@@ -34,6 +34,7 @@ diverges.
   its torsion subgroup and the free abelian group on the fundamental system.
 * `NumberField.Units.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of
   complex places plus one is the degree.
+* `NumberField.Units.rank_add_one`: the unit rank plus one is the number of infinite places.
 * `NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real
   place has unit rank one.
 * `NumberField.Units.rank_eq_zero_iff_card_infinitePlace_eq_one`: the unit rank is zero exactly
@@ -133,6 +134,14 @@ theorem rank_add_nrComplexPlaces_add_one :
   have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank K
   -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
   have h₃ : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos
+  simp only [rank]
+  omega
+
+/-- **The unit rank plus one equals the number of infinite places** `r₁ + r₂`. -/
+theorem rank_add_one :
+    rank K + 1 = InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K := by
+  have hcard := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  have hpos : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos
   simp only [rank]
   omega
 

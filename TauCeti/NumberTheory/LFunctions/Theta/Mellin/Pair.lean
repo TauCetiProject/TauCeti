@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MellinTransform
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Volume
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The Mellin pair of the theta kernel of a lattice
@@ -99,6 +100,15 @@ theorem mellinConstant_pos : 0 < mellinConstant K := by
 variable (K) in
 @[simp]
 theorem mellinConstant_ne_zero : mellinConstant K ≠ 0 := (mellinConstant_pos K).ne'
+
+variable (K) in
+/-- Doubling the Mellin constant cancels the `- 1` in `2 ^ (r₁ + r₂ - 1)`, leaving
+`2 ^ r₁ * 2 ^ r₂ * R / w`. -/
+theorem two_mul_mellinConstant :
+    2 * mellinConstant K =
+      2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K * regulator K / torsionOrder K := by
+  rw [mellinConstant_def, ← mul_div_assoc, ← mul_assoc, ← pow_succ',
+    Nat.sub_add_cancel (InfinitePlace.one_le_nrPlaces K), pow_add]
 
 /-- Over a unit fundamental domain `D` the constant term `(2^r₂ / w) vol(D)` of the Mellin kernel
 is `a₀ = 2^(r-1) R / w`, independently of `D`. -/

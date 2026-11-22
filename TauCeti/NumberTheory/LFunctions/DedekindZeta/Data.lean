@@ -113,8 +113,8 @@ theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K :
   · simp
   · simp
   · simp
-  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
-      map_eq_one_iff _ (starRingEnd ℂ).injective]
+  · rw [AnalyticLFunctionData.dual_polarOrder_apply]
+    exact single_zero_add_single_one_conj _
 
 /-- The Dedekind zeta coefficients satisfy the average absolute growth bound `O(n ^ (1 + ε))`. -/
 theorem dedekindZetaData_hasAverageCoefficientGrowth :
@@ -144,30 +144,19 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation where
   meromorphic := meromorphic_completedDedekindZeta K
   meromorphicOrderAt_eq p hp := by
-    by_cases h0 : p = 0
-    · subst h0
-      simp [meromorphicOrderAt_completedDedekindZeta_zero]
-    by_cases h1 : p = 1
-    · subst h1
-      simp [meromorphicOrderAt_completedDedekindZeta_one]
-    simp [Ne.symm h0, Ne.symm h1] at hp
+    rcases (single_zero_add_single_one_ne_zero_iff p).mp hp with rfl | rfl
+    · simp [meromorphicOrderAt_completedDedekindZeta_zero]
+    · simp [meromorphicOrderAt_completedDedekindZeta_one]
   analyticAt p hp := by
-    refine analyticAt_completedDedekindZeta ?_ ?_ <;> rintro rfl <;> simp at hp
+    obtain ⟨h0, h1⟩ := (single_zero_add_single_one_eq_zero_iff p).mp hp
+    exact analyticAt_completedDedekindZeta h0 h1
 
 /-- The functional equation `Λ_K(1 - s) = Λ_K(s)` of the completed Dedekind zeta function, with
 root number `1`. -/
 theorem dedekindZetaData_hasFunctionalEquation :
     (dedekindZetaData K).HasFunctionalEquation where
   norm_rootNumber := by simp
-  polarOrder_one_sub_conj s := by
-    have hconj (z : ℂ) :
-        (dedekindZetaData K).polarOrder (conj z) = (dedekindZetaData K).polarOrder z := by
-      rw [← AnalyticLFunctionData.dual_polarOrder_apply, dedekindZetaData_dual]
-    have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
-    have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
-    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
-    simp only [dedekindZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply, e0, e1]
-    rw [add_comm]
+  polarOrder_one_sub_conj s := single_zero_add_single_one_one_sub_conj s
   completed_eq s _ _ := by
     simp [completedDedekindZeta_one_sub]
 
@@ -180,7 +169,8 @@ theorem ofSeries_dedekindZetaData :
       dedekindZetaData K := by
   refine AnalyticLFunctionData.ofSeries_eq
     (dedekindZetaData_hasDirichletAgreement K) (dedekindZetaData_hasFunctionalEquation K)
-    (meromorphicNFOn_completedDedekindZeta K) (by norm_num [Finsupp.single_apply]) ?_
+    (meromorphicNFOn_completedDedekindZeta K)
+    ((single_zero_add_single_one_eq_zero_iff 2).mpr ⟨by norm_num, by norm_num⟩) ?_
   rw [dedekindZetaData_completed, completedDedekindZeta_eq (by norm_num)]
   have hdiscr : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 := by
     rw [div_self two_ne_zero, Complex.cpow_one]

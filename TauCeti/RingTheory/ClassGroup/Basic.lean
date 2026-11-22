@@ -19,9 +19,11 @@ trivial class, and the class `[v]` of a height one prime.
 
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk`: the class `[v]` of a height one prime of a
   Dedekind domain.
+* `ClassGroup.rep`: a chosen fractional-ideal representative for each class of `ClassGroup R`.
 
 ## Main results
 
+* `ClassGroup.mk_rep`: `ClassGroup.rep` is a right inverse to `ClassGroup.mk`.
 * `ClassGroup.mk_eq_one_iff_exists`: a class is trivial exactly when some `x : Kˣ` generates it.
   This is Mathlib's `ClassGroup.mk_eq_one_iff` with `Submodule.IsPrincipal` traded for the range
   of `toPrincipalIdeal`, which is the form a consumer that wants to *name* the generator can use.
@@ -156,5 +158,18 @@ lemma ClassGroup.mk0_eq_inv_mk_iff {K : Type*} [Field K] [Algebra R K] [IsFracti
         FractionalIdeal.spanSingleton R⁰ (x : K) := by
   rw [eq_inv_iff_mul_eq_one, ← ClassGroup.mk_mk0 K, ← map_mul, ClassGroup.mk_eq_one_iff_exists]
   simp only [Units.ext_iff, Units.val_mul, FractionalIdeal.coe_mk0, coe_toPrincipalIdeal, eq_comm]
+
+/-- Choosing an invertible fractional-ideal representative of each ideal class over a fraction
+field `K`. -/
+noncomputable def ClassGroup.rep (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+    (c : ClassGroup R) : (FractionalIdeal R⁰ K)ˣ :=
+  FractionalIdeal.mk0 K (ClassGroup.mk0_surjective c).choose
+
+/-- The chosen representative of an ideal class `c` maps back to `c` under `ClassGroup.mk`. -/
+@[simp]
+theorem ClassGroup.mk_rep {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+    (c : ClassGroup R) : ClassGroup.mk K (ClassGroup.rep K c) = c := by
+  rw [ClassGroup.rep, ClassGroup.mk_mk0]
+  exact (ClassGroup.mk0_surjective c).choose_spec
 
 end

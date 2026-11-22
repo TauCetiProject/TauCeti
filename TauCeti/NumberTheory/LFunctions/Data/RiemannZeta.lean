@@ -94,6 +94,53 @@ theorem riemannZetaData_hasAverageCoefficientGrowth :
   apply AnalyticLFunctionData.hasAverageCoefficientGrowth_of_norm_coeff_le
   exact ⟨1, fun n hn ↦ by simp [hn]⟩
 
+/-- The support of the simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is
+`{0, 1}`. -/
+theorem support_single_zero_add_single_one {α : Type*} [Zero α] [One α] [DecidableEq α] :
+    (Finsupp.single (0 : α) (1 : ℕ) + Finsupp.single 1 1).support = {0, 1} := by
+  ext x
+  by_cases h0 : x = 0 <;> by_cases h1 : x = 1 <;> simp [Finsupp.single_apply, h0, h1]
+
+/-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is nonzero exactly at `0`
+and `1`. -/
+theorem single_zero_add_single_one_ne_zero_iff {α : Type*} [Zero α] [One α] (x : α) :
+    (Finsupp.single (0 : α) (1 : ℕ) + Finsupp.single 1 1 : α →₀ ℕ) x ≠ 0 ↔ x = 0 ∨ x = 1 := by
+  classical
+  simp only [← Finsupp.mem_support_iff, support_single_zero_add_single_one, Finset.mem_insert,
+    Finset.mem_singleton]
+
+/-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` vanishes away from `0` and
+`1`. -/
+theorem single_zero_add_single_one_eq_zero_iff {α : Type*} [Zero α] [One α] (x : α) :
+    (Finsupp.single (0 : α) (1 : ℕ) + Finsupp.single 1 1 : α →₀ ℕ) x = 0 ↔ x ≠ 0 ∧ x ≠ 1 := by
+  simpa only [ne_eq, not_not, not_or] using not_congr (single_zero_add_single_one_ne_zero_iff x)
+
+/-- Conjugation preserves the simple-pole divisor at `0` and `1`. -/
+theorem mapDomain_conj_single_zero_add_single_one :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1).mapDomain conj =
+      Finsupp.single 0 1 + Finsupp.single 1 1 := by
+  simp only [Finsupp.mapDomain_add, Finsupp.mapDomain_single, map_zero, map_one]
+
+/-- Evaluation of `Finsupp.single 0 1 + Finsupp.single 1 1` is invariant under conjugation. -/
+theorem single_zero_add_single_one_conj (s : ℂ) :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (conj s) =
+      (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
+  have h := congrArg (fun d : ℂ →₀ ℕ ↦ d (conj s)) mapDomain_conj_single_zero_add_single_one.symm
+  rwa [Finsupp.mapDomain_apply_of_injective (starRingEnd ℂ).injective] at h
+
+/-- The simple-pole divisor at `0` and `1` is invariant under `s ↦ 1 - conj s`. -/
+theorem single_zero_add_single_one_one_sub_conj (s : ℂ) :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (1 - conj s) =
+      (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
+  have h0 : (0 : ℂ) = 1 - conj s ↔ (1 : ℂ) = s := by
+    rw [eq_comm, sub_eq_zero, eq_comm]
+    exact (map_eq_one_iff _ (starRingEnd ℂ).injective).trans eq_comm
+  have h1 : (1 : ℂ) = 1 - conj s ↔ (0 : ℂ) = s := by
+    rw [eq_comm, sub_eq_self]
+    exact (map_eq_zero_iff _ (starRingEnd ℂ).injective).trans eq_comm
+  simp only [Finsupp.add_apply, Finsupp.single_apply, h0, h1]
+  rw [add_comm]
+
 /-- The Riemann zeta card is its own dual. -/
 @[simp]
 theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
@@ -104,8 +151,8 @@ theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
   · simp
   · simp
   · simp [completedRiemannZeta_conj]
-  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
-      map_eq_one_iff _ (starRingEnd ℂ).injective]
+  · rw [AnalyticLFunctionData.dual_polarOrder_apply]
+    exact single_zero_add_single_one_conj _
 
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
@@ -128,28 +175,18 @@ theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation where
   meromorphic := meromorphic_completedRiemannZeta
   meromorphicOrderAt_eq p hp := by
-    by_cases h0 : p = 0
-    · subst h0
-      simp [meromorphicOrderAt_completedRiemannZeta_zero]
-    by_cases h1 : p = 1
-    · subst h1
-      simp [meromorphicOrderAt_completedRiemannZeta_one]
-    simp [Ne.symm h0, Ne.symm h1] at hp
+    rcases (single_zero_add_single_one_ne_zero_iff p).mp hp with rfl | rfl
+    · simp [meromorphicOrderAt_completedRiemannZeta_zero]
+    · simp [meromorphicOrderAt_completedRiemannZeta_one]
   analyticAt p hp := by
-    refine analyticAt_completedRiemannZeta ?_ ?_ <;> rintro rfl <;> simp at hp
+    obtain ⟨h0, h1⟩ := (single_zero_add_single_one_eq_zero_iff p).mp hp
+    exact analyticAt_completedRiemannZeta h0 h1
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/
 theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEquation where
   norm_rootNumber := by simp
-  polarOrder_one_sub_conj s := by
-    have hconj (z : ℂ) : riemannZetaData.polarOrder (conj z) = riemannZetaData.polarOrder z := by
-      rw [← AnalyticLFunctionData.dual_polarOrder_apply, riemannZetaData_dual]
-    have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
-    have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
-    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
-    simp only [riemannZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply, e0, e1]
-    rw [add_comm]
+  polarOrder_one_sub_conj s := single_zero_add_single_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]
@@ -165,9 +202,8 @@ theorem ofSeries_riemannZetaData :
     riemannZetaData_hasDirichletAgreement riemannZetaData_hasMeromorphicContinuation
     riemannZetaData_hasFunctionalEquation
   · intro s hs
-    have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-    have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-    simp [Ne.symm h0, Ne.symm h1]
+    exact (single_zero_add_single_one_eq_zero_iff s).mpr
+      ⟨by rintro rfl; norm_num at hs, by rintro rfl; norm_num at hs⟩
   · have heq : riemannZetaData.completed 2 = Gammaℝ 2 * LSeries riemannZetaData.coeff 2 := by
       simpa using riemannZetaData_hasDirichletAgreement.completed_eq 2 (by norm_num)
     have hL : LSeries riemannZetaData.coeff 2 = riemannZeta 2 :=

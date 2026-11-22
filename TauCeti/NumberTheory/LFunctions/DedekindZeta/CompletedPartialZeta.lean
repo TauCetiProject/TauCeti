@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Meromorphic.Conj
+import TauCeti.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
@@ -705,8 +706,7 @@ pole `s = 0`. -/
 @[simp]
 theorem completedPartialZeta_zero (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     completedPartialZeta I 0 = 0 :=
-  not_not.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 0))
-    |>.meromorphicOrderAt_eq_zero_iff.not.mp
+  (meromorphicNFOn_completedPartialZeta I (mem_univ 0)).apply_eq_zero_of_order_ne_zero
     (by simp [meromorphicOrderAt_completedPartialZeta_zero])
 
 /-- As a meromorphic normal form, `completedPartialZeta I` takes the canonical value `0` at its
@@ -714,8 +714,7 @@ pole `s = 1`. -/
 @[simp]
 theorem completedPartialZeta_one (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     completedPartialZeta I 1 = 0 :=
-  not_not.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 1))
-    |>.meromorphicOrderAt_eq_zero_iff.not.mp
+  (meromorphicNFOn_completedPartialZeta I (mem_univ 1)).apply_eq_zero_of_order_ne_zero
     (by simp [meromorphicOrderAt_completedPartialZeta_one])
 
 /-! ### Functional equation -/
@@ -765,7 +764,7 @@ theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : �
       have h := congrArg conj
         (TauCeti.ofReal_cpow_conj (by positivity : (0 : ℝ) ≤ (|discr K| : ℤ)) (z / 2))
       simpa only [Complex.ofReal_intCast, map_div₀, map_ofNat, Complex.conj_conj] using h
-    set c : RayClassGroup (Modulus.one K) := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹
+    set c : RayClassGroup (Modulus.one K) := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹ with hc
     have hstar : star (rayClassCoeff (Modulus.one K) c) = rayClassCoeff (Modulus.one K) c := by
       funext 𝔟
       simp only [Pi.star_apply, rayClassCoeff_apply]
@@ -779,7 +778,7 @@ theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : �
       completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hzc,
       completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hz,
       map_mul, map_pow, ← Complex.Gammaℝ_conj, ← Complex.Gammaℂ_conj, Complex.conj_conj]
-    rw [hdiscr, show oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹ = c from rfl, hL]
+    rw [hdiscr, ← hc, hL]
   simpa using (congrFun heq (conj s)).symm
 
 end TauCeti.LFunctions

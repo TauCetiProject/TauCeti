@@ -64,6 +64,7 @@ equivalent to a nonarchimedean absolute value.
   discriminant in low degree.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
+* `NumberField.InfinitePlace.one_le_nrPlaces`: a number field has at least one infinite place.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
   place.
 * `NumberField.InfinitePlace.liesOver_comap`: a place lies over its restriction.
@@ -235,6 +236,13 @@ theorem InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces :
     (Module.finrank ℚ K - nrRealPlaces K) / 2 = nrComplexPlaces K := by
   have key := card_add_two_mul_card_eq_rank K
   omega
+
+variable (K) in
+/-- A number field has at least one infinite place (`r₁ + r₂ ≥ 1`). -/
+theorem InfinitePlace.one_le_nrPlaces :
+    1 ≤ nrRealPlaces K + nrComplexPlaces K := by
+  rw [← InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  exact Fintype.card_pos
 
 variable (K) in
 /-- **Brill's theorem, parity form.** The number of complex places is even exactly when the

@@ -346,7 +346,10 @@ theorem sum_LSeries_rayClassCoeff_classGroup [Fintype (ClassGroup (𝓞 K))] {s 
   rw [← sum_LSeries_rayClassCoeff_one hs]
   let e : ClassGroup (𝓞 K) ≃ RayClassGroup (Modulus.one K) :=
     (Equiv.inv (ClassGroup (𝓞 K))).trans oneEquivClassGroup.symm.toEquiv
-  exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
+  refine Fintype.sum_equiv e _ _ fun c ↦ ?_
+  have he : e c = oneEquivClassGroup.symm c⁻¹ := by
+    simp [e]
+  rw [he]
 
 /-- **The sum over the ray classes is `ζ_K` only for a trivial finite part.** At a real `s > 1`
 the Dirichlet series of the ray classes of `𝔪` sum to `ζ_K(s)` exactly when `𝔪.support` is

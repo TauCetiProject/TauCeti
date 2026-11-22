@@ -16,6 +16,8 @@ supplies three basic properties of `toMeromorphicNFAt`:
 
 * `MeromorphicNFAt.toMeromorphicNFAt_eq_of_eqOn_compl_singleton`: if `g` is already in normal form
   at `x` and `f` agrees with `g` off `x`, then `toMeromorphicNFAt f x = g`.
+* `MeromorphicNFAt.apply_eq_zero_of_order_ne_zero`: a function in normal form at `x` vanishes
+  at `x` whenever its order at `x` is nonzero.
 * `MeromorphicAt.toMeromorphicNFAt_apply_eq_of_tendsto`: if `f` is meromorphic at `x` and
   converges to `a` on `𝓝[≠] x`, then its normal-form representative at `x` evaluates to `a` at `x`.
 * `TauCeti.toMeromorphicNFAt_comp_add_const`, `TauCeti.toMeromorphicNFAt_comp_sub_const`:
@@ -45,6 +47,11 @@ theorem MeromorphicNFAt.toMeromorphicNFAt_eq_of_eqOn_compl_singleton {f g : 𝕜
     simpa [toMeromorphicNFAt_eq_self.mpr hg] using
       (toMeromorphicNFAt_eventuallyEq_nhds_congr hfg').eq_of_nhds
   · rw [← hf.eqOn_compl_singleton_toMeromorphicNFAt hz, hfg hz]
+
+/-- If `f` is in meromorphic normal form at `x` with nonzero order, then `f x = 0`. -/
+theorem MeromorphicNFAt.apply_eq_zero_of_order_ne_zero {f : 𝕜 → E} {x : 𝕜}
+    (hf : MeromorphicNFAt f x) (hord : meromorphicOrderAt f x ≠ 0) : f x = 0 :=
+  not_not.mp <| hf.meromorphicOrderAt_eq_zero_iff.not.mp hord
 
 /-- If `f` is meromorphic at `x` and tends to `a` on the punctured neighbourhood `𝓝[≠] x`, then
 its local meromorphic normal form at `x` evaluates to `a` at `x`. Meromorphicity cannot be
