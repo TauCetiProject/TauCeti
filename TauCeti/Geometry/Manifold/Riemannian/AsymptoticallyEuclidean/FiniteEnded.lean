@@ -204,7 +204,7 @@ private theorem radial_segment_norm_bounds {R R₁ : ℝ} {x : EuclideanSpace �
   exact ⟨hxR.trans_le (le_mul_of_one_le_left hx_pos.le hscale),
     (mul_le_mul_of_nonneg_right hscale_ub hx_pos.le).trans_eq (div_mul_cancel₀ _ hx_pos.ne')⟩
 
-/-/-- Radial extended-distance estimate from `φ x` (`R < ‖x‖ < R₀ ≤ R₁`) to the outer sphere
+/-- Radial extended-distance estimate from `φ x` (`R < ‖x‖ < R₀ ≤ R₁`) to the outer sphere
 `sphere 0 R₀`. -/
 private theorem edist_image_radial_le {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]

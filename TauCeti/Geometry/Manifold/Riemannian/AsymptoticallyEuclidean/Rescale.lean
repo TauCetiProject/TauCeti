@@ -36,7 +36,7 @@ metric.
 
 ## Main results
 
-* `TauCeti.pullbackMetricCoeff_comp_smul`: precomposing with a nonzero scalar dilation scales
+* `TauCeti.pullbackMetricCoeff_comp_smul`: precomposing with a scalar dilation scales
   `pullbackMetricCoeff` by `a ^ 2`.
 * `TauCeti.pullbackMetricCoeff_toWithMetric_rescaledMetric_comp`: postcomposing with
   `WithMetric.toWithMetric (rescaledMetric I M m hc)` scales `pullbackMetricCoeff` by `c`.
@@ -72,30 +72,43 @@ private theorem mfderiv_const_smul_apply {F : Type*} [NormedAddCommGroup F] [Nor
   change mvfderiv 𝓘(ℝ, F) (a • id) x _ = a • v
   simp [mvfderiv_const_smul_field, mvfderiv_eq_fderiv]
 
-/-- Precomposing `φ : ℝⁿ → M` with a nonzero scalar dilation `y ↦ a • y` multiplies its
-pulled-back metric coefficients at `x` by `a ^ 2`, evaluated at `a • x`. -/
-theorem pullbackMetricCoeff_comp_smul (φ : EuclideanSpace ℝ (Fin n) → M) {a : ℝ} (ha : a ≠ 0)
+/-- Precomposing `φ : ℝⁿ → M` with a scalar dilation `y ↦ a • y` multiplies its pulled-back metric
+coefficients at `x` by `a ^ 2`, evaluated at `a • x`. -/
+theorem pullbackMetricCoeff_comp_smul (φ : EuclideanSpace ℝ (Fin n) → M) (a : ℝ)
     (x : EuclideanSpace ℝ (Fin n)) :
     pullbackMetricCoeff I (fun y ↦ φ (a • y)) x =
       a ^ 2 • pullbackMetricCoeff I φ (a • x) := by
-  let A : EuclideanSpace ℝ (Fin n) ≃L[ℝ] EuclideanSpace ℝ (Fin n) :=
-    Units.mk0 a ha • ContinuousLinearEquiv.refl ℝ (EuclideanSpace ℝ (Fin n))
-  have hA : (⇑A.toDiffeomorph : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) = (a • ·) :=
-    funext fun y ↦ by simp [A]
-  have hderiv (k : Fin n) :
-      mfderiv (𝓡 n) I (fun y ↦ φ (a • y)) x (EuclideanSpace.basisFun (Fin n) ℝ k) =
-        a • mfderiv (𝓡 n) I φ (a • x) (EuclideanSpace.basisFun (Fin n) ℝ k) := by
-    have hcomp := DFunLike.congr_fun
-      (A.toDiffeomorph.mfderiv_comp_diffeomorph (K := I) (hn := by simp) (f := φ) (x := x))
-      ((NormedSpace.fromTangentSpace x).symm (EuclideanSpace.basisFun (Fin n) ℝ k))
-    change mfderiv (𝓡 n) I (φ ∘ ⇑A.toDiffeomorph) x _ =
-      mfderiv (𝓡 n) I φ (⇑A.toDiffeomorph x) (mfderiv (𝓡 n) (𝓡 n) ⇑A.toDiffeomorph x _) at hcomp
-    rw [hA, mfderiv_const_smul_apply, map_smul] at hcomp
-    exact hcomp
-  ext i j
-  rw [Matrix.smul_apply, smul_eq_mul, pullbackMetricCoeff_apply, pullbackMetricCoeff_apply,
-    hderiv i, hderiv j, real_inner_smul_left, real_inner_smul_right]
-  ring
+  by_cases ha : a = 0
+  · subst ha
+    have h0 : (fun y : EuclideanSpace ℝ (Fin n) ↦ φ ((0 : ℝ) • y)) =
+        fun _ ↦ φ ((0 : ℝ) • x) :=
+      funext fun _ ↦ by rw [zero_smul, zero_smul]
+    ext i j
+    rw [Matrix.smul_apply, smul_eq_mul, zero_pow two_ne_zero, zero_mul, pullbackMetricCoeff_apply,
+      h0, mfderiv_const]
+    change ⟪(0 : TangentSpace (𝓡 n) x →L[ℝ] TangentSpace I (φ ((0 : ℝ) • x)))
+        ((NormedSpace.fromTangentSpace x).symm (EuclideanSpace.basisFun (Fin n) ℝ i)),
+      (0 : TangentSpace (𝓡 n) x →L[ℝ] TangentSpace I (φ ((0 : ℝ) • x)))
+        ((NormedSpace.fromTangentSpace x).symm (EuclideanSpace.basisFun (Fin n) ℝ j))⟫ = 0
+    simp
+  · let A : EuclideanSpace ℝ (Fin n) ≃L[ℝ] EuclideanSpace ℝ (Fin n) :=
+      Units.mk0 a ha • ContinuousLinearEquiv.refl ℝ (EuclideanSpace ℝ (Fin n))
+    have hA : (⇑A.toDiffeomorph : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) =
+        (a • ·) := funext fun y ↦ by simp [A]
+    have hderiv (k : Fin n) :
+        mfderiv (𝓡 n) I (fun y ↦ φ (a • y)) x (EuclideanSpace.basisFun (Fin n) ℝ k) =
+          a • mfderiv (𝓡 n) I φ (a • x) (EuclideanSpace.basisFun (Fin n) ℝ k) := by
+      have hcomp := DFunLike.congr_fun
+        (A.toDiffeomorph.mfderiv_comp_diffeomorph (K := I) (hn := by simp) (f := φ) (x := x))
+        ((NormedSpace.fromTangentSpace x).symm (EuclideanSpace.basisFun (Fin n) ℝ k))
+      change mfderiv (𝓡 n) I (φ ∘ ⇑A.toDiffeomorph) x _ =
+        mfderiv (𝓡 n) I φ (⇑A.toDiffeomorph x) (mfderiv (𝓡 n) (𝓡 n) ⇑A.toDiffeomorph x _) at hcomp
+      rw [hA, mfderiv_const_smul_apply, map_smul] at hcomp
+      exact hcomp
+    ext i j
+    rw [Matrix.smul_apply, smul_eq_mul, pullbackMetricCoeff_apply, pullbackMetricCoeff_apply,
+      hderiv i, hderiv j, real_inner_smul_left, real_inner_smul_right]
+    ring
 
 section Rescale
 
@@ -139,7 +152,7 @@ theorem pullbackMetricCoeff_rescale (φ : EuclideanSpace ℝ (Fin n) → M)
   have hcomp :
       (fun z ↦ WithMetric.toWithMetric (rescaledMetric I M m hc) (φ (s⁻¹ • z))) =
         fun z ↦ (WithMetric.toWithMetric (rescaledMetric I M m hc) ∘ φ) (s⁻¹ • z) := rfl
-  rw [hcomp, pullbackMetricCoeff_comp_smul (I := I) _ (inv_ne_zero hs.ne') y,
+  rw [hcomp, pullbackMetricCoeff_comp_smul (I := I) _ s⁻¹ y,
     pullbackMetricCoeff_toWithMetric_rescaledMetric_comp m hc φ (s⁻¹ • y), smul_smul]
   have hcs : s⁻¹ ^ 2 * c = 1 := by
     rw [← Real.sq_sqrt hc.le, inv_pow, inv_mul_cancel₀ (pow_ne_zero 2 hs.ne')]

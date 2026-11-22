@@ -247,31 +247,33 @@ theorem isOpen_image [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R 
   (h.isLocalDiffeomorphOn 1 le_rfl (by simp)).isLocalHomeomorphOn.isOpen_image
     isClosed_closedBall.isOpen_compl
 
-/-- An end as a diffeomorphism from the exterior of its ball onto its open image. -/
-def toPartialDiffeomorph [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I (EuclideanSpace ℝ (Fin n)) M ∞ :=
-  (h.isLocalDiffeomorphOn ∞ (by simp) le_rfl).partialDiffeomorphOfInjOn
+/-- An end as a `C^k` partial diffeomorphism from the exterior of its ball onto its open image,
+for every `1 ≤ k ≤ ∞`. -/
+def toPartialDiffeomorph (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k) (hk : k ≤ ∞)
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I (EuclideanSpace ℝ (Fin n)) M k :=
+  (h.isLocalDiffeomorphOn k hk1 hk).partialDiffeomorphOfInjOn
     isClosed_closedBall.isOpen_compl h.injOn
 
 /-- The source of an end, as a partial diffeomorphism, is the exterior of its ball. -/
 @[simp]
-theorem toPartialDiffeomorph_source [IsManifold I ∞ M]
+theorem toPartialDiffeomorph_source (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k) (hk : k ≤ ∞)
     (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    h.toPartialDiffeomorph.source = (closedBall 0 R)ᶜ :=
-  (h.isLocalDiffeomorphOn ∞ (by simp) le_rfl).partialDiffeomorphOfInjOn_source _ _
+    (h.toPartialDiffeomorph k hk1 hk).source = (closedBall 0 R)ᶜ :=
+  (h.isLocalDiffeomorphOn k hk1 hk).partialDiffeomorphOfInjOn_source _ _
 
 /-- The target of an end, as a partial diffeomorphism, is its image. -/
 @[simp]
-theorem toPartialDiffeomorph_target [IsManifold I ∞ M]
+theorem toPartialDiffeomorph_target (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k) (hk : k ≤ ∞)
     (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    h.toPartialDiffeomorph.target = φ '' (closedBall 0 R)ᶜ :=
-  (h.isLocalDiffeomorphOn ∞ (by simp) le_rfl).partialDiffeomorphOfInjOn_target _ _
+    (h.toPartialDiffeomorph k hk1 hk).target = φ '' (closedBall 0 R)ᶜ :=
+  (h.isLocalDiffeomorphOn k hk1 hk).partialDiffeomorphOfInjOn_target _ _
 
 /-- An end, as a partial diffeomorphism, evaluates as its parametrization. -/
 @[simp]
-theorem coe_toPartialDiffeomorph [IsManifold I ∞ M]
-    (h : IsAsymptoticallyEuclideanEnd I t R φ) : ⇑h.toPartialDiffeomorph = φ :=
-  (h.isLocalDiffeomorphOn ∞ (by simp) le_rfl).coe_partialDiffeomorphOfInjOn _ _
+theorem coe_toPartialDiffeomorph (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k) (hk : k ≤ ∞)
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) : ⇑(h.toPartialDiffeomorph k hk1 hk) = φ :=
+  (h.isLocalDiffeomorphOn k hk1 hk).coe_partialDiffeomorphOfInjOn _ _
 
 /-- In dimension at least two the image of an end is path-connected, as the image of the
 path-connected exterior of a ball. -/

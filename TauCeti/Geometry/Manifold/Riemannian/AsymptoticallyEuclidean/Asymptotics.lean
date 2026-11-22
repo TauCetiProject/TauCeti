@@ -228,13 +228,14 @@ theorem exists_asymptotic_bounds (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht
   exact (hC k hk i j x hrx).trans
     (mul_le_mul_of_nonneg_right (hC0.trans hC1) (Real.rpow_nonneg (norm_nonneg x) _))
 
-/-- At every point, the Riemannian Jacobian of `h.toPartialDiffeomorph` in the standard basis of
-`ℝⁿ` is `√(det (pullbackMetricCoeff I φ x))`. -/
-theorem riemannianJacobian_toPartialDiffeomorph [IsManifold I ∞ M]
-    (h : IsAsymptoticallyEuclideanEnd I t R φ) (x : EuclideanSpace ℝ (Fin n)) :
+/-- At every point, the Riemannian Jacobian of `h.toPartialDiffeomorph k hk1 hk` in the standard
+basis of `ℝⁿ` is `√(det (pullbackMetricCoeff I φ x))`. -/
+theorem riemannianJacobian_toPartialDiffeomorph (k : ℕ∞ω) [IsManifold I k M] (hk1 : 1 ≤ k)
+    (hk : k ≤ (∞ : ℕ∞ω)) (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    (x : EuclideanSpace ℝ (Fin n)) :
     riemannianJacobian (I := I) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-      h.toPartialDiffeomorph x = Real.sqrt (pullbackMetricCoeff I φ x).det := by
-  rw [h.coe_toPartialDiffeomorph]
+      (h.toPartialDiffeomorph k hk1 hk) x = Real.sqrt (pullbackMetricCoeff I φ x).det := by
+  rw [h.coe_toPartialDiffeomorph k hk1 hk]
   exact riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff φ x
 
 /-- An asymptotically Euclidean end identifies `ℝⁿ` linearly with the target model space `E` via
