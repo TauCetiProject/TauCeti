@@ -51,8 +51,8 @@ constants and variables, and commutes with bounded coefficient maps by
   uniform structure on polynomials are given by the Gauss norm of differences.
 
 Dense coefficient subsets give dense polynomials with coefficients in them by
-`MvPowerSeries.dense_closure_monomial`, and injectivity of the polynomial embedding is Mathlib's
-`MvPolynomial.toRestricted_injective`.
+`MvPowerSeries.dense_setOf_coe_eq_sum_monomial`, and injectivity of the polynomial embedding is
+Mathlib's `MvPolynomial.toRestricted_injective`.
 
 The packaging as an `AbstractCompletion` follows Mathlib's `LaurentSeries.LaurentSeriesPkg` in
 `Mathlib/RingTheory/LaurentSeries.lean`, as does `TauCeti.NovikovSeries.completionPkg`.

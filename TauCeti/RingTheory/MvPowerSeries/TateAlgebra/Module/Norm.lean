@@ -21,7 +21,9 @@ norm bound, so the induced map is open and is a quotient map. This extends the
 coefficient-lifting argument of
 `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le` to module coefficients.
 
-Complete coefficient groups give complete restricted families. The construction allows arbitrary
+Complete coefficient groups give complete restricted families. Every restricted family is the
+unconditional sum of its single coefficients, so its finite-support truncations converge to it
+and finite-support families are dense. The construction allows arbitrary
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
@@ -320,6 +322,36 @@ theorem norm_ofFinsupp_single (t : σ →₀ ℕ) (e : E) :
       simp
     · simp [h, mul_nonneg (norm_nonneg e) (prod_pow_pos t).le]
   · simpa using norm_coeff_mul_prod_le (ofFinsupp R c (Finsupp.single t e)) t
+
+variable (R) in
+/-- **Finite-support truncations converge**: a restricted family is the unconditional sum of its
+single coefficients, so its truncations to finite sets of exponents tend to it in the Gauss norm,
+at every positive polyradius. -/
+theorem hasSum_ofFinsupp_single (a : Gauss c E) :
+    HasSum (fun t ↦ ofFinsupp R c (Finsupp.single t (a t))) a := by
+  classical
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  -- only finitely many weighted coefficient norms are at least `ε / 2`
+  have hF : {t | ε / 2 ≤ ‖a t‖ * t.prod (c · ^ ·)}.Finite := by
+    simpa [eventually_cofinite, not_lt] using
+      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).eventually
+        (gt_mem_nhds (half_pos hε))
+  refine (eventually_ge_atTop hF.toFinset).mono fun s hs ↦ ?_
+  rw [dist_eq_norm']
+  refine (norm_le_iff.mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
+  by_cases ht : t ∈ s
+  · simpa [← map_sum, Finsupp.single_apply, ht] using (half_pos hε).le
+  · simpa [← map_sum, Finsupp.single_apply, ht] using
+      (not_le.mp fun h ↦ ht (hs (hF.mem_toFinset.mpr h))).le
+
+variable (R) in
+/-- **Finite-support families are dense** in the restricted families for the Gauss norm, at every
+positive polyradius. -/
+theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (σ := σ) (E := E) R c) := by
+  classical
+  intro a
+  exact mem_closure_of_tendsto (hasSum_ofFinsupp_single R a) <|
+    .of_forall fun s ↦ ⟨∑ t ∈ s, Finsupp.single t (a t), by simp⟩
 
 /-- Coefficientwise scalar multiplication is bounded for the Gauss norm. -/
 instance : IsBoundedSMul R (Gauss c E) :=
