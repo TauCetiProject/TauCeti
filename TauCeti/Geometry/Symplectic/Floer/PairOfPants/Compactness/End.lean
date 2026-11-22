@@ -54,7 +54,8 @@ heights, from two facts about the translated ends proved in
   sequence of solutions with energy at most `E` and `vₖ(Ω) ⊆ B`, a subsequence of the `vₖ`
   converges locally uniformly on `Ω` off a finite set `Z` with `#Z * δ ≤ E`.
 
-* **The limit is a Floer cylinder.** For smooth solutions the convergence holds in `C¹`
+* **The limit solves the cylindrical Floer equation.** For smooth solutions the convergence holds
+  in `C¹`
   (`exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_positiveEndChart`):
   the derivatives of the `v_{φ n}` converge to that of `v` locally uniformly on `Ω \ Z`, `v` is a
   `C¹` solution there of the Floer equation of the positive end, for the cylindrical datum
@@ -215,9 +216,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   exact hconv hΩ hΩD hvC (fun k ↦ (h k).1) huK (fun k ↦ (h k).2.1) fun k ↦ (h k).2.2
 
 /-- **The translated ends of smooth Floer solutions on `S` converge in `C¹` off finitely many
-bubbling points to a Floer cylinder.** Under the hypotheses of
-`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart`, there is a
-threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
+bubbling points to a solution of the cylindrical Floer equation of the end.** Under the
+hypotheses of `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart`,
+there is a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
 `(du - X_K)^{0,1} = 0` on `S` for `J(z, u)` with energy at most `E ≥ 0`, let `Rₖ ≥ 0` be heights,
 and let the translated ends `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))` map an open `Ω ⊆ D` into `B`. Then
 there are a subsequence `φ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a map `v : Ω \ Z → B`

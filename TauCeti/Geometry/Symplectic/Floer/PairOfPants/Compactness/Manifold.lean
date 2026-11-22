@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Order.Interval.Set.Prod
 
 /-!
 # Compactness of pairs of pants in a symplectic chart of a manifold
@@ -464,11 +465,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
   -- chart.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
       hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
@@ -476,7 +474,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
     fun k ↦ (h k).2.2.2
 
 /-- **The translated ends of smooth Floer pairs of pants in a symplectic chart of a manifold
-converge in `C¹` off finitely many bubbling points to a Floer cylinder.** Under the hypotheses of
+converge in `C¹` off finitely many bubbling points to a solution of the Floer equation of the
+positive end on `Ω \ Z`.** Under the hypotheses of
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart`, there is a
 threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
 `(du - X_K)^{0,1} = 0` on `S` for `J(z, u)` with energy at most `E ≥ 0`, let `Rₖ ≥ 0` be heights,
@@ -550,11 +549,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_com
   -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
   -- chart.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have hvC (k : ℕ) :
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q _).comp

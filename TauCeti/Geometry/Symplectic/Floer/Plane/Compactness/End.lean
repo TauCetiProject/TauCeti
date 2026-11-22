@@ -60,8 +60,8 @@ half-cylinder.
   (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add` in
   the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`).
 
-For smooth solutions the limit is a Floer cylinder: the convergence holds in `C¹` off `Z`, and the
-limit `v` is a `C¹` solution on `Ω \ Z` of the Floer equation for the cylindrical datum
+For smooth solutions the convergence holds in `C¹` off `Z`, and the limit `v` is a `C¹` solution
+on `Ω \ Z` of the Floer equation for the cylindrical datum
 `ε H(ε t) dt` and the structures `J_∞(t)`, with energy over `Ω \ Z` at most `E`. In a symplectic
 chart the coordinate maps and their derivatives converge. These are
 `exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_realChart_positive_add`
@@ -234,7 +234,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
     fun k ↦ (h k).2.2.2
 
 /-- **The translated ends of smooth PSS planes converge in `C¹` off finitely many bubbling points to
-a Floer cylinder.** Under the hypotheses of
+a solution of the cylindrical Floer equation on `Ω \ Z`.** Under the hypotheses of
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add`, there
 is a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions on the plane of
 the Floer equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most
@@ -511,7 +511,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
     (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 /-- **The translated ends of smooth PSS planes in a symplectic chart of a manifold converge in `C¹`
-off finitely many bubbling points to a Floer cylinder.** Under the hypotheses of
+off finitely many bubbling points to a solution of the cylindrical Floer equation on `Ω \ Z`.**
+Under the hypotheses of
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add`, there
 is a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions on the plane of
 the Floer equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most
