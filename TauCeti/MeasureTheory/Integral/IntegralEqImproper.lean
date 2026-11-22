@@ -10,10 +10,10 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 
 /-!
 # Derivatives of improper tail integrals
@@ -26,8 +26,10 @@ closure arguments for improper integrals.
 
 For a real function `g` integrable on the right tail `I ∩ Ioi x` of a measurable set `I`
 (specializing to `(x, ∞)` via `inter_eq_right` and to `(x, b)` via `Iio_inter_Ioi`), with tail
-integral `Ψ v = ∫ u in I ∩ Ioi v, g u`, the product `g * Ψ ^ k` is integrable on `I ∩ Ioi x` with
-integral `Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.mul_pow_integral_inter_Ioi`,
+integral `Ψ v = ∫ u in I ∩ Ioi v, g u`, the tail norm is bounded by the larger tail norm integral
+(`MeasureTheory.IntegrableOn.norm_integral_inter_Ioi_le`), the product `g * Ψ ^ k` is integrable
+on `I ∩ Ioi x` with integral `Ψ x ^ (k + 1) / (k + 1)`
+(`MeasureTheory.IntegrableOn.mul_pow_integral_inter_Ioi`,
 `MeasureTheory.IntegrableOn.integral_inter_Ioi_mul_pow_integral_inter_Ioi`, and the `(x, ∞)` forms
 `mul_pow_integral_Ioi`, `integral_Ioi_mul_pow_integral_Ioi`), and `g * exp ∘ Ψ` is integrable on
 `I ∩ Ioi x` with integral `exp (Ψ x) - 1`
@@ -75,6 +77,18 @@ open scoped Topology
 
 namespace MeasureTheory.IntegrableOn
 
+/-- The norm of a tail integral over `I ∩ Ioi v` is at most the integral of the norm over any
+larger tail `I ∩ Ioi x` (`x ≤ v`). -/
+theorem norm_integral_inter_Ioi_le {α E : Type*} [MeasurableSpace α] [Preorder α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} {g : α → E} {I : Set α} {x v : α}
+    (hint : IntegrableOn g (I ∩ Ioi x) μ) (hxv : x ≤ v) :
+    ‖∫ u in I ∩ Ioi v, g u ∂μ‖ ≤ ∫ u in I ∩ Ioi x, ‖g u‖ ∂μ :=
+  (norm_integral_le_integral_norm _).trans
+    (setIntegral_mono_set hint.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+      (inter_subset_inter_right I (Ioi_subset_Ioi hxv)).eventuallySubset)
+
+section
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 variable {f : ℝ → E} {a t : ℝ}
 
@@ -115,6 +129,8 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
     filter_upwards [Ioi_mem_nhds ht] with u hu
     exact hint.deriv_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hu)) hu
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
+
+end
 
 section Real
 
@@ -192,18 +208,6 @@ private lemma indicator_mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : Measurabl
   ext v
   rw [Set.indicator_mul_left, setIntegral_indicator hI, inter_comm]
 
-private lemma norm_integral_inter_Ioi_le {g : ℝ → ℝ} {I : Set ℝ} {x v : ℝ}
-    (hint : IntegrableOn g (I ∩ Ioi x)) (hxv : x ≤ v) :
-    ‖∫ u in I ∩ Ioi v, g u‖ ≤ ∫ u in I ∩ Ioi x, ‖g u‖ :=
-  (norm_integral_le_integral_norm _).trans
-    (setIntegral_mono_set hint.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
-      (inter_subset_inter_right I (Ioi_subset_Ioi hxv)).eventuallySubset)
-
-private lemma hasSum_pow_div_factorial (y : ℝ) :
-    HasSum (fun k : ℕ ↦ y ^ k / k !) (Real.exp y) := by
-  rw [Real.exp_eq_exp_ℝ]
-  exact NormedSpace.expSeries_div_hasSum_exp y
-
 /-- If `I` is measurable and `g` is integrable on `I ∩ Ioi x`, with tail integral
 `Ψ v = ∫ u in I ∩ Ioi v, g u`, then `v ↦ g v * Ψ v ^ k` is integrable on `I ∩ Ioi x`.
 Specializing `I = Iio b` via `Iio_inter_Ioi` yields the interval `(x, b)`, and `I = Ioi a` via
@@ -245,7 +249,7 @@ theorem mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
   filter_upwards [ae_restrict_mem (hI.inter measurableSet_Ioi)] with v hv
   rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
   gcongr
-  exact (le_abs_self _).trans (norm_integral_inter_Ioi_le hint hv.2.le)
+  exact (le_abs_self _).trans (hint.norm_integral_inter_Ioi_le hv.2.le)
 
 /-- For a measurable set `I` and `g` integrable on `I ∩ Ioi x`, with tail integral
 `Ψ v = ∫ u in I ∩ Ioi v, g u`, the integral of `g * exp ∘ Ψ` over `I ∩ Ioi x` is
@@ -266,14 +270,14 @@ theorem integral_inter_Ioi_mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : Measur
         ≤ ∫ v in I ∩ Ioi x, (M ^ k / k !) * ‖g v‖ := by
           refine setIntegral_mono_on (hFint k).norm (hint.norm.const_mul _)
             (hI.inter measurableSet_Ioi) fun v hv ↦ ?_
-          have hΨle : ‖Ψ v‖ ≤ M := norm_integral_inter_Ioi_le hint hv.2.le
+          have hΨle : ‖Ψ v‖ ≤ M := hint.norm_integral_inter_Ioi_le hv.2.le
           simp only [F, norm_mul, norm_inv, Real.norm_natCast, norm_pow]
           rw [div_eq_mul_inv, mul_comm (M ^ k), mul_assoc, mul_comm (‖g v‖)]
           gcongr
       _ = M * (M ^ k / k !) := by rw [integral_const_mul]; ring
   have hser := hasSum_integral_of_summable_integral_norm hFint hFsum
   have hpt : ∀ v, ∑' k, F k v = g v * Real.exp (Ψ v) := fun v ↦
-    (((hasSum_pow_div_factorial (Ψ v)).mul_left (g v)).congr_fun fun k ↦ by
+    (((Real.hasSum_pow_div_factorial (Ψ v)).mul_left (g v)).congr_fun fun k ↦ by
       simp only [F, div_eq_mul_inv]; ring).tsum_eq
   simp only [hpt] at hser
   have hterm : ∀ k, ∫ v in I ∩ Ioi x, F k v = Ψ x ^ (k + 1) / (k + 1)! := fun k ↦ by
@@ -284,7 +288,8 @@ theorem integral_inter_Ioi_mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : Measur
     field_simp
   simp only [hterm] at hser
   have htarget : HasSum (fun k : ℕ ↦ Ψ x ^ (k + 1) / (k + 1)!) (Real.exp (Ψ x) - 1) := by
-    simpa [Nat.factorial_zero] using (hasSum_nat_add_iff' 1).2 (hasSum_pow_div_factorial (Ψ x))
+    simpa [Nat.factorial_zero] using
+      (hasSum_nat_add_iff' 1).2 (Real.hasSum_pow_div_factorial (Ψ x))
   exact hser.unique htarget
 
 end Real

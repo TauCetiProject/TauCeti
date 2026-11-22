@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Pointwise.Interval
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Group.Measure
@@ -58,8 +60,10 @@ invariance.
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
-* `TauCeti.integrableOn_comp_neg_iff`, `TauCeti.setIntegral_comp_neg`: integrability and
-  set-integral change of variables under `x ↦ -x` for a negation-invariant measure.
+* `TauCeti.setIntegral_comp_neg`, `TauCeti.setIntegral_comp_neg_inter_Ioi`,
+  `TauCeti.setIntegral_comp_neg_inter_Iio`, `MeasureTheory.IntegrableOn.comp_neg_inter_Ioi`,
+  `MeasureTheory.IntegrableOn.comp_neg_inter_Iio`: integrability and set-integral change of
+  variables under `x ↦ -x` for a negation-invariant measure.
 -/
 
 public section
@@ -266,17 +270,6 @@ end Translation
 
 section NegInvariant
 
-/-- For a negation-invariant measure, `f (-x)` is integrable on `s` if and only if `f` is
-integrable on `-s`. -/
-@[simp]
-theorem integrableOn_comp_neg_iff {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
-    [MeasurableNeg G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E)
-    (s : Set G) :
-    IntegrableOn (fun x ↦ f (-x)) s μ ↔ IntegrableOn f (-s) μ := by
-  simpa only [Set.neg_preimage, neg_neg, Function.comp_def] using
-    (Measure.measurePreserving_neg μ).integrableOn_comp_preimage (f := f) (s := -s)
-      (MeasurableEquiv.neg G).measurableEmbedding
-
 /-- For a negation-invariant measure, the integral of `x ↦ f (-x)` over `s` equals the integral
 of `f` over `-s`. -/
 @[simp]
@@ -287,6 +280,40 @@ theorem setIntegral_comp_neg {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
   simpa only [Set.neg_preimage, neg_neg] using
     (Measure.measurePreserving_neg μ).setIntegral_preimage_emb
       (MeasurableEquiv.neg G).measurableEmbedding f (-s)
+
+/-- For a negation-invariant measure on an ordered additive group, integrability of `f` on
+`I ∩ Iio (-x)` yields integrability of `v ↦ f (-v)` on `-I ∩ Ioi x`. -/
+theorem _root_.MeasureTheory.IntegrableOn.comp_neg_inter_Ioi {G E : Type*} [MeasurableSpace G]
+    [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G] [MeasurableNeg G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsNegInvariant] {f : G → E} {I : Set G} {x : G}
+    (hf : IntegrableOn f (I ∩ Iio (-x)) μ) :
+    IntegrableOn (fun v ↦ f (-v)) (-I ∩ Ioi x) μ := by
+  simpa [Set.inter_neg] using hf.comp_neg
+
+/-- For a negation-invariant measure on an ordered additive group, integrability of `f` on
+`I ∩ Ioi (-x)` yields integrability of `v ↦ f (-v)` on `-I ∩ Iio x`. -/
+theorem _root_.MeasureTheory.IntegrableOn.comp_neg_inter_Iio {G E : Type*} [MeasurableSpace G]
+    [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G] [MeasurableNeg G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsNegInvariant] {f : G → E} {I : Set G} {x : G}
+    (hf : IntegrableOn f (I ∩ Ioi (-x)) μ) :
+    IntegrableOn (fun v ↦ f (-v)) (-I ∩ Iio x) μ := by
+  simpa [Set.inter_neg] using hf.comp_neg
+
+/-- For a negation-invariant measure on an ordered additive group, the integral of `v ↦ f (-v)`
+over `-I ∩ Ioi x` equals the integral of `f` over `I ∩ Iio (-x)`. -/
+theorem setIntegral_comp_neg_inter_Ioi {G E : Type*} [MeasurableSpace G] [AddCommGroup G]
+    [PartialOrder G] [IsOrderedAddMonoid G] [MeasurableNeg G] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E) (I : Set G) (x : G) :
+    ∫ v in -I ∩ Ioi x, f (-v) ∂μ = ∫ v in I ∩ Iio (-x), f v ∂μ := by
+  simp [Set.inter_neg]
+
+/-- For a negation-invariant measure on an ordered additive group, the integral of `v ↦ f (-v)`
+over `-I ∩ Iio x` equals the integral of `f` over `I ∩ Ioi (-x)`. -/
+theorem setIntegral_comp_neg_inter_Iio {G E : Type*} [MeasurableSpace G] [AddCommGroup G]
+    [PartialOrder G] [IsOrderedAddMonoid G] [MeasurableNeg G] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E) (I : Set G) (x : G) :
+    ∫ v in -I ∩ Iio x, f (-v) ∂μ = ∫ v in I ∩ Ioi (-x), f v ∂μ := by
+  simp [Set.inter_neg]
 
 end NegInvariant
 

@@ -43,6 +43,8 @@ neighbourhood inside any given identity neighbourhood.
   contains `V * K` for an open superset `V` of `A`. Outer regularity arguments use it to thicken
   an arbitrary set to an open one.
 * `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
+* `ContinuousOn.comp_inv`, with its additive form `ContinuousOn.comp_neg`: precomposing a
+  map continuous on `s` with inversion (negation) gives a map continuous on `s⁻¹` (`-s`).
 -/
 
 public section
@@ -142,5 +144,13 @@ theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group 
     IsClosed (t / s) := by
   rw [div_eq_mul_inv]
   exact ht.mul_right_of_isCompact hs.inv
+
+/-- Precomposing a map continuous on `s` with inversion gives a map continuous on `s⁻¹`. -/
+@[to_additive
+  /-- Precomposing a map continuous on `s` with negation gives a map continuous on `-s`. -/]
+theorem ContinuousOn.comp_inv {G X : Type*} [TopologicalSpace G] [InvolutiveInv G] [ContinuousInv G]
+    [TopologicalSpace X] {f : G → X} {s : Set G} (hf : ContinuousOn f s) :
+    ContinuousOn (fun x ↦ f x⁻¹) s⁻¹ :=
+  hf.comp continuous_inv.continuousOn fun _ hx ↦ hx
 
 end

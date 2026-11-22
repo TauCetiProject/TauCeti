@@ -7,24 +7,30 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
-# A summable exponential series over the integers
+# Summable exponential series
 
 The decay `e^(-2π (|m| - 1))` is summable over `m ∈ ℤ`, being a two-sided geometric series. It is
 the summable majorant of the rows of lattice series in the coordinates of modular forms on
 `1 ≤ Im z`, shared by the Eisenstein series of weights one and two.
 
+This file also records the Taylor series `HasSum (fun k : ℕ ↦ y ^ k / k!) (Real.exp y)` for
+the real exponential.
+
 ## Main declarations
 
 * `TauCeti.summable_exp_neg_two_pi_mul_abs_sub_one`: `∑_{m ∈ ℤ} e^(-2π (|m| - 1))` converges.
+* `Real.hasSum_pow_div_factorial`: `HasSum (fun k : ℕ ↦ y ^ k / k!) (Real.exp y)`.
 -/
 
 public section
 
 open Real
+open scoped Nat
 
 namespace TauCeti
 
@@ -48,3 +54,13 @@ theorem summable_exp_neg_two_pi_mul_abs_sub_one :
   rw [abs_neg]
 
 end TauCeti
+
+namespace Real
+
+/-- The Taylor series `∑' k, y ^ k / k!` converges to `Real.exp y`. -/
+theorem hasSum_pow_div_factorial (y : ℝ) :
+    HasSum (fun k : ℕ ↦ y ^ k / k !) (Real.exp y) := by
+  rw [Real.exp_eq_exp_ℝ]
+  exact NormedSpace.expSeries_div_hasSum_exp y
+
+end Real

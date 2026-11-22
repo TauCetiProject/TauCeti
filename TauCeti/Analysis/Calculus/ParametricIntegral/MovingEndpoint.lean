@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Order.Interval.Set.Basic
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -27,6 +28,9 @@ moving cutoff `x` when `K x x = 0`.
 
 ## Main results
 
+* `ContinuousOn.aestronglyMeasurable_slice_inter_Ioi`: slice measurability of a kernel
+  continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}`.
+* `TauCeti.norm_kernel_smul_le`: pointwise separable bound `‖K x v • y‖ ≤ P x * (Q v * ‖y‖)`.
 * `TauCeti.integrableOn_kernel_smul_inter_Ioi`: integrability of `v ↦ K x v • F v` on
   `I ∩ Ioi x`.
 * `TauCeti.norm_integral_kernel_smul_inter_Ioi_le`: separable bound
@@ -43,19 +47,30 @@ public section
 open Filter Set MeasureTheory Function
 open scoped Topology
 
-namespace TauCeti
+/-- A kernel `K` continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}` has almost everywhere strongly
+measurable slice `K x` on `I ∩ Ioi x` for every `x ∈ I`. -/
+theorem ContinuousOn.aestronglyMeasurable_slice_inter_Ioi
+    {α γ : Type*} [TopologicalSpace α] [LinearOrder α] [ClosedIicTopology α]
+    [MeasurableSpace α] [OpensMeasurableSpace α] [TopologicalSpace γ]
+    [SecondCountableTopologyEither α γ] [TopologicalSpace.PseudoMetrizableSpace γ]
+    {μ : Measure α} {I : Set α} {K : α → α → γ}
+    (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.1 ≤ p.2})
+    (hI : MeasurableSet I) {x : α} (hx : x ∈ I) :
+    AEStronglyMeasurable (K x) (μ.restrict (I ∩ Ioi x)) :=
+  (hK.comp (continuous_const.prodMk continuous_id).continuousOn
+    fun _ (hv : _ ∈ I ∩ Ioi x) ↦ ⟨hx, hv.1, hv.2.le⟩).aestronglyMeasurable
+    (hI.inter measurableSet_Ioi)
 
-private lemma inter_Ioi_inter_Ioi_eq {I : Set ℝ} {c x : ℝ} (hcx : c ≤ x) :
-    (I ∩ Ioi c) ∩ Ioi x = I ∩ Ioi x :=
-  Set.ext fun _ ↦ ⟨fun ⟨⟨hvI, _⟩, hxv⟩ ↦ ⟨hvI, hxv⟩,
-    fun ⟨hvI, hxv⟩ ↦ ⟨⟨hvI, hcx.trans_lt hxv⟩, hxv⟩⟩
+namespace TauCeti
 
 section IntegrabilityAndBound
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {I : Set ℝ} {K : ℝ → ℝ → 𝕜} {P Q : ℝ → ℝ}
 
-private lemma norm_kernel_smul_le {x : ℝ} (hKle : ∀ v ∈ I, x ≤ v → ‖K x v‖ ≤ P x * Q v)
+/-- The pointwise separable bound `‖K x v • y‖ ≤ P x * (Q v * ‖y‖)` for `v ∈ I` with
+`x ≤ v`. -/
+theorem norm_kernel_smul_le {x : ℝ} (hKle : ∀ v ∈ I, x ≤ v → ‖K x v‖ ≤ P x * Q v)
     {v : ℝ} (hv : v ∈ I) (hxv : x ≤ v) (y : E) :
     ‖K x v • y‖ ≤ P x * (Q v * ‖y‖) := by
   rw [norm_smul, ← mul_assoc]
@@ -83,7 +98,7 @@ private lemma integrableOn_indicator_kernel_smul_inter_Ioi (hI : MeasurableSet I
     {c : ℝ} (hcx : c ≤ x) (hFint : IntegrableOn (fun v ↦ Q v * ‖F v‖) (I ∩ Ioi x)) :
     IntegrableOn ((Ioi x).indicator (fun v ↦ K x v • F v)) (I ∩ Ioi c) := by
   rw [integrableOn_indicator_iff measurableSet_Ioi.nullMeasurableSet, inter_comm,
-    inter_Ioi_inter_Ioi_eq hcx]
+    Set.inter_Ioi_inter_Ioi_of_le hcx]
   exact integrableOn_kernel_smul_inter_Ioi hI hKle hKx hF hFint
 
 /-- The separable bound `‖∫ v in I ∩ Ioi x, K x v • F v‖ ≤ P x * ∫ v in I ∩ Ioi x, Q v * ‖F v‖`
@@ -119,22 +134,22 @@ theorem continuousOn_integral_kernel_smul_inter_Ioi (hI : I.OrdConnected)
   obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn (hP.mono hcdI)
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x₀ ⟨hcx₀, hx₀d⟩)
   have hSmeas : MeasurableSet (I ∩ Ioi c) := hI.measurableSet.inter measurableSet_Ioi
+  -- extend the integrands by zero to the fixed tail `I ∩ Ioi c`
   have heq : (fun x ↦ ∫ v in I ∩ Ioi x, K x v • F v) =ᶠ[𝓝[I] x₀]
       fun x ↦ ∫ v in I ∩ Ioi c, (Ioi x).indicator (fun v ↦ K x v • F v) v := by
     filter_upwards [hcdN] with x hx
-    rw [setIntegral_indicator measurableSet_Ioi, inter_Ioi_inter_Ioi_eq hx.1]
+    rw [setIntegral_indicator measurableSet_Ioi, Set.inter_Ioi_inter_Ioi_of_le hx.1]
   refine ContinuousWithinAt.congr_of_eventuallyEq ?_ heq ?_
   · refine continuousWithinAt_of_dominated (bound := fun v ↦ M * (Q v * ‖F v‖)) ?_ ?_
       ((hFint c hcI).const_mul M) ?_
-    · filter_upwards [hcdN] with x hx
+    · -- measurability of the extended integrands
+      filter_upwards [hcdN] with x hx
       have hxI : x ∈ I := hcdI hx
-      have hKx : ContinuousOn (K x) (I ∩ Ioi x) :=
-        hK.comp (continuous_const.prodMk continuous_id).continuousOn
-          fun v hv ↦ ⟨hxI, hv.1, hv.2.le⟩
       exact (integrableOn_indicator_kernel_smul_inter_Ioi hI.measurableSet (hKle x hxI)
-        (hKx.aestronglyMeasurable (hI.measurableSet.inter measurableSet_Ioi))
+        (hK.aestronglyMeasurable_slice_inter_Ioi hI.measurableSet hxI)
         (hF.mono_set inter_subset_left) hx.1 (hFint x hxI)).aestronglyMeasurable
-    · filter_upwards [hcdN] with x hx
+    · -- uniform integrable domination on `I ∩ Ioi c`
+      filter_upwards [hcdN] with x hx
       refine (ae_restrict_iff' hSmeas).2 (ae_of_all _ fun v hv ↦ ?_)
       have hQF : 0 ≤ Q v * ‖F v‖ := mul_nonneg (hQ0 v hv.1) (norm_nonneg _)
       by_cases hxv : x < v
@@ -148,7 +163,8 @@ theorem continuousOn_integral_kernel_smul_inter_Ioi (hI : I.OrdConnected)
           _ = M * (Q v * ‖F v‖) := by ring
       · rw [indicator_of_notMem hxv, norm_zero]
         exact mul_nonneg hM0 hQF
-    · filter_upwards [ae_restrict_mem hSmeas, ae_restrict_of_ae (Measure.ae_ne volume x₀)]
+    · -- pointwise continuity away from `x₀`
+      filter_upwards [ae_restrict_mem hSmeas, ae_restrict_of_ae (Measure.ae_ne volume x₀)]
         with v hv hvne
       rcases hvne.lt_or_gt with hlt | hgt
       · refine continuousWithinAt_const.congr_of_eventuallyEq ?_
@@ -167,7 +183,8 @@ theorem continuousOn_integral_kernel_smul_inter_Ioi (hI : I.OrdConnected)
           (indicator_of_mem (mem_Ioi.2 hgt) _)
         filter_upwards [mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hgt)] with x hx
         exact indicator_of_mem (mem_Ioi.2 hx) _
-  · rw [setIntegral_indicator measurableSet_Ioi, inter_Ioi_inter_Ioi_eq hcx₀]
+  · -- rewrite the value at `x₀` back to `I ∩ Ioi x₀`
+    rw [setIntegral_indicator measurableSet_Ioi, Set.inter_Ioi_inter_Ioi_of_le hcx₀]
 
 end Continuity
 
@@ -253,48 +270,53 @@ theorem hasDerivAt_integral_kernel_smul_inter_Ioi (hIopen : IsOpen I)
   have hM₁0 : 0 ≤ M₁ := (norm_nonneg _).trans (hM₁ x₀ ⟨hcx₀.le, hx₀d.le⟩)
   have hImeas : MeasurableSet I := hIopen.measurableSet
   have hSmeas : MeasurableSet (I ∩ Ioi (x₀ - ε / 2)) := hImeas.inter measurableSet_Ioi
-  have hK_meas : ∀ x ∈ I, AEStronglyMeasurable (K x) (volume.restrict (I ∩ Ioi x)) := fun x hx ↦
-    (hK.comp (continuous_const.prodMk continuous_id).continuousOn
-      fun v (hv : v ∈ I ∩ Ioi x) ↦ ⟨hx, hv.1, hv.2.le⟩).aestronglyMeasurable
-      (hImeas.inter measurableSet_Ioi)
-  have hderiv_ind := hasDerivAt_integral_of_dominated_loc_of_lip
-    (μ := volume.restrict (I ∩ Ioi (x₀ - ε / 2)))
-    (F := fun x v ↦ (Ioi x).indicator (fun u ↦ K x u • F u) v)
-    (F' := fun v ↦ (Ioi x₀).indicator (fun u ↦ K' x₀ u • F u) v)
-    (bound := fun v ↦ M₁ * (Q v * ‖F v‖)) (s := Ioo (x₀ - ε / 2) (x₀ + ε / 2))
-    (Ioo_mem_nhds hcx₀ hx₀d)
-    (by
-      filter_upwards [Ioo_mem_nhds hcx₀ hx₀d] with x hx
-      have hxI : x ∈ I := hcdI ⟨hx.1.le, hx.2.le⟩
-      exact (integrableOn_indicator_kernel_smul_inter_Ioi hImeas (hKle x hxI) (hK_meas x hxI)
-        (hF.mono_set inter_subset_left) hx.1.le (hFint x hxI)).aestronglyMeasurable)
-    (integrableOn_indicator_kernel_smul_inter_Ioi hImeas (hKle x₀ hx₀) (hK_meas x₀ hx₀)
-      (hF.mono_set inter_subset_left) hcx₀.le (hFint x₀ hx₀))
+  have hF_meas : ∀ᶠ x in 𝓝 x₀,
+      AEStronglyMeasurable (fun v ↦ (Ioi x).indicator (fun u ↦ K x u • F u) v)
+        (volume.restrict (I ∩ Ioi (x₀ - ε / 2))) := by
+    filter_upwards [Ioo_mem_nhds hcx₀ hx₀d] with x hx
+    have hxI : x ∈ I := hcdI ⟨hx.1.le, hx.2.le⟩
+    exact (integrableOn_indicator_kernel_smul_inter_Ioi hImeas (hKle x hxI)
+      (hK.aestronglyMeasurable_slice_inter_Ioi hImeas hxI)
+      (hF.mono_set inter_subset_left) hx.1.le (hFint x hxI)).aestronglyMeasurable
+  have hF_int : IntegrableOn (fun v ↦ (Ioi x₀).indicator (fun u ↦ K x₀ u • F u) v)
+      (I ∩ Ioi (x₀ - ε / 2)) :=
+    integrableOn_indicator_kernel_smul_inter_Ioi hImeas (hKle x₀ hx₀)
+      (hK.aestronglyMeasurable_slice_inter_Ioi hImeas hx₀)
+      (hF.mono_set inter_subset_left) hcx₀.le (hFint x₀ hx₀)
+  have hF'_meas : AEStronglyMeasurable (fun v ↦ (Ioi x₀).indicator (fun u ↦ K' x₀ u • F u) v)
+      (volume.restrict (I ∩ Ioi (x₀ - ε / 2))) :=
     (integrableOn_indicator_kernel_smul_inter_Ioi hImeas (hK'le x₀ hx₀) hK'x
       (hF.mono_set inter_subset_left) hcx₀.le (hFint x₀ hx₀)).aestronglyMeasurable
-    (by
-      filter_upwards [ae_restrict_mem hSmeas] with v hv
-      exact lipschitzOnWith_indicator_kernel_smul hK hKdiag hKderiv hcdI hM₁0
-        (fun t ht u hu htu ↦ (hK'le t (hcdI ht) u hu htu).trans
-          (mul_le_mul_of_nonneg_right ((le_abs_self _).trans (hM₁ t ht)) (hQ0 u hu)))
-        hQ0 hv.1)
-    ((hFint _ hcI).const_mul M₁)
-    (by
-      filter_upwards [ae_restrict_mem hSmeas, ae_restrict_of_ae (Measure.ae_ne volume x₀)]
-        with v hv hvne
-      rcases hvne.lt_or_gt with hlt | hgt
-      · rw [indicator_of_notMem (notMem_Ioi.2 hlt.le)]
-        refine (hasDerivAt_const x₀ (0 : E)).congr_of_eventuallyEq ?_
-        filter_upwards [Ioi_mem_nhds hlt] with x hx
-        exact indicator_of_notMem (notMem_Ioi.2 hx.le) _
-      · rw [indicator_of_mem hgt]
-        refine ((hKderiv x₀ hx₀ v hv.1 hgt).smul_const (F v)).congr_of_eventuallyEq ?_
-        filter_upwards [Iio_mem_nhds hgt] with x hx
-        exact indicator_of_mem (mem_Ioi.2 hx) _)
+  have h_lip : ∀ᵐ v ∂volume.restrict (I ∩ Ioi (x₀ - ε / 2)),
+      LipschitzOnWith (Real.nnabs (M₁ * (Q v * ‖F v‖)))
+        (fun x ↦ (Ioi x).indicator (fun u ↦ K x u • F u) v) (Ioo (x₀ - ε / 2) (x₀ + ε / 2)) := by
+    filter_upwards [ae_restrict_mem hSmeas] with v hv
+    exact lipschitzOnWith_indicator_kernel_smul hK hKdiag hKderiv hcdI hM₁0
+      (fun t ht u hu htu ↦ (hK'le t (hcdI ht) u hu htu).trans
+        (mul_le_mul_of_nonneg_right ((le_abs_self _).trans (hM₁ t ht)) (hQ0 u hu)))
+      hQ0 hv.1
+  have h_deriv : ∀ᵐ v ∂volume.restrict (I ∩ Ioi (x₀ - ε / 2)),
+      HasDerivAt (fun x ↦ (Ioi x).indicator (fun u ↦ K x u • F u) v)
+        ((Ioi x₀).indicator (fun u ↦ K' x₀ u • F u) v) x₀ := by
+    filter_upwards [ae_restrict_mem hSmeas, ae_restrict_of_ae (Measure.ae_ne volume x₀)]
+      with v hv hvne
+    rcases hvne.lt_or_gt with hlt | hgt
+    · rw [indicator_of_notMem (notMem_Ioi.2 hlt.le)]
+      refine (hasDerivAt_const x₀ (0 : E)).congr_of_eventuallyEq ?_
+      filter_upwards [Ioi_mem_nhds hlt] with x hx
+      exact indicator_of_notMem (notMem_Ioi.2 hx.le) _
+    · rw [indicator_of_mem hgt]
+      refine ((hKderiv x₀ hx₀ v hv.1 hgt).smul_const (F v)).congr_of_eventuallyEq ?_
+      filter_upwards [Iio_mem_nhds hgt] with x hx
+      exact indicator_of_mem (mem_Ioi.2 hx) _
+  -- differentiate the truncated integral over `I ∩ Ioi (x₀ - ε / 2)`
+  have hderiv_ind := hasDerivAt_integral_of_dominated_loc_of_lip
+    (Ioo_mem_nhds hcx₀ hx₀d) hF_meas hF_int hF'_meas h_lip ((hFint _ hcI).const_mul M₁) h_deriv
+  -- rewrite the indicator integrals back to moving tail integrals on `I ∩ Ioi x`
   have hres := hderiv_ind.2.congr_of_eventuallyEq (by
     filter_upwards [Ioo_mem_nhds hcx₀ hx₀d] with x hx
-    rw [setIntegral_indicator measurableSet_Ioi, inter_Ioi_inter_Ioi_eq hx.1.le])
-  rwa [setIntegral_indicator measurableSet_Ioi, inter_Ioi_inter_Ioi_eq hcx₀.le] at hres
+    rw [setIntegral_indicator measurableSet_Ioi, Set.inter_Ioi_inter_Ioi_of_le hx.1.le])
+  rwa [setIntegral_indicator measurableSet_Ioi, Set.inter_Ioi_inter_Ioi_of_le hcx₀.le] at hres
 
 end Differentiability
 

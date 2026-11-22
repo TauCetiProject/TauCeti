@@ -252,7 +252,7 @@ theorem isBigO_comp_neg_map_atTop {α E F : Type*} [AddCommGroup α] [PartialOrd
     (fun x ↦ f (-x)) =O[map ((↑) : (-I : Set α) → α) atTop] (fun x ↦ g (-x)) ↔
       f =O[map ((↑) : I → α) atBot] g := by
   conv_rhs => rw [← TauCeti.map_neg_map_coe_neg_atTop I, isBigO_map]
-  rfl
+  simp only [Function.comp_def]
 
 /-- **A constant multiple of `ψ` that is `o(ψ)` vanishes.** If `ψ` is frequently nonzero along `l`
 and `ψ • c = o(ψ)` along `l`, then `c = 0`. -/

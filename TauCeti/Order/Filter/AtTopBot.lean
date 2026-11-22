@@ -51,7 +51,8 @@ Archimedean ordered semiring, truncating a finite `WithTop` element at natural c
 stabilizes (`WithTop.eventually_min_natCast_eq`).
 
 For a subset `I` of an ordered additive group, negation pushes the right-endpoint filter of `-I`
-forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_coe_neg_atTop`).
+forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_coe_neg_atTop`), using
+`Filter.map_ofDual_atTop` (with dual `Filter.map_ofDual_atBot`).
 -/
 
 public section
@@ -188,10 +189,17 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 /-- Mapping `atTop` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atBot` on `β`. -/
-private lemma map_ofDual_atTop {β : Type*} [Preorder β] :
+theorem _root_.Filter.map_ofDual_atTop {β : Type*} [Preorder β] :
     map (OrderDual.ofDual : βᵒᵈ → β) atTop = atBot := by
   -- `OrderDual.ofDual` is definitionally `id`, and `atBot` on `β` is defined as `atTop` on `βᵒᵈ`.
   change map (id : β → β) (atBot : Filter β) = atBot
+  exact Filter.map_id
+
+/-- Mapping `atBot` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atTop` on `β`. -/
+theorem _root_.Filter.map_ofDual_atBot {β : Type*} [Preorder β] :
+    map (OrderDual.ofDual : βᵒᵈ → β) atBot = atTop := by
+  -- `OrderDual.ofDual` is definitionally `id`, and `atTop` on `β` is defined as `atBot` on `βᵒᵈ`.
+  change map (id : β → β) (atTop : Filter β) = atTop
   exact Filter.map_id
 
 /-- Negation pushes the right-endpoint filter of `-I` forward to the left-endpoint filter of
@@ -205,9 +213,12 @@ theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder �
       left_inv x := Subtype.ext (neg_neg x.val)
       right_inv x := OrderDual.ofDual.injective (Subtype.ext (neg_neg x.ofDual.val))
       map_rel_iff' := @fun _ _ ↦ neg_le_neg_iff }
+  -- `e x` reduces definitionally through `OrderIso`/`Equiv` coercion to
+  -- `OrderDual.toDual ⟨-x.val, _⟩`, and `OrderDual.ofDual` cancels `OrderDual.toDual`.
   have hcomp : Neg.neg ∘ ((↑) : (-I : Set α) → α) =
       ((↑) : I → α) ∘ OrderDual.ofDual ∘ e := rfl
-  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop, map_ofDual_atTop]
+  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop,
+    Filter.map_ofDual_atTop]
 
 end TauCeti
 
