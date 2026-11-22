@@ -776,8 +776,7 @@ theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
     (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
       dirichletForm w (ofSmooth φ) = ∫ x, f x * φ x ∂riemannianVolume I M) :
     w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x = f x := by
-  have hw_eq : w = ofSmooth u :=
-    toLp_injective (Lp.ext (hwu.trans (toLp_ofSmooth_ae_eq u).symm))
+  have hw_eq : w = ofSmooth u := toLp_ae_eq_iff_eq_ofSmooth.1 hwu
   refine ⟨hw_eq, fun x ↦ sub_eq_zero.1 ?_⟩
   have hΔ_cont : Continuous (-laplaceBeltrami I u) :=
     (continuous_laplaceBeltrami (u.contMDiff.of_le (by simp))).neg

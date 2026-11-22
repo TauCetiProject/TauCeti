@@ -63,9 +63,6 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
   are equal.
 * `TauCeti.HyperbolicMetric.hypVolumeOfMetric_eq_of_metric_eq_rescale`: a hyperbolic metric
   conformal to `g` has area `-∫ K dV_g`.
-* `Bundle.ContMDiffRiemannianMetric.isHyperbolic_of_integral_scalarCurvature_neg`: a closed
-  connected surface admitting a smooth Riemannian metric of negative total scalar curvature is
-  hyperbolic.
 * `TauCeti.isHyperbolic_iff_exists_integral_scalarCurvature_neg`: a nonempty closed connected
   surface is hyperbolic if and only if it admits a smooth Riemannian metric of negative total
   scalar curvature.
