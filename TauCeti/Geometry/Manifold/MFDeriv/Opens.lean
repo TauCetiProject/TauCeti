@@ -17,7 +17,8 @@ the inclusion of an open subset is the identity of the model space, restricting 
 source, or following a map into an open target by the inclusion, does not change its differential
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
-assumption.
+assumption. The same holds for the differential `mvfderiv` of a vector-valued function
+(`TauCeti.Manifold.mvfderiv_comp_subtype_val`).
 
 A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
 every open subset of the chart's source where `g` is differentiable at the chart image
@@ -73,6 +74,18 @@ theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U}
   simp only [ContinuousLinearMap.ext_iff, zero_apply, mfderiv_comp_subtype_val_apply]
   -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
   exact Iff.rfl
+
+/-- Restricting a vector-valued function to an open source does not change its differential. No
+differentiability is assumed: where the function is not differentiable, neither is its
+restriction. -/
+theorem mvfderiv_comp_subtype_val {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {U : Opens N} (f : N → F) (x : U) :
+    mvfderiv J (f ∘ (Subtype.val : U → N)) x = mvfderiv J f (x : N) := by
+  ext v
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_comp_subtype_val_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`, and
+  -- `fromTangentSpace` is the identity of it at either base point.
+  rfl
 
 /-- A map read in the coordinate of a chart `e` of the maximal atlas, `x ↦ g (e x)`, is
 differentiable on every open subset `W` of the chart's source on which `g` is differentiable at the

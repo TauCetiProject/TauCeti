@@ -14,8 +14,11 @@ public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -58,6 +61,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
   that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
   reciprocity of the Jacobian determinants of `e` and `e.symm`.
+* `OpenPartialHomeomorph.contDiffOn_abs_det_fderiv_of_contDiffOn`: for a real open partial
+  homeomorphism that is `C^n` in both directions, the absolute Jacobian determinant is `C^m` on
+  the source when `m + 1 ≤ n`.
 * `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
   `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply` and their
   `_of_contDiffOn` forms: between inner product spaces over `ℝ` or `ℂ`, the transposes of the
@@ -84,7 +90,10 @@ finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
 part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
-fibre of a map defined on an open subset `s`.
+fibre of a map defined on an open subset `s`. In particular, if `f` is continuous on a compact
+set `K` and its derivative is invertible at every point of `K ∩ f⁻¹(y)`, then `K ∩ f⁻¹(y)` is
+finite (`IsCompact.finite_inter_preimage_of_isInvertible_fderiv`): an invertible `fderiv` is a
+genuine derivative.
 -/
 
 public section
@@ -256,6 +265,24 @@ end OpenPartialHomeomorph
 
 namespace OpenPartialHomeomorph
 
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For a real open partial homeomorphism of a space to itself that is `C^n` on its source, with
+inverse `C^n` on its target, the absolute Jacobian determinant `x ↦ |det De(x)|` is `C^m` on the
+source when `m + 1 ≤ n`. -/
+theorem contDiffOn_abs_det_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E E)
+    {m : ℕ∞} {n : WithTop ℕ∞} (hmn : m + 1 ≤ n) (he : ContDiffOn ℝ n e e.source)
+    (hes : ContDiffOn ℝ n e.symm e.target) :
+    ContDiffOn ℝ m (fun x ↦ |(fderiv ℝ e x).det|) e.source := fun x hx ↦
+  have hn : n ≠ 0 := fun h ↦ by simp [h] at hmn
+  ((ContinuousLinearMap.contDiff_det.contDiffAt.comp x
+    ((he.fderiv_of_isOpen e.open_source hmn).contDiffAt (e.open_source.mem_nhds hx))).abs
+    (e.det_fderiv_ne_zero_of_contDiffOn he hes hn hx)).contDiffWithinAt
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
 variable {𝕜 : Type*} [RCLike 𝕜] {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
@@ -383,6 +410,23 @@ theorem IsCompact.finite_inter_preimage_of_hasFDerivAt {𝕜 : Type*} [Nontrivia
     (hf' : ∀ x ∈ s ∩ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (s ∩ f ⁻¹' {y}).Finite :=
   hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2
     (((hf x hx).eventually_ne (hf' x hx)).mono fun _ hz hzK ↦ hz (hzK.2.trans hx.2.symm)))
+
+/-- **The nondegenerate points of a fibre in a compact set are finite.** If `f` is continuous on
+a compact set `K` and its derivative is invertible at every point of `K ∩ f⁻¹(y)`, then
+`K ∩ f⁻¹(y)` is finite. By `differentiableAt_of_isInvertible_fderiv`, an invertible `fderiv` is a
+genuine derivative, so this is `IsCompact.finite_inter_preimage_of_hasFDerivAt`. -/
+theorem IsCompact.finite_inter_preimage_of_isInvertible_fderiv
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E} {y : F}
+    (hK : IsCompact K) (hc : ContinuousOn f K)
+    (hinv : ∀ x ∈ K ∩ f ⁻¹' {y}, (fderiv 𝕜 f x).IsInvertible) : (K ∩ f ⁻¹' {y}).Finite := by
+  have hclosed : IsClosed (K ∩ f ⁻¹' {y}) :=
+    hc.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton
+  refine (hK.of_isClosed_subset hclosed inter_subset_left).finite_inter_preimage_of_hasFDerivAt
+    (fun x hx ↦ (differentiableAt_of_isInvertible_fderiv (hinv x hx)).hasFDerivAt) fun x hx ↦ ?_
+  obtain ⟨L, hL⟩ := hinv x hx
+  rw [← hL]
+  exact ⟨_, L.antilipschitzWith⟩
 
 /-- **A compact fibre of regular points is finite.** If every point of the fibre of `f` over `y`
 is a point where `f` has an antilipschitz derivative, for instance an invertible derivative between
