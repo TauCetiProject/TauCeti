@@ -96,6 +96,8 @@ def preimageThomPairIso :
     exact Set.ext_iff.1 (preimage_pullbackLift_zeroSectionCompl (F := F) (E := E) _) v
 
 /-- The isomorphism `preimageThomPairIso` is the identity on total spaces. -/
+-- Not `@[simp]`: simp rewrites the coercion of the continuous map on the left-hand side, so the
+-- statement is not in simp normal form.
 theorem preimageThomPairIso_hom_fst_apply
     (v : (TopPair.ofSubset (liftHom F E ι ⁻¹' zeroSectionCompl F E)).fst) :
     TopPair.Hom.fst (preimageThomPairIso F E ι).hom v = v := by
@@ -134,12 +136,6 @@ section CommRing
 
 variable {K : Type w} [CommRing K] [Invertible (2 : K)]
 
-/-- Multiplication by `2 = |ℤˣ|` is invertible on `K` when `2` is invertible in `K`. -/
-private theorem isIso_card_units_int_smul_id :
-    IsIso (Fintype.card ℤˣ • 𝟙 (ModuleCat.of K K)) := by
-  rw [Fintype.card_units_int]
-  refine ⟨ModuleCat.ofHom ((⅟(2 : K)) • (LinearMap.id : K →ₗ[K] K)), ?_, ?_⟩ <;> ext <;> simp
-
 variable (K) in
 /-- **The transfer lands on the classes fixed by the lifted deck involution.** Let `δ` be the lift
 of the deck involution to the Thom pair `(E', E'₀)` and `K` a ring in which `2` is invertible. The
@@ -153,7 +149,8 @@ theorem map_range_pairTransfer_eq_ker_sub_id (m : ℕ) :
         (TopPair.singularHomologyMapIso (ModuleCat.of K K) (preimageThomPairIso F E ι) m).hom.hom =
       LinearMap.ker ((TopPair.singularHomologyMap (deckThomPairMap F E ι) (ModuleCat.of K K)
         m).hom - LinearMap.id) := by
-  have := isIso_card_units_int_smul_id (K := K)
+  have : IsIso (Fintype.card ℤˣ • 𝟙 (ModuleCat.of K K)) :=
+    Linear.isIso_nsmul_id (by simpa using isUnit_of_invertible (2 : K))
   have hc := (isQuotientCoveringMap_liftHom F E hι).isLimitHomologyMapConePairTransferCone
     (zeroSectionCompl F E) (ModuleCat.of K K) m
   let e := (TopPair.singularHomologyMapIso (ModuleCat.of K K) (preimageThomPairIso F E ι)
@@ -186,7 +183,8 @@ def thomPairSingularHomologyEquivDeckInvariants (m : ℕ) :
     ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) ≃ₗ[K]
       LinearMap.ker ((TopPair.singularHomologyMap (deckThomPairMap F E ι) (ModuleCat.of K K)
         m).hom - LinearMap.id) :=
-  have := isIso_card_units_int_smul_id (K := K)
+  have : IsIso (Fintype.card ℤˣ • 𝟙 (ModuleCat.of K K)) :=
+    Linear.isIso_nsmul_id (by simpa using isUnit_of_invertible (2 : K))
   (LinearEquiv.ofInjective _ (ModuleCat.injective_π_app_star_of_isLimit
     ((isQuotientCoveringMap_liftHom F E hι).isLimitHomologyMapConePairTransferCone
       (zeroSectionCompl F E) (ModuleCat.of K K) m))).trans

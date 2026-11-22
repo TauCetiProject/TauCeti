@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Limits
+public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 
 /-!
@@ -16,7 +17,8 @@ A functor `J : SingleObj G ⥤ ModuleCat R` is an `R`-module `J.obj *` with an a
 given limit cone concretely: its leg `c.pt ⟶ J.obj *` is injective
 (`ModuleCat.injective_π_app_star_of_isLimit`), and its range is the submodule
 `ModuleCat.invariants J` of the elements fixed by every `J.map g`
-(`ModuleCat.range_π_app_star_of_isLimit`). So the cone point is identified with the invariants.
+(`ModuleCat.range_π_app_star_of_isLimit`). So the cone point is identified with the invariants,
+whose inclusion is itself a limit cone (`ModuleCat.isLimitInvariantsCone`).
 
 This is the form in which limit cones over an action, such as the one by which the transfer of a
 finite quotient covering exhibits the homology of the base as the invariants of the homology of the
@@ -24,7 +26,7 @@ total space (`IsQuotientCoveringMap.isLimitHomologyMapConePairTransferCone`), ar
 individual classes.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -54,6 +56,7 @@ theorem mem_invariants_iff {y : J.obj (SingleObj.star G)} :
 
 variable (J) in
 /-- The cone over `J` given by the inclusion of its invariants. -/
+@[simps pt π_app]
 def invariantsCone : Cone J where
   pt := ModuleCat.of R (invariants J)
   π :=
@@ -62,18 +65,29 @@ def invariantsCone : Cone J where
         ext y
         exact (y.property g).symm }
 
+variable (J) in
+/-- **The invariants are the limit of an action.** The inclusion of the invariants of
+`J : SingleObj G ⥤ ModuleCat R` is a limit cone over `J`: a cone over `J` factors through it by
+restricting its leg to the invariants, in which that leg lands. -/
+def isLimitInvariantsCone : IsLimit (invariantsCone J) where
+  lift s := ModuleCat.ofHom ((s.π.app (SingleObj.star G)).hom.codRestrict _
+    fun x g ↦ congr($(s.w g).hom x))
+  fac s j := by
+    -- The shape `SingleObj G` has a single object.
+    obtain rfl : j = SingleObj.star G := rfl
+    rfl
+  uniq s m hm := by
+    ext x
+    exact Subtype.ext congr($(hm (SingleObj.star G)).hom x)
+
 include hc in
 /-- **The leg of a limit cone over an action is injective.** For a limit cone `c` over
 `J : SingleObj G ⥤ ModuleCat R`, its leg `c.pt ⟶ J.obj *` is injective. -/
-theorem injective_π_app_star_of_isLimit : Function.Injective (c.π.app (SingleObj.star G)).hom := by
-  refine LinearMap.ker_eq_bot.1 (eq_bot_iff.2 fun x hx ↦ ?_)
-  let N := LinearMap.ker (c.π.app (SingleObj.star G)).hom
-  have h : ModuleCat.ofHom N.subtype = (0 : ModuleCat.of R N ⟶ c.pt) := hc.hom_ext fun j ↦ by
+theorem injective_π_app_star_of_isLimit : Function.Injective (c.π.app (SingleObj.star G)).hom :=
+  fun x y h ↦ Concrete.isLimit_ext J hc x y fun j ↦ by
     -- The shape `SingleObj G` has a single object.
     obtain rfl : j = SingleObj.star G := rfl
-    ext y
-    simp
-  exact (Submodule.mem_bot R).2 congr($(h).hom ⟨x, hx⟩)
+    exact h
 
 include hc in
 /-- **The range of the leg of a limit cone over an action is the invariants.** For a limit cone `c`
