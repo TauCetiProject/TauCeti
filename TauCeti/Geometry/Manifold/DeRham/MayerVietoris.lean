@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+import TauCeti.Algebra.Homology.HomologySequenceBiprod
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.Metrizable
@@ -76,6 +78,15 @@ the glued form restricting to `dα` and `dβ` is the differential of a function 
   and in degree zero, for preconnected `U` and `V`, nothing else.
 * `TauCeti.subsingleton_deRhamCohomology_one_sup`: if `U` and `V` have no first cohomology and
   `U ⊓ V` is preconnected, then `U ⊔ V` has no first cohomology.
+* `TauCeti.deRhamCohomology.mayerVietorisToProd` and
+  `TauCeti.deRhamCohomology.mayerVietorisFromProd`: the restrictions `H^k(U ⊔ V) → H^k(U) × H^k(V)`
+  and their difference `H^k(U) × H^k(V) → H^k(U ⊓ V)`, as linear maps to and from the product
+  module.
+* `TauCeti.deRhamCohomology.exact_mayerVietorisToProd_fromProd`,
+  `TauCeti.deRhamCohomology.exact_mayerVietorisFromProd_δ` and
+  `TauCeti.deRhamCohomology.exact_mayerVietorisδ_toProd`: the Mayer–Vietoris long exact sequence,
+  as exactness (`Function.Exact`) of linear maps, the form diagram chases such as the five lemma
+  use; `TauCeti.deRhamCohomology.mayerVietorisToProd_zero_injective`: it starts with an injection.
 
 ## References
 
@@ -734,5 +745,137 @@ theorem subsingleton_deRhamCohomology_one_sup {U V : Opens M}
   exact deRhamCohomology.mayerVietorisδ_const U V r
 
 end Connecting
+
+
+section LongExact
+
+/-! ### The Mayer–Vietoris long exact sequence as linear maps -/
+
+namespace deRhamCohomology
+
+section Maps
+
+variable [IsManifold I 2 M]
+
+variable (I) in
+/-- The map `H^k(U ⊔ V) → H^k(U) × H^k(V)` of the Mayer–Vietoris sequence of de Rham cohomology,
+whose components are the restrictions to `U` and to `V`. -/
+def mayerVietorisToProd (U V : Opens M) (k : ℕ) :
+    deRhamCohomology I (U ⊔ V : Opens M) k →ₗ[ℝ] deRhamCohomology I U k × deRhamCohomology I V k :=
+  (map (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _) k).prod
+    (map (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _) k)
+
+@[simp]
+theorem mayerVietorisToProd_apply (U V : Opens M) (k : ℕ)
+    (x : deRhamCohomology I (U ⊔ V : Opens M) k) :
+    mayerVietorisToProd I U V k x =
+      (map (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _) k x,
+        map (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _) k x) :=
+  (rfl)
+
+variable (I) in
+/-- The map `H^k(U) × H^k(V) → H^k(U ⊓ V)` of the Mayer–Vietoris sequence of de Rham cohomology:
+the difference of the restrictions to `U ⊓ V`. -/
+def mayerVietorisFromProd (U V : Opens M) (k : ℕ) :
+    deRhamCohomology I U k × deRhamCohomology I V k →ₗ[ℝ]
+      deRhamCohomology I (U ⊓ V : Opens M) k :=
+  (map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _) k).coprod
+    (-map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _) k)
+
+@[simp]
+theorem mayerVietorisFromProd_apply (U V : Opens M) (k : ℕ)
+    (x : deRhamCohomology I U k × deRhamCohomology I V k) :
+    mayerVietorisFromProd I U V k x =
+      map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _) k x.1 -
+        map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _) k x.2 := by
+  simp [mayerVietorisFromProd, sub_eq_add_neg]
+
+/-- Under the identification of the biproduct with the product module, the map induced on
+cohomology by the first map of the Mayer–Vietoris short complex is `mayerVietorisToProd`. -/
+private theorem biprodIsoProd_hom_lift_homologyMap_apply (U V : Opens M) (k : ℕ)
+    (x : deRhamCohomology I (U ⊔ V : Opens M) k) :
+    (ModuleCat.biprodIsoProd _ _).hom
+        (biprod.lift
+          (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+            (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _)) k)
+          (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+            (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _)) k) x) =
+      mayerVietorisToProd I U V k x := by
+  rw [ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
+    ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd, deRhamComplex.homologyMap_map,
+    deRhamComplex.homologyMap_map, mayerVietorisToProd_apply]
+  rfl
+
+/-- Under the identification of the biproduct with the product module, the map induced on
+cohomology by the second map of the Mayer–Vietoris short complex is `mayerVietorisFromProd`. -/
+private theorem desc_homologyMap_apply (U V : Opens M) (k : ℕ)
+    (x : ↑(((deRhamComplex I U).homology k) ⊞ ((deRhamComplex I V).homology k))) :
+    biprod.desc
+        (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _)) k)
+        (HomologicalComplex.homologyMap (-deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _)) k) x =
+      mayerVietorisFromProd I U V k ((ModuleCat.biprodIsoProd _ _).hom x) := by
+  have h : biprod.desc
+        (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _)) k)
+        (HomologicalComplex.homologyMap (-deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _)) k) =
+      (ModuleCat.biprodIsoProd _ _).hom ≫ ModuleCat.ofHom (mayerVietorisFromProd I U V k) := by
+    apply biprod.hom_ext' <;> ext y <;>
+      simp [HomologicalComplex.homologyMap_neg, deRhamComplex.homologyMap_map]
+  rw [h, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]
+
+/-- The map `H⁰(U ⊔ V) → H⁰(U) × H⁰(V)` at the start of the Mayer–Vietoris sequence is injective:
+a closed function on `U ⊔ V` vanishing on `U` and on `V` vanishes. -/
+theorem mayerVietorisToProd_zero_injective (U V : Opens M) :
+    Function.Injective (mayerVietorisToProd I U V 0) := by
+  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I 0 x
+  rw [mayerVietorisToProd_apply, map_mk, map_mk, Prod.mk_eq_zero, mk_eq_zero_iff, mk_eq_zero_iff,
+    exactForms_zero, exactForms_zero, Submodule.mem_bot, Submodule.mem_bot] at hx
+  rw [mk_eq_zero_iff, exactForms_zero, Submodule.mem_bot]
+  refine SmoothForm.injective_mayerVietoris (I := I) (F := ℝ) U V ?_
+  rw [map_zero, LinearMap.prod_apply, Function.prod_apply, ← closedForms.coe_mpullback,
+    ← closedForms.coe_mpullback, hx.1, hx.2, Prod.mk_zero_zero]
+
+end Maps
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^k(U) × H^k(V)`.** -/
+theorem exact_mayerVietorisToProd_fromProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisToProd I U V k) (mayerVietorisFromProd I U V k) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl ℝ _)
+    (e₂ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₃ := LinearEquiv.refl ℝ _)
+    (LinearMap.ext fun x ↦ (biprodIsoProd_hom_lift_homologyMap_apply U V k x).symm)
+    (LinearMap.ext fun x ↦ (desc_homologyMap_apply U V k x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₂ k))
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^k(U ⊓ V)`.** -/
+theorem exact_mayerVietorisFromProd_δ (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisFromProd I U V k) (mayerVietorisδ I U V k) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact
+    (e₁ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₂ := LinearEquiv.refl ℝ _)
+    (e₃ := LinearEquiv.refl ℝ _)
+    (LinearMap.ext fun x ↦ (desc_homologyMap_apply U V k x).symm)
+    (LinearMap.ext fun _ ↦ rfl)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₃ k (k + 1) rfl))
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^{k+1}(U ⊔ V)`.** -/
+theorem exact_mayerVietorisδ_toProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisδ I U V k) (mayerVietorisToProd I U V (k + 1)) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl ℝ _)
+    (e₂ := LinearEquiv.refl ℝ _) (e₃ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv)
+    (LinearMap.ext fun _ ↦ rfl)
+    (LinearMap.ext fun x ↦ (biprodIsoProd_hom_lift_homologyMap_apply U V (k + 1) x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₁ k (k + 1) rfl))
+
+end deRhamCohomology
+
+end LongExact
 
 end TauCeti

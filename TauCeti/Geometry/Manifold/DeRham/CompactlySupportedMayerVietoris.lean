@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Geometry.Manifold.Metrizable
+import TauCeti.Algebra.Homology.HomologySequenceBiprod
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # The Mayer–Vietoris sequence of compactly supported de Rham complexes
@@ -51,6 +53,16 @@ closed form `τ` on `U ⊔ V` as `ext α + ext β` with `α` and `β` compactly 
 * `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ`: its connecting map
   `H^k_c(U ⊔ V) → H^{k+1}_c(U ⊓ V)`, computed on classes by
   `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisToProd` and
+  `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisFromProd`: the maps
+  `H^k_c(U ⊓ V) → H^k_c(U) × H^k_c(V) → H^k_c(U ⊔ V)` of extension by zero, `(ext, -ext)` and
+  `ext + ext`, as linear maps to and from the product module.
+* `TauCeti.compactlySupportedDeRhamCohomology.exact_mayerVietorisToProd_fromProd`,
+  `TauCeti.compactlySupportedDeRhamCohomology.exact_mayerVietorisFromProd_δ` and
+  `TauCeti.compactlySupportedDeRhamCohomology.exact_mayerVietorisδ_toProd`: the compactly supported
+  Mayer–Vietoris long exact sequence, as exactness (`Function.Exact`) of linear maps;
+  `TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisFromProd_surjective`: it ends with a
+  surjection in degrees at least the dimension.
 
 ## References
 
@@ -377,5 +389,138 @@ theorem mayerVietorisδ_mk (U V : Opens M) (τ : compactlySupportedClosedForms I
 end compactlySupportedDeRhamCohomology
 
 end Connecting
+
+
+section LongExact
+
+/-! ### The compactly supported Mayer–Vietoris long exact sequence as linear maps -/
+
+namespace compactlySupportedDeRhamCohomology
+
+section Maps
+
+variable [IsManifold I 2 M]
+
+variable (I) in
+/-- The map `H^k_c(U ⊓ V) → H^k_c(U) × H^k_c(V)` of the compactly supported Mayer–Vietoris
+sequence: the extension by zero to `U` and the negative of the extension by zero to `V`. -/
+def mayerVietorisToProd (U V : Opens M) (k : ℕ) :
+    compactlySupportedDeRhamCohomology I (U ⊓ V : Opens M) k →ₗ[ℝ]
+      compactlySupportedDeRhamCohomology I U k × compactlySupportedDeRhamCohomology I V k :=
+  (extendByZero (inf_le_left : U ⊓ V ≤ U) k).prod (-extendByZero (inf_le_right : U ⊓ V ≤ V) k)
+
+@[simp]
+theorem mayerVietorisToProd_apply (U V : Opens M) (k : ℕ)
+    (x : compactlySupportedDeRhamCohomology I (U ⊓ V : Opens M) k) :
+    mayerVietorisToProd I U V k x =
+      (extendByZero (inf_le_left : U ⊓ V ≤ U) k x, -extendByZero (inf_le_right : U ⊓ V ≤ V) k x) :=
+  (rfl)
+
+variable (I) in
+/-- The map `H^k_c(U) × H^k_c(V) → H^k_c(U ⊔ V)` of the compactly supported Mayer–Vietoris
+sequence: the sum of the extensions by zero to `U ⊔ V`. -/
+def mayerVietorisFromProd (U V : Opens M) (k : ℕ) :
+    compactlySupportedDeRhamCohomology I U k × compactlySupportedDeRhamCohomology I V k →ₗ[ℝ]
+      compactlySupportedDeRhamCohomology I (U ⊔ V : Opens M) k :=
+  (extendByZero (le_sup_left : U ≤ U ⊔ V) k).coprod (extendByZero (le_sup_right : V ≤ U ⊔ V) k)
+
+@[simp]
+theorem mayerVietorisFromProd_apply (U V : Opens M) (k : ℕ)
+    (x : compactlySupportedDeRhamCohomology I U k × compactlySupportedDeRhamCohomology I V k) :
+    mayerVietorisFromProd I U V k x =
+      extendByZero (le_sup_left : U ≤ U ⊔ V) k x.1 +
+        extendByZero (le_sup_right : V ≤ U ⊔ V) k x.2 :=
+  (rfl)
+
+/-- Under the identification of the biproduct with the product module, the map induced on
+cohomology by the first map of the compactly supported Mayer–Vietoris short complex is
+`mayerVietorisToProd`. -/
+private theorem biprodIsoProd_hom_lift_homologyMap_apply (U V : Opens M) (k : ℕ)
+    (x : compactlySupportedDeRhamCohomology I (U ⊓ V : Opens M) k) :
+    (ModuleCat.biprodIsoProd _ _).hom
+        (biprod.lift
+          (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I)
+            (inf_le_left : U ⊓ V ≤ U)) k)
+          (HomologicalComplex.homologyMap (-compactlySupportedDeRhamComplex.extendByZero (I := I)
+            (inf_le_right : U ⊓ V ≤ V)) k) x) =
+      mayerVietorisToProd I U V k x := by
+  rw [ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
+    ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd,
+    HomologicalComplex.homologyMap_neg, compactlySupportedDeRhamComplex.homologyMap_extendByZero,
+    compactlySupportedDeRhamComplex.homologyMap_extendByZero, mayerVietorisToProd_apply]
+  rfl
+
+/-- Under the identification of the biproduct with the product module, the map induced on
+cohomology by the second map of the compactly supported Mayer–Vietoris short complex is
+`mayerVietorisFromProd`. -/
+private theorem desc_homologyMap_apply (U V : Opens M) (k : ℕ)
+    (x : ↑(((compactlySupportedDeRhamComplex I U).homology k) ⊞
+      ((compactlySupportedDeRhamComplex I V).homology k))) :
+    biprod.desc
+        (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I)
+          (le_sup_left : U ≤ U ⊔ V)) k)
+        (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I)
+          (le_sup_right : V ≤ U ⊔ V)) k) x =
+      mayerVietorisFromProd I U V k ((ModuleCat.biprodIsoProd _ _).hom x) := by
+  have h : biprod.desc
+        (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I)
+          (le_sup_left : U ≤ U ⊔ V)) k)
+        (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.extendByZero (I := I)
+          (le_sup_right : V ≤ U ⊔ V)) k) =
+      (ModuleCat.biprodIsoProd _ _).hom ≫ ModuleCat.ofHom (mayerVietorisFromProd I U V k) := by
+    apply biprod.hom_ext' <;> ext y <;>
+      simp [compactlySupportedDeRhamComplex.homologyMap_extendByZero]
+  rw [h, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]
+
+end Maps
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [SigmaCompactSpace M]
+
+/-- **Exactness of the compactly supported Mayer–Vietoris sequence at `H^k_c(U) × H^k_c(V)`.** -/
+theorem exact_mayerVietorisToProd_fromProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisToProd I U V k) (mayerVietorisFromProd I U V k) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl ℝ _)
+    (e₂ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₃ := LinearEquiv.refl ℝ _)
+    (LinearMap.ext fun x ↦ (biprodIsoProd_hom_lift_homologyMap_apply U V k x).symm)
+    (LinearMap.ext fun x ↦ (desc_homologyMap_apply U V k x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₂
+        k))
+
+/-- **Exactness of the compactly supported Mayer–Vietoris sequence at `H^k_c(U ⊔ V)`.** -/
+theorem exact_mayerVietorisFromProd_δ (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisFromProd I U V k) (mayerVietorisδ I U V k) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact
+    (e₁ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₂ := LinearEquiv.refl ℝ _)
+    (e₃ := LinearEquiv.refl ℝ _)
+    (LinearMap.ext fun x ↦ (desc_homologyMap_apply U V k x).symm)
+    (LinearMap.ext fun _ ↦ rfl)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₃
+        k (k + 1) rfl))
+
+/-- **Exactness of the compactly supported Mayer–Vietoris sequence at `H^{k+1}_c(U ⊓ V)`.** -/
+theorem exact_mayerVietorisδ_toProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisδ I U V k) (mayerVietorisToProd I U V (k + 1)) :=
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl ℝ _)
+    (e₂ := LinearEquiv.refl ℝ _) (e₃ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv)
+    (LinearMap.ext fun _ ↦ rfl)
+    (LinearMap.ext fun x ↦ (biprodIsoProd_hom_lift_homologyMap_apply U V (k + 1) x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₁
+        k (k + 1) rfl))
+
+/-- In degrees at least the dimension, every compactly supported class on `U ⊔ V` is a sum of
+classes extended by zero from `U` and from `V`: the next term `H^{k+1}_c(U ⊓ V)` of the compactly
+supported Mayer–Vietoris sequence vanishes. -/
+theorem mayerVietorisFromProd_surjective (U V : Opens M) (hk : Module.finrank ℝ E ≤ k) :
+    Function.Surjective (mayerVietorisFromProd I U V k) := fun x ↦
+  (exact_mayerVietorisFromProd_δ U V k x).mp
+    (Subsingleton.elim (h := subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt I
+      (U ⊓ V : Opens M) (Nat.lt_succ_of_le hk)) _ _)
+
+end compactlySupportedDeRhamCohomology
+
+end LongExact
 
 end TauCeti

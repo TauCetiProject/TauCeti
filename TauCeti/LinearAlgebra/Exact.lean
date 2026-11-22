@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+
 /-!
 # Exact sequences of linear maps
 
@@ -21,7 +23,8 @@ including the exactness of `U' → V → B × A` built from two exact stages `U'
 exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
 `Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), its covariant counterpart
-(`Function.Exact.compRight_of_injective`), the generators and relations of an extension
+(`Function.Exact.compRight_of_injective`), the exactness of transposition over a field
+(`Function.Exact.dualMap`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
@@ -219,6 +222,15 @@ theorem _root_.Function.Exact.compRight_of_injective {R T M₁ M₂ M₃ : Type*
   · rintro ⟨u, rfl⟩
     ext x
     simp [exac.apply_apply_eq_zero]
+
+/-- **Transposition is exact over a field.** If `V₁ --f--> V₂ --g--> V₃` is exact, so is
+`V₃* --g*--> V₂* --f*--> V₁*`: a functional on `V₂` vanishing on the range of `f`, which is the
+kernel of `g`, factors through `g`. -/
+theorem dualMap {K V₁ V₂ V₃ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
+    [Module K V₂] [AddCommGroup V₃] [Module K V₃] {f : V₁ →ₗ[K] V₂} {g : V₂ →ₗ[K] V₃}
+    (h : Exact f g) : Exact g.dualMap f.dualMap := by
+  rw [LinearMap.exact_iff, LinearMap.ker_dualMap_eq_dualAnnihilator_range,
+    LinearMap.range_dualMap_eq_dualAnnihilator_ker, h.linearMap_ker_eq]
 
 /-- Given an exact sequence `M₁ → M → M₂`, a surjection `π₁ : P₁ → M₁` and a lift `σ : P₂ → M`
 of a surjection `π₂ : P₂ → M₂`, the combined generator map `(x, y) ↦ f (π₁ x) + σ y` of `M` is
