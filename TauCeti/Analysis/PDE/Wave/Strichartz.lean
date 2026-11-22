@@ -266,11 +266,8 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
       _ ≤ 1 * B := by
           gcongr
           · exact norm_phasePropagator_le _ _
-          · refine (Lp.norm_fourierMultiplierCLM_le m').trans ?_
-            rw [Lp.norm_def, eLpNorm_exponent_top]
-            · exact ENNReal.toReal_le_of_le_ofReal hB0
-                (eLpNormEssSup_le_of_ae_bound (hm'.mono fun ξ h ↦ h ▸ hB _))
-            · exact Lp.aestronglyMeasurable _
+          · exact (Lp.norm_fourierMultiplierCLM_le m').trans
+              (Lp.norm_le_of_ae_bound_top hB0 (hm'.mono fun ξ h ↦ h ▸ hB _))
       _ ≤ B + 1 := by linarith
 
 /-! ### The Strichartz estimates -/
