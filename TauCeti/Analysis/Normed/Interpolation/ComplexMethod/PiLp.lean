@@ -405,12 +405,12 @@ private theorem norm_piLpFromCoord_le_of_traces {θ B : ℝ}
     exact Finset.sum_congr rfl fun i _ ↦ by rw [piLpSingle, ← hmk i, ComplexMethodSpace.map_mk]
   have hG₀ (t : ℝ) : G.val.1 t = toLp q₀ (fun j ↦ (g j).val.1 t) := by
     dsimp only [G]
-    rw [Submodule.coe_sum, Prod.fst_sum, ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply]
+    rw [Submodule.coe_sum, Prod.fst_sum, FunLike.coe_sum, Finset.sum_apply]
     simp_rw [stripTracesMap_apply_fst, PiLp.singleCLM_apply]
     exact PiLp.univ_sum_single (toLp q₀ (fun j ↦ (g j).val.1 t))
   have hG₁ (t : ℝ) : G.val.2 t = toLp q₁ (fun j ↦ (g j).val.2 t) := by
     dsimp only [G]
-    rw [Submodule.coe_sum, Prod.snd_sum, ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply]
+    rw [Submodule.coe_sum, Prod.snd_sum, FunLike.coe_sum, Finset.sum_apply]
     simp_rw [stripTracesMap_apply_snd, PiLp.singleCLM_apply]
     exact PiLp.univ_sum_single (toLp q₁ (fun j ↦ (g j).val.2 t))
   rw [← hG_mk]
