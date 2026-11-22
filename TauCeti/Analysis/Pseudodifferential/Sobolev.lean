@@ -112,6 +112,8 @@ families of operators.
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.quantizeSobolev_map`: the symbol `L ∘ a ∘ K`, for constant maps `L` and `K` of
   the fibres, quantizes to `L ∘ Op(a) ∘ K`.
+* `TauCeti.Symbol.postcomp_comp_quantizeSobolev`: the component `ℓ ∘ Op(a)` of a matrix-valued
+  quantization is `∑ⱼ Op(ℓ ∘ a ∘ e_j) ∘ c_j`.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 * `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
