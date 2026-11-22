@@ -23,9 +23,8 @@ statement about orbits and stabilizers to the homogeneous symplectic manifolds `
 
 **On the groups.** For every smooth homomorphism `φ`, the left-invariant one-form and the
 left-invariant Kirillov form of `ν` on `G` pull back along `φ` to those of `ν ∘ dφ` on `K`
-(`ContMDiffMonoidMorphism.mpullback_leftInvariantForm`,
-`ContMDiffMonoidMorphism.mpullback_leftInvariantKirillovForm`), because `φ` carries the
-left-invariant vector field of `ξ` to that of `dφ ξ`.
+(`Module.Dual.mpullback_leftInvariantForm`, `Module.Dual.mpullback_leftInvariantKirillovForm`),
+because `φ` carries the left-invariant vector field of `ξ` to that of `dφ ξ`.
 
 **On the orbits.** If `φ` and `dφ` are both surjective, then `[k] ↦ [φ k]` is a diffeomorphism
 
@@ -56,7 +55,6 @@ needed: the projection `G × L → G` of a product identifies the orbit of `(ν,
 
 ## Main results
 
-* `ContMDiffMonoidMorphism.mpullback_leftInvariantKirillovForm`: `φ^* σ_ν = σ_{ν ∘ dφ}`.
 * `ContMDiffMonoidMorphism.mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm`: the
   diffeomorphism is a symplectomorphism of the Kirillov–Kostant–Souriau forms.
 * `ContMDiffMonoidMorphism.orbitMap_coadjointRepresentation_comp_groupLieAlgebraMap`: it
@@ -88,34 +86,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace HK] {J : ModelWithCorners ℝ F HK}
   {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K] [LieGroup J ∞ K]
   (φ : ContMDiffMonoidMorphism J I ∞ K G)
-
-/-! ### The Kirillov forms on the groups -/
-
-/-- **The left-invariant one-form along a homomorphism.** A smooth homomorphism `φ : K → G` pulls
-the left-invariant one-form of `ν ∈ 𝔤*` back to the left-invariant one-form of `ν ∘ dφ ∈ 𝔨*`. -/
-@[simp]
-theorem mpullback_leftInvariantForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
-    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
-      Dual.leftInvariantForm (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) := by
-  apply Subtype.ext
-  funext k
-  ext v
-  obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (v 0)
-  rw [SmoothForm.coe_mpullback, TauCeti.mpullback_apply, Dual.leftInvariantForm_apply,
-    Dual.leftInvariantForm_apply, ← hξ, φ.mfderiv_mulInvariantVectorField,
-    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-
-/-- **The left-invariant Kirillov form along a homomorphism.** A smooth homomorphism `φ : K → G`
-pulls the left-invariant Kirillov form `σ_ν` of `ν ∈ 𝔤*` back to the left-invariant Kirillov form
-`σ_{ν ∘ dφ}` of `ν ∘ dφ ∈ 𝔨*`. -/
-@[simp]
-theorem mpullback_leftInvariantKirillovForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
-    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantKirillovForm =
-      Dual.leftInvariantKirillovForm
-        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) := by
-  rw [Dual.leftInvariantKirillovForm_def, Dual.leftInvariantKirillovForm_def, map_neg,
-    ← SmoothForm.mextDerivₗ_mpullback, mpullback_leftInvariantForm]
 
 /-! ### The orbit map along a homomorphism -/
 
@@ -309,6 +279,6 @@ theorem mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm :
     (φ.coadjointOrbitDiffeomorph hφ hdφ ν).contMDiff φ.contMDiff_toFun hπG
     (funext fun k ↦ coadjointOrbitDiffeomorph_mk φ hφ hdφ ν k),
     Dual.mpullback_quotientMk_coadjointOrbitForm]
-  exact φ.mpullback_leftInvariantKirillovForm ν
+  exact ν.mpullback_leftInvariantKirillovForm φ
 
 end ContMDiffMonoidMorphism
