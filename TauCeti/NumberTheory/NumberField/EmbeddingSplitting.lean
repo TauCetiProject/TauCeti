@@ -99,7 +99,7 @@ end Splitting
 
 section Eigenspace
 
-variable (M : Type*) [AddCommGroup M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
+variable (M : Type*) [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
 
 /-- The **embedding eigenspace** `M(σ)`: the largest `R`-submodule of `M` on which `𝓞 L` acts
 through `σ`, namely the `m` with `ℓ • m = σ(ℓ) • m` for all `ℓ : 𝓞 L`. -/
@@ -109,11 +109,6 @@ def embeddingEigenspace (σ : L →+* K) : Submodule R M where
   zero_mem' ℓ := by simp
   smul_mem' r m hm ℓ := by simp [smul_comm ℓ r m, hm ℓ, smul_smul, mul_comm]
 
-/-- The action of `R ⊗[ℤ] 𝓞 L` on `M` by `R`-linear endomorphisms. -/
-noncomputable def embeddingAction : R ⊗[ℤ] 𝓞 L →ₐ[R] Module.End R M :=
-  Algebra.TensorProduct.lift (Algebra.ofId R _) (Module.toModuleEnd R (S := 𝓞 L) M).toIntAlgHom
-    fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
-
 variable {L K R M}
 
 theorem mem_embeddingEigenspace {σ : L →+* K} {m : M} :
@@ -122,11 +117,24 @@ theorem mem_embeddingEigenspace {σ : L →+* K} {m : M} :
 
 /-- **Functoriality**: an `R`-linear map commuting with the `𝓞 L`-actions sends `M(σ)` into
 `N(σ)`. -/
-theorem embeddingEigenspace_le_comap {N : Type*} [AddCommGroup N] [Module R N] [Module (𝓞 L) N]
+theorem embeddingEigenspace_le_comap {N : Type*} [AddCommMonoid N] [Module R N] [Module (𝓞 L) N]
     [SMulCommClass (𝓞 L) R N] (f : M →ₗ[R] N) (hf : ∀ (ℓ : 𝓞 L) (m : M), f (ℓ • m) = ℓ • f m)
     (σ : L →+* K) :
     embeddingEigenspace L K R M σ ≤ (embeddingEigenspace L K R N σ).comap f :=
   fun m hm ℓ ↦ by rw [← hf, hm ℓ, map_smul]
+
+end Eigenspace
+
+section Action
+
+variable (M : Type*) [AddCommGroup M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
+
+/-- The action of `R ⊗[ℤ] 𝓞 L` on `M` by `R`-linear endomorphisms. -/
+noncomputable def embeddingAction : R ⊗[ℤ] 𝓞 L →ₐ[R] Module.End R M :=
+  Algebra.TensorProduct.lift (Algebra.ofId R _) (Module.toModuleEnd R (S := 𝓞 L) M).toIntAlgHom
+    fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
+
+variable {L K R M}
 
 @[simp]
 theorem embeddingAction_tmul (r : R) (ℓ : 𝓞 L) (m : M) :
@@ -142,7 +150,7 @@ theorem embeddingAction_apply_of_mem {σ : L →+* K} {m : M}
   | tmul r ℓ => rw [embeddingAction_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
   | add s t hs ht => rw [map_add, LinearMap.add_apply, hs, ht, map_add, add_smul]
 
-end Eigenspace
+end Action
 
 section Bijective
 
@@ -298,7 +306,7 @@ theorem isInternal_embeddingEigenspace [DecidableEq (L →+* K)] :
 /-- **Base change of the eigenspaces**: for an `R`-module `N`, the eigenspace `(M ⊗[R] N)(σ)`,
 with `𝓞 L` acting on the first factor, is the image of `M(σ) ⊗[R] N`. -/
 theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
-    (N : Type*) [AddCommGroup N] [Module R N] (σ : L →+* K) :
+    (N : Type*) [AddCommMonoid N] [Module R N] (σ : L →+* K) :
     embeddingEigenspace L K R (M ⊗[R] N) σ =
       LinearMap.range ((embeddingEigenspace L K R M σ).subtype.rTensor N) := by
   apply le_antisymm
