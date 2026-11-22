@@ -251,6 +251,20 @@ theorem IsDeltaMap.comp {g : B →+* C} {f : A →+* B} (hg : IsDeltaMap p g)
     (hf : IsDeltaMap p f) : IsDeltaMap p (g.comp f) :=
   ⟨fun x => by rw [RingHom.comp_apply, hf.map_delta, hg.map_delta, RingHom.comp_apply]⟩
 
+/-- A ring homomorphism is a `δ`-map as soon as it commutes with `δ` on a set generating its
+source as a ring: the elements on which it commutes with `δ` form a subring, by the sum and
+product rules of `δ`. -/
+theorem isDeltaMap_of_closure_eq_top {s : Set A} (hs : Subring.closure s = ⊤) (f : A →+* B)
+    (h : ∀ x ∈ s, f (delta p x) = delta p (f x)) : IsDeltaMap p f := by
+  refine ⟨fun x => ?_⟩
+  induction (hs ▸ Subring.mem_top x : x ∈ Subring.closure s) using Subring.closure_induction with
+  | mem x hx => exact h x hx
+  | zero => simp
+  | one => simp
+  | add x y _ _ hx hy => simp [delta_add, hx, hy]
+  | neg x _ hx => simp [delta_neg, hx]
+  | mul x y _ _ hx hy => simp [delta_mul, hx, hy]
+
 end IsDeltaMap
 
 section Frobenius
