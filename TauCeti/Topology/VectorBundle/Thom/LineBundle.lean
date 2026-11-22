@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
 public import TauCeti.AlgebraicTopology.LocalCoefficient.TransferSequence
 public import TauCeti.AlgebraicTopology.Singular.Transfer.CoveringPair
-public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology
+public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
 public import TauCeti.Topology.VectorBundle.SphereBundle.Orientation
 
 /-!

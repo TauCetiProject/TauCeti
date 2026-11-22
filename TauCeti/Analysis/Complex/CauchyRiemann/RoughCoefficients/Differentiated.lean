@@ -505,7 +505,7 @@ private theorem inner_crFormalAdjoint_withLp_eq [CompleteSpace V]
 
 /-- Evaluates `∫ ⟪crFormalAdjoint J₂ DJ₂ S₂ Φ, Ξ⟫` on `WithLp 2 (V × V)` by splitting into the
 two coordinate rows and combining `integral_commutator_of_hasWeakFDerivOn` (row 1) and
-`HasWeakFDerivOn.integral_inner_fderiv_comm` (row 2) with `integral_lineDeriv_crEquation`. -/
+`HasWeakLineDerivOn.integral_inner_lineDeriv_comm` (row 2) with `integral_lineDeriv_crEquation`. -/
 private theorem integral_inner_crFormalAdjoint_differentiated_aux [FiniteDimensional ℝ V]
     {p q : ℝ≥0∞} (hp : p ≠ ⊤) (hq : q ≠ ⊤) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     {J S : ℂ → V →L[ℝ] V} {DJ DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
@@ -541,8 +541,10 @@ private theorem integral_inner_crFormalAdjoint_differentiated_aux [FiniteDimensi
   have hrow2 : (∫ z, ⟪crFormalAdjoint J DJ S φ₂ z, Dξ z I⟫_ℝ) +
       (∫ z, ⟪(φ₂ : ℂ → V) z, DJ z I (Dξ z I)⟫_ℝ) =
       ∫ z, ⟪(φ₂ : ℂ → V) z, Dη z I - DS z I (ξ z)⟫_ℝ := by
-    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv I) φ₂,
-      hDξ.integral_inner_fderiv_comm 1 I φ₂]
+    have hmixed := (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_comm
+      (hDξ.hasWeakLineDerivOn I) φ₂
+    simp only [TestFunction.lineDeriv_eq_fderiv] at hmixed
+    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv I) φ₂, ← hmixed]
     linarith [integral_lineDeriv_crEquation hp hq hpq hc.memLpLoc_coeff hS hDS hξ hDξ hDη heq I φ₂]
   have hloc := locallyIntegrableOn_differentiatedCR_coord hpq hS hDS hξ.memLpLoc hDη
   rw [integral_congr_ae (.of_forall fun z => inner_crFormalAdjoint_withLp_eq Φ z (Dξ z 1) (Dξ z I)),

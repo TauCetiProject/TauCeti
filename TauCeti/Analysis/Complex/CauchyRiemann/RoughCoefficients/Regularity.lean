@@ -37,11 +37,10 @@ system `TauCeti.isWeakCRSolution_differentiated` of
 `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Differentiated`, this file proves
 higher-order interior regularity (McDuff–Salamon, Proposition B.4.9):
 
-1. **Higher-order interior regularity** (`TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc`
-   and `TauCeti.IsWeakCRSolution.memWkpLoc_succ`). By induction on `k`, if `2 < p ≤ ∞`,
-   `1 < r < ∞`, `r ≤ p`, `p⁻¹ + q⁻¹ < 1`, `J ∈ W^{max 1 k, p}_loc(Ω)` with `J² = -1` almost
-   everywhere, `S ∈ W^{k,p}_loc(Ω)`, and `η ∈ W^{k,r}_loc(Ω)`, then every weak solution
-   `ξ ∈ L^q_loc(Ω)` belongs to `W^{k+1,r}_loc(Ω)`.
+1. **Higher-order interior regularity** (`TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc`).
+   By induction on `k`, if `2 < p ≤ ∞`, `1 < r < ∞`, `r ≤ p`, `p⁻¹ + q⁻¹ < 1`,
+   `J ∈ W^{max 1 k, p}_loc(Ω)` with `J² = -1` almost everywhere, `S ∈ W^{k,p}_loc(Ω)`, and
+   `η ∈ W^{k,r}_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` belongs to `W^{k+1,r}_loc(Ω)`.
 2. **Regularity on general finite-dimensional normed spaces**
    (`TauCeti.HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann`,
    `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ`,
@@ -54,9 +53,8 @@ higher-order interior regularity (McDuff–Salamon, Proposition B.4.9):
 
 ## Main declarations
 
-* `TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc` and
-  `TauCeti.IsWeakCRSolution.memWkpLoc_succ`: McDuff–Salamon Proposition B.4.9
-  (`ξ ∈ W^{k+1,r}_loc` and `ξ ∈ W^{k+1,q}_loc`).
+* `TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc`: McDuff–Salamon Proposition B.4.9
+  with exponent raising (`ξ ∈ W^{k+1,r}_loc`, allowing `p = ∞` and `q = ∞`).
 * `TauCeti.IsWeakCRSolution.exists_contDiffOn_ae_eq`: `C^k` representative almost everywhere on `Ω`
   when `2 < r ≤ p` and `η ∈ W^{k,r}_loc(Ω)`.
 * `TauCeti.HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann`: inhomogeneous `W^{k+1,r}_loc`
@@ -209,21 +207,6 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc
     exact memWkpLoc_succ_of_memWkpLoc_step hp₀ hr₀ hrp₀' hp₀q hJm1 hDJ hJsq hS hη hsol
       (ih hDJ hJsq hsol hp₀q hη.of_succ (hJm1.of_le hmax) hS.of_succ)
       fun hpr₁ hJ₂ hDJ₂ hJ₂sq hS₂ hH₂ hsol₂ => ih hDJ₂ hJ₂sq hsol₂ hpr₁ hH₂ hJ₂ hS₂
-
-/-- **Higher-order interior regularity** (McDuff–Salamon, Proposition B.4.9). Let `k : ℕ`,
-`2 < p ≤ ∞`, `q < ∞`, `q ≤ p`, and `p⁻¹ + q⁻¹ < 1` (which forces `1 < q`). If
-`J ∈ W^{max 1 k, p}_loc(Ω)` has weak derivative `DJ` with `J² = -1` almost everywhere on `Ω`,
-`S ∈ W^{k,p}_loc(Ω)`, and `η ∈ W^{k,q}_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of
-`∂_s ξ + J ∂_t ξ + S ξ = η` belongs to `W^{k+1,q}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_succ
-    (hp : 2 < p) (hq_top : q ≠ ⊤) (hqp : q ≤ p) (hpq : p⁻¹ + q⁻¹ < 1)
-    (hJ : MemWkpLoc p Ω (max 1 k) J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
-    (hS : MemWkpLoc p Ω k S) (hη : MemWkpLoc q Ω k η)
-    (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
-    MemWkpLoc q Ω (k + 1) ξ :=
-  hsol.memWkpLoc_succ_of_memWkpLoc hp (ENNReal.inv_lt_one.1 (le_add_self.trans_lt hpq)) hq_top hqp
-    hpq hJ hDJ hJsq hS hη
 
 /-- **Existence of a `C^k` representative.** Let `2 < r ≤ p` and `p⁻¹ + q⁻¹ < 1` (allowing `p = ∞`,
 `r = ∞`, and `q = ∞`). If `J ∈ W^{max 1 k, p}_loc(Ω)` has weak derivative `DJ` with `J² = -1`
