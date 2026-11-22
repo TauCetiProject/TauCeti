@@ -218,7 +218,7 @@ theorem IsSpinCEquivalent.exists_covectorSquare_eq_sub (hQ : P.intersectionMatri
     ∃ l : V → ℤ,
       P.covectorSquare k'.val = P.covectorSquare k.val - 8 * P.characteristicWeight k l := by
   obtain ⟨l, hl⟩ := (P.isSpinCEquivalent_iff k k').1 hk
-  exact ⟨l, by rw [hl, P.covectorSquare_add_two_mulVec_eq_sub hQ]⟩
+  exact ⟨l, by rw [← hl, P.addTwoMulVec_val, P.covectorSquare_add_two_mulVec_eq_sub hQ]⟩
 
 /-! ### The maximal square in a spin^c orbit -/
 
@@ -234,10 +234,8 @@ theorem IsNegativeDefinite.isGreatest_covectorSquare (h : P.IsNegativeDefinite)
   have hQ := h.det_intersectionMatrix_ne_zero
   constructor
   · obtain ⟨l, hl⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
-    refine ⟨⟨fun v => k.val v + 2 * (P.intersectionMatrix *ᵥ l) v,
-      IsCharacteristicVector.add_two_mul P k.property⟩, (P.isSpinCEquivalent_iff _ _).2 ⟨l, rfl⟩,
-      ?_⟩
-    rw [P.covectorSquare_add_two_mulVec_eq_sub hQ, hl]
+    refine ⟨P.addTwoMulVec k l, (P.isSpinCEquivalent_iff _ _).2 ⟨l, rfl⟩, ?_⟩
+    rw [P.addTwoMulVec_val, P.covectorSquare_add_two_mulVec_eq_sub hQ, hl]
   · rintro q ⟨k', hk', rfl⟩
     obtain ⟨l, hl⟩ := hk'.exists_covectorSquare_eq_sub P hQ
     rw [hl]

@@ -497,9 +497,9 @@ theorem oneVertexPlumbing_neg_one_latticeCorrectionTerm
       decide
   have hk : (oneVertexPlumbing (-1)).IsSpinCEquivalent ⟨fun _ => 1, h1⟩ k := by
     refine ((oneVertexPlumbing (-1)).isSpinCEquivalent_iff _ _).2 ⟨fun _ => -m, ?_⟩
-    funext v
+    ext v
     obtain rfl := Subsingleton.elim v 0
-    simp only [hm, Matrix.mulVec, dotProduct, Fin.sum_univ_one,
+    simp only [PlumbingGraph.addTwoMulVec_val, hm, Matrix.mulVec, dotProduct, Fin.sum_univ_one,
       oneVertexPlumbing_intersectionMatrix, Matrix.of_apply, Matrix.cons_val_fin_one]
     ring
   have h := isNegativeDefinite_oneVertexPlumbing (w := -1) (by norm_num)
