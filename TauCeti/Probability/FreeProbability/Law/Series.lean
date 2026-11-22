@@ -86,8 +86,8 @@ theorem map_ofReal_rSeries_integral_law {a : A} (ha : IsSelfAdjoint a) :
     PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
         (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂φ.law a) id) = TauCeti.rSeries φ a := by
   ext n
-  simpa [TauCeti.coeff_rSeries] using
-    φ.ofReal_freeCumulant_integral_law ha (univ : Finset (Fin (n + 1)))
+  rw [coeff_map, TauCeti.coeff_rSeries, TauCeti.coeff_rSeries, Complex.ofRealHom_eq_coe]
+  exact φ.ofReal_freeCumulant_integral_law ha (univ : Finset (Fin (n + 1)))
 
 end PositiveLinearMap
 

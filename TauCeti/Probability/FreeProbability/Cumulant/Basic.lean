@@ -151,6 +151,7 @@ theorem partitionMoment_top (φ : A → R) (a : α → A) (hs : s.Nonempty) :
   rw [partitionMoment_def, Finpartition.parts_top hs.ne_empty, prod_singleton]
 
 /-- A monoid homomorphism commutes with block moments. -/
+@[simp]
 theorem map_partitionMoment {S F : Type*} [CommMonoid S] [FunLike F R S] [MonoidHomClass F R S]
     (g : F) (φ : A → R) (a : α → A) (P : Finpartition s) :
     g (partitionMoment φ a P) = partitionMoment (g ∘ φ) a P := by
@@ -499,6 +500,7 @@ section RingHom
 variable {S F : Type*} [CommRing R] [CommRing S] [Monoid A] [FunLike F R S] [RingHomClass F R S]
 
 /-- A ring homomorphism commutes with noncrossing partition cumulants. -/
+@[simp]
 theorem map_partitionCumulant (g : F) (φ : A → R) (a : α → A) (π : NoncrossingPartition s) :
     g (partitionCumulant φ a π) = partitionCumulant (g ∘ φ) a π := by
   refine congrFun (eq_partitionCumulant_of_forall_sum_Iic (g ∘ φ) a
@@ -506,6 +508,7 @@ theorem map_partitionCumulant (g : F) (φ : A → R) (a : α → A) (π : Noncro
   rw [← map_sum, sum_Iic_partitionCumulant, map_partitionMoment]
 
 /-- A ring homomorphism commutes with free cumulants. -/
+@[simp]
 theorem map_freeCumulant (g : F) (φ : A → R) (a : α → A) (s : Finset α) :
     g (freeCumulant φ a s) = freeCumulant (g ∘ φ) a s := by
   rw [freeCumulant_def, freeCumulant_def, map_partitionCumulant]

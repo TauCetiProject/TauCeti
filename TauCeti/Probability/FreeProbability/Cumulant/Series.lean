@@ -104,6 +104,7 @@ theorem constantCoeff_momentSeries : constantCoeff (momentSeries φ a) = φ 1 :=
 end MomentSeries
 
 /-- Mapping the moment series by a ring homomorphism gives the moment series of `g ∘ φ`. -/
+@[simp]
 theorem map_momentSeries {S : Type*} [Semiring R] [Semiring S] [Monoid A] (g : R →+* S)
     (φ : A → R) (a : A) : PowerSeries.map g (momentSeries φ a) = momentSeries (g ∘ φ) a := by
   ext n; simp
@@ -278,14 +279,16 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [
 end Monoid
 
 /-- Mapping the free cumulant series by a ring homomorphism gives that of `g ∘ φ`. -/
+@[simp]
 theorem map_freeCumulantSeries {S : Type*} [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R)
     (a : A) : PowerSeries.map g (freeCumulantSeries φ a) = freeCumulantSeries (g ∘ φ) a := by
-  ext n; simpa [coeff_freeCumulantSeries] using map_freeCumulant g φ (fun _ : Fin n => a) univ
+  ext n; simp
 
 /-- Mapping the R-series by a ring homomorphism gives the R-series of `g ∘ φ`. -/
+@[simp]
 theorem map_rSeries {S : Type*} [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R) (a : A) :
     PowerSeries.map g (rSeries φ a) = rSeries (g ∘ φ) a := by
-  ext n; simpa [coeff_rSeries] using map_freeCumulant g φ (fun _ : Fin (n + 1) => a) univ
+  ext n; simp
 
 section Algebra
 

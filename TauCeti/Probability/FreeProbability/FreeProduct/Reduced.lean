@@ -74,6 +74,13 @@ instance : CompleteSpace (HilbertSpace φ hφ) :=
 def hilbertClassMap : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ] HilbertSpace φ hφ :=
   (freeProductPositiveFunctional φ hφ).hilbertClassMap
 
+/-- The GNS inner product on algebra classes in `HilbertSpace φ hφ`. -/
+@[simp]
+theorem inner_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :
+    ⟪hilbertClassMap φ hφ a, hilbertClassMap φ hφ b⟫_ℂ =
+      freeProductPositiveFunctional φ hφ (star a * b) :=
+  (freeProductPositiveFunctional φ hφ).inner_hilbertClassMap a b
+
 /-- The bounded left regular representation of the algebraic free product. -/
 def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
     (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
