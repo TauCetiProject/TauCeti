@@ -360,7 +360,7 @@ def transpose (D : DoubleCategoryStruct.{s} O H V) : DoubleCategoryStruct.{s} O 
 variable {D : DoubleCategoryStruct.{s} O H V}
 
 /-- A cell of the transpose with boundary `(p, q, l, r)` is a cell with boundary `(l, r, p, q)`. -/
-theorem transpose_Cell {a b c d : O} (p : Edge V a b) (q : Edge V c d) (l : Edge H a c)
+theorem transpose_cell {a b c d : O} (p : Edge V a b) (q : Edge V c d) (l : Edge H a c)
     (r : Edge H b d) : D.transpose.Cell p q l r = D.Cell l r p q :=
   rfl
 

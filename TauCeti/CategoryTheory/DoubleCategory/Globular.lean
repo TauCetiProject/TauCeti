@@ -28,7 +28,8 @@ The vertical counterparts are obtained by applying these constructions to the tr
 `TauCeti.StrictDoubleCategory.transpose`: a vertically globular cell, with identity horizontal
 boundaries, read from left to right, is a horizontally globular cell of the transpose. This gives
 `TauCeti.StrictDoubleCategory.VerticalIso`, `TauCeti.StrictDoubleCategory.changeLeft` and
-`TauCeti.StrictDoubleCategory.changeRight`.
+`TauCeti.StrictDoubleCategory.changeRight`. Changes of any two different boundaries commute; for
+two adjacent boundaries this is the middle-four interchange law.
 
 These categories and comparisons are the setting for the representations of the paths of an
 implicit double category by single generators, in the sense of Fairbanks and Shulman.
@@ -364,6 +365,78 @@ theorem changeRight_changeLeft (e : D.VerticalIso l l') (e' : D.VerticalIso r r'
   D.transpose.changeBottom_changeTop e e' α
 
 end Vertical
+
+/-! ### Changing adjacent boundaries -/
+
+section Adjacent
+
+variable {c d : O} {p p' : Edge H a b} {q q' : Edge H c d} {l l' : Edge V a c}
+  {r r' : Edge V b d}
+
+/-- Changing the top and the left boundary of a cell commute. -/
+theorem changeLeft_changeTop (e : D.HorizontalIso p p') (e' : D.VerticalIso l l')
+    (α : D.Cell p q l r) :
+    D.changeLeft e' (D.changeTop e α) = D.changeTop e (D.changeLeft e' α) := by
+  simp only [changeLeft_apply, changeTop_apply, pasteTop]
+  generalize e.inv = σ
+  generalize e'.inv = τ
+  change D.Cell p' p (edgeId V a) (edgeId V b) at σ
+  change D.Cell (edgeId H a) (edgeId H c) l' l at τ
+  have hσ : (D.hComp (D.vId (edgeId H a)) σ).cast (Category.id_comp (self := H) p')
+      (Category.id_comp (self := H) p) rfl rfl = σ := by
+    rw [← D.hId_id, D.hId_hComp]; simp
+  have hτ : (D.vComp (D.vId (edgeId H a)) τ).cast rfl rfl (Category.id_comp (self := V) l')
+      (Category.id_comp (self := V) l) = τ := by
+    rw [D.vId_vComp]; simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the top and the right boundary of a cell commute. -/
+theorem changeRight_changeTop (e : D.HorizontalIso p p') (e' : D.VerticalIso r r')
+    (α : D.Cell p q l r) :
+    D.changeRight e' (D.changeTop e α) = D.changeTop e (D.changeRight e' α) := by
+  simp only [changeRight_apply, changeTop_apply, pasteTop]
+  generalize e.inv = σ
+  generalize e'.hom = τ
+  change D.Cell p' p (edgeId V a) (edgeId V b) at σ
+  change D.Cell (edgeId H b) (edgeId H d) r r' at τ
+  have hσ : (D.hComp σ (D.vId (edgeId H b))).cast (Category.comp_id (self := H) p')
+      (Category.comp_id (self := H) p) rfl rfl = σ := by
+    rw [← D.hId_id, D.hComp_hId]; simp
+  have hτ : (D.vComp (D.vId (edgeId H b)) τ).cast rfl rfl (Category.id_comp (self := V) r)
+      (Category.id_comp (self := V) r') = τ := by
+    rw [D.vId_vComp]; simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the bottom and the right boundary of a cell commute. -/
+theorem changeRight_changeBottom (e : D.HorizontalIso q q') (e' : D.VerticalIso r r')
+    (α : D.Cell p q l r) :
+    D.changeRight e' (D.changeBottom e α) = D.changeBottom e (D.changeRight e' α) := by
+  simp only [changeRight_apply, changeBottom_apply, pasteBottom]
+  generalize e.hom = σ
+  generalize e'.hom = τ
+  change D.Cell q q' (edgeId V c) (edgeId V d) at σ
+  change D.Cell (edgeId H b) (edgeId H d) r r' at τ
+  have hσ : (D.hComp σ (D.vId (edgeId H d))).cast (Category.comp_id (self := H) q)
+      (Category.comp_id (self := H) q') rfl rfl = σ := by
+    rw [← D.hId_id, D.hComp_hId]; simp
+  have hτ : (D.vComp τ (D.vId (edgeId H d))).cast rfl rfl (Category.comp_id (self := V) r)
+      (Category.comp_id (self := V) r') = τ := by
+    rw [D.vComp_vId]; simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, ← D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the bottom and the left boundary of a cell commute. -/
+theorem changeLeft_changeBottom (e : D.HorizontalIso q q') (e' : D.VerticalIso l l')
+    (α : D.Cell p q l r) :
+    D.changeLeft e' (D.changeBottom e α) = D.changeBottom e (D.changeLeft e' α) :=
+  (D.transpose.changeRight_changeTop e' e α).symm
+
+end Adjacent
 
 end StrictDoubleCategory
 
