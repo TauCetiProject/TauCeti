@@ -17,18 +17,17 @@ to the product decomposition, an element `e x + (1 - e) y` has `e`-component `e 
 `(1 - e)`-component `(1 - e) y`, and since `e² = e` and `e (1 - e) = 0` such elements multiply
 componentwise.
 
-For an idempotent `p` of any ring, both `2 p - 1` and `1 - 2 p` square to `1`. For a star
-projection these give the self-adjoint unitaries `IsStarProjection.two_mul_sub_one_mem_unitary` and
-`IsStarProjection.one_sub_two_mul_mem_unitary`. Conversely, for any element `u` with `u * u = 1`,
-`1 + u` squares to `(1 + u) + (1 + u)`, and when `v` anticommutes with `u` (`u * v + v * u = 0`),
-the sandwich `(1 + u) * (1 + v) * (1 + u)` also reduces to `(1 + u) + (1 + u)`.
+For an idempotent `p` of any ring, `2 p - 1` squares to `1`. For a star projection this is the
+self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely, for any element
+`u` with `u * u = 1`, `1 + u` squares to `(1 + u) + (1 + u)`, and when `v` anticommutes with `u`
+(`u * v + v * u = 0`), the sandwich `(1 + u) * (1 + v) * (1 + u)` also reduces to
+`(1 + u) + (1 + u)`.
 
 ## Main results
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
-* `IsIdempotentElem.one_sub_two_mul_mul_self`: `(1 - 2 e) * (1 - 2 e) = 1`.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -60,11 +59,6 @@ theorem two_mul_sub_one_mul_self {p : R} (hp : IsIdempotentElem p) :
     (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
   abel
-
-/-- For an idempotent `e`, the element `1 - 2 * e` is an involution. -/
-theorem one_sub_two_mul_mul_self {e : R} (he : IsIdempotentElem e) :
-    (1 - 2 * e) * (1 - 2 * e) = 1 := by
-  rw [← neg_sub (2 * e) 1, neg_mul_neg, he.two_mul_sub_one_mul_self]
 
 end NonAssocRing
 

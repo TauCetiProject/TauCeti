@@ -133,14 +133,10 @@ theorem murrayVonNeumannEquiv_of_unitization_unitary_conj [Fintype n]
   have hq : IsStarProjection q := hq_coe.of_inr
   refine (murrayVonNeumannEquiv_iff hp hq).mpr ⟨v, Unitization.inr_injective (R := R) ?_,
     Unitization.inr_injective (R := R) ?_⟩
-  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe, star_mul,
-      hp_coe.isSelfAdjoint.star_eq, mul_assoc (p : Unitization R M) (star u) (u * p),
-      ← mul_assoc (star u) u (p : Unitization R M), Unitary.star_mul_self_of_mem hu, one_mul,
-      hp_coe.isIdempotentElem.eq]
-  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe, star_mul,
-      hp_coe.isSelfAdjoint.star_eq, mul_assoc u (p : Unitization R M),
-      ← mul_assoc (p : Unitization R M) (p : Unitization R M) (star u),
-      hp_coe.isIdempotentElem.eq, ← mul_assoc, hconj]
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
+    exact hp_coe.star_mul_mul_self_of_mem_unitary hu
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
+    exact (hp_coe.mul_star_mul_eq_mul_mul_star u).trans hconj
 
 /-- Setoid of Murray–von Neumann equivalence on star projections of fixed size `n`. -/
 def murrayVonNeumannSetoid (n A : Type*) [Fintype n]

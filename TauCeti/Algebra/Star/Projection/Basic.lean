@@ -9,16 +9,20 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
 
 /-!
-# Reflections of star projections
+# Reflections and unitary conjugates of star projections
 
 For a star projection `p` in a star ring, the reflection `1 - 2 * p` is the negative of the
 symmetry `2 * p - 1` in Mathlib's `IsStarProjection.two_mul_sub_one_mem_unitary`, so it is
-self-adjoint and lies in `unitary A`.
+self-adjoint and lies in `unitary A`. We also record the witness identities for `u * p` used
+when descending unitary conjugacy of projections to Murray–von Neumann equivalence.
 
 ## Main declarations
 
 * `IsStarProjection.isSelfAdjoint_one_sub_two_mul`: `1 - 2 * p` is self-adjoint.
 * `IsStarProjection.one_sub_two_mul_mem_unitary`: `1 - 2 * p ∈ unitary A`.
+* `IsStarProjection.mul_star_mul_eq_mul_mul_star`: `(x * p) * star (x * p) = x * p * star x`.
+* `IsStarProjection.star_mul_mul_self_of_mem_unitary`: `star (u * p) * (u * p) = p` for `u`
+  unitary.
 
 ## References
 
@@ -29,6 +33,30 @@ self-adjoint and lies in `unitary A`.
 public section
 
 namespace IsStarProjection
+
+section Semigroup
+
+variable {A : Type*} [Semigroup A] [StarMul A] {p : A}
+
+/-- For a star projection `p` and any `x`, `(x * p) * star (x * p) = x * p * star x`. -/
+theorem mul_star_mul_eq_mul_mul_star (hp : IsStarProjection p) (x : A) :
+    x * p * star (x * p) = x * p * star x := by
+  rw [star_mul, hp.isSelfAdjoint.star_eq, mul_assoc x p, ← mul_assoc p p (star x),
+    hp.isIdempotentElem.eq, ← mul_assoc]
+
+end Semigroup
+
+section Monoid
+
+variable {A : Type*} [Monoid A] [StarMul A] {p u : A}
+
+/-- For a star projection `p` and a unitary `u`, `star (u * p) * (u * p) = p`. -/
+theorem star_mul_mul_self_of_mem_unitary (hp : IsStarProjection p) (hu : u ∈ unitary A) :
+    star (u * p) * (u * p) = p := by
+  rw [star_mul, hp.isSelfAdjoint.star_eq, mul_assoc p (star u) (u * p),
+    ← mul_assoc (star u) u p, Unitary.star_mul_self_of_mem hu, one_mul, hp.isIdempotentElem.eq]
+
+end Monoid
 
 section NonAssocStarRing
 
