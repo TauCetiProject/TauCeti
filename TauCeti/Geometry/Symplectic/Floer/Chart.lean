@@ -50,11 +50,12 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
 * For a map `u` into the chart source, with coordinate expression `v = extChartAt I α ∘ u`, the
   perturbed derivative `du - X_K` in tangent coordinates is `dv` minus the Hamiltonian vector
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
-  So if `u` solves the Floer equation, `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` with the
-  data read in the chart
-  (`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). The two vector fields
-  together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` read in the chart
-  (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this coordinate equation.
+  So `u` solves the Floer equation exactly when `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})`
+  with the data read in the chart (in the namespace `TauCeti.SmoothTwoForm`,
+  `isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). The
+  two vector fields together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
+  read in the chart (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this
+  coordinate equation.
 
 Compactness of solutions with values in one chart, of either kind, is
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`, and the mean-value inequality in a chart
@@ -306,7 +307,8 @@ theorem continuousOn_associatedBilinFormInChartAt {ω : SmoothTwoForm I M} {P : 
 `K = K_s ds + K_t dt`, read in the chart at `α`: at `(z, y)` it sends a tangent vector `(a, b)` of
 the domain to `a X_{K_s} + b X_{K_t}`, with the Hamiltonian vector fields read in the chart. This is
 the one-form of the coordinate Floer equation solved by the coordinate expressions of solutions
-(`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
+(in the namespace `TauCeti.SmoothTwoForm`,
+`isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
 def hamiltonianOneFormInChartAt (ω : SmoothTwoForm I M) (α : M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (p : (ℝ × ℝ) × E) : ℝ × ℝ →L[ℝ] E :=
   (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Ks p) +
@@ -364,20 +366,21 @@ theorem continuousLinearMapAt_perturbedMFDeriv_apply (ω : SmoothTwoForm I M)
   -- The two sides differ only in the identification of `TangentSpace 𝓘(ℝ, E)` with `E`.
   rfl
 
-/-- **The Floer equation in a chart.** Let `u` solve the Floer equation
-`∂ₛu - X_{K_s} + J (∂ₜu - X_{K_t}) = 0` at `z`, with `u z` in the source of the chart at `α`.
-Then its coordinate expression `v = extChartAt I α ∘ u` solves the coordinate Floer equation
-`∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` at `z`, where `J` and the Hamiltonian vector fields are
-read in the chart. -/
-theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) (hz : u z ∈ (extChartAt I α).source)
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
-        ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
-      Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
-        (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
-          ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
+/-- **The Floer equation in a chart.** Let `u` be differentiable at `z`, with `u z` in the source
+of the chart at `α`. Then `u` solves the Floer equation `∂ₛu - X_{K_s} + J (∂ₜu - X_{K_t}) = 0` at
+`z` exactly when its coordinate expression `v = extChartAt I α ∘ u` solves the coordinate Floer
+equation `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` at `z`, where `J` and the Hamiltonian vector fields
+are read in the chart. -/
+theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+    (ω : SmoothTwoForm I M) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
+    (hz : u z ∈ (extChartAt I α).source) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap ↔
+      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+          ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
+        Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
+          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
   have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hz
   have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
@@ -386,10 +389,14 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
     stdComplexLineImag
   simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
     stdComplexLineImag_snd, zero_smul, one_smul, sub_zero] at hre him
-  have h' := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at h'
-  rw [← hre, ← him, h', Floer.almostComplexInChartAt_apply, (extChartAt I α).left_inv hz,
-    Trivialization.symmL_continuousLinearMapAt _ hb]
+  rw [isComplexLinearMap_stdComplexLine_iff, ← hre, ← him, Floer.almostComplexInChartAt_apply,
+    (extChartAt I α).left_inv hz, Trivialization.symmL_continuousLinearMapAt _ hb]
+  simp only [ContinuousLinearMap.coe_coe]
+  -- The tangent coordinates of the chart are injective on the fibre over `u z`.
+  refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
+  have h' := congrArg ((trivializationAt E (TangentSpace I) α).symmL ℝ (u z)) h
+  rwa [Trivialization.symmL_continuousLinearMapAt _ hb,
+    Trivialization.symmL_continuousLinearMapAt _ hb] at h'
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
