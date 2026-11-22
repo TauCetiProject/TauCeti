@@ -328,7 +328,7 @@ end AlgHom
 
 namespace TauCeti.FixedPoints
 
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
 variable [Algebra.Etale R S] [Module.Finite R S] [Finite G]
