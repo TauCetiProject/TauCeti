@@ -439,15 +439,16 @@ theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph [Finite α] {H : Simp
         Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
   classical
   let _ : Fintype V(Graph.ofSimpleGraph H) := Fintype.ofFinite _
-  have hsurj : Function.Surjective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
-    fun x ↦ ⟨⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩, rfl⟩
+  have hbij : Function.Bijective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
+    (Equiv.subtypeUnivEquiv fun x ↦ by
+      rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x).bijective
   let L : Finset V(Graph.ofSimpleGraph H) :=
     (Set.toFinite (Subtype.val ⁻¹' s : Set V(Graph.ofSimpleGraph H))).toFinset
   let R : Finset V(Graph.ofSimpleGraph H) := Lᶜ
   have hL : Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s := by
-    rw [Set.Finite.coe_toFinset, Set.image_preimage_eq s hsurj]
+    rw [Set.Finite.coe_toFinset, Set.image_preimage_eq s hbij.surjective]
   have hR : Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
-    rw [Finset.coe_compl, Set.image_compl_eq ⟨Subtype.val_injective, hsurj⟩, hL]
+    rw [Finset.coe_compl, Set.image_compl_eq hbij, hL]
   refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨hL ▸ hR ▸ h.compl_right, ?_⟩, hL, hR⟩
   rw [hL, hR, Set.union_compl_self]
 

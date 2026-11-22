@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
+public import Mathlib.Order.Filter.Extr
 
 /-!
 # Minimum vertex covers of simple graphs
 
 A *minimum vertex cover* of a simple graph `G` is a vertex cover whose extended cardinality
-`Set.encard` in `ℕ∞` is at most that of every vertex cover of `G`. Formulating minimality through
-`Set.encard` avoids the degeneracy of `Set.ncard` on infinite sets and aligns directly with
-Mathlib's `ℕ∞`-valued `SimpleGraph.vertexCoverNum`: a vertex cover is minimum if and only if its
-`Set.encard` equals `G.vertexCoverNum`, and every simple graph admits a minimum vertex cover without
-any finiteness hypothesis. Note that in `ℕ∞` all infinite covers count as `⊤` (infinite
-cardinalities are not distinguished, so when `G.vertexCoverNum = ⊤`, every infinite vertex cover is
-minimum). For finite covers (and in particular on finite vertex types), minimality agrees with
-comparison by `Set.ncard`.
+`Set.encard` in `ℕ∞` is at most that of every vertex cover of `G`. Formulating cardinality
+optimality through `Set.encard` avoids the degeneracy of `Set.ncard` on infinite sets and aligns
+directly with Mathlib's `ℕ∞`-valued `SimpleGraph.vertexCoverNum`: a vertex cover is minimum if and
+only if its `Set.encard` equals `G.vertexCoverNum`, and every simple graph admits a minimum vertex
+cover without any finiteness hypothesis. Note that in `ℕ∞` all infinite covers count as `⊤`
+(infinite cardinalities are not distinguished, so when `G.vertexCoverNum = ⊤`, every infinite
+vertex cover is minimum). A finite vertex cover is minimum if and only if its `Set.ncard` is at
+most that of every finite vertex cover (and, on a finite vertex type, at most that of every vertex
+cover).
 
 ## Main definitions
 
@@ -33,9 +35,9 @@ comparison by `Set.ncard`.
 * `SimpleGraph.Iso.isMinimumVertexCover_preimage_iff` and
   `SimpleGraph.Iso.isMinimumVertexCover_image_iff`: graph isomorphisms preserve minimum vertex
   covers.
-* `SimpleGraph.isMinimumVertexCover_iff_ncard_le`: for a finite vertex cover, minimality is
-  equivalently characterized by `Set.ncard` among finite vertex covers (and among all vertex covers
-  on a finite vertex type via `SimpleGraph.isMinimumVertexCover_iff_ncard_le_of_finite`).
+* `SimpleGraph.isMinimumVertexCover_iff_ncard_le`: a finite vertex cover is minimum if and only
+  if its `Set.ncard` is at most that of every finite vertex cover (and at most that of every vertex
+  cover on a finite vertex type via `SimpleGraph.isMinimumVertexCover_iff_ncard_le_of_finite`).
 
 ## References
 
@@ -53,12 +55,12 @@ variable {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W} {c c' : Set V}
 cardinality `Set.encard` in `ℕ∞` is at most that of every vertex cover of `G` (with every infinite
 cover counting as `⊤`). -/
 def IsMinimumVertexCover (G : SimpleGraph V) (c : Set V) : Prop :=
-  G.IsVertexCover c ∧ ∀ ⦃c' : Set V⦄, G.IsVertexCover c' → c.encard ≤ c'.encard
+  G.IsVertexCover c ∧ IsMinOn Set.encard {s | G.IsVertexCover s} c
 
 theorem isMinimumVertexCover_def :
     G.IsMinimumVertexCover c ↔
-      G.IsVertexCover c ∧ ∀ ⦃c' : Set V⦄, G.IsVertexCover c' → c.encard ≤ c'.encard :=
-  Iff.rfl
+      G.IsVertexCover c ∧ ∀ ⦃c' : Set V⦄, G.IsVertexCover c' → c.encard ≤ c'.encard := by
+  simp [IsMinimumVertexCover, isMinOn_iff]
 
 /-- Every minimum vertex cover is a vertex cover. -/
 @[grind →]
@@ -172,7 +174,7 @@ theorem isMinimumVertexCover_iff_ncard_le (hfin : c.Finite) :
     G.IsMinimumVertexCover c ↔
       G.IsVertexCover c ∧ ∀ ⦃c' : Set V⦄, G.IsVertexCover c' → c'.Finite → c.ncard ≤ c'.ncard := by
   refine ⟨fun hc ↦ ⟨hc.isVertexCover, fun _ hc' hfin' ↦ hc.ncard_le hc' hfin'⟩,
-    fun ⟨hc, h⟩ ↦ ⟨hc, fun c' hc' ↦ ?_⟩⟩
+    fun ⟨hc, h⟩ ↦ isMinimumVertexCover_def.2 ⟨hc, fun c' hc' ↦ ?_⟩⟩
   obtain hfin' | hinf' := c'.finite_or_infinite
   · rw [← hfin.cast_ncard_eq, ← hfin'.cast_ncard_eq]
     exact Nat.cast_le.mpr (h hc' hfin')
