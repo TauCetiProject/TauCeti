@@ -107,6 +107,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     rw [(hr b hb).2, isRoot_C_mul_prod_X_sub_C_iff (by
       rw [hlead _ ⟨h₁, h₂⟩]
       exact mul_ne_zero (pow_ne_zero _ h₃) (hu0 _ ⟨h₁, h₂⟩))]
+    simp only [Finset.mem_univ, true_and]
   -- The punctured product is connected; conjugation therefore uses one permutation.
   let := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
