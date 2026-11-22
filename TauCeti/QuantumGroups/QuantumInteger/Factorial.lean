@@ -9,6 +9,7 @@ public import TauCeti.QuantumGroups.QuantumInteger.Binomial
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.GradedMonoid
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.RingTheory.TensorProduct.Basic
 
@@ -283,6 +284,18 @@ theorem quantumDividedPower_mem_graded {ι S : Type*} [AddMonoid ι]
     quantumDividedPower u x n ∈ 𝒜 (n • c) := by
   rw [quantumDividedPower_def]
   exact SMulMemClass.smul_mem _ (SetLike.pow_mem_graded n hx)
+
+/-- The quantum divided power of a homogeneous direct-sum injection `DirectSum.of` lies in the
+scaled degree `n • c`. -/
+@[simp]
+theorem quantumDividedPower_of {Γ : Type*} [AddMonoid Γ] [DecidableEq Γ]
+    {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]
+    (u : K) (c : Γ) (x : 𝒜 c) (n : ℕ) :
+    quantumDividedPower u (DirectSum.of (fun c => 𝒜 c) c x) n =
+      DirectSum.of (fun c => 𝒜 c) (n • c)
+        ⟨quantumDividedPower u (x : A) n, quantumDividedPower_mem_graded u x.property n⟩ := by
+  simp only [quantumDividedPower_def, DirectSum.ofPow, ← DirectSum.of_smul]
+  rfl
 
 open scoped TensorProduct in
 /-- The quantum divided power of a pure tensor `u ⊗ₜ[K] v` in `A ⊗[K] B`, placing the divided

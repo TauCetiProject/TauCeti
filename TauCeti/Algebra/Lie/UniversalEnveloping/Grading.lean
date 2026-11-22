@@ -191,35 +191,17 @@ private theorem coeAlgHom_comp_decomposeAlgHom :
     simp only [LieHom.coe_comp, Function.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
       AlgHom.id_apply, decomposeAlgHom_ι_apply, _root_.DirectSum.coeAlgHom_of]
 
-private theorem decomposeAlgHom_prod (l : List (Σ i, ℒ i)) :
-    decomposeAlgHom ℒ (l.map (fun x => ι R (x.2 : L))).prod =
-      _root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) (l.map Sigma.fst).sum
-        ⟨(l.map (fun x => ι R (x.2 : L))).prod, prod_mem_homogeneousSubmodule ℒ l⟩ := by
-  induction l with
-  | nil => simp only [List.map_nil, List.prod_nil, map_one, _root_.DirectSum.one_def]; rfl
-  | cons x l ih =>
-    simp only [List.map_cons, List.prod_cons, map_mul, decomposeAlgHom_ι_apply, ih,
-      _root_.DirectSum.of_mul_of]
-    congr 1
-
 /-- The decomposition homomorphism places each homogeneous element in its prescribed summand. -/
 private theorem decomposeAlgHom_apply (n : Γ) (x : homogeneousSubmodule ℒ n) :
     decomposeAlgHom ℒ (x : U) =
       _root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) n x := by
-  obtain ⟨x, hx⟩ := x
-  induction hx using TauCeti.GradedAlgebra.wordSpan_induction with
-  | word l hl =>
-    subst n
-    exact decomposeAlgHom_prod ℒ l
-  | zero =>
-    rw [map_zero]
-    exact (map_zero (_root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) n)).symm
-  | add x y hx hy hxi hyi =>
-    rw [map_add, hxi, hyi, ← map_add]
-    rfl
-  | smul r x hx hxi =>
-    rw [map_smul, hxi, ← _root_.DirectSum.of_smul]
-    rfl
+  have hf (z : Σ i, ℒ i) :
+      decomposeAlgHom ℒ (ι R (z.2 : L)) ∈
+        _root_.DirectSum.summand R (fun n => ↥(homogeneousSubmodule ℒ n)) z.1 := by
+    rw [decomposeAlgHom_ι_apply ℒ z.2]
+    exact _root_.DirectSum.of_mem_summand (R := R) _ _
+  exact TauCeti.GradedAlgebra.algHom_apply_of_mem_wordSpan (decomposeAlgHom ℒ)
+    (AlgHom.congr_fun (coeAlgHom_comp_decomposeAlgHom ℒ)) hf x.property
 
 /-- The total Lie-degree pieces form an internal direct sum over an arbitrary commutative ring,
 without a basis hypothesis. -/

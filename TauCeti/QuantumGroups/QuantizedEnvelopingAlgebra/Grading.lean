@@ -17,11 +17,11 @@ import TauCeti.Algebra.DirectSum.Supported
 /-!
 # Root-lattice grading on a quantized enveloping algebra
 
-Assigning `Eᵢ` degree `eᵢ ∈ ι →₀ ℤ`, `Fᵢ` degree `-eᵢ`, and `K_y` degree `0` equips
-`QuantizedEnvelopingAlgebra D q` with homogeneous pieces `gradedPiece D q c` (`c : ι →₀ ℤ`) for
-arbitrary `q : K`, without finiteness assumptions on `ι`, decidable equality on `ι`, or freeness
-assumptions on `X` and `Y`. Neither `gradedPiece`, its `SetLike.GradedMonoid` instance, the
-divided-power and map-preservation lemmas, nor the toral conjugation formula
+Assigning `Eᵢ` degree `εᵢ := Finsupp.single i 1` (`εᵢ ∈ ι →₀ ℤ`), `Fᵢ` degree `-εᵢ`, and `K_y`
+degree `0` equips `QuantizedEnvelopingAlgebra D q` with homogeneous pieces `gradedPiece D q c`
+(`c : ι →₀ ℤ`) for arbitrary `q : K`, without finiteness assumptions on `ι`, decidable equality
+on `ι`, or freeness assumptions on `X` and `Y`. Neither `gradedPiece`, its `SetLike.GradedMonoid`
+instance, the divided-power and map-preservation lemmas, nor the toral conjugation formula
 (`k_mul_mul_k_neg_of_mem_gradedPiece`) requires `[DecidableEq ι]`.
 
 Under `[DecidableEq ι]`, the homogeneous pieces form an internal direct sum
@@ -54,8 +54,8 @@ section Degree
 
 variable {ι Y : Type*}
 
-/-- The formal root-lattice degree in `ι →₀ ℤ` of a generator: `+eᵢ` on `Eᵢ`, `-eᵢ` on `Fᵢ`, and
-`0` on every toral generator `K_y`. -/
+/-- The formal root-lattice degree in `ι →₀ ℤ` of a generator: `+εᵢ` on `Eᵢ`, `-εᵢ` on `Fᵢ`, and
+`0` on every toral generator `K_y`, where `εᵢ := Finsupp.single i 1`. -/
 noncomputable def generatorDegree : Generator ι Y → (ι →₀ ℤ)
   | .e i => Finsupp.single i 1
   | .f i => -Finsupp.single i 1
@@ -89,6 +89,9 @@ theorem word_mem_gradedPiece {c : ι →₀ ℤ} {l : List (Generator ι Y)}
     (hl : (l.map generatorDegree).sum = c) :
     (l.map (generator D q)).prod ∈ gradedPiece D q c :=
   TauCeti.GradedAlgebra.prod_mem_wordSpan_of_eq hl
+
+/-- A submodule contains the degree-`c` piece `gradedPiece D q c` exactly when it contains every
+generator word of total degree `c`. -/
 theorem gradedPiece_le_iff (c : ι →₀ ℤ) (p : Submodule K (QuantizedEnvelopingAlgebra D q)) :
     gradedPiece D q c ≤ p ↔
       ∀ l : List (Generator ι Y), (l.map generatorDegree).sum = c →
@@ -128,29 +131,28 @@ instance instGradedMonoid (D : CartanDatum ι X Y) (q : K) :
   inferInstanceAs (SetLike.GradedMonoid
     (TauCeti.GradedAlgebra.wordSpan K (generator D q) generatorDegree))
 
-/-- The normalized raising generator `eᵢ = Kᵢ⁻¹ Eᵢ` lies in
-`gradedPiece D q (Finsupp.single i 1)`. -/
+/-- The normalized raising generator `eᵢ = Kᵢ⁻¹ Eᵢ` lies in degree `εᵢ := Finsupp.single i 1`. -/
 theorem normalizedE_mem_gradedPiece (i : ι) :
     normalizedE D q i ∈ gradedPiece D q (Finsupp.single i 1) := by
   rw [normalizedE_def, ← zero_add (Finsupp.single i 1)]
   exact SetLike.mul_mem_graded (simpleKInv_mem_gradedPiece i) (e_mem_gradedPiece i)
 
-/-- The normalized lowering generator `fᵢ = Fᵢ Kᵢ` lies in
-`gradedPiece D q (-Finsupp.single i 1)`. -/
+/-- The normalized lowering generator `fᵢ = Fᵢ Kᵢ` lies in degree `-εᵢ`
+(`εᵢ := Finsupp.single i 1`). -/
 theorem normalizedF_mem_gradedPiece (i : ι) :
     normalizedF D q i ∈ gradedPiece D q (-Finsupp.single i 1) := by
   rw [normalizedF_def, ← add_zero (-Finsupp.single i 1)]
   exact SetLike.mul_mem_graded (f_mem_gradedPiece i) (simpleK_mem_gradedPiece i)
 
-/-- The `n`-th divided power of the raising generator `Eᵢ` lies in degree `n • eᵢ` for any `q : K`,
-even when `[n]_(qᵢ)! = 0`. -/
+/-- The `n`-th divided power of the raising generator `Eᵢ` lies in degree `n • εᵢ`
+(`εᵢ := Finsupp.single i 1`) for any `q : K`, even when `[n]_(qᵢ)! = 0`. -/
 theorem quantumDividedPower_e_mem_gradedPiece (i : ι) (n : ℕ) :
     quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n ∈
       gradedPiece D q (n • Finsupp.single i 1) :=
   quantumDividedPower_mem_graded _ (e_mem_gradedPiece i) n
 
-/-- The `n`-th divided power of the lowering generator `Fᵢ` lies in degree `-(n • eᵢ)` for any
-`q : K`, even when `[n]_(qᵢ)! = 0`. -/
+/-- The `n`-th divided power of the lowering generator `Fᵢ` lies in degree `-(n • εᵢ)`
+(`εᵢ := Finsupp.single i 1`) for any `q : K`, even when `[n]_(qᵢ)! = 0`. -/
 theorem quantumDividedPower_f_mem_gradedPiece (i : ι) (n : ℕ) :
     quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n ∈
       gradedPiece D q (-(n • Finsupp.single i 1)) := by
@@ -274,40 +276,16 @@ private theorem serreSum_of (D : CartanDatum ι X Y) (q : K) (i j : ι)
       of (fun c' => gradedPiece D q c') (D.serreLength i j • c i + c j)
         ⟨serreSum D q (fun l => (x l).val) i j,
           serreSum_mem_graded D q (x i).property (x j).property⟩ := by
-  set u := q ^ D.symmetrizer i
-  set m := D.serreLength i j
-  have hdp (n : ℕ) : quantumDividedPower u (of (fun c' => gradedPiece D q c') (c i) (x i)) n =
-      of (fun c' => gradedPiece D q c') (n • c i)
-        ⟨quantumDividedPower u (x i).val n,
-          quantumDividedPower_mem_graded u (x i).property n⟩ := by
-    simp only [quantumDividedPower_def, ofPow, ← of_smul]; rfl
-  have hterm (r : {r // r ∈ Finset.range (m + 1)}) :
-      (-1 : K) ^ r.val •
-          (quantumDividedPower u (of (fun c' => gradedPiece D q c') (c i) (x i)) r.val *
-            of (fun c' => gradedPiece D q c') (c j) (x j) *
-            quantumDividedPower u (of (fun c' => gradedPiece D q c') (c i) (x i)) (m - r.val)) =
-        of (fun c' => gradedPiece D q c') (m • c i + c j) ⟨(-1 : K) ^ r.val •
-          (quantumDividedPower u (x i).val r.val * (x j).val *
-            quantumDividedPower u (x i).val (m - r.val)), by
-          have hr := Finset.mem_range_succ_iff.mp r.property
-          have hdeg : r.val • c i + c j + (m - r.val) • c i = m • c i + c j := by
-            rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hr]
-          exact Submodule.smul_mem _ _ (hdeg ▸ SetLike.mul_mem_graded
-            (SetLike.mul_mem_graded (quantumDividedPower_mem_graded u (x i).property r.val)
-              (x j).property)
-            (quantumDividedPower_mem_graded u (x i).property (m - r.val)))⟩ := by
-    rw [hdp r.val, hdp (m - r.val), of_mul_of, of_mul_of, ← of_smul]
-    refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext ?_ ?_) <;>
-      dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-    · rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp r.property)]
-    · rfl
-  rw [serreSum_def, ← Finset.sum_attach, Finset.sum_congr rfl fun r _ => hterm r, ← map_sum]
-  refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl ?_)
-  dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-  simp only [Submodule.coe_sum, serreSum_def]
-  exact Finset.sum_attach _ fun r =>
-    (-1 : K) ^ r • (quantumDividedPower u (x i).val r * (x j).val *
-      quantumDividedPower u (x i).val (m - r))
+  obtain ⟨y, hy⟩ := DirectSum.mem_summand.mp <|
+    serreSum_mem_graded (𝒜 := DirectSum.summand K fun c' => gradedPiece D q c')
+      (x := fun l => of (fun c' => gradedPiece D q c') (c l) (x l)) (i := i) (j := j) D q
+      (DirectSum.of_mem_summand (R := K) (M := fun c' => ↥(gradedPiece D q c')) (c i) (x i))
+      (DirectSum.of_mem_summand (R := K) (M := fun c' => ↥(gradedPiece D q c')) (c j) (x j))
+  rw [← hy]
+  congr 1
+  apply Subtype.ext
+  have hcoe := congrArg (DirectSum.coeAlgHom (gradedPiece D q)) hy
+  simpa only [map_serreSum, DirectSum.coeAlgHom_of] using hcoe
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=
@@ -381,39 +359,24 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
           gradedPiece D q (D.serreLength i j • -Finsupp.single i 1 + -Finsupp.single j 1)) = 0 from
           Subtype.ext (serreF_eq_zero D q hij), map_zero] }
 
-private theorem decomposeAlgHom_word {D : CartanDatum ι X Y} {q : K} (l : List (Generator ι Y)) :
-    decomposeAlgHom D q (l.map (generator D q)).prod =
-      of (fun c => gradedPiece D q c) (l.map generatorDegree).sum
-        ⟨(l.map (generator D q)).prod, word_mem_gradedPiece rfl⟩ := by
-  have hg (g : Generator ι Y) : decomposeAlgHom D q (generator D q g) =
-      of (fun c => gradedPiece D q c) (generatorDegree g)
-        ⟨generator D q g, generator_mem_gradedPiece g⟩ := by
-    cases g <;> simp only [generator_e, generator_f, generator_k, decomposeAlgHom, lift_e, lift_f,
-      lift_k] <;> exact of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl rfl)
-  rw [map_list_prod, List.map_map]
-  simp_rw [Function.comp_def, hg]
-  rw [← DirectSum.ofList_dProd (fun c => gradedPiece D q c) l generatorDegree
-    (fun g => ⟨generator D q g, generator_mem_gradedPiece g⟩)]
-  apply of_eq_of_gradedMonoid_eq
-  exact Sigma.subtype_ext (List.dProdIndex_eq_map_sum l generatorDegree)
-    (by rw [SetLike.list_dProd_eq]; rfl)
-
-private theorem decomposeAlgHom_apply_of_mem {D : CartanDatum ι X Y} {q : K} {c : ι →₀ ℤ}
-    {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
-    decomposeAlgHom D q x = of (fun c' => gradedPiece D q c') c ⟨x, hx⟩ := by
-  induction hx using gradedPiece_induction with
-  | word l hl =>
-    exact (decomposeAlgHom_word l).trans (of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hl rfl))
-  | zero => exact (map_zero _).trans (map_zero _).symm
-  | add _ _ _ _ iha ihb => rw [map_add, iha, ihb, ← map_add]; rfl
-  | smul _ _ _ ih => rw [map_smul, ih, ← of_smul]; rfl
-
 /-- `gradedPiece D q` forms an internal direct sum for every `q : K` (given `[DecidableEq ι]`),
 giving unique finite homogeneous decompositions and a genuine `(ι →₀ ℤ)`-grading. -/
 theorem isInternal_gradedPiece (D : CartanDatum ι X Y) (q : K) : IsInternal (gradedPiece D q) := by
-  let := GradedAlgebra.ofAlgHom (gradedPiece D q) (decomposeAlgHom D q)
-    (by ext <;> simp [decomposeAlgHom])
-    (fun _ x => decomposeAlgHom_apply_of_mem x.property)
+  have hcoe : (DirectSum.coeAlgHom (gradedPiece D q)).comp (decomposeAlgHom D q) =
+      AlgHom.id K _ := by ext <;> simp [decomposeAlgHom]
+  have hf (g : Generator ι Y) :
+      decomposeAlgHom D q (generator D q g) ∈
+        DirectSum.summand K (fun c => ↥(gradedPiece D q c)) (generatorDegree g) := by
+    cases g
+    · simp only [generator_e, generatorDegree_e, decomposeAlgHom, lift_e]
+      exact DirectSum.of_mem_summand (R := K) _ _
+    · simp only [generator_f, generatorDegree_f, decomposeAlgHom, lift_f]
+      exact DirectSum.of_mem_summand (R := K) _ _
+    · simp only [generator_k, generatorDegree_k, decomposeAlgHom, lift_k]
+      exact DirectSum.of_mem_summand (R := K) _ _
+  let := GradedAlgebra.ofAlgHom (gradedPiece D q) (decomposeAlgHom D q) hcoe fun _ x =>
+    TauCeti.GradedAlgebra.algHom_apply_of_mem_wordSpan (decomposeAlgHom D q)
+      (AlgHom.congr_fun hcoe) hf x.property
   exact Decomposition.isInternal (gradedPiece D q)
 
 /-- `QuantizedEnvelopingAlgebra D q` is internally `(ι →₀ ℤ)`-graded by `gradedPiece D q`. -/
