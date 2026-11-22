@@ -490,17 +490,6 @@ reals, so that the pairs `(∞, r)` are included. -/
 
 section TwoPairs
 
-/-- A wave-admissible pair `(q, r)` in dimension `n`, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
-`2 < q < ∞` in extended reals is wave-admissible for the real exponent `q.toNNReal`, in the form of
-`TauCeti.two_le_finrank_of_waveAdmissible`. -/
-private theorem waveAdmissible_toNNReal {n : ℝ} {q r : ℝ≥0∞} (hq : 2 < q) (hq_top : q ≠ ∞)
-    (hqr : 2 * (q⁻¹).toReal + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2) :
-    2 < q.toNNReal ∧ 2 / (q.toNNReal : ℝ) + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2 := by
-  refine ⟨?_, ?_⟩
-  · rw [← ENNReal.coe_lt_coe, ENNReal.coe_toNNReal hq_top]
-    exact_mod_cast hq
-  · rwa [ENNReal.coe_toNNReal_eq_toReal, div_eq_mul_inv, ← ENNReal.toReal_inv]
-
 /-- The dual estimate along a wave-admissible pair `(q, r)` with `2 < q ≤ ∞` and `r ≥ 2`, for the
 Hölder conjugate `p` of `q`: the finite-`q` estimate
 `ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le` and the estimate
@@ -997,13 +986,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   obtain ⟨hq2, hqr'⟩ := waveAdmissible_toNNReal hq hq_top hqr
   obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq2 hr0 hqr' hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
-  have hr₁ : 2 ≤ r₁ := by
-    have hn' : (0 : ℝ) < Module.finrank ℝ E - 1 := by
-      have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
-      linarith
-    refine ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r₁ r₁')
-      (le_of_mul_le_mul_left ?_ hn')
-    linarith [ENNReal.toReal_nonneg (a := q₁⁻¹)]
+  have hr₁ := two_le_of_waveAdmissible (ENNReal.HolderConjugate.ne_zero r₁ r₁') hqr₁ hn
   -- Test against `L^{p}_t L^{r'}_x` with `p` and `r'` the Hölder conjugates of `q` and `r`.
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hq.le)
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
