@@ -391,19 +391,27 @@ end NormalModel
 
 section Family
 
+/-- Reindexing the frame by `i ↦ i + 2` swaps its base and normal planes. -/
+private theorem reindex_addRight_two_apply (i : Fin 4) :
+    e.reindex (Equiv.addRight 2) (i + 2) = e i := by
+  simp
+
 variable (e) in
 /-- The **base coordinate** `w = ⟪e₀, v⟫ + i ⟪e₁, v⟫` of `V = ℂ_base × ℂ_normal` in the frame `e`,
-whose first two vectors span the base factor. -/
+whose first two vectors span the base factor. It is the normal coordinate (`normalCoord`) of the
+frame reindexed by `i ↦ i + 2`, which swaps the base and normal planes. -/
 def baseCoord : V →L[ℝ] ℂ :=
-  (innerSL ℝ (e 0)).smulRight (1 : ℂ) + (innerSL ℝ (e 1)).smulRight I
+  normalCoord (e.reindex (Equiv.addRight 2))
 
 @[simp]
 theorem baseCoord_re (v : V) : (baseCoord e v).re = ⟪e 0, v⟫ := by
-  simp [baseCoord]
+  rw [baseCoord, normalCoord_re, ← reindex_addRight_two_apply (e := e) 0]
+  rfl
 
 @[simp]
 theorem baseCoord_im (v : V) : (baseCoord e v).im = ⟪e 1, v⟫ := by
-  simp [baseCoord]
+  rw [baseCoord, normalCoord_im, ← reindex_addRight_two_apply (e := e) 1]
+  rfl
 
 theorem baseCoord_apply (v : V) : baseCoord e v = ⟪e 0, v⟫ + ⟪e 1, v⟫ * I := by
   apply Complex.ext <;> simp
@@ -411,24 +419,26 @@ theorem baseCoord_apply (v : V) : baseCoord e v = ⟪e 0, v⟫ + ⟪e 1, v⟫ * 
 /-- The base coordinate of `e₀` is `1`. -/
 @[simp]
 theorem baseCoord_apply_zero : baseCoord e (e 0) = 1 := by
-  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (1 : Fin 4) ≠ 0)]
+  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 0]
+  exact normalCoord_apply_two
 
 /-- The base coordinate of `e₁` is `i`. -/
 @[simp]
 theorem baseCoord_apply_one : baseCoord e (e 1) = I := by
-  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (0 : Fin 4) ≠ 1)]
+  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 1]
+  exact normalCoord_apply_three
 
 /-- The base coordinate of `e₂` is `0`. -/
 @[simp]
 theorem baseCoord_apply_two : baseCoord e (e 2) = 0 := by
-  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (0 : Fin 4) ≠ 2),
-    e.orthonormal.inner_eq_zero (by decide : (1 : Fin 4) ≠ 2)]
+  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 2]
+  exact normalCoord_apply_zero
 
 /-- The base coordinate of `e₃` is `0`. -/
 @[simp]
 theorem baseCoord_apply_three : baseCoord e (e 3) = 0 := by
-  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (0 : Fin 4) ≠ 3),
-    e.orthonormal.inner_eq_zero (by decide : (1 : Fin 4) ≠ 3)]
+  rw [baseCoord, ← reindex_addRight_two_apply (e := e) 3]
+  exact normalCoord_apply_one
 
 /-- **Chain rule through the base and normal coordinates**: the derivative along `v` of a function
 of `(w, z)` is the derivative of its base slice along `w(v)` plus that of its normal slice along
@@ -679,17 +689,31 @@ end Family
 
 section Coupling
 
-/-- The **base coupling of the normal rows**: the term `D 1 + K (D i)`, with
+/-- The **base coupling of the normal rows**: the linear map `D ↦ D 1 + K (D i)`, with
 `K (v₀, v₁, v₂, v₃) = (-v₁, v₀, v₃, -v₂)`, through which the derivative `D` of the paired
 family along the base enters the normal rows of the normal model. -/
-def normalBaseCoupling (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
-  !₂[D 1 0 - D I 1, D 1 1 + D I 0, D 1 2 + D I 3, D 1 3 - D I 2]
+def normalBaseCoupling :
+    (ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun D := !₂[D 1 0 - D I 1, D 1 1 + D I 0, D 1 2 + D I 3, D 1 3 - D I 2]
+  map_add' D D' := by
+    ext i
+    fin_cases i <;> simp <;> ring
+  map_smul' c D := by
+    ext i
+    fin_cases i <;> simp <;> ring
 
-/-- The **base coupling of the paired rows**: the term `D 1 + K' (D i)`, with
+/-- The **base coupling of the paired rows**: the linear map `D ↦ D 1 + K' (D i)`, with
 `K' (v₀, v₁, v₂, v₃) = (-v₁, v₀, -v₃, v₂)`, through which the derivative `D` of the normal family
 along the base enters the paired rows of the normal model. -/
-def pairedBaseCoupling (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
-  !₂[D 1 0 - D I 1, D 1 1 + D I 0, D 1 2 - D I 3, D 1 3 + D I 2]
+def pairedBaseCoupling :
+    (ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun D := !₂[D 1 0 - D I 1, D 1 1 + D I 0, D 1 2 - D I 3, D 1 3 + D I 2]
+  map_add' D D' := by
+    ext i
+    fin_cases i <;> simp <;> ring
+  map_smul' c D := by
+    ext i
+    fin_cases i <;> simp <;> ring
 
 @[simp]
 theorem normalBaseCoupling_apply_zero (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
@@ -722,58 +746,6 @@ theorem pairedBaseCoupling_apply_two (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 
 @[simp]
 theorem pairedBaseCoupling_apply_three (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     pairedBaseCoupling D 3 = D 1 3 + D I 2 := (rfl)
-
-/-- A family constant along the base does not couple into the normal rows. -/
-@[simp]
-theorem normalBaseCoupling_zero : normalBaseCoupling 0 = 0 := by
-  ext i
-  fin_cases i <;> simp
-
-/-- A family constant along the base does not couple into the paired rows. -/
-@[simp]
-theorem pairedBaseCoupling_zero : pairedBaseCoupling 0 = 0 := by
-  ext i
-  fin_cases i <;> simp
-
-/-- The base coupling of the normal rows is additive in the base derivative. -/
-@[simp]
-theorem normalBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    normalBaseCoupling (D + D') = normalBaseCoupling D + normalBaseCoupling D' := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-/-- The base coupling of the paired rows is additive in the base derivative. -/
-@[simp]
-theorem pairedBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    pairedBaseCoupling (D + D') = pairedBaseCoupling D + pairedBaseCoupling D' := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-/-- The base coupling of the normal rows is homogeneous in the base derivative. -/
-@[simp]
-theorem normalBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    normalBaseCoupling (c • D) = c • normalBaseCoupling D := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-/-- The base coupling of the paired rows is homogeneous in the base derivative. -/
-@[simp]
-theorem pairedBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    pairedBaseCoupling (c • D) = c • pairedBaseCoupling D := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-/-- The base coupling of the normal rows commutes with negating the base derivative. -/
-@[simp]
-theorem normalBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    normalBaseCoupling (-D) = -normalBaseCoupling D := by
-  rw [← neg_one_smul ℝ D, normalBaseCoupling_smul, neg_one_smul]
-
-/-- The base coupling of the paired rows commutes with negating the base derivative. -/
-@[simp]
-theorem pairedBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    pairedBaseCoupling (-D) = -pairedBaseCoupling D := by
-  rw [← neg_one_smul ℝ D, pairedBaseCoupling_smul, neg_one_smul]
 
 end Coupling
 
