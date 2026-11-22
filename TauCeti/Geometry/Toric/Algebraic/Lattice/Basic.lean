@@ -471,6 +471,13 @@ theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
   rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
 
+/-- A functional on `V` is determined by its values on an integral basis `b`: it is the
+combination of the dual basis of `b` with these values as coefficients. -/
+theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : StrongDual ℝ V) (z : V) :
+    ∑ j, x (i (b j)) * h.dualBasis b j z = x z := by
+  conv_rhs => rw [← (h.dualBasis b).sum_repr x]
+  simp [dualBasis_repr]
+
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/
 theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
