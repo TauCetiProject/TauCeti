@@ -41,9 +41,12 @@ Silverman V.3.1):
 
 Because every isogeny `φ : W₁ → W₂` induces a nonzero formal-group homomorphism
 `φ.formalGroupHom : FormalGroupHom (formalGroup W₁) (formalGroup W₂)`, formal-group height — and
-hence ordinarity and supersingularity — are invariant under arbitrary isogenies. The resulting
-family-level truncation of Landweber height ideals over arbitrary commutative rings is deduced in
-`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
+hence ordinarity and supersingularity — are invariant under arbitrary isogenies. In terms of the
+general Landweber height ideals `FormalGroup.heightIdeal` constructed in
+`TauCeti.RingTheory.FormalGroup.Height.Ideal`, every height ideal `I_n(Ê)` with `n ≥ 3` and `1 < p`
+is the unit ideal, and over a field of characteristic `p` ordinarity and supersingularity correspond
+to `I₂(Ê) = ⊤` and `I₂(Ê) = ⊥`; the resulting family-level truncation over arbitrary commutative
+rings is deduced in `TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
 
 ## Main results
 
@@ -76,6 +79,8 @@ family-level truncation of Landweber height ideals over arbitrary commutative ri
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.4, IV.7 and V.3.1.
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
   108, Princeton University Press, 1985, §12.4.
+* P. S. Landweber, *Homological properties of comodules over `MU_*(MU)` and `BP_*(BP)`*,
+  Amer. J. Math. 98 (1976), 591–610.
 -/
 
 public section
