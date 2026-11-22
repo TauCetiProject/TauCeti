@@ -64,6 +64,7 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `Real.smoothTransition.mul_deriv_nonneg` and `Real.smoothTransition.mul_deriv_le_deriv`:
   multiplying the derivative by its argument gives a value between zero and the derivative.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
+* `Real.smoothTransition.abs_one_sub_le_one`: `|1 - Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_nonpos`: `deriv Real.smoothTransition x = 0` for `x ≤ 0`.
 * `Real.smoothTransition.deriv_of_one_le`: `deriv Real.smoothTransition x = 0` for `1 ≤ x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -216,6 +217,12 @@ theorem one_sub (x : ℝ) : smoothTransition (1 - x) = 1 - smoothTransition x :=
 /-- The smooth transition function takes values of absolute value at most one. -/
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
+
+/-- The complementary transition `1 - smoothTransition` also takes values of absolute value at
+most one. -/
+theorem abs_one_sub_le_one (x : ℝ) : |1 - smoothTransition x| ≤ 1 := by
+  rw [← one_sub]
+  exact abs_le_one _
 
 /-- The smooth transition function has derivative zero on `(-∞, 0]`. -/
 theorem deriv_of_nonpos {x : ℝ} (hx : x ≤ 0) : deriv smoothTransition x = 0 := by

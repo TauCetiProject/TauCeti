@@ -124,7 +124,7 @@ private theorem ae_top_iff {P : ℝ → Prop} : (∀ᵐ s ∂μ₀, P s) ↔ ∀
 omit [CompleteSpace D] in
 /-- An `L²` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off the window `(-b, b)` has norm
 at most `c` times the `L²` norm of `ι ∘ u` on the window. -/
-private theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
+theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
     (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) {f : Lp H 2 μ₀}
     (hf : ∀ᵐ s ∂volume, ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
     (hf₀ : ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → f s = 0) :
