@@ -62,9 +62,9 @@ nondegenerate is `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_z
 
 ## Main results
 
-* `TauCeti.exists_criticalCurve`: the critical points of the family near a transverse degenerate
-  critical point form a `C²` curve through it, with velocity `(0, v)` for a kernel vector `v` of
-  the Hessian.
+* `TauCeti.exists_curve_fderiv_eq_zero`: the critical points of the family near a transverse
+  degenerate critical point form a `C²` curve through it, with velocity `(0, v)` for a kernel
+  vector `v` of the Hessian.
 * `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg`: a birth at a
   birth–death point where the product is negative.
 * `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`: a death at a
@@ -183,7 +183,7 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
 `c` on `(-δ, δ)` stays above `s` when `s < t`, takes the value `t` only at `0`, and takes the
 value `s` exactly twice, once on each side of `0`, when `s > t`. This is `eventually_fold` for
 `F (σ, u) = (c σ).1 - t - u`. -/
-private theorem eventually_fold_criticalCurve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {v : E}
+private theorem eventually_fold_curve_fst (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {v : E}
     (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
     (hsign : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
       deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0)
@@ -371,7 +371,7 @@ a `C²` curve `c` through `(t, x)` with velocity `(0, v)`, made of critical poin
 along which `ℓ` restricted to the space component increases at unit rate, and which passes
 through every critical point of the family near `(t, x)`. It is the preimage of the line
 `{0} × ℝ` under the local inverse of `(t, x) ↦ (d(f t)_x, ℓ x)`. -/
-theorem exists_criticalCurve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
     (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) (hv0 : v ≠ 0)
     {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
@@ -438,9 +438,9 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
   have hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0 := fun h ↦ by simp [h] at hsign
   have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
-  obtain ⟨c, N, hN, hc0, hcd, hc', hcrit, hcN⟩ := exists_criticalCurve hf hs hc hv hv0 hℓ
+  obtain ⟨c, N, hN, hc0, hcd, hc', hcrit, hcN⟩ := exists_curve_fderiv_eq_zero hf hs hc hv hv0 hℓ
   -- The parameter along the curve folds back at `0`.
-  have hfold := eventually_fold_criticalCurve hf hv hsign hc0 hcd hc' (hcrit.mono fun _ h ↦ h.1)
+  have hfold := eventually_fold_curve_fst hf hv hsign hc0 hcd hc' (hcrit.mono fun _ h ↦ h.1)
   obtain ⟨ε, hε, hεc⟩ := Metric.eventually_nhds_iff.1 hcrit
   obtain ⟨δ₀, hfold₀, hδ₀⟩ := (hfold.and (Ioo_mem_nhdsGT hε)).exists
   have hcritI : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 ∧ ℓ (c σ).2 = ℓ x + σ :=
