@@ -43,8 +43,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 ## Main definitions
 
 * `TauCeti.realPoints`: the real points of a conjugate-linear map, as a `Submodule ℝ V`.
-* `TauCeti.conjRealPart` and `TauCeti.conjImaginaryPart`: the two real points a vector decomposes
-  into; `TauCeti.conjRealPart_def` and `TauCeti.conjImaginaryPart_def` are their defining formulas.
+* `TauCeti.conjRealPart` and `TauCeti.conjImaginaryPart`: the two parts a vector decomposes into,
+  real points once `K` is involutive; `TauCeti.conjRealPart_def` and
+  `TauCeti.conjImaginaryPart_def` are their defining formulas.
 * `TauCeti.realPointsLift`: the canonical `ℂ`-linear map `ℂ ⊗[ℝ] realPoints K →ₗ[ℂ] V`.
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
@@ -66,10 +67,12 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.span_realPoints_eq_top`: the real points of an involutive conjugation span `V` over
   `ℂ`, so an identity between `ℂ`-linear or `ℂ`-bilinear maps may be checked on real vectors
   alone.
-* `Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints`: in particular a `ℂ`-linear map from a
-  space with an involutive conjugation to one with an arbitrary conjugate-linear map intertwines
-  the two exactly when it carries the real points of the first into those of the second.
-* `TauCeti.finrank_realPoints`: the real points have the `ℝ`-dimension that `V` has over `ℂ`.
+* `Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints`: a `ℂ`-linear map from a space with an
+  involutive conjugation to one with an arbitrary conjugate-linear map intertwines the two exactly
+  when it carries the real points of the first into those of the second; the reverse direction is
+  where the spanning above is used.
+* `TauCeti.finrank_realPoints`: the real points of a conjugation have the `ℝ`-dimension that `V`
+  has over `ℂ`.
 * `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
   star module have the `ℝ`-dimension that the module has over `ℂ`.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
@@ -101,11 +104,14 @@ bundles exactly this data, but it lives downstream in `TauCeti/Geometry/Hodge/`,
 would either duplicate it or invert the dependency between `TauCeti.LinearAlgebra` and
 `TauCeti.Geometry`; a `TauCeti.Hodge.Conjugation` supplies the hypotheses below from its two
 fields.  For the same reason `TauCeti.realPoints` asks only for the semilinear map: forming the
-subspace needs no involutivity.  Using it does: involutivity of `K` is what makes its real points
-recover `V`, both as their complexification (`TauCeti.realPointsEquiv`) and as their `ℂ`-span
-(`TauCeti.span_realPoints_eq_top`), and so what lets them detect intertwiners
-(`Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints`, where only the source conjugation need
-be involutive).
+subspace needs no involutivity, and neither do `TauCeti.coe_realPoints`, the injectivity of
+`TauCeti.realPointsLift`, or the forward direction of
+`Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints` (an intertwiner carries real points to
+real points).  Recovering `V` from the real points does need it: involutivity of `K` is what makes
+them recover `V`, both as their complexification (`TauCeti.realPointsEquiv`) and as their `ℂ`-span
+(`TauCeti.span_realPoints_eq_top`), and so what lets preservation of real points detect
+intertwiners (the reverse direction of the criterion, where only the source conjugation need be
+involutive).
 
 Mathlib's `realPart`/`imaginaryPart` decomposition of a star module over `ℂ` is the same
 mathematics, but it reads the conjugation off the `Star` *instance* on `V`: `selfAdjoint.submodule`
@@ -119,8 +125,11 @@ over as a field rather than as an instance.
 
 No definition here exposes its body: `TauCeti.mem_realPoints`, `TauCeti.coe_realPoints`,
 `TauCeti.conjRealPart_def`, `TauCeti.conjImaginaryPart_def`, `TauCeti.realPointsLift_tmul`,
-`TauCeti.realPointsEquiv_tmul`, `TauCeti.realPointsEquiv_symm_apply`, `TauCeti.tmulConj_tmul` and
-`TauCeti.coe_tmulConj` are the characterizations a consumer works from.
+`TauCeti.realPointsEquiv_tmul`, `TauCeti.realPointsEquiv_symm_apply`, `TauCeti.tmulConj_tmul`,
+`TauCeti.coe_tmulConj`, `TauCeti.realPart_tmul`, `TauCeti.imaginaryPart_tmul`,
+`TauCeti.complexificationLinearEquivProd_apply`,
+`TauCeti.complexificationLinearEquivProd_symm_apply` and
+`LinearEquiv.conjugationOfComplexification_apply` are the characterizations a consumer works from.
 
 The real scalar structure on `V` is Mathlib's `Module.complexToReal`, the one `Module ℂ V` induces,
 so `r • v` and `(r : ℂ) • v` are definitionally equal and no scalar tower hypothesis is carried.
@@ -633,8 +642,8 @@ theorem conjugationOfComplexification_eq_self_iff (v : V) :
   rw [conjugationOfComplexification_apply, ← e.eq_symm_apply, tmulConj_eq_self_iff]
   exact exists_congr fun w ↦ by rw [e.symm_apply_eq, eq_comm]
 
-/-- A conjugate-linear map fixing the real inclusion is uniquely the transported conjugation.
-No involutivity assumption on the competing map is necessary. -/
+/-- A conjugate-linear map fixing the image of the real inclusion pointwise is the transported
+conjugation.  No involutivity assumption on the competing map is necessary. -/
 theorem conjugationOfComplexification_unique (K : V →ₛₗ[starRingEnd ℂ] V)
     (hfix : ∀ w : W, K (e (1 ⊗ₜ[ℝ] w)) = e (1 ⊗ₜ[ℝ] w)) :
     K = conjugationOfComplexification e := by
