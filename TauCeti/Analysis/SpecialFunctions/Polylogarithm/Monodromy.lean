@@ -546,6 +546,32 @@ theorem isPolylogTowerGerm_polylogTower_basePt (N : ℕ) :
   isPolylogTowerGerm_polylogTower N (coe_basePt.symm ▸ half_mem_slitPlane)
     (fun _ => coe_basePt.symm ▸ sub_half_mem_slitPlane)
 
+private theorem analyticOnNhd_polylog_succ_ball (N : ℕ) :
+    AnalyticOnNhd ℂ (fun z (i : Fin N) => polylog (i.succ : ℕ) z) (ball 0 1) :=
+  fun _ hz => AnalyticAt.pi fun i => analyticAt_polylog (i.succ : ℕ)
+    (sub_eq_add_neg (1 : ℂ) _ ▸ Complex.mem_slitPlane_of_norm_lt_one (by simpa using hz))
+
+/-- **Principal-tower `γ0`-monodromy.** Continuing `polylogTower N` along `γ0` shifts the
+terminal germ by `polylogMonodromy N periph0⁻¹`. -/
+theorem eventuallyEq_periph0_inv_comp_polylogTower_of_γ0 (N : ℕ) {f : I → ℂ → Fin (N + 1) → ℂ}
+    (hf : IsAnalyticContinuationAlong f (fun t => (γ0 t : ℂ)) univ)
+    (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) :
+    f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph0⁻¹ ∘ polylogTower N :=
+  (isPolylogTowerGerm_polylogTower N half_mem_slitPlane
+    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_periph0_inv_comp_of_γ0
+      (polylogTower_zero N (1 / 2)) (analyticOnNhd_polylog_succ_ball N)
+      (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) hf hf0
+
+/-- **Principal-tower `γ1`-monodromy.** Continuing `polylogTower N` along `γ1` shifts the
+terminal germ by `polylogMonodromy N periph1⁻¹`. -/
+theorem eventuallyEq_periph1_inv_comp_polylogTower_of_γ1 (N : ℕ) {f : I → ℂ → Fin (N + 1) → ℂ}
+    (hf : IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ)
+    (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) :
+    f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph1⁻¹ ∘ polylogTower N :=
+  (isPolylogTowerGerm_polylogTower N half_mem_slitPlane
+    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_periph1_inv_comp_of_γ1
+      (polylogTower_zero N (1 / 2)) hf hf0
+
 /-- `polylogTower N` continues inside `{z : ℂ | z ≠ 0 ∧ z ≠ 1}` from `basePt` in every height. -/
 theorem continuesInside_polylogTower (N : ℕ) :
     ContinuesInside (polylogTower N) {z : ℂ | z ≠ 0 ∧ z ≠ 1} (basePt : ℂ) :=
@@ -583,6 +609,17 @@ theorem exists_isAnalyticContinuationAlong_polylogBranch (N : ℕ) {z : ThricePu
       polylogBranch N ⟨z, Path.Homotopic.Quotient.mk γ⟩ = f 1 (z : ℂ) := by
   simpa [coe_basePt, polylogBranch_def] using
     (continuesInside_polylogTower N).exists_isAnalyticContinuationAlong_universalCoverBranch γ
+
+/-- **Pointwise exponential law for coordinate `0` of `polylogBranch N`.** -/
+@[simp] theorem exp_polylogBranch_zero (N : ℕ) (p : UniversalCover basePt) :
+    Complex.exp (polylogBranch N p 0) = (p.proj : ℂ) := by
+  rcases p with ⟨z, q⟩; induction q with | mk γ =>
+    obtain ⟨f, hf, hf0, hval⟩ := exists_isAnalyticContinuationAlong_polylogBranch N γ
+    have h1 : IsPolylogTowerGerm N (f 1) (z : ℂ) := γ.target ▸
+      IsPolylogTowerGerm.of_isAnalyticContinuationAlong isPreconnected_univ (mem_univ 0)
+        (mem_univ 1) hf (by simpa [γ.source, coe_basePt] using hf0)
+        (by simpa [γ.source] using isPolylogTowerGerm_polylogTower_basePt N)
+    rw [hval]; exact h1.exp_zero
 
 /-- **Local tower ODEs for `polylogBranch N`.** Every local continuous section of
 `polylogBranch N` satisfies `IsPolylogTowerGerm N`. -/
@@ -654,9 +691,7 @@ theorem polylogBranch_smul (N : ℕ) (g : FundamentalGroup ThricePuncturedSphere
     (p : UniversalCover basePt) :
     polylogBranch N (g • p) = polylogMonodromy N g (polylogBranch N p) :=
   (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_smul_of_analyticOnNhd_ball
-    (polylogTower_zero N (1 / 2)) (G := fun z i => polylog (i.succ : ℕ) z)
-    (fun z hz => AnalyticAt.pi fun i => analyticAt_polylog (i.succ : ℕ)
-      (sub_eq_add_neg (1 : ℂ) z ▸ Complex.mem_slitPlane_of_norm_lt_one (by simpa using hz)))
+    (polylogTower_zero N (1 / 2)) (analyticOnNhd_polylog_succ_ball N)
     (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) g p
 
 /-- **Coherent universal-cover branch and polynomial monodromy of `polylogTower N`.** -/
