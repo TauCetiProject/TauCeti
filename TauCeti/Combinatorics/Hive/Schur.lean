@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Complete
 
 /-!
 # The hive model of the Littlewood–Richardson rule for Schur polynomials
@@ -119,13 +119,11 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
         hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape := by
   classical
   let ι := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
+  let embDiag : ι ↪ {μ : YoungDiagram // μ.colLen 0 ≤ n} :=
+    ⟨fun ν => ⟨ofPartition ν.val, ν.property⟩,
+      fun _ _ h => Subtype.ext (YoungDiagram.ofPartition_injective (congrArg Subtype.val h))⟩
   let emb : ι ↪ DominantWeight n :=
-    { toFun ν := weightOfShape n (ofPartition ν.val)
-      inj' ν₁ ν₂ h := by
-        have hsh : (weightOfShape n (ofPartition ν₁.val)).shape =
-            (weightOfShape n (ofPartition ν₂.val)).shape := congrArg DominantWeight.shape h
-        rw [shape_weightOfShape ν₁.property, shape_weightOfShape ν₂.property] at hsh
-        exact Subtype.ext (YoungDiagram.ofPartition_injective hsh) }
+    embDiag.trans ((shapeEquivPolynomialWeight n).toEmbedding.trans (Function.Embedding.subtype _))
   let f (γ : DominantWeight n) : MvPolynomial (Fin n) R :=
     hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape
   have hsupp : Function.support f ⊆ (Finset.univ.map emb : Finset (DominantWeight n)) := by
@@ -167,27 +165,6 @@ private theorem finsum_hiveCount_one_eq_smul :
     hne (by ext i; fin_cases i; simpa [lam, γ₁] using h.symm)
   simp [hiveCount_one_productBoundary, hsum]
 
-private theorem natCard_lrTableau_std_one_det_two :
-    let lam : DominantWeight 1 := ⟨![1], by decide⟩
-    let γ₂ : DominantWeight 2 := ⟨![1, 1], by decide⟩
-    Nat.card (LRTableau lam.shape γ₂.shape lam.shape) = 1 := by
-  intro lam γ₂
-  have hlam : lam.IsPolynomial := by
-    rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hγ₂ : γ₂.IsPolynomial := by
-    rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hlam_col : lam.shape.colLen 0 ≤ 2 :=
-    (DominantWeight.colLen_zero_shape_le lam).trans (by decide)
-  have hw_lam : weightOfShape 2 lam.shape = (⟨![1, 0], by decide⟩ : DominantWeight 2) := by
-    ext i
-    fin_cases i
-    · simpa [lam] using DominantWeight.natCast_rowLen_shape hlam 0
-    · simp [lam]
-  rw [← hiveCount_productBoundary_eq_natCard_lrTableau hlam_col
-      (DominantWeight.colLen_zero_shape_le γ₂) hlam_col,
-    hw_lam, weightOfShape_shape hγ₂]
-  exact hiveCount_two_std_std_det
-
 /-- **Sharpness of the `n`-variable restriction in
 `diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`**: in `2` variables for `n = 1` and
 `λ = μ = (1)`, `s_{(1)}^2 = s_{(2)} + s_{(1, 1)}`, whereas summing over `γ : DominantWeight 1`
@@ -197,53 +174,24 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two :
     diagramSchurPoly 2 ℤ lam.shape * diagramSchurPoly 2 ℤ lam.shape ≠
       ∑ᶠ γ : DominantWeight 1,
         hiveCount (productBoundary lam lam γ) • diagramSchurPoly 2 ℤ γ.shape := by
-  classical
   intro lam heq
   let γ₁ : DominantWeight 1 := ⟨![2], by decide⟩
-  let γ₂ : DominantWeight 2 := ⟨![1, 1], by decide⟩
   have hlam : lam.IsPolynomial := by
     rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
   have hγ₁ : γ₁.IsPolynomial := by
-    rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hγ₂ : γ₂.IsPolynomial := by
     rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
   have hcard_lam : lam.shape.card = 1 :=
     Int.ofNat_inj.mp ((DominantWeight.natCast_card_shape hlam).trans (by decide))
   have hcard_γ₁ : γ₁.shape.card = 2 :=
     Int.ofNat_inj.mp ((DominantWeight.natCast_card_shape hγ₁).trans (by decide))
-  have hcard_γ₂ : γ₂.shape.card = 2 :=
-    Int.ofNat_inj.mp ((DominantWeight.natCast_card_shape hγ₂).trans (by decide))
-  -- Collapse the rank-1 hive sum on the right to the single one-row term `γ₁ = (2)`, and expand
-  -- `s_{(1)}^2` on the left in the Schur basis of degree `d = 2`.
-  rw [finsum_hiveCount_one_eq_smul,
-    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau] at heq
-  set d := lam.shape.card + lam.shape.card
-  have hd2 : d = 2 := by omega
-  let ν_col : d.Partition := γ₂.shape.toPartition (hcard_γ₂.trans hd2.symm)
-  let ν_row : d.Partition := γ₁.shape.toPartition (hcard_γ₁.trans hd2.symm)
-  have hne_ν : ν_col ≠ ν_row := fun h => by
-    have hr : γ₂.shape.rowLen 0 = γ₁.shape.rowLen 0 := by
-      simpa [ν_col, ν_row, YoungDiagram.ofPartition_toPartition] using
-        congrArg (fun p : d.Partition => (ofPartition p).rowLen 0) h
-    exact absurd ((γ₂.rowLen_shape 0).symm.trans (hr.trans (γ₁.rowLen_shape 0))) (by decide)
-  -- Rewrite the single term `γ₁` as an indicator sum over `d.Partition` so both sides are
-  -- `ℕ`-linear combinations of `diagramSchurPoly 2 ℤ`, then compare coefficients at `ν_col`.
-  have hrhs :
-      hiveCount (productBoundary lam lam γ₁) • diagramSchurPoly 2 ℤ γ₁.shape =
-      ∑ ν : d.Partition,
-        (if ν = ν_row then hiveCount (productBoundary lam lam γ₁) else 0) •
-          diagramSchurPoly 2 ℤ (ofPartition ν) := by
-    refine (?_ : _ = ∑ ν : d.Partition, if ν = ν_row then
-        hiveCount (productBoundary lam lam γ₁) •
-          diagramSchurPoly 2 ℤ (ofPartition ν) else 0).trans
-      (Finset.sum_congr rfl fun ν _ => by split_ifs <;> simp)
-    rw [Fintype.sum_ite_eq' ν_row]
-    simp [ν_row, YoungDiagram.ofPartition_toPartition]
-  have hcoeff := congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq (N := 2) hd2.le (heq.trans hrhs))
-    ν_col
-  simp only [hne_ν, ↓reduceIte, ν_col, YoungDiagram.ofPartition_toPartition] at hcoeff
-  have hlr_one : Nat.card (LRTableau lam.shape γ₂.shape lam.shape) = 1 :=
-    natCard_lrTableau_std_one_det_two
-  omega
+  have hcnt : hiveCount (productBoundary lam lam γ₁) = 1 := by
+    simp [hiveCount_one_productBoundary, lam, γ₁]
+  rw [finsum_hiveCount_one_eq_smul, hcnt, one_smul,
+    diagramSchurPoly_eq_hsymm_of_colLen_le_one (DominantWeight.colLen_zero_shape_le lam),
+    diagramSchurPoly_eq_hsymm_of_colLen_le_one (DominantWeight.colLen_zero_shape_le γ₁),
+    hcard_lam, hcard_γ₁] at heq
+  have heval := congrArg (MvPolynomial.eval (fun _ : Fin 2 => (1 : ℤ))) heq
+  rw [map_mul, eval_hsymm_fin_two, eval_hsymm_fin_two] at heval
+  simp at heval
 
 end TauCeti.Hive

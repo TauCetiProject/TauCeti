@@ -732,8 +732,9 @@ end SignedShifts
 section Checks
 
 /-- **Rank-`2` check (`λ = μ = (1, 0)`, `γ = (1, 1)`)**: `detTwo` corresponds under
-`fixedIntegerHiveShapeEquivLRTableau` to the unique LR tableau of shape `(1, 1) / (1)` and content
-`(1)`, with `rowCount 1 0 = 1`, `detTwo(1, 1) = 1`, and `detTwo(1, 2) = 2`. -/
+`fixedIntegerHiveShapeEquivLRTableau` to the unique LR tableau `T` of shape `(1, 1) / (1)` and
+content `(1)` with `T.rowCount 1 0 = 1`, and recovering the hive `h` from `T` via
+`fixedIntegerHiveShapeEquivLRTableau_symm_apply_ofChart` yields `h(1, 1) = 1` and `h(1, 2) = 2`. -/
 theorem rowCount_lrTableau_detTwo :
     let lam : DominantWeight 2 := ⟨![1, 0], by decide⟩
     let γ : DominantWeight 2 := ⟨![1, 1], by decide⟩
@@ -742,17 +743,33 @@ theorem rowCount_lrTableau_detTwo :
     let hγ : γ.IsPolynomial := by
       rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
     let T := fixedIntegerHiveShapeEquivLRTableau hlam hlam hγ ⟨detTwo, boundary_detTwo⟩
+    let h := (fixedIntegerHiveShapeEquivLRTableau hlam hlam hγ).symm T
     T.val.rowCount 1 0 = 1 ∧
-      detTwo (Vertex.ofChart 2 1 1 le_rfl (by decide)) = 1 ∧
-      detTwo (Vertex.ofChart 2 1 2 (by decide) le_rfl) = 2 := by
-  intro lam γ hlam hγ T
-  refine ⟨Int.ofNat_inj.mp ?_, by simp, by simp⟩
-  dsimp only [T]
-  rw [natCast_rowCount_fixedIntegerHiveShapeEquivLRTableau hlam hlam hγ ⟨detTwo, boundary_detTwo⟩
-      (by decide) 0,
-    toGTPattern_apply_of_lt_of_le _ (by decide) (by decide),
-    toGTPattern_apply_of_lt_of_le _ (by decide) (by decide)]
-  simp
+      h.val (Vertex.ofChart 2 1 1 le_rfl (by decide)) = 1 ∧
+      h.val (Vertex.ofChart 2 1 2 (by decide) le_rfl) = 2 := by
+  intro lam γ hlam hγ T h
+  have h00 : T.val.rowCount 0 0 = 0 := Int.ofNat_inj.mp <| by
+    dsimp only [T]
+    rw [natCast_rowCount_fixedIntegerHiveShapeEquivLRTableau hlam hlam hγ ⟨detTwo, boundary_detTwo⟩
+        (by decide) 0,
+      toGTPattern_apply_of_lt_of_le _ (by decide) (by decide),
+      toGTPattern_apply _ 0 0]
+    simp
+  have h10 : T.val.rowCount 1 0 = 1 := Int.ofNat_inj.mp <| by
+    dsimp only [T]
+    rw [natCast_rowCount_fixedIntegerHiveShapeEquivLRTableau hlam hlam hγ ⟨detTwo, boundary_detTwo⟩
+        (by decide) 0,
+      toGTPattern_apply_of_lt_of_le _ (by decide) (by decide),
+      toGTPattern_apply_of_lt_of_le _ (by decide) (by decide)]
+    simp
+  refine ⟨h10, ?_, ?_⟩
+  · dsimp only [h]
+    rw [fixedIntegerHiveShapeEquivLRTableau_symm_apply_ofChart]
+    simp [TauCeti.prefixSum_def, Finset.sum_filter, h00, lam]
+  · dsimp only [h]
+    rw [fixedIntegerHiveShapeEquivLRTableau_symm_apply_ofChart]
+    simp [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_two,
+      Finset.sum_range_succ, h00, h10, lam]
 
 end Checks
 
