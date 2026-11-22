@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Endomorphism
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
+public import TauCeti.LinearAlgebra.Complex.Module
+public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 public import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Data.SignType.Basic
@@ -66,9 +68,22 @@ stabilize `L_S`, with kernel coordinate the value at `0`, and correspond to the 
 `l ↦ E (r l)` of `1 - Ψ(T)`; evaluation at `0` identifies the two stabilized kernels
 (`ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker`).
 
+For a loop `S` of complex-linear maps, `L_S` and `1 - Ψ(T)` are complex linear, and the
+identification respects their complex orientations: the transported normalized generator is complex
+positive
+(`TauCeti.CircleSobolev.isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm`),
+because evaluation at `0` and the endpoint map commute with `I` when the propagator does
+(`TauCeti.commute_dysonSeriesLeft`). This fixes the absolute sign of the comparison. Along a path
+of loops from a complex-linear loop, such as the zero loop, to a loop `S` with `L_S` bijective,
+transport carries the complex orientation of the complex-linear end to the orientation of `L_S`
+given by bijectivity multiplied by the sign of `det (1 - Ψ(T))` (the `_of_pos` and `_of_neg`
+forms of
+`TauCeti.CircleSobolev.detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine`).
+
 The operators `∂t - J₀ S(t)` on loops along a closed orbit, which govern the periodic twists of the
 normal operator `∂s + J₀ ∂t + S(t)` of an orbit torus, are of this form, with `P` the linearized
-return map. For them the orientation comparison above is expressed by the sign of `det (1 - P)`.
+return map. For them the orientation comparison above is expressed by the sign of `det (1 - P)`,
+and the complex-linear reference operator `∂t` has `P = 1`.
 
 ## Main definitions
 
@@ -91,6 +106,12 @@ return map. For them the orientation comparison above is expressed by the sign o
 * `TauCeti.CircleSobolev.detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm`:
   orientation transport along a path of loop operators carries transported normalized generators to
   transported normalized generators.
+* `TauCeti.CircleSobolev.isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm`:
+  for a loop of complex-linear maps, the transported normalized generator is complex positive.
+* `TauCeti.CircleSobolev.detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine`:
+  transport from a complex-linear loop operator carries its complex orientation to the transported
+  normalized generator, and so, at a bijective end, to `sgn det (1 - Ψ(T))` times the orientation
+  given by bijectivity (`..._of_pos`, `..._of_neg`).
 
 ## References
 
@@ -621,6 +642,243 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm
           (detLineLoopOperatorEquiv T (M b)).symm _ ≠ 0) :=
   detLineOrientationTransport_rayOfNeZero _ _
     (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm T M _ hM)
+
+/-! ### Complex-linear loops and complex orientations -/
+
+section Complex
+
+open Complex (I)
+
+variable {T S}
+
+omit hT in
+/-- For a loop of complex-linear maps, the propagator commutes with multiplication by `I`. -/
+private theorem dysonSeriesLeft_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (t : ℝ) (v : E) :
+    dysonSeriesLeft (fun t : ℝ ↦ S t) t (I • v) = I • dysonSeriesLeft (fun t : ℝ ↦ S t) t v :=
+  (DFunLike.congr_fun (commute_dysonSeriesLeft (AddCircle.continuous_comp_coe S)
+    (a := I • ContinuousLinearMap.id ℝ E) (fun s ↦ ContinuousLinearMap.ext fun w ↦ by
+      simp [hS]) t) v).symm
+
+omit hT in
+/-- For a loop of complex-linear maps, the inverse propagator commutes with multiplication by
+`I`. -/
+private theorem dysonSeries_neg_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (t : ℝ) (v : E) :
+    dysonSeries (-fun t : ℝ ↦ S t) t (I • v) = I • dysonSeries (-fun t : ℝ ↦ S t) t v :=
+  (DFunLike.congr_fun (commute_dysonSeries (AddCircle.continuous_comp_coe S).neg
+    (a := I • ContinuousLinearMap.id ℝ E) (fun s ↦ Commute.neg_right <|
+      ContinuousLinearMap.ext fun w ↦ by simp [hS]) t) v).symm
+
+omit hT in
+/-- For a loop of complex-linear maps, `1 - Ψ(T)` commutes with multiplication by `I`. -/
+private theorem one_sub_dysonSeriesLeft_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (v : E) :
+    (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) (I • v) =
+      I • (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) v := by
+  simp [dysonSeriesLeft_I_smul hS, smul_sub]
+
+/-- For a loop of complex-linear maps, the inverse of evaluation at `0` on the kernel of `L_S`
+commutes with multiplication by `I`. -/
+private theorem kerLoopOperatorEquiv_symm_I_smul (hS : ∀ t v, S t (I • v) = I • S t v)
+    (x y : ker (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)))
+    (h : (y : E) = I • (x : E)) :
+    ((kerLoopOperatorEquiv T S).symm y : CircleSobolev 1 E) =
+      I • ((kerLoopOperatorEquiv T S).symm x : CircleSobolev 1 E) := by
+  refine toContinuousMap_injective T (show (1 : ℝ) / 2 < 1 by norm_num) ?_
+  refine AddCircle.continuousMap_ext_coe fun t ↦ ?_
+  rw [map_smul, ContinuousMap.smul_apply, toContinuousMap_kerLoopOperatorEquiv_symm_apply,
+    toContinuousMap_kerLoopOperatorEquiv_symm_apply, h, dysonSeriesLeft_I_smul hS]
+
+variable (T S) in
+/-- Every class in the cokernel of `L_S` is the class of a continuous loop. -/
+private theorem exists_mk_ofContinuousMap_eq (y : CircleSobolev 0 E) :
+    ∃ g : C(AddCircle T, E),
+      (Submodule.Quotient.mk (ofContinuousMap T g) : CircleSobolev 0 E ⧸
+          range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) =
+        Submodule.Quotient.mk y := by
+  have hy : y ∈ range (toH0 E T) ⊔
+      range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) := by
+    rw [sup_range_eq_top]
+    trivial
+  obtain ⟨_, ⟨f, rfl⟩, v, hv, rfl⟩ := Submodule.mem_sup.1 hy
+  refine ⟨twistedContinuousOneEquiv E T f, ?_⟩
+  rw [← toH0_apply, Submodule.Quotient.eq, sub_add_cancel_left]
+  exact neg_mem hv
+
+/-- For a loop of complex-linear maps, the endpoint map on the cokernel of `L_S` commutes with
+multiplication by `I`. -/
+private theorem quotientRangeLoopOperatorEquiv_mk_I_smul (hS : ∀ t v, S t (I • v) = I • S t v)
+    (y : CircleSobolev 0 E) (w : E)
+    (h : quotientRangeLoopOperatorEquiv T S (Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk w) :
+    quotientRangeLoopOperatorEquiv T S (Submodule.Quotient.mk (I • y)) =
+      Submodule.Quotient.mk (I • w) := by
+  obtain ⟨g, hg⟩ := exists_mk_ofContinuousMap_eq T S y
+  -- The class of `I • y` is the class of the continuous loop `I • g`.
+  have hIg : (Submodule.Quotient.mk (ofContinuousMap T (I • g)) : CircleSobolev 0 E ⧸
+      range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) =
+        Submodule.Quotient.mk (I • y) := by
+    rw [Submodule.Quotient.eq] at hg ⊢
+    obtain ⟨a, ha⟩ := hg
+    refine ⟨I • a, ?_⟩
+    simp only [ContinuousLinearMap.coe_coe] at ha ⊢
+    rw [loopOperator_I_smul T hS, ha, map_smul, smul_sub]
+  -- The endpoint value of `I • g` is `I` times the endpoint value of `g`.
+  have hend : dysonSeriesLeft (fun t : ℝ ↦ S t) T
+      (∫ s in 0..T, dysonSeries (-fun t : ℝ ↦ S t) s ((I • g) s)) =
+        I • dysonSeriesLeft (fun t : ℝ ↦ S t) T
+          (∫ s in 0..T, dysonSeries (-fun t : ℝ ↦ S t) s (g s)) := by
+    simp only [ContinuousMap.smul_apply, dysonSeries_neg_I_smul hS, intervalIntegral.integral_smul,
+      dysonSeriesLeft_I_smul hS]
+  rw [← hg, quotientRangeLoopOperatorEquiv_mk, Submodule.Quotient.eq] at h
+  rw [← hIg, quotientRangeLoopOperatorEquiv_mk, Submodule.Quotient.eq, hend, ← smul_sub]
+  obtain ⟨u, hu⟩ := h
+  exact ⟨I • u, by rw [one_sub_dysonSeriesLeft_I_smul hS, hu]⟩
+
+/-- **The complex orientation of a complex-linear loop operator.** Let `S` be a loop of
+complex-linear maps, so that `L_S ζ = ζ' - S ζ` is the real-linear map underlying a complex-linear
+map `A`, and so is `1 - Ψ(T)`. Then `TauCeti.CircleSobolev.detLineLoopOperatorEquiv` respects
+complex orientations: the normalized generator of the determinant line of `1 - Ψ(T)`
+(`LinearMap.detLineEndGenerator`), which is complex positive
+(`LinearMap.isComplexPositiveDetLine_detLineEndGenerator`), is carried to a complex positive
+element of the determinant line of `A`. Evaluation at `0` on kernels and the endpoint map on
+cokernels commute with `I`, because the propagator does. -/
+theorem isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm
+    (hS : ∀ t v, S t (I • v) = I • S t v) {A : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E}
+    (hA : (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) = A.restrictScalars ℝ) :
+    A.IsComplexPositiveDetLine (LinearMap.detLineCongrOfEq hA ((detLineLoopOperatorEquiv T S).symm
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator)) := by
+  set P := (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).complexOfMapISmul
+    (one_sub_dysonSeriesLeft_I_smul hS)
+  -- The transport law for complex orientations, read through the equalities of the real maps
+  -- with the underlying maps of `P` and `A`.
+  have key (g : E →ₗ[ℝ] E) (hg : P.restrictScalars ℝ = g)
+      (g' : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) (hg' : g' = A.restrictScalars ℝ)
+      (eK : ker g ≃ₗ[ℝ] ker g') (eC : (E ⧸ range g) ≃ₗ[ℝ] CircleSobolev 0 E ⧸ range g')
+      (hK : ∀ x y : ker g, (y : E) = I • (x : E) →
+        (eK y : CircleSobolev 1 E) = I • (eK x : CircleSobolev 1 E))
+      (hC : ∀ (y : E) (y' : CircleSobolev 0 E), eC (Submodule.Quotient.mk y) =
+        Submodule.Quotient.mk y' →
+          eC (Submodule.Quotient.mk (I • y)) = Submodule.Quotient.mk (I • y')) :
+      A.IsComplexPositiveDetLine (LinearMap.detLineCongrOfEq hg'
+        (LinearMap.detLineCongrKerCoker eK eC g.detLineEndGenerator)) := by
+    subst hg hg'
+    simpa using (LinearMap.isComplexPositiveDetLine_detLineEndGenerator P).detLineCongrKerCoker
+      hK hC
+  rw [detLineLoopOperatorEquiv_def, LinearMap.detLineCongrKerCoker_symm]
+  refine key _ (LinearMap.restrictScalars_complexOfMapISmul _ _) _ hA _ _
+    (fun x y h ↦ kerLoopOperatorEquiv_symm_I_smul hS x y h) fun y y' h ↦ ?_
+  have h' : quotientRangeLoopOperatorEquiv T S (Submodule.Quotient.mk y') =
+      Submodule.Quotient.mk y := by
+    rw [← h, LinearEquiv.apply_symm_apply]
+  rw [← quotientRangeLoopOperatorEquiv_mk_I_smul hS y' y h', LinearEquiv.symm_apply_apply]
+
+variable {M : ℝ → C(AddCircle T, E →L[ℝ] E)} {a b : ℝ}
+
+/-- **Transport of the complex orientation along loop operators.** Let `M` be a path of coefficient
+loops, continuous on `[a, b]`, whose loop `M a` consists of complex-linear maps, so that `L_a` is
+the real-linear map underlying a complex-linear map `A`. Transport of orientations of the
+determinant lines of the loop operators `L_t ζ = ζ' - M t ζ` carries the complex orientation of `A`
+to the orientation of the transported normalized generator of `1 - Ψ_b(T)`, where `Ψ_b` is the
+propagator of `w' = M b w`. -/
+theorem detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine
+    (hM : ContinuousOn M (Set.uIcc a b)) (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {A : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E}
+    (hA : (loopOperator T (M a) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) =
+      A.restrictScalars ℝ)
+    {z : (A.restrictScalars ℝ).detLine} (hz : A.IsComplexPositiveDetLine z) (hz₀ : z ≠ 0) :
+    detLineOrientationTransport a b ((continuous_loopOperator T).comp_continuousOn hM)
+        (fun t _ ↦ isFredholm_loopOperator T (M t))
+        (Module.Ray.map (LinearMap.detLineCongrOfEq hA.symm) (rayOfNeZero ℝ z hz₀)) =
+      rayOfNeZero ℝ _ ((LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero
+          (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : E →ₗ[ℝ] E))) :
+          (detLineLoopOperatorEquiv T (M b)).symm _ ≠ 0) := by
+  -- The cokernel of `A` is finite-dimensional over `ℂ`.
+  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸ range (A.restrictScalars ℝ)) :=
+    hA ▸ (isFredholm_loopOperator T (M a)).finite_coker
+  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸ range A) :=
+    Module.Finite.equiv (A.cokerRestrictScalarsEquiv ℝ)
+  have : FiniteDimensional ℂ (CircleSobolev 0 E ⧸ range A) :=
+    Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  -- Two complex positive elements span the same ray.
+  obtain ⟨c, hc, rfl⟩ :=
+    (isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm hMa
+      hA).exists_pos_smul_eq hz
+  rw [← detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm T hM,
+    Module.Ray.map_apply]
+  refine congrArg _ ((ray_eq_iff _ _).2 ?_)
+  rw [LinearEquiv.map_smul, ← LinearMap.detLineCongrOfEq_symm hA, LinearEquiv.symm_apply_apply]
+  exact SameRay.sameRay_pos_smul_left _ hc
+
+variable (T S) in
+/-- At a bijective `L_S`, the transported normalized generator of `1 - Ψ(T)` is `det (1 - Ψ(T))`
+times the generator of the trivialization given by bijectivity. -/
+private theorem symm_detLineEndGenerator_eq_det_smul_of_bijective
+    (hL : Function.Bijective (loopOperator T S)) :
+    (detLineLoopOperatorEquiv T S).symm
+        (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator =
+      LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) •
+        ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
+          hL).symm 1 := by
+  have hinj := (injective_loopOperator_iff T S).1 hL.1
+  have hP := And.intro hinj (LinearMap.injective_iff_surjective.1 hinj)
+  rw [LinearMap.detLineEndGenerator_eq_det_smul _ hP, map_smul]
+  congr 1
+  refine (LinearMap.detLineEquivOfBijective hL).injective ?_
+  rw [LinearEquiv.apply_symm_apply, ← LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP,
+    ← detLineLoopOperatorEquiv_def, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+/-- **The determinant sign of a nondegenerate loop operator, positive case.** In the situation of
+`TauCeti.CircleSobolev.detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine`, if
+`L_b` is bijective and `det (1 - Ψ_b(T)) > 0`, transport carries the complex orientation of `A` to
+the orientation of the determinant line of `L_b` given by bijectivity
+(`LinearMap.detLineEquivOfBijective`). -/
+theorem detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine_of_pos
+    (hM : ContinuousOn M (Set.uIcc a b)) (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {A : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E}
+    (hA : (loopOperator T (M a) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) =
+      A.restrictScalars ℝ)
+    {z : (A.restrictScalars ℝ).detLine} (hz : A.IsComplexPositiveDetLine z) (hz₀ : z ≠ 0)
+    (hb : Function.Bijective (loopOperator T (M b)))
+    (hdet : 0 < LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : E →ₗ[ℝ] E))) :
+    detLineOrientationTransport a b ((continuous_loopOperator T).comp_continuousOn hM)
+        (fun t _ ↦ isFredholm_loopOperator T (M t))
+        (Module.Ray.map (LinearMap.detLineCongrOfEq hA.symm) (rayOfNeZero ℝ z hz₀)) =
+      rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective (f := (loopOperator T (M b) :
+        CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) hb).symm.map_ne_zero_iff.2 one_ne_zero) := by
+  rw [detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine hM hMa hA hz hz₀]
+  refine (ray_eq_iff _ _).2 ?_
+  rw [symm_detLineEndGenerator_eq_det_smul_of_bijective T _ hb]
+  exact SameRay.sameRay_pos_smul_left _ hdet
+
+/-- **The determinant sign of a nondegenerate loop operator, negative case.** In the situation of
+`TauCeti.CircleSobolev.detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine`, if
+`L_b` is bijective and `det (1 - Ψ_b(T)) < 0`, transport carries the complex orientation of `A` to
+the opposite of the orientation of the determinant line of `L_b` given by bijectivity
+(`LinearMap.detLineEquivOfBijective`). -/
+theorem detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine_of_neg
+    (hM : ContinuousOn M (Set.uIcc a b)) (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {A : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E}
+    (hA : (loopOperator T (M a) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) =
+      A.restrictScalars ℝ)
+    {z : (A.restrictScalars ℝ).detLine} (hz : A.IsComplexPositiveDetLine z) (hz₀ : z ≠ 0)
+    (hb : Function.Bijective (loopOperator T (M b)))
+    (hdet : LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : E →ₗ[ℝ] E)) < 0) :
+    detLineOrientationTransport a b ((continuous_loopOperator T).comp_continuousOn hM)
+        (fun t _ ↦ isFredholm_loopOperator T (M t))
+        (Module.Ray.map (LinearMap.detLineCongrOfEq hA.symm) (rayOfNeZero ℝ z hz₀)) =
+      -rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective (f := (loopOperator T (M b) :
+        CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) hb).symm.map_ne_zero_iff.2 one_ne_zero) := by
+  have hb₀ := (LinearMap.detLineEquivOfBijective (f := (loopOperator T (M b) :
+    CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
+  rw [detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine hM hMa hA hz hz₀]
+  -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
+  -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
+  let : AddCommGroup (loopOperator T (M b) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine :=
+    TensorProduct.addCommGroup
+  refine ((ray_eq_iff _ (neg_ne_zero.2 hb₀)).2 ?_).trans (neg_rayOfNeZero ℝ _ hb₀).symm
+  rw [symm_detLineEndGenerator_eq_det_smul_of_bijective T _ hb]
+  exact (sameRay_neg_smul_left_iff_of_ne hb₀ hdet.ne).2 hdet
+
+end Complex
 
 end CircleSobolev
 

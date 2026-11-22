@@ -58,6 +58,8 @@ comparing weak and classical derivatives
   coefficient loop `S`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
   is multiplication by that scalar.
+* `TauCeti.CircleSobolev.loopOperator_I_smul`: for a loop of complex-linear maps, `L_S` is
+  complex linear.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.norm_mulLoop_le`: for a loop with `‖S t‖ ≤ M`, the zero-order term has
   norm at most `M` for the `H⁰` norms, and `TauCeti.CircleSobolev.norm_sq_le_of_loopOperator`
@@ -183,6 +185,18 @@ theorem loopOperator_zero :
       (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num)).restrictScalars ℝ := by
   ext a : 1
   simp [loopOperator_apply, mulLoop_apply]
+
+/-- **Complex-linear loops give complex-linear operators.** If every `S t` commutes with
+multiplication by `I`, so does `L_S ζ = ζ' - S ζ`. -/
+theorem loopOperator_I_smul {S : C(AddCircle T, E →L[ℝ] E)}
+    (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
+    loopOperator T S (I • a) = I • loopOperator T S a := by
+  have h : applyContinuousLinearMap S (toContinuousMap T (by norm_num) (I • a)) =
+      I • applyContinuousLinearMap S (toContinuousMap T (by norm_num) a) := by
+    ext t
+    simp [hS]
+  rw [loopOperator_apply, loopOperator_apply, mulLoop_apply, mulLoop_apply, map_smul, h,
+    map_smul, smul_sub]
 
 /-- Subtracting `S₂` from the coefficient loop adds multiplication by `S₂` to `L_S`. -/
 theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
