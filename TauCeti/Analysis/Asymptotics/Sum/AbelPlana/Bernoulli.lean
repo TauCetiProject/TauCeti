@@ -49,7 +49,8 @@ with `f(z) = o(e^{2π|Im z|})` uniformly in the strip), substituting this expans
   Taylor–Lagrange identity at the upper endpoint `c = n`, assuming half-line integrability at both
   `c = a` and `c = n`.
 * `TauCeti.abs_two_mul_pow_div_factorial_integral_im_le`: supremum remainder bound
-  `|R_m| ≤ 2 / (2m)! * ∫₀^∞ (sup_{0 ≤ t ≤ 1} |Im g(c + ity)|) y^{2m} / (e^{2πy} - 1) dy`.
+  `|R_m| ≤ 2 / (2m)! * ∫₀^∞ (sup_{0 ≤ t ≤ 1} |Im g(c + ity)|) y^{2m} / (e^{2πy} - 1) dy`
+  assuming integrability of both the selected remainder integrand and the supremum envelope.
 
 ## References
 
@@ -287,14 +288,19 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
   simp only [← ofReal_mul] at hcast
   linear_combination hcast
 
-/-- **Supremum bound for the Abel–Plana Lagrange remainder** (DLMF 2.10.2). If `ϑ(y) ∈ [0, 1]` and
-`t ↦ Im g(c + i t y)` is continuous on `[0, 1]` for every `y > 0`, and the supremum envelope is
-integrable against `y^{2m} / (e^{2πy} - 1)` on `(0, ∞)`, then
+/-- **Supremum bound for the Abel–Plana Lagrange remainder** (DLMF 2.10.2). If `ϑ(y) ∈ [0, 1]`,
+`t ↦ Im g(c + i t y)` is continuous on `[0, 1]` for every `y > 0`, the selected remainder integrand
+is integrable on `(0, ∞)`, and the supremum envelope is integrable against `y^{2m} / (e^{2πy} - 1)`
+on `(0, ∞)`, then
 `|2 (-1)^m / (2m)! * ∫₀^∞ Im g(c + i ϑ(y) y) y^{2m} / (e^{2πy} - 1) dy|
   ≤ 2 / (2m)! * ∫₀^∞ (sup_{t ∈ [0, 1]} |Im g(c + i t y)|) y^{2m} / (e^{2πy} - 1) dy`. -/
 theorem abs_two_mul_pow_div_factorial_integral_im_le {g : ℂ → ℂ} {c : ℝ} {m : ℕ} {ϑ : ℝ → ℝ}
     (hϑ : ∀ y > 0, ϑ y ∈ Icc (0 : ℝ) 1)
     (hcont : ∀ y > 0, ContinuousOn (fun t : ℝ => (g (c + ((t * y : ℝ) : ℂ) * I)).im) (Icc 0 1))
+    (hint_rem : IntegrableOn
+      (fun y : ℝ =>
+        (g (c + ((ϑ y * y : ℝ) : ℂ) * I)).im * y ^ (2 * m) / (Real.exp (2 * π * y) - 1))
+      (Ioi 0))
     (hint : IntegrableOn
       (fun y : ℝ =>
         sSup ((fun t : ℝ => |(g (c + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) *
@@ -312,7 +318,7 @@ theorem abs_two_mul_pow_div_factorial_integral_im_le {g : ℂ → ℂ} {c : ℝ}
   rw [abs_mul, hcoeff]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   rw [← Real.norm_eq_abs]
-  refine norm_integral_le_of_norm_le hint ?_
+  refine (norm_integral_le_integral_norm _).trans (integral_mono_ae hint_rem.norm hint ?_)
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with y (hy : 0 < y)
   have hexp_pos : 0 < Real.exp (2 * π * y) - 1 :=
     sub_pos.mpr (Real.one_lt_exp_iff.mpr (by positivity))
@@ -400,7 +406,7 @@ example {a n : ℤ} (han : a < n) :
       IntegrableOn (fun y : ℝ => ((k : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1)) (Ioi 0) :=
     fun _ => by
       simpa using integrableOn_pow_div_exp_mul_sub_one (k := 1) (c := 2 * π) le_rfl (by positivity)
-  obtain ⟨ϑ, hϑ_mem, _, _, hmain⟩ :=
+  obtain ⟨ϑ, hϑ_mem, _, hϑ_int, hmain⟩ :=
     exists_sum_Icc_eq_abelPlana_bernoulli (f := fun z : ℂ => z) (m := 1) han le_rfl
       contDiff_id.contDiffOn hgrowth (fun _ _ _ => ofReal_im _) (hint_k a) (hint_k n)
   let g : ℂ → ℂ := iteratedDerivWithin 2 (fun z : ℂ => z) S
@@ -408,11 +414,14 @@ example {a n : ℤ} (han : a < n) :
     TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr ⟨by simp [han'.le], by simp⟩
   have hd1 : iteratedDerivWithin 1 (fun z : ℂ => z) S n = 1 := by
     simp [iteratedDerivWithin_fun_id hnS huniq]
-  have hg_im : ∀ u : ℝ, (g (((n : ℝ) : ℂ) + (u : ℂ) * I)).im = 0 := fun u => by
+  have hd2 : ∀ u : ℝ, g (((n : ℝ) : ℂ) + (u : ℂ) * I) = 0 := fun u => by
     have hzS : (((n : ℝ) : ℂ) + (u : ℂ) * I) ∈ S :=
       TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr (by simp [han'.le])
-    rw [show g (((n : ℝ) : ℂ) + (u : ℂ) * I) = 0 from by
-      dsimp only [g]; rw [iteratedDerivWithin_fun_id hzS huniq]; simp, zero_im]
+    dsimp only [g]
+    rw [iteratedDerivWithin_fun_id hzS huniq]
+    simp
+  have hg_im : ∀ u : ℝ, (g (((n : ℝ) : ℂ) + (u : ℂ) * I)).im = 0 := fun u => by
+    rw [hd2 u, zero_im]
   have hsup0 : ∀ y : ℝ,
       sSup ((fun t : ℝ => |(g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) = 0 :=
     fun _ => by
@@ -420,6 +429,7 @@ example {a n : ℤ} (han : a < n) :
   have hrem_bound := abs_two_mul_pow_div_factorial_integral_im_le (g := g) (c := n) (m := 1)
     (ϑ := ϑ) (fun y hy => Ioo_subset_Icc_self (hϑ_mem y hy))
     (fun _ _ => by simp only [hg_im]; exact continuousOn_const)
+    (by simpa [g] using hϑ_int)
     (by simp only [hsup0, zero_mul, zero_div]; exact integrableOn_zero)
   simp only [hsup0, zero_mul, zero_div, integral_zero, mul_zero] at hrem_bound
   have hrem0 : ∫ y in Ioi (0 : ℝ),
@@ -433,7 +443,7 @@ example {a n : ℤ} (han : a < n) :
   have hint_ab : ∫ x in (a : ℝ)..n, (x : ℂ) = ((n : ℂ) ^ 2 - a ^ 2) / 2 := by
     rw [intervalIntegral.integral_ofReal, integral_id]; push_cast; ring
   have hb2 : (bernoulli 2 : ℂ) = 1 / 6 := by
-    rw [bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two]; norm_num
+    rw [bernoulli_two]; norm_num
   rw [hmain]
   simp only [Nat.mul_one, Finset.Icc_self, Finset.sum_singleton, Nat.reduceSub]
   rw [hint_ab, hint_a, hd1, hb2, hrem0]

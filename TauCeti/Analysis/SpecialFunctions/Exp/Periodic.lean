@@ -31,8 +31,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
 * `Complex.exp_two_pi_mul_I_mul_eq_one_iff`: `exp (2 π i z) = 1` iff `z` is an integer.
-* `Complex.exp_neg_two_pi_mul_I_mul_add_intCast`: `exp (-2 π i (z + k)) = exp (-2 π i z)` for an
-  integer `k`.
+* `Complex.exp_neg_two_pi_mul_I_mul_add_intCast`: `exp (-(2 π i (z + k))) = exp (-(2 π i z))` for
+  an integer `k`.
 * `Complex.exp_neg_two_pi_mul_I_mul_intCast_add_mul_I`: `exp (-2 π i (k + y i)) = exp (2 π y)` for
   an integer `k` and real `y`.
 * `Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff`: `exp (-2 π i z) = 1` iff `z` is an integer.
@@ -90,10 +90,11 @@ theorem exp_two_pi_mul_I_mul_eq_one_iff {z : ℂ} :
     exact ⟨k, mul_left_cancel₀ two_pi_I_ne_zero (by linear_combination hk)⟩
   · rw [hm, mul_comm (2 * π * I : ℂ), exp_int_mul_two_pi_mul_I]
 
-/-- `exp (-2 π i (z + k)) = exp (-2 π i z)` for an integer `k`. -/
+/-- `exp (-(2 π i (z + k))) = exp (-(2 π i z))` for an integer `k`. -/
+@[simp]
 theorem exp_neg_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
-    cexp (-2 * π * I * (z + k)) = cexp (-2 * π * I * z) := by
-  have hsplit : -2 * π * I * (z + k) = (-k : ℤ) * (2 * π * I) + (-2 * π * I * z) := by
+    cexp (-(2 * π * I * (z + k))) = cexp (-(2 * π * I * z)) := by
+  have hsplit : -(2 * π * I * (z + k)) = (-k : ℤ) * (2 * π * I) + -(2 * π * I * z) := by
     push_cast; ring
   rw [hsplit, exp_add, exp_int_mul_two_pi_mul_I, one_mul]
 
@@ -101,9 +102,9 @@ theorem exp_neg_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
 @[simp]
 theorem exp_neg_two_pi_mul_I_mul_intCast_add_mul_I (k : ℤ) (y : ℝ) :
     cexp (-(2 * π * I * ((k : ℂ) + (y : ℂ) * I))) = (Real.exp (2 * π * y) : ℂ) := by
-  rw [← neg_mul, ← neg_mul, ← neg_mul, add_comm (k : ℂ), exp_neg_two_pi_mul_I_mul_add_intCast]
-  have hy : -2 * π * I * ((y : ℂ) * I) = ((2 * π * y : ℝ) : ℂ) := by
-    calc -2 * π * I * ((y : ℂ) * I) = -2 * (π : ℂ) * (y : ℂ) * (I * I) := by ring
+  rw [add_comm (k : ℂ), exp_neg_two_pi_mul_I_mul_add_intCast]
+  have hy : -(2 * π * I * ((y : ℂ) * I)) = ((2 * π * y : ℝ) : ℂ) := by
+    calc -(2 * π * I * ((y : ℂ) * I)) = -2 * (π : ℂ) * (y : ℂ) * (I * I) := by ring
       _ = ((2 * π * y : ℝ) : ℂ) := by rw [I_mul_I]; push_cast; ring
   rw [hy, ofReal_exp]
 
@@ -134,7 +135,8 @@ theorem exp_neg_two_pi_mul_I_mul_ne_one_of_re_mem_Ioo {z : ℂ} (j : ℤ)
 /-- If `0 < ‖w‖ < 1`, `w` cannot be a nonzero integer, so `exp (-2 π i (k + w)) ≠ 1`. -/
 theorem exp_neg_two_pi_mul_I_mul_intCast_add_ne_one_of_norm_lt_one (k : ℤ) {w : ℂ}
     (hw0 : 0 < ‖w‖) (hw1 : ‖w‖ < 1) : cexp (-2 * π * I * ((k : ℂ) + w)) ≠ 1 := by
-  rw [add_comm (k : ℂ), exp_neg_two_pi_mul_I_mul_add_intCast]
+  simp only [add_comm (k : ℂ), neg_mul, exp_neg_two_pi_mul_I_mul_add_intCast]
+  simp only [← neg_mul]
   intro h
   obtain ⟨m, rfl⟩ := exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
   rw [norm_intCast] at hw0 hw1

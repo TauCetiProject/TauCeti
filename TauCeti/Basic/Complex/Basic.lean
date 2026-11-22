@@ -19,7 +19,9 @@ estimates at division points to real inequalities.
 For real `t`, the complex number `1 + t ^ 2` is nonzero (`Complex.one_add_ofReal_sq_ne_zero`), as
 needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
 
-Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = (-1 : ℂ) ^ k`.
+Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = (-1 : ℂ) ^ k`, and
+the imaginary part of `I ^ n * w` is given by `Complex.im_I_pow_two_mul_mul` (even `n`) and
+`Complex.im_I_pow_two_mul_add_one_mul` (odd `n`).
 -/
 
 public section
@@ -40,5 +42,18 @@ theorem one_add_ofReal_sq_ne_zero (t : ℝ) : 1 + (t : ℂ) ^ 2 ≠ 0 := by
 @[simp]
 theorem I_pow_two_mul (k : ℕ) : I ^ (2 * k) = (-1 : ℂ) ^ k := by
   rw [pow_mul, I_sq]
+
+/-- The imaginary part of `I ^ (2 * k) * w` is `(-1 : ℝ) ^ k * w.im`. -/
+theorem im_I_pow_two_mul_mul (k : ℕ) (w : ℂ) :
+    (I ^ (2 * k) * w).im = (-1 : ℝ) ^ k * w.im := by
+  rw [I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, mul_im,
+    ofReal_re, ofReal_im, zero_mul, add_zero]
+
+/-- The imaginary part of `I ^ (2 * k + 1) * w` is `(-1 : ℝ) ^ k * w.re`. -/
+theorem im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
+    (I ^ (2 * k + 1) * w).im = (-1 : ℝ) ^ k * w.re := by
+  rw [pow_succ, I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
+    mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re]
+  ring
 
 end Complex

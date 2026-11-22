@@ -227,7 +227,7 @@ theorem integral_Ioi_pow_div_exp_two_pi_mul_sub_one {s : ℕ} (hs : 1 ≤ s) :
 theorem integral_Ioi_div_exp_two_pi_mul_sub_one :
     ∫ y in Ioi (0 : ℝ), y / (exp (2 * π * y) - 1) = 1 / 24 := by
   have h := integral_Ioi_pow_div_exp_two_pi_mul_sub_one (s := 1) le_rfl
-  rw [bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two] at h
+  rw [bernoulli_two] at h
   simpa using (h.trans (by norm_num))
 
 end TauCeti

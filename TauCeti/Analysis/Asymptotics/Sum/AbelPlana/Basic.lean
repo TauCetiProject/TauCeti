@@ -13,7 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
+import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Growth
 import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
@@ -53,9 +55,11 @@ exponentially damped vertical-line remainder.
 * `TauCeti.sum_Icc_eq_abelPlana`: the exact Abel–Plana formula (DLMF 2.10.2) for `f` real on
   `[a, n]`, assuming `Im f(c + i y) / (e^{2πy} - 1)` is integrable on `(0, ∞)` at `c = a` and
   `c = n`.
-* `TauCeti.tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le`: growth criterion verifying the uniform
-  `o(e^{2π|Im z|})` hypothesis when `‖f z‖ ≤ C * (1 + |z.im|) ^ p * e^{c |z.im|}` eventually as
-  `|Im z| → ∞` in the strip with `c < 2 * π`.
+
+The uniform `o(e^{2π|Im z|})` hypothesis can be verified from polynomial-times-exponential strip
+bounds using `TauCeti.tendsto_mul_exp_neg_mul_abs_im_of_norm_le` (with `r = 2 * π`) or
+`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im` in
+`TauCeti.Analysis.Complex.VerticalStrip.Growth`.
 
 ## Proof strategy
 
@@ -404,12 +408,14 @@ private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set �
   refine hprod.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with w hw
   dsimp only [abelPlanaUpper]
-  rw [add_comm (k : ℂ), Complex.exp_neg_two_pi_mul_I_mul_add_intCast, ← norm_mul, mul_sub]
+  simp only [add_comm (k : ℂ), neg_mul, Complex.exp_neg_two_pi_mul_I_mul_add_intCast]
+  rw [← norm_mul, mul_sub]
   congr 1
   have hw0 : w ≠ 0 := hw.1
-  rcases em (cexp (-2 * π * I * w) - 1 = 0) with h0 | h0
-  · rw [h0]; field_simp [hw0, hc_ne]
-  · field_simp [hw0, hc_ne, h0]
+  have h2pi : (2 * π * I : ℂ) ≠ 0 := Complex.two_pi_I_ne_zero
+  rcases em (cexp (-(2 * π * I * w)) - 1 = 0) with h0 | h0
+  · rw [h0]; field_simp [hw0, h2pi]
+  · field_simp [hw0, h2pi, h0]
 
 /-- Along a family of segments `γ ε : [a₀ ε, b₀ ε] → ℂ` of length `ε` with `ε ≤ ‖γ ε t‖ ≤ 2 * ε`,
 the integral of `abelPlanaUpper f (k + γ ε t)` minus its singular model tends to `0` as `ε → 0⁺`. -/
@@ -461,14 +467,28 @@ private theorem tendsto_integral_abelPlanaUpper_sub_zero {f : ℂ → ℂ} {S : 
   rw [hlen, abs_of_pos hε, div_mul_cancel₀ _ hε.ne'] at hle
   exact hle.trans_lt (by linarith)
 
-/-- Norm bounds `ε ≤ ‖w‖ ≤ 2 * ε` for any point `w` on the boundary of `[-ε, ε] × [-ε, ε]`. -/
-private theorem norm_bounds_of_abs_le_and_eq (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
-    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
-    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
-  refine ⟨?_, (Complex.norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
-  rcases hside with h | h
-  · exact h ▸ Complex.abs_re_le_norm w
-  · exact h ▸ Complex.abs_im_le_norm w
+/-- Combines two side limits from `tendsto_integral_abelPlanaUpper_sub_zero` with weight `σ`
+when their singular models sum to `f k / 4`. -/
+private theorem tendsto_abelPlanaUpper_cap {f : ℂ → ℂ} {S : Set ℂ} {k : ℤ} {σ : ℂ}
+    {a₁ b₁ a₂ b₂ : ℝ → ℝ} {γ₁ γ₂ : ℝ → ℝ → ℂ} (hk : (k : ℂ) ∈ S) (hcont : ContinuousOn f S)
+    (hseg₁ : ∀ ε ∈ Ioo (0 : ℝ) 1, b₁ ε - a₁ ε = ε ∧ Continuous (γ₁ ε) ∧
+      ∀ t ∈ Icc (a₁ ε) (b₁ ε), ε ≤ ‖γ₁ ε t‖ ∧ ‖γ₁ ε t‖ ≤ 2 * ε ∧ (k : ℂ) + γ₁ ε t ∈ S)
+    (hseg₂ : ∀ ε ∈ Ioo (0 : ℝ) 1, b₂ ε - a₂ ε = ε ∧ Continuous (γ₂ ε) ∧
+      ∀ t ∈ Icc (a₂ ε) (b₂ ε), ε ≤ ‖γ₂ ε t‖ ∧ ‖γ₂ ε t‖ ≤ 2 * ε ∧ (k : ℂ) + γ₂ ε t ∈ S)
+    (hmodel : ∀ {ε : ℝ}, 0 < ε →
+      (∫ t in a₁ ε..b₁ ε, f k / (-2 * π * I * γ₁ ε t)) +
+        σ * (∫ t in a₂ ε..b₂ ε, f k / (-2 * π * I * γ₂ ε t)) = f k / 4) :
+    Tendsto (fun ε : ℝ =>
+      (∫ t in a₁ ε..b₁ ε, abelPlanaUpper f ((k : ℂ) + γ₁ ε t)) +
+        σ * (∫ t in a₂ ε..b₂ ε, abelPlanaUpper f ((k : ℂ) + γ₂ ε t)))
+      (𝓝[>] 0) (𝓝 (f k / 4)) := by
+  have hb1 := tendsto_integral_abelPlanaUpper_sub_zero hk hcont hseg₁
+  have hb2 := tendsto_integral_abelPlanaUpper_sub_zero hk hcont hseg₂
+  have hcomb := (hb1.add (hb2.const_mul σ)).add_const (f k / 4)
+  simp only [mul_zero, add_zero, zero_add] at hcomb
+  refine hcomb.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+  linear_combination -(hmodel hε)
 
 /-- Quarter-box limit `upperRightCap f j ε → f j / 4` as `ε → 0⁺` for `j ∈ [a, n)`. -/
 private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈ Finset.Ico a n)
@@ -479,27 +499,21 @@ private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j �
   have hjn' : (j : ℝ) + 1 ≤ n := by exact_mod_cast hjn
   have hjS : (j : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simpa using hja', by simp; linarith⟩
-  have hb1 := tendsto_integral_abelPlanaUpper_sub_zero hjS hcont
-    (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε t => (t : ℂ) + ε * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun t ht => by
-        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((t : ℂ) + ε * I) ε
-          (by simp [abs_of_nonneg ht.1, ht.2]) (by simp [abs_of_pos hε0])
-          (Or.inr (by simp [abs_of_pos hε0]))
-        exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩
-  have hb2 := tendsto_integral_abelPlanaUpper_sub_zero hjS hcont
-    (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε y => (ε : ℂ) + y * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun y hy => by
-        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((ε : ℂ) + y * I) ε
-          (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
-          (Or.inl (by simp [abs_of_pos hε0]))
-        exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩
-  have hcomb := (hb1.sub (hb2.const_mul I)).add_const (f j / 4)
-  simp only [mul_zero, sub_self, zero_add] at hcomb
-  refine hcomb.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-  dsimp only [upperRightCap]
-  simp only [add_assoc]
-  linear_combination -upperRightCap_model (f j) hε
+  have hcap := tendsto_abelPlanaUpper_cap hjS hcont (σ := -I)
+    (a₁ := fun _ => 0) (b₁ := fun ε => ε) (γ₁ := fun ε t => (t : ℂ) + ε * I)
+    (a₂ := fun _ => 0) (b₂ := fun ε => ε) (γ₂ := fun ε y => (ε : ℂ) + y * I)
+    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun t ht => by
+      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((t : ℂ) + ε * I) ε
+        (by simp [abs_of_nonneg ht.1, ht.2]) (by simp [abs_of_pos hε0])
+        (Or.inr (by simp [abs_of_pos hε0]))
+      exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩)
+    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun y hy => by
+      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((ε : ℂ) + y * I) ε
+        (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
+        (Or.inl (by simp [abs_of_pos hε0]))
+      exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩)
+    fun {ε} hε => by simpa [sub_eq_add_neg, neg_mul] using upperRightCap_model (f j) hε
+  simpa only [upperRightCap, sub_eq_add_neg, neg_mul, add_assoc] using hcap
 
 /-- Quarter-box limit `upperLeftCap f (j + 1) ε → f (j + 1) / 4` as `ε → 0⁺` for `j ∈ [a, n)`. -/
 private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈ Finset.Ico a n)
@@ -511,27 +525,21 @@ private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈
   have hkn' : (k : ℝ) ≤ n := by dsimp [k]; exact_mod_cast hjn
   have hkS : (k : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simp; linarith, by simpa using hkn'⟩
-  have hb1 := tendsto_integral_abelPlanaUpper_sub_zero hkS hcont
-    (a₀ := fun ε => -ε) (b₀ := fun _ => 0) (γ := fun ε t => (t : ℂ) + ε * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨by ring, by fun_prop, fun t ht => by
-        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((t : ℂ) + ε * I) ε
-          (by simp [abs_of_nonpos ht.2]; linarith [ht.1]) (by simp [abs_of_pos hε0])
-          (Or.inr (by simp [abs_of_pos hε0]))
-        exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩
-  have hb2 := tendsto_integral_abelPlanaUpper_sub_zero hkS hcont
-    (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε y => -(ε : ℂ) + y * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun y hy => by
-        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq (-(ε : ℂ) + y * I) ε
-          (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
-          (Or.inl (by simp [abs_of_pos hε0]))
-        exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩
-  have hcomb := (hb1.add (hb2.const_mul I)).add_const (f k / 4)
-  simp only [mul_zero, add_zero, zero_add] at hcomb
-  refine hcomb.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-  dsimp only [upperLeftCap, k]
-  simp only [sub_eq_add_neg, add_assoc]
-  linear_combination -upperLeftCap_model (f ((j + 1 : ℤ) : ℂ)) hε
+  have hcap := tendsto_abelPlanaUpper_cap hkS hcont (σ := I)
+    (a₁ := fun ε => -ε) (b₁ := fun _ => 0) (γ₁ := fun ε t => (t : ℂ) + ε * I)
+    (a₂ := fun _ => 0) (b₂ := fun ε => ε) (γ₂ := fun ε y => -(ε : ℂ) + y * I)
+    (fun ε ⟨hε0, hε1⟩ => ⟨by ring, by fun_prop, fun t ht => by
+      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((t : ℂ) + ε * I) ε
+        (by simp [abs_of_nonpos ht.2]; linarith [ht.1]) (by simp [abs_of_pos hε0])
+        (Or.inr (by simp [abs_of_pos hε0]))
+      exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩)
+    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun y hy => by
+      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le (-(ε : ℂ) + y * I) ε
+        (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
+        (Or.inl (by simp [abs_of_pos hε0]))
+      exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩)
+    fun {ε} hε => upperLeftCap_model (f k) hε
+  simpa only [upperLeftCap, k, sub_eq_add_neg, add_assoc] using hcap
 
 /-- Shrinking the punctured unit subintervals `[j + ε, j + 1 - ε]` to `[j, j + 1]` recovers
 `- ∫_a^n f` as `ε → 0⁺`. -/
@@ -569,7 +577,7 @@ private theorem tendsto_sum_abelPlana_caps {f : ℂ → ℂ} {a n : ℤ} (han : 
   have hcont_conj : ContinuousOn (schwarzConjFun f)
       (Complex.HadamardThreeLines.verticalClosedStrip a n) :=
     continuousOn_conj_conj_of_symmetric
-      (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h) hcont
+      (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a n) hcont
   have htrap : ∑ j ∈ Finset.Ico a n, (f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2) =
       (∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2 := by
     have hsum := Finset.sum_Ico_add_add_endpoints (fun j : ℤ => f j / 2) han.le
@@ -614,7 +622,7 @@ private theorem real_seg_add_conj_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
       (fun x : ℝ => conj (abelPlanaUpper (schwarzConjFun f) x)) volume _ _ :=
     (Complex.continuous_conj.comp_continuousOn
       (hc (continuousOn_conj_conj_of_symmetric
-        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h)
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a n)
         hcont))).intervalIntegrable_of_Icc (μ := volume) hle1
   rw [← intervalIntegral.intervalIntegral_conj, ← intervalIntegral.integral_add hc1 hc2,
     ← intervalIntegral.integral_neg]
@@ -644,7 +652,7 @@ private theorem vert_seg_add_conj_eq {f : ℂ → ℂ} {a n k : ℤ} {ε T : ℝ
       (fun y : ℝ => conj (schwarzConjFun f (k + y * I) / (Real.exp (2 * π * y) - 1))) volume _ _ :=
     (Complex.continuous_conj.comp_continuousOn
       (hv (continuousOn_conj_conj_of_symmetric
-        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h)
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a n)
         hcont))).intervalIntegrable_of_Icc (μ := volume) hεT
   rw [← intervalIntegral.intervalIntegral_conj, neg_mul, ← sub_eq_add_neg, ← mul_sub,
     ← intervalIntegral.integral_sub hv1 hv2]
@@ -671,9 +679,9 @@ private theorem combined_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ
   have hu2 := congrArg (starRingEnd ℂ)
     (upper_rect_identity (f := schwarzConjFun f) han hε0 hε2 hεT
       (differentiableOn_conj_conj_of_symmetric
-        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalStrip] using h) hf)
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalStrip a n) hf)
       (continuousOn_conj_conj_of_symmetric
-        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h) hcont))
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a n) hcont))
   simp only [map_add, map_sub, map_sum, map_mul, Complex.conj_I] at hu2
   have hcomb := congrArg₂ (· + ·) hu1 hu2
   have hsum_real :
@@ -818,21 +826,5 @@ theorem sum_Icc_eq_abelPlana {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
   linear_combination (norm := ring)
     ((∫ y in Ioi (0 : ℝ), (f (a + y * I)).im / (Real.exp (2 * π * y) - 1) : ℝ) : ℂ) * hI2 -
       ((∫ y in Ioi (0 : ℝ), (f (n + y * I)).im / (Real.exp (2 * π * y) - 1) : ℝ) : ℂ) * hI2
-
-/-! ### Growth criterion -/
-
-/-- Sufficient growth condition for the Abel–Plana formula: if `‖f z‖ ≤ C * (1 + |z.im|) ^ p *
-exp (c * |z.im|)` holds eventually as `|z.im| → ∞` uniformly on `verticalClosedStrip a b`
-with `c < 2 * π`, then `f z * exp (-(2 * π * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the
-strip. -/
-theorem tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c : ℝ}
-    (hc : c < 2 * π)
-    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓
-        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b),
-      ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
-    Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓
-        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) :=
-  tendsto_mul_exp_neg_mul_abs_im_of_norm_le hc hbound
 
 end TauCeti

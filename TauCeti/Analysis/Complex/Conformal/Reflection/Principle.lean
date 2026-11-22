@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.VerticalStrip.Basic
 
 /-!
 # The Schwarz reflection principle across the real axis
@@ -48,10 +49,10 @@ continuity on the closure of a vertical strip (`TauCeti.apply_conj_eq_conj_of_im
 
 public section
 
-namespace TauCeti
-
-open Complex Filter Set Topology
+open _root_.Complex Filter Set Topology
 open scoped ComplexConjugate
+
+namespace TauCeti
 
 variable {f : ℂ → ℂ}
 
@@ -163,6 +164,23 @@ theorem exists_lt_lt_ne_zero_of_ne_zero {x r : ℝ} (hr : 0 < r)
     abs_of_pos (half_pos hr)])
   exact ⟨y₁, y₂, by linarith, by linarith, by linarith, by linarith, hy₁, hy₂⟩
 
+/-- A holomorphic function on a preconnected open set `Ω` meeting the real axis at `x` that
+vanishes on `Ω ∩ ℝ` vanishes identically on `Ω`. -/
+private theorem eqOn_zero_of_differentiableOn_of_zero_on_real_axis {Ω : Set ℂ}
+    (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω) {x : ℝ} (hx : (x : ℂ) ∈ Ω)
+    (hFd : DifferentiableOn ℂ f Ω) (hzero : ∀ z ∈ Ω, z.im = 0 → f z = 0) :
+    EqOn f 0 Ω := by
+  have hreal : ∀ᶠ t : ℝ in 𝓝[≠] x, f t = 0 := by
+    filter_upwards [nhdsWithin_le_nhds <| continuous_ofReal.continuousAt.preimage_mem_nhds
+      (hΩopen.mem_nhds hx)] with t ht
+    exact hzero _ ht (ofReal_im t)
+  have hmap : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (continuous_ofReal.tendsto x |>.mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun t ht => by simpa using ht)
+  exact (hFd.analyticOnNhd hΩopen).eqOn_zero_of_preconnected_of_frequently_eq_zero hΩconn
+    hx (hmap.frequently hreal.frequently)
+
 /-- **Boundary uniqueness on the real axis.** On a preconnected conjugation-symmetric open set
 `Ω` meeting the real axis, a function continuous on the closed upper part, holomorphic on the
 open upper part and vanishing on the real axis vanishes on the whole closed upper part. -/
@@ -174,17 +192,8 @@ theorem eqOn_zero_of_zero_on_real_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω) (hΩ
     EqOn f 0 (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
   obtain ⟨F, hFd, hFf, -⟩ := exists_differentiableOn_eqOn_conj_of_symmetric hΩopen hΩ hcont
     hholo fun z hz hz0 => by rw [hzero z hz hz0, zero_im]
-  -- the extension vanishes at the real points of `Ω` accumulating at `x`
-  have hreal : ∀ᶠ t : ℝ in 𝓝[≠] x, F t = 0 := by
-    filter_upwards [nhdsWithin_le_nhds <| continuous_ofReal.continuousAt.preimage_mem_nhds
-      (hΩopen.mem_nhds hx)] with t ht
-    rw [hFf ⟨ht, by simp⟩, hzero _ ht (ofReal_im t)]
-  have hmap : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_ofReal.tendsto x |>.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun t ht => by simpa using ht)
-  have hF0 := (hFd.analyticOnNhd hΩopen).eqOn_zero_of_preconnected_of_frequently_eq_zero hΩconn
-    hx (hmap.frequently hreal.frequently)
+  have hF0 := eqOn_zero_of_differentiableOn_of_zero_on_real_axis hΩopen hΩconn hx hFd
+    fun z hz hz0 => (hFf ⟨hz, hz0.ge⟩).trans (hzero z hz hz0)
   exact fun z hz => (hFf hz).symm.trans (hF0 hz.1)
 
 /-- **Boundary uniqueness on an upper horizontal strip.** For `0 < c`, a function continuous
@@ -248,18 +257,14 @@ theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
     {z : ℂ} (hz : z ∈ Ω) :
     f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
   let G : ℂ → ℂ := fun w => f w - (starRingEnd ℂ) (f ((starRingEnd ℂ) w))
-  have hGdiff : DifferentiableOn ℂ G Ω := hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf)
-  have hGupper : EqOn G 0 (Ω ∩ {w : ℂ | 0 ≤ w.im}) :=
-    eqOn_zero_of_zero_on_real_axis hΩopen hΩconn hΩ hx
-      (hGdiff.continuousOn.mono inter_subset_left) (hGdiff.mono inter_subset_left)
+  have hG0 : EqOn G 0 Ω :=
+    eqOn_zero_of_differentiableOn_of_zero_on_real_axis hΩopen hΩconn hx
+      (hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf))
       fun w hw hw0 => by
         dsimp only [G]
         rw [Complex.conj_eq_iff_im.mpr hw0, Complex.conj_eq_iff_im.mpr (hreal w hw hw0), sub_self]
-  rcases le_or_gt 0 z.im with hz_im | hz_im
-  · have h0 : f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := sub_eq_zero.mp (hGupper ⟨hz, hz_im⟩)
-    simpa only [starRingEnd_self_apply] using (congrArg (starRingEnd ℂ) h0).symm
-  · have h0 := sub_eq_zero.mp (hGupper ⟨hΩ hz, by simp [hz_im.le]⟩)
-    simpa only [starRingEnd_self_apply] using h0
+  have h0 : f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := sub_eq_zero.mp (hG0 hz)
+  simpa only [starRingEnd_self_apply] using (congrArg (starRingEnd ℂ) h0).symm
 
 /-- **Schwarz reflection symmetry on a closed vertical strip.** If `f` is holomorphic on the open
 strip `verticalStrip a b` (`a < b`), continuous on the closed strip `verticalClosedStrip a b`, and
@@ -272,22 +277,23 @@ theorem apply_conj_eq_conj_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
     f (conj z) = conj (f z) := by
   have hΩ : EqOn (fun w => f (conj w)) (fun w => conj (f w))
       (Complex.HadamardThreeLines.verticalStrip a b) := fun w hw =>
-    apply_conj_eq_conj_of_real_on_axis (isOpen_Ioo.preimage continuous_re)
-      ((convex_Ioo a b).linear_preimage reLm).isPreconnected
-      (fun _ h => by simpa [Complex.HadamardThreeLines.verticalStrip] using h) (x := (a + b) / 2)
-      (by simp; constructor <;> linarith) hf
+    apply_conj_eq_conj_of_real_on_axis (TauCeti.Complex.HadamardThreeLines.isOpen_verticalStrip a b)
+      (TauCeti.Complex.HadamardThreeLines.convex_verticalStrip a b).isPreconnected
+      (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalStrip a b) (x := (a + b) / 2)
+      (by simp only [TauCeti.Complex.HadamardThreeLines.mem_verticalStrip_iff, ofReal_re, mem_Ioo]
+          constructor <;> linarith)
+      hf
       (fun u hu hu0 => by
         rw [← re_add_im u, hu0, ofReal_zero, zero_mul, add_zero]
         exact hreal u.re hu.1 hu.2) hw
-  have hSsymm : MapsTo (starRingEnd ℂ) (Complex.HadamardThreeLines.verticalClosedStrip a b)
-      (Complex.HadamardThreeLines.verticalClosedStrip a b) :=
-    fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h
   have hS : EqOn (fun w => f (conj w)) (fun w => conj (f w))
       (Complex.HadamardThreeLines.verticalClosedStrip a b) :=
-    hΩ.of_subset_closure (hcont.comp continuous_conj.continuousOn hSsymm)
-      (continuous_conj.comp_continuousOn hcont) (preimage_mono Ioo_subset_Icc_self) (by
-        rw [Complex.HadamardThreeLines.verticalStrip,
-          Complex.HadamardThreeLines.verticalClosedStrip, closure_preimage_re, closure_Ioo hab.ne])
+    hΩ.of_subset_closure
+      (hcont.comp continuous_conj.continuousOn
+        (TauCeti.Complex.HadamardThreeLines.mapsTo_conj_verticalClosedStrip a b))
+      (continuous_conj.comp_continuousOn hcont)
+      (TauCeti.Complex.HadamardThreeLines.verticalStrip_subset_verticalClosedStrip a b)
+      (TauCeti.Complex.HadamardThreeLines.closure_verticalStrip hab).superset
   exact hS hz
 
 end TauCeti

@@ -80,6 +80,16 @@ theorem one_sub_mem_verticalClosedStrip_iff :
   simpa only [one_re, sub_self, sub_zero] using
     sub_mem_verticalClosedStrip_iff (a := 0) (b := 1) (1 : ℂ) z
 
+/-- Complex conjugation preserves open vertical strips. -/
+theorem mapsTo_conj_verticalStrip (a b : ℝ) :
+    MapsTo (starRingEnd ℂ) (verticalStrip a b) (verticalStrip a b) :=
+  fun _ hz => by simpa only [mem_verticalStrip_iff, conj_re] using hz
+
+/-- Complex conjugation preserves closed vertical strips. -/
+theorem mapsTo_conj_verticalClosedStrip (a b : ℝ) :
+    MapsTo (starRingEnd ℂ) (verticalClosedStrip a b) (verticalClosedStrip a b) :=
+  fun _ hz => by simpa only [mem_verticalClosedStrip_iff, conj_re] using hz
+
 theorem isOpen_verticalStrip (a b : ℝ) : IsOpen (verticalStrip a b) :=
   isOpen_Ioo.preimage continuous_re
 
@@ -322,17 +332,6 @@ open scoped Nat
 
 namespace TauCeti
 
-private lemma im_I_pow_two_mul_mul (k : ℕ) (w : ℂ) :
-    (I ^ (2 * k) * w).im = (-1 : ℝ) ^ k * w.im := by
-  rw [_root_.Complex.I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, mul_im,
-    ofReal_re, ofReal_im, zero_mul, add_zero]
-
-private lemma im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
-    (I ^ (2 * k + 1) * w).im = (-1 : ℝ) ^ k * w.re := by
-  rw [pow_succ, _root_.Complex.I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
-    mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re]
-  ring
-
 /-- The degree-`(2 * m - 1)` Taylor polynomial of `t ↦ Im f(c + i t)` on `[0, y]` collapses to
 the odd-order sum over `Finset.Icc 1 m` when `f` is real on `[a, b]`. -/
 private lemma taylorWithinEval_im_comp {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
@@ -372,13 +371,13 @@ private lemma taylorWithinEval_im_comp {f : ℂ → ℂ} {a b c y : ℝ} {m : �
       have := Finset.mem_range.mp hj; omega
     have him0 : (iteratedDerivWithin (2 * j) f S c).im = 0 :=
       hf.im_iteratedDerivWithin_verticalClosedStrip_eq_zero hab hc (by exact_mod_cast hj_le) hreal
-    rw [im_I_pow_two_mul_mul, him0, mul_zero, zero_mul, zero_div]
+    rw [_root_.Complex.im_I_pow_two_mul_mul, him0, mul_zero, zero_mul, zero_div]
   rw [heven, zero_add]
   symm
   rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, add_tsub_cancel_right]
   refine Finset.sum_congr rfl fun j _ => ?_
   have hsub : 2 * (1 + j) - 1 = 2 * j + 1 := by omega
-  rw [Nat.add_sub_cancel_left, hsub, im_I_pow_two_mul_add_one_mul]
+  rw [Nat.add_sub_cancel_left, hsub, _root_.Complex.im_I_pow_two_mul_add_one_mul]
 
 /-- Pointwise Taylor–Lagrange identity along a vertical line: if `f : ℂ → ℂ` is `C^{2m}`
 (`1 ≤ m`) on the closed vertical strip `verticalClosedStrip a b` (`a < b`) and real-valued on
@@ -436,7 +435,7 @@ theorem exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ} {m :
         ((2 * m - 1) + 1)! =
       (-1 : ℝ) ^ m * (iteratedDerivWithin (2 * m) f S (c + ((ξ / y * y : ℝ) : ℂ) * I)).im *
         y ^ (2 * m) / (2 * m)! := by
-    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, im_I_pow_two_mul_mul]
+    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, _root_.Complex.im_I_pow_two_mul_mul]
   have hψy : ψ y = (f (c + (y : ℂ) * I)).im := by simp [ψ, γ, _root_.Complex.real_smul]
   linarith [hξ_eq, htaylor, hrem, hψy]
 

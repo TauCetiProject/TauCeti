@@ -65,6 +65,9 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `ε ≤ ‖w‖ ≤ 2 * ε`
+(`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
 -/
 
 public section
@@ -366,5 +369,15 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
+`ε ≤ ‖w‖ ≤ 2 * ε`. -/
+theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
+    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
+    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
+  refine ⟨?_, (norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
+  rcases hside with h | h
+  · exact h ▸ abs_re_le_norm w
+  · exact h ▸ abs_im_le_norm w
 
 end Complex
