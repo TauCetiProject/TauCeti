@@ -19,9 +19,7 @@ covered by sections.
 This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback`: if
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the fibre of
-`pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`; and
-`CategoryTheory.Over.isMonHom_pullbackId_hom_app`, showing that `Over.pullbackId` preserves
-monoid-object structures on each component.
+`pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`.
 -/
 
 public section
@@ -99,18 +97,5 @@ theorem exists_pullback_snd_comp_eq_of_pullback {R : C} {X Y Z : Over S} (f : X 
     _ = pullback.snd c y ≫ yR ≫ gR.left ≫ pullback.fst Z.hom s := by
       rw [hgR, Over.comp_left]
       simp [φ, F, s, Category.assoc]
-
-section
-
-open scoped CategoryTheory.Obj
-
-/-- The natural isomorphism `Over.pullbackId` preserves monoid-object structures on each
-component. -/
-instance isMonHom_pullbackId_hom_app {X : C} (M : Over X) [MonObj M] :
-    IsMonHom ((Over.pullbackId (X := X)).hom.app M) :=
-  inferInstanceAs
-    (IsMonHom ((Functor.mapMonNatTrans (Over.pullbackId (X := X)).hom).app (Mon.mk M)).hom)
-
-end
 
 end CategoryTheory.Over

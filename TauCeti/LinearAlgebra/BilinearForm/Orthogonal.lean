@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 
 /-!
 # Orthogonal complements of bilinear forms
@@ -77,6 +78,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-pairing splits off.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
+* `LinearMap.BilinForm.IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors`: two vectors whose
+  value under an alternating form is a non-zero-divisor are linearly independent.
+* `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal_of_dvd`: a pair `e, f` whose value
+  `B e f` is a non-zero-divisor dividing every `B e u` and `B f u` spans an orthogonal direct
+  summand.
 * `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
   `LinearMap.BilinForm.IsAlt.finrank_orthogonal_span_pair_add_two`: a hyperbolic pair of an
   alternating form spans a complement of its orthogonal complement, which has codimension two.
@@ -85,6 +91,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   in any dimension.
 * `LinearMap.BilinForm.IsRefl.nondegenerate_restrict_of_isCompl_ker`: a reflexive form is
   nondegenerate on every complement of its kernel.
+* `LinearMap.IsRefl.apply_add_add_of_mem`: a reflexive form splits on `W + W^⊥`.
+* `Submodule.map_comap_orthogonalBilin_of_isometry` and
+  `Submodule.finrank_inf_orthogonalBilin_eq_of_isometry`: a linear isomorphism of subspaces
+  carrying one form to the other, up to an injective map of values, matches the radicals
+  `W ∩ W^⊥` of the restricted forms.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
@@ -600,7 +611,47 @@ section HyperbolicPair
 
 open Submodule
 
-variable {B : LinearMap.BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
+variable {B : LinearMap.BilinForm R M}
+
+/-- Two vectors whose value under an alternating form is a non-zero-divisor are linearly
+independent. -/
+theorem IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors (hB : B.IsAlt) {e f : M}
+    (hd : B e f ∈ nonZeroDivisors R) : LinearIndependent R ![e, f] :=
+  -- The Gram matrix of `![e, f]` is `B e f • !![0, 1; -1, 0]`, of determinant `1`.
+  linearIndependent_of_isUnit_det (B := B) hd (G := !![0, 1; -1, 0])
+    (fun i j => by fin_cases i <;> fin_cases j <;> simp [hB.self_eq_zero, ← hB.neg_eq e f])
+    (by simp)
+
+/-- **A pair whose value divides its pairings splits off orthogonally.** If `B e f` is a
+non-zero-divisor dividing every `B e u` and every `B f u`, then the span of `e` and `f` and its
+orthogonal complement are complementary. The component of `u` in the orthogonal complement is
+`u + b • e - a • f`, where `B e u = B e f * a` and `B f u = B e f * b`. When `B e f = -1` (that
+is, `B f e = 1`) this is `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal`. -/
+theorem IsAlt.isCompl_span_pair_orthogonal_of_dvd (hB : B.IsAlt) {e f : M}
+    (hd : B e f ∈ nonZeroDivisors R) (hdvd : ∀ u, B e f ∣ B e u ∧ B e f ∣ B f u) :
+    IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
+  have hfe : B f e = -B e f := (hB.neg_eq e f).symm
+  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
+    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
+  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
+    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
+      simpa [orthogonal] using hv'
+    simp only [map_add, map_smul, smul_eq_mul, hB.self_eq_zero, hfe, mul_zero, zero_add,
+      add_zero, mul_neg, neg_eq_zero] at he hf
+    rw [mem_nonZeroDivisors_iff_right.1 hd a hf, mem_nonZeroDivisors_iff_right.1 hd b he,
+      zero_smul, zero_smul, add_zero]
+    exact zero_mem _
+  · obtain ⟨a, ha⟩ := (hdvd u).1
+    obtain ⟨b, hb⟩ := (hdvd u).2
+    refine mem_sup.2 ⟨a • f - b • e, sub_mem (smul_mem _ _ (subset_span (by simp)))
+      (smul_mem _ _ (subset_span (by simp))), u + b • e - a • f, ?_, by abel⟩
+    refine mem_orthogonal_iff.2 fun n hn => ?_
+    obtain ⟨s, t, rfl⟩ := mem_span_pair.1 hn
+    simp only [map_add, map_sub, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+      smul_eq_mul, hB.self_eq_zero, hfe, ha, hb]
+    ring
+
+variable (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
 include hB hfe
 
 /-- If `B f e = 1` for an alternating form, then `B e f = -1`. -/
@@ -615,14 +666,10 @@ theorem IsAlt.apply_smul_add_smul_snd (a b : R) : B f (a • e + b • f) = a :=
   simp [hfe, hB.self_eq_zero]
 
 /-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
-theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have h1 := congrArg (B f) hst
-  have h2 := congrArg (B e) hst
-  rw [hB.apply_smul_add_smul_snd hfe, map_zero] at h1
-  rw [hB.apply_smul_add_smul_fst hfe, map_zero, neg_eq_zero] at h2
-  exact ⟨h1, h2⟩
+theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] :=
+  hB.linearIndependent_pair_of_mem_nonZeroDivisors <| by
+    rw [hB.apply_eq_neg_one_of_apply_eq_one hfe]
+    exact isUnit_neg_one.mem_nonZeroDivisors
 
 /-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
 of the hyperbolic pair `e, f`. -/
@@ -634,17 +681,10 @@ theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
 span carries a nondegenerate form, so no nondegeneracy of the ambient form is needed. -/
 theorem IsAlt.isCompl_span_pair_orthogonal :
     IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
-  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
-    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
-  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
-    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
-      simpa [orthogonal] using hv'
-    rw [hB.apply_smul_add_smul_fst hfe, neg_eq_zero] at he
-    rw [hB.apply_smul_add_smul_snd hfe] at hf
-    simp [he, hf]
-  · refine mem_sup.2 ⟨B f u • e - B e u • f, sub_mem (smul_mem _ _ (subset_span (by simp)))
-      (smul_mem _ _ (subset_span (by simp))), u - B f u • e + B e u • f,
-      hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u, by abel⟩
+  have hu : IsUnit (B e f) := by
+    rw [hB.apply_eq_neg_one_of_apply_eq_one hfe]
+    exact isUnit_neg_one
+  exact hB.isCompl_span_pair_orthogonal_of_dvd hu.mem_nonZeroDivisors fun _ => ⟨hu.dvd, hu.dvd⟩
 
 end HyperbolicPair
 
@@ -783,6 +823,41 @@ theorem orthogonalBilin_compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R
   simp only [mem_orthogonalBilin, LinearMap.compr₂_apply]
   exact forall₂_congr fun w _ ↦ by rw [← map_zero e, he.eq_iff]
 
+section Isometry
+
+variable {R M M' Q Q' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] [AddCommGroup Q] [Module R Q] [AddCommGroup Q'] [Module R Q']
+  {B : M →ₗ[R] M →ₗ[R] Q} {B' : M' →ₗ[R] M' →ₗ[R] Q'} {W : Submodule R M} {W' : Submodule R M'}
+  {c : Q →ₗ[R] Q'}
+
+/-- A linear isomorphism `L : W ≃ W'` with `B'(L x, L y) = c (B(x, y))`, for an injective `c`,
+maps the radical `W ∩ W^⊥` of `B` restricted to `W` onto the radical `W' ∩ W'^⊥` of `B'`
+restricted to `W'`, both seen inside `W` and `W'`. -/
+theorem map_comap_orthogonalBilin_of_isometry (hc : Function.Injective c) (L : W ≃ₗ[R] W')
+    (hL : ∀ x y : W, B' (L x) (L y) = c (B x y)) :
+    ((W.orthogonalBilin B).comap W.subtype).map (L : W →ₗ[R] W') =
+      (W'.orthogonalBilin B').comap W'.subtype := by
+  ext y
+  obtain ⟨x, rfl⟩ := L.surjective y
+  simp only [mem_map_equiv, LinearEquiv.symm_apply_apply, mem_comap, subtype_apply,
+    mem_orthogonalBilin]
+  refine ⟨fun h n hn ↦ ?_, fun h n hn ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := L.surjective ⟨n, hn⟩
+    rw [show n = L m by rw [hm], hL, h m m.property, map_zero]
+  · exact hc (by rw [← hL ⟨n, hn⟩ x, h _ (L ⟨n, hn⟩).property, map_zero])
+
+/-- A linear isomorphism `L : W ≃ W'` with `B'(L x, L y) = c (B(x, y))`, for an injective `c`,
+matches the radicals of the restricted forms, so `W ∩ W^⊥` and `W' ∩ W'^⊥` have the same
+dimension. -/
+theorem finrank_inf_orthogonalBilin_eq_of_isometry (hc : Function.Injective c)
+    (L : W ≃ₗ[R] W') (hL : ∀ x y : W, B' (L x) (L y) = c (B x y)) :
+    Module.finrank R ↥(W ⊓ W.orthogonalBilin B) =
+      Module.finrank R ↥(W' ⊓ W'.orthogonalBilin B') := by
+  rw [← map_comap_subtype, ← map_comap_subtype, finrank_map_subtype_eq, finrank_map_subtype_eq,
+    ← map_comap_orthogonalBilin_of_isometry hc L hL, LinearEquiv.finrank_map_eq]
+
+end Isometry
+
 end Submodule
 
 namespace LinearMap
@@ -794,6 +869,14 @@ theorem IsRefl.compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
     (B.compr₂ e).IsRefl := fun x y h ↦ by
   rw [compr₂_apply, ← map_zero e, he.eq_iff] at h
   rw [compr₂_apply, hB x y h, map_zero]
+
+/-- Vectors of `W` and of `W^⊥` do not pair, so a reflexive form splits on `W + W^⊥`. -/
+theorem IsRefl.apply_add_add_of_mem {R M Q : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid Q] [Module R Q] {B : M →ₗ[R] M →ₗ[R] Q} (hB : B.IsRefl)
+    {W : Submodule R M} {w₁ w₂ u₁ u₂ : M} (hw₁ : w₁ ∈ W) (hw₂ : w₂ ∈ W)
+    (hu₁ : u₁ ∈ W.orthogonalBilin B) (hu₂ : u₂ ∈ W.orthogonalBilin B) :
+    B (w₁ + u₁) (w₂ + u₂) = B w₁ w₂ + B u₁ u₂ := by
+  simp [hu₂ w₁ hw₁, hB _ _ (hu₁ w₂ hw₂)]
 
 /-- **Identifying a line with the scalars turns an injective line-valued form into a
 nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,

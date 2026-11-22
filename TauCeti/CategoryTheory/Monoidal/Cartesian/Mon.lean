@@ -5,35 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
 
 /-!
-# Pointwise characterization of monoid-object homomorphisms
+# Monoid homomorphisms detected on points
 
-In a cartesian monoidal category `C`, every hom-set `X ⟶ M` into a monoid object `M` carries the
-pointwise monoid structure (`CategoryTheory.Hom.monoid`). A morphism `f : M ⟶ N` between monoid
-objects is a monoid-object homomorphism (`CategoryTheory.IsMonHom f`) if and only if
-postcomposition by `f` preserves the unit and multiplication on `X`-points for every `X : C`.
-When `N` is a group object, preservation of multiplication on all `X`-points already implies
-preservation of the unit (and, when `M` is also a group object, of inverses).
+In a cartesian monoidal category every hom-set `X ⟶ M` into a monoid object `M` is a monoid
+(`CategoryTheory.MonObj.Hom.monoid`). A morphism `f : M ⟶ N` of monoid objects is a monoid
+homomorphism (`IsMonHom f`) exactly when postcomposition with `f` preserves the unit and the
+multiplication of these point monoids for every test object `X`. Mathlib proves the forward
+direction as `MonObj.one_comp` and `MonObj.mul_comp`; this file adds the converse, which tests the
+unit on the tensor unit and the multiplication on the universal pair of points
+`fst M M, snd M M : M ⊗ M ⟶ M`.
 
-This is the Yoneda criterion corresponding to `CategoryTheory.isCommMonObj_iff_isMulCommutative`.
+For group schemes over a base `S` this is the statement that a morphism in `Over S` is a
+homomorphism exactly when it is one on `T`-valued points for every `S`-scheme `T`.
 
-## Main results
+## Main declarations
 
-* `CategoryTheory.isMonHom_iff_one_comp_and_mul_comp` (and its additive version
-  `CategoryTheory.isAddMonHom_iff_zero_comp_and_add_comp`): `IsMonHom f` holds if and only if
-  postcomposition by `f` preserves the unit and multiplication on `X`-points for every `X : C`.
-* `CategoryTheory.GrpObj.isMonHom_iff_mul_comp` (and its additive version
-  `CategoryTheory.AddGrpObj.isAddMonHom_iff_add_comp`): when the target is a group object,
-  preservation of multiplication on `X`-points for every `X : C` already suffices.
+* `CategoryTheory.isMonHom_iff_forall_one_comp_mul_comp`: `IsMonHom f` holds exactly when
+  postcomposition with `f` preserves the unit and multiplication of all point monoids. Its
+  additive form is `CategoryTheory.isAddMonHom_iff_forall_zero_comp_add_comp`.
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
-
-open scoped CategoryTheory.MonObj
+open scoped CategoryTheory.MonObj CategoryTheory.AddMonObj
 
 namespace CategoryTheory
 
@@ -41,36 +39,20 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
 
-/-- A morphism `f : M ⟶ N` between monoid objects in a cartesian monoidal category is a
-monoid-object homomorphism if and only if postcomposition by `f` preserves the unit and
-multiplication on `X`-points for every `X : C`. -/
-@[to_additive
-/-- A morphism `f : M ⟶ N` between additive monoid objects in a cartesian monoidal category is an
-additive monoid-object homomorphism if and only if postcomposition by `f` preserves zero and
-addition on `X`-points for every `X : C`. -/]
-theorem isMonHom_iff_one_comp_and_mul_comp {M N : C} [MonObj M] [MonObj N] (f : M ⟶ N) :
-    IsMonHom f ↔
-      (∀ X : C, (1 : X ⟶ M) ≫ f = 1) ∧
-      (∀ (X : C) (x y : X ⟶ M), (x * y) ≫ f = x ≫ f * y ≫ f) := by
-  refine ⟨fun _ ↦ ⟨fun _ ↦ MonObj.one_comp f, fun _ _ _ ↦ MonObj.mul_comp _ _ f⟩,
-    fun ⟨h1, hmul⟩ ↦ ⟨?_, ?_⟩⟩
-  · simpa only [MonObj.one_eq_one] using h1 (𝟙_ C)
-  · simpa only [MonObj.mul_eq_mul, MonObj.comp_mul, tensorHom_fst, tensorHom_snd] using
-      hmul (M ⊗ M) (fst M M) (snd M M)
-
-/-- A morphism `f : G ⟶ H` from a monoid object to a group object in a cartesian monoidal
-category is a monoid-object homomorphism if and only if postcomposition by `f` preserves
-multiplication on `X`-points for every `X : C`. -/
-@[to_additive
-/-- A morphism `f : G ⟶ H` from an additive monoid object to an additive group object in a
-cartesian monoidal category is an additive monoid-object homomorphism if and only if
-postcomposition by `f` preserves addition on `X`-points for every `X : C`. -/]
-theorem GrpObj.isMonHom_iff_mul_comp {G H : C} [MonObj G] [GrpObj H] (f : G ⟶ H) :
-    IsMonHom f ↔ ∀ (X : C) (x y : X ⟶ G), (x * y) ≫ f = x ≫ f * y ≫ f := by
-  rw [isMonHom_iff_one_comp_and_mul_comp]
-  refine ⟨fun h ↦ h.2, fun hmul ↦ ⟨fun X ↦ ?_, hmul⟩⟩
-  have h1 : ((1 : X ⟶ G) ≫ f) * ((1 : X ⟶ G) ≫ f) = (1 : X ⟶ G) ≫ f := by
-    rw [← hmul X 1 1, _root_.mul_one]
-  exact mul_left_cancel (h1.trans (_root_.mul_one _).symm)
+/-- A morphism of monoid objects in a cartesian monoidal category is a monoid homomorphism exactly
+when, for every test object `X`, postcomposition with it preserves the unit and the multiplication
+of the monoid `X ⟶ M` of `X`-valued points. -/
+@[to_additive /-- A morphism of additive monoid objects in a cartesian monoidal category is an
+additive monoid homomorphism exactly when, for every test object `X`, postcomposition with it
+preserves the zero and the addition of the additive monoid `X ⟶ M` of `X`-valued points. -/]
+theorem isMonHom_iff_forall_one_comp_mul_comp {M N : C} [MonObj M] [MonObj N] (f : M ⟶ N) :
+    IsMonHom f ↔ ∀ X : C, (1 : X ⟶ M) ≫ f = 1 ∧
+      ∀ x y : X ⟶ M, (x * y) ≫ f = (x ≫ f) * (y ≫ f) := by
+  refine ⟨fun _ X ↦ ⟨MonObj.one_comp f, fun x y ↦ MonObj.mul_comp x y f⟩, fun h ↦ ⟨?_, ?_⟩⟩
+  · -- The unit is the unit point over the tensor unit.
+    simpa [Hom.one_def, toUnit_unique (toUnit (𝟙_ C)) (𝟙 _)] using (h (𝟙_ C)).1
+  · -- The multiplication is the product of the two universal points `fst` and `snd`.
+    simpa [Hom.mul_def, lift_fst_snd, lift_fst_comp_snd_comp] using
+      (h (M ⊗ M)).2 (fst M M) (snd M M)
 
 end CategoryTheory

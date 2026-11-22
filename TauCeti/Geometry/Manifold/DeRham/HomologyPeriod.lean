@@ -26,7 +26,8 @@ For a path-connected manifold, where the Hurewicz map identifies `H₁(M; ℤ)` 
 abelianization of `π₁(M, x)`, this determines `homologyPeriodHom φ`
 (`TauCeti.homologyPeriodHom_hurewiczHomologyAddEquiv`). The periods are natural: the periods of
 the pullback `f^* θ` along a `C²` map `f` are those of `θ` composed with the induced map
-`f_* : H₁(M; ℤ) → H₁(M'; ℤ)` (`TauCeti.homologyPeriodHom_singularHomologyMap`).
+`f_* : H₁(M; ℤ) → H₁(M'; ℤ)` (`TauCeti.homologyPeriodHom_singularHomologyMap`), and they commute
+with continuous linear maps of the coefficients (`TauCeti.homologyPeriodHom_mapCoeff`).
 
 For smooth real forms the homomorphism only depends on the de Rham class, and it determines the
 class, with no connectedness assumption: `TauCeti.deRhamCohomology.homologyPeriod` is an injective
@@ -169,6 +170,21 @@ theorem homologyPeriodHom_smul (a : ℝ) :
     (fun c ↦ by
       rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.smul_apply])
     fun s ↦ by rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, pathClassIntegral_smul]
+
+/-- **The periods on singular homology are natural in the coefficients.** A continuous linear
+map `L` of coefficient spaces carries the periods of a closed `C¹` form `φ` to the periods of the
+form `L ∘ φ`. -/
+theorem homologyPeriodHom_mapCoeff {G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0) :
+    homologyPeriodHom (RoughForm.mapCoeff L φ) = (L : F →+ G).comp (homologyPeriodHom φ) :=
+  homologyPeriodHom_eq_of_simplexChain
+    ((L : F →+ G).toIntLinearMap ∘ₗ chainsDesc fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
+    (fun c ↦ by
+      rw [AddMonoidHom.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.comp_apply,
+        AddMonoidHom.coe_toIntLinearMap])
+    fun s ↦ by
+      rw [LinearMap.comp_apply, chainsDesc_simplexChain_one, AddMonoidHom.coe_toIntLinearMap,
+        pathClassIntegral_mapCoeff L hφ hclosed, AddMonoidHom.coe_ofClass]
 
 /-- The periods of a `1`-form which is not a closed `C¹` form are `0` by convention. -/
 theorem homologyPeriodHom_undef (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :

@@ -19,7 +19,6 @@ fibre product of the two spectra over the base.
 
 * `TauCeti.geometricallyConnected_respectsIso`: geometric connectedness of morphisms of schemes
   respects isomorphisms.
-* `TauCeti.geometricallyConnected_of_isIso`: an isomorphism of schemes is geometrically connected.
 * `TauCeti.geometricallyConnected_tensorProduct`: the tensor product of two commutative algebras
   with geometrically connected, universally open spectra is geometrically connected.
 -/
@@ -40,13 +39,6 @@ base change. -/
 instance geometricallyConnected_respectsIso :
     MorphismProperty.RespectsIso @GeometricallyConnected :=
   MorphismProperty.IsStableUnderBaseChange.respectsIso
-
-/-- An isomorphism of schemes is geometrically connected. -/
-theorem geometricallyConnected_of_isIso {X Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f] :
-    GeometricallyConnected f :=
-  ⟨fun _ _ _ _ _ snd h ↦
-    have := h.isIso_snd_of_isIso
-    snd.homeomorph.symm.surjective.connectedSpace snd.homeomorph.symm.continuous⟩
 
 variable {k : Type u} [CommRing k]
 

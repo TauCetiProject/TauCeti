@@ -5,37 +5,55 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
-public import TauCeti.AlgebraicGeometry.Geometrically.Connected
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
+public import TauCeti.AlgebraicGeometry.Geometrically.Integral
+public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
+public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
 
 /-!
 # Abelian schemes
 
-This file defines an **abelian scheme** over an arbitrary base scheme `S`: a group object in
-`Over S` whose structure morphism is proper and smooth with geometrically connected fibres. No
-commutativity axiom, dimension, or ample line bundle is part of the bundled structure.
+An **abelian scheme** over a scheme `S` is a group object `A` in `Over S` whose structure
+morphism is proper and smooth with geometrically connected fibres. No commutativity, relative
+dimension or ample line bundle is part of the data: commutativity is a theorem, the relative
+dimension is a locally constant function on `S`, and a polarization is extra structure. The base
+`S` is arbitrary, nonreduced bases included.
 
-From smoothness and geometric connectedness we derive geometric integrality of the structure
-morphism (`AbelianScheme.geometricallyIntegral`) and integrality of every scheme-theoretic fibre
-(`AbelianScheme.isIntegral_fiber`). The file also supplies:
+The structure `AbelianScheme S` bundles the underlying object `toOver : Over S` with its group
+law and the three properties of its structure morphism. The underlying scheme is `toScheme` and
+the zero section is `zeroSection`, a section of the structure morphism.
 
-* `AbelianScheme.toScheme`, `AbelianScheme.zeroSection`, and
-  `AbelianScheme.zeroSection_comp_toOver_hom`: the underlying scheme and unit section;
-* `AbelianScheme.mulBy`: integer multiplication `[n] = 𝟙 ^ n` in the group of endomorphisms of the
-  underlying group scheme over `S`;
-* `AbelianScheme.ofGroupScheme`: a constructor from a group object in `Over S` satisfying the
-  standing geometric hypotheses;
-* `AbelianScheme.identity`: the identity group scheme `S ⟶ S` carried by `𝟙_ (Over S)`, the
-  dimension-zero abelian scheme over `S`.
+The file also provides:
+
+* `AbelianScheme.mulBy`: the multiplication-by-`n` endomorphism `[n]` of the underlying group
+  scheme over `S`.
+* `AbelianScheme.ofGroupScheme`: constructor packaging a proper, smooth, geometrically connected
+  group scheme over `S` as an abelian scheme.
+* `AbelianScheme.baseChange`: for `f : T ⟶ S`, the pullback of `A` along `f`, with the group law
+  transported by the monoidal pullback functor. Its group object is
+  `(Over.pullback f).mapGrp.obj (Grp.mk A.toOver)` (`grpMk_baseChange_toOver`), so the point-group
+  identification `TauCeti.GroupScheme.baseChangePointMulEquiv` applies to it directly.
+* `AbelianScheme.identity`: the base `S ⟶ S` with its trivial group law, the abelian scheme of
+  relative dimension zero.
+* the category of abelian schemes over `S`, whose morphisms are morphisms of `Over S` preserving
+  the group law (`IsMonHom`), and the base-change functor `AbelianScheme.baseChangeFunctor`.
+
+A smooth morphism with geometrically connected fibres is geometrically integral
+(`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`). That instance lives in
+`TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral`, which this file does not
+import; once it is imported, as in `TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety`, the
+structure morphism of an abelian scheme is geometrically integral by instance search. Together
+with properness this is what identifies abelian schemes over a field with Tau Ceti's
+`AbelianVariety`, in that file.
 
 ## References
 
-* G. Faltings and C.-L. Chai, *Degeneration of Abelian Varieties*, Chapter I, §§1.1–1.2.
-* J. L. Kass, *Notes on abelian schemes*, §1.
+* S. Kass, *Notes on abelian schemes*, §1.
+* G. Faltings and C.-L. Chai, *Degeneration of abelian varieties*, Chapter I, §1.
 * M. Olsson, *Compactifications of moduli of abelian varieties: an introduction*, §2.1.4.
 -/
 
@@ -50,51 +68,49 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- An **abelian scheme** over a scheme `S`: a group object in `Over S` whose structure morphism is
-proper and smooth with geometrically connected fibres.
+/-- An **abelian scheme** over a scheme `S`: a group object in `Over S` whose structure morphism
+is proper and smooth with geometrically connected fibres.
 
-No commutativity, relative dimension, or ample line bundle is part of the data. -/
-@[ext]
+The group-object structure lives on `toOver : Over S`; the underlying scheme is
+`toScheme = toOver.left`. No commutativity, dimension or ample line bundle is part of the data. -/
 structure AbelianScheme (S : Scheme.{u}) where
   /-- The underlying group scheme over `S`. -/
   toOver : Over S
-  /-- The group-object structure on `toOver`. -/
+  /-- The group law. -/
   grpObj : GrpObj toOver
-  /-- The structure morphism to `S` is proper. -/
+  /-- The structure morphism is proper. -/
   isProper : IsProper toOver.hom
-  /-- The structure morphism to `S` is smooth. -/
+  /-- The structure morphism is smooth. -/
   smooth : Smooth toOver.hom
-  /-- The structure morphism to `S` has geometrically connected fibres. -/
+  /-- The structure morphism has geometrically connected fibres. -/
   geometricallyConnected : GeometricallyConnected toOver.hom
 
 namespace AbelianScheme
 
-variable {S : Scheme.{u}}
+variable {S T : Scheme.{u}}
 
 attribute [instance] AbelianScheme.grpObj AbelianScheme.isProper AbelianScheme.smooth
   AbelianScheme.geometricallyConnected
-
-/-- An abelian scheme is geometrically integral over its base, being smooth with geometrically
-connected fibres. -/
-instance geometricallyIntegral (A : AbelianScheme S) : GeometricallyIntegral A.toOver.hom :=
-  Smooth.geometricallyIntegral A.toOver.hom
-
-/-- Every scheme-theoretic fibre of an abelian scheme is integral. -/
-instance isIntegral_fiber (A : AbelianScheme S) (s : S) :
-    IsIntegral (A.toOver.hom.fiber s) :=
-  have : GeometricallyIntegral (A.toOver.hom.fiberToSpecResidueField s) :=
-    inferInstanceAs (GeometricallyIntegral (pullback.snd A.toOver.hom (S.fromSpecResidueField s)))
-  GeometricallyIntegral.isIntegral_of_subsingleton (A.toOver.hom.fiberToSpecResidueField s)
 
 /-- The underlying scheme of an abelian scheme. -/
 noncomputable abbrev toScheme (A : AbelianScheme S) : Scheme.{u} :=
   A.toOver.left
 
+/-- Two abelian schemes over `S` are equal when their underlying group objects are equal. -/
+lemma ext {A B : AbelianScheme S} (h : Grp.mk A.toOver = Grp.mk B.toOver) : A = B := by
+  cases A
+  cases B
+  cases h
+  rfl
+
+/-! ### The zero section -/
+
 /-- The zero section `S ⟶ A` of an abelian scheme, that is, the unit of its group law. -/
 noncomputable abbrev zeroSection (A : AbelianScheme S) : S ⟶ A.toScheme :=
   η[A.toOver].left
 
-/-- The zero section is a section of the structure morphism of `A`. -/
+/-- The zero section is a section of the structure morphism. Not a simp lemma: `Over.w` and
+`Over.tensorUnit_hom` already prove it. -/
 @[reassoc]
 lemma zeroSection_comp_toOver_hom (A : AbelianScheme S) :
     A.zeroSection ≫ A.toOver.hom = 𝟙 S := by
@@ -138,7 +154,7 @@ lemma comp_mulBy (A : AbelianScheme S) {T : Over S} (x : T ⟶ A.toOver) (n : �
 
 /-- Construct an abelian scheme from a group object in `Over S` whose structure morphism is proper
 and smooth with geometrically connected fibres. -/
-noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+@[expose] noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] : AbelianScheme S where
   toOver := G
   grpObj := inferInstance
@@ -174,62 +190,257 @@ lemma ofGroupScheme_inv (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
       eqToHom (ofGroupScheme_toOver G) ≫ ι[G] :=
   (Category.comp_id ι[G]).trans (Category.id_comp ι[G]).symm
 
+/-! ### Base change -/
+
+/-- The base change of an abelian scheme along a morphism `f : T ⟶ S`, obtained by pulling back
+the group scheme along `f`.
+
+Properness, smoothness and geometric connectedness are stable under base change, and the monoidal
+pullback functor carries the group-object structure (`Functor.grpObjObj`). -/
+@[expose] noncomputable def baseChange (A : AbelianScheme S) (f : T ⟶ S) : AbelianScheme T where
+  toOver := (Over.pullback f).obj A.toOver
+  grpObj := Functor.grpObjObj
+  isProper := inferInstanceAs (IsProper (pullback.snd A.toOver.hom f))
+  smooth := inferInstanceAs (Smooth (pullback.snd A.toOver.hom f))
+  geometricallyConnected := inferInstanceAs (GeometricallyConnected (pullback.snd A.toOver.hom f))
+
+@[simp]
+lemma baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).toOver = (Over.pullback f).obj A.toOver :=
+  (rfl)
+
+/-- The underlying scheme of a base change is the fibre product of `A` with `T` over `S`. -/
+lemma baseChange_toScheme (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).toScheme = pullback A.toOver.hom f :=
+  (rfl)
+
+/-- The group object underlying a base change is the image of the group object of `A` under the
+pullback functor on group objects. In particular the points of the base change are identified
+with points of `A` by `TauCeti.GroupScheme.baseChangePointMulEquiv`. -/
+lemma grpMk_baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
+    Grp.mk (A.baseChange f).toOver = (Over.pullback f).mapGrp.obj (Grp.mk A.toOver) :=
+  (rfl)
+
+/-- The zero section of a base change is the pullback of the zero section of `A`: the point of
+`pullback A.toOver.hom f` given by `f ≫ A.zeroSection` and `𝟙 T`. -/
+lemma zeroSection_baseChange (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).zeroSection = pullback.lift (f ≫ A.zeroSection) (𝟙 T) (by
+      rw [Category.assoc, zeroSection_comp_toOver_hom, Category.comp_id, Category.id_comp]) := by
+  refine pullback.hom_ext ?_ ((A.baseChange f).zeroSection_comp_toOver_hom.trans
+    (pullback.lift_snd _ _ _).symm)
+  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`.
+  have hη : η[(A.baseChange f).toOver] =
+      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
+    Functor.obj.η_def _
+  rw [zeroSection, hη, Over.comp_left, Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq,
+    pullback.lift_fst]
+  simp only [Over.pullback_map_left, pullback.lift_fst, Over.tensorUnit_hom]
+  rw [← pullback.condition_assoc, Category.id_comp]
+
 /-! ### The identity abelian scheme -/
 
-section Identity
-
-variable (S)
-
-/-- The **identity abelian scheme** over `S`: the base scheme `S ⟶ S` regarded as a group scheme
-over itself, carried by the monoidal unit `𝟙_ (Over S)`. -/
-noncomputable def identity : AbelianScheme S where
+/-- The **identity abelian scheme** over `S`: the base `S ⟶ S` with its trivial group law. It is
+the abelian scheme of relative dimension zero. -/
+@[expose] noncomputable def identity (S : Scheme.{u}) : AbelianScheme S where
   toOver := 𝟙_ (Over S)
   grpObj := inferInstance
-  isProper := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (IsProper (𝟙 S))
-  smooth := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (Smooth (𝟙 S))
-  geometricallyConnected := by
-    rw [Over.tensorUnit_hom]; exact geometricallyConnected_of_isIso (𝟙 S)
+  isProper := inferInstance
+  smooth := inferInstance
+  geometricallyConnected := inferInstance
 
-/-- The group scheme underlying the identity abelian scheme is the monoidal unit of `Over S`. -/
 @[simp]
-lemma identity_toOver : (identity S).toOver = 𝟙_ (Over S) :=
+lemma identity_toOver (S : Scheme.{u}) : (identity S).toOver = 𝟙_ (Over S) :=
+  (rfl)
+
+/-- The group object underlying the identity abelian scheme is the trivial group object. -/
+lemma grpMk_identity_toOver (S : Scheme.{u}) :
+    Grp.mk (identity S).toOver = Grp.trivial (Over S) :=
+  (rfl)
+
+/-- The zero section of the identity abelian scheme is the identity of `S`. -/
+@[simp]
+lemma zeroSection_identity (S : Scheme.{u}) : (identity S).zeroSection = 𝟙 S :=
   (rfl)
 
 /-- The scheme underlying the identity abelian scheme is the base `S`. -/
 @[simp]
-lemma identity_toScheme : (identity S).toScheme = S := by
+lemma identity_toScheme (S : Scheme.{u}) : (identity S).toScheme = S := by
   simp only [toScheme, identity_toOver, Over.tensorUnit_left]
 
 /-- The scheme over `S` underlying the identity abelian scheme is terminal. -/
-noncomputable def isTerminalIdentityToOver : IsTerminal (identity S).toOver :=
+noncomputable def isTerminalIdentityToOver (S : Scheme.{u}) : IsTerminal (identity S).toOver :=
   IsTerminal.ofIso isTerminalTensorUnit (eqToIso (identity_toOver S).symm)
 
 /-- The unit section of the identity abelian scheme is the identity of `𝟙_ (Over S)`. -/
 @[simp]
-lemma identity_one :
+lemma identity_one (S : Scheme.{u}) :
     η[(identity S).toOver] ≫ eqToHom (identity_toOver S) = η[𝟙_ (Over S)] :=
   Category.comp_id η[𝟙_ (Over S)]
 
 /-- The multiplication of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
 @[simp]
-lemma identity_mul :
+lemma identity_mul (S : Scheme.{u}) :
     μ[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
       (eqToHom (identity_toOver S) ⊗ₘ eqToHom (identity_toOver S)) ≫ μ[𝟙_ (Over S)] :=
   (Category.comp_id μ[𝟙_ (Over S)]).trans (by simp : μ[𝟙_ (Over S)] = (𝟙 _ ⊗ₘ 𝟙 _) ≫ _)
 
 /-- The inversion of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
 @[simp]
-lemma identity_inv :
+lemma identity_inv (S : Scheme.{u}) :
     ι[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
       eqToHom (identity_toOver S) ≫ ι[𝟙_ (Over S)] :=
   (Category.comp_id ι[𝟙_ (Over S)]).trans (Category.id_comp _).symm
 
 /-- Every integer multiplication map on the identity abelian scheme is the identity. -/
 @[simp]
-lemma identity_mulBy (n : ℤ) : (identity S).mulBy n = 𝟙 (identity S).toOver :=
+lemma identity_mulBy (S : Scheme.{u}) (n : ℤ) : (identity S).mulBy n = 𝟙 (identity S).toOver :=
   (isTerminalIdentityToOver S).hom_ext _ _
 
-end Identity
+/-! ### Homomorphisms -/
+
+noncomputable section
+
+/-- Abelian schemes over `S` form a category whose morphisms are the morphisms of the underlying
+group schemes over `S`, that is, morphisms of `Over S` preserving the group law. -/
+instance : Category (AbelianScheme S) :=
+  inferInstanceAs (Category (InducedCategory _ (fun A : AbelianScheme S ↦ Grp.mk A.toOver)))
+
+/-- Construct a homomorphism of abelian schemes from a morphism over `S` and proofs that it
+preserves the unit and multiplication. -/
+def homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
+    (one_f : η[A.toOver] ≫ f = η[B.toOver] := by cat_disch)
+    (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) : A ⟶ B :=
+  InducedCategory.homMk (Grp.homMk'' f one_f mul_f)
+
+/-- The forgetful functor from abelian schemes over `S` to schemes over `S`. -/
+@[expose] def toOverFunctor : AbelianScheme S ⥤ Over S :=
+  inducedFunctor (fun A : AbelianScheme S ↦ Grp.mk A.toOver) ⋙ Grp.forget (Over S)
+
+@[simp]
+lemma toOverFunctor_obj (A : AbelianScheme S) : toOverFunctor.obj A = A.toOver :=
+  (rfl)
+
+/-- The underlying morphism over `S` of a homomorphism of abelian schemes. -/
+abbrev toOverHom {A B : AbelianScheme S} (f : A ⟶ B) : A.toOver ⟶ B.toOver :=
+  toOverFunctor.map f
+
+/-- `toOverHom` is definitionally the underlying-morphism projection through the induced category
+and `Grp`. -/
+private lemma toOverHom_def {A B : AbelianScheme S} (f : A ⟶ B) :
+    toOverHom f = f.hom.hom.hom :=
+  rfl
+
+/-- `toOverHom` sends the identity homomorphism to the identity over `S`. Not a simp lemma:
+`toOverHom` is reducible, so `Functor.map_id` and `toOverFunctor_obj` already prove it. -/
+lemma toOverHom_id (A : AbelianScheme S) : toOverHom (𝟙 A) = 𝟙 A.toOver :=
+  toOverFunctor.map_id A
+
+/-- `toOverHom` sends composition to composition over `S`. Not a simp lemma: `toOverHom` is
+reducible, so `Functor.map_comp` already proves it. -/
+@[reassoc]
+lemma toOverHom_comp {A B C : AbelianScheme S} (f : A ⟶ B) (g : B ⟶ C) :
+    toOverHom (f ≫ g) = toOverHom f ≫ toOverHom g :=
+  toOverFunctor.map_comp f g
+
+/-- The underlying morphism of a homomorphism of abelian schemes preserves the group law. -/
+instance {A B : AbelianScheme S} (f : A ⟶ B) : IsMonHom (toOverHom f) :=
+  toOverHom_def f ▸ inferInstance
+
+/-- A homomorphism of abelian schemes preserves the zero section. -/
+@[reassoc]
+lemma one_hom {A B : AbelianScheme S} (f : A ⟶ B) :
+    η[A.toOver] ≫ toOverHom f = η[B.toOver] :=
+  IsMonHom.one_hom _
+
+/-- A homomorphism of abelian schemes preserves multiplication. -/
+@[reassoc]
+lemma mul_hom {A B : AbelianScheme S} (f : A ⟶ B) :
+    μ[A.toOver] ≫ toOverHom f = (toOverHom f ⊗ₘ toOverHom f) ≫ μ[B.toOver] :=
+  IsMonHom.mul_hom _
+
+/-- A homomorphism of abelian schemes preserves inverses. -/
+@[reassoc]
+lemma inv_hom {A B : AbelianScheme S} (f : A ⟶ B) :
+    ι[A.toOver] ≫ toOverHom f = toOverHom f ≫ ι[B.toOver] :=
+  GrpObj.inv_hom _
+
+/-- A homomorphism of abelian schemes carries the zero section of its source to the zero section
+of its target. -/
+@[reassoc]
+lemma zeroSection_comp {A B : AbelianScheme S} (f : A ⟶ B) :
+    A.zeroSection ≫ (toOverHom f).left = B.zeroSection := by
+  rw [← Over.comp_left, one_hom]
+
+/-- The underlying morphism over `S` of a homomorphism built by `homMk` is the supplied
+morphism. -/
+@[simp]
+lemma toOverHom_homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
+    (one_f : η[A.toOver] ≫ f = η[B.toOver] := by cat_disch)
+    (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
+    toOverHom (homMk f one_f mul_f) = f :=
+  (rfl)
+
+/-- Two homomorphisms of abelian schemes are equal when their underlying scheme morphisms are
+equal. -/
+@[ext]
+lemma hom_ext {A B : AbelianScheme S} {f g : A ⟶ B}
+    (h : (toOverHom f).left = (toOverHom g).left) : f = g := by
+  simp only [toOverHom_def] at h
+  exact InducedCategory.hom_ext (Grp.hom_ext _ _ (Over.OverMorphism.ext h))
+
+/-- Forgetting a homomorphism of abelian schemes to its underlying morphism over `S` is
+faithful. -/
+instance : (toOverFunctor (S := S)).Faithful where
+  map_injective h := hom_ext (congrArg Over.Hom.left h)
+
+/-- Two homomorphisms of abelian schemes with the same underlying morphism over `S` are equal. -/
+lemma toOverHom_injective {A B : AbelianScheme S} {f g : A ⟶ B}
+    (h : toOverHom f = toOverHom g) : f = g :=
+  toOverFunctor.map_injective h
+
+/-- A homomorphism of abelian schemes is a morphism over `S` that preserves the group law. -/
+def homEquivIsMonHom (A B : AbelianScheme S) :
+    (A ⟶ B) ≃ {f : A.toOver ⟶ B.toOver // IsMonHom f} where
+  toFun f := ⟨toOverHom f, inferInstance⟩
+  invFun f :=
+    have := f.property
+    homMk f.val (IsMonHom.one_hom f.val) (IsMonHom.mul_hom f.val)
+  left_inv _ := hom_ext rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma homEquivIsMonHom_apply_coe {A B : AbelianScheme S} (f : A ⟶ B) :
+    (homEquivIsMonHom A B f : A.toOver ⟶ B.toOver) = toOverHom f :=
+  (rfl)
+
+/-- The homomorphism attached to a morphism over `S` preserving the group law has that morphism
+as its morphism over `S`. -/
+@[simp]
+lemma toOverHom_homEquivIsMonHom_symm_apply {A B : AbelianScheme S}
+    (g : {f : A.toOver ⟶ B.toOver // IsMonHom f}) :
+    toOverHom ((homEquivIsMonHom A B).symm g) = g.val :=
+  (rfl)
+
+/-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
+and a homomorphism to its pullback. -/
+@[expose] def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where
+  obj A := A.baseChange f
+  map g := InducedCategory.homMk ((Over.pullback f).mapGrp.map g.hom)
+  map_id A := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_id (Grp.mk A.toOver))
+  map_comp g h := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_comp g.hom h.hom)
+
+@[simp]
+lemma baseChangeFunctor_obj (f : T ⟶ S) (A : AbelianScheme S) :
+    (baseChangeFunctor f).obj A = A.baseChange f :=
+  (rfl)
+
+/-- The base change of a homomorphism is its image under the pullback functor of `Over S`. -/
+@[simp]
+lemma toOverHom_baseChangeFunctor_map (f : T ⟶ S) {A B : AbelianScheme S} (g : A ⟶ B) :
+    toOverHom ((baseChangeFunctor f).map g) = (Over.pullback f).map (toOverHom g) :=
+  (rfl)
+
+end
 
 end AbelianScheme
 

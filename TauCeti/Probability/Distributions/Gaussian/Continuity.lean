@@ -36,10 +36,8 @@ namespace TauCeti.Probability
 the zero-variance Dirac boundary. -/
 theorem continuous_gaussianReal :
     Continuous (fun p : ℝ × ℝ≥0 ↦ (gaussianReal p.1 p.2).toProbabilityMeasure) := by
-  apply continuous_iff_seqContinuous.2
-  intro p a hp
-  apply ProbabilityMeasure.tendsto_of_tendsto_charFun
-  intro t
+  refine continuous_iff_seqContinuous.2 fun p a hp ↦
+    ProbabilityMeasure.tendsto_of_tendsto_charFun fun t ↦ ?_
   have h : Continuous (fun p : ℝ × ℝ≥0 ↦
       Complex.exp ((t : ℂ) * p.1 * Complex.I - (p.2 : ℂ) * (t : ℂ) ^ 2 / 2)) := by
     fun_prop
@@ -56,24 +54,11 @@ theorem continuous_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq �
       (EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef}) :=
     inferInstanceAs (FirstCountableTopology
       (EuclideanSpace ℝ ι × {S : ι → ι → ℝ // (Matrix.of S).PosSemidef}))
-  apply continuous_iff_seqContinuous.2
-  intro p a hp
-  apply ProbabilityMeasure.tendsto_of_tendsto_charFun
-  intro t
-  have hquad : Continuous (fun p :
-      EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-        (t ⬝ᵥ p.2.val *ᵥ t : ℝ)) :=
-    continuous_const.dotProduct
-      ((continuous_subtypeVal.comp continuous_snd).matrix_mulVec continuous_const)
-  have hmean : Continuous (fun p :
-      EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦ (⟪t, p.1⟫ : ℝ)) :=
-    continuous_const.inner continuous_fst
+  refine continuous_iff_seqContinuous.2 fun p a hp ↦
+    ProbabilityMeasure.tendsto_of_tendsto_charFun fun t ↦ ?_
   have h : Continuous (fun p : EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-      Complex.exp ((⟪t, p.1⟫ : ℝ) * Complex.I -
-        (t ⬝ᵥ p.2.val *ᵥ t : ℝ) / 2)) := by
-    exact Complex.continuous_exp.comp
-      (((Complex.continuous_ofReal.comp hmean).mul_const Complex.I).sub
-        ((Complex.continuous_ofReal.comp hquad).div_const 2))
+      Complex.exp ((⟪t, p.1⟫ : ℝ) * Complex.I - (t ⬝ᵥ p.2.val *ᵥ t : ℝ) / 2)) := by
+    fun_prop
   simpa only [Function.comp_def, Measure.coe_toProbabilityMeasure,
     charFun_multivariateGaussian (p _).2.property, charFun_multivariateGaussian a.2.property] using
     (h.tendsto a).comp hp
