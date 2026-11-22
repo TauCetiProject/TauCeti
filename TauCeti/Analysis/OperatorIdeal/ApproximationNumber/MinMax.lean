@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Operator.Restrict
 
 /-!
@@ -188,15 +189,6 @@ end UnitNorm
 section OrthogonalTail
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`.
-The target needs only a topology and a module structure; no target norm is used. -/
-theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
-    [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
-    [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
-    (T ∘L V.starProjection).rank ≤ n := by
-  refine T.rank_comp_le_of_rank_le ?_
-  rwa [LinearMap.rank, Submodule.range_starProjection]
 
 variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Rank
 
 /-!
 # Products and norms of orthogonal projections
@@ -76,6 +77,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   orthogonal projection is subspace inclusion.
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
+* `ContinuousLinearMap.rank_comp_starProjection_le`: a continuous linear map `T P_V` has rank at
+  most `n` when `V` has rank at most `n`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
@@ -527,6 +530,21 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
 end Commute
 
 end Submodule
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`.
+The target needs only a topology and a module structure; no target norm is used. -/
+theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+    [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
+    (T ∘L V.starProjection).rank ≤ n := by
+  refine T.rank_comp_le_of_rank_le ?_
+  rwa [LinearMap.rank, Submodule.range_starProjection]
+
+end ContinuousLinearMap
 
 namespace TauCeti
 

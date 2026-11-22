@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
-public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Rank
 

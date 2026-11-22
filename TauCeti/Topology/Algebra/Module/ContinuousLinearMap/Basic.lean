@@ -17,7 +17,7 @@ commutative square of the underlying (semi)linear maps. This lets results about 
 of linear maps, such as the module snake lemma, be applied to continuous linear maps.
 
 Precomposing with a continuous linear equivalence does not change whether a continuous linear map
-vanishes.
+vanishes, and a continuous linear map vanishes exactly when its range is trivial.
 
 ## Main results
 
@@ -25,6 +25,8 @@ vanishes.
   commutes after coercion to semilinear maps.
 * `ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff`: `L ∘ e = 0` exactly when `L = 0`,
   for a continuous semilinear equivalence `e`.
+* `ContinuousLinearMap.range_toLinearMap_eq_bot`: a continuous semilinear map has trivial range
+  exactly when it is zero.
 * `ContinuousLinearMap.surjective_iff_ne_zero`: a continuous linear functional is surjective
   exactly when it is nonzero.
 -/
@@ -57,6 +59,12 @@ theorem comp_continuousLinearEquiv_eq_zero_iff {σ₂₁ : R₂ →+* R₁} [Rin
     (e : M₁ ≃SL[σ₁₂] M₂) : L.comp (e : M₁ →SL[σ₁₂] M₂) = 0 ↔ L = 0 := by
   refine ⟨fun h ↦ ext fun v ↦ ?_, fun h ↦ by rw [h, zero_comp]⟩
   simpa using congr($h (e.symm v))
+
+/-- A continuous semilinear map has trivial range exactly when it is the zero map. -/
+@[simp]
+theorem range_toLinearMap_eq_bot [RingHomSurjective σ₁₂] {f : M₁ →SL[σ₁₂] M₂} :
+    (f : M₁ →ₛₗ[σ₁₂] M₂).range = ⊥ ↔ f = 0 := by
+  rw [LinearMap.range_eq_bot, ← toLinearMap_zero, coe_inj]
 
 /-- A continuous linear functional with values in a division semiring is surjective exactly when
 it is nonzero. -/

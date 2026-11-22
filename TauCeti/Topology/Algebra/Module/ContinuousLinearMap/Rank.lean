@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Rank bounds for continuous linear maps
@@ -15,12 +15,11 @@ The rank of a continuous linear map `R` is the rank of its underlying linear map
 its range. This file records facts used to work with maps of bounded rank, for instance in the
 infimum defining approximation numbers.
 
-* `ContinuousLinearMap.instNonemptyRankLE`: for every cardinal `c`, some continuous linear map has
-  rank at most `c`, namely the zero map.
+* `ContinuousLinearMap.instNonemptyRankLE`: over a nontrivial semiring, for every cardinal `c`,
+  some continuous linear map has rank at most `c`, namely the zero map.
 * `ContinuousLinearMap.rank_comp_le_of_rank_le`: postcomposition preserves a rank bound by a
   natural number. The bound is a natural number so that the three spaces may lie in different
   universes.
-* `ContinuousLinearMap.range_toLinearMap_eq_bot`: only the zero map has trivial range.
 * `ContinuousLinearMap.rank_eq_zero_iff`: over a domain, among maps with torsion-free range, only
   the zero map has rank `0`.
 * `ContinuousLinearMap.rank_add_le_of_le`: rank bounds add along a sum of maps.
@@ -37,8 +36,8 @@ variable {K E F G : Type*} [Semiring K]
   [TopologicalSpace F] [AddCommMonoid F] [Module K F]
   [TopologicalSpace G] [AddCommMonoid G] [Module K G]
 
-/-- The continuous linear maps of rank at most `c` form a nonempty type: the zero map has
-rank `0`. -/
+/-- Over a nontrivial semiring, the continuous linear maps of rank at most `c` form a nonempty
+type: the zero map has rank `0`. -/
 instance instNonemptyRankLE [Nontrivial K] (c : Cardinal) :
     Nonempty {R : E →L[K] F // R.rank ≤ c} :=
   ⟨⟨0, by simp⟩⟩
@@ -51,12 +50,6 @@ theorem rank_comp_le_of_rank_le (A : F →L[K] G) {R : E →L[K] F} {n : ℕ} (h
   exact Cardinal.lift_le_nat_iff.mp <|
     (LinearMap.lift_rank_comp_le_right _ _).trans (by simpa using hR)
 
-/-- A continuous linear map has trivial range exactly when it is the zero map. This is the
-`simp` normal form that `R.rank = 0` reaches through `Submodule.rank_eq_zero`. -/
-@[simp]
-theorem range_toLinearMap_eq_bot {R : E →L[K] F} : (R : E →ₗ[K] F).range = ⊥ ↔ R = 0 := by
-  rw [LinearMap.range_eq_bot, ← toLinearMap_zero, coe_inj]
-
 end ContinuousLinearMap
 
 namespace ContinuousLinearMap
@@ -66,11 +59,8 @@ variable {K E F : Type*} [Ring K]
   [TopologicalSpace F] [AddCommMonoid F] [Module K F]
 
 /-- Over a domain, a continuous linear map with torsion-free range has rank `0` exactly when it is
-the zero map. The range is torsion-free in particular when the target `F` is.
-
-This is not a `simp` lemma: when `F` is torsion-free, `simp` already rewrites `R.rank = 0` to
-`range R = ⊥` through `Submodule.rank_eq_zero`, and then to `R = 0` through
-`range_toLinearMap_eq_bot`. -/
+the zero map. The range is torsion-free in particular when the target `F` is. -/
+@[simp]
 theorem rank_eq_zero_iff [IsDomain K] {R : E →L[K] F}
     [Module.IsTorsionFree K (R : E →ₗ[K] F).range] : R.rank = 0 ↔ R = 0 := by
   let := Module.addCommMonoidToAddCommGroup K (M := F)
