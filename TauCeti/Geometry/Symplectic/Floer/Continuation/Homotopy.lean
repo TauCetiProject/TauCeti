@@ -44,9 +44,9 @@ the exact estimate and of the monotone case are also here; their contractible fo
 `SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_sub_integral` and
 `SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_monotone`, in
 `TauCeti.Geometry.Symplectic.Floer.CylinderAction`. The underlying estimates of the integrated
-curvature along a map are
-`TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral` and
-`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le`.
+curvature along a map are `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`,
+`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le` and
+`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le_integral_add`.
 
 The end `s = a` is the input of the continuation map and `s = b` its output. Barraud, Damian,
 Humilière and Oancea state the same estimates with the two ends exchanged, for continuation maps
@@ -103,16 +103,12 @@ theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
   have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
     (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
   -- On the rectangle, the restricted Lebesgue measure is the product of the restrictions.
-  have hvol : volume.restrict (Icc a b ×ˢ Icc (0 : ℝ) 1) =
-      (volume.restrict (Icc a b)).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
-    rw [Measure.volume_eq_prod, Measure.prod_restrict]
   have hci : IntegrableOn (fun z : ℝ × ℝ ↦ c z.1) (Icc a b ×ˢ Icc 0 1) := by
-    rw [IntegrableOn, hvol]
+    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
     exact Integrable.comp_fst hc _
   have hle : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
       -fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 :=
-    setIntegral_mono_on
-      (hcurv.neg.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)) hci
+    setIntegral_mono_on hcurv.neg.integrableOn_Icc_prod_Icc hci
       (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
         have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
           contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
@@ -120,8 +116,7 @@ theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
           fderiv_apply_mk_one_zero (hd.differentiable one_ne_zero z)]
         exact hGc z hz
   have hrhs : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 = ∫ s in Icc a b, c s := by
-    rw [hvol, integral_fun_fst, measureReal_restrict_apply_univ,
-      Real.volume_real_Icc_of_le zero_le_one, sub_zero, one_smul]
+    simpa using setIntegral_Icc_prod_comp_fst c zero_le_one
   rwa [integral_neg, hrhs] at hle
 
 /-- **The integrated curvature of a reparametrized path along a map.** Let `K_w`, `w = (ϑ, t)`, be
@@ -165,6 +160,26 @@ theorem neg_setIntegral_fderiv_reparam_le {K : ℝ × ℝ → M → ℝ}
     fun z hz ↦ neg_le.mp (hKk z hz)
   linarith
 
+/-- **The integrated curvature of a path close to the linear one.** Under the hypotheses of
+`TauCeti.Floer.neg_setIntegral_fderiv_reparam_le`, with `β(a) = 0` and `β(b) = 1`, suppose that
+`∂_ϑ K ≥ K(1, ·) - K(0, ·) - ε` at `(β(s), t, u(s, t))` and that
+`K(0, t, u(s, t)) - K(1, t, u(s, t)) ≤ h(t)`, on `[a, b] × [0, 1]`, for a function `h` integrable on
+`[0, 1]`. Then minus the integral of the curvature of `G(s, t) = K(β(s), t)` along `u` over the
+rectangle is at most `∫₀¹ h + ε`. -/
+theorem neg_setIntegral_fderiv_reparam_le_integral_add {K : ℝ × ℝ → M → ℝ}
+    (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K)) {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
+    (hβm : Monotone β) (hβa : β a = 0) (hβb : β b = 1) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hab : a ≤ b) {ε : ℝ} (hε : ∀ z ∈ Icc a b ×ˢ Icc 0 1,
+      K (1, z.2) (u z) - K (0, z.2) (u z) - ε ≤ deriv (fun θ ↦ K (θ, z.2) (u z)) (β z.1))
+    {h : ℝ → ℝ} (hhi : IntegrableOn h (Icc 0 1))
+    (hh : ∀ z ∈ Icc a b ×ˢ Icc 0 1, K (0, z.2) (u z) - K (1, z.2) (u z) ≤ h z.2) :
+    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ K (β w.1, w.2) (u z)) z stdComplexLineReal ≤
+      (∫ t in Icc 0 1, h t) + ε := by
+  have hε' : IntegrableOn (fun _ ↦ ε) (Icc (0 : ℝ) 1) := integrableOn_const measure_Icc_lt_top.ne
+  simpa [hβa, hβb, integral_add hhi hε'] using
+    neg_setIntegral_fderiv_reparam_le (k := fun t ↦ h t + ε) hK hβ hβm hu hab (hhi.add hε')
+      fun z hz ↦ by linarith [hε z hz, hh z hz]
+
 end Floer
 
 namespace SmoothTwoForm
@@ -184,8 +199,9 @@ and `v` a `C¹` map with `v (0, ·) = u (b, ·)`. If `u` solves the Floer equati
 `∂_s u + J_z (∂_t u - X_{G_z}(u)) = 0` on `[a, b] × [0, 1]`, with almost complex structures
 `J z` on `T_{u z} M` tamed by `ω`, then the action of `γ_b = u(b, ·)` for `G(b, ·)` measured
 against `v` is at most the action of `γ_a = u(a, ·)` for `G(a, ·)` measured against the glued map
-`w # v`, minus the integral of the curvature `∂_s G` along `u`. When `v` is a cap of `γ_b`, both
-actions are capped actions. -/
+`w # v`, minus the integral of the curvature `∂_s G` along `u`. Here `w # v`
+(`TauCeti.rectangleTrans`) glues `u` on `[a, b] × [0, 1]`, rescaled to `[0, 1] × [0, 1]`, to `v`.
+When `v` is a cap of `γ_b`, both actions are capped actions. -/
 theorem IsNondegenerate.cylinderAction_le_cylinderAction_sub_integral (hω : ω.IsNondegenerate)
     (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (hab : a ≤ b) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t))
@@ -273,10 +289,8 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction_add_of_reparam (hω : �
       cylinderAction ω.val (fun t ↦ K (β a, t))
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         (β b - β a) * ∫ t in Icc 0 1, k t := by
-  have hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
-    hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd)
-  have h := hω.cylinderAction_le_cylinderAction_sub_integral hG hu hab hv hv₀ J hJ hfloer
+  have h := hω.cylinderAction_le_cylinderAction_sub_integral (contMDiff_uncurry_reparam hβ hK) hu
+    hab hv hv₀ J hJ hfloer
   linarith [neg_setIntegral_fderiv_reparam_le hK hβ hβm hu hab hk hKk]
 
 /-- **The capped action shift of a path close to the linear one.** Under the hypotheses of
@@ -303,12 +317,10 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction_add_integral_add_of_rep
       cylinderAction ω.val (fun t ↦ K (0, t))
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         (∫ t in Icc 0 1, h t) + ε := by
-  have h' := hω.cylinderAction_le_cylinderAction_add_of_reparam (k := fun t ↦ h t + ε) hK hβ
-    hβm hu hab hv hv₀ J hJ hfloer (hhi.add (integrableOn_const measure_Icc_lt_top.ne))
-    fun z hz ↦ by linarith [hε z hz, hh z hz]
-  rw [hβa, hβb, sub_zero, one_mul, integral_add hhi (integrableOn_const measure_Icc_lt_top.ne),
-    setIntegral_const, Real.volume_real_Icc_of_le zero_le_one, sub_zero, one_smul] at h'
-  linarith
+  have h' := hω.cylinderAction_le_cylinderAction_sub_integral (contMDiff_uncurry_reparam hβ hK) hu
+    hab hv hv₀ J hJ hfloer
+  simp only [hβa, hβb] at h'
+  linarith [neg_setIntegral_fderiv_reparam_le_integral_add hK hβ hβm hβa hβb hu hab hε hhi hh]
 
 /-! ### The action of contractible loops -/
 
@@ -357,11 +369,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_
     contractibleLoopAction ω.val (fun t ↦ K (β b, t)) (fun t ↦ u (b, t)) ≤
       contractibleLoopAction ω.val (fun t ↦ K (β a, t)) (fun t ↦ u (a, t)) +
         (β b - β a) * ∫ t in Icc 0 1, k t := by
-  have hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
-    hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd)
-  have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe hG hu hper hab hv
-    J hJ hfloer
+  have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe
+    (contMDiff_uncurry_reparam hβ hK) hu hper hab hv J hJ hfloer
   linarith [neg_setIntegral_fderiv_reparam_le hK hβ hβm (hu.of_le one_le_two) hab hk hKk]
 
 /-- **The action shift of a path close to the linear one, for contractible loops.** Under the
@@ -389,12 +398,11 @@ theorem
     contractibleLoopAction ω.val (fun t ↦ K (1, t)) (fun t ↦ u (b, t)) ≤
       contractibleLoopAction ω.val (fun t ↦ K (0, t)) (fun t ↦ u (a, t)) +
         (∫ t in Icc 0 1, h t) + ε := by
-  have h' := hω.contractibleLoopAction_le_contractibleLoopAction_add_of_reparam
-    (k := fun t ↦ h t + ε) hωe hK hβ hβm hu hper hab hv J hJ hfloer
-    (hhi.add (integrableOn_const measure_Icc_lt_top.ne)) fun z hz ↦ by linarith [hε z hz, hh z hz]
-  rw [hβa, hβb, sub_zero, one_mul, integral_add hhi (integrableOn_const measure_Icc_lt_top.ne),
-    setIntegral_const, Real.volume_real_Icc_of_le zero_le_one, sub_zero, one_smul] at h'
-  linarith
+  have h' := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe
+    (contMDiff_uncurry_reparam hβ hK) hu hper hab hv J hJ hfloer
+  simp only [hβa, hβb] at h'
+  linarith [neg_setIntegral_fderiv_reparam_le_integral_add hK hβ hβm hβa hβb (hu.of_le one_le_two)
+    hab hε hhi hh]
 
 end SmoothTwoForm
 

@@ -221,6 +221,14 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
 
+/-- The reparametrization `(s, t) ↦ K_{(β(s), t)}` of a `Cⁿ` family of Hamiltonians on a manifold by
+a `Cⁿ` function `β` is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_reparam {n : ℕ∞} {K : ℝ × ℝ → M → ℝ} {β : ℝ → ℝ}
+    (hβ : ContDiff ℝ n β) (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
+  hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+    contMDiff_snd)
+
 /-- **The integrated curvature of a linear homotopy along a map.** Let `H₀` and `H₁` be `C¹`
 time-dependent Hamiltonians on a manifold, `β` a monotone `C¹` profile and `u` a continuous map.
 If `H₀ - H₁ ≤ B` along `u` on `[a, b] × [0, 1]` for a function `B` integrable on `[0, 1]`, then
