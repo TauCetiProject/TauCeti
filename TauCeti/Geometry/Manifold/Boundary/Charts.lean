@@ -43,7 +43,8 @@ manifold and embedding results hold for every exponent `k`. Boundarylessness the
 directly from `ModelWithCorners.Boundaryless.boundary_eq_empty`.
 
 Corners are deliberately out of scope: gluing along a *piece* of the boundary produces corners, and
-the quadrant model `modelWithCornersEuclideanQuadrant` needs its own boundary analysis. Collar
+the quadrant model `modelWithCornersEuclideanQuadrant` needs its own boundary analysis. Only its
+chart test for boundary points, the analogue of the half-space one, is recorded here. Collar
 neighbourhoods, which are what make a gluing smooth rather than merely topological, are the next
 step and are not proved here.
 
@@ -59,6 +60,8 @@ step and are not proved here.
   by the positive zeroth coordinate in any ambient chart.
 * `TauCeti.mem_boundary_iff_transHomeomorph_prodUnique`: the same boundary criterion in an ambient
   chart read with a trivial second factor, the form taken by the hyperplane and product charts.
+* `TauCeti.ModelWithCorners.mem_boundary_euclideanQuadrant_iff`: on a charted space modelled on
+  the quadrant, boundary points are detected by a vanishing coordinate in any ambient chart.
 * `TauCeti.boundaryChartedSpace_atlas`: the boundary atlas is the range of its preferred charts.
 * `TauCeti.boundaryChartedSpace_chartAt_source` and its companions characterize the preferred
   boundary charts induced by the ambient preferred charts.
@@ -100,6 +103,22 @@ theorem ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff
   exact Iff.rfl
 
 end Interior
+
+section Quadrant
+
+/-- **Boundary points of a manifold with corners, in any chart.** A point `x` of a charted space
+modelled on the quadrant `[0, ∞)ⁿ` is a boundary point exactly when some coordinate of its image
+under a chart `e` around it, in the atlas or not, vanishes. -/
+theorem ModelWithCorners.mem_boundary_euclideanQuadrant_iff {n : ℕ} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
+    {e : OpenPartialHomeomorph M (EuclideanQuadrant n)} {x : M} (hx : x ∈ e.source) :
+    x ∈ (𝓡c n).boundary M ↔ ∃ i, (e x).val i = 0 := by
+  rw [ModelWithCorners.boundary, mem_ofPred_eq,
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
+    frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
+  exact (and_iff_right (e x).property).trans (exists_congr fun _ ↦ eq_comm)
+
+end Quadrant
 
 section Boundary
 
