@@ -367,12 +367,9 @@ theorem weylProjection_eq_one_of_mem_bruhatCell_of_conj_positivePoints
   obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K n γ
   let x := D.rootSubgroupPoints γ K (Multiplicative.ofAdd ((c⁻¹ : Kˣ) : K))
   let y := b₂⁻¹ * x * b₂
-  have hyU : y ∈ D.positivePoints K := by
-    have hxU : x ∈ D.positivePoints K := D.rootSubgroupPoints_mem_positivePoints K hγpos _
-    have h := (Subgroup.mem_normalizer_iff.mp
-      (D.borelSubgroup_le_normalizer_positivePoints K ((D.borelSubgroup K).inv_mem hb₂))
-      x).mp hxU
-    simpa only [y, inv_inv] using h
+  have hyU : y ∈ D.positivePoints K :=
+    (Subgroup.mem_normalizer_iff''.mp (D.borelSubgroup_le_normalizer_positivePoints K hb₂) x).mp
+      (D.rootSubgroupPoints_mem_positivePoints K hγpos _)
   have hgyU : (b₁ * (n : D.points K) * b₂) * y * (b₁ * (n : D.points K) * b₂)⁻¹ ∈
       D.positivePoints K := hconj y hyU
   have hnx_eq : (n : D.points K) * x * (n : D.points K)⁻¹ =

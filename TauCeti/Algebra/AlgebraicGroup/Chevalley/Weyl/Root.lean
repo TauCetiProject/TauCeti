@@ -140,19 +140,6 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
 
-private theorem map_iSup_rootSubgroupPoints_conj_longestElement (n₀ : D.weylSubgroup K)
-    (hn₀ : D.weylProjection K n₀ =
-      let _ := t.isReduced_simplyConnectedRootDatum ht
-      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht))
-    {S T : Set (Fin t.numRoots)}
-    (hST : (t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (let _ := t.isReduced_simplyConnectedRootDatum ht
-        longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) '' S = T) :
-    (⨆ γ ∈ S, (D.rootSubgroupPoints γ K).range).map
-        (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
-      ⨆ γ ∈ T, (D.rootSubgroupPoints γ K).range := by
-  rw [← MulEquiv.toMonoidHom_eq_coe, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀, hST]
-
 /-- Conjugation by a Weyl lift of the longest element sends the positive unipotent subgroup onto
 the negative unipotent subgroup. -/
 @[simp]
@@ -163,10 +150,10 @@ theorem map_positivePoints_conj_longestElement (n₀ : D.weylSubgroup K)
     (D.positivePoints K).map (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
       D.negativePoints K := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
-  rw [D.positivePoints_eq_iSup K, D.negativePoints_eq_iSup K]
-  refine D.map_iSup_rootSubgroupPoints_conj_longestElement K n₀ hn₀ ?_
-  rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
-  exact image_weylGroupToPerm_longestElement_posRoots _ _
+  rw [D.positivePoints_eq_iSup K, D.negativePoints_eq_iSup K,
+    ← MulEquiv.toMonoidHom_eq_coe, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
+    t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht,
+    image_weylGroupToPerm_longestElement_posRoots]
 
 /-- Conjugation by a Weyl lift of the longest element sends the negative unipotent subgroup onto
 the positive unipotent subgroup. -/
@@ -178,9 +165,9 @@ theorem map_negativePoints_conj_longestElement (n₀ : D.weylSubgroup K)
     (D.negativePoints K).map (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
       D.positivePoints K := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
-  rw [D.negativePoints_eq_iSup K, D.positivePoints_eq_iSup K]
-  refine D.map_iSup_rootSubgroupPoints_conj_longestElement K n₀ hn₀ ?_
-  rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
-  exact image_weylGroupToPerm_longestElement_negRoots _ _
+  rw [D.negativePoints_eq_iSup K, D.positivePoints_eq_iSup K,
+    ← MulEquiv.toMonoidHom_eq_coe, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
+    t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht,
+    image_weylGroupToPerm_longestElement_negRoots]
 
 end TauCeti.DynkinType.ChevalleyDatum

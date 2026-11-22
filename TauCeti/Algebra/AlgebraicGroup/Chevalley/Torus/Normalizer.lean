@@ -57,22 +57,16 @@ private theorem mem_centralizer_range_torusPoints_of_mul_mul_eq_of_mem_normalize
   rw [Subgroup.mem_centralizer_iff]
   rintro _ ⟨r, rfl⟩
   let tr := D.torusPoints K r
-  have htr' : g⁻¹ * tr * g ∈ (D.torusPoints K).range := by
-    have hgNinv : g⁻¹ ∈ Subgroup.normalizer (Set.range (D.torusPoints K)) :=
-      Subgroup.inv_mem _ hgN
-    have h := (Subgroup.mem_normalizer_iff (H := (D.torusPoints K).range).mp hgNinv tr).mp
-      ⟨r, rfl⟩
-    simpa only [inv_inv] using h
+  have htr' : g⁻¹ * tr * g ∈ (D.torusPoints K).range :=
+    (Subgroup.mem_normalizer_iff''.mp hgN tr).mp ⟨r, rfl⟩
   have hu' : tr * (u : D.points K) * tr⁻¹ ∈
       D.inversionPoints K (D.weylProjection K n) :=
     (Subgroup.mem_normalizer_iff.mp
       (D.range_torusPoints_le_normalizer_inversionPoints K (D.weylProjection K n) ⟨r, rfl⟩)
       u).mp u.property
-  have hnt : (n : D.points K)⁻¹ * tr * (n : D.points K) ∈ (D.torusPoints K).range := by
-    have h := (Subgroup.mem_normalizer_iff.mp
-      (D.weylSubgroup_le_normalizer_range_torusPoints K ((D.weylSubgroup K).inv_mem n.property))
-      tr).mp ⟨r, rfl⟩
-    simpa only [inv_inv] using h
+  have hnt : (n : D.points K)⁻¹ * tr * (n : D.points K) ∈ (D.torusPoints K).range :=
+    (Subgroup.mem_normalizer_iff''.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints K n.property) tr).mp ⟨r, rfl⟩
   have hb' : (n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
       (g⁻¹ * tr * g)⁻¹ ∈ D.borelSubgroup K :=
     (D.borelSubgroup K).mul_mem

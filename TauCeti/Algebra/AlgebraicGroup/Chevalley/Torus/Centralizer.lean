@@ -94,21 +94,26 @@ theorem positivePoints_inf_centralizer_range_torusPoints :
     simpa [Matrix.one_apply, hne] using
       (D.mem_centralizer_range_torusPoints_iff K g).mp hc i j hij
 
-/-- Inside the Borel-type subgroup, the actual torus is its own centralizer over an infinite
-field. This is not a statement about the centralizer in the whole point group. -/
-@[simp]
-theorem borelSubgroup_inf_centralizer_range_torusPoints :
-    D.borelSubgroup K ⊓ Subgroup.centralizer (Set.range (D.torusPoints K)) =
-      (D.torusPoints K).range := by
-  have hT : (D.torusPoints K).range ≤
-      Subgroup.centralizer (Set.range (D.torusPoints K)) := by
-    simpa only [MonoidHom.coe_range] using Subgroup.le_centralizer (D.torusPoints K).range
+omit [Infinite K] in
+private theorem borelSubgroup_inf_eq_range_torusPoints {H : Subgroup (D.points K)}
+    (hT : (D.torusPoints K).range ≤ H) (hU : D.positivePoints K ⊓ H = ⊥) :
+    D.borelSubgroup K ⊓ H = (D.torusPoints K).range := by
   rw [D.borelSubgroup_def, inf_comm,
     ← Subgroup.inf_sup_assoc_of_le
       (Subgroup.coe_mul_of_right_le_normalizer_left _ _
         (D.range_torusPoints_le_normalizer_positivePoints K))
       hT,
-    inf_comm, D.positivePoints_inf_centralizer_range_torusPoints K, bot_sup_eq]
+    inf_comm, hU, bot_sup_eq]
+
+/-- Inside the Borel-type subgroup, the actual torus is its own centralizer over an infinite
+field. This is not a statement about the centralizer in the whole point group. -/
+@[simp]
+theorem borelSubgroup_inf_centralizer_range_torusPoints :
+    D.borelSubgroup K ⊓ Subgroup.centralizer (Set.range (D.torusPoints K)) =
+      (D.torusPoints K).range :=
+  D.borelSubgroup_inf_eq_range_torusPoints K
+    (by simpa only [MonoidHom.coe_range] using Subgroup.le_centralizer (D.torusPoints K).range)
+    (D.positivePoints_inf_centralizer_range_torusPoints K)
 
 /-- Over an infinite field, no nonidentity positive point normalizes the actual torus. -/
 @[simp]
@@ -126,14 +131,9 @@ subgroup. -/
 @[simp]
 theorem borelSubgroup_inf_normalizer_range_torusPoints :
     D.borelSubgroup K ⊓ Subgroup.normalizer (Set.range (D.torusPoints K)) =
-      (D.torusPoints K).range := by
-  have hT : (D.torusPoints K).range ≤ Subgroup.normalizer (Set.range (D.torusPoints K)) := by
-    simpa only [MonoidHom.coe_range] using (D.torusPoints K).range.le_normalizer
-  rw [D.borelSubgroup_def, inf_comm,
-    ← Subgroup.inf_sup_assoc_of_le
-      (Subgroup.coe_mul_of_right_le_normalizer_left _ _
-        (D.range_torusPoints_le_normalizer_positivePoints K))
-      hT,
-    inf_comm, D.positivePoints_inf_normalizer_range_torusPoints K, bot_sup_eq]
+      (D.torusPoints K).range :=
+  D.borelSubgroup_inf_eq_range_torusPoints K
+    (by simpa only [MonoidHom.coe_range] using (D.torusPoints K).range.le_normalizer)
+    (D.positivePoints_inf_normalizer_range_torusPoints K)
 
 end TauCeti.DynkinType.ChevalleyDatum
