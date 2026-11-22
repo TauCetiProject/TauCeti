@@ -8,13 +8,18 @@ module
 public import Mathlib.CategoryTheory.Whiskering
 
 /-!
-# Flip comparison for two-variable left whiskering
+# Flip comparison for two-variable whiskering
 
 Flipping the arguments of a bifunctor commutes with two-variable precomposition
 `CategoryTheory.Functor.whiskeringLeft₂` via `CategoryTheory.Functor.whiskeringLeft₂FlipIso`,
 with identity component equations (`CategoryTheory.Functor.whiskeringLeft₂FlipIso_hom_app_app` and
 `CategoryTheory.Functor.whiskeringLeft₂FlipIso_inv_app_app`) and naturality in the bifunctor
 argument (`CategoryTheory.Functor.whiskeringLeft₂FlipIso_naturality`).
+
+Similarly, flipping a bifunctor commutes with target postcomposition via
+`CategoryTheory.Functor.whiskeringRightFlipIso`, with identity component equations
+(`CategoryTheory.Functor.whiskeringRightFlipIso_hom_app_app` and
+`CategoryTheory.Functor.whiskeringRightFlipIso_inv_app_app`).
 -/
 
 public section
@@ -54,6 +59,27 @@ lemma whiskeringLeft₂FlipIso_naturality {G₁ G₂ : D₁ ⥤ D₂ ⥤ H} (f :
         (flipFunctor _ _ _).map ((((whiskeringLeft₂ H).obj L₁).obj L₂).map f) := by
   ext X₂ X₁
   simp
+
+/-- Flipping a bifunctor commutes with postcomposition on the target. -/
+def whiskeringRightFlipIso {C₁ C₂ D E : Type*} [Category* C₁] [Category* C₂] [Category* D]
+    [Category* E] (T : C₁ ⥤ C₂ ⥤ D) (G : D ⥤ E) :
+    (T ⋙ (whiskeringRight _ _ _).obj G).flip ≅ T.flip ⋙ (whiskeringRight _ _ _).obj G :=
+  NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
+
+/-- The forward component of `whiskeringRightFlipIso` at `(X₂, X₁)` is the identity. -/
+@[simp]
+lemma whiskeringRightFlipIso_hom_app_app {C₁ C₂ D E : Type*} [Category* C₁] [Category* C₂]
+    [Category* D] [Category* E] (T : C₁ ⥤ C₂ ⥤ D) (G : D ⥤ E) (X₂ : C₂) (X₁ : C₁) :
+    (((T.whiskeringRightFlipIso G).hom).app X₂).app X₁ = 𝟙 _ := by
+  simp only [whiskeringRightFlipIso, NatIso.ofComponents_hom_app, Iso.refl_hom]
+
+/-- The inverse component of `whiskeringRightFlipIso` at `(X₂, X₁)` is the identity. -/
+@[simp]
+lemma whiskeringRightFlipIso_inv_app_app {C₁ C₂ D E : Type*} [Category* C₁] [Category* C₂]
+    [Category* D] [Category* E] (T : C₁ ⥤ C₂ ⥤ D) (G : D ⥤ E) (X₂ : C₂) (X₁ : C₁) :
+    (((T.whiskeringRightFlipIso G).inv).app X₂).app X₁ = 𝟙 _ := by
+  simp only [whiskeringRightFlipIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
+  rfl
 
 end Whiskering
 
