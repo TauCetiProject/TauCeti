@@ -14,12 +14,17 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Singular homology of contractible spaces
 
 A contractible space has the singular homology of a point: its homology vanishes in every positive
-degree, and its reduced homology vanishes in every degree. Consequently, the reduced connecting
-morphism of a pair is an isomorphism whenever its ambient space is contractible. For
+degree, and its reduced homology vanishes in every degree. Every map between contractible spaces
+therefore induces an isomorphism on singular homology
+(`TauCeti.isIso_singularHomologyFunctor_map_of_contractibleSpace`). More generally, when `Z` has
+the homology of a point, a map `Y ⟶ Z` is a homology isomorphism exactly when `Y` has the homology
+of a point (`TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_iff`). Likewise, the reduced
+connecting morphism of a pair is an isomorphism whenever its ambient space is contractible. For
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible; for a point this is
-`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`.
+`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`. The connecting morphism
+`Hₖ₊₁(X, A) ⟶ Hₖ(A)` then vanishes (`TopPair.singularHomologyδ_eq_zero_of_contractibleSpace`).
 
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
 singular homology.
@@ -69,6 +74,29 @@ theorem isZero_singularHomologyFunctor_of_contractibleSpace (X : TopCat.{w})
   rw [IsZero.iff_id_eq_zero, ← hid, CategoryTheory.Functor.map_comp, hpt.eq_of_src
     (((singularHomologyFunctor C n).obj R).map s) 0, comp_zero]
 
+/-- **A map between contractible spaces induces an isomorphism on singular homology.** In degree
+zero it intertwines the augmentations, which are isomorphisms; in positive degrees both groups
+vanish. -/
+instance isIso_singularHomologyFunctor_map_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace X] [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rcases n with _ | n
+  · exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R f)
+  · exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace R Y n.succ_ne_zero) _
+
+/-- **Having the homology of a point along a homology isomorphism.** If the map from `Z` to a
+point induces an isomorphism on `Hₙ(-; R)`, then the map from `Y` to a point does if and only if
+`f : Y ⟶ Z` does: the map from `Y` to a point factors through `f`. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_iff {Y Z : TopCat.{w}} (f : Y ⟶ Z)
+    (n : ℕ)
+    (hZ : IsIso (((singularHomologyFunctor C n).obj R).map (TopCat.isTerminalPUnit.from Z))) :
+    IsIso (((singularHomologyFunctor C n).obj R).map (TopCat.isTerminalPUnit.from Y)) ↔
+      IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rw [TopCat.isTerminalPUnit.hom_ext (TopCat.isTerminalPUnit.from Y)
+    (f ≫ TopCat.isTerminalPUnit.from Z), Functor.map_comp]
+  exact isIso_comp_right_iff _ _
+
 variable [HasKernels C]
 
 /-- **The reduced singular homology of a contractible space vanishes in every degree.** -/
@@ -80,6 +108,43 @@ theorem isZero_reducedSingularHomologyFunctor_of_contractibleSpace (X : TopCat.{
   | succ n =>
     exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).of_iso
       ((reducedSingularHomologySuccIso R n).app X)
+
+/-- A map into a contractible space kills the reduced homology of its source. -/
+@[reassoc (attr := simp)]
+theorem reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    (reducedSingularHomologyι R n).app X ≫ ((singularHomologyFunctor C n).obj R).map f = 0 := by
+  rw [← (reducedSingularHomologyι R n).naturality,
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R Y n).eq_of_tgt
+      ((reducedSingularHomologyFunctor R n).map f) 0, zero_comp]
+
+/-- **The kernel of a map into a contractible space is reduced homology.** For a map `f : X ⟶ Y`
+with `Y` contractible, the inclusion `H~ₙ(X) ⟶ Hₙ(X)` is a kernel of `f_* : Hₙ(X) ⟶ Hₙ(Y)`, in
+every degree: in degree zero `f_*` followed by the augmentation of `Y`, an isomorphism, is the
+augmentation of `X`, and in positive degrees `f_*` is zero. -/
+def isLimitReducedSingularHomologyιOfContractibleSpace {X Y : TopCat.{w}} [ContractibleSpace Y]
+    (f : X ⟶ Y) (n : ℕ) :
+    IsLimit (KernelFork.ofι ((reducedSingularHomologyι R n).app X)
+      (reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace R f n)) := by
+  cases n with
+  | zero =>
+    -- a morphism killed by `f_*` is killed by the augmentation `f_* ≫ ε_Y = ε_X`
+    refine KernelFork.IsLimit.ofι _ _ (fun k hk ↦ kernel.lift (X.singularHomology₀ε R) k ?_ ≫
+      eqToHom (reducedSingularHomologyFunctor_zero_obj R X).symm) ?_ ?_
+    · rw [← singularHomologyMap_singularHomology₀ε R f, reassoc_of% hk, zero_comp]
+    · intro _ _ _
+      simp [reducedSingularHomologyι_zero_app]
+    · intro _ _ _ m hm
+      rw [← cancel_mono ((reducedSingularHomologyι R 0).app X), hm]
+      simp [reducedSingularHomologyι_zero_app]
+  | succ n =>
+    -- in positive degrees the inclusion of reduced homology is an identity
+    have : IsIso ((reducedSingularHomologyι R (n + 1)).app X) := by
+      rw [reducedSingularHomologyι_succ_app]
+      infer_instance
+    exact KernelFork.IsLimit.ofι _ _
+      (fun k _ ↦ k ≫ inv ((reducedSingularHomologyι R (n + 1)).app X))
+      (fun _ _ ↦ by simp) (fun _ _ m hm ↦ by simp [← hm])
 
 end Contractible
 
@@ -106,6 +171,13 @@ instance isIso_singularHomologyπ_of_contractibleSpace [ContractibleSpace P.snd]
   P.isIso_singularHomologyπ R
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd (k + 1))
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k)
+
+/-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
+vanishes. -/
+theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
+    P.singularHomologyδ R (k + 1) k = 0 := by
+  rw [← cancel_epi (P.singularHomologyπ R (k + 1)),
+    singularHomologyπ_comp_singularHomologyδ _ R (k + 1) k, comp_zero]
 
 end TopPair
 

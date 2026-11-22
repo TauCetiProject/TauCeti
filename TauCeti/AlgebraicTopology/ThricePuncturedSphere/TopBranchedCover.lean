@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Enumerative.Partition.Basic
-public import Mathlib.Topology.Covering.Basic
-public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
@@ -129,7 +126,7 @@ public section
 
 noncomputable section
 
-open Filter Set Topology OnePoint
+open Filter Set Topology
 
 namespace TauCeti
 
@@ -492,6 +489,7 @@ variable {X} {Y W : TopBranchedCover n}
 def refl (X : TopBranchedCover n) : Iso X X :=
   ⟨Homeomorph.refl X.Z, fun _ => rfl⟩
 
+/-- The homeomorphism underlying the identity isomorphism is the identity. -/
 @[simp]
 theorem refl_toHomeomorph (X : TopBranchedCover n) :
     (refl X).toHomeomorph = Homeomorph.refl X.Z :=
@@ -501,6 +499,7 @@ theorem refl_toHomeomorph (X : TopBranchedCover n) :
 def symm (ι : Iso X Y) : Iso Y X :=
   ⟨ι.toHomeomorph.symm, fun z => by rw [← ι.π_apply, Homeomorph.apply_symm_apply]⟩
 
+/-- The homeomorphism underlying the inverse of an isomorphism is the inverse homeomorphism. -/
 @[simp]
 theorem symm_toHomeomorph (ι : Iso X Y) : ι.symm.toHomeomorph = ι.toHomeomorph.symm :=
   (rfl)
@@ -509,6 +508,8 @@ theorem symm_toHomeomorph (ι : Iso X Y) : ι.symm.toHomeomorph = ι.toHomeomorp
 def trans (ι : Iso X Y) (κ : Iso Y W) : Iso X W :=
   ⟨ι.toHomeomorph.trans κ.toHomeomorph, fun z => (κ.π_apply _).trans (ι.π_apply z)⟩
 
+/-- The homeomorphism underlying a composite of isomorphisms is the composite of the underlying
+homeomorphisms. -/
 @[simp]
 theorem trans_toHomeomorph (ι : Iso X Y) (κ : Iso Y W) :
     (ι.trans κ).toHomeomorph = ι.toHomeomorph.trans κ.toHomeomorph :=
@@ -519,19 +520,23 @@ branched covers. -/
 def restrict (ι : Iso X Y) : X.π ⁻¹' range toOnePoint ≃ₜ Y.π ⁻¹' range toOnePoint :=
   ι.toHomeomorph.subtype fun z ↦ by simp
 
+/-- The restricted homeomorphism acts on points as the underlying homeomorphism does. -/
 @[simp]
 theorem coe_restrict_apply (ι : Iso X Y) (z : X.π ⁻¹' range toOnePoint) :
     (ι.restrict z : Y.Z) = ι.toHomeomorph z :=
   (rfl)
 
+/-- The restriction of the identity isomorphism is the identity homeomorphism. -/
 @[simp]
 theorem refl_restrict (X : TopBranchedCover n) : (refl X).restrict = Homeomorph.refl _ :=
   (rfl)
 
+/-- The restriction of the inverse of an isomorphism is the inverse of its restriction. -/
 @[simp]
 theorem symm_restrict (ι : Iso X Y) : ι.symm.restrict = ι.restrict.symm :=
   (rfl)
 
+/-- The restriction of a composite of isomorphisms is the composite of the restrictions. -/
 @[simp]
 theorem trans_restrict (ι : Iso X Y) (κ : Iso Y W) :
     (ι.trans κ).restrict = ι.restrict.trans κ.restrict :=
@@ -562,11 +567,15 @@ def connectedCoverIso (ι : Iso X Y) : X.connectedCover.cover ≅ Y.connectedCov
     simp only [connectedCoverHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply,
       ι.restrict_restrict])
 
+/-- The forward map of the isomorphism of connected covers induced by `ι` is the homeomorphism
+`ι.connectedCoverHomeomorph`. -/
 @[simp]
 theorem connectedCoverIso_hom_hom_left (ι : Iso X Y) :
     ι.connectedCoverIso.hom.hom.left = (TopCat.isoOfHomeo ι.connectedCoverHomeomorph).hom :=
   CoveringSpace.FullSubcategory.isoMk_hom_hom_left _ _
 
+/-- The inverse map of the isomorphism of connected covers induced by `ι` is the inverse of the
+homeomorphism `ι.connectedCoverHomeomorph`. -/
 @[simp]
 theorem connectedCoverIso_inv_hom_left (ι : Iso X Y) :
     ι.connectedCoverIso.inv.hom.left = (TopCat.isoOfHomeo ι.connectedCoverHomeomorph).inv :=
@@ -703,21 +712,21 @@ private theorem exists_tendsto_comap_val_nhds
   by_cases hx : x ∈ X.π ⁻¹' range toOnePoint
   · refine ⟨f ⟨x, hx⟩, ?_⟩
     rw [← nhds_subtype_eq_comap]
-    exact (continuous_subtype_val.comp hf).continuousAt
+    exact (continuous_subtypeVal.comp hf).continuousAt
   -- At a point `x` of a marked fibre, the cluster set of `f` is connected, since the unbranched
   -- part has preconnected approach regions at `x`, and lies in the finite fibre of `Y` over
   -- `X.π x`. So it has at most one point, and compactness of `Y` turns it into a limit.
   -- Read `f` as a map `g` on the total space of `X`, continuous on the unbranched part.
   obtain ⟨g, hg⟩ : ∃ g : X.Z → Y.Z, ∀ z : X.π ⁻¹' range toOnePoint, g z = f z :=
-    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtype_val.comp hf)⟩
+    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp hf)⟩
   have hgc : ContinuousOn g (X.π ⁻¹' range toOnePoint) := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (continuous_subtype_val.comp hf).congr fun z ↦ (hg z).symm
+    exact (continuous_subtypeVal.comp hf).congr fun z ↦ (hg z).symm
   suffices h : ∃ y, Tendsto g (𝓝[X.π ⁻¹' range toOnePoint] x) (𝓝 y) by
     obtain ⟨y, hy⟩ := h
     refine ⟨y, ?_⟩
     rw [show Subtype.val ∘ f = g ∘ Subtype.val from funext fun z ↦ (hg z).symm,
-      ← tendsto_map'_iff, subtype_coe_map_comap]
+      ← tendsto_map'_iff, subtypeVal_map_comap]
     exact hy
   refine exists_tendsto_of_clusterSetOn_subsingleton isCompact_univ (mapsTo_univ _ _)
     (X.dense_preimage_range.closure_eq ▸ mem_univ x) ?_
@@ -731,7 +740,8 @@ private theorem exists_tendsto_comap_val_nhds
     exact eq_of_nhds_neBot (h.neBot.mono (inf_le_inf_left _
       ((X.π.continuous.tendsto x).mono_left nhdsWithin_le_nhds)))
   exact (isPreconnected_clusterSetOn isCompact_univ (mapsTo_univ _ _) hgc
-    fun _ ↦ X.exists_mem_nhds_isPreconnected_inter hx).isDiscrete_iff_subsingleton.1
+    (isPreconnectedApproachAt_def.mpr fun _ ↦
+      X.exists_mem_nhds_isPreconnected_inter hx)).isDiscrete_iff_subsingleton.1
       ((Y.finite_preimage_singleton _).subset hsub).isDiscrete
 
 /-- The extension of a continuous map over the thrice-punctured sphere from the unbranched part of
@@ -750,7 +760,7 @@ variable (f : C(X.π ⁻¹' range toOnePoint, Y.π ⁻¹' range toOnePoint))
 /-- On the unbranched part, the extension of `f` is `f`. -/
 @[simp]
 theorem extend_apply_val (z : X.π ⁻¹' range toOnePoint) : extend f hπ z = f z :=
-  X.dense_preimage_range.extend_eq (continuous_subtype_val.comp f.continuous) z
+  X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp f.continuous) z
 
 /-- A continuous map of total spaces agreeing with `f` on the unbranched part is the extension
 of `f`. -/

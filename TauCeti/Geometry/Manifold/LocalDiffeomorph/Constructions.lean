@@ -22,7 +22,8 @@ coordinate gives a local change of parameters intertwining those charts. The fil
 that the coordinate axes of a partial diffeomorphism into a real Euclidean space, centred at a
 point, pull back to curves through that point.
 
-It also records the source, target, forward map and inverse map of Mathlib's composition
+It also provides extensionality for `PartialDiffeomorph` via its underlying `PartialEquiv`, and
+records the source, target, forward map and inverse map of Mathlib's composition
 `PartialDiffeomorph.trans`, so that callers need not unfold it through `OpenPartialHomeomorph`.
 
 ## Main definitions
@@ -36,6 +37,8 @@ It also records the source, target, forward map and inverse map of Mathlib's com
 
 ## Main results
 
+* `PartialDiffeomorph.toPartialEquiv_injective` and `PartialDiffeomorph.ext`: extensionality for
+  `PartialDiffeomorph` through its underlying `PartialEquiv`.
 * `PartialDiffeomorph.exists_transition`: charts with a common coordinate induce a local change
   of parameters carrying the specified points to one another.
 * `PartialDiffeomorph.exists_curve_single_axis`: pulling a coordinate axis back through a
@@ -60,6 +63,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {m n : WithTop ℕ∞}
 
 namespace PartialDiffeomorph
+
+/-- A partial diffeomorphism is determined by its underlying `PartialEquiv`. -/
+theorem toPartialEquiv_injective :
+    Function.Injective (toPartialEquiv : PartialDiffeomorph I J M N n → PartialEquiv M N)
+  | ⟨_, _, _, _, _⟩, ⟨_, _, _, _, _⟩, rfl => rfl
+
+/-- Two partial diffeomorphisms are equal when their forward maps, inverse maps, and sources
+agree. -/
+@[ext]
+protected theorem ext {Φ Ψ : PartialDiffeomorph I J M N n} (h : ∀ x, Φ x = Ψ x)
+    (hinv : ∀ y, Φ.symm y = Ψ.symm y) (hs : Φ.source = Ψ.source) : Φ = Ψ :=
+  toPartialEquiv_injective (PartialEquiv.ext h hinv hs)
 
 /-- A `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`. -/
 def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorph I J M N m where
@@ -208,4 +223,18 @@ theorem toPartialDiffeomorph_toPartialEquiv (A : E ≃L[𝕜] F) :
     (A.toPartialDiffeomorph (n := n)).toPartialEquiv = A.toEquiv.toPartialEquiv :=
   (rfl)
 
+/-- The forward map of a continuous linear equivalence viewed as a partial diffeomorphism. -/
+theorem coe_toPartialDiffeomorph (A : E ≃L[𝕜] F) :
+    ⇑(A.toPartialDiffeomorph (n := n)) = A := by
+  simp
+
 end ContinuousLinearEquiv
+
+/-- Postcomposing a partial diffeomorphism with a continuous linear equivalence keeps its
+source. -/
+theorem PartialDiffeomorph.trans_toPartialDiffeomorph_source
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n)
+    (A : F ≃L[𝕜] G) : (Φ.trans (A.toPartialDiffeomorph (n := n))).source = Φ.source := by
+  rw [PartialDiffeomorph.trans_source]
+  simp

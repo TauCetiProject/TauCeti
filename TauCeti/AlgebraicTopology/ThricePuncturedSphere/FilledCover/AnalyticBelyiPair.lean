@@ -109,7 +109,7 @@ namespace TauCeti
 
 open Equiv.Perm Function Set Topology ThricePuncturedSphere PunctureFilling
 
-open scoped ContDiff Manifold OnePoint
+open scoped ContDiff _root_.Manifold OnePoint
 
 namespace FilledCover
 
@@ -365,11 +365,11 @@ theorem isoClassEquivConnectedIsoClass_apply {n : ℕ} (P : Quotient (isoSetoid.
 /-- The classification `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass` sends the class of
 a pair to the class of its monodromy triple, for any numbering of its fibre over `1/2`. -/
 theorem isoClassEquivConnectedIsoClass_mk {n : ℕ}
-    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.1.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.val.restrict ⁻¹' {basePt} ≃ Fin n) :
     isoClassEquivConnectedIsoClass n ⟦P⟧ =
-      .mk ⟨P.1.isCoveringMap_restrict.monodromyTriple ν,
-        P.1.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ := by
-  set X := P.1.toTopBranchedCover P.2
+      .mk ⟨P.val.isCoveringMap_restrict.monodromyTriple ν,
+        P.val.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ := by
+  set X := P.val.toTopBranchedCover P.property
   obtain ⟨ν'⟩ := X.connectedCover.nonempty_equiv_fin
   obtain ⟨ν''⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
   rw [isoClassEquivConnectedIsoClass_apply, isoClassEquivConnectedCoverClass_apply,
@@ -382,7 +382,7 @@ theorem isoClassEquivConnectedIsoClass_mk {n : ℕ}
   exact (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph ν'
       X.isCoveringMap_restrict ν'' X.connectedCoverHomeomorph
       (funext X.restrict_connectedCoverHomeomorph)).symm.trans
-    (P.1.isoClass_monodromyTriple_toTopBranchedCover P.2 ν ν'')
+    (P.val.isoClass_monodromyTriple_toTopBranchedCover P.property ν ν'')
 
 /-- Forgetting connectedness, the classification
 `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass` is the permutation triple
@@ -392,9 +392,10 @@ theorem forget_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid
     (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P := by
   induction P using Quotient.inductionOn with
   | h P =>
-    obtain ⟨ν⟩ := P.1.nonempty_restrict_preimage_singleton_equiv basePt
-    rw [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.2)), ConnectedIsoClass.forget_mk,
-      toIsoClass_mk P (ν.trans (finCongr P.2))]
+    obtain ⟨ν⟩ := P.val.nonempty_restrict_preimage_singleton_equiv basePt
+    rw [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
+        ConnectedIsoClass.forget_mk,
+      toIsoClass_mk P (ν.trans (finCongr P.property))]
 
 /-- **An analytic Belyi pair is determined up to isomorphism by its permutation triple.** -/
 theorem toIsoClass_injective (n : ℕ) : Injective (toIsoClass.{0} n) := fun P Q h ↦
@@ -675,7 +676,7 @@ theorem deckMulEquivIso_apply_incl (h : deck ⇑C.cover.proj) (x : (C.cover : To
   refine (AnalyticBelyiPair.coe_isoMulEquivDeckRestrict_symm_apply _ _ _).trans ?_
   exact congrArg Subtype.val ((Deck.conjMulEquiv_apply_coe _ _ h _).trans
     (congrArg C.unpuncturedHomeomorphRestrict
-      (congrArg h.1 (C.unpuncturedHomeomorphRestrict.symm_apply_apply x))))
+      (congrArg h.val (C.unpuncturedHomeomorphRestrict.symm_apply_apply x))))
 
 end ConnectedCover
 

@@ -241,29 +241,29 @@ def equivOppositeConvention (n : ℕ) : PermutationTriple n ≃
     {p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // p.1 * p.2.1 * p.2.2 = 1} where
   toFun t := ⟨(t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹), by rw [t.σinf_eq_inv, inv_inv]; group⟩
   invFun p :=
-    { σ0 := p.1.1⁻¹
-      σ1 := p.1.2.1⁻¹
-      σinf := p.1.2.2⁻¹
+    { σ0 := p.val.1⁻¹
+      σ1 := p.val.2.1⁻¹
+      σinf := p.val.2.2⁻¹
       product_eq_one := by
-        have h : (p.1.1 * p.1.2.1 * p.1.2.2)⁻¹ = 1 := by rw [p.2, inv_one]
+        have h : (p.val.1 * p.val.2.1 * p.val.2.2)⁻¹ = 1 := by rw [p.property, inv_one]
         simpa [mul_inv_rev, mul_assoc] using h }
   left_inv t := by ext1 <;> simp
   right_inv p := by ext1; simp
 
 @[simp] theorem equivOppositeConvention_apply_coe :
-    (equivOppositeConvention n t).1 = (t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹) := (rfl)
+    (equivOppositeConvention n t).val = (t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹) := (rfl)
 
 @[simp] theorem equivOppositeConvention_symm_apply_σ0
     (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
-    ((equivOppositeConvention n).symm p).σ0 = p.1.1⁻¹ := (rfl)
+    ((equivOppositeConvention n).symm p).σ0 = p.val.1⁻¹ := (rfl)
 
 @[simp] theorem equivOppositeConvention_symm_apply_σ1
     (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
-    ((equivOppositeConvention n).symm p).σ1 = p.1.2.1⁻¹ := (rfl)
+    ((equivOppositeConvention n).symm p).σ1 = p.val.2.1⁻¹ := (rfl)
 
 @[simp] theorem equivOppositeConvention_symm_apply_σinf
     (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
-    ((equivOppositeConvention n).symm p).σinf = p.1.2.2⁻¹ := (rfl)
+    ((equivOppositeConvention n).symm p).σinf = p.val.2.2⁻¹ := (rfl)
 
 /-! ### Relabeling the sheets -/
 
@@ -297,11 +297,11 @@ instance : MulAction (Perm (Fin n)) (PermutationTriple n) where
 def relabelOppositeConvention (τ : Perm (Fin n))
     (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
     {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1} :=
-  ⟨(τ * p.1.1 * τ⁻¹, τ * p.1.2.1 * τ⁻¹, τ * p.1.2.2 * τ⁻¹), by
+  ⟨(τ * p.val.1 * τ⁻¹, τ * p.val.2.1 * τ⁻¹, τ * p.val.2.2 * τ⁻¹), by
     dsimp only
     calc
-      _ = τ * (p.1.1 * p.1.2.1 * p.1.2.2) * τ⁻¹ := by group
-      _ = 1 := by rw [p.2]; simp⟩
+      _ = τ * (p.val.1 * p.val.2.1 * p.val.2.2) * τ⁻¹ := by group
+      _ = 1 := by rw [p.property]; simp⟩
 
 /-- The opposite-convention equivalence commutes with relabeling the sheets. -/
 @[simp] theorem equivOppositeConvention_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
@@ -462,7 +462,7 @@ theorem IsConnected.isPretransitive (ht : t.IsConnected) :
     obtain ⟨g, hg⟩ := hs.isPretransitive.exists_smul_eq (υ⁻¹ i) (υ⁻¹ j)
     refine ⟨⟨MulAut.conj υ g, ?_⟩, ?_⟩
     · rw [monodromyGroup_smul]
-      exact ⟨g, g.2, rfl⟩
+      exact ⟨g, g.property, rfl⟩
     · simpa [Subgroup.smul_def, Perm.smul_def] using congrArg υ hg
   refine ⟨fun h => ?_, key τ t⟩
   simpa using key τ⁻¹ _ h
@@ -491,7 +491,7 @@ theorem isConnected_of_degree_one (t : PermutationTriple 1) : t.IsConnected := b
 theorem isConnected_equivOppositeConvention_iff (t : PermutationTriple n) :
     (n ≠ 0 ∧ MulAction.IsPretransitive
       (Subgroup.closure
-        {(equivOppositeConvention n t).1.1, (equivOppositeConvention n t).1.2.1}) (Fin n)) ↔
+        {(equivOppositeConvention n t).val.1, (equivOppositeConvention n t).val.2.1}) (Fin n)) ↔
       t.IsConnected := by
   rw [equivOppositeConvention_apply_coe, closure_inv_pair_eq_monodromyGroup, isConnected_iff]
 
@@ -555,7 +555,7 @@ theorem natCard_automorphismGroup_eq_of_equivalent {t t' : PermutationTriple n}
 opposite side as the simultaneous centralizer of its first two components. -/
 theorem automorphismGroup_equivOppositeConvention (t : PermutationTriple n) :
     Subgroup.centralizer
-      ({(equivOppositeConvention n t).1.1, (equivOppositeConvention n t).1.2.1} :
+      ({(equivOppositeConvention n t).val.1, (equivOppositeConvention n t).val.2.1} :
         Set (Perm (Fin n))) = t.automorphismGroup := by
   rw [equivOppositeConvention_apply_coe]
   calc

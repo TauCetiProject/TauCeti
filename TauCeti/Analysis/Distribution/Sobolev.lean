@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -27,7 +28,9 @@ symbols of order `0` (`TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_l
 Mihlin's condition, and the Mihlin–Hörmander multiplier theorem makes them bounded on `Lᵖ`
 (`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`). The converse
 direction needs the derivatives only along an orthonormal basis: `J¹ f = J⁻¹ (J² f)` with
-`J² = 1 - (2π)⁻² Δ`.
+`J² = 1 - (2π)⁻² Δ`. The same identity, applied to `J⁻² f`, writes every element of `H^{s-1,p}` as
+`u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{s,p}`; this is how statements about `H^{s,p}` pass down to
+lower orders.
 
 Use the regularity criteria to characterize Sobolev membership through directional derivatives,
 either in all directions or along an orthonormal basis. The order-two operator identity relates
@@ -37,6 +40,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 
 * `TemperedDistribution.besselPotential_two_eq_sub_laplacian`: the Bessel potential of order `2`
   is `1 - (2π)⁻² Δ`.
+* `TemperedDistribution.besselPotential_eq_id_of_subsingleton`: on a zero-dimensional space every
+  Bessel potential is the identity.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
@@ -46,8 +51,15 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sum`: the element of `H^{s,p}` defined
   by a tempered distribution in `H^{s,p}` depends linearly on it.
-* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
-  same for a finite linear combination of `Lᵠ` functions in `H^{s,p}`.
+* `TemperedDistribution.MemSobolev.toTemperedDistribution_add`,
+  `TemperedDistribution.MemSobolev.toTemperedDistribution_sub`,
+  `TemperedDistribution.MemSobolev.toTemperedDistribution_smul`: the `Lᵠ` functions in `H^{s,p}`
+  are closed under sums, differences and complex multiples.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_add`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sub`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
+  element of `H^{s,p}` defined by such a function depends linearly on it.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -76,6 +88,15 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
+* `TemperedDistribution.memSobolev_sub_one_iff`: dually, `f ∈ H^{s-1,p}` exactly when
+  `f = u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{s,p}`, along an orthonormal basis.
+* `TemperedDistribution.memSobolev_zero_smulLeftCLM_of_ae_eq`: a Schwartz multiple of an `L²`
+  function with a bounded representative lies in `H^{0,p}`.
+* `TemperedDistribution.memSobolev_smulLeftCLM_lineDerivOp`: for `1 < p < ∞`, if every Schwartz
+  multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `∂_w f` lies in `H^{r-1,p}`.
+* `TemperedDistribution.memSobolev_smulLeftCLM_besselPotential_two`: for `1 < p < ∞`, if every
+  Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `J² f` lies in
+  `H^{r-2,p}`.
 
 ## References
 
@@ -119,6 +140,13 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
     rw [laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg,
       inv_mul_cancel₀ (by positivity), neg_one_smul]
   rw [hsplit, hΔ, sub_neg_eq_add]
+
+/-- On a zero-dimensional space every Bessel potential is the identity: its symbol
+`(1 + ‖ξ‖²) ^ (s / 2)` is `1` at the only frequency `ξ = 0`. -/
+theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
+    besselPotential E F s = ContinuousLinearMap.id ℂ _ := by
+  rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
+    funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
 
 variable [CompleteSpace F]
 
@@ -176,7 +204,7 @@ summands. -/
 theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal}
     [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i ∈ t, MemSobolev s p (g i))
     (h : MemSobolev s p (∑ i ∈ t, g i)) :
-    h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.2).toBesselPotentialSpace :=
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.property).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
     rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
     clear h
@@ -194,10 +222,60 @@ theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : 
     [μ.HasTemperateGrowth] {a : ι → ℂ} {f : ι → Lp F q μ}
     (hf : ∀ i ∈ t, MemSobolev s p (f i : 𝓢'(E, F)))
     (h : MemSobolev s p ((∑ i ∈ t, a i • f i : Lp F q μ) : 𝓢'(E, F))) :
-    h.toBesselPotentialSpace = ∑ i ∈ t.attach, a i • (hf i i.2).toBesselPotentialSpace := by
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, a i • (hf i i.property).toBesselPotentialSpace := by
   simp only [Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul,
     MemSobolev.toBesselPotentialSpace_sum fun i hi ↦ (hf i hi).smul (a i),
-    fun (i : t) ↦ (hf i i.2).toBesselPotentialSpace_smul (a i)]
+    fun (i : t) ↦ (hf i i.property).toBesselPotentialSpace_smul (a i)]
+
+/-- The sum of two `Lᵠ` functions in `H^{s,p}` lies in `H^{s,p}`. -/
+theorem MemSobolev.toTemperedDistribution_add {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] {f g : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (hg : MemSobolev s p (g : 𝓢'(E, F))) :
+    MemSobolev s p ((f + g : Lp F q μ) : 𝓢'(E, F)) := by
+  rw [Lp.toTemperedDistribution_add]
+  exact hf.add hg
+
+/-- The difference of two `Lᵠ` functions in `H^{s,p}` lies in `H^{s,p}`. -/
+theorem MemSobolev.toTemperedDistribution_sub {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] {f g : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (hg : MemSobolev s p (g : 𝓢'(E, F))) :
+    MemSobolev s p ((f - g : Lp F q μ) : 𝓢'(E, F)) := by
+  rw [Lp.toTemperedDistribution_sub]
+  exact hf.sub hg
+
+/-- A complex multiple of an `Lᵠ` function in `H^{s,p}` lies in `H^{s,p}`. -/
+theorem MemSobolev.toTemperedDistribution_smul {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] {f : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (c : ℂ) :
+    MemSobolev s p ((c • f : Lp F q μ) : 𝓢'(E, F)) := by
+  rw [Lp.toTemperedDistribution_smul]
+  exact hf.smul c
+
+/-- The element of `H^{s,p}` defined by the sum of two `Lᵠ` functions in `H^{s,p}` is the sum of
+the elements defined by these functions. -/
+theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_add {s : ℝ} {p q : ENNReal}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] {f g : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (hg : MemSobolev s p (g : 𝓢'(E, F)))
+    (h : MemSobolev s p ((f + g : Lp F q μ) : 𝓢'(E, F))) :
+    h.toBesselPotentialSpace = hf.toBesselPotentialSpace + hg.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_add])
+
+/-- The element of `H^{s,p}` defined by the difference of two `Lᵠ` functions in `H^{s,p}` is the
+difference of the elements defined by these functions. -/
+theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sub {s : ℝ} {p q : ENNReal}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] {f g : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (hg : MemSobolev s p (g : 𝓢'(E, F)))
+    (h : MemSobolev s p ((f - g : Lp F q μ) : 𝓢'(E, F))) :
+    h.toBesselPotentialSpace = hf.toBesselPotentialSpace - hg.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_sub])
+
+/-- The element of `H^{s,p}` defined by a complex multiple of an `Lᵠ` function in `H^{s,p}` is the
+same multiple of the element defined by that function. -/
+theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul {s : ℝ} {p q : ENNReal}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] (c : ℂ) {f : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (h : MemSobolev s p ((c • f : Lp F q μ) : 𝓢'(E, F))) :
+    h.toBesselPotentialSpace = c • hf.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_smul])
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/
@@ -392,6 +470,76 @@ theorem memSobolev_natCast_add_one_iff (hp : 1 < p) (hp_top : p ≠ ∞) {k : �
       rw [Nat.cast_succ, memSobolev_add_one_iff hp hp_top, ih]
       exact ⟨fun h => ⟨h.1.1, h.2⟩,
         fun h => ⟨⟨h.1, fun m => (h.2 m).mono_of_one_lt hp hp_top (by linarith)⟩, h.2⟩⟩
+
+/-- A Schwartz multiple of an `L²` function with a bounded representative lies in `Lᵖ`. -/
+theorem memSobolev_zero_smulLeftCLM_of_ae_eq {u : Lp F 2 (volume : Measure E)}
+    {g : E → F} (hg : MemLp g ∞ volume) (hug : u =ᵐ[volume] g) (ψ : 𝓢(E, ℂ)) :
+    MemSobolev 0 p (smulLeftCLM F (ψ : E → ℂ) (u : 𝓢'(E, F))) := by
+  have hmem : MemLp (fun x ↦ ψ x • g x) p volume := (ψ.memLp p).smul hg
+  refine memSobolev_zero_iff.2 ⟨hmem.toLp _, ?_⟩
+  ext φ
+  rw [Lp.smulLeftCLM_toTemperedDistribution_apply ψ.hasTemperateGrowth,
+    Lp.toTemperedDistribution_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [hug, hmem.coeFn_toLp] with x hx hx'
+  rw [hx', hx]
+
+/-- For `1 < p < ∞`, if every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz
+multiple of `∂_w f` lies in `H^{r - 1,p}`, by the Leibniz rule `ψ ∂_w f = ∂_w (ψ f) - (∂_w ψ) f`. -/
+theorem memSobolev_smulLeftCLM_lineDerivOp (hp : 1 < p) (hp_top : p ≠ ∞) {r : ℝ}
+    {f : 𝓢'(E, F)} (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (w : E)
+    (ψ : 𝓢(E, ℂ)) : MemSobolev (r - 1) p (smulLeftCLM F (ψ : E → ℂ) (∂_{w} f)) := by
+  have h := lineDerivOp_smulLeftCLM ψ.hasTemperateGrowth f w
+  have hψ : (fun x ↦ fderiv ℝ (ψ : E → ℂ) x w) = ⇑(∂_{w} ψ : 𝓢(E, ℂ)) :=
+    funext fun x ↦ (SchwartzMap.lineDerivOp_apply_eq_fderiv w ψ x).symm
+  rw [hψ] at h
+  rw [eq_sub_of_add_eq' h.symm]
+  exact ((hf ψ).lineDerivOp_of_one_lt hp hp_top).sub
+    ((hf (∂_{w} ψ : 𝓢(E, ℂ))).mono_of_one_lt hp hp_top (by linarith))
+
+/-- For `1 < p < ∞`, if every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz
+multiple of `J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
+theorem memSobolev_smulLeftCLM_besselPotential_two (hp : 1 < p) (hp_top : p ≠ ∞)
+    {r : ℝ} {f : 𝓢'(E, F)}
+    (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (ψ : 𝓢(E, ℂ)) :
+    MemSobolev (r - 2) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F 2 f)) := by
+  set b := stdOrthonormalBasis ℝ E
+  rw [besselPotential_two_eq_sub_laplacian, laplacian_eq_sum b, map_sub,
+    ContinuousLinearMap.map_smul_of_tower, map_sum, RCLike.real_smul_eq_coe_smul (K := ℂ)]
+  refine ((hf ψ).mono_of_one_lt hp hp_top (by linarith)).sub
+    (MemSobolev.smul _ (MemSobolev.sum fun i _ ↦ ?_))
+  have h := memSobolev_smulLeftCLM_lineDerivOp hp hp_top
+    (memSobolev_smulLeftCLM_lineDerivOp hp hp_top hf (b i)) (b i) ψ
+  rwa [show r - 1 - 1 = r - 2 by ring] at h
+
+/-- For `1 < p < ∞`, a tempered distribution lies in `H^{s-1,p}` exactly when it is `u + ∑ᵢ ∂ᵢ wᵢ`
+for distributions `u` and `wᵢ` in `H^{s,p}`, the derivatives being taken along an orthonormal
+basis. For `u` one may take `J⁻² f`, where `J^r` is the Bessel potential of order `r`: since
+`J² = 1 - (2π)⁻² ∑ᵢ ∂ᵢ ∂ᵢ`, this gives `f = u + ∑ᵢ ∂ᵢ (-(2π)⁻² ∂ᵢ u)`. -/
+theorem memSobolev_sub_one_iff (hp : 1 < p) (hp_top : p ≠ ∞) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {s : ℝ} {f : 𝓢'(E, F)} :
+    MemSobolev (s - 1) p f ↔ ∃ (u : 𝓢'(E, F)) (w : ι → 𝓢'(E, F)), MemSobolev s p u ∧
+      (∀ i, MemSobolev s p (w i)) ∧ f = u + ∑ i, ∂_{b i} (w i) := by
+  refine ⟨fun hf => ?_, ?_⟩
+  · have hu : MemSobolev (s + 1) p (besselPotential E F (-2) f) := by
+      rw [memSobolev_besselPotential_iff]
+      convert hf using 1
+      ring
+    refine ⟨besselPotential E F (-2) f,
+      fun i => -((2 * π) ^ 2)⁻¹ • ∂_{b i} (besselPotential E F (-2) f),
+      hu.mono_of_one_lt hp hp_top (by linarith),
+      fun i => MemSobolev.smul_of_tower _
+        (by simpa using hu.lineDerivOp_of_one_lt hp hp_top (m := b i)), ?_⟩
+    calc f = besselPotential E F 2 (besselPotential E F (-2) f) := by
+          rw [besselPotential_besselPotential_apply]
+          norm_num
+      _ = _ := by
+          rw [besselPotential_two_eq_sub_laplacian, laplacian_eq_sum b, Finset.smul_sum,
+            sub_eq_add_neg, ← Finset.sum_neg_distrib]
+          simp [RCLike.real_smul_eq_coe_smul (K := ℂ), LineDeriv.lineDerivOp_smul]
+  · rintro ⟨u, w, hu, hw, rfl⟩
+    exact (hu.mono_of_one_lt hp hp_top (by linarith)).add
+      (MemSobolev.sum fun i _ => (hw i).lineDerivOp_of_one_lt hp hp_top)
 
 end inner
 

@@ -6,11 +6,11 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.Support
-public import TauCeti.Probability.Distributions.Exponential.Basic
+public import Mathlib.Probability.Distributions.Exponential
 public import TauCeti.Probability.Distributions.Laplace.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Probability.Independence.Basic
 import TauCeti.Probability.Cdf.Density
+import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The asymmetric Laplace distribution
@@ -259,16 +259,6 @@ theorem integrable_asymmetricLaplacePDFReal (m l r : ℝ) :
     · simp [funext (asymmetricLaplacePDFReal_of_nonpos_right (not_lt.mp hr) m l)]
   · simp [funext (asymmetricLaplacePDFReal_of_nonpos_left (not_lt.mp hl) m r)]
 
-/-- The asymmetric Laplace density is integrable on every lower half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Iic :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
-/-- The asymmetric Laplace density is integrable on every upper half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Ioi :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Ioi x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
 /-- The asymmetric Laplace density integrates to `1`. -/
 theorem integral_asymmetricLaplacePDFReal (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
     ∫ y, asymmetricLaplacePDFReal m l r y = 1 := by
@@ -430,7 +420,8 @@ private lemma charFun_withDensity_asymmetricLaplacePDF (hl : 0 < l) (hr : 0 < r)
       (memLp_top_of_bound (by fun_prop) 1 (ae_of_all _ fun y => by
         rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]))
   rw [charFun_apply_real, funext (asymmetricLaplacePDF_eq_ofReal m l r),
-    integral_withDensity_ofReal (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
+    MeasureTheory.integral_withDensity_ofReal
+      (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
       (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)),
     ← integral_add_compl (s := Iic m) measurableSet_Iic hint, compl_Iic,
     integral_Iic_asymmetricLaplacePDFReal_smul_exp hl hr,
@@ -478,7 +469,8 @@ theorem integrable_asymmetricLaplaceMeasure_iff (m l r : ℝ) {g : ℝ → E} :
     Integrable g (asymmetricLaplaceMeasure m l r) ↔
       Integrable fun y ↦ asymmetricLaplacePDFReal m l r y • g y := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, funext (asymmetricLaplacePDF_eq_ofReal m l r)]
-  exact integrable_withDensity_ofReal_iff (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
     (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r))
 
 /-- **Integral transfer.** An integral against an asymmetric Laplace measure is the
@@ -486,7 +478,8 @@ density-weighted Lebesgue integral. -/
 theorem integral_asymmetricLaplaceMeasure_eq (m l r : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂asymmetricLaplaceMeasure m l r = ∫ y, asymmetricLaplacePDFReal m l r y • g y := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, funext (asymmetricLaplacePDF_eq_ofReal m l r)]
-  exact integral_withDensity_ofReal (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
     (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)) g
 
 end Transfer
@@ -521,8 +514,9 @@ theorem rnDeriv_asymmetricLaplaceMeasure (m l r : ℝ) :
 private lemma measureReal_asymmetricLaplaceMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (asymmetricLaplaceMeasure m l r).real s = ∫ y in s, asymmetricLaplacePDFReal m l r y := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, funext (asymmetricLaplacePDF_eq_ofReal m l r)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)) hs
-    (integrable_asymmetricLaplacePDFReal m l r).integrableOn
+  exact MeasureTheory.measureReal_withDensity_ofReal
+    (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)) hs.nullMeasurableSet
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
 
 /-- **The cumulative distribution function of the asymmetric Laplace law.** -/
 theorem cdf_asymmetricLaplaceMeasure_eq (hl : 0 < l) (hr : 0 < r) (m x : ℝ) :

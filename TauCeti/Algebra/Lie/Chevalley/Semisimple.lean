@@ -208,7 +208,7 @@ noncomputable def toChevalleyLieLattice (γ : Y →ₗ[ℤ] H)
       map_smul' _ _ := Subtype.ext (by simp) }
   ChevalleyLieAlgebra.liftLieHom (hx.chevalleyConstants P e he) γL
     (fun i ↦ ⟨x (e i), hx.rootVector_mem_chevalleyLieLattice (e i)⟩)
-    (fun y z ↦ Subtype.ext <| LieSubalgebra.lie_eq_zero_of_mem (γ y).2 (γ z).2)
+    (fun y z ↦ Subtype.ext <| LieSubalgebra.lie_eq_zero_of_mem (γ y).property (γ z).property)
     (fun y i ↦ Subtype.ext <| by
       simp only [LieSubalgebra.coe_bracket, SetLike.val_smul, γL, LinearMap.coe_mk, AddHom.coe_mk]
       rw [← LieSubalgebra.coe_bracket_of_module, lie_eq_smul_of_mem_rootSpace

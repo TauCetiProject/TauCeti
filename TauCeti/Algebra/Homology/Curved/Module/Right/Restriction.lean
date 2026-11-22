@@ -127,9 +127,9 @@ noncomputable def restrictScalarsCochains (p : ℤ) :
       dgRightModuleCochains (R := R) (A := A)
         (ℳ := (restrictScalarsObj f M).grading) (ℳN := (restrictScalarsObj f N).grading) p where
   toFun g :=
-    ⟨{ toFun := g.1
-       map_add' := g.1.map_add
-       map_smul' a x := g.1.map_smul (AlgHom.op f.toGradedAlgHom.toAlgHom a) x },
+    ⟨{ toFun := g.val
+       map_add' := g.val.map_add
+       map_smul' a x := g.val.map_smul (AlgHom.op f.toGradedAlgHom.toAlgHom a) x },
       dgRightModuleCochains.mem_iff.mpr
         (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ dgRightModuleCochains.map_mem g hx)⟩
   map_add' _ _ := Subtype.ext (LinearMap.ext fun _ ↦ rfl)
@@ -140,8 +140,8 @@ noncomputable def restrictScalarsCochains (p : ℤ) :
 theorem restrictScalarsCochains_apply (p : ℤ)
     (g : dgRightModuleCochains (R := R) (A := B) (ℳ := M.grading) (ℳN := N.grading) p)
     (x : restrictScalarsObj f M) :
-    restrictScalarsEquiv f N ((restrictScalarsCochains f p g).1 x) =
-      g.1 (restrictScalarsEquiv f M x) := (rfl)
+    restrictScalarsEquiv f N ((restrictScalarsCochains f p g).val x) =
+      g.val (restrictScalarsEquiv f M x) := (rfl)
 
 /-- Restriction commutes with the Hom differential, including the odd homotopy boundary. -/
 @[simp]

@@ -58,7 +58,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   all of `s` multiplies `e_s` on the left by its generator.
 * `CliffordAlgebra.basis_mul_ι_of_mem` and `CliffordAlgebra.basis_mul_ι_of_notMem`: a basis
   vector `e_s` and a basis generator `ι Q (b i)` commute up to the sign `(-1) ^ (|s| - 1)` when
-  `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`.
+  `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`. For even `|s|` the sign is `-1` exactly when
+  `i ∈ s` (`CliffordAlgebra.basis_mul_ι_of_even_card`).
 * `CliffordAlgebra.basis_comm_ι_iff`: a basis vector commutes with every basis generator exactly
   when its support is empty or is the full index set of odd cardinality, under unit-square
   hypotheses.
@@ -68,10 +69,14 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
   `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
   and a smaller index of `t`.
-* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
-  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_mul_basis_eq_or`, `CliffordAlgebra.mul_eq_or_of_eq_basis_or` and
+  `CliffordAlgebra.basis_mul_self_eq_or`: signed multiplication and square laws when the
+  generators square to `±1`.
 * `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
+* `CliffordAlgebra.commute_basis_iff`: two basis vectors commute exactly when the two sign
+  exponents of `CliffordAlgebra.basis_mul_basis` have the same parity, under unit-square
+  hypotheses.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
@@ -141,7 +146,7 @@ theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Set.powersetCard I 2) :
     ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
   obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.property] :
       ((s : Finset I).sort (· ≤ ·)).length = 2)
   refine ⟨k, l, fun i ↦ ?_, ?_⟩
   · rw [← Finset.mem_sort (· ≤ ·), hsort]
@@ -227,6 +232,17 @@ theorem basis_mul_ι_of_notMem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {
   refine QuadraticMap.associated_isOrtho.mp (hb ?_)
   rintro rfl
   exact hi ((Finset.mem_sort _).1 hj)
+
+/-- **A basis vector of even degree commutes or anticommutes with each basis generator**, for an
+orthogonal basis: `e_s * ι Q (b i) = ± (ι Q (b i) * e_s)` when `|s|` is even, with the sign `-1`
+exactly when `i ∈ s`. -/
+theorem basis_mul_ι_of_even_card (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I}
+    (hs : Even s.card) (i : I) :
+    basis Q b s * ι Q (b i) = (if i ∈ s then -1 else 1 : R) • (ι Q (b i) * basis Q b s) := by
+  split_ifs with hi
+  · rw [basis_mul_ι_of_mem hb hi,
+      (Nat.Even.sub_odd (Finset.card_pos.2 ⟨i, hi⟩) hs odd_one).neg_one_pow]
+  · rw [basis_mul_ι_of_notMem hb hi, hs.neg_one_pow]
 
 /-- For an orthogonal basis, adjoining an index `a` smaller than every index of `s` multiplies the
 basis vector `e_s` on the left by the generator `ι Q (b a)`. -/
@@ -363,6 +379,16 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
 
+/-- When every generator squares to `±1`, the product of signed basis vectors `±e_s` and `±e_t`
+is `±e_{s ∆ t}`. -/
+theorem mul_eq_or_of_eq_basis_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {x y : CliffordAlgebra Q} {s t : Finset I}
+    (hx : x = basis Q b s ∨ x = -basis Q b s) (hy : y = basis Q b t ∨ y = -basis Q b t) :
+    x * y = basis Q b (s ∆ t) ∨ x * y = -basis Q b (s ∆ t) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;>
+    simp only [neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
+
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
 theorem basis_commuteOrNeg
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
@@ -389,6 +415,30 @@ theorem basis_commuteOrNeg
     rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
+
+/-- **Two basis vectors commute exactly when the two sign exponents of
+`CliffordAlgebra.basis_mul_basis` have the same parity**, for an orthogonal basis whose vectors
+have unit squares, over a nontrivial commutative ring in which `2` is invertible. -/
+theorem commute_basis_iff [Nontrivial R] (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, IsUnit (Q (b i))) (s t : Finset I) :
+    Commute (basis Q b s) (basis Q b t) ↔
+      (∑ i ∈ s, (t.filter (· < i)).card) % 2 = (∑ i ∈ t, (s.filter (· < i)).card) % 2 := by
+  rw [Commute, SemiconjBy, basis_mul_basis hb, basis_mul_basis hb, symmDiff_comm t s,
+    Finset.inter_comm t s, neg_one_pow_eq_pow_mod_two,
+    neg_one_pow_eq_pow_mod_two (n := ∑ i ∈ t, _)]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  -- Compare the coefficients of `e_{s ∆ t}` on both sides and cancel the unit `∏ Q (b i)`.
+  have hc := congrArg (fun z ↦ (basis Q b).repr z (s ∆ t)) h
+  simp only [map_smul, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_eq_same,
+    smul_eq_mul, mul_one] at hc
+  have hc' := (IsUnit.mul_left_inj (IsUnit.prod_iff.mpr fun i _ ↦ hQ i)).mp hc
+  have h1 : (-1 : R) ≠ 1 := fun h ↦ Nat.not_even_one
+    (TauCeti.even_of_neg_one_pow_smul_eq_self (isUnit_of_invertible (2 : R))
+      (one_ne_zero (α := R)) (by rw [pow_one, h, one_smul]))
+  rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ s, (t.filter (· < i)).card) with h₁ | h₁ <;>
+    rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ t, (s.filter (· < i)).card) with h₂ | h₂ <;>
+    simp only [h₁, h₂, pow_zero, pow_one] at hc' ⊢ <;>
+    first | exact absurd hc' h1 | exact absurd hc'.symm h1
 
 /-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
 theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -424,7 +474,7 @@ theorem basis_comm_ι_iff [Fintype I] [Nontrivial R]
     · exact Or.inl hempty
     · right
       have hsodd : Odd s.card := by
-        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.mp hempty
         have h := hs i
         rw [basis_mul_ι_of_mem hb hi] at h
         have heven : Even (s.card - 1) :=
