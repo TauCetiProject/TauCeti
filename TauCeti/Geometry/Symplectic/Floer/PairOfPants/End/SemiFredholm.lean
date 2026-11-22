@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
@@ -577,7 +578,7 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
     (max_le (by linarith) (by linarith)) hη hηR
   have hper (s t : ℝ) : η' (s, t + 1) = η' (s, t) := by
     simp only [η', covectorPullback_apply, φ, positiveEndChart_add_one,
-      fderiv_positiveEndChart_add_one]
+      fderiv_add_snd_of_periodic_snd (positiveEndChart_add_one q)]
   calc _ = ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, sobolevDensity η' ζ := by
         refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
           (measurableSet_Ioi.prod measurableSet_Icc)
