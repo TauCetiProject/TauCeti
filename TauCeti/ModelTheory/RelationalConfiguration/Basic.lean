@@ -81,8 +81,9 @@ variable {L : Language} {V W X : Type*}
 
 /-! ### Atoms -/
 
-/-- The atom with relation symbol `R` and argument tuple `x`. -/
-def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
+/-- The atom with relation symbol `R` and argument tuple `x`. Its body is exposed so that the
+arity and relation symbol of `atom R x` are `n` and `R` by definition. -/
+@[expose] def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
