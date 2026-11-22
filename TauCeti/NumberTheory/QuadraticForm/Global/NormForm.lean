@@ -143,7 +143,7 @@ theorem represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar
   · refine ⟨LocallyRepresentsScalar.of_represents, fun _ => ?_⟩
     let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
     have hnd : (weightedSumSquares K ![1, -d]).Nondegenerate :=
-      nondegenerate_weightedSumSquares fun i => by
+      nondegenerate_weightedSumSquares_iff.mpr fun i => by
         fin_cases i <;> simp [isRegular_iff_ne_zero, hd]
     have hiso : ¬ (weightedSumSquares K ![1, -d]).Anisotropic :=
       mt (TauCeti.anisotropic_binary_one_neg_iff d).mp (not_not.mpr hsq)

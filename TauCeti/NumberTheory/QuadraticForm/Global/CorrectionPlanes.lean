@@ -69,12 +69,12 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 /-- The norm plane `⟨1, -β⟩` is regular. -/
 theorem nondegenerate_weightedSumSquares_one_neg (b : Kˣ) :
     (weightedSumSquares K ![1, -(b : K)]).Nondegenerate :=
-  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+  nondegenerate_weightedSumSquares_iff.mpr fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
 
 /-- The scaled norm plane `⟨α, -αβ⟩` is regular. -/
 theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
     (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
-  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+  nondegenerate_weightedSumSquares_iff.mpr fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
 
 /-- The plain discriminant of the norm plane `⟨1, -β⟩` is the square class of `-β`. -/
 @[simp]
