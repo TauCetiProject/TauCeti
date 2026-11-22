@@ -23,6 +23,10 @@ A framed tube `τ : S × V → B` around `f : S → B` (`TauCeti.IsFramedTube`) 
 `Z = f(S)` the normal coordinate `τ(x, v) ↦ v` on the part `τ(S × D)` of the tube over a ball `D`
 about `0` (`TauCeti.IsFramedTube.tubeBall`, `TauCeti.IsFramedTube.normalCoordinate`), so
 `Hₙ₊ᵣ(E, E ∖ p⁻¹(f(S))) ≅ Hₙ(p⁻¹(f(S)))` (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`).
+It is natural for a map `s : B' → B` carrying a second framed tube `τ'` to `τ` fibrewise,
+`s (τ' (x, v)) = τ (φ x, v)`, and pulling the core of `τ` back into the core of `τ'`
+(`TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq`): for instance
+the Thom collapse onto the Thom space of the trivial bundle.
 
 Let `s : B' → B` meet the core in a single point `b'`, `s⁻¹(f(S)) = {b'}`, and suppose that near
 `b'` the normal coordinate of `s` is a chart `e` of `B'`: `s` maps the ball of radius `ε` about
@@ -50,6 +54,8 @@ embedded sphere meeting a highly connected framed submanifold of `Q` once.
 
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso`: the local homology along the core of a
   framed tube.
+* `TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq`: naturality
+  of the shriek map of the core for maps of framed tubes.
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality`,
   `TauCeti.TopCat.singularHomologyComplPreimageCoreIso_singularHomologyπ_homologyMap`: the shriek
   map of the core and the shriek map of a transverse point commute.
@@ -126,6 +132,86 @@ def singularHomologyComplPreimageCoreIso {ε : ℝ} (hε₀ : 0 < ε) (hp : serr
     hp (mem_serreFibrations_normalCoordinate hτ ε) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h
 
 end Core
+
+/-! ### Maps of framed tubes -/
+
+section TubeMap
+
+variable {V : Type u} [NormedAddCommGroup V] {E B E' B' : _root_.TopCat.{u}} {p : E ⟶ B}
+  {p' : E' ⟶ B'} {S S' : Type*} [TopologicalSpace S] [TopologicalSpace S'] {f : S → B}
+  {τ : S × V → B} {f' : S' → B'} {τ' : S' × V → B'} (hτ : IsFramedTube f τ)
+  (hτ' : IsFramedTube f' τ') {s : B' ⟶ B} {g : E' ⟶ E} (hg : g ≫ p = p' ≫ s) {φ : S' → S}
+  (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) (hsf : ∀ x, s x ∈ range f → x ∈ range f')
+
+include hτ hτ' hs in
+/-- A map of the bases carrying the tube `τ'` to the tube `τ` fibrewise carries the core of `τ'`
+into the core of `τ`. -/
+lemma mapsTo_range_of_apply_eq : MapsTo s (range f') (range f) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
+
+omit [TopologicalSpace S] [TopologicalSpace S'] in
+include hg hsf in
+/-- A map over `s`, where `s` pulls the core of `τ` back into the core of `τ'`, maps the complement
+of the preimage of the core of `τ'` into the complement of the preimage of the core of `τ`. -/
+lemma mapsTo_compl_preimage_range_compl_preimage_range :
+    MapsTo g (p' ⁻¹' range f')ᶜ (p ⁻¹' range f)ᶜ :=
+  g.mapsTo_preimage_of_comp_eq_comp (T := (range f')ᶜ) (U := (range f)ᶜ) hg fun x hx hxf ↦
+    hx (hsf x hxf)
+
+omit [TopologicalSpace S] [TopologicalSpace S'] in
+include hg hs in
+private lemma mapsTo_tubeBall_tubeBall {ε : ℝ} :
+    MapsTo g (p' ⁻¹' IsFramedTube.tubeBall τ' ε) (p ⁻¹' IsFramedTube.tubeBall τ ε) :=
+  g.mapsTo_preimage_of_comp_eq_comp hg fun x hx ↦ by
+    obtain ⟨y, v, hv, rfl⟩ := IsFramedTube.mem_tubeBall.1 hx
+    rw [hs]
+    exact IsFramedTube.apply_mem_tubeBall (φ y) hv
+
+include hg hs in
+private lemma normalCoordinate_apply_comp_of_apply_eq {ε : ℝ} (x : E')
+    (hx : p' x ∈ IsFramedTube.tubeBall τ' ε) :
+    hτ.normalCoordinate ε ⟨p (g x), mapsTo_tubeBall_tubeBall hg hs hx⟩ =
+      hτ'.normalCoordinate ε ⟨p' x, hx⟩ := by
+  obtain ⟨y, hy⟩ := hτ'.exists_apply_normalCoordinate ⟨p' x, hx⟩
+  apply Subtype.ext
+  refine hτ.normalCoordinate_eq_of_eq (x := φ y) ((ConcreteCategory.congr_hom hg x).trans ?_)
+  rw [← hs, hy]
+  rfl
+
+variable {R : Type*} [Ring R] (M : ModuleCat.{u} R) (hfc : IsClosed (range f))
+  (hfc' : IsClosed (range f')) [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Naturality of the shriek map of the core for maps of framed tubes.** Let `τ : S × V → B` and
+`τ' : S' × V → B'` be framed tubes around `f` and `f'`, with closed cores, and let `s : B' → B`
+carry `τ'` to `τ` fibrewise, `s (τ' (x, v)) = τ (φ x, v)`, and pull the core of `τ` back into the
+core of `τ'`. For a map `g : E' ⟶ E` of Serre fibrations over `s`, the shriek map
+`Hₙ₊ᵣ(E, E ∖ p⁻¹(f(S))) ≅ Hₙ(p⁻¹(f(S)))` of the core
+(`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`) composed with the map induced by `g` is
+the shriek map of the core of `τ'` composed with the map induced by the restriction
+`p'⁻¹(f'(S')) → p⁻¹(f(S))` of `g`. -/
+@[reassoc]
+theorem singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq {ε : ℝ} (hε₀ : 0 < ε)
+    (hp : serreFibrations p) (hp' : serreFibrations p') (n m : ℕ) (h : n + finrank ℝ V = m) :
+    TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap g (mapsTo_compl_preimage_range_compl_preimage_range hg hsf)) M m ≫
+        (singularHomologyComplPreimageCoreIso hτ M hfc hε₀ hp n m h).hom =
+      (singularHomologyComplPreimageCoreIso hτ' M hfc' hε₀ hp' n m h).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
+          (g.preimageMapOver hg (mapsTo_range_of_apply_eq hτ hτ' hs)) := by
+  refine (singularHomologyComplPreimageIso_hom_naturality hτ.normalCoordinate_eq_zero_iff
+    hτ'.normalCoordinate_eq_zero_iff (hτ'.range_subset_tubeBall hε₀)
+    (mapsTo_tubeBall_tubeBall hg hs) (normalCoordinate_apply_comp_of_apply_eq hτ hτ' hg hs)
+    (mapsTo_compl_preimage_range_compl_preimage_range hg hsf) M (hτ.isOpen_tubeBall ε) hfc
+    (hτ.range_subset_tubeBall hε₀) (hτ'.isOpen_tubeBall ε) hfc' hp hp'
+    (mem_serreFibrations_normalCoordinate hτ ε) (mem_serreFibrations_normalCoordinate hτ' ε)
+    (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h).trans ?_
+  -- Both restrictions of `g` send a point `x` of `p'⁻¹(f'(S'))` to `g x`.
+  congr 2
+  ext x
+  exact (g.coe_preimageMapOver_apply hg _ x).symm
+
+end TubeMap
 
 /-! ### Maps meeting the core of a framed tube once -/
 
