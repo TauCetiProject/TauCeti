@@ -39,7 +39,7 @@ noncomputable abbrev adelicPolarizationStabilizer (c : (FractionalIdeal (𝓞 K)
 
 /-- The rational points of the finite adelic row lattice are exactly the original polarization
 lattice. -/
-theorem algebraMap_mem_adelicPolarizationLattice_iff
+theorem algebraMap_mem_finiteAdelicRowLattice_polarizationCoordinateIdeal_iff
     (c : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (x : Fin 2 → K) :
     (fun i ↦ algebraMap K 𝔸ᶠ[𝓞 K, K] (x i)) ∈
         finiteAdelicRowLattice (polarizationCoordinateIdeal c) ↔
