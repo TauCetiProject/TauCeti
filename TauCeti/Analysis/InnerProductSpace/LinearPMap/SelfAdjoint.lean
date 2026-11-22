@@ -172,7 +172,8 @@ theorem IsFormalAdjoint.range_le_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.
   exact hA.apply_mem_orthogonal_ker x
 
 /-- Removing the kernel component of `u ∈ D(A)` gives a vector of `D(A)` with the same image. -/
-theorem exists_coe_eq_sub_starProjection {A : E →ₗ.[𝕜] E} [A.ker.HasOrthogonalProjection]
+theorem exists_coe_eq_sub_starProjection {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    {A : E →ₗ.[𝕜] F} [A.ker.HasOrthogonalProjection]
     (u : A.domain) : ∃ v : A.domain, (v : E) = u - A.ker.starProjection u ∧ A v = A u :=
   ⟨u - ⟨_, A.ker_le_domain (A.ker.starProjection_apply_mem u)⟩, rfl, by
     rw [map_sub, (coe_mem_ker_iff (x := ⟨_, _⟩)).1 (A.ker.starProjection_apply_mem u), sub_zero]⟩
