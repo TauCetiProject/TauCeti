@@ -49,10 +49,10 @@ public section
 open MeasureTheory Set
 open scoped ComplexOrder
 
-section Integrable
-
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X]
+
+section Integrable
 
 /-- On a compact space, a continuous function is integrable against every finite measure. -/
 theorem Continuous.integrable_of_compactSpace {E : Type*} [NormedAddCommGroup E] {f : X → E}
@@ -75,8 +75,7 @@ end Integrable
 
 section integralPositiveLinearMap
 
-variable {X 𝕜 : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
-  [OpensMeasurableSpace X] [RCLike 𝕜] (μ : Measure X) [IsFiniteMeasure μ]
+variable {𝕜 : Type*} [RCLike 𝕜] (μ : Measure X) [IsFiniteMeasure μ]
 
 /-- Integration against a finite measure on a compact space, as a positive linear functional on
 `C(X, 𝕜)`. -/
@@ -90,9 +89,8 @@ noncomputable def ContinuousMap.integralPositiveLinearMap : C(X, 𝕜) →ₚ[�
 /-- `ContinuousMap.integralPositiveLinearMap μ` integrates against `μ`. -/
 @[simp]
 theorem ContinuousMap.integralPositiveLinearMap_apply (f : C(X, 𝕜)) :
-    integralPositiveLinearMap μ f = ∫ x, f x ∂μ := by
-  rw [integralPositiveLinearMap, PositiveLinearMap.mk₀]
-  rfl
+    integralPositiveLinearMap μ f = ∫ x, f x ∂μ :=
+  (rfl)
 
 /-- Integration against `μ` sends the constant function `1` to the total mass of `μ`, so it is a
 state exactly when `μ` is a probability measure. -/
@@ -104,8 +102,7 @@ end integralPositiveLinearMap
 
 /-- On a compact space, a `𝕜`-linear functional `φ` on `C(X, 𝕜)` that agrees with integration
 against a finite measure `μ` on real functions is integration against `μ`. -/
-theorem LinearMap.apply_eq_integral_of_forall_realToRCLike {X 𝕜 : Type*} [TopologicalSpace X]
-    [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [RCLike 𝕜]
+theorem LinearMap.apply_eq_integral_of_forall_realToRCLike {𝕜 : Type*} [RCLike 𝕜]
     (φ : C(X, 𝕜) →ₗ[𝕜] 𝕜) {μ : Measure X} [IsFiniteMeasure μ]
     (h : ∀ g : C(X, ℝ), φ (g.realToRCLike 𝕜) = ((∫ x, g x ∂μ : ℝ) : 𝕜)) (f : C(X, 𝕜)) :
     φ f = ∫ x, f x ∂μ := by
@@ -115,15 +112,13 @@ theorem LinearMap.apply_eq_integral_of_forall_realToRCLike {X 𝕜 : Type*} [Top
   have hf : f = u.realToRCLike 𝕜 + (RCLike.I : 𝕜) • v.realToRCLike 𝕜 := by
     ext x
     simp [u, v, mul_comm RCLike.I]
-  rw [← integral_re_add_im (f.integrable μ)]
-  nth_rw 1 [hf]
-  rw [map_add, map_smul, h, h, smul_eq_mul, mul_comm]
-  rfl
+  rw [← integral_re_add_im (f.integrable μ), congrArg φ hf]
+  -- By linearity of `φ` and `h`, both sides are now `∫ re f + (∫ im f) * I`.
+  simp [h, u, v, mul_comm]
 
 namespace TauCeti
 
-variable {X E : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
-  [OpensMeasurableSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- On a compact space, integration against a finite measure is a continuous function of the
 integrand for the topology of uniform convergence on `C(X, E)`. -/
@@ -140,14 +135,11 @@ namespace ContinuousLinearMap
 
 open Filter
 
-section Integrable
-
-variable {X 𝕜 E F G : Type*} [TopologicalSpace X] [CompactSpace X]
-  [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
-  [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F G : Type*} {μ : Measure X} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+section Integrable
 
 /-- Pairing a continuous map on a compact space with an integrable function through a continuous
 bilinear map yields an integrable function, even when the ambient measure is infinite. -/
@@ -168,12 +160,7 @@ end Integrable
 
 section IntegralCLM
 
-variable {X 𝕜 E F G : Type*} [TopologicalSpace X] [CompactSpace X]
-  [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
-  [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G] [SMulCommClass ℝ 𝕜 G]
+variable [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G]
 
 /-- Weighted Bochner integration `f ↦ ∫ x, B (f x) (g x) ∂μ` on a compact space as a continuous
 `𝕜`-linear map `C(X, E) →L[𝕜] G`. For an incomplete codomain `G`, Mathlib defines the Bochner
