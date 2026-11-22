@@ -342,21 +342,15 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     hpq₁ hqr₁
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
     hqr
-  -- The time exponents satisfy `1 / p₁ + 1 / p > 1`, since `q, q₁ > 2`.
-  have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
   have := hpq.coe_ennreal
   have := hpq₁.coe_ennreal
-  have hpp : 1 < (p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ :=
-    one_lt_inv_add_inv_of_holderConjugate (q := q) (q₁ := q₁) (by exact_mod_cast hq)
-      (by exact_mod_cast hq₁.le)
-  set K : ℝ≥0∞ := (1 - 2 ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
-  have hK : K ≠ ∞ :=
-    inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
-  refine ⟨K.toNNReal * C₁ * C, fun F G hF hG hSF hSG ↦ ?_⟩
-  rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
+  refine ⟨((1 - (2 : ℝ≥0∞) ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹).toNNReal * C₁ * C,
+    fun F G hF hG hSF hSG ↦ ?_⟩
+  rw [ENNReal.coe_mul, ENNReal.coe_mul]
   simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, ← schrodingerPropagator_def]
   simp_rw [← adjoint_schrodingerPropagator] at hC₁ hC hSF hSG
-  exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp hC₁ hC hF hG hSF hSG
+  exact enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate (q := q) (q₁ := q₁)
+    (by exact_mod_cast hq) (by exact_mod_cast hq₁.le) hC₁ hC hF hG hSF hSG
 
 end TwoPairs
 

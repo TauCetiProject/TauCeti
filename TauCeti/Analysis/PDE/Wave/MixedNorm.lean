@@ -490,6 +490,17 @@ reals, so that the pairs `(∞, r)` are included. -/
 
 section TwoPairs
 
+/-- A wave-admissible pair `(q, r)` in dimension `n`, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
+`2 < q < ∞` in extended reals is wave-admissible for the real exponent `q.toNNReal`, in the form of
+`TauCeti.two_le_finrank_of_waveAdmissible`. -/
+private theorem waveAdmissible_toNNReal {n : ℝ} {q r : ℝ≥0∞} (hq : 2 < q) (hq_top : q ≠ ∞)
+    (hqr : 2 * (q⁻¹).toReal + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2) :
+    2 < q.toNNReal ∧ 2 / (q.toNNReal : ℝ) + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2 := by
+  refine ⟨?_, ?_⟩
+  · rw [← ENNReal.coe_lt_coe, ENNReal.coe_toNNReal hq_top]
+    exact_mod_cast hq
+  · rwa [ENNReal.coe_toNNReal_eq_toReal, div_eq_mul_inv, ← ENNReal.toReal_inv]
+
 /-- The dual estimate along a wave-admissible pair `(q, r)` with `2 < q ≤ ∞` and `r ≥ 2`, for the
 Hölder conjugate `p` of `q`: the finite-`q` estimate
 `ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le` and the estimate
@@ -513,14 +524,11 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
       φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_eLpNorm_one (r' := r') hr
     exact ⟨C, fun j m hm F hF _ ↦ by simpa using hC j m hm F hF⟩
   -- For `q < ∞` pass to the real exponents `q.toNNReal` and `p.toNNReal`.
-  have hq2 : (2 : ℝ≥0) < q.toNNReal := by
-    rw [← ENNReal.coe_lt_coe, ENNReal.coe_toNNReal hqtop]
-    exact_mod_cast hq
+  obtain ⟨hq2, hqr⟩ := waveAdmissible_toNNReal hq hqtop hqr
   have hptop : p ≠ ⊤ :=
     (ENNReal.HolderConjugate.ne_top_iff_ne_one p q).2 (ENNReal.one_lt_two.trans hq).ne'
   have hpq : p.toNNReal.HolderConjugate q.toNNReal :=
     (ENNReal.HolderConjugate.toNNReal (p := q) (q := p) (one_lt_two.trans hq2)).symm
-  rw [ENNReal.toReal_inv, ← div_eq_mul_inv, ← ENNReal.coe_toNNReal_eq_toReal] at hqr
   obtain ⟨C, hC⟩ :=
     φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le (r' := r') hq2 hpq hqr
   refine ⟨C, fun j m hm F hF hWF ↦ ?_⟩
@@ -577,7 +585,7 @@ private theorem exists_enorm_integral_adjoint_halfWavePropagator_comp_le (hq : 2
 the dual estimates along `(q₁, r₁)` and `(q, r)`, `2 < q, q₁`, with the constants `C₁ 2^{jγ₁}`
 and `C 2^{jγ}`, then their retarded pairings are bounded with the constant `K C₁ C 2^{j(γ + γ₁)}`,
 where `K` is the Christ–Kiselev constant of the time exponents
-(`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`). -/
+(`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate`). -/
 private theorem enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt (hq : 2 < q)
     (hq₁ : 2 < q₁) {U : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E)}
     {C₁ C : ℝ≥0} {j : ℤ} {γ γ₁ : ℝ}
@@ -597,13 +605,10 @@ private theorem enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt (hq : 
         ENNReal.ofReal (((2 : ℝ) ^ j) ^ (γ + γ₁)) *
         eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume *
         eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  -- The Christ–Kiselev condition `1 / p₁ + 1 / p > 1` holds since `q, q₁ > 2`.
-  have hp : 1 ≤ p := ENNReal.HolderConjugate.one_le p q
-  have hpp := one_lt_inv_add_inv_of_holderConjugate (p := p) (p₁ := p₁) hq hq₁.le
-  have hK := inv_one_sub_two_rpow_neg_ne_top (ENNReal.HolderConjugate.ne_zero p₁ q₁) hp hpp
-  refine (enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp hC₁ hC hF hG hUF hUG).trans_eq ?_
+  refine (enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate hq hq₁.le hC₁ hC hF hG
+    hUF hUG).trans_eq ?_
   rw [Real.rpow_add (zpow_pos two_pos j), ENNReal.ofReal_mul (by positivity), ENNReal.coe_mul,
-    ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
+    ENNReal.coe_mul]
   ring
 
 /-- The retarded estimate for the frequency-localized half-wave propagator `W₊` with two
@@ -732,9 +737,6 @@ private theorem exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_su
     (hW Y hY _ continuous_neg) (hW G hG _ continuous_neg)
   have hm' := hCm j m hm Y G hY.aestronglyMeasurable hG.aestronglyMeasurable
     (hW Y hY _ continuous_id) (hW G hG _ continuous_id)
-  have hYF := φ.eLpNorm_eLpNorm_invMultiplier_le j hF.aestronglyMeasurable
-    (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
-  have hc : ‖c‖ₑ ≤ ‖c‖ₑ * 2 := le_mul_of_one_le_right' one_le_two
   rw [φ.integral_inner_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_eq hm hF hG,
     eNorm_mul, RCLike.eNorm_conj]
   calc _ ≤ ‖c‖ₑ * (Cp * ENNReal.ofReal (((2 : ℝ) ^ j) ^ γ) *
@@ -746,7 +748,10 @@ private theorem exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_su
     _ ≤ ‖c‖ₑ * 2 * ((Cp + Cm) * ENNReal.ofReal (((2 : ℝ) ^ j) ^ γ) *
           (K * eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume) * X) := by
         rw [← add_mul, ← add_mul, ← add_mul, ← ENNReal.coe_add]
-        gcongr
+        gcongr ?_ * (_ * _ * ?_ * _)
+        · exact le_mul_of_one_le_right' one_le_two
+        · exact φ.eLpNorm_eLpNorm_invMultiplier_le j hF.aestronglyMeasurable
+            (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
     _ = _ := by
         rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ENNReal.coe_mul, ENNReal.coe_add, hK,
           Real.rpow_sub_one (zpow_pos two_pos j).ne', div_eq_inv_mul,
@@ -989,11 +994,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
     simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
-  have hq2 : (2 : ℝ≥0) < q.toNNReal := by
-    rw [← ENNReal.coe_lt_coe, ENNReal.coe_toNNReal hq_top]
-    exact_mod_cast hq
-  obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq2 hr0
-    (by rwa [ENNReal.coe_toNNReal_eq_toReal, div_eq_mul_inv, ← ENNReal.toReal_inv]) hE
+  obtain ⟨hq2, hqr'⟩ := waveAdmissible_toNNReal hq hq_top hqr
+  obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq2 hr0 hqr' hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
   have hr₁ : 2 ≤ r₁ := by
     have hn' : (0 : ℝ) < Module.finrank ℝ E - 1 := by
