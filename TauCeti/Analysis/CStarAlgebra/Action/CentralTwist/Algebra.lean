@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Convolution
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 
 /-!
 # The cocycle-twisted convolution ⋆-algebra and its L¹ norm
@@ -207,18 +208,12 @@ variable [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
 
 /-- Realize a compactly supported twisted convolution coefficient as a Bochner `L¹` class. -/
 def toL1 : TwistedConvolutionAlgebra ω μ →ₗ[ℂ] Lp A 1 μ :=
-  (ConvolutionAlgebra.toL1 (α := α) (μ := μ)).comp
-    ((ConvolutionAlgebra.linearEquiv α μ).symm.toLinearMap.comp (linearEquiv ω μ).toLinearMap)
-
-theorem toL1_eq (f : TwistedConvolutionAlgebra ω μ) :
-    toL1 f =
-      ConvolutionAlgebra.toL1 (ConvolutionAlgebra.toConv f.ofConv : ConvolutionAlgebra α μ) := by
-  simp [toL1]
+  (CompactlySupportedContinuousMap.toLp 1 μ ℂ).comp (linearEquiv ω μ).toLinearMap
 
 /-- The `L¹` class of a twisted convolution coefficient is represented by its underlying
 function. -/
 theorem coeFn_toL1 (f : TwistedConvolutionAlgebra ω μ) : toL1 f =ᵐ[μ] f.ofConv := by
-  rw [toL1_eq]; exact ConvolutionAlgebra.coeFn_toL1 (ConvolutionAlgebra.toConv f.ofConv)
+  simpa [toL1] using CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv
 
 instance : SeminormedAddCommGroup (TwistedConvolutionAlgebra ω μ) :=
   .induced _ _ (toL1 (ω := ω) (μ := μ)).toAddMonoidHom
@@ -230,10 +225,9 @@ theorem norm_def (f : TwistedConvolutionAlgebra ω μ) : ‖f‖ = ‖toL1 f‖ 
 
 /-- The norm of a twisted convolution coefficient is its `L¹` integral norm. -/
 theorem norm_eq_integral_norm (f : TwistedConvolutionAlgebra ω μ) :
-    ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ := by
-  rw [norm_def, toL1_eq]
-  exact (L1.norm_eq_integral_norm _).trans <| integral_congr_ae <|
-    (ConvolutionAlgebra.coeFn_toL1 (ConvolutionAlgebra.toConv f.ofConv)).fun_comp norm
+    ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ :=
+  (L1.norm_eq_integral_norm (toL1 f)).trans <| integral_congr_ae <|
+    (coeFn_toL1 f).fun_comp norm
 
 @[simp] theorem norm_toConv (f : C_c(G, A)) :
     ‖(toConv f : TwistedConvolutionAlgebra ω μ)‖ = ∫ s, ‖f s‖ ∂μ :=
@@ -266,9 +260,8 @@ section FullSupport
 variable [μ.IsOpenPosMeasure]
 
 /-- Full support of `μ` makes `toL1` injective on continuous coefficients. -/
-theorem toL1_injective : Function.Injective (toL1 (ω := ω) (μ := μ)) := fun _ _ h => by
-  rw [toL1_eq, toL1_eq] at h
-  ext1; simpa using congrArg ConvolutionAlgebra.ofConv (ConvolutionAlgebra.toL1_injective h)
+theorem toL1_injective : Function.Injective (toL1 (ω := ω) (μ := μ)) :=
+  (CompactlySupportedContinuousMap.toLp_injective 1 μ ℂ).comp (linearEquiv ω μ).injective
 
 instance : NormedAddCommGroup (TwistedConvolutionAlgebra ω μ) :=
   .ofSeparation fun f hf => toL1_injective <| by

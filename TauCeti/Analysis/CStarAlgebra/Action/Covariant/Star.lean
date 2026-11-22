@@ -51,37 +51,16 @@ The modular factor in the involution cancels the change of Haar measure under in
 @[simp]
 theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
     P.integratedOperator μ (α.twistedInvolution f) = star (P.integratedOperator μ f) := by
-  rw [ContinuousLinearMap.star_eq_adjoint]
-  refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun v w => ?_
-  rw [← inner_conj_symm _ w, P.inner_integratedOperator_apply,
-    P.inner_integratedOperator_apply, ← integral_conj]
-  calc
-    (∫ g, starRingEnd ℂ ⟪w, P.coefficient (α.twistedInvolution f g) (P.group g v)⟫_ℂ ∂μ) =
-        ∫ g, (Measure.modularCharacter g : ℝ) •
-          ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ ∂μ := by
-      apply integral_congr_ae
-      filter_upwards [] with g
-      rw [inner_conj_symm]
-      calc
-        ⟪P.coefficient (α.twistedInvolution f g) (P.group g v), w⟫_ℂ =
-            (Measure.modularCharacter g : ℝ) •
-              ⟪P.coefficient (α g (star (f g⁻¹))) (P.group g v), w⟫_ℂ := by
-          simp only [twistedInvolution_apply, map_smul, smul_apply]
-          exact inner_smul_real_left _ _ _
-        _ = (Measure.modularCharacter g : ℝ) •
-              ⟪P.group g (P.coefficient (star (f g⁻¹)) v), w⟫_ℂ := by
-          rw [P.covariance]
-        _ = (Measure.modularCharacter g : ℝ) •
-              ⟪P.coefficient (star (f g⁻¹)) v, P.group g⁻¹ w⟫_ℂ := by
-          rw [P.isUnitary.inner_map_left]
-        _ = (Measure.modularCharacter g : ℝ) •
-              ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ := by
-          simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
-            ContinuousLinearMap.adjoint_inner_left]
-    _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ :=
-      integral_modularCharacter_smul_inv_eq_self (μ := μ)
-        (continuous_const.inner (P.continuous_integrand f w))
-        ((P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v))
+  have hdef (h : C_c(G, A)) : P.integratedOperator μ h =
+      P.coefficient.integratedOperator (fun g => P.group g) P.continuous_orbit
+        P.isUnitary.exists_norm_le μ h := by
+    ext v
+    simp [integratedOperator_apply, NonUnitalStarAlgHom.integratedOperator_apply]
+  rw [hdef, hdef]
+  refine P.coefficient.integratedOperator_eq_star P.continuous_orbit P.isUnitary.exists_norm_le μ
+    fun g => ?_
+  rw [twistedInvolution_apply, map_smul, smul_mul_assoc, ← P.group_mul_coefficient,
+    star_mul, map_star, P.isUnitary.star_eq_inv, inv_inv]
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on the compact-support
 convolution algebra. Its values are defined by Hilbert-space vector integrals. -/

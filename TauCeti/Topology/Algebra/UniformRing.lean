@@ -106,6 +106,8 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.instNonUnitalRing` and `UniformSpace.Completion.instStarRing`: the
   completion of a nonunital topological ring is a nonunital ring, and a star ring when the star
   operation is continuous.
+* `UniformSpace.Completion.extension_mul`: extending a uniformly continuous multiplicative map into
+  a complete separated space preserves multiplication.
 * `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf` and
   `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm`: both directions are
   uniformly continuous, hence continuous by `UniformContinuous.continuous`.
@@ -288,6 +290,17 @@ theorem coe_mul' [Mul α] [ContinuousMul α] (a b : α) :
     ((a * b : α) : Completion α) = a * b :=
   ((isDenseInducing_coe.prodMap isDenseInducing_coe).extend_eq
       ((continuous_coe α).comp continuous_mul) (a, b)).symm
+
+/-- Extending a uniformly continuous multiplicative map into a complete separated uniform space
+preserves multiplication. -/
+theorem extension_mul {E F : Type*} [UniformSpace E] [Mul E] [ContinuousMul E]
+    [ContinuousMul (Completion E)] [UniformSpace F] [T0Space F] [CompleteSpace F] [Mul F]
+    [ContinuousMul F] {f : E → F} (hf : UniformContinuous f)
+    (hmul : ∀ a b : E, f (a * b) = f a * f b) (x y : Completion E) :
+    Completion.extension f (x * y) = Completion.extension f x * Completion.extension f y := by
+  induction x, y using Completion.induction_on₂ with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih a b => simp only [← coe_mul', extension_coe hf, hmul]
 
 variable [NonUnitalNonAssocRing α] [IsTopologicalRing α] [IsUniformAddGroup α]
 

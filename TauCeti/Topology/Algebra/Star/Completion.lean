@@ -29,6 +29,8 @@ nonunital rings is `UniformSpace.Completion.instStarRing` in
 * `UniformSpace.Completion.coe_star`: the inclusion into the completion commutes with star.
 * `UniformSpace.Completion.instStarAddMonoid` and `UniformSpace.Completion.instStarModule`: the
   star additive monoid and star module laws pass to the completion.
+* `UniformSpace.Completion.extension_star`: extending a uniformly continuous star-preserving map
+  into a complete separated space preserves `star`.
 -/
 
 public section
@@ -53,6 +55,20 @@ instance instStar [Star α] : Star (Completion α) :=
 /-- The extended star operation is continuous, whatever the star operation of `α`. -/
 instance instContinuousStar [Star α] : ContinuousStar (Completion α) :=
   ⟨Completion.continuous_map⟩
+
+/-- Extending a uniformly continuous star-preserving map into a complete separated uniform space
+preserves `star`. -/
+theorem extension_star {E F : Type*} [UniformSpace E] [Star E]
+    (hstar : UniformContinuous (star : E → E)) [UniformSpace F] [T0Space F] [CompleteSpace F]
+    [Star F] [ContinuousStar F] {f : E → F} (hf : UniformContinuous f)
+    (hfstar : ∀ a : E, f (star a) = star (f a)) (x : Completion E) :
+    Completion.extension f (star x) = star (Completion.extension f x) := by
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih a =>
+    have hcoe : ((star a : E) : Completion E) = star (a : Completion E) :=
+      (map_coe hstar a).symm
+    simp only [← hcoe, extension_coe hf, hfstar]
 
 variable [AddGroup α] [IsUniformAddGroup α] [StarAddMonoid α] [ContinuousStar α]
 

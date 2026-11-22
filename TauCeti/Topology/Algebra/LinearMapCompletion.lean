@@ -69,18 +69,15 @@ multiplication. -/
 theorem fromCompletion_mul [Mul E] [ContinuousMul E] [ContinuousMul (Completion E)]
     [Mul F] [ContinuousMul F] (f : E →SL[σ] F) (hf : ∀ a b : E, f (a * b) = f a * f b)
     (x y : Completion E) :
-    f.fromCompletion (x * y) = f.fromCompletion x * f.fromCompletion y := by
-  induction x, y using Completion.induction_on₂ with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih a b => simp only [← Completion.coe_mul', fromCompletion_apply_coe, hf]
+    f.fromCompletion (x * y) = f.fromCompletion x * f.fromCompletion y :=
+  Completion.extension_mul (uniformContinuous_addMonoidHom_of_continuous f.continuous) hf x y
 
 /-- Extending a star-preserving continuous semilinear map to the completion preserves `star`. -/
 theorem fromCompletion_star [StarAddMonoid E] [ContinuousStar E] [Star F] [ContinuousStar F]
     (f : E →SL[σ] F) (hf : ∀ a : E, f (star a) = star (f a)) (x : Completion E) :
-    f.fromCompletion (star x) = star (f.fromCompletion x) := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih a => simp only [← Completion.coe_star, fromCompletion_apply_coe, hf]
+    f.fromCompletion (star x) = star (f.fromCompletion x) :=
+  Completion.extension_star TauCeti.uniformContinuous_star
+    (uniformContinuous_addMonoidHom_of_continuous f.continuous) hf x
 
 end FromCompletion
 

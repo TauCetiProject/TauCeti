@@ -407,25 +407,9 @@ covariant pair sends the cocycle-twisted involution `ω.involution` to the opera
 @[simp]
 theorem integratedOperator_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
-    P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) := by
-  rw [ContinuousLinearMap.star_eq_adjoint]
-  refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun v w => ?_
-  rw [← inner_conj_symm _ w, P.inner_integratedOperator_apply,
-    P.inner_integratedOperator_apply, ← integral_conj]
-  calc
-    (∫ s, starRingEnd ℂ ⟪w, P.pi (ω.involution f s) ((P.unitaryMap s : H →L[ℂ] H) v)⟫_ℂ ∂μ) =
-        ∫ s, (Measure.modularCharacter s : ℝ) •
-          ⟪v, P.pi (f s⁻¹) ((P.unitaryMap s⁻¹ : H →L[ℂ] H) w)⟫_ℂ ∂μ := by
-      congr 1 with s
-      rw [inner_conj_symm, ← mul_apply_eq_comp, P.pi_involution_mul_unitaryMap, smul_apply,
-        inner_smul_left, Complex.conj_ofReal, ← Complex.real_smul,
-        ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left,
-        mul_apply_eq_comp]
-    _ = ∫ s, ⟪v, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) w)⟫_ℂ ∂μ :=
-      integral_modularCharacter_smul_inv_eq_self (μ := μ)
-        (f := fun s => ⟪v, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) w)⟫_ℂ)
-        (continuous_const.inner (P.continuous_integrand f w))
-        ((P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v))
+    P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) :=
+  P.pi.integratedOperator_eq_star P.strong_continuous P.exists_norm_unitaryMap_le μ
+    (P.pi_involution_mul_unitaryMap f)
 
 end Involution
 

@@ -393,8 +393,8 @@ norm. -/
 theorem integral_norm_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
     ∫ s, ‖ω.involution f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ := by
-  simp_rw [norm_involution_apply, ← smul_eq_mul]
-  exact integral_modularCharacter_smul_inv_eq_self f.continuous.norm f.hasCompactSupport.norm
+  simp_rw [ω.norm_involution_eq_norm_twistedInvolution]
+  exact α.integral_norm_twistedInvolution μ f
 
 section ConvolutionInvolution
 

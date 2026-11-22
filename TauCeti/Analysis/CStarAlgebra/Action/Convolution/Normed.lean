@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
@@ -53,19 +54,12 @@ variable [OpensMeasurableSpace G] {α : CStarAction G A} {μ : Measure G}
   [IsFiniteMeasureOnCompacts μ]
 
 /-- Realize a compactly supported convolution coefficient as a Bochner L¹ class. -/
-def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ where
-  toFun f := f.ofConv.integrable.toL1 f.ofConv
-  map_add' f g := by
-    simpa only [ofConv_add, CompactlySupportedContinuousMap.coe_add] using
-      Integrable.toL1_add (f.ofConv : G → A) (g.ofConv : G → A)
-        f.ofConv.integrable g.ofConv.integrable
-  map_smul' c f := by
-    simpa only [ofConv_smul, CompactlySupportedContinuousMap.coe_smul, RingHom.id_apply] using
-      Integrable.toL1_smul' (f.ofConv : G → A) f.ofConv.integrable c
+def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ :=
+  (CompactlySupportedContinuousMap.toLp 1 μ ℂ).comp (linearEquiv α μ).toLinearMap
 
 /-- The L¹ class of a convolution coefficient is represented by its underlying function. -/
-theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv :=
-  f.ofConv.integrable.coeFn_toL1
+theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv := by
+  simpa [toL1] using CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv
 
 /-- The convolution algebra carries the L¹ seminorm, even for measures without full support. -/
 instance : SeminormedAddCommGroup (ConvolutionAlgebra α μ) :=
@@ -120,12 +114,8 @@ section FullSupport
 variable [μ.IsOpenPosMeasure]
 
 /-- Full support of the measure makes the realization of continuous coefficients injective. -/
-theorem toL1_injective : Function.Injective (toL1 (α := α) (μ := μ)) := by
-  intro f g h
-  apply ext
-  exact CompactlySupportedContinuousMap.ext fun s => congrFun
-    (Measure.eq_of_ae_eq ((coeFn_toL1 f).symm.trans (h ▸ coeFn_toL1 g))
-      f.ofConv.continuous g.ofConv.continuous) s
+theorem toL1_injective : Function.Injective (toL1 (α := α) (μ := μ)) :=
+  (CompactlySupportedContinuousMap.toLp_injective 1 μ ℂ).comp (linearEquiv α μ).injective
 
 /-- For a full-support measure the L¹ seminorm separates convolution coefficients. -/
 instance : NormedAddCommGroup (ConvolutionAlgebra α μ) :=
@@ -153,10 +143,8 @@ variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 `‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density
 of the inverted Haar measure. -/
 theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ := by
-  simp only [norm_eq_integral_norm, ofConv_star, norm_twistedInvolution_apply]
-  simpa only [smul_eq_mul] using integral_modularCharacter_smul_inv_eq_self
-    (μ := μ) (f := fun s => ‖f.ofConv s‖) f.ofConv.continuous.norm
-    f.ofConv.hasCompactSupport.norm
+  rw [norm_eq_integral_norm, ofConv_star, α.integral_norm_twistedInvolution μ f.ofConv,
+    norm_eq_integral_norm]
 
 /-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
 completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach

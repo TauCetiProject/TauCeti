@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Hom
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
 # Vector-valued integration along Hilbert-space representations
@@ -53,6 +55,8 @@ construction.
   right-covariance formulas.
 * `NonUnitalStarAlgHom.integratedOperator_eq_mul`: multiplicativity for convolution-type integrals
   against a left-invariant measure.
+* `NonUnitalStarAlgHom.integratedOperator_eq_star`: adjoint identity for coefficients satisfying a
+  pointwise modular-weighted adjoint relation.
 
 ## References
 
@@ -264,5 +268,41 @@ theorem integratedOperator_eq_mul (hU : ∀ v : H, Continuous fun g => U g v)
         simp [integratedOperator_apply]
 
 end Group
+
+section GroupStar
+
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} {U : G → H →L[ℂ] H}
+
+/-- On a locally compact topological group with a left-invariant Borel measure finite on compacts,
+if `f g : C_c(G, A)` satisfy the pointwise modular-weighted adjoint identity
+`π (g s) * U s = c(s) • (π (f s⁻¹) * U s⁻¹)*`, then `π.integratedOperator U hU hbdd μ g` is the
+adjoint of `π.integratedOperator U hU hbdd μ f`. -/
+theorem integratedOperator_eq_star (hU : ∀ v : H, Continuous fun g => U g v)
+    (hbdd : ∃ C, ∀ g, ‖U g‖ ≤ C) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [μ.IsMulLeftInvariant] {f g : C_c(G, A)}
+    (hstar : ∀ s, π (g s) * U s =
+      ((Measure.modularCharacter s : ℝ) : ℂ) • star (π (f s⁻¹) * U s⁻¹)) :
+    π.integratedOperator U hU hbdd μ g = star (π.integratedOperator U hU hbdd μ f) := by
+  rw [ContinuousLinearMap.star_eq_adjoint]
+  refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun v w => ?_
+  rw [← inner_conj_symm _ w, π.inner_integratedOperator_apply hU hbdd μ g,
+    π.inner_integratedOperator_apply hU hbdd μ f, ← integral_conj]
+  calc
+    (∫ s, starRingEnd ℂ ⟪w, π (g s) (U s v)⟫_ℂ ∂μ) =
+        ∫ s, (Measure.modularCharacter s : ℝ) • ⟪v, π (f s⁻¹) (U s⁻¹ w)⟫_ℂ ∂μ := by
+      congr 1 with s
+      rw [inner_conj_symm, ← mul_apply_eq_comp, hstar s, smul_apply,
+        inner_smul_left, Complex.conj_ofReal, ← Complex.real_smul,
+        ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left,
+        mul_apply_eq_comp]
+    _ = ∫ s, ⟪v, π (f s) (U s w)⟫_ℂ ∂μ :=
+      TauCeti.integral_modularCharacter_smul_inv_eq_self (μ := μ)
+        (continuous_const.inner (π.continuous_integrand hU f w))
+        ((π.hasCompactSupport_integrand U f w).comp_left (inner_zero_right v))
+
+end GroupStar
 
 end NonUnitalStarAlgHom
