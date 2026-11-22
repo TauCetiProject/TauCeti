@@ -88,7 +88,7 @@ private theorem cycleMatrix_mul_cycleMatrix {m : ℕ} [NeZero m] (hm : 3 ≤ m) 
   · exact zero_mul _
   · exact zero_mul _
 
-private theorem extendByZero_cycleMatrix_mul {V : Type u} [DecidableEq V] {G : SimpleGraph V}
+private theorem extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V}
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) (v w : V) :
     c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := by
   by_cases hv : v ∈ Set.range c
@@ -106,8 +106,8 @@ private theorem extendByZero_cycleMatrix_mul {V : Type u} [DecidableEq V] {G : S
   · exact zero_mul _
   · exact zero_mul _
 
-private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} [Fintype V] [DecidableEq V]
-    {G : SimpleGraph V} [DecidableRel G.Adj] {m : ℕ} [NeZero m] (hm : 3 ≤ m)
+private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} [Fintype V] {G : SimpleGraph V}
+    [DecidableRel G.Adj] {m : ℕ} [NeZero m] (hm : 3 ≤ m)
     (c : (cycleGraph m).Copy G) (v : V) :
     ∑ w ∈ G.neighborFinset v,
       c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 :=
