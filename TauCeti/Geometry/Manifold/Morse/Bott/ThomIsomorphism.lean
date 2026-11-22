@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
+public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
 
 /-!
 # The shifted homology of the critical submanifold across a Morse–Bott level
@@ -28,16 +29,22 @@ base, shifted up by the index.
 * For a field `K` and a Thom class of `V` with coefficients in `K`,
   `Hₚ₊ᵣ(M_{c+ε}, M_{c-ε}; K) ≅ Hₚ(B; K)` in every degree `p`
   (`TauCeti.nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass`).
-* Such a Thom class exists with no orientation when `1` is the only unit of `K`, as for
-  `K = ZMod 2`
-  (`TauCeti.nonempty_singularHomology_sublevelPair_iso_singularHomology_of_subsingleton_units`),
+* Such a Thom class exists with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
+  (`TauCeti.nonempty_singularHomology_sublevelPair_iso_singularHomology_of_two_eq_zero`),
   and for every field when `V` is oriented
   (`nonempty_singularHomology_sublevelPair_iso_singularHomology_of_vectorBundleOrientation`).
+* For a non-orientable negative bundle the shifted homology of the base must be taken with
+  coefficients twisted by the orientation local system `o(V)`: if `2` is invertible in a
+  commutative ring `K`, for instance `K = ℚ`, then `Hₚ₊ᵣ(M_{c+ε}, M_{c-ε}; K) ≅ Hₚ(B; o(V) ⊗ K)`
+  with no orientation of `V`
+  (`TauCeti.nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem`).
 
-For a non-orientable negative bundle and a field of characteristic other than `2` the shifted
-homology of the base must be taken with coefficients twisted by the orientation of `V`, which this
-file does not treat. The homology Thom isomorphism used here (`TauCeti.homologyThomIso`) holds in
-every rank and over any base, so neither the rank nor compactness of `B` is restricted.
+Together with the case of characteristic two, this computes the contribution of a critical
+submanifold over every field of characteristic two and over every commutative ring in which `2` is
+invertible, whether or not its negative bundle is orientable. The homology Thom isomorphisms used
+here (`TauCeti.homologyThomIso` and
+`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`) hold in every
+rank and over any base, so neither the rank nor compactness of `B` is restricted.
 
 ## References
 
@@ -135,9 +142,9 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomCla
 critical submanifold, with no orientation.** In the setting of
 `TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`, let the negative disc bundle of the
 quadratic normal form `f = c - s + t` be parametrized by the disc bundle of a real vector bundle
-`V → B` of rank `r`, and let `K` be a field whose only unit is `1`, such as `ZMod 2`. Then
+`V → B` of rank `r`, and let `K` be a field of characteristic two, such as `ZMod 2`. Then
 `H_{p + r}({f ≤ c + ε}, {f ≤ c - ε}; K) ≅ Hₚ(B; K)` for every degree `p`. -/
-theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_subsingleton_units
+theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_two_eq_zero
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
     (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
     (hf : ∀ x ∈ W, f x = c - s x + t x)
@@ -153,11 +160,11 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_subsingle
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    (K : Type u) [Field K] [Subsingleton Kˣ] (p : ℕ) :
+    (K : Type u) [Field K] (h2 : (2 : K) = 0) (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology
         (ModuleCat.of K K) (finrank ℝ F + p) ≅
       ((singularHomologyFunctor (ModuleCat.{u} K) p).obj (ModuleCat.of K K)).obj (TopCat.of B)) :=
-  let ⟨_, hu, _⟩ := existsUnique_isThomClass_of_subsingleton_units (F := F) (E := V) K
+  let ⟨_, hu⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := V) K h2
   nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass hfs hW hs ht hs₀ ht₀
     hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu p
 
@@ -193,5 +200,42 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_vectorBun
   let ⟨_, hu⟩ := o.exists_isThomClass hι K
   nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass hfs hW hs ht hs₀ ht₀
     hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu p
+
+/-- **Across a Morse–Bott level the relative homology is the shifted homology of the critical
+submanifold twisted by the orientation of the negative bundle.** In the setting of
+`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`, let the negative disc bundle of the
+quadratic normal form `f = c - s + t` be parametrized by the disc bundle of a real vector bundle
+`V → B` of rank `r`, orientable or not, with orientation local system `o(V)`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
+`H_{p + r}({f ≤ c + ε}, {f ≤ c - ε}; K) ≅ Hₚ(B; o(V) ⊗ K)` for every commutative ring `K` in which
+`2` is invertible, for instance `ℚ`, and every degree `p`. -/
+theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
+    (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
+    (hf : ∀ x ∈ W, f x = c - s x + t x)
+    (hdir : ∀ x ∈ W, t x ≠ 0 → ∃ v : TangentSpace I x,
+      mfderiv I 𝓘(ℝ) s x v = 0 ∧ mfderiv I 𝓘(ℝ) t x v ≠ 0)
+    (φ : C(unitInterval × W, W)) (hφs : ∀ τ x, s (φ (τ, x)) = s x)
+    (hφt : ∀ τ x, t (φ (τ, x)) = τ ^ 2 * t x) (hφ₁ : ∀ x, φ (1, x) = x)
+    (hφ₀ : ∀ τ (x : W), t x = 0 → φ (τ, x) = x) (hε : 0 < ε)
+    (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ W)
+    (hρ : IsFiberGauge ρ)
+    (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
+    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
+    (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
+    {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type u) [CommRing K]
+    [Invertible (2 : K)] (p : ℕ) :
+    Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology
+        (ModuleCat.of K K) (finrank ℝ F + p) ≅
+      LocalCoefficientSystem.twistedHomology
+        (VectorBundleOrientationCover.signLocalSystem F V K hι) p) := by
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir φ
+    hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
+  obtain ⟨e'⟩ :=
+    VectorBundleOrientationCover.nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F V
+      hι K rfl
+  exact ⟨e ≪≫ e'.toModuleIso⟩
 
 end TauCeti

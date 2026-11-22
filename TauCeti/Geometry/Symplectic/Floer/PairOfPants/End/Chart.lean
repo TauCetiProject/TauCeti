@@ -117,6 +117,9 @@ apply to all three ends.
   `TauCeti.Floer.exists_positiveEndCoord_positiveEndChart`,
   `TauCeti.Floer.fst_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
   the positive end chart, up to an integer shift of `t`.
+* `TauCeti.Floer.subset_preimage_truncation_union_iUnion_image_positiveEndChart`: `S` is covered
+  by the truncation `S_T` and the images of the bands `(T, ∞) × [0, 1)` under the three positive
+  end charts.
 * `TauCeti.Floer.contDiffAt_comp_positiveEndCoord`: a `Cⁿ` function on the cylinder of period one
   in `t`, read in the positive end coordinates, is `Cⁿ` away from the center of the end.
 * `TauCeti.Floer.contDiffAt_fst_positiveEndCoord`,
@@ -1023,6 +1026,25 @@ theorem fst_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
     (positiveEndCoord q (positiveEndChart q ζ)).1 = ζ.1 := by
   obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
   simp [hk]
+
+/-- Every point of `S` lies in the truncation `S_T` or, for some end `q`, in the image under the
+positive end chart `φ'_q` of the band `(T, ∞) × [0, 1)`. -/
+theorem subset_preimage_truncation_union_iUnion_image_positiveEndChart (T : ℝ) :
+    thricePuncturedSphereReal ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation T ∪
+      ⋃ q, positiveEndChart q '' (Ioi T ×ˢ Ico 0 1) := by
+  intro z hz
+  by_cases hzT : Complex.equivRealProdCLM.symm z ∈ truncation T
+  · exact Or.inl hzT
+  obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzT
+  set ζ := positiveEndCoord q z
+  -- Move the angular coordinate into `[0, 1)` by an integer shift.
+  have hper : Periodic (fun t ↦ positiveEndChart q (ζ.1, t)) 1 := positiveEndChart_add_one q ζ.1
+  have h := hper.sub_int_mul_eq (x := ζ.2) ⌊ζ.2⌋
+  rw [mul_one, ← Int.fract] at h
+  refine Or.inr (mem_iUnion.2 ⟨q, (ζ.1, Int.fract ζ.2),
+    ⟨hq, Int.fract_nonneg _, Int.fract_lt_one _⟩, h.trans ?_⟩)
+  exact positiveEndChart_positiveEndCoord q
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
 
 /-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
 point beyond some height. -/

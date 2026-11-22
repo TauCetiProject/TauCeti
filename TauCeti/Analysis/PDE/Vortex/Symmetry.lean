@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Topology.Algebra.Field
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.RCLike.AtInfinity
 import TauCeti.LinearAlgebra.Complex.Module
@@ -311,62 +311,40 @@ theorem fieldRotation_trans_fieldRotation (u v : Circle) :
     (fieldRotation v).trans (fieldRotation u) = fieldRotation (u * v) :=
   LinearIsometryEquiv.ext (fieldRotation_fieldRotation u v)
 
-/-- The exchange of the coordinate pairs `(v 0, v 1)` and `(v 2, v 3)` of `ℝ⁴`. -/
-private def swapPairs : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (finRotate 4 ^ 2)
-
-@[simp]
-private theorem swapPairs_apply (v : EuclideanSpace ℝ (Fin 4)) :
-    swapPairs v = !₂[v 2, v 3, v 0, v 1] := by
-  -- The permutation `finRotate 4 ^ 2` adds `2` to each index, a finite check on `Fin 4`.
-  have h : ∀ i : Fin 4, (finRotate 4 ^ 2).symm i = i + 2 := by decide
-  ext i
-  fin_cases i <;> simp [swapPairs, Equiv.piCongrLeft'_apply, h]
-
-@[simp]
-private theorem swapPairs_symm : swapPairs.symm = swapPairs := by
-  ext v : 1
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext i
-  fin_cases i <;> simp
-
 /-- The rotation of values by which `rotateTarget u` acts at the rotated point: the complex
 `∂bar` row is multiplied by `u⁻¹` and the two real rows are fixed
-(`rotateTarget_apply_eq_targetRotation`). It is `fieldRotation u` with the two coordinate pairs
-exchanged, so a linear isometry of `ℝ⁴`. -/
+(`rotateTarget_apply_eq_targetRotation`). It is the gauge frame `gaugeFrame u⁻¹`, so a linear
+isometry of `ℝ⁴`. -/
 def targetRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  swapPairs.trans ((fieldRotation u).trans swapPairs)
+  gaugeFrame u⁻¹
 
 @[simp]
 theorem targetRotation_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
     targetRotation u v = !₂[v 0, v 1, (u : ℂ).re * v 2 + (u : ℂ).im * v 3,
       (u : ℂ).re * v 3 - (u : ℂ).im * v 2] := by
   ext i
-  fin_cases i <;> simp [targetRotation]
+  fin_cases i <;> simp [targetRotation, gaugeFrame_apply]
+  ring
 
 /-- The inverse of the rotation of target values by `u` is the rotation by `u⁻¹`. -/
 @[simp]
 theorem targetRotation_symm (u : Circle) : (targetRotation u).symm = targetRotation u⁻¹ := by
-  rw [targetRotation, targetRotation, LinearIsometryEquiv.symm_trans,
-    LinearIsometryEquiv.symm_trans, swapPairs_symm, fieldRotation_symm,
-    LinearIsometryEquiv.trans_assoc]
+  rw [targetRotation, targetRotation, gaugeFrame_symm]
 
 @[simp]
 theorem targetRotation_one : targetRotation 1 = LinearIsometryEquiv.refl ℝ _ := by
-  ext v i
-  fin_cases i <;> simp
-
-/-- Successive rotations of target values multiply. -/
-theorem targetRotation_targetRotation (u v : Circle) (w : EuclideanSpace ℝ (Fin 4)) :
-    targetRotation u (targetRotation v w) = targetRotation (u * v) w := by
-  ext i
-  fin_cases i <;> simp <;> ring
+  rw [targetRotation, inv_one, gaugeFrame_one]
 
 /-- Successive rotations of target values multiply, as linear isometry equivalences. -/
 @[simp]
 theorem targetRotation_trans_targetRotation (u v : Circle) :
-    (targetRotation v).trans (targetRotation u) = targetRotation (u * v) :=
-  LinearIsometryEquiv.ext (targetRotation_targetRotation u v)
+    (targetRotation v).trans (targetRotation u) = targetRotation (u * v) := by
+  rw [targetRotation, targetRotation, targetRotation, ← gaugeFrame_mul, mul_inv]
+
+/-- Successive rotations of target values multiply. -/
+theorem targetRotation_targetRotation (u v : Circle) (w : EuclideanSpace ℝ (Fin 4)) :
+    targetRotation u (targetRotation v w) = targetRotation (u * v) w := by
+  rw [← targetRotation_trans_targetRotation, LinearIsometryEquiv.trans_apply]
 
 /-- Pullback of a vortex field by the rotation `z ↦ u z`. The section is composed with the
 rotation; the connection coefficient `b₁ + i b₂` is composed with the rotation and multiplied

@@ -15,6 +15,7 @@ only:
 
 * query-free instructions succeed with use `0` against any oracle answers;
 * a query at address `0` succeeds with use `1`, on a positive and on a negative answer;
+* a query-free program supplies a bounded answer even with a use bound of `0`;
 * a query beyond a finite oracle string fails: an unanswered query is not a negative answer;
 * by the use principle, a run against a finite string succeeds unchanged against an extension of
   the string, and its output is a value of the program relative to every total oracle extending
@@ -35,6 +36,11 @@ example : evaln (fun z => [1][z]?) 1 oracle 0 = some ⟨1, 1⟩ := by
 -- ... and on a negative answer.
 example : evaln (fun z => [0][z]?) 1 oracle 0 = some ⟨0, 1⟩ := by
   simp
+
+-- A zero-use query program returns zero even when the base answer table supplies no answers.
+example : evaln (zero.boundedAnswers (fun _ => none) 1 0) 1 oracle 0 = some ⟨0, 1⟩ :=
+  evaln_succ_oracle_eq_some.2 ⟨le_rfl, 0,
+    boundedAnswers_eq_some_iff.2 ⟨⟨0, 0⟩, by simp, le_rfl, rfl⟩, rfl⟩
 
 -- A query beyond a finite string fails, at every fuel.
 example (k : ℕ) : evaln (fun z => [1][z]?) k oracle 1 = none := by

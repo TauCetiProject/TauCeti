@@ -729,7 +729,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
             (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) u η z‖ ^ 2) + ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2) :=
   ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add_of_cylindrical
-    (Floer.isCylindricalNearEnds_comp_snd hJ hH u) hu hJu hX hH hxm hndm hJ hJ1 hJxm huxm hδm hX hH
-    hxp hndp hJ hJ1 hJxp huxp hδp
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJ1 hJxm huxm
+    hδm hX hH hxp hndp hJ hJ1 hJxp huxp hδp
 
 end TauCeti.SymplecticForm
