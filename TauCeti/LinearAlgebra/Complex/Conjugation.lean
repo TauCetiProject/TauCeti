@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -658,32 +659,18 @@ variable {V ι : Type*} [AddCommGroup V] [Module ℂ V] (c : Module.Basis ι ℂ
 
 /-- The **conjugation fixing a basis** of a complex vector space: it conjugates the coordinates.
 The basis may be infinite; the coordinates of a vector are finitely supported. -/
-noncomputable def conj : V →ₛₗ[starRingEnd ℂ] V where
-  toFun x := c.repr.symm ((c.repr x).mapRange star (star_zero _))
-  map_add' x y := by
-    rw [← map_add]
-    congr 1
-    ext i
-    simp
-  map_smul' a x := by
-    rw [← LinearEquiv.map_smul]
-    congr 1
-    ext i
-    simp
+noncomputable def conj : V →ₛₗ[starRingEnd ℂ] V :=
+  c.semilinearMap (starRingEnd ℂ) c
 
 /-- `Module.Basis.conj` conjugates the coordinates. -/
 @[simp]
-theorem repr_conj (x : V) (i : ι) : c.repr (c.conj x) i = star (c.repr x i) := by
-  rw [conj, LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply,
-    Finsupp.mapRange_apply]
+theorem repr_conj (x : V) (i : ι) : c.repr (c.conj x) i = star (c.repr x i) :=
+  c.repr_semilinearMap_apply (starRingEnd ℂ) c x i
 
 /-- `Module.Basis.conj` fixes the basis. -/
 @[simp]
 theorem conj_self (i : ι) : c.conj (c i) = c i :=
-  c.ext_elem fun j ↦ by
-    classical
-    rw [repr_conj, c.repr_self, Finsupp.single_apply]
-    split_ifs <;> simp
+  c.semilinearMap_apply_self (starRingEnd ℂ) c i
 
 /-- `Module.Basis.conj` is an involution. -/
 @[simp]

@@ -120,13 +120,11 @@ theorem ad_apply_eq (hτ : IsLieConjugation τ) (x : L) :
 /-- **A conjugation conjugates the Killing form**: `B(τ x, τ y) = conj B(x, y)`. -/
 theorem killingForm_map (hτ : IsLieConjugation τ) (x y : L) :
     killingForm ℂ L (τ x) (τ y) = star (killingForm ℂ L x y) := by
-  by_cases hfin : FiniteDimensional ℂ L
-  · rw [killingForm_apply_apply, killingForm_apply_apply, hτ.ad_apply_eq, hτ.ad_apply_eq,
-      ← starRingEnd_apply, ← LinearMap.trace_comp_comp_of_involutive hτ.involutive]
-    congr 1
-    ext z
-    simp [hτ.apply_apply]
-  · simp [killingForm_apply_apply, TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
+  rw [killingForm_apply_apply, killingForm_apply_apply, hτ.ad_apply_eq, hτ.ad_apply_eq,
+    ← starRingEnd_apply, ← LinearMap.trace_comp_comp_of_involutive hτ.involutive]
+  congr 1
+  ext z
+  simp [hτ.apply_apply]
 
 variable [LieAlgebra ℝ L] [IsScalarTower ℝ ℂ L]
 
@@ -154,7 +152,7 @@ theorem mem_realForm {x : L} : x ∈ hτ.realForm ↔ τ x = x :=
 /-- `τ` fixes the elements of its real form. -/
 @[simp]
 theorem apply_coe_realForm (x : hτ.realForm) : τ x = x :=
-  x.2
+  x.property
 
 /-- The inclusion of the real form exhibits `L` as its complexification: an instance of real-form
 descent for the conjugation `τ` (`LinearMap.isBaseChange_complex_of_conj`). -/

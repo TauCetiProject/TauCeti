@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Integrality
+import TauCeti.Algebra.Lie.Weights.Killing
 
 /-!
 # The invariant form is positive definite on the integral weights
@@ -49,8 +50,8 @@ and nonzero.
 
 * `TauCeti.invForm_eq_sum_root`: the invariant form is the sum over the roots of the products of
   the coordinates the roots define.
-* `TauCeti.killingForm_eq_sum_root`: on the Cartan subalgebra, `κ(h, h') = ∑_γ γ(h) γ(h')`, and
-  `TauCeti.eq_zero_of_forall_root_apply_eq_zero`: the roots separate its points.
+* `TauCeti.sum_sum_mul_star_killingForm_coroot`: for `h = ∑ᵢ aᵢ αᵢ∨`,
+  `∑ᵢ ∑ⱼ aᵢ star(aⱼ) κ(αᵢ∨, αⱼ∨) = ∑_γ γ(h) star(γ(h))`.
 * `TauCeti.exists_pos_rat_invForm_root_self`: a root has positive rational length.
 * `TauCeti.IsIntegralWeight.exists_pos_rat_invForm_self`: the invariant form of a nonzero integral
   weight with itself is a positive rational.
@@ -90,30 +91,29 @@ theorem invForm_eq_sum_root (a b : Module.Dual K H) :
     rw [invForm_apply_apply (α : Module.Dual K H) a, invForm_apply_apply (α : Module.Dual K H) b]
     simp only [Weight.toLinear_apply]
 
-/-- **The Killing form on the Cartan subalgebra is the sum over the roots**:
-`κ(h, h') = ∑_γ γ(h) γ(h')`. -/
-theorem killingForm_eq_sum_root (h h' : H) :
-    killingForm K L h h' = ∑ γ ∈ H.root, γ h * γ h' := by
-  have := LinearMap.congr_fun₂ (restrict_killingForm_eq_sum (K := K) (L := L) (H := H)) h h'
-  simp only [LinearMap.BilinForm.restrict_apply, LinearMap.sum_apply, LinearMap.smulRight_apply,
-    LinearMap.smul_apply, smul_eq_mul] at this
-  exact this.trans (Finset.sum_congr rfl fun _ _ ↦ rfl)
-
-/-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
-vanishes is zero. -/
-theorem eq_zero_of_forall_root_apply_eq_zero {h : H} (hh : ∀ γ ∈ H.root, γ h = 0) : h = 0 := by
-  refine (Module.forall_dual_apply_eq_zero_iff K h).mp fun f ↦ ?_
-  have hf : f ∈ Submodule.span K
-      ({α : Weight K H L | α.IsNonZero}.image (Weight.toLinear K H L)) := by
-    rw [span_weight_isNonZero_eq_top]
-    trivial
-  induction hf using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨γ, hγ, rfl⟩ := hg
-    exact hh γ (by simpa [LieSubalgebra.root] using hγ)
-  | zero => rfl
-  | add f g _ _ hf hg => simp [hf, hg]
-  | smul c f _ hf => simp [hf]
+/-- **The Gram sum of coroots over the roots**: for `h = ∑ᵢ aᵢ αᵢ∨`,
+`∑ᵢ ∑ⱼ aᵢ star(aⱼ) κ(αᵢ∨, αⱼ∨) = ∑_γ γ(h) star(γ(h))`, since the roots take integer values on the
+coroots. Over `ℂ` the right side is `∑_γ |γ(h)|²`. -/
+theorem sum_sum_mul_star_killingForm_coroot [StarRing K] {ι : Type*} [Fintype ι]
+    (α : ι → Weight K H L) (a : ι → K) :
+    ∑ i, ∑ j, a i * star (a j) * killingForm K L (coroot (α i)) (coroot (α j)) =
+      ∑ γ ∈ H.root, γ (∑ i, a i • coroot (α i)) * star (γ (∑ i, a i • coroot (α i))) := by
+  have hreal (γ : Weight K H L) (i : ι) : star (γ (coroot (α i))) = γ (coroot (α i)) := by
+    rw [apply_coroot_eq_cast]
+    exact star_intCast _
+  calc _ = ∑ i, ∑ j, ∑ γ ∈ H.root, a i * γ (coroot (α i)) * star (a j * γ (coroot (α j))) := by
+          refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [killingForm_eq_sum_root, Finset.mul_sum]
+          refine Finset.sum_congr rfl fun γ _ ↦ ?_
+          rw [star_mul', hreal]
+          ring
+    _ = ∑ γ ∈ H.root, ∑ i, ∑ j, a i * γ (coroot (α i)) * star (a j * γ (coroot (α j))) := by
+          refine (Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm).trans ?_
+          exact Finset.sum_comm
+    _ = _ := by
+          refine Finset.sum_congr rfl fun γ _ ↦ ?_
+          rw [map_sum, star_sum, Finset.sum_mul_sum]
+          simp only [map_smul, smul_eq_mul]
 
 /-- **A weight orthogonal to every root vanishes.** This is the span of the roots, in the form in
 which the sum-over-roots identity delivers it. -/

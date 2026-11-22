@@ -25,6 +25,8 @@ splitting Cartan subalgebra.
   the weight space of `n • α + β` is non-trivial.
 * `RootPairing.Base.mem_rootSpace_iff_forall_lie_coroot`: membership in a root space can be
   checked on the simple coroots of a base.
+* `TauCeti.killingForm_eq_sum_root`: on the Cartan subalgebra, `κ(h, h') = ∑_γ γ(h) γ(h')`, and
+  `TauCeti.eq_zero_of_forall_root_apply_eq_zero`: the roots separate its points.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
 -/
@@ -83,6 +85,31 @@ theorem killingForm_ne_zero_of_mem_rootSpace {α : Weight K H L} (hα : α.IsNon
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp <|
     (toSubmodule_rootSpace_eq_span (-α) hα.neg f hf₀ hf).le hy
   simp [hef]
+
+/-- **The Killing form on the Cartan subalgebra is the sum over the roots**:
+`κ(h, h') = ∑_γ γ(h) γ(h')`. -/
+theorem killingForm_eq_sum_root (h h' : H) :
+    killingForm K L h h' = ∑ γ ∈ H.root, γ h * γ h' := by
+  have := LinearMap.congr_fun₂ (restrict_killingForm_eq_sum (K := K) (L := L) (H := H)) h h'
+  simp only [LinearMap.BilinForm.restrict_apply, LinearMap.sum_apply, LinearMap.smulRight_apply,
+    LinearMap.smul_apply, smul_eq_mul] at this
+  exact this.trans (Finset.sum_congr rfl fun _ _ ↦ rfl)
+
+/-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
+vanishes is zero. -/
+theorem eq_zero_of_forall_root_apply_eq_zero {h : H} (hh : ∀ γ ∈ H.root, γ h = 0) : h = 0 := by
+  refine (Module.forall_dual_apply_eq_zero_iff K h).mp fun f ↦ ?_
+  have hf : f ∈ Submodule.span K
+      ({α : Weight K H L | α.IsNonZero}.image (Weight.toLinear K H L)) := by
+    rw [span_weight_isNonZero_eq_top]
+    trivial
+  induction hf using Submodule.span_induction with
+  | mem g hg =>
+    obtain ⟨γ, hγ, rfl⟩ := hg
+    exact hh γ (by simpa [LieSubalgebra.root] using hγ)
+  | zero => rfl
+  | add f g _ _ hf hg => simp [hf, hg]
+  | smul c f _ hf => simp [hf]
 
 omit [CharZero K] [FiniteDimensional K L] in
 /-- The roots of a Lie algebra with non-degenerate Killing form are closed under negation, so a

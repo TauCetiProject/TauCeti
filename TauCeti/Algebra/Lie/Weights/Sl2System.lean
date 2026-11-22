@@ -179,7 +179,7 @@ omit [CharZero K] in
 theorem killingForm_rootVector_cartan {α : Weight K H L} (hα : α.IsNonZero) (h : H) :
     killingForm K L (x α) h = 0 :=
   killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H (β := 0)
-    (hx.mem_rootSpace α) (by rw [rootSpace_zero_eq]; exact h.2)
+    (hx.mem_rootSpace α) (by rw [rootSpace_zero_eq]; exact h.property)
     fun h' ↦ hα (by rwa [add_zero] at h')
 
 /-- A root vector of a normalised family spans its root space. -/

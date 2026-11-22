@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Lie.Weights.Chevalley.Twist
 public import TauCeti.Algebra.Lie.Weights.Positivity.RootVector
 public import TauCeti.Algebra.Lie.Weights.Root.IntegralBasis
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Weights.Killing
 
 /-!
 # Existence of a compact real form
@@ -24,8 +25,8 @@ Choose a splitting Cartan subalgebra `H`, a base `b` of its root system, and a C
 a Lie automorphism `ω` acting by `-1` on `H` together with root vectors `x α`, normalised by
 `⁅x α, x (-α)⁆ = α∨`, with `ω (x α) = -x (-α)`. The automorphism `ω` is the Chevalley involution
 of the Serre presentation of `L`, transported along Serre's theorem
-(`TauCeti.exists_lieEquiv_forall_mem_apply_eq_neg`); over an algebraically closed field the root
-vectors can then be rescaled into a Chevalley system for it
+(`LieSubalgebra.exists_lieEquiv_forall_mem_apply_eq_neg`); over an algebraically closed field the
+root vectors can then be rescaled into a Chevalley system for it
 (`TauCeti.exists_isChevalleySystem_of_isAlgClosed`).
 
 The root vectors and the simple coroots form a basis of `L` whose structure constants are integers.
@@ -104,7 +105,7 @@ theorem conj_eq_self_of_mem_chevalleyLieLattice {z : L} (hz : z ∈ hx.chevalley
 theorem rootSimpleCorootFieldBasis_mem_chevalleyLieLattice (k : H.root ⊕ b.support) :
     hx.toIsSl2System.rootSimpleCorootFieldBasis b k ∈ hx.chevalleyLieLattice := by
   rw [← coe_rootSimpleCorootBasis]
-  exact (hx.rootSimpleCorootBasis b k).2
+  exact (hx.rootSimpleCorootBasis b k).property
 
 /-- The Chevalley involution sends the basis of root vectors and simple coroots into the Chevalley
 Lie lattice. -/
@@ -200,32 +201,6 @@ theorem killingHermitianForm_compactConjugation_eq_sum (v : L) :
   refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ ?_
   ring
 
-/-- The Gram part of the Hermitian Killing form on `H`: for `h = ∑ aᵢ αᵢ∨`,
-`∑ aᵢ conj aⱼ B(αᵢ∨, αⱼ∨) = ∑_γ |γ(h)|²`. -/
-private theorem sum_sum_killingForm_coroot (a : b.support → ℂ) :
-    ∑ i, ∑ j, a i * star (a j) *
-        killingForm ℂ L (coroot (i : Weight ℂ H L)) (coroot (j : Weight ℂ H L)) =
-      ∑ γ ∈ H.root, (Complex.normSq (γ (∑ i, a i • coroot (i : Weight ℂ H L))) : ℂ) := by
-  have hreal (γ : Weight ℂ H L) (i : b.support) :
-      star (γ (coroot (i : Weight ℂ H L))) = γ (coroot (i : Weight ℂ H L)) := by
-    rw [apply_coroot_eq_cast]
-    exact star_intCast _
-  calc _ = ∑ i, ∑ j, ∑ γ ∈ H.root, a i * γ (coroot (i : Weight ℂ H L)) *
-        star (a j * γ (coroot (j : Weight ℂ H L))) := by
-          refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [killingForm_eq_sum_root, Finset.mul_sum]
-          refine Finset.sum_congr rfl fun γ _ ↦ ?_
-          rw [star_mul', hreal]
-          ring
-    _ = ∑ γ ∈ H.root, ∑ i, ∑ j, a i * γ (coroot (i : Weight ℂ H L)) *
-        star (a j * γ (coroot (j : Weight ℂ H L))) := by
-          refine (Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm).trans ?_
-          exact Finset.sum_comm
-    _ = _ := by
-          refine Finset.sum_congr rfl fun γ _ ↦ ?_
-          rw [← Complex.mul_conj, map_sum, map_sum, Finset.sum_mul_sum]
-          simp only [map_smul, smul_eq_mul, starRingEnd_apply]
-
 /-- **The Hermitian Killing form of the compact conjugation.** For `v = ∑ a_α x α + ∑ aᵢ αᵢ∨`,
 `H_τ(v, v) = ∑_α |a_α|² B(x α, x (-α)) + ∑_γ |γ(h)|²` with `h = ∑ aᵢ αᵢ∨`. -/
 theorem killingHermitianForm_compactConjugation_self (v : L) :
@@ -248,13 +223,14 @@ theorem killingHermitianForm_compactConjugation_self (v : L) :
   simp only [Fintype.sum_sum_type, IsSl2System.rootSimpleCorootFieldBasis_inl,
     IsSl2System.rootSimpleCorootFieldBasis_inr, hx.map_root, hx.map_coroot, map_neg, neg_neg,
     hcart, hcart', mul_zero, Finset.sum_const_zero, add_zero, zero_add]
-  rw [sum_sum_killingForm_coroot]
+  simp only [sum_sum_mul_star_killingForm_coroot]
   congr 1
-  refine Finset.sum_congr rfl fun α _ ↦ ?_
-  rw [Finset.sum_eq_single α (fun β _ hβ ↦ by
-      rw [hx.toIsSl2System.killingForm_rootVector_neg_eq_zero fun h ↦ hβ (Subtype.ext h).symm,
-        mul_zero])
-    (by simp), ← Complex.mul_conj, starRingEnd_apply]
+  · refine Finset.sum_congr rfl fun α _ ↦ ?_
+    rw [Finset.sum_eq_single α (fun β _ hβ ↦ by
+        rw [hx.toIsSl2System.killingForm_rootVector_neg_eq_zero fun h ↦ hβ (Subtype.ext h).symm,
+          mul_zero])
+      (by simp), ← Complex.mul_conj, starRingEnd_apply]
+  · exact Finset.sum_congr rfl fun γ _ ↦ Complex.mul_conj _
 
 /-- **The compact conjugation of a Chevalley system is compact**: its Hermitian Killing form
 `-B(v, τ v)` is positive definite. -/
@@ -309,7 +285,7 @@ theorem exists_isCompactConjugation (L : Type*) [LieRing L] [LieAlgebra ℂ L] [
     ∃ τ : L →ₛₗ[starRingEnd ℂ] L, IsCompactConjugation τ := by
   have := finite_of_isKilling (R := ℂ) (L := L)
   obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base ℂ L
-  obtain ⟨ω, hω⟩ := exists_lieEquiv_forall_mem_apply_eq_neg H
+  obtain ⟨ω, hω⟩ := H.exists_lieEquiv_forall_mem_apply_eq_neg
   obtain ⟨x, hx⟩ := exists_isChevalleySystem_of_isAlgClosed hω
   exact ⟨_, hx.isCompactConjugation_compactConjugation b⟩
 

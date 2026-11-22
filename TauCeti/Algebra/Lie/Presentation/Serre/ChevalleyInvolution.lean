@@ -23,8 +23,8 @@ span `H`.
 
 ## Main results
 
-* `TauCeti.exists_lieEquiv_forall_mem_apply_eq_neg`: a Lie automorphism of `L` acting by `-1` on
-  a splitting Cartan subalgebra.
+* `LieSubalgebra.exists_lieEquiv_forall_mem_apply_eq_neg`: a Lie automorphism of `L` acting by
+  `-1` on a splitting Cartan subalgebra.
 
 ## References
 
@@ -43,19 +43,21 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [IsKi
 /-- **A Lie automorphism inverting a splitting Cartan subalgebra.** It is the Chevalley involution
 `Hᵢ ↦ -Hᵢ`, `Eᵢ ↦ -Fᵢ`, `Fᵢ ↦ -Eᵢ` of the Serre presentation, transported along Serre's
 theorem. -/
-theorem exists_lieEquiv_forall_mem_apply_eq_neg : ∃ ω : L ≃ₗ⁅K⁆ L, ∀ y ∈ H, ω y = -y := by
+theorem _root_.LieSubalgebra.exists_lieEquiv_forall_mem_apply_eq_neg :
+    ∃ ω : L ≃ₗ⁅K⁆ L, ∀ y ∈ H, ω y = -y := by
   classical
   have := finite_of_isKilling (R := K) (L := L)
   obtain ⟨b⟩ := (rootSystem H).nonempty_base
-  obtain ⟨e, f, hS, hspan⟩ := exists_isSerreSystem_of_base b
-  let E := serreLiftEquiv hS hspan
-  let ω : L ≃ₗ⁅K⁆ L := (E.symm.trans (serreChevalleyInvolution K b.cartanMatrix.transpose)).trans E
+  obtain ⟨e, f, hS⟩ := TauCeti.exists_isSerreSystem_of_base b
+  let E := TauCeti.serreLiftEquiv hS
+  let ω : L ≃ₗ⁅K⁆ L :=
+    (E.symm.trans (TauCeti.serreChevalleyInvolution K b.cartanMatrix.transpose)).trans E
   have hcoroot (i : b.support) :
       ω ((coroot ((i : H.root) : Weight K H L) : H) : L) =
         -((coroot ((i : H.root) : Weight K H L) : H) : L) := by
-    simp only [ω, LieEquiv.trans_apply, E, serreLiftEquiv_symm_coroot,
-      serreChevalleyInvolution_serreH, map_neg]
-    rw [← serreLiftEquiv_symm_coroot hS hspan i, LieEquiv.apply_symm_apply]
+    simp only [ω, LieEquiv.trans_apply, E, TauCeti.serreLiftEquiv_symm_coroot,
+      TauCeti.serreChevalleyInvolution_serreH, map_neg]
+    rw [← TauCeti.serreLiftEquiv_symm_coroot hS i, LieEquiv.apply_symm_apply]
   refine ⟨ω, fun y hy ↦ ?_⟩
   suffices h : ∀ z : H, ω z = -(z : L) from h ⟨y, hy⟩
   intro z
