@@ -79,8 +79,8 @@ lemma ofArrows_mem_hPrecoverage_iff {X : Scheme.{u}} {ι : Type v} {Y : ι → S
 lemma _root_.AlgebraicGeometry.Scheme.Hom.singleton_mem_hPrecoverage
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsProper f]
     [Surjective f] : Presieve.singleton f ∈ hPrecoverage Y :=
-  mem_hPrecoverage_iff.mpr <| Or.inr
-    ⟨⟨X, f, .mk⟩, fun _ _ ⟨⟩ ↦ ⟨inferInstance, inferInstance⟩⟩
+  Or.inr ((Scheme.singleton_mem_precoverage_iff (@IsProper ⊓ @Surjective) f).mpr
+    ⟨(inferInstance : Surjective f).surj, ⟨inferInstance, inferInstance⟩⟩)
 
 instance : hPrecoverage.{u}.IsStableUnderBaseChange where
   mem_coverings_of_isPullback {ι} S X f hf Y g P p₁ p₂ h := by
@@ -151,7 +151,6 @@ lemma exists_mem_range_of_mem_hTopology {X : Scheme.{u}} {R : Sieve X}
     ∃ (Y : Scheme.{u}) (f : Y ⟶ X), R f ∧ x ∈ Set.range f :=
   (Presieve.mem_comap_jointlySurjectivePrecoverage_iff Scheme.forget).mp
     (hTopology_le_jointlySurjectiveTopology _ hR) x
-
 
 /-- Every h-covering family is jointly surjective on scheme points. -/
 lemma jointlySurjective_of_mem_hTopology {X : Scheme.{u}} {ι : Type v}
