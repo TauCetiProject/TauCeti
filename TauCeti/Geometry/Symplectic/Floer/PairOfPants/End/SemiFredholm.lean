@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
@@ -34,6 +36,20 @@ Read in the chart, the operator is `a D_u ξ - b J D_u ξ` for the complex deriv
 loops of `u` converge to the orbit. The factor `a² + b²` is the Jacobian determinant of `φ'_q`,
 and changing variables along the chart, which is injective on `ℝ × (0, 1)`, bounds the integral
 by `∫_S ‖D_u ξ‖²`.
+
+The same holds for the formal adjoint `D_u^*` on covector fields, whose kernel is the cokernel of
+`D_u` (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`). A
+covector field `η` is read in the chart as the `(0, 1)`-form `η' = η (φ'_q ·) ∘ (a + b J)`
+(`TauCeti.Floer.covectorPullback`), on which the adjoint of the half-cylinder is `a² + b²` times
+`D_u^* η` (`floerLinearizationAdjoint_comp_positiveEndChart`). The end estimate of the adjoint on
+the half-cylinder
+(`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint`)
+then bounds the energy of `η'` by `∫_S |z - c_q|² ‖D_u^* η‖²`, for the center `c_q` of the end:
+of the two factors `a² + b² = 4π² |z - c_q|²`, one is absorbed by the change of variables. The
+weight `|z - c_q|²` is comparable to the inverse of the cylindrical weight of
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev` on the end, as for the dual of
+`W^{1,2}`. Since the cylinder estimate is stated for `C²` fields, `J` and `u` are assumed `C²` far
+out on the end, so that `η'` is `C²`.
 
 ## References
 
@@ -321,5 +337,265 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
               ((le_max_left _ _).trans (le_max_right _ _))
               ((le_max_right _ _).trans (le_max_left _ _)) hR2) (le_max_right _ _))
     _ = _ := by ring
+
+/-! ### The formal adjoint -/
+
+/-- Far out on the end `q`, where `J` is a `C²` family `J_q(t)` and `u` is `C²`, a `C²` covector
+field `η` supported there reads in the positive end chart as a `C²` form
+`η (φ'_q ·) ∘ (a + b J)`. -/
+private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
+    {R₁ R : ℝ} (hJe : ContDiff ℝ 2 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 u z) (hR : max R₁ 0 ≤ R)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η)
+    (hηR : tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1}) :
+    ContDiff ℝ 2 (covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) := by
+  set φ := positiveEndChart q
+  -- The factor `a + b J(φ'_q ·, u ∘ φ'_q)` is `C²` beyond `R₁`, where `J` is `J_q`.
+  set M : ℝ × ℝ → V →L[ℝ] V := fun ζ ↦ (fderiv ℝ φ ζ stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
+    (fderiv ℝ φ ζ stdComplexLineReal).2 • (J (φ ζ) (u (φ ζ))).toLinearMap.toContinuousLinearMap
+  have hA : ContDiff ℝ 2 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
+    ((contDiff_positiveEndChart q 3).fderiv_right (by norm_num)).clm_apply contDiff_const
+  have hM : ContDiffOn ℝ 2 M {ζ | max R₁ 0 < ζ.1} := by
+    intro ζ hζ
+    have hJζ : ContDiffAt ℝ 2 (fun ζ' : ℝ × ℝ ↦
+        (Je ζ'.2 ((u ∘ φ) ζ')).toLinearMap.toContinuousLinearMap) ζ :=
+      hJe.contDiffAt.comp ζ (contDiffAt_snd.prodMk ((hu _
+        (positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ))).comp
+          _ (contDiff_positiveEndChart q 2).contDiffAt))
+    refine (ContDiffAt.congr_of_eventuallyEq (((contDiff_fst.comp hA).contDiffAt.smul
+      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
+      ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
+    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds
+      ((le_max_left _ _).trans_lt hζ)] with ζ' hζ'
+    simp only [M, hJeq ζ' hζ'.le, Function.comp_apply, Pi.smul_apply']
+  -- The pulled-back form is `M` composed with `η ∘ φ'_q`, which is supported beyond `R`.
+  have h := (ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff_of_tsupport_subset_right hM
+    (hη.comp (contDiff_positiveEndChart q 2)).contDiffOn
+    (isOpen_lt continuous_const continuous_fst) fun ζ hζ ↦ ?_
+  · rwa [funext (covectorPullback_apply φ _ u η)]
+  · obtain ⟨-, hζR⟩ := hηR (tsupport_comp_subset_preimage _
+      (contDiff_positiveEndChart q 0).continuous hζ)
+    rw [fst_positiveEndCoord_positiveEndChart] at hζR
+    exact hR.trans_lt hζR
+
+/-- Beyond `R₁`, where `J` is the end structure `J_q(t)` and `ζ.1 ≥ 2`, the formal adjoint of the
+end data `(J_q(t), 0, H'_q(t))` along `u ∘ φ'_q` on the pulled-back form `η (φ'_q ·) ∘ (a + b J)` is
+the Jacobian of `φ'_q` times `D_u^* η` at `φ'_q(ζ)`. -/
+private theorem floerLinearizationAdjoint_covectorPullback_positiveEndChart (ω : SymplecticForm V)
+    {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1) {q : Puncture}
+    (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {ζ : ℝ × ℝ} (hζ₁ : R₁ < ζ.1) (hζ₂ : 2 ≤ ζ.1)
+    (hu : DifferentiableAt ℝ u (positiveEndChart q ζ))
+    (hη : DifferentiableAt ℝ η (positiveEndChart q ζ))
+    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
+      (positiveEndChart q ζ))
+    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (positiveEndChart q ζ) (u (positiveEndChart q ζ)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+        (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
+    ω.floerLinearizationAdjoint (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
+        (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ =
+      (fderiv ℝ (positiveEndChart q) ζ).det • ω.floerLinearizationAdjoint
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u η (positiveEndChart q ζ) := by
+  set φ := positiveEndChart q
+  set η' := covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
+  -- Near `ζ` the structures of the end data are those of the pulled-back data.
+  have hev : (fun w ↦ (η' w).comp (Je w.2 ((u ∘ φ) w)).toLinearMap.toContinuousLinearMap) =ᶠ[𝓝 ζ]
+      fun w ↦ (η' w).comp (J (φ w) ((u ∘ φ) w)).toLinearMap.toContinuousLinearMap := by
+    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ₁] with w hw
+    rw [hJeq w hw.le]
+  have hC : ω.floerLinearizationCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) ζ =
+      ω.floerLinearizationCoeff (fun w y ↦ (J (φ w) y).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) ζ := by
+    ext v
+    simp only [floerLinearizationCoeff_apply, hJeq ζ hζ₁.le]
+  refine Eq.trans ?_ (ω.floerLinearizationAdjoint_comp_positiveEndChart hH hHs hζ₂ hu hη hJu hfl)
+  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, hev.fderiv_eq, hC]
+
+/-- **The adjoint of an end, read in its chart.** Far out on the end `q`, where `J` is the end
+structure `J_q(t)` and `ζ.1 ≥ 2`, the `L²` norm over a band `[a, b] × [0, 1]` of the adjoint of the
+end data along `u ∘ φ'_q` on the pulled-back form `η (φ'_q ·) ∘ (a + b J)` is at most `4π²` times
+the integral of `|z - c_q|² ‖D_u^* η‖²` over `S`, for the center `c_q` of the end. -/
+private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {q : Puncture}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
+    {R₁ : ℝ} (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2)
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z (u z)) (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+        z : ℝ × ℝ →ₗ[ℝ] V))
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) {a b : ℝ} (ha₁ : R₁ < a) (ha₂ : 2 ≤ a) :
+    ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
+        (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ‖ ^ 2 ≤
+      4 * Real.pi ^ 2 * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+        ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u η z‖ ^ 2 := by
+  -- `D_u^* η` is continuous and vanishes off the support of `η`, so the weighted integrand is
+  -- integrable.
+  set D := ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u η
+  have hDc : Continuous D := continuous_floerLinearizationAdjoint_of_tsupport_subset hJ
+    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
+    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hη hηS
+  set g : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 * ‖D z‖ ^ 2
+  have hg : Integrable fun z ↦ 4 * Real.pi ^ 2 * g z := by
+    refine ((continuous_const.mul ((Complex.equivRealProdCLM.symm.continuous.sub
+      continuous_const).norm.pow 2 |>.mul (hDc.norm.pow 2))).integrable_of_hasCompactSupport
+      (hηc.mono' fun z hz ↦ ?_))
+    by_contra hz'
+    simp [D, floerLinearizationAdjoint_of_notMem_tsupport hz'] at hz
+  -- On the band the adjoint on the pulled-back form is the Jacobian `4π² |φ'_q - c_q|²` times
+  -- `D_u^* η`; one factor of the Jacobian is absorbed by the change of variables.
+  calc _ = ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1,
+        (fderiv ℝ (positiveEndChart q) ζ).det * (4 * Real.pi ^ 2 * g (positiveEndChart q ζ)) := by
+        refine setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+        have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) (z := ζ)
+          (by linarith [hζ.1.1])
+        rw [floerLinearizationAdjoint_covectorPullback_positiveEndChart ω hH
+          (fun t ↦ (hHs q).comp (contDiff_const.prodMk contDiff_id)) hJeq
+          (by linarith [hζ.1.1]) (by linarith [hζ.1.1]) ((hu _ hS).differentiableAt one_ne_zero)
+          (hη.differentiable one_ne_zero _) (((hJ _ hS).differentiableAt one_ne_zero).comp
+            (f := fun z ↦ (z, u z)) _ (differentiableAt_id.prodMk
+              ((hu _ hS).differentiableAt one_ne_zero))) (hF _ hS),
+          norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+        simp only [g, det_fderiv_positiveEndChart]
+        ring
+    _ ≤ ∫ z, 4 * Real.pi ^ 2 * g z :=
+        setIntegral_det_mul_comp_positiveEndChart_le_integral (fun z ↦ by positivity) hg q a b
+    _ = _ := integral_const_mul _ _
+
+/-- **The end estimate of the formal adjoint along a Floer pair of pants.** Let `u` be a solution
+on `S = ℂ ∖ {0, 1}` of the Floer equation for the pair-of-pants perturbation of jointly `C²`
+period-one Hamiltonians `H`, `C²` on `S`, whose end `q`, read in the positive end chart `φ'_q`,
+converges uniformly to an orbit `x` of the positive end Hamiltonian `H'_q` starting at a
+nondegenerate fixed point of the time-one map, while the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}`
+tends uniformly to zero. Suppose that `J` is `C¹` and compatible along `u` on `S`, and that far out
+on the end it is a `C²` family `J_q(t)` compatible along `x`. Then there are `C` and `R` such that
+every `C²` covector field `η` with compact support in the part `±s > R` of the end satisfies
+
+`∫_{(0, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C ∫ |z - c_q|² ‖D_u^* η (z)‖²`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of the pair-of-pants perturbation,
+where `η' = η (φ'_q ·) ∘ (a + b J)` is `η` read in the chart as a `(0, 1)`-form
+(`TauCeti.Floer.covectorPullback`) and `c_q` is the center of the end.
+
+The weight `|z - c_q|²` is, up to `4π²`, the Jacobian of the chart at `z`: the adjoint of the
+half-cylinder on `η'` is the Jacobian times `D_u^* η`
+(`floerLinearizationAdjoint_comp_positiveEndChart`), and one factor of the Jacobian is absorbed by
+the change of variables. The form `η'` is `C²` because `J` and `u` are `C²` far out on the end. -/
+theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (q : Puncture) {L : ℝ≥0}
+    (hX : LipschitzWith L (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) hX 0 1) (x 0))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
+    {R₁ : ℝ} (hJe : ContDiff ℝ 2 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ t, ω.Compatible (Je t (x t)))
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 u z)
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z (u z)) (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+            u η z‖ ^ 2 := by
+  have hH' := contDiff_uncurry_positiveEndHamiltonian (hHs q)
+  set φ := positiveEndChart q
+  have hφS {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) : φ ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal hζ
+  -- The end structure has period one, since the end chart does, and it is compatible along `u`.
+  have hJe1 : Je 1 = Je 0 := by
+    rw [← hJeq (R₁, 1) le_rfl, ← hJeq (R₁, 0) le_rfl]
+    exact congrArg J (by simpa using positiveEndChart_add_one q R₁ 0)
+  have hJeu {ζ : ℝ × ℝ} (hζ : max R₁ 1 ≤ ζ.1) : ω.Compatible (Je ζ.2 ((u ∘ φ) ζ)) := by
+    rw [← hJeq ζ ((le_max_left _ _).trans hζ)]
+    exact hc _ (hφS (by linarith [le_max_right R₁ 1]))
+  -- The end estimate of the adjoint on the half-cylinder of the end data.
+  obtain ⟨C₁, -, R₂, hest⟩ :=
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX hH' hx hnd
+    (hJe.of_le one_le_two) hJe1 hJex (u := u ∘ φ)
+    ((eventually_gt_atTop 0).mono fun s hs t ↦ ((hu _ (hφS (ζ := (s, t)) hs)).comp _
+      (contDiff_positiveEndChart q 2).contDiffAt).of_le one_le_two)
+    ((eventually_ge_atTop (max R₁ 1)).mono fun s hs t ↦ hJeu (ζ := (s, t)) hs) hux hδ
+  set R := max (max R₂ (R₁ + 1)) 2
+  have hR : R₂ ≤ R ∧ R₁ + 1 ≤ R ∧ 2 ≤ R :=
+    ⟨(le_max_left _ _).trans (le_max_left _ _), (le_max_right _ _).trans (le_max_left _ _),
+      le_max_right _ _⟩
+  refine ⟨max C₁ 0 * (4 * Real.pi ^ 2), R, fun η hη hηc hηR ↦ ?_⟩
+  set η' := covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
+  -- `η` vanishes in the end chart outside a finite band `(R, b) × ℝ`, and so does `η'`, which
+  -- is `C²` and has period one in `t`.
+  obtain ⟨b, hRb, hvan⟩ := exists_forall_comp_positiveEndChart_eq_zero hηc hηR
+  have hvan' (s t : ℝ) (hs : s ∉ Ioo R b) : η' (s, t) = 0 := by
+    have h₀ : η (φ (s, t)) = 0 := hvan s t hs
+    simp only [η', covectorPullback_apply, h₀, ContinuousLinearMap.zero_comp]
+  have hη' : ContDiff ℝ 2 η' := contDiff_covectorPullback_positiveEndChart hJe hJeq hu
+    (max_le (by linarith) (by linarith)) hη hηR
+  have hper (s t : ℝ) : η' (s, t + 1) = η' (s, t) := by
+    simp only [η', covectorPullback_apply, φ, positiveEndChart_add_one,
+      fderiv_positiveEndChart_add_one]
+  calc _ = ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, sobolevDensity η' ζ := by
+        refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+          (measurableSet_Ioi.prod measurableSet_Icc)
+          (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
+        have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan'
+          fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
+        rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
+    _ ≤ max C₁ 0 * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+          (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) η' ζ‖ ^ 2 := by
+        simp only [funext (sobolevDensity_apply η')]
+        exact (hest hη' hper hRb hR.1 hvan').trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _))
+    _ ≤ _ := by
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left
+          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs hJeq hJ
+            (fun z hz ↦ (hu z hz).of_le one_le_two) hF (hη.of_le one_le_two) hηc
+            (fun z hz ↦ (hηR hz).1) (by linarith) hR.2.2) (le_max_right _ _)
 
 end TauCeti.SymplecticForm

@@ -108,7 +108,8 @@ apply to all three ends.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
-  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`.
+  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`, and so is its
+  derivative (`TauCeti.Floer.fderiv_positiveEndChart_add_one`).
 * `TauCeti.Floer.positiveEndChart_endSign_mul_endCoord`,
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
@@ -901,6 +902,18 @@ theorem hasFDerivAt_positiveEndChart_add (q : Puncture) (c z : ℝ × ℝ) :
     HasFDerivAt (fun z ↦ positiveEndChart q (z + c)) (fderiv ℝ (positiveEndChart q) (z + c)) z :=
   ((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).hasFDerivAt.comp z
     ((hasFDerivAt_id z).add_const c)
+
+/-- The derivative of the positive end chart is `1`-periodic in the angular coordinate, as the
+chart is. -/
+theorem fderiv_positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
+    fderiv ℝ (positiveEndChart q) (s, t + 1) = fderiv ℝ (positiveEndChart q) (s, t) := by
+  have hfun : (fun z : ℝ × ℝ ↦ positiveEndChart q (z + (0, 1))) = positiveEndChart q :=
+    funext fun z ↦ by
+      rw [← Prod.mk.eta (p := z), Prod.mk_add_mk, add_zero]
+      exact positiveEndChart_add_one q z.1 z.2
+  have h := (hasFDerivAt_positiveEndChart_add q (0, 1) (s, t)).fderiv
+  rw [hfun, Prod.mk_add_mk, add_zero] at h
+  exact h.symm
 
 /-- The positive end charts are holomorphic. -/
 theorem isComplexLinearMap_fderiv_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :

@@ -314,6 +314,24 @@ theorem continuous_floerLinearizationAdjoint
   continuous_iff_continuousAt.2 fun z ↦
     continuousAt_floerLinearizationAdjoint (hJ z) (hKs z) (hKt z) hu.contDiffAt hη.contDiffAt
 
+/-- The formal adjoint on a covector field `η` supported in a set `U` is continuous when `η` is
+`C¹` and the data are regular along `u` on `U`. This is the adjoint counterpart of
+`continuous_floerLinearization_of_tsupport_subset`. -/
+theorem continuous_floerLinearizationAdjoint_of_tsupport_subset {U : Set (ℝ × ℝ)}
+    (hJ : ∀ z ∈ U, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z) (hη : ContDiff ℝ 1 η) (hηU : tsupport η ⊆ U) :
+    Continuous (ω.floerLinearizationAdjoint J Ks Kt u η) := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  by_cases hz : z ∈ U
+  · exact continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+      hη.contDiffAt
+  · have h : ω.floerLinearizationAdjoint J Ks Kt u η =ᶠ[𝓝 z] fun _ ↦ 0 :=
+      Filter.mem_of_superset ((isClosed_tsupport η).isOpen_compl.mem_nhds fun h ↦ hz (hηU h))
+        fun w hw ↦ floerLinearizationAdjoint_of_notMem_tsupport hw
+    exact continuousAt_const.congr h.symm
+
 /-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
 let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
 `K_s`, `K_t` be `C²`, at each point of the support of `ξ` (at `(z, u z)` for the coefficients).
