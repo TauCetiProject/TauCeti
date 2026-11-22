@@ -155,11 +155,12 @@ theorem isSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
   (isSufficientStatistic_const_iff s₀).mpr hconst
 
 /-- Composing a sufficient statistic with a measurable equivalence preserves sufficiency. -/
-theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X} [∀ θ, SFinite (P θ)]
+theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X}
     {T : X → S} (h : IsSufficientStatistic P T) (e : S ≃ᵐ S') :
     IsSufficientStatistic P (e ∘ T) := by
   obtain ⟨hT, K, hK, hdis⟩ := h
   refine ⟨e.measurable.comp hT, K.comap e.symm e.symm.measurable, inferInstance, fun θ ↦ ?_⟩
+  have : SFinite (P θ) := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable (hdis θ)
   have hK' : (K.comap e.symm e.symm.measurable).comap e e.measurable = K := by
     rw [← Kernel.comap_comp_right]
     simp
@@ -176,7 +177,7 @@ theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X} [∀ �
 
 /-- Composing a statistic with a measurable equivalence preserves sufficiency. -/
 @[simp]
-theorem isSufficientStatistic_comp_measurableEquiv_iff {P : Θ → Measure X} [∀ θ, SFinite (P θ)]
+theorem isSufficientStatistic_comp_measurableEquiv_iff {P : Θ → Measure X}
     {T : X → S} (e : S ≃ᵐ S') :
     IsSufficientStatistic P (e ∘ T) ↔ IsSufficientStatistic P T :=
   ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_measurableEquiv e.symm,
@@ -250,7 +251,7 @@ theorem isMinimalSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure
 sufficiency. -/
 theorem IsMinimalSufficientStatistic.comp_measurableEquiv.{u, v, w, w', r} {Θ : Type u}
     {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X] [MeasurableSpace S]
-    [MeasurableSpace S'] {P : Θ → Measure X} [∀ θ, SFinite (P θ)] {T : X → S}
+    [MeasurableSpace S'] {P : Θ → Measure X} {T : X → S}
     (h : IsMinimalSufficientStatistic.{u, v, w, r} P T) (e : S ≃ᵐ S') :
     IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) := by
   refine ⟨h.isSufficientStatistic.comp_measurableEquiv e, fun U_ty _ U hU ↦ ?_⟩
@@ -261,7 +262,7 @@ theorem IsMinimalSufficientStatistic.comp_measurableEquiv.{u, v, w, w', r} {Θ :
 @[simp]
 theorem isMinimalSufficientStatistic_comp_measurableEquiv_iff.{u, v, w, w', r} {Θ : Type u}
     {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X] [MeasurableSpace S]
-    [MeasurableSpace S'] {P : Θ → Measure X} [∀ θ, SFinite (P θ)] {T : X → S}
+    [MeasurableSpace S'] {P : Θ → Measure X} {T : X → S}
     (e : S ≃ᵐ S') :
     IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) ↔
       IsMinimalSufficientStatistic.{u, v, w, r} P T :=

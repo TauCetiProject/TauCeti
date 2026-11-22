@@ -21,7 +21,7 @@ This file provides the measure-level counterpart of Mathlib's
 
 * `MeasureTheory.Measure.compProd_fst_borelMarkovFromReal`: transporting a real-valued
   disintegrating kernel `η : Kernel β ℝ` to a disintegrating kernel `Kernel.borelMarkovFromReal Ω η`
-  for an s-finite measure `ρ : Measure (β × Ω)`.
+  for a measure `ρ : Measure (β × Ω)`.
 -/
 
 public section
@@ -34,21 +34,32 @@ namespace MeasureTheory.Measure
 
 /-- Measure-level counterpart of `ProbabilityTheory.Kernel.compProd_fst_borelMarkovFromReal`:
 if an s-finite kernel `η : Kernel β ℝ` disintegrates the embedded measure
-`ρ.map (Prod.map id (embeddingReal Ω))` of an s-finite measure `ρ : Measure (β × Ω)` on a
+`ρ.map (Prod.map id (embeddingReal Ω))` of a measure `ρ : Measure (β × Ω)` on a
 nonempty standard Borel space `Ω`, then `Kernel.borelMarkovFromReal Ω η` disintegrates `ρ`. -/
 theorem compProd_fst_borelMarkovFromReal {β Ω : Type*} [MeasurableSpace β] [MeasurableSpace Ω]
-    [StandardBorelSpace Ω] [Nonempty Ω] (ρ : Measure (β × Ω)) [SFinite ρ] (η : Kernel β ℝ)
+    [StandardBorelSpace Ω] [Nonempty Ω] (ρ : Measure (β × Ω)) (η : Kernel β ℝ)
     [IsSFiniteKernel η]
     (hη : ρ.fst ⊗ₘ η = ρ.map (Prod.map (id : β → β) (embeddingReal Ω))) :
     ρ.fst ⊗ₘ Kernel.borelMarkovFromReal Ω η = ρ := by
   let e : Ω → ℝ := embeddingReal Ω
-  have he : Measurable e := (measurableEmbedding_embeddingReal Ω).measurable
+  have he : MeasurableEmbedding e := measurableEmbedding_embeddingReal Ω
+  have hρ_eq : (ρ.fst ⊗ₘ η).map (Prod.map (id : β → β) he.invFun) = ρ := by
+    rw [hη, Measure.map_map (measurable_id.prodMap he.measurable_invFun)
+      (measurable_id.prodMap he.measurable)]
+    have hcomp : Prod.map (id : β → β) he.invFun ∘ Prod.map (id : β → β) e = id := by
+      ext ⟨b, ω⟩
+      · rfl
+      · exact he.leftInverse_invFun ω
+    rw [hcomp, Measure.map_id]
+  have : SFinite ρ := by
+    rw [← hρ_eq]
+    infer_instance
   let κ : Kernel Unit (β × Ω) := Kernel.const Unit ρ
   have hfst_map : (ρ.map (Prod.map (id : β → β) e)).fst = ρ.fst :=
-    Measure.fst_map_prodMk measurable_fst (he.comp measurable_snd)
+    Measure.fst_map_prodMk measurable_fst (he.measurable.comp measurable_snd)
   have hη' : (κ.map (Prod.map (id : β → β) e)).fst ⊗ₖ η.prodMkLeft Unit =
       κ.map (Prod.map (id : β → β) e) := by
-    rw [Kernel.map_const _ (measurable_id.prodMap he), Kernel.fst_const, hfst_map,
+    rw [Kernel.map_const _ (measurable_id.prodMap he.measurable), Kernel.fst_const, hfst_map,
       Kernel.const_compProd_prodMkLeft, hη]
   have hdis := Kernel.compProd_fst_borelMarkovFromReal κ (η.prodMkLeft Unit) hη'
   have hprod : Kernel.borelMarkovFromReal Ω (η.prodMkLeft Unit) =

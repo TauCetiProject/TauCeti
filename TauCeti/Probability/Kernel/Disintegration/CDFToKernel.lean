@@ -87,6 +87,11 @@ theorem isRatCondKernelCDF_of_forall_setIntegral_eq {κ : Kernel α (β × ℝ)}
   have hpre : IsRatCondKernelCDF (fun p r ↦ (preCDF (κ a) r p.2).toReal)
       (Kernel.const Unit (κ a)) (Kernel.const Unit (κ a).fst) :=
     isRatCondKernelCDF_preCDF (κ a)
+  have hpre_int (q : ℚ) : Integrable (fun b ↦ (preCDF (κ a) q b).toReal) (κ a).fst := by
+    have h := hpre.integrable () q
+    rwa [Kernel.const_apply] at h
+  have hpre_ae := hpre.isRatStieltjesPoint_ae ()
+  rw [Kernel.const_apply] at hpre_ae
   have hfst : κ.fst a = (κ a).fst := by rw [Kernel.fst_apply, Measure.fst]
   rw [hfst]
   have hae_eq_pre : ∀ᵐ b ∂(κ a).fst, ∀ q : ℚ, f (a, b) q = (preCDF (κ a) q b).toReal := by
@@ -94,13 +99,16 @@ theorem isRatCondKernelCDF_of_forall_setIntegral_eq {κ : Kernel α (β × ℝ)}
     intro q
     refine ae_eq_of_forall_setIntegral_eq_of_sigmaFinite (μ := (κ a).fst)
       (fun _ _ _ ↦ (hfst ▸ hint a q).integrableOn)
-      (fun _ _ _ ↦ (hpre.integrable () q).integrableOn) (fun s hs _ ↦ ?_)
+      (fun _ _ _ ↦ (hpre_int q).integrableOn) (fun s hs _ ↦ ?_)
     have hset : ∫ b in s, f (a, b) q ∂(κ a).fst = (κ a).real (s ×ˢ Iic (q : ℝ)) := by
       rw [← hfst]
       exact hsetInt a hs q
-    rw [hset]
-    simpa [Kernel.const_apply] using (hpre.setIntegral () hs q).symm
-  filter_upwards [hae_eq_pre, hpre.isRatStieltjesPoint_ae ()] with b hbeq hsp
+    have hpre_set : ∫ b in s, (preCDF (κ a) q b).toReal ∂(κ a).fst =
+        (κ a).real (s ×ˢ Iic (q : ℝ)) := by
+      have h := hpre.setIntegral () hs q
+      rwa [Kernel.const_apply, Kernel.const_apply] at h
+    rw [hset, hpre_set]
+  filter_upwards [hae_eq_pre, hpre_ae] with b hbeq hsp
   have hf_eq : f (a, b) = fun q ↦ (preCDF (κ a) q b).toReal := funext hbeq
   refine ⟨hf_eq ▸ hsp.mono, hf_eq ▸ hsp.tendsto_atTop_one,
     hf_eq ▸ hsp.tendsto_atBot_zero, fun t ↦ ?_⟩

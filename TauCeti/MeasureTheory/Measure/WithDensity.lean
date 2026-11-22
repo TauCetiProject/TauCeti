@@ -461,7 +461,9 @@ theorem eq_withDensity_div_of_eq_withDensity_mul {Î± : Type*} [MeasurableSpace Î
         intro htop
         rw [htop, ENNReal.top_mul hh0] at hxlt
         exact lt_irrefl _ hxlt
-      rw [mul_comm (G x), mul_assoc, mul_comm (G x), ENNReal.div_mul_cancel hG0 hGtop, mul_comm]
+      calc g x * h x
+        _ = (g x / G x) * G x * h x := by rw [ENNReal.div_mul_cancel hG0 hGtop]
+        _ = G x * h x * (g x / G x) := by ac_rfl
 
 /-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
 of `s`. The weight `f` is arbitrary; no measurability of it is required. -/

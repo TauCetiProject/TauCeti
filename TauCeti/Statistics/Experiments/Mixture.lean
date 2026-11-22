@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Statistics.Experiments.Density
+import TauCeti.Probability.Kernel.Disintegration.Map
 
 /-!
 # Countable mixtures and the Halmos–Savage lemma
@@ -141,11 +142,13 @@ theorem countableMixture_compProd {Y : Type*} [MeasurableSpace Y] [∀ n, SFinit
 /-- If an s-finite kernel `K` disintegrates each component `P (θs n)` along a measurable map `T`,
 then `K` also disintegrates the countable mixture `countableMixture P θs` along `T`. -/
 theorem map_prodMk_countableMixture_eq_compProd {S : Type*} [MeasurableSpace S]
-    [∀ n, SFinite (P (θs n))] {T : X → S} (hT : Measurable T)
+    {T : X → S} (hT : Measurable T)
     {K : ProbabilityTheory.Kernel S X} [ProbabilityTheory.IsSFiniteKernel K]
     (h : ∀ n, (P (θs n)).map (fun x ↦ (T x, x)) = (P (θs n)).map T ⊗ₘ K) :
     (countableMixture P θs).map (fun x ↦ (T x, x)) =
       (countableMixture P θs).map T ⊗ₘ K := by
+  have : ∀ n, SFinite (P (θs n)) := fun n ↦
+    sfinite_of_map_prodMk_eq_compProd hT.aemeasurable (h n)
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   calc (countableMixture P θs).map (fun x ↦ (T x, x))
     _ = countableMixture (fun θ ↦ (P θ).map (fun x ↦ (T x, x))) θs :=

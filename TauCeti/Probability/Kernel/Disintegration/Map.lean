@@ -12,6 +12,7 @@ public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 import Mathlib.Probability.Kernel.Composition.WithDensity
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Kernel.Composition.IntegralCompProd
 
@@ -20,7 +21,7 @@ import TauCeti.Probability.Kernel.Composition.IntegralCompProd
 
 This file develops generic measure- and kernel-theoretic identities for a disintegration of the
 graph pushforward along a measurable map `T : X → S`, i.e. a relation
-`μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K` for an s-finite measure `μ : Measure X` and an s-finite
+`μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K` for a measure `μ : Measure X` and an s-finite
 kernel `K : Kernel S X`.
 
 It builds directly on Mathlib's `MeasureTheory.Measure.compProd`,
@@ -30,6 +31,8 @@ together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
 
 ## Main statements
 
+* `ProbabilityTheory.sfinite_of_map_prodMk_eq_compProd`: projecting a graph disintegration
+  `μ.map (T, id) = ν ⊗ₘ K` onto the second coordinate shows `μ` is s-finite.
 * `ProbabilityTheory.comp_map_eq_self_of_map_prodMk_eq_compProd`: marginal reconstruction
   `K ∘ₘ μ.map T = μ`.
 * `ProbabilityTheory.map_prodMk_eq_compProd_iff`: rectangle characterization of disintegration
@@ -61,19 +64,25 @@ open scoped ENNReal
 
 namespace ProbabilityTheory
 
-variable {Θ X S F : Type*} [MeasurableSpace X] [MeasurableSpace S]
-  {μ : Measure X} [SFinite μ] {T : X → S} {K : Kernel S X} [IsSFiniteKernel K]
+/-- A measure whose graph pushforward along an almost-everywhere measurable map `T` equals a
+composition-product `ν ⊗ₘ K` is s-finite, obtained by projecting onto the second coordinate. -/
+theorem sfinite_of_map_prodMk_eq_compProd {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {T : X → S} {ν : Measure S} {K : Kernel S X}
+    (hT : AEMeasurable T μ) (h : μ.map (fun x ↦ (T x, x)) = ν ⊗ₘ K) :
+    SFinite μ := by
+  rw [← Measure.snd_map_prodMk_id₀ hT, h]
+  infer_instance
 
-private theorem snd_map_prodMk_id {ν : Measure X} {T : X → S} (hT : Measurable T) :
-    (ν.map (fun x ↦ (T x, x))).snd = ν := by
-  rw [Measure.snd_map_prodMk hT measurable_id', Measure.map_id']
+variable {Θ X S F : Type*} [MeasurableSpace X] [MeasurableSpace S]
+  {μ : Measure X} {T : X → S} {K : Kernel S X} [IsSFiniteKernel K]
 
 /-- Reconstructing `μ` from a disintegration `μ.map (T, id) = μ.map T ⊗ₘ K`: composing the kernel
 with the marginal law `μ.map T` recovers `μ`. -/
 theorem comp_map_eq_self_of_map_prodMk_eq_compProd (hT : Measurable T)
     (h : μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K) :
     K ∘ₘ μ.map T = μ := by
-  rw [← Measure.snd_compProd, ← h, snd_map_prodMk_id hT]
+  have : SFinite μ := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable h
+  rw [← Measure.snd_compProd, ← h, Measure.snd_map_prodMk_id hT]
 
 /-- Rectangle characterization of graph disintegration for a finite measure `μ`:
 `μ.map (T, id) = μ.map T ⊗ₘ K` holds if and only if for all measurable `A : Set S` and
@@ -92,6 +101,7 @@ theorem map_prodMk_eq_compProd_iff [IsFiniteMeasure μ] (hT : Measurable T) :
 theorem lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd (hT : Measurable T)
     (h : μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K) {f : S × X → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ x, f (T x, x) ∂μ = ∫⁻ x, ∫⁻ y, f (T x, y) ∂K (T x) ∂μ := by
+  have : SFinite μ := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable h
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   have hmeas : Measurable fun s ↦ ∫⁻ y, f (s, y) ∂K s :=
     Measurable.lintegral_kernel_prod_right' hf
@@ -107,6 +117,7 @@ theorem integral_eq_integral_integral_of_map_prodMk_eq_compProd (hT : Measurable
     (hfm : AEStronglyMeasurable f (μ.map (fun x ↦ (T x, x))))
     (hf : Integrable (fun x ↦ f (T x, x)) μ) :
     ∫ x, f (T x, x) ∂μ = ∫ x, ∫ y, f (T x, y) ∂K (T x) ∂μ := by
+  have : SFinite μ := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable h
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   have hf_map : Integrable f (μ.map (fun x ↦ (T x, x))) :=
     (integrable_map_measure hfm hpair.aemeasurable).mpr hf
@@ -153,6 +164,7 @@ theorem condExp_ae_eq_integral_of_map_prodMk_eq_compProd [CompleteSpace F]
     μ[φ | MeasurableSpace.comap T inferInstance] =ᵐ[μ] fun x ↦ ∫ y, φ y ∂K (T x) := by
   -- Replace `φ` by a strongly measurable `μ`-a.e. equal version `φ'` so fiberwise integrals are
   -- measurable, and show both sides have the same set integrals over `T ⁻¹' B`.
+  have : SFinite μ := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable h
   let φ' : X → F := hφ.aestronglyMeasurable.mk φ
   have hφ'm : StronglyMeasurable φ' := hφ.aestronglyMeasurable.stronglyMeasurable_mk
   have hφ'ae : φ =ᵐ[μ] φ' := hφ.aestronglyMeasurable.ae_eq_mk
@@ -240,10 +252,11 @@ theorem map_prodMk_comp_eq_compProd [MeasurableSpace Θ] {P : Kernel Θ X} [IsSF
 
 /-- Reweighting a measure `L` by a measurable density `q ∘ T` factoring through `T` preserves any
 disintegrating kernel `K` given `T`. -/
-theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T : X → S}
+theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} {T : X → S}
     (hT : Measurable T) {K : Kernel S X} [IsSFiniteKernel K]
     (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) {q : S → ℝ≥0∞} (hq : Measurable q) :
     (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by
+  have : SFinite L := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable hL
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   calc (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x))
     _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) :=
@@ -255,12 +268,13 @@ theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T :
 
 /-- If `P ≪ L` share a disintegrating kernel `K` given a measurable map `T`, then `P` has
 `L`-density `((P.map T).rnDeriv (L.map T)) ∘ T`. -/
-theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [SFinite L]
+theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X}
     {T : X → S} (hT : Measurable T) [(P.map T).HaveLebesgueDecomposition (L.map T)]
     {K : Kernel S X} [IsSFiniteKernel K] (hPL : P ≪ L)
     (hP : P.map (fun x ↦ (T x, x)) = P.map T ⊗ₘ K)
     (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) :
     P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T) := by
+  have : SFinite L := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable hL
   let q : S → ℝ≥0∞ := (P.map T).rnDeriv (L.map T)
   have hq : Measurable q := Measure.measurable_rnDeriv _ _
   have hmarg : (L.withDensity (q ∘ T)).map T = P.map T := by
@@ -269,6 +283,6 @@ theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [
   have hjoint : P.map (fun x ↦ (T x, x)) = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) := by
     rw [map_prodMk_withDensity_comp_eq_compProd hT hL hq, hmarg, hP]
   have hsnd := congrArg Measure.snd hjoint
-  rwa [snd_map_prodMk_id hT, snd_map_prodMk_id hT] at hsnd
+  rwa [Measure.snd_map_prodMk_id hT, Measure.snd_map_prodMk_id hT] at hsnd
 
 end ProbabilityTheory

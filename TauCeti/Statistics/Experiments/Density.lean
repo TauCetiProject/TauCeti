@@ -40,7 +40,12 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
   σ-finite `P`, and agrees `μ`-a.e. with `(P.rnDeriv μ ·).toReal`.
 * `TauCeti.HasDensity.ae_pos`: a density is positive almost everywhere for the measure it
   defines.
-* `TauCeti.HasDensity.integral_eq`: `∫ g dP = ∫ f • g dμ`, for every `g`.
+* `TauCeti.HasDensity.measure_apply_eq_zero_iff`: a set is `P`-null iff its intersection with
+  `{x | 0 < f x}` is `μ`-null.
+* `TauCeti.HasDensity.measure_apply`, `TauCeti.HasDensity.measureReal_apply`: extended and real
+  set masses as integrals of the density.
+* `TauCeti.HasDensity.lintegral_eq`, `TauCeti.HasDensity.integral_eq`: Lebesgue and Bochner
+  integral transfers for `P`.
 * `TauCeti.HasDensity.integrable_iff`: `g` is `P`-integrable iff `f • g` is `μ`-integrable.
 * `TauCeti.HasDensity.integrable`, `TauCeti.HasDensity.integral_eq_one`: the density of a finite
   measure is integrable, and that of a probability measure has integral `1`.
@@ -157,10 +162,32 @@ theorem ae_pos (h : HasDensity P μ f) : ∀ᵐ x ∂P, 0 < f x := by
   rw [h.eq_withDensity, ae_withDensity_iff h.measurable.ennreal_ofReal]
   exact ae_of_all _ fun x hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
 
+/-- A set is `P`-null iff its intersection with `{x | 0 < f x}` is `μ`-null. -/
+theorem measure_apply_eq_zero_iff (h : HasDensity P μ f) {s : Set X} :
+    P s = 0 ↔ μ ({x | 0 < f x} ∩ s) = 0 := by
+  rw [h.eq_withDensity, withDensity_apply_eq_zero h.measurable.ennreal_ofReal]
+  simp
+
 /-- The mass of a measurable set is the integral of the density over it. -/
 theorem measure_apply (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
     P s = ∫⁻ x in s, ENNReal.ofReal (f x) ∂μ := by
   rw [h.eq_withDensity, withDensity_apply _ hs]
+
+/-- The real mass of a `μ`-null-measurable set is the integral of the density over it. -/
+theorem measureReal_apply (h : HasDensity P μ f) {s : Set X} (hs : NullMeasurableSet s μ) :
+    P.real s = ∫ x in s, f x ∂μ := by
+  rw [h.eq_withDensity]
+  exact MeasureTheory.measureReal_withDensity_ofReal (ae_restrict_of_ae h.ae_nonneg) hs
+    h.measurable.aemeasurable.restrict
+
+/-- **The Lebesgue integral transfer.** Integration of a nonnegative function against `P` is
+integration against `μ` weighted by `ENNReal.ofReal ∘ f`, with no measurability hypothesis on
+`g`. -/
+theorem lintegral_eq (h : HasDensity P μ f) (g : X → ℝ≥0∞) :
+    ∫⁻ x, g x ∂P = ∫⁻ x, ENNReal.ofReal (f x) * g x ∂μ := by
+  rw [h.eq_withDensity]
+  exact lintegral_withDensity_eq_lintegral_mul_non_measurable μ h.measurable.ennreal_ofReal
+    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) g
 
 /-- **The integral transfer.** Integration against `P` is integration of the `f`-weighted
 integrand against `μ`. No integrability hypothesis is needed: when `g` is not `P`-integrable,
