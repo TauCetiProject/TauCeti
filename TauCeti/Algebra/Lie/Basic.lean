@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Basic infrastructure for Lie modules
@@ -44,6 +45,7 @@ This file supplies general constructions for Lie modules that are missing from M
   of the Lie action on `v`.
 * `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
   `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.lieAnnihilator_zero`: the annihilator of the zero vector is all of `L`.
 * `TauCeti.apply_lie_eq_zero_of_lieAnnihilator_eq_top`: a coadjoint-fixed functional vanishes on
   brackets.
 * `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
@@ -163,6 +165,20 @@ theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup 
   fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
 
 end EndSubalgebra
+
+section LieEquivOfBijective
+
+variable {R L₁ L₂ : Type*} [CommRing R] [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂]
+  [LieAlgebra R L₂]
+
+/-- The equivalence `LieEquiv.ofBijective f h` applies `f`. Mathlib provides only
+`LieEquiv.toLinearEquiv_ofBijective`. -/
+@[simp]
+theorem LieEquiv.ofBijective_apply (f : L₁ →ₗ⁅R⁆ L₂) (h : Function.Bijective f) (x : L₁) :
+    LieEquiv.ofBijective f h x = f x :=
+  rfl
+
+end LieEquivOfBijective
 
 namespace TauCeti
 
@@ -342,6 +358,11 @@ theorem lieAnnihilator_eq_top_iff {v : M} :
 theorem lieAnnihilator_eq_top [LieModule.IsTrivial L M] (v : M) : lieAnnihilator R L v = ⊤ :=
   (lieAnnihilator_eq_top_iff R L).2 fun x ↦ trivial_lie_zero L M x v
 
+/-- The annihilator of the zero vector is the whole Lie algebra. -/
+@[simp]
+theorem lieAnnihilator_zero : lieAnnihilator R L (0 : M) = ⊤ :=
+  (lieAnnihilator_eq_top_iff R L).2 lie_zero
+
 variable {R L} in
 /-- **A coadjoint-fixed functional vanishes on brackets.** If every element of `L` annihilates
 `ν` in the coadjoint module `Module.Dual R L`, then `ν ⁅x, y⁆ = 0`. -/
@@ -466,8 +487,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 /-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image. -/
 theorem _root_.LieEquiv.ker_ad_apply (e : L ≃ₗ⁅R⁆ L') (x : L) :
     ker (ad R L' (e x)) = (ker (ad R L x)).map (e.toLinearEquiv : L →ₗ[R] L') := by
-  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+  rw [← conj_ad_apply, LinearEquiv.ker_conj]
 
 /-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
 so the two have the same dimension. -/

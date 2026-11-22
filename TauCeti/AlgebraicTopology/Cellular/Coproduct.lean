@@ -168,6 +168,29 @@ lemma ι_cellularChainGroupIso_inv (n : ℕ) [HasExactColimitsOfShape (Discrete 
   rw [colimit.comp_coconePointUniqueUpToIso_inv_assoc]
   simp [TopPair.singularHomologyMap_comp]
 
+/-- Read on the Euclidean disk of the cell `j`, the characteristic maps send the centre of the disk
+to the centre `χⱼ(0)` of the cell. -/
+lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j : cell C n) :
+    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C (n + 1)))
+      (TopPair.Hom.fst (characteristicPairMap C n))
+        (TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom
+          (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
+            (diskCenter n)))).val = map n j 0 := by
+  let c := TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
+    (diskCenter n)
+  have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst (cell C n) n c
+  have h₂ :
+      ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c).2 : Fin n → ℝ) = 0 := by
+    rw [coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd,
+      ContinuousLinearEquiv.unitBallHomeomorph_apply]
+    -- The summand of `c` is `diskCenter n` only after unfolding the inclusion of the summand.
+    erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+  refine (characteristicPairMap_fst_apply C n _).trans ?_
+  generalize TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c = q at h₁ h₂ ⊢
+  obtain ⟨i, y⟩ := q
+  obtain rfl : i = j := h₁
+  exact congrArg (map n i) h₂
+
 /-- With projective coefficients, the cellular chain group in degree `n` is projective whenever
 coproducts indexed by the `n`-cells are exact in `A`. -/
 instance projective_cellularChainGroup [Projective R] (n : ℕ)

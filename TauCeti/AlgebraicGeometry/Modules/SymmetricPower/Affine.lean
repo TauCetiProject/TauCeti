@@ -68,7 +68,7 @@ private def symmetricToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Opens)
 private lemma coe_symmetricToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Opens)
     (x : M.symmetricPower n) :
     Subtype.val (symmetricToOpen M n U x) =
-      SymmetricAlgebra.mapₛₗ (symmetricToOpenSemilinear M U) x.1 :=
+      SymmetricAlgebra.mapₛₗ (symmetricToOpenSemilinear M U) x.val :=
   TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x
 
 private lemma symmetricToOpen_res (M : ModuleCat.{u} R) (n : ℕ)
@@ -89,7 +89,7 @@ private lemma symmetricToOpen_res (M : ModuleCat.{u} R) (n : ℕ)
   change Subtype.val ((symmetricPresheaf M n).map i.op (symmetricToOpen M n U x)) = _
   erw [PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply,
     coe_symmetricToOpen, coe_symmetricToOpen]
-  exact RingHom.congr_fun h x.1
+  exact RingHom.congr_fun h x.val
 
 private instance symmetricToOpen_isLocalized (M : ModuleCat.{u} R) (n : ℕ) (f : R) :
     IsLocalizedModule (.powers f) (symmetricToOpen M n (PrimeSpectrum.basicOpen f)).hom := by
@@ -191,7 +191,7 @@ private def symmetricComparison (M : ModuleCat.{u} R) (n : ℕ) :
       apply TopCat.Presheaf.IsSheaf.section_ext (tilde (M.symmetricPower n)).isSheaf
       intro x hxU
       obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-        PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.2
+        PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.is_open'
       refine ⟨_, hfU, hxf, ?_⟩
       let i : PrimeSpectrum.basicOpen f ⟶ U.unop := homOfLE hfU
       have hn (z : (symmetricPresheaf M n).obj U) :
@@ -259,7 +259,7 @@ private instance symmetricComparison_locallyInjective (M : ModuleCat.{u} R) (n :
   equalizerSieve_mem {U} a b h := by
     intro x hxU
     obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.2
+      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.is_open'
     refine ⟨_, homOfLE hfU, ?_, hxf⟩
     apply (symmetricComparison_basic_bijective M n f).1
     have hab : (symmetricComparison M n).app U a = (symmetricComparison M n).app U b := h
@@ -275,7 +275,7 @@ private instance symmetricComparison_locallySurjective (M : ModuleCat.{u} R) (n 
   imageSieve_mem {U} a := by
     intro x hxU
     obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.2
+      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.is_open'
     exact ⟨_, homOfLE hfU,
       (symmetricComparison_basic_bijective M n f).2
         ((tilde (M.symmetricPower n)).val.map (homOfLE hfU).op a), hxf⟩
@@ -313,7 +313,7 @@ private lemma symmetricToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ 
   change Subtype.val (ModuleCat.symmetricPower.map ψ n (symmetricToOpen M n U x)) = _
   erw [ModuleCat.symmetricPower.coe_map_apply, coe_symmetricToOpen,
     coe_symmetricToOpen, ModuleCat.symmetricPower.coe_map_apply]
-  exact RingHom.congr_fun h x.1
+  exact RingHom.congr_fun h x.val
 
 private lemma symmetricComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N) :
     specPresheafFunctor.map ((PresheafOfModulesOfCommRing.symmetricPower

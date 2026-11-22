@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -39,7 +39,7 @@ but it may meet every block of lower index. So the block `Δₖ ∑ⱼ fⱼ` inv
 absolutely in `Lᵖ`, and along the tail the weights `2^{(k - j)s}` decay geometrically too. Splitting
 each block at `j = k` bounds `2^{ks} ‖Δₖ ∑ⱼ fⱼ‖_p` by a window sum of `a` below `k` plus a
 geometric tail sum of `a` above it (`TauCeti.two_rpow_mul_norm_tsum_le`), and both have `ℓ^q` norm
-controlled by `‖a‖` (`lp.norm_le_of_forall_eq_sum_Ico_sub_add`,
+controlled by `‖a‖` (`lp.exists_eq_sum_Ico_sub_add_and_norm_le`,
 `lp.exists_forall_hasSum_pow_smul_add_and_norm_le`).
 
 The positivity of `s` is needed: the pieces `fⱼ = Δ₀ u` for every `j`, with `u` a fixed nonzero
@@ -86,15 +86,9 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
   refine ⟨K * 2 ^ (|s| * N) * (2 * N) + K * (1 - ρ)⁻¹, by have := sub_pos.2 hρ1; positivity,
     fun {p q} _ _ f a h1 ha ↦ ?_⟩
   -- Since `s > 0`, the pieces decay geometrically in `Lᵖ`: `‖fⱼ‖ ≤ ρ ^ j ‖a‖`.
-  have hfn (j : ℕ) : ‖f j‖ ≤ ‖a‖ * ρ ^ j := by
-    have hρj : ρ ^ j * 2 ^ (s * j) = 1 := by
-      simpa using Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos s j 0
-    calc ‖f j‖ = ρ ^ j * (2 ^ (s * j) * ‖f j‖) := by rw [← mul_assoc, hρj, one_mul]
-      _ ≤ ρ ^ j * ‖a‖ := by
-          gcongr
-          exact (ha j).trans <| (Real.le_norm_self _).trans <|
-            lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' a j
-      _ = _ := mul_comm _ _
+  have hfn (j : ℕ) : ‖f j‖ ≤ ‖a‖ * ρ ^ j :=
+    Real.le_mul_rpow_neg_pow_of_rpow_mul_le two_pos <| (ha j).trans <|
+      (Real.le_norm_self _).trans <| lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' a j
   have hgeom := (summable_geometric_of_lt_one hρ0 hρ1).mul_left ‖a‖
   have hW := ((Summable.of_norm_bounded hgeom hfn).hasSum).map
     (Lp.toTemperedDistributionCLM F volume p) (ContinuousLinearMap.continuous _)
@@ -120,11 +114,7 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
       simp only [Function.comp_apply, Lp.toTemperedDistributionCLM_apply, hg]
     · rw [Lp.toTemperedDistributionCLM_apply]
   obtain ⟨T, hT, hTn⟩ := lp.exists_forall_hasSum_pow_smul_add_and_norm_le a hρ0 hρ1
-  set A : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun k ↦ ∑ j ∈ Finset.Ico (k - N) (k + N), a j, (lp.memℓp a).sum_Ico_sub_add N⟩
-  -- The entries of the anonymous `lp` element `A` are its defining window sums by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hA (k : ℕ) : A k = ∑ j ∈ Finset.Ico (k - N) (k + N), a j := rfl
+  obtain ⟨A, hA, hAn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le a N
   have hGn (k : ℕ) : 2 ^ (s * k) * ‖G k‖ ≤ ((K * 2 ^ (|s| * N)) • A + K • T) k := by
     rw [lp.coeFn_add, lp.coeFn_smul, lp.coeFn_smul, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
       smul_eq_mul, smul_eq_mul, hA]
@@ -136,9 +126,7 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
         refine (norm_add_le _ _).trans_eq ?_
         rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
           Real.norm_of_nonneg (by positivity)]
-    _ ≤ K * 2 ^ (|s| * N) * (2 * N * ‖a‖) + K * ((1 - ρ)⁻¹ * ‖a‖) := by
-        gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add N hA
+    _ ≤ K * 2 ^ (|s| * N) * (2 * N * ‖a‖) + K * ((1 - ρ)⁻¹ * ‖a‖) := by gcongr
     _ = (K * 2 ^ (|s| * N) * (2 * N) + K * (1 - ρ)⁻¹) * ‖a‖ := by ring
 
 end TauCeti.BesovSpace

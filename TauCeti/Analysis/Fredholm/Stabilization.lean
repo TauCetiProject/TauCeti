@@ -33,6 +33,9 @@ topological complement of the range, and the projection onto it along the range 
 family; see `ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod` and
 `ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`.
 
+An invertible operator has the kernel chart with zero stabilization and coordinate spaces
+(`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`).
+
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -45,6 +48,28 @@ open Function Set Topology
 open Submodule (IsTopCompl)
 
 namespace ContinuousLinearMap
+
+section Subsingleton
+
+variable {𝕜 E Λ F G : Type*} [Semiring 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommMonoid Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [Subsingleton Λ] [AddCommMonoid F]
+  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommMonoid G] [Module 𝕜 G]
+  [TopologicalSpace G] [Subsingleton G]
+
+/-- **The zero kernel chart.** An invertible operator has a kernel chart with zero stabilization
+space and zero coordinate space: the pair `((T.coprod D₂).prod q)` is then `T` itself, up to the
+zero factors. -/
+theorem IsInvertible.prod_coprod_of_subsingleton {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F}
+    {q : E × Λ →L[𝕜] G} (hT : T.IsInvertible) : ((T.coprod D₂).prod q).IsInvertible := by
+  obtain ⟨e, rfl⟩ := hT
+  let z : Λ ≃L[𝕜] G :=
+    { LinearEquiv.ofSubsingleton Λ G with
+      continuous_toFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+      continuous_invFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _ }
+  refine ⟨e.prodCongr z, ContinuousLinearMap.ext fun ⟨x, l⟩ ↦ Prod.ext ?_ (Subsingleton.elim _ _)⟩
+  simp [Subsingleton.elim l 0]
+
+end Subsingleton
 
 variable {𝕜 E F S : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -96,19 +121,19 @@ theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup
   let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
     (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
       ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S
-  refine ⟨ContinuousLinearEquiv.equivOfInverse ((T.coprod (D₂.coprod D₃)).prod
+  refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((T.coprod (D₂.coprod D₃)).prod
     ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
       (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)) inv
-    (fun z ↦ ?_) (fun w ↦ ?_), rfl⟩
-  · obtain ⟨x, l, l₃⟩ := z
-    have := he' (x, l)
-    simp only [coprod_apply] at this
-    simp [inv, S, ← add_assoc, this]
+    (ContinuousLinearMap.ext fun w ↦ ?_) (ContinuousLinearMap.ext fun z ↦ ?_), rfl⟩
   · obtain ⟨y, g, m⟩ := w
     have h1 := hA (y - D₃ m, g)
     have h2 := hq (y - D₃ m, g)
     simp only [coprod_apply] at h1
     simp [inv, S, ← add_assoc, h1, h2]
+  · obtain ⟨x, l, l₃⟩ := z
+    have := he' (x, l)
+    simp only [coprod_apply] at this
+    simp [inv, S, ← add_assoc, this]
 
 omit [CompleteSpace 𝕜] in
 /-- **Kernel charts under a change of models.** A kernel coordinate `q` of the stabilization of `T`

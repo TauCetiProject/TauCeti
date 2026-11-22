@@ -68,8 +68,8 @@ theorem exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq
     (SymplecticForm.ofContinuousAlternatingMap _ hnd₀)
     (SymplecticForm.ofContinuousAlternatingMap _ hnd₁) rfl S.subtype S.injective_subtype
     fun x y ↦ by
-      obtain ⟨a, ha⟩ := x.2
-      obtain ⟨b, hb⟩ := y.2
+      obtain ⟨a, ha⟩ := x.property
+      obtain ⟨b, hb⟩ := y.property
       have h := congrArg (fun c ↦ c ![a, b]) htan
       simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
       simp only [SymplecticForm.ofContinuousAlternatingMap_apply, Submodule.coe_subtype, ← ha,

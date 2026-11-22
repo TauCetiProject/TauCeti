@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
+public import TauCeti.GroupTheory.Perm.Coxeter
+public import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
 # The sign character of a symmetric group
@@ -39,6 +41,11 @@ Twisting the group algebra by the sign character gives the **sign automorphism**
 * `TauCeti.signLinearCharacter_swap`: it sends a transposition to `-1`.
 * `TauCeti.signLinearCharacter_mul_self`: its square is the trivial character.
 * `TauCeti.signLinearCharacter_comp_permCongrHom`: it is invariant under relabelling.
+* `TauCeti.signLinearCharacter_comp_finSumPermHom`: restricted along the block embedding
+  `S_a × S_b → S_(a+b)`, it is the product of the signs of the two blocks.
+* `TauCeti.lengthPowHom_neg_one_permCoxeterSystem_eq_signLinearCharacter`: the length-parity
+  character `(-1) ^ ℓ(σ)` of `TauCeti.permCoxeterSystem n` in `kˣ` is
+  `signLinearCharacter k (Fin n)`.
 * `TauCeti.signLinearCharacter_comp_alternatingGroup_subtype`: it is trivial on the alternating
   group.
 * `TauCeti.signTwist_signTwist`: the sign automorphism is an involution.
@@ -97,6 +104,25 @@ theorem signLinearCharacter_comp_permCongrHom {β : Type*} [DecidableEq β] [Fin
       signLinearCharacter k α := by
   ext σ
   simp [Equiv.Perm.sign_permCongr]
+
+/-- **The sign of the block embedding is the product of the signs of the blocks**: restricted
+along `Equiv.Perm.finSumPermHom a b`, the sign character of `S_(a+b)` is the external product
+`sgn_a ⊠ sgn_b` of the sign characters of the two factors of `S_a × S_b`. -/
+theorem signLinearCharacter_comp_finSumPermHom (k : Type*) [CommRing k] (a b : ℕ) :
+    (signLinearCharacter k (Fin (a + b))).comp (Equiv.Perm.finSumPermHom a b) =
+      (signLinearCharacter k (Fin a)).comp (MonoidHom.fst _ _) *
+        (signLinearCharacter k (Fin b)).comp (MonoidHom.snd _ _) := by
+  ext p
+  simp [Equiv.Perm.sign_finSumPerm]
+
+/-- **The length-parity character of `TauCeti.permCoxeterSystem n` in `kˣ` is the sign
+character.** -/
+@[simp]
+theorem lengthPowHom_neg_one_permCoxeterSystem_eq_signLinearCharacter (n : ℕ)
+    (h : (-1 : kˣ) ^ 2 = 1 := by simp) :
+    (permCoxeterSystem n).lengthPowHom (-1 : kˣ) h = signLinearCharacter k (Fin n) := by
+  ext σ
+  simp [← lengthPowHom_neg_one_permCoxeterSystem n]
 
 /-- **The sign character is trivial on the alternating group.** With
 `FDRep.actionRes_obj_ofLinearCharacter`, the sign representation restricts to the trivial
