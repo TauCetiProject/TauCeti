@@ -364,11 +364,11 @@ private theorem integrable_trace_pow_mul_trace_pow_wignerMatrix [IsFiniteMeasure
       (wignerMatrix ξ η n ω ^ k₂).trace) P := by
   rcases eq_or_ne k₁ 0 with rfl | hk₁
   · simp only [pow_zero, trace_one, Fintype.card_fin]
-    exact (integrable_trace_pow_wignerMatrix (n := n)
+    exact (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ by simpa using hξp ij) (fun i _ ↦ by simpa using hηp i)).const_mul _
   rcases eq_or_ne k₂ 0 with rfl | hk₂
   · simp only [pow_zero, trace_one, Fintype.card_fin]
-    exact (integrable_trace_pow_wignerMatrix (n := n)
+    exact (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ by simpa using hξp ij) (fun i _ ↦ by simpa using hηp i)).mul_const _
   have hprod (ω : Ω) : (wignerMatrix ξ η n ω ^ k₁).trace * (wignerMatrix ξ η n ω ^ k₂).trace =
       ∑ p : (Fin k₁ → Fin n) × (Fin k₂ → Fin n),
@@ -405,11 +405,11 @@ theorem norm_integral_inv_mul_trace_pow_wignerMatrix_sub_mul_le
   set X₁ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₁).trace
   set X₂ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₂).trace
   have hint₁ : Integrable X₁ P :=
-    (integrable_trace_pow_wignerMatrix (n := n)
+    (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ (hξp ij).mono_exponent (by exact_mod_cast Nat.le_add_right k₁ k₂))
       (fun i _ ↦ (hηp i).mono_exponent (by exact_mod_cast Nat.le_add_right k₁ k₂))).const_mul _
   have hint₂ : Integrable X₂ P :=
-    (integrable_trace_pow_wignerMatrix (n := n)
+    (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ (hξp ij).mono_exponent (by exact_mod_cast Nat.le_add_left k₂ k₁))
       (fun i _ ↦ (hηp i).mono_exponent (by exact_mod_cast Nat.le_add_left k₂ k₁))).const_mul _
   have hint₁₂ : Integrable (fun ω ↦ X₁ ω * X₂ ω) P := by

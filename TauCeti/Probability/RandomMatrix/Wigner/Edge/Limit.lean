@@ -12,6 +12,7 @@ import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
+import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 
 /-!
 # Reduction of Wigner edge limits to a growing trace bound
@@ -84,7 +85,7 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
     obtain ⟨t, b, C, d, k, ht, htr, hb, hk, htrace'⟩ := htrace r hr
     refine ⟨t, b, C, d, k, ht, htr, hb, hk, .of_forall fun n ↦ ?_, ?_⟩
     · have hi : Integrable (fun ω ↦ ((B n ω) ^ (2 * k n)).trace) P :=
-        integrable_trace_pow_wignerMatrix (fun ij _ ↦
+        integrable_trace_pow_wignerMatrix (fun _ ↦ inferInstance) (fun ij _ ↦
           (hid ij).aestronglyMeasurable_fst.memLp_centeredTruncation _) (fun _ _ ↦ memLp_const 0)
       exact hi.re
     · simpa only [B, RCLike.re_to_complex] using htrace'

@@ -177,23 +177,6 @@ theorem IsHermitian.abs_eigenvalues₀_sub_le_norm
         isSymmetric_toEuclideanLin_iff.mpr hB)
       finrank_euclideanSpace i
 
-open Filter in
-open scoped Topology in
-/-- If the selected ordered eigenvalues of `B` converge and `‖A - B‖` tends to zero in
-operator norm, the corresponding eigenvalues of `A` converge to the same limit.
-The index type may vary. -/
-theorem _root_.Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
-    {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
-    {A B : (i : ι) → Matrix (m i) (m i) 𝕜} {hB : ∀ i, (B i).IsHermitian}
-    {j : (i : ι) → Fin (Fintype.card (m i))} {l : Filter ι} {c : ℝ}
-    (h : Tendsto (fun i ↦ (hB i).eigenvalues₀ (j i)) l (𝓝 c))
-    (hA : ∀ i, (A i).IsHermitian) (hd : Tendsto (fun i ↦ ‖A i - B i‖) l (𝓝 0)) :
-    Tendsto (fun i ↦ (hA i).eigenvalues₀ (j i)) l (𝓝 c) := by
-  apply h.congr_dist
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) hd
-  rw [dist_comm, Real.dist_eq]
-  exact (hA i).abs_eigenvalues₀_sub_le_norm (hB i) (j i)
-
 /-- A Hermitian perturbation smaller than the distance of a sorted eigenvalue from `c`
 preserves whether that eigenvalue belongs to `[c, ∞)`. The norm is the Euclidean operator
 norm. -/

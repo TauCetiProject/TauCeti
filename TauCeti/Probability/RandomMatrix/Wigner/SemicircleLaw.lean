@@ -46,22 +46,21 @@ private theorem norm_wignerMatrix_sub_div_sqrt_le
     (ζ : StrictUpper → Ω → ℂ) (n : ℕ) (ω : Ω) :
     ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω -
       wignerMatrix ζ (fun _ _ ↦ 0) (n + 1) ω‖ / Real.sqrt (n + 1) ≤
-      Real.sqrt ((∑ i : StrictUpperFin (n + 1),
+      Real.sqrt ((∑ i : FinStrictUpper (n + 1),
         ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2) /
         ((n + 1).choose 2 : ℝ)) := by
   apply Real.le_sqrt_of_sq_le
-  rw [div_pow, Real.sq_sqrt (by positivity), norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
+  rw [div_pow, Real.sq_sqrt (by positivity), norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
   cases n with
   | zero =>
-    have : IsEmpty (StrictUpperFin 1) := ⟨fun i ↦
-      (Nat.not_lt_zero _) (i.prop.trans_le (Nat.le_of_lt_succ i.val.2.isLt))⟩
+    have : IsEmpty (FinStrictUpper 1) := ⟨fun i ↦ i.prop.ne (Subsingleton.elim _ _)⟩
     simp
   | succ n =>
     have hs : 0 < (((n + 1 + 1).choose 2 : ℕ) : ℝ) := by
       exact_mod_cast (Nat.choose_pos (by omega : 2 ≤ n + 1 + 1))
     have hn : 0 < (n + 1 + 1 : ℝ) := by positivity
     simp only [Nat.cast_add, Nat.cast_one]
-    rw [div_le_div_iff₀ hn hs, mul_right_comm, mul_comm (∑ i : StrictUpperFin (n + 1 + 1),
+    rw [div_le_div_iff₀ hn hs, mul_right_comm, mul_comm (∑ i : FinStrictUpper (n + 1 + 1),
       ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2)]
     apply mul_le_mul_of_nonneg_right _ (by positivity)
     rw [Nat.cast_choose_two]
@@ -78,7 +77,7 @@ private theorem ae_tendsto_wigner_approximation_error
     (hξ : MemLp (ξ e₀) 2 P) {g : ℂ → ℂ} (hg : Measurable g)
     {b : ℝ≥0} (hb : ∀ x, ‖g x‖ ≤ b) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
-      Real.sqrt ((∑ i : StrictUpperFin (n + 1),
+      Real.sqrt ((∑ i : FinStrictUpper (n + 1),
         ‖ξ (wignerUpperIndex i) ω - g (ξ (wignerUpperIndex i) ω)‖ ^ 2) /
         ((n + 1).choose 2 : ℝ))) atTop (𝓝 (Real.sqrt (∫ ω, ‖ξ e₀ ω - g (ξ e₀ ω)‖ ^ 2 ∂P))) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
@@ -89,7 +88,7 @@ private theorem ae_tendsto_wigner_approximation_error
       (.of_forall fun ω ↦ by simpa only [Real.norm_of_nonneg b.coe_nonneg] using hb (ξ e₀ ω))
   have hint : Integrable (fun ω ↦ f (ξ e₀ ω)) P :=
     (hξ.sub hg₂).integrable_norm_pow'
-  filter_upwards [ae_tendsto_sum_strictUpperFin_div (X := fun i ω ↦ f (ξ i ω)) hint
+  filter_upwards [ae_tendsto_sum_finStrictUpper_div (X := fun i ω ↦ f (ξ i ω)) hint
     (fun _ _ hij ↦ (hind.indepFun hij).comp hf hf) (fun i ↦ (hid i).comp hf)] with ω hω
   exact (hω.comp (tendsto_add_atTop_nat 1)).sqrt
 

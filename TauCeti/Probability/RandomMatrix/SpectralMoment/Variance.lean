@@ -74,7 +74,7 @@ theorem memLp_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {p :
     MemLp (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P := by
   simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin]
-  exact (memLp_trace_pow_wignerMatrix (n := n + 1) (fun ij _ ↦ hξp ij)
+  exact (memLp_trace_pow_wignerMatrix (n := n + 1) (fun _ ↦ inferInstance) (fun ij _ ↦ hξp ij)
     (fun i _ ↦ hηp i)).re.const_mul _
 
 /-- **Empirical spectral moment covariance bound.** Under independent centered entries in

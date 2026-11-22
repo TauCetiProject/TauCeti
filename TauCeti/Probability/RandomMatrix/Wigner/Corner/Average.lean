@@ -14,7 +14,7 @@ import Mathlib.Probability.StrongLaw
 In column order, the strictly upper entries of an `n × n` corner form an initial segment of
 length `n.choose 2`. The strong law then controls empirical averages over the corner, such as
 the entrywise squared errors that give the Frobenius distance of two Wigner matrices
-(`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`).
+(`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper`).
 -/
 
 public section
@@ -30,12 +30,12 @@ namespace Probability
 
 /-- Strong law for the arithmetic means of the strictly upper triangular corners of an
 identically distributed, pairwise independent array. -/
-theorem ae_tendsto_sum_strictUpperFin_div {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem ae_tendsto_sum_finStrictUpper_div {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : StrictUpper → Ω → ℝ} (hInt : Integrable (X ⟨(0, 1), by decide⟩) P)
     (hind : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
     (hid : ∀ i, IdentDistrib (X i) (X ⟨(0, 1), by decide⟩) P P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
-      (∑ ij : StrictUpperFin n, X (wignerUpperIndex ij) ω) / (n.choose 2 : ℝ))
+      (∑ ij : FinStrictUpper n, X (wignerUpperIndex ij) ω) / (n.choose 2 : ℝ))
       atTop (𝓝 (∫ ω, X ⟨(0, 1), by decide⟩ ω ∂P)) := by
   let Y (k : ℕ) := X (strictUpperEquivNat.symm k)
   have h0 : strictUpperEquivNat.symm 0 = ⟨(0, 1), by decide⟩ := by
@@ -49,7 +49,7 @@ theorem ae_tendsto_sum_strictUpperFin_div {Ω : Type*} [MeasurableSpace Ω] {P :
     (fun i j hij ↦ hind (strictUpperEquivNat.symm.injective.ne hij))
     (fun i ↦ by simpa only [Y, h0] using hid (strictUpperEquivNat.symm i))
   filter_upwards [hY] with ω hω
-  simp_rw [sum_strictUpperFin_eq_sum_range _ (fun ij ↦ X ij ω)]
+  simp_rw [sum_finStrictUpper_eq_sum_range _ (fun ij ↦ X ij ω)]
   simpa only [Function.comp_def, Y, h0] using hω.comp hd
 
 end Probability

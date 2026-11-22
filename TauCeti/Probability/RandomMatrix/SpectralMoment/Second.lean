@@ -45,16 +45,8 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) =
       (n + 1 : ℝ)⁻¹ ^ 2 *
         ((∑ i : Fin (n + 1), η i.val ω ^ 2) +
-          2 * ∑ p : FinStrictUpper (n + 1),
-            ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2) := by
-  -- The pairs whose values are ordered are the pairs ordered in `Fin (n + 1)`.
-  have hpairs : ∑ u : StrictUpperFin (n + 1), ‖ξ (wignerUpperIndex u) ω‖ ^ 2 =
-      ∑ p : FinStrictUpper (n + 1), ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 :=
-    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt) _ _ fun u ↦ by
-      rw [show wignerUpperIndex u = ⟨(u.val.1.val, u.val.2.val), u.prop⟩ from
-        Subtype.ext (wignerUpperIndex_val u)]
-      rfl
-  rw [integral_sq_spectralMeasure_wignerMatrix, sum_norm_wignerMatrix_apply_sq, hpairs]
+          2 * ∑ p : FinStrictUpper (n + 1), ‖ξ (wignerUpperIndex p) ω‖ ^ 2) := by
+  rw [integral_sq_spectralMeasure_wignerMatrix, sum_norm_wignerMatrix_apply_sq]
   push_cast
   ring
 
@@ -63,7 +55,7 @@ variable [MeasurableSpace Ω] {P : Measure Ω}
 /-- Finite coordinates embedded in the Wigner array. -/
 def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ
   | .inl i => .inr i.val
-  | .inr p => .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩
+  | .inr p => .inl (wignerUpperIndex p)
 
 /-- A diagonal coordinate maps to its diagonal array index. -/
 @[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (i : Fin n) :
@@ -71,7 +63,7 @@ def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper
 
 /-- A strict-upper coordinate maps to its upper array index. -/
 @[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (p : FinStrictUpper n) :
-    wignerCoordinateIndex n (.inr p) = .inl ⟨(p.val.1.val, p.val.2.val), p.property⟩ := by rfl
+    wignerCoordinateIndex n (.inr p) = .inl (wignerUpperIndex p) := by rfl
 
 theorem wignerCoordinateIndex_injective (n : ℕ) :
     Function.Injective (wignerCoordinateIndex n) := by
@@ -87,10 +79,10 @@ theorem wignerCoordinateIndex_injective (n : ℕ) :
     cases b with
     | inl j => simp [wignerCoordinateIndex] at h
     | inr j =>
-      simp only [wignerCoordinateIndex, Sum.inl.injEq, Subtype.mk.injEq, Prod.mk.injEq] at h
-      apply congrArg Sum.inr
-      apply Subtype.ext
-      exact Prod.ext (Fin.ext h.1) (Fin.ext h.2)
+      simp only [wignerCoordinateIndex, Sum.inl.injEq] at h
+      have h' := congrArg Subtype.val h
+      simp only [wignerUpperIndex_val, Prod.mk.injEq] at h'
+      exact congrArg Sum.inr (Subtype.ext (Prod.ext (Fin.ext h'.1) (Fin.ext h'.2)))
 
 /-- Diagonal coordinates carry weight one and strict-upper coordinates weight two. -/
 def wignerCoordinateWeight (n : ℕ) : Fin n ⊕ FinStrictUpper n → ℝ
@@ -120,7 +112,7 @@ omit [MeasurableSpace Ω] in
 /-- The strict-upper statistic is the squared norm of the corresponding entry. -/
 @[simp] theorem wignerCoordinateSquare_inr (n : ℕ) (p : FinStrictUpper n) (ω : Ω) :
     wignerCoordinateSquare ξ η n (.inr p) ω =
-      ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 := by
+      ‖ξ (wignerUpperIndex p) ω‖ ^ 2 := by
   simp [wignerCoordinateSquare, wignerCoordinateIndex]
 
 /-- Squared coordinate norms remain independent. -/

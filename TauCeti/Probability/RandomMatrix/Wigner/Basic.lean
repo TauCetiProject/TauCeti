@@ -14,7 +14,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
-import TauCeti.Algebra.BigOperators.Finset.Pairs
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
@@ -29,8 +29,8 @@ array is the coupling used by almost-sure global laws such as the semicircle law
 This file defines `TauCeti.wignerMatrix` and proves the structural facts consumed by the moment
 and resolvent methods:
 
-* the corner positions `StrictUpperFin n` correspond to the strictly upper positions of the
-  infinite array with column below `n` (`strictUpperFinEquivSubtype`);
+* the corner positions `FinStrictUpper n` correspond to the strictly upper positions of the
+  infinite array with column below `n` (`finStrictUpperEquivSubtype`);
 * the entry formulas and `wignerMatrix_isHermitian`;
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
@@ -61,7 +61,7 @@ and resolvent methods:
   (`sum_norm_wignerMatrix_apply_sq`);
 * the squared Frobenius distance of two Wigner matrices sharing a diagonal is `2/n` times the sum
   of the squared upper differences in the corner
-  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`), so its expectation is
+  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper`), so its expectation is
   `2/n` times the sum of their second absolute moments
   (`integral_norm_wignerMatrix_sub_sq_eq_sum`). Hence, if the upper differences in the corner of
   size `n + 1` have second absolute moment `s`, the matrices differ by expected squared Frobenius
@@ -102,45 +102,43 @@ noncomputable def wignerMatrix (ξ : StrictUpper → Ω → ℂ) (η : ℕ → �
 
 noncomputable section
 
-/-- Strictly upper-triangular positions in a fixed finite matrix. -/
-abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
-
 /-- Convert a finite upper-triangular position to the index type used by `wignerMatrix`. -/
-def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
+def wignerUpperIndex {n : ℕ} (u : FinStrictUpper n) : StrictUpper :=
   ⟨(u.val.1.val, u.val.2.val), by exact_mod_cast u.property⟩
 
 /-- Reading the row and column labels of a finite upper coordinate in the infinite array. -/
 @[simp]
-theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
+theorem wignerUpperIndex_val {n : ℕ} (u : FinStrictUpper n) :
     (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
   (rfl)
 
 /-- The strictly upper positions of the corner of size `n` are the strictly upper positions of
 the infinite array whose column index is below `n`. -/
-def strictUpperFinEquivSubtype (n : ℕ) :
-    StrictUpperFin n ≃ {ij : StrictUpper // ij.val.2 < n} where
+def finStrictUpperEquivSubtype (n : ℕ) :
+    FinStrictUpper n ≃ {ij : StrictUpper // ij.val.2 < n} where
   toFun u := ⟨wignerUpperIndex u, u.val.2.isLt⟩
-  invFun ij := ⟨(⟨ij.val.val.1, ij.val.prop.trans ij.prop⟩, ⟨ij.val.val.2, ij.prop⟩), ij.val.prop⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.prop.trans ij.prop⟩, ⟨ij.val.val.2, ij.prop⟩),
+    Fin.mk_lt_mk.2 ij.val.prop⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
-/-- The forward direction of `strictUpperFinEquivSubtype` reads a corner position in the
+/-- The forward direction of `finStrictUpperEquivSubtype` reads a corner position in the
 infinite array. -/
 @[simp]
-theorem strictUpperFinEquivSubtype_apply_val {n : ℕ} (u : StrictUpperFin n) :
-    (strictUpperFinEquivSubtype n u).val = wignerUpperIndex u :=
+theorem finStrictUpperEquivSubtype_apply_val {n : ℕ} (u : FinStrictUpper n) :
+    (finStrictUpperEquivSubtype n u).val = wignerUpperIndex u :=
   (rfl)
 
-/-- Reading back a corner position produced by the inverse of `strictUpperFinEquivSubtype`
+/-- Reading back a corner position produced by the inverse of `finStrictUpperEquivSubtype`
 recovers the original position of the infinite array. -/
 @[simp]
-theorem wignerUpperIndex_strictUpperFinEquivSubtype_symm_apply {n : ℕ}
+theorem wignerUpperIndex_finStrictUpperEquivSubtype_symm_apply {n : ℕ}
     (ij : {ij : StrictUpper // ij.val.2 < n}) :
-    wignerUpperIndex ((strictUpperFinEquivSubtype n).symm ij) = ij.val :=
+    wignerUpperIndex ((finStrictUpperEquivSubtype n).symm ij) = ij.val :=
   (rfl)
 
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
-abbrev WignerCoordinateIndex (n : ℕ) := StrictUpperFin n ⊕ Fin n
+abbrev WignerCoordinateIndex (n : ℕ) := FinStrictUpper n ⊕ Fin n
 
 /-- The value type of a Wigner coordinate, complex above the diagonal and real on the diagonal. -/
 abbrev WignerCoordinateType {n : ℕ} : WignerCoordinateIndex n → Type
@@ -153,7 +151,7 @@ instance wignerCoordinateMeasurableSpace {n : ℕ} (k : WignerCoordinateIndex n)
   cases k <;> infer_instance
 
 /-- The family of coordinate laws for a finite Wigner matrix. -/
-def wignerCoordinateMeasures {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+def wignerCoordinateMeasures {n : ℕ} (μ : FinStrictUpper n → Measure ℂ)
     (ν : Fin n → Measure ℝ) :
     (k : WignerCoordinateIndex n) → Measure (WignerCoordinateType k)
   | .inl u => μ u
@@ -161,14 +159,14 @@ def wignerCoordinateMeasures {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
 
 /-- The coordinate law above the diagonal. -/
 @[simp]
-theorem wignerCoordinateMeasures_inl {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
-    (ν : Fin n → Measure ℝ) (u : StrictUpperFin n) :
+theorem wignerCoordinateMeasures_inl {n : ℕ} (μ : FinStrictUpper n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) (u : FinStrictUpper n) :
     wignerCoordinateMeasures μ ν (.inl u) = μ u := by
   simp [wignerCoordinateMeasures]
 
 /-- The coordinate law on the diagonal. -/
 @[simp]
-theorem wignerCoordinateMeasures_inr {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+theorem wignerCoordinateMeasures_inr {n : ℕ} (μ : FinStrictUpper n → Measure ℂ)
     (ν : Fin n → Measure ℝ) (i : Fin n) :
     wignerCoordinateMeasures μ ν (.inr i) = ν i := by
   simp [wignerCoordinateMeasures]
@@ -183,7 +181,7 @@ def wignerCoordinates {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ �
 /-- The coordinate above the diagonal comes from the infinite upper-triangular array. -/
 @[simp]
 theorem wignerCoordinates_inl {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
-    (n : ℕ) (ω : Ω) (u : StrictUpperFin n) :
+    (n : ℕ) (ω : Ω) (u : FinStrictUpper n) :
     wignerCoordinates ξ η n ω (.inl u) = ξ (wignerUpperIndex u) ω := by
   simp [wignerCoordinates]
 
@@ -234,7 +232,7 @@ laws. The hypotheses allow a separate law on the real diagonal; independence is 
 both the upper-triangular and diagonal coordinates. -/
 theorem hasLaw_wignerMatrix_of_iIndepFun {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ)
-    (μ : StrictUpperFin n → Measure ℂ) (ν : Fin n → Measure ℝ)
+    (μ : FinStrictUpper n → Measure ℂ) (ν : Fin n → Measure ℝ)
     (hξ : ∀ u, HasLaw (fun ω => ξ (wignerUpperIndex u) ω) (μ u) P)
     (hη : ∀ i, HasLaw (fun ω => η i.val ω) (ν i) P)
     (hind : iIndepFun (fun k ω => wignerCoordinates ξ η n ω k) P) :
@@ -420,30 +418,25 @@ theorem sum_norm_wignerMatrix_apply_sq (ξ : StrictUpper → Ω → ℂ) (η : �
     (ω : Ω) :
     ∑ i : Fin n, ∑ j : Fin n, ‖wignerMatrix ξ η n ω i j‖ ^ 2 =
       (n : ℝ)⁻¹ * (∑ i : Fin n, η i.val ω ^ 2 +
-        2 * ∑ u : StrictUpperFin n, ‖ξ (wignerUpperIndex u) ω‖ ^ 2) := by
+        2 * ∑ u : FinStrictUpper n, ‖ξ (wignerUpperIndex u) ω‖ ^ 2) := by
   have hsymm (i j : Fin n) :
       ‖wignerMatrix ξ η n ω i j‖ ^ 2 = ‖wignerMatrix ξ η n ω j i‖ ^ 2 := by
     rw [← (wignerMatrix_isHermitian ξ η ω n).apply i j, norm_star]
-  have hupper (u : StrictUpperFin n) : ‖wignerMatrix ξ η n ω u.val.1 u.val.2‖ ^ 2 =
+  have hupper (u : FinStrictUpper n) : ‖wignerMatrix ξ η n ω u.val.1 u.val.2‖ ^ 2 =
       (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex u) ω‖ ^ 2 :=
-    norm_wignerMatrix_apply_sq_of_lt ξ η ω u.prop
-  -- The pairs ordered in `Fin n` are the pairs whose values are ordered.
-  have hpairs : ∑ p : {p : Fin n × Fin n // p.1 < p.2},
-      ‖wignerMatrix ξ η n ω p.val.1 p.val.2‖ ^ 2 =
-        ∑ u : StrictUpperFin n, ‖wignerMatrix ξ η n ω u.val.1 u.val.2‖ ^ 2 :=
-    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt.symm) _ _ fun _ ↦ rfl
-  rw [sum_symmetric_pairs _ hsymm, hpairs]
+    norm_wignerMatrix_apply_sq_of_lt ξ η ω (Fin.lt_def.1 u.prop)
+  rw [sum_symmetric_pairs _ hsymm]
   simp only [norm_wignerMatrix_apply_self_sq, hupper, ← Finset.mul_sum, nsmul_eq_mul,
     Nat.cast_ofNat]
   ring
 
 /-- Squared Frobenius error between Wigner matrices with a common diagonal, in terms of
 the squared errors on the strictly upper corner. -/
-theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
+theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper
     {ξ : StrictUpper → Ω → ℂ} (ζ : StrictUpper → Ω → ℂ)
     (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
     ‖wignerMatrix ξ η n ω - wignerMatrix ζ η n ω‖ ^ 2 =
-      (2 / (n : ℝ)) * ∑ i : StrictUpperFin n,
+      (2 / (n : ℝ)) * ∑ i : FinStrictUpper n,
         ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2 := by
   rw [wignerMatrix_sub, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_norm_wignerMatrix_apply_sq]
   simp only [sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
@@ -603,7 +596,7 @@ theorem indepFun_submatrix_wignerMatrix_zero_column (hind : iIndepFun ξ P)
       Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
       (fun ω (j : {j // j ≠ i}) ↦ wignerMatrix ξ (fun _ _ ↦ 0) n ω j i) P := by
   classical
-  let S := (Finset.univ : Finset (StrictUpperFin n)).image wignerUpperIndex
+  let S := (Finset.univ : Finset (FinStrictUpper n)).image wignerUpperIndex
   let T := S.filter (fun ij ↦ ij.val.1 = i.val ∨ ij.val.2 = i.val)
   let U := S \ T
   let extend (V : Finset StrictUpper) (x : V → ℂ) :=
@@ -865,31 +858,31 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
 open scoped Matrix.Norms.Frobenius in
 /-- Keeping the same diagonal, the expected squared Frobenius error at size `n` is `2 / n` times
 the sum of the second absolute moments of the upper-coordinate differences in the corner.
-The differences may have different laws, and entries outside the corner are unrestricted. -/
+Only the squared distances need to be integrable, so the differences themselves need not be
+measurable. They may have different laws, and entries outside the corner are unrestricted. -/
 theorem integral_norm_wignerMatrix_sub_sq_eq_sum {ξ' : StrictUpper → Ω → ℂ} {n : ℕ}
-    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P) :
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → Integrable (fun ω ↦ ‖ξ ij ω - ξ' ij ω‖ ^ 2) P) :
     ∫ ω, ‖wignerMatrix ξ η n ω - wignerMatrix ξ' η n ω‖ ^ 2 ∂P =
-      (2 / (n : ℝ)) * ∑ u : StrictUpperFin n,
+      (2 / (n : ℝ)) * ∑ u : FinStrictUpper n,
         ∫ ω, ‖ξ (wignerUpperIndex u) ω - ξ' (wignerUpperIndex u) ω‖ ^ 2 ∂P := by
-  have hj (u : StrictUpperFin n) : (wignerUpperIndex u).val.2 < n := u.val.2.isLt
-  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
-  rw [integral_const_mul, integral_finsetSum _ fun u _ ↦
-    (memLp_two_iff_integrable_sq_norm (hξ _ (hj u)).aestronglyMeasurable).mp (hξ _ (hj u))]
+  have hj (u : FinStrictUpper n) : (wignerUpperIndex u).val.2 < n := u.val.2.isLt
+  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
+  rw [integral_const_mul, integral_finsetSum _ fun u _ ↦ hξ _ (hj u)]
 
 open scoped Matrix.Norms.Frobenius in
 /-- Keeping the same diagonal, a common second absolute moment `s` of the upper-coordinate
 differences in the corner gives expected squared Frobenius error `n * s` at size `n + 1`.
 Entries outside the corner are unrestricted. -/
 theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ} {n : ℕ}
-    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 →
+      Integrable (fun ω ↦ ‖ξ ij ω - ξ' ij ω‖ ^ 2) P)
     {s : ℝ} (hs : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω - ξ' ij ω‖ ^ 2 ∂P = s) :
     ∫ ω, ‖wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω‖ ^ 2 ∂P = n * s := by
-  have hj (u : StrictUpperFin (n + 1)) : (wignerUpperIndex u).val.2 < n + 1 := u.val.2.isLt
-  have hcard : (Fintype.card (StrictUpperFin (n + 1)) : ℝ) * 2 = (n + 1) * n := by
+  have hj (u : FinStrictUpper (n + 1)) : (wignerUpperIndex u).val.2 < n + 1 := u.val.2.isLt
+  have hcard : (Fintype.card (FinStrictUpper (n + 1)) : ℝ) * 2 = (n + 1) * n := by
     have h := Nat.add_one_mul_choose_eq n 1
     rw [Nat.choose_one_right] at h
-    rw [Fintype.card_subtype]
-    simp only [Fin.val_fin_lt, Fintype.card_product_filter_lt, Fintype.card_fin]
+    rw [Fintype.card_subtype, Fintype.card_product_filter_lt, Fintype.card_fin]
     exact_mod_cast h.symm
   rw [integral_norm_wignerMatrix_sub_sq_eq_sum hξ]
   simp only [hs _ (hj _), Finset.sum_const, Finset.card_univ, nsmul_eq_mul]

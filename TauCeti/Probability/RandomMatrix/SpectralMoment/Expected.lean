@@ -93,7 +93,7 @@ theorem integrable_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P]
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) P := by
   simp_rw [integral_pow_spectralMeasure_wignerMatrix]
   exact Complex.reCLM.integrable_comp
-    ((integrable_trace_pow_wignerMatrix hξ hη).const_mul _)
+    ((integrable_trace_pow_wignerMatrix (fun _ ↦ inferInstance) hξ hη).const_mul _)
 
 /-- On a finite measure space with `Lᵏ` corner entries, the expected `k`th empirical spectral
 moment is the real part of the normalized expected `k`th trace. -/
@@ -107,7 +107,7 @@ theorem integral_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {
   rw [← integral_const_mul]
   simpa only [Complex.reCLM_apply] using
     Complex.reCLM.integral_comp_comm
-      ((integrable_trace_pow_wignerMatrix hξ hη).const_mul _)
+      ((integrable_trace_pow_wignerMatrix (fun _ ↦ inferInstance) hξ hη).const_mul _)
 
 /-- **Quantitative expected even spectral moment bound.** For independent centered entries in the
 `(n + 1) × (n + 1)` corner with `2m`th absolute moments bounded by `B` and strictly upper second

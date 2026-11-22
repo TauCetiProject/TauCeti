@@ -147,9 +147,10 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le [IsProba
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω‖ ^ 2 ∂P ≤
         ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q := by
   have hm (ij : StrictUpper) (hij : ij.val.2 < n + 1) :
-      MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
-    ((hd ij hij).symm.memLp_snd hX).sub
+      Integrable (fun ω ↦ ‖ξ ij ω - centeredTruncation (ξ ij) P R ω‖ ^ 2) P := by
+    have h := ((hd ij hij).symm.memLp_snd hX).sub
       (((hd ij hij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
+    exact (memLp_two_iff_integrable_sq_norm h.aestronglyMeasurable).mp h
   rw [integral_norm_wignerMatrix_sub_sq hm fun ij hij ↦
     (((hd ij hij).sub_centeredTruncation R).comp (measurable_norm.pow_const 2)).integral_eq]
   rcases Nat.eq_zero_or_pos n with rfl | hn
