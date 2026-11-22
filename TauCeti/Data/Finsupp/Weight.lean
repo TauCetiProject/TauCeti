@@ -40,9 +40,10 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
-* `Finsupp.degree_cons`, `Finsupp.degree_eq_zero_add_tail`, `Finsupp.degree_tail_of_apply_zero`:
-  prepending `c` at `0` adds `c` to the degree, `degree α = α 0 + degree α.tail`, and vanishing at
-  `0` preserves degree under `tail`.
+* `Finsupp.degree_cons`, `Finsupp.degree_eq_zero_add_tail`, `Finsupp.degree_tail_of_apply_zero`,
+  `Finsupp.unique_single_degree`: prepending `c` at `0` adds `c` to the degree,
+  `degree α = α 0 + degree α.tail`, vanishing at `0` preserves degree under `tail`, and in one
+  variable `γ = single default γ.degree`.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
@@ -128,6 +129,14 @@ theorem degree_eq_zero_add_tail {n : ℕ} {M : Type*} [AddCommMonoid M] (γ : Fi
 `α`. -/
 theorem degree_tail_of_apply_zero {n : ℕ} {M : Type*} [AddCommMonoid M] {α : Fin (n + 1) →₀ M}
     (hα : α 0 = 0) : α.tail.degree = α.degree := by rw [degree_eq_zero_add_tail α, hα, zero_add]
+
+/-- In a single variable, any finitely supported function equals `single default γ.degree`. -/
+theorem unique_single_degree {σ M : Type*} [Unique σ] [AddCommMonoid M] (γ : σ →₀ M) :
+    γ = single default γ.degree := by
+  have h := congrArg degree (unique_single γ)
+  rw [degree_single] at h
+  rw [h]
+  exact unique_single γ
 
 /-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
 form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial

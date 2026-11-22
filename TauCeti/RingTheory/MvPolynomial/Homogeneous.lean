@@ -16,6 +16,7 @@ import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 import TauCeti.Algebra.MvPolynomial.Rename
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -367,9 +368,7 @@ theorem IsHomogeneous.eq_monomial_single_default [Unique σ] {d : ℕ} {p : MvPo
   · rw [h]
   · by_contra hc
     have hdeg : γ.degree = d := by rw [Finsupp.degree_eq_weight_one]; exact hp hc
-    have hval : γ.degree = γ default := by
-      simpa [Finsupp.degree_single] using congrArg Finsupp.degree (Finsupp.unique_single γ)
-    exact h (hdeg ▸ hval ▸ (Finsupp.unique_single γ).symm)
+    exact h (hdeg ▸ (Finsupp.unique_single_degree γ).symm)
 
 /-- Killing the variables outside the range of an injective index map `f : σ → τ` preserves
 homogeneity of degree `d`. -/
@@ -380,13 +379,22 @@ theorem IsHomogeneous.killCompl {τ : Type*} {f : σ → τ} (hf : Function.Inje
     rw [Finsupp.degree_eq_weight_one]; exact hp (by rwa [coeff_killCompl] at hs)
   rwa [Finsupp.degree_mapDomain, Finsupp.degree_eq_weight_one] at hdeg
 
-/-- Dividing a homogeneous polynomial of degree `d + e` by a monomial exponent `μ` of degree `e`
-yields a homogeneous polynomial of degree `d`. -/
+/-- For a homogeneous polynomial `p` of degree `d + e` and an exponent `μ` of degree `e`,
+`p.divMonomial μ` discards terms not divisible by `monomial μ 1` and divides the remaining terms
+by `monomial μ 1`, yielding a homogeneous polynomial of degree `d`. -/
 theorem IsHomogeneous.divMonomial {d e : ℕ} {p : MvPolynomial σ R}
     (hp : p.IsHomogeneous (d + e)) {μ : σ →₀ ℕ} (hμ : μ.degree = e) :
     (p.divMonomial μ).IsHomogeneous d := fun γ hγ ↦ by
   have hdeg := hp (by rwa [coeff_divMonomial] at hγ)
   rw [map_add] at hdeg; rw [Finsupp.degree_eq_weight_one, ← Pi.one_def] at hμ; omega
+
+/-- Taking the monomial remainder `p.modMonomial μ` (discarding terms divisible by `monomial μ 1`)
+preserves homogeneity of degree `d` for any monomial exponent `μ`. -/
+theorem IsHomogeneous.modMonomial {d : ℕ} {p : MvPolynomial σ R}
+    (hp : p.IsHomogeneous d) (μ : σ →₀ ℕ) : (p.modMonomial μ).IsHomogeneous d := fun s hs ↦ by
+  by_cases h : μ ≤ s
+  · simp [coeff_modMonomial_of_le _ h] at hs
+  · exact hp (by rwa [coeff_modMonomial_of_not_le _ h] at hs)
 
 /-- If an injective map `f : σ → τ` has image `{i}ᶜ` (omitting only the variable `i : τ`), every
 homogeneous polynomial `p` of degree `d + 1` in `τ` decomposes as
