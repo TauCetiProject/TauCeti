@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.NumberTheory.LSeries.Basic
 import TauCeti.Analysis.Complex.PowerSeries.Fejer
 import TauCeti.Analysis.SpecificLimits.MovingAverage
-import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Basic
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.BlockCoefficients
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Endpoint
 import TauCeti.Topology.Order.OrderClosed
@@ -81,7 +80,8 @@ theorem exists_bounded_continuousOn_LSeries_not_tendsto_sum_Icc_div :
     refine (hc_zero.comp hlog).congr' ?_
     filter_upwards [eventually_ge_atTop 1] with n hn
     simp [a, Nat.one_le_iff_ne_zero.mp hn]
-  have hmean := tendsto_inv_mul_sum_Icc_floor ha_zero
+  have hmean : Tendsto (fun x : ℝ ↦ x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 0) := by
+    simpa only [smul_eq_mul] using tendsto_inv_smul_sum_Icc_floor ha_zero
   have hc_norm : ∀ n, ‖(c n : ℂ)‖ ≤ 1 := fun n ↦ by
     simpa [Complex.norm_real, Real.norm_eq_abs] using hc_bound n
   obtain ⟨F, hF_cont, hF_diff, hF_series⟩ :=
@@ -99,9 +99,8 @@ theorem exists_bounded_continuousOn_LSeries_not_tendsto_sum_Icc_div :
       atTop (𝓝 L) := by
     intro L hL
     have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, a n / (n : ℝ)) atTop (𝓝 L.re) :=
-      ((Complex.continuous_re.tendsto L).comp hL).congr
-        fun N ↦ by
-          simp only [Function.comp_apply, Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re]
+      ((Complex.continuous_re.tendsto L).comp hL).congr fun N ↦
+        re_sum_ofReal_div_natCast (Finset.Icc 1 N) a
     exact TauCeti.not_tendsto_nhds_of_forall_exists_le hunb L.re hre
   refine ⟨a, F, ha0, ha_bound, ha_zero, hmean, hF_cont, hF_diff, hF_series, hunb, hnot,
     fun Ω F' hΩ hsub heq hF' ↦ ?_⟩

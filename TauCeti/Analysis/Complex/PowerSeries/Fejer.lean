@@ -13,9 +13,9 @@ import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.DirichletSineSum
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Fejér polynomials and a disc-algebra power series diverging at `1`
@@ -129,6 +129,12 @@ theorem abs_fejerPolyCoeff_le_one (m n : ℕ) : |fejerPolyCoeff m n| ≤ 1 := by
     exact inv_le_one_of_one_le₀ hpos
   · simp
 
+private theorem sum_range_eq_sum_Icc_sub {M : Type*} [AddCommMonoid M] (f : ℕ → M) (m : ℕ) :
+    ∑ n ∈ range m, f n = ∑ j ∈ Icc 1 m, f (m - j) := by
+  have href := (sum_Ico_reflect f 1 (m := m + 1) (n := m) le_rfl).symm
+  simpa only [Nat.sub_self, Nat.add_sub_cancel, Nat.Ico_zero_eq_range,
+    Ico_add_one_right_eq_Icc] using href
+
 /-- Power-series expansion of `fejerPoly m w` in terms of `fejerPolyCoeff m`. -/
 theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
     fejerPoly m w = ∑ n ∈ range (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n := by
@@ -142,12 +148,7 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
   -- Match the lower half `n < m` with `j = m - n ∈ Icc 1 m`.
   have hlo : ∑ n ∈ range m, (fejerPolyCoeff m n : ℂ) * w ^ n =
       ∑ j ∈ Icc 1 m, w ^ (m - j) / (j : ℂ) := by
-    have href :=
-      (sum_Ico_reflect (fun n ↦ (fejerPolyCoeff m n : ℂ) * w ^ n) 1 (m := m + 1) (n := m)
-        le_rfl).symm
-    simp only [Nat.sub_self, Nat.add_sub_cancel, Nat.Ico_zero_eq_range,
-      Ico_add_one_right_eq_Icc] at href
-    rw [href]
+    rw [sum_range_eq_sum_Icc_sub]
     refine sum_congr rfl fun j hj ↦ ?_
     have hmem := mem_Icc.mp hj
     rw [fejerPolyCoeff_of_lt (by omega : m - j < m), Nat.sub_sub_self hmem.2,
@@ -172,10 +173,7 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
 /-- The sum of the first `m` coefficients of `fejerPoly m` equals the `m`-th harmonic number. -/
 theorem sum_range_fejerPolyCoeff (m : ℕ) :
     ∑ n ∈ range m, fejerPolyCoeff m n = (harmonic m : ℝ) := by
-  have href := (sum_Ico_reflect (fejerPolyCoeff m) 1 (m := m + 1) (n := m) le_rfl).symm
-  simp only [Nat.sub_self, Nat.add_sub_cancel, Nat.Ico_zero_eq_range,
-    Ico_add_one_right_eq_Icc] at href
-  rw [harmonic_eq_sum_Icc, href]
+  rw [harmonic_eq_sum_Icc, sum_range_eq_sum_Icc_sub]
   simp only [Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
   refine sum_congr rfl fun j hj ↦ ?_
   have hmem := mem_Icc.mp hj
@@ -432,12 +430,10 @@ theorem exists_continuousOn_closedBall_hasSum_unbounded_sum_range :
   · exact differentiableOn_tsum_of_summable_norm hu (fun k ↦ (hdiff_term k).differentiableOn)
       isOpen_ball fun k w hw ↦ hbound k w (ball_subset_closedBall hw)
   · intro w hw
-    have hsumm : Summable fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n := by
-      refine Summable.of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg w) hw) fun n ↦ ?_
-      rw [norm_mul, norm_real, Real.norm_eq_abs, norm_pow]
-      calc |fejerSeriesCoeff n| * ‖w‖ ^ n
-          ≤ 1 * ‖w‖ ^ n := by gcongr; exact abs_fejerSeriesCoeff_le_one n
-        _ = ‖w‖ ^ n := one_mul _
+    have hsumm : Summable fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n :=
+      TauCeti.summable_mul_pow_of_norm_le
+        (fun n ↦ by simpa [Complex.norm_real, Real.norm_eq_abs] using abs_fejerSeriesCoeff_le_one n)
+        hw
     have hsumm_f : Summable fun k ↦ f k w :=
       Summable.of_norm_bounded hu fun k ↦ hbound k w (mem_closedBall_zero_iff.mpr hw.le)
     have hlim1 : Tendsto (fun K ↦ ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n)

@@ -8,20 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
+import TauCeti.Analysis.LaplaceTransform.ExponentialStep
 import TauCeti.Analysis.LaplaceTransform.UniformStep
-import TauCeti.Analysis.SpecialFunctions.Log.Base
-import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Basic
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.LaplaceBridge
+import TauCeti.NumberTheory.LSeries.Term
 
 /-!
 # Block-constant Dirichlet series and uniform step transforms
 
 For an integer base `b > 1` and a sequence `c : ℕ → ℂ`, the `b`-adic block-constant sequence
 `a n = c (Nat.log b n)` (`n ≥ 1`, `a 0 = 0`) satisfies `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊`
-for `0 ≤ t` (`Real.natFloor_logb_eq_natLog_natFloor`). Consequently:
+for `0 ≤ t` (`Real.natFloor_logb_eq_natLog_natFloor`). Combining this with the integral identity
+`TauCeti.integral_floor_exp_natLog_mul_cexp_neg_mul`:
 
-* at the Laplace-integral level, `∫ t in Ici 0, a ⌊exp t⌋₊ * exp (-z * t)` equals
-  `∫ t in Ici 0, c ⌊t / log b⌋₊ * exp (-z * t)` (`integral_floor_exp_natLog_mul_cexp_neg_mul`);
 * when `c` is bounded and `0 < re z`, `LSeries a (z + 1) + stepCorrection a z` equals
   `(∫ u in 0..log b, exp (-z * u)) * ∑' k, c k * exp (-log b * z) ^ k`
   (`LSeries_natLog_add_stepCorrection`);
@@ -33,12 +32,13 @@ for `0 ≤ t` (`Real.natFloor_logb_eq_natLog_natFloor`). Consequently:
 
 ## Main results
 
-* `TauCeti.LSeries.integral_floor_exp_natLog_mul_cexp_neg_mul`: integral-level block identity.
 * `TauCeti.LSeries.LSeries_natLog_add_stepCorrection`: Laplace–Dirichlet bridge for block
   coefficients.
 * `TauCeti.LSeries.sum_Icc_natLog_div_add_stepCorrectionTerm`: partial-sum identity at powers
   of `b`.
 * `TauCeti.LSeries.exists_continuousOn_LSeries_natLog`: disc-algebra transfer to `1 ≤ re s`.
+* `TauCeti.LSeries.re_sum_ofReal_div_natCast`: real part of a finite harmonic sum with real
+  coefficients.
 * `TauCeti.LSeries.unbounded_sum_Icc_natLog_div`: unboundedness of real ordered harmonic sums.
 -/
 
@@ -48,23 +48,6 @@ open Filter MeasureTheory Metric Set Complex
 open scoped Topology Interval
 
 namespace TauCeti.LSeries
-
-private theorem natLog_floor_exp_eq (b : ℕ) (c : ℕ → ℂ) {t : ℝ} (ht : 0 ≤ t) :
-    (if ⌊Real.exp t⌋₊ = 0 then (0 : ℂ) else c (Nat.log b ⌊Real.exp t⌋₊)) =
-      c ⌊t / Real.log b⌋₊ := by
-  rw [ite_eq_right (Nat.floor_pos.mpr (Real.one_le_exp ht)).ne',
-    ← Real.natFloor_logb_eq_natLog_natFloor b (Real.exp_nonneg t), Real.logb, Real.log_exp]
-
-/-- **Integral-level bridge for `b`-adic block coefficients.** On `[0, ∞)`, the exponential-step
-Laplace integral of `n ↦ if n = 0 then 0 else c (Nat.log b n)` agrees with the uniform-step
-Laplace integral of `c` with step length `log b`. -/
-theorem integral_floor_exp_natLog_mul_cexp_neg_mul (b : ℕ) (c : ℕ → ℂ) (z : ℂ) :
-    ∫ t in Ici (0 : ℝ),
-        (if ⌊Real.exp t⌋₊ = 0 then (0 : ℂ) else c (Nat.log b ⌊Real.exp t⌋₊)) *
-          cexp (-z * t) =
-      ∫ t in Ici (0 : ℝ), c ⌊t / Real.log b⌋₊ * cexp (-z * t) := by
-  refine setIntegral_congr_fun measurableSet_Ici fun t ht ↦ ?_
-  rw [natLog_floor_exp_eq b c ht]
 
 private theorem LSeries_natLog_add_stepCorrection_eq_integral (b : ℕ) {c : ℕ → ℂ} {M : ℝ}
     (hbound : ∀ n, ‖c n‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
@@ -118,7 +101,7 @@ theorem sum_Icc_natLog_div_add_stepCorrectionTerm {b : ℕ} (hb : 1 < b) (c : �
       ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), c ⌊t / Real.log b⌋₊ := by
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le (by positivity)] at ht
-    exact natLog_floor_exp_eq b c ht.1
+    exact ite_floor_exp_natLog_eq b c ht.1
   have hterm : ∑ n ∈ Finset.range (b ^ K), LSeries.term a 1 n =
       ∑ n ∈ Finset.Icc 1 (b ^ K - 1), c (Nat.log b n) / (n : ℂ) := by
     rw [← Nat.sub_add_cancel hpow_pos, sum_range_add_one_LSeries_term_one]
@@ -180,6 +163,12 @@ theorem exists_continuousOn_LSeries_natLog {b : ℕ} (hb : 1 < b) {c : ℕ → �
       exact eq_sub_of_add_eq hlap
     exact hFeq ▸ hsumm.LSeriesHasSum
 
+/-- The real part of a finite harmonic sum with real coefficients is the corresponding real
+harmonic sum. -/
+theorem re_sum_ofReal_div_natCast (s : Finset ℕ) (f : ℕ → ℝ) :
+    (∑ n ∈ s, (f n : ℂ) / (n : ℂ)).re = ∑ n ∈ s, f n / (n : ℝ) := by
+  simp only [Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re]
+
 /-- **Unboundedness of ordered harmonic partial sums for `b`-adic block coefficients.** For an
 integer base `b > 1` and a bounded real sequence `c : ℕ → ℝ` whose partial sums `∑ k ∈ range K, c k`
 are unbounded above, the real ordered harmonic partial sums `∑ n ∈ Icc 1 N, c (Nat.log b n) / n`
@@ -205,8 +194,7 @@ theorem unbounded_sum_Icc_natLog_div {b : ℕ} (hb : 1 < b) {c : ℕ → ℝ} {M
   have hre_rhs : ((Real.log b : ℂ) * ∑ k ∈ Finset.range K, (c k : ℂ)).re =
       Real.log b * ∑ k ∈ Finset.range K, c k := by
     rw [← Complex.ofReal_sum, ← Complex.ofReal_mul, Complex.ofReal_re]
-  simp only [Complex.add_re, Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re,
-    hre_rhs] at hre
+  rw [Complex.add_re, re_sum_ofReal_div_natCast, Complex.re_sum, hre_rhs] at hre
   have hcorr_le : (∑ n ∈ Finset.range (b ^ K), stepCorrectionTerm aC n 0).re ≤ C :=
     hC ⟨b ^ K, rfl⟩
   simp only [Complex.re_sum] at hcorr_le

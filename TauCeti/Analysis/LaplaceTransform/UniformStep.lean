@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.LaplaceTransform.Truncated
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Laplace transforms of uniform step functions
@@ -31,9 +32,13 @@ open scoped Topology Complex Interval
 
 namespace TauCeti
 
+private theorem norm_cexp_neg_ofReal_mul (h : ℝ) (z : ℂ) :
+    ‖cexp (-(h : ℂ) * z)‖ = Real.exp (-(z.re * h)) := by
+  rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
+
 private theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
     ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-  rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
+  rw [norm_cexp_neg_ofReal_mul]
   exact Real.exp_lt_one_iff.mpr (by nlinarith)
 
 /-- **Truncated Laplace transform of a uniform step function.** For `h > 0`, `c : ℕ → ℂ`,
@@ -94,11 +99,8 @@ theorem integral_floor_div_mul_cexp_neg_mul {c : ℕ → ℂ} {M : ℝ} (hbound 
     (measurable_from_nat.comp (measurable_id.div_const h).nat_floor).aestronglyMeasurable
   have hint := integrableOn_mul_cexp_neg_mul hmeas (fun t _ ↦ hbound _) hz
   have hnorm_lt : ‖cexp (-(h : ℂ) * z)‖ < 1 := norm_cexp_neg_mul_lt_one hh hz
-  have hsumm : Summable fun n : ℕ ↦ c n * cexp (-(h : ℂ) * z) ^ n := by
-    refine Summable.of_norm_bounded
-      ((summable_geometric_of_lt_one (norm_nonneg _) hnorm_lt).mul_left M) fun n ↦ ?_
-    rw [norm_mul, norm_pow]
-    exact mul_le_mul_of_nonneg_right (hbound n) (by positivity)
+  have hsumm : Summable fun n : ℕ ↦ c n * cexp (-(h : ℂ) * z) ^ n :=
+    TauCeti.summable_mul_pow_of_norm_le hbound hnorm_lt
   have hlim1 : Tendsto (fun N : ℕ ↦ ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t))
       atTop (𝓝 (∫ t in Ici (0 : ℝ), c ⌊t / h⌋₊ * cexp (-z * t))) := by
     rw [integral_Ici_eq_integral_Ioi]
@@ -139,7 +141,7 @@ theorem exists_continuousOn_integral_floor_div_mul_cexp_neg_mul
   refine hK_diff.continuous.continuousOn.mul
     (hP_cont.comp (by fun_prop : Continuous fun z : ℂ ↦ cexp (-(h : ℂ) * z)).continuousOn
       fun z (hz : 0 ≤ z.re) ↦ ?_)
-  rw [mem_closedBall_zero_iff, neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
+  rw [mem_closedBall_zero_iff, norm_cexp_neg_ofReal_mul]
   exact Real.exp_le_one_iff.mpr (by nlinarith)
 
 end TauCeti

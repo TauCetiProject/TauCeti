@@ -21,9 +21,8 @@ The one-sided criterion is the analytic step used to pass from uniform occupatio
 to decay of transition probabilities in the null-recurrent case. No boundedness of the
 original sequence is required. The averages include times `n + 1` through `n + k`.
 
-Also included are the real-cutoff Cesàro means `x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n` (and the
-real-scalar version `x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n`), which inherit the limit of `a` from
-Mathlib's `Filter.Tendsto.cesaro_smul`.
+Also included is the real-cutoff Cesàro mean `x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n`, which
+inherits the limit of `a` from Mathlib's `Filter.Tendsto.cesaro_smul`.
 
 ## Main results
 
@@ -31,8 +30,7 @@ Mathlib's `Filter.Tendsto.cesaro_smul`.
   `TauCeti.tendsto_of_norm_inv_smul_sum_range_add_sub_le`,
   `TauCeti.tendsto_zero_of_nonneg_of_sum_range_add_div_le`: pointwise limits from forward moving
   averages.
-* `TauCeti.tendsto_inv_smul_sum_Icc_floor`, `TauCeti.tendsto_inv_mul_sum_Icc_floor`: real-cutoff
-  Cesàro means for convergent sequences.
+* `TauCeti.tendsto_inv_smul_sum_Icc_floor`: real-cutoff Cesàro mean for convergent sequences.
 
 ## References
 
@@ -143,11 +141,5 @@ theorem tendsto_inv_smul_sum_Icc_floor {F : Type*} [NormedAddCommGroup F] [Norme
   rw [hsum_eq, smul_smul]
   congr 1
   field_simp [hpos, hx.ne']
-
-/-- A real sequence converging to `l` has real-cutoff Cesàro mean
-`x⁻¹ * ∑ n ∈ Icc 1 ⌊x⌋₊, a n → l`. -/
-theorem tendsto_inv_mul_sum_Icc_floor {a : ℕ → ℝ} {l : ℝ} (ha : Tendsto a atTop (𝓝 l)) :
-    Tendsto (fun x : ℝ ↦ x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 l) :=
-  tendsto_inv_smul_sum_Icc_floor ha
 
 end TauCeti

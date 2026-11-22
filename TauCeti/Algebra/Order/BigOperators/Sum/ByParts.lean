@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Order.SuccPred.Archimedean
 
 /-!
 # Comparing weighted sums through their partial sums
@@ -173,39 +174,33 @@ theorem abs_sum_Ioc_mul_le {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R
   swap
   · rw [Ioc_eq_empty hKm, sum_empty, abs_zero]
     exact mul_nonneg (mul_nonneg zero_le_two hB) hg_nonneg
-  have hg_mono : ∀ ⦃i j : ℕ⦄, K + 1 ≤ i → i ≤ j → j ≤ m → g j ≤ g i := by
-    intro i j hi hij hj
-    induction j, hij using Nat.le_induction with
-    | base => exact le_rfl
-    | succ k hik ih =>
-      exact (hg_anti k (mem_Ico.mpr ⟨hi.trans hik, hj⟩)).trans (ih (Nat.le_of_succ_le hj))
+  have hg_antitone : AntitoneOn g (Set.Icc (K + 1) m) := by
+    refine antitoneOn_of_succ_le Set.ordConnected_Icc fun j _ hj hsj ↦ ?_
+    exact hg_anti j (mem_Ico.mpr ⟨hj.1, hsj.2⟩)
   let w : ℕ → R := fun i ↦ if i < m - K then g (K + 1 + i) else 0
   have hw₀ : 0 ≤ w := fun i ↦ by
     dsimp [w]
     split_ifs with hi
-    · exact (hgm hKm).trans (hg_mono (by omega) (by omega) (by omega))
+    · exact (hgm hKm).trans (hg_antitone ⟨by omega, by omega⟩ ⟨by omega, le_rfl⟩ (by omega))
     · exact le_rfl
   have hw_anti : AntitoneOn w (Set.Iio (m - K)) := by
     intro i hi j hj hij
     simp only [Set.mem_Iio] at hi hj
     simp only [w, hi, hj, ↓reduceIte]
-    exact hg_mono (by omega) (by omega) (by omega)
-  have hshift (k : ℕ) (h : ℕ → R) :
-      ∑ i ∈ range k, h (K + 1 + i) = ∑ j ∈ Ico (K + 1) (K + 1 + k), h j := by
-    simp_rw [add_comm (K + 1)]
-    rw [← Nat.Ico_zero_eq_range, sum_Ico_add' h 0 k (K + 1), zero_add, add_comm k (K + 1)]
+    exact hg_antitone ⟨by omega, by omega⟩ ⟨by omega, by omega⟩ (by omega)
   have hf' : ∀ k ≤ m - K, |∑ i ∈ range k, f (K + 1 + i)| ≤ 2 * B := by
     intro k hk
-    rw [hshift k f, Finset.sum_Ico_eq_sub _ (by omega)]
+    have hsub : ∑ i ∈ range k, f (K + 1 + i) = ∑ j ∈ Ico (K + 1) (K + 1 + k), f j := by
+      rw [sum_Ico_eq_sum_range, Nat.add_sub_cancel_left]
+    rw [hsub, Finset.sum_Ico_eq_sub _ (by omega)]
     calc |∑ j ∈ range (K + 1 + k), f j - ∑ j ∈ range (K + 1), f j|
         ≤ |∑ j ∈ range (K + 1 + k), f j| + |∑ j ∈ range (K + 1), f j| := abs_sub _ _
       _ ≤ B + B := add_le_add
           (hf (K + 1 + k) (mem_Icc.mpr ⟨by omega, by omega⟩))
           (hf (K + 1) (mem_Icc.mpr ⟨le_rfl, by omega⟩))
       _ = 2 * B := (two_mul B).symm
-  have hm : K + 1 + (m - K) = m + 1 := by omega
   have hsum_eq : ∑ j ∈ Ioc K m, f j * g j = ∑ i ∈ range (m - K), f (K + 1 + i) * w i := by
-    rw [← Ico_add_one_add_one_eq_Ioc, ← hm, ← hshift (m - K) (fun j ↦ f j * g j)]
+    rw [← Ico_add_one_add_one_eq_Ioc, sum_Ico_eq_sum_range, show m + 1 - (K + 1) = m - K by omega]
     exact sum_congr rfl fun i hi ↦ by simp [w, mem_range.mp hi]
   have hw0 : w 0 = g (K + 1) := by simp [w, Nat.sub_pos_of_lt hKm]
   rw [hsum_eq, ← hw0]

@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Order.Cofinal
 import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
@@ -161,9 +162,9 @@ theorem not_tendsto_nhds_of_forall_exists_le {α : Type*} [LinearOrder α] [NoMa
     [TopologicalSpace α] [ClosedIciTopology α] {u : ℕ → α}
     (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) (a : α) : ¬ Tendsto u atTop (𝓝 a) := by
   intro h
-  obtain ⟨B, hB⟩ := h.bddAbove_range
-  obtain ⟨B', hBB'⟩ := exists_gt B
-  obtain ⟨n, hn⟩ := hu B'
-  exact (hBB'.trans_le hn).not_ge (hB ⟨n, rfl⟩)
+  have hc : IsCofinal (Set.range u) := fun B ↦ by
+    obtain ⟨n, hn⟩ := hu B
+    exact ⟨u n, ⟨n, rfl⟩, hn⟩
+  exact hc.not_bddAbove h.bddAbove_range
 
 end TauCeti
