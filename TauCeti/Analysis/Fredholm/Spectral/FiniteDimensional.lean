@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Fredholm.Spectral.Flow
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
-public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The spectral flow in finite dimensions
@@ -30,14 +28,10 @@ spectral cut of `A` on all of `[a, b]` (`TauCeti.isSpectralCutOn_of_forall_norm_
 of eigenvalues of `A t` in `[0, c]` is then the number `dim H - n⁻(A t)` of its nonnegative
 eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 
-As a consequence, this file proves **the regular-crossing formula**. On a real space, if the
-endpoints are invertible and every crossing `t`, a time at which `A t` is not injective, is regular,
-that is, `A` has a derivative `A' t` there and the crossing form `v ↦ ⟪A' t v, v⟫` on the kernel
-of `A t` is nondegenerate, then the spectral flow is the sum over the crossings of the signatures
-of the crossing forms (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`). Positive
-crossings count positively. This is Robbin and Salamon's formula, and it rests on the drop of the
-negative index along a path of symmetric bilinear forms with regular crossings
-(`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`).
+Every operator on a finite-dimensional space is Fredholm, so the regular-crossing formula of
+`TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`
+(`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`) applies to every continuous path
+of self-adjoint operators on a finite-dimensional real space.
 
 This is the finite-dimensional form of the statement that the spectral flow of `A` is the index
 of the trajectory operator `d/ds + A`; see
@@ -55,14 +49,13 @@ of the trajectory operator `d/ds + A`; see
   number of nonnegative eigenvalues.
 * `TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`: the spectral flow is
   `n⁻(A a) - n⁻(A b)`.
-* `TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the regular-crossing formula.
 
 ## References
 
 * J. Phillips, *Self-adjoint Fredholm operators and spectral flow*, Canad. Math. Bull. **39**
   (1996), 460--467.
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc.
-  **27** (1995), 1--33, Section 4 (the spectral flow as a sum of crossing signatures).
+  **27** (1995), 1--33.
 -/
 
 public section
@@ -157,48 +150,5 @@ theorem spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank {a b : ℝ} (h
   have h₂ := hAb.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
   rw [compl_Iio] at h₁ h₂
   omega
-
-end TauCeti
-
-/-! ### The regular-crossing formula -/
-
-namespace TauCeti
-
-open ContinuousLinearMap
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A A' : ℝ → E →L[ℝ] E}
-
-/-- **The regular-crossing formula for the spectral flow.** Let `A` be a continuous path of
-self-adjoint operators on a finite-dimensional real inner product space over `[a, b]`, with
-invertible endpoints. Suppose that every crossing `t ∈ (a, b)`, where `A t` is not injective, is
-regular: `A` has derivative `A' t` at `t`, and the crossing form `Γₜ : v ↦ ⟪A' t v, v⟫` on the
-kernel of `A t` is nondegenerate. Then the spectral flow of `A` is the sum over the crossings of
-the signatures `sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the
-sum. That the crossings are finite in number is a separate fact,
-`ContinuousLinearMap.finite_setOf_not_nondegenerate_toBilinForm`. -/
-theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm {a b : ℝ} (hab : a ≤ b)
-    (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
-    (ha : LinearMap.ker (A a : E →ₗ[ℝ] E) = ⊥) (hb : LinearMap.ker (A b : E →ₗ[ℝ] E) = ⊥)
-    (hderiv : ∀ t ∈ Ioo a b, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ → HasDerivAt A (A' t) t)
-    (hreg : ∀ t ∈ Ioo a b, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ →
-      (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))).Nondegenerate) :
-    spectralFlow A a b = ∑ᶠ t ∈ Ioo a b,
-      ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))) : ℤ) -
-        sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t)))) := by
-  have ha' : a ∈ Icc a b := ⟨le_rfl, hab⟩
-  have hb' : b ∈ Icc a b := ⟨hab, le_rfl⟩
-  have hflow := spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank hab hA hsa
-  have hcross := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm hab
-    (continuousOn_const.clm_comp hA)
-    (fun t ht ↦ (hsa t ht).isSymmetric.isSymm_toBilinForm_innerSL_comp)
-    (nondegenerate_toBilinForm_innerSL_comp_iff.2 ha)
-    (nondegenerate_toBilinForm_innerSL_comp_iff.2 hb)
-    (fun t ht hnd ↦
-      (hderiv t ht (mt nondegenerate_toBilinForm_innerSL_comp_iff.2 hnd)).const_clm_comp _)
-    (fun t ht hnd ↦ hreg t ht (mt nondegenerate_toBilinForm_innerSL_comp_iff.2 hnd))
-  rw [(hsa a ha').isSymmetric.sigNeg_toBilinForm_innerSL_comp,
-    (hsa b hb').isSymmetric.sigNeg_toBilinForm_innerSL_comp] at hcross
-  rw [hflow, hcross]
 
 end TauCeti

@@ -26,6 +26,8 @@ kernel-equality hypothesis, it identifies the cokernel with the original kernel.
   has index zero.
 * `ContinuousLinearMap.index_eq_zero_of_isSymmetric`: the same result in terms of
   symmetry of the underlying linear map.
+* `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_isSelfAdjoint`: an injective
+  self-adjoint Fredholm operator is invertible.
 
 This is the elementary self-adjoint index computation for Fredholm operators. The convention and
 argument follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -81,5 +83,11 @@ theorem index_eq_zero_of_isSymmetric {T : E →L[𝕜] E}
   index_eq_zero_of_isSelfAdjoint hT
     (isSelfAdjoint_iff_isSymmetric.mpr hsymm)
 
+/-- An injective self-adjoint Fredholm operator on a Hilbert space is invertible, since its index
+vanishes. -/
+theorem IsFredholm.isInvertible_of_injective_of_isSelfAdjoint {T : E →L[𝕜] E}
+    (hT : IsFredholm T) (hself : IsSelfAdjoint T) (hinj : Function.Injective T) :
+    T.IsInvertible :=
+  hT.isInvertible_of_injective_of_index_eq_zero hinj (index_eq_zero_of_isSelfAdjoint hT hself)
 
 end ContinuousLinearMap
