@@ -305,7 +305,7 @@ theorem exists_abs_ncard_smul_inter_vadd_sub_le {D : Set E} (hDb : IsBounded D)
       w₁ = w₂ := fun _ w₁ h₁ w₂ h₂ k₁ k₂ ↦
     ZSpan.eq_of_sub_mem_fundamentalDomain β ((hmem w₁).mp h₁) ((hmem w₂).mp h₂) k₁ k₂
   have hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F := fun x ↦
-    ⟨(ZSpan.floor β x : E), (hmem _).mpr (ZSpan.floor β x).2,
+    ⟨(ZSpan.floor β x : E), (hmem _).mpr (ZSpan.floor β x).property,
       ZSpan.fract_mem_fundamentalDomain β x⟩
   have hcov : ZLattice.covolume L μ = μ.real F :=
     ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ)

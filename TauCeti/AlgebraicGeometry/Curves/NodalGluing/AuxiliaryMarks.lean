@@ -375,11 +375,11 @@ automorphism `e₀⁻¹ ∘ e` of the source, and every ordered automorphism `g`
 arrow `e₀ ∘ g` with the permutation of `e₀`. -/
 def permFiberEquiv (e₀ : AuxiliaryIso I n m m') :
     {e : AuxiliaryIso I n m m' // e.perm = e₀.perm} ≃ AuxiliaryAut.ordered I n m where
-  toFun e := ⟨e.1.trans e₀.symm, by
-    rw [AuxiliaryAut.mem_ordered_iff, perm_trans, perm_symm, e.2, Equiv.self_trans_symm,
+  toFun e := ⟨e.val.trans e₀.symm, by
+    rw [AuxiliaryAut.mem_ordered_iff, perm_trans, perm_symm, e.property, Equiv.self_trans_symm,
       Equiv.Perm.one_def]⟩
-  invFun g := ⟨g.1.trans e₀, by
-    have hg := (AuxiliaryAut.mem_ordered_iff g.1).mp g.2
+  invFun g := ⟨g.val.trans e₀, by
+    have hg := (AuxiliaryAut.mem_ordered_iff g.val).mp g.property
     rw [perm_trans, hg, Equiv.Perm.one_def, Equiv.refl_trans]⟩
   left_inv e := Subtype.ext <| ext fun x ↦ by simp
   right_inv g := Subtype.ext <| ext fun x ↦ by simp
@@ -388,7 +388,7 @@ def permFiberEquiv (e₀ : AuxiliaryIso I n m m') :
 `e₀⁻¹ ∘ e`. -/
 @[simp] theorem coe_permFiberEquiv_apply (e₀ : AuxiliaryIso I n m m')
     (e : {e : AuxiliaryIso I n m m' // e.perm = e₀.perm}) :
-    (e₀.permFiberEquiv e : AuxiliaryAut I n m) = e.1.trans e₀.symm :=
+    (e₀.permFiberEquiv e : AuxiliaryAut I n m) = e.val.trans e₀.symm :=
   (rfl)
 
 /-- The arrow attached to an ordered automorphism `g` is `e₀ ∘ g`. -/

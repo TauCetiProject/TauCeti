@@ -142,8 +142,8 @@ def simplexBoundaryCoordinateLift (n : ℕ) :
 private def topToCoordinateSimplex (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
     coordinateSimplex (Fin n) := by
-  let y : Fin n → ℝ := fun i => x.1 i.castSucc
-  have hsum : (∑ i, y i) + x.1 (Fin.last n) = 1 := by
+  let y : Fin n → ℝ := fun i => x.val i.castSucc
+  have hsum : (∑ i, y i) + x.val (Fin.last n) = 1 := by
     have h := Realization.sum_eq_one _ x
     rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
     exact h
@@ -153,13 +153,13 @@ private def topToCoordinateSimplex (n : ℕ)
 
 private theorem topToCoordinateSimplex_apply (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) (i : Fin n) :
-    (topToCoordinateSimplex n x).1 i = x.1 i.castSucc := (rfl)
+    (topToCoordinateSimplex n x).val i = x.val i.castSucc := (rfl)
 
 private def coordinateSimplexToTop (n : ℕ) (y : coordinateSimplex (Fin n)) :
     Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) := by
-  have hy := (mem_coordinateSimplex _ _).mp y.2
+  have hy := (mem_coordinateSimplex _ _).mp y.property
   let z : Fin (n + 1) →₀ ℝ := Finsupp.equivFunOnFinite.symm
-    (Fin.snoc y.1 (1 - ∑ i, y.1 i))
+    (Fin.snoc y.val (1 - ∑ i, y.val i))
   refine (realizationTopHomeomorphStdSimplex (ι := Fin (n + 1))).symm ⟨z, ?_, ?_⟩
   · intro i
     refine Fin.lastCases ?_ (fun j => ?_) i
@@ -168,11 +168,11 @@ private def coordinateSimplexToTop (n : ℕ) (y : coordinateSimplex (Fin n)) :
   · simp [z, Finsupp.sum_fintype, Fin.sum_univ_castSucc]
 
 private theorem coordinateSimplexToTop_castSucc (n : ℕ) (y : coordinateSimplex (Fin n))
-    (i : Fin n) : (coordinateSimplexToTop n y).1 i.castSucc = y.1 i := by
+    (i : Fin n) : (coordinateSimplexToTop n y).val i.castSucc = y.val i := by
   simp [coordinateSimplexToTop, realizationTopHomeomorphStdSimplex_symm_apply_val]
 
 private theorem coordinateSimplexToTop_last (n : ℕ) (y : coordinateSimplex (Fin n)) :
-    (coordinateSimplexToTop n y).1 (Fin.last n) = 1 - ∑ i, y.1 i := by
+    (coordinateSimplexToTop n y).val (Fin.last n) = 1 - ∑ i, y.val i := by
   simp [coordinateSimplexToTop, realizationTopHomeomorphStdSimplex_symm_apply_val]
 
 /-- Dropping the last barycentric coordinate identifies the weak realization of a standard
@@ -207,14 +207,14 @@ def realizationTopHomeomorphCoordinateSimplex (n : ℕ) :
 @[simp]
 theorem realizationTopHomeomorphCoordinateSimplex_apply (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) (i : Fin n) :
-    (realizationTopHomeomorphCoordinateSimplex n x).1 i = x.1 i.castSucc := (rfl)
+    (realizationTopHomeomorphCoordinateSimplex n x).val i = x.val i.castSucc := (rfl)
 
 /-- The inverse comparison restores the last coordinate as the missing mass. -/
 @[simp]
 theorem realizationTopHomeomorphCoordinateSimplex_symm_last (n : ℕ)
     (y : coordinateSimplex (Fin n)) :
-    ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 (Fin.last n) =
-      1 - ∑ i, y.1 i :=
+    ((realizationTopHomeomorphCoordinateSimplex n).symm y).val (Fin.last n) =
+      1 - ∑ i, y.val i :=
   coordinateSimplexToTop_last n y
 
 /-- In the standard `n`-simplex, the open star of the last vertex is described in the
@@ -223,12 +223,12 @@ theorem mem_openStarRealization_top_last_iff_sum_lt_one (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
     x ∈ openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))
       (Fin.last n) ↔
-      ∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i < 1 := by
+      ∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).val i < 1 := by
   have h := Realization.sum_eq_one
     (⊤ : AbstractSimplicialComplex (Fin (n + 1))) x
   rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
-  have hsum : (∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i) +
-      x.1 (Fin.last n) = 1 := by
+  have hsum : (∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).val i) +
+      x.val (Fin.last n) = 1 := by
     simpa only [realizationTopHomeomorphCoordinateSimplex_apply] using h
   rw [mem_openStarRealization]
   constructor <;> intro hx <;> linarith
@@ -238,7 +238,7 @@ theorem mem_openStarRealization_top_last_iff_sum_lt_one (n : ℕ)
 theorem image_openStarRealization_top_last (n : ℕ) :
     realizationTopHomeomorphCoordinateSimplex n ''
         openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) (Fin.last n) =
-      {y : coordinateSimplex (Fin n) | ∑ i, y.1 i < 1} := by
+      {y : coordinateSimplex (Fin n) | ∑ i, y.val i < 1} := by
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
@@ -254,7 +254,7 @@ theorem image_openStarRealization_top_last (n : ℕ) :
 @[simp]
 theorem realizationTopHomeomorphCoordinateSimplex_symm_castSucc (n : ℕ)
     (y : coordinateSimplex (Fin n)) (i : Fin n) :
-    ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 i.castSucc = y.1 i :=
+    ((realizationTopHomeomorphCoordinateSimplex n).symm y).val i.castSucc = y.val i :=
   coordinateSimplexToTop_castSucc n y i
 
 /-- Dropping the last barycentric coordinate is linear, and its affine inverse restores the
@@ -264,7 +264,7 @@ theorem realizationTopHomeomorphCoordinateSimplex_exists_affine (n : ℕ) :
     ∃ B : (Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ),
       (∀ z i, A z i = z i.castSucc) ∧
       ∀ y : coordinateSimplex (Fin (n + 1)),
-        B y.1 = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).1 := by
+        B y.val = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).val := by
   let e : (Fin (n + 1) → ℝ) ≃L[ℝ] (Option (Fin n) → ℝ) :=
     ContinuousLinearEquiv.piCongrLeft ℝ (fun _ : Option (Fin n) => ℝ) finSuccEquivLast
   have he (x : Fin (n + 1) → ℝ) (i : Option (Fin n)) : e x i = x (finSuccEquivLast.symm i) := by
@@ -279,7 +279,7 @@ theorem realizationTopHomeomorphCoordinateSimplex_exists_affine (n : ℕ) :
     fun z i => by simp [hs], fun y => ?_⟩
   funext i
   refine Fin.lastCases ?_ (fun k => ?_) i
-  · simp [he, Equiv.sum_comp finSuccEquivLast.symm (fun j => y.1 j)]
+  · simp [he, Equiv.sum_comp finSuccEquivLast.symm (fun j => y.val j)]
   · simp [he]
 
 /-- A simplex point maps to the geometric frontier exactly when its support is a proper
@@ -287,16 +287,16 @@ face. This includes the empty boundary of the zero-simplex. -/
 @[simp 1100]
 theorem realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
-    (realizationTopHomeomorphCoordinateSimplex n x).1 ∈ frontier (coordinateSimplex (Fin n)) ↔
-      x.1.support ≠ Finset.univ := by
+    (realizationTopHomeomorphCoordinateSimplex n x).val ∈ frontier (coordinateSimplex (Fin n)) ↔
+      x.val.support ≠ Finset.univ := by
   rw [mem_frontier_coordinateSimplex]
   rw [iff_true_intro ((mem_coordinateSimplex _ _).mp
-    (realizationTopHomeomorphCoordinateSimplex n x).2), true_and]
+    (realizationTopHomeomorphCoordinateSimplex n x).property), true_and]
   simp only [realizationTopHomeomorphCoordinateSimplex_apply]
-  have hsum : (∑ i : Fin n, x.1 i.castSucc) + x.1 (Fin.last n) = 1 := by
+  have hsum : (∑ i : Fin n, x.val i.castSucc) + x.val (Fin.last n) = 1 := by
     have h := Realization.sum_eq_one _ x
     rwa [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at h
-  have hmissing : x.1.support ≠ Finset.univ ↔ ∃ i, x.1 i = 0 := by
+  have hmissing : x.val.support ≠ Finset.univ ↔ ∃ i, x.val i = 0 := by
     simp [Finset.eq_univ_iff_forall, Finsupp.mem_support_iff]
   rw [hmissing]
   constructor
@@ -323,15 +323,15 @@ def realizationTopHomeomorphClosedBall (n : ℕ) :
 @[simp]
 theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
-    ‖(realizationTopHomeomorphClosedBall n x).1‖ = 1 ↔
-      x.1.support ≠ Finset.univ := by
+    ‖(realizationTopHomeomorphClosedBall n x).val‖ = 1 ↔
+      x.val.support ≠ Finset.univ := by
   rw [← mem_sphere_zero_iff_norm]
   let h := Classical.choose (exists_homeomorph_coordinateSimplex (Fin n))
   have hfr : h '' frontier (coordinateSimplex (Fin n)) =
       sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
     (Classical.choose_spec (exists_homeomorph_coordinateSimplex (Fin n))).2.2
-  have he : (realizationTopHomeomorphClosedBall n x).1 =
-      h (realizationTopHomeomorphCoordinateSimplex n x).1 := (rfl)
+  have he : (realizationTopHomeomorphClosedBall n x).val =
+      h (realizationTopHomeomorphCoordinateSimplex n x).val := (rfl)
   rw [he, ← hfr]
   simpa only [h.injective.mem_set_image] using
     realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
@@ -352,8 +352,8 @@ sphere. -/
 @[simp]
 theorem realizationTopHomeomorphPiClosedBall_norm_eq_one_iff (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
-    ‖(realizationTopHomeomorphPiClosedBall n x).1‖ = 1 ↔
-      x.1.support ≠ Finset.univ := by
+    ‖(realizationTopHomeomorphPiClosedBall n x).val‖ = 1 ↔
+      x.val.support ≠ Finset.univ := by
   rw [← realizationTopHomeomorphClosedBall_norm_eq_one_iff]
   exact ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
 
@@ -368,20 +368,20 @@ variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : �
 enumerated face. Its boundary corresponds to the proper faces. -/
 def simplexClosedBallHomeomorph :
     closedBall (0 : Fin n → ℝ) 1 ≃ₜ
-      {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
+      {x : Realization K // x.val.support ⊆ Finset.univ.image f} :=
   (realizationTopHomeomorphPiClosedBall n).symm.trans (realizationTopHomeomorphFace K f hf)
 
 /-- Barycentric coordinates are obtained from the fixed standard ball model by pushing
 its coordinate vector along the vertex enumeration. -/
 theorem simplexClosedBallHomeomorph_val (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1 =
-      Finsupp.mapDomain f ((realizationTopHomeomorphPiClosedBall n).symm x).1 :=
+    (simplexClosedBallHomeomorph K f hf x).val.val =
+      Finsupp.mapDomain f ((realizationTopHomeomorphPiClosedBall n).symm x).val :=
   realizationTopHomeomorphFace_val K f hf _
 
 /-- The boundary sphere corresponds exactly to barycentric support smaller than the face. -/
 theorem simplexClosedBallHomeomorph_support_ne_iff
     (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1.support ≠ Finset.univ.image f ↔ ‖x.1‖ = 1 := by
+    (simplexClosedBallHomeomorph K f hf x).val.val.support ≠ Finset.univ.image f ↔ ‖x.val‖ = 1 := by
   rw [simplexClosedBallHomeomorph_val, Finsupp.mapDomain_support_of_injective f.injective,
     ne_eq, Finset.image_inj f.injective, ← ne_eq,
     ← realizationTopHomeomorphPiClosedBall_norm_eq_one_iff, Homeomorph.apply_symm_apply]
@@ -390,27 +390,27 @@ theorem simplexClosedBallHomeomorph_support_ne_iff
 @[simp]
 theorem simplexClosedBallHomeomorph_support_eq_iff
     (x : closedBall (0 : Fin n → ℝ) 1) :
-    (simplexClosedBallHomeomorph K f hf x).1.1.support = Finset.univ.image f ↔ ‖x.1‖ < 1 := by
-  have hx : ‖x.1‖ ≤ 1 := mem_closedBall_zero_iff.mp x.2
+    (simplexClosedBallHomeomorph K f hf x).val.val.support = Finset.univ.image f ↔ ‖x.val‖ < 1 := by
+  have hx : ‖x.val‖ ≤ 1 := mem_closedBall_zero_iff.mp x.property
   have h := simplexClosedBallHomeomorph_support_ne_iff K f hf x
   grind
 
 /-- The inverse closed-simplex homeomorphism lands in the open ball exactly at the points
 with full barycentric support. -/
 theorem norm_simplexClosedBallHomeomorph_symm_lt_one_iff
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ < 1 ↔
-      y.1.1.support = Finset.univ.image f := by
+    (y : {x : Realization K // x.val.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).val‖ < 1 ↔
+      y.val.val.support = Finset.univ.image f := by
   rw [← simplexClosedBallHomeomorph_support_eq_iff K f hf, Homeomorph.apply_symm_apply]
 
 /-- The inverse closed-simplex homeomorphism lands on the sphere exactly at the points of
 proper faces. -/
 theorem norm_simplexClosedBallHomeomorph_symm_eq_one_iff
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ = 1 ↔
-      y.1.1.support ⊂ Finset.univ.image f := by
+    (y : {x : Realization K // x.val.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).val‖ = 1 ↔
+      y.val.val.support ⊂ Finset.univ.image f := by
   rw [← simplexClosedBallHomeomorph_support_ne_iff K f hf, Homeomorph.apply_symm_apply,
-    Finset.ssubset_iff_subset_ne, and_iff_right y.2]
+    Finset.ssubset_iff_subset_ne, and_iff_right y.property]
 
 end EnumeratedFace
 
@@ -426,7 +426,7 @@ variable {ι : Type*} {A : AbstractSimplicialComplex ι} {n : ℕ}
 `n`-ball, inside any ambient realization containing it. -/
 theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
     (hV : V.card = n + 1) (hA : simplex V ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ simplex V} ≃ₜ
+    Nonempty ({x : Realization A // x.val.support ∈ simplex V} ≃ₜ
       Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   classical
   let P := simplex (Finset.univ : Finset (Fin (n + 1)))

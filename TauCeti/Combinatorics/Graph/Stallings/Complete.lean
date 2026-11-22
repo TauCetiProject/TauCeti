@@ -58,7 +58,7 @@ the number of such darts is the number of vertices times the number of letters. 
 theorem IsComplete.natCard_setOf_label_snd (hS : S.IsComplete) (hF : S.IsFolded) :
     Nat.card {e : S.graph.E | (S.label e).2 = true} = Nat.card S.graph.V * Nat.card α := by
   rw [← Nat.card_prod]
-  refine Nat.card_congr (.ofBijective (fun e => (S.graph.src e.1, (S.label e.1).1)) ⟨?_, ?_⟩)
+  refine Nat.card_congr (.ofBijective (fun e => (S.graph.src e.val, (S.label e.val).1)) ⟨?_, ?_⟩)
   · rintro ⟨e, he⟩ ⟨f, hf⟩ h
     exact Subtype.ext (S.isFolded_def.mp hF e f (congrArg Prod.fst h)
       (Prod.ext (congrArg Prod.snd h) (he.trans hf.symm)))

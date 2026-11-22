@@ -7,14 +7,22 @@ module
 
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+public import Mathlib.CategoryTheory.EqToHom
 
 /-!
-# Functors from and into concrete categories
+# Basic lemmas for concrete categories
 
-Functorial composition out of a concrete category can be checked pointwise on the underlying
-functions, even when the morphisms have different presentations. Dually, precomposing with an
-isomorphism does not change the range of a morphism under a functor into a concrete category
-(`CategoryTheory.Functor.range_map_comp_of_isIso`).
+Elementwise and pointwise properties of morphisms and functors in a concrete category.
+
+## Main results
+
+* `CategoryTheory.Functor.map_comp_eq_of_apply_eq`: functorial composition out of a concrete
+  category can be checked pointwise on the underlying functions, even when the morphisms have
+  different presentations.
+* `CategoryTheory.Functor.range_map_comp_of_isIso`: precomposing with an isomorphism does not
+  change the range of a morphism under a functor into a concrete category.
+* `TauCeti.eqToHom_apply_heq`: applying the transport morphism `eqToHom h` along an equality
+  `h : X = Y` of objects in a concrete category preserves elements up to heterogeneous equality.
 -/
 
 public section
@@ -46,3 +54,17 @@ lemma range_map_comp_of_isIso {E : Type u'} [Category.{v'} E] {D : Type u} [Cate
   exact (ConcreteCategory.bijective_of_isIso (F.map e)).surjective.range_comp _
 
 end CategoryTheory.Functor
+
+namespace TauCeti
+
+/-- Applying the transport morphism `eqToHom h` along an equality `h : X = Y` of objects in a
+concrete category preserves elements up to heterogeneous equality. -/
+@[simp]
+theorem eqToHom_apply_heq {C : Type*} [Category* C] {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+    {X Y : C} (h : X = Y) (x : ToType X) :
+    (eqToHom h) x ≍ x := by
+  subst h
+  simp
+
+end TauCeti
