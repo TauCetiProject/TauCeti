@@ -83,7 +83,7 @@ theorem IsJordanSplitting.isPerfPair_constituentForm (h : B.IsJordanSplitting 2 
 /-- The canonical constituent form of a symmetric dyadic Jordan splitting is symmetric. -/
 theorem IsJordanSplitting.isSymm_constituentForm (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm)
     (i : ℕ) : (h.constituentForm i).IsSymm :=
-  IsSymm.of_smul (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero))
+  (IsSMulRegular.of_ne_zero (pow_ne_zero i two_ne_zero)).isSymm_smul_iff.mp
     ((h.two_pow_smul_constituentForm i).symm ▸ hB.restrict (N i))
 
 private theorem transport_constituentForm {N' : ℕ → Submodule ℤ_[2] M}
