@@ -26,9 +26,9 @@ import TauCeti.RingTheory.TensorProduct.Pi
 
 The equalizer of two algebra maps `f g : A →ₐ[R] B` between finite étale `R`-algebras is a finite
 étale `R`-algebra (`AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`). In particular, the
-invariants of a finite étale algebra under a finitely generated (for example, finite) monoid
-acting by algebra endomorphisms form a finite étale algebra (`TauCeti.FixedPoints.etale_subalgebra`,
-`TauCeti.FixedPoints.finite_subalgebra`).
+invariants of a finite étale algebra under a monoid acting through a finitely generated (for
+example, finite) monoid of algebra endomorphisms form a finite étale algebra
+(`TauCeti.FixedPoints.etale_subalgebra`, `TauCeti.FixedPoints.finite_subalgebra`).
 Geometrically, the affine coequalizer of two morphisms of finite étale `Spec R`-schemes, and the
 invariant quotient of a finite étale `Spec R`-scheme by a finite group, are again finite étale.
 The invariant quotients supply the quotients by finite groups that the axioms of a Galois category
@@ -39,7 +39,8 @@ require of finite étale covers.
 * `AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`: equalizers of finite étale algebras are
   finite étale.
 * `TauCeti.FixedPoints.etale_subalgebra`, `TauCeti.FixedPoints.finite_subalgebra`: invariants of
-  a finite étale algebra under a finitely generated monoid are finite étale.
+  a finite étale algebra under a monoid acting through a finitely generated monoid of
+  endomorphisms are finite étale.
 
 ## Implementation notes
 
@@ -303,27 +304,33 @@ namespace TauCeti.FixedPoints
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
-variable [Algebra.Etale R S] [Module.Finite R S] [Monoid.FG G]
+variable [Algebra.Etale R S] [Module.Finite R S]
+  [IsMulFG (MonoidHom.mrange (MulAction.toEndHom (M := G) (α := S)))]
 
-/-- The invariants of a finite étale algebra under a finitely generated monoid of algebra
-endomorphisms form a finite étale algebra. -/
+/-- The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form a finite étale algebra. -/
 private theorem etale_and_finite_subalgebra :
     Algebra.Etale R (FixedPoints.subalgebra R S G) ∧
       Module.Finite R (FixedPoints.subalgebra R S G) := by
   -- The invariants are the equalizer of the diagonal map `S → (Fin n → S)` and the action of
-  -- finitely many generators of `G`, which is finite étale.
-  obtain ⟨s, hs⟩ := Monoid.exists_of_isMulFG (M := G)
-  -- Index the generators by `Fin n`, so that `Fin n → S` stays in the universe of `R`.
-  rw [subalgebra_eq_equalizer G (σ := Subtype.val ∘ s.equivFin.symm) (by simpa [Set.range_comp])]
+  -- finitely many elements of `G` whose action generates that of `G`, which is finite étale.
+  obtain ⟨t, ht⟩ :=
+    Monoid.exists_of_isMulFG (M := MonoidHom.mrange (MulAction.toEndHom (M := G) (α := S)))
+  -- Lift the generators to `G` and index them by `Fin n`, so that `Fin n → S` stays in the
+  -- universe of `R`.
+  have hρ := Function.rightInverse_surjInv
+    (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict_surjective
+  rw [subalgebra_eq_equalizer G (σ := Function.surjInv _ ∘ Subtype.val ∘ t.equivFin.symm)
+    (by rw [← Function.comp_assoc, hρ.comp_eq_id]; simpa [Set.range_comp])]
   exact ⟨inferInstance, inferInstance⟩
 
-/-- **The invariants of a finite étale algebra under a finitely generated monoid of algebra
-endomorphisms form an étale algebra.** -/
+/-- **The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form an étale algebra.** -/
 instance etale_subalgebra : Algebra.Etale R (FixedPoints.subalgebra R S G) :=
   (etale_and_finite_subalgebra G).1
 
-/-- The invariants of a finite étale algebra under a finitely generated monoid of algebra
-endomorphisms form a finite module. -/
+/-- The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form a finite module. -/
 instance finite_subalgebra : Module.Finite R (FixedPoints.subalgebra R S G) :=
   (etale_and_finite_subalgebra G).2
 
