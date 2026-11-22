@@ -49,6 +49,19 @@ variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {ι : V →L[ℝ] H} {A A' : ℝ → V →L[ℝ] StrongDual ℝ V}
   {u u' : ℝ → V} {f : ℝ → H} {a b K α M : ℝ}
 
+private theorem continuousOn_secondEnergy_data {H₀ : Type*} [SeminormedAddCommGroup H₀]
+    [NormedSpace ℝ H₀] {ι : V →L[ℝ] H₀} {S : Set ℝ}
+    (hA : ∀ s ∈ S, HasDerivWithinAt A (A' s) S s) (hA' : ContinuousOn A' S)
+    (hu : ∀ s ∈ S, HasDerivWithinAt u (u' s) S s) (hu' : ContinuousOn u' S) :
+    ContinuousOn A S ∧ ContinuousOn u S ∧
+      ContinuousOn (fun s ↦ ‖ι (u' s)‖ ^ 2) S ∧
+      ContinuousOn (fun s ↦ A' s (u s) (u s)) S := by
+  have hAc : ContinuousOn A S := fun s hs ↦
+    HasDerivWithinAt.continuousWithinAt (F := V →L[ℝ] StrongDual ℝ V) (hA s hs)
+  have huc : ContinuousOn u S := fun s hs ↦ (hu s hs).continuousWithinAt
+  exact ⟨hAc, huc, (ι.continuous.comp_continuousOn hu').norm.pow 2,
+    (hA'.clm_apply huc).clm_apply huc⟩
+
 /-- **The second energy inequality before absorption.** The velocity-tested inequality
 bounds terminal diagonal energy plus the accumulated squared pivot norm of the velocity
 by initial energy, squared forcing, and the integral of the derivative of the form.
@@ -66,19 +79,13 @@ theorem apply_self_add_integral_norm_sq_le_add_integral
     A t (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
       A a (u a) (u a) + (∫ s in a..t, ‖f s‖ ^ 2) +
         ∫ s in a..t, A' s (u s) (u s) := by
-  have hAc : ContinuousOn A (Icc a b) := fun s hs ↦
-    HasDerivWithinAt.continuousWithinAt (F := V →L[ℝ] StrongDual ℝ V) (hA s hs)
-  have huc : ContinuousOn u (Icc a b) := fun s hs ↦ (hu s hs).continuousWithinAt
-  have hD : ContinuousOn (fun s ↦ ‖ι (u' s)‖ ^ 2) (Icc a b) :=
-    (ι.continuous.comp_continuousOn hu').norm.pow 2
-  have hE' := (hA'.clm_apply huc).clm_apply huc
+  obtain ⟨hAc, huc, hD, hE'⟩ := continuousOn_secondEnergy_data (ι := ι) hA hA' hu hu'
   have hcross := ((hAc.clm_apply huc).clm_apply hu').const_mul 2
   have hsub : Icc a t ⊆ Icc a b := Icc_subset_Icc_right ht.2
   have hDi := (hD.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
   have hEi := (hE'.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
   have hCi := (hcross.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
-  have hFi := hf.mono_set (c := a) (d := t)
-    (by simpa only [uIcc_of_le ht.1, uIcc_of_le (ht.1.trans ht.2)] using hsub)
+  have hFi := hf.mono_set (uIcc_subset_uIcc_left (mem_uIcc_of_le ht.1 ht.2))
   have hid := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1
     (((hAc.clm_apply huc).clm_apply huc).mono hsub)
     (fun s hs ↦ ((hA s (hsub ⟨hs.1.le, hs.2.le⟩)).clm_apply_self
@@ -115,15 +122,9 @@ theorem apply_self_add_integral_norm_sq_le_mul_exp
     A t (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
       (A a (u a) (u a) + ∫ s in a..t, ‖f s‖ ^ 2) * Real.exp (K * (t - a)) := by
   let X : ℝ → ℝ := fun s ↦ A s (u s) (u s) + ∫ r in a..s, ‖ι (u' r)‖ ^ 2
-  have hAc : ContinuousOn A (Icc a b) := fun s hs ↦
-    HasDerivWithinAt.continuousWithinAt (F := V →L[ℝ] StrongDual ℝ V) (hA s hs)
-  have huc : ContinuousOn u (Icc a b) := fun s hs ↦ (hu s hs).continuousWithinAt
-  have hD : ContinuousOn (fun s ↦ ‖ι (u' s)‖ ^ 2) (Icc a b) :=
-    (ι.continuous.comp_continuousOn hu').norm.pow 2
-  have hE' := (hA'.clm_apply huc).clm_apply huc
+  obtain ⟨hAc, huc, hD, hE'⟩ := continuousOn_secondEnergy_data (ι := ι) hA hA' hu hu'
   have hsub : Icc a t ⊆ Icc a b := Icc_subset_Icc_right ht.2
-  have hFi := hf.mono_set (c := a) (d := t)
-    (by simpa only [uIcc_of_le ht.1, uIcc_of_le (ht.1.trans ht.2)] using hsub)
+  have hFi := hf.mono_set (uIcc_subset_uIcc_left (mem_uIcc_of_le ht.1 ht.2))
   have hprim : ContinuousOn (fun s ↦ ∫ r in a..s, ‖ι (u' r)‖ ^ 2) (Icc a t) := by
     rw [← uIcc_of_le ht.1]
     exact intervalIntegral.continuousOn_primitive_interval

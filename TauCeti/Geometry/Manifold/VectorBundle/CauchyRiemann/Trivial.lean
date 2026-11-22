@@ -22,9 +22,10 @@ Functions `M → F` are the sections of the trivial bundle `M × F`, and their `
 `∂bar σ = (dσ)^{0,1}`, is the `(0,1)`-part of the canonical connection of the trivial bundle. So
 it is a complex linear real Cauchy–Riemann operator: `∂bar (g σ) = g ∂bar σ + (∂bar g) ⊗ σ` for
 real valued `g`. The complementary operator `∂ σ = dσ - ∂bar σ = (dσ)^{1,0}` is also defined here;
-its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator. On a complex normed
-space with multiplication by `i` as its almost complex structure, `∂bar` and `∂` are the conjugate
-Wirtinger derivative and the Wirtinger derivative.
+its values are `(1,0)`-forms. On a nonempty base with nontrivial tangent model and target,
+it is not a real Cauchy–Riemann operator. On a complex normed space with multiplication by `i`
+as its almost complex structure, `∂bar` and `∂` are the conjugate Wirtinger derivative and the
+Wirtinger derivative.
 
 ## Main declarations
 
@@ -61,10 +62,19 @@ Wirtinger derivative and the Wirtinger derivative.
   `TauCeti.SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply`: on a complex
   normed space with multiplication by `i`, `∂bar` and `∂` are the Wirtinger derivatives.
 
+* `TauCeti.conjSMulForm`: the real-linear coefficient `ξ ↦ conj ξ • η` for a one-form `η`.
+* `TauCeti.SmoothAlmostComplexStructure.isRealCauchyRiemannOperator_dbarFunction_add_conjSMulForm`:
+  `∂bar σ + conj σ • η` is a real Cauchy–Riemann operator for every `(0,1)`-form `η`.
+* `TauCeti.SmoothAlmostComplexStructure.sectionComplexLinearPart_dbarFunction_add_conjSMulForm`,
+  `TauCeti.SmoothAlmostComplexStructure.antilinearPart_dbarFunction_add_conjSMulForm`: its complex
+  part is `∂bar` and its antilinear part is the conjugate coefficient.
+* `TauCeti.SmoothAlmostComplexStructure.isComplexLinearOperator_dbarFunction_add_conjSMulForm_iff`:
+  this operator is complex linear exactly when `η` vanishes everywhere.
+
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Appendix C.1, Definition C.1.5.
+  Appendix C.1, Definition C.1.5 and Exercise C.1.7.
 -/
 
 public section
@@ -75,6 +85,37 @@ open scoped ContDiff Manifold TauCeti.ComplexManifold
 noncomputable section
 
 namespace TauCeti
+
+section ConjugateCoefficient
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The real-linear coefficient `ξ ↦ conj ξ • η x` for a complex-valued one-form `η`.
+It takes values in continuous real linear forms on the tangent space. -/
+def conjSMulForm (η : Π x : M, TangentSpace I x →L[ℝ] ℂ) (x : M) :
+    ℂ →L[ℝ] TangentSpace I x →L[ℝ] ℂ :=
+  -- Real components use the existing real scalar action on tangent covectors; a direct
+  -- complex `smulRight` would require an additional joint complex scalar-action instance.
+  Complex.reCLM.smulRight (η x) - Complex.imCLM.smulRight (Complex.I • η x)
+
+@[simp]
+theorem conjSMulForm_apply (η : Π x : M, TangentSpace I x →L[ℝ] ℂ) (x : M) (ξ : ℂ) :
+    conjSMulForm η x ξ = starRingEnd ℂ ξ • η x := by
+  simp only [conjSMulForm, sub_apply, ContinuousLinearMap.smulRight_apply,
+    Complex.reCLM_apply, Complex.imCLM_apply]
+  simpa only [Complex.conj_re, Complex.conj_im, neg_smul, sub_eq_add_neg] using
+    Complex.re_smul_add_im_smul (starRingEnd ℂ ξ) (η x)
+
+/-- The coefficient `ξ ↦ conj ξ • η x` is complex antilinear. -/
+theorem conjSMulForm_complex_I_smul (η : Π x : M, TangentSpace I x →L[ℝ] ℂ)
+    (x : M) (ξ : ℂ) : conjSMulForm η x (Complex.I • ξ) = -(Complex.I • conjSMulForm η x ξ) := by
+  ext v
+  simp only [conjSMulForm_apply, smul_apply, _root_.neg_apply, smul_eq_mul, map_mul,
+    Complex.conj_I]
+  ring
+
+end ConjugateCoefficient
 
 namespace SmoothAlmostComplexStructure
 
@@ -205,6 +246,70 @@ theorem isComplexLinearOperator_dbarFunction :
   rw [Trivial.mdifferentiableAt_section_iff] at hσ
   simp only [CovariantDerivative.trivial_apply]
   exact mvfderiv_const_smul hσ Complex.I
+
+/-- Multiplying a `(0,1)`-form by the conjugate coefficient gives a `(0,1)`-form. -/
+theorem isZeroOneForm_conjSMulForm (η : Π x : M, TangentSpace I x →L[ℝ] ℂ)
+    (hη : ∀ x, j.IsZeroOneForm (V := Trivial M ℂ) (η x)) (x : M) (ξ : ℂ) :
+    j.IsZeroOneForm (V := Trivial M ℂ) (conjSMulForm η x ξ) := by
+  refine isZeroOneForm_iff.2 fun v ↦ ?_
+  rw [conjSMulForm_apply, smul_apply, isZeroOneForm_iff.1 (hη x) v, smul_neg, smul_comm]
+  simp only [smul_apply]
+
+/-- `∂bar σ + conj σ • η` is a real Cauchy–Riemann operator when `η` is a `(0,1)`-form. -/
+theorem isRealCauchyRiemannOperator_dbarFunction_add_conjSMulForm
+    (η : Π x : M, TangentSpace I x →L[ℝ] ℂ)
+    (hη : ∀ x, j.IsZeroOneForm (V := Trivial M ℂ) (η x)) :
+    IsRealCauchyRiemannOperator ℂ j (V := Trivial M ℂ)
+      (fun σ x ↦ j.dbarFunction σ x + starRingEnd ℂ (σ x) • η x) := by
+  simpa only [conjSMulForm_apply] using
+    j.isRealCauchyRiemannOperator_dbarFunction.add_zeroOrder (conjSMulForm η)
+      (j.isZeroOneForm_conjSMulForm η hη)
+
+/-- The complex-linear part of `∂bar σ + conj σ • η` is `∂bar`, for every function `σ`,
+including at points where it is not differentiable. -/
+@[simp]
+theorem sectionComplexLinearPart_dbarFunction_add_conjSMulForm
+    (η : Π x : M, TangentSpace I x →L[ℝ] ℂ) (σ : M → ℂ) (x : M) :
+    sectionComplexLinearPart (V := Trivial M ℂ)
+      (fun σ x ↦ j.dbarFunction σ x + starRingEnd ℂ (σ x) • η x) σ x = j.dbarFunction σ x := by
+  have hi := conjSMulForm_complex_I_smul η x (σ x)
+  simp only [conjSMulForm_apply] at hi
+  rw [sectionComplexLinearPart_apply, dbarFunction_const_smul, Pi.smul_apply, hi]
+  simp only [smul_add, smul_neg, smul_smul Complex.I Complex.I, Complex.I_mul_I]
+  module
+
+/-- The operator `∂bar σ + conj σ • η` is complex linear exactly when the coefficient form
+vanishes everywhere. This includes the empty manifold. -/
+theorem isComplexLinearOperator_dbarFunction_add_conjSMulForm_iff
+    (η : Π x : M, TangentSpace I x →L[ℝ] ℂ) :
+    IsComplexLinearOperator ℂ (V := Trivial M ℂ)
+      (fun σ x ↦ j.dbarFunction σ x + starRingEnd ℂ (σ x) • η x) ↔ ∀ x, η x = 0 := by
+  constructor
+  · intro h x
+    have hσ : MDifferentiableAt I 𝓘(ℝ, ℂ) (fun _ : M ↦ (1 : ℂ)) x := mdifferentiableAt_const
+    have h₁ := (h.sectionComplexLinearPart_eq
+      (Trivial.mdifferentiableAt_section_iff.2 hσ)).symm.trans
+        (j.sectionComplexLinearPart_dbarFunction_add_conjSMulForm η (fun _ ↦ (1 : ℂ)) x)
+    have h₂ : starRingEnd ℂ 1 • η x = 0 := add_eq_left.1 h₁
+    simpa only [map_one, one_smul] using h₂
+  · intro hη
+    have heq : (fun σ x ↦ j.dbarFunction σ x + starRingEnd ℂ (σ x) • η x) = j.dbarFunction := by
+      funext σ x
+      ext v
+      simp only [add_apply, smul_apply, hη, zero_apply, smul_zero, add_zero]
+    rw [heq]
+    exact j.isComplexLinearOperator_dbarFunction
+
+/-- The antilinear zeroth-order part of `∂bar σ + conj σ • η` in McDuff–Salamon Exercise C.1.7
+is `ξ ↦ conj ξ • η`. -/
+@[simp]
+theorem antilinearPart_dbarFunction_add_conjSMulForm
+    (η : Π x : M, TangentSpace I x →L[ℝ] ℂ)
+    (hD : IsRealCauchyRiemannOperator ℂ j (V := Trivial M ℂ)
+      (fun σ x ↦ j.dbarFunction σ x + starRingEnd ℂ (σ x) • η x)) (x : M) :
+    hD.antilinearPart x = conjSMulForm η x :=
+  hD.antilinearPart_eq_of_eq_add j.isComplexLinearOperator_dbarFunction (conjSMulForm η)
+    (conjSMulForm_complex_I_smul η) (fun _ _ _ ↦ by rw [conjSMulForm_apply]) x
 
 /-- `∂bar` on functions is smooth: it sends `C^(n + 1)` functions to `C^n` sections of the bundle
 `Hom(TM, M × F)`. -/

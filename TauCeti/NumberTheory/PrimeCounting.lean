@@ -116,6 +116,11 @@ theorem primeCounting_add_one_le (n : ℕ) : primeCounting (n + 1) ≤ primeCoun
     count_succ]
   split_ifs <;> omega
 
+/-- There are at most `n` primes `p ≤ n`. -/
+theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
+  rw [← primesLE_card_eq_primeCounting, primesLE_eq_filter_Ioc_zero]
+  exact (card_filter_le _ _).trans (by simp)
+
 /-- The prime counting function at the `k`-th prime, counting from `nth Nat.Prime 0 = 2`,
 is `k + 1`. -/
 @[simp]

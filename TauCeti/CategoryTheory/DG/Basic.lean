@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
@@ -430,7 +433,7 @@ theorem dgId_dgComp {X Y : C} {q : ℤ} (g : DGHom R q X Y) :
   have h := HomologicalComplex.congr_hom
     (e_id_comp (CochainComplex (ModuleCat.{v} R) ℤ) X Y) q
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, leftUnitor_inv_f,
-    HomologicalComplex.leftUnitor'_inv, Category.assoc, Category.assoc,
+    Category.assoc, Category.assoc,
     ι_whiskerRight_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) g
   simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,
@@ -445,7 +448,7 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
   have h := HomologicalComplex.congr_hom
     (e_comp_id (CochainComplex (ModuleCat.{v} R) ℤ) X Y) p
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, rightUnitor_inv_f,
-    HomologicalComplex.rightUnitor'_inv, Category.assoc, Category.assoc,
+    Category.assoc, Category.assoc,
     ι_whiskerLeft_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) f
   simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,

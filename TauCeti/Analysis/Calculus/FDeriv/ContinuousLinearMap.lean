@@ -188,6 +188,7 @@ theorem _root_.HasDerivAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜]
     (hc : HasDerivAt c c' t) (hu : HasDerivAt u u' t)
     (hsym : ∀ v w, c t v w = c t w v) :
     HasDerivAt (fun r ↦ c r (u r) (u r)) (c' (u t) (u t) + 2 * c t (u t) u') t := by
+  -- Inferring the arguments from `hc` times out in unification on the nested operator space.
   have hc' := HasDerivAt.hasDerivWithinAt (𝕜 := 𝕜) (F := F →L[𝕜] F →L[𝕜] 𝕜)
     (f := c) (f' := c') (x := t) (s := univ) hc
   exact hasDerivWithinAt_univ.mp (hc'.clm_apply_self hu.hasDerivWithinAt hsym)
