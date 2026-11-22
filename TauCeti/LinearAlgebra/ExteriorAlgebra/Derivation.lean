@@ -40,6 +40,8 @@ a `k`-linear map `d₁ : M →ₗ[k] ExteriorAlgebra S M` in degree one extends 
 * `ExteriorAlgebra.liftTwistedDerivation_mem_integerGrading`,
   `ExteriorAlgebra.liftTwistedDerivation_mem_exteriorPower`: grading-shift preservation
   when `σ` preserves degree one, `d₀` has degree `r`, and `d₁` has degree `r + 1`.
+* `ExteriorAlgebra.map_ιMulti_of_leibniz`: an untwisted Leibniz map extending a linear map `A` of
+  `M` acts on `v₀ ∧ ⋯ ∧ vₙ₋₁` as `∑ⱼ v₀ ∧ ⋯ ∧ A vⱼ ∧ ⋯ ∧ vₙ₋₁`.
 
 ## Implementation notes
 
@@ -447,5 +449,22 @@ theorem liftTwistedDerivation_mem_exteriorPower
     (fun m ↦ by rw [← Nat.cast_add_one, integerGrading_natCast]; exact hd₁_mem m)
     hx'
   rwa [← Nat.cast_add, integerGrading_natCast] at hmem
+
+/-- **A Leibniz map on pure wedges**: if an `S`-linear map `d` of `ExteriorAlgebra S M` obeys the
+Leibniz rule `d (x * y) = d x * y + x * d y` and sends each generator `ι S m` to `ι S (A m)`, then
+it sends `v₀ ∧ ⋯ ∧ vₙ₋₁` to `∑ⱼ v₀ ∧ ⋯ ∧ A vⱼ ∧ ⋯ ∧ vₙ₋₁`. -/
+theorem map_ιMulti_of_leibniz {A : M →ₗ[S] M} {d : ExteriorAlgebra S M →ₗ[S] ExteriorAlgebra S M}
+    (hd : ∀ x y, d (x * y) = d x * y + x * d y)
+    (hι : ∀ m, d (ExteriorAlgebra.ι S m) = ExteriorAlgebra.ι S (A m)) (n : ℕ) (v : Fin n → M) :
+    d (ιMulti S n v) = ∑ j, ιMulti S n (Function.update v j (A (v j))) := by
+  induction n with
+  | zero => simpa using hd 1 1
+  | succ n ih =>
+    have h0 (j : Fin n) (x : M) : Function.update v j.succ x 0 = v 0 :=
+      Function.update_of_ne (Fin.succ_ne_zero j).symm _ _
+    rw [Fin.sum_univ_succ]
+    simp only [ιMulti_succ_apply, hd, hι, ih, Function.update_self, h0, Finset.mul_sum]
+    simp [Matrix.vecTail, Function.update_comp_eq_of_injective _ (Fin.succ_injective _),
+      Function.update_comp_eq_of_forall_ne _ _ Fin.succ_ne_zero]
 
 end ExteriorAlgebra
