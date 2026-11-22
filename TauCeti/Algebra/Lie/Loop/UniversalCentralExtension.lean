@@ -86,11 +86,11 @@ private theorem splittingCoordinate_add_eta_lie
     (η : oneCochain K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K))
     {t : K}
     (hω_eq :
-      letI : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.2 _)⟩
+      letI : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.property _)⟩
       letI := (loopExtension πQ hπQ_surj).ringModuleOf
       letI := (loopExtension πQ hπQ_surj).lieModuleOf
       twoCochainMap ((TrivialLieModule.equiv K (loopAlgebra K ℤ L) K).symm.toLinearMap ∘ₗ μ)
-          LieHom.id ((loopExtension πQ hπQ_surj).twoCocycleOf (s := sec) hsec).1 =
+          LieHom.id ((loopExtension πQ hπQ_surj).twoCocycleOf (s := sec) hsec).val =
         t • twoCochainOfBilinear K ℤ L Φ hΦs +
           d₁₂ K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K) η)
     (y₁ y₂ : Q) :
@@ -98,7 +98,7 @@ private theorem splittingCoordinate_add_eta_lie
     (μ ∘ₗ (loopExtension πQ hπQ_surj).splittingCoordinate hsec +
       e.toLinearMap ∘ₗ η ∘ₗ πQ.toLinearMap) ⁅y₁, y₂⁆ =
       t * residuePairing K ℤ L Φ (πQ y₁) (πQ y₂) := by
-  let : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.2 _)⟩
+  let : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.property _)⟩
   let := (loopExtension πQ hπQ_surj).ringModuleOf
   let := (loopExtension πQ hπQ_surj).lieModuleOf
   let e := TrivialLieModule.equiv K (loopAlgebra K ℤ L) K
@@ -117,7 +117,7 @@ private theorem splittingCoordinate_add_eta_lie
     smul_eq_mul] at hω_eval
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LieHom.coe_toLinearMap, LieHom.map_lie]
   rw [hbra, ← (loopExtension πQ hπQ_surj).twoCocycleOf_eq_splittingCoordinate hsec (πQ y₁) (πQ y₂)]
-  change μ (((loopExtension πQ hπQ_surj).twoCocycleOf hsec).1 (πQ y₁) (πQ y₂)) +
+  change μ (((loopExtension πQ hπQ_surj).twoCocycleOf hsec).val (πQ y₁) (πQ y₂)) +
       e (η ⁅πQ y₁, πQ y₂⁆) = t * residuePairing K ℤ L Φ (πQ y₁) (πQ y₂)
   rw [hω_eval]
   ring
@@ -156,13 +156,14 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
   have hμ_cQ : μ ⟨cQ, hcQ_ker⟩ = 0 := by
     simp [μ, (Submodule.Quotient.mk_eq_zero U).mpr (Submodule.mem_span_singleton_self _)]
   have hμ_z₀ : μ ⟨z₀, hz₀_ker⟩ ≠ 0 := by simpa only [μ, LinearMap.comp_apply] using hν
-  have : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.2 _)⟩
+  have : IsLieAbelian πQ.ker := ⟨fun a b ↦ Subtype.ext (hker_central _ b.property _)⟩
   let := (loopExtension πQ hπQ_surj).ringModuleOf
   let := (loopExtension πQ hπQ_surj).lieModuleOf
   have : LieModule.IsTrivial (loopAlgebra K ℤ L) πQ.ker := ⟨fun p z ↦ by
     obtain ⟨y, rfl⟩ := (loopExtension πQ hπQ_surj).proj_surjective p
     rw [(loopExtension πQ hπQ_surj).ringModuleOf_bracket_proj,
-      show ⁅y, (loopExtension πQ hπQ_surj).toKer z⁆ = 0 from Subtype.ext (hker_central _ z.2 y),
+      show ⁅y, (loopExtension πQ hπQ_surj).toKer z⁆ = 0 from
+        Subtype.ext (hker_central _ z.property y),
       map_zero]⟩
   obtain ⟨sec, hsec⟩ := LinearMap.exists_rightInverse_of_surjective πQ.toLinearMap
     (LinearMap.range_eq_top.mpr hπQ_surj)
@@ -171,10 +172,11 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
   let e := TrivialLieModule.equiv K (loopAlgebra K ℤ L) K
   let ω : twoCochain K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K) :=
     twoCochainMap (e.symm.toLinearMap ∘ₗ μ) LieHom.id
-      ((loopExtension πQ hπQ_surj).twoCocycleOf hsec_apply).1
+      ((loopExtension πQ hπQ_surj).twoCocycleOf hsec_apply).val
   have hω_cocycle : ω ∈ twoCocycle K (loopAlgebra K ℤ L)
       (TrivialLieModule K (loopAlgebra K ℤ L) K) :=
-    twoCochainMap_mem_twoCocycle _ LieHom.id ((loopExtension πQ hπQ_surj).twoCocycleOf hsec_apply).2
+    twoCochainMap_mem_twoCocycle _ LieHom.id
+      ((loopExtension πQ hπQ_surj).twoCocycleOf hsec_apply).property
   have hdecomp : ω ∈ (K ∙ twoCochainOfBilinear K ℤ L Φ hΦs) ⊔
       LinearMap.range (d₁₂ K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)) := by
     rw [← twoCocycle_eq_span_sup_range_d₁₂ hΦs hspan]; exact hω_cocycle

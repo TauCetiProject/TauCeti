@@ -161,7 +161,7 @@ noncomputable def affineRealization :
     rw [linearIndependent_option]
     refine ⟨?_, fun hmem ↦ ?_⟩
     · exact b.linearIndepOn_coroot.map' (LinearMap.inl K N (K × K))
-        (LinearMap.ker_eq_bot.mpr fun _ _ h ↦ (Prod.ext_iff.mp h).1)
+        (LinearMap.ker_eq_bot.mpr fun _ _ h ↦ (Prod.ext_iff.mp h).left)
     · let πc : N × K × K →ₗ[K] K := LinearMap.fst K K K ∘ₗ LinearMap.snd K N (K × K)
       have hker : Submodule.span K (Set.range (b.affineCoroot ∘ some)) ≤ LinearMap.ker πc :=
         Submodule.span_le.mpr (by rintro _ ⟨i, rfl⟩; simp [πc, affineCoroot])

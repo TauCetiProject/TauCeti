@@ -75,8 +75,9 @@ theorem exists_eq_smul_killingForm_of_isSimple (H : LieSubalgebra K L) [H.IsCart
   let f : L →ₗ⁅K,L⁆ L := { T with map_lie' := fun {z x} ↦ hT_lie z x }
   have hf_apply (x : L) : f x = T x := rfl
   obtain ⟨α⟩ := nonempty_root_of_isSimple (H := H)
-  have hα : α.1.IsNonZero := H.isNonZero_coe_root α
-  have hdim : Module.finrank K (rootSpace H (α : H → K)) = 1 := finrank_rootSpace_eq_one α.1 hα
+  have hα : α.val.IsNonZero := H.isNonZero_coe_root α
+  have hdim : Module.finrank K (rootSpace H (α : H → K)) = 1 :=
+    finrank_rootSpace_eq_one α.val hα
   have _ : Nontrivial (rootSpace H (α : H → K)) :=
     Module.nontrivial_of_finrank_pos (R := K) (M := rootSpace H (α : H → K))
       (hdim.symm ▸ Nat.zero_lt_one)

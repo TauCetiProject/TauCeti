@@ -216,7 +216,7 @@ the highest root. These are the coefficients of the central coroot `c = ∑ₖ a
 affine realization, and their sum is the dual Coxeter number `1 + ht(θ^∨)`. -/
 noncomputable def affineComarks : Option b.support → ℤ
   | none => 1
-  | some i => b.flip.toWeightBasisInt.repr (P.flip.rootSpanMem ℤ b.highestRoot) ⟨i.1, i.2⟩
+  | some i => b.flip.toWeightBasisInt.repr (P.flip.rootSpanMem ℤ b.highestRoot) ⟨i.val, i.property⟩
 
 @[simp]
 theorem affineComarks_none : b.affineComarks none = 1 := (rfl)
@@ -237,7 +237,7 @@ theorem affineComarks_some_eq_of_coroot_highestRoot_eq_sum {f : b.support → �
     (hf : P.coroot b.highestRoot = ∑ i : b.support, f i • P.coroot i) (i : b.support) :
     b.affineComarks (some i) = f i := by
   have h : P.flip.rootSpanMem ℤ b.highestRoot =
-      ∑ j : b.flip.support, f ⟨j.1, j.2⟩ • b.flip.toWeightBasisInt j := by
+      ∑ j : b.flip.support, f ⟨j.val, j.property⟩ • b.flip.toWeightBasisInt j := by
     refine Subtype.ext ?_
     simp only [Submodule.coe_sum, SetLike.val_smul, RootPairing.Base.coe_toWeightBasisInt_apply,
       RootPairing.flip_root]
@@ -328,7 +328,7 @@ theorem affineComarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.I
     rw [map_zsmul, smul_comm, ← P.rootFormIn_self_smul_coroot ℤ j, mul_smul]
   have h1 : P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot) •
       P.flip.rootSpanMem ℤ b.highestRoot =
-      ∑ j : b.flip.support, (b.affineComarks (some ⟨j.1, j.2⟩) *
+      ∑ j : b.flip.support, (b.affineComarks (some ⟨j.val, j.property⟩) *
         P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot)) •
         b.flip.toWeightBasisInt j := by
     refine Subtype.ext ?_
@@ -339,7 +339,7 @@ theorem affineComarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.I
     rw [mul_comm, mul_smul]
   have h2 : P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot) •
       P.flip.rootSpanMem ℤ b.highestRoot =
-      ∑ j : b.flip.support, (b.affineMarks (some ⟨j.1, j.2⟩) *
+      ∑ j : b.flip.support, (b.affineMarks (some ⟨j.val, j.property⟩) *
         P.RootFormIn ℤ (P.rootSpanMem ℤ j) (P.rootSpanMem ℤ j)) • b.flip.toWeightBasisInt j := by
     refine Subtype.ext ?_
     simp only [SetLike.val_smul, Submodule.coe_sum, RootPairing.Base.coe_toWeightBasisInt_apply,
@@ -347,7 +347,8 @@ theorem affineComarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.I
     exact hpol
   have hmul : b.affineComarks (some i) * (P.posRootForm ℤ).rootLength b.highestRoot =
       b.affineMarks (some i) * (P.posRootForm ℤ).rootLength i := by
-    have hrepr := congrArg (fun x ↦ b.flip.toWeightBasisInt.repr x ⟨i.1, i.2⟩) (h1.symm.trans h2)
+    have hrepr := congrArg (fun x ↦ b.flip.toWeightBasisInt.repr x ⟨i.val, i.property⟩)
+      (h1.symm.trans h2)
     rw [b.flip.toWeightBasisInt.repr_sum_self, b.flip.toWeightBasisInt.repr_sum_self] at hrepr
     simpa [RootPairing.RootPositiveForm.rootLength, RootPairing.posRootForm_eq] using hrepr
   have hpos : 0 < b.affineMarks (some i) * (P.posRootForm ℤ).rootLength i :=
