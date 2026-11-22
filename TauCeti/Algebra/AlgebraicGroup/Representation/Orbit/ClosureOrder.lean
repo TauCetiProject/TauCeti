@@ -50,6 +50,7 @@ adjoint orbits, in particular on nilpotent orbits.
 ## Main declarations
 
 * `TauCeti.Comodule.VectorOrbit.image_injective`,
+  `TauCeti.Comodule.VectorOrbit.projectiveOrbitMap_mem_image_iff`,
   `TauCeti.Comodule.VectorOrbit.disjoint_image_of_ne`,
   `TauCeti.Comodule.VectorOrbit.closure_image_injective`: distinct orbits have disjoint images,
   and are determined by their images and even by the closures of their images.
@@ -129,11 +130,9 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
       (Module.isUnimodular_mk_one (0 : M)) hq_hom).mpr (by simpa using hzero)
   have hPne : P ≠ 0 := fun h ↦ hP0 (by simp [h])
   -- Choose a nonzero scalar `t` that is not a root of `P`.
-  obtain ⟨t, ht⟩ := Infinite.exists_notMem_finset (insert (0 : k) P.roots.toFinset)
-  have ht0 : t ≠ 0 := fun h ↦ ht (Finset.mem_insert.mpr (Or.inl h))
-  have hPt : P.eval t ≠ 0 := fun hzero ↦
-    ht (Finset.mem_insert_of_mem
-      (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hPne).mpr hzero)))
+  obtain ⟨t, ht0, hPt⟩ :=
+    ((Filter.eventually_cofinite_ne (0 : k)).and
+      (Polynomial.eventually_eval_ne_zero_cofinite hPne)).exists
   obtain ⟨g, hg⟩ := hv t ht0
   refine ⟨projectiveOrbitMap (H := H) ((t • v, 1) : M × k) (Module.isUnimodular_mk_one (t • v))
       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)), hfU (hq_le ?_), ?_⟩
@@ -162,15 +161,22 @@ theorem image_injective : Function.Injective (image : VectorOrbit k H M → Set 
   obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq_of_mem_range _ _ _ _ h
   exact mk_eq_mk_iff.mpr ⟨g, basePointsRepresentation_eq_of_span_eq hg⟩
 
-private theorem mk_eq_of_projectiveOrbitMap_mem_image {u : M} {O : VectorOrbit k H M}
-    (h : projectiveOrbitMap (H := H) ((u, 1) : M × k) (Module.isUnimodular_mk_one u)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ O.image) :
-    (mk u : VectorOrbit k H M) = O := by
-  induction O using VectorOrbit.ind with | h v
-  rw [image_mk] at h
-  exact image_injective <| by
-    rw [image_mk, image_mk]
-    exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr h
+/-- A vector's identity projective orbit point lies in the geometric image of `O` if and only if
+the vector belongs to `O`. -/
+theorem projectiveOrbitMap_mem_image_iff {u : M} {O : VectorOrbit k H M} :
+    projectiveOrbitMap (H := H) ((u, 1) : M × k) (Module.isUnimodular_mk_one u)
+        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ O.image ↔
+      (mk u : VectorOrbit k H M) = O := by
+  constructor
+  · intro h
+    induction O using VectorOrbit.ind with | h v
+    rw [image_mk] at h
+    exact image_injective <| by
+      rw [image_mk, image_mk]
+      exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr h
+  · rintro rfl
+    rw [image_mk]
+    exact Set.mem_range_self _
 
 /-- **Distinct orbits have disjoint geometric images.** Two distinct rational orbits share no
 scheme point, closed or nonclosed, in `P(M × k)`. -/
@@ -183,8 +189,8 @@ theorem disjoint_image_of_ne {O O' : VectorOrbit k H M} (h : O ≠ O') :
   obtain ⟨u, rfl⟩ :=
     exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd (H := H)
       (O.image_subset_basicOpen_snd hxO) hxc
-  exact h ((mk_eq_of_projectiveOrbitMap_mem_image hxO).symm.trans
-    (mk_eq_of_projectiveOrbitMap_mem_image hxO'))
+  exact h ((projectiveOrbitMap_mem_image_iff.mp hxO).symm.trans
+    (projectiveOrbitMap_mem_image_iff.mp hxO'))
 
 /-- **Orbits are determined by their closures.** Two rational orbits whose geometric images
 have the same closure in `P(M × k)` are equal. -/

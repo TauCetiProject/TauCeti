@@ -15,11 +15,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Bas
 public import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
 import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
-import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 import TauCeti.RingTheory.Nilpotent.Log
 
@@ -250,6 +248,7 @@ theorem toHomUnits_basePointsRepresentation_expAdPoint [LieAlgebra ℚ 𝔤]
 theorem isUnipotentPoint_expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     HopfAlgebra.IsUnipotentPoint (expAdPoint (H := H) hx) := by
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+  rw [expAdPoint_def]
   exact HopfAlgebra.isUnipotentPoint_expPoint _
     (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
 
@@ -346,12 +345,17 @@ theorem exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup
         rw [← LieEquiv.map_lie, hy_ker, map_zero])
     refine ⟨expAdPoint hy, Subgroup.subset_closure
       ⟨expAdPoint_mem_quotientPointsSubgroup I hy hy_lie, isUnipotentPoint_expAdPoint hy⟩, ?_⟩
-    rw [toHomUnits_basePointsRepresentation_expAdPoint hy]
-    exact (LinearMap.GeneralLinearGroup.generalLinearEquiv_symm_apply _).symm
+    change toGL (expAdPoint hy) = LinearMap.GeneralLinearGroup.ofLinearEquiv _
+    exact toHomUnits_basePointsRepresentation_expAdPoint hy
   obtain ⟨g, hg, hgf⟩ := hle ⟨ψ, hψ, rfl⟩
   refine ⟨g, hg, ?_⟩
+  rw [show toGL g = LinearMap.GeneralLinearGroup.ofLinearEquiv
+    (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g).toLinearEquiv from
+      toHomUnits_basePointsRepresentation_eq_ofLinearEquiv g] at hgf
   have hgf' := congrArg (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤) hgf
-  simpa [toGL, toHomUnits_basePointsRepresentation_eq_ofLinearEquiv] using hgf'
+  change (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤)
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤).symm _) = _ at hgf'
+  simpa using hgf'
 
 end Field
 

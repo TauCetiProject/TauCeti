@@ -87,15 +87,29 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
 /-- In the cotangent-dual model, the differential of the adjoint comodule along
+`cotangentLinearEquiv x` is the adjoint operator `LieAlgebra.ad R _ x`. -/
+@[simp]
+theorem differential_cotangentLinearEquiv
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H)
+        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+        (cotangentLinearEquiv (R := R) (A := H) (B := R) x) =
+      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
+  ext y
+  rw [differential_adjointComodule, cotangentDualLieEquiv_symm_apply,
+    LinearEquiv.symm_apply_apply, LieAlgebra.ad_apply]
+
+/-- In the cotangent-dual model, the differential of the adjoint comodule along
 `cotangentDualLieEquiv x` is the adjoint operator `LieAlgebra.ad R _ x`. -/
+-- `cotangentDualLieEquiv_apply` is `@[simp]`, so `differential_cotangentLinearEquiv`
+-- carries `@[simp]`.
 theorem differential_cotangentDualLieEquiv
     (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
     Comodule.differential (R := R) (H := H)
         (M := Module.Dual R (Bialgebra.CotangentSpace R H))
         (cotangentDualLieEquiv (R := R) (H := H) x) =
       LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
-  ext y
-  rw [differential_adjointComodule, LieEquiv.symm_apply_apply, LieAlgebra.ad_apply]
+  simp only [cotangentDualLieEquiv_apply, differential_cotangentLinearEquiv]
 
 end Derivation
 

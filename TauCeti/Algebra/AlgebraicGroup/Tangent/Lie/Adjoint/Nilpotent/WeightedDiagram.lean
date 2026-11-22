@@ -42,9 +42,9 @@ orbits lie below `O` in the closure order
 (`TauCeti.Comodule.VectorOrbit.finite_setOf_le_of_isNilpotentAd`,
 `TauCeti.Comodule.VectorOrbit.finite_setOf_lt_of_isNilpotentAd`), so the generic scheme-point
 decompositions of `closure O` and `closure O \ O` inside the affine chart `𝔤 = {t ≠ 0}` of
-`P(𝔤 × k)` (`TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion_le` and
-`TauCeti.Comodule.VectorOrbit.closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt`) apply directly
-to `finite_setOf_le_of_isNilpotentAd hO`.
+`P(𝔤 × k)` specialize to decompositions in `TauCeti.Comodule.VectorOrbit` indexed by the
+subtype of nilpotent orbits (`closure_image_inter_basicOpen_snd_eq_biUnion_le_nilpotentOrbit` and
+`closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt_nilpotentOrbit`).
 
 When `G` is connected, `O(𝔤)^G = S(𝔤*)^𝔤` (`TauCeti.adjointInvariantPolynomials_eq_lieInvariants`),
 so two dominant `sl₂` triples have `G(k)`-conjugate nilpositive elements if and only if their
@@ -68,11 +68,13 @@ all-zero diagram `0` to the zero orbit and `b.weightedDynkinDiagram h` to each n
   nilpotent `G(k)`-orbits without assuming connectedness.
 * `TauCeti.Comodule.VectorOrbit.finite_setOf_le_of_isNilpotentAd` and
   `TauCeti.Comodule.VectorOrbit.finite_setOf_lt_of_isNilpotentAd`: finiteness of orbits below a
-  nilpotent orbit in the closure order, supplying the finiteness hypothesis of
-  `TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion_le` and
-  `TauCeti.Comodule.VectorOrbit.closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt`, and making
-  the decomposition of the `k`-rational vectors `{y : 𝔤 | mk y ≤ O}` in
+  nilpotent orbit in the closure order, making the decomposition of the `k`-rational vectors
+  `{y : 𝔤 | mk y ≤ O}` in
   `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd` a finite union.
+* `closure_image_inter_basicOpen_snd_eq_biUnion_le_nilpotentOrbit` and
+  `closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt_nilpotentOrbit` in
+  `TauCeti.Comodule.VectorOrbit`: exact decompositions of `closure O` and `closure O \ O` in the
+  affine chart `𝔤` of `P(𝔤 × k)` into finite unions indexed by the nilpotent orbit subtype.
 * `IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`: for connected `G`,
   nilpositive elements of dominant `sl₂` triples are `G(k)`-conjugate iff their weighted Dynkin
   diagrams agree.
@@ -262,6 +264,41 @@ theorem finite_setOf_lt_of_isNilpotentAd {O : VectorOrbit k H 𝔤} (hO : O.IsNi
     {O' : VectorOrbit k H 𝔤 | O' < O}.Finite :=
   (finite_setOf_le_of_isNilpotentAd hO).subset fun (_ : VectorOrbit k H 𝔤) (hlt : _ < O) ↦
     hlt.le
+
+/-- **Orbit closure decomposition for nilpotent orbits.** Inside the affine chart `𝔤 = {t ≠ 0}` of
+`P(𝔤 × k)`, the closure of a nilpotent adjoint orbit `O` is the finite union of the scheme-point
+orbit images of all nilpotent orbits `O' ≤ O`, indexed by the nilpotent orbit subtype. No
+connectedness of `G` is assumed. -/
+theorem closure_image_inter_basicOpen_snd_eq_biUnion_le_nilpotentOrbit
+    (O : {O : VectorOrbit k H 𝔤 // O.IsNilpotentAd}) :
+    closure O.val.image ∩
+        (AlgebraicGeometry.Proj.basicOpen
+          (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (𝔤 × k)))
+          (SymmetricAlgebra.ι k (Module.Dual k (𝔤 × k)) (LinearMap.snd k 𝔤 k)) : Set _) =
+      ⋃ O' ∈ {O' : {O' : VectorOrbit k H 𝔤 // O'.IsNilpotentAd} | O' ≤ O}, O'.val.image := by
+  rw [closure_image_inter_basicOpen_snd_eq_biUnion_le (finite_setOf_le_of_isNilpotentAd O.property)]
+  ext x
+  simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Subtype.exists, exists_prop]
+  exact ⟨fun ⟨O', hle, hx⟩ ↦ ⟨O', O.property.of_le hle, hle, hx⟩,
+    fun ⟨O', _, hle, hx⟩ ↦ ⟨O', hle, hx⟩⟩
+
+/-- **Orbit boundary decomposition for nilpotent orbits.** Inside the affine chart `𝔤 = {t ≠ 0}` of
+`P(𝔤 × k)`, the boundary `closure O \ O` of a nilpotent adjoint orbit `O` is the finite union of
+the scheme-point orbit images of all strictly smaller nilpotent orbits `O' < O`, indexed by the
+nilpotent orbit subtype. No connectedness of `G` is assumed. -/
+theorem closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt_nilpotentOrbit
+    (O : {O : VectorOrbit k H 𝔤 // O.IsNilpotentAd}) :
+    (closure O.val.image \ O.val.image) ∩
+        (AlgebraicGeometry.Proj.basicOpen
+          (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (𝔤 × k)))
+          (SymmetricAlgebra.ι k (Module.Dual k (𝔤 × k)) (LinearMap.snd k 𝔤 k)) : Set _) =
+      ⋃ O' ∈ {O' : {O' : VectorOrbit k H 𝔤 // O'.IsNilpotentAd} | O' < O}, O'.val.image := by
+  rw [closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt
+    (finite_setOf_le_of_isNilpotentAd O.property)]
+  ext x
+  simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Subtype.exists, exists_prop]
+  exact ⟨fun ⟨O', hlt, hx⟩ ↦ ⟨O', O.property.of_le hlt.le, hlt, hx⟩,
+    fun ⟨O', _, hlt, hx⟩ ↦ ⟨O', hlt, hx⟩⟩
 
 end Comodule.VectorOrbit
 

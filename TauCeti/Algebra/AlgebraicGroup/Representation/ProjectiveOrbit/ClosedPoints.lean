@@ -121,10 +121,8 @@ theorem _root_.ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap
     have hm : Module.IsUnimodular k m := Module.isUnimodular_of_apply_eq_one (f := (v φ)⁻¹ • φ)
       (by rw [LinearMap.smul_apply, hφm, smul_eq_mul, inv_mul_cancel₀ hφ])
     refine ⟨m, hm, ProjectiveSpectrum.ext_of_mem_pos fun n hn s hs ↦ ?_⟩
-    have h := mem_projectiveOrbitMap_kernelPoint_iff (H := H) m hm 1 hs
-    simp only [map_one, one_apply_eq_self] at h
-    simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at h
-    rw [h, hv n hn s hs, hmv]
+    rw [mem_projectiveOrbitMap_kernelPoint_counitAlgHom_iff (H := H) m hm hs,
+      hv n hn s hs, hmv]
   · rintro ⟨m, hm, rfl⟩
     exact projectiveOrbitMap_kernelPoint_mem_closedPoints m hm _
 
@@ -149,12 +147,9 @@ theorem exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd [Comodule k H (
   have hu2 : u.2 = 1 := by
     simpa using (LinearMap.congr_fun huv (LinearMap.snd k M k)).trans hv1
   refine ⟨u.1, ProjectiveSpectrum.ext_of_mem_pos fun n hn s hs ↦ ?_⟩
-  have h := mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((u.1, 1) : M × k)
-    (Module.isUnimodular_mk_one u.1) 1 hs
-  simp only [map_one, one_apply_eq_self] at h
-  simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at h
   have hu : ((u.1, 1) : M × k) = u := Prod.ext rfl hu2.symm
-  rw [h, hv n hn s hs, hu, huv]
+  rw [mem_projectiveOrbitMap_kernelPoint_counitAlgHom_iff (H := H) ((u.1, 1) : M × k)
+    (Module.isUnimodular_mk_one u.1) hs, hv n hn s hs, hu, huv]
 
 variable [Algebra.FiniteType k H]
 

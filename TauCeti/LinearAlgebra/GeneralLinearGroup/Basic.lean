@@ -18,9 +18,6 @@ Supplements to `Mathlib.LinearAlgebra.GeneralLinearGroup.Basic`.
   `ofLinearEquiv f` is `f`.
 * `LinearMap.GeneralLinearGroup.ofLinearEquiv_one`: `ofLinearEquiv` sends the identity equivalence
   to the identity.
-* `LinearMap.GeneralLinearGroup.generalLinearEquiv_ofLinearEquiv` and
-  `LinearMap.GeneralLinearGroup.generalLinearEquiv_symm_apply`: `generalLinearEquiv` and
-  `ofLinearEquiv` are inverses.
 -/
 
 public section
@@ -40,17 +37,5 @@ theorem val_ofLinearEquiv (f : M ≃ₗ[R] M) :
 @[simp]
 theorem ofLinearEquiv_one : ofLinearEquiv (1 : M ≃ₗ[R] M) = (1 : GeneralLinearGroup R M) :=
   Units.ext (LinearMap.ext fun _ ↦ rfl)
-
-/-- `generalLinearEquiv` sends `ofLinearEquiv f` back to `f`. -/
-@[simp]
-theorem generalLinearEquiv_ofLinearEquiv (f : M ≃ₗ[R] M) :
-    generalLinearEquiv R M (ofLinearEquiv f) = f :=
-  LinearEquiv.ext fun x ↦ by simp
-
-/-- The inverse of `generalLinearEquiv` sends a linear equivalence to `ofLinearEquiv`. -/
-@[simp]
-theorem generalLinearEquiv_symm_apply (f : M ≃ₗ[R] M) :
-    (generalLinearEquiv R M).symm f = ofLinearEquiv f :=
-  (generalLinearEquiv R M).symm_apply_eq.mpr (generalLinearEquiv_ofLinearEquiv f).symm
 
 end LinearMap.GeneralLinearGroup
