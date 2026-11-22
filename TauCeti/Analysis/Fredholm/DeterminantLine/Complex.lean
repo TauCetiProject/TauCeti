@@ -83,10 +83,10 @@ bijectivity (`LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_on
 path of invertible operators transport preserves the orientations given by invertibility. Hence,
 along a path of invertible operators starting at a complex-linear one, transport carries the
 complex orientation to the orientation given by invertibility at the other end
-(`TauCeti.detLineOrientationTransport_rayOfNeZero_of_isInvertible`): an operator joined
-to a complex-linear reference through invertible operators has positive determinant sign. This
-holds for real Banach spaces with compatible complex structures that need not come from complex
-norms.
+(`TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`):
+an operator joined to a complex-linear reference through invertible operators has positive
+determinant sign. This holds for real Banach spaces with compatible complex structures that need
+not come from complex norms.
 
 ## Main definitions
 
@@ -106,8 +106,9 @@ norms.
   family of complex-linear Fredholm operators are coherent.
 * `TauCeti.detLineOrientationTransport_complexDetLineOrientation`: transport along complex-linear
   paths preserves complex orientations.
-* `TauCeti.detLineOrientationTransport_rayOfNeZero_of_isInvertible`: transport from
-  a complex-linear operator along invertible operators gives the orientation of invertibility.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`:
+  transport from a complex-linear operator along invertible operators gives the orientation of
+  invertibility.
 
 ## References
 
@@ -577,9 +578,22 @@ theorem detLineOrientationTransport_complexDetLineOrientation {T : ℝ → E →
 
 section Invertible
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [Module ℂ E]
-  [IsScalarTower ℝ ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [Module ℂ F]
-  [IsScalarTower ℝ ℂ F]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [Module ℂ F] [IsScalarTower ℝ ℂ F]
+
+/-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
+underlying real map is an onto operator `A` is nonzero, and so is its image in the determinant line
+of `A`. -/
+theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero {f : E →ₗ[ℂ] F}
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) {A : E →L[ℝ] F}
+    (hf : f.restrictScalars ℝ = A) (hA : Function.Surjective A) :
+    LinearMap.detLineCongrOfEq hf z ≠ 0 := by
+  rw [LinearEquiv.map_ne_zero_iff]
+  refine hz.ne_zero_of_surjective ?_
+  rw [← LinearMap.coe_restrictScalars ℝ f, hf, ContinuousLinearMap.coe_coe]
+  exact hA
+
+variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **Transport from a complex-linear operator along invertible operators.** Let `T` be a path of
 invertible operators between real Banach spaces with compatible complex structures, continuous
@@ -589,17 +603,14 @@ element `z` of its determinant line (`LinearMap.IsComplexPositiveDetLine`), to t
 the determinant line of `T b` given by invertibility, that of the element `1` under
 `LinearMap.detLineEquivOfBijective`. So, relative to the complex orientation at `T a`, the
 determinant sign of `T b` is positive. The complex structures need not come from complex norms. -/
-theorem detLineOrientationTransport_rayOfNeZero_of_isInvertible
+theorem detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine
     {T : ℝ → E →L[ℝ] F} {a b : ℝ} (hT : ContinuousOn T (uIcc a b))
     (hinv : ∀ t ∈ uIcc a b, (T t).IsInvertible) {f : E →ₗ[ℂ] F}
     (hf : f.restrictScalars ℝ = T a) {z : (f.restrictScalars ℝ).detLine}
     (hz : f.IsComplexPositiveDetLine z) :
     detLineOrientationTransport a b hT (fun t ht ↦ (hinv t ht).isFredholm)
-        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z) (by
-          rw [LinearEquiv.map_ne_zero_iff]
-          refine hz.ne_zero_of_surjective ?_
-          rw [← LinearMap.coe_restrictScalars ℝ f, hf, ContinuousLinearMap.coe_coe]
-          exact (hinv a left_mem_uIcc).surjective)) =
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero hf (hinv a left_mem_uIcc).surjective)) =
       rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
         (hinv b right_mem_uIcc).bijective).symm 1) (by simp) := by
   have hfb : Function.Bijective (f.restrictScalars ℝ) := by
