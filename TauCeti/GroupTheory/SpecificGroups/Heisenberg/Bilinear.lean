@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
@@ -57,8 +58,8 @@ The trivial action of `Multiplicative W` on `Multiplicative C` is the local inst
   central exactly when `B(w, ·) = B(·, w)`, so the center is the coefficient group exactly when
   `B - Bᵀ` is left-separating.
 * `LinearMap.BilinMap.commutatorElement_invOf_two_smul_eq_inl` and
-  `LinearMap.BilinMap.center_invOf_two_smul`: for alternating `ω` the commutator in `E_{½ω}` is
-  `ω`, and for left-separating `ω` the center of `E_{½ω}` is the coefficient group.
+  `LinearMap.BilinMap.center_invOf_two_smul_eq_range_inl`: for alternating `ω` the commutator in
+  `E_{½ω}` is `ω`, and for left-separating `ω` the center of `E_{½ω}` is the coefficient group.
 * `LinearMap.BilinMap.factorSet_invOf_two_smul_sub_flip_mul`: the factor sets of `½(B - Bᵀ)` and
   of `B` differ by the coboundary of `w ↦ ½B(w, w)`.
 * `LinearMap.BilinForm.isometryGroupToMulAut_injective`: the isometry action is faithful.
@@ -158,27 +159,21 @@ section Half
 
 variable [Invertible (2 : R)] {ω : LinearMap.BilinMap R W C}
 
-/-- For alternating `ω`, the antisymmetrization of `½ω` is `ω`. -/
-private theorem invOf_two_smul_apply_sub_apply (hω : ω.IsAlt) (x y : W) :
-    ((⅟2 : R) • ω) x y - ((⅟2 : R) • ω) y x = ω x y := by
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply,
-    ← hω.neg x y, smul_neg, sub_neg_eq_add, ← add_smul, invOf_two_add_invOf_two, one_smul]
-
 /-- **The commutator in the Heisenberg group**: for alternating `ω` and `2` invertible, the
 commutator of `(t, w)` and `(s, v)` in `E_{½ω}` is `(ω(w, v), 0)`. -/
 theorem commutatorElement_invOf_two_smul_eq_inl (hω : ω.IsAlt)
     (p q : ((⅟2 : R) • ω).factorSet.Extension) :
     ⁅p, q⁆ = FactorSet.inl _ (ofAdd (ω p.right.toAdd q.right.toAdd)) := by
-  rw [commutatorElement_eq_inl, invOf_two_smul_apply_sub_apply hω]
+  rw [commutatorElement_eq_inl, hω.invOf_two_smul_apply_sub_apply]
 
 /-- **The center of the Heisenberg group**: for alternating left-separating `ω` and `2` invertible,
 the center of `E_{½ω}` is exactly the coefficient group. -/
-theorem center_invOf_two_smul (hω : ω.IsAlt) (hs : ω.SeparatingLeft) :
+theorem center_invOf_two_smul_eq_range_inl (hω : ω.IsAlt) (hs : ω.SeparatingLeft) :
     Subgroup.center ((⅟2 : R) • ω).factorSet.Extension =
       (FactorSet.inl ((⅟2 : R) • ω).factorSet).range := by
   refine (center_eq_range_inl_iff _).2 fun w hw => hs w fun v => ?_
-  rw [← invOf_two_smul_apply_sub_apply hω, ← hw v, LinearMap.sub_apply, LinearMap.sub_apply,
-    LinearMap.flip_apply]
+  rw [← hω.invOf_two_smul_sub_flip]
+  exact hw v
 
 /-- **The quadratic correction between Heisenberg cocycles**: the factor sets of `½(B - Bᵀ)` and of
 `B` differ by the coboundary of `q(w) = ½B(w, w)`. Additively,
@@ -191,9 +186,7 @@ theorem factorSet_invOf_two_smul_sub_flip_mul (w v : Multiplicative W) :
   apply toAdd.injective
   simp only [factorSet_apply, toAdd_mul, toAdd_ofAdd, LinearMap.smul_apply, LinearMap.sub_apply,
     LinearMap.flip_apply, map_add, LinearMap.add_apply, smul_add, smul_sub]
-  have h2 : B w.toAdd v.toAdd = (⅟2 : R) • B w.toAdd v.toAdd + (⅟2 : R) • B w.toAdd v.toAdd := by
-    rw [← add_smul, invOf_two_add_invOf_two, one_smul]
-  conv_rhs => rw [h2]
+  conv_rhs => rw [← invOf_two_smul_add_invOf_two_smul R (B w.toAdd v.toAdd)]
   abel
 
 /-- **Polarized Heisenberg coordinates**: the equivalence of extensions `E_{½(B - Bᵀ)} ≃ E_B`,

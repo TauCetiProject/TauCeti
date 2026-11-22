@@ -75,6 +75,8 @@ maps valued in an arbitrary module.
   pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
   `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
   endomorphism of `R × R`.
+* `LinearMap.IsAlt.invOf_two_smul_sub_flip`: for alternating `ω` and `2` invertible,
+  `½ω - (½ω)ᵀ = ω`, with applied form `LinearMap.IsAlt.invOf_two_smul_apply_sub_apply`.
 -/
 
 public section
@@ -111,6 +113,24 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [M
     ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
       LinearMap.det B • ω v w := by
   rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
+section Invertible
+
+variable {R M N : Type*} [CommSemiring R] [Invertible (2 : R)] [AddCommMonoid M] [Module R M]
+  [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N}
+
+/-- For an alternating bilinear map `ω` and `2` invertible, the antisymmetrization of `½ω` is `ω`,
+evaluated at a pair of vectors. -/
+theorem invOf_two_smul_apply_sub_apply (halt : ω.IsAlt) (x y : M) :
+    ((⅟2 : R) • ω) x y - ((⅟2 : R) • ω) y x = ω x y := by
+  simp [← halt.neg x y]
+
+/-- For an alternating bilinear map `ω` and `2` invertible, the antisymmetrization
+`½ω - (½ω)ᵀ` of `½ω` is `ω`. -/
+theorem invOf_two_smul_sub_flip (halt : ω.IsAlt) : (⅟2 : R) • ω - ((⅟2 : R) • ω).flip = ω :=
+  LinearMap.ext₂ halt.invOf_two_smul_apply_sub_apply
+
+end Invertible
 
 end LinearMap.IsAlt
 
