@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
-public import TauCeti.Geometry.Manifold.IsManifold.Basic
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Invertible manifold derivatives of composites

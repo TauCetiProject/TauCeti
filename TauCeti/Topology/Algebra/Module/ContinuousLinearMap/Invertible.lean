@@ -136,6 +136,7 @@ factors are. Neither finite-dimensionality nor completeness is required.
 The forward implication rests on Mathlib's `Topology.IsQuotientMap.of_comp`, which makes `g` a
 quotient map when `g ∘L f` is invertible, and `isHomeomorph_iff_isQuotientMap_injective`, which
 makes the injective quotient map `g` a homeomorphism. -/
+@[simp]
 theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
   refine ⟨fun h ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
