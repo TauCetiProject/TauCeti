@@ -23,9 +23,7 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. Correspondingly, the substitution
-`x = N y` for an invertible linear map `N` multiplies integrals by `|det N|`
-(`MeasureTheory.Measure.integral_eq_abs_det_smul_integral_comp`). The affine dilation
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation
 `y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`,
@@ -37,10 +35,6 @@ of the part of a set in a ball or closed ball
 equivalences for rescaling lower volume bounds
 (`MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_iff`,
 `MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_inter_ball_iff`).
-
-Read in the other direction, the linear substitution says that precomposing an integrand with a
-continuous linear automorphism `A` divides its integral by `|det A|`
-(`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`).
 
 `MeasureTheory.Measure.addHaar_preimage_comp_sub_right_ball` gives the corresponding
 translation-and-scaling formula for preimages of balls under linear maps.
@@ -131,35 +125,6 @@ the determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
-
-/-- **Linear change of variables.** Substituting `x = N y` for an invertible linear map `N`
-multiplies an integral against an additive Haar measure by `|det N|`. -/
-theorem integral_eq_abs_det_smul_integral_comp {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {N : F →L[ℝ] F} (hN : IsUnit N) (f : F → G) :
-    ∫ x, f x ∂μ = |N.det| • ∫ y, f (N y) ∂μ := by
-  obtain ⟨u, rfl⟩ := hN
-  set e := ContinuousLinearEquiv.unitsEquiv ℝ F u
-  have he : ⇑e = ⇑(u : F →L[ℝ] F) := funext (ContinuousLinearEquiv.unitsEquiv_apply ℝ F u)
-  have h := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
-    (fun y _ ↦ (u : F →L[ℝ] F).hasFDerivAt.hasFDerivWithinAt) (he ▸ e.injective).injOn f
-  rw [image_univ_of_surjective (he ▸ e.surjective)] at h
-  simp only [Measure.restrict_univ] at h
-  rw [h, integral_smul]
-
-/-- **Linear change of variables.** Precomposing an integrand with a continuous linear
-automorphism `A` divides its integral against an additive Haar measure by `|det A|`:
-`∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No integrability or measurability of `f` is needed.
-This is `MeasureTheory.Measure.integral_eq_abs_det_smul_integral_comp` read in the other
-direction. -/
-theorem integral_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (f : F → G) (A : F ≃L[ℝ] F) :
-    ∫ x, f (A x) ∂μ = |LinearMap.det (A : F →ₗ[ℝ] F)|⁻¹ • ∫ x, f x ∂μ := by
-  -- The image of `μ` under `A` is `|det A|⁻¹ • μ`.
-  have hmap : μ.map A = ENNReal.ofReal |(LinearMap.det (A : F →ₗ[ℝ] F))⁻¹| • μ :=
-    map_linearMap_addHaar_eq_smul_addHaar μ A.toLinearEquiv.isUnit_det'.ne_zero
-  have hcov := integral_map_equiv (μ := μ) A.toHomeomorph.toMeasurableEquiv f
-  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at hcov
-  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
 
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/

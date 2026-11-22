@@ -18,7 +18,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 import TauCeti.Analysis.Fourier.Parametric
 
 /-!
@@ -172,8 +172,21 @@ private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E
     by_cases hy : ψ y = 0
     · simp [f, k, s, huv, hy]
     have hy' : y ∈ tsupport ψ := subset_tsupport _ hy
-    rw [Measure.integral_eq_abs_det_smul_integral_comp volume (hNu y hy') (fun ζ ↦ f ζ (κ y)),
-      smul_smul, ← integral_smul]
+    -- Substitute `ζ = N(y) ζ'` along the equivalence `T'` of the unit `T` with value `N y`.
+    obtain ⟨T, hT⟩ := hNu y hy'
+    set T' := ContinuousLinearEquiv.unitsEquiv ℝ E T
+    have hT' : (T' : E →L[ℝ] E) = N y := by
+      ext ζ
+      simp [T', ← hT]
+    have hcov := Measure.integral_comp_continuousLinearEquiv volume (fun ζ ↦ f (T' ζ) (κ y))
+      T'.symm
+    have hdet : LinearMap.det (T'.symm : E →ₗ[ℝ] E) = (N y).det⁻¹ := by
+      rw [← hT', ← ContinuousLinearEquiv.det_coe_symm, ContinuousLinearMap.det,
+        ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+    simp only [ContinuousLinearEquiv.apply_symm_apply] at hcov
+    rw [hdet, abs_inv, inv_inv] at hcov
+    simp only [← ContinuousLinearEquiv.coe_coe, hT'] at hcov
+    rw [hcov, smul_smul, ← integral_smul]
     refine integral_congr_ae (ae_of_all _ fun ζ ↦ ?_)
     have hΦ := ContDiff.sub_eq_hadamardFactor_apply κ hκ y x
     simp only [f, k, s, huv, hΦ, hNΦ y hy', ContinuousLinearMap.map_smul_of_tower,

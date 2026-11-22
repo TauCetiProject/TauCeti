@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Complex
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.Prod
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # The volume scaling of multiplication on the mixed space
@@ -93,8 +93,13 @@ theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   let e : mixedSpace K ≃L[ℝ] mixedSpace K :=
     (hu.unit.mulLeftLinearEquiv ℝ (mixedSpace K)).toContinuousLinearEquiv
   -- The equivalence `e` is multiplication by `c`, whose linear map is `Algebra.lmul ℝ _ c`.
-  have he : ⇑e = (c * ·) := rfl
-  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c := rfl
+  have he : ⇑e = (c * ·) := funext fun x ↦ by
+    simp only [e, LinearEquiv.coe_toContinuousLinearEquiv', Units.mulLeftLinearEquiv_apply,
+      IsUnit.unit_spec]
+  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c :=
+    LinearMap.ext fun x ↦ by
+      simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, he,
+        Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
   have h := Measure.integral_comp_continuousLinearEquiv volume g e
   rwa [he, hlin, ← Algebra.norm_apply, abs_algebraNorm] at h
 

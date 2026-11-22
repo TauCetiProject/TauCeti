@@ -23,6 +23,10 @@ uses the totalized Bochner integral, and
 is equivalent to integrability in the parameters. In particular, both integrals vanish
 when the integrands are not integrable.
 
+Over the whole space and without translation it reads: precomposing an integrand with a continuous
+linear automorphism `A` of a finite-dimensional real normed space divides its integral against an
+additive Haar measure by `|det A|` (`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`).
+
 On `ι → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives invariance
 under single-coordinate reflections `u k ↦ 1 - u k`
 (`MeasureTheory.setIntegral_Icc_single_add_negCoord`) and rescaling of arbitrary closed
@@ -93,6 +97,22 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
             ∫ y in (fun x ↦ p + L x) '' s, f y ∂μ) := by
       rw [smul_smul, abs_inv, mul_inv_cancel₀ (abs_ne_zero.mpr hdet), one_smul]
     _ = _ := congrArg (|LinearMap.det (L : V →ₗ[ℝ] V)| • ·) h
+
+/-- **Linear change of variables.** Precomposing an integrand with a continuous linear
+automorphism `A` of a finite-dimensional real normed space divides its integral against an
+additive Haar measure `μ` by `|det A|`: `∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No
+integrability or measurability of `f` is needed. This is the whole-space, translation-free case of
+`ContinuousLinearEquiv.integral_image_affine`. The statement and name follow the sketch in
+[Tau Ceti PR #37628](https://github.com/TauCetiProject/TauCeti/pull/37628). -/
+theorem _root_.MeasureTheory.Measure.integral_comp_continuousLinearEquiv [NormedSpace ℝ E]
+    (μ : Measure V) [μ.IsAddHaarMeasure] (f : V → E) (A : V ≃L[ℝ] V) :
+    ∫ x, f (A x) ∂μ = |LinearMap.det (A : V →ₗ[ℝ] V)|⁻¹ • ∫ x, f x ∂μ := by
+  have hdet : |LinearMap.det (A : V →ₗ[ℝ] V)| ≠ 0 :=
+    abs_ne_zero.mpr A.toLinearEquiv.isUnit_det'.ne_zero
+  have h := A.integral_image_affine 0 f univ μ
+  simp only [zero_add, image_univ_of_surjective A.surjective, Measure.restrict_univ,
+    integral_smul] at h
+  rw [h, smul_smul, inv_mul_cancel₀ hdet, one_smul]
 
 end ContinuousLinearEquiv
 
