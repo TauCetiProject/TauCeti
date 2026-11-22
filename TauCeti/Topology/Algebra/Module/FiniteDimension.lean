@@ -68,6 +68,9 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
+bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
+of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -89,6 +92,11 @@ needed.
 An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
+
+Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field `𝕜` is by continuous maps:
+`FiniteDimensional.continuousConstSMul`. This is not an instance, since the field cannot be inferred
+from the action.
 -/
 
 public section
@@ -157,6 +165,14 @@ theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
   rfl
 
 end Module.End
+
+/-- Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over
+a complete nontrivially normed field `𝕜` is by continuous maps. -/
+theorem FiniteDimensional.continuousConstSMul (𝕜 G E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] [DistribSMul G E]
+    [SMulCommClass G 𝕜 E] : ContinuousConstSMul G E :=
+  ⟨fun g ↦ (DistribSMul.toLinearMap 𝕜 E g).continuous_of_finiteDimensional⟩
 
 namespace MultilinearMap
 
@@ -300,6 +316,29 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
+
+namespace ContinuousLinearMap
+
+variable {R F G H : Type*} [CommSemiring R]
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+  [AddCommMonoid G] [Module R G] [TopologicalSpace G] [ContinuousAdd G] [ContinuousConstSMul R G]
+  [AddCommMonoid H] [Module R H] [TopologicalSpace H] [ContinuousAdd H] [ContinuousConstSMul R H]
+
+/-- The composition `S ∘ T` expanded in the products `b l ∘ a k` of a finite basis `b` of
+`G →L[R] H` and a finite basis `a` of `F →L[R] G`, with the products of the coordinates of `S` and
+`T` as coefficients. -/
+theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : Module.Basis κ R (F →L[R] G)) (b : Module.Basis ι R (G →L[R] H)) (S : G →L[R] H)
+    (T : F →L[R] G) :
+    S.comp T = ∑ lk : ι × κ, (b.coord lk.1 S * a.coord lk.2 T) • (b lk.1).comp (a lk.2) := by
+  ext v
+  conv_lhs => rw [← a.sum_repr T, ← b.sum_repr S]
+  simp only [comp_apply, sum_apply, smul_apply, map_sum, map_smul, Finset.smul_sum, smul_smul,
+    Fintype.sum_prod_type, Module.Basis.coord_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
+
+end ContinuousLinearMap
 
 namespace Submodule
 

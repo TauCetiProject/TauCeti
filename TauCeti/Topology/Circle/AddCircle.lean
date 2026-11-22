@@ -38,6 +38,8 @@ at some small time, every point forward by a small continuous amount, and the sh
 * `AddCircle.homeomorphCircle_symm_one` — the inverse circle homeomorphism sends `1` to `0` for
   every nonzero real period.
 * `AddCircle.homeomorphCircle_symm_exp` — it sends `exp (2πix / T)` to the class of `x`.
+* `AddCircle.homeomorphCircle_one_symm_exp` — for the unit period, it sends `exp (2πix)` to the
+  class of `x`.
 * `AddCircle.re_toCircle_coe`, `AddCircle.im_toCircle_coe` — the real and imaginary parts of
   `AddCircle.toCircle` at the class of `t` are `cos (2πt / T)` and `sin (2πt / T)`.
 * `AddCircle.toCircle_half_period`, `AddCircle.coe_half_period_ne_zero` — the half period is sent
@@ -79,6 +81,14 @@ class of `x`. -/
 theorem homeomorphCircle_symm_exp {T : ℝ} (hT : T ≠ 0) (x : ℝ) :
     (AddCircle.homeomorphCircle hT).symm (Circle.exp (2 * Real.pi / T * x)) = x := by
   rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_apply_mk]
+
+/-- For the unit period, the inverse homeomorphism `AddCircle.homeomorphCircle.symm` carries
+`exp (2πix)` to the class of `x`. -/
+@[simp]
+theorem homeomorphCircle_one_symm_exp (x : ℝ) :
+    (AddCircle.homeomorphCircle one_ne_zero).symm (Circle.exp (2 * Real.pi * x)) =
+      (x : UnitAddCircle) := by
+  simpa using homeomorphCircle_symm_exp one_ne_zero x
 
 /-- The real part of `AddCircle.toCircle` at the class of `t` is `cos (2πt / T)`. -/
 @[simp]
@@ -261,11 +271,8 @@ theorem circleProdHomeomorphUnitAddTorus_exp (a b : ℝ) :
     circleProdHomeomorphUnitAddTorus
         (Circle.exp (2 * Real.pi * a), Circle.exp (2 * Real.pi * b)) =
       ![(a : UnitAddCircle), (b : UnitAddCircle)] := by
-  have h (x : ℝ) : (AddCircle.homeomorphCircle one_ne_zero).symm (Circle.exp (2 * Real.pi * x)) =
-      (x : UnitAddCircle) := by
-    simpa using AddCircle.homeomorphCircle_symm_exp one_ne_zero x
   ext i
-  fin_cases i <;> simp [circleProdHomeomorphUnitAddTorus, h]
+  fin_cases i <;> simp [circleProdHomeomorphUnitAddTorus]
 
 /-- The standard torus `UnitAddTorus ι = (ℝ / ℤ)^ι` is isomorphic as a topological group to the
 product `ι → Circle` of unit circles, each coordinate being identified with `Circle` by

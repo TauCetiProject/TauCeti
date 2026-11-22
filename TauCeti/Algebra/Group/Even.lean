@@ -8,9 +8,14 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Squares and finite products
+# Squares, powers and finite products
+
+For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and `r ^ m * r ^ n`
+is a square (`TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow`), since one of
+`m`, `n` and `m + n` is even.
 
 A unit square factor does not change whether an element is a square
 (`IsUnit.isSquare_sq_mul_iff`).
@@ -25,6 +30,16 @@ fiber `k i = z` is also a square (`Finset.isSquare_prod_filter_of_isSquare_prod`
 public section
 
 namespace TauCeti
+
+/-- For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and
+`r ^ m * r ^ n` is a square: one of `m`, `n` and `m + n` is even. -/
+theorem isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow {G : Type*} [Group G] (r : G)
+    (m n : ℤ) : IsSquare (r ^ m) ∨ IsSquare (r ^ n) ∨ IsSquare (r ^ m * r ^ n) := by
+  obtain hm | hm := Int.even_or_odd m
+  · exact .inl (hm.isSquare_zpow r)
+  obtain hn | hn := Int.even_or_odd n
+  · exact .inr (.inl (hn.isSquare_zpow r))
+  · exact .inr (.inr (by rw [← zpow_add]; exact (hm.add_odd hn).isSquare_zpow r))
 
 /-- Agreement modulo squares of two products over `s`, and of all their factors except the one
 at `j ∈ s`, forces agreement of the factors at `j`. -/

@@ -101,9 +101,8 @@ theorem equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
   · obtain ⟨n, hn⟩ : ∃ n, Fintype.card ι = n + 1 := ⟨Fintype.card ι - 1, by omega⟩
     let α : Fin (n + 1) ≃ ι := (Fintype.equivFinOfCardEq hn).symm
     have hcomp (u : ι → Rˣ) :
-        (weightedSumSquares R u).Equivalent (weightedSumSquares R (u ∘ α)) := by
-      rw [weightedSumSquares_units, weightedSumSquares_units]
-      exact equivalent_weightedSumSquares_comp (fun i ↦ (u i : R)) α
+        (weightedSumSquares R u).Equivalent (weightedSumSquares R (u ∘ α)) :=
+      ⟨QuadraticForm.isometryEquivWeightedSumSquaresReindex u α⟩
     have hfin : IsSquare ((∏ j, (w ∘ α) j) * ∏ j, (v ∘ α) j) := by
       rwa [Function.comp_def, Equiv.prod_comp α w, Function.comp_def, Equiv.prod_comp α v]
     refine (hcomp w).trans <|
