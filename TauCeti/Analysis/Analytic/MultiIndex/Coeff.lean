@@ -57,14 +57,14 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   coefficients of a fixed total degree is preserved under precomposition by a continuous linear
   map.
 * `TauCeti.norm_prod_pow_smul_le`, `TauCeti.summable_norm_prod_pow_smul_of_le`,
-  `TauCeti.hasSum_prod_pow_smul_of_le`,
   `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow`, and
   `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: normal summability at radius `ρ`
   implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
   normally and absolutely wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ρ ^ k` are
   summable.
-* `TauCeti.summable_norm_shift_single` and `TauCeti.hasSum_monomial_shift_single`: shifting
-  coefficients preserves normal summability and extracts a coordinate monomial from a series.
+* `TauCeti.summable_norm_shift` and `TauCeti.hasSum_monomial_shift`: shifting
+  coefficients by any multi-index preserves normal summability and extracts a monomial from a
+  series.
 * `TauCeti.summable_norm_sum_Iic_smul_mul_pow` and
   `TauCeti.hasSum_prod_pow_smul_sum_Iic_smul`: Cauchy convolution over `Finset.Iic` preserves
   normal summability and evaluates the product of two absolutely summable multi-index power series.
@@ -289,54 +289,35 @@ theorem summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι 
     Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ :=
   hd.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun β ↦ norm_prod_pow_smul_le hy β (d β)
 
-/-- On the closed polydisc `‖y‖ ≤ ρ`, a normally summable multi-index series in a complete
-target converges to its sum. No positivity assumption on the radius is needed. -/
-theorem hasSum_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*}
-    [Fintype ι] {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-    {d : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜}
-    (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
-    HasSum (fun β : ι → ℕ ↦ (∏ i, y i ^ β i) • d β)
-      (∑' β : ι → ℕ, (∏ i, y i ^ β i) • d β) :=
-  (summable_norm_prod_pow_smul_of_le hd hy).of_norm.hasSum
-
-/-- Shifting a normally summable multi-index coefficient family by `m` in coordinate `i`
+/-- Shifting a normally summable multi-index coefficient family by a multi-index `s`
 preserves normal summability at every positive radius. Only the real-valued norm of the
 coefficients is used. -/
-theorem summable_norm_shift_single {ι F : Type*} [Fintype ι] [DecidableEq ι] [Norm F]
-    {c : (ι → ℕ) → F} {r : ℝ} (hr : 0 < r) (i : ι) (m : ℕ)
+theorem summable_norm_shift {ι F : Type*} [Fintype ι] [Norm F]
+    {c : (ι → ℕ) → F} {r : ℝ} (hr : 0 < r) (s : ι → ℕ)
     (hc : Summable fun α : ι → ℕ ↦ ‖c α‖ * r ^ (∑ j, α j)) :
-    Summable fun α : ι → ℕ ↦ ‖c (α + Pi.single i m)‖ * r ^ (∑ j, α j) := by
-  have h := (hc.comp_injective (add_left_injective (Pi.single i m))).mul_left (r ^ m)⁻¹
+    Summable fun α : ι → ℕ ↦ ‖c (α + s)‖ * r ^ (∑ j, α j) := by
+  have h := (hc.comp_injective (add_left_injective s)).mul_left (r ^ (∑ j, s j))⁻¹
   refine h.congr fun α ↦ ?_
-  simp only [Function.comp_apply, Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single', pow_add]
+  simp only [Function.comp_apply, Pi.add_apply, sum_add_distrib, pow_add]
   field_simp
 
-/-- A multi-index series whose coefficients vanish below degree `m` in coordinate `i` is
-obtained by multiplying the series with shifted coefficients by the monomial `y i ^ m`. If the
-shifted series sums to `a`, then the original series sums to `y i ^ m • a`. The commutative monoid
-of scalars acts distributively on the target, and each fixed-scalar map is continuous. -/
-theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fintype ι]
-    [DecidableEq ι] [AddCommMonoid F] [TopologicalSpace F] [DistribMulAction 𝕜 F]
+/-- A multi-index series whose coefficients vanish outside the upper cone of `s` is
+obtained by multiplying the series with coefficients shifted by `s` by the monomial
+`∏ j, y j ^ s j`. The commutative monoid of scalars acts distributively on the target,
+and each fixed-scalar map is continuous. -/
+theorem hasSum_monomial_shift {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fintype ι]
+    [AddCommMonoid F] [TopologicalSpace F] [DistribMulAction 𝕜 F]
     [ContinuousConstSMul 𝕜 F] {c : (ι → ℕ) → F}
-    (i : ι) (m : ℕ) (hzero : ∀ α, α i < m → c α = 0) {y : ι → 𝕜} {a : F}
-    (h : HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c (α + Pi.single i m)) a) :
-    HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c α) (y i ^ m • a) := by
-  let s : ι → ℕ := Pi.single i m
+    (s : ι → ℕ) (hzero : ∀ α, ¬ s ≤ α → c α = 0) {y : ι → 𝕜} {a : F}
+    (h : HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c (α + s)) a) :
+    HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c α) ((∏ j, y j ^ s j) • a) := by
   have hrange : Set.range (fun β : ι → ℕ ↦ β + s) = Set.Ici s := by
     simpa using (Set.range_add_eq_image_Ici (f := id) (k := s))
   refine (Function.Injective.hasSum_iff (add_left_injective s) (fun α hα ↦ ?_)).1 ?_
-  · have hi : α i < m := by
-      by_contra! hmi
-      rw [hrange] at hα
-      have hle : Pi.single i m ≤ α := by
-        simpa only [Pi.single] using
-          (update_le_iff.mpr ⟨hmi, fun j _ ↦ Nat.zero_le (α j)⟩ :
-            Function.update (0 : ι → ℕ) i m ≤ α)
-      exact hα hle
-    simp [hzero α hi]
-  · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
-    have hs : ∏ j, y j ^ s j = y i ^ m := Fintype.prod_pow_pi_single y i m
-    simp only [Function.comp_apply, Pi.add_apply, pow_add, prod_mul_distrib, hs, smul_smul]
+  · rw [hrange] at hα
+    simp [hzero α hα]
+  · refine (h.const_smul (∏ j, y j ^ s j)).congr_fun fun α ↦ ?_
+    simp only [Function.comp_apply, Pi.add_apply, pow_add, prod_mul_distrib, smul_smul]
     rw [mul_comm]
 
 /-- Normal summability at radius `ρ` is preserved under Cauchy convolution over `Finset.Iic`. -/
@@ -655,7 +636,7 @@ theorem exists_hasFPowerSeriesOnBall_tsum [CompleteSpace F] (c : (ι → ℕ) �
       HasFPowerSeriesOnBall (fun z : ι → 𝕜 ↦ ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α) p 0 r ∧
         ∀ α, p.mvCoeff α = c α := by
   refine exists_hasFPowerSeriesOnBall_of_hasSum hr hsum fun y hy ↦ ?_
-  simpa only [zero_add] using hasSum_prod_pow_smul_of_le hsum hy.le
+  simpa only [zero_add] using (summable_norm_prod_pow_smul_of_le hsum hy.le).of_norm.hasSum
 
 /-- **Uniqueness of normally convergent multi-index series**: if a multi-index series converges
 normally on a polydisc of positive radius and vanishes near the origin (in particular if it

@@ -31,6 +31,8 @@ congruence, and coordinate factorization also use the derivative at the base poi
 * `TauCeti.dslope_mul`: the product rule for divided differences.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
+* `TauCeti.sub_smul_dslope_update`: a coordinate displacement times its divided difference
+  equals the coordinate-update numerator.
 * `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
   identifies the coordinate divided difference with its factor.
 -/
@@ -105,6 +107,16 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
 
+/-- Multiplying a coordinate divided difference by the coordinate displacement recovers its
+numerator, including on the base hyperplane. The index type need not be finite. -/
+theorem sub_smul_dslope_update {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (f : (ι → 𝕜) → F) (z : ι → 𝕜) (i : ι) (ζ : 𝕜) :
+    (z i - ζ) • dslope (fun w ↦ f (Function.update z i w)) ζ (z i) =
+      f z - f (Function.update z i ζ) := by
+  simpa only [Function.update_eq_self] using
+    sub_smul_dslope (fun w ↦ f (Function.update z i w)) ζ (z i)
+
 /-- A local factorization by a coordinate difference identifies the coordinate divided
 difference with its factor. On the base hyperplane only continuity of the factor's
 one-dimensional slices is needed; the index type can be infinite. -/
@@ -137,7 +149,7 @@ theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
   · have hmul : (z i - x i) •
         dslope (fun w ↦ f (Function.update z i w)) (x i) (z i) =
           (z i - x i) • g z := by
-      rw [sub_smul_dslope, Function.update_eq_self]
+      rw [sub_smul_dslope_update]
       exact mem_of_mem_nhds hz
     exact smul_right_injective _ (sub_ne_zero.mpr hzi) hmul
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Analytic.Constructions
 
 /-!
@@ -18,6 +19,7 @@ open polydisc of radius `r`, with `f (x + y) = y i ^ m • g y` there. The radiu
 
 ## Main results
 
+* `TauCeti.sub_update_apply_update`: subtracting a hyperplane restriction vanishes there.
 * `TauCeti.exists_analyticOnNhd_eq_coord_pow_smul`: coordinate division on the whole polydisc.
 * `AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul`: for a function analytic at `x` with
   complete target, local coordinate division when Taylor coefficients vanish below the
@@ -45,6 +47,12 @@ variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
 
 namespace TauCeti
 
+/-- Subtracting a coordinate-hyperplane restriction vanishes on that hyperplane. -/
+theorem sub_update_apply_update {κ A G : Type*} [DecidableEq κ] [AddGroup G]
+    (f : (κ → A) → G) (i : κ) (a : A) (z : κ → A) :
+    (fun w ↦ f w - f (Function.update w i a)) (Function.update z i a) = 0 := by
+  simp only [Function.update_idem, sub_self]
+
 /-- For a complete target, suppose the expansion of `f` at `x` has weighted norm summability
 at every positive finite radius smaller than `r` and no terms of degree less than `m` in coordinate
 `i`. Then there is a quotient `g` analytic on the zero-centred open polydisc of radius `r`,
@@ -65,14 +73,23 @@ theorem exists_analyticOnNhd_eq_coord_pow_smul [CompleteSpace F] {f : (ι → �
       AnalyticAt 𝕜 g y ∧ HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • d α) (g y) := by
     obtain ⟨s, hys, hsr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 (mem_eball_zero_iff.1 hy)
     have hs : 0 < s := ENNReal.coe_pos.1 (zero_le.trans_lt hys)
-    have hd := summable_norm_shift_single (NNReal.coe_pos.mpr hs) i m (hc s hs hsr)
+    have hd := summable_norm_shift (NNReal.coe_pos.mpr hs) (Pi.single i m) (hc s hs hsr)
     have hyball : y ∈ Metric.eball 0 (s : ℝ≥0∞) := mem_eball_zero_iff.2 hys
     have hnorm : ‖y‖ < (s : ℝ) := by
       simpa only [Metric.eball_coe, mem_ball_zero_iff] using hyball
     obtain ⟨p, hp, -⟩ := exists_hasFPowerSeriesOnBall_tsum (𝕜 := 𝕜) d hs hd
-    exact ⟨hp.analyticAt_of_mem hyball, hasSum_prod_pow_smul_of_le hd hnorm.le⟩
-  exact ⟨g, fun y hy ↦ (hpoint y hy).1, fun y hy ↦
-    (hf y hy).unique (hasSum_monomial_shift_single i m hzero (hpoint y hy).2)⟩
+    exact ⟨hp.analyticAt_of_mem hyball,
+      (summable_norm_prod_pow_smul_of_le hd hnorm.le).of_norm.hasSum⟩
+  refine ⟨g, fun y hy ↦ (hpoint y hy).1, fun y hy ↦ (hf y hy).unique ?_⟩
+  have hcone (α : ι → ℕ) (hα : ¬ Pi.single i m ≤ α) : c α = 0 := by
+    apply hzero α
+    by_contra! hmi
+    apply hα
+    simpa only [Pi.single] using
+      (update_le_iff.mpr ⟨hmi, fun j _ ↦ Nat.zero_le (α j)⟩ :
+        Function.update (0 : ι → ℕ) i m ≤ α)
+  simpa only [Fintype.prod_pow_pi_single] using
+    hasSum_monomial_shift (Pi.single i m) hcone (hpoint y hy).2
 
 end TauCeti
 
@@ -129,5 +146,4 @@ theorem AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul [CompleteSpace 
   have hfupdate : AnalyticAt 𝕜 f (Function.update x i (x i)) := by
     simpa only [Function.update_eq_self] using hf
   apply (hf.fun_sub hfupdate.comp_update).exists_eventuallyEq_coord_sub_smul i
-  simp only [Function.update_idem, sub_self]
-  rfl
+  exact Filter.Eventually.of_forall (TauCeti.sub_update_apply_update f i (x i))
