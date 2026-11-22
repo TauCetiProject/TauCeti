@@ -20,7 +20,7 @@ subspace at `𝕜 = ℝ` and the complex Hermitian subspace at `𝕜 = ℂ`. Thi
 over `𝕜` with the ambient Frobenius norm and real inner product `⟪A, B⟫ = RCLike.re tr(B * A)` on
 the subtype uniformity, builds `Matrix.UnitaryGroup.selfAdjointConj` as a real linear isometry
 equivalence, and reads the subspace in real diagonal and strict upper coordinates. The Borel
-structure and `volume` live in `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix`.
+structure and `volume` live in `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic`.
 
 ## Main declarations
 

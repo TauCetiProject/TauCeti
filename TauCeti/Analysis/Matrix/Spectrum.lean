@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -389,28 +389,31 @@ end Matrix
 
 namespace Matrix
 
-variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [LinearOrder ι]
 
-/-- The decreasing ordering of a real Hermitian diagonal is the ordered eigenvalue vector
-of every unitary conjugate of that diagonal. -/
-theorem eigenvalues₀_conjStarAlgAut_diagonal (U : unitaryGroup (Fin n) 𝕜) {d : Fin n → ℝ}
+/-- If a real diagonal decreases along a linear order on its finite index type, its entries listed
+in that order are the ordered eigenvalues of every unitary conjugate of the diagonal. -/
+theorem eigenvalues₀_conjStarAlgAut_diagonal (U : unitaryGroup ι 𝕜) {d : ι → ℝ}
     (hd : Antitone d) (hA : (Unitary.conjStarAlgAut ℝ _ U
       (diagonal fun i ↦ (d i : 𝕜))).IsHermitian) :
-    hA.eigenvalues₀ = d ∘ Fin.cast (Fintype.card_fin n) := by
-  let D := diagonal fun i : Fin n ↦ (d i : 𝕜)
+    hA.eigenvalues₀ = d ∘ Fintype.orderIsoFinOfCardEq ι rfl := by
+  let D := diagonal fun i : ι ↦ (d i : 𝕜)
+  let o := Fintype.orderIsoFinOfCardEq ι rfl
   have hC : (Unitary.conjStarAlgAut ℝ _ U D).charpoly = D.charpoly := by
     rw [Unitary.conjStarAlgAut_apply, ← inv_eq_left_inv (Unitary.coe_star_mul_self U)]
     exact charpoly_units_conj (Unitary.toUnits U) D
   rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, hC,
     roots_charpoly_diagonal, Multiset.map_map]
-  have hmap : (Finset.univ.val.map (RCLike.re ∘ fun i ↦ (d i : 𝕜))) =
-      (List.ofFn d : Multiset ℝ) := by
-    simp [Fin.univ_val_map]
-  rw [hmap, List.ofFn_congr (Fintype.card_fin n).symm d, Multiset.coe_sort]
+  have hmap : Finset.univ.val.map (RCLike.re ∘ fun i ↦ (d i : 𝕜)) =
+      (List.ofFn (d ∘ o) : Multiset ℝ) := by
+    have ho : Finset.univ.val.map (d ∘ o) = Finset.univ.val.map d := by
+      rw [← Multiset.map_map, ← OrderIso.coe_toEquiv, Multiset.map_univ_val_equiv]
+    rw [← Fin.univ_val_map, ho]
+    simp
+  rw [hmap, Multiset.coe_sort]
   exact List.mergeSort_of_pairwise (by
     simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
-    have hm : Monotone (Fin.cast (Fintype.card_fin n)) := fun _ _ h ↦ h
-    exact (hd.comp_monotone hm).sortedGE_ofFn)
+    exact (hd.comp_monotone o.monotone).sortedGE_ofFn)
 
 end Matrix
 

@@ -359,7 +359,10 @@ theorem eigenvalues₀_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfA
       (diagonal fun i ↦ (x.1 i : 𝕜))).IsHermitian := coe_spectralMatrix U x ▸ hA
   rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, coe_spectralMatrix,
     hB.sort_roots_charpoly_eq_eigenvalues₀,
-    eigenvalues₀_conjStarAlgAut_diagonal (U * expStrictUpper x.2) hd hB]
+    eigenvalues₀_conjStarAlgAut_diagonal (U * expStrictUpper x.2) hd hB,
+    Subsingleton.elim (Fintype.orderIsoFinOfCardEq (Fin n) rfl)
+      (Fin.castOrderIso (Fintype.card_fin n))]
+  rfl
 
 /-- Every simple self-adjoint matrix is the center of a local spectral chart. -/
 theorem exists_spectralMatrix_openPartialHomeomorph

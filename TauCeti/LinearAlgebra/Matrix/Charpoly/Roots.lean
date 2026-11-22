@@ -39,15 +39,8 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 `Matrix.charpoly_aeval_eq_resultant` over the split characteristic polynomial. In particular
 `det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
 
-A diagonal with distinct entries is determined by its characteristic polynomial up to
-permutation, with one diagonal for each permutation. This gives the multiplicity `n!` in
-the spectral change of variables of Anderson, Guionnet and Zeitouni,
-*An Introduction to Random Matrices* (2010), §4.1.
-
 ## Main results
 
-* `Matrix.permEquivDiagonalCharpolyFiber` — permutations parametrize the diagonal
-  matrices with the same characteristic polynomial as a given simple diagonal.
 * `Matrix.eval_ne_zero_of_det_aeval_ne_zero`: if `det (p(A)) ≠ 0`, then `p(λ) ≠ 0` for every
   characteristic root `λ` of `A`.
 * `Matrix.nonempty_roots_charpoly` — a square matrix of positive size over an algebraically closed
@@ -73,60 +66,6 @@ public section
 open Polynomial
 
 namespace Matrix
-
-section Diagonal
-
-variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [IsDomain R]
-
-/-- The characteristic roots of a diagonal matrix are its diagonal entries with multiplicity. -/
-theorem roots_charpoly_diagonal (d : ι → R) :
-    (diagonal d).charpoly.roots = Finset.univ.val.map d := by
-  rw [charpoly_diagonal, roots_prod]
-  · simp
-  · exact Finset.prod_ne_zero_iff.mpr fun _ _ ↦ X_sub_C_ne_zero _
-
-private theorem injective_of_roots_charpoly_diagonal_eq {d e : ι → R} (hd : Function.Injective d)
-    (h : (diagonal e).charpoly.roots = (diagonal d).charpoly.roots) : Function.Injective e := by
-  simp only [roots_charpoly_diagonal] at h
-  have hn : (Finset.univ.val.map e).Nodup := h ▸ (Finset.univ.nodup.map hd)
-  exact fun i j hij ↦ Multiset.inj_on_of_nodup_map hn i (by simp) j (by simp) hij
-
-/-- All diagonals with the same characteristic polynomial as a simple diagonal
-are its permutations, with a unique permutation for each diagonal. -/
-noncomputable def permEquivDiagonalCharpolyFiber (d : ι → R) (hd : Function.Injective d) :
-    Equiv.Perm ι ≃ {e : ι → R // (diagonal e).charpoly = (diagonal d).charpoly} := by
-  let f (σ : Equiv.Perm ι) : {e : ι → R // (diagonal e).charpoly = (diagonal d).charpoly} :=
-    ⟨d ∘ σ, by
-      simp only [charpoly_diagonal, Function.comp_apply]
-      exact Equiv.prod_comp σ (fun i ↦ X - C (d i))⟩
-  refine Equiv.ofBijective f ⟨?_, ?_⟩
-  · intro σ τ h
-    exact Equiv.ext fun i ↦ hd (congrFun (congrArg Subtype.val h) i)
-  · intro ⟨e, he⟩
-    have hr := congrArg roots he
-    have hi := injective_of_roots_charpoly_diagonal_eq hd hr
-    have hmem (i : ι) : e i ∈ Set.range d := by
-      have h : e i ∈ (diagonal e).charpoly.roots := by simp [roots_charpoly_diagonal]
-      rw [hr, roots_charpoly_diagonal] at h
-      simpa using h
-    choose σ hσ using hmem
-    have hs : Function.Injective σ := fun i j hij ↦ hi (by rw [← hσ i, ← hσ j, hij])
-    exact ⟨Equiv.ofBijective σ ⟨hs, Finite.surjective_of_injective hs⟩,
-      Subtype.ext (funext hσ)⟩
-
-/-- The permutation-to-diagonal map evaluates the original diagonal at permuted indices. -/
-@[simp] theorem permEquivDiagonalCharpolyFiber_apply (d : ι → R) (hd : Function.Injective d)
-    (σ : Equiv.Perm ι) (i : ι) :
-    (permEquivDiagonalCharpolyFiber d hd σ).val i = d (σ i) := (rfl)
-
-/-- A diagonal with distinct entries has exactly `card ι !` orderings of its spectrum. -/
-theorem natCard_diagonalCharpolyFiber (d : ι → R) (hd : Function.Injective d) :
-    Nat.card {e : ι → R // (diagonal e).charpoly = (diagonal d).charpoly} =
-      (Fintype.card ι).factorial := by
-  rw [← Nat.card_congr (permEquivDiagonalCharpolyFiber d hd), Nat.card_eq_fintype_card,
-    Fintype.card_perm]
-
-end Diagonal
 
 section RectangularProducts
 

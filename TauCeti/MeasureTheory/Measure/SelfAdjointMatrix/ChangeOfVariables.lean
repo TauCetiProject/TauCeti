@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralCoordinates
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import Mathlib.MeasureTheory.Function.Jacobian
 
 /-!

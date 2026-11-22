@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Spectrum
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Disintegration
-import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Analysis.Matrix.Eigenvalues.Discriminant
 import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 
 /-!
 # Almost every self-adjoint matrix has simple spectrum
 
-As a function of real linear coordinates on the self-adjoint subspace, the characteristic
-discriminant `Matrix.IsHermitian.charpoly_discr_eq` is a nonzero real polynomial. Thus a
-self-adjoint matrix sampled from a law absolutely continuous with respect to Frobenius volume
-has distinct eigenvalues almost surely.
+As a function of real linear coordinates on the self-adjoint subspace, the real part of the
+characteristic discriminant is a real polynomial (`Matrix.exists_eval_eq_re_charpoly_discr`). It is
+nonzero at a diagonal with distinct entries and vanishes exactly at the matrices with a repeated
+eigenvalue (`Matrix.IsHermitian.charpoly_discr_ne_zero_iff`). Thus a self-adjoint matrix sampled
+from a law absolutely continuous with respect to Frobenius volume has distinct eigenvalues almost
+surely.
 
 The discriminant argument is the one used in Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2.
@@ -28,49 +29,24 @@ public section
 
 noncomputable section
 
-open Finset MeasureTheory Polynomial
+open MeasureTheory Polynomial
 open scoped TauCeti.SelfAdjointMatrix
 
 namespace MeasureTheory.Measure
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
-private theorem exists_eval_charpoly_discr {ι : Type*} [Finite ι]
-    (b : Module.Basis ι ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))) :
-    ∃ q : MvPolynomial ι ℝ, ∀ x : ι → ℝ, MvPolynomial.eval x q =
-      RCLike.re (b.equivFun.symm x : Matrix (Fin n) (Fin n) 𝕜).charpoly.discr := by
-  let _ := Fintype.ofFinite ι
-  let M : Matrix (Fin n) (Fin n) (MvPolynomial ι 𝕜) := Matrix.of fun i j ↦
-    ∑ k, MvPolynomial.C ((b k : Matrix (Fin n) (Fin n) 𝕜) i j) * MvPolynomial.X k
-  obtain ⟨q, hq⟩ := (M.charpoly.discr).exists_eval_eq_linearMap (RCLike.reLm (K := 𝕜))
-  refine ⟨q, fun x ↦ ?_⟩
-  let φ := MvPolynomial.eval (algebraMap ℝ 𝕜 ∘ x)
-  have hM : M.map φ = (b.equivFun.symm x : Matrix (Fin n) (Fin n) 𝕜) := by
-    rw [Module.Basis.equivFun_symm_apply]
-    ext i j
-    simp [M, φ, Algebra.smul_def, Matrix.algebraMap_eq_diagonal, mul_comm]
-  rw [← hM, Matrix.charpoly_map, M.charpoly_monic.discr_map]
-  exact hq x
-
 private theorem exists_re_charpoly_discr_ne_zero :
     ∃ A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜),
       RCLike.re A.val.charpoly.discr ≠ 0 := by
-  let d (i : Fin n) := (i.val : ℝ)
-  let D := Matrix.diagonal fun i ↦ (d i : 𝕜)
-  have hD : D.IsHermitian :=
-    Matrix.isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
+  let D := Matrix.diagonal fun i : Fin n ↦ ((i : ℕ) : 𝕜)
+  have hD : D.IsHermitian := Matrix.isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
+  have hsep : D.charpoly.discr ≠ 0 := by
+    rw [D.charpoly_monic.discr_ne_zero_iff, Matrix.charpoly_diagonal, separable_prod_X_sub_C_iff]
+    exact fun i j h ↦ Fin.ext (Nat.cast_injective (R := 𝕜) h)
+  rw [hD.charpoly_discr_eq, ne_eq, RCLike.ofReal_eq_zero] at hsep
   refine ⟨⟨D, hD⟩, ?_⟩
-  have hdiscr : D.charpoly.discr = ((∏ i, ∏ j ∈ Ioi i, (d i - d j) ^ 2 : ℝ) : 𝕜) := by
-    dsimp only [D]
-    rw [Matrix.charpoly_diagonal, discr_prod_X_sub_C]
-    push_cast
-    rfl
-  dsimp only
-  rw [hdiscr, RCLike.ofReal_re]
-  exact prod_ne_zero_iff.mpr fun i _ ↦ prod_ne_zero_iff.mpr fun j hj ↦
-    pow_ne_zero _ (sub_ne_zero.mpr fun h ↦ (mem_Ioi.mp hj).ne (Fin.ext (by
-      have h' : (i.val : ℝ) = (j.val : ℝ) := h
-      exact_mod_cast h')))
+  rwa [hD.charpoly_discr_eq, RCLike.ofReal_re]
 
 /-- Frobenius-absolutely-continuous self-adjoint matrix laws have simple eigenvalues
 almost surely, including in empty and one-dimensional matrix spaces. -/
@@ -79,12 +55,14 @@ theorem ae_injective_eigenvalues_selfAdjoint [MeasurableSpace 𝕜] [BorelSpace 
     ∀ᵐ A ∂μ, Function.Injective (selfAdjoint.isHermitian_coe A).eigenvalues := by
   let E := selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)
   let b := Module.finBasis ℝ E
-  obtain ⟨q, hq⟩ := exists_eval_charpoly_discr b
+  obtain ⟨q, hq⟩ :=
+    Matrix.exists_eval_eq_re_charpoly_discr (E.subtype ∘ₗ b.equivFun.symm.toLinearMap)
   obtain ⟨A, hA⟩ := exists_re_charpoly_discr_ne_zero (n := n) (𝕜 := 𝕜)
   have hq₀ : q ≠ 0 := by
     intro h
     have he := hq (b.equivFun A)
-    rw [h, map_zero, LinearEquiv.symm_apply_apply] at he
+    rw [h, map_zero, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+      E.subtype_apply] at he
     exact hA he.symm
   have hnonzero : ∀ᵐ x : _ ∂volume, MvPolynomial.eval x q ≠ 0 :=
     compl_mem_ae_iff.mpr (q.volume_setOfPred_eval_eq_zero hq₀)
@@ -95,6 +73,7 @@ theorem ae_injective_eigenvalues_selfAdjoint [MeasurableSpace 𝕜] [BorelSpace 
   filter_upwards [hμ.ae_le hp] with A' hA'
   refine (selfAdjoint.isHermitian_coe A').charpoly_discr_ne_zero_iff.mp fun h ↦ hA' ?_
   simp only [Set.mem_ofPred_eq, LinearEquiv.coe_toLinearMap]
-  rw [hq, LinearEquiv.symm_apply_apply, h, map_zero]
+  rw [hq, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, E.subtype_apply,
+    h, map_zero]
 
 end MeasureTheory.Measure
