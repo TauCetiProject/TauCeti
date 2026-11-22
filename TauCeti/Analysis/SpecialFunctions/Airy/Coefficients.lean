@@ -80,11 +80,14 @@ private theorem airyU_numerator_succ (k : ℕ) :
     convert h using 2
     · exact prod_congr rfl fun j _ => by ring
     · ring
-  -- Peel off the last two factors of the product over `range (2 * (k + 1))`.
-  have h2 : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
-  rw [h2, prod_range_succ, prod_range_succ, ← h2]
-  linear_combination ((2 * (k + 1) + 1 + 2 * (2 * k)) * (2 * (k + 1) + 1 + 2 * (2 * k + 1))) *
-    hshift
+  -- Split the product over `range (2 * k + 2)` into `range (2 * k)` and a two-factor tail.
+  have h2 : 2 * (k + 1) = 2 * k + 2 := by ring
+  have htail : ∏ j ∈ range 2, (2 * (k + 1) + 1 + 2 * (2 * k + j)) =
+      (6 * k + 3) * (6 * k + 5) := by
+    simp only [prod_range_succ, prod_range_zero, one_mul]
+    ring
+  rw [h2, prod_range_add, ← h2, htail]
+  linear_combination ((6 * k + 3) * (6 * k + 5)) * hshift
 
 /-- The recurrence `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k`
 (DLMF 9.7.2). -/
@@ -95,7 +98,7 @@ theorem _root_.Nat.airyU_succ (k : ℕ) :
       ((∏ j ∈ range (2 * k), (2 * k + 1 + 2 * j) : ℕ) : ℝ) *
         ((6 * k + 1) * (6 * k + 3) * (6 * k + 5)) := by
     exact_mod_cast airyU_numerator_succ k
-  rw [Nat.airyU_def, Nat.airyU_def, ← Nat.cast_prod, ← Nat.cast_prod, Nat.factorial_succ]
+  simp only [Nat.airyU_def, ← Nat.cast_prod, Nat.factorial_succ]
   have h2k : (2 * k + 1 : ℝ) ≠ 0 := by positivity
   push_cast at h ⊢
   rw [(eq_div_iff h2k).mpr h]

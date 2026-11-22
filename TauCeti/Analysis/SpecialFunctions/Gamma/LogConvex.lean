@@ -74,6 +74,10 @@ theorem convexOn_sum_log_Gamma_add_div {ι : Type*} (s : Finset ι) {c : ι → 
     exact (convexOn_log_Gamma_add_div (hc i (mem_insert_self i s)) hm).add
       (ih fun j hj => hc j (mem_insert_of_mem hj))
 
+/-- Complementary powers recombine: for `0 ≤ y`, `y^a · y^{1-a} = y`. -/
+private theorem rpow_mul_rpow_one_sub {y : ℝ} (hy : 0 ≤ y) (a : ℝ) : y ^ a * y ^ (1 - a) = y := by
+  simp [← rpow_add' hy (by simp : a + (1 - a) ≠ 0)]
+
 /-- The interpolation step of Wendel's inequalities: for `0 < y` and `0 ≤ a ≤ 1`,
 `Γ(y + a) ≤ y^a Γ(y)`, from the log-convexity of `Γ` between `y` and `y + 1`. -/
 private theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) :
@@ -87,9 +91,10 @@ private theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 �
     _ ≤ Gamma y ^ (1 - a) * Gamma (y + 1) ^ a :=
       Gamma_mul_add_mul_le_rpow_Gamma_mul_rpow_Gamma hy (by linarith) (sub_pos.2 ha1) ha0
         (sub_add_cancel 1 a)
-    _ = y ^ a * Gamma y := by
-      rw [Gamma_add_one hy.ne', mul_rpow hy.le hΓ.le, mul_left_comm, ← rpow_add hΓ,
-        sub_add_cancel, rpow_one]
+    _ = y ^ a * (Gamma y ^ a * Gamma y ^ (1 - a)) := by
+      rw [Gamma_add_one hy.ne', mul_rpow hy.le hΓ.le]
+      ring
+    _ = y ^ a * Gamma y := by rw [rpow_mul_rpow_one_sub hΓ.le]
 
 /-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. The case
 `(x, s) = (0, 0)`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
@@ -97,7 +102,7 @@ conventions `Γ(0) = 0` and `a / 0 = 0`; there both sides are `0`. -/
 theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (hs0 : 0 ≤ s)
     (hs1 : s ≤ 1) : x ^ (1 - s) ≤ Gamma (x + 1) / Gamma (x + s) := by
   rcases hx.eq_or_lt with rfl | hx
-  · rw [zero_add, Gamma_one, zero_add]
+  · simp only [zero_add, Gamma_one]
     rcases hs1.eq_or_lt with rfl | hs1
     · simp
     rw [zero_rpow (by linarith)]
@@ -105,7 +110,8 @@ theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (
   rw [le_div_iff₀ (Gamma_pos_of_pos (by linarith)), Gamma_add_one hx.ne']
   calc x ^ (1 - s) * Gamma (x + s) ≤ x ^ (1 - s) * (x ^ s * Gamma x) :=
         mul_le_mul_of_nonneg_left (Gamma_add_le_rpow_mul_Gamma hx hs0 hs1) (by positivity)
-    _ = x * Gamma x := by rw [← mul_assoc, ← rpow_add hx, sub_add_cancel, rpow_one]
+    _ = (x ^ s * x ^ (1 - s)) * Gamma x := by ring
+    _ = x * Gamma x := by rw [rpow_mul_rpow_one_sub hx.le]
 
 /-- Wendel's upper bound: for `0 ≤ s ≤ 1` and `x + s ≥ 0`, `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}`.
 The case `x + s = 0`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
@@ -148,12 +154,15 @@ private theorem isEquivalent_Gamma_add_one_div_Gamma_add_iff_add_one (s : ℝ) :
       fun x => Gamma (x + 1) / Gamma (x + s) := by
     filter_upwards [eventually_gt_atTop (-s)] with x hx
     have hne : x + s ≠ 0 := by linarith
-    rw [← add_assoc, Gamma_add_one hne, div_mul_eq_mul_div, mul_comm (x + s) (Gamma (x + s)),
-      mul_div_mul_right _ _ hne]
+    calc Gamma (x + 1) / Gamma (x + (s + 1)) * (x + s)
+        = Gamma (x + 1) / Gamma (x + s) / (x + s) * (x + s) := by
+          rw [← add_assoc, Gamma_add_one hne, div_div, mul_comm (Gamma (x + s))]
+      _ = Gamma (x + 1) / Gamma (x + s) := div_mul_cancel₀ _ hne
   have hpow : (fun x : ℝ => x ^ (1 - (s + 1)) * x) =ᶠ[atTop] fun x => x ^ (1 - s) := by
     filter_upwards [eventually_gt_atTop 0] with x hx
-    have hexp : 1 - (s + 1) = 1 - s - 1 := by ring
-    rw [hexp, rpow_sub hx, rpow_one, div_mul_cancel₀ _ hx.ne']
+    calc x ^ (1 - (s + 1)) * x = x ^ (1 - s) / x * x := by
+          rw [sub_add_eq_sub_sub, rpow_sub_one hx.ne']
+      _ = x ^ (1 - s) := div_mul_cancel₀ _ hx.ne'
   constructor
   · intro h
     refine ((h.div hlin).congr_left ?_).congr_right ?_
@@ -221,20 +230,21 @@ theorem strictMonoOn_Gamma_add_div_Gamma {c : ℝ} (hc : 0 < c) :
     have hΓ := Gamma_pos_of_pos hx
     have hΓc := Gamma_pos_of_pos (add_pos hx hc)
     exact ⟨div_pos hΓc hΓ, log_div hΓc.ne' hΓ.ne'⟩
+  have hlogΓ : ∀ {y : ℝ}, 0 < y → log (Gamma (y + 1)) = log y + log (Gamma y) := fun hy => by
+    rw [Gamma_add_one hy.ne', log_mul hy.ne' (Gamma_pos_of_pos hy).ne']
   have hshift : ∀ {x : ℝ}, 0 < x → log (Gamma (x + 1 + c)) - log (Gamma (x + 1)) =
       log (Gamma (x + c)) - log (Gamma x) + (log (x + c) - log x) := by
     intro x hx
-    have hxc : 0 < x + c := add_pos hx hc
-    have hx1 : x + 1 + c = x + c + 1 := by ring
-    rw [hx1, Gamma_add_one hxc.ne', Gamma_add_one hx.ne',
-      log_mul hxc.ne' (Gamma_pos_of_pos hxc).ne', log_mul hx.ne' (Gamma_pos_of_pos hx).ne']
+    rw [add_right_comm, hlogΓ (add_pos hx hc), hlogΓ hx]
     ring
   intro s hsD t htD hst
   have hs : 0 < s := Set.mem_Ioi.mp hsD
   have ht : 0 < t := Set.mem_Ioi.mp htD
   have hD : log (t + c) - log t < log (s + c) - log s := by
-    rw [sub_lt_sub_iff, ← log_mul (by linarith) hs.ne', ← log_mul (by linarith) ht.ne']
-    exact log_lt_log (by positivity) (by nlinarith)
+    rw [← log_div (by linarith) ht.ne', ← log_div (by linarith) hs.ne']
+    refine log_lt_log (div_pos (by linarith) ht) ?_
+    rw [div_lt_div_iff₀ ht hs]
+    nlinarith
   refine (log_lt_log_iff (hratio hs).1 (hratio ht).1).1 ?_
   rw [(hratio hs).2, (hratio ht).2]
   refine (hmono hs hst.le).lt_of_ne fun heq => ?_
