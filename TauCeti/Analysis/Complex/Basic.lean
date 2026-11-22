@@ -35,6 +35,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 `Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
 (`Complex.re_conj_mul_le`).
 
+As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
+the counterpart of Mathlib's `Complex.conjLIE_symm`).
+
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
 `Complex.inv_re_nonneg`). Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
@@ -275,6 +278,11 @@ end TauCeti
 namespace Complex
 
 open ComplexConjugate
+
+/-- Complex conjugation, as a continuous real-linear equivalence, is its own inverse. -/
+@[simp]
+theorem conjCLE_symm : conjCLE.symm = conjCLE := by
+  rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
 
 /-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by

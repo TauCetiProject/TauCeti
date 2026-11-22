@@ -19,6 +19,10 @@ with rational constants, the second bounds the contribution `log p / p` of a sin
 real cutoff `x` when passing between inclusive and strict prime sums, and the third bounds
 logarithmic growth linearly with arbitrarily small slope `η`.
 
+Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
+(`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
+decay of `log x`, as for the modulus `|α|²` of a section tending to one.
+
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
 `posLog x` by `sqrt (2 * |x|)` for every real `x`.
@@ -31,6 +35,7 @@ in Hadamard minimum-modulus estimates.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.log_le_mul_sub_log_sub_one`: `log x ≤ η * x - log η - 1` for `x > 0` and `η > 0`.
+* `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
@@ -64,6 +69,17 @@ theorem log_le_mul_sub_log_sub_one {x η : ℝ} (hx : 0 < x) (hη : 0 < η) :
   have h := log_le_sub_one_of_pos (mul_pos hη hx)
   rw [log_mul hη.ne' hx.ne'] at h
   linarith
+
+/-- Near `1` from below the logarithm is controlled by the distance to `1`: for `1 / 2 ≤ x ≤ 1`,
+`|log x| ≤ 2 (1 - x)`. -/
+theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1) :
+    |log x| ≤ 2 * (1 - x) := by
+  have hx₀ : 0 < x := by linarith
+  -- `-log x = log x⁻¹ ≤ x⁻¹ - 1 = (1 - x) / x ≤ 2 (1 - x)`.
+  have h := log_le_sub_one_of_pos (inv_pos.mpr hx₀)
+  rw [log_inv, inv_eq_one_div, div_sub_one hx₀.ne', le_div_iff₀ hx₀] at h
+  rw [abs_of_nonpos (log_nonpos hx₀.le hx₁)]
+  nlinarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/

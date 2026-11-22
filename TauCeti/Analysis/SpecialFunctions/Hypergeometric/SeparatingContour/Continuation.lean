@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.SeparatingContour.Analyticity
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.MeasureTheory.Group.Integral

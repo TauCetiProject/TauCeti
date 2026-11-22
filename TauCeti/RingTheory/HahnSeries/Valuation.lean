@@ -56,20 +56,12 @@ noncomputable def valuation : Valuation R⟦Γ⟧ Γᵐ⁰ where
   map_zero' := by simp
   map_one' := by simp
   map_mul' x y := by
-    by_cases hx : x = 0
-    · simp [hx]
-    by_cases hy : y = 0
-    · simp [hy]
-    simp [hx, hy, order_mul hx hy, exp_add, mul_comm]
+    by_cases hx : x = 0 <;> by_cases hy : y = 0 <;> simp [hx, hy, exp_add, mul_comm]
   map_add_le_max' x y := by
-    by_cases hxy : x + y = 0
-    · simp [hxy]
-    by_cases hx : x = 0
-    · simp [hx]
-    by_cases hy : y = 0
-    · simp [hy]
-    simp only [hxy, hx, hy, ↓reduceIte, le_max_iff, exp_le_exp, neg_le_neg_iff]
-    exact (min_le_iff.mp (min_order_le_order_add hxy))
+    by_cases hx : x = 0; · simp [hx]
+    by_cases hy : y = 0; · simp [hy]
+    by_cases hxy : x + y = 0; · simp [hxy]
+    simpa [hxy, hx, hy, le_max_iff] using min_order_le_order_add hxy
 
 variable {x y : R⟦Γ⟧}
 
@@ -80,9 +72,7 @@ theorem valuation_eq_exp_neg_order (hx : x ≠ 0) : valuation Γ R x = exp (-x.o
 /-- The valuation of `x` vanishes exactly when `x = 0`. -/
 @[simp]
 theorem valuation_eq_zero_iff : valuation Γ R x = 0 ↔ x = 0 := by
-  by_cases hx : x = 0
-  · simp [hx]
-  simp [valuation_eq_exp_neg_order hx, hx]
+  simp [valuation]
 
 /-- The monomial `r t ^ g`, for `r ≠ 0`, has valuation `exp (-g)`. -/
 @[simp]
@@ -93,24 +83,19 @@ theorem valuation_single (g : Γ) {r : R} (hr : r ≠ 0) :
 /-- The valuation of `x` is below `exp (-g)` exactly when the order of `x` exceeds `g`. -/
 theorem valuation_lt_exp_neg_iff (g : Γ) :
     valuation Γ R x < exp (-g) ↔ (g : WithTop Γ) < x.orderTop := by
-  by_cases hx : x = 0
-  · simp [hx]
-  rw [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx, exp_lt_exp, neg_lt_neg_iff,
-    WithTop.coe_lt_coe]
+  by_cases hx : x = 0; · simp [hx]
+  simp [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx]
 
 /-- The valuation of `x` is at most `exp (-g)` exactly when the order of `x` is at least `g`. -/
 theorem valuation_le_exp_neg_iff (g : Γ) :
     valuation Γ R x ≤ exp (-g) ↔ (g : WithTop Γ) ≤ x.orderTop := by
-  by_cases hx : x = 0
-  · simp [hx]
-  rw [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx, exp_le_exp, neg_le_neg_iff,
-    WithTop.coe_le_coe]
+  by_cases hx : x = 0; · simp [hx]
+  simp [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx]
 
 /-- The valuation reverses the order: `v x ≤ v y` exactly when `ord y ≤ ord x`. -/
 theorem valuation_le_valuation_iff :
     valuation Γ R x ≤ valuation Γ R y ↔ y.orderTop ≤ x.orderTop := by
-  by_cases hy : y = 0
-  · simp [hy]
+  by_cases hy : y = 0; · simp [hy]
   rw [valuation_eq_exp_neg_order hy, valuation_le_exp_neg_iff, order_eq_orderTop_of_ne_zero hy]
 
 end HahnSeries

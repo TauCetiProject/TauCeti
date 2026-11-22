@@ -84,6 +84,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   multiplicative unit circle is a unique integer power.
 * `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
+* `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
+  with the `n`-th Fourier basis vector in the first slot gives the `n`-th Fourier coefficient.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -116,7 +118,7 @@ Fourier, additive circle, character, Pontryagin dual
 public section
 
 open MeasureTheory AddCircle
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {T : ℝ}
 
@@ -285,6 +287,18 @@ theorem eq_zero_of_forall_fourierCoeff_eq_zero (F : C(AddCircle T, ℂ))
 end ContinuousMap
 
 namespace TauCeti
+
+/-- The inner product with the `n`-th Fourier basis vector in the first slot is the `n`-th
+Fourier coefficient. -/
+theorem inner_fourierBasis_left (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
+    ⟪fourierBasis (T := T) n, f⟫_ℂ = fourierCoeff f n := by
+  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+
+/-- The continuous linear functional given by the `n`-th Fourier basis vector extracts the
+`n`-th Fourier coefficient. -/
+theorem innerSL_fourierBasis_apply (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
+    innerSL ℂ (fourierBasis (T := T) n) f = fourierCoeff f n := by
+  rw [innerSL_apply_apply, inner_fourierBasis_left]
 
 /-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
 theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]

@@ -246,6 +246,13 @@ section Stabilizer
 
 variable [IsDomain R]
 
+/-- An element `H ∈ t` commutes with a vector `v` of a root plane exactly when `α(H) = 0` or
+`v = 0`. -/
+theorem lie_eq_zero_iff [Module.IsTorsionFree R L] (h : IsRootPlane B t α E J) (H : t) (v : E) :
+    ⁅(H : L), (v : L)⁆ = 0 ↔ α H = 0 ∨ v = 0 := by
+  rw [h.lie_apply]
+  simp [map_eq_zero_iff J h.injective]
+
 /-- **Root planes and the coadjoint stabilizer.** For a separating invariant form `B` and
 `p ∈ t`, a vector `A` of a root plane stabilizes `ν = B p` exactly when `α(p) = 0` or `A = 0`.
 So a root plane with `α(p) = 0` lies in the stabilizer `L_ν`, and one with `α(p) ≠ 0` meets it

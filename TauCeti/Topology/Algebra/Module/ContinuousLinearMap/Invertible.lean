@@ -34,14 +34,22 @@ A one-sided inverse of an invertible map is its inverse
 (`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
-(`ContinuousLinearMap.isInvertible_iff_isUnit`).
+(`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
+(`ContinuousLinearMap.isInvertible_neg_iff`).
+
+A map agreeing pointwise with an equality cast is invertible
+(`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts.
+bundles over the same base, read in bundle charts. Two invertible maps on `M₁ × M₂` which agree
+on `M₁` have mutually inverse diagonal blocks `M₂ → M₂`
+(`ContinuousLinearMap.IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr`).
+For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible
+(`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
@@ -57,6 +65,15 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+/-- A continuous linear map equal to the equality cast between its fibres is invertible. -/
+theorem isInvertible_of_eq_cast {R M : Type*} [Semiring R] {V : M → Type*}
+    [∀ x, AddCommMonoid (V x)] [∀ x, Module R (V x)] [∀ x, TopologicalSpace (V x)]
+    {x₀ x₁ : M} (h : x₀ = x₁) (A : V x₀ →L[R] V x₁)
+    (hA : ∀ v, A v = cast (congrArg V h) v) : A.IsInvertible := by
+  subst x₁
+  obtain rfl : A = ContinuousLinearMap.id R (V x₀) := ContinuousLinearMap.ext hA
+  exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl R (V x₀))
 
 section IsUnit
 
@@ -85,6 +102,19 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section Neg
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+
+/-- Negation preserves and reflects invertibility. -/
+@[simp]
+theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
+  have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
+  rw [h, isInvertible_equiv_comp]
+
+end Neg
 
 section OneSided
 
@@ -296,7 +326,40 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       conv_rhs => rw [hp, map_add]
       simp [hKp, add_comm]
 
+/-- Two invertible maps `d₀, d₁ : M₁ × M₂ → N` which agree on the first factor have mutually
+inverse diagonal blocks `snd ∘ d₀⁻¹ ∘ d₁ ∘ inr` and `snd ∘ d₁⁻¹ ∘ d₀ ∘ inr : M₂ → M₂`, since
+`d₀⁻¹ ∘ d₁` restricts to the identity on `M₁`. This is how the normal parts of the differentials of
+two tubes around the same map are compared. -/
+theorem IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr {N : Type*}
+    [TopologicalSpace N] [AddCommGroup N] [Module R N] {d₀ d₁ : M₁ × M₂ →L[R] N}
+    (h₀ : d₀.IsInvertible) (h₁ : d₁.IsInvertible) (h : d₀ ∘L inl R M₁ M₂ = d₁ ∘L inl R M₁ M₂) :
+    (snd R M₁ M₂ ∘L d₀.inverse ∘L d₁ ∘L inr R M₁ M₂) ∘L
+      (snd R M₁ M₂ ∘L d₁.inverse ∘L d₀ ∘L inr R M₁ M₂) = .id R M₂ :=
+  ContinuousLinearMap.ext fun v ↦ by
+    have hbase (a : M₁) : d₀ (a, 0) = d₁ (a, 0) := by simpa using DFunLike.congr_fun h a
+    -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
+    have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
+        d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
+      rw [map_sub, hbase, eq_sub_iff_add_eq, ← map_add]
+      simp [h₁.self_apply_inverse]
+    simp [hw, h₀.inverse_apply_self]
+
 end FstPreserving
+
+section CoprodId
+
+variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [IsTopologicalAddGroup M]
+
+/-- For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible, with
+inverse `(f, g) ↦ (g, f - B g)`. -/
+theorem isInvertible_coprod_id_prod_fst (B : M →L[R] M) :
+    ((B.coprod (ContinuousLinearMap.id R M)).prod (fst R M M)).IsInvertible :=
+  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R M)).prod
+    (fst R M M)) ((snd R M M).prod (fst R M M - B ∘L snd R M M)) (ext fun _ ↦ by simp)
+    (ext fun _ ↦ by simp), rfl⟩
+
+end CoprodId
 
 section OneSubComp
 

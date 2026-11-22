@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
 import TauCeti.CategoryTheory.GradedObject.Monoidal
 
@@ -43,10 +46,53 @@ The proof uses no local computation in a product of charts. Fix a point `z = (x,
   monomorphism between modules free of rank one, hence it carries the generator `μ ⊗ ν` to a
   generator of the local homology at `z` (`LinearMap.span_singleton_apply_eq_top_of_leftInverse`).
 
+## Manifolds with boundary
+
+Let `X` and `X'` be compact manifolds of dimensions `m` and `n` with collared boundaries, as in
+`TauCeti.HomologicalOrientation.fundamentalClassRel`: open embeddings `ι : M → X` and
+`ι' : M' → X'` of oriented manifolds without boundary whose complements `∂X` and `∂X'` are collared.
+The product `X × X'` is a manifold with corners, with boundary `∂X × X' ∪ X × ∂X'`, and the cross
+product of the relative fundamental classes `[X, ∂X]` and `[X', ∂X']` plays the role of its
+fundamental class relative to the boundary. The pairs `(X, ∂X)` and `(X', ∂X')` are not open, so
+this cross product is taken in the homology of the normalized cubical chains
+`N((X, ∂X) × (X', ∂X'))` of the product of pairs (`TauCeti.cubicalHomologyKunnethPair`). This is
+the complex in which the cross product `c × c'` of cubical chains `c` and `c'` of `X` and `X'` with
+boundaries in `∂X` and `∂X'` is a relative cycle, with boundary `∂c × c' ± c × ∂c'` in
+`∂X × X' ∪ X × ∂X'`; it represents the cross product of the classes of `c` and `c'`
+(`TauCeti.cubicalCrossProductPair_f_ιTensorObj_tmul`). With integral coefficients, the image of
+the cross product of the relative fundamental classes in the local homology of `X × X'` at every
+interior point `(ι x, ι' x')` generates that group
+(`TauCeti.HomologicalOrientation.span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top`).
+
+The local computation is the Künneth theorem for the open pairs `(X, X ∖ {x})` and
+`(X', X' ∖ {x'})` (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`), whose union of
+preimages `(X ∖ {x}) × X' ∪ X × (X' ∖ {x'})` is the complement of `(x, x')`. When the local
+homology of `X` at `x` is projective and vanishes outside degree `m`, as at a point with a chart,
+the summand `Hₘ(X, X ∖ {x}) ⊗ Hₙ(X', X' ∖ {x'})` is all of the Künneth sum in degree `m + n`, so the
+Künneth class of two generators generates
+(`TauCeti.span_singularHomologyKunnethPair_tmul_eq_top`). The cross product of relative classes
+along `S ⊆ X` and `S' ⊆ X'` restricts at a point of `S × S'` to the Künneth class of the
+restrictions
+(`TauCeti.tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular`), so it
+restricts to a generator wherever both factors do
+(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`). The integral relative
+fundamental classes have coefficients `ULift ℤ`, read in `ℤ` through
+`TopPair.uliftIntSingularHomologyIso`.
+
+The generator is not compared here with the local orientation of the product orientation
+`TauCeti.LocalOrientation.prod`; only the generator property is proved.
+
 ## Main results
 
 * `TauCeti.IsFundamentalClass.singularHomologyCross`: the cross product of fundamental classes of
   closed connected manifolds is a fundamental class of their product.
+* `TauCeti.span_singularHomologyKunnethPair_tmul_eq_top`: the Künneth class of local generators
+  generates the local homology of a product.
+* `TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`: the cubical cross product of
+  classes restricting to local generators restricts to a local generator of the product.
+* `TauCeti.HomologicalOrientation.span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top`:
+  the cross product of the relative fundamental classes of two compact manifolds with collared
+  boundary restricts to a generator of the local homology at every interior point of the product.
 
 ## References
 
@@ -55,13 +101,16 @@ The proof uses no local computation in a product of charts. Fix a point `z = (x,
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, Proposition 6.13, where the cross product of
   fundamental classes is the fundamental class of a product of manifolds abundant with 2-spheres.
+* J.-F. Barraud, O. Cornea, *Lagrangian intersections and the Serre spectral sequence*, Annals of
+  Mathematics 166 (2007), Appendix A, where the fundamental chains rel boundary of products of
+  compactified trajectory spaces are cross products of fundamental chains.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits Module Set MonoidalCategory
+open CategoryTheory Limits Module Set MonoidalCategory Topology
 
 universe w
 
@@ -139,5 +188,144 @@ theorem IsFundamentalClass.singularHomologyCross
     (eT.span_singleton_eq_top_iff_isUnit.2 heT)
 
 end Cross
+
+section ProdPair
+
+open HomologicalComplex TopPair
+
+variable {k : Type w} [CommRing k] {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+  [T1Space X] [T1Space Y]
+
+/-- **The Künneth class of local generators generates the local homology of a product.** Let `x`
+be a point of `X` at which the local homology `H_*(X, X ∖ {x}; k)` vanishes outside degree `m` and
+is projective in degree `m`, for instance a point with a chart to a real normed space of dimension
+`m`. If `z` generates `Hₘ(X, X ∖ {x}; k)` and `z'` generates `Hₙ(Y, Y ∖ {y}; k)`, then the Künneth
+class of `z ⊗ z'` generates `Hₘ₊ₙ(X × Y, (X ∖ {x}) × Y ∪ X × (Y ∖ {y}); k)`, the local homology of
+`X × Y` at `(x, y)`. -/
+theorem span_singularHomologyKunnethPair_tmul_eq_top {x : X} {y : Y} {m n : ℕ}
+    (hX : ∀ p ≠ m, IsZero (localHomology (ModuleCat.of k k) ({x} : Set X) p))
+    [Projective (localHomology (ModuleCat.of k k) ({x} : Set X) m)]
+    {z : (localHomology (ModuleCat.of k k) ({x} : Set X) m : ModuleCat.{w} k)}
+    {z' : (localHomology (ModuleCat.of k k) ({y} : Set Y) n : ModuleCat.{w} k)}
+    (hz : k ∙ z = ⊤) (hz' : k ∙ z' = ⊤) :
+    k ∙ (GradedObject.Monoidal.ιTensorObj _ _ m n (m + n) rfl ≫
+      singularHomologyKunnethPair k ({x}ᶜ : Set (TopCat.of X)) ({y}ᶜ : Set (TopCat.of Y))
+        (m + n)).hom (z ⊗ₜ z') = ⊤ := by
+  -- The Künneth map is an isomorphism, and so is the inclusion of the summand of `(m, n)`.
+  have (p : ℕ) : Projective (localHomology (ModuleCat.of k k) ({x} : Set X) p) := by
+    rcases eq_or_ne p m with rfl | hp
+    · infer_instance
+    · exact (hX p hp).projective
+  have := isIso_singularHomologyKunnethPair_of_projective k (A := ({x}ᶜ : Set (TopCat.of X)))
+    (B := ({y}ᶜ : Set (TopCat.of Y))) isOpen_compl_singleton isOpen_compl_singleton (m + n)
+  have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left _
+    (fun q ↦ localHomology (ModuleCat.of k k) ({y} : Set Y) q) hX n (m + n) rfl
+  -- The tensor product of the generators generates the tensor product.
+  have htop : k ∙ z ⊗ₜ[k] z' = ⊤ := by
+    have h := Submodule.map₂_span_span k (TensorProduct.mk k _ _) {z} {z'}
+    rw [hz, hz', TensorProduct.map₂_mk_top_top_eq_top, image2_singleton] at h
+    exact h.symm
+  exact (ModuleCat.span_singleton_apply_eq_top_iff _).2 htop
+
+variable {S : Set X} {T : Set Y} {x : X} {y : Y}
+
+/-- **The cross product of relative classes restricting to local generators.** Let `γ` be a class
+of the local homology `Hₘ(X, X ∖ S; k)` along `S` and `γ'` one of `Hₙ(Y, Y ∖ T; k)`, restricting
+to generators of the local homology at `x ∈ S` and at `y ∈ T`. Suppose that the local homology of
+`X` at `x` vanishes outside degree `m` and is projective in degree `m`. Then the cubical cross
+product of `γ` and `γ'`, in the homology of the normalized cubical chains of the product of the
+pairs `(X, X ∖ S)` and `(Y, Y ∖ T)`, restricts to a generator of the local homology of `X × Y` at
+`(x, y)`, the relative homology of `(X × Y, (X ∖ {x}) × Y ∪ X × (Y ∖ {y}))`. -/
+theorem span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (hx : x ∈ S) (hy : y ∈ T)
+    {m n : ℕ} (hX : ∀ p ≠ m, IsZero (localHomology (ModuleCat.of k k) ({x} : Set X) p))
+    [Projective (localHomology (ModuleCat.of k k) ({x} : Set X) m)]
+    (γ : (localHomology (ModuleCat.of k k) S m : ModuleCat.{w} k))
+    (γ' : (localHomology (ModuleCat.of k k) T n : ModuleCat.{w} k))
+    (hγ : k ∙ (localHomologyRestriction (ModuleCat.of k k) (singleton_subset_iff.2 hx) m).hom γ = ⊤)
+    (hγ' : k ∙ (localHomologyRestriction (ModuleCat.of k k) (singleton_subset_iff.2 hy) n).hom γ' =
+      ⊤) :
+    k ∙ (homologyMap (cubicalChainComplexProdMap k _ _
+        (ofSubsetMap (𝟙 (TopCat.of X)) (compl_subset_compl.2 (singleton_subset_iff.2 hx)))
+        (ofSubsetMap (𝟙 (TopCat.of Y)) (compl_subset_compl.2 (singleton_subset_iff.2 hy))))
+          (m + n) ≫
+      homologyMap (cubicalChainComplexProdToSingular k ({x}ᶜ : Set (TopCat.of X))
+        ({y}ᶜ : Set (TopCat.of Y))) (m + n)).hom
+      ((GradedObject.Monoidal.ιTensorObj _ _ m n (m + n) rfl ≫
+        cubicalHomologyKunnethPair k (ofSubset (Sᶜ : Set (TopCat.of X)))
+          (ofSubset (Tᶜ : Set (TopCat.of Y))) (m + n)).hom
+        ((TopPair.singularCubicalHomologyIso k _ m).hom γ ⊗ₜ
+          (TopPair.singularCubicalHomologyIso k _ n).hom γ')) = ⊤ := by
+  -- The restriction of the cross product is the Künneth class of the restrictions.
+  have key := congrArg (fun φ ↦ φ.hom (γ ⊗ₜ γ'))
+    (tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular k
+      (𝟙 (TopCat.of X)) (𝟙 (TopCat.of Y)) (compl_subset_compl.2 (singleton_subset_iff.2 hx))
+      (compl_subset_compl.2 (singleton_subset_iff.2 hy)) m n (m + n) rfl)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul] at key
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [key]
+  rw [localHomologyRestriction_def] at hγ hγ'
+  exact span_singularHomologyKunnethPair_tmul_eq_top hX hγ hγ'
+
+end ProdPair
+
+namespace HomologicalOrientation
+
+variable {X M X' M' : Type} {N N' : Type*} [TopologicalSpace X] [TopologicalSpace M]
+  [TopologicalSpace N] [TopologicalSpace X'] [TopologicalSpace M'] [TopologicalSpace N']
+  [T2Space X] [CompactSpace X] [T2Space M] [T2Space X'] [CompactSpace X'] [T2Space M']
+  {E E' : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [ChartedSpace E' M']
+  {ι : M → X} {f : N → X} {ι' : M' → X'} {f' : N' → X'} {m n : ℕ}
+
+open HomologicalComplex TopPair in
+/-- **The cross product of relative fundamental classes restricts to local generators of the
+product.** Let `X` and `X'` be compact manifolds with collared boundaries `∂X` and `∂X'` and
+oriented interiors `ι : M → X` and `ι' : M' → X'` of dimensions `m` and `n`, as in
+`TauCeti.HomologicalOrientation.fundamentalClassRel`. The cubical cross product of the relative
+fundamental classes `[X, ∂X]` and `[X', ∂X']`, read with coefficients `ℤ`, is a class of the
+homology of the normalized cubical chains of the product of pairs `(X, ∂X) × (X', ∂X')`. At every
+interior point `(ι x, ι' x')` of `X × X'`, it restricts to a generator of the local homology
+`Hₘ₊ₙ(X × X', (X ∖ {ι x}) × X' ∪ X × (X' ∖ {ι' x'}); ℤ)`. -/
+theorem span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top
+    (o : HomologicalOrientation M E m) (hm : finrank ℝ E = m) (hι : IsOpenEmbedding ι)
+    (hιf : range ι = (range f)ᶜ) (hf : IsCollared f)
+    (o' : HomologicalOrientation M' E' n) (hn : finrank ℝ E' = n) (hι' : IsOpenEmbedding ι')
+    (hιf' : range ι' = (range f')ᶜ) (hf' : IsCollared f') (x : M) (x' : M') :
+    ℤ ∙ (homologyMap (cubicalChainComplexProdMap ℤ _ _
+        (ofSubsetMap (𝟙 (TopCat.of X))
+          (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self x))))
+        (ofSubsetMap (𝟙 (TopCat.of X'))
+          (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self x'))))) (m + n) ≫
+      homologyMap (cubicalChainComplexProdToSingular ℤ ({ι x}ᶜ : Set (TopCat.of X))
+        ({ι' x'}ᶜ : Set (TopCat.of X'))) (m + n)).hom
+      ((GradedObject.Monoidal.ιTensorObj _ _ m n (m + n) rfl ≫
+        cubicalHomologyKunnethPair ℤ (ofSubset ((range ι)ᶜ : Set (TopCat.of X)))
+          (ofSubset ((range ι')ᶜ : Set (TopCat.of X'))) (m + n)).hom
+        ((TopPair.singularCubicalHomologyIso ℤ _ m).hom
+            ((uliftIntSingularHomologyIso _ m).hom (o.fundamentalClassRel hm hι hιf hf)) ⊗ₜ
+          (TopPair.singularCubicalHomologyIso ℤ _ n).hom
+            ((uliftIntSingularHomologyIso _ n).hom
+              (o'.fundamentalClassRel hn hι' hιf' hf')))) = ⊤ := by
+  subst hm hn
+  -- At the interior point `ι x`, the local homology of `X` is that of `M`, computed by a chart.
+  have hX (p : ℕ) (hp : p ≠ finrank ℝ E) :
+      IsZero (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) p) :=
+    (isZero_singularHomology_complSingleton_of_ne (ModuleCat.of ℤ ℤ) (chartAt E x)
+      (mem_chart_source E x) rfl hp).of_iso (localHomologyIsoOfIsOpenEmbedding _ hι x p).symm
+  have : Projective (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) (finrank ℝ E)) :=
+    Projective.of_iso ((localHomologyIsoOfIsOpenEmbedding _ hι x _).symm ≪≫
+      singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ ℤ) (chartAt E x)
+        (mem_chart_source E x)).symm inferInstance
+  exact span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (mem_range_self x)
+    (mem_range_self x') hX _ _
+    ((o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
+      (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+        (mem_range_self x))
+    ((o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
+      (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+        (mem_range_self x'))
+
+end HomologicalOrientation
 
 end TauCeti
