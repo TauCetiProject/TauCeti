@@ -26,10 +26,12 @@ for a line derivative first and the Fréchet version is deduced from it.
 
 For `m = 0` this is the familiar statement that a differentiable convex function lies above its
 tangent hyperplanes; it holds on an arbitrary convex set, with no interior or openness assumption
-on the base point. The parameter `m` may be negative, in which case the paraboloid opens
-downwards. In an inner product space, with `f'` given by the gradient, this is the inequality that
-makes the gradient of a strongly convex potential a subgradient of its potential energy on the
-Wasserstein space.
+on the base point, and its concave counterpart follows by negation. For a concave function that is
+positively homogeneous of degree one, Euler's identity `f' x = f x` moves the tangent hyperplane at
+`x` through the origin, which gives the tangent inequality `f y ≤ f' y`. The parameter `m` may be
+negative, in which case the paraboloid opens downwards. In an inner product space, with `f'` given
+by the gradient, this is the inequality that makes the gradient of a strongly convex potential a
+subgradient of its potential energy on the Wasserstein space.
 
 Uniform concavity is preserved by translation. Restriction to an affine line rescales a signed
 strong modulus by the squared direction norm. At a point where the derivative is differentiable,
@@ -48,6 +50,10 @@ original function is needed only in a neighbourhood, not continuity of its secon
 * `StrongConvexOn.add_add_le_of_hasFDerivWithinAt`: the first-order condition for strong convexity,
   for a Fréchet derivative.
 * `ConvexOn.add_le_of_hasFDerivWithinAt`: a convex function lies above its tangent hyperplanes.
+* `ConcaveOn.le_add_of_hasFDerivWithinAt`: a concave function lies below its tangent hyperplanes.
+* `ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`: for a concave function that is positively
+  homogeneous of degree one along a ray, the tangent hyperplane at a point of that ray passes
+  through the origin, so `f y ≤ f' y`.
 -/
 
 public section
@@ -113,6 +119,29 @@ within `s` at a point `x ∈ s`, then `f` lies above its tangent hyperplane at `
 theorem ConvexOn.add_le_of_hasFDerivWithinAt (hf : ConvexOn ℝ s f) (hx : x ∈ s) (hy : y ∈ s)
     (hd : HasFDerivWithinAt f f' s x) : f x + f' (y - x) ≤ f y := by
   simpa using (strongConvexOn_zero.2 hf).add_add_le_of_hasFDerivWithinAt hx hy hd
+
+/-- **Tangent support for concave functions.** If `f` is concave on `s` and has derivative `f'`
+within `s` at a point `x ∈ s`, then `f` lies below its tangent hyperplane at `x` on `s`:
+`f y ≤ f x + f' (y - x)` for every `y ∈ s`. -/
+theorem ConcaveOn.le_add_of_hasFDerivWithinAt (hf : ConcaveOn ℝ s f) (hx : x ∈ s) (hy : y ∈ s)
+    (hd : HasFDerivWithinAt f f' s x) : f y ≤ f x + f' (y - x) := by
+  have h := hf.neg.add_le_of_hasFDerivWithinAt hx hy hd.neg
+  simp only [Pi.neg_apply, neg_apply] at h
+  linarith
+
+/-- **The tangent inequality for positively homogeneous concave functions.** Let `f` be concave on
+`s` and differentiable at `x ∈ s` with derivative `f'`, and suppose that `f (t • x) = t * f x` for
+`t` near `1`. Then the tangent hyperplane at `x` passes through the origin, and `f y ≤ f' y` for
+every `y ∈ s`. -/
+theorem ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous (hf : ConcaveOn ℝ s f) (hx : x ∈ s)
+    (hy : y ∈ s) (hd : HasFDerivAt f f' x) (hhom : ∀ᶠ t in 𝓝 (1 : ℝ), f (t • x) = t * f x) :
+    f y ≤ f' y := by
+  have hsupp := hf.le_add_of_hasFDerivWithinAt hx hy hd.hasFDerivWithinAt
+  -- Euler's identity `f' x = f x` along the ray through `x`.
+  have heuler : f' x = f x := by
+    simpa using hd.apply_self_eq_smul_of_eventuallyEq (hasDerivAt_id (1 : ℝ)) hhom
+  rw [map_sub] at hsupp
+  linarith
 
 /-- Uniform concavity depends only on the values of the function on its domain. -/
 theorem UniformConcaveOn.congr {f g : E → ℝ} {ψ : ℝ → ℝ} {s : Set E}

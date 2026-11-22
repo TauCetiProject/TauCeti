@@ -57,6 +57,7 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.concaveOn_prod_rpow`: the geometric mean is concave on the nonnegative orthant.
 * `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
   norms of the pairs.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
@@ -122,6 +123,38 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
     _ ≤ ∑ i ∈ s, w i := Finset.sum_le_sum fun i hi =>
         mul_le_of_le_one_right (hw i hi) (div_self_le_one _)
     _ = 1 := hw'
+
+/-- The geometric mean `(∏ i, μ i) ^ (1 / n)`, `n = card ι ≥ 1`, is positively homogeneous:
+`(∏ i, t * μ i) ^ (1 / n) = t * (∏ i, μ i) ^ (1 / n)` for `t ≥ 0` and `μ ≥ 0`. -/
+theorem prod_mul_rpow_inv_card {ι : Type*} [Fintype ι] [Nonempty ι] {t : ℝ} (ht : 0 ≤ t)
+    {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i) :
+    (∏ i, t * μ i) ^ (Fintype.card ι : ℝ)⁻¹ = t * (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
+    mul_rpow (pow_nonneg ht _) (Finset.prod_nonneg fun i _ ↦ hμ i),
+    pow_rpow_inv_natCast ht Fintype.card_ne_zero]
+
+/-- **Concavity of the geometric mean.** The geometric mean `μ ↦ (∏ i, μ i) ^ (1 / n)`,
+`n = card ι`, is concave on the nonnegative orthant. -/
+theorem concaveOn_prod_rpow {ι : Type*} [Fintype ι] :
+    ConcaveOn ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i}
+      fun μ ↦ (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  have hconv : Convex ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i} := fun μ hμ ν hν a b ha hb hab i ↦ by
+    simpa using convex_Ici (0 : ℝ) (hμ i) (hν i) ha hb hab
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simpa using concaveOn_const (1 : ℝ) hconv
+  refine ⟨hconv, fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
+  have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  -- Superadditivity at equal weights `1 / n`, applied to `a • μ` and `b • ν`.
+  have hsuper := prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
+    (w := fun _ ↦ (Fintype.card ι : ℝ)⁻¹) (a := fun i ↦ a * μ i) (b := fun i ↦ b * ν i)
+    (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg _))
+    (by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_inv_cancel₀ hn])
+    (fun i _ ↦ mul_nonneg ha (hμ i)) (fun i _ ↦ mul_nonneg hb (hν i))
+  simp only [finsetProd_rpow _ _ (fun i _ ↦ mul_nonneg ha (hμ i)),
+    finsetProd_rpow _ _ (fun i _ ↦ mul_nonneg hb (hν i)),
+    finsetProd_rpow _ _ (fun i _ ↦ add_nonneg (mul_nonneg ha (hμ i)) (mul_nonneg hb (hν i))),
+    prod_mul_rpow_inv_card ha hμ, prod_mul_rpow_inv_card hb hν] at hsuper
+  simpa using hsuper
 
 /-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into
 the interpolation bound for the squared Euclidean norms of the pairs `(a, b)`, `(a₀, b₀)` and
