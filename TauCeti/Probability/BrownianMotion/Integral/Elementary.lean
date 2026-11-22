@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Order.Monotone.Basic
 import TauCeti.Probability.Independence.Integration
 
 /-!
@@ -164,12 +165,7 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (fun i hi => hτ (by simpa using (mem_range.mp hi).le)
       (by simpa using Nat.succ_le_of_lt (mem_range.mp hi)) (Nat.le_succ i))
     (hX := fun i hi => ha i (mem_range.mp hi)) (hXi := fun i hi => ha₂ i (mem_range.mp hi))
-  intro i hi j hj hij
-  rcases hij.lt_or_gt with hij | hji
-  · exact Or.inl (hτ (by simpa using Nat.succ_le_of_lt (mem_range.mp hi))
-      (by simpa using (mem_range.mp hj).le) (Nat.succ_le_of_lt hij))
-  · exact Or.inr (hτ (by simpa using Nat.succ_le_of_lt (mem_range.mp hj))
-      (by simpa using (mem_range.mp hi).le) (Nat.succ_le_of_lt hji))
+  simpa only [coe_range] using hτ.pairwise_succ_le_or_succ_le
 
 /-- A finite sum of weighted Brownian increments truncated at an observation time lies in
 `L²`. Heights need only be measurable at their original left endpoints: intervals not yet
