@@ -60,8 +60,12 @@ noncomputable def ofScalarCoreAux : VectorBundleCore 𝕜 B (Fin 1 → 𝕜) B :
         ContinuousLinearEquiv.apply_symm_apply,
         Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
 
+/-- Every base point `x : B` is its own preferred chart index in `ofScalarCoreAux Z`. -/
 theorem indexAt_ofScalarCoreAux (x : B) : (ofScalarCoreAux Z).indexAt x = x := (rfl)
 
+-- Expose only the wrapper so `(ofScalarCore Z).rank` reduces definitionally to `1` in
+-- dependent fibre statements while keeping the cocycle body in `ofScalarCoreAux` unexposed;
+-- Lean's `module` system requires declarations referenced in `@[expose]` bodies to be `public`.
 /-- Present a scalar line-bundle core `Z : VectorBundleCore 𝕜 B 𝕜 ι` as a point-indexed core of
 rank one, using the preferred chart `Z.indexAt x` at each base point `x` and identifying
 `Fin 1 → 𝕜` with `𝕜` by evaluation at `0`. -/
