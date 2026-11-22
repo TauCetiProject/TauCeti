@@ -95,6 +95,32 @@ open scoped ENNReal NNReal FourierTransform InnerProductSpace InnerProduct ContD
 
 namespace TauCeti
 
+section WaveAdmissible
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {q : ℝ≥0} {r : ℝ≥0∞}
+
+/-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
+`2 < q` and `r ≠ 0` has `n ≥ 2` and `r > 2`. -/
+theorem two_le_finrank_of_waveAdmissible (hq : 2 < q) (hr0 : r ≠ 0)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) :
+    2 ≤ Module.finrank ℝ E ∧ (r⁻¹).toReal < 2⁻¹ ∧ 2 ≤ r := by
+  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
+  have hn : 2 ≤ Module.finrank ℝ E := by
+    by_contra h
+    have h1 : Module.finrank ℝ E = 1 := by omega
+    rw [h1, Nat.cast_one, sub_self, zero_mul, add_zero, zero_div] at hqr
+    linarith
+  have hn' : (1 : ℝ) ≤ Module.finrank ℝ E - 1 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
+    linarith
+  have hρ : (r⁻¹).toReal < 2⁻¹ := by
+    have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
+    linarith [pos_of_mul_pos_right h (by linarith)]
+  exact ⟨hn, hρ, ENNReal.two_le_of_toReal_inv_le hr0 hρ.le⟩
+
+end WaveAdmissible
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
@@ -145,27 +171,6 @@ private theorem ofReal_rpow_mul_rpow_two_mul {A c s : ℝ} (hA : 0 ≤ A) (hc : 
     mul_inv_cancel_right₀ two_ne_zero]
 
 variable {ψ : E → ℂ} {q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-include r' in
-/-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
-`2 < q` has `n ≥ 2` and `r > 2`, so `2 ≤ r`. -/
-private theorem two_le_of_admissible (hq : 2 < q)
-    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
-      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) : 2 ≤ r := by
-  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
-  have hn : 2 ≤ Module.finrank ℝ E := by
-    by_contra h
-    have h1 : Module.finrank ℝ E = 1 := by omega
-    rw [h1, Nat.cast_one, sub_self, zero_mul, add_zero, zero_div] at hqr
-    linarith
-  have hn' : (1 : ℝ) ≤ Module.finrank ℝ E - 1 := by
-    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
-    linarith
-  have hρ : (r⁻¹).toReal < 2⁻¹ := by
-    have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
-    linarith [pos_of_mul_pos_right h (by linarith)]
-  exact ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') hρ.le
 
 /-- **Interpolated dispersive decay.** Let `(q, r)` be wave-admissible in dimension `n`, and let
 `T` be bounded on `L²` with `‖T‖ ≤ B₁` and `‖T f‖_∞ ≤ C₁ c^n (1 + c |τ|)^(-(n - 1)/2) ‖f‖₁`. Then
@@ -248,7 +253,8 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
     rw [h0, ContinuousLinearMap.comp_zero, zero_apply,
       eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
-  refine eLpNorm_apply_le_of_eLpNorm_top_le hq (two_le_of_admissible (r' := r') hq hqr hE) hqr _
+  refine eLpNorm_apply_le_of_eLpNorm_top_le hq
+    (two_le_finrank_of_waveAdmissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE).2.2 hqr _
     (by positivity) (by positivity) (zpow_pos two_pos j) (sub_ne_zero.2 hst) (fun f hf ↦ ?_) ?_ g
   · -- The `L¹ → L^∞` bound, from the dispersive estimate for dilated cutoffs.
     refine (hC j m' hm' (s - t) f hf).trans ?_

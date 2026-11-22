@@ -8,9 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # The pointwise inner product of covariant derivatives
@@ -40,7 +40,7 @@ a chart with the inverse Gram matrix of the chart frame.
 
 public section
 
-open Bundle FiberBundle Riemannian.Tensor
+open Bundle FiberBundle
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
@@ -126,25 +126,8 @@ variable [IsManifold I ∞ M]
 function. -/
 theorem contMDiff_innerCovariantDerivative (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) :
     ContMDiff I 𝓘(ℝ) ∞ (cov.innerCovariantDerivative σ τ) := by
-  intro x
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hbase : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x :=
-    (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp)
-  have hframe (j) : CMDiffAt ∞ (T% (chartLocalFrame (I := I) x j)) x :=
-    contMDiffAt_chartLocalFrame (I := I) (n := ∞) x j
-  have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
-  have hτ' : CMDiff (∞ + 1) (T% τ) := by simpa using hτ
-  -- On the chart source, the metric trace is read off with the inverse Gram matrix.
-  have heq : (fun y ↦ ∑ i, ∑ j, chartInvGramMatrix (I := I) x y i j *
-      ⟪cov σ y (chartLocalFrame (I := I) x i y), cov τ y (chartLocalFrame (I := I) x j y)⟫)
-      =ᶠ[𝓝 x] cov.innerCovariantDerivative σ τ := by
-    filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
-    simp only [innerCovariantDerivative_def, ContinuousLinearMap.hilbertSchmidtInner_def,
-      metricTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
-      ContinuousLinearMap.coe_coe, smul_eq_mul]
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ heq.symm
-  refine contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦ ?_
-  exact ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) x i j).contMDiffAt hbase).mul
-    ((cov.contMDiffAt_apply (hframe i) hσ').inner_bundle (cov.contMDiffAt_apply (hframe j) hτ'))
+  exact (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)).hilbertSchmidtInner_bundle
+    (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hτ))
 
 end CovariantDerivative

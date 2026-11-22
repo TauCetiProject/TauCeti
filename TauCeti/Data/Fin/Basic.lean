@@ -30,9 +30,9 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, sums of families vanishing beyond an index, and the cyclic index
-arithmetic of `Fin 3`.
+permutations of `Fin 2`, sums of indices and of reversed indices, indicator sums indexed by
+`Fin n`, the final value of a partial product, sums of families vanishing beyond an index, and the
+cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -60,6 +60,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
+* `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
@@ -221,6 +222,10 @@ theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
 
+/-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
+theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id, Nat.choose_two_right]
+
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
     (∑ i : Fin k, (rev (castLE hk i) : ℕ)) =
@@ -264,6 +269,17 @@ theorem partialProd_last_eq_prod_ofFn {M : Type*} [Monoid M] {n : ℕ} (f : Fin 
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
     partialProd f (last n) = ∏ i, f i := by
   rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
+
+/-- The partial product up to the `i`-th entry is the product of the entries of index less than
+`i`. -/
+@[to_additive /-- The partial sum up to the `i`-th entry is the sum of the entries of index less
+than `i`. -/]
+theorem partialProd_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    (i : Fin (n + 1)) : partialProd f i.castSucc = ∏ k < i, f k := by
+  rw [partialProd, val_castSucc, List.prod_take_ofFn]
+  congr 1
+  ext k
+  simp
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
