@@ -37,6 +37,13 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg_mass`: with a mass term, the restriction
+  of a nonnegative weak supersolution shifted by `δ > 0` is a weak supersolution of the equation
+  with the modified mass coefficient `c u⁺ / (u⁺ + δ)`, still bounded by `|c|`.
+* `TauCeti.PDE.aestronglyMeasurable_mass_add_const`, `TauCeti.PDE.norm_mass_add_const_le`: that
+  mass coefficient is measurable, and bounded by `|c|`.
+* `TauCeti.PDE.exists_energyFormH1_restrictL_add_const_nonneg`: the same shift with the mass
+  coefficient packaged existentially, as a measurable coefficient bounded by `|c|`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
@@ -262,6 +269,76 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
     0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
+
+/-- **Shifted nonnegative supersolutions with a mass coefficient.** Let `u` be a weak
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` on `Ω`, let `U ⊆ Ω` be open of finite measure
+with `u ≥ 0` almost everywhere on `U`, and let `δ > 0`. Then `u|_U + δ` is a weak supersolution
+on `U` of the equation with the mass coefficient `c u⁺ / (u⁺ + δ)`, whose product with `u + δ` is
+`c u`. Unlike `c`, this coefficient depends on `u`, but it is bounded by `|c|`. -/
+theorem energyFormH1_restrictL_add_const_nonneg_mass
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    (hu0 : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x) {δ : ℝ} (hδ : 0 < δ)
+    (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a b (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
+      (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  refine (energyFormH1_restrictL_nonneg hU hu v hv).trans_eq ?_
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_restrictL_add_const_ae hU u δ, W1p.value_restrictL_ae hU u,
+    hu0] with x h1 h2 h3
+  have hne : W1p.value u x + δ ≠ 0 := by linarith
+  simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_add_const, massForm_apply, h1,
+    h2, max_eq_left h3]
+  field_simp
+
+/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of `energyFormH1_restrictL_add_const_nonneg_mass` is
+almost everywhere strongly measurable on every open `U ⊆ Ω` when `c` is on `Ω`. -/
+theorem aestronglyMeasurable_mass_add_const {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    (u : W1p mu Omega 2) (hc : AEStronglyMeasurable c (mu.restrict Omega)) (δ : ℝ) :
+    AEStronglyMeasurable (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
+      (mu.restrict U) := by
+  have hum : AEMeasurable (W1p.value u) (mu.restrict Omega) :=
+    (Lp.aestronglyMeasurable _).aemeasurable
+  exact (hc.mul ((hum.max aemeasurable_const).div ((hum.max aemeasurable_const).add_const δ)
+    ).aestronglyMeasurable).mono_measure (Measure.restrict_mono hU le_rfl)
+
+/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of `energyFormH1_restrictL_add_const_nonneg_mass`,
+`δ ≥ 0`, is bounded by `|c|` everywhere. -/
+theorem norm_mass_add_const_le (c : EuclideanSpace ℝ ι → ℝ) (u : W1p mu Omega 2) {δ : ℝ}
+    (hδ : 0 ≤ δ) (x : EuclideanSpace ℝ ι) :
+    ‖c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ))‖ ≤ ‖c x‖ := by
+  have hq : ‖max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)‖ ≤ 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact div_le_one_of_le₀ (by linarith [le_max_right (W1p.value u x) 0]) (by positivity)
+  rw [norm_mul]
+  exact mul_le_of_le_one_right (norm_nonneg _) hq
+
+/-- **Shifted nonnegative weak supersolutions with a mass term.** Let `u ∈ H¹(Ω)` satisfy
+`a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, for an energy form with drift `b` and a
+measurable mass coefficient `c` of either sign, and let `U ⊆ Ω` be open of finite measure with
+`u ≥ 0` almost everywhere on `U`. Then for every `δ > 0` the shifted restriction
+`u|_U + δ ∈ H¹(U)` is again a weak supersolution on `U`, for the same `a` and `b` and a measurable
+mass coefficient `c'` with `|c'| ≤ |c|` everywhere
+(`energyFormH1_restrictL_add_const_nonneg_mass` names `c'`). -/
+theorem exists_energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    (hu0 : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ c' : EuclideanSpace ℝ ι → ℝ, AEStronglyMeasurable c' (mu.restrict U) ∧
+      (∀ x, ‖c' x‖ ≤ ‖c x‖) ∧ ∀ v : W1p0 mu U 2,
+        (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) →
+          0 ≤ energyFormH1 a b c' (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) :=
+  ⟨_, aestronglyMeasurable_mass_add_const hU u hc δ, norm_mass_add_const_le c u hδ.le,
+    energyFormH1_restrictL_add_const_nonneg_mass hU hu hu0 hδ⟩
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
