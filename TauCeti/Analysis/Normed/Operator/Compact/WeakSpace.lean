@@ -14,6 +14,7 @@ public import TauCeti.Topology.Semicontinuity.Sequences
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Compact operators on bounded sets in the weak topology
@@ -23,7 +24,10 @@ subsets of `F`, on which the weak topology and the original topology agree whene
 is Hausdorff (`TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact`). Consequently, `J` is
 continuous from the weak topology on any von Neumann bounded or norm-bounded subset of `V` to the
 topology of `F` (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded`,
-`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`), even for net/filter
+`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`), and likewise for
+postcompositions `g ∘ J`
+(`IsCompactOperator.continuousOn_comp_comp_toWeakSpace_symm_of_isVonNBounded`,
+`IsCompactOperator.continuousOn_comp_comp_toWeakSpace_symm_of_isBounded`), even for net/filter
 convergence without metrizability or reflexivity assumptions on `V`.
 
 This bounded-set weak-to-norm continuity yields:
@@ -33,10 +37,12 @@ This bounded-set weak-to-norm continuity yields:
   `IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage`);
-* over `ℝ` or `ℂ`, sequential weak-to-original continuity of `J`
+* over `ℝ` or `ℂ`, sequential weak-to-original continuity of `J` and `g ∘ J`
   (`IsCompactOperator.tendsto_of_tendsto_toWeakSpace`,
-  `IsCompactOperator.seqContinuous_toWeakSpace_symm`), sequential weak closedness of `J ⁻¹' C` for
-  every closed or sequentially closed `C ⊆ F` (`IsCompactOperator.isSeqClosed_toWeakSpace_preimage`,
+  `IsCompactOperator.seqContinuous_toWeakSpace_symm`,
+  `IsCompactOperator.seqContinuous_comp_toWeakSpace_symm`), sequential weak closedness of `J ⁻¹' C`
+  for every closed or sequentially closed `C ⊆ F`
+  (`IsCompactOperator.isSeqClosed_toWeakSpace_preimage`,
   `IsCompactOperator.isSeqClosed_toWeakSpace_preimage_of_isSeqClosed`), and sequential weak lower
   semicontinuity of compact perturbations
   (`IsCompactOperator.seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm`), because weakly
@@ -52,14 +58,17 @@ are weakly sequentially closed yet not weakly closed, see
 
 ## Main results
 
-* `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`: weak-to-norm continuity of
-  a compact operator on any norm-bounded set, and
-  `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded` in topological vector
-  spaces.
+* `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`,
+  `IsCompactOperator.continuousOn_comp_comp_toWeakSpace_symm_of_isBounded`: weak-to-norm continuity
+  of a compact operator `J` and postcomposition `g ∘ J` on any norm-bounded set, with von Neumann
+  bounded versions in topological vector spaces.
 * `IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`, and
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage`: weak closedness and weak compactness of
   `S ∩ J ⁻¹' C` for bounded weakly closed or weakly compact `S` and closed `C`.
+* `IsCompactOperator.seqContinuous_toWeakSpace_symm`,
+  `IsCompactOperator.seqContinuous_comp_toWeakSpace_symm`: sequential weak continuity of `J` and
+  `g ∘ J` over `ℝ` or `ℂ`.
 * `IsCompactOperator.isSeqClosed_toWeakSpace_preimage`: sequential weak closedness of `J ⁻¹' C` for
   a compact operator `J` and a closed set `C`.
 * `IsCompactOperator.seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm`: sequential weak lower
@@ -126,6 +135,17 @@ theorem continuousOn_comp_toWeakSpace_symm_of_isVonNBounded (hJ : IsCompactOpera
       (toWeakSpace 𝕜 V '' B) :=
   fun w _ ↦ hJ.continuousWithinAt_toWeakSpace_symm_of_isVonNBounded hB w
 
+/-- Postcomposing a compact operator `J : V →L[𝕜] F` with a map `g : F → β` continuous on
+`J '' B` is continuous from the weak topology to `β` on any von Neumann bounded set `B ⊆ V`. -/
+theorem continuousOn_comp_comp_toWeakSpace_symm_of_isVonNBounded {β : Type*} [TopologicalSpace β]
+    (hJ : IsCompactOperator J) {B : Set V} (hB : IsVonNBounded 𝕜 B)
+    {g : F → β} (hg : ContinuousOn g (J '' B)) :
+    ContinuousOn (fun w : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm w)))
+      (toWeakSpace 𝕜 V '' B) := by
+  refine hg.comp (hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded hB) ?_
+  rw [mapsTo_image_iff]
+  simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J B
+
 /-- On a von Neumann bounded weakly closed set `B`, the preimage of a closed set under a compact
 operator is weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isVonNBounded (hJ : IsCompactOperator J)
@@ -173,6 +193,16 @@ theorem continuousOn_comp_toWeakSpace_symm_of_isBounded (hJ : IsCompactOperator 
   hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded <| by
     rwa [NormedSpace.isVonNBounded_iff]
 
+/-- Postcomposing a compact operator `J : V →L[𝕜] F` with a map `g : F → β` continuous on
+`J '' B` is continuous from the weak topology to `β` on any norm-bounded set `B ⊆ V`. -/
+theorem continuousOn_comp_comp_toWeakSpace_symm_of_isBounded {β : Type*} [TopologicalSpace β]
+    (hJ : IsCompactOperator J) {B : Set V} (hB : IsBounded B)
+    {g : F → β} (hg : ContinuousOn g (J '' B)) :
+    ContinuousOn (fun w : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm w)))
+      (toWeakSpace 𝕜 V '' B) :=
+  hJ.continuousOn_comp_comp_toWeakSpace_symm_of_isVonNBounded
+    (by rwa [NormedSpace.isVonNBounded_iff]) hg
+
 /-- On a bounded weakly closed set `B`, the preimage of a closed set under a compact operator is
 weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isBounded (hJ : IsCompactOperator J) {B : Set V}
@@ -187,12 +217,10 @@ theorem isCompact_toWeakSpace_inter_preimage_of_isCompact (hJ : IsCompactOperato
     (hS_bdd : IsBounded S) (hS_cpt : IsCompact (toWeakSpace 𝕜 V '' S)) {C : Set F}
     (hC : IsClosed C) :
     IsCompact (toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C)) := by
-  obtain ⟨t, ht, hteq⟩ :=
-    continuousOn_iff_isClosed.mp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd) C hC
   rw [show J ⁻¹' C = toWeakSpace 𝕜 V ⁻¹'
       ((fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C) from rfl,
-    Set.image_inter_preimage, inter_comm, hteq, inter_comm]
-  exact hS_cpt.inter_right ht
+    Set.image_inter_preimage]
+  exact hS_cpt.inter_preimage (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd) hC
 
 /-- In a reflexive seminormed space over a proper nontrivially normed field, if `S ⊆ V` is
 norm-bounded and weakly closed, `J : V →L[𝕜] F` is compact, and `C ⊆ F` is closed, then
@@ -242,6 +270,13 @@ theorem seqContinuous_toWeakSpace_symm (hJ : IsCompactOperator J) :
     SeqContinuous (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) :=
   fun _ _ hw ↦ hJ.tendsto_of_tendsto_toWeakSpace
     (by simpa only [LinearEquiv.apply_symm_apply] using hw)
+
+/-- Over `ℝ` or `ℂ`, postcomposing a compact operator `J : V →L[𝕜] F` with a sequentially
+continuous map `g : F → β` is sequentially continuous from the weak topology on `V` to `β`. -/
+theorem seqContinuous_comp_toWeakSpace_symm {β : Type*} [TopologicalSpace β]
+    (hJ : IsCompactOperator J) {g : F → β} (hg : SeqContinuous g) :
+    SeqContinuous (fun w : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm w))) :=
+  fun _ _ hw ↦ hg (hJ.seqContinuous_toWeakSpace_symm hw)
 
 /-- **Sequential weak closedness of compact constraints.** Over `ℝ` or `ℂ`, for a compact operator
 `J : V →L[𝕜] F` and any sequentially closed set `C ⊆ F`, `J ⁻¹' C` is sequentially closed in the

@@ -26,13 +26,13 @@ trace class and `L^(1,∞)`), and prove that ordinary convergence of the logarit
 limit, and for arbitrary operators when the logarithmic means tend to `0`, covering trace-class and
 finite-rank operators).
 
-On `ℓ²(ℕ, ℂ)` we construct the positive harmonic diagonal operator `diag((j + 1)⁻¹)`
-(`TauCeti.harmonicDiagonalCLM`), which lies in `L^(1,∞)` and is Dixmier measurable with trace `1`,
-and establish the three benchmark singularity and non-uniqueness phenomena for Dixmier traces: a
-monotone sequence of positive operators of trace `0` converging in operator norm to, and having as
-Loewner least upper bound, a positive Dixmier-measurable operator in `L^(1,∞)` of trace `1`; a
-positive Dixmier-measurable operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace; and a positive
-operator in `L^(1,∞)` that is not Dixmier measurable.
+On `ℓ²(ℕ, ℂ)` we study the positive harmonic diagonal operator `diag((j + 1)⁻¹)`
+(`lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)`), which lies in `L^(1,∞)` and is Dixmier measurable
+with trace `1`, and establish the three benchmark singularity and non-uniqueness phenomena for
+Dixmier traces: a monotone sequence of positive operators of trace `0` converging in operator norm
+to, and having as Loewner least upper bound, a positive Dixmier-measurable operator in `L^(1,∞)`
+of trace `1`; a positive Dixmier-measurable operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace;
+and a positive operator in `L^(1,∞)` that is not Dixmier measurable.
 
 ## Main declarations
 
@@ -43,10 +43,11 @@ operator in `L^(1,∞)` that is not Dixmier measurable.
 * `TauCeti.isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean`,
   `TauCeti.isDixmierMeasurable_of_tendsto_kyFanLogMean_zero`: ordinary convergence of logarithmic
   means implies Dixmier measurability.
-* `TauCeti.harmonicDiagonalCLM`, `TauCeti.kyFanGauge_harmonicDiagonalCLM`,
-  `TauCeti.tendsto_kyFanLogMean_harmonicDiagonalCLM`,
+* `TauCeti.kyFanGauge_diagonalCLM_invNatSucc`,
+  `TauCeti.tendsto_kyFanLogMean_diagonalCLM_invNatSucc`,
   `TauCeti.exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne`: the harmonic diagonal
-  model, its Ky Fan gauges and logarithmic-mean limit, and singularity / non-normality of `Tr_ω`.
+  model `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)`, its Ky Fan gauges and logarithmic-mean limit,
+  and singularity / non-normality of `Tr_ω`.
 * `TauCeti.exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_eq_zero`:
   positive operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace.
 * `TauCeti.exists_isPositive_mem_logarithmic_not_isDixmierMeasurable`: positive operator in
@@ -292,54 +293,55 @@ section DiagonalModels
 
 /-! #### 1. The harmonic diagonal model and non-normality -/
 
-/-- The **harmonic diagonal operator** `diag((j + 1)⁻¹)` on `ℓ²(ℕ, ℂ)`: the canonical positive
-Dixmier-measurable operator in `L^(1,∞)` with Dixmier trace `1`. -/
-noncomputable def harmonicDiagonalCLM : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ) :=
-  lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)
-
-/-- Coordinate formula for `TauCeti.harmonicDiagonalCLM`. -/
+/-- The `k`-th Ky Fan prefix gauge of `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is
+`∑ j < k, (j + 1)⁻¹`. -/
 @[simp]
-theorem harmonicDiagonalCLM_apply (x : ℓ^2(ℕ, ℂ)) (j : ℕ) :
-    harmonicDiagonalCLM x j = ((j : ℂ) + 1)⁻¹ * x j := by simp [harmonicDiagonalCLM]
+theorem kyFanGauge_diagonalCLM_invNatSucc (k : ℕ) :
+    (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).kyFanGauge k =
+      ∑ j ∈ Finset.range k, ((j : ℝ≥0) + 1)⁻¹ := by
+  simp [lp.invNatSucc_eq_ofAntitone]
 
-/-- The `k`-th Ky Fan prefix gauge of `TauCeti.harmonicDiagonalCLM` is `∑ j < k, (j + 1)⁻¹`. -/
-@[simp]
-theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
-    harmonicDiagonalCLM.kyFanGauge k = ∑ j ∈ Finset.range k, ((j : ℝ≥0) + 1)⁻¹ := by
-  simp [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
-
-/-- The harmonic diagonal operator is positive on `ℓ²(ℕ, ℂ)`. -/
-theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive :=
+/-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is positive on
+`ℓ²(ℕ, ℂ)`. -/
+theorem isPositive_diagonalCLM_invNatSucc :
+    (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).IsPositive :=
   (lp.isPositive_diagonalCLM_iff _).2 (lp.invNatSucc_apply_nonneg ℂ)
 
-/-- The logarithmic Ky Fan means of `TauCeti.harmonicDiagonalCLM` converge to `1`. -/
-theorem tendsto_kyFanLogMean_harmonicDiagonalCLM :
-    Tendsto harmonicDiagonalCLM.kyFanLogMean atTop (𝓝 1) :=
+/-- The logarithmic Ky Fan means of `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` converge to
+`1`. -/
+theorem tendsto_kyFanLogMean_diagonalCLM_invNatSucc :
+    Tendsto (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).kyFanLogMean atTop (𝓝 1) :=
   tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by
-    simp [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
+    simp [lp.invNatSucc_eq_ofAntitone]
 
-/-- Every generalized limit assigns real Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
+/-- Every generalized limit assigns real Dixmier trace `1` to
+`lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)`. -/
 @[simp]
-theorem dixmierTrace_harmonicDiagonalCLM (ω : GeneralizedLimit) :
-    dixmierTrace ω harmonicDiagonalCLM = 1 :=
-  dixmierTrace_eq_of_tendsto ω tendsto_kyFanLogMean_harmonicDiagonalCLM
+theorem dixmierTrace_diagonalCLM_invNatSucc (ω : GeneralizedLimit) :
+    dixmierTrace ω (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) = 1 :=
+  dixmierTrace_eq_of_tendsto ω tendsto_kyFanLogMean_diagonalCLM_invNatSucc
 
-/-- The harmonic diagonal operator is Dixmier measurable. -/
-theorem isDixmierMeasurable_harmonicDiagonalCLM : IsDixmierMeasurable harmonicDiagonalCLM :=
-  isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean isPositive_harmonicDiagonalCLM
-    tendsto_kyFanLogMean_harmonicDiagonalCLM
+/-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is Dixmier
+measurable. -/
+theorem isDixmierMeasurable_diagonalCLM_invNatSucc :
+    IsDixmierMeasurable (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) :=
+  isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean isPositive_diagonalCLM_invNatSucc
+    tendsto_kyFanLogMean_diagonalCLM_invNatSucc
 
-/-- The harmonic diagonal operator belongs to the logarithmic ideal `L^(1,∞)`. -/
-theorem harmonicDiagonalCLM_mem_logarithmic :
-    harmonicDiagonalCLM ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
-  isDixmierMeasurable_harmonicDiagonalCLM.mem_finiteSubmodule
+/-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` belongs to the
+logarithmic ideal `L^(1,∞)`. -/
+theorem diagonalCLM_invNatSucc_mem_logarithmic :
+    lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ) ∈
+      ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
+  isDixmierMeasurable_diagonalCLM_invNatSucc.mem_finiteSubmodule
 
-/-- Every generalized limit assigns complex Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
+/-- Every generalized limit assigns complex Dixmier trace `1` to
+`lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)`. -/
 @[simp]
-theorem complexDixmierTrace_harmonicDiagonalCLM (ω : GeneralizedLimit) :
-    complexDixmierTrace ω harmonicDiagonalCLM = 1 := by
-  rw [complexDixmierTrace_of_isPositive ω isPositive_harmonicDiagonalCLM,
-    dixmierTrace_harmonicDiagonalCLM, Complex.ofReal_one]
+theorem complexDixmierTrace_diagonalCLM_invNatSucc (ω : GeneralizedLimit) :
+    complexDixmierTrace ω (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) = 1 := by
+  rw [complexDixmierTrace_of_isPositive ω isPositive_diagonalCLM_invNatSucc,
+    dixmierTrace_diagonalCLM_invNatSucc, Complex.ofReal_one]
 
 /-- **Singularity and non-normality of the Dixmier trace.** On `ℓ²(ℕ, ℂ)` there exist a monotone
 sequence `S` of positive operators and a positive Dixmier-measurable operator `T` in `L^(1,∞)` such
@@ -352,19 +354,19 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
       Monotone S ∧ Tendsto S atTop (𝓝 T) ∧ IsLUB (Set.range S) T ∧
       (∀ n (ω : GeneralizedLimit), complexDixmierTrace ω (S n) = 0) ∧
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 1) := by
-  -- Witnessed by `harmonicDiagonalCLM` and its finite-rank coordinate truncations.
+  -- Witnessed by `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` and its finite-rank truncations.
   open ComplexOrder in
   have hd_nonneg : ∀ j, 0 ≤ lp.invNatSucc ℂ j := lp.invNatSucc_apply_nonneg ℂ
   exact ⟨fun n ↦ lp.diagonalTruncation (p := 2) (lp.invNatSucc ℂ) (Finset.range n),
-    harmonicDiagonalCLM, harmonicDiagonalCLM_mem_logarithmic, isPositive_harmonicDiagonalCLM,
-    isDixmierMeasurable_harmonicDiagonalCLM,
+    lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ), diagonalCLM_invNatSucc_mem_logarithmic,
+    isPositive_diagonalCLM_invNatSucc, isDixmierMeasurable_diagonalCLM_invNatSucc,
     fun n ↦ (lp.isPositive_diagonalTruncation_iff _ _).2 fun i _ ↦ hd_nonneg i,
     fun m n hmn ↦ lp.diagonalTruncation_mono hd_nonneg (Finset.range_mono hmn),
     lp.tendsto_diagonalTruncation_range (lp.invNatSucc ℂ) (lp.tendsto_norm_invNatSucc ℂ),
     lp.isLUB_range_diagonalTruncation_range hd_nonneg,
     fun n ω ↦ complexDixmierTrace_eq_zero_of_rank_le ω
       (lp.rank_diagonalTruncation_range_le (lp.invNatSucc ℂ) n),
-    complexDixmierTrace_harmonicDiagonalCLM⟩
+    complexDixmierTrace_diagonalCLM_invNatSucc⟩
 
 /-! #### 2. Zero Dixmier trace outside the trace class -/
 
@@ -678,7 +680,7 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
   set T := lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ oscNNSeq_antitone) with hT
   have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone oscNNSeq_antitone
   have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
-    mem_finiteSubmodule_of_forall_kyFanGauge_le harmonicDiagonalCLM_mem_logarithmic fun k ↦ by
+    mem_finiteSubmodule_of_forall_kyFanGauge_le diagonalCLM_invNatSucc_mem_logarithmic fun k ↦ by
       simpa [hT] using Finset.sum_le_sum fun j _ ↦ (by exact_mod_cast oscSeq_le_inv j)
   obtain ⟨g, hg⟩ := exists_coe_eq_kyFanLogMean hmem
   have hlin (b : ℕ) : Tendsto (fun r : ℕ ↦ 2 * r + b) atTop atTop :=

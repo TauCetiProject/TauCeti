@@ -66,13 +66,13 @@ theorem isClosed_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V → �
     image_inter_preimage]
   exact hE.isClosed_inter_preimage_Iic hS b
 
-/-- A weakly lower semicontinuous energy with a nonempty weakly compact sublevel attains its
-minimum on `S`. -/
+/-- An energy weakly lower semicontinuous on a nonempty weakly compact sublevel
+`{u ∈ S | E u ≤ b}` attains its minimum on `S`. -/
 theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V → β}
-    {S : Set V}
+    {S : Set V} {b : β}
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' S))
-    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
+      (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}))
+    (hne : {u ∈ S | E u ≤ b}.Nonempty)
     (hcpt : IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :
     ∃ u ∈ S, IsMinOn E S u := by
   have heq : {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} =
@@ -80,11 +80,11 @@ theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrd
     (image_inter_preimage (toWeakSpace 𝕜 V) S
       ((fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b)).symm
   obtain ⟨w, hw, hmin⟩ :=
-    hE.exists_isMinOn_of_isCompact_sublevel (heq ▸ hne.image _) (heq ▸ hcpt)
+    (heq ▸ hE).exists_isMinOn_of_isCompact_sublevel (heq ▸ hne.image _) (heq ▸ hcpt)
   obtain ⟨u, hu, rfl⟩ := hw
-  exact ⟨u, hu, isMinOn_iff.2 fun x hx ↦ by
-    simpa only [LinearEquiv.symm_apply_apply] using
-      isMinOn_iff.1 hmin _ (mem_image_of_mem (toWeakSpace 𝕜 V) hx)⟩
+  exact ⟨u, hu, by
+    simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using
+      hmin.comp_of_mapsTo (mapsTo_image (toWeakSpace 𝕜 V) S) rfl⟩
 
 /-- If the sublevel at every minimizer of `E` on `S` is weakly compact, then the full set of
 minimizers of `E` on `S` is weakly compact (including when it is empty). -/
@@ -149,7 +149,7 @@ theorem exists_isMinOn_of_weak_closed_of_isBounded_sublevel
       (toWeakSpace 𝕜 V '' S))
     {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
     (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
-  exists_isMinOn_of_isCompact_toWeakSpace_sublevel hE hne
+  exists_isMinOn_of_isCompact_toWeakSpace_sublevel (hE.mono (image_mono (sep_subset S _))) hne
     (isCompact_toWeakSpace_sublevel hV hS hE b hb)
 
 /-- **The direct method.** A weakly lower semicontinuous energy with bounded sublevels on
@@ -212,7 +212,7 @@ theorem exists_isMinOn_of_isClosed_toWeakSpace_inter_closedBall_of_isBounded_sub
       (toWeakSpace 𝕜 V '' S))
     {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
     (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
-  exists_isMinOn_of_isCompact_toWeakSpace_sublevel hE hne
+  exists_isMinOn_of_isCompact_toWeakSpace_sublevel (hE.mono (image_mono (sep_subset S _))) hne
     (isCompact_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall hV hS hE b hb)
 
 /-- **Direct method with bounded-ball weak closedness.** In a reflexive seminormed space over a

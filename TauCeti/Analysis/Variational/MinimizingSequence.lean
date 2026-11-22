@@ -283,9 +283,7 @@ theorem exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel
   have hlsc : LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
     (lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2 (hE.mono hsubset)
-  obtain ⟨u, hu, hmin⟩ :=
-    exists_isMinOn_of_weak_closed hV hne hcompact.isClosed hlsc (hb.hasBoundedSublevelsOn E)
-  exact ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 hmin⟩
+  exact exists_isMinOn_of_isCompact_toWeakSpace_sublevel hlsc hne hcompact
 
 /-- **The sequential direct method under bounded sublevels.** A sequentially weakly lower
 semicontinuous energy with norm-bounded sublevels on a nonempty sequentially weakly closed set in

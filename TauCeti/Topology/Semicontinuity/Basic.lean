@@ -19,8 +19,8 @@ This file collects general topological properties of lower semicontinuous functi
   lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
   interior. Lower envelopes and lower and upper Γ-limits are of this form.
 * The sublevels of a lower semicontinuous function on a closed set are closed
-  (`LowerSemicontinuousOn.isClosed_inter_preimage_Iic`), and a lower semicontinuous function on a
-  set `s` with a nonempty compact sublevel attains its minimum on `s`
+  (`LowerSemicontinuousOn.isClosed_inter_preimage_Iic`), and a function lower semicontinuous on a
+  nonempty compact sublevel `{x ∈ s | f x ≤ b}` attains its minimum on `s`
   (`LowerSemicontinuousOn.exists_isMinOn_of_isCompact_sublevel`).
 * A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and `A 0 = 0`, such as a
   lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
@@ -58,13 +58,13 @@ theorem isClosed_inter_preimage_Iic {α β : Type*} [TopologicalSpace α] [Linea
   obtain ⟨v, hv, hv'⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hfs b
   exact hv' ▸ hs.inter hv
 
-/-- A lower semicontinuous function on a set `s` with a nonempty compact sublevel attains its
-minimum on `s`. -/
+/-- A function lower semicontinuous on a nonempty compact sublevel `{x ∈ s | f x ≤ b}` attains
+its minimum on `s`. -/
 theorem exists_isMinOn_of_isCompact_sublevel {α β : Type*} [TopologicalSpace α] [LinearOrder β]
-    {f : α → β} {s : Set α} (hf : LowerSemicontinuousOn f s) {b : β}
+    {f : α → β} {s : Set α} {b : β} (hf : LowerSemicontinuousOn f {x ∈ s | f x ≤ b})
     (hne : {x ∈ s | f x ≤ b}.Nonempty) (hcpt : IsCompact {x ∈ s | f x ≤ b}) :
     ∃ x ∈ s, IsMinOn f s x := by
-  obtain ⟨x, hx, hmin⟩ := (hf.mono (Set.sep_subset s _)).exists_isMinOn hne hcpt
+  obtain ⟨x, hx, hmin⟩ := hf.exists_isMinOn hne hcpt
   exact ⟨x, hx.1, (TauCeti.isMinOn_sublevel_iff hx.2).1 hmin⟩
 
 end LowerSemicontinuousOn
