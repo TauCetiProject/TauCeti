@@ -143,9 +143,6 @@ theorem contMDiff_symplecticNormalFlat (f : SmoothEmbedding I J n M N)
   intro x
   let e := trivializationAt P (fun x ↦ f.NormalSpace x hn) x
   let b := Module.Basis.ofVectorSpace ℝ P
-  let e' := trivializationAt (P →L[ℝ] ℝ) (fun x ↦ f.NormalSpace x hn →L[ℝ] ℝ) x
-  let eℝ := trivializationAt ℝ (Bundle.Trivial M ℝ) x
-  have he' : e'.baseSet = e.baseSet := by simp [e', e]
   -- The symplectic representatives of the frame sections are `C^m` tangent fields along `f`.
   have hrep (i) : ContMDiffOn I J.tangent m
       (fun y ↦ TotalSpace.mk' V (f y)
@@ -153,26 +150,12 @@ theorem contMDiff_symplecticNormalFlat (f : SmoothEmbedding I J n M N)
     (f.contMDiff_symplecticNormalRepresentative h hn hm hm' hdim).comp_contMDiffOn
       (e.contMDiffOn_localFrame_baseSet m b i)
   -- Test the bilinear section on two copies of the local normal frame.
-  have hform : ContMDiffOn I (I.prod 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ)) m
-      (fun y ↦ TotalSpace.mk' (P →L[ℝ] P →L[ℝ] ℝ)
-        (E := fun y ↦ f.NormalSpace y hn →L[ℝ] f.NormalSpace y hn →L[ℝ] ℝ) y
-        (f.symplecticNormalFlat h y hn)) e.baseSet := by
-    apply TauCeti.Manifold.contMDiffOn_hom_of_localFrame
-      (I := I) (n := m) (V := fun x ↦ f.NormalSpace x hn)
-      (V' := fun x ↦ f.NormalSpace x hn →L[ℝ] ℝ) (F' := P →L[ℝ] ℝ)
-      (e := e) (e' := e') b (J := I) (f := fun y ↦ y) (u := e.baseSet)
-      contMDiffOn_id (fun y hy ↦ ⟨hy, he' ▸ hy⟩)
-    intro i
-    apply TauCeti.Manifold.contMDiffOn_hom_of_localFrame
-      (I := I) (n := m) (V := fun x ↦ f.NormalSpace x hn)
-      (V' := Bundle.Trivial M ℝ) (F' := ℝ) (e := e) (e' := eℝ) b (J := I)
-      (f := fun y ↦ y) (u := e.baseSet) contMDiffOn_id (fun y hy ↦ ⟨hy, by simp [eℝ]⟩)
-    intro j y hy
+  have hform := TauCeti.Manifold.contMDiffOn_bilinear_of_localFrame (I := I) (n := m) b
+    (e := e) subset_rfl (A := fun y ↦ f.symplecticNormalFlat h y hn) fun i j y hy ↦ by
     have hpair := (σ.contMDiffAt_eval₂ ((hrep i y hy).contMDiffAt
       (e.open_baseSet.mem_nhds hy)) ((hrep j y hy).contMDiffAt
       (e.open_baseSet.mem_nhds hy))).contMDiffWithinAt (s := e.baseSet)
-    rw [Bundle.contMDiffWithinAt_totalSpace_iff] at hpair ⊢
-    refine ⟨contMDiffWithinAt_id, ?_⟩
+    rw [Bundle.contMDiffWithinAt_totalSpace_iff] at hpair
     simpa [Trivial.fiberBundle_trivializationAt'] using hpair.2
   exact hform.contMDiffAt (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ x))
 
@@ -193,15 +176,6 @@ variable {E' V' H' G' M' N' : Type*}
   (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n' M' N')
   (hf : hσ.HasSymplecticTangentImages I f) (hg : hτ.HasSymplecticTangentImages I' g)
   {u : M → M'} {v : N → N'} {x : M}
-
-omit [FiniteDimensional ℝ V'] in
-/-- Evaluating a two-form at two equal points agrees after identifying their tangent spaces. -/
-private theorem eval₂_tangentSpaceCast {y y' : N'} (hy : y = y') (a b : TangentSpace J' y) :
-    SmoothBundleForm.eval₂ τ y' (tangentSpaceCast J' y y' a) (tangentSpaceCast J' y y' b) =
-      SmoothBundleForm.eval₂ τ y a b := by
-  subst hy
-  -- `tangentSpaceCast J' y y` is the identity of the model fibre.
-  rfl
 
 /-- **Symplectic maps carry symplectic representatives to symplectic representatives.** Let
 `v : N → N'` be differentiable at `f x`, with differential carrying `σ` to `τ` there, and let it
@@ -228,7 +202,7 @@ theorem symplecticNormalRepresentative_normalMap (hn : n ≠ 0) (hn' : n' ≠ 0)
       (f.symplecticNormalRepresentative_mem_orthogonal hf x hn ν) t ht
     simp only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe,
       ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at hw ⊢
-    rw [eval₂_tangentSpaceCast hfx, hvσ, hw]
+    rw [SmoothForm.eval₂_tangentSpaceCast τ hfx, hvσ, hw]
   · rw [← normalMap_normalClass, normalClass_symplecticNormalRepresentative]
 
 /-- **Naturality of the normal symplectic form.** Let `v : N → N'` be differentiable at `f x`,
@@ -247,7 +221,7 @@ theorem symplecticNormalForm_normalMap (hn : n ≠ 0) (hn' : n' ≠ 0)
   rw [symplecticNormalForm_apply, symplecticNormalForm_apply,
     f.symplecticNormalRepresentative_normalMap g hf hg hn hn' h hv hvσ hsurj,
     f.symplecticNormalRepresentative_normalMap g hf hg hn hn' h hv hvσ hsurj,
-    eval₂_tangentSpaceCast hfx, hvσ]
+    SmoothForm.eval₂_tangentSpaceCast τ hfx, hvσ]
 
 end Naturality
 
