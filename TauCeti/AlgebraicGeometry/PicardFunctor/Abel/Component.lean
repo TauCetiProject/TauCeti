@@ -18,8 +18,12 @@ degree `d` on `X_T = T ×_S X` to a class whose degree on the fibre over every p
 functor `Div^d_{X/S}` of divisors of degree `d`, it takes values in the degree-`d` subfunctor
 `Pic^d_{X/S}` of the relative Picard presheaf (`abelMapOfDegree`). No section of `f` is needed,
 in contrast to the normalized Abel–Jacobi maps `D ↦ 𝒪(D - d • x₀_T)` into `Pic⁰_{X/S}`
-(`abelJacobiMapOfDegreeToPicZero`). Once `Div^d_{X/S}` is represented by the symmetric power of a
-curve, these are the Abel maps from the symmetric powers to the components of its Picard scheme.
+(`abelJacobiMapOfDegreeToPicZero`). The target of `abelMapOfDegree` is the presheaf `Pic^d_{X/S}`,
+not a Picard scheme. The scheme-level Abel maps from the symmetric powers of a curve to the
+components of its Picard scheme are induced by composing `abelMapOfDegree` with the comparison
+from the relative Picard presheaf to the Picard sheaf, once `Div^d_{X/S}` is represented by the
+symmetric power and the degree-`d` part of the Picard sheaf by a component of the Picard scheme.
+Neither representability statement is treated here.
 
 ## Main declarations
 

@@ -20,8 +20,7 @@ of `f` restricted to schemes over `S'` along `Over.map g`
 every field-valued fibre, and hence identifies the degree-zero parts.
 
 For a point `ξ : Spec Ω ⟶ T` of a scheme `T` over `S'`, the fibres of `X'_T` and of `X_T` over
-`ξ` are `Spec Ω ×_{S'} X'` and `Spec Ω ×_S X`, which are isomorphic over `Spec Ω`. When `f` is
-quasi-compact and separated, these fibres are quasi-compact and separated over `Ω`, and the
+`ξ` are `Spec Ω ×_{S'} X'` and `Spec Ω ×_S X`, which are isomorphic over `Spec Ω`, and the
 Euler-characteristic degree is invariant under this isomorphism
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`). So the comparison
 preserves the fibre degree
@@ -76,12 +75,10 @@ variable {S S' X : Scheme.{u}} (f : X ⟶ S) (g : S' ⟶ S)
 
 section FiberDegree
 
-variable [QuasiCompact f] [IsSeparated f]
-
-/-- **The base change comparison preserves fibre degrees.** For `f : X ⟶ S` quasi-compact and
-separated, `g : S' ⟶ S`, a scheme `T` over `S'` and a point `ξ : Spec Ω ⟶ T`, the degree on the
-fibre over `ξ` of a section of `T ↦ Pic(T ×_{S'} X') / Pic(T)` is the degree on the fibre over
-`ξ` of its image in `T ↦ Pic(T ×_S X) / Pic(T)` under `relativePicardPresheafBaseChangeIso`. -/
+/-- **The base change comparison preserves fibre degrees.** For `f : X ⟶ S`, `g : S' ⟶ S`, a
+scheme `T` over `S'` and a point `ξ : Spec Ω ⟶ T`, the degree on the fibre over `ξ` of a section
+of `T ↦ Pic(T ×_{S'} X') / Pic(T)` is the degree on the fibre over `ξ` of its image in
+`T ↦ Pic(T ×_S X) / Pic(T)` under `relativePicardPresheafBaseChangeIso`. -/
 -- Not `@[simp]`: `simp` rewrites the object `(Over.map g).op.obj T` by `Functor.op_obj`, after
 -- which this left-hand side no longer matches.
 theorem relativePicardFiberDegree_relativePicardPresheafBaseChangeIso_hom_app
@@ -113,12 +110,6 @@ theorem relativePicardFiberDegree_relativePicardPresheafBaseChangeIso_hom_app
   let _ : (pullback (ξ ≫ ((Over.map g).obj T.unop).hom) f).Over (Spec (.of Ω)) :=
     ⟨pullback.fst _ _⟩
   let _ : (pullback (ξ ≫ T.unop.hom) (pullback.fst g f)).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
-  -- The fibre of `X'` is quasi-compact and separated, as a base change of `f`.
-  have : CompactSpace ↥(pullback (ξ ≫ T.unop.hom) (pullback.fst g f)) :=
-    (quasiCompact_iff_compactSpace (pullback.fst (ξ ≫ T.unop.hom) (pullback.fst g f))).mp
-      inferInstance
-  have : QuasiSeparatedSpace ↥(pullback (ξ ≫ T.unop.hom) (pullback.fst g f)) :=
-    quasiSeparatedSpace_of_quasiSeparated (pullback.fst (ξ ≫ T.unop.hom) (pullback.fst g f))
   have h := LineBundleClass.eulerDegree_pullback_of_isIso (k := Ω) e he₁
     (LineBundleClass.pullback (pullback.map (ξ ≫ T.unop.hom) (pullback.fst g f) T.unop.hom
       (pullback.fst g f) ξ (𝟙 _) (𝟙 S') (by simp) (by simp)) a)
@@ -126,10 +117,9 @@ theorem relativePicardFiberDegree_relativePicardPresheafBaseChangeIso_hom_app
   rw [LineBundleClass.pullback_comp]
   exact h
 
-/-- **The base change comparison preserves and reflects `Pic⁰`.** For `f` quasi-compact and
-separated, a section of `T ↦ Pic(T ×_{S'} X') / Pic(T)` has degree zero on every geometric fibre
-exactly when its image in `T ↦ Pic(T ×_S X) / Pic(T)` under
-`relativePicardPresheafBaseChangeIso` does. -/
+/-- **The base change comparison preserves and reflects `Pic⁰`.** A section of
+`T ↦ Pic(T ×_{S'} X') / Pic(T)` has degree zero on every geometric fibre exactly when its image
+in `T ↦ Pic(T ×_S X) / Pic(T)` under `relativePicardPresheafBaseChangeIso` does. -/
 theorem relativePicardPresheafBaseChangeIso_hom_app_mem_iff
     {T : (Over S')ᵒᵖ} {c : (relativePicardPresheaf (pullback.fst g f)).obj T} :
     (relativePicardPresheafBaseChangeIso f g).hom.app T c ∈

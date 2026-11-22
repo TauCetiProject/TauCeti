@@ -22,21 +22,24 @@ with a point, the subfunctors of different degrees have disjoint sections
 For a smooth proper geometrically connected family of curves, the fibre degree is additive, so
 products, inverses and powers of classes add, negate and multiply degrees
 (`mul_mem_relativePicardDegreeSubfunctor_obj` and its companions). Consequently the group
-`Pic⁰_{X/S}(T)` acts on `Pic^d_{X/S}(T)` by multiplication, simply transitively: for any
-section `c` of `Pic^d_{X/S}(T)`, `z ↦ z • c` is a bijection
-`relativePicardDegreeZeroSubgroup f T ≃ Pic^d_{X/S}(T)` (`relativePicardDegreeSubfunctorObjEquiv`).
-So `Pic^d_{X/S}` is a pseudo-torsor under `Pic⁰_{X/S}`, before representability. A section `c₀`
+`Pic⁰_{X/S}(T)` acts on `Pic^d_{X/S}(T)` by multiplication. The action is pretransitive, and free
+and transitive whenever `Pic^d_{X/S}(T)` is nonempty: for any section `c` of `Pic^d_{X/S}(T)`,
+`z ↦ z • c` is a bijection `relativePicardDegreeZeroSubgroup f T ≃ Pic^d_{X/S}(T)`
+(`relativePicardDegreeSubfunctorObjEquiv`). The set `Pic^d_{X/S}(T)` may be empty, so
+`Pic^d_{X/S}` is a pseudo-torsor under `Pic⁰_{X/S}`, before representability. A section `c₀`
 of `Pic^d_{X/S}` over `S` itself, for instance the class of a line bundle on `X` of degree `d`
 on every fibre, trivializes it: translation by the pullbacks of `c₀` is a natural isomorphism
 `Pic⁰_{X/S} ≅ Pic^d_{X/S}` (`relativePicardDegreeZeroIsoDegree`).
 
 At a field-valued point `Spec L ⟶ S`, for `f` quasi-compact and quasi-separated, a section lies
 in `Pic^d_{X/S}` exactly when its line-bundle class on `X_L` has degree `d` over `L`
-(`mem_relativePicardDegreeSubfunctor_obj_iff_eulerDegree_eq`). For a curve over a field `k`
-without a rational point, this is where the `k`-rational divisor classes of degree `d` live.
-For `f` quasi-compact and separated, the base change comparison of relative Picard presheaves
-identifies `Pic^d` of a base change with the restriction of `Pic^d_{X/S}`
-(`relativePicardDegreeSubfunctorBaseChangeIso`).
+(`mem_relativePicardDegreeSubfunctor_obj_iff_eulerDegree_eq`). So these sections are the
+classes of line bundles of degree `d` on `X_L`. They need not exhaust the `L`-points of the
+degree-`d` part of the fppf Picard sheaf: for a curve over a field `k` without a rational point,
+a `k`-rational divisor class need not come from a line bundle on `X`, the obstruction lying in
+the Brauer group of `k`. The Picard sheaf is not treated here. The base change comparison of
+relative Picard presheaves identifies `Pic^d` of a base change with the restriction of
+`Pic^d_{X/S}` (`relativePicardDegreeSubfunctorBaseChangeIso`).
 
 Sheafification, representability by an open and closed subscheme of a Picard scheme, and the
 local constancy of the degree are not treated here.
@@ -48,8 +51,9 @@ local constancy of the degree are not treated here.
   are disjoint over a nonempty scheme;
 * `TauCeti.AlgebraicGeometry.mul_mem_relativePicardDegreeSubfunctor_obj`: degrees add under
   products of classes, for a family of curves;
-* `TauCeti.AlgebraicGeometry.relativePicardDegreeSubfunctorObjEquiv`: `Pic^d_{X/S}(T)` is a
-  principal homogeneous set under `Pic⁰_{X/S}(T)`;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeSubfunctorObjEquiv`: a section of
+  `Pic^d_{X/S}(T)` identifies it with `Pic⁰_{X/S}(T)` by translation, so `Pic^d_{X/S}(T)` is a
+  principal homogeneous set under `Pic⁰_{X/S}(T)` when it is nonempty;
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroIsoDegree`: a section of degree `d` over
   `S` trivializes `Pic^d_{X/S}` as a translate of `Pic⁰_{X/S}`;
 * `TauCeti.AlgebraicGeometry.mem_relativePicardDegreeSubfunctor_obj_iff_eulerDegree_eq`:
@@ -225,9 +229,10 @@ lemma coe_relativePicardDegreeZeroSubgroup_smul {d : ℤ} {T : (Over S)ᵒᵖ}
       (z : (relativePicardPresheaf f).obj T) * c :=
   (rfl)
 
-/-- **`Pic^d_{X/S}(T)` is a principal homogeneous set under `Pic⁰_{X/S}(T)`**, for a smooth proper
+/-- **A section of `Pic^d_{X/S}(T)` identifies it with `Pic⁰_{X/S}(T)`**, for a smooth proper
 geometrically connected family of curves: for a section `c` of degree `d`, translation
-`z ↦ z • c` is a bijection from `Pic⁰_{X/S}(T)` onto `Pic^d_{X/S}(T)`. -/
+`z ↦ z • c` is a bijection from `Pic⁰_{X/S}(T)` onto `Pic^d_{X/S}(T)`. So `Pic^d_{X/S}(T)` is a
+principal homogeneous set under `Pic⁰_{X/S}(T)` when it is nonempty; it may be empty. -/
 def relativePicardDegreeSubfunctorObjEquiv {d : ℤ} {T : (Over S)ᵒᵖ}
     (c : (relativePicardDegreeSubfunctor f d).obj T) :
     relativePicardDegreeZeroSubgroup f T ≃ (relativePicardDegreeSubfunctor f d).obj T :=
@@ -257,7 +262,9 @@ lemma coe_relativePicardDegreeSubfunctorObjEquiv_symm_apply {d : ℤ} {T : (Over
       relativePicardDegreeZeroSubgroup f T) : (relativePicardPresheaf f).obj T) = c' / c :=
   (rfl)
 
-/-- The action of `Pic⁰_{X/S}(T)` on `Pic^d_{X/S}(T)` is transitive. -/
+/-- The action of `Pic⁰_{X/S}(T)` on `Pic^d_{X/S}(T)` is pretransitive: any two sections of
+degree `d` differ by a class of `Pic⁰_{X/S}(T)`. This holds vacuously when `Pic^d_{X/S}(T)` is
+empty. -/
 instance (d : ℤ) (T : (Over S)ᵒᵖ) :
     MulAction.IsPretransitive (relativePicardDegreeZeroSubgroup f T)
       ((relativePicardDegreeSubfunctor f d).obj T) :=
@@ -343,12 +350,12 @@ end FieldPoint
 
 section BaseChange
 
-variable {S' : Scheme.{u}} [QuasiCompact f] [IsSeparated f] (g : S' ⟶ S)
+variable {S' : Scheme.{u}} (g : S' ⟶ S)
 
-/-- **The base change comparison preserves and reflects `Pic^d`.** For `f` quasi-compact and
-separated and `g : S' ⟶ S`, a section of `T ↦ Pic(T ×_{S'} X') / Pic(T)`, for the base change
-`X' = S' ×_S X ⟶ S'`, has degree `d` on every geometric fibre exactly when its image in
-`T ↦ Pic(T ×_S X) / Pic(T)` under `relativePicardPresheafBaseChangeIso` does. -/
+/-- **The base change comparison preserves and reflects `Pic^d`.** For `g : S' ⟶ S`, a section
+of `T ↦ Pic(T ×_{S'} X') / Pic(T)`, for the base change `X' = S' ×_S X ⟶ S'`, has degree `d` on
+every geometric fibre exactly when its image in `T ↦ Pic(T ×_S X) / Pic(T)` under
+`relativePicardPresheafBaseChangeIso` does. -/
 theorem relativePicardPresheafBaseChangeIso_hom_app_mem_relativePicardDegreeSubfunctor_obj_iff
     {d : ℤ} {T : (Over S')ᵒᵖ} {c : (relativePicardPresheaf (pullback.fst g f)).obj T} :
     (relativePicardPresheafBaseChangeIso f g).hom.app T c ∈
@@ -361,10 +368,10 @@ theorem relativePicardPresheafBaseChangeIso_hom_app_mem_relativePicardDegreeSubf
   exact Iff.of_eq (congrArg (· = d)
     (relativePicardFiberDegree_relativePicardPresheafBaseChangeIso_hom_app f g (T := T) ξ c))
 
-/-- **Base change of `Pic^d`.** For `f` quasi-compact and separated and `g : S' ⟶ S`, the
-degree-`d` subfunctor of the base change `X' = S' ×_S X ⟶ S'` is `Pic^d_{X/S}` restricted to
-schemes over `S'` along `Over.map g`, by the restriction of
-`relativePicardPresheafBaseChangeIso`, that is pullback along `T ×_S X ≅ T ×_{S'} X'`. -/
+/-- **Base change of `Pic^d`.** For `g : S' ⟶ S`, the degree-`d` subfunctor of the base change
+`X' = S' ×_S X ⟶ S'` is `Pic^d_{X/S}` restricted to schemes over `S'` along `Over.map g`, by the
+restriction of `relativePicardPresheafBaseChangeIso`, that is pullback along
+`T ×_S X ≅ T ×_{S'} X'`. -/
 def relativePicardDegreeSubfunctorBaseChangeIso (d : ℤ) :
     (relativePicardDegreeSubfunctor (pullback.fst g f) d).toFunctor ≅
       (Over.map g).op ⋙ (relativePicardDegreeSubfunctor f d).toFunctor :=
