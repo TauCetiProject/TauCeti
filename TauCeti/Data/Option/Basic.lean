@@ -14,7 +14,7 @@ public import Mathlib.Logic.Relation
 * `Option.unattach_bind`: forgetting subtype membership commutes with `Option.bind`.
 * `Option.unattach_inj`, `Option.unattach_map`, `Option.map_unattach_eq_map_val`: injectivity of
   `Option.unattach` and compatibility with `Option.map`.
-* `Option.reflTransGen_of_foldlM_eq_some`: a successful `List.foldlM` over `Option` gives a
+* `TauCeti.reflTransGen_of_foldlM_eq_some`: a successful `List.foldlM` over `Option` gives a
   `Relation.ReflTransGen` walk whenever each step satisfies the relation.
 -/
 
@@ -47,6 +47,10 @@ theorem map_unattach_eq_map_val {α β : Type*} {p : α → Prop} (o : Option {x
     o.unattach.map g = o.map fun x ↦ g x.val := by
   cases o <;> rfl
 
+end Option
+
+namespace TauCeti
+
 /-- If every defined `Option`-valued step `f z a = some z'` implies `r z z'`, then a defined
 `List.foldlM` along `l` from `x` to `y` yields `Relation.ReflTransGen r x y`. -/
 theorem reflTransGen_of_foldlM_eq_some {α β : Type*} {r : α → α → Prop}
@@ -55,10 +59,11 @@ theorem reflTransGen_of_foldlM_eq_some {α β : Type*} {r : α → α → Prop}
   induction l generalizing x with
   | nil => obtain rfl := Option.some.inj (by simpa using h); exact .refl
   | cons a l ih =>
+    rw [List.foldlM_cons] at h
     obtain ⟨z, hxz, hzy⟩ := Option.bind_eq_some_iff.mp h
     exact .head (hf hxz) (ih hzy)
 
-/-- Variant of `Option.reflTransGen_of_foldlM_eq_some` for an action `g : List β → α → Option α`
+/-- Variant of `TauCeti.reflTransGen_of_foldlM_eq_some` for an action `g : List β → α → Option α`
 characterized by its `[]` and `b :: l` equations (for instance an unexposed wrapper around
 `List.foldlM`). -/
 theorem reflTransGen_of_nil_of_cons_eq_some {α β : Type*} {r : α → α → Prop}
@@ -73,4 +78,4 @@ theorem reflTransGen_of_nil_of_cons_eq_some {α β : Type*} {r : α → α → P
     | cons b l ih => intro x; simp [hcons, ih]
   exact reflTransGen_of_foldlM_eq_some (f := f) hf (heq l x ▸ h)
 
-end Option
+end TauCeti

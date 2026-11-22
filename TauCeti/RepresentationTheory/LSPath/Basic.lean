@@ -133,8 +133,7 @@ structure LSPath (lam : M) where
 
 namespace LSPath
 
-variable {lam : M} (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+variable {lam : M}
 
 /-- A Lakshmibai–Seshadri path is determined by its lists of directions and of times. -/
 @[ext]
@@ -218,19 +217,19 @@ theorem sum_duration (π : LSPath P b lam) : ∑ j, π.duration j = 1 := by
   simp only [duration]
   rw [Fin.sum_Iic_sub, Fin.succ_last, π.time_last, π.time_zero, sub_zero]
 
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+
 /-- The **distinguished timed presentation** of a Lakshmibai–Seshadri path: for each direction
 `τ_j`, the segment `(a_{j+1} - a_j) τ_j λ` traversed during time `a_{j+1} - a_j`, so with constant
 velocity `f (τ_j λ)`, carried to `V` by `f`. -/
 noncomputable def timed (π : LSPath P b lam) : List (𝕜 × V) :=
   List.ofFn fun j ↦ ((π.duration j : 𝕜), (π.duration j : 𝕜) • f ((π.dir j).val • lam))
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 theorem timed_def (π : LSPath P b lam) :
     π.timed 𝕜 f =
       List.ofFn fun j ↦ ((π.duration j : 𝕜), (π.duration j : 𝕜) • f ((π.dir j).val • lam)) :=
   (rfl)
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- The segments of the distinguished timed presentation are the segments `(a_{j+1} - a_j) τ_j λ`,
 traversed during time `a_{j+1} - a_j`. -/
 theorem mem_timed_iff (π : LSPath P b lam) {y : 𝕜 × V} :
@@ -240,9 +239,12 @@ theorem mem_timed_iff (π : LSPath P b lam) {y : 𝕜 × V} :
 
 /-- Every segment of the distinguished timed presentation of a Lakshmibai–Seshadri path has
 strictly positive duration. -/
-theorem isTimed_timed (π : LSPath P b lam) : PLPath.IsTimed (π.timed 𝕜 f) := by
-  simp only [PLPath.isTimed_iff, timed, List.forall_mem_ofFn_iff, Rat.cast_pos]
-  exact π.duration_pos
+theorem isTimed_timed [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] (π : LSPath P b lam) :
+    PLPath.IsTimed (π.timed 𝕜 f) := by
+  simp only [PLPath.isTimed_iff, timed, List.forall_mem_ofFn_iff]
+  exact fun j ↦ Rat.cast_pos.mpr (π.duration_pos j)
+
+variable [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 /-- The distinguished timed presentation of a Lakshmibai–Seshadri path has duration `1`. -/
 @[simp]
@@ -274,7 +276,7 @@ theorem endpoint_toPLPath (π : LSPath P b lam) :
 
 /-- Taking a semilinear image of a realized LS path along a monotone ring homomorphism commutes
 with `toPLPath` by postcomposing the realization `f` with the semilinear map. -/
-theorem mapSemilinear_toPLPath {𝕜' W : Type*} [Field 𝕜'] [LinearOrder 𝕜'] [IsStrictOrderedRing 𝕜']
+theorem mapSemilinear_toPLPath {𝕜' W : Type*} [Field 𝕜'] [PartialOrder 𝕜'] [IsStrictOrderedRing 𝕜']
     [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} (g : V →ₛₗ[σ] W) (hσ : Monotone σ)
     (π : LSPath P b lam) :
     (π.toPLPath 𝕜 f).mapSemilinear g = π.toPLPath 𝕜' (g.toAddMonoidHom.comp f) := by
@@ -467,7 +469,7 @@ theorem duration_congr (h : lam = lam') (π : LSPath P b lam) (j : Fin ((congr h
 theorem congr_straight (h : lam = lam') :
     congr (P := P) (b := b) h (straight lam) = straight lam' := by subst h; rfl
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+omit [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem timed_congr (h : lam = lam') (π : LSPath P b lam) :
     (congr h π).timed 𝕜 f = π.timed 𝕜 f := by subst h; rfl

@@ -170,7 +170,19 @@ def LinearMap.liftBaseChangeSemilinear (f : M →ₛₗ[σ.comp (algebraMap R S)
 @[simp]
 theorem LinearMap.liftBaseChangeSemilinear_tmul (f : M →ₛₗ[σ.comp (algebraMap R S)] V) (s : S)
     (m : M) : f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m := by
-  simp [liftBaseChangeSemilinear]
+  let : Module S V := Module.compHom V σ
+  let : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+  have : IsScalarTower R S V :=
+    ⟨fun r s v ↦ by
+      change σ (r • s) • v = σ (algebraMap R S r) • (σ s • v)
+      rw [Algebra.smul_def, map_mul, mul_smul]⟩
+  have : SMulCommClass R S V :=
+    ⟨fun r s v ↦ by
+      change σ (algebraMap R S r) • (σ s • v) = σ s • (σ (algebraMap R S r) • v)
+      rw [← mul_smul, ← mul_smul, ← map_mul, ← map_mul, Algebra.commutes]⟩
+  dsimp only [liftBaseChangeSemilinear, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [AlgebraTensorModule.lift_tmul, LinearMap.ringLmapEquivSelf_symm_apply]
+  -- Scalar multiplication under `Module.compHom V σ` is definitionally `σ s • _`.
   rfl
 
 /-- Two `σ`-semilinear maps out of `S ⊗[R] M` are equal if they agree on every `1 ⊗ₜ[R] m`. -/

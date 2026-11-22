@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.Distinguished
 public import TauCeti.RepresentationTheory.LSPath.Weight
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
@@ -290,33 +289,32 @@ theorem toPLPath_centralTransport_centralTransport {ψ : M}
     (centralTransport ψ hψ (centralTransport χ hχ π)).toPLPath 𝕜 f =
       (centralTransport (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero]) π).toPLPath
         𝕜 f := by
-  simp [toPLPath_def, PLPath.shiftTimed_shiftTimed]
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_centralTransport χ hχ π hψ)
 
 /-- The central transport by `0` does not change the realized path. -/
 @[simp]
 theorem toPLPath_centralTransport_zero :
     (centralTransport (0 : M) (fun _ _ ↦ map_zero _) π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by
-  simp [toPLPath_def, PLPath.shiftTimed_zero]
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_zero π (fun _ _ ↦ map_zero _))
 
 /-- **The inverse of a central transport.** On realized paths, the inverse of the central
 transport by `χ` is the central transport by `-χ`. -/
 theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
     (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π).toPLPath 𝕜 f =
       ((centralTransport χ hχ).symm π).toPLPath 𝕜 f := by
-  conv_lhs => rw [← (centralTransport χ hχ).apply_symm_apply π]
-  rw [toPLPath_centralTransport_centralTransport]
-  simp [toPLPath_def, PLPath.shiftTimed_zero]
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_symm_apply χ hχ π).symm
 
 end Realization
 
 /-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
-theorem weight_centralTransport (hlam : lam ∈ dominantChamber P b)
-    (hlam' : lam + χ ∈ dominantChamber P b) :
-    (centralTransport χ hχ π).weight hlam' = π.weight hlam + χ :=
-  ((centralTransport χ hχ π).weight_eq_iff_toRatPLPath_endpoint hlam').mpr (by
-    rw [toRatPLPath, endpoint_toPLPath_centralTransport, ← toRatPLPath,
-      ← apply_weight ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom hlam π, ← map_add]
-    rfl)
+theorem weight_centralTransport :
+    (centralTransport χ hχ π).weight = π.weight + χ := by
+  refine ((centralTransport χ hχ π).weight_eq_iff_toRatPLPath_endpoint).mpr ?_
+  rw [toRatPLPath, endpoint_toPLPath_centralTransport, ← toRatPLPath, toRatPLPath_endpoint,
+    LinearMap.toAddMonoidHom_coe, ← map_add]
 
 end LSPath
 

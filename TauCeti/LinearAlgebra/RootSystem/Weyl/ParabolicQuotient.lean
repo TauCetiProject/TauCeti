@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Combinatorics
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
@@ -83,8 +82,9 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩` is `x = sᵢ y`.
 * `TauCeti.oppositionPerm_mem_wallIndices_neg_longestElement_smul_iff`,
   `TauCeti.conj_longestElement_mem_parabolic_wallIndices_iff`, and
-  `TauCeti.minimalCosetRep_mul_longestElement_smul`: the longest element exchanges `W_λ` and
-  `W_{-w₀ λ}` and sends minimal coset representatives `u w₀` to `-(u • λ)`.
+  `TauCeti.minimalCosetRep_mul_longestElement_smul`: conjugation by `w₀` exchanges the wall
+  parabolics `W_λ` and `W_{-(w₀ • λ)}`, and the minimal representative of the coset of `u w₀`
+  acts on `-(w₀ • λ)` to give `-(u • λ)`.
 
 ## References
 
@@ -581,7 +581,7 @@ theorem conj_longestElement_mem_parabolic_wallIndices_iff (lam : M) (p : P.weylG
   have hp : longestElement P b * (longestElement P b * p * longestElement P b) *
       longestElement P b = p := by
     rw [← mul_assoc, ← mul_assoc, hmul, one_mul, mul_assoc, hmul, mul_one]
-  simpa [smul_neg, neg_neg, smul_smul_longestElement, hp] using
+  simpa only [neg_longestElement_smul_neg_longestElement_smul, hp] using
     conj_longestElement_mem_parabolic_wallIndices (-(longestElement P b • lam)) h
 
 /-- **The minimal coset rep of `u * w₀` for `-(w₀ • λ)` sends `-(w₀ • λ)` to `-(u • λ)`.** -/
@@ -596,8 +596,11 @@ theorem minimalCosetRep_mul_longestElement_smul (lam : M) (u : P.weylGroup) :
     MulAction.mem_stabilizer_iff.mp (P.parabolic_wallIndices_le_stabilizer b lam'
       ((weylCoxeterSystem P b).inv_mul_minimalCosetRep_mem _ _))
   rw [← mul_inv_cancel_left (u * longestElement P b)
-    ((weylCoxeterSystem P b).minimalCosetRep _ _), mul_smul, hfix]
-  simp [lam', mul_smul, smul_neg, smul_smul_longestElement]
+    ((weylCoxeterSystem P b).minimalCosetRep _ _), mul_smul, hfix, mul_smul]
+  have h : longestElement P b • lam' = -lam := neg_injective (by
+    rw [neg_neg]
+    exact neg_longestElement_smul_neg_longestElement_smul P b lam)
+  rw [h, smul_neg]
 
 end LongestElement
 

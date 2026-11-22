@@ -243,6 +243,11 @@ theorem smul_smul_longestElement (x : M) :
     longestElement P b • longestElement P b • x = x := by
   rw [smul_smul, ← sq, longestElement_sq, one_smul]
 
+/-- Negating and acting by `w₀` is an involution on the weight space. -/
+theorem neg_longestElement_smul_neg_longestElement_smul (x : M) :
+    -(longestElement P b • -(longestElement P b • x)) = x := by
+  rw [smul_neg, neg_neg, smul_smul_longestElement]
+
 /-- The permutation of the root indices induced by the longest element is an involution. -/
 theorem weylGroupToPerm_longestElement_involutive :
     Involutive (P.weylGroupToPerm (longestElement P b)) := fun i ↦ by

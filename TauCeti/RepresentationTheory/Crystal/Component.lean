@@ -46,9 +46,9 @@ isomorphism (`TauCeti.NormalCrystal.StrictIso.componentIso`): components transpo
 
 ## Main results
 
-* `TauCeti.NormalCrystal.graph_reachable_of_eWord_eq_some` and
-  `TauCeti.NormalCrystal.graph_reachable_of_fWord_eq_some`: elements related by a raising or
-  lowering word are reachable in the crystal graph.
+* `TauCeti.NormalCrystal.reachable_of_eWord_eq_some` and
+  `TauCeti.NormalCrystal.reachable_of_fWord_eq_some`: elements related by a raising or lowering
+  word are reachable in the crystal graph.
 * `TauCeti.NormalCrystal.connected_component_graph`: each component is a connected crystal.
 * `TauCeti.NormalCrystal.sigmaComponentsIso`: a normal crystal is strictly isomorphic to the
   direct sum of its connected components.
@@ -94,16 +94,16 @@ theorem graph_adj_of_f_eq_some (h : c.f i x = some y) : c.graph.Adj x y :=
   c.graph_adj_iff.2 ⟨i, Or.inr (c.f_eq_some_iff.1 h)⟩
 
 /-- Elements connected by a defined raising word are reachable in the crystal graph. -/
-theorem graph_reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
+theorem reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
     c.graph.Reachable x y := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
-  exact Option.reflTransGen_of_nil_of_cons_eq_some c.eWord_nil c.eWord_cons
+  exact TauCeti.reflTransGen_of_nil_of_cons_eq_some c.eWord_nil c.eWord_cons
     (fun h' ↦ c.graph_adj_of_e_eq_some h') h
 
 /-- Elements connected by a defined lowering word are reachable in the crystal graph. -/
-theorem graph_reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
+theorem reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
     c.graph.Reachable x y :=
-  (c.graph_reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
+  (c.reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
 
 /-- Lowering operators also define the crystal graph. -/
 theorem graph_adj_iff_f : c.graph.Adj x y ↔ ∃ i, c.f i x = some y ∨ c.f i y = some x := by
@@ -118,12 +118,12 @@ theorem dual_graph : c.dual.graph = c.graph := by
 crystal graph. -/
 theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
     c.graph.Reachable x y :=
-  c.graph_reachable_of_eWord_eq_some (w := List.replicate n i) (by simpa [eWord_replicate] using h)
+  c.reachable_of_eWord_eq_some (w := List.replicate n i) (by simpa [eWord_replicate] using h)
 
 /-- Elements connected by an iterated lowering operator lie in the same connected component of the
 crystal graph. -/
 theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
-  c.graph_reachable_of_fWord_eq_some (w := List.replicate n i) (by simpa [fWord_replicate] using h)
+  c.reachable_of_fWord_eq_some (w := List.replicate n i) (by simpa [fWord_replicate] using h)
 
 end Graph
 

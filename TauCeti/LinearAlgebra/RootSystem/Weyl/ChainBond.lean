@@ -424,7 +424,6 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
 vector, in every characteristic-zero linear realization. This retains the lattice information,
 not only its values under integral linear forms. -/
 theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
-    (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
@@ -434,33 +433,45 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
   | snoc C y hy ih =>
     obtain ⟨hC, z, hz⟩ := (isAChain_snoc_iff hy).mp hC
     obtain ⟨m, hm, heq⟩ := ih hC
-    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
-      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hy
-    have hb := reflectionBond_eq_neg_coroot' hβ hβx
-      (smul_ne_smul_of_minimalCosetRepCovBy hlam hy)
-    have hz' : (a : 𝕜) * (P.coroot' β (C.last.val • lam) : 𝕜) = (-z : ℤ) := by
-      rw [hb] at hz
-      exact_mod_cast (by push_cast at hz ⊢; linarith :
-        a * (P.coroot' β (C.last.val • lam) : ℚ) = (-z : ℤ))
-    have hdiff : C.last.val • lam - y.val • lam =
-        P.coroot' β (C.last.val • lam) • P.root β := by
-      rw [← hβx, RootPairing.reflection_apply]
-      abel
-    have hedge : (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) =
-        f ((-z) • P.root β) := by
-      rw [← map_sub, hdiff, map_zsmul]
-      simpa only [map_zsmul, ← Int.cast_smul_eq_zsmul 𝕜, smul_smul] using
-        congrArg (fun t : 𝕜 ↦ t • f (P.root β)) hz'
-    refine ⟨m + (-z) • P.root β, Submodule.add_mem _ hm
-      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩)), ?_⟩
-    simp only [RelSeries.head_snoc, RelSeries.last_snoc]
-    calc
-      (a : 𝕜) • (f (C.head.val • lam) - f (y.val • lam)) =
-          (a : 𝕜) • (f (C.head.val • lam) - f (C.last.val • lam)) +
-          (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) := by
-            rw [← smul_add, sub_add_sub_cancel]
-      _ = f m + f ((-z) • P.root β) := by rw [heq, hedge]
-      _ = f (m + (-z) • P.root β) := (map_add f _ _).symm
+    by_cases hweq : y.val • lam = C.last.val • lam
+    · refine ⟨m, hm, ?_⟩
+      simpa only [RelSeries.head_snoc, RelSeries.last_snoc, hweq] using heq
+    · obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := hy.exists_isReflection
+      have hstab := MulAction.mem_stabilizer_iff.mp
+        (P.parabolic_wallIndices_le_stabilizer b lam hmem)
+      rw [mul_smul, inv_smul_eq_iff, mul_smul, weylCoxeterSystem_simple,
+        ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+        RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hstab
+      obtain ⟨β, hβ, hβx⟩ : ∃ β, b.IsPos β ∧ P.reflection β (C.last.val • lam) = y.val • lam := by
+        let := P.indexNeg
+        rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
+        · exact ⟨_, hj, hstab⟩
+        · refine ⟨_, hj, ?_⟩
+          rw [← hstab, reflection_indexNeg_neg]
+      have hb := reflectionBond_eq_neg_coroot' hβ hβx hweq
+      have hz' : (a : 𝕜) * (P.coroot' β (C.last.val • lam) : 𝕜) = (-z : ℤ) := by
+        rw [hb] at hz
+        exact_mod_cast (by push_cast at hz ⊢; linarith :
+          a * (P.coroot' β (C.last.val • lam) : ℚ) = (-z : ℤ))
+      have hdiff : C.last.val • lam - y.val • lam =
+          P.coroot' β (C.last.val • lam) • P.root β := by
+        rw [← hβx, RootPairing.reflection_apply]
+        abel
+      have hedge : (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) =
+          f ((-z) • P.root β) := by
+        rw [← map_sub, hdiff, map_zsmul]
+        simpa only [map_zsmul, ← Int.cast_smul_eq_zsmul 𝕜, smul_smul] using
+          congrArg (fun t : 𝕜 ↦ t • f (P.root β)) hz'
+      refine ⟨m + (-z) • P.root β, Submodule.add_mem _ hm
+        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩)), ?_⟩
+      simp only [RelSeries.head_snoc, RelSeries.last_snoc]
+      calc
+        (a : 𝕜) • (f (C.head.val • lam) - f (y.val • lam)) =
+            (a : 𝕜) • (f (C.head.val • lam) - f (C.last.val • lam)) +
+            (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) := by
+              rw [← smul_add, sub_add_sub_cancel]
+        _ = f m + f ((-z) • P.root β) := by rw [heq, hedge]
+        _ = f (m + (-z) • P.root β) := (map_add f _ _).symm
 
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`

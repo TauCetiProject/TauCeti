@@ -72,6 +72,28 @@ theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f 
 
 end Semiring
 
+section Semilinear
+
+variable {R R' M N : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+  [AddCommGroup N] [Module R' N] {σ : R →+* R'}
+
+/-- A semilinear map along a monotone ring homomorphism preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear {x y : M} (h : SameRay R x y) (g : M →ₛₗ[σ] N) (hσ : Monotone σ) :
+    SameRay R' (g x) (g y) := by
+  rcases h with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, heq⟩
+  · simp
+  · simp
+  · have hσ_pos {r : R} (hr : 0 < r) : 0 < σ r := by
+      refine lt_of_le_of_ne (by simpa only [map_zero] using hσ hr.le) ?_
+      intro h0
+      have h1 : σ r * σ r⁻¹ = 1 := by rw [← map_mul, mul_inv_cancel₀ hr.ne', map_one]
+      simp [← h0] at h1
+    exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ_pos hr₁, hσ_pos hr₂,
+      by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
+
+end Semilinear
+
 section Partition
 
 open Set

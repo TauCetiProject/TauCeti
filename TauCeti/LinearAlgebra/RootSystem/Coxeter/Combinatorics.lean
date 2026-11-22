@@ -113,14 +113,14 @@ theorem conj_longestElement_simple {ι R M N : Type*} [CommRing R] [CharZero R] 
     {b : P.Base} [Finite ι] [P.IsCrystallographic] [P.IsReduced] (i : b.support) :
     longestElement P b * (weylCoxeterSystem P b).simple i * longestElement P b =
       (weylCoxeterSystem P b).simple (oppositionPerm P b i) := by
-  nth_rw 2 [← longestElement_inv P b]
-  rw [weylCoxeterSystem_simple, weylCoxeterSystem_simple, coe_oppositionPerm,
-    ← weylGroup.ofIdx_weylGroupToPerm_eq_conj]
+  rw [weylCoxeterSystem_simple, weylCoxeterSystem_simple, coe_oppositionPerm]
+  have hconj : longestElement P b * weylGroup.ofIdx P ↑i * longestElement P b =
+      longestElement P b * weylGroup.ofIdx P ↑i * (longestElement P b)⁻¹ :=
+    congrArg (_ * ·) (longestElement_inv P b).symm
+  rw [hconj, ← weylGroup.ofIdx_weylGroupToPerm_eq_conj]
   let := P.indexNeg
-  have hneg : opposition P b ↑i = -(P.weylGroupToPerm (longestElement P b) ↑i) :=
-    P.root.injective <| by
-      rw [root_opposition, RootPairing.indexNeg_neg, RootPairing.root_reflectionPerm,
-        RootPairing.reflection_apply_self, P.weylGroup_apply_root]
+  have hneg : opposition P b ↑i = -(P.weylGroupToPerm (longestElement P b) ↑i) := by
+    rw [RootPairing.indexNeg_neg, ← P.root_eq_neg_iff, root_opposition, P.weylGroup_apply_root]
   rw [hneg, weylGroup.ofIdx_neg]
 
 end TauCeti

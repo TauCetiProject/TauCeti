@@ -15,7 +15,7 @@ For a finite reduced root pairing `P` with base `b` and longest element `w₀`, 
 an LS path `π = (τ₀, …, τ_l; a₀, …, a_{l+1})` of shape `λ` is the path `π^*` of shape
 `-(w₀ • λ)` whose coset sequence is `(τ_l w₀ W_{-w₀ λ}, …, τ₀ w₀ W_{-w₀ λ})` (encoded by their
 minimal coset representatives `minimalCosetRep (P.wallIndices b (-(w₀ • λ))) (τ_{l - j} w₀)`) and
-whose breaks are `(1 - a_{l+1}, …, 1 - a₀)`. Its distinguished timed presentation is
+whose breaks are `(1 - a_{l+1}, …, 1 - a₀)`. Its canonical timed presentation is
 `PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`, with no dominance
 assumption on `λ`.
 
@@ -79,16 +79,13 @@ private theorem dualAux_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b l
     dualAux (congr h π) =
       congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dualAux π) := by subst h; simp
 
-private theorem neg_longestElement_smul_neg_longestElement_smul (lam : M) :
-    -(longestElement P b • -(longestElement P b • lam)) = lam := by
-  simp [smul_neg, smul_smul_longestElement]
-
 private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
     congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
         (dualAux (dualAux π)) = π := by
   have hwall : P.wallIndices b (-(longestElement P b • -(longestElement P b • lam))) =
       P.wallIndices b lam :=
-    congrArg (P.wallIndices b) (neg_longestElement_smul_neg_longestElement_smul lam)
+    congrArg (P.wallIndices b)
+      (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
   symm
   refine ext' (by simp [dualAux]) (fun j ↦ ?_) (fun k ↦ ?_)
   · simp only [dir_congr, dualAux, Fin.rev_rev, hwall]
@@ -105,7 +102,8 @@ private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
 realizing path reversal on `TauCeti.PLPath` (`TauCeti.LSPath.toPLPath_dual`). -/
 noncomputable def dual {lam : M} : LSPath P b lam ≃ LSPath P b (-(longestElement P b • lam)) where
   toFun := dualAux
-  invFun π' := congr (neg_longestElement_smul_neg_longestElement_smul lam) (dualAux π')
+  invFun π' := congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
+    (dualAux π')
   left_inv := congr_dualAux_dualAux
   right_inv π' := by rw [dualAux_congr]; exact congr_dualAux_dualAux π'
 
@@ -136,7 +134,9 @@ theorem duration_dual (j : Fin ((dual π).length + 1)) :
 
 /-- The inverse of `dual` is `dual` followed by shape transport along `-(w₀ • -(w₀ • λ)) = λ`. -/
 theorem dual_symm_eq_congr_dual (π' : LSPath P b (-(longestElement P b • lam))) :
-    dual.symm π' = congr (by simp [smul_neg, smul_smul_longestElement]) (dual π') := (rfl)
+    dual.symm π' =
+      congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam) (dual π') :=
+  (rfl)
 
 /-- Applying `dual` twice returns the original LS path up to `-(w₀ • -(w₀ • λ)) = λ`. -/
 @[simp]
@@ -150,11 +150,11 @@ theorem dual_congr {lam' : M} (h : lam = lam') :
 
 section Realization
 
-variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- **The distinguished timed presentation of `π^*` is the reversal of that of `π`.** -/
+omit [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+/-- **The canonical timed presentation of `π^*` is the reversal of that of `π`.** -/
 @[simp]
 theorem timed_dual : (dual π).timed 𝕜 f = PLPath.reverseTimed (π.timed 𝕜 f) := by
   refine List.ext_getElem (by simp [timed_def, PLPath.reverseTimed_def]) fun n h₁ _ ↦ ?_
@@ -180,12 +180,10 @@ theorem toPLPath_dual_symm (π' : LSPath P b (-(longestElement P b • lam))) :
 end Realization
 
 /-- The weight of Littelmann's dual path `π^*` is the negative of the weight of `π`. -/
-theorem weight_dual (hlam : lam ∈ dominantChamber P b)
-    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
-    (dual π).weight hlam' = -π.weight hlam :=
-  ((dual π).weight_eq_iff_toRatPLPath_endpoint hlam').mpr (by
-    rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, map_neg, ← toRatPLPath,
-      ← apply_weight ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom hlam π,
-      LinearMap.toAddMonoidHom_coe])
+@[simp]
+theorem weight_dual : (dual π).weight = -π.weight :=
+  (dual π).weight_eq_iff_toRatPLPath_endpoint.mpr (by
+    rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, ← toRatPLPath,
+      toRatPLPath_endpoint, map_neg])
 
 end TauCeti.LSPath
