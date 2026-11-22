@@ -200,13 +200,12 @@ private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ 
   rw [mem_ofPred_eq, mfderiv_prodMap mdifferentiableAt_id (hι₀.mdifferentiableAt (by simp)),
     mfderiv_id, not_iff_not, Prod.map_apply, verticalField_apply, hslice,
     reebVectorField_mpullback_subtype_val]
+  refine Iff.trans ?_ (Manifold.mem_range_mfderiv_restrictPreimage_iff hι.continuous W (x := s))
   constructor
   · rintro ⟨w, hw⟩
-    exact ⟨w.2, (Manifold.mfderiv_restrictPreimage_apply hι.continuous W (x := s) w.2).symm.trans
-      (congrArg Prod.snd hw)⟩
+    exact ⟨w.2, congrArg Prod.snd hw⟩
   · rintro ⟨w, hw⟩
-    exact ⟨((0 : ℝ), w), Prod.ext rfl
-      ((Manifold.mfderiv_restrictPreimage_apply hι.continuous W (x := s) w).trans hw)⟩
+    exact ⟨((0 : ℝ), w), Prod.ext rfl hw⟩
 
 /-- **Transversality persists near a transverse slice.** Let every interpolation
 `α₀ + u (α₁ - α₀)`, `u ∈ [0, 1]`, be contact on an open set `N`, and let `K ⊆ N` be a set on the
@@ -289,12 +288,9 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
   have hι₂ : ContMDiff J I ∞ ι₂ := hι.restrictPreimage W
   have htrW (u : ℝ) (hu : u ∈ Icc (0 : ℝ) 1) :
       IsTransverseAlong J (res α₀ + u • (res α₁ - res α₀)).reebVectorField ι₂ := by
-    refine isTransverseAlong_iff.2 fun s ⟨w, hw⟩ ↦ htrV s s.property.1 s.property.2 u hu ⟨w, ?_⟩
-    obtain ⟨s, hs⟩ := s
-    rw [hres, reebVectorField_mpullback_subtype_val, ContinuousLinearMap.coe_coe,
-      Manifold.mfderiv_restrictPreimage_apply hι.continuous W] at hw
-    simp only [ι₂, restrictPreimage_mk] at hw
-    rwa [ContinuousLinearMap.coe_coe]
+    refine isTransverseAlong_iff.2 fun s h ↦ htrV s s.property.1 s.property.2 u hu ?_
+    rw [hres, reebVectorField_mpullback_subtype_val] at h
+    exact (Manifold.mem_range_mfderiv_restrictPreimage_iff hι.continuous W).1 h
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt hι₂
       (fun s ↦ (Manifold.injective_mfderiv_restrictPreimage_iff hι.continuous W).2 (himm s))
