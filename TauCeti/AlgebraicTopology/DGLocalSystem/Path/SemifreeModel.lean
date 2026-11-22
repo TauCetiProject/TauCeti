@@ -107,18 +107,19 @@ theorem cellPathChain_succ (m : ℕ) (j : cell C (m + 1)) :
 
 /-- The chosen path to the centre of a `0`-cell, as a path to the point of the cell. -/
 private def zeroCellPath (q : cell C 0) : MoorePathBetween B b (zeroCellPoint C q) :=
-  ⟨(τ 0 q).toMoorePath, (τ 0 q).source, by
-    rw [MoorePathBetween.target, coe_zeroCellPoint, Subsingleton.elim (0 : Fin 0 → ℝ) ![]]⟩
+  (τ 0 q).cast rfl (by rw [coe_zeroCellPoint, Subsingleton.elim (0 : Fin 0 → ℝ) ![]])
 
 /-- The chain of a `0`-cell is the point chain of the path to the point of the cell. -/
 private theorem cellPathChain_zero_eq (q : cell C 0) :
     cellPathChain H R τ 0 q = cubicalChainModuleLinearMap (G' := H) R
       (MoorePathBetween.toMoorePathFrom b _) (pathChainPoint R (zeroCellPath τ q)) := by
-  rw [cellPathChain_zero, pathChainPoint_def, pathChainPoint_def, cubicalChainModuleLinearMap_lof,
-    cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube,
-    NormalizedCubicalChain.map_ofCube]
-  congr 2
-  exact ContinuousMap.ext fun _ ↦ MoorePathFrom.ext (by simp [zeroCellPath])
+  -- Changing the end point along an equality `c = map 0 q 0` with `c` free is the identity.
+  have h {c : B} (hc : c = map 0 q 0) : cubicalChainModuleLinearMap (G' := H) R
+      (MoorePathBetween.toMoorePathFrom b c) (pathChainPoint R ((τ 0 q).cast rfl hc)) =
+        cellPathChain H R τ 0 q := by
+    subst hc
+    rw [MoorePathBetween.cast_rfl_rfl, cellPathChain_zero]
+  exact (h _).symm
 
 omit [T2Space B] in
 /-- The chain of an `n`-cell has dimension `n`. -/
@@ -211,6 +212,7 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
       (∀ x, g x - cellPathChain H R τ x.1 x.2 ∈ pathFromChainSkeleton b C H R ((x.1 : ℤ) - 1)) ∧
       (∀ x, linearCombination (loopChainAlgebra B b R) g (m.m x) =
         cubicalChainModuleDifferential (MoorePathFrom B b) H R (g x)) ∧
+      (∀ x, m.m x ∈ supported (loopChainAlgebra B b R) (loopChainAlgebra B b R) {y | y.1 < x.1}) ∧
       WellFounded (fun y x ↦ y ∈ (m.m x).support) ∧
       (∀ (k : ℕ) (u : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
           (w : cubicalChainModule (MoorePathFrom B b) H R),
@@ -251,7 +253,7 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
     simp only [hF, Nat.cast_succ, add_sub_cancel_right]
   have hFmono : Monotone F := fun k l hkl ↦
     monotone_pathFromChainSkeleton b C H R (by simpa using hkl)
-  obtain ⟨m, g, hgdeg, hgF, hgc, hgm, -, hwf, hK⟩ :=
+  obtain ⟨m, g, hgdeg, hgF, hgc, hgm, hms, hwf, hK⟩ :=
     exists_semifreeModel_of_filtration (pathFromChain_isDGLeftModule B b H R) hFmono
       (fun k ↦ isHomogeneous_pathFromChainSkeleton b C H R _)
       (fun w hw _ ↦ ⟨w, hw, by
@@ -265,7 +267,7 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
         rw [hFsucc] at hw ⊢
         exact exists_mapRange_eq_and_linearCombination_cellPathChain_add_differential_sub_mem
           τ k y w hy hw hyw)
-  refine ⟨m, g, hgdeg, fun x ↦ hFsucc x.1 ▸ hgF x, hgc, hgm, hwf, hK, fun u w hu huw ↦ ?_⟩
+  refine ⟨m, g, hgdeg, fun x ↦ hFsucc x.1 ▸ hgF x, hgc, hgm, hms, hwf, hK, fun u w hu huw ↦ ?_⟩
   -- A chain on the based path space lies over a finite skeleton, so in some stage `F k`.
   have hFex (w : cubicalChainModule (MoorePathFrom B b) H R) : ∃ k, w ∈ F k := by
     have hw : w ∈ ⨆ q, pathFromChainSkeleton b C H R q := by
