@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.Idempotents.Primitive.Basic
+import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
 /-!
 # Homogeneous ideals: generators and componentwise absorption
@@ -37,7 +37,7 @@ ordered additive commutative grading monoid, the setting of Mathlib's
   asks the ideal to be two-sided, through `Ideal.IsTwoSided`.
 * `CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span`: a complete family of orthogonal
   idempotents with homogeneous left ideals consists of degree-zero elements.
-* `HomogeneousIdeal.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so when
+* `TauCeti.GradedAlgebra.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so when
   `A` is a ring the quotient `A ⧸ A₊` carries its quotient ring structure.
 * `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
   every element is a scalar plus an element of the irrelevant ideal.
@@ -123,24 +123,21 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
     e i ∈ 𝒜 0 := by
   classical
   -- the nonzero-degree components of `e j` lie in `A * e j`, they sum to the nonzero-degree
-  -- components of `1`, which vanish, and the ideals `A * e j` are independent
-  have hfix : ∀ j p, (decompose 𝒜 (e j) p : A) * e j = decompose 𝒜 (e j) p := fun j p ↦
-    (TauCeti.mem_span_singleton_iff_mul_eq_self (he.idem j)).1
-      (hI j p (Ideal.mem_span_singleton_self _))
+  -- components of `1`, which vanish, and the sum of the ideals `A * e j` is direct
   have hvanish : ∀ p, p ≠ 0 → (decompose 𝒜 (e i) p : A) = 0 := by
     intro p hp
+    have hmem j : (decompose 𝒜 (e j) p : A) ∈ Ideal.span {e j} :=
+      hI j p (Ideal.mem_span_singleton_self _)
     have hsum : ∑ j, (decompose 𝒜 (e j) p : A) = 0 := by
       rw [← AddSubmonoidClass.coe_finsetSum, ← DirectSum.sum_apply, ← decompose_sum, he.complete]
       exact decompose_of_mem_ne 𝒜 SetLike.GradedOne.one_mem hp.symm
-    calc (decompose 𝒜 (e i) p : A)
-        = (decompose 𝒜 (e i) p : A) * e i := (hfix i p).symm
-      _ = (∑ j, (decompose 𝒜 (e j) p : A)) * e i := by
-        rw [Finset.sum_mul, Finset.sum_eq_single i _ (by simp)]
-        intro j _ hji
-        calc (decompose 𝒜 (e j) p : A) * e i
-            = ((decompose 𝒜 (e j) p : A) * e j) * e i := by rw [hfix j p]
-          _ = 0 := by rw [mul_assoc, he.ortho hji, mul_zero]
-      _ = 0 := by rw [hsum, zero_mul]
+    have h0 : ∑ j, DirectSum.of (fun j ↦ (Ideal.span {e j} : Ideal A)) j ⟨_, hmem j⟩ = 0 :=
+      he.isInternal_span_singleton.injective <| by simpa using hsum
+    have h0i := congr($h0 i)
+    rw [DirectSum.sum_apply, DirectSum.zero_apply,
+      Finset.sum_eq_single i (fun j _ hji ↦ of_eq_of_ne _ _ _ hji.symm) (by simp),
+      of_eq_same] at h0i
+    exact congr(($h0i : A))
   rw [← sum_support_decompose 𝒜 (e i)]
   refine sum_mem fun p _ ↦ ?_
   obtain rfl | hp := eq_or_ne p 0
@@ -148,23 +145,18 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
 
 end CompleteOrthogonalIdempotents
 
-namespace HomogeneousIdeal
-
-variable {ι σ A : Type*} [Semiring A] [DecidableEq ι] [AddCommMonoid ι] [PartialOrder ι]
-  [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
-
-/-- The irrelevant ideal is two-sided, as the kernel of the projection onto degree zero. -/
-instance isTwoSided_toIdeal_irrelevant : (irrelevant 𝒜).toIdeal.IsTwoSided :=
-  inferInstanceAs (RingHom.ker (GradedRing.projZeroRingHom 𝒜)).IsTwoSided
-
-end HomogeneousIdeal
-
 namespace TauCeti.GradedAlgebra
 
 open HomogeneousIdeal
 
 variable {ι σ R A : Type*} [DecidableEq ι] [AddCommMonoid ι] [PartialOrder ι]
   [CanonicallyOrderedAdd ι]
+
+/-- The irrelevant ideal is two-sided, as the kernel of the projection onto degree zero. -/
+instance isTwoSided_toIdeal_irrelevant [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A]
+    (𝒜 : ι → σ) [GradedRing 𝒜] : (irrelevant 𝒜).toIdeal.IsTwoSided := by
+  rw [toIdeal_irrelevant]
+  infer_instance
 
 /-- In a connected graded algebra, whose degree-zero part consists of the scalars, every element
 is a scalar plus an element of the irrelevant ideal. -/
@@ -174,8 +166,9 @@ theorem exists_sub_algebraMap_mem_irrelevant [CommSemiring R] [Ring A] [Algebra 
     ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
   obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).property)
   refine ⟨c, ?_⟩
-  rw [mem_irrelevant_iff, map_sub, hc, GradedRing.proj_apply,
-    GradedRing.proj_apply, decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).property, sub_self]
+  rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant, RingHom.sub_mem_ker_iff, hc,
+    GradedRing.projZeroRingHom_apply, GradedRing.projZeroRingHom_apply,
+    decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).property]
 
 /-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
 term modulo `A₊`. -/
