@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Defs
-public import Mathlib.Algebra.BigOperators.Intervals
+
+import Mathlib.Algebra.Ring.GeomSum
 
 /-!
 # Telescoping strings in a group algebra
@@ -18,6 +19,9 @@ notation, with `e^x` for the basis element at `x`, these are the identities
 `(1 - e^{-α}) (e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}) = e^y - e^{y - n α}` and
 `(1 - e^{-α}) (e^{y + α} + ⋯ + e^{y + n α}) = e^{y + n α} - e^y` for root strings in the group
 algebra of a weight lattice.
+
+Both are instances of the geometric-sum identities `mul_neg_geom_sum` and `mul_geom_sum` in the
+ring `R[G]`: the summands are `g⁻ʲ * y`, respectively `g * gʲ * y`, as products of basis elements.
 
 ## Main statements
 
@@ -43,13 +47,11 @@ namespace Commute
 theorem one_sub_single_inv_mul_sum_div {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1 =
       single y 1 - single (y / g ^ n) 1 := by
-  have h := Finset.sum_range_sub' (fun j ↦ single (y / g ^ j) (1 : R)) n
-  rw [pow_zero, div_one] at h
-  rw [Finset.mul_sum, ← h]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hj : g⁻¹ * (y / g ^ j) = y / g ^ (j + 1) := by
-    rw [pow_succ, div_mul_eq_div_div_swap, div_eq_mul_inv y g, ← hgy.inv_left.eq, mul_div_assoc]
-  rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
+  have hterm (j : ℕ) : single (y / g ^ j) (1 : R) = single g⁻¹ 1 ^ j * single y 1 := by
+    rw [single_pow, one_pow, single_mul_single, one_mul, inv_pow, (hgy.pow_left j).inv_left.eq,
+      div_eq_mul_inv]
+  rw [Finset.sum_congr rfl fun j _ ↦ hterm j, ← Finset.sum_mul, ← mul_assoc, mul_neg_geom_sum,
+    sub_mul, one_mul, hterm]
 
 /-- For commuting `g` and `y`, multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹`
 telescopes. -/
@@ -59,12 +61,11 @@ telescopes. -/
 theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1 =
       single (y * g ^ n) 1 - single y 1 := by
-  have h := Finset.sum_range_sub (fun j ↦ single (y * g ^ j) (1 : R)) n
-  rw [pow_zero, mul_one] at h
-  rw [Finset.mul_sum, ← h]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hj : g⁻¹ * (y * g ^ (j + 1)) = y * g ^ j := by
-    rw [pow_succ', ← mul_assoc y, ← hgy.eq, mul_assoc, inv_mul_cancel_left]
-  rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
+  have hterm (j : ℕ) : single (y * g ^ j) (1 : R) = single g 1 ^ j * single y 1 := by
+    rw [single_pow, one_pow, single_mul_single, one_mul, (hgy.pow_left j).eq]
+  have hg : (1 - single g⁻¹ (1 : R)) * single g 1 = single g 1 - 1 := by
+    rw [sub_mul, one_mul, single_mul_single, inv_mul_cancel, one_mul, one_def]
+  rw [Finset.sum_congr rfl fun j _ ↦ by rw [hterm, pow_succ'], ← Finset.sum_mul, ← Finset.mul_sum,
+    ← mul_assoc, ← mul_assoc, hg, mul_geom_sum, sub_mul, one_mul, hterm]
 
 end Commute
