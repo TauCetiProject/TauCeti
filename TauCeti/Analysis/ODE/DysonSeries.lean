@@ -70,6 +70,8 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.commute_dysonSeriesLeft`, `TauCeti.commute_dysonSeries_neg`: an element commuting with
+  every value of `p` commutes with both.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
@@ -431,6 +433,27 @@ series of `-p`. -/
 theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
   ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
     rfl⟩
+
+/-- An element commuting with every value of a continuous path `p` commutes with its left Dyson
+series: `a Γ` and `Γ a` both solve `X' = p X` with initial value `a`. -/
+theorem commute_dysonSeriesLeft (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
+  let L : ℝ → B →L[ℝ] B := fun s => ContinuousLinearMap.mul ℝ B (p s)
+  have hL : Continuous L := (ContinuousLinearMap.mul ℝ B).continuous.comp hp
+  have h : (fun s => a * dysonSeriesLeft p s) = fun s => dysonSeriesLeft p s * a := by
+    refine hL.eq_of_hasDerivAt_clm_apply (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)
+    · exact ((hasDerivAt_dysonSeriesLeft hp s).const_mul a).congr_deriv (by
+        simp only [L, ContinuousLinearMap.mul_apply', ← mul_assoc, (ha s).eq])
+    · exact ((hasDerivAt_dysonSeriesLeft hp s).mul_const a).congr_deriv (by
+        simp only [L, ContinuousLinearMap.mul_apply', mul_assoc])
+  exact congrFun h t
+
+/-- An element commuting with every value of a continuous path `p` commutes with the Dyson series
+of `-p`, the inverse of the left Dyson series of `p`. -/
+theorem commute_dysonSeries_neg (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeries (-p) t) :=
+  (commute_dysonSeriesLeft hp ha t).units_inv_right (u := ⟨_, _,
+    dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩)
 
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
