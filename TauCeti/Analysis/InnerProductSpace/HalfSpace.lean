@@ -15,9 +15,11 @@ A translation orthogonal to the normal vector preserves a strict half-space. The
 `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
 closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
-`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). In rigid coordinates
-`e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
-where it is positive is a half-space.
+`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). For `x` in the closed
+half-space `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the
+open half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). In rigid
+coordinates `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so
+the region where it is positive is a half-space.
 -/
 
 public section
@@ -67,6 +69,24 @@ theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
     rw [inner_neg_right, norm_neg]
     linarith
   simpa [inner_neg_right] using closedBall_subset_setOf_inner_lt h' hy
+
+/-- For a point `x` of the closed half-space `{z | c ≤ ⟪z, ν⟫}`, `ν ≠ 0`, the open ball of radius
+`ρ` about `x + (ρ / ‖ν‖) ν` lies in the open half-space `{z | c < ⟪z, ν⟫}`. -/
+theorem ball_add_smul_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ν x : E} {c ρ : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫_ℝ) :
+    Metric.ball (x + (ρ / ‖ν‖) • ν) ρ ⊆ {z | c < ⟪z, ν⟫_ℝ} := by
+  intro z hz
+  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
+  set w := z - (x + (ρ / ‖ν‖) • ν)
+  have hw : ‖w‖ * ‖ν‖ < ρ * ‖ν‖ :=
+    mul_lt_mul_of_pos_right (by rw [← dist_eq_norm]; exact hz) hν0
+  have hc : ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ = ρ * ‖ν‖ := by
+    rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
+    field_simp
+  have hz' : ⟪z, ν⟫_ℝ = ⟪x, ν⟫_ℝ + ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ + ⟪w, ν⟫_ℝ := by
+    simp only [w, inner_sub_left, inner_add_left]
+    ring
+  exact Set.mem_ofPred.2 (by linarith [neg_le_of_abs_le (abs_real_inner_le_norm w ν)])
 
 end TauCeti
 
