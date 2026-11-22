@@ -232,13 +232,14 @@ namespace TauCeti
 open MeasureTheory
 open scoped ENNReal NNReal
 
-/-- **Lower exponents on a finite measure space.** If a bounded linear map `S : X → L^{p⋆}(μ)`
-represents `v`, that is `S u = v u` almost everywhere, and `μ` is finite, then
+/-- **Lower exponents on a finite measure space.** If a bounded (semi)linear map
+`S : X → L^{p⋆}(μ)` represents `v`, that is `S u = v u` almost everywhere, and `μ` is finite, then
 `‖v u‖_{L^q(μ)} ≤ C ‖u‖` for every `q ≤ p⋆`, by Hölder's inequality. -/
-theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [SeminormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {pstar q : ℝ≥0∞} [Fact (1 ≤ pstar)] (hm : m Set.univ ≠ ∞)
-    (hq : q ≤ pstar) (S : X →L[ℝ] Lp F pstar m) {v : X → alpha → F}
+theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha 𝕜 𝕜' X F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+    {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ] [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] {pstar q : ℝ≥0∞} [Fact (1 ≤ pstar)]
+    (hm : m Set.univ ≠ ∞) (hq : q ≤ pstar) (S : X →SL[σ] Lp F pstar m) {v : X → alpha → F}
     (hS : ∀ u, S u =ᵐ[m] v u) :
     ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q m ≤ C * ‖u‖ₑ := by
   rcases eq_or_ne q 0 with rfl | hq0
@@ -302,14 +303,11 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
           Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
           Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h)]
           with z hz hA hB hadd hsA hsB
-        rw [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, Pi.smul_apply, hA, hB, smul_eq_mul,
-          smul_eq_mul, Real.norm_of_nonneg (add_nonneg (mul_nonneg ha (norm_nonneg _))
-            (mul_nonneg hb (norm_nonneg _)))]
-        exact hz
+        simp only [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, smul_eq_mul, hA, hB]
+        exact hz.trans (Real.le_norm_self _)
     _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ := norm_add_le _ _
     _ = a * ‖g‖ + b * ‖h‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb,
-          Lp.norm_normLp, Lp.norm_normLp]
+        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, Lp.norm_normLp]
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
@@ -513,11 +511,12 @@ theorem memLp_clm_apply_and_integral_norm_sq_le {α 𝕜 E F : Type*} [Measurabl
       |>.comp_aestronglyMeasurable (hB.prodMk hf.aestronglyMeasurable)) hle
   exact ⟨hm, integral_norm_sq_le_sq_mul_of_norm_le hm hf hle⟩
 
-/-- **A continuous linear map preserves convergence in `L²`.** If `∫ ‖f n - g‖² → 0` for
+/-- **A continuous (semi)linear map preserves convergence in `L²`.** If `∫ ‖f n - g‖² → 0` for
 `f n, g ∈ L²`, then `∫ ‖T (f n) - T g‖² → 0`. -/
-theorem tendsto_integral_norm_clm_apply_sub_sq {α 𝕜 E F : Type*} [MeasurableSpace α]
-    {μ : Measure α} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) {f : ℕ → α → E} {g : α → E}
+theorem tendsto_integral_norm_clm_apply_sub_sq {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [RingHomIsometric σ] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜' F] (T : E →SL[σ] F) {f : ℕ → α → E} {g : α → E}
     (hf : ∀ n, MemLp (f n) 2 μ) (hg : MemLp g 2 μ)
     (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
     Tendsto (fun n ↦ ∫ x, ‖T (f n x) - T (g x)‖ ^ 2 ∂μ) atTop (𝓝 0) := by
@@ -537,9 +536,8 @@ theorem exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq {α E : Type*}
     ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ t ∂μ, Tendsto (fun k ↦ f (ns k) t) atTop (𝓝 (g t)) := by
   refine (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) two_ne_zero ?_).exists_seq_tendsto_ae
   simp_rw [fun n ↦ ((hf n).sub hg).eLpNorm_two_eq_ofReal_sqrt_integral, Pi.sub_apply]
-  have := ((ENNReal.continuous_ofReal.comp Real.continuous_sqrt).tendsto 0).comp h
-  rw [Function.comp_apply, Real.sqrt_zero, ENNReal.ofReal_zero] at this
-  exact this
+  simpa only [Function.comp_def, Real.sqrt_zero, ENNReal.ofReal_zero] using
+    ((ENNReal.continuous_ofReal.comp Real.continuous_sqrt).tendsto 0).comp h
 
 /-- **Pointwise bounds pass to limits in `L²`.** If `∫ ‖f n - g‖² → 0` for `f n, g ∈ L²`, each
 `φ x` is continuous and `φ x (f n x) ≤ c n` almost everywhere with `c n → M`, then
@@ -666,9 +664,7 @@ theorem MemLp.integrableOn_of_subset {p : ℝ≥0∞}
     (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
     IntegrableOn g s μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hgs : MemLp g p (μ.restrict s) := by
-    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
-  exact hgs.integrable hp
+  exact (hg.mono_measure (Measure.restrict_mono hst le_rfl)).integrable hp
 
 /-- For a function `g` in `L²(t)`, the squared distance `‖g - c‖²` to a constant `c` is integrable
 on every subset `s ⊆ t` of finite measure. -/
@@ -676,9 +672,8 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset
     (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
     IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hgs : MemLp g 2 (μ.restrict s) := by
-    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
-  exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+  exact ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).sub
+    (memLp_const c)).integrable_norm_pow two_ne_zero
 
 /-- For a function `g` in `L²(U)` and `ball z R ⊆ U`, the `L²` mass `∫_{B(z, t) ∩ H} ‖g‖²` is
 nondecreasing in the radius `t ≤ R`, for any set `H`. -/
@@ -701,11 +696,8 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hgs : MemLp g q (μ.restrict s) := hg.mono_measure (Measure.restrict_mono hst le_rfl)
   have hexp : 0 ≤ 1 / 2 - 1 / q.toReal := by
-    rcases eq_or_ne q ∞ with rfl | hq'
-    · simp
-    · rw [sub_nonneg]
-      exact one_div_le_one_div_of_le two_pos
-        (by simpa using (ENNReal.toReal_le_toReal (by simp) hq').2 hq)
+    simpa only [ENNReal.toReal_ofNat] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg two_ne_zero hq
   -- Hölder's inequality on `s`: `‖g‖_{L²(s)} ≤ ‖g‖_{L^q(t)} μ(s)^{1/2-1/q}`.
   have hH : (eLpNorm g 2 (μ.restrict s)).toReal ≤
       (eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal) := by
@@ -911,12 +903,8 @@ variable {α E F 𝕜₁ 𝕜₂ : Type*} {_ : MeasurableSpace α} {μ : Measure
 /-- Post-composing an `Lᵖ` function with a semilinear isometry preserves its `Lᵖ` norm. -/
 @[simp]
 theorem norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
-    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
-  rw [Lp.norm_def, Lp.norm_def]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
-  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with x hx
-  rw [hx, L.coe_toContinuousLinearMap, L.norm_map]
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ :=
+  L.toContinuousLinearMap.norm_compLp_of_isometry L.isometry f
 
 /-- Post-composing an `Lᵖ` function with a semilinear isometry via `compLpL` preserves its `Lᵖ`
 norm. -/
@@ -934,13 +922,10 @@ variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ
 /-- Pointwise evaluation at `1 : 𝕜` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ` norm. -/
 @[simp]
 theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
-    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
-  have h : ContinuousLinearMap.apply 𝕜 E (1 : 𝕜) =
-      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.toContinuousLinearMap := by
-    ext φ
-    simp
-  rw [h]
-  exact (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.norm_compLp f
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ :=
+  -- evaluation at `1` is the isometry `(toSpanSingletonLIE 𝕜 E).symm`
+  norm_compLp_of_isometry (AddMonoidHomClass.isometry_of_norm _ fun φ ↦ by
+    rw [apply_apply, ← toSpanSingletonLIE_symm_apply, LinearIsometryEquiv.norm_map]) f
 
 /-- Pointwise evaluation at `1 : 𝕜` via `compLpL` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ`
 norm. -/
