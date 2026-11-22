@@ -103,6 +103,17 @@ theorem chartComponent_zero (v : F) :
   ext φ
   simp
 
+/-- The components along a basis of the model fibre determine all components: the component along
+`v` is the combination of those along `b i` with the coordinates of `v`. -/
+theorem chartComponent_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct T v = ∑ i, (b.repr v i : ℂ) • t.chartComponent c hc hct T (b i) := by
+  ext φ
+  simp only [chartComponent_apply, sum_apply, smul_apply, smul_eq_mul,
+    ← chartDistributionCLM_apply_apply]
+  conv_lhs => rw [← b.sum_repr v]
+  simp only [map_sum, map_smul, smul_eq_mul, ofReal_sum, ofReal_mul]
+
 /-! ### Changes of chart and frame -/
 
 section Transition
