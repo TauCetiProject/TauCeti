@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Rat.Lemmas
 
+import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -84,12 +85,15 @@ theorem den_dvd_iff_exists_mul_intCast_eq (r : ℚ) (a : ℤ) :
 denominator divides it**: for `0 ≤ r`, `r.den ∣ n` if and only if `r * n` is a natural number. -/
 theorem den_dvd_iff_exists_mul_natCast_eq {r : ℚ} (hr : 0 ≤ r) (n : ℕ) :
     r.den ∣ n ↔ ∃ k : ℕ, r * n = k := by
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num.toNat * c, ?_⟩, fun ⟨k, hk⟩ ↦ ?_⟩
-  · have hnum : (r.num.toNat : ℚ) = r.num := by
-      exact_mod_cast Int.toNat_of_nonneg (num_nonneg.mpr hr)
-    rw [hc, Nat.cast_mul, ← mul_assoc, mul_den_eq_num, Nat.cast_mul, hnum]
-  · exact Int.natCast_dvd_natCast.mp
-      (den_dvd_of_intCast_eq_mul_intCast r (by exact_mod_cast hk.symm))
+  rw [← Int.natCast_dvd_natCast, den_dvd_iff_exists_mul_intCast_eq r (n : ℤ)]
+  refine ⟨fun ⟨z, hz⟩ ↦ ⟨z.toNat, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k, by exact_mod_cast hk⟩⟩
+  have hz0 : 0 ≤ z := by
+    have hq : (0 : ℚ) ≤ (z : ℚ) := by
+      rw [← hz]
+      exact mul_nonneg hr (by exact_mod_cast Nat.zero_le n)
+    exact_mod_cast hq
+  rw [← Int.cast_natCast (R := ℚ) z.toNat, Int.toNat_of_nonneg hz0]
+  exact_mod_cast hz
 
 end Rat
 

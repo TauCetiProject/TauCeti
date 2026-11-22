@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.GroupTheory.Perm.TranspositionGenerated
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.PermInvariant
-import Mathlib.Data.Finset.Sort
+import Mathlib.Data.Fin.Tuple.Sort
 import TauCeti.Data.Finsupp.Single
 import TauCeti.Order.Fin.Antitone
 
@@ -153,25 +153,15 @@ private noncomputable def sortOrbitDesc (m : MonomialOrder σ) (S : Type*) [Fini
       ∀ {k₁ k₂}, k₁ < k₂ → Finsupp.single (emb (e k₂)) 1 ≺[m] Finsupp.single (emb (e k₁)) 1 } := by
   classical
   let _ : Fintype S := Fintype.ofFinite S
-  let f : S → m.syn := fun i => m.toSyn (Finsupp.single (emb i) 1)
-  have hf : Function.Injective f := fun _ _ hab =>
+  let e : Fin (Nat.card S) ≃ S :=
+    (Fin.castOrderIso Nat.card_eq_fintype_card).toEquiv.trans (Fintype.equivFin S).symm
+  let f : Fin (Nat.card S) → m.syn := fun k => m.toSyn (Finsupp.single (emb (e k)) 1)
+  have hf : Function.Injective f := fun _ _ hab => e.injective <|
     emb.injective ((Finsupp.single_left_inj (one_ne_zero : (1 : ℕ) ≠ 0)).mp (m.toSyn.injective hab))
-  let img : Finset m.syn := Finset.univ.image f
-  have hcard : img.card = Nat.card S := by
-    rw [Finset.card_image_of_injective _ hf, Finset.card_univ, Nat.card_eq_fintype_card]
-  let ord : Fin (Nat.card S) ↪o m.syn := img.orderEmbOfFin hcard
-  let g : Fin (Nat.card S) → S :=
-    fun k => (Finset.mem_image.mp (Finset.orderEmbOfFin_mem img hcard k.rev)).choose
-  have hfg : ∀ k, f (g k) = ord k.rev :=
-    fun k => (Finset.mem_image.mp (Finset.orderEmbOfFin_mem img hcard k.rev)).choose_spec.right
-  have hg_inj : Function.Injective g := fun k₁ k₂ h =>
-    Fin.rev_injective (ord.injective (by rw [← hfg k₁, ← hfg k₂, h]))
-  refine ⟨Equiv.ofBijective g ((Fintype.bijective_iff_injective_and_card g).mpr
-    ⟨hg_inj, by rw [Fintype.card_fin, Nat.card_eq_fintype_card]⟩), fun {k₁ k₂} hk => ?_⟩
-  -- Unfold `≺[m]` to `<` on `m.syn`, matching the definition of `f`.
-  change f (g k₂) < f (g k₁)
-  rw [hfg k₂, hfg k₁]
-  exact ord.strictMono (Fin.rev_lt_rev.mpr hk)
+  have hstrict : StrictAnti (f ∘ Tuple.sortDesc f) :=
+    (Tuple.antitone_sortDesc f).strictAnti_of_injective (hf.comp (Tuple.sortDesc f).injective)
+  refine ⟨(Tuple.sortDesc f).trans e, fun {k₁ k₂} hk => ?_⟩
+  exact hstrict hk
 
 /-- Among all `j`-element subsets of `S ↪ σ`, the `j` largest elements for `m` uniquely maximize
 the sum of their unit vectors. -/
@@ -191,10 +181,7 @@ private theorem sum_single_lt_topPrefix (m : MonomialOrder σ) {S : Type*} [Fini
       Finset.card_univ, Fintype.card_fin]
   let A := T \ T0
   let B := T0 \ T
-  have hAB_card : A.card = B.card := by
-    have h1 := Finset.card_inter_add_card_sdiff T T0
-    have h2 := Finset.card_inter_add_card_sdiff T0 T
-    rw [Finset.inter_comm] at h2; dsimp only [A, B]; omega
+  have hAB_card : A.card = B.card := Finset.card_sdiff_comm (hT.trans hT0_card.symm)
   have hA_nonempty : A.Nonempty := by
     by_contra hemp
     rw [Finset.not_nonempty_iff_eq_empty, Finset.sdiff_eq_empty_iff_subset] at hemp
@@ -453,13 +440,10 @@ theorem isSAGBIBasis_blockEsymmSet [Finite σ] [DecidableEq σ] (m : MonomialOrd
   have horb_mem : ∀ o i, i ∈ orb o ↔ Quotient.mk (MulAction.orbitRel G σ) i = o :=
     fun _ _ => by simp [orb]
   have hd_eq : d = ∑ o : MulAction.orbitRel.Quotient G σ,
-      ∑ i ∈ orb o, Finsupp.single i (d i) := by
-    ext a
-    simp only [Finsupp.finsetSum_apply, Finsupp.single_apply, Finset.sum_ite_eq']
-    rw [Finset.sum_eq_single (Quotient.mk (MulAction.orbitRel G σ) a)]
-    · simp [horb_mem]
-    · intro o _ ho; simp [horb_mem, Ne.symm ho]
-    · intro hnot; exact absurd (Finset.mem_univ _) hnot
+      ∑ i ∈ orb o, Finsupp.single i (d i) :=
+    (Finsupp.univ_sum_single d).symm.trans
+      (Finset.sum_fiberwise Finset.univ (Quotient.mk (MulAction.orbitRel G σ))
+        (fun i => Finsupp.single i (d i))).symm
   have hmon : monomial d (1 : R) ∈ Algebra.adjoin R (m.leadingTerm '' blockEsymmSet G R) := by
     rw [hd_eq, monomial_sum_one]
     exact Subalgebra.prod_mem _ fun o _ =>

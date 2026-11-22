@@ -338,22 +338,9 @@ theorem mem_initialAlgebra_iff :
     p ∈ m.initialAlgebra A ↔ (p.support : Set (σ →₀ ℕ)) ⊆ m.leadingExponents A := by
   classical
   refine ⟨fun hp ↦ ?_, fun hp ↦ ?_⟩
-  · induction hp using Algebra.adjoin_induction with
-    | mem _ hx =>
-      obtain ⟨f, hf, rfl⟩ := hx
-      rcases eq_or_ne f 0 with rfl | hf0
-      · simp
-      · simpa [support_leadingTerm' hf0] using degree_mem_leadingExponents hf hf0
-    | algebraMap c =>
-      rcases eq_or_ne c 0 with rfl | hc
-      · simp
-      · simp [support_C, hc]
-    | add x y _ _ hx hy =>
-      exact (Finset.coe_subset.2 support_add).trans (by simpa using And.intro hx hy)
-    | mul x y _ _ hx hy =>
-      refine (Finset.coe_subset.2 (support_mul x y)).trans ?_
-      rw [Finset.coe_add]
-      exact Set.add_subset_iff.2 fun a ha b hb ↦ add_mem (hx ha) (hy hb)
+  · rw [initialAlgebra_def] at hp
+    simpa [closure_image_degree_eq_leadingExponents] using
+      m.support_subset_closure_degree_of_mem_adjoin_leadingTerm hp
   · rw [p.as_sum]
     exact Subalgebra.sum_mem _ fun a ha ↦ monomial_mem_initialAlgebra_iff.2 (.inl (hp ha))
 
@@ -439,25 +426,18 @@ exponents is finitely generated. -/
 theorem exists_finite_isSAGBIBasis_iff_fg :
     (∃ B : Set (MvPolynomial σ k), B.Finite ∧ m.IsSAGBIBasis B A) ↔
       (m.leadingExponents A).FG := by
-  rw [AddSubmonoid.fg_iff]
-  constructor
-  · rintro ⟨B, hBfin, hB⟩
-    refine ⟨m.degree '' (B \ {0}), le_antisymm ?_ ?_, (hBfin.subset Set.sdiff_subset).image _⟩
-    · rw [AddSubmonoid.closure_le]
-      rintro _ ⟨b, ⟨hb, hb0⟩, rfl⟩
-      exact degree_mem_leadingExponents (hB.subset hb) hb0
-    · rintro _ ⟨f, hf, hf0, rfl⟩
-      exact (isSAGBIBasis_iff_degree_mem_closure.1 hB).2 f hf hf0
-  · rintro ⟨S, hS, hSfin⟩
-    have hex (a : σ →₀ ℕ) (ha : a ∈ S) : ∃ f ∈ A, f ≠ 0 ∧ m.degree f = a := by
-      rw [← mem_leadingExponents_iff, ← hS]
-      exact AddSubmonoid.subset_closure ha
-    choose! f hfA hf0 hfa using hex
-    refine ⟨f '' S, hSfin.image f, isSAGBIBasis_iff_degree_mem_closure.2 ⟨?_, fun g hg hg0 ↦ ?_⟩⟩
-    · rintro _ ⟨a, ha, rfl⟩
-      exact hfA a ha
-    · refine AddSubmonoid.closure_mono ?_ (hS ▸ degree_mem_leadingExponents hg hg0)
-      exact fun a ha ↦ ⟨f a, ⟨⟨a, ha, rfl⟩, hf0 a ha⟩, hfa a ha⟩
+  refine ⟨fun ⟨_, hBfin, hB⟩ ↦ m.fg_leadingExponents_of_finite_isSAGBIBasis hBfin hB, fun hfg ↦ ?_⟩
+  rw [AddSubmonoid.fg_iff] at hfg
+  obtain ⟨S, hS, hSfin⟩ := hfg
+  have hex (a : σ →₀ ℕ) (ha : a ∈ S) : ∃ f ∈ A, f ≠ 0 ∧ m.degree f = a := by
+    rw [← mem_leadingExponents_iff, ← hS]
+    exact AddSubmonoid.subset_closure ha
+  choose! f hfA hf0 hfa using hex
+  refine ⟨f '' S, hSfin.image f, isSAGBIBasis_iff_degree_mem_closure.2 ⟨?_, fun g hg hg0 ↦ ?_⟩⟩
+  · rintro _ ⟨a, ha, rfl⟩
+    exact hfA a ha
+  · refine AddSubmonoid.closure_mono ?_ (hS ▸ degree_mem_leadingExponents hg hg0)
+    exact fun a ha ↦ ⟨f a, ⟨⟨a, ha, rfl⟩, hf0 a ha⟩, hfa a ha⟩
 
 end Field
 
