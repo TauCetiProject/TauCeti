@@ -264,18 +264,12 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
     (htr : ∀ s, ι s ∈ K → α₀.reebVectorField (ι s) ∉ (mfderiv J I ι s).range) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, TauCeti.mpullback I I φ α₁.val x = α₀.val x := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · -- For empty `K`, the partial diffeomorphism with empty source will do.
-    refine ⟨(Diffeomorph.refl I M ∞).toPartialDiffeomorph.restrOpen ∅ isOpen_empty, by simp,
-      by simp, by simp, fun x hx ↦ ?_⟩
-    simp at hx
   -- Restrict to an open neighbourhood `W` of `K` on which the segment is contact and transverse.
   obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval
     fun x hx v _ w _ ↦ by rw [hd x hx]
   obtain ⟨V, hV, hKV, htrV⟩ :=
     exists_isOpen_forall_notMem_range_mfderiv hι himm hind hdim hN hcN hKN hKι hval hd htr
   set W : TopologicalSpace.Opens M := ⟨N ∩ V, hN.inter hV⟩
-  have hW : Nonempty W := ⟨⟨x₀, hKN hx₀, hKV hx₀⟩⟩
   have := Manifold.sigmaCompactSpace_opens I W
   have := Manifold.metrizableSpace I W
   set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
@@ -302,14 +296,11 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
       fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
-  refine ⟨φ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · exact (PartialDiffeomorph.liftOpens_source φ hW hW).symm ▸ ⟨⟨x, hKN hx, hKV hx⟩, hsrc hx, rfl⟩
-  · exact (PartialDiffeomorph.liftOpens_target φ hW hW).symm ▸ ⟨⟨x, hKN hx, hKV hx⟩, htgt hx, rfl⟩
-  · exact (φ.liftOpens_apply_coe hW hW ⟨x, hKN hx, hKV hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKN hx, hKV hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
-  rw [mpullback_liftOpens_apply_coe φ (by simp) hW hW α₁.val hy, ← coe_mpullback]
+  obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ := exists_partialDiffeomorph_mpullback_apply_eq_of_opens
+    (by simp) (W := W) (fun x hx ↦ ⟨hKN hx, hKV hx⟩) φ hsrc htgt hfix α₁.val
+  refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
+  rw [hΦy, ← coe_mpullback]
   exact (hφ y hy).trans (coe_mpullback_subtype_val_apply α₀ y)
 
 end TauCeti.SmoothForm

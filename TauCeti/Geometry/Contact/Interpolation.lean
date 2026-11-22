@@ -175,15 +175,9 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
       mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.val x = g • α₀.val x := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · -- For empty `K`, the partial diffeomorphism with empty source will do.
-    refine ⟨(Diffeomorph.refl I M ∞).toPartialDiffeomorph.restrOpen ∅ isOpen_empty, by simp,
-      by simp, by simp, fun x hx ↦ ?_⟩
-    simp at hx
   -- Restrict both forms to an open neighbourhood `W` of `K` on which the segment is contact.
   obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval hd
   set W : TopologicalSpace.Opens M := ⟨N, hN⟩
-  have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
   set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
     mpullback (Subtype.val : W → M) contMDiff_subtypeVal
   have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
@@ -195,17 +189,12 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
       hcW fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
-  refine ⟨φ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.liftOpens_source]
-    exact ⟨⟨x, hKN hx⟩, hsrc hx, rfl⟩
-  · rw [PartialDiffeomorph.liftOpens_target]
-    exact ⟨⟨x, hKN hx⟩, htgt hx, rfl⟩
-  · exact (φ.liftOpens_apply_coe hW hW ⟨x, hKN hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKN hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
+  obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ :=
+    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix α₁.val
+  refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
   obtain ⟨g, hg, hφy⟩ := hφ y hy
-  refine ⟨g, hg, (mpullback_liftOpens_apply_coe φ (by simp) hW hW α₁.val hy).trans ?_⟩
+  refine ⟨g, hg, hΦy.trans ?_⟩
   rw [coe_mpullback, coe_mpullback] at hφy
   exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))
 
