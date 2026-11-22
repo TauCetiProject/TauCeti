@@ -382,55 +382,46 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
+private theorem isCompact_toWeakSpace_of_isBounded_of_seqClosed {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
+    {S : Set E} (hS : IsBounded S)
+    (hclosed : ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ S) →
+      Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ S) :
+    IsCompact (toWeakSpace 𝕜 E '' S) := by
+  rw [TauCeti.isCompact_toWeakSpace_iff_isSeqCompact]
+  intro w hw
+  choose u hu hwu using hw
+  have hcomp : IsCompact (closure (toWeakSpace 𝕜 E '' S)) :=
+    TauCeti.isCompact_closure_toWeakSpace_of_isBounded hE hS
+  obtain ⟨x, φ, hφ, hlim⟩ :=
+    TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp hu
+  refine ⟨toWeakSpace 𝕜 E x, mem_image_of_mem _ (hclosed (fun n => hu (φ n)) hlim), φ, hφ, ?_⟩
+  simpa only [Function.comp_def, hwu] using hlim
+
 /-- Weak compactness of bounded parts of the constrained sphere in a reflexive space: for closed
 `W ≤ H` and every radius `R`, `P.unitConstraint W ∩ closedBall 0 R` is weakly compact. -/
 theorem isCompact_toWeakSpace_unitConstraint_inter_closedBall (P : CompactFormPair 𝕜 E H)
     (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) (R : ℝ) :
     IsCompact (toWeakSpace 𝕜 E '' (P.unitConstraint W ∩ closedBall 0 R)) := by
-  rw [TauCeti.isCompact_toWeakSpace_iff_isSeqCompact]
-  intro w hw
-  have hu : ∀ n, (toWeakSpace 𝕜 E).symm (w n) ∈ P.unitConstraint W ∩ closedBall 0 R := by
-    intro n
-    obtain ⟨v, hv, hvw⟩ := hw n
-    simpa [← hvw] using hv
-  have hwball : ∀ n, w n ∈ toWeakSpace 𝕜 E '' closedBall (0 : E) R :=
-    fun n => let ⟨v, hv, hvw⟩ := hw n; ⟨v, hv.2, hvw⟩
-  obtain ⟨_, ⟨x, hxball, rfl⟩, φ, hφ, hlim⟩ :=
-    TauCeti.isSeqCompact_toWeakSpace_of_isCompact
-      (TauCeti.isCompact_toWeakSpace_closedBall hE 0 R) hwball
-  have hlim_symm :
-      Tendsto (fun n => toWeakSpace 𝕜 E ((toWeakSpace 𝕜 E).symm (w (φ n))))
-        atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
-    simpa only [Function.comp_def, LinearEquiv.apply_symm_apply] using hlim
-  have hxW : x ∈ P.unitConstraint W :=
-    P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu (φ n)).1) hlim_symm
-  exact ⟨toWeakSpace 𝕜 E x, mem_image_of_mem _ ⟨hxW, hxball⟩, φ, hφ, hlim⟩
+  refine isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
+    (isBounded_closedBall.subset inter_subset_right) fun u x hu hlim => ⟨?_, ?_⟩
+  · exact P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu n).1) hlim
+  · have hclosed := (TauCeti.isCompact_toWeakSpace_closedBall hE 0 R).isClosed
+    exact (toWeakSpace 𝕜 E).injective.mem_set_image.mp <|
+      hclosed.mem_of_tendsto hlim (Eventually.of_forall fun n => mem_image_of_mem _ (hu n).2)
 
 /-- Weak compactness of every constrained energy sublevel in a reflexive space. -/
 theorem isCompact_toWeakSpace_sublevel_unitConstraint (P : CompactFormPair 𝕜 E H)
     (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) (b : ℝ) :
     IsCompact (toWeakSpace 𝕜 E '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) := by
-  rw [TauCeti.isCompact_toWeakSpace_iff_isSeqCompact]
-  intro w hw
-  have hu : ∀ n, (toWeakSpace 𝕜 E).symm (w n) ∈ {u ∈ P.unitConstraint W | P.energy u ≤ b} := by
-    intro n
-    obtain ⟨v, hv, hvw⟩ := hw n
-    simpa [← hvw] using hv
-  have hcomp :
-      IsCompact (closure (toWeakSpace 𝕜 E '' {u ∈ P.unitConstraint W | P.energy u ≤ b})) :=
-    TauCeti.isCompact_closure_toWeakSpace_of_isBounded hE
-      ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
-  obtain ⟨x, φ, hφ, hlim⟩ :=
-    TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp hu
-  have hlim' : Tendsto (fun n => w (φ n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
-    simpa only [LinearEquiv.apply_symm_apply] using hlim
-  have hxW : x ∈ P.unitConstraint W :=
-    P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu (φ n)).1) hlim
-  have hxb : P.energy x ≤ b :=
-    P.energy_le_of_tendsto_toWeakSpace_of_le hlim fun n => (hu (φ n)).2
-  exact ⟨toWeakSpace 𝕜 E x, mem_image_of_mem _ ⟨hxW, hxb⟩, φ, hφ, hlim'⟩
+  refine isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
+    ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
+    fun u x hu hlim => ⟨?_, ?_⟩
+  · exact P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu n).1) hlim
+  · exact P.energy_le_of_tendsto_toWeakSpace_of_le hlim fun n => (hu n).2
 
 /-- Norm compactness of the set of constrained minimizers on `P.unitConstraint W` in a reflexive
 space whenever `W` is norm-closed. -/
@@ -592,15 +583,19 @@ private theorem re_shift_form_eq_zero_of_isMinOn (P : CompactFormPair 𝕜 E H)
   let B : LinearMap.BilinForm ℝ V₀ := P'.form.toBilinForm.domRestrict₁₂ V₀ V₀
   have hB_apply : ∀ x y : V₀, B x y = P'.form x.1 y.1 := fun _ _ => by
     rw [LinearMap.domRestrict₁₂_apply, ContinuousLinearMap.toBilinForm_apply]
-  have hs : ∀ x : V₀, 0 ≤ B x x := fun x => by
+  have hB_diag : ∀ x : V₀, B x x = P.energy x.1 - P.energy u * ‖P.inclusion x.1‖ ^ 2 := fun x => by
     rw [hB_apply, ← RCLike.re_to_real (x := P'.form x.1 x.1), ← energy_def,
       restrictScalars_energy, shift_energy]
+    ring
+  have hs : ∀ x : V₀, 0 ≤ B x x := fun x => by
+    rw [hB_diag]
     linarith [hquad x.1 x.2]
   have hB : LinearMap.IsSymm B := ⟨fun x y => by
     rw [hB_apply, hB_apply, RingHom.id_apply, P'.hermitian x.1 y.1, star_trivial]⟩
   have hBu : B ⟨u, hu.1⟩ ⟨u, hu.1⟩ = 0 := by
-    rw [hB_apply, ← RCLike.re_to_real (x := P'.form u u), ← energy_def,
-      restrictScalars_energy, shift_energy, hu.2]
+    rw [hB_diag]
+    dsimp only
+    rw [hu.2]
     ring
   have hker : ⟨u, hu.1⟩ ∈ LinearMap.ker B := (B.apply_apply_same_eq_zero_iff hs hB).mp hBu
   intro w hwW
