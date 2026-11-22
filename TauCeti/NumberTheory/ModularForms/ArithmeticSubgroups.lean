@@ -58,6 +58,10 @@ noncomputable def projectiveIndex (H : Subgroup G) : ℕ :=
 theorem projectiveIndex_def (H : Subgroup G) : H.projectiveIndex = H.adjoinNegOne.index :=
   (rfl)
 
+/-- `±H` has finite index whenever `H` does. -/
+instance finiteIndex_adjoinNegOne (H : Subgroup G) [H.FiniteIndex] : H.adjoinNegOne.FiniteIndex :=
+  finiteIndex_of_le H.le_adjoinNegOne
+
 /-- The projective index divides the index. -/
 theorem projectiveIndex_dvd_index (H : Subgroup G) : H.projectiveIndex ∣ H.index :=
   index_dvd_of_le H.le_adjoinNegOne

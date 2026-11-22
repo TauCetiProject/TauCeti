@@ -202,6 +202,11 @@ coset. -/
   obtain ⟨j, hj⟩ := exists_zpow_smul_eq_out (𝒢 := 𝒢) q
   rw [cuspTranslationOrbitWidth, ← hj, minimalPeriod_zpow_smul]
 
+/-- Translating a coset by a power of `T` does not change its period. -/
+lemma minimalPeriod_TSL_zpow_smul (j : ℤ) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
+    minimalPeriod (TSL • ·) (TSL ^ j • q) = minimalPeriod (TSL • ·) q :=
+  minimalPeriod_zpow_smul TSL j q
+
 /-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
 when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these
 exponents. When the period is positive — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` — it is
@@ -545,6 +550,29 @@ lemma sum_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ] :
       Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :=
   ((𝒢.subgroupOf 𝒮ℒ).index_eq_card ▸
     Subgroup.index_eq_sum_minimalPeriod (𝒢.subgroupOf 𝒮ℒ) TSL).symm
+
+/-- **A cusp translation orbit of width `m` contains `m` cosets**, in the form of a sum: weighting
+each coset by the reciprocal width of its orbit, a sum over the cosets is the sum over the
+orbits. -/
+lemma sum_div_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ]
+    [Fintype (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)] (G : CuspTranslationOrbit 𝒢 → ℚ) :
+    ∑ q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ,
+        G ⟦q⟧ / cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit 𝒢) =
+      ∑ c, G c := by
+  rw [← (Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm.sum_comp,
+    Fintype.sum_sigma]
+  refine Fintype.sum_congr _ _ fun c ↦ ?_
+  have hc (x : ZMod (minimalPeriod (TSL • ·) c.out)) :
+      (⟦(Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm ⟨c, x⟩⟧ :
+        CuspTranslationOrbit 𝒢) = c := by
+    rw [Subgroup.quotientEquivSigmaZMod_symm_apply]
+    exact (Quotient.sound (orbitRel_apply.mpr (mem_orbit _
+      (⟨TSL ^ (ZMod.cast x : ℤ), Subgroup.zpow_mem_zpowers _ _⟩ : Subgroup.zpowers TSL)))).trans
+      (Quotient.out_eq c)
+  have hw : (cuspTranslationOrbitWidth c : ℚ) ≠ 0 := by
+    exact_mod_cast (cuspTranslationOrbitWidth_pos c).ne'
+  simp only [hc, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
+  rw [← cuspTranslationOrbitWidth, mul_div_cancel₀ _ hw]
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
   [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
