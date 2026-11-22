@@ -68,6 +68,8 @@ at `f x`.
   curve `t ↦ φ⁻¹ (L t)` vanishes.
 * `OpenPartialHomeomorph.hasFDerivAt_comp_symm_trans`: the chain rule for transitions
   `ψ₀ ∘ ψ₂⁻¹ = (ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)` of open partial homeomorphisms into normed spaces.
+* `OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn`: the transition `ψ₂ ∘ ψ₁⁻¹` is
+  `C^n` on its source when `ψ₂` and `ψ₁⁻¹` are.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -163,6 +165,15 @@ theorem hasFDerivAt_comp_symm_trans (ψ₀ : OpenPartialHomeomorph M V₀)
       (ψ₁.open_source.mem_nhds (by rwa [ψ₂.left_inv hx₂]))
   filter_upwards [hsource] with z hz
   simp [ψ₁.left_inv hz]
+
+/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into normed spaces is
+`C^n` on its source when `ψ₂` is `C^n` on its source and `ψ₁⁻¹` is `C^n` on its target. -/
+theorem contDiffOn_symm_trans_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V₁}
+    {ψ₂ : OpenPartialHomeomorph M V₂} (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₂) n ψ₂ ψ₂.source)
+    (hψ₁ : ContMDiffOn 𝓘(𝕜, V₁) I n ψ₁.symm ψ₁.target) :
+    ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂) (ψ₁.symm.trans ψ₂).source := by
+  rw [trans_source, coe_trans]
+  exact contMDiffOn_iff_contDiffOn.1 (hψ₂.comp (hψ₁.mono Set.inter_subset_left) fun _ hy ↦ hy.2)
 
 end Transition
 
