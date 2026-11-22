@@ -146,35 +146,49 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
     exact ⟨N, fun k hk l hl ↦ hdist k l ▸ hN k hk l hl⟩
 
 /-- Shared continuous-martingale completion returning both the constructed Itô integral and a
-bounded simple-holding sequence whose elementary integrals converge almost surely uniformly on
+sequence of `ElementaryIntegrand`s whose elementary integrals converge almost surely uniformly on
 every finite horizon. -/
 private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
     (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P)
     (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
-    ∃ (I : ℝ≥0 → Ω → ℝ) (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
-      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
-      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
-      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
+    ∃ (I : ℝ≥0 → Ω → ℝ) (K : ℕ → ElementaryIntegrand ℱ),
       IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P ∧
       (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
-        (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
+        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
           ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
       ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
-        TendstoUniformlyOn (fun k t ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω)
+        TendstoUniformlyOn (fun k t ↦ (K k).integral W t ω)
           (I · ω) atTop (Iic T) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, hmem, hτ, ha, haC, hmart, hcau, hKH⟩ :=
     hH.exists_simpleGains_cauchySeq hW
   obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
     (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem hcau
-  refine ⟨I, fun k ↦ n (φ k), fun k ↦ τ (φ k), fun k ↦ a (φ k), fun k ↦ C (φ k),
-    fun k ↦ hτ (φ k), fun k ↦ ha (φ k), fun k ↦ haC (φ k),
-    ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨n, τ, a, hτ, ha,
+  let K (k : ℕ) : ElementaryIntegrand ℱ :=
+    ElementaryIntegrand.ofSimpleHolding (hτ k) (ha k)
+      fun j hj ↦ ⟨C k, fun ω ↦ by simpa [Real.norm_eq_abs] using haC k j hj ω⟩
+  have hK_proc (k : ℕ) :
+      (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) =
+        Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) - Function.uncurry H :=
+    funext fun p ↦ by
+      dsimp only [K, Pi.sub_apply, Function.uncurry_apply_pair]
+      rw [ElementaryIntegrand.toProcess_ofSimpleHolding]
+      rfl
+  have hK_gain (k : ℕ) (t : ℝ≥0) :
+      (K k).integral W t = Finance.simpleGains (τ k) (n k) (a k) W t :=
+    funext fun ω ↦ ElementaryIntegrand.integral_ofSimpleHolding (hτ k) (ha k) _ W t ω
+  refine ⟨I, fun k ↦ K (φ k),
+    ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨K,
       tendsto_measure_le_lintegral_enorm_sq_sub
-        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
-        (fun _ ↦ hH.isStronglyPredictable) (hKH t),
-      tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
-    hIp, hI, fun T ↦ (hKH T).comp hφ.tendsto_atTop, hIc.mono fun _ hω ↦ hω.2⟩
+        (fun k ↦ (K k).isStronglyPredictable)
+        (fun _ ↦ hH.isStronglyPredictable) (by simpa only [hK_proc] using hKH t),
+      by simpa only [hK_gain] using
+        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
+    hIp, hI,
+    fun T ↦ ((hKH T).comp hφ.tendsto_atTop).congr fun k ↦ by
+      dsimp only [Function.comp_def]; rw [hK_proc],
+    hIc.mono fun ω hω T ↦ by
+      simpa only [fun k t ↦ congr_fun (hK_gain (φ k) t) ω] using hω.2 T⟩
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable
@@ -183,28 +197,26 @@ is a predictable martingale. No usual conditions on the filtration are assumed. 
 theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianIntegrable ℱ P H)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
     ∃ I, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P := by
-  obtain ⟨I, -, -, -, -, -, -, -, hIito, hIp, hI, -, -⟩ := hH.exists_isItoIntegral_approx hW hWc
+  obtain ⟨I, -, hIito, hIp, hI, -, -⟩ := hH.exists_isItoIntegral_approx hW hWc
   exact ⟨I, hIito, hIp, hI⟩
 
 /-- Every Itô integral of a `BrownianIntegrable` integrand against an almost surely continuous
 filtered pre-Brownian motion is approximated almost surely uniformly on every finite horizon by a
-single sequence of bounded simple holdings whose holdings converge in `L²` on every horizon. -/
-theorem IsFilteredPreBrownianReal.exists_seq_simpleHolding_tendstoUniformlyOn
+single sequence of `ElementaryIntegrand`s whose represented processes converge in `L²` on every
+horizon. -/
+theorem IsFilteredPreBrownianReal.exists_seq_elementaryIntegrand_tendstoUniformlyOn
     (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
     {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
-    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
-      (∀ k, MonotoneOn (τ k) (Set.Iic (n k))) ∧
-      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
-      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
+    ∃ K : ℕ → ElementaryIntegrand ℱ,
       (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
-        (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
+        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
           ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
       ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
-        TendstoUniformlyOn (fun k t ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω)
+        TendstoUniformlyOn (fun k t ↦ (K k).integral W t ω)
           (I · ω) atTop (Set.Iic T) := by
-  obtain ⟨I₀, n, τ, a, C, hτ, ha, hb, hI₀ito, -, -, hKlim, hpath⟩ :=
+  obtain ⟨I₀, K, hI₀ito, -, -, hKlim, hpath⟩ :=
     hH.exists_isItoIntegral_approx hW hcont
-  refine ⟨n, τ, a, C, hτ, ha, hb, hKlim, hpath.mp ((isItoIntegral_unique hW hI hI₀ito).mono
+  refine ⟨K, hKlim, hpath.mp ((isItoIntegral_unique hW hI hI₀ito).mono
     fun ω heq hω T ↦ ?_)⟩
   -- Pointwise path indistinguishability rewrites the target path `I · ω` to `I₀ · ω`.
   have hfun : (fun t ↦ I t ω) = fun t ↦ I₀ t ω := funext heq

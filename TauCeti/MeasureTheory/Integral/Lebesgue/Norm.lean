@@ -45,10 +45,8 @@ theorem lintegral_enorm_sub_sq_le_two_mul {f g h : α → E}
       2 * ((∫⁻ x, ‖f x - h x‖ₑ ^ 2 ∂μ) + ∫⁻ x, ‖g x - h x‖ₑ ^ 2 ∂μ) := by
   rw [← lintegral_add_left' hfh, ← lintegral_const_mul' _ _ (by norm_num)]
   refine lintegral_mono fun x ↦ ?_
-  have hx := ENNReal.ofReal_le_ofReal (norm_sub_sq_le_two_mul (f x) (g x) (h x))
-  simpa only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
-    ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _), ENNReal.ofReal_pow (norm_nonneg _),
-    ofReal_norm, ENNReal.ofReal_ofNat] using hx
+  simpa only [sub_add_sub_cancel, eNorm_sub_rev (g x) (h x)] using
+    eNorm_add_sq_le (f x - h x) (h x - g x)
 
 /-- If two families `K` and `L` converge in section square energy in `ν`-measure to a common
 target `H`, then the section square energies of `K - L` converge to zero in `ν`-measure. Only

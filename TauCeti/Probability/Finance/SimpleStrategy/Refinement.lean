@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Data.Finset.Sort
+import TauCeti.Order.Interval.Set.ProjIcc
 
 /-!
 # Common trading grids
@@ -211,26 +212,13 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-private theorem Ioc_projIcc_eq_Ioc_inter {s t l r : ι} (hst : s ≤ t) (hlt : l ≤ t) :
-    Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι) =
-      Set.Ioc s t ∩ Set.Ioc l r := by
-  ext u
-  simp only [Set.mem_Ioc, Set.mem_inter_iff, Set.coe_projIcc, min_eq_right hlt, max_lt_iff,
-    le_max_iff, le_min_iff]
-  constructor
-  · rintro ⟨⟨hsu, hlu⟩, h1 | ⟨hut, hur⟩⟩
-    · exact absurd h1 hsu.not_ge
-    · exact ⟨⟨hsu, hut⟩, ⟨hlu, hur⟩⟩
-  · rintro ⟨⟨hsu, hut⟩, ⟨hlu, hur⟩⟩
-    exact ⟨⟨hsu, hlu⟩, Or.inr ⟨hut, hur⟩⟩
-
 private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t) (hlr : l ≤ r)
     (ξ c : ℝ) (u : ι) :
     (Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι)).indicator
         (fun _ ↦ if l ≤ t then ξ * c else 0) u =
       (Set.Ioc s t).indicator (fun _ ↦ ξ * (Set.Ioc l r).indicator (fun _ ↦ c) u) u := by
   by_cases hlt : l ≤ t
-  · rw [Ioc_projIcc_eq_Ioc_inter hst hlt]
+  · rw [Set.Ioc_projIcc_eq_Ioc_inter hst hlt]
     by_cases hus : u ∈ Set.Ioc s t <;> by_cases hul : u ∈ Set.Ioc l r <;>
       simp [hlt, hus, hul]
   · have htl : t < l := lt_of_not_ge hlt
@@ -245,10 +233,22 @@ private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t) (hlr : 
       simp [hus, hul]
     · simp [hus]
 
-private theorem min_coe_projIcc_eq {s t T : ι} (hst : s ≤ t) (hsT : s ≤ T) (r : ι) :
-    min (Set.projIcc s t hst r : ι) T = max s (min r (min T t)) := by
-  rw [Set.coe_projIcc, min_max_distrib_right, min_eq_left hsT]
-  ac_rfl
+private theorem sub_min_coe_projIcc_eq {s t T : ι} (hst : s ≤ t) (hsT : s ≤ T) (r : ι)
+    (f : ι → ℝ) :
+    f (min (Set.projIcc s t hst r : ι) T) - f s = f (min r (min T t)) - f (min r s) := by
+  rw [Set.min_coe_projIcc_eq hst hsT]
+  have hsu : s ≤ min T t := le_min hsT hst
+  rcases le_total r s with hrs | hsr
+  · simp [hrs, hrs.trans hsu]
+  · rw [max_eq_right (le_min hsr hsu), min_eq_right hsr]
+
+private theorem sub_min_coe_projIcc_sub {s t l r T : ι} (hst : s ≤ t) (hsT : s ≤ T)
+    (f : ι → ℝ) :
+    f (min (Set.projIcc s t hst r : ι) T) - f (min (Set.projIcc s t hst l : ι) T) =
+      (f (min r (min T t)) - f (min l (min T t))) - (f (min r s) - f (min l s)) := by
+  have hr := sub_min_coe_projIcc_eq hst hsT r f
+  have hl := sub_min_coe_projIcc_eq hst hsT l f
+  linarith
 
 private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l ≤ r)
     (ξ c : ℝ) (f : ι → ℝ) :
@@ -262,24 +262,8 @@ private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l �
     rw [min_eq_right hpl, min_eq_right hpr, min_eq_left (hTs.trans hst), min_eq_left hTs,
       sub_self, mul_zero, sub_self, mul_zero]
   · by_cases hlt : l ≤ t
-    · simp only [hlt, ite_true, min_coe_projIcc_eq hst hsT, min_eq_right hsT]
-      rw [show ξ * (c * (f (min r (min T t)) - f (min l (min T t))) -
-            c * (f (min r s) - f (min l s))) =
-          (ξ * c) * ((f (min r (min T t)) - f (min l (min T t))) -
-            (f (min r s) - f (min l s))) by ring]
-      congr 1
-      have hsu : s ≤ min T t := le_min hsT hst
-      rcases le_total l s with hls | hsl <;> rcases le_total r s with hrs | hsr
-      · simp [hls, hrs, hls.trans hsu, hrs.trans hsu]
-      · rw [max_eq_right (le_min hsr hsu), max_eq_left (min_le_of_left_le hls),
-          min_eq_left (hls.trans hsu), min_eq_right hsr, min_eq_left hls]
-        ring
-      · have hls_eq : l = s := (hlr.trans hrs).antisymm hsl
-        have hrs_eq : r = s := hrs.antisymm (hsl.trans hlr)
-        simp [hls_eq, hrs_eq, hsu]
-      · rw [max_eq_right (le_min hsl hsu), max_eq_right (le_min hsr hsu),
-          min_eq_right hsl, min_eq_right hsr]
-        ring
+    · simp only [hlt, ite_true, min_eq_right hsT]
+      rw [sub_min_coe_projIcc_sub hst hsT, mul_assoc, mul_sub]
     · have htl : t < l := lt_of_not_ge hlt
       have htr : t < r := htl.trans_le hlr
       simp only [hlt, ite_false, zero_mul]
@@ -315,7 +299,8 @@ theorem simpleHolding_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration 
     · simp only [hjt, ite_true]
       have hsσ : s ≤ σ j := (Set.projIcc s t hst (τ j)).property.1
       have hτσ : τ j ≤ σ j := by
-        rw [show σ j = max s (min t (τ j)) from Set.coe_projIcc s t hst (τ j)]
+        dsimp only [σ]
+        rw [Set.coe_projIcc]
         exact le_max_of_le_right (le_min hjt le_rfl)
       exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
     · simp only [hjt, ite_false]

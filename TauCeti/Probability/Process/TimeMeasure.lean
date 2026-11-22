@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -37,6 +38,19 @@ noncomputable def timeMeasure (T : ℝ≥0) : Measure ℝ≥0 :=
 theorem timeMeasure_def (T : ℝ≥0) :
     timeMeasure T = (Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 T) :=
   (rfl)
+
+/-- The coercion `ℝ≥0 → ℝ` is measure-preserving from `timeMeasure T` to Lebesgue measure on
+`(0, T]`. -/
+theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
+    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) where
+  measurable := NNReal.continuous_coe.measurable
+  map_eq := by
+    rw [timeMeasure_def, ← NNReal.comap_volume_restrict_Ioc,
+      NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
+      Measure.restrict_restrict
+        NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range]
+    congr 1
+    exact inter_eq_right.mpr fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
 
 /-- The mass of a measurable time set is its real Lebesgue mass within the horizon. -/
 theorem timeMeasure_apply (T : ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s) :
@@ -79,10 +93,16 @@ theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ 
 theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
-/-- The initial time carries no mass, independently of the horizon. -/
+/-- Every singleton time carries no mass under `timeMeasure T`. -/
 @[simp]
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
+  rw [timeMeasure_apply T (measurableSet_singleton t)]
+  exact measure_mono_null ((Set.image_mono Set.inter_subset_left).trans_eq Set.image_singleton)
+    Real.volume_singleton
+
+/-- The initial time carries no mass, independently of the horizon. -/
+theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 :=
+  timeMeasure_singleton T 0
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

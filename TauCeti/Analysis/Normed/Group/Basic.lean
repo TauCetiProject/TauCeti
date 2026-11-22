@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
@@ -107,14 +108,9 @@ additive monoid, `‖x + y‖ₑ ^ 2 ≤ 2 * (‖x‖ₑ ^ 2 + ‖y‖ₑ ^ 2)`.
 theorem eNorm_add_sq_le {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E] (x y : E) :
     ‖x + y‖ₑ ^ 2 ≤ 2 * (‖x‖ₑ ^ 2 + ‖y‖ₑ ^ 2) := by
   refine (pow_le_pow_left' (eNorm_add_le x y) 2).trans ?_
-  induction ‖x‖ₑ using ENNReal.recTopCoe with
-  | top => simp
-  | coe a =>
-    induction ‖y‖ₑ using ENNReal.recTopCoe with
-    | top => simp
-    | coe b =>
-      norm_cast
-      exact_mod_cast (add_sq_le (a := (a : ℝ)) (b := (b : ℝ)))
+  have h := ENNReal.rpow_add_le_mul_rpow_add_rpow ‖x‖ₑ ‖y‖ₑ (p := 2) one_le_two
+  norm_num at h
+  simpa [ENNReal.rpow_two] using h
 
 /-- **Squared triangle inequality for three summands.** The squared norm of `a + b + c` is at most
 three times the sum of the squared norms of `a`, `b` and `c`. -/

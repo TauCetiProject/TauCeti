@@ -8,19 +8,25 @@ module
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Topology.Order.Lattice
+public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
 # Bounded elementary predictable integrands
 
 `TauCeti.ElementaryIntegrand` records a finite nondecreasing trading grid and bounded
-real positions measurable at the left endpoints. These are presentations, not a quotient
-by equality of processes: repeated dates and the empty grid are allowed. The associated
-process uses intervals open on the left and closed on the right, and is zero at time zero.
+real positions measurable at the left endpoints. Repeated dates and the empty grid are allowed,
+with canonical values on degenerate data: the grid is `0` when `n = 0`, and the height on a
+degenerate interval `grid i.castSucc = grid i.succ` is `0`. Thus two presentations with the same
+number of intervals, nonempty-grid endpoints, and heights on nondegenerate intervals are equal
+(`ElementaryIntegrand.ext`). The associated process uses intervals open on the left and closed on
+the right, and is zero at time zero.
 
 The elementary integral is the existing `TauCeti.Finance.simpleGains`, not a new
-integration operator. Its finite-sum formula, path continuity, martingale property and
-finite-time Lᵖ membership provide the starting objects for stochastic-integral completion.
-Neither completion nor an integral of an arbitrary predictable process is asserted here.
+integration operator. Its finite-sum formula, path continuity, martingale property, finite-time Lᵖ
+membership, filtration monotonicity (`monoFiltration`), addition (`Add`), and construction from
+bounded monotone-grid simple holdings (`ofSimpleHolding`) provide the starting objects for
+stochastic-integral completion. Neither completion nor an integral of an arbitrary predictable
+process is asserted here.
 
 ## References
 
@@ -40,9 +46,9 @@ namespace TauCeti
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-- A finite-grid presentation of a bounded elementary real predictable integrand.
-The height on `(grid i, grid (i+1)]` is measurable at `grid i`. Boundedness is
-pointwise; no probability measure or usual-filtration condition is needed. -/
-@[ext]
+The height on `(grid i.castSucc, grid i.succ]` is measurable at `grid i.castSucc`. Boundedness is
+pointwise; no probability measure or usual-filtration condition is needed. On degenerate data
+(`n = 0` or `grid i.castSucc = grid i.succ`), the grid or height is canonically `0`. -/
 structure ElementaryIntegrand (ℱ : Filtration ℝ≥0 mΩ) where
   /-- Number of trading intervals. -/
   n : ℕ
@@ -56,28 +62,78 @@ structure ElementaryIntegrand (ℱ : Filtration ℝ≥0 mΩ) where
   measurable_height : ∀ i, StronglyMeasurable[ℱ (grid i.castSucc)] (height i)
   /-- Every position is bounded, uniformly over sample points. -/
   bounded_height : ∀ i, ∃ C : ℝ, ∀ ω, |height i ω| ≤ C
+  /-- Canonicalize the grid to `0` when there are no intervals. -/
+  grid_eq_zero_of_zero : n = 0 → grid = 0
+  /-- Canonicalize the height on a degenerate interval to `0`. -/
+  height_eq_zero_of_eq : ∀ i : Fin n, grid i.castSucc = grid i.succ → height i = 0
 
 namespace ElementaryIntegrand
 
+/-- Two `ElementaryIntegrand` presentations with the same interval count, matching grids when
+`0 < n`, and matching heights on every nondegenerate interval are equal. -/
+@[ext (iff := false)]
+theorem ext {ℱ : Filtration ℝ≥0 mΩ} {K L : ElementaryIntegrand ℱ} (hn : K.n = L.n)
+    (hgrid : 0 < K.n → ∀ i, K.grid i = L.grid (i.cast (by omega)))
+    (hheight : ∀ i, K.grid i.castSucc < K.grid i.succ →
+      K.height i = L.height (i.cast hn)) :
+    K = L := by
+  rcases K with ⟨n₁, g₁, mg₁, h₁, mh₁, bh₁, gz₁, hz₁⟩
+  rcases L with ⟨n₂, g₂, mg₂, h₂, mh₂, bh₂, gz₂, hz₂⟩
+  dsimp at hn
+  subst hn
+  have hg : g₁ = g₂ := by
+    by_cases hn0 : n₁ = 0
+    · rw [gz₁ hn0, gz₂ hn0]
+    · funext i
+      exact hgrid (Nat.pos_of_ne_zero hn0) i
+  have hh : h₁ = h₂ := by
+    funext i
+    rcases lt_or_eq_of_le (mg₁ i.castSucc_le_succ) with hlt | heq
+    · exact hheight i hlt
+    · exact (hz₁ i heq).trans (hz₂ i (by rw [← hg]; exact heq)).symm
+  subst hg
+  subst hh
+  rfl
+
 variable {ℱ : Filtration ℝ≥0 mΩ} (K : ElementaryIntegrand ℱ)
 
--- The old sum API has natural-number indices. Extend the finite data canonically;
--- these extensions carry no extra data in an elementary-integrand presentation.
-private def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
+/-- Canonical extension of `K.grid` to `ℕ`, constant after `K.n`. -/
+def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
 
-private def positions (j : ℕ) : Ω → ℝ :=
+/-- Canonical extension of `K.height` to `ℕ`, zero at indices `j ≥ K.n`. -/
+def positions (j : ℕ) : Ω → ℝ :=
   if h : j < K.n then K.height ⟨j, h⟩ else 0
 
-private theorem monotone_dates : Monotone K.dates := by
-  intro i j hij
-  exact K.monotone_grid (min_le_min_right _ hij)
+/-- On a trading interval index, `K.dates i` is the left endpoint `K.grid i.castSucc`. -/
+theorem dates_castSucc (i : Fin K.n) : K.dates i = K.grid i.castSucc := by
+  rw [dates]
+  congr 1
+  ext
+  simp
 
-private theorem measurable_positions (j : ℕ) (hj : j < K.n) :
+/-- On a trading interval index, `K.dates (i + 1)` is the right endpoint `K.grid i.succ`. -/
+theorem dates_succ (i : Fin K.n) : K.dates (i + 1) = K.grid i.succ := by
+  simp [dates, Fin.succ]
+
+/-- On a trading interval index, `K.positions i` equals `K.height i`. -/
+theorem positions_eq (i : Fin K.n) : K.positions i = K.height i := by
+  simp [positions, i.isLt]
+
+/-- The extended grid `K.dates` is monotone. -/
+theorem monotone_dates : Monotone K.dates := fun _ _ hij ↦
+  K.monotone_grid (min_le_min_right _ hij)
+
+/-- Every extended position `K.positions j` for `j < K.n` is strongly measurable at `K.dates j`. -/
+theorem measurable_positions (j : ℕ) (hj : j < K.n) :
     StronglyMeasurable[ℱ (K.dates j)] (K.positions j) := by
-  have hd : K.dates j = K.grid (⟨j, hj⟩ : Fin K.n).castSucc := by
-    simp [dates, Nat.min_eq_left hj.le, Fin.castSucc]
-  rw [hd]
-  simpa only [positions, dite_eq_left hj] using K.measurable_height ⟨j, hj⟩
+  rw [K.dates_castSucc ⟨j, hj⟩, K.positions_eq ⟨j, hj⟩]
+  exact K.measurable_height ⟨j, hj⟩
+
+/-- Every extended position `K.positions j` is uniformly bounded. -/
+theorem bounded_positions (j : ℕ) : ∃ C : ℝ, ∀ ω, |K.positions j ω| ≤ C := by
+  by_cases hj : j < K.n
+  · simpa [positions, hj] using K.bounded_height ⟨j, hj⟩
+  · exact ⟨0, fun ω ↦ by simp [positions, hj]⟩
 
 /-- The predictable process represented by the bounded positions and their half-open
 trading intervals. It vanishes outside the finite grid. -/
@@ -89,31 +145,37 @@ intervals truncated at the evaluation time. -/
 def integral (X : ℝ≥0 → Ω → ℝ) : ℝ≥0 → Ω → ℝ :=
   Finance.simpleGains K.dates K.n K.positions X
 
+/-- `K.toProcess` is `Finance.simpleHolding K.dates K.n K.positions`. -/
+theorem toProcess_eq_simpleHolding :
+    K.toProcess = Finance.simpleHolding K.dates K.n K.positions := by
+  rw [toProcess]
+
+/-- `K.integral X` is `Finance.simpleGains K.dates K.n K.positions X`. -/
+theorem integral_eq_simpleGains (X : ℝ≥0 → Ω → ℝ) :
+    K.integral X = Finance.simpleGains K.dates K.n K.positions X := by
+  rw [integral]
+
 /-- Finite-sum formula for the represented predictable process. -/
 theorem toProcess_def (t : ℝ≥0) (ω : Ω) :
     K.toProcess t ω = ∑ i : Fin K.n,
       (Set.Ioc (K.grid i.castSucc) (K.grid i.succ)).indicator (fun _ ↦ K.height i ω) t := by
   rw [toProcess, Finance.simpleHolding_def, ← Fin.sum_univ_eq_sum_range]
-  apply sum_congr rfl
-  intro i _
-  simp [dates, positions, i.isLt, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ]
+  exact sum_congr rfl fun i _ ↦ by rw [K.dates_castSucc i, K.dates_succ i, K.positions_eq i]
 
 /-- Finite-sum formula for the elementary integral. -/
 theorem integral_def (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
     K.integral X t ω = ∑ i : Fin K.n, K.height i ω *
       (X (min (K.grid i.succ) t) ω - X (min (K.grid i.castSucc) t) ω) := by
   rw [integral, Finance.simpleGains_def, ← Fin.sum_univ_eq_sum_range]
-  apply sum_congr rfl
-  intro i _
-  simp [dates, positions, i.isLt, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ]
+  exact sum_congr rfl fun i _ ↦ by rw [K.dates_castSucc i, K.dates_succ i, K.positions_eq i]
 
 /-- On a trading interval the represented process equals its height. -/
 theorem toProcess_of_mem_Ioc (i : Fin K.n) {t : ℝ≥0}
     (ht : t ∈ Set.Ioc (K.grid i.castSucc) (K.grid i.succ)) (ω : Ω) :
     K.toProcess t ω = K.height i ω := by
   have ht' : t ∈ Set.Ioc (K.dates i) (K.dates (i + 1)) := by
-    simpa [dates, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ] using ht
-  simpa [toProcess, positions, i.isLt] using
+    rwa [K.dates_castSucc i, K.dates_succ i]
+  simpa [toProcess, K.positions_eq i] using
     Finance.simpleHolding_of_mem_Ioc (a := K.positions)
       (K.monotone_dates.monotoneOn _) i.isLt ht' ω
 
@@ -202,15 +264,113 @@ theorem memLp_integral {P : Measure Ω} {p : ℝ≥0∞}
     (Filter.Eventually.of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hC ω)
   exact hi.mul ((hX _).sub (hX _))
 
+/-- Enlarging the filtration on the same measurable space preserves `ElementaryIntegrand`. -/
+def monoFiltration {𝒢 : Filtration ℝ≥0 mΩ} (hℱ𝒢 : ℱ ≤ 𝒢) : ElementaryIntegrand 𝒢 where
+  n := K.n
+  grid := K.grid
+  monotone_grid := K.monotone_grid
+  height := K.height
+  measurable_height i := (K.measurable_height i).mono (hℱ𝒢 _)
+  bounded_height := K.bounded_height
+  grid_eq_zero_of_zero := K.grid_eq_zero_of_zero
+  height_eq_zero_of_eq := K.height_eq_zero_of_eq
+
+/-- Enlarging the filtration does not change the represented process. -/
+@[simp]
+theorem toProcess_monoFiltration {𝒢 : Filtration ℝ≥0 mΩ} (hℱ𝒢 : ℱ ≤ 𝒢) :
+    (K.monoFiltration hℱ𝒢).toProcess = K.toProcess := by
+  ext t ω
+  simp [toProcess_def, monoFiltration]
+
+/-- Enlarging the filtration does not change the elementary integral. -/
+@[simp]
+theorem integral_monoFiltration {𝒢 : Filtration ℝ≥0 mΩ} (hℱ𝒢 : ℱ ≤ 𝒢) (X : ℝ≥0 → Ω → ℝ) :
+    (K.monoFiltration hℱ𝒢).integral X = K.integral X := by
+  ext t ω
+  simp [integral_def, monoFiltration]
+
+/-- Construct a bounded `ElementaryIntegrand` from a bounded monotone-grid simple holding.
+Empty intervals are canonicalized to height `0` and a `0`-interval grid is canonicalized to `0`,
+preserving both the represented process and every elementary integral. -/
+def ofSimpleHolding {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) : ElementaryIntegrand ℱ where
+  n := n
+  grid i := if n = 0 then 0 else τ i
+  monotone_grid := by
+    by_cases hn : n = 0
+    · intro i j _
+      simp [hn]
+    · intro i j hij
+      simp only [ite_eq_right (fun h ↦ (hn h).elim)]
+      exact hτ (Nat.lt_succ_iff.mp i.isLt) (Nat.lt_succ_iff.mp j.isLt) hij
+  height i ω := if τ i < τ (i + 1) then a i ω else 0
+  measurable_height i := by
+    have hn : n ≠ 0 := Nat.ne_zero_of_lt i.isLt
+    have hgrid : (if n = 0 then 0 else τ ↑i.castSucc) = τ i := by simp [hn]
+    rw [hgrid]
+    by_cases hlt : τ i < τ (i + 1)
+    · simpa only [hlt, ite_true] using ha i i.isLt
+    · simp only [hlt, ite_false]
+      exact stronglyMeasurable_zero
+  bounded_height i := by
+    obtain ⟨C, hC⟩ := hb i i.isLt
+    refine ⟨max C 0, fun ω ↦ ?_⟩
+    split_ifs
+    · exact (hC ω).trans (le_max_left _ _)
+    · simp
+  grid_eq_zero_of_zero hn := by
+    funext i
+    simp [hn]
+  height_eq_zero_of_eq i heq := by
+    have hn : n ≠ 0 := Nat.ne_zero_of_lt i.isLt
+    simp only [ite_eq_right (fun h ↦ (hn h).elim), Fin.val_castSucc, Fin.val_succ] at heq
+    funext ω
+    simp [heq]
+
+/-- `ofSimpleHolding` preserves the represented process pointwise. -/
+@[simp]
+theorem toProcess_ofSimpleHolding {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (t : ℝ≥0) (ω : Ω) :
+    (ofSimpleHolding hτ ha hb).toProcess t ω = Finance.simpleHolding τ n a t ω := by
+  rw [toProcess_def, Finance.simpleHolding_def, ← Fin.sum_univ_eq_sum_range]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hn : n ≠ 0 := Nat.ne_zero_of_lt i.isLt
+  simp only [ofSimpleHolding, ite_eq_right (fun h ↦ (hn h).elim)]
+  split_ifs with hlt
+  · rfl
+  · have heq : τ i = τ (i + 1) :=
+      (hτ i.isLt.le i.isLt (Nat.le_succ _)).antisymm (le_of_not_gt hlt)
+    simp [heq]
+
+/-- `ofSimpleHolding` preserves elementary integrals pointwise. -/
+@[simp]
+theorem integral_ofSimpleHolding {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
+    (ofSimpleHolding hτ ha hb).integral X t ω = Finance.simpleGains τ n a X t ω := by
+  rw [integral_def, Finance.simpleGains_def, ← Fin.sum_univ_eq_sum_range]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hn : n ≠ 0 := Nat.ne_zero_of_lt i.isLt
+  simp only [ofSimpleHolding, ite_eq_right (fun h ↦ (hn h).elim)]
+  split_ifs with hlt
+  · rfl
+  · have heq : τ i = τ (i + 1) :=
+      (hτ i.isLt.le i.isLt (Nat.le_succ _)).antisymm (le_of_not_gt hlt)
+    simp [heq]
+
 /-- The empty presentation has no intervals and its sole grid point is zero. -/
 instance : Zero (ElementaryIntegrand ℱ) where
   zero :=
     { n := 0
-      grid := fun _ ↦ 0
+      grid := 0
       monotone_grid := monotone_const
       height := Fin.elim0
       measurable_height := fun i ↦ i.elim0
-      bounded_height := fun i ↦ i.elim0 }
+      bounded_height := fun i ↦ i.elim0
+      grid_eq_zero_of_zero := fun _ ↦ rfl
+      height_eq_zero_of_eq := fun i _ ↦ i.elim0 }
 
 /-- The empty presentation represents the zero process. -/
 @[simp]
@@ -237,7 +397,11 @@ instance : SMul ℝ (ElementaryIntegrand ℱ) where
       bounded_height := fun i ↦ by
         obtain ⟨C, hC⟩ := K.bounded_height i
         exact ⟨|c| * C, fun ω ↦ by
-          simpa [abs_mul] using mul_le_mul_of_nonneg_left (hC ω) (abs_nonneg c)⟩ }
+          simpa [abs_mul] using mul_le_mul_of_nonneg_left (hC ω) (abs_nonneg c)⟩
+      grid_eq_zero_of_zero := K.grid_eq_zero_of_zero
+      height_eq_zero_of_eq := fun i hi ↦ by
+        ext ω
+        simp [K.height_eq_zero_of_eq i hi] }
 
 private theorem n_smul (c : ℝ) : (c • K).n = K.n := rfl
 
@@ -265,19 +429,99 @@ theorem integral_smul (c : ℝ) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω :
   simpa only [integral, n_smul, dates_smul, positions_smul] using
     Finance.simpleGains_smul K.dates K.n c K.positions X t ω
 
-/-- A one-interval elementary integrand. The height is selected at `s`, not at `t`. -/
+/-- Sum of two elementary integrands on a common strictly increasing grid. -/
+@[expose]
+def add (K L : ElementaryIntegrand ℱ) : ElementaryIntegrand ℱ :=
+  let h := Finance.exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range K.n).disjSum (range L.n))
+    (Sum.elim K.dates L.dates)
+    (Sum.elim (fun j ↦ K.dates (j + 1)) fun j ↦ L.dates (j + 1))
+    (Sum.elim K.positions L.positions) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact K.measurable_positions j hj
+      · exact L.measurable_positions j hj)
+  ofSimpleHolding h.choose_spec.choose_spec.choose_spec.2.1.monotoneOn
+    h.choose_spec.choose_spec.choose_spec.2.2.1 (fun j hj ↦ by
+      choose CK hCK using K.bounded_positions
+      choose CL hCL using L.bounded_positions
+      refine ⟨(∑ i ∈ range K.n, CK i) + (∑ i ∈ range L.n, CL i), fun ω ↦ ?_⟩
+      refine (h.choose_spec.choose_spec.choose_spec.2.2.2.1 j hj ω).trans ?_
+      rw [sum_disjSum]
+      exact add_le_add
+        (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCK i ω)
+        (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCL i ω))
+
+/-- Adding two presentations via `ElementaryIntegrand.add` (also available as `K + L`). -/
+instance : Add (ElementaryIntegrand ℱ) where
+  add := add
+
+private theorem add_def (K L : ElementaryIntegrand ℱ) : K + L = K.add L := rfl
+
+/-- Adding two presentations adds their represented processes pointwise. -/
+@[simp]
+theorem toProcess_add (K L : ElementaryIntegrand ℱ) (t : ℝ≥0) (ω : Ω) :
+    (K + L).toProcess t ω = K.toProcess t ω + L.toProcess t ω := by
+  rw [add_def, add, toProcess_ofSimpleHolding]
+  have hs := (Finance.exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range K.n).disjSum (range L.n))
+    (Sum.elim K.dates L.dates)
+    (Sum.elim (fun j ↦ K.dates (j + 1)) fun j ↦ L.dates (j + 1))
+    (Sum.elim K.positions L.positions) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact K.measurable_positions j hj
+      · exact L.measurable_positions j hj)).choose_spec.choose_spec.choose_spec
+  rw [hs.2.2.2.2.1, sum_disjSum]
+  simp only [Sum.elim_inl, Sum.elim_inr]
+  rw [toProcess_eq_simpleHolding, toProcess_eq_simpleHolding,
+    Finance.simpleHolding_def, Finance.simpleHolding_def]
+
+/-- Elementary integration is additive over sums of presentations. -/
+@[simp]
+theorem integral_add (K L : ElementaryIntegrand ℱ) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
+    (K + L).integral X t ω = K.integral X t ω + L.integral X t ω := by
+  rw [add_def, add, integral_ofSimpleHolding]
+  have hs := (Finance.exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range K.n).disjSum (range L.n))
+    (Sum.elim K.dates L.dates)
+    (Sum.elim (fun j ↦ K.dates (j + 1)) fun j ↦ L.dates (j + 1))
+    (Sum.elim K.positions L.positions) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact K.measurable_positions j hj
+      · exact L.measurable_positions j hj)).choose_spec.choose_spec.choose_spec
+  rw [hs.2.2.2.2.2, sum_disjSum]
+  simp only [Sum.elim_inl, Sum.elim_inr]
+  rw [integral_eq_simpleGains, integral_eq_simpleGains,
+    Finance.simpleGains_def, Finance.simpleGains_def]
+  congr 1 <;> refine sum_congr rfl fun j _ ↦ ?_
+  · simp [K.monotone_dates (Nat.le_succ j)]
+  · simp [L.monotone_dates (Nat.le_succ j)]
+
+/-- A one-interval elementary integrand. The height is selected at `s`, not at `t`, and is
+canonicalized to `0` when `s = t`. -/
 def single (s t : ℝ≥0) (hst : s ≤ t) (a : Ω → ℝ)
     (ha : StronglyMeasurable[ℱ s] a) (hb : ∃ C : ℝ, ∀ ω, |a ω| ≤ C) :
     ElementaryIntegrand ℱ where
   n := 1
   grid := ![s, t]
   monotone_grid := by intro i j hij; fin_cases i <;> fin_cases j <;> simp_all
-  height := fun _ ↦ a
+  height := fun _ ↦ if s < t then a else 0
   measurable_height := fun i ↦ by
     have hi : i = 0 := Subsingleton.elim _ _
     subst i
-    exact ha
-  bounded_height := fun _ ↦ hb
+    split_ifs
+    · exact ha
+    · exact stronglyMeasurable_zero
+  bounded_height := fun _ ↦ by
+    obtain ⟨C, hC⟩ := hb
+    exact ⟨max C 0, fun ω ↦ by split_ifs <;> simp [hC ω]⟩
+  grid_eq_zero_of_zero h := by omega
+  height_eq_zero_of_eq i heq := by
+    have hi : i = 0 := Subsingleton.elim _ _
+    subst i
+    simp only [Fin.castSucc_zero, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
+      Matrix.cons_val_one] at heq
+    funext ω
+    simp [heq]
 
 /-- A single elementary interval represents exactly its predictable rectangle. -/
 @[simp]
@@ -285,7 +529,11 @@ theorem toProcess_single (s t : ℝ≥0) (hst : s ≤ t) (a : Ω → ℝ)
     (ha : StronglyMeasurable[ℱ s] a) (hb : ∃ C : ℝ, ∀ ω, |a ω| ≤ C)
     (u : ℝ≥0) (ω : Ω) :
     (single s t hst a ha hb).toProcess u ω = (Set.Ioc s t).indicator (fun _ ↦ a ω) u := by
-  simp [toProcess_def, single]
+  simp only [toProcess_def, single, Fin.sum_univ_one]
+  by_cases hst' : s < t
+  · simp [hst']
+  · have heq : s = t := hst.antisymm (le_of_not_gt hst')
+    simp [heq]
 
 /-- On a single interval the elementary integral is height times the truncated increment. -/
 @[simp]
@@ -293,7 +541,11 @@ theorem integral_single (s t : ℝ≥0) (hst : s ≤ t) (a : Ω → ℝ)
     (ha : StronglyMeasurable[ℱ s] a) (hb : ∃ C : ℝ, ∀ ω, |a ω| ≤ C)
     (X : ℝ≥0 → Ω → ℝ) (u : ℝ≥0) (ω : Ω) :
     (single s t hst a ha hb).integral X u ω = a ω * (X (min t u) ω - X (min s u) ω) := by
-  simp [integral_def, single]
+  simp only [integral_def, single, Fin.sum_univ_one]
+  by_cases hst' : s < t
+  · simp [hst']
+  · have heq : s = t := hst.antisymm (le_of_not_gt hst')
+    simp [heq]
 
 end ElementaryIntegrand
 end TauCeti

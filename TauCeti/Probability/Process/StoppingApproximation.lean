@@ -10,6 +10,7 @@ public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import TauCeti.Order.WithBot
 import TauCeti.Probability.Process.StoppedValue
 
 /-!
@@ -312,16 +313,6 @@ theorem dyadicProjIcc_le_dyadicCeilTime {s b : ℝ≥0} (hsb : s ≤ b) {k j : �
       exact max_le hs_lt.le hdiv)
 
 end TauCeti
-
-namespace WithTop
-
-/-- Coercing the unwrapped minimum of a finite element and a `WithTop` element recovers that
-minimum. -/
-theorem coe_untopA_coe_min {ι : Type*} [LinearOrder ι] [Nonempty ι] (x : ι) (a : WithTop ι) :
-    ((min (x : WithTop ι) a).untopA : WithTop ι) = min (x : WithTop ι) a := by
-  rw [untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _) (coe_lt_top x))), coe_untop]
-
-end WithTop
 
 namespace TauCeti
 
