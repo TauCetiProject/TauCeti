@@ -10,6 +10,7 @@ public import Mathlib.Algebra.GroupWithZero.Associated
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Data.ZMod.QuotientGroup
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -47,6 +48,8 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
+* `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
+  multiples of `e`, the shift class group is `ZMod |e|`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
   `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements `b`
   and `a` have degrees differing by an element of `homogeneousUnitDegrees 𝒜`, either when `b`
@@ -149,6 +152,22 @@ units. The shifts `A(d)` and `A(e)` of the graded module `A` are graded-isomorph
 abbrev ShiftClassGroup {ι A σ : Type*} [AddCommGroup ι] [Monoid A] [SetLike σ A] (𝒜 : ι → σ) :
     Type _ :=
   ι ⧸ homogeneousUnitDegrees 𝒜
+
+/-- If the degrees of the homogeneous units of a `ℤ`-graded ring are the multiples of `e`, then the
+shift class group is `ZMod |e|`. -/
+noncomputable def ShiftClassGroup.equivZMod {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ}
+    {e : ℤ} (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) :
+    ShiftClassGroup 𝒜 ≃+ ZMod e.natAbs :=
+  (QuotientAddGroup.quotientAddEquivOfEq h).trans (Int.quotientZMultiplesEquivZMod e)
+
+/-- The identification `ShiftClassGroup.equivZMod` sends the class of a shift `c` to
+`c mod |e|`. -/
+@[simp]
+theorem ShiftClassGroup.equivZMod_mk {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ} {e : ℤ}
+    (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) (c : ℤ) :
+    ShiftClassGroup.equivZMod h c = c := by
+  rw [ShiftClassGroup.equivZMod, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
+    Int.quotientZMultiplesEquivZMod_mk]
 
 section Shift
 

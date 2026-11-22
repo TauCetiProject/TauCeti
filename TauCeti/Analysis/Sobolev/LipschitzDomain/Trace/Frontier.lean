@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Kernel
 import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # The boundary trace of a bounded Lipschitz domain
@@ -392,8 +393,7 @@ theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0�
   -- `R v` is zero exactly when the local trace of `v` vanishes almost everywhere on `S`.
   have hR (v : W1p volume Ω p) :
       R v = 0 ↔ W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs v =ᵐ[volume.restrict S] 0 :=
-    Lp.eq_zero_iff_ae_eq_zero.trans ⟨(LpToLpRestrictCLM_coeFn ℝ S _).symm.trans,
-      (LpToLpRestrictCLM_coeFn ℝ S _).trans⟩
+    LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) S _
   -- On restrictions of test functions, the local trace is the cutoff product at the graph point,
   -- which vanishes on `S`; the general case follows by density.
   have hu : R u = 0 := (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u

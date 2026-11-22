@@ -213,17 +213,12 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable
   have hsub : ∀ t : ℝ, 0 < t → {x | ENNReal.ofReal (c * t) < f x} ⊆ {x | 0 < f x} := by
     intro t _ x hx
     exact Set.mem_ofPred.2 (lt_of_le_of_lt zero_le (Set.mem_ofPred.1 hx))
-  -- Neither does `∫⁻ f ^ p`, since `f ^ p` is supported in `{f > 0}`.
-  have hpow : ∫⁻ x, f x ^ p ∂μ.restrict {x | 0 < f x} = ∫⁻ x, f x ^ p ∂μ := by
-    refine setLIntegral_eq_of_support_subset fun x hx => ?_
-    have hx' : f x ^ p ≠ 0 := hx
-    refine Set.mem_ofPred.2 (pos_iff_ne_zero.2 fun h0 => hx' ?_)
-    rw [h0, ENNReal.zero_rpow_of_pos hp0]
   have hmain := lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable_of_sFinite
     (μ := μ.restrict {x | 0 < f x}) hf hu hp hc fun t ht => by
       rw [Measure.restrict_restrict_of_subset (hsub t ht)]
       exact h t ht
-  rwa [hpow] at hmain
+  -- Neither does `∫⁻ f ^ p`, since `f ^ p` is supported in `{f > 0}`.
+  rwa [lintegral_rpow_restrict_pos hf hp0] at hmain
 
 /-- **Marcinkiewicz interpolation**, the diagonal case `p₀ = 1`, `p₁ = ∞`, in distributional form.
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.DG.Karoubi.Basic
 public import TauCeti.CategoryTheory.Linear.Karoubi
+public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # The homotopy category of the DG Karoubi envelope
@@ -20,8 +21,14 @@ to `Q` in `H⁰` of the envelope are identified with the morphisms `φ : X ⟶ Y
 idempotent completion `Karoubi H⁰(C)`.
 
 This gives a fully faithful functor `H⁰(Kar C) ⥤ Karoubi H⁰(C)` sending `(X, p)` to `(X, [p])`,
-compatible with the embeddings of `H⁰(C)` into both sides.  It is not claimed to be essentially
-surjective: an idempotent of `H⁰(C)` need not be the class of a closed idempotent of `C`.
+compatible with the embeddings of `H⁰(C)` into both sides.
+
+Essential surjectivity is a separate question: it asks whether every idempotent of `H⁰(C)` is,
+up to isomorphism in `Karoubi H⁰(C)`, the class of a closed idempotent of degree zero of `C`.
+The comparison is an equivalence exactly when `H⁰(Kar C)` is idempotent complete, since every
+object of `Karoubi H⁰(C)` is a retract of an object of `H⁰(C)`.  When `H⁰(C)` is itself
+idempotent complete, every object of `Kar C` is isomorphic in `H⁰` to an object of `C`, so the
+embedding `C ⥤ Kar C` is a quasi-equivalence.
 
 ## Main definitions
 
@@ -36,6 +43,12 @@ surjective: an idempotent of `H⁰(C)` need not be the class of a closed idempot
   class of a closed morphism to the class of its underlying morphism.
 * `TauCeti.DGKaroubi.homotopyCategoryToKaroubiFullyFaithful`: the comparison functor is fully
   faithful.
+* `TauCeti.DGKaroubi.isEquivalence_homotopyCategoryToKaroubi_iff`: the comparison functor is an
+  equivalence exactly when `H⁰(Kar C)` is idempotent complete.
+* `TauCeti.DGKaroubi.isQuasiEquivalence_toDGKaroubi`: if `H⁰(C)` is idempotent complete, the
+  embedding `C ⥤ Kar C` is a quasi-equivalence.
+* `TauCeti.DGKaroubi.isEquivalence_homotopyCategoryToKaroubi`: if `H⁰(C)` is idempotent complete,
+  the comparison functor is an equivalence.
 
 ## References
 
@@ -276,6 +289,47 @@ identities. -/
 theorem toDGKaroubiCompHomotopyCategoryToKaroubiIso_inv_app_f (X : DGHomotopyCategory R C) :
     ((toDGKaroubiCompHomotopyCategoryToKaroubiIso R C).inv.app X).f = 𝟙 X :=
   (rfl)
+
+/-! ### When the comparison is an equivalence -/
+
+variable (R C) in
+/-- **The comparison functor `H⁰(Kar C) ⥤ Karoubi H⁰(C)` is an equivalence exactly when
+`H⁰(Kar C)` is idempotent complete.**  Conversely to the transport of idempotent completeness
+from `Karoubi H⁰(C)`, every object `(X, e)` of `Karoubi H⁰(C)` is a retract of the image of
+`(X, 1)`, and the essential image of a fully faithful functor out of an idempotent-complete
+category is stable under retracts. -/
+theorem isEquivalence_homotopyCategoryToKaroubi_iff :
+    (homotopyCategoryToKaroubi R C).IsEquivalence ↔
+      IsIdempotentComplete (DGHomotopyCategory R (DGKaroubi R C)) := by
+  refine ⟨fun _ ↦ (isIdempotentComplete_iff_of_equivalence
+    (homotopyCategoryToKaroubi R C).asEquivalence).2 inferInstance, fun _ ↦ ?_⟩
+  refine { essSurj := ⟨fun Y ↦ ?_⟩ }
+  exact (homotopyCategoryToKaroubi R C).essImage.prop_of_retract (Karoubi.retract Y)
+    ⟨(toDGKaroubi R C).mapDGHomotopyCategory.obj Y.X,
+      ⟨(toDGKaroubiCompHomotopyCategoryToKaroubiIso R C).app Y.X⟩⟩
+
+variable (R C) in
+/-- **If `H⁰(C)` is idempotent complete, the embedding `C ⥤ Kar C` into the DG Karoubi envelope
+is a quasi-equivalence**: every object `(X, p)` is isomorphic in `H⁰` to an object of `C`, namely
+to a splitting in `H⁰(C)` of the idempotent `[p]`. -/
+theorem isQuasiEquivalence_toDGKaroubi [IsIdempotentComplete (DGHomotopyCategory R C)] :
+    (toDGKaroubi R C).IsQuasiEquivalence := by
+  refine (EnrichedFunctor.isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj _).2
+    ⟨isQuasiFullyFaithful_toDGKaroubi R C, ⟨fun P ↦ ?_⟩⟩
+  obtain ⟨Y, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage (toKaroubi (DGHomotopyCategory R C))
+    ((homotopyCategoryToKaroubi R C).obj P)
+  exact ⟨Y, ⟨(homotopyCategoryToKaroubiFullyFaithful R C).preimageIso
+    ((toDGKaroubiCompHomotopyCategoryToKaroubiIso R C).app Y ≪≫ e)⟩⟩
+
+variable (R C) in
+/-- If `H⁰(C)` is idempotent complete, the comparison functor `H⁰(Kar C) ⥤ Karoubi H⁰(C)` is an
+equivalence. -/
+theorem isEquivalence_homotopyCategoryToKaroubi [IsIdempotentComplete (DGHomotopyCategory R C)] :
+    (homotopyCategoryToKaroubi R C).IsEquivalence := by
+  have := (isQuasiEquivalence_toDGKaroubi R C).isEquivalence_mapDGHomotopyCategory
+  exact (isEquivalence_homotopyCategoryToKaroubi_iff R C).2
+    ((isIdempotentComplete_iff_of_equivalence
+      (toDGKaroubi R C).mapDGHomotopyCategory.asEquivalence).1 inferInstance)
 
 end
 
