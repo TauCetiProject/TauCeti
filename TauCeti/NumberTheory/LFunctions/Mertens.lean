@@ -106,7 +106,7 @@ yields the additive `O(1)` product estimate.
 * `TauCeti.LFunctions.tendsto_primeIdealZetaSum_univ_sub_log_one_div_sub_one`:
   `∑_𝔭 N𝔭 ^ (-s) = log (1 / (s - 1)) + B_K - γ + o(1)` as `s → 1⁺`.
 * `TauCeti.LFunctions.mertensConstant_eq`,
-  `TauCeti.LFunctions.summable_log_one_sub_inv_absNorm_add_inv_absNorm`,
+  `TauCeti.LFunctions.summable_neg_log_one_sub_sub_inv_absNorm`,
   `TauCeti.LFunctions.log_one_sub_inv_absNorm_add_inv_absNorm_neg`, and
   `TauCeti.LFunctions.mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue`:
   `B_K = γ + log κ_K + ∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹) < γ + log κ_K`.
@@ -788,14 +788,13 @@ theorem mertensConstant_eq :
   rw [log_dedekindZeta_re_eq_tsum_neg_log_one_sub hs, Set.primeIdealZetaSum_univ, hsum]
   ring
 
-/-- The series `∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹)` appearing in `mertensConstant_eq` is summable. -/
-theorem summable_log_one_sub_inv_absNorm_add_inv_absNorm :
+/-- The quadratic Euler-product remainder series `∑_𝔭 (-log (1 - N𝔭⁻¹) - N𝔭⁻¹)` is
+summable. -/
+theorem summable_neg_log_one_sub_sub_inv_absNorm :
     Summable fun v : HeightOneSpectrum (𝓞 K) ↦
-      Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
-  refine (summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1)
-    (by norm_num)).neg.congr fun v ↦ ?_
-  rw [Real.rpow_neg_one]
-  ring
+      -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
+  simpa only [Real.rpow_neg_one] using
+    summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
 
 section
 variable {K}
@@ -803,9 +802,8 @@ variable {K}
 /-- Each prime-ideal term `log (1 - N𝔭⁻¹) + N𝔭⁻¹` in `mertensConstant_eq` is strictly negative. -/
 theorem log_one_sub_inv_absNorm_add_inv_absNorm_neg (v : HeightOneSpectrum (𝓞 K)) :
     Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹ < 0 := by
-  have h2 := two_le_absNorm_asIdeal_real v
-  linarith [Real.neg_log_one_sub_sub_pos (inv_ne_zero (zero_lt_two.trans_le h2).ne')
-    (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le h2))]
+  linarith
+    [Real.neg_log_one_sub_inv_sub_inv_pos (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))]
 
 end
 
@@ -816,12 +814,9 @@ theorem mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue 
     mertensConstant K < Real.eulerMascheroniConstant + Real.log (dedekindZeta_residue K) := by
   obtain ⟨v₀⟩ := (inferInstance : Nonempty (HeightOneSpectrum (𝓞 K)))
   have hpos : 0 < ∑' v : HeightOneSpectrum (𝓞 K),
-      (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) := by
-    have hr : Summable fun v : HeightOneSpectrum (𝓞 K) ↦
-        -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
-      simpa only [Real.rpow_neg_one] using
-        summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
-    exact hr.tsum_pos (fun v ↦ by linarith [log_one_sub_inv_absNorm_add_inv_absNorm_neg v]) v₀
+      (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) :=
+    (summable_neg_log_one_sub_sub_inv_absNorm K).tsum_pos
+      (fun v ↦ by linarith [log_one_sub_inv_absNorm_add_inv_absNorm_neg v]) v₀
       (by linarith [log_one_sub_inv_absNorm_add_inv_absNorm_neg v₀])
   have hneg : ∑' v : HeightOneSpectrum (𝓞 K),
       (Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹) =
@@ -858,9 +853,7 @@ theorem isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm :
           (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x) =O[atTop] fun x ↦ x ^ (-(1 / 2 : ℝ)) := by
   set r : HeightOneSpectrum (𝓞 K) → ℝ :=
     fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹
-  have hr : Summable r := by
-    simpa only [r, Real.rpow_neg_one] using
-      summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
+  have hr : Summable r := summable_neg_log_one_sub_sub_inv_absNorm K
   have hZ : Summable fun v : HeightOneSpectrum (𝓞 K) ↦
       (Ideal.absNorm v.asIdeal : ℝ) ^ (-(3 / 2 : ℝ)) :=
     summable_absNorm_rpow_primes_of_one_lt (by norm_num : (1 : ℝ) < 3 / 2)
@@ -871,8 +864,8 @@ theorem isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm :
   have hnonneg : 0 ≤ (∑' v, r v) - primeSummatory K r x := htail.nonneg fun v ↦ by
     split_ifs
     · exact le_rfl
-    · exact Real.neg_log_one_sub_sub_nonneg
-        (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
+    · exact (Real.neg_log_one_sub_inv_sub_inv_pos
+        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))).le
   rw [Real.norm_of_nonneg hnonneg, Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), mul_comm,
     ← htail.tsum_eq, ← tsum_mul_left]
   refine htail.summable.tsum_le_tsum (fun v ↦ ?_) (hZ.mul_left _)
@@ -902,13 +895,11 @@ theorem isBigO_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log_sub :
       fun x ↦ (Real.log x)⁻¹ := by
   set r : HeightOneSpectrum (𝓞 K) → ℝ :=
     fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹
-  have hr : Summable r := by
-    simpa only [r, Real.rpow_neg_one] using
-      summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
+  have hr : Summable r := summable_neg_log_one_sub_sub_inv_absNorm K
   have hconst : Real.eulerMascheroniConstant + Real.log (dedekindZeta_residue K) =
       mertensConstant K + ∑' v, r v := by
     rw [mertensConstant_eq, add_assoc,
-      ← (summable_log_one_sub_inv_absNorm_add_inv_absNorm K).tsum_add hr]
+      ← (hr.neg.congr fun v ↦ by simp only [r]; ring).tsum_add hr]
     simp [r]
   have htail :=
     ((isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm K).trans_isLittleO

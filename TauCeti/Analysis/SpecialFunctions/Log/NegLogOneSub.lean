@@ -188,12 +188,8 @@ theorem hasSum_pow_div_natCast_tail {x : ℝ} (hx : |x| < 1) (m : ℕ) :
     HasSum (fun j : ℕ ↦ x ^ (j + (m + 1)) / (j + (m + 1) : ℕ))
       (-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k) := by
   have hrange : ∑ k ∈ Finset.range (m + 1), x ^ k / (k : ℝ) = ∑ k ∈ Finset.Icc 1 m, x ^ k / k := by
-    refine (Finset.sum_subset (fun k hk ↦ ?_) fun k hkR hk ↦ ?_).symm
-    · rw [Finset.mem_Icc] at hk
-      exact Finset.mem_range.mpr (by lia)
-    · rw [Finset.mem_range] at hkR
-      have hk0 : k = 0 := by simp only [Finset.mem_Icc, not_and, not_le] at hk; lia
-      simp [hk0]
+    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.succ_pos _)]
+    simp [Finset.Ico_add_one_right_eq_Icc]
   rw [← hrange]
   exact (hasSum_nat_add_iff' (m + 1)).mpr (hasSum_pow_div_natCast hx)
 

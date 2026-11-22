@@ -862,11 +862,8 @@ theorem hasSum_vonMangoldt_nonprime_div_mul_log :
       (∑ n ∈ Icc 2 N, Λ n / ((n : ℝ) * Real.log n)) -
         ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
     have hrange : ∑ n ∈ range (N + 1), f n = ∑ n ∈ Icc 1 N, f n := by
-      refine (sum_subset (fun n hn ↦ mem_range.mpr (by
-        rw [mem_Icc] at hn; lia)) fun n hnR hn ↦ ?_).symm
-      rw [mem_range] at hnR
-      have hn0 : n = 0 := by simp only [mem_Icc, not_and, not_le] at hn; lia
-      simp [f, hn0]
+      rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot (Nat.succ_pos _)]
+      simp [f, Ico_add_one_right_eq_Icc]
     have hprime_sum : ∑ n ∈ Icc 1 N with n.Prime, Λ n / ((n : ℝ) * Real.log n) =
         ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
       rw [← Nat.primesLE_eq_filter_Icc_one]
