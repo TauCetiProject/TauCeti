@@ -257,12 +257,26 @@ lemma kroneckerEquiv_apply [Injective Y] (i : α) (x : (X.linearYonedaObj k Y).h
     kroneckerEquiv k X Y i x = kronecker k X Y i x :=
   (rfl)
 
+end TauCeti.ChainComplex
+
+namespace HomologicalComplex
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+
 /-- The cochain `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X)` built from a retraction of the inclusion of the cycles vanishes
 on boundaries. -/
 @[reassoc (attr := simp)]
-lemma d_comp_retraction_iCycles_comp_homologyπ (j i : α) [IsSplitMono (X.iCycles i)] :
+lemma d_comp_retraction_iCycles_comp_homologyπ {X : HomologicalComplex C c} (j i : ι)
+    [X.HasHomology i] [IsSplitMono (X.iCycles i)] :
     X.d j i ≫ retraction (X.iCycles i) ≫ X.homologyπ i = 0 := by
   rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ]
+
+end HomologicalComplex
+
+namespace TauCeti.ChainComplex
+
+variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemigroup α] [One α]
+  {k : Type*} [Ring k] [Linear k C] {X : ChainComplex C α} {Y : C}
 
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: given a retraction of the inclusion
@@ -287,13 +301,6 @@ lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.hom
     kronecker k X Y i (kroneckerSection k X Y i g) = g := by
   rw [← cancel_epi (X.homologyπ i), kroneckerSection, homologyπ_kronecker_homologyClassOfComp,
     Category.assoc, IsSplitMono.id_assoc]
-
-/-- `TauCeti.ChainComplex.kroneckerSection` commutes with changing the coefficient object. -/
-lemma kroneckerSection_coefficient_naturality {Z : C} (h : Y ⟶ Z) (i : α)
-    [IsSplitMono (X.iCycles i)] (g : X.homology i ⟶ Y) :
-    homologyMap (X.linearYonedaObjMap k h) i (kroneckerSection k X Y i g) =
-      kroneckerSection k X Z i (g ≫ h) :=
-  homologyClassOfComp_coefficient_naturality _ _ g h
 
 /-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is a split monomorphism, then every morphism
 `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology class of `Hom(X, Y)`. -/

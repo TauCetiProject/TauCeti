@@ -264,7 +264,8 @@ private lemma exists_intCocycle (n : ℕ) :
   -- The relative cycles split off the relative chains; the cocycle is the one of
   -- `TauCeti.ChainComplex.kroneckerSection` for `τ`.
   refine ⟨retraction (K.iCycles (n + 2)) ≫ K.homologyπ (n + 2) ≫ ModuleCat.ofHom τ, ?_, ?_⟩
-  · exact (ChainComplex.d_comp_retraction_iCycles_comp_homologyπ_assoc _ _ _).trans zero_comp
+  · exact (HomologicalComplex.d_comp_retraction_iCycles_comp_homologyπ_assoc _ _ _).trans
+      zero_comp
   · rw [← iCycles_cubeBoundaryPairCycle, ← ConcreteCategory.comp_apply, IsSplitMono.id_assoc]
     exact hτ
 

@@ -61,12 +61,8 @@ section Comparison
 
 variable {C : Type u} [Category.{v} C] [Abelian C] (k : Type*) [Ring k] [Linear k C]
 
-/-- Reindexing a `ℤ`-indexed cochain complex `K` along `n ↦ -n` as a chain complex. -/
-private abbrev negChain (K : CochainComplex C ℤ) : ChainComplex C ℤ :=
-  K.restriction ComplexShape.embeddingDownIntUpInt
-
 /-- Unsigned identification of `linearHomComplex k K Y[0]` with the alternating-differential
-twist of `(negChain K).linearYonedaObj k Y`. -/
+twist of `(K.restriction ComplexShape.embeddingDownIntUpInt).linearYonedaObj k Y`. -/
 private def linearHomComplexSingle₀XIso (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
     (linearHomComplex k K ((singleFunctor C 0).obj Y)).X i ≅
       (_root_.ChainComplex.linearYonedaObj
@@ -206,10 +202,7 @@ theorem linearHomComplexPrecomp_linearHomComplexSingle₀Iso_hom
   have hnat :
       CochainComplex.alternatingDifferentialMap ψ ≫ U₁.alternatingDifferentialIso.inv =
         U₂.alternatingDifferentialIso.inv ≫ ψ := by
-    apply HomologicalComplex.hom_ext
-    intro i
-    have h := HomologicalComplex.congr_hom
-      (CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ) i
+    have h := CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ
     simp only [CochainComplex.alternatingDifferentialFunctor_map,
       CochainComplex.alternatingDifferentialNatIso_inv_app, Functor.id_map] at h
     exact h
@@ -249,14 +242,12 @@ theorem linearHomComplexPostcomp_linearHomComplexSingle₀Iso_hom
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
     rw [linearHomComplexSingle₀XIso_hom_apply, linearHomComplexSingle₀XIso_hom_apply,
       toSingleLinearEquiv_linearHomComplexPostcomp_f_apply]
-    exact (_root_.ChainComplex.linearYonedaObjMap_f_hom_apply k (negChain K) g i _).symm
+    exact (_root_.ChainComplex.linearYonedaObjMap_f_hom_apply k
+      (K.restriction ComplexShape.embeddingDownIntUpInt) g i _).symm
   have hnat :
       CochainComplex.alternatingDifferentialMap ψ ≫ U₂.alternatingDifferentialIso.inv =
         U₁.alternatingDifferentialIso.inv ≫ ψ := by
-    apply HomologicalComplex.hom_ext
-    intro i
-    have h := HomologicalComplex.congr_hom
-      (CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ) i
+    have h := CochainComplex.alternatingDifferentialNatIso.inv.naturality ψ
     simp only [CochainComplex.alternatingDifferentialFunctor_map,
       CochainComplex.alternatingDifferentialNatIso_inv_app, Functor.id_map] at h
     exact h
@@ -305,7 +296,10 @@ theorem homologyMap_precomp_linearHomComplexSingle₀HomologyIso_hom
             (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op) i := by
   have hcomp := HomologicalComplex.homologyMap_comp
     (K := linearHomComplex k K₂ ((singleFunctor C 0).obj Y))
-    (L := (negChain K₂).linearYonedaObj k Y) (M := (negChain K₁).linearYonedaObj k Y)
+    (L := _root_.ChainComplex.linearYonedaObj
+      (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+    (M := _root_.ChainComplex.linearYonedaObj
+      (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
     (linearHomComplexSingle₀Iso k K₂ Y).hom
     ((ChainComplex.linearYonedaFunctor k Y).map
       (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op) i
