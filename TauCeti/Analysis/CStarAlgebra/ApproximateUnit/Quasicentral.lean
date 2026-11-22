@@ -96,6 +96,25 @@ private theorem eventually_lipschitzWith_commutator_left {A : Type*} [NonUnitalS
   (eventually_nnNorm_le_one hnorm).mono fun e he =>
     (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he)
 
+private theorem tendsto_nhds_iff_norm_lt {α E : Type*} [SeminormedAddCommGroup E]
+    {f : α → E} {l : Filter α} {y : E} :
+    Tendsto f l (𝓝 y) ↔ ∀ ε > 0, ∀ᶠ x in l, ‖f x - y‖ < ε := by
+  simp only [Metric.tendsto_nhds, dist_eq_norm]
+
+private theorem eventually_forall_mem_mul_sub_lt {α A : Type*} [NonUnitalSeminormedRing A]
+    {I : TwoSidedIdeal A} {l : Filter α} {φ : α → A} (G : Finset I) {ε : ℝ} (hε : 0 < ε)
+    (hmr : ∀ x ∈ G, Tendsto (fun a => φ a * (x : A)) l (𝓝 (x : A)))
+    (hml : ∀ x ∈ G, Tendsto (fun a => (x : A) * φ a) l (𝓝 (x : A))) :
+    ∀ᶠ a in l, ∀ x ∈ G, ‖φ a * (x : A) - x‖ < ε ∧ ‖(x : A) * φ a - x‖ < ε :=
+  G.eventually_all.mpr fun x hx =>
+    (tendsto_nhds_iff_norm_lt.mp (hmr x hx) ε hε).and
+      (tendsto_nhds_iff_norm_lt.mp (hml x hx) ε hε)
+
+private theorem coe_mul {A : Type*} [NonUnitalCStarAlgebra A] {I : TwoSidedIdeal A}
+    [IsClosed (I : Set A)] (x y : I) :
+    ((x * y : I) : A) = (x : A) * (y : A) := by
+  simpa only [I.starAlgHom_apply] using map_mul I.starAlgHom x y
+
 section Basic
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
@@ -272,10 +291,12 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
   neBot := hl.neBot.comap_of_range_mem (hl.eventually_mem.mono fun e he => ⟨⟨e, he⟩, rfl⟩)
   tendsto_mul_left x := by
     rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    exact (hl.tendsto_mul_left x.property).comp tendsto_comap
+    simpa only [Function.comp_def, coe_mul] using
+      (hl.tendsto_mul_left x.property).comp tendsto_comap
   tendsto_mul_right x := by
     rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    exact (hl.tendsto_mul_right x.property).comp tendsto_comap
+    simpa only [Function.comp_def, coe_mul] using
+      (hl.tendsto_mul_right x.property).comp tendsto_comap
   eventually_nonneg := (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
   eventually_norm := (hl.eventually_norm.comap _).mono fun _ h => by
     rwa [AddSubgroupClass.coe_norm]
@@ -361,8 +382,9 @@ theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClose
       (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ h => Subtype.coe_le_coe.mpr h)
       (eventually_map.mpr <| hl.eventually_norm.mono fun _ h => by
         rwa [← AddSubgroupClass.coe_norm])
-      (fun x hx => tendsto_map'_iff.mpr <|
-        (continuous_subtypeVal.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
+      (fun x hx => tendsto_map'_iff.mpr <| by
+        simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
+          (continuous_subtypeVal.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
       (fun a => tendsto_map'_iff.mpr (hc a))
 
 end Basic
@@ -492,26 +514,29 @@ theorem le_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {l : Filter A} 
   rw [(hasBasis_quasicentralApproximateUnit I).ge_iff]
   constructor
   · intro h
-    refine ⟨?_, fun x hx => Metric.tendsto_nhds.mpr fun ε hε => ?_,
-      fun x hx => Metric.tendsto_nhds.mpr fun ε hε => ?_,
-      fun a => Metric.tendsto_nhds.mpr fun ε hε => ?_⟩
-    · exact mem_of_superset (h (∅, ∅, 1) zero_lt_one) fun _ ⟨h1, h2, h3, _, _⟩ => ⟨h1, h2, h3⟩
-    · exact mem_of_superset (h ({⟨x, hx⟩}, ∅, ε) hε) fun e ⟨_, _, _, hG, _⟩ => by
-        simpa only [dist_eq_norm] using! (hG ⟨x, hx⟩ (Finset.mem_singleton_self _)).1
-    · exact mem_of_superset (h ({⟨x, hx⟩}, ∅, ε) hε) fun e ⟨_, _, _, hG, _⟩ => by
-        simpa only [dist_eq_norm] using! (hG ⟨x, hx⟩ (Finset.mem_singleton_self _)).2
-    · exact mem_of_superset (h (∅, {a}, ε) hε) fun e ⟨_, _, _, _, hF⟩ => by
-        simpa only [dist_zero_right] using! hF a (Finset.mem_singleton_self a)
+    have hmem_basis {G : Finset I} {F : Finset A} {ε : ℝ} (hε : 0 < ε) :
+        ∀ᶠ e in l, e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
+          (∀ y ∈ G, ‖e * (y : A) - y‖ < ε ∧ ‖(y : A) * e - y‖ < ε) ∧
+          (∀ b ∈ F, ‖e * b - b * e‖ < ε) :=
+      h (G, F, ε) hε
+    refine ⟨(hmem_basis (G := ∅) (F := ∅) zero_lt_one).mono fun _ ⟨h1, h2, h3, _, _⟩ =>
+        ⟨h1, h2, h3⟩,
+      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
+        (hmem_basis (G := {⟨x, hx⟩}) (F := ∅) hε).mono fun _ ⟨_, _, _, hG, _⟩ =>
+          (hG ⟨x, hx⟩ (Finset.mem_singleton_self _)).1,
+      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
+        (hmem_basis (G := {⟨x, hx⟩}) (F := ∅) hε).mono fun _ ⟨_, _, _, hG, _⟩ =>
+          (hG ⟨x, hx⟩ (Finset.mem_singleton_self _)).2,
+      fun a => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
+        (hmem_basis (G := ∅) (F := {a}) hε).mono fun _ ⟨_, _, _, _, hF⟩ => by
+          simpa only [sub_zero] using hF a (Finset.mem_singleton_self a)⟩
   · rintro ⟨hmem, hmr, hml, hc⟩ ⟨G, F, ε⟩ (hε : 0 < ε)
-    have hG : ∀ᶠ e in l, ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε :=
-      G.eventually_all.mpr fun x _ =>
-        ((Metric.tendsto_nhds.mp (hmr x x.property) ε hε).and
-          (Metric.tendsto_nhds.mp (hml x x.property) ε hε)).mono fun _ ⟨h1, h2⟩ => by
-          simpa only [dist_eq_norm] using And.intro h1 h2
+    have hG := eventually_forall_mem_mul_sub_lt (I := I) (φ := id) G hε
+      (fun x _ => hmr x x.property) (fun x _ => hml x x.property)
     have hF : ∀ᶠ e in l, ∀ a ∈ F, ‖e * a - a * e‖ < ε :=
       F.eventually_all.mpr fun a _ =>
-        (Metric.tendsto_nhds.mp (hc a) ε hε).mono fun _ ha => by
-          simpa only [dist_zero_right] using ha
+        (tendsto_nhds_iff_norm_lt.mp (hc a) ε hε).mono fun _ ha => by
+          simpa only [sub_zero] using ha
     exact (hmem.and (hG.and hF)).mono fun _ ⟨⟨h1, h2, h3⟩, h4, h5⟩ => ⟨h1, h2, h3, h4, h5⟩
 
 /-- Every quasicentral approximate unit of `I` is finer than `I.quasicentralApproximateUnit`: a
@@ -588,16 +613,16 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
   let l₀ : Filter I := CStarAlgebra.approximateUnit I
   have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
-  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
-    (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
-  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
-    (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
+  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) := by
+    simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
+      (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
+  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) := by
+    simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
+      (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
   have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
-    G.eventually_all.mpr fun x _ =>
-      ((Metric.tendsto_nhds.mp (hmul_r x.property) ε hε).and
-        (Metric.tendsto_nhds.mp (hmul_l x.property) ε hε)).mono fun v ⟨hr, hl⟩ =>
-        ⟨by simpa only [dist_eq_norm] using hr, by simpa only [dist_eq_norm] using hl⟩
+    eventually_forall_mem_mul_sub_lt (I := I) (φ := ((↑) : I → A)) G hε
+      (fun x _ => hmul_r x.property) (fun x _ => hmul_l x.property)
   have hF : ∀ᶠ v : I in l₀, ∀ i ∈ Finset.range n, ∀ a ∈ F,
       ‖star (u i * a - a * u i) * ((v : A) * a - a * (v : A))‖ ≤ δ * (‖a‖ + 1) := by
     refine (Finset.range n).eventually_all.mpr fun i hi => F.eventually_all.mpr fun a _ => ?_
@@ -605,14 +630,12 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
     let d : A := star (u i * a - a * u i)
     have hsd : d ∈ I :=
       I.star_mem_of_isClosed (I.sub_mem (I.mul_mem_right _ _ hui) (I.mul_mem_left _ _ hui))
-    filter_upwards [Metric.tendsto_nhds.mp (hmul_l hsd) δ hδ,
-      Metric.tendsto_nhds.mp (hmul_l (I.mul_mem_right _ _ hsd)) δ hδ] with v hv₁ hv₂
-    have h1 : ‖d * (v : A) - d‖ ≤ δ := by simpa only [dist_eq_norm] using hv₁.le
-    have h2 : ‖d * a * (v : A) - d * a‖ ≤ δ := by simpa only [dist_eq_norm] using hv₂.le
+    filter_upwards [tendsto_nhds_iff_norm_lt.mp (hmul_l hsd) δ hδ,
+      tendsto_nhds_iff_norm_lt.mp (hmul_l (I.mul_mem_right _ _ hsd)) δ hδ] with v hv₁ hv₂
     calc ‖d * ((v : A) * a - a * (v : A))‖
         ≤ ‖d * (v : A) - d‖ * ‖a‖ + ‖d * a * (v : A) - d * a‖ :=
           norm_mul_commutator_le d (v : A) a
-      _ ≤ δ * ‖a‖ + δ := add_le_add (mul_le_mul_of_nonneg_right h1 (norm_nonneg a)) h2
+      _ ≤ δ * ‖a‖ + δ := add_le_add (mul_le_mul_of_nonneg_right hv₁.le (norm_nonneg a)) hv₂.le
       _ = δ * (‖a‖ + 1) := by ring
   obtain ⟨v, ⟨hv₀, hv₁⟩, hvG, hvF⟩ :=
     ((hl₀.eventually_nonneg.and hl₀.eventually_norm).and (hG.and hF)).exists
@@ -703,6 +726,34 @@ private theorem norm_average_sq_le {ι : Type*} {s : Finset ι} (hs : s.Nonempty
         mul_le_mul_of_nonneg_left (TauCeti.CStarAlgebra.norm_sum_sq_le hη hd hoff) (by positivity)
     _ = C ^ 2 / s.card + η := by field_simp
 
+omit [PartialOrder A] [StarOrderedRing A] in
+private theorem norm_commutator_average_sq_le {n : ℕ} (hn_pos : 0 < n) {u : ℕ → A} {a : A}
+    {η : ℝ} (hη : 0 ≤ η) (hu : ∀ k < n, ‖u k‖ ≤ 1)
+    (hoff : ∀ i j, i < j → j < n → ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ η) :
+    let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
+    ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / n + η := by
+  intro e
+  have hcomm : e * a - a * e = (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k) := by
+    simp [e, Finset.sum_sub_distrib, Finset.sum_mul, Finset.mul_sum, smul_sub, smul_mul_assoc,
+      mul_smul_comm]
+  have havg_sq : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2 ≤
+      (2 * ‖a‖) ^ 2 / n + η := by
+    simpa only [Finset.card_range] using
+      norm_average_sq_le (Finset.nonempty_range_iff.mpr hn_pos.ne') (C := 2 * ‖a‖) hη
+        (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
+          (mul_le_mul_of_nonneg_right
+            (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)))
+            (norm_nonneg a)))
+        (fun i hi j hj hij => by
+          rcases lt_or_gt_of_ne hij with h | h
+          · exact hoff i j h (Finset.mem_range.mp hj)
+          · rw [← norm_star, star_mul, star_star]
+            exact hoff j i h (Finset.mem_range.mp hi))
+  rw [hcomm]
+  calc ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2
+      ≤ (2 * ‖a‖) ^ 2 / n + η := havg_sq
+    _ = 4 * ‖a‖ ^ 2 / n + η := by ring
+
 /-- **Finite-set Arveson–Akemann–Pedersen theorem.** For every closed two-sided ideal `I` of a
 C⋆-algebra `A`, finite subsets `G ⊆ I` and `F ⊆ A`, and `ε > 0`, there exists a positive
 contraction `e ∈ I` such that `‖e * x - x‖ < ε` and `‖x * e - x‖ < ε` for all `x ∈ G`, and
@@ -726,28 +777,11 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
   refine ⟨e, heI, he₀, he₁, heG, fun a ha => ?_⟩
   have haM : ‖a‖ ≤ M :=
     (Finset.single_le_sum (fun b _ => norm_nonneg b) ha).trans (le_add_of_nonneg_right zero_le_one)
-  have hcomm : e * a - a * e = (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k) := by
-    simp [e, Finset.sum_sub_distrib, Finset.sum_mul, Finset.mul_sum, smul_sub, smul_mul_assoc,
-      mul_smul_comm]
-  have hoff_lt {i j : ℕ} (hij : i < j) (hjn : j < n) :
-      ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ ε ^ 2 / 4 :=
-    (hoff i j hij hjn a ha).trans <| by
-      calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
-        _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
-  have havg_sq : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2 ≤
-      (2 * ‖a‖) ^ 2 / n + ε ^ 2 / 4 := by
-    simpa only [Finset.card_range] using
-      norm_average_sq_le (Finset.nonempty_range_iff.mpr hn_pos.ne') (C := 2 * ‖a‖)
-        (η := ε ^ 2 / 4) (by positivity)
-        (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
-          (mul_le_mul_of_nonneg_right
-            (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)).2.2.1)
-            (norm_nonneg a)))
-        (fun i hi j hj hij => by
-          rcases lt_or_gt_of_ne hij with h | h
-          · exact hoff_lt h (Finset.mem_range.mp hj)
-          · rw [← norm_star, star_mul, star_star]
-            exact hoff_lt h (Finset.mem_range.mp hi))
+  have havg_sq : ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 :=
+    norm_commutator_average_sq_le hn_pos (by positivity) (fun k hk => (hu k hk).2.2.1)
+      fun i j hij hjn => (hoff i j hij hjn a ha).trans <| by
+        calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
+          _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
   have hterm1 : 4 * ‖a‖ ^ 2 / (n : ℝ) < ε ^ 2 / 2 := by
     have hmn : 8 * M ^ 2 / ε ^ 2 < (n : ℝ) := hm.trans (by exact_mod_cast Nat.lt_succ_self m)
     rw [div_lt_iff₀ (by positivity)] at hmn
@@ -755,10 +789,8 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
     have ha2 : ‖a‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg a) haM 2
     nlinarith
   have hlt : ‖e * a - a * e‖ ^ 2 < ε ^ 2 := by
-    rw [hcomm]
-    calc ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2
-        ≤ (2 * ‖a‖) ^ 2 / (n : ℝ) + ε ^ 2 / 4 := havg_sq
-      _ = 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 := by ring
+    calc ‖e * a - a * e‖ ^ 2
+        ≤ 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 := havg_sq
       _ < ε ^ 2 / 2 + ε ^ 2 / 2 := add_lt_add hterm1
           (div_lt_div_of_pos_left (sq_pos_of_pos hε) two_pos (by norm_num))
       _ = ε ^ 2 := add_halves _
@@ -828,11 +860,10 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
   have hdiag (k : ℕ) {f : ℕ → A} {y : A}
       (hf : ∀ n, k < n → ‖f n - y‖ < 1 / ((n : ℝ) + 1)) :
       Tendsto f atTop (𝓝 y) := by
-    rw [Metric.tendsto_nhds]
-    intro ε hε
+    refine tendsto_nhds_iff_norm_lt.mpr fun ε hε => ?_
     filter_upwards [(tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε),
       eventually_gt_atTop k] with n hn hkn
-    simpa only [dist_eq_norm] using (hf n hkn).trans hn
+    exact (hf n hkn).trans hn
   refine ⟨u, fun n => ⟨huI n, hu₀ n, hu₁ n⟩, ?_⟩
   have : (atTop.map u).NeBot := atTop_neBot.map u
   refine IsQuasicentralApproximateUnit.of_tendsto_mul_right_of_dense
