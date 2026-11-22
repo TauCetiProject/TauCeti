@@ -44,4 +44,34 @@ theorem adjoint_completion {f : E →L[𝕜] F} {g : F →L[𝕜] E}
     simp only [completion_apply_coe, Completion.inner_coe]
     simpa only [inner_conj_symm] using (congrArg (starRingEnd 𝕜) (h x y)).symm
 
+/-- For a submodule `M` of finite codimension in a seminormed inner product space `E` over `ℝ` or
+`ℂ`, the orthogonal complement in `Completion E` of the image of `M` has dimension at most the
+codimension `Module.rank 𝕜 (E ⧸ M)`: the orthogonal projection onto `M₀ᗮ` vanishes on `M` and so
+descends to a linear map out of `E ⧸ M` with dense, finite-dimensional, hence closed range. -/
+theorem rank_orthogonal_map_toComplL_le (M : Submodule 𝕜 E) [FiniteDimensional 𝕜 (E ⧸ M)] :
+    Module.rank 𝕜 (M.map (Completion.toComplL : E →L[𝕜] Completion E).toLinearMap)ᗮ ≤
+      Module.rank 𝕜 (E ⧸ M) := by
+  let j : E →L[𝕜] Completion E := Completion.toComplL
+  let M₀ : Submodule 𝕜 (Completion E) := M.map j.toLinearMap
+  let φ : E →L[𝕜] M₀ᗮ := M₀ᗮ.orthogonalProjectionOnto ∘L j
+  have hker : M ≤ LinearMap.ker φ.toLinearMap := fun x hx ↦
+    LinearMap.mem_ker.mpr <| M₀.orthogonalProjectionOnto_orthogonal_apply_eq_zero
+      (Submodule.mem_map_of_mem hx)
+  let ψ : (E ⧸ M) →ₗ[𝕜] M₀ᗮ := M.liftQ φ.toLinearMap hker
+  have hrange : LinearMap.range φ.toLinearMap = LinearMap.range ψ := by
+    rw [← M.liftQ_mkQ φ.toLinearMap hker, LinearMap.range_comp_of_range_eq_top _ M.range_mkQ]
+  have : FiniteDimensional 𝕜 (LinearMap.range φ.toLinearMap) :=
+    hrange ▸ LinearMap.finiteDimensional_range ψ
+  have hsurj : Function.Surjective M₀ᗮ.orthogonalProjectionOnto :=
+    fun y ↦ ⟨y, M₀ᗮ.orthogonalProjectionOnto_mem_subspace_eq_self y⟩
+  have hdense : DenseRange φ :=
+    hsurj.denseRange.comp Completion.denseRange_coe M₀ᗮ.orthogonalProjectionOnto.continuous
+  have htop : LinearMap.range ψ = ⊤ := by
+    rw [← hrange]
+    exact SetLike.coe_injective <|
+      (LinearMap.range φ.toLinearMap).isClosed_of_finiteDimensional.closure_eq.symm.trans
+        hdense.closure_range
+  exact LinearMap.rank_le_of_surjective ψ (LinearMap.range_eq_top.mp htop)
+
+
 end ContinuousLinearMap

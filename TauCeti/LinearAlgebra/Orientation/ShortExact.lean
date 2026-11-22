@@ -46,7 +46,10 @@ and `V / U ≅ A`, and the map `U → B` extends to `V`, then orienting `U` from
 then `V` from `U` and `A` is the same as orienting `V` from `U'` and the product `[B][A]`
 (`Orientation.shortExact_shortExact`). Consequently, when a linear equivalence carries such a
 tower onto one that cuts out the same subspace in the opposite order, the induced orientations
-differ by `(-1) ^ (dim A · dim B)` (`Orientation.map_shortExact_shortExact`). Adjoining a further
+differ by `(-1) ^ (dim A · dim B)` (`Orientation.map_shortExact_shortExact`). Dually, if the
+quotient `W` of `0 → U → V → W → 0` is oriented through `0 → N → W → Q → 0`, the orientation of
+`V` from `U` and `W` is the one from the preimage `S` of `N`, oriented from `U` and `N`, and `Q`
+(`Orientation.shortExact_shortExact_right`). Adjoining a further
 factor `Z` to a short exact sequence after the subspace costs the sign `(-1) ^ (dim Z · dim W)`
 of moving `Z` past `W`, while adjoining it before costs nothing
 (`Orientation.shortExact_prodMap_id`, `Orientation.shortExact_id_prodMap`). These are the
@@ -71,6 +74,7 @@ bookkeeping identities behind the associativity of fibre product orientations
 * `Orientation.shortExactLeft_eq_iff`: the characterization of `Orientation.shortExactLeft`.
 * `Orientation.shortExact_inl_snd`: the product orientation is that of the split sequence.
 * `Orientation.shortExact_shortExact`: subspace-first orientations compose along towers.
+* `Orientation.shortExact_shortExact_right`: the same for a tower in the quotient.
 * `Orientation.map_shortExact_shortExact`: exchanging the two stages of a tower costs
   `(-1) ^ (dim A · dim B)`.
 * `Orientation.shortExact_prodMap_id`, `Orientation.shortExact_id_prodMap`: adjoining a further
@@ -120,11 +124,11 @@ private theorem map_splitSurjectiveEquiv_prod_basis (hf : Function.Injective f)
     (hfg : Function.Exact f g) (l : { l : W →ₗ[K] V // g ∘ₗ l = LinearMap.id })
     (b : Basis (Fin a) K U) (e : Basis (Fin c) K W) (t : Fin c → V) (ht : ∀ j, g (t j) = e j)
     (ha : finrank K U = a) (hc : finrank K W = c) :
-    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).1.symm
+    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).val.symm
         (prod b.orientation e.orientation ha hc) =
       ((Basis.ofExactLift hf hfg b e t ht).reindex finSumFinEquiv).orientation := by
-  obtain ⟨hφf, hφg⟩ := (hfg.splitSurjectiveEquiv hf l).2
-  set φ := (hfg.splitSurjectiveEquiv hf l).1
+  obtain ⟨hφf, hφg⟩ := (hfg.splitSurjectiveEquiv hf l).property
+  set φ := (hfg.splitSurjectiveEquiv hf l).val
   rw [prod_basis_orientation, ← Basis.orientation_map]
   set B := ((b.prod e).reindex finSumFinEquiv).map φ.symm
   have hB₁ (i : Fin a) : B (Fin.castAdd c i) = f (b i) := by
@@ -140,13 +144,13 @@ private theorem map_splitSurjectiveEquiv_eq (hf : Function.Injective f)
     (hfg : Function.Exact f g) (hg : Function.Surjective g)
     (l l' : { l : W →ₗ[K] V // g ∘ₗ l = LinearMap.id }) (ha : finrank K U = a)
     (hc : finrank K W = c) (x : Orientation K (U × W) (Fin (a + c))) :
-    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).1.symm x =
-      map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l').1.symm x := by
+    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).val.symm x =
+      map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l').val.symm x := by
   set b := finBasisOfFinrankEq K U ha
   set e := finBasisOfFinrankEq K W hc
   choose t ht using fun j ↦ hg (e j)
   rcases x.eq_or_eq_neg (prod b.orientation e.orientation ha hc)
-    (by rw [Fintype.card_fin, finrank_prod, ha, hc]) with rfl | rfl <;>
+    (by rw [Nat.card_fin, finrank_prod, ha, hc]) with rfl | rfl <;>
   simp only [Orientation.map_neg, map_splitSurjectiveEquiv_prod_basis hf hfg _ b e t ht]
 
 /-! ### The orientation of the middle term -/
@@ -158,7 +162,7 @@ the image of a positive basis of `U` followed by lifts of a positive basis of `W
 def shortExact (hf : Function.Injective f) (hfg : Function.Exact f g)
     (hg : Function.Surjective g) (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c))
     (ha : finrank K U = a) (hc : finrank K W = c) : Orientation K V (Fin (a + c)) :=
-  map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf ⟨_, (exists_section hg).choose_spec⟩).1.symm
+  map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf ⟨_, (exists_section hg).choose_spec⟩).val.symm
     (prod o p ha hc)
 
 variable (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
@@ -169,7 +173,7 @@ variable (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.S
 theorem shortExact_eq_map_prod (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c))
     (s : W →ₗ[K] V) (hs : g ∘ₗ s = LinearMap.id) :
     shortExact hf hfg hg o p ha hc =
-      map (Fin (a + c)) ((hfg.splitSurjectiveEquiv hf ⟨s, hs⟩).1.symm) (prod o p ha hc) :=
+      map (Fin (a + c)) ((hfg.splitSurjectiveEquiv hf ⟨s, hs⟩).val.symm) (prod o p ha hc) :=
   map_splitSurjectiveEquiv_eq hf hfg hg _ _ ha hc _
 
 /-- A basis of `V` consisting of the image of a basis `b` of `U` followed by lifts of a basis `e`
@@ -231,7 +235,7 @@ theorem shortExact_units_smul_right (u : Kˣ) (o : Orientation K U (Fin a))
 theorem shortExact_inj_left {o o' : Orientation K U (Fin a)} (p : Orientation K W (Fin c)) :
     shortExact hf hfg hg o p ha hc = shortExact hf hfg hg o' p ha hc ↔ o = o' := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rcases o.eq_or_eq_neg o' (by rw [Fintype.card_fin, ha]) with ho | ho
+  rcases o.eq_or_eq_neg o' (by rw [Nat.card_fin, ha]) with ho | ho
   · exact ho
   · rw [ho, shortExact_neg_left] at h
     exact absurd h (Module.Ray.ne_neg_self _).symm
@@ -241,7 +245,7 @@ theorem shortExact_inj_left {o o' : Orientation K U (Fin a)} (p : Orientation K 
 theorem shortExact_inj_right (o : Orientation K U (Fin a)) {p p' : Orientation K W (Fin c)} :
     shortExact hf hfg hg o p ha hc = shortExact hf hfg hg o p' ha hc ↔ p = p' := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rcases p.eq_or_eq_neg p' (by rw [Fintype.card_fin, hc]) with hp | hp
+  rcases p.eq_or_eq_neg p' (by rw [Nat.card_fin, hc]) with hp | hp
   · exact hp
   · rw [hp, shortExact_neg_right] at h
     exact absurd h (Module.Ray.ne_neg_self _).symm
@@ -277,8 +281,8 @@ theorem map_shortExact {U' V' W' : Type*} [AddCommGroup U'] [Module K U'] [AddCo
     rw [shortExact_basis_orientation hf hfg hg ha hc b e B hB₁ hB₂, ← Basis.orientation_map,
       ← Basis.orientation_map, ← Basis.orientation_map,
       shortExact_basis_orientation hf' hfg' hg' _ _ _ _ _ hB₁' hB₂']
-  rcases o.eq_or_eq_neg b.orientation (by rw [Fintype.card_fin, ha]) with rfl | rfl <;>
-  rcases p.eq_or_eq_neg e.orientation (by rw [Fintype.card_fin, hc]) with rfl | rfl <;>
+  rcases o.eq_or_eq_neg b.orientation (by rw [Nat.card_fin, ha]) with rfl | rfl <;>
+  rcases p.eq_or_eq_neg e.orientation (by rw [Nat.card_fin, hc]) with rfl | rfl <;>
   simp only [shortExact_neg_left, shortExact_neg_right, Orientation.map_neg, key]
 
 /-! ### The orientation of the subspace -/
@@ -299,8 +303,8 @@ theorem shortExact_shortExactLeft (ov : Orientation K V (Fin (a + c)))
     (p : Orientation K W (Fin c)) :
     shortExact hf hfg hg (shortExactLeft hf hfg hg ha hc ov p) p ha hc = ov := by
   have := Module.Finite.of_exact hfg hg
-  have hV : Fintype.card (Fin (a + c)) = finrank K V := by
-    rw [Fintype.card_fin, hfg.finrank_eq_add hf hg, ha, hc]
+  have hV : Nat.card (Fin (a + c)) = finrank K V := by
+    rw [Nat.card_fin, hfg.finrank_eq_add hf hg, ha, hc]
   unfold shortExactLeft
   split_ifs with h
   · exact h
@@ -619,5 +623,62 @@ theorem shortExact_id_prodMap (oz : Orientation K Z (Fin z)) (o : Orientation K 
     simp [B, BV, this, Basis.prod_apply, ht]
 
 end Factor
+
+/-! ### Towers in the quotient -/
+
+section QuotientTower
+
+variable {K U V W N Q S : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup U] [Module K U] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+  [AddCommGroup N] [Module K N] [AddCommGroup Q] [Module K Q] [AddCommGroup S] [Module K S]
+  [FiniteDimensional K U] [FiniteDimensional K W] [FiniteDimensional K N]
+  [FiniteDimensional K Q] [FiniteDimensional K S]
+  {f : U →ₗ[K] V} {g : V →ₗ[K] W} {i : N →ₗ[K] W} {π : W →ₗ[K] Q}
+  {f' : U →ₗ[K] S} {g' : S →ₗ[K] N} {j : S →ₗ[K] V} {k : V →ₗ[K] Q} {a n c : ℕ}
+
+/-- **Towers in the quotient.** Let `0 → U → V → W → 0` be short exact, and let the quotient `W`
+be oriented through a further short exact sequence `0 → N → W → Q → 0`. The preimage `S` of `N`
+in `V` sits in short exact sequences `0 → U → S → N → 0` and `0 → S → V → Q → 0`, compatible with
+the first two: `j ∘ f' = f`, `g ∘ j = i ∘ g'` and `π ∘ g = k`. Then orienting `W` from `N` and `Q`
+and `V` from `U` and `W` gives the same orientation of `V` as orienting `S` from `U` and `N` and
+`V` from `S` and `Q`: in a subspace-first basis, a basis of `U` is followed by lifts of a basis of
+`N` and then by lifts of a basis of `Q`. This is the quotient counterpart of
+`Orientation.shortExact_shortExact`. -/
+theorem shortExact_shortExact_right (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) (hi : Function.Injective i) (hiπ : Function.Exact i π)
+    (hπ : Function.Surjective π) (hf' : Function.Injective f') (hfg' : Function.Exact f' g')
+    (hg' : Function.Surjective g') (hj : Function.Injective j) (hjk : Function.Exact j k)
+    (hk : Function.Surjective k) (hjf : j ∘ₗ f' = f) (hgj : g ∘ₗ j = i ∘ₗ g')
+    (hπg : π ∘ₗ g = k) (o : Orientation K U (Fin a)) (p : Orientation K N (Fin n))
+    (q : Orientation K Q (Fin c)) (ha : finrank K U = a) (hn : finrank K N = n)
+    (hc : finrank K Q = c) (hW : finrank K W = n + c) (hS : finrank K S = a + n) :
+    shortExact hf hfg hg o (shortExact hi hiπ hπ p q hn hc) ha hW =
+      reindex K V (finCongr (add_assoc a n c))
+        (shortExact hj hjk hk (shortExact hf' hfg' hg' o p ha hn) q hS hc) := by
+  -- A retraction of `i` splits `W` as `N × Q`, and the first component `ρ` of the splitting `e`
+  -- extends `g'` to `ρ ∘ g : V → N`.
+  obtain ⟨l, hl⟩ := i.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hi)
+  obtain ⟨e, hie, hπe⟩ := hiπ.splitInjectiveEquiv hπ ⟨l, hl⟩
+  set ρ := LinearMap.fst K N Q ∘ₗ e.toLinearMap
+  have hhj : (ρ ∘ₗ g) ∘ₗ j = g' := by
+    rw [LinearMap.comp_assoc, hgj, hie]
+    ext x
+    simp [ρ]
+  -- Collapse the tower on the right; along `e`, the sequence `0 → U → V → W → 0` becomes the
+  -- collapsed sequence `0 → U → V → N × Q → 0`, and the orientation of `W` becomes `[N][Q]`.
+  rw [shortExact_shortExact hf' hfg' hg' hj hjk hk hhj o p q ha hn hc hS]
+  have E := map_shortExact hf hfg hg ha hW (LinearMap.injective_comp hj hf')
+    (hfg'.comp_prod hjk hhj)
+    (LinearMap.surjective_prod_of_comp_eq_zero hjk.linearMap_comp_eq_zero (hhj ▸ hg') hk)
+    (LinearEquiv.refl K U) (LinearEquiv.refl K V) e (by simp [hjf])
+    (by ext v <;> simp [ρ, ← hπg, hπe]) o (shortExact hi hiπ hπ p q hn hc)
+  have F := map_shortExact hi hiπ hπ hn hc LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective (LinearEquiv.refl K N) e (LinearEquiv.refl K Q)
+    (by rw [hie]; ext x <;> simp) (by rw [hπe]; ext; simp) p q
+  simp only [map_refl, Equiv.refl_apply] at E F
+  rw [F, shortExact_inl_snd] at E
+  rw [E, reindex_finCongr_reindex_finCongr, finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+end QuotientTower
 
 end Orientation

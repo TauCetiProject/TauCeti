@@ -176,9 +176,8 @@ theorem biLinHom_apply_one_mk (h : H) (T : V →L[𝕜] W) :
     biLinHom π ρ (1, h) T = T.comp (π h⁻¹) := by
   simp [ContinuousLinearMap.one_def]
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H]
+variable [TopologicalSpace G] [TopologicalSpace H]
 
-omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
 /-- **The two-sided Hom representation of two representations with continuous operator-valued
 action has one.** Only continuity of inversion on `H` is used, so `G` needs no topological group
 structure and `H` needs no continuous multiplication. -/
@@ -243,7 +242,7 @@ theorem toContinuousLinearMap_mem_invariants_linHom (f : ContIntertwiningMap π 
 /-- **The invariants of the Hom representation are the continuous intertwiners.** -/
 noncomputable def invariantsEquivContIntertwiningMap :
     (linHom π ρ).invariants ≃ₗ[𝕜] ContIntertwiningMap π ρ where
-  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.2⟩
+  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun f := ⟨f.toContinuousLinearMap, toContinuousLinearMap_mem_invariants_linHom π ρ f⟩
@@ -266,13 +265,13 @@ end Invariants
 
 section Character
 
+section
+
 variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
-  [TopologicalSpace G] [IsTopologicalGroup G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W]
   (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [FiniteDimensional 𝕜 W] in
 /-- **The Hom representation is Mathlib's `Representation.linHom`, transported along
 `LinearMap.toContinuousLinearMap`.** In finite dimension every linear map is continuous, and the
 resulting identification of `V →ₗ[𝕜] W` with `V →L[𝕜] W` conjugates the algebraic conjugation
@@ -284,6 +283,14 @@ theorem conj_linHom (g : G) :
   ext T v
   simp only [ContinuousLinearMap.coe_coe, linHom_apply_apply]
   simp [LinearEquiv.conj_apply, ContRepresentation.toMonoidHom_apply]
+
+end
+
+variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
 
 /-- **The character of the Hom representation is `χ_π(g⁻¹) · χ_ρ(g)`.** The trace is unchanged by
 transporting along `LinearMap.toContinuousLinearMap`, so this is Mathlib's

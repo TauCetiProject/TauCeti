@@ -76,6 +76,11 @@ For `S` finite étale of constant rank `n` and `ι = Fin n`, the frame algebra i
 * `TauCeti.Algebra.FrameAlgebra.lift`, `TauCeti.Algebra.FrameAlgebra.eq_lift_iff`: the universal
   property, algebra maps out of the tensor power separating every two distinct slots factor
   uniquely through the frame algebra.
+* `TauCeti.Algebra.FrameAlgebra.liftPi`, `TauCeti.Algebra.FrameAlgebra.eq_liftPi_iff`: the
+  universal property in terms of canonical sections, `ι`-tuples of algebra maps `S →ₐ[R] T`
+  separating every two distinct slots factor uniquely through the frame algebra.
+* `TauCeti.Algebra.FrameAlgebra.singleAlgHom_injective`: over a nontrivial frame algebra, distinct
+  indices give distinct canonical sections.
 * `TauCeti.Algebra.FrameAlgebra.smul_mk`, `TauCeti.Algebra.FrameAlgebra.smul_singleAlgHom`:
   permutations act by permuting tensor factors and slot sections.
 * `TauCeti.Algebra.FrameAlgebra.etale`, `TauCeti.Algebra.FrameAlgebra.finite`: the frame algebra
@@ -90,6 +95,8 @@ For `S` finite étale of constant rank `n` and `ι = Fin n`, the frame algebra i
   `TauCeti.Algebra.map_distinctIdempotent_of_span_range_eq_top`: transport of `δᵢⱼ` and `ε`.
 * `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_permAlgEquiv`,
   `TauCeti.Algebra.FrameAlgebra.congr_smul`: equivariance of base change and of `congr`.
+* `TauCeti.Algebra.FrameAlgebra.congr_refl`, `TauCeti.Algebra.FrameAlgebra.congr_trans`,
+  `TauCeti.Algebra.FrameAlgebra.congr_symm`: functoriality of `congr`.
 
 ## References
 
@@ -281,6 +288,20 @@ theorem productMap_singleAlgHom_elem {i j : ι} (hij : i ≠ j) :
   rw [singleAlgHom, singleAlgHom, ← map_tensorPowDiagonal, Ideal.Quotient.mkₐ_eq_mk,
     mk_tensorPowDiagonal hij]
 
+/-- When the frame algebra is nontrivial, distinct indices yield distinct canonical sections
+`S →ₐ[R] FrameAlgebra R S ι`. -/
+theorem singleAlgHom_injective [Nontrivial (FrameAlgebra R S ι)] :
+    Function.Injective (singleAlgHom R S : ι → (S →ₐ[R] FrameAlgebra R S ι)) := by
+  intro i j hij
+  by_contra hne
+  have h0 := productMap_singleAlgHom_elem (R := R) (S := S) hne
+  rw [hij] at h0
+  have hmul : Algebra.TensorProduct.productMap (singleAlgHom R S j) (singleAlgHom R S j) =
+      (singleAlgHom R S j).comp (Algebra.TensorProduct.lmul' R) :=
+    Algebra.TensorProduct.ext' fun a b ↦ by simp [map_mul]
+  rw [hmul, AlgHom.comp_apply, Algebra.FormallyUnramified.lmul_elem, map_one] at h0
+  exact one_ne_zero h0
+
 section Lift
 
 variable {T : Type*} [Semiring T] [Algebra R T]
@@ -340,6 +361,54 @@ theorem algHom_ext {f g : FrameAlgebra R S ι →ₐ[R] T}
     simpa only [singleAlgHom, AlgHom.comp_assoc] using h i
 
 end Lift
+
+section LiftPi
+
+variable {T : Type*} [CommSemiring T] [Algebra R T]
+
+/-- Universal property of the frame algebra in terms of canonical sections: an `ι`-tuple of
+`R`-algebra maps `f : ι → (S →ₐ[R] T)` whose distinct pairs annihilate the diagonal idempotent
+factors through a unique `R`-algebra map `FrameAlgebra R S ι →ₐ[R] T`. -/
+noncomputable def liftPi (f : ι → (S →ₐ[R] T))
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0) :
+    FrameAlgebra R S ι →ₐ[R] T :=
+  lift (PiTensorProduct.productMap f) fun i j hij ↦ by
+    have hcomp (k : ι) :
+        (PiTensorProduct.productMap f).comp (PiTensorProduct.singleAlgHom k) = f k :=
+      AlgHom.ext (productMap_singleAlgHom f k)
+    rw [map_tensorPowDiagonal, hcomp i, hcomp j, hf i j hij]
+
+/-- `TauCeti.Algebra.FrameAlgebra.liftPi` restricts to `f i` on the `i`-th canonical section. -/
+@[simp]
+theorem liftPi_singleAlgHom (f : ι → (S →ₐ[R] T))
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0)
+    (i : ι) (s : S) :
+    liftPi f hf (singleAlgHom R S i s) = f i s := by
+  simp [liftPi]
+
+/-- Composing `TauCeti.Algebra.FrameAlgebra.liftPi` with the `i`-th canonical section recovers
+`f i`. -/
+@[simp]
+theorem liftPi_comp_singleAlgHom (f : ι → (S →ₐ[R] T))
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0)
+    (i : ι) :
+    (liftPi f hf).comp (singleAlgHom R S i) = f i :=
+  AlgHom.ext (liftPi_singleAlgHom f hf i)
+
+/-- An `R`-algebra map out of the frame algebra equals `liftPi f hf` if and only if its
+restriction to the `i`-th canonical section is `f i` for every `i`. -/
+theorem eq_liftPi_iff (f : ι → (S →ₐ[R] T))
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0)
+    (ψ : FrameAlgebra R S ι →ₐ[R] T) :
+    ψ = liftPi f hf ↔ ∀ i, ψ.comp (singleAlgHom R S i) = f i :=
+  ⟨fun h i ↦ h ▸ liftPi_comp_singleAlgHom f hf i,
+    fun h ↦ algHom_ext fun i ↦ (h i).trans (liftPi_comp_singleAlgHom f hf i).symm⟩
+
+end LiftPi
 
 variable (R S ι) in
 /-- The permutations of `ι` act on the frame algebra by permuting the tensor factors. -/
@@ -617,6 +686,29 @@ theorem FrameAlgebra.congr_mk (e : S ≃ₐ[R] S') (x : ⨂[R] _ : ι, S) :
 theorem FrameAlgebra.congr_singleAlgHom (e : S ≃ₐ[R] S') (i : ι) (s : S) :
     FrameAlgebra.congr ι e (singleAlgHom R S i s) = singleAlgHom R S' i (e s) := by
   rw [singleAlgHom_def, congr_mk, PiTensorProduct.congrAlgEquiv_singleAlgHom, ← singleAlgHom_def]
+
+/-- `TauCeti.Algebra.FrameAlgebra.congr` of the identity equivalence is the identity. -/
+@[simp]
+theorem FrameAlgebra.congr_refl : congr ι (AlgEquiv.refl : S ≃ₐ[R] S) = AlgEquiv.refl :=
+  AlgEquiv.coe_toAlgHom_injective <| algHom_ext fun i ↦ AlgHom.ext fun s ↦ by simp
+
+/-- `TauCeti.Algebra.FrameAlgebra.congr` commutes with composition of algebra equivalences. -/
+theorem FrameAlgebra.congr_trans {S'' : Type*} [CommRing S''] [Algebra R S'']
+    [Algebra.EssFiniteType R S''] [Algebra.FormallyUnramified R S''] (e₁ : S ≃ₐ[R] S')
+    (e₂ : S' ≃ₐ[R] S'') :
+    congr ι (e₁.trans e₂) = (congr ι e₁).trans (congr ι e₂) :=
+  AlgEquiv.coe_toAlgHom_injective <| algHom_ext fun i ↦ AlgHom.ext fun s ↦ by simp
+
+/-- The inverse of `TauCeti.Algebra.FrameAlgebra.congr e` is `congr ι e.symm`. -/
+@[simp]
+theorem FrameAlgebra.congr_symm (e : S ≃ₐ[R] S') :
+    (congr ι e).symm = congr ι e.symm := by
+  apply AlgEquiv.ext
+  intro y
+  apply (congr ι e).injective
+  rw [AlgEquiv.apply_symm_apply, ← AlgEquiv.trans_apply, ← congr_trans, AlgEquiv.symm_trans_self,
+    congr_refl]
+  rfl
 
 /-- `TauCeti.Algebra.FrameAlgebra.congr e` is equivariant for the permutations of the slots. -/
 theorem FrameAlgebra.congr_smul (e : S ≃ₐ[R] S') (σ : Equiv.Perm ι) (y : FrameAlgebra R S ι) :

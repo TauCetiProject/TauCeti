@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
+import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
 # A level-dependent bound for continued Dirichlet L-functions
@@ -22,9 +24,13 @@ on the level. For a primitive character the level is its conductor.
 
 At `s = 1` the same integral is `∫_{t > 1} S(t) / t²`, where `S(t)` is the sum of `χ k` over
 `1 ≤ k ≤ t`. Using `‖S(t)‖ ≤ t` on `(1, N]` and `‖S(t)‖ ≤ N` beyond gives
-`‖L(1, χ)‖ ≤ 1 + log N`. No primitivity is assumed, so this bound also holds for imprimitive
-characters such as the product of two characters taken at the least common multiple of their
-levels.
+`‖L(1, χ)‖ ≤ 1 + log N`, and hence `‖L(1, χ)‖ ≤ (1 + t⁻¹) N ^ t` for every `t > 0`. No
+primitivity is assumed, so these bounds also hold for imprimitive characters such as the product
+of two characters taken at the least common multiple of their levels. Combining the nonprincipal
+bound with the fractional-part bound on `riemannZeta` and the Euler-factor bound on
+`N.primeFactors` also yields
+`‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))` on `Re(s) > 0` (away from `s = 1` when `χ = 1`) for
+every character `χ` of level `N`, principal or nonprincipal.
 
 The function being bounded is the native analytic continuation, not the Dirichlet series
 (which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
@@ -135,5 +141,33 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN)),
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
+
+/-- **A power bound for `L(1, χ)`.** For every `t > 0`, the continued L-function of a nonprincipal
+character of level `N` satisfies `‖L(1, χ)‖ ≤ (1 + t⁻¹) N ^ t`. This is the logarithmic bound
+`norm_LFunction_one_le_one_add_log` with `log N ≤ N ^ t / t`. -/
+theorem norm_LFunction_one_le_mul_rpow (hχ : χ ≠ 1) {t : ℝ} (ht : 0 < t) :
+    ‖χ.LFunction 1‖ ≤ (1 + t⁻¹) * (N : ℝ) ^ t := by
+  have hlog := Real.log_le_rpow_div (Nat.cast_nonneg N) ht
+  have h1 : 1 ≤ (N : ℝ) ^ t := Real.one_le_rpow (Nat.one_le_cast.mpr NeZero.one_le) ht.le
+  calc ‖χ.LFunction 1‖ ≤ 1 + Real.log N := χ.norm_LFunction_one_le_one_add_log hχ
+    _ ≤ (N : ℝ) ^ t + (N : ℝ) ^ t / t := by linarith
+    _ = (1 + t⁻¹) * (N : ℝ) ^ t := by ring
+
+/-- On `Re(s) > 0` (away from `s = 1` when `χ = 1`), the continued L-function of any Dirichlet
+character of level `N` — principal or nonprincipal — satisfies
+`‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))`. -/
+theorem norm_LFunction_le {s : ℂ} (hs : 0 < s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) :
+    ‖χ.LFunction s‖ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) := by
+  by_cases hχ : χ = 1
+  · subst hχ
+    have hs_ne : s ≠ 1 := h1.resolve_right (not_not.mpr rfl)
+    rw [← LFunctionTrivChar, LFunctionTrivChar_eq_mul_riemannZeta hs_ne, norm_mul]
+    exact mul_le_mul (TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le hs.le)
+      (TauCeti.norm_riemannZeta_le_of_re_pos hs) (norm_nonneg _) (Nat.cast_nonneg N)
+  · calc ‖χ.LFunction s‖ ≤ (N : ℝ) * ‖s‖ / s.re :=
+          χ.norm_LFunction_le_level_mul_norm_div_re hχ hs
+      _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
+      _ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) :=
+          mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (by positivity)) (Nat.cast_nonneg N)
 
 end DirichletCharacter

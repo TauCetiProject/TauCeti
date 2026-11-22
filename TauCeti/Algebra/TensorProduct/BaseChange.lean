@@ -29,6 +29,10 @@ with passing to the opposite algebra, and composes in stages:
   distributing scalar extension over a tensor product.
 * `AlgHom.liftEquiv_toLinearMap`: the algebra map out of a scalar extension attached to `f` is
   the scalar extension `LinearMap.liftBaseChange` of `f`, as a linear map.
+* `AlgHom.toLinearMap_tensorProduct_map_id`, `AlgHom.coe_tensorProduct_map_id`:
+  `Algebra.TensorProduct.map (AlgHom.id S R') f` agrees, as an `S`-linear map (and as a function),
+  with `f.toLinearMap.baseChange R'`, for any intermediate commutative semiring `S` between `R`
+  and `R'`.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.mulBaseChange`: the map
@@ -61,7 +65,7 @@ All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul`
 `_symm_tmul` simp lemmas describe their action in both directions. For tensor-product base change,
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv` identifies the underlying
 Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
-fourfold tensor interchange and with scalar extension in stages.
+the second-factor inclusion, with fourfold tensor interchange and with scalar extension in stages.
 
 Mathlib's `Algebra.TensorProduct.cancelBaseChange` supplies the tower comparison for a commutative
 algebra being extended. The tower comparisons here also support noncommutative algebras, including
@@ -107,6 +111,30 @@ theorem _root_.AlgHom.liftEquiv_toLinearMap {R S A B : Type*} [CommSemiring R] [
     [IsScalarTower R S B] (f : A →ₐ[R] B) :
     (AlgHom.liftEquiv R S A B f).toLinearMap = f.toLinearMap.liftBaseChange S :=
   rfl
+
+/-- Extending an `R`-algebra map `f : A →ₐ[R] B` along `R'` via `Algebra.TensorProduct.map`
+with `AlgHom.id S R'` agrees, as an `S`-linear map, with restricting scalars of
+`f.toLinearMap.baseChange R'`. Unlike `AlgHom.lTensor_toLinearMap_apply`, this allows any
+intermediate commutative semiring `S` between `R` and `R'`. -/
+theorem _root_.AlgHom.toLinearMap_tensorProduct_map_id {R S R' A B : Type*}
+    [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring R'] [Algebra R R']
+    [Algebra S R'] [IsScalarTower R S R'] [Semiring A] [Algebra R A] [Semiring B]
+    [Algebra R B] (f : A →ₐ[R] B) :
+    (Algebra.TensorProduct.map (AlgHom.id S R') f).toLinearMap =
+      (f.toLinearMap.baseChange R').restrictScalars S := by
+  apply LinearMap.restrictScalars_injective R
+  ext r' a
+  simp
+
+/-- Extending an `R`-algebra map `f : A →ₐ[R] B` along `R'` via `Algebra.TensorProduct.map`
+with `AlgHom.id S R'` agrees as a function with `f.toLinearMap.baseChange R'`. -/
+theorem _root_.AlgHom.coe_tensorProduct_map_id {R S R' A B : Type*}
+    [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring R'] [Algebra R R']
+    [Algebra S R'] [IsScalarTower R S R'] [Semiring A] [Algebra R A] [Semiring B]
+    [Algebra R B] (f : A →ₐ[R] B) :
+    ⇑(Algebra.TensorProduct.map (AlgHom.id S R') f) = ⇑(f.toLinearMap.baseChange R') := by
+  simpa only [AlgHom.coe_toLinearMap, LinearMap.coe_restrictScalars] using
+    congrArg DFunLike.coe (f.toLinearMap_tensorProduct_map_id (S := S) (R' := R'))
 
 namespace Algebra.TensorProduct
 
@@ -154,6 +182,16 @@ of scalar extension over a tensor product. -/
 theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Distributing base change over `⊗` carries the second-factor inclusion of the base-changed
+factors to the base change of the second-factor inclusion. -/
+theorem baseChangeTensorAlgEquiv_symm_comp_includeRight :
+    (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+        (Algebra.TensorProduct.includeRight (R := L) (A := L ⊗[K] A) (B := L ⊗[K] B)) =
+      Algebra.TensorProduct.map (AlgHom.id L L) Algebra.TensorProduct.includeRight := by
+  refine Algebra.TensorProduct.ext' fun l b ↦ ?_
+  rw [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.one_def]
+  simp
 
 end Algebra.TensorProduct
 
@@ -266,6 +304,14 @@ def baseChangeTowerAlgEquiv : M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A :=
     (by simp [Algebra.TensorProduct.one_def])
     (LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp)).symm
 
+/-- The linear equivalence underlying the scalar-extension tower comparison is tensor
+cancellation. -/
+@[simp]
+theorem baseChangeTowerAlgEquiv_toLinearEquiv :
+    (baseChangeTowerAlgEquiv K L A M).toLinearEquiv =
+      _root_.TensorProduct.AlgebraTensorModule.cancelBaseChange K L M M A :=
+  (rfl)
+
 /-- The tower comparison moves the intermediate scalar onto the top scalar factor. -/
 @[simp]
 theorem baseChangeTowerAlgEquiv_tmul (m : M) (l : L) (a : A) :
@@ -278,6 +324,18 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
     (baseChangeTowerAlgEquiv K L A M).symm (m ⊗ₜ[K] a) = m ⊗ₜ[L] (1 ⊗ₜ[K] a) :=
   (baseChangeTowerAlgEquiv K L A M).symm_apply_eq.mpr <| by
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
+
+/-- `M ⊗[K] A` is the base change of `L ⊗[K] A` along `L → M`: the inverse tower comparison sends
+the image of `x ∈ L ⊗[K] A` under the scalar map `L → M` to `1 ⊗ x`. -/
+theorem _root_.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
+    (baseChangeTowerAlgEquiv K L A M).symm
+        (Algebra.TensorProduct.rTensor A (IsScalarTower.toAlgHom K L M) x) =
+      (1 : M) ⊗ₜ[L] x := by
+  induction x with
+  | tmul l a =>
+    simp [Algebra.algebraMap_eq_smul_one, _root_.TensorProduct.smul_tmul,
+      _root_.TensorProduct.smul_tmul']
+  | add x y hx hy => simp only [map_add, _root_.TensorProduct.tmul_add, hx, hy]
 
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
 scalar extension over their tensor product, as an equality of algebra maps. -/

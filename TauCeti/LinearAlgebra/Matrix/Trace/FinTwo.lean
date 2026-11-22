@@ -72,6 +72,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   its trace has absolute value greater than `2`.
 * `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
   trace has absolute value less than `2`.
+* `Matrix.IsElliptic.map_intCast`: an elliptic integer matrix is elliptic in every linearly
+  ordered commutative ring.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
   through the determinant of the additive commutator.
@@ -233,6 +235,13 @@ theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A
     A.IsElliptic ↔ |A.trace| < 2 := by
   rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
+
+/-- An elliptic `2 × 2` integer matrix stays elliptic in every linearly ordered commutative ring:
+its discriminant is cast from `ℤ`, and the cast preserves negativity. -/
+theorem IsElliptic.map_intCast {A : Matrix (Fin 2) (Fin 2) ℤ} (h : A.IsElliptic) :
+    (A.map ((↑) : ℤ → R)).IsElliptic := by
+  rw [IsElliptic, discr_fin_two, ← Int.cast_lt_zero (R := R)] at h
+  simpa [IsElliptic, discr_fin_two, trace_fin_two, det_fin_two] using h
 
 /-- If a `2 × 2` matrix of determinant one has trace of absolute value at most `2`, then so does
 every power of it. -/

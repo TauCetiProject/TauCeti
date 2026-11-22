@@ -15,6 +15,7 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.Defs
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -29,11 +30,18 @@ Let `A` be the Gram matrix of a nondegenerate `ℤ_p`-lattice of rank `n`. Its l
 α_p(A) = lim_{r → ∞} p^{-r n (n - 1) / 2} · #{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X ≡ A (mod pʳ)},
 ```
 
-and the local densities at all primes are the local factors of the mass of a genus of
-positive definite lattices. This file defines the count inside the limit,
-`Matrix.localDensityCount A r`, shows that it only depends on `A` up to a change of basis, proves
-that its normalized count stabilizes at every prime, defines the local density
-`Matrix.localDensity A` as the limit, and evaluates it at a prime `p` not dividing `2 det A`.
+and the local densities at all primes, suitably normalized, are the local factors of the mass of a
+genus of positive definite lattices. The normalization here is Siegel's: the congruence is
+entrywise and there is no extra factor `1 / 2`. Consequently `α_p(A) → 2` as `p → ∞` (see the
+closed values below), so the raw product `∏_p α_p(A)⁻¹` diverges to `0`, and the factor that enters
+a mass formula is `α_p(A) / 2`. The count is of entrywise bilinear isometries, which at `p = 2` is
+not the count of isometries of the half-norm quadratic form `x ↦ xᵀ A x / 2`: for the hyperbolic
+plane the bilinear count gives density `4` and the half-norm count gives `1`
+(`Matrix.localDensity_hyperbolicPlane_two` in `LocalDensity/Dyadic.lean`). This file defines the
+count inside the limit, `Matrix.localDensityCount A r`, shows that it only depends on `A` up to a
+change of basis, proves that its normalized count stabilizes at every prime, defines the local
+density `Matrix.localDensity A` as the limit, and evaluates it at a prime `p` not dividing
+`2 det A`.
 
 **Stabilization.** Let `A` be symmetric with `2 det A ∣ pᵉ`, for instance `e = v_p(2 det A)`.
 For every `r > 2 e` the count at level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`,
@@ -546,7 +554,8 @@ private theorem localDensityCount_div_pow_succ_of_dvd {A : Matrix n n ℤ_[p]} (
 normalized counts `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)`. For symmetric `A` with
 nonzero determinant the normalized counts are constant from `r = 2 v_p(2 det A) + 1` on
 (`Matrix.localDensityCount_div_pow_of_det_ne_zero`), so the limit exists; for other `A` this is
-a junk value. -/
+a junk value. This is Siegel's normalization: entrywise bilinear congruences and no extra factor
+`1 / 2`; the dyadic case is discussed in `LocalDensity/Dyadic.lean`. -/
 noncomputable def localDensity (A : Matrix n n ℤ_[p]) : ℚ :=
   limUnder atTop fun r => (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2)
 
@@ -699,15 +708,6 @@ theorem isUnit_det_map_padicInt_iff {A : Matrix n n ℤ} :
     IsUnit (A.map (Int.castRingHom ℤ_[p])).det ↔ ¬ (p : ℤ) ∣ A.det := by
   rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast, PadicInt.isUnit_intCast_iff]
 
-/-- The reduction modulo an odd prime `p` of a symmetric matrix with unit determinant over `ℤ_p`
-is a nondegenerate symmetric matrix over a field of characteristic different from two. -/
-private theorem isSymm_map_toZMod (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A)
-    (hdet : IsUnit A.det) :
-    (A.map PadicInt.toZMod).IsSymm ∧ (A.map PadicInt.toZMod).det ≠ 0 ∧ ringChar (ZMod p) ≠ 2 := by
-  refine ⟨IsSymm.map hA _, ?_, by rwa [ZMod.ringChar_zmod_n]⟩
-  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
-  exact (hdet.map _).ne_zero
-
 /-- **The local density at a prime not dividing `2 det A`, in odd rank.** If `p` is odd and `A` is
 a symmetric `(2m + 1) × (2m + 1)` matrix over `ℤ_p` with unit determinant, the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` converges to `2 ∏_{i=1}^{m} (1 - p^{-2i})`. -/
@@ -717,7 +717,9 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
     Tendsto (fun r => (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2))
       atTop (𝓝 (2 * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
-  obtain ⟨hsymm, hdet', hchar⟩ := isSymm_map_toZMod hp hA hdet
+  have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one hchar hdet' hn
   rw [ZMod.card] at h
   have hchoose : (Fintype.card n).choose 2 = m ^ 2 + m * (m + 1) := by
@@ -753,7 +755,9 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
       atTop (𝓝 (2 * (1 - quadraticChar (ZMod p) ((-1) ^ (m + 1) * (A.map PadicInt.toZMod).det) *
         ((p : ℚ) ^ (m + 1))⁻¹) * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
-  obtain ⟨hsymm, hdet', hchar⟩ := isSymm_map_toZMod hp hA hdet
+  have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two hchar hdet' hn
   rw [ZMod.card] at h
   have hchoose : (Fintype.card n).choose 2 = 2 * (m * (m + 1)) + (m + 1) := by

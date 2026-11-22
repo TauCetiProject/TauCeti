@@ -63,7 +63,7 @@ private theorem lift_surjective :
   intro z
   obtain ⟨n, hn⟩ := exists_pow_mul_mem_holomorphyRing hF
     (mem_holomorphyRing_iff.mpr fun _ hP ↦ hP) (z := (z : F))
-    fun P hP hPx ↦ mem_holomorphyRing_iff.mp z.2 P ⟨hP, hPx⟩
+    fun P hP hPx ↦ mem_holomorphyRing_iff.mp z.property P ⟨hP, hPx⟩
   refine ⟨.tmul k ⟨_, hn⟩ (⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ ^ n), Subtype.ext ?_⟩
   simp [mul_right_comm _ (z : F), mul_inv_cancel₀ (pow_ne_zero n hx)]
 

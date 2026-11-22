@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Derivative
 public import TauCeti.Analysis.Sobolev.Circle.Lp
+public import TauCeti.Analysis.Sobolev.Circle.Rotation
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.Uniqueness
@@ -49,6 +50,8 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
 
 * `TauCeti.CircleSobolev.coeff_ofContinuousMap`: the coefficients of `ofContinuousMap T f` are
   the Fourier coefficients of `f`.
+* `TauCeti.CircleSobolev.rotate_ofContinuousMap`: the rotation by `θ` of the class of a loop
+  `f` is the class of the translated loop `x ↦ f (x + θ)`.
 * `TauCeti.CircleSobolev.ofContinuousMap_toContinuousMap`: for `s > 1/2`, the continuous
   representative of `a ∈ H^s(E)` is sent back to `a`, regarded as an element of `H⁰(E)`.
 * `TauCeti.CircleSobolev.ofContinuousMap_injective`: a continuous loop is determined by its
@@ -65,6 +68,11 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
   `TauCeti.CircleSobolev.norm_ofContinuousMap_le_of_forall_norm_le`: the squared `H⁰` norm of a
   continuous loop is the mean of its squared pointwise norm, so pointwise domination of loops
   gives domination in `H⁰`.
+* `TauCeti.CircleSobolev.integral_norm_sq_eq_mul_norm_ofContinuousMap_sq`: Parseval on a period,
+  `∫_{[0, T]} ‖f‖² = T ‖ofContinuousMap T f‖²`.
+* `TauCeti.CircleSobolev.eq_zero_of_abs_le_of_hilbertBasis`: a real-linear functional on
+  continuous loops, bounded by a multiple of the `H⁰` norm and vanishing on loops forming a Hilbert
+  basis of `H⁰`, vanishes.
 
 ## References
 
@@ -156,6 +164,16 @@ theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
   rw [← b.coord_apply, ← hcoord]
   congr 1
   exact (coeff_toLpₗᵢ_symm T _ n).trans (fourierCoeff_toLp _ n)
+
+/-- The rotation by `θ` of the class in `H⁰(E)` of a continuous loop `f` is the class of the
+translated loop `x ↦ f (x + θ)`. -/
+@[simp]
+theorem rotate_ofContinuousMap (θ : AddCircle T) (f : C(AddCircle T, E)) :
+    rotate θ (ofContinuousMap T f) = ofContinuousMap T (f.comp (ContinuousMap.addRight θ)) :=
+  CircleSobolev.ext (funext fun n ↦ by
+    rw [coeff_rotate, coeff_ofContinuousMap, coeff_ofContinuousMap, ContinuousMap.coe_comp,
+      ContinuousMap.coe_addRight]
+    exact (fourierCoeff_comp_add_right f θ n).symm)
 
 end OfContinuousMap
 
@@ -291,8 +309,8 @@ theorem inner_ofContinuousMap (f g : C(AddCircle T, F)) :
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ f j))
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ g j)) using 1
     · funext n
-      simp only [← inner_conj_symm _ (fourierBasis n), ← HilbertBasis.repr_apply_apply,
-        fourierBasis_repr, fourierCoeff_toLp, hcoeff, inner_conj_symm]
+      simp only [← inner_conj_symm _ (fourierBasis n), inner_fourierBasis_left,
+        fourierCoeff_toLp, hcoeff, inner_conj_symm]
     · rw [ContinuousMap.inner_toLp]
       refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
       simp [φ, mul_comm]
@@ -335,6 +353,51 @@ theorem norm_ofContinuousMap_le_of_forall_norm_le {f g : C(AddCircle T, F)} {C :
   rw [mul_pow, norm_ofContinuousMap_sq, norm_ofContinuousMap_sq, ← integral_const_mul]
   refine integral_mono (hint f) ((hint g).const_mul _) fun x ↦ ?_
   simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) (h x) 2
+
+/-- **Parseval's identity on a period.** For a continuous loop `f` of period `T`,
+`∫_{[0, T]} ‖f‖² = T ‖ofContinuousMap T f‖²`. -/
+theorem integral_norm_sq_eq_mul_norm_ofContinuousMap_sq (f : C(AddCircle T, F)) :
+    ∫ t in Set.Icc 0 T, ‖f t‖ ^ 2 = T * ‖ofContinuousMap T f‖ ^ 2 := by
+  have h := AddCircle.integral_preimage (T := T) 0 fun x ↦ ‖f x‖ ^ 2
+  rw [zero_add] at h
+  rw [norm_ofContinuousMap_sq, integral_Icc_eq_integral_Ioc, h,
+    AddCircle.volume_eq_smul_haarAddCircle, integral_smul_measure,
+    ENNReal.toReal_ofReal hT.out.le, smul_eq_mul]
+
+/-- **Density in `H⁰`.** A real-linear functional on continuous loops bounded by a multiple of the
+`H⁰` norm and vanishing on loops forming a Hilbert basis of `H⁰` vanishes. -/
+theorem eq_zero_of_abs_le_of_hilbertBasis (Λ : C(AddCircle T, F) →ₗ[ℝ] ℝ) {K : ℝ}
+    (hΛ : ∀ χ, |Λ χ| ≤ K * ‖ofContinuousMap T χ‖) {ι : Type*}
+    (b : HilbertBasis ι ℝ (CircleSobolev 0 F)) (e : ι → C(AddCircle T, F))
+    (hb : ∀ i, b i = ofContinuousMap T (e i)) (he : ∀ i, Λ (e i) = 0)
+    (ψ : C(AddCircle T, F)) : Λ ψ = 0 := by
+  -- The bound also holds with the nonnegative constant `|K|`.
+  replace hΛ (χ : C(AddCircle T, F)) : |Λ χ| ≤ |K| * ‖ofContinuousMap T χ‖ :=
+    (hΛ χ).trans (mul_le_mul_of_nonneg_right (le_abs_self K) (norm_nonneg _))
+  have hK : 0 ≤ |K| := abs_nonneg K
+  -- The loops on which `Λ` vanishes have a dense image in `H⁰`, since it contains the basis.
+  set P : Submodule ℝ (CircleSobolev 0 F) := (LinearMap.ker Λ).map
+    ((ofContinuousMap T : C(AddCircle T, F) →L[ℂ] CircleSobolev 0 F)
+      |>.toLinearMap.restrictScalars ℝ)
+  have hspan : Submodule.span ℝ (Set.range b) ≤ P :=
+    Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact ⟨e i, he i, (hb i).symm⟩)
+  have hmem : ofContinuousMap T ψ ∈ closure (P : Set (CircleSobolev 0 F)) := by
+    have h := Submodule.topologicalClosure_mono hspan
+    rw [b.dense_span, top_le_iff] at h
+    rw [← Submodule.topologicalClosure_coe, h]
+    trivial
+  by_contra hne
+  have hpos : 0 < |Λ ψ| := abs_pos.2 hne
+  obtain ⟨y, ⟨χ, hχ, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 hmem (|Λ ψ| / (|K| + 1))
+    (by positivity)
+  have h1 : |Λ ψ| ≤ |K| * dist (ofContinuousMap T ψ) (ofContinuousMap T χ) := by
+    have := hΛ (ψ - χ)
+    rwa [map_sub, LinearMap.mem_ker.1 hχ, sub_zero, map_sub, ← dist_eq_norm] at this
+  have h2 := mul_le_mul_of_nonneg_left hy.le hK
+  have h3 : |K| * (|Λ ψ| / (|K| + 1)) < |Λ ψ| := by
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+    nlinarith
+  exact (h1.trans h2).not_gt h3
 
 end Inner
 

@@ -368,6 +368,41 @@ theorem swapColumns_eq_swapRows (a b : Fin n) (x : GridState n) :
   ext c
   simp [x.toPerm.injective.swap_apply]
 
+/-- Two different grid states differ in two distinct columns `c₁` and `c₂` with `x c₂ = y c₁`:
+take for `c₁` a column where they differ and for `c₂` the column in which `x` occupies the row
+`y c₁`. -/
+theorem exists_ne_of_ne {x y : GridState n} (hxy : x ≠ y) :
+    ∃ c₁ c₂, c₁ ≠ c₂ ∧ x c₁ ≠ y c₁ ∧ x c₂ ≠ y c₂ ∧ x c₂ = y c₁ := by
+  obtain ⟨c₁, hc₁⟩ : ∃ c, x c ≠ y c := by
+    by_contra h
+    exact hxy (GridState.ext fun c => by_contra fun hc => h ⟨c, hc⟩)
+  have hxc₂ : x (x.toPerm.symm (y c₁)) = y c₁ := x.toPerm.apply_symm_apply _
+  have hc₁₂ : c₁ ≠ x.toPerm.symm (y c₁) := fun h => hc₁ (by rw [← hxc₂, ← h])
+  exact ⟨c₁, _, hc₁₂, hc₁, fun h => hc₁₂ (y.toPerm.injective (hxc₂.symm.trans h)), hxc₂⟩
+
+/-- Two grid states which agree away from the columns `c₁` and `c₂` and satisfy `x c₂ = y c₁`
+differ by the transposition of these two columns. This is the converse of
+`TauCeti.GridRectangleBetween.target_eq_swapColumns`. -/
+theorem eq_swapColumns_of_agree {x y : GridState n} {c₁ c₂ : Fin n} (hxc₂ : x c₂ = y c₁)
+    (hagree : ∀ c, c ≠ c₁ → c ≠ c₂ → x c = y c) :
+    y = x.swapColumns c₁ c₂ := by
+  -- The column of `y` occupying the row `x c₁` can only be `c₂`.
+  have hyc₂ : y c₂ = x c₁ := by
+    have hyd : y (y.toPerm.symm (x c₁)) = x c₁ := y.toPerm.apply_symm_apply _
+    by_cases hd₁ : y.toPerm.symm (x c₁) = c₁
+    · rw [hd₁] at hyd
+      rwa [x.toPerm.injective (hxc₂.trans hyd)]
+    by_cases hd₂ : y.toPerm.symm (x c₁) = c₂
+    · rwa [hd₂] at hyd
+    · exact absurd (x.toPerm.injective ((hagree _ hd₁ hd₂).trans hyd)) hd₁
+  refine GridState.ext fun c => ?_
+  rw [GridState.swapColumns_apply]
+  by_cases h₁ : c = c₁
+  · rw [h₁, Equiv.swap_apply_left, hxc₂]
+  by_cases h₂ : c = c₂
+  · rw [h₂, Equiv.swap_apply_right, hyc₂]
+  · rw [Equiv.swap_apply_of_ne_of_ne h₁ h₂, hagree c h₁ h₂]
+
 /-- Swapping the same pair of columns twice is the identity on grid states. -/
 @[simp]
 theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :

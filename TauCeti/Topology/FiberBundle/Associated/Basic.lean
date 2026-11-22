@@ -254,9 +254,9 @@ theorem mk_smul_inv_smul {b : B} (p : P b) (g : G) (v : F) :
 /-- Two pairs of points of the total space of `P` and of `F` have the same class exactly when they
 differ by the action of an element `g` of `G`, acting by `(p, v) ↦ (p • g, g⁻¹ • v)`. -/
 theorem totalSpaceMk_mk_eq_iff {x y : TotalSpace G P × F} :
-    (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) =
-        ⟨y.1.proj, mk G y.1.2 y.2⟩ ↔
-      ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2) := by
+    (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) =
+        ⟨y.1.proj, mk G y.1.snd y.2⟩ ↔
+      ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2) := by
   obtain ⟨⟨b, p⟩, v⟩ := x
   obtain ⟨⟨b', q⟩, w⟩ := y
   constructor
@@ -275,7 +275,7 @@ variable (G P F) in
 `(p • g, g⁻¹ • v)` for every `g : G`. Its quotient is the associated bundle
 (`TauCeti.AssociatedBundle.quotientHomeomorph`). -/
 def orbitRel : Setoid (TotalSpace G P × F) where
-  r x y := ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2)
+  r x y := ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2)
   -- By `totalSpaceMk_mk_eq_iff`, the relation says that the two pairs have the same class.
   iseqv.refl _ := totalSpaceMk_mk_eq_iff.1 rfl
   iseqv.symm h := totalSpaceMk_mk_eq_iff.1 (totalSpaceMk_mk_eq_iff.2 h).symm
@@ -284,13 +284,13 @@ def orbitRel : Setoid (TotalSpace G P × F) where
 
 /-- Two pairs are related by `orbitRel` when they differ by the action of an element of `G`. -/
 theorem orbitRel_iff {x y : TotalSpace G P × F} :
-    orbitRel G P F x y ↔ ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2) :=
+    orbitRel G P F x y ↔ ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2) :=
   Iff.rfl
 
 /-- The orbit relation is the kernel of `(p, v) ↦ [p, v]`. -/
 theorem orbitRel_eq_ker :
     orbitRel G P F = Setoid.ker fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
   Setoid.ext fun _ _ ↦ totalSpaceMk_mk_eq_iff.symm
 
 end AssociatedBundle
@@ -359,17 +359,17 @@ variable (G P F)
 total space of the associated bundle is continuous. -/
 theorem continuous_totalSpaceMk_mk :
     Continuous fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
   Continuous.totalSpaceMk_associatedBundleMk (f := fun x : TotalSpace G P × F ↦ x.1.proj)
     continuous_fst continuous_snd
 
 /-- The map `(p, v) ↦ [p, v]` is an open map. -/
 theorem isOpenMap_totalSpaceMk_mk :
     IsOpenMap fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
   refine IsOpenMap.of_local_sections fun x₀ ↦ ?_
   set Φ := fun x : TotalSpace G P × F ↦
-    (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F))
+    (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F))
   set e := trivializationAt G P x₀.1.proj
   set eA := trivializationAt F (AssociatedBundle G P F) x₀.1.proj
   have heA : eA.baseSet = e.baseSet := baseSet_trivializationAt _
@@ -417,9 +417,9 @@ points of the total space of `P` and of `F` onto the total space of the associat
 open quotient map. -/
 theorem isOpenQuotientMap_totalSpaceMk_mk :
     IsOpenQuotientMap fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) where
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) where
   surjective y := by
-    obtain ⟨p, v, hv⟩ := exists_mk y.2
+    obtain ⟨p, v, hv⟩ := exists_mk y.snd
     exact ⟨(⟨y.proj, p⟩, v), congrArg (TotalSpace.mk y.proj) hv⟩
   continuous := continuous_totalSpaceMk_mk G P F
   isOpenMap := isOpenMap_totalSpaceMk_mk G P F
@@ -438,7 +438,7 @@ variable {G P F}
 /-- The homeomorphism `quotientHomeomorph` sends the class of `(p, v)` to `[p, v]`. -/
 @[simp]
 theorem quotientHomeomorph_mk (x : TotalSpace G P × F) :
-    quotientHomeomorph G P F (Quotient.mk _ x) = ⟨x.1.proj, mk G x.1.2 x.2⟩ :=
+    quotientHomeomorph G P F (Quotient.mk _ x) = ⟨x.1.proj, mk G x.1.snd x.2⟩ :=
   (rfl)
 
 end TauCeti.AssociatedBundle

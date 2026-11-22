@@ -80,7 +80,7 @@ def toCovariantRepresentation : CovariantRepresentation α H where
   group := .ofMonoidHom <| (L.multiplierExtension hL).toMonoidHom.comp
     ((unitary 𝓜(ℂ, FullCrossedProduct α μ)).subtype.comp (groupMultiplier α μ))
   isUnitary := (ContRepresentation.isUnitary_iff_mem_unitary _).2 fun r =>
-    Unitary.map_mem (L.multiplierExtension hL) (groupMultiplier α μ r).2
+    Unitary.map_mem (L.multiplierExtension hL) (groupMultiplier α μ r).property
   continuous_orbit ξ := continuous_multiplierExtension_apply hL
     (u := fun r => (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)))
     continuous_groupMultiplier_fst_apply (fun r => by

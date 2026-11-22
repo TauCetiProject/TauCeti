@@ -38,7 +38,7 @@ initial measure on that set. -/
 theorem map_comp_subtype (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (ν : Measure s) :
     ((κ.subtype hs) ∘ₘ ν).map Subtype.val = κ ∘ₘ (ν.map Subtype.val) := by
-  rw [Measure.map_comp _ _ measurable_subtype_coe, map_subtype κ hs hclosed,
+  rw [Measure.map_comp _ _ measurable_subtypeVal, map_subtype κ hs hclosed,
     ← comp_deterministic_eq_comap, ← Measure.comp_assoc,
     Measure.deterministic_comp_eq_map]
 
@@ -49,14 +49,14 @@ theorem invariant_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
     (κ.subtype hs).Invariant ν ↔ κ.Invariant (ν.map Subtype.val) := by
   unfold Invariant
   rw [← map_comp_subtype κ hs hclosed ν]
-  exact (MeasurableEmbedding.subtype_coe hs).map_injective.eq_iff.symm
+  exact (MeasurableEmbedding.subtypeVal hs).map_injective.eq_iff.symm
 
 /-- An ambient measure concentrated on a closed set is invariant if and only if its
 pullback to that set is invariant for the restricted kernel. -/
 theorem invariant_comap_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (ν : Measure S) (hν : ν sᶜ = 0) :
     (κ.subtype hs).Invariant (ν.comap Subtype.val) ↔ κ.Invariant ν := by
-  rw [invariant_subtype_iff κ hs hclosed, map_comap_subtype_coe hs,
+  rw [invariant_subtype_iff κ hs hclosed, map_comap_subtypeVal hs,
     Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr hν)]
 
 /-- A closed-state restriction has an invariant probability exactly when the ambient kernel
@@ -71,14 +71,14 @@ theorem exists_invariant_probability_subtype_iff (κ : Kernel S S) (hs : Measura
     have := hprob
     refine ⟨ν.map Subtype.val, inferInstance,
       (invariant_subtype_iff κ hs hclosed ν).1 hinv, ?_⟩
-    rw [Measure.map_apply measurable_subtype_coe hs.compl]
+    rw [Measure.map_apply measurable_subtypeVal hs.compl]
     simp
   · rintro ⟨ν, hprob, hinv, hν⟩
     have := hprob
     have hae : ∀ᵐ x ∂ν, x ∈ range (Subtype.val : s → S) := by
       simpa only [Subtype.range_coe] using (ae_iff.mpr hν : ∀ᵐ x ∂ν, x ∈ s)
     exact ⟨ν.comap Subtype.val,
-      (MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae,
+      (MeasurableEmbedding.subtypeVal hs).isProbabilityMeasure_comap hae,
       (invariant_comap_subtype_iff κ hs hclosed ν hν).2 hinv⟩
 
 end ProbabilityTheory.Kernel

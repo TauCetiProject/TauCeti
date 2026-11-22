@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
+import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
 
 /-!
 # The spectral sequence of the critical-band filtration of a Morse function
@@ -44,7 +45,10 @@ For a Morse function the first page is then free on the critical points
 the `q`th band, by Milnor's cell attachment theorem in homology
 (`TauCeti.IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma`). In particular it vanishes when
 the band has no critical point of index `n`, and over a division ring its dimension is the number
-of these critical points times the dimension of the coefficients.
+of these critical points times the dimension of the coefficients. For a Morse–Bott function the
+object at `(p, q)` is instead the relative homology of the lower sublevel with the negative disc
+bundles of the critical submanifolds in the band attached, by Bott's theorem
+(`TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The spectral sequence does not depend on where exactly the bands are cut. If `a ≤ a'` and each
 band `f⁻¹[a q, a' q]` is compact and free of critical points, the identity of `M` induces a
@@ -53,6 +57,15 @@ isomorphism on every page from the first on
 (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_sublevel_hom_f`): on the first page it is the
 map on the relative homology of the bands induced by the inclusions of sublevels, which cross
 bands without critical points.
+
+On a compact manifold the filtration of a cut starting below and ending above all values of `f` is
+finite, from `∅` to `M`, so the spectral sequence converges to the singular homology of `M`: with
+coefficients in a finite-dimensional module `V` over a division ring, the dimension of `Hₙ(M; V)`
+is the sum of the dimensions of the objects of total degree `-n` on every late enough page
+(`TauCeti.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X_sublevel`).
+This needs no hypothesis on `f`, since the homology of a compact manifold is finite-dimensional
+(`TauCeti.finite_singularHomology_of_compactSpace`). For a Morse or Morse–Bott function cut into
+critical bands, the first page records the relative homology across the critical levels.
 
 If moreover no two critical points have indices differing by one, every differential of every page
 vanishes (`TauCeti.IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one`): a
@@ -79,6 +92,9 @@ which records only the dimensions.
   in which the band has no critical point.
 * `TauCeti.IsMorse.finrank_filteredSpaceSpectralSequence_page_two_X`: its dimension over a
   division ring.
+* `TauCeti.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X_sublevel`:
+  on a compact manifold, the dimension of the homology is the sum of the dimensions of a late
+  page in that total degree.
 * `TauCeti.IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one`:
   degeneration when no two critical points have adjacent indices.
 * `TauCeti.IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one`: the
@@ -251,7 +267,8 @@ theorem IsMorse.isZero_filteredSpaceSpectralSequence_page_two_X (hf : IsMorse I 
   obtain ⟨e⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha hband pq hq n
     hn
   have : IsEmpty {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a q) (a (q + 1))) //
-      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.1 x.1.2.1 x.1.2.2 x.2⟩
+      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.val x.val.property.1 x.val.property.2
+          x.property⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
 
 /-- **The dimensions of the first page.** Under the hypotheses of
@@ -273,6 +290,39 @@ theorem IsMorse.finrank_filteredSpaceSpectralSequence_page_two_X (hf : IsMorse I
     (pq.2 + 1) rfl rfl _ rfl n hn).toLinearEquiv.finrank_eq,
     hf.finrank_singularHomology_sublevelPair_eq hc.1 hc.2 hband.isCompact hcrit V n,
     criticalPoints_inter_preimage_singleton_eq hc hcrit]
+
+/-! ### Convergence on a compact manifold -/
+
+variable (I) in
+include I in
+/-- **The spectral sequence of the sublevels of a compact manifold converges to its homology.**
+Let `M` be a compact boundaryless manifold, `f : M → ℝ` a function and `a : ℤ → ℝ` monotone with
+`a q₀ < f ≤ a q₁`, so that the filtration `q ↦ {f ≤ a q}` is `∅` at `q₀` and `M` at `q₁`. On every
+page `r ≥ 2` with `q₁ - q₀ + 1 ≤ r` of the spectral sequence of this filtration, the dimension of
+`Hₙ(M; V)` is the sum, over `q₀ ≤ q < q₁`, of the dimensions of the objects at `(-n - q, q)`, the
+positions of total degree `-n`. For a critical-band cut of a Morse or Morse–Bott function, the first
+page at `(-n - q, q)` is the relative homology `Hₙ({f ≤ a (q + 1)}, {f ≤ a q}; V)` across the
+critical level of the `q`th band. -/
+theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X_sublevel
+    [CompactSpace M] {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V]
+    (ha : Monotone a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁) (n : ℕ)
+    {r : ℤ} (hr : 2 ≤ r) (hrq : q₁ - q₀ + 1 ≤ r) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+        (TopCat.of M)) =
+      ∑ q ∈ Finset.Ico q₀ q₁, finrank k (((filteredSpaceSpectralSequence (Y := TopCat.of M) V
+        ((sublevel_mono f).comp ha)).page r).X (-n - q, q) : ModuleCat k) := by
+  have := finite_singularHomology_of_compactSpace M I V n
+  have hX₀ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₀ = ∅ :=
+    eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx
+  have hX := (sublevel_mono f).comp ha
+  by_cases hq : q₀ ≤ q₁
+  · exact hX.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X V hq
+      hX₀ (eq_univ_of_forall hq₁) n hr hrq
+  -- Otherwise `a q₁ ≤ a q₀ < f ≤ a q₁`, so `M` is empty and the filtration is `M` from `q₀` on.
+  rw [Finset.Ico_eq_empty_of_le (not_le.1 hq).le, Finset.sum_empty,
+    hX.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X V le_rfl hX₀
+      (eq_univ_of_forall fun x ↦ (hq₁ x).trans (ha (not_le.1 hq).le)) n hr (by lia),
+    Finset.Ico_self, Finset.sum_empty]
 
 /-! ### Degeneration in the lacunary case -/
 
@@ -321,12 +371,9 @@ vanishes. -/
 theorem IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one (r : ℤ)
     (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) R
-      ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 := by
-  by_cases hrel : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq'
-  · exact SpectralSequence.page_d_eq_zero_of_le _ le_rfl
-      (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc r pq pq' hrel hr)) r hr
-  · exact HomologicalComplex.shape _ _ _ hrel
+      ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 :=
+  SpectralSequence.page_d_eq_zero_of_isZero_or_isZero _
+    (fun _ _ ↦ isZero_or_isZero_page_two_X R hf ha hind) r hr pq pq'
 
 /-- **The graded homology in the lacunary case.** Let `f` be a Morse function and `a : ℤ → ℝ` a
 critical-band cut of `f`, starting below and ending above all values of `f`: monotone, with every
@@ -340,35 +387,17 @@ in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
 theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one
     {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁) (pq : ℤ × ℤ) (n : ℕ)
     (hn : pq.1 + pq.2 = -n) :
-    Nonempty (cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (Y := TopCat.of M)
-          ((AlgebraicTopology.singularChainComplexFunctor _).obj R)
-          ((sublevel_mono f).comp ha.monotone)))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
+    Nonempty (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) R
+        ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
       ∐ fun _ : {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a pq.2) (a (pq.2 + 1))) //
         manifoldMorseIndex I f x = n} ↦ R) := by
-  set E :=
-    filteredSpaceSpectralSequence (Y := TopCat.of M) R ((sublevel_mono f).comp ha.monotone)
-  -- On a late enough page the object at `pq` is the graded piece of the homology of `M`.
-  have hX₀ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₀ = ∅ :=
-    eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx
-  have hX₁ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₁ = univ := eq_univ_of_forall hq₁
-  set r := max 2 (max (pq.2 - q₀ + 2) (q₁ - pq.2 + 1))
-  have hr : 2 ≤ r := le_max_left _ _
-  have eE := filteredSpaceSpectralSequencePageXIsoGradedOfFinite (Y := TopCat.of M) R
-    ((sublevel_mono f).comp ha.monotone) hX₀ hX₁ r hr pq (by lia) (by lia)
   obtain ⟨e₂⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha.monotone
     (ha.isCriticalBand _) pq rfl n hn
-  by_cases hpq : IsZero ((E.page 2).X pq)
-  · -- The object at `pq` vanishes on every page, and so does the coproduct.
-    exact ⟨(eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r hr)).iso
-      (e₂.isZero_iff.1 hpq)⟩
-  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  let e := E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
-    rcases hpq' with hpq' | hpq'
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right hpq) r hr
-  exact ⟨eE.symm ≪≫ e ≪≫ e₂⟩
+  obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero R
+    ((sublevel_mono f).comp ha.monotone)
+    (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
+    (fun _ hpq' ↦ hpq'.elim (isZero_or_isZero_page_two_X R hf ha hind)
+      fun h ↦ (isZero_or_isZero_page_two_X R hf ha hind h).symm)
+  exact ⟨e ≪≫ e₂⟩
 
 end TauCeti

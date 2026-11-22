@@ -48,7 +48,9 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
 * `TopCat.singularCup_eq_homologyMap_singularCup`: the cup product along a coefficient morphism
   `u` is the cup product along the identity followed by the coefficient change induced by `u`.
 * `TopCat.singularCup_precomp`: compatibility of the cup product with the change of chain
-  coefficients `TopCat.singularCohomologyChainCoefficientMap`.
+  coefficients `TopCat.singularCohomologyChainCoefficientMap`, and
+  `TopCat.singularCup_comp_tensorHom` its compatibility with the changes of chain coefficients of
+  the two factors.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
   `TopCat.singularCup_assoc_unit` the commutative-ring case and
@@ -313,6 +315,25 @@ lemma singularCup_precomp (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
       Category.assoc]
   rw [singularCup, singularCup, hD]
   exact TauCeti.ChainComplex.cup_precomp _ _ _ _ _ _ _ _ _
+
+/-- The cup product along `u ≫ (f ⊗ g)` is the cup product along `u` of the classes pulled back
+along the changes of chain coefficients `f` and `g` of the two factors. -/
+lemma singularCup_comp_tensorHom (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {R' S' : C} (u : T ⟶ R' ⊗ S') (f : R' ⟶ R) (g : S' ⟶ S)
+    (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    X.singularCup k (u ≫ (f ⊗ₘ g)) μ p q n h a b =
+      X.singularCup k u μ p q n h (X.singularCohomologyChainCoefficientMap k M f p a)
+        (X.singularCohomologyChainCoefficientMap k N g q b) := by
+  have h' := TauCeti.ChainComplex.cup_naturality (k := k) (X.alexanderWhitneyDiagonal
+    (u ≫ (f ⊗ₘ g))) μ (X.alexanderWhitneyDiagonal u) (𝟙 _) _ _
+    -- The tensor product `⊗ₘ` of chain maps is `HomologicalComplex.tensorHom` by definition.
+    (by rw [Category.id_comp, alexanderWhitneyDiagonal_comp_tensorHom]; rfl) p q n h a b
+  rw [singularCup, singularCup]
+  refine .trans ?_ h'.symm
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyMap_id
+    (((toSSet.obj X).chainComplex T).linearYonedaObj k P) n) _).symm
 
 section Laws
 
