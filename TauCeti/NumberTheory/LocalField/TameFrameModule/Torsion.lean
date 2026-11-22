@@ -229,11 +229,11 @@ private theorem exists_tameFrameRelationMap_eq_nsmul {n : ℕ} {x : MonoidAlgebr
     (h₀ : ∀ g, (n : R) ∣ (x * (single σ (1 : R) - single 1 a)).coeff g)
     (h₁ : ∀ g, (n : R) ∣ (x * (single τ (1 : R) - single 1 b)).coeff g) :
     ∃ y, tameFrameRelationMap R G σ τ a b x = n • y := by
-  obtain ⟨u₀, hu₀⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₀
-  obtain ⟨u₁, hu₁⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₁
+  obtain ⟨u₀, hu₀⟩ := MonoidAlgebra.exists_eq_smul_iff_dvd_coeff.mpr h₀
+  obtain ⟨u₁, hu₁⟩ := MonoidAlgebra.exists_eq_smul_iff_dvd_coeff.mpr h₁
   refine ⟨Finsupp.single 0 u₀ + Finsupp.single 1 u₁, ?_⟩
   ext i : 1
-  fin_cases i <;> simp [hu₀, hu₁]
+  fin_cases i <;> simp [hu₀, hu₁, Nat.cast_smul_eq_nsmul]
 
 /-- If the relation map sends `w` to `n • y`, then `x` kills the class of `y` in the tame-frame
 module exactly when `x w` is divisible by `n`. -/
@@ -274,8 +274,9 @@ private theorem smul_toQuotient_eq_zero_of_mem
     rw [Ideal.span, Submodule.span_le]
     rintro x (rfl | rfl) <;>
       exact (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).2
-        (MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff fun g ↦
-          hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g)
+        ((MonoidAlgebra.exists_eq_smul_iff_dvd_coeff.mpr fun g ↦
+          hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g).imp
+            fun _ h ↦ h.trans (Nat.cast_smul_eq_nsmul R _ _))
   exact hle hx
 
 include hp hinj hJ hc in
@@ -351,7 +352,8 @@ private theorem exists_smul_toQuotient_eq
     rw [← hu'₁, hd]
     push_cast
     ring
-  obtain ⟨v, hv⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff hcoeff
+  obtain ⟨v, hv⟩ := MonoidAlgebra.exists_eq_smul_iff_dvd_coeff.mpr hcoeff
+  rw [Nat.cast_smul_eq_nsmul] at hv
   refine ⟨u.coeff 1, ?_⟩
   -- Dividing by `p ^ (n + k)`, `y = d y₀` modulo the relation.
   have hy : y = single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v := by

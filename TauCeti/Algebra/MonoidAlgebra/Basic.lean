@@ -23,7 +23,8 @@ none of the further theory built on it.
 * `TauCeti.single_sub_one_ne_zero`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
-  that of `yx` in a group algebra over a commutative semiring.
+  that of `yx` in the monoid algebra of a Dedekind-finite monoid (for instance a group) over a
+  commutative semiring.
 * `MonoidAlgebra.coeff_one_mul_of_coeff_mem`: the coefficient at the identity is multiplicative
   on elements whose other coefficients lie in a square-zero ideal, with additive version
   `AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem`.
@@ -40,14 +41,14 @@ none of the further theory built on it.
 * The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
 * `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
   monoid is integral over its coefficient ring.
-* `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
-  for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
-  coefficient-one monomials) are non-zero-divisors in `R[M]`.
+* `MonoidAlgebra.single_mem_nonZeroDivisors_iff` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
+  for a cancellative monoid `M`, a monomial is a non-zero-divisor in `R[M]` exactly when its
+  coefficient is one in `R`; in particular coefficient-one monomials are non-zero-divisors.
 * `MonoidAlgebra.addSubgroupClosure_range_of`: the basis monomials generate `ℤ[M]` as an additive
   group.
-* `MonoidAlgebra.isRegular_single_one` and `MonoidAlgebra.isRegular_natCast`: for an arbitrary
-  monoid `M`, a regular element of `R` placed at the identity, for instance a regular natural
-  number, is regular in `R[M]`.
+* `MonoidAlgebra.isRegular_single_one_iff` and `MonoidAlgebra.isRegular_natCast_iff`: for an
+  arbitrary monoid `M`, an element of `R` placed at the identity, for instance a natural number,
+  is regular in `R[M]` exactly when it is regular in `R`.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -71,8 +72,8 @@ commutative without carrying a `CommSemigroup` instance. -/
 instance instIsMulCommutativeMonoidAlgebra [IsMulCommutative M] :
     IsMulCommutative (MonoidAlgebra R M) where
   is_comm.comm f g := by
-    have hM := isMulCommutative_iff.mp (inferInstance : IsMulCommutative M)
-    simp [MonoidAlgebra.mul_def, Finsupp.sum, mul_comm, hM, f.coeff.support.sum_comm]
+    simp [MonoidAlgebra.mul_def, Finsupp.sum, mul_comm, mul_comm' (M := M),
+      f.coeff.support.sum_comm]
 
 end Commutative
 
@@ -80,15 +81,17 @@ section Semiring
 
 variable {R : Type*} [Semiring R] {M : Type*}
 
-/-- An element of `R[M]` all of whose coefficients are divisible by `n` is `n` times an element. -/
-theorem _root_.MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
-    (h : ∀ m, (n : R) ∣ x.coeff m) : ∃ y, x = n • y := by
+/-- An element of `R[M]` is `r` times an element exactly when `r` (left) divides each of its
+coefficients. -/
+theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff {r : R} {x : MonoidAlgebra R M} :
+    (∃ y, x = r • y) ↔ ∀ m, r ∣ x.coeff m := by
+  refine ⟨fun ⟨y, hy⟩ m ↦ ⟨y.coeff m, by simp [hy]⟩, fun h ↦ ?_⟩
   choose c hc using h
   refine ⟨∑ m ∈ x.coeff.support, MonoidAlgebra.single m (c m), ?_⟩
   conv_lhs => rw [← MonoidAlgebra.sum_coeff_single x]
   rw [Finsupp.sum, Finset.smul_sum]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [MonoidAlgebra.smul_single, hc m, nsmul_eq_mul]
+  rw [MonoidAlgebra.smul_single', hc m]
 
 end Semiring
 
@@ -166,20 +169,16 @@ end TauCeti
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
-
-/-- The coefficient at the identity is symmetric under swapping the factors in a group algebra
-over a commutative semiring. -/
-theorem coeff_one_mul_comm (x y : MonoidAlgebra R G) :
-    (x * y).coeff 1 = (y * x).coeff 1 := by
-  induction y using MonoidAlgebra.induction_on with
-  | of g => simp [MonoidAlgebra.of_apply]
-  | add y z hy hz =>
-      simpa only [mul_add, add_mul, MonoidAlgebra.coeff_add, Finsupp.add_apply] using
-        congrArg₂ (· + ·) hy hz
-  | smul r y hy =>
-      simpa only [mul_smul_comm, smul_mul_assoc, MonoidAlgebra.coeff_smul,
-        Finsupp.smul_apply] using congrArg (r • ·) hy
+/-- The coefficient at the identity is symmetric under swapping the factors in the monoid algebra
+over a commutative semiring of a Dedekind-finite monoid, one where `a * b = 1` implies
+`b * a = 1` (for instance a group, or a cancellative or commutative monoid). -/
+theorem coeff_one_mul_comm {R M : Type*} [CommSemiring R] [MulOne M] [IsDedekindFiniteMonoid M]
+    (x y : MonoidAlgebra R M) : (x * y).coeff 1 = (y * x).coeff 1 := by
+  classical
+  simp only [coeff_mul, Finsupp.sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ ↦ Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [mul_eq_one_comm, mul_comm (x.coeff a)]
 
 /-- If all coefficients away from the identity of two elements of `R[M]` lie in a square-zero
 ideal, the coefficient at the identity of their product is the product of their coefficients at
@@ -190,7 +189,7 @@ constant modulo such an ideal. -/
 coefficient at zero of their product is the product of their coefficients at zero. Thus the zero
 coefficient is multiplicative on the elements of `R[M]` that are constant modulo such an ideal;
 for Laurent polynomials this is the constant coefficient. -/]
-theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [Monoid M] {I : Ideal R}
+theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [MulOneClass M] {I : Ideal R}
     (hI : I ^ 2 = ⊥) {x y : MonoidAlgebra R M} (hx : ∀ m ≠ 1, x.coeff m ∈ I)
     (hy : ∀ m ≠ 1, y.coeff m ∈ I) :
     (x * y).coeff 1 = x.coeff 1 * y.coeff 1 := by
@@ -241,47 +240,62 @@ instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
     Finite (MonoidAlgebra R M) :=
   .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
 
-/-- In the monoid algebra of a cancellative monoid, any monomial whose coefficient is a
-non-zero-divisor of `R` is a non-zero-divisor of `R[M]`. -/
+/-- In the monoid algebra of a cancellative monoid, a monomial is a non-zero-divisor of `R[M]`
+exactly when its coefficient is a non-zero-divisor of `R`. Cancellativity is used only for the
+reverse implication. -/
 @[to_additive (dont_translate := R)
-/-- In the additive monoid algebra of a cancellative additive monoid, any monomial whose
-coefficient is a non-zero-divisor of `R` is a non-zero-divisor of `R[M]`. -/]
-theorem single_mem_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M]
-    (m : M) {r : R} (hr : r ∈ nonZeroDivisors R) :
-    single m r ∈ nonZeroDivisors (MonoidAlgebra R M) := by
-  obtain ⟨hrL, hrR⟩ := mem_nonZeroDivisors_iff.mp hr
-  refine mem_nonZeroDivisors_iff.mpr ⟨fun f hf => ?_, fun f hf => ?_⟩
-  · ext t
-    exact hrL (f.coeff t) (by simpa using congr(($hf).coeff (m * t)))
-  · ext t
-    exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
+/-- In the additive monoid algebra of a cancellative additive monoid, a monomial is a
+non-zero-divisor of `R[M]` exactly when its coefficient is a non-zero-divisor of `R`.
+Cancellativity is used only for the reverse implication. -/]
+theorem single_mem_nonZeroDivisors_iff {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M]
+    {m : M} {r : R} :
+    single m r ∈ nonZeroDivisors (MonoidAlgebra R M) ↔ r ∈ nonZeroDivisors R := by
+  refine ⟨fun h ↦ ?_, fun hr ↦ ?_⟩
+  · -- Multiplying `single m r` by a monomial at the identity multiplies the coefficients.
+    obtain ⟨hL, hR⟩ := mem_nonZeroDivisors_iff.mp h
+    refine mem_nonZeroDivisors_iff.mpr ⟨fun s hs ↦ ?_, fun s hs ↦ ?_⟩
+    · simpa using hL (single 1 s) (by simp [hs])
+    · simpa using hR (single 1 s) (by simp [hs])
+  · obtain ⟨hrL, hrR⟩ := mem_nonZeroDivisors_iff.mp hr
+    refine mem_nonZeroDivisors_iff.mpr ⟨fun f hf => ?_, fun f hf => ?_⟩
+    · ext t
+      exact hrL (f.coeff t) (by simpa using congr(($hf).coeff (m * t)))
+    · ext t
+      exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
 
-/-- A regular element `r` of `R`, placed at the identity of `M`, is regular in `R[M]`: both
-products with `single 1 r` multiply every coefficient by `r`. No cancellativity of `M` is
-needed. -/
+/-- An element `r` of `R`, placed at the identity of `M`, is regular in `R[M]` exactly when it is
+regular in `R`: both products with `single 1 r` multiply every coefficient by `r`. No
+cancellativity of `M` is needed. -/
 @[to_additive (dont_translate := R)
-/-- A regular element `r` of `R`, placed at the zero of `M`, is regular in `R[M]`: both
-products with `single 0 r` multiply every coefficient by `r`. -/]
-theorem isRegular_single_one {R M : Type*} [Semiring R] [MulOneClass M] {r : R}
-    (hr : IsRegular r) : IsRegular (single 1 r : MonoidAlgebra R M) :=
-  ⟨fun x y h => coeff_injective <| Finsupp.ext fun m =>
-      hr.left (by simpa [coeff_single_one_mul] using congr(($h).coeff m)),
-    fun x y h => coeff_injective <| Finsupp.ext fun m =>
-      hr.right (by simpa [coeff_mul_single_one] using congr(($h).coeff m))⟩
+/-- An element `r` of `R`, placed at the zero of `M`, is regular in `R[M]` exactly when it is
+regular in `R`: both products with `single 0 r` multiply every coefficient by `r`. -/]
+theorem isRegular_single_one_iff {R M : Type*} [Semiring R] [MulOneClass M] {r : R} :
+    IsRegular (single 1 r : MonoidAlgebra R M) ↔ IsRegular r := by
+  refine ⟨fun h ↦ ⟨fun a b hab ↦ ?_, fun a b hab ↦ ?_⟩,
+    fun hr ↦ ⟨fun x y h ↦ ?_, fun x y h ↦ ?_⟩⟩
+  · -- Products of monomials at the identity are the monomials of the products.
+    exact single_right_injective (m := (1 : M)) (h.left (by simpa using hab))
+  · exact single_right_injective (m := (1 : M)) (h.right (by simpa using hab))
+  · exact coeff_injective <| Finsupp.ext fun m ↦
+      hr.left (by simpa [coeff_single_one_mul] using congr(($h).coeff m))
+  · exact coeff_injective <| Finsupp.ext fun m ↦
+      hr.right (by simpa [coeff_mul_single_one] using congr(($h).coeff m))
 
-/-- A natural number that is regular in `R` stays regular in `R[M]`. -/
+/-- A natural number is regular in `R[M]` exactly when it is regular in `R`. -/
 @[to_additive (dont_translate := R)
-/-- A natural number that is regular in `R` stays regular in `R[M]`. -/]
-theorem isRegular_natCast {R M : Type*} [Semiring R] [MulOneClass M] {n : ℕ}
-    (hn : IsRegular (n : R)) : IsRegular (n : MonoidAlgebra R M) := by
-  simpa [natCast_def] using isRegular_single_one (M := M) hn
+/-- A natural number is regular in `R[M]` exactly when it is regular in `R`. -/]
+theorem isRegular_natCast_iff {R M : Type*} [Semiring R] [MulOneClass M] {n : ℕ} :
+    IsRegular (n : MonoidAlgebra R M) ↔ IsRegular (n : R) := by
+  rw [natCast_def, isRegular_single_one_iff]
 
 /-- For a cancellative monoid `M`, every coefficient-one monomial in `MonoidHom.mrange (of R M)`
 is a non-zero-divisor of `R[M]`. -/
 theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M] :
     MonoidHom.mrange (of R M) ≤ nonZeroDivisors (MonoidAlgebra R M) := by
   rintro _ ⟨m, rfl⟩
-  exact single_mem_nonZeroDivisors m (one_mem _)
+  exact single_mem_nonZeroDivisors_iff.mpr (one_mem _)
+
+variable {R : Type*} [Semiring R] {G : Type*} [Group G]
 
 /-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
 noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=
@@ -298,10 +312,9 @@ theorem coe_inv_singleOneUnit (g : G) :
       single g⁻¹ 1 := by
   rfl
 
-omit [CommSemiring R] in
 /-- Conjugating by a basis element conjugates the indices of the coefficients:
 `(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
-theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
+theorem coeff_single_mul_mul_single_inv (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
 
@@ -326,4 +339,4 @@ theorem AddMonoidAlgebra.mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R]
     [IsCancelAdd M] :
     MonoidHom.mrange (AddMonoidAlgebra.of R M) ≤ nonZeroDivisors (AddMonoidAlgebra R M) := by
   rintro _ ⟨m, rfl⟩
-  exact AddMonoidAlgebra.single_mem_nonZeroDivisors m.toAdd (one_mem _)
+  exact AddMonoidAlgebra.single_mem_nonZeroDivisors_iff.mpr (one_mem _)
