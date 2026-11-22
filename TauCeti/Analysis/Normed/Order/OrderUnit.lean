@@ -39,7 +39,8 @@ satisfies `‖e‖ = 1` and the interval formula above. The constructed norm sat
 (`TauCeti.IsArchimedeanOrderUnit.isOrderUnitNorm`), and conversely the interval formula forces
 `e` to be an Archimedean order unit (`TauCeti.IsOrderUnitNorm.isArchimedeanOrderUnit`). For
 such a norm the positive cone is closed, `e` is an interior point of it, and the order is
-recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`. A unital linear order embedding
+recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`; for a homogeneous norm the
+order is then compatible with nonnegative scalars. A unital linear order embedding
 between two such spaces is isometric. The predicate is stable under restriction to a subspace
 containing `e` and under finite nonempty products with the coordinatewise order and the supremum
 norm, and `ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The self-adjoint
@@ -70,6 +71,8 @@ part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.Order
 * `TauCeti.IsOrderUnitNorm.isClosed_nonneg`, `TauCeti.IsOrderUnitNorm.orderClosedTopology`,
   `TauCeti.IsOrderUnitNorm.mem_interior_Ici_zero`: the positive cone is closed and has `e` as an
   interior point.
+* `TauCeti.IsOrderUnitNorm.posSMulMono`: for a homogeneous norm, the cone is stable under
+  nonnegative scaling.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
   `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.isOrderUnitNorm_real_one`,
   `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces, finite nonempty products and
@@ -366,6 +369,16 @@ theorem isClosed_nonneg (h : IsOrderUnitNorm e) : IsClosed {a : E | 0 ≤ a} := 
 /-- An order-unit norm makes `E` an ordered topological group: the order relation is closed. -/
 theorem orderClosedTopology (h : IsOrderUnitNorm e) : OrderClosedTopology E :=
   ⟨isClosed_le_of_isClosed_nonneg h.isClosed_nonneg⟩
+
+/-- For a homogeneous order-unit norm, the order is compatible with multiplication by nonnegative
+scalars: the cone, read off from the norm by `nonneg_iff_norm_smul_sub_le`, is stable under
+nonnegative scaling. -/
+theorem posSMulMono [NormSMulClass ℝ E] (h : IsOrderUnitNorm e) : PosSMulMono ℝ E :=
+  PosSMulMono.of_smul_nonneg fun r hr b hb => by
+    rw [h.nonneg_iff_norm_smul_sub_le] at hb ⊢
+    rw [norm_smul, Real.norm_of_nonneg hr, mul_smul, ← smul_sub, norm_smul,
+      Real.norm_of_nonneg hr]
+    exact mul_le_mul_of_nonneg_left hb hr
 
 end IsOrderUnitNorm
 
