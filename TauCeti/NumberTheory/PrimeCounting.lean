@@ -21,8 +21,8 @@ Since the prime counting function `π` tends to infinity and never increases by 
 time, the ordered products over the primes `p ≤ n` converge exactly when the products over the
 first `k` primes do.
 
-Iterating the same unit-step bound shows that `π n ≤ n` and that an interval `(x, x + y]` of
-length `y ≥ 0` contains at most `y + 1` primes.
+There are at most `n` primes `p ≤ n`, and iterating the same unit-step bound shows that an
+interval `(x, x + y]` of length `y ≥ 0` contains at most `y + 1` primes.
 
 The same comparison applies to any sequence of cutoffs `B k` tending to infinity such that,
 eventually, each interval `(B k, B (k + 1)]` contains at most one prime: the products over the
@@ -130,7 +130,8 @@ theorem primeCounting_add_le_add (m k : ℕ) : primeCounting (m + k) ≤ primeCo
 
 /-- There are at most `n` primes `p ≤ n`. -/
 theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
-  simpa using primeCounting_add_le_add 0 n
+  rw [← primesLE_card_eq_primeCounting, primesLE_eq_filter_Ioc_zero]
+  exact (card_filter_le _ _).trans (by simp)
 
 /-- In an ordered commutative ring with a floor, an interval `(x, x + y]` of length `y ≥ 0`
 contains at most `y + 1` primes. -/

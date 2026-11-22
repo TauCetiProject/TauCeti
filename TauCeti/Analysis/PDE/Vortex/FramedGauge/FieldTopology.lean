@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Limit
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Normed.Lp.PiLp
@@ -207,8 +207,8 @@ theorem subRef_eq_iff (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) (e
     subRef x j = e ↔
       ⇑(inclusion h e).toLp =ᵐ[volume] fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ) := by
   refine ⟨fun hxe ↦ hxe ▸ coeFn_toLp_inclusion_subRef h x j, fun he ↦ ?_⟩
-  rw [subRef_eq_toBesselPotentialSpace x j (memSobolev_toLp_inclusion h e) he]
-  exact toBesselPotentialSpace_memSobolev_toLp_inclusion h e
+  rw [subRef_eq_toBesselPotentialSpace x j (memSobolev_inclusionLp h e) (by rwa [← toLp_inclusion])]
+  exact toBesselPotentialSpace_memSobolev_inclusionLp h e
 
 /-- For `s ≥ 0`, a continuous field of `A_m^s` is determined by the coordinates of `x - x_m` in
 `H^s(ℂ)`. -/
