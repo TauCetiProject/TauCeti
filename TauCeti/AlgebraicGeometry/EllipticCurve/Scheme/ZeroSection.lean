@@ -33,6 +33,8 @@ the residue-field point factors through the zero section.
 * `WeierstrassCurve.mem_range_projModelZero_iff` and `WeierstrassCurve.range_projModelZero`: the
   image of the zero section is the complement of the chart `D₊(Z)`.
 * `WeierstrassCurve.isClosedImmersion_projModelZero`: the zero section is a closed immersion.
+* `WeierstrassCurve.basicOpen_coord_one_sup_coord_two_eq_top`: the charts `D₊(Y)` and
+  `D₊(Z)` cover the projective model.
 * `WeierstrassCurve.ne_projModelZero_iff_mem_basicOpen`: a section of the projective model misses
   the zero section over a point of the base exactly when it lies on the chart `D₊(Z)` there.
 * `WeierstrassCurve.exists_eq_projModelAffinePoint`: a section missing the zero section over every
@@ -149,6 +151,32 @@ theorem range_projModelZero :
     Set.range W.projModelZero =
       (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) : Set W.projModel)ᶜ :=
   Set.ext W.mem_range_projModelZero_iff
+
+/-- The two standard affine opens `D₊(Y)` and `D₊(Z)` cover the projective Weierstrass model:
+the complement of `D₊(Z)` is the zero section, which lies in `D₊(Y)`. -/
+theorem basicOpen_coord_one_sup_coord_two_eq_top :
+    Proj.basicOpen W.toProjective.grading (W.toProjective.coord 1) ⊔
+      Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) = ⊤ := by
+  apply top_unique
+  intro p _
+  by_cases hp : p ∈ Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2)
+  · exact Or.inr hp
+  · obtain ⟨q, rfl⟩ := (W.mem_range_projModelZero_iff p).mpr hp
+    exact Or.inl ((W.projModelZero_mem_basicOpen_iff q 1).mpr rfl)
+
+/-- Every point of the projective Weierstrass model lies in one of the charts `D₊(Y)` or
+`D₊(Z)`, indexed by `Fin 2` via successor. -/
+theorem exists_mem_range_chartι_succ (p : W.projModel) :
+    ∃ i : Fin 2, p ∈ Set.range (W.chartι i.succ) := by
+  have hp : p ∈ Proj.basicOpen W.toProjective.grading (W.toProjective.coord 1) ⊔
+      Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) := by
+    rw [W.basicOpen_coord_one_sup_coord_two_eq_top]
+    trivial
+  rcases hp with hp | hp
+  · exact ⟨0, by simpa only [← Scheme.Hom.coe_opensRange, W.opensRange_chartι,
+      Fin.succ_zero_eq_one] using hp⟩
+  · exact ⟨1, by simpa only [← Scheme.Hom.coe_opensRange, W.opensRange_chartι,
+      Fin.succ_one_eq_two] using hp⟩
 
 /-- The zero section of the projective Weierstrass model is a closed immersion, as is every
 section of a separated morphism. -/

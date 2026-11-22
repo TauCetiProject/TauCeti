@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.Topology.Circle.Degree.Square
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -60,7 +61,12 @@ bundles have the same clutching numbers (`TauCeti.clutchingNumber_eq_of_continuo
 The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
 made a complex vector bundle by
 `TauCeti.ContMDiffAlmostComplexStructure.toContinuousComplexStructure`; this gives the clutching
-number of the almost complex tangent bundle on spheres.
+number of the almost complex tangent bundle on spheres. More generally, a continuous complex
+structure `J` on a real vector bundle `V` makes it a complex vector bundle `J.Fiber`. Two such
+structures `J₀` and `J₁` that are nowhere opposite, `J₁ v ≠ -J₀ v` for `v ≠ 0`, give isomorphic
+complex vector bundles, hence the same clutching numbers
+(`TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add`); this is the
+case for any two almost complex structures tamed by a common symplectic form.
 
 ## Main definitions
 
@@ -78,6 +84,8 @@ number of the almost complex tangent bundle on spheres.
 * `TauCeti.clutchingNumber_eq_of_continuousLinearEquiv`,
   `TauCeti.clutchingNumberHom_eq_of_continuousLinearEquiv`: invariance under isomorphisms of
   complex vector bundles.
+* `TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add`: nowhere
+  opposite complex structures on a real vector bundle have the same clutching numbers.
 
 ## References
 
@@ -181,13 +189,9 @@ theorem continuousOn_clutchingFunction
   -- A total family of automorphisms of `F` agreeing with `e ∘ φ` over the base set.
   let A : B → F ≃L[ℂ] F := fun y ↦ if hy : f y ∈ e.baseSet then
     (φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) else ContinuousLinearEquiv.refl ℂ F
-  have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    have hc : ContinuousOn (fun y ↦ (e (TotalSpace.mk' F (f y) (φ y v))).2) (f ⁻¹' e.baseSet) :=
-      continuous_snd.comp_continuousOn (e.continuousOn.comp
-        (hφ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)
-    refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
-    simp [A, hy]
+  have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) :=
+    (continuousOn_continuousLinearMapAt_comp hφ e).congr fun y (hy : f y ∈ e.baseSet) ↦
+      ContinuousLinearMap.ext fun v ↦ by simp [A, hy, e.coe_linearMapAt_of_mem hy]
   refine hA.normalizedDet.inv.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [A, clutchingFunction_of_mem hy, hy]
 
@@ -196,17 +200,8 @@ theorem continuousOn_clutchingFunction
 theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
-    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet := by
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- Near `y₀`, read both frames in a trivialization around `f y₀`.
-  let e₀ := trivializationAt F E (f y₀)
-  have hU : f ⁻¹' e₀.baseSet ∈ 𝓝 y₀ :=
-    (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
-      (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (f y₀)))
-  refine (((continuousOn_clutchingFunction hψ e₀).inv.mul
-    (continuousOn_clutchingFunction hφ e₀)).continuousAt hU).congr
-      (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
-  simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
+    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet :=
+  (continuous_trans_symm_of_continuous_frame hψ hφ).normalizedDet
 
 end ClutchingFunction
 
@@ -219,6 +214,16 @@ variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, Con
 
 /-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
 private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+
+omit [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- The clutching function of a continuous frame along a sphere based at `x`, read in a
+trivialization defined at `x`, is continuous on the boundary of the square. -/
+theorem continuousOn_clutchingFunction_boundary (p : Ω^ (Fin 2) X x)
+    {φ : ∀ y, F ≃L[ℂ] E (p y)}
+    (hφ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (φ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] (hx : x ∈ e.baseSet) :
+    ContinuousOn (clutchingFunction p φ e) (Cube.boundary (Fin 2)) :=
+  (continuousOn_clutchingFunction hφ e).mono fun y hy ↦ by simp [GenLoop.boundary p y hy, hx]
 
 variable (F E) in
 /-- The **clutching number** of a complex vector bundle `E` on a sphere `p : I² → X` based at `x`
@@ -244,8 +249,7 @@ theorem clutchingNumber_eq_squareBoundaryDegree (p : Ω^ (Fin 2) X x)
   set φ₀ := (exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)).choose
   set e₀ := trivializationAt F E x
   have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
-  have hc₀ : ContinuousOn (clutchingFunction p φ₀ e₀) (Cube.boundary (Fin 2)) :=
-    (continuousOn_clutchingFunction hφ₀ e₀).mono fun y hy ↦ by simp [GenLoop.boundary p y hy, hx₀]
+  have hc₀ := continuousOn_clutchingFunction_boundary p hφ₀ e₀ hx₀
   have hK : Continuous fun y ↦ ((φ y).trans (φ₀ y).symm).normalizedDet⁻¹ :=
     (continuous_normalizedDet_trans_symm hφ₀ hφ).inv
   -- On the boundary, the clutching function of `φ` in `e` is that of `φ₀` in `e₀`, times a factor
@@ -421,5 +425,31 @@ theorem clutchingNumberHom_eq_of_continuousLinearEquiv (Φ : ∀ x, E x ≃L[ℂ
     | h p => exact clutchingNumber_eq_of_continuousLinearEquiv Φ hΦ p
 
 end Equiv
+
+/-! ### Changing the complex structure -/
+
+section ComplexStructure
+
+variable {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀] [FiniteDimensional ℝ F₀]
+  {V : X → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [TopologicalSpace (TotalSpace F₀ V)] [FiberBundle F₀ V] [VectorBundle ℝ F₀ V]
+  [FiniteDimensional ℂ F] [Fact (Module.finrank ℝ F₀ = 2 * Module.finrank ℂ F)]
+
+variable (F) in
+/-- **Nowhere opposite complex structures have the same clutching numbers.** If two continuous
+complex structures `J₀` and `J₁` on a real vector bundle `V` satisfy `J₁ b v ≠ -J₀ b v` for every
+nonzero `v`, the complex vector bundles they define have the same clutching number homomorphism,
+since `J₀ + J₁` is an isomorphism between them
+(`TauCeti.Bundle.ContinuousComplexStructure.fiberCongr`). This applies to any two almost complex
+structures tamed by a common symplectic form. -/
+theorem Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add
+    (J₀ J₁ : Bundle.ContinuousComplexStructure F₀ V) (h : ∀ b, Function.Injective (J₀ b + J₁ b))
+    (x : X) :
+    clutchingNumberHom F J₁.Fiber x = clutchingNumberHom F J₀.Fiber x :=
+  clutchingNumberHom_eq_of_continuousLinearEquiv (J₀.fiberCongr J₁ h)
+    (J₀.continuous_fiberCongr F J₁ h) x
+
+end ComplexStructure
 
 end TauCeti

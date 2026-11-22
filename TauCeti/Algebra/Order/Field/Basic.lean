@@ -29,8 +29,9 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, and how
-to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
+It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, that a
+bound `a * r ^ 2 * t ≤ C` for every `r > 0` with `0 < a` forces `t ≤ 0`, and how to transfer
+bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
@@ -76,6 +77,8 @@ zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
+  `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
   `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
@@ -170,6 +173,21 @@ needed. -/
 theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m :=
   le_of_forall_mem_Ioc_mul_le one_pos fun ε hε ↦ h ε hε.1
+
+/-- If `0 < a` and `a * r ^ 2 * t ≤ C` for every `r > 0`, then `t ≤ 0`: for `t > 0` the left side
+is unbounded in `r`. -/
+theorem nonpos_of_forall_pos_mul_sq_mul_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a t C : α} (ha : 0 < a) (h : ∀ r : α, 0 < r → a * r ^ 2 * t ≤ C) :
+    t ≤ 0 := by
+  by_contra! ht
+  have hat : 0 < a * t := mul_pos ha ht
+  set r := max 1 ((|C| + 1) / (a * t))
+  have hr1 : 1 ≤ r := le_max_left _ _
+  have hr : |C| + 1 ≤ a * t * r := by
+    rw [← div_le_iff₀' hat]
+    exact le_max_right _ _
+  nlinarith [h r (by linarith), le_abs_self C, mul_nonneg (mul_nonneg hat.le (by linarith : 0 ≤ r))
+    (sub_nonneg.2 hr1)]
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]
