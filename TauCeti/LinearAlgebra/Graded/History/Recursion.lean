@@ -35,7 +35,7 @@ variable [DecidableEq ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition 
 
 /-- The truncated geometric sum is the sum of all contributing homogeneous
 histories of lengths strictly below its cutoff; no nilpotence is required. -/
-theorem sum_homogeneousHistory_eq_finiteRecursion (r : ℕ) (x : M) :
+theorem sum_sum_homogeneousHistory_eq_finiteRecursion (r : ℕ) (x : M) :
     (∑ j ∈ Finset.range r,
       ∑ d ∈ ((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).historySupport
           (fun _ => U) (fun _ => ℳ) x,
@@ -48,15 +48,16 @@ theorem sum_homogeneousHistory_eq_finiteRecursion (r : ℕ) (x : M) :
   rw [Path.sum_homogeneousHistory, Path.composeLinear_loopPow, Path.composeLinear_toPath]
 
 /-- A complete family of supplied supports expands the truncated geometric sum after
-linear input and output maps. Completeness is required only below the cutoff. -/
-theorem sum_homogeneousHistory_comp_eq_finiteRecursion {E O : Type*}
+linear input and output maps. Histories below the exclusive cutoff may be
+omitted if they vanish after the output map. -/
+theorem sum_sum_comp_homogeneousHistory_comp_eq_finiteRecursion {E O : Type*}
     [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
     (a : E →ₗ[R] M) (b : M →ₗ[R] O) (r : ℕ)
     (S : (j : ℕ) → Finset
       (((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).Degrees (fun _ => ι)))
     (hS : ∀ j < r, ∀ d ∉ S j,
-      (((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).homogeneousHistory
-        (fun _ => U) (fun _ => ℳ) d).comp a = 0) :
+      b.comp ((((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).homogeneousHistory
+        (fun _ => U) (fun _ => ℳ) d).comp a) = 0) :
     (∑ j ∈ Finset.range r, ∑ d ∈ S j,
       b.comp ((((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).homogeneousHistory
         (fun _ => U) (fun _ => ℳ) d).comp a)) =
@@ -65,8 +66,10 @@ theorem sum_homogeneousHistory_comp_eq_finiteRecursion {E O : Type*}
     _ = ∑ j ∈ Finset.range r, b.comp ((U ^ j).comp a) := by
       apply Finset.sum_congr rfl
       intro j hj
-      rw [Path.sum_comp_homogeneousHistory_comp_eq _ _ _ _ _ _ (hS j (Finset.mem_range.mp hj)),
-        Path.composeLinear_loopPow, Path.composeLinear_toPath]
+      simpa only [Path.composeLinear_loopPow, Path.composeLinear_toPath] using
+        Path.sum_comp_homogeneousHistory_comp_eq (fun _ => U) (fun _ => ℳ)
+          ((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j) a b (S j)
+          (hS j (Finset.mem_range.mp hj))
     _ = b.comp ((U.finiteRecursion r).comp a) := by
       ext y
       simp only [LinearMap.sum_apply, LinearMap.comp_apply, finiteRecursion_apply, map_sum]
@@ -93,7 +96,8 @@ theorem exists_uniform_history_expansion {E : Type*}
   choose S hS using hs
   refine ⟨S, fun j _ => hS j, ?_⟩
   intro O _ _ b
-  exact U.sum_homogeneousHistory_comp_eq_finiteRecursion ℳ a b r S (fun j _ => hS j)
+  exact U.sum_sum_comp_homogeneousHistory_comp_eq_finiteRecursion ℳ a b r S
+    (fun j _ d hd => by simp only [hS j d hd, LinearMap.comp_zero])
 
 /-- With finitely generated range of the forcing map `a`, a family solving a
 nilpotent recursion has common finite history supports for every input at lengths

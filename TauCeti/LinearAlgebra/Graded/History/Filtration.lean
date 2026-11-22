@@ -11,11 +11,11 @@ public import TauCeti.LinearAlgebra.Graded.History.Basic
 # Filtration bounds for homogeneous histories
 
 When each projected arrow transfer raises an additive filtration by one, a history
-along `p` sends an input in step `k` into step `k + p.length`. In a decreasing target
-filtration this output is zero once that index reaches or exceeds a zero step.
-For fixed selections, the sum through `s` agrees with its cutoff `r` if the target
-step `k + r` is zero and each discarded index `r ≤ j < s` has a path of length at
-least `r`. The stages need only be additive submonoids.
+along `p` sends an input in step `k` into step `k + p.length`. It vanishes
+if that step is zero. For exclusive cutoffs `r ≤ s`, the sums over `j < s` and
+`j < r` agree if the step reached by each discarded path `p j` is zero.
+For a decreasing filtration it suffices that step `k + r` is zero and that
+`r ≤ (p j).length` for every `r ≤ j < s`. The stages need only be additive submonoids.
 
 Adapted from `Mei/LinearAlgebra/GradedModule/History/Filtration.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -52,33 +52,28 @@ theorem homogeneousHistory_mem_of_components_raise
     simpa only [length_cons, ← Nat.add_assoc, homogeneousHistory_cons, LinearMap.comp_apply]
       using hF e i (k + p.length) (ih d)
 
-/-- If every projected arrow transfer raises the filtration by one, a history
-starting in step `k` vanishes when `k + p.length` reaches a zero step of the
-decreasing target filtration. -/
-theorem homogeneousHistory_eq_zero_of_le_add_length
+/-- A history vanishes when the filtration step reached by its path is zero. -/
+theorem homogeneousHistory_eq_zero_of_eq_bot
     (hF : ∀ {q q' : Q} (e : q ⟶ q') (i : ι q') (k : ℕ) {y : M q},
       y ∈ F q k → homogeneousComponent (ℳ q') i (T e y) ∈ F q' (k + 1))
-    (p : Path a b) (d : p.Degrees ι) {k r : ℕ} (hanti : Antitone (F b)) (hr : F b r = ⊥)
-    (hp : r ≤ k + p.length) {x : M a} (hx : x ∈ F a k) :
+    (p : Path a b) (d : p.Degrees ι) {k : ℕ} (hp : F b (k + p.length) = ⊥)
+    {x : M a} (hx : x ∈ F a k) :
     p.homogeneousHistory T ℳ d x = 0 := by
-  have hmem := hanti hp (p.homogeneousHistory_mem_of_components_raise T ℳ hF d hx)
-  rwa [hr, AddSubmonoid.mem_bot] at hmem
+  have hmem := p.homogeneousHistory_mem_of_components_raise T ℳ hF d hx
+  rwa [hp, AddSubmonoid.mem_bot] at hmem
 
 end Quiver.Path
 
 namespace TauCeti
 
 open Classical in
-/-- Every projected transfer must raise the filtration by one between its source
-and destination. For a decreasing final target filtration with zero stage `k + r`,
-an input in stage `k` has the same selected sum through cutoffs `s` and `r` if
-every discarded path has length at least `r`. -/
-theorem sum_selected_homogeneousHistory_eq_of_components_raise
+/-- For exclusive cutoffs `r ≤ s`, selected history sums agree when every
+discarded path reaches a zero step of the filtration. -/
+theorem sum_range_sum_homogeneousHistory_eq_of_eq_bot
     (hF : ∀ {q q' : Q} (e : q ⟶ q') (i : ι q') (l : ℕ) {y : M q},
       y ∈ F q l → homogeneousComponent (ℳ q') i (T e y) ∈ F q' (l + 1))
     (p : ℕ → Path a b) {k r s : ℕ}
-    (hp : ∀ j, r ≤ j → j < s → r ≤ (p j).length)
-    (hanti : Antitone (F b)) (hr : F b (k + r) = ⊥) (hrs : r ≤ s)
+    (hp : ∀ j, r ≤ j → j < s → F b (k + (p j).length) = ⊥) (hrs : r ≤ s)
     {x : M a} (hx : x ∈ F a k) (S : (j : ℕ) → Finset ((p j).Degrees ι)) :
     (∑ j ∈ Finset.range s, ∑ d ∈ S j, (p j).homogeneousHistory T ℳ d x) =
       ∑ j ∈ Finset.range r, ∑ d ∈ S j, (p j).homogeneousHistory T ℳ d x := by
@@ -88,8 +83,8 @@ theorem sum_selected_homogeneousHistory_eq_of_components_raise
   have hjr : r ≤ j := Nat.le_of_not_gt (fun h => hj (Finset.mem_range.mpr h))
   apply Finset.sum_eq_zero
   intro d _
-  exact (p j).homogeneousHistory_eq_zero_of_le_add_length T ℳ hF d hanti hr
-    (Nat.add_le_add_left (hp j hjr (Finset.mem_range.mp hjs)) k) hx
+  exact (p j).homogeneousHistory_eq_zero_of_eq_bot T ℳ hF d
+    (hp j hjr (Finset.mem_range.mp hjs)) hx
 
 end TauCeti
 
