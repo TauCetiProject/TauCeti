@@ -159,15 +159,16 @@ theorem IsSequenceForm.mem_sequenceFormPolytope
   refine ⟨hx.apply_none, hx.nonneg hρ fun j ↦ (hb' j).1, fun j ↦ ?_⟩
   simp_rw [hx.apply_some, ← mul_sum, (hb' j).2, mul_one]
 
-/-- Every point of the sequence-form polytope is the sequence form of a behavioral strategy:
-at a decision point `j` reached with positive value, the strategy plays `a` with probability
-`x (some ⟨j, a⟩) / x (parent j)`, and elsewhere it plays any mixed strategy. -/
+/-- Every point of the sequence-form polytope is the sequence form of some behavioral
+strategy. -/
 theorem exists_isSequenceForm_of_mem_sequenceFormPolytope [∀ j, Nonempty (A j)]
     {x : Option (Σ j, A j) → ℝ} (hx : x ∈ sequenceFormPolytope parent) :
     ∃ b : ∀ j, A j → ℝ, (∀ j, b j ∈ Set.range fun p : StdSimplex ℝ (A j) ↦ ⇑p.weights) ∧
       IsSequenceForm parent b x := by
   classical
   obtain ⟨hx1, hx0, hxsum⟩ := hx
+  -- At a decision point `j` with `0 < x (parent j)`, play `a` with probability
+  -- `x (some ⟨j, a⟩) / x (parent j)`; elsewhere, play a fixed point mass `c j`.
   let c (j : J) : A j → ℝ :=
     ⇑(StdSimplex.single (Classical.arbitrary (A j)) : StdSimplex ℝ _).weights
   refine ⟨fun j ↦ if 0 < x (parent j) then fun a ↦ x (some ⟨j, a⟩) / x (parent j) else c j,
