@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
 import Mathlib.Algebra.GroupWithZero.Regular
-import Mathlib.RingTheory.Ideal.Span
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Algebra.MvPolynomial.PDeriv
 
@@ -41,6 +40,7 @@ partial derivatives.
 
 ## Main results
 
+* `MvPolynomial.stronglyDvdAt_iff`, `MvPolynomial.weaklyDvdAt_iff`: the defining conditions.
 * `MvPolynomial.stronglyDvdAt_iff_forall_add_smul`: strong divisibility in terms of the
   translates `a + p • b`.
 * `MvPolynomial.stronglyDvdAt_congr`, `MvPolynomial.weaklyDvdAt_congr`: strong divisibility
@@ -49,13 +49,15 @@ partial derivatives.
   divides `f` at `a` strongly or weakly (and never both).
 * `MvPolynomial.stronglyDvdAt_iff_dvd_eval_of_dvd`, `MvPolynomial.not_weaklyDvdAt_of_dvd`: if
   `q ∣ p`, strong divisibility is divisibility of the value, and there is no weak divisibility.
-* `MvPolynomial.stronglyDvdAt_sq_iff`: the gradient criterion for `p ^ 2`.
-* `MvPolynomial.weaklyDvdAt_sq_iff`, `MvPolynomial.weaklyDvdAt_sq_of_not_dvd_eval_pderiv`:
-  `p ^ 2` weakly divides `f` at `a` exactly when `p ^ 2 ∣ f(a)` and some partial derivative
-  `∂ᵢf(a)` is not divisible by `p`.
+* `MvPolynomial.stronglyDvdAt_sq_iff`: the gradient criterion for `p ^ 2`, when `p` is a
+  non-zero-divisor.
+* `MvPolynomial.weaklyDvdAt_sq_iff`, `MvPolynomial.weaklyDvdAt_sq_of_not_dvd_eval_pderiv`: when
+  `p` is a non-zero-divisor, `p ^ 2` weakly divides `f` at `a` exactly when `p ^ 2 ∣ f(a)` and
+  some partial derivative `∂ᵢf(a)` is not divisible by `p`.
 * `MvPolynomial.StronglyDvdAt.eval₂_eq_zero`,
   `MvPolynomial.StronglyDvdAt.eval₂_pderiv_eq_zero`: modulo `p`, a point at which `p ^ 2`
-  strongly divides `f` reduces into the zero locus of `f` and of every `∂ᵢf`.
+  strongly divides `f` reduces into the zero locus of `f` and, when `p` is a non-zero-divisor,
+  of every `∂ᵢf`.
 
 ## References
 
@@ -85,6 +87,15 @@ def WeaklyDvdAt (f : MvPolynomial σ R) (p q : R) (a : σ → R) : Prop :=
   q ∣ eval a f ∧ ¬ f.StronglyDvdAt p q a
 
 variable {f : MvPolynomial σ R} {p q : R} {a a' : σ → R}
+
+/-- Unfolding lemma for `MvPolynomial.StronglyDvdAt`. -/
+theorem stronglyDvdAt_iff :
+    f.StronglyDvdAt p q a ↔ ∀ a' : σ → R, (∀ i, p ∣ a' i - a i) → q ∣ eval a' f :=
+  Iff.rfl
+
+/-- Unfolding lemma for `MvPolynomial.WeaklyDvdAt`. -/
+theorem weaklyDvdAt_iff : f.WeaklyDvdAt p q a ↔ q ∣ eval a f ∧ ¬ f.StronglyDvdAt p q a :=
+  Iff.rfl
 
 /-- Strong divisibility at `a` modulo `p` is divisibility of the values at all the translates
 `a + p • b`. -/
@@ -128,7 +139,7 @@ theorem dvd_eval_iff_stronglyDvdAt_or_weaklyDvdAt :
 /-- When `p ∣ q`, weak divisibility depends only on the point modulo `q`. -/
 theorem weaklyDvdAt_congr (hpq : p ∣ q) (h : ∀ i, q ∣ a' i - a i) :
     f.WeaklyDvdAt p q a' ↔ f.WeaklyDvdAt p q a := by
-  rw [WeaklyDvdAt, WeaklyDvdAt, stronglyDvdAt_congr fun i ↦ hpq.trans (h i),
+  rw [weaklyDvdAt_iff, weaklyDvdAt_iff, stronglyDvdAt_congr fun i ↦ hpq.trans (h i),
     dvd_iff_dvd_of_dvd_sub (dvd_eval_sub_eval f h)]
 
 /-- If `q ∣ p`, then `q` strongly divides `f` at `a` modulo `p` exactly when it divides the
@@ -148,18 +159,6 @@ multiples of `p` itself. -/
 theorem not_weaklyDvdAt_of_dvd (hqp : q ∣ p) : ¬ f.WeaklyDvdAt p q a :=
   fun h ↦ h.2 ((stronglyDvdAt_iff_dvd_eval_of_dvd hqp).2 h.1)
 
-/-- The first-order Taylor expansion modulo `p ^ 2` along the translates `a + p • b`, over the
-finitely many variables of `f`. -/
-private theorem sq_dvd_eval_add_smul_sub (f : MvPolynomial σ R) (p : R) (a b : σ → R) :
-    p ^ 2 ∣ eval (a + p • b) f - eval a f - p * ∑ j ∈ f.vars, eval a (pderiv j f) * b j := by
-  have h := eval_sub_eval_sub_sum_pderiv_mem_sq f (I := Ideal.span {p}) (a := a)
-    (b := a + p • b) (s := f.vars) (fun i hi _ ↦ hi)
-    (fun i _ ↦ Ideal.mem_span_singleton.2 ⟨b i, by simp⟩)
-  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
-  convert h using 2
-  rw [Finset.mul_sum]
-  exact Finset.sum_congr rfl fun j _ ↦ by simp [mul_left_comm]
-
 /-- **Gradient criterion, necessity.** If `p` is a non-zero-divisor and `p ^ 2` strongly divides
 `f` at `a` modulo `p`, then `p` divides every partial derivative `∂ᵢf(a)`. -/
 theorem StronglyDvdAt.dvd_eval_pderiv (hp : IsLeftRegular p) (h : f.StronglyDvdAt p (p ^ 2) a)
@@ -172,7 +171,7 @@ theorem StronglyDvdAt.dvd_eval_pderiv (hp : IsLeftRegular p) (h : f.StronglyDvdA
     split_ifs with hi
     · rfl
     · simp [pderiv_eq_zero_of_notMem_vars hi]
-  have htaylor := sq_dvd_eval_add_smul_sub f p a (Pi.single i 1 : σ → R)
+  have htaylor := sq_dvd_eval_add_smul_sub_sum_pderiv f p a (Pi.single i 1 : σ → R)
   rw [hsum] at htaylor
   have hlin := dvd_sub (dvd_sub (h (Pi.single i 1 : σ → R)) (by simpa using h 0)) htaylor
   rw [sub_sub_cancel, sq] at hlin
@@ -187,7 +186,7 @@ theorem stronglyDvdAt_sq_of_forall_dvd_eval_pderiv (h0 : p ^ 2 ∣ eval a f)
   have hsum : p ^ 2 ∣ p * ∑ j ∈ f.vars, eval a (pderiv j f) * b j := by
     rw [sq]
     exact mul_dvd_mul_left p (Finset.dvd_sum fun j _ ↦ (hi j).mul_right _)
-  simpa using dvd_add (dvd_add (sq_dvd_eval_add_smul_sub f p a b) hsum) h0
+  simpa using dvd_add (dvd_add (sq_dvd_eval_add_smul_sub_sum_pderiv f p a b) hsum) h0
 
 /-- **Gradient criterion.** If `p` is a non-zero-divisor, then `p ^ 2` strongly divides `f` at
 `a` modulo `p` if and only if `p ^ 2 ∣ f(a)` and `p` divides every partial derivative
@@ -201,7 +200,7 @@ theorem stronglyDvdAt_sq_iff (hp : IsLeftRegular p) :
 if `p ^ 2 ∣ f(a)` and some partial derivative `∂ᵢf(a)` is not divisible by `p`. -/
 theorem weaklyDvdAt_sq_iff (hp : IsLeftRegular p) :
     f.WeaklyDvdAt p (p ^ 2) a ↔ p ^ 2 ∣ eval a f ∧ ∃ i, ¬ p ∣ eval a (pderiv i f) := by
-  rw [WeaklyDvdAt, stronglyDvdAt_sq_iff hp, not_and, not_forall]
+  rw [weaklyDvdAt_iff, stronglyDvdAt_sq_iff hp, not_and, not_forall]
   exact and_congr_right fun h ↦ ⟨fun h' ↦ h' h, fun h' _ ↦ h'⟩
 
 /-- If `p` is a non-zero-divisor, `p ^ 2 ∣ f(a)` and some partial derivative `∂ᵢf(a)` is not
