@@ -16,7 +16,8 @@ The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x
 Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both sides vanish: the
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
-For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling.
+For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling,
+and likewise its real powers are `(√t)⁻¹ ^ x = t ^ (-x/2)`.
 Splitting `1 - x² = (1 - x) (1 + x)` gives `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`,
 again for every real `x`.
 
@@ -69,6 +70,8 @@ A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 
 norms, as for the monomials of a weighted Sobolev algebra.
 Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`; this is how a
 power-law exponent is read off from testing an inequality on `n` copies of one vector.
+If `c ^ e` is bounded for all `c > 0`, then `e = 0`; this is how a scaling argument pins an
+exponent.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -84,9 +87,17 @@ A nonnegative factor splits off a real power of any real number, including a neg
 `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
 the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
-A common nonnegative factor comes out of a weighted geometric mean:
-`(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for `0 ≤ c`. This is how a common factor is
-pulled out of the bound `A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+A common nonnegative factor comes out of a product of two real powers whose exponents sum to `1`:
+`(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t` and `a + b = 1`, with no condition on the signs
+of `x`, `y`, `a` and `b`. For nonnegative bases and weights this is the homogeneity of the
+two-point weighted geometric mean, and it is how a common factor is pulled out of the bound
+`A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+The powers `N ^ β₀` and `N ^ β₁` of a nonnegative base in such a bound recombine as
+`(N ^ β₀) ^ a (N ^ β₁) ^ b = N ^ (β₀ a + β₁ b)` when that exponent is nonzero, typically `N` itself
+when the boundary exponents interpolate to `1`.
+
+A bound `s ^ p u ≤ M` with `s, u ≥ 0` splits as `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for every
+`θ ≥ 0`. This trades part of a power of a cutoff for a power of its maximum.
 
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
@@ -96,6 +107,7 @@ with the corresponding integral of `q`-th powers.
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-1 / 2)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
+* `Real.inv_sqrt_rpow_eq_rpow`: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t` and real `x`.
 * `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
   `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
@@ -129,14 +141,19 @@ with the corresponding integral of `q`-th powers.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
+* `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
-* `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
-  `0 ≤ c`.
+* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
+  and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
+* `Real.rpow_rpow_mul_rpow_rpow_of_add_eq`: `(x ^ y) ^ a (x ^ z) ^ b = x ^ w` for `0 ≤ x` and
+  `y a + z b = w ≠ 0`.
 * `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
   `0 ≤ P` and `0 ≤ δ ≤ 1`.
+* `Real.rpow_mul_mul_le_rpow_mul_rpow`: `s ^ p u ≤ M` gives `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for
+  `0 ≤ s`, `0 ≤ u` and `0 ≤ θ`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -176,6 +193,13 @@ theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-1 / 2 : ℝ) := by
 `0 ≤ t`. This is the factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` in dimension `n`. -/
 theorem inv_sqrt_pow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (n : ℕ) : (√t)⁻¹ ^ n = t ^ (-(n : ℝ) / 2) := by
   rw [rpow_div_two_eq_sqrt _ ht, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
+
+/-- A real power of the inverse square root: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t`. This is the
+factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` on an `Lᵖ` norm. -/
+theorem inv_sqrt_rpow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (x : ℝ) : (√t)⁻¹ ^ x = t ^ (-x / 2) := by
+  rw [sqrt_eq_rpow, ← rpow_neg ht, ← rpow_mul ht]
+  congr 1
+  ring
 
 /-- For every real `x`, `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`. For `|x| > 1` both
 sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y ≠ 0` and
@@ -356,6 +380,18 @@ theorem le_of_forall_natCast_rpow_le_mul_rpow {a b C : ℝ}
   simp only [Function.comp_apply] at hCn
   nlinarith
 
+/-- If `c ^ e` is bounded on `(0, ∞)`, then `e = 0`: otherwise `c = (K + 1) ^ e⁻¹` gives
+`c ^ e = K + 1`. This is how a scaling argument pins an exponent. -/
+theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e ≤ K) : e = 0 := by
+  by_contra he
+  have hK : 0 < K + 1 := by
+    have := h 1 one_pos
+    rw [one_rpow] at this
+    linarith
+  have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
+  rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
+  linarith
+
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
     A ^ c ≤ exp (-(c * t)) := by
@@ -377,12 +413,20 @@ theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
         log_mul ha.ne' ht.ne, add_mul, exp_add]
       ring
 
-/-- A common factor `c ≥ 0` comes out of a weighted geometric mean:
-`(c a) ^ (1 - θ) (c b) ^ θ = c (a ^ (1 - θ) b ^ θ)`, for all real `a`, `b` and `θ`. -/
-theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
-    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
-  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
-    ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+/-- A common factor `t ≥ 0` comes out of a product of two real powers whose exponents sum to `1`:
+`(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)` for all real `x`, `y`, `a` and `b` with `a + b = 1`. For
+nonnegative bases and weights this is the homogeneity of the two-point weighted geometric mean. -/
+theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hab : a + b = 1) :
+    (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
+  simp only [mul_rpow_of_nonneg_left ht]
+  rw [mul_mul_mul_comm, ← rpow_of_add_eq ht one_ne_zero hab, rpow_one]
+
+/-- Two real powers of a nonnegative base, each raised to a further real power, combine into one
+power: `(x ^ y) ^ a (x ^ z) ^ b = x ^ w` for `0 ≤ x` and `y a + z b = w ≠ 0`. -/
+theorem rpow_rpow_mul_rpow_rpow_of_add_eq {x y z a b w : ℝ} (hx : 0 ≤ x) (hw : w ≠ 0)
+    (h : y * a + z * b = w) : (x ^ y) ^ a * (x ^ z) ^ b = x ^ w := by
+  simp only [← rpow_mul hx]
+  exact (rpow_of_add_eq hx hw h).symm
 
 /-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
 every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
@@ -393,6 +437,18 @@ theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤
     _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
         (rpow_le_rpow hP hB (by linarith)) (by positivity)
         (rpow_nonneg (hP.trans hA) _)
+
+/-- **Splitting a power bound.** If `s ^ p u ≤ M` with `s, u ≥ 0`, then
+`s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for every `θ ≥ 0`: write `s ^ (p θ) u` as
+`(s ^ p u) ^ θ u ^ (1 - θ)`. -/
+theorem rpow_mul_mul_le_rpow_mul_rpow {s u M p θ : ℝ} (hs : 0 ≤ s) (hu : 0 ≤ u) (hθ : 0 ≤ θ)
+    (hM : s ^ p * u ≤ M) : s ^ (p * θ) * u ≤ M ^ θ * u ^ (1 - θ) := by
+  calc s ^ (p * θ) * u = (u * s ^ p) ^ θ * (u * 1) ^ (1 - θ) := by
+        rw [mul_rpow_mul_mul_rpow_of_add_eq_one hu (add_sub_cancel θ 1), one_rpow,
+          mul_one ((s ^ p) ^ θ), rpow_mul hs, mul_comm u]
+    _ ≤ M ^ θ * u ^ (1 - θ) := by
+        rw [mul_comm u (s ^ p), mul_one u]
+        gcongr
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

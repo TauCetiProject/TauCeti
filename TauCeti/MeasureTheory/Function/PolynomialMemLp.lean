@@ -12,8 +12,8 @@ public import Mathlib.Topology.Algebra.Polynomial
 /-!
 # Integrability and `L²` membership of polynomials when moments are integrable
 
-This file proves that a real polynomial, evaluated pointwise, is integrable and square-integrable
-against any measure on `ℝ` whose polynomial moments are finite (up to the relevant degree):
+This file proves integrability of a real polynomial of degree `d` when its monomials through degree
+`d` are integrable. Moments through degree `2 * d` suffice for square-integrability.
 
 * `integrable_eval_of_forall_le_natDegree` — a polynomial is integrable, being a finite linear
   combination of monomials, as soon as its monomials up to its degree are integrable, and
@@ -21,8 +21,8 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   combination of moments;
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable when every monomial is;
-* `tendsto_integral_eval_of_forall_le_natDegree` — convergence of polynomial integrals from
-  eventual integrability and convergence of monomial integrals up to the polynomial's degree;
+* `Polynomial.tendsto_integral_eval_of_forall_le_natDegree` — convergence of polynomial
+  integrals from eventual integrability and convergence of monomial integrals up to the degree;
 * `tendsto_integral_eval_of_tendsto_integral_pow` — convergence of polynomial integrals from
   eventual integrability and convergence of monomial integrals;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
@@ -33,10 +33,10 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
-The all-moments results consume only the hypothesis `∀ k, Integrable (x ↦ xᵏ) μ`, and the
-degree-bounded ones only its restriction to `k ≤ q.natDegree`, with no dependence on the particular
-measure, so they apply verbatim to the Gaussian measure (all moments integrable by Fernique) and
-to the compactly supported Chebyshev measure alike.
+The integrability results depend only on monomial integrability against the given measure. The
+convergence results also require eventual monomial integrability against the approximating measures
+and convergence of the corresponding moments. They apply, for example, to the Gaussian measure
+(all moments integrable by Fernique) and to the compactly supported Chebyshev measure.
 
 Building on the `L²` membership, `polynomialEvalLp` bundles polynomial evaluation, cast into any
 `[RCLike 𝕜]` scalar field, as an `ℝ`-linear map `ℝ[X] →ₗ[ℝ] Lp 𝕜 2 μ`.  Being measure- and
@@ -73,17 +73,10 @@ theorem integral_eval_eq_sum_range {q : ℝ[X]}
     (hmom k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).const_mul _]
   simp_rw [integral_const_mul]
 
-/-- If every monomial is eventually integrable against `μᵢ`, then eventually all monomials up to
-the degree of a given polynomial are integrable. -/
-theorem eventually_forall_le_natDegree_integrable_pow {ι : Type*} {l : Filter ι}
-    {μs : ι → Measure ℝ} (p : ℝ[X])
-    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) :
-    ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
-  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 hμs
-
-/-- If the moments up to the degree of `p` converge to prescribed values, the polynomial integrals
-converge to the corresponding linear combination of those values. -/
-theorem tendsto_integral_eval_sum_range_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
+/-- If the monomials through the degree of `p` are eventually integrable and their integrals
+converge to prescribed values, the polynomial integrals converge to their linear combination. -/
+theorem _root_.Polynomial.tendsto_integral_eval_sum_range_of_forall_le_natDegree
+    {ι : Type*} {l : Filter ι}
     {μs : ι → Measure ℝ} {m : ℕ → ℝ} (p : ℝ[X])
     (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
     (h : ∀ n ≤ p.natDegree,
@@ -92,11 +85,13 @@ theorem tendsto_integral_eval_sum_range_of_forall_le_natDegree {ι : Type*} {l :
       (𝓝 (∑ n ∈ Finset.range (p.natDegree + 1), p.coeff n * m n)) := by
   refine (tendsto_finsetSum _ fun n hn =>
     (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [eventually_forall_le_natDegree_integrable_pow p hμs] with i hi
+  filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2 hμs] with i hi
   exact (integral_eval_eq_sum_range hi).symm
 
-/-- Convergence of the moments up to the degree of `p` implies convergence of its integral. -/
-theorem tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
+/-- If the monomials through the degree of `p` are eventually integrable for the approximating
+measures and integrable for the limit measure, convergence of their integrals implies convergence
+of the polynomial integrals. -/
+theorem _root_.Polynomial.tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
     {μs : ι → Measure ℝ} {μ : Measure ℝ} (p : ℝ[X])
     (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
     (hμ : ∀ n ≤ p.natDegree, Integrable (fun x : ℝ => x ^ n) μ)
@@ -104,7 +99,7 @@ theorem tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι
       Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) :
     Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
   rw [integral_eval_eq_sum_range hμ]
-  exact tendsto_integral_eval_sum_range_of_forall_le_natDegree p hμs h
+  exact p.tendsto_integral_eval_sum_range_of_forall_le_natDegree hμs h
 
 /-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
 polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
@@ -115,7 +110,7 @@ theorem tendsto_integral_eval_of_tendsto_integral_pow {ι : Type*} {l : Filter �
     (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
     (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
     Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
-  exact tendsto_integral_eval_of_forall_le_natDegree p (fun n _ => hμs n)
+  exact p.tendsto_integral_eval_of_forall_le_natDegree (fun n _ => hμs n)
     (fun n _ => hμ n) (fun n _ => h n)
 
 /-- A real polynomial is integrable against any measure all of whose monomials are integrable. -/

@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Function.Lusin
 public import TauCeti.Topology.Semicontinuity.Approximation
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Lower semicontinuity of a lower semicontinuous integrand in the measure
@@ -37,8 +36,9 @@ the value `∞` is allowed on both sides.
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
 * `TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le` and its finite-measure
-  counterpart: weak cluster points inherit eventual integral bounds for lower-semicontinuous
-  nonnegative functions.
+  counterpart: weak cluster points inherit integrability and integral bounds for
+  lower-semicontinuous nonnegative functions that are eventually integrable and uniformly bounded
+  in integral.
 * `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
   `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on a set of finite or probability measures when
   `Φ` is continuous on closed sets of uniformly almost full mass.
@@ -133,8 +133,8 @@ section IntegralBounds
 
 variable {γ : Type*} {L : Filter γ} {g : Ω → ℝ} {M : ℝ}
 
-/-- A weak cluster point of finite measures inherits an eventual integral bound for a
-nonnegative lower-semicontinuous real-valued function. -/
+/-- If a nonnegative lower-semicontinuous function is eventually integrable with a uniform
+integral bound, a weak cluster point of finite measures inherits both properties. -/
 theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
     {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω}
     (hg : LowerSemicontinuous g) (hnonneg : ∀ x, 0 ≤ g x)
@@ -165,8 +165,8 @@ theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasur
   rw [← ofReal_integral_eq_lintegral_ofReal hμint (ae_of_all _ hnonneg)] at hlintegral
   exact ⟨hμint, (ENNReal.ofReal_le_ofReal_iff hM).mp hlintegral⟩
 
-/-- A weak cluster point of probability measures inherits an eventual integral bound for a
-nonnegative lower-semicontinuous real-valued function. -/
+/-- If a nonnegative lower-semicontinuous function is eventually integrable with a uniform
+integral bound, a weak cluster point of probability measures inherits both properties. -/
 theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le
     {μs : γ → ProbabilityMeasure Ω} {μ : ProbabilityMeasure Ω}
     (hg : LowerSemicontinuous g) (hnonneg : ∀ x, 0 ≤ g x)
@@ -176,9 +176,9 @@ theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le
     Integrable g (μ : Measure Ω) ∧ ∫ x, g x ∂(μ : Measure Ω) ≤ M := by
   have hμ' := hμ.continuousAt_comp ProbabilityMeasure.toFiniteMeasure_continuous.continuousAt
   have hint' : ∀ᶠ i in L, Integrable g ((μs i).toFiniteMeasure : Measure Ω) := by
-    simpa using hint
+    simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hint
   have hbound' : ∀ᶠ i in L, ∫ x, g x ∂((μs i).toFiniteMeasure : Measure Ω) ≤ M := by
-    simpa using hbound
+    simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hbound
   simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure, Function.comp_apply]
     using integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
       hg hnonneg hint' hbound' hμ'

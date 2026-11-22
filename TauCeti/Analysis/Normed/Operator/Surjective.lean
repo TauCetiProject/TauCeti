@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Stability of surjectivity under small perturbations
@@ -43,6 +44,8 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   stays surjective under a perturbation bounded by `θ < 1` times the map.
 * `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
   the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
+* `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_lt`: an approximate bounded
+  linear right inverse, with `‖T ∘ Q₀ - id‖ < 1`, corrects to an exact one.
 * `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
   by the line through a vector is surjective exactly when its range and the vector span the
   target.
@@ -163,6 +166,30 @@ theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
   apply Submodule.eq_top_of_nonempty_interior'
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
   exact ⟨0, 0, map_zero S⟩
+
+/-- **Approximate right inverses can be corrected.** If `Q₀` is an approximate bounded linear
+right inverse of `T`, with `‖T ∘ Q₀ - id‖ < 1`, then `T` has a bounded linear right inverse `Q`
+with `‖Q‖ ≤ ‖Q₀‖ / (1 - ‖T ∘ Q₀ - id‖)`, namely `Q₀ ∘ (T ∘ Q₀)⁻¹`, where `T ∘ Q₀` is inverted by
+its Neumann series. -/
+theorem exists_rightInverse_of_norm_comp_sub_id_lt [CompleteSpace F] (T : E →L[𝕜] F)
+    (Q₀ : F →L[𝕜] E) (h : ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖ < 1) :
+    ∃ Q : F →L[𝕜] E, T.comp Q = ContinuousLinearMap.id 𝕜 F ∧
+      ‖Q‖ ≤ ‖Q₀‖ * (1 - ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖)⁻¹ := by
+  set t : F →L[𝕜] F := ContinuousLinearMap.id 𝕜 F - T.comp Q₀
+  have ht : ‖t‖ < 1 := by rwa [norm_sub_rev]
+  set U := Units.oneSub t ht
+  have hU : (U : F →L[𝕜] F) = T.comp Q₀ := by
+    rw [Units.val_oneSub, one_def, sub_sub_cancel]
+  refine ⟨Q₀.comp ((U⁻¹ : (F →L[𝕜] F)ˣ) : F →L[𝕜] F), ?_, ?_⟩
+  · rw [← comp_assoc, ← hU, ← mul_def, Units.mul_inv, one_def]
+  · rw [norm_sub_rev]
+    refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg Q₀))
+    rw [← Ring.inverse_unit, Units.val_oneSub]
+    refine (NormedRing.norm_inverse_one_sub_le ht).trans ?_
+    have h1 : ‖(1 : F →L[𝕜] F)‖ ≤ 1 := by
+      rw [one_def]
+      exact norm_id_le
+    linarith
 
 /-- A continuous linear map and a vector together span the target exactly when the map extended
 by the line through the vector is surjective. -/

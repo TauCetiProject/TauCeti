@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
 # Integrals of unbounded functions along weakly convergent finite measures
@@ -37,6 +40,10 @@ sufficiency of the tail condition; the necessity needs `∫⁻ g ∂μ ≠ ∞`.
 * `TauCeti.exists_setLIntegral_le_of_tendsto_lintegral` — conversely, convergence of the
   integrals to a finite limit gives uniformly integrable tails;
 * `TauCeti.tendsto_lintegral_iff_forall_exists_setLIntegral_le` — the resulting equivalence.
+* `MeasureTheory.FiniteMeasure.tendsto_integral_of_integral_sq_le` — convergence of real integrals
+  under an eventual square-integrability bound and integrability at the limit.
+* `MeasureTheory.FiniteMeasure.integrable_and_integral_eq_of_mapClusterPt_of_integral_sq_le` —
+  integrability and integral equality at a weak cluster point under the same square bound.
 
 ## References
 
@@ -204,3 +211,102 @@ theorem tendsto_lintegral_of_sq_bound (hg : Continuous g)
     _ ≤ ε := hδε.le
 
 end TauCeti
+
+namespace MeasureTheory.FiniteMeasure
+
+open TauCeti
+
+private theorem tendsto_toReal_lintegral_ofReal_of_sq_bound
+    {Ω : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    {ι : Type*} {l : Filter ι} {μn : ι → FiniteMeasure Ω}
+    {ν : FiniteMeasure Ω} {f g : Ω → ℝ} {B : ℝ}
+    (hf : Continuous f) (hfsq : ∀ x, f x ^ 2 = g x ^ 2)
+    (hfν : Integrable f (ν : Measure Ω))
+    (hμ : Tendsto μn l (𝓝 ν))
+    (h2 : ∀ᶠ i in l, Integrable (fun x ↦ g x ^ 2) (μn i : Measure Ω))
+    (hB : ∀ᶠ i in l, ∫ x, g x ^ 2 ∂(μn i : Measure Ω) ≤ B) :
+    Tendsto (fun i ↦ (∫⁻ x, ENNReal.ofReal (f x) ∂(μn i : Measure Ω)).toReal) l
+      (𝓝 (∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure Ω)).toReal) := by
+  have hbound : ∀ᶠ i in l,
+      ∫⁻ x, (Real.toNNReal (f x) : ℝ≥0∞) ^ 2 ∂(μn i : Measure Ω) ≤
+        (Real.toNNReal B : ℝ≥0∞) := by
+    filter_upwards [h2, hB] with i h2i hBi
+    calc
+      _ ≤ ∫⁻ x, ENNReal.ofReal (g x ^ 2) ∂(μn i : Measure Ω) := by
+        refine lintegral_mono fun x ↦ ?_
+        rw [ENNReal.ofNNReal_toNNReal]
+        by_cases hx : 0 ≤ f x
+        · rw [← ENNReal.ofReal_pow hx, hfsq x]
+        · rw [ENNReal.ofReal_of_nonpos (le_of_not_ge hx), zero_pow (by decide)]
+          exact bot_le
+      _ = ENNReal.ofReal (∫ x, g x ^ 2 ∂(μn i : Measure Ω)) :=
+        (ofReal_integral_eq_lintegral_ofReal h2i (.of_forall fun x ↦ sq_nonneg (g x))).symm
+      _ ≤ (Real.toNNReal B : ℝ≥0∞) := by
+        rw [ENNReal.ofNNReal_toNNReal]
+        exact ENNReal.ofReal_le_ofReal hBi
+  have hfinite : ∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure Ω) ≠ ∞ := by
+    have h := (lintegral_ofReal_ne_top_iff_integrable
+      hfν.pos_part.aestronglyMeasurable (.of_forall fun x ↦ le_max_right (f x) 0)).2
+        hfν.pos_part
+    simpa using h
+  have h := TauCeti.tendsto_lintegral_of_sq_bound
+    (continuous_real_toNNReal.comp hf) hμ hbound
+  simpa only [Function.comp_def, ENNReal.ofNNReal_toNNReal] using
+    (ENNReal.tendsto_toReal hfinite).comp h
+
+/-- Weak convergence of finite measures and an eventual bound on the integrals of `g²` imply
+convergence of the integrals of continuous `g`, provided `g²` is eventually integrable and `g` is
+integrable at the limit. -/
+theorem tendsto_integral_of_integral_sq_le
+    {Ω : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    {ι : Type*} {l : Filter ι} {μn : ι → FiniteMeasure Ω}
+    {ν : FiniteMeasure Ω} {g : Ω → ℝ} {B : ℝ}
+    (hg : Continuous g) (hνint : Integrable g (ν : Measure Ω))
+    (hμ : Tendsto μn l (𝓝 ν))
+    (h2 : ∀ᶠ i in l, Integrable (fun x ↦ g x ^ 2) (μn i : Measure Ω))
+    (hB : ∀ᶠ i in l, ∫ x, g x ^ 2 ∂(μn i : Measure Ω) ≤ B) :
+    Tendsto (fun i ↦ ∫ x, g x ∂(μn i : Measure Ω)) l
+      (𝓝 (∫ x, g x ∂(ν : Measure Ω))) := by
+  have hint : ∀ᶠ i in l, Integrable g (μn i : Measure Ω) := by
+    filter_upwards [h2] with i hi
+    simpa only [pow_one] using
+      (integrable_pow_of_le hg.aestronglyMeasurable (by omega : 1 ≤ 2) hi)
+  have hp := tendsto_toReal_lintegral_ofReal_of_sq_bound hg (fun _ ↦ rfl) hνint hμ h2 hB
+  have hn := tendsto_toReal_lintegral_ofReal_of_sq_bound hg.neg (fun x ↦ by simp) hνint.neg hμ
+    h2 hB
+  have hdiff := hp.sub hn
+  rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hνint]
+  refine hdiff.congr' ?_
+  filter_upwards [hint] with i hi
+  exact (integral_eq_lintegral_pos_part_sub_lintegral_neg_part hi).symm
+
+/-- If the integrals of a continuous function converge to `m` and its square is eventually
+integrable with uniformly bounded integral, the function is integrable at every weak cluster point
+of the finite measures and has integral `m` there. -/
+theorem integrable_and_integral_eq_of_mapClusterPt_of_integral_sq_le
+    {Ω : Type*} [PseudoMetricSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    {ι : Type*} {l : Filter ι} {μn : ι → FiniteMeasure Ω}
+    {ν : FiniteMeasure Ω} {g : Ω → ℝ} {m B : ℝ}
+    (hg : Continuous g)
+    (h2 : ∀ᶠ i in l, Integrable (fun x ↦ g x ^ 2) (μn i : Measure Ω))
+    (hB : ∀ᶠ i in l, ∫ x, g x ^ 2 ∂(μn i : Measure Ω) ≤ B)
+    (hlim : Tendsto (fun i ↦ ∫ x, g x ∂(μn i : Measure Ω)) l (𝓝 m))
+    (hν : MapClusterPt ν l μn) :
+    Integrable g (ν : Measure Ω) ∧ ∫ x, g x ∂(ν : Measure Ω) = m := by
+  have h2ν : Integrable (fun x ↦ g x ^ 2) (ν : Measure Ω) :=
+    (integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
+      (hg.pow 2).lowerSemicontinuous (fun x ↦ sq_nonneg (g x)) h2 hB hν).1
+  have hνint : Integrable g (ν : Measure Ω) := by
+    simpa only [pow_one] using
+      (integrable_pow_of_le hg.aestronglyMeasurable (by omega : 1 ≤ 2) h2ν)
+  let L : Filter ι := l ⊓ Filter.comap μn (𝓝 ν)
+  have : L.NeBot := by
+    dsimp only [L]
+    rw [neBot_inf_comap_iff_map, inf_comm]
+    exact hν.clusterPt.neBot
+  have hμ : Tendsto μn L (𝓝 ν) := tendsto_comap.mono_left inf_le_right
+  have hconv := tendsto_integral_of_integral_sq_le hg hνint hμ
+    (h2.filter_mono inf_le_left) (hB.filter_mono inf_le_left)
+  exact ⟨hνint, tendsto_nhds_unique hconv (hlim.mono_left inf_le_left)⟩
+
+end MeasureTheory.FiniteMeasure

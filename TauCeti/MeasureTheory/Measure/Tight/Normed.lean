@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Tight
 import Mathlib.MeasureTheory.Measure.TightNormed
-import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
 /-!
 # Tightness from bounded moments
@@ -57,21 +56,14 @@ theorem isTightMeasureSet_of_integral_norm_rpow_le {E : Type*} [MeasurableSpace 
     simp
   simpa only [hset] using htail
 
-/-- Measures on a proper seminormed group with uniformly bounded second norm moment are tight. -/
-theorem isTightMeasureSet_of_integral_norm_sq_le {E : Type*} [MeasurableSpace E]
-    [SeminormedAddCommGroup E] [ProperSpace E] {S : Set (Measure E)} {B : ℝ}
-    (hS : ∀ ρ ∈ S, Integrable (fun x : E => ‖x‖ ^ 2) ρ ∧
-      ∫ x, ‖x‖ ^ 2 ∂ρ ≤ B) : IsTightMeasureSet S := by
-  apply isTightMeasureSet_of_integral_norm_rpow_le (p := ((2 : ℕ) : ℝ)) (B := B) (by norm_num)
-  simpa only [Real.rpow_natCast] using hS
-
 /-- A set of measures on `ℝ` with uniformly bounded second moment is tight. -/
 theorem isTightMeasureSet_of_integral_sq_le {S : Set (Measure ℝ)} {B : ℝ}
     (hS : ∀ ρ ∈ S, Integrable (fun x : ℝ => x ^ 2) ρ ∧
       ∫ x, x ^ 2 ∂ρ ≤ B) : IsTightMeasureSet S := by
-  refine isTightMeasureSet_of_integral_norm_sq_le (B := B) ?_
+  refine isTightMeasureSet_of_integral_norm_rpow_le
+    (p := ((2 : ℕ) : ℝ)) (B := B) (by norm_num) ?_
   intro ρ hρ
-  simpa only [Real.norm_eq_abs, sq_abs] using hS ρ hρ
+  simpa only [Real.rpow_natCast, Real.norm_eq_abs, sq_abs] using hS ρ hρ
 
 end TauCeti
 
