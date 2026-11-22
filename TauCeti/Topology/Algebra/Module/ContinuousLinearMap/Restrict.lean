@@ -11,7 +11,17 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 # Restrictions of continuous semilinear maps
 
 This file supplements `Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict` with density
-properties of codomain restrictions and retract-compression identities for invariant submodules.
+properties of codomain restrictions of continuous semilinear maps, retract-compression identities
+for invariant submodules, and the restriction of an `R`-linear map to submodules over a larger
+ring `S` of scalars. The latter is Mathlib's `ContinuousLinearMap.restrict` between the
+`R`-submodules `Submodule.restrictScalars R`, stated with the `S`-submodules themselves as domain
+and codomain, so that their `S`-module structure, for example the complex structure of complex
+subspaces for a real-linear map, is directly available.
+
+## Main definitions
+
+* `ContinuousLinearMap.restrictOfTower`: the restriction of an `R`-linear map `f` to submodules
+  `p`, `q` over `S`, given that `f` maps `p` into `q`.
 
 ## Main results
 
@@ -48,5 +58,25 @@ theorem comp_comp_subtypeL_eq_restrict {R₁ R₂ M₁ M₂ : Type*} [Semiring R
   have hfix : r (S₂.subtypeL (u.restrict hs x)) = u.restrict hs x := by
     simpa only [comp_apply, id_apply] using DFunLike.congr_fun hri (u.restrict hs x)
   simpa only [comp_apply, Submodule.subtypeL_apply, restrict_apply] using hfix
+
+section Tower
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [TopologicalSpace N] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- The restriction of an `R`-linear map `f : M →L[R] N` mapping the submodule `p` into the
+submodule `q`, as an `R`-linear map `p →L[R] q`. The submodules may be over a larger ring `S` of
+scalars, whose module structure on `p` and `q` is kept. -/
+def restrictOfTower (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
+    (h : ∀ x ∈ p, f x ∈ q) : p →L[R] q :=
+  f.restrict (p := p.restrictScalars R) (q := q.restrictScalars R) h
+
+@[simp]
+theorem coe_restrictOfTower_apply (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
+    (h : ∀ x ∈ p, f x ∈ q) (x : p) : (f.restrictOfTower h x : N) = f x :=
+  (rfl)
+
+end Tower
 
 end ContinuousLinearMap

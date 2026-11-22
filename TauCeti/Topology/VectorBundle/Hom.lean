@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Coordinates
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -37,6 +39,11 @@ preferred-frame coordinate expression is locally constant around each frame cent
 fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
 base set (`TauCeti.continuousOn_inCoordinates`).
 
+Real-linear Hom bundles, and more generally Hom bundles over a normed field extension, carry
+the larger scalar field on their values whenever the target bundle does.
+`Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra` registers this structure on the existing
+Hom atlas; the source bundle needs only the smaller field.
+
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
 common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
@@ -44,6 +51,12 @@ common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
 section through the local trivializations of the two charts
 (`VectorBundleCore.inChartCoordinates_eq_localTriv_comp` in
 `TauCeti.Topology.VectorBundle.Coordinates`).
+
+In the trivializations at a point, the coordinate expression of a bilinear fibre map evaluated on
+the coordinates of two fibre vectors is the coordinate of its value on them
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`); for a bilinear fibre map with
+values in a fixed space this is its value on the two fibre vectors
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -623,3 +636,117 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section TwoVariables
+
+variable {𝕜 B F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {E₃ : B → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)]
+
+/-- Over the base sets of the source trivializations at `x₀`, the coordinate expression of a
+bilinear fibre map, evaluated on the coordinates of two fibre vectors, is the coordinate of the
+value of the fibre map on them. Outside the base set of the target trivialization both sides
+vanish. -/
+theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂ {x₀ x : B}
+    (h₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (h₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
+    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (v : E₁ x) (w : E₂ x) :
+    inCoordinates F₁ E₁ (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] E₃ x) x₀ x x₀ x ϕ
+        ((trivializationAt F₁ E₁ x₀).continuousLinearMapAt 𝕜 x v)
+        ((trivializationAt F₂ E₂ x₀).continuousLinearMapAt 𝕜 x w) =
+      (trivializationAt F₃ E₃ x₀).continuousLinearMapAt 𝕜 x (ϕ v w) := by
+  by_cases h₃ : x ∈ (trivializationAt F₃ E₃ x₀).baseSet
+  · rw [inCoordinates_apply_eq₂ h₁ h₂ h₃]
+    simp [Trivialization.symm_linearMapAt _ h₁, Trivialization.symm_linearMapAt _ h₂]
+  · have hhom : x ∉ (trivializationAt (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] E₃ x) x₀).baseSet := by
+      simp [hom_trivializationAt_baseSet, h₃]
+    simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+      Trivialization.linearMapAt_def_of_notMem _ hhom,
+      Trivialization.linearMapAt_def_of_notMem _ h₃]
+
+/-- Over the base sets of the source trivializations at `x₀`, the coordinate expression of a
+bilinear fibre map with values in a fixed space, evaluated on the coordinates of two fibre vectors,
+is the value of the fibre map on them. -/
+theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply {x₀ x : B}
+    (h₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (h₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
+    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] F₃) (v : E₁ x) (w : E₂ x) :
+    inCoordinates F₁ E₁ (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] F₃) x₀ x x₀ x ϕ
+        ((trivializationAt F₁ E₁ x₀).continuousLinearMapAt 𝕜 x v)
+        ((trivializationAt F₂ E₂ x₀).continuousLinearMapAt 𝕜 x w) = ϕ v w := by
+  rw [inCoordinates_apply_continuousLinearMapAt₂ (E₃ := Bundle.Trivial B F₃) h₁ h₂]
+  simp
+
+end TwoVariables
+
+section HomFrame
+variable {𝕜 B F G : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V L : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (L x)] [∀ x, Module 𝕜 (L x)] [∀ x, TopologicalSpace (L x)]
+  [TopologicalSpace (TotalSpace G L)] [FiberBundle G L] [VectorBundle 𝕜 G L]
+  [∀ x, IsTopologicalAddGroup (L x)] [∀ x, ContinuousSMul 𝕜 (L x)]
+
+/-- The native Hom frame is the induced arrow equivalence on original fibres. -/
+theorem Bundle.Trivialization.continuousLinearEquivAt_continuousLinearMap (e : Trivialization F
+  (π F V))
+    [MemTrivializationAtlas e] (d : Trivialization G (π G L))
+    [MemTrivializationAtlas d] {x : B} (hx : x ∈ e.baseSet ∩ d.baseSet) :
+    (e.continuousLinearMap (RingHom.id 𝕜) d).continuousLinearEquivAt 𝕜 x (by simpa using hx) =
+      (e.continuousLinearEquivAt 𝕜 x hx.1).arrowCongr
+        (d.continuousLinearEquivAt 𝕜 x hx.2) := by
+  ext T v
+  simp only [Trivialization.continuousLinearEquivAt_apply,
+    Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.arrowCongr_apply]
+  rw [e.symmL_apply hx.1, Trivialization.continuousLinearEquivAt_symm_apply]
+  simp [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 d hx.2]
+
+end HomFrame
+
+section ScalarExtensionHom
+
+variable {𝕜 𝕜' B F G : Type*} [NontriviallyNormedField 𝕜]
+  [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G]
+  {V W : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, Module 𝕜' (W x)]
+  [∀ x, IsScalarTower 𝕜 𝕜' (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [∀ x, ContinuousConstSMul 𝕜' (W x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+  [VectorBundle 𝕜 G W] [VectorBundle 𝕜' G W]
+
+/-- Homomorphisms into a bundle admitting a scalar extension form a vector bundle over the
+larger field, acting on their values. The source bundle is only over the smaller field. -/
+noncomputable instance (priority := 50) Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra :
+    VectorBundle 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x) := by
+  apply VectorBundle.ofLinear 𝕜 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x)
+  intro e he
+  obtain ⟨e', ⟨e₁, e₂, he₁, he₂, rfl⟩, rfl⟩ := he.out
+  let := he₁
+  let := he₂
+  -- The native prebundle atlas consists of exactly these induced Hom trivializations.
+  change (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).IsLinear 𝕜'
+  refine ⟨fun b hb ↦ ⟨((e₁.continuousLinearMap (RingHom.id 𝕜) e₂).linear 𝕜 hb).map_add, ?_⟩⟩
+  intro c v
+  ext u
+  simp only [Bundle.Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply,
+    smul_apply]
+  simpa only [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e₂ hb.2] using
+    (e₂.linear 𝕜' hb.2).map_smul c (v (e₁.symmL 𝕜 b u))
+
+end ScalarExtensionHom

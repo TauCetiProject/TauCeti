@@ -145,7 +145,7 @@ theorem of_exact
   refine of_finset (fun j => ?_) (sU ∪ sW) fun j hj => ?_
   · let _ := hU.finiteDimensional j
     let _ := hW.finiteDimensional j
-    exact finiteDimensional_of_exact (hfg j)
+    exact (hfg j).moduleFinite
   · rw [Finset.mem_union, not_or] at hj
     let _ := hsU j hj.1
     let _ := hsW j hj.2
@@ -318,7 +318,7 @@ theorem gradedDimension_shortExact
   simp only [coeff_gradedDimension, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   let _ := hU.finiteDimensional j
   let _ := hW.finiteDimensional j
-  let _ := finiteDimensional_of_exact (hfg j)
+  let _ := (hfg j).moduleFinite
   have hrank := (g j).finrank_range_add_finrank_ker
   rw [LinearMap.range_eq_top.mpr (hsurj j), finrank_top, (hfg j).linearMap_ker_eq,
     LinearMap.finrank_range_of_inj (hinj j)] at hrank

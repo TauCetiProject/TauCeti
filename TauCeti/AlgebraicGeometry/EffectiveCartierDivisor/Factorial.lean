@@ -72,11 +72,6 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
   with factorial local rings, the ideal sheaf of a nonzero global function `f` is the product of
   the ideal sheaves of the prime divisors, raised to the orders of vanishing of `f`.
 
-In the namespace `AlgebraicGeometry.Scheme.Hom`:
-
-* `uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: open immersions preserve stalkwise
-  factoriality.
-
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.11: on a Noetherian integral
@@ -93,18 +88,6 @@ public section
 open CategoryTheory TopologicalSpace Order
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-/-- The stalks of the source of an open immersion into a locally factorial scheme are unique
-factorization domains. -/
-theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X)
-    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
-    UniqueFactorizationMonoid (U.presheaf.stalk u) :=
-  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
-    inferInstance
-
-end AlgebraicGeometry.Scheme.Hom
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 

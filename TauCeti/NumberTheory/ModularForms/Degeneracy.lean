@@ -824,7 +824,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
-  set j : ℤ := (j₀.val : ℤ) with _
+  set j : ℤ := (j₀.val : ℤ)
   have hdetM : (!![γ' 0 0 - i * γ' 1 0, k; (l : ℤ) * γ' 1 0, γ' 1 1 - γ' 1 0 * j]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + γ' 1 0 * hk
@@ -1032,8 +1032,9 @@ private theorem unitsMap_Gamma0Map_toHomUnits_eq_of_diag {M N : ℕ} (hMN : M �
 
 /-- **The Γ₀(N/l)-transformation law of a function whose level-raise carries a nebentypus.**
 
-If the level-raise `f ∣[k] V_l` is an eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the value
-`χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is trivial on the kernel of the reduction
+If the slash `f ∣[k] diag(l, 1)` (the level-raise `τ ↦ f (l τ)` scaled by `l ^ (k - 1)`) is an
+eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the value `χ` reads off `γ`, if `f` is
+`T`-periodic, and if `χ` is trivial on the kernel of the reduction
 `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` itself transforms under each `γ' ∈ Γ₀(N / l)` by `χ u`, for
 *any* unit `u` of level `N` lying over the nebentypus label of `γ'`.
 
@@ -1072,9 +1073,10 @@ theorem slash_mapGL_eq_smul_of_unitsMap_eq (l N : ℕ) [NeZero l] (hlN : l ∣ N
 
 /-- **Γ₁(N/l)-invariance from a nebentypus of level `N` that factors through `N / l`.**
 
-If the level-raise `f ∣[k] V_l` is an eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the
-character value `χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is trivial on the kernel of
-the reduction `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
+If the slash `f ∣[k] diag(l, 1)` (the level-raise `τ ↦ f (l τ)` scaled by `l ^ (k - 1)`) is an
+eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the character value `χ` reads off `γ`, if `f` is
+`T`-periodic, and if `χ` is trivial on the kernel of the reduction
+`(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
 
 This is the step that converts a nebentypus into honest invariance, and it is where the conductor
 drops: a `T`-periodic function whose level-raise carries a character that already factors through
