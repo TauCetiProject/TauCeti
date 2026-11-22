@@ -102,18 +102,19 @@ private theorem cup_gradedComm_add_one (M N : Rep k G) {p q r : ℤ} (hq : 0 ≤
   obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
     ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
   have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact :=
+    dimensionShiftUpSES_shortExact N
   -- The braiding commutes with the connecting maps of the tensor products of the shifting sequence
   -- with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact N M)
+    (dimensionShiftUpSES_tensorLeft_shortExact N M)
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M
       (leftInverse_coindBotUnit N))
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).hom) r)
     (cup M (dimensionShiftUp N) p q r h x y)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
-    BraidedCategory.tensorLeftIsoTensorRight_hom_app] at hδ
+    BraidedCategory.tensorLeftIsoTensorRight_hom_app, dimensionShiftUpSES_X₁,
+    dimensionShiftUpSES_X₃] at hδ
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom,
     ← hδ, ih, map_zsmul_unit, δ_cup_of_leftInverse hD (leftInverse_coindBotUnit N) M
       (by omega : q + p = r) y x, dimensionShiftUpIso_hom, smul_smul, ← Int.negOnePow_add]
@@ -133,8 +134,8 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
     (tateCohomologyFunctor r).map (β_ M N).hom (cup M N p q r h x y) =
       (p * q).negOnePow • cup N M q p r (by omega) y x := by
   have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact :=
+    dimensionShiftDownSES_shortExact N
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
   have hβ : ∀ {A B : Rep k G} (e : A ≅ B) (n : ℤ) (z : tateCohomology A n),
       (tateCohomologyFunctor n).map e.inv ((tateCohomologyFunctor n).map e.hom z) = z :=
@@ -143,8 +144,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   -- sequence with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M hρ)
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact N M)
+    (dimensionShiftDownSES_tensorLeft_shortExact N M)
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).inv) r)
     (cup N M q p r (by omega) y x)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
@@ -155,7 +155,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   congr 1
   refine (tensorDimensionShiftDownIso N M r (r + 1) rfl).toLinearEquiv.injective ?_
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, map_zsmul_unit,
-    ← negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
+    ← Int.negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
     ← cup_dimensionShiftDownIso_hom M N hq h rfl x y,
     ← hβ (β_ M (dimensionShiftDown N)) (r + 1) (cup M (dimensionShiftDown N) p (q + 1) (r + 1)
       (by omega) x ((dimensionShiftDownIso N q).hom y)), ih,

@@ -21,7 +21,7 @@ The first family comes from the *symmetries of the matrix*: a permutation `σ` o
 `CM.submatrix σ σ = CM` reindexes the generators, and `TauCeti.serreDiagramAut` is the resulting
 automorphism `Hᵢ ↦ H_{σ i}`, `Eᵢ ↦ E_{σ i}`, `Fᵢ ↦ F_{σ i}`. When `CM` is the Cartan matrix of a
 Dynkin diagram these are the *diagram* (or *graph*) automorphisms; the permutations themselves are
-already pinned in `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`, whose entrywise
+already pinned in `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`, whose entrywise
 invariance lemmas supply the hypothesis `CM.submatrix σ σ = CM` through `Matrix.ext`.
 
 The second is the *Chevalley involution* `TauCeti.serreChevalleyInvolution`, which exchanges the

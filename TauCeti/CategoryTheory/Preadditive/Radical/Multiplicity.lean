@@ -77,7 +77,26 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] (k : Type*) [DivisionRing k] [Linear k C]
+variable {C : Type u} [Category.{v} C] [Preadditive C] (k : Type*)
+
+section Ring
+
+variable [Ring k] [Linear k C]
+
+/-- **Between non-isomorphic objects with local endomorphism rings the quotient by the radical is
+trivial**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
+theorem subsingleton_quotient_jacobsonRadicalSubmodule {X Y : C} [IsLocalRing (End X)]
+    [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
+    Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) := by
+  have htop : jacobsonRadicalSubmodule k X Y = ⊤ := by
+    refine Submodule.eq_top_iff'.2 fun f ↦ ?_
+    rw [mem_jacobsonRadicalSubmodule, jacobsonRadical_eq_top h]
+    exact AddSubgroup.mem_top f
+  exact Submodule.Quotient.subsingleton_iff.2 htop
+
+end Ring
+
+variable [DivisionRing k] [Linear k C]
 
 /-- **Morphisms out of a biproduct, modulo the radical, split as a product**: the dimension of
 `(X₁ ⊞ X₂ ⟶ Y) / rad` is the sum of the dimensions of `(X₁ ⟶ Y) / rad` and `(X₂ ⟶ Y) / rad`.
@@ -122,17 +141,6 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_congr {X X' Y Y' : C} (e : X �
       Module.finrank k ((X' ⟶ Y') ⧸ jacobsonRadicalSubmodule k X' Y') :=
   (Submodule.Quotient.equiv _ _ (Linear.homCongr k e e')
     (jacobsonRadicalSubmodule_map_homCongr k e e')).finrank_eq
-
-/-- **Between non-isomorphic objects with local endomorphism rings the quotient by the radical is
-trivial**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
-theorem subsingleton_quotient_jacobsonRadicalSubmodule {X Y : C} [IsLocalRing (End X)]
-    [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
-    Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) := by
-  have htop : jacobsonRadicalSubmodule k X Y = ⊤ := by
-    refine Submodule.eq_top_iff'.2 fun f ↦ ?_
-    rw [mem_jacobsonRadicalSubmodule, jacobsonRadical_eq_top h]
-    exact AddSubgroup.mem_top f
-  exact Submodule.Quotient.subsingleton_iff.2 htop
 
 /-- **Between non-isomorphic objects with local endomorphism rings nothing survives modulo the
 radical**: the quotient is trivial, so it has dimension zero. -/

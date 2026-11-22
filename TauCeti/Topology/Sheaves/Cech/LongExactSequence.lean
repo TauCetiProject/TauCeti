@@ -52,6 +52,8 @@ compare Čech cohomology with derived-functor cohomology on compact Hausdorff sp
   monic.
 * `CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ_naturality`: naturality in morphisms of
   short exact sequences of sheaves.
+* `CategoryTheory.ShortComplex.ShortExact.δ_comp_toCechCohomology_app`: on a cover for which the
+  sequence of Čech complexes is short exact, the connecting map is that of the Čech complexes.
 * `CategoryTheory.ShortComplex.ShortExact.isIso_cechCohomologyδ_succ_of_isFlasque` and
   `CategoryTheory.ShortComplex.ShortExact.epi_cechCohomologyδ_zero_of_isFlasque`: dimension
   shifting along a short exact sequence with flasque middle term.
@@ -110,6 +112,23 @@ theorem mono_cechCohomology_map_zero (hS : S.ShortExact) :
     Mono ((cechCohomology X (ModuleCat.{u} R) 0).map S.f.hom) :=
   TauCeti.CategoryTheory.mono_cechCohomology_map_zero (S := presheafCokernelSequence S)
     PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) (presheafCokernelSequence_map_shortExact hS)
+
+/-- On an open cover `U` for which the sequence of Čech complexes of `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is
+short exact, the map from the Čech complex of the presheaf cokernel of `F₁ ⟶ F₂` to that of `F₃`
+is an isomorphism: both are cokernels of the same map of Čech complexes. -/
+private lemma isIso_cechComplexFunctor_map_cokernelToX₃ {ι : Type u} (U : ι → Opens X)
+    (hSU : ((S.map (sheafToPresheaf _ _)).map (cechComplexFunctor U)).ShortExact)
+    (hS : S.ShortExact) :
+    IsIso ((cechComplexFunctor U).map (cokernelToX₃ S)) := by
+  let hT := (presheafCokernelSequence_shortExact hS).map_of_exact (cechComplexFunctor U)
+  let e := IsColimit.coconePointUniqueUpToIso hT.gIsCokernel hSU.gIsCokernel
+  have he : e.hom = (cechComplexFunctor U).map (cokernelToX₃ S) := by
+    have := hT.epi_g
+    refine (cancel_epi ((cechComplexFunctor U).map (cokernel.π S.f.hom))).1 ?_
+    rw [← Functor.map_comp, cokernel_π_cokernelToX₃]
+    exact IsColimit.comp_coconePointUniqueUpToIso_hom hT.gIsCokernel hSU.gIsCokernel
+      WalkingParallelPair.one
+  exact he ▸ inferInstance
 
 variable [HasSheafify (Opens.grothendieckTopology X) (ModuleCat.{u} R)]
   [CompactSpace X] [NormalSpace X]
@@ -212,6 +231,49 @@ theorem cechCohomologyδ_naturality (hS : S.ShortExact)
   rw [← cancel_epi ((cechCohomology X (ModuleCat.{u} R) n).map (cokernelToX₃ S)),
     cechCohomology_map_cokernelToX₃_comp_δ_assoc, ← Functor.map_comp_assoc]
   exact h
+
+/-- **The connecting map on a fixed cover.** Let `U` be a `u`-small open cover of `X` for which
+the Čech complexes of `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` form a short exact sequence, for instance one on
+whose finite intersections `F₁` has no first cohomology. Then the connecting map of these Čech
+complexes is compatible with the connecting map
+`CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ` of cover-colimit Čech cohomology,
+through the maps `TauCeti.Topology.toCechCohomology` of `U`. -/
+@[reassoc]
+theorem δ_comp_toCechCohomology_app (hS : S.ShortExact) {ι : Type u} (U : ι → Opens X)
+    (hU : IsOpenCover U)
+    (hSU : ((S.map (sheafToPresheaf _ _)).map (cechComplexFunctor U)).ShortExact) (n : ℕ) :
+    hSU.δ n (n + 1) rfl ≫ (toCechCohomology (ModuleCat.{u} R) (n + 1) U hU).app S.X₁.obj =
+      (toCechCohomology (ModuleCat.{u} R) n U hU).app S.X₃.obj ≫ hS.cechCohomologyδ n := by
+  let T := presheafCokernelSequence S
+  have hT := presheafCokernelSequence_shortExact hS
+  have hTU := hT.map_of_exact (cechComplexFunctor U)
+  -- the presheaf cokernel sequence maps to the sequence of underlying presheaves
+  let φ : T ⟶ S.map (sheafToPresheaf _ _) :=
+    { τ₁ := 𝟙 _
+      τ₂ := 𝟙 _
+      τ₃ := cokernelToX₃ S
+      comm₁₂ := (Category.id_comp _).trans (Category.comp_id _).symm
+      comm₂₃ := (Category.id_comp _).trans (cokernel_π_cokernelToX₃ S).symm }
+  have hc := isIso_cechComplexFunctor_map_cokernelToX₃ U hSU hS
+  -- on `U`, the connecting maps of `T` and of `F₁ ⟶ F₂ ⟶ F₃` agree through `φ`
+  have h₁ : hTU.δ n (n + 1) rfl = HomologicalComplex.homologyMap
+      ((cechComplexFunctor U).map (cokernelToX₃ S)) n ≫ hSU.δ n (n + 1) rfl := by
+    simpa [φ] using HomologicalComplex.HomologySequence.δ_naturality
+      ((cechComplexFunctor U).mapShortComplex.map φ) hTU hSU n (n + 1) rfl
+  -- the fixed-cover connecting map of `T` passes to the colimit connecting map of `T`
+  have h₂ := TauCeti.CategoryTheory.δ_comp_toCechCohomology_app (S := T)
+    PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h)
+    (fun W : PointOpenCover X ↦ hT.map_of_exact (cechComplexFunctor W.opens))
+    (FormalCoproduct.mk ι U) (PointOpenCover.exists_refinement U hU) hTU n
+  -- the colimit connecting maps of `T` and of `F₁ ⟶ F₂ ⟶ F₃` agree through `φ`
+  have h₃ := hS.cechCohomologyδ_naturality_of_presheaf hT φ n
+  rw [CategoryTheory.Functor.map_id, Category.comp_id] at h₃
+  rw [← cancel_epi (HomologicalComplex.homologyMap ((cechComplexFunctor U).map (cokernelToX₃ S)) n),
+    ← reassoc_of% h₁, toCechCohomology_def, toCechCohomology_def]
+  refine h₂.trans ?_
+  rw [h₃]
+  exact ((TauCeti.CategoryTheory.toCechCohomology (ModuleCat.{u} R) _ _ n _ _).naturality_assoc
+    (cokernelToX₃ S) _).symm
 
 /-- The map `Hⁿ(X, F₂) ⟶ Hⁿ(X, F₃)` followed by the connecting map is zero. -/
 @[reassoc (attr := simp)]

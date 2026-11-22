@@ -76,8 +76,8 @@ local notation "𝒜" => SymmetricAlgebra.homogeneousSubmodule R (Fin 2 → R)
 private noncomputable def overlapSection (m : ℕ) (c : 𝒜 m) :
     Γ(Proj.twistingSheaf 𝒜 (-((m : ℤ) + 2)),
       Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1)) :=
-  Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
-    ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) _
+  Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.val
+    ((coord R 0 * coord R 1) ^ (m + 1)) c.property (coord_mul_coord_pow_mem R (m + 1)) _
     (inf_le_basicOpen_coord_mul_coord_pow R)
 
 private theorem smul_overlapSection (m : ℕ) (r : R) (c : 𝒜 m) :
@@ -87,7 +87,7 @@ private theorem smul_overlapSection (m : ℕ) (r : R) (c : 𝒜 m) :
   refine Proj.twistingSheaf.ext fun x ↦ (Proj.twistingSheaf.smul_apply _ _ x).trans ?_
   refine (congrArg (· * _) (val_map_baseRingToGlobalSections R r _ x)).trans ?_
   -- both sections are the fractions `c / (X₀X₁)ᵐ⁺¹` and `(r • c) / (X₀X₁)ᵐ⁺¹` at `x`
-  exact (Algebra.smul_def r _).symm.trans (Localization.smul_mk r c.1 _)
+  exact (Algebra.smul_def r _).symm.trans (Localization.smul_mk r c.val _)
 
 private theorem subsingleton_cohomologyOn_basicOpen_coord (n : ℤ) (i : Fin 2) :
     Subsingleton (cohomologyOn (Proj.twistingSheaf 𝒜 n) 1 (Proj.basicOpen 𝒜 (coord R i))) :=
@@ -118,8 +118,9 @@ private theorem exists_sub_overlapSection_mem_range (m : ℕ)
       (h₀ : W ≤ Proj.basicOpen 𝒜 (coord R 0)) (h₁ : W ≤ Proj.basicOpen 𝒜 (coord R 1))
       (hW : W ≤ Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ (m + 1)))
       (s : Γ(Proj.twistingSheaf 𝒜 (-((m : ℤ) + 2)), W)), ∃ (c : 𝒜 m) (t₀ t₁ : _),
-        s - Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
-            ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) W hW =
+        s - Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.val
+            ((coord R 0 * coord R 1) ^ (m + 1)) c.property (coord_mul_coord_pow_mem R
+                (m + 1)) W hW =
           (Proj.twistingSheaf 𝒜 _).presheaf.map (homOfLE h₀).op t₀ -
             (Proj.twistingSheaf 𝒜 _).presheaf.map (homOfLE h₁).op t₁ by
     obtain ⟨c, t₀, t₁, ht⟩ := h _ (Proj.basicOpen_mul _ _ _) inf_le_left inf_le_right
@@ -169,7 +170,7 @@ private theorem eq_zero_of_overlapSection_mem_range (m : ℕ) {c : 𝒜 m}
   obtain ⟨N, hN⟩ := (Proj.twistingSheaf.const_eq_const_iff (n := -((m : ℤ) + 2))
     (i := k * 1 + k' * 1) (j := k' * 1 + j) (i' := (m + 1) * 2) (j' := m)
     (r := coord R 1 ^ k' * a - coord R 0 ^ k * b) (s := coord R 0 ^ k * coord R 1 ^ k')
-    (r' := c.1) (s' := (coord R 0 * coord R 1) ^ (m + 1))
+    (r' := c.val) (s' := (coord R 0 * coord R 1) ^ (m + 1))
     (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 two_pos
       (SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1))) (by push_cast at h ⊢; omega)
     (by push_cast; ring)
@@ -178,19 +179,20 @@ private theorem eq_zero_of_overlapSection_mem_range (m : ℕ) {c : 𝒜 m}
           simp only [smul_eq_mul]; push_cast at h h'; omega))
     (SetLike.mul_mem_graded (SetLike.pow_mem_graded _ (coord_mem R 0))
       (SetLike.pow_mem_graded _ (coord_mem R 1)))
-    c.2 (coord_mul_coord_pow_mem R (m + 1))
+    c.property (coord_mul_coord_pow_mem R (m + 1))
     (hW.trans fun x hx hxs ↦ (x.isPrime.mem_or_mem hxs).elim
       (fun h₀ ↦ hx.1 (x.isPrime.mem_of_pow_mem _ h₀))
       (fun h₁ ↦ hx.2 (x.isPrime.mem_of_pow_mem _ h₁)))
     (hW.trans (inf_le_basicOpen_coord_mul_coord_pow R))).mp
     (Proj.twistingSheaf.ext fun x ↦ by
       -- both sides are the values at `x` of the fractions, by `const_apply`
-      exact (Localization.sub_mk ..).symm.trans (congrArg (fun t ↦ t.1 ⟨x.1, hW x.2⟩) ht))
+      exact (Localization.sub_mk ..).symm.trans (congrArg (fun t ↦ t.val ⟨x.val,
+          hW x.property⟩) ht))
   -- the coordinates are nonzerodivisors, so `X₀ᵏ X₁ᵏ' c = (X₀X₁)ᵐ⁺¹ (X₁ᵏ' a - X₀ᵏ b)`
   have hE := (pow_mem (mul_mem (coord_mem_nonZeroDivisors R 0)
     (coord_mem_nonZeroDivisors R 1)) N).2 _ (by rw [mul_comm]; exact hN)
   exact Subtype.ext (eq_zero_of_coord_pow_mul_eq R (k := k) (k' := k') (a := a)
-    (by push_cast at h'; omega) hb c.2 (by linear_combination -hE))
+    (by push_cast at h'; omega) hb c.property (by linear_combination -hE))
 
 /-! ### First cohomology of `𝒪(n)` for `n ≤ -2` -/
 
@@ -218,8 +220,8 @@ Mayer–Vietoris boundary of the section `c / (X₀X₁)ᵐ⁺¹` over the overl
 theorem cohomologyOneTwistingSheafLinearEquiv_symm_apply (m : ℕ) (c : 𝒜 m) :
     (cohomologyOneTwistingSheafLinearEquiv R m).symm c =
       mayerVietorisBoundaryLinear _ _ _ (basicOpen_coord_sup_eq_top R)
-        (Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
-          ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) _
+        (Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.val
+          ((coord R 0 * coord R 1) ^ (m + 1)) c.property (coord_mul_coord_pow_mem R (m + 1)) _
           (inf_le_basicOpen_coord_mul_coord_pow R)) :=
   (rfl)
 

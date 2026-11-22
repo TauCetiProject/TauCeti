@@ -25,6 +25,7 @@ relation carrying no `Preorder` instance. Every preorder supplies both instances
 
 * `IsChain.exists_isGreatest`: a nonempty finite chain has a greatest element.
 * `IsChain.exists_isLeast`: a nonempty finite chain has a least element.
+* `IsChain.decidableFinset`: being a chain for a decidable relation is decidable on finite sets.
 * `Finset.exists_max_image_of_forall_comparable`: a nonempty finite set on which a function to a
   reflexive transitive order takes pairwise comparable values has a point where the value is
   greatest.
@@ -33,6 +34,11 @@ relation carrying no `Preorder` instance. Every preorder supplies both instances
 public section
 
 namespace IsChain
+
+/-- Whether a finite set is a chain for a decidable relation is decidable. -/
+instance decidableFinset {α : Type*} [DecidableEq α] {r : α → α → Prop} [DecidableRel r]
+    {s : Finset α} : Decidable (IsChain r (s : Set α)) :=
+  decidable_of_iff' (∀ x ∈ s, ∀ y ∈ s, x ≠ y → r x y ∨ r y x) Iff.rfl
 
 variable {α : Type*} [LE α] [IsTrans α (· ≤ ·)] [Std.Refl (· ≤ · : α → α → Prop)] {s : Set α}
 

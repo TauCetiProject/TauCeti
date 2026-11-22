@@ -111,7 +111,7 @@ theorem isLocalDiffeomorphOn_riemannianExp_of_sectionalCurvature_nonpos
         x u w ≤ 0) (p : M) :
     IsLocalDiffeomorphOn 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
       (expDomain I M p) :=
-  fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_sectionalCurvature_nonpos v.2
-    (fun t _ ↦ hK (riemannianExp I M p (t • v.1)))
+  fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_sectionalCurvature_nonpos v.property
+    (fun t _ ↦ hK (riemannianExp I M p (t • v.val)))
 
 end TauCeti.Manifold
