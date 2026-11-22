@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -43,10 +41,9 @@ the integral to `z`.
   `HasLaplace.integrableOn_of_re_le` (monotonicity of convergence in `Re s`),
   `integrableOn_cexp_neg_mul_ofReal_pow_smul_of_re_lt` (polynomial moments to the right of
   convergence), `exists_hasLaplace_neg_smul_and_hasDerivAt`, `hasDerivAt_of_hasLaplace`,
-  `hasDerivAt_integral_cexp_neg_mul_smul`, `hasLaplace_neg_smul_deriv_of_hasLaplace`,
-  `differentiableOn_of_hasLaplace`, `differentiableOn_of_hasLaplace_re_gt`, and
-  `analyticOnNhd_of_hasLaplace` (holomorphic differentiation under the integral sign with respect
-  to `s`, producing the transform of `t ↦ -(t : ℂ) • f t`, and analyticity on open sets).
+  `hasDerivAt_integral_cexp_neg_mul_smul`, `differentiableOn_of_hasLaplace`, and
+  `differentiableOn_of_hasLaplace_re_gt` (holomorphic differentiation under the integral sign with
+  respect to `s`, producing the transform of `t ↦ -(t : ℂ) • f t`).
 * Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
   establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
   `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
@@ -526,16 +523,6 @@ theorem hasDerivAt_of_hasLaplace {E : Type*}
   obtain ⟨w', hw', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt hF
   exact hw'.unique hf' ▸ hder
 
-/-- If `F` represents the one-sided Laplace transform of `f` in a neighborhood of `s`, then
-`t ↦ -(t : ℂ) • f t` has Laplace transform `deriv F s` at `s`. -/
-theorem hasLaplace_neg_smul_deriv_of_hasLaplace {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : ℝ → E} {F : ℂ → E} {s : ℂ}
-    (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w)) :
-    HasLaplace (fun t : ℝ ↦ -(t : ℂ) • f t) s (deriv F s) := by
-  obtain ⟨z', hz', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt hF
-  rwa [hder.deriv]
-
 /-- A function representing a convergent one-sided Laplace transform on an open set `U ⊆ ℂ` is
 complex-differentiable on `U`. -/
 theorem differentiableOn_of_hasLaplace {E : Type*}
@@ -556,15 +543,6 @@ theorem differentiableOn_of_hasLaplace_re_gt {E : Type*}
     (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) :
     DifferentiableOn ℂ F {s : ℂ | a < s.re} :=
   differentiableOn_of_hasLaplace (isOpen_lt continuous_const Complex.continuous_re) hF
-
-/-- In a complex Banach space, a function representing a convergent one-sided Laplace transform on
-an open set `U ⊆ ℂ` is analytic on `U`. -/
-theorem analyticOnNhd_of_hasLaplace {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {f : ℝ → E} {F : ℂ → E} {U : Set ℂ} (hU : IsOpen U)
-    (hF : ∀ s ∈ U, HasLaplace f s (F s)) :
-    AnalyticOnNhd ℂ F U :=
-  (differentiableOn_of_hasLaplace hU hF).analyticOnNhd hU
 
 end HalfPlane
 
