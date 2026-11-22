@@ -32,7 +32,11 @@ topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
 (`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
 
 A one-sided inverse of an invertible map is its inverse
-(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`). A composite
+`g ∘L f` with `g` injective is invertible exactly when both factors are
+(`ContinuousLinearMap.isInvertible_comp_iff_of_injective_left`), without any dimension or
+completeness assumption; this is how invertibility of a derivative of a composite passes to
+the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
@@ -171,6 +175,31 @@ theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
   rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
 
 end OneSided
+
+section Comp
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R]
+  [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
+
+/-- A composite `g ∘L f` whose outer factor `g` is injective is invertible exactly when both
+factors are. Neither finite-dimensionality nor completeness is required.
+
+The forward implication rests on Mathlib's `Topology.IsQuotientMap.of_comp`, which makes `g` a
+quotient map when `g ∘L f` is invertible, and `isHomeomorph_iff_isQuotientMap_injective`, which
+makes the injective quotient map `g` a homeomorphism. -/
+@[simp]
+theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
+    (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
+  have hgq : Topology.IsQuotientMap g :=
+    .of_comp f.continuous g.continuous h.isHomeomorph.isQuotientMap
+  obtain ⟨e, rfl⟩ : g.IsInvertible :=
+    .of_isHomeomorph (isHomeomorph_iff_isQuotientMap_injective.2 ⟨hgq, hg⟩)
+  exact ⟨isInvertible_equiv_comp.1 h, isInvertible_equiv⟩
+
+end Comp
 
 section CompleteSpace
 
