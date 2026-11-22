@@ -83,7 +83,7 @@ models and the coefficient field here live in `Type`.
 In the namespace `TauCeti.SmoothEmbedding`:
 
 * `IsCriticalSubmanifold.finrank_singularHomology_negativeDiscSpherePair_of_isThomClass`: if the
-  negative normal bundle has rank `r` and a Thom class over a commutative ring `K`, then
+  negative normal bundle has rank `r` and a Thom class over a nontrivial commutative ring `K`, then
   `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` if `r ≤ n`, and `0` otherwise.
 * `IsNondegenerateCriticalSubmanifold.finrank_singularHomology_negativeDiscSpherePair`: the same
   over a field of characteristic two for a Morse–Bott submanifold of index `r`.
@@ -156,13 +156,14 @@ variable {E : Type} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fi
 /-- **The homology of the negative disc bundle from a Thom class, in dimensions.** Let `i` be a
 critical submanifold of `f` and `g` a fibre metric on its normal bundle, and suppose that the
 negative normal spaces have continuous local frames of size `r`, so that they form a vector bundle
-`ν⁻` of rank `r`. If `ν⁻` has a Thom class with coefficients in a commutative ring `K`, then for
-`ε > 0` the negative disc bundle `D_ε`, relative to the negative sphere bundle `S_ε`, has
+`ν⁻` of rank `r`. If `ν⁻` has a Thom class with coefficients in a nontrivial commutative ring
+`K`, then for `ε > 0` the
+negative disc bundle `D_ε`, relative to the negative sphere bundle `S_ε`, has
 `dim Hₖ(D_ε, S_ε; K) = b_{k - r}(S; K)` when `r ≤ k`, and `0` when `k < r`. -/
 theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass
     (hV : letI := i.normalSpaceFiberBundle hn hdim
       HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g))
-    {ε : ℝ} (hε : 0 < ε) {K : Type} [CommRing K]
+    {ε : ℝ} (hε : 0 < ε) {K : Type} [CommRing K] [Nontrivial K]
     (u : letI := i.normalSpaceFiberBundle hn hdim
       haveI := i.normalSpaceVectorBundle hn hdim
       letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
