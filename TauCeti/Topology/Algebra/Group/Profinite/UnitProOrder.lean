@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 import Mathlib.Topology.Separation.Connected
-import TauCeti.Data.Nat.Cast.IsUnit
+import TauCeti.Data.Nat.Cast.Prime
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 

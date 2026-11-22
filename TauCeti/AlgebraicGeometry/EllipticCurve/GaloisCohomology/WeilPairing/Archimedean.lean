@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
-public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.Duality
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real

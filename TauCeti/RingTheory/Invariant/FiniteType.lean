@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Coeff
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 import Mathlib.Data.Nat.Factorial.NatCast
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
