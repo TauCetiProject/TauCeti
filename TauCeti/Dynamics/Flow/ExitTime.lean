@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.OmegaLimit
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.Dynamics.Flow.Basic
+import TauCeti.Dynamics.Flow.OmegaLimit
 
 /-!
 # Exit times of a flow from a closed set
@@ -39,17 +39,18 @@ The **flow stopped at the exit** (`Flow.stopAtExit ϕ P t`) sends `x` to its pos
 exit time is continuous on `P`, it is a continuous self-map of `P` (`Flow.stopAtExitMap`)
 homotopic to the identity relative to any set `L` of points of exit time zero
 (`Flow.homotopicRel_stopAtExitMap`): flow each point for the fraction `u ∈ [0, 1]` of its stopped
-time. In the Conley–Zehnder argument, `L` is the exit set of an index pair `(P, L)`, so the
-stopped flow is a self-map of the pair `(P, L)` homotopic to the identity which carries `E_t`
-into `L`.
+time. When `L` is exactly the set of points of `P` of exit time zero, as for the exit set of the
+index pair `(P, L)` in the Conley–Zehnder argument, the stopped flow is therefore a self-map of
+the pair `(P, L)` homotopic to the identity relative to `L` which carries `E_t` into `L`.
 
 Finally the forward-trapped set `S⁺` is carried by the flow towards the maximal invariant subset
-`Inv(P) = {x | ∀ t, ϕ t x ∈ P}`. The ω-limit set of any set whose forward images eventually lie
-in `P` is contained in `Inv(P)` (`Flow.omegaLimit_subset_setOf_forall_apply_mem`). When `P` is
-compact and `α` is Hausdorff, such a set is eventually carried into every open neighbourhood of
-`Inv(P)` (`Flow.eventually_mapsTo_of_isCompact_of_isOpen`), in particular `S⁺` is
-(`Flow.eventually_mapsTo_setOf_exitTime_eq_top`). On the forward invariant set `S⁺`, each time-`t`
-map with `t ≥ 0` is homotopic to the identity (`Flow.homotopic_id_restrict`).
+`Inv(P) = {x | ∀ t, ϕ t x ∈ P}`: when `P` is compact and `α` is Hausdorff, `S⁺` is eventually
+carried into every open neighbourhood of `Inv(P)`
+(`Flow.eventually_mapsTo_setOf_exitTime_eq_top`), by the attraction of sets eventually mapped
+into `P` (`Flow.eventually_mapsTo_of_isCompact_of_isOpen` in
+`TauCeti/Dynamics/Flow/OmegaLimit.lean`). On the forward invariant set `S⁺`
+(`Flow.isForwardInvariant_setOf_exitTime_eq_top`), each time-`t` map with `t ≥ 0` is homotopic to
+the identity (`Flow.homotopic_id_restrict` in `TauCeti/Dynamics/Flow/Basic.lean`).
 
 ## Main definitions
 
@@ -84,7 +85,7 @@ map with `t ≥ 0` is homotopic to the identity (`Flow.homotopic_id_restrict`).
 public section
 
 open Filter Set
-open scoped ENNReal NNReal omegaLimit
+open scoped ENNReal NNReal
 
 namespace Flow
 
@@ -224,6 +225,12 @@ noncomputable def stopAtExit (t : ℝ≥0) (x : α) : α :=
 
 variable {ϕ P} {x : α} {t : ℝ≥0}
 
+/-- The time `min t (exitTime x)` for which the stopped flow runs is at most the exit time. -/
+theorem ofReal_truncateToReal_exitTime_le (t : ℝ≥0∞) :
+    ENNReal.ofReal (ENNReal.truncateToReal t (ϕ.exitTime P x)) ≤ ϕ.exitTime P x := by
+  rw [ENNReal.truncateToReal]
+  exact ENNReal.ofReal_toReal_le.trans (min_le_right _ _)
+
 /-- Stopping the flow at time `0` does nothing. -/
 @[simp]
 theorem stopAtExit_zero : ϕ.stopAtExit P 0 x = x := by
@@ -245,10 +252,8 @@ theorem stopAtExit_of_exitTime_le (h : ϕ.exitTime P x ≤ t) :
 
 /-- The stopped flow maps a closed set `P` into itself. -/
 theorem mapsTo_stopAtExit (hP : IsClosed P) (t : ℝ≥0) : MapsTo (ϕ.stopAtExit P t) P P :=
-  fun _ hx ↦ apply_mem_of_le_exitTime hP hx ENNReal.toReal_nonneg <| by
-    rw [ENNReal.truncateToReal,
-      ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top (min_le_left _ _))]
-    exact min_le_right _ _
+  fun _ hx ↦ apply_mem_of_le_exitTime hP hx ENNReal.truncateToReal_nonneg
+    (ofReal_truncateToReal_exitTime_le _)
 
 /-- **The stopped flow ends at the exit.** At time `t`, the stopped flow sends the points of a
 closed set `P` which leave `P` by time `t` to points of `P` of exit time zero. -/
@@ -292,13 +297,11 @@ theorem homotopicRel_stopAtExitMap (hP : IsClosed P) (hτ : ContinuousOn (ϕ.exi
   have hTc : Continuous T :=
     (ENNReal.continuous_truncateToReal ENNReal.coe_ne_top).comp hτ.domRestrict
   have hmem (u : unitInterval) (x : P) : ϕ (u * T x) x ∈ P := by
-    refine apply_mem_of_le_exitTime hP x.property (mul_nonneg u.property.1 ENNReal.toReal_nonneg) ?_
-    have hmin : min (t : ℝ≥0∞) (ϕ.exitTime P x) ≠ ∞ :=
-      ne_top_of_le_ne_top ENNReal.coe_ne_top (min_le_left _ _)
-    calc ENNReal.ofReal (u * T x) ≤ ENNReal.ofReal (T x) :=
-          ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left ENNReal.toReal_nonneg u.property.2)
-      _ = min (t : ℝ≥0∞) (ϕ.exitTime P x) := ENNReal.ofReal_toReal hmin
-      _ ≤ ϕ.exitTime P x := min_le_right _ _
+    refine apply_mem_of_le_exitTime hP x.property
+      (mul_nonneg u.property.1 ENNReal.truncateToReal_nonneg) ?_
+    calc ENNReal.ofReal (u * T x) ≤ ENNReal.ofReal (T x) := ENNReal.ofReal_le_ofReal
+          (mul_le_of_le_one_left ENNReal.truncateToReal_nonneg u.property.2)
+      _ ≤ ϕ.exitTime P x := ofReal_truncateToReal_exitTime_le _
   refine ⟨{ toFun := fun p ↦ ⟨ϕ (p.1 * T p.2) p.2, hmem p.1 p.2⟩
             continuous_toFun := (ϕ.continuous
               ((continuous_subtypeVal.comp continuous_fst).mul (hTc.comp continuous_snd))
@@ -313,26 +316,7 @@ end StopAtExit
 
 section Limit
 
-variable {ϕ : Flow ℝ α} {P s : Set α}
-
-/-- The ω-limit set of a set whose forward images eventually lie in a closed set `P` is contained
-in the maximal invariant subset of `P`, the set of points whose whole orbit lies in `P`. -/
-theorem omegaLimit_subset_setOf_forall_apply_mem (hP : IsClosed P)
-    (hs : ∀ᶠ t in atTop, MapsTo (ϕ t) s P) : ω⁺ ϕ s ⊆ {x | ∀ t, ϕ t x ∈ P} := by
-  have hω : ω⁺ ϕ s ⊆ P :=
-    (omegaLimit_subset_closure_image2 _ _ _ hs).trans
-      (closure_minimal (image2_subset_iff.2 fun _ ht _ hx ↦ ht hx) hP)
-  exact fun y hy t ↦
-    hω (isInvariant_omegaLimit atTop ϕ s (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) t hy)
-
-/-- **Attraction to the maximal invariant subset.** If `P` is compact in a Hausdorff space, a set
-whose forward images eventually lie in `P` is eventually carried by the flow into every open
-neighbourhood of the maximal invariant subset of `P`. -/
-theorem eventually_mapsTo_of_isCompact_of_isOpen [T2Space α] (hP : IsCompact P)
-    (hs : ∀ᶠ t in atTop, MapsTo (ϕ t) s P) {U : Set α} (hU : IsOpen U)
-    (hPU : {x | ∀ t, ϕ t x ∈ P} ⊆ U) : ∀ᶠ t in atTop, MapsTo (ϕ t) s U :=
-  eventually_mapsTo_of_isCompact_absorbing_of_isOpen_of_omegaLimit_subset _ _ _ hP hs hU
-    ((omegaLimit_subset_setOf_forall_apply_mem hP.isClosed hs).trans hPU)
+variable {ϕ : Flow ℝ α} {P : Set α}
 
 /-- If `P` is compact in a Hausdorff space, the points whose forward orbit stays in `P` are
 eventually carried by the flow into every open neighbourhood of the maximal invariant subset
@@ -342,16 +326,6 @@ theorem eventually_mapsTo_setOf_exitTime_eq_top [T2Space α] (hP : IsCompact P) 
     ∀ᶠ t in atTop, MapsTo (ϕ t) {x | ϕ.exitTime P x = ∞} U :=
   eventually_mapsTo_of_isCompact_of_isOpen hP
     (eventually_ge_atTop 0 |>.mono fun _ ht _ hx ↦ exitTime_eq_top_iff.1 hx _ ht) hU hPU
-
-/-- On a forward invariant set, the time-`t` map of the flow with `t ≥ 0` is homotopic to the
-identity, through the time-`u t` maps with `u ∈ [0, 1]`. -/
-theorem homotopic_id_restrict (hs : IsForwardInvariant ϕ s) {t : ℝ} (ht : 0 ≤ t) :
-    (ContinuousMap.id s).Homotopic
-      ⟨(hs ht).restrict (ϕ t) s s, (ϕ.continuous_toFun t).restrict (hs ht)⟩ :=
-  ϕ.homotopic_of_eq_apply Topology.IsEmbedding.subtypeVal continuous_subtypeVal
-    continuous_const continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ t)
-    (fun x ↦ by simp) (fun _ ↦ rfl) fun x u hu ↦
-      ⟨⟨ϕ (u * t) x, hs (mul_nonneg hu.1 ht) x.property⟩, by simp⟩
 
 end Limit
 
