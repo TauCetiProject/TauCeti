@@ -92,12 +92,12 @@ private theorem H_mem_engel_E (i j : B) : H j ∈ LieSubalgebra.engel R (E i) :=
   simp
 
 /-- The higher Serre relation, one step later: `ad Eᵢ` kills each `Eⱼ`. -/
-private theorem E_mem_engel_E (i j : B) : E j ∈ LieSubalgebra.engel R (E i) :=
+theorem E_mem_engel_E (i j : B) : E j ∈ LieSubalgebra.engel R (E i) :=
   (LieSubalgebra.mem_engel_iff R _ _).2
     ⟨(-CM i j).toNat + 1, by rw [ad_pow_succ_apply, h.ad_pow_lie_E_E i j]⟩
 
 /-- `ad Eᵢ` kills `Fⱼ` in one step for `j ≠ i`, and carries `Fᵢ` to `Hᵢ`. -/
-private theorem F_mem_engel_E (i j : B) : F j ∈ LieSubalgebra.engel R (E i) := by
+theorem F_mem_engel_E (i j : B) : F j ∈ LieSubalgebra.engel R (E i) := by
   rcases eq_or_ne j i with rfl | hji
   · obtain ⟨n, hn⟩ := (LieSubalgebra.mem_engel_iff R _ _).1 (h.H_mem_engel_E j j)
     refine (LieSubalgebra.mem_engel_iff R _ _).2 ⟨n + 1, ?_⟩

@@ -109,6 +109,12 @@ theorem symmetrizer_cast_ne_zero {R : Type*} [AddMonoidWithOne R] [CharZero R] (
     (A.symmetrizer i : R) ≠ 0 :=
   Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
 
+/-- The underlying matrix of a symmetrizable Cartan datum is a generalized Cartan matrix. -/
+theorem isGeneralizedCartan : A.cartan.IsGeneralizedCartan where
+  diag := A.diag
+  offDiag_nonpos := A.offDiag_nonpos
+  zero_comm := A.zero_comm
+
 /-! ### The symmetrized matrix -/
 
 /-- The symmetrized matrix `B = (d i * a i j)` of a symmetrizable datum. -/

@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Lie.Free.Basic
 public import TauCeti.Algebra.Lie.Free.LowerCentral
-public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
 
 /-!

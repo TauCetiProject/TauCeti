@@ -151,11 +151,9 @@ theorem liftQ_mkQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) : (I.liftQ f h).com
 /-- The range of the homomorphism induced on the quotient equals the range of the original
 homomorphism. -/
 theorem range_liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
-    (I.liftQ f h).range = f.range :=
-  SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := I.surjective_mkQ q
-        exact ⟨x, (DFunLike.congr_fun (I.liftQ_mkQ f h) x).symm⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨I.mkQ x, DFunLike.congr_fun (I.liftQ_mkQ f h) x⟩⟩
+    (I.liftQ f h).range = f.range := by
+  rw [← LieSubalgebra.toSubmodule_inj, LieHom.range_toSubmodule, coe_liftQ,
+    Submodule.range_liftQ, LieHom.range_toSubmodule]
 
 /-- Two homomorphisms out of `L ⧸ I` that agree after composition with the quotient map are
 equal. -/

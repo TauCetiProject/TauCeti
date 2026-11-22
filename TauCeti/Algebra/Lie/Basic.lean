@@ -71,7 +71,11 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_succ_apply` and `TauCeti.ad_pow_succ_apply'`: an additional adjoint action can be
   applied before or outside the preceding powers.
-* `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element preserves adjoint vanishing.
+* `TauCeti.lie_ad_pow_of_lie_eq_smul`: eigenvalue shift for an iterated adjoint bracket.
+* `TauCeti.lie_ad_pow_of_lie_eq_zero`: commuting elements commute with powers of each other's
+  adjoint actions.
+* `TauCeti.ad_neg_pow_apply` and `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element
+  scales the `n`-fold adjoint action by `(-1) ^ n` and preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
   whichever base ring the Lie algebra is read over.
@@ -440,12 +444,38 @@ theorem ad_pow_succ_apply' (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = ⁅x, (LieAlgebra.ad R L x ^ n) y⁆ := by
   rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
+/-- If `h` acts on `x` and `y` by scalars `a` and `b`, then `h` acts on `(ad x) ^ n y` by
+`n • a + b`. -/
+theorem lie_ad_pow_of_lie_eq_smul {h x y : L} {a b : R} (hx : ⁅h, x⁆ = a • x)
+    (hy : ⁅h, y⁆ = b • y) (n : ℕ) :
+    ⁅h, (LieAlgebra.ad R L x ^ n) y⁆ = (n • a + b) • (LieAlgebra.ad R L x ^ n) y := by
+  induction n with
+  | zero => simpa using hy
+  | succ n ih =>
+    rw [ad_pow_succ_apply', leibniz_lie, hx, ih, smul_lie, lie_smul, succ_nsmul]
+    module
+
+/-- If `⁅x, y⁆ = 0`, then `ad x` commutes with every power of `ad y`. -/
+theorem lie_ad_pow_of_lie_eq_zero {x y : L} (hxy : ⁅x, y⁆ = 0) (n : ℕ) (z : L) :
+    ⁅x, (LieAlgebra.ad R L y ^ n) z⁆ = (LieAlgebra.ad R L y ^ n) ⁅x, z⁆ := by
+  let := LieRing.ofAssociativeRing (A := Module.End R L)
+  have hcomm : Commute (LieAlgebra.ad R L x) (LieAlgebra.ad R L y) := by
+    rw [commute_iff_lie_eq, ← LieHom.map_lie, hxy, map_zero]
+  simpa only [_root_.mul_apply_eq_comp, LieAlgebra.ad_apply] using
+    LinearMap.congr_fun (hcomm.pow_right n).eq z
+
+/-- Iterating the adjoint action of `-x` `n` times scales the `n`-fold adjoint action of `x` by
+`(-1) ^ n`. -/
+theorem ad_neg_pow_apply (x y : L) (n : ℕ) :
+    (LieAlgebra.ad R L (-x) ^ n) y = (-1 : R) ^ n • (LieAlgebra.ad R L x ^ n) y := by
+  rw [map_neg, neg_pow, _root_.mul_apply_eq_comp, ← neg_one_smul R (1 : Module.End R L),
+    smul_pow, one_pow]
+  simp
+
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :
     (LieAlgebra.ad R L (-x) ^ n) y = 0 := by
-  have hneg : LieAlgebra.ad R L (-x) = (-1 : R) • LieAlgebra.ad R L x := by
-    rw [map_neg, neg_smul, one_smul]
-  rw [hneg, smul_pow, LinearMap.smul_apply, h, smul_zero]
+  rw [ad_neg_pow_apply, h, smul_zero]
 
 /-- The Engel subalgebra of `-x` is that of `x`: the powers of `ad (-x)` are those of `ad x` up to
 sign. -/

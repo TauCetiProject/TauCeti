@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 
 /-!
 # Generalized Cartan matrices
@@ -26,8 +26,6 @@ a symmetrizer (`TauCeti.SymmetrizableDatum`).
 * `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_reindex`,
   `Matrix.IsGeneralizedCartan.fromBlocks`: closure under principal submatrices along an embedding,
   reindexing along an equivalence, and block-diagonal direct sums.
-* `TauCeti.SymmetrizableDatum.isGeneralizedCartan`: symmetrizable Cartan data have generalized
-  Cartan underlying matrices.
 
 ## References
 
@@ -104,17 +102,6 @@ theorem isGeneralizedCartan_reindex {I I' : Type*} {M : Matrix I I ℤ} (e : I �
   ⟨fun h => by simpa using h.reindex e.symm, fun h => h.reindex e⟩
 
 end Matrix
-
-namespace TauCeti.SymmetrizableDatum
-
-/-- The underlying matrix of a symmetrizable Cartan datum is a generalized Cartan matrix. -/
-theorem isGeneralizedCartan {I : Type*} (A : SymmetrizableDatum I) :
-    A.cartan.IsGeneralizedCartan where
-  diag := A.diag
-  offDiag_nonpos := A.offDiag_nonpos
-  zero_comm := A.zero_comm
-
-end TauCeti.SymmetrizableDatum
 
 /-! ### Examples -/
 

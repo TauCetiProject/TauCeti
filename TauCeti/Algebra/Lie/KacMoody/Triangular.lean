@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.KacMoody.Auxiliary
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
+public import TauCeti.Algebra.Lie.KacMoody.Basic
 
+import TauCeti.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.KacMoody.Auxiliary
+import TauCeti.Algebra.Lie.Presentation.Serre.Integrable
 import TauCeti.Algebra.Lie.Presentation.Serre.Triangular
+import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 
 /-!
-# Triangular decomposition and Cartan injectivity for Kac–Moody algebras
+# Triangular decomposition for Kac–Moody algebras
 
 Let `R` be a realization of an integral matrix `A` over a field `K`. This file establishes the
 structure of the presented Kac–Moody algebra `TauCeti.KacMoody.PresentedLieAlgebra R` around its
@@ -26,13 +31,15 @@ When `A` is a generalized Cartan matrix (`Matrix.IsGeneralizedCartan A`), combin
 decomposition with `TauCeti.KacMoody.quotientTriangular_eq_zero` (proved via Kac's auxiliary
 presentation and word representation in `TauCeti/Algebra/Lie/KacMoody/Auxiliary.lean`) yields:
 
-* **Cartan injectivity**: `TauCeti.KacMoody.cartanElement R : H →ₗ[K] PresentedLieAlgebra R` is
-  injective;
-* **Triangular decomposition**: `n⁻ × H × n⁺ ≃ₗ[K] PresentedLieAlgebra R`, with both `n⁺` and `n⁻`
-  canonically isomorphic to `FreeLieAlgebra K I ⧸ serreIdeal K A`;
+* **Triangular decomposition**: `n⁻ × H × n⁺ ≃ₗ[K] PresentedLieAlgebra R`, with bundled
+  coordinate projections onto the three summands and both `n⁺` and `n⁻` canonically isomorphic to
+  `FreeLieAlgebra K I ⧸ serreIdeal K A`;
 * **Generator independence**: the families `eᵢ` and `fᵢ` are linearly independent over `K`;
 * **Derived subalgebra comparison**: `TauCeti.KacMoody.serreHom R` embeds `Matrix.ToLieAlgebra K A`
   isomorphically onto `⁅𝔤, 𝔤⁆`, with `⁅𝔤, 𝔤⁆ ∩ H` equal to the image of `R.corootSpan`.
+
+(Cartan injectivity `TauCeti.KacMoody.cartanElement_injective` is established directly in
+`TauCeti/Algebra/Lie/KacMoody/CartanInjective.lean`.)
 
 All results hold over an arbitrary field `K`, with no characteristic or finiteness assumption.
 
@@ -46,6 +53,9 @@ All results hold over an arbitrary field `K`, with no characteristic or finitene
   isomorphisms `(FreeLieAlgebra K I ⧸ serreIdeal K A) ≃ₗ⁅K⁆ n⁺` and `≃ₗ⁅K⁆ n⁻`.
 * `TauCeti.KacMoody.triangularEquiv`: the `K`-linear equivalence
   `negativeSubalgebra R × H × positiveSubalgebra R ≃ₗ[K] PresentedLieAlgebra R`.
+* `TauCeti.KacMoody.negativeProjection`, `TauCeti.KacMoody.cartanProjection`, and
+  `TauCeti.KacMoody.positiveProjection`: the bundled linear projections out of
+  `PresentedLieAlgebra R`.
 * `TauCeti.KacMoody.serreEquivRange`: the Lie algebra isomorphism from `Matrix.ToLieAlgebra K A`
   onto `(serreHom R).range = ⁅𝔤, 𝔤⁆`.
 
@@ -53,8 +63,6 @@ All results hold over an arbitrary field `K`, with no characteristic or finitene
 
 * `TauCeti.KacMoody.engel_positiveGenerator_eq_top` and
   `TauCeti.KacMoody.engel_negativeGenerator_eq_top`: local nilpotence of `ad eᵢ` and `ad fᵢ`.
-* `TauCeti.KacMoody.cartanElement_injective`: injectivity of `cartanElement R` for a generalized
-  Cartan matrix.
 * `TauCeti.KacMoody.linearIndependent_positiveGenerator` and
   `TauCeti.KacMoody.linearIndependent_negativeGenerator`: linear independence of `eᵢ` and of `fᵢ`.
 * `TauCeti.KacMoody.serreHom_injective` and
@@ -87,19 +95,14 @@ variable {R} in
 preserves the defining relations of the Kac–Moody algebra. -/
 theorem SatisfiesRelations.neg_swap {L : Type*} [LieRing L] [LieAlgebra K L]
     {φ : H →ₗ[K] L} {E F : I → L} (h : SatisfiesRelations R φ E F) :
-    SatisfiesRelations R (-φ) (-F) (-E) where
-  lie_cartan_cartan x y := by simp [h.lie_cartan_cartan]
-  lie_cartan_positive x j := by simp [h.lie_cartan_negative]
-  lie_cartan_negative x j := by simp [h.lie_cartan_positive]
-  lie_positive_negative_self i := by simp [← lie_skew (F i) (E i), h.lie_positive_negative_self]
-  lie_positive_negative_of_ne i j hij := by
-    simp [← lie_skew (F i) (E j), h.lie_positive_negative_of_ne j i hij.symm]
-  serre_positive i j := by
-    simpa using ad_neg_pow_apply_eq_zero (x := F i) (n := (-A i j).toNat) (y := ⁅F i, F j⁆)
-      (h.serre_negative i j)
-  serre_negative i j := by
-    simpa using ad_neg_pow_apply_eq_zero (x := E i) (n := (-A i j).toNat) (y := ⁅E i, E j⁆)
-      (h.serre_positive i j)
+    SatisfiesRelations R (-φ) (-F) (-E) :=
+  { h.toSatisfiesAuxRelations.neg_swap with
+    serre_positive := fun i j => by
+      simpa using ad_neg_pow_apply_eq_zero (x := F i) (n := (-A i j).toNat) (y := ⁅F i, F j⁆)
+        (h.serre_negative i j)
+    serre_negative := fun i j => by
+      simpa using ad_neg_pow_apply_eq_zero (x := E i) (n := (-A i j).toNat) (y := ⁅E i, E j⁆)
+        (h.serre_positive i j) }
 
 private noncomputable def chevalleyHom : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R :=
   lift (satisfiesRelations_generators R).neg_swap
@@ -182,52 +185,31 @@ theorem negativeGenerator_mem_negativeSubalgebra (i : I) :
 theorem map_positiveSubalgebra_chevalleyInvolution :
     (positiveSubalgebra R).map (chevalleyInvolution R :
       PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R) = negativeSubalgebra R := by
-  rw [positiveSubalgebra, LieSubalgebra.map_lieSpan]
-  refine le_antisymm (LieSubalgebra.lieSpan_le.mpr ?_) ?_
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    simpa only [LieEquiv.coe_toLieHom, chevalleyInvolution_positiveGenerator, SetLike.mem_coe,
-      neg_mem_iff] using negativeGenerator_mem_negativeSubalgebra R i
-  · rw [negativeSubalgebra, LieSubalgebra.lieSpan_le]
-    rintro _ ⟨i, rfl⟩
-    refine neg_neg (negativeGenerator R i) ▸ neg_mem (LieSubalgebra.subset_lieSpan ?_)
-    exact ⟨positiveGenerator R i, ⟨i, rfl⟩, chevalleyInvolution_positiveGenerator R i⟩
+  have hcomp : ((chevalleyInvolution R :
+      PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R) ∘ positiveGenerator R) =
+      -negativeGenerator R :=
+    funext (chevalleyInvolution_positiveGenerator R)
+  rw [positiveSubalgebra, LieSubalgebra.map_lieSpan, ← Set.range_comp, hcomp, ← Set.neg_range',
+    LieSubalgebra.lieSpan_neg, negativeSubalgebra]
 
 /-- The Chevalley involution carries `n⁻` onto `n⁺`. -/
 @[simp]
 theorem map_negativeSubalgebra_chevalleyInvolution :
     (negativeSubalgebra R).map (chevalleyInvolution R :
       PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R) = positiveSubalgebra R := by
-  rw [negativeSubalgebra, LieSubalgebra.map_lieSpan]
-  refine le_antisymm (LieSubalgebra.lieSpan_le.mpr ?_) ?_
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    simpa only [LieEquiv.coe_toLieHom, chevalleyInvolution_negativeGenerator, SetLike.mem_coe,
-      neg_mem_iff] using positiveGenerator_mem_positiveSubalgebra R i
-  · rw [positiveSubalgebra, LieSubalgebra.lieSpan_le]
-    rintro _ ⟨i, rfl⟩
-    refine neg_neg (positiveGenerator R i) ▸ neg_mem (LieSubalgebra.subset_lieSpan ?_)
-    exact ⟨negativeGenerator R i, ⟨i, rfl⟩, chevalleyInvolution_negativeGenerator R i⟩
+  rw [← map_positiveSubalgebra_chevalleyInvolution]
+  ext y
+  simp only [LieSubalgebra.mem_map, LieEquiv.coe_toLieHom]
+  exact ⟨by rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩; simpa using hx,
+    fun hy => ⟨chevalleyInvolution R y, ⟨y, hy, rfl⟩, chevalleyInvolution_apply_apply R y⟩⟩
 
-theorem range_positiveQuotientHom : (positiveQuotientHom R).range = positiveSubalgebra R := by
-  have hcomp : (positiveQuotientHom R).comp (serreIdeal K A).mkQ =
-      FreeLieAlgebra.lift K (positiveGenerator R) :=
-    FreeLieAlgebra.hom_ext fun i => by
-      rw [LieHom.comp_apply, positiveQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
-  rw [positiveSubalgebra_def, ← FreeLieAlgebra.range_lift_eq_lieSpan, ← hcomp]
-  exact SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q
-        exact ⟨x, (LieHom.comp_apply _ _ x).symm⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, LieHom.comp_apply _ _ x⟩⟩
+/-- The range of `TauCeti.KacMoody.positiveQuotientHom` is `n⁺`. -/
+theorem range_positiveQuotientHom : (positiveQuotientHom R).range = positiveSubalgebra R :=
+  range_serreIdealLift _
 
-theorem range_negativeQuotientHom : (negativeQuotientHom R).range = negativeSubalgebra R := by
-  have hcomp : (negativeQuotientHom R).comp (serreIdeal K A).mkQ =
-      FreeLieAlgebra.lift K (negativeGenerator R) :=
-    FreeLieAlgebra.hom_ext fun i => by
-      rw [LieHom.comp_apply, negativeQuotientHom_mk_of, FreeLieAlgebra.lift_of_apply]
-  rw [negativeSubalgebra_def, ← FreeLieAlgebra.range_lift_eq_lieSpan, ← hcomp]
-  exact SetLike.ext fun _ =>
-    ⟨by rintro ⟨q, rfl⟩; obtain ⟨x, rfl⟩ := (serreIdeal K A).surjective_mkQ q
-        exact ⟨x, (LieHom.comp_apply _ _ x).symm⟩,
-     by rintro ⟨x, rfl⟩; exact ⟨(serreIdeal K A).mkQ x, LieHom.comp_apply _ _ x⟩⟩
+/-- The range of `TauCeti.KacMoody.negativeQuotientHom` is `n⁻`. -/
+theorem range_negativeQuotientHom : (negativeQuotientHom R).range = negativeSubalgebra R :=
+  range_serreIdealLift _
 
 /-- **Spanning triangular decomposition.** For any integral matrix `A`, the presented Lie algebra is
 the sum `n⁻ + H + n⁺` of its lowering subalgebra, the image of `H`, and its raising subalgebra. -/
@@ -262,24 +244,17 @@ theorem negativeSubalgebra_sup_range_cartanElement_sup_positiveSubalgebra :
 /-- **The raising generators act locally nilpotently** on `PresentedLieAlgebra R`. -/
 theorem engel_positiveGenerator_eq_top (i : I) :
     LieSubalgebra.engel K (positiveGenerator R i) = ⊤ := by
-  have hcartan : ∀ x : H, cartanElement R x ∈ LieSubalgebra.engel K (positiveGenerator R i) := by
-    intro x
-    refine (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨2, ?_⟩
+  classical
+  have hs := (satisfiesRelations_generators R).isSerreSystem
+  rw [eq_top_iff, ← lieSpan_generators_eq_top R, LieSubalgebra.lieSpan_le]
+  rintro _ ((⟨x, rfl⟩ | ⟨j, rfl⟩) | ⟨j, rfl⟩)
+  · refine (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨2, ?_⟩
     rw [ad_pow_succ_apply, pow_one, ad_apply,
       ← lie_skew (positiveGenerator R i) (cartanElement R x),
       lie_cartanElement_positiveGenerator]
     simp
-  rw [eq_top_iff, ← lieSpan_generators_eq_top R, LieSubalgebra.lieSpan_le]
-  rintro _ ((⟨x, rfl⟩ | ⟨j, rfl⟩) | ⟨j, rfl⟩)
-  · exact hcartan x
-  · exact (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨(-A i j).toNat + 1, by
-      rw [ad_pow_succ_apply, ad_pow_lie_positiveGenerator_positiveGenerator]⟩
-  · rcases eq_or_ne j i with rfl | hji
-    · obtain ⟨n, hn⟩ := (LieSubalgebra.mem_engel_iff K _ _).mp (hcartan (R.coroot j))
-      exact (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨n + 1, by
-        rw [ad_pow_succ_apply, lie_positiveGenerator_negativeGenerator_self, hn]⟩
-    · exact (LieSubalgebra.mem_engel_iff K _ _).mpr ⟨1, by
-        rw [pow_one, ad_apply, lie_positiveGenerator_negativeGenerator_of_ne R hji.symm]⟩
+  · exact hs.E_mem_engel_E i j
+  · exact hs.F_mem_engel_E i j
 
 /-- **The lowering generators act locally nilpotently** on `PresentedLieAlgebra R`. -/
 theorem engel_negativeGenerator_eq_top (i : I) :
@@ -292,16 +267,9 @@ theorem engel_negativeGenerator_eq_top (i : I) :
 
 end Subalgebras
 
-/-! ## Cartan injectivity, the triangular equivalence, and generator independence -/
+/-! ## Triangular equivalence, projections, and generator independence -/
 
 section Triangular
-
-/-- **Cartan injectivity.** For a generalized Cartan matrix `A`, the canonical linear map
-`cartanElement R : H →ₗ[K] PresentedLieAlgebra R` is injective. -/
-theorem cartanElement_injective (hA : A.IsGeneralizedCartan) :
-    Function.Injective (cartanElement R) :=
-  (injective_iff_map_eq_zero _).mpr fun _ hx =>
-    (quotientTriangular_eq_zero R hA (a := 0) (b := 0) (by simpa using hx)).2.1
 
 /-- For a generalized Cartan matrix `A`, `positiveQuotientHom R` is injective. -/
 theorem positiveQuotientHom_injective (hA : A.IsGeneralizedCartan) :
@@ -325,12 +293,13 @@ noncomputable def positiveEquiv (hA : A.IsGeneralizedCartan) :
 @[simp]
 theorem coe_positiveEquiv_apply (hA : A.IsGeneralizedCartan)
     (b : FreeLieAlgebra K I ⧸ serreIdeal K A) :
-    (positiveEquiv R hA b : PresentedLieAlgebra R) = positiveQuotientHom R b := (rfl)
+    (positiveEquiv R hA b : PresentedLieAlgebra R) = positiveQuotientHom R b := by
+  rw [positiveEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply, LieEquiv.ofInjective_apply]
 
 theorem coe_positiveEquiv_mk_of (hA : A.IsGeneralizedCartan) (i : I) :
     (positiveEquiv R hA ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) : PresentedLieAlgebra R) =
       positiveGenerator R i := by
-  rw [coe_positiveEquiv_apply, positiveQuotientHom_mk_of]
+  rw [coe_positiveEquiv_apply, LieIdeal.mkQ_apply, positiveQuotientHom_mk_of]
 
 /-- The Lie algebra isomorphism between `FreeLieAlgebra K I ⧸ serreIdeal K A` and the lowering
 subalgebra `n⁻` of `PresentedLieAlgebra R`. -/
@@ -342,34 +311,31 @@ noncomputable def negativeEquiv (hA : A.IsGeneralizedCartan) :
 @[simp]
 theorem coe_negativeEquiv_apply (hA : A.IsGeneralizedCartan)
     (a : FreeLieAlgebra K I ⧸ serreIdeal K A) :
-    (negativeEquiv R hA a : PresentedLieAlgebra R) = negativeQuotientHom R a := (rfl)
+    (negativeEquiv R hA a : PresentedLieAlgebra R) = negativeQuotientHom R a := by
+  rw [negativeEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply, LieEquiv.ofInjective_apply]
 
 theorem coe_negativeEquiv_mk_of (hA : A.IsGeneralizedCartan) (i : I) :
     (negativeEquiv R hA ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) : PresentedLieAlgebra R) =
       negativeGenerator R i := by
-  rw [coe_negativeEquiv_apply, negativeQuotientHom_mk_of]
+  rw [coe_negativeEquiv_apply, LieIdeal.mkQ_apply, negativeQuotientHom_mk_of]
 
 /-- The canonical addition map `n⁻ × H × n⁺ →ₗ[K] PresentedLieAlgebra R`. -/
 noncomputable def triangularLinearMap :
-    (negativeSubalgebra R × H × positiveSubalgebra R) →ₗ[K] PresentedLieAlgebra R where
-  toFun p := (p.1 : PresentedLieAlgebra R) + cartanElement R p.2.1 + (p.2.2 : PresentedLieAlgebra R)
-  map_add' _ _ := by simp; abel
-  map_smul' _ _ := by simp [smul_add]
+    (negativeSubalgebra R × H × positiveSubalgebra R) →ₗ[K] PresentedLieAlgebra R :=
+  ((negativeSubalgebra R).toSubmodule.subtype).coprod
+    ((cartanElement R).coprod (positiveSubalgebra R).toSubmodule.subtype)
 
 @[simp]
 theorem triangularLinearMap_apply (p : negativeSubalgebra R × H × positiveSubalgebra R) :
     triangularLinearMap R p =
-      (p.1 : PresentedLieAlgebra R) + cartanElement R p.2.1 + (p.2.2 : PresentedLieAlgebra R) :=
-  (rfl)
+      (p.1 : PresentedLieAlgebra R) + cartanElement R p.2.1 + (p.2.2 : PresentedLieAlgebra R) := by
+  simp only [triangularLinearMap, LinearMap.coprod_apply, add_assoc]
+  rfl
 
 theorem triangularLinearMap_surjective : Function.Surjective (triangularLinearMap R) := by
-  intro z
-  have hz : z ∈ (negativeSubalgebra R).toSubmodule ⊔ LinearMap.range (cartanElement R) ⊔
-      (positiveSubalgebra R).toSubmodule := by
-    rw [negativeSubalgebra_sup_range_cartanElement_sup_positiveSubalgebra R]; trivial
-  obtain ⟨uv, huv, w, hw, rfl⟩ := Submodule.mem_sup.mp hz
-  obtain ⟨u, hu, _, ⟨x, rfl⟩, rfl⟩ := Submodule.mem_sup.mp huv
-  exact ⟨(⟨u, hu⟩, x, ⟨w, hw⟩), (triangularLinearMap_apply R _).symm⟩
+  rw [← LinearMap.range_eq_top, triangularLinearMap, LinearMap.range_coprod, LinearMap.range_coprod,
+    Submodule.range_subtype, Submodule.range_subtype, ← sup_assoc]
+  exact negativeSubalgebra_sup_range_cartanElement_sup_positiveSubalgebra R
 
 /-- **Triangular decomposition.** For a generalized Cartan matrix `A`, addition gives a `K`-linear
 isomorphism `n⁻ × H × n⁺ ≃ₗ[K] PresentedLieAlgebra R`. -/
@@ -390,7 +356,7 @@ theorem triangularEquiv_apply (hA : A.IsGeneralizedCartan)
     (p : negativeSubalgebra R × H × positiveSubalgebra R) :
     triangularEquiv R hA p =
       (p.1 : PresentedLieAlgebra R) + cartanElement R p.2.1 + (p.2.2 : PresentedLieAlgebra R) :=
-  (rfl)
+  triangularLinearMap_apply R p
 
 @[simp]
 theorem triangularEquiv_symm_coe_negativeSubalgebra (hA : A.IsGeneralizedCartan)
@@ -408,6 +374,80 @@ theorem triangularEquiv_symm_coe_positiveSubalgebra (hA : A.IsGeneralizedCartan)
     (w : positiveSubalgebra R) :
     (triangularEquiv R hA).symm (w : PresentedLieAlgebra R) = (0, 0, w) :=
   (triangularEquiv R hA).injective (by simp)
+
+/-- The projection of `PresentedLieAlgebra R` onto the lowering subalgebra `n⁻` along the
+triangular decomposition. -/
+noncomputable def negativeProjection (hA : A.IsGeneralizedCartan) :
+    PresentedLieAlgebra R →ₗ[K] negativeSubalgebra R :=
+  (LinearMap.fst K (negativeSubalgebra R) (H × positiveSubalgebra R)).comp
+    (triangularEquiv R hA).symm.toLinearMap
+
+/-- The projection of `PresentedLieAlgebra R` onto the Cartan space `H` along the triangular
+decomposition. -/
+noncomputable def cartanProjection (hA : A.IsGeneralizedCartan) :
+    PresentedLieAlgebra R →ₗ[K] H :=
+  (LinearMap.fst K H (positiveSubalgebra R)).comp
+    ((LinearMap.snd K (negativeSubalgebra R) (H × positiveSubalgebra R)).comp
+      (triangularEquiv R hA).symm.toLinearMap)
+
+/-- The projection of `PresentedLieAlgebra R` onto the raising subalgebra `n⁺` along the
+triangular decomposition. -/
+noncomputable def positiveProjection (hA : A.IsGeneralizedCartan) :
+    PresentedLieAlgebra R →ₗ[K] positiveSubalgebra R :=
+  (LinearMap.snd K H (positiveSubalgebra R)).comp
+    ((LinearMap.snd K (negativeSubalgebra R) (H × positiveSubalgebra R)).comp
+      (triangularEquiv R hA).symm.toLinearMap)
+
+@[simp]
+theorem negativeProjection_coe_negativeSubalgebra (hA : A.IsGeneralizedCartan)
+    (u : negativeSubalgebra R) :
+    negativeProjection R hA (u : PresentedLieAlgebra R) = u := by
+  simp [negativeProjection]
+
+@[simp]
+theorem negativeProjection_cartanElement (hA : A.IsGeneralizedCartan) (x : H) :
+    negativeProjection R hA (cartanElement R x) = 0 := by
+  simp [negativeProjection]
+
+@[simp]
+theorem negativeProjection_coe_positiveSubalgebra (hA : A.IsGeneralizedCartan)
+    (w : positiveSubalgebra R) :
+    negativeProjection R hA (w : PresentedLieAlgebra R) = 0 := by
+  simp [negativeProjection]
+
+@[simp]
+theorem cartanProjection_coe_negativeSubalgebra (hA : A.IsGeneralizedCartan)
+    (u : negativeSubalgebra R) :
+    cartanProjection R hA (u : PresentedLieAlgebra R) = 0 := by
+  simp [cartanProjection]
+
+@[simp]
+theorem cartanProjection_cartanElement (hA : A.IsGeneralizedCartan) (x : H) :
+    cartanProjection R hA (cartanElement R x) = x := by
+  simp [cartanProjection]
+
+@[simp]
+theorem cartanProjection_coe_positiveSubalgebra (hA : A.IsGeneralizedCartan)
+    (w : positiveSubalgebra R) :
+    cartanProjection R hA (w : PresentedLieAlgebra R) = 0 := by
+  simp [cartanProjection]
+
+@[simp]
+theorem positiveProjection_coe_negativeSubalgebra (hA : A.IsGeneralizedCartan)
+    (u : negativeSubalgebra R) :
+    positiveProjection R hA (u : PresentedLieAlgebra R) = 0 := by
+  simp [positiveProjection]
+
+@[simp]
+theorem positiveProjection_cartanElement (hA : A.IsGeneralizedCartan) (x : H) :
+    positiveProjection R hA (cartanElement R x) = 0 := by
+  simp [positiveProjection]
+
+@[simp]
+theorem positiveProjection_coe_positiveSubalgebra (hA : A.IsGeneralizedCartan)
+    (w : positiveSubalgebra R) :
+    positiveProjection R hA (w : PresentedLieAlgebra R) = w := by
+  simp [positiveProjection]
 
 theorem disjoint_negativeSubalgebra_range_cartanElement_sup_positiveSubalgebra
     (hA : A.IsGeneralizedCartan) :
@@ -436,55 +476,38 @@ theorem disjoint_range_cartanElement_positiveSubalgebra (hA : A.IsGeneralizedCar
 
 section GeneratorIndependence
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-private noncomputable def nilStep (i : I) : Module.End K (Option I →₀ K) :=
-  Finsupp.lsum K fun
-    | none => LinearMap.toSpanSingleton K (Option I →₀ K) (Finsupp.single (some i) 1)
-    | some _ => 0
-
-private theorem nilStep_mul_nilStep (i j : I) :
-    nilStep (K := K) i * nilStep (K := K) j = 0 := by
-  refine Finsupp.lhom_ext' fun o => LinearMap.ext_ring ?_
-  cases o <;> simp [nilStep]
-
 /-- For a generalized Cartan matrix `A`, the raising generators `eᵢ` are linearly independent over
 `K`. -/
 theorem linearIndependent_positiveGenerator (hA : A.IsGeneralizedCartan) :
     LinearIndependent K (positiveGenerator R) := by
-  let abHom : FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ Module.End K (Option I →₀ K) :=
-    (serreIdeal K A).liftQ (FreeLieAlgebra.lift K (nilStep (K := K))) <|
-      serreIdeal_le_ker_lift fun i j => by
-        rw [LieRing.of_associative_ring_bracket, nilStep_mul_nilStep, nilStep_mul_nilStep,
-          sub_self]
-        simp
-  let proj : positiveSubalgebra R →ₗ[K] (Option I →₀ K) :=
-    (LinearMap.applyₗ (Finsupp.single (none : Option I) (1 : K))).comp
+  classical
+  let eBasis : I → TauCeti.AbelianLieAlgebra (I →₀ K) :=
+    fun i => (TauCeti.AbelianLieAlgebra.equiv K (I →₀ K)).symm (Finsupp.single i 1)
+  let abHom : FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ TauCeti.AbelianLieAlgebra (I →₀ K) :=
+    serreIdealLift (E := eBasis) fun i j => by simp
+  let proj : positiveSubalgebra R →ₗ[K] (I →₀ K) :=
+    (TauCeti.AbelianLieAlgebra.equiv K (I →₀ K)).toLinearMap.comp
       (abHom.toLinearMap.comp (positiveEquiv R hA).symm.toLinearMap)
   have hproj : ∀ i : I,
       proj ⟨positiveGenerator R i, positiveGenerator_mem_positiveSubalgebra R i⟩ =
-        Finsupp.single (some i) 1 := fun i => by
+        Finsupp.single i 1 := fun i => by
     have hsymm : (positiveEquiv R hA).symm
         ⟨positiveGenerator R i, positiveGenerator_mem_positiveSubalgebra R i⟩ =
         (serreIdeal K A).mkQ (FreeLieAlgebra.of K i) :=
       (positiveEquiv R hA).injective <| Subtype.ext <| by
         rw [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, coe_positiveEquiv_mk_of]
-    have hab : abHom ((serreIdeal K A).mkQ (FreeLieAlgebra.of K i)) = nilStep i :=
-      (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
-    simp only [proj, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, LieHom.coe_toLinearMap,
-      LieEquiv.coe_toLieHom, hsymm, hab, nilStep]
-    simp
-  have hind : LinearIndependent K fun i : I => Finsupp.single (some i) (1 : K) :=
-    (Finsupp.basisSingleOne (ι := Option I) (R := K)).linearIndependent.comp _
-      (Option.some_injective I)
+    simp only [proj, LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, hsymm,
+      abHom, LieIdeal.mkQ_apply, serreIdealLift_mk_of, eBasis, LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply]
   have hcomp : proj ∘ (fun i =>
       (⟨positiveGenerator R i, positiveGenerator_mem_positiveSubalgebra R i⟩ :
-        positiveSubalgebra R)) = fun i => Finsupp.single (some i) (1 : K) :=
+        positiveSubalgebra R)) = fun i => Finsupp.single i (1 : K) :=
     funext hproj
   have hind_sub : LinearIndependent K (fun i =>
       (⟨positiveGenerator R i, positiveGenerator_mem_positiveSubalgebra R i⟩ :
         positiveSubalgebra R)) :=
-    LinearIndependent.of_comp proj (hcomp ▸ hind)
+    LinearIndependent.of_comp proj
+      (hcomp ▸ (Finsupp.basisSingleOne (ι := I) (R := K)).linearIndependent)
   exact hind_sub.map' (positiveSubalgebra R).toSubmodule.subtype
     (Submodule.ker_subtype (positiveSubalgebra R).toSubmodule)
 
@@ -527,35 +550,23 @@ variable [DecidableEq I]
 
 private noncomputable def toSerreE :
     FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ Matrix.ToLieAlgebra K A :=
-  (serreIdeal K A).liftQ (FreeLieAlgebra.lift K (serreE K A))
-    (serreIdeal_le_ker_lift (ad_pow_lie_serreE_serreE K A))
+  serreIdealLift (ad_pow_lie_serreE_serreE K A)
 
 private noncomputable def toSerreF :
     FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ Matrix.ToLieAlgebra K A :=
-  (serreIdeal K A).liftQ (FreeLieAlgebra.lift K (serreF K A))
-    (serreIdeal_le_ker_lift (ad_pow_lie_serreF_serreF K A))
+  serreIdealLift (ad_pow_lie_serreF_serreF K A)
 
 private theorem serreHom_comp_toSerreE :
-    (serreHom R).comp (toSerreE (K := K) (A := A)) = positiveQuotientHom R := by
-  refine (serreIdeal K A).lieHom_qext fun x => ?_
-  have hcomp : ((serreHom R).comp (toSerreE (K := K) (A := A))).comp (serreIdeal K A).mkQ =
-      (positiveQuotientHom R).comp (serreIdeal K A).mkQ := by
-    refine FreeLieAlgebra.hom_ext fun i => ?_
-    rw [LieHom.comp_apply, LieHom.comp_apply, LieHom.comp_apply, positiveQuotientHom_mk_of]
-    simp only [toSerreE, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, FreeLieAlgebra.lift_of_apply,
-      serreHom_serreE]
-  exact DFunLike.congr_fun hcomp x
+    (serreHom R).comp (toSerreE (K := K) (A := A)) = positiveQuotientHom R :=
+  serreIdeal_hom_ext fun i => by
+    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreE, serreIdealLift_mk_of,
+      positiveQuotientHom_mk_of, serreHom_serreE]
 
 private theorem serreHom_comp_toSerreF :
-    (serreHom R).comp (toSerreF (K := K) (A := A)) = negativeQuotientHom R := by
-  refine (serreIdeal K A).lieHom_qext fun x => ?_
-  have hcomp : ((serreHom R).comp (toSerreF (K := K) (A := A))).comp (serreIdeal K A).mkQ =
-      (negativeQuotientHom R).comp (serreIdeal K A).mkQ := by
-    refine FreeLieAlgebra.hom_ext fun i => ?_
-    rw [LieHom.comp_apply, LieHom.comp_apply, LieHom.comp_apply, negativeQuotientHom_mk_of]
-    simp only [toSerreF, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, FreeLieAlgebra.lift_of_apply,
-      serreHom_serreF]
-  exact DFunLike.congr_fun hcomp x
+    (serreHom R).comp (toSerreF (K := K) (A := A)) = negativeQuotientHom R :=
+  serreIdeal_hom_ext fun i => by
+    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreF, serreIdealLift_mk_of,
+      negativeQuotientHom_mk_of, serreHom_serreF]
 
 private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
     ∃ (a b : FreeLieAlgebra K I ⧸ serreIdeal K A) (c : I →₀ K),
@@ -570,10 +581,10 @@ private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
   obtain ⟨u, hu, h, hh, rfl⟩ := Submodule.mem_sup.mp huh
   have hrF : (toSerreF (K := K) (A := A)).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreF K A)) :=
-    (LieIdeal.range_liftQ _ _ _).trans (FreeLieAlgebra.range_lift_eq_lieSpan (serreF K A))
+    range_serreIdealLift _
   have hrE : (toSerreE (K := K) (A := A)).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreE K A)) :=
-    (LieIdeal.range_liftQ _ _ _).trans (FreeLieAlgebra.range_lift_eq_lieSpan (serreE K A))
+    range_serreIdealLift _
   rw [LieSubalgebra.mem_toSubmodule, ← hrF] at hu
   rw [LieSubalgebra.mem_toSubmodule, ← hrE] at hv
   rcases hu with ⟨a, rfl⟩
@@ -608,6 +619,13 @@ noncomputable def serreEquivRange (hA : A.IsGeneralizedCartan) :
     Matrix.ToLieAlgebra K A ≃ₗ⁅K⁆ (serreHom R).range :=
   LieEquiv.ofInjective (serreHom R) (serreHom_injective R hA)
 
+/-- Coercing the image of `z` under `TauCeti.KacMoody.serreEquivRange` back to
+`PresentedLieAlgebra R` recovers `serreHom R z`. -/
+@[simp]
+theorem coe_serreEquivRange_apply (hA : A.IsGeneralizedCartan) (z : Matrix.ToLieAlgebra K A) :
+    (serreEquivRange R hA z : PresentedLieAlgebra R) = serreHom R z := by
+  rw [serreEquivRange, LieEquiv.ofInjective_apply]
+
 /-- **Intersection of the derived subalgebra with the Cartan subalgebra.** For a generalized Cartan
 matrix `A`, `⁅𝔤, 𝔤⁆ ∩ H` is the image of `R.corootSpan` under `cartanElement R`. -/
 theorem range_serreHom_inf_range_cartanElement (hA : A.IsGeneralizedCartan) :
@@ -639,11 +657,12 @@ end SerreComparison
 example {H : Type*} [AddCommGroup H] [Module ℚ H]
     (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → ℚ))
       H) :
-    Function.Injective (cartanElement R) ∧
+    Function.Injective (positiveQuotientHom R) ∧
       LinearIndependent ℚ (positiveGenerator R) ∧
       Function.Injective (serreHom R) :=
   have hA : (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).IsGeneralizedCartan := by decide
-  ⟨cartanElement_injective R hA, linearIndependent_positiveGenerator R hA, serreHom_injective R hA⟩
+  ⟨positiveQuotientHom_injective R hA, linearIndependent_positiveGenerator R hA,
+    serreHom_injective R hA⟩
 
 end KacMoody
 
