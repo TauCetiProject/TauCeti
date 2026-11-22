@@ -99,11 +99,6 @@ private theorem finrank_typeD_of_card_eq_three (hι : Fintype.card ι = 3) :
     P.finrank_eq_two_mul_card b hline, hι]
   rfl
 
-include b hline in
-private theorem finite_typeD_of_card_eq_three (hι : Fintype.card ι = 3) :
-    Module.Finite K (LieAlgebra.Orthogonal.typeD ι K) :=
-  Module.finite_of_finrank_pos (by rw [finrank_typeD_of_card_eq_three P b hline hι]; omega)
-
 /-! ### The image of `so₆` in `End S⁺` -/
 
 /-- The even monomial basis `1, e₀e₁, e₀e₂, e₁e₂` of `S⁺`, for the basis `b` of `W` renumbered by
@@ -167,40 +162,24 @@ private theorem single_mem_comap_range_matrixLieHom (hι : Fintype.card ι = 3) 
 of `so₆` on `S⁺`. -/
 private theorem sl_le_range_matrixLieHom (hι : Fintype.card ι = 3) :
     SpecialLinear.sl (Fin 4) K ≤ (P.matrixLieHom b hline (monomialBasis P b hι)).range := by
-  have hspan : LieSubalgebra.lieSpan K (SpecialLinear.sl (Fin (3 + 1)) K)
-      (Set.range (fun i : Fin 3 ↦ SpecialLinear.single i.castSucc i.succ
-        (Fin.castSucc_lt_succ (i := i)).ne (1 : K)) ∪
-      Set.range (fun i : Fin 3 ↦ SpecialLinear.single i.succ i.castSucc
-        (Fin.castSucc_lt_succ (i := i)).ne' (1 : K))) ≤
-      (P.matrixLieHom b hline (monomialBasis P b hι)).range.comap
-        (SpecialLinear.sl (Fin 4) K).incl := by
-    rw [LieSubalgebra.lieSpan_le]
-    rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩) <;> exact single_mem_comap_range_matrixLieHom P b hline hι _
-  rw [lieSpan_specialLinear_adjacent_single_eq_top] at hspan
-  intro A hA
-  simpa only [LieSubalgebra.mem_comap, LieSubalgebra.coe_incl] using
-    hspan (LieSubalgebra.mem_top (⟨A, hA⟩ : SpecialLinear.sl (Fin 4) K))
-
-omit [Invertible (2 : K)] in
-private theorem finrank_sl_toSubmodule_fin_four :
-    finrank K (SpecialLinear.sl (Fin 4) K).toSubmodule = 15 :=
-  -- `sl` and its underlying submodule are the same subtype with the same module structure.
-  (finrank_sl (n := Fin 4) (R := K)).trans (by simp)
+  rw [← LieSubalgebra.comap_incl_eq_top, eq_top_iff,
+    ← lieSpan_specialLinear_adjacent_single_eq_top 3 K, LieSubalgebra.lieSpan_le]
+  rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩) <;> exact single_mem_comap_range_matrixLieHom P b hline hι _
 
 /-- The matrices in the even monomial basis of the action of `so₆` on `S⁺` are exactly the
 trace-zero matrices: the image contains them, and both have dimension fifteen. -/
 private theorem range_matrixLieHom (hι : Fintype.card ι = 3) :
     (P.matrixLieHom b hline (monomialBasis P b hι)).range = SpecialLinear.sl (Fin 4) K := by
-  have := finite_typeD_of_card_eq_three P b hline hι
   refine (LieSubalgebra.toSubmodule_injective <|
     Submodule.eq_of_le_of_finrank_le (sl_le_range_matrixLieHom P b hline hι) ?_).symm
-  rw [finrank_sl_toSubmodule_fin_four, ← finrank_typeD_of_card_eq_three P b hline hι,
-    LieHom.range_toSubmodule]
-  exact LinearMap.finrank_range_le _
+  -- `sl` and its underlying submodule are the same subtype with the same module structure.
+  change _ ≤ finrank K (SpecialLinear.sl (Fin 4) K)
+  rw [finrank_sl, LieHom.range_toSubmodule]
+  simpa [finrank_typeD_of_card_eq_three P b hline hι] using
+    LinearMap.finrank_range_le (P.matrixLieHom b hline (monomialBasis P b hι)).toLinearMap
 
 private theorem injective_matrixLieHom (hι : Fintype.card ι = 3) :
     Function.Injective (P.matrixLieHom b hline (monomialBasis P b hι)) := by
-  have := finite_typeD_of_card_eq_three P b hline hι
   set f := P.matrixLieHom b hline (monomialBasis P b hι)
   have hfin : finrank K (LieAlgebra.Orthogonal.typeD ι K) = finrank K f.range := by
     rw [finrank_typeD_of_card_eq_three P b hline hι, range_matrixLieHom P b hline hι, finrank_sl]
