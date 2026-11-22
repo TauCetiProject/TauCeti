@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Continuity of pairing in the manifold weak Whitney topology
@@ -66,11 +67,12 @@ private theorem iteratedFDerivWithin_extChartAt_prodMk (f : C^n⟮I, M; J, N⟯)
   have heq : extChartAt (J.prod J') y ∘ f.prodMk g ∘ (extChartAt I x).symm =
       fun v ↦ ((extChartAt J y.1 ∘ f ∘ (extChartAt I x).symm) v,
         (extChartAt J' y.2 ∘ g ∘ (extChartAt I x).symm) v) := by
-    rw [extChartAt_prod]
-    rfl
+    funext v
+    simp only [extChartAt_prod, Function.comp_apply, prodMk_apply, PartialEquiv.prod_coe]
   rw [heq, iteratedFDerivWithin_prodMk (f.contDiffWithinAt_extChartAt hw hf)
-    (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm]
-  rfl
+    (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm,
+    ContinuousMultilinearMap.prodL_apply, Equiv.toFun_as_coe,
+    ContinuousMultilinearMap.prodEquiv_apply]
 
 /-- The local form of continuity of pairing: a coordinate derivative test passed by the pair of
 `f₀` and `g₀` at a chart point is passed near that point by the pair of `f` and `g` for all `f`
