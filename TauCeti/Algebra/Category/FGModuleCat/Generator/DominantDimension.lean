@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 public import TauCeti.RingTheory.DominantDimension
 
+import Mathlib.Algebra.Module.FinitePresentation
 import TauCeti.Algebra.Module.Injective.Envelope.Existence
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.LinearAlgebra.Exact
@@ -79,7 +80,8 @@ theorem IsInjectiveEnvelope.injective_end_of_isCoseparator (hf : IsInjectiveEnve
   have := hf.moduleInjective
   obtain ⟨n, a, b, hab⟩ := additiveClosure_iff_exists_sum_comp_eq_id.1
     ((hf.isCoseparator_iff_additiveClosure M).1 hM)
-  let e := hf.fgModuleCatMatlisDualRegularEquiv (A := A)
+  let e := (hf.fgModuleCatMatlisDualRegularEquiv (A := A)).trans
+    (MatlisDual.congrOp (MulOpposite.opLinearEquiv Aᵐᵒᵖ))
   refine MatlisDual.injective_end_of_sum_comp_eq_id hf.length_quotient_linearMap_eq_one
     (isFiniteLength_of_finite_trans R A M.obj) (fun j ↦ (a j).hom.hom ∘ₗ e.symm.toLinearMap)
     (fun j ↦ e.toLinearMap ∘ₗ (b j).hom.hom) (LinearMap.ext fun x ↦ ?_)
@@ -109,14 +111,6 @@ private theorem finite_projective_injective_linearMap (n : ℕ)
   exact ⟨.equiv e.symm, (IsProjective.iff_projective _).1 inferInstance,
     Module.injective_object_of_injective_module _ _⟩
 
-/-- Precomposition with `q : F → M`, as a map `Γ → Hom_A(F, M)` of `Γ`-modules, where `Γ` acts on
-`Hom_A(F, M)` by postcomposition. -/
-private def precomp {F : Type*} [AddCommGroup F] [Module A F] (q : F →ₗ[A] M) :
-    Module.End A M →ₗ[Module.End A M] (F →ₗ[A] M) where
-  toFun g := g ∘ₗ q
-  map_add' _ _ := LinearMap.add_comp _ _ _
-  map_smul' _ _ := rfl
-
 end Hom
 
 /-- **Müller's criterion, forward direction, for a generator.** Let `A` be a left Noetherian ring
@@ -127,19 +121,15 @@ terms are isomorphic to `Mⁿ` and `Mᵐ`. -/
 theorem two_le_dominantDimension_end_of_isGenerator {A : Type v} [Ring A] [IsNoetherianRing A]
     (M : Type v) [AddCommGroup M] [Module A M] [Module.Finite A M] [Module.IsGenerator A M]
     [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) := by
-  -- A presentation `Aᵐ → Aⁿ → M → 0`; the kernel of `q` is finitely generated as `A` is Noetherian.
-  obtain ⟨n, q, hq⟩ := Module.Finite.exists_fin' A M
-  obtain ⟨m, r', hr'⟩ := Module.Finite.exists_fin' A (LinearMap.ker q)
-  let r := (LinearMap.ker q).subtype ∘ₗ r'
-  have hqr : Function.Exact r q := fun x ↦ ⟨fun h ↦ (hr' ⟨x, h⟩).imp fun _ hy ↦
-    congr_arg Subtype.val hy, fun ⟨y, hy⟩ ↦ hy ▸ (r' y).property⟩
+  -- A presentation `Aᵐ → Aⁿ → M → 0`, which exists as `A` is Noetherian.
+  have := Module.finitePresentation_of_finite A M
+  obtain ⟨n, m, q, r, hq, hqr⟩ := Module.FinitePresentation.exists_fin' A M
   -- Applying `Hom_A(-, M)` gives `0 → Γ → Hom_A(Aⁿ, M) → Hom_A(Aᵐ, M)`.
   have hex := hqr.lcomp_of_surjective (T := Module.End A M) M hq
-  refine (two_le_dominantDimension_iff _).2 ⟨_, _, ModuleCat.ofHom (precomp q),
-    ModuleCat.ofHom (LinearMap.lcomp _ M r), ?_, ?_, ?_,
+  refine (two_le_dominantDimension_iff _).2 ⟨_, _,
+    ModuleCat.ofHom (LinearMap.lcomp (Module.End A M) M q),
+    ModuleCat.ofHom (LinearMap.lcomp _ M r), ModuleCat.hom_ext hex.linearMap_comp_eq_zero, ?_, ?_,
     finite_projective_injective_linearMap n, finite_projective_injective_linearMap m⟩
-  · refine ModuleCat.hom_ext (LinearMap.ext fun g ↦ LinearMap.ext fun x ↦ ?_)
-    simp [precomp, hqr.apply_apply_eq_zero]
   · exact (ModuleCat.mono_iff_injective _).2 hq.injective_linearMapComp_right
   · exact (ShortComplex.moduleCat_exact_iff _).2 fun g hg ↦ (hex g).1 hg
 

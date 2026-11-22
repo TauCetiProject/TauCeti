@@ -36,6 +36,9 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   `TauCeti.MatlisDual.congrOp`.
 * `TauCeti.MatlisDual.dualSelfEquiv`: the isomorphism `D_R (Hom_A(A, A)) ≅ D_R A` of left
   `A`-modules.
+* `TauCeti.MatlisDual.equivLinearMapDualRegular`: the Hom-tensor adjunction
+  `D_R N ≅ Hom_A(N, D_R A)` for a left `A`-module `N`, where `D_R A` is the dual of the right
+  regular module.
 * `TauCeti.MatlisDual.evalEquiv` and `TauCeti.MatlisDual.evalEquivOp`: biduality for modules of
   finite length over `R`, as an isomorphism of left and of right `A`-modules.
 
@@ -278,6 +281,34 @@ theorem dualSelfEquiv_apply (θ : MatlisDual R E (Module.Dual A A)) (a : A) :
 theorem dualSelfEquiv_symm_apply (φ : MatlisDual R E A) (ψ : Module.Dual A A) :
     equivLinearMap R E _ (dualSelfEquiv.symm φ) ψ = equivLinearMap R E A φ (ψ 1) := by
   simp [dualSelfEquiv]
+
+variable {N : Type w} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+
+/-- **The Hom-tensor adjunction for the Matlis dual**: `D_R N` is isomorphic to `Hom_A(N, D_R A)`,
+where `D_R A` is the dual of the right regular module, a left `A`-module. A functional `φ` goes to
+`x ↦ (a ↦ φ (a • x))`, and a morphism `g : N → D_R A` goes back to `x ↦ g x 1`. -/
+def equivLinearMapDualRegular : MatlisDual R E N ≃ₗ[R] (N →ₗ[A] MatlisDual R E A) where
+  toFun φ :=
+    { toFun x := (equivLinearMap R E A).symm <|
+        equivLinearMap R E N φ ∘ₗ (LinearMap.toSpanSingleton A N x).restrictScalars R
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp [mul_smul] }
+  invFun g := (equivLinearMap R E N).symm <|
+    LinearMap.applyₗ 1 ∘ₗ (equivLinearMap R E A).toLinearMap ∘ₗ g.restrictScalars R
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv g := by ext x a; simp
+
+@[simp]
+theorem equivLinearMapDualRegular_apply_apply (φ : MatlisDual R E N) (x : N) (a : A) :
+    equivLinearMap R E A (equivLinearMapDualRegular φ x) a = equivLinearMap R E N φ (a • x) :=
+  (rfl)
+
+@[simp]
+theorem equivLinearMapDualRegular_symm_apply (g : N →ₗ[A] MatlisDual R E A) (x : N) :
+    equivLinearMap R E N (equivLinearMapDualRegular.symm g) x = equivLinearMap R E A (g x) 1 :=
+  (rfl)
 
 end Regular
 

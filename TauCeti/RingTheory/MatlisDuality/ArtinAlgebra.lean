@@ -151,16 +151,8 @@ theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N
   have := hf.finite_op_matlisDual (A := A) (N := N)
   obtain ⟨n, b, hb⟩ := Module.Finite.exists_fin (R := Aᵐᵒᵖ) (M := MatlisDual R E N)
   -- The coordinate `i` of `g x` is the functional `a ↦ b i (a • x)`.
-  let g₀ (x : N) (i : Fin n) : MatlisDual R E A :=
-    (equivLinearMap R E A).symm ((equivLinearMap R E N (b i)).comp
-      ((LinearMap.toSpanSingleton A N x).restrictScalars R))
-  have hg₀ (x : N) (i : Fin n) (a : A) :
-      equivLinearMap R E A (g₀ x i) a = equivLinearMap R E N (b i) (a • x) := by
-    simp [g₀]
   let g : N →ₗ[A] (Fin n → MatlisDual R E A) :=
-    { toFun := g₀
-      map_add' := fun _ _ => by ext; simp [hg₀]
-      map_smul' := fun _ _ => by ext; simp [hg₀, mul_smul] }
+    LinearMap.pi fun i ↦ equivLinearMapDualRegular (b i)
   refine ⟨n, g, (injective_iff_map_eq_zero g).mpr fun x hx => ?_⟩
   -- Every functional on `N` is a combination of the `b i`, each of which vanishes on `A • x`.
   have key (φ : MatlisDual R E N) (hφ : φ ∈ Submodule.span Aᵐᵒᵖ (Set.range b)) (a : A) :
@@ -168,7 +160,7 @@ theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N
     induction hφ using Submodule.span_induction generalizing a with
     | mem _ h =>
       obtain ⟨i, rfl⟩ := h
-      rw [← hg₀]
+      rw [← equivLinearMapDualRegular_apply_apply]
       have h := congr(equivLinearMap R E A ($hx i) a)
       exact h.trans (by simp)
     | zero => simp
