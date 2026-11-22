@@ -92,6 +92,8 @@ transfers the bound from the finite sums of atoms to `F` and `G`.
 * `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint`: the endpoint bilinear estimate
   on a region of times.
 * `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`: the endpoint dual estimate.
+* `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds`: the same estimate from
+  a non-endpoint dual estimate in `L^{4/3}_t`.
 * `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint`: the retarded
   endpoint estimate.
 
@@ -681,23 +683,28 @@ Suppose that `U` satisfies a dual Strichartz estimate `‖∫ U(t)* G(t) dt‖ �
 at a non-endpoint pair: `1/2 < 1/b < 1/r'` and `1/p = 1 + σ/2 - σ/b`. Then there is `C` such
 that for every integrable `F : ℝ → L²(X, μ)`,
 
-`‖∫ U(t)* F(t) dt‖ ≤ C ‖F‖_{L²_t L^{r'}_x}`. -/
+`‖∫ U(t)* F(t) dt‖ ≤ C ‖F‖_{L²_t L^{r'}_x}`.
+
+The constant `C` depends only on `σ`, the exponents and `A`, `M`, `K`, not on the family `U`: it
+is uniform over all families satisfying the three bounds with the same constants. -/
 theorem exists_enorm_integral_adjoint_le_of_endpoint {σ : ℝ} (hσ : 1 < σ)
     {p b r' : ℝ≥0∞} (hb : 2⁻¹ < b.toReal⁻¹) (hbσ : b.toReal⁻¹ < (σ + 1) / (2 * σ))
     (hp : p.toReal⁻¹ = 1 + σ / 2 - σ * b.toReal⁻¹) (hr' : r'.toReal⁻¹ = (σ + 1) / (2 * σ))
-    {U : ℝ → H →L[𝕜] Lp E 2 μ} {A M K : ℝ≥0} (hM : ∀ t, ‖U t‖ₑ ≤ M)
-    (hD : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
-      eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ)
-    (hK : ∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
-      ‖∫ t, ((U t)†) (G t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) p)
-    (hUm : ∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
-      AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) :
-    ∃ C : ℝ≥0, ∀ F : ℝ → Lp E 2 μ, Integrable F →
-      ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
+    (A M K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ U : ℝ → H →L[𝕜] Lp E 2 μ, (∀ t, ‖U t‖ₑ ≤ M) →
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
+        ‖∫ t, ((U t)†) (G t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) p) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
+        AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) →
+      ∀ F : ℝ → Lp E 2 μ, Integrable F →
+        ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
   obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint (𝕜 := 𝕜) (H := H)
     (μ := μ) (E := E) hσ hb hbσ hp hr' A M K
-  refine ⟨NNReal.sqrt C, fun F hF ↦ enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := 𝕜)
-    (integrable_adjoint hM hUm hF) ?_⟩
+  refine ⟨NNReal.sqrt C, fun U hM hD hK hUm F hF ↦
+    enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := 𝕜)
+      (integrable_adjoint hM hUm hF) ?_⟩
   have h := hC U hM hD hK hUm Set.univ MeasurableSet.univ F F hF hF
   rwa [Measure.restrict_univ] at h
 
@@ -741,6 +748,32 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint {σ :
     (f := fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜)
     (by rw [Measure.volume_eq_prod]; exact hφ), Measure.volume_eq_prod]
   exact hC U hM hD hK hUm _ (measurableSet_lt measurable_fst measurable_snd) F G hF hG
+
+/-- **The endpoint dual Strichartz estimate from an `L^{4/3}_t` estimate.** The case of
+`exists_enorm_integral_adjoint_le_of_endpoint` where the non-endpoint dual estimate is taken in
+`L^{4/3}_t L^b_x` with `1/b = 1/2 + 1/(4σ)`, the dual of the pair `(4, r₄)` on the boundary line
+`1/r₄ = 1/2 - 1/(4σ)`. The exponent conditions of the general theorem then hold automatically. -/
+theorem exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds {σ : ℝ} (hσ : 1 < σ)
+    {b r' : ℝ≥0∞} (hb : b.toReal⁻¹ = 2⁻¹ + (4 * σ)⁻¹) (hr' : r'.toReal⁻¹ = (σ + 1) / (2 * σ))
+    (A M K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ U : ℝ → H →L[𝕜] Lp E 2 μ, (∀ t, ‖U t‖ₑ ≤ M) →
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
+        ‖∫ t, ((U t)†) (G t)‖ₑ ≤
+          K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) ((4 / 3 : ℝ≥0) : ℝ≥0∞)) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
+        AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) →
+      ∀ F : ℝ → Lp E 2 μ, Integrable F →
+        ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
+  have hσ0 : 0 < σ := by linarith
+  refine exists_enorm_integral_adjoint_le_of_endpoint hσ ?_ ?_ ?_ hr' A M K <;> rw [hb]
+  · linarith [inv_pos.2 (by positivity : 0 < 4 * σ)]
+  · field_simp
+    linarith
+  · norm_num
+    field_simp
+    ring
 
 end Shell
 
