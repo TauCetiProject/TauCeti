@@ -115,16 +115,21 @@ theorem norm_toLp_weights_le_one {ι : Type*} [Fintype ι] {p : ENNReal} [Fact (
 
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/
-theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder R]
-    [IsStrictOrderedRing R] {ι : Type*} [Finite ι] {x : ι → R}
+theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedCancelAddMonoid R] {ι : Type*} {x : ι → R}
     (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
     (hxj : 0 < x j) : x i < 1 := by
   classical
-  have := Fintype.ofFinite ι
-  obtain ⟨hx0, hx1⟩ := mem_range_toFun_comp_weights_iff.1 hx
-  have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
-  rw [sum_pair hij.symm, hx1] at this
-  exact (lt_add_of_pos_right (x i) hxj).trans_le this
+  obtain ⟨s, rfl⟩ := hx
+  -- The total weight is the sum over any finite set containing the support, here one that also
+  -- contains `i` and `j`.
+  have htotal := s.total
+  rw [s.weights.sum_of_support_subset (subset_union_left (s₂ := {i, j})) _ fun _ _ => rfl]
+    at htotal
+  have hle := sum_le_sum_of_subset_of_nonneg
+    (subset_union_right (s₁ := s.weights.support) (s₂ := {i, j})) fun k _ _ => s.weights_nonneg k
+  rw [sum_pair hij.symm, htotal] at hle
+  exact (lt_add_of_pos_right _ hxj).trans_le hle
 
 end Convexity.StdSimplex
 
@@ -200,22 +205,22 @@ end Boundary
 
 /-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
 consists of weight vectors of `Convexity.StdSimplex`. -/
-theorem convexHull_pi_single_subset_range_toFun_comp_weights [DecidableEq ι] (s : Set ι) :
-    convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ⊆
-      range fun t : StdSimplex ℝ ι => ⇑t.weights := by
-  refine convexHull_min (fun _ hi => ?_) (StdSimplex.convex_range_toFun_comp_weights ℝ ι)
+theorem convexHull_pi_single_subset_range_toFun_comp_weights {R : Type*} [Semiring R]
+    [PartialOrder R] [IsOrderedRing R] [DecidableEq ι] (s : Set ι) :
+    convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ⊆
+      range fun t : StdSimplex R ι => ⇑t.weights := by
+  refine convexHull_min (fun _ hi => ?_) (StdSimplex.convex_range_toFun_comp_weights R ι)
   obtain ⟨i, _, rfl⟩ := hi
-  exact ⟨StdSimplex.single i, by
-    ext j
-    simp [Finsupp.single_apply, Pi.single_apply, eq_comm]⟩
+  exact ⟨⟨.single i 1, by simp, by simp⟩, Finsupp.single_eq_pi_single i 1⟩
 
 variable [Fintype ι]
 
 /-- Membership in a face of the standard simplex is nonnegativity, total mass one,
 and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
 @[simp]
-theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → ℝ} :
-    x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ↔
+theorem mem_convexHull_pi_single_iff {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [DecidableEq ι] {s : Set ι} {x : ι → R} :
+    x ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ↔
       (∀ i, 0 ≤ x i) ∧ (∑ i, x i = 1) ∧ ∀ i ∉ s, x i = 0 := by
   constructor
   · intro hx
@@ -231,11 +236,11 @@ theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → �
     have hmem (i : ι) (hi : x i ≠ 0) : i ∈ s := by_contra fun his => hi (hsupp i his)
     have hsums : ∑ i ∈ univ with i ∈ s, x i = 1 := by
       rw [sum_filter_of_ne fun i _ => hmem i, hsum]
-    have hrepr : ∑ i ∈ univ with i ∈ s, x i • Pi.single i (1 : ℝ) = x := by
+    have hrepr : ∑ i ∈ univ with i ∈ s, x i • Pi.single i (1 : R) = x := by
       rw [sum_filter_of_ne fun i _ hi => hmem i (left_ne_zero_of_smul hi), ← pi_eq_sum_univ']
     rw [← hrepr]
-    exact (convex_convexHull ℝ _).sum_mem (fun i _ => hnonneg i) hsums
-      (fun i hi => subset_convexHull ℝ _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
+    exact (convex_convexHull R _).sum_mem (fun i _ => hnonneg i) hsums
+      (fun i hi => subset_convexHull R _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
 
 section Faces
 
@@ -320,14 +325,15 @@ end Faces
 
 /-- Along the segment from a point `y` with nonnegative coordinates, one of them zero, to the
 barycentre of the standard simplex, `card ι` times the least coordinate is the parameter `t`. -/
-theorem card_mul_inf'_smul_add_smul_barycenter [Nonempty ι] {y : ι → ℝ} (hy : 0 ≤ y) {i : ι}
-    (hi : y i = 0) {t : ℝ} (ht : t ≤ 1) :
-    (Fintype.card ι : ℝ) * univ.inf' univ_nonempty
-      ((1 - t) • y + t • ⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights) = t := by
-  have hc : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
+theorem card_mul_inf'_smul_add_smul_barycenter {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Nonempty ι] {y : ι → R} (hy : 0 ≤ y) {i : ι} (hi : y i = 0) {t : R}
+    (ht : t ≤ 1) :
+    (Fintype.card ι : R) * univ.inf' univ_nonempty
+      ((1 - t) • y + t • ⇑(StdSimplex.barycenter : StdSimplex R ι).weights) = t := by
+  have hc : (0 : R) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
   have hinf : univ.inf' univ_nonempty
-      ((1 - t) • y + t • ⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights) =
-      t * (Fintype.card ι : ℝ)⁻¹ := by
+      ((1 - t) • y + t • ⇑(StdSimplex.barycenter : StdSimplex R ι).weights) =
+      t * (Fintype.card ι : R)⁻¹ := by
     refine le_antisymm ((inf'_le _ (mem_univ i)).trans_eq
       (by simp [hi, StdSimplex.weights_barycenter_apply])) (le_inf' _ _ ?_)
     intro j _
@@ -344,10 +350,8 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
   set c : ℝ := (Fintype.card ι : ℝ)
   have hc : 0 < c := Nat.cast_pos.mpr Fintype.card_pos
   have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =
-      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} := by
-    rw [StdSimplex.range_toFun_comp_weights]
-    ext z
-    simp
+      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
+    Set.ext fun _ => StdSimplex.mem_range_toFun_comp_weights_iff
   have hconv := StdSimplex.convex_range_toFun_comp_weights ℝ ι
   have hbar : ⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights = fun _ => c⁻¹ :=
     funext StdSimplex.weights_barycenter_apply
@@ -398,15 +402,13 @@ theorem convexJoin_facet_stdSimplex_single {R : Type*} [Field R] [LinearOrder R]
       range fun s : StdSimplex R ι => ⇑s.weights := by
   have := Fintype.ofFinite ι
   have hS : (range fun s : StdSimplex R ι => ⇑s.weights) =
-      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} := by
-    rw [StdSimplex.range_toFun_comp_weights]
-    ext z
-    simp
+      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
+    Set.ext fun _ => StdSimplex.mem_range_toFun_comp_weights_iff
   have hconv := StdSimplex.convex_range_toFun_comp_weights R ι
   rw [hS] at hconv
   rw [hS]
   have hb : (Pi.single i 1 : ι → R) ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
-    ⟨fun j => by rcases eq_or_ne j i with rfl | hj <;> simp [*], by simp⟩
+    ⟨Pi.single_nonneg.2 zero_le_one, by simp⟩
   refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
     (singleton_subset_iff.mpr hb) hconv) fun z hz => ?_
   have hle : z i ≤ 1 := by
@@ -439,7 +441,7 @@ theorem convexJoin_facet_stdSimplex_single {R : Type*} [Field R] [LinearOrder R]
     obtain ⟨j, hj⟩ := exists_ne i
     have hj' : (Pi.single j 1 : ι → R) ∈
         {y ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | y i = 0} :=
-      ⟨⟨fun k => by rcases eq_or_ne k j with rfl | hk <;> simp [*], by simp⟩, by simp [hj.symm]⟩
+      ⟨⟨Pi.single_nonneg.2 zero_le_one, by simp⟩, by simp [hj.symm]⟩
     rw [hzi]
     exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)
 
