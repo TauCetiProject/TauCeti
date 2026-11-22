@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Hemisphere
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 public import TauCeti.KnotTheory.SmoothCircle
-import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # Seifert surfaces and the Seifert genus of a knot
@@ -275,7 +275,7 @@ vanishes. -/
 theorem genus_hemisphere (hv : ∀ z, ⟪(v : E), ι z⟫_ℝ = 0) :
     (hemisphere (n := n) hv).genus = 0 := by
   have : ContractibleSpace (hemisphere (n := n) hv).carrier :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
+    inferInstanceAs (ContractibleSpace (closedBall (0 : ℂ) 1))
   rw [genus_def, surfaceGenus_eq_zero_of_contractibleSpace]
 
 end SeifertSurface

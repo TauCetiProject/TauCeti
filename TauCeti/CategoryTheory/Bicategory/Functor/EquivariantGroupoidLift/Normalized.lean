@@ -407,23 +407,42 @@ lemma joint_mapComp_inv_app {X Y Z : LocallyDiscrete (Γ × SingleObj H)} (f : X
       (N.jointComp f.as g.as (f ≫ g).as rfl).inv.app x :=
   LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
 
+/-- Associativity of the inverse composition isomorphisms `E_gh ≅ E_g ⋙ E_h` of transport, in
+the form of the associativity condition of `LocallyDiscrete.mkCatPseudofunctor`. -/
+lemma transportComp_inv_associativity {p q r s : Γ} (f : p ⟶ q) (g : q ⟶ r) (h : r ⟶ s)
+    (fg : p ⟶ r) (gh : q ⟶ s) (fgh : p ⟶ s) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
+    (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (X : fiber actions p) :
+    (N.transportComp fg h fgh hfgh).inv.app X ≫ (N.transport h).map
+        ((N.transportComp f g fg hfg).inv.app X) =
+      (N.transportComp f gh fgh hfgh').inv.app X ≫
+        (N.transportComp g h gh hgh).inv.app ((N.transport f).obj X) :=
+  LocallyDiscrete.inv_associativity_of_hom_associativity
+    (fun g h gh hgh ↦ N.transportComp g h gh hgh) N.transportComp_associativity
+    f g h fg gh fgh hfg hgh hfgh hfgh' X
+
+/-- Left unitality of the inverse composition isomorphisms `E_gh ≅ E_g ⋙ E_h` of transport, in
+the form of the left unitality condition of `LocallyDiscrete.mkCatPseudofunctor`. -/
+lemma transportComp_inv_left_unitality {p q : Γ} (g : p ⟶ q) (hg : 𝟙 p ≫ g = g)
+    (X : fiber actions p) :
+    (N.transportComp (𝟙 p) g g hg).inv.app X ≫ (N.transport g).map ((N.transportId p).hom.app X) =
+      𝟙 _ := by
+  rw [← N.transportComp_left_unitality g hg X, Iso.inv_hom_id_app]
+
+/-- Right unitality of the inverse composition isomorphisms `E_gh ≅ E_g ⋙ E_h` of transport, in
+the form of the right unitality condition of `LocallyDiscrete.mkCatPseudofunctor`. -/
+lemma transportComp_inv_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q = g)
+    (X : fiber actions p) :
+    (N.transportComp g (𝟙 q) g hg).inv.app X ≫ (N.transportId q).hom.app ((N.transport g).obj X) =
+      𝟙 _ := by
+  rw [← N.transportComp_right_unitality g hg X, Iso.inv_hom_id_app]
+
 /-- The prescribed transport functors, with their given unit and composition cells,
 form a pseudofunctor on the parameter category. -/
 -- Expose the object assignment so components can be typed in the prescribed fibers.
 @[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
   LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) N.transport N.transportId
-    (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
-    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦ by
-      simp only [Iso.symm_hom]
-      exact LocallyDiscrete.inv_associativity_of_hom_associativity
-        (fun g h gh hgh ↦ N.transportComp g h gh hgh)
-        (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
-          N.transportComp_associativity f g h fg gh fgh hfg hgh hfgh hfgh' X)
-        f g h fg gh fgh hfg hgh hfgh hfgh' X)
-    (fun g hg X ↦ by
-      rw [Iso.symm_hom, ← N.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
-    (fun g hg X ↦ by
-      rw [Iso.symm_hom, ← N.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
+    (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm) N.transportComp_inv_associativity
+    N.transportComp_inv_left_unitality N.transportComp_inv_right_unitality
 
 @[simp]
 lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :

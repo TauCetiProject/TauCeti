@@ -192,7 +192,7 @@ theorem map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (v : E) :
         rw [Measure.map_map (by fun_prop) (by fun_prop),
           Measure.map_map (by fun_prop) (by fun_prop)]
         congr 1
-        exact funext hcoord
+        exact funext fun x ↦ by simpa using hcoord x
       _ = _ := by
         rw [f.map_uniformBallMeasure, map_zero, map_eval_uniformBallMeasure,
           Measure.map_map (by fun_prop) (by fun_prop)]

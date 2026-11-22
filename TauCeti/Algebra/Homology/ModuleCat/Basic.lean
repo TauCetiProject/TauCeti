@@ -22,9 +22,11 @@ For a homological complex `K` of modules over a ring, the inclusion of the degre
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
 `K.homologyπ n` is an epimorphism.  Additive maps out of the homology are therefore determined by
 their values on classes of cycles (`HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ`,
-`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).
-Chain maps commute with the differentials and the square of
-the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
+`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).  Dually, the inclusion of the homology
+into the opcycles is injective and the projection of `K.X n` onto the opcycles is surjective
+(`HomologicalComplex.moduleCat_homologyι_injective`,
+`HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
+and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
 `c.next i` is killed by every differential out of degree `i`
@@ -100,7 +102,7 @@ subspace, such as fundamental chains of a manifold with boundary.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace HomologicalComplex
 
@@ -309,6 +311,16 @@ on the classes of cycles. -/
 lemma moduleCat_linearMap_ext_homologyπ {G : Type*} [AddCommMonoid G] [Module R G]
     {f g : K.homology n →ₗ[R] G} (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g :=
   LinearMap.toAddMonoidHom_injective (moduleCat_addMonoidHom_ext_homologyπ h)
+
+/-- The inclusion of the degree-`n` homology of a homological complex of modules into its
+degree-`n` opcycles is injective. -/
+lemma moduleCat_homologyι_injective : Function.Injective (K.homologyι n) :=
+  (ModuleCat.mono_iff_injective _).1 inferInstance
+
+/-- The projection of the degree-`n` term of a homological complex of modules onto its degree-`n`
+opcycles is surjective. -/
+lemma moduleCat_pOpcycles_surjective : Function.Surjective (K.pOpcycles n) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
 elements. -/
@@ -752,6 +764,30 @@ theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
   exact Module.End.iSup_wordKer_eq_top_of_injective
     (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
     (K.moduleCat_iCycles_injective n) h
+
+/-- Components of a biproduct cochain lift have the prescribed coboundaries and difference. -/
+lemma moduleCat_exists_components_of_biprod_lift {R : Type*} [Ring R]
+    {A B C D : CochainComplex (ModuleCat R) ℕ}
+    (r : A ⟶ C) (b : A ⟶ D) (t : C ⟶ B) (l : D ⟶ B)
+    (p : ℕ) (x : (C ⊞ D).X p) (z : A.X (p + 1)) (a : B.X p)
+    (hx : ((C ⊞ D).d p (p + 1)).hom x = ((biprod.lift r b).f (p + 1)).hom z)
+    (ha : ((biprod.desc t (-l)).f p).hom x = a) :
+    ∃ (u : C.X p) (v : D.X p),
+      (C.d p (p + 1)).hom u = (r.f (p + 1)).hom z ∧
+      (D.d p (p + 1)).hom v = (b.f (p + 1)).hom z ∧
+      (t.f p).hom u - (l.f p).hom v = a := by
+  refine ⟨((biprod.fst : C ⊞ D ⟶ C).f p).hom x,
+    ((biprod.snd : C ⊞ D ⟶ D).f p).hom x, ?_, ?_, ?_⟩
+  · have h := congrArg (((biprod.fst : C ⊞ D ⟶ C).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_fst] using h
+  · have h := congrArg (((biprod.snd : C ⊞ D ⟶ D).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_snd] using h
+  · simpa only [biprod.desc_eq, Preadditive.comp_neg, ← sub_eq_add_neg,
+      HomologicalComplex.sub_f_apply, ModuleCat.hom_sub, LinearMap.sub_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] using ha
+
 
 end HomologicalComplex
 
