@@ -339,6 +339,13 @@ theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
       ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ ^ 2 := by
   rw [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
 
+/-- The squared absolute value of a strictly upper entry is its upper coordinate's squared
+absolute value divided by the matrix size. -/
+theorem norm_wignerMatrix_apply_sq_of_lt {i j : Fin n} (h : i.val < j.val) :
+    ‖wignerMatrix ξ η n ω i j‖ ^ 2 = (n : ℝ)⁻¹ * ‖ξ ⟨(i.val, j.val), h⟩ ω‖ ^ 2 := by
+  rw [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, norm_inv_ofReal_sqrt_natCast, inv_pow,
+    Real.sq_sqrt (Nat.cast_nonneg n)]
+
 /-- The normalised Wigner matrix is Hermitian for every sample point. -/
 theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermitian := by
   ext i j
@@ -423,12 +430,16 @@ theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
       (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex p) ω - ζ (wignerUpperIndex p) ω‖ ^ 2 := by
     have hp : wignerUpperIndex p = ⟨(p.val.1.val, p.val.2.val), p.prop⟩ :=
       Subtype.ext (wignerUpperIndex_val _)
-    simpa only [D, d, hp, min_eq_left p.prop.le, max_eq_right p.prop.le] using
-      norm_wignerMatrix_apply_sq_of_ne d (fun _ _ ↦ 0) ω (Fin.ne_of_val_ne p.prop.ne)
-  rw [hD, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_symmetric_pairs _ hsymm]
+    rw [hp]
+    exact norm_wignerMatrix_apply_sq_of_lt d (fun _ _ ↦ 0) ω p.prop
+  -- The pairs ordered in `Fin n` are the pairs whose values are ordered.
+  have hpairs : ∑ p : {p : Fin n × Fin n // p.1 < p.2}, ‖D p.val.1 p.val.2‖ ^ 2 =
+      ∑ p : StrictUpperFin n, ‖D p.val.1 p.val.2‖ ^ 2 :=
+    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt.symm) _ _ fun p ↦ by
+      rw [Equiv.subtypeEquivRight_apply]
+  rw [hD, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_symmetric_pairs _ hsymm, hpairs]
   simp only [hdiag, Finset.sum_const_zero, zero_add, hupper, ← Finset.mul_sum, nsmul_eq_mul,
     Nat.cast_ofNat, div_eq_mul_inv, mul_assoc]
-  rfl
 
 end Frobenius
 

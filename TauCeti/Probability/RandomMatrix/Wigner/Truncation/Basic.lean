@@ -155,10 +155,9 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le [IsProba
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- A corner of size one has no upper entries, so the error vanishes.
     simpa using integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
-  have : IsProbabilityMeasure Q := ⟨by
-    simpa only [Set.preimage_univ, measure_univ] using
-      ((hd ⟨(0, 1), by decide⟩ (by dsimp only; omega)).measure_mem_eq
-        (s := Set.univ) MeasurableSet.univ).symm⟩
+  have : IsProbabilityMeasure Q := by
+    have h := hd ⟨(0, 1), by decide⟩ (by dsimp only; omega)
+    exact (h.hasLaw (hasLaw_map h.aemeasurable_fst)).isProbabilityMeasure
   have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q :=
     integral_nonneg fun _ ↦ sq_nonneg _
   calc

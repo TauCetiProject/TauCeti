@@ -58,10 +58,9 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
     simpa only [Nat.cast_add, Nat.cast_one] using norm_wignerMatrix_apply_self_sq ξ η ω i
   have hu (p : FinStrictUpper (n + 1)) :
       ‖H p.val.1 p.val.2‖ ^ 2 =
-        (n + 1 : ℝ)⁻¹ * ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 := by
-    have hp : p.val.1.val < p.val.2.val := p.property
-    simpa only [Nat.cast_add, Nat.cast_one, min_eq_left hp.le, max_eq_right hp.le] using
-      norm_wignerMatrix_apply_sq_of_ne ξ η ω p.property.ne
+        (n + 1 : ℝ)⁻¹ * ‖ξ ⟨(p.val.1.val, p.val.2.val), Fin.val_fin_lt.2 p.property⟩ ω‖ ^ 2 := by
+    simpa only [Nat.cast_add, Nat.cast_one] using
+      norm_wignerMatrix_apply_sq_of_lt ξ η ω (Fin.val_fin_lt.2 p.property)
   rw [integral_sq_spectralMeasure_wignerMatrix]
   -- Name the Wigner matrix so the diagonal and upper-coordinate identities apply.
   change (n + 1 : ℝ)⁻¹ * (∑ i, ∑ j, ‖H i j‖ ^ 2) = _

@@ -11,7 +11,8 @@ public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 # Column enumeration of strictly upper Wigner entries
 
 In column order, the strictly upper entries of the corner of size `n` form an initial segment
-of length `n.choose 2`.
+of length `n.choose 2`. The entry `(i, j)` with `i < j` has index `j.choose 2 + i`, and simp
+reduces membership of this index in the initial segment to the column bound `j < n`.
 -/
 
 public section
@@ -20,7 +21,11 @@ noncomputable section
 
 namespace TauCeti
 
-private theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
+/-- The column-order index `j.choose 2 + i` of a strictly upper entry `(i, j)` is below
+`n.choose 2` exactly when its column `j` is below `n`. This is the simp normal form of
+`strictUpperEquivNat_lt_choose_iff`, after `strictUpperEquivNat_apply` unfolds the enumeration. -/
+@[simp]
+theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
     ij.val.2.choose 2 + ij.val.1 < n.choose 2 ↔ ij.val.2 < n := by
   constructor
   · contrapose!
@@ -68,8 +73,8 @@ theorem strictUpperEquivNat_apply (ij : StrictUpper) :
 
 /-- The upper entries of the corner of size `n` are the initial segment of length `n.choose 2`. -/
 theorem strictUpperEquivNat_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
-    strictUpperEquivNat ij < n.choose 2 ↔ ij.val.2 < n :=
-  strictUpperIndex_lt_choose_iff ij n
+    strictUpperEquivNat ij < n.choose 2 ↔ ij.val.2 < n := by
+  simp
 
 /-- The column-order enumeration restricted to strictly upper entries of a finite corner. -/
 def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) :=

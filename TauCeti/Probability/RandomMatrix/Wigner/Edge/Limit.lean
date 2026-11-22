@@ -10,7 +10,7 @@ public import TauCeti.Probability.RandomMatrix.Wigner.Truncation.OperatorNorm
 import TauCeti.Probability.RandomMatrix.Wigner.SemicircleLaw
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
-import TauCeti.Probability.RandomMatrix.TraceWord
+import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
 
 /-!
@@ -46,11 +46,12 @@ local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 /-- Let the upper entries be independent with a common centered law of unit second moment and
 finite fourth moment, and let the diagonal entries, possibly dependent, share a law of finite
 second moment. Then the largest and smallest eigenvalues of the normalized corners converge
-almost surely to `2` and `-2`, provided the following trace bound holds. The expected real trace
-of the `2*k`-th powers of the zero-diagonal centered truncations at radius `(n+1)^a`, with
-`a > 1/4`, is bounded by a polynomial in the sequence index times `t^(2*k)`. At each threshold
-`r > 2`, the scale `0 < t < r` and the orders `k n` may depend on `r`. The orders satisfy
-`k n ≥ B * log (n + 1)` eventually and `2 * B * log (r/t) > d+1` for polynomial exponent `d`. -/
+almost surely to `2` and `-2`, provided the following trace bound holds at each threshold
+`r > 2`. For all sufficiently large `n`, the expected real trace of the `2 * k n`-th power of the
+zero-diagonal centered truncation of size `n + 1` at radius `(n+1)^a`, with `a > 1/4`, is at most
+`C * (n + 1)^d * t^(2 * k n)`; the bound need not hold for small `n`. The scale `0 < t < r`, the
+constants `B`, `C`, `d` and the orders `k n` may depend on `r`. The orders satisfy
+`k n ≥ B * log (n + 1)` eventually and `2 * B * log (r/t) > d+1`. -/
 theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_two_mul_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
     (hξ : MemLp X 4 Q) (hmean : ∫ ω, X ω ∂Q = 0) (hvar : ∫ ω, ‖X ω‖ ^ 2 ∂Q = 1)

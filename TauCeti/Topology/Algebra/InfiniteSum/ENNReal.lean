@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -56,12 +57,12 @@ indices, it is bounded by a family with finite sum. -/
 theorem Filter.EventuallyLE.ennreal_tsum_lt_top {ι : Type*} {f b : ι → ℝ≥0∞}
     (h : f ≤ᶠ[cofinite] b) (hf : ∀ i, f i ≠ ∞) (hb : (∑' i, b i) < ∞) :
     (∑' i, f i) < ∞ := by
-  have hfin := eventually_cofinite.1 h
-  rw [← sum_add_tsum_compl hfin.toFinset f]
-  refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun i _ ↦ (hf i).lt_top, ?_⟩
-  refine (tsum_le_tsum (g := fun i : {i // i ∉ hfin.toFinset} ↦ b i) fun i ↦ not_not.1
-    (by simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using i.property)).trans_lt ?_
-  exact (tsum_comp_le_tsum_of_injective Subtype.val_injective b).trans_lt hb
+  -- Apply the real comparison test `Summable.of_norm_bounded_eventually` to the `toReal` terms.
+  have hs : Summable fun i ↦ (f i).toReal :=
+    (ENNReal.summable_toReal hb.ne).of_norm_bounded_eventually <| h.mono fun i hi ↦ by
+      rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
+      exact ENNReal.toReal_mono (_root_.ne_top_of_tsum_ne_top hb.ne i) hi
+  simpa only [ENNReal.ofReal_toReal (hf _)] using hs.tsum_ofReal_lt_top
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :

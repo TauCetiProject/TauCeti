@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
@@ -16,10 +16,16 @@ import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 /-!
 # Upper spectral bounds from growing even moments
 
+For a random matrix that is almost surely Hermitian with integrable real even trace, the measure
+of the set where its operator norm is at least `r > 0` is at most the expected real trace of its
+`2 * k`-th power divided by `r ^ (2 * k)`. This bounds the outer measure when the set is not
+measurable.
+
 At a norm threshold `r > s > 0`, where `s` is the exponential scale of the trace bound,
 a sufficiently large multiple of `log (n + 1)` in the half-exponent `k n` of the even trace
-power `2 * k n` offsets a polynomial prefactor in the sequence index `n`. The norm tails have a
-summable eventual majorant.
+power `2 * k n` offsets a polynomial prefactor in the sequence index `n`. If the matrices are
+eventually almost surely Hermitian with integrable real even traces, and the trace bound holds
+eventually, then the norm tails have a summable eventual majorant.
 Full-series summability also requires finite tail measures at the initial indices where
 Hermiticity and trace integrability are not assumed. The Borel–Cantelli step applies
 without independence across indices. For the almost-sure bound below every threshold above a
@@ -41,8 +47,10 @@ open Matrix
 
 variable {Ω 𝕜 ι : Type*} [MeasurableSpace Ω] [RCLike 𝕜] {P : Measure Ω}
 
-/-- For a random Hermitian matrix, Markov's inequality with the even trace power
-controls the upper tail of its Euclidean operator norm. -/
+/-- For a random matrix that is almost surely Hermitian with integrable real `2 * k`-th trace,
+the measure of the set where its Euclidean operator norm is at least `r > 0` is at most the
+expected real trace of its `2 * k`-th power divided by `r ^ (2 * k)`. The set need not be
+measurable, in which case this bounds its outer measure. -/
 theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
     [Fintype ι] [DecidableEq ι] {A : Ω → Matrix ι ι 𝕜}
     (hA : ∀ᵐ ω ∂P, (A ω).IsHermitian) (k : ℕ)
@@ -53,25 +61,25 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
   · have hnorm (ω : Ω) : ‖A ω‖ = 0 := by
       rw [Subsingleton.elim (A ω) (0 : Matrix ι ι 𝕜), norm_zero]
     simp [hnorm, not_le_of_gt hr]
-  have hnonneg : 0 ≤ᵐ[P] fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace :=
+  have hnonneg : ∀ᵐ ω ∂P, 0 ≤ RCLike.re ((A ω) ^ (2 * k)).trace :=
     hA.mono fun ω hω ↦ (by positivity : 0 ≤ ‖A ω‖ ^ (2 * k)).trans
       (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k)
   have hsub : {ω | r ≤ ‖A ω‖} ≤ᵐ[P] {ω | r ^ (2 * k) ≤ RCLike.re ((A ω) ^ (2 * k)).trace} :=
     hA.mono fun _ hω h ↦
       (pow_le_pow_left₀ hr.le h _).trans (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k)
-  have hr' : 0 < r ^ (2 * k) := pow_pos hr _
   refine (measure_mono_ae hsub).trans ?_
-  rw [← integral_div]
-  exact (hint.div_const _).measure_le_integral (hnonneg.mono fun _ h ↦ div_nonneg h hr'.le)
-    fun _ hω ↦ (one_le_div hr').2 hω
+  simpa only [pow_one] using meas_ge_le_integral_pow_div_pow
+    (Y := fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace) 1 (by simpa only [pow_one] using hint)
+    (by simpa only [pow_one] using hnonneg) (pow_pos hr _)
 
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}
 
 /-- At a threshold `r > s > 0`, an eventual bound on the expected real trace of the
 `2 * k n`-th powers, with exponential scale `s` and polynomial prefactor of degree `d`, gives a
-summable eventual majorant for the norm tails. The trace exponent is `2 * k n`, and it suffices
-that `k n ≥ B * log (n + 1)` eventually and `d + 1 < 2 * B * log (r / s)`. -/
+summable eventual majorant for the norm tails. The matrices must eventually be almost surely
+Hermitian with integrable real `2 * k n`-th traces. The trace exponent is `2 * k n`, and it
+suffices that `k n ≥ B * log (n + 1)` eventually and `d + 1 < 2 * B * log (r / s)`. -/
 theorem exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P)
@@ -133,10 +141,11 @@ theorem tsum_meas_l2_opNorm_ge_lt_top_of_integral_re_trace_pow_two_mul_le {N : �
       (hint n hn) (hs.trans hr)
     exact (hle.trans_lt ENNReal.ofReal_lt_top).ne
 
-/-- If, for each threshold `r > s`, a trace estimate of sufficiently large logarithmic order
-holds at some exponential scale `0 < t < r`, the norms are almost surely eventually below
-every threshold `r > s`. The scale, moment orders and polynomial prefactors may depend on the
-threshold. -/
+/-- Let the matrices be eventually almost surely Hermitian. If, for each threshold `r > s`, the
+real even traces of some sufficiently large logarithmic order are eventually integrable and
+eventually satisfy a trace estimate at some exponential scale `0 < t < r`, the norms are almost
+surely eventually below every threshold `r > s`. The scale, moment orders and polynomial
+prefactors may depend on the threshold. -/
 theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian) {s : ℝ}
     (htrace : ∀ r > s, ∃ (t B C d : ℝ) (k : ℕ → ℕ), 0 < t ∧ t < r ∧
