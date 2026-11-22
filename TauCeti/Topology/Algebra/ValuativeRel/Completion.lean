@@ -128,7 +128,7 @@ theorem denseRange_algebraMap_integer :
   obtain ⟨V, hV, hVU⟩ := mem_comap.1 hU
   obtain ⟨r, hrV, hrv⟩ := (valuation K).exists_coe_mem_extension_eq hV
   have hx1 : (x : Completion K) ≤ᵥ 1 := by
-    simpa using (valuation (Completion K)).vle_iff_le.2 x.2
+    simpa using (valuation (Completion K)).vle_iff_le.2 x.property
   have hr1 : valuation K r ≤ 1 := by
     rw [← hrv]
     simpa using ((valuation K).extension).vle_iff_le.1 hx1
@@ -144,7 +144,7 @@ theorem algebraMap_residueField_bijective :
   have hball : {u : Completion K | valuation (Completion K) u < 1} ∈ 𝓝 (0 : Completion K) := by
     simpa using (IsValuativeTopology.hasBasis_nhds_zero (Completion K)).mem_of_mem (i := 1) trivial
   have hU : {y : 𝒪[Completion K] | valuation (Completion K) ((y : Completion K) - x) < 1} ∈ 𝓝 x :=
-    (continuous_subtype_val.sub continuous_const).continuousAt.preimage_mem_nhds
+    (continuous_subtypeVal.sub continuous_const).continuousAt.preimage_mem_nhds
       ((sub_self (x : Completion K)).symm ▸ hball)
   obtain ⟨_, hmem, r₀, rfl⟩ := mem_closure_iff_nhds.1 (denseRange_algebraMap_integer x) _ hU
   refine ⟨residue 𝒪[K] r₀, ?_⟩

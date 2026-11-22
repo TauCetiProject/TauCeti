@@ -67,7 +67,7 @@ private def detOneRescalePoint (g : upperTriangularGroup (Fin n) A) :
   ⟨⟨detOneRescale (g : GL (Fin n) A), by
       rw [← Matrix.GeneralLinearGroup.val_det_apply, det_detOneRescale, Units.val_one]⟩,
     UpperTriangularGroup.mem_comap_toGL_iff.mpr
-      (UpperTriangularGroup.mem_iff.mp (detOneRescale_mem g.2))⟩
+      (UpperTriangularGroup.mem_iff.mp (detOneRescale_mem g.property))⟩
 
 private theorem coe_detOneRescalePoint (g : upperTriangularGroup (Fin n) A) :
     (((detOneRescalePoint g : _) : Matrix.SpecialLinearGroup (Fin n) A) :
@@ -108,7 +108,7 @@ private def inclusionAlgHom :
     GeneralLinear.UpperTriangular.coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n :=
   ((GeneralLinear.UpperTriangular.pointsMulEquiv (R := R) (n := n)
       (A := coordinateHopfAlgebra R n)).symm
-    ⟨Matrix.SpecialLinearGroup.toGL (genericPoint R n : _), (genericPoint R n).2⟩).ofConv
+    ⟨Matrix.SpecialLinearGroup.toGL (genericPoint R n : _), (genericPoint R n).property⟩).ofConv
 
 /-- The retraction restricts to the identity on `B`: in coordinates, the inclusion map is a left
 inverse of the retraction map. -/
@@ -118,7 +118,7 @@ private theorem inclusionAlgHom_comp_retractionAlgHom :
   -- Pushing the generic point of `B'` along the inclusion gives the generic point of `B`.
   have hgeneric : Matrix.GeneralLinearGroup.map (inclusionAlgHom R n).toRingHom
       (genericPointGL R n : GL (Fin n) _) =
-        Matrix.SpecialLinearGroup.toGL (genericPoint R n).1 := by
+        Matrix.SpecialLinearGroup.toGL (genericPoint R n).val := by
     have h := GeneralLinear.UpperTriangular.pointsMulEquiv_mapValue (R := R) (n := n)
       (inclusionAlgHom R n)
       (toConv (AlgHom.id R (GeneralLinear.UpperTriangular.coordinateHopfAlgebra R n)))
@@ -129,7 +129,7 @@ private theorem inclusionAlgHom_comp_retractionAlgHom :
   -- The rescaling of that generic point is the generic point itself, as it has determinant one.
   have hrescale : Matrix.GeneralLinearGroup.map (inclusionAlgHom R n).toRingHom
       (detOneRescale (genericPointGL R n : GL (Fin n) _)) =
-        Matrix.SpecialLinearGroup.toGL (genericPoint R n).1 := by
+        Matrix.SpecialLinearGroup.toGL (genericPoint R n).val := by
     rw [map_detOneRescale, hgeneric,
       detOneRescale_of_det_eq_one (Matrix.SpecialLinearGroup.coeToGL_det _)]
   apply toConv_injective

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.ODE.Gronwall
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The evolution variational inequality
@@ -497,7 +498,7 @@ theorem dist_le (hu : IsEVISolution lam φ u) (hv : IsEVISolution lam φ v)
   have h := continuousWithinAt_const.closure_le hcl hcont fun s hs ↦
     dist_sq_le_of_pos hu hv hφ hs.1 hs.2
   have hexp : exp (-(2 * lam) * (t - 0)) = exp (-(lam * t)) ^ 2 := by
-    rw [← exp_nat_mul]
+    rw [← exp_natCast_mul]
     ring_nf
   rw [hexp] at h
   exact (pow_le_pow_iff_left₀ dist_nonneg (by positivity) two_ne_zero).1 (by nlinarith)

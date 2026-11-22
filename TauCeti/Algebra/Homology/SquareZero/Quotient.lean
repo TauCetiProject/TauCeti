@@ -434,8 +434,8 @@ noncomputable def mappingConeProjectionHomologyEquiv :
 @[simp]
 theorem mappingConeProjectionHomologyEquiv_mk (z : ker (mappingCone d e f)) :
     mappingConeProjectionHomologyEquiv hd he hq hf hinj hπ hexact hπe (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨π z.1.2,
-        map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.2⟩ :=
+      Submodule.Quotient.mk ⟨π z.val.2,
+        map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.property⟩ :=
   (LinearEquiv.ofBijective_apply _ _).trans <| (homologyMap_mk _ _ _ _ z).trans <|
     congrArg Submodule.Quotient.mk (Subtype.ext (by simp only [comp_apply, snd_apply]))
 

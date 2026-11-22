@@ -218,7 +218,7 @@ theorem indepFun_shift (hB : IsPreBrownianVector B P) (t₀ : ℝ≥0) :
       (fun (q : ι × Set.Iic t₀) ω ↦ B q.1 q.2 ω)) fun
     | .inl (i, t) => ⟨{(i, t₀ + t), (i, t₀)}, ContinuousLinearMap.proj ⟨(i, t₀ + t), by simp⟩ -
         ContinuousLinearMap.proj ⟨(i, t₀), by simp⟩, fun _ ↦ by simp [restrict_def]⟩
-    | .inr (j, u) => ⟨{(j, u.1)}, ContinuousLinearMap.proj ⟨(j, u.1), by simp⟩,
+    | .inr (j, u) => ⟨{(j, u.val)}, ContinuousLinearMap.proj ⟨(j, u.val), by simp⟩,
         fun _ ↦ by simp [restrict_def]⟩).indepFun_of_covariance_eq_zero
     (fun p ↦ (hB.aemeasurable p.1 (t₀ + p.2)).sub (hB.aemeasurable p.1 t₀))
     (fun q ↦ hB.aemeasurable q.1 q.2) fun ⟨i, t⟩ ⟨j, u, hu⟩ ↦ ?_).comp
@@ -249,15 +249,9 @@ theorem hasLaw_sub_pi [Fintype ι] (hB : IsPreBrownianVector B P) {s t : ℝ≥0
 /-- For `s ≤ t`, `WithLp.toLp 2 (B · t - B · s)` has law `multivariateGaussian 0 ((t - s) • 1)`. -/
 theorem hasLaw_toLp_sub [Fintype ι] [DecidableEq ι] (hB : IsPreBrownianVector B P)
     {s t : ℝ≥0} (hst : s ≤ t) : HasLaw (fun ω ↦ WithLp.toLp 2 fun i ↦ B i t ω - B i s ω)
-      (multivariateGaussian 0 (((t - s : ℝ≥0) : ℝ) • (1 : Matrix ι ι ℝ))) P := by
-  refine (HasLaw.mk (by fun_prop) ?_).fun_comp (hB.hasLaw_sub_pi hst)
-  have hcomm : (WithLp.toLp 2 ∘ fun x : ι → ℝ ↦ √((t - s : ℝ≥0) : ℝ) • x) =
-      (fun z : EuclideanSpace ℝ ι ↦ 0 + √((t - s : ℝ≥0) : ℝ) • z) ∘ WithLp.toLp 2 := by
-    ext x i; simp
-  rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map (by fun_prop) (by fun_prop), hcomm,
-    ← Measure.map_map (by fun_prop) (by fun_prop), map_pi_eq_stdGaussian,
-    ← multivariateGaussian_zero_one, map_add_smul_multivariateGaussian 0 Matrix.PosSemidef.one 0]
-  simp [Real.sq_sqrt (NNReal.coe_nonneg _)]
+      (multivariateGaussian 0 (((t - s : ℝ≥0) : ℝ) • (1 : Matrix ι ι ℝ))) P :=
+  (HasLaw.mk (by fun_prop) (by simpa using (multivariateGaussian_smul_one_eq_map_pi 0 _).symm)
+    ).fun_comp (hB.hasLaw_sub_pi hst)
 
 end IsPreBrownianVector
 

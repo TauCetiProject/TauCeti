@@ -11,6 +11,7 @@ import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Independence
 import TauCeti.NumberTheory.ModularForms.Cusps.Codimension
 import TauCeti.NumberTheory.ModularForms.SturmBound
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The Eisenstein series with character span the Eisenstein space
@@ -86,8 +87,9 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
   rw [CharIndex.card_four]
   split_ifs with hk₂
   · -- The cusp `1/2 = α • ∞` is the third representative.
-    let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
-    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
+    let α : SL(2, ℤ) := Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2
+    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := by
+      simp [α]
     simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
         h.elim (fun h ↦ .inl ⟨1, h⟩)
@@ -206,7 +208,7 @@ theorem eisensteinSubspace_eq_comap_congruenceEisensteinSubspace (χ : (ZMod N)�
     rw [iSup_split_single W χ, sup_inf_assoc_of_le _ (hWle χ), sup_eq_left]
     exact ((iSupIndep_modFormCharSpace (k : ℤ) χ).symm.mono_left
       (iSup₂_mono fun ψ _ ↦ hWle ψ)).le_bot.trans bot_le
-  have hfW : (f : ModularForm _ (k : ℤ)) ∈ W χ := hcut ▸ Submodule.mem_inf.mpr ⟨hE hf, f.2⟩
+  have hfW : (f : ModularForm _ (k : ℤ)) ∈ W χ := hcut ▸ Submodule.mem_inf.mpr ⟨hE hf, f.property⟩
   obtain ⟨g, hg, hgf⟩ := Submodule.mem_map.mp hfW
   rwa [← Subtype.ext hgf]
 

@@ -41,7 +41,9 @@ isomorphism, and on a spectrum they are the inverse of the tilde equivalence (St
 
 The file also identifies the global sections of a free module on `Spec R` with a direct sum of
 copies of `R`, and records the base-ring action on affine global sections and extensionality of
-sections by restriction to basic opens.
+sections by restriction to basic opens. For `Spec R` over `Spec k`, the `k`-algebra structure
+`Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and acts
+pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
 -/
 
 public section
@@ -225,7 +227,7 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
         M.presheaf.map (homOfLE (X := (Spec A).Opens) hf).op t) : s = t := by
   refine TopCat.Presheaf.IsSheaf.section_ext M.isSheaf fun x hx ↦ ?_
   obtain ⟨_, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU : PrimeSpectrum.basicOpen f ≤ U⟩ :=
-    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.2
+    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.is_open'
   exact ⟨_, hfU, hxf, h f hfU⟩
 
 /-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global
@@ -319,3 +321,36 @@ theorem sectionsCokernelEquiv_π_app {M N : X.Modules} (g : M ⟶ N) [M.IsQuasic
 end
 
 end AlgebraicGeometry.Scheme.Modules
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+section SectionsAlgebra
+
+attribute [local instance] algebraOfOver
+
+variable {k : Type u} [CommRing k] {R : CommRingCat.{u}} [Algebra k R]
+
+/-- For `Spec R` over `Spec k`, the `k`-algebra structure `Scheme.algebraOfOver` on sections
+factors through the `R`-algebra structure. -/
+theorem algebraMap_spec_eq (U : (Spec R).Opens) :
+    algebraMap k Γ(Spec R, U) = (algebraMap R Γ(Spec R, U)).comp (algebraMap k R) :=
+  RingHom.ext fun c ↦ by
+    rw [algebraMap_eq_baseRingToStructurePresheaf_app]
+    exact TauCeti.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_Spec_app_apply k R (op U) c
+
+instance (U : (Spec R).Opens) : IsScalarTower k R Γ(Spec R, U) :=
+  .of_algebraMap_eq fun c ↦ by rw [algebraMap_spec_eq]; rfl
+
+/-- For `Spec R` over `Spec k`, scalar multiplication by `k` on the sections over `V` is computed
+pointwise in the localizations of `R`. -/
+theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)) (x : V) :
+    (c • s).val x = c • s.val x := by
+  rw [Algebra.smul_def, Algebra.smul_def, algebraMap_spec_eq,
+    IsScalarTower.algebraMap_apply k R (StructureSheaf.Localizations R x.val)]
+  rfl
+
+end SectionsAlgebra
+
+end AlgebraicGeometry.Scheme

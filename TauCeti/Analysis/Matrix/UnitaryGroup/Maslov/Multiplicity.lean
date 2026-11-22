@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
-import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The eigenvalue `1` of the Souriau map and the zero axiom
@@ -66,14 +65,14 @@ private theorem souriau_mulVec_eq_self_iff (U : unitaryGroup n ℂ) {x : n → �
             vecMul_transpose]
       _ = (U : Matrix n n ℂ)ᵀ *ᵥ x := by
           conv_lhs => rw [← h]
-          rw [mulVec_mulVec, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem U.2,
+          rw [mulVec_mulVec, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem U.property,
             one_mulVec]
   · rintro ⟨y, hy, rfl⟩
     congr 1
     calc (U : Matrix n n ℂ)ᵀ *ᵥ ((U : Matrix n n ℂ) *ᵥ y)
         = (U : Matrix n n ℂ)ᵀ *ᵥ star ((U : Matrix n n ℂ) *ᵥ y) := by rw [hx]
       _ = y := by
-          rw [star_mulVec_eq_map_star_mulVec, hy, mulVec_mulVec,
+          rw [star_mulVec, ← mulVec_transpose, conjTranspose_transpose, hy, mulVec_mulVec,
             transpose_mul_map_star, one_mulVec]
 
 /-- The entrywise conjugate of the Souriau map `U Uᵀ` is its inverse `conj(U) Uᴴ`. -/
@@ -85,14 +84,14 @@ private theorem mul_map_star_souriau (U : unitaryGroup n ℂ) :
     simp [Matrix.mul_apply]
   rw [h, coe_souriau, Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix n n ℂ)ᵀ,
     transpose_mul_map_star, Matrix.one_mul, ← star_eq_conjTranspose]
-  exact Unitary.mul_star_self_of_mem U.2
+  exact Unitary.mul_star_self_of_mem U.property
 
 /-- The eigenvectors of a Souriau map at `1` are stable under conjugation. -/
 private theorem souriau_mulVec_star_eq_star (U : unitaryGroup n ℂ) {x : n → ℂ}
     (hx : (souriau U : Matrix n n ℂ) *ᵥ x = x) :
     (souriau U : Matrix n n ℂ) *ᵥ star x = star x := by
-  conv_lhs => rw [← hx, star_mulVec_eq_map_star_mulVec, mulVec_mulVec, mul_map_star_souriau,
-    one_mulVec]
+  conv_lhs => rw [← hx, star_mulVec, ← mulVec_transpose, conjTranspose_transpose, mulVec_mulVec,
+    mul_map_star_souriau, one_mulVec]
 
 /-- A vector of `ℂⁿ` lies in `U ℝⁿ ∩ ℝⁿ` exactly when it is real and fixed by the Souriau map. -/
 private theorem mem_realImage_inf_realSubspace_iff (U : unitaryGroup n ℂ)

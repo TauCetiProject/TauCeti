@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Connected.Basic
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
-# Topology of additive fixed points
+# Topology of fixed points
 
 The fixed points of a subgroup carry the subspace topology from the coefficient space. This file
 proves continuity of restricted biadditive pairings and supplies the continuous quotient actions
@@ -32,6 +35,9 @@ Pairings and quotient-action continuity have both additive-submonoid and additiv
 forms. The subgroup forms retain the coefficient groups' additive inverses and match the
 subgroup carrier used by group cohomology.
 
+An equivariant homeomorphism carries the fixed set onto the fixed set, so it carries each
+connected component of the fixed set onto the component through the image point.
+
 ## Main results
 
 * `Subgroup.continuous_fixedPointsAddSubmonoidPairing` and
@@ -47,6 +53,8 @@ subgroup carrier used by group cohomology.
   points of arbitrary normal subgroups are continuous when the ambient action is continuous.
 * `TauCeti.continuous_fixedPoints_addSubgroup_subtype`: the inclusion of the fixed-point additive
   subgroup into the ambient coefficient group is continuous.
+* `Homeomorph.image_connectedComponentIn_fixedPoints`: an equivariant homeomorphism carries each
+  connected component of the fixed set onto the connected component through the image point.
 -/
 
 public section
@@ -73,7 +81,7 @@ theorem continuous_fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ 
   refine continuous_induced_rng.2 ?_
   simpa only [Function.comp_def, coe_fixedPointsAddSubmonoidPairing,
     Prod.map_fst, Prod.map_snd] using
-    hμ.comp (continuous_subtype_val.prodMap continuous_subtype_val)
+    hμ.comp (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 end Pairing
 
@@ -155,7 +163,7 @@ variable [TopologicalSpace M]
 /-- The inclusion `M ^ H ↪ M` of the invariants is continuous for the subspace topology. -/
 theorem continuous_fixedPoints_addSubgroup_subtype (H : Subgroup G) :
     Continuous ⇑(FixedPoints.addSubgroup H M).subtype :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 end Subtype
 
@@ -196,3 +204,17 @@ instance continuousSMulQuotientFixedPointsOfContinuousSMul (G : Type*) [Group G]
 end ArbitraryNormalSubgroup
 
 end TauCeti
+
+namespace Homeomorph
+
+/-- An equivariant homeomorphism carries each connected component of the fixed set onto the
+connected component of the fixed set through the image point. -/
+theorem image_connectedComponentIn_fixedPoints {K M N : Type*} [Monoid K] [TopologicalSpace M]
+    [TopologicalSpace N] [MulAction K M] [MulAction K N] (ψ : M ≃ₜ N)
+    (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x) {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
+    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
+      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
+  rw [← TauCeti.MulAction.image_fixedPoints_of_bijective ψ.bijective hψ]
+  exact ψ.image_connectedComponentIn hx
+
+end Homeomorph

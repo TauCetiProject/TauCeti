@@ -69,7 +69,7 @@ private def filteredSpaceCocone (hX : Monotone X) :
     Cocone ({ obj q := TopCat.of (X q)
               map f := TopCat.ofHom (ContinuousMap.inclusion (hX f.le)) } : ℤ ⥤ TopCat.{w}) where
   pt := Y
-  ι := { app q := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app q := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 /-- **Singular chains of an exhaustive filtration of a space.** If every compact subset of `Y` lies
 in some `X q`, every singular chain of `Y`, in each degree of the reindexed chain complex, lies in

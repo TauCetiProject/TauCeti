@@ -13,7 +13,6 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
 import Mathlib.RingTheory.TensorProduct.Maps
 import TauCeti.AlgebraicGeometry.EllipticCurve.Invariants.Presentation
-import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 
 /-!
@@ -362,26 +361,26 @@ noncomputable def integralModularFormToModularForm (k : ℕ) :
     TauCeti.WeierstrassCurve.integralModularFormSubmodule k →ₗ[ℤ] ModularForm 𝒮ℒ k where
   toFun f :=
     (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-      f.2).exists_qExpansion_eq_map_specialize_tateCurve.choose
+      f.property).exists_qExpansion_eq_map_specialize_tateCurve.choose
   map_add' f g := by
     refine ModularForm.qExpansion_injective one_pos one_mem_strictPeriods_SL ?_
     dsimp only
     rw [(TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-        (f + g).2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
+        (f + g).property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
       FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
       (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-        f.2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
+        f.property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
       (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-        g.2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec]
+        g.property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec]
     simp
   map_smul' n f := by
     refine ModularForm.qExpansion_injective one_pos one_mem_strictPeriods_SL ?_
     dsimp only
     rw [(TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-        (n • f).2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
+        (n • f).property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
       RingHom.id_apply, ModularForm.qExpansion_zsmul one_pos one_mem_strictPeriods_SL,
       (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-        f.2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
+        f.property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec,
       Submodule.coe_smul, map_zsmul, map_zsmul]
 
 @[simp]
@@ -390,7 +389,7 @@ theorem qExpansion_integralModularFormToModularForm (k : ℕ)
     qExpansion 1 (integralModularFormToModularForm k f) =
       (tateCurve.specialize (f : MvPolynomial Coeff ℤ)).map (Int.castRingHom ℂ) :=
   (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-    f.2).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec
+    f.property).exists_qExpansion_eq_map_specialize_tateCurve.choose_spec
 
 /-- The comparison map `integralModularFormToModularForm k` from weight-`k` integral modular forms
 to analytic level-one modular forms of weight `k` is injective. -/
@@ -399,8 +398,8 @@ theorem integralModularFormToModularForm_injective (k : ℕ) :
   intro f g h
   ext1
   refine (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp
-    f.2).eq_of_specialize_tateCurve_eq
-    (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp g.2) ?_
+    f.property).eq_of_specialize_tateCurve_eq
+    (TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mp g.property) ?_
   refine PowerSeries.map_injective (Int.castRingHom ℂ) Int.cast_injective ?_
   rw [← qExpansion_integralModularFormToModularForm,
     ← qExpansion_integralModularFormToModularForm, h]
@@ -454,7 +453,8 @@ across weights. -/
 theorem integralModularFormToModularForm_mul {k l : ℕ}
     (f : TauCeti.WeierstrassCurve.integralModularFormSubmodule k)
     (g : TauCeti.WeierstrassCurve.integralModularFormSubmodule l) :
-    integralModularFormToModularForm (k + l) ⟨f.1 * g.1, SetLike.mul_mem_graded f.2 g.2⟩ =
+    integralModularFormToModularForm (k + l) ⟨f.val * g.val, SetLike.mul_mem_graded f.property
+        g.property⟩ =
       ModularForm.mcast (Nat.cast_add k l).symm
         ((integralModularFormToModularForm k f).mul (integralModularFormToModularForm l g)) := by
   refine ModularForm.qExpansion_injective one_pos one_mem_strictPeriods_SL ?_
@@ -475,12 +475,12 @@ noncomputable def integralModularFormEquivIntegralAtCusps (k : ℕ) :
   LinearEquiv.ofBijective
     ((integralModularFormToModularForm k).codRestrict _ fun f ↦
       TauCeti.ModularForm.mem_integralAtCusps_intCast_SL2Z_iff.mpr
-        ⟨tateCurve.specialize f.1, qExpansion_integralModularFormToModularForm k f⟩)
+        ⟨tateCurve.specialize f.val, qExpansion_integralModularFormToModularForm k f⟩)
     ⟨fun f g h ↦ integralModularFormToModularForm_injective k (congrArg Subtype.val h),
      fun F ↦ by
-       obtain ⟨P, hP⟩ := TauCeti.ModularForm.mem_integralAtCusps_intCast_SL2Z_iff.mp F.2
+       obtain ⟨P, hP⟩ := TauCeti.ModularForm.mem_integralAtCusps_intCast_SL2Z_iff.mp F.property
        obtain ⟨f, -, hf, hfP⟩ :=
-         ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq F.1 hP
+         ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq F.val hP
        let fSub : TauCeti.WeierstrassCurve.integralModularFormSubmodule k :=
          ⟨f, TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mpr hf⟩
        refine ⟨fSub, Subtype.ext <|
@@ -622,7 +622,7 @@ theorem adjoinC₄C₆ΔToModularForms_injective :
     Function.Injective adjoinC₄C₆ΔToModularForms := by
   intro x y hxy
   ext1
-  refine injOn_specialize_tateCurve x.2 y.2 ?_
+  refine injOn_specialize_tateCurve x.property y.property ?_
   refine PowerSeries.map_injective (Int.castRingHom ℂ) Int.cast_injective ?_
   simpa only [qExpansionRingHom_adjoinC₄C₆ΔToModularForms] using
     congrArg (ModularForm.qExpansionRingHom 1 one_pos one_mem_strictPeriods_SL) hxy
@@ -651,26 +651,20 @@ private noncomputable def modularFormsToComplexAdjoin :
   (MvPolynomial.aeval (R := ℂ)
     ![Algebra.TensorProduct.includeRight (adjoinGen 0),
       Algebra.TensorProduct.includeRight (-adjoinGen 1)]).comp
-    TauCeti.ModularForm.mvPolynomialEquivModularForms.symm.toAlgHom
+    ModularForm.mvPolynomialEquiv.symm.toAlgHom
 
 private theorem modularFormsToComplexAdjoin_E₄ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 4 E₄) =
       Algebra.TensorProduct.includeRight (adjoinGen 0) := by
-  have h : DirectSum.of (ModularForm 𝒮ℒ) 4 E₄ =
-      TauCeti.ModularForm.mvPolynomialEquivModularForms (MvPolynomial.X 0) := by
-    simp
-  rw [h, modularFormsToComplexAdjoin, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply]
+  rw [← ModularForm.evalE₄E₆_X_zero, modularFormsToComplexAdjoin, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, ModularForm.mvPolynomialEquiv_symm_evalE₄E₆]
   simp only [MvPolynomial.aeval_X, Matrix.cons_val_zero]
 
 private theorem modularFormsToComplexAdjoin_E₆ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 6 E₆) =
       Algebra.TensorProduct.includeRight (-adjoinGen 1) := by
-  have h : DirectSum.of (ModularForm 𝒮ℒ) 6 E₆ =
-      TauCeti.ModularForm.mvPolynomialEquivModularForms (MvPolynomial.X 1) := by
-    simp
-  rw [h, modularFormsToComplexAdjoin, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply]
+  rw [← ModularForm.evalE₄E₆_X_one, modularFormsToComplexAdjoin, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, ModularForm.mvPolynomialEquiv_symm_evalE₄E₆]
   simp only [MvPolynomial.aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero]
 
 private theorem modularFormsToComplexAdjoin_discriminant :
@@ -695,15 +689,10 @@ private theorem modularFormsToComplexAdjoin_discriminant :
 
 private theorem complexAdjoinToModularForms_comp_modularFormsToComplexAdjoin :
     complexAdjoinToModularForms.comp modularFormsToComplexAdjoin = AlgHom.id ℂ _ := by
-  have hpoly : (complexAdjoinToModularForms.comp modularFormsToComplexAdjoin).comp
-      TauCeti.ModularForm.mvPolynomialEquivModularForms.toAlgHom =
-      TauCeti.ModularForm.mvPolynomialEquivModularForms.toAlgHom := by
-    refine MvPolynomial.algHom_ext fun i ↦ match i with
-    | 0 => by simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms]
-    | 1 => by simp [modularFormsToComplexAdjoin_E₆, complexAdjoinToModularForms]
-  refine AlgHom.ext fun x ↦ ?_
-  obtain ⟨p, rfl⟩ := TauCeti.ModularForm.mvPolynomialEquivModularForms.surjective x
-  exact DFunLike.congr_fun hpoly p
+  refine AlgHom.ext_of_adjoin_eq_top ModularForm.adjoin_E₄_E₆_eq_top ?_
+  rintro _ (rfl | rfl)
+  · simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms]
+  · simp [modularFormsToComplexAdjoin_E₆, complexAdjoinToModularForms]
 
 private theorem modularFormsToComplexAdjoin_adjoinC₄C₆ΔToModularForms
     (x : Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) :
