@@ -48,8 +48,9 @@ covector fields, for each of three kinds of variation.
   variation of `J_t` near `(t, u(s, t))` is felt by the trajectory away from `(s, t)` unless
   `(s, t)` is an injective point of `(s, t) ↦ (t, u(s, t))`. The regular points of `u`
   (`TauCeti.Floer.regularPoints`) are such injective points
-  (`TauCeti.comap_nhds_le_nhds_of_tendsto`), with `∂ₜu - X_{H_t} = J_t ∂ₛu ≠ 0`, and they are
-  dense (`TauCeti.Floer.dense_regularPoints`), so `η` vanishes on the strip.
+  (`TauCeti.comap_nhds_le_nhds_of_forall_slice_eq_imp_eq`), with
+  `∂ₜu - X_{H_t} = J_t ∂ₛu ≠ 0`, and they are dense (`TauCeti.Floer.dense_regularPoints`), so `η`
+  vanishes on the strip.
 
 In each case the first hypothesis says that `η` solves the adjoint equation `D_u^* η = 0` on `Ω`
 (`TauCeti.SymplecticForm.forall_integral_apply_floerLinearization_eq_zero_iff`), the second that
@@ -208,7 +209,7 @@ private theorem eq_zero_of_mem_regularPoints_of_setIntegral_deriv_floerOperator 
     (Ks := fun _ _ ↦ 0) hJ hJω hJper hzS hJ₀
     (Eventually.of_forall fun _ ↦ hu.continuous.continuousAt) hξ
     (Eventually.of_forall fun _ ↦ hη.continuousAt)
-    (comap_nhds_le_nhds_of_tendsto hu.continuous hm hp hzm hzp hzs) hξ₀ hY
+    (comap_nhds_le_nhds_of_forall_slice_eq_imp_eq hu.continuous hm hp hzm hzp hzs) hξ₀ hY
 
 /-- **Periodic variations of `J_t` kill the cokernel of the universal operator along a Floer
 trajectory** (Floer, Hofer and Salamon). Let `J (t, x)` be a `Cⁿ` family of complex structures

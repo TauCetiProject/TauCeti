@@ -19,8 +19,8 @@ slice with its value (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`). T
 the competitors to a compact interval, and a compactness argument separates them uniformly
 nearby. Without the local injectivity, such a point `z₀` is an injective point of
 `(s, t) ↦ (t, u(s, t))`: the points `z` with `(z.2, u z)` close to `(t₀, u z₀)` are close to `z₀`
-(`TauCeti.comap_nhds_le_nhds_of_tendsto`). The limits confine these points to a compact box, on
-which `z₀` is their only cluster point.
+(`TauCeti.comap_nhds_le_nhds_of_forall_slice_eq_imp_eq`). The limits confine these points to a
+compact box, on which `z₀` is their only cluster point.
 
 A *partner* of `z` on its slice is a point `(s, z.2)` with `u(s, z.2) = u z`. For a compact set
 `D`, the points with a partner in `D` at distance at least `ε` form a closed set
@@ -107,7 +107,7 @@ Let `u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and 
 tends to `xm(t₀)` and `xp(t₀)` as `s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a
 point with `u(z₀) ≠ xm(t₀)`, `u(z₀) ≠ xp(t₀)` and `u(s, t₀) ≠ u(z₀)` for all `s ≠ s₀`. Then the
 points `z` at which `(z.2, u z)` is close to `(t₀, u z₀)` are close to `z₀`. -/
-theorem comap_nhds_le_nhds_of_tendsto {z₀ : ℝ × ℝ} (hu : Continuous u)
+theorem comap_nhds_le_nhds_of_forall_slice_eq_imp_eq {z₀ : ℝ × ℝ} (hu : Continuous u)
     (hm : Tendsto u (atBot ×ˢ 𝓝 z₀.2) (𝓝 (xm z₀.2)))
     (hp : Tendsto u (atTop ×ˢ 𝓝 z₀.2) (𝓝 (xp z₀.2)))
     (hm₀ : u z₀ ≠ xm z₀.2) (hp₀ : u z₀ ≠ xp z₀.2) (h₀ : ∀ s, u (s, z₀.2) = u z₀ → s = z₀.1) :
