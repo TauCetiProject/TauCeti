@@ -52,7 +52,7 @@ theorem charpoly_eq_of_cyclic {R : Type*} [CommRing R] [Nontrivial R] {n : ℕ}
     sum_mulVec, Finset.sum_range] at hzero
   simp only [smul_mulVec] at hzero
   have hc := Fintype.linearIndependent_iff.1 hv _ hzero
-  refine sub_eq_zero.1 (Polynomial.ext fun k => ?_)
+  refine sub_eq_zero.1 (AddMonoidAlgebra.ext <| Finsupp.ext fun k => ?_)
   rw [coeff_zero]
   rcases lt_trichotomy k n with hk | rfl | hk
   · exact hc ⟨k, hk⟩

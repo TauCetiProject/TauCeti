@@ -47,7 +47,7 @@ namespace Complex
 /-- `exp(2πi e / m)` is the `e`-th power of the root of unity `exp(2πi / m)`. -/
 theorem exp_two_pi_I_mul_div_eq_pow (e m : ℕ) :
     exp (2 * π * I * ((e : ℂ) / (m : ℂ))) = exp (2 * π * I / (m : ℂ)) ^ e := by
-  rw [← exp_nat_mul]
+  rw [← exp_natCast_mul]
   congr 1
   ring
 

@@ -74,7 +74,7 @@ theorem natDegree_geom_sum_X [Nontrivial R] (n : ℕ) :
     (∑ i ∈ range (n + 1), (X : R[X]) ^ i).natDegree = n := by
   refine natDegree_eq_of_le_of_coeff_ne_zero (natDegree_sum_le_of_forall_le _ _ fun i hi ↦
     (natDegree_X_pow_le i).trans (Nat.le_of_lt_succ (mem_range.1 hi))) ?_
-  simp [finsetSum_coeff, coeff_X_pow]
+  simp [coeff_X_pow]
 
 end Semiring
 
