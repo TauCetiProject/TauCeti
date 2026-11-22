@@ -301,6 +301,11 @@ theorem ncard_setOf_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) :
     simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
   rw [h, Set.ncard_coe_finset, Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
 
+private theorem degree_eq_apply_none_add_degree_some {σ R : Type*} [AddCommMonoid R]
+    (t : Option σ →₀ R) :
+    t.degree = t none + t.some.degree := by
+  conv_lhs => rw [← optionElim_some t, degree_optionElim]
+
 /-- Adjoining the slack exponent `n - s.degree` at `none` identifies the exponent vectors on `σ`
 of degree at most `n` with the exponent vectors on `Option σ` of degree `n`. -/
 noncomputable def degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ) :
@@ -308,14 +313,14 @@ noncomputable def degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ) :
   toFun s := ⟨s.val.optionElim (n - s.val.degree),
     by rw [degree_optionElim, Nat.sub_add_cancel s.property]⟩
   invFun t := ⟨t.val.some, by
-    have h := t.property
-    rw [← optionElim_some t.val, degree_optionElim] at h
+    have := degree_eq_apply_none_add_degree_some t.val
+    have := t.property
     omega⟩
   left_inv s := Subtype.ext (some_optionElim _ _)
   right_inv t := by
     apply Subtype.ext
-    have h := t.property
-    rw [← optionElim_some t.val, degree_optionElim] at h
+    have := degree_eq_apply_none_add_degree_some t.val
+    have := t.property
     have hnone : n - t.val.some.degree = t.val none := by omega
     simp [hnone]
 
@@ -340,10 +345,7 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
 /-- The number of exponent vectors on `σ` of degree `n` is `(card σ).multichoose n`. -/
 theorem card_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) [Fintype {s : σ →₀ ℕ // s.degree = n}] :
     Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
-  classical
-  rw [Fintype.card_of_subtype ((Finset.univ : Finset σ).finsuppAntidiag n)
-      (fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]),
-    Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
+  rw [← Nat.card_eq_fintype_card, ← Set.ncard_ofPred, ncard_setOf_degree_eq]
 
 /-- The number of exponent vectors on `σ` of degree at most `n` is `(card σ + n).choose n`. -/
 theorem card_degree_le {σ : Type*} [Fintype σ] (n : ℕ) [Fintype {s : σ →₀ ℕ // s.degree ≤ n}] :
