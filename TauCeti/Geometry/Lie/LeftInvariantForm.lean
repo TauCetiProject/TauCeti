@@ -46,7 +46,7 @@ of the Lie algebra, such as the Cartan three-form `(X, Y, Z) ↦ B (X, ⁅Y, Z�
 bilinear form `B`, into closed differential forms on the group. In degree one, with real
 coefficients, the left-invariant form of a covector is also constructed as a pullback of the
 Liouville form, `Module.Dual.leftInvariantForm`, which agrees with this extension
-(`Module.Dual.leftInvariantForm_val`).
+(`Module.Dual.leftInvariantForm_eq_leftInvariantSmoothForm`).
 
 The coefficient space `F` is a normed space, regarded as a trivial module over `𝔤` through
 Mathlib's type synonym `TrivialLieModule ℝ 𝔤 F`, so no Lie module structure on `F` itself is
@@ -62,10 +62,12 @@ derivative has no term in which `𝔤` acts on the values of the form.
 ## Main results
 
 * `TauCeti.leftInvariantForm_apply_mulInvariantVectorField`: `α^L (X₁^L, …, Xₖ^L) = α (X₁, …, Xₖ)`.
-* `TauCeti.mpullback_mul_left_leftInvariantForm`: left translations preserve `α^L`.
+* `TauCeti.mpullback_mul_left_leftInvariantForm`,
+  `TauCeti.mpullback_mul_left_leftInvariantSmoothForm`: left translations preserve `α^L`.
 * `TauCeti.forall_mpullback_mul_left_eq_iff`: the left-invariant forms are the forms `α^L`.
 * `TauCeti.isSmoothForm_leftInvariantForm`: on a `C^n` Lie group, `α^L` is `C^m` for `m + 1 ≤ n`.
-* `TauCeti.mextDeriv_leftInvariantForm`: `d (α^L) = (d α)^L`.
+* `TauCeti.mextDeriv_leftInvariantForm`, `TauCeti.mextDerivₗ_leftInvariantSmoothForm`:
+  `d (α^L) = (d α)^L`.
 * `TauCeti.mextDeriv_leftInvariantForm_eq_zero_iff`,
   `TauCeti.isClosed_leftInvariantSmoothForm_iff`: `α^L` is closed exactly when `d α = 0`.
 
@@ -246,6 +248,16 @@ theorem leftInvariantSmoothForm_val (α : GroupLieAlgebra I G [⋀^Fin k]→L[�
     (leftInvariantSmoothForm I G F k α).val = leftInvariantForm I G F k α :=
   (rfl)
 
+/-- Every left translation preserves the smooth left-invariant extension of `α`. -/
+@[simp]
+theorem mpullback_mul_left_leftInvariantSmoothForm (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F)
+    (g : G) :
+    SmoothForm.mpullback (g * ·) contMDiff_mul_left (leftInvariantSmoothForm I G F k α) =
+      leftInvariantSmoothForm I G F k α :=
+  Subtype.ext <| by
+    rw [SmoothForm.coe_mpullback, leftInvariantSmoothForm_val,
+      mpullback_mul_left_leftInvariantForm]
+
 end Smooth
 
 /-! ### The exterior derivative -/
@@ -320,6 +332,23 @@ theorem mextDeriv_leftInvariantForm_eq_zero_iff (α : GroupLieAlgebra I G [⋀^F
   rw [mextDeriv_leftInvariantForm, ← map_zero (leftInvariantForm I G F (k + 1)),
     leftInvariantForm_injective.eq_iff, ← map_zero AlternatingMap.toContinuousAlternatingMap,
     AlternatingMap.toContinuousAlternatingMap.injective.eq_iff, LinearEquiv.map_eq_zero_iff]
+
+/-- **The exterior derivative of a smooth left-invariant form** is the smooth left-invariant
+extension of the Chevalley–Eilenberg differential of its value at the identity, with `F` regarded
+as a trivial module over the Lie algebra. -/
+@[simp]
+theorem mextDerivₗ_leftInvariantSmoothForm [IsManifold I 1 G] [LieGroup I ∞ G]
+    (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    mextDerivₗ I k (leftInvariantSmoothForm I G F k α) =
+      leftInvariantSmoothForm I G F (k + 1) (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight
+          (LieModule.Cohomology.d ℝ (GroupLieAlgebra I G)
+            (TrivialLieModule ℝ (GroupLieAlgebra I G) F) k
+            ((TrivialLieModule.equiv ℝ (GroupLieAlgebra I G) F).alternatingMapCongrRight.symm
+              α.toAlternatingMap)))) :=
+  Subtype.ext <| by
+    rw [mextDerivₗ_apply, leftInvariantSmoothForm_val, leftInvariantSmoothForm_val,
+      mextDeriv_leftInvariantForm]
 
 /-- **The smooth left-invariant extension of a form is closed exactly when the form is a
 Chevalley–Eilenberg cocycle**, with `F` regarded as a trivial module over the Lie algebra. -/

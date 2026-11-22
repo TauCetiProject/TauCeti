@@ -29,9 +29,9 @@ the orbit.
   multiplication. Its value at `g` is `ν ∘ d(L_{g⁻¹})_g`.
 * `Module.Dual.leftInvariantForm ν` is the corresponding smooth one-form `α_ν`, the pullback of
   the Liouville form along this section. It is the left-invariant one-form with value `ν` at the
-  identity: `α_ν(X^L_ξ) = ν ξ` for the left-invariant vector field `X^L_ξ` of `ξ`. Its underlying
-  form is the left-invariant extension `TauCeti.leftInvariantForm` of `ν`
-  (`Module.Dual.leftInvariantForm_val`).
+  identity: `α_ν(X^L_ξ) = ν ξ` for the left-invariant vector field `X^L_ξ` of `ξ`. It is the
+  smooth left-invariant extension `TauCeti.leftInvariantSmoothForm` of `ν`
+  (`Module.Dual.leftInvariantForm_eq_leftInvariantSmoothForm`).
 * `Module.Dual.leftInvariantKirillovForm ν` is the two-form `σ_ν = -dα_ν`, which is also the
   pullback of the canonical symplectic form `ω = -dλ` of `T*G` along the section.
 
@@ -163,19 +163,27 @@ theorem leftInvariantForm_apply (g : G) (v : Fin 1 → TangentSpace I g) :
       (ν.contMDiff_leftInvariantCovector.mdifferentiableAt (by simp)),
     mfderiv_id, ContinuousLinearMap.id_apply, leftInvariantCovector_snd_apply]
 
-/-- The left-invariant one-form of `ν` is the left-invariant extension `TauCeti.leftInvariantForm`
-of `ν`, viewed as a one-form on the Lie algebra. -/
-theorem leftInvariantForm_val :
-    ν.leftInvariantForm.val = TauCeti.leftInvariantForm I G ℝ 1
+/-- The left-invariant one-form of `ν` is the smooth left-invariant extension
+`TauCeti.leftInvariantSmoothForm` of `ν`, viewed as a one-form on the Lie algebra. -/
+theorem leftInvariantForm_eq_leftInvariantSmoothForm :
+    ν.leftInvariantForm = TauCeti.leftInvariantSmoothForm I G ℝ 1
       (AlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ 0 ν).toContinuousAlternatingMap := by
+  apply Subtype.ext
   funext g
   ext v
-  rw [Module.Dual.leftInvariantForm_apply, TauCeti.leftInvariantForm_apply,
-    AlternatingMap.coe_toContinuousAlternatingMap]
+  rw [Module.Dual.leftInvariantForm_apply, TauCeti.leftInvariantSmoothForm_val,
+    TauCeti.leftInvariantForm_apply, AlternatingMap.coe_toContinuousAlternatingMap]
   -- `ν` is applied to the translate in `TangentSpace I (g⁻¹ * g)`, which is definitionally the Lie
   -- algebra (both are the model space), so `AlternatingMap.ofSubsingleton_apply_apply` does not
   -- rewrite syntactically.
   rfl
+
+/-- The underlying form of the left-invariant one-form of `ν` is the left-invariant extension
+`TauCeti.leftInvariantForm` of `ν`, viewed as a one-form on the Lie algebra. -/
+theorem leftInvariantForm_val :
+    ν.leftInvariantForm.val = TauCeti.leftInvariantForm I G ℝ 1
+      (AlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ 0 ν).toContinuousAlternatingMap := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm, TauCeti.leftInvariantSmoothForm_val]
 
 /-- The left-invariant one-form of `ν` is constant, equal to `ν ξ`, on the left-invariant vector
 field of `ξ`. -/
@@ -193,10 +201,9 @@ theorem leftInvariantForm_apply_mulInvariantVectorField (ξ : GroupLieAlgebra I 
 /-- The left-invariant one-form is invariant under left translations. -/
 @[simp]
 theorem mpullback_mul_left_leftInvariantForm (h : G) :
-    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantForm = ν.leftInvariantForm :=
-  Subtype.ext <| by
-    rw [SmoothForm.coe_mpullback, leftInvariantForm_val,
-      TauCeti.mpullback_mul_left_leftInvariantForm]
+    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantForm = ν.leftInvariantForm := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm,
+    TauCeti.mpullback_mul_left_leftInvariantSmoothForm]
 
 /-- Right translation by `h` pulls the left-invariant one-form of `ν` back to that of the
 coadjoint translate `Ad*_h ν`. -/
@@ -251,8 +258,9 @@ theorem eval₂_leftInvariantKirillovForm_mulInvariantVectorField (ξ η : Group
     fin_cases i <;> rfl
   -- `dα_ν` is the left-invariant extension of the Chevalley–Eilenberg differential of `ν`.
   rw [SmoothBundleForm.eval₂_apply, leftInvariantKirillovForm, NegMemClass.coe_neg, Pi.neg_apply,
-    mextDerivₗ_apply, ContinuousAlternatingMap.neg_apply, leftInvariantForm_val,
-    TauCeti.mextDeriv_leftInvariantForm, h, TauCeti.leftInvariantForm_apply_mulInvariantVectorField,
+    leftInvariantForm_eq_leftInvariantSmoothForm, TauCeti.mextDerivₗ_leftInvariantSmoothForm,
+    TauCeti.leftInvariantSmoothForm_val, ContinuousAlternatingMap.neg_apply, h,
+    TauCeti.leftInvariantForm_apply_mulInvariantVectorField,
     AlternatingMap.coe_toContinuousAlternatingMap, LinearEquiv.alternatingMapCongrRight_apply_apply,
     TauCeti.LieModule.Cohomology.d_succ_apply]
   simp [trivial_lie_zero]
