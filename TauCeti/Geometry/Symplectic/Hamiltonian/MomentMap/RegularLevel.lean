@@ -66,6 +66,19 @@ theorem mfderiv_components_apply (h : σ.IsMomentMap a μ) (b : Basis ι ℝ �
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
   rw [h.differential_apply, this, mvfderiv_apply_eq_mfderiv_apply]
 
+/-- The components of a moment map in a basis `b` of `𝔤` have a regular point at `x` exactly when
+the differential `dμ_x` is surjective: their derivative is `dμ_x` read in the dual basis. -/
+theorem isRegularPoint_components_iff (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) {x : M} :
+    IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x ↔
+      Function.Surjective (h.differential x) := by
+  classical
+  have heq : ⇑(mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x) =
+      ⇑b.dualBasis.equivFun ∘ ⇑(h.differential x) := by
+    funext v i
+    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.mfderiv_components_apply]
+  rw [isRegularPoint_iff, heq]
+  exact EquivLike.comp_surjective _ b.dualBasis.equivFun
+
 variable [FiniteDimensional ℝ E]
 
 /-- **Regular points of a moment map.** At a point where the form is nondegenerate, the components
@@ -73,15 +86,8 @@ variable [FiniteDimensional ℝ E]
 locally free. -/
 theorem isRegularPoint_iff_isotropy_eq_bot (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) {x : M}
     (hσx : (σ.bilinFormAt x).Nondegenerate) :
-    IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x ↔ a.isotropy x = ⊥ := by
-  classical
-  -- The derivative of the components is the differential read in the dual basis.
-  have heq : ⇑(mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x) =
-      ⇑b.dualBasis.equivFun ∘ ⇑(h.differential x) := by
-    funext v i
-    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.mfderiv_components_apply]
-  rw [isRegularPoint_iff, heq]
-  exact (EquivLike.comp_surjective _ b.dualBasis.equivFun).trans (h.differential_surjective_iff hσx)
+    IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x ↔ a.isotropy x = ⊥ :=
+  (h.isRegularPoint_components_iff b).trans (h.differential_surjective_iff hσx)
 
 variable (hσ : σ.IsNondegenerate)
 include hσ

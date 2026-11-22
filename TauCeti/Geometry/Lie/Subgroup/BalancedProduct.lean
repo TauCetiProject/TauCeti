@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.BalancedProduct
 public import TauCeti.Topology.Covering.BalancedProduct.RightTranslation
 
 import TauCeti.Geometry.Manifold.Algebra.SMul
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
@@ -41,6 +42,14 @@ makes the orbit space `(G ×_K Z) ⧸ G` a smooth manifold, and the bijection
 theorem on both sides (`TauCeti.BalancedProduct.orbitRelQuotientDiffeomorphRightTranslation`).
 So `Z ⧸ K` is recovered from `G ×_K Z` as a manifold, not only as a set.
 
+For a `K`-equivariant smooth embedding `ι : Z → M` into a smooth `G`-manifold, `G ×_K Z` is
+recovered inside `M × G ⧸ K` as the set of pairs `(m, g K)` with `g⁻¹ • m ∈ ι(Z)`: the map
+`[g, z] ↦ (g • ι z, g K)` is smooth and injective, and it lifts to a diffeomorphism onto every
+manifold `W` smoothly embedded in `M × G ⧸ K` with that image
+(`TauCeti.BalancedProduct.liftProjDiffeomorphRightTranslation`). The inverse is smooth because
+over an open set of `G ⧸ K` with a smooth local section `s` of `G → G ⧸ K`, the preimage of
+`(m, o)` is `[s o, ι⁻¹ ((s o)⁻¹ • m)]`.
+
 For a Hamiltonian action with coadjoint-equivariant moment map `μ` and a regular value `c` of
 `μ`, this is the space `G ×_{G_c} μ⁻¹(c)`, with its maps to the coadjoint orbit `G ⧸ G_c`, to the
 symplectic manifold and to the reduced space `μ⁻¹(c) ⧸ G_c`, through which reduction at `c` is
@@ -54,6 +63,8 @@ compared with reduction at zero of the shifted moment map on the product with th
   quotient manifold theorem on the orbit space `(G ×_K Z) ⧸ G`.
 * `TauCeti.BalancedProduct.orbitRelQuotientDiffeomorphRightTranslation`: the diffeomorphism
   `(G ×_K Z) ⧸ G ≃ₘ Z ⧸ K`, `G • [g, z] ↦ [z]`.
+* `TauCeti.BalancedProduct.liftProjDiffeomorphRightTranslation`: the diffeomorphism from `G ×_K Z`
+  onto a submanifold of `M × G ⧸ K` with the image of `[g, z] ↦ (g • ι z, g K)`.
 
 ## Main results
 
@@ -71,6 +82,8 @@ compared with reduction at zero of the shifted moment map on the product with th
 * `TauCeti.BalancedProduct.contMDiff_proj_rightTranslation`,
   `TauCeti.BalancedProduct.contMDiff_liftRightTranslation`: the maps to `G ⧸ K` and to a
   `G`-manifold are smooth.
+* `TauCeti.BalancedProduct.contMDiff_liftProjRightTranslation`: the map
+  `[g, z] ↦ (g • ι z, g K)` is smooth.
 * `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
   space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
@@ -294,6 +307,153 @@ theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [
   rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
+
+/-! ### `G ×_K Z` as a submanifold of `M × G ⧸ K` -/
+
+section Embedding
+
+variable {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
+  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace HM M] [MulAction G M] [ContMDiffSMul I IM ∞ G M]
+  {ι : Z →ₑ[((↑) : K → G)] M}
+  {EW HW : Type*} [NormedAddCommGroup EW] [NormedSpace ℝ EW] [TopologicalSpace HW]
+  {IW : ModelWithCorners ℝ EW HW} {W : Type*} [TopologicalSpace W] [ChartedSpace HW W]
+
+/-- **The map `[g, z] ↦ (g • ι z, g K)` is smooth** when `ι` is, for the charts of the
+homogeneous space `Subgroup.quotientChartedSpaceOfIsClosed` on `G ⧸ K`. -/
+theorem contMDiff_liftProjRightTranslation (hι : ContMDiff IZ IM ∞ ι) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))
+      (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ (liftProjRightTranslation ι) := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  refine ((contMDiff_liftRightTranslation (I := I) (F := F) hι).prodMk
+    (contMDiff_proj_rightTranslation (I := I) (IZ := IZ) (F := F))).congr fun y ↦ ?_
+  exact Prod.ext (fst_liftProjRightTranslation ι y) (snd_liftProjRightTranslation ι y)
+
+/-- Near a point `w` of a manifold `W` mapped by `e` into the image of `[g, z] ↦ (g • ι z, g K)`,
+the preimage of `e w'` is `[s (e w').2, z']`, for a smooth local section `s` of `G → G ⧸ K` and the
+point `z'` with `ι z' = (s (e w').2)⁻¹ • (e w').1`, which depends smoothly on `w'` since `ι` is a
+smooth embedding. So any map `ψ : W → G ×_K Z` lifting `e` is smooth. -/
+private theorem contMDiff_of_liftProjRightTranslation_comp_eq (hι : IsSmoothEmbedding IZ IM ∞ ι)
+    {e : W → M × G ⧸ K}
+    (he : letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+      ContMDiff IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ e)
+    {ψ : W → BalancedProduct K K.RightTranslation Z}
+    (hψ : liftProjRightTranslation ι ∘ ψ = e) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    ContMDiff IW 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ ψ := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have hinj := injective_liftProjRightTranslation ι hι.isEmbedding.injective
+  intro w
+  have hq := Subgroup.isSubmersion_quotientMk (I := I) ‹IsClosed (K : Set G)›
+  obtain ⟨U, hU, hwU, s, hs, hsU⟩ :=
+    hq.exists_contMDiffOn_section_of_surjective QuotientGroup.mk_surjective (e w).2
+  have hmem : ∀ w', (e w').2 ∈ U → (s (e w').2)⁻¹ • (e w').1 ∈ Set.range ι := fun w' hw' ↦
+    (mem_range_liftProjRightTranslation_iff ι (hsU _ hw')).1 ⟨ψ w', congrFun hψ w'⟩
+  have : Nonempty Z := ⟨(hmem w hwU).choose⟩
+  -- The point `z'` of `Z`, read off through the injective map `ι`.
+  let z' : W → Z := fun w' ↦ Function.invFun ι ((s (e w').2)⁻¹ • (e w').1)
+  have hV : ∀ᶠ w' in nhds w, (e w').2 ∈ U :=
+    (he.continuous.snd).continuousAt.preimage_mem_nhds (hU.mem_nhds hwU)
+  have hsw : ContMDiffAt IW I ∞ (fun w' ↦ s (e w').2) w :=
+    (hs.contMDiffAt (hU.mem_nhds hwU)).comp w (he.snd w)
+  have hz' : ContMDiffAt IW IZ ∞ z' w := by
+    rw [hι.contMDiffAt_iff_comp]
+    refine ContMDiffAt.congr_of_eventuallyEq (hsw.inv.smul (he.fst w)) ?_
+    filter_upwards [hV] with w' hw' using Function.invFun_eq (hmem w' hw')
+  have hπ := isSubmersion_quotientMk_rightTranslation (I := I) (IZ := IZ) (F := F) (K := K)
+    (Z := Z)
+  refine ContMDiffAt.congr_of_eventuallyEq (hπ.contMDiff.contMDiffAt.comp w
+    (((Subgroup.RightTranslation.contMDiff_toRightTranslation (I := I) ∞).contMDiffAt.comp w
+      hsw).prodMk hz')) ?_
+  filter_upwards [hV] with w' hw'
+  -- Both points have the image `e w'` under the injective map `[g, z] ↦ (g • ι z, g K)`.
+  refine hinj ?_
+  simp only [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, Equiv.symm_apply_apply,
+    liftProjRightTranslation_mk]
+  rw [Function.invFun_eq (hmem w' hw'), smul_inv_smul, hsU _ hw']
+  exact congrFun hψ w'
+
+/-- The bijection from `G ×_K Z` onto `W` through `[g, z] ↦ (g • ι z, g K)` and an injective
+map `e : W → M × G ⧸ K` with the same image. -/
+private def liftProjEquiv (hι : Function.Injective ι) {e : W → M × G ⧸ K}
+    (he : Function.Injective e) (hrange : Set.range e = Set.range (liftProjRightTranslation ι)) :
+    BalancedProduct K K.RightTranslation Z ≃ W :=
+  (Equiv.ofInjective _ (injective_liftProjRightTranslation ι hι)).trans
+    ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective e he).symm)
+
+omit [TopologicalSpace G] [IsClosed (K : Set G)] [TopologicalSpace Z] [T2Space Z]
+  [TopologicalSpace M] [TopologicalSpace W] in
+private theorem apply_liftProjEquiv (hι : Function.Injective ι) {e : W → M × G ⧸ K}
+    (he : Function.Injective e) (hrange : Set.range e = Set.range (liftProjRightTranslation ι))
+    (y : BalancedProduct K K.RightTranslation Z) :
+    e (liftProjEquiv hι he hrange y) = liftProjRightTranslation ι y := by
+  simp only [liftProjEquiv, Equiv.trans_apply]
+  exact Equiv.apply_ofInjective_symm he _
+
+variable (ι) in
+/-- **`G ×_K Z` is the submanifold `{(m, g K) | g⁻¹ • m ∈ ι(Z)}` of `M × G ⧸ K`.** Let `ι` be a
+`K`-equivariant smooth embedding of `Z` into a smooth `G`-manifold `M`, and let `e : W → M × G ⧸ K`
+be a smooth embedding with the same image as `[g, z] ↦ (g • ι z, g K)`, that is, onto the pairs
+`(m, g K)` with `g⁻¹ • m` in the image of `ι`
+(`TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`). Then `[g, z] ↦ (g • ι z, g K)`
+lifts to a diffeomorphism `G ×_K Z ≃ W`
+(`TauCeti.BalancedProduct.apply_liftProjDiffeomorphRightTranslation`). The inverse is smooth since
+the preimage of `(m, o)` is `[s o, ι⁻¹ ((s o)⁻¹ • m)]` for a smooth local section `s` of
+`G → G ⧸ K`. -/
+def liftProjDiffeomorphRightTranslation (hι : IsSmoothEmbedding IZ IM ∞ ι) {e : W → M × G ⧸ K}
+    (he : letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+      IsSmoothEmbedding IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ e)
+    (hrange : Set.range e = Set.range (liftProjRightTranslation ι)) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    BalancedProduct K K.RightTranslation Z ≃ₘ⟮𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)), IW⟯
+      W :=
+  letI := rightTranslationChartedSpace K Z I IZ F
+  letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  { toEquiv := liftProjEquiv hι.isEmbedding.injective he.isEmbedding.injective hrange
+    contMDiff_toFun := he.contMDiff_iff_comp.2 <|
+      (contMDiff_liftProjRightTranslation (I := I) (F := F) hι.contMDiff).congr fun y ↦
+        apply_liftProjEquiv hι.isEmbedding.injective he.isEmbedding.injective hrange y
+    contMDiff_invFun := contMDiff_of_liftProjRightTranslation_comp_eq (F := F) hι he.contMDiff
+      (funext fun w ↦ by
+        rw [Function.comp_apply, ← apply_liftProjEquiv hι.isEmbedding.injective
+          he.isEmbedding.injective hrange, Equiv.apply_symm_apply]) }
+
+/-- The diffeomorphism `TauCeti.BalancedProduct.liftProjDiffeomorphRightTranslation` followed by
+`e` is `[g, z] ↦ (g • ι z, g K)`. -/
+theorem apply_liftProjDiffeomorphRightTranslation (hι : IsSmoothEmbedding IZ IM ∞ ι)
+    {e : W → M × G ⧸ K}
+    (he : letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+      IsSmoothEmbedding IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ e)
+    (hrange : Set.range e = Set.range (liftProjRightTranslation ι))
+    (y : BalancedProduct K K.RightTranslation Z) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    e (liftProjDiffeomorphRightTranslation (F := F) ι hι he hrange y) =
+      liftProjRightTranslation ι y := by
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  exact apply_liftProjEquiv hι.isEmbedding.injective he.isEmbedding.injective hrange y
+
+/-- The inverse of `TauCeti.BalancedProduct.liftProjDiffeomorphRightTranslation` sends `w` to the
+point of `G ×_K Z` whose image under `[g, z] ↦ (g • ι z, g K)` is `e w`. -/
+@[simp]
+theorem liftProjRightTranslation_liftProjDiffeomorphRightTranslation_symm
+    (hι : IsSmoothEmbedding IZ IM ∞ ι) {e : W → M × G ⧸ K}
+    (he : letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+      IsSmoothEmbedding IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ e)
+    (hrange : Set.range e = Set.range (liftProjRightTranslation ι)) (w : W) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    liftProjRightTranslation ι
+        ((liftProjDiffeomorphRightTranslation (F := F) ι hι he hrange).symm w) =
+      e w := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  rw [← apply_liftProjDiffeomorphRightTranslation (F := F) hι he hrange,
+    Diffeomorph.apply_symm_apply]
+
+end Embedding
 
 /-! ### The orbit space of `G` -/
 

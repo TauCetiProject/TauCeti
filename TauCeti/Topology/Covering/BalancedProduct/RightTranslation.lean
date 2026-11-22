@@ -49,6 +49,8 @@ Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 
 * `Subgroup.RightTranslation K`: the group `G` as a `K`-space under `h • g = g h⁻¹`.
 * `TauCeti.BalancedProduct.liftRightTranslation`: the map `[g, z] ↦ g • ι z`.
+* `TauCeti.BalancedProduct.liftProjRightTranslation`: the map `[g, z] ↦ (g • ι z, g K)` to
+  `M × G ⧸ K`.
 
 ## Main results
 
@@ -60,6 +62,10 @@ Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 * `TauCeti.BalancedProduct.eq_liftRightTranslation`,
   `TauCeti.BalancedProduct.liftEquivRightTranslation`: `G`-equivariant maps out of `G ×_K Z`
   correspond to `K`-equivariant maps out of `Z`.
+* `TauCeti.BalancedProduct.injective_liftProjRightTranslation`,
+  `TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`: for injective `ι`, the map
+  `[g, z] ↦ (g • ι z, g K)` is a bijection onto the pairs `(m, g K)` with `g⁻¹ • m` in the image of
+  `ι`.
 * `TauCeti.BalancedProduct.isOpenQuotientMap_mk_toRightTranslation`: `(g, z) ↦ [g, z]` is an open
   quotient map.
 * `TauCeti.BalancedProduct.instContinuousSMulRightTranslation`,
@@ -319,6 +325,73 @@ theorem liftEquivRightTranslation_symm_apply_apply
     (f : BalancedProduct K K.RightTranslation Z →[G] M) (z : Z) :
     (liftEquivRightTranslation K Z M).symm f z = f (mk K (K.toRightTranslation 1) z) :=
   (rfl)
+
+/-- The map `[g, z] ↦ (g • ι z, g K)` from `G ×_K Z` to `M × G ⧸ K`, which pairs the action map
+`TauCeti.BalancedProduct.liftRightTranslation ι` with the projection onto `G ⧸ K`. It is
+`G`-equivariant, injective when `ι` is
+(`TauCeti.BalancedProduct.injective_liftProjRightTranslation`), and its image consists of the
+pairs `(m, g K)` with `g⁻¹ • m` in the image of `ι`
+(`TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`). -/
+def liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) : M × G ⧸ K :=
+  (liftRightTranslation ι y, proj Z Subgroup.RightTranslation.quotientMk_smul y)
+
+@[simp]
+theorem fst_liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) :
+    (liftProjRightTranslation ι y).1 = liftRightTranslation ι y :=
+  (rfl)
+
+@[simp]
+theorem snd_liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) :
+    (liftProjRightTranslation ι y).2 = proj Z Subgroup.RightTranslation.quotientMk_smul y :=
+  (rfl)
+
+@[simp]
+theorem liftProjRightTranslation_mk (g : G) (z : Z) :
+    liftProjRightTranslation ι (mk K (K.toRightTranslation g) z) = (g • ι z, (g : G ⧸ K)) := by
+  rw [liftProjRightTranslation, liftRightTranslation_mk, proj_mk,
+    Subgroup.RightTranslation.quotientMk_toRightTranslation]
+
+/-- The map `[g, z] ↦ (g • ι z, g K)` is `G`-equivariant for the diagonal action on
+`M × G ⧸ K`. -/
+@[simp]
+theorem liftProjRightTranslation_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
+    liftProjRightTranslation ι (k • y) = k • liftProjRightTranslation ι y :=
+  Prod.ext (liftRightTranslation_smul ι k y) (proj_smul_rightTranslation k y)
+
+/-- **The image of `[g, z] ↦ (g • ι z, g K)`.** A pair `(m, o)` of `M × G ⧸ K` lies in the image
+exactly when `g⁻¹ • m` lies in the image of `ι`, for any representative `g` of `o`. -/
+theorem mem_range_liftProjRightTranslation_iff {p : M × G ⧸ K} {g : G} (hg : (g : G ⧸ K) = p.2) :
+    p ∈ Set.range (liftProjRightTranslation ι) ↔ g⁻¹ • p.1 ∈ Set.range ι := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    induction y using induction_on_toRightTranslation with
+    | h g' z =>
+      rw [liftProjRightTranslation_mk] at hg
+      -- `g = g' h⁻¹` for the element `h = g⁻¹ g'` of `K`, so `g⁻¹ • g' • ι z = ι (h • z)`.
+      have hK : g⁻¹ * g' ∈ K := QuotientGroup.eq.1 hg
+      refine ⟨(⟨g⁻¹ * g', hK⟩ : K) • z, ?_⟩
+      rw [map_smulₛₗ, liftProjRightTranslation_mk, smul_smul]
+  · rintro ⟨z, hz⟩
+    refine ⟨mk K (K.toRightTranslation g) z, ?_⟩
+    rw [liftProjRightTranslation_mk, hz, smul_inv_smul, hg]
+
+/-- **`[g, z] ↦ (g • ι z, g K)` is injective when `ι` is.** If `g K = g' K`, then `g' = g h` for
+some `h ∈ K`, and `g • ι z = g h • ι z'` forces `z = h • z'`, so `[g', z'] = [g, h • z'] = [g, z]`.
+-/
+theorem injective_liftProjRightTranslation (hι : Function.Injective ι) :
+    Function.Injective (liftProjRightTranslation ι) := by
+  intro y y' hyy'
+  induction y using induction_on_toRightTranslation with
+  | h g z =>
+  induction y' using induction_on_toRightTranslation with
+  | h g' z' =>
+    rw [liftProjRightTranslation_mk, liftProjRightTranslation_mk, Prod.mk.injEq] at hyy'
+    obtain ⟨hm, ho⟩ := hyy'
+    let h : K := ⟨g⁻¹ * g', QuotientGroup.eq.1 ho⟩
+    have hg' : g' = g * h := by simp [h]
+    have hz : z = h • z' := hι <| by
+      rw [map_smulₛₗ, ← smul_left_cancel_iff g, hm, hg', mul_smul]
+    rw [hg', mk_toRightTranslation_mul, hz]
 
 end Lift
 
