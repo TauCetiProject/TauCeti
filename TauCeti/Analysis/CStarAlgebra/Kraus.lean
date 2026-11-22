@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
+public import TauCeti.LinearAlgebra.Matrix.Choi
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import Mathlib.LinearAlgebra.Matrix.Trace
 
@@ -127,6 +128,16 @@ theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
   change (∑ i, (conjugateCP (V i)).toLinearMap) a = _
   simp only [LinearMap.sum_apply]
   rfl
+
+/-- The Choi matrix of a Kraus map is the sum of outer products of its vectorized adjoints
+with their entrywise conjugates. -/
+theorem choiMatrix_krausMap [DecidableEq n] (V : ι → Matrix n m ℂ) :
+    TauCeti.choiMatrix (fun X => ofMatrix.symm (krausMap V (ofMatrix X))) =
+      ∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec) := by
+  simp only [krausMap_apply, Equiv.symm_apply_apply, TauCeti.choiMatrix_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simpa only [Matrix.conjTranspose_conjTranspose] using
+    ((V i)ᴴ).choiMatrix_mul_mul_conjTranspose
 
 /-- A Kraus map is unital precisely when its normalization sum is one. -/
 @[simp] theorem krausMap_unital_iff [DecidableEq n] [DecidableEq m]

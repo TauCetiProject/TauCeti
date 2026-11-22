@@ -79,6 +79,20 @@ theorem choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n] [Sem
   rintro ⟨i, a⟩ ⟨j, b⟩
   simp [choiMatrixAddEquiv, Function.curry, Matrix.stdBasis_eq_single]
 
+/-- The Choi matrix of the linear map reconstructed from `C` is `C`. -/
+@[simp]
+theorem choiMatrix_choiMatrixAddEquiv_symm {m n R : Type*} [Finite n] [DecidableEq n]
+    [Semiring R] (C : Matrix (n × m) (n × m) R) :
+    choiMatrix (choiMatrixAddEquiv.symm C) = C := by
+  simpa only [choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.apply_symm_apply C
+
+/-- Reconstructing a linear map from its Choi matrix recovers the original map. -/
+@[simp]
+theorem choiMatrixAddEquiv_symm_choiMatrix {m n R : Type*} [Finite n] [DecidableEq n]
+    [Semiring R] (Φ : Matrix n n R →ₗ[R] Matrix m m R) :
+    choiMatrixAddEquiv.symm (choiMatrix Φ) = Φ := by
+  simpa only [choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.symm_apply_apply Φ
+
 /-- A linear map with a finite input index type is determined by its Choi matrix.
 The output index type is arbitrary. -/
 theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R] :
