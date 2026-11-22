@@ -44,6 +44,11 @@ contain the frequencies of the wave front sets of the factors and those of the p
   comparable to the sum.
 * `TauCeti.forall_neg_mem_insert_zero_imp_eq_zero`: adjoining `0` to the cones creates no
   opposite nonzero vectors.
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
+  Springer, 1990, proof of Theorem 8.2.10 (the cone geometry for the product of distributions).
 -/
 
 public section

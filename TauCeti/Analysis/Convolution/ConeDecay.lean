@@ -32,6 +32,12 @@ neighbourhoods of these frequencies.
   integrand `F η G (ζ - η)`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_integral_mul_le`: rapid decay of the convolution on
   `Γ`.
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
+  Springer, 1990, proof of Theorem 8.2.10 (the decay of the convolution of the localized Fourier
+  transforms of the factors).
 -/
 
 public section
