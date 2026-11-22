@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -366,6 +367,45 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
   rw [coordinateDeriv_eq_iteratedFDeriv _ contDiff_const,
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- The first coordinate derivatives of a continuous linear map are constant: `∂ⱼ L = L eⱼ`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_singleton (L : CoordinateSpace n →L[ℝ] A)
+    (j : Fin n) : coordinateDeriv [j] L = fun _ => L (EuclideanSpace.single j 1) := by
+  funext x
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, L.fderiv]
+
+/-- The coordinate derivatives of order at least two of a continuous linear map vanish. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_eq_zero_of_two_le_length
+    (L : CoordinateSpace n →L[ℝ] A) {α : List (Fin n)} (hα : 2 ≤ α.length) :
+    coordinateDeriv α L = 0 := by
+  rcases List.eq_nil_or_concat α with rfl | ⟨α', j, rfl⟩
+  · simp at hα
+  have hα' : α' ≠ [] := by
+    rintro rfl
+    simp at hα
+  rw [List.concat_eq_append, coordinateDeriv_append, L.coordinateDeriv_singleton,
+    coordinateDeriv_const _ hα']
+
+/-- The function `y ↦ yⱼ • c` is the continuous linear map `(proj j).smulRight c`. -/
+private theorem coord_smul_eq_smulRight (c : A) (j : Fin n) :
+    (fun y : CoordinateSpace n => y j • c) =
+      ⇑((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight c) := by
+  funext y
+  rw [ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+
+/-- The first coordinate derivatives of `y ↦ yⱼ • c` are constant: `∂ₗ (yⱼ • c) = (eₗ)ⱼ • c`. -/
+theorem coordinateDeriv_singleton_coord_smul (c : A) (j l : Fin n) :
+    coordinateDeriv [l] (fun y : CoordinateSpace n => y j • c) =
+      fun _ => (EuclideanSpace.single l (1 : ℝ) : CoordinateSpace n) j • c := by
+  rw [coord_smul_eq_smulRight, ContinuousLinearMap.coordinateDeriv_singleton,
+    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+
+/-- The coordinate derivatives of order at least two of `y ↦ yⱼ • c` vanish. -/
+theorem coordinateDeriv_coord_smul_eq_zero_of_two_le_length (c : A) (j : Fin n)
+    {α : List (Fin n)} (hα : 2 ≤ α.length) :
+    coordinateDeriv α (fun y : CoordinateSpace n => y j • c) = 0 := by
+  rw [coord_smul_eq_smulRight]
+  exact ContinuousLinearMap.coordinateDeriv_eq_zero_of_two_le_length _ hα
 
 /-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
 derivative. -/
@@ -1169,6 +1209,53 @@ theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContD
   refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))
     (hg.of_le (by exact_mod_cast le_top)) ξ).trans_eq ?_
   simp only [mixedDeriv_eq_coordinateDeriv_snd ha]
+
+/-- **Symbol estimates for a product with a frequency cutoff.** Let `B i` bound
+`‖D^i ψ ξ‖ ⟨ξ⟩ ^ i`. If the mixed derivatives `∂ₓ^α ∂_ξ^w a` at `(x, ξ)` are bounded by
+`D w ⟨ξ⟩ ^ (m - |w|)`, then by the Leibniz rule `∂ₓ^α ∂_ξ^β (ψ(ξ) a(x, ξ))` is bounded by
+`C ⟨ξ⟩ ^ (m - |β|)`, where `C = ∑ᵢ (|β| choose i) B i ∑_{|w| = |β| - i} D w`. -/
+theorem norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight (hψ : ContDiff ℝ ∞ ψ)
+    (ha : ContDiff ℝ ∞ a) {α : List (Fin n)} {x ξ : CoordinateSpace n}
+    {m : ℝ} {B : ℕ → ℝ}
+    (hB : ∀ i, ‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i)
+    {D : List (Fin n) → ℝ}
+    (hD : ∀ w, ‖mixedDeriv α w a x ξ‖ ≤ D w * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2))
+    (β : List (Fin n)) :
+    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
+      (∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
+        ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+        (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  refine (norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi => ?_
+  have hi' : i ≤ β.length := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  -- `⟨ξ⟩ ^ (m - (|β| - i)) = ⟨ξ⟩ ^ i * ⟨ξ⟩ ^ (m - |β|)`
+  have hw (w : Fin (β.length - i) → Fin n) :
+      (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
+        (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+    rw [← one_add_norm_sq_rpow_add, List.length_ofFn, Nat.cast_sub hi']
+    ring_nf
+  have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
+      (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+        ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
+    rw [Finset.sum_mul]
+    exact Finset.sum_le_sum fun w _ => (hD _).trans_eq (by rw [hw])
+  have hS : 0 ≤ ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w) :=
+    Finset.sum_nonneg fun w _ => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD _))
+      (Real.rpow_pos_of_pos (by positivity) _)
+  calc (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖
+      ≤ (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ((∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))) := by
+        gcongr
+    _ = (β.length.choose i : ℝ) * (‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)) *
+          (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
+    _ ≤ (β.length.choose i : ℝ) * B i * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+        gcongr
+        exact hB i
 
 /-- Away from the support of a smooth frequency cutoff `ψ`, every mixed derivative of
 `ψ(ξ) a(x, ξ)` vanishes. -/

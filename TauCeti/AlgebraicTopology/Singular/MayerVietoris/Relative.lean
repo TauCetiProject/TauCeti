@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.CategoryTheory.Abelian.CommSq
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -58,6 +59,8 @@ corner pair with `(A ∪ B, C ∪ D)`.
   `TopCat.relativeMayerVietoris_exact₃`: exactness at `Hₘ(X, U ∩ V)`, at
   `Hₙ(X, U) ⊞ Hₙ(X, V)` and at `Hₙ(X, U ∪ V)`.
 * `TopCat.epi_relativeMayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `TopCat.relativeMayerVietoris_isPullback`: the square of `Hₖ(X, U ∩ V)`, `Hₖ(X, U)`,
+  `Hₖ(X, V)` and `Hₖ(X, U ∪ V)` is a pullback square when `Hₖ₊₁(X, U ∪ V)` vanishes.
 * `TopCat.mono_relativeMayerVietorisToBiprod`: injectivity of the first map when
   `Hₖ₊₁(X, U ∪ V)` vanishes.
 * `TopCat.relativeMayerVietorisToBiprod_naturality`,
@@ -485,6 +488,45 @@ lemma relativeMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
     (asIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n)) (Iso.refl _) ?_ ?_
   · simp [mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
   · simp [homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ R hU hV n m h]
+
+include hU hV in
+/-- **The relative Mayer–Vietoris square is a pullback.** If `Hₖ₊₁(X, U ∪ V)` vanishes, the square
+of the maps `Hₖ(X, U ∩ V) ⟶ Hₖ(X, U)`, `Hₖ(X, U ∩ V) ⟶ Hₖ(X, V)`, `Hₖ(X, U) ⟶ Hₖ(X, U ∪ V)` and
+`Hₖ(X, V) ⟶ Hₖ(X, U ∪ V)` induced by the identity of `X` is a pullback square: the sequence is
+exact at `Hₖ(X, U) ⊞ Hₖ(X, V)` and begins with a monomorphism. -/
+lemma relativeMayerVietoris_isPullback {k : ℕ}
+    (h : IsZero ((TopPair.ofSubset (U ∪ V)).singularHomology R (k + 1))) :
+    IsPullback
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) (Set.inter_subset_left (s := U)
+        (t := V))) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+  have sq : CommSq
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) (Set.inter_subset_left (s := U)
+        (t := V))) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+    have hw := relativeMayerVietorisToBiprod_fromBiprod R U V k
+    rw [← Category.id_comp (relativeMayerVietorisFromBiprod R U V k), ← biprod.total] at hw
+    simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
+      relativeMayerVietorisToBiprod_fst_assoc, relativeMayerVietorisToBiprod_snd_assoc,
+      inl_relativeMayerVietorisFromBiprod, inr_relativeMayerVietorisFromBiprod,
+      Preadditive.neg_comp, add_neg_eq_zero] at hw
+    exact ⟨hw⟩
+  -- The short complex of the square is the relative Mayer–Vietoris sequence at
+  -- `Hₖ(X, U) ⊞ Hₖ(X, V)`, componentwise by the identity.
+  have e : sq.shortComplex ≅
+      ShortComplex.mk _ _ (relativeMayerVietorisToBiprod_fromBiprod R U V k) := by
+    refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext <;> simp
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext' <;> simp
+  obtain ⟨hex, hmono⟩ := (ShortComplex.exact_and_mono_f_iff_of_iso e).2
+    ⟨relativeMayerVietoris_exact₂ R hU hV k, mono_relativeMayerVietorisToBiprod R hU hV h⟩
+  exact IsPullback.of_exact_shortComplex sq hex hmono
 
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris
 sequence is an epimorphism, for any subspaces `U` and `V`: already `H₀(X, U) ⟶ H₀(X, U ∪ V)` is,
