@@ -436,7 +436,7 @@ theorem bijective_algebraMap_center_end_of_forall_exists_smul [LieModule R L M] 
   · obtain ⟨c, hc⟩ := h ((lieModuleHomEquiv hM hM).symm f) fun g => by
       ext m
       simpa using (LinearMap.congr_fun
-        (Subalgebra.mem_center_iff.mp f.2 (lieModuleHomEquiv hM hM g)) m).symm
+        (Subalgebra.mem_center_iff.mp f.property (lieModuleHomEquiv hM hM g)) m).symm
     exact ⟨c, Subtype.ext <| LinearMap.ext fun m => by simpa using (hc m).symm⟩
 
 /-! #### Equivalences -/
