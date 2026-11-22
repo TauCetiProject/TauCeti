@@ -123,6 +123,7 @@ inclusion of the skeleton. -/
 
 /-- `TauCeti.characteristicCellMap` is the characteristic map of the cell in rescaled Euclidean
 coordinates. -/
+@[simp]
 lemma characteristicCellMap_apply {n : ℕ} (j : cell C n) (x : TopCat.disk.{w} n) :
     characteristicCellMap C j x =
       map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) :=

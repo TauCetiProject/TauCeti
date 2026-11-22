@@ -170,6 +170,9 @@ def isColimitCofanTwistedHomologyMapCharacteristicCellPairMap (n : ℕ) :
     (Cofan.ext (c₂ := Cofan.mk (twistedCellularChainGroup C L n) fun j : cell C n ↦
         TopPair.twistedHomologyMap (characteristicCellPairMap C j) (skeletonSystem C L (n + 1)) n)
       (asIso (TopPair.twistedHomologyMap g (skeletonSystem C L (n + 1)) n)) fun j ↦ by
+      -- The pulled-back systems are typed on `skeletonObj C (n + 1)` rather than on the ambient
+      -- space of the pair, so the goal is not type-correct at instance transparency and `rw`/`simp`
+      -- cannot reassociate; the composites are matched by unification.
       refine (Category.assoc _ _ _).trans ?_
       refine (Category.assoc _ _ _).trans ?_
       refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
@@ -225,6 +228,9 @@ def isColimitCofanιTwistedHomology₀ZeroCellCenter :
     (isColimitCofanTwistedHomologyMapCharacteristicCellPairMap C L 0)).ofIsoColimit
     (Cofan.ext (Iso.refl _) fun k ↦ ?_)
   -- The leg at `k` is the class over the centre of `D⁰` pushed forward by the characteristic map.
+  -- The pulled-back systems are typed on `skeletonObj C (0 + 1)` rather than on the ambient space
+  -- of the pair, so the goal is not type-correct at instance transparency and `rw`/`simp` cannot
+  -- reassociate; the composites are matched by unification.
   refine (Category.comp_id _).trans ?_
   refine (Category.assoc _ _ _).trans ?_
   refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)

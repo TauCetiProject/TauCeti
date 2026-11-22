@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.ZeroColumn.Basic
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Coproduct
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.EdgeIncidence
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Homology
-public import TauCeti.AlgebraicTopology.Singular.Empty
 
 /-!
 # The column `p = 0` of the second page of the Serre spectral sequence with local coefficients
@@ -18,8 +17,8 @@ Let `p : E ⟶ B` be a Serre fibration and `C ⊆ B` a relative CW complex with 
 `X⁻¹ = D`. The fibre homology `b ↦ Hq(p⁻¹(b); R)` is a local coefficient system on `B` with
 path-transport monodromy (`TauCeti.TopCat.serreFiberLocalSystem`); write `Hq(F)` for its restriction
 to `C` (`TauCeti.TopCat.serreFiberLocalSystemOn`). This file identifies the column `p = 0` of the
-second page of the Serre spectral sequence with the zeroth homology of the base with these
-coefficients,
+second page of the Serre spectral sequence with the zeroth homology of `C` relative to `D` with
+these coefficients,
 
 `E²_{0,q} ≅ H₀(C, D; Hq(F))`
 
@@ -64,7 +63,9 @@ The comparison has two steps.
 * `TauCeti.TopCat.fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom`: the
   identification of the column `p = 0` of the first page with the cellular chains on fibre classes.
 * `TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology_hom`
-  says that on the second page the identification is induced by that of the first page.
+  says that on the second page the identification is induced by that of the first page, and
+  `TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedHomology_hom` says
+  the same for the singular version.
 
 ## References
 
@@ -91,105 +92,11 @@ namespace TopCat
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelCWComplex C D]
 
-/-! ### The fibre homology over the `0`-skeleton is a coproduct over the `0`-cells -/
-
-section FiberCofan
-
-variable (p) in
-/-- Over a `0`-cell `k`, the pullback `Pₖ` of `p` along the characteristic map is the fibre of `p`
-over the centre of the cell. -/
-private def cellZeroPullbackHomeomorph (k : cell C 0) :
-    p.fiber (map 0 k 0) ≃ₜ (cellDiskPullbackPair p C 0 k).fst where
-  toFun e := ⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.val),
-    (cellULiftMap_zero_apply k _).trans (p.apply_coe_fiber _ e).symm⟩
-  invFun x := ⟨x.val.2, by
-    rw [mem_preimage, mem_singleton_iff, ← x.property, cellULiftMap_zero_apply]⟩
-  left_inv _ := rfl
-  right_inv x := Subtype.ext (Prod.ext (Subsingleton.elim _ _) rfl)
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-omit [T2Space B] in
-/-- Over a `0`-cell, the part `∂Pₖ` of the pullback over the boundary sphere is empty. -/
-instance isEmpty_cellDiskPullbackPair_zero_snd (k : cell C 0) :
-    IsEmpty (cellDiskPullbackPair p C 0 k).snd := by
-  refine ⟨fun x ↦ ?_⟩
-  have h := ((mem_cellDiskPullbackPair_snd_iff 0 k x.val).1 x.property)
-  rw [mem_sphere_zero_iff_norm] at h
-  have h0 : ‖(x.val.val.1 : ULift.{u} (Fin 0 → ℝ))‖ = 0 := by
-    rw [← ULift.norm_down]
-    exact norm_eq_zero.2 (Subsingleton.elim _ _)
-  exact zero_ne_one (h0.symm.trans h)
-
-variable (R : Type u) [Ring R]
-
-variable (p) in
-/-- The identification `Hq(p⁻¹(χₖ(0)); R) ≅ Hq(Pₖ, ∂Pₖ; R)` over a `0`-cell `k`, induced by the
-homeomorphism of the fibre with the pullback `Pₖ`, whose part `∂Pₖ` over the boundary is empty. -/
-private def cellZeroFiberHomologyIso (q : ℕ) (k : cell C 0) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-        (ModuleCat.of R R)).obj (p.fiber (map 0 k 0)) ≅
-      (cellDiskPullbackPair p C 0 k).singularHomology (ModuleCat.of R R) q :=
-  -- The two factors are isomorphisms; instance search does not see through the identification of
-  -- the middle object as the singular homology of the ambient space, so they are supplied.
-  @asIso _ _ _ _ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-      (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
-    (cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)
-    (@IsIso.comp_isIso _ _ _ _ _ _ _ (Functor.map_isIso _ _)
-      (inferInstance :
-        IsIso ((cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)))
-
-/-- Read through `Hq(p⁻¹(χₖ(0))) ≅ Hq(Pₖ, ∂Pₖ)`, the projection of the pullback over a `0`-cell
-to the skeletal filtration is the inclusion of the fibre over the centre. -/
-private lemma cellZeroFiberHomologyIso_hom_comp (q : ℕ) (k : cell C 0) :
-    (cellZeroFiberHomologyIso p R q k).hom ≫
-        (cellDiskPullbackPair p C 0 k).singularHomologyMap (cellDiskPullbackPairMap p C 0 k)
-          (ModuleCat.of R R) q =
-      fiberHomologyToPreimageSkeletonZero p C R q
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
-  rw [cellZeroFiberHomologyIso, asIso_hom]
-  -- The middle object is the ambient homology only up to unfolding `TopPair.toSSetPair`, so the
-  -- composites are reassociated by unification rather than by rewriting.
-  refine (Category.assoc _ _ _).trans ?_
-  refine (congrArg (_ ≫ ·) (TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
-    (cellDiskPullbackPairMap p C 0 k) q).symm).trans ?_
-  refine (Category.assoc _ _ _).symm.trans ?_
-  have hg : (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
-      TopPair.Hom.fst (cellDiskPullbackPairMap p C 0 k) =
-        fiberToPreimageSkeletonZero p C
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
-    ext e
-    exact Subtype.ext ((coe_cellDiskPullbackPairMap_fst_apply 0 k _).trans
-      (coe_fiberToPreimageSkeletonZero_apply _ e).symm)
-  rw [fiberHomologyToPreimageSkeletonZero_def, ← hg, Functor.map_comp]
-  rfl
-
-variable (C) (hp : serreFibrations p) in
-/-- **The fibre homology over the `0`-skeleton is the direct sum of the fibre homology over the
-`0`-cells.** The inclusions of the fibres over the centres of the `0`-cells exhibit
-`Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` as the coproduct of the `Hq(p⁻¹(χₖ(0)); R)`. -/
-def isColimitCofanFiberHomologyToPreimageSkeletonZero (q : ℕ) :
-    IsColimit (Cofan.mk ((preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q)
-      fun k : cell C 0 ↦ fiberHomologyToPreimageSkeletonZero p C R q
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one))) :=
-  ((IsColimit.precomposeHomEquiv (Discrete.natIso fun k ↦ cellZeroFiberHomologyIso p R q k.as)
-    _).symm (isColimitCofanSingularHomologyPreimageSkeletonPair C hp R 0 q)).ofIsoColimit
-    (Cofan.ext (Iso.refl _) fun k ↦ by simp [Cofan.inj, cellZeroFiberHomologyIso_hom_comp])
-
-end FiberCofan
-
 /-! ### The fibre homology over the `0`-skeleton as cellular chains with local coefficients -/
 
 section ZeroChains
 
 variable (R : Type u) [Ring R] (hp : serreFibrations p)
-
-variable (C) in
-/-- The local system of fibre homology `b ↦ Hq(p⁻¹(b); R)` of a Serre fibration `p`, restricted to
-the relative CW complex `C ⊆ B`. -/
-abbrev serreFiberLocalSystemOn (q : ℕ) : LocalCoefficientSystem.{u, u, u} R (_root_.TopCat.of C) :=
-  (LocalCoefficientSystem.pullback ⟨Subtype.val, continuous_subtypeVal⟩).obj
-    (serreFiberLocalSystem hp (ModuleCat.of R R) q)
 
 variable (C) in
 /-- The class in the cellular chain group `H₀(X⁰, X⁻¹; Hq(F))` of a fibre homology class over a
@@ -255,6 +162,9 @@ lemma fiberHomologyToTwistedZeroChains_eq_zero (q : ℕ) (y : skeletonObj C 1)
   have h := LocalCoefficientSystem.ιTwistedHomology₀_homologyMap
     (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (0 + 1)) (skeletonPair C 0).map y'
   rw [fiberHomologyToTwistedZeroChains_def]
+  -- `skeletonSystem C _ 1` and `skeletonSystem C _ (0 + 1)` agree only up to unfolding, so the goal
+  -- is not type-correct at instance transparency and `rw` cannot reassociate; the composites are
+  -- matched by unification.
   refine (congrArg (_ ≫ ·) ((congrArg (· ≫ _) h.symm).trans ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) ((skeletonPair C 0).twistedHomologyMap_comp_twistedHomologyπ _ 0))))).trans ?_
   exact (congrArg (_ ≫ ·) comp_zero).trans comp_zero
@@ -262,6 +172,7 @@ lemma fiberHomologyToTwistedZeroChains_eq_zero (q : ℕ) (y : skeletonObj C 1)
 variable (C) in
 /-- Through `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) ≅ H₀(X⁰, X⁻¹; Hq(F))`, the class of a fibre homology class
 over a point `y` of the `0`-skeleton is its class with local coefficients. -/
+@[reassoc (attr := simp)]
 theorem fiberHomologyToPreimageSkeletonZero_comp_serreZeroChainsIso_hom
     (q : ℕ) (y : skeletonObj C 1) :
     fiberHomologyToPreimageSkeletonZero p C R q y.property ≫
@@ -413,6 +324,7 @@ transport difference along the cell.** Read through the identification of the fi
 of the disk with the fibre homology over the end point `χⱼ(-1)`, and through
 `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) ≅ H₀(X⁰, X⁻¹; Hq(F))`, the cellular differential of the `1`-cell `j` is
 the map `a ↦ a - τⱼ a` of `TauCeti.TopCat.oneCellTransportDifference`. -/
+@[reassoc]
 private lemma twistedCellularDifferential_zero_eq :
     (twistedHomologyDiskBoundaryPairIso 1
         ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C j)).hom).obj
@@ -465,23 +377,17 @@ private def cokernelOneCellTransportDifferenceIso (q : ℕ) :
         (serreZeroChainsIso C R hp q).hom) ≅
       cokernel (twistedCellularDifferential.{u, u, u} C (serreFiberLocalSystemOn C R hp q) 0) where
   hom := cokernel.desc _ (cokernel.π _) (Sigma.hom_ext _ _ fun j ↦ by
-    have h := (Iso.eq_inv_comp _).2 (twistedCellularDifferential_zero_eq j R hp q).symm
-    rw [comp_zero, ← Category.assoc, ← Category.assoc, Category.assoc (Sigma.ι _ j), h]
-    simp only [Category.assoc]
-    rw [cokernel.condition]
-    simp only [comp_zero])
+    rw [← cancel_epi (cellCenterToEndIso j R hp q).hom]
+    simp only [Category.assoc, comp_zero]
+    rw [← twistedCellularDifferential_zero_eq_assoc, cokernel.condition, comp_zero, comp_zero])
   inv := cokernel.desc _ (cokernel.π _)
     ((isColimitCofanTwistedHomologyMapCharacteristicCellPairMap C
       (serreFiberLocalSystemOn C R hp q) 1).hom_ext fun ⟨j⟩ ↦ by
-    have h := (Iso.inv_comp_eq _).1 (twistedCellularDifferential_zero_eq j R hp q)
-    have hc := cokernel.condition (oneCellTransportDifference C R hp q ≫
-      (serreZeroChainsIso C R hp q).hom)
-    rw [Category.assoc] at hc
+    rw [← cancel_epi (twistedHomologyDiskBoundaryPairIso 1 _).inv]
     simp only [Cofan.mk_pt, Cofan.mk_ι_app, comp_zero]
-    rw [← Category.assoc, h]
-    simp only [Category.assoc]
-    rw [hc]
-    simp only [comp_zero])
+    rw [twistedCellularDifferential_zero_eq_assoc,
+      ← Category.assoc (oneCellTransportDifference C R hp q), cokernel.condition, comp_zero,
+      comp_zero])
   hom_inv_id := by rw [← cancel_epi (cokernel.π _)]; simp
   inv_hom_id := by rw [← cancel_epi (cokernel.π _)]; simp
 
@@ -527,16 +433,40 @@ lemma homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomo
 
 variable (C) in
 /-- **The column `p = 0` of the second page of the Serre spectral sequence is the zeroth homology of
-the base with coefficients in the fibre homology.** For a Serre fibration `p : E ⟶ B` and a
-relative CW complex `C ⊆ B` with base `D`, the object `E²_{0,q}` of the second page (numbered `3`)
-of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and `a + b = -q`, is the relative
-singular homology `H₀(C, D; Hq(F))` with coefficients in the local system of fibre homology. -/
+`C` relative to `D` with coefficients in the fibre homology.** For a Serre fibration `p : E ⟶ B`
+and a relative CW complex `C ⊆ B` with base `D`, the object `E²_{0,q}` of the second page (numbered
+`3`) of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and `a + b = -q`, is the
+relative singular homology `H₀(C, D; Hq(F))` with coefficients in the local system of fibre
+homology. -/
 def serreSpectralSequenceSecondPageXZeroIsoTwistedHomology (q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = -1) (ha : pq.1 + pq.2 = -q) :
     ((serreSpectralSequence C p R).page 3).X pq ≅
       (complexBasePair C).twistedHomology (serreFiberLocalSystemOn C R hp q) 0 :=
   serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology C R hp q pq hb ha ≪≫
     twistedCellularSingularHomologyIso C (serreFiberLocalSystemOn C R hp q) 0
+
+variable (C) in
+/-- Under `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoTwistedHomology`, the projection of
+the first page onto the second is the identification `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) ≅ H₀(X⁰, X⁻¹; Hq(F))`
+of `TauCeti.TopCat.serreZeroChainsIso`, followed by the projection of the cellular chains in degree
+zero onto cellular homology and the comparison of cellular with singular homology. -/
+@[reassoc]
+lemma homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedHomology_hom (q : ℕ)
+    (pq : ℤ × ℤ) (hb : pq.2 = -1) (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 2).homologyπ pq ≫
+        ((serreSpectralSequence C p R).iso 2 3 pq rfl le_rfl).hom ≫
+        (serreSpectralSequenceSecondPageXZeroIsoTwistedHomology C R hp q pq hb ha).hom =
+      ((serreSpectralSequence C p R).page 2).iCycles pq ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl q ha).hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) q)
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair 0 pq.2 (by lia))) ≫
+        (serreZeroChainsIso C R hp q).hom ≫
+        cokernel.π (twistedCellularDifferential.{u, u, u} C (serreFiberLocalSystemOn C R hp q) 0) ≫
+        (twistedCellularChainComplexHomologyZeroIso C (serreFiberLocalSystemOn C R hp q)).inv ≫
+        (twistedCellularSingularHomologyIso C (serreFiberLocalSystemOn C R hp q) 0).hom := by
+  rw [serreSpectralSequenceSecondPageXZeroIsoTwistedHomology, Iso.trans_hom,
+    homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoTwistedCellularHomology_hom_assoc]
 
 end SecondPage
 

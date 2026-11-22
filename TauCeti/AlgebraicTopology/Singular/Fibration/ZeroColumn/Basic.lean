@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.Fibration.SerreLocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Additivity
+public import TauCeti.AlgebraicTopology.Singular.Empty
 import TauCeti.Analysis.Convex.Contractible
 
 /-!
@@ -51,6 +52,8 @@ inclusions into `Pⱼ` differ by the transport `τⱼ`, that kernel is `{(a, -τ
 
 ## Main definitions and results
 
+* `TauCeti.TopCat.isColimitCofanFiberHomologyToPreimageSkeletonZero`: `E¹_{0,q}` is the direct sum
+  of the fibre homology over the centres of the `0`-cells.
 * `TauCeti.TopCat.oneCellTransportDifference`: the map `⨁ⱼ Hq(p⁻¹(χⱼ(-1))) ⟶ E¹_{0,q}`,
   `a ↦ a - τⱼ a`.
 * `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoCokernel`: `E²_{0,q}` is its cokernel.
@@ -151,6 +154,81 @@ lemma ι_oneCellTransportDifference (q : ℕ) (j : cell C 1) :
   Sigma.ι_comp_desc _ _
 
 end Endpoints
+
+/-! ### The fibre homology over the `0`-skeleton is a coproduct over the `0`-cells -/
+
+section FiberCofan
+
+variable (p) in
+/-- Over a `0`-cell `k`, the pullback `Pₖ` of `p` along the characteristic map is the fibre of `p`
+over the centre of the cell. -/
+private def cellZeroPullbackHomeomorph (k : cell C 0) :
+    p.fiber (map 0 k 0) ≃ₜ (cellDiskPullbackPair p C 0 k).fst where
+  toFun e := ⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.val),
+    (cellULiftMap_zero_apply k _).trans (p.apply_coe_fiber _ e).symm⟩
+  invFun x := ⟨x.val.2, by
+    rw [mem_preimage, mem_singleton_iff, ← x.property, cellULiftMap_zero_apply]⟩
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (Prod.ext (Subsingleton.elim _ _) rfl)
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+variable (R : Type u) [Ring R]
+
+variable (p) in
+/-- The identification `Hq(p⁻¹(χₖ(0)); R) ≅ Hq(Pₖ, ∂Pₖ; R)` over a `0`-cell `k`, induced by the
+homeomorphism of the fibre with the pullback `Pₖ`, whose part `∂Pₖ` over the boundary is empty. -/
+private def cellZeroFiberHomologyIso (q : ℕ) (k : cell C 0) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (p.fiber (map 0 k 0)) ≅
+      (cellDiskPullbackPair p C 0 k).singularHomology (ModuleCat.of R R) q :=
+  -- The two factors are isomorphisms; instance search does not see through the identification of
+  -- the middle object as the singular homology of the ambient space, so they are supplied.
+  @asIso _ _ _ _ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
+    (cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)
+    (@IsIso.comp_isIso _ _ _ _ _ _ _ (Functor.map_isIso _ _)
+      (inferInstance :
+        IsIso ((cellDiskPullbackPair p C 0 k).singularHomologyπ (ModuleCat.of R R) q)))
+
+/-- Read through `Hq(p⁻¹(χₖ(0))) ≅ Hq(Pₖ, ∂Pₖ)`, the projection of the pullback over a `0`-cell
+to the skeletal filtration is the inclusion of the fibre over the centre. -/
+private lemma cellZeroFiberHomologyIso_hom_comp (q : ℕ) (k : cell C 0) :
+    (cellZeroFiberHomologyIso p R q k).hom ≫
+        (cellDiskPullbackPair p C 0 k).singularHomologyMap (cellDiskPullbackPairMap p C 0 k)
+          (ModuleCat.of R R) q =
+      fiberHomologyToPreimageSkeletonZero p C R q
+        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
+  rw [cellZeroFiberHomologyIso, asIso_hom]
+  -- The middle object is the ambient homology only up to unfolding `TopPair.toSSetPair`, so the
+  -- composites are reassociated by unification rather than by rewriting.
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·) (TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
+    (cellDiskPullbackPairMap p C 0 k) q).symm).trans ?_
+  refine (Category.assoc _ _ _).symm.trans ?_
+  have hg : (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
+      TopPair.Hom.fst (cellDiskPullbackPairMap p C 0 k) =
+        fiberToPreimageSkeletonZero p C
+        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
+    ext e
+    exact Subtype.ext ((coe_cellDiskPullbackPairMap_fst_apply 0 k _).trans
+      (coe_fiberToPreimageSkeletonZero_apply _ e).symm)
+  rw [fiberHomologyToPreimageSkeletonZero_def, ← hg, Functor.map_comp]
+  rfl
+
+variable (C) (hp : serreFibrations p) in
+/-- **The fibre homology over the `0`-skeleton is the direct sum of the fibre homology over the
+`0`-cells.** The inclusions of the fibres over the centres of the `0`-cells exhibit
+`Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` as the coproduct of the `Hq(p⁻¹(χₖ(0)); R)`. -/
+def isColimitCofanFiberHomologyToPreimageSkeletonZero (q : ℕ) :
+    IsColimit (Cofan.mk ((preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q)
+      fun k : cell C 0 ↦ fiberHomologyToPreimageSkeletonZero p C R q
+        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one))) :=
+  ((IsColimit.precomposeHomEquiv (Discrete.natIso fun k ↦ cellZeroFiberHomologyIso p R q k.as)
+    _).symm (isColimitCofanSingularHomologyPreimageSkeletonPair C hp R 0 q)).ofIsoColimit
+    (Cofan.ext (Iso.refl _) fun k ↦ by simp [Cofan.inj, cellZeroFiberHomologyIso_hom_comp])
+
+end FiberCofan
 
 section CellBoundary
 

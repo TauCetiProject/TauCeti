@@ -136,6 +136,17 @@ lemma mem_cellDiskPullbackPair_snd_iff (n : ℕ) (j : cell C n)
       (y.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1 := by
   rw [mem_preimage, mem_ofPred_eq, _root_.TopCat.pullbackFst_apply]
 
+/-- Over a `0`-cell, the part `∂Pₖ` of the pullback over the boundary sphere is empty. -/
+instance isEmpty_cellDiskPullbackPair_zero_snd (k : cell C 0) :
+    IsEmpty (cellDiskPullbackPair p C 0 k).snd := by
+  refine ⟨fun x ↦ ?_⟩
+  have h := ((mem_cellDiskPullbackPair_snd_iff 0 k x.val).1 x.property)
+  rw [mem_sphere_zero_iff_norm] at h
+  have h0 : ‖(x.val.val.1 : ULift.{u} (Fin 0 → ℝ))‖ = 0 := by
+    rw [← ULift.norm_down]
+    exact norm_eq_zero.2 (Subsingleton.elim _ _)
+  exact zero_ne_one (h0.symm.trans h)
+
 variable (p C) in
 /-- The inclusion `Pⱼ ⟶ P` of the pullback of `p` along the characteristic map of `j` into the
 pullback of `p` to the disks of all `n`-cells. -/
