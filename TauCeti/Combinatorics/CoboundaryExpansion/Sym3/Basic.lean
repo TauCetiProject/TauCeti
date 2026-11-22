@@ -17,8 +17,8 @@ For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complet
 transposition `swap 0 1` on the edges of `G` and `1` elsewhere has moved-point defect twice the
 number of odd triangles of `G` (`SimpleGraph.defect_ofLt_ite_adj`).
 
-The balanced-replication identity `Cochain.defect_ofLt_lex` is in
-`TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication`.
+Balanced replication multiplies defect by `(Fintype.card ι) ^ 3`
+(`Cochain.defect_replicate`, in `TauCeti.Combinatorics.CoboundaryExpansion.Replication`).
 
 ## References
 

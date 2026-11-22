@@ -11,31 +11,29 @@ import Mathlib.Data.List.GetD
 import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
-# Layers 6.2 and 6.3: multiples of four, and the witnesses at `k = 5, …, 8`
+# Explicit `Sym(3)` witnesses on five to eight vertices
 
-`h1_complete_movedNorm_fin_three` already gives `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`
-for every `3 ≤ card V`. This file names the two specializations asked for by Layer 6:
+`h1_complete_movedNorm_fin_three` gives `h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for
+every `3 ≤ card V`. This file records two families of special cases.
 
-* `Sym3.replicatedSeed` (6.2): the seed `Sym3.w4` replicated on `Fin 4 ×ₗ Fin q`, with
-  defect `8 q ^ 3` and gauge distance `6 q ^ 2`, the identity gauge attaining that distance.
-  `replicatedSeedOfCardEq` carries it to any `V` with `card V = 4 q`, and
-  `replicatedSeedOfCardEq_attains` is `defect / gaugeDist = card V / 3 = h1`.
-  `h1_complete_movedNorm_fin_three_of_four_dvd` is that identity under `4 ∣ card V` and
-  `4 ≤ card V`;
+* `h1_complete_movedNorm_fin_three_of_four_dvd` is that identity when `4 ∣ card V` and
+  `4 ≤ card V` (Beasley, Corollary 7). The replicated seed on `Fin 4 ×ₗ Fin q`, its transport to
+  any `V` with `card V = 4 q`, and the equality of its ratio with `card V / 3` and with `h1`, are
+  `Sym3.replicatedSeed`, `Sym3.replicatedSeedOfCardEq` and `Sym3.replicatedSeedOfCardEq_attains`
+  in `Sym3/Complete.lean`.
 * `h1_complete_fin_five`, `h1_complete_fin_six`, `h1_complete_fin_seven` and
-  `h1_complete_fin_eight` (6.3): the values `5 / 3`, `6 / 3`, `7 / 3` and `8 / 3`.
+  `h1_complete_fin_eight` are the values `5 / 3`, `6 / 3`, `7 / 3` and `8 / 3`.
 
-The four cochains `witness5`, `witness6`, `witness7` and `witness8` are the explicit Appendix A
-data: each is `Cochain.ofLt` of the listed non-identity edges, in the one-line notation of the
-roadmap table. `witness*_defect` and `witness*_cost_one` check the table's defect and the
-identity-gauge cost. `witness*_gaugeDist` is the lower bound from a branch-and-bound exhaustion
-of the gauges pinned at `0`, and `witness*_attains` is `defect / gaugeDist = k / 3`, equal to `h1`.
+`Sym3.witness5`, `Sym3.witness6`, `Sym3.witness7` and `Sym3.witness8` are the Appendix A cochains,
+each `Cochain.ofLt` of `Sym3.edge5` through `Sym3.edge8`. `defect_witness*` is the moved-point
+defect and `cost_one_witness*` is the identity-gauge cost. `gaugeDist_witness*` is the gauge
+distance, equal to that cost (`6`, `18`, `12` and `27`) and attained by the identity gauge.
+`attains_witness*` is `defect / gaugeDist = h1`.
 
 ## References
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
-  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Corollary 7 (6.2) and Theorem 4 with
-  Appendix A (6.3).
+  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Corollary 7 and Theorem 4 with Appendix A.
 * D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136, Definition 3.2.
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
   commit `7f5f2c6`: `w5`, `w6`, `w7` and `w8` in `CoboundaryK3/Basic.lean`.
@@ -49,7 +47,7 @@ namespace TauCeti
 
 open TwoComplex
 
-/-! ## 6.2 Every multiple of four -/
+/-! ## Every multiple of four -/
 
 /-- Whenever `4 ∣ Fintype.card V` and `4 ≤ Fintype.card V`,
 `h1 (complete V) (movedNorm (Fin 3)) = card V / 3` (Beasley, Corollary 7). This is the
@@ -60,32 +58,33 @@ theorem h1_complete_movedNorm_fin_three_of_four_dvd {V : Type*} [Fintype V] [Lin
   obtain ⟨q, hq⟩ := h4
   rw [h1_complete_movedNorm_fin_three (by omega), hq]
 
-/-! ## 6.3 Explicit witnesses for `k = 5, …, 8` -/
+namespace Sym3
 
-/-- Non-identity edges of the `k = 5` witness: `(0, 1)`, `(1, 2)`, `(2, 3) ↦ (1 0 2)`. -/
-private def edge5 (u v : Fin 5) : Perm (Fin 3) :=
+/-! ## Explicit witnesses for `k = 5, …, 8` -/
+
+/-- Non-identity edges of the `k = 5` witness: `(0, 1)`, `(1, 2)` and `(2, 3)` carry `swap 0 1`. -/
+def edge5 (u v : Fin 5) : Perm (Fin 3) :=
   if u = 0 ∧ v = 1 then swap 0 1 else if u = 1 ∧ v = 2 then swap 0 1
   else if u = 2 ∧ v = 3 then swap 0 1 else 1
 
-/-- Non-identity edges of the `k = 6` witness: `(0, 1)`, `(1, 3) ↦ (1 2 0)` and
-`(0, 3)`, `(0, 4)`, `(1, 5)`, `(4, 5) ↦ (2 0 1)`. -/
-private def edge6 (u v : Fin 6) : Perm (Fin 3) :=
+/-- Non-identity edges of the `k = 6` witness: `(0, 1)` and `(1, 3)` carry `finRotate 3`, and
+`(0, 3)`, `(0, 4)`, `(1, 5)` and `(4, 5)` carry its inverse. -/
+def edge6 (u v : Fin 6) : Perm (Fin 3) :=
   if u = 0 ∧ v = 1 then finRotate 3 else if u = 1 ∧ v = 3 then finRotate 3
   else if u = 0 ∧ v = 3 then (finRotate 3)⁻¹ else if u = 0 ∧ v = 4 then (finRotate 3)⁻¹
   else if u = 1 ∧ v = 5 then (finRotate 3)⁻¹ else if u = 4 ∧ v = 5 then (finRotate 3)⁻¹ else 1
 
-/-- Non-identity edges of the `k = 7` witness: the six pairs
-`(0, 1)`, `(0, 3)`, `(0, 4)`, `(1, 2)`, `(1, 5)`, `(2, 3) ↦ (1 0 2)`. -/
-private def edge7 (u v : Fin 7) : Perm (Fin 3) :=
+/-- Non-identity edges of the `k = 7` witness: `(0, 1)`, `(0, 3)`, `(0, 4)`, `(1, 2)`, `(1, 5)`
+and `(2, 3)` carry `swap 0 1`. -/
+def edge7 (u v : Fin 7) : Perm (Fin 3) :=
   if u = 0 ∧ v = 1 then swap 0 1 else if u = 0 ∧ v = 3 then swap 0 1
   else if u = 0 ∧ v = 4 then swap 0 1 else if u = 1 ∧ v = 2 then swap 0 1
   else if u = 1 ∧ v = 5 then swap 0 1 else if u = 2 ∧ v = 3 then swap 0 1 else 1
 
-/-- Non-identity edges of the `k = 8` witness, in the four blocks of the roadmap table:
-`(0, 1)`, `(0, 7)`, `(1, 2)`, `(2, 5)`, `(2, 7) ↦ (0 2 1)`;
-`(1, 3)`, `(1, 4)`, `(1, 6)`, `(3, 7) ↦ (1 0 2)`;
-`(0, 4)`, `(2, 3)`, `(2, 4) ↦ (2 1 0)`; `(4, 7) ↦ (2 0 1)`. -/
-private def edge8 (u v : Fin 8) : Perm (Fin 3) :=
+/-- Non-identity edges of the `k = 8` witness, in four blocks: `(0, 1)`, `(0, 7)`, `(1, 2)`,
+`(2, 5)` and `(2, 7)` carry `swap 1 2`; `(1, 3)`, `(1, 4)`, `(1, 6)` and `(3, 7)` carry
+`swap 0 1`; `(0, 4)`, `(2, 3)` and `(2, 4)` carry `swap 0 2`; `(4, 7)` carries `(finRotate 3)⁻¹`. -/
+def edge8 (u v : Fin 8) : Perm (Fin 3) :=
   if u = 0 ∧ v = 1 then swap 1 2 else if u = 0 ∧ v = 7 then swap 1 2
   else if u = 1 ∧ v = 2 then swap 1 2 else if u = 2 ∧ v = 5 then swap 1 2
   else if u = 2 ∧ v = 7 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
@@ -95,133 +94,116 @@ private def edge8 (u v : Fin 8) : Perm (Fin 3) :=
   else if u = 4 ∧ v = 7 then (finRotate 3)⁻¹ else 1
 
 
-private theorem defect_eq {k : ℕ} (f : Fin k → Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) f).defect (movedNorm (Fin 3)) =
-      (∑ p ∈ univ.filter fun p : Fin k × Fin k × Fin k => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-        (f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℝ) := by
-  rw [Cochain.defect_complete]
-  have h :
-      ∀ p ∈ univ.filter fun p : Fin k × Fin k × Fin k => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-        movedNorm (Fin 3)
-            ((Cochain.ofLt (complete (Fin k)) f).holonomy p.1 p.2.1 p.2.2) =
-          (((f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℕ) : ℝ) := by
-    intro p hp
-    rw [mem_filter] at hp
-    rw [Cochain.holonomy_ofLt_complete _ hp.2.1 hp.2.2, movedNorm_apply]
-  rw [sum_congr rfl h, ← Nat.cast_sum]
-
-
-private theorem cost_eq_card {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β : Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) α).cost (movedNorm (Fin 3)) β =
-      (∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-        ((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
-  rw [Cochain.cost_complete]
-  have h : ∀ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-      movedNorm (Fin 3) ((β p.1)⁻¹ *
-        (Cochain.ofLt (complete (Fin k)) α) p.1 p.2 * β p.2) =
-        (((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
-    intro p hp
-    rw [mem_filter] at hp
-    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, movedNorm_apply]
-  rw [sum_congr rfl h, ← Nat.cast_sum]
-
-
-/-- The README 6.3 witness at `k = 5`: `(0, 1)`, `(1, 2)`, `(2, 3) ↦ (1 0 2)`, and `1` on every
-other ordered pair `u < v`. -/
+/-- The Beasley Appendix A witness on `Fin 5`: `(0, 1)`, `(1, 2)` and `(2, 3)` carry `swap 0 1`,
+and every other `u < v` carries `1`. -/
 noncomputable def witness5 : Cochain (complete (Fin 5)) (Perm (Fin 3)) :=
   Cochain.ofLt (complete (Fin 5)) edge5
 
-/-- The README 6.3 witness at `k = 6`. -/
+/-- The Beasley Appendix A witness on `Fin 6`: `(0, 1)` and `(1, 3)` carry `finRotate 3`,
+`(0, 3)`, `(0, 4)`, `(1, 5)` and `(4, 5)` carry its inverse, and every other `u < v` carries `1`. -/
 noncomputable def witness6 : Cochain (complete (Fin 6)) (Perm (Fin 3)) :=
   Cochain.ofLt (complete (Fin 6)) edge6
 
-/-- The README 6.3 witness at `k = 7`: the six edges of `edge7` carry `(1 0 2)`, and every other
-ordered pair `u < v` carries `1`. -/
+/-- The Beasley Appendix A witness on `Fin 7`: `(0, 1)`, `(0, 3)`, `(0, 4)`, `(1, 2)`, `(1, 5)`
+and `(2, 3)` carry `swap 0 1`, and every other `u < v` carries `1`. -/
 noncomputable def witness7 : Cochain (complete (Fin 7)) (Perm (Fin 3)) :=
   Cochain.ofLt (complete (Fin 7)) edge7
 
-/-- The README 6.3 witness at `k = 8`, with the thirteen non-identity edges of `edge8`. -/
+/-- The Beasley Appendix A witness on `Fin 8`: the thirteen non-identity edges of `edge8`, and `1`
+on every other `u < v`. -/
 noncomputable def witness8 : Cochain (complete (Fin 8)) (Perm (Fin 3)) :=
   Cochain.ofLt (complete (Fin 8)) edge8
 
-theorem witness5_defect : witness5.defect (movedNorm (Fin 3)) = 10 := by
-  rw [witness5, defect_eq]
+/-- `witness5` has moved-point defect `10`. -/
+theorem defect_witness5 : witness5.defect (movedNorm (Fin 3)) = 10 := by
+  rw [witness5, defect_ofLt_movedNorm]
   have h10 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 × Fin 5 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge5 p.1 p.2.1 * edge5 p.2.1 p.2.2 * (edge5 p.1 p.2.2)⁻¹).support.card = 10 := by
     decide +kernel
   exact_mod_cast h10
 
-theorem witness6_defect : witness6.defect (movedNorm (Fin 3)) = 36 := by
-  rw [witness6, defect_eq]
+/-- `witness6` has moved-point defect `36`. -/
+theorem defect_witness6 : witness6.defect (movedNorm (Fin 3)) = 36 := by
+  rw [witness6, defect_ofLt_movedNorm]
   have h36 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 × Fin 6 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge6 p.1 p.2.1 * edge6 p.2.1 p.2.2 * (edge6 p.1 p.2.2)⁻¹).support.card = 36 := by
     decide +kernel
   exact_mod_cast h36
 
-theorem witness7_defect : witness7.defect (movedNorm (Fin 3)) = 28 := by
-  rw [witness7, defect_eq]
+/-- `witness7` has moved-point defect `28`. -/
+theorem defect_witness7 : witness7.defect (movedNorm (Fin 3)) = 28 := by
+  rw [witness7, defect_ofLt_movedNorm]
   have h28 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 × Fin 7 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge7 p.1 p.2.1 * edge7 p.2.1 p.2.2 * (edge7 p.1 p.2.2)⁻¹).support.card = 28 := by
     decide +kernel
   exact_mod_cast h28
 
-theorem witness8_defect : witness8.defect (movedNorm (Fin 3)) = 72 := by
-  rw [witness8, defect_eq]
+/-- `witness8` has moved-point defect `72`. -/
+theorem defect_witness8 : witness8.defect (movedNorm (Fin 3)) = 72 := by
+  rw [witness8, defect_ofLt_movedNorm]
   have h72 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 × Fin 8 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge8 p.1 p.2.1 * edge8 p.2.1 p.2.2 * (edge8 p.1 p.2.2)⁻¹).support.card = 72 := by
     decide +kernel
   exact_mod_cast h72
 
 /-- The identity gauge costs `6` against `witness5`. -/
-theorem witness5_cost_one : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [witness5, cost_eq_card]
+theorem cost_one_witness5 : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
+  rw [witness5, cost_ofLt_movedNorm]
   simp only [inv_one, one_mul, mul_one]
   have h6 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 => p.1 < p.2,
       (edge5 p.1 p.2).support.card = 6 := by decide +kernel
   exact_mod_cast h6
 
 /-- The identity gauge costs `18` against `witness6`. -/
-theorem witness6_cost_one : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 := by
-  rw [witness6, cost_eq_card]
+theorem cost_one_witness6 : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 := by
+  rw [witness6, cost_ofLt_movedNorm]
   simp only [inv_one, one_mul, mul_one]
   have h18 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 => p.1 < p.2,
       (edge6 p.1 p.2).support.card = 18 := by decide +kernel
   exact_mod_cast h18
 
 /-- The identity gauge costs `12` against `witness7`. -/
-theorem witness7_cost_one : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 := by
-  rw [witness7, cost_eq_card]
+theorem cost_one_witness7 : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 := by
+  rw [witness7, cost_ofLt_movedNorm]
   simp only [inv_one, one_mul, mul_one]
   have h12 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 => p.1 < p.2,
       (edge7 p.1 p.2).support.card = 12 := by decide +kernel
   exact_mod_cast h12
 
 /-- The identity gauge costs `27` against `witness8`. -/
-theorem witness8_cost_one : witness8.cost (movedNorm (Fin 3)) (fun _ => 1) = 27 := by
-  rw [witness8, cost_eq_card]
+theorem cost_one_witness8 : witness8.cost (movedNorm (Fin 3)) (fun _ => 1) = 27 := by
+  rw [witness8, cost_ofLt_movedNorm]
   simp only [inv_one, one_mul, mul_one]
   have h27 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 => p.1 < p.2,
       (edge8 p.1 p.2).support.card = 27 := by decide +kernel
   exact_mod_cast h27
 
-/-- **README 6.3, `k = 5`.** `h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3`. -/
+end Sym3
+
+/-- `h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3` (Beasley, Theorem 4). -/
 theorem h1_complete_fin_five : h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 5) (by simp)
 
-/-- **README 6.3, `k = 6`.** `h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3`. -/
+/-- `h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3` (Beasley, Theorem 4). -/
 theorem h1_complete_fin_six : h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 6) (by simp)
 
-/-- **README 6.3, `k = 7`.** `h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3`. -/
+/-- `h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3` (Beasley, Theorem 4). -/
 theorem h1_complete_fin_seven : h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 7) (by simp)
 
-/-- **README 6.3, `k = 8`.** `h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3`. -/
+/-- `h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3` (Beasley, Theorem 4). -/
 theorem h1_complete_fin_eight : h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 8) (by simp)
 
+namespace Sym3
 
-/-! ## Gauge distance of the four witnesses -/
+/-! ## Gauge distance of the four witnesses
+
+`gaugeDist_witness*` equates the gauge distance with the identity-gauge cost. The matching lower
+bound searches gauges pinned at `0`, one element of `sym3Elems` at a time. At `k = 8` one
+declaration can afford only one six-leaf `decide` within the default heartbeat budget, so that
+tree is checked node by node. -/
 
 private def g0 : Perm (Fin 3) := 1
 private def g1 : Perm (Fin 3) := swap 0 1
@@ -364,7 +346,7 @@ private theorem le_cost_of_search {m : ℕ}
   have he : List.ofFn β = [g0] ++ List.ofFn fun i : Fin m => β i.succ := by
     rw [List.ofFn_succ, hβ, g0, ← List.singleton_append]
   rw [← he] at hs
-  rw [cost_eq_card]
+  rw [cost_ofLt_movedNorm]
   have hsum := pcost_ofFn α β
   simp only [movedFast_eq] at hsum
   exact_mod_cast hsum ▸ hs
@@ -373,25 +355,31 @@ private theorem le_cost_of_search {m : ℕ}
 private theorem search5_root : search edge5 6 4 [g0] = true := by
   decide +kernel
 
-/-- Two-level form of `search_of_prefixes`, so that each `decide` below checks only the six
-fuel-`f` searches under one node. -/
-private theorem search_of_nodes {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D f : ℕ)
-    (l : List (Perm (Fin 3)))
-    (h : ∀ a ∈ sym3Elems, ((prefixes 1).all fun p => search α D f (l ++ [a] ++ p)) = true) :
-    search α D (f + 2) l :=
-  search_step α D (f + 1) l fun a ha => search_of_prefixes α D f 1 (l ++ [a]) (h a ha)
-
 private theorem search6_root : search edge6 18 5 [g0] = true :=
   search_of_prefixes edge6 18 4 1 [g0] (by decide +kernel)
 
-private theorem search7_root : search edge7 12 6 [g0] = true := by
-  refine search_of_nodes edge7 12 4 [g0] ?_
-  intro a ha
+/-- One step of the gauge search: the six extensions by `sym3Elems` give fuel `f + 1`. -/
+private theorem search_step_of_six {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D f : ℕ)
+    (l : List (Perm (Fin 3)))
+    (h0 : search α D f (l ++ [g0]) = true) (h1 : search α D f (l ++ [g1]) = true)
+    (h2 : search α D f (l ++ [g2]) = true) (h3 : search α D f (l ++ [g3]) = true)
+    (h4 : search α D f (l ++ [g4]) = true) (h5 : search α D f (l ++ [g5]) = true) :
+    search α D (f + 1) l = true := by
+  refine search_step α D f l fun a ha => ?_
   simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [h0, h1, h2, h3, h4, h5]
 
-/-! At `k = 8` one declaration can afford only one six-leaf `decide` within the default
-heartbeat budget, so the tree is checked node by node. -/
+private theorem search7_root : search edge7 12 6 [g0] = true :=
+  search_step_of_six edge7 12 5 [g0]
+    (search_of_prefixes edge7 12 4 1 [g0, g0] (by decide +kernel))
+    (search_of_prefixes edge7 12 4 1 [g0, g1] (by decide +kernel))
+    (search_of_prefixes edge7 12 4 1 [g0, g2] (by decide +kernel))
+    (search_of_prefixes edge7 12 4 1 [g0, g3] (by decide +kernel))
+    (search_of_prefixes edge7 12 4 1 [g0, g4] (by decide +kernel))
+    (search_of_prefixes edge7 12 4 1 [g0, g5] (by decide +kernel))
+
+/-! At `k = 8` each node below is one `decide`. `search_step_of_six` assembles them. -/
 
 private theorem search8_node_0_0 : search edge8 27 5 [g0, g0, g0] = true :=
   search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
@@ -501,54 +489,40 @@ private theorem search8_node_5_4 : search edge8 27 5 [g0, g5, g4] = true :=
 private theorem search8_node_5_5 : search edge8 27 5 [g0, g5, g5] = true :=
   search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
 
-private theorem search8_mid_0 : search edge8 27 6 [g0, g0] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_0_0, search8_node_0_1, search8_node_0_2, search8_node_0_3,
-    search8_node_0_4, search8_node_0_5]
+private theorem search8_mid_0 : search edge8 27 6 [g0, g0] = true :=
+  search_step_of_six edge8 27 5 [g0, g0]
+    search8_node_0_0 search8_node_0_1 search8_node_0_2
+    search8_node_0_3 search8_node_0_4 search8_node_0_5
 
-private theorem search8_mid_1 : search edge8 27 6 [g0, g1] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_1_0, search8_node_1_1, search8_node_1_2, search8_node_1_3,
-    search8_node_1_4, search8_node_1_5]
+private theorem search8_mid_1 : search edge8 27 6 [g0, g1] = true :=
+  search_step_of_six edge8 27 5 [g0, g1]
+    search8_node_1_0 search8_node_1_1 search8_node_1_2
+    search8_node_1_3 search8_node_1_4 search8_node_1_5
 
-private theorem search8_mid_2 : search edge8 27 6 [g0, g2] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_2_0, search8_node_2_1, search8_node_2_2, search8_node_2_3,
-    search8_node_2_4, search8_node_2_5]
+private theorem search8_mid_2 : search edge8 27 6 [g0, g2] = true :=
+  search_step_of_six edge8 27 5 [g0, g2]
+    search8_node_2_0 search8_node_2_1 search8_node_2_2
+    search8_node_2_3 search8_node_2_4 search8_node_2_5
 
-private theorem search8_mid_3 : search edge8 27 6 [g0, g3] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_3_0, search8_node_3_1, search8_node_3_2, search8_node_3_3,
-    search8_node_3_4, search8_node_3_5]
+private theorem search8_mid_3 : search edge8 27 6 [g0, g3] = true :=
+  search_step_of_six edge8 27 5 [g0, g3]
+    search8_node_3_0 search8_node_3_1 search8_node_3_2
+    search8_node_3_3 search8_node_3_4 search8_node_3_5
 
-private theorem search8_mid_4 : search edge8 27 6 [g0, g4] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_4_0, search8_node_4_1, search8_node_4_2, search8_node_4_3,
-    search8_node_4_4, search8_node_4_5]
+private theorem search8_mid_4 : search edge8 27 6 [g0, g4] = true :=
+  search_step_of_six edge8 27 5 [g0, g4]
+    search8_node_4_0 search8_node_4_1 search8_node_4_2
+    search8_node_4_3 search8_node_4_4 search8_node_4_5
 
-private theorem search8_mid_5 : search edge8 27 6 [g0, g5] = true := by
-  refine search_step edge8 27 5 _ fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_node_5_0, search8_node_5_1, search8_node_5_2, search8_node_5_3,
-    search8_node_5_4, search8_node_5_5]
+private theorem search8_mid_5 : search edge8 27 6 [g0, g5] = true :=
+  search_step_of_six edge8 27 5 [g0, g5]
+    search8_node_5_0 search8_node_5_1 search8_node_5_2
+    search8_node_5_3 search8_node_5_4 search8_node_5_5
 
-private theorem search8_root : search edge8 27 7 [g0] = true := by
-  refine search_step edge8 27 6 [g0] fun a ha => ?_
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [search8_mid_0, search8_mid_1, search8_mid_2, search8_mid_3, search8_mid_4,
-    search8_mid_5]
+private theorem search8_root : search edge8 27 7 [g0] = true :=
+  search_step_of_six edge8 27 6 [g0]
+    search8_mid_0 search8_mid_1 search8_mid_2
+    search8_mid_3 search8_mid_4 search8_mid_5
 
 private theorem witness5_le_cost (β : Fin 5 → Perm (Fin 3)) (hβ : β 0 = 1) :
     (6 : ℝ) ≤ witness5.cost (movedNorm (Fin 3)) β := by
@@ -566,88 +540,90 @@ private theorem witness8_le_cost (β : Fin 8 → Perm (Fin 3)) (hβ : β 0 = 1) 
     (27 : ℝ) ≤ witness8.cost (movedNorm (Fin 3)) β := by
   rw [witness8]; exact le_cost_of_search edge8 27 search8_root β hβ
 
-/-- Every gauge costs at least `6` against `witness5`, and the identity gauge costs `6`, so the
-gauge distance is `6`. -/
-theorem witness5_gaugeDist : witness5.gaugeDist (movedNorm (Fin 3)) = 6 := by
-  refine le_antisymm ((witness5.gaugeDist_le_cost _ (fun _ => 1)).trans_eq witness5_cost_one) ?_
+/-- `witness5` has gauge distance `6`, attained by the identity gauge. -/
+theorem gaugeDist_witness5 : witness5.gaugeDist (movedNorm (Fin 3)) = 6 := by
+  refine le_antisymm ((witness5.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness5) ?_
   rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness5 0]
   intro β hβ
   exact witness5_le_cost β hβ
 
-/-- Every gauge costs at least `18` against `witness6`, and the identity gauge costs `18`. -/
-theorem witness6_gaugeDist : witness6.gaugeDist (movedNorm (Fin 3)) = 18 := by
-  refine le_antisymm ((witness6.gaugeDist_le_cost _ (fun _ => 1)).trans_eq witness6_cost_one) ?_
+/-- `witness6` has gauge distance `18`, attained by the identity gauge. -/
+theorem gaugeDist_witness6 : witness6.gaugeDist (movedNorm (Fin 3)) = 18 := by
+  refine le_antisymm ((witness6.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness6) ?_
   rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness6 0]
   intro β hβ
   exact witness6_le_cost β hβ
 
-/-- Every gauge costs at least `12` against `witness7`, and the identity gauge costs `12`. -/
-theorem witness7_gaugeDist : witness7.gaugeDist (movedNorm (Fin 3)) = 12 := by
-  refine le_antisymm ((witness7.gaugeDist_le_cost _ (fun _ => 1)).trans_eq witness7_cost_one) ?_
+/-- `witness7` has gauge distance `12`, attained by the identity gauge. -/
+theorem gaugeDist_witness7 : witness7.gaugeDist (movedNorm (Fin 3)) = 12 := by
+  refine le_antisymm ((witness7.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness7) ?_
   rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness7 0]
   intro β hβ
   exact witness7_le_cost β hβ
 
-/-- Every gauge costs at least `27` against `witness8`, and the identity gauge costs `27`. -/
-theorem witness8_gaugeDist : witness8.gaugeDist (movedNorm (Fin 3)) = 27 := by
-  refine le_antisymm ((witness8.gaugeDist_le_cost _ (fun _ => 1)).trans_eq witness8_cost_one) ?_
+/-- `witness8` has gauge distance `27`, attained by the identity gauge. -/
+theorem gaugeDist_witness8 : witness8.gaugeDist (movedNorm (Fin 3)) = 27 := by
+  refine le_antisymm ((witness8.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness8) ?_
   rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness8 0]
   intro β hβ
   exact witness8_le_cost β hβ
 
-/-- `witness5` attains the constant: `defect / gaugeDist = 5 / 3 = h1`. -/
-theorem witness5_attains :
+/-- `defect / gaugeDist` for `witness5` equals `h1 (complete (Fin 5)) (movedNorm (Fin 3))`. -/
+theorem attains_witness5 :
     witness5.defect (movedNorm (Fin 3)) / witness5.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 5)) (movedNorm (Fin 3)) := by
-  rw [witness5_defect, witness5_gaugeDist, h1_complete_fin_five]
+  rw [defect_witness5, gaugeDist_witness5, h1_complete_fin_five]
   norm_num
 
-/-- `witness6` attains the constant: `defect / gaugeDist = 6 / 3 = h1`. -/
-theorem witness6_attains :
+/-- `defect / gaugeDist` for `witness6` equals `h1 (complete (Fin 6)) (movedNorm (Fin 3))`. -/
+theorem attains_witness6 :
     witness6.defect (movedNorm (Fin 3)) / witness6.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 6)) (movedNorm (Fin 3)) := by
-  rw [witness6_defect, witness6_gaugeDist, h1_complete_fin_six]
+  rw [defect_witness6, gaugeDist_witness6, h1_complete_fin_six]
   norm_num
 
-/-- `witness7` attains the constant: `defect / gaugeDist = 7 / 3 = h1`. -/
-theorem witness7_attains :
+/-- `defect / gaugeDist` for `witness7` equals `h1 (complete (Fin 7)) (movedNorm (Fin 3))`. -/
+theorem attains_witness7 :
     witness7.defect (movedNorm (Fin 3)) / witness7.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 7)) (movedNorm (Fin 3)) := by
-  rw [witness7_defect, witness7_gaugeDist, h1_complete_fin_seven]
+  rw [defect_witness7, gaugeDist_witness7, h1_complete_fin_seven]
   norm_num
 
-/-- `witness8` attains the constant: `defect / gaugeDist = 8 / 3 = h1`. -/
-theorem witness8_attains :
+/-- `defect / gaugeDist` for `witness8` equals `h1 (complete (Fin 8)) (movedNorm (Fin 3))`. -/
+theorem attains_witness8 :
     witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 8)) (movedNorm (Fin 3)) := by
-  rw [witness8_defect, witness8_gaugeDist, h1_complete_fin_eight]
+  rw [defect_witness8, gaugeDist_witness8, h1_complete_fin_eight]
   norm_num
+
+end Sym3
 
 /-! ## Checks at small sizes
 
-The 6.2 seed at `q = 2` and the 6.3 witness at `k = 8` are different cochains on eight vertices,
-`(64, 24)` and `(72, 27)`, with the same ratio `8 / 3`. -/
+The replicated seed at `q = 2` and `witness8` are different cochains on eight vertices, with
+defects and gauge distances `(64, 24)` and `(72, 27)` and the same ratio `8 / 3`. -/
 
 example : (Sym3.replicatedSeed 1).defect (movedNorm (Fin 3)) = 8 ∧
     (Sym3.replicatedSeed 1).gaugeDist (movedNorm (Fin 3)) = 6 := by
-  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  rw [Sym3.defect_replicatedSeed, Sym3.gaugeDist_replicatedSeed]
   norm_num
 
 example : (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) = 64 ∧
     (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 24 := by
-  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  rw [Sym3.defect_replicatedSeed, Sym3.gaugeDist_replicatedSeed]
   norm_num
 
 example : (Sym3.replicatedSeed 3).defect (movedNorm (Fin 3)) = 216 ∧
     (Sym3.replicatedSeed 3).gaugeDist (movedNorm (Fin 3)) = 54 := by
-  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  rw [Sym3.defect_replicatedSeed, Sym3.gaugeDist_replicatedSeed]
   norm_num
 
 example : (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) /
       (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 8 / 3 ∧
-    witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) = 8 / 3 := by
-  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist, witness8_defect,
-    witness8_gaugeDist]
+    Sym3.witness8.defect (movedNorm (Fin 3)) / Sym3.witness8.gaugeDist (movedNorm (Fin 3)) =
+      8 / 3 := by
+  rw [Sym3.defect_replicatedSeed, Sym3.gaugeDist_replicatedSeed, Sym3.defect_witness8,
+    Sym3.gaugeDist_witness8]
   norm_num
 
 end TauCeti
