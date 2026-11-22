@@ -26,12 +26,14 @@ of `f`, and estimates bounding a function by its differential survive changes of
 At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
 precomposition with the derivative of that map.
 
-For precomposition with an affine change of variables, or with the multiplication by a fixed
-scalar `c` of a division semiring acting on the domain, the chain rule holds as an identity between
-values of `fderiv` for every `f`, differentiable or not: at a point where `f` is not
-differentiable, both sides are `0`, the value of `fderiv` at points of nondifferentiability. For
-the latter, the map `w ↦ c • w` must be continuous and commute with the scalars `𝕜`; for instance,
-for `f` on `ℂ`, `fderiv ℝ (fun w ↦ f (c * w)) w v = fderiv ℝ f (c * w) (c * v)`.
+For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
+multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
+`E` is a module, the chain rule holds as an identity between values of `fderiv` for every `f`,
+differentiable or not: if `f` is not differentiable at the image `c + a • w`, respectively
+`c • w`, of the point `w`, both sides are `0`, the value of `fderiv` at points of
+nondifferentiability. For the latter, the map `w ↦ c • w` must be continuous and commute with the
+scalars `𝕜`; for instance, for `f` on `ℂ`,
+`fderiv ℝ (fun w ↦ f (c * w)) w v = fderiv ℝ f (c * w) (c * v)`.
 
 ## Main results
 
@@ -52,8 +54,8 @@ for `f` on `ℂ`, `fderiv ℝ (fun w ↦ f (c * w)) w v = fderiv ℝ f (c * w) (
 * `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
   `fderiv 𝕜 f (c + a • w)`, for every `f`.
 * `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
-  `fderiv 𝕜 f (c • x) (c • v)`, for every `f` and a scalar `c` of a division semiring acting on
-  the domain, with each `w ↦ c • w` continuous and commuting with `𝕜`.
+  `fderiv 𝕜 f (c • x) (c • v)`, for every `f` and a scalar `c` of a division semiring `𝕜'` over
+  which `E` is a module, with each `w ↦ c • w` continuous and commuting with `𝕜`.
 -/
 
 public section
@@ -137,8 +139,8 @@ theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
   rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
 
 /-- **The chain rule for precomposition with a scalar multiplication.** Let `𝕜'` be a division
-semiring acting on `E` so that multiplication `w ↦ c • w` by each fixed scalar `c : 𝕜'` is
-continuous and commutes with the action of `𝕜`. Then `fderiv 𝕜 (fun w ↦ f (c • w)) x` sends `v`
+semiring and `E` a `𝕜'`-module such that multiplication `w ↦ c • w` by each fixed scalar `c : 𝕜'`
+is continuous and commutes with the action of `𝕜`. Then `fderiv 𝕜 (fun w ↦ f (c • w)) x` sends `v`
 to `fderiv 𝕜 f (c • x) (c • v)`. Multiplication by `c` is `𝕜`-linear and, unless `c = 0`,
 invertible, so this holds for every `f`, with no norm or additive inverses on `𝕜'`: if `f` is not
 differentiable at `c • x`, both sides are `0`, the value of `fderiv` at points of
