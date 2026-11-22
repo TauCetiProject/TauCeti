@@ -677,6 +677,11 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
       ‖∫ s in a..τ, Φ τ s‖ ≤ C₁ * H * (τ - a) ^ ((α : ℝ) / 2) :=
     hC₁ (hfM' hτt) (hH' hτt) a ha haτ x
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
+  -- `2 ^ (α / 2) ≤ 2` since `α / 2 ≤ 1`, so in both cases the coefficient is at most `3 C₁ H`.
+  have h2 : (2 : ℝ) ^ ((α : ℝ) / 2) * (C₁ * H * h ^ ((α : ℝ) / 2)) ≤
+      2 * (C₁ * H * h ^ ((α : ℝ) / 2)) :=
+    mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
+      (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
     have hb := dist_le_rpow_add_one_mul_mul_rpow_of_le_mul (x := ∫ s in 0..t, Φ t s)
@@ -684,11 +689,6 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
       (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) ht.le (by linarith) ht' hsmall
       (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
     rw [dist_eq_norm] at hb
-    -- `2 ^ (α / 2) ≤ 2` since `α / 2 ≤ 1`, so the coefficient is at most `3 C₁ H`.
-    have h2 : (2 : ℝ) ^ ((α : ℝ) / 2) * (C₁ * H * h ^ ((α : ℝ) / 2)) ≤
-        2 * (C₁ * H * h ^ ((α : ℝ) / 2)) :=
-      mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
-        (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
   -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
@@ -714,12 +714,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     (hg₂.mono_set (uIcc_subset_uIcc_right (hmem (by linarith)))) hfar
     (hnear hs₀ (by linarith) le_rfl) (hnear hs₀ (by linarith) htt'.le)
   rw [show t - (2 * t' - t) = 2 * h by rw [hh_def]; ring,
-    show t' - (2 * t' - t) = h by rw [hh_def]; ring] at hb
-  -- `(2 h) ^ (α / 2) ≤ 2 h ^ (α / 2)` since `α / 2 ≤ 1`, so the tails are at most `3 C₁ H h^(α/2)`.
-  have h₃ : C₁ * H * (2 * h) ^ ((α : ℝ) / 2) ≤ 2 * (C₁ * H * h ^ ((α : ℝ) / 2)) := by
-    rw [Real.mul_rpow zero_le_two hh.le, mul_left_comm (C₁ * H)]
-    exact mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
-      (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
+    show t' - (2 * t' - t) = h by rw [hh_def]; ring, Real.mul_rpow zero_le_two hh.le] at hb
   linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`
