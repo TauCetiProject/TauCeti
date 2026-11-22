@@ -48,10 +48,12 @@ on spaces in the lowest universe, so these hypotheses are carried by the stateme
 * `LieHom.lieMap_integrate`: the differential of `φ.integrate` is `φ`.
 * `ContMDiffMonoidMorphism.integrate_lieMap`: a smooth homomorphism is the integral of its
   differential.
-* `TauCeti.Lie.bijective_lieMap`: **Lie's second theorem**, differentiation is bijective on
+* `ContMDiffMonoidMorphism.eq_integrate_iff`: a smooth homomorphism is the integral of `φ` exactly
+  when its differential is `φ`.
+* `TauCeti.Lie.lieMap_bijective`: **Lie's second theorem**, differentiation is bijective on
   smooth homomorphisms out of a simply connected Lie group.
 * `LieHom.integrate_comp`: integration is functorial.
-* `LieHom.bijective_integrate`: a Lie-algebra isomorphism between the Lie algebras of two simply
+* `LieHom.integrate_bijective`: a Lie-algebra isomorphism between the Lie algebras of two simply
   connected Lie groups integrates to a bijective homomorphism.
 
 ## References
@@ -130,10 +132,10 @@ private theorem lieMapToHom_graphData
   obtain ⟨X, hX⟩ := (LieHom.mem_range _ _).1 <|
     (LieSubalgebra.range_lieMapToHom_integralLeafSubgroupData (graphLieHom φ).range).le
       (LieHom.mem_range_self _ Y)
-  rw [← hX, graphFst, lieMap_comp, LieHom.comp_apply,
-    ImmersedLieSubgroupData.lieMap_toContMDiffMonoidMorphism, ← hX, lieMap_fst_graphLieHom]
+  simp only [← hX, graphFst, lieMap_comp, LieHom.comp_apply,
+    ImmersedLieSubgroupData.lieMap_toContMDiffMonoidMorphism, lieMap_fst_graphLieHom]
 
-private theorem bijective_lieMap_graphFst
+private theorem lieMap_graphFst_bijective
     (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :
     Bijective (lieMap (graphFst φ)) := by
   refine ⟨fun Y Y' h ↦ (graphData φ).injective_lieMapToHom ?_, fun X ↦ ?_⟩
@@ -153,37 +155,38 @@ private def graphFstDiffeomorph
     (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :
     Diffeomorph (graphData φ).I' I (graphData φ).X G ∞ :=
   IsLocalDiffeomorph.diffeomorphOfBijective
-    ((graphFst φ).isLocalDiffeomorph_of_lieMap_bijective (bijective_lieMap_graphFst φ))
+    ((graphFst φ).isLocalDiffeomorph_of_lieMap_bijective (lieMap_graphFst_bijective φ))
     ((graphFst φ).bijective_of_lieMap_bijective_of_simplyConnectedSpace
-      (bijective_lieMap_graphFst φ))
+      (lieMap_graphFst_bijective φ))
 
 private theorem coe_graphFstDiffeomorph
     (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :
     ⇑(graphFstDiffeomorph φ) = graphFst φ :=
   IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
+private theorem graphFst_graphFstDiffeomorph_symm
+    (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') (g : G) :
+    graphFst φ ((graphFstDiffeomorph φ).symm g) = g := by
+  rw [← coe_graphFstDiffeomorph]
+  exact (graphFstDiffeomorph φ).apply_symm_apply g
+
 /-- The inverse of the first projection from the integrated graph of `φ`, as a smooth
 homomorphism. -/
 private def graphFstInv (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :
     ContMDiffMonoidMorphism I (graphData φ).I' ∞ G (graphData φ).X where
   toFun := (graphFstDiffeomorph φ).symm
-  map_one' := (graphFstDiffeomorph φ).symm_apply_eq.2 <| by
-    change 1 = graphFstDiffeomorph φ 1
-    rw [coe_graphFstDiffeomorph, map_one]
-  map_mul' g h := (graphFstDiffeomorph φ).symm_apply_eq.2 <| by
-    change g * h = graphFstDiffeomorph φ _
-    rw [coe_graphFstDiffeomorph, map_mul, ← coe_graphFstDiffeomorph,
-      Diffeomorph.apply_symm_apply, Diffeomorph.apply_symm_apply]
+  map_one' := (graphFstDiffeomorph φ).injective <| by
+    simp [coe_graphFstDiffeomorph]
+  map_mul' g h := (graphFstDiffeomorph φ).injective <| by
+    simp [coe_graphFstDiffeomorph, graphFst_graphFstDiffeomorph_symm]
   contMDiff_toFun := (graphFstDiffeomorph φ).symm.contMDiff
 
 private theorem graphFst_comp_graphFstInv
     (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :
-    (graphFst φ).comp (graphFstInv φ) = ContMDiffMonoidMorphism.id := by
-  apply DFunLike.coe_injective
-  funext g
-  rw [ContMDiffMonoidMorphism.coe_comp, ContMDiffMonoidMorphism.coe_id, comp_apply, id,
-    ← coe_graphFstDiffeomorph]
-  exact (graphFstDiffeomorph φ).apply_symm_apply g
+    (graphFst φ).comp (graphFstInv φ) = ContMDiffMonoidMorphism.id :=
+  DFunLike.ext _ _ fun g ↦ by
+    simp only [ContMDiffMonoidMorphism.coe_comp, ContMDiffMonoidMorphism.coe_id, comp_apply, id]
+    exact graphFst_graphFstDiffeomorph_symm φ g
 
 end TauCeti.Lie
 
@@ -209,7 +212,7 @@ theorem lieMap_integrate (φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftI
     lieMap φ.integrate = φ := by
   ext X
   have hinv := (graphFstInv φ).leftInverse_lieMap (graphFst φ) (graphFst_comp_graphFstInv φ) X
-  rw [integrate, lieMap_comp, lieMap_comp, LieHom.comp_apply, LieHom.comp_apply,
+  simp only [integrate, lieMap_comp, LieHom.comp_apply,
     ImmersedLieSubgroupData.lieMap_toContMDiffMonoidMorphism, lieMapToHom_graphData, hinv,
     lieMap_snd_graphLieHom]
 
@@ -234,11 +237,10 @@ theorem integrate_comp [SimplyConnectedSpace G']
 
 /-- A bijective homomorphism between the Lie algebras of two simply connected Lie groups
 integrates to a bijective homomorphism of the groups. -/
-theorem bijective_integrate [SimplyConnectedSpace G']
+theorem integrate_bijective [SimplyConnectedSpace G']
     {φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G'} (hφ : Bijective φ) :
     Bijective φ.integrate :=
   φ.integrate.bijective_of_lieMap_bijective_of_simplyConnectedSpace (by rwa [lieMap_integrate])
-
 
 end LieHom
 
@@ -251,13 +253,21 @@ theorem integrate_lieMap (f : ContMDiffMonoidMorphism I I' ∞ G G') :
     (lieMap f).integrate = f :=
   lieMap_injective (lieMap f).lieMap_integrate
 
+/-- `LieHom.integrate` is characterized by its universal property: a smooth homomorphism out of a
+simply connected Lie group is the integral of `φ` exactly when its differential is `φ`. -/
+@[simp]
+theorem eq_integrate_iff {f : ContMDiffMonoidMorphism I I' ∞ G G'}
+    {φ : LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G'} :
+    f = φ.integrate ↔ lieMap f = φ :=
+  ⟨fun h ↦ h ▸ φ.lieMap_integrate, fun h ↦ h ▸ (integrate_lieMap f).symm⟩
+
 end ContMDiffMonoidMorphism
 
 namespace TauCeti.Lie
 
 /-- **Lie's second theorem.** Differentiation is a bijection from the smooth homomorphisms out of
 a simply connected Lie group onto the homomorphisms of Lie algebras. -/
-theorem bijective_lieMap :
+theorem lieMap_bijective :
     Bijective (lieMap : ContMDiffMonoidMorphism I I' ∞ G G' →
       LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') :=
   ⟨lieMap_injective, fun φ ↦ ⟨φ.integrate, φ.lieMap_integrate⟩⟩
