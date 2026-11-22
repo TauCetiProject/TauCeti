@@ -46,6 +46,10 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
+* `continuous_negativeNormalSpaceEquiv`: projecting the negative normal spaces of `g'` along the
+  positive normal spaces of `g` is continuous on total spaces.
+* `negativeNormalSpaceSignLocalSystemIso_eq`: the isomorphism of orientation local systems is the
+  one induced by this projection.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff`: the negative normal bundles of two
   fibre metrics are orientable together.
 
@@ -78,7 +82,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- Projecting the negative normal spaces of `g'` along the positive normal spaces of `g` is
 continuous on the total spaces of the negative normal bundles. -/
-private theorem continuous_negativeNormalSpaceEquiv
+theorem continuous_negativeNormalSpaceEquiv
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -110,7 +114,8 @@ private theorem continuous_negativeNormalSpaceEquiv
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
   let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g' hr).fiberBundle
   obtain ⟨Φ, hΦ⟩ := h.exists_bundleDiffeomorph_negativeNormalSpace hn hk hf hdim g' g hr
-  exact Φ.continuous.congr fun v ↦ (hΦ v).trans rfl
+  refine Φ.continuous.congr fun v ↦ (hΦ v).trans ?_
+  rw [LinearEquiv.coe_toContinuousLinearEquiv']
 
 variable (R : Type u) [Ring R]
 
@@ -166,6 +171,40 @@ def negativeNormalSpaceSignLocalSystemIso
     (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquiv hn
       g'.toRiemannianMetric g.toRiemannianMetric s).toContinuousLinearEquiv) (by simp) (by simp)
     (h.continuous_negativeNormalSpaceEquiv hn hk hf hdim g g' hr)
+
+/-- The isomorphism between the orientation local systems of the negative normal bundles of two
+fibre metrics is the one induced by projecting along the positive normal spaces of `g`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). -/
+@[simp]
+theorem negativeNormalSpaceSignLocalSystemIso_eq
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g g' : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr).fiberBundle
+    haveI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g
+      hr).vectorBundle
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+    letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g' hr).fiberBundle
+    haveI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g'
+      hr).vectorBundle
+    h.negativeNormalSpaceSignLocalSystemIso hn R hk hf hdim g g' hr =
+      VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R (F := Fin r → ℝ)
+        (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquiv hn
+          g'.toRiemannianMetric g.toRiemannianMetric s).toContinuousLinearEquiv) (by simp) (by simp)
+        (h.continuous_negativeNormalSpaceEquiv hn hk hf hdim g g' hr) :=
+  (rfl)
 
 /-- **The negative normal bundles of two fibre metrics are orientable together.** In the setting of
 `negativeNormalSpaceSignLocalSystemIso`, the negative normal bundle relative to `g` is orientable

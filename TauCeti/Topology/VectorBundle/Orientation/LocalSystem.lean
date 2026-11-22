@@ -356,14 +356,12 @@ variable (R) in
 orientation local systems that pulls a function on the orientations of `E_b` back along the
 transport of orientations by `φ b` (`TauCeti.VectorBundleOrientationCover.map`). -/
 def signLocalSystemIsoOfFiberwise : signLocalSystem F E R hι ≅ signLocalSystem F' E' R hι' :=
-  @asIso _ _ _ _ ((isCoveringMap_proj hι').signLocalSystemMap (X := TopCat.of B) (R := R)
-      (hσ := proj_comp_deck) (hσ' := proj_comp_deck) (isCoveringMap_proj hι)
-      (map (g := ContinuousMap.id B) (φ := φ) hι' hφ) (proj_comp_map hι' hφ)
-      (map_comp_deck hι' hφ))
-    ((isCoveringMap_proj hι').isIso_signLocalSystemMap (X := TopCat.of B) (R := R)
-      (hσ := proj_comp_deck) (hσ' := proj_comp_deck) (isCoveringMap_proj hι)
-      (map (g := ContinuousMap.id B) (φ := φ) hι' hφ) (proj_comp_map hι' hφ)
-      (map_comp_deck hι' hφ) (bijective_fiberMap_map hι hι' hφ))
+  let α : signLocalSystem F E R hι ⟶ signLocalSystem F' E' R hι' :=
+    (isCoveringMap_proj hι').signLocalSystemMap (isCoveringMap_proj hι) _ (proj_comp_map hι' hφ)
+      (map_comp_deck hι' hφ)
+  haveI : IsIso α := (isCoveringMap_proj hι').isIso_signLocalSystemMap (isCoveringMap_proj hι) _
+    (proj_comp_map hι' hφ) (map_comp_deck hι' hφ) (bijective_fiberMap_map hι hι' hφ)
+  asIso α
 
 omit [FiniteDimensional ℝ F] in
 /-- The isomorphism of orientation local systems induced by `φ` evaluates a function on the
@@ -385,6 +383,23 @@ theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply
     (Subtype.ext ?_)
   rw [Function.fiberMap_apply_coe]
   exact map_mk (g := ContinuousMap.id B) (φ := φ) hι' hφ x.as o
+
+omit [FiniteDimensional ℝ F] in
+/-- The inverse of the isomorphism of orientation local systems induced by `φ` pushes a function
+on the orientations of `E'_b` forward along the transport of orientations by `φ b`: its value at
+the image under `φ b` of an orientation of `E'_b` is the original value there. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_inv_app_apply
+    (x : FundamentalGroupoid (TopCat.of B)) (f : (signLocalSystem F' E' R hι').obj x)
+    (o : Orientation ℝ (E' x.as) ι) :
+    (signLocalSystemObjEquiv hι x
+        (((signLocalSystemIsoOfFiberwise R hι hι' hφ).inv.app x).hom f) :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R)
+        ⟨⟨x.as, Orientation.map ι (φ x.as).toLinearEquiv o⟩, rfl⟩ =
+      (signLocalSystemObjEquiv hι' x f :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F' E' ι)) → R) ⟨⟨x.as, o⟩, rfl⟩ := by
+  rw [← signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply (hφ := hφ) (o := o),
+    ← ModuleCat.comp_apply, Iso.inv_hom_id_app, ModuleCat.id_apply]
 
 end Fiberwise
 

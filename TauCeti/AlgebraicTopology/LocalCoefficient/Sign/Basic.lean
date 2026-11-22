@@ -395,8 +395,9 @@ theorem signLocalSystemObjEquiv_signLocalSystemMap_app_apply (x : FundamentalGro
 isomorphism of sign local systems. -/
 theorem isIso_signLocalSystemMap (hbij : ∀ x, Function.Bijective (Function.fiberMap φ hφ x)) :
     IsIso (hp.signLocalSystemMap (R := R) (hσ := hσ) (hσ' := hσ') hp' φ hφ hφσ) := by
-  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun x ↦
-    (ConcreteCategory.isIso_iff_bijective _).2 ⟨fun f f' hff' ↦ ?_, fun f ↦ ?_⟩
+  suffices ∀ x, IsIso ((hp.signLocalSystemMap (R := R) (hσ := hσ) (hσ' := hσ') hp' φ hφ
+      hφσ).app x) from NatIso.isIso_of_isIso_app _
+  refine fun x ↦ (ConcreteCategory.isIso_iff_bijective _).2 ⟨fun f f' hff' ↦ ?_, fun f ↦ ?_⟩
   · -- Precomposition with a surjection is injective.
     refine Subtype.ext <| funext fun e' ↦ ?_
     obtain ⟨e, rfl⟩ := (hbij x.as).2 e'
