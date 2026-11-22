@@ -56,7 +56,7 @@ decrease the action.
   the first variation formula as the `L²` pairing of `∂_s w` with the gradient
   `A_t (∂_t w - X_{H_t}(w))`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible`: for
-  compatible `J_t`, the pairing of `∂_s w` with `J_t (∂_t w - X_{H_t}(w))` for the metric
+  compatible `J_t`, the pairing of `J_t (∂_t w - X_{H_t}(w))` with `∂_s w` for the metric
   `σ(·, J_t ·)`.
 
 ## References
@@ -120,7 +120,7 @@ theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_tames
 the hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_tames`, if every
 `J_t` is compatible with `σ`, the action of the loops `w (s, ·)` has derivative
-`∫₀¹ g_{J_t}(∂_s w, J_t (∂_t w - X_{H_t}(w))) dt` at `s₀` for the metric `g_{J_t} = σ(·, J_t ·)`,
+`∫₀¹ g_{J_t}(J_t (∂_t w - X_{H_t}(w)), ∂_s w) dt` at `s₀` for the metric `g_{J_t} = σ(·, J_t ·)`,
 with all terms taken at `(s₀, t)`. So `J_t (γ' - X_{H_t}(γ))` is the weak `L²` gradient. -/
 theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible
     (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.val)
@@ -131,13 +131,13 @@ theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compa
     (hJ : ∀ t, (h.symplecticFormAt (w (s₀, t))).Compatible (J t)) :
     HasDerivAt (fun s ↦ contractibleLoopAction σ.val H fun t ↦ w (s, t))
       (∫ t in 0..1, (h.symplecticFormAt (w (s₀, t))).associatedBilinForm (J t)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0))
         (J t (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) -
-          σ.hamiltonianVectorField (H t) (w (s₀, t))))) s₀ := by
+          σ.hamiltonianVectorField (H t) (w (s₀, t))))
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0))) s₀ := by
   refine (h.hasDerivAt_contractibleLoopAction_of_tames hw hH hwc hper hcap
     fun t ↦ (hJ t).tames).congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
-  simp only [(hJ t).gradientOperator_eq, (hJ t).symmetrizedBilinForm_apply,
-    SymplecticForm.associatedBilinForm_apply]
+  rw [(hJ t).gradientOperator_eq, (hJ t).symmetrizedBilinForm_apply,
+    SymplecticForm.associatedBilinForm_apply, (hJ t).associatedBilinForm_apply_swap]
   ring
 
 /-- **The weak gradient of the action relative to a reference loop for tame almost complex
