@@ -72,36 +72,25 @@ the slab `E × [0, T]`. -/
 theorem exists_holderSpace_eq_sqrt_time {α : ℝ≥0} (hα : α ≤ 1) (T : ℝ) :
     ∃ f : HolderSpace α (slab (E := E) 0 T) ℝ,
       ∀ p, f p = √(p : ParabolicSpaceTime E).time := by
-  -- The increments are at most `√T`, and at most `√|t - s| ≤ d`.
-  have hbound : ∀ p q : slab (E := E) 0 T,
-      dist (√(p : ParabolicSpaceTime E).time) (√(q : ParabolicSpaceTime E).time) ≤ √T := by
-    intro p q
-    have hp := mem_slab.1 p.property
-    have hq := mem_slab.1 q.property
+  -- `√` is `1 / 2`-Hölder with constant one on `[0, T]`, and its oscillation there is at most `√T`.
+  have hbound : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T, dist (√s) (√t) ≤ √T := by
+    intro s hs t ht
     rw [Real.dist_eq, abs_sub_le_iff]
-    constructor <;> linarith [Real.sqrt_le_sqrt hp.2, Real.sqrt_le_sqrt hq.2,
-      Real.sqrt_nonneg (p : ParabolicSpaceTime E).time,
-      Real.sqrt_nonneg (q : ParabolicSpaceTime E).time]
-  have h₁ : ∀ p q : slab (E := E) 0 T,
-      dist (√(p : ParabolicSpaceTime E).time) (√(q : ParabolicSpaceTime E).time) ≤
-        dist p q := by
-    intro p q
-    have hp := mem_slab.1 p.property
-    have hq := mem_slab.1 q.property
-    rw [Real.dist_eq, Subtype.dist_eq]
-    refine le_trans ?_ (sqrt_abs_time_sub_le_dist _ _)
-    have h := Real.abs_rpow_sub_rpow_le hp.1 hq.1 (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num)
-    simpa only [← Real.sqrt_eq_rpow] using h
+    constructor <;> linarith [Real.sqrt_le_sqrt hs.2, Real.sqrt_le_sqrt ht.2,
+      Real.sqrt_nonneg s, Real.sqrt_nonneg t]
+  have hsqrt := HolderOnWith.of_le_of_dist_le (f := Real.sqrt) (s := Icc 0 T) (K := 1)
+    (β := 1 / 2) (γ := α / 2) (δ := 1) (D := ⟨√T, Real.sqrt_nonneg T⟩)
+    (fun s hs t ht _ ↦ by
+      have h := Real.abs_rpow_sub_rpow_le hs.1 ht.1 (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+      rw [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow] at h
+      simpa [Real.dist_eq] using h)
+    hbound (by gcongr) one_pos
   let g : slab (E := E) 0 T →ᵇ ℝ :=
     BoundedContinuousFunction.mkOfBound
       ⟨fun p ↦ √(p : ParabolicSpaceTime E).time,
         Real.continuous_sqrt.comp (continuous_time.comp continuous_subtypeVal)⟩ √T
-      hbound
-  have hg : MemHolder α (g : slab (E := E) 0 T → ℝ) :=
-    ⟨_, holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (K := 1) (β := 1) (δ := 1)
-      (D := ⟨√T, Real.sqrt_nonneg T⟩) (fun p _ q _ _ ↦ by simpa [g] using h₁ p q)
-      (fun p _ q _ ↦ hbound p q) hα one_pos)⟩
+      fun p q ↦ hbound _ (mem_slab.1 p.property) _ (mem_slab.1 q.property)
+  have hg : MemHolder α (g : slab (E := E) 0 T → ℝ) := ⟨_, hsqrt.comp_parabolicTime_slab⟩
   exact ⟨HolderSpace.ofBoundedContinuousFunction g hg,
     fun p ↦ HolderSpace.ofBoundedContinuousFunction_apply g hg p⟩
 
