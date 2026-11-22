@@ -336,6 +336,7 @@ theorem map_prodAssoc_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (
 /-- Deleting a trivial left factor with its positive orientation recovers the orientation of the
 right factor, reindexed along `0 + n = n`. By `Orientation.prod_neg_left`, the negative
 orientation of the trivial factor negates it. -/
+@[simp]
 theorem map_uniqueProd_prod_positiveOrientation [Unique E] (p : Orientation R F (Fin n))
     (hm : Module.finrank R E = 0) (hn : Module.finrank R F = n) :
     Orientation.map (Fin (0 + n)) (LinearEquiv.uniqueProd (R := R) (M := F) (M₂ := E))
@@ -363,6 +364,7 @@ theorem map_uniqueProd_prod_positiveOrientation [Unique E] (p : Orientation R F 
 /-- Deleting a trivial right factor with its positive orientation recovers the orientation of the
 left factor. By `Orientation.prod_neg_right`, the negative orientation of the trivial factor
 negates it. -/
+@[simp]
 theorem map_prodUnique_prod_positiveOrientation [Unique F] (o : Orientation R E (Fin m))
     (hm : Module.finrank R E = m) (hn : Module.finrank R F = 0) :
     Orientation.map (Fin m) (LinearEquiv.prodUnique (R := R) (M := E) (M₂ := F))

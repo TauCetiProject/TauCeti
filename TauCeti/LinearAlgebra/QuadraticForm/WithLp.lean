@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -16,7 +17,7 @@ When a quadratic map `Q` on `WithLp p (M₁ × M₂)` decomposes orthogonally as
 isometrically with `Q₁.prod Q₂`, and the structural equivalences of Cartesian products (swapping
 factors, reassociating iterated `WithLp` products, and deleting trivial factors) lift to isometric
 equivalences of quadratic maps on `WithLp` (`withLpProd`, `withLpProdComm`, `withLpProdAssoc`,
-`withLpUniqueProd`, `withLpProdUnique`).
+`withLpUniqueProd`, `withLpProdUnique`), together with their base-change compatibility diagrams.
 -/
 
 public section
@@ -214,5 +215,92 @@ theorem toLinearEquiv_withLpProdAssoc
   LinearEquiv.ext fun x ↦ by simp [coe_toLinearEquiv]
 
 end Assoc
+
+section BaseChange
+
+variable {p : ℝ≥0∞} {R A M₁ M₂ M₃ : Type*} [CommRing R] [Invertible (2 : R)]
+  [CommRing A] [Algebra R A]
+  [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
+  [Module R M₁] [Module R M₂] [Module R M₃]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
+  {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
+
+/-- Deleting a trivial left factor commutes with base change of `WithLp` products. -/
+theorem baseChangeProd_trans_uniqueProd [Unique M₁]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
+    ((withLpProd hQ).baseChangeProd A).trans
+        (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)) =
+      (withLpUniqueProd hQ).baseChange A := by
+  apply DFunLike.ext
+  intro x
+  have hlin :
+      (((withLpProd hQ).baseChangeProd A).trans
+          (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap =
+        ((withLpUniqueProd hQ).baseChange A).toLinearEquiv.toLinearMap :=
+    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
+  exact LinearMap.congr_fun hlin x
+
+/-- Deleting a trivial right factor commutes with base change of `WithLp` products. -/
+theorem baseChangeProd_trans_prodUnique [Unique M₂]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
+    ((withLpProd hQ).baseChangeProd A).trans
+        (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)) =
+      (withLpProdUnique hQ).baseChange A := by
+  apply DFunLike.ext
+  intro x
+  have hlin :
+      (((withLpProd hQ).baseChangeProd A).trans
+          (prodUnique (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap =
+        ((withLpProdUnique hQ).baseChange A).toLinearEquiv.toLinearMap :=
+    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
+  exact LinearMap.congr_fun hlin x
+
+/-- Swapping factors commutes with base change of `WithLp` products. -/
+theorem baseChange_withLpProdComm_trans_baseChangeProd
+    {Q' : QuadraticForm R (WithLp p (M₂ × M₁))}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
+    ((withLpProdComm hQ hQ').baseChange A).trans ((withLpProd hQ').baseChangeProd A) =
+      ((withLpProd hQ).baseChangeProd A).trans (prodComm (Q₁.baseChange A) (Q₂.baseChange A)) := by
+  apply DFunLike.ext
+  intro x
+  have hlin :
+      (((withLpProdComm hQ hQ').baseChange A).trans
+          ((withLpProd hQ').baseChangeProd A)).toLinearEquiv.toLinearMap =
+        (((withLpProd hQ).baseChangeProd A).trans
+          (prodComm (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap :=
+    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
+  exact LinearMap.congr_fun hlin x
+
+/-- Reassociating iterated `WithLp` products commutes with base change. -/
+theorem baseChangeProd_trans_prodAssoc
+    {Q₁₂ : QuadraticForm R (WithLp p (M₁ × M₂))} {Q₂₃ : QuadraticForm R (WithLp p (M₂ × M₃))}
+    {Q₁₂_₃ : QuadraticForm R (WithLp p (WithLp p (M₁ × M₂) × M₃))}
+    {Q₁_₂₃ : QuadraticForm R (WithLp p (M₁ × WithLp p (M₂ × M₃)))}
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2) :
+    (((withLpProd hQ₁₂_₃).baseChangeProd A).trans
+        (((withLpProd hQ₁₂).baseChangeProd A).prod (refl (Q₃.baseChange A)))).trans
+        (prodAssoc (Q₁.baseChange A) (Q₂.baseChange A) (Q₃.baseChange A)) =
+      ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange A).trans
+        (((withLpProd hQ₁_₂₃).baseChangeProd A).trans
+          ((refl (Q₁.baseChange A)).prod ((withLpProd hQ₂₃).baseChangeProd A))) := by
+  apply DFunLike.ext
+  intro x
+  have hlin :
+      (((((withLpProd hQ₁₂_₃).baseChangeProd A).trans
+          (((withLpProd hQ₁₂).baseChangeProd A).prod (refl (Q₃.baseChange A)))).trans
+          (prodAssoc (Q₁.baseChange A) (Q₂.baseChange A)
+            (Q₃.baseChange A))).toLinearEquiv).toLinearMap =
+        ((((withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange A).trans
+          (((withLpProd hQ₁_₂₃).baseChangeProd A).trans
+            ((refl (Q₁.baseChange A)).prod
+              ((withLpProd hQ₂₃).baseChangeProd A)))).toLinearEquiv).toLinearMap :=
+    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
+  exact LinearMap.congr_fun hlin x
+
+end BaseChange
 
 end QuadraticMap.IsometryEquiv

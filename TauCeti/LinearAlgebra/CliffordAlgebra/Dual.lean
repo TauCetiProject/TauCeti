@@ -142,12 +142,4 @@ theorem cliffordReverseDual_comp_map {V' : Type*} [AddCommGroup V'] [Module R V'
   (cliffordReverseDual_unique (ρ.comp (map f)) (ρ.cliffordReverseDual.comp (map f))
     fun v ↦ by simp).symm
 
-/-- Reverse duality commutes with precomposition along `CliffordAlgebra.equivOfIsometry`. -/
-theorem cliffordReverseDual_comp_equivOfIsometry {V' : Type*} [AddCommGroup V'] [Module R V']
-    {Q' : QuadraticForm R V'} (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)
-    (f : Q'.IsometryEquiv Q) :
-    (ρ.comp (equivOfIsometry f).toAlgHom).cliffordReverseDual =
-      ρ.cliffordReverseDual.comp (equivOfIsometry f).toAlgHom :=
-  cliffordReverseDual_comp_map ρ f.toIsometry
-
 end AlgHom

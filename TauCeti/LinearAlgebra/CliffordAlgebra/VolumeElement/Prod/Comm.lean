@@ -35,6 +35,8 @@ open Module Module.End TensorProduct
 
 namespace CliffordAlgebra
 
+attribute [local instance] instFactFinrankWithLpProd
+
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
   {n m : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = m)]
@@ -68,13 +70,19 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
             (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
           (equivOfIsometry
             ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).toAlgHom := by
-    refine CliffordAlgebra.hom_ext <| LinearMap.ext fun u ↦ ?_
-    induction u using TensorProduct.inductionOn with
-    | tmul c x => simp [equivOfIsometry_apply, QuadraticMap.IsometryEquiv.toIsometry_apply]
-    | add x y hx hy => simp only [map_add, hx, hy]
+    refine AlgHom.ext fun x ↦ ?_
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
+      AlgEquiv.coe_toAlgHom,
+      ← equivOfIsometry_apply (QuadraticMap.IsometryEquiv.prodComm
+        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)),
+      ← AlgEquiv.trans_apply, ← AlgEquiv.trans_apply, equivOfIsometry_trans,
+      equivOfIsometry_trans,
+      QuadraticMap.IsometryEquiv.baseChange_withLpProdComm_trans_baseChangeProd
+        (A := ℂ) hQ hQ']
   have hcomm_a := AlgHom.congr_fun hcomm a
-  simp only [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply] at hcomm_a
-  rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_cliffordProdTensor, hcomm_a]
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] at hcomm_a
+  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, hcomm_a]
   exact AlgHom.koszulComm_cliffordProdTensor
     ρ₁ (ρ₁ (complexVolume Q₁ o₁)) (ρ₁.involutive_complexVolume o₁ hQ₁)
     (map_complexVolume_mul_map_ι o₁ hn ρ₁)
@@ -101,7 +109,6 @@ theorem conjAlgEquiv_koszulComm_complexProdTensor :
 /-- **Koszul commutor and the product chirality**: for the ordered product orientations `o` on
 `V ⊕ W` and `o'` on `W ⊕ V`, the Koszul commutor conjugates `Γ_(V ⊕ W)` to `Γ_(W ⊕ V)`. -/
 theorem conj_koszulComm_complexProdTensor_complexVolume
-    [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)] [Fact (finrank ℝ (WithLp 2 (W × V)) = m + n)]
     (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
     (o' : Orientation ℝ (WithLp 2 (W × V)) (Fin (m + n)))
     (ho : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (n + m))
@@ -113,8 +120,9 @@ theorem conj_koszulComm_complexProdTensor_complexVolume
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)) =
       complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q' o') := by
   subst o o'
+  have hvol := equivOfIsometry_withLpProdComm_complexVolume hQ hQ' o₁ o₂
+  rw [(hn.mul_right m).neg_one_pow, one_smul] at hvol
   exact conj_complexVolume_of_conjAlgEquiv_comp
-    (conjAlgEquiv_koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂)
-    (equivOfIsometry_withLpProdComm_complexVolume hQ hQ' o₁ o₂ (hn.mul_right m))
+    (conjAlgEquiv_koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂) hvol
 
 end CliffordAlgebra

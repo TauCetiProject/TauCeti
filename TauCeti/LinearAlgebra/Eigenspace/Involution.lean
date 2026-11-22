@@ -85,4 +85,15 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
 
+/-- Transporting the codomain of `Module.End.eigenProjOfInvolutive` along an equality of
+eigenvalues `μ = ν` gives the eigenprojection for `ν`. -/
+theorem ofEq_comp_eigenProjOfInvolutive (hg : Function.Involutive g) {μ ν : k}
+    (hμ : μ * μ = 1) (hν : ν * ν = 1) (h : μ = ν) :
+    (LinearEquiv.ofEq (g.eigenspace μ) (g.eigenspace ν)
+        (congrArg g.eigenspace h)).toLinearMap.comp (eigenProjOfInvolutive hg hμ) =
+      eigenProjOfInvolutive hg hν := by
+  subst h
+  ext y
+  simp
+
 end Module.End

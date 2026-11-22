@@ -97,11 +97,11 @@ theorem conjAlgEquiv_lTensor_cliffordProdTensor (δ : Module.End R F)
   have hsymm : ((LinearEquiv.ofInvolutive δ hδ).symm : F →ₗ[R] F) = δ :=
     LinearMap.ext fun f ↦ (LinearEquiv.symm_apply_eq _).mpr <| by
       simp [LinearEquiv.coe_ofInvolutive, hδ f]
+  have hof : ((LinearEquiv.ofInvolutive δ hδ : F ≃ₗ[R] F) : F →ₗ[R] F) = δ :=
+    LinearMap.ext (congrFun (LinearEquiv.coe_ofInvolutive δ hδ))
   have hcoe : (((LinearEquiv.ofInvolutive δ hδ).lTensor E : E ⊗[R] F ≃ₗ[R] E ⊗[R] F) :
       E ⊗[R] F →ₗ[R] E ⊗[R] F) = δ.lTensor E := by
-    rw [LinearEquiv.coe_lTensor,
-      show ((LinearEquiv.ofInvolutive δ hδ : F ≃ₗ[R] F) : F →ₗ[R] F) = δ from
-        LinearMap.ext (congrFun (LinearEquiv.coe_ofInvolutive δ hδ))]
+    rw [LinearEquiv.coe_lTensor, hof]
   have hsymm_coe : ((((LinearEquiv.ofInvolutive δ hδ).lTensor E).symm :
       E ⊗[R] F ≃ₗ[R] E ⊗[R] F) : E ⊗[R] F →ₗ[R] E ⊗[R] F) = δ.lTensor E := by
     rw [LinearEquiv.symm_lTensor, LinearEquiv.coe_lTensor, hsymm]
