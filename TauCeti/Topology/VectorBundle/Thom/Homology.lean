@@ -89,6 +89,9 @@ isomorphism in cohomology over an arbitrary base over a field:
   homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
 * `TauCeti.finrank_singularHomology_thomPair_of_subsingleton_units`: over a field whose only unit
   is `1`, such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
+* `TauCeti.finrank_singularHomology_thomPair_eq_ite`: over a field, the dimensions of the homology
+  of the Thom pair in every degree from those in degrees at least the rank, the homology below the
+  rank vanishing (`TauCeti.finrank_singularHomology_thomPair_eq_zero`).
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
   over a field and an arbitrary base with vector-space coefficients `M`.
 * `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`: over any commutative ring, the
@@ -517,6 +520,30 @@ theorem finrank_singularHomology_thomPair_of_subsingleton_units [FiniteDimension
   have hu := (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists
   rw [bettiNumber_def]
   exact (homologyThomIso F E p m h _ hu.choose_spec).toLinearEquiv.finrank_eq
+
+variable (F E) in
+/-- The homology of the Thom pair of a real vector bundle of rank `r`, over a field `K`, has
+dimension `0` in degrees below `r` (`TauCeti.isZero_singularHomology_thomPair`). -/
+theorem finrank_singularHomology_thomPair_eq_zero [FiniteDimensional ℝ F] {n : ℕ}
+    (hn : n < finrank ℝ F) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) n : ModuleCat K) = 0 := by
+  have := ModuleCat.isZero_iff_subsingleton.1
+    (isZero_singularHomology_thomPair (F := F) (E := E) (ModuleCat.of K K) hn)
+  exact Module.finrank_zero_of_subsingleton
+
+variable (F E) in
+/-- **The dimensions of the homology of a Thom pair in every degree.** Let `E → B` be a real vector
+bundle of rank `r` and `K` a field. If `dim H_{r + p}(E, E₀; K) = d p` for every `p`, then
+`dim Hₙ(E, E₀; K)` is `d (n - r)` when `r ≤ n`, and `0` when `n < r`. -/
+theorem finrank_singularHomology_thomPair_eq_ite [FiniteDimensional ℝ F] {r : ℕ}
+    (hr : finrank ℝ F = r) (d : ℕ → ℕ)
+    (hd : ∀ p, finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) (r + p) :
+      ModuleCat K) = d p) (n : ℕ) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) n : ModuleCat K) =
+      if r ≤ n then d (n - r) else 0 := by
+  split_ifs with hrn
+  · rw [← hd, Nat.add_sub_cancel' hrn]
+  · exact finrank_singularHomology_thomPair_eq_zero F E (by omega)
 
 end IsomorphismOfField
 
