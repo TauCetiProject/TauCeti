@@ -63,11 +63,13 @@ open scoped CStarAlgebra MultiplierAlgebra InnerProductSpace
 
 namespace NonUnitalStarAlgHom
 
-variable {A H : Type*} [NonUnitalCStarAlgebra A]
+section Basic
+
+variable {A H : Type*} [NonUnitalNonAssocSemiring A] [DistribMulAction ℂ A] [Star A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- A representation of a C⋆-algebra on a Hilbert space is *nondegenerate* when the vectors
-`π a ξ` span a dense subspace. -/
+/-- A representation of a ⋆-algebra on a Hilbert space is *nondegenerate* when the vectors `π a ξ`
+span a dense subspace. -/
 def IsNondegenerate (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : Prop :=
   Dense (Submodule.span ℂ (⋃ a, Set.range (π a)) : Set H)
 
@@ -85,6 +87,12 @@ theorem IsNondegenerate.ext (hπ : π.IsNondegenerate) {S T : H →L[ℂ] H}
   refine ContinuousLinearMap.ext_on hπ fun x hx => ?_
   obtain ⟨a, ξ, rfl⟩ := Set.mem_iUnion.1 hx
   simpa using congr($(h a) ξ)
+
+end Basic
+
+variable {A H : Type*} [NonUnitalCStarAlgebra A]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
 
 /-- A representation of a unital C⋆-algebra sending the identity to the identity operator is
 nondegenerate. -/

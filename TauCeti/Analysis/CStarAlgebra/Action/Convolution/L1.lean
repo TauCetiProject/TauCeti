@@ -365,15 +365,6 @@ theorem toL1FromCompletion_completion_coefficientMul [OpensMeasurableSpace G]
     rw [ContinuousLinearMap.completion_apply_coe, toL1FromCompletion_coe, toL1FromCompletion_coe,
       toL1_coefficientMul]
 
-/-- `toL1FromCompletion` intertwines `Completion.map (coefficientMul a)` with left multiplication by
-`a` on `Lp A 1 μ`, without requiring local compactness or inner regularity. -/
-@[simp]
-theorem toL1FromCompletion_map_coefficientMul [OpensMeasurableSpace G]
-    [IsFiniteMeasureOnCompacts μ] (a : A) (x : Completion (ConvolutionAlgebra α μ)) :
-    toL1FromCompletion α μ (Completion.map (coefficientMul a) x) =
-      (ContinuousLinearMap.mul ℂ A a).compLp (toL1FromCompletion α μ x) := by
-  rw [← ContinuousLinearMap.coe_completion, toL1FromCompletion_completion_coefficientMul]
-
 @[simp]
 theorem toL1_translateLIE [OpensMeasurableSpace G] [IsTopologicalGroup G] [MeasurableMul G]
     [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (r : G) (f : ConvolutionAlgebra α μ) :
@@ -395,17 +386,6 @@ theorem toL1FromCompletion_completion_translateLIE [OpensMeasurableSpace G]
   | ih f =>
     rw [LinearIsometryEquiv.completion_apply_coe, toL1FromCompletion_coe, toL1FromCompletion_coe,
       toL1_translateLIE]
-
-/-- `toL1FromCompletion` intertwines `Completion.map (translateLIE r)` with
-`CStarAction.translateLp`, without requiring local compactness or inner regularity. -/
-@[simp]
-theorem toL1FromCompletion_map_translateLIE [OpensMeasurableSpace G]
-    [IsTopologicalGroup G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
-    [μ.IsMulLeftInvariant] (r : G) (x : Completion (ConvolutionAlgebra α μ)) :
-    toL1FromCompletion α μ (Completion.map (translateLIE r) x) =
-      α.translateLp μ 1 r (toL1FromCompletion α μ x) := by
-  simpa only [LinearIsometryEquiv.coe_completion] using
-    toL1FromCompletion_completion_translateLIE (α := α) r x
 
 variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
@@ -478,13 +458,6 @@ theorem completionEquivL1_completion_coefficientMul (a : A)
     toL1FromCompletion_completion_coefficientMul]
 
 @[simp]
-theorem completionEquivL1_map_coefficientMul (a : A)
-    (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (Completion.map (coefficientMul a) x) =
-      (ContinuousLinearMap.mul ℂ A a).compLp (completionEquivL1 α μ x) := by
-  simp only [← toL1FromCompletion_eq_completionEquivL1, toL1FromCompletion_map_coefficientMul]
-
-@[simp]
 theorem completionEquivL1_symm_compLp_mul (a : A) (f : Lp A 1 μ) :
     (completionEquivL1 α μ).symm ((ContinuousLinearMap.mul ℂ A a).compLp f) =
       (coefficientMul a).completion ((completionEquivL1 α μ).symm f) := by
@@ -508,19 +481,12 @@ theorem completionEquivL1_completion_translateLIE (r : G)
   simp only [← toL1FromCompletion_eq_completionEquivL1, toL1FromCompletion_completion_translateLIE]
 
 @[simp]
-theorem completionEquivL1_map_translateLIE (r : G)
-    (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ (Completion.map (translateLIE r) x) =
-      α.translateLp μ 1 r (completionEquivL1 α μ x) := by
-  simp only [← toL1FromCompletion_eq_completionEquivL1, toL1FromCompletion_map_translateLIE]
-
-@[simp]
 theorem completionEquivL1_symm_translateLp (r : G) (f : Lp A 1 μ) :
     (completionEquivL1 α μ).symm (α.translateLp μ 1 r f) =
       Completion.map (translateLIE r) ((completionEquivL1 α μ).symm f) := by
   apply (completionEquivL1 α μ).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_map_translateLIE,
-    LinearIsometryEquiv.apply_symm_apply]
+  rw [LinearIsometryEquiv.apply_symm_apply, ← LinearIsometryEquiv.coe_completion,
+    completionEquivL1_completion_translateLIE, LinearIsometryEquiv.apply_symm_apply]
 
 end TranslateCompletion
 

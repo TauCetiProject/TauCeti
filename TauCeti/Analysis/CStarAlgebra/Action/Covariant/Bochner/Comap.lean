@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp
 
 /-!
 # Bochner `L¹` functoriality for pulled-back covariant representations
 
-This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap` and
-`TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1` to the Bochner `L¹` integrated form,
+This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap`,
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1`, and
+`TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp` to the Bochner `L¹` integrated form,
 showing that `CovariantRepresentation.integratedOperatorBochnerL1` commutes with pullback along an
 equivariant C⋆-homomorphism via `CStarAction.Hom.mapLp`.
 

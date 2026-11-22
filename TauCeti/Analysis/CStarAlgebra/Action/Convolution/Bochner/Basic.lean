@@ -7,16 +7,16 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp
 
 /-!
-# Bochner `Lᵖ` equivariant functoriality
+# Intertwining of `Hom.mapLp` with twisted Bochner convolution and `L¹` completion
 
-This file extends `TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality` and
-`TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` with Bochner `Lᵖ` functoriality:
-
-* `TauCeti.CStarAction.Hom.mapLp`: contractive functoriality `Lp A p μ →L[ℂ] Lp B p μ` of an
-  equivariant homomorphism, intertwining `actionLp`, `translateLp`, `convolutionLp`,
-  `convolutionMapL1`, and `twistedInvolutionL1`.
+This file extends `TauCeti.Analysis.CStarAlgebra.Action.Hom.Lp`,
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Functoriality`, and
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` by showing that
+`TauCeti.CStarAction.Hom.mapLp` intertwines `actionLp`, `translateLp`, `convolutionLp`,
+`convolutionMapL1`, and `twistedInvolutionL1`.
 
 ## References
 
@@ -43,47 +43,7 @@ variable {G A B C : Type*} [Group G] [TopologicalSpace G]
 
 section MapLp
 
-variable [MeasurableSpace G] (μ : Measure G) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-
-/-- Pointwise application of an equivariant C⋆-algebra homomorphism `φ : Hom α β` on `Lp A p μ`,
-as a contractive continuous linear map `Lp A p μ →L[ℂ] Lp B p μ`. -/
-def mapLp (φ : Hom α β) : Lp A p μ →L[ℂ] Lp B p μ :=
-  φ.toNonUnitalStarAlgHom.toContinuousLinearMap.compLpL p μ
-
-variable {μ p}
-
-/-- `Hom.mapLp` is composition on `Lp` with `φ.toNonUnitalStarAlgHom.toContinuousLinearMap`. -/
-theorem mapLp_eq_compLpL (φ : Hom α β) :
-    φ.mapLp μ p = φ.toNonUnitalStarAlgHom.toContinuousLinearMap.compLpL p μ :=
-  (rfl)
-
-/-- Pointwise almost-everywhere formula for `Hom.mapLp`. -/
-theorem coeFn_mapLp (φ : Hom α β) (u : Lp A p μ) : φ.mapLp μ p u =ᵐ[μ] fun s => φ (u s) := by
-  simpa only [mapLp_eq_compLpL, NonUnitalStarAlgHom.coe_toContinuousLinearMap,
-    coe_toNonUnitalStarAlgHom] using
-    φ.toNonUnitalStarAlgHom.toContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ) u
-
-/-- `Hom.mapLp` is a contraction: `‖φ.mapLp μ p‖ ≤ 1`. -/
-theorem norm_mapLp_le (φ : Hom α β) : ‖φ.mapLp μ p‖ ≤ 1 := by
-  rw [mapLp_eq_compLpL]
-  exact (φ.toNonUnitalStarAlgHom.toContinuousLinearMap.norm_compLpL_le (p := p) (μ := μ)).trans
-    φ.toNonUnitalStarAlgHom.norm_toContinuousLinearMap_le
-
-/-- The identity equivariant homomorphism induces the identity on `Lp A p μ`. -/
-@[simp]
-theorem mapLp_id : (Hom.id α).mapLp μ p = ContinuousLinearMap.id ℂ (Lp A p μ) := by
-  rw [mapLp_eq_compLpL]
-  have hid : (Hom.id α).toNonUnitalStarAlgHom.toContinuousLinearMap =
-      ContinuousLinearMap.id ℂ A := by ext a; simp
-  rw [hid, ContinuousLinearMap.id_compLpL]
-
-/-- `Hom.mapLp` preserves composition of equivariant homomorphisms. -/
-@[simp]
-theorem mapLp_comp (ψ : Hom β γ) (φ : Hom α β) :
-    (ψ.comp φ).mapLp μ p = (ψ.mapLp μ p).comp (φ.mapLp μ p) := by
-  rw [mapLp_eq_compLpL, mapLp_eq_compLpL, mapLp_eq_compLpL,
-    ContinuousLinearMap.compLpL_comp_compLpL]
-  congr 1; ext a; simp
+variable [MeasurableSpace G] {μ : Measure G} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- `Hom.mapLp` intertwines the pointwise action `actionLp`. -/
 theorem mapLp_actionLp (φ : Hom α β) (r : G) (u : Lp A p μ) :
