@@ -29,8 +29,9 @@ spectrum. The zero algebra and its empty spectrum are included. No normalization
 the norm of the identity is assumed.
 
 This file also establishes the core algebraic and functorial properties—commutation, naturality,
-and scalar specialization from the contour definition, together with character evaluation and
-resolvent/rational evaluation formulas as algebraic consequences of coordinate evaluation (via
+and scalar specialization from the contour definition, character evaluation from naturality and
+scalar point evaluation (`AlgHom.map_holomorphicCalculus_eq_eval`), and resolvent/rational
+evaluation formulas as algebraic consequences of coordinate evaluation (via
 `AlgHom.map_holomorphicGermsOfFun_*`):
 * **Commutation**: every element commuting with `a` commutes with `f(a)`, and values of the
   calculus at commuting elements commute with one another.
@@ -309,8 +310,9 @@ theorem holomorphicCalculus_id (a : A) :
 theorem holomorphicCalculus_polynomial (a : A) (p : Polynomial ℂ) :
     holomorphicCalculus a
       (holomorphicGerms.ofFun (fun z => p.eval z)
-        ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) = Polynomial.aeval a p :=
-  (holomorphicCalculus a).map_holomorphicGermsOfFun_polynomial (holomorphicCalculus_id a) p
+        ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) = Polynomial.aeval a p := by
+  rw [holomorphicGerms.ofFun_eval_polynomial, ← Polynomial.aeval_algHom_apply,
+    holomorphicCalculus_id]
 
 end TauCeti
 

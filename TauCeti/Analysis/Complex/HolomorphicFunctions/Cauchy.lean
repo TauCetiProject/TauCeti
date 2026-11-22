@@ -61,15 +61,12 @@ open Contour
 
 /-- The holomorphic Cauchy kernel `z ↦ (w - z)⁻¹` on an open set `V` avoiding `w`. -/
 def cauchyKernel (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) : holomorphicFunctions V :=
-  of V (fun z ↦ (w - z)⁻¹)
-    (((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-      sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz))
+  of V (fun z ↦ (w - z)⁻¹) (analyticOnNhd_sub_inv_iff.mpr hw).differentiableOn
 
 /-- Express `cauchyKernel` as `HolomorphicFunctions.of` applied to `z ↦ (w - z)⁻¹`. -/
 theorem cauchyKernel_def (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) :
-    cauchyKernel V w hw = of V (fun z ↦ (w - z)⁻¹)
-      (((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-        sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz)) := (rfl)
+    cauchyKernel V w hw =
+      of V (fun z ↦ (w - z)⁻¹) (analyticOnNhd_sub_inv_iff.mpr hw).differentiableOn := (rfl)
 
 @[simp]
 theorem cauchyKernel_apply (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) (z : V) :
@@ -88,8 +85,7 @@ theorem toGerm_cauchyKernel {s : Set ℂ} {V : Opens ℂ} (hs : s ⊆ V) (w : �
     (hw : w ∉ (V : Set ℂ)) :
     toGerm hs (cauchyKernel V w hw) =
       holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹)
-        (((((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-          sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz)).analyticOnNhd V.isOpen).mono hs) := by
+        (analyticOnNhd_sub_inv_iff.mpr fun hws ↦ hw (hs hws)) := by
   rw [cauchyKernel_def, toGerm_of]
 
 /-- Normalized `(N + 1)`-point left-endpoint Riemann sum of `w ↦ g w • cauchyKernel V w _` over a

@@ -23,13 +23,10 @@ suffices; for general `u`, the germ must vanish at its scalar coordinate
 
 ## Main results
 
-* `WithLp.unitizationFstA_holomorphicCalculus`: specialization of
-  `AlgHom.map_holomorphicCalculus_eq_eval` showing that the scalar coordinate of `g(u)` is
-  `g(WithLp.unitizationFstA ℂ A u)`.
 * `WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff` and
   `WithLp.holomorphicCalculusOn_mem_range_unitizationInrL_iff`: membership in the image of `A` is
   equivalent to vanishing at the scalar coordinate `WithLp.unitizationFstA ℂ A u` (and at `0`
-  when evaluated at `WithLp.unitizationInrL ℂ A a`).
+  when evaluated at `WithLp.unitizationInrL ℂ A a`), via `AlgHom.map_holomorphicCalculus_eq_eval`.
 
 ## References
 
@@ -48,15 +45,6 @@ open TauCeti HolomorphicFunctions
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [CompleteSpace A]
 
-/-- The scalar coordinate of the unitized holomorphic calculus of `u : WithLp 1 (Unitization ℂ A)`
-at `g` is `g(WithLp.unitizationFstA ℂ A u)`. -/
-theorem unitizationFstA_holomorphicCalculus (u : WithLp 1 (Unitization ℂ A))
-    (g : holomorphicGerms (spectrum ℂ u)) :
-    unitizationFstA ℂ A (holomorphicCalculus u g) =
-      holomorphicGerms.eval (unitizationFstA ℂ A u)
-        (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g :=
-  AlgHom.map_holomorphicCalculus_eq_eval (unitizationFstA ℂ A) u g
-
 /-- **Unitized holomorphic calculus range criterion (germ form).** The holomorphic calculus of
 `u : WithLp 1 (Unitization ℂ A)` lies in the image of `A` if and only if the germ vanishes at
 `WithLp.unitizationFstA ℂ A u`. -/
@@ -65,7 +53,8 @@ theorem holomorphicCalculus_mem_range_unitizationInrL_iff (u : WithLp 1 (Unitiza
     holomorphicCalculus u g ∈ Set.range (unitizationInrL ℂ A) ↔
       holomorphicGerms.eval (unitizationFstA ℂ A u)
         (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g = 0 := by
-  rw [mem_range_unitizationInrL_iff, u.unitizationFstA_holomorphicCalculus]
+  rw [mem_range_unitizationInrL_iff,
+    AlgHom.map_holomorphicCalculus_eq_eval (unitizationFstA ℂ A)]
 
 /-- **Unitized holomorphic calculus range criterion (open-domain form).** The calculus of
 `u : WithLp 1 (Unitization ℂ A)` at `f : holomorphicFunctions U` lies in the image of `A` if and

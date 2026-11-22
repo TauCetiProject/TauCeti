@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Spectrum
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 
 /-!

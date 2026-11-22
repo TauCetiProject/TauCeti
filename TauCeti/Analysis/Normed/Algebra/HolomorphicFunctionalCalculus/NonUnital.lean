@@ -14,9 +14,9 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Unit
 For an element `a` of a nonunital complex Banach algebra `A`, embedding `a` into its external `ℓ¹`
 unitization `WithLp 1 (Unitization ℂ A)` via `WithLp.unitizationInrL ℂ A` identifies
 `spectrum ℂ (WithLp.unitizationInrL ℂ A a)` with `quasispectrum ℂ a` (which always contains `0`).
-By `WithLp.unitizationFstA_holomorphicCalculus` (applied to `WithLp.unitizationInrL ℂ A a`), the
-scalar part of `g(a)` is `g(0)`, so `g(a)` lies in the embedded copy of `A` if and only if
-`g(0) = 0`.
+By `AlgHom.map_holomorphicCalculus_eq_eval` applied to `WithLp.unitizationFstA ℂ A` and
+`WithLp.unitizationInrL ℂ A a`, the scalar part of `g(a)` is `g(0)`, so `g(a)` lies in the embedded
+copy of `A` if and only if `g(0) = 0`.
 
 On the nonunital subalgebra `holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 _` of holomorphic
 germs near `quasispectrum ℂ a` that vanish at `0`, projecting onto `A` yields the nonunital
@@ -52,7 +52,8 @@ private theorem unitizationInrL_unitizationSndL_holomorphicCalculus (a : A)
       holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
         (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) :=
   WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
-    rw [← WithLp.unitizationFstA_apply, WithLp.unitizationFstA_holomorphicCalculus]
+    rw [← WithLp.unitizationFstA_apply,
+      AlgHom.map_holomorphicCalculus_eq_eval (WithLp.unitizationFstA ℂ A)]
     simp
 
 /-- **Nonunital holomorphic functional calculus.** For an element `a` of a nonunital complex Banach
@@ -67,10 +68,9 @@ def nonUnitalHolomorphicCalculus (a : A) :
   map_add' g₁ g₂ := by simp
   map_mul' g₁ g₂ := by
     apply (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective
-    simp only [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul]
-    rw [unitizationInrL_unitizationSndL_holomorphicCalculus,
-      unitizationInrL_unitizationSndL_holomorphicCalculus,
-      unitizationInrL_unitizationSndL_holomorphicCalculus, MulMemClass.coe_mul, map_mul, map_mul]
+    simp only [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul,
+      unitizationInrL_unitizationSndL_holomorphicCalculus]
+    simp only [MulMemClass.coe_mul, map_mul]
 
 /-- Formula for `nonUnitalHolomorphicCalculus a g` via the `ℓ¹` unitization. -/
 theorem nonUnitalHolomorphicCalculus_apply (a : A)
