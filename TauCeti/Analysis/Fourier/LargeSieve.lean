@@ -403,6 +403,38 @@ theorem sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le {ι : Type*} [Decida
     _ ≤ (L : ℝ)⁻¹ * S := mul_le_mul_of_nonneg_left (hrow i hi) (by positivity)
     _ = S / (L : ℝ) := by ring
 
+/-- Taper-width estimate for `L = ⌊1 / δ⌋₊` when `0 < δ ≤ 1 / 2`:
+`L + (π ^ 2 / (12 * δ ^ 2)) / L ≤ 2 / δ`. -/
+private theorem natFloor_inv_add_pi_sq_div_le {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) :
+    (⌊1 / δ⌋₊ : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (⌊1 / δ⌋₊ : ℝ) ≤ 2 / δ := by
+  let L : ℕ := ⌊1 / δ⌋₊
+  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
+  have hL_pos : (0 : ℝ) < (L : ℝ) := Nat.cast_pos.mpr (by omega)
+  have hr_le : (L : ℝ) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
+  have hr_ge : 2 / 3 ≤ (L : ℝ) * δ := by
+    have h1 : (1 : ℝ) < ((L : ℝ) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
+    have h2 : (2 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL_ge_two
+    -- `3 * (L * δ) = 2 * ((L + 1) * δ) + (L - 2) * δ > 2`
+    nlinarith [mul_nonneg (sub_nonneg.mpr h2) hδ.le]
+  have hsq : (1 - (L : ℝ) * δ) ^ 2 ≤ (1 / 3 : ℝ) ^ 2 := by
+    nlinarith [hr_le, hr_ge]
+  have hpi : Real.pi ^ 2 / 12 ≤ 8 / 9 := by
+    nlinarith [Real.pi_lt_d2, Real.pi_pos]
+  have hquad : ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 ≤ 2 * ((L : ℝ) * δ) := by
+    linarith [hsq, hpi]
+  have hmul :
+      ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) ≤
+        (2 / δ) * ((L : ℝ) * δ ^ 2) := by
+    have hLHS :
+        ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) =
+          ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 := by
+      field_simp [hL_pos.ne', hδ.ne']
+    have hRHS : (2 / δ) * ((L : ℝ) * δ ^ 2) = 2 * ((L : ℝ) * δ) := by
+      field_simp [hδ.ne']
+    rw [hLHS, hRHS]
+    exact hquad
+  exact le_of_mul_le_mul_right hmul (by positivity)
+
 /-- Centered core additive large sieve for `0 < δ ≤ 1 / 2`: taking taper width `L = ⌊1 / δ⌋₊`
 yields the explicit constant `2 * N + 2 / δ`. -/
 theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
@@ -418,29 +450,8 @@ theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
       (2 * (N : ℝ) + 2 / δ) * ‖f‖ ^ 2 := by
   classical
   let L : ℕ := ⌊1 / δ⌋₊
-  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
-  have hL_pos : 0 < L := by omega
-  have hr_le : (L : ℝ) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
-  have hr_ge : 2 / 3 ≤ (L : ℝ) * δ := by
-    have h1 : (1 : ℝ) < ((L : ℝ) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
-    have h2 : (2 : ℝ) ≤ (L : ℝ) := by exact_mod_cast hL_ge_two
-    nlinarith
-  have hwidth : (L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ) ≤ 2 / δ := by
-    have hL_rpos : (0 : ℝ) < (L : ℝ) := Nat.cast_pos.mpr hL_pos
-    have hquad : ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 ≤ 2 * ((L : ℝ) * δ) := by
-      nlinarith [Real.pi_lt_d2, Real.pi_pos]
-    have hmul :
-        ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) ≤
-          (2 / δ) * ((L : ℝ) * δ ^ 2) := by
-      have hLHS :
-          ((L : ℝ) + (Real.pi ^ 2 / (12 * δ ^ 2)) / (L : ℝ)) * ((L : ℝ) * δ ^ 2) =
-            ((L : ℝ) * δ) ^ 2 + Real.pi ^ 2 / 12 := by
-        field_simp [hL_rpos.ne', hδ.ne']
-      have hRHS : (2 / δ) * ((L : ℝ) * δ ^ 2) = 2 * ((L : ℝ) * δ) := by
-        field_simp [hδ.ne']
-      rw [hLHS, hRHS]
-      exact hquad
-    exact le_of_mul_le_mul_right hmul (by positivity)
+  have hL_pos : 0 < L := Nat.floor_pos.mpr (by rw [le_div_iff₀ hδ]; linarith)
+  have hwidth := natFloor_inv_add_pi_sq_div_le hδ hδ'
   have hsin : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → Real.sin (Real.pi * (x i - x j)) ≠ 0 := by
     intro i hi j hj hne hzero
     have hlb := (x i - x j).two_mul_norm_unitAddCircle_le_abs_sin

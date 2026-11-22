@@ -154,27 +154,6 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
 
-/-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
-theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :
-    ∑ n ∈ Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
-  rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ g ((k : ℤ) - K)) (2 * K + 1)]
-  refine sum_nbij' (fun n ↦ (n + K).toNat) (fun k ↦ (k : ℤ) - K) ?_ ?_ ?_ ?_ ?_
-  · intro n hn
-    simp only [mem_Icc, mem_range] at hn ⊢
-    omega
-  · intro k hk
-    simp only [mem_range, mem_Icc] at hk ⊢
-    omega
-  · intro n hn
-    simp only [mem_Icc] at hn
-    omega
-  · intro k _
-    omega
-  · intro n hn
-    simp only [mem_Icc] at hn
-    congr 1
-    omega
-
 /-- Reindex a sum over `Ico M (M + H)` by `range H`. -/
 theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
     (M : ℤ) (H : ℕ) (g : ℤ → α) :
@@ -201,6 +180,15 @@ theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
     (M : ℤ) (H : ℕ) (g : ℤ → α) :
     ∑ n ∈ Ico M (M + H), g n = ∑ j : Fin H, g (M + (j : ℤ)) := by
   rw [sum_Ico_int_add_eq_sum_range, ← Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ g (M + (j : ℤ)))]
+
+/-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
+theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :
+    ∑ n ∈ Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
+  have hIcc : Icc (-(K : ℤ)) K = Ico (-(K : ℤ)) (-(K : ℤ) + ((2 * K + 1 : ℕ) : ℤ)) := by
+    ext n; simp only [mem_Icc, mem_Ico]; omega
+  rw [hIcc, sum_Ico_int_add_eq_sum_fin]
+  refine sum_congr rfl fun k _ ↦ ?_
+  congr 1; ring
 
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/
