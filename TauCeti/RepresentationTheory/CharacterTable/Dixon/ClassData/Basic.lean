@@ -757,6 +757,13 @@ theorem index_map_inv (g : G) :
     (d.map e).index (e g)⁻¹ = Fin.cast (d.numClasses_map e).symm (d.index g⁻¹) := by
   rw [← map_inv, index_map]
 
+/-- The integer-power map of transported class data is that of `d`: the image of `g ^ z` is
+numbered as `g ^ z` is. Stated for `e g ^ z`, the `simp` normal form of `e (g ^ z)`. -/
+@[simp]
+theorem index_map_zpow (g : G) (z : ℤ) :
+    (d.map e).index (e g ^ z) = Fin.cast (d.numClasses_map e).symm (d.index (g ^ z)) := by
+  rw [← map_zpow, index_map]
+
 /-- **The numbering of the classes of `H` by transported class data** is the numbering by `d`
 followed by the equivalence `MulEquiv.conjClassesEquiv` that `e` induces on conjugacy classes. -/
 theorem equivConjClasses_map :

@@ -329,6 +329,43 @@ theorem zpowIndex_eq_of_modEq {z w : ℤ} {i : Fin d.numClasses}
     (h : z ≡ w [ZMOD orderOf (d.rep i)]) : d.zpowIndex z i = d.zpowIndex w i := by
   rw [zpowIndex, zpowIndex, zpow_eq_zpow_iff_modEq.mpr h]
 
+/-- The order of the `z`-th integer-power class representative, for `z ≠ 0`, is
+`orderOf (d.rep i) / gcd (orderOf (d.rep i)) z.natAbs`. -/
+theorem orderOf_rep_zpowIndex {z : ℤ} (hz : z ≠ 0) (i : Fin d.numClasses) :
+    orderOf (d.rep (d.zpowIndex z i)) =
+      orderOf (d.rep i) / Nat.gcd (orderOf (d.rep i)) z.natAbs := by
+  rw [zpowIndex, orderOf_rep_index, orderOf_zpow' _ hz]
+
+/-- An integer power with `z.natAbs` coprime to `orderOf (d.rep i)` preserves the representative's
+element order. -/
+theorem orderOf_rep_zpowIndex_of_coprime {z : ℤ} {i : Fin d.numClasses}
+    (hz : (orderOf (d.rep i)).Coprime z.natAbs) :
+    orderOf (d.rep (d.zpowIndex z i)) = orderOf (d.rep i) := by
+  rw [zpowIndex, orderOf_rep_index, ← orderOf_pow_natAbs, hz.orderOf_pow]
+
+/-- Raising class `i` to an integer power with `z.natAbs` coprime to `orderOf (d.rep i)`
+preserves its centralizer index. -/
+theorem index_centralizer_rep_zpowIndex_of_coprime {z : ℤ} {i : Fin d.numClasses}
+    (hz : (orderOf (d.rep i)).Coprime z.natAbs) :
+    (Subgroup.centralizer {d.rep (d.zpowIndex z i)}).index =
+      (Subgroup.centralizer {d.rep i}).index := by
+  cases z with
+  | ofNat n =>
+      rw [Int.ofNat_eq_natCast, zpowIndex_natCast]
+      exact d.index_centralizer_rep_powIndex_of_coprime hz
+  | negSucc n =>
+      rw [Int.negSucc_eq, zpowIndex_neg, index_centralizer_rep_invIndex, ← Nat.cast_succ,
+        zpowIndex_natCast]
+      exact d.index_centralizer_rep_powIndex_of_coprime hz
+
+/-- Raising class `i` to an integer power with `z.natAbs` coprime to `orderOf (d.rep i)`
+preserves the cardinality of its numbered class `Finset`. -/
+theorem card_classFinset_zpowIndex_of_coprime [Fintype G] {z : ℤ} {i : Fin d.numClasses}
+    (hz : (orderOf (d.rep i)).Coprime z.natAbs) :
+    (d.classFinset (d.zpowIndex z i)).card = (d.classFinset i).card := by
+  rw [card_classFinset_eq_index_centralizer, card_classFinset_eq_index_centralizer,
+    d.index_centralizer_rep_zpowIndex_of_coprime hz]
+
 /-- **A power map coprime to every representative order is a bijection** on `Fin d.numClasses`,
 without assuming `G` is finite. -/
 theorem powIndex_bijective_of_coprime {n : ℕ}
@@ -379,7 +416,7 @@ theorem zpowIndex_map {H : Type*} [Group H] [DecidableRel (IsConj : H → H → 
     (e : G ≃* H) (z : ℤ) (i : Fin (d.map e).numClasses) :
     (d.map e).zpowIndex z i =
       Fin.cast (d.numClasses_map e).symm (d.zpowIndex z (Fin.cast (d.numClasses_map e) i)) := by
-  rw [zpowIndex, rep_map, ← map_zpow, index_map, zpowIndex]
+  rw [zpowIndex, rep_map, index_map_zpow, zpowIndex]
 
 end Pow
 
