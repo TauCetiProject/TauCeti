@@ -327,7 +327,7 @@ theorem hasDerivAt_exp_smul_transpose_mul_mul_exp_smul
   rw [hfn]
   have hleft := (hasDerivAt_exp_smul_const Aᵀ t).mul_const J
   have hright := hasDerivAt_exp_smul_const' A t
-  exact (hleft.fun_mul hright).congr_deriv (by simp only [mul_add, add_mul, mul_assoc]; rfl)
+  exact (hleft.fun_mul hright).congr_deriv (by noncomm_ring)
 
 end CommutativeEntries
 

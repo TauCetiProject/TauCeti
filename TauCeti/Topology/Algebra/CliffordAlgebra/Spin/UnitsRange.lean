@@ -66,8 +66,7 @@ theorem isEmbedding_spinGroup_toUnits (Q : QuadraticForm R V) :
   have hinv : ∀ x : spinGroup Q,
       (((spinGroup.toUnits x)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
         star (x : CliffordAlgebra Q) := fun x ↦ by
-    rw [← map_inv, spinGroup.val_toUnits_apply, ← spinGroup.star_eq_inv]
-    rfl
+    rw [← map_inv, spinGroup.val_toUnits_apply, ← spinGroup.star_eq_inv, spinGroup.coe_star]
   have hcont : Continuous (spinGroup.toUnits (Q := Q)) :=
     Units.continuous_iff.mpr ⟨by rw [hval]; exact continuous_subtypeVal,
       continuous_subtypeVal.star.congr fun x ↦ (hinv x).symm⟩

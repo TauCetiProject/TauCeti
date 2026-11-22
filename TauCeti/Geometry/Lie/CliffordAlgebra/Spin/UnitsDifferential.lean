@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitsRange
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Analysis.SpecialFunctions.Exponential
@@ -29,6 +31,9 @@ normed field extension `𝕜` of `ℝ` with `2` invertible:
   algebra identification `e : CliffordAlgebra Q ≃ₐ[ℝ] R` into a complete normed algebra `R` and a
   curve `u : ℝ → MonoidHom.range spinGroup.toUnits` whose Spin and matrix projections follow
   `NormedSpace.exp (t • e x)` and `NormedSpace.exp (t • A)`, deduces `ι Q (A *ᵥ v) = ⁅x, ι Q v⁆`.
+* `TauCeti.CliffordAlgebra.ι_mulVec_eq_lie_of_embeddedLieSubgroupData`: specializes that
+  differentiation to `EmbeddedLieSubgroupData` for the `Spin(Q)` and `SO(Q)` unit ranges and a
+  smooth homomorphism agreeing with `spinToSpecialOrthogonalUnitsRange Q`.
 
 ## References
 
@@ -37,7 +42,8 @@ normed field extension `𝕜` of `ℝ` with `2` invertible:
 
 public section
 
-open scoped Matrix Matrix.Norms.Operator
+open Manifold
+open scoped ContDiff Manifold Matrix Matrix.Norms.Operator
 
 noncomputable section
 
@@ -128,6 +134,58 @@ theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
   apply e.injective
   rw [Ring.lie_def, map_sub, map_mul, map_mul]
   exact hderiv
+
+/-- **Spin–SO differential commutator from embedded Lie-subgroup data.** Given an algebra
+identification `e : CliffordAlgebra Q ≃ₐ[ℝ] R` into a finite-dimensional real normed algebra `R`,
+an identification `eK` of `MonoidHom.range spinGroup.toUnits` with `K₁ ≤ Rˣ`, embedded real
+Lie-group structures on `K₁` and the `SO(Q)` unit range, a smooth homomorphism `φ` agreeing with
+`spinToSpecialOrthogonalUnitsRange Q`, and ambient unit-algebra identifications `hx` and `hA` of
+`X` and `lieMap φ X`, the matrix `A` acts on embedded vectors `v` by `⁅x, ι Q v⁆`. -/
+theorem ι_mulVec_eq_lie_of_embeddedLieSubgroupData
+    [IsModuleTopology 𝕜 (m → 𝕜)] [ContinuousMul (CliffordAlgebra Q)]
+    [CompleteSpace 𝕜]
+    [FiniteDimensional ℝ R] {K₁ : Subgroup Rˣ}
+    {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+    {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
+    (e : CliffordAlgebra Q ≃ₐ[ℝ] R)
+    (eK : MonoidHom.range (spinGroup.toUnits (Q := Q)) ≃* K₁)
+    (heK : ∀ u, ((eK u : Rˣ) : R) = e ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
+    (d₁ : TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, R) K₁ E₁)
+    (d₂ : TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, Matrix m m 𝕜)
+      (MonoidHom.range Q.specialOrthogonalToGeneralLinear) E₂) :
+    let _ : ChartedSpace E₁ K₁ := d₁.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E₁) ∞ K₁ := d₁.lieGroup
+    let _ : ChartedSpace E₂ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=
+      d₂.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E₂) ∞ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=
+      d₂.lieGroup
+    ∀ (φ : ContMDiffMonoidMorphism 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞
+        K₁ (MonoidHom.range Q.specialOrthogonalToGeneralLinear))
+      (_hφ : ∀ u, φ (eK u) = spinToSpecialOrthogonalUnitsRange Q u)
+      (X : LeftInvariantDerivation 𝓘(ℝ, E₁) K₁)
+      {x : CliffordAlgebra Q} {A : Matrix m m 𝕜}
+      (_hx : TauCeti.Lie.unitsLieAlgebraLieEquiv (d₁.lieMapSubtypeVal X) = e x)
+      (_hA : TauCeti.Lie.unitsLieAlgebraLieEquiv (d₂.lieMapSubtypeVal (lieMap φ X)) = A)
+      (v : m → 𝕜),
+      ι Q (A *ᵥ v) = ⁅x, ι Q v⁆ := by
+  let _ : ChartedSpace E₁ K₁ := d₁.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E₁) ∞ K₁ := d₁.lieGroup
+  let _ : ChartedSpace E₂ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=
+    d₂.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E₂) ∞ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=
+    d₂.lieGroup
+  dsimp only
+  intro φ hφ X x A hx hA v
+  refine ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve (Q := Q) e x A
+    (fun t : ℝ ↦ eK.symm (lieExp (t • X))) ?_ ?_ v
+  · intro t
+    rw [← heK, eK.apply_symm_apply,
+      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := d₁),
+      d₁.coe_lieExp_smul X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, hx]
+  · intro t
+    rw [← hφ, eK.apply_symm_apply,
+      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := d₂),
+      d₁.coe_map_lieExp_smul d₂ φ X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, hA]
 
 end Commutator
 

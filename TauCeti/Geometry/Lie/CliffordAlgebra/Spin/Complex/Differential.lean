@@ -89,29 +89,14 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_lie_ι
         ι Q v⁆ := by
   let D := complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate)
   let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
-  let A := ((RestrictScalars.addEquiv ℝ ℂ
-    (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-    (complexSpinToSpecialOrthogonalCoordinateLieHom (Q := Q) x)) : Matrix (Fin n) (Fin n) ℂ)
-  let x₀ := RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q) x
-  refine ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve (Q := Q)
-    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (x₀ : CliffordAlgebra Q) A
-    (fun t : ℝ ↦ lieExp (t • X)) ?_ ?_ v
-  · intro t
-    rw [← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := D),
-      D.coe_lieExp_smul X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic]
-    simp only [X, LieEquiv.apply_symm_apply, x₀, AlgEquiv.coe_refl, id_eq]
-  · intro t
-    rw [← complexSpinToSpecialOrthogonalSmoothRange_apply,
-      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
-        (d := complexSpecialOrthogonalEmbeddedLieSubgroupData Q),
-      D.coe_map_lieExp_smul (complexSpecialOrthogonalEmbeddedLieSubgroupData Q)
-        (complexSpinToSpecialOrthogonalSmoothRange (Q := Q)) X t,
-      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply]
-    rw [
-unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices
-    ]
-    rw [← complexSpinToSpecialOrthogonalCoordinateLieHom_apply]
+  refine ι_mulVec_eq_lie_of_embeddedLieSubgroupData (Q := Q)
+    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (MulEquiv.refl _) (fun _ ↦ rfl)
+    D (complexSpecialOrthogonalEmbeddedLieSubgroupData Q)
+    (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))
+    (complexSpinToSpecialOrthogonalSmoothRange_apply (Q := Q)) X ?_ ?_ v
+  · rw [unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic]
+    simp only [X, LieEquiv.apply_symm_apply, AlgEquiv.coe_refl, id_eq]
+  · simp [X, complexSpinToSpecialOrthogonalCoordinateLieHom_apply]
 
 /-- The basis-free polar endomorphism differential of the complex `Spin(Q) → SO(Q)` projection acts
 on an embedded vector `v` by the Clifford Lie bracket with its quadratic source coordinate. -/

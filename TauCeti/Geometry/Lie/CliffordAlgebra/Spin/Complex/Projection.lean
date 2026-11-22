@@ -150,23 +150,6 @@ def complexSpecialOrthogonalLieEquivSkewAdjointMatrices [Fact Q.Nondegenerate] :
     |>.lieEquivLieSubalgebraOfSubgroup.trans
       (complexSpecialOrthogonalAmbientCoordinateLieEquiv (Fact.out : Q.Nondegenerate))
 
-/-- In ambient matrix coordinates, `complexSpecialOrthogonalLieEquivSkewAdjointMatrices` is the
-units Lie equivalence applied after differentiating the subgroup inclusion. -/
-theorem coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices_apply [Fact Q.Nondegenerate]
-    (X : LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel) SpecialOrthogonalUnitsRange) :
-    ((RestrictScalars.addEquiv ℝ ℂ
-        (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-        (complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q) X)) :
-      Matrix (Fin n) (Fin n) ℂ) =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv
-        ((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieMapSubtypeVal X) := by
-  have h := congrArg
-    (fun Y : LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ) (Matrix (Fin n) (Fin n) ℂ)ˣ ↦
-      TauCeti.Lie.unitsLieAlgebraLieEquiv Y)
-    ((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieEquivLieSubalgebraOfSubgroup_apply X)
-  simpa only [complexSpecialOrthogonalLieEquivSkewAdjointMatrices, LieEquiv.trans_apply,
-    coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply] using h
-
 /-- Matrix units coordinates of the differentiated `SO(Q)` range inclusion normalize to the polar
 skew-adjoint matrix coordinates. -/
 @[simp↓ high]
@@ -179,8 +162,13 @@ theorem
       ((RestrictScalars.addEquiv ℝ ℂ
           (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
           (complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q) X)) :
-        Matrix (Fin n) (Fin n) ℂ) :=
-  (coe_complexSpecialOrthogonalLieEquivSkewAdjointMatrices_apply (Q := Q) X).symm
+        Matrix (Fin n) (Fin n) ℂ) := by
+  have h := congrArg
+    (fun Y : LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ) (Matrix (Fin n) (Fin n) ℂ)ˣ ↦
+      TauCeti.Lie.unitsLieAlgebraLieEquiv Y)
+    ((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieEquivLieSubalgebraOfSubgroup_apply X)
+  simpa only [complexSpecialOrthogonalLieEquivSkewAdjointMatrices, LieEquiv.trans_apply,
+    coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply] using h.symm
 
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in basis-free polar skew-adjoint
 endomorphism coordinates. -/

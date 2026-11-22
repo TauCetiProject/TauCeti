@@ -58,27 +58,15 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_lie_ι (n : ℕ)
       ⁅(x : CliffordAlgebra Q), ι Q v⁆ := by
   let Q := realCliffordForm n 0
   let X := (realCliffordSpinLieEquivQuadratic n).symm x
-  let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
-    LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-  refine ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve (Q := realCliffordFormZero n)
-    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (x : CliffordAlgebra Q) A
-    (fun t : ℝ ↦ lieExp (t • X)) ?_ ?_ v
-  · intro t
-    rw [← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
-        (d := realCliffordSpinEmbeddedLieSubgroupData n),
-      (realCliffordSpinEmbeddedLieSubgroupData n).coe_lieExp_smul X t,
-      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpinLieEquivQuadratic]
+  refine ι_mulVec_eq_lie_of_embeddedLieSubgroupData (Q := realCliffordFormZero n)
+    (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (MulEquiv.refl _) (fun _ ↦ rfl)
+    (realCliffordSpinEmbeddedLieSubgroupData n)
+    (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n)
+    (realCliffordSpinToSpecialOrthogonalSmoothRange n)
+    (realCliffordSpinToSpecialOrthogonalSmoothRange_apply n) X ?_ ?_ v
+  · rw [unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpinLieEquivQuadratic]
     simp only [X, LieEquiv.apply_symm_apply, AlgEquiv.coe_refl, id_eq]
-  · intro t
-    rw [← realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
-      ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply
-        (d := realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n),
-      (realCliffordSpinEmbeddedLieSubgroupData n).coe_map_lieExp_smul
-        (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n)
-        (realCliffordSpinToSpecialOrthogonalSmoothRange n) X t,
-      ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-      unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpecialOrthogonalLieEquivSo,
+  · rw [unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpecialOrthogonalLieEquivSo,
       ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply]
 
 /-- After the exterior-bivector identification, the differential of the real Spin projection is
