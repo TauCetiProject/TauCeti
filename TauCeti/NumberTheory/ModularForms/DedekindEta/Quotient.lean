@@ -133,11 +133,11 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
     have := σ.det_coe
     rwa [Matrix.det_fin_two] at this
   -- `diag(δ, 1) σ = σ' (A B; 0 D)` with `B = y d`.
-  let σ' : SL(2, ℤ) := ⟨!![D * σ 0 0, x * δ * σ 0 1 - y; c', x * σ 1 1], by
+  let σ' : SL(2, ℤ) := .mk !![D * σ 0 0, x * δ * σ 0 1 - y; c', x * σ 1 1] (by
     rw [Matrix.det_fin_two_of]
     refine mul_left_cancel₀ (a := (A : ℤ)) (by exact_mod_cast hA) ?_
     linear_combination (-(σ 0 0 * x * σ 1 1)) * hδ + (x * δ * σ 0 1 - y) * hc +
-      (δ * x) * hdet - hbez⟩
+      (δ * x) * hdet - hbez)
   refine ⟨etaMultiplier σ' * Complex.sqrt (D : ℂ)⁻¹, y * σ 1 1,
     mul_ne_zero (etaMultiplier_ne_zero σ') (Complex.sqrt_eq_zero_iff.not.2 (inv_ne_zero hD0)),
     fun τ ↦ ?_⟩
