@@ -22,6 +22,8 @@ rescaled scalar curvatures of its factors.
 
 * `Bundle.ContMDiffRiemannianMetric.hasDerivWithinAt_inner_prodTangentSpace_of_ricciFlow`:
   products preserve the Ricci equation on any time set.
+* `hasDerivWithinAt_inner_prodTangentSpace_neg_two_mul_ricciTensor_iff`, in the same namespace:
+  a product family satisfies the Ricci equation at a point exactly when both factors do.
 * `Bundle.ContMDiffRiemannianMetric.hasDerivAt_inner_einsteinProductFlow`: independently
   scaled Einstein factors satisfy the Ricci equation.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_einsteinProductFlow`: scalar curvature
@@ -140,6 +142,39 @@ theorem hasDerivWithinAt_inner_prodTangentSpace_of_ricciFlow
     exact prodTangentSpace_inner (g₁ τ) (g₂ τ) p u v
   · rw [ricciTensor_prodTangentSpace]
     ring
+
+/-- A product family satisfies the Ricci equation at `p` for all tangent vectors exactly when
+each factor family satisfies it at the corresponding component of `p`. -/
+theorem hasDerivWithinAt_inner_prodTangentSpace_neg_two_mul_ricciTensor_iff
+    (g₁ : ℝ → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (g₂ : ℝ → ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y))
+    {s : Set ℝ} {t : ℝ} (p : M × N) :
+    (∀ u v : TangentSpace (I.prod J) p,
+      HasDerivWithinAt (fun τ ↦ ((g₁ τ).prodTangentSpace (g₂ τ)).inner p u v)
+        (-2 * (letI : RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p) :=
+          ⟨((g₁ t).prodTangentSpace (g₂ t)).toRiemannianMetric⟩;
+          (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p u v)) s t) ↔
+    (∀ u v : TangentSpace I p.1, HasDerivWithinAt (fun τ ↦ (g₁ τ).inner p.1 u v)
+      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g₁ t).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor p.1 u v)) s t) ∧
+    (∀ u v : TangentSpace J p.2, HasDerivWithinAt (fun τ ↦ (g₂ τ).inner p.2 u v)
+      (-2 * (letI : RiemannianBundle (fun y : N ↦ TangentSpace J y) :=
+        ⟨(g₂ t).toRiemannianMetric⟩;
+        (leviCivitaConnection J N).ricciTensor p.2 u v)) s t) := by
+  refine ⟨fun h ↦ ⟨fun u v ↦ ?_, fun u v ↦ ?_⟩, fun h u v ↦
+    hasDerivWithinAt_inner_prodTangentSpace_of_ricciFlow g₁ g₂ p u v (h.1 _ _) (h.2 _ _)⟩
+  -- Test the product equation on vectors tangent to a single factor.
+  on_goal 1 =>
+    have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (u, 0))
+      ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (v, 0))
+  on_goal 2 =>
+    have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, u))
+      ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, v))
+  all_goals
+    rw [ricciTensor_prodTangentSpace] at hp
+    simpa only [prodTangentSpace_inner, ContinuousLinearEquiv.apply_symm_apply, map_zero,
+      LinearMap.zero_apply, zero_apply, add_zero, zero_add] using hp
 
 variable
   (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))

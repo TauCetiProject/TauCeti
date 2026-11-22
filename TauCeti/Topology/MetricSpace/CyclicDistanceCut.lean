@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 import TauCeti.Data.Fin.Basic
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Cyclic tuples with bounded consecutive distances
@@ -49,6 +50,8 @@ The sampling of compact families of free Moore loops into these cuts is in
 
 * `TauCeti.isClosed_cyclicDistanceCut`, `TauCeti.isCompact_cyclicDistanceCut`: the cut is closed,
   and compact in a compact space.
+* `TauCeti.dist_cons_self_zero_sub_one`, `TauCeti.dist_cons_self_one_sub_one`,
+  `TauCeti.dist_cons_self_succ_succ_sub_one`: the edge lengths after repeating the first vertex.
 * `TauCeti.cons_mem_cyclicDistanceCut`: repeating the first vertex maps one cut into another.
 * `TauCeti.isEmbedding_cyclicDistanceCutRepeatFirst`,
   `TauCeti.isClosedEmbedding_cyclicDistanceCutRepeatFirst`: it is an embedding, closed when the
@@ -112,6 +115,28 @@ theorem dist_add_one_lt_of_forall_dist_sub_one_lt {r : ℝ} {q : Fin (n + 1) →
     (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) : dist (q i) (q (i + 1)) < r := by
   simpa only [add_sub_cancel_right, dist_comm] using h (i + 1)
 
+/-- Repeating the first vertex keeps the closing edge `(q₀, qₙ)` at the vertex `0`. -/
+theorem dist_cons_self_zero_sub_one (q : Fin (n + 1) → X) :
+    dist ((Fin.cons (q 0) q : Fin (n + 2) → X) 0) ((Fin.cons (q 0) q : Fin (n + 2) → X) (0 - 1)) =
+      dist (q 0) (q (0 - 1)) := by
+  rw [Fin.zero_sub_one_eq_last, Fin.zero_sub_one_eq_last, ← Fin.succ_last, Fin.cons_zero,
+    Fin.cons_succ]
+
+/-- Repeating the first vertex adds the edge `(q₀, q₀)` of length zero at the vertex `1`. -/
+theorem dist_cons_self_one_sub_one (q : Fin (n + 1) → X) :
+    dist ((Fin.cons (q 0) q : Fin (n + 2) → X) 1) ((Fin.cons (q 0) q : Fin (n + 2) → X) (1 - 1)) =
+      0 := by
+  rw [sub_self, ← Fin.succ_zero_eq_one, Fin.cons_succ, Fin.cons_zero, dist_self]
+
+/-- Repeating the first vertex moves the edge of `q` at the vertex `k + 1` to the vertex
+`k + 2`. -/
+theorem dist_cons_self_succ_succ_sub_one (q : Fin (n + 1) → X) (k : Fin n) :
+    dist ((Fin.cons (q 0) q : Fin (n + 2) → X) k.succ.succ)
+        ((Fin.cons (q 0) q : Fin (n + 2) → X) (k.succ.succ - 1)) =
+      dist (q k.succ) (q (k.succ - 1)) := by
+  rw [Fin.succ_sub_one_eq_castSucc, Fin.succ_sub_one_eq_castSucc, ← Fin.succ_castSucc,
+    Fin.cons_succ, Fin.cons_succ]
+
 /-- **Repeating the first vertex maps one distance cut into another.** The tuple
 `(q₀, q₀, q₁, …, qₙ)` has the closing edge `(q₀, qₙ)` of `q` at the vertex `0`, a new edge of
 length zero at the vertex `1`, and the edge of `q` at the vertex `i` at the vertex `i + 1`
@@ -127,20 +152,15 @@ theorem cons_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2)
   intro i
   refine Fin.cases ?_ (fun j ↦ ?_) i
   · -- The closing edge `(q₀, qₙ)` is the closing edge of `q`.
-    have hq0 := hq 0
-    rw [Fin.zero_sub_one_eq_last] at hq0
-    rw [Fin.zero_sub_one_eq_last, ← Fin.succ_last, Fin.cons_zero, Fin.cons_succ]
-    exact hq0.trans h₀
-  · rw [Fin.succ_sub_one_eq_castSucc, Fin.cons_succ]
-    refine Fin.cases ?_ (fun k ↦ ?_) j
+    rw [dist_cons_self_zero_sub_one]
+    exact (hq 0).trans h₀
+  · refine Fin.cases ?_ (fun k ↦ ?_) j
     · -- The new edge `(q₀, q₀)` has length zero.
-      rw [Fin.castSucc_zero, Fin.cons_zero, dist_self, Fin.succ_zero_eq_one]
+      rw [Fin.succ_zero_eq_one, dist_cons_self_one_sub_one]
       exact h₁
     · -- The edge `(qₖ₊₁, qₖ)` is an edge of `q`.
-      have hk := hq k.succ
-      rw [Fin.succ_sub_one_eq_castSucc] at hk
-      rw [← Fin.succ_castSucc, Fin.cons_succ]
-      exact hk.trans (h _)
+      rw [dist_cons_self_succ_succ_sub_one]
+      exact (hq k.succ).trans (h _)
 
 /-- **The embedding `ιⁿ : 𝓛ⁿ → 𝓛ⁿ⁺¹` repeating the first vertex**,
 `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, between the distance cuts with cut-offs `δ` and `δ'`, when
@@ -167,13 +187,14 @@ theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ'
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
-  refine IsEmbedding.of_comp (map_continuous _)
-    continuous_subtypeVal.finTail ?_
-  have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.val) ∘
-      cyclicDistanceCutRepeatFirst h₀ h₁ h = Subtype.val := by
-    funext q
-    simp
-  exact hcomp ▸ IsEmbedding.subtypeVal
+  have hmaps : MapsTo (fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X))
+      (cyclicDistanceCut δ) (cyclicDistanceCut δ') := fun _ ↦ cons_mem_cyclicDistanceCut h₀ h₁ h
+  -- the carrier map is the restriction of the tuple map to the cuts
+  have hfun : ⇑(cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) = hmaps.restrict := by
+    ext q : 2
+    rw [coe_cyclicDistanceCutRepeatFirst_apply, MapsTo.val_restrict_apply]
+  rw [hfun]
+  exact isEmbedding_cons_apply_zero.restrict hmaps
 
 /-- The range of the map repeating the first vertex: the tuples of the target cut whose first two
 vertices agree and whose tail lies in the source cut. -/
