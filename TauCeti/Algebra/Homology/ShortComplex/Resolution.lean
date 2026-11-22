@@ -88,8 +88,8 @@ lemma resolutionComplex_d_add_two (S : ShortComplex C) (n j : ℕ) :
 /-- Every chain map out of `S.resolutionComplex` vanishes in degrees at least `2`, since the
 complex does. -/
 @[simp]
-lemma from_resolutionComplex_f_add_two {K : ChainComplex C ℕ} (f : S.resolutionComplex ⟶ K)
-    (n : ℕ) : f.f (n + 2) = 0 :=
+lemma _root_.HomologicalComplex.Hom.from_resolutionComplex_f_add_two {K : ChainComplex C ℕ}
+    (f : S.resolutionComplex ⟶ K) (n : ℕ) : f.f (n + 2) = 0 :=
   (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
 
 /-- Two chain maps out of `S.resolutionComplex` agree as soon as they agree in degrees `0` and `1`,
@@ -101,8 +101,7 @@ lemma from_resolutionComplex_hom_ext {K : ChainComplex C ℕ} {f g : S.resolutio
   ext (_ | _ | n)
   · exact h₀
   · exact h₁
-  · exact (from_resolutionComplex_f_add_two f n).trans
-      (from_resolutionComplex_f_add_two g n).symm
+  · exact (f.from_resolutionComplex_f_add_two n).trans (g.from_resolutionComplex_f_add_two n).symm
 
 section mkHomFromResolutionComplex
 
@@ -113,21 +112,20 @@ variable (S) {K : ChainComplex C ℕ} (φ₀ : S.X₂ ⟶ K.X 0) (φ₁ : S.X₁
 degree `1`, given their compatibility `comm` with `S.f` and the differential of `K`. This is the
 analogue for this model of Mathlib's `HomologicalComplex.mkHomFromDouble`. -/
 def mkHomFromResolutionComplex : S.resolutionComplex ⟶ K :=
-  ChainComplex.ofHom (fun n => match n with | 0 => φ₀ | 1 => φ₁ | _ + 2 => 0) fun
-    | 0 => comm
-    | j + 1 => (S.isZero_resolutionComplex_X_add_two j).eq_of_src _ _
+  ChainComplex.mkHom S.resolutionComplex K φ₀ φ₁ comm fun n _ =>
+    ⟨0, (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _⟩
 
 /-- In degree `0`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₀`. -/
 @[simp]
 lemma mkHomFromResolutionComplex_f_zero :
     (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 0 = φ₀ :=
-  (rfl)
+  ChainComplex.mkHom_f_0 ..
 
 /-- In degree `1`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` is `φ₁`. -/
 @[simp]
 lemma mkHomFromResolutionComplex_f_one :
     (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 1 = φ₁ :=
-  (rfl)
+  ChainComplex.mkHom_f_1 ..
 
 end mkHomFromResolutionComplex
 
@@ -206,12 +204,12 @@ def resolutionComplexMap (φ : S ⟶ S') : S.resolutionComplex ⟶ S'.resolution
 /-- In degree `0`, the chain map induced by `φ` is `φ.τ₂`. -/
 @[simp]
 lemma resolutionComplexMap_f_zero (φ : S ⟶ S') : (resolutionComplexMap φ).f 0 = φ.τ₂ :=
-  (rfl)
+  S.mkHomFromResolutionComplex_f_zero (K := S'.resolutionComplex) φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- In degree `1`, the chain map induced by `φ` is `φ.τ₁`. -/
 @[simp]
 lemma resolutionComplexMap_f_one (φ : S ⟶ S') : (resolutionComplexMap φ).f 1 = φ.τ₁ :=
-  (rfl)
+  S.mkHomFromResolutionComplex_f_one (K := S'.resolutionComplex) φ.τ₂ φ.τ₁ φ.comm₁₂
 
 /-- The induced map of the identity short-complex morphism is the identity chain map. -/
 @[simp]
