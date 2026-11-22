@@ -64,8 +64,8 @@ theorem tendsto_prod_range_one_sub_of_not_summable {α : ℕ → ℝ} (h0 : ∀�
       (fun t ↦ prod_nonneg fun s _ ↦ sub_nonneg.2 (hT _ (Nat.le_add_right T s)).2) (fun t ↦ ?_)
       (Real.tendsto_exp_neg_atTop_nhds_zero.comp hsum)
     calc ∏ s ∈ range t, (1 - α (T + s)) ≤ ∏ s ∈ range t, Real.exp (-α (T + s)) :=
-          prod_le_prod₀ (fun s _ ↦ sub_nonneg.2 (hT _ (Nat.le_add_right T s)).2) fun s _ ↦ by
-            linarith [Real.add_one_le_exp (-α (T + s))]
+          prod_le_prod₀ (fun s _ ↦ sub_nonneg.2 (hT _ (Nat.le_add_right T s)).2) fun s _ ↦
+            Real.one_sub_le_exp_neg _
       _ = Real.exp (-∑ s ∈ range t, α (T + s)) := by rw [← Real.exp_sum, sum_neg_distrib]
   have h := htail.const_mul (∏ s ∈ range T, (1 - α s))
   rw [mul_zero] at h

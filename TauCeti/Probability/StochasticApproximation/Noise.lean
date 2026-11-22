@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecificLimits.Averaging
 public import TauCeti.Probability.Martingale.DifferenceSeries
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
 # The scalar noise lemma of stochastic approximation
@@ -147,7 +148,7 @@ private lemma condExp_truncStep_mul [IsFiniteMeasure P] (hα : Adapted ℱ α)
     (hw_condExp : ∀ t, P[w t | ℱ t] =ᵐ[P] 0) (k s : ℕ) :
     P[fun ω ↦ truncStep P ℱ α w k s ω * w s ω | ℱ s] =ᵐ[P] 0 :=
   -- For real functions `f • g` is `f * g` by `smul_eq_mul`.
-  condExp_smul_eq_zero_of_condExp_eq_zero
+  MeasureTheory.condExp_smul_eq_zero_of_condExp_eq_zero
     (stronglyMeasurable_truncStep hα k s).aestronglyMeasurable
     ((memLp_truncStep_mul hα hw hw₂ k s).integrable one_le_two)
     ((hw₂ s).integrable one_le_two) (hw_condExp s)

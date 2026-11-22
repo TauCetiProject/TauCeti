@@ -38,6 +38,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   integrability hypothesis.
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
+- `condExp_smul_eq_zero_of_condExp_eq_zero`: if `μ[g | m] = 0` and `f` is `m`-measurable, then
+  `μ[f • g | m] = 0`.
 - `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
   `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
 - `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is `m`-measurable with the same set integrals
@@ -323,6 +325,15 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
           eLpNorm_one_eq_lintegral_eNorm integrable_condExp.aestronglyMeasurable]
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
+
+/-- If `μ[g | m] = 0` and `f` is `m`-measurable, then `μ[f • g | m] = 0`: a measurable factor
+times a martingale difference is again a martingale difference. -/
+theorem condExp_smul_eq_zero_of_condExp_eq_zero {Ω E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → ℝ}
+    {g : Ω → E} (hf : AEStronglyMeasurable[m] f μ) (hfg : Integrable (f • g) μ)
+    (hg : Integrable g μ) (hcg : μ[g | m] =ᵐ[μ] 0) : μ[f • g | m] =ᵐ[μ] 0 := by
+  filter_upwards [condExp_smul_of_aestronglyMeasurable_left hf hfg hg, hcg] with ω h₁ h₂
+  simp [h₁, h₂]
 
 /-- Pulling out an a.e. `m`-measurable factor: if `Z ≥ 0` almost everywhere and the
 conditional mean of `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`. -/
