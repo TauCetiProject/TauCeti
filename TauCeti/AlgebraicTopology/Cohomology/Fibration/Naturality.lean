@@ -130,20 +130,18 @@ private lemma singularCohomologyMap_filteredSpaceStepMap_comp_eqToHom (hf : f �
         eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularCohomology (ModuleCat.of R R) k M m)
           (TopPair.ofInclusion_congr _ (preimage_mono (skeletonLT_subset_skeletonLT_succ C n))
             (preimageSkeleton_eq_preimage_skeletonLT p n a ha)
-            (by rw [show b = a + 1 by lia]
-                exact preimageSkeleton_add_one_eq_preimage_skeletonLT p n a ha))) =
+            (preimageSkeleton_eq_preimage_skeletonLT p (n + 1) b (by lia)))) =
       eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularCohomology (ModuleCat.of R R) k M m)
           (TopPair.ofInclusion_congr _ (preimage_mono (skeletonLT_subset_skeletonLT_succ C n))
             (preimageSkeleton_eq_preimage_skeletonLT p' n a ha)
-            (by rw [show b = a + 1 by lia]
-                exact preimageSkeleton_add_one_eq_preimage_skeletonLT p' n a ha))) ≫
+            (preimageSkeleton_eq_preimage_skeletonLT p' (n + 1) b (by lia)))) ≫
         TopPair.singularCohomologyMap
           (TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C n)) m :=
   TopPair.singularCohomologyMap_comp_eqToHom_of_eq
     (preimageSkeleton_eq_preimage_skeletonLT p n a ha)
-    (by rw [show b = a + 1 by lia]; exact preimageSkeleton_add_one_eq_preimage_skeletonLT p n a ha)
+    (preimageSkeleton_eq_preimage_skeletonLT p (n + 1) b (by lia))
     (preimageSkeleton_eq_preimage_skeletonLT p' n a ha)
-    (by rw [show b = a + 1 by lia]; exact preimageSkeleton_add_one_eq_preimage_skeletonLT p' n a ha)
+    (preimageSkeleton_eq_preimage_skeletonLT p' (n + 1) b (by lia))
     _ _
     (fun x ↦ (filteredSpaceStepMap_fst_apply _ _ f _ _ x).trans <| Eq.symm <|
       (congrArg Subtype.val (ConcreteCategory.congr_hom

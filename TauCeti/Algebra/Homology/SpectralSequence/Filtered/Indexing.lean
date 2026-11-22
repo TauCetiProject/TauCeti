@@ -129,6 +129,23 @@ noncomputable def decreasingFiltrationSpectralSequencePageXIso (r r' : ℤ) (hr 
         (by lia)).X (a, b) :=
   SpectralSequence.reindexPageXIso _ _ _ _ _ r r' hr hr' (p, q) (a, b) (by simp [ha, hb])
 
+/-- The graded piece of the increasing filtration `t ↦ F^{-t}` at `-(p + 1) ≤ -p`, the cokernel of a
+transition map of its functor, is the graded piece `F^p/F^{p+1}` of `F`. -/
+noncomputable def decreasingFiltrationGradedIso (p : ℤ) :
+    cokernel ((filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h)).map
+        (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
+          WithBotTop.coe_le_coe.mpr (by lia)))) ≅
+      cokernel (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia))) :=
+  cokernelFiltrationFunctorMapIso _ _ _ ≪≫ Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ _
+
+/-- The isomorphism `CochainComplex.decreasingFiltrationGradedIso` is induced by the identity of
+the stage `F^p`. -/
+@[reassoc (attr := simp)]
+lemma π_decreasingFiltrationGradedIso_hom (p : ℤ) :
+    cokernel.π _ ≫ (decreasingFiltrationGradedIso F hF p).hom =
+      (filtrationFunctorObjIso _ _ _).hom ≫ Subobject.ofLE _ (F p) (by simp) ≫ cokernel.π _ := by
+  simp [decreasingFiltrationGradedIso]
+
 /-- **The first page of the spectral sequence of a decreasing filtration.** The object at
 `(p, q)` is the cohomology `H^{p+q}(F^p/F^{p+1})` of the graded piece `F^p/F^{p+1}`. -/
 noncomputable def decreasingFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) :
@@ -150,12 +167,7 @@ lemma decreasingFiltrationSpectralSequenceFirstPageXIso_hom (p q : ℤ) :
       (decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
         (spectralSequenceFirstPageXIsoCokernel _ (2 * p + q + 1, -p - 1) (-(p + 1)) (-p)
           (by dsimp; lia) (by dsimp; lia) (p + q) (by dsimp; lia)).hom ≫
-        HomologicalComplex.homologyMap
-          (cokernelFiltrationFunctorMapIso _ (hF.comp fun _ _ h ↦ neg_le_neg h)
-              (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
-                WithBotTop.coe_le_coe.mpr (by lia))) ≪≫
-            Subobject.cokernelOfLEIsoOfEq (A' := F (p + 1)) (B' := F p) (by simp) (by simp) _
-              (hF (by lia))).hom (p + q) :=
+        HomologicalComplex.homologyMap (decreasingFiltrationGradedIso F hF p).hom (p + q) :=
   (rfl)
 
 /-- **The first differential of the spectral sequence of a decreasing filtration.** Under the
@@ -305,20 +317,11 @@ theorem decreasingFiltrationSpectralSequenceFirstPageXIso_hom_naturality (f : K 
     (hG.comp fun _ _ h ↦ neg_le_neg h) f fun t ↦ hf (-t)
   -- The square of graded pieces, compared with those of the functors of the filtrations.
   have key : cokernel.map _ _ (α.app (-(p + 1) : ℤ)) (α.app (-p : ℤ)) (α.naturality _).symm ≫
-      (cokernelFiltrationFunctorMapIso _ (hG.comp fun _ _ h ↦ neg_le_neg h)
-          (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
-            WithBotTop.coe_le_coe.mpr (by lia))) ≪≫
-        Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ (hG (by lia))).hom =
-      (cokernelFiltrationFunctorMapIso _ (hF.comp fun _ _ h ↦ neg_le_neg h)
-          (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
-            WithBotTop.coe_le_coe.mpr (by lia))) ≪≫
-        Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ (hF (by lia))).hom ≫
-        decreasingFiltrationGradedMap hF hG f hf p := by
+      (decreasingFiltrationGradedIso G hG p).hom =
+      (decreasingFiltrationGradedIso F hF p).hom ≫ decreasingFiltrationGradedMap hF hG f hf p := by
     refine (cancel_epi (cokernel.π _)).1 ?_
-    simp only [Iso.trans_hom, cokernel.π_desc_assoc, Category.assoc,
-      π_cokernelFiltrationFunctorMapIso_hom_assoc, Subobject.π_cokernelOfLEIsoOfEq_hom_assoc,
-      π_decreasingFiltrationGradedMap]
-    rw [Subobject.π_cokernelOfLEIsoOfEq_hom]
+    simp only [cokernel.π_desc_assoc, Category.assoc, π_decreasingFiltrationGradedIso_hom,
+      π_decreasingFiltrationGradedIso_hom_assoc, π_decreasingFiltrationGradedMap]
     simp only [← Category.assoc]
     congr 1
     rw [← cancel_mono (G p).arrow]
