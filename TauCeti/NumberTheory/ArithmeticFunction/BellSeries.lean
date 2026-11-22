@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.NumberTheory.Divisors
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Bell series of arithmetic functions
@@ -118,10 +119,10 @@ theorem bellSeries_ofPowerSeries_pow {p m : ℕ} (hp : p.Prime) (hm : m ≠ 0) (
 theorem bellSeries_mul_one_sub_C_mul_X {p : ℕ} (hp : p.Prime) {f : ArithmeticFunction R} {c : R}
     (hf : ∀ k : ℕ, f (p ^ k) = c ^ k) :
     bellSeries p hp f * (1 - PowerSeries.C c * PowerSeries.X) = 1 := by
-  have h := congrArg (PowerSeries.rescale c) (PowerSeries.mk_one_mul_one_sub_eq_one R)
-  have hbell : bellSeries p hp f = PowerSeries.rescale c (PowerSeries.mk 1) :=
+  have hbell : bellSeries p hp f = PowerSeries.mk (c ^ ·) :=
     PowerSeries.ext fun k ↦ by simp [hf]
-  simpa [hbell, map_mul, map_sub, map_one, PowerSeries.rescale_X] using h
+  rw [hbell]
+  exact TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one c
 
 /-- The Bell series at `p` of the geometric local factor supported on powers of `p ^ m` (`m ≠ 0`)
 is the formal reciprocal of `1 - X ^ m`. -/

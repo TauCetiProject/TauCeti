@@ -5,16 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-public import Mathlib.NumberTheory.LSeries.Convolution
 public import TauCeti.GroupTheory.FiniteAbelian.EulerFactor
-import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.ZMod.OrderOf
-import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
-import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Products of linear Euler factors over Dirichlet characters
@@ -35,9 +31,7 @@ the polynomial Euler-factor identity
   (1 - X ^ orderOf (p : ZMod m)) ^ (m.totient / orderOf (p : ZMod m))`
 
 over any integral domain `R` with enough roots of unity for `Monoid.exponent (ZMod m)ˣ`, including
-at ramified primes `p ∣ n` where `k ≥ 1`. Inverting both sides in `R⟦X⟧` identifies the prime-power
-Dirichlet convolution coefficients of `∏ χ, toArithmeticFunction (χ.primitiveCharacter ·)` at
-`p ^ r`, providing the character side of the Dedekind zeta factorization for cyclotomic fields.
+at ramified primes `p ∣ n` where `k ≥ 1`.
 
 ## Main results
 
@@ -50,9 +44,6 @@ Dirichlet convolution coefficients of `∏ χ, toArithmeticFunction (χ.primitiv
   `DirichletCharacter.prod_one_sub_primitiveCharacter_prime_mul`: product of
   `1 - C (χ.primitiveCharacter p) * X` (and `1 - χ.primitiveCharacter p * z`) over all `χ` modulo
   `n = p ^ k * m`.
-* `DirichletCharacter.prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow`: prime-power
-  evaluation of the Dirichlet convolution `∏ χ, toArithmeticFunction (χ.primitiveCharacter ·)` via
-  `(ArithmeticFunction.ofPowerSeries (p ^ f) (PowerSeries.mk 1)) ^ g`.
 
 ## References
 
@@ -150,77 +141,5 @@ theorem prod_one_sub_primitiveCharacter_prime_mul {n p k m : ℕ} (hp : p.Prime)
   have h := congrArg (Polynomial.eval z)
     (prod_one_sub_C_primitiveCharacter_prime_mul_X (R := R) hp hn hm)
   simpa [eval_prod] using h
-
-/-- Reciprocal power-series identity at a prime `p`: the product over `χ` modulo `n = p ^ k * m` of
-`∑_{i ≥ 0} (χ.primitiveCharacter p) ^ i X ^ i` equals `((1 + X ^ f + X ^ (2 f) + ⋯)) ^ g` in
-`R⟦X⟧`, where `f = orderOf (p : ZMod m)` and `g = m.totient / f`. -/
-private theorem prod_mk_primitiveCharacter_prime_pow_eq {n p k m : ℕ} (hp : p.Prime)
-    (hn : n = p ^ k * m) (hm : ¬ p ∣ m)
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod m)ˣ)] :
-    (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) =
-      (PowerSeries.subst (PowerSeries.X ^ orderOf (p : ZMod m) : PowerSeries R)
-        (PowerSeries.mk 1 : PowerSeries R)) ^ (m.totient / orderOf (p : ZMod m)) := by
-  set f := orderOf (p : ZMod m)
-  set g := m.totient / f
-  have hf0 : f ≠ 0 := (ZMod.orderOf_natCast_pos_of_not_dvd hp hm).ne'
-  set U : PowerSeries R :=
-    PowerSeries.subst (PowerSeries.X ^ f : PowerSeries R) (PowerSeries.mk 1 : PowerSeries R)
-  set Z : PowerSeries R := (1 - PowerSeries.X ^ f) ^ g
-  have hVZ : (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) *
-      Z = 1 := by
-    have hZ : Z = ∏ χ : DirichletCharacter R n,
-        (1 - PowerSeries.C (χ.primitiveCharacter p) * PowerSeries.X) := by
-      simpa [Z, map_prod] using (congrArg (Polynomial.coeToPowerSeries.ringHom (R := R))
-        (prod_one_sub_C_primitiveCharacter_prime_mul_X (R := R) hp hn hm)).symm
-    rw [hZ, ← Finset.prod_mul_distrib]
-    exact Finset.prod_eq_one fun χ _ ↦ TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one _
-  have hUZ : U ^ g * Z = 1 := by
-    have hU : U * (1 - PowerSeries.X ^ f) = 1 := by
-      simpa only [U, map_mul, map_sub, map_one, PowerSeries.substAlgHom_X,
-        PowerSeries.coe_substAlgHom] using congrArg
-          (PowerSeries.substAlgHom (R := R) (PowerSeries.HasSubst.X_pow (R := R) hf0))
-          (PowerSeries.mk_one_mul_one_sub_eq_one R)
-    rw [← mul_pow, hU, one_pow]
-  calc (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i)
-      = (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) *
-          (U ^ g * Z) := by rw [hUZ, mul_one]
-    _ = (((∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) * Z) *
-          U ^ g) := by ring
-    _ = U ^ g := by rw [hVZ, one_mul]
-
-/-- **Prime-power coefficients of the primitive-character convolution product.** If `n = p ^ k * m`
-with `p` prime and `¬ p ∣ m`, the `p ^ r`-th Dirichlet-convolution coefficient of
-`∏ χ : DirichletCharacter R n, toArithmeticFunction (χ.primitiveCharacter ·)` coincides with that of
-`(ArithmeticFunction.ofPowerSeries (p ^ f) (PowerSeries.mk 1)) ^ g`, the `g`-fold convolution of
-the geometric Euler factor of norm `p ^ f`, where `f = orderOf (p : ZMod m)` and
-`g = m.totient / f`. -/
-theorem prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow {n p k m : ℕ} (hp : p.Prime)
-    (hn : n = p ^ k * m) (hm : ¬ p ∣ m)
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod m)ˣ)] (r : ℕ) :
-    (∏ χ : DirichletCharacter R n, toArithmeticFunction (χ.primitiveCharacter ·)) (p ^ r) =
-      ((ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
-          (PowerSeries.mk 1 : PowerSeries R)) ^
-        (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
-  classical
-  have hf0 : orderOf (p : ZMod m) ≠ 0 := (ZMod.orderOf_natCast_pos_of_not_dvd hp hm).ne'
-  have hcongr (t : Finset (DirichletCharacter R n)) (j : ℕ) :
-      (∏ χ ∈ t, toArithmeticFunction (χ.primitiveCharacter ·)) (p ^ j) =
-        (∏ χ ∈ t, ArithmeticFunction.ofPowerSeries p
-          (PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i)) (p ^ j) := by
-    induction t using Finset.induction_on generalizing j with
-    | empty => simp
-    | insert χ t hχ ih =>
-      rw [Finset.prod_insert hχ, Finset.prod_insert hχ, ArithmeticFunction.mul_apply,
-        ArithmeticFunction.mul_apply]
-      refine Finset.sum_congr rfl fun d hd ↦ ?_
-      obtain ⟨i₁, -, hi₁⟩ := (Nat.dvd_prime_pow hp).mp
-        (Nat.dvd_of_mem_divisors (Nat.fst_mem_divisors_of_mem_antidiagonal hd))
-      obtain ⟨i₂, -, hi₂⟩ := (Nat.dvd_prime_pow hp).mp
-        (Nat.dvd_of_mem_divisors (Nat.snd_mem_divisors_of_mem_antidiagonal hd))
-      rw [hi₁, hi₂, toArithmeticFunction_apply_pow _ hp.ne_zero,
-        ArithmeticFunction.ofPowerSeries_apply_pow hp.one_lt, PowerSeries.coeff_mk, ih]
-  rw [hcongr Finset.univ r, ← map_prod (ArithmeticFunction.ofPowerSeries p),
-    prod_mk_primitiveCharacter_prime_pow_eq hp hn hm, ArithmeticFunction.ofPowerSeries_pow p hf0,
-    ← map_pow]
 
 end DirichletCharacter

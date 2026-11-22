@@ -15,8 +15,9 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.ZMod.OrderOf
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.BellSeries
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
+import TauCeti.NumberTheory.DirichletCharacter.BellSeries
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.LSeries.Convolution
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
@@ -120,44 +121,6 @@ theorem prod_primesOverFinset_inv_one_sub_absNorm_cpow_neg [NeZero n] (s : ℂ) 
   rw [Finset.prod_inv_distrib, Finset.prod_inv_distrib,
     prod_primesOverFinset_one_sub_absNorm_cpow_neg (n := n)]
 
-/-- Prime-power evaluation of `normCoeff K 1` in a cyclotomic field: the `g` primes of `𝓞 K` above
-`p` each contribute `ArithmeticFunction.ofPowerSeries (p ^ f) (PowerSeries.mk 1)`. -/
-private theorem normCoeff_one_apply_prime_pow (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (r : ℕ) :
-    normCoeff K 1 (p ^ r) =
-      ((ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
-          (PowerSeries.mk 1 : PowerSeries ℂ)) ^
-        (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
-  let Pset := primesOverFinset (span {(p : ℤ)}) (𝓞 K)
-  let mkH (P : {P // P ∈ Pset}) : {Q : HeightOneSpectrum (𝓞 K) // Q.asIdeal = P.val} :=
-    haveI : P.val.IsPrime := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property).1
-    haveI : P.val.LiesOver (span {(p : ℤ)}) := ((mem_primesOverFinset_iff hp0
-        (𝓞 K)).mp P.property).2
-    ⟨heightOneSpectrumOfLiesOver p P.val, heightOneSpectrumOfLiesOver_asIdeal p P.val⟩
-  let toH : {P // P ∈ Pset} ↪ HeightOneSpectrum (𝓞 K) :=
-    { toFun := fun P ↦ (mkH P).val
-      inj' := fun P₁ P₂ h ↦ Subtype.ext <|
-        (mkH P₁).property.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans
-            (mkH P₂).property) }
-  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.val := (mkH P).property
-  have hmem : ∀ Q : HeightOneSpectrum (𝓞 K),
-      Q.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → Q ∈ Pset.attach.map toH :=
-    fun Q hQ ↦ Finset.mem_map.mpr ⟨⟨Q.asIdeal, (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ⟩,
-      Finset.mem_attach _ _, HeightOneSpectrum.ext (hasIdeal _)⟩
-  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
-    (Pset.attach.map toH) (mem_of_natCast_mem_asIdeal hmem) r, Finset.prod_map]
-  have hloc : ∀ P ∈ Pset.attach,
-      (1 : IdealArithmeticFunction K).localArithmeticFactor (toH P) =
-        ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
-          (PowerSeries.mk 1 : PowerSeries ℂ) := by
-    intro P _
-    obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property
-    have hps : (1 : IdealArithmeticFunction K).localPowerSeries (toH P) = PowerSeries.mk 1 := by
-      ext i; simp
-    rw [localArithmeticFactor_def, hps, hasIdeal P, absNorm_eq_pow_orderOf hn hm P.val]
-  rw [Finset.prod_congr rfl hloc, Finset.prod_const, Finset.card_attach,
-    card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm]
-
 end Local
 
 /-! ### Global Dirichlet-coefficient, `L`-series, and residue factorizations -/
@@ -173,16 +136,33 @@ Dirichlet convolution of `toArithmeticFunction (χ.primitiveCharacter ·)` over 
 theorem normCoeff_one_eq_prod_primitiveCharacter :
     normCoeff K 1 =
       ∏ χ : DirichletCharacter ℂ n, toArithmeticFunction (χ.primitiveCharacter ·) := by
-  refine (ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers _
-    isMultiplicative_one.normCoeff _
+  refine (ArithmeticFunction.IsMultiplicative.eq_iff_forall_bellSeries_eq
+    isMultiplicative_one.normCoeff
     (ArithmeticFunction.isMultiplicative_finsetProd _ _ fun χ _ ↦
-      χ.primitiveCharacter.isMultiplicative_toArithmeticFunction)).mpr fun p r hp ↦ ?_
+      χ.primitiveCharacter.isMultiplicative_toArithmeticFunction)).mpr fun p hp ↦ ?_
   have := Fact.mk hp
-  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.ne_one
+  set m := ordCompl[p] n
+  have hn : n = p ^ n.factorization p * m := (Nat.ordProj_mul_ordCompl_eq_self n p).symm
+  have hm : ¬ p ∣ m := Nat.not_dvd_ordCompl hp (NeZero.ne n)
   have := NeZero.of_not_dvd_right hm
   have : NeZero (Monoid.exponent (ZMod m)ˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
-  rw [normCoeff_one_apply_prime_pow (K := K) hn hm r,
-    DirichletCharacter.prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow hp hn hm r]
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.ne_zero
+  have h1 : ArithmeticFunction.bellSeries p hp (normCoeff K 1) *
+      (1 - PowerSeries.X ^ orderOf (p : ZMod m)) ^ (m.totient / orderOf (p : ZMod m)) = 1 := by
+    have hbell :=
+      TauCeti.IdealArithmeticFunction.bellSeries_normCoeff_one_mul_prod_one_sub_X_pow K hp
+    have hinert : ∀ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K),
+        𝔭.inertiaDeg ℤ = orderOf (p : ZMod m) := by
+      intro 𝔭 h𝔭
+      obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
+      exact Nat.pow_right_injective hp.one_lt
+        ((Ideal.pow_inertiaDeg p 𝔭).trans (absNorm_eq_pow_orderOf hn hm 𝔭))
+    rwa [Finset.prod_congr rfl fun 𝔭 h𝔭 ↦ by rw [hinert 𝔭 h𝔭], Finset.prod_const,
+      card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm] at hbell
+  have h2 :=
+    DirichletCharacter.bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub
+      (R := ℂ) (N := n) hp
+  exact inv_unique (by simpa only [mul_comm] using h1) (by simpa only [mul_comm] using h2)
 
 /-- **Ideal-counting coefficients of `ζ_K` for a cyclotomic field.** For every `k ≠ 0`, the number
 `dedekindZetaCoeff K k` of integral ideals of `𝓞 K` of norm `k` equals the `k`-th coefficient of

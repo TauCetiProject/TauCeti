@@ -16,10 +16,7 @@ Inversion preserves primitivity, and a primitive character is trivial exactly at
 accordingly `χ.primitiveCharacter = 1 ↔ χ = 1`, while `χ.primitiveCharacter` vanishes at every
 prime dividing `χ.conductor`. Writing `n = p ^ k * m` with `p` prime and `¬ p ∣ m`, a character
 modulo `n` factors through `m` iff `p` does not divide its conductor; at prime-power level `p ^ k`,
-`p ∣ χ.conductor ↔ χ ≠ 1`, so every nonprincipal character of prime level is primitive. Lifting a
-character from level `M` to a nonzero multiple level `N` and taking its primitive character
-preserves evaluation at integers coprime to `M`
-(`DirichletCharacter.primitiveCharacter_changeLevel_apply_of_isCoprime`).
+`p ∣ χ.conductor ↔ χ ≠ 1`, so every nonprincipal character of prime level is primitive.
 
 An injective change of coefficient ring preserves factorization through a lower level, hence the
 conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
@@ -39,9 +36,6 @@ characters with pairwise coprime conductors is the product of their conductors.
   `p ∣ χ.conductor ↔ χ ≠ 1`.
 * `DirichletCharacter.isPrimitive_of_ne_one_of_prime`: every nonprincipal character modulo a prime
   `p` is primitive.
-* `DirichletCharacter.primitiveCharacter_changeLevel_apply_of_isCoprime`: lifting from level `M` to
-  a nonzero multiple level `N` and taking `primitiveCharacter` preserves evaluation at integers
-  coprime to `M`.
 * `DirichletCharacter.conductor_ringHomComp`, `DirichletCharacter.isPrimitive_ringHomComp_iff`:
   injective ring homomorphisms preserve conductor and primitivity.
 * `DirichletCharacter.conductor_mul_of_coprime`,
@@ -117,16 +111,6 @@ theorem isPrimitive_of_ne_one_of_prime {R : Type*} [CommMonoidWithZero R] {p : �
   rcases hp.eq_one_or_self_of_dvd _ χ.conductor_dvd_level with h1 | hp'
   · exact absurd (eq_one_iff_conductor_eq_one.mpr h1) hχ
   · exact hp'
-
-/-- Lifting a character `ψ` from level `M` to a nonzero multiple level `N` and taking its
-primitive character preserves evaluation at any integer coprime to `M`. -/
-theorem primitiveCharacter_changeLevel_apply_of_isCoprime {R : Type*} [CommMonoidWithZero R]
-    {M N : ℕ} [NeZero N] (hMN : M ∣ N) (ψ : DirichletCharacter R M) {a : ℤ}
-    (ha : IsCoprime a M) :
-    (changeLevel hMN ψ).primitiveCharacter a = ψ a := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Subsingleton.elim _ _
-  rw [primitiveCharacter_changeLevel_apply, primitiveCharacter_apply_of_isCoprime ψ ha]
 
 /-! ### Injective changes of the coefficient ring -/
 

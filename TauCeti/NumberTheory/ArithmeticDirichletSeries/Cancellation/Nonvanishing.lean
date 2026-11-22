@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
-import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
+import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # The continued L-function of a cancelling weight does not vanish on `Re s ≥ 1`

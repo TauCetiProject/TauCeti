@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
@@ -25,19 +24,15 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
 * Any primitive character `ψ` modulo `m ∣ n` lifting to `χ` has the same continued `L`-function as
   `χ.primitiveCharacter`
   (`DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`).
-* For a single character `χ` (`χ ≠ 1` or `s ≠ 1`), `χ.LFunction s` equals
-  `χ.primitiveCharacter.LFunction s` multiplied by the Euler factors deleted at primes dividing `n`
-  (`DirichletCharacter.LFunction_eq_LFunction_primitiveCharacter_mul`). Taking the product over
-  all `χ : DirichletCharacter ℂ n` away from `s = 1` recovers `∏ χ, χ.LFunction s`
+* Away from `s = 1`, multiplying `∏ χ, χ.primitiveCharacter.LFunction s` by the Euler factors
+  `∏ χ, ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * p ^ (-s))` deleted when raising level
+  from `χ.conductor` to `n` recovers `∏ χ : DirichletCharacter ℂ n, χ.LFunction s`
   (`DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction`).
 * Raising the level of `χ` does not change `χ.primitiveCharacter.LFunction`
   (`DirichletCharacter.LFunction_primitiveCharacter_changeLevel`); in particular, if `χ.mul ψ` is
   principal then `χ` and `ψ⁻¹` have the same primitive `L`-function
   (`DirichletCharacter.LFunction_primitiveCharacter_eq_of_mul_eq_one`).
-* Each nonprincipal factor `χ.primitiveCharacter.LFunction` is entire
-  (`DirichletCharacter.differentiable_LFunction_primitiveCharacter`), and each
-  `χ.primitiveCharacter.LFunction` is analytic at `s` whenever `χ ≠ 1` or `s ≠ 1`
-  (`DirichletCharacter.analyticAt_LFunction_primitiveCharacter`); hence the product over `χ ≠ 1`
+* Each nonprincipal factor `χ.primitiveCharacter.LFunction` is entire, so the product over `χ ≠ 1`
   is entire (`DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one`), while
   the full product is analytic away from `s = 1`
   (`DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter`) and meromorphic on `ℂ`
@@ -50,8 +45,6 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
   (and of `(1 : DirichletCharacter ℂ n).primitiveCharacter`) equals `riemannZeta`.
 * `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`: any primitive
   lift of `χ` has the same continued `L`-function as `χ.primitiveCharacter`.
-* `DirichletCharacter.LFunction_eq_LFunction_primitiveCharacter_mul`: expresses `χ.LFunction s` in
-  terms of `χ.primitiveCharacter.LFunction s` and the deleted Euler factors.
 * `DirichletCharacter.LFunction_primitiveCharacter_changeLevel`,
   `DirichletCharacter.LFunction_primitiveCharacter_eq_of_mul_eq_one`: raising the level does not
   change the primitive `L`-function, and characters `χ`, `ψ` with principal common-level product
@@ -60,12 +53,10 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
   from the `χ ≠ 1` factors of `∏ χ, χ.primitiveCharacter.LFunction s`.
 * `DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction`: Euler-factor
   comparison between `∏ χ, χ.primitiveCharacter.LFunction s` and `∏ χ, χ.LFunction s` for `s ≠ 1`.
-* `DirichletCharacter.differentiable_LFunction_primitiveCharacter`,
-  `DirichletCharacter.analyticAt_LFunction_primitiveCharacter`,
-  `DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one`,
+* `DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one`,
   `DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter`,
   `DirichletCharacter.meromorphic_prod_LFunction_primitiveCharacter`: regularity and meromorphy of
-  individual and product primitive-character `L`-functions.
+  the primitive-character `L`-function products.
 
 ## References
 
@@ -99,17 +90,6 @@ theorem IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq {m n : ℕ
     ψ.LFunction = χ.primitiveCharacter.LFunction := by
   obtain ⟨rfl, rfl⟩ := hψ.eq_primitiveCharacter_of_changeLevel_eq hm hind
   rfl
-
-/-- The continued `L`-function of a Dirichlet character `χ` of nonzero level equals that of its
-primitive character multiplied by the missing Euler factors at primes dividing the level. -/
-theorem LFunction_eq_LFunction_primitiveCharacter_mul {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
-    χ.LFunction s =
-      χ.primitiveCharacter.LFunction s *
-        ∏ p ∈ N.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
-  have h' := LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
-    (h.imp_left χ.primitiveCharacter_eq_one_iff.not.mpr)
-  rwa [χ.changeLevel_primitiveCharacter] at h'
 
 /-- Lifting a character `χ` of nonzero level `m` to a nonzero multiple `n` of `m` does not change
 the continued `L`-function of its primitive character. -/
@@ -155,22 +135,8 @@ theorem prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction (n : ℕ) [
       ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
   rw [← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [← LFunction_eq_LFunction_primitiveCharacter_mul χ (.inr hs)]
-
-/-- For a nonprincipal character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is
-entire. -/
-theorem differentiable_LFunction_primitiveCharacter {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
-    Differentiable ℂ χ.primitiveCharacter.LFunction :=
-  differentiable_LFunction (χ.primitiveCharacter_eq_one_iff.not.mpr hχ)
-
-/-- For every character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is analytic at every
-point `s ≠ 1`, and at `s = 1` as well when `χ ≠ 1`. -/
-theorem analyticAt_LFunction_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
-    AnalyticAt ℂ χ.primitiveCharacter.LFunction s :=
-  analyticAt_LFunction χ.primitiveCharacter
-    (h.symm.imp_right χ.primitiveCharacter_eq_one_iff.not.mpr)
+  rw [← LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter (.inr hs),
+    χ.changeLevel_primitiveCharacter]
 
 open scoped Classical in
 /-- The product of `χ.primitiveCharacter.LFunction` over all nonprincipal characters `χ` modulo `n`
@@ -178,8 +144,8 @@ open scoped Classical in
 theorem differentiable_prod_LFunction_primitiveCharacter_ne_one (n : ℕ) [NeZero n] :
     Differentiable ℂ fun z ↦
       ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction z :=
-  Differentiable.fun_finsetProd fun _ hχ ↦
-    differentiable_LFunction_primitiveCharacter (Finset.mem_filter.mp hχ).2
+  Differentiable.fun_finsetProd fun χ hχ ↦
+    differentiable_LFunction (mt χ.primitiveCharacter_eq_one_iff.mp (Finset.mem_filter.mp hχ).2)
 
 /-- Away from `s = 1`, the product of `χ.primitiveCharacter.LFunction` over all characters `χ`
 modulo `n` (`n ≠ 0`) is analytic at `s`. -/

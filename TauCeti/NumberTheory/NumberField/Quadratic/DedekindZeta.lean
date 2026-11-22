@@ -21,8 +21,8 @@ import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.NumberTheory.LSeries.Zeta.Mul
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
-import TauCeti.NumberTheory.NumberField.DedekindZeta.Residue
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
@@ -257,12 +257,19 @@ theorem dedekindZeta_residue_eq_LFunction_one :
   set χ : DirichletCharacter ℂ (discr K).natAbs :=
     (fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
       (Int.castRingHom ℂ)
-  refine dedekindZeta_residue_eq_of_eventuallyEq_riemannZeta_mul K
-    (eventually_nhdsWithin_of_forall fun s hs ↦
-      dedekindZeta_eq_riemannZeta_mul_LFunction hK (s := s) (by simpa using hs)) ?_
-  exact (((DirichletCharacter.differentiable_LFunction (χ := χ)
-    (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)).continuous.comp
-    Complex.continuous_ofReal).tendsto' 1 _ (by simp)).mono_left nhdsWithin_le_nhds
+  -- As `s → 1⁺`, `(s - 1) ζ(s) → 1` and `L(s, χ) → L(1, χ)`, while `(s - 1) ζ_K(s) → ρ`.
+  have hζ := TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT
+  have hL : Tendsto (fun s : ℝ ↦ χ.LFunction s) (𝓝[>] 1) (𝓝 (χ.LFunction 1)) :=
+    (((DirichletCharacter.differentiable_LFunction (χ := χ)
+      (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)).continuous.comp
+      Complex.continuous_ofReal).tendsto' 1 _ (by simp)).mono_left nhdsWithin_le_nhds
+  have hF : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * dedekindZeta K s) (𝓝[>] 1)
+      (𝓝 (χ.LFunction 1)) := by
+    refine (one_mul (χ.LFunction 1) ▸ hζ.mul hL).congr'
+      (eventually_nhdsWithin_of_forall fun s hs ↦ ?_)
+    dsimp only
+    rw [dedekindZeta_eq_riemannZeta_mul_LFunction hK (s := s) (by simpa using hs), mul_assoc]
+  exact tendsto_nhds_unique (tendsto_sub_one_mul_dedekindZeta_nhdsGT K) hF
 
 /-- **`L(1, χ_D)` is a positive real number** for the complex quadratic character `χ_D` of the
 discriminant `D` of a quadratic field `K`. -/

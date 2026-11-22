@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
+import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # Nonvanishing of Galois character series on the line `Re s = 1`
