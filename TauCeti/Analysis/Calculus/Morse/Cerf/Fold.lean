@@ -416,23 +416,6 @@ theorem exists_criticalCurve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     rw [comp_apply, hΦz]
     exact P.left_inv hz
 
-/-- **The cubic condition along the kernel line.** At a transverse point, if the Hessian of
-`f t` at `x` has a kernel vector `v` with `D³(f t)_x (v, v, v) ≠ 0`, then no nonzero kernel vector
-`u` has `D³(f t)_x (u, u, u) = 0`, since `u` is a multiple of `v`. -/
-private theorem eq_zero_of_fderiv_fderiv_fderiv_apply_eq_zero
-    (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
-    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
-    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
-    (hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0) {u : E}
-    (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0)
-    (hu3 : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x u u u = 0) : u = 0 := by
-  have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
-  obtain ⟨k, rfl⟩ := exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf hs hv0 hv hu
-  have hk : k ^ 3 * fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v = 0 := by
-    simpa [pow_succ, mul_assoc] using hu3
-  simp [pow_eq_zero_iff, hκ] at hk
-  simp [hk]
-
 /-! ### Births and deaths -/
 
 /-- **A pair of critical points is born at a birth–death point.** Let `f t` be a family of
