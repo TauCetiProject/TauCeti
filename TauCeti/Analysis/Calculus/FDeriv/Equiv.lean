@@ -80,7 +80,9 @@ finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
 part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
-fibre of a map defined on an open subset `s`.
+fibre of a map defined on an open subset `s`. In particular a map continuous on a compact set `K`
+whose derivative is invertible at each of its zeros in `K` has only finitely many zeros there
+(`IsCompact.finite_sep_eq_zero_of_isInvertible_fderiv`).
 -/
 
 public section
@@ -362,3 +364,20 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
     (hf' : ∀ x ∈ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (f ⁻¹' {y}).Finite := by
   simpa using IsCompact.finite_inter_preimage_of_hasFDerivAt (s := univ) (by simpa using hK)
     (by simpa using hf) (by simpa using hf')
+
+/-- **Zeros with invertible derivative on a compact set are finitely many.** If `f` is continuous
+on a compact set `K` and its derivative is invertible at every zero of `f` in `K`, then `f` has
+only finitely many zeros in `K`. This is `IsCompact.finite_inter_preimage_of_hasFDerivAt`: by
+`differentiableAt_of_isInvertible_fderiv`, an invertible `fderiv` is a genuine derivative. -/
+theorem IsCompact.finite_sep_eq_zero_of_isInvertible_fderiv {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E} (hK : IsCompact K)
+    (hf : ContinuousOn f K) (hz : ∀ x ∈ K, f x = 0 → (fderiv 𝕜 f x).IsInvertible) :
+    {x ∈ K | f x = 0}.Finite :=
+  (hK.of_isClosed_subset (hf.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton)
+    inter_subset_left).finite_inter_preimage_of_hasFDerivAt
+    (fun x hx ↦ (differentiableAt_of_isInvertible_fderiv (hz x hx.1 hx.2)).hasFDerivAt)
+    fun x hx ↦ by
+      obtain ⟨L, hL⟩ := hz x hx.1 hx.2
+      rw [← hL]
+      exact ⟨_, L.antilipschitzWith⟩
