@@ -282,7 +282,7 @@ private theorem norm_parameterIteratedFDeriv_cutoff_smul_sub_le {m : ℝ} {t : �
     _ ≤ (Cψ + Ca) * ((5 * t) ^ |m - μ'| * parameterWeight ξ z ^ μ') := by
         have hw1 := one_le_parameterWeight ξ z
         gcongr
-        exact Real.rpow_le_rpow_abs (parameterWeight_pos ξ z) hw
+        exact Real.rpow_le_rpow_abs (parameterWeight_pos ξ z).le hw
           ((inv_le_one_of_one_le₀ hw1).trans (hw1.trans hw)) _
     _ = _ := by ring
 

@@ -159,7 +159,7 @@ private theorem rpow_norm_stripBase_bounds {a b p P : ℝ} {s : ℂ} (hs : s.re 
   -- the comparison is symmetric in the two quantities
   have key {r u : ℝ} (hu : 0 < u) (h₁ : u ≤ N * r) (h₂ : r ≤ N * u) : r ^ p ≤ N ^ P * u ^ p := by
     have hr : 0 < r := pos_of_mul_pos_right (hu.trans_le h₁) hN0.le
-    have hru := Real.rpow_le_rpow_abs (div_pos hr hu) ((div_le_iff₀ hu).mpr h₂)
+    have hru := Real.rpow_le_rpow_abs (div_pos hr hu).le ((div_le_iff₀ hu).mpr h₂)
       (by rw [inv_div]; exact (div_le_iff₀ hr).mpr h₁) p
     rw [Real.div_rpow hr.le hu.le, div_le_iff₀ (by positivity)] at hru
     exact hru.trans

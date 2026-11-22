@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Integrating complementary power bounds

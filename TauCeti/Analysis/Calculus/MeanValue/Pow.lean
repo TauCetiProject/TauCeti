@@ -8,39 +8,41 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Increment bounds at the rate of a real power
 
 These bounds control the increment of a function `u` of time between `a` and `b` by a multiple
-of `|b - a| |a| ^ (β - 1)`, for `0 ≤ β ≤ 1`. This is the time-Lipschitz estimate of a function
-that is Hölder in time with exponent `β` and whose derivative grows at most like `r ^ (β - 1)`
-near `0`.
+of `|b - a|` times a power `r ^ (β - 1)`, `β ≤ 1`, of a time `r`. This is the time-Lipschitz
+estimate of a function that is Hölder in time with exponent `β` and whose derivative grows at
+most like `r ^ (β - 1)` near `0`.
 
-For `a > 0` and `a / 2 ≤ b`, the mean value inequality gives the bound from a derivative of norm
-at most `D r ^ (β - 1)` at every `r` between `a` and `b`.
+For `0 < a`, `0 < b` and `β ≤ 1`, the mean value inequality gives the bound
+`D |b - a| (min a b) ^ (β - 1)` from a derivative of norm at most `D r ^ (β - 1)` at every `r`
+between `a` and `b`.
 
 The two other cases need no derivative, only data at the two endpoints, so they are stated for
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
 `0 ≤ β ≤ 1` and `0 ≤ K`, the data are that `dist x y` vanishes if `b ≤ 0` and is at most `K b ^ β`
-if `0 < b`. For `0 < a` and `b ≤ a / 2`, they are that `x` and `y` both lie within `K a ^ β` of a
-point `c`. A function `u` equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0`
-supplies, at `x = u b` and `y = u a`, the endpoint data of both estimates: of the first for every
-`β`, and of the second when `0 ≤ β`, so that `b ^ β ≤ a ^ β` for `0 < b ≤ a / 2`. The data alone
-do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
+if `0 < b`. For `0 < a` and `a ≤ 2 |b - a|`, they are that `x` and `y` both lie within `K a ^ β`
+of a point `c`. A function `u` equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
+`r ≥ 0` supplies, at `x = u b` and `y = u a`, the endpoint data of the first estimate for every
+`β`, and of the second when `0 ≤ β` and `b ≤ a`, so that `b ^ β ≤ a ^ β` for `0 < b`. The data
+alone do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
 ## Main results
 
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt`:
-  `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `0 < a`, `a / 2 ≤ b` and `0 ≤ β ≤ 1` when
+  `‖u b - u a‖ ≤ D |b - a| (min a b) ^ (β - 1)` for `0 < a`, `0 < b` and `β ≤ 1` when
   `u` has derivative `u' r` within `[[a, b]]` with `‖u' r‖ ≤ D r ^ (β - 1)` at every
   `r ∈ [[a, b]]`.
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right`: `dist x y ≤ K |b - a| (-a) ^ (β - 1)`
   for `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, when `dist x y = 0` if `b ≤ 0` and
   `dist x y ≤ K b ^ β` if `0 < b`.
-* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_half`: `dist x y ≤ 4 K |b - a| a ^ (β - 1)` for
-  `0 < a` and `b ≤ a / 2`, when `dist x c ≤ K a ^ β` and `dist y c ≤ K a ^ β`.
+* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_two_mul_abs_sub`:
+  `dist x y ≤ 4 K |b - a| a ^ (β - 1)` for `0 < a` and `a ≤ 2 |b - a|`, when
+  `dist x c ≤ K a ^ β` and `dist y c ≤ K a ^ β`.
 -/
 
 public section
@@ -49,36 +51,24 @@ namespace TauCeti
 
 open Real Set
 
-/-- Mean value bound near `a > 0`: if `a / 2 ≤ b` and `u` has derivative `f' r` within
-`[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]` (`0 ≤ β ≤ 1`), then
-`‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)`. -/
+/-- Mean value bound at positive times: if `0 < a`, `0 < b`, `β ≤ 1` and `u` has derivative
+`f' r` within `[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]`, then
+`‖u b - u a‖ ≤ D |b - a| (min a b)^(β - 1)`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0) (ha : 0 < a)
-    (hb : a / 2 ≤ b) (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
+    [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (hβ : β ≤ 1) (ha : 0 < a) (hb : 0 < b)
+    (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
     (hbound : ∀ r ∈ uIcc a b, ‖f' r‖ ≤ D * r ^ (β - 1)) :
-    ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
-  have ha2 : 0 < a / 2 := half_pos ha
+    ‖u b - u a‖ ≤ D * (|b - a| * min a b ^ (β - 1)) := by
+  have hm : 0 < min a b := lt_min ha hb
   have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound a left_mem_uIcc))
     (rpow_pos_of_pos ha _)
-  have hr2 : uIcc a b ⊆ Ici (a / 2) :=
-    ordConnected_Ici.uIcc_subset (mem_Ici.2 (half_le_self ha.le)) (mem_Ici.2 hb)
   have hmv := (convex_uIcc a b).norm_image_sub_le_of_norm_hasDerivWithin_le (f := u)
-    (f' := f') (C := D * (a / 2) ^ (β - 1)) hderiv
+    (f' := f') (C := D * min a b ^ (β - 1)) hderiv
     (fun r hr => (hbound r hr).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 (hr2 hr) hβ₁) hD))
+      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hm hr.1 (by linarith)) hD))
     left_mem_uIcc right_mem_uIcc
-  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) :=
-    calc (a / 2) ^ (β - 1) = a ^ (β - 1) / 2 ^ (β - 1) := div_rpow ha.le zero_le_two _
-      _ = 2 ^ (1 - β) * a ^ (β - 1) := by
-          rw [div_eq_inv_mul, ← rpow_neg zero_le_two, neg_sub]
-      _ ≤ 2 ^ (1 : ℝ) * a ^ (β - 1) :=
-          mul_le_mul_of_nonneg_right (rpow_le_rpow_of_exponent_le one_le_two (by linarith))
-            (by positivity)
-      _ = 2 * a ^ (β - 1) := by rw [rpow_one]
   rw [Real.norm_eq_abs] at hmv
-  calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
-    _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
-    _ = _ := by ring
+  exact hmv.trans_eq (by ring)
 
 /-- If `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, and `dist x y` vanishes when `b ≤ 0` and is at most
 `K b ^ β` when `0 < b`, then `dist x y ≤ K |b - a| (-a) ^ (β - 1)`. This bounds the increment
@@ -100,22 +90,21 @@ theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace
           rw [rpow_one, abs_of_pos (by linarith), mul_comm]
   exact (hpos hb).trans (by gcongr)
 
-/-- If `0 < a` and `b ≤ a / 2`, and `x` and `y` both lie within `K a ^ β` of a point `c`, then
-`dist x y ≤ 4 K |b - a| a ^ (β - 1)`. This bounds the increment `dist (u b) (u a)` of a function
-`u` that is constant equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0`, when
-`0 ≤ β`. -/
-theorem dist_le_mul_abs_sub_mul_rpow_of_le_half {X : Type*} [PseudoMetricSpace X]
-    {x y c : X} {β K a b : ℝ} (ha : 0 < a) (hb : b ≤ a / 2) (hx : dist x c ≤ K * a ^ β)
+/-- If `0 < a` and `a ≤ 2 |b - a|`, and `x` and `y` both lie within `K a ^ β` of a point `c`,
+then `dist x y ≤ 4 K |b - a| a ^ (β - 1)`. This bounds the increment `dist (u b) (u a)` of a
+function `u` that is constant equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
+`r ≥ 0`, when `0 ≤ β` and `b ≤ a / 2`. -/
+theorem dist_le_mul_abs_sub_mul_rpow_of_le_two_mul_abs_sub {X : Type*} [PseudoMetricSpace X]
+    {x y c : X} {β K a b : ℝ} (ha : 0 < a) (hab : a ≤ 2 * |b - a|) (hx : dist x c ≤ K * a ^ β)
     (hy : dist y c ≤ K * a ^ β) :
     dist x y ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
   have hK : 0 ≤ K :=
     nonneg_of_mul_nonneg_left (dist_nonneg.trans hx) (rpow_pos_of_pos ha β)
-  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
-    have hpow : a ^ β = a * a ^ (β - 1) := by
-      simpa only [sub_add_cancel, mul_comm] using (rpow_add_one ha.ne' (β - 1))
-    rw [hpow, abs_of_neg (by linarith : b - a < 0)]
-    have : 0 ≤ a ^ (β - 1) := by positivity
-    nlinarith
+  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) :=
+    calc a ^ β = a * a ^ (β - 1) := by
+          simpa only [sub_add_cancel, mul_comm] using rpow_add_one ha.ne' (β - 1)
+      _ ≤ 2 * |b - a| * a ^ (β - 1) := by gcongr
+      _ = 2 * (|b - a| * a ^ (β - 1)) := mul_assoc _ _ _
   calc dist x y ≤ dist x c + dist y c := dist_triangle_right _ _ _
     _ ≤ 2 * (K * a ^ β) := by linarith
     _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr

@@ -12,7 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 Scaling arguments compare a quantity on a ball of radius `r` with the same quantity on a larger
 ball of radius `R`, and the comparison is expressed through real powers of the ratio `r / R`.
-This file collects the rearrangements of such powers that these arguments need.
+This file collects the rearrangements of such powers that these arguments need, together with
+comparisons of powers of two comparable quantities, such as a time and a time step.
 
 * A power of `r` is a power of `r / R` times a power of `R`. So a bound `c R^a ≤ M` on a
   dimensionless constant gives `r^{2a} c² ≤ (r / R)^{2a} M²`, and a bound `c² R^{d+2a} ≤ V` gives
@@ -27,6 +28,13 @@ This file collects the rearrangements of such powers that these arguments need.
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
   `r^{d+2a}` is at most `(R^{d/2+b} Q)² (r / R)^{d+2b}`.
+* A power of `u ≥ a > 0` with a smaller exponent `s ≤ t` is at most `a ^ (s - t)` times the
+  power with exponent `t`, which raises the exponent on `(a, ∞)`.
+* For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
+  temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded
+  by a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric space lie
+  within `c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ t ≤ 2 h` and
+  `0 ≤ t' ≤ h`, then `dist x y ≤ 3 c h ^ p`.
 -/
 
 public section
@@ -119,4 +127,40 @@ theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : �
   exact (rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR hba).trans (mul_le_mul_of_nonneg_right
     (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
+/-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
+theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
+    (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
+  calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
+    _ ≤ a ^ (s - t) * u ^ t :=
+      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
+        (rpow_nonneg (ha.le.trans hau) t)
+
+/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
+theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
+    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
+  have hh : 0 ≤ h := by linarith
+  calc r ^ p ≤ (2 * h) ^ p := by gcongr
+    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
+    _ ≤ 2 * h ^ p := by
+        gcongr
+        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
+
 end Real
+
+namespace TauCeti
+
+/-- If `x` lies within `c t ^ β` and `y` within `c t' ^ β` of a point `z`, where `0 ≤ c`,
+`0 ≤ β ≤ 1`, `0 ≤ t ≤ 2 h` and `0 ≤ t' ≤ h`, then `dist x y ≤ 3 c h ^ β`. -/
+theorem dist_le_three_mul_rpow_of_le_two_mul {X : Type*} [PseudoMetricSpace X] {x y z : X}
+    {c β h t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht : 0 ≤ t) (hth : t ≤ 2 * h)
+    (ht' : 0 ≤ t') (ht'h : t' ≤ h) (hx : dist x z ≤ c * t ^ β) (hy : dist y z ≤ c * t' ^ β) :
+    dist x y ≤ 3 * c * h ^ β := by
+  have h₁ : t ^ β ≤ 2 * h ^ β := Real.rpow_le_two_mul_rpow_of_le_two_mul ht hth hβ₀ hβ₁
+  have h₂ : t' ^ β ≤ h ^ β := Real.rpow_le_rpow ht' ht'h hβ₀
+  calc dist x y ≤ dist x z + dist y z := dist_triangle_right x y z
+    _ ≤ c * (2 * h ^ β) + c * h ^ β :=
+        add_le_add (hx.trans (mul_le_mul_of_nonneg_left h₁ hc))
+          (hy.trans (mul_le_mul_of_nonneg_left h₂ hc))
+    _ = 3 * c * h ^ β := by ring
+
+end TauCeti

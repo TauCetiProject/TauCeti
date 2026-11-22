@@ -15,9 +15,10 @@ import TauCeti.Topology.ContinuousOn.CompactDomination
 # A uniform strict power mean inequality
 
 For `1 ≤ q` and nonnegative `s`, `t`, the power mean inequality
-`(s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` is `NNReal.rpow_add_le_mul_rpow_add_rpow`. For
-`1 < q` it is strict at every `0 ≤ u ≤ s + t` unless `s = t` and `u = s + t`: if `s ≠ t`, by strict
-convexity of `t ↦ t ^ q`, and if `u < s + t`, because `t ↦ t ^ q` is strictly increasing.
+`(s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` is `NNReal.rpow_add_le_mul_rpow_add_rpow`. So
+`u ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` for every `0 ≤ u ≤ s + t`. For `1 < q` this inequality
+for `u ^ q` is strict unless `s = t` and `u = s + t`: if `s ≠ t`, by strict convexity of
+`t ↦ t ^ q`, and if `u < s + t`, because `t ↦ t ^ q` is strictly increasing.
 
 The improvement is uniform once `u` is bounded away from `2 * s`: for each `0 < δ` there is
 `κ > 0` with `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ s`, `0 ≤ t`,

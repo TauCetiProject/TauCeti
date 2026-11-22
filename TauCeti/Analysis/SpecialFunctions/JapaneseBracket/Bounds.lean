@@ -57,9 +57,10 @@ theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ
   have h := rpow_le_rpow_abs (x := t ^ 2 / (1 + t ^ 2)) (R := 2) (by positivity)
     (((div_le_one hs).2 (by linarith)).trans one_le_two)
     (by rw [inv_div, div_le_iff₀ (by positivity)]; linarith) (r / 2)
-  calc |t| ^ r = (t ^ 2 / (1 + t ^ 2)) ^ (r / 2) * (1 + t ^ 2) ^ (r / 2) := by
-        rw [div_rpow (sq_nonneg t) hs.le, div_mul_cancel₀ _ (by positivity), ← sq_abs t,
-          sq_rpow_div_two (abs_nonneg t)]
+  calc |t| ^ r = (t ^ 2) ^ (r / 2) := by rw [← sq_abs t, sq_rpow_div_two (abs_nonneg t)]
+    _ = (t ^ 2 / (1 + t ^ 2)) ^ (r / 2) * (1 + t ^ 2) ^ (r / 2) := by
+        rw [div_rpow (sq_nonneg t) hs.le]
+        exact (div_mul_cancel₀ _ (by positivity)).symm
     _ ≤ 2 ^ |r / 2| * (1 + t ^ 2) ^ (r / 2) := by gcongr
     _ = 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by simp [abs_div]
 
@@ -91,7 +92,8 @@ theorem one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow (t : ℝ) {R : ℝ} (ht :
   have h := rpow_le_rpow_abs (by positivity) hR ((inv_le_one_of_one_le₀ ht1).trans (ht1.trans hR))
     (-(r / 2))
   -- `h` reads `((1 + t ^ 2) ^ (r / 2))⁻¹ ≤ (1 + R ^ 2) ^ |-(r / 2)|`.
-  rw [rpow_neg (by positivity), show |-(r / 2)| = |r| / 2 by simp [abs_div]] at h
+  rw [rpow_neg (by positivity)] at h
+  simp only [abs_neg, abs_div, abs_two] at h
   exact (inv_le_iff_one_le_mul₀ (by positivity)).1 h
 
 /-- For fixed `M`, `R` and `r`, a single constant `C ≥ 0` bounds `M` by a multiple of the
@@ -120,9 +122,7 @@ theorem one_add_mul_abs_rpow_le (t : ℝ) {c p : ℝ} (hc : 0 ≤ c) (hp : 0 ≤
     (1 + c * |t|) ^ p ≤ (1 + c) ^ p * (1 + t ^ 2) ^ (p / 2) := by
   have hle : 1 + c * |t| ≤ (1 + c) * √(1 + t ^ 2) := by
     have h1 := one_le_sqrt_one_add_sq t
-    have h2 : |t| ≤ √(1 + t ^ 2) := by
-      simpa only [zero_div, rpow_zero, one_mul, zero_add, ← sqrt_eq_rpow] using
-        one_add_sq_rpow_mul_abs_le t 0
+    have h2 : |t| ≤ √(1 + t ^ 2) := abs_le_sqrt (by linarith)
     nlinarith
   rw [rpow_div_two_eq_sqrt p (by positivity), ← mul_rpow (by positivity) (sqrt_nonneg _)]
   exact rpow_le_rpow (by positivity) hle hp

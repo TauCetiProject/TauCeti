@@ -15,8 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 For `0 < x` and `|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`: a power with a small
 logarithm is close to `1`. Likewise, for `0 < u` and any
 exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates `u ^ (Re s - 1)` for all
-`u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`; and
-for `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t` raises the exponent on `(a, ∞)`.
+`u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`.
 
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
@@ -51,12 +50,6 @@ If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. So when `d` is the re
 a rational `q`, an error `|ξ - q|` strictly below `d ^ (-p)` is strictly below `1 / (2 d ^ 2)`,
 which is the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
-For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
-temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded by
-a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric space lie within
-`c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ t ≤ 2 h` and `0 ≤ t' ≤ h`, then
-`dist x y ≤ 3 c h ^ p`.
-
 If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 `(p - 1) log q < log 2 + log q'`. Hence `t < log q' / log q` once `log 2 < (p - 1 - t) log q`.
 This reads off the growth of consecutive continued-fraction denominators from the lower error
@@ -85,8 +78,6 @@ dyadic intervals.
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
 * `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
   `p ∈ Set.Icc p₁ p₂`.
-* `Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le`: `u ^ s ≤ a ^ (s - t) * u ^ t` for `0 < a ≤ u`
-  and `s ≤ t`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
@@ -99,8 +90,6 @@ dyadic intervals.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
-* `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
-  `0 ≤ p ≤ 1`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
 * `Real.rpow_le_rpow_sub_sub_one_rpow_div` and `Real.add_one_rpow_sub_rpow_div_le_rpow`: unit
@@ -138,14 +127,6 @@ theorem rpow_le_rpow_add_rpow_of_mem_Icc {u p p₁ p₂ : ℝ} (hu : 0 < u) (hp 
   rcases le_total u 1 with hu1 | hu1
   · exact le_add_of_le_of_nonneg (rpow_le_rpow_of_exponent_ge hu hu1 hp.1) (by positivity)
   · exact le_add_of_nonneg_of_le (by positivity) (rpow_le_rpow_of_exponent_le hu1 hp.2)
-
-/-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
-theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
-    (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
-  calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
-    _ ≤ a ^ (s - t) * u ^ t :=
-      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
-        (rpow_nonneg (ha.le.trans hau) t)
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -286,16 +267,6 @@ theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (h2 : 2 ≤ d ^ (p - 2)) :
         rw [sq_abs]
         gcongr
     _ = 1 / (2 * d ^ 2) := by rw [one_div, mul_inv]
-
-/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
-theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
-    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
-  have hh : 0 ≤ h := by linarith
-  calc r ^ p ≤ (2 * h) ^ p := by gcongr
-    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
-    _ ≤ 2 * h ^ p := by
-        gcongr
-        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
 
 /-- The logarithmic form of `q ^ p < q (q + q')`: if moreover `2 ≤ q ≤ q'` and
 `log 2 < (p - 1 - t) log q`, then `t < log q' / log q`. -/
@@ -472,20 +443,6 @@ theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ �
   have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
   simp only [add_zero] at hlim
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
-
-/-- If `x` lies within `c t ^ β` and `y` within `c t' ^ β` of a point `z`, where `0 ≤ c`,
-`0 ≤ β ≤ 1`, `0 ≤ t ≤ 2 h` and `0 ≤ t' ≤ h`, then `dist x y ≤ 3 c h ^ β`. -/
-theorem dist_le_three_mul_rpow_of_le_two_mul {X : Type*} [PseudoMetricSpace X] {x y z : X}
-    {c β h t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht : 0 ≤ t) (hth : t ≤ 2 * h)
-    (ht' : 0 ≤ t') (ht'h : t' ≤ h) (hx : dist x z ≤ c * t ^ β) (hy : dist y z ≤ c * t' ^ β) :
-    dist x y ≤ 3 * c * h ^ β := by
-  have h₁ : t ^ β ≤ 2 * h ^ β := Real.rpow_le_two_mul_rpow_of_le_two_mul ht hth hβ₀ hβ₁
-  have h₂ : t' ^ β ≤ h ^ β := Real.rpow_le_rpow ht' ht'h hβ₀
-  calc dist x y ≤ dist x z + dist y z := dist_triangle_right x y z
-    _ ≤ c * (2 * h ^ β) + c * h ^ β :=
-        add_le_add (hx.trans (mul_le_mul_of_nonneg_left h₁ hc))
-          (hy.trans (mul_le_mul_of_nonneg_left h₂ hc))
-    _ = 3 * c * h ^ β := by ring
 
 end TauCeti
 

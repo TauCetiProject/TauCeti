@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
