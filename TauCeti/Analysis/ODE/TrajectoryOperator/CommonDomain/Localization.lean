@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Family
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.LinePartition
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
 
@@ -52,8 +51,9 @@ The estimate is spliced from local ones by a partition of unity.
   (`exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of_tendsto`).
 * **Splicing.** Cover a compact interval `[-T₀, T₀]` outside which the end estimates hold by
   finitely many such neighbourhoods, take a smooth partition of unity `∑ ψᵢ = 1` subordinate to
-  them and to the two ends, and estimate each `ψᵢ u`. Multiplication by `ψᵢ`
-  (`TauCeti.WeakDerivStep.smulLeftCompLpLCLM`) satisfies the Leibniz rule
+  them and to the two ends (`TauCeti.exists_contDiff_finset_sum_eq_one_of_mem_nhds`), and estimate
+  each `ψᵢ u`; these add up to `u` (`TauCeti.WeakDerivStep.sum_smulLeftCompLpLCLM`). Multiplication
+  by `ψᵢ` (`TauCeti.WeakDerivStep.smulLeftCompLpLCLM`) satisfies the Leibniz rule
   `(ι ∘ (ψ u))' + A (ψ u) = ψ ((ι ∘ u)' + A u) + ψ' (ι ∘ u)`
   (`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator_smulLeftCompLpLCLM_ae`), and the
   commutator term `ψ' (ι ∘ u)` and the local error terms `ι ∘ (ψ u)` live in a fixed bounded window
@@ -213,33 +213,6 @@ private theorem norm_compLpL_prev_smulLeftCompLpLCLM_le {ψ : ℝ → ℝ} (hψ 
     rw [hs, hψs, map_smul])
 
 omit [CompleteSpace D] in
-/-- The paths `ψᵢ u` of a finite smooth partition of unity `∑ᵢ ψᵢ = 1` add up to `u`. -/
-private theorem sum_smulLeftCompLpLCLM {κ : Type*} (t : Finset κ) (ψ : κ → ℝ → ℝ)
-    (hψ : ∀ i, ContDiff ℝ ∞ (ψ i)) (h₀ : ∀ i, ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ i x‖ ≤ C)
-    (h₁ : ∀ i, ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C) (hsum : ∀ x, ∑ i ∈ t, ψ i x = 1)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ∑ i ∈ t, smulLeftCompLpLCLM ι (ψ i) (hψ i).contDiffOn (h₀ i) (h₁ i) u = u := by
-  classical
-  -- The field of a partial sum is the partial sum of the `ψᵢ` times the field of `u`.
-  have key : ∀ t' : Finset κ, ⇑(prev _ (∑ i ∈ t', smulLeftCompLpLCLM ι (ψ i) (hψ i).contDiffOn
-      (h₀ i) (h₁ i) u)) =ᵐ[μ₀] fun s ↦ (∑ i ∈ t', ψ i s) • prev _ u s := by
-    intro t'
-    induction t' using Finset.induction_on with
-    | empty =>
-      simp only [Finset.sum_empty, prev_zero, zero_smul]
-      exact Lp.coeFn_zero D 2 μ₀
-    | insert j t' hj ih =>
-      simp only [Finset.sum_insert hj, prev_add]
-      filter_upwards [Lp.coeFn_add (prev _ (smulLeftCompLpLCLM ι (ψ j) (hψ j).contDiffOn (h₀ j)
-          (h₁ j) u)) (prev _ (∑ i ∈ t', smulLeftCompLpLCLM ι (ψ i) (hψ i).contDiffOn (h₀ i)
-          (h₁ i) u)), prev_smulLeftCompLpLCLM_ae ι (hψ j).contDiffOn (h₀ j) (h₁ j) u, ih]
-        with s hs hj' ht'
-      rw [hs, Pi.add_apply, hj', ht', add_smul]
-  refine ext (Lp.ext ?_)
-  filter_upwards [key t] with s hs
-  rw [hs, hsum, one_smul]
-
-omit [CompleteSpace D] in
 /-- **Splicing local estimates.** Let `∑ᵢ ψᵢ = 1` be a finite smooth partition of unity on `ℝ` by
 functions with bounded derivatives vanishing off `(-T, T)`, and suppose that each `ψᵢ u` satisfies
 `‖ψᵢ u‖ ≤ Cᵢ (‖(ι ∘ ψᵢ u)' + A (ψᵢ u)‖ + ‖ι ∘ u‖_{L²((-T, T), H)})`. Then
@@ -277,66 +250,10 @@ private theorem exists_forall_norm_le_of_sum_eq_one (AL : Lp (D →L[ℝ] H) ∞
     nlinarith [abs_nonneg (h₀ i).choose, abs_nonneg (h₁ i).choose,
       (norm_nonneg _ : 0 ≤ Du), (norm_nonneg _ : 0 ≤ Ku)]
   calc ‖u‖ = ‖∑ i ∈ t, smulLeftCompLpLCLM ι (ψ i) (hψ i).contDiffOn (h₀ i) (h₁ i) u‖ := by
-        rw [sum_smulLeftCompLpLCLM t ψ hψ h₀ h₁ hsum]
+        rw [sum_smulLeftCompLpLCLM ι t ψ (fun i ↦ (hψ i).contDiffOn) h₀ h₁ fun x _ ↦ hsum x]
     _ ≤ ∑ i ∈ t, |C i| * (|(h₀ i).choose| + |(h₁ i).choose| + 1) * (Du + Ku) :=
         (norm_sum_le _ _).trans (Finset.sum_le_sum hpiece)
     _ = _ := by rw [Finset.sum_mul]
-
-/-- **The two end pieces of the partition of unity.** Let `∑ᵢ χᵢ` be a finite sum of nonnegative
-smooth functions, supported in `(-T, T)`, at most one everywhere and equal to one on `[-T₀, T₀]`,
-where `1 ≤ T₀ < T`. Then `1 - ∑ᵢ χᵢ` splits as `ρbot + ρtop` into smooth functions with values in
-`[0, 1]`, locally constant off `(-T, T)`, with `ρbot` vanishing on `[-T₀, ∞)` and `ρtop` on
-`(-∞, T₀]`. -/
-private theorem exists_end_pieces {κ : Type*} (t : Finset κ) (χ : κ → ℝ → ℝ)
-    (hχ : ∀ i, ContDiff ℝ ∞ (χ i)) (hχ0 : ∀ i x, 0 ≤ χ i x) (hχle : ∀ x, ∑ i ∈ t, χ i x ≤ 1)
-    {T₀ T : ℝ} (hT₀ : 1 ≤ T₀) (hT₀T : T₀ < T) (hχK : ∀ x ∈ Icc (-T₀) T₀, ∑ i ∈ t, χ i x = 1)
-    (hχT : ∀ i, tsupport (χ i) ⊆ Ioo (-T) T) :
-    ∃ ρbot ρtop : ℝ → ℝ, ContDiff ℝ ∞ ρbot ∧ ContDiff ℝ ∞ ρtop ∧
-      (∀ x, ρbot x + ρtop x + ∑ i ∈ t, χ i x = 1) ∧ (∀ x, |ρbot x| ≤ 1) ∧ (∀ x, |ρtop x| ≤ 1) ∧
-      (∀ x ∉ Ioo (-T) T, fderiv ℝ ρbot x = 0) ∧ (∀ x ∉ Ioo (-T) T, fderiv ℝ ρtop x = 0) ∧
-      (∀ x, -T₀ ≤ x → ρbot x = 0) ∧ (∀ x, x ≤ T₀ → ρtop x = 0) := by
-  set θ := Real.smoothTransition
-  set χm : ℝ → ℝ := fun x ↦ ∑ i ∈ t, χ i x
-  have hχm : ContDiff ℝ ∞ χm := ContDiff.sum fun i _ ↦ hχ i
-  have hχm0 (x : ℝ) : 0 ≤ 1 - χm x := sub_nonneg.2 (hχle x)
-  have hχm1 (x : ℝ) : 1 - χm x ≤ 1 := sub_le_self _ (Finset.sum_nonneg fun i _ ↦ hχ0 i x)
-  -- Off `(-T, T)`, `θ` is locally constant and `∑ᵢ χᵢ` vanishes nearby.
-  have hloc (x : ℝ) (hx : x ∉ Ioo (-T) T) :
-      ∃ a : ℝ, θ =ᶠ[𝓝 x] (fun _ ↦ a) ∧ χm =ᶠ[𝓝 x] 0 := by
-    have hχx : χm =ᶠ[𝓝 x] 0 := (Filter.eventually_all_finset t).2
-        (fun i _ ↦ notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hχT i h)) |>.mono
-      fun y hy ↦ Finset.sum_eq_zero hy
-    rcases not_and_or.1 hx with hx | hx
-    · refine ⟨0, (eventually_lt_nhds (show x < 0 by linarith [not_lt.1 hx])).mono fun y hy ↦
-        Real.smoothTransition.zero_of_nonpos hy.le, hχx⟩
-    · refine ⟨1, (eventually_gt_nhds (show 1 < x by linarith [not_lt.1 hx])).mono fun y hy ↦
-        Real.smoothTransition.one_of_one_le hy.le, hχx⟩
-  refine ⟨fun x ↦ (1 - θ x) * (1 - χm x), fun x ↦ θ x * (1 - χm x),
-    (contDiff_const.sub Real.smoothTransition.contDiff).mul (contDiff_const.sub hχm),
-    Real.smoothTransition.contDiff.mul (contDiff_const.sub hχm), fun x ↦ by ring,
-    fun x ↦ ?_, fun x ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [abs_of_nonneg (mul_nonneg (sub_nonneg.2 (Real.smoothTransition.le_one x)) (hχm0 x))]
-    nlinarith [Real.smoothTransition.nonneg x, Real.smoothTransition.le_one x, hχm0 x, hχm1 x]
-  · rw [abs_of_nonneg (mul_nonneg (Real.smoothTransition.nonneg x) (hχm0 x))]
-    nlinarith [Real.smoothTransition.nonneg x, Real.smoothTransition.le_one x, hχm0 x, hχm1 x]
-  · obtain ⟨a, hθ, hχx⟩ := hloc x hx
-    have h : (fun y ↦ (1 - θ y) * (1 - χm y)) =ᶠ[𝓝 x] fun _ ↦ (1 - a) * 1 := by
-      filter_upwards [hθ, hχx] with y h₁ h₂
-      simp only [h₁, h₂, Pi.zero_apply, sub_zero]
-    rw [h.fderiv_eq]
-    exact fderiv_const_apply _
-  · obtain ⟨a, hθ, hχx⟩ := hloc x hx
-    have h : (fun y ↦ θ y * (1 - χm y)) =ᶠ[𝓝 x] fun _ ↦ a * 1 := by
-      filter_upwards [hθ, hχx] with y h₁ h₂
-      simp only [h₁, h₂, Pi.zero_apply, sub_zero]
-    rw [h.fderiv_eq]
-    exact fderiv_const_apply _
-  · rcases le_or_gt 1 x with h | h
-    · simp [θ, Real.smoothTransition.one_of_one_le h]
-    · simp [χm, hχK x ⟨hx, by linarith⟩]
-  · rcases le_or_gt x 0 with h | h
-    · simp [θ, Real.smoothTransition.zero_of_nonpos h]
-    · simp [χm, hχK x ⟨by linarith, hx⟩]
 
 omit [CompleteSpace D] in
 /-- **A local estimate for a piece of the partition.** If `ψ` vanishes off `S` and off `(-T, T)`,
@@ -367,56 +284,6 @@ private theorem exists_forall_norm_smulLeftCompLpLCLM_le (AL : Lp (D →L[ℝ] H
   refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg C)
   nlinarith [norm_nonneg K, mul_nonneg (mul_nonneg he (abs_nonneg c))
     (norm_nonneg (familyDomainTrajectoryOperator ι AL w))]
-
-/-- **A partition of unity adapted to local estimates.** Given a neighbourhood `S s` of every time
-`s` and `1 ≤ T₀`, there is a finite smooth partition of unity `∑ᵢ ψᵢ = 1` on `ℝ`, by functions with
-bounded values and derivatives, whose derivatives vanish off `(-(T₀ + 1), T₀ + 1)`, made of one
-function vanishing on `[-T₀, ∞)`, one vanishing on `(-∞, T₀]`, and functions `ψ (inr s)` vanishing
-off `S s ∩ (-(T₀ + 1), T₀ + 1)`. -/
-private theorem exists_partition_of_mem_nhds (S : ℝ → Set ℝ) (hS : ∀ s, S s ∈ 𝓝 s) {T₀ : ℝ}
-    (hT₀ : 1 ≤ T₀) :
-    ∃ (t : Finset (Bool ⊕ ℝ)) (ψ : Bool ⊕ ℝ → ℝ → ℝ) (hψ : ∀ i, ContDiff ℝ ∞ (ψ i))
-      (h₀ : ∀ i, ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ i x‖ ≤ C)
-      (h₁ : ∀ i, ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C),
-      (∀ x, ∑ i ∈ t, ψ i x = 1) ∧ (∀ i, ∀ s ∉ Ioo (-(T₀ + 1)) (T₀ + 1), deriv (ψ i) s = 0) ∧
-      (∀ s, -T₀ ≤ s → ψ (.inl false) s = 0) ∧ (∀ s, s ≤ T₀ → ψ (.inl true) s = 0) ∧
-      ∀ i s, s ∉ S i ∩ Ioo (-(T₀ + 1)) (T₀ + 1) → ψ (.inr i) s = 0 := by
-  obtain ⟨t, χ, hχ, hχ0, hχle, hχK⟩ :=
-    (isCompact_Icc (a := -T₀) (b := T₀)).exists_contDiff_tsupport_subset_finset_sum_eq_one
-      (U := fun s₀ ↦ interior (S s₀) ∩ Ioo (-(T₀ + 1)) (T₀ + 1))
-      (fun _ ↦ isOpen_interior.inter isOpen_Ioo) fun x hx ↦ mem_iUnion.2
-        ⟨x, mem_interior_iff_mem_nhds.2 (hS x), by linarith [hx.1], by linarith [hx.2]⟩
-  have hχT (i : ℝ) : tsupport (χ i) ⊆ Ioo (-(T₀ + 1)) (T₀ + 1) :=
-    (hχ i).2.2.trans inter_subset_right
-  obtain ⟨ρb, ρt, hρb, hρt, hsum, hρb1, hρt1, hρb', hρt', hρb0, hρt0⟩ :=
-    exists_end_pieces t χ (fun i ↦ (hχ i).1) hχ0 hχle hT₀ (by linarith) hχK hχT
-  -- The pieces, indexed by `Bool ⊕ ℝ`: the two ends and the pieces near `[-T₀, T₀]`.
-  let ψ : Bool ⊕ ℝ → ℝ → ℝ := Sum.elim (fun b ↦ bif b then ρt else ρb) χ
-  have hψ : ∀ i, ContDiff ℝ ∞ (ψ i) := by
-    rintro ((_ | _) | i)
-    exacts [hρb, hρt, (hχ i).1]
-  have hfd : ∀ i, ∀ s ∉ Ioo (-(T₀ + 1)) (T₀ + 1), fderiv ℝ (ψ i) s = 0 := by
-    rintro ((_ | _) | i) s hs
-    exacts [hρb' s hs, hρt' s hs, fderiv_of_notMem_tsupport ℝ fun h ↦ hs (hχT i h)]
-  have h₀ : ∀ i, ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ i x‖ ≤ C := by
-    rintro ((_ | _) | i)
-    · exact ⟨1, fun x _ ↦ (Real.norm_eq_abs _).trans_le (hρb1 x)⟩
-    · exact ⟨1, fun x _ ↦ (Real.norm_eq_abs _).trans_le (hρt1 x)⟩
-    · obtain ⟨C, hC⟩ := (hχ i).1.continuous.bounded_above_of_compact_support (hχ i).2.1
-      exact ⟨C, fun x _ ↦ hC x⟩
-  -- The derivatives are continuous and vanish off a compact interval, hence are bounded.
-  have h₁ (i : Bool ⊕ ℝ) : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C := by
-    obtain ⟨C, hC⟩ := ((hψ i).continuous_fderiv (by simp)).bounded_above_of_compact_support
-      (HasCompactSupport.intro (isCompact_Icc (a := -(T₀ + 1)) (b := T₀ + 1)) fun s hs ↦
-        hfd i s fun h ↦ hs (Ioo_subset_Icc_self h))
-    exact ⟨C, fun x _ ↦ hC x⟩
-  refine ⟨Finset.univ.disjSum t, ψ, hψ, h₀, h₁, fun x ↦ ?_,
-    fun i s hs ↦ by simp [← fderiv_apply_one_eq_deriv, hfd i s hs], hρb0, hρt0,
-    fun i s hs ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hs ⟨interior_subset ((hχ i).2.2 h).1,
-      hχT i h⟩⟩
-  simp only [Finset.sum_disjSum, Fintype.sum_bool, ψ, Sum.elim_inl, Sum.elim_inr, Bool.cond_true,
-    Bool.cond_false]
-  linarith [hsum x]
 
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Abot Atop : D →L[ℝ] H}
 
@@ -452,9 +319,13 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_r
   choose Cl el hel S hS hCl using hloc
   -- A partition of unity: finitely many pieces near `[-T₀, T₀]`, and the two ends.
   set T₀ := max |Tt| |Tb| + 1
-  obtain ⟨t, ψ, hψ, h₀, h₁, hsum, hT, hψb, hψt, hψS⟩ :=
-    exists_partition_of_mem_nhds S hS (T₀ := T₀)
+  obtain ⟨t, ψ, hψ, hb, hd, hsum, hT, hψb, hψt, hψS⟩ :=
+    exists_contDiff_finset_sum_eq_one_of_mem_nhds S hS (T₀ := T₀)
       (by linarith [le_max_left |Tt| |Tb|, abs_nonneg Tt])
+  have h₀ (i : Bool ⊕ ℝ) : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖ψ i x‖ ≤ C :=
+    (hb i).imp fun _ hC x _ ↦ hC x
+  have h₁ (i : Bool ⊕ ℝ) : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C :=
+    (hd i).imp fun _ hC x _ ↦ norm_deriv_eq_norm_fderiv (f := ψ i) (x := x) ▸ hC x
   -- An estimate `‖w‖ ≤ C ‖Dw‖` gives the splicing form.
   have hend {w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)} {C K : ℝ} (hK : 0 ≤ K)
       (h : ‖w‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL w‖) :

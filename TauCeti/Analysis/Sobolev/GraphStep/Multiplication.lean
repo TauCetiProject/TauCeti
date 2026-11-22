@@ -43,6 +43,7 @@ first-order operator `∂ₛ + A(s)` whose coefficients are bounded only from a 
   `T.compLpL`, with `TauCeti.WeakDerivStep.prev_smulLeftCompLpLCLM_ae`,
   `TauCeti.WeakDerivStep.weakFDeriv_smulLeftCompLpLCLM_ae` and the bound
   `TauCeti.WeakDerivStep.norm_smulLeftCompLpLCLM_apply_le`, `‖ψ u‖ ≤ (√2 C₀ + C₁ ‖T‖) ‖u‖`.
+* `TauCeti.WeakDerivStep.sum_smulLeftCompLpLCLM`: if `∑ᵢ ψᵢ = 1` on `Ω`, then `∑ᵢ ψᵢ u = u`.
 
 ## References
 
@@ -340,5 +341,32 @@ theorem norm_smulLeftCompLpLCLM_apply_le (T : G →L[ℝ] F) (hψ : ContDiffOn �
     ‖smulLeftCompLpLCLM T ψ hψ h₀ h₁ u‖ ≤ (√2 * C₀ + C₁ * ‖T‖) * ‖u‖ :=
   norm_smulLeftAux_apply_le hψ h₀ h₁ _ hC₀ hC₁ (norm_nonneg T)
     (fun g ↦ (T.compLpL p _).le_of_opNorm_le (T.norm_compLpL_le) g) u
+
+/-- **Multiplication by a partition of unity.** If the smooth functions `ψᵢ` add up to one on `Ω`,
+then the fields `ψᵢ u` over `T.compLpL` add up to `u`. -/
+theorem sum_smulLeftCompLpLCLM {κ : Type*} (T : G →L[ℝ] F) (t : Finset κ) (ψ : κ → E → ℝ)
+    (hψ : ∀ i, ContDiffOn ℝ ∞ (ψ i) Omega) (h₀ : ∀ i, ∃ C, ∀ x ∈ Omega, ‖ψ i x‖ ≤ C)
+    (h₁ : ∀ i, ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ (ψ i) x‖ ≤ C)
+    (hsum : ∀ x ∈ Omega, ∑ i ∈ t, ψ i x = 1)
+    (u : WeakDerivStep mu Omega p (T.compLpL p (mu.restrict Omega))) :
+    ∑ i ∈ t, smulLeftCompLpLCLM T (ψ i) (hψ i) (h₀ i) (h₁ i) u = u := by
+  classical
+  -- The field of a partial sum is the partial sum of the `ψᵢ` times the field of `u`.
+  have key : ∀ t' : Finset κ, ⇑(prev _ (∑ i ∈ t', smulLeftCompLpLCLM T (ψ i) (hψ i) (h₀ i)
+      (h₁ i) u)) =ᵐ[mu.restrict Omega] fun x ↦ (∑ i ∈ t', ψ i x) • prev _ u x := by
+    intro t'
+    induction t' using Finset.induction_on with
+    | empty =>
+      simp only [Finset.sum_empty, prev_zero, zero_smul]
+      exact Lp.coeFn_zero G p _
+    | insert j t' hj ih =>
+      simp only [Finset.sum_insert hj, prev_add]
+      filter_upwards [Lp.coeFn_add (prev _ (smulLeftCompLpLCLM T (ψ j) (hψ j) (h₀ j) (h₁ j) u))
+          (prev _ (∑ i ∈ t', smulLeftCompLpLCLM T (ψ i) (hψ i) (h₀ i) (h₁ i) u)),
+        prev_smulLeftCompLpLCLM_ae T (hψ j) (h₀ j) (h₁ j) u, ih] with x hx hj' ht'
+      rw [hx, Pi.add_apply, hj', ht', add_smul]
+  refine ext (Lp.ext ?_)
+  filter_upwards [key t, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  rw [hx, hsum x hxΩ, one_smul]
 
 end TauCeti.WeakDerivStep
