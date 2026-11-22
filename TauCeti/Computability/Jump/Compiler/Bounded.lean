@@ -31,8 +31,8 @@ theorem exists_forall_evaln_jumpProgram_eq_map (d : Code) (e : ℕ) :
   exact exists_forall_evaln_comp_oracle_eq_map_of_mem_eval_none (htranslate _ e ▸ Part.mem_some _)
 
 /-- A successful bounded run of the jump program has use one more than the translated index. -/
-theorem evaln_jumpProgram_use {σ : ℕ → Option ℕ} {k e : ℕ} {d : Code} {r : Halt}
-    (h : evaln σ k d.jumpProgram e = some r) : r.use = d.jumpIndex e + 1 := by
+theorem evaln_jumpProgram_use_eq_jumpIndex_add_one {σ : ℕ → Option ℕ} {k e : ℕ} {d : Code}
+    {r : Halt} (h : evaln σ k d.jumpProgram e = some r) : r.use = d.jumpIndex e + 1 := by
   obtain ⟨t, ht, htranslate⟩ := exists_jumpProgram_eq_comp_oracle d
   rw [ht] at h
   exact evaln_comp_oracle_use_eq_add_one_of_mem_eval_none (htranslate _ e ▸ Part.mem_some _) h

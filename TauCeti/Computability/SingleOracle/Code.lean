@@ -38,6 +38,11 @@ program uniformly in the oracle.
 * `TauCeti.Oracle.Single.Code.eval`: the partial function computed by a program relative to an
   oracle.
 * `Nat.Partrec.Code.toSingleOracleCode`: the query-free program of an ordinary Mathlib code.
+* `TauCeti.Oracle.Single.Code.curry`: the program that specializes the first input of a program
+  to a parameter.
+* `TauCeti.Oracle.Single.Code.fixInput`: the program that runs a program on a fixed input,
+  ignoring its own input.
+* `TauCeti.Oracle.Single.Code.haltingIndex`: the number of such a fixed-input program.
 
 ## Main results
 
@@ -50,7 +55,14 @@ program uniformly in the oracle.
   values of a pairing, and one step of a search.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.eval_curry`, `TauCeti.Oracle.Single.Code.eval_fixInput`:
+  specialization and fixing an input preserve evaluation, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.curry_inj`, `TauCeti.Oracle.Single.Code.fixInput_inj`,
+  `TauCeti.Oracle.Single.Code.haltingIndex_inj`: these compilers retain both the source program and
+  the parameter or input.
 * `TauCeti.Oracle.Single.Code.exists_forall_eval_eq_of_partrec`: every partial recursive function
+  is computed by one program relative to every oracle.
+* `TauCeti.Oracle.Single.Code.exists_code_of_computable`: in particular, every computable function
   is computed by one program relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
