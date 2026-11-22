@@ -42,10 +42,10 @@ def levelSolutionMap (α : A →ₜ* B) (hα : Function.Surjective α) (f : G �
     {V U : OpenNormalSubgroup A} (hVU : V ≤ U) (β : LevelSolution α hα f V) :
     LevelSolution α hα f U := by
   refine ⟨(⟨QuotientGroup.mapOfLE hVU, continuous_of_discreteTopology⟩ :
-    A ⧸ V.toSubgroup →ₜ* A ⧸ U.toSubgroup).comp β.1, ?_⟩
+    A ⧸ V.toSubgroup →ₜ* A ⧸ U.toSubgroup).comp β.val, ?_⟩
   intro g
-  obtain ⟨a, ha⟩ := QuotientGroup.mk_surjective (β.1 g)
-  have hβ := β.2 g
+  obtain ⟨a, ha⟩ := QuotientGroup.mk_surjective (β.val g)
+  have hβ := β.property g
   rw [← ha, levelMap_mk] at hβ
   rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_mk, ← ha,
     QuotientGroup.mapOfLE_mk, levelMap_mk]
@@ -55,7 +55,7 @@ def levelSolutionMap (α : A →ₜ* B) (hα : Function.Surjective α) (f : G �
 @[simp]
 theorem levelSolutionMap_apply (α : A →ₜ* B) (hα : Function.Surjective α) (f : G →ₜ* B)
     {V U : OpenNormalSubgroup A} (hVU : V ≤ U) (β : LevelSolution α hα f V) (g : G) :
-    (levelSolutionMap α hα f hVU β).1 g = QuotientGroup.mapOfLE hVU (β.1 g) :=
+    (levelSolutionMap α hα f hVU β).val g = QuotientGroup.mapOfLE hVU (β.val g) :=
   (rfl)
 
 @[simp]
@@ -75,7 +75,7 @@ theorem levelSolutionMap_comp (α : A →ₜ* B) (hα : Function.Surjective α) 
   apply Subtype.ext
   ext g
   simp only [levelSolutionMap_apply]
-  exact DFunLike.congr_fun (QuotientGroup.mapOfLE_comp hWV hVU) (β.1 g)
+  exact DFunLike.congr_fun (QuotientGroup.mapOfLE_comp hWV hVU) (β.val g)
 
 instance (α : A →ₜ* B) (hα : Function.Surjective α) (f : G →ₜ* B) :
     DirectedSystem (LevelSolution α hα f) (fun _ _ h ↦ levelSolutionMap α hα f h) where
@@ -91,12 +91,12 @@ theorem levelSolutionMap_surjective {p : ℕ} (hG : HasPGroupSolutions p G)
     Function.Surjective (levelSolutionMap α hα f hVU) := by
   intro β
   let φ := (QuotientGroup.mapOfLE hVU).prod (levelMap α hα V)
-  let γ := β.1.toMonoidHom.prod
+  let γ := β.val.toMonoidHom.prod
     ((QuotientGroup.mk' (levelImage α hα V).toSubgroup).comp f.toMonoidHom)
   have hmem : ∀ g, γ g ∈ φ.range := by
     intro g
-    obtain ⟨a, ha⟩ := QuotientGroup.mk_surjective (β.1 g)
-    have hβ := β.2 g
+    obtain ⟨a, ha⟩ := QuotientGroup.mk_surjective (β.val g)
+    have hβ := β.property g
     rw [← ha, levelMap_mk] at hβ
     have hm : (α a)⁻¹ * f g ∈ U.toSubgroup.map α.toMonoidHom := by
       rw [← levelImage_toSubgroup α hα U]
@@ -112,7 +112,7 @@ theorem levelSolutionMap_surjective {p : ℕ} (hG : HasPGroupSolutions p G)
     · rw [levelMap_mk, map_mul, hat, mul_inv_cancel_left, QuotientGroup.mk'_apply]
   let γ' : G →* φ.range := γ.codRestrict _ hmem
   have hγ : IsOpen (γ'.ker : Set G) := (MonoidHom.continuous_iff_isOpen_ker _).mp
-    ((β.1.continuous.prodMk (QuotientGroup.continuous_mk.comp f.continuous)).subtype_mk _)
+    ((β.val.continuous.prodMk (QuotientGroup.continuous_mk.comp f.continuous)).subtype_mk _)
   obtain ⟨δ, hδ, hcomp⟩ := hG.exists_comp_eq φ.rangeRestrict φ.rangeRestrict_surjective
     ((isProP_iff.mp hA V).to_subgroup _) γ' hγ
   have hpair (g : G) : φ (δ g) = γ g :=

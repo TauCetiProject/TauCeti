@@ -31,13 +31,16 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
   with the canonical seminorm, and with the Hölder-space norm.
+* `TauCeti.HolderSpace.holderOnWith_of_apply_eq`: a function agreeing on `s` with an element of
+  the Hölder space of `s` is Hölder on `s` with constant its Hölder-space norm.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
   closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
-  at most `max 1 (K ^ α)`.
+  at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
+  isometric equivalence, as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
@@ -66,17 +69,17 @@ supremum-plus-Hölder norm. The wrapper separates this norm from the inherited s
 the underlying submodule. -/
 structure HolderSpace where
   /-- The underlying bounded continuous Hölder function. -/
-  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) α
+  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) ℝ α
 
 namespace HolderSpace
 
 variable {α : ℝ≥0} {X : Type u} {Y : Type v} [MetricSpace X]
   [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
-instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.1.1⟩
+instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.toHolderSubmodule.val⟩
 
 /-- The underlying bounded continuous function. -/
-def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.1.1
+def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.toHolderSubmodule.val
 
 /-- Promote a bounded continuous Hölder function to the Hölder space. -/
 def ofBoundedContinuousFunction (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y)) :
@@ -108,7 +111,7 @@ theorem continuous (f : HolderSpace α X Y) : Continuous (f : X → Y) := by
 /-- A Hölder-space element satisfies the global Hölder condition. -/
 theorem memHolder (f : HolderSpace α X Y) :
     MemHolder α (f.toBoundedContinuousFunction : X → Y) :=
-  (mem_holderSubmodule_iff f.toHolderSubmodule.1).mp f.toHolderSubmodule.2
+  (mem_holderSubmodule_iff f.toHolderSubmodule.val).mp f.toHolderSubmodule.property
 
 @[simp]
 theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace α X Y) :
@@ -129,17 +132,17 @@ theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by
 
 instance : Zero (HolderSpace α X Y) := ⟨⟨0⟩⟩
 
-instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 + g.1⟩⟩
+instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule + g.toHolderSubmodule⟩⟩
 
-instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.1⟩⟩
+instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.toHolderSubmodule⟩⟩
 
-instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 - g.1⟩⟩
+instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule - g.toHolderSubmodule⟩⟩
 
-instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.1⟩⟩
+instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
 @[simp] theorem toBoundedContinuousFunction_zero :
     (0 : HolderSpace α X Y).toBoundedContinuousFunction = 0 := (rfl)
@@ -233,7 +236,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace α X Y) :=
         exact holderNorm_nonneg f.toBoundedContinuousFunction
       norm_smul := fun c f ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-        exact holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
+        exact holderNorm_smul c f.toBoundedContinuousFunction
       norm_triangle := fun f g ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, norm_eq_holderNorm,
           toBoundedContinuousFunction_add]
@@ -260,7 +263,7 @@ instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
   { toModule := inferInstance
     norm_smul_le := fun c f ↦ by
       rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-      exact (holderNorm_smul c f.toBoundedContinuousFunction f.memHolder).le }
+      exact (holderNorm_smul c f.toBoundedContinuousFunction).le }
 
 /-- The supremum norm is controlled by the Hölder-space norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : HolderSpace α X Y) :
@@ -421,6 +424,16 @@ theorem nnHolderNorm_le (f : HolderSpace α X Y) :
 theorem holderWith_nnnorm (f : HolderSpace α X Y) : HolderWith ‖f‖₊ α f :=
   f.holderWith.mono f.nnHolderNorm_le
 
+/-- A function equal on `s` to an element `f` of the Hölder space of `s` is `α`-Hölder on `s` with
+constant the Hölder-space norm of `f`. This reads Hölder bounds on a subset off Hölder-space
+elements on that subset. -/
+theorem holderOnWith_of_apply_eq {s : Set X} {g : X → Y} (f : HolderSpace α s Y)
+    (hf : ∀ x : s, f x = g x) : HolderOnWith ‖f‖₊ α g s := by
+  rw [← HolderWith.restrict_iff]
+  have he : s.domRestrict g = ⇑f := funext fun x ↦ (hf x).symm
+  rw [he]
+  exact f.holderWith_nnnorm
+
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
   ofBoundedContinuousFunction (BoundedContinuousFunction.const X c) memHolder_const
@@ -519,14 +532,6 @@ section compLipschitz
 
 variable {X' : Type*} [MetricSpace X'] {K : ℝ≥0}
 
-/-- Precomposition with a `K`-Lipschitz map preserves bounded `α`-Hölder functions: the global
-Hölder seminorm grows by at most the factor `K ^ α`. -/
-theorem nnHolderNorm_comp_le {g : X' → X} (hg : LipschitzWith K g) (f : HolderSpace α X Y) :
-    nnHolderNorm α ((f : X → Y) ∘ g) ≤ nnHolderNorm α (f : X → Y) * K ^ (α : ℝ) := by
-  have h := f.memHolder.holderWith.comp (holderWith_one.2 hg)
-  rw [mul_one, coe_toBoundedContinuousFunction] at h
-  exact h.nnholderNorm_le
-
 /-- Precomposition with a `K`-Lipschitz map, as a continuous linear map between bounded Hölder
 spaces of the same exponent. -/
 def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
@@ -543,9 +548,12 @@ def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
     (max 1 ((K : ℝ) ^ (α : ℝ))) fun f ↦ by
       have h₁ := BoundedContinuousFunction.norm_compContinuous_le
         f.toBoundedContinuousFunction ⟨g, hg.continuous⟩
+      -- The Hölder seminorm grows by at most the factor `K ^ α`, since `g` is `K`-Lipschitz.
       have h₂ : (nnHolderNorm α ((f : X → Y) ∘ g) : ℝ) ≤
           nnHolderNorm α (f : X → Y) * (K : ℝ) ^ (α : ℝ) := by
-        exact_mod_cast nnHolderNorm_comp_le hg f
+        have h := f.holderWith.memHolder.nnHolderNorm_comp_le hg.holderWith.memHolder
+        rw [mul_one] at h
+        exact_mod_cast h.trans (by gcongr; exact hg.holderWith.nnholderNorm_le)
       have hM₁ : (1 : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_left _ _
       have hMK : (K : ℝ) ^ (α : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_right _ _
       have hH : (0 : ℝ) ≤ nnHolderNorm α (f : X → Y) := NNReal.coe_nonneg _
@@ -581,6 +589,32 @@ subspace, does not increase the Hölder-space norm. -/
 theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
+
+/-- Precomposing a Hölder function with a `1`-Lipschitz map does not increase its norm. -/
+theorem norm_compLipschitzL_apply_le (hg : LipschitzWith 1 g) (f : HolderSpace α X Y) :
+    ‖compLipschitzL g hg f‖ ≤ ‖f‖ := by
+  simpa using (compLipschitzL g hg).le_of_opNorm_le (norm_compLipschitzL_le_one hg) f
+
+variable (α Y) in
+/-- Precomposition with an isometric equivalence `g : X' ≃ᵢ X`, as a linear isometric equivalence
+between bounded Hölder spaces of the same exponent. Its inverse is precomposition with
+`g.symm`. -/
+def compIsometryEquivLIE (g : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y :=
+  LinearIsometryEquiv.ofBounds
+    { (compLipschitzL (α := α) (Y := Y) g g.isometry.lipschitzWith).toLinearMap with
+      invFun := compLipschitzL g.symm g.symm.isometry.lipschitzWith
+      left_inv f := ext fun x ↦ by simp
+      right_inv f := ext fun x ↦ by simp }
+    (fun f ↦ by simpa using norm_compLipschitzL_apply_le g.isometry.lipschitzWith f)
+    (fun f ↦ by simpa using norm_compLipschitzL_apply_le g.symm.isometry.lipschitzWith f)
+
+@[simp]
+theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :
+    compIsometryEquivLIE α Y g f x = f (g x) := (rfl)
+
+@[simp]
+theorem compIsometryEquivLIE_symm (g : X' ≃ᵢ X) :
+    (compIsometryEquivLIE α Y g).symm = compIsometryEquivLIE α Y g.symm := (rfl)
 
 end compLipschitz
 
@@ -640,6 +674,20 @@ theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace
       LinearIsometry.norm_map]
   rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
   simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
+
+/-- If the values of `f` are those of `g` under a `1`-Lipschitz map `e` that does not increase
+norms, then `‖f‖ ≤ ‖g‖`. The map `e` need not be linear. -/
+theorem norm_le_norm_of_apply_eq_comp {f : HolderSpace α X Y'} {g : HolderSpace α X Y}
+    {e : Y → Y'} (he : LipschitzWith 1 e) (hn : ∀ y, ‖e y‖ ≤ ‖y‖) (h : ∀ x, f x = e (g x)) :
+    ‖f‖ ≤ ‖g‖ := by
+  rw [norm_def g, coe_toBoundedContinuousFunction]
+  refine norm_le_of_norm_le_of_holderWith (norm_nonneg _) (fun x ↦ ?_) fun x y ↦ ?_
+  · rw [h, ← toBoundedContinuousFunction_apply]
+    exact (hn _).trans (g.toBoundedContinuousFunction.norm_coe_le_norm x)
+  · have he' := he (g x) (g y)
+    rw [ENNReal.coe_one, one_mul] at he'
+    rw [h, h]
+    exact he'.trans (g.holderWith x y)
 
 end compLeft
 

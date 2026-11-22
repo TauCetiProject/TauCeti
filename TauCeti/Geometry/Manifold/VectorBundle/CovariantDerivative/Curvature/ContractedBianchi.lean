@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -204,7 +204,8 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
   let e := trivializationAt E (TangentSpace I : M → Type _) x
   let b := Module.finBasis ℝ E
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  obtain ⟨F, hF, hFeq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  obtain ⟨F, hF, hFeq⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl hx
   have hFx (k : Fin (Module.finrank ℝ E)) : F k x = e.basisAt b hx k := by
     rw [(hFeq k).self_of_nhds, e.localFrame_apply_of_mem_baseSet b hx]
   let c (k : Fin (Module.finrank ℝ E)) : TangentSpace I x →ₗ[ℝ] ℝ := e.localFrameCoeff I b k x

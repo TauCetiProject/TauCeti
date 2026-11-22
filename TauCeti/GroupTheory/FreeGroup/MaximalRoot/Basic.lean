@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
+public import TauCeti.GroupTheory.ProperPower
+import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 
 /-!
 # Maximal roots in free groups

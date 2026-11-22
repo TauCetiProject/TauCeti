@@ -360,7 +360,7 @@ private theorem exists_principalSeries_row (hF : Fintype.card F = 3) {u : Eˣ}
 /-- The cuspidal character attached to `θ` at the eight normal forms, in terms of `ζ = θ(u)`. -/
 private theorem cuspidal_apply_gl2FieldThreeNormalForm (hF : Fintype.card F = 3) {u : Eˣ}
     (hu : (u : E) * u = u + 1) (θ : Eˣ →* ℂˣ) (j : Fin 8) :
-    (GL2CuspidalVirtualCharacter F E θ (AddChar.FiniteField.primitiveChar_to_Complex F)).1
+    (GL2CuspidalVirtualCharacter F E θ (AddChar.FiniteField.primitiveChar_to_Complex F)).val
         (gl2FieldThreeNormalForm u j) =
       ![2, 2 * (θ u : ℂ) ^ 4, -((θ u : ℂ) ^ 2 + (θ u : ℂ) ^ 6), -((θ u : ℂ) + (θ u : ℂ) ^ 3),
         -((θ u : ℂ) ^ 5 + (θ u : ℂ) ^ 15), -1, -(θ u : ℂ) ^ 4, 0] j := by
