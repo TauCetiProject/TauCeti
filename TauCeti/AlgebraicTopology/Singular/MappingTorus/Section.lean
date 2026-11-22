@@ -27,10 +27,11 @@ where `g : K → F` is the family of fibre coordinates at height zero, `mk φ (g
 (`TauCeti.MappingTorus.singularHomologyMap_comp_wangδ_of_section`). The monodromy `φ` enters only
 through `s`. For a family of seamed paths `ℓ : K → SeamedPath φ`, whose sections are
 `TauCeti.SeamedPath.sectionFamily`, the map `g` takes `k` to the start point of `ℓ k`
-(`TauCeti.SeamedPath.singularHomologyMap_sectionFamily_comp_wangδ`). For a loop of seamed paths
-`u ↦ γ_u` this is the formula `∂ (im [γ_u]) = [u ↦ γ_u(0)]` for the class of the torus swept by the
-loop in the Floer–Novikov theory of a symplectomorphism, with the class of the torus taken in the
-product `T_{𝟙_K} = K × S¹` and read through `∂ z`.
+(`TauCeti.SeamedPath.singularHomologyMap_sectionFamily_comp_wangδ`), so `∂ (s'_* z) = g_* (∂ z)`
+for every class `z` of `T_{𝟙_K} = K × S¹`. For a loop of seamed paths `u ↦ γ_u`, `K` is a circle,
+and the formula `∂ (im [γ_u]) = [u ↦ γ_u(0)]` for the class of the torus swept by the loop in the
+Floer–Novikov theory of a symplectomorphism follows once the Wang boundary `∂` of the oriented torus
+class of `K × S¹` is identified with the class of the circle `K`, which is not proved here.
 
 The proof is naturality of the Wang connecting morphism for maps of infinite cyclic covers
 (`TauCeti.MappingTorus.singularHomologyMap_descend_comp_wangδ`). Read on the cylinders through the
@@ -99,8 +100,9 @@ open MappingTorus
 /-- **The Wang boundary of a class swept by a family of seamed paths.** For a family of seamed
 paths `ℓ : K → SeamedPath φ`, read through their sections on `T_{𝟙_K} = K × UnitAddCircle`, the
 Wang connecting morphism of `T_φ` on the swept classes is `g_*` of the Wang connecting morphism of
-`T_{𝟙_K}`, where `g k` is the start point of `ℓ k`. For a loop of seamed paths `u ↦ γ_u` this is
-`∂ (im [γ_u]) = [u ↦ γ_u(0)]`. -/
+`T_{𝟙_K}`, where `g k` is the start point of `ℓ k`. With `K` a circle, this reduces the Wang
+boundary of the torus swept by a loop of seamed paths `u ↦ γ_u` to `g_*` of the Wang boundary of
+the torus class of `K × S¹`. -/
 @[reassoc]
 theorem singularHomologyMap_sectionFamily_comp_wangδ (ℓ : C(K, SeamedPath φ)) (g : C(K, F))
     (hg : ∀ k, (ℓ k).val 0 = g k) (n : ℕ) :

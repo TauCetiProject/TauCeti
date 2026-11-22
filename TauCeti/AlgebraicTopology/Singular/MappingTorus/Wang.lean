@@ -356,11 +356,14 @@ of mapping tori and with `g_*`.
 The map `g` need not intertwine the monodromies: on the homology of the cylinders `Φ` is `g`,
 read through the zero section and the projection, which are mutually inverse there. -/
 @[reassoc]
-theorem homologyMap_descend_comp_wangδ (g : C(F, G)) (hg : ∀ x, (Φ (x, 0)).1 = g x) (n : ℕ) :
-    homologyMap (((singularChainComplexFunctor A).obj R).map
-        (TopCat.ofHom (descend φ ψ Φ hΦ))) (n + 1) ≫ wangδ ψ R n =
-      wangδ φ R n ≫
-        homologyMap (((singularChainComplexFunctor A).obj R).map (TopCat.ofHom g)) n := by
+theorem singularHomologyMap_descend_comp_wangδ (g : C(F, G)) (hg : ∀ x, (Φ (x, 0)).1 = g x)
+    (n : ℕ) :
+    ((singularHomologyFunctor A (n + 1)).obj R).map (TopCat.ofHom (descend φ ψ Φ hΦ)) ≫
+        wangδ ψ R n =
+      wangδ φ R n ≫ ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) := by
+  -- Mathlib defines `singularHomologyFunctor A n` as `singularChainComplexFunctor A` followed by
+  -- `homologyFunctor _ _ n`, so the maps on singular homology are `homologyMap`s of chain maps.
+  change homologyMap _ (n + 1) ≫ _ = _ ≫ homologyMap _ n
   have hδ := HomologicalComplex.HomologySequence.δ_naturality
     (cyclicCoverShortComplexMap φ R ψ Φ hΦ) (cyclicCoverShortComplex_shortExact φ R)
     (cyclicCoverShortComplex_shortExact ψ R) (n + 1) n (by simp)
@@ -378,18 +381,6 @@ theorem homologyMap_descend_comp_wangδ (g : C(F, G)) (hg : ∀ x, (Φ (x, 0)).1
     simpa using hg x
   rw [wangδ, wangδ, ← Category.assoc, ← cyclicCoverShortComplexMap_τ₃ φ R ψ Φ hΦ, ← hδ,
     Category.assoc, hcyl, Category.assoc]
-
-/-- **Naturality of the Wang connecting morphism for maps of infinite cyclic covers**, stated with
-the maps induced on singular homology by the descended map of mapping tori and by `g`. -/
-@[reassoc]
-theorem singularHomologyMap_descend_comp_wangδ (g : C(F, G)) (hg : ∀ x, (Φ (x, 0)).1 = g x)
-    (n : ℕ) :
-    ((singularHomologyFunctor A (n + 1)).obj R).map (TopCat.ofHom (descend φ ψ Φ hΦ)) ≫
-        wangδ ψ R n =
-      wangδ φ R n ≫ ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) :=
-  -- Mathlib defines `singularHomologyFunctor A n` as `singularChainComplexFunctor A` followed by
-  -- `homologyFunctor _ _ n`, so the two statements agree definitionally.
-  homologyMap_descend_comp_wangδ φ R ψ Φ hΦ g hg n
 
 variable (g : C(F, G)) (h : Function.Semiconj g φ ψ)
 
@@ -412,7 +403,7 @@ theorem wangδ_naturality (n : ℕ) :
     wangδ φ R n ≫ homologyMap (fibreChainMap R g) n =
       homologyMap (mappingTorusChainMap φ R ψ g h) (n + 1) ≫ wangδ ψ R n := by
   rw [fibreChainMap_def, mappingTorusChainMap_def, ← descend_prodMap φ h]
-  exact (homologyMap_descend_comp_wangδ φ R ψ _ _ g (fun _ ↦ rfl) n).symm
+  exact (singularHomologyMap_descend_comp_wangδ φ R ψ _ _ g (fun _ ↦ rfl) n).symm
 
 end Naturality
 

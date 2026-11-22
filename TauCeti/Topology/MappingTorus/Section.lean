@@ -283,6 +283,12 @@ theorem sectionHomeomorph_apply (γ : SeamedPath φ) (t : I) :
     (sectionHomeomorph φ γ).val (t : ℝ) = mk φ (γ.val t) t := by
   simp [sectionHomeomorph]
 
+/-- The section of a seamed path is a section: it lies over `θ` at every `θ`. -/
+@[simp]
+theorem proj_sectionHomeomorph_apply (γ : SeamedPath φ) (θ : UnitAddCircle) :
+    proj φ ((sectionHomeomorph φ γ).val θ) = θ :=
+  (sectionHomeomorph φ γ).property θ
+
 /-- The seamed path of a section consists of the fibre coordinates of the section. -/
 @[simp]
 theorem sectionHomeomorph_symm_apply

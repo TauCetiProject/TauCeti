@@ -106,6 +106,7 @@ lemma coverMap_deck (p : F × ℝ) : coverMap φ (deck φ p) = coverMap φ p := 
 
 /-- The `n`-th power of the deck transformation is the action of `n : ℤ`,
 `(x, t) ↦ (φⁿ x, t + n)`. -/
+@[simp]
 lemma deck_zpow_apply (n : ℤ) (p : F × ℝ) : (deck φ ^ n) p = ((φ ^ n) p.1, p.2 + n) := by
   induction n using Int.induction_on generalizing p with
   | zero => simp
