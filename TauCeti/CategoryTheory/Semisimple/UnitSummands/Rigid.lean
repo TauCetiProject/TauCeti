@@ -56,64 +56,50 @@ theorem not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass (X Y : C) {Y' :
     [ExactPairing Y Y'] [Simple X] [Simple Y] :
     ¬ IsZero (X ⊗ Y) ↔ rightUnitClass X = leftUnitClass Y := by
   refine ⟨rightUnitClass_eq_leftUnitClass_of_not_isZero, fun h hz ↦ ?_⟩
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y') (Simple.not_isZero Y))
-  have hI : I = rightUnitClass X := by
-    have hIY : I = leftUnitClass Y := by simpa using leftUnitClass_eq_of_hom_ne_zero hf
-    exact hIY.trans h.symm
+  obtain ⟨I, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
+    (coevaluation_ne_zero (Y := Y') (Simple.not_isZero Y))
+  have hI : I = rightUnitClass X :=
+    (by simpa using leftUnitClass_eq_of_hom_ne_zero hf : I = leftUnitClass Y).trans h.symm
   have := isSplitMono_of_nonzero_from_simple hf
-  have hz' : IsZero (X ⊗ (Y ⊗ Y')) :=
-    ((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm
-  have h0 : X ◁ (f ≫ η_ Y Y') = 0 := hz'.eq_of_tgt _ _
-  have hid : 𝟙 (X ⊗ I.repr) = 0 := by
-    rw [← whiskerLeft_id, ← IsSplitMono.id (f ≫ η_ Y Y'), whiskerLeft_comp, h0, zero_comp]
-  exact not_isZero_tensorObj_rightUnitClass X (hI ▸ (IsZero.iff_id_eq_zero _).2 hid)
+  have h0 : X ◁ (UnitSimpleClasses.ι I ≫ η_ Y Y') = 0 :=
+    (((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm).eq_of_tgt _ _
+  subst hI
+  exact not_isZero_tensorObj_rightUnitClass X <| (IsZero.iff_id_eq_zero _).2 <| by
+    rw [← whiskerLeft_id, ← IsSplitMono.id (UnitSimpleClasses.ι (rightUnitClass X) ≫ η_ Y Y'),
+      whiskerLeft_comp, h0, zero_comp]
 
 /-- In an exact pairing of simple objects, the left unit class of the right member equals the right
 unit class of the left member. -/
 theorem leftUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
     leftUnitClass Y = rightUnitClass X := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  obtain ⟨_, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
+    (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
   exact (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf).symm
 
 /-- In an exact pairing of simple objects, the right unit class of the right member equals the left
 unit class of the left member. -/
 theorem rightUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
     rightUnitClass Y = leftUnitClass X := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
-  exact (by simpa using rightUnitClass_eq_of_hom_ne_zero hf : I = rightUnitClass Y).symm.trans
-    (by simpa using leftUnitClass_eq_of_hom_ne_zero hf)
+  obtain ⟨_, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
+    (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  have hR := rightUnitClass_eq_of_hom_ne_zero hf; have hL := leftUnitClass_eq_of_hom_ne_zero hf
+  simp only [rightUnitClass_unitRepr, leftUnitClass_unitRepr] at hR hL
+  exact hR.symm.trans hL
 
 /-- Right duality interchanges left and right unit classes: the left unit class of `Xᘁ` is the
 right unit class of `X`. -/
-@[simp]
-theorem leftUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    leftUnitClass Xᘁ = rightUnitClass X :=
-  leftUnitClass_of_exactPairing
-
+@[simp] theorem leftUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
+    leftUnitClass Xᘁ = rightUnitClass X := leftUnitClass_of_exactPairing
 /-- Right duality interchanges left and right unit classes: the right unit class of `Xᘁ` is the
 left unit class of `X`. -/
-@[simp]
-theorem rightUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    rightUnitClass Xᘁ = leftUnitClass X :=
-  rightUnitClass_of_exactPairing
+@[simp] theorem rightUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
+    rightUnitClass Xᘁ = leftUnitClass X := rightUnitClass_of_exactPairing
 
-section Rigid
-
-variable [RigidCategory C]
-
-@[simp]
-theorem leftUnitClass_dual_repr (S : SimpleClasses C) :
+@[simp] theorem leftUnitClass_dual_repr [RigidCategory C] (S : SimpleClasses C) :
     leftUnitClass S.dual.repr = rightUnitClass S.repr := by
   rw [leftUnitClass_congr (SimpleClasses.dualReprIso S), leftUnitClass_rightDual]
-
-@[simp]
-theorem rightUnitClass_dual_repr (S : SimpleClasses C) :
+@[simp] theorem rightUnitClass_dual_repr [RigidCategory C] (S : SimpleClasses C) :
     rightUnitClass S.dual.repr = leftUnitClass S.repr := by
   rw [rightUnitClass_congr (SimpleClasses.dualReprIso S), rightUnitClass_rightDual]
-
-end Rigid
 
 end TauCeti

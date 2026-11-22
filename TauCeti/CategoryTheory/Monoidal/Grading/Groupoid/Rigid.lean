@@ -41,17 +41,14 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 endpoint transports. -/
 theorem GroupoidGrading.degOf_of_exactPairing {G : Type u₂} [Groupoid.{v₂} G]
     (γ : GroupoidGrading C G) {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    γ.degOf Y =
-      eqToHom (congrArg γ.obj leftUnitClass_of_exactPairing) ≫
-        inv (γ.degOf X) ≫
-        eqToHom (congrArg γ.obj rightUnitClass_of_exactPairing).symm := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
-  have hcomp := γ.degOf_comp (f ≫ η_ X Y) hf
+    γ.degOf Y = eqToHom (congrArg γ.obj leftUnitClass_of_exactPairing) ≫ inv (γ.degOf X) ≫
+      eqToHom (congrArg γ.obj rightUnitClass_of_exactPairing).symm := by
+  obtain ⟨I, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
+    (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  have hcomp := γ.degOf_comp (UnitSimpleClasses.ι I ≫ η_ X Y) hf
   rw [γ.degOf_unitRepr] at hcomp
   have hinv : eqToHom (congrArg γ.obj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)) ≫
-      γ.degOf Y =
-      inv (γ.degOf X) ≫
+      γ.degOf Y = inv (γ.degOf X) ≫
         eqToHom (congrArg γ.obj rightUnitClass_of_exactPairing).symm := by
     rw [IsIso.eq_inv_comp]
     simpa [Category.assoc] using
@@ -59,6 +56,20 @@ theorem GroupoidGrading.degOf_of_exactPairing {G : Type u₂} [Groupoid.{v₂} G
         eqToHom (congrArg γ.obj (rightUnitClass_eq_of_hom_ne_zero hf))
   simpa [Category.assoc] using
     eqToHom (congrArg γ.obj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)).symm ≫= hinv
+
+/-- Right duals have inverse grading degrees up to endpoint transports in any groupoid grading. -/
+@[simp] theorem GroupoidGrading.degOf_rightDual {G : Type u₂} [Groupoid.{v₂} G]
+    (γ : GroupoidGrading C G) (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
+    γ.degOf Xᘁ = eqToHom (by simp) ≫ inv (γ.degOf X) ≫ eqToHom (by simp) := by
+  simpa using γ.degOf_of_exactPairing (X := X) (Y := Xᘁ)
+
+/-- Dual simple classes have inverse grading degrees up to endpoint transports in any groupoid
+grading. -/
+@[simp] theorem GroupoidGrading.deg_dual [RigidCategory C] {G : Type u₂} [Groupoid.{v₂} G]
+    (γ : GroupoidGrading C G) (S : SimpleClasses C) :
+    γ.deg S.dual = eqToHom (by simp) ≫ inv (γ.deg S) ≫ eqToHom (by simp) := by
+  rw [← γ.degOf_repr S.dual, γ.degOf_congr (SimpleClasses.dualReprIso S),
+    γ.degOf_rightDual S.repr, γ.degOf_repr S]; simp [Category.assoc]
 
 end ExactPairing
 
@@ -70,37 +81,32 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 /-- In an exact pairing of simple objects, `degreeOf Y` is the inverse of `degreeOf X` up to
 endpoint transports. -/
 theorem degreeOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    degreeOf Y =
-      eqToHom (congrArg mkObj leftUnitClass_of_exactPairing) ≫
-        inv (degreeOf X) ≫
-        eqToHom (congrArg mkObj rightUnitClass_of_exactPairing).symm := by
-  simpa only [GroupoidGrading.degOf_def, ← degreeOf_def] using
-    GroupoidGrading.degOf_of_exactPairing
-      ⟨mkObj, degree, fun f hf ↦ degree_comp f hf⟩ (X := X) (Y := Y)
+    degreeOf Y = eqToHom (congrArg mkObj leftUnitClass_of_exactPairing) ≫ inv (degreeOf X) ≫
+      eqToHom (congrArg mkObj rightUnitClass_of_exactPairing).symm := by
+  have h := (idGrading (C := C)).degOf_of_exactPairing (X := X) (Y := Y)
+  simp only [idGrading_degOf] at h
+  simpa [Category.assoc] using eqToHom (idGrading_obj (leftUnitClass Y)).symm ≫= h =≫
+    eqToHom (idGrading_obj (rightUnitClass Y))
 
-@[simp]
-theorem degreeOf_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
+@[simp] theorem degreeOf_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
     degreeOf Xᘁ = eqToHom (by simp) ≫ inv (degreeOf X) ≫ eqToHom (by simp) := by
   simpa using degreeOf_of_exactPairing (X := X) (Y := Xᘁ)
 
 section Rigid
-
 variable [RigidCategory C]
 
 /-- Dual simple classes have inverse degrees in `universalGradingGroupoid C`. -/
-@[simp]
-theorem degree_dual (S : SimpleClasses C) :
+@[simp] theorem degree_dual (S : SimpleClasses C) :
     degree S.dual = eqToHom (by simp) ≫ inv (degree S) ≫ eqToHom (by simp) := by
-  rw [← degreeOf_repr S.dual, degreeOf_congr (SimpleClasses.dualReprIso S),
-    degreeOf_rightDual S.repr, degreeOf_repr S]
-  simp [Category.assoc]
+  have h := (idGrading (C := C)).deg_dual S; simp only [idGrading_deg] at h
+  simpa [Category.assoc] using eqToHom (idGrading_obj (leftUnitClass S.dual.repr)).symm ≫= h =≫
+    eqToHom (idGrading_obj (rightUnitClass S.dual.repr))
 
 /-- In a rigid finite semisimple monoidal category, every morphism in
 `universalGradingGroupoid C` is the degree of some simple isomorphism class. -/
 theorem exists_degree_eq {x y : universalGradingGroupoid C} (g : x ⟶ y) :
     ∃ (S : SimpleClasses C) (hL : mkObj (leftUnitClass S.repr) = x)
-      (hR : mkObj (rightUnitClass S.repr) = y),
-      g = eqToHom hL.symm ≫ degree S ≫ eqToHom hR := by
+      (hR : mkObj (rightUnitClass S.repr) = y), g = eqToHom hL.symm ≫ degree S ≫ eqToHom hR := by
   induction g using hom_induction with
   | hdeg S => exact ⟨S, rfl, rfl, by simp⟩
   | hinv S =>
@@ -112,18 +118,14 @@ theorem exists_degree_eq {x y : universalGradingGroupoid C} (g : x ⟶ y) :
     exact ⟨I.val, congrArg mkObj (leftUnitClass_unitRepr I),
       congrArg mkObj (rightUnitClass_unitRepr I), by simp⟩
   | hcomp f₁ f₂ ih₁ ih₂ =>
-    obtain ⟨S, hSL, hSR, hf₁⟩ := ih₁
-    obtain ⟨T, hTL, hTR, hf₂⟩ := ih₂
-    have hmid : rightUnitClass S.repr = leftUnitClass T.repr :=
-      mkObj.injective (hSR.trans hTL.symm)
+    obtain ⟨S, hSL, hSR, hf₁⟩ := ih₁; obtain ⟨T, hTL, hTR, hf₂⟩ := ih₂
+    have hmid : rightUnitClass S.repr = leftUnitClass T.repr := mkObj.injective (hSR.trans hTL.symm)
     have hnz : ¬ IsZero (S.repr ⊗ T.repr) :=
       (not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass S.repr T.repr
         (Y' := T.reprᘁ)).2 hmid
     obtain ⟨W, hW, f, hf⟩ := exists_simple_hom_ne_zero hnz
-    let _ := hW
-    let dW := SimpleClasses.classOfReprIso W
-    have hf' : dW.hom ≫ f ≠ 0 := fun h ↦ hf <| by
-      rw [← dW.inv_hom_id_assoc f, h, comp_zero]
+    let _ := hW; let dW := SimpleClasses.classOfReprIso W
+    have hf' : dW.hom ≫ f ≠ 0 := fun h ↦ hf <| by rw [← dW.inv_hom_id_assoc f, h, comp_zero]
     refine ⟨SimpleClasses.classOf W,
       (congrArg mkObj (leftUnitClass_eq_of_hom_ne_zero hf')).trans hSL,
       (congrArg mkObj (rightUnitClass_eq_of_hom_ne_zero hf')).trans hTR, ?_⟩
@@ -144,13 +146,12 @@ theorem nonempty_hom_mkObj_iff (I J : UnitSimpleClasses C) :
     Nonempty (mkObj I ⟶ mkObj J) ↔
       ∃ S : SimpleClasses C, leftUnitClass S.repr = I ∧ rightUnitClass S.repr = J :=
   ⟨fun ⟨g⟩ ↦ by obtain ⟨S, hL, hR, _⟩ := exists_simple_degree_eq g; exact ⟨S, hL, hR⟩,
-    fun ⟨S, hL, hR⟩ ↦ ⟨eqToHom (congrArg mkObj hL).symm ≫ degree S ≫ eqToHom (congrArg mkObj hR)⟩⟩
+   fun ⟨S, hL, hR⟩ ↦ ⟨eqToHom (congrArg mkObj hL).symm ≫ degree S ≫ eqToHom (congrArg mkObj hR)⟩⟩
 
 /-- If only finitely many simple classes connect `x` and `y`, then `x ⟶ y` is finite. -/
 theorem finite_hom_of_finite_subtype (x y : universalGradingGroupoid C)
     [Finite {S : SimpleClasses C //
-      mkObj (leftUnitClass S.repr) = x ∧ mkObj (rightUnitClass S.repr) = y}] :
-    Finite (x ⟶ y) :=
+      mkObj (leftUnitClass S.repr) = x ∧ mkObj (rightUnitClass S.repr) = y}] : Finite (x ⟶ y) :=
   Finite.of_surjective
     (fun p : {S : SimpleClasses C //
         mkObj (leftUnitClass S.repr) = x ∧ mkObj (rightUnitClass S.repr) = y} ↦

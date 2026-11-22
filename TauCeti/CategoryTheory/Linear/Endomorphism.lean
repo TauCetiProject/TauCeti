@@ -136,24 +136,25 @@ noncomputable def endAlgEquivOfSurjective (X : C) [Nontrivial (End X)]
     rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
     exact bijective_algebraMap_end_of_surjective k X hsurj).symm
 
-variable {k}
-variable {X : C} [Nontrivial (End X)] {hsurj : Function.Surjective (algebraMap k (End X))}
+variable {k} {X : C} [Nontrivial (End X)] {hsurj : Function.Surjective (algebraMap k (End X))}
 
 /-- The inverse of `endAlgEquivOfSurjective` is the structure map `algebraMap k (End X)`. -/
-@[simp]
-theorem endAlgEquivOfSurjective_symm_apply (c : k) :
+@[simp] theorem endAlgEquivOfSurjective_symm_apply (c : k) :
     (endAlgEquivOfSurjective k X hsurj).symm c = algebraMap k (End X) c := by
   rw [endAlgEquivOfSurjective, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
 
 /-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
 `f`. -/
-theorem algebraMap_endAlgEquivOfSurjective (f : End X) :
+@[simp] theorem algebraMap_endAlgEquivOfSurjective (f : End X) :
     algebraMap k (End X) (endAlgEquivOfSurjective k X hsurj f) = f := by
   rw [← endAlgEquivOfSurjective_symm_apply (hsurj := hsurj), AlgEquiv.symm_apply_apply]
 
+/-- Evaluating `endAlgEquivOfSurjective` on `algebraMap k (End X) c` recovers `c`. -/
+theorem endAlgEquivOfSurjective_algebraMap (c : k) :
+    endAlgEquivOfSurjective k X hsurj (algebraMap k (End X) c) = c := by simp
+
 /-- Every endomorphism of an object with scalar endomorphisms is its scalar times the identity. -/
-@[simp]
-theorem endAlgEquivOfSurjective_smul_id (f : End X) :
+@[simp] theorem endAlgEquivOfSurjective_smul_id (f : End X) :
     endAlgEquivOfSurjective k X hsurj f • 𝟙 X = f.asHom := by
   rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSurjective]
 

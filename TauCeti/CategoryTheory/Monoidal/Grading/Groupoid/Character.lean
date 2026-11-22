@@ -60,14 +60,12 @@ def groupoidCharacterMonoidalAut :
 variable {R}
 
 theorem groupoidCharacterMonoidalAut_eq_characterMonoidalAut
-    (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) :
-    groupoidCharacterMonoidalAut R F =
+    (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) : groupoidCharacterMonoidalAut R F =
       characterMonoidalAut R (universalGradingGroupoid.singleObjFunctorMulEquiv Rˣ F) := (rfl)
 
 /-- Precomposed with a morphism `s : S ⟶ X` out of a simple object `S`, the monoidal automorphism
 associated to a groupoid character `F` scales `s` by `F.map (degreeOf S)`. -/
-@[reassoc]
-theorem comp_groupoidCharacterMonoidalAut_app
+@[reassoc] theorem comp_groupoidCharacterMonoidalAut_app
     (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) {S X : C} [Simple S] (s : S ⟶ X) :
     s ≫ (LaxMonoidalFunctor.forgetAut (𝟭 C) (groupoidCharacterMonoidalAut R F)).asIso.hom.app X =
       Units.val (F.map (universalGradingGroupoid.degreeOf S)) • s := by
@@ -76,8 +74,7 @@ theorem comp_groupoidCharacterMonoidalAut_app
 
 /-- The monoidal automorphism associated to a groupoid character `F` acts on each simple object `X`
 as multiplication by `F.map (degreeOf X)`. -/
-@[simp]
-theorem groupoidCharacterMonoidalAut_app_of_simple
+@[simp] theorem groupoidCharacterMonoidalAut_app_of_simple
     (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) (X : C) [Simple X] :
     (LaxMonoidalFunctor.forgetAut (𝟭 C) (groupoidCharacterMonoidalAut R F)).asIso.hom.app X =
       Units.val (F.map (universalGradingGroupoid.degreeOf X)) • 𝟙 X := by
@@ -97,19 +94,14 @@ theorem groupoidCharacterMonoidalAut_injective_of_smul_injective (R) [CommSemiri
 
 end Semiring
 
-section Field
-
-variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C]
-
 /-- Over a field, distinct `kˣ`-valued characters of `universalGradingGroupoid C` induce distinct
 monoidal automorphisms of the identity functor. -/
-theorem groupoidCharacterMonoidalAut_injective :
+theorem groupoidCharacterMonoidalAut_injective (k : Type w) [Field k]
+    {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+    [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C] :
     Function.Injective (groupoidCharacterMonoidalAut k (C := C)) :=
   groupoidCharacterMonoidalAut_injective_of_smul_injective k fun S _ _ h ↦
     Units.ext (smul_left_injective k (CategoryTheory.id_ne_zero S.repr) h)
-
-end Field
 
 section Classification
 
@@ -127,14 +119,10 @@ def monoidalAutGroupoidCharacter :
 /-- The structure map sends the value of `monoidalAutGroupoidCharacter` at `degree S` to the
 component of the automorphism at `S.repr`. -/
 theorem algebraMap_monoidalAutGroupoidCharacter_degree (a : Aut (LaxMonoidalFunctor.of (𝟭 C)))
-    (S : SimpleClasses C) :
-    algebraMap k (End S.repr)
-        (Units.val ((monoidalAutGroupoidCharacter k a).map
-          (universalGradingGroupoid.degree S))) =
+    (S : SimpleClasses C) : algebraMap k (End S.repr)
+      (Units.val ((monoidalAutGroupoidCharacter k a).map (universalGradingGroupoid.degree S))) =
       End.of ((LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr) := by
-  simp only [monoidalAutGroupoidCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    universalGradingGroupoid.singleObjFunctorMulEquiv_symm_map_degree,
-    algebraMap_monoidalAutCharacter_degree]
+  simp [monoidalAutGroupoidCharacter, algebraMap_monoidalAutCharacter_degree]
 
 /-- The value of the groupoid character on `degree S` is the scalar of the component of the
 monoidal automorphism at `S.repr`. -/
@@ -143,20 +131,15 @@ theorem monoidalAutGroupoidCharacter_degree (a : Aut (LaxMonoidalFunctor.of (�
     Units.val ((monoidalAutGroupoidCharacter k a).map (universalGradingGroupoid.degree S)) =
       endAlgEquivOfSurjective k S.repr (HasScalarSimpleEnd.surjective_algebraMap S.repr)
         (End.of ((LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr)) := by
-  simp only [monoidalAutGroupoidCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    universalGradingGroupoid.singleObjFunctorMulEquiv_symm_map_degree, monoidalAutCharacter_degree]
+  simp [monoidalAutGroupoidCharacter, monoidalAutCharacter_degree]
 
 /-- Evaluating `monoidalAutGroupoidCharacter` on `degreeOf X` for a simple object `X` recovers the
 component of the monoidal automorphism at `X`. -/
-@[simp]
-theorem monoidalAutGroupoidCharacter_degreeOf_smul_id (a : Aut (LaxMonoidalFunctor.of (𝟭 C)))
-    (X : C) [Simple X] :
-    Units.val ((monoidalAutGroupoidCharacter k a).map
-        (universalGradingGroupoid.degreeOf X)) • 𝟙 X =
+@[simp] theorem monoidalAutGroupoidCharacter_degreeOf_smul_id
+    (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) (X : C) [Simple X] :
+    Units.val ((monoidalAutGroupoidCharacter k a).map (universalGradingGroupoid.degreeOf X)) • 𝟙 X =
       (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app X := by
-  simp only [monoidalAutGroupoidCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    universalGradingGroupoid.singleObjFunctorMulEquiv_symm_map_degreeOf,
-    monoidalAutCharacter_degree_smul_id]
+  simp [monoidalAutGroupoidCharacter]
 
 /-- In a finite semisimple category where simple objects have scalar endomorphisms, a monoidal
 automorphism of `𝟭 C` is uniquely determined by its groupoid character on
@@ -166,14 +149,11 @@ theorem monoidalAutGroupoidCharacter_injective :
   (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm.injective.comp
     (monoidalAutCharacter_injective k)
 
-@[simp]
-theorem monoidalAutGroupoidCharacter_groupoidCharacterMonoidalAut
+@[simp] theorem monoidalAutGroupoidCharacter_groupoidCharacterMonoidalAut
     (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
     monoidalAutGroupoidCharacter k (groupoidCharacterMonoidalAut k F) = F := by
   simp [monoidalAutGroupoidCharacter, groupoidCharacterMonoidalAut]
-
-@[simp]
-theorem groupoidCharacterMonoidalAut_monoidalAutGroupoidCharacter
+@[simp] theorem groupoidCharacterMonoidalAut_monoidalAutGroupoidCharacter
     (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
     groupoidCharacterMonoidalAut k (monoidalAutGroupoidCharacter k a) = a := by
   simp [monoidalAutGroupoidCharacter, groupoidCharacterMonoidalAut]
@@ -187,13 +167,10 @@ def monoidalAutGroupoidCharacterEquiv :
   (monoidalAutCharacterEquiv k).trans
     (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm
 
-@[simp]
-theorem monoidalAutGroupoidCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
+@[simp] theorem monoidalAutGroupoidCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
     monoidalAutGroupoidCharacterEquiv k a = monoidalAutGroupoidCharacter k a := by
   simp [monoidalAutGroupoidCharacterEquiv, monoidalAutGroupoidCharacter]
-
-@[simp]
-theorem monoidalAutGroupoidCharacterEquiv_symm_apply
+@[simp] theorem monoidalAutGroupoidCharacterEquiv_symm_apply
     (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
     (monoidalAutGroupoidCharacterEquiv k).symm F = groupoidCharacterMonoidalAut k F := by
   simp [monoidalAutGroupoidCharacterEquiv, groupoidCharacterMonoidalAut]

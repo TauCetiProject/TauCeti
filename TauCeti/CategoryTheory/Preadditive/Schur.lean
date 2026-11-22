@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Simple.ScalarEndomorphism
 
 /-!
@@ -104,9 +105,14 @@ theorem endAlgEquivOfSimple_symm_apply (c : k) :
 
 /-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
 `f`. -/
+@[simp]
 theorem algebraMap_endAlgEquivOfSimple (f : End X) :
     algebraMap k (End X) (endAlgEquivOfSimple k X f) = f :=
   algebraMap_endAlgEquivOfSurjective f
+
+/-- Evaluating `endAlgEquivOfSimple` on `algebraMap k (End X) c` recovers `c`. -/
+theorem endAlgEquivOfSimple_algebraMap (c : k) :
+    endAlgEquivOfSimple k X (algebraMap k (End X) c) = c := by simp
 
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]

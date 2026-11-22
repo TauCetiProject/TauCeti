@@ -47,22 +47,17 @@ variable (k : Type*) [Field k]
 
 /-- Extracting the character of the automorphism extended from a character recovers that
 character. -/
-@[simp]
-theorem monoidalAutCharacter_characterMonoidalAut (χ : universalGradingGroup C →* kˣ) :
+@[simp] theorem monoidalAutCharacter_characterMonoidalAut (χ : universalGradingGroup C →* kˣ) :
     monoidalAutCharacter k (characterMonoidalAut k χ) = χ := by
-  apply universalGradingGroup.hom_ext
-  intro S
-  apply Units.ext
+  apply universalGradingGroup.hom_ext; intro S; apply Units.ext
   apply smul_left_injective k (id_ne_zero S.repr)
   simpa only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] using
     monoidalAutCharacter_degree_smul_id k (characterMonoidalAut k χ) S.repr
 
 /-- Extending the character extracted from an automorphism recovers that automorphism. -/
-@[simp]
-theorem characterMonoidalAut_monoidalAutCharacter (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
+@[simp] theorem characterMonoidalAut_monoidalAutCharacter (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
     characterMonoidalAut k (monoidalAutCharacter k a) = a := by
-  apply monoidalAutCharacter_injective k
-  simp only [monoidalAutCharacter_characterMonoidalAut]
+  apply monoidalAutCharacter_injective k; simp only [monoidalAutCharacter_characterMonoidalAut]
 
 /-- Monoidal natural automorphisms of the identity are the characters of the universal grading
 group, as groups, whenever simple objects have scalar endomorphisms. The forward map extracts the
@@ -76,15 +71,11 @@ def monoidalAutCharacterEquiv :
     right_inv := monoidalAutCharacter_characterMonoidalAut k }
 
 /-- The classification sends an automorphism to its character on simple degrees. -/
-@[simp]
-theorem monoidalAutCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
-    monoidalAutCharacterEquiv k a = monoidalAutCharacter k a :=
-  (rfl)
+@[simp] theorem monoidalAutCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
+    monoidalAutCharacterEquiv k a = monoidalAutCharacter k a := (rfl)
 
 /-- The inverse classification extends a character to a monoidal automorphism. -/
-@[simp]
-theorem monoidalAutCharacterEquiv_symm_apply (χ : universalGradingGroup C →* kˣ) :
-    (monoidalAutCharacterEquiv k).symm χ = characterMonoidalAut k χ :=
-  (rfl)
+@[simp] theorem monoidalAutCharacterEquiv_symm_apply (χ : universalGradingGroup C →* kˣ) :
+    (monoidalAutCharacterEquiv k).symm χ = characterMonoidalAut k χ := (rfl)
 
 end TauCeti

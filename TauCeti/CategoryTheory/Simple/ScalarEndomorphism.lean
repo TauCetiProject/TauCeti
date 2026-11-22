@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Simple
-public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Categories whose simple objects have scalar endomorphisms

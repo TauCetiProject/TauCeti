@@ -94,16 +94,13 @@ def characterEquiv (P : PivotalCategory C) :
   exact (Equiv.smulConst P).symm.trans (monoidalAutCharacterEquiv k).toEquiv
 
 /-- The character of `Q` relative to `P` is that of the automorphism `Q /ₛ P`. -/
-@[simp]
-theorem characterEquiv_apply (P Q : PivotalCategory C) :
-    characterEquiv k P Q = monoidalAutCharacter k (Q /ₛ P) := by
-  simp [characterEquiv]
+@[simp] theorem characterEquiv_apply (P Q : PivotalCategory C) :
+    characterEquiv k P Q = monoidalAutCharacter k (Q /ₛ P) := by simp [characterEquiv]
 
 /-- A character parametrizes the pivotal structure obtained by twisting the base structure. -/
-@[simp]
-theorem characterEquiv_symm_apply (P : PivotalCategory C) (χ : universalGradingGroup C →* kˣ) :
-    (characterEquiv k P).symm χ = characterMonoidalAut k χ • P := by
-  simp [characterEquiv]
+@[simp] theorem characterEquiv_symm_apply (P : PivotalCategory C)
+    (χ : universalGradingGroup C →* kˣ) :
+    (characterEquiv k P).symm χ = characterMonoidalAut k χ • P := by simp [characterEquiv]
 
 /-- Any two pivotal structures differ by exactly one universal grading character whenever simple
 objects have scalar endomorphisms. -/
@@ -122,14 +119,12 @@ def groupoidCharacterEquiv (P : PivotalCategory C) :
 
 /-- The groupoid character of `Q` relative to `P` is that of the monoidal automorphism
 `Q /ₛ P`. -/
-@[simp]
-theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
+@[simp] theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
     groupoidCharacterEquiv k P Q = monoidalAutGroupoidCharacter k (Q /ₛ P) := by
   simp [groupoidCharacterEquiv]
 
 /-- A groupoid character parametrizes the pivotal structure obtained by twisting `P`. -/
-@[simp]
-theorem groupoidCharacterEquiv_symm_apply (P : PivotalCategory C)
+@[simp] theorem groupoidCharacterEquiv_symm_apply (P : PivotalCategory C)
     (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
     (groupoidCharacterEquiv k P).symm F = groupoidCharacterMonoidalAut k F • P := by
   simp [groupoidCharacterEquiv]
