@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.Algebra.Category.Ring.Under.Limits
+import Mathlib.Algebra.Category.Ring.Instances
 import TauCeti.CategoryTheory.Comma.Under.Pushout
 
 /-!
@@ -78,16 +79,11 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
     CommRingCat.Under.preservesFiniteLimits_of_flat a
       (RingHom.flat_algebraMap_iff.mpr (IsLocalization.flat A' M))
   have hm := hu.map F
-  -- Evaluate the original square on numerators before extending to the localizations.
-  have hw_on_numerators (x : A) :
-      (i' ≫ f') (algebraMap A A' x) = (j' ≫ g') (algebraMap A A' x) := by
-    rw [CommRingCat.comp_apply, CommRingCat.comp_apply, hi, hj, hf, hg]
-    exact congrArg (algebraMap D D') (ConcreteCategory.congr_hom h.w x)
+  -- Both paths agree after the localization map, which is an epimorphism.
+  have : Epi a := IsLocalization.epi M A'
   have hw : i' ≫ f' = j' ≫ g' := by
-    apply CommRingCat.hom_ext
-    apply IsLocalization.ringHom_ext M
-    ext x
-    exact hw_on_numerators x
+    apply (cancel_epi a).mp
+    rw [hdComm, h.w, Category.assoc, ← hg₀, ← Category.assoc, ← hj₀, Category.assoc]
   -- Identify each chosen localization with its categorical pushout.
   exact hm.of_iso haP.isoPushout.symm hiP.isoPushout.symm hjP.isoPushout.symm
     hdP.isoPushout.symm

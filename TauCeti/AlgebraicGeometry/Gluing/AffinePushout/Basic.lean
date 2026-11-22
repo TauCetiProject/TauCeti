@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
-import Mathlib.RingTheory.Spectrum.Prime.Topology
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 import TauCeti.RingTheory.FiberProduct.Basic
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.Category.TopCat.Pushout
 
 /-!
@@ -65,9 +66,10 @@ of the second projection. -/
 theorem isIso_spec_pullbackFst_restrict_basicOpen {t : p.pullback q}
     (ht : t ∈ RingHom.ker (p.pullbackSnd q)) :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_ PrimeSpectrum.basicOpen t) :=
-  ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (p.pullbackFst q)) t)).mpr
-    (isIso_SpecMap_iff.mpr (p.bijective_awayMap_pullbackFst q ht))
+  (isIso_SpecMap_morphismRestrict_basicOpen_iff
+    (CommRingCat.ofHom (p.pullbackFst q)) t).mpr
+    (p.bijective_away_map_pullbackFst q (Localization.Away t)
+      (Localization.Away (p.pullbackFst q t)) ht)
 
 /-- The map from `Spec B` is an isomorphism over the complement of
 `V(ker (p.pullbackSnd q))`, with domain the inverse image of that complement.
@@ -82,14 +84,7 @@ theorem isIso_spec_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
   have hU : (⨆ t, U t) =
       (⟨(zeroLocus (RingHom.ker (p.pullbackSnd q))).compl,
         (isClosed_zeroLocus _).isOpen_compl⟩ : (Spec (CommRingCat.of (p.pullback q))).Opens) := by
-    apply SetLike.coe_injective
-    rw [TopologicalSpace.Opens.coe_iSup]
-    -- Use the underlying prime spectrum so the basic-open formula matches its coercions.
-    change (⋃ t : RingHom.ker (p.pullbackSnd q), (basicOpen t.val : Set (PrimeSpectrum _))) =
-      (zeroLocus (RingHom.ker (p.pullbackSnd q) : Set (p.pullback q)))ᶜ
-    simp only [basicOpen_eq_zeroLocus_compl, ← Set.compl_iInter, ← zeroLocus_iUnion]
-    exact congrArg (fun s : Set (p.pullback q) ↦ (zeroLocus s)ᶜ)
-      (Set.iUnion_of_singleton_coe (RingHom.ker (p.pullbackSnd q) : Set (p.pullback q)))
+    exact iSup_basicOpen_eq_compl_zeroLocus _
   have h : IsIso (f ∣_ iSup U) :=
     f.isIso_morphismRestrict_iSup U fun t ↦ p.isIso_spec_pullbackFst_restrict_basicOpen q t.property
   exact hU ▸ h
@@ -103,7 +98,7 @@ private theorem existsUnique_comap_pullbackFst_of_notMem {t : p.pullback q}
   have hxU : x ∈ U := (mem_basicOpen t x).mpr hx
   have : IsIso (f ∣_ U) := p.isIso_spec_pullbackFst_restrict_basicOpen q ht
   have hf := (Scheme.homeoOfIso (asIso (f ∣_ U))).bijective
-  obtain ⟨y, hy⟩ := hf.surjective ⟨x, hxU⟩
+  obtain ⟨y, hy, huniq⟩ := hf.existsUnique ⟨x, hxU⟩
   have hrestrict (z : f ⁻¹ᵁ U) : ((f ∣_ U) z).val = comap (p.pullbackFst q) z.val :=
     (morphismRestrict_base_coe f U z).trans
       (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)) z.val)
@@ -113,7 +108,7 @@ private theorem existsUnique_comap_pullbackFst_of_notMem {t : p.pullback q}
       (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)) y').symm ▸ (hy'.symm ▸ hxU)
   have hy'' : (f ∣_ U) ⟨y', hy'U⟩ = ⟨x, hxU⟩ := Subtype.ext
     ((hrestrict ⟨y', hy'U⟩).trans hy')
-  exact congrArg Subtype.val (hf.injective (hy''.trans hy.symm))
+  exact congrArg Subtype.val (huniq ⟨y', hy'U⟩ hy'')
 
 private theorem surjective_sumElim_comap_pullback (hp : Surjective p) :
     Surjective (Sum.elim (comap (p.pullbackFst q)) (comap (p.pullbackSnd q))) := by

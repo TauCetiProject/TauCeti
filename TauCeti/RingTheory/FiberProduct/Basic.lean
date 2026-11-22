@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
-public import TauCeti.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.Algebra.Category.Ring.Constructions
@@ -41,6 +41,13 @@ open CategoryTheory
 
 namespace RingHom
 
+/-- Elements of the ring pullback are determined by their two projections. -/
+theorem pullback_ext {B C D : Type*} [Ring B] [Semiring C] [Ring D]
+    {p : B →+* C} {q : D →+* C} {x y : p.pullback q}
+    (hfst : p.pullbackFst q x = p.pullbackFst q y)
+    (hsnd : p.pullbackSnd q x = p.pullbackSnd q y) : x = y :=
+  Subtype.ext (Prod.ext hfst hsnd)
+
 /-- The first projection identifies the second projection's kernel with `ker p`.
 The latter carries scalars through the first projection. This is the elementwise
 counterpart of `RingHom.map_pullbackSnd_ker_pullbackFst_eq`, with the factors swapped. -/
@@ -60,8 +67,7 @@ def pullbackSndKerEquiv {B C D : Type*} [CommRing B] [Semiring C] [CommRing D]
   · exact (mem_ker.mp b.property).trans q.map_zero.symm
   · intro x
     apply Subtype.ext
-    apply Subtype.ext
-    exact Prod.ext rfl (mem_ker.mp x.property).symm
+    exact pullback_ext rfl (mem_ker.mp x.property).symm
 
 @[simp]
 theorem pullbackSndKerEquiv_apply_coe {B C D : Type*}
@@ -158,32 +164,36 @@ theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [C
     IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
   exact CommRingCat.isPushout_iff_isPushout.mp (isPushout_pullback p q hp)
 
-universe u v w
-
-variable {B : Type u} {C : Type v} {D : Type w} [CommRing B] [CommRing C] [CommRing D]
-variable (p : B →+* C) (q : D →+* C)
-
-/-- For `t ∈ ker (p.pullbackSnd q)`, the induced map `(B ×_C D)[1/t] → B[1/(p.pullbackFst q t)]`
-is bijective for arbitrary ring maps `p` and `q`.
-
-For this bijection, `IsLocalization.Away.map_symm_algebraMap` gives the inverse
-representative `a / t` whenever `p.pullbackFst q a = p.pullbackFst q t * b`. -/
-theorem bijective_awayMap_pullbackFst {t : p.pullback q} (ht : t ∈ ker (p.pullbackSnd q)) :
-    Function.Bijective (Localization.awayMap (p.pullbackFst q) t) := by
+/-- For `t ∈ ker (p.pullbackSnd q)`, the first projection induces a bijection between
+arbitrary localizations of `B ×_C D` away from `t` and of `B` away from
+`p.pullbackFst q t`. No surjectivity hypothesis on `p` or `q` is needed.
+The inverse on numerators is computed by `IsLocalization.Away.ofBijective_map_symm_algebraMap`. -/
+theorem bijective_away_map_pullbackFst {B C D : Type*} [CommRing B] [Semiring C] [CommRing D]
+    (p : B →+* C) (q : D →+* C) (Aₜ Bₜ : Type*) [CommRing Aₜ] [CommSemiring Bₜ]
+    [Algebra (p.pullback q) Aₜ] [Algebra B Bₜ] {t : p.pullback q}
+    [IsLocalization.Away t Aₜ] [IsLocalization.Away (p.pullbackFst q t) Bₜ]
+    (ht : t ∈ ker (p.pullbackSnd q)) :
+    Function.Bijective (IsLocalization.Away.map Aₜ Bₜ (p.pullbackFst q) t) := by
   constructor
-  · apply Localization.awayMap_injective_iff.mpr
+  · apply (IsLocalization.Away.map_injective_iff _ _ _).mpr
     intro a ha
     have hfst : p.pullbackFst q (t ^ 1 * a) = 0 := by simp only [map_mul, pow_one, ha, mul_zero]
     have hsnd : p.pullbackSnd q (t ^ 1 * a) = 0 := by
       simp only [map_mul, pow_one, mem_ker.mp ht, zero_mul]
-    exact ⟨1, Subtype.ext (Prod.ext hfst hsnd)⟩
-  · apply Localization.awayMap_surjective_iff.mpr
+    exact ⟨1, pullback_ext (hfst.trans (map_zero _).symm)
+      (hsnd.trans (map_zero _).symm)⟩
+  · apply (IsLocalization.Away.map_surjective_iff _ _ _ _).mpr
     intro b
     have hzero : p (p.pullbackFst q t) = 0 :=
       (pullbackSndKerEquiv p q ⟨t, ht⟩).property
     have hb : p.pullbackFst q t * b ∈ ker p := by
       rw [mem_ker, map_mul, hzero, zero_mul]
     exact ⟨(pullbackSndKerEquiv p q).symm ⟨_, hb⟩, 1, by simp⟩
+
+universe u v w
+
+variable {B : Type u} {C : Type v} {D : Type w} [CommRing B] [CommRing C] [CommRing D]
+variable (p : B →+* C) (q : D →+* C)
 
 /-- If the map from the first factor is surjective and the map from the second
 factor is finite, the first projection is finite. -/

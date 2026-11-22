@@ -191,7 +191,10 @@ private theorem rightOverlapMap_app (V : (Spec (CommRingCat.of (p.pullback q))).
         (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
           (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ V))
         (overlap_le p q V) := by
-  dsimp only [rightOverlapMap]
+  unfold rightOverlapMap
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    TopCat.Presheaf.Pushforward.comp_inv_app,
+    TopCat.Presheaf.Pushforward.comp_hom_app, TopCat.Presheaf.pushforwardEq_hom_app]
   simp only [Scheme.Hom.appLE]
   -- Both transports restrict from the right inverse image to the left inverse image.
   apply congrArg ((Spec.map (CommRingCat.ofHom q)).app

@@ -143,6 +143,16 @@ end Quotient
 
 variable {R : Type*} [CommSemiring R]
 
+/-- The union of the basic opens indexed by an arbitrary set is the complement of its
+zero locus. This needs only a commutative semiring. -/
+theorem iSup_basicOpen_eq_compl_zeroLocus (s : Set R) :
+    (⨆ r : s, basicOpen r.val) =
+      (⟨(zeroLocus s)ᶜ, (isClosed_zeroLocus s).isOpen_compl⟩ : Opens (PrimeSpectrum R)) := by
+  rw [SetLike.ext'_iff, Opens.coe_iSup]
+  simp only [basicOpen_eq_zeroLocus_compl, ← Set.compl_iInter, ← zeroLocus_iUnion,
+    Set.iUnion_of_singleton_coe]
+  rfl
+
 /-- A subset of the prime spectrum containing every minimal prime is dense: every nonempty open
 set contains a minimal prime, namely a generization of any of its points. -/
 theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
