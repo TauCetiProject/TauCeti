@@ -19,10 +19,10 @@ The *Laurent extension* of `D` (`TauCeti.NovikovModule.matrixKernel`) is the ker
 `⟨i, g⟩` to `∑ₖ D i k • ⟨k, g⟩`: the matrix `D ⊗ 1` on `R^{ι₁} ⊗ R[H]`, the tensor product
 `TauCeti.NovikovModule.kernelTensor` of `D` with the identity kernel
 (`TauCeti.NovikovModule.matrixKernel_apply_eq_kernelTensor`). It is the kernel of the matrix of
-constant Novikov series `D i k • e^0` (`TauCeti.NovikovModule.matrixKernel_eq`), it is
-invariant under the periods, products of matrices give composites of kernels
-(`TauCeti.NovikovModule.kernelComp_matrixKernel`), and its specialization `t ↦ 1` is `D` itself
-(`TauCeti.NovikovModule.cyclicMatrix_matrixKernel`).
+constant Novikov series `D i k • e^0`
+(`TauCeti.NovikovModule.matrixKernel_eq_mapKernelOfMatrix`), it is invariant under the periods,
+products of matrices give composites of kernels (`TauCeti.NovikovModule.kernelComp_matrixKernel`),
+and its specialization `t ↦ 1` is `D` itself (`TauCeti.NovikovModule.cyclicMatrix_matrixKernel`).
 
 Let `D` be square with integer degrees `e : ι → ℤ` on the generators, raising them by one, with
 `D * D = 0`, so that `K = gradedMatrixComplex e D` is a bounded integer-graded complex. For a
@@ -98,6 +98,13 @@ theorem matrixKernel_zero [Zero R] : matrixKernel (H := H) (0 : Matrix ι₁ ι�
   ext ⟨i, g⟩ ⟨k, h⟩
   simp
 
+/-- The Laurent extension of the identity matrix is the identity kernel. -/
+@[simp]
+theorem matrixKernel_one [DecidableEq ι₁] [Zero R] [One R] :
+    matrixKernel (H := H) (1 : Matrix ι₁ ι₁ R) = fun p q ↦ if p = q then 1 else 0 := by
+  ext ⟨i, g⟩ ⟨k, h⟩
+  by_cases hik : i = k <;> by_cases hgh : g = h <;> simp [hik, hgh]
+
 /-- The Laurent extension is invariant under translating input and output by the same period. -/
 theorem matrixKernel_vadd_vadd [AddGroup H] [Zero R] (M : Matrix ι₁ ι₀ R) (g : H) (i : ι₁)
     (p : H) (k : ι₀) (q : H) :
@@ -126,8 +133,8 @@ theorem matrixKernel_apply_eq_kernelTensor [Semiring R] (M : Matrix ι₁ ι₀ 
 
 /-- The Laurent extension of a matrix is the kernel of the matrix of constant Novikov series
 `M i k • e^0`, relative to the reference generators `0`. -/
-theorem matrixKernel_eq {H : Type*} [AddCommGroup H] [DecidableEq H] {N : H →+ ℝ} [Zero R]
-    (M : Matrix ι₁ ι₀ R) :
+theorem matrixKernel_eq_mapKernelOfMatrix {H : Type*} [AddCommGroup H] [DecidableEq H]
+    {N : H →+ ℝ} [Zero R] (M : Matrix ι₁ ι₀ R) :
     matrixKernel M = mapKernelOfMatrix (P₁ := fun _ ↦ H) (P₀ := fun _ ↦ H) (fun _ ↦ 0)
       (fun _ ↦ 0) (Matrix.of fun i k ↦ (NovikovSeries.single 0 (M i k) : NovikovSeries R H N)) := by
   ext ⟨i, g⟩ ⟨k, h⟩
@@ -150,6 +157,7 @@ theorem isLaurentKernel_matrixKernel [AddGroup H] [Zero R] [Finite ι₀] {A : T
 
 /-- **The composite of the Laurent extensions of two matrices is the Laurent extension of their
 product.** -/
+@[simp]
 theorem kernelComp_matrixKernel [Semiring R] [Fintype ι₀] (M : Matrix ι₁ ι₀ R)
     (M' : Matrix ι₀ ι₂ R) :
     kernelComp (matrixKernel (H := H) M) (matrixKernel M') = matrixKernel (M * M') := by
@@ -211,7 +219,8 @@ include hd hD in
 degree reading `e` modulo `n`. -/
 theorem isLaurentKernel_matrixKernel_of_intCast [AddGroup H] [DecidableEq H] [Finite ι] :
     IsLaurentKernel (H := H) d d 1 (matrixKernel D) :=
-  isLaurentKernel_matrixKernel fun i k g h ↦ by rw [hd, hd, hD i k h, Int.cast_add, Int.cast_one]
+  isLaurentKernel_matrixKernel fun i k g h ↦ by
+    rw [hd, hd, PeriodicComplex.intCast_eq_intCast_add_one n hD i k h]
 
 variable [AddGroup H] [DecidableEq H] [Fintype ι] (hDD : D * D = 0)
 
@@ -250,7 +259,7 @@ def cyclicComplexMatrixKernelIso :
     cyclicComplex R d (apply_vadd_of_intCast hd) (matrixKernel D)
         (isLaurentKernel_matrixKernel_of_intCast hD hd) (kernelComp_matrixKernel_self_eq_zero hDD) ≅
       gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (fun i k h ↦ by rw [hD i k h, Int.cast_add, Int.cast_one]) hDD :=
+        (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD :=
   isoGradedMatrixComplexOfBasis _ _ _ _ (cyclicBasis hD hd hDD) (cyclicBasis_d hD hd hDD)
 
 /-- The isomorphism `cyclicComplexMatrixKernelIso` sends the orbit of a generator to the
@@ -262,12 +271,27 @@ theorem cyclicComplexMatrixKernelIso_hom_f_basis (r : ZMod n)
         (cyclicComplexBasis R d (apply_vadd_of_intCast hd) (matrixKernel D)
           (isLaurentKernel_matrixKernel_of_intCast hD hd)
           (kernelComp_matrixKernel_self_eq_zero hDD) r i) =
-      gradedMatrixComplexBasis _ D (fun i k h ↦ by rw [hD i k h, Int.cast_add, Int.cast_one]) hDD
+      gradedMatrixComplexBasis _ D (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD
         r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩ := by
   have h := isoGradedMatrixComplexOfBasis_hom_f_basis
-    (hD := fun i k h ↦ by rw [hD i k h, Int.cast_add, Int.cast_one]) (hDD := hDD)
+    (hD := PeriodicComplex.intCast_eq_intCast_add_one n hD) (hDD := hDD)
     (cyclicBasis hD hd hDD)
     (cyclicBasis_d hD hd hDD) r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩
+  rw [cyclicBasis, Basis.reindex_apply] at h
+  exact h
+
+/-- The inverse of `cyclicComplexMatrixKernelIso` sends a generator to its orbit. -/
+@[simp]
+theorem cyclicComplexMatrixKernelIso_inv_f_basis (r : ZMod n) (i : {i // (e i : ZMod n) = r}) :
+    ((cyclicComplexMatrixKernelIso R hD hd hDD).inv.f r).hom
+        (gradedMatrixComplexBasis _ D (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD r i) =
+      cyclicComplexBasis R d (apply_vadd_of_intCast hd) (matrixKernel D)
+        (isLaurentKernel_matrixKernel_of_intCast hD hd)
+        (kernelComp_matrixKernel_self_eq_zero hDD) r
+        ⟨i, (orbitDegree_eq_intCast hd i).trans i.property⟩ := by
+  have h := isoGradedMatrixComplexOfBasis_inv_f_basis
+    (hD := PeriodicComplex.intCast_eq_intCast_add_one n hD) (hDD := hDD)
+    (cyclicBasis hD hd hDD) (cyclicBasis_d hD hd hDD) r i
   rw [cyclicBasis, Basis.reindex_apply] at h
   exact h
 
@@ -315,7 +339,7 @@ graded matrix.** Let `δ₁` be a Laurent differential, with Laurent chain maps 
 and `K'` of degree `-1`. If the degrees of the generators of `D` lie in `[a, b]`, the homology of
 the cyclic complex of `δ₁` in residue `r` is the direct sum of the homology of
 `gradedMatrixComplex e D` in the degrees of `[a, b]` congruent to `r`:
-`HF^cyc_r ≅ ⨁_{j ≡ r} H^j(K)`. -/
+`HF^cyc_r ≅ ⨁_{j ≡ r} H^j(gradedMatrixComplex e D)`. -/
 def homologyCyclicComplexIsoOfLaurentEquiv (a b : ℤ) (ha : ∀ i, a ≤ e i) (hb : ∀ i, e i ≤ b)
     (r : ZMod n) :
     (cyclicComplex R d₁ hd₁ δ₁ hδ₁ hδδ₁).homology r ≅
