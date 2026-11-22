@@ -19,8 +19,8 @@ the smooth Lie functor.
 ## Main results
 
 * `ContinuousMonoidHom.lieMap` is the Lie map of a continuous homomorphism.
-* `ContinuousMonoidHom.lieMap_one` and `ContinuousMonoidHom.lieMap_comp` give its trivial-morphism
-  and composition laws.
+* `ContinuousMonoidHom.lieMap_one`, `ContinuousMonoidHom.lieMap_comp`, and
+  `ContinuousMonoidHom.lieMap_comp_apply` give its trivial-morphism and composition laws.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
 * `ContinuousMonoidHom.isLocalDiffeomorph_iff_lieMap_bijective` characterizes smooth local
   diffeomorphisms via bijectivity of `lieMap`.
@@ -103,6 +103,19 @@ theorem lieMap_comp
       ContinuousMonoidHom.coe_comp]
   rw [lieMap, lieMap, lieMap, h, _root_.lieMap_comp]
 
+/-- Pointwise, the Lie map of a composite of continuous homomorphisms applies the Lie maps in
+sequence. -/
+theorem lieMap_comp_apply
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G'']
+    [FiniteDimensional ℝ E''] [LieGroup I'' ∞ G'']
+    (f : G →ₜ* G') (g : G' →ₜ* G'') (X : LeftInvariantDerivation I G) :
+    lieMap (I := I) (I' := I'') (g.comp f) X =
+      lieMap (I := I') (I' := I'') g (lieMap (I := I) (I' := I') f X) :=
+  (LieHom.congr_fun (lieMap_comp (I := I) (I' := I') (I'' := I'') f g) X).trans
+    (LieHom.comp_apply _ _ X)
+
 /-- A continuous homomorphism intertwines Lie-group exponentials through its Lie map. -/
 theorem map_lieExp (f : G →ₜ* G') (X : LeftInvariantDerivation I G) :
     let _ : T2Space G := I.t2Space_of_lieGroup ∞
@@ -158,9 +171,7 @@ theorem leftInverse_lieMap (f : G →ₜ* G') (g : G' →ₜ* G)
     Function.LeftInverse
       (lieMap (I := I') (I' := I) g) (lieMap (I := I) (I' := I') f) := by
   intro X
-  have h' := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := I) (I' := I') (I'' := I) f g) X
-  simpa only [h, lieMap_id, LieHom.comp_apply, one_apply_eq_self] using h'.symm
+  rw [← lieMap_comp_apply (I := I) (I' := I') (I'' := I) f g X, h, lieMap_id, one_apply_eq_self]
 
 end ContinuousMonoidHom
 

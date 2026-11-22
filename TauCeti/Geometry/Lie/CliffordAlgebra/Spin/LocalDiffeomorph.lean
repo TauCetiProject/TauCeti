@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Differential
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The compact real Spin projection is a local diffeomorphism
@@ -87,7 +88,7 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_apply (n : ℕ)
     (x : quadraticLieSubalgebra (realCliffordForm n 0)) :
     realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n x =
       realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :=
-  (rfl)
+  LieEquiv.ofBijective_apply _ _ x
 
 /-- Inverse of `realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv` in terms of the normalized
 exterior-bivector equivalence `bivectorEquivSo`. -/

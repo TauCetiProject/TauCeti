@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Determinant
 public import TauCeti.Geometry.Lie.Adjoint.Naturality
 public import TauCeti.Geometry.Lie.Prod
 import TauCeti.Geometry.Lie.Subgroup.Center
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie algebra of compact Spinᶜ and its Spin–determinant splitting
@@ -107,7 +108,7 @@ theorem realMkLieEquiv_apply
     (D : LeftInvariantDerivation IC (spinGroup (realCliffordForm n 0) × Circle)) :
     realMkLieEquiv n hQ D =
       ContinuousMonoidHom.lieMap (I := IC) (I' := IC) (mkContinuousMonoidHom _ hQ) D :=
-  (rfl)
+  LieEquiv.ofBijective_apply _ _ D
 
 /-- The Lie-algebra isomorphism `Lie(Spin(n)) × Lie(U(1)) ≃ₗ⁅ℝ⁆ Lie(Spinᶜ(n))` induced by the
 defining central quotient. -/
@@ -342,8 +343,6 @@ theorem lie_realQuadraticProdDetLinearEquiv
     (p q : quadraticLieSubalgebra (realCliffordForm n 0) × ℝ) :
     ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆ =
       realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
-  rw [realQuadraticProdDetLinearEquiv_apply, realQuadraticProdDetLinearEquiv_apply,
-    realQuadraticProdDetLinearEquiv_apply]
-  exact lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ (realSpinLieEquivQuadratic n).symm p q
+  simp only [realQuadraticProdDetLinearEquiv_apply, lie_realSpinProdDetLinearEquiv_comp_lieEquiv]
 
 end CliffordAlgebra.spinCGroup

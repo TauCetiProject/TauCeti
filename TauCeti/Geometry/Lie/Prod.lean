@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import Mathlib.Algebra.Lie.Prod
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie algebra of a product Lie group
@@ -112,8 +113,8 @@ def prodLieEquiv : LeftInvariantDerivation (I.prod I') (G × G') ≃ₗ⁅ℝ⁆
 @[simp]
 theorem prodLieEquiv_apply (D : LeftInvariantDerivation (I.prod I') (G × G')) :
     prodLieEquiv D =
-      (lieMap ContMDiffMonoidMorphism.fst D, lieMap ContMDiffMonoidMorphism.snd D) := by
-  rfl
+      (lieMap ContMDiffMonoidMorphism.fst D, lieMap ContMDiffMonoidMorphism.snd D) :=
+  LieEquiv.ofBijective_apply _ _ D
 
 /-- The first projection recovers the first component of the inverse product Lie equivalence. -/
 @[simp]
@@ -151,14 +152,12 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
     apply ContinuousMonoidHom.ext; intro x; rfl
   have hsnd : (ContinuousMonoidHom.snd G G').comp (f.prod g) = g := by
     apply ContinuousMonoidHom.ext; intro x; rfl
-  have h1 := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := I'') (I' := I.prod I') (I'' := I)
-      (f.prod g) (ContinuousMonoidHom.fst G G')) D
-  have h2 := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := I'') (I' := I.prod I') (I'' := I')
-      (f.prod g) (ContinuousMonoidHom.snd G G')) D
-  rw [hfst, LieHom.comp_apply] at h1
-  rw [hsnd, LieHom.comp_apply] at h2
+  have h1 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I)
+    (f.prod g) (ContinuousMonoidHom.fst G G') D
+  have h2 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I')
+    (f.prod g) (ContinuousMonoidHom.snd G G') D
+  rw [hfst] at h1
+  rw [hsnd] at h2
   exact Prod.ext h1.symm h2.symm
 
 /-- The left factor inclusion maps a derivation to the first summand of the product Lie algebra. -/
@@ -212,15 +211,11 @@ theorem lieMap_prodLieEquiv_symm
           (f.comp (ContinuousMonoidHom.inl G G')) p.1 +
         ContinuousMonoidHom.lieMap (I := I') (I' := I'')
           (f.comp (ContinuousMonoidHom.inr G G')) p.2 := by
-  rw [prodLieEquiv_symm_eq_add, map_add]
-  have h1 := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := I) (I' := I.prod I') (I'' := I'')
-      (ContinuousMonoidHom.inl G G') f) p.1
-  have h2 := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := I') (I' := I.prod I') (I'' := I'')
-      (ContinuousMonoidHom.inr G G') f) p.2
-  rw [LieHom.comp_apply] at h1 h2
-  rw [← h1, ← h2]
+  rw [prodLieEquiv_symm_eq_add, map_add,
+    ContinuousMonoidHom.lieMap_comp_apply (I := I) (I' := I.prod I') (I'' := I'')
+      (ContinuousMonoidHom.inl G G') f p.1,
+    ContinuousMonoidHom.lieMap_comp_apply (I := I') (I' := I.prod I') (I'' := I'')
+      (ContinuousMonoidHom.inr G G') f p.2]
 
 /-- If a continuous homomorphism out of `G × G'` has injective Lie map, so does its restriction to
 the first factor. -/
