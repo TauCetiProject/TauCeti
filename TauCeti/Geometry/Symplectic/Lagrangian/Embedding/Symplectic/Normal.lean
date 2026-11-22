@@ -232,7 +232,7 @@ omit [FiniteDimensional ℝ V] in
 /-- The flat map of the pulled-back form `f^* σ` at a point is invertible: a tangent vector `u`
 with `σ(df_x u, df_x ·) = 0` has `df_x u` in the tangent space and in its symplectic complement,
 so `df_x u = 0`, and `df_x` is injective. -/
-private theorem isInvertible_of_eval₂_mfderiv [FiniteDimensional ℝ E]
+theorem isInvertible_of_eval₂_mfderiv [FiniteDimensional ℝ E]
     (f : SmoothEmbedding I J n M N) (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
     (a : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
     (ha : ∀ u w, a u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w)) :
@@ -339,6 +339,32 @@ section Smooth
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] {m : ℕ∞ω}
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- **Smooth flat map of the pulled-back form.** A family `a` of bilinear forms on the tangent
+spaces of `M` with `a x u w = σ(df_x u, df_x w)`, the flat maps of the pulled-back form `f^* σ`,
+is a `C^m` section for a `C^n` embedding with `m + 1 ≤ n` and `m + 1 ≤ ∞`. -/
+theorem contMDiff_of_eval₂_mfderiv (f : SmoothEmbedding I J n M N) (hm : m + 1 ≤ n)
+    (hm' : m + 1 ≤ ∞) {a : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (ha : ∀ x u w,
+      a x u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w)) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) m
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (a x)) := by
+  have hmtop : m ≤ ∞ := le_self_add.trans hm'
+  have : IsManifold I (m + 1) M := .of_le hm'
+  have : IsManifold J (m + 1) N := .of_le hm'
+  let τ := TauCeti.mpullback I J f σ.val
+  have hτ : IsSmoothForm I m τ :=
+    IsSmoothForm.mpullback ((isSmoothForm_def m σ.val).2 ((SmoothForm.contMDiff σ).of_le hmtop))
+      (f.contMDiff.of_le hm)
+  -- `a` is the currying of `τ`.
+  obtain rfl : a = fun x ↦ ContinuousAlternatingMap.flatL ℝ E ℝ (τ x) := by
+    refine funext fun x ↦ ContinuousLinearMap.ext fun u ↦ ContinuousLinearMap.ext fun w ↦ ?_
+    refine (ha x u w).trans (((ContinuousAlternatingMap.flatL_apply_apply (E := E) (τ x) u w).trans
+      (mpullback_apply_pair f σ.val x u w)).trans ?_).symm
+    rw [SmoothBundleForm.eval₂_apply]
+  exact fun x₀ ↦ contMDiffAt_sectionAlong_flatL (b := fun x ↦ x) (σ := τ) (hτ.contMDiff x₀)
+
 /-- **Smooth symplectic projection.** The symplectic representative of the normal class of an
 ambient tangent vector, the projection onto the symplectic complement of the tangent space along
 it, is `C^m` on the pulled-back ambient tangent bundle for a `C^n` symplectic submanifold
@@ -356,21 +382,14 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
   have : IsManifold I (m + 1) M := .of_le hm'
   have : IsManifold J (m + 1) N := .of_le hm'
   -- The flat map of the pulled-back form `f^* σ` is a `C^m` section, invertible at every point.
-  let τ := TauCeti.mpullback I J f σ.val
-  have hτ : IsSmoothForm I m τ :=
-    IsSmoothForm.mpullback ((isSmoothForm_def m σ.val).2 ((SmoothForm.contMDiff σ).of_le hmtop))
-      (f.contMDiff.of_le hm)
   let a : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
-    fun x ↦ ContinuousAlternatingMap.flatL ℝ E ℝ (τ x)
+    fun x ↦ ((ContinuousLinearMap.compL ℝ E V ℝ).flip (mfderiv I J f x)).comp
+      ((flat σ (f x)).comp (mfderiv I J f x))
   have ha (x : M) (u w : TangentSpace I x) :
-      a x u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w) := by
-    refine ((ContinuousAlternatingMap.flatL_apply_apply (E := E) (τ x) u w).trans
-      (mpullback_apply_pair f σ.val x u w)).trans ?_
-    rw [SmoothBundleForm.eval₂_apply]
-  have hacont : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) m
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (a x)) :=
-    fun x₀ ↦ contMDiffAt_sectionAlong_flatL (b := fun x ↦ x) (σ := τ) (hτ.contMDiff x₀)
+      a x u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w) :=
+    -- `a x u w` unfolds to `flat σ (f x) (df_x u) (df_x w)`.
+    flat_apply σ (f x) _ _
+  have hacont := f.contMDiff_of_eval₂_mfderiv hm hm' ha
   exact f.contMDiff_of_eq_sub_mfderiv_inverse hm hacont
     (fun x ↦ isInvertible_of_eval₂_mfderiv f h x hn (a x) (ha x)) ((contMDiff_flat σ).of_le hmtop)
     _ fun x v ↦

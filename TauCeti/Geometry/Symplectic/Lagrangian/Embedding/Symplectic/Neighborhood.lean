@@ -11,7 +11,6 @@ import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.PrescribedDerivative
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The symplectic neighbourhood theorem
@@ -34,10 +33,12 @@ by `σ` to the form induced by `θ` and `C q` is symplectic for the normal sympl
 the ambient extension carries `σ` to `θ` on the full ambient tangent space
 (`TauCeti.SmoothEmbedding.eval₂_symplecticNormalExtension`), because the two summands are
 `σ`-orthogonal. It is invertible when `df_q` and `C q` are
-(`TauCeti.SmoothEmbedding.isInvertible_symplecticNormalExtension`), and smooth when `f` and `C`
-are (`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalExtension`): its tangential part is
-`df_q` applied to `(f^* θ)⁻¹ (θ(v, di_q ·))`, built from the inverse of the flat map of the
-induced form.
+(`TauCeti.SmoothEmbedding.isInvertible_symplecticNormalExtension`), and smooth for smooth `f`
+when the symplectic representatives `v ↦ r_j (C q [v])` depend smoothly on ambient tangent
+vectors along `i` (`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalExtension`): its tangential
+part is `df_q` applied to `(i^* θ)⁻¹ (θ(v, di_q ·))`, built from the inverse of the flat map of
+the induced form. This holds for a smooth normal-bundle map `C`
+(`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative_comp_normalClass`).
 
 These are exactly the data of the neighbourhood theorem with a prescribed ambient derivative. The
 tubular construction `TauCeti.SmoothEmbedding.exists_partialDiffeomorph_mfderiv_eq` realizes the
@@ -49,8 +50,9 @@ neighbourhood theorem**
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_opens_mfderiv_eq_symplecticNormalExtension`): for
 compact `Q`, a symplectomorphism of the submanifolds together with a smooth symplectic isomorphism
 of their normal bundles over it extends to a symplectomorphism `φ` of open neighbourhoods, with
-`φ ∘ i = j ∘ f` and differential the ambient extension along `i(Q)`. In particular two symplectic
-submanifolds with symplectomorphic normal bundles have symplectomorphic neighbourhoods.
+`φ ∘ i = j ∘ f` and differential the ambient extension along `i(Q)`. In particular, for closed
+forms, if a compact nonempty symplectic submanifold is symplectomorphic to another by `f` and their
+symplectic normal bundles are isomorphic over `f`, they have symplectomorphic neighbourhoods.
 
 ## References
 
@@ -108,15 +110,29 @@ private def tangentialPart (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q
     TangentSpace J (i q) →L[ℝ] TangentSpace I q :=
   ((tangentPairing θ i q).comp (mfderiv I J i q)).inverse.comp (tangentPairing θ i q)
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- The two-form induced by `θ` on `Q`, as the composite of `tangentPairing` with `di_q`. -/
+private theorem tangentPairing_comp_apply (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
+    (q : Q) (u w : TangentSpace I q) :
+    (tangentPairing θ i q).comp (mfderiv I J i q) u w =
+      SmoothBundleForm.eval₂ θ (i q) (mfderiv I J i q u) (mfderiv I J i q w) := by
+  rw [ContinuousLinearMap.comp_apply, tangentPairing_apply, ContinuousLinearMap.comp_apply,
+    flat_apply]
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- The tangential part of `v` inverts the induced form on the pairings `θ(v, di_q ·)`. -/
+private theorem tangentialPart_apply (θ : SmoothTwoForm J M) (i : SmoothEmbedding I J n Q M)
+    (q : Q) (v : TangentSpace J (i q)) :
+    tangentialPart θ i q v = ((tangentPairing θ i q).comp (mfderiv I J i q)).inverse
+      ((flat θ (i q) v).comp (mfderiv I J i q)) :=
+  rfl
+
 private theorem mfderiv_tangentialPart (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (v : TangentSpace J (i q)) :
     mfderiv I J i q (tangentialPart θ i q v) =
       v - i.symplecticNormalRepresentative hi q hn (i.normalClass q hn v) := by
-  rw [i.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse hi q hn
-    ((tangentPairing θ i q).comp (mfderiv I J i q)) (fun u w ↦ by
-      rw [ContinuousLinearMap.comp_apply, tangentPairing_apply, ContinuousLinearMap.comp_apply,
-        flat_apply]) v, sub_sub_cancel]
-  rfl
+  rw [i.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse hi q hn _
+    (tangentPairing_comp_apply θ i q) v, sub_sub_cancel, tangentialPart_apply]
 
 private theorem tangentialPart_mfderiv (i : SmoothEmbedding I J n Q M)
     (hi : hθ.HasSymplecticTangentImages I i) (q : Q) (hn : n ≠ 0) (u : TangentSpace I q) :
@@ -269,45 +285,12 @@ theorem isInvertible_symplecticNormalExtension (q : Q) (hf : (mfderiv I I' f q).
     ⟨hinj, hsurj⟩
 
 
-omit [FiniteDimensional ℝ V] in
-include hi hn in
-/-- The flat map of the two-form induced by `θ` on `Q` is invertible. -/
-private theorem isInvertible_tangentPairing_comp (q : Q) :
-    ((tangentPairing θ i q).comp (mfderiv I J i q)).IsInvertible := by
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  refine ContinuousLinearMap.isInvertible_of_separatingLeft fun u hu ↦ ?_
-  have hdu := IsNondegenerate.hasSymplecticTangentImages_iff.1 hi q u fun w ↦ by
-    simpa [tangentPairing_apply, flat_apply] using hu w
-  exact (injective_iff_map_eq_zero _).1 (i.isImmersion.mfderiv_injective hn q) u hdu
-
 end Extension
 
 
 section Smooth
 
 variable [IsManifold I ∞ Q] [IsManifold I' ∞ Q']
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- The flat maps of the two-form induced by `θ` on `Q` form a smooth section. -/
-private theorem contMDiff_tangentPairing_comp (i : SmoothEmbedding I J ∞ Q M) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
-      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun q : Q ↦ TangentSpace I q →L[ℝ] TangentSpace I q →L[ℝ] ℝ) q
-        ((tangentPairing θ i q).comp (mfderiv I J i q))) := by
-  let τ := TauCeti.mpullback I J i θ.val
-  have hτ : IsSmoothForm I ∞ τ :=
-    IsSmoothForm.mpullback ((isSmoothForm_def ∞ θ.val).2 (SmoothForm.contMDiff θ)) i.contMDiff
-  refine fun q₀ ↦ (contMDiffAt_sectionAlong_flatL (b := fun q ↦ q) (σ := τ)
-    (hτ.contMDiff q₀)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦ ?_)
-  refine congrArg (TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-    (E := fun q : Q ↦ TangentSpace I q →L[ℝ] TangentSpace I q →L[ℝ] ℝ) q) ?_
-  ext u w
-  rw [ContinuousLinearMap.comp_apply, tangentPairing_apply, ContinuousLinearMap.comp_apply,
-    flat_apply]
-  refine (((ContinuousAlternatingMap.flatL_apply_apply (E := E) (τ q) u w).trans
-    (mpullback_apply_pair i θ.val q u w)).trans ?_).symm
-  rw [SmoothBundleForm.eval₂_apply]
-
 
 omit [FiniteDimensional ℝ V] in
 /-- **Smoothness of the ambient extension.** For smooth `f` and normal maps `C q` whose
@@ -326,8 +309,10 @@ theorem contMDiff_symplecticNormalExtension (i : SmoothEmbedding I J ∞ Q M)
         (⟨j (f p.proj), symplecticNormalExtension θ i j hj f hn hn C p.proj p.snd⟩ :
           TangentBundle K N)) := by
   -- The tangential part is smooth into `T Q`; push it forward by `df` and then `dj`.
-  have hu := i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp) (contMDiff_tangentPairing_comp i)
-    (fun q ↦ isInvertible_tangentPairing_comp i hi hn q) (contMDiff_flat θ)
+  have hu := i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp)
+    (i.contMDiff_of_eval₂_mfderiv (by simp) (by simp) (tangentPairing_comp_apply θ i))
+    (fun q ↦ i.isInvertible_of_eval₂_mfderiv hi q hn _ (tangentPairing_comp_apply θ i q))
+    (contMDiff_flat θ)
   -- `tangentMap` is `⟨x, v⟩ ↦ ⟨f x, df_x v⟩` by definition.
   have ht : ContMDiff (I.prod 𝓘(ℝ, V)) (K.prod 𝓘(ℝ, F)) ∞
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
@@ -438,13 +423,9 @@ theorem exists_diffeomorph_opens_mfderiv_eq_symplecticNormalExtension [I.Boundar
   obtain ⟨Ψ, hsrc, -, -, hval, hd⟩ := i.exists_partialDiffeomorph_mfderiv_eq hg
     (j.isEmbedding.isInducing.comp f.toHomeomorph.isInducing) hA hAinv hAi isOpen_univ
     (subset_univ _) isOpen_univ (subset_univ _)
-  have hnd (q : Q) : (θ.bilinFormAt (i q)).Nondegenerate :=
-    (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-      (SmoothForm.isAlt_bilinFormAt θ (i q)).isRefl).2 fun v hv ↦
-        isNondegenerate_iff_separatingLeft.1 hθ (i q) v fun w ↦ by
-          simpa only [SmoothForm.bilinFormAt_apply] using hv w
   obtain ⟨U₀, U₁, φ, hφ, hpull⟩ := SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq
-    i hθc hnd hσc Ψ (fun q ↦ hsrc (mem_range_self q)) fun q v w ↦ by
+    i hθc (fun q ↦ hθ.nondegenerate_bilinFormAt (i q)) hσc Ψ (fun q ↦ hsrc (mem_range_self q))
+    fun q v w ↦ by
       rw [hd q, hval q]
       exact hAω q v w
   refine ⟨U₀, U₁, φ, fun q ↦ ?_, hpull⟩

@@ -83,10 +83,6 @@ theorem contMDiff_inverse_comp_mfderiv (f : SmoothEmbedding I J n M N) (hm : m +
     ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
   have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
       (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
-  have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
-      (Pullback.lift (f : M → N)) :=
-    ((Pullback.contMDiff_iff fc fc.contMDiff
-      (E := fun y : N ↦ TangentSpace J y)).mp contMDiff_id).2
   -- Pair the ambient vector with the differential under `b`, then pull the covector back.
   let φ := fun (x : M) (v : TangentSpace J (f x)) ↦ (b (f x) v).comp (mfderiv I J f x)
   have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
@@ -95,7 +91,8 @@ theorem contMDiff_inverse_comp_mfderiv (f : SmoothEmbedding I J n M N) (hm : m +
     CotangentBundle.contMDiff_mk_comp_mfderiv
       (Ψ := fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         (⟨f q.proj, b (f q.proj) q.snd⟩ : CotangentBundle J N))
-      (fun _ ↦ rfl) ((hb.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift)
+      (fun _ ↦ rfl) ((hb.comp (fc.contMDiff.comp hbase)).clm_bundle_apply
+        (Pullback.contMDiff_lift (E := TangentSpace J) fc fc.contMDiff))
       hbase f.contMDiff hm
   -- Invert `a`.
   exact ((ha.clm_bundle_inverse hainv).comp hbase).clm_bundle_apply hφ
@@ -121,11 +118,6 @@ theorem contMDiff_of_eq_sub_mfderiv_inverse (f : SmoothEmbedding I J n M N) (hm 
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         (⟨f p.proj, r p.proj p.snd⟩ : TangentBundle J N)) := by
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
-  have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
-      (Pullback.lift (f : M → N)) :=
-    ((Pullback.contMDiff_iff fc fc.contMDiff
-      (E := fun y : N ↦ TangentSpace J y)).mp contMDiff_id).2
   -- Push the tangential component forward and subtract it.
   have ht := (f.contMDiff.contMDiff_tangentMap (by simpa using hm)).comp
     (f.contMDiff_inverse_comp_mfderiv hm ha hainv hb)
@@ -134,7 +126,8 @@ theorem contMDiff_of_eq_sub_mfderiv_inverse (f : SmoothEmbedding I J n M N) (hm 
       r x v = v + (-1 : ℝ) • mfderiv I J f x
         ((a x).inverse ((b (f x) v).comp (mfderiv I J f x))) := by
     rw [hr, neg_one_smul, ← sub_eq_add_neg]
-  exact (hlift.add_sectionAlong hneg).congr fun p ↦
+  exact ((Pullback.contMDiff_lift (E := TangentSpace J) f
+    (f.contMDiff.of_le (le_self_add.trans hm))).add_sectionAlong hneg).congr fun p ↦
     congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.snd)
 
 /-- **Smooth descent of representatives.** A family of maps `r x` from the normal spaces to the
