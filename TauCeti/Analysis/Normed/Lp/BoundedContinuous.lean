@@ -33,9 +33,10 @@ When `α` carries the discrete topology and `𝕜` is `ℝ` or `ℂ`, `toLpInfty
 and `lp.dualEquiv` identifies `ℓ∞(α, 𝕜)` with the strong dual of `ℓ¹(α, 𝕜)`, giving the isometric
 identification `lp.bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)` whose
 inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`. Pulling back a
-continuous linear functional `Λ` on a finite `Lᵖ` product `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` along
+continuous linear functional `Λ` on a finite `Lᵖ` product `PiLp p (fun i ↦ ℓ¹(α i, 𝕜))` along
 the coordinate inclusions `PiLp.singleCLM` gives coordinate bounded functions
-`Λ.piLpCoordBCF i : α →ᵇ 𝕜` satisfying `Λ v = ∑ i, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i)`.
+`Λ.piLpCoordBCF i : α i →ᵇ 𝕜` satisfying
+`Λ v = ∑ i, lp.bcfPairing 𝕜 (α i) 𝕜 (v i) (Λ.piLpCoordBCF i)`.
 
 ## Main definitions
 
@@ -46,8 +47,8 @@ the coordinate inclusions `PiLp.singleCLM` gives coordinate bounded functions
   `∑' x, u x • f x`.
 * `lp.bcfDualEquiv`: on a discrete space over `RCLike 𝕜`, the linear isometry equivalence
   `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`.
-* `ContinuousLinearMap.piLpCoordBCF`: coordinate bounded functions `y ↦ Λ (PiLp.single p i δ_y)`
-  associated to a continuous linear functional `Λ` on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))`.
+* `StrongDual.piLpCoordBCF`: coordinate bounded functions `y ↦ Λ (PiLp.single p i δ_y)`
+  associated to a continuous linear functional `Λ` on `PiLp p (fun i ↦ ℓ¹(α i, 𝕜))`.
 -/
 
 public section
@@ -286,45 +287,57 @@ end DiscreteDual
 
 end lp
 
-namespace ContinuousLinearMap
+namespace StrongDual
 
 section PiLpCoordBCF
 
-variable {ι α 𝕜 : Type*} [DecidableEq ι] [TopologicalSpace α] [DiscreteTopology α]
-  [RCLike 𝕜] {p : ℝ≥0∞}
+variable {ι : Type*} {α : ι → Type*} {𝕜 : Type*} [DecidableEq ι]
+  [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜] {p : ℝ≥0∞}
 
-/-- For a continuous linear functional `Λ` on the `Lᵖ` product of `ℓ¹(α, 𝕜)` spaces, the
+/-- For a continuous linear functional `Λ` on the `Lᵖ` product of `ℓ¹(α i, 𝕜)` spaces, the
 `i`-th coordinate bounded function `y ↦ Λ (PiLp.single p i (lp.single 1 y 1))`. -/
-def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
-    α →ᵇ 𝕜 :=
-  (lp.bcfDualEquiv 𝕜 α).symm
-    (Λ.comp (PiLp.singleCLM p 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) i))
+def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι) :
+    α i →ᵇ 𝕜 :=
+  (lp.bcfDualEquiv 𝕜 (α i)).symm
+    (Λ.comp (PiLp.singleCLM p 𝕜 (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1) i))
 
 /-- The `i`-th coordinate bounded function of `Λ` evaluates at `y` to
 `Λ (PiLp.single p i (lp.single 1 y 1))`. -/
 @[simp]
-theorem piLpCoordBCF_apply [DecidableEq α]
-    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
+theorem piLpCoordBCF_apply
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
+    [DecidableEq (α i)] (y : α i) :
     Λ.piLpCoordBCF i y = Λ (PiLp.single p i (lp.single 1 y 1)) := by
   simp [piLpCoordBCF]
 
-/-- Each coordinate bounded function of `Λ` has supremum norm at most `‖Λ‖`. -/
+/-- Evaluating `Λ` on a single coordinate vector `PiLp.single p i u` agrees with the
+`ℓ¹`-pairing of `u` against `Λ.piLpCoordBCF i`. -/
+theorem apply_piLp_single
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
+    (u : lp (fun _ : α i ↦ 𝕜) 1) :
+    Λ (PiLp.single p i u) = lp.bcfPairing 𝕜 (α i) 𝕜 u (Λ.piLpCoordBCF i) := by
+  simp [piLpCoordBCF]
+
+/-- When the coordinate index type `ι` is finite and `1 ≤ p`, each coordinate bounded function of
+`Λ` has supremum norm at most `‖Λ‖`. -/
 theorem norm_piLpCoordBCF_le [Fintype ι] [Fact (1 ≤ p)]
-    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι) :
     ‖Λ.piLpCoordBCF i‖ ≤ ‖Λ‖ := by
   rw [piLpCoordBCF, LinearIsometryEquiv.norm_map]
   exact (Λ.opNorm_comp_le _).trans
     (mul_le_of_le_one_right (norm_nonneg Λ) (PiLp.norm_singleCLM_le i))
 
-/-- A continuous linear functional on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` is the sum over `i` of the
-`ℓ¹`-pairings with its coordinate bounded functions `Λ.piLpCoordBCF i`. -/
+/-- When `ι` is finite, a continuous linear functional on `PiLp p (fun i ↦ ℓ¹(α i, 𝕜))` is the
+sum over `i` of the `ℓ¹`-pairings with its coordinate bounded functions `Λ.piLpCoordBCF i`. -/
 theorem apply_eq_sum_bcfPairing [Fintype ι]
-    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)))
-    (v : PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) :
-    Λ v = ∑ i : ι, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i) := by
-  conv_lhs => rw [← PiLp.univ_sum_single v]
-  simp [map_sum, piLpCoordBCF]
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)))
+    (v : PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)) :
+    Λ v = ∑ i : ι, lp.bcfPairing 𝕜 (α i) 𝕜 (v i) (Λ.piLpCoordBCF i) := by
+  rw [← Λ.sum_comp_piLpSingleCLM v]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa only [ContinuousLinearMap.comp_apply, PiLp.singleCLM_apply] using
+    Λ.apply_piLp_single i (v i)
 
 end PiLpCoordBCF
 
-end ContinuousLinearMap
+end StrongDual

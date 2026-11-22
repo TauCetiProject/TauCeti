@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.LeftTranslation
-public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 public import TauCeti.GroupTheory.Amenable.Sequence
@@ -211,10 +210,17 @@ theorem Amenable.zero_mem_closure_range_stdSimplexLeftTranslationSub [Amenable G
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   have h0 : m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) = 0 := by
     simp only [map_sum, map_sub, hm.apply_leftTranslation, sub_self, sum_const_zero]
-  -- `map_inv` would turn `UCB.leftTranslation g⁻¹` into `(UCB.leftTranslation g).symm`.
+  have hF (x : G) :
+      ((∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g) : UCB G) : G →ᵇ ℝ) x =
+        Λ (stdSimplexLeftTranslationSub K (.single x)) := by
+    rw [hv]
+    simp only [F, AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_sub,
+      FunLike.coe_sum, FunLike.coe_sub, Finset.sum_apply, Pi.sub_apply,
+      UCB.leftTranslation_apply, inv_inv, UCB.coe_discreteAlgEquiv_symm]
   have hu : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
     m.le_apply_of_forall_le fun x ↦ by
-      simpa [hv, F, -map_inv] using (hΛ _ (subset_closure ⟨.single x, rfl⟩)).le
+      rw [hF]
+      exact (hΛ _ (subset_closure ⟨.single x, rfl⟩)).le
   linarith
 
 /-- **Reiter's condition in `ℓ¹(G)`.** In an amenable discrete group, for every finite `K ⊆ G` and
