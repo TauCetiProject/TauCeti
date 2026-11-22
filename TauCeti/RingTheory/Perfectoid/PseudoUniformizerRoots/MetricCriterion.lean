@@ -115,9 +115,10 @@ theorem exists_gauge_sub_pow_le_mul [Fact p.Prime] [IsPerfectoidTateRing p R] {c
   obtain ⟨y, hy⟩ := ϖ.exists_scaled_gauge_sub_pow_le x m n hm
   refine ⟨y, hy.trans ((mul_le_mul_of_nonneg_left (le_max_left (ϖ.gauge (p : R) / 2) (c / 2))
     (by positivity)).trans ?_)⟩
-  have := mul_lt_mul_of_pos_right hn ha
-  field_simp at this
-  exact this.le
+  have hbound := mul_lt_mul_of_pos_right hn ha
+  calc
+    (2 : ℝ) ^ (-((m : ℝ) / p ^ n)) * a ≤ (c / a * ϖ.gauge x) * a := hbound.le
+    _ = c * ϖ.gauge x := by rw [mul_right_comm, div_mul_cancel₀ c ha.ne']
 
 /-- A uniform complete Hausdorff Tate ring is perfectoid if `1 < p` and every power-bounded
 input admits a `p`-th-power approximation with one global absolute spectral-gauge error bound

@@ -275,7 +275,9 @@ theorem gauge_le_rpow_iff_rootPB_pow_dvd (x : powerBoundedSubring R) (n k : ℕ)
   have hg := ϖ.gauge_le_rpow_iff (x := (x : R)) (k : ℤ) n
   simp only [Int.cast_natCast] at hg
   rw [hg, zpow_neg]
-  change u⁻¹ • (x : R) ∈ (powerBoundedSubring R : Set R) ↔ _
+  suffices h : u⁻¹ • (x : R) ∈ (powerBoundedSubring R : Set R) ↔
+      ϖ.rootPB n ^ k ∣ x by
+    simpa only [Units.smul_def, smul_eq_mul, SetLike.mem_coe] using h
   rw [← Set.mem_smul_set_iff_inv_smul_mem]
   have hu : (u : R) = (ϖ.rootPB n ^ k : powerBoundedSubring R) := by
     simp only [u, coe_zpow_natCast, Subring.coe_pow, coe_rootPB]
