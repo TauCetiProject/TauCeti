@@ -50,9 +50,9 @@ submodule that contains the canonical components of each of its elements,
 `DirectSum.mem_of_forall_ne_eq_bot` shows that when all pieces outside one degree vanish, every
 element lies in that piece, and over a ring `DirectSum.isInternal_submodule_comap_subtype` turns a
 supremum-independent family with supremum `S` into an internal direct sum of `S` via
-`(A i).comap S.subtype`. Over any additive commutative monoid, two finite sums with `i`-th term
-in the `i`-th summand of an internal direct sum agree only if they agree termwise
-(`DirectSum.IsInternal.eq_of_finsetSum_eq`).
+`(A i).comap S.subtype`. Over any additive commutative monoid, if two sums over the same `Finset`
+take their `i`-th terms from the `i`-th summand of an internal direct sum and are equal, then their
+terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_finsetSum_eq`).
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
@@ -497,8 +497,9 @@ theorem iSup_inf_eq_of_component_mem
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
-/-- **Finite sums in an internal direct sum are compared termwise.** If two finite sums, each
-taking its `i`-th term from the `i`-th summand, agree, then they agree term by term. -/
+/-- **Finite sums in an internal direct sum are compared termwise.** If two sums over the same
+`Finset` `s`, each taking its `i`-th term from the `i`-th summand, are equal, then their terms are
+equal at every index in `s`. -/
 theorem eq_of_finsetSum_eq {ι M σ : Type*} [DecidableEq ι] [AddCommMonoid M] [SetLike σ M]
     [AddSubmonoidClass σ M] {A : ι → σ} (h : IsInternal A) {s : Finset ι} {v w : ι → M}
     (hv : ∀ i ∈ s, v i ∈ A i) (hw : ∀ i ∈ s, w i ∈ A i)

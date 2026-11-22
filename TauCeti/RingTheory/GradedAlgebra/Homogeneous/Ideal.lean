@@ -23,10 +23,11 @@ This file also proves the absorption lemmas for componentwise membership: if eve
 component of `x` lies in an ideal, then so does every homogeneous component of `a * x`, and, when
 the ideal is two-sided, of `x * a`.
 
-Finally, the irrelevant ideal `A₊` is two-sided, and in a connected graded algebra, whose
-degree-zero part consists of the scalars, every element is its constant term plus an element of
+Finally, the irrelevant ideal `A₊` is two-sided, and in a graded algebra whose degree-zero part
+is contained in the image of the scalars, every element is its constant term plus an element of
 `A₊`. So the scalars map onto `A ⧸ A₊`, and for a nontrivial algebra over a field `A₊` is
-maximal. These results need neither commutativity of `A` nor grading by `ℕ`: any canonically
+maximal. Only this containment is assumed: the scalars may also have components of nonzero
+degree. These results need neither commutativity of `A` nor grading by `ℕ`: any canonically
 ordered additive commutative grading monoid, the setting of Mathlib's
 `HomogeneousIdeal.irrelevant`, will do.
 
@@ -40,12 +41,14 @@ ordered additive commutative grading monoid, the setting of Mathlib's
   idempotents with homogeneous left ideals consists of degree-zero elements.
 * `TauCeti.GradedAlgebra.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so when
   `A` is a ring the quotient `A ⧸ A₊` carries its quotient ring structure.
-* `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
-  every element is a scalar plus an element of the irrelevant ideal.
-* `TauCeti.GradedAlgebra.surjective_algebraMap_quotient_irrelevant`: in a connected graded algebra
-  the scalars map onto `A ⧸ A₊`.
+* `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: if the degree-zero part is
+  contained in the image of the scalars, every element is a scalar plus an element of the
+  irrelevant ideal.
+* `TauCeti.GradedAlgebra.surjective_algebraMap_quotient_irrelevant`: if the degree-zero part is
+  contained in the image of the scalars, the scalars map onto `A ⧸ A₊`.
 * `TauCeti.GradedAlgebra.isMaximal_toIdeal_irrelevant`: the irrelevant ideal of a nontrivial
-  connected graded algebra over a field is maximal.
+  graded algebra over a field, whose degree-zero part is contained in the image of the scalars,
+  is maximal.
 
 ## Implementation notes
 
@@ -154,20 +157,20 @@ instance isTwoSided_toIdeal_irrelevant [Semiring A] [SetLike σ A] [AddSubmonoid
   rw [toIdeal_irrelevant]
   infer_instance
 
-/-- In a connected graded algebra, whose degree-zero part consists of the scalars, every element
-is a scalar plus an element of the irrelevant ideal. -/
+/-- In a graded algebra whose degree-zero part is contained in the image of the scalars, every
+element is a scalar plus an element of the irrelevant ideal. -/
 theorem exists_sub_algebraMap_mem_irrelevant [CommSemiring R] [Ring A] [Algebra R A]
     [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
     (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) (a : A) :
     ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
   obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).property)
   refine ⟨c, ?_⟩
-  rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant, RingHom.sub_mem_ker_iff, hc,
-    GradedRing.projZeroRingHom_apply, GradedRing.projZeroRingHom_apply,
+  rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant, RingHom.sub_mem_ker_iff]
+  simp only [hc, GradedRing.projZeroRingHom_apply,
     decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).property]
 
-/-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
-term modulo `A₊`. -/
+/-- In a graded algebra whose degree-zero part is contained in the image of the scalars, the
+scalars map onto `A ⧸ A₊`: every element is its constant term modulo `A₊`. -/
 theorem surjective_algebraMap_quotient_irrelevant [CommSemiring R] [Ring A] [Algebra R A]
     [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
     (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) :
@@ -177,7 +180,8 @@ theorem surjective_algebraMap_quotient_irrelevant [CommSemiring R] [Ring A] [Alg
   obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
   exact ⟨c, by rw [← Ideal.Quotient.mk_algebraMap]; exact (Ideal.Quotient.eq.2 hc).symm⟩
 
-/-- The irrelevant ideal of a nontrivial connected graded algebra over a field is maximal. -/
+/-- The irrelevant ideal of a nontrivial graded algebra over a field, whose degree-zero part is
+contained in the image of the scalars, is maximal. -/
 theorem isMaximal_toIdeal_irrelevant {k : Type*} [Field k] [Ring A] [Nontrivial A] [Algebra k A]
     [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
     (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A)) :
