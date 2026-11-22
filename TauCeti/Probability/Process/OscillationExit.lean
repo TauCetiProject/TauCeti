@@ -92,23 +92,24 @@ theorem StronglyAdapted.isStoppingTime_oscillationExit
     simpa only [TauCeti.oscillationExit_succ] using
       hX.isStoppingTime_oscillationExitAfter hc ih hε
 
-/-- For an adapted càdlàg process in a second-countable pseudometric Borel space, the first
-`ε`-oscillation exit time (`ε > 0`) after a stopping time `τ` is a stopping time on the raw
-filtration `ℱ`. -/
+/-- For an adapted càdlàg process in a second-countable pseudometric space with measurable open
+sets, the first `ε`-oscillation exit time (`ε > 0`) after a stopping time `τ` is a stopping time on
+the raw filtration `ℱ`. -/
 theorem Adapted.isStoppingTime_oscillationExitAfter
-    [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+    [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
     (hX : Adapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω))
     {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) {ε : ℝ} (hε : 0 < ε) :
     IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExitAfter (X · ω) ε (τ ω)) :=
-  (stronglyAdapted_iff_adapted.mpr hX).isStoppingTime_oscillationExitAfter hc hτ hε
+  hX.stronglyAdapted.isStoppingTime_oscillationExitAfter hc hτ hε
 
 /-- Iterated `ε`-oscillation exit times (`ε > 0`) of an adapted càdlàg process in a
-second-countable pseudometric Borel space are stopping times on the raw filtration `ℱ`. -/
+second-countable pseudometric space with measurable open sets are stopping times on the raw
+filtration `ℱ`. -/
 theorem Adapted.isStoppingTime_oscillationExit
-    [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+    [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
     (hX : Adapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω)) {ε : ℝ} (hε : 0 < ε) (n : ℕ) :
     IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExit (X · ω) ε n) :=
-  (stronglyAdapted_iff_adapted.mpr hX).isStoppingTime_oscillationExit hc hε n
+  hX.stronglyAdapted.isStoppingTime_oscillationExit hc hε n
 
 end StoppingTime
 

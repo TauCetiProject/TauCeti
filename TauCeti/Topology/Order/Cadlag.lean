@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Order.Cadlag
 public import Mathlib.Topology.Order.WithTop
+import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Topology.Order.LeftRight
@@ -348,68 +349,71 @@ theorem dist_lt_of_lt_oscillationExitAfter {f : X → E} {ε : ℝ} (hε : 0 < �
       exact csInf_le ⟨⊥, fun _ _ => bot_le⟩ hmem
     exact not_le_of_gt hlt hle
 
-private noncomputable def stoppedDist (f : X → E) (u : WithTop X) (t : X) : ℝ :=
-  dist (f t) (f (min (t : WithTop X) u).untopA)
+private noncomputable def stoppedEdist (f : X → E) (u : WithTop X) (t : X) : ℝ≥0∞ :=
+  edist (f t) (f (min (t : WithTop X) u).untopA)
 
-private theorem stoppedDist_coe_apply (f : X → E) (a t : X) :
-    stoppedDist f a t = dist (f t) (f (min t a)) := by
-  dsimp only [stoppedDist]
+private theorem stoppedEdist_coe_apply (f : X → E) (a t : X) :
+    stoppedEdist f a t = edist (f t) (f (min t a)) := by
+  dsimp only [stoppedEdist]
   rw [← WithTop.coe_min]
   rfl
 
 variable [TopologicalSpace X] [OrderTopology X]
 
-private theorem isCadlag_stoppedDist {f : X → E} (hf : IsCadlag f) (u : WithTop X) :
-    IsCadlag (stoppedDist f u) := by
+private theorem isCadlag_stoppedEdist {f : X → E} (hf : IsCadlag f) (u : WithTop X) :
+    IsCadlag (stoppedEdist f u) := by
   cases u with
   | top =>
-    have heq : stoppedDist f ⊤ = fun _ => (0 : ℝ) := by
+    have heq : stoppedEdist f ⊤ = fun _ => (0 : ℝ≥0∞) := by
       ext t
-      simp [stoppedDist]
+      simp [stoppedEdist]
     rw [heq]
     exact IsCadlag.const
   | coe a =>
-    have heq : stoppedDist f a = fun t => dist (f t) (f (min t a)) :=
-      funext (stoppedDist_coe_apply f a)
+    have heq : stoppedEdist f a = fun t => edist (f t) (f (min t a)) :=
+      funext (stoppedEdist_coe_apply f a)
     rw [heq]
-    exact hf.continuous_comp₂ (hf.comp_min_const a) continuous_dist
+    exact hf.continuous_comp₂ (hf.comp_min_const a) continuous_edist
 
-private theorem setOf_oscillation_eq_stoppedDist {f : X → E} (hf : IsCadlag f) {ε : ℝ}
+private theorem setOf_oscillation_eq_stoppedEdist {f : X → E} (hf : IsCadlag f) {ε : ℝ}
     (hε : 0 < ε) (u : WithTop X) :
     {t : X | u < (t : WithTop X) ∧
         (ε ≤ dist (f t) (f u.untopA) ∨ ε ≤ dist (f.leftLim t) (f u.untopA))} =
-      {t : X | ε ≤ stoppedDist f u t ∨ ε ≤ (stoppedDist f u).leftLim t} := by
+      {t : X | ENNReal.ofReal ε ≤ stoppedEdist f u t ∨
+        ENNReal.ofReal ε ≤ (stoppedEdist f u).leftLim t} := by
   ext t
   simp only [mem_ofPred_eq]
+  have hε_pos : 0 < ENNReal.ofReal ε := ENNReal.ofReal_pos.mpr hε
   cases u with
   | top =>
-    have hzero : stoppedDist f ⊤ = fun _ => (0 : ℝ) := by
+    have hzero : stoppedEdist f ⊤ = fun _ => (0 : ℝ≥0∞) := by
       ext s
-      simp [stoppedDist]
-    simp [hzero, continuous_const.continuousWithinAt.leftLim_eq, not_le_of_gt hε]
+      simp [stoppedEdist]
+    simp [hzero, continuous_const.continuousWithinAt.leftLim_eq, not_le_of_gt hε_pos]
   | coe a =>
     rcases le_or_gt t a with hta | hat
-    · have hval : stoppedDist f a t = 0 := by
-        rw [stoppedDist_coe_apply, min_eq_left hta, dist_self]
-      have hlim : (stoppedDist f a).leftLim t = 0 := by
+    · have hval : stoppedEdist f a t = 0 := by
+        rw [stoppedEdist_coe_apply, min_eq_left hta, edist_self]
+      have hlim : (stoppedEdist f a).leftLim t = 0 := by
         rcases eq_or_neBot (𝓝[<] t) with hbot | _
         · rw [leftLim_eq_of_eq_bot _ hbot, hval]
         · refine leftLim_eq_of_tendsto (tendsto_const_nhds.congr' ?_)
           filter_upwards [self_mem_nhdsWithin] with s hs
-          rw [stoppedDist_coe_apply, min_eq_left ((le_of_lt hs).trans hta), dist_self]
-      simp [not_lt_of_ge (WithTop.coe_le_coe.mpr hta), hval, hlim, not_le_of_gt hε]
-    · have hval : stoppedDist f a t = dist (f t) (f a) := by
-        rw [stoppedDist_coe_apply, min_eq_right hat.le]
-      have hlim : (stoppedDist f a).leftLim t = dist (f.leftLim t) (f a) := by
+          rw [stoppedEdist_coe_apply, min_eq_left ((le_of_lt hs).trans hta), edist_self]
+      simp [not_lt_of_ge (WithTop.coe_le_coe.mpr hta), hval, hlim, not_le_of_gt hε_pos]
+    · have hval : stoppedEdist f a t = edist (f t) (f a) := by
+        rw [stoppedEdist_coe_apply, min_eq_right hat.le]
+      have hlim : (stoppedEdist f a).leftLim t = edist (f.leftLim t) (f a) := by
         rcases eq_or_neBot (𝓝[<] t) with hbot | _
         · rw [leftLim_eq_of_eq_bot _ hbot, leftLim_eq_of_eq_bot _ hbot, hval]
         · refine leftLim_eq_of_tendsto
-            ((((continuous_id.dist continuous_const).tendsto (f.leftLim t)).comp
+            ((((continuous_id.edist continuous_const).tendsto (f.leftLim t)).comp
               (hf.tendsto_nhdsLT_leftLim t)).congr' ?_)
           filter_upwards [Ioo_mem_nhdsLT hat] with s hs
-          rw [stoppedDist_coe_apply, min_eq_right hs.1.le]
+          rw [stoppedEdist_coe_apply, min_eq_right hs.1.le]
           rfl
-      simp [WithTop.coe_lt_coe.mpr hat, hval, hlim]
+      simp [WithTop.coe_lt_coe.mpr hat, hval, hlim, edist_dist,
+        ENNReal.ofReal_le_ofReal_iff dist_nonneg]
 
 end OscillationExit
 
@@ -436,12 +440,12 @@ theorem mem_of_oscillationExitAfter_eq_coe {f : X → E} (hf : IsCadlag f) {ε :
     simp [TauCeti.oscillationExitAfter, A, h] at hs
   have hs_eq : s = sInf A := by
     simpa [TauCeti.oscillationExitAfter, A, hne] using hs.symm
-  have hA_eq := TauCeti.setOf_oscillation_eq_stoppedDist hf hε u
+  have hA_eq := TauCeti.setOf_oscillation_eq_stoppedEdist hf hε u
   have hmem : sInf A ∈ A := by
     dsimp only [A]
     rw [hA_eq]
     exact isClosed_Ici.csInf_mem_or_leftLim_mem_of_continuousWithinAt
-      ((TauCeti.isCadlag_stoppedDist hf u).isRightContinuous _) (hA_eq ▸ hne)
+      ((TauCeti.isCadlag_stoppedEdist hf u).isRightContinuous _) (hA_eq ▸ hne)
       ⟨⊥, fun _ _ => bot_le⟩
   exact hs_eq ▸ hmem
 
@@ -487,34 +491,19 @@ theorem exists_countable_subset_Iic_oscillationExitAfter_le_coe_iff
           ENNReal.ofReal ε ≤
             ⨆ s ∈ S, edist (f s) (f (min (s : WithTop X) u).untopA) := by
   obtain ⟨S, hSc, hST, hS⟩ :=
-    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
+    TopologicalSpace.exists_countable_subset_Iic_biSup_eq (α := ℝ≥0∞) T
   refine ⟨S, hSc, hST, fun f hf ε hε u => ?_⟩
   have hT : IsCompact (Iic T) := by
     rw [← Icc_bot]
     exact isCompact_Icc
-  rw [← not_iff_not, hf.oscillationExitAfter_le_coe_iff hε u T]
-  have hset := Set.ext_iff.mp (TauCeti.setOf_oscillation_eq_stoppedDist hf hε u)
+  have hset := Set.ext_iff.mp (TauCeti.setOf_oscillation_eq_stoppedEdist hf hε u)
   simp only [mem_ofPred_eq] at hset
+  rw [hf.oscillationExitAfter_le_coe_iff hε u T]
   simp_rw [hset]
-  push Not
-  rw [(TauCeti.isCadlag_stoppedDist hf u).forall_lt_and_leftLim_lt_iff_exists_le hT ε]
-  constructor
-  · rintro ⟨c, hcε, hc⟩
-    refine (iSup₂_le fun s hs => ?_).trans_lt ((ENNReal.ofReal_lt_ofReal_iff hε).mpr hcε)
-    rw [edist_dist]
-    exact ENNReal.ofReal_le_ofReal (hc s (hST hs))
-  · intro hm
-    let m : ℝ≥0∞ := ⨆ s ∈ S, edist (f s) (f (min (s : WithTop X) u).untopA)
-    have hm_top : m ≠ ⊤ := ne_top_of_lt (hm.trans ENNReal.ofReal_lt_top)
-    refine ⟨m.toReal, ENNReal.toReal_lt_of_lt_ofReal hm, fun t ht => not_lt.mp fun hlt => ?_⟩
-    obtain ⟨s, hs, hms⟩ :=
-      hS (fun v _ => (TauCeti.isCadlag_stoppedDist hf u).isRightContinuous v) ht hlt
-    have hle : edist (f s) (f (min (s : WithTop X) u).untopA) ≤ m :=
-      le_iSup₂ (f := fun s _ => edist (f s) (f (min (s : WithTop X) u).untopA)) s hs
-    have hle' := ENNReal.toReal_mono hm_top hle
-    dsimp only [TauCeti.stoppedDist] at hms
-    rw [dist_edist] at hms
-    exact not_le_of_gt hms hle'
+  rw [(TauCeti.isCadlag_stoppedEdist hf u).exists_le_or_le_leftLim_iff_le_biSup hT
+      (ENNReal.ofReal ε),
+    ← hS fun t _ => (TauCeti.isCadlag_stoppedEdist hf u).isRightContinuous t]
+  rfl
 
 /-- A càdlàg path has only finitely many `ε`-oscillation exits (`ε > 0`) on `[⊥, T]`: its iterated
 exit times eventually lie strictly beyond `T`. -/
