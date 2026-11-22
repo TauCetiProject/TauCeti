@@ -26,7 +26,7 @@ Compactoid sets replace relatively compact sets in nonarchimedean functional ana
 field such as `ℂ_p`, which is not locally compact, a bounded subset of a line need not be totally
 bounded, yet it is compactoid. Operators mapping the closed unit ball to a compactoid set are the
 compact operators of nonarchimedean Banach space theory. Every totally bounded set is compactoid
-as soon as `‖1‖ = 1`, `1 • x = x` and `0 • x = 0`, as over any normed field. Conversely, a
+as soon as `‖1‖ ≤ 1`, `1 • x = x` and `0 • x = 0`, as over any normed field. Conversely, a
 compactoid set is totally bounded as soon as, for each vector `v`, the multiples `a • v` with
 `‖a‖ ≤ 1` form a totally bounded set: for instance over a scalar ring whose closed unit ball is
 compact, such as a nontrivially normed locally compact field, when each map `a ↦ a • v` is
@@ -59,7 +59,7 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
   multiples, for a distributive action by continuous maps that commutes with itself, or of a
   normed division ring.
 * `TotallyBounded.isCompactoidSet`, `Set.Finite.isCompactoidSet`: totally bounded sets, in
-  particular finite sets, are compactoid, for scalars with `‖1‖ = 1` acting with `1 • x = x`
+  particular finite sets, are compactoid, for scalars with `‖1‖ ≤ 1` acting with `1 • x = x`
   and `0 • x = 0`.
 * `TauCeti.IsCompactoidSet.isBounded_of_forall`, `TauCeti.IsCompactoidSet.isBounded`: compactoid
   sets are bounded when the multiples `a • v` with `‖a‖ ≤ 1` of each vector form a bounded set,
@@ -68,7 +68,7 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
   normed field, conversely, bounded sets are compactoid.
 * `TauCeti.IsCompactoidSet.totallyBounded_of_forall`: compactoid sets are totally bounded when the
   multiples `a • v` with `‖a‖ ≤ 1` of each vector form a totally bounded set.
-* `TauCeti.isCompactoidSet_iff_totallyBounded`: over a scalar ring with `‖1‖ = 1` whose closed
+* `TauCeti.isCompactoidSet_iff_totallyBounded`: over a scalar ring with `‖1‖ ≤ 1` whose closed
   unit ball is compact, acting with `1 • x = x` and `0 • x = 0` and such that each map `a ↦ a • v`
   is continuous on that ball, compactoid sets are exactly the totally bounded sets.
 
@@ -398,13 +398,14 @@ section TotallyBounded
 
 open TauCeti
 
-variable {K E : Type*} [SeminormedRing K] [NormOneClass K] [SeminormedAddCommGroup E] [SMul K E]
+variable {K E : Type*} [SeminormedRing K] [SeminormedAddCommGroup E] [SMul K E]
 
-/-- A totally bounded set is compactoid, for scalars with `‖1‖ = 1` acting with `1 • x = x` and
-`0 • x = 0`, for instance over a normed field. The two action laws are discharged by `simp` by
-default, for instance for a module. -/
+/-- A totally bounded set is compactoid, for scalars with `‖1‖ ≤ 1` acting with `1 • x = x` and
+`0 • x = 0`, for instance over a normed field. The three hypotheses are discharged by `simp` by
+default, for instance for a module over a ring with `‖1‖ = 1`. -/
 theorem TotallyBounded.isCompactoidSet {S : Set E} (hS : TotallyBounded S)
-    (h1 : ∀ v : E, (1 : K) • v = v := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    (hn : ‖(1 : K)‖ ≤ 1 := by simp) (h1 : ∀ v : E, (1 : K) • v = v := by simp)
+    (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
     IsCompactoidSet K S := by
   classical
   refine isCompactoidSet_of_forall_exists_finset id fun ε hε ↦ ?_
@@ -416,39 +417,44 @@ theorem TotallyBounded.isCompactoidSet {S : Set E} (hS : TotallyBounded S)
   · rw [Finset.sum_eq_single_of_mem y (ht.mem_toFinset.2 hy) fun z _ hzy ↦ by simp [hzy, h0]]
     simpa [← dist_eq_norm, h1] using hxy
 
-/-- A finite set is compactoid, for scalars with `‖1‖ = 1` acting with `1 • x = x` and
-`0 • x = 0`. The two action laws are discharged by `simp` by default. -/
+/-- A finite set is compactoid, for scalars with `‖1‖ ≤ 1` acting with `1 • x = x` and
+`0 • x = 0`. The three hypotheses are discharged by `simp` by default. -/
 theorem Set.Finite.isCompactoidSet {S : Set E} (hS : S.Finite)
-    (h1 : ∀ v : E, (1 : K) • v = v := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    (hn : ‖(1 : K)‖ ≤ 1 := by simp) (h1 : ∀ v : E, (1 : K) • v = v := by simp)
+    (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
     IsCompactoidSet K S :=
-  hS.totallyBounded.isCompactoidSet h1 h0
+  hS.totallyBounded.isCompactoidSet hn h1 h0
 
-/-- A compact set is compactoid, for scalars with `‖1‖ = 1` acting with `1 • x = x` and
-`0 • x = 0`. The two action laws are discharged by `simp` by default. -/
+/-- A compact set is compactoid, for scalars with `‖1‖ ≤ 1` acting with `1 • x = x` and
+`0 • x = 0`. The three hypotheses are discharged by `simp` by default. -/
 theorem IsCompact.isCompactoidSet {S : Set E} (hS : IsCompact S)
-    (h1 : ∀ v : E, (1 : K) • v = v := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    (hn : ‖(1 : K)‖ ≤ 1 := by simp) (h1 : ∀ v : E, (1 : K) • v = v := by simp)
+    (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
     IsCompactoidSet K S :=
-  hS.totallyBounded.isCompactoidSet h1 h0
+  hS.totallyBounded.isCompactoidSet hn h1 h0
 
-/-- For scalars with `‖1‖ = 1` acting with `1 • x = x` and `0 • x = 0`, such that the multiples
+/-- For scalars with `‖1‖ ≤ 1` acting with `1 • x = x` and `0 • x = 0`, such that the multiples
 `a • v` with `‖a‖ ≤ 1` of every vector `v` form a totally bounded set, a set is compactoid if and
-only if it is totally bounded. The two action laws are discharged by `simp` by default. -/
+only if it is totally bounded. The hypotheses `‖1‖ ≤ 1`, `1 • x = x` and `0 • x = 0` are
+discharged by `simp` by default. -/
 theorem TauCeti.isCompactoidSet_iff_totallyBounded_of_forall {S : Set E}
     (hK : ∀ v : E, TotallyBounded ((· • v) '' closedBall (0 : K) 1))
-    (h1 : ∀ v : E, (1 : K) • v = v := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    (hn : ‖(1 : K)‖ ≤ 1 := by simp) (h1 : ∀ v : E, (1 : K) • v = v := by simp)
+    (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
     IsCompactoidSet K S ↔ TotallyBounded S :=
-  ⟨IsCompactoidSet.totallyBounded_of_forall hK, (·.isCompactoidSet h1 h0)⟩
+  ⟨IsCompactoidSet.totallyBounded_of_forall hK, (·.isCompactoidSet hn h1 h0)⟩
 
-/-- Over a scalar ring with `‖1‖ = 1` whose closed unit ball is compact, acting with `1 • x = x`
+/-- Over a scalar ring with `‖1‖ ≤ 1` whose closed unit ball is compact, acting with `1 • x = x`
 and `0 • x = 0` and such that each map `a ↦ a • v` is continuous on that ball, a set is compactoid
-if and only if it is totally bounded. All four hypotheses are discharged by default for a normed
+if and only if it is totally bounded. All five hypotheses are discharged by default for a normed
 space over a proper normed field; since they are explicit, apply the equivalence as
 `(isCompactoidSet_iff_totallyBounded).1`. -/
 theorem TauCeti.isCompactoidSet_iff_totallyBounded {S : Set E}
     (hK : IsCompact (closedBall (0 : K) 1) := by exact isCompact_closedBall 0 1)
     (hc : ∀ v : E, ContinuousOn (· • v) (closedBall (0 : K) 1) := by intro; fun_prop)
-    (h1 : ∀ v : E, (1 : K) • v = v := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    (hn : ‖(1 : K)‖ ≤ 1 := by simp) (h1 : ∀ v : E, (1 : K) • v = v := by simp)
+    (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
     IsCompactoidSet K S ↔ TotallyBounded S :=
-  ⟨(·.totallyBounded hK hc), (·.isCompactoidSet h1 h0)⟩
+  ⟨(·.totallyBounded hK hc), (·.isCompactoidSet hn h1 h0)⟩
 
 end TotallyBounded
