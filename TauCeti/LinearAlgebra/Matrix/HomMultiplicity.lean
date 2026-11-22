@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.Algebra.Star.StarProjection
@@ -25,9 +26,9 @@ defining representation of `Mₙ(K)` occurs in `Kᵐ` through `f`. It determines
 `tr (f x) = homMultiplicity f * tr x`, and the rank of the image of every matrix,
 `rank (f x) = homMultiplicity f * rank x`. In particular `n * homMultiplicity f ≤ m`, with
 equality exactly when `f` is unital, and the multiplicity of a composite is the product of the
-multiplicities. Every multiplicity allowed by this inequality is realised by a `⋆`-homomorphism,
-unital in the case of equality, and a unital homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when
-`n ∣ m`.
+multiplicities. For `n ≠ 0`, every multiplicity allowed by this inequality is realised by a
+`⋆`-homomorphism, unital in the case of equality, and a unital homomorphism `Mₙ(K) → Mₘ(K)` exists
+exactly when `n ∣ m`.
 
 The rank of an idempotent is its class in `K₀(Mₙ(K)) = ℤ`, so the multiplicity is the map induced
 by `f` on `K₀` in these coordinates. Two `⋆`-homomorphisms into a unital `⋆`-ring are conjugate by
@@ -43,8 +44,14 @@ classification of `⋆`-homomorphisms `Mₙ(ℂ) → Mₘ(ℂ)` to the multiplic
 
 ## Main statements
 
+* `Matrix.orthogonalIdempotents_map_single`, `Matrix.map_single_mul_map_single` and
+  `Matrix.star_map_single`: the images of the matrix units under a homomorphism out of `Mₙ(R)`
+  into any ring multiply like matrix units, and a `⋆`-homomorphism maps adjoints to adjoints.
 * `Matrix.homMultiplicity_eq_rank_map_single`: the multiplicity is the rank of the image of any
   diagonal matrix unit.
+* `Matrix.homMultiplicity_eq_zero_iff`, `NonUnitalAlgHom.homMultiplicity_zero` and
+  `NonUnitalStarAlgHom.homMultiplicity_zero`: the multiplicity vanishes exactly for the zero
+  homomorphism.
 * `Matrix.trace_map_eq_homMultiplicity_mul` and `Matrix.rank_map_eq_homMultiplicity_mul`: the
   trace and the rank of `f x`.
 * `Matrix.card_mul_homMultiplicity_le` and `Matrix.card_mul_homMultiplicity_eq_card_iff`:
@@ -93,19 +100,42 @@ theorem homMultiplicity_of_isEmpty [IsEmpty n] [FunLike F (Matrix n n K) (Matrix
     homMultiplicity f = 0 := by
   simp [homMultiplicity]
 
+section MatrixUnits
+
+variable {R B : Type*} [Semiring R] [FunLike F (Matrix n n R) B]
+
+/-- The image of a diagonal matrix unit is idempotent. -/
+theorem isIdempotentElem_map_single [Mul B] [MulHomClass F (Matrix n n R) B] (f : F) (i : n) :
+    IsIdempotentElem (f (single i i 1)) :=
+  IsIdempotentElem.map (by simp [IsIdempotentElem]) f
+
+/-- The images of the diagonal matrix units are orthogonal idempotents. -/
+theorem orthogonalIdempotents_map_single [Semiring B] [NonUnitalRingHomClass F (Matrix n n R) B]
+    (f : F) : OrthogonalIdempotents fun i : n => f (single i i 1) :=
+  ⟨isIdempotentElem_map_single f, fun i j hij => by simp [← map_mul, hij]⟩
+
+/-- The images of the matrix units multiply like matrix units. -/
+theorem map_single_mul_map_single [NonUnitalNonAssocSemiring B]
+    [NonUnitalRingHomClass F (Matrix n n R) B] (f : F) (i j k l : n) :
+    f (single i j 1) * f (single k l 1) = if j = k then f (single i l 1) else 0 := by
+  rw [← map_mul]
+  split_ifs with h
+  · rw [h, single_mul_single_same, mul_one]
+  · simp [h]
+
+omit [Fintype n] in
+/-- A `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of a matrix unit `Eᵢⱼ` to the adjoint of its
+image. -/
+theorem star_map_single [StarRing R] [Star B] [StarHomClass F (Matrix n n R) B] (f : F)
+    (i j : n) : star (f (single i j 1)) = f (single j i 1) := by
+  rw [← map_star, star_eq_conjTranspose, conjTranspose_single, star_one]
+
+end MatrixUnits
+
 section NonUnitalAlgHomClass
 
 variable [Fintype m] [FunLike F (Matrix n n K) (Matrix m m K)]
   [NonUnitalAlgHomClass F K (Matrix n n K) (Matrix m m K)] (f : F)
-
-/-- The image of a diagonal matrix unit is idempotent. -/
-theorem isIdempotentElem_map_single (i : n) : IsIdempotentElem (f (single i i 1)) :=
-  IsIdempotentElem.map (by simp [IsIdempotentElem]) f
-
-/-- The images of the diagonal matrix units are orthogonal idempotents. -/
-private theorem orthogonalIdempotents_map_single [DecidableEq m] :
-    OrthogonalIdempotents fun i : n => f (single i i 1) :=
-  ⟨isIdempotentElem_map_single f, fun i j hij => by simp [← map_mul, hij]⟩
 
 omit [DecidableEq n] in
 /-- The image of a product `a * b * c` has rank at most that of the image of `b`. -/
@@ -215,6 +245,15 @@ theorem rank_map_eq_homMultiplicity_mul (x : Matrix n n K) :
   · rw [← hfN, ← h]
     exact rank_map_mul_mul_le f _ _ _
 
+/-- A homomorphism between matrix algebras has multiplicity zero exactly when it is zero. -/
+theorem homMultiplicity_eq_zero_iff : homMultiplicity f = 0 ↔ ∀ x, f x = 0 := by
+  classical
+  refine ⟨fun h x => ?_, fun h => by simp [homMultiplicity, h]⟩
+  -- a matrix of rank zero is zero
+  have hx : (f x).rank = 0 := by rw [rank_map_eq_homMultiplicity_mul, h, zero_mul]
+  rw [← finrank_range_mulVecLin, Submodule.finrank_eq_zero, LinearMap.range_eq_bot] at hx
+  exact toLin'.injective (by rw [toLin'_apply', hx, map_zero])
+
 /-- A homomorphism `Mₙ(K) → Mₘ(K)` of multiplicity `μ` has `n * μ ≤ m`. -/
 theorem card_mul_homMultiplicity_le : Fintype.card n * homMultiplicity f ≤ Fintype.card m :=
   (card_mul_homMultiplicity f).trans_le (rank_le_card_width _)
@@ -235,6 +274,24 @@ theorem card_dvd_card_of_map_one [DecidableEq m] (hf : f 1 = 1) : Fintype.card n
   ⟨homMultiplicity f, ((card_mul_homMultiplicity_eq_card_iff f).mpr hf).symm⟩
 
 end NonUnitalAlgHomClass
+
+section Zero
+
+variable [Fintype m]
+
+/-- The zero homomorphism has multiplicity zero. -/
+@[simp]
+theorem _root_.NonUnitalAlgHom.homMultiplicity_zero :
+    homMultiplicity (0 : Matrix n n K →ₙₐ[K] Matrix m m K) = 0 := by
+  simp [homMultiplicity]
+
+/-- The zero `⋆`-homomorphism has multiplicity zero. -/
+@[simp]
+theorem _root_.NonUnitalStarAlgHom.homMultiplicity_zero [StarRing K] :
+    homMultiplicity (0 : Matrix n n K →⋆ₙₐ[K] Matrix m m K) = 0 := by
+  simp [homMultiplicity]
+
+end Zero
 
 section Comp
 
@@ -395,23 +452,11 @@ open TauCeti
 
 variable {R B : Type*} [CommSemiring R] [StarRing R] [Ring B] [StarRing B] [Algebra R B]
 
-/-- Products of images of matrix units. -/
-private theorem map_single_mul_map_single (φ : Matrix n n R →⋆ₙₐ[R] B) (i j k l : n) :
-    φ (single i j 1) * φ (single k l 1) = if j = k then φ (single i l 1) else 0 := by
-  rw [← map_mul]
-  split_ifs with h
-  · rw [h, single_mul_single_same, mul_one]
-  · simp [h]
-
 /-- Products of images of matrix units, associated to the right. -/
 private theorem map_single_mul_map_single_mul (φ : Matrix n n R →⋆ₙₐ[R] B) (i j k l : n)
     (x : B) : φ (single i j 1) * (φ (single k l 1) * x) =
       if j = k then φ (single i l 1) * x else 0 := by
   rw [← mul_assoc, map_single_mul_map_single, ite_mul, zero_mul]
-
-private theorem star_map_single (φ : Matrix n n R →⋆ₙₐ[R] B) (i j : n) :
-    star (φ (single i j 1)) = φ (single j i 1) := by
-  rw [← map_star, star_eq_conjTranspose, conjTranspose_single, star_one]
 
 variable (φ ψ : Matrix n n R →⋆ₙₐ[R] B) (i : n) {v : B}
 
