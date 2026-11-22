@@ -486,9 +486,8 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
   have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
     rw [← coe_subset, coe_map, coe_neighborFinset, coe_neighborFinset]
     exact f.toHom.image_neighborSet_subset v
-  have hle₁ (v : V) : ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y := by
-    have h := sum_le_sum_of_subset_of_nonneg (hsub v) fun y _ _ ↦ ha0 y
-    rwa [sum_map] at h
+  have hle₁ (v : V) : ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y :=
+    (sum_map _ _ _).symm.trans_le (sum_le_sum_of_subset_of_nonneg (hsub v) fun y _ _ ↦ ha0 y)
   -- Paired with `δ`, the sums over the edges of `G` reproduce `2 * a (f v)`, as `δ` is additive.
   have hswap : ∑ v, δ v * ∑ u ∈ G.neighborFinset v, a (f u) = ∑ v, δ v * (2 * a (f v)) := by
     have swap : ∑ v, ∑ u ∈ G.neighborFinset v, δ v * a (f u) =
