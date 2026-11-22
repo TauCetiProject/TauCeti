@@ -94,6 +94,14 @@ theorem eq_or_eq_of_bruhatCell_subset_union {w u v : T.WeylGroup}
   obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
   exact (h hn).imp (T.eq_of_mem_bruhatCell_of_mem hn) (T.eq_of_mem_bruhatCell_of_mem hn)
 
+/-- Left-multiplying the Weyl index by a nonidentity element changes the cell, so `B (u w) B`
+never absorbs `B w B` in a union. -/
+theorem bruhatCell_mul_ne_union_of_ne_one {u : T.WeylGroup} (hu : u ≠ 1) (w : T.WeylGroup) :
+    T.bruhatCell (u * w) ≠ T.bruhatCell (u * w) ∪ T.bruhatCell w := by
+  intro h
+  have hsub : T.bruhatCell w ⊆ T.bruhatCell (u * w) := h ▸ Set.subset_union_right
+  exact hu (by simpa using (T.bruhatCell_subset_iff.mp hsub).symm)
+
 /-- Two Bruhat cells are disjoint exactly when their Weyl indices differ. -/
 @[simp]
 theorem disjoint_bruhatCell_iff {w v : T.WeylGroup} :

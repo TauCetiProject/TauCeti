@@ -123,20 +123,20 @@ theorem restrictToPreimage_realMap (S : Set (PointedCone ℝ V')) (hS : S ⊆ Ps
 theorem restrictToPreimage_leastCone (S : Set (PointedCone ℝ V')) (hS : S ⊆ Psi.cones)
     (hface : ∀ ⦃sigma tau⦄, sigma ∈ S → tau.IsFaceOf sigma → tau ∈ S)
     (sigma : (f.preimageSubfan S hface).cones) :
-    (f.restrictToPreimage S hS hface).leastCone sigma.2 =
-      f.leastCone (f.preimageSubfan_cones_subset S hface sigma.2) := by
-  have h_sigma_preimage : sigma.1 ∈ f.preimageCones S := by
-    simpa only [Fan.subfan_cones] using sigma.2
+    (f.restrictToPreimage S hS hface).leastCone sigma.property =
+      f.leastCone (f.preimageSubfan_cones_subset S hface sigma.property) := by
+  have h_sigma_preimage : sigma.val ∈ f.preimageCones S := by
+    simpa only [Fan.subfan_cones] using sigma.property
   obtain ⟨h_sigma, hleast⟩ := h_sigma_preimage
   apply le_antisymm
-  · apply (f.restrictToPreimage S hS hface).leastCone_le sigma.2
+  · apply (f.restrictToPreimage S hS hface).leastCone_le sigma.property
       (by simpa only [Fan.subfan_cones] using hleast)
     exact f.map_le_leastCone h_sigma
   · apply f.leastCone_le h_sigma
       (hS (by simpa only [Fan.subfan_cones] using
-        (f.restrictToPreimage S hS hface).leastCone_mem sigma.2))
+        (f.restrictToPreimage S hS hface).leastCone_mem sigma.property))
     simpa only [restrictToPreimage_realMap] using
-      (f.restrictToPreimage S hS hface).map_le_leastCone sigma.2
+      (f.restrictToPreimage S hS hface).map_le_leastCone sigma.property
 
 /-- Restricting a fan morphism to an open subfan commutes with the source and target subfan
 inclusions. -/

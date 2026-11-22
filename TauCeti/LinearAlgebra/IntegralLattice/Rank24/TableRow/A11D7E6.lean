@@ -203,6 +203,34 @@ theorem a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff
   simpa only [Fin.cast_cast, Fin.cast_refl, id_eq] using
     h i (Fin.cast (congrArg rank (componentType_a11d7e6 i)) j)
 
+/-- `a11d7e6LatticeIsometry` maps the computable digit-word representative
+`glueWordVector a11d7e6.componentType l` to `glueWordVector TauCeti.a11d7e6 l`. -/
+@[simp]
+theorem a11d7e6LatticeIsometry_glueWordVector (l : List ℕ) :
+    a11d7e6LatticeIsometry (glueWordVector a11d7e6.componentType l) =
+      glueWordVector TauCeti.a11d7e6 l := by
+  rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply]
+  exact gluedLatticeIsometryOfEq_glueWordVector a11d7e6.componentType
+    a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ valid_a11d7e6 _
+    (rfl : 3 = a11d7e6.components.length) (fun i ↦ componentType_a11d7e6 i)
+    piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff l
+
+/-- `a11d7e6LatticeIsometry` intertwines the glue-word representatives of the row and of
+`TauCeti.a11d7e6` along `a11d7e6GlueModuleIsometry`. -/
+@[simp]
+theorem a11d7e6LatticeIsometry_glueWordRepresentativeVector (w : a11d7e6.glueModule) :
+    a11d7e6LatticeIsometry
+        (glueWordRepresentativeVector a11d7e6.componentType a11d7e6.isSimplyLaced_componentType w) =
+      glueWordRepresentativeVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6
+        (a11d7e6GlueModuleIsometry w) := by
+  rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply, ← piGlueAlphabetCongr_eq_a11d7e6GlueModuleIsometry]
+  exact gluedLatticeIsometryOfEq_glueWordRepresentativeVector a11d7e6.componentType
+    a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ valid_a11d7e6 _
+    (finCongr (rfl : 3 = a11d7e6.components.length)) (fun i ↦ componentType_a11d7e6 i)
+    piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff w
+
 /-! ### Explicit glue generator and coset decomposition of `a11d7e6.lattice` -/
 
 /-- **The explicit norm-`4` glue generator of the table lattice `a11d7e6.lattice`**, obtained by

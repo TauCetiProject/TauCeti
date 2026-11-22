@@ -42,7 +42,7 @@ noncomputable def comulLinearMap : D.toSubmodule →ₗ[R] D.toSubmodule ⊗[R] 
     (TensorProduct.map_injective_of_flat_flat _ _ Subtype.val_injective
       Subtype.val_injective)).symm.toLinearMap ∘ₗ
     ((Coalgebra.comul (R := R) (A := C)) ∘ₗ D.toSubmodule.subtype).codRestrict _
-      (fun x ↦ D.comul_mem x.2)
+      (fun x ↦ D.comul_mem x.property)
 
 /-- Including the comultiplication of a subcoalgebra recovers the ambient comultiplication. -/
 @[simp]

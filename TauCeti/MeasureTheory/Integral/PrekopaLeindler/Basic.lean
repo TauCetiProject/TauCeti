@@ -80,6 +80,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
   log-concave.
 * `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`: the central slice of a
   symmetric convex set is the largest.
+* `Convex.measure_preimage_add_le`: a symmetric convex set has at least the measure of each
+  of its translates (Anderson's inequality).
 
 ## References
 
@@ -496,5 +498,17 @@ theorem _root_.Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
     exact ⟨fun h ↦ by simpa using hneg _ h, fun h ↦ by simpa using hneg _ h⟩
   dsimp only
   rw [hslice, Measure.measure_neg]
+
+/-- **Anderson's inequality for Prékopa–Leindler measures.** For a measurable convex set
+`C ⊆ F` with `-C = C` and a negation-invariant measure `ν` with the Prékopa–Leindler property at
+every weight, no translate `(a + ·) ⁻¹' C` of `C` has larger measure than `C`. -/
+theorem _root_.Convex.measure_preimage_add_le [MeasurableAdd₂ F] [MeasurableNeg F]
+    [ν.IsNegInvariant] (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {C : Set F}
+    (hC : MeasurableSet C) (hCc : Convex ℝ C) (hneg : ∀ x ∈ C, -x ∈ C) (a : F) :
+    ν ((a + ·) ⁻¹' C) ≤ ν C := by
+  have h := (hCc.linear_preimage (LinearMap.fst ℝ F F + LinearMap.snd ℝ F F))
+    |>.measure_preimage_prodMk_le_measure_preimage_prodMk_zero hν
+      ((measurable_fst.add measurable_snd) hC) (fun p hp ↦ by simpa [add_comm] using hneg _ hp) a
+  simpa [Set.preimage, zero_add] using h
 
 end TauCeti

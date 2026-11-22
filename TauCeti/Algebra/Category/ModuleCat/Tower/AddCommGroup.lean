@@ -182,20 +182,20 @@ theorem productEquiv_mem_range_shift {a : ∀ n, A.obj n} :
 
 /-- The limit of a tower of abelian groups is the limit of the tower of `ℤ`-modules. -/
 def limComparison : A.lim ≃+ A.toModuleFunctor.lim where
-  toFun a := ⟨A.productEquiv a.1, A.productEquiv_mem_lim.2 a.2⟩
-  invFun a := ⟨A.productEquiv.symm a.1, A.productEquiv_mem_lim.1 <| by simp⟩
-  left_inv a := Subtype.ext <| A.productEquiv.symm_apply_apply a.1
-  right_inv a := Subtype.ext <| A.productEquiv.apply_symm_apply a.1
-  map_add' a b := Subtype.ext <| map_add A.productEquiv a.1 b.1
+  toFun a := ⟨A.productEquiv a.val, A.productEquiv_mem_lim.2 a.property⟩
+  invFun a := ⟨A.productEquiv.symm a.val, A.productEquiv_mem_lim.1 <| by simp⟩
+  left_inv a := Subtype.ext <| A.productEquiv.symm_apply_apply a.val
+  right_inv a := Subtype.ext <| A.productEquiv.apply_symm_apply a.val
+  map_add' a b := Subtype.ext <| map_add A.productEquiv a.val b.val
 
 @[simp]
 theorem coe_limComparison_apply (a : A.lim) :
-    (A.limComparison a : A.toModuleFunctor.Product) = A.productEquiv a.1 :=
+    (A.limComparison a : A.toModuleFunctor.Product) = A.productEquiv a.val :=
   (rfl)
 
 @[simp]
 theorem coe_limComparison_symm_apply (a : A.toModuleFunctor.lim) :
-    (A.limComparison.symm a : ∀ n, A.obj n) = A.productEquiv.symm a.1 :=
+    (A.limComparison.symm a : ∀ n, A.obj n) = A.productEquiv.symm a.val :=
   (rfl)
 
 /-- The comparison of limits is compatible with the projections `lim A → Aₙ`. -/
@@ -451,7 +451,7 @@ theorem Hom.shift_onProduct (f : Hom A B) (a : ∀ n, A.obj n) :
 /-- The homomorphism `lim A → lim B` induced by a morphism of towers. -/
 def Hom.limMap (f : Hom A B) : A.lim →+ B.lim :=
   (f.onProduct.comp A.lim.subtype).codRestrict B.lim fun a ↦ by
-    have ha : A.shift a = 0 := a.2
+    have ha : A.shift a = 0 := a.property
     rw [lim_eq_ker, AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, Hom.shift_onProduct,
       AddSubgroup.subtype_apply, ha, map_zero]
 

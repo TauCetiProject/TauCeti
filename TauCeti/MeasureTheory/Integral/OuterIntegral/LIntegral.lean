@@ -245,13 +245,13 @@ theorem exists_minimal_measurable_ge_outerLIntegral (μ : Measure α) [SFinite �
     ∃ g : α → ℝ≥0∞, Measurable g ∧ f ≤ g ∧ ∫⁻ ω, g ω ∂μ = outerLIntegral μ f ∧
       ∀ h : α → ℝ≥0∞, AEMeasurable h μ → f ≤ᵐ[μ] h → g ≤ᵐ[μ] h := by
   obtain ⟨ν, hν_fin, hμν, hνμ⟩ := exists_isFiniteMeasure_absolutelyContinuous (μ := μ)
-  let φ : ℝ≥0∞ → ℝ≥0∞ := fun x ↦ (ENNReal.orderIsoIicOneBirational x).1
+  let φ : ℝ≥0∞ → ℝ≥0∞ := fun x ↦ (ENNReal.orderIsoIicOneBirational x).val
   have hφ_meas : Measurable φ := by
     simp only [φ, ENNReal.orderIsoIicOneBirational_apply_coe]
     exact (measurable_id.inv.add_const (1 : ℝ≥0∞)).inv
   have hφ_mono : Monotone φ := fun _ _ hxy ↦
     Subtype.coe_le_coe.mpr (ENNReal.orderIsoIicOneBirational.monotone hxy)
-  have hφ_le_one : ∀ x, φ x ≤ 1 := fun x ↦ (ENNReal.orderIsoIicOneBirational x).2
+  have hφ_le_one : ∀ x, φ x ≤ 1 := fun x ↦ (ENNReal.orderIsoIicOneBirational x).property
   have hfin : outerLIntegral ν (φ ∘ f) < ⊤ :=
     lt_of_le_of_lt
       ((outerLIntegral_mono (f₂ := fun _ ↦ 1) fun ω ↦ hφ_le_one (f ω)).trans_eq (by simp))
