@@ -272,6 +272,13 @@ theorem mem_primaryComponent_span_iff {N : Type*} [AddCommMonoid N] [Module R N]
   simpa only [Finset.coe_singleton, Finset.mem_singleton, forall_eq] using
     (mem_primaryComponent_span_iff (N := N) {r} (y := x))
 
+/-- The primary component of `(r)` is `r`-saturated: `r • x` lies in it exactly when `x` does. -/
+theorem smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N]
+    [Module R N] (r : R) {x : N} :
+    r • x ∈ (span {r}).primaryComponent N ↔ x ∈ (span {r}).primaryComponent N := by
+  simp only [mem_primaryComponent_span_singleton_iff, smul_smul, ← pow_succ]
+  exact ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, hn⟩, fun ⟨n, hn⟩ ↦ ⟨n, by rw [pow_succ', mul_smul, hn, smul_zero]⟩⟩
+
 /-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
 theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
     (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by
