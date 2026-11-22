@@ -133,19 +133,22 @@ end CharacteristicSet
 
 /-! ### Microlocal elliptic regularity -/
 
-section EllipticRegularity
+section ParametrixIdentity
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
 /-- **The microlocal parametrix identity on Sobolev spaces.** Let `a` have compact spatial support
 and be elliptic on a set `S`, and let `c` of order `0` have compact spatial support and vanish
 outside `S`. Then there are a symbol `q` of order `-m` and a smoothing symbol `e`, both with compact
 spatial support, such that `Op(c) v = Op(q) (Op(a) v) - Op(e) v` for every `v ∈ H^t`. -/
-theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n ℂ ℂ m}
+theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) {S : Set (CoordinateSpace n × CoordinateSpace n)}
-    (hell : a.IsEllipticOn S) {c : Symbol n ℂ ℂ 0} (hc : c.HasCompactSpatialSupport)
+    (hell : a.IsEllipticOn S) {c : Symbol n V V 0} (hc : c.HasCompactSpatialSupport)
     (hcS : ∀ p ∉ S, c.coefficient p = 0) :
-    ∃ (q : Symbol n ℂ ℂ (-m)) (hq : q.HasCompactSpatialSupport) (e : Symbol n ℂ ℂ (-m + m))
+    ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport) (e : Symbol n V V (-m + m))
       (he : e.HasCompactSpatialSupport), e.IsSmoothing ∧
-      ∀ (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)), (c.quantizeSobolev hc t v).toDistr =
+      ∀ (t : ℝ) (v : H^{t}(CoordinateSpace n, V)), (c.quantizeSobolev hc t v).toDistr =
         (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t v)).toDistr -
           (e.quantizeSobolev he t v).toDistr := by
   obtain ⟨b, hb⟩ := hell.exists_isAsymptoticSum_sharpTerm_left hcS
@@ -178,6 +181,10 @@ theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n ℂ ℂ m}
   rw [← toDistr_quantizeSobolev_sharp hq ha, toDistr_quantizeSobolev_sub_apply (hq.sharp ha)
     (hc.inclusion _) hsub, sub_sub_cancel]
   exact toDistr_quantizeSobolev_congr (coefficient_inclusion _ _).symm hc _ rfl
+
+end ParametrixIdentity
+
+section EllipticRegularity
 
 /-- **Microlocal elliptic regularity on a conic region.** Let the scalar symbol `a` with compact
 spatial support be elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, for an open
