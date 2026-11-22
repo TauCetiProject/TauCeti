@@ -92,7 +92,7 @@ with the level included. -/
 @[simp]
 theorem heckeTCuspNewCharEnd_basisCharSpace (n : ℕ+) (f : {f : Newform N k // f.χ = χ}) :
     heckeTCuspNewCharEnd k χ n (basisCharSpace N k χ f) =
-      (qExpansion 1 f.1.toCuspForm).coeff n • basisCharSpace N k χ f := by
+      (qExpansion 1 f.val.toCuspForm).coeff n • basisCharSpace N k χ f := by
   obtain ⟨f, rfl⟩ := f
   have hb : (basisCharSpace N k f.χ ⟨f, rfl⟩ : cuspFormCharSpace k f.χ) =
       ⟨f.toCuspForm, f.mem_charSpace⟩ := Subtype.ext (by simp)
@@ -105,7 +105,7 @@ coefficient. -/
 theorem heckeTCuspNewCharEnd_pow_basisCharSpace (n : ℕ+) (j : ℕ)
     (f : {f : Newform N k // f.χ = χ}) :
     (heckeTCuspNewCharEnd k χ n ^ j) (basisCharSpace N k χ f) =
-      (qExpansion 1 f.1.toCuspForm).coeff n ^ j • basisCharSpace N k χ f := by
+      (qExpansion 1 f.val.toCuspForm).coeff n ^ j • basisCharSpace N k χ f := by
   induction j with
   | zero => rw [pow_zero, pow_zero, one_apply_eq_self, one_smul]
   | succ j ih =>
@@ -117,7 +117,7 @@ on `S_k(N, χ)ⁿᵉʷ` is `∏_f (X - aₙ(f))`, over the newforms `f` of level
 nebentypus `χ`, for every positive index `n`. -/
 theorem charpoly_heckeTCuspNewCharEnd [Fintype {f : Newform N k // f.χ = χ}] (n : ℕ+) :
     (heckeTCuspNewCharEnd k χ n).charpoly =
-      ∏ f : {f : Newform N k // f.χ = χ}, (X - C ((qExpansion 1 f.1.toCuspForm).coeff n)) := by
+      ∏ f : {f : Newform N k // f.χ = χ}, (X - C ((qExpansion 1 f.val.toCuspForm).coeff n)) := by
   classical
   rw [← LinearMap.charpoly_toMatrix _ (basisCharSpace N k χ),
     (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
@@ -131,7 +131,7 @@ weight `k` and nebentypus `χ`. These traces determine the coefficients of
 theorem trace_heckeTCuspNewCharEnd_pow [Fintype {f : Newform N k // f.χ = χ}] (n : ℕ+)
     (j : ℕ) :
     LinearMap.trace ℂ _ (heckeTCuspNewCharEnd k χ n ^ j) =
-      ∑ f : {f : Newform N k // f.χ = χ}, (qExpansion 1 f.1.toCuspForm).coeff n ^ j := by
+      ∑ f : {f : Newform N k // f.χ = χ}, (qExpansion 1 f.val.toCuspForm).coeff n ^ j := by
   classical
   rw [LinearMap.trace_eq_matrix_trace ℂ (basisCharSpace N k χ),
     (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
@@ -142,7 +142,7 @@ theorem trace_heckeTCuspNewCharEnd_pow [Fintype {f : Newform N k // f.χ = χ}] 
 newforms** of level `N`, weight `k` and nebentypus `χ`. -/
 theorem trace_heckeTCuspNewCharEnd [Fintype {f : Newform N k // f.χ = χ}] (n : ℕ+) :
     LinearMap.trace ℂ _ (heckeTCuspNewCharEnd k χ n) =
-      ∑ f : {f : Newform N k // f.χ = χ}, (qExpansion 1 f.1.toCuspForm).coeff n := by
+      ∑ f : {f : Newform N k // f.χ = χ}, (qExpansion 1 f.val.toCuspForm).coeff n := by
   simpa using trace_heckeTCuspNewCharEnd_pow (χ := χ) n 1
 
 /-- **In weight at least two the Hecke characteristic polynomials of a newspace have
@@ -154,7 +154,7 @@ theorem isIntegral_coeff_charpoly_heckeTCuspNewCharEnd (hk : 2 ≤ k) (n : ℕ+)
   let O := integralClosure ℤ ℂ
   have hprod : (heckeTCuspNewCharEnd k χ n).charpoly =
       (∏ f : {f : Newform N k // f.χ = χ},
-        (X - C (⟨_, f.1.isIntegral_qExpansion_coeff hk n⟩ : O))).map O.val := by
+        (X - C (⟨_, f.val.isIntegral_qExpansion_coeff hk n⟩ : O))).map O.val := by
     simp [charpoly_heckeTCuspNewCharEnd, Polynomial.map_prod]
   rw [hprod, coeff_map]
   exact (Subtype.prop _ : _ ∈ O)

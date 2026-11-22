@@ -22,10 +22,14 @@ least `n ≥ 1` adds `e` to `F(x, y)`, up to terms of degree greater than `n`.
 
 ## Main results
 
+* `FormalGroup.coeff_single_zero`, `FormalGroup.coeff_single_one`: the coefficients of `Xⁿ` and
+  `Yⁿ` in a formal group law are `1` for `n = 1` and `0` otherwise.
 * `FormalGroup.coeff_comm`: the coefficients of a commutative formal group law are symmetric.
 * `FormalGroup.le_order_subst_add_left_sub`, `FormalGroup.le_order_subst_add_right_sub`:
   `F(x + e, y) ≡ F(x, y) + e` and `F(x, y + e) ≡ F(x, y) + e` modulo terms of degree greater than
   `n`, for `e` of order at least `n ≥ 1`.
+* `FormalGroup.le_order_subst_pair_sub`: if `F, G` and `(a₁, a₂), (b₁, b₂)` agree below degree `M`,
+  then `F(a₁, a₂)` and `G(b₁, b₂)` agree below degree `M`.
 -/
 
 public section
@@ -35,6 +39,18 @@ open MvPowerSeries Finsupp
 variable {A : Type*} [CommRing A]
 
 namespace FormalGroup
+
+/-- The coefficient of `Xⁿ` in a formal group law `F(X, Y)`: since `F(X, 0) = X`, it is `1` for
+`n = 1` and `0` otherwise. -/
+theorem coeff_single_zero (F : FormalGroup A) (n : ℕ) :
+    coeff (single 0 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
+  rw [← coeff_subst_X_zero, ← Xzero, Xzero_eq_X, PowerSeries.coeff_X]
+
+/-- The coefficient of `Yⁿ` in a formal group law `F(X, Y)`: since `F(0, Y) = Y`, it is `1` for
+`n = 1` and `0` otherwise. -/
+theorem coeff_single_one (F : FormalGroup A) (n : ℕ) :
+    coeff (single 1 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
+  rw [← coeff_subst_zero_X, ← zeroX, zeroX_eq_X, PowerSeries.coeff_X]
 
 /-- The coefficients of a commutative formal group law are symmetric: the coefficient of `XⁱYʲ`
 equals that of `XʲYⁱ`. -/
@@ -83,5 +99,38 @@ theorem le_order_subst_add_right_sub (hx : constantCoeff x = 0) (hy : constantCo
   fin_cases j <;> simp
 
 end Perturbation
+
+/-- If two formal group laws `F` and `G` agree below degree `M`, and pairs of series `(a₁, a₂)` and
+`(b₁, b₂)` with zero constant coefficient agree below degree `M`, then `F(a₁, a₂)` and `G(b₁, b₂)`
+agree below degree `M`. -/
+theorem le_order_subst_pair_sub {F G : FormalGroup A} {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
+    {σ : Type*} {a₁ a₂ b₁ b₂ : MvPowerSeries σ A}
+    (ha₁ : constantCoeff a₁ = 0) (ha₂ : constantCoeff a₂ = 0)
+    (hb₁ : constantCoeff b₁ = 0) (hb₂ : constantCoeff b₂ = 0)
+    (h₁ : (M : ℕ∞) ≤ (a₁ - b₁).order) (h₂ : (M : ℕ∞) ≤ (a₂ - b₂).order) :
+    (M : ℕ∞) ≤ (F.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂]).order := by
+  have ha' : ∀ i : Fin 2, constantCoeff (![a₁, a₂] i) = 0 := Fin.forall_fin_two.mpr ⟨ha₁, ha₂⟩
+  have hb' : ∀ i : Fin 2, constantCoeff (![b₁, b₂] i) = 0 := Fin.forall_fin_two.mpr ⟨hb₁, hb₂⟩
+  have ha : HasSubst ![a₁, a₂] := hasSubst_of_constantCoeff_zero ha'
+  have hb : HasSubst ![b₁, b₂] := hasSubst_of_constantCoeff_zero hb'
+  have hsplit : F.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂] =
+      (F.toPowerSeries - G.toPowerSeries).subst ![a₁, a₂] +
+        (G.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂]) := by
+    rw [subst_sub ha]
+    ring
+  rw [hsplit]
+  refine le_order_add ?_ ?_
+  · have h1 : (1 : ℕ∞) ≤ ⨅ i : Fin 2, (![a₁, a₂] i).order :=
+      le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha' i)
+    calc (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := hFG
+      _ = 1 * (F.toPowerSeries - G.toPowerSeries).order := (one_mul _).symm
+      _ ≤ (⨅ i : Fin 2, (![a₁, a₂] i).order) * (F.toPowerSeries - G.toPowerSeries).order :=
+        mul_le_mul_left h1 _
+      _ ≤ ((F.toPowerSeries - G.toPowerSeries).subst ![a₁, a₂]).order :=
+        le_order_subst ha _
+  · simpa only [Nat.add_sub_cancel] using MvPowerSeries.le_order_subst_sub_subst
+      (H := G.toPowerSeries) (k := 1) (one_le_order_iff_constCoeff_eq_zero.mpr G.zero_constantCoeff)
+      ha hb ha' hb' (Fin.forall_fin_two.mpr ⟨h₁, h₂⟩)
 
 end FormalGroup

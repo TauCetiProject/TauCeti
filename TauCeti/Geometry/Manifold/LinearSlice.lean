@@ -23,6 +23,10 @@ normed space is the case of the space modelled on itself. For a self-modelled am
 a linear identification of the product coordinates with the ambient model makes the inclusion
 a smooth embedding, with the transverse model as its immersion complement.
 
+The existence statements `TauCeti.exists_isSmoothEmbedding_of_linearSubspaceCharts` and
+`TauCeti.exists_isSmoothEmbedding_of_finrankSubspaceCharts` record this embedding for a subset of
+a self-modelled manifold flattened near each of its points by smooth charts.
+
 The construction requires neither finite dimension nor completeness. It reuses
 `IsSliceChart.subtypeChart`; the smooth-atlas argument follows the preferred-chart argument
 in `TauCeti.Geometry.Lie.Subgroup.Manifold`, without its group translations. The variant
@@ -121,7 +125,7 @@ theorem contMDiff_subtypeVal_linearSliceChartedSpace
   refine hd.congr_of_eventuallyEq ?_
   filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
   rw [linearSliceChart_source] at hy
-  rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.2, (e x).left_inv hy]
+  rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.property, (e x).left_inv hy]
 
 omit hsmooth hinv in
 /-- For smooth linear-slice charts, the inclusion is an immersion with the transverse model as
@@ -179,6 +183,45 @@ theorem isSmoothEmbedding_subtypeVal_linearSliceChartedSpace
     IsEmbedding.subtypeVal⟩
 
 omit e he hsmooth hinv in
+/-- Ambient charts flattening `s` onto a complemented subspace `L` of the model, read in the
+product coordinates `L × N`, are linear-slice charts onto `L × {0}`. -/
+private theorem exists_linearSliceCharts_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
+    (hcompl : Submodule.IsTopCompl L N)
+    (hcharts : ∀ y : s, ∃ q : OpenPartialHomeomorph M E, (y : M) ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
+      ∀ z ∈ q.source, z ∈ s ↔ q z ∈ L) :
+    ∃ e : s → OpenPartialHomeomorph M (L × N),
+      (∀ y, IsSliceChart (e y) ((univ : Set L) ×ˢ ({0} : Set N)) s) ∧
+      (∀ y : s, (y : M) ∈ (e y).source) ∧
+      (∀ y, ∀ z ∈ (e y).source, ContMDiffAt I 𝓘(𝕜, L × N) n (e y) z) ∧
+      ∀ y, ∀ z ∈ (e y).target, ContMDiffAt 𝓘(𝕜, L × N) I n (e y).symm z := by
+  classical
+  choose q hq hqs hqi hqmem using hcharts
+  let A := (L.prodEquivOfIsTopCompl N hcompl).symm
+  refine ⟨fun y ↦ (q y).transHomeomorph A.toHomeomorph, fun y ↦ ?_, fun y ↦ ?_,
+    fun y z hz ↦ ?_, fun y z hz ↦ ?_⟩
+  · refine isSliceChart_iff.2 fun z hz ↦ ?_
+    rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    rw [hqmem y z hz]
+    simp only [OpenPartialHomeomorph.transHomeomorph_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, mem_prod, mem_univ,
+      mem_singleton_iff, true_and, A,
+      Submodule.coe_symm_prodEquivOfIsTopCompl]
+    exact (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero L N hcompl.isCompl).symm
+  · simpa only [OpenPartialHomeomorph.transHomeomorph_source] using hq y
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    simpa only [OpenPartialHomeomorph.transHomeomorph_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def] using
+      A.contDiff.contMDiff.contMDiffAt.comp z (hqs y z hz)
+  · have hzt : A.symm z ∈ (q y).target := by
+      simpa only [OpenPartialHomeomorph.transHomeomorph_target, mem_preimage,
+        ContinuousLinearEquiv.coe_symm_toHomeomorph] using hz
+    simpa only [OpenPartialHomeomorph.transHomeomorph_symm_apply,
+      ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_def] using
+      (hqi y _ hzt).comp z A.symm.contDiff.contMDiff.contMDiffAt
+
+omit e he hsmooth hinv in
 /-- A subset of a manifold locally flattened onto a complemented linear subspace of the model is a
 `C^n` manifold modelled on that subspace, and its inclusion into the ambient manifold is `C^n`. -/
 theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
@@ -189,37 +232,40 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
       ∀ z ∈ q.source, z ∈ s ↔ q z ∈ L) :
     ∃ C : ChartedSpace L s, letI := C
       IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
-  classical
-  choose q hq hqs hqi hqmem using hcharts
-  let A := (L.prodEquivOfIsTopCompl N hcompl).symm
-  let e (y : s) := (q y).transHomeomorph A.toHomeomorph
-  have he (y : s) : IsSliceChart (e y) ((univ : Set L) ×ˢ ({0} : Set N)) s := by
-    refine isSliceChart_iff.2 fun z hz ↦ ?_
-    rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    rw [hqmem y z hz]
-    simp only [e, OpenPartialHomeomorph.transHomeomorph_apply,
-      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply, mem_prod, mem_univ,
-      mem_singleton_iff, true_and, A,
-      Submodule.coe_symm_prodEquivOfIsTopCompl]
-    exact (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero L N hcompl.isCompl).symm
-  have hcover (y : s) : (y : M) ∈ (e y).source := by
-    simpa only [e, OpenPartialHomeomorph.transHomeomorph_source] using hq y
-  have hs (y : s) (z : M) (hz : z ∈ (e y).source) : ContMDiffAt I 𝓘(𝕜, L × N) n (e y) z := by
-    rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    simpa only [e, OpenPartialHomeomorph.transHomeomorph_apply,
-      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def] using
-      A.contDiff.contMDiff.contMDiffAt.comp z (hqs y z hz)
-  have hi (y : s) (z : L × N) (hz : z ∈ (e y).target) :
-      ContMDiffAt 𝓘(𝕜, L × N) I n (e y).symm z := by
-    have hzt : A.symm z ∈ (q y).target := by
-      simpa only [e, OpenPartialHomeomorph.transHomeomorph_target, mem_preimage,
-        ContinuousLinearEquiv.coe_symm_toHomeomorph] using hz
-    simpa only [e, OpenPartialHomeomorph.transHomeomorph_symm_apply,
-      ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_def] using
-      (hqi y _ hzt).comp z A.symm.contDiff.contMDiff.contMDiffAt
+  obtain ⟨e, he, hcover, hs, hi⟩ :=
+    exists_linearSliceCharts_of_linearSubspaceCharts hcompl hcharts
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
     contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover⟩
+
+omit e he hsmooth hinv in
+/-- Charts of a finite-dimensional model flattening `s` near each of its points onto some subspace
+of dimension `d` can be replaced by charts flattening `s` onto any fixed subspace `L` of dimension
+`d`, which has a complement. -/
+private theorem exists_linearSubspaceCharts_of_finrankSubspaceCharts [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {L : Submodule 𝕜 E}
+    (hcharts : ∀ y ∈ s, ∃ (q : OpenPartialHomeomorph M E) (V : Submodule 𝕜 E), y ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
+      (∀ z ∈ q.source, z ∈ s ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
+    ∃ N : Submodule 𝕜 E, Submodule.IsTopCompl L N ∧
+      ∀ y : s, ∃ q : OpenPartialHomeomorph M E, (y : M) ∈ q.source ∧
+        (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+        (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
+        ∀ z ∈ q.source, z ∈ s ↔ q z ∈ L := by
+  obtain ⟨N, hN⟩ := L.exists_isCompl
+  refine ⟨N, Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN
+    L.isClosed_of_finiteDimensional, fun y ↦ ?_⟩
+  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.property
+  obtain ⟨Φ, hΦ⟩ := V.exists_continuousLinearEquiv_mem_iff L hdim
+  refine ⟨q.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    exact Φ.contDiff.contMDiff.contMDiffAt.comp z (hq z hz)
+  · have hz' : Φ.symm z ∈ q.target := by simpa using hz
+    exact (hqs _ hz').comp z Φ.symm.contDiff.contMDiff.contMDiffAt
+  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
+    simpa [hΦ] using hmem z hz
 
 omit e he hsmooth hinv in
 /-- A subset of a manifold modelled on a finite-dimensional space that is flattened near each of its
@@ -233,19 +279,56 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
       (∀ z ∈ q.source, z ∈ s ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
     ∃ C : ChartedSpace L s, letI := C
       IsManifold 𝓘(𝕜, L) n s ∧ ContMDiff 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
-  obtain ⟨N, hN⟩ := L.exists_isCompl
-  have hLN : Submodule.IsTopCompl L N :=
-    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN L.isClosed_of_finiteDimensional
-  refine exists_isManifold_of_linearSubspaceCharts hLN fun y ↦ ?_
-  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.2
-  obtain ⟨Φ, hΦ⟩ := V.exists_continuousLinearEquiv_mem_iff L hdim
-  refine ⟨q.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    exact Φ.contDiff.contMDiff.contMDiffAt.comp z (hq z hz)
-  · have hz' : Φ.symm z ∈ q.target := by simpa using hz
-    exact (hqs _ hz').comp z Φ.symm.contDiff.contMDiff.contMDiffAt
-  · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
-    simpa [hΦ] using hmem z hz
+  obtain ⟨N, hLN, hcharts'⟩ := exists_linearSubspaceCharts_of_finrankSubspaceCharts hcharts
+  exact exists_isManifold_of_linearSubspaceCharts hLN hcharts'
+
+/-! ### Smooth embeddings into a manifold modelled on its model space -/
+
+section Embedding
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(𝕜, E) n X] {t : Set X}
+
+omit e he hsmooth hinv in
+/-- A subset of a manifold with charts in its model space, locally flattened onto a complemented
+linear subspace `L` of the model, is a `C^n` manifold modelled on `L`, and its inclusion into the
+ambient manifold is a `C^n` embedding. -/
+theorem exists_isSmoothEmbedding_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
+    (hcompl : Submodule.IsTopCompl L N)
+    (hcharts : ∀ y : t, ∃ q : OpenPartialHomeomorph X E, (y : X) ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q.symm z) ∧
+      ∀ z ∈ q.source, z ∈ t ↔ q z ∈ L) :
+    ∃ C : ChartedSpace L t, letI := C
+      IsManifold 𝓘(𝕜, L) n t ∧
+        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : t → X) := by
+  obtain ⟨e, he, hcover, hs, hi⟩ :=
+    exists_linearSliceCharts_of_linearSubspaceCharts hcompl hcharts
+  have hs' (y : t) : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, L × N) n (e y) (e y).source :=
+    fun z hz ↦ (hs y z hz).contMDiffWithinAt
+  have hi' (y : t) : ContMDiffOn 𝓘(𝕜, L × N) 𝓘(𝕜, E) n (e y).symm (e y).target :=
+    fun z hz ↦ (hi y z hz).contMDiffWithinAt
+  exact ⟨linearSliceChartedSpace e he hcover,
+    isManifold_linearSliceChartedSpace e he hs hi hcover,
+    isSmoothEmbedding_subtypeVal_linearSliceChartedSpace e he
+      (fun _ ↦ L.prodEquivOfIsTopCompl N hcompl) hs' hi' hcover⟩
+
+omit e he hsmooth hinv in
+/-- A subset of a manifold with charts in its finite-dimensional model space, flattened near each
+of its points by a `C^n` chart onto some subspace of dimension `d` of the model, is a `C^n`
+manifold modelled on any subspace `L` of dimension `d`, and its inclusion is a `C^n`
+embedding. -/
+theorem exists_isSmoothEmbedding_of_finrankSubspaceCharts [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {L : Submodule 𝕜 E}
+    (hcharts : ∀ y ∈ t, ∃ (q : OpenPartialHomeomorph X E) (V : Submodule 𝕜 E), y ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q.symm z) ∧
+      (∀ z ∈ q.source, z ∈ t ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
+    ∃ C : ChartedSpace L t, letI := C
+      IsManifold 𝓘(𝕜, L) n t ∧
+        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : t → X) := by
+  obtain ⟨N, hLN, hcharts'⟩ := exists_linearSubspaceCharts_of_finrankSubspaceCharts hcharts
+  exact exists_isSmoothEmbedding_of_linearSubspaceCharts hLN hcharts'
+
+end Embedding
 
 end TauCeti

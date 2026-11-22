@@ -554,7 +554,7 @@ theorem mpullback_mpullback_snd_fiberForm_apply_basis_nonneg [FiniteDimensional 
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (b : Basis (Fin 2) ℝ (TangentSpace I' c)) (hb : b.orientation = o.orientationAt c) :
     0 ≤ (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b :=
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val c b :=
   j.apply_basis_nonneg_of_forall_nonneg (ho c) (fun e ↦ by
     rw [← SmoothBundleForm.eval₂_apply]
     exact eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame e) b hb

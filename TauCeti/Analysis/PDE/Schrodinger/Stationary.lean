@@ -94,6 +94,8 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
 
 * `TauCeti.exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq`: the bounded weak
   solution operator of `-Δ + P` on `L²(E)`.
+* `TauCeti.neg_laplacian_add_eq_of_integral_mul_neg_laplacian_add_mul_eq`: a weak solution solves
+  `-Δh + h = g + h - P h` as tempered distributions.
 * `TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`: a weak
   solution gains two derivatives over `h`, `P h` and `g`.
 * `TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq`: weak `L²`
@@ -251,11 +253,11 @@ end Weak
 
 section Regularity
 
-/-- The distributional form of a weak solution: if `h` is a weak solution of `-Δh + P h = g`,
+/-- **The distributional form of a weak solution.** If `h` is a weak solution of `-Δh + P h = g`,
 with `h`, `P h` and `g` square integrable, then `-Δh + h = g + h - P h` as tempered
 distributions. -/
-private theorem neg_laplacian_add_eq {P h g : E → ℝ} (hh : MemLp h 2 volume)
-    (hPh : MemLp (fun z ↦ P z * h z) 2 volume) (hg : MemLp g 2 volume)
+theorem neg_laplacian_add_eq_of_integral_mul_neg_laplacian_add_mul_eq {P h g : E → ℝ}
+    (hh : MemLp h 2 volume) (hPh : MemLp (fun z ↦ P z * h z) 2 volume) (hg : MemLp g 2 volume)
     (hweak : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, h z * (-Δ (φ : E → ℝ) z + P z * φ z) = ∫ z, g z * φ z)
     {uh uR : Lp ℝ 2 (volume : Measure E)} (huh : uh =ᵐ[volume] h)
@@ -316,7 +318,8 @@ theorem mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_e
     h ∈ realSobolevFunctions E (s + 2) 2 := by
   obtain ⟨uh, huh, -⟩ := mem_realSobolevFunctions.1 hh
   obtain ⟨uR, huR, hRs⟩ := mem_realSobolevFunctions.1 (sub_mem (add_mem hg hh) hPh)
-  have hT := neg_laplacian_add_eq (memLp_of_mem_realSobolevFunctions hh)
+  have hT := neg_laplacian_add_eq_of_integral_mul_neg_laplacian_add_mul_eq
+    (memLp_of_mem_realSobolevFunctions hh)
     (memLp_of_mem_realSobolevFunctions hPh) (memLp_of_mem_realSobolevFunctions hg) hweak huh huR
   exact mem_realSobolevFunctions.2 ⟨uh, huh,
     (memSobolev_add_two_iff_neg_laplacian_add_smul one_pos).2 (by rw [hT]; exact hRs)⟩
@@ -568,7 +571,7 @@ end Plane
 
 /-- The weak form `∫ h (-f + P φ) = ∫ g φ` of `-Δh + P h = g`, with `f = Δφ`, rearranged into the
 weak form `∫ f h = ∫ φ (P h - g)` of `Δh = P h - g`. -/
-private theorem integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq {α : Type*}
+theorem integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq {α : Type*}
     [MeasurableSpace α] {μ : Measure α} {f φ P h g : α → ℝ}
     (i₁ : Integrable (fun z ↦ f z * h z) μ) (i₂ : Integrable (fun z ↦ φ z * (P z * h z)) μ)
     (i₃ : Integrable (fun z ↦ φ z * g z) μ)

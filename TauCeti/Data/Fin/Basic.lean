@@ -30,9 +30,9 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, sums of families vanishing beyond an index, and the cyclic index
-arithmetic of `Fin 3`.
+permutations of `Fin 2`, sums of indices and of reversed indices, indicator sums indexed by
+`Fin n`, the final value of a partial product, sums of families vanishing beyond an index, and the
+cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -60,8 +60,11 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
+* `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
+  with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -117,6 +120,8 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two`: open intervals in
   `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
+* `Fin.partialProd_last_eq_prod_ofFn` and `Fin.partialSum_last_eq_sum_ofFn`: the final partial
+  product (sum) is the ordered product (sum) of all the entries, in any monoid.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.last_mul_partialProd`: the last entry times the final partial product of the initial
@@ -151,12 +156,16 @@ range, so the value is a `dite` rather than a plain application.
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
+* `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
+  two consecutive values meets the closed interval of no other step.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
   rays of a `Fin` family and the consecutive closed intervals cover the whole order.
 * `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
   that lie in the range of a monotone `Fin` family lie between its first and last values.
+* `TauCeti.apply_fin_eq_of_val_eq`: evaluating a dependent family indexed by `Fin (f i)` at equal
+  outer indices and finite ordinals with equal underlying values gives the same value.
 -/
 
 public section
@@ -213,6 +222,10 @@ theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
 
+/-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
+theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id, Nat.choose_two_right]
+
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
     (∑ i : Fin k, (rev (castLE hk i) : ℕ)) =
@@ -245,12 +258,28 @@ theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : F
   rw [one_div, h4]
   linear_combination (b i - (i : K) + 2⁻¹) * h2
 
+/-- The final partial product is the ordered product of all the entries. -/
+@[to_additive /-- The final partial sum is the ordered sum of all the entries. -/]
+theorem partialProd_last_eq_prod_ofFn {M : Type*} [Monoid M] {n : ℕ} (f : Fin n → M) :
+    partialProd f (last n) = (List.ofFn f).prod := by
+  rw [partialProd, val_last, (List.take_eq_self_iff _).mpr (by simp)]
+
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
     partialProd f (last n) = ∏ i, f i := by
-  rw [partialProd, val_last]
-  rw [(List.take_eq_self_iff _).mpr (by simp), prod_ofFn]
+  rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
+
+/-- The partial product up to the `i`-th entry is the product of the entries of index less than
+`i`. -/
+@[to_additive /-- The partial sum up to the `i`-th entry is the sum of the entries of index less
+than `i`. -/]
+theorem partialProd_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    (i : Fin (n + 1)) : partialProd f i.castSucc = ∏ k < i, f k := by
+  rw [partialProd, val_castSucc, List.prod_take_ofFn]
+  congr 1
+  ext k
+  simp
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
@@ -295,6 +324,22 @@ theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : F
     partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
   rw [partialProd_contractNth, Function.comp_apply, succAbove_of_le_castSucc, succ_last]
   simp [le_def]
+
+/-- Applying a monoid homomorphism to a partial product applies it to each entry. -/
+@[to_additive /-- Applying an additive monoid homomorphism to a partial sum applies it to each
+entry. -/]
+theorem map_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) (i : Fin (n + 1)) :
+    φ (partialProd x i) = partialProd (φ ∘ x) i := by
+  simp [partialProd, map_list_prod, List.map_take, List.map_ofFn]
+
+/-- Composing a monoid homomorphism with `Fin.partialProd` applies it entrywise. -/
+@[to_additive /-- Composing an additive monoid homomorphism with `Fin.partialSum` applies it
+entrywise. -/]
+theorem comp_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) :
+    φ ∘ partialProd x = partialProd (φ ∘ x) :=
+  funext (map_partialProd φ x)
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
@@ -936,6 +981,18 @@ theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : 
 
 end Fin
 
+/-- **The steps of an antitone sequence overlap only at their ends.** If `a : Fin (n + 1) → α` is
+antitone, a point strictly between `a (i + 1)` and `a i` lies between `a (j + 1)` and `a j` only
+for `j = i`. -/
+theorem Antitone.eq_of_mem_Ioo_of_mem_Icc_fin {α : Type*} [Preorder α] {n : ℕ}
+    {a : Fin (n + 1) → α} (ha : Antitone a) {i j : Fin n} {x : α}
+    (hi : x ∈ Set.Ioo (a i.succ) (a i.castSucc)) (hj : x ∈ Set.Icc (a j.succ) (a j.castSucc)) :
+    i = j := by
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · exact absurd (hj.2.trans (ha (Fin.succ_le_castSucc_iff.2 hij))) (not_le_of_gt hi.1)
+  · rfl
+  · exact absurd ((ha (Fin.succ_le_castSucc_iff.2 hij)).trans hj.1) (not_le_of_gt hi.2)
+
 namespace TauCeti
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
@@ -1051,13 +1108,13 @@ theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
     {x y : (i : Fin k) × Fin (d i)} :
     finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
   -- The offset of block `i` is the sum of the sizes of the blocks before it.
-  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.isLt.le j) with hs
   have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
     set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
     have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
       rw [hs, ← Fin.sum_univ_eq_sum_range]
       refine Fintype.sum_congr _ _ fun l ↦ ?_
-      simp [F, l.2.trans i.2, Fin.castLE]
+      simp [F, l.isLt.trans i.isLt, Fin.castLE]
     have hFi : F i = d i := by simp [F]
     rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
     exact Nat.le_add_right _ _
@@ -1100,5 +1157,14 @@ theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j 
   have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
     Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
   rw [← h, Fin.sum_univ_three, add_zero]
+
+/-- Evaluating a dependent family `x : ∀ i, Fin (f i) → α` at equal outer indices `a = b` and
+finite ordinals with equal underlying values produces the same value. -/
+theorem apply_fin_eq_of_val_eq {ι : Sort*} {f : ι → ℕ} {α : Sort*}
+    (x : ∀ i, Fin (f i) → α) {a b : ι} (hab : a = b)
+    {j₁ : Fin (f a)} {j₂ : Fin (f b)} (hj : j₁.val = j₂.val) :
+    x a j₁ = x b j₂ := by
+  subst hab
+  exact congrArg (x a) (Fin.ext hj)
 
 end TauCeti

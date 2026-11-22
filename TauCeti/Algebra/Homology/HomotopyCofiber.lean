@@ -248,6 +248,11 @@ lemma fstX_inlX_add_sndX_inrX (i j : ι) (hij : c.Rel i j) :
     fstX φ i j hij ≫ inlX φ j i hij + sndX φ i ≫ inrX φ i = 𝟙 _ :=
   ext_from_X φ j i hij (by simp) (by simp)
 
+/-- The inclusion `inr φ` of `G` into the mapping cone of `φ : F ⟶ G` is a monomorphism, since
+it is split in each degree by the projection `sndX`. -/
+instance mono_inr : Mono (inr φ) :=
+  mono_of_mono_f _ fun i ↦ mono_of_mono_fac (inrX_sndX φ i)
+
 /-- The map out of the mapping cone of `φ` induced by `ψ` with `φ ≫ ψ = 0`, using the homotopy
 given by this equality, vanishes on the summand `F` and is `ψ` on the summand `G`. -/
 @[simp, reassoc]

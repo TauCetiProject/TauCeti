@@ -51,6 +51,7 @@ changed without any metrizability or countability assumption on the model fibre.
 
 ## Main results
 
+* `TauCeti.AEStronglyMeasurableSection.of_continuous`: continuous sections are measurable.
 * `TauCeti.aestronglyMeasurableSection_restrict_iUnion_iff`: measurability is tested on a
   countable measurable partition subordinate to atlas charts.
 * `TauCeti.AEStronglyMeasurableSection.aestronglyMeasurable_norm`,
@@ -148,6 +149,14 @@ theorem AEStronglyMeasurableSection.const_smul (hs : AEStronglyMeasurableSection
     (c : 𝕜) : AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ c • s x) :=
   fun e _ ↦ ((hs e).const_smul c).congr (.of_forall fun x ↦ by simp)
 
+/-- Multiplying a measurable section by an a.e.-strongly measurable scalar function gives a
+measurable section. -/
+theorem AEStronglyMeasurableSection.smul {f : B → 𝕜} (hf : AEStronglyMeasurable f μ)
+    (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
+    AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ f x • s x) :=
+  fun e _ ↦ ((hf.mono_measure Measure.restrict_le_self).smul (hs e)).congr
+    (.of_forall fun x ↦ by simp)
+
 theorem AEStronglyMeasurableSection.neg (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ -s x) :=
   fun e _ ↦ ((hs e).neg).congr (.of_forall fun x ↦ by simp)
@@ -176,6 +185,13 @@ theorem AEStronglyMeasurableSection.of_coord
     AEStronglyMeasurableSection 𝕜 F μ s :=
   fun e _ ↦ (h e).congr <| (ae_restrict_mem e.open_baseSet.measurableSet).mono fun _ hx ↦
     (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx _).symm
+
+/-- A continuous section is a.e.-strongly measurable for every measure: its coordinates are
+continuous on the base set of each chart. -/
+theorem AEStronglyMeasurableSection.of_continuous [SecondCountableTopologyEither B F]
+    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) : AEStronglyMeasurableSection 𝕜 F μ s :=
+  .of_coord fun e _ ↦ (continuous_snd.comp_continuousOn (e.continuousOn.comp hs.continuousOn
+    fun _ hx ↦ e.mem_source.2 hx)).aestronglyMeasurable e.open_baseSet.measurableSet
 
 variable [SecondCountableTopology B]
 
