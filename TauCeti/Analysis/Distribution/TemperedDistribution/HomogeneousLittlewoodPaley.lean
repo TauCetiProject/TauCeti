@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
@@ -70,10 +71,16 @@ inequalities on annuli apply.
   differences of low-pass truncations.
 * `TemperedDistribution.isVanishingOn_fourier_homogeneousLittlewoodPaleyBlock`: the spectrum of a
   block lies in its dyadic annulus.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_eq_of_isVanishingOn_fourier_sub`: the
+  blocks see a distribution only modulo distributions with spectrum at the origin.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero`: almost
-  orthogonality, also between the blocks of two bump functions.
+  orthogonality, also between the blocks of two bump functions, and
+  `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico`: the blocks of a second
+  bump function are window sums `P'ⱼ u = ∑_{j - L ≤ k < j + L} P'ⱼ Pₖ u`.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le`: the blocks are
-  bounded on `Lᵖ`, uniformly in `j ∈ ℤ`, and
+  bounded on `Lᵖ`, uniformly in `j ∈ ℤ`,
+  `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's
+  inequality `‖Pⱼ u‖_r ≤ C 2^{jn(1/p - 1/r)} ‖Pⱼ u‖_p` for `p ≤ r`, and
   `TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow`: the
   truncation at scale `R` of an `Lᵖ` function is `O(R ^ (n / p))` in `L^∞`.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
@@ -83,6 +90,9 @@ inequalities on annuli apply.
   in general it holds modulo distributions with spectrum at the origin.
 * `TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_of_ne_top`: every `Lᵖ`
   function, `p < ∞`, is the sum of its homogeneous blocks.
+* `TemperedDistribution.exists_tendsto_sum_homogeneousLittlewoodPaleyBlock_of_summable`: if the
+  blocks of nonpositive index are bounded functions with summable `L^∞` norms, the decomposition
+  converges, to `u` modulo a distribution with spectrum at the origin.
 
 ## References
 
@@ -189,6 +199,16 @@ theorem homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero {u :
     homogeneousLittlewoodPaleyBlock F φ j u = 0 :=
   homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn φ hu fun _ hξ h0 ↦
     φ.zero_notMem_tsupport_littlewoodPaley j (h0 ▸ hξ)
+
+open Distribution in
+/-- **The blocks see a distribution only modulo spectrum at the origin.** If the Fourier transform
+of `u - v` vanishes on `E \ {0}`, as when `u - v` is a polynomial, then `Pⱼ u = Pⱼ v` for every
+`j`. -/
+theorem homogeneousLittlewoodPaleyBlock_eq_of_isVanishingOn_fourier_sub {u v : 𝓢'(E, F)}
+    (h : IsVanishingOn (𝓕 (u - v) : 𝓢'(E, F)) {0}ᶜ) (j : ℤ) :
+    homogeneousLittlewoodPaleyBlock F φ j u = homogeneousLittlewoodPaleyBlock F φ j v := by
+  rw [← sub_eq_zero, ← map_sub]
+  exact homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ h j
 
 /-- The composition of the homogeneous blocks of two bump functions is the Fourier multiplier by
 the product of the two cutoffs. -/
@@ -304,6 +324,58 @@ theorem isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock
   rw [Metric.mem_ball, dist_zero_right]
   exact hball.trans_lt ha
 
+/-- **Change of bump function.** The homogeneous blocks `Pₖ` and `P'ⱼ` built from two bump functions
+`φ` and `φ'` interact only at nearby indices: there is `L`, depending only on `φ` and `φ'`, such
+that `P'ⱼ u = ∑_{j - L ≤ k < j + L} P'ⱼ Pₖ u` for every `j ∈ ℤ` and every tempered distribution
+`u`. The block `P'ⱼ u` has spectrum in an annulus away from the origin, so it is the sum of its
+own blocks `Pₖ P'ⱼ u`, and only those with `k` near `j` are nonzero. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ (j : ℤ) (u : 𝓢'(E, F)), homogeneousLittlewoodPaleyBlock F φ' j u =
+      ∑ k ∈ Finset.Ico (j - L) (j + L),
+        homogeneousLittlewoodPaleyBlock F φ' j (homogeneousLittlewoodPaleyBlock F φ k u) := by
+  obtain ⟨L₁, hL₁⟩ := exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (F := F) φ φ'
+  obtain ⟨L₂, hL₂⟩ := exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (F := F) φ' φ
+  refine ⟨max L₁ L₂, fun j u ↦ ?_⟩
+  have hL₁L : L₁ ≤ max L₁ L₂ := le_max_left _ _
+  have hL₂L : L₂ ≤ max L₁ L₂ := le_max_right _ _
+  set w := homogeneousLittlewoodPaleyBlock F φ' j u
+  -- The blocks commute: `P'ⱼ Pₖ u = Pₖ P'ⱼ u`.
+  have hcomm (k : ℤ) : homogeneousLittlewoodPaleyBlock F φ' j
+      (homogeneousLittlewoodPaleyBlock F φ k u) = homogeneousLittlewoodPaleyBlock F φ k w := by
+    have h : homogeneousLittlewoodPaleyBlock F φ' j ∘L homogeneousLittlewoodPaleyBlock F φ k =
+        homogeneousLittlewoodPaleyBlock F φ k ∘L homogeneousLittlewoodPaleyBlock F φ' j := by
+      simp_rw [homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock, mul_comm]
+    exact congr($h u)
+  -- The low-pass truncations of `w` vanish once their spectrum misses the annulus carrying `w`.
+  have hlow : Tendsto (fun a : ℤ ↦ fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ a)⁻¹ • ξ) : ℂ))
+      w) atBot (𝓝 0) := by
+    refine tendsto_const_nhds.congr' ?_
+    have hsmall : ∀ᶠ a : ℤ in atBot, (2 : ℝ) ^ a * φ.rOut < 2 ^ (j - 1) * φ'.rIn :=
+      ((TauCeti.tendsto_zpow_atBot_nhds_zero_of_one_lt one_lt_two).mul_const φ.rOut).eventually
+        (gt_mem_nhds (by rw [zero_mul]; exact mul_pos (zpow_pos two_pos _) φ'.rIn_pos))
+    filter_upwards [hsmall] with a ha
+    refine (fourierMultiplierCLM_eq_zero_of_isVanishingOn
+      ((isVanishingOn_fourier_homogeneousLittlewoodPaleyBlock φ' j u).mono
+        Set.subset_union_left) ?_).symm
+    refine (closure_minimal (fun ξ hξ ↦ ?_) Metric.isClosed_closedBall).trans
+      (Metric.closedBall_subset_ball ha)
+    by_contra h
+    exact hξ (φ.ofReal_apply_inv_smul_eq_zero (zpow_pos two_pos a) ξ h)
+  -- So `w` is the sum of its blocks `Pₖ w`, and those far from `j` vanish.
+  refine tendsto_nhds_unique ((tendsto_sum_homogeneousLittlewoodPaleyBlock_iff φ w).2 hlow)
+    (tendsto_const_nhds.congr' ?_)
+  filter_upwards [tendsto_fst.eventually (eventually_lt_atBot (j - max L₁ L₂)),
+    tendsto_snd.eventually (eventually_ge_atTop (j + max L₁ L₂))] with ab ha hb
+  simp_rw [hcomm]
+  refine Finset.sum_subset (fun k hk ↦ ?_) fun k _ hk ↦ ?_
+  · rw [Finset.mem_Ico] at hk
+    rw [Finset.mem_Ioc]
+    omega
+  · rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+    rcases hk with hk | hk
+    · simpa using DFunLike.congr_fun (hL₁ k j (by omega)).1 u
+    · simpa using DFunLike.congr_fun (hL₂ j k (by omega)).2 u
+
 /-! ### Bounds on `Lᵖ` and the reconstruction of `Lᵖ` functions -/
 
 section Lp
@@ -326,6 +398,34 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le :
   simp_rw [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j] at hgf
   rwa [TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))
     (inv_ne_zero (zpow_ne_zero j two_ne_zero))] at hgf
+
+/-- **Bernstein's inequality for the homogeneous blocks.** For `1 ≤ p ≤ r ≤ ∞` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with the following property. If the block `Pⱼ u`,
+`j ∈ ℤ`, of a tempered distribution is an `Lᵖ` function `f`, then it is also an `Lʳ` function `g`,
+with
+
+`‖g‖_r ≤ C 2^{j n (1/p - 1/r)} ‖f‖_p`,
+
+where `n` is the dimension of `E` and `1/∞ = 0`. The Fourier transform of the block is carried by
+the ball of radius `2^j φ.rOut`, so this is Bernstein's inequality at that radius. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_le {p r : ℝ≥0∞} [Fact (1 ≤ p)]
+    [Fact (1 ≤ r)] (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℤ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      homogeneousLittlewoodPaleyBlock F φ j u = f → ∃ g : Lp F r (volume : Measure E),
+        homogeneousLittlewoodPaleyBlock F φ j u = g ∧
+          ‖g‖ ≤ C * 2 ^ (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹) * j) * ‖f‖ := by
+  obtain ⟨C, hC, hB⟩ :=
+    TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F) hpr
+  set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
+  refine ⟨C * φ.rOut ^ a, mul_nonneg hC (Real.rpow_nonneg φ.rOut_pos.le a), fun j u f hf ↦ ?_⟩
+  -- Bernstein's inequality without derivatives, at the radius `2^j φ.rOut` carrying `Pⱼ u`.
+  obtain ⟨g, hg, hgf⟩ := hB (mul_pos (zpow_pos two_pos j) φ.rOut_pos) f
+    (hf ▸ (isVanishingOn_fourier_homogeneousLittlewoodPaleyBlock φ j u).mono
+      Set.subset_union_right)
+  refine ⟨g, hf.trans hg, hgf.trans_eq ?_⟩
+  rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_intCast,
+    ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
+  ring
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation
@@ -395,6 +495,49 @@ theorem tendsto_sum_homogeneousLittlewoodPaleyBlock_of_ne_top [Nontrivial E] {p 
         (atBot ×ˢ atTop) (𝓝 (f : 𝓢'(E, F))) :=
   (tendsto_sum_homogeneousLittlewoodPaleyBlock_iff φ _).2
     (tendsto_fourierMultiplierCLM_two_zpow_atBot φ hp f)
+
+/-- **Reconstruction modulo spectrum at the origin from summable low frequencies.** If the blocks
+`P₋ₖ u`, `k ∈ ℕ`, of nonpositive index are bounded functions `gₖ` with `∑ₖ ‖gₖ‖_∞ < ∞`, then the
+two-sided partial sums `∑_{a < j ≤ b} Pⱼ u` converge in the tempered distributions, as `a → -∞`
+and `b → ∞`, to a distribution `v` such that the Fourier transform of `u - v` vanishes on
+`E \ {0}`. The high-frequency partial sums converge for every tempered distribution; the
+hypothesis makes the low-frequency ones converge in `L^∞`. -/
+theorem exists_tendsto_sum_homogeneousLittlewoodPaleyBlock_of_summable {u : 𝓢'(E, F)}
+    {g : ℕ → Lp F ∞ (volume : Measure E)}
+    (hg : ∀ k : ℕ, homogeneousLittlewoodPaleyBlock F φ (-k) u = g k)
+    (hsum : Summable fun k ↦ ‖g k‖) :
+    ∃ v : 𝓢'(E, F), Tendsto (fun ab : ℤ × ℤ ↦
+        ∑ j ∈ Finset.Ioc ab.1 ab.2, homogeneousLittlewoodPaleyBlock F φ j u)
+          (atBot ×ˢ atTop) (𝓝 v) ∧ IsVanishingOn (𝓕 (u - v) : 𝓢'(E, F)) {0}ᶜ := by
+  obtain ⟨w, hw⟩ := hsum.of_norm
+  -- The low-frequency partial sums `∑_{a < j ≤ 0} Pⱼ u` converge to `w` as `a → -∞`.
+  have hlow : Tendsto (fun a : ℤ ↦ ∑ j ∈ Finset.Ioc a 0, homogeneousLittlewoodPaleyBlock F φ j u)
+      atBot (𝓝 (w : 𝓢'(E, F))) := by
+    have hw' := ((Lp.toTemperedDistributionCLM F volume ∞).continuous.tendsto w).comp
+      hw.tendsto_sum_nat
+    have htoNat : Tendsto (fun a : ℤ ↦ (-a).toNat) atBot atTop :=
+      tendsto_atTop.2 fun N ↦ (eventually_le_atBot (-(N : ℤ))).mono fun a ha ↦ by omega
+    refine (hw'.comp htoNat).congr' ?_
+    filter_upwards [eventually_le_atBot (0 : ℤ)] with a ha
+    have ha' : a = -(((-a).toNat : ℕ) : ℤ) := by omega
+    rw [ha', Finset.sum_Ioc_neg_zero_eq_sum_range, ← ha']
+    simp only [Function.comp_apply, map_sum, Lp.toTemperedDistributionCLM_apply, hg]
+  -- The high-frequency partial sums `∑_{0 < j ≤ b} Pⱼ u` telescope to `S_b u - S_0 u → u - S_0 u`.
+  have hhigh : Tendsto (fun b : ℤ ↦ ∑ j ∈ Finset.Ioc 0 b, homogeneousLittlewoodPaleyBlock F φ j u)
+      atTop (𝓝 (u - fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ (0 : ℤ))⁻¹ • ξ) : ℂ)) u)) := by
+    refine ((tendsto_fourierMultiplierCLM_two_zpow_atTop φ u).sub_const _).congr' ?_
+    filter_upwards [eventually_ge_atTop (0 : ℤ)] with b hb
+    rw [← _root_.sum_apply, sum_homogeneousLittlewoodPaleyBlock_Ioc φ hb, _root_.sub_apply]
+  have hsplit : (fun ab : ℤ × ℤ ↦
+      ∑ j ∈ Finset.Ioc ab.1 ab.2, homogeneousLittlewoodPaleyBlock F φ j u) =ᶠ[atBot ×ˢ atTop]
+      fun ab ↦ (∑ j ∈ Finset.Ioc ab.1 0, homogeneousLittlewoodPaleyBlock F φ j u) +
+        ∑ j ∈ Finset.Ioc 0 ab.2, homogeneousLittlewoodPaleyBlock F φ j u := by
+    filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
+      tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
+    rw [← Finset.Ioc_union_Ioc_eq_Ioc ha hb,
+      Finset.sum_union (Finset.Ioc_disjoint_Ioc_of_le le_rfl)]
+  have hlim := ((hlow.comp tendsto_fst).add (hhigh.comp tendsto_snd)).congr' hsplit.symm
+  exact ⟨_, hlim, isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock φ hlim⟩
 
 end Lp
 
