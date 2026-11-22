@@ -46,6 +46,8 @@ idele classes to ray classes.
 * `TauCeti.GlobalNumberFields.isOpen_raySubgroup`: every ray subgroup is open.
 * `TauCeti.GlobalNumberFields.ofCompletion_mem_raySubgroup`: an idele class concentrated at an
   infinite place where the modulus imposes no sign condition is a ray class.
+* `TauCeti.GlobalNumberFields.mem_ker_ideleCongruenceToClassHom_iff`: kernel of
+  `ideleCongruenceToClassHom 𝔪`.
 * `TauCeti.GlobalNumberFields.ideleCongruenceToClassHom_surjective_iff`,
   `TauCeti.GlobalNumberFields.isQuotientMap_ideleCongruenceToClassHom_iff`: the continuous map from
   `ideleCongruenceSubgroup 𝔪` to the idele class group is open, and is surjective (and hence a
@@ -157,6 +159,27 @@ theorem range_ideleCongruenceToClassHom (𝔪 : Modulus K) :
     exact ⟨y, hy, (ideleCongruenceToClassHom_apply 𝔪 ⟨y, hy⟩).symm⟩
   · rintro ⟨y, hy, rfl⟩
     exact ⟨⟨y, hy⟩, ideleCongruenceToClassHom_apply 𝔪 ⟨y, hy⟩⟩
+
+/-- **The kernel of `ideleCongruenceToClassHom 𝔪` consists of the principal ideles of units in
+`unitsCongruenceSubgroup 𝔪`.** -/
+theorem mem_ker_ideleCongruenceToClassHom_iff {𝔪 : Modulus K}
+    {y : ideleCongruenceSubgroup 𝔪} :
+    y ∈ (ideleCongruenceToClassHom 𝔪 :
+        ideleCongruenceSubgroup 𝔪 →* IdeleClassGroup (𝓞 K) K).ker ↔
+      ∃ u ∈ unitsCongruenceSubgroup 𝔪,
+        (y : IdeleGroup (𝓞 K) K) =
+          IdeleGroup.unitEmbedding (𝓞 K) K (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := by
+  rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass, ideleCongruenceToClassHom_apply,
+    QuotientGroup.eq_one_iff]
+  constructor
+  · rintro ⟨x, hx⟩
+    have hxmem : IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongruenceSubgroup 𝔪 :=
+      hx.symm ▸ y.property
+    obtain ⟨u, hu, rfl⟩ :=
+      Subgroup.mem_map.mp (unitEmbedding_mem_ideleCongruenceSubgroup_iff.mp hxmem)
+    exact ⟨u, hu, hx.symm⟩
+  · rintro ⟨u, -, hy⟩
+    exact ⟨Units.map (algebraMap (𝓞 K) K).toMonoidHom u, hy.symm⟩
 
 /-- **`ideleCongruenceToClassHom 𝔪` is surjective onto the idele class group if and only if
 `raySubgroup 𝔪 = ⊤`.** -/

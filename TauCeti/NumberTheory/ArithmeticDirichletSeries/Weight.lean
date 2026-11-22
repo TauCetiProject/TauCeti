@@ -57,7 +57,8 @@ into good primes; this is the engine behind both
 * `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood` and
   `TauCeti.MultiplicativeIdealWeight.IsTrivialOnGood`: the weights agreeing with a purely
   imaginary norm twist, respectively with the trivial weight, on their good ideals, with the
-  structure theorem `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`, its
+  structure theorem `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`,
+  `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_of_absNorm_eq`, its
   converse `TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_normTwist_ofBadPrimes`, and the
   behaviour of the parameter under conjugation, the pointwise product, powers and a further
   twist;
@@ -648,6 +649,13 @@ theorem IsNormTwistOnGood.eq_normTwist {χ : MultiplicativeIdealWeight K} {u : �
   · have hI' : ¬ Ideal.IsPrimeTo I S := fun hc ↦ hI (hc.mono hSbad.subset)
     rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, normTwist_apply, ofBadPrimes_apply]
     simp [hI']
+
+/-- Any two good ideals of the same absolute norm have the same value under a norm twist on its
+good ideals. -/
+theorem IsNormTwistOnGood.eq_of_absNorm_eq {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) {I J : Ideal (𝓞 K)} (hI : χ.IsGood I) (hJ : χ.IsGood J)
+    (hN : Ideal.absNorm I = Ideal.absNorm J) : χ I = χ J := by
+  rw [h I hI, h J hJ, hN]
 
 /-- **A twist adds to the parameter.** Twisting by `N(I) ^ (v * Complex.I)` turns a norm twist
 with parameter `u` on the good ideals into one with parameter `u + v`; the good ideals are

@@ -207,6 +207,7 @@ theorem IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord
   (rfl)
 
 /-- Replacing the infinite coordinates of an idele by `1` preserves its finite coordinates. -/
+@[simp high]
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_toFiniteIdele
     (v : HeightOneSpectrum R) (x : IdeleGroup R K) :
     v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (IdeleGroup.toFiniteIdele R K x)) =

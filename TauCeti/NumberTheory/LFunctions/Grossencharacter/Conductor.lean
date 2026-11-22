@@ -61,6 +61,9 @@ whose zeros lie on the vertical line `Re s = χ.idealShift`.
 * `TauCeti.LFunctions.Grossencharacter.changeModulus`: the presentation of `χ` at any multiple of
   `χ.conductor`.
 * `TauCeti.LFunctions.Grossencharacter.primitive`: the canonical presentation at `χ.conductor`.
+* `TauCeti.LFunctions.Grossencharacter.mkOfFiniteConductor`: construct a presentation from a
+  Hecke character at a modulus whose finite part equals its finite conductor and whose infinite
+  part clears real sign-parity mismatches.
 * `TauCeti.LFunctions.Grossencharacter.eulerCorrection`: the Euler factors deleted when passing to
   a larger modulus.
 * `TauCeti.LFunctions.Grossencharacter.normPow`: the presentation at `narrowModulus K` of the
@@ -281,7 +284,7 @@ theorem changeModulus_changeModulus {𝔨 : Modulus K} (χ : Grossencharacter K 
 /-- Construct a presentation carrying the primitive unitary ideal weight `φ.unitaryIdealWeight`
 at any modulus whose finite part is `φ.finiteConductor` and whose infinite part clears all real
 sign-parity mismatches against `n`. -/
-private def mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityType K)
+def mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityType K)
     (hn : φ.infinityType.AgreesOnIdentityComponent n.toContinuous) {𝔪 : Modulus K}
     (hfin : 𝔪.finitePart = φ.finiteConductor)
     (hparity : ∀ w : {w : InfinitePlace K // w.IsReal}, w ∉ 𝔪.infinitePart →
@@ -300,6 +303,36 @@ private def mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityTy
         hprime v (hfin ▸ (𝔪.mem_support_iff v).mp hv)⟩
   unitaryWeight_apply v hv u hu :=
     φ.unitaryIdealWeight_apply_prime v (hfin ▸ hv) u hu
+
+/-- The Hecke character presented by `mkOfFiniteConductor` is `φ`. -/
+@[simp]
+theorem toHeckeCharacter_mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityType K)
+    (hn : φ.infinityType.AgreesOnIdentityComponent n.toContinuous) {𝔪 : Modulus K}
+    (hfin : 𝔪.finitePart = φ.finiteConductor)
+    (hparity : ∀ w : {w : InfinitePlace K // w.IsReal}, w ∉ 𝔪.infinitePart →
+      φ.infinityType.realParity w = n.toContinuous.realParity w) :
+    (mkOfFiniteConductor φ n hn hfin hparity).toHeckeCharacter = φ :=
+  (rfl)
+
+/-- The unitary weight of `mkOfFiniteConductor` is `φ.unitaryIdealWeight`. -/
+@[simp]
+theorem unitaryWeight_mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityType K)
+    (hn : φ.infinityType.AgreesOnIdentityComponent n.toContinuous) {𝔪 : Modulus K}
+    (hfin : 𝔪.finitePart = φ.finiteConductor)
+    (hparity : ∀ w : {w : InfinitePlace K // w.IsReal}, w ∉ 𝔪.infinitePart →
+      φ.infinityType.realParity w = n.toContinuous.realParity w) :
+    (mkOfFiniteConductor φ n hn hfin hparity).unitaryWeight = φ.unitaryIdealWeight :=
+  (rfl)
+
+/-- The algebraic infinity type of `mkOfFiniteConductor` is `n`. -/
+@[simp]
+theorem infinityType_mkOfFiniteConductor (φ : HeckeCharacter K) (n : AlgebraicInfinityType K)
+    (hn : φ.infinityType.AgreesOnIdentityComponent n.toContinuous) {𝔪 : Modulus K}
+    (hfin : 𝔪.finitePart = φ.finiteConductor)
+    (hparity : ∀ w : {w : InfinitePlace K // w.IsReal}, w ∉ 𝔪.infinitePart →
+      φ.infinityType.realParity w = n.toContinuous.realParity w) :
+    (mkOfFiniteConductor φ n hn hfin hparity).infinityType = n :=
+  (rfl)
 
 /-- **The primitive presentation** of `χ` at `χ.conductor`, carrying the canonical primitive
 unitary ideal weight `χ.toHeckeCharacter.unitaryIdealWeight`. -/

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Angular.Basic
 import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Splitting
+import TauCeti.RingTheory.RootsOfUnity.Complex
 
 /-!
 # Evaluation at `(2 + i)` and absence of pure norm twists for Hecke's angular characters
@@ -57,20 +58,21 @@ open scoped NumberField
 
 namespace TauCeti.LFunctions
 
-open GlobalNumberFields
+open GlobalNumberFields TauCeti.NumberField
 
-private theorem norm_two_add_toInteger_of_four {F : Type*} [Field F] [NumberField F]
+private theorem absNorm_span_two_add_of_four {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) :
-    Algebra.norm ℤ ((2 : 𝓞 F) + hζ.toInteger) = 5 := by
-  simpa using hζ.norm_intCast_add_intCast_mul_toInteger_of_four 2 1
+    Ideal.absNorm (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) = 5 :=
+  GaussianRationals.absNorm_span_two_add hζ.minpoly_toInteger_eq_X_sq_add_one
+    (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)
 
 private theorem two_add_toInteger_ne_zero_of_four {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) :
     (2 : 𝓞 F) + hζ.toInteger ≠ 0 := by
   intro h0
-  have hnorm := norm_two_add_toInteger_of_four hζ
-  rw [h0, Algebra.norm_zero] at hnorm
-  omega
+  have hN := absNorm_span_two_add_of_four hζ
+  rw [h0, Ideal.span_singleton_zero] at hN
+  simp at hN
 
 private theorem unitaryWeight_angularGrossencharacter_apply_sq {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (I : Ideal (𝓞 F)) :
@@ -95,28 +97,22 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Fie
   rw [unitaryWeight_angularGrossencharacter_span_singleton k w
     (two_add_toInteger_ne_zero_of_four hζ)]
   set τ := w.val.embedding
-  have h2I : (2 + Complex.I) / (2 - Complex.I) = ((3 : ℂ) + 4 * Complex.I) / 5 := by
-    have hne : (2 : ℂ) - Complex.I ≠ 0 := fun h ↦ by simpa using congrArg Complex.im h
-    rw [div_eq_div_iff hne (by norm_num)]
-    linear_combination 4 * Complex.I_sq
-  have hτI : τ (hζ.toInteger : F) = Complex.I ∨ τ (hζ.toInteger : F) = -Complex.I := by
-    have hz : algebraMap (𝓞 F) F hζ.toInteger = ζ := hζ.coe_toInteger
-    have hsq : (τ (hζ.toInteger : F)) ^ 2 = Complex.I ^ 2 := by
-      rw [Complex.I_sq, RingOfIntegers.coe_eq_algebraMap, hz, ← map_pow,
-        hζ.sq_eq_neg_one, map_neg, map_one]
-    exact sq_eq_sq_iff_eq_or_eq_neg.mp hsq
+  have hτI : τ (hζ.toInteger : F) = Complex.I ∨ τ (hζ.toInteger : F) = -Complex.I :=
+    Complex.isPrimitiveRoot_four_iff.mp
+      (by simpa [RingOfIntegers.coe_eq_algebraMap, hζ.coe_toInteger] using
+        hζ.map_of_injective τ.injective)
   have hτα_sum : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 + τ (hζ.toInteger : F) := by
     simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat]
   rcases hτI with hI | hnegI
   · left
     have hconj : starRingEnd ℂ (2 + Complex.I) = 2 - Complex.I := by
       simp [map_ofNat, sub_eq_add_neg]
-    rw [hτα_sum, hI, hconj, h2I]
+    rw [hτα_sum, hI, hconj, GaussianRationals.two_add_I_div_two_sub_I]
   · right
     have hconj : starRingEnd ℂ (2 - Complex.I) = 2 + Complex.I := by
       simp [map_ofNat]
     have h2I_inv : (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ := by
-      rw [← h2I, inv_div]
+      rw [← GaussianRationals.two_add_I_div_two_sub_I, inv_div]
     rw [hτα_sum, hnegI, ← sub_eq_add_neg, hconj, h2I_inv, inv_zpow, ← zpow_neg]
 
 /-- **Nonreal value at `(2 + i)`**: for `k ≠ 0`, `angularGrossencharacter F k` takes a nonreal
@@ -195,29 +191,23 @@ theorem angularGrossencharacter_not_isNormTwist
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
   set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
   set β : 𝓞 F := (2 : 𝓞 F) - hζ.toInteger
-  have hNα : Ideal.absNorm (Ideal.span {α}) = 5 := by
-    exact_mod_cast (RingOfIntegers.natCast_absNorm_span_singleton_of_four α).trans
-      (norm_two_add_toInteger_of_four hζ)
-  have hNβ : Ideal.absNorm (Ideal.span {β}) = 5 := by
-    have hβ' : β = (2 : ℤ) + (-1 : ℤ) * hζ.toInteger := by simp [β, sub_eq_add_neg]
-    have hn : Algebra.norm ℤ β = 5 := by
-      rw [hβ', hζ.norm_intCast_add_intCast_mul_toInteger_of_four]; norm_num
-    exact_mod_cast (RingOfIntegers.natCast_absNorm_span_singleton_of_four β).trans hn
-  have hnormTwist := htwist.eq_normTwist (badPrimes_unitaryWeight_angularGrossencharacter F k)
-  have hαprime : Ideal.IsPrimeTo (Ideal.span {α}) ∅ :=
-    Ideal.isPrimeTo_empty.mpr (Ideal.absNorm_eq_zero_iff.not.mp (by omega))
-  have hβprime : Ideal.IsPrimeTo (Ideal.span {β}) ∅ :=
-    Ideal.isPrimeTo_empty.mpr (Ideal.absNorm_eq_zero_iff.not.mp (by omega))
+  have hNα : Ideal.absNorm (Ideal.span {α}) = 5 := absNorm_span_two_add_of_four hζ
+  have hNβ : Ideal.absNorm (Ideal.span {β}) = 5 :=
+    GaussianRationals.absNorm_span_two_sub hζ.minpoly_toInteger_eq_X_sq_add_one
+      (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)
+  have hαgood : (angularGrossencharacter F k).unitaryWeight.val.IsGood (Ideal.span {α}) := by
+    rw [MultiplicativeIdealWeight.IsGood, badPrimes_unitaryWeight_angularGrossencharacter,
+      Ideal.isPrimeTo_empty]
+    exact Ideal.absNorm_eq_zero_iff.not.mp (by omega)
+  have hβgood : (angularGrossencharacter F k).unitaryWeight.val.IsGood (Ideal.span {β}) := by
+    rw [MultiplicativeIdealWeight.IsGood, badPrimes_unitaryWeight_angularGrossencharacter,
+      Ideal.isPrimeTo_empty]
+    exact Ideal.absNorm_eq_zero_iff.not.mp (by omega)
   have heqαβ : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α}) =
-      (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {β}) := by
-    rw [DFunLike.congr_fun hnormTwist (Ideal.span {α}),
-      DFunLike.congr_fun hnormTwist (Ideal.span {β}),
-      MultiplicativeIdealWeight.normTwist_apply, MultiplicativeIdealWeight.normTwist_apply,
-      MultiplicativeIdealWeight.ofBadPrimes_apply, MultiplicativeIdealWeight.ofBadPrimes_apply,
-      hNα, hNβ]
-    simp [hαprime, hβprime]
-  have hmul5 : α * β = (5 : 𝓞 F) := by
-    simp only [α, β]; linear_combination -hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+      (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {β}) :=
+    htwist.eq_of_absNorm_eq hαgood hβgood (hNα.trans hNβ.symm)
+  have hmul5 : α * β = (5 : 𝓞 F) :=
+    GaussianRationals.two_add_mul_two_sub_eq_five hζ.minpoly_toInteger_eq_X_sq_add_one
   have hval5 : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(5 : 𝓞 F)}) = 1 := by
     rw [unitaryWeight_angularGrossencharacter_span_singleton k (complexPlaceFour F) (by norm_num)]
     simp [map_ofNat]

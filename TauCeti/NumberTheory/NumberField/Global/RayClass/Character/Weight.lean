@@ -115,6 +115,14 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
   apply Subtype.ext
   simp
 
+/-- At `Modulus.one K`, the trivial ray class character gives the trivial unitary ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_one_of_modulus_one :
+    (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 := by
+  apply Subtype.ext
+  ext I
+  simp [TauCeti.MultiplicativeIdealWeight.one_apply]
+
 /-- Increasing the modulus restricts the induced character's ideal weight away from the finite
 primes of the larger modulus. -/
 theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :

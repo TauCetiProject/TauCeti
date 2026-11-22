@@ -65,8 +65,10 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 * `TauCeti.LFunctions.Grossencharacter.infiniteComponent_apply_eq_of_infinityType_eq_of_isReal`:
   presentations with equal algebraic infinity types agree at a real place on positive or
   parity-compatible inputs.
-* `TauCeti.LFunctions.Grossencharacter.ext_of_infinityType_eq`: when `raySubgroup 𝔪 = ⊤`, a
-  presentation is determined by its algebraic infinity type.
+* `TauCeti.LFunctions.Grossencharacter.eqOn_raySubgroup_of_infinityType_eq`,
+  `TauCeti.LFunctions.Grossencharacter.ext_of_infinityType_eq`: presentations with the same
+  algebraic infinity type agree on `raySubgroup 𝔪`, and hence everywhere when
+  `raySubgroup 𝔪 = ⊤`.
 * `TauCeti.LFunctions.Grossencharacter.badPrimes_unitaryWeight`: the bad primes of the unitary
   weight of a presentation are the primes in the support of `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
@@ -295,16 +297,17 @@ theorem infiniteComponent_apply_eq_of_infinityType_eq_of_isReal {𝔪 𝔫 : Mod
     simp
   · rw [hpar]
 
-/-- **Uniqueness by infinity type when `raySubgroup 𝔪 = ⊤`**: if every idele class lies in
-`raySubgroup 𝔪` (in particular, at `Modulus.one K` when `K` has class number `1`), then two
-presentations at `𝔪` with the same algebraic infinity type are equal. -/
-theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤)
-    {χ ψ : Grossencharacter K 𝔪} (h : χ.infinityType = ψ.infinityType) : χ = ψ := by
-  apply ext
-  refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
-  -- Lift `c` to a congruence idele `y` and strip its finite part, on which both characters are `1`.
-  obtain ⟨⟨y, hy⟩, rfl⟩ := (ideleCongruenceToClassHom_surjective_iff 𝔪).mpr hray c
-  rw [ideleCongruenceToClassHom_apply, Subtype.coe_mk]
+/-- **Agreement on the ray subgroup from equality of infinity types**: two presentations at the
+same modulus `𝔪` with the same algebraic infinity type have underlying Hecke characters that agree
+on `raySubgroup 𝔪`. -/
+theorem eqOn_raySubgroup_of_infinityType_eq {𝔪 : Modulus K} {χ ψ : Grossencharacter K 𝔪}
+    (h : χ.infinityType = ψ.infinityType) :
+    Set.EqOn χ.toHeckeCharacter ψ.toHeckeCharacter
+      (raySubgroup 𝔪 : Set (IdeleClassGroup (𝓞 K) K)) := by
+  intro c hc
+  obtain ⟨y, hy, rfl⟩ := mem_raySubgroup_iff.mp hc
+  rw [QuotientGroup.mk'_apply]
+  apply Units.ext
   have hfin_mem := ideleCongruenceSubgroup.ofFiniteIdele_toFiniteIdele_mem hy
   have hfin_inf (w : InfinitePlace K) :
       w.ideleInfiniteCoord
@@ -328,6 +331,14 @@ theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤
     · exact .inr (by rw [χ.realParity_eq ⟨w, hw⟩ hw_mem, ψ.realParity_eq ⟨w, hw⟩ hw_mem, h])
   · exact DFunLike.congr_fun
       (infiniteComponent_eq_of_infinityType_eq_of_isComplex h hw) (w.ideleInfiniteCoord y)
+
+/-- **Uniqueness by infinity type when `raySubgroup 𝔪 = ⊤`**: if every idele class lies in
+`raySubgroup 𝔪` (in particular, at `Modulus.one K` when `K` has class number `1`), then two
+presentations at `𝔪` with the same algebraic infinity type are equal. -/
+theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤)
+    {χ ψ : Grossencharacter K 𝔪} (h : χ.infinityType = ψ.infinityType) : χ = ψ :=
+  ext (ContinuousMonoidHom.ext fun c ↦
+    eqOn_raySubgroup_of_infinityType_eq h (hray ▸ Subgroup.mem_top c))
 
 /-! ### The finite conductor of a presentation -/
 

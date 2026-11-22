@@ -33,6 +33,8 @@ given by explicit generators.
   are exactly `(2 + θ)` and `(2 − θ)`.
 * `TauCeti.NumberField.GaussianRationals.im_three_add_four_I_div_five_zpow_ne_zero`: no nonzero
   integer power of `(3 + 4i) / 5` is real.
+* `TauCeti.NumberField.GaussianRationals.two_add_I_div_two_sub_I`: in `ℂ`,
+  `(2 + i) / (2 - i) = (3 + 4i) / 5`.
 
 ## References
 
@@ -171,5 +173,12 @@ theorem im_three_add_four_I_div_five_zpow_ne_zero {m : ℤ} (hm : m ≠ 0) :
     · exact hnat hn (neg_eq_zero.mp hneg)
     · have hz0 : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n = 0 := Complex.normSq_eq_zero.mp hnsq
       exact hnat hn (by simp [hz0])
+
+/-- In `ℂ`, `(2 + i) / (2 - i) = (3 + 4i) / 5`. -/
+theorem two_add_I_div_two_sub_I :
+    ((2 : ℂ) + Complex.I) / (2 - Complex.I) = ((3 : ℂ) + 4 * Complex.I) / 5 := by
+  have hne : (2 : ℂ) - Complex.I ≠ 0 := fun h ↦ by simpa using congrArg Complex.im h
+  rw [div_eq_div_iff hne (by norm_num)]
+  linear_combination 4 * Complex.I_sq
 
 end TauCeti.NumberField.GaussianRationals
