@@ -5,17 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.Moments.Pi
-import TauCeti.MeasureTheory.Integral.Gamma
+import TauCeti.Probability.Distributions.Chi.Gaussian
+import TauCeti.Probability.Distributions.Chi.Moments
+import TauCeti.Probability.Distributions.Gaussian.Symmetry
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Moments of the real Gaussian distribution
 
-This file computes the centered moments of Mathlib's real Gaussian measure.  The absolute
-centered moment is evaluated first from the Gaussian density and Euler's Gamma integral; the
-ordinary even and odd centered moments then follow from this formula and symmetry.
+This file computes the centered moments of a variable `X` with Mathlib's real Gaussian law
+`gaussianReal m v`: the absolute moments `E|X - m|ⁿ`, the even moments
+`E (X - m)²ⁿ = vⁿ (2n - 1)‼`, and the vanishing of the odd ones. These closed forms are what
+moment-based arguments about Gaussian variables consume, for instance Kolmogorov-type continuity
+bounds and quadratic-variation estimates for Brownian increments, the half-normal mean
+`E|X - m| = √(2v/π)`, and comparisons with the moments of other laws.
+
+The absolute centered moment is obtained by folding. For positive variance `v`, after centering,
+`|X - m|` has the half-normal law `chiMeasure 1 √v`, whose moments are known; for `v = 0` the
+folded law is the point mass at `0`. The even centered moments follow from this formula, and the
+odd ones vanish because a centered Gaussian law is symmetric.
 
 The formulas follow the standard calculation in, for example, Johnson, Kotz, and Balakrishnan,
 *Continuous Univariate Distributions*, volume 1, Chapter 13.
@@ -23,10 +32,10 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
 ## Main results
 
 * `integral_abs_sub_pow_gaussianReal` evaluates every absolute centered moment.
-* `centralMoment_id_two_mul_gaussianReal` evaluates the even centered moments.
-* `TauCeti.integral_exp_mul_dotProduct_pi_gaussianReal` evaluates the exponential moment of a
-  linear form `y ⬝ᵥ g` on a finite product of centred real Gaussian laws.
-* `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
+* `integral_sub_pow_two_mul_gaussianReal` and `centralMoment_id_two_mul_gaussianReal` evaluate
+  the even centered moments.
+* `integral_sub_pow_two_mul_add_one_gaussianReal` and
+  `centralMoment_id_two_mul_add_one_gaussianReal` say that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
@@ -36,9 +45,9 @@ public section
 
 open scoped Nat NNReal Real
 
-namespace TauCeti.Probability
+open MeasureTheory ProbabilityTheory Real
 
-open MeasureTheory ProbabilityTheory Real Set
+namespace TauCeti.Probability
 
 /-- The absolute value is integrable under every real Gaussian law. -/
 theorem integrable_abs_gaussianReal (μ : ℝ) (v : ℝ≥0) :
@@ -49,72 +58,32 @@ theorem integrable_abs_gaussianReal (μ : ℝ) (v : ℝ≥0) :
 /-- The sum of the absolute coordinate values is integrable under two real Gaussian laws. -/
 theorem integrable_abs_add_abs_gaussianReal (μ₁ μ₂ : ℝ) (v₁ v₂ : ℝ≥0) :
     Integrable (fun p : ℝ × ℝ => |p.1| + |p.2|)
-      (Measure.prod (gaussianReal μ₁ v₁) (gaussianReal μ₂ v₂)) := by
-  have h₁ := integrable_abs_gaussianReal μ₁ v₁
-  have h₂ := integrable_abs_gaussianReal μ₂ v₂
-  exact ((measurePreserving_fst (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
-    h₁.aestronglyMeasurable |>.2 h₁).add
-      ((measurePreserving_snd (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
-        h₂.aestronglyMeasurable |>.2 h₂)
-
-private lemma gaussian_absolute_moment_algebra (n : ℕ) {v : ℝ} (hv : 0 < v) :
-    (√(2 * π * v))⁻¹ *
-        ((2 * v)⁻¹ ^ (-((n : ℝ) + 1) / 2) * Gamma (((n : ℝ) + 1) / 2)) =
-      (2 * v) ^ ((n : ℝ) / 2) * Gamma (((n : ℝ) + 1) / 2) / √π := by
-  have hv₂ : 0 < 2 * v := mul_pos two_pos hv
-  have hradicand : 2 * π * v = π * (2 * v) := by ring
-  have hneg : -((n : ℝ) + 1) / 2 = -(((n : ℝ) + 1) / 2) := by ring
-  have hsplit : ((n : ℝ) + 1) / 2 = (n : ℝ) / 2 + 1 / 2 := by ring
-  rw [hradicand, Real.sqrt_mul pi_pos.le,
-    Real.sqrt_eq_rpow, Real.sqrt_eq_rpow,
-    hneg,
-    Real.inv_rpow hv₂.le, Real.rpow_neg hv₂.le, inv_inv]
-  rw [hsplit, Real.rpow_add hv₂]
-  field_simp [Real.sqrt_ne_zero'.mpr pi_pos, (Real.rpow_pos_of_pos hv₂ _).ne']
+      (Measure.prod (gaussianReal μ₁ v₁) (gaussianReal μ₂ v₂)) :=
+  ((integrable_abs_gaussianReal μ₁ v₁).comp_fst _).add
+    ((integrable_abs_gaussianReal μ₂ v₂).comp_snd _)
 
 /-- The `n`th absolute centered moment of a real Gaussian distribution. -/
 @[simp]
 theorem integral_abs_sub_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     ∫ x, |x - m| ^ n ∂gaussianReal m v =
       (2 * (v : ℝ)) ^ ((n : ℝ) / 2) * Gamma (((n : ℝ) + 1) / 2) / √π := by
-  by_cases hv : v = 0
-  · subst v
-    cases n with
-    | zero =>
-        simp only [gaussianReal_zero_var, MeasureTheory.integral_dirac, pow_zero, Nat.cast_zero,
-          zero_div, Real.rpow_zero, zero_add]
-        rw [one_mul, Real.Gamma_one_half_eq]
-        field_simp [Real.sqrt_ne_zero'.mpr pi_pos]
-    | succ n =>
-        simp only [gaussianReal_zero_var, MeasureTheory.integral_dirac, sub_self, abs_zero,
-          zero_pow (Nat.succ_ne_zero n), NNReal.coe_zero, Nat.cast_add, Nat.cast_one]
-        simp only [mul_zero]
-        rw [Real.zero_rpow (by positivity : ((n : ℝ) + 1) / 2 ≠ 0)]
-        simp
-  have hv' : 0 < (v : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
+  rcases eq_or_ne v 0 with rfl | hv
+  · rcases n.eq_zero_or_pos with rfl | hn
+    · simp only [pow_zero, integral_const, probReal_univ, smul_eq_mul, mul_one,
+        CharP.cast_eq_zero, zero_div, Real.rpow_zero, zero_add, one_mul]
+      rw [Real.Gamma_one_half_eq, div_self (Real.sqrt_ne_zero'.mpr pi_pos)]
+    · simp [gaussianReal_zero_var, hn.ne']
+  -- Centering and folding send `gaussianReal m v` to the half-normal law `chiMeasure 1 √v`.
   calc
-    _ = ∫ x, |x| ^ n ∂(gaussianReal m v).map (fun x ↦ x - m) := by
-      rw [integral_map (by fun_prop) (by fun_prop)]
-    _ = ∫ x, |x| ^ n ∂gaussianReal 0 v := by simp [gaussianReal_map_sub_const]
-    _ = ∫ x, gaussianPDFReal 0 v x * |x| ^ n :=
-      integral_gaussianReal_eq_integral_smul hv
-    _ = (√(2 * π * (v : ℝ)))⁻¹ *
-        ∫ x : ℝ, |x| ^ n * exp (-(2 * (v : ℝ))⁻¹ * x ^ 2) := by
-      rw [← integral_const_mul]
-      congr with x
-      rw [gaussianPDFReal]
-      simp only [sub_zero]
-      have hexponent : -(x ^ 2) / (2 * (v : ℝ)) = -(2 * (v : ℝ))⁻¹ * x ^ 2 := by
-        field_simp
-      rw [hexponent]
+    _ = ∫ x, x ^ n ∂((gaussianReal m v).map (· - m)).map (|·|) := by
+      rw [integral_map (by fun_prop) (by fun_prop), integral_map (by fun_prop) (by fun_prop)]
+    _ = ∫ x, x ^ n ∂chiMeasure 1 √(v : ℝ) := by
+      rw [gaussianReal_map_sub_const, sub_self, gaussianReal_map_abs hv]
+    _ = _ := by
+      rw [integral_pow_chiMeasure one_pos (by positivity), Real.Gamma_one_half_eq,
+        Real.mul_rpow zero_le_two v.coe_nonneg, Real.rpow_div_two_eq_sqrt _ v.coe_nonneg,
+        Real.rpow_natCast, add_comm (1 : ℝ)]
       ring
-    _ = (√(2 * π * (v : ℝ)))⁻¹ *
-        ((2 * (v : ℝ))⁻¹ ^ (-((n : ℝ) + 1) / 2) * Gamma (((n : ℝ) + 1) / 2)) := by
-      have h := integral_abs_rpow_mul_exp_neg_mul_sq (q := (n : ℝ))
-        (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) (inv_pos.mpr (mul_pos two_pos hv'))
-      simp only [Real.rpow_natCast] at h
-      rw [h]
-    _ = _ := gaussian_absolute_moment_algebra n hv'
 
 /-- The mean of the absolute value of a centered real Gaussian, the half-normal mean:
 `E|X| = √(2 * v / π)` for `X ∼ N(0, v)`. -/
@@ -130,12 +99,9 @@ theorem integral_abs_gaussianReal (v : ℝ≥0) : ∫ x, |x| ∂gaussianReal 0 v
 theorem integral_sub_pow_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     (∫ x, (x - m) ^ (2 * n) ∂gaussianReal m v) =
       (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
-  have heven_abs : (∫ x, (x - m) ^ (2 * n) ∂gaussianReal m v) =
-      ∫ x, |x - m| ^ (2 * n) ∂gaussianReal m v := by
-    congr with x
-    simp only [pow_mul, sq_abs]
-  rw [heven_abs]
-  rw [integral_abs_sub_pow_gaussianReal]
+  have h := integral_abs_sub_pow_gaussianReal m v (2 * n)
+  simp only [pow_abs_two_mul] at h
+  rw [h]
   have hhalf_even : ((2 * n : ℕ) : ℝ) / 2 = (n : ℝ) := by norm_num
   have hhalf_succ : (((2 * n : ℕ) : ℝ) + 1) / 2 = (n : ℝ) + 1 / 2 := by
     push_cast
@@ -149,9 +115,9 @@ theorem integral_sub_pow_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) 
 @[simp]
 theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     centralMoment id (2 * n) (gaussianReal m v) =
-      (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
-  simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_gaussianReal]
-    using integral_sub_pow_two_mul_gaussianReal m v n
+      (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ :=
+  (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
+    (integral_sub_pow_two_mul_gaussianReal m v n)
 
 /-- The second moment of a real Gaussian distribution is its variance plus its squared mean. -/
 theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
@@ -169,61 +135,19 @@ theorem integral_sub_pow_four_gaussianReal (m : ℝ) (v : ℝ≥0) :
   simpa only [hfour, Nat.reduceMul, Nat.cast_ofNat, mul_comm] using
     integral_sub_pow_two_mul_gaussianReal m v 2
 
+/-- Every odd power about the mean integrates to zero under a real Gaussian distribution. -/
+@[simp]
+theorem integral_sub_pow_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    ∫ x, (x - m) ^ (2 * n + 1) ∂gaussianReal m v = 0 := by
+  simpa only [id_eq, integral_id_gaussianReal] using
+    IsGaussian.integral_comp_sub_eq_zero_of_odd (gaussianReal m v)
+      (f := fun x : ℝ ↦ x ^ (2 * n + 1)) (odd_two_mul_add_one n).neg_pow
+
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]
 theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id (2 * n + 1) (gaussianReal m v) = 0 := by
-  simp only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq]
-  rw [integral_id_gaussianReal]
-  have hmap : (gaussianReal m v).map (fun x ↦ x - m) = gaussianReal 0 v := by
-    simpa using gaussianReal_map_sub_const (μ := m) (v := v) m
-  have hcentered_map : (∫ x, (x - m) ^ (2 * n + 1) ∂gaussianReal m v) =
-      ∫ x, x ^ (2 * n + 1) ∂(gaussianReal m v).map (fun x ↦ x - m) := by
-    rw [integral_map (by fun_prop) (by fun_prop)]
-  rw [hcentered_map]
-  rw [hmap]
-  have hsym : (gaussianReal 0 v).map (fun x : ℝ ↦ -x) = gaussianReal 0 v := by
-    simpa using gaussianReal_map_neg (μ := 0) (v := v)
-  have hneg : (∫ x, x ^ (2 * n + 1) ∂gaussianReal 0 v) =
-      -(∫ x, x ^ (2 * n + 1) ∂gaussianReal 0 v) := by
-    calc
-      _ = ∫ x, x ^ (2 * n + 1) ∂(gaussianReal 0 v).map (fun x : ℝ ↦ -x) := by
-        rw [hsym]
-      _ = ∫ x, (-x) ^ (2 * n + 1) ∂gaussianReal 0 v := by
-        rw [integral_map (by fun_prop) (by fun_prop)]
-      _ = ∫ x, -(x ^ (2 * n + 1)) ∂gaussianReal 0 v := by
-        congr with x
-        exact (odd_two_mul_add_one n).neg_pow x
-      _ = _ := integral_neg _
-  linarith
+    centralMoment id (2 * n + 1) (gaussianReal m v) = 0 :=
+  (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
+    (integral_sub_pow_two_mul_add_one_gaussianReal m v n)
 
 end TauCeti.Probability
-
-namespace TauCeti
-
-open MeasureTheory ProbabilityTheory
-
-/-- Exponential moment of a linear form `y ⬝ᵥ g` on a finite product of centred real Gaussian
-laws `gaussianReal 0 v`. -/
-theorem integral_exp_mul_dotProduct_pi_gaussianReal {γ : Type*} [Fintype γ]
-    (y : γ → ℝ) (v : ℝ≥0) (r : ℝ) :
-    Integrable (fun g : γ → ℝ ↦ Real.exp (r * (y ⬝ᵥ g)))
-        (Measure.pi fun _ : γ ↦ gaussianReal 0 v) ∧
-      ∫ g : γ → ℝ, Real.exp (r * (y ⬝ᵥ g)) ∂(Measure.pi fun _ : γ ↦ gaussianReal 0 v) =
-        Real.exp ((v : ℝ) * r ^ 2 / 2 * ∑ l, y l ^ 2) := by
-  let ν : Measure (γ → ℝ) := Measure.pi fun _ : γ ↦ gaussianReal 0 v
-  have hrew (g : γ → ℝ) : r * (y ⬝ᵥ g) = 1 * ∑ l, (r * y l) * g l := by
-    simp only [dotProduct, one_mul, Finset.mul_sum, mul_assoc]
-  have hmgf : mgf (fun g : γ → ℝ ↦ ∑ l, (r * y l) * g l) ν 1 =
-      Real.exp ((v : ℝ) * r ^ 2 / 2 * ∑ l, y l ^ 2) := by
-    rw [TauCeti.mgf_sum_pi (fun l u ↦ (r * y l) * u) 1]
-    have hcoord (l : γ) : mgf (fun u : ℝ ↦ (r * y l) * u) (gaussianReal 0 v) 1 =
-        Real.exp ((v : ℝ) * r ^ 2 / 2 * y l ^ 2) := by
-      rw [mgf_const_mul, mgf_fun_id_gaussianReal]; dsimp only; congr 1; ring
-    simp_rw [hcoord, ← Real.exp_sum, ← Finset.mul_sum]
-  have hint : Integrable (fun g : γ → ℝ ↦ Real.exp (1 * ∑ l, (r * y l) * g l)) ν :=
-    mgf_pos_iff.mp (hmgf ▸ Real.exp_pos _)
-  exact ⟨hint.congr (.of_forall fun g ↦ by dsimp only; rw [← hrew g]),
-    (integral_congr_ae (.of_forall fun g ↦ by dsimp only; rw [hrew g])).trans hmgf⟩
-
-end TauCeti

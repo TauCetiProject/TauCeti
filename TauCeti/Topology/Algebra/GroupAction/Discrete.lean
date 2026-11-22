@@ -79,7 +79,7 @@ theorem exists_orbitMap_quotient (m : M) :
     ∃ (U : OpenNormalSubgroup G) (f : G ⧸ U.toSubgroup → M),
       ∀ g : G, f (QuotientGroup.mk g) = g • m := by
   obtain ⟨U, hm⟩ := exists_openNormalSubgroup_smul_eq_self (G := G) m
-  let mU : MulAction.fixedPoints U.toSubgroup M := ⟨m, fun u ↦ hm u u.2⟩
+  let mU : MulAction.fixedPoints U.toSubgroup M := ⟨m, fun u ↦ hm u u.property⟩
   refine ⟨U, fun q ↦ (q • mU : MulAction.fixedPoints U.toSubgroup M), fun g ↦ ?_⟩
   exact congrArg Subtype.val (MulAction.coe_quotient_smul_fixedPoints g mU)
 
@@ -98,7 +98,7 @@ theorem isLocallyConstant_of_apply_mul (hU : IsOpen (U : Set G)) {k : G → M}
     (hk : ∀ (u : U) (g : G), k (u * g) = u • k g) : IsLocallyConstant k := by
   refine (IsLocallyConstant.iff_eventually_eq k).2 fun g ↦ ?_
   have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' MulAction.stabilizer U (k g)) :=
-    (isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val _ (stabilizer_isOpen U (k g))
+    (isOpenMap_mul_right g).comp hU.isOpenMap_subtypeVal _ (stabilizer_isOpen U (k g))
   filter_upwards [hopen.mem_nhds ⟨1, one_mem _, one_mul g⟩]
   rintro _ ⟨u, hu, rfl⟩
   exact (hk u g).trans (MulAction.mem_stabilizer_iff.1 hu)
@@ -145,7 +145,7 @@ theorem openActionKernel_toSubgroup [Finite M] :
 @[simp]
 theorem openActionKernel_smul_eq_self [Finite M] (g : openActionKernel G M) (m : M) :
     (g : G) • m = m :=
-  Equiv.congr_fun (MonoidHom.mem_ker.mp g.2) m
+  Equiv.congr_fun (MonoidHom.mem_ker.mp g.property) m
 
 end Kernel
 
@@ -176,7 +176,7 @@ theorem iSup_fixedPoints_openNormal_eq_top :
     (⨆ U : OpenNormalSubgroup G, FixedPoints.addSubgroup U.toSubgroup M) = ⊤ := by
   refine eq_top_iff.2 fun m _ ↦ ?_
   obtain ⟨U, hm⟩ := exists_openNormalSubgroup_smul_eq_self (G := G) m
-  exact AddSubgroup.mem_iSup_of_mem U fun u ↦ hm u u.2
+  exact AddSubgroup.mem_iSup_of_mem U fun u ↦ hm u u.property
 
 end Exhaustion
 

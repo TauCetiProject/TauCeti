@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 -- The existence of a base, the rigidity theorem and the independence of the Cartan type from the
 -- base are used in proofs only.
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 
 /-!

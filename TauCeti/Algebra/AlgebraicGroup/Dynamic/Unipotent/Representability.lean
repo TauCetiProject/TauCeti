@@ -52,10 +52,10 @@ between the universal constant coefficients and the counit. -/
 theorem limit_eq_one_iff_coeff_conjugationAlgHom
     (l : H →ₐc[R] LaurentPolynomial R) (g : parabolic A l) :
     limit A l g = 1 ↔ ∀ h : H,
-      g.1.ofConv ((conjugationAlgHom l h).coeff 0 -
+      g.val.ofConv ((conjugationAlgHom l h).coeff 0 -
         algebraMap R H (Coalgebra.counit h)) = 0 := by
   have hvalue (h : H) :
-      g.1.ofConv ((conjugationAlgHom l h).coeff 0 -
+      g.val.ofConv ((conjugationAlgHom l h).coeff 0 -
           algebraMap R H (Coalgebra.counit h)) =
         (limit A l g).ofConv h - (1 : WithConv (H →ₐ[R] A)).ofConv h := by
     rw [map_sub, AlgHom.commutes, limit_apply_eq_coeff_conjugate, coeff_conjugate,
@@ -211,7 +211,7 @@ ambient point. -/
 theorem quotientPointsHom_unipotentPointsIso_inv_app_apply
     (l : H →ₐc[R] LaurentPolynomial R) (A : CommAlgCat.{w} R) (g : unipotent A l) :
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
-        (unipotentDefiningHopfIdeal l) A ((unipotentPointsIso l).inv.app A g) = g.1 := by
+        (unipotentDefiningHopfIdeal l) A ((unipotentPointsIso l).inv.app A g) = g.val := by
   unfold unipotentPointsIso
   exact CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
     (_root_.CommHopfAlgCat.of R H) (unipotentDefiningHopfIdeal l) (fun A ↦ unipotent A l) _ A g

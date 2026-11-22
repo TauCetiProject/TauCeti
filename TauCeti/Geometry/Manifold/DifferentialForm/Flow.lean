@@ -160,19 +160,21 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   simp
 
 omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 M] in
-/-- **Moving the base point of pulled-back forms.** Let the maps `ψᵤ` factor near time `t` and
-near `x` as `χᵤ ∘ g` through a map `g` differentiable at `x`, with each `χᵤ` differentiable at
-`g x`. If the
-pullbacks `(χᵤ^* α)_{g x}` have velocity `β (g x)` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have
-velocity `(g^* β)ₓ` there. -/
-theorem hasDerivAt_mpullback_of_eq_comp {ψ χ : ℝ → M → M} {g : M → M} {β : RoughForm I M F k}
-    {x : M} {t : ℝ} (hψ : ∀ᶠ u in 𝓝 t, ψ u =ᶠ[𝓝 x] χ u ∘ g) (hg : MDifferentiableAt I I g x)
-    (hχ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (χ u) (g x))
-    (h : HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (χ u) α (g x)) (β (g x)) t) :
-    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x)
-      (mpullback I I g β x) t := by
+/-- **Moving the base point of pulled-back forms.** Let the maps `ψᵤ : M → N` factor near time `t`
+and near `x` as `χᵤ ∘ g` through a map `g : M → N` differentiable at `x`, with each `χᵤ : N → N`
+differentiable at `g x`. If the pullbacks `(χᵤ^* α)_{g x}` of a form `α` on `N` have velocity
+`β (g x)` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have velocity `(g^* β)ₓ` there. -/
+theorem hasDerivAt_mpullback_of_eq_comp {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {α β : RoughForm I' N F k} {ψ : ℝ → M → N} {χ : ℝ → N → N} {g : M → N}
+    {x : M} {t : ℝ} (hψ : ∀ᶠ u in 𝓝 t, ψ u =ᶠ[𝓝 x] χ u ∘ g) (hg : MDifferentiableAt I I' g x)
+    (hχ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I' I' (χ u) (g x))
+    (h : HasDerivAt (F := E' [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I' I' (χ u) α (g x))
+      (β (g x)) t) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I' (ψ u) α x)
+      (mpullback I I' g β x) t := by
   -- Pulling back along `g` composes with its derivative, a continuous linear operator.
-  set L : E →L[ℝ] E := mfderiv I I g x
+  set L : E →L[ℝ] E' := mfderiv I I' g x
   have hL := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t h
   refine (hL.congr_of_eventuallyEq ?_).congr_deriv ?_
   · filter_upwards [hψ, hχ] with u hu hχu
@@ -299,11 +301,11 @@ whose contraction `ι_Z β` with a `C²` vector field `Z` is closed, the time-`t
 flow `φ` of `Z` satisfies `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is defined at time `t`,
 because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. The field need not be complete. -/
 theorem mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
-    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) {t : ℝ} {x : M}
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.val) = 0) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain Z) :
-    mpullback (F := F) I I (flowOf Z t) β.1 x = β.1 x := by
+    mpullback (F := F) I I (flowOf Z t) β.val x = β.val x := by
   -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`, a zero multiple of `β`.
-  have hL : mlieDerivForm Z β.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.1 y := by
+  have hL : mlieDerivForm Z β.val = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.val y := by
     rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
     funext y
     simp
@@ -317,11 +319,11 @@ wherever the flow through `x` is defined at time `t`, because Cartan's formula g
 `L_Z α = ι_Z dα + d(α(Z)) = 0`. This applies to the Reeb vector field of a contact form. The field
 need not be complete. -/
 theorem mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero {α : SmoothForm I M F 1} {c : F}
-    (hαZ : ∀ y, α.1 y ![Z y] = c) (hZα : (mextDeriv α.1).interior Z = 0) {t : ℝ} {x : M}
+    (hαZ : ∀ y, α.val y ![Z y] = c) (hZα : (mextDeriv α.val).interior Z = 0) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain Z) :
-    mpullback (F := F) I I (flowOf Z t) α.1 x = α.1 x := by
+    mpullback (F := F) I I (flowOf Z t) α.val x = α.val x := by
   -- Cartan's formula: `L_Z α = ι_Z dα + d(α(Z)) = 0`, a zero multiple of `α`.
-  have hL : mlieDerivForm Z α.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • α.1 y := by
+  have hL : mlieDerivForm Z α.val = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • α.val y := by
     funext y
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
@@ -394,8 +396,8 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
 contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow `ψ` of `Z` satisfies
 `ψₜ^* β = β` for every time `t`, because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. -/
 theorem mpullback_globalFlow_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
-    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) (t : ℝ) :
-    mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.1 = β.1 := by
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.val) = 0) (t : ℝ) :
+    mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.val = β.val := by
   funext x
   rw [← flowOf_eq_globalFlow (hZ.of_le one_le_two) hc]
   exact mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hZ hβ hZβ (hc.mem_flowDomain t x)

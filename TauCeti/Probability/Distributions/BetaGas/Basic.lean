@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Integral.Pi
 public import TauCeti.Probability.Density
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The finite beta gas
@@ -230,7 +231,8 @@ theorem integral_betaGasMeasure_eq_integral_smul {E : Type*}
       ∫ x, betaGasPDFReal n β V x • f x
         ∂(volume : Measure (Fin n → ℝ)) := by
   rw [betaGasMeasure]
-  exact integral_withDensity_ofReal (integrable_betaGasPDFReal n β V).1.aemeasurable
+  exact TauCeti.MeasureTheory.integral_withDensity_ofReal
+    (integrable_betaGasPDFReal n β V).1.aemeasurable
     (ae_of_all _ (betaGasPDFReal_nonneg n β V)) f
 
 /-- The beta-gas measure is finite, including for nonintegrable weights. -/
@@ -258,7 +260,8 @@ theorem integrable_betaGasMeasure_iff {E : Type*}
       Integrable (fun x => betaGasPDFReal n β V x • f x)
         (volume : Measure (Fin n → ℝ)) := by
   rw [betaGasMeasure]
-  exact integrable_withDensity_ofReal_iff (integrable_betaGasPDFReal n β V).1.aemeasurable
+  exact TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+    (integrable_betaGasPDFReal n β V).1.aemeasurable
     (ae_of_all _ (betaGasPDFReal_nonneg n β V))
 
 /-- The unnormalized Gaussian beta-gas weight with quadratic potential `V x = x² / 2`. -/

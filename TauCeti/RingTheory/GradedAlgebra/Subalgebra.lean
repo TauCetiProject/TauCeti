@@ -71,7 +71,7 @@ theorem map_val_grading (i : ι) :
     (T.grading 𝒜 i).map T.val.toLinearMap = Subalgebra.toSubmodule T ⊓ 𝒜 i := by
   ext x
   simp only [Submodule.mem_map, mem_grading_iff, Submodule.mem_inf, mem_toSubmodule]
-  exact ⟨by rintro ⟨y, hy, rfl⟩; exact ⟨y.2, hy⟩, fun hx ↦ ⟨⟨x, hx.1⟩, hx.2, rfl⟩⟩
+  exact ⟨by rintro ⟨y, hy, rfl⟩; exact ⟨y.property, hy⟩, fun hx ↦ ⟨⟨x, hx.1⟩, hx.2, rfl⟩⟩
 
 omit [DecidableEq ι] [AddMonoid ι] in
 /-- The degree-`i` piece of the induced grading of `T` has the rank of `T ∩ 𝒜 i`. -/
@@ -93,7 +93,7 @@ theorem isInternal_grading (hT : SetLike.IsHomogeneous 𝒜 T) :
   -- Restrict the decomposition of `A` along the inclusion, whose range contains the homogeneous
   -- components of elements of `T`.
   TauCeti.DirectSum.isInternal_comap 𝒜 (T.grading 𝒜) T.val.toLinearMap Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun i x ↦ ⟨⟨_, hT i x.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun i x ↦ ⟨⟨_, hT i x.property⟩, rfl⟩
 
 /-- A homogeneous subalgebra is a graded algebra, graded by its intersections with the pieces of
 the ambient grading. -/

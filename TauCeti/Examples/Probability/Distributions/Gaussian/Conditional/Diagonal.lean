@@ -170,24 +170,13 @@ theorem condDistrib_gaussianSingularDiagonalCovariance {Ω : Type*} [MeasurableS
       ((posSemidef_gaussianSingularDiagonalCovariance_iff a b).mpr hab)] with x₂ hx₂
     rw [hx₂, EuclideanSpace.gaussianCondKernel_gaussianSingularDiagonalCovariance]
   · rw [multivariateGaussian_of_not_posSemidef m (by simpa using hab)] at hX
-    have hfst : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).1) =ᵐ[P]
-        fun _ ↦ (EuclideanSpace.sumEquivProd m).1 :=
-      hX.ae_eq_of_dirac.fun_comp (fun x ↦ (EuclideanSpace.sumEquivProd x).1)
-    have hsnd : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2) =ᵐ[P]
-        fun _ ↦ (EuclideanSpace.sumEquivProd m).2 :=
-      hX.ae_eq_of_dirac.fun_comp (fun x ↦ (EuclideanSpace.sumEquivProd x).2)
-    rw [condDistrib_congr_left hfst]
-    have hobs : ∀ᵐ x₂ ∂P.map (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2),
-        x₂ = (EuclideanSpace.sumEquivProd m).2 :=
-      (ae_map_iff (by fun_prop) (by measurability)).mpr hsnd
-    filter_upwards [condDistrib_const (by fun_prop) (EuclideanSpace.sumEquivProd m).1,
-      hobs] with x₂ hx₂ hm
+    filter_upwards [condDistrib_sumEquivProd_of_hasLaw_dirac X m hX] with x₂ ⟨hm, hx₂⟩
     rw [hx₂, hm]
     have hmean : (EuclideanSpace.sumEquivProd m).1 =
         EuclideanSpace.single () (m (Sum.inl ())) := by
       ext i
       simp [EuclideanSpace.sumEquivProd]
-    rw [Kernel.deterministic_apply, hmean]
+    rw [hmean]
     simp [Real.toNNReal_of_nonpos (by linarith : a - b ^ 2 ≤ 0),
       EuclideanSpace.sumEquivProd]
 
