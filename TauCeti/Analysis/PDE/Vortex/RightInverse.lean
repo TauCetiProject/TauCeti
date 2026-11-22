@@ -793,12 +793,8 @@ theorem integral_inner_adjoint_apply_gaugeFixedOperator_eq (hx : Continuous x)
       = ⟪ContinuousLinearMap.adjoint Q g, hLv.toLp _⟫ := (L2.inner_toLp _ _).symm
     _ = ⟪g, Q (hLv.toLp _)⟫ := ContinuousLinearMap.adjoint_inner_left _ _ _
     _ = ⟪g, hv₂.toLp v⟫ := by
-        rw [L2.inner_def, L2.inner_def, ← sub_eq_zero, ← integral_sub
-          ((Lp.memLp g).integrable_inner (𝕜 := ℝ) (Lp.memLp _))
-          ((Lp.memLp g).integrable_inner (𝕜 := ℝ) (Lp.memLp _)), ← horth]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_sub (Q (hLv.toLp _)) (hv₂.toLp v)] with z h₁
-        rw [h₁, Pi.sub_apply, inner_sub_right]
+        have h0 : ⟪g, Q (hLv.toLp _) - hv₂.toLp v⟫ = 0 := (L2.inner_def _ _).trans horth
+        rwa [inner_sub_right, sub_eq_zero] at h0
     _ = ∫ z, ⟪g z, v z⟫ ∂μ := L2.inner_toLp _ _
 
 /-- **Weighted estimates pass to the adjoint by duality.** Suppose every square-integrable weak
