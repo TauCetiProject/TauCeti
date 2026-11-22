@@ -259,8 +259,8 @@ theorem exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (σ : ℝ) {q r : ℝ≥0∞}
           (one_le_two.trans hr) hL hm hT hC j f
     _ = _ := by
         simp_rw [mul_pow (_ * _ : ℝ≥0∞), ENNReal.tsum_mul_left]
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← ENNReal.rpow_two,
-          ← ENNReal.rpow_mul, mul_inv_cancel₀ two_ne_zero, ENNReal.rpow_one, ENNReal.coe_mul]
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← Nat.cast_ofNat (R := ℝ),
+          ENNReal.pow_rpow_inv_natCast two_ne_zero, ENNReal.coe_mul]
         ring
 
 end ContDiffBump

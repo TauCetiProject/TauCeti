@@ -274,31 +274,19 @@ theorem coeFn_fourier_waveSinPropagator (t : ℝ) (f : Lp F 2 (volume : Measure 
     𝓕 (waveSinPropagator F t f) =ᵐ[volume] fun ξ ↦ waveSinSymbol t ξ • 𝓕 f ξ :=
   Lp.coeFn_fourier_fourierMultiplierCLM_toLp f (memLp_waveSinSymbol t)
 
-/-- Two `L²` Fourier multipliers commute, since their symbols do. -/
-private theorem fourierMultiplierCLM_fourierMultiplierCLM_comm (m₁ m₂ : Lp ℂ ∞ (volume : Measure E))
-    (f : Lp F 2 (volume : Measure E)) :
-    Lp.fourierMultiplierCLM F m₁ (Lp.fourierMultiplierCLM F m₂ f) =
-      Lp.fourierMultiplierCLM F m₂ (Lp.fourierMultiplierCLM F m₁ f) := by
-  have h : (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = m₂ • m₁ := by
-    apply Lp.ext
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) m₁ m₂, Lp.coeFn_lpSMul (r := ∞) m₂ m₁] with ξ h₁ h₂
-    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
-  rw [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
-    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, h]
-
 /-- `cos(tD)` commutes with every `L²` Fourier multiplier, applied form. -/
 theorem fourierMultiplierCLM_waveCosPropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
     (f : Lp F 2 (volume : Measure E)) :
     Lp.fourierMultiplierCLM F m (waveCosPropagator F t f) =
       waveCosPropagator F t (Lp.fourierMultiplierCLM F m f) :=
-  fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
+  Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
 
 /-- `D⁻¹ sin(tD)` commutes with every `L²` Fourier multiplier, applied form. -/
 theorem fourierMultiplierCLM_waveSinPropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
     (f : Lp F 2 (volume : Measure E)) :
     Lp.fourierMultiplierCLM F m (waveSinPropagator F t f) =
       waveSinPropagator F t (Lp.fourierMultiplierCLM F m f) :=
-  fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
+  Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
 
 /-- `cos(0D)` is the identity. -/
 @[simp]
