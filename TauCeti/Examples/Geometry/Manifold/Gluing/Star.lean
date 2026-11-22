@@ -37,19 +37,11 @@ example : ∃ (e : Bool → OpenPartialHomeomorph ℂ ℂ)
     OpenPartialHomeomorph.ofSet (U b) (U b).isOpen
   have he : Pairwise (Disjoint on fun b ↦ (e b).source) := by
     intro i j hij
-    cases i <;> cases j
-    · exact (hij rfl).elim
-    · apply Set.disjoint_left.2
-      intro z hx hy
-      have hx' : z.re < 0 := hx
-      have hy' : 0 < z.re := hy
-      exact lt_asymm hx' hy'
-    · apply Set.disjoint_left.2
-      intro z hx hy
-      have hx' : 0 < z.re := hx
-      have hy' : z.re < 0 := hy
-      exact lt_asymm hx' hy'
-    · exact (hij rfl).elim
+    cases i <;> cases j <;>
+      simp_all only [ne_eq, not_true_eq_false, Bool.false_eq_true, Bool.true_eq_false,
+        OpenPartialHomeomorph.ofSet_toPartialEquiv, PartialEquiv.ofSet_source, Set.disjoint_left,
+        ↓reduceIte, Opens.coe_mk, Set.mem_ofPred_eq, e, U] <;>
+      exact fun _ hz ↦ lt_asymm hz
   have h : (starGlueData e he).IsCompatible 𝓘(ℂ) ω :=
     isCompatible_starGlueData e he (fun _ ↦ contMDiff_id.contMDiffOn)
       (fun _ ↦ contMDiff_id.contMDiffOn)
@@ -58,4 +50,5 @@ example : ∃ (e : Bool → OpenPartialHomeomorph ℂ ℂ)
     cases b
     · exact ⟨-1, by norm_num [e, U]⟩
     · exact ⟨1, by norm_num [e, U]⟩
-  · exact starGlueData_ι_some_ne_some e he Bool.false_ne_true
+  · intro x y
+    simp

@@ -69,7 +69,7 @@ noncomputable def starTransition (e : ∀ i, OpenPartialHomeomorph X (Y i)) :
       exact TopCat.ofHom ⟨fun x ↦ False.elim (h x.2), continuous_of_discreteTopology⟩
 
 private theorem starTransition_self (e : ∀ i, OpenPartialHomeomorph X (Y i))
-    (i : Option ι) : ⇑(starTransition e i i) = id := by
+    (i : Option ι) : starTransition e i i = 𝟙 _ := by
   cases i <;> simp [starTransition]
 
 private theorem starTransition_inter (e : ∀ i, OpenPartialHomeomorph X (Y i))
@@ -102,9 +102,7 @@ private theorem starTransition_inter (e : ∀ i, OpenPartialHomeomorph X (Y i))
     | some j =>
       have hij : i = j := x.2
       subst j
-      dsimp only [starTransition]
-      rw [dite_eq_left rfl]
-      exact hx
+      simpa only [starTransition_self, CategoryTheory.id_apply] using hx
 
 private theorem starTransition_cocycle (e : ∀ i, OpenPartialHomeomorph X (Y i))
     (he : Pairwise (Disjoint on fun i ↦ (e i).source))
@@ -125,9 +123,7 @@ private theorem starTransition_cocycle (e : ∀ i, OpenPartialHomeomorph X (Y i)
           by_contra h
           exact Set.disjoint_left.1 (he h) x.2 hx
         subst k
-        dsimp only [starTransition]
-        rw [dite_eq_left rfl]
-        rfl
+        simp only [starTransition_self, CategoryTheory.id_apply]
   | some i =>
     cases j with
     | none =>
@@ -136,8 +132,7 @@ private theorem starTransition_cocycle (e : ∀ i, OpenPartialHomeomorph X (Y i)
       | some k =>
         have hik : i = k := hx
         subst k
-        dsimp only [starTransition]
-        rw [dite_eq_left rfl]
+        simp only [starTransition_self, CategoryTheory.id_apply]
         exact (e i).right_inv x.2
     | some j =>
       have hij : i = j := x.2
@@ -145,9 +140,7 @@ private theorem starTransition_cocycle (e : ∀ i, OpenPartialHomeomorph X (Y i)
       apply congrArg (fun z : starOverlap e (some i) k ↦
         (starTransition e (some i) k z).val)
       apply Subtype.ext
-      dsimp only [starTransition]
-      rw [dite_eq_left rfl]
-      rfl
+      simp only [starTransition_self, CategoryTheory.id_apply]
 
 /-- Glue a hub `X` to leaves `Y i` along open partial homeomorphisms with pairwise disjoint
 sources. The index `none` denotes the hub, and `some i` denotes the leaf `Y i`.
@@ -159,7 +152,7 @@ The body is exposed so that the dependent piece and overlap carriers can be comp
       V := starOverlap e
       t := starTransition e
       V_id := by intro i; cases i <;> ext x <;> simp [starOverlap]
-      t_id := by exact starTransition_self e
+      t_id := fun i ↦ by rw [starTransition_self]; rfl
       t_inter := by exact fun {_ _} ↦ starTransition_inter e he
       cocycle := by exact starTransition_cocycle e he }
 
@@ -211,14 +204,30 @@ theorem starGlueData_U_some (i : ι) :
       x ∈ (e i).source ∧ e i x = y := by
   refine ((starGlueData e he).ι_eq_iff_rel none (some i) x y).trans ⟨?_, ?_⟩
   · rintro ⟨z, hx, hy⟩
-    have hx' : z.val = x := hx
-    have hy' : e i z.val = y := hy
-    exact hx' ▸ ⟨z.2, hy'⟩
+    simp only [starGlueData_f_apply, starGlueData_t_none_some] at hx hy
+    exact hx ▸ ⟨z.2, hy⟩
   · rintro ⟨hx, rfl⟩
     exact ⟨⟨x, hx⟩, rfl, rfl⟩
 
+/-- A leaf point is identified with a hub point exactly by the prescribed transition. -/
+@[simp, grind =] theorem starGlueData_ι_some_eq_none_iff (i : ι) (x : X) (y : Y i) :
+    (starGlueData e he).toGlueData.ι (some i) y = (starGlueData e he).toGlueData.ι none x ↔
+      x ∈ (e i).source ∧ e i x = y :=
+  eq_comm.trans (starGlueData_ι_none_eq_some_iff e he i x y)
+
+/-- Two hub points are identified only if they are equal. -/
+@[simp] theorem starGlueData_ι_none_eq_none_iff (x y : X) :
+    (starGlueData e he).toGlueData.ι none x = (starGlueData e he).toGlueData.ι none y ↔ x = y :=
+  ((starGlueData e he).ι_injective none).eq_iff
+
+/-- Two points of the same leaf are identified only if they are equal. -/
+@[simp] theorem starGlueData_ι_some_eq_same_iff (i : ι) (x y : Y i) :
+    (starGlueData e he).toGlueData.ι (some i) x = (starGlueData e he).toGlueData.ι (some i) y ↔
+      x = y :=
+  ((starGlueData e he).ι_injective (some i)).eq_iff
+
 /-- Distinct leaves have disjoint images, even after taking all generated identifications. -/
-theorem starGlueData_ι_some_ne_some {i j : ι} (hij : i ≠ j) (x : Y i) (y : Y j) :
+@[simp] theorem starGlueData_ι_some_ne_some {i j : ι} (hij : i ≠ j) (x : Y i) (y : Y j) :
     (starGlueData e he).toGlueData.ι (some i) x ≠
       (starGlueData e he).toGlueData.ι (some j) y := by
   intro h
