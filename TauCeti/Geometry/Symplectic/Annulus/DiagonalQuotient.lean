@@ -154,16 +154,22 @@ theorem diagonalSection_apply_of_ne (p : ℝ × ({i // i ≠ i₀} → ℝ)) {i 
     diagonalSection i₀ p i = p.1 + p.2 ⟨i, h⟩ := by
   simp [diagonalSection_apply, h]
 
+/-- The coordinates of `diagonalSection` off `i₀`, indexed by `{i // i ≠ i₀}`. -/
+@[simp]
+theorem diagonalSection_apply_coe (p : ℝ × ({i // i ≠ i₀} → ℝ)) (i : {i // i ≠ i₀}) :
+    diagonalSection i₀ p i = p.1 + p.2 i :=
+  diagonalSection_apply_of_ne i₀ p i.property
+
 /-- The diagonal coordinates of the configuration `q_(i₀) = t`, `q_i = t + v_i` are
 `(t mod 1, v)`. -/
 theorem diagonalCoordinates_diagonalSection (p : ℝ × ({i // i ≠ i₀} → ℝ)) :
     diagonalCoordinates i₀ (diagonalSection i₀ p) = ((p.1 : AddCircle (1 : ℝ)), p.2) := by
   refine Prod.ext (by simp) (funext fun i ↦ ?_)
-  simp [diagonalSection_apply_of_ne i₀ p i.property]
+  simp
 
 omit [DecidableEq ι] in
 /-- The diagonal coordinates are onto: `diagonalSection` is a section. -/
-theorem surjective_diagonalCoordinates : Function.Surjective (diagonalCoordinates i₀) := by
+theorem diagonalCoordinates_surjective : Function.Surjective (diagonalCoordinates i₀) := by
   classical
   rintro ⟨θ, v⟩
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
@@ -175,7 +181,7 @@ diagonal coordinates. -/
 def diagonalQuotientAddEquiv :
     (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ) ≃+ AddCircle (1 : ℝ) × ({i // i ≠ i₀} → ℝ) :=
   (QuotientAddGroup.quotientAddEquivOfEq (ker_diagonalCoordinates i₀).symm).trans
-    (QuotientAddGroup.quotientKerEquivOfSurjective _ (surjective_diagonalCoordinates i₀))
+    (QuotientAddGroup.quotientKerEquivOfSurjective _ (diagonalCoordinates_surjective i₀))
 
 omit [DecidableEq ι] in
 /-- The additive equivalence sends the class of `q` to its diagonal coordinates. -/
@@ -207,7 +213,7 @@ private theorem contMDiff_diagonalQuotientAddEquiv :
     ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj i.val - P
   have h : ⇑(diagonalQuotientAddEquiv i₀) ∘ QuotientAddGroup.mk =
       fun q ↦ ((P q : AddCircle (1 : ℝ)), L q) :=
-    funext (diagonalQuotientAddEquiv_coe i₀)
+    funext fun q ↦ by simp [P, L]
   rw [h]
   exact ((AddCircle.contMDiff_coe 1 n).comp P.contMDiff).prodMk L.contMDiff
 
@@ -249,8 +255,19 @@ def diagonalQuotientDiffeomorph :
   contMDiff_toFun := contMDiff_diagonalQuotientAddEquiv i₀ n
   contMDiff_invFun := contMDiff_diagonalQuotientAddEquiv_symm i₀ n
 
-/-- The diffeomorphism sends the class of `q` to `(q_(i₀) mod 1, (q_i - q_(i₀))_(i ≠ i₀))`. -/
+/-- As a map, the diffeomorphism is the additive equivalence `diagonalQuotientAddEquiv`. -/
 @[simp]
+theorem coe_diagonalQuotientDiffeomorph :
+    ⇑(diagonalQuotientDiffeomorph i₀ n) = diagonalQuotientAddEquiv i₀ :=
+  (rfl)
+
+/-- As a map, the inverse diffeomorphism is the inverse of `diagonalQuotientAddEquiv`. -/
+@[simp]
+theorem coe_diagonalQuotientDiffeomorph_symm :
+    ⇑(diagonalQuotientDiffeomorph i₀ n).symm = (diagonalQuotientAddEquiv i₀).symm :=
+  (rfl)
+
+/-- The diffeomorphism sends the class of `q` to `(q_(i₀) mod 1, (q_i - q_(i₀))_(i ≠ i₀))`. -/
 theorem diagonalQuotientDiffeomorph_coe (q : ι → ℝ) :
     diagonalQuotientDiffeomorph i₀ n (q : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) =
       ((q i₀ : AddCircle (1 : ℝ)), fun i : {i // i ≠ i₀} ↦ q i - q i₀) :=
@@ -258,7 +275,6 @@ theorem diagonalQuotientDiffeomorph_coe (q : ι → ℝ) :
 
 /-- The inverse diffeomorphism sends `(t mod 1, v)` to the class of the configuration
 `q_(i₀) = t`, `q_i = t + v_i`. -/
-@[simp]
 theorem diagonalQuotientDiffeomorph_symm_coe (t : ℝ) (v : {i // i ≠ i₀} → ℝ) :
     (diagonalQuotientDiffeomorph i₀ n).symm ((t : AddCircle (1 : ℝ)), v) =
       (diagonalSection i₀ (t, v) : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) :=
