@@ -14,21 +14,13 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-import TauCeti.Analysis.ODE.Gronwall.Integrable
 
 /-!
 # Grönwall-type estimates
 
 Mathlib's Grönwall inequality (`le_gronwallBound_of_liminf_deriv_right_le`) bounds a function by
-a bound on its derivative. Energy estimates for evolution equations instead produce a bound on a
-function by an integral of itself: an integrable `φ` with `φ t ≤ c + K ∫ₐᵗ φ` for almost every
-`t ∈ [a, b]`, for some `K ≥ 0`. This file proves that such a `φ` satisfies
-`φ t ≤ c exp (K (t - a))` at every `t ∈ [a, b]` where the inequality itself holds
-(`TauCeti.le_mul_exp_of_le_add_mul_integral`). This is the constant-kernel case of the
-integrable-kernel inequality `TauCeti.le_mul_exp_integral_of_le_add_integral_mul`.
-
-The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
-large when `K < 0`.
+a bound on its derivative. The integral form, which bounds a function by an integral of itself, is
+in `TauCeti.Analysis.ODE.Gronwall.Integrable`.
 
 For a monotone `g` the differential form needs neither continuity nor differentiability: if
 `k g ≤ g'` at almost every point of `[s, t]` and `g s ≥ 0`, then `g s exp (∫ₛᵗ k) ≤ g t`
@@ -72,23 +64,6 @@ open Set Filter Real MeasureTheory
 open scoped Topology
 
 namespace TauCeti
-
-/-- **Grönwall's inequality, integral form.** Let `φ` be integrable on `[a, b]` and `0 ≤ K`, with
-`φ s ≤ c + K ∫ₐˢ φ` for almost every `s ∈ [a, b]`. Then `φ t ≤ c exp (K (t - a))` at every
-`t ∈ [a, b]` where `φ t ≤ c + K ∫ₐᵗ φ` holds; in particular at every `t ∈ [a, b]` if the
-hypothesis holds everywhere there, and at almost every `t ∈ [a, b]` in general. -/
-theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
-    (hφ : IntegrableOn φ (Icc a b)) (hK : 0 ≤ K)
-    (h : ∀ᵐ s ∂volume.restrict (Icc a b), φ s ≤ c + K * ∫ r in a..s, φ r)
-    (ht : t ∈ Icc a b) (hφt : φ t ≤ c + K * ∫ s in a..t, φ s) :
-    φ t ≤ c * exp (K * (t - a)) := by
-  -- Apply the integrable-kernel inequality to the constant kernel `K`, which integrates to
-  -- `∫ₐᵗ K = (t - a) K`.
-  have hgr := le_mul_exp_integral_of_le_add_integral_mul (integrableOn_const measure_Icc_lt_top.ne)
-    (.of_forall fun _ ↦ hK) (hφ.const_mul K)
-    (by simpa only [intervalIntegral.integral_const_mul] using h) ht
-    (by rwa [intervalIntegral.integral_const_mul])
-  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
 on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then

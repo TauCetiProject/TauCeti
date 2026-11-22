@@ -21,8 +21,13 @@ Let `β ≥ 0` be integrable on `[a, b]` and let `u` satisfy `u s ≤ α + ∫�
 the inequality itself holds (`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`); in particular
 at every `t ∈ [a, b]` if it holds everywhere there. The backward form, with `∫ₜᵇ` in place of
 `∫ₐᵗ`, is `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be
-bounded, nor `u` continuous. The constant-kernel case `β ≡ K`, with the closed form
-`α exp (K (t - a))`, is `TauCeti.le_mul_exp_of_le_add_mul_integral`.
+bounded, nor `u` continuous.
+
+Energy estimates for evolution equations produce such a recurrence with a constant kernel
+`K ≥ 0`. For an integrable `φ` with `φ s ≤ c + K ∫ₐˢ φ` at almost every `s ∈ [a, b]`, the bound
+takes the closed form `φ t ≤ c exp (K (t - a))` (`TauCeti.le_mul_exp_of_le_add_mul_integral`).
+This corollary asks `φ` itself to be integrable. The forward form needs only `K φ` integrable,
+which is weaker when `K = 0`.
 
 The sign of the kernel matters: `u ≡ 1/2`, `β ≡ -1` and `α = 1` satisfy the hypothesis on
 `[0, 1]`, yet `1/2 > e^{-1}`.
@@ -32,6 +37,7 @@ This is the estimate behind uniqueness and the bounds for linear Carathéodory s
 ## References
 
 * E. A. Coddington, N. Levinson, *Theory of Ordinary Differential Equations*, Chapter 1.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., Appendix B.2.
 -/
 
 public section
@@ -71,21 +77,20 @@ theorem le_mul_exp_integral_of_le_add_integral_mul {u β : ℝ → ℝ} {a b α 
     ((LipschitzWith.const α).lipschitzOnWith.absolutelyContinuousOnInterval.add hvAC).fun_mul
       hEAC
   -- Its derivative `β e^{-B} (u - α - v)` is almost everywhere nonpositive on `[a, t]`.
-  have hβ₀' : ∀ᵐ x, x ∈ Icc a b → 0 ≤ β x := (ae_restrict_iff' measurableSet_Icc).1 hβ₀
-  have h' : ∀ᵐ x, x ∈ Icc a b → u x ≤ α + v x := (ae_restrict_iff' measurableSet_Icc).1 h
   have hderiv : (fun x ↦ deriv (fun x ↦ (α + v x) * exp (-B x)) x)
       ≤ᵐ[volume.restrict (Icc a t)] fun _ ↦ 0 := by
-    rw [Filter.EventuallyLE, ae_restrict_iff' measurableSet_Icc]
-    filter_upwards [hβi.ae_hasDerivAt_integral, hβui.ae_hasDerivAt_integral, hβ₀', h']
-      with x hB hv hx₀ hxu hx
+    filter_upwards [ae_restrict_of_ae hβi.ae_hasDerivAt_integral,
+      ae_restrict_of_ae hβui.ae_hasDerivAt_integral,
+      ae_restrict_of_ae_restrict_of_subset hsub (hβ₀.and h), ae_restrict_mem measurableSet_Icc]
+      with x hB hv ⟨hx₀, hxu⟩ hx
     have hx' : x ∈ uIcc a t := by rwa [uIcc_of_le ht.1]
     have hd : HasDerivAt (fun y ↦ (α + v y) * exp (-B y))
         ((0 + β x * u x) * exp (-B x) + (α + v x) * (exp (-B x) * -β x)) x :=
       ((hasDerivAt_const x α).add (hv hx' a left_mem_uIcc)).mul
         (hB hx' a left_mem_uIcc).neg.exp
     rw [hd.deriv]
-    nlinarith [mul_nonneg (mul_nonneg (hx₀ (hsub hx)) (exp_pos (-B x)).le)
-      (sub_nonneg.2 (hxu (hsub hx)))]
+    nlinarith [mul_nonneg (mul_nonneg hx₀ (exp_pos (-B x)).le)
+      (sub_nonneg.2 (show u x ≤ α + v x from hxu))]
   have hle := intervalIntegral.integral_mono_ae_restrict ht.1 hgAC.intervalIntegrable_deriv
     intervalIntegrable_const hderiv
   rw [hgAC.integral_deriv_eq_sub, intervalIntegral.integral_const, smul_zero] at hle
@@ -105,24 +110,39 @@ theorem le_mul_exp_integral_of_le_add_integral_mul_rev {u β : ℝ → ℝ} {a b
     (h : ∀ᵐ s ∂volume.restrict (Icc a b), u s ≤ α + ∫ r in s..b, β r * u r)
     (ht : t ∈ Icc a b) (hut : u t ≤ α + ∫ s in t..b, β s * u s) :
     u t ≤ α * exp (∫ s in t..b, β s) := by
-  -- Reflect `[a, b]` to `[-b, -a]` and apply the forward form to `u ∘ neg` and `β ∘ neg`.
-  have hmp := Measure.measurePreserving_neg (volume : Measure ℝ)
+  -- Reflect `[a, b]` to `[-b, -a]` and apply the forward form to `u ∘ neg` and `β ∘ neg`. One
+  -- measure-preserving negation between the restricted measures transports both the
+  -- integrability and the almost-everywhere hypotheses.
   have hpre : Neg.neg ⁻¹' Icc a b = Icc (-b) (-a) := by simp [neg_preimage, neg_Icc]
-  have hneg {f : ℝ → ℝ} (hf : IntegrableOn f (Icc a b)) :
-      IntegrableOn (fun s ↦ f (-s)) (Icc (-b) (-a)) := by
+  have hmp : MeasurePreserving Neg.neg (volume.restrict (Icc (-b) (-a)))
+      (volume.restrict (Icc a b)) := by
     rw [← hpre]
-    exact (hmp.integrableOn_comp_preimage (measurableEmbedding_neg)).2 hf
-  have hae {p : ℝ → Prop} (hp : ∀ᵐ s ∂volume.restrict (Icc a b), p s) :
-      ∀ᵐ s ∂volume.restrict (Icc (-b) (-a)), p (-s) := by
-    rw [ae_restrict_iff' measurableSet_Icc] at hp ⊢
-    filter_upwards [hmp.quasiMeasurePreserving.ae hp] with s hs hs'
-    exact hs ⟨le_neg.1 hs'.2, neg_le.1 hs'.1⟩
+    exact (Measure.measurePreserving_neg (volume : Measure ℝ)).restrict_preimage
+      measurableSet_Icc
   have key := le_mul_exp_integral_of_le_add_integral_mul (u := fun s ↦ u (-s))
-    (β := fun s ↦ β (-s)) (α := α) (hneg hβ) (hae hβ₀) (hneg hβu)
-    ((hae h).mono fun s hs ↦ by
+    (β := fun s ↦ β (-s)) (α := α) ((hmp.integrable_comp_emb measurableEmbedding_neg).2 hβ)
+    (hmp.quasiMeasurePreserving.ae hβ₀) ((hmp.integrable_comp_emb measurableEmbedding_neg).2 hβu)
+    ((hmp.quasiMeasurePreserving.ae h).mono fun s hs ↦ by
       simpa [intervalIntegral.integral_comp_neg (fun s ↦ β s * u s)] using hs)
     ⟨neg_le_neg ht.2, neg_le_neg ht.1⟩
     (by simpa [intervalIntegral.integral_comp_neg (fun s ↦ β s * u s)] using hut)
   simpa [intervalIntegral.integral_comp_neg β] using key
+
+/-- **Grönwall's inequality with a constant kernel.** Let `φ` be integrable on `[a, b]` and
+`0 ≤ K`, with `φ s ≤ c + K ∫ₐˢ φ` for almost every `s ∈ [a, b]`. Then `φ t ≤ c exp (K (t - a))`
+at every `t ∈ [a, b]` where `φ t ≤ c + K ∫ₐᵗ φ` holds; in particular at every `t ∈ [a, b]` if the
+hypothesis holds everywhere there, and at almost every `t ∈ [a, b]` in general. -/
+theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
+    (hφ : IntegrableOn φ (Icc a b)) (hK : 0 ≤ K)
+    (h : ∀ᵐ s ∂volume.restrict (Icc a b), φ s ≤ c + K * ∫ r in a..s, φ r)
+    (ht : t ∈ Icc a b) (hφt : φ t ≤ c + K * ∫ s in a..t, φ s) :
+    φ t ≤ c * exp (K * (t - a)) := by
+  -- Apply the integrable-kernel inequality to the constant kernel `K`, which integrates to
+  -- `∫ₐᵗ K = (t - a) K`.
+  have hgr := le_mul_exp_integral_of_le_add_integral_mul (integrableOn_const measure_Icc_lt_top.ne)
+    (.of_forall fun _ ↦ hK) (hφ.const_mul K)
+    (by simpa only [intervalIntegral.integral_const_mul] using h) ht
+    (by rwa [intervalIntegral.integral_const_mul])
+  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
 
 end TauCeti
