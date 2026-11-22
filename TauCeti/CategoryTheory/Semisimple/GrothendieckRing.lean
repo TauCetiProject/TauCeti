@@ -228,6 +228,14 @@ theorem isIntegral_ringHom_apply [Finite (SimpleClasses C)] {R : Type*} [Ring R]
     (ψ : SplitK0 C →+* R) (x : SplitK0 C) : IsIntegral ℤ (ψ x) :=
   (IsIntegral.of_finite ℤ x).map ψ.toIntAlgHom
 
+/-- A ring homomorphism out of the Grothendieck ring evaluates on the class of an object as the
+sum of its values on the simple classes weighted by their multiplicities in the object. -/
+theorem ringHom_apply_of [Fintype (SimpleClasses C)] {R : Type*} [NonAssocSemiring R]
+    (ψ : SplitK0 C →+* R) (X : C) :
+    ψ (of X) = ∑ S : SimpleClasses C, (simpleMultiplicities X S : R) * ψ (of S.repr) := by
+  rw [of_eq_sum, Finsupp.sum_fintype _ _ (by simp), map_sum]
+  simp [nsmul_eq_mul]
+
 end Mul
 
 end SplitK0

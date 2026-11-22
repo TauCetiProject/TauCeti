@@ -388,9 +388,7 @@ private theorem counitLF_comm {A : C} (b : HalfBraiding A) (U : C) :
   refine inductionObj_whiskerRight_hom_ext fun S ↦ ?_
   have htot : U ◁ counitLF b =
       ∑ T : SimpleClasses C, U ◁ biproduct.π (inductionSummand A) T ≫ U ◁ counitComponent b T := by
-    rw [← Category.id_comp (counitLF b), ← biproduct.total]
-    simp only [Preadditive.sum_comp, Category.assoc, counitLF, biproduct.ι_desc, whiskerLeft_sum,
-      whiskerLeft_comp]
+    simp only [counitLF, biproduct.desc_eq, whiskerLeft_sum, whiskerLeft_comp]
   rw [Category.assoc, htot, ← comp_whiskerRight, counitLF, biproduct.ι_desc]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc,
     ι_whiskerRight_inductionβHom_whiskerLeft_π_assoc]

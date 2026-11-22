@@ -12,6 +12,7 @@ public import TauCeti.CategoryTheory.Monoidal.Center.Simple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.GlobalDim
 public import TauCeti.CategoryTheory.Semisimple.Finite
 public import TauCeti.CategoryTheory.Semisimple.Split
+import TauCeti.CategoryTheory.Adjunction.Linear
 import TauCeti.CategoryTheory.Monoidal.Pivotal.Character
 
 /-!
@@ -99,11 +100,7 @@ theorem simpleMultiplicities_inductionCenterObj_apply [IsFiniteSemisimpleCategor
     simpleMultiplicities (inductionCenterObj k X) M =
       simpleMultiplicities M.repr.1 (SimpleClasses.classOf X) := by
   have : ∀ Z W : Center C, FiniteDimensional k (Z ⟶ W) := inferInstance
-  let e : ((forget C).obj M.repr ⟶ X) ≃ₗ[k] (M.repr ⟶ (induction k C).obj X) :=
-    ((forgetInductionAdjunction k C).homAddEquiv M.repr X).toLinearEquiv fun r g ↦ by
-      rw [Adjunction.homAddEquiv_apply, Adjunction.homAddEquiv_apply,
-        Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_smul, Linear.comp_smul]
-  have hfin := e.finrank_eq.symm
+  have hfin := ((forgetInductionAdjunction k C).homLinearEquiv k M.repr X).finrank_eq.symm
   rw [induction_obj] at hfin
   rw [finrank_hom_simple_eq_simpleMultiplicities k, SimpleClasses.classOf_repr,
     forget_obj, finrank_homTo_simple_eq_simpleMultiplicities k] at hfin
@@ -139,25 +136,26 @@ theorem forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_coun
   rw [← hsum]
   let u : Z.1 ⟶ inductionObj Z.1 := ((forgetInductionAdjunction k C).unit.app Z).f
   let c : inductionObj Z.1 ⟶ Z.1 := ((inductionForgetAdjunction k C).counit.app Z).f
-  calc u ≫ c
-      = u ≫ (∑ S : SimpleClasses C,
-          biproduct.π (inductionSummand Z.1) S ≫ biproduct.ι (inductionSummand Z.1) S) ≫ c := by
-        rw [biproduct.total, Category.id_comp]
-    _ = ∑ S : SimpleClasses C,
-          (u ≫ biproduct.π (inductionSummand Z.1) S) ≫
-          (biproduct.ι (inductionSummand Z.1) S ≫ c) := by
-        simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
-    _ = _ := by
-        simp only [whiskerLeft_sum, Preadditive.comp_sum, Preadditive.sum_comp]
-        refine Finset.sum_congr rfl fun S _ ↦ ?_
-        have hu : u ≫ biproduct.π (inductionSummand Z.1) S = _ :=
-          forgetInductionAdjunction_unit_app_f_comp_π k C Z S
-        have hc : biproduct.ι (inductionSummand Z.1) S ≫ c = _ :=
-          ι_comp_inductionForgetAdjunction_counit_app_f k C Z S
-        rw [hu, hc]
-        simp only [Category.assoc, Iso.hom_inv_id_assoc]
-        rw [← comp_whiskerRight_assoc, Iso.hom_inv_id, id_whiskerRight, Category.id_comp,
-          Iso.inv_hom_id_assoc, ← whiskerLeft_comp_assoc]
+  have hu : u = biproduct.lift fun S : SimpleClasses C ↦
+      (ρ_ Z.1).inv ≫ Z.1 ◁ η_ S.repr S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).inv ≫
+        (Z.2.β S.repr).hom ▷ S.reprᘁ ≫ (α_ S.repr Z.1 S.reprᘁ).hom := by
+    refine biproduct.hom_ext _ _ fun S ↦ ?_
+    rw [biproduct.lift_π]
+    exact forgetInductionAdjunction_unit_app_f_comp_π k C Z S
+  have hc : c = biproduct.desc fun S : SimpleClasses C ↦
+      (α_ S.repr Z.1 S.reprᘁ).inv ≫ (Z.2.β S.repr).inv ▷ S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).hom ≫
+        Z.1 ◁ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) ≫
+        (ρ_ Z.1).hom := by
+    refine biproduct.hom_ext' _ _ fun S ↦ ?_
+    rw [biproduct.ι_desc]
+    exact ι_comp_inductionForgetAdjunction_counit_app_f k C Z S
+  change u ≫ c = _
+  rw [hu, hc, biproduct.lift_desc]
+  simp only [whiskerLeft_sum, Preadditive.comp_sum, Preadditive.sum_comp]
+  refine Finset.sum_congr rfl fun S _ ↦ ?_
+  simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  rw [← comp_whiskerRight_assoc, Iso.hom_inv_id, id_whiskerRight, Category.id_comp,
+    Iso.inv_hom_id_assoc, ← whiskerLeft_comp_assoc]
 
 /-- In a fusion category `C` over an algebraically closed field `k`, the composite of the unit of
 `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at `Z : Center C` is
@@ -338,9 +336,8 @@ private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) *
         SplitK0.leftDimChar k C (SplitK0.of S.repr) := by
   calc _ = SplitK0.leftDimChar k (Center C) (SplitK0.of ((induction k C).obj S.repr)) := by
-          conv_rhs => rw [SplitK0.of_eq_sum, Finsupp.sum_fintype _ _ (by simp)]
-          simp only [map_sum, nsmul_eq_mul, map_mul, map_natCast,
-            simpleMultiplicities_induction_obj_apply k, SimpleClasses.classOf_repr]
+          rw [SplitK0.ringHom_apply_of]
+          simp_rw [simpleMultiplicities_induction_obj_apply k, SimpleClasses.classOf_repr]
     _ = _ := by
           rw [SplitK0.leftDimChar_of, endAlgEquivOfSimple_unit_apply,
             leftDim_induction_obj_f k S.repr, End.of_comp, map_mul, SplitK0.leftDimChar_of]
@@ -369,12 +366,8 @@ theorem endAlgEquivOfSimple_globalDim [IsFiniteSemisimpleCategory (Center C)]
   have hM (M : SimpleClasses (Center C)) :
       ∑ S : SimpleClasses C, (simpleMultiplicities M.repr.1 S : k) * ψC (SplitK0.of S.repr) =
         χZ (SplitK0.of (M.repr)ᘁ) := by
-    calc _ = ψC (SplitK0.of M.repr.1) := by
-            conv_rhs => rw [SplitK0.of_eq_sum, Finsupp.sum_fintype _ _ (by simp)]
-            simp [map_sum]
-      _ = _ := by
-            rw [← SplitK0.dual_of, SplitK0.leftDimChar_dual, SplitK0.rightDimChar_of,
-              SplitK0.rightDimChar_of, endAlgEquivOfSimple_unit_apply, rightDim_f]
+    rw [← SplitK0.ringHom_apply_of ψC M.repr.1, ← SplitK0.dual_of, SplitK0.leftDimChar_dual,
+      SplitK0.rightDimChar_of, SplitK0.rightDimChar_of, endAlgEquivOfSimple_unit_apply, rightDim_f]
   calc endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C)))
       = ∑ M : SimpleClasses (Center C), χZ (SplitK0.of M.repr) *
           (∑ S : SimpleClasses C, (simpleMultiplicities M.repr.1 S : k) * ψC (SplitK0.of S.repr)) :=
