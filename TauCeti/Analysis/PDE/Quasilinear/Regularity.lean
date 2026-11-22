@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Holder.Superposition
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
@@ -40,8 +40,8 @@ One more derivative of the coefficient buys one more derivative of the solution.
 `C¹` as a function of `(x, s)` with derivative `α`-Hölder near every point of `Ω × ℝ`, then every
 weak solution agrees almost everywhere with a function that is `C²` on `Ω` and whose second
 derivative is `α`-Hölder on every compact subset of `Ω`
-(`exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_quasilinear`). This is
-interior `C^{2,α}` regularity.
+(`exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_energyFormH1_quasilinear_eq`).
+This is interior `C^{2,α}` regularity.
 
 ## The bootstrap
 
@@ -59,8 +59,8 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
 * **Schauder again.** A second application of the Schauder estimate gives the exponents above.
 * **Differentiating the equation.** For the `C^{2,α}` statement, the data are bounded near each
   point, so `∇u` is `α`-Hölder near each point, and `u` has a `C¹` representative `g₁`
-  (`TauCeti.HasWeakFDerivOn.exists_contDiffOn_one_ae_eq`). The frozen coefficient
-  `x ↦ A(x, g₁(x))` is then `C^{1,α}` near each point
+  (`TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`). The frozen
+  coefficient `x ↦ A(x, g₁(x))` is then `C^{1,α}` near each point
   (`TauCeti.exists_mem_nhds_holderOnWith_fderiv_superposition`), and the linear theorem for
   `C^{1,α}` coefficients
   (`TauCeti.PDE.exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`)
@@ -364,7 +364,7 @@ private theorem exists_mem_nhds_holderOnWith_preciseRepresentative_gradient (hα
       (Omega := B) (q := ⊤) (G := 0) (KG := 0) le_top (fun s => (hA s).mono_set hBΩ)
       (fun s => (hAx s).mono hBΩ) (fun y hy => hAs y (hBΩ hy)) (HolderWith.zero.holderOnWith _)
       hftop huB (β := α) hα hα1 le_rfl (by simpa using hα1.le) isBounded_ball (half_pos hR)
-      (S := ball x (R / 2)) ((thickening_ball x _ _).trans_eq (by rw [add_halves]; rfl))
+      (S := ball x (R / 2)) ((thickening_ball x _ _).trans_eq (by rw [add_halves, Opens.coe_mk]))
   refine ⟨ball x (R / 2), ball_mem_nhds x (half_pos hR), C, hC.congr fun y hy => ?_⟩
   exact preciseRepresentative_congr_ae_nhds
     (B.isOpen.mem_nhds (ball_subset_ball (half_le_self hR.le) hy)) (W1p.gradient_restrictL_ae hBΩ u)
@@ -385,7 +385,8 @@ that is `∫_Ω ⟨A(x, u) ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹₀(�
 on `Ω` with a function `g` that is `C²` on `Ω` and whose second derivative is `α`-Hölder on every
 compact subset of `Ω`. No boundary condition is imposed on `u` and nothing is assumed about `∂Ω`.
 -/
-theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_quasilinear
+theorem
+    exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_energyFormH1_quasilinear_eq
     (hα : 0 < α) (hα1 : α < 1)
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
@@ -411,10 +412,8 @@ theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_quasi
   have hP : ContinuousOn (preciseRepresentative volume (W1p.gradient u)) Omega := fun x hx => by
     obtain ⟨T, hT, C, hC⟩ := hloc x hx
     exact ((hC.continuousOn hα).continuousAt hT).continuousWithinAt
-  obtain ⟨g₁, hg₁, hug₁, hdg₁⟩ := ((W1p.hasWeakFDerivOn u).congr_ae_deriv
-    ((ae_eq_restrict_preciseRepresentative Omega.isOpen
-      (W1p.locallyIntegrableOn_gradient u)).fun_comp (innerSL ℝ))).exists_contDiffOn_one_ae_eq
-    ((innerSL ℝ).continuous.comp_continuousOn hP)
+  obtain ⟨g₁, hg₁, hug₁, hdg₁⟩ :=
+    W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative u le_rfl hP
   have hdg₁H : ∀ x ∈ Omega, ∃ T ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C α (fderiv ℝ g₁) T :=
     fun x hx => by
       obtain ⟨T, hT, C, hC⟩ := hloc x hx

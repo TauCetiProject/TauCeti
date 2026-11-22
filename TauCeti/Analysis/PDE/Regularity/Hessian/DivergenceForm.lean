@@ -10,7 +10,8 @@ public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
-import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -69,8 +70,8 @@ of the solution. This is the linear step of the regularity bootstrap for quasili
 * `exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`: the same
   in classical form, a `C²` representative with locally `α`-Hölder second derivative. The
   continuous representatives of the second weak derivatives give `C¹` representatives of the first
-  derivatives (`TauCeti.HasWeakFDerivOn.exists_contDiffOn_one_ae_eq`), which assemble into a `C¹`
-  derivative of `u`.
+  derivatives (`TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`),
+  which assemble into a `C¹` derivative of `u`.
 
 ## References
 
@@ -318,15 +319,9 @@ private theorem exists_contDiffOn_hasWeakLineDerivOn_and_holderOnWith_of_contDif
   have hCW : HolderOnWith C α (preciseRepresentative volume (W1p.gradient d : E → E)) W :=
     hC.mono ball_subset_closedBall
   -- The precise representative of `∇d` is a continuous weak derivative of `d = ∂ₑu` on `W`.
-  have hdG : (W1p.gradient d : E → E) =ᵐ[volume.restrict W]
-      preciseRepresentative volume (W1p.gradient d : E → E) :=
-    ae_restrict_of_ae_restrict_of_subset hWV
-      (ae_eq_restrict_preciseRepresentative V.isOpen (W1p.locallyIntegrableOn_gradient d))
-  have hweak : HasWeakFDerivOn volume W (W1p.value d)
-      (fun y => innerSL ℝ (preciseRepresentative volume (W1p.gradient d : E → E) y)) :=
-    ((W1p.hasWeakFDerivOn d).mono hWV).congr_ae_deriv (hdG.fun_comp (innerSL ℝ))
-  obtain ⟨ge, hge, hdge, hgd⟩ := hweak.exists_contDiffOn_one_ae_eq
-    ((innerSL ℝ).continuous.comp_continuousOn (hCW.continuousOn hα))
+  obtain ⟨ge, hge, hdge, hgd⟩ :=
+    W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative d hWV
+      (hCW.continuousOn hα)
   exact ⟨ge, _, C, hge, hCW, (hd.mono hWV).congr_ae_deriv hdge, hgd⟩
 
 /-- Near each point of `Ω`, a continuous representative `g` of a weak solution of
@@ -414,12 +409,8 @@ theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contD
       obtain ⟨C, hC⟩ := exists_holderOnWith_preciseRepresentative_gradient_of_contDiffOn hα hα1
         hell ha hf hfH hu (isCompact_closedBall x r) hrΩ
       exact ((hC.continuousOn hα).continuousAt (closedBall_mem_nhds x hr)).continuousWithinAt
-  have hweak : HasWeakFDerivOn volume Omega (W1p.value u)
-      (fun x => innerSL ℝ (preciseRepresentative volume (W1p.gradient u : E → E) x)) :=
-    (W1p.hasWeakFDerivOn u).congr_ae_deriv ((ae_eq_restrict_preciseRepresentative Omega.isOpen
-      (W1p.locallyIntegrableOn_gradient u)).fun_comp (innerSL ℝ))
   obtain ⟨g, hg, hug, -⟩ :=
-    hweak.exists_contDiffOn_one_ae_eq ((innerSL ℝ).continuous.comp_continuousOn hP)
+    W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative u le_rfl hP
   have hloc := fun x (hx : x ∈ Omega) =>
     exists_ball_contDiffOn_two_and_holderOnWith_iteratedFDeriv_two hα hα1 hell ha hda hf hfH hu
       hg.continuousOn hug hx
