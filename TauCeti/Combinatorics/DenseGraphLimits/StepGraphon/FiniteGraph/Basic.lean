@@ -11,6 +11,8 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Average
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.UniformOn
+import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Pullback
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # A finite graph as a graphon
@@ -64,7 +66,12 @@ and measurability is a composition through the countable discrete space `ℕ × 
   graph is a `stepGraphon` on the partition of the unit interval into its `m` cells, and
   `TauCeti.DenseGraphLimits.stepGraphonAvg_finiteGraphGraphon` — it is its own block average
   over those cells;
-* `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility.
+* `TauCeti.DenseGraphLimits.prod_edgeFactor_finiteGraphGraphon`,
+  `TauCeti.DenseGraphLimits.prod_edgeFactor_finiteGraphGraphonOnFin` — the edge product of `F` is
+  the indicator that the vertex assignment carries every edge of `F` to an edge of `G`;
+* `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphonOnFin`,
+  `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility, on the
+  uniform finite carrier and on the unit interval.
 
 ## References
 
@@ -219,40 +226,68 @@ theorem stepGraphonAvg_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
 
 variable {V : Type*} [Fintype V]
 
+/-- For a graphon that is the adjacency indicator of a graph `r` on its carrier, the edge product of
+`F` at `x` is the indicator that `x` carries every edge of `F` to an edge of `r`. -/
+private theorem prod_edgeFactor_eq_ite {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (F : SimpleGraph V) [DecidableRel F.Adj] {W : Graphon Ω μ}
+    {r : SimpleGraph Ω} [DecidableRel r.Adj] (hW : ∀ x y, W x y = if r.Adj x y then 1 else 0)
+    (x : V → Ω) :
+    ∏ e ∈ F.edgeFinset, edgeFactor W x e
+      = if ∀ a b, F.Adj a b → r.Adj (x a) (x b) then (1 : ℝ) else 0 := by
+  -- each edge factor is the indicator of the edge set of the pulled-back graph `r.comap x`
+  have hfac : ∀ e : Sym2 V, edgeFactor W x e = if e ∈ (r.comap x).edgeSet then 1 else 0 := by
+    intro e
+    induction e using Sym2.ind with
+    | _ a b => simp [hW]
+  rw [Finset.prod_congr rfl fun e _ => hfac e, Finset.prod_boole]
+  simp [Sym2.forall]
+
 open scoped Classical in
 /-- **The edge product is an adjacency-preservation indicator.** For the graphon of a finite graph
 `G`, the product of `edgeFactor` over the edges of `F` is `1` exactly when every edge of `F` is
 carried to an edge of `G` by the cell index, and `0` otherwise.
 
-This is the pointwise identity that makes `homDensity_finiteGraphGraphon` a counting argument: it
-replaces the integrand of the graphon homomorphism density by an indicator, whose integral is then
-the proportion of cell-index tuples that are graph homomorphisms. Use it whenever the edge product
-of a finite-graph graphon has to be evaluated at a fixed tuple. -/
+This holds for every `m`, so the adjacency is that of the transported graph on `ℕ`. For `m ≠ 0`,
+the same indicator in terms of `G.Adj` on `Fin m` is `prod_edgeFactor_finiteGraphGraphonOnFin`,
+read through `finiteGraphGraphon_eq_comap` and `edgeFactor_comap`. -/
 theorem prod_edgeFactor_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj]
     (G : SimpleGraph (Fin m)) (x : V → I) :
     ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphon G) x e
       = if ∀ a b, F.Adj a b → (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b))
-          then (1 : ℝ) else 0 := by
-  let p : Sym2 V → Prop := Sym2.lift
-    ⟨fun a b => (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)),
-      fun a b => propext (SimpleGraph.adj_comm (G.map Fin.valEmbedding) _ _)⟩
-  have hfac : ∀ e : Sym2 V,
-      edgeFactor (finiteGraphGraphon G) x e = if p e then 1 else 0 := by
-    intro e
-    induction e using Sym2.ind with
-    | _ a b =>
-      rw [edgeFactor_mk, finiteGraphGraphon_apply]
-      exact if_congr (by simp only [p, Sym2.lift_mk]) rfl rfl
-  have hp_iff : (∀ e ∈ F.edgeFinset, p e) ↔
-      ∀ a b, F.Adj a b →
-        (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)) := by
-    simp only [SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet, Sym2.forall, p,
-      Sym2.lift_mk]
-  rw [Finset.prod_congr rfl fun e _ => hfac e, Finset.prod_boole]
-  by_cases h : ∀ a b, F.Adj a b →
-      (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b))
-  · rw [ite_eq_left h, ite_eq_left (hp_iff.2 h)]
-  · rw [ite_eq_right h, ite_eq_right fun hp => h (hp_iff.1 hp)]
+          then (1 : ℝ) else 0 :=
+  prod_edgeFactor_eq_ite F (r := (G.map Fin.valEmbedding).comap (cellIdx m))
+    (finiteGraphGraphon_apply G) x
+
+open scoped Classical in
+/-- **The edge product on the uniform finite carrier is a homomorphism indicator.** For the graphon
+of `G` on `Fin m`, the product of `edgeFactor` over the edges of `F` at `ψ : V → Fin m` is `1`
+exactly when `ψ` carries every edge of `F` to an edge of `G`, and `0` otherwise. -/
+theorem prod_edgeFactor_finiteGraphGraphonOnFin [NeZero m] (F : SimpleGraph V)
+    [DecidableRel F.Adj] (G : SimpleGraph (Fin m)) (ψ : V → Fin m) :
+    ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphonOnFin G) ψ e
+      = if ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b) then (1 : ℝ) else 0 :=
+  prod_edgeFactor_eq_ite F (finiteGraphGraphonOnFin_apply G) ψ
+
+/-- **Finite-graph compatibility on the uniform finite carrier.** The graphon homomorphism density
+of `F` in the graphon of `G` on `Fin m` is the finite homomorphism density of `F` in `G`. -/
+@[simp]
+theorem homDensity_finiteGraphGraphonOnFin [NeZero m] (F : SimpleGraph V) [DecidableRel F.Adj]
+    (G : SimpleGraph (Fin m)) :
+    homDensity F (finiteGraphGraphonOnFin G) = homDensityFin F G := by
+  classical
+  -- the vertex assignments that carry every edge of `F` to an edge of `G` are the homomorphisms
+  have hcount : (Fintype.card {ψ : V → Fin m // ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b)} : ℝ)
+      = Nat.card (F →g G) := by
+    rw [SimpleGraph.card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card]
+  calc homDensity F (finiteGraphGraphonOnFin G)
+      = ∫ ψ : V → Fin m, (if ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b) then (1 : ℝ) else 0)
+          ∂uniformOn Set.univ := by
+        rw [homDensity_def, ← uniformOn_pi, Set.pi_univ]
+        simp only [prod_edgeFactor_finiteGraphGraphonOnFin]
+    _ = homDensityFin F G := by
+        rw [Probability.integral_uniformOn_univ, Finset.sum_boole, ← Fintype.card_subtype, hcount,
+          homDensityFin_def]
+        simp [div_eq_inv_mul]
 
 /-- **Finite-graph compatibility.** The graphon homomorphism density of `F` in the graphon of a
 finite graph `G` on `Fin m` is the finite homomorphism density of `F` in `G`:
@@ -265,19 +300,9 @@ left-hand side is `1`, while the right-hand side is `0 / 0 = 0`. -/
 theorem homDensity_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj] (hm : 0 < m)
     (G : SimpleGraph (Fin m)) :
     homDensity F (finiteGraphGraphon G) = homDensityFin F G := by
-  classical
   have : NeZero m := ⟨hm.ne'⟩
-  -- the edge product is the indicator that the cells of the points span a homomorphism
-  have hind : ∀ x : V → I, ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphon G) x e
-      = if ∀ a b, F.Adj a b → G.Adj (cellFin m (x a)) (cellFin m (x b)) then (1 : ℝ) else 0 := by
-    intro x
-    simp only [prod_edgeFactor_finiteGraphGraphon, ← coe_cellFin, map_valEmbedding_adj_iff]
-  rw [homDensity_def, integral_congr_ae (Filter.Eventually.of_forall hind),
-    integral_pi_comp_cellFin_eq_inv_smul_sum
-      (fun ψ : V → Fin m => if ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b) then (1 : ℝ) else 0),
-    Finset.sum_boole, smul_eq_mul, inv_mul_eq_div, homDensityFin_def,
-    SimpleGraph.card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card, Fintype.card_subtype,
-    Fintype.card_fin]
+  rw [finiteGraphGraphon_eq_comap, homDensity_comap F _ measurePreserving_cellFin,
+    homDensity_finiteGraphGraphonOnFin]
 
 end DenseGraphLimits
 

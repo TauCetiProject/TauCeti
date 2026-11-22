@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # The equipartition of the unit interval into `m` cells
@@ -57,8 +58,8 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.measurePreserving_cellFin` — the cell index carries `volume` to the uniform
   measure on `Fin m`;
 * `TauCeti.unitInterval.integral_pi_comp_cellFin_eq_inv_smul_sum` — a function of the cells of
-  finitely many independent uniform points integrates to the average of its values over
-  `V → Fin m`.
+  finitely many independent uniform points, with values in a complete real normed space, integrates
+  to the average of its values over `V → Fin m`.
 
 The file also records `TauCeti.intervalIntegral_eq_integral_unitInterval`: an interval integral
 over `[0, 1]` is the integral over the unit interval `I` with its volume measure.
@@ -266,13 +267,15 @@ theorem volume_real_preimage_cellFin [NeZero m] (C : Finset (Fin m)) :
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 open scoped Classical in
-/-- **Independent uniform points, read through their cells.** For `m ≠ 0`, the integral of a
-function of the cells `cellFin m (x v)` of `#V` independent uniform points of `[0, 1]` is the
-average of that function over all `#V`-tuples of cells `V → Fin m`.
+/-- **Independent uniform points, read through their cells.** For `m ≠ 0` and a function `f` on
+the tuples of cells `V → Fin m` with values in a complete real normed space, the integral of
+`f (fun v => cellFin m (x v))` over `#V` independent uniform points of `[0, 1]` is the average of
+`f` over all `#V`-tuples of cells.
 
-This turns an integral over a finite power of `(I, volume)` into a finite sum. It is the product,
-under Mathlib's `MeasureTheory.measurePreserving_pi`, of `measurePreserving_cellFin`. A function `g`
-of the `ℕ`-valued indices `cellIdx m (x v)` is covered by taking `f ψ = g fun v => ψ v`, since
+This turns an integral over a finite power of `(I, volume)` into a finite sum. The coordinatewise
+cell map is measure preserving onto the product of the uniform measures on `Fin m`, by Mathlib's
+`MeasureTheory.measurePreserving_pi` applied to `measurePreserving_cellFin`. A function `g` of the
+`ℕ`-valued indices `cellIdx m (x v)` is covered by taking `f ψ = g fun v => ψ v`, since
 `coe_cellFin` rewrites `(cellFin m x : ℕ)` to `cellIdx m x`. -/
 theorem integral_pi_comp_cellFin_eq_inv_smul_sum [NeZero m] (f : (V → Fin m) → E) :
     ∫ x : V → I, f (fun v => cellFin m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
@@ -285,9 +288,8 @@ theorem integral_pi_comp_cellFin_eq_inv_smul_sum [NeZero m] (f : (V → Fin m) �
         rw [← hmp.map_eq, integral_map hmp.aemeasurable .of_discrete]
     _ = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f ψ := by
         -- the product of uniform measures is the uniform measure on the cube of cells
-        rw [← ProbabilityTheory.uniformOn_pi, Set.pi_univ, integral_fintype .of_finite,
-          Finset.smul_sum]
-        simp [ProbabilityTheory.uniformOn_univ, measureReal_def]
+        rw [← ProbabilityTheory.uniformOn_pi, Set.pi_univ, Probability.integral_uniformOn_univ]
+        simp
 
 end unitInterval
 
