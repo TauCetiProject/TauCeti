@@ -9,15 +9,16 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Surjective
 
 /-!
-# Reindexing spectral sequences
+# Reindexing and rebasing spectral sequences
 
 A spectral sequence `E` with pages `E_r` indexed by `κ`, whose differentials on page `r` follow
-the complex shape `c r`, can be read in other coordinates. Given a shift `d : ℤ` of the page
-numbers and a bijection `f : κ' ≃ κ` of the index types which identifies the shape `c' r` with
-`c (r + d)` for every `r`, the **reindexed spectral sequence** `E.reindex d f hf hd` has page `r`
-equal to page `r + d` of `E`, with its object at `i : κ'` the object of `E` at `f i`
-(`CategoryTheory.SpectralSequence.reindex_page_X`) and the same differentials
-(`CategoryTheory.SpectralSequence.reindex_page_d`; read through the identifications
+the complex shape `c r`, can be read in other coordinates or started from a later page.
+
+Given a shift `d : ℤ` of the page numbers and a bijection `f : κ' ≃ κ` of the index types which
+identifies the shape `c' r` with `c (r + d)` for every `r`, the **reindexed spectral sequence**
+`E.reindex d f hf hd` has page `r` equal to page `r + d` of `E`, with its object at `i : κ'` the
+object of `E` at `f i` (`CategoryTheory.SpectralSequence.reindex_page_X`) and the same
+differentials (`CategoryTheory.SpectralSequence.reindex_page_d`; read through the identifications
 `CategoryTheory.SpectralSequence.reindexPageXIso` of the objects, this is
 `CategoryTheory.SpectralSequence.reindex_page_d_eq`). Morphisms of spectral sequences are
 reindexed componentwise (`CategoryTheory.SpectralSequence.reindexFunctor`).
@@ -33,10 +34,16 @@ by `f` (`ComplexShape.Embedding.mk'`). These embeddings are surjective, so the c
 homology of a page with the next page is `HomologicalComplex.restrictionHomologyIsoOfSurjective`
 followed by that of `E`.
 
+Given a later starting page `s ≥ r₀`, `E.fromPage s hs` rebases `E` to start at page `s`
+(`CategoryTheory.SpectralSequence.fromPage`, `CategoryTheory.SpectralSequence.fromPageFunctor`).
+
 ## Main definitions
 
 * `CategoryTheory.SpectralSequence.reindex`: the reindexed spectral sequence.
 * `CategoryTheory.SpectralSequence.reindexFunctor`: reindexing as a functor.
+* `CategoryTheory.SpectralSequence.fromPage`: rebasing a spectral sequence to start at a later
+  page `s ≥ r₀`.
+* `CategoryTheory.SpectralSequence.fromPageFunctor`: rebasing as a functor.
 -/
 
 public section
@@ -44,6 +51,8 @@ public section
 open CategoryTheory
 
 namespace CategoryTheory.SpectralSequence
+
+section Reindex
 
 variable {C : Type*} [Category* C] [Abelian C] {κ κ' : Type*} {c : ℤ → ComplexShape κ}
   {c' : ℤ → ComplexShape κ'} {r₀ r₀' : ℤ} (d : ℤ) (f : κ' ≃ κ)
@@ -133,5 +142,52 @@ variable (C c' r₀')
 noncomputable def reindexFunctor : SpectralSequence C c r₀ ⥤ SpectralSequence C c' r₀' where
   obj E := E.reindex d f hf hd
   map φ := reindexMap d f hf hd φ
+
+end Reindex
+
+section FromPage
+
+variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} {r₀ : ℤ}
+
+/-- Rebase a spectral sequence `E` starting at page `r₀` so that it starts at a later page
+`s ≥ r₀`. -/
+abbrev fromPage (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) : SpectralSequence C c s where
+  page r hr := E.page r (hs.trans hr)
+  iso r r' pq hrr' hr := E.iso r r' pq hrr' (hs.trans hr)
+
+@[simp]
+lemma fromPage_page (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hr : s ≤ r) :
+    (E.fromPage s hs).page r hr = E.page r (hs.trans hr) :=
+  rfl
+
+@[simp]
+lemma fromPage_iso (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ)
+    (hrr' : r + 1 = r') (hr : s ≤ r) :
+    (E.fromPage s hs).iso r r' pq hrr' hr = E.iso r r' pq hrr' (hs.trans hr) :=
+  rfl
+
+/-- Restrict a morphism of spectral sequences `f : E ⟶ E'` to the rebased spectral sequences
+starting at page `s ≥ r₀`. -/
+abbrev Hom.fromPageMap {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s) :
+    E.fromPage s hs ⟶ E'.fromPage s hs where
+  hom r hr := f.hom r (hs.trans hr)
+  comm r r' pq hrr' hr := f.comm r r' pq hrr' (hs.trans hr)
+
+@[simp]
+lemma Hom.fromPageMap_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
+    (r : ℤ) (hr : s ≤ r) :
+    (f.fromPageMap s hs).hom r hr = f.hom r (hs.trans hr) :=
+  rfl
+
+variable (C c)
+
+/-- Rebasing spectral sequences from page `r₀` to a later page `s ≥ r₀`, as a functor. -/
+@[expose, simps]
+def fromPageFunctor (s : ℤ) (hs : r₀ ≤ s) :
+    SpectralSequence C c r₀ ⥤ SpectralSequence C c s where
+  obj E := E.fromPage s hs
+  map f := f.fromPageMap s hs
+
+end FromPage
 
 end CategoryTheory.SpectralSequence

@@ -28,6 +28,8 @@ below `Z`, by `Subobject.map Z.arrow` with inverse `Subobject.pullback Z.arrow` 
   pullback of `S` along `Z.arrow` gives `S`.
 * `CategoryTheory.Subobject.isLimitKernelForkOfLE`: if the kernel of a morphism `g` out of `Z` is
   the pullback of `S ≤ Z`, then the inclusion `S ⟶ Z` is a kernel of `g`.
+* `CategoryTheory.Subobject.le_pullback_iff` and `CategoryTheory.Subobject.exists_le_iff`:
+  characterizations of `X' ≤ (pullback f).obj Y'` and `(exists f).obj X' ≤ Y'` via factoring.
 -/
 
 public section
@@ -92,5 +94,21 @@ noncomputable def isLimitKernelForkOfLE :
       factorThru_arrow]⟩
 
 end Kernel
+
+section PullbackExists
+
+variable {X Y : C}
+
+lemma le_pullback_iff (f : X ⟶ Y) (X' : Subobject X) (Y' : Subobject Y) :
+    X' ≤ (pullback f).obj Y' ↔ Y'.Factors (X'.arrow ≫ f) := by
+  refine ⟨fun h ↦ (pullback_factors_iff f Y' X'.arrow).mp
+    (factors_of_le X'.arrow h (factors_self X')), fun h ↦ ?_⟩
+  exact le_pullback_of_comm f (Y'.factorThru (X'.arrow ≫ f) h) (Y'.factorThru_arrow _ h)
+
+lemma exists_le_iff [HasImages C] (f : X ⟶ Y) (X' : Subobject X) (Y' : Subobject Y) :
+    («exists» f).obj X' ≤ Y' ↔ Y'.Factors (X'.arrow ≫ f) :=
+  ((existsPullbackAdj f).gc X' Y').trans (le_pullback_iff f X' Y')
+
+end PullbackExists
 
 end CategoryTheory.Subobject

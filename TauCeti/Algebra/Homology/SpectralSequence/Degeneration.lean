@@ -6,31 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralObject.HasSpectralSequence
-public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
-public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
+public import TauCeti.Algebra.Homology.SpectralSequence.Stabilization.Basic
 
 /-!
-# Vanishing and survival of objects on later pages of a spectral sequence
+# Degeneration of spectral sequences
 
-Each page of a spectral sequence is the homology of the previous one, so its objects are
-subquotients of the objects of every earlier page. Hence an object which vanishes on some page
-vanishes on every later page (`CategoryTheory.SpectralSequence.isZero_page_X_of_le`).
-
-Conversely, when a spectral sequence stabilizes at a position `pq` from a page `s`
-(`CategoryTheory.SpectralSequence.StabilizesAt`), meaning that every differential leaving or
-entering `pq` on pages `r ≥ s` vanishes, the object at `pq` is its own homology at each step
-(`CategoryTheory.SpectralSequence.pageXStepIso`) and survives unchanged to every later page `r ≥ s`
-(`CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt`). In particular, if on the page `r`
-every object joined to `pq` by a differential of some later page vanishes, then the spectral
-sequence stabilizes at `pq` from page `r`
-(`CategoryTheory.SpectralSequence.stabilizesAt_of_forall_isZero`). This is how sparseness of an
-early page, for instance a lacunary pattern of nonzero total degrees, makes a spectral sequence
-degenerate: all differentials from the page `r` on vanish
-(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`).
+A spectral sequence `E : SpectralSequence C c r₀` **degenerates at page `s`** (`s ≥ r₀`) if every
+differential on every page `r ≥ s` vanishes (`CategoryTheory.SpectralSequence.DegeneratesAt`). This
+implies stabilization at every position from page `s`
+(`CategoryTheory.SpectralSequence.DegeneratesAt.stabilizesAt`), and is invariant under isomorphisms
+of spectral sequences (`CategoryTheory.SpectralSequence.degeneratesAt_iff_of_iso`).
 
 For a cohomological spectral sequence starting on the page `2`, whose differentials on the page
 `r` go from `(p, q)` to `(p + r, q - r + 1)` and so raise the total degree `p + q` by one, this
-gives the lacunary degeneration: if of any two positions of the page `2` whose total degrees differ
+gives lacunary degeneration: if of any two positions of the page `2` whose total degrees differ
 by one at least one carries the zero object, every differential from the page `2` on vanishes
 (`CategoryTheory.SpectralSequence.page_d_eq_zero_of_isZero_or_isZero`), and every object of the
 page `2` survives unchanged to every later page
@@ -38,16 +28,9 @@ page `2` survives unchanged to every later page
 
 ## Main results
 
-* `CategoryTheory.SpectralSequence.isZero_page_X_of_le`: a zero object stays zero on later pages.
-* `CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`: a differential of a later page between
-  positions one of which is zero on an earlier page vanishes.
-* `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`: the differentials at a
-  position whose neighbours vanish are zero on all later pages.
-* `CategoryTheory.SpectralSequence.StabilizesAt`,
-  `CategoryTheory.SpectralSequence.pageXStepIso`, and
-  `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt`: canonical survival isomorphisms at a
-  stabilizing position, with `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt_self` and
-  `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt_add_one`.
+* `CategoryTheory.SpectralSequence.DegeneratesAt`: degeneration from page `s` onward, with
+  `DegeneratesAt.mono`, `DegeneratesAt.stabilizesAt`, `degeneratesAt_iff_forall_stabilizesAt`, and
+  `degeneratesAt_iff_of_iso`.
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_of_isZero_or_isZero` and
   `CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`: lacunary
   degeneration of a cohomological spectral sequence starting on the page `2`.
@@ -65,108 +48,41 @@ namespace CategoryTheory.SpectralSequence
 open Limits
 
 variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} {r₀ : ℤ}
-  (E : SpectralSequence C c r₀)
 
-/-- **Zero objects stay zero.** If the object at `pq` vanishes on the page `r`, it vanishes on
-every later page `r' ≥ r`, since each page is the homology of the previous one. This is
-`CategoryTheory.SpectralSequence.prop_page_X_of_le` for the Serre class of zero objects. -/
-lemma isZero_page_X_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (h : IsZero ((E.page r).X pq))
-    (r' : ℤ) (hrr' : r ≤ r') : IsZero ((E.page r' (hr.trans hrr')).X pq) :=
-  E.prop_page_X_of_le IsZero hr h r' hrr'
+section Degeneration
 
-/-- **Differentials into or out of zero objects vanish on later pages.** If the source or the
-target of a differential of the page `r' ≥ r` is zero on the page `r`, the differential is zero. -/
-lemma page_d_eq_zero_of_le {r : ℤ} (hr : r₀ ≤ r) {pq pq' : κ}
-    (h : IsZero ((E.page r).X pq) ∨ IsZero ((E.page r).X pq')) (r' : ℤ) (hrr' : r ≤ r') :
-    (E.page r' (hr.trans hrr')).d pq pq' = 0 := by
-  rcases h with h | h
-  · exact (E.isZero_page_X_of_le hr h r' hrr').eq_of_src _ _
-  · exact (E.isZero_page_X_of_le hr h r' hrr').eq_of_tgt _ _
-
-/-- **Differentials at a position with vanishing neighbours vanish.** Suppose that on the page `r`
-every object joined to the position `pq` by a differential of some page `s ≥ r` is zero. Then on
-every page `s ≥ r` both differentials at `pq` vanish: either their other end is zero, or the shape
-forbids them. -/
-lemma page_d_eq_zero_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
-    (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
-    (s : ℤ) (hrs : r ≤ s) {i j : κ} (hij : i = pq ∨ j = pq) :
-    (E.page s (hr.trans hrs)).d i j = 0 := by
-  by_cases hrel : (c s).Rel i j
-  · rcases hij with rfl | rfl
-    · exact E.page_d_eq_zero_of_le hr (Or.inr (h s hrs j (Or.inl hrel))) s hrs
-    · exact E.page_d_eq_zero_of_le hr (Or.inl (h s hrs i (Or.inr hrel))) s hrs
-  · exact (E.page s (hr.trans hrs)).shape i j hrel
-
-/-- A spectral sequence `E` **stabilizes at `pq` from page `s`** (`s ≥ r₀`) if on every page
-`r ≥ s`, both the differential leaving `pq` and the differential entering `pq` vanish. -/
-structure StabilizesAt (pq : κ) (s : ℤ) : Prop where
-  /-- The stabilization page `s` is at least the starting page `r₀`. -/
+/-- A spectral sequence `E` **degenerates at page `s`** (`s ≥ r₀`) if every differential of every
+page `r ≥ s` vanishes. -/
+structure DegeneratesAt (E : SpectralSequence C c r₀) (s : ℤ) : Prop where
+  /-- The degeneration page `s` is at least the starting page `r₀`. -/
   le : r₀ ≤ s
-  /-- Every differential leaving `pq` on pages `r ≥ s` vanishes. -/
-  dFrom_eq_zero : ∀ r (hsr : s ≤ r), (E.page r (le.trans hsr)).dFrom pq = 0
-  /-- Every differential entering `pq` on pages `r ≥ s` vanishes. -/
-  dTo_eq_zero : ∀ r (hsr : s ≤ r), (E.page r (le.trans hsr)).dTo pq = 0
+  /-- Every differential on every page `r ≥ s` vanishes. -/
+  d_eq_zero : ∀ r (hsr : s ≤ r) (i j : κ), (E.page r (le.trans hsr)).d i j = 0
 
-lemma StabilizesAt.mono {E : SpectralSequence C c r₀} {pq : κ} {s s' : ℤ}
-    (h : E.StabilizesAt pq s) (hss' : s ≤ s') : E.StabilizesAt pq s' where
+lemma DegeneratesAt.mono {E : SpectralSequence C c r₀} {s s' : ℤ} (h : E.DegeneratesAt s)
+    (hss' : s ≤ s') : E.DegeneratesAt s' where
   le := h.le.trans hss'
-  dFrom_eq_zero r hs'r := h.dFrom_eq_zero r (hss'.trans hs'r)
-  dTo_eq_zero r hs'r := h.dTo_eq_zero r (hss'.trans hs'r)
+  d_eq_zero r hs'r i j := h.d_eq_zero r (hss'.trans hs'r) i j
 
-/-- If the object at `pq` vanishes on page `s`, then `E` stabilizes at `pq` from page `s`. -/
-lemma stabilizesAt_of_isZero_page_X {s : ℤ} (hs : r₀ ≤ s) {pq : κ}
-    (h : IsZero ((E.page s hs).X pq)) : E.StabilizesAt pq s :=
-  ⟨hs, fun r hsr ↦ E.page_d_eq_zero_of_le hs (Or.inl h) r hsr,
-    fun r hsr ↦ E.page_d_eq_zero_of_le hs (Or.inr h) r hsr⟩
+lemma DegeneratesAt.stabilizesAt {E : SpectralSequence C c r₀} {s : ℤ} (h : E.DegeneratesAt s)
+    (pq : κ) : E.StabilizesAt pq s where
+  le := h.le
+  dFrom_eq_zero r hsr := h.d_eq_zero r hsr pq _
+  dTo_eq_zero r hsr := h.d_eq_zero r hsr _ pq
 
-/-- If on page `s` every object joined to `pq` by a differential of some page `r ≥ s` vanishes,
-then `E` stabilizes at `pq` from page `s`. -/
-lemma stabilizesAt_of_forall_isZero {s : ℤ} (hs : r₀ ≤ s) {pq : κ}
-    (h : ∀ r, s ≤ r → ∀ pq', (c r).Rel pq pq' ∨ (c r).Rel pq' pq → IsZero ((E.page s hs).X pq')) :
-    E.StabilizesAt pq s :=
-  ⟨hs, fun r hsr ↦ E.page_d_eq_zero_of_forall_isZero hs h r hsr (Or.inl rfl),
-    fun r hsr ↦ E.page_d_eq_zero_of_forall_isZero hs h r hsr (Or.inr rfl)⟩
+lemma degeneratesAt_iff_forall_stabilizesAt (E : SpectralSequence C c r₀) (s : ℤ) :
+    E.DegeneratesAt s ↔ r₀ ≤ s ∧ ∀ pq, E.StabilizesAt pq s := by
+  refine ⟨fun h ↦ ⟨h.le, h.stabilizesAt⟩, fun ⟨hs, h⟩ ↦ ⟨hs, fun r hsr i j ↦ ?_⟩⟩
+  exact ((E.page r (hs.trans hsr)).dFrom_eq_zero_iff i).1 ((h i).dFrom_eq_zero r hsr) j
 
-/-- The canonical one-step isomorphism `(E.page r hr).X pq ≅ (E.page (r + 1) _).X pq` when both
-the entering and leaving differentials at `pq` on page `r` vanish. -/
-noncomputable def pageXStepIso (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
-    (hdTo : (E.page r hr).dTo pq = 0) (hdFrom : (E.page r hr).dFrom pq = 0) :
-    (E.page r hr).X pq ≅ (E.page (r + 1) (Int.le_add_one hr)).X pq :=
-  (E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom ≪≫ E.iso r (r + 1) pq rfl hr
+/-- Degeneration at page `s` is invariant under isomorphisms of spectral sequences. -/
+theorem degeneratesAt_iff_of_iso {E E' : SpectralSequence C c r₀} (e : E ≅ E') (s : ℤ) :
+    E.DegeneratesAt s ↔ E'.DegeneratesAt s := by
+  constructor <;> intro h <;> refine ⟨h.le, fun r hsr i j ↦ ?_⟩
+  · exact (page_d_eq_zero_iff_of_iso e r (h.le.trans hsr) i j).1 (h.d_eq_zero r hsr i j)
+  · exact (page_d_eq_zero_iff_of_iso e r (h.le.trans hsr) i j).2 (h.d_eq_zero r hsr i j)
 
-@[reassoc, simp]
-lemma pageXStepIso_hom (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
-    (hdTo : (E.page r hr).dTo pq = 0) (hdFrom : (E.page r hr).dFrom pq = 0) :
-    (E.pageXStepIso pq r hr hdTo hdFrom).hom =
-      ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom).hom ≫
-        (E.iso r (r + 1) pq rfl hr).hom :=
-  by simp [pageXStepIso]
-
-/-- **Canonical stabilization isomorphism.** If `E` stabilizes at `pq` from page `s`, then the
-composites of the homology isomorphisms yield canonical isomorphisms
-`(E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq` for all `r ≥ s`. -/
-noncomputable def pageXIsoOfStabilizesAt {E : SpectralSequence C c r₀} {pq : κ} {s : ℤ}
-    (h : E.StabilizesAt pq s) (r : ℤ) (hsr : s ≤ r) :
-    (E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq :=
-  Int.leInduction
-    (motive := fun r hsr ↦ (E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq)
-    (Iso.refl _)
-    (fun r hsr e ↦
-      e ≪≫ E.pageXStepIso pq r (h.le.trans hsr) (h.dTo_eq_zero r hsr) (h.dFrom_eq_zero r hsr))
-    r hsr
-
-@[simp]
-lemma pageXIsoOfStabilizesAt_self {E : SpectralSequence C c r₀} {pq : κ} {s : ℤ}
-    (h : E.StabilizesAt pq s) :
-    E.pageXIsoOfStabilizesAt h s le_rfl = Iso.refl _ :=
-  Int.leInduction_base _ _
-
-lemma pageXIsoOfStabilizesAt_add_one {E : SpectralSequence C c r₀} {pq : κ} {s : ℤ}
-    (h : E.StabilizesAt pq s) (r : ℤ) (hsr : s ≤ r) :
-    E.pageXIsoOfStabilizesAt h (r + 1) (Int.le_add_one hsr) =
-      E.pageXIsoOfStabilizesAt h r hsr ≪≫
-        E.pageXStepIso pq r (h.le.trans hsr) (h.dTo_eq_zero r hsr) (h.dFrom_eq_zero r hsr) :=
-  Int.leInduction_add_one _ _ r hsr
+end Degeneration
 
 section Cohomological
 

@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
+public import TauCeti.Algebra.Homology.SpectralSequence.Stabilization.Basic
 public import TauCeti.Algebra.Homology.SpectralSequence.Tower
 
 /-!
-# Stabilization, regularity, and degeneration of spectral sequences
+# Stabilization and regularity of spectral sequences
 
-This file defines the regularity and degeneration conditions on the differentials of a spectral
+This file defines the regularity and coregularity conditions on the differentials of a spectral
 sequence `E : SpectralSequence C c r₀` and relates stabilization (`StabilizesAt` and
-`pageXIsoOfStabilizesAt`, defined in `TauCeti.Algebra.Homology.SpectralSequence.Degeneration`) to
-the cycle and boundary towers of `TauCeti.Algebra.Homology.SpectralSequence.Tower`:
+`pageXIsoOfStabilizesAt`, from `TauCeti.Algebra.Homology.SpectralSequence.Stabilization.Basic`)
+to the cycle and boundary towers of `TauCeti.Algebra.Homology.SpectralSequence.Tower`:
 
 * `CategoryTheory.SpectralSequence.IsRegularAt`: the leaving differentials at `pq` vanish on all
   sufficiently large pages, equivalently the cycle tower `Z_r(pq)` is eventually constant
@@ -22,11 +23,9 @@ the cycle and boundary towers of `TauCeti.Algebra.Homology.SpectralSequence.Towe
 * `CategoryTheory.SpectralSequence.IsCoregularAt`: the entering differentials at `pq` vanish on
   all sufficiently large pages, equivalently the boundary tower `B_r(pq)` is eventually constant
   (`isCoregularAt_iff_eventually_boundariesSubobject_eq`).
-* `CategoryTheory.SpectralSequence.DegeneratesAt`: every differential on every page `r ≥ s`
-  vanishes; this implies stabilization at every position from page `s`.
 * Compatibility of `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt` with composition,
   subquotient presentations, and morphisms of spectral sequences (`pageXIsoOfStabilizesAt_trans`,
-  `pageXIsoOfStabilizesAt_eq_isoOfEq`, `Hom.pageXIsoOfStabilizesAt_naturality`).
+  `pageXIsoOfStabilizesAt_eq_isoOfEq`, `pageXIsoOfStabilizesAt_hom_naturality`).
 
 ## References
 
@@ -55,31 +54,7 @@ all sufficiently large pages. -/
 def IsCoregularAt (pq : κ) : Prop :=
   ∃ s, ∃ hs : r₀ ≤ s, ∀ r (hsr : s ≤ r), (E.page r (hs.trans hsr)).dTo pq = 0
 
-/-- A spectral sequence `E` **degenerates at page `s`** (`s ≥ r₀`) if every differential of every
-page `r ≥ s` vanishes. -/
-structure DegeneratesAt (s : ℤ) : Prop where
-  /-- The degeneration page `s` is at least the starting page `r₀`. -/
-  le : r₀ ≤ s
-  /-- Every differential on every page `r ≥ s` vanishes. -/
-  d_eq_zero : ∀ r (hsr : s ≤ r) (i j : κ), (E.page r (le.trans hsr)).d i j = 0
-
 variable {E}
-
-lemma DegeneratesAt.mono {s s' : ℤ} (h : E.DegeneratesAt s) (hss' : s ≤ s') :
-    E.DegeneratesAt s' where
-  le := h.le.trans hss'
-  d_eq_zero r hs'r i j := h.d_eq_zero r (hss'.trans hs'r) i j
-
-lemma DegeneratesAt.stabilizesAt {s : ℤ} (h : E.DegeneratesAt s) (pq : κ) :
-    E.StabilizesAt pq s where
-  le := h.le
-  dFrom_eq_zero r hsr := h.d_eq_zero r hsr pq _
-  dTo_eq_zero r hsr := h.d_eq_zero r hsr _ pq
-
-lemma degeneratesAt_iff_forall_stabilizesAt (E : SpectralSequence C c r₀) (s : ℤ) :
-    E.DegeneratesAt s ↔ r₀ ≤ s ∧ ∀ pq, E.StabilizesAt pq s := by
-  refine ⟨fun h ↦ ⟨h.le, h.stabilizesAt⟩, fun ⟨hs, h⟩ ↦ ⟨hs, fun r hsr i j ↦ ?_⟩⟩
-  exact ((E.page r (hs.trans hsr)).dFrom_eq_zero_iff i).1 ((h i).dFrom_eq_zero r hsr) j
 
 lemma StabilizesAt.isRegularAt {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s) :
     E.IsRegularAt pq :=
@@ -175,38 +150,26 @@ lemma pageXStepIso_eq_isoOfEq (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
         (E.pagePresentation pq (r + 1) (Int.le_add_one hr))
         ((E.boundariesSubobject_add_one_eq_iff pq r hr).2 hdTo).symm
         ((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom).symm := by
-  have hZ : E.cyclesSubobject pq r hr = E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) :=
-    ((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom).symm
-  ext
-  rw [← cancel_epi (E.pagePresentation pq r hr).π,
-    TauCeti.SubquotientPresentation.π_isoOfEq_hom, E.pagePresentation_add_one_π pq r hr]
   let p := E.pagePresentation pq r hr
+  let p' := E.pagePresentation pq (r + 1) (Int.le_add_one hr)
   let sc := (E.page r hr).sc pq
-  have hsc_π : sc.homologyPresentation.π =
-      (kernelSubobject ((E.page r hr).dFrom pq)).arrow ≫
-        ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom).hom := by
-    rw [ShortComplex.homologyPresentation_π, HomologicalComplex.XIsoHomologyOfDEqZero_hom]
-    have hcyc : (kernelSubobject ((E.page r hr).dFrom pq)).arrow ≫
-          ((E.page r hr).iCyclesIso pq _ rfl hdFrom).inv =
-        (kernelSubobjectIso ((E.page r hr).dFrom pq)).hom ≫ sc.cyclesIsoKernel.inv := by
-      have hi : sc.iCycles = (E.page r hr).iCycles pq := rfl
-      rw [← cancel_mono ((E.page r hr).iCycles pq), Category.assoc, Category.assoc,
-        HomologicalComplex.iCyclesIso_inv_hom_id, Category.comp_id, ← hi]
-      simp [sc]
-    rw [reassoc_of% hcyc]
-    rfl
-  have hlift : Subobject.ofLE (E.cyclesSubobject pq r hr)
-        (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr)) hZ.le ≫
-      Subobject.ofLE (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
-        (p.preimage (kernelSubobject ((E.page r hr).dFrom pq)))
-        (E.cyclesSubobject_add_one pq r hr).le ≫
-      p.preimageπ (kernelSubobject ((E.page r hr).dFrom pq)) ≫
-      (kernelSubobject ((E.page r hr).dFrom pq)).arrow = p.π := by
-    rw [p.preimageπ_arrow, Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_comp_ofLE_assoc,
-      Subobject.ofLE_refl, Category.id_comp]
-  rw [hsc_π, pageXStepIso_hom]
-  simp only [Category.assoc]
-  rw [reassoc_of% hlift]
+  have hstep : p.mapIso (E.pageXStepIso pq r hr hdTo hdFrom) = p' := by
+    have he : E.pageXStepIso pq r hr hdTo hdFrom =
+        (E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom ≪≫ E.iso r (r + 1) pq rfl hr :=
+      Iso.ext (E.pageXStepIso_hom pq r hr hdTo hdFrom)
+    have hsc : sc.homologyPresentation = (TauCeti.SubquotientPresentation.refl sc.X₂).mapIso
+        ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom) := by
+      rw [HomologicalComplex.XIsoHomologyOfDEqZero_eq_shortComplex,
+        ← ShortComplex.homologyPresentation_isoOfEq_of_eq_zero sc hdTo hdFrom,
+        TauCeti.SubquotientPresentation.mapIso_isoOfEq]
+    rw [show p' = p.trans (sc.homologyPresentation.mapIso (E.iso r (r + 1) pq rfl hr)) from
+        E.pagePresentation_add_one pq r hr,
+      hsc, TauCeti.SubquotientPresentation.mapIso_mapIso, ← he,
+      TauCeti.SubquotientPresentation.trans_mapIso,
+      show TauCeti.SubquotientPresentation.refl sc.X₂ =
+        TauCeti.SubquotientPresentation.refl ((E.page r hr).X pq) from rfl,
+      TauCeti.SubquotientPresentation.trans_refl]
+  exact p.eq_isoOfEq_of_mapIso_eq hstep _ _
 
 /-- The stabilization isomorphism `pageXIsoOfStabilizesAt` agrees with the canonical comparison
 isomorphism `SubquotientPresentation.isoOfEq` between the page-`s` and page-`r` presentations. -/
@@ -262,26 +225,6 @@ section IsoInvariance
 
 variable {E E' : SpectralSequence C c r₀}
 
-/-- An isomorphism of spectral sequences preserves vanishing of every differential on every
-page. -/
-lemma page_d_eq_zero_iff_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (i j : κ) :
-    (E.page r hr).d i j = 0 ↔ (E'.page r hr).d i j = 0 := by
-  have hcomm : (e.hom.hom r hr).f i ≫ (E'.page r hr).d i j =
-      (E.page r hr).d i j ≫ (e.hom.hom r hr).f j := (e.hom.hom r hr).comm i j
-  have hi : IsIso ((e.hom.hom r hr).f i) := by
-    rw [← pageXIsoOfIso_hom e r hr i]
-    infer_instance
-  have hj : IsIso ((e.hom.hom r hr).f j) := by
-    rw [← pageXIsoOfIso_hom e r hr j]
-    infer_instance
-  constructor
-  · intro h
-    rw [h, zero_comp] at hcomm
-    exact (cancel_epi ((e.hom.hom r hr).f i)).1 (by simpa using hcomm)
-  · intro h
-    rw [h, comp_zero] at hcomm
-    exact (cancel_mono ((e.hom.hom r hr).f j)).1 (by simpa using hcomm.symm)
-
 /-- Stabilization at `pq` from page `s` is invariant under isomorphisms of spectral sequences. -/
 theorem stabilizesAt_iff_of_iso (e : E ≅ E') (pq : κ) (s : ℤ) :
     E.StabilizesAt pq s ↔ E'.StabilizesAt pq s := by
@@ -305,13 +248,6 @@ theorem isCoregularAt_iff_of_iso (e : E ≅ E') (pq : κ) :
   constructor <;> rintro ⟨s, hs, h⟩ <;> refine ⟨s, hs, fun r hsr ↦ ?_⟩
   · exact (page_d_eq_zero_iff_of_iso e r (hs.trans hsr) _ pq).1 (h r hsr)
   · exact (page_d_eq_zero_iff_of_iso e r (hs.trans hsr) _ pq).2 (h r hsr)
-
-/-- Degeneration at page `s` is invariant under isomorphisms of spectral sequences. -/
-theorem degeneratesAt_iff_of_iso (e : E ≅ E') (s : ℤ) :
-    E.DegeneratesAt s ↔ E'.DegeneratesAt s := by
-  constructor <;> intro h <;> refine ⟨h.le, fun r hsr i j ↦ ?_⟩
-  · exact (page_d_eq_zero_iff_of_iso e r (h.le.trans hsr) i j).1 (h.d_eq_zero r hsr i j)
-  · exact (page_d_eq_zero_iff_of_iso e r (h.le.trans hsr) i j).2 (h.d_eq_zero r hsr i j)
 
 end IsoInvariance
 

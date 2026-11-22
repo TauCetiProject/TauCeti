@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.ShortComplex.Subquotient
-import TauCeti.CategoryTheory.Subobject.Limits
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
+public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
+import TauCeti.CategoryTheory.Subobject.Image
+import TauCeti.CategoryTheory.Subobject.Kernel
 
 /-!
 # Cycle and boundary towers of a spectral sequence
@@ -26,15 +28,15 @@ subobjects form the cycle and boundary towers
 
 ## Main declarations
 
-* `CategoryTheory.SpectralSequence.fromPage`: rebasing a spectral sequence to start at a later
-  page `s ≥ r₀`.
 * `CategoryTheory.SpectralSequence.pagePresentation`,
   `CategoryTheory.SpectralSequence.cyclesSubobject`,
   `CategoryTheory.SpectralSequence.boundariesSubobject`: the inductive presentations and towers,
   together with monotonicity, vanishing characterizations (`cyclesSubobject_add_one_eq_iff`,
   `boundariesSubobject_add_one_eq_iff`, `isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject`),
-  naturality (`Hom.pagePresentation_map`), rebasing (`pagePresentation_eq_trans_fromPage`), and
-  invariance under isomorphisms of spectral sequences.
+  naturality (`Hom.pagePresentation_map`), rebasing (`pagePresentation_eq_trans_fromPage`,
+  using `CategoryTheory.SpectralSequence.fromPage` from
+  `TauCeti.Algebra.Homology.SpectralSequence.Reindex`), and invariance under isomorphisms of
+  spectral sequences.
 
 ## References
 
@@ -50,49 +52,6 @@ open CategoryTheory Limits
 namespace CategoryTheory.SpectralSequence
 
 variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} {r₀ : ℤ}
-
-section FromPage
-
-/-- Rebase a spectral sequence `E` starting at page `r₀` so that it starts at a later page
-`s ≥ r₀`. -/
-abbrev fromPage (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) : SpectralSequence C c s where
-  page r hr := E.page r (hs.trans hr)
-  iso r r' pq hrr' hr := E.iso r r' pq hrr' (hs.trans hr)
-
-@[simp]
-lemma fromPage_page (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hr : s ≤ r) :
-    (E.fromPage s hs).page r hr = E.page r (hs.trans hr) :=
-  rfl
-
-@[simp]
-lemma fromPage_iso (E : SpectralSequence C c r₀) (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ)
-    (hrr' : r + 1 = r') (hr : s ≤ r) :
-    (E.fromPage s hs).iso r r' pq hrr' hr = E.iso r r' pq hrr' (hs.trans hr) :=
-  rfl
-
-/-- Restrict a morphism of spectral sequences `f : E ⟶ E'` to the rebased spectral sequences
-starting at page `s ≥ r₀`. -/
-abbrev Hom.fromPageMap {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s) :
-    E.fromPage s hs ⟶ E'.fromPage s hs where
-  hom r hr := f.hom r (hs.trans hr)
-  comm r r' pq hrr' hr := f.comm r r' pq hrr' (hs.trans hr)
-
-@[simp]
-lemma Hom.fromPageMap_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
-    (r : ℤ) (hr : s ≤ r) :
-    (f.fromPageMap s hs).hom r hr = f.hom r (hs.trans hr) :=
-  rfl
-
-variable (C c)
-
-/-- Rebasing spectral sequences from page `r₀` to a later page `s ≥ r₀`, as a functor. -/
-@[expose, simps]
-def fromPageFunctor (s : ℤ) (hs : r₀ ≤ s) :
-    SpectralSequence C c r₀ ⥤ SpectralSequence C c s where
-  obj E := E.fromPage s hs
-  map f := f.fromPageMap s hs
-
-end FromPage
 
 section Tower
 
@@ -330,24 +289,14 @@ private lemma naturality_step (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ 
   have hcomp := TauCeti.SubquotientPresentation.trans_map p p' q q' ((f.hom r₀).f pq) hB hZ hI hK
   have hqmap : q.map q' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
       (f.hom (r + 1) (Int.le_add_one hr)).f pq := by
-    have hq₁ : q.map q' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
-        (E.iso r (r + 1) pq rfl hr).inv ≫
-          q₀.map q₀' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK ≫
-          (E'.iso r (r + 1) pq rfl hr).hom :=
-      (TauCeti.SubquotientPresentation.map_mapIso_left q₀
-          (q₀'.mapIso (E'.iso r (r + 1) pq rfl hr)) _ _ hI hK).trans
-        (congrArg ((E.iso r (r + 1) pq rfl hr).inv ≫ ·)
-          (TauCeti.SubquotientPresentation.map_mapIso_right q₀ q₀'
-            (E'.iso r (r + 1) pq rfl hr) _ hI hK))
-    rw [hq₁]
-    have hsc : q₀.map q₀' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
-        HomologicalComplex.homologyMap (f.hom r hr) pq := by
-      have h1 : ∀ (g : (E.page r hr).X pq ⟶ (E'.page r hr).X pq) (_ : g = φ.τ₂) h1 h2,
-          q₀.map q₀' g h1 h2 = ShortComplex.homologyMap φ := by
-        rintro _ rfl _ _
-        exact ShortComplex.homologyPresentation_map φ
-      exact h1 _ hmap hI hK
-    rw [hsc, f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
+    rw [TauCeti.SubquotientPresentation.map_mapIso q₀ q₀'
+        (E.iso r (r + 1) pq rfl hr) (E'.iso r (r + 1) pq rfl hr) _ hI hK,
+      TauCeti.SubquotientPresentation.map_congr (P := q₀) (Q := q₀') (h := hmap.trans hτ₂.symm)
+        (hB' := ShortComplex.factors_imageSubobject_map φ)
+        (hZ' := ShortComplex.factors_kernelSubobject_map φ),
+      ShortComplex.homologyPresentation_map φ,
+      show ShortComplex.homologyMap φ = HomologicalComplex.homologyMap (f.hom r hr) pq from rfl,
+      f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
   have hstepE := E.pagePresentation_add_one pq r hr
   have hstepE' := E'.pagePresentation_add_one pq r hr
   simpa only [hstepE, hstepE', hqmap] using hcomp
@@ -412,22 +361,6 @@ theorem Hom.pagePresentation_map (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ �
       (f.hom r hr).f pq :=
   (naturality_aux f pq r hr).choose_spec.choose_spec
 
-/-- The component isomorphism `(E.page r hr).X pq ≅ (E'.page r hr).X pq` induced by an isomorphism
-of spectral sequences `e : E ≅ E'`. -/
-def pageXIsoOfIso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
-    (E.page r hr).X pq ≅ (E'.page r hr).X pq :=
-  (pageFunctor C c r₀ r hr ⋙ HomologicalComplex.eval C (c r) pq).mapIso e
-
-@[simp]
-lemma pageXIsoOfIso_hom (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
-    (pageXIsoOfIso e r hr pq).hom = (e.hom.hom r hr).f pq :=
-  (rfl)
-
-@[simp]
-lemma pageXIsoOfIso_inv (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
-    (pageXIsoOfIso e r hr pq).inv = (e.inv.hom r hr).f pq :=
-  (rfl)
-
 /-- Isomorphic spectral sequences have corresponding cycle towers under the first-page
 isomorphism. -/
 lemma map_cyclesSubobject_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
@@ -435,9 +368,11 @@ lemma map_cyclesSubobject_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ �
       E'.cyclesSubobject pq r hr := by
   let g := pageXIsoOfIso e r₀ le_rfl pq
   have h1 : (Subobject.map g.hom).obj (E.cyclesSubobject pq r hr) ≤ E'.cyclesSubobject pq r hr :=
-    ((Subobject.mapPullbackAdj g.hom).gc _ _).2 (e.hom.cyclesSubobject_le_pullback pq r hr)
+    ((Subobject.mapPullbackAdj g.hom).gc _ _).2 (by
+      simpa [g, pageXIsoOfIso_hom] using e.hom.cyclesSubobject_le_pullback pq r hr)
   have h2 : (Subobject.map g.inv).obj (E'.cyclesSubobject pq r hr) ≤ E.cyclesSubobject pq r hr :=
-    ((Subobject.mapPullbackAdj g.inv).gc _ _).2 (e.inv.cyclesSubobject_le_pullback pq r hr)
+    ((Subobject.mapPullbackAdj g.inv).gc _ _).2 (by
+      simpa [g, pageXIsoOfIso_inv] using e.inv.cyclesSubobject_le_pullback pq r hr)
   exact le_antisymm h1
     (((Subobject.mapIsoToOrderIso g).apply_symm_apply _).symm.le.trans
       ((Subobject.mapIsoToOrderIso g).monotone h2))
@@ -451,11 +386,13 @@ lemma map_boundariesSubobject_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r�
   have h1 : (Subobject.map g.hom).obj (E.boundariesSubobject pq r hr) ≤
       E'.boundariesSubobject pq r hr :=
     ((Subobject.mapPullbackAdj g.hom).gc _ _).2
-      ((Subobject.le_pullback_iff _ _ _).2 (e.hom.factors_boundariesSubobject pq r hr))
+      ((Subobject.le_pullback_iff _ _ _).2 (by
+        simpa [g, pageXIsoOfIso_hom] using e.hom.factors_boundariesSubobject pq r hr))
   have h2 : (Subobject.map g.inv).obj (E'.boundariesSubobject pq r hr) ≤
       E.boundariesSubobject pq r hr :=
     ((Subobject.mapPullbackAdj g.inv).gc _ _).2
-      ((Subobject.le_pullback_iff _ _ _).2 (e.inv.factors_boundariesSubobject pq r hr))
+      ((Subobject.le_pullback_iff _ _ _).2 (by
+        simpa [g, pageXIsoOfIso_inv] using e.inv.factors_boundariesSubobject pq r hr))
   exact le_antisymm h1
     (((Subobject.mapIsoToOrderIso g).apply_symm_apply _).symm.le.trans
       ((Subobject.mapIsoToOrderIso g).monotone h2))
