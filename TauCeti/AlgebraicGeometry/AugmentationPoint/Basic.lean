@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Scheme
+public import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 
 /-!
 # The spectrum point and section defined by an augmentation
@@ -30,8 +30,6 @@ file records that point and its underlying prime ideal.
 
 * `AlgHom.specSplitEpi`: the structure morphism `Spec A ⟶ Spec R`, split by the section induced
   by an augmentation `A →ₐ[R] R`.
-* `AlgHom.Spec_map_comp_Spec_map_algebraMap`: the splitting identity for the explicit spectrum
-  maps.
 * `AlgHom.kernelPoint`: the point cut out by the kernel of an augmentation.
 * `AlgHom.comap_kernelPoint`: contraction of a kernel point is the kernel point of the
   composite algebra homomorphism.
@@ -49,21 +47,12 @@ section SplitEpi
 
 variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
 
-/-- An augmentation `f : A →ₐ[R] R` induces a section `Spec R ⟶ Spec A` of the structure morphism
-`Spec A ⟶ Spec R`. -/
-@[reassoc (attr := simp)]
-theorem Spec_map_comp_Spec_map_algebraMap (f : A →ₐ[R] R) :
-    Spec.map (CommRingCat.ofHom (f : A →+* R)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
-      𝟙 (Spec (CommRingCat.of R)) := by
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, f.comp_algebraMap]
-  simp
-
 /-- The structure morphism `Spec A ⟶ Spec R` of a commutative `R`-algebra `A`, split by the
 section `Spec R ⟶ Spec A` induced by an augmentation `f : A →ₐ[R] R`. -/
 noncomputable def specSplitEpi (f : A →ₐ[R] R) :
     SplitEpi (Spec.map (CommRingCat.ofHom (algebraMap R A))) where
   section_ := Spec.map (CommRingCat.ofHom (f : A →+* R))
-  id := f.Spec_map_comp_Spec_map_algebraMap
+  id := by simp
 
 /-- The section of `f.specSplitEpi` is induced by the augmentation `f`. -/
 @[simp]
