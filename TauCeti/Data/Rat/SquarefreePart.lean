@@ -30,6 +30,7 @@ Dirichlet character attached to `u`, can therefore be defined through this integ
 * `Rat.squarefreePart_eq_iff`: for squarefree `d`, `Rat.squarefreePart u = d` exactly when
   `u = d * c ^ 2` for a nonzero rational `c`.
 * `Rat.squarefreePart_mul_sq`: invariance under multiplication by a nonzero square.
+* `Rat.squarefreePart_intCast_dvd`: the squarefree part of an integer divides it.
 * `Rat.squarefreePart_pos_iff`, `Rat.squarefreePart_neg_iff`: it has the sign of `u`.
 * `Rat.prime_dvd_squarefreePart_iff`: a prime `p` divides it exactly when `padicValRat p u` is odd.
 
@@ -100,6 +101,22 @@ theorem squarefreePart_ne_zero {u : ℚ} (hu : u ≠ 0) : u.squarefreePart ≠ 0
 theorem squarefreePart_intCast_of_squarefree {d : ℤ} (hd : Squarefree d) :
     (d : ℚ).squarefreePart = d :=
   (squarefreePart_eq_iff hd).mpr ⟨1, one_ne_zero, by simp⟩
+
+/-- The squarefree part of an integer divides it: the square factor removed from an integer is
+the square of an integer, not merely of a rational. -/
+theorem squarefreePart_intCast_dvd (n : ℤ) : (n : ℚ).squarefreePart ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  obtain ⟨a, b, ha, hb, rfl⟩ := Int.exists_squarefree_mul_sq hn
+  rw [(squarefreePart_eq_iff ha).mpr ⟨b, by exact_mod_cast hb, by push_cast; ring⟩]
+  exact dvd_mul_right a _
+
+/-- The squarefree part of an integer is at most the integer in absolute value. -/
+theorem natAbs_squarefreePart_intCast_le (n : ℤ) :
+    (n : ℚ).squarefreePart.natAbs ≤ n.natAbs := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  exact Int.natAbs_le_of_dvd_ne_zero (squarefreePart_intCast_dvd n) hn
 
 /-- The square class of `1` is represented by `1`. -/
 @[simp]

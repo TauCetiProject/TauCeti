@@ -217,8 +217,8 @@ theorem IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull {C : S
   have hUc : IsBounded (filledHull C)ᶜᶜ := by
     rw [compl_compl]
     exact isBounded_filledHull.mpr hC.isCompact.isBounded
-  rw [frontier_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl
-    (hC.notMem_closure_compl_filledHull hp) hUc, frontier_compl, hC.frontier_filledHull]
+  rw [frontier_insert_zero_image_inv_sub (hC.notMem_closure_compl_filledHull hp) hUc,
+    frontier_compl, hC.frontier_filledHull]
 
 /-- Every complementary component of a Jordan curve `C ⊆ ℂ` is either its inside
 `filledHull C \ C` or its outside `(filledHull C)ᶜ`. -/

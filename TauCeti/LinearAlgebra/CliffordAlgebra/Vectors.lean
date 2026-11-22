@@ -41,7 +41,10 @@ preserves `Q` has to be proved separately.
 
 Against the degree filtration `CliffordAlgebra.filtration`, whose first step is spanned by
 the scalars and the vectors, the disjointness of the two pins that step down to `R ⊕ M`:
-`CliffordAlgebra.filtrationOneEquiv`.
+`CliffordAlgebra.filtrationOneEquiv`. When `2` is invertible in `R` and `R` is reduced, an
+algebra equivalence of Clifford algebras preserves that step exactly when it preserves the
+vectors: if `φ (ι v) = r + ι t`, the vector part of the generator square is `2 r • t`, which
+forces `r = 0`.
 
 ## Main definitions
 
@@ -72,6 +75,9 @@ the scalars and the vectors, the disjointness of the two pins that step down to 
   part.
 * `CliffordAlgebra.finrank_filtration_one`: the first step of the degree filtration has one
   more dimension than `M`.
+* `CliffordAlgebra.filtration_one_map_eq_iff`: an algebra equivalence maps the first filtration
+  step onto the first filtration step if and only if it maps the vectors onto the vectors, when
+  `2` is invertible in `R` and `R` is reduced.
 
 ## References
 
@@ -82,7 +88,7 @@ the scalars and the vectors, the disjointness of the two pins that step down to 
 public section
 
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
@@ -278,6 +284,78 @@ theorem coe_filtrationOneEquiv_apply (x : R × M) :
     LinearEquiv.ofInjective_apply, scalarAddVector_apply]
 
 end CommRing
+
+section FiltrationOne
+
+variable {R : Type u} [CommRing R] [Invertible (2 : R)]
+  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-! ### Maps preserving the first step of the degree filtration -/
+
+/-- **An injective algebra map sending a generator into the first filtration step sends it to a
+vector**, when `2` is invertible and the base ring is reduced.
+
+Both hypotheses on `R` are needed. In characteristic `2`, over `𝔽₄ = 𝔽₂(ω)`, the Clifford algebra
+of `x ↦ x²` on a line has the automorphism `e ↦ ω + ω² e`. Over the dual numbers
+`R = K[δ] ⧸ (δ²)` of a field `K` of characteristic different from `2`, the exterior algebra
+`R ⊕ K` of `K = R ⧸ (δ)` has the automorphism `r + ι m ↦ r + δ m + ι m`. -/
+theorem apply_ι_mem_range_ι_of_mem_filtration_one [IsReduced R]
+    {g : CliffordAlgebra Q₁ →ₐ[R] CliffordAlgebra Q₂} (hg : Function.Injective g) {v : M₁}
+    (hv : g (ι Q₁ v) ∈ filtration Q₂ 1) : g (ι Q₁ v) ∈ LinearMap.range (ι Q₂) := by
+  -- Write `g (ι Q₁ v) = r + ι Q₂ t`. The vector part of the generator square
+  -- `g (ι Q₁ v) ^ 2 = Q₁ v` is `ι Q₂ ((2 * r) • t)`, which must vanish. Then
+  -- `g (ι Q₁ (r • v)) = r * r` is a scalar, so `ι Q₁ (r • v)` is one too, and `r * r = 0`.
+  rw [← range_scalarAddVector] at hv
+  obtain ⟨⟨r, t⟩, hrt⟩ := hv
+  simp only [scalarAddVector_apply] at hrt
+  have hsq : ι Q₂ ((2 * r) • t) = algebraMap R _ (Q₁ v - (r * r + Q₂ t)) := by
+    rw [map_sub, ← AlgHom.commutes g, ← ι_sq_scalar, map_mul, ← hrt, algebraMap_add_ι_mul_self]
+    abel
+  have hrt0 : r • t = 0 := by
+    rw [← (isUnit_of_invertible (2 : R)).smul_eq_zero, smul_smul]
+    exact ((ι_eq_algebraMap_iff Q₂ _ _).mp hsq).1
+  have hrv : g (ι Q₁ (r • v)) = g (algebraMap R _ (r * r)) := by
+    rw [map_smul, map_smul, ← hrt, smul_add, ← map_smul (ι Q₂), hrt0, map_zero, add_zero,
+      Algebra.smul_def, ← map_mul, AlgHom.commutes]
+  have hr : r = 0 :=
+    IsNilpotent.eq_zero ⟨2, by rw [pow_two]; exact ((ι_eq_algebraMap_iff Q₁ _ _).mp (hg hrv)).2⟩
+  exact ⟨t, by rw [← hrt, hr, map_zero, zero_add]⟩
+
+/-- **The first filtration step detects the vector-preserving equivalences.** An algebra
+equivalence of Clifford algebras maps the first filtration step `R ⊕ M₁` onto `R ⊕ M₂` if and
+only if it maps the vectors onto the vectors, when `2` is invertible in `R` and `R` is reduced;
+see `CliffordAlgebra.apply_ι_mem_range_ι_of_mem_filtration_one` for why the hypotheses on `R`
+are needed. No hypothesis on the forms or the modules is needed. -/
+theorem filtration_one_map_eq_iff [IsReduced R]
+    (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂) :
+    (filtration Q₁ 1).map φ.toLinearMap = filtration Q₂ 1 ↔
+      (LinearMap.range (ι Q₁)).map φ.toLinearMap = LinearMap.range (ι Q₂) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hle : (LinearMap.range (ι Q₁)).map φ.toLinearMap ≤ LinearMap.range (ι Q₂) := by
+      rintro _ ⟨_, ⟨v, rfl⟩, rfl⟩
+      exact apply_ι_mem_range_ι_of_mem_filtration_one (g := φ.toAlgHom) φ.injective
+        (h ▸ Submodule.mem_map_of_mem (ι_mem_filtration_one Q₁ v))
+    refine le_antisymm hle ?_
+    -- A vector `ι Q₂ t` is `φ (r + ι Q₁ u)` with `φ (ι Q₁ u)` a vector `ι Q₂ s`, so the scalar
+    -- `r` is the vector `ι Q₂ (t - s)` and vanishes.
+    rintro _ ⟨t, rfl⟩
+    obtain ⟨x, hx, hxt⟩ := h.symm ▸ ι_mem_filtration_one Q₂ t
+    rw [← range_scalarAddVector] at hx
+    obtain ⟨⟨r, u⟩, rfl⟩ := hx
+    obtain ⟨s, hs⟩ := hle ⟨ι Q₁ u, ⟨u, rfl⟩, rfl⟩
+    rw [AlgEquiv.toLinearMap_apply, scalarAddVector_apply, map_add, AlgEquiv.commutes] at hxt
+    rw [AlgEquiv.toLinearMap_apply] at hs
+    have hr : ι Q₂ (t - s) = algebraMap R _ r := by
+      rw [map_sub, hs, ← hxt, add_sub_cancel_right]
+    rw [((ι_eq_algebraMap_iff Q₂ _ _).mp hr).2, map_zero, zero_add, ← hs] at hxt
+    exact ⟨ι Q₁ u, ⟨u, rfl⟩, by rw [AlgEquiv.toLinearMap_apply, ← hs, hxt]⟩
+  · rw [filtration_eq_pow, filtration_eq_pow, pow_one, pow_one, Submodule.map_sup, h]
+    -- `φ.toLinearMap` is the linear map underlying the algebra map `φ.toAlgHom`.
+    exact congrArg (· ⊔ LinearMap.range (ι Q₂)) (Submodule.map_one φ.toAlgHom)
+
+end FiltrationOne
 
 section Field
 

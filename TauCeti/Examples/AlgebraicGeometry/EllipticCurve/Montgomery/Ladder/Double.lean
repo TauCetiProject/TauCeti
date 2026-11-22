@@ -7,6 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of the even Montgomery-ladder relation
@@ -26,7 +27,7 @@ relation `[2k]P` from `[k]P + [k]P`.
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 -- No normalization of the input representative is required.
 example {K : Type*} [Field K] [DecidableEq K] {A B N D c : K}
@@ -51,10 +52,7 @@ example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
 
 -- Track actual raw outputs rather than assuming the group order or the intermediate multiples.
 example [Fact (Nat.Prime 7)] :
-    let P : (model (0 : ZMod 7) 1).toAffine.Point := .some 3 3 (by
-      rw [Affine.nonsingular_iff, Affine.equation_iff]
-      norm_num
-      decide +revert)
+    let P := pointThreeThreeSeven
     8 • P = 0 := by
   intro P
   have hd₁ : double (2 : ZMod 7) 4 ⟨3, 1⟩ = ⟨4, 4⟩ := by
@@ -69,7 +67,7 @@ example [Fact (Nat.Prime 7)] :
     ext <;> norm_num [double_x, double_z]
     decide +revert
   have h₁ : (Pair.mk (3 : ZMod 7) 1).cross (coordinates 0 1 (1 • P)) = 0 := by
-    simp [P]
+    simp [P, pointThreeThreeSeven]
   have hD : (4 : ZMod 7) ≠ 0 := (ZMod.natCast_eq_zero_iff 4 7).not.mpr (by decide)
   have h₂ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) hD
     (by norm_num) (S := ⟨3, 1⟩) (by simp [Pair.ne_zero_iff]) h₁

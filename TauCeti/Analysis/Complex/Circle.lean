@@ -21,6 +21,7 @@ import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -40,7 +41,8 @@ upper and lower semicircle paths from `1` to `-1` in `ℂ`.
 ## Main declarations
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
-  numbers.
+  numbers, with `Circle.coe_homeomorphSphere_exp_re` and `Circle.coe_homeomorphSphere_exp_im`
+  computing the real and imaginary parts of `exp (i x)` on the sphere.
 * `Circle.expContinuousMonoidHom`: `t ↦ exp (i t)` as a continuous homomorphism
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
@@ -74,6 +76,9 @@ upper and lower semicircle paths from `1` to `-1` in `ℂ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
+* `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
+  differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
+  `e^{iθ} (dr + i r dθ)`.
 -/
 
 public section
@@ -98,6 +103,16 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
+theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_re x
+
+/-- The imaginary part of `exp (i x)`, read on the unit sphere of `ℂ`, is `sin x`. -/
+theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ).im = Real.sin x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_im x
 
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
@@ -236,6 +251,11 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   rw [mul_left_comm, ← Complex.exp_add]
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
+
+/-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
+theorem coe_inv_mul_sub_one (a b : Circle) :
+    ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
+  rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
@@ -551,5 +571,32 @@ theorem circleParam_eq_one_of_coe_eq_neg_one {u : sphere (0 : ℂ) 1} (hu : (u :
     circleParam u = 1 := by
   apply Subtype.ext
   simp [coe_circleParam, hu]
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {θ r : E → ℝ}
+  {θ' r' : E →L[ℝ] ℝ} {x : E}
+
+/-- **The differential of a map in polar form.** If the angle `θ` and the radius `r` are
+differentiable at `x`, then `f = e^{iθ} r` is differentiable at `x`, with differential
+`df_x v = dr_x v • e^{iθ(x)} + dθ_x v • (r(x) i e^{iθ(x)})`. -/
+theorem hasFDerivAt_circleExp_mul_ofReal (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x) :
+    HasFDerivAt (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ))
+      (r'.smulRight (Circle.exp (θ x) : ℂ) +
+        θ'.smulRight ((r x : ℂ) * I * Circle.exp (θ x))) x := by
+  refine ((((ofRealCLM.hasFDerivAt.comp x hθ).mul_const' I).cexp.mul
+      (ofRealCLM.hasFDerivAt.comp x hr)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun y ↦ by simp [Circle.coe_exp])).congr_fderiv ?_
+  ext v
+  simp [Circle.coe_exp]
+  ring
+
+/-- The value of the differential of a map `e^{iθ} r` in polar form:
+`df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`. -/
+theorem fderiv_circleExp_mul_ofReal_apply (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) x v =
+      (Circle.exp (θ x) : ℂ) * ((r' v : ℂ) + (r x * θ' v : ℝ) * I) := by
+  rw [(hasFDerivAt_circleExp_mul_ofReal hθ hr).fderiv]
+  simp
+  ring
 
 end TauCeti

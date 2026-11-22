@@ -62,6 +62,8 @@ at `0` while releasing the first.
   boundaries of `I^(Option N)`, `I^(Fin (n + 1))`, and `I^(Fin 2)`.
 * `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
   `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
+* `Cube.snoc_mem_boundary_iff`: appending a last coordinate lands on the boundary of the cube
+  exactly when the first coordinates or the last one do.
 * `Cube.dense_boundary`: for an infinite index set the boundary of `I^N` is dense.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
@@ -173,6 +175,16 @@ theorem Cube.append_mem_boundary_iff {m n : ℕ} {x : I^(Fin m)} {y : I^(Fin n)}
   · rintro (⟨i, hi⟩ | ⟨i, hi⟩)
     · exact ⟨Fin.castAdd n i, by simpa using hi⟩
     · exact ⟨Fin.natAdd m i, by simpa using hi⟩
+
+open scoped Topology unitInterval in
+/-- **Appending a last coordinate to a point of the cube.** The point `Fin.snoc y t` of
+`I^(Fin (n + 1))` lies on its boundary exactly when `y` lies on the boundary of `I^(Fin n)` or `t`
+is `0` or `1`. -/
+theorem Cube.snoc_mem_boundary_iff {n : ℕ} {y : I^(Fin n)} {t : I} :
+    (Fin.snoc y t : I^(Fin (n + 1))) ∈ Cube.boundary (Fin (n + 1)) ↔
+      y ∈ Cube.boundary (Fin n) ∨ t = 0 ∨ t = 1 := by
+  simp only [Cube.boundary, Set.mem_ofPred_eq, Fin.exists_fin_succ', Fin.snoc_castSucc,
+    Fin.snoc_last]
 
 open scoped Topology unitInterval in
 /-- **The boundary of a product of cubes**: under the homeomorphism

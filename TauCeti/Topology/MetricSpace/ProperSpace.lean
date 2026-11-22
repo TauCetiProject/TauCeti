@@ -35,6 +35,9 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   exhaustion by compact sets with the divergence condition, namely by the closed balls about `p`.
 * `TauCeti.properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist`: the
   equivalence.
+* `CompactExhaustion.closedBall`: the closed balls of natural radius about a point, as a
+  `CompactExhaustion` of a proper space; a point `x` first enters it at the index `⌈dist x p⌉₊`
+  (`CompactExhaustion.find_closedBall`).
 * `IsOpen.exists_iUnion_isOpen_isCompact_closure`: in a proper space, every open set is the union
   of an increasing sequence of open sets with compact closures inside it.
 * `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
@@ -223,3 +226,30 @@ theorem _root_.Homeomorph.isBounded_image_iff {β : Type*} [PseudoMetricSpace β
     ← e.image_closure, e.isCompact_image]
 
 end TauCeti
+
+namespace CompactExhaustion
+
+variable {α : Type*} [PseudoMetricSpace α] [ProperSpace α]
+
+/-- The compact exhaustion of a proper pseudometric space by the closed balls of natural radius
+about a point `p`. Its `n`th set is `Metric.closedBall p n`, and a point `x` first enters it at the
+index `⌈dist x p⌉₊` (`CompactExhaustion.find_closedBall`). -/
+def closedBall (p : α) : CompactExhaustion α where
+  toFun n := Metric.closedBall p n
+  isCompact' n := isCompact_closedBall p n
+  subset_interior_succ' n :=
+    (closedBall_subset_ball (by simp)).trans ball_subset_interior_closedBall
+  iUnion_eq' := iUnion_closedBall_nat p
+
+@[simp]
+theorem closedBall_apply (p : α) (n : ℕ) : closedBall p n = Metric.closedBall p n :=
+  (rfl)
+
+/-- A point `x` first enters the closed balls of natural radius about `p` at the index
+`⌈dist x p⌉₊`. -/
+@[simp]
+theorem find_closedBall (p x : α) : (closedBall p).find x = ⌈dist x p⌉₊ :=
+  le_antisymm ((closedBall p).mem_iff_find_le.1 (mem_closedBall.2 (Nat.le_ceil _)))
+    (Nat.ceil_le.2 (mem_closedBall.1 ((closedBall p).mem_find x)))
+
+end CompactExhaustion
