@@ -37,12 +37,13 @@ factors, which holds over any field of characteristic zero.
 
 ## Main results
 
+* `TauCeti.mk_orrCoefficient`: the formal generating function of the `Aₛ` (DLMF 15.16.2).
 * `TauCeti.hasSum_orrCoefficient_mul_pow`: the generating function of the `Aₛ` on the open unit
   disk (DLMF 15.16.2).
 * `TauCeti.sum_antidiagonal_ordinaryHypergeometricCoefficient_mul_eq_mul_orrCoefficient`: the
   coefficient form of Orr's formula.
-* `TauCeti.hasSum_mul_orrCoefficient_smul_pow`: Orr's formula on the open unit ball of a Banach
-  algebra (DLMF 15.16.1).
+* `TauCeti.hasSum_mul_orrCoefficient_smul_pow`: Orr's formula on the open unit ball of a complete
+  normed division algebra over `ℝ` or `ℂ` (DLMF 15.16.1).
 
 ## Implementation notes
 
@@ -103,6 +104,27 @@ theorem orrCoefficient_def (a b c : K) (s : ℕ) :
 theorem orrCoefficient_zero (a b c : K) : orrCoefficient a b c 0 = 1 := by
   simp [orrCoefficient_def, ordinaryHypergeometricCoefficient]
 
+/-- The formal generating function of the `Aₛ` (DLMF 15.16.2): it is the product of the series of
+`F(2a, 2b; 2c - 1; X)` and the series `∑ⱼ (c - a - b)ⱼ / j! Xʲ` of `(1 - X)^(a + b - c)`. -/
+theorem mk_orrCoefficient (a b c : K) :
+    PowerSeries.mk (orrCoefficient a b c) =
+      mk (ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1)) *
+        mk (Ring.multichoose (c - a - b)) := by
+  ext
+  simp [coeff_mul, orrCoefficient_def]
+
+omit [CharZero K] in
+/-- The coefficient of `X` in `p + X q + X² r` is `p₁ + q₀`. -/
+private theorem coeff_one_add_X_mul_add_X_mul_X_mul (p q r : K⟦X⟧) :
+    coeff 1 (p + X * q + X * (X * r)) = coeff 1 p + coeff 0 q := by
+  simp [coeff_succ_X_mul]
+
+omit [CharZero K] in
+/-- The coefficient of `Xⁿ⁺²` in `p + X q + X² r` is `pₙ₊₂ + qₙ₊₁ + rₙ`. These two lemmas turn an
+equation `p + X q + X² r = 0` into the three-term recurrence of its coefficients. -/
+private theorem coeff_add_two_add_X_mul_add_X_mul_X_mul (p q r : K⟦X⟧) (n : ℕ) :
+    coeff (n + 2) (p + X * q + X * (X * r)) = coeff (n + 2) p + coeff (n + 1) q + coeff n r := by
+  simp only [map_add, coeff_succ_X_mul]
 
 /-- If `f` and `g` satisfy the hypergeometric equations with parameters `(a, b; c - 1/2)` and
 `(c - a, c - b; c + 1/2)`, their product `Y = f * g` satisfies the fourth-order equation
@@ -189,18 +211,15 @@ private theorem coeff_mul_recurrence_of_gaussEquation {a b c : K} {f g : K⟦X�
         4 * (n + c - a + b) * (n + c + a - b) * (n + c) * (n + c + 1) * coeff n (f * g) = 0 := by
   have hode := orr_equation_mul_of_gaussEquation hf hg
   refine ⟨?_, fun n ↦ ?_⟩
-  · have h := congrArg (coeff (0 + 1)) hode
-    simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative] at h
-    simp only [coeff_succ_X_mul, coeff_zero_X_mul] at h
+  · have h := congrArg (coeff 1) hode
+    rw [coeff_one_add_X_mul_add_X_mul_X_mul] at h
     simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
     push_cast at h
     linear_combination h
-  · have h := congrArg (coeff (n + 1 + 1)) hode
-    simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative] at h
-    simp only [coeff_succ_X_mul] at h
+  · have h := congrArg (coeff (n + 2)) hode
+    rw [coeff_add_two_add_X_mul_add_X_mul_X_mul] at h
     simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
     push_cast at h
-    rw [show n + 2 = n + 1 + 1 from rfl]
     linear_combination h
 
 omit [CharZero K] in
@@ -237,18 +256,15 @@ private theorem coeff_mul_recurrence_of_gaussEquation_of_one_sub {a b c : K} {f 
       (-f * X ^ 2 * C a - f * X ^ 2 * C b - f * X ^ 2 * C c + 2 * f * X * C c - f * X -
         2 * d⁄dX f * X ^ 3 + 2 * d⁄dX f * X ^ 2) * hg
   refine ⟨?_, fun n ↦ ?_⟩
-  · have h := congrArg (coeff (0 + 1)) hode
-    simp only [hH₁, hH₂, map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative] at h
-    simp only [coeff_succ_X_mul, coeff_zero_X_mul] at h
-    simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
+  · have h := congrArg (coeff 1) hode
+    rw [coeff_one_add_X_mul_add_X_mul_X_mul] at h
+    simp only [hH₁, hH₂, map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
     push_cast at h
     linear_combination h
-  · have h := congrArg (coeff (n + 1 + 1)) hode
-    simp only [hH₁, hH₂, map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative] at h
-    simp only [coeff_succ_X_mul] at h
-    simp only [map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
+  · have h := congrArg (coeff (n + 2)) hode
+    rw [coeff_add_two_add_X_mul_add_X_mul_X_mul] at h
+    simp only [hH₁, hH₂, map_add, coeff_smul, smul_eq_mul, coeff_X_mul_derivative, map_zero] at h
     push_cast at h
-    rw [show n + 2 = n + 1 + 1 from rfl]
     linear_combination h
 
 /-- The ratio `Bₘ = (c)ₘ / (c + 1/2)ₘ` satisfies `(2 (c + m) + 1) Bₘ₊₁ = 2 (c + m) Bₘ` when `2c - 1`
@@ -327,7 +343,7 @@ private theorem eq_ascPochhammer_div_mul_of_recurrence {a b c : K}
       have h := hB (m + 1)
       push_cast at h
       refine ⟨ih.2, ?_⟩
-      rw [show m + 1 + 1 = m + 2 from rfl]
+      rw [show m + 1 + 1 = m + 2 by omega]
       refine mul_left_cancel₀ (hq m) ?_
       linear_combination hy m -
         2 * (-2 * (m + 1) ^ 2 + (2 - 4 * c) * (m + 1) +
@@ -361,20 +377,17 @@ theorem sum_antidiagonal_ordinaryHypergeometricCoefficient_mul_eq_mul_orrCoeffic
       C (c - a - b) * mk (Ring.multichoose (c - a - b)) := by
     ext m
     rw [sub_mul, one_mul, map_sub, coeff_X_mul_derivative, coeff_derivative, coeff_C_mul]
-    simp only [coeff_mk, Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-      ascPochhammer_succ_eval, Nat.factorial_succ, Nat.cast_mul, mul_inv]
-    field_simp
-    push_cast
-    ring
+    simp only [coeff_mk]
+    have h := Ring.add_one_nsmul_multichoose_add_one (c - a - b) m
+    rw [nsmul_eq_mul] at h
+    push_cast at h ⊢
+    linear_combination h
   obtain ⟨hy₁, hy⟩ := coeff_mul_recurrence_of_gaussEquation
     (mk_ordinaryHypergeometricCoefficient_gaussEquation a b (c - 1 / 2) hc₁)
     (mk_ordinaryHypergeometricCoefficient_gaussEquation (c - a) (c - b) (c + 1 / 2) hc₂)
   obtain ⟨hA₁, hA⟩ := coeff_mul_recurrence_of_gaussEquation_of_one_sub
     (mk_ordinaryHypergeometricCoefficient_gaussEquation (2 * a) (2 * b) (2 * c - 1) hc₃) hP
-  have hA' : ∀ m, coeff m (mk (ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1)) *
-      mk (Ring.multichoose (c - a - b))) = orrCoefficient a b c m := fun m ↦ by
-    simp [coeff_mul, orrCoefficient_def]
-  simp only [hA'] at hA₁ hA
+  simp only [← mk_orrCoefficient, coeff_mk] at hA₁ hA
   have h := eq_ascPochhammer_div_mul_of_recurrence hc (y := fun m ↦ coeff m
     (mk (ordinaryHypergeometricCoefficient a b (c - 1 / 2)) *
       mk (ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2))))
