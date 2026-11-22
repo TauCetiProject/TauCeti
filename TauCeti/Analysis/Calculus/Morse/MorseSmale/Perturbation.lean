@@ -44,8 +44,8 @@ for parameters in the closed unit ball.
   admissible for `perturb f h s` for small `s`.
 * `TauCeti.exists_pos_forall_isNondegenerateCriticalPoint_perturb_iff`: small perturbations keep
   the nondegenerate critical points; `TauCeti.exists_forall_abs_perturb_sub_le` bounds
-  `perturb f h s - f` by a multiple of `‖s‖`, and `TauCeti.isCompact_sublevel_perturb` keeps
-  compact sublevels.
+  `perturb f h s - f` by a multiple of `‖s‖`, and `TauCeti.isCompact_sublevel_perturb`: for a
+  lower semicontinuous `f`, a compact sublevel of `f` stays compact under perturbation.
 * `TauCeti.perturbedFlow f h hf hh hc`: the flow of the field
   `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)` on `E × EuclideanSpace ℝ ι`, where `a` is the cutoff of
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
@@ -65,8 +65,8 @@ for parameters in the closed unit ball.
   less than `1`, with the flow of the perturbation in place of the flow of `f`.
 * `TauCeti.mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem`: membership
   in unstable sets is that for `f` when the backward orbit of the perturbed flow avoids the
-  supports. `TauCeti.exists_pos_forall_unstableSet_perturb_eq`: for a family supported where
-  `f > c` and a rest point with `f p < c`, small perturbations keep the whole unstable set of `p`;
+  supports. `TauCeti.unstableSet_perturb_eq`: for a family with closed supports where `f > c` and
+  a rest point with `f p < c`, every perturbation keeps the whole unstable set of `p`;
   `TauCeti.exists_pos_forall_value_negativeGradientFlow_perturb_lt`: if the time-`T` images of a
   compact set lie below a level, they still do for small perturbations.
 * `TauCeti.range_fst_fderiv_perturbedFlow_inr_le`: at the parameter `0`, a family whose members
@@ -251,7 +251,8 @@ theorem exists_pos_forall_isAdmissiblePerturbation_perturb (hfs : ContDiff ℝ 1
   exact (hadm i).disjoint
 
 /-- **Small perturbations keep the nondegenerate critical points.** For a family of compactly
-supported `C¹` functions whose supports avoid the critical points of `f`, for all sufficiently
+supported `C¹` functions whose closed supports (`tsupport`) avoid the critical points of `f`, for
+all sufficiently
 small parameters the nondegenerate critical points of `perturb f h s` are those of `f`. -/
 theorem exists_pos_forall_isNondegenerateCriticalPoint_perturb_iff (hfs : ContDiff ℝ 1 f)
     (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
@@ -284,20 +285,22 @@ theorem exists_forall_abs_perturb_sub_le (hcont : ∀ i, Continuous (h i))
     (le_max_right _ _)
 
 omit [NormedSpace ℝ E] in
-/-- **Compact sublevels persist under perturbation.** If every sublevel of a continuous `f` is
-compact, then so is every sublevel of its perturbation by continuous compactly supported
-functions. -/
-theorem isCompact_sublevel_perturb (hfc : Continuous f) (hcont : ∀ i, Continuous (h i))
-    (hc : ∀ i, HasCompactSupport (h i)) (hcompact : ∀ c : ℝ, IsCompact {x | f x ≤ c})
-    (s : EuclideanSpace ℝ ι) (c : ℝ) : IsCompact {x | perturb f h s x ≤ c} := by
-  obtain ⟨M, -, hM⟩ := exists_forall_abs_perturb_sub_le (f := f) hcont hc
-  have hpc : Continuous (perturb f h s) := by
-    unfold perturb
-    fun_prop
-  refine (hcompact (c + M * ‖s‖)).of_isClosed_subset (isClosed_le hpc continuous_const)
-    fun x hx ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hx ⊢
-  linarith [(abs_le.1 (hM s x)).1]
+/-- **Compact sublevels persist under perturbation.** If `f` is lower semicontinuous and its
+sublevel at `c` is compact, then so is the sublevel at `c` of its perturbation by continuous
+compactly supported functions: it lies in the sublevel of `f` and the supports. -/
+theorem isCompact_sublevel_perturb (hfc : LowerSemicontinuous f) (hcont : ∀ i, Continuous (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (s : EuclideanSpace ℝ ι) {c : ℝ}
+    (hcompact : IsCompact {x | f x ≤ c}) : IsCompact {x | perturb f h s x ≤ c} := by
+  have hcs : Continuous fun x ↦ ∑ i, s i * h i x := by fun_prop
+  have hpc : LowerSemicontinuous (perturb f h s) := hfc.add hcs.lowerSemicontinuous
+  refine (hcompact.union (isCompact_iUnion fun i ↦ hc i)).of_isClosed_subset
+    (hpc.isClosed_preimage c) fun x hx ↦ ?_
+  by_cases hx' : ∃ i, x ∈ tsupport (h i)
+  · exact Or.inr (mem_iUnion.2 hx')
+  · refine Or.inl ?_
+    have hfx : perturb f h s x = f x := by
+      simp [perturb_apply, fun i ↦ image_eq_zero_of_notMem_tsupport (not_exists.1 hx' i)]
+    simpa only [Set.mem_ofPred_eq, hfx] using hx
 
 end Differential
 
@@ -408,49 +411,47 @@ theorem mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMe
   simp only [Flow.mem_unstableSet]
   exact (tendsto_congr' heq).symm
 
-/-- **Unstable sets of low rest points are unchanged.** If the family is supported where `f > c`
-and `f p < c`, then for all sufficiently small `s` the unstable set of `p` for the perturbed flow
-is that for the flow of `f`. -/
-theorem exists_pos_forall_unstableSet_perturb_eq (hfs : ContDiff ℝ 1 f)
-    (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
-    (hf : LipschitzWith K (∇ f)) {c : ℝ} (hsupp : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c) {p : E}
-    (hp : f p < c) :
-    ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ ⦃K' : ℝ≥0⦄
-      (hf' : LipschitzWith K' (∇ (perturb f h s))),
-      Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p =
-        Flow.unstableSet (negativeGradientFlow f hf) p := by
-  obtain ⟨M, hM0, hM⟩ :=
-    exists_forall_abs_perturb_sub_le (f := f) (fun i ↦ (hh i).continuous) hc
-  refine ⟨(c - f p) / (M + 1), div_pos (sub_pos.2 hp) (by positivity), fun s hs K' hf' ↦ ?_⟩
-  have hsM : M * ‖s‖ < c - f p := by
-    rw [lt_div_iff₀ (by positivity)] at hs
-    nlinarith [norm_nonneg s]
-  -- On the supports, both `f` and its perturbation lie above `f p`.
-  have hhigh : ∀ i, ∀ z ∈ tsupport (h i), f p < f z ∧ f p < perturb f h s z := fun i z hz ↦ by
-    have h1 : c < f z := hsupp i hz
-    exact ⟨hp.trans h1, by linarith [(abs_le.1 (hM s z)).1]⟩
-  have hpp : perturb f h s p = f p :=
-    (perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦
-      (hhigh i p hmem).1.false).eq_of_nhds
-  have hd : Differentiable ℝ f := hfs.differentiable one_ne_zero
-  have hds : Differentiable ℝ (perturb f h s) :=
-    (contDiff_perturb hfs hh s).differentiable one_ne_zero
+/-- **Unstable sets of low rest points are unchanged.** If the closed supports (`tsupport`) of
+the family lie where `f > c` and `f p < c`, with `f` continuous at `p`, then for every parameter
+the unstable set of `p` for the perturbed flow is that for the flow of `f`. -/
+theorem unstableSet_perturb_eq (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ}
+    (hsupp : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c) {p : E} (hfp : ContinuousAt f p) (hp : f p < c) :
+    Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p =
+      Flow.unstableSet (negativeGradientFlow f hf) p := by
+  -- Along the whole orbit of a point of the unstable set of `p` for `f`, `f` is at most `f p`, so
+  -- that orbit avoids the supports.
+  have hlow : ∀ y ∈ Flow.unstableSet (negativeGradientFlow f hf) p, ∀ τ i,
+      negativeGradientFlow f hf τ y ∉ tsupport (h i) := fun y hy τ i hmem ↦ by
+    have hy' := Flow.isInvariant_unstableSet _ p τ hy
+    have hle : f (negativeGradientFlow f hf τ y) ≤ f p := by
+      simpa only [Flow.map_zero_apply] using
+        (negativeGradientFlow_orbit_antitone f hf _).ge_of_tendsto
+          (hfp.tendsto.comp (Flow.mem_unstableSet.mp hy')) 0
+    exact (hp.trans (hsupp i hmem)).not_ge hle
   ext y
   constructor
   · intro hy
-    refine (mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem hf hf'
-      fun τ _ i hmem ↦ ?_).1 hy
-    have hle : perturb f h s (negativeGradientFlow (perturb f h s) hf' τ y) ≤ perturb f h s p :=
-      (isNegativeGradient_negativeGradientFlow _ hf').value_ge_of_mem_unstableSet
-        (Flow.isInvariant_unstableSet _ p τ hy) (fun _ ↦ hds _) hds.continuous.continuousAt
-    exact ((hhigh i _ hmem).2.trans_le (hle.trans hpp.le)).false
+    -- Far back, the perturbed orbit of `y` lies in a neighbourhood of `p` below `c`, which avoids
+    -- the supports; from there on the two flows agree.
+    obtain ⟨T₀, hT₀⟩ := eventually_atBot.1 ((Flow.mem_unstableSet.mp hy).eventually
+      (hfp.preimage_mem_nhds (Iio_mem_nhds hp)))
+    set T := min T₀ 0
+    set z := negativeGradientFlow (perturb f h s) hf' T y
+    have hz : z ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
+      refine (mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem hf hf'
+        fun τ hτ i hmem ↦ ?_).1 (Flow.isInvariant_unstableSet _ p T hy)
+      have hlt : f (negativeGradientFlow (perturb f h s) hf' (τ + T) y) < c :=
+        hT₀ _ (by linarith [min_le_left T₀ 0])
+      rw [Flow.map_add] at hlt
+      exact (hsupp i hmem).not_gt hlt
+    have hyz : negativeGradientFlow f hf (-T) z = y :=
+      (negativeGradientFlow_perturb_apply_eq hf hf' fun τ _ ↦ hlow z hz τ).symm.trans
+        (Flow.map_neg_apply_map _ T y)
+    rw [← hyz]
+    exact Flow.isInvariant_unstableSet _ p (-T) hz
   · intro hy
-    refine (mem_unstableSet_perturb_iff hf hf' fun τ _ i hmem ↦ ?_).2 hy
-    have hle : f (negativeGradientFlow f hf τ y) ≤ f p :=
-      (isNegativeGradient_negativeGradientFlow f hf).value_ge_of_mem_unstableSet
-        (Flow.isInvariant_unstableSet _ p τ hy) (fun _ ↦ hd _) hd.continuous.continuousAt
-    exact ((hhigh i _ hmem).1.trans_le hle).false
-
+    exact (mem_unstableSet_perturb_iff hf hf' fun τ _ ↦ hlow y hy τ).2 hy
 
 /-- **Stable sets below a level are unchanged.** If the family is supported where `f > c`, then
 at points where `f ≤ c` the stable set of `q` for the perturbed flow is that for the flow of `f`:

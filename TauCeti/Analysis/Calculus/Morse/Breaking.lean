@@ -180,9 +180,10 @@ end IsNondegenerateCriticalPoint
 
 variable {K : ℝ≥0}
 
-/-- If the closure of `Wˢ(q)` meets `Wˢ(x)` for `x ≠ q`, and every forward orbit in that
-closure converges to a nondegenerate critical point, then there is a nonconstant connecting orbit
-from `x` to another nondegenerate critical point `a`, with a point in the closure of `Wˢ(q)`. -/
+/-- Let `x ≠ q` be a nondegenerate critical point. If the closure of `Wˢ(q)` meets `Wˢ(x)`, and
+every forward orbit in that closure converges to a nondegenerate critical point, then there is a
+nonconstant connecting orbit from `x` to another nondegenerate critical point `a`, with a point in
+the closure of `Wˢ(q)`. -/
 theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {q y : E} (hqx : q ≠ x)
@@ -211,10 +212,10 @@ theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
   rw [hzx, dist_self] at hzr
   exact (ne_of_gt hr) hzr.symm
 
-/-- If the closure of `Wᵘ(p)` meets `Wᵘ(x)` for `x ≠ p`, and every backward orbit in that
-closure converges to a nondegenerate critical point, then there is a nonconstant connecting orbit
-from another nondegenerate critical point `a` to `x`, with a point in the closure of `Wᵘ(p)`. This
-is the time-reversed counterpart of
+/-- Let `x ≠ p` be a nondegenerate critical point. If the closure of `Wᵘ(p)` meets `Wᵘ(x)`, and
+every backward orbit in that closure converges to a nondegenerate critical point, then there is a
+nonconstant connecting orbit from another nondegenerate critical point `a` to `x`, with a point in
+the closure of `Wᵘ(p)`. This is the time-reversed counterpart of
 `exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
 theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)

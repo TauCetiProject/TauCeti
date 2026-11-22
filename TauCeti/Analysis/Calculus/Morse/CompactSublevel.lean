@@ -91,7 +91,7 @@ theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
   have hmaps : MapsTo (fun t ↦ φ t y) (Iic 0) {z | f z ≤ f p} := fun t _ ↦
     (isNegativeGradient_negativeGradientFlow f hf).value_ge_of_mem_closure_unstableSet
       (hfs.differentiable (by norm_num))
-      (map_mem_closure (φ.continuous_toFun t) hy (Flow.isInvariant_unstableSet φ p t))
+      ((Flow.isInvariant_unstableSet φ p).closure φ.continuous_toFun t hy)
   have hγ : IsIntegralCurveOn (fun t ↦ φ t y) (fun _ x ↦ -∇ f x) (Iic 0) :=
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
   obtain ⟨a, -, ha, hlim⟩ :=
@@ -211,7 +211,7 @@ theorem value_lt_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_suble
   have hbp : f b ≤ f p :=
     le_of_tendsto (hd.continuous.continuousAt.tendsto.comp (Flow.mem_unstableSet.1 hzb))
       (Eventually.of_forall fun t ↦ hφ.value_ge_of_mem_closure_unstableSet hd
-        (map_mem_closure (φ.continuous_toFun t) hz.1 (Flow.isInvariant_unstableSet φ p t)))
+        ((Flow.isInvariant_unstableSet φ p).closure φ.continuous_toFun t hz.1))
   exact (hφ.value_lt_of_mem_unstableSet_inter_stableSet (fun _ ↦ hd _)
     hd.continuous.continuousAt hd.continuous.continuousAt hba ⟨hzb, hz.2⟩).trans_le hbp
 

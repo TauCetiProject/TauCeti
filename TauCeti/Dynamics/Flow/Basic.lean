@@ -19,6 +19,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 
 * `IsInvariant.apply_mem_iff`: if some map of the family sends `ϕ g x` back to `x`, then `ϕ g x`
   lies in an invariant subset exactly when `x` does.
+* `IsInvariant.closure`: the closure of a set invariant under continuous maps is invariant.
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
@@ -41,6 +42,11 @@ theorem IsInvariant.apply_mem_iff {G X : Type*} {ϕ : G → X → X} {s : Set X}
     (hs : IsInvariant ϕ s) {g g' : G} {x : X} (h : ϕ g' (ϕ g x) = x) :
     ϕ g x ∈ s ↔ x ∈ s :=
   ⟨fun hx ↦ h ▸ hs g' hx, fun hx ↦ hs g hx⟩
+
+/-- The closure of a set invariant under a family of continuous maps is invariant. -/
+theorem IsInvariant.closure {G X : Type*} [TopologicalSpace X] {ϕ : G → X → X} {s : Set X}
+    (hs : IsInvariant ϕ s) (hϕ : ∀ g, Continuous (ϕ g)) : IsInvariant ϕ (closure s) :=
+  fun g ↦ (hs g).closure (hϕ g)
 
 namespace Flow
 
