@@ -59,9 +59,10 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_zero_hardThreshold
   have hgap : 0 < 4 * a - 1 := by linarith
   obtain ⟨q, hq⟩ := exists_nat_gt (2 / (4 * a - 1))
   have hq' := (div_lt_iff₀ hgap).1 hq
-  filter_upwards [ae_eventually_card_filter_lt_norm_wignerMatrix_zero_apply_lt hind
+  filter_upwards [ae_eventually_card_filter_lt_norm_wignerMatrix_zero_apply_lt (m := 4) hind
       (fun ij ↦ ((hid ij).symm.memLp_snd hX).integrable_norm_pow (by decide))
-      (fun ij ↦ ((hid ij).comp (measurable_norm.pow_const 4)).integral_eq.le) hq',
+      (fun ij ↦ ((hid ij).comp (measurable_norm.pow_const 4)).integral_eq.le)
+      (by exact_mod_cast hq'),
     ae_eventually_norm_wignerMatrix_zero_apply_le hid hX] with ω hsparse hmax
   apply tendsto_order.2
   refine ⟨fun r hr ↦ .of_forall fun n ↦ hr.trans_le (norm_nonneg _), fun r hr ↦ ?_⟩

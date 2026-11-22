@@ -39,7 +39,8 @@ expected empirical spectral measure — has finite moments of every order and co
 * `TauCeti.Probability.integral_pow_spectralMeasure_wignerMatrix`,
   `TauCeti.Probability.integral_integral_pow_spectralMeasure_wignerMatrix`, and
   `TauCeti.Probability.integral_pow_bind_spectralMeasure_wignerMatrix`: deterministic, expected, and
-  mixture spectral moments expressed through normalized traces under `Lᵏ` corner entries.
+  mixture spectral moments expressed through normalized traces; the mixture moments use `Lᵏ`
+  corner entries.
 * `TauCeti.Probability.abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le` and
   `TauCeti.Probability.abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le`:
   quantitative `O((n + 1)⁻¹)` and `O((√(n + 1))⁻¹)` error bounds against `semicircleReal 0 s`.
@@ -83,31 +84,32 @@ theorem integral_pow_spectralMeasure_wignerMatrix (n k : ℕ) (ω : Ω) :
 
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
-/-- On a finite measure space, the `k`th empirical spectral moment of the `(n + 1) × (n + 1)`
-Wigner matrix is integrable whenever all coordinates in the `(n + 1) × (n + 1)` corner lie in
-`Lᵏ`. -/
-theorem integrable_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k n : ℕ}
+/-- The `k`th empirical spectral moment of the `(n + 1) × (n + 1)` Wigner matrix is integrable
+whenever all coordinates in the `(n + 1) × (n + 1)` corner lie in `Lᵏ`. The measure is assumed
+finite when `k = 0`. -/
+theorem integrable_integral_pow_spectralMeasure_wignerMatrix {k n : ℕ}
+    (hP : k = 0 → IsFiniteMeasure P)
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) k P)
     (hη : ∀ i < n + 1, MemLp (η i) k P) :
     Integrable (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) P := by
   simp_rw [integral_pow_spectralMeasure_wignerMatrix]
-  exact Complex.reCLM.integrable_comp
-    ((integrable_trace_pow_wignerMatrix (fun _ ↦ inferInstance) hξ hη).const_mul _)
+  exact Complex.reCLM.integrable_comp ((integrable_trace_pow_wignerMatrix hP hξ hη).const_mul _)
 
-/-- On a finite measure space with `Lᵏ` corner entries, the expected `k`th empirical spectral
-moment is the real part of the normalized expected `k`th trace. -/
-theorem integral_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k n : ℕ}
-    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) k P)
-    (hη : ∀ i < n + 1, MemLp (η i) k P) :
+/-- The expected `k`th empirical spectral moment is the real part of the normalized expected `k`th
+trace. No moment or finiteness hypothesis is needed: the trace of a power of a Hermitian matrix is
+real, and the Bochner integral commutes with the embedding of `ℝ` in `ℂ`. -/
+theorem integral_integral_pow_spectralMeasure_wignerMatrix (n k : ℕ) :
     ∫ ω, (∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P =
       (((n + 1 : ℕ) : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η (n + 1) ω ^ k).trace ∂P).re := by
-  simp_rw [integral_pow_spectralMeasure_wignerMatrix]
+  have h (ω : Ω) : ((n + 1 : ℕ) : ℂ)⁻¹ * (wignerMatrix ξ η (n + 1) ω ^ k).trace =
+      RCLike.ofReal (∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) := by
+    rw [Matrix.ofReal_integral_pow_spectralMeasure, Fintype.card_fin]
   rw [← integral_const_mul]
-  simpa only [Complex.reCLM_apply] using
-    Complex.reCLM.integral_comp_comm
-      ((integrable_trace_pow_wignerMatrix (fun _ ↦ inferInstance) hξ hη).const_mul _)
+  simp_rw [h]
+  rw [integral_ofReal, ← RCLike.re_to_complex, RCLike.ofReal_re]
 
 /-- **Quantitative expected even spectral moment bound.** For independent centered entries in the
 `(n + 1) × (n + 1)` corner with `2m`th absolute moments bounded by `B` and strictly upper second
@@ -130,7 +132,7 @@ theorem abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le
       ∫ x, x ^ (2 * m) ∂semicircleReal 0 s| ≤
       ((m : ℝ) ^ (2 * m) * B + (s : ℝ) ^ m * catalan m * (m + 1).choose 2) / (n + 1 : ℕ) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  rw [integral_integral_pow_spectralMeasure_wignerMatrix hξp hηp,
+  rw [integral_integral_pow_spectralMeasure_wignerMatrix,
     integral_pow_two_mul_semicircleReal_zero]
   calc |(((n + 1 : ℕ) : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η (n + 1) ω ^ (2 * m)).trace ∂P).re -
           (s : ℝ) ^ m * catalan m|
@@ -164,7 +166,7 @@ theorem abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_l
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P| ≤
       (m + 1 : ℝ) ^ (2 * m + 1) * B / Real.sqrt (n + 1 : ℕ) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  rw [integral_integral_pow_spectralMeasure_wignerMatrix hξp hηp]
+  rw [integral_integral_pow_spectralMeasure_wignerMatrix]
   exact (Complex.abs_re_le_norm _).trans
     (norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
       hindep hξzero hηzero hξp hηp hξ hη)

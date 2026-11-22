@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
-import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Lindeberg sums of Wigner matrices
@@ -215,8 +214,8 @@ theorem wignerLindebergSum_wignerMatrix_eq_sum {N : ℕ} (ξ : StrictUpper → �
     (η : ℕ → Ω → ℝ) (r : ℝ≥0) :
     wignerLindebergSum (wignerMatrix ξ η N) P r =
       2 * (N : ℝ≥0∞)⁻¹ ^ 2 * ∑ u : FinStrictUpper N,
-        ∫⁻ ω, ENNReal.ofReal ({ω | (r : ℝ) * N < ‖ξ (wignerUpperIndex u) ω‖ ^ 2}.indicator
-          (fun ω ↦ ‖ξ (wignerUpperIndex u) ω‖ ^ 2) ω) ∂P := by
+        ∫⁻ ω, ENNReal.ofReal ({ω | (r : ℝ) * N < ‖ξ u.toStrictUpper ω‖ ^ 2}.indicator
+          (fun ω ↦ ‖ξ u.toStrictUpper ω‖ ^ 2) ω) ∂P := by
   cases N with
   | zero => simp
   | succ n =>
@@ -236,13 +235,13 @@ theorem wignerLindebergSum_wignerMatrix_eq_sum {N : ℕ} (ξ : StrictUpper → �
         (∑ j : {j // j ≠ i}, T (edge j i j.property)) = ∑ j, g i j := by
       rw [Fintype.sum_eq_add_sum_subtype_ne (g i) i, hdiag, zero_add]
       exact sum_congr rfl fun j _ ↦ by simp only [g, dite_eq_left j.property]
-    have hupper (u : FinStrictUpper (n + 1)) : g u.val.1 u.val.2 = T (wignerUpperIndex u) := by
+    have hupper (u : FinStrictUpper (n + 1)) : g u.val.1 u.val.2 = T u.toStrictUpper := by
       have hu : (u.val.1 : ℕ) ≤ u.val.2 := Fin.val_le_of_le u.property.le
-      have he : edge u.val.2 u.val.1 (Fin.ne_of_lt u.property).symm = wignerUpperIndex u :=
+      have he : edge u.val.2 u.val.1 (Fin.ne_of_lt u.property).symm = u.toStrictUpper :=
         Subtype.ext (by simp [edge, min_eq_right hu, max_eq_left hu])
       simp only [g, dite_eq_left (Fin.ne_of_lt u.property).symm, he]
     have hordered : (∑ i : Fin (n + 1), ∑ j : {j // j ≠ i}, T (edge j i j.property)) =
-        2 * ∑ u : FinStrictUpper (n + 1), T (wignerUpperIndex u) := by
+        2 * ∑ u : FinStrictUpper (n + 1), T u.toStrictUpper := by
       simp_rw [hrow]
       rw [sum_symmetric_pairs g hsymm, sum_eq_zero fun i _ ↦ hdiag i, zero_add, nsmul_eq_mul,
         Nat.cast_ofNat]

@@ -19,10 +19,11 @@ controlled by the `q`-th power of a uniform entry tail bound. The cutoff is nonn
 zero diagonal entries are never counted as exceedances. These events need not be measurable, so
 the bounds are stated for the measure, which is an outer measure on nonmeasurable sets.
 
-For upper entries whose fourth moments are bounded by a common constant `C` and the cutoff
-`(n+1)^a / √(n+1)`, Markov's inequality bounds this by `C ^ q * (n+1)^(q+1-4*a*q)`. The entries
-need not share a law. When `2 < q * (4*a - 1)` these bounds are summable, so by Borel–Cantelli
-every row eventually has fewer than `q` entries above the cutoff almost surely.
+Fix a moment order `m`. For upper entries whose `m`-th norm powers are integrable with integrals
+at most a common constant `C`, and the cutoff `(n+1)^a / √(n+1)`, Markov's inequality bounds this
+by `ENNReal.ofReal (C ^ q * (n+1)^(q+1-a*m*q))`. The entries need not share a law. When
+`2 < q * (m*a - 1)` these bounds are summable, so by Borel–Cantelli every row eventually has
+fewer than `q` entries above the cutoff almost surely. The truncation argument uses `m = 4`.
 
 ## References
 
@@ -90,42 +91,43 @@ theorem measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le {n q : 
       exact_mod_cast (Nat.choose_le_pow _ _).trans (Nat.pow_le_pow_left hc q)
     _ = _ := by simp [nsmul_eq_mul, pow_succ', mul_assoc]
 
-/-- In a zero-diagonal Wigner corner whose upper entries have fourth moments at most `C`, with
-independence within each row, the measure of the set where some row has at least `q` entries
-above `(n+1)^a / √(n+1)` is bounded by `C ^ q * (n+1)^(q+1-4*a*q)`. The entries need not share a
-law. The set need not be measurable, so this is an outer-measure bound in general and a
-probability bound when the set is measurable. -/
+/-- In a zero-diagonal Wigner corner whose upper entries have integrable `m`-th norm powers with
+integrals at most `C`, with independence within each row, the measure of the set where some row
+has at least `q` entries above `(n+1)^a / √(n+1)` is at most
+`ENNReal.ofReal (C ^ q * (n+1)^(q+1-a*m*q))`. The entries need not share a law. The set need not
+be measurable, so this is an outer-measure bound in general and a probability bound when the set
+is measurable. -/
 theorem measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le_ofReal_rpow
-    (a : ℝ) (n q : ℕ)
+    (a : ℝ) (m n q : ℕ)
     (hind : ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
-    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 4) P)
-    {C : ℝ} (hCξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω‖ ^ 4 ∂P ≤ C) :
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ m) P)
+    {C : ℝ} (hCξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω‖ ^ m ∂P ≤ C) :
     P {ω | ∃ i : Fin (n + 1), q ≤ (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card} ≤
-      ENNReal.ofReal (C ^ q * ((n + 1 : ℕ) : ℝ) ^ ((q : ℝ) + 1 - a * (4 * q))) := by
+      ENNReal.ofReal (C ^ q * ((n + 1 : ℕ) : ℝ) ^ ((q : ℝ) + 1 - a * m * q)) := by
   let N : ℝ := (n + 1 : ℕ)
   have hN : 0 < N := by dsimp only [N]; positivity
   have hr : 0 < N ^ a := Real.rpow_pos_of_pos hN _
   have htail (ij : StrictUpper) (hij : ij.val.2 < n + 1) :
-      P {ω | N ^ a < ‖ξ ij ω‖} ≤ ENNReal.ofReal (C / (N ^ a) ^ 4) := by
+      P {ω | N ^ a < ‖ξ ij ω‖} ≤ ENNReal.ofReal (C / (N ^ a) ^ m) := by
     have hsub : {ω | N ^ a < ‖ξ ij ω‖} ⊆ {ω | N ^ a ≤ ‖ξ ij ω‖} :=
       ofPred_subset_ofPred.2 fun _ ↦ le_of_lt
-    refine (measure_mono hsub).trans ((meas_ge_le_integral_pow_div_pow 4 (hξ ij hij)
+    refine (measure_mono hsub).trans ((meas_ge_le_integral_pow_div_pow m (hξ ij hij)
       (.of_forall fun _ ↦ pow_nonneg (norm_nonneg _) _) hr).trans ?_)
     gcongr
     exact hCξ ij hij
-  have hpow : N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q =
-      C ^ q * N ^ ((q : ℝ) + 1 - a * (4 * q)) := by
+  have hpow : N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q =
+      C ^ q * N ^ ((q : ℝ) + 1 - a * m * q) := by
     rw [div_pow, ← pow_mul, ← Real.rpow_natCast N (q + 1), ← Real.rpow_mul_natCast hN.le,
       mul_div_left_comm, ← Real.rpow_sub hN]
     push_cast
-    ring
+    ring_nf
   calc
-    _ ≤ ((n + 1 : ℕ) : ℝ≥0∞) ^ (q + 1) * ENNReal.ofReal (C / (N ^ a) ^ 4) ^ q :=
+    _ ≤ ((n + 1 : ℕ) : ℝ≥0∞) ^ (q + 1) * ENNReal.ofReal (C / (N ^ a) ^ m) ^ q :=
       measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le hind hr.le htail
-    _ ≤ ENNReal.ofReal (N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q) := by
+    _ ≤ ENNReal.ofReal (N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q) := by
       rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
         ENNReal.ofReal_natCast]
       rcases le_or_gt 0 C with hC | hC
@@ -140,14 +142,15 @@ theorem measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le_ofReal_
     _ = _ := congrArg ENNReal.ofReal hpow
 
 /-- The measures of the events that some row of the zero-diagonal Wigner corner has at
-least `q` entries above cutoff `(n+1)^a / √(n+1)` have finite sum when `2 < q * (4*a - 1)`.
-The fourth moments of the upper entries are bounded by a common constant `C`, the entries need
-not share a law, and the off-diagonal entries of each row are independent. -/
-theorem tsum_measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_lt_top
+least `q` entries above cutoff `(n+1)^a / √(n+1)` have finite sum when `2 < q * (m*a - 1)`.
+The `m`-th norm powers of the upper entries are integrable with integrals at most a common
+constant `C`, the entries need not share a law, and the off-diagonal entries of each row are
+independent. -/
+theorem tsum_measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_lt_top {m : ℕ}
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
-    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 4) P) {C : ℝ} (hCξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 4 ∂P ≤ C)
-    {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ m) P) {C : ℝ} (hCξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ m ∂P ≤ C)
+    {a : ℝ} {q : ℕ} (hq : 2 < q * (m * a - 1)) :
     (∑' n : ℕ, P {ω | ∃ i : Fin (n + 1), q ≤ (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card}) < ∞ := by
@@ -155,22 +158,22 @@ theorem tsum_measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_lt_to
     ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
       ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card}
   have hbound (n : ℕ) : P (E n) ≤
-      ENNReal.ofReal (C ^ q * ((n : ℝ) + 1) ^ ((q : ℝ) + 1 - a * (4 * q))) := by
-    refine (measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le_ofReal_rpow a n q
+      ENNReal.ofReal (C ^ q * ((n : ℝ) + 1) ^ ((q : ℝ) + 1 - a * m * q)) := by
+    refine (measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le_ofReal_rpow a m n q
       (hind n) (fun ij _ ↦ hξ ij) fun ij _ ↦ hCξ ij).trans_eq ?_
     rw [Nat.cast_add_one]
   exact (tsum_le_tsum hbound).trans_lt
     (tsum_ofReal_mul_natCast_add_one_rpow_lt_top _ (by linarith))
 
-/-- For zero-diagonal Wigner corners whose upper entries have fourth moments bounded by a common
-constant `C`, with independence within each row, almost surely every row eventually has fewer
-than `q` entries above the cutoff `(n+1)^a / √(n+1)` when `2 < q * (4*a - 1)`. The entries need
-not share a law. -/
-theorem ae_eventually_card_filter_lt_norm_wignerMatrix_zero_apply_lt
+/-- For zero-diagonal Wigner corners whose upper entries have integrable `m`-th norm powers with
+integrals at most a common constant `C`, with independence within each row, almost surely every
+row eventually has fewer than `q` entries above the cutoff `(n+1)^a / √(n+1)` when
+`2 < q * (m*a - 1)`. The entries need not share a law. -/
+theorem ae_eventually_card_filter_lt_norm_wignerMatrix_zero_apply_lt {m : ℕ}
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
-    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 4) P) {C : ℝ} (hCξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 4 ∂P ≤ C)
-    {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ m) P) {C : ℝ} (hCξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ m ∂P ≤ C)
+    {a : ℝ} {q : ℕ} (hq : 2 < q * (m * a - 1)) :
     ∀ᵐ ω ∂P, ∀ᶠ n : ℕ in atTop, ∀ i : Fin (n + 1), (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card < q := by

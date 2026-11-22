@@ -18,12 +18,13 @@ The trace of the `k`-th power of a square matrix is a finite sum, over the close
 `k`, of the products of the `k` entries read along the walk (`Matrix.trace_pow_eq_sum_prod`). For
 `k ≠ 0`, Hölder's inequality therefore puts the trace of `A ^ k` in `Lᵖ` for any measure when
 every entry of the random matrix `A` lies in `L^(p * k)`. For `k = 0` the trace is the constant
-`card ι`, so the measure must be finite. Neither independence nor centering is needed.
+`card ι`, and the theorem assumes a finite measure in that case. Neither independence nor
+centering is needed.
 
 ## Main results
 
 * `TauCeti.memLp_trace_pow`: with entries in `L^(p * k)`, `(A ^ k).trace` lies in `Lᵖ`; the
-  measure needs to be finite only for `k = 0`.
+  measure is assumed finite when `k = 0`.
 -/
 
 public section
@@ -37,8 +38,8 @@ variable {Ω ι 𝕜 : Type*} [MeasurableSpace Ω] {P : Measure Ω} [Fintype ι]
   [NormedCommRing 𝕜]
 
 /-- The trace of the `k`th power of a random square matrix lies in `Lᵖ` for every `p : ℝ≥0∞`
-whenever all of its entries lie in `L^(p * k)`. The measure needs to be finite only for `k = 0`,
-where the trace is constant. Neither independence nor centering is required. -/
+whenever all of its entries lie in `L^(p * k)`. The measure is assumed finite when `k = 0`, where
+the trace is constant. Neither independence nor centering is required. -/
 theorem memLp_trace_pow {A : Ω → Matrix ι ι 𝕜} {p : ℝ≥0∞} {k : ℕ}
     (hP : k = 0 → IsFiniteMeasure P) (hA : ∀ i j, MemLp (fun ω ↦ A ω i j) (p * k) P) :
     MemLp (fun ω ↦ (A ω ^ k).trace) p P := by

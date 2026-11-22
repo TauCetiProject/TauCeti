@@ -46,9 +46,10 @@ case and proves integrability first.
   independent, centred and in `Lᵏ`, the expectation of `(Hₙ ^ k).trace` is the sum, over the
   closed walks of length `k` traversing each of their edges at least twice, of the expected
   products of entries along the walk. The integrability of `(Hₙ ^ k).trace` for corner entries
-  in `Lᵏ`, which holds for every `k` including `0` and needs neither independence nor centering,
-  is `TauCeti.integrable_trace_pow_wignerMatrix` in
-  `TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability`.
+  in `Lᵏ`, which needs neither independence nor centering, is
+  `TauCeti.integrable_trace_pow_wignerMatrix` in
+  `TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability`; that theorem covers every `k`
+  and assumes a finite measure when `k = 0`.
 
 * `TauCeti.integrable_prod_wignerMatrix_apply_path`,
   `TauCeti.integral_prod_wignerMatrix_apply_path`, and

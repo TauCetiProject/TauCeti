@@ -118,10 +118,9 @@ theorem memLp_fun_prod_of_memLp_mul_card {ι α 𝕜 : Type*} {_ : MeasurableSpa
     [NormedCommRing 𝕜] {μ : Measure α} {f : ι → α → 𝕜} {s : Finset ι} (hs : s.Nonempty)
     {p : ℝ≥0∞} (hf : ∀ i ∈ s, MemLp (f i) (p * s.card) μ) :
     MemLp (fun x ↦ ∏ i ∈ s, f i x) p μ := by
-  have hc : (s.card : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 hs.card_pos.ne'
   have h := MemLp.fun_prod hf
-  rwa [Finset.sum_const, nsmul_eq_mul, ENNReal.mul_inv (.inr (ENNReal.natCast_ne_top _)) (.inr hc),
-    mul_left_comm, ENNReal.mul_inv_cancel hc (ENNReal.natCast_ne_top _), mul_one, inv_inv] at h
+  rwa [Finset.sum_const, nsmul_eq_mul, ENNReal.inv_mul_inv_mul_cancel
+    (Nat.cast_ne_zero.2 hs.card_pos.ne') (ENNReal.natCast_ne_top _)] at h
 
 namespace MeasureTheory
 

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.RandomMatrix.Wigner.Corner.Enumeration
-import Mathlib.Probability.StrongLaw
+public import Mathlib.Probability.StrongLaw
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Strong law for upper-triangular corners
@@ -35,7 +35,7 @@ theorem ae_tendsto_sum_finStrictUpper_div {Ω : Type*} [MeasurableSpace Ω] {P :
     (hind : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
     (hid : ∀ i, IdentDistrib (X i) (X ⟨(0, 1), by decide⟩) P P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
-      (∑ ij : FinStrictUpper n, X (wignerUpperIndex ij) ω) / (n.choose 2 : ℝ))
+      (∑ ij : FinStrictUpper n, X ij.toStrictUpper ω) / (n.choose 2 : ℝ))
       atTop (𝓝 (∫ ω, X ⟨(0, 1), by decide⟩ ω ∂P)) := by
   let Y (k : ℕ) := X (strictUpperEquivNat.symm k)
   have h0 : strictUpperEquivNat.symm 0 = ⟨(0, 1), by decide⟩ := by

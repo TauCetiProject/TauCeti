@@ -33,6 +33,11 @@ permuted, which is `TauCeti.prod_prod_Ioi_comp_perm`. This is the symmetric coun
 Mathlib's `Equiv.Perm.prod_Ioi_comp_eq_sign_mul_prod`, where an antisymmetric summand picks up the
 sign of the permutation.
 
+The strictly increasing pairs `FinStrictUpper n` of `Fin n` are the strictly upper positions
+`StrictUpper` of the matrix indexed by `ℕ` with column below `n`
+(`TauCeti.finStrictUpperEquivSubtype`). Listing these positions column by column enumerates them
+by `ℕ`, and the positions of `Fin n` form the initial segment of length `n.choose 2`.
+
 ## Main results
 
 * `TauCeti.sum_fin_product_eq_sum_antidiagonal`: a sum over the pairs of `Fin n × Fin n` with
@@ -67,6 +72,11 @@ sign of the permutation.
 * `TauCeti.sum_sum_Ioi_append_of_mul`: the same for a pairing turning products into sums.
 * `TauCeti.prod_prod_Ioi_scale`: scaling all entries of a pair product for a symmetric
   bimultiplicative pairing.
+* `TauCeti.strictUpperEquivNat`: the column-order enumeration `StrictUpper ≃ ℕ`, sending `(i, j)`
+  to `j.choose 2 + i`; its restriction `TauCeti.finStrictUpperEquiv` to `FinStrictUpper n` has
+  range `Fin (n.choose 2)`.
+* `TauCeti.sum_finStrictUpper_eq_sum_range`: a sum over `FinStrictUpper n` as a sum over the first
+  `n.choose 2` positions of the column enumeration.
 -/
 
 public section
@@ -400,5 +410,157 @@ theorem sum_mul_sum_erase_eq_sum_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrde
   rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
   rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
+
+section StrictUpper
+
+/-- The strictly upper-triangular positions `(i, j)`, `i < j`, of a matrix indexed by `ℕ`. -/
+abbrev StrictUpper := {ij : ℕ × ℕ // ij.1 < ij.2}
+
+/-- A strictly increasing pair of indices in `Fin n`, as a strictly upper position of the matrix
+indexed by `ℕ`. -/
+def FinStrictUpper.toStrictUpper {n : ℕ} (u : FinStrictUpper n) : StrictUpper :=
+  ⟨(u.val.1.val, u.val.2.val), by exact_mod_cast u.property⟩
+
+/-- The row and column labels of a finite strictly upper position in the infinite array. -/
+@[simp]
+theorem FinStrictUpper.val_toStrictUpper {n : ℕ} (u : FinStrictUpper n) :
+    u.toStrictUpper.val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
+
+/-- The finite strictly upper position with row `i` and column `j` is the position `(i, j)` of the
+infinite array. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_mk {n : ℕ} (i j : Fin n) (h : i < j) :
+    FinStrictUpper.toStrictUpper ⟨(i, j), h⟩ = ⟨(i.val, j.val), Fin.lt_def.1 h⟩ :=
+  (rfl)
+
+/-- The column label of a finite strictly upper position of `Fin n` is below `n`. -/
+theorem FinStrictUpper.toStrictUpper_val_snd_lt {n : ℕ} (u : FinStrictUpper n) :
+    u.toStrictUpper.val.2 < n := by
+  rw [FinStrictUpper.val_toStrictUpper]
+  exact u.val.2.isLt
+
+/-- The strictly upper positions of `Fin n` are the strictly upper positions of the infinite array
+whose column label is below `n`. -/
+def finStrictUpperEquivSubtype (n : ℕ) :
+    FinStrictUpper n ≃ {ij : StrictUpper // ij.val.2 < n} where
+  toFun u := ⟨u.toStrictUpper, u.toStrictUpper_val_snd_lt⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.property.trans ij.property⟩, ⟨ij.val.val.2, ij.property⟩),
+    Fin.mk_lt_mk.2 ij.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Forgetting the column bound of a finite strictly upper position gives its position in the
+infinite array. -/
+@[simp]
+theorem coe_finStrictUpperEquivSubtype_apply {n : ℕ} (u : FinStrictUpper n) :
+    (finStrictUpperEquivSubtype n u : StrictUpper) = u.toStrictUpper :=
+  (rfl)
+
+/-- The finite position of a strictly upper position with column below `n` has the same position
+in the infinite array. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_finStrictUpperEquivSubtype_symm_apply {n : ℕ}
+    (ij : {ij : StrictUpper // ij.val.2 < n}) :
+    ((finStrictUpperEquivSubtype n).symm ij).toStrictUpper = ij.val :=
+  (rfl)
+
+/-- Distinct strictly upper positions of `Fin n` are distinct positions of the infinite array. -/
+theorem FinStrictUpper.toStrictUpper_injective {n : ℕ} :
+    Function.Injective (FinStrictUpper.toStrictUpper (n := n)) := fun _ _ h ↦
+  (finStrictUpperEquivSubtype n).injective (Subtype.ext h)
+
+/-- The column-order index `j.choose 2 + i` of a strictly upper position `(i, j)` is below
+`n.choose 2` exactly when its column `j` is below `n`. This is the simp normal form of corner
+membership for the enumeration `strictUpperEquivNat`, after `strictUpperEquivNat_apply`. -/
+@[simp]
+theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
+    ij.val.2.choose 2 + ij.val.1 < n.choose 2 ↔ ij.val.2 < n := by
+  constructor
+  · contrapose!
+    intro h
+    exact (Nat.choose_mono 2 h).trans (Nat.le_add_right _ _)
+  · intro h
+    calc
+      _ < (ij.val.2 + 1).choose 2 := by
+        rw [Nat.choose_succ_succ' _ 1, Nat.choose_one_right, Nat.add_comm ij.val.2]
+        exact Nat.add_lt_add_left ij.prop _
+      _ ≤ _ := Nat.choose_mono 2 h
+
+/-- The column-by-column enumeration of strictly upper-triangular positions. -/
+noncomputable def strictUpperEquivNat : StrictUpper ≃ ℕ := by
+  refine Equiv.ofBijective (fun ij ↦ ij.val.2.choose 2 + ij.val.1) ⟨?_, ?_⟩
+  · intro x y h
+    dsimp only at h
+    have hx := (strictUpperIndex_lt_choose_iff x (y.val.2 + 1)).mp (h.symm ▸
+      (strictUpperIndex_lt_choose_iff y (y.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hy := (strictUpperIndex_lt_choose_iff y (x.val.2 + 1)).mp (h ▸
+      (strictUpperIndex_lt_choose_iff x (x.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hs : x.val.2 = y.val.2 := by omega
+    exact Subtype.ext (Prod.ext (by rw [hs, Nat.add_right_inj] at h; exact h) hs)
+  · intro k
+    induction k with
+    | zero => exact ⟨⟨(0, 1), by decide⟩, by simp⟩
+    | succ k ih =>
+      obtain ⟨⟨⟨i, j⟩, hij⟩, hk⟩ := ih
+      dsimp only at hk
+      by_cases h : i + 1 < j
+      · refine ⟨⟨(i + 1, j), h⟩, ?_⟩
+        dsimp only
+        omega
+      · refine ⟨⟨(0, j + 1), Nat.zero_lt_succ _⟩, ?_⟩
+        dsimp only
+        rw [Nat.choose_succ_succ' j 1, Nat.choose_one_right]
+        simp only [Nat.reduceAdd]
+        omega
+
+/-- The index of a strictly upper position is the size of the preceding columns plus its row. -/
+@[simp]
+theorem strictUpperEquivNat_apply (ij : StrictUpper) :
+    strictUpperEquivNat ij = ij.val.2.choose 2 + ij.val.1 :=
+  (rfl)
+
+/-- The position with index `k` in the column enumeration has column below `n` exactly when `k` is
+below `n.choose 2`. -/
+@[simp]
+theorem strictUpperEquivNat_symm_apply_val_snd_lt_iff (k n : ℕ) :
+    (strictUpperEquivNat.symm k).val.2 < n ↔ k < n.choose 2 := by
+  rw [← strictUpperIndex_lt_choose_iff, ← strictUpperEquivNat_apply, Equiv.apply_symm_apply]
+
+/-- The column-order enumeration restricted to the strictly upper positions of `Fin n`. -/
+noncomputable def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.choose 2) :=
+  ((finStrictUpperEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦ by
+    simp only [strictUpperEquivNat_apply, strictUpperIndex_lt_choose_iff])).trans
+      Fin.equivSubtype.symm
+
+/-- The finite enumeration gives the same index as the infinite column enumeration. -/
+@[simp]
+theorem finStrictUpperEquiv_apply_val (n : ℕ) (ij : FinStrictUpper n) :
+    (finStrictUpperEquiv n ij).val = strictUpperEquivNat ij.toStrictUpper := by
+  simp only [finStrictUpperEquiv, Equiv.trans_apply, Fin.equivSubtype_symm_apply,
+    Equiv.subtypeEquiv_apply, coe_finStrictUpperEquivSubtype_apply]
+
+/-- An index of the finite enumeration corresponds to the same strictly upper position as in the
+infinite column enumeration. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_finStrictUpperEquiv_symm_apply (n : ℕ)
+    (k : Fin (n.choose 2)) :
+    ((finStrictUpperEquiv n).symm k).toStrictUpper = strictUpperEquivNat.symm k := by
+  apply strictUpperEquivNat.injective
+  rw [← finStrictUpperEquiv_apply_val, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- A sum over the strictly upper positions of `Fin n` is the sum over the corresponding prefix of
+the column-order enumeration. -/
+theorem sum_finStrictUpper_eq_sum_range {E : Type*} [AddCommMonoid E]
+    (n : ℕ) (f : StrictUpper → E) :
+    ∑ ij : FinStrictUpper n, f ij.toStrictUpper =
+      ∑ k ∈ range (n.choose 2), f (strictUpperEquivNat.symm k) := by
+  calc
+    _ = ∑ k : Fin (n.choose 2), f (strictUpperEquivNat.symm k) :=
+      Fintype.sum_equiv (finStrictUpperEquiv n) _ _ fun ij ↦ by
+        rw [finStrictUpperEquiv_apply_val, Equiv.symm_apply_apply]
+    _ = _ := Fin.sum_univ_eq_sum_range (fun k ↦ f (strictUpperEquivNat.symm k)) (n.choose 2)
+
+end StrictUpper
 
 end TauCeti

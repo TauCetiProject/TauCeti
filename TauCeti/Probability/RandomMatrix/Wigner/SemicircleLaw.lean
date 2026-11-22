@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
 import TauCeti.Probability.RandomMatrix.Wigner.Corner.Average
 import TauCeti.Probability.RandomMatrix.Wigner.Centering.SpectralMeasure
-import TauCeti.Probability.RandomMatrix.Wigner.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.L2Space
@@ -48,7 +48,7 @@ private theorem norm_wignerMatrix_sub_div_sqrt_le
     ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω -
       wignerMatrix ζ (fun _ _ ↦ 0) (n + 1) ω‖ / Real.sqrt (n + 1) ≤
       Real.sqrt ((∑ i : FinStrictUpper (n + 1),
-        ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2) /
+        ‖ξ i.toStrictUpper ω - ζ i.toStrictUpper ω‖ ^ 2) /
         ((n + 1).choose 2 : ℝ)) := by
   apply Real.le_sqrt_of_sq_le
   rw [div_pow, Real.sq_sqrt (by positivity), norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
@@ -62,7 +62,7 @@ private theorem norm_wignerMatrix_sub_div_sqrt_le
     have hn : 0 < (n + 1 + 1 : ℝ) := by positivity
     simp only [Nat.cast_add, Nat.cast_one]
     rw [div_le_div_iff₀ hn hs, mul_right_comm, mul_comm (∑ i : FinStrictUpper (n + 1 + 1),
-      ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2)]
+      ‖ξ i.toStrictUpper ω - ζ i.toStrictUpper ω‖ ^ 2)]
     apply mul_le_mul_of_nonneg_right _ (by positivity)
     rw [Nat.cast_choose_two]
     simp only [Nat.cast_add, Nat.cast_one]
@@ -79,7 +79,7 @@ private theorem ae_tendsto_wigner_approximation_error
     {b : ℝ≥0} (hb : ∀ x, ‖g x‖ ≤ b) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
       Real.sqrt ((∑ i : FinStrictUpper (n + 1),
-        ‖ξ (wignerUpperIndex i) ω - g (ξ (wignerUpperIndex i) ω)‖ ^ 2) /
+        ‖ξ i.toStrictUpper ω - g (ξ i.toStrictUpper ω)‖ ^ 2) /
         ((n + 1).choose 2 : ℝ))) atTop (𝓝 (Real.sqrt (∫ ω, ‖ξ e₀ ω - g (ξ e₀ ω)‖ ^ 2 ∂P))) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let f := fun x : ℂ ↦ ‖x - g x‖ ^ 2

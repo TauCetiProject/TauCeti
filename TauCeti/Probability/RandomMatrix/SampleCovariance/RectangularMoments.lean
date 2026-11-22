@@ -10,6 +10,7 @@ public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectral
 public import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Moment
 import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
+import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceIntegrability
 
 /-!
 # The rectangular trace-word method for sample covariance moments

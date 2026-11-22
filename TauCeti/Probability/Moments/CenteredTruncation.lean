@@ -200,8 +200,8 @@ theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_m
     (by simp only [S, norm_indicator_eq_indicator_norm]; exact
       Set.indicator_le_self' (fun _ _ ↦ norm_nonneg _) _) (norm_nonneg _) R.coe_nonneg
 
-/-- For a square-integrable variable on a probability space, centering after norm truncation
-does not increase the second absolute moment. -/
+/-- For a square-integrable variable on a probability space with values in a real Hilbert space,
+centering after norm truncation does not increase the second absolute moment. -/
 theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_sq_le
     (hX : MemLp X 2 P) (R : ℝ≥0) :
     ∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P ≤ ∫ ω, ‖X ω‖ ^ 2 ∂P := by
@@ -215,8 +215,9 @@ theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_sq_le
   exact integral_mono (hT.integrable_norm_pow (by decide)) (hX.integrable_norm_pow (by decide))
     fun ω ↦ pow_le_pow_left₀ (norm_nonneg _) (hnorm ω) _
 
-/-- For a square-integrable variable on a probability space, the centered truncation has
-absolute moment of order `k+2` bounded by the original second moment times `(2*R)^k`. -/
+/-- For a square-integrable variable on a probability space with values in a real Hilbert space,
+the centered truncation has absolute moment of order `k+2` bounded by the original second moment
+times `(2*R)^k`. -/
 theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_pow_le
     (hX : MemLp X 2 P) (R : ℝ≥0) (k : ℕ) :
     ∫ ω, ‖centeredTruncation X P R ω‖ ^ (k + 2) ∂P ≤

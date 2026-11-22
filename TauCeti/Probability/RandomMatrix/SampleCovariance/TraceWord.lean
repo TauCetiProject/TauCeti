@@ -11,8 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.Fintype.SmallRange
-import TauCeti.Probability.RandomMatrix.Integrability
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Trace words of sample covariance matrices
@@ -48,10 +48,6 @@ with `p / n` bounded.
   their positions at least twice, of their expectations.
 * `TauCeti.Probability.integral_trace_sampleCovariance_pow`: the same expansion for the sample
   covariance matrix `X Xᴴ / n`.
-* `TauCeti.Probability.memLp_trace_pow_sampleCovariance` and
-  `TauCeti.Probability.integrable_trace_pow_sampleCovariance`: with entries in `L^(q * 2k)`, the
-  trace of the `k`th power of the sample covariance matrix lies in `L^q`; with entries in
-  `L^(2k)` it is integrable. The measure needs to be finite only for `k = 0`.
 * `TauCeti.Probability.norm_integral_prod_mul_star_le` and
   `TauCeti.Probability.norm_sum_integral_prod_mul_star_le`: moment bounds for one bipartite word
   and for a family of bipartite words with a bounded number of rows and columns.
@@ -120,6 +116,11 @@ theorem integral_prod_apply_mul_star_apply_eq_zero
     simp only [readFactor, Sum.elim_inr, RCLike.star_def]
     rw [integral_conj, hX, map_zero]
 
+/-- A bipartite word of half-length `k` has `2 * k` steps. -/
+private theorem card_univ_sum_fin {k : ℕ} :
+    (Finset.univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by
+  simp [two_mul]
+
 /-- If the entries of a random rectangular matrix `X` lie in `L²ᵏ`, `k ≠ 0`, then the product of
 the entries `X (u t) (v t)` and conjugate entries `star (X (u (t + 1)) (v t))` along a bipartite
 word of half-length `k` is integrable. -/
@@ -132,12 +133,10 @@ theorem integrable_prod_apply_mul_star_apply {k : ℕ} (hk : k ≠ 0)
     cases s
     · exact hXk _ _
     · exact (hXk _ _).star
-  have hexponent : (∑ _ : Fin k ⊕ Fin k, (2 * k : ℝ≥0∞)⁻¹) = 1 := by
-    have h2k : (2 * k : ℝ≥0∞) ≠ 0 := by simpa using hk
-    simpa [nsmul_eq_mul, ← two_mul] using
-      ENNReal.mul_inv_cancel h2k (ENNReal.mul_ne_top (by simp) (by simp))
-  simpa [hexponent, memLp_one_iff_integrable] using
-    (MemLp.fun_prod (s := Finset.univ) fun s _ ↦ hfactor s)
+  have : Nonempty (Fin k) := ⟨⟨0, Nat.pos_of_ne_zero hk⟩⟩
+  exact integrable_fun_prod_of_memLp_card_of_nonempty Finset.univ_nonempty fun s _ ↦ by
+    rw [card_univ_sum_fin]
+    exact_mod_cast hfactor s
 
 /-- **Trace-word expansion of sample covariance moments.** Let the entries of a random
 rectangular matrix `X` be independent, centred and in `L²ᵏ`, `k ≠ 0`. Then the expected trace of
@@ -191,41 +190,11 @@ variable {k : ℕ}
 private theorem norm_readFactor (s : Fin k ⊕ Fin k) (z : 𝕜) : ‖readFactor s z‖ = ‖z‖ := by
   cases s <;> simp [readFactor]
 
-/-- A bipartite word of half-length `k` has `2 * k` steps. -/
-private theorem card_univ_sum_fin : #(univ : Finset (Fin k ⊕ Fin k)) = 2 * k := by
-  simp [two_mul]
-
 /-- A bound on the `2k`th absolute moments of the entries of a matrix with a nonempty set of
 positions is nonnegative. -/
 private theorem nonneg_of_integral_norm_pow_le [Nonempty p] [Nonempty n] {B : ℝ}
     (hB : ∀ a b, ∫ ω, ‖X ω a b‖ ^ (2 * k) ∂P ≤ B) : 0 ≤ B :=
   (integral_nonneg fun ω ↦ by positivity).trans (hB (Classical.arbitrary p) (Classical.arbitrary n))
-
-/-- The trace of the `k`th power of the sample covariance matrix of `X` lies in `L^q` whenever all
-entries of `X` lie in `L^(q * 2k)`. The measure needs to be finite only for `k = 0`. Neither
-independence nor centering is required. -/
-theorem memLp_trace_pow_sampleCovariance [Fintype p] [Fintype n] [DecidableEq p] {q : ℝ≥0∞}
-    (hP : k = 0 → IsFiniteMeasure P) (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (q * (2 * k : ℕ)) P) :
-    MemLp (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) q P := by
-  -- Each entry is a scaled sum of products of two entries, which lie in `L^(q * k)` by Hölder.
-  have hexp : ((q * (2 * k : ℕ))⁻¹ + (q * (2 * k : ℕ))⁻¹)⁻¹ = q * k := by
-    rw [← two_mul, ENNReal.mul_inv (.inl two_ne_zero) (.inl ENNReal.ofNat_ne_top), inv_inv,
-      Nat.cast_mul, Nat.cast_ofNat, mul_left_comm q, ← mul_assoc,
-      ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-  have : ENNReal.HolderTriple (q * (2 * k : ℕ)) (q * (2 * k : ℕ)) (q * k) :=
-    hexp ▸ ENNReal.HolderTriple.of _ _
-  refine memLp_trace_pow hP fun a b ↦ ?_
-  simp only [sampleCovariance_apply]
-  exact (memLp_finsetSum _ fun c _ ↦ (hX a c).mul (r := q * k) (hX b c).star).const_smul
-    (1 / (Fintype.card n : ℝ))
-
-/-- The trace of the `k`th power of the sample covariance matrix of `X` is integrable whenever all
-entries of `X` lie in `L^(2k)`. The measure needs to be finite only for `k = 0`. Neither
-independence nor centering is required. -/
-theorem integrable_trace_pow_sampleCovariance [Fintype p] [Fintype n] [DecidableEq p]
-    (hP : k = 0 → IsFiniteMeasure P) (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (2 * k : ℕ) P) :
-    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P :=
-  memLp_one_iff_integrable.mp (memLp_trace_pow_sampleCovariance hP (by simpa using hX))
 
 /-- A bound `B` on the `2k`th absolute moments of the entries of `X` bounds the expected product
 along every bipartite word of half-length `k ≠ 0`. The positions read may repeat, and no

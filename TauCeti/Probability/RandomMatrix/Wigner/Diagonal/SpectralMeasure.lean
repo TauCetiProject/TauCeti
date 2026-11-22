@@ -12,7 +12,7 @@ import TauCeti.Probability.Moments.Variance
 import TauCeti.Probability.RandomMatrix.SpectralMeasure.Diagonal
 
 /-!
-# Diagonal perturbations of Wigner matrices
+# Diagonal perturbations of Wigner spectral measures
 
 Setting the diagonal to zero changes the empirical spectral transform by at most
 the normalized Euclidean size of the diagonal times the inverse squared imaginary

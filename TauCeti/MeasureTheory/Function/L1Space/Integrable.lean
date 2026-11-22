@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Integrability criteria
@@ -239,9 +240,9 @@ theorem integrable_of_forall_notMem_eq_zero_of_norm_le {α E : Type*} [Measurabl
 
 end MeasureTheory
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 /-- On a finite measure, `Lᵖ` membership of the identity gives integrability of its norm
 power, including for seminormed groups and order zero. -/
@@ -278,7 +279,8 @@ theorem integrable_fun_prod_of_memLp_card_of_nonempty {X ι 𝕜 : Type*} [Measu
     [NormedCommRing 𝕜] {μ : Measure X} {f : ι → X → 𝕜} {s : Finset ι} (hs : s.Nonempty)
     (hf : ∀ i ∈ s, MemLp (f i) s.card μ) :
     Integrable (fun x ↦ ∏ i ∈ s, f i x) μ :=
-  integrable_fun_prod_of_memLp hf <| by simp [nsmul_eq_mul, ENNReal.mul_inv_cancel, hs.ne_empty]
+  memLp_one_iff_integrable.1 <| memLp_fun_prod_of_memLp_mul_card hs fun i hi ↦ by
+    simpa only [one_mul] using hf i hi
 
 /-- On a finite measure space, a product of functions indexed by a finset `s` is integrable when
 every factor lies in `L^(s.card)`. The finite measure is needed only for the empty product; see

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.Probability.Moments.Variance
 
 /-!
@@ -45,7 +44,7 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) =
       (n + 1 : ℝ)⁻¹ ^ 2 *
         ((∑ i : Fin (n + 1), η i.val ω ^ 2) +
-          2 * ∑ p : FinStrictUpper (n + 1), ‖ξ (wignerUpperIndex p) ω‖ ^ 2) := by
+          2 * ∑ p : FinStrictUpper (n + 1), ‖ξ p.toStrictUpper ω‖ ^ 2) := by
   rw [integral_sq_spectralMeasure_wignerMatrix, sum_norm_wignerMatrix_apply_sq]
   push_cast
   ring
@@ -53,9 +52,8 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- Finite coordinates embedded in the Wigner array. -/
-def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ
-  | .inl i => .inr i.val
-  | .inr p => .inl (wignerUpperIndex p)
+def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ :=
+  Sum.swap ∘ Sum.map Fin.val FinStrictUpper.toStrictUpper
 
 /-- A diagonal coordinate maps to its diagonal array index. -/
 @[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (i : Fin n) :
@@ -63,26 +61,13 @@ def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper
 
 /-- A strict-upper coordinate maps to its upper array index. -/
 @[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (p : FinStrictUpper n) :
-    wignerCoordinateIndex n (.inr p) = .inl (wignerUpperIndex p) := by rfl
+    wignerCoordinateIndex n (.inr p) = .inl p.toStrictUpper := by rfl
 
+/-- Distinct finite coordinates are distinct coordinates of the Wigner array. -/
 theorem wignerCoordinateIndex_injective (n : ℕ) :
-    Function.Injective (wignerCoordinateIndex n) := by
-  intro a b h
-  cases a with
-  | inl i =>
-    cases b with
-    | inl j =>
-      simp only [wignerCoordinateIndex, Sum.inr.injEq] at h
-      exact congrArg Sum.inl (Fin.ext h)
-    | inr j => simp [wignerCoordinateIndex] at h
-  | inr i =>
-    cases b with
-    | inl j => simp [wignerCoordinateIndex] at h
-    | inr j =>
-      simp only [wignerCoordinateIndex, Sum.inl.injEq] at h
-      have h' := congrArg Subtype.val h
-      simp only [wignerUpperIndex_val, Prod.mk.injEq] at h'
-      exact congrArg Sum.inr (Subtype.ext (Prod.ext (Fin.ext h'.1) (Fin.ext h'.2)))
+    Function.Injective (wignerCoordinateIndex n) :=
+  Sum.swap_leftInverse.injective.comp
+    (Fin.val_injective.sumMap FinStrictUpper.toStrictUpper_injective)
 
 /-- Diagonal coordinates carry weight one and strict-upper coordinates weight two. -/
 def wignerCoordinateWeight (n : ℕ) : Fin n ⊕ FinStrictUpper n → ℝ
@@ -106,14 +91,14 @@ omit [MeasurableSpace Ω] in
 /-- The diagonal statistic is the square of the corresponding entry. -/
 @[simp] theorem wignerCoordinateSquare_inl (n : ℕ) (i : Fin n) (ω : Ω) :
     wignerCoordinateSquare ξ η n (.inl i) ω = η i.val ω ^ 2 := by
-  simp [wignerCoordinateSquare, wignerCoordinateIndex, Complex.norm_real, Real.norm_eq_abs]
+  simp [wignerCoordinateSquare, Complex.norm_real, Real.norm_eq_abs]
 
 omit [MeasurableSpace Ω] in
 /-- The strict-upper statistic is the squared norm of the corresponding entry. -/
 @[simp] theorem wignerCoordinateSquare_inr (n : ℕ) (p : FinStrictUpper n) (ω : Ω) :
     wignerCoordinateSquare ξ η n (.inr p) ω =
-      ‖ξ (wignerUpperIndex p) ω‖ ^ 2 := by
-  simp [wignerCoordinateSquare, wignerCoordinateIndex]
+      ‖ξ p.toStrictUpper ω‖ ^ 2 := by
+  simp [wignerCoordinateSquare]
 
 /-- Squared coordinate norms remain independent. -/
 theorem wignerCoordinateSquare_independent
@@ -142,8 +127,8 @@ theorem integral_sq_spectralMeasure_wignerMatrix_weighted (n : ℕ) (ω : Ω) :
           wignerCoordinateSquare ξ η (n + 1) i ω := by
   rw [integral_sq_spectralMeasure_wignerMatrix_coordinates]
   simp only [Fintype.sum_sum_type, wignerCoordinateWeight, wignerCoordinateSquare,
-    wignerCoordinateIndex, Sum.elim_inl, Sum.elim_inr, Complex.norm_real, Real.norm_eq_abs,
-    sq_abs, mul_one]
+    wignerCoordinateIndex_inl, wignerCoordinateIndex_inr, Sum.elim_inl, Sum.elim_inr,
+    Complex.norm_real, Real.norm_eq_abs, sq_abs, mul_one]
   rw [← Finset.mul_sum, ← Finset.mul_sum]
   ring
 

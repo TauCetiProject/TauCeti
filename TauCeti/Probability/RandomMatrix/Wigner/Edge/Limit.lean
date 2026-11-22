@@ -13,6 +13,7 @@ import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Reduction of Wigner edge limits to a growing trace bound
@@ -104,14 +105,9 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
   have hdiag := ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
   -- The norm bounds pass from the truncations to the zero-diagonal corners.
-  have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by
-    have hgap : 0 < (r - 2) / 2 := by linarith
-    filter_upwards [hn ((r + 2) / 2) (by linarith), hdiff.eventually_lt_const hgap] with n hBn hδ
-    exact (norm_le_norm_sub_add (Z n ω) (B n ω)).trans_lt
-      ((add_lt_add hδ hBn).trans_eq (by ring))
   obtain ⟨hmax, hmin⟩ := hw.eigenvalues₀_bot_and_top_of_eventually_l2_opNorm_lt
     (hA := fun n ↦ hZ n ω) (by simp [support_semicircleReal]) (by simp [support_semicircleReal])
-    hZnorm
+    (hdiff.eventually_norm_lt_of_eventually_norm_lt hn)
   -- The diagonal perturbation has vanishing operator norm.
   exact ⟨hmax.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
       (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hdω,
