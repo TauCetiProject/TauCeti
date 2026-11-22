@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 public import TauCeti.MeasureTheory.Measure.ContentOfOpens
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -38,6 +39,8 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
 * `TauCeti.variationMeasure μ Ω u`: the variation measure `|Du|` on `Ω`, a regular measure.
 * `TauCeti.variationMeasure_preimage_coe`: `|Du|(U) = totalVariationOn μ U u` for every open
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
+* `TauCeti.tendsto_totalVariationOn_ball_sdiff_singleton`: for `u` of locally finite variation on
+  `Ω` and `x ∈ Ω`, `totalVariationOn μ (ball x r \ {x}) u → 0` as `r → 0⁺`.
 * `TauCeti.forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral`: distributional
   limits of locally BV functions with eventually bounded variation measures on compact subsets
   have locally finite variation.
@@ -152,6 +155,41 @@ theorem variationMeasure_preimage_coe (hu : LocallyIntegrableOn u Ω μ)
     (hU : U ≤ Ω) :
     variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u := by
   rw [variationMeasure, dite_eq_left ⟨hu, hfin⟩, variationContent_measure_preimage_coe hu hfin hU]
+
+/-- For a function `u` of locally finite variation on `Ω` and any `x ∈ Ω`, the total variation of
+`u` on the punctured ball `ball x r \ {x}` tends to `0` as `r → 0⁺`. -/
+theorem tendsto_totalVariationOn_ball_sdiff_singleton (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {x : E} (hx : x ∈ Ω) :
+    Tendsto (fun r => totalVariationOn μ
+      ⟨Metric.ball x r \ {x}, Metric.isOpen_ball.sdiff isClosed_singleton⟩ u) (𝓝[>] 0) (𝓝 0) := by
+  obtain ⟨δ, hδ, hδΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hx)
+  set lam := variationMeasure μ Ω u
+  have hK : IsCompact (((↑) : Ω → E) ⁻¹' Metric.closedBall x δ) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x δ)
+      (by rwa [Subtype.range_coe])
+  let x' : Ω := ⟨x, hx⟩
+  let lam' := lam.restrict {x'}ᶜ
+  have hfinB : ∃ R > 0, lam' (Metric.ball x' R) ≠ ⊤ := by
+    refine ⟨δ, hδ, ne_top_of_le_ne_top (hK.measure_lt_top (μ := lam)).ne ?_⟩
+    exact (Measure.restrict_apply_le _ _).trans
+      (measure_mono (preimage_mono Metric.ball_subset_closedBall))
+  have hlim := tendsto_measure_ball_nhdsGT_zero hfinB
+  have hx' : lam' {x'} = 0 := by
+    rw [Measure.restrict_apply (measurableSet_singleton _), inter_compl_self, measure_empty]
+  rw [hx'] at hlim
+  refine hlim.congr' (eventually_of_mem (Ioo_mem_nhdsGT hδ) fun r ⟨_, hrδ⟩ => ?_)
+  have hrΩ : Metric.ball x r \ {x} ⊆ Ω :=
+    sdiff_subset.trans ((Metric.ball_subset_closedBall.trans
+      (Metric.closedBall_subset_closedBall hrδ.le)).trans hδΩ)
+  have hlam : lam' (Metric.ball x' r) = lam (((↑) : Ω → E) ⁻¹' (Metric.ball x r \ {x})) := by
+    rw [Measure.restrict_apply measurableSet_ball]
+    congr 1
+    ext y
+    simp [x', Subtype.dist_eq, Subtype.ext_iff, sdiff_eq_compl_inter, inter_comm]
+  exact hlam.trans <| by
+    simpa only [Opens.coe_mk] using variationMeasure_preimage_coe hu hfin
+      (U := ⟨Metric.ball x r \ {x}, Metric.isOpen_ball.sdiff isClosed_singleton⟩) hrΩ
 
 /-- A distributional limit of locally BV functions whose variation measures are eventually
 bounded on every compact subset of the domain has locally finite variation. -/

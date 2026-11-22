@@ -247,7 +247,7 @@ theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_top_ne_top
       HasDensityAt μ s x 0 ∨ HasDensityAt μ s x (1 / 2) ∨ HasDensityAt μ s x 1 := by
   filter_upwards [ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top (Ω := ⊤)
     (hs.mono Measure.restrict_le_self) hP] with x hx
-  exact hx trivial
+  exact hx (Opens.mem_top x)
 
 end TauCeti
 

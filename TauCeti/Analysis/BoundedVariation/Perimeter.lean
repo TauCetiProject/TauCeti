@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -42,7 +43,8 @@ the semicontinuity half of the direct method for perimeter problems.
   and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
   monotonicity and inner continuity in `Ω`.
 * `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ`,
-  `TauCeti.perimeter_of_subsingleton` and `TauCeti.perimeter_smul_measure`.
+  `TauCeti.perimeter_of_subsingleton`, `TauCeti.perimeter_smul_measure` and
+  `TauCeti.perimeter_eq_addHaarScalarFactor_mul`.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
 * `TauCeti.perimeter_union_of_disjoint_closure`: additivity for sets with disjoint closures.
@@ -137,6 +139,12 @@ theorem perimeter_smul_measure (c : ℝ≥0) :
 section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
+
+/-- Any two additive Haar measures rescale perimeter by their Haar scalar factor. -/
+theorem perimeter_eq_addHaarScalarFactor_mul (ν : Measure E) [ν.IsAddHaarMeasure] :
+    perimeter μ Ω s = (Measure.addHaarScalarFactor μ ν : ℝ≥0∞) * perimeter ν Ω s := by
+  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ ν]
+  exact perimeter_smul_measure _
 
 /-- **Complements have the same perimeter**, against an additive Haar measure. No measurability
 of `s` is needed: the indicators of `s` and `sᶜ` differ by a constant up to sign. -/

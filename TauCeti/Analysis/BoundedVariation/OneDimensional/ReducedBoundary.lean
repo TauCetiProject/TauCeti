@@ -74,9 +74,8 @@ private theorem perimeter_sdiff_singleton_eq_zero_of_ae_eq_setOf_inner_lt
   have hdisj : (U : Set E) ∩ {y | ⟪y, ν⟫ = ⟪x, ν⟫} = ∅ :=
     eq_empty_of_forall_notMem fun _ ⟨hyU, heq⟩ =>
       hyU.2 (inner_left_injective_of_finrank_eq_one hn hν0 heq)
-  rw [perimeter_congr_ae (Ω := U) hsHU]
-  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-  rw [perimeter_smul_measure, perimeter_setOf_inner_lt hν _ U, hdisj, measure_empty, mul_zero]
+  rw [perimeter_congr_ae (Ω := U) hsHU, perimeter_eq_addHaarScalarFactor_mul volume,
+    perimeter_setOf_inner_lt hν _ U, hdisj, measure_empty, mul_zero]
 
 /-- In dimension one, if a set `s` of locally finite perimeter in `Ω` agrees `μ`-almost everywhere
 on `ball x r ⊆ Ω` (`r > 0`) with a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`), then `|Dχ_s|`
@@ -100,13 +99,8 @@ private theorem mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one
         perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
       simpa only [Opens.coe_mk, ← perimeter_def] using
         variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hrΩ
-    have hper : perimeter μ ⟨ball x r, isOpen_ball⟩ s =
-        (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) *
-          perimeter volume ⟨ball x r, isOpen_ball⟩ {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
-      rw [perimeter_congr_ae (Ω := ⟨ball x r, isOpen_ball⟩) hsH]
-      conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-      exact perimeter_smul_measure _
-    rw [hval, hper, perimeter_ball_setOf_inner_lt hν x hr, hn]
+    rw [hval, perimeter_congr_ae (Ω := ⟨ball x r, isOpen_ball⟩) hsH,
+      perimeter_eq_addHaarScalarFactor_mul volume, perimeter_ball_setOf_inner_lt hν x hr, hn]
     exact mul_ne_zero (ENNReal.coe_ne_zero.2
         (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne')
       (mul_ne_zero (by simp) (measure_ball_pos volume _ one_pos).ne')

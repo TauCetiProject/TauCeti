@@ -39,8 +39,8 @@ inequality.
 
 * `TauCeti.min_measure_inter_measure_sdiff_rpow_le_perimeter`: the relative isoperimetric
   inequality in a ball.
-* `TauCeti.min_div_closedBall_rpow_le_mul_perimeter_div`: the normalized closed-ball form in terms
-  of `P(s; ball x r) / r ^ (n - 1)`.
+* `TauCeti.exists_min_div_closedBall_rpow_le_mul_perimeter_div`: the normalized closed-ball form
+  in terms of `P(s; ball x r) / r ^ (n - 1)`.
 * `TauCeti.notMem_essentialBoundary_of_tendsto_perimeter_ball_div`: vanishing `(n - 1)`-dimensional
   perimeter density at `x ∈ Ω` excludes `x` from the essential boundary `∂ᵉs`.
 
@@ -144,13 +144,18 @@ private theorem normalizedRelativeIsoperimetricConst_ne_top :
   ENNReal.div_ne_top ENNReal.ofReal_ne_top
     (ENNReal.rpow_pos (measure_ball_pos μ 0 one_pos) measure_ball_lt_top.ne).ne'
 
-private theorem min_div_closedBall_rpow_le_normalizedRelativeIsoperimetricConst_mul
-    (hn : 2 ≤ finrank ℝ E) {s : Set E} {x : E} {r : ℝ} (hr : 0 < r)
-    (hs : NullMeasurableSet s (μ.restrict (ball x r))) :
-    (min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) ^
-        (1 - (finrank ℝ E : ℝ)⁻¹) ≤
-      normalizedRelativeIsoperimetricConst μ *
-        (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) := by
+/-- Rescaled relative isoperimetric bound on closed balls: in dimension `n ≥ 2`, there is a finite
+constant `C` depending only on `μ` such that the `(1 - 1 / n)` power of the smaller closed-ball
+volume proportion of `s` and `sᶜ` is at most `C * (P(s; ball x r) / r ^ (n - 1))`. -/
+theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank ℝ E)
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ {s : Set E} {x : E} {r : ℝ}, 0 < r →
+      NullMeasurableSet s (μ.restrict (ball x r)) →
+      (min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) ^
+          (1 - (finrank ℝ E : ℝ)⁻¹) ≤
+        C * (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) := by
+  refine ⟨normalizedRelativeIsoperimetricConst μ, normalizedRelativeIsoperimetricConst_ne_top,
+    fun {s x r} hr hs => ?_⟩
   set n := finrank ℝ E with hn_eq
   set q : ℝ := 1 - (n : ℝ)⁻¹
   have hq : 0 < q := sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
@@ -179,18 +184,6 @@ private theorem min_div_closedBall_rpow_le_normalizedRelativeIsoperimetricConst_
     ENNReal.mul_inv (.inr hωqt) (.inl (ENNReal.pow_ne_top ENNReal.ofReal_ne_top))]
   ring
 
-/-- Rescaled relative isoperimetric bound on closed balls: in dimension `n ≥ 2`, the `(1 - 1 / n)`
-power of the smaller closed-ball volume proportion of `s` and `sᶜ` is controlled by
-`P(s; ball x r) / r ^ (n - 1)`. -/
-theorem min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank ℝ E) {s : Set E} {x : E}
-    {r : ℝ} (hr : 0 < r) (hs : NullMeasurableSet s (μ.restrict (ball x r))) :
-    (min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) ^
-        (1 - (finrank ℝ E : ℝ)⁻¹) ≤
-      (ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) /
-          μ (ball (0 : E) 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) *
-        (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) :=
-  min_div_closedBall_rpow_le_normalizedRelativeIsoperimetricConst_mul hn hr hs
-
 /-- In dimension `n ≥ 2`, if `s` is null-measurable on `Ω`, `x ∈ Ω`, and
 `P(s; ball x r) / r ^ (n - 1) → 0` as `r → 0⁺`, then `x ∉ ∂ᵉs`. -/
 theorem notMem_essentialBoundary_of_tendsto_perimeter_ball_div (hn : 2 ≤ finrank ℝ E)
@@ -201,18 +194,17 @@ theorem notMem_essentialBoundary_of_tendsto_perimeter_ball_div (hn : 2 ≤ finra
   set n := finrank ℝ E
   set q : ℝ := 1 - (n : ℝ)⁻¹
   have hq : 0 < q := sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
-  set K := normalizedRelativeIsoperimetricConst μ
+  obtain ⟨C, hC, hbound⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
   set f : ℝ → ℝ≥0∞ := fun r =>
     min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds hx)
-  have hKP : Tendsto (fun r => K * (perimeter μ ⟨ball x r, isOpen_ball⟩ s /
+  have hCP : Tendsto (fun r => C * (perimeter μ ⟨ball x r, isOpen_ball⟩ s /
       ENNReal.ofReal r ^ (n - 1))) (𝓝[>] 0) (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hP (.inr normalizedRelativeIsoperimetricConst_ne_top)
+    simpa using ENNReal.Tendsto.const_mul hP (.inr hC)
   have hfq : Tendsto (fun r => f r ^ q) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hKP
+    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hCP
       (.of_forall fun _ => zero_le) (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr =>
-        min_div_closedBall_rpow_le_normalizedRelativeIsoperimetricConst_mul hn hr.1
-          (hs.mono (Measure.restrict_mono ((ball_subset_ball hr.2.le).trans hεΩ) le_rfl)))
+        hbound hr.1 (hs.mono (Measure.restrict_mono ((ball_subset_ball hr.2.le).trans hεΩ) le_rfl)))
   refine notMem_essentialBoundary_of_tendsto_min_div ?_
   have hf := ((ENNReal.continuous_rpow_const (y := q⁻¹)).tendsto 0).comp hfq
   rw [ENNReal.zero_rpow_of_pos (inv_pos.2 hq)] at hf
