@@ -20,15 +20,22 @@ The coefficientwise scalar action also commutes with formation of a monomial.
 
 public section
 
-namespace HahnSeries
+/-- Scaling the coefficient of a Hahn monomial scales the whole monomial.
+This generalizes the `map_smul'` law of Mathlib's `HahnSeries.single.linearMap`, using
+`HahnSeries.map_single` for the zero-preserving coefficient action. -/
+theorem TauCeti.hahnSeries_single_smul {Γ R V : Type*} [PartialOrder Γ] [Zero V]
+    [SMulZeroClass R V] (a : Γ) (r : R) (v : V) :
+    HahnSeries.single a (r • v) = r • HahnSeries.single a v := by
+  let f := SMulZeroClass.toZeroHom V r
+  calc
+    HahnSeries.single a (r • v) = (HahnSeries.single a v).map f :=
+      (HahnSeries.map_single (a := a) (r := v) f).symm
+    _ = r • HahnSeries.single a v := by
+      ext b
+      simp only [HahnSeries.map_coeff, HahnSeries.coeff_smul, f,
+        SMulZeroClass.toZeroHom_apply]
 
-/-- Scaling the coefficient of a Hahn monomial scales the whole monomial. -/
-theorem single_smul {Γ R V : Type*} [PartialOrder Γ] [Zero V] [SMulZeroClass R V]
-    (a : Γ) (r : R) (v : V) : single a (r • v) = r • single a v := by
-  ext b
-  rcases eq_or_ne b a with rfl | h
-  · simp only [coeff_smul, coeff_single_same]
-  · simp only [coeff_smul, coeff_single_of_ne h, smul_zero]
+namespace HahnSeries
 
 variable {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V] [Module R V]
 

@@ -312,6 +312,7 @@ theorem coordinateEnvelopingAut_homothety_normalOrderedSummand
 /-- The formal homothety `t ↦ u t` scales the convergent normally ordered sum at any cut by `u ^ n`,
 where `n` is the total mode.
 This applies to any Lie algebra over the field and at every central value. -/
+@[simp↓]
 theorem coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand
     (u : Kˣ) (p n : ℤ) (x y : L) :
     coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
