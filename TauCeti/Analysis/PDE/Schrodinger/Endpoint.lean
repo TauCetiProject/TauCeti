@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
-import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
@@ -147,11 +146,9 @@ theorem exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint 
     have hn0 : n ≠ 0 := by positivity
     field_simp
     nlinarith
-  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint (𝕜 := ℂ)
-    (H := Lp ℂ 2 (volume : Measure E)) (μ := (volume : Measure E)) (E := ℂ) (σ := n / 2)
-    (p := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (b := b) (r' := r') (by linarith)
-    (by rw [hbinv]; linarith [inv_pos.2 (by positivity : (0 : ℝ) < 2 * n)])
-    (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds
+    (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E)) (μ := (volume : Measure E)) (E := ℂ)
+    (σ := n / 2) (b := b) (r' := r') (by linarith) (by rw [hbinv]; ring) hr'inv
     ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal 1 K
   refine ⟨C, fun R hR F G hF hG ↦ ?_⟩
   simp_rw [inner_schrodingerPropagator_sub_apply, ← adjoint_schrodingerPropagator]

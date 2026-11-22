@@ -38,9 +38,6 @@ these weak estimates into bounds in the mixed norm
   `‖u‖_{L^q([0, T]; L^r)} ≤ C (‖f‖₂ + ‖F‖_{L^{p₁}((0, T]; L^{r₁'})})` with `C` independent of `T`
   (`TauCeti.exists_eLpNorm_eLpNorm_schrodingerDuhamel_le`).
 
-For the retarded estimates, the pairing with a test function moves inside the Duhamel integral
-(`TauCeti.inner_setIntegral_Iio_schrodingerPropagator_sub`).
-
 The pairs may coincide, and on the line either may be `(4, ∞)`. The forcing term is assumed
 integrable on `(0, T]` with values in `L²`, so that Duhamel's formula is a Bochner integral; the
 energy estimate `TauCeti.norm_schrodingerDuhamel_le` is the companion bound at the energy pair
@@ -65,18 +62,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p q p₁ q₁ : ℝ≥0} {r r₁ r₁' : ℝ≥0∞}
   [r₁'.HolderConjugate r₁]
-
-/-- The pairing of the retarded Duhamel integral `∫_{s < t} S(t - s) F(s) ds` of an integrable
-forcing term with `g` is the integral over `s < t` of the pairings `⟪S(t - s) F(s), g⟫`. -/
-theorem inner_setIntegral_Iio_schrodingerPropagator_sub {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℂ V] [CompleteSpace V] {F : ℝ → Lp V 2 (volume : Measure E)}
-    (hF : Integrable F) (t : ℝ) (g : Lp V 2 (volume : Measure E)) :
-    ⟪∫ s in Iio t, schrodingerPropagator V (t - s) (F s), g⟫_ℂ =
-      ∫ s in Iio t, ⟪schrodingerPropagator V (t - s) (F s), g⟫_ℂ := by
-  have hint : Integrable fun s ↦ schrodingerPropagator V (t - s) (F s) :=
-    integrable_phasePropagator_apply _ (continuous_const.sub continuous_id).aestronglyMeasurable hF
-  rw [← inner_conj_symm, ← integral_inner hint.integrableOn, ← integral_conj]
-  simp_rw [inner_conj_symm]
 
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` the Hölder

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Pairing a function with a bounded kernel integral
@@ -59,8 +60,7 @@ theorem inner_integral_integral_eq_integral_prod {u : α → V} {v : β → V} (
     ⟪∫ x, u x ∂μ, ∫ y, v y ∂ν⟫_𝕜 = ∫ z, ⟪u z.1, v z.2⟫_𝕜 ∂(μ.prod ν) := by
   rw [integral_prod _ (hu.inner_fst_snd hv)]
   simp_rw [integral_inner hv]
-  rw [← inner_conj_symm, ← integral_inner hu, ← integral_conj]
-  simp_rw [inner_conj_symm]
+  exact (integral_inner_left hu _).symm
 
 end Inner
 

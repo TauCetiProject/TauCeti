@@ -92,9 +92,9 @@ transfers the bound from the finite sums of atoms to `F` and `G`.
   a region, summed over the dyadic time shells.
 * `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint`: the endpoint bilinear estimate
   on a region of times.
+* `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds`: the same
+  estimate from a non-endpoint dual estimate in `L^{4/3}_t`.
 * `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`: the endpoint dual estimate.
-* `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds`: the same estimate from
-  a non-endpoint dual estimate in `L^{4/3}_t`.
 * `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint`: the retarded
   endpoint estimate.
 
@@ -722,11 +722,12 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint {σ :
   rw [integral_setIntegral_Iio_eq_setIntegral hφ.integrableOn]
   exact hC U hM hD hK hUm _ (measurableSet_lt measurable_fst measurable_snd) F G hF hG
 
-/-- **The endpoint dual Strichartz estimate from an `L^{4/3}_t` estimate.** The case of
-`exists_enorm_integral_adjoint_le_of_endpoint` where the non-endpoint dual estimate is taken in
-`L^{4/3}_t L^b_x` with `1/b = 1/2 + 1/(4σ)`, the dual of the pair `(4, r₄)` on the boundary line
-`1/r₄ = 1/2 - 1/(4σ)`. The exponent conditions of the general theorem then hold automatically. -/
-theorem exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds {σ : ℝ} (hσ : 1 < σ)
+/-- **The endpoint estimate on a region of times from an `L^{4/3}_t` estimate.** The case of
+`exists_enorm_setIntegral_inner_adjoint_le_of_endpoint` where the non-endpoint dual estimate is
+taken in `L^{4/3}_t L^b_x` with `1/b = 1/2 + 1/(4σ)`, the dual of the pair `(4, r₄)` on the
+boundary line `1/r₄ = 1/2 - 1/(4σ)`. The exponent conditions of the general theorem then hold
+automatically. -/
+theorem exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds {σ : ℝ} (hσ : 1 < σ)
     {b r' : ℝ≥0∞} (hb : b.toReal⁻¹ = 2⁻¹ + (4 * σ)⁻¹) (hr' : r'.toReal⁻¹ = (σ + 1) / (2 * σ))
     (A M K : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ U : ℝ → H →L[𝕜] Lp E 2 μ, (∀ t, ‖U t‖ₑ ≤ M) →
@@ -737,10 +738,11 @@ theorem exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds {σ : ℝ} (
           K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) ((4 / 3 : ℝ≥0) : ℝ≥0∞)) →
       (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
         AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) →
-      ∀ F : ℝ → Lp E 2 μ, Integrable F →
-        ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
+      ∀ R : Set (ℝ × ℝ), MeasurableSet R → ∀ F G : ℝ → Lp E 2 μ, Integrable F → Integrable G →
+        ‖∫ z in R, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
+          C * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 * eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 2 := by
   have hσ0 : 0 < σ := by linarith
-  refine exists_enorm_integral_adjoint_le_of_endpoint hσ ?_ ?_ ?_ hr' A M K <;> rw [hb]
+  refine exists_enorm_setIntegral_inner_adjoint_le_of_endpoint hσ ?_ ?_ ?_ hr' A M K <;> rw [hb]
   · linarith [inv_pos.2 (by positivity : 0 < 4 * σ)]
   · field_simp
     linarith

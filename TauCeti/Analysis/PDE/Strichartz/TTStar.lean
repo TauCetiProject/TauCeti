@@ -218,46 +218,6 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
 
 variable [NormedSpace ℝ H]
 
-/-- **The dual homogeneous `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
-`U(t) : H → L²(X, μ)` be bounded operators with
-`‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for every almost everywhere
-strongly measurable `F : ℝ → L²(X, μ)` for which `s ↦ U(s)* F(s)` is integrable,
-
-`‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^p L^{r'}}`,
-
-with `C` independent of the family `U`, of `A` and of `F`. -/
-theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.HolderConjugate q) :
-    ∃ C : ℝ≥0, ∀ (U : ℝ → H →L[𝕜] Lp E 2 μ) (A : ℝ≥0∞),
-      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
-        eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
-      ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
-        ‖∫ s, ((U s)†) (F s)‖ₑ ≤
-          C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p := by
-  obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := 𝕜) (H := H)
-    (E := E) (μ := μ) (r := r) (r' := r') hq hpq
-  refine ⟨NNReal.sqrt C, fun U A hU F hF hUF => ?_⟩
-  set v := ∫ s, ((U s)†) (F s)
-  set a := eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p
-  -- `‖v‖² = ⟪v, v⟫` expands into the double integral of the time pairings.
-  have hsq : ‖v‖ₑ ^ (2 : ℝ) ≤ C * A * a * a := by
-    calc ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
-          rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
-          simp
-      _ = ‖∫ s, ⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := by rw [integral_inner hUF]
-      _ ≤ ∫⁻ s, ‖⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := eNorm_integral_le_lintegral_eNorm _
-      _ = ∫⁻ s, ‖∫ t, ⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ := by
-          refine lintegral_congr fun s ↦ ?_
-          rw [← ofReal_norm, norm_inner_symm, ofReal_norm, integral_inner hUF]
-      _ ≤ ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ :=
-          lintegral_mono fun s ↦ eNorm_integral_le_lintegral_eNorm _
-      _ ≤ C * A * a * a := hC U A hU F F hF hF
-  have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * A ^ (2⁻¹ : ℝ) * a) ^ (2 : ℝ) = C * A * a * a := by
-    rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
-      ← ENNReal.rpow_mul, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one, ENNReal.rpow_two,
-      ENNReal.rpow_two, ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
-    ring
-  rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
-
 omit [CompleteSpace E] in
 /-- **`TT*` for a time integral.** For an integrable `u : ℝ → H`, `‖∫ u‖²` is the integral of the
 pairings `⟪u(s), u(t)⟫` over the plane, so a bound `|∫∫ ⟪u(s), u(t)⟫ ds dt| ≤ C a²` gives
@@ -278,6 +238,40 @@ theorem enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le {u : ℝ → H} (h
       ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
     ring
   rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
+
+/-- **The dual homogeneous `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
+`U(t) : H → L²(X, μ)` be bounded operators with
+`‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for every almost everywhere
+strongly measurable `F : ℝ → L²(X, μ)` for which `s ↦ U(s)* F(s)` is integrable,
+
+`‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^p L^{r'}}`,
+
+with `C` independent of the family `U`, of `A` and of `F`. -/
+theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.HolderConjugate q) :
+    ∃ C : ℝ≥0, ∀ (U : ℝ → H →L[𝕜] Lp E 2 μ) (A : ℝ≥0∞),
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
+      ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+        ‖∫ s, ((U s)†) (F s)‖ₑ ≤
+          C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p := by
+  obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := 𝕜) (H := H)
+    (E := E) (μ := μ) (r := r) (r' := r') hq hpq
+  refine ⟨NNReal.sqrt C, fun U A hU F hF hUF => ?_⟩
+  set a := eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p
+  have hA : A ^ (2⁻¹ : ℝ) * A ^ (2⁻¹ : ℝ) = A := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+    norm_num
+  -- `TT*`, with `A ^ (1 / 2) a` in place of `a`.
+  rw [mul_assoc]
+  refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := 𝕜) hUF ?_
+  calc _ ≤ ∫⁻ z, ‖⟪((U z.1)†) (F z.1), ((U z.2)†) (F z.2)⟫_𝕜‖ₑ ∂(volume.prod volume) :=
+        eNorm_integral_le_lintegral_eNorm _
+    _ = ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ :=
+        lintegral_prod _ (hUF.inner_fst_snd hUF).aestronglyMeasurable.eNorm
+    _ ≤ C * A * a * a := hC U A hU F F hF hF
+    _ = C * (A ^ (2⁻¹ : ℝ) * a) * (A ^ (2⁻¹ : ℝ) * a) := by
+        nth_rw 1 [← hA]
+        ring
 
 /-- **The homogeneous `TT*` estimate in weak form.** Let `2 < q < ∞` with Hölder conjugate `p`,
 and let `U(t) : H → L²(X, μ)` be bounded operators with
