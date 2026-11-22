@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Naturality in relative simplicial homology
@@ -28,6 +29,8 @@ connecting morphism on a relative cycle: lift it by the section, take the bounda
 onto the chains of `X` (`SSetPair.homologyπ_homologyδ`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
 chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
+Multiplication by a natural number invertible on the coefficients is invertible on relative chains
+(`SSetPair.isIso_smul_id_chainComplex`), as it is on the chains of `X` and of `Y`.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -84,6 +87,19 @@ lemma chainComplexπ_naturality (R : C) {P P' : SSetPair.{w}} (f : P ⟶ P') :
     SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R =
       P.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
   ((chainComplexFunctorπ C).app R).naturality f
+
+/-- If multiplication by a natural number `n` is invertible on the coefficients `R`, it is
+invertible on the relative chains of every pair of simplicial sets, which are a cokernel of chains
+on which it is invertible. -/
+lemma isIso_smul_id_chainComplex (P : SSetPair.{w}) (R : C) (n : ℕ) [IsIso (n • 𝟙 R)] :
+    IsIso (n • 𝟙 (P.chainComplex R)) := by
+  -- The cokernel cofork of `P` is stated for `SSet.chainComplexMap P.hom R`, from
+  -- `((𝟭 SSet).obj P.left).chainComplex R` to `((𝟭 SSet).obj P.right).chainComplex R`.
+  have : IsIso (n • 𝟙 (((𝟭 SSet).obj P.left).chainComplex R)) :=
+    (SSet.chainComplexFunctor C ⋙ (evaluation _ _).obj P.left).isIso_smul_id_obj n R
+  have : IsIso (n • 𝟙 (((𝟭 SSet).obj P.right).chainComplex R)) :=
+    (SSet.chainComplexFunctor C ⋙ (evaluation _ _).obj P.right).isIso_smul_id_obj n R
+  exact CokernelCofork.IsColimit.isIso_smul_id_pt (P.isColimitCokernelCoforkChainComplex R) n
 
 /-- In each degree, the map from the chains of the subobject of a pair of simplicial sets to the
 chains of the ambient simplicial set is a split monomorphism. -/
