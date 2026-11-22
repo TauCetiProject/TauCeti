@@ -360,10 +360,20 @@ theorem tendsto_deriv_putPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
 /-! ### Gamma at maturity -/
 
 /-- **Gamma away from the money at maturity.** For a fixed spot `s > 0` with `s ≠ K`, the call
-gamma tends to `0` as the remaining maturity tends to `0⁺`. -/
-theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
+gamma tends to `0` as the remaining maturity tends to `0⁺`. This holds for every volatility `σ`:
+at `σ = 0` the closed-form price is affine in the spot (through Lean's convention `x / 0 = 0`),
+so its gamma vanishes. -/
+theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 < K)
     (hsK : s ≠ K) :
     Tendsto (fun u => deriv (deriv fun x => callPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
+  rcases eq_or_ne σ 0 with rfl | hσ
+  · -- At `σ = 0` the call price is `(x - K e^{-rτ}) / 2`, with constant delta `1 / 2`.
+    refine tendsto_const_nhds.congr fun u => ?_
+    have hx : deriv (fun x => callPrice x r 0 K u) = fun _ => 1 / 2 := by
+      ext x
+      simp only [callPrice_volatility_zero]
+      exact (((hasDerivAt_id x).sub_const _).div_const 2).deriv
+    rw [hx, deriv_const]
   -- Writing `A(τ) = log (s / K) + (r + σ² / 2) τ = σ √τ d₊`, the gamma `φ(d₊) / (s σ √τ)` is
   -- `d₊ φ(d₊) / (s A(τ))`, where `d₊ φ(d₊) → 0` since `|d₊| → ∞` and `A(τ) → log (s / K) ≠ 0`.
   have hlog : log (s / K) ≠ 0 := by
@@ -375,9 +385,20 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
     (Continuous.continuousWithinAt (by fun_prop)).tendsto
   rw [mul_zero, add_zero] at hA
   have hd : Tendsto (dPlus s r σ K) (𝓝[>] 0) (cocompact ℝ) := by
-    rcases hsK.lt_or_gt with hsK | hsK
-    · exact (tendsto_dPlus_maturity_atBot (r := r) hσ hs hsK).mono_right atBot_le_cocompact
-    · exact (tendsto_dPlus_maturity_atTop (r := r) hσ hK hsK).mono_right atTop_le_cocompact
+    have habs : Tendsto (dPlus s r |σ| K) (𝓝[>] 0) (cocompact ℝ) := by
+      rcases hsK.lt_or_gt with hsK | hsK
+      · exact (tendsto_dPlus_maturity_atBot (r := r) (abs_pos.2 hσ) hs hsK).mono_right
+          atBot_le_cocompact
+      · exact (tendsto_dPlus_maturity_atTop (r := r) (abs_pos.2 hσ) hK hsK).mono_right
+          atTop_le_cocompact
+    rcases abs_choice σ with hσa | hσa
+    · rwa [hσa] at habs
+    -- For `σ < 0`, `d₊` is the negative of `d₊` at the volatility `-σ`, and negation maps
+    -- `cocompact ℝ` to itself.
+    rw [hσa] at habs
+    refine ((Homeomorph.neg ℝ).isClosedEmbedding.tendsto_cocompact.comp habs).congr fun u => ?_
+    rw [Function.comp_apply, Homeomorph.coe_neg, dPlus_def, dPlus_def, neg_sq, neg_mul, div_neg,
+      neg_neg]
   have h := ((tendsto_mul_gaussianPDFReal_cocompact 0 1).comp hd).div hA
     (mul_ne_zero hs.ne' hlog)
   rw [zero_div] at h
@@ -385,11 +406,10 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
   filter_upwards [self_mem_nhdsWithin, hA.eventually_ne (mul_ne_zero hs.ne' hlog)] with u hu hAu
   have hsq := (sqrt_pos.2 hu).ne'
   have hdu : dPlus s r σ K u = (log (s / K) + (r + σ ^ 2 / 2) * u) / (σ * √u) := dPlus_def ..
-  rw [(hasDerivAt_deriv_callPrice_spot hs hK hσ.ne' hu).deriv, Pi.div_apply,
+  rw [(hasDerivAt_deriv_callPrice_spot hs hK hσ hu).deriv, Pi.div_apply,
     Function.comp_apply, hdu]
   have hA0 : log (s / K) + (r + σ ^ 2 / 2) * u ≠ 0 := right_ne_zero_of_mul hAu
   have := hs.ne'
-  have := hσ.ne'
   generalize gaussianPDFReal 0 1 _ = c
   generalize log (s / K) + (r + σ ^ 2 / 2) * u = A at hA0 ⊢
   field_simp
@@ -434,12 +454,19 @@ private theorem deriv_deriv_putPrice_spot_eventuallyEq (hs : 0 < s) (hσ : σ �
   exact deriv_deriv_putPrice_spot hs hK hσ hu
 
 /-- For a fixed spot `s > 0` with `s ≠ K`, the put gamma tends to `0` as the remaining maturity
-tends to `0⁺`. -/
-theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
-    (hsK : s ≠ K) :
-    Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) :=
-  (tendsto_deriv_deriv_callPrice_spot_maturity_zero hs hσ hK hsK).congr'
-    (deriv_deriv_putPrice_spot_eventuallyEq hs hσ.ne' hK).symm
+tends to `0⁺`. As for the call, this holds for every volatility `σ`. -/
+theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 < K) (hsK : s ≠ K) :
+    Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
+  rcases eq_or_ne σ 0 with rfl | hσ
+  · -- At `σ = 0` the put price is `(K e^{-rτ} - x) / 2`, with constant delta `-1 / 2`.
+    refine tendsto_const_nhds.congr fun u => ?_
+    have hx : deriv (fun x => putPrice x r 0 K u) = fun _ => -1 / 2 := by
+      ext x
+      simp only [putPrice_volatility_zero]
+      exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
+    rw [hx, deriv_const]
+  exact (tendsto_deriv_deriv_callPrice_spot_maturity_zero hs hK hsK).congr'
+    (deriv_deriv_putPrice_spot_eventuallyEq hs hσ hK).symm
 
 /-- At the spot `s = K`, `√τ` times the put gamma tends to `1 / (K σ √(2π))` as the remaining
 maturity tends to `0⁺`. -/
