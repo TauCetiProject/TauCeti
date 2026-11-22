@@ -55,8 +55,8 @@ private theorem awayCoeffAux_eq_of_mul_pow_eq {z : Localization.Away (T : Annula
     simpa [s, map_pow] using IsLocalization.Away.sec_spec (T : AnnularRing p) z
   have heq : (T : AnnularRing p) ^ k * s.1 = T ^ s.2 * x :=
     algebraMap_localizationAway_injective <| by simp only [map_mul, map_pow, ← hs, ← hz]; ring
-  simpa [awayCoeffAux, s, coeff_T_pow_mul, show m + (s.2 : ℤ) + k - s.2 = m + k by omega] using
-    congr_arg (coeff · (m + s.2 + k)) heq
+  have hidx : m + (s.2 : ℤ) + k - s.2 = m + k := by omega
+  simpa [awayCoeffAux, s, coeff_T_pow_mul, hidx] using congr_arg (coeff · (m + s.2 + k)) heq
 
 /-- Two-sided coefficient map on `Localization.Away (T : AnnularRing p)`. -/
 def awayCoeff : Localization.Away (T : AnnularRing p) →ₗ[ℤ_[p]] (ℤ → ℤ_[p]) where
@@ -92,9 +92,11 @@ theorem awayCoeff_eq_of_mul_pow_eq {z : Localization.Away (T : AnnularRing p)}
 @[simp] theorem awayCoeff_algebraMap_T_mul (z : Localization.Away (T : AnnularRing p)) (m : ℤ) :
     awayCoeff (algebraMap (AnnularRing p) _ T * z) m = awayCoeff z (m - 1) := by
   obtain ⟨k, x, hx⟩ := IsLocalization.Away.surj (T : AnnularRing p) z
-  rw [awayCoeff_eq_of_mul_pow_eq (show (algebraMap (AnnularRing p) _ T * z) *
-    algebraMap (AnnularRing p) _ T ^ k = algebraMap (AnnularRing p) _ (T * x) by
-      rw [mul_assoc, hx, map_mul]), coeff_T_mul, awayCoeff_eq_of_mul_pow_eq hx]; congr 1; omega
+  have hmul : (algebraMap (AnnularRing p) _ T * z) * algebraMap (AnnularRing p) _ T ^ k =
+      algebraMap (AnnularRing p) _ (T * x) := by
+    rw [mul_assoc, hx, map_mul]
+  rw [awayCoeff_eq_of_mul_pow_eq hmul, coeff_T_mul, awayCoeff_eq_of_mul_pow_eq hx]
+  congr 1; omega
 
 /-- Elements of `Localization.Away T` are uniquely determined by `awayCoeff`. -/
 theorem awayCoeff_injective : Function.Injective (awayCoeff (p := p)) := by
@@ -186,6 +188,16 @@ def coeff {hα : α ∈ Set.Ioo 0 1} : AnnularLaurent p hα →ₗ[ℤ_[p]] (ℤ
 /-- Elements of `AnnularLaurent p hα` are uniquely determined by their coefficients. -/
 theorem coeff_injective {hα : α ∈ Set.Ioo 0 1} :
     Function.Injective (coeff (p := p) (hα := hα)) := awayCoeff_injective
+/-- Two elements of `AnnularLaurent p hα` with the same coefficients are equal. -/
+@[ext]
+theorem ext {hα : α ∈ Set.Ioo 0 1} {z₁ z₂ : AnnularLaurent p hα}
+    (h : ∀ m : ℤ, coeff z₁ m = coeff z₂ m) : z₁ = z₂ :=
+  coeff_injective (funext h)
+/-- `d : ℤ → ℤ_p` lies in `range coeff` iff `∃ k, ∀ m, ‖d m‖ ≤ p ^ min 0 (m + k)`. -/
+theorem mem_range_coeff_iff {hα : α ∈ Set.Ioo 0 1} (d : ℤ → ℤ_[p]) :
+    d ∈ Set.range (coeff (p := p) (hα := hα)) ↔
+      ∃ k : ℕ, ∀ m : ℤ, ‖d m‖ ≤ (p : ℝ) ^ min 0 (m + k) :=
+  mem_range_awayCoeff_iff d
 /-- Convolution `∑ coeff z₁ i * coeff z₂ (m - i)` converges to `coeff (z₁ * z₂) m`. -/
 theorem hasSum_coeff_mul {hα : α ∈ Set.Ioo 0 1} (z₁ z₂ : AnnularLaurent p hα) (m : ℤ) :
     HasSum (fun i : ℤ ↦ coeff z₁ i * coeff z₂ (m - i)) (coeff (z₁ * z₂) m) :=
@@ -246,7 +258,9 @@ private theorem zpow_unitT_neg_mul_mem_iff (hα : α ∈ Set.Ioo 0 1) (z : Annul
 private theorem tateGauge_le_zpow_iff (hα : α ∈ Set.Ioo 0 1) (z : AnnularLaurent p hα)
     (r : ℤ) : Huber.tateGauge (ringOfDefinition p hα) (unitT p hα) α⁻¹ z ≤ α ^ r ↔
       ↑(unitT p hα ^ (-r)) * z ∈ ringOfDefinition p hα := by
-  rw [← show (α⁻¹) ^ (-r) = α ^ r by simp [zpow_neg]]; exact Huber.tateGauge_le_zpow_iff
+  have hpow : (α⁻¹) ^ (-r) = α ^ r := by simp [zpow_neg]
+  rw [← hpow]
+  exact Huber.tateGauge_le_zpow_iff
     (unitT_mem_ringOfDefinition hα) (exists_zpow_unitT_mul_mem hα z) (one_lt_inv_of_mem_Ioo hα)
 private theorem tateGauge_le_zpow_iff_coeff (hα : α ∈ Set.Ioo 0 1) (z : AnnularLaurent p hα)
     (r : ℤ) : Huber.tateGauge (ringOfDefinition p hα) (unitT p hα) α⁻¹ z ≤ α ^ r ↔
@@ -256,8 +270,8 @@ private theorem norm_coeff_le_zpow_neg_of_tateGauge_le {hα : α ∈ Set.Ioo 0 1
     {z : AnnularLaurent p hα} {m : ℤ} {k : ℕ}
     (hz : Huber.tateGauge (ringOfDefinition p hα) (unitT p hα) α⁻¹ z ≤ α ^ (m + k)) :
     ‖coeff z m‖ ≤ (p : ℝ) ^ (-(k : ℤ)) := by
-  simpa [show min (0 : ℤ) (m - (m + k)) = -(k : ℤ) by omega] using
-    (tateGauge_le_zpow_iff_coeff hα z (m + k)).1 hz m
+  have hmin : min (0 : ℤ) (m - (m + k)) = -(k : ℤ) := by omega
+  simpa [hmin] using (tateGauge_le_zpow_iff_coeff hα z (m + k)).1 hz m
 
 /-- The Tate gauge of `(ringOfDefinition p hα, unitT p hα, α⁻¹)` as a `RingNorm`. -/
 def ringNorm (p : ℕ) [Fact p.Prime] (hα : α ∈ Set.Ioo 0 1) : RingNorm (AnnularLaurent p hα) :=
@@ -308,10 +322,12 @@ private theorem norm_eq_one_of_mem_of_not_le {z : AnnularLaurent p hα}
   rw [norm_def] at hnot ⊢; refine le_antisymm (Huber.tateGauge_le_one hz) ?_; by_contra! hlt
   obtain ⟨n, hn, hnr⟩ := (Huber.tateGauge_lt_iff (inv_nonneg.2 hα.1.le)
     (exists_zpow_unitT_mul_mem hα z)).1 hlt
+  have hn_le : (1 : ℤ) ≤ n := by
+    have hnr' : (α⁻¹) ^ (-n) < (α⁻¹) ^ (0 : ℤ) := by simpa using hnr
+    have hlt' := (zpow_lt_zpow_iff_right₀ (one_lt_inv_of_mem_Ioo hα)).1 hnr'
+    omega
   exact hnot <| by simpa using Huber.tateGauge_le_zpow (inv_nonneg.2 hα.1.le) <|
-    Huber.zpow_neg_mul_mem_of_le (unitT_mem_ringOfDefinition hα) (by
-      have := (zpow_lt_zpow_iff_right₀ (one_lt_inv_of_mem_Ioo hα)).1
-        (by simpa using hnr : (α⁻¹) ^ (-n) < (α⁻¹) ^ (0 : ℤ)); omega : (1 : ℤ) ≤ n) hn
+    Huber.zpow_neg_mul_mem_of_le (unitT_mem_ringOfDefinition hα) hn_le hn
 
 /-- The Tate gauge norm on `AnnularLaurent p hα` is normalised so that `‖1‖ = 1`. -/
 instance instNormOneClass : NormOneClass (AnnularLaurent p hα) where
@@ -352,18 +368,20 @@ theorem norm_algebraMap_le_one (x : AnnularRing p) :
 /-- Changing the gauge parameter from `α` to `β` raises the norm to `log β / log α`. -/
 theorem norm_ofRadius {β : ℝ} (hβ : β ∈ Set.Ioo 0 1) (z : AnnularLaurent p hα) :
     ‖ofRadius hα hβ z‖ = ‖z‖ ^ (Real.log β / Real.log α) := by
-  rw [norm_def hβ, norm_def hα, show Huber.tateGauge (ringOfDefinition p hβ) (unitT p hβ) β⁻¹
-        (ofRadius hα hβ z) = Huber.tateGauge (ringOfDefinition p hα) (unitT p hα) β⁻¹ z by
-      simp only [Huber.tateGauge_def, mem_ringOfDefinition_iff_norm_coeff_le,
-        coeff_zpow_unitT_mul, coeff_ofRadius],
-    ← show Real.log β⁻¹ / Real.log α⁻¹ = Real.log β / Real.log α by simp [Real.log_inv]]
+  have hgauge : Huber.tateGauge (ringOfDefinition p hβ) (unitT p hβ) β⁻¹ (ofRadius hα hβ z) =
+      Huber.tateGauge (ringOfDefinition p hα) (unitT p hα) β⁻¹ z := by
+    simp only [Huber.tateGauge_def, mem_ringOfDefinition_iff_norm_coeff_le,
+      coeff_zpow_unitT_mul, coeff_ofRadius]
+  have hlog : Real.log β⁻¹ / Real.log α⁻¹ = Real.log β / Real.log α := by simp [Real.log_inv]
+  rw [norm_def hβ, norm_def hα, hgauge, ← hlog]
   exact Huber.tateGauge_rpow (one_lt_inv_of_mem_Ioo hα) (one_lt_inv_of_mem_Ioo hβ) z
 /-- Every power `U ^ k` has Tate gauge norm `1` in `AnnularLaurent p hα`. -/
 @[simp] theorem norm_algebraMap_U_pow (k : ℕ) :
     ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) U ^ k‖ = 1 := by
   rw [← map_pow]; refine norm_eq_one_of_mem_of_not_le hα ⟨U ^ k, rfl⟩ fun h ↦ ?_
+  have h1 : (1 : ℤ) = -(k : ℤ) + (k + 1 : ℕ) := by omega
   have hk := norm_coeff_le_zpow_neg_of_norm_le hα (m := -(k : ℤ)) (k := k + 1)
-    (by simpa [← show (1 : ℤ) = -(k : ℤ) + (k + 1 : ℕ) by omega] using h)
+    (by simpa [← h1] using h)
   rw [← map_pow, coeff_algebraMap, coeff_U_pow, ite_eq_left rfl, PadicInt.norm_p_pow] at hk
   linarith [zpow_lt_zpow_right₀ (one_lt_p (p := p)) (by omega : -((k + 1 : ℕ) : ℤ) < -(k : ℤ))]
 /-- The element `U = p / T` has Tate gauge norm `1` in `AnnularLaurent p hα`. -/
@@ -371,8 +389,10 @@ theorem norm_ofRadius {β : ℝ} (hβ : β ∈ Set.Ioo 0 1) (z : AnnularLaurent 
   simpa using norm_algebraMap_U_pow hα 1
 /-- Since `p = T U` and `‖U‖ = 1`, the prime `p` has Tate gauge norm `α`. -/
 @[simp] theorem norm_natCast_p : ‖(p : AnnularLaurent p hα)‖ = α := by
-  rw [show (p : AnnularLaurent p hα) = (unitT p hα : AnnularLaurent p hα) *
-    algebraMap (AnnularRing p) _ U by rw [val_unitT, ← map_mul, T_mul_U, map_natCast]]
+  have hp : (p : AnnularLaurent p hα) = (unitT p hα : AnnularLaurent p hα) *
+      algebraMap (AnnularRing p) _ U := by
+    rw [val_unitT, ← map_mul, T_mul_U, map_natCast]
+  rw [hp]
   simpa using (pseudoUniformizer p hα).norm_mul (algebraMap (AnnularRing p) _ U)
 
 private theorem norm_coeff_sub_lim_le {u : ℕ → AnnularLaurent p hα} {d : ℤ → ℤ_[p]}

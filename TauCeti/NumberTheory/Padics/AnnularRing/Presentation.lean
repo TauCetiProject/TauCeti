@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.MvPowerSeries.Basic
+public import TauCeti.Data.Finsupp.Fin
 public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
 import Mathlib.Data.Finsupp.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
@@ -309,26 +310,24 @@ private theorem coeff_toFun_eq_pow_mul_diagSum (F : MvPowerSeries (Fin 2) ℤ_[p
     simp only [Fin.isValue, ↓reduceIte, mul_one, zero_ne_one, zero_add, pow_add]
     ring
   · intro k hk
-    have := eq_sub_of_coeff_T_pow_mul_U_pow_ne_zero (right_ne_zero_of_mul hk)
-    refine ⟨min (k 0) (k 1), Finsupp.ext fun i ↦ ?_⟩
-    fin_cases i <;> simp <;> omega
+    have hk_sub := eq_sub_of_coeff_T_pow_mul_U_pow_ne_zero (right_ne_zero_of_mul hk)
+    refine ⟨min (k 0) (k 1), Finsupp.finTwoSubMinEquiv.injective ?_⟩
+    simp [diag]; omega
 
 /-- The coefficient of `T ^ m` in the image of `∑ a_(i,j) T ^ i U ^ j` is
 `d_m = ∑_{i - j = m} a_(i,j) p ^ j`, the diagonal `i - j = m` being parametrised as
 `(m⁺ + j, m⁻ + j)`. -/
 theorem coeff_ofMvPowerSeries (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
     (ofMvPowerSeries F).coeff m = ∑' j : ℕ, (p : ℤ_[p]) ^ ((-m).toNat + j) *
-      MvPowerSeries.coeff
-        (Finsupp.single 0 (m.toNat + j) + Finsupp.single 1 ((-m).toNat + j)) F := by
+      MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, j)) F := by
   rw [ofMvPowerSeries_apply,
-    coeff_toFun_eq_pow_mul_diagSum F (n := Finsupp.single 0 m.toNat + Finsupp.single 1 (-m).toNat)
+    coeff_toFun_eq_pow_mul_diagSum F (n := Finsupp.finTwoSubMinEquiv.symm (m, 0))
       (by simp; omega) (by simp), diagSum,
     ← (PadicInt.summable_pow_mul _).tsum_mul_left]
   refine tsum_congr fun j ↦ ?_
-  have hidx : Finsupp.single 0 m.toNat + Finsupp.single 1 (-m).toNat + j • diag =
-      Finsupp.single 0 (m.toNat + j) + Finsupp.single 1 ((-m).toNat + j) := by
-    ext i
-    fin_cases i <;> simp [add_comm]
+  have hidx : Finsupp.finTwoSubMinEquiv.symm (m, 0) + j • diag =
+      Finsupp.finTwoSubMinEquiv.symm (m, j) :=
+    Finsupp.finTwoSubMinEquiv.injective (by simp [diag]; omega)
   rw [hidx, pow_add, mul_assoc]
   simp
 
