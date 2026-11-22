@@ -120,7 +120,11 @@ lemma cellDiskPullbackPairSingularCohomologyIso_hom (n q : ℕ) (j : cell C n) :
         (singularCohomologyPreimageSphereIso (ModuleCat.of R R) k M
           (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j)) q (q + n) (by simp)).hom := by
   rw [cellDiskPullbackPairSingularCohomologyIso]
-  rfl
+  -- `rw`/`simp` cannot rewrite further: `cellDiskPullbackFiberHomeomorph` only matches the type
+  -- expected by `TopCat.isoOfHomeo` up to unfolding `TopCat.of`, so the target is not type-correct
+  -- at instance transparency. Unification by `exact` sees through this.
+  exact (Iso.trans_hom _ _).trans (congrArg (· ≫ _)
+    ((Functor.mapIso_hom _ _).trans (singularCohomologyFunctor_map _ _ _ _ _)))
 
 variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'} in
 /-- The identifications `Hq(Fⱼ) ≅ Hq+n(Pⱼ, ∂Pⱼ)` are natural in maps `f` over `B`: through them,
@@ -274,10 +278,11 @@ def serreCohomologySpectralSequenceFirstPageXIsoPi (n q : ℕ) (s t : ℤ) (hs :
         (_root_.TopCat.of (p ⁻¹' {map n j 0} : Set E)).singularCohomology (ModuleCat.of R R) k M
           q :=
   filteredSpaceCohomologySpectralSequenceFirstPageXIso (ModuleCat.of R R) k M
-      (monotone_preimageSkeleton p) s t (s - 1) s rfl rfl (q + n) hst ≪≫
+      (monotone_preimageSkeleton p) s t (s - 1) (s - 1 + 1) rfl (sub_add_cancel s 1) (q + n)
+          hst ≪≫
     eqToIso (congrArg
       (fun P : TopPair.{u} ↦ P.singularCohomology (ModuleCat.of R R) k M (q + n))
-      (ofInclusion_preimageSkeleton_sub_one_eq_preimageSkeletonPair n s hs)) ≪≫
+      (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))) ≪≫
     preimageSkeletonPairSingularCohomologyIsoPi C hp R k M n q
 
 /-- On the factor of the `n`-cell `j`,
@@ -289,10 +294,11 @@ lemma serreCohomologySpectralSequenceFirstPageXIsoPi_hom_π (n q : ℕ) (s t : �
     (serreCohomologySpectralSequenceFirstPageXIsoPi C hp R k M n q s t hs hst).hom ≫
         Pi.π _ j =
       (filteredSpaceCohomologySpectralSequenceFirstPageXIso (ModuleCat.of R R) k M
-          (monotone_preimageSkeleton p) s t (s - 1) s rfl rfl (q + n) hst).hom ≫
+          (monotone_preimageSkeleton p) s t (s - 1) (s - 1 + 1) rfl (sub_add_cancel s 1) (q + n)
+          hst).hom ≫
         eqToHom (congrArg
           (fun P : TopPair.{u} ↦ P.singularCohomology (ModuleCat.of R R) k M (q + n))
-          (ofInclusion_preimageSkeleton_sub_one_eq_preimageSkeletonPair n s hs)) ≫
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))) ≫
         TopPair.singularCohomologyMap (cellDiskPullbackPairMap p C n j) (q + n) ≫
         (cellDiskPullbackPairSingularCohomologyIso hp R k M n q j).inv := by
   simp [serreCohomologySpectralSequenceFirstPageXIsoPi]

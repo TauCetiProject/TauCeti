@@ -110,15 +110,6 @@ lemma ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (k : ℕ) (b : ℤ) (
   rintro s t _ _ h h' rfl rfl
   rfl
 
-/-- The pair of stages `s - 1 ≤ s` of the filtration of `E` by the preimages of the skeleta is the
-pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` of consecutive preimages of skeleta, for `s = n`. -/
-lemma ofInclusion_preimageSkeleton_sub_one_eq_preimageSkeletonPair (n : ℕ) (s : ℤ) (hs : s = n) :
-    TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (by lia : s - 1 ≤ s)) =
-      preimageSkeletonPair p C n := by
-  exact (TopPair.ofInclusion_congr _ (monotone_preimageSkeleton (C := C) p (Int.le_add_one le_rfl))
-    rfl (by rw [sub_add_cancel])).trans
-      (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))
-
 /-- A point of the pullback lies over the `n`-skeleton. -/
 lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
     x.val.2 ∈ p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) := by
