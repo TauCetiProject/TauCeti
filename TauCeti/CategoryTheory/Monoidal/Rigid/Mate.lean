@@ -43,6 +43,8 @@ morphism.
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
   after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
   agree once they agree after coevaluation;
+* `CategoryTheory.ExactPairing.rightMemberHom_ext`: morphisms out of a right member agree once
+  they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
@@ -64,8 +66,9 @@ morphism.
   coevaluation, and conversely;
 * `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
-  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation` and
-  `rightDualIso_inv_whiskerRight_evaluation`;
+  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation`,
+  `rightDualIso_inv_whiskerRight_evaluation`, `rightDualIso_congrLeft_tensorHom_evaluation`, and
+  `coevaluation_comp_rightDualIso_congrLeft_tensorHom`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -76,7 +79,9 @@ morphism.
   `leftMate_leftUnitor_hom` and `leftMate_rightUnitor_hom`;
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
-  as left mates;
+  as left mates, with `leftDualIso_hom_whiskerLeft_evaluation`,
+  `leftDualIso_congrRight_tensorHom_evaluation`, and
+  `coevaluation_comp_leftDualIso_congrRight_tensorHom`;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
   comparison between two duals is an identity;
@@ -117,6 +122,12 @@ after the coevaluation of the pairing. -/
 theorem leftHom_ext {X Y A : C} [ExactPairing X Y] {f g : X ⟶ A}
     (h : η_ X Y ≫ f ▷ Y = η_ X Y ≫ g ▷ Y) : f = g := by
   simpa using congrArg (tensorRightHomEquiv (𝟙_ C) X Y A).symm h
+
+/-- Two morphisms out of the right member `Y` of an exact pairing agree as soon as they agree
+after the coevaluation of the pairing. -/
+theorem rightMemberHom_ext {X Y A : C} [ExactPairing X Y] {f g : Y ⟶ A}
+    (h : η_ X Y ≫ X ◁ f = η_ X Y ≫ X ◁ g) : f = g := by
+  simpa using congrArg (tensorLeftHomEquiv (𝟙_ C) X Y A).symm h
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
 pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given
@@ -278,6 +289,36 @@ the evaluation of `p₂`. -/
 theorem rightDualIso_inv_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
     (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).inv ▷ X ≫ ε_ X Y₁ = ε_ X Y₂ := by
   rw [rightDualIso_inv, ← rightDualIso_hom, rightDualIso_hom_whiskerRight_evaluation]
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `i : X₁ ≅ X₂` and comparing
+its right dual with `p₁ : ExactPairing X₁ Y₁` intertwines the evaluations. -/
+@[reassoc]
+theorem rightDualIso_congrLeft_tensorHom_evaluation {X₁ X₂ Y₁ Y₂ : C} (p₁ : ExactPairing X₁ Y₁)
+    (p₂ : ExactPairing X₂ Y₂) (i : X₁ ≅ X₂) :
+    ((rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)).hom ⊗ₘ i.hom) ≫
+        @ExactPairing.evaluation C _ _ X₂ Y₂ p₂ =
+      @ExactPairing.evaluation C _ _ X₁ Y₁ p₁ := by
+  have h := rightDualIso_hom_whiskerRight_evaluation p₁
+    (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)
+  rw [TauCeti.exactPairingCongrLeft_evaluation, ← tensorHom_def_assoc] at h
+  exact h
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `i : X₁ ≅ X₂` and comparing
+its right dual with `p₁ : ExactPairing X₁ Y₁` intertwines the coevaluations. -/
+@[reassoc]
+theorem coevaluation_comp_rightDualIso_congrLeft_tensorHom {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (i : X₁ ≅ X₂) :
+    @ExactPairing.coevaluation C _ _ X₁ Y₁ p₁ ≫
+        (i.hom ⊗ₘ (rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)).hom) =
+      @ExactPairing.coevaluation C _ _ X₂ Y₂ p₂ := by
+  let p₂' := @exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i
+  have h := coevaluation_comp_rightMate p₂' p₁ (𝟙 X₁)
+  rw [← rightDualIso_hom p₁ p₂', id_whiskerRight, Category.comp_id,
+    TauCeti.exactPairingCongrLeft_coevaluation] at h
+  have h' := congrArg (· ≫ i.hom ▷ Y₂) h
+  rw [Category.assoc, Category.assoc, ← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight,
+    Category.comp_id, ← tensorHom_def'] at h'
+  exact h'
 
 /-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
 pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation
@@ -452,6 +493,43 @@ theorem leftDualIso_inv {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y) (p₂ : E
     (leftDualIso p₁ p₂).inv = leftMate p₁ p₂ (𝟙 Y) :=
   -- `(leftDualIso p₁ p₂).inv` and `(leftDualIso p₂ p₁).hom` are the same left mate of `𝟙 Y`.
   leftDualIso_hom p₂ p₁
+
+/-- Through the comparison `leftDualIso p₁ p₂ : X₁ ≅ X₂`, the evaluation of `p₂` is the
+evaluation of `p₁`. -/
+@[reassoc]
+theorem leftDualIso_hom_whiskerLeft_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) : Y ◁ (leftDualIso p₁ p₂).hom ≫ ε_ X₂ Y = ε_ X₁ Y := by
+  rw [leftDualIso_hom, leftMate_comp_evaluation, id_whiskerRight, Category.id_comp]
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `j : Y₁ ≅ Y₂` and comparing
+its left dual with `p₁ : ExactPairing X₁ Y₁` intertwines the evaluations. -/
+@[reassoc]
+theorem leftDualIso_congrRight_tensorHom_evaluation {X₁ X₂ Y₁ Y₂ : C} (p₁ : ExactPairing X₁ Y₁)
+    (p₂ : ExactPairing X₂ Y₂) (j : Y₁ ≅ Y₂) :
+    (j.hom ⊗ₘ (leftDualIso p₁ (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)).hom) ≫
+        @ExactPairing.evaluation C _ _ X₂ Y₂ p₂ =
+      @ExactPairing.evaluation C _ _ X₁ Y₁ p₁ := by
+  have h := leftDualIso_hom_whiskerLeft_evaluation p₁
+    (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)
+  rw [TauCeti.exactPairingCongrRight_evaluation, ← tensorHom_def'_assoc] at h
+  exact h
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `j : Y₁ ≅ Y₂` and comparing
+its left dual with `p₁ : ExactPairing X₁ Y₁` intertwines the coevaluations. -/
+@[reassoc]
+theorem coevaluation_comp_leftDualIso_congrRight_tensorHom {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (j : Y₁ ≅ Y₂) :
+    @ExactPairing.coevaluation C _ _ X₁ Y₁ p₁ ≫
+        ((leftDualIso p₁ (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)).hom ⊗ₘ j.hom) =
+      @ExactPairing.coevaluation C _ _ X₂ Y₂ p₂ := by
+  let p₂' := @exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j
+  have h := coevaluation_comp_leftMate p₂' p₁ (𝟙 Y₁)
+  rw [← leftDualIso_hom p₁ p₂', MonoidalCategory.whiskerLeft_id, Category.comp_id,
+    TauCeti.exactPairingCongrRight_coevaluation] at h
+  have h' := congrArg (· ≫ X₂ ◁ j.hom) h
+  rw [Category.assoc, Category.assoc, ← MonoidalCategory.whiskerLeft_comp, Iso.inv_hom_id,
+    MonoidalCategory.whiskerLeft_id, Category.comp_id, ← tensorHom_def] at h'
+  exact h'
 
 /-- If `X` has two right duals `Y₁` and `Y₂`, then taking the left mate with respect to `(X, Y₁)`
 turns the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` into the identity, transported to the pairing

@@ -68,7 +68,9 @@ equivalence.
 * `CategoryTheory.Functor.mapExactPairing`: the image of an exact pairing under a strong monoidal
   functor, with evaluation and coevaluation computed by
   `CategoryTheory.Functor.mapExactPairing_evaluation` and
-  `CategoryTheory.Functor.mapExactPairing_coevaluation`;
+  `CategoryTheory.Functor.mapExactPairing_coevaluation`, and naturality criteria
+  `CategoryTheory.Functor.map_evaluation_naturality_of_mapExactPairing` and
+  `CategoryTheory.Functor.map_coevaluation_naturality_of_mapExactPairing`;
 * `CategoryTheory.Functor.mapHasLeftDual` and `CategoryTheory.Functor.mapHasRightDual`: the image
   of an object with a left or right dual has the image of that dual as a dual;
 * `CategoryTheory.Functor.mapRightDualIso`: the comparison `F.obj Xᘁ ≅ (F.obj X)ᘁ`, characterized
@@ -76,9 +78,11 @@ equivalence.
   `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
   composites by `CategoryTheory.Functor.mapRightDualIso_id` and
   `CategoryTheory.Functor.mapRightDualIso_comp`;
-* `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
-  `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
-  monoidal natural transformations and isomorphisms;
+* `CategoryTheory.NatTrans.IsMonoidal.app_unit_comp_η`,
+  `CategoryTheory.NatTrans.IsMonoidal.δ_comp_tensor`,
+  `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`, and
+  `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: oplax compatibility and naturality of the
+  dual comparison with respect to monoidal natural transformations and isomorphisms;
 * `CategoryTheory.NatTrans.app_comp_rightMate_of_exactPairing`,
   `CategoryTheory.NatTrans.rightMate_comp_app_of_exactPairing`,
   `CategoryTheory.NatTrans.app_comp_leftMate_of_exactPairing`,
@@ -371,6 +375,70 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 variable {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
 
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax unit
+comparisons: `τ.app (𝟙_ C) ≫ η G = η F`. -/
+@[reassoc]
+theorem NatTrans.IsMonoidal.app_unit_comp_η (τ : F ⟶ G) [τ.IsMonoidal] :
+    τ.app (𝟙_ C) ≫ η G = η F := by
+  rw [← cancel_epi (ε F)]
+  simp [NatTrans.IsMonoidal.unit_assoc]
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax
+tensor comparisons. -/
+@[reassoc]
+theorem NatTrans.IsMonoidal.δ_comp_tensor (τ : F ⟶ G) [τ.IsMonoidal] (X Y : C) :
+    δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = τ.app (X ⊗ Y) ≫ δ G X Y := by
+  rw [← cancel_epi (μ F X Y), ← cancel_mono (μ G X Y)]
+  simp
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the evaluations
+of the image exact pairings. -/
+@[reassoc]
+theorem NatTrans.tensorHom_app_comp_mapExactPairing_evaluation (τ : F ⟶ G) [τ.IsMonoidal]
+    (X Y : C) [ExactPairing X Y] :
+    (τ.app Y ⊗ₘ τ.app X) ≫
+        @ExactPairing.evaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y) =
+      @ExactPairing.evaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y) := by
+  simp only [Functor.mapExactPairing_evaluation, ← NatTrans.IsMonoidal.tensor_assoc,
+    ← τ.naturality_assoc, NatTrans.IsMonoidal.app_unit_comp_η]
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the
+coevaluations of the image exact pairings. -/
+@[reassoc]
+theorem NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app (τ : F ⟶ G) [τ.IsMonoidal]
+    (X Y : C) [ExactPairing X Y] :
+    @ExactPairing.coevaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y) ≫
+        (τ.app X ⊗ₘ τ.app Y) =
+      @ExactPairing.coevaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y) := by
+  simp only [Functor.mapExactPairing_coevaluation, Category.assoc,
+    NatTrans.IsMonoidal.δ_comp_tensor, τ.naturality_assoc, NatTrans.IsMonoidal.unit_assoc]
+
+/-- An equality of evaluations of the image pairings `F.mapExactPairing X Y` and
+`G.mapExactPairing X Y` along `i : F.obj X ≅ G.obj X` and `j : F.obj Y ≅ G.obj Y` yields
+naturality of `ε_ X Y` up to the unit and tensor comparisons of `F` and `G`. -/
+theorem Functor.map_evaluation_naturality_of_mapExactPairing {X Y : C} [ExactPairing X Y]
+    {i : F.obj X ≅ G.obj X} {j : F.obj Y ≅ G.obj Y}
+    (h : (j.hom ⊗ₘ i.hom) ≫
+        @ExactPairing.evaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y) =
+      @ExactPairing.evaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y)) :
+    F.map (ε_ X Y) ≫ η F ≫ ε G = (δ F Y X ≫ (j.hom ⊗ₘ i.hom) ≫ μ G Y X) ≫ G.map (ε_ X Y) := by
+  simp only [Functor.mapExactPairing_evaluation] at h
+  rw [← cancel_epi (μ F Y X), ← cancel_mono (η G)]
+  simpa [Category.assoc, μ_δ_assoc, ε_η] using h.symm
+
+/-- An equality of coevaluations of the image pairings `F.mapExactPairing X Y` and
+`G.mapExactPairing X Y` along `i : F.obj X ≅ G.obj X` and `j : F.obj Y ≅ G.obj Y` yields
+naturality of `η_ X Y` up to the unit and tensor comparisons of `F` and `G`. -/
+theorem Functor.map_coevaluation_naturality_of_mapExactPairing {X Y : C} [ExactPairing X Y]
+    {i : F.obj X ≅ G.obj X} {j : F.obj Y ≅ G.obj Y}
+    (h : @ExactPairing.coevaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y) ≫
+        (i.hom ⊗ₘ j.hom) =
+      @ExactPairing.coevaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y)) :
+    F.map (η_ X Y) ≫ δ F X Y ≫ (i.hom ⊗ₘ j.hom) ≫ μ G X Y = (η F ≫ ε G) ≫ G.map (η_ X Y) := by
+  simp only [Functor.mapExactPairing_coevaluation] at h
+  rw [← cancel_epi (ε F), ← cancel_mono (δ G X Y)]
+  simpa [Category.assoc, μ_δ_assoc, ε_η_assoc] using h
+
 /-- A monoidal natural transformation `τ : F ⟶ G` between strong monoidal functors is compatible
 with the comparisons between images of duals and duals of images:
 `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` as morphisms `F.obj Xᘁ ⟶ (F.obj X)ᘁ`. -/
@@ -378,15 +446,15 @@ with the comparisons between images of duals and duals of images:
 theorem NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate (τ : F ⟶ G) [τ.IsMonoidal]
     (X : C) [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :
     τ.app Xᘁ ≫ (G.mapRightDualIso X).hom ≫ (τ.app X)ᘁ = (F.mapRightDualIso X).hom := by
-  have hη : τ.app (𝟙_ C) ≫ η G = η F := by
-    rw [← cancel_epi (ε F), IsMonoidal.unit_assoc, ε_η, ε_η]
   refine ExactPairing.rightHom_ext (X := F.obj X) ?_
   -- Both sides evaluate to the image under `F` of the evaluation of `(X, Xᘁ)`; on the left, move
-  -- `τ` past the evaluation through its compatibility with the tensor and unit comparisons.
+  -- `τ` past the evaluation through the evaluation law of `G.mapExactPairing`.
   rw [Functor.mapRightDualIso_hom_whiskerRight_evaluation]
   simp only [comp_whiskerRight, Category.assoc, rightAdjointMate_comp_evaluation]
   rw [← whisker_exchange_assoc, Functor.mapRightDualIso_hom_whiskerRight_evaluation,
-    ← tensorHom_def_assoc, ← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, hη]
+    ← tensorHom_def_assoc]
+  simpa only [Functor.mapExactPairing_evaluation] using
+    NatTrans.tensorHom_app_comp_mapExactPairing_evaluation τ X Xᘁ
 
 /-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of
 duals and duals of images: `α_{Xᘁ} ≫ δ^G_X = δ^F_X ≫ (α_X⁻¹)ᘁ`. -/
@@ -397,34 +465,6 @@ theorem Iso.hom_app_comp_mapRightDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] 
   rw [← NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate α.hom X, Category.assoc,
     Category.assoc, ← comp_rightAdjointMate, Iso.inv_hom_id_app, rightAdjointMate_id,
     Category.comp_id]
-
-/-- A monoidal natural transformation between strong monoidal functors intertwines the evaluations
-of the image exact pairings. -/
-@[reassoc]
-theorem NatTrans.tensorHom_app_comp_mapExactPairing_evaluation (τ : F ⟶ G) [τ.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] :
-    (τ.app Y ⊗ₘ τ.app X) ≫
-        @ExactPairing.evaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y) =
-      @ExactPairing.evaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y) := by
-  have hη : τ.app (𝟙_ C) ≫ η G = η F := by
-    rw [← cancel_epi (ε F), NatTrans.IsMonoidal.unit_assoc, ε_η, ε_η]
-  simp only [Functor.mapExactPairing_evaluation, ← NatTrans.IsMonoidal.tensor_assoc,
-    ← τ.naturality_assoc, hη]
-
-/-- A monoidal natural transformation between strong monoidal functors intertwines the
-coevaluations of the image exact pairings. -/
-@[reassoc]
-theorem NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app (τ : F ⟶ G) [τ.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] :
-    @ExactPairing.coevaluation D _ _ (F.obj X) (F.obj Y) (F.mapExactPairing X Y) ≫
-        (τ.app X ⊗ₘ τ.app Y) =
-      @ExactPairing.coevaluation D _ _ (G.obj X) (G.obj Y) (G.mapExactPairing X Y) := by
-  have hδ : δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = τ.app (X ⊗ Y) ≫ δ G X Y := by
-    rw [← cancel_epi (μ F X Y), ← cancel_mono (μ G X Y), Category.assoc, Category.assoc,
-      μ_δ_assoc, ← NatTrans.IsMonoidal.tensor, Category.assoc, Category.assoc, δ_μ,
-      Category.comp_id]
-  simp only [Functor.mapExactPairing_coevaluation, Category.assoc, hδ, τ.naturality_assoc,
-    NatTrans.IsMonoidal.unit_assoc]
 
 /-- For an exact pairing `(X, Y)` in `C`, the right mate of `τ.app X` with respect to the image
 pairings is a right inverse to `τ.app Y`. -/
@@ -447,17 +487,10 @@ theorem NatTrans.rightMate_comp_app_of_exactPairing (τ : F ⟶ G) [τ.IsMonoida
         τ.app Y =
       𝟙 (G.obj Y) := by
   let : ExactPairing (G.obj X) (G.obj Y) := G.mapExactPairing X Y
-  set f := ExactPairing.rightMate (F.mapExactPairing X Y) (G.mapExactPairing X Y) (τ.app X) ≫
-    τ.app Y
-  have h : η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ f =
-      η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ 𝟙 (G.obj Y) := by
-    rw [MonoidalCategory.whiskerLeft_comp, ExactPairing.coevaluation_comp_rightMate_assoc,
-      ← tensorHom_def, NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app,
-      MonoidalCategory.whiskerLeft_id, Category.comp_id]
-  have h' := congrArg (tensorLeftHomEquiv (𝟙_ D) (G.obj X) (G.obj Y) (G.obj Y)).symm h
-  rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
-    tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft, cancel_epi] at h'
-  exact h'
+  refine ExactPairing.rightMemberHom_ext (X := G.obj X) ?_
+  rw [MonoidalCategory.whiskerLeft_comp, ExactPairing.coevaluation_comp_rightMate_assoc,
+    ← tensorHom_def, NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app,
+    MonoidalCategory.whiskerLeft_id, Category.comp_id]
 
 /-- For an exact pairing `(X, Y)` in `C`, the left mate of `τ.app Y` with respect to the image
 pairings is a right inverse to `τ.app X`. -/

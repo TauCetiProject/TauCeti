@@ -45,7 +45,8 @@ The uniqueness half of the universal property (`FreeRigid.monoidalNatIso` and
   whiskering.
 * `FreeRigid.lift fo fc`: the strong monoidal functor into an arbitrary (not necessarily strict)
   rigid monoidal category determined by images `fo` of the generating objects and `fc` of the
-  coupons, preserving chosen duals strictly (`FreeRigid.lift_mapRightDualIso`).
+  coupons, preserving chosen duals strictly (`FreeRigid.lift_mapRightDualIso` and
+  `FreeRigid.lift_mapLeftDualIso`).
 * `FreeRigid.couponCount`, `FreeRigid.coupon_ne_id`, and `FreeRigid.coupon_ne_coupon`: coupon
   multiplicity is invariant under the rigid-category axioms, so no coupon collapses to an identity
   and distinct coupons with matching boundaries remain distinct.
@@ -230,15 +231,9 @@ instance : Category.{max u v} S.FreeRigid where
   Hom X Y := Quotient (setoidHom X.as Y.as)
   id X := ⟦Hom.id X.as⟧
   comp := Quotient.map₂ Hom.comp (fun _ _ hf _ _ hg ↦ HomEquiv.comp hf hg)
-  id_comp := by
-    rintro X Y ⟨f⟩
-    exact Quotient.sound (id_comp f)
-  comp_id := by
-    rintro X Y ⟨f⟩
-    exact Quotient.sound (comp_id f)
-  assoc := by
-    rintro W X Y Z ⟨f⟩ ⟨g⟩ ⟨h⟩
-    exact Quotient.sound (assoc f g h)
+  id_comp := by rintro X Y ⟨f⟩; exact Quotient.sound (id_comp f)
+  comp_id := by rintro X Y ⟨f⟩; exact Quotient.sound (comp_id f)
+  assoc := by rintro W X Y Z ⟨f⟩ ⟨g⟩ ⟨h⟩; exact Quotient.sound (assoc f g h)
 
 instance : MonoidalCategory S.FreeRigid where
   tensorObj X Y := ⟨X.as.tensor Y.as⟩
@@ -247,13 +242,10 @@ instance : MonoidalCategory S.FreeRigid where
     Quot.map (fun f ↦ Hom.whiskerLeft X.as f) (fun f f' ↦ .whiskerLeft _ f f') f
   whiskerRight f Y :=
     Quot.map (fun f ↦ Hom.whiskerRight f Y.as) (fun f f' ↦ .whiskerRight f f' _) f
-  tensorHom_def := by
-    rintro _ _ _ _ ⟨f⟩ ⟨g⟩
-    exact Quotient.sound (tensorHom_def _ _)
+  tensorHom_def := by rintro _ _ _ _ ⟨f⟩ ⟨g⟩; exact Quotient.sound (tensorHom_def _ _)
   id_tensorHom_id _ _ := Quot.sound id_tensorHom_id
   tensorHom_comp_tensorHom := by
-    rintro _ _ _ _ _ _ ⟨f₁⟩ ⟨f₂⟩ ⟨g₁⟩ ⟨g₂⟩
-    exact Quotient.sound (tensorHom_comp_tensorHom _ _ _ _)
+    rintro _ _ _ _ _ _ ⟨f₁⟩ ⟨f₂⟩ ⟨g₁⟩ ⟨g₂⟩; exact Quotient.sound (tensorHom_comp_tensorHom _ _ _ _)
   whiskerLeft_id X Y := Quot.sound (HomEquiv.whiskerLeft_id X.as Y.as)
   id_whiskerRight X Y := Quot.sound (HomEquiv.id_whiskerRight X.as Y.as)
   tensorUnit := ⟨.unit⟩
@@ -261,23 +253,24 @@ instance : MonoidalCategory S.FreeRigid where
     ⟨⟦Hom.α_hom X.as Y.as Z.as⟧, ⟦Hom.α_inv X.as Y.as Z.as⟧, Quotient.sound α_hom_inv,
       Quotient.sound α_inv_hom⟩
   associator_naturality := by
-    rintro _ _ _ _ _ _ ⟨f₁⟩ ⟨f₂⟩ ⟨f₃⟩
-    exact Quotient.sound (associator_naturality _ _ _)
+    rintro _ _ _ _ _ _ ⟨f₁⟩ ⟨f₂⟩ ⟨f₃⟩; exact Quotient.sound (associator_naturality _ _ _)
   leftUnitor X :=
     ⟨⟦Hom.l_hom X.as⟧, ⟦Hom.l_inv X.as⟧, Quotient.sound l_hom_inv, Quotient.sound l_inv_hom⟩
-  leftUnitor_naturality := by
-    rintro _ _ ⟨f⟩
-    exact Quotient.sound (l_naturality _)
+  leftUnitor_naturality := by rintro _ _ ⟨f⟩; exact Quotient.sound (l_naturality _)
   rightUnitor X :=
     ⟨⟦Hom.ρ_hom X.as⟧, ⟦Hom.ρ_inv X.as⟧, Quotient.sound ρ_hom_inv, Quotient.sound ρ_inv_hom⟩
-  rightUnitor_naturality := by
-    rintro _ _ ⟨f⟩
-    exact Quotient.sound (ρ_naturality _)
+  rightUnitor_naturality := by rintro _ _ ⟨f⟩; exact Quotient.sound (ρ_naturality _)
   pentagon _ _ _ _ := Quotient.sound pentagon
   triangle _ _ := Quotient.sound triangle
 
 /-- The morphism of the free rigid monoidal category represented by a formal morphism. -/
 abbrev homMk {X Y : S.FreeRigid} (f : Hom X.as Y.as) : X ⟶ Y := ⟦f⟧
+
+/-- Two formal morphisms represent the same morphism of `S.FreeRigid` if and only if they are
+related by `HomEquiv`. -/
+theorem homMk_eq_iff {X Y : S.FreeRigid} (f g : Hom X.as Y.as) :
+    homMk f = homMk g ↔ HomEquiv f g :=
+  Quotient.eq
 
 instance : RightRigidCategory S.FreeRigid where
   rightDual X :=
@@ -300,8 +293,8 @@ instance : LeftRigidCategory S.FreeRigid where
 instance : RigidCategory S.FreeRigid where
 
 /-- The generating morphism given by a coupon, from its source expression to its target
-expression. Exposed so that `homMk (Hom.coupon g)` reduces definitionally to `coupon g`. -/
-@[expose] def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeRigid) ⟶ ⟨S.tgt g⟩ :=
+expression. -/
+def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeRigid) ⟶ ⟨S.tgt g⟩ :=
   homMk (Hom.coupon g)
 
 @[simp]
@@ -375,17 +368,15 @@ theorem homMk_ε_left (X : S.FreeRigid) :
 
 @[simp]
 theorem homMk_coupon (g : S.Coupon) :
-    homMk (X := ⟨S.src g⟩) (Y := ⟨S.tgt g⟩) (Hom.coupon g) = coupon g := rfl
+    homMk (X := ⟨S.src g⟩) (Y := ⟨S.tgt g⟩) (Hom.coupon g) = coupon g := by unfold coupon; rfl
 
 /-- The chosen right dual of `X` in `S.FreeRigid` is the formal right dual expression. -/
 theorem rightDual_eq (X : S.FreeRigid) :
-    (RightRigidCategory.rightDual X).rightDual = ⟨X.as.rightDual⟩ :=
-  rfl
+    (RightRigidCategory.rightDual X).rightDual = ⟨X.as.rightDual⟩ := rfl
 
 /-- The chosen left dual of `X` in `S.FreeRigid` is the formal left dual expression. -/
 theorem leftDual_eq (X : S.FreeRigid) :
-    (LeftRigidCategory.leftDual X).leftDual = ⟨X.as.leftDual⟩ :=
-  rfl
+    (LeftRigidCategory.leftDual X).leftDual = ⟨X.as.leftDual⟩ := rfl
 
 /-- Double right duality does not identify a generating object with itself in `S.FreeRigid`. -/
 theorem of_ne_doubleRightDual (a : S.Obj) :
@@ -547,9 +538,7 @@ theorem liftMap_id (X : S.FreeRigid) : liftMap fo fc (𝟙 X) = 𝟙 _ := by rfl
 
 theorem liftMap_comp {X Y Z : S.FreeRigid} (f : X ⟶ Y) (g : Y ⟶ Z) :
     liftMap fo fc (f ≫ g) = liftMap fo fc f ≫ liftMap fo fc g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; induction g using Quotient.inductionOn; rfl
 
 /-- The functor out of the free rigid monoidal category on `S` determined by the images `fo` of
 the generating objects and `fc` of the coupons. It is strong monoidal, with identity tensorator
@@ -582,26 +571,23 @@ theorem lift_obj_leftDual (X : S.FreeRigid) :
       (LeftRigidCategory.leftDual ((lift fo fc).obj X)).leftDual := rfl
 
 @[simp]
-theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by rfl
+theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by
+  unfold coupon; rfl
 
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeRigid) {Y₁ Y₂ : S.FreeRigid} (f : Y₁ ⟶ Y₂) :
     (lift fo fc).map (X ◁ f) = (lift fo fc).obj X ◁ (lift fo fc).map f := by
-  induction f using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; rfl
 
 @[simp]
 theorem lift_map_whiskerRight {X₁ X₂ : S.FreeRigid} (f : X₁ ⟶ X₂) (Y : S.FreeRigid) :
     (lift fo fc).map (f ▷ Y) = (lift fo fc).map f ▷ (lift fo fc).obj Y := by
-  induction f using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; rfl
 
 @[simp]
 theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.FreeRigid} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
     (lift fo fc).map (f ⊗ₘ g) = (lift fo fc).map f ⊗ₘ (lift fo fc).map g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; induction g using Quotient.inductionOn; rfl
 
 @[simp]
 theorem lift_map_associator_hom (X Y Z : S.FreeRigid) :
@@ -660,25 +646,14 @@ instance : (lift fo fc).Monoidal :=
   Functor.CoreMonoidal.toMonoidal
     { εIso := Iso.refl _
       μIso := fun _ _ ↦ Iso.refl _
-      μIso_hom_natural_left := by
-        intros
-        dsimp only [Iso.refl_hom, lift_obj_tensor]
-        simp
-      μIso_hom_natural_right := by
-        intros
-        dsimp only [Iso.refl_hom, lift_obj_tensor]
-        simp
-      associativity := by
-        intros
-        dsimp only [Iso.refl_hom, lift_obj_tensor]
-        simp
+      μIso_hom_natural_left := by intros; dsimp only [Iso.refl_hom, lift_obj_tensor]; simp
+      μIso_hom_natural_right := by intros; dsimp only [Iso.refl_hom, lift_obj_tensor]; simp
+      associativity := by intros; dsimp only [Iso.refl_hom, lift_obj_tensor]; simp
       left_unitality := by
-        intros
-        dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
+        intros; dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
         simp [lift_map_leftUnitor_hom]
       right_unitality := by
-        intros
-        dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
+        intros; dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
         simp [lift_map_rightUnitor_hom] }
 
 @[simp]
@@ -709,6 +684,27 @@ theorem lift_mapRightDualIso (X : S.FreeRigid) :
   have h := @Functor.mapRightDualIso_hom_whiskerRight_evaluation _ _ _ _ _ _ (lift fo fc) _ X
     (RightRigidCategory.rightDual X) (RightRigidCategory.rightDual ((lift fo fc).obj X))
   rw [lift_map_evaluation_right, lift_μ, lift_η] at h
+  simpa using h
+
+/-- The canonical lift preserves chosen left duals strictly: the `leftDualIso` comparing the
+mapped pairing with the chosen left-dual pairing at every object `X` is the identity. -/
+@[simp]
+theorem lift_mapLeftDualIso (X : S.FreeRigid) :
+    @leftDualIso D _ _ _ _ ((lift fo fc).obj X)
+        (@Functor.mapExactPairing _ _ _ _ _ _ (lift fo fc) _
+          (LeftRigidCategory.leftDual X).leftDual X (LeftRigidCategory.leftDual X).exact)
+        (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact =
+      Iso.refl _ := by
+  ext
+  let : ExactPairing (LeftRigidCategory.leftDual ((lift fo fc).obj X)).leftDual
+      ((lift fo fc).obj X) :=
+    (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact
+  refine ExactPairing.leftDualHom_ext (Y := (lift fo fc).obj X) ?_
+  have h := ExactPairing.leftDualIso_hom_whiskerLeft_evaluation
+    (@Functor.mapExactPairing _ _ _ _ _ _ (lift fo fc) _
+      (LeftRigidCategory.leftDual X).leftDual X (LeftRigidCategory.leftDual X).exact)
+    (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact
+  rw [Functor.mapExactPairing_evaluation, lift_map_evaluation_left, lift_μ, lift_η] at h
   simpa using h
 
 end Lift
@@ -827,28 +823,22 @@ theorem couponCount_evaluation_left (g₀ : S.Coupon) (X : S.FreeRigid) :
 @[simp]
 theorem couponCount_comp (g₀ : S.Coupon) {X Y Z : S.FreeRigid} (f : X ⟶ Y) (g : Y ⟶ Z) :
     couponCount g₀ (f ≫ g) = couponCount g₀ f + couponCount g₀ g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; induction g using Quotient.inductionOn; rfl
 
 @[simp]
 theorem couponCount_whiskerLeft (g₀ : S.Coupon) (X : S.FreeRigid) {Y₁ Y₂ : S.FreeRigid}
     (f : Y₁ ⟶ Y₂) : couponCount g₀ (X ◁ f) = couponCount g₀ f := by
-  induction f using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; rfl
 
 @[simp]
 theorem couponCount_whiskerRight (g₀ : S.Coupon) {X₁ X₂ : S.FreeRigid} (f : X₁ ⟶ X₂)
     (Y : S.FreeRigid) : couponCount g₀ (f ▷ Y) = couponCount g₀ f := by
-  induction f using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; rfl
 
 @[simp]
 theorem couponCount_tensorHom (g₀ : S.Coupon) {X₁ Y₁ X₂ Y₂ : S.FreeRigid} (f : X₁ ⟶ Y₁)
     (g : X₂ ⟶ Y₂) : couponCount g₀ (f ⊗ₘ g) = couponCount g₀ f + couponCount g₀ g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  induction f using Quotient.inductionOn; induction g using Quotient.inductionOn; rfl
 
 @[simp]
 theorem couponCount_coupon_self (g : S.Coupon) : couponCount g (coupon g) = 1 := by
@@ -861,9 +851,7 @@ theorem couponCount_coupon_of_ne {g₁ g₂ : S.Coupon} (h : g₂ ≠ g₁) :
 
 @[simp]
 theorem couponCount_eqToHom (g₀ : S.Coupon) {X Y : S.FreeRigid} (h : X = Y) :
-    couponCount g₀ (eqToHom h) = 0 := by
-  subst h
-  exact couponCount_id g₀ X
+    couponCount g₀ (eqToHom h) = 0 := by subst h; exact couponCount_id g₀ X
 
 /-- No coupon is identified with an identity morphism in `S.FreeRigid`. In particular, a nullary
 coupon `𝟙_ S.FreeRigid ⟶ 𝟙_ S.FreeRigid` is distinct from `𝟙 (𝟙_ S.FreeRigid)`. -/
@@ -904,18 +892,13 @@ theorem projectObj_of_toRigidSignature (S : TensorSignature.{u, v})
     (RigidSignature.FreeRigid.projectObj_of (S := S.toRigidSignature) X.toRigidObject)
 
 /-- The canonical strong monoidal functor from the free monoidal category on a tensor signature
-`S` into the free rigid monoidal category on `S.toRigidSignature`. Exposed so that its strong
-monoidal structure and object action reduce through `FreeMonoidal.lift`. -/
-@[expose] def ofFreeMonoidal (S : TensorSignature.{u, v}) :
+`S` into the free rigid monoidal category on `S.toRigidSignature`. -/
+def ofFreeMonoidal (S : TensorSignature.{u, v}) :
     S.FreeMonoidal ⥤ S.toRigidSignature.FreeRigid :=
   FreeMonoidal.lift (fun a ↦ RigidSignature.FreeRigid.of (S := S.toRigidSignature) a)
     (fun g ↦ eqToHom (projectObj_of_toRigidSignature S (S.src g)) ≫
       RigidSignature.FreeRigid.coupon (S := S.toRigidSignature) g ≫
       eqToHom (projectObj_of_toRigidSignature S (S.tgt g)).symm)
-
-instance (S : TensorSignature.{u, v}) : (ofFreeMonoidal S).Monoidal :=
-  inferInstanceAs
-    (FreeMonoidal.lift (fun a ↦ RigidSignature.FreeRigid.of (S := S.toRigidSignature) a) _).Monoidal
 
 @[simp]
 theorem ofFreeMonoidal_obj_of (S : TensorSignature.{u, v}) (a : S.Obj) :
@@ -934,33 +917,78 @@ theorem ofFreeMonoidal_obj (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
     (ofFreeMonoidal S).obj X = ⟨X.as.toRigidObject⟩ :=
   projectObj_of_toRigidSignature S X.as
 
+private theorem ofFreeMonoidal_eqToHom_unit (S : TensorSignature.{u, v}) :
+    eqToHom (ofFreeMonoidal_obj_tensorUnit S).symm = 𝟙 _ := eqToHom_refl _ rfl
+
+private theorem ofFreeMonoidal_eqToHom_tensor (S : TensorSignature.{u, v})
+    (A B : S.FreeMonoidal) :
+    eqToHom (ofFreeMonoidal_obj_tensor S A B).symm = 𝟙 _ := eqToHom_refl _ rfl
+
+instance (S : TensorSignature.{u, v}) : (ofFreeMonoidal S).Monoidal :=
+  Functor.CoreMonoidal.toMonoidal
+    { εIso := (eqToIso (ofFreeMonoidal_obj_tensorUnit S)).symm
+      μIso := fun X Y ↦ (eqToIso (ofFreeMonoidal_obj_tensor S X Y)).symm
+      μIso_hom_natural_left := by
+        intros; simp only [Iso.symm_hom, eqToIso.inv, ofFreeMonoidal_eqToHom_tensor]
+        unfold ofFreeMonoidal; simp
+      μIso_hom_natural_right := by
+        intros; simp only [Iso.symm_hom, eqToIso.inv, ofFreeMonoidal_eqToHom_tensor]
+        unfold ofFreeMonoidal; simp
+      associativity := by
+        intros; simp only [Iso.symm_hom, eqToIso.inv, ofFreeMonoidal_eqToHom_tensor]
+        unfold ofFreeMonoidal; simp
+      left_unitality := by
+        intros
+        simp only [Iso.symm_hom, eqToIso.inv, ofFreeMonoidal_eqToHom_unit,
+          ofFreeMonoidal_eqToHom_tensor]
+        unfold ofFreeMonoidal
+        simp only [FreeMonoidal.lift_obj_tensor, FreeMonoidal.lift_obj_tensorUnit,
+          id_whiskerRight, Category.id_comp]
+        rw [FreeMonoidal.lift_map_leftUnitor_hom, Category.id_comp]
+      right_unitality := by
+        intros
+        simp only [Iso.symm_hom, eqToIso.inv, ofFreeMonoidal_eqToHom_unit,
+          ofFreeMonoidal_eqToHom_tensor]
+        unfold ofFreeMonoidal
+        simp only [FreeMonoidal.lift_obj_tensor, FreeMonoidal.lift_obj_tensorUnit,
+          MonoidalCategory.whiskerLeft_id, Category.id_comp]
+        rw [FreeMonoidal.lift_map_rightUnitor_hom, Category.id_comp] }
+
 @[simp]
 theorem ofFreeMonoidal_map_coupon (S : TensorSignature.{u, v}) (g : S.Coupon) :
     (ofFreeMonoidal S).map (FreeMonoidal.coupon g) =
-      eqToHom (projectObj_of_toRigidSignature S (S.src g)) ≫
+      eqToHom (ofFreeMonoidal_obj S ⟨S.src g⟩) ≫
         RigidSignature.FreeRigid.coupon (S := S.toRigidSignature) g ≫
-        eqToHom (projectObj_of_toRigidSignature S (S.tgt g)).symm :=
-  FreeMonoidal.lift_map_coupon _ _ g
+        eqToHom (ofFreeMonoidal_obj S ⟨S.tgt g⟩).symm := by
+  unfold ofFreeMonoidal; exact FreeMonoidal.lift_map_coupon _ _ g
 
 @[simp]
 theorem ofFreeMonoidal_ε (S : TensorSignature.{u, v}) :
-    Functor.LaxMonoidal.ε (ofFreeMonoidal S) = 𝟙 _ :=
-  FreeMonoidal.lift_ε _ _
+    Functor.LaxMonoidal.ε (ofFreeMonoidal S) =
+      eqToHom (ofFreeMonoidal_obj_tensorUnit S).symm := by
+  dsimp only [Functor.LaxMonoidal.ε, Functor.CoreMonoidal.toMonoidal,
+    Functor.CoreMonoidal.toLaxMonoidal, Iso.symm_hom, eqToIso.inv]
 
 @[simp]
 theorem ofFreeMonoidal_η (S : TensorSignature.{u, v}) :
-    Functor.OplaxMonoidal.η (ofFreeMonoidal S) = 𝟙 _ :=
-  FreeMonoidal.lift_η _ _
+    Functor.OplaxMonoidal.η (ofFreeMonoidal S) =
+      eqToHom (ofFreeMonoidal_obj_tensorUnit S) := by
+  dsimp only [Functor.OplaxMonoidal.η, Functor.CoreMonoidal.toMonoidal,
+    Functor.CoreMonoidal.toOplaxMonoidal, Iso.symm_inv, eqToIso.hom]
 
 @[simp]
 theorem ofFreeMonoidal_μ (S : TensorSignature.{u, v}) (X Y : S.FreeMonoidal) :
-    Functor.LaxMonoidal.μ (ofFreeMonoidal S) X Y = 𝟙 _ :=
-  FreeMonoidal.lift_μ _ _ X Y
+    Functor.LaxMonoidal.μ (ofFreeMonoidal S) X Y =
+      eqToHom (ofFreeMonoidal_obj_tensor S X Y).symm := by
+  dsimp only [Functor.LaxMonoidal.μ, Functor.CoreMonoidal.toMonoidal,
+    Functor.CoreMonoidal.toLaxMonoidal, Iso.symm_hom, eqToIso.inv]
 
 @[simp]
 theorem ofFreeMonoidal_δ (S : TensorSignature.{u, v}) (X Y : S.FreeMonoidal) :
-    Functor.OplaxMonoidal.δ (ofFreeMonoidal S) X Y = 𝟙 _ :=
-  FreeMonoidal.lift_δ _ _ X Y
+    Functor.OplaxMonoidal.δ (ofFreeMonoidal S) X Y =
+      eqToHom (ofFreeMonoidal_obj_tensor S X Y) := by
+  dsimp only [Functor.OplaxMonoidal.δ, Functor.CoreMonoidal.toMonoidal,
+    Functor.CoreMonoidal.toOplaxMonoidal, Iso.symm_inv, eqToIso.hom]
 
 end TensorSignature
 

@@ -30,9 +30,13 @@ that agree on the generating objects are equal (`FreeRigid.natTrans_ext`).
   their components at the generating objects.
 * `TauCeti.RigidSignature.FreeRigid.wordIso`: canonical extension of generating-object
   isomorphisms `e` to all objects of `S.FreeRigid`.
-* `TauCeti.RigidSignature.FreeRigid.map_comp_wordIso_hom` and
-  `TauCeti.RigidSignature.FreeRigid.monoidalNatIso`: naturality of `wordIso` whenever it respects
-  the coupons, assembling into a monoidal natural isomorphism `F ≅ G`.
+* `TauCeti.RigidSignature.FreeRigid.map_comp_wordIso_hom`,
+  `TauCeti.RigidSignature.FreeRigid.monoidalNatIso`,
+  `TauCeti.RigidSignature.FreeRigid.wordIso_app_of_isMonoidal`, and
+  `TauCeti.RigidSignature.FreeRigid.map_coupon_comp_wordIso_hom_of_isMonoidal`: naturality of
+  `wordIso` whenever it respects the coupons, assembling into a monoidal natural isomorphism
+  `F ≅ G`, and conversely recovering `wordIso` and coupon compatibility from any monoidal natural
+  isomorphism.
 
 ## References
 
@@ -110,9 +114,19 @@ theorem wordIso_of (a : S.Obj) : wordIso F G e (of a).as = e a := by rfl
 theorem wordIso_tensorUnit_hom : (wordIso F G e (𝟙_ S.FreeRigid).as).hom = η F ≫ ε G := by rfl
 
 @[simp]
+theorem wordIso_tensorUnit_inv : (wordIso F G e (𝟙_ S.FreeRigid).as).inv = η G ≫ ε F := by rfl
+
+@[simp]
 theorem wordIso_tensor_hom (X Y : S.FreeRigid) :
     (wordIso F G e (X ⊗ Y).as).hom =
       δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y := by rfl
+
+@[simp]
+theorem wordIso_tensor_inv (X Y : S.FreeRigid) :
+    (wordIso F G e (X ⊗ Y).as).inv =
+      δ G X Y ≫ ((wordIso F G e X.as).inv ⊗ₘ (wordIso F G e Y.as).inv) ≫ μ F X Y := by
+  rw [← Category.assoc]
+  rfl
 
 theorem wordIso_rightDual (X : RigidObject S.Obj) :
     wordIso F G e X.rightDual =
@@ -141,18 +155,11 @@ private theorem wordIso_naturality_ε_right (X : S.FreeRigid) :
         G.map (@ExactPairing.evaluation S.FreeRigid _ _ X _
           (RightRigidCategory.rightDual X).exact) := by
   let : ExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid) := (RightRigidCategory.rightDual X).exact
-  let pF := F.mapExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid)
-  let pG := G.mapExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid)
-  let pG' := @exactPairingCongrLeft D _ _ _ _ _ pG (wordIso F G e X.as)
-  have h := ExactPairing.rightDualIso_hom_whiskerRight_evaluation pF pG'
-  rw [← congrArg Iso.hom (wordIso_rightDual F G e X.as),
-    @exactPairingCongrLeft_evaluation D _ _ _ _ _ pG (wordIso F G e X.as),
-    ← tensorHom_def_assoc, Functor.mapExactPairing_evaluation,
-    Functor.mapExactPairing_evaluation] at h
-  rw [wordIso_tensorUnit_hom, wordIso_tensor_hom, ← cancel_epi (μ F ⟨X.as.rightDual⟩ X),
-    ← cancel_mono (η G)]
-  simpa [rightDual_eq, Category.assoc, Functor.Monoidal.μ_δ_assoc,
-    Functor.Monoidal.ε_η] using h.symm
+  simpa only [wordIso_tensorUnit_hom, wordIso_tensor_hom, rightDual_eq, wordIso_rightDual] using
+    Functor.map_evaluation_naturality_of_mapExactPairing
+      (ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation
+        (F.mapExactPairing X ⟨X.as.rightDual⟩) (G.mapExactPairing X ⟨X.as.rightDual⟩)
+        (wordIso F G e X.as))
 
 private theorem wordIso_naturality_η_right (X : S.FreeRigid) :
     F.map (@ExactPairing.coevaluation S.FreeRigid _ _ X _
@@ -162,21 +169,11 @@ private theorem wordIso_naturality_η_right (X : S.FreeRigid) :
         G.map (@ExactPairing.coevaluation S.FreeRigid _ _ X _
           (RightRigidCategory.rightDual X).exact) := by
   let : ExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid) := (RightRigidCategory.rightDual X).exact
-  let pF := F.mapExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid)
-  let pG := G.mapExactPairing X (⟨X.as.rightDual⟩ : S.FreeRigid)
-  let pG' := @exactPairingCongrLeft D _ _ _ _ _ pG (wordIso F G e X.as)
-  have h := ExactPairing.coevaluation_comp_rightMate pG' pF (𝟙 (F.obj X))
-  rw [← ExactPairing.rightDualIso_hom pF pG', id_whiskerRight, Category.comp_id,
-    ← congrArg Iso.hom (wordIso_rightDual F G e X.as),
-    @exactPairingCongrLeft_coevaluation D _ _ _ _ _ pG (wordIso F G e X.as)] at h
-  have h' := congrArg (· ≫ (wordIso F G e X.as).hom ▷ G.obj ⟨X.as.rightDual⟩) h
-  rw [Category.assoc, Category.assoc, ← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight,
-    Category.comp_id, ← tensorHom_def', Functor.mapExactPairing_coevaluation,
-    Functor.mapExactPairing_coevaluation] at h'
-  rw [wordIso_tensorUnit_hom, wordIso_tensor_hom, ← cancel_epi (ε F),
-    ← cancel_mono (δ G X ⟨X.as.rightDual⟩)]
-  simpa [rightDual_eq, Category.assoc, Functor.Monoidal.μ_δ_assoc,
-    Functor.Monoidal.ε_η_assoc] using h'
+  simpa only [wordIso_tensorUnit_hom, wordIso_tensor_hom, rightDual_eq, wordIso_rightDual] using
+    Functor.map_coevaluation_naturality_of_mapExactPairing
+      (ExactPairing.coevaluation_comp_rightDualIso_congrLeft_tensorHom
+        (F.mapExactPairing X ⟨X.as.rightDual⟩) (G.mapExactPairing X ⟨X.as.rightDual⟩)
+        (wordIso F G e X.as))
 
 private theorem wordIso_naturality_ε_left (X : S.FreeRigid) :
     F.map (@ExactPairing.evaluation S.FreeRigid _ _ _ X (LeftRigidCategory.leftDual X).exact) ≫
@@ -185,19 +182,11 @@ private theorem wordIso_naturality_ε_left (X : S.FreeRigid) :
         G.map (@ExactPairing.evaluation S.FreeRigid _ _ _ X
           (LeftRigidCategory.leftDual X).exact) := by
   let : ExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X := (LeftRigidCategory.leftDual X).exact
-  let pF := F.mapExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X
-  let pG := G.mapExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X
-  let pG' := @exactPairingCongrRight D _ _ _ _ _ pG (wordIso F G e X.as)
-  have h := ExactPairing.leftMate_comp_evaluation pG' pF (𝟙 (F.obj X))
-  rw [← ExactPairing.leftDualIso_hom pF pG', id_whiskerRight, Category.id_comp,
-    ← congrArg Iso.hom (wordIso_leftDual F G e X.as),
-    @exactPairingCongrRight_evaluation D _ _ _ _ _ pG (wordIso F G e X.as),
-    ← tensorHom_def'_assoc, Functor.mapExactPairing_evaluation,
-    Functor.mapExactPairing_evaluation] at h
-  rw [wordIso_tensorUnit_hom, wordIso_tensor_hom, ← cancel_epi (μ F X ⟨X.as.leftDual⟩),
-    ← cancel_mono (η G)]
-  simpa [leftDual_eq, Category.assoc, Functor.Monoidal.μ_δ_assoc,
-    Functor.Monoidal.ε_η] using h.symm
+  simpa only [wordIso_tensorUnit_hom, wordIso_tensor_hom, leftDual_eq, wordIso_leftDual] using
+    Functor.map_evaluation_naturality_of_mapExactPairing
+      (ExactPairing.leftDualIso_congrRight_tensorHom_evaluation
+        (F.mapExactPairing ⟨X.as.leftDual⟩ X) (G.mapExactPairing ⟨X.as.leftDual⟩ X)
+        (wordIso F G e X.as))
 
 private theorem wordIso_naturality_η_left (X : S.FreeRigid) :
     F.map (@ExactPairing.coevaluation S.FreeRigid _ _ _ X
@@ -207,21 +196,11 @@ private theorem wordIso_naturality_η_left (X : S.FreeRigid) :
         G.map (@ExactPairing.coevaluation S.FreeRigid _ _ _ X
           (LeftRigidCategory.leftDual X).exact) := by
   let : ExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X := (LeftRigidCategory.leftDual X).exact
-  let pF := F.mapExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X
-  let pG := G.mapExactPairing (⟨X.as.leftDual⟩ : S.FreeRigid) X
-  let pG' := @exactPairingCongrRight D _ _ _ _ _ pG (wordIso F G e X.as)
-  have h := ExactPairing.coevaluation_comp_leftMate pG' pF (𝟙 (F.obj X))
-  rw [← ExactPairing.leftDualIso_hom pF pG', MonoidalCategory.whiskerLeft_id, Category.comp_id,
-    ← congrArg Iso.hom (wordIso_leftDual F G e X.as),
-    @exactPairingCongrRight_coevaluation D _ _ _ _ _ pG (wordIso F G e X.as)] at h
-  have h' := congrArg (· ≫ G.obj ⟨X.as.leftDual⟩ ◁ (wordIso F G e X.as).hom) h
-  rw [Category.assoc, Category.assoc, ← MonoidalCategory.whiskerLeft_comp, Iso.inv_hom_id,
-    MonoidalCategory.whiskerLeft_id, Category.comp_id, ← tensorHom_def,
-    Functor.mapExactPairing_coevaluation, Functor.mapExactPairing_coevaluation] at h'
-  rw [wordIso_tensorUnit_hom, wordIso_tensor_hom, ← cancel_epi (ε F),
-    ← cancel_mono (δ G ⟨X.as.leftDual⟩ X)]
-  simpa [leftDual_eq, Category.assoc, Functor.Monoidal.μ_δ_assoc,
-    Functor.Monoidal.ε_η_assoc] using h'
+  simpa only [wordIso_tensorUnit_hom, wordIso_tensor_hom, leftDual_eq, wordIso_leftDual] using
+    Functor.map_coevaluation_naturality_of_mapExactPairing
+      (ExactPairing.coevaluation_comp_leftDualIso_congrRight_tensorHom
+        (F.mapExactPairing ⟨X.as.leftDual⟩ X) (G.mapExactPairing ⟨X.as.leftDual⟩ X)
+        (wordIso F G e X.as))
 
 /- Composites with tensors of morphisms are folded into a single tensor of composites, so that
 the tensorators cancel inside each tensor factor. -/
@@ -248,20 +227,44 @@ theorem map_comp_wordIso_hom
     simp [← Functor.OplaxMonoidal.associativity_inv]
   | l_hom X =>
     rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
-    simp
-    simp [tensorHom_def']
+    have h : ε F ▷ F.obj X ≫ ((η F ≫ ε G) ⊗ₘ (wordIso F G e X.as).hom) =
+        𝟙_ D ◁ (wordIso F G e X.as).hom ≫ ε G ▷ G.obj X := by
+      rw [← tensorHom_id, tensorHom_comp_tensorHom, Functor.Monoidal.ε_η_assoc,
+        Category.id_comp, tensorHom_def']
+    rw [Category.assoc, ← Functor.LaxMonoidal.left_unitality_assoc, ← leftUnitor_naturality,
+      Category.assoc, wordIso_tensor_hom, wordIso_tensorUnit_hom, Category.assoc,
+      Functor.Monoidal.μ_δ_assoc, Category.assoc, reassoc_of% h,
+      ← Functor.LaxMonoidal.left_unitality]
   | l_inv X =>
     rw [← cancel_mono (δ G (𝟙_ _) X ≫ η G ▷ G.obj X)]
-    simp
-    simp [MonoidalCategory.tensorHom_def, ← Functor.OplaxMonoidal.left_unitality]
+    have h : ((η F ≫ ε G) ⊗ₘ (wordIso F G e X.as).hom) ≫ η G ▷ G.obj X =
+        η F ▷ F.obj X ≫ 𝟙_ D ◁ (wordIso F G e X.as).hom := by
+      rw [← tensorHom_id, tensorHom_comp_tensorHom, Category.assoc, Functor.Monoidal.ε_η,
+        Category.comp_id, Category.comp_id, MonoidalCategory.tensorHom_def]
+    rw [Category.assoc, wordIso_tensor_hom, wordIso_tensorUnit_hom, Category.assoc,
+      Category.assoc, Category.assoc, Functor.Monoidal.μ_δ_assoc, h,
+      ← Functor.OplaxMonoidal.left_unitality_assoc, ← Functor.OplaxMonoidal.left_unitality,
+      leftUnitor_inv_naturality]
   | ρ_hom X =>
     rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
-    simp
-    simp [MonoidalCategory.tensorHom_def]
+    have h : F.obj X ◁ ε F ≫ ((wordIso F G e X.as).hom ⊗ₘ (η F ≫ ε G)) =
+        (wordIso F G e X.as).hom ▷ 𝟙_ D ≫ G.obj X ◁ ε G := by
+      rw [← id_tensorHom, tensorHom_comp_tensorHom, Functor.Monoidal.ε_η_assoc,
+        Category.id_comp, MonoidalCategory.tensorHom_def]
+    rw [Category.assoc, ← Functor.LaxMonoidal.right_unitality_assoc, ← rightUnitor_naturality,
+      Category.assoc, wordIso_tensor_hom, wordIso_tensorUnit_hom, Category.assoc,
+      Functor.Monoidal.μ_δ_assoc, Category.assoc, reassoc_of% h,
+      ← Functor.LaxMonoidal.right_unitality]
   | ρ_inv X =>
     rw [← cancel_mono (δ G X (𝟙_ _) ≫ G.obj X ◁ η G)]
-    simp
-    simp [tensorHom_def', ← Functor.OplaxMonoidal.right_unitality]
+    have h : ((wordIso F G e X.as).hom ⊗ₘ (η F ≫ ε G)) ≫ G.obj X ◁ η G =
+        F.obj X ◁ η F ≫ (wordIso F G e X.as).hom ▷ 𝟙_ D := by
+      rw [← id_tensorHom, tensorHom_comp_tensorHom, Category.assoc, Functor.Monoidal.ε_η,
+        Category.comp_id, Category.comp_id, tensorHom_def']
+    rw [Category.assoc, wordIso_tensor_hom, wordIso_tensorUnit_hom, Category.assoc,
+      Category.assoc, Category.assoc, Functor.Monoidal.μ_δ_assoc, h,
+      ← Functor.OplaxMonoidal.right_unitality_assoc, ← Functor.OplaxMonoidal.right_unitality,
+      rightUnitor_inv_naturality]
   | η_right X => exact wordIso_naturality_η_right X
   | ε_right X => exact wordIso_naturality_ε_right X
   | η_left X => exact wordIso_naturality_η_left X
@@ -277,6 +280,73 @@ theorem map_comp_wordIso_hom
     simp only [wordIso_tensor_hom, Functor.Monoidal.map_whiskerRight, Category.assoc,
       Functor.Monoidal.μ_δ_assoc, whiskerRight_comp_tensorHom_assoc,
       tensorHom_comp_whiskerRight_assoc, hf]
+
+/-- For a monoidal natural isomorphism `α : F ≅ G` between strong monoidal functors out of
+`S.FreeRigid`, `wordIso` applied to its components at the generating objects recovers all its
+components. -/
+@[simp]
+theorem wordIso_app_of_isMonoidal (α : F ≅ G) [α.hom.IsMonoidal] (X : RigidObject S.Obj) :
+    wordIso F G (fun a ↦ α.app (of a)) X = α.app ⟨X⟩ := by
+  induction X with
+  | of a => rfl
+  | unit =>
+    ext
+    change (wordIso F G (fun a ↦ α.app (of a)) (𝟙_ S.FreeRigid).as).hom =
+      α.hom.app (𝟙_ S.FreeRigid)
+    rw [wordIso_tensorUnit_hom, ← NatTrans.IsMonoidal.app_unit_comp_η α.hom, Category.assoc,
+      Functor.Monoidal.η_ε, Category.comp_id]
+  | tensor X Y ihX ihY =>
+    ext
+    change (wordIso F G (fun a ↦ α.app (of a)) ((⟨X⟩ : S.FreeRigid) ⊗ ⟨Y⟩).as).hom =
+      α.hom.app ((⟨X⟩ : S.FreeRigid) ⊗ ⟨Y⟩)
+    rw [wordIso_tensor_hom]
+    simp only [congrArg Iso.hom ihX, congrArg Iso.hom ihY, Iso.app_hom,
+      NatTrans.IsMonoidal.δ_comp_tensor_assoc, Functor.Monoidal.δ_μ, Category.comp_id]
+  | rightDual X ih =>
+    ext
+    rw [wordIso_rightDual]
+    dsimp only
+    rw [ih]
+    let : ExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩ :=
+      (RightRigidCategory.rightDual (⟨X⟩ : S.FreeRigid)).exact
+    let : ExactPairing (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) :=
+      G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
+    refine ExactPairing.rightHom_ext (X := G.obj ⟨X⟩) ?_
+    rw [← cancel_epi (F.obj ⟨X.rightDual⟩ ◁ α.hom.app ⟨X⟩), ← tensorHom_def'_assoc,
+      ← tensorHom_def'_assoc]
+    have h₁ := ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation
+      (F.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩)
+      (G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩) (α.app ⟨X⟩)
+    have h₂ := NatTrans.tensorHom_app_comp_mapExactPairing_evaluation α.hom
+      (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
+    exact h₁.trans h₂.symm
+  | leftDual X ih =>
+    ext
+    rw [wordIso_leftDual]
+    dsimp only
+    rw [ih]
+    let : ExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩ :=
+      (LeftRigidCategory.leftDual (⟨X⟩ : S.FreeRigid)).exact
+    let : ExactPairing (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) :=
+      G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
+    refine ExactPairing.leftDualHom_ext (Y := G.obj ⟨X⟩) ?_
+    rw [← cancel_epi (α.hom.app ⟨X⟩ ▷ F.obj ⟨X.leftDual⟩), ← tensorHom_def_assoc,
+      ← tensorHom_def_assoc]
+    have h₁ := ExactPairing.leftDualIso_congrRight_tensorHom_evaluation
+      (F.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩)
+      (G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩) (α.app ⟨X⟩)
+    have h₂ := NatTrans.tensorHom_app_comp_mapExactPairing_evaluation α.hom
+      (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
+    exact h₁.trans h₂.symm
+
+/-- The generating components of a monoidal natural isomorphism `α : F ≅ G` satisfy the coupon
+compatibility condition for `wordIso`. -/
+theorem map_coupon_comp_wordIso_hom_of_isMonoidal (α : F ≅ G) [α.hom.IsMonoidal]
+    (g : S.Coupon) :
+    F.map (coupon g) ≫ (wordIso F G (fun a ↦ α.app (of a)) (S.tgt g)).hom =
+      (wordIso F G (fun a ↦ α.app (of a)) (S.src g)).hom ≫ G.map (coupon g) := by
+  simp only [wordIso_app_of_isMonoidal, Iso.app_hom]
+  exact α.hom.naturality (coupon g)
 
 /-- Two strong monoidal functors out of the free rigid monoidal category on `S` (into an arbitrary
 monoidal category `D`) that agree up to isomorphisms `e` on the generating objects, compatibly
@@ -294,15 +364,9 @@ variable (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e (S.tgt g)).hom =
 theorem monoidalNatIso_hom_app (X : S.FreeRigid) :
     (monoidalNatIso he).hom.app X = (wordIso F G e X.as).hom := by rfl
 
-theorem monoidalNatIso_hom_app_of (a : S.Obj) :
-    (monoidalNatIso he).hom.app (of a) = (e a).hom := by rfl
-
 @[simp]
 theorem monoidalNatIso_inv_app (X : S.FreeRigid) :
     (monoidalNatIso he).inv.app X = (wordIso F G e X.as).inv := by rfl
-
-theorem monoidalNatIso_inv_app_of (a : S.Obj) :
-    (monoidalNatIso he).inv.app (of a) = (e a).inv := by rfl
 
 instance : NatTrans.IsMonoidal (monoidalNatIso he).hom where
   unit := by
