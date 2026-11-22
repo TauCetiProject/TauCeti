@@ -89,6 +89,7 @@ theorem positiveRootProduct_cons (γ : PositiveRoot) (l : List PositiveRoot)
 
 /-- Concatenating lists of positive roots multiplies the corresponding positive-root products in
 `D.positivePoints A`. -/
+@[simp]
 theorem positiveRootProduct_append (l₁ l₂ : List PositiveRoot)
     (A : Type v) [CommRing A] (u : PositiveRoot → A) :
     D.positiveRootProduct (l₁ ++ l₂) A u =

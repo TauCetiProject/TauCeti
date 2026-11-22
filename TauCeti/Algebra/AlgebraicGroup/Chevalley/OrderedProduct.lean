@@ -116,4 +116,12 @@ theorem rootSubgroupPoints_inj (γ : Fin t.numRoots) (A : Type v) [CommRing A]
     D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
   (D.rootSubgroupPoints_injective γ A).eq_iff
 
+/-- An element of a root subgroup of a Chevalley datum is the identity if and only if its
+parameter is `1`. -/
+@[simp]
+theorem rootSubgroupPoints_eq_one_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
+  map_eq_one_iff _ (D.rootSubgroupPoints_injective γ A)
+
 end TauCeti.DynkinType.ChevalleyDatum

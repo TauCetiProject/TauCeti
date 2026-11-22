@@ -59,27 +59,33 @@ theorem exists_isPrimitive_kostantRootOperator (i : Fin t.rank ⊕ Fin t.rank) :
     ∃ m : D.lattice, IsPrimitive
       (kostantRootOperator (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         D.representation D.lattice D.representation_mem_lattice i m) := by
+  have hwt_ne (j : Fin t.rank) : ∃ r : Fin D.dim, D.weight r j ≠ 0 := by
+    by_contra! hzero
+    apply (D.isSl2Triple_representation_rootGenerator j).h_ne_zero
+    apply LinearMap.ext_on_range D.span_range_basis_eq_top
+    intro r
+    rw [((isCartanWeightVector_iff _ _).mp (D.isCartanWeightVector_basis r)) j,
+      hzero r, Int.cast_zero, zero_smul, LinearMap.zero_apply]
   cases i with
   | inl j =>
     exact exists_isPrimitive_kostantRootOperator_of_isSl2Triple
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      D.representation D.lattice D.representation_mem_lattice
-      D.basis D.span_range_basis_eq_top
+      D.representation D.lattice D.representation_mem_lattice D.basis
       (D.isSl2Triple_representation_rootGenerator j)
       (wt := fun r => D.weight r j)
       (fun r => ((isCartanWeightVector_iff _ _).mp (D.isCartanWeightVector_basis r)) j)
-      (Set.finite_range _).bddBelow (Set.finite_range _).bddAbove
+      (hwt_ne j) (Set.finite_range _).bddBelow (Set.finite_range _).bddAbove
   | inr j =>
     exact exists_isPrimitive_kostantRootOperator_of_isSl2Triple
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      D.representation D.lattice D.representation_mem_lattice
-      D.basis D.span_range_basis_eq_top
+      D.representation D.lattice D.representation_mem_lattice D.basis
       (D.isSl2Triple_representation_rootGenerator j).symm
       (wt := fun r => -D.weight r j)
       (fun r => by
         rw [LinearMap.neg_apply,
           ((isCartanWeightVector_iff _ _).mp (D.isCartanWeightVector_basis r)) j,
           Int.cast_neg, neg_smul])
+      (let ⟨r, hr⟩ := hwt_ne j; ⟨r, neg_ne_zero.mpr hr⟩)
       (Set.finite_range _).bddBelow (Set.finite_range _).bddAbove
 
 end

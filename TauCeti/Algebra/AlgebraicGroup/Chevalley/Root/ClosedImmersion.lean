@@ -22,6 +22,8 @@ nonreduced rings and rings of bad characteristic, and across all isogeny types.
   positive simple-root coordinate maps over `ℤ` implies surjectivity of all root coordinate maps.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_of_simple`: closed-immersion
   extension from positive simple roots to every root `γ`.
+* `TauCeti.DynkinType.ChevalleyDatum.chevalleyRootSubgroupToralCoordinateMap_surjective`:
+  every factored root coordinate map of `D` is unconditionally surjective over `ℤ`.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup`: every root morphism
   `D.rootSubgroup γ : 𝔾ₐ ⟶ D.groupScheme` is unconditionally a closed immersion over `ℤ`.
 
@@ -148,12 +150,14 @@ theorem rootCoordinateMap_surjective_of_simple
     simpa only [reflectionPerm_rationalRootSystem] using
       D.coordinateMap_surjective_reflection i γ hγ
 
-/-- If the positive simple-root morphisms are closed immersions, every root morphism is a
-closed immersion. This criterion does not assume generation of the group of field points. -/
-theorem isClosedImmersion_rootSubgroup_of_simple
+private theorem chevalleyRootSubgroupToralCoordinateMap_surjective_of_simple
     (hsimple : ∀ i : Fin t.rank,
       IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left)
-    (γ : Fin t.numRoots) : IsClosedImmersion (D.rootSubgroup γ).hom.hom.left := by
+    (γ : Fin t.numRoots) :
+    Function.Surjective
+      (chevalleyRootSubgroupToralCoordinateMap D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+        D.basis D.coordinateWeight γ).hom := by
   have hcoord (i : Fin t.rank) : Function.Surjective (C (t.simpleIndex ht i)).hom := by
     have := hsimple i
     have hc' := IsClosedImmersion.comp
@@ -164,8 +168,6 @@ theorem isClosedImmersion_rootSubgroup_of_simple
     rw [D.rootSubgroup_comp_groupSchemeι, kostantRootSubgroup_def] at hc
     exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
       (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ D.dim) _).1 hc
-  rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
-  apply (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
   have h := mkQuotient_comp_chevalleyRootSubgroupToralCoordinateMap D.representation
     D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ
@@ -176,15 +178,36 @@ theorem isClosedImmersion_rootSubgroup_of_simple
   exact CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
     (D.rootCoordinateMap_surjective_of_simple hcoord γ)
 
+/-- If the positive simple-root morphisms are closed immersions, every root morphism is a
+closed immersion. This criterion does not assume generation of the group of field points. -/
+theorem isClosedImmersion_rootSubgroup_of_simple
+    (hsimple : ∀ i : Fin t.rank,
+      IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left)
+    (γ : Fin t.numRoots) : IsClosedImmersion (D.rootSubgroup γ).hom.hom.left := by
+  rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
+    (D.chevalleyRootSubgroupToralCoordinateMap_surjective_of_simple hsimple γ)
+
+/-- The factored root coordinate map of every root of a Chevalley datum is unconditionally
+surjective over `ℤ`. -/
+theorem chevalleyRootSubgroupToralCoordinateMap_surjective (γ : Fin t.numRoots) :
+    Function.Surjective
+      (chevalleyRootSubgroupToralCoordinateMap D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+        D.basis D.coordinateWeight γ).hom :=
+  D.chevalleyRootSubgroupToralCoordinateMap_surjective_of_simple
+    (fun i => by
+      rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
+      infer_instance) γ
+
 /-- Every root morphism of a Chevalley datum is a closed immersion over `ℤ`.
 In particular this is scheme-theoretic, including in bad characteristic and after nonreduced
 base change, and does not require generation of all group points by root subgroups. -/
 instance isClosedImmersion_rootSubgroup (γ : Fin t.numRoots) :
-    IsClosedImmersion (D.rootSubgroup γ).hom.hom.left :=
-  D.isClosedImmersion_rootSubgroup_of_simple
-    (fun i => by
-      rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
-      infer_instance) γ
+    IsClosedImmersion (D.rootSubgroup γ).hom.hom.left := by
+  rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
+    (D.chevalleyRootSubgroupToralCoordinateMap_surjective γ)
 
 end ChevalleyDatum
 
