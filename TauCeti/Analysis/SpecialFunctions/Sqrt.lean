@@ -11,15 +11,14 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
-# Square-root displacement estimates and limits at zero
+# Square-root estimates, derivatives and limits at zero
 
-Two estimates comparing the real square-root and inverse-square-root functions
-with the identity near `1`. These bounds control scalar spectral factors of
-positive operators close to the identity. The file also records that the square root is
-subadditive and `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that
-bound, that `1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
+This file records that the square root is `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a
+weighted form of that bound, that `1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It
+also records the derivatives of `x ↦ √(x² + p)` and of `x ↦ β x + √(x² + p)`, that the
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
 to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
@@ -28,11 +27,6 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
 
 ## Main results
 
-* `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`,
-  `|√μ - 1| ≤ |μ - 1|`.
-* `Real.abs_one_sub_inv_sqrt_le_abs_sub_one`: if `1/2 ≤ μ`,
-  `|1 - (√μ)⁻¹| ≤ |μ - 1|`.
-* `Real.sqrt_add_le_add_sqrt`: for all reals `a` and `b`, `√(a + b) ≤ √a + √b`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
   `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
@@ -44,13 +38,14 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
 * `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
-* `Real.abs_le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `|a| ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
+* `Real.hasDerivAt_sqrt_sq_add`, `Real.hasDerivAt_mul_add_sqrt_sq_add`: the derivatives of
+  `x ↦ √(x² + p)` and `x ↦ β x + √(x² + p)` wherever `t² + p ≠ 0`.
 * `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
   `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)` has an explicit
   derivative wherever `t² + p > 0`, and is positive and maps `ℝ` onto `(0, ∞)` for `p > 0`.
@@ -86,45 +81,6 @@ open Filter
 open scoped Topology
 
 namespace Real
-
-/-- For every real `μ`, the square root is no farther from `1` than `μ` is:
-`|√μ - 1| ≤ |μ - 1|`. -/
-theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
-    |√μ - 1| ≤ |μ - 1| := by
-  rcases le_total 0 μ with hμ | hμ
-  · -- `|√μ - 1| (√μ + 1) = |μ - 1|` and `1 ≤ √μ + 1`.
-    have hpos : 0 < √μ + 1 := by positivity
-    calc |√μ - 1| ≤ |√μ - 1| * (√μ + 1) :=
-          le_mul_of_one_le_right (abs_nonneg _) (le_add_of_nonneg_left (sqrt_nonneg μ))
-      _ = |μ - 1| := by
-          rw [← abs_of_pos hpos, ← abs_mul]
-          congr 1
-          linear_combination sq_sqrt hμ
-  · rw [sqrt_eq_zero_of_nonpos hμ, abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
-    norm_num
-    linarith
-
-/-- If `1 / 2 ≤ μ`, then the inverse square root is no farther from `1` than `μ` is:
-`|1 - (√μ)⁻¹| ≤ |μ - 1|`. -/
-theorem abs_one_sub_inv_sqrt_le_abs_sub_one {μ : ℝ} (hμ : 1 / 2 ≤ μ) :
-    |1 - (√μ)⁻¹| ≤ |μ - 1| := by
-  have hs : 0 < √μ := sqrt_pos.2 (by linarith)
-  have hsq : √μ ^ 2 = μ := sq_sqrt (by linarith)
-  -- `|1 - (√μ)⁻¹| = |√μ - 1| / √μ` and `|μ - 1| = |√μ - 1| (√μ + 1)`, with `1 ≤ √μ (√μ + 1)`.
-  have h1 : 1 ≤ √μ * (√μ + 1) := by nlinarith
-  rw [show 1 - (√μ)⁻¹ = (√μ - 1) / √μ by field_simp,
-    show μ - 1 = (√μ - 1) * (√μ + 1) by linear_combination -hsq, abs_div, abs_mul,
-    abs_of_pos hs, abs_of_pos (by positivity : 0 < √μ + 1), div_le_iff₀ hs, mul_assoc]
-  exact le_mul_of_one_le_right (abs_nonneg _) (by linarith)
-
-/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
-theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
-  rw [sqrt_le_left (by positivity), add_sq, sq_sqrt', sq_sqrt']
-  nlinarith [le_max_left a 0, le_max_left b 0, mul_nonneg (sqrt_nonneg a) (sqrt_nonneg b)]
-
-/-- For all reals `t` and `s`, `√t ≤ √s + √|t - s|`. -/
-theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| :=
-  (sqrt_le_sqrt (by linarith [le_abs_self (t - s)])).trans (sqrt_add_le_add_sqrt s |t - s|)
 
 /-- **The square root is `1/2`-Hölder.** For all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`. -/
 theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
@@ -231,11 +187,6 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
 theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
   le_sqrt_of_sq_le (by nlinarith [sq_nonneg (t - 1)])
 
-/-- If `a² ≤ c b²` with `0 ≤ b`, then `|a| ≤ √c * b`. -/
-theorem abs_le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
-    |a| ≤ √c * b :=
-  (abs_le_sqrt h).trans_eq (by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb])
-
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
 of variables against the square root of an integrand that has acquired the factor `d²`. -/
@@ -289,15 +240,25 @@ theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2
   nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
   gcongr
 
+/-- The derivative of `x ↦ √(x² + p)` at a point `t` where `t² + p ≠ 0`. Where `t² + p < 0`
+the function vanishes near `t`, matching the junk value `t / √(t² + p) = 0`. -/
+theorem hasDerivAt_sqrt_sq_add {p t : ℝ} (h : t ^ 2 + p ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ √(x ^ 2 + p)) (t / √(t ^ 2 + p)) t :=
+  (((hasDerivAt_pow 2 t).add_const p).sqrt h).congr_deriv
+    (by norm_num [mul_div_mul_left _ _ (two_ne_zero' ℝ)])
+
+/-- The derivative of `x ↦ β x + √(x² + p)` at a point `t` where `t² + p ≠ 0`. -/
+theorem hasDerivAt_mul_add_sqrt_sq_add (β : ℝ) {p t : ℝ} (h : t ^ 2 + p ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ β * x + √(x ^ 2 + p)) (β + t / √(t ^ 2 + p)) t :=
+  (((hasDerivAt_id t).const_mul β).add (hasDerivAt_sqrt_sq_add h)).congr_deriv (by simp)
+
 /-- The derivative of `t ↦ t + √(t² + p)` at a point `t` where `0 < t² + p`. -/
 theorem hasDerivAt_add_sqrt_sq_add {p t : ℝ} (h : 0 < t ^ 2 + p) :
     HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
-  rw [← div_add_one (sqrt_pos.2 h).ne', add_comm]
-  apply (hasDerivAt_id' _).fun_add
-  rw [← mul_div_mul_left _ _ two_ne_zero]
-  refine ((HasDerivAt.add_const _) ?_).sqrt h.ne'
-  convert hasDerivAt_pow 2 t using 1
-  ring
+  convert hasDerivAt_mul_add_sqrt_sq_add 1 h.ne' using 1
+  · simp only [one_mul]
+  · rw [add_div, div_self (sqrt_pos.2 h).ne']
+    ring
 
 /-- For `0 < p`, the map `t ↦ t + √(t² + p)` sends `ℝ` onto `(0, ∞)`. -/
 theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
@@ -321,13 +282,7 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
     (hy : β * y + √(y ^ 2 + c) ≠ 0) :
     HasDerivAt (fun y => α / (β * y + √(y ^ 2 + c)))
       (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
-  have hs : HasDerivAt (fun y => √(y ^ 2 + c)) (y / √(y ^ 2 + c)) y := by
-    refine (((hasDerivAt_pow 2 y).add_const c).sqrt hyc).congr_deriv ?_
-    norm_num [mul_div_mul_left _ _ (two_ne_zero' ℝ)]
-  have hD : HasDerivAt (fun y => β * y + √(y ^ 2 + c)) (β + y / √(y ^ 2 + c)) y := by
-    have := ((hasDerivAt_id y).const_mul β).add hs
-    exact this.congr_deriv (by simp)
-  have := (hasDerivAt_const y α).div hD hy
+  have := (hasDerivAt_const y α).div (hasDerivAt_mul_add_sqrt_sq_add β hyc) hy
   refine this.congr_deriv ?_
   ring
 

@@ -11,7 +11,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
-import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -349,7 +348,8 @@ private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hC : 0 ≤
   have hN2 : N ^ 2 ≤ C * ((1 + b * K) ^ 2 + 4 * K ^ 2) * A ^ 2 :=
     h.trans <| (mul_le_mul_of_nonneg_left (b := F ^ 2 + S)
       (c := ((1 + b * K) * A) ^ 2 + 4 * (K * A) ^ 2) (by linarith) hC).trans_eq (by ring)
-  exact (le_abs_self N).trans (Real.abs_le_sqrt_mul_of_sq_le_mul hA hN2)
+  exact (Real.le_sqrt_of_sq_le hN2).trans_eq
+    (by rw [Real.sqrt_mul' _ (sq_nonneg A), Real.sqrt_sq hA])
 
 /-- **The weighted `H¹` estimate for the right inverse.** Let `x` be a bounded `C¹` solution of the
 plane vortex equations with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and

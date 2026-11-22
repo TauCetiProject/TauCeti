@@ -120,10 +120,12 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
   have hx := h (e.symm x)
   rw [e.apply_symm_apply] at hx
+  have hsq : ‖e.symm x‖ ^ 2 ≤ lam⁻¹ * ‖x‖ ^ 2 := by
+    rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
+    exact hx
   rw [← Real.sqrt_inv]
-  refine (le_abs_self _).trans (Real.abs_le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_)
-  rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
-  exact hx
+  exact (Real.le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg x)])
 
 end ContinuousLinearEquiv
 

@@ -35,6 +35,10 @@ For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 `√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
 `√a - √b` expands to `a + b - 2√(ab)`.
 
+The square root is subadditive, and two displacement estimates compare the square-root and
+inverse-square-root functions with the identity near `1`. These bounds control scalar spectral
+factors of positive operators close to the identity.
+
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
@@ -52,6 +56,12 @@ For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
 * `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
 * `Real.sqrt_mul_le_half_add`: `√(ab) ≤ (a + b) / 2` for `0 ≤ a` and `0 ≤ b`.
+* `Real.abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt`: `|√x - √y| (√x + √y) = |x - y|` for `0 ≤ x` and
+  `0 ≤ y`.
+* `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`, `|√μ - 1| ≤ |μ - 1|`.
+* `Real.abs_one_sub_inv_sqrt_le_abs_sub_one`: if `1 ≤ μ + √μ`, `|1 - (√μ)⁻¹| ≤ |μ - 1|`.
+* `Real.sqrt_add_le_add_sqrt`: for all reals `a` and `b`, `√(a + b) ≤ √a + √b`.
+* `Real.sqrt_le_sqrt_add_sqrt_abs_sub`: for all reals `t` and `s`, `√t ≤ √s + √|t - s|`.
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
@@ -202,6 +212,57 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
 theorem sqrt_mul_le_half_add {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     √(a * b) ≤ (a + b) / 2 :=
   sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (a - b)]⟩
+
+/-- For nonnegative `x`, `y`, the difference of squares of `√x` and `√y` in absolute value:
+`|√x - √y| (√x + √y) = |x - y|`. -/
+theorem abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    |√x - √y| * (√x + √y) = |x - y| := by
+  rw [← abs_of_nonneg (add_nonneg (sqrt_nonneg x) (sqrt_nonneg y)), ← abs_mul, mul_comm,
+    ← sq_sub_sq, sq_sqrt hx, sq_sqrt hy]
+
+/-- For every real `μ`, the square root is no farther from `1` than `μ` is:
+`|√μ - 1| ≤ |μ - 1|`. -/
+theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
+    |√μ - 1| ≤ |μ - 1| := by
+  rcases le_total 0 μ with hμ | hμ
+  · have h := abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt hμ zero_le_one
+    rw [sqrt_one] at h
+    calc |√μ - 1| ≤ |√μ - 1| * (√μ + 1) :=
+          le_mul_of_one_le_right (abs_nonneg _) (le_add_of_nonneg_left (sqrt_nonneg μ))
+      _ = |μ - 1| := h
+  · rw [sqrt_eq_zero_of_nonpos hμ, abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
+    norm_num
+    linarith
+
+/-- If `1 ≤ μ + √μ`, then the inverse square root is no farther from `1` than `μ` is:
+`|1 - (√μ)⁻¹| ≤ |μ - 1|`. The hypothesis forces `0 < μ` and holds for `1 / 2 ≤ μ`; for positive
+`μ ≠ 1` it is equivalent to the bound. -/
+theorem abs_one_sub_inv_sqrt_le_abs_sub_one {μ : ℝ} (hμ : 1 ≤ μ + √μ) :
+    |1 - (√μ)⁻¹| ≤ |μ - 1| := by
+  have hμ₀ : 0 < μ := by
+    by_contra! h
+    rw [sqrt_eq_zero_of_nonpos h] at hμ
+    linarith
+  have hs : 0 < √μ := sqrt_pos.2 hμ₀
+  have h := abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt hμ₀.le zero_le_one
+  rw [sqrt_one] at h
+  -- `|1 - (√μ)⁻¹| = |√μ - 1| / √μ`, and `1 ≤ (√μ + 1) √μ = μ + √μ`.
+  have h1 : 1 ≤ (√μ + 1) * √μ := by rwa [add_one_mul, mul_self_sqrt hμ₀.le]
+  calc |1 - (√μ)⁻¹| = |√μ - 1| / √μ := by
+        rw [inv_eq_one_div, one_sub_div hs.ne', abs_div, abs_of_pos hs]
+    _ ≤ |√μ - 1| * (√μ + 1) := by
+        rw [div_le_iff₀ hs, mul_assoc]
+        exact le_mul_of_one_le_right (abs_nonneg _) h1
+    _ = |μ - 1| := h
+
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rw [sqrt_le_left (by positivity), add_sq, sq_sqrt', sq_sqrt']
+  nlinarith [le_max_left a 0, le_max_left b 0, mul_nonneg (sqrt_nonneg a) (sqrt_nonneg b)]
+
+/-- For all reals `t` and `s`, `√t ≤ √s + √|t - s|`. -/
+theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| :=
+  (sqrt_le_sqrt (by linarith [le_abs_self (t - s)])).trans (sqrt_add_le_add_sqrt s |t - s|)
 
 /-- For nonnegative `a`, `b`, `(√a - √b)² = a + b - 2 √(ab)`. -/
 theorem sq_sqrt_sub_sqrt {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :

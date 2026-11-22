@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # A smooth approximation of the absolute value
@@ -61,11 +62,10 @@ theorem contDiff_smoothAbs {η : ℝ} (hη : η ≠ 0) {n : WithTop ℕ∞} : Co
 /-- For `η ≠ 0`, the derivative of `smoothAbs η` at `t` is `t / √(t² + η²)`. -/
 theorem hasDerivAt_smoothAbs {η : ℝ} (hη : η ≠ 0) (t : ℝ) :
     HasDerivAt (smoothAbs η) (t / √(t ^ 2 + η ^ 2)) t := by
-  have h := (((hasDerivAt_pow 2 t).add_const (η ^ 2)).sqrt (by positivity)).sub_const η
+  have h := (Real.hasDerivAt_sqrt_sq_add (p := η ^ 2) (t := t) (by positivity)).sub_const η
   convert h using 1
-  · ext x
-    rw [smoothAbs]
-  simp [mul_div_mul_left]
+  ext x
+  rw [smoothAbs]
 
 /-- For `η ≠ 0`, the derivative of the approximation has its explicit quotient formula. -/
 @[simp]
