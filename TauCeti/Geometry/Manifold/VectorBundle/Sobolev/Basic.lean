@@ -7,6 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
+import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
@@ -104,6 +108,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   coordinates of the sum or the multiple of the sections.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.FiniteBundleAtlas.chartDerivL_ae_overlap`: native weak chart derivatives obey the
+  chain and Leibniz rules on overlaps for arbitrary real finite-dimensional model spaces.
 * `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: the chart data of an order-one tuple are
   weakly differentiable on the chart image, with weak derivative
   `TauCeti.SectionChartData.chartDerivL` assembled from the weak gradients of the components.
@@ -1150,6 +1156,72 @@ end FiniteMeasure
 
 end FiniteBundleAtlas
 
+namespace FiniteBundleAtlas
+
+section TangentHom
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  (A : FiniteBundleAtlas E M F V)
+
+/-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_image_tangentHom (i : Fin A.n) :
+    (A.tangentHom.sectionChartData.image i : Set E) = A.image i :=
+  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
+
+/-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
+  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom A i i')
+
+/-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
+those of `A`. -/
+theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : E}
+    (hy : y ∈ A.overlap i i') :
+    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
+  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
+    (congrFun (transition_tangentHom A i i') y)
+
+/-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
+on the corresponding chart image of `A`. -/
+theorem ae_image_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i : Fin A.n) {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set E), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [sectionChartData_image_tangentHom]
+
+/-- Almost everywhere on an overlap of the section chart data of one-forms is almost everywhere
+on the corresponding overlap of `A`. -/
+theorem ae_overlap_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i i' : Fin A.n)
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
+  rw [sectionChartData_overlap_tangentHom]
+
+/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
+one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
+theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : E}
+    (hy : y ∈ A.overlap i i') (η : E →L[ℝ] F) :
+    A.tangentHom.sectionChartData.coordChange i i' y η =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        (η.comp (fderiv ℝ (A.transition i i') y)) := by
+  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom]
+  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
+    rw [transition_tangentHom, image_tangentHom]
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
+  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
+    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
+  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
+  exact h.symm
+
+end TangentHom
+
+end FiniteBundleAtlas
+
 section Sobolev
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -1177,6 +1249,47 @@ theorem FiniteBundleAtlas.aeTransition_sectionChartData [IsManifold 𝓘(ℝ, E)
     exact A.transition_transition hy
 
 variable [FiniteDimensional ℝ F]
+
+variable [IsManifold 𝓘(ℝ, E) 1 M] [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)] in
+/-- On the overlap of charts `i` and `i'`, the weak derivative of the chart data in chart `i'` of an
+order-one Sobolev section is that of `y ↦ g y (uᵢ (τ y))`, by the weak chain and Leibniz rules. -/
+theorem FiniteBundleAtlas.chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections μ p 1)
+    (i i' : Fin A.n) :
+    ∀ᵐ y ∂μ.restrict (A.overlap i i'),
+      A.sectionChartData.chartDerivL μ p i' w y =
+        ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+          ((A.sectionChartData.chartDerivL μ p i w (A.transition i i' y)).comp
+            (fderiv ℝ (A.transition i i') y)) +
+        (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :
+          F →L[ℝ] F)) y).flip
+          (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) := by
+  let O : Opens E := ⟨A.overlap i i', A.isOpen_overlap i i'⟩
+  have hC := A.aeTransition_sectionChartData μ
+  have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
+    (U := O) (A.contDiffOn_transition i i')
+    (fun y hy y' hy' h ↦ by rw [← A.transition_transition hy, h, A.transition_transition hy'])
+    (fun y hy ↦ by
+      rw [A.fderiv_transition hy]
+      exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
+    fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
+    (A.overlap_subset_transferDomain i i')
+  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero hcoord one_ne_zero
+  have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
+      ((A.chart i').symm y) : F →L[ℝ] F)
+        (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
+      A.sectionChartData.chartValueL μ p 1 i' w y := by
+    filter_upwards [(A.sectionChartData.compatible_iff μ p 1).1
+      (SectionChartData.compatible_of_mem hC w.property i i'),
+      ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
+    rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
+    exact h.symm
+  -- `O` is the overlap as an open set and `A.sectionChartData.image i'` is the image of chart `i'`
+  -- as an open set; the type ascription states the inclusion of overlap into image as one of
+  -- `Opens E`, which `A.overlap_subset_image` proves for the underlying sets.
+  have hO : O ≤ A.sectionChartData.image i' := A.overlap_subset_image i i'
+  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono hO).ae_eq
+      (hprod.congr_ae hcompat)
 
 /-- The Sobolev space `W^{k,p}(V)` of sections of `V` with respect to the finite bundle atlas `A`:
 the tuples of chartwise Sobolev components of sections, with the maximum of the component norms. -/
