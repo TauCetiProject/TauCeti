@@ -230,6 +230,19 @@ theorem toSection_injective (h : HasContinuousRepresentatives A μ p k) :
   fun w w' hww' ↦ eq_of_ae_eq_coord (chartValueL_ae_eq_coord_toSection h w)
     (hww' ▸ chartValueL_ae_eq_coord_toSection h w')
 
+/-- Forgetting the highest derivative keeps the chart data. -/
+theorem chartValueL_lowerOrderL_ae_eq (w : SobolevSection A μ p (k + 1)) (i) :
+    A.sectionChartData.chartValueL μ p k i (A.sectionChartData.lowerOrderL μ p k w)
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p (k + 1) i w := by
+  rw [SectionChartData.chartValueL_coe_lowerOrderL]
+
+/-- Lowering the exponent keeps the chart data. -/
+theorem chartValueL_ofExponentLEL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
+    (w : SobolevSection A μ q k) (i) :
+    A.sectionChartData.chartValueL μ p k i (A.sectionChartData.ofExponentLEL μ k hpq w)
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ q k i w := by
+  rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
+
 /-- Two Sobolev sections, possibly of different orders and exponents, with the same chart data have
 the same continuous representative. -/
 theorem toSection_eq_of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] {l : ℕ}
@@ -246,16 +259,14 @@ theorem toSection_eq_of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] {l :
 theorem toSection_lowerOrderL (h : HasContinuousRepresentatives A μ p (k + 1))
     (w : SobolevSection A μ p (k + 1)) :
     toSection (A.sectionChartData.lowerOrderL μ p k w) = toSection w :=
-  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ by
-    rw [SectionChartData.chartValueL_coe_lowerOrderL]).symm
+  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ (chartValueL_lowerOrderL_ae_eq w i).symm).symm
 
 /-- Lowering the exponent does not change the continuous representative. -/
 @[simp]
 theorem toSection_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
     (h : HasContinuousRepresentatives A μ q k) (w : SobolevSection A μ q k) :
     toSection (A.sectionChartData.ofExponentLEL μ k hpq w) = toSection w :=
-  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ by
-    rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]).symm
+  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ (chartValueL_ofExponentLEL_ae_eq hpq w i).symm).symm
 
 /-- **Transfer of continuous representatives.** If a map `T` from `W^{k,p}(V)` to `W^{l,q}(V)` keeps
 the chart data and every element of `W^{l,q}(V)` has a continuous representative, then so does every
@@ -300,10 +311,8 @@ theorem HasContinuousRepresentatives.mono {q : ℝ≥0∞} [Fact (1 ≤ q)] {l :
     induction l, hkl using Nat.le_induction with
     | base => exact h
     | succ l _ ih =>
-      exact ih.of_chartValueL_ae_eq (A.sectionChartData.lowerOrderL μ p l) fun w i ↦ by
-        rw [SectionChartData.chartValueL_coe_lowerOrderL]
-  exact hp.of_chartValueL_ae_eq (A.sectionChartData.ofExponentLEL μ l hpq) fun w i ↦ by
-    rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
+      exact ih.of_chartValueL_ae_eq _ chartValueL_lowerOrderL_ae_eq
+  exact hp.of_chartValueL_ae_eq _ (chartValueL_ofExponentLEL_ae_eq hpq)
 
 /-- The continuous representative of a `Cᵏ` section, viewed as an element of `W^{k,p}(V)`, is the
 section itself. -/

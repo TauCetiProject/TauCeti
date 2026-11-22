@@ -122,18 +122,16 @@ theorem exists_forall_holderOnWith_coord_toSection_of_mul_lt_of_lt_mul
   have hk0 : k ≠ 0 := by
     rintro rfl
     simp at hkp
-  obtain ⟨r, rfl⟩ : ∃ r, k = 1 + r := ⟨k - 1, by omega⟩
-  rw [Nat.add_sub_cancel_left] at hk
+  obtain ⟨r, rfl⟩ : ∃ r, k = r + 1 := ⟨k - 1, by omega⟩
+  rw [Nat.add_sub_cancel] at hk
   rcases Nat.eq_zero_or_pos r with rfl | hr
-  · simp only [Nat.add_zero, Nat.cast_one, one_mul] at hkp ⊢
+  · simp only [Nat.zero_add, Nat.cast_one, one_mul] at hkp ⊢
     exact exists_forall_holderOnWith_coord_toSection hkp i hK hKi
   -- `r` Sobolev embeddings at once give `W^{1+r,p}(V) → W^{1,q}(V)` with `n < q`.
-  rw [Nat.add_comm] at hkp
   obtain ⟨q, hq, hexp, hnq, hα⟩ := exists_inv_add_mul_inv_eq_and_lt_and_sub_div_eq hr.ne' hk hkp
-  rw [Nat.add_comm r 1] at hα
   have : Fact (1 ≤ q) := ⟨one_le_of_inv_add_eq_inv hexp⟩
   obtain ⟨T, hT⟩ := exists_sobolevEmbeddingL_of_inv_add_eq A μ 1 r hq hexp
-  rw [← hα]
+  rw [← hα, Nat.add_comm r 1]
   exact exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq (.of_finrank_lt hnq) T hT
     (exists_forall_holderOnWith_coord_toSection hnq i hK hKi)
 
@@ -159,8 +157,7 @@ theorem exists_forall_holderOnWith_coord_toSection_of_mul_eq (hp : 1 < p)
     exists_forall_holderOnWith_coord_toSection_of_mul_lt_of_lt_mul (μ := μ) hk₀ hkp₀ i hK hKi
   rw [hβ, ENNReal.toNNReal_coe] at hC
   exact exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq
-    (.of_finrank_lt_mul hp₀ hkp₀) (A.sectionChartData.ofExponentLEL μ k hp₀p)
-    (fun w i ↦ by rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]) hC
+    (.of_finrank_lt_mul hp₀ hkp₀) _ (chartValueL_ofExponentLEL_ae_eq hp₀p) hC
 
 /-- **Check.** In dimension `3`, `W^{2,2}(V)` embeds continuously into the Hölder space
 `C^{0,1/2}(K; F)` on every compact subset `K` of a chart image: `(2 - 1) · 2 < 3 < 2 · 2` and the
