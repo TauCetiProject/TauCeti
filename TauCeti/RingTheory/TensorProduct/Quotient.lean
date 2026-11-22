@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Tensor products of quotient algebras
@@ -162,30 +162,6 @@ section QuotientSum
 
 variable {R σ ι : Type*} [CommRing R]
 
-/-- `MvPolynomial.tensorEquivSum` sends `p ⊗ 1` to `rename Sum.inl p`. -/
-@[simp]
-theorem tensorEquivSum_tmul_one (p : MvPolynomial σ R) :
-    tensorEquivSum R σ ι R (p ⊗ₜ 1) = rename Sum.inl p := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [TensorProduct.add_tmul, hp, hq]
-  | mul_X p j hp =>
-    rw [← mul_one (1 : MvPolynomial ι R), ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, hp,
-      map_mul]
-    simp
-
-/-- `MvPolynomial.tensorEquivSum` sends `1 ⊗ q` to `rename Sum.inr q`. -/
-@[simp]
-theorem tensorEquivSum_one_tmul (q : MvPolynomial ι R) :
-    tensorEquivSum R σ ι R (1 ⊗ₜ q) = rename Sum.inr q := by
-  induction q using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [TensorProduct.tmul_add, hp, hq]
-  | mul_X q j hq =>
-    rw [← mul_one (1 : MvPolynomial σ R), ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, hq,
-      map_mul]
-    simp
-
 /-- The tensor product of quotients of `R[X_σ]` and `R[X_ι]` is the quotient of `R[X_(σ ⊕ ι)]` by
 the images of the two ideals under `rename Sum.inl` and `rename Sum.inr`. The equivalence sends
 `[p] ⊗ [q]` to the class of `rename Sum.inl p * rename Sum.inr q`. -/
@@ -195,10 +171,8 @@ noncomputable def quotientTensorQuotientEquivSum (I : Ideal (MvPolynomial σ R))
       MvPolynomial (σ ⊕ ι) R ⧸ (I.map (rename Sum.inl) ⊔ J.map (rename Sum.inr)) :=
   (Algebra.TensorProduct.quotientTensorQuotientEquiv I J).trans
     (Ideal.quotientEquivAlg _ _ (tensorEquivSum R σ ι R) (by
-      rw [Ideal.map_sup]
-      change _ = Ideal.map (tensorEquivSum R σ ι R).toAlgHom _ ⊔
-        Ideal.map (tensorEquivSum R σ ι R).toAlgHom _
-      rw [Ideal.map_mapₐ, Ideal.map_mapₐ]
+      rw [Ideal.map_sup, ← AlgEquiv.toAlgHom_toRingHom, Ideal.map_coe, Ideal.map_coe,
+        Ideal.map_mapₐ, Ideal.map_mapₐ]
       congr 2 <;> ext p <;> simp))
 
 /-- `quotientTensorQuotientEquivSum` sends `[p] ⊗ [q]` to the class of
@@ -211,7 +185,7 @@ theorem quotientTensorQuotientEquivSum_tmul (I : Ideal (MvPolynomial σ R))
   rw [quotientTensorQuotientEquivSum, AlgEquiv.trans_apply,
     Algebra.TensorProduct.quotientTensorQuotientEquiv_tmul, Ideal.quotientEquivAlg_mk,
     ← mul_one p, ← one_mul q, ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, mul_one, one_mul,
-    tensorEquivSum_tmul_one, tensorEquivSum_one_tmul]
+    tensorEquivSum_tmul_one, tensorEquivSum_one_tmul, Algebra.algebraMap_self, map_id]
 
 /-- `quotientTensorQuotientEquivSum` sends `[p] ⊗ 1` to the class of `rename Sum.inl p`. -/
 @[simp]
