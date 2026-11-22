@@ -27,7 +27,8 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
-(`PiLp.card_filter_lt_norm_le`).
+(`PiLp.card_filter_lt_norm_le`). Bounds `‖x i‖² F ≤ G i` on the coordinate shares of
+`‖x‖² F` add up to `‖x‖² F ≤ ∑ i, G i` (`PiLp.norm_sq_mul_le_sum`).
 
 Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
 in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
@@ -140,6 +141,13 @@ theorem card_filter_lt_norm_le {x : PiLp 2 E} {k : ℕ} {t : ℝ}
   have hcard' : (k + 1 : ℝ) ≤ s.card := by exact_mod_cast hcard
   exact (mul_le_mul_of_nonneg_right hcard' (sq_nonneg t)).not_gt
     (hsum.trans_le (htotal.trans hxt))
+
+/-- Bounds `‖x i‖ ^ 2 * F ≤ G i` on the coordinate shares of `‖x‖ ^ 2 * F` add up to
+`‖x‖ ^ 2 * F ≤ ∑ i, G i`. -/
+theorem norm_sq_mul_le_sum {x : PiLp 2 E} {F : ℝ} {G : ι → ℝ} (h : ∀ i, ‖x i‖ ^ 2 * F ≤ G i) :
+    ‖x‖ ^ 2 * F ≤ ∑ i, G i := by
+  rw [PiLp.norm_sq_eq_of_L2, Finset.sum_mul]
+  exact Finset.sum_le_sum fun i _ ↦ h i
 
 section SingleLI
 

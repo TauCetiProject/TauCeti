@@ -256,7 +256,9 @@ theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V
     show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
     ← intervalIntegral.integral_sub hg₁' hg₂']
   have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β :=
-    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
+    (rpow_le_rpow_mul_rpow_of_le_mul (by linarith) (by linarith) le_rfl hβ₀).trans
+      (mul_le_mul_of_nonneg_right (rpow_le_self_of_one_le one_le_two hβ₁)
+        (rpow_nonneg (by linarith) _))
   calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
         ∫ s in (2 * t' - t)..t', g₂ s‖
       ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +

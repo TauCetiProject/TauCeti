@@ -13,21 +13,24 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 /-!
 # Increment bounds at the rate of a real power
 
-These bounds control the increment of a function `u` of time between `a` and `b` by a multiple
-of `|b - a|` times a power `r ^ (β - 1)`, `β ≤ 1`, of a time `r`. This is the time-Lipschitz
-estimate of a function that is Hölder in time with exponent `β` and whose derivative grows at
-most like `r ^ (β - 1)` near `0`.
+These are scale-dependent increment bounds: they control the increment of a function `u` of
+time between `a` and `b` by a multiple of `|b - a|` times a power `r ^ (β - 1)` of a time scale
+`r` set by the endpoints (`min a b`, `-a` or `a` below). So `u` is Lipschitz in time near `a`,
+with a constant that depends on the scale `r` and, for `β < 1`, blows up as `r → 0`.
 
 For `0 < a`, `0 < b` and `β ≤ 1`, the mean value inequality gives the bound
 `D |b - a| (min a b) ^ (β - 1)` from a derivative of norm at most `D r ^ (β - 1)` at every `r`
-between `a` and `b`.
+between `a` and `b`. Here `β` may be negative, and no Hölder hypothesis is involved.
 
 The two other cases need no derivative, only data at the two endpoints, so they are stated for
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
 `0 ≤ β ≤ 1` and `0 ≤ K`, the data are that `dist x y` vanishes if `b ≤ 0` and is at most `K b ^ β`
-if `0 < b`. For `0 < a` and `a ≤ 2 |b - a|`, they are that `x` and `y` both lie within `K a ^ β`
-of a point `c`. A function `u` equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
-`r ≥ 0` supplies, at `x = u b` and `y = u a`, the endpoint data of the first estimate for every
+if `0 < b`. For `0 < a` and `a ≤ A |b - a|`, they are that `x` and `y` both lie within `K a ^ β`
+of a point `c`.
+
+Hölder-in-time estimates are an application of these bounds, not a premise. A function `u` equal
+to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0`, such as one that is `β`-Hölder at
+time `0`, supplies, at `x = u b` and `y = u a`, the endpoint data of the first estimate for every
 `β`, and of the second when `0 ≤ β` and `b ≤ a`, so that `b ^ β ≤ a ^ β` for `0 < b`. The data
 alone do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
@@ -40,8 +43,8 @@ alone do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right`: `dist x y ≤ K |b - a| (-a) ^ (β - 1)`
   for `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, when `dist x y = 0` if `b ≤ 0` and
   `dist x y ≤ K b ^ β` if `0 < b`.
-* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_two_mul_abs_sub`:
-  `dist x y ≤ 4 K |b - a| a ^ (β - 1)` for `0 < a` and `a ≤ 2 |b - a|`, when
+* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_mul_abs_sub`:
+  `dist x y ≤ 2 A K |b - a| a ^ (β - 1)` for `0 < a` and `a ≤ A |b - a|`, when
   `dist x c ≤ K a ^ β` and `dist y c ≤ K a ^ β`.
 -/
 
@@ -90,24 +93,24 @@ theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace
           rw [rpow_one, abs_of_pos (by linarith), mul_comm]
   exact (hpos hb).trans (by gcongr)
 
-/-- If `0 < a` and `a ≤ 2 |b - a|`, and `x` and `y` both lie within `K a ^ β` of a point `c`,
-then `dist x y ≤ 4 K |b - a| a ^ (β - 1)`. This bounds the increment `dist (u b) (u a)` of a
+/-- If `0 < a` and `a ≤ A |b - a|`, and `x` and `y` both lie within `K a ^ β` of a point `c`,
+then `dist x y ≤ 2 A K |b - a| a ^ (β - 1)`. This bounds the increment `dist (u b) (u a)` of a
 function `u` that is constant equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
-`r ≥ 0`, when `0 ≤ β` and `b ≤ a / 2`. -/
-theorem dist_le_mul_abs_sub_mul_rpow_of_le_two_mul_abs_sub {X : Type*} [PseudoMetricSpace X]
-    {x y c : X} {β K a b : ℝ} (ha : 0 < a) (hab : a ≤ 2 * |b - a|) (hx : dist x c ≤ K * a ^ β)
+`r ≥ 0`, when `0 ≤ β` and `b ≤ a`; for instance, `b ≤ a / 2` gives `a ≤ 2 |b - a|`. -/
+theorem dist_le_mul_abs_sub_mul_rpow_of_le_mul_abs_sub {X : Type*} [PseudoMetricSpace X]
+    {x y c : X} {β K A a b : ℝ} (ha : 0 < a) (hab : a ≤ A * |b - a|) (hx : dist x c ≤ K * a ^ β)
     (hy : dist y c ≤ K * a ^ β) :
-    dist x y ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
+    dist x y ≤ 2 * A * K * (|b - a| * a ^ (β - 1)) := by
   have hK : 0 ≤ K :=
     nonneg_of_mul_nonneg_left (dist_nonneg.trans hx) (rpow_pos_of_pos ha β)
-  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) :=
+  have h3 : a ^ β ≤ A * (|b - a| * a ^ (β - 1)) :=
     calc a ^ β = a * a ^ (β - 1) := by
           simpa only [sub_add_cancel, mul_comm] using rpow_add_one ha.ne' (β - 1)
-      _ ≤ 2 * |b - a| * a ^ (β - 1) := by gcongr
-      _ = 2 * (|b - a| * a ^ (β - 1)) := mul_assoc _ _ _
+      _ ≤ A * |b - a| * a ^ (β - 1) := by gcongr
+      _ = A * (|b - a| * a ^ (β - 1)) := mul_assoc _ _ _
   calc dist x y ≤ dist x c + dist y c := dist_triangle_right _ _ _
     _ ≤ 2 * (K * a ^ β) := by linarith
-    _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
+    _ ≤ 2 * (K * (A * (|b - a| * a ^ (β - 1)))) := by gcongr
     _ = _ := by ring
 
 end TauCeti

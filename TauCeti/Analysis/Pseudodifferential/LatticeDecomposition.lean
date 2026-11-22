@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -449,11 +450,11 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
       rw [sq_abs]
       ring
     calc ‖η‖ ^ (2 * (N + 1)) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
-        = ∑ j, ‖η‖ ^ (2 * N) * (η j ^ 2 * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by
-          rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-          ring
+        = ‖η‖ ^ 2 * (‖η‖ ^ (2 * N) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by ring
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
-          Finset.sum_le_sum fun j _ ↦ by
+          PiLp.norm_sq_mul_le_sum fun j ↦ by
+            rw [Real.norm_eq_abs, sq_abs]
+            refine (mul_left_comm _ _ _).trans_le ?_
             rw [hj, mul_left_comm]
             exact mul_le_mul_of_nonneg_left (hD j i η ξ) (by positivity)
       _ = _ := by rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]

@@ -679,11 +679,16 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
-    have hb := dist_le_three_mul_rpow_of_le_two_mul (x := ∫ s in 0..t, Φ t s)
-      (y := ∫ s in 0..t', Φ t' s) (z := 0) (c := C₁ * H) (β := (α : ℝ) / 2)
-      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht.le (by linarith) ht' hsmall
+    have hb := dist_le_rpow_add_one_mul_mul_rpow_of_le_mul (x := ∫ s in 0..t, Φ t s)
+      (y := ∫ s in 0..t', Φ t' s) (z := 0) (c := C₁ * H) (β := (α : ℝ) / 2) (A := 2)
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) ht.le (by linarith) ht' hsmall
       (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
     rw [dist_eq_norm] at hb
+    -- `2 ^ (α / 2) ≤ 2` since `α / 2 ≤ 1`, so the coefficient is at most `3 C₁ H`.
+    have h2 : (2 : ℝ) ^ ((α : ℝ) / 2) * (C₁ * H * h ^ ((α : ℝ) / 2)) ≤
+        2 * (C₁ * H * h ^ ((α : ℝ) / 2)) :=
+      mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
+        (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
   -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.

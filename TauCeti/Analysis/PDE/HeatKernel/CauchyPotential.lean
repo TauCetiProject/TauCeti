@@ -498,6 +498,36 @@ theorem exists_norm_laplacian_heatCauchyPotential_le :
         mul_le_mul_of_nonneg_left (h2.trans h3) hn
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring
 
+/-- **The time-Lipschitz bound of the Cauchy potential at positive times.** If `g` is essentially
+bounded, `0 ≤ β ≤ 1` and the Laplacian of `u(r, ·)` at `x` is at most `D r^(β - 1)` for every
+`r > 0`, then `‖u(b, x) - u(a, x)‖ ≤ 2 D |b - a| a^(β - 1)` for `0 < a` and `a / 2 ≤ b`. -/
+private theorem norm_heatCauchyPotential_sub_le_of_half_le {D β : ℝ} (hβ₀ : 0 ≤ β)
+    (hβ₁ : β ≤ 1) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {x : E}
+    (hΔ : ∀ r, 0 < r → ‖Δ (heatCauchyPotential g r) x‖ ≤ D * r ^ (β - 1)) {a b : ℝ} (ha : 0 < a)
+    (hb : a / 2 ≤ b) :
+    ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖ ≤
+      2 * D * (|b - a| * a ^ (β - 1)) := by
+  have hb0 : 0 < b := (half_pos ha).trans_le hb
+  have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha hb0
+  have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hΔ a ha))
+    (rpow_pos_of_pos ha _)
+  -- Every time in `[[a, b]]` is at least `a / 2`, which costs a factor `2` in `r ^ (β - 1)`.
+  have hmin : min a b ^ (β - 1) ≤ 2 * a ^ (β - 1) :=
+    calc min a b ^ (β - 1) ≤ (a / 2) ^ (β - 1) :=
+          rpow_le_rpow_of_nonpos (half_pos ha) (le_min (half_le_self ha.le) hb) (by linarith)
+      _ ≤ 2 * a ^ (β - 1) := by
+          simpa only [neg_sub] using
+            Real.div_rpow_neg_le_mul_rpow_neg (by linarith : 1 - β ≤ 1) one_le_two ha.le
+  calc ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖
+      ≤ D * (|b - a| * min a b ^ (β - 1)) :=
+        norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt
+          (u := fun r ↦ heatCauchyPotential g r x) hβ₁ ha hb0
+          (fun r hr ↦
+            (hasDerivAt_heatCauchyPotential_of_ae_norm_le hM (hpos hr) x).hasDerivWithinAt)
+          (fun r hr ↦ hΔ r (hpos hr))
+    _ ≤ D * (|b - a| * (2 * a ^ (β - 1))) := by gcongr
+    _ = 2 * D * (|b - a| * a ^ (β - 1)) := by ring
+
 /-- **The time-Lipschitz bound of the Cauchy potential.** For `α ≤ 2` there is a constant `C`,
 depending only on `α` and the dimension, with the following property. If `g` is bounded,
 continuous and `α`-Hölder with constant `H`, then for every `a ≠ 0` and every `b`,
@@ -552,30 +582,13 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   rw [abs_of_pos ha]
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
-    have hb0 : 0 < b := (half_pos ha).trans_le hb
-    have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha hb0
-    -- Every time in `[[a, b]]` is at least `a / 2`, which costs a factor `2` in `r ^ (β - 1)`.
-    have hmin : min a b ^ (β - 1) ≤ 2 * a ^ (β - 1) :=
-      calc min a b ^ (β - 1) ≤ (a / 2) ^ (β - 1) :=
-            rpow_le_rpow_of_nonpos (half_pos ha) (le_min (half_le_self ha.le) hb) hβ₁
-        _ ≤ 2 * a ^ (β - 1) := by
-            simpa only [neg_sub] using
-              Real.div_rpow_neg_le_mul_rpow_neg (by linarith : 1 - β ≤ 1) one_le_two ha.le
     refine hweak (k := 2 * C₂) (rpow_nonneg ha.le _) (by linarith) ?_
-    calc ‖u b - u a‖ ≤ C₂ * H * (|b - a| * min a b ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt (u := u)
-            (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) (by linarith) ha hb0
-            (fun r hr => (hasDerivAt_heatCauchyPotential_of_ae_norm_le
-              (ae_of_all _ hM) (hpos hr) x).hasDerivWithinAt)
-            (fun r hr => hC₂ (ae_of_all _ hM) hg (hpos hr) x)
-      _ ≤ C₂ * H * (|b - a| * (2 * a ^ (β - 1))) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hmin (abs_nonneg _))
-            (mul_nonneg hC₂₀ H.coe_nonneg)
-      _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
+    exact (norm_heatCauchyPotential_sub_le_of_half_le hβ₀ (by linarith) (ae_of_all _ hM)
+      (fun r hr ↦ hC₂ (ae_of_all _ hM) hg hr x) ha hb).trans_eq (by ring)
   · refine hweak (k := 4 * Mα) (rpow_nonneg ha.le _) (by linarith) ?_
     calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
-      _ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          dist_le_mul_abs_sub_mul_rpow_of_le_two_mul_abs_sub ha
+      _ ≤ 2 * 2 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_le_mul_abs_sub ha
             (by rw [abs_of_neg (by linarith : b - a < 0)]; linarith) ?_ (hrate a ha.le)
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
     -- `u b` is within `H Mα b ^ β ≤ H Mα a ^ β` of `g x`, and equals it if `b ≤ 0`.

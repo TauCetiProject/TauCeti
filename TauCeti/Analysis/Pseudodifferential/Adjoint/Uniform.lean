@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
@@ -304,11 +305,11 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_ofRight_le (N : ℕ) :
         (hC'.trans (mul_le_mul_of_nonneg_left hwC (hC0 j))))
         ((hD j i x ξ).trans (mul_le_mul_of_nonneg_left hwD (hD0 j)))).trans_eq (by ring)
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖((c i).ofRight hci).coefficient (x, ξ)‖
-        = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
-            ‖((c i).ofRight hci).coefficient (x, ξ)‖) := by
-          rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
+        = ‖x - z i‖ ^ 2 * (‖x - z i‖ ^ (2 * N) * ‖((c i).ofRight hci).coefficient (x, ξ)‖) := by
           ring
-      _ ≤ ∑ j, (A j + B j + C j + D j) * w := Finset.sum_le_sum fun j _ ↦ hj j
+      _ ≤ ∑ j, (A j + B j + C j + D j) * w := PiLp.norm_sq_mul_le_sum fun j ↦ by
+          rw [Real.norm_eq_abs, sq_abs]
+          exact (mul_left_comm _ _ _).trans_le (hj j)
       _ = _ := by rw [Finset.sum_mul]
 
 /-- **Decay of the derivatives away from the centres.** Every mixed derivative
