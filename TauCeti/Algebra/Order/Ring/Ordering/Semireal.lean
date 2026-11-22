@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Algebra.Order.Ring.Ordering.Extension
 public import Mathlib.Algebra.Ring.Semireal.Defs
+public import Mathlib.Algebra.Ring.IsFormallyReal
 
 /-! # Ordering formally real fields
 
 The sums of squares in a formally real field form a preordering, which extends to an ordering.
-This supplies an order when deriving polynomial intermediate value from `IsRealClosed`.
+This supplies an order when deriving polynomial intermediate value from `IsRealClosed`. It also
+shows that a semireal field is formally real in the sense of `IsFormallyReal`.
 
 ## References
 
@@ -34,3 +36,8 @@ theorem IsSemireal.exists_linearOrder {K : Type*} [Field K] [IsSemireal K] :
       IsStrictOrderedRing K := by
   obtain ⟨o, ho, _⟩ := (Subsemiring.IsPreordering.sumSq (K := K)).exists_linearOrder
   exact ⟨o, ho⟩
+
+/-- A semireal field is formally real: a sum of squares vanishes only when every term does. -/
+theorem IsSemireal.isFormallyReal {K : Type*} [Field K] [IsSemireal K] : IsFormallyReal K := by
+  obtain ⟨o, _⟩ := IsSemireal.exists_linearOrder (K := K)
+  infer_instance

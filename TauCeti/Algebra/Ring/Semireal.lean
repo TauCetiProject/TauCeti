@@ -11,6 +11,10 @@ public import Mathlib.Algebra.Ring.Semireal.Defs
 
 Semireality excludes `-1` from the squares. The `Fact` instance supplies this obstruction
 when constructing a field by adjoining a square root of `-1`.
+
+Ring homomorphisms send sums of squares to sums of squares (`IsSumSq.map`), so semireality pulls
+back along any ring homomorphism (`IsSemireal.of_ringHom`): a subring of a semireal ring, for
+instance a subfield of a real closed field, is semireal.
 -/
 
 public section
@@ -24,3 +28,17 @@ instance {R : Type*} [AddGroup R] [One R] [Mul R] [IsSemireal R] :
   ⟨fun h => IsSemireal.not_isSumSq_neg_one R h.isSumSq⟩
 
 end TauCeti
+
+/-- A ring homomorphism sends sums of squares to sums of squares. -/
+theorem IsSumSq.map {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [FunLike F R S] [RingHomClass F R S] (f : F) {s : R} (hs : IsSumSq s) : IsSumSq (f s) := by
+  induction hs with
+  | zero => simp
+  | sq_add a _ ih => simpa using IsSumSq.sq_add (f a) ih
+
+/-- Semireality pulls back along ring homomorphisms: if `-1` is not a sum of squares in `S`, it is
+not one in `R` either. -/
+theorem IsSemireal.of_ringHom {R S F : Type*} [NonAssocRing R] [NonAssocRing S] [IsSemireal S]
+    [FunLike F R S] [RingHomClass F R S] (f : F) : IsSemireal R :=
+  isSemireal_iff_not_isSumSq_neg_one.2 fun h ↦
+    IsSemireal.not_isSumSq_neg_one S (by simpa using h.map f)

@@ -122,16 +122,20 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
 
+/-- By Artin's theorem, `M` has degree `orderOf σ` over the field fixed by an automorphism `σ` of
+finite order. -/
+theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
+    Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
+  have := Fintype.ofFinite (Subgroup.zpowers σ)
+  rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
+  exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
+
 /-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
 `σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
 theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
     Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
   by_cases hfin : Finite (Subgroup.zpowers σ)
-  · have := Fintype.ofFinite (Subgroup.zpowers σ)
-    have h : Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
-      rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
-      exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
-    rw [← h, Module.finrank_mul_finrank]
+  · rw [← finrank_fixedField_zpowers_eq_orderOf σ, Module.finrank_mul_finrank]
   · have hσ : orderOf σ = 0 := by
       rw [orderOf_eq_zero_iff, ← finite_zpowers]
       exact hfin
