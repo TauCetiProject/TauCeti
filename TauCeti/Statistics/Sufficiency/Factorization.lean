@@ -20,6 +20,9 @@ families and deduces the minimal sufficiency of the likelihood ratio for countab
 building on the generic two-measure disintegration/density lemmas in
 `TauCeti.Probability.Kernel.Disintegration.Map`:
 
+* `TauCeti.IsSufficientStatistic.countableMixture`,
+  `TauCeti.IsSufficientStatistic.sumElim_countableMixture`: preservation of sufficiency under
+  countable mixtures, retaining the same common Markov kernel.
 * `TauCeti.IsSufficientStatistic.exists_factorization`: forward factorization (no standard Borel
   assumption needed).
 * `TauCeti.isSufficientStatistic_of_exists_factorization`: converse factorization on a standard
@@ -49,6 +52,29 @@ namespace TauCeti
 
 variable {Θ X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
 
+/-! ### Countable mixtures of sufficient statistics -/
+
+/-- Taking countable mixtures `TauCeti.countableMixture P (θss ι)` preserves sufficiency of `T`,
+with a single common Markov kernel. -/
+theorem IsSufficientStatistic.countableMixture {P : Θ → Measure X} {T : X → S}
+    (h : IsSufficientStatistic P T) {Ι : Type*} (θss : Ι → ℕ → Θ) :
+    IsSufficientStatistic (fun ι ↦ TauCeti.countableMixture P (θss ι)) T := by
+  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp h
+  rw [isSufficientStatistic_def]
+  exact ⟨hT, K, hK, fun ι ↦ map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θss ι n)⟩
+
+/-- Adjoining countable mixtures `TauCeti.countableMixture P (θss ι)` to `P` preserves
+sufficiency with a single common Markov kernel shared by `P` and all mixtures. -/
+theorem IsSufficientStatistic.sumElim_countableMixture {P : Θ → Measure X} {T : X → S}
+    (h : IsSufficientStatistic P T) {Ι : Type*} (θss : Ι → ℕ → Θ) :
+    IsSufficientStatistic (Sum.elim P (fun ι ↦ TauCeti.countableMixture P (θss ι))) T := by
+  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp h
+  rw [isSufficientStatistic_def]
+  refine ⟨hT, K, hK, ?_⟩
+  rintro (θ | ι)
+  · exact hdis θ
+  · exact map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θss ι n)
+
 /-! ### The Neyman–Fisher factorization theorem -/
 
 /-- Forward direction of the factorization theorem: if `T` is sufficient for a nonempty family of
@@ -60,12 +86,11 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
     ∃ (g : Θ → S → ℝ) (h : X → ℝ),
       (∀ θ, Measurable (g θ) ∧ ∀ s, 0 ≤ g θ s) ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
       ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x := by
-  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp hs
   obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ
     fun θ ↦ (hf θ).absolutelyContinuous
-  let L : Measure X := countableMixture P θs
-  have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K :=
-    map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θs n)
+  let L : Measure X := TauCeti.countableMixture P θs
+  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp
+    (hs.sumElim_countableMixture (fun _ : Unit ↦ θs))
   let h : X → ℝ := fun x ↦ (∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)).toReal
   have hh_dens : HasDensity L μ h := HasDensity.countableMixture fun n ↦ hf (θs n)
   let g : Θ → S → ℝ := fun θ s ↦ (((P θ).map T).rnDeriv (L.map T) s).toReal
@@ -75,7 +100,8 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
   have hPL_dens : HasDensity (P θ) L (fun x ↦ g θ (T x)) := by
     refine ⟨((Measure.measurable_rnDeriv _ _).ennreal_toReal).comp hT,
       ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
-    rw [eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd hT (hdom θ) (hdis θ) hLdis]
+    rw [eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd hT (hdom θ) (hdis (Sum.inl θ))
+      (hdis (Sum.inr ()))]
     exact withDensity_congr_ae
       (ae_of_ae_map hT.aemeasurable (Measure.ofReal_toReal_rnDeriv ((P θ).map T) (L.map T)).symm)
   exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)

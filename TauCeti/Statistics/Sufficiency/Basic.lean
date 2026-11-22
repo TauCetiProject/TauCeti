@@ -27,9 +27,15 @@ and develops the conditional-expectation characterization of sufficiency:
 * `TauCeti.isSufficientStatistic_of_forall_setLIntegral_eq`,
   `TauCeti.isSufficientStatistic_iff_forall_setLIntegral_eq`: rectangle introduction and
   characterization lemmas for sufficiency of finite families.
+* `TauCeti.IsSufficientStatistic.sFinite`, `TauCeti.isSufficientStatistic_id_iff`: sufficiency
+  implies s-finiteness of every model law, characterizing identity sufficiency.
+* `TauCeti.IsSufficientStatistic.comp`, `TauCeti.IsSufficientStatistic.sumElim_comp`: preservation
+  of sufficiency under kernel mixtures, retaining the same common Markov kernel.
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
+* `TauCeti.IsMinimalSufficientStatistic.exists_ae_eq_comp_ulift`: elimination of minimal
+  sufficiency at universe `max r r'` against sufficient statistics with codomain in `Type r'`.
 * `TauCeti.isSufficientStatistic_iff_exists_condExp_ae_eq`: on a nonempty standard Borel space `X`,
   a measurable statistic `T` is sufficient for a family of finite measures `P` if and only if
   every bounded measurable `φ : X → ℝ` admits a single measurable `ψ : S → ℝ` with
@@ -121,6 +127,12 @@ theorem IsSufficientStatistic.exists_kernel {P : Θ → Measure X} {T : X → S}
       ∀ θ, (P θ).map (fun x ↦ (T x, x)) = (P θ).map T ⊗ₘ K :=
   h.2
 
+/-- Every measure in a family admitting a sufficient statistic is s-finite. -/
+theorem IsSufficientStatistic.sFinite {P : Θ → Measure X} {T : X → S}
+    (h : IsSufficientStatistic P T) (θ : Θ) : SFinite (P θ) := by
+  obtain ⟨hT, _, _, hdis⟩ := h
+  exact sfinite_of_map_prodMk_eq_compProd hT.aemeasurable (hdis θ)
+
 /-- The identity statistic is sufficient for every family of s-finite measures. -/
 @[simp]
 theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)] :
@@ -128,6 +140,13 @@ theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)]
   refine ⟨measurable_id, Kernel.id, inferInstance, fun θ ↦ ?_⟩
   rw [Measure.map_id, Kernel.id, Measure.compProd_deterministic measurable_id]
   simp only [id_eq]
+
+/-- The identity statistic is sufficient for a family `P` if and only if every measure `P θ` is
+s-finite. -/
+@[simp]
+theorem isSufficientStatistic_id_iff (P : Θ → Measure X) :
+    IsSufficientStatistic P id ↔ ∀ θ, SFinite (P θ) :=
+  ⟨fun h ↦ h.sFinite, fun _ ↦ isSufficientStatistic_id P⟩
 
 /-- A constant statistic is sufficient for a nonempty family of probability measures if and only
 if all measures in the family are equal. -/
@@ -195,6 +214,27 @@ theorem IsSufficientStatistic.of_ae_eq {P : Θ → Measure X} {T₁ T₂ : X →
   rw [← Measure.map_congr hpair, ← Measure.map_congr (hae θ)]
   exact hdis θ
 
+/-- Mixing a sufficient kernel `P : Kernel Θ X` against a family of s-finite priors
+`Λ : Ι → Measure Θ` preserves sufficiency of `T`, with a single common Markov kernel. -/
+theorem IsSufficientStatistic.comp [MeasurableSpace Θ] {P : Kernel Θ X} [IsSFiniteKernel P]
+    {T : X → S} (h : IsSufficientStatistic P T) {Ι : Type*} (Λ : Ι → Measure Θ)
+    [∀ ι, SFinite (Λ ι)] :
+    IsSufficientStatistic (fun ι ↦ P ∘ₘ Λ ι) T := by
+  obtain ⟨hT, K, hK, hdis⟩ := h
+  exact ⟨hT, K, hK, fun ι ↦ map_prodMk_comp_eq_compProd hT (ae_of_all _ hdis)⟩
+
+/-- Adjoining kernel mixtures `P ∘ₘ Λ ι` to a sufficient kernel `P` preserves sufficiency with a
+single common Markov kernel shared by `P` and all mixtures. -/
+theorem IsSufficientStatistic.sumElim_comp [MeasurableSpace Θ] {P : Kernel Θ X}
+    [IsSFiniteKernel P] {T : X → S} (h : IsSufficientStatistic P T) {Ι : Type*}
+    (Λ : Ι → Measure Θ) [∀ ι, SFinite (Λ ι)] :
+    IsSufficientStatistic (Sum.elim P (fun ι ↦ P ∘ₘ Λ ι)) T := by
+  obtain ⟨hT, K, hK, hdis⟩ := h
+  refine ⟨hT, K, hK, ?_⟩
+  rintro (θ | ι)
+  · exact hdis θ
+  · exact map_prodMk_comp_eq_compProd hT (ae_of_all _ hdis)
+
 /-! ### Minimal sufficient statistics -/
 
 /-- A statistic `T : X → S` is minimal sufficient for `P : Θ → Measure X` (with respect to the
@@ -229,6 +269,18 @@ theorem IsMinimalSufficientStatistic.exists_ae_eq_comp.{u, v, w, r} {Θ : Type u
     {U : X → S'} (hU : IsSufficientStatistic P U) :
     ∃ φ : S' → S, Measurable φ ∧ ∀ θ, T =ᵐ[P θ] φ ∘ U :=
   h.2 S' U hU
+
+/-- A minimal sufficient statistic `IsMinimalSufficientStatistic.{u, v, w, max r r'} P T`
+factors almost everywhere through any sufficient statistic `U : X → S'` whose codomain
+`S' : Type r'` lies in the smaller universe `r'`, by lifting `S'` via `MeasurableEquiv.ulift`. -/
+theorem IsMinimalSufficientStatistic.exists_ae_eq_comp_ulift.{u, v, w, r, r'} {Θ : Type u}
+    {X : Type v} {S : Type w} [MeasurableSpace X] [MeasurableSpace S] {P : Θ → Measure X}
+    {T : X → S} (h : IsMinimalSufficientStatistic.{u, v, w, max r r'} P T)
+    {S' : Type r'} [MeasurableSpace S'] {U : X → S'} (hU : IsSufficientStatistic P U) :
+    ∃ φ : S' → S, Measurable φ ∧ ∀ θ, T =ᵐ[P θ] φ ∘ U := by
+  let e : S' ≃ᵐ ULift.{r, r'} S' := (MeasurableEquiv.ulift.{r', r}).symm
+  obtain ⟨φ, hφ, hfac⟩ := h.exists_ae_eq_comp (hU.comp_measurableEquiv e)
+  exact ⟨φ ∘ e, hφ.comp e.measurable, hfac⟩
 
 /-- Any constant statistic is minimal sufficient for a constant nonempty family of probability
 measures. -/
