@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.FieldTheory.PerfectClosure
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.FieldTheory.PerfectClosure
+public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
+public import TauCeti.RingTheory.Kaehler.PBasis
+import Mathlib.FieldTheory.IsPerfectClosure
 import Mathlib.FieldTheory.RatFunc.AsPolynomial
-import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import Mathlib.RingTheory.Etale.Kaehler
 import Mathlib.RingTheory.Kaehler.Polynomial
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
-import TauCeti.RingTheory.Kaehler.PBasis
+import TauCeti.FieldTheory.Frobenius.Range
 
 /-!
 # Examples of `p`-bases and Kähler differentials in prime characteristic
@@ -32,9 +34,37 @@ import TauCeti.RingTheory.Kaehler.PBasis
 * **Perfect closure of an infinite transcendental extension:** the perfect closure of
   `FractionRing (MvPolynomial ℕ (ZMod p))` has transcendence degree `ℵ₀` over `ZMod p`, yet it is
   perfect with empty `p`-basis, `Ω¹ = 0`, `[L : L ^ p] = 1 = p ^ 0`, and `dim_L Ω¹ = 0`.
+
+The rational-function and polynomial-fraction-field examples identify `Ω[K⁄ZMod p]` by
+transporting Mathlib's polynomial differential bases (`KaehlerDifferential.polynomialEquiv` and
+`KaehlerDifferential.mvPolynomialBasis`) along `KaehlerDifferential.isBaseChange_of_formallyEtale`
+via `IsBaseChange.basis`.
 -/
 
+namespace TauCeti.Examples
+
 open KaehlerDifferential TauCeti
+
+private theorem perfectRing_summary (p : ℕ) [Fact p.Prime] (k : Type*)
+    [Field k] [ExpChar k p] [PerfectRing k p] [Algebra (ZMod p) k] :
+    IsPBasis p (Empty.elim : Empty → k) ∧
+      Subsingleton Ω[k⁄ZMod p] ∧
+      FiniteDimensional (frobenius k p).fieldRange k ∧
+      FiniteDimensional k Ω[k⁄ZMod p] ∧
+      Module.finrank (frobenius k p).fieldRange k = 1 ∧
+      Module.finrank k Ω[k⁄ZMod p] = 0 := by
+  have hb : IsPBasis p (Empty.elim : Empty → k) :=
+    (isPBasis_empty_iff_perfectRing (Empty.elim : Empty → k)).mpr ‹_›
+  have hsub : Subsingleton Ω[k⁄ZMod p] :=
+    (subsingleton_kaehlerDifferential_iff_perfectRing p (ZMod p) k
+      (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mpr ‹_›
+  have hfd_frob : FiniteDimensional (frobenius k p).fieldRange k :=
+    hb.finite_iff_finiteDimensional.mp inferInstance
+  have hfd_kaehler : FiniteDimensional k Ω[k⁄ZMod p] :=
+    (kaehler_finiteDimensional_iff p (ZMod p) k
+      (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mpr hfd_frob
+  refine ⟨hb, hsub, hfd_frob, hfd_kaehler, ?_, Module.finrank_zero_of_subsingleton⟩
+  simpa using hb.finrank_fieldRange_frobenius
 
 -- For a perfect field of prime characteristic `p`, the empty family is a `p`-basis,
 -- `Ω[k⁄ZMod p]` vanishes, `[k : k ^ p] = 1`, and `dim_k Ω[k⁄ZMod p] = 0`.
@@ -44,14 +74,9 @@ example (p : ℕ) [Fact p.Prime] (k : Type*) [Field k] [CharP k p] [PerfectField
       Subsingleton Ω[k⁄ZMod p] ∧
       Module.finrank (frobenius k p).fieldRange k = 1 ∧
       Module.finrank k Ω[k⁄ZMod p] = 0 := by
-  have hperf : PerfectRing k p := PerfectField.toPerfectRing p
-  have hb : IsPBasis p (Empty.elim : Empty → k) :=
-    (isPBasis_empty_iff_perfectRing (Empty.elim : Empty → k)).mpr hperf
-  have hsub : Subsingleton Ω[k⁄ZMod p] :=
-    (subsingleton_kaehlerDifferential_iff_perfectRing p (ZMod p) k
-      (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mpr hperf
-  refine ⟨hb, hsub, ?_, Module.finrank_zero_of_subsingleton⟩
-  simpa using hb.finrank_fieldRange_frobenius
+  have : PerfectRing k p := PerfectField.toPerfectRing p
+  obtain ⟨hb, hsub, -, -, hfinrank, homega⟩ := perfectRing_summary p k
+  exact ⟨hb, hsub, hfinrank, homega⟩
 
 -- In `RatFunc (ZMod p)`, `RatFunc.X` forms a `p`-basis, `[𝔽_p(t) : 𝔽_p(t ^ p)] = p`,
 -- `D (ZMod p) _ RatFunc.X` spans `Ω¹`, and `dim Ω¹ = 1`, including `p = 2`.
@@ -84,10 +109,8 @@ example :
     let bK : Module.Basis (Fin 1) K Ω[K⁄ZMod p] := hbc.basis bS
     have hbK : ∀ i : Fin 1, bK i = D (ZMod p) K (RatFunc.X : K) := fun i ↦ by
       rw [hbc.basis_apply]
-      simp only [bS, Module.Basis.map_apply, Module.Basis.singleton_apply]
-      change KaehlerDifferential.map (ZMod p) (ZMod p) S K
-        ((KaehlerDifferential.polynomialEquiv (ZMod p)).symm 1) = D (ZMod p) K RatFunc.X
-      rw [KaehlerDifferential.polynomialEquiv_symm, one_smul, KaehlerDifferential.map_D,
+      simp only [bS, S, K, Module.Basis.map_apply, Module.Basis.singleton_apply,
+        KaehlerDifferential.polynomialEquiv_symm, one_smul, KaehlerDifferential.map_D,
         RatFunc.algebraMap_X]
     have hfun : (fun _ : Fin 1 ↦ D (ZMod p) K (RatFunc.X : K)) = ⇑bK := funext fun i ↦ (hbK i).symm
     have hb : IsPBasis p (fun _ : Fin 1 ↦ (RatFunc.X : K)) := by
@@ -162,10 +185,10 @@ example (p : ℕ) [Fact p.Prime] :
       (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mp hfd)
   exact ⟨hb, hfun ▸ bK.linearIndependent, hfun ▸ bK.span_eq, hnot_frob, hnot_kaehler⟩
 
--- The perfect closure `L` of `FractionRing (MvPolynomial ℕ (ZMod p))` has transcendence degree
--- `ℵ₀` over `ZMod p`, yet it is perfect with empty `p`-basis, `Ω[L⁄ZMod p] = 0`,
--- `[L : L ^ p] = 1 = p ^ 0`, and `dim_L Ω[L⁄ZMod p] = 0`.
-example (p : ℕ) [Fact p.Prime] :
+/-- The perfect closure `L` of `FractionRing (MvPolynomial ℕ (ZMod p))` has transcendence degree
+`ℵ₀` over `ZMod p`, yet it is perfect with empty `p`-basis, `Ω[L⁄ZMod p] = 0`,
+`[L : L ^ p] = 1 = p ^ 0`, and `dim_L Ω[L⁄ZMod p] = 0`. -/
+public theorem perfectClosure_mvPolynomial_pBasis (p : ℕ) [Fact p.Prime] :
     let K := FractionRing (MvPolynomial ℕ (ZMod p))
     have : CharP K p := charP_of_injective_algebraMap
       (IsFractionRing.injective (MvPolynomial ℕ (ZMod p)) K) p
@@ -181,29 +204,16 @@ example (p : ℕ) [Fact p.Prime] :
   intro K hchar L
   let : Algebra (ZMod p) L := ((PerfectClosure.of K p).comp (algebraMap (ZMod p) K)).toAlgebra
   let : Algebra K L := (PerfectClosure.of K p).toAlgebra
+  have hof : algebraMap K L = PerfectClosure.of K p := rfl
   have : IsScalarTower (ZMod p) K L := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   have : Algebra.IsAlgebraic (MvPolynomial ℕ (ZMod p)) K :=
     IsLocalization.isAlgebraic K (nonZeroDivisors (MvPolynomial ℕ (ZMod p)))
-  have : Algebra.IsAlgebraic K L := ⟨fun e ↦ PerfectClosure.induction_on e fun ⟨n, x⟩ ↦ by
-    refine ⟨Polynomial.X ^ p ^ n - Polynomial.C x, ?_, ?_⟩
-    · exact (Polynomial.monic_X_pow_sub_C x (pow_ne_zero n (Fact.out : p.Prime).ne_zero)).ne_zero
-    · simp only [map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C]
-      change PerfectClosure.mk K p (n, x) ^ p ^ n - PerfectClosure.of K p x = 0
-      rw [← iterateFrobenius_def, coe_iterateFrobenius, PerfectClosure.iterate_frobenius_mk,
-        sub_self]⟩
+  have : IsPRadical (algebraMap K L) p := hof ▸ PerfectClosure.isPRadical K p
+  have : IsPurelyInseparable K L := IsPRadical.isPurelyInseparable K L p
   have htr : Algebra.trdeg (ZMod p) L = Cardinal.aleph0 := by
     have htbK := (IsTranscendenceBasis.mvPolynomial ℕ (ZMod p)).algebraMap_comp (A := K)
     have htbL := htbK.algebraMap_comp (A := L)
     simpa using htbL.cardinalMk_eq_trdeg.symm
-  have hb : IsPBasis p (Empty.elim : Empty → L) :=
-    (isPBasis_empty_iff_perfectRing (Empty.elim : Empty → L)).mpr inferInstance
-  have hsub : Subsingleton Ω[L⁄ZMod p] :=
-    (subsingleton_kaehlerDifferential_iff_perfectRing p (ZMod p) L
-      (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mpr inferInstance
-  have hfd_frob : FiniteDimensional (frobenius L p).fieldRange L :=
-    hb.finite_iff_finiteDimensional.mp inferInstance
-  have hfd_kaehler : FiniteDimensional L Ω[L⁄ZMod p] :=
-    (kaehler_finiteDimensional_iff p (ZMod p) L
-      (algebraMap_mem_fieldRange_frobenius_of_perfectRing p)).mpr hfd_frob
-  refine ⟨htr, hb, hsub, hfd_frob, hfd_kaehler, ?_, Module.finrank_zero_of_subsingleton⟩
-  simpa using hb.finrank_fieldRange_frobenius
+  exact ⟨htr, perfectRing_summary p L⟩
+
+end TauCeti.Examples

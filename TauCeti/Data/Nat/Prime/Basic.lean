@@ -31,6 +31,7 @@ neither base; this ensures that their ratio modulo the prime is a unit.
 ## Main declarations
 
 * `Nat.Primes.instFactPrime`: for `p : Nat.Primes`, the instance `Fact (p : ℕ).Prime`.
+* `Nat.Prime.instNeZero`: for `p : ℕ` with `[Fact p.Prime]`, the instance `NeZero p`.
 * `Nat.Prime.not_dvd_six_of_five_le`: a prime `p ≥ 5` does not divide `6`.
 * `Nat.Prime.gcd_mul_eq_of_dvd_of_not_mul_dvd`, `Nat.Prime.lcm_mul_eq_of_dvd_of_not_mul_dvd`:
   if `n ∣ m` and `q * n ∤ m`, then `gcd m (q * n) = n` and `lcm m (q * n) = q * m`.
@@ -46,6 +47,9 @@ public section
 the prime-indexed API, for instance the `p`-adic integers `ℤ_[p]`, can be used for `p : Nat.Primes`.
 -/
 instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.2⟩
+
+/-- A prime natural number is nonzero. -/
+instance Nat.Prime.instNeZero (p : ℕ) [hp : Fact p.Prime] : NeZero p := ⟨hp.out.ne_zero⟩
 
 /-- **A prime at least `5` does not divide `6`**: the primes dividing `6` are `2` and `3`. -/
 theorem Nat.Prime.not_dvd_six_of_five_le {p : ℕ} (hp : p.Prime) (h5 : 5 ≤ p) : ¬ p ∣ 6 :=

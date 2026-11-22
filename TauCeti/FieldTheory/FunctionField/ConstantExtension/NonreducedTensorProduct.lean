@@ -20,7 +20,7 @@ import TauCeti.FieldTheory.RatFunc.Transcendental
 
 Let `k` be a field of characteristic `p > 0` and let `a, b ∈ k` be `p`-independent: the
 monomials `a ^ i * b ^ j` with `i, j < p` are linearly independent over the subfield `k ^ p` of
-`p`-th powers (`TauCeti.IsPIndependentPair`); for instance, independent indeterminates `a` and
+`p`-th powers (`TauCeti.IsPIndependent p ![a, b]`); for instance, independent indeterminates `a` and
 `b` over `𝔽_p`. Let `F = k(x, y)` with `x` transcendental over `k` and
 
 `y ^ p = a + b x ^ p`.
@@ -83,7 +83,7 @@ variable {k : Type u} [Field k] {p : ℕ} [hp : Fact p.Prime] [CharP k p] {a b :
 
 section PIndependent
 
-variable (hab : IsPIndependentPair p a b)
+variable (hab : IsPIndependent p ![a, b])
 
 include hab
 
@@ -246,7 +246,7 @@ theorem not_isReduced_tensorProduct_of_pow_eq_add_mul_X_pow {y : F}
 
 section PIndependent
 
-variable (hab : IsPIndependentPair p a b)
+variable (hab : IsPIndependent p ![a, b])
 
 include hab
 

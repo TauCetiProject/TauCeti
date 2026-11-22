@@ -18,6 +18,15 @@ Mathlib's `RingHom.fieldRange` and `RingHom.rangeRestrictFieldEquiv`.
 This distinguishes an isomorphism of abstract fields preserving the constant subfield from a
 `k`-algebra isomorphism: Frobenius need not fix each element of `k`.
 
+## Main results
+
+* `TauCeti.frobeniusPowers`, `TauCeti.iterateFrobeniusEquivPowers`: the intermediate field `F^{p^n}`
+  over perfect constants and the field isomorphism `F ≃+* F^{p^n}`.
+* `TauCeti.algebraMap_mem_fieldRange_frobenius_of_perfectRing`: the image of a perfect ring in a
+  field of exponential characteristic `p` lies in `k ^ p`.
+* `TauCeti.intCast_mem_fieldRange_frobenius`: the image of `ℤ` in a field of exponential
+  characteristic `p` lies in `k ^ p`.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Section III.10.
@@ -94,5 +103,18 @@ instance isPurelyInseparable_frobeniusPowers :
   rw [isPurelyInseparable_iff_pow_mem _ p]
   intro x
   exact ⟨n, ⟨x ^ p ^ n, (mem_frobeniusPowers k F p n _).mpr ⟨x, rfl⟩⟩, rfl⟩
+
+/-- If `R` is a perfect ring of characteristic `p`, its image in any field `k` of exponential
+characteristic `p` lies in the Frobenius subfield `k ^ p`. -/
+theorem algebraMap_mem_fieldRange_frobenius_of_perfectRing (p : ℕ) {R k : Type*}
+    [CommSemiring R] [Field k] [ExpChar k p] [Algebra R k] [PerfectRing R p] (r : R) :
+    algebraMap R k r ∈ (frobenius k p).fieldRange := by
+  obtain ⟨s, rfl⟩ := (PerfectRing.bijective_frobenius (R := R) (p := p)).2 r
+  exact ⟨algebraMap R k s, by rw [frobenius_def, map_pow]⟩
+
+/-- The image of `ℤ` in any field `k` of exponential characteristic `p` lies in `k ^ p`. -/
+theorem intCast_mem_fieldRange_frobenius (p : ℕ) {k : Type*} [Field k] [ExpChar k p] (n : ℤ) :
+    algebraMap ℤ k n ∈ (frobenius k p).fieldRange :=
+  ⟨algebraMap ℤ k n, by rw [eq_intCast, map_intCast]⟩
 
 end TauCeti

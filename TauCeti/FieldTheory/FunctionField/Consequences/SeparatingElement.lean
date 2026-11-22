@@ -10,6 +10,8 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Frobenius
 public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 public import TauCeti.LinearAlgebra.LinearIndependent.Frobenius
+import TauCeti.FieldTheory.Frobenius.Range
+import TauCeti.RingTheory.Kaehler.PBasis
 
 /-!
 # Separating elements in Riemann–Roch spaces of small degree
@@ -362,7 +364,8 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
       (finrank_kaehlerDifferential_eq_one_iff.2 hsep) hx⟩
   -- Over the perfect field `k'`, an element with vanishing differential is a `p`-th power in
   -- `F'`; but not every element of a basis of `L(W)` is one.
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have : ExpChar k' p := (algebraMap k' F').expChar (algebraMap k' F').injective p
+  have : PerfectRing k' p := PerfectField.toPerfectRing p
   have := finiteDimensional_riemannRochSpace hF W
   let b := Module.finBasis k (riemannRochSpace W)
   have hlt : Divisor.degree W <
@@ -375,8 +378,9 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
     hex' p (by omega) (by omega) (fun i ↦ (b i).2)
     (b.linearIndependent.map' (riemannRochSpace W).subtype (Submodule.ker_subtype _)) hlt
   refine ⟨b i, (b i).2, fun h0 ↦ hi ?_⟩
-  rw [← hF'.D_eq_zero_iff_mem_fieldRange_frobenius p, ← KaehlerDifferential.map_D k k' F F', h0,
-    map_zero]
+  rw [← TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius (R := k') (k := F') (p := p)
+    (fun c ↦ algebraMap_mem_fieldRange_frobenius_of_perfectRing p c),
+    ← KaehlerDifferential.map_D k k' F F', h0, map_zero]
 
 /-- **A separating element of degree at most `2g - 2`.** Over a perfect field `k`, a function
 field `F / k` of genus `g ≥ 2` with exact constant field has a separating element `x`, that is

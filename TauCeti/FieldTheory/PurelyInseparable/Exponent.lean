@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Exponent
+import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.FieldTheory.Minpoly.Finite
 
 /-!
@@ -21,6 +22,11 @@ inseparable extension *has* an exponent, but keeps the bound inside the instance
 states the bound, in the pointwise form a caller holding a degree uses and as a bound on
 `IsPurelyInseparable.exponent`.
 
+In prime characteristic `p`, an element `x ∉ E` of a field `k` whose `p`-th power lies in a
+subfield `E` has `X ^ p - C (x ^ p)` irreducible over `E` (via Mathlib's
+`irreducible_X_pow_sub_C_of_prime` in `Mathlib.FieldTheory.KummerPolynomial`), so
+`1, x, …, x ^ (p - 1)` are linearly independent over `E`.
+
 When `K` is the fraction field of a ring `A`, the exponent also clears denominators: any `K`-basis
 of `L` can be rescaled to one whose `p ^ n`-th powers all come from `A`. This needs only an
 exponent, not finite dimensionality.
@@ -34,6 +40,8 @@ exponent, not finite dimensionality.
 * `TauCeti.IsPurelyInseparable.exists_iterateFrobenius_unitsSMul_eq_algebraMap`: over the
   fraction field of a ring `A`, any basis rescales to one whose `p ^ n`-th powers lie in the image
   of `A`.
+* `TauCeti.linearIndependent_pow_of_notMem_subfield`: an element `x ∉ E` with `x ^ p ∈ E` has
+  `1, x, …, x ^ (p - 1)` linearly independent over `E`.
 -/
 
 public section
@@ -85,5 +93,37 @@ theorem exponent_le_of_finrank_le_pow {n : ℕ} (h : Module.finrank K L ≤ p ^ 
   not_lt.1 fun hn ↦ (exponent_min' p hn).elim fun a ha ↦ ha (pow_mem_of_finrank_le_pow K L p h a)
 
 end TauCeti.IsPurelyInseparable
+
+namespace TauCeti
+
+/-- An element `x` outside a subfield `E` with `x ^ p ∈ E` has `1, x, …, x ^ (p - 1)` linearly
+independent over `E`. -/
+theorem linearIndependent_pow_of_notMem_subfield {p : ℕ} [Fact p.Prime] {k : Type*} [Field k]
+    [ExpChar k p] {E : Subfield k} {x : k} (hx : x ∉ E) (hxp : x ^ p ∈ E) :
+    LinearIndependent E (fun n : Fin p ↦ x ^ (n : ℕ)) := by
+  have hp : p.Prime := Fact.out
+  let a : E := ⟨x ^ p, hxp⟩
+  have ha : ∀ y : E, y ^ p ≠ a := by
+    intro y hy
+    have hy' : (y : k) ^ p = x ^ p := congrArg Subtype.val hy
+    have : (y : k) = x := frobenius_inj k p hy'
+    exact hx (this ▸ y.2)
+  let f : Polynomial E := Polynomial.X ^ p - Polynomial.C a
+  have hirr : Irreducible f := irreducible_X_pow_sub_C_of_prime hp ha
+  have hmonic : f.Monic := Polynomial.monic_X_pow_sub_C a hp.ne_zero
+  have haeval : Polynomial.aeval x f = 0 := by
+    simp only [f, map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C]
+    exact sub_self (x ^ p)
+  have hmin : minpoly E x = f := (minpoly.eq_of_irreducible_of_monic hirr haeval hmonic).symm
+  have hdeg : (minpoly E x).natDegree = p := by
+    rw [hmin]
+    exact Polynomial.natDegree_X_pow_sub_C a
+  have hcomp : (fun n : Fin p ↦ x ^ (n : ℕ)) =
+      (fun i : Fin (minpoly E x).natDegree ↦ x ^ (i : ℕ)) ∘ finCongr hdeg.symm :=
+    funext fun n ↦ by simp only [Function.comp_apply, finCongr_apply_coe]
+  rw [hcomp, linearIndependent_equiv]
+  exact linearIndependent_pow (K := E) x
+
+end TauCeti
 
 end
