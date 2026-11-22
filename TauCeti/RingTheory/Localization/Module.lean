@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Ideal
+import TauCeti.Algebra.Module.LocalizedModule.Map
 
 /-!
 # Localized linear maps
@@ -19,6 +20,8 @@ Facts about the localization `LocalizedModule.map S f : Mₛ → Nₛ` of a line
 submonoid `S`:
 
 * `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
+* `LocalizedModule.liftOfLE_comp_restrictScalars_map`, `LocalizedModule.liftOfLE_map_apply`:
+  passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with `LocalizedModule.map`.
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
 * `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
@@ -55,6 +58,25 @@ theorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
   ext x
   induction x using induction_on with
   | h m s => simp
+
+/-- Passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with `LocalizedModule.map`,
+as an equality of `R`-linear maps. -/
+theorem liftOfLE_comp_restrictScalars_map (S₁ S₂ : Submonoid R) (h : S₁ ≤ S₂) (f : M →ₗ[R] N) :
+    liftOfLE S₁ S₂ h ∘ₗ (map S₁ f).restrictScalars R =
+      (map S₂ f).restrictScalars R ∘ₗ liftOfLE S₁ S₂ h := by
+  rw [LocalizedModule.restrictScalars_map_eq S₁ (mkLinearMap S₁ M) (mkLinearMap S₁ N),
+    LocalizedModule.restrictScalars_map_eq S₂ (mkLinearMap S₂ M) (mkLinearMap S₂ N)]
+  simp only [IsLocalizedModule.iso_localizedModule_eq_refl, LinearEquiv.refl_symm,
+    LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id]
+  exact IsLocalizedModule.liftOfLE_comp_map S₁ S₂ h
+    (mkLinearMap S₁ M) (mkLinearMap S₂ M) (mkLinearMap S₁ N) (mkLinearMap S₂ N) f
+
+/-- Passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with `LocalizedModule.map`. -/
+theorem liftOfLE_map_apply (S₁ S₂ : Submonoid R) (h : S₁ ≤ S₂) (f : M →ₗ[R] N)
+    (x : LocalizedModule S₁ M) :
+    liftOfLE S₁ S₂ h (map S₁ f x) = map S₂ f (liftOfLE S₁ S₂ h x) := by
+  simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars] using
+    LinearMap.congr_fun (liftOfLE_comp_restrictScalars_map S₁ S₂ h f) x
 
 variable {S} (M) in
 /-- Multiplication by an element of `S` becomes bijective after localizing at `S`. -/
@@ -148,7 +170,7 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
     simp [h₁, h₂, Submonoid.smul_def, smul'_mk]
   obtain ⟨u, hu⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule S
     (mkLinearMap S N) _ _ key
-  refine ⟨u * s, mul_mem u.2 s.2, (u : R) • φ, ?_⟩
+  refine ⟨u * s, mul_mem u.property s.property, (u : R) • φ, ?_⟩
   ext n
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 

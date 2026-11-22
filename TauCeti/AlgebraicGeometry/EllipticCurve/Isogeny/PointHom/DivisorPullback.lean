@@ -45,23 +45,23 @@ field, `φ^* (T) = ∑_{φ P = T} (P)`. The isogeny is unramified, and every pla
 `T` is the place of a point, since `φ` splits it completely. -/
 theorem divisorPullback_ofPoint_eq_sum (T : W₂.Point) :
     letI := φ.fieldPullback.toRingHom.toAlgebra
-    φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).1) =
+    φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).val) =
       ∑ P ∈ (φ.finite_setOf_toPointHom_eq T).toFinset,
-        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ P).1 := by
+        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ P).val := by
   classical
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  have hinj : Function.Injective fun P : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ P).1 :=
+  have hinj : Function.Injective fun P : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ P).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W₁).injective
   -- a place lies over the place of `T` exactly when it is the place of a point over `T`
   have hover (v : Place F W₁.FunctionField) :
-      v.restrict F W₂.FunctionField = (pointEquivDegreeOnePlace W₂ T).1 ↔
-        ∃ P, φ.toPointHom P = T ∧ (pointEquivDegreeOnePlace W₁ P).1 = v := by
+      v.restrict F W₂.FunctionField = (pointEquivDegreeOnePlace W₂ T).val ↔
+        ∃ P, φ.toPointHom P = T ∧ (pointEquivDegreeOnePlace W₁ P).val = v := by
     refine ⟨fun hv ↦ ?_, ?_⟩
     · have hdeg : v.degree = 1 := by
         rw [Place.degree_eq_degree_restrict_mul_relativeDegree F W₂.FunctionField v, hv,
-          (pointEquivDegreeOnePlace W₂ T).2, one_mul]
+          (pointEquivDegreeOnePlace W₂ T).property, one_mul]
         exact (φ.isSplitCompletely (fun _ ↦ rfl) _).relativeDegree_eq_one hv
       refine ⟨(pointEquivDegreeOnePlace W₁).symm ⟨v, hdeg⟩, ?_, by simp⟩
       refine (pointEquivDegreeOnePlace W₂).injective (Subtype.ext ?_)
@@ -70,7 +70,7 @@ theorem divisorPullback_ofPoint_eq_sum (T : W₂.Point) :
       exact (φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) P).symm
   have hfin := φ.finite_setOf_toPointHom_eq T
   -- the fibre sum is the finite-set divisor of the places of the fibre
-  have hsum : ∑ P ∈ hfin.toFinset, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ P).1 =
+  have hsum : ∑ P ∈ hfin.toFinset, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ P).val =
       WeilDivisor.ofFinset (hfin.toFinset.map ⟨_, hinj⟩) := by
     rw [WeilDivisor.ofFinset_eq_sum, Finset.sum_map, Function.Embedding.coeFn_mk]
   rw [hsum]
@@ -91,11 +91,11 @@ is `∑_{φ K = O} ((P₀ + K) - (K))`, over a separably closed field. -/
 theorem divisorPullback_ofPoint_sub_eq_sum {T : W₂.Point} {P₀ : W₁.Point}
     (hP₀ : φ.toPointHom P₀ = T) :
     letI := φ.fieldPullback.toRingHom.toAlgebra
-    φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).1 -
-        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ 0).1) =
+    φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).val -
+        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ 0).val) =
       ∑ K ∈ (φ.finite_setOf_toPointHom_eq 0).toFinset,
-        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ (P₀ + K)).1 -
-          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ K).1) := by
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ (P₀ + K)).val -
+          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ K).val) := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   rw [map_sub, divisorPullback_ofPoint_eq_sum, divisorPullback_ofPoint_eq_sum,
     Finset.sum_sub_distrib]

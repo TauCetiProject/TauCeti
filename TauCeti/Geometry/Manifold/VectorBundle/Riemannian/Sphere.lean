@@ -48,13 +48,13 @@ namespace Bundle.TotalSpace
 nonzero vector a regular point. Radial variation alone detects a nonzero differential. -/
 theorem isRegularPoint_norm_sq_sub_proj
     [IsContMDiffRiemannianBundle I 1 F V] (p : TotalSpace F V) {a : B → ℝ}
-    (ha : ContMDiffAt I 𝓘(ℝ) 1 a p.proj) (hp : p.2 ≠ 0) :
+    (ha : ContMDiffAt I 𝓘(ℝ) 1 a p.proj) (hp : p.snd ≠ 0) :
     IsRegularPoint (I.prod 𝓘(ℝ, F)) 𝓘(ℝ)
-      (fun q : TotalSpace F V => ‖q.2‖ ^ 2 - a q.proj) p := by
-  let g : TotalSpace F V → ℝ := fun q => ‖q.2‖ ^ 2 - a q.proj
-  let c : ℝ → TotalSpace F V := fun t => ⟨p.proj, t • p.2⟩
+      (fun q : TotalSpace F V => ‖q.snd‖ ^ 2 - a q.proj) p := by
+  let g : TotalSpace F V → ℝ := fun q => ‖q.snd‖ ^ 2 - a q.proj
+  let c : ℝ → TotalSpace F V := fun t => ⟨p.proj, t • p.snd⟩
   have hsq : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) 1
-      (fun q : TotalSpace F V => ‖q.2‖ ^ 2) := by
+      (fun q : TotalSpace F V => ‖q.snd‖ ^ 2) := by
     simpa only [real_inner_self_eq_norm_sq] using
       (contMDiff_id (I := I.prod 𝓘(ℝ, F)) (n := 1)).inner_bundle contMDiff_id
   have hg : ContMDiffAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) 1 g p :=
@@ -62,12 +62,13 @@ theorem isRegularPoint_norm_sq_sub_proj
   have hc : ContMDiff 𝓘(ℝ) (I.prod 𝓘(ℝ, F)) 1 c :=
     contMDiff_id.smul_totalSpace (contMDiff_const (c := p))
   have hc1 : c 1 = p := by simp [c]
-  have hgc : g ∘ c = fun t : ℝ => t ^ 2 * ‖p.2‖ ^ 2 - a p.proj := by
+  have hgc : g ∘ c = fun t : ℝ => t ^ 2 * ‖p.snd‖ ^ 2 - a p.proj := by
     funext t
     simp [g, c, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-  have hd : HasDerivAt (g ∘ c) (2 * ‖p.2‖ ^ 2) 1 := by
+  have hd : HasDerivAt (g ∘ c) (2 * ‖p.snd‖ ^ 2) 1 := by
     rw [hgc]
-    convert (((hasDerivAt_id (1 : ℝ)).pow 2).mul_const (‖p.2‖ ^ 2)).sub_const (a p.proj) using 1 <;>
+    convert (((hasDerivAt_id (1 : ℝ)).pow 2).mul_const (‖p.snd‖ ^ 2)).sub_const
+        (a p.proj) using 1 <;>
       norm_num
   rw [isRegularPoint_iff_mvfderiv_ne_zero]
   intro hzero
@@ -77,9 +78,9 @@ theorem isRegularPoint_norm_sq_sub_proj
   have hchain := mvfderiv_comp_apply (I := I.prod 𝓘(ℝ, F)) (I' := 𝓘(ℝ))
     (1 : ℝ) hg1 ((hc 1).mdifferentiableAt one_ne_zero)
     ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)
-  have hnorm : 2 * ‖p.2‖ ^ 2 = 0 := by
+  have hnorm : 2 * ‖p.snd‖ ^ 2 = 0 := by
     simpa [hzero1, mvfderiv_eq_fderiv, hd.hasFDerivAt.fderiv] using hchain
-  have hne : 2 * ‖p.2‖ ^ 2 ≠ 0 := by positivity
+  have hne : 2 * ‖p.snd‖ ^ 2 ≠ 0 := by positivity
   exact hne hnorm
 
 end Bundle.TotalSpace
@@ -89,14 +90,14 @@ namespace TauCeti
 /-- The squared fibre norm minus the squared radius. Its zero set is the sphere bundle
 when the radius is positive. -/
 def sphereBundleEquation (r : B → ℝ) (p : TotalSpace F V) : ℝ :=
-  ‖p.2‖ ^ 2 - (r p.proj) ^ 2
+  ‖p.snd‖ ^ 2 - (r p.proj) ^ 2
 
 omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] in
 /-- The defining scalar equation of a variable-radius sphere bundle. -/
 @[simp] theorem sphereBundleEquation_apply (r : B → ℝ) (p : TotalSpace F V) :
-    sphereBundleEquation r p = ‖p.2‖ ^ 2 - (r p.proj) ^ 2 := (rfl)
+    sphereBundleEquation r p = ‖p.snd‖ ^ 2 - (r p.proj) ^ 2 := (rfl)
 
 omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace (TotalSpace F V)]
@@ -104,7 +105,7 @@ omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
 /-- For a nonnegative radius, the equation cuts out exactly the vectors of that length. -/
 theorem sphereBundleEquation_eq_zero_iff (r : B → ℝ) (p : TotalSpace F V)
     (hr : 0 ≤ r p.proj) :
-    sphereBundleEquation r p = 0 ↔ ‖p.2‖ = r p.proj := by
+    sphereBundleEquation r p = 0 ↔ ‖p.snd‖ = r p.proj := by
   rw [sphereBundleEquation_apply, sub_eq_zero]
   exact (sq_eq_sq₀ (norm_nonneg _) hr)
 
@@ -114,7 +115,7 @@ omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
 /-- The nonpositive sublevel of the sphere-bundle equation is the closed disc bundle. -/
 theorem sphereBundleEquation_le_zero_iff (r : B → ℝ) (p : TotalSpace F V)
     (hr : 0 ≤ r p.proj) :
-    sphereBundleEquation r p ≤ 0 ↔ ‖p.2‖ ≤ r p.proj := by
+    sphereBundleEquation r p ≤ 0 ↔ ‖p.snd‖ ≤ r p.proj := by
   rw [sphereBundleEquation_apply, sub_nonpos]
   exact sq_le_sq₀ (norm_nonneg _) hr
 
@@ -124,7 +125,7 @@ omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
 /-- The negative sublevel of the sphere-bundle equation is the open disc bundle. -/
 theorem sphereBundleEquation_lt_zero_iff (r : B → ℝ) (p : TotalSpace F V)
     (hr : 0 ≤ r p.proj) :
-    sphereBundleEquation r p < 0 ↔ ‖p.2‖ < r p.proj := by
+    sphereBundleEquation r p < 0 ↔ ‖p.snd‖ < r p.proj := by
   rw [sphereBundleEquation_apply, sub_neg]
   exact sq_lt_sq₀ (norm_nonneg _) hr
 
@@ -134,7 +135,7 @@ theorem contMDiff_sphereBundleEquation {n : ℕ∞ω}
     (hr : ContMDiff I 𝓘(ℝ) n r) :
     ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) n (sphereBundleEquation (F := F) (V := V) r) := by
   have hsq : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) n
-      (fun p : TotalSpace F V => ‖p.2‖ ^ 2) := by
+      (fun p : TotalSpace F V => ‖p.snd‖ ^ 2) := by
     simpa only [real_inner_self_eq_norm_sq] using
       (contMDiff_id (I := I.prod 𝓘(ℝ, F)) (n := n)).inner_bundle contMDiff_id
   exact hsq.sub ((hr.comp (Bundle.contMDiff_proj (IB := I) (F := F) V)).pow 2)
@@ -163,16 +164,16 @@ locally to use the manifold and smooth embedding theorems. -/
 def sphereBundleChartedSpace {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) n r)
     (hn : 1 ≤ n) (hrpos : ∀ b, 0 < r b) :
     ChartedSpace (Fin (Module.finrank ℝ (E × F) - 1) → ℝ)
-      {p : TotalSpace F V // ‖p.2‖ = r p.proj} := by
+      {p : TotalSpace F V // ‖p.snd‖ = r p.proj} := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
   let := regularLevelChartedSpace (n := Module.finrank ℝ (E × F) - 1)
     (fun p _ => (contMDiff_sphereBundleEquation hr p).of_le hn) hreg (by rw [Module.finrank_self])
-  let e : {p : TotalSpace F V // ‖p.2‖ = r p.proj} ≃ₜ
+  let e : {p : TotalSpace F V // ‖p.snd‖ = r p.proj} ≃ₜ
       {p : TotalSpace F V // sphereBundleEquation r p = 0} :=
     Homeomorph.setCongr
-      (s := {p : TotalSpace F V | ‖p.2‖ = r p.proj})
+      (s := {p : TotalSpace F V | ‖p.snd‖ = r p.proj})
       (t := {p : TotalSpace F V | sphereBundleEquation r p = 0}) (Set.ext fun p =>
         (sphereBundleEquation_eq_zero_iff r p (hrpos p.proj).le).symm)
   exact e.pullbackChartedSpace
@@ -182,7 +183,7 @@ theorem isManifold_sphereBundle {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) n r)
     (hn : 1 ≤ n) (hrpos : ∀ b, 0 < r b) :
     letI := sphereBundleChartedSpace (F := F) (V := V) hr hn hrpos
     IsManifold 𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ) n
-      {p : TotalSpace F V // ‖p.2‖ = r p.proj} := by
+      {p : TotalSpace F V // ‖p.snd‖ = r p.proj} := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
@@ -192,7 +193,7 @@ theorem isManifold_sphereBundle {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) n r)
     (fun p hp => (hfm p hp).of_le hn) hreg (by rw [Module.finrank_self])
   have := isManifold_regularLevel hn hfm hreg (by rw [Module.finrank_self])
   exact (Homeomorph.setCongr
-    (s := {p : TotalSpace F V | ‖p.2‖ = r p.proj})
+    (s := {p : TotalSpace F V | ‖p.snd‖ = r p.proj})
     (t := {p : TotalSpace F V | sphereBundleEquation r p = 0}) (Set.ext fun p =>
       (sphereBundleEquation_eq_zero_iff r p (hrpos p.proj).le).symm)).pullback_isManifold _ n
 
@@ -203,7 +204,7 @@ theorem isSmoothEmbedding_coe_sphereBundle {r : B → ℝ} (hr : ContMDiff I �
     letI := sphereBundleChartedSpace (F := F) (V := V) hr hn hrpos
     Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ)
       (I.prod 𝓘(ℝ, F)) n
-      (Subtype.val : {p : TotalSpace F V // ‖p.2‖ = r p.proj} → TotalSpace F V) := by
+      (Subtype.val : {p : TotalSpace F V // ‖p.snd‖ = r p.proj} → TotalSpace F V) := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
@@ -212,10 +213,10 @@ theorem isSmoothEmbedding_coe_sphereBundle {r : B → ℝ} (hr : ContMDiff I �
   let := regularLevelChartedSpace (n := Module.finrank ℝ (E × F) - 1)
     (fun p hp => (hfm p hp).of_le hn) hreg (by rw [Module.finrank_self])
   have := isManifold_regularLevel hn hfm hreg (by rw [Module.finrank_self])
-  let e : {p : TotalSpace F V // ‖p.2‖ = r p.proj} ≃ₜ
+  let e : {p : TotalSpace F V // ‖p.snd‖ = r p.proj} ≃ₜ
       {p : TotalSpace F V // sphereBundleEquation r p = 0} :=
     Homeomorph.setCongr
-      (s := {p : TotalSpace F V | ‖p.2‖ = r p.proj})
+      (s := {p : TotalSpace F V | ‖p.snd‖ = r p.proj})
       (t := {p : TotalSpace F V | sphereBundleEquation r p = 0}) (Set.ext fun p =>
         (sphereBundleEquation_eq_zero_iff r p (hrpos p.proj).le).symm)
   let := e.pullbackChartedSpace (H := Fin (Module.finrank ℝ (E × F) - 1) → ℝ)
@@ -226,7 +227,7 @@ theorem isSmoothEmbedding_coe_sphereBundle {r : B → ℝ} (hr : ContMDiff I �
     (isSmoothEmbedding_coe_regularLevel hn hfm hreg (by rw [Module.finrank_self]))
   have hcoe : Subtype.val ∘ e.pullbackDiffeomorph
       𝓘(ℝ, Fin (Module.finrank ℝ (E × F) - 1) → ℝ) n =
-      (Subtype.val : {p : TotalSpace F V // ‖p.2‖ = r p.proj} → TotalSpace F V) := by
+      (Subtype.val : {p : TotalSpace F V // ‖p.snd‖ = r p.proj} → TotalSpace F V) := by
     rw [Homeomorph.coe_pullbackDiffeomorph]
     -- A set-congruence homeomorphism preserves the underlying point.
     rfl

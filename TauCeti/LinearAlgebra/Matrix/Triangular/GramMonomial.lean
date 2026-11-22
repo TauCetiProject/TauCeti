@@ -66,7 +66,7 @@ omit [Fintype ι] in
 private theorem mulTransposeExpansionIndex_snd_le {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (a : (Σ ij, Fin (n ij)) × Fin 2) :
     (mulTransposeExpansionIndex c a).2 ≤ (mulTransposeExpansionIndex c a).1 := by
-  have h := (c a.1.1 a.1.2).2
+  have h := (c a.1.1 a.1.2).property
   unfold mulTransposeExpansionIndex
   split_ifs
   · exact h.trans (min_le_left _ _)

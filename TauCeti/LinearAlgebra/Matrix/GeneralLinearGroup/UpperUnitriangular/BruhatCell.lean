@@ -421,8 +421,8 @@ def unitriangularInversionGroupEquivBruhatCell (w : Equiv.Perm ι) :
     unitriangularInversionGroup R w ≃ bruhatCell R w :=
   Equiv.ofBijective
     (fun j ↦ ⟨QuotientGroup.mk (j * permutationGL (k := R) w),
-      mk_mul_permutationGL_mem_bruhatCell j.2⟩)
-    ⟨fun j j' hjj' ↦ Subtype.ext (eq_and_eq_of_mul_permutationGL_mul_eq j.2 j'.2
+      mk_mul_permutationGL_mem_bruhatCell j.property⟩)
+    ⟨fun j j' hjj' ↦ Subtype.ext (eq_and_eq_of_mul_permutationGL_mul_eq j.property j'.property
         (QuotientGroup.eq.mp (congrArg Subtype.val hjj')) (one_mem _) (by group)).1,
       fun ⟨x, hx⟩ ↦ by
         obtain ⟨j, hj, rfl⟩ := mem_bruhatCell_iff.mp hx
@@ -460,10 +460,10 @@ variable (R) in
 inversions of `w⁻¹`, and these entries are arbitrary. -/
 def unitriangularInversionGroupEquivFun (w : Equiv.Perm ι) :
     unitriangularInversionGroup R w ≃ (Finset.univ.inversions ⇑w.symm → R) where
-  toFun j p := ((j : GL ι R) : Matrix ι ι R) p.1.1 p.1.2
+  toFun j p := ((j : GL ι R) : Matrix ι ι R) p.val.1 p.val.2
   invFun c := ⟨_, inversionMatrix_mem w c⟩
   left_inv j := by
-    obtain ⟨hU, hw⟩ := mem_unitriangularInversionGroup_iff.mp j.2
+    obtain ⟨hU, hw⟩ := mem_unitriangularInversionGroup_iff.mp j.property
     refine Subtype.ext (Units.ext ?_)
     simp only [IsUpperUnitriangular.coe_toGL]
     refine (isUpperUnitriangular_inversionMatrix w _).ext hU fun a b hab ↦ ?_
@@ -475,14 +475,14 @@ def unitriangularInversionGroupEquivFun (w : Equiv.Perm ι) :
       simp only [inversionMatrix, hab.ne, hinv, ↓reduceIte, ↓reduceDIte, hw a b hab hlt]
   right_inv c := by
     funext p
-    have hp := (Finset.mem_inversions.mp p.2).2.2.1
+    have hp := (Finset.mem_inversions.mp p.property).2.2.1
     simp [inversionMatrix, hp.ne]
 
 /-- The coordinates of `j ∈ U_w` are its entries at the inversions of `w⁻¹`. -/
 @[simp]
 theorem unitriangularInversionGroupEquivFun_apply (w : Equiv.Perm ι)
     (j : unitriangularInversionGroup R w) (p : Finset.univ.inversions ⇑w.symm) :
-    unitriangularInversionGroupEquivFun R w j p = ((j : GL ι R) : Matrix ι ι R) p.1.1 p.1.2 :=
+    unitriangularInversionGroupEquivFun R w j p = ((j : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 :=
   (rfl)
 
 /-- The element of `U_w` with coordinates `c` has the entry `c (i, j)` at an inversion `(i, j)` of

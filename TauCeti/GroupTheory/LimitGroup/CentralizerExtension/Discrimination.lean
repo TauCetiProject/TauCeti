@@ -135,7 +135,7 @@ private theorem prod_map_retraction_eq (k : Fin n → ℤ)
     · simp only [List.map_cons, List.prod_cons, ih, bpData, retraction_pushoutI_of_false]
       exact (mul_assoc _ _ _).symm
     · -- `c * u ^ e = u ^ e * c`, because `c` commutes with `u`.
-      have hc : Commute (g.1 : G) u := mem_centralizer_singleton_iff.mp g.1.2
+      have hc : Commute (g.1 : G) u := mem_centralizer_singleton_iff.mp g.1.property
       simp only [List.map_cons, List.prod_cons, ih, bpData, retraction_pushoutI_of_true, one_mul,
         mul_assoc, (hc.zpow_right _).eq]
 
@@ -194,7 +194,7 @@ private theorem isChain_bpData_snd {L : List (Σ b, CentralizerExtFactor u n b)}
           · exact absurd (List.isChain_cons_cons.1 hc.tail).1 (by simp)
           · rfl
         simp only [bpData, h1, mul_one]
-        exact fun h => ha (by simpa using mul_mem (inv_mem p.1.2) h)
+        exact fun h => ha (by simpa using mul_mem (inv_mem p.1.property) h)
       · exact absurd (List.isChain_cons_cons.1 hc).1 (by simp)
 
 /-- A product of letters of the factor `G` lies in `G`. -/

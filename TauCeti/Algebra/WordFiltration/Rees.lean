@@ -45,7 +45,7 @@ private theorem symbolComponent_apply (n : ℕ)
     (a : coeffSubalgebra.grade (wordFiltration f) n) :
     symbolComponent f n a = Submodule.Quotient.mk
       (⟨((a : Rees f) : A[X]).coeff n,
-        mem_coeffSubalgebra_iff.mp (a : Rees f).2 n⟩ : wordFiltration f n) := by
+        mem_coeffSubalgebra_iff.mp (a : Rees f).property n⟩ : wordFiltration f n) := by
   apply congrArg Submodule.Quotient.mk
   exact Subtype.ext (coeffSubalgebra.coe_gradeEquiv_symm_apply n a)
 
@@ -75,8 +75,8 @@ noncomputable def reesSymbol : Rees f →ₐ[R] AssociatedGraded f := by
     dsimp only [Subtype.coe_mk]
     -- Each homogeneous factor is a monomial, so only one product coefficient survives.
     rw [SetLike.coe_gMul, Subalgebra.coe_mul,
-      ← coeffSubalgebra.mem_grade_iff_monomial_coeff.mp a.2,
-      ← coeffSubalgebra.mem_grade_iff_monomial_coeff.mp b.2,
+      ← coeffSubalgebra.mem_grade_iff_monomial_coeff.mp a.property,
+      ← coeffSubalgebra.mem_grade_iff_monomial_coeff.mp b.property,
       monomial_mul_monomial, coeff_monomial_same, coeff_monomial_same,
       coeff_monomial_same]
   exact (DirectSum.toAlgebra R _ c h1 @hm).comp
@@ -106,7 +106,7 @@ private theorem reesSymbol_eq_lmap (p : Rees f) :
   | zero => simp
   | of n a =>
     rw [DirectSum.decompose_symm_of]
-    obtain ⟨b, hb, hba⟩ := coeffSubalgebra.mem_grade_iff.mp a.2
+    obtain ⟨b, hb, hba⟩ := coeffSubalgebra.mem_grade_iff.mp a.property
     have heq : (a : Rees f) = coeffSubalgebra.monomial (wordFiltration f) n b hb :=
       Subtype.ext (by simpa using hba.symm)
     rw [DirectSum.decompose_coe, DirectSum.lmap_of, heq, reesSymbol_monomial]
@@ -122,7 +122,7 @@ private theorem reesSymbol_eq_lmap (p : Rees f) :
 @[simp]
 theorem reesSymbol_apply (p : Rees f) (n : ℕ) :
     reesSymbol f p n = Submodule.Quotient.mk
-      (⟨(p : A[X]).coeff n, mem_coeffSubalgebra_iff.mp p.2 n⟩ : wordFiltration f n) := by
+      (⟨(p : A[X]).coeff n, mem_coeffSubalgebra_iff.mp p.property n⟩ : wordFiltration f n) := by
   rw [reesSymbol_eq_lmap, DirectSum.lmap_apply, symbolComponent_apply]
   apply congrArg Submodule.Quotient.mk
   apply Subtype.ext
@@ -142,8 +142,8 @@ theorem reesSymbol_surjective : Function.Surjective (reesSymbol f) := by
   | zero => exact ⟨0, map_zero _⟩
   | of n a =>
     induction a using Submodule.Quotient.induction_on with
-    | _ a => exact ⟨coeffSubalgebra.monomial (wordFiltration f) n a a.2,
-        reesSymbol_monomial f n a a.2⟩
+    | _ a => exact ⟨coeffSubalgebra.monomial (wordFiltration f) n a a.property,
+        reesSymbol_monomial f n a a.property⟩
   | add a b ha hb =>
     obtain ⟨p, rfl⟩ := ha
     obtain ⟨q, rfl⟩ := hb

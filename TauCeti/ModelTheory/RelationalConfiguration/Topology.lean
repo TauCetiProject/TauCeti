@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Continuum
+public import TauCeti.Topology.Algebra.Group.Perm
 
 /-!
 # Topology of relational configurations
@@ -23,6 +24,10 @@ countable carriers in countable relational vocabularies the topology is Polish a
 exactly continuum many on a countably infinite carrier when some relation symbol has positive
 arity (`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite
 and empty carriers.
+
+For a discrete carrier, the *logic action* of its permutation group, with the topology of
+pointwise convergence, is jointly continuous, for every language, so stabilizers of
+configurations are closed subgroups (`TauCeti.isClosed_stabilizer`).
 
 These are the usual spaces of structures used for the logic action; see Gao,
 *Invariant Descriptive Set Theory*. The measurable coordinates and encoding of structures are
@@ -89,6 +94,14 @@ theorem continuous_uncurry_restrict {W : Type*} [TopologicalSpace W] [DiscreteTo
 /-- Each relabelling by a permutation of the carrier is continuous. -/
 instance : ContinuousConstSMul (Equiv.Perm V) (RelationalConfiguration L V) :=
   ⟨fun _ => continuous_restrict _⟩
+
+/-- **The logic action is jointly continuous**, for every language: relabelling by `σ` is
+restriction along `σ⁻¹`, which is jointly continuous in the vertex map and the configuration,
+and `σ⁻¹` depends continuously on `σ`. On `ℕ` this makes the coding space an `S∞`-space. -/
+instance instContinuousSMulPerm [TopologicalSpace V] [DiscreteTopology V] :
+    ContinuousSMul (Equiv.Perm V) (RelationalConfiguration L V) where
+  continuous_smul := continuous_uncurry_restrict.comp
+    (((continuous_pi Equiv.Perm.continuous_inv_apply).comp continuous_fst).prodMk continuous_snd)
 
 /-- The configurations giving a fixed answer to one atom form a clopen cylinder. -/
 theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :

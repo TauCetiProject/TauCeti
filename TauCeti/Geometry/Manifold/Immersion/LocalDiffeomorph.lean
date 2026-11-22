@@ -347,7 +347,7 @@ theorem _root_.Manifold.IsImmersion.codRestrict [IsManifold J n N] (hf : IsImmer
 inclusion of `U` is. -/
 theorem isImmersion_subtypeVal_comp_iff [IsManifold J n N] {U : TopologicalSpace.Opens N}
     {g : M → U} : IsImmersion I J n (Subtype.val ∘ g) ↔ IsImmersion I J n g :=
-  ⟨fun h ↦ h.codRestrict U fun x ↦ (g x).2,
+  ⟨fun h ↦ h.codRestrict U fun x ↦ (g x).property,
     isImmersion_isLocalDiffeomorphAt_comp fun _ ↦ isLocalDiffeomorph_subtype_val _⟩
 
 /-- A map into an open submanifold `U` is a smooth embedding exactly when its composition with the

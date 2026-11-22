@@ -77,9 +77,9 @@ private lemma squareSnd_def (p : I × I) :
       else ((p.2 : ℝ) - 2 * (p.1 : ℝ)) / max (1 - (p.1 : ℝ)) (1 / 2) := (rfl)
 
 private lemma squareFst_mem (p : I × I) : squareFst p ∈ I := by
-  have h2 : (p.1 : ℝ) ≤ 1 := p.1.2.2
-  have _ : (0 : ℝ) ≤ (p.2 : ℝ) := p.2.2.1
-  have h4 : (p.2 : ℝ) ≤ 1 := p.2.2.2
+  have h2 : (p.1 : ℝ) ≤ 1 := p.1.property.2
+  have _ : (0 : ℝ) ≤ (p.2 : ℝ) := p.2.property.1
+  have h4 : (p.2 : ℝ) ≤ 1 := p.2.property.2
   have hd : (0 : ℝ) < 2 - (p.2 : ℝ) := by linarith
   rw [squareFst_def]
   split_ifs with h
@@ -87,8 +87,8 @@ private lemma squareFst_mem (p : I × I) : squareFst p ∈ I := by
   · exact ⟨le_rfl, zero_le_one⟩
 
 private lemma squareSnd_mem (p : I × I) : squareSnd p ∈ I := by
-  have h1 : (0 : ℝ) ≤ (p.1 : ℝ) := p.1.2.1
-  have h4 : (p.2 : ℝ) ≤ 1 := p.2.2.2
+  have h1 : (0 : ℝ) ≤ (p.1 : ℝ) := p.1.property.1
+  have h4 : (p.2 : ℝ) ≤ 1 := p.2.property.2
   rw [squareSnd_def]
   split_ifs with h
   · exact ⟨le_rfl, zero_le_one⟩
@@ -99,7 +99,7 @@ private lemma squareSnd_mem (p : I × I) : squareSnd p ∈ I := by
 private lemma continuous_squareFst : Continuous fun p : I × I => squareFst p := by
   have hd : Continuous fun p : I × I => (2 * (p.1 : ℝ) - p.2) / (2 - (p.2 : ℝ)) := by
     refine Continuous.div (by fun_prop) (by fun_prop) fun p => ?_
-    have : (p.2 : ℝ) ≤ 1 := p.2.2.2
+    have : (p.2 : ℝ) ≤ 1 := p.2.property.2
     linarith
   simp only [squareFst_def]
   exact hd.if_le continuous_const (by fun_prop) (by fun_prop) fun p hp => by
@@ -139,7 +139,7 @@ private lemma squareRetract_mem (p : I × I) :
 /-- The projection point lies on the line of height `1`, so the whole top face keeps its height
 and only has its time reset to `0`. -/
 private lemma squareRetract_top (t : I) : squareRetract (1, t) = (1, 0) := by
-  have h4 : (t : ℝ) ≤ 1 := t.2.2
+  have h4 : (t : ℝ) ≤ 1 := t.property.2
   have hle : ((((1 : I), t) : I × I).2 : ℝ) ≤ 2 * ((((1 : I), t) : I × I).1 : ℝ) := by
     simp only [Set.Icc.coe_one]
     linarith
@@ -149,7 +149,7 @@ private lemma squareRetract_top (t : I) : squareRetract (1, t) = (1, 0) := by
   · rw [squareRetract_snd, squareSnd_def, ite_eq_left hle, Set.Icc.coe_zero]
 
 private lemma squareRetract_time_zero (s : I) : squareRetract (s, 0) = (s, 0) := by
-  have h1 : (0 : ℝ) ≤ (s : ℝ) := s.2.1
+  have h1 : (0 : ℝ) ≤ (s : ℝ) := s.property.1
   have hle : (((s, (0 : I)) : I × I).2 : ℝ) ≤ 2 * (((s, (0 : I)) : I × I).1 : ℝ) := by
     simp only [Set.Icc.coe_zero]
     linarith
@@ -160,7 +160,7 @@ private lemma squareRetract_time_zero (s : I) : squareRetract (s, 0) = (s, 0) :=
   · rw [squareRetract_snd, squareSnd_def, ite_eq_left hle, Set.Icc.coe_zero]
 
 private lemma squareRetract_height_zero (t : I) : squareRetract (0, t) = (0, t) := by
-  have h3 : (0 : ℝ) ≤ (t : ℝ) := t.2.1
+  have h3 : (0 : ℝ) ≤ (t : ℝ) := t.property.1
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
   · simp only [squareRetract_fst, squareFst_def, Set.Icc.coe_zero, mul_zero]
     split_ifs with h
