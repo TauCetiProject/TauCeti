@@ -47,15 +47,16 @@ of `D²u` on `closure H` and `B` bounds `D²u` there
 (`TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le`). The bound
 `B ≤ J r^α + |B_{r/2}|^(-1/2) ‖D²u‖_{L²(H)}` comes from comparing `D²u` at a point
 `x ∈ closure H` with its values on the ball of radius `r / 2` inside `H` whose centre is
-`x + (r / (2 ‖ν‖)) ν` (`HolderOnWith.norm_le_add_eLpNorm_toReal`). The constant-coefficient
-estimate applied to each two-point set `{x, y} ⊆ closure H` at the radius `r` bounds `J` by a
-multiple of these quantities, and the smallness condition absorbs the terms in `J`
-(`TauCeti.PDE.le_two_mul_of_le_mul_add_mul_add`).
+`x + (r / (2 ‖ν‖)) ν` (`HolderOnWith.norm_le_add_eLpNorm_toReal_of_halfSpace`). The
+constant-coefficient estimate applied to each two-point set `{x, y} ⊆ closure H` at the radius
+`r` bounds `J` by a multiple of these quantities, and the smallness condition absorbs the terms
+in `J`
+(`TauCeti.le_two_mul_of_le_mul_add_mul_add`).
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 6.2, the boundary estimate by freezing coefficients (Lemma 6.4).
+  Section 6.2, the boundary estimate by freezing coefficients (Lemma 6.5).
 -/
 
 public section
@@ -70,53 +71,6 @@ namespace TauCeti.PDE
 variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
-
-/-- For a point `x` of the closed half-space `{z | c₀ ≤ ⟪z, ν⟫}`, `ν ≠ 0`, the ball of radius `ρ`
-about `x + (ρ / ‖ν‖) ν` lies in the open half-space `{z | c₀ < ⟪z, ν⟫}`. -/
-private theorem ball_add_smul_subset_halfSpace {ν x : E} {c₀ ρ : ℝ} (hν : ν ≠ 0)
-    (hx : c₀ ≤ ⟪x, ν⟫_ℝ) : ball (x + (ρ / ‖ν‖) • ν) ρ ⊆ {z | c₀ < ⟪z, ν⟫_ℝ} := by
-  intro z hz
-  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  set w := z - (x + (ρ / ‖ν‖) • ν)
-  have hw : ‖w‖ * ‖ν‖ < ρ * ‖ν‖ :=
-    mul_lt_mul_of_pos_right (by rw [← dist_eq_norm]; exact hz) hν0
-  have hc : ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ = ρ * ‖ν‖ := by
-    rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
-    field_simp
-  have hz' : ⟪z, ν⟫_ℝ = ⟪x, ν⟫_ℝ + ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ + ⟪w, ν⟫_ℝ := by
-    simp only [w, inner_sub_left, inner_add_left]
-    ring
-  simp only [mem_ofPred_eq]
-  linarith [neg_le_of_abs_le (abs_real_inner_le_norm w ν)]
-
-/-- A function `g` that is `α`-Hölder with constant `J` on the closed half-space
-`closure H = {z | c₀ ≤ ⟪z, ν⟫}` and square integrable on the open half-space `H` satisfies, at
-every point of `closure H` and for every `r > 0`, `‖g x‖ ≤ J r^α + |B_{r/2}|^(-1/2) ‖g‖_{L²(H)}`:
-compare `g x` with the values of `g` on the ball of radius `r / 2` in `H` whose centre is
-`x + (r / (2 ‖ν‖)) ν`. -/
-private theorem norm_le_of_holderOnWith_halfSpace {F : Type*} [NormedAddCommGroup F] {ν : E}
-    {c₀ r : ℝ} {g : E → F} {J α : ℝ≥0} (hν : ν ≠ 0) (hr : 0 < r)
-    (hJ : HolderOnWith J α g {z | c₀ ≤ ⟪z, ν⟫_ℝ})
-    (hg : MemLp g 2 (volume.restrict {z | c₀ < ⟪z, ν⟫_ℝ})) {x : E} (hx : c₀ ≤ ⟪x, ν⟫_ℝ) :
-    ‖g x‖ ≤ J * r ^ (α : ℝ) + (volume (ball (0 : E) (r / 2)) ^ (-((2 : ℝ)⁻¹))).toReal *
-      (eLpNorm g 2 (volume.restrict {z | c₀ < ⟪z, ν⟫_ℝ})).toReal := by
-  have hball : ball (x + (r / 2 / ‖ν‖) • ν) (r / 2) ⊆ {z | c₀ < ⟪z, ν⟫_ℝ} :=
-    ball_add_smul_subset_halfSpace hν hx
-  have hxc : dist x (x + (r / 2 / ‖ν‖) • ν) ≤ r / 2 := by
-    rw [dist_eq_norm, sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg
-      (by positivity), div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν)]
-  have hoc : {z | c₀ < ⟪z, ν⟫_ℝ} ⊆ {z | c₀ ≤ ⟪z, ν⟫_ℝ} := fun z hz => by
-    simp only [mem_ofPred_eq] at hz ⊢
-    exact hz.le
-  have hle : eLpNorm g 2 (volume.restrict (ball (x + (r / 2 / ‖ν‖) • ν) (r / 2))) ≤
-      eLpNorm g 2 (volume.restrict {z | c₀ < ⟪z, ν⟫_ℝ}) :=
-    eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)
-  have h := hJ.norm_le_add_eLpNorm_toReal (mu := volume) two_ne_zero ENNReal.ofNat_ne_top
-    (half_pos hr) (by simpa only [mem_ofPred_eq] using hx) (hball.trans hoc) hxc
-    (hle.trans_lt hg.eLpNorm_lt_top).ne
-  rw [mul_div_cancel₀ _ two_ne_zero, ENNReal.toReal_ofNat] at h
-  exact h.trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left
-    (ENNReal.toReal_mono hg.eLpNorm_ne_top hle) ENNReal.toReal_nonneg))
 
 /-- **Schauder estimate up to a flat boundary for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on the dimension and `α`, with the following
@@ -162,15 +116,12 @@ theorem
   obtain ⟨C₀, hC₀, hS⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_halfSpace hα hα1 (n := n)
   refine ⟨C₀ + 1, by positivity, fun {A lam Lam} hlam hA hA' {ν c₀ a ε L K r} hν hr hsmall ha hL
-    {U u} hU hHU hu hu0 hH hH2 hf => ?_⟩
+    {U u} hU hHU hu hu0 ⟨J₀, hJ₀⟩ hH2 hf => ?_⟩
   set Hc : Set E := {x | c₀ ≤ ⟪x, ν⟫_ℝ}
   set Ho : Set E := {x | c₀ < ⟪x, ν⟫_ℝ}
-  have hoc : Ho ⊆ Hc := fun x hx => by
-    simp only [Ho, Hc, mem_ofPred_eq] at hx ⊢
-    exact hx.le
+  have hoc : Ho ⊆ Hc := fun _ hx => mem_ofPred.2 (mem_ofPred.1 hx).le
   let H := iteratedFDeriv ℝ 2 u
   -- The best Hölder constant `J` of `D²u` on the closed half-space.
-  obtain ⟨J₀, hJ₀⟩ := hH
   let J : ℝ≥0 := nnHolderNorm α (Hc.domRestrict H)
   have hJ : HolderOnWith J α H Hc := HolderWith.restrict_iff.1 hJ₀.holderWith.memHolder.holderWith
   let M : ℝ := (eLpNorm H 2 (volume.restrict Ho)).toReal
@@ -178,10 +129,10 @@ theorem
   let κ : ℝ := (C₀ + 1) * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
   have hLam : 0 < Lam :=
     hlam.trans_le (by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _))
-  -- Interpolation at scale `r`, on a ball of radius `r / 2` in `H` next to each point of
-  -- `closure H`.
-  have hsup (x : E) (hx : x ∈ Hc) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M :=
-    norm_le_of_holderOnWith_halfSpace hν hr hJ hH2 (by simpa only [Hc, mem_ofPred_eq] using hx)
+  -- Interpolation at scale `r`, on a ball of radius `r / 2` in `H` next to each point.
+  have hsup (x : E) (hx : x ∈ Hc) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
+    simpa only [ENNReal.toReal_ofNat] using hJ.norm_le_add_eLpNorm_toReal_of_halfSpace
+      (mu := volume) hν hr two_ne_zero ENNReal.ofNat_ne_top hH2 (mem_ofPred.1 hx)
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le ha hL (hJ.mono hoc)
@@ -206,7 +157,7 @@ theorem
   -- Absorb the terms in `J` with the smallness condition.
   have hbound := (HolderWith.restrict_iff.2 hglobal).nnholderNorm_le
   rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)] at hbound
-  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := K) (V := V) (M := M)
+  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := (K : ℝ)) (V := V) (M := M)
     (Q := r ^ (-(((n : ℝ) + 1) / 2 + α))) J.coe_nonneg hlam hsmall
     (hbound.trans_eq (by push_cast; rw [hBc]))
   exact hJ.mono_const (by

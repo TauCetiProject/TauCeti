@@ -19,7 +19,7 @@ import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
-# Schauder estimates up to a flat boundary for Poisson's equation
+# Schauder estimates up to a flat boundary for Poisson's equation and constant-coefficient operators
 
 Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space of `ℝ^{n+1}`, `ν ≠ 0`, and let `0 < α < 1`. This
 file proves the `C^{2,α}` estimate up to the flat part of the boundary for classical solutions of
@@ -82,8 +82,9 @@ interior case (`TauCeti.PDE.holderOnWith_iteratedFDeriv_two_of_holderOnWith_comp
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 4.4, Theorem 4.11 (the `C^{2,α}` estimate for Poisson's equation near a flat boundary
-  portion on which the solution vanishes), and Lemma 6.1 (reduction of a constant-coefficient
-  operator to the Laplacian by a linear change of variables).
+  portion on which the solution vanishes), Lemma 6.1 (reduction of a constant-coefficient
+  operator to the Laplacian by a linear change of variables), and Section 6.2, Lemma 6.4 (the
+  estimate for constant-coefficient operators near a flat boundary portion).
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, 2nd ed., Chapter 5 (Schauder estimates up to a flat boundary
   by Campanato's method, applied to the tangential derivatives).
@@ -260,10 +261,9 @@ private theorem exists_holderOnWith_gradient_fderiv_of_inner_eq_zero {α : ℝ�
   have hMV : (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (U₁ ⊓ H : Opens E))).toReal ≤
       (eLpNorm (iteratedFDeriv ℝ 2 u) 2
         (volume.restrict (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}))).toReal :=
-    ENNReal.toReal_mono (((ContinuousOn.continuousOn_iteratedFDeriv hu hU (by norm_num)).mono
-      (hcl subset_rfl)).memLp_restrict_of_subset_isCompact
-        (hS.thickening.subset inter_subset_left).isCompact_closure
-        ((isOpen_thickening.inter H.isOpen).measurableSet) subset_closure 2).eLpNorm_ne_top
+    ENNReal.toReal_mono (Measure.eLpNorm_iteratedFDeriv_ne_top_of_closure_subset volume 2 hU hu
+        (hS.thickening.subset inter_subset_left) (isOpen_thickening.inter H.isOpen).measurableSet
+        (hcl subset_rfl))
       (eLpNorm_mono_measure _ (Measure.restrict_mono (fun x hx =>
         Set.mem_inter (hR2 (hU₁H hx)) hx.2) le_rfl))
   -- Transfer the estimate from the precise representative to `∇ ∂ₑu` and compare constants.
@@ -402,48 +402,35 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian_of_halfSpace {α : �
     simpa using tendsto_const_nhds.add (htend.smul_const ν)
   · simpa [edist_add_right] using hT _ (hmem k y hy) _ (hmem k z hz)
 
-/-- The `L²` norm of `D²u` on the part in an open half-space `H` of the open `R`-thickening of a
-bounded set `S` is finite when `u` is `C²` on an open set containing the part of the closed
-`R`-thickening in the closure of `H`. -/
-private theorem eLpNorm_iteratedFDeriv_two_thickening_inter_ne_top {U S : Set E} {u : E → ℝ}
-    {ν : E} {c₀ R : ℝ} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
-    (hSU : cthickening R S ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ} ⊆ U) :
-    eLpNorm (iteratedFDeriv ℝ 2 u) 2
-      (volume.restrict (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ})) ≠ ∞ := by
-  have hcl : closure (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}) ⊆ U := by
-    refine (closure_inter_subset_inter_closure _ _).trans (Subset.trans ?_ hSU)
-    refine inter_subset_inter (closure_thickening_subset_cthickening R S) (closure_minimal
-      (fun x hx => ?_) (isClosed_le continuous_const (by fun_prop)))
-    simp only [mem_ofPred_eq] at hx ⊢
-    exact hx.le
-  exact (((ContinuousOn.continuousOn_iteratedFDeriv hu hU (by norm_num)).mono hcl
-    ).memLp_restrict_of_subset_isCompact (hS.thickening.subset inter_subset_left).isCompact_closure
-      (isOpen_thickening.inter (isOpen_lt continuous_const (by fun_prop))).measurableSet
-      subset_closure 2).eLpNorm_ne_top
+/-- The adjoint of a linear automorphism `e` does not vanish at `ν ≠ 0`; it is the normal of the
+pullback `{y | c₀ < ⟪y, e† ν⟫}` of the half-space `{x | c₀ < ⟪x, ν⟫}` under `e`. -/
+private theorem adjoint_apply_ne_zero (e : E ≃L[ℝ] E) {ν : E} (hν : ν ≠ 0) :
+    (e : E →L[ℝ] E).adjoint ν ≠ 0 := fun h0 => hν (inner_self_eq_zero (𝕜 := ℝ).1 (by
+  simpa [h0] using (ContinuousLinearMap.adjoint_inner_right (e : E →L[ℝ] E) (e.symm ν) ν).symm))
 
-/-- Under a linear automorphism `e` that is `√Λ`-Lipschitz, the half-space `{x | c₀ < ⟪x, ν⟫}`
-pulls back to the half-space `{y | c₀ < ⟪y, e† ν⟫}`, `e†` the adjoint, with `e† ν ≠ 0`, and the
-parts in it of the thickenings of `e ⁻¹' S` of radius `R / √Λ` map into the corresponding parts of
-the thickenings of `S` of radius `R`. -/
-private theorem adjoint_ne_zero_and_thickening_inter_subset_preimage {e : E ≃L[ℝ] E}
-    {Lam R c₀ : ℝ} {ν : E} {S U : Set E} (hν : ν ≠ 0) (hlip : LipschitzWith (√Lam).toNNReal e)
-    (hSU : cthickening R S ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ} ⊆ U) :
-    (e : E →L[ℝ] E).adjoint ν ≠ 0 ∧
-      thickening (R / √Lam) (e ⁻¹' S) ∩ {y | c₀ < ⟪y, (e : E →L[ℝ] E).adjoint ν⟫_ℝ} ⊆
-        e ⁻¹' (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}) ∧
-      cthickening (R / √Lam) (e ⁻¹' S) ∩ {y | c₀ ≤ ⟪y, (e : E →L[ℝ] E).adjoint ν⟫_ℝ} ⊆
-        e ⁻¹' U := by
-  have hν'e (y : E) : ⟪y, (e : E →L[ℝ] E).adjoint ν⟫_ℝ = ⟪e y, ν⟫_ℝ :=
-    ContinuousLinearMap.adjoint_inner_right _ _ _
-  refine ⟨fun h0 => hν (inner_self_eq_zero (𝕜 := ℝ).1 ?_), fun y hy => ⟨?_, ?_⟩,
-    fun y hy => hSU ⟨?_, ?_⟩⟩
-  · simpa [h0] using (hν'e (e.symm ν)).symm
-  · refine hlip.thickening_preimage_subset_preimage_thickening S (R := R) ?_
-    simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hy.1
-  · simpa only [mem_preimage, mem_ofPred_eq, hν'e] using hy.2
-  · refine hlip.cthickening_preimage_subset_preimage_cthickening S (R := R) ?_
-    simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hy.1
-  · simpa only [mem_ofPred_eq, hν'e] using hy.2
+/-- Under a linear automorphism `e` that is `√Λ`-Lipschitz, the part in the pulled back half-space
+`{y | c₀ < ⟪y, e† ν⟫}` of the open thickening of `e ⁻¹' S` of radius `R / √Λ` maps into the part
+in `{x | c₀ < ⟪x, ν⟫}` of the open `R`-thickening of `S`. -/
+private theorem thickening_inter_setOf_lt_inner_adjoint_subset {e : E ≃L[ℝ] E} {Lam R c₀ : ℝ}
+    {ν : E} (S : Set E) (hlip : LipschitzWith (√Lam).toNNReal e) :
+    thickening (R / √Lam) (e ⁻¹' S) ∩ {y | c₀ < ⟪y, (e : E →L[ℝ] E).adjoint ν⟫_ℝ} ⊆
+      e ⁻¹' (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}) := fun y hy =>
+  ⟨hlip.thickening_preimage_subset_preimage_thickening S (R := R)
+      (by simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hy.1),
+    by simpa only [mem_preimage, mem_ofPred_eq, ContinuousLinearMap.adjoint_inner_right,
+      ContinuousLinearEquiv.coe_coe] using hy.2⟩
+
+/-- Under a linear automorphism `e` that is `√Λ`-Lipschitz, the part in the pulled back closed
+half-space `{y | c₀ ≤ ⟪y, e† ν⟫}` of the closed thickening of `e ⁻¹' S` of radius `R / √Λ` maps
+into the part in `{x | c₀ ≤ ⟪x, ν⟫}` of the closed `R`-thickening of `S`. -/
+private theorem cthickening_inter_setOf_le_inner_adjoint_subset {e : E ≃L[ℝ] E} {Lam R c₀ : ℝ}
+    {ν : E} (S : Set E) (hlip : LipschitzWith (√Lam).toNNReal e) :
+    cthickening (R / √Lam) (e ⁻¹' S) ∩ {y | c₀ ≤ ⟪y, (e : E →L[ℝ] E).adjoint ν⟫_ℝ} ⊆
+      e ⁻¹' (cthickening R S ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ}) := fun y hy =>
+  ⟨hlip.cthickening_preimage_subset_preimage_cthickening S (R := R)
+      (by simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hy.1),
+    by simpa only [mem_preimage, mem_ofPred_eq, ContinuousLinearMap.adjoint_inner_right,
+      ContinuousLinearEquiv.coe_coe] using hy.2⟩
 
 /-- **Schauder estimate up to a flat boundary for constant-coefficient operators, classical form.**
 Let `0 < α < 1`. There is a constant `C`, depending only on `n` and `α`, such that the following
@@ -483,8 +470,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_half
   -- half-space `{y | c₀ < ⟪y, e† ν⟫}` onto `H`, apply the estimate for the Laplacian up to the
   -- flat boundary to `v = u ∘ e`, and transfer the Hölder bound for `D²v` back to `D²u`.
   obtain ⟨e, -, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
-  have hlamLam : lam ≤ Lam := by
-    simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _)
+  have hlamLam : lam ≤ Lam := by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _)
   have hLam : 0 < Lam := hlam.trans_le hlamLam
   set v := u ∘ e
   set R' := R / √Lam
@@ -494,15 +480,15 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_half
     rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), dist_eq_norm, dist_eq_norm, ← map_sub]
     exact he' _
   -- The half-space thickenings of `e⁻¹ S` map into those of `S`.
-  obtain ⟨hν', hT', hSU'⟩ := adjoint_ne_zero_and_thickening_inter_subset_preimage hν hlip hSU
-  have hTU' : thickening R' (e ⁻¹' S) ∩ {y | c₀ < ⟪y, ν'⟫_ℝ} ⊆ e ⁻¹' U := fun y hy =>
-    hSU' ⟨thickening_subset_cthickening _ _ hy.1, by
-      simp only [mem_ofPred_eq] at hy ⊢
-      exact hy.2.le⟩
+  have hT' := thickening_inter_setOf_lt_inner_adjoint_subset (R := R) (c₀ := c₀) (ν := ν) S hlip
+  have hSU' := (cthickening_inter_setOf_le_inner_adjoint_subset (R := R) (c₀ := c₀) (ν := ν) S
+    hlip).trans (preimage_mono hSU)
+  have hTU' : thickening R' (e ⁻¹' S) ∩ {y | c₀ < ⟪y, ν'⟫_ℝ} ⊆ e ⁻¹' U :=
+    subset_closure.trans ((closure_thickening_inter_setOf_lt_inner_subset _ _ _ _).trans hSU')
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
-  have hvhol := h hν' (hU.preimage e.continuous)
+  have hvhol := h (adjoint_apply_ne_zero e hν) (hU.preimage e.continuous)
     (hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)) hS'
     (fun y hy => by rw [hν'e]; exact hSc _ hy) (by positivity) hSU'
     (fun y hy hy0 => hu0 _ hy (by simpa only [ContinuousLinearEquiv.coe_coe, ← hν'e] using hy0))
@@ -510,18 +496,19 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_half
   -- The `L²` norm of `D²v` on the new half-space thickening is controlled by that of `D²u`.
   have hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹ :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity) he
-  have hTU : thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ U := fun x hx =>
-    hSU ⟨thickening_subset_cthickening _ _ hx.1, by
-      simp only [mem_ofPred_eq] at hx ⊢
-      exact hx.2.le⟩
+  have hcl : closure (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}) ⊆ U :=
+    (closure_thickening_inter_setOf_lt_inner_subset R S ν c₀).trans hSU
   have hMv : (eLpNorm (iteratedFDeriv ℝ 2 v) 2
         (volume.restrict (thickening R' (e ⁻¹' S) ∩ {y | c₀ < ⟪y, ν'⟫_ℝ}))).toReal ≤
       Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
         (eLpNorm (iteratedFDeriv ℝ 2 u) 2
           (volume.restrict (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}))).toReal := by
+    have hTm : MeasurableSet (thickening R S ∩ {x | c₀ < ⟪x, ν⟫_ℝ}) :=
+      (isOpen_thickening.inter (isOpen_lt continuous_const (by fun_prop))).measurableSet
     have h2 := Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le (volume : Measure E) hlam hLam
-      he' hesn hU hu (isOpen_thickening.inter (isOpen_lt continuous_const (by fun_prop))
-        ).measurableSet hTU hT' (eLpNorm_iteratedFDeriv_two_thickening_inter_ne_top hU hu hS hSU)
+      he' hesn hU hu hTm (subset_closure.trans hcl) hT'
+      (Measure.eLpNorm_iteratedFDeriv_ne_top_of_closure_subset volume 2 hU hu
+        (hS.thickening.subset inter_subset_left) hTm hcl)
     rwa [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one] at h2
   exact holderOnWith_iteratedFDeriv_two_of_holderOnWith_comp hlam hlamLam hR hC hesn
     ENNReal.toReal_nonneg hMv hvhol

@@ -110,21 +110,6 @@ theorem holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le {α ε L J K B : ℝ�
   ext j
   ring
 
-/-- **The absorption step of the perturbation argument.** If the Hölder constant `J ≥ 0` of a
-Hessian satisfies `J ≤ κ ((K + N (ε J + (J s + V M) L)) / λ + Q M)`, which is the bound that
-freezing the coefficients gives when the Hessian is bounded by `J s + V M`, and the smallness
-condition `2 κ N (ε + L s) ≤ λ` holds, then `J ≤ 2 κ (K / λ + (N L / λ V + Q) M)`. -/
-theorem le_two_mul_of_le_mul_add_mul_add {J K ε L κ lam s V M Q N : ℝ} (hJ : 0 ≤ J)
-    (hlam : 0 < lam) (hsmall : 2 * κ * N * (ε + L * s) ≤ lam)
-    (h : J ≤ κ * ((K + N * (ε * J + (J * s + V * M) * L)) / lam + Q * M)) :
-    J ≤ 2 * κ * (K / lam + (N * L / lam * V + Q) * M) := by
-  have hX : κ * N * (ε + L * s) / lam ≤ 1 / 2 := by
-    rw [div_le_iff₀ hlam]
-    linarith
-  have h2 := TauCeti.le_two_mul_of_le_add_mul hJ hX (Y := κ * (K / lam + (N * L / lam * V + Q) * M))
-    (h.trans_eq (by field_simp; ring))
-  linarith
-
 /-- **Global a priori Schauder estimate for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on dimension and `α`, with the following
 property. Put `κ = C (Λ / λ)^(1 + (n+1)/4 + α/2)`. Let `A` have ellipticity bounds `λ, Λ`, with
@@ -203,7 +188,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
       _ ≤ _ := by dsimp [κ]; gcongr; linarith
   have hbound := hglobal.nnholderNorm_le
   rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)] at hbound
-  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := K) (V := V) (M := M)
+  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := (K : ℝ)) (V := V) (M := M)
     (Q := r ^ (-(((n : ℝ) + 1) / 2 + α))) J.coe_nonneg hlam hsmall
     (hbound.trans_eq (by push_cast; rw [hBc]))
   exact hJ.mono (by

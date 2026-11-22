@@ -27,10 +27,13 @@ with its preimage under `e`, works against any additive Haar measure on a finite
 real normed space, and requires no differentiability of the function. Only the derivative of
 the composite must be a.e. strongly measurable on the preimage.
 
-For a finite-dimensional real normed space it also records the consequence for second derivatives
-of a `C²` function on a thickening: the `L²` norm of `D²u` on a thickening of a bounded set is
-finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and the `L²` norm
-of `D²(u ∘ e)` on a subset of the preimage of a set is controlled by that of `D²u` on the set,
+For a finite-dimensional real normed space it also records finiteness and change-of-variables
+bounds for iterated derivatives of a `Cᵏ` function on bounded sets. The `Lᵖ` norm of `Dᵏu` on a
+bounded measurable set whose closure lies where `u` is `Cᵏ` is finite
+(`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_ne_top_of_closure_subset`), in particular the `L²`
+norm of `D²u` on a thickening of a bounded set
+(`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`). For any measurable set
+`T`, the `L²` norm of `D²(u ∘ e)` on a subset of `e ⁻¹' T` is controlled by that of `D²u` on `T`,
 through the ellipticity constants of `e`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
 
@@ -85,6 +88,16 @@ section Thickening
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
 
+/-- The `Lᵖ` norm of `Dᵏu` on a bounded measurable set `T` is finite when `u` is `Cᵏ` on an open
+set containing the closure of `T`. -/
+theorem eLpNorm_iteratedFDeriv_ne_top_of_closure_subset [IsFiniteMeasureOnCompacts μ]
+    {U T : Set E} {u : E → ℝ} {k : ℕ} (p : ℝ≥0∞) (hU : IsOpen U) (hu : ContDiffOn ℝ k u U)
+    (hT : Bornology.IsBounded T) (hTm : MeasurableSet T) (hTU : closure T ⊆ U) :
+    eLpNorm (iteratedFDeriv ℝ k u) p (μ.restrict T) ≠ ∞ :=
+  (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
+    hTU).memLp_restrict_of_subset_isCompact hT.isCompact_closure hTm subset_closure
+      p).eLpNorm_ne_top
+
 /-- The `L²` norm of `D²u` on the open `R`-thickening of a bounded set `S` is finite when `u` is
 `C²` on an open set containing the closed `R`-thickening. -/
 theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top [IsFiniteMeasureOnCompacts μ]
@@ -92,10 +105,8 @@ theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top [IsFiniteMeasureOnCompacts 
     (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
     (hSU : cthickening R S ⊆ U) :
     eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict (thickening R S)) ≠ ∞ :=
-  (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
-    ((closure_thickening_subset_cthickening R S).trans hSU)).memLp_restrict_of_subset_isCompact
-      hS.thickening.isCompact_closure isOpen_thickening.measurableSet subset_closure
-        2).eLpNorm_ne_top
+  eLpNorm_iteratedFDeriv_ne_top_of_closure_subset μ 2 hU hu hS.thickening
+    isOpen_thickening.measurableSet ((closure_thickening_subset_cthickening R S).trans hSU)
 
 /-- Let `e` be a linear automorphism with `‖e ξ‖ ≤ √Λ ‖ξ‖` and `‖e⁻¹‖ ≤ 1 / √λ`, and let `u` be
 `C²` on an open set containing a measurable set `T` on which `D²u` is in `L²`. Then on every
