@@ -220,13 +220,14 @@ theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [CommRing K]
 
 /-- **The homology of the negative disc bundle of a Morse–Bott submanifold, from a Thom class.**
 Let `i` be a nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at
-every point, and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a field such
-that the negative normal bundle `ν⁻` relative to `g`, a vector bundle of rank `r`, has a Thom class
-with coefficients in `K`. For `ε > 0`, the negative disc bundle `D_ε` relative to `g`, taken
-relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when `r ≤ n`, and `0`
-when `n < r`. -/
+every point, and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a nontrivial
+commutative ring such that the negative normal bundle `ν⁻` relative to `g`, a vector bundle of
+rank `r`, has a Thom class with coefficients in `K`. For `ε > 0`, the negative disc bundle `D_ε`
+relative to `g`, taken relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)`
+when `r ≤ n`, and `0` when `n < r`. -/
 theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass {ε : ℝ} (hε : 0 < ε)
-    {K : Type} [Field K] (hu : h.HasNegativeNormalThomClass hn hfs hdim g hr K) (n : ℕ) :
+    {K : Type} [CommRing K] [Nontrivial K] (hu : h.HasNegativeNormalThomClass hn hfs hdim g hr K)
+    (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     finrank K ((h.negativeDiscSpherePair hn P g.toRiemannianMetric ε).singularHomology
@@ -257,13 +258,13 @@ theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass {ε : ℝ
 include hfs hr in
 /-- **The mod `2` homology of the negative disc bundle of a Morse–Bott submanifold.** Let `i` be a
 nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at every point,
-and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a field whose only unit is
-`1`, such as `ZMod 2`. For `ε > 0`, the negative disc bundle `D_ε` relative to `g`, taken
-relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when `r ≤ n`, and `0`
-when `n < r`: the negative normal bundle has a Thom class with coefficients in `K`, with no
-orientation needed (`hasNegativeNormalThomClass_of_subsingleton_units`). -/
-theorem finrank_singularHomology_negativeDiscSpherePair {ε : ℝ} (hε : 0 < ε) (K : Type) [Field K]
-    [Subsingleton Kˣ] (n : ℕ) :
+and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a nontrivial commutative
+ring whose only unit is `1`, such as `ZMod 2`. For `ε > 0`, the negative disc bundle `D_ε`
+relative to `g`, taken relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)`
+when `r ≤ n`, and `0` when `n < r`: the negative normal bundle has a Thom class with coefficients
+in `K`, with no orientation needed (`hasNegativeNormalThomClass_of_subsingleton_units`). -/
+theorem finrank_singularHomology_negativeDiscSpherePair {ε : ℝ} (hε : 0 < ε) (K : Type)
+    [CommRing K] [Nontrivial K] [Subsingleton Kˣ] (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     finrank K ((h.negativeDiscSpherePair hn P g.toRiemannianMetric ε).singularHomology
