@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
+public import TauCeti.Analysis.Pseudodifferential.EllipticRegularity.Basic
 public import TauCeti.Analysis.Pseudodifferential.BesovSpace
 public import TauCeti.Analysis.Holder.Zygmund
 import TauCeti.Analysis.Pseudodifferential.Smoothing
