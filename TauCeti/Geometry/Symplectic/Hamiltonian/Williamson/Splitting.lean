@@ -363,7 +363,7 @@ theorem IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval
   refine h.restrict (ω.isSymplectic_maxGenEigenspace_aeval
     (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P) hp) fun i ↦
       (Module.End.mem_invtSubmodule _).2 <|
-        Module.End.mapsTo_maxGenEigenspace_aeval_of_comm ?_ p 0
+        Module.End.mapsTo_genEigenspace_aeval_of_comm ?_ p 0 ⊤
   exact (ω.quadraticPoissonBracket_eq_zero_iff.1 <|
     ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero
       (Submodule.subset_span ⟨i, rfl⟩) hP).symm

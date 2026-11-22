@@ -194,15 +194,15 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {s : Finset ℝ}
     (hs : s.card * 2 = finrank ℝ V) (hAs : ∀ μ ∈ s, (A ^ 2).HasEigenvalue μ) {μ : ℝ}
     (hμ : μ ∈ s) :
-    A.restrict (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0) *
-        A.restrict (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0) =
+    A.restrict (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0 ⊤) *
+        A.restrict (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0 ⊤) =
       μ • 1 := by
   set L := (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0
   have hL := isSymplectic_maxGenEigenspace_sq_sub hA μ
   obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict L hL.nondegenerate_restrict)
     (finrank_maxGenEigenspace_sq_sub hA hs hAs hμ)
     ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict
-      (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) _ 0)⟩
+      (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) _ 0 ⊤)⟩
   -- An eigenvector of `A²` for `μ` lies in `L`, so `κ = μ`.
   obtain ⟨x, hx⟩ := (hAs μ hμ).exists_hasEigenvector
   have hxμ : A (A x) = μ • x := by simpa [sq] using hx.apply_eq_smul
@@ -231,7 +231,7 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
   have hL := isSymplectic_maxGenEigenspace_sq_sub hA ν
   set ω' := ω.restrict L hL.nondegenerate_restrict
   set A' := A.restrict
-    (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C ν) 0)
+    (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C ν) 0 ⊤)
   have hA' : A' ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
     restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict _
   have hAA : A' * A' = ν • 1 := apply_apply_eq_of_mem_maxGenEigenspace_sq_sub hA hs hAs hν
