@@ -155,17 +155,16 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgeb
   classical
   let γ := Module.Basis.ofVectorSpace k C
   let γ' : _ → L := fun m ↦ (γ m : L)
-  -- the products `γ m * β i` are linearly independent over `k`, hence over `A`
-  have hprod : LinearIndependent A fun p : ι × _ ↦ γ' p.2 * β p.1 := by
+  -- the products `γ m • β i` are linearly independent over `k`, hence over `A`
+  have hprod : LinearIndependent A fun p : _ × ι ↦ γ' p.1 • β p.2 := by
     have hk : LinearIndependent k fun p : _ × ι ↦ γ p.1 • β p.2 :=
       linearIndependent_smul γ.linearIndependent hβ
     have hkB : LinearIndependent k fun p : _ × ι ↦
         (⟨γ p.1 • β p.2, B.mul_mem (hCB (γ p.1).property) (hβB p.2)⟩ : B) :=
       .of_comp B.val.toLinearMap hk
-    have hA := h.linearIndependent_right hkB
-    exact (hA.comp (Equiv.prodComm _ _) (Equiv.injective _))
+    exact h.linearIndependent_right hkB
   -- every element of `A ⊔ C` is an `A`-combination of the `γ m`
-  refine linearIndependent_of_linearIndependent_mul_of_mem_span (fun x ↦ ?_) hprod
+  refine hprod.of_smul_of_algebraMap_mem_span fun x ↦ ?_
   have hC : (C : Set L) ⊆ Submodule.span A (Set.range γ') := by
     intro c hc
     have hck : c ∈ Submodule.span k (Set.range γ') := by

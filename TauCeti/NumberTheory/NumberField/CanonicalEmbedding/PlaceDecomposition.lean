@@ -200,7 +200,6 @@ abbrev placeSpanProd (W : Submodule K (ι → K)) : Type _ :=
 
 open scoped Classical in
 /-- `W.placeSpanProd` has real dimension `[K : ℚ] * finrank K W`. -/
-@[simp]
 theorem finrank_placeSpanProd [NumberField K] [Finite ι] (W : Submodule K (ι → K)) :
     finrank ℝ W.placeSpanProd = finrank ℚ K * finrank K W := by
   cases nonempty_fintype ι

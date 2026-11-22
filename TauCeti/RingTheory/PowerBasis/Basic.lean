@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
+public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.PowerBasis
 
 /-!
@@ -29,6 +30,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
   coefficients of `q %ₘ pb.minpolyGen`.
 * `PowerBasis.minpolyGen_eq_X_pow_sub_C`: if `pb.gen ^ pb.dim` is a scalar `b`, then
   `pb.minpolyGen = X ^ pb.dim - C b`.
+* `PowerBasis.norm_gen_sub_algebraMap`: the norm of `pb.gen - a` for a scalar `a` is
+  `(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
   `S →ₐ[R] E`, each counted once.
@@ -104,6 +107,21 @@ theorem PowerBasis.minpolyGen_eq_X_pow_sub_C {R S : Type*} [CommRing R] [Ring S]
     ← show pb.basis ⟨0, pb.dim_pos⟩ = 1 by rw [pb.basis_eq_pow, pow_zero],
     map_smul, pb.basis.repr_self, Finsupp.smul_single_one]
   simp [Finsupp.single_apply, apply_ite C]
+
+open Polynomial in
+/-- For a power basis of `S` over `R` and `a : R`, the norm of `pb.gen - algebraMap R S a` is
+`(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`. -/
+theorem PowerBasis.norm_gen_sub_algebraMap {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
+    (pb : PowerBasis R S) (a : R) :
+    Algebra.norm R (pb.gen - algebraMap R S a) = (-1) ^ pb.dim * (minpoly R pb.gen).eval a := by
+  nontriviality R
+  have := Module.Free.of_basis pb.basis
+  have := Module.Finite.of_basis pb.basis
+  have h : Algebra.lmul R S (pb.gen - algebraMap R S a) =
+      (-1 : R) • (algebraMap R (Module.End R S) a - Algebra.lmul R S pb.gen) := by
+    ext; simp [Algebra.algebraMap_eq_smul_one]
+  rw [← pb.charpoly_lmul_gen, LinearMap.eval_charpoly, Algebra.norm_apply, h, LinearMap.det_smul,
+    pb.finrank]
 
 open Polynomial in
 /-- The roots in a domain `E` of the minimal polynomial of the generator of a power basis are the
