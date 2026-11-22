@@ -134,8 +134,11 @@ private theorem eventually_riemannianEDist_neg_mgradient
     (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
   have hlim := (hγ.tendsto_maximalIntegralCurve_iff
     (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   obtain ⟨c, hc, C, hC, hbound⟩ :=
-    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp hlim hf
+    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp.mem_criticalPoints
+      hp.exists_mul_abs_sub_le_norm_mgradient_sq hlim hf
   refine ⟨c, hc, C * Real.exp c, by positivity, ?_⟩
   filter_upwards [(tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id).eventually hbound,
     eventually_ge_atTop (1 : ℝ)] with t ht ht1

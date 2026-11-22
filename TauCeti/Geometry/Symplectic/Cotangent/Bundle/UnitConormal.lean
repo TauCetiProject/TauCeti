@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Conormal
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
+import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
@@ -41,6 +42,15 @@ structure `ker(λ|S*M)` (`TauCeti.CotangentBundle.isLegendrianEmbedding_unitCono
 This is also the kernel of the contact form `α_b = -λ|S*M` of the opposite coorientation, the
 boundary form of the primitive `-λ` of `ω = -dλ`.
 
+For a `C¹` closed embedding, the image `N*Q ∩ S*M` of the unit conormal bundle is closed in `S*M`
+(`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion`), since `N*Q` is closed in `T*M`.
+Closedness of the submanifold cannot be dropped: in positive codimension every point of the image
+of `i` carries a unit conormal covector, and the unit covectors over a compact set form a compact
+set, so a closed image of the unit conormal bundle forces a closed image of `i`
+(`TauCeti.CotangentBundle.isClosed_range_of_isClosed_range_unitConormalInclusion`). Thus for a
+`C¹` embedding of smaller dimension, the unit conormal bundle is closed in `S*M` exactly when the
+submanifold is closed in `M` (`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`).
+
 The atlas and the manifold structure only use that `i` is smooth with injective differentials;
 the embedding into `S*M` uses that `i` is a smooth embedding. The vector bundle structure of `N*Q`
 depends on `i`, so it is installed locally by `letI`, as is the atlas of the unit conormal bundle,
@@ -60,6 +70,8 @@ in the statements about it.
   `S*M`.
 * `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion`: it is a Legendrian
   embedding for the contact structure `ker(λ|S*M)`.
+* `TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`: in positive codimension, it
+  is closed in `S*M` exactly when the submanifold is closed in `M`.
 
 ## References
 
@@ -128,6 +140,72 @@ theorem unitConormalInclusion_injective (hi : Injective i) :
   restrictPreimage_injective _ (conormalInclusion_injective (Fin k → ℝ) hi)
 
 end Definitions
+
+section Closed
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- **The unit conormal bundle of a closed submanifold is closed.** For a `C¹` closed embedding
+`i : Q → M`, the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`. -/
+theorem isClosed_range_unitConormalInclusion [IsManifold I 1 M] [IsManifold J 1 Q]
+    (hi : Topology.IsClosedEmbedding i) (hic : ContMDiff J I 1 i) :
+    IsClosed (range (unitConormalInclusion J I k i)) := by
+  rw [range_unitConormalInclusion]
+  exact (isClosed_conormal hi hic).preimage continuous_subtypeVal
+
+/-- **A closed unit conormal bundle lies over a closed image.** If `Q` has smaller dimension than
+`M` and the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`, then the image
+of `i` is closed in `M`. Indeed, every point of the image of `i` carries a unit conormal covector,
+and the unit conormal covectors over a compact subset of `M` form a compact set. -/
+theorem isClosed_range_of_isClosed_range_unitConormalInclusion [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    (hdim : finrank ℝ F < finrank ℝ E) (h : IsClosed (range (unitConormalInclusion J I k i))) :
+    IsClosed (range i) := by
+  have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
+  rw [range_unitConormalInclusion] at h
+  -- The set `{z | ↑z ∈ N*Q}` of `S*M` is the preimage of `N*Q` by definition.
+  have hC : IsClosed (cosphereBundle I M ∩ conormal J I i) := by
+    have h' : IsClosed ((↑) ⁻¹' conormal J I i : Set (cosphereBundle I M)) := h
+    simpa only [Subtype.image_preimage_coe] using h'.trans isClosed_cosphereBundle
+  refine isClosed_of_closure_subset fun x hx ↦ ?_
+  obtain ⟨K, hK, hxK⟩ := exists_compact_mem_nhds x
+  -- The unit conormal covectors over `K` form a compact set `A`, whose projection is closed and
+  -- contains `range i ∩ K`.
+  set A := (cosphereBundle I M ∩
+    π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ⁻¹' K) ∩ (cosphereBundle I M ∩
+      conormal J I i)
+  have hA : IsCompact A := (isCompact_cosphereBundle_inter_preimage_proj (I := I) hK).inter_right hC
+  have hsub : range i ∩ K ⊆ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) '' A := by
+    rintro y hy
+    obtain ⟨⟨q, rfl⟩, hqK⟩ := mem_inter_iff _ _ _ |>.1 hy
+    obtain ⟨p, hp, hp0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+      (conormalSpace_ne_bot (J := J) (I := I) hdim i q)
+    have hn : TotalSpace.mk' (E →L[ℝ] ℝ) (i q) (NormedSpace.normalize p) ∈ cosphereBundle I M :=
+      mem_cosphereBundle.2 (NormedSpace.norm_normalize (V := TangentSpace I (i q) →L[ℝ] ℝ) hp0)
+    have hpn : NormedSpace.normalize p ∈ conormalSpace J I i q := by
+      rw [NormedSpace.normalize]
+      exact Submodule.smul_mem _ _ hp
+    exact mem_image_of_mem _ (mem_inter (mem_inter hn hqK) (mem_inter hn (mk_mem_conormal hpn)))
+  have hx' : x ∈ closure (range i ∩ K) :=
+    mem_closure_iff_frequently.2 ((mem_closure_iff_frequently.1 hx).and_eventually hxK)
+  obtain ⟨z, hz, rfl⟩ :=
+    closure_minimal hsub (hA.image (FiberBundle.continuous_proj _ _)).isClosed hx'
+  obtain ⟨q, hq, -⟩ := mem_conormal_iff.1 hz.2.2
+  exact mem_range.2 ⟨q, hq⟩
+
+/-- **The unit conormal bundle is closed exactly over a closed submanifold.** For a `C¹`
+embedding `i : Q → M` into a Riemannian manifold of larger dimension, the image `N*Q ∩ S*M` of the
+unit conormal bundle of `i` is closed in `S*M` exactly when the image of `i` is closed in `M`. -/
+theorem isClosed_range_unitConormalInclusion_iff [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M] [IsManifold J 1 Q]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] (hi : Topology.IsEmbedding i)
+    (hic : ContMDiff J I 1 i) (hdim : finrank ℝ F < finrank ℝ E) :
+    IsClosed (range (unitConormalInclusion J I k i)) ↔ IsClosed (range i) :=
+  ⟨isClosed_range_of_isClosed_range_unitConormalInclusion hdim,
+    fun h ↦ isClosed_range_unitConormalInclusion ⟨hi, h⟩ hic⟩
+
+end Closed
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [IsManifold J ∞ Q]
 
