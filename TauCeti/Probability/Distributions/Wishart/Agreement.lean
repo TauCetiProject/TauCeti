@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.CharFun
 
 import TauCeti.Probability.Distributions.Wishart.Congruence
+import TauCeti.Probability.Distributions.Wishart.Rank
 
 /-!
 # Identifying Wishart laws through their characteristic function
@@ -34,6 +35,12 @@ Gaussian factors, or a degenerate covariance, leave the Gram law with no density
   size at
   least the dimension has a Gram sum with the nonsingular Wishart law.
 * `TauCeti.Probability.ae_posDef_wishartGramMeasure` — such a Gram sum is almost surely nonsingular.
+* `map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_eq_wishartGramMeasure` and
+  `ProbabilityTheory.HasLaw.symmetricCongruenceLinearMap_wishartGramMeasure` — at a natural degree
+  at least the dimension, congruence by a matrix of any rank, including a rank-deficient one,
+  carries a nonsingular Wishart law to a Gaussian-Gram law;
+  `ae_rank_eq_map_symmetricCongruenceLinearMap_nonsingularWishartMeasure` gives the almost sure
+  rank of that image.
 * `TauCeti.Probability.hasPDF_of_hasLaw_wishartGramMeasure` and
   `TauCeti.Probability.rnDeriv_wishartGramMeasure` — such
   a Gram law has a density against `TauCeti.symmetricLebesgue`, the nonsingular Wishart density.
@@ -48,6 +55,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
+open scoped Matrix
 
 namespace TauCeti.Probability
 
@@ -132,4 +140,73 @@ theorem rnDeriv_wishartGramMeasure (hS : S.PosDef) (hp : p ≤ ν) :
 
 end Density
 
+/-! ### Congruence images at natural degrees
+
+Congruence by a `q × p` matrix `M` of full row rank keeps a nonsingular Wishart law inside the
+density family (`TauCeti.Probability.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure`).
+A congruence of smaller rank leaves it: its image is carried by the singular matrices
+(`MeasureTheory.Measure.mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue`), so
+at a real degree it remains a pushforward with no density. At a natural degree it is still a named
+law, because the nonsingular law is then Gaussian-Gram and the Gram family is closed under every
+congruence. -/
+
+section Congruence
+
+variable {q ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
+
+/-- **The congruence image of a nonsingular Wishart law of natural degree is Gaussian-Gram.** For
+a positive-definite scale `S` and a natural degree `ν ≥ p`, congruence by any `q × p` matrix `M`,
+of whatever rank, carries the nonsingular Wishart law of scale `S` to the Gaussian-Gram law of
+scale `M * S * Mᵀ`. When `M` has rank below `q` this image is not a nonsingular Wishart law:
+`MeasureTheory.Measure.mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue` makes
+it singular with respect to `TauCeti.symmetricLebesgue`. -/
+theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_eq_wishartGramMeasure
+    (M : Matrix (Fin q) (Fin p) ℝ) (hS : S.PosDef) (hp : p ≤ ν) :
+    (nonsingularWishartMeasure (ν : ℝ) S).map (Matrix.symmetricCongruenceLinearMap M) =
+      wishartGramMeasure ν (M * S * Mᵀ) := by
+  rw [← wishartGramMeasure_eq_nonsingularWishartMeasure hS hp,
+    map_symmetricCongruenceLinearMap_wishartGramMeasure ν M hS.posSemidef]
+
+/-- **The congruence image of a nonsingular Wishart matrix of natural degree has the rank of the
+congruence matrix almost surely.** For a positive-definite scale and a natural degree `ν ≥ p`,
+congruence by a `q × p` matrix `M` gives a matrix of rank exactly `M.rank` almost surely. -/
+theorem ae_rank_eq_map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
+    (M : Matrix (Fin q) (Fin p) ℝ) (hS : S.PosDef) (hp : p ≤ ν) :
+    ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ)
+        ∂(nonsingularWishartMeasure (ν : ℝ) S).map (Matrix.symmetricCongruenceLinearMap M),
+      (A : Matrix (Fin q) (Fin q) ℝ).rank = M.rank := by
+  have hrank : (M * S * Mᵀ).rank = M.rank := by
+    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      hS.rank_mul_mul_conjTranspose M
+  have hmin : min ν (M * S * Mᵀ).rank = M.rank := by
+    rw [hrank, min_eq_right]
+    simpa using M.rank_le_width.trans hp
+  have hPSD : (M * S * Mᵀ).PosSemidef := by
+    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      hS.posSemidef.mul_mul_conjTranspose_same M
+  rw [map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_eq_wishartGramMeasure M hS hp]
+  simpa only [hmin] using ae_rank_eq_wishartGramMeasure ν hPSD
+
+end Congruence
+
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- **A congruence of a nonsingular Wishart matrix of natural degree is Gaussian-Gram Wishart.**
+Congruence by a `q × p` matrix `M` of any rank turns a nonsingular Wishart matrix of natural degree
+`ν ≥ p` and positive-definite scale `S` into a Gaussian-Gram Wishart matrix of scale
+`M * S * Mᵀ`. -/
+theorem HasLaw.symmetricCongruenceLinearMap_wishartGramMeasure {p q ν : ℕ}
+    {S : Matrix (Fin p) (Fin p) ℝ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    (hX : HasLaw X (nonsingularWishartMeasure (ν : ℝ) S) P)
+    (M : Matrix (Fin q) (Fin p) ℝ) (hS : S.PosDef) (hp : p ≤ ν) :
+    HasLaw (fun ω ↦ Matrix.symmetricCongruenceLinearMap M (X ω))
+      (wishartGramMeasure ν (M * S * Mᵀ)) P := by
+  rw [← map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_eq_wishartGramMeasure M hS hp]
+  exact (hasLaw_map (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable).comp hX
+
+end ProbabilityTheory

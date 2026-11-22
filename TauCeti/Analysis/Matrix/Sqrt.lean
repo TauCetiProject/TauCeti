@@ -54,6 +54,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
 * `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
+* `Matrix.PosDef.rank_mul_mul_conjTranspose` — congruence by a positive-definite matrix preserves
+  rank;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -220,6 +222,19 @@ theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) 
   rw [hS.posDef_inv_sub_iff (c • Θ), Matrix.mul_smul, Matrix.smul_mul]
 
 end PosDef
+
+open scoped Classical in
+/-- Congruence by a positive-definite matrix preserves rank: `M * S * Mᴴ` has the rank of `M`. -/
+theorem PosDef.rank_mul_mul_conjTranspose {m : Type*} [Finite m] {S : Matrix ι ι 𝕜}
+    (hS : S.PosDef) (M : Matrix m ι 𝕜) : (M * S * Mᴴ).rank = M.rank := by
+  have hh : (CFC.sqrt S).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian
+  calc (M * S * Mᴴ).rank = (M * CFC.sqrt S * (M * CFC.sqrt S)ᴴ).rank := by
+        conv_lhs => rw [← CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg]
+        rw [conjTranspose_mul, hh.eq]
+        simp only [Matrix.mul_assoc]
+    _ = (M * CFC.sqrt S).rank := rank_self_mul_conjTranspose _
+    _ = M.rank := rank_mul_eq_left_of_isUnit_det _ _ hS.isUnit_det_sqrt
 
 /-! ### The square-root factorization over the reals -/
 
