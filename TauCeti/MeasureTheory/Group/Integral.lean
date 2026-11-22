@@ -58,6 +58,8 @@ invariance.
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.integrableOn_comp_neg_iff`, `TauCeti.setIntegral_comp_neg`: integrability and
+  set-integral change of variables under `x ↦ -x` for a negation-invariant measure.
 -/
 
 public section
@@ -261,5 +263,31 @@ theorem integral_comp_add_sub_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
         ring
 
 end Translation
+
+section NegInvariant
+
+/-- For a negation-invariant measure, `f (-x)` is integrable on `s` if and only if `f` is
+integrable on `-s`. -/
+@[simp]
+theorem integrableOn_comp_neg_iff {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
+    [MeasurableNeg G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E)
+    (s : Set G) :
+    IntegrableOn (fun x ↦ f (-x)) s μ ↔ IntegrableOn f (-s) μ := by
+  simpa only [Set.neg_preimage, neg_neg, Function.comp_def] using
+    (Measure.measurePreserving_neg μ).integrableOn_comp_preimage (f := f) (s := -s)
+      (MeasurableEquiv.neg G).measurableEmbedding
+
+/-- For a negation-invariant measure, the integral of `x ↦ f (-x)` over `s` equals the integral
+of `f` over `-s`. -/
+@[simp]
+theorem setIntegral_comp_neg {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G] [MeasurableNeg G]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E)
+    (s : Set G) :
+    ∫ x in s, f (-x) ∂μ = ∫ x in -s, f x ∂μ := by
+  simpa only [Set.neg_preimage, neg_neg] using
+    (Measure.measurePreserving_neg μ).setIntegral_preimage_emb
+      (MeasurableEquiv.neg G).measurableEmbedding f (-s)
+
+end NegInvariant
 
 end TauCeti

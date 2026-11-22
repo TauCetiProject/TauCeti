@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Pointwise.Set.Basic
-public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
@@ -63,8 +61,6 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
-* `MeasureTheory.integrableOn_comp_neg_iff`, `MeasureTheory.setIntegral_comp_neg`: integrability
-  and set-integral change of variables under `x ↦ -x` for a negation-invariant measure.
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
   integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
   measure finite on compact sets.
@@ -73,7 +69,7 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
 public section
 
 open MeasureTheory Function Set
-open scoped ENNReal Pointwise
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -356,26 +352,6 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-
-/-- For a negation-invariant measure, `f (-x)` is integrable on `s` if and only if `f` is
-integrable on `-s`. -/
-theorem integrableOn_comp_neg_iff {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
-    [MeasurableNeg G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E)
-    (s : Set G) :
-    IntegrableOn (fun x ↦ f (-x)) s μ ↔ IntegrableOn f (-s) μ := by
-  simpa only [Set.neg_preimage, neg_neg, Function.comp_def] using
-    (Measure.measurePreserving_neg μ).integrableOn_comp_preimage (f := f) (s := -s)
-      (MeasurableEquiv.neg G).measurableEmbedding
-
-/-- For a negation-invariant measure, the integral of `x ↦ f (-x)` over `s` equals the integral
-of `f` over `-s`. -/
-theorem setIntegral_comp_neg {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G] [MeasurableNeg G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] (f : G → E)
-    (s : Set G) :
-    ∫ x in s, f (-x) ∂μ = ∫ x in -s, f x ∂μ := by
-  simpa only [Set.neg_preimage, neg_neg] using
-    (Measure.measurePreserving_neg μ).setIntegral_preimage_emb
-      (MeasurableEquiv.neg G).measurableEmbedding f (-s)
 
 end MeasureTheory
 

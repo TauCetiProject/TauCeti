@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
-public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.Order.Filter.AtTopBot.Defs
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import TauCeti.Order.Filter.AtTopBot
 

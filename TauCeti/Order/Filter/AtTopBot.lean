@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Floor.Semiring
-public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
@@ -188,6 +187,13 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
   · push Not at h
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
+/-- Mapping `atTop` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atBot` on `β`. -/
+private lemma map_ofDual_atTop {β : Type*} [Preorder β] :
+    map (OrderDual.ofDual : βᵒᵈ → β) atTop = atBot := by
+  -- `OrderDual.ofDual` is definitionally `id`, and `atBot` on `β` is defined as `atTop` on `βᵒᵈ`.
+  change map (id : β → β) (atBot : Filter β) = atBot
+  exact Filter.map_id
+
 /-- Negation pushes the right-endpoint filter of `-I` forward to the left-endpoint filter of
 `I`. -/
 theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder α]
@@ -201,9 +207,7 @@ theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder �
       map_rel_iff' := @fun _ _ ↦ neg_le_neg_iff }
   have hcomp : Neg.neg ∘ ((↑) : (-I : Set α) → α) =
       ((↑) : I → α) ∘ OrderDual.ofDual ∘ e := rfl
-  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop]
-  change map ((↑) : I → α) (map id atBot) = _
-  rw [Filter.map_id]
+  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop, map_ofDual_atTop]
 
 end TauCeti
 
