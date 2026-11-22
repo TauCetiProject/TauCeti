@@ -132,11 +132,8 @@ theorem thomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {z : S × V} :
 Pontryagin–Thom collapse onto `OnePoint V`. -/
 theorem map_snd_thomCollapse (hτ : Injective τ) (m : M) :
     OnePoint.map Prod.snd (thomCollapse τ m) = pontryaginThomCollapse τ m := by
-  by_cases hm : m ∈ range τ
-  · obtain ⟨z, rfl⟩ := hm
-    rw [thomCollapse_apply hτ, OnePoint.map_some, pontryaginThomCollapse_apply hτ]
-  · rw [thomCollapse_of_notMem_range hm, pontryaginThomCollapse_of_notMem_range hm,
-      OnePoint.map_infty]
+  rw [thomCollapse_eq_onePointCollapse, pontryaginThomCollapse_eq_onePointCollapse]
+  exact map_onePointCollapse hτ Prod.snd m
 
 variable [TopologicalSpace S] [TopologicalSpace V] [TopologicalSpace M]
 
@@ -292,6 +289,32 @@ variable {S V : Type u} [TopologicalSpace S] [NormedAddCommGroup V] {B : _root_.
 variable [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {R : Type*}
   [Ring R] (M : ModuleCat.{u} R)
 
+omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The Thom collapse sends the point `f x` of the core to the point `(x, 0)` of the zero section,
+so its restriction to the cores, followed by the identification of the zero section with `S` and
+the core `S → f(S)`, is the identity of the core. -/
+private lemma preimageMapOver_thomCollapseHom_comp_coreHom
+    (hg : hτ.thomCollapseHom ≫ 𝟙 _ = 𝟙 B ≫ hτ.thomCollapseHom)
+    (hs : ∀ x v, hτ.thomCollapseHom (τ (x, v)) = ((x, v) : OnePoint (S × V))) :
+    (hτ.thomCollapseHom).preimageMapOver hg
+      (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ≫
+        (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).inv ≫ hτ.coreHom =
+      𝟙 _ := by
+  ext ⟨b, hb⟩
+  rw [Set.mem_preimage, ConcreteCategory.id_apply, Set.mem_range] at hb
+  obtain ⟨x, rfl⟩ := hb
+  have hx : zeroSectionHomeomorph.symm
+      ((hτ.thomCollapseHom).preimageMapOver hg
+        (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ⟨f x, x, rfl⟩) =
+      x := by
+    rw [Homeomorph.symm_apply_eq]
+    apply Subtype.ext
+    rw [TopCat.Hom.coe_preimageMapOver_apply, IsFramedTube.thomCollapseHom_apply]
+    exact hτ.thomCollapse_apply_self x
+  simp only [ConcreteCategory.comp_apply, _root_.TopCat.isoOfHomeo_inv, _root_.TopCat.hom_ofHom,
+    ContinuousMap.coe_ofClass, hx, ConcreteCategory.id_apply]
+  exact hτ.coe_coreHom_apply x
+
 /-- **The shriek map of a framed submanifold is the Thom collapse followed by the Thom
 isomorphism.** Let `τ : S × V → B` be a framed tube around `f : S → B`, with `S` compact
 Hausdorff and `B` Hausdorff, and let `m + 1 = n + dim V`. The shriek map
@@ -320,23 +343,6 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
   rw [TopPair.ofSubsetMap_fst] at hπ
   -- The collapse sends the point `f x` of the core to the point `(x, 0)` of the zero section, so
   -- the composite of the three maps of cores is the identity.
-  have hid : (hτ.thomCollapseHom).preimageMapOver hg
-      (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ≫
-        (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).inv ≫ hτ.coreHom =
-        𝟙 _ := by
-    ext ⟨b, x, hx⟩
-    obtain rfl : f x = b := hx
-    have hx' : zeroSectionHomeomorph.symm
-        ((hτ.thomCollapseHom).preimageMapOver hg
-          (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ⟨f x, x, rfl⟩) =
-        x := by
-      rw [Homeomorph.symm_apply_eq]
-      apply Subtype.ext
-      rw [TopCat.Hom.coe_preimageMapOver_apply, IsFramedTube.thomCollapseHom_apply]
-      exact hτ.thomCollapse_apply_self x
-    simp only [ConcreteCategory.comp_apply, _root_.TopCat.isoOfHomeo_inv, _root_.TopCat.hom_ofHom,
-      ContinuousMap.coe_ofClass, hx']
-    rfl
   have key : TopPair.singularHomologyMap (TopPair.ofSubsetMap (hτ.thomCollapseHom)
       (mapsTo_compl_preimage_range_compl_preimage_range hg hsf)) M (m + 1) ≫
         (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
@@ -348,7 +354,8 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
       (singularHomologyComplPreimageCoreIso hτ M hτ.isClosed_range one_pos
           (serreFibrations.of_isIso _) n (m + 1) h).hom := by
     rw [singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq_assoc
-      isFramedTube_onePoint_coe hτ hg hs hsf, ← Functor.map_comp, ← Functor.map_comp, hid,
+      isFramedTube_onePoint_coe hτ hg hs hsf, ← Functor.map_comp, ← Functor.map_comp,
+      preimageMapOver_thomCollapseHom_comp_coreHom hτ hg hs,
       CategoryTheory.Functor.map_id, Category.comp_id]
   rw [← key, ← Category.assoc, ← hπ, onePointProdHomologyIso_hom_eq]
   -- The two sides differ by associativity, across the identification of the source of the

@@ -90,6 +90,11 @@ noncomputable def pontryaginThomCollapse (τ : S × V → M) : M → OnePoint V 
 
 variable {τ : S × V → M}
 
+/-- The Pontryagin–Thom collapse is the collapse `TauCeti.onePointCollapse τ Prod.snd`. -/
+theorem pontryaginThomCollapse_eq_onePointCollapse :
+    pontryaginThomCollapse τ = onePointCollapse τ Prod.snd :=
+  (rfl)
+
 @[simp]
 theorem pontryaginThomCollapse_apply (hτ : Injective τ) (x : S) (v : V) :
     pontryaginThomCollapse τ (τ (x, v)) = v :=
