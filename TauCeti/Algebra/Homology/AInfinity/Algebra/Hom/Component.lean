@@ -194,15 +194,15 @@ theorem ext_component {f g : AInfinityHom AA BB}
       g.taylor ∘ₗ ReducedTensorWords.of R A n := by
     apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
-    let d : ℕ → ℤ := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).1 else 0
-    let x : ℕ → A := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).2 else 0
-    have hx : ∀ i < n.1, x i ∈ AA.grading.piece (d i) := by
+    let d : ℕ → ℤ := fun i ↦ if hi : i < n.val then (q ⟨i, hi⟩).1 else 0
+    let x : ℕ → A := fun i ↦ if hi : i < n.val then (q ⟨i, hi⟩).2 else 0
+    have hx : ∀ i < n.val, x i ∈ AA.grading.piece (d i) := by
       intro i hi
       simp only [x, d, hi, dite_true]
       exact (q ⟨i, hi⟩).2.property
-    have hf := f.taylor_eq_suspend_component n.1 n.2 d x hx
-    have hg := g.taylor_eq_suspend_component n.1 n.2 d x hx
-    rw [h n.1] at hf
+    have hf := f.taylor_eq_suspend_component n.val n.property d x hx
+    have hg := g.taylor_eq_suspend_component n.val n.property d x hx
+    rw [h n.val] at hf
     simpa only [LinearMap.comp_apply, x, Fin.isLt, dite_true] using hf.trans hg.symm
   exact LinearMap.congr_fun hmaps (PiTensorProduct.tprod R z)
 

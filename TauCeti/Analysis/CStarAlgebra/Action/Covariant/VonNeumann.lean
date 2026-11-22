@@ -91,10 +91,10 @@ noncomputable def vonNeumannAction :
   toFun g :=
     let e := Unitary.conjStarAlgAut ℂ (H →L[ℂ] H) ⟨P.group g, P.isUnitary.mem_unitary g⟩
     { toFun x := ⟨e x, by
-        simpa [e, P.star_group] using P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g x.2⟩
+        simpa [e, P.star_group] using P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g x.property⟩
       invFun x := ⟨e.symm x, by
         simpa [e, Unitary.conjStarAlgAut_symm_apply, P.star_group] using
-          P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g⁻¹ x.2⟩
+          P.group_mul_mul_group_inv_mem_vonNeumannAlgebra g⁻¹ x.property⟩
       left_inv x := Subtype.ext (e.symm_apply_apply (x : H →L[ℂ] H))
       right_inv x := Subtype.ext (e.apply_symm_apply (x : H →L[ℂ] H))
       map_mul' x y := Subtype.ext (map_mul e (x : H →L[ℂ] H) y)

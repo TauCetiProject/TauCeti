@@ -116,28 +116,50 @@ theorem kostantRootSubgroup_def :
         eqToHom (GeneralLinear.groupScheme_def ℤ n).symm := by
   let : Comodule ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) M :=
     kostantRootSubgroupComodule e h ρ M hM i hnil
-  rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
+  rw [kostantRootSubgroup]
+  dsimp only
+  rw [Comodule.coordinateGroupSchemeHom_def]
   rfl
 
-/-- Replacing a generator family by one with the same selected root vector leaves the
-represented root-subgroup morphism unchanged. -/
-theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
-    (hM' : ∀ u ∈ kostantForm e' h, ∀ m ∈ M, ρ u m ∈ M)
-    (i' : I') (hnil' : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
-    (he : e i = e' i') :
+/-- Equal represented root operators give equal root-subgroup coordinate maps, even when the
+operators are obtained from representations of different Lie algebras. The integral lattice and
+its basis are kept fixed. -/
+theorem kostantRootSubgroupCoordinateMap_eq_of_operator_eq
+    {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'] {I' κ' : Type*}
+    (e' : I' → L') (h' : κ' → L')
+    (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
+    (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
+    (i : I) (i' : I')
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (hact : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
+    kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
+      kostantRootSubgroupCoordinateMap e' h' ρ' M hM' i' hnil' b := by
+  apply CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext ℤ n
+  intro r s
+  rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
+  simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
+    kostantRootSubgroupComodule_coact, hact]
+
+/-- Equal represented root operators give equal root-subgroup scheme morphisms, even for
+representations of different Lie algebras on the same integral lattice with the same basis. -/
+theorem kostantRootSubgroup_eq_of_operator_eq
+    {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'] {I' κ' : Type*}
+    (e' : I' → L') (h' : κ' → L')
+    (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
+    (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
+    (i : I) (i' : I')
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (hact : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
     kostantRootSubgroup e h ρ M hM i hnil b =
-      kostantRootSubgroup e' h ρ M hM' i' hnil' b := by
-  have hcoord : kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
-      kostantRootSubgroupCoordinateMap e' h ρ M hM' i' hnil' b := by
-    apply CommHopfAlgCat.hom_ext
-    apply BialgHom.coe_toAlgHom_injective
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
-    intro r s
-    simp only [BialgHom.coe_toAlgHom]
-    rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
-    simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-      kostantRootSubgroupComodule_coact, he]
-  rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
+      kostantRootSubgroup e' h' ρ' M hM' i' hnil' b := by
+  rw [kostantRootSubgroup_def, kostantRootSubgroup_def,
+    kostantRootSubgroupCoordinateMap_eq_of_operator_eq e h ρ M hM b
+      e' h' ρ' hM' i i' hnil hnil' hact]
 
 section Points
 
@@ -249,7 +271,7 @@ theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
     ext
     simp
   have hmatrix := congrArg
-    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.val)
     hpoint'
   -- This bridge compares the bundled algebra structure with the canonical integer algebra.
   -- Both maps are identified explicitly by their value on the symmetric-algebra generator.

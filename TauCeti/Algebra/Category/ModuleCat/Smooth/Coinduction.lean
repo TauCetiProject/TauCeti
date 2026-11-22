@@ -160,7 +160,8 @@ theorem coinduction_obj_obj (hJ : Directed (· ≥ ·) J) (V : ModuleCat.{max u 
 /-- The coinduction of a linear map `φ` is postcomposition with `φ`. -/
 theorem coinduction_map_hom_apply (hJ : Directed (· ≥ ·) J) {V W : ModuleCat.{max u w} R}
     (φ : V ⟶ W) (g : smoothPart J ((ModuleCat.coextendScalars f).obj V)) (a : A) :
-    (((coinduction f hJ).map φ).hom.hom g).1 a = φ ((g : (ModuleCat.coextendScalars f).obj V) a) :=
+    (((coinduction f hJ).map φ).hom.hom g).val a = φ ((g : (ModuleCat.coextendScalars f).obj V) a)
+        :=
   rfl
 
 /-- The underlying `R`-module functor of smooth `A`-modules is left adjoint to the coinduction:
@@ -174,13 +175,13 @@ noncomputable def coinductionAdjunction (hJ : Directed (· ≥ ·) J) :
 /-- The unit of the coinduction adjunction sends `m` to the orbit map `a ↦ a • m`. -/
 theorem coinductionAdjunction_unit_app_apply (hJ : Directed (· ≥ ·) J)
     (M : (smoothModules.{max u w} J).FullSubcategory) (m : M.obj) (a : A) :
-    (((coinductionAdjunction f hJ).unit.app M).hom.hom m).1 a = a • m :=
+    (((coinductionAdjunction f hJ).unit.app M).hom.hom m).val a = a • m :=
   (rfl)
 
 /-- The counit of the coinduction adjunction is evaluation at `1`. -/
 theorem coinductionAdjunction_counit_app_apply (hJ : Directed (· ≥ ·) J)
     (V : ModuleCat.{max u w} R) (g : smoothPart J ((ModuleCat.coextendScalars f).obj V)) :
-    ((coinductionAdjunction f hJ).counit.app V).hom g = g.1 (1 : A) :=
+    ((coinductionAdjunction f hJ).counit.app V).hom g = g.val (1 : A) :=
   (rfl)
 
 /-- The `A`-linear map to the coinduction corresponding to an `R`-linear map `φ : M → V` sends
@@ -189,7 +190,7 @@ theorem coinductionAdjunction_homEquiv_apply_apply (hJ : Directed (· ≥ ·) J)
     {M : (smoothModules.{max u w} J).FullSubcategory} {V : ModuleCat.{max u w} R}
     (φ : ((smoothModules.{max u w} J).ι ⋙ ModuleCat.restrictScalars.{max u w} f).obj M ⟶ V)
     (m : M.obj) (a : A) :
-    (((coinductionAdjunction f hJ).homEquiv M V φ).hom.hom m).1 a = φ.hom (a • m : M.obj) :=
+    (((coinductionAdjunction f hJ).homEquiv M V φ).hom.hom m).val a = φ.hom (a • m : M.obj) :=
   (rfl)
 
 /-- The `R`-linear map corresponding to an `A`-linear map `ψ` to the coinduction is evaluation of
@@ -197,7 +198,7 @@ theorem coinductionAdjunction_homEquiv_apply_apply (hJ : Directed (· ≥ ·) J)
 theorem coinductionAdjunction_homEquiv_symm_apply (hJ : Directed (· ≥ ·) J)
     {M : (smoothModules.{max u w} J).FullSubcategory} {V : ModuleCat.{max u w} R}
     (ψ : M ⟶ (coinduction f hJ).obj V) (m : M.obj) :
-    (((coinductionAdjunction f hJ).homEquiv M V).symm ψ).hom m = (ψ.hom.hom m).1 (1 : A) :=
+    (((coinductionAdjunction f hJ).homEquiv M V).symm ψ).hom m = (ψ.hom.hom m).val (1 : A) :=
   (rfl)
 
 /-- The unit `m ↦ (a ↦ a • m)` of the coinduction adjunction is injective, by evaluation at
@@ -205,7 +206,7 @@ theorem coinductionAdjunction_homEquiv_symm_apply (hJ : Directed (· ≥ ·) J)
 theorem coinductionAdjunction_unit_app_injective (hJ : Directed (· ≥ ·) J)
     (M : (smoothModules.{max u w} J).FullSubcategory) :
     Function.Injective ((coinductionAdjunction f hJ).unit.app M).hom.hom := fun m n h => by
-  have := congr($h.1 (1 : A))
+  have := congr(($h).val (1 : A))
   rwa [coinductionAdjunction_unit_app_apply, coinductionAdjunction_unit_app_apply, one_smul,
     one_smul] at this
 
@@ -267,6 +268,6 @@ noncomputable instance hasExt_discreteModules [TopologicalSpace A] [SeparatelyCo
   intro P _ hP
   subst P
   exact hasExt_smoothModules (fun I K =>
-    ⟨⟨I.1 ⊓ K.1, I.2.inter K.2⟩, inf_le_left, inf_le_right⟩)
+    ⟨⟨I.val ⊓ K.val, I.property.inter K.property⟩, inf_le_left, inf_le_right⟩)
 
 end TauCeti

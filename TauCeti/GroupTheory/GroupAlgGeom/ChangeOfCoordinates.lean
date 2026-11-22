@@ -185,6 +185,41 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   apply (equivOfCoordinateChange ι σ hσ S).injective
   simp
 
+/-- The coordinate-group isomorphism sends a coordinate `y` of the generic point of the
+transformed system to the class of the word `σ y`. -/
+@[simp]
+theorem equivOfCoordinateChange_genericPoint (S : Set (GX G X)) (y : Y) :
+    equivOfCoordinateChange ι σ hσ S (genericPoint ι (σ ⁻¹' S) y) =
+      (σ (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The inverse coordinate-group isomorphism sends a coordinate `x` of the generic point of the
+system to the class of the word `σ⁻¹ x`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_genericPoint (S : Set (GX G X)) (x : X) :
+    (equivOfCoordinateChange ι σ hσ S).symm (genericPoint ι S x) =
+      ((σ.symmOfBijective hσ) (inr (FreeGroup.of x)) : CoordGroup ι (σ ⁻¹' S)) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism sends the generic point of the transformed system to the
+image of the generic point of the system under the word map of `σ`. -/
+@[simp]
+theorem equivOfCoordinateChange_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S) ∘ genericPoint ι (σ ⁻¹' S) =
+      wordMap (coeff ι S) (fun y => σ (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
+
+/-- The inverse coordinate-group isomorphism sends the generic point of the system to the image
+of the generic point of the transformed system under the word map of `σ⁻¹`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S).symm ∘ genericPoint ι S =
+      wordMap (coeff ι (σ ⁻¹' S)) (fun x => (σ.symmOfBijective hσ) (inr (FreeGroup.of x)))
+        (genericPoint ι (σ ⁻¹' S)) := by
+  funext x
+  simp
+
 end CoordGroup
 
 end CoordinateChange
@@ -264,6 +299,42 @@ coefficient maps. -/
 theorem imageMulEquiv_symm_coeff (S : Set (GX G X)) (g : G) :
     (imageMulEquiv ι φ hφ S).symm (coeff ι (φ '' S) g) = coeff ι S g := by
   rw [MulEquiv.symm_apply_eq, imageMulEquiv_coeff]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a coordinate `x` of
+the generic point of the system to the class of the word `φ x`. -/
+@[simp]
+theorem imageMulEquiv_genericPoint (S : Set (GX G X)) (x : X) :
+    imageMulEquiv ι φ hφ S (genericPoint ι S x) =
+      (φ (inr (FreeGroup.of x)) : CoordGroup ι (φ '' S)) := by
+  simp [genericPoint_apply]
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a
+coordinate `y` of the generic point of the image system to the class of the word `φ⁻¹ y`. -/
+@[simp]
+theorem imageMulEquiv_symm_genericPoint (S : Set (GX G X)) (y : Y) :
+    (imageMulEquiv ι φ hφ S).symm (genericPoint ι (φ '' S) y) =
+      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the generic point of
+the system to the image of the generic point of the image system under the word map of `φ`. -/
+@[simp]
+theorem imageMulEquiv_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S) ∘ genericPoint ι S =
+      wordMap (coeff ι (φ '' S)) (fun x => φ (inr (FreeGroup.of x)))
+        (genericPoint ι (φ '' S)) := by
+  funext x
+  simp
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the
+generic point of the image system to the image of the generic point of the system under the word
+map of `φ⁻¹`. -/
+@[simp]
+theorem imageMulEquiv_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S).symm ∘ genericPoint ι (φ '' S) =
+      wordMap (coeff ι S) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
 
 end CoordGroup
 

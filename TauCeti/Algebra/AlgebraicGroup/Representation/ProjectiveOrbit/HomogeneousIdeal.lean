@@ -218,7 +218,8 @@ theorem projectiveOrbitMap_eq_of_mem_weightSpace {c : GroupLike k H} {m : M}
     refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
     by_contra hne
     exact z.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h
-      (((isUnit_iff_ne_zero.mpr hne).map (algebraMap k H)).mul (c.2.isUnit.pow n)))
+      (((isUnit_iff_ne_zero.mpr hne).map (algebraMap k H)).mul (c.isGroupLikeElem_val.isUnit.pow
+          n)))
   exact ProjectiveSpectrum.ext_of_mem_pos fun n hn s hs ↦ (key x hn hs).trans (key y hn hs).symm
 
 /-- The orbit of the line through a weight vector is the single point given by that line. -/

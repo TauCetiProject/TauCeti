@@ -129,7 +129,7 @@ theorem eq_nsmul_affineRayCharacter
     (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
     m = ((m : (Fin 1 → ℤ) →+ ℤ) 1).toNat • affineRayCharacter := by
   have hm : 0 ≤ (m : (Fin 1 → ℤ) →+ ℤ) 1 := by
-    have h := (mem_dualSemigroup _ _).1 m.2
+    have h := (mem_dualSemigroup _ _).1 m.property
       (x := ((Int.castAddHom ℝ).compLeft (Fin 1)) (1 : Fin 1 → ℤ))
       (by simp)
     rw [IsIntegralLattice.realCharacter_apply] at h

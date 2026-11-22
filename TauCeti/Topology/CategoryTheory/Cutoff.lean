@@ -136,7 +136,7 @@ theorem isProperMap_left [T2Space C] [CompactlyCoherentSpace C] (hc : IsCutoff c
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) :
     IsProperMap fun a : tsupport (c ∘ Quiver.Total.right) ↦ (a : Quiver.Total C).left := by
   rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨hs.comp continuous_subtype_val, fun K hK ↦ ?_⟩
+  refine ⟨hs.comp continuous_subtypeVal, fun K hK ↦ ?_⟩
   have hpre : (fun a : tsupport (c ∘ Quiver.Total.right) ↦ (a : Quiver.Total C).left) ⁻¹' K =
       Subtype.val ⁻¹' (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport c) := by
     ext ⟨a, ha⟩

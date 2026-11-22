@@ -24,7 +24,8 @@ records that every coordinate variable `X s` is nonzero over a nontrivial semiri
 `R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring), and
 `MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
 `support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
-algebraic operations on `MvPowerSeries`.
+algebraic operations on `MvPowerSeries`, and `MvPowerSeries.coeff_map_mul_mem` shows that left
+multiplication by a scalar power series preserves membership of coefficients in a submodule.
 -/
 
 public section
@@ -118,5 +119,17 @@ theorem support_sub {σ S : Type*} [Ring S] (f g : MvPowerSeries σ S) :
   simpa only [Set.mem_union, Function.mem_support, ← mem_support] using
     Function.support_sub (coeff · f) (coeff · g)
       (by rwa [Function.mem_support, ← map_sub, ← mem_support])
+
+/-- Left multiplication by a scalar power series `MvPowerSeries.map (algebraMap R A) D` preserves
+membership of all coefficients in an `R`-submodule `E` of `A`. -/
+theorem coeff_map_mul_mem {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (D : MvPowerSeries σ R) {U : MvPowerSeries σ A} {E : Submodule R A}
+    (hU : ∀ α, coeff α U ∈ E) (β : σ →₀ ℕ) :
+    coeff β (MvPowerSeries.map (algebraMap R A) D * U) ∈ E := by
+  classical
+  rw [coeff_mul]
+  refine E.sum_mem fun uv _ ↦ ?_
+  rw [coeff_map, ← Algebra.smul_def]
+  exact E.smul_mem _ (hU uv.2)
 
 end MvPowerSeries
