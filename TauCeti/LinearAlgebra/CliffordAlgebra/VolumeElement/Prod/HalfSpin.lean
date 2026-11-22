@@ -156,7 +156,8 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
     ⟨fun c a z ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
   have hlsmul : (Algebra.lsmul ℂ ℂ (E ⊗[ℂ] F) :
       CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] F)) =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by ext a z; rfl
+      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ :=
+    AlgHom.ext fun a ↦ LinearMap.ext fun z ↦ hsmul a z
   rw [← hlsmul]
   exact finrank_eigenspace_complexVolume_of_bijective_lsmul o
     (QuadraticForm.withLpProd_eq_neg_norm_sq hQ hQ₁ hQ₂)

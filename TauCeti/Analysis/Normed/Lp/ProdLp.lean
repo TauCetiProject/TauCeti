@@ -63,6 +63,7 @@ linear maps is identified with the product of their sources.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `WithLp.finrank_prod` — `WithLp p (M × M')` has dimension `finrank M + finrank M'`.
+* `LinearEquiv.withLpProdAssoc` — purely algebraic associator on iterated binary `WithLp` products.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.finrank_range_withLpProdMap`,
   `ContinuousLinearMap.finiteDimensional_range_withLpProdMap_iff` — the same for finite ranks.
@@ -271,6 +272,39 @@ theorem WithLp.finrank_prod {p : ℝ≥0∞} {R M M' : Type*} [Ring R] [StrongRa
     [AddCommGroup M'] [Module R M'] [Module.Free R M'] [Module.Finite R M'] :
     Module.finrank R (WithLp p (M × M')) = Module.finrank R M + Module.finrank R M' := by
   rw [(WithLp.linearEquiv p R (M × M')).finrank_eq, Module.finrank_prod]
+
+namespace LinearEquiv
+
+variable (p : ℝ≥0∞) (K M₁ M₂ M₃ : Type*) [Semiring K]
+  [AddCommGroup M₁] [Module K M₁] [AddCommGroup M₂] [Module K M₂] [AddCommGroup M₃] [Module K M₃]
+
+/-- Associativity of iterated `WithLp` binary products as a linear equivalence, with no metric or
+seminorm assumptions. -/
+def withLpProdAssoc :
+    WithLp p (WithLp p (M₁ × M₂) × M₃) ≃ₗ[K] WithLp p (M₁ × WithLp p (M₂ × M₃)) :=
+  (WithLp.linearEquiv p K (WithLp p (M₁ × M₂) × M₃)) ≪≫ₗ
+    ((WithLp.linearEquiv p K (M₁ × M₂)).prodCongr (.refl K M₃)) ≪≫ₗ
+    LinearEquiv.prodAssoc K M₁ M₂ M₃ ≪≫ₗ
+    ((LinearEquiv.refl K M₁).prodCongr (WithLp.linearEquiv p K (M₂ × M₃)).symm) ≪≫ₗ
+    (WithLp.linearEquiv p K (M₁ × WithLp p (M₂ × M₃))).symm
+
+variable {p K M₁ M₂ M₃}
+
+/-- Forward evaluation of `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_apply (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
+    withLpProdAssoc p K M₁ M₂ M₃ x =
+      WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
+        WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2)) := (rfl)
+
+/-- Inverse evaluation of `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem withLpProdAssoc_symm_apply (x : WithLp p (M₁ × WithLp p (M₂ × M₃))) :
+    (withLpProdAssoc p K M₁ M₂ M₃).symm x =
+      WithLp.toLp p (WithLp.toLp p ((WithLp.ofLp x).1, (WithLp.ofLp (WithLp.ofLp x).2).1),
+        (WithLp.ofLp (WithLp.ofLp x).2).2) := (rfl)
+
+end LinearEquiv
 
 namespace ContinuousLinearMap
 

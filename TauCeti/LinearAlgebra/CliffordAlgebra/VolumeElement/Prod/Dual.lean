@@ -197,6 +197,48 @@ theorem toLinearMap_cliffordReverseDualProdEquivOfOddDivTwo
         (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) := by
   ext φ ψ; simp [cliffordReverseDualProdEquivOfOddDivTwo, mul_comm]
 
+variable (E) in
+/-- Forward evaluation of `cliffordReverseDualProdEquivOfOddDivTwo`: applies `1 ⊗ Γ_(F*)`
+followed by `TensorProduct.dualDistrib ℂ E F`. -/
+@[simp]
+theorem cliffordReverseDualProdEquivOfOddDivTwo_apply
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
+    (z : Dual ℂ E ⊗[ℂ] Dual ℂ F) :
+    cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂ z =
+      dualDistrib ℂ E F
+        ((ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) z) := by
+  rw [← LinearEquiv.coe_toLinearMap, toLinearMap_cliffordReverseDualProdEquivOfOddDivTwo,
+    LinearMap.comp_apply]
+
+variable (E) in
+/-- Underlying linear map of `(cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂).symm`. -/
+@[simp]
+theorem toLinearMap_cliffordReverseDualProdEquivOfOddDivTwo_symm
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) :
+    (cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂).symm.toLinearMap =
+      (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) ∘ₗ
+        (dualDistribEquiv ℂ E F).symm.toLinearMap := by
+  ext Φ
+  simp only [LinearEquiv.coe_toLinearMap, LinearMap.comp_apply,
+    cliffordReverseDualProdEquivOfOddDivTwo, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_lTensor]
+  induction (dualDistribEquiv ℂ E F).symm Φ using TensorProduct.inductionOn with
+  | tmul φ ψ => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+variable (E) in
+/-- Inverse evaluation of `cliffordReverseDualProdEquivOfOddDivTwo`: applies
+`(TensorProduct.dualDistribEquiv ℂ E F).symm` followed by `1 ⊗ Γ_(F*)`. -/
+@[simp]
+theorem cliffordReverseDualProdEquivOfOddDivTwo_symm_apply
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
+    (Φ : Dual ℂ (E ⊗[ℂ] F)) :
+    (cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂).symm Φ =
+      (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E)
+        ((dualDistribEquiv ℂ E F).symm Φ) := by
+  rw [← LinearEquiv.coe_toLinearMap, toLinearMap_cliffordReverseDualProdEquivOfOddDivTwo_symm,
+    LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+
 /-- For finite-dimensional `E` and `F`, `Odd (n / 2)`, `Even m`, and `Q₂ w = -‖w‖²`,
 `cliffordReverseDualProdEquivOfOddDivTwo` conjugates `complexProdTensor` of the reverse duals into
 the reverse dual of `complexProdTensor`. -/
@@ -210,8 +252,7 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_of_odd_div_two
   refine LinearMap.ext fun Φ ↦ ?_
   obtain ⟨z, rfl⟩ := (cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂).surjective Φ
   rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
-  simpa only [LinearMap.comp_apply,
-    ← toLinearMap_cliffordReverseDualProdEquivOfOddDivTwo E ρ₂ o₂ hQ₂, LinearEquiv.coe_coe] using
+  simpa only [cliffordReverseDualProdEquivOfOddDivTwo_apply, LinearMap.comp_apply] using
     (LinearMap.congr_fun
       (dualDistrib_comp_lTensor_complexVolume_comp_complexProdTensor_of_odd_div_two hQ o₁ hQ₁ hn
         ρ₁ ρ₂ o₂ hodd hm a) z).symm

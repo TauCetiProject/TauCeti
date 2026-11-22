@@ -285,8 +285,10 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
   let e₁ : CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
     (CliffordAlgebra.prodEquiv Q₁ Q₂).toLinearEquiv.trans
       (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).symm
-  let hρ₁' : Function.Bijective ρ₁.toLinearMap := hρ₁
-  let hρ₂' : Function.Bijective ρ₂.toLinearMap := hρ₂
+  have hρ₁' : Function.Bijective ρ₁.toLinearMap := by
+    simpa only [AlgHom.coe_toLinearMap] using hρ₁
+  have hρ₂' : Function.Bijective ρ₂.toLinearMap := by
+    simpa only [AlgHom.coe_toLinearMap] using hρ₂
   -- Assemble the equivalence `CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] End_R (E ⊗ F)` by untwisting the
   -- odd summand of `CliffordAlgebra Q₂` by `rγ` and applying `homTensorHomEquiv`.
   let Ψ : CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] Module.End R (E ⊗[R] F) :=
@@ -296,34 +298,41 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
       (TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm ≪≫ₗ
       TensorProduct.congr (.refl R _) (s₂.trans (LinearEquiv.ofBijective ρ₂.toLinearMap hρ₂')) ≪≫ₗ
       homTensorHomEquiv R E F E F
+  have he₁_symm (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₂) :
+      e₁.symm (x ⊗ₜ y) = toProd Q₁ Q₂ (x ᵍ⊗ₜ y) := by
+    simp [e₁]
+  have hhom (a : CliffordAlgebra Q₁) {j : ZMod 2} {y : CliffordAlgebra Q₂}
+      (hy : y ∈ evenOdd Q₂ j) :
+      cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (e₁.symm (a ⊗ₜ y)) = Ψ (e₁.symm (a ⊗ₜ y)) := by
+    have hmid :
+        LinearEquiv.prodCongr (.refl R (Module.End R E ⊗[R] evenOdd Q₂ 0))
+            (rγ.rTensor (evenOdd Q₂ 1))
+            (TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
+              (ρ₁ a ⊗ₜ s₂.symm y)) =
+          TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
+            ((ρ₁ a * γ ^ j.val) ⊗ₜ s₂.symm y) := by
+      rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) j with rfl | rfl
+      · have hs : s₂.symm y = (⟨y, hy⟩, 0) := s₂.symm_apply_eq.mpr (by simp [s₂])
+        simp [hs, ZMod.val_zero]
+      · have hs : s₂.symm y = (0, ⟨y, hy⟩) := s₂.symm_apply_eq.mpr (by simp [s₂])
+        simp [hs, rγ, ZMod.val_one]
+    have hΨ : Ψ (e₁.symm (a ⊗ₜ y)) = TensorProduct.map (ρ₁ a * γ ^ j.val) (ρ₂ y) := by
+      dsimp only [Ψ, LinearEquiv.trans_apply]
+      rw [e₁.apply_symm_apply, TensorProduct.congr_tmul, LinearEquiv.ofBijective_apply,
+        AlgHom.toLinearMap_apply, hmid, LinearEquiv.symm_apply_apply, TensorProduct.congr_tmul,
+        LinearEquiv.refl_apply, LinearEquiv.trans_apply, s₂.apply_symm_apply,
+        LinearEquiv.ofBijective_apply, AlgHom.toLinearMap_apply]
+      ext e f'
+      simp
+    rw [hΨ, he₁_symm, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hy]
   have hlin : (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap = Ψ.toLinearMap := by
     refine e₁.symm.surjective.injective_linearMapComp_right (TensorProduct.ext' fun a b ↦ ?_)
     obtain ⟨b₀, b₁, hbb⟩ : ∃ b₀ b₁, s₂.symm b = (b₀, b₁) := ⟨_, _, rfl⟩
-    have hb : b = s₂ (b₀, 0) + s₂ (0, b₁) := by
-      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, ← hbb, s₂.apply_symm_apply]
-    have he₁_symm (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₂) :
-        e₁.symm (x ⊗ₜ y) = toProd Q₁ Q₂ (x ᵍ⊗ₜ y) := by
-      simp [e₁]
-    have hs₀ : s₂ (b₀, 0) = (b₀ : CliffordAlgebra Q₂) := by simp [s₂]
-    have hs₁ : s₂ (0, b₁) = (b₁ : CliffordAlgebra Q₂) := by simp [s₂]
+    have hb : b = (b₀ : CliffordAlgebra Q₂) + (b₁ : CliffordAlgebra Q₂) := by
+      simpa [s₂] using (s₂.apply_symm_apply b).symm.trans (congrArg s₂ hbb)
     rw [hb, tmul_add, map_add, map_add]
-    congr 1
-    · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
-        hs₀, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₀.property, ← hs₀]
-      have hp₀ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
-          (ρ₁ a ⊗ₜ b₀, 0) = ρ₁ a ⊗ₜ (b₀, 0) := by
-        simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
-          (ρ₁ a) b₀ 0
-      ext e f'
-      simp [Ψ, rγ, ZMod.val_zero, s₂.symm_apply_eq.mpr hs₀.symm, hp₀, hs₀]
-    · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
-        hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.property, ← hs₁]
-      have hp₁ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
-          (0, (ρ₁ a * γ) ⊗ₜ b₁) = (ρ₁ a * γ) ⊗ₜ (0, b₁) := by
-        simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
-          (ρ₁ a * γ) 0 b₁
-      ext e f'
-      simp [Ψ, rγ, ZMod.val_one_eq_one_mod, s₂.symm_apply_eq.mpr hs₁.symm, hp₁, hs₁]
+    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, AlgHom.toLinearMap_apply]
+    rw [hhom a b₀.property, hhom a b₁.property]
   exact congrArg DFunLike.coe hlin ▸ Ψ.bijective
 
 end AlgHom

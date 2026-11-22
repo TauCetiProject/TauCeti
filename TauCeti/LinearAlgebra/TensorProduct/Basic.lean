@@ -46,6 +46,8 @@ pure tensors over a finite spanning family of the right factor.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.map_neg_left` and `TensorProduct.map_neg_right`: negating either argument of
+  `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
@@ -403,6 +405,24 @@ theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGrou
   simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
     LinearMap.lTensor_def]
   abel
+
+/-- Negating the left map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_left {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommMonoid N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map (-f) g = -map f g :=
+  TensorProduct.ext' fun m n ↦ by simp [neg_tmul]
+
+/-- Negating the right map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_right {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map f (-g) = -map f g :=
+  TensorProduct.ext' fun m n ↦ by simp [tmul_neg]
 
 variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 

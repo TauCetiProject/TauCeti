@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.ProdLp
-public import TauCeti.Analysis.Normed.Lp.WithLp
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
@@ -35,8 +34,8 @@ with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and `pro
   `QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange`, and
   `QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange`: compatibility of the
   structural `WithLp` isometries with `baseChange` and `baseChangeProd`.
-* `QuadraticForm.withLpProd_eq_neg_norm_sq` and
-  `QuadraticForm.eq_neg_norm_sq_of_subsingleton`: `L²` negative-norm-squared formulas.
+* `QuadraticForm.withLpProd_eq_neg_norm_sq`: `L²` negative-norm-squared formula on
+  `WithLp 2 (V × W)`.
 -/
 
 public section
@@ -61,7 +60,7 @@ variable {Q : QuadraticMap R (WithLp p (M₁ × M₂)) P}
 `Q x = Q₁ x.1 + Q₂ x.2`. -/
 def withLpProd : Q.IsometryEquiv (Q₁.prod Q₂) where
   toLinearEquiv := WithLp.linearEquiv p R (M₁ × M₂)
-  map_app' x := by rw [QuadraticMap.prod_apply, hQ x]; rfl
+  map_app' x := by simp [QuadraticMap.prod_apply, hQ x]
 
 /-- `withLpProd` unwraps `WithLp.ofLp`. -/
 @[simp]
@@ -270,14 +269,6 @@ theorem withLpProd_eq_neg_norm_sq
     (x : WithLp 2 (V × W)) : Q x = -‖x‖ ^ 2 := by
   rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2]
   dsimp only [WithLp.fst, WithLp.snd]
-  ring
-
-/-- On a subsingleton normed space, every real quadratic form satisfies `Q v = -‖v‖ ^ 2`. -/
-theorem eq_neg_norm_sq_of_subsingleton
-    {V : Type*} [SeminormedAddCommGroup V] [Module ℝ V] [Subsingleton V]
-    (Q : QuadraticForm ℝ V) (v : V) :
-    Q v = -‖v‖ ^ 2 := by
-  rw [Subsingleton.elim v 0, map_zero, norm_zero]
   ring
 
 end L2

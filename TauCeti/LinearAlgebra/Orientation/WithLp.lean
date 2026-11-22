@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.WithLp
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
