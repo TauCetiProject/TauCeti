@@ -146,8 +146,8 @@ theorem ofExteriorEnd_compContinuousLinearMap {V W : Type*}
       ofExteriorEnd
         ((exteriorPower.map 2 e.symm.toLinearMap) ∘ₗ T ∘ₗ
           (exteriorPower.map 2 e.toLinearMap)) := by
-  have he : e.toLinearIsometry.toContinuousLinearMap.toLinearMap = e.toLinearMap :=
-    LinearMap.ext fun _ ↦ rfl
-  rw [ContinuousLinearMap.ofExteriorEnd_compContinuousLinearMap, he, e.adjoint_exteriorPowerMap]
+  rw [ContinuousLinearMap.ofExteriorEnd_compContinuousLinearMap,
+    LinearIsometry.toLinearMap_toContinuousLinearMap, e.toLinearIsometry_toLinearMap,
+    e.adjoint_exteriorPower_map]
 
 end LinearIsometryEquiv

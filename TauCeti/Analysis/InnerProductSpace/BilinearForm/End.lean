@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -34,6 +35,7 @@ endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowe
 * `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
   `LinearIsometry.bilinFormTrace_comp_adjoint`,
+  `LinearIsometryEquiv.toLinearIsometry_toLinearMap`,
   `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
   `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
 -/
@@ -125,15 +127,23 @@ namespace LinearIsometryEquiv
 
 open TauCeti
 
+omit [FiniteDimensional ℝ E] in
+/-- The linear map underlying `e.toLinearIsometry` is `e.toLinearMap`. -/
+theorem toLinearIsometry_toLinearMap {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (e : F ≃ₗᵢ[ℝ] E) :
+    e.toLinearIsometry.toLinearMap = e.toLinearMap :=
+  LinearMap.ext fun _ ↦ by
+    rw [LinearIsometry.coe_toLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+    rfl
+
 /-- Metric index raising is equivariant under linear isometric equivalences. -/
 theorem comp_bilinFormToEnd_compl₁₂ {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] E) (B : BilinForm ℝ E) :
     e.toLinearIsometry.toLinearMap ∘ₗ bilinFormToEnd
         (B.compl₁₂ e.toLinearIsometry.toLinearMap e.toLinearIsometry.toLinearMap) =
       bilinFormToEnd B ∘ₗ e.toLinearIsometry.toLinearMap := by
-  have he : e.toLinearIsometry.toLinearMap = e.toLinearMap := LinearMap.ext fun _ ↦ by simp
-  rw [B.bilinFormToEnd_compl₁₂, he, e.adjoint_toLinearMap_eq_symm, ← LinearMap.comp_assoc,
-    ← LinearMap.comp_assoc]
+  rw [B.bilinFormToEnd_compl₁₂, e.toLinearIsometry_toLinearMap, e.adjoint_toLinearMap_eq_symm,
+    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc]
   ext; simp
 
 /-- Pointwise equivariance of `bilinFormToEnd` under a linear isometric equivalence `e` relating
@@ -162,10 +172,35 @@ theorem bilinFormTrace_comp_adjoint {W V : Type*} [NormedAddCommGroup W]
         (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
           (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
       bilinFormTrace B := by
-  rw [← LinearMap.BilinForm.trace_bilinFormToEnd, ← B.trace_bilinFormToEnd,
-    LinearMap.BilinForm.comp, B.bilinFormToEnd_compl₁₂,
-    ← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.adjoint_adjoint,
-    ← LinearMap.comp_assoc, LinearMap.trace_comp_cycle',
-    f.toLinearMap_toContinuousLinearMap, f.adjoint_comp_self', LinearMap.id_comp]
+  let bEnd := LinearMap.toContinuousLinearMap (bilinFormToEnd B)
+  have hEnd :
+      bilinFormToEnd
+          (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
+            (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
+        (f.toContinuousLinearMap ∘L bEnd ∘L
+          ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap := by
+    rw [LinearMap.BilinForm.comp, B.bilinFormToEnd_compl₁₂,
+      ← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.adjoint_adjoint,
+      f.toLinearMap_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.toLinearMap_comp]
+    rfl
+  calc
+    bilinFormTrace
+        (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
+          (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap)
+        = LinearMap.trace ℝ V
+            (bilinFormToEnd
+              (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
+                (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap)) :=
+          (LinearMap.BilinForm.trace_bilinFormToEnd _).symm
+    _ = TauCeti.traceCLM ℝ V
+          (f.toContinuousLinearMap ∘L bEnd ∘L
+            ContinuousLinearMap.adjoint f.toContinuousLinearMap) := by
+          rw [hEnd, TauCeti.traceCLM_apply]
+    _ = TauCeti.traceCLM ℝ W bEnd :=
+          ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id f.adjoint_comp_self _
+    _ = bilinFormTrace B := by
+          rw [TauCeti.traceCLM_apply]
+          exact B.trace_bilinFormToEnd
 
 end LinearIsometry

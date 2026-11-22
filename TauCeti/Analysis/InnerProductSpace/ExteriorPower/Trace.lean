@@ -37,16 +37,6 @@ open exteriorPower
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι]
 
-/-- The rank-one operators associated to all ordered wedges of an orthonormal basis sum to
-twice the identity on the exterior square. -/
-theorem sum_rankOne_ιMulti_two (b : OrthonormalBasis ι ℝ E) :
-    (∑ i, ∑ j, (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![b i, b j])
-      (ιMulti ℝ 2 ![b i, b j])).toLinearMap) = (2 : ℝ) • LinearMap.id :=
-  LinearMap.ext fun η ↦ by
-    simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-      InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
-      b.sum_inner_smul_ιMulti_two η
-
 /-- The sum of the diagonal coefficients of an endomorphism against all ordered basis wedges
 is twice its trace. In contrast, the increasing wedges form an orthonormal basis and count
 each diagonal coefficient once. -/
@@ -100,6 +90,11 @@ theorem sum_inner_mul_inner_smul_ιMulti_two {M : Type*} [AddCommGroup M] [Modul
       (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) •
         Φ (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l])) =
       (4 : ℝ) • Φ x y := by
+  have hrank (z : ⋀[ℝ]^2 E) :
+      (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], z⟫ • ιMulti ℝ 2 ![b i, b j]) = (2 : ℝ) • z := by
+    simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
+      InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
+      LinearMap.congr_fun b.sum_rankOne_ιMulti_two z
   have h :
       Φ (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], x⟫ • ιMulti ℝ 2 ![b i, b j])
         (∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l]) =
@@ -110,7 +105,7 @@ theorem sum_inner_mul_inner_smul_ιMulti_two {M : Type*} [AddCommGroup M] [Modul
     simp only [map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [Y, map_sum, map_smul, Finset.smul_sum, smul_smul]
-  rw [← h, b.sum_inner_smul_ιMulti_two, b.sum_inner_smul_ιMulti_two]
+  rw [← h, hrank x, hrank y]
   simp only [map_smul, LinearMap.smul_apply, smul_smul]
   norm_num
 

@@ -45,6 +45,7 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
 * `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`,
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent`,
   `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first`,
+  `TauCeti.FourTensor.mem_range_ofExteriorBilin_iff`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm`.
 
@@ -238,71 +239,88 @@ theorem algebraicCurvatureSubmodule_eq_bot_of_finrank_le_one (hdim : Module.finr
 
 /-- The four-tensor `(u, v, z, w) ↦ B (u ∧ v) (z ∧ w)` associated to a bilinear form `B` on
 `⋀[ℝ]^2 V`. -/
-def fourTensorOfExteriorBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V where
+def ofExteriorBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V where
   toFun B := ofLinearMap₄ <| MultilinearMap.toBilinMap
     ((TauCeti.BilinForm.ofExteriorSquareDual.comp B).compMultilinearMap
       (exteriorPower.ιMulti ℝ 2).toMultilinearMap)
   map_add' _ _ := ext_vec fun _ _ _ _ ↦ by simp
   map_smul' _ _ := ext_vec fun _ _ _ _ ↦ by simp
 
-/-- Evaluation of `fourTensorOfExteriorBilin` on four vectors via pure wedges. -/
+/-- Evaluation of `ofExteriorBilin` on four vectors via pure wedges. -/
 @[simp]
-theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    fourTensorOfExteriorBilin B ![u, v, z, w] =
+theorem ofExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+    ofExteriorBilin B ![u, v, z, w] =
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
-  simp [fourTensorOfExteriorBilin]
+  simp [ofExteriorBilin]
 
 /-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
 first pair. -/
-theorem fourTensorOfExteriorBilin_antisymm_first (B : BilinForm ℝ (⋀[ℝ]^2 V))
+theorem ofExteriorBilin_antisymm_first (B : BilinForm ℝ (⋀[ℝ]^2 V))
     (u v z w : V) :
-    fourTensorOfExteriorBilin B ![u, v, z, w] =
-      -fourTensorOfExteriorBilin B ![v, u, z, w] := by
-  simp only [fourTensorOfExteriorBilin_apply]
+    ofExteriorBilin B ![u, v, z, w] =
+      -ofExteriorBilin B ![v, u, z, w] := by
+  simp only [ofExteriorBilin_apply]
   rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
 
 /-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
 last pair. -/
-theorem fourTensorOfExteriorBilin_antisymm_last (B : BilinForm ℝ (⋀[ℝ]^2 V))
+theorem ofExteriorBilin_antisymm_last (B : BilinForm ℝ (⋀[ℝ]^2 V))
     (u v z w : V) :
-    fourTensorOfExteriorBilin B ![u, v, z, w] =
-      -fourTensorOfExteriorBilin B ![u, v, w, z] := by
-  simp only [fourTensorOfExteriorBilin_apply]
+    ofExteriorBilin B ![u, v, z, w] =
+      -ofExteriorBilin B ![u, v, w, z] := by
+  simp only [ofExteriorBilin_apply]
   rw [exteriorPower.ιMulti_two_swap w z, map_neg]
 
-/-- `fourTensorOfExteriorBilin B` is bivector-symmetric iff `B` is symmetric. -/
+/-- `ofExteriorBilin B` is bivector-symmetric iff `B` is symmetric. -/
 @[simp]
-theorem isBivectorSymmetric_fourTensorOfExteriorBilin_iff (B : BilinForm ℝ (⋀[ℝ]^2 V)) :
-    IsBivectorSymmetric (fourTensorOfExteriorBilin B) ↔ B.IsSymm := by
+theorem isBivectorSymmetric_ofExteriorBilin_iff (B : BilinForm ℝ (⋀[ℝ]^2 V)) :
+    IsBivectorSymmetric (ofExteriorBilin B) ↔ B.IsSymm := by
   refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun h ↦
-    ⟨fourTensorOfExteriorBilin_antisymm_first B, fourTensorOfExteriorBilin_antisymm_last B,
-      fun u v z w ↦ by simpa only [fourTensorOfExteriorBilin_apply] using h.eq _ _⟩⟩
+    ⟨ofExteriorBilin_antisymm_first B, ofExteriorBilin_antisymm_last B,
+      fun u v z w ↦ by simpa only [ofExteriorBilin_apply] using h.eq _ _⟩⟩
   have hbil : B = B.flip :=
     exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
       exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
-        simpa only [LinearMap.BilinForm.flip_apply, fourTensorOfExteriorBilin_apply] using
+        simpa only [LinearMap.BilinForm.flip_apply, ofExteriorBilin_apply] using
           h.swap_pairs u v z w
   exact LinearMap.congr_fun₂ hbil x y
+
+/-- A four-tensor lies in the range of `ofExteriorBilin` iff it is antisymmetric in its first
+and last pairs. -/
+theorem mem_range_ofExteriorBilin_iff {r : FourTensor V} :
+    r ∈ LinearMap.range (ofExteriorBilin (V := V)) ↔
+      (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
+        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) := by
+  refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  · rintro ⟨B, rfl⟩
+    exact ⟨ofExteriorBilin_antisymm_first B, ofExteriorBilin_antisymm_last B⟩
+  · refine ⟨(toLinearMap₄ r).exteriorSquareBilinear
+      (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ u u v z))
+      (show ∀ u v, (toLinearMap₄ r u v).IsAlt from fun u v z ↦ by
+        rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z)),
+      ext_vec fun u v z w ↦ ?_⟩
+    rw [ofExteriorBilin_apply, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
+    exact toLinearMap₄_apply r u v z w
 
 /-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/
 def bivectorSymmetricEquivSymmBilin :
     bivectorSymmetricSubmodule V ≃ₗ[ℝ] LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) where
   toFun r := ⟨exteriorBilinOfBivectorSymmetric r,
     LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfBivectorSymmetric r)⟩
-  invFun B := ⟨fourTensorOfExteriorBilin B.val,
+  invFun B := ⟨ofExteriorBilin B.val,
     mem_bivectorSymmetricSubmodule.mpr
-      ((isBivectorSymmetric_fourTensorOfExteriorBilin_iff B.val).mpr
+      ((isBivectorSymmetric_ofExteriorBilin_iff B.val).mpr
         (LinearMap.BilinForm.mem_symmSubmodule.mp B.property))⟩
   map_add' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
     simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
   map_smul' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
     simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
   left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
-    ext u v z w; simp only [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]
+    ext u v z w; simp only [toLinearMap₄_apply, ofExteriorBilin_apply]
     exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
       (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.val u v z w)
   right_inv _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun v w ↦ by
-    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply, ← FinVec.etaExpand_eq v,
+    rw [toLinearMap₄_apply, ofExteriorBilin_apply, ← FinVec.etaExpand_eq v,
       ← FinVec.etaExpand_eq w]; rfl
 
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
@@ -318,7 +336,7 @@ def bivectorSymmetricEquivSymmBilin :
     (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
     (bivectorSymmetricEquivSymmBilin.symm B).val ![u, v, z, w] =
       B.val (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) :=
-  fourTensorOfExteriorBilin_apply B.val u v z w
+  ofExteriorBilin_apply B.val u v z w
 
 /-- `bianchiAlternatingMap` is surjective onto alternating four-forms. -/
 theorem bianchiAlternatingMap_surjective :
