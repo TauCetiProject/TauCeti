@@ -23,7 +23,8 @@ with the quotient map.
 
 * `TauCeti.BasedMap`: the based mapping space `Map_*(B, X)`.
 * `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
-  continuous by `TauCeti.BasedMap.continuous_map`.
+  continuous by `TauCeti.BasedMap.continuous_map`; `TauCeti.BasedMap.mapContinuousMap` bundles it
+  as a continuous map.
 * `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
   fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
 * `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
@@ -83,6 +84,18 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g 
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
   continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtypeVal)
+
+/-- The continuous map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `g : X → Y`: the map
+`TauCeti.BasedMap.map` bundled with its continuity. -/
+def mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
+    C(BasedMap B X b₀ x, BasedMap B Y b₀ y) :=
+  ⟨map g hg, continuous_map g hg⟩
+
+/-- The bundled map `TauCeti.BasedMap.mapContinuousMap` is `TauCeti.BasedMap.map`. -/
+@[simp]
+theorem coe_mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
+    ⇑(mapContinuousMap (B := B) (b₀ := b₀) g hg) = map g hg :=
+  (rfl)
 
 end Map
 

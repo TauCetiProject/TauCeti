@@ -80,6 +80,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   induces its relative singular homology map, conjugated by the comparison isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
+* `TopPair.IsCubicalRepresentative.map`: a map of pairs carries a representative of a relative
+  class to a representative of its image.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -87,6 +89,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * `TopPair.exists_boundary_eq_sub_add_map_of_injective`: when `Hₙ(X) → Hₙ(X, A)` is injective
   and `s`, `s'` are relative cycles representing the same class, any cycle `s - s' + a` with `a` a
   chain of `A` is a boundary.
+
+* `TopPair.boundary_ofCube_comp`: compute the boundary of a cube mapped out of a pair, from
+  the map on its subspace.
 
 ## References
 
@@ -337,6 +342,20 @@ theorem π_cubicalChainComplexMap_f_apply {P P' : TopPair.{u}} (f : P ⟶ P') (n
       (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f n
         (NormalizedCubicalChain.map k (Hom.fst f).hom n x) :=
   ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k f)) x
+
+variable {k} in
+/-- A map of pairs sends a representative of a relative class to a representative of its image:
+the push-forward of the chain along the map of ambient spaces. -/
+theorem IsCubicalRepresentative.map {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ}
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) :
+    P'.IsCubicalRepresentative k (NormalizedCubicalChain.map k (Hom.fst f).hom n c)
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n μ) := by
+  obtain ⟨r, hc, rfl⟩ := h
+  refine ⟨(HomologicalComplex.cyclesMap (cubicalChainComplexMap k f) n).hom r, ?_, ?_⟩
+  · refine (π_cubicalChainComplexMap_f_apply k f n c).symm.trans ?_
+    rw [hc, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+  · rw [← ModuleCat.comp_apply, ← HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
 
 @[simp]
 theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
@@ -665,6 +684,19 @@ theorem map_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1)
       P.map.hom.comp (P.liftSnd g hg) = g := ContinuousMap.ext (map_liftSnd g hg)
   simp [cubicalBoundaryChainOfCube, NormalizedCubicalChain.boundary_ofCube,
     NormalizedCubicalChain.map_ofCube, h]
+
+/-- The boundary of a mapped cube is the pushforward of its lifted boundary in the subspace
+of a pair. -/
+theorem boundary_ofCube_comp {Y : Type*} [TopologicalSpace Y] (P : TopPair.{u})
+    {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map))
+    (q : C(P.fst, Y)) :
+    NormalizedCubicalChain.boundary Y k m
+      (NormalizedCubicalChain.ofCube Y k (q.comp c)) =
+      NormalizedCubicalChain.map k (q.comp P.map.hom) m
+        (P.cubicalBoundaryChainOfCube k c hc) := by
+  rw [NormalizedCubicalChain.map_comp, LinearMap.comp_apply, map_cubicalBoundaryChainOfCube,
+    NormalizedCubicalChain.map_boundary_apply, NormalizedCubicalChain.map_ofCube]
 
 /-- The boundary of a relative cube, read in the subspace, is a cycle. -/
 @[simp]
