@@ -12,7 +12,6 @@ import TauCeti.Analysis.Complex.Laurent.Basic
 import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.Analysis.Contour.Cycle.Fubini
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
@@ -130,34 +129,25 @@ section CircleSum
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The exterior Cauchy integral of `f` over `C(ρ, r)`, representing the principal part of an
-isolated singularity inside `closedBall ρ r`. -/
-private def exteriorCauchy (f : ℂ → E) (ρ : ℂ) (r : ℝ) (z : ℂ) : E :=
-  (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w
-
-/-- The exterior Cauchy integral is the negative of the standard-sign Cauchy integral. -/
-private theorem exteriorCauchy_eq_neg {f : ℂ → E} {ρ z : ℂ} {r : ℝ} (hr : 0 < r) :
-    exteriorCauchy f ρ r z =
-      -((2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (w - z)⁻¹ • f w) := by
-  have heq : (∮ w in C(ρ, r), (z - w)⁻¹ • f w) = -(∮ w in C(ρ, r), (w - z)⁻¹ • f w) := by
-    calc ∮ w in C(ρ, r), (z - w)⁻¹ • f w
-        = ∮ w in C(ρ, r), (-1 : ℂ) • ((w - z)⁻¹ • f w) := by
-          refine circleIntegral.integral_congr hr.le fun w _ ↦ ?_
-          rw [neg_one_smul, ← neg_smul, ← inv_neg, neg_sub]
-      _ = (-1 : ℂ) • ∮ w in C(ρ, r), (w - z)⁻¹ • f w := circleIntegral.integral_smul _ _ _ _
-      _ = -(∮ w in C(ρ, r), (w - z)⁻¹ • f w) := neg_one_smul _ _
-  rw [exteriorCauchy, heq, smul_neg]
-
-/-- The exterior Cauchy integral is complex differentiable at every point off `sphere ρ r`. -/
-private theorem differentiableAt_exteriorCauchy {f : ℂ → E} {ρ z : ℂ} {r : ℝ} (hr : 0 < r)
-    (hf : CircleIntegrable f ρ r) (hz : z ∉ sphere ρ r) :
-    DifferentiableAt ℂ (exteriorCauchy f ρ r) z := by
+/-- The exterior Cauchy integral `z ↦ (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` is complex
+differentiable at every point off `sphere ρ r`. -/
+private theorem differentiableAt_sub_inv_smul_circleIntegral {f : ℂ → E} {ρ z : ℂ} {r : ℝ}
+    (hr : 0 < r) (hf : CircleIntegrable f ρ r) (hz : z ∉ sphere ρ r) :
+    DifferentiableAt ℂ (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z := by
   have hz' : z ∉ sphere ρ |r| := by rwa [abs_of_pos hr]
   have hd : DifferentiableAt ℂ (fun s ↦ ∮ w in C(ρ, r), (w - s)⁻¹ • f w) z :=
     (hasDerivAt_circleIntegral_sub_inv_smul hf hz').differentiableAt
-  have heq : exteriorCauchy f ρ r =
-      fun s ↦ -((2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (w - s)⁻¹ • f w) :=
-    funext fun _ ↦ exteriorCauchy_eq_neg hr
+  have heq : (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) =
+      fun s ↦ -((2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (w - s)⁻¹ • f w) := by
+    funext s
+    have hneg : (∮ w in C(ρ, r), (s - w)⁻¹ • f w) = -(∮ w in C(ρ, r), (w - s)⁻¹ • f w) := by
+      calc ∮ w in C(ρ, r), (s - w)⁻¹ • f w
+          = ∮ w in C(ρ, r), (-1 : ℂ) • ((w - s)⁻¹ • f w) := by
+            refine circleIntegral.integral_congr hr.le fun w _ ↦ ?_
+            rw [neg_one_smul, ← neg_smul, ← inv_neg, neg_sub]
+        _ = (-1 : ℂ) • ∮ w in C(ρ, r), (w - s)⁻¹ • f w := circleIntegral.integral_smul _ _ _ _
+        _ = -(∮ w in C(ρ, r), (w - s)⁻¹ • f w) := neg_one_smul _ _
+    rw [hneg, smul_neg]
   rw [heq]
   exact (hd.const_smul _).neg
 
@@ -168,7 +158,8 @@ private theorem integral_rectPolygon_exteriorCauchy [CompleteSpace E]
     {z₀ w₀ : ℂ} {r : ℝ} (hre : z₀.re ≤ w₀.re) (him : z₀.im ≤ w₀.im) (hr : 0 < r) {ρ : ℂ}
     (hρ : closedBall ρ r ⊆ Ioo z₀.re w₀.re ×ℂ Ioo z₀.im w₀.im) {f : ℂ → E}
     (hf : ContinuousOn f (sphere ρ r)) :
-    Cycle.integral (exteriorCauchy f ρ r) (rectPolygon z₀ w₀).contourCycle =
+    Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
+        (rectPolygon z₀ w₀).contourCycle =
       ∮ w in C(ρ, r), f w := by
   let C : Cycle := (rectPolygon z₀ w₀).contourCycle
   let D : Cycle := circleCycle ρ r
@@ -188,13 +179,13 @@ private theorem integral_rectPolygon_exteriorCauchy [CompleteSpace E]
     exact hDsub hp.2
   have hswap := Cycle.integral_integral_swap hF
   have hne : (2 * (π : ℂ) * I) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  have houter : Cycle.integral (exteriorCauchy f ρ r) C =
+  have houter : Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w) C =
       (2 * π * I : ℂ)⁻¹ •
         Cycle.integral (fun z ↦ Cycle.integral (fun w ↦ (z - w)⁻¹ • f w) D) C := by
-    have hfun : exteriorCauchy f ρ r =
+    have hfun : (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w) =
         fun z ↦ (2 * π * I : ℂ)⁻¹ • Cycle.integral (fun w ↦ (z - w)⁻¹ • f w) D := by
       funext z
-      simp only [exteriorCauchy, D, Cycle.integral_circleCycle]
+      simp only [D, Cycle.integral_circleCycle]
     rw [hfun, Cycle.integral_smul]
   rw [houter, hswap, Cycle.integral_circleCycle]
   have hinner : EqOn (fun w ↦ Cycle.integral (fun z ↦ (z - w)⁻¹ • f w) C)
@@ -203,171 +194,6 @@ private theorem integral_rectPolygon_exteriorCauchy [CompleteSpace E]
     rw [Cycle.integral_smul_const, integral_rectPolygon_sub_inv (hDsub hw)]
   rw [circleIntegral.integral_congr hr.le hinner, circleIntegral.integral_smul,
     inv_smul_smul₀ hne]
-
-/-- On the open annulus `ball ρ r' \ closedBall ρ r`, subtracting the exterior Cauchy integral of
-`f` over `C(ρ, r)` leaves the interior Cauchy integral over `C(ρ, r')`. -/
-private theorem sub_exteriorCauchy_eq_interiorCauchy [CompleteSpace E] {f : ℂ → E} {ρ z : ℂ}
-    {r r' : ℝ} (hr : 0 < r) (hz : z ∈ ball ρ r' \ closedBall ρ r)
-    (hc : ContinuousOn f (closedBall ρ r' \ ball ρ r))
-    (hd : ∀ w ∈ ball ρ r' \ closedBall ρ r, DifferentiableAt ℂ f w) :
-    f z - exteriorCauchy f ρ r z = (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r'), (w - z)⁻¹ • f w := by
-  have hann :=
-    two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable
-      hr countable_empty hz hc (fun w hw ↦ hd w hw.1)
-  rw [← hann, smul_sub, exteriorCauchy_eq_neg hr]
-  abel
-
-/-- The singularity-removed gluing of `f - ∑ ρ ∈ P, exteriorCauchy f ρ r`: inside each closed
-disc `closedBall ρ r` (`ρ ∈ P`) it uses the interior Cauchy integral over `C(ρ, r')` minus the
-exterior Cauchy integrals of the other singularities. -/
-private def gluedRegular (f : ℂ → E) (P : Finset ℂ) (r r' : ℝ) (z : ℂ) : E := by
-  classical
-  exact if h : ∃ ρ ∈ P, z ∈ closedBall ρ r then
-    (2 * π * I : ℂ)⁻¹ • (∮ w in C(h.choose, r'), (w - z)⁻¹ • f w) -
-      ∑ ρ' ∈ P.erase h.choose, exteriorCauchy f ρ' r z
-  else
-    f z - ∑ ρ ∈ P, exteriorCauchy f ρ r z
-
-/-- Outside all closed discs `closedBall ρ r`, `gluedRegular` agrees with
-`f - ∑ ρ ∈ P, exteriorCauchy f ρ r`. -/
-private theorem gluedRegular_eq_out {f : ℂ → E} {P : Finset ℂ} {r r' : ℝ} {z : ℂ}
-    (hz : ∀ ρ ∈ P, z ∉ closedBall ρ r) :
-    gluedRegular f P r r' z = f z - ∑ ρ ∈ P, exteriorCauchy f ρ r z := by
-  classical
-  have hneg : ¬ ∃ ρ ∈ P, z ∈ closedBall ρ r := by push Not; exact hz
-  simp only [gluedRegular, hneg, ↓reduceDIte]
-
-/-- On each open ball `ball ρ r'` (`ρ ∈ P`), `gluedRegular` agrees with the holomorphic formula
-`(2πi)⁻¹ • ∮ w in C(ρ, r'), (w - z)⁻¹ • f w - ∑ ρ' ∈ P.erase ρ, exteriorCauchy f ρ' r z`. -/
-private theorem gluedRegular_eq_on_ball [CompleteSpace E] {f : ℂ → E} {P : Finset ℂ} {U : Set ℂ}
-    {r r' : ℝ} (hr : 0 < r) (hrr' : r < r') (hU : IsOpen U)
-    (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ U)
-    (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    (hd : DifferentiableOn ℂ f (U \ P)) {ρ : ℂ} (hρ : ρ ∈ P) :
-    EqOn (gluedRegular f P r r')
-      (fun z ↦ (2 * π * I : ℂ)⁻¹ • (∮ w in C(ρ, r'), (w - z)⁻¹ • f w) -
-        ∑ ρ' ∈ P.erase ρ, exteriorCauchy f ρ' r z) (ball ρ r') := by
-  classical
-  intro z hz
-  have hr' : 0 < r' := hr.trans hrr'
-  have hsub_ann : closedBall ρ r' \ {ρ} ⊆ U \ P := fun w hw ↦
-    ⟨hP' ρ hρ hw.1, fun hwP ↦ hw.2 <| by_contra fun hne ↦
-      disjoint_left.1 (hdisj' hρ hwP (Ne.symm hne)) hw.1 (mem_closedBall_self hr'.le)⟩
-  by_cases hzr : z ∈ closedBall ρ r
-  · have hex : ∃ ρ' ∈ P, z ∈ closedBall ρ' r := ⟨ρ, hρ, hzr⟩
-    have hch : hex.choose = ρ := by_contra fun hne ↦
-      disjoint_left.1 (hdisj' hex.choose_spec.1 hρ hne)
-        (closedBall_subset_closedBall hrr'.le hex.choose_spec.2)
-        (closedBall_subset_closedBall hrr'.le hzr)
-    simp only [gluedRegular, hex, ↓reduceDIte, hch]
-  · have hnone : ∀ ρ' ∈ P, z ∉ closedBall ρ' r := fun ρ' hρ' hz' ↦ by
-      rcases eq_or_ne ρ' ρ with rfl | hne
-      · exact hzr hz'
-      · exact disjoint_left.1 (hdisj' hρ hρ' hne.symm) (ball_subset_closedBall hz)
-          (closedBall_subset_closedBall hrr'.le hz')
-    have hsub := sub_exteriorCauchy_eq_interiorCauchy hr ⟨hz, hzr⟩
-      (hd.continuousOn.mono fun w hw ↦
-        hsub_ann ⟨hw.1, fun heq ↦ hw.2 (heq ▸ mem_ball_self hr)⟩)
-      (fun w hw ↦ hd.differentiableAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds
-        (hsub_ann ⟨ball_subset_closedBall hw.1, fun heq ↦ hw.2 (heq ▸ mem_closedBall_self hr.le)⟩)))
-    rw [gluedRegular_eq_out hnone, ← Finset.add_sum_erase _ _ hρ, ← sub_sub, hsub]
-
-/-- `gluedRegular` is complex differentiable at every point of each open ball `ball ρ r'`. -/
-private theorem differentiableAt_gluedRegular_of_mem_ball [CompleteSpace E] {f : ℂ → E}
-    {P : Finset ℂ} {U : Set ℂ} {r r' : ℝ} (hr : 0 < r) (hrr' : r < r') (hU : IsOpen U)
-    (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ U)
-    (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    (hd : DifferentiableOn ℂ f (U \ P)) {ρ z : ℂ} (hρ : ρ ∈ P) (hz : z ∈ ball ρ r') :
-    DifferentiableAt ℂ (gluedRegular f P r r') z := by
-  classical
-  have hr' : 0 < r' := hr.trans hrr'
-  have hcont_r' := continuousOn_sphere_of_closedBall_subset hr' le_rfl hP' hdisj' hd.continuousOn hρ
-  have hz' : z ∉ sphere ρ |r'| := by
-    rw [abs_of_pos hr', mem_sphere]; exact ne_of_lt (mem_ball.1 hz)
-  have hint : DifferentiableAt ℂ (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r'), (w - s)⁻¹ • f w)
-      z := (hasDerivAt_circleIntegral_sub_inv_smul
-        (hcont_r'.circleIntegrable hr'.le) hz').differentiableAt.const_smul _
-  have hsum : DifferentiableAt ℂ (fun s ↦ ∑ ρ' ∈ P.erase ρ, exteriorCauchy f ρ' r s) z := by
-    refine DifferentiableAt.fun_sum fun ρ' hρ' ↦ ?_
-    obtain ⟨hne, hmem⟩ := Finset.mem_erase.1 hρ'
-    have hcont_r :=
-      continuousOn_sphere_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn hmem
-    exact differentiableAt_exteriorCauchy hr (hcont_r.circleIntegrable hr.le) fun hsp ↦
-      disjoint_left.1 (hdisj' hρ hmem hne.symm) (ball_subset_closedBall hz)
-        (closedBall_subset_closedBall hrr'.le (sphere_subset_closedBall hsp))
-  exact (hint.sub hsum).congr_of_eventuallyEq <|
-    Filter.eventuallyEq_of_mem (isOpen_ball.mem_nhds hz)
-      (gluedRegular_eq_on_ball hr hrr' hU hP' hdisj' hd hρ)
-
-/-- `gluedRegular` is continuous on the closed rectangle `[σ₁, σ₂] ×ℂ [t₁, t₂]`. -/
-private theorem continuousOn_gluedRegular [CompleteSpace E] {σ₁ σ₂ t₁ t₂ r r' : ℝ} (hr : 0 < r)
-    (hrr' : r < r') {P : Finset ℂ}
-    (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂)
-    (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    {f : ℂ → E} (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
-    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P)) :
-    ContinuousOn (gluedRegular f P r r') (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) := by
-  let R : Set ℂ := Icc σ₁ σ₂ ×ℂ Icc t₁ t₂
-  have hU : IsOpen (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) := isOpen_Ioo.reProdIm isOpen_Ioo
-  have hopen_out : IsOpen (⋃ ρ ∈ P, closedBall ρ r)ᶜ :=
-    (P.finite_toSet.isClosed_biUnion fun _ _ ↦ isClosed_closedBall).isOpen_compl
-  intro z hz
-  by_cases hex : ∃ ρ ∈ P, z ∈ closedBall ρ r
-  · obtain ⟨ρ, hρ, hzr⟩ := hex
-    exact (differentiableAt_gluedRegular_of_mem_ball hr hrr' hU hP' hdisj' hd hρ
-      (closedBall_subset_ball hrr' hzr)).continuousAt.continuousWithinAt
-  · push Not at hex
-    have hmem : z ∈ (⋃ ρ ∈ P, closedBall ρ r)ᶜ := by simpa using hex
-    have hsub : R ∩ (⋃ ρ ∈ P, closedBall ρ r)ᶜ ⊆ R \ P := fun w hw ↦
-      ⟨hw.1, fun hwP ↦ by
-        have := hw.2; simp only [mem_compl_iff, mem_iUnion] at this
-        exact this ⟨w, hwP, mem_closedBall_self hr.le⟩⟩
-    have hsum_diff : DifferentiableAt ℂ (fun s ↦ ∑ ρ ∈ P, exteriorCauchy f ρ r s) z :=
-      DifferentiableAt.fun_sum fun ρ hρ ↦
-        differentiableAt_exteriorCauchy hr
-          ((continuousOn_sphere_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn hρ
-            ).circleIntegrable hr.le)
-          fun hsp ↦ hex ρ hρ (sphere_subset_closedBall hsp)
-    have hloc : ContinuousWithinAt (fun s ↦ f s - ∑ ρ ∈ P, exteriorCauchy f ρ r s) R z :=
-      (hc.continuousWithinAt (hsub ⟨hz, hmem⟩) |>.mono_of_mem_nhdsWithin
-        (mem_of_superset (inter_mem_nhdsWithin R (hopen_out.mem_nhds hmem)) hsub)).sub
-        hsum_diff.continuousAt.continuousWithinAt
-    exact hloc.congr_of_eventuallyEq
-      (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (hopen_out.mem_nhds hmem)) fun w hw ↦ by
-        simp only [mem_compl_iff, mem_iUnion, not_exists] at hw
-        exact gluedRegular_eq_out hw)
-      (gluedRegular_eq_out hex)
-
-/-- `gluedRegular` is complex differentiable on the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`. -/
-private theorem differentiableOn_gluedRegular [CompleteSpace E] {σ₁ σ₂ t₁ t₂ r r' : ℝ}
-    (hr : 0 < r) (hrr' : r < r') {P : Finset ℂ}
-    (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂)
-    (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    {f : ℂ → E} (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P)) :
-    DifferentiableOn ℂ (gluedRegular f P r r') (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) := by
-  let U : Set ℂ := Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂
-  have hU : IsOpen U := isOpen_Ioo.reProdIm isOpen_Ioo
-  have hopen_out : IsOpen (⋃ ρ ∈ P, closedBall ρ r)ᶜ :=
-    (P.finite_toSet.isClosed_biUnion fun _ _ ↦ isClosed_closedBall).isOpen_compl
-  intro z hz
-  by_cases hex : ∃ ρ ∈ P, z ∈ closedBall ρ r
-  · obtain ⟨ρ, hρ, hzr⟩ := hex
-    exact (differentiableAt_gluedRegular_of_mem_ball hr hrr' hU hP' hdisj' hd hρ
-      (closedBall_subset_ball hrr' hzr)).differentiableWithinAt
-  · push Not at hex
-    have hmem : z ∈ (⋃ ρ ∈ P, closedBall ρ r)ᶜ := by simpa using hex
-    have hloc : DifferentiableAt ℂ (fun s ↦ f s - ∑ ρ ∈ P, exteriorCauchy f ρ r s) z :=
-      (hd.differentiableAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds ⟨hz, fun hzP ↦
-        hex z hzP (mem_closedBall_self hr.le)⟩)).sub
-        (DifferentiableAt.fun_sum fun ρ hρ ↦
-          differentiableAt_exteriorCauchy hr
-            ((continuousOn_sphere_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn hρ
-              ).circleIntegrable hr.le)
-            fun hsp ↦ hex ρ hρ (sphere_subset_closedBall hsp))
-    exact (hloc.congr_of_eventuallyEq <|
-      Filter.eventuallyEq_of_mem (hopen_out.mem_nhds hmem) fun w hw ↦ by
-        simp only [mem_compl_iff, mem_iUnion, not_exists] at hw
-        exact gluedRegular_eq_out hw).differentiableWithinAt
 
 /-- **Rectangle cycle integral as a sum of circle integrals.** Let `z₀.re ≤ w₀.re`, `z₀.im ≤ w₀.im`,
 `r > 0`, and let `P` be a finite set whose closed discs `closedBall ρ r` are pairwise disjoint and
@@ -389,45 +215,43 @@ theorem integral_rectPolygon_eq_sum_circleIntegral
   wlog hE : CompleteSpace E
   · simp [Cycle.integral_eq_sum_support, circleIntegral, intervalIntegral,
       integral_of_not_completeSpace hE]
-  have hRrect : Rectangle z₀ w₀ = Icc z₀.re w₀.re ×ℂ Icc z₀.im w₀.im := by
-    rw [Rectangle, uIcc_of_le hre, uIcc_of_le him]
-  have hc' : ContinuousOn f (Icc z₀.re w₀.re ×ℂ Icc z₀.im w₀.im \ P) := hRrect ▸ hc
-  obtain ⟨r', hrr', hP', hdisj'⟩ := TauCeti.exists_gt_closedBall_subset_and_pairwiseDisjoint
-    (U := fun _ ↦ Ioo z₀.re w₀.re ×ℂ Ioo z₀.im w₀.im)
-    (fun _ _ ↦ isOpen_Ioo.reProdIm isOpen_Ioo) hP hdisj
-  let g := gluedRegular f P r r'
-  have hg_cont := continuousOn_gluedRegular hr hrr' hP' hdisj' hc' hd
-  have hg_diff := differentiableOn_gluedRegular hr hrr' hP' hdisj' hd
+  have hP_int : ∀ ρ ∈ P, closedBall ρ r ⊆ interior (Rectangle z₀ w₀) := fun ρ hρ ↦ by
+    rw [interior_rectangle hre him]; exact hP ρ hρ
+  obtain ⟨g, hg_cont, hg_diff, hg_eq⟩ :=
+    TauCeti.exists_continuousOn_differentiableOn_sub_sum_circleIntegral hr hP_int hdisj hc
+      (by rwa [interior_rectangle hre him])
   have hUrect : Ioo (min z₀.re w₀.re) (max z₀.re w₀.re) ×ℂ
       Ioo (min z₀.im w₀.im) (max z₀.im w₀.im) = Ioo z₀.re w₀.re ×ℂ Ioo z₀.im w₀.im := by
     simp [min_eq_left hre, max_eq_right hre, min_eq_left him, max_eq_right him]
   have hg_zero : Cycle.integral g (rectPolygon z₀ w₀).contourCycle = 0 := by
-    rw [integral_contourCycle_rectPolygon (hg_cont.mono <|
-      (isClosed_rectangle z₀ w₀).frontier_subset.trans (by rw [hRrect]))]
+    rw [integral_contourCycle_rectPolygon (hg_cont.mono (isClosed_rectangle z₀ w₀).frontier_subset)]
     exact Complex.integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn
-      g z₀ w₀ (by rw [← Rectangle, hRrect]; exact hg_cont) (hUrect ▸ hg_diff)
+      g z₀ w₀ hg_cont (by rwa [hUrect, ← interior_rectangle hre him])
   have hfr_out : ∀ z ∈ frontier (Rectangle z₀ w₀), ∀ ρ ∈ P, z ∉ closedBall ρ r := by
     intro z hz ρ hρ hzr
-    exact disjoint_left.1 disjoint_interior_frontier
-      (by rw [interior_rectangle hre him]; exact hP ρ hρ hzr) hz
+    exact disjoint_left.1 disjoint_interior_frontier (hP_int ρ hρ hzr) hz
   have htrace : Cycle.trace (rectPolygon z₀ w₀).contourCycle = frontier (Rectangle z₀ w₀) := by
     rw [Polygon.trace_contourCycle, boundary_rectPolygon]
   have hf_fr : ContinuousOn f (frontier (Rectangle z₀ w₀)) :=
     hc.mono fun z hz ↦ ⟨(isClosed_rectangle z₀ w₀).frontier_subset hz,
       fun hzP ↦ hfr_out z hz z hzP (mem_closedBall_self hr.le)⟩
   have hfc_r : ∀ ρ ∈ P, ContinuousOn f (sphere ρ r) := fun ρ hρ ↦
-    continuousOn_sphere_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn hρ
+    TauCeti.continuousOn_sphere_of_closedBall_subset hr le_rfl
+      (fun ρ' hρ' ↦ (hP_int ρ' hρ').trans interior_subset) hdisj hc hρ
   have hext_fr : ∀ ρ ∈ P,
-      ContinuousOn (exteriorCauchy f ρ r) (Cycle.trace (rectPolygon z₀ w₀).contourCycle) := by
+      ContinuousOn (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
+        (Cycle.trace (rectPolygon z₀ w₀).contourCycle) := by
     rw [htrace]
     exact fun ρ hρ z hz ↦
-      (differentiableAt_exteriorCauchy hr ((hfc_r ρ hρ).circleIntegrable hr.le) fun hsp ↦
-        hfr_out z hz ρ hρ (sphere_subset_closedBall hsp)).continuousAt.continuousWithinAt
+      (differentiableAt_sub_inv_smul_circleIntegral hr ((hfc_r ρ hρ).circleIntegrable hr.le)
+        fun hsp ↦ hfr_out z hz ρ hρ (sphere_subset_closedBall hsp)).continuousAt.continuousWithinAt
   have hsplit : Cycle.integral g (rectPolygon z₀ w₀).contourCycle =
       Cycle.integral f (rectPolygon z₀ w₀).contourCycle -
-        ∑ ρ ∈ P, Cycle.integral (exteriorCauchy f ρ r) (rectPolygon z₀ w₀).contourCycle := by
-    rw [Cycle.integral_congr (g := fun z ↦ f z - ∑ ρ ∈ P, exteriorCauchy f ρ r z)
-        fun z hz ↦ gluedRegular_eq_out (hfr_out z (htrace ▸ hz)),
+        ∑ ρ ∈ P, Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
+          (rectPolygon z₀ w₀).contourCycle := by
+    rw [Cycle.integral_congr
+        (g := fun z ↦ f z - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
+        fun z hz ↦ hg_eq (by simpa [htrace] using hfr_out z (htrace ▸ hz)),
       Cycle.integral_sub (htrace ▸ hf_fr) (continuousOn_finsetSum P hext_fr),
       Cycle.integral_finsetSum hext_fr]
   rw [hg_zero, eq_comm, sub_eq_zero] at hsplit
@@ -628,10 +452,11 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
           eventually_principal.2 fun _ h ↦ h, fun {_} _ {_} hy ↦ ?_⟩
         rw [uIcc_of_le ht₂] at hy
         simpa using hy
-    have hprod : Tendsto (Function.uncurry fun X y : ℝ ↦ f ((-X : ℝ) + y * I))
+    have hprod : Tendsto (fun q : ℝ × ℝ ↦ f ((-q.1 : ℝ) + q.2 * I))
         (atTop ×ˢ 𝓟 (uIcc w.im t₂)) (𝓝 0) := hdecay.comp hmap
-    simpa only [smul_zero] using
-      (TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_tendsto_prod hprod).const_smul I
+    have h0 : Tendsto (fun X : ℝ ↦ ∫ y : ℝ in w.im..t₂, f ((-X : ℝ) + y * I)) atTop (𝓝 0) :=
+      TendstoUniformlyOn.tendsto_intervalIntegral_nhds_zero (tendsto_prod_principal_iff.mp hprod)
+    simpa only [smul_zero] using h0.const_smul I
   have hrhs : Tendsto (fun X : ℝ ↦
         (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
           (∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) + (∫ x : ℝ in (-X)..σ₂, f (x + t₂ * I)) +

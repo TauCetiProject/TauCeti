@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinTransform
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Contour.Curve.Rectangle
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -13,11 +13,10 @@ import TauCeti.Analysis.Contour.Cauchy.Rectangle
 import TauCeti.Analysis.Contour.Residue.Cycle
 import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
-# The residue theorem on a rectangle, vertical-line shifts, and U-shaped contour shifts
+# The residue theorem on a rectangle and U-shaped contour shifts
 
 For a closed axis-parallel rectangle `R = Complex.Rectangle z w` with `z` its lower left corner,
 and a function `f` analytic on `R` outside a finite set `S` that avoids `frontier R` and
@@ -26,16 +25,6 @@ boundary `Complex.rectBoundary z w` is `2πi` times the sum of the residues of `
 `S` in `R`:
 
 `∫ t in 0..4, γ' t • f (γ t) = 2πi · ∑_{s ∈ S ∩ R} Res_s f`.
-
-Expanding the boundary into its four edges relates the difference of the right and left vertical
-segments to the residue sum and the two horizontal segments. Letting the horizontal heights tend to
-`±∞` when `f` is vertically integrable on `Re s = σ₀` and `Re s = σ₁` and the horizontal segment
-integrals vanish in the limit gives the improper vertical-line contour shift
-
-`∫ y, f (σ₁ + y * I) - ∫ y, f (σ₀ + y * I) = 2π · ∑_{s ∈ S} Res_s f`
-
-for poles `S` in the open strip `σ₀ < Re s < σ₁`. Notice that the factor `I` from `ds = I dy` along
-the vertical lines cancels the `I` in `2πi`.
 
 We also prove the four-edge rectangle residue theorem and finite-height / infinite-line U-shaped
 contour shifts without requiring an open neighbourhood of the closed rectangle: given a finite set
@@ -51,10 +40,6 @@ integral to small circle integrals around `P`, which evaluate to `2πi · ∑ p 
 * `TauCeti.Contour.rectangle_boundary_integral_eq_residues`: the four-edge boundary integral of `f`
   around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, assuming only continuity on
   the closed rectangle off `P` and complex differentiability on its interior off `P`.
-* `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue`: shifting an
-  improper vertical-line integral across a strip with finitely many poles.
-* `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le`:
-  the same vertical-line shift under a uniform decay bound on horizontal segments.
 * `TauCeti.Contour.vertical_integral_eq_uShaped_add_residues`: the finite-height U-shaped identity
   expressing the right vertical edge in terms of the left vertical edge, the horizontal edges, and
   the enclosed residues.
@@ -151,88 +136,6 @@ theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (h
   have hzUP : z ∈ U \ P := ⟨hP_ball p hp hz, fun hzP ↦
     disjoint_left.1 (hdisj hp hzP hzp.symm) hz (mem_closedBall_self hr.le)⟩
   exact hd.analyticAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds hzUP)
-
-/-- **Shifting a vertical-line integral across poles.** Let `σ₀ ≤ σ₁` and let `S` be a finite set
-of points in the open strip `σ₀ < Re s < σ₁`. Suppose `f` is analytic on the closed strip
-`σ₀ ≤ Re z ≤ σ₁` away from `S`, meromorphic at each point of `S`, and integrable on the vertical
-lines `Re z = σ₀` and `Re z = σ₁`. If the horizontal segment integrals at heights `-T` and `T` tend
-to `0` as `T → +∞`, then
-
-`(∫ y, f (σ₁ + y * I)) - (∫ y, f (σ₀ + y * I)) = 2π · ∑ s ∈ S, residue f s`. -/
-theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue
-    {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ : ℝ} (hσ : σ₀ ≤ σ₁)
-    (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
-    (hmero : ∀ s ∈ S, MeromorphicAt f s)
-    (hS : ∀ s ∈ S, s.re ∈ Ioo σ₀ σ₁)
-    (hint₀ : VerticalIntegrable f σ₀) (hint₁ : VerticalIntegrable f σ₁)
-    (hbot : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₀..σ₁, f (x - T * I)) atTop (𝓝 0))
-    (htop : Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₀..σ₁, f (x + T * I)) atTop (𝓝 0)) :
-    (∫ y : ℝ, f (σ₁ + y * I)) - (∫ y : ℝ, f (σ₀ + y * I)) =
-      2 * π * ∑ s ∈ S, residue f s := by
-  classical
-  -- Choose a height `M > 0` strictly bounding `|Im s|` for every `s ∈ S`.
-  set M : ℝ := 1 + ∑ s ∈ S, |s.im|
-  have hSim : ∀ s ∈ S, |s.im| < M := fun s hs ↦ by
-    have hle : |s.im| ≤ ∑ x ∈ S, |x.im| :=
-      Finset.single_le_sum (fun x _ ↦ abs_nonneg x.im) hs
-    linarith
-  have hev : (fun T : ℝ ↦ (∫ x : ℝ in σ₀..σ₁, f (x - T * I)) -
-      (∫ x : ℝ in σ₀..σ₁, f (x + T * I)) +
-      I * (∫ y : ℝ in (-T)..T, f (σ₁ + y * I)) -
-      I * (∫ y : ℝ in (-T)..T, f (σ₀ + y * I))) =ᶠ[atTop]
-      fun _ ↦ 2 * π * I * ∑ s ∈ S, residue f s := by
-    filter_upwards [eventually_ge_atTop M] with T hT
-    have hT0 : 0 < T := lt_of_lt_of_le (by positivity) hT
-    have hST (s : ℂ) (hs : s ∈ S) : s ∈ Ioo σ₀ σ₁ ×ℂ Ioo (-T) T :=
-      ⟨hS s hs, abs_lt.mp ((hSim s hs).trans_le hT)⟩
-    have hc : ContinuousOn f (Icc σ₀ σ₁ ×ℂ Icc (-T) T \ S) := fun z hz ↦
-      (hf z hz.1.1 (by simpa using hz.2)).continuousAt.continuousWithinAt
-    have hd : DifferentiableOn ℂ f (Ioo σ₀ σ₁ ×ℂ Ioo (-T) T \ S) := fun z hz ↦
-      (hf z (Ioo_subset_Icc_self hz.1.1) (by simpa using hz.2)).differentiableAt
-        |>.differentiableWithinAt
-    have hedge := rectangle_boundary_integral_eq_residues hσ (by linarith : -T ≤ T) hST hc hd hmero
-    have hsub : ∀ x : ℝ, (x : ℂ) + (-T : ℝ) * I = (x : ℂ) - T * I := fun x ↦ by
-      push_cast; ring
-    simp_rw [hsub] at hedge
-    exact hedge
-  have hlim : Tendsto (fun T : ℝ ↦ (∫ x : ℝ in σ₀..σ₁, f (x - T * I)) -
-      (∫ x : ℝ in σ₀..σ₁, f (x + T * I)) +
-      I * (∫ y : ℝ in (-T)..T, f (σ₁ + y * I)) -
-      I * (∫ y : ℝ in (-T)..T, f (σ₀ + y * I))) atTop
-      (𝓝 ((0 : ℂ) - 0 + I * (∫ y : ℝ, f (σ₁ + y * I)) -
-        I * (∫ y : ℝ, f (σ₀ + y * I)))) :=
-    ((hbot.sub htop).add ((intervalIntegral_tendsto_integral hint₁ tendsto_neg_atTop_atBot
-      tendsto_id).const_mul I)).sub
-      ((intervalIntegral_tendsto_integral hint₀ tendsto_neg_atTop_atBot tendsto_id).const_mul I)
-  have heq := tendsto_nhds_unique hlim (tendsto_const_nhds.congr' hev.symm)
-  apply mul_left_cancel₀ I_ne_zero
-  linear_combination heq
-
-/-- **Shifting a vertical-line integral under uniform horizontal decay.** If on horizontal
-segments `[σ₀, σ₁] ± i T` the integrand is eventually bounded by `B T` with `B T → 0` as
-`T → +∞`, the horizontal segment integrals vanish in the limit and
-`integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue` applies. -/
-theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le
-    {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ : ℝ} {B : ℝ → ℝ} (hσ : σ₀ ≤ σ₁)
-    (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
-    (hmero : ∀ s ∈ S, MeromorphicAt f s)
-    (hS : ∀ s ∈ S, s.re ∈ Ioo σ₀ σ₁)
-    (hint₀ : VerticalIntegrable f σ₀) (hint₁ : VerticalIntegrable f σ₁)
-    (hB : Tendsto B atTop (𝓝 0))
-    (hbound : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc σ₀ σ₁,
-      ‖f ((x : ℂ) + T * I)‖ ≤ B T ∧ ‖f ((x : ℂ) - T * I)‖ ≤ B T) :
-    (∫ y : ℝ, f (σ₁ + y * I)) - (∫ y : ℝ, f (σ₀ + y * I)) =
-      2 * π * ∑ s ∈ S, residue f s := by
-  have hseg (g : ℝ → ℝ → ℂ)
-      (hg : ∀ᶠ (T : ℝ) in atTop, ∀ x ∈ Icc σ₀ σ₁, ‖g T x‖ ≤ B T) :
-      Tendsto (fun T : ℝ ↦ ∫ x : ℝ in σ₀..σ₁, g T x) atTop (𝓝 0) :=
-    TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le hB <|
-      hg.mono fun T hTB ↦ Eventually.of_forall fun x hx ↦
-        hTB x (Ioc_subset_Icc_self (by rwa [uIoc_of_le hσ] at hx))
-  exact integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue hσ hf hmero hS
-    hint₀ hint₁
-    (hseg (fun T x ↦ f ((x : ℂ) - T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).2))
-    (hseg (fun T x ↦ f ((x : ℂ) + T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).1))
 
 /-- **Finite-height U-shaped contour identity.** Under the hypotheses of
 `rectangle_boundary_integral_eq_residues` (with no integrability hypothesis), the right vertical

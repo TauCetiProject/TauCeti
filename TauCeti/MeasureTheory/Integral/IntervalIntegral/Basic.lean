@@ -38,8 +38,6 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
-* `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_tendsto_prod`: if `F i x → 0` along
-  `l ×ˢ 𝓟 (uIcc a b)`, then `∫ x in a..b, F i x ∂μ → 0` along `l`.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
@@ -346,31 +344,6 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
       (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
   rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
-
-open Filter Topology Interval in
-/-- If `F i x` tends to `0` along `l ×ˢ 𝓟 (uIcc a b)`, then for any locally finite measure `μ` the
-interval integrals `∫ x in a..b, F i x ∂μ` tend to `0` along `l`. -/
-theorem tendsto_integral_nhds_zero_of_tendsto_prod {ι E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {l : Filter ι} {F : ι → ℝ → E}
-    {a b : ℝ} (hF : Tendsto (Function.uncurry F) (l ×ˢ 𝓟 (uIcc a b)) (𝓝 0)) :
-    Tendsto (fun i ↦ ∫ x in a..b, F i x ∂μ) l (𝓝 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  have hlen : 0 < μ.real (Ι a b) + 1 := by positivity
-  have hev := (Metric.tendsto_nhds.1 hF) (ε / (μ.real (Ι a b) + 1)) (div_pos hε hlen)
-  rw [Filter.eventually_prod_iff] at hev
-  obtain ⟨p, hp, q, hq, hpq⟩ := hev
-  refine hp.mono fun i hi ↦ ?_
-  rw [dist_zero_right, _root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
-  have hle : ‖∫ x in Ι a b, F i x ∂μ‖ ≤ (ε / (μ.real (Ι a b) + 1)) * μ.real (Ι a b) :=
-    norm_setIntegral_le_of_norm_le_const measure_Ioc_lt_top fun x hx ↦ by
-      have hqx : q x := Filter.eventually_principal.1 hq x (uIoc_subset_uIcc hx)
-      simpa [dist_zero_right] using (hpq hi hqx).le
-  calc ‖∫ x in Ι a b, F i x ∂μ‖
-      ≤ ε * (μ.real (Ι a b) / (μ.real (Ι a b) + 1)) := by
-        simpa [mul_div_assoc', mul_comm] using hle
-    _ < ε * 1 := mul_lt_mul_of_pos_left ((div_lt_one hlen).2 (by linarith)) hε
-    _ = ε := mul_one ε
 
 end intervalIntegral
 
