@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
-
+public import Mathlib.LinearAlgebra.Dual.Defs
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.LinearAlgebra.Prod
 import Mathlib.RingTheory.Finiteness.Prod
@@ -16,7 +17,7 @@ import Mathlib.RingTheory.Finiteness.Prod
 # Dimensions of products of modules
 
 Mathlib's `Module.finrank_prod` and `Module.finrank_pi_fintype` compute the `finrank` of binary
-and finite dependent products of finite free modules. This file records three relaxations:
+and finite dependent products of finite free modules. This file records four results:
 
 * For the square `M × M` of a free module over a semiring with the strong rank condition, no
   finiteness is needed: if `M` is not finite then neither is `M × M`, and both dimensions are `0`
@@ -30,6 +31,9 @@ and finite dependent products of finite free modules. This file records three re
   (`Module.finrank_prod_of_hasRankNullity`) or a finite dependent product
   (`Module.finrank_pi_fintype_of_hasRankNullity`) of finitely generated modules is the sum of their
   `finrank`s, covering finitely generated modules with torsion (such as finite abelian groups).
+* For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
+  model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
+  (`Module.finrank_prod_dual_prod_self`).
 -/
 
 public section
@@ -108,5 +112,12 @@ theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype
     rfl
 
 end HasRankNullity
+
+/-- The dimension of `V × V^* × K` is `2 * finrank K V + 1` for a finite-dimensional vector space
+`V` over a field `K`. -/
+theorem finrank_prod_dual_prod_self (K V : Type*) [Field K] [AddCommGroup V] [Module K V]
+    [Module.Finite K V] : finrank K (V × Dual K V × K) = 2 * finrank K V + 1 := by
+  rw [Module.finrank_prod, Module.finrank_prod, Subspace.dual_finrank_eq, finrank_self]
+  omega
 
 end Module

@@ -19,7 +19,7 @@ Let `X` be a spectral object in an abelian category, indexed by `EInt`. Its abut
 filtered by the images of the maps `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)`: the `q`th piece is
 `opZ^n(⊥ ≤ q, q ≤ ⊤)`, the cokernel of `δ : H^{n-1}(q ≤ ⊤) ⟶ H^n(⊥ ≤ q)`, embedded in the abutment
 by `X.abutmentFiltrationι q n` (a monomorphism, by exactness). The pieces increase with `q`
-(`X.abutmentFiltrationMap q n`, compatible with the embeddings), and the limit object
+(`X.abutmentFiltrationMap q n`, a monomorphism compatible with the embeddings), and the limit object
 `X.EInfty q n = E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece: the cokernel
 of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact sequence
 `shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`.
@@ -104,6 +104,11 @@ lemma abutmentFiltrationMap_ι (q n : ℤ) :
   rw [X.opcyclesMap_fromOpcycles _ _ _ _ _ _ _ _ _ (𝟙 _) n (by simp [threeδ₂Toδ₁])
     (by simp [threeδ₂Toδ₁]), CategoryTheory.Functor.map_id, Category.comp_id]
 
+/-- The inclusion of the `q`th piece of the filtration of the abutment into the `(q + 1)`st one is
+a monomorphism, since both embed into the abutment compatibly. -/
+instance (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
+  mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
+
 /-- The limit object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece
 `F_{q+1} H^n / F_q H^n` of the filtration of the abutment. -/
 noncomputable def EInftyIsoCokernel (q n : ℤ) :
@@ -157,10 +162,6 @@ lemma isZero_abutment_of_le {a b n : ℤ} (hba : b ≤ a)
     (homOfLE (WithBotTop.coe_le_coe.mpr hba)) (homOfLE (le_top : (a : EInt) ≤ ⊤)) _ _ _
     (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) n ha hb
 
-/-- The transition morphism `F_q H^n ⟶ F_{q+1} H^n` in the abutment filtration of a spectral object
-is a monomorphism. -/
-instance mono_abutmentFiltrationMap (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
-  mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
 
 /-- The filtration step `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ F_{q+1} H^n / F_q H^n ⟶ 0` of the abutment of
 a spectral object is short exact. -/

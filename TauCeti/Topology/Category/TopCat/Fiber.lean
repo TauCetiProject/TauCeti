@@ -17,10 +17,13 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
 More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
-(`TopCat.Hom.preimageMap`). For a continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
+(`TopCat.Hom.preimageMap`), and a map over `s : B' ⟶ B` restricts to a map from the part over `T`
+to the part over any subset into which `s` maps `T` (`TopCat.Hom.preimageMapOver`). For a
+continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
 `ContinuousMap.preimageInclusion` is the inclusion `p⁻¹(y) → p⁻¹(Y)`, which is the fibre inclusion
 of the restriction `p⁻¹(Y) → Y` (`ContinuousMap.preimageInclusion_eq`) and is natural in maps over
-the base (`ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap`).
+the base (`ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap`,
+`TopCat.Hom.preimageMapOver_comp_preimageInclusion`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -62,6 +65,27 @@ lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} 
     (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
   exact he
+
+/-- A map `g` over `s`, that is with `g ≫ p = p' ≫ s`, carries the part of `E'` over a subset `T`
+of `B'` into the part of `E` over any subset `U` of `B` into which `s` maps `T`. -/
+lemma mapsTo_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B}
+    {p' : E' ⟶ B'} {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B}
+    (hs : Set.MapsTo s T U) : Set.MapsTo g (p' ⁻¹' T) (p ⁻¹' U) := fun x hx ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hg, ConcreteCategory.comp_apply]
+  exact hs hx
+
+/-- The restriction `p'⁻¹(T) ⟶ p⁻¹(U)` of a map `g` over `s`, that is with `g ≫ p = p' ≫ s`, where
+`s` maps `T` into `U` (`TopCat.Hom.mapsTo_preimage_of_comp_eq_comp`). -/
+def preimageMapOver {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B} {p' : E' ⟶ B'} {s : B' ⟶ B}
+    (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B} (hs : Set.MapsTo s T U) :
+    TopCat.of (p' ⁻¹' T) ⟶ TopCat.of (p ⁻¹' U) :=
+  TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp hg hs).restrict, g.hom.continuous.restrict _⟩
+
+@[simp]
+lemma coe_preimageMapOver_apply {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B} {p' : E' ⟶ B'}
+    {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B} (hs : Set.MapsTo s T U)
+    (x : TopCat.of (p' ⁻¹' T)) : (g.preimageMapOver hg hs x : E) = g x :=
+  (rfl)
 
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
 parts over a subset `S` of `B`: the morphism of `TauCeti.restrictPreimageMap`. -/
@@ -179,6 +203,20 @@ theorem preimageInclusion_eq (p : C(E', B')) (hy : y ∈ Y) :
     exact Subtype.ext (p.coe_coe_preimageSingletonHomeomorphFiber_apply hy x).symm
 
 end ContinuousMap
+
+namespace TopCat.Hom
+
+/-- The restriction of a map `g` over `s` to the parts over `T` and over a point `y ∈ Y`, followed
+by the inclusion `p⁻¹(y) → p⁻¹(Y)`, is the restriction of `g` to the parts over `T` and `Y`. -/
+@[reassoc (attr := simp)]
+lemma preimageMapOver_comp_preimageInclusion {E B E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B}
+    {p' : E' ⟶ B'} {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {Y : Set B} {y : B}
+    (hs : Set.MapsTo s T {y}) (hy : y ∈ Y) :
+    g.preimageMapOver hg hs ≫ p.hom.preimageInclusion hy =
+      g.preimageMapOver hg (hs.mono_right (Set.singleton_subset_iff.2 hy)) :=
+  (rfl)
+
+end TopCat.Hom
 
 namespace CategoryTheory.CommSq
 

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.GraphStep.Density
+public import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
 public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -18,15 +19,21 @@ import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
-# The autonomous trajectory operator over a common domain
+# The trajectory operator over a common domain
 
 When a spatial differential operator `A` is unbounded on a Banach space `H` and bounded only on a
 denser Sobolev domain `D` embedded via `ι : D →L[ℝ] H`, `TauCeti.WeakDerivStep.trajectoryOperator`
 on `W^{1,p}(Ω, H)` cannot model `∂s + A`. Instead, for `ι A : D →L[ℝ] H` and open `Ω ⊆ ℝ`,
 `WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))` realizes `Lᵖ(Ω, D) ∩ W^{1,p}(Ω, H)`,
 where `∂s ∘ ι + A` defines a bounded map `TauCeti.WeakDerivStep.domainTrajectoryOperator ι A` into
-`Lᵖ(Ω, H)`. Taking `D = H¹(AddCircle T, E)` and `H = H⁰(AddCircle T, E)` feeds
-`CircleSobolev.cylinderOperator` (`TauCeti/Analysis/Sobolev/Circle/LinearODE/Cylinder.lean`).
+`Lᵖ(Ω, H)`. More generally, for an `L∞` family `A : Lp (D →L[ℝ] H) ∞ (mu.restrict Omega)` acting
+by `MeasureTheory.Lp.operatorMultiplication`, `u ↦ (ι ∘ u)' + A(s) u(s)` is the bounded map
+`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator ι A`; a coefficient almost everywhere equal to
+a constant `A₀` gives `domainTrajectoryOperator ι A₀`
+(`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator_of_ae_eq_const`), and the basic Banach API of
+the autonomous operator is derived from that of the family. Taking `D = H¹(AddCircle T, E)` and
+`H = H⁰(AddCircle T, E)` feeds `CircleSobolev.cylinderOperator`
+(`TauCeti/Analysis/Sobolev/Circle/LinearODE/Cylinder.lean`).
 
 After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, and mode intertwining
 over Banach spaces, the second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for
@@ -35,7 +42,7 @@ identity `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, 
 invertibility with inverse norm `≤ √(1 + ‖A⁻¹‖²)` for invertible `A`, failure of closed range when
 `A.ker ≠ ⊥`, and equivalence of closed range / Fredholmness / invertibility with `A.IsInvertible`
 for index-`0` Fredholm `A`. Adapts `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
-`TauCeti/Analysis/Sobolev/GraphStep/Density.lean`,
+`TauCeti/Analysis/Sobolev/GraphStep/Coordinates.lean`,
 `TauCeti/Analysis/ODE/EnergyEstimate/Cokernel.lean`, and
 `TauCeti/Analysis/ODE/TrajectoryOperator/Degenerate.lean`.
 
@@ -63,8 +70,113 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 
 local notation "μΩ" => (mu.restrict Omega)
 
+/-- The first-order operator `u ↦ (ι ∘ u)' + A(s) u(s)` from `Lᵖ(Ω, D) ∩ W^{1,p}(Ω, H)` to
+`Lᵖ(Ω, H)`, for an `L∞` family `A` of operators from `D` to `H`. It depends only on the almost
+everywhere class of `A`. -/
+def familyDomainTrajectoryOperator (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
+    WeakDerivStep mu Omega p (ι.compLpL p μΩ) →L[ℝ] Lp H p μΩ :=
+  ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ).comp (weakFDerivL (ι.compLpL p μΩ)) +
+    (Lp.operatorMultiplication p A).comp (prevL (ι.compLpL p μΩ))
+
+/-- Unfolding formula for `familyDomainTrajectoryOperator` as a continuous linear map. -/
+theorem familyDomainTrajectoryOperator_def (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
+    familyDomainTrajectoryOperator (p := p) ι A =
+      ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ).comp (weakFDerivL (ι.compLpL p μΩ)) +
+        (Lp.operatorMultiplication p A).comp (prevL (ι.compLpL p μΩ)) := (rfl)
+
+/-- `familyDomainTrajectoryOperator` adds weak-derivative evaluation at `1` to the action of the
+coefficient. -/
+@[simp] theorem familyDomainTrajectoryOperator_apply (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ)
+    (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
+    familyDomainTrajectoryOperator ι A u =
+      (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ (weakFDeriv (ι.compLpL p μΩ) u) +
+      Lp.operatorMultiplication p A (prev (ι.compLpL p μΩ) u) := by
+  simp [familyDomainTrajectoryOperator_def]
+
+/-- Pointwise almost-everywhere formula for `familyDomainTrajectoryOperator`. -/
+theorem familyDomainTrajectoryOperator_apply_ae (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ)
+    (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
+    familyDomainTrajectoryOperator ι A u =ᵐ[μΩ]
+      fun s ↦ weakFDeriv (ι.compLpL p μΩ) u s 1 + A s (prev (ι.compLpL p μΩ) u s) := by
+  let base := ι.compLpL p μΩ
+  rw [familyDomainTrajectoryOperator_apply]
+  filter_upwards [Lp.coeFn_add ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ
+      (weakFDeriv base u)) (Lp.operatorMultiplication p A (prev base u)),
+    (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLpL (weakFDeriv base u),
+    Lp.operatorMultiplication_ae A (prev base u)] with s hadd hd hA
+  rw [hadd, Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply]
+
+/-- The operator norm of `familyDomainTrajectoryOperator ι A` is at most `1 + ‖A‖`. -/
+theorem norm_familyDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
+    ‖familyDomainTrajectoryOperator (p := p) ι A‖ ≤ 1 + ‖A‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
+  rw [familyDomainTrajectoryOperator_apply]; refine (norm_add_le _ _).trans ?_
+  rw [ContinuousLinearMap.norm_apply_one_compLpL_apply, one_add_mul]
+  exact add_le_add (norm_weakFDeriv_le _ u) ((Lp.norm_operatorMultiplication_apply_le _ _).trans
+    (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _)))
+
+/-- Subtracting two operators over the same domain embedding cancels the derivative part and
+leaves the action of the difference of the coefficients. -/
+theorem familyDomainTrajectoryOperator_sub (ι : D →L[ℝ] H) (A B : Lp (D →L[ℝ] H) ∞ μΩ) :
+    familyDomainTrajectoryOperator (p := p) ι A - familyDomainTrajectoryOperator ι B =
+      (Lp.operatorMultiplication p (A - B)).comp (prevL (ι.compLpL p μΩ)) := by
+  simp only [familyDomainTrajectoryOperator, map_sub, ContinuousLinearMap.sub_comp]
+  abel
+
+/-- Changing the coefficient from `B` to `A` changes `familyDomainTrajectoryOperator ι` by at most
+`‖A - B‖` in operator norm. -/
+theorem norm_familyDomainTrajectoryOperator_sub_le (ι : D →L[ℝ] H) (A B : Lp (D →L[ℝ] H) ∞ μΩ) :
+    ‖familyDomainTrajectoryOperator (p := p) ι A - familyDomainTrajectoryOperator ι B‖ ≤
+      ‖A - B‖ := by
+  rw [familyDomainTrajectoryOperator_sub]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, prevL_apply]
+  exact (Lp.norm_operatorMultiplication_apply_le _ _).trans
+    (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _))
+
+/-- `familyDomainTrajectoryOperator ι` is `1`-Lipschitz in its `L∞` coefficient. -/
+theorem lipschitzWith_familyDomainTrajectoryOperator (ι : D →L[ℝ] H) :
+    LipschitzWith 1 (familyDomainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι) :=
+  LipschitzWith.of_dist_le_mul fun A B ↦ by
+    simpa only [dist_eq_norm, NNReal.coe_one, one_mul] using
+      norm_familyDomainTrajectoryOperator_sub_le ι A B
+
+/-- `familyDomainTrajectoryOperator ι` depends continuously on its `L∞` coefficient. -/
+@[fun_prop] theorem continuous_familyDomainTrajectoryOperator (ι : D →L[ℝ] H) :
+    Continuous (familyDomainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι) :=
+  (lipschitzWith_familyDomainTrajectoryOperator ι).continuous
+
+/-- `familyDomainTrajectoryOperator ι A u = f` iff `(ι ∘ u)' = f - A u` weakly. -/
+theorem familyDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn (ι : D →L[ℝ] H)
+    (A : Lp (D →L[ℝ] H) ∞ μΩ) (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) (f : Lp H p μΩ) :
+    familyDomainTrajectoryOperator ι A u = f ↔ HasWeakLineDerivOn mu Omega
+      (ι.compLpL p μΩ (prev (ι.compLpL p μΩ) u))
+      (fun s ↦ f s - A s (prev (ι.compLpL p μΩ) u s)) 1 := by
+  have hd := (hasWeakFDerivOn_base_prev (ι.compLpL p μΩ) u).hasWeakLineDerivOn 1
+  refine ⟨fun h ↦ hd.congr_ae_deriv ?_, fun h ↦ Lp.ext ?_⟩
+  · filter_upwards [h ▸ familyDomainTrajectoryOperator_apply_ae ι A u] with s hs
+    exact eq_sub_iff_add_eq.mpr hs.symm
+  · filter_upwards [familyDomainTrajectoryOperator_apply_ae ι A u, hd.ae_eq h] with s hs hd'
+    rw [hs, hd', sub_add_cancel]
+
+/-- If `x ∈ Lᵖ(Ω, D)` solves `(ι ∘ x)' = f - A x` weakly on `Ω`, then `x` lifts to `u` with
+`familyDomainTrajectoryOperator ι A u = f`. -/
+theorem exists_prev_eq_and_familyDomainTrajectoryOperator_eq_of_hasWeakLineDerivOn
+    (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) {x : Lp D p μΩ} {f : Lp H p μΩ}
+    (h : HasWeakLineDerivOn mu Omega (ι.compLpL p μΩ x) (fun s ↦ f s - A s (x s)) 1) :
+    ∃ u : WeakDerivStep mu Omega p (ι.compLpL p μΩ),
+      prev (ι.compLpL p μΩ) u = x ∧ familyDomainTrajectoryOperator ι A u = f := by
+  let g := f - Lp.operatorMultiplication p A x
+  have hg : (fun s ↦ f s - A s (x s)) =ᵐ[μΩ] g := by
+    filter_upwards [Lp.coeFn_sub f (Lp.operatorMultiplication p A x),
+      Lp.operatorMultiplication_ae A x] with s hs hA
+    simp only [g, hs, Pi.sub_apply, hA]
+  refine ⟨mkLine _ x g (h.congr_ae_deriv hg), prev_mkLine _ _ _ _, ?_⟩
+  rwa [familyDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mkLine]
+
 /-- The autonomous first-order operator `u ↦ (ι ∘ u)' + A ∘ u` from `Lᵖ(Ω, D) ∩ W^{1,p}(Ω, H)` to
-`Lᵖ(Ω, H)`. -/
+`Lᵖ(Ω, H)`. It is `familyDomainTrajectoryOperator` for the constant coefficient `A`
+(`familyDomainTrajectoryOperator_toLp_const`). -/
 def domainTrajectoryOperator (ι A : D →L[ℝ] H) :
     WeakDerivStep mu Omega p (ι.compLpL p μΩ) →L[ℝ] Lp H p μΩ :=
   ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ).comp (weakFDerivL (ι.compLpL p μΩ)) +
@@ -83,47 +195,60 @@ theorem domainTrajectoryOperator_def (ι A : D →L[ℝ] H) :
       (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ (weakFDeriv (ι.compLpL p μΩ) u) +
       A.compLpL p μΩ (prev (ι.compLpL p μΩ) u) := by simp [domainTrajectoryOperator]
 
+/-- A coefficient that is almost everywhere equal to the constant `A₀` gives the autonomous
+operator `domainTrajectoryOperator ι A₀`. -/
+theorem familyDomainTrajectoryOperator_of_ae_eq_const (ι : D →L[ℝ] H)
+    {A : Lp (D →L[ℝ] H) ∞ μΩ} {A₀ : D →L[ℝ] H} (hA : A =ᵐ[μΩ] fun _ ↦ A₀) :
+    familyDomainTrajectoryOperator (p := p) ι A = domainTrajectoryOperator ι A₀ := by
+  rw [familyDomainTrajectoryOperator_def, domainTrajectoryOperator_def,
+    Lp.operatorMultiplication_of_ae_eq_const hA]
+
+/-- For the constant coefficient `A₀`, `familyDomainTrajectoryOperator` is the autonomous
+operator `domainTrajectoryOperator ι A₀`. -/
+@[simp] theorem familyDomainTrajectoryOperator_toLp_const (ι A₀ : D →L[ℝ] H) :
+    familyDomainTrajectoryOperator (p := p) ι ((memLp_top_const (μ := μΩ) A₀).toLp _) =
+      domainTrajectoryOperator ι A₀ :=
+  familyDomainTrajectoryOperator_of_ae_eq_const ι (memLp_top_const A₀).coeFn_toLp
+
+omit [CompleteSpace H] [IsFiniteMeasureOnCompacts mu] in
+/-- The constant coefficient `A` acts almost everywhere as `A` along any path `x`. -/
+private theorem toLp_const_apply_ae (A : D →L[ℝ] H) (x : ℝ → D) :
+    (fun s ↦ (memLp_top_const (μ := μΩ) A).toLp _ s (x s)) =ᵐ[μΩ] fun s ↦ A (x s) := by
+  filter_upwards [(memLp_top_const (μ := μΩ) A).coeFn_toLp] with s hs
+  rw [hs]
+
 /-- Pointwise almost-everywhere formula for `domainTrajectoryOperator`. -/
 theorem domainTrajectoryOperator_apply_ae (ι A : D →L[ℝ] H)
     (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
     domainTrajectoryOperator ι A u =ᵐ[μΩ]
       fun s ↦ weakFDeriv (ι.compLpL p μΩ) u s 1 + A (prev (ι.compLpL p μΩ) u s) := by
-  let base := ι.compLpL p μΩ; rw [domainTrajectoryOperator_apply]
-  filter_upwards [Lp.coeFn_add _ (A.compLpL p μΩ (prev base u)),
-    (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLpL (weakFDeriv base u),
-    A.coeFn_compLpL (prev base u)] with s hadd hd hA
-  rw [hadd, Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply]
+  rw [← familyDomainTrajectoryOperator_toLp_const]
+  exact (familyDomainTrajectoryOperator_apply_ae ι _ u).trans
+    (EventuallyEq.rfl.add (toLp_const_apply_ae A _))
 
 /-- The operator norm of `domainTrajectoryOperator ι A` is at most `1 + ‖A‖`. -/
 theorem norm_domainTrajectoryOperator_le (ι A : D →L[ℝ] H) :
     ‖domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A‖ ≤ 1 + ‖A‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  rw [domainTrajectoryOperator_apply]; refine (norm_add_le _ _).trans ?_
-  rw [ContinuousLinearMap.norm_apply_one_compLpL_apply, one_add_mul]
-  refine add_le_add (norm_weakFDeriv_le _ u) (((A.compLpL p _).le_opNorm _).trans ?_)
-  exact mul_le_mul A.norm_compLpL_le (norm_prev_le _ u) (norm_nonneg _) (norm_nonneg _)
+  rw [← familyDomainTrajectoryOperator_toLp_const]
+  exact (norm_familyDomainTrajectoryOperator_le ι _).trans
+    (add_le_add_right (Lp.norm_toLp_memLp_top_const_le A) 1)
 
 /-- Subtracting two operators over the same domain embedding cancels the derivative part. -/
 theorem domainTrajectoryOperator_sub (ι A B : D →L[ℝ] H) :
     domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A -
       domainTrajectoryOperator ι B = ((A - B).compLpL p μΩ).comp (prevL (ι.compLpL p μΩ)) := by
-  ext u : 1
-  simp only [sub_apply, domainTrajectoryOperator_apply, ContinuousLinearMap.comp_apply, prevL_apply,
-    add_sub_add_left_eq_sub]
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_sub (A.compLpL p μΩ (prev _ u)) _, A.coeFn_compLpL (prev _ u),
-    B.coeFn_compLpL (prev _ u), (A - B).coeFn_compLpL (prev _ u)] with s hsub hA hB hAB
-  rw [hsub, Pi.sub_apply, hA, hB, hAB, sub_apply]
+  rw [← familyDomainTrajectoryOperator_toLp_const, ← familyDomainTrajectoryOperator_toLp_const,
+    familyDomainTrajectoryOperator_sub, ← MemLp.toLp_sub, Lp.operatorMultiplication_of_ae_eq_const
+      (T := A - B) ((memLp_top_const (μ := μΩ) A).sub (memLp_top_const B)).coeFn_toLp]
 
 /-- Changing `A` to `B` changes `domainTrajectoryOperator ι` by at most `‖A - B‖` in norm. -/
 theorem norm_domainTrajectoryOperator_sub_le (ι A B : D →L[ℝ] H) :
     ‖domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A -
       domainTrajectoryOperator ι B‖ ≤ ‖A - B‖ := by
-  rw [domainTrajectoryOperator_sub]
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, prevL_apply]
-  exact (((A - B).compLpL p μΩ).le_opNorm _).trans
-    (mul_le_mul (A - B).norm_compLpL_le (norm_prev_le _ u) (norm_nonneg _) (norm_nonneg _))
+  rw [← familyDomainTrajectoryOperator_toLp_const, ← familyDomainTrajectoryOperator_toLp_const]
+  refine (norm_familyDomainTrajectoryOperator_sub_le ι _ _).trans ?_
+  rw [← MemLp.toLp_sub]
+  exact Lp.norm_toLp_memLp_top_const_le (A - B)
 
 /-- `domainTrajectoryOperator ι` is `1`-Lipschitz in its zero-order operator `A`. -/
 theorem lipschitzWith_domainTrajectoryOperator (ι : D →L[ℝ] H) :
@@ -143,13 +268,11 @@ theorem domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn (ι A : D →L[ℝ] H
     domainTrajectoryOperator ι A u = f ↔ HasWeakLineDerivOn mu Omega
       (ι.compLpL p μΩ (prev (ι.compLpL p μΩ) u))
       (fun s ↦ f s - A (prev (ι.compLpL p μΩ) u s)) 1 := by
-  let base := ι.compLpL p μΩ
-  have hd := (hasWeakFDerivOn_base_prev base u).hasWeakLineDerivOn 1
-  refine ⟨fun h ↦ hd.congr_ae_deriv ?_, fun h ↦ Lp.ext ?_⟩
-  · filter_upwards [h ▸ domainTrajectoryOperator_apply_ae ι A u] with s hs
-    exact eq_sub_iff_add_eq.mpr hs.symm
-  · filter_upwards [domainTrajectoryOperator_apply_ae ι A u, hd.ae_eq h] with s hs hd'
-    rw [hs, hd', sub_add_cancel]
+  have hc := (EventuallyEq.refl _ (f : ℝ → H)).sub
+    (toLp_const_apply_ae (mu := mu) (Omega := Omega) A ⇑(prev (ι.compLpL p μΩ) u))
+  rw [← familyDomainTrajectoryOperator_toLp_const,
+    familyDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn]
+  exact ⟨fun h ↦ h.congr_ae_deriv hc, fun h ↦ h.congr_ae_deriv hc.symm⟩
 
 /-- If `x ∈ Lᵖ(Ω, D)` solves `(ι ∘ x)' = f - A ∘ x` weakly on `Ω`, `x` lifts to `u` with
 `domainTrajectoryOperator ι A u = f`. -/
@@ -158,12 +281,9 @@ theorem exists_prev_eq_and_domainTrajectoryOperator_eq_of_hasWeakLineDerivOn (ι
     (h : HasWeakLineDerivOn mu Omega (ι.compLpL p μΩ x) (fun s ↦ f s - A (x s)) 1) :
     ∃ u : WeakDerivStep mu Omega p (ι.compLpL p μΩ),
       prev (ι.compLpL p μΩ) u = x ∧ domainTrajectoryOperator ι A u = f := by
-  let g := f - A.compLpL p μΩ x
-  have hg : (fun s ↦ f s - A (x s)) =ᵐ[μΩ] g := by
-    filter_upwards [Lp.coeFn_sub f (A.compLpL p _ x), A.coeFn_compLpL x] with s hs hA
-    simp only [g, hs, Pi.sub_apply, hA]
-  refine ⟨mkLine _ x g (h.congr_ae_deriv hg), prev_mkLine _ _ _ _, ?_⟩
-  rwa [domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mkLine]
+  rw [← familyDomainTrajectoryOperator_toLp_const]
+  exact exists_prev_eq_and_familyDomainTrajectoryOperator_eq_of_hasWeakLineDerivOn ι _
+    (h.congr_ae_deriv (EventuallyEq.rfl.sub (toLp_const_apply_ae A x)).symm)
 
 end Banach
 

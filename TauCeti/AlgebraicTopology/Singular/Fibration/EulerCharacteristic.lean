@@ -147,7 +147,7 @@ private lemma isZero_or_eq_serreFirstPagePos (pq : ℤ × ℤ) :
     IsZero (((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page 2).X pq) ∨
       ∃ k q : ℕ, pq = serreFirstPagePos k q := by
   by_cases h1 : pq.2 < -1
-  · exact Or.inl (isZero_serreSpectralSequence_page_two_X_of_lt_neg_one _ R C pq h1)
+  · exact Or.inl (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two R C pq (by lia))
   · by_cases h2 : 0 ≤ pq.1 + 2 * pq.2
     · exact Or.inl (isZero_serreSpectralSequence_page_two_X
         (mem_serreFibrations_pullbackFst hp g) R C pq h2)

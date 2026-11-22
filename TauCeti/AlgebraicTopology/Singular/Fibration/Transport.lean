@@ -57,7 +57,7 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
 `b₁` in `B` induces an isomorphism `H_n(p⁻¹(b₀); M) ≅ H_n(p⁻¹(b₁); M)` in every degree `n` for any
 coefficient module `M`, obtained by specializing `TauCeti.TopCat.fiberIsoOfPath` to singular
 homology. -/
-noncomputable def fiberSingularHomologyIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
+@[expose] noncomputable def fiberSingularHomologyIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
     (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₀)) ≅
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₁)) :=
   fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ

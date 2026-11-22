@@ -26,7 +26,10 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 In a homological complex of vector spaces, a homology group has dimension at most that of the
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
 with equality, even for complexes of modules over any ring, when the differentials into and out of
-that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`). In general,
+over a division ring, the dimension of a finite-dimensional term is the sum of the dimensions of
+the boundaries, of the homology and of the image of the outgoing differential
+(`HomologicalComplex.finrank_X_eq_finrank_range_add_finrank_homology_add`).
 Over any ring satisfying the strong rank condition and rank--nullity, the rank of a finitely
 generated term `K.X i` equals the rank of `K.homology i` plus the ranks of the incoming and
 outgoing boundary submodules (`HomologicalComplex.finrank_X_eq`).
@@ -136,6 +139,19 @@ theorem finrank_range_d_next_eq_sum {R : Type*} [Ring R] [Nontrivial R] {ι : Ty
     exact finrank_zero_of_subsingleton
   · rw [hnext hmem, ModuleCat.hom_zero, LinearMap.range_zero]
     exact finrank_zero_of_subsingleton
+
+/-- In a degree `j` with `i = c.prev j` and `l = c.next j`, the dimension of a finite-dimensional
+term `Cⱼ` of a complex of vector spaces is the sum of the dimensions of the boundaries `Bⱼ` (the
+image of `Cᵢ` in `Cⱼ`), of the homology `Hⱼ` and of the image of `Cⱼ` in `Cₗ`. -/
+theorem finrank_X_eq_finrank_range_add_finrank_homology_add {k : Type*} [DivisionRing k]
+    {ι : Type*} {c : ComplexShape ι} (C : HomologicalComplex (ModuleCat k) c) {i j l : ι}
+    (hi : c.prev j = i) (hl : c.next j = l) [Module.Finite k (C.X j)] :
+    finrank k (C.X j) = finrank k (LinearMap.range (C.d i j).hom) + finrank k (C.homology j) +
+      finrank k (LinearMap.range (C.d j l).hom) := by
+  have h₁ := (C.d j l).hom.finrank_range_add_finrank_ker
+  have h₂ := (C.exact_inclusion_moduleCatKerHomologyClass hl hi).finrank_eq_add
+    (Submodule.inclusion_injective _) (C.moduleCatKerHomologyClass_surjective hl)
+  omega
 
 /-- For a bounded based homological complex of modules over a nontrivial ring, only finitely many
 homology bases are nonempty: homology vanishes in every degree where the complex vanishes. -/

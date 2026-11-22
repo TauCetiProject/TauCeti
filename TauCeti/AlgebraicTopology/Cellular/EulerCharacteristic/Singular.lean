@@ -112,9 +112,8 @@ theorem finsum_finrank_singularHomology_complexBasePair [RelCWComplex.Finite C] 
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) =
       finrank k M * cwEulerChar C := by
   simp_rw [← (cellularSingularHomologyIso C M _).toLinearEquiv.finrank_eq]
-  simpa only [HomologicalComplex.homologyEulerChar, GradedObject.eulerChar,
-    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one] using homologyEulerChar_cellularChainComplex C M
+  rw [← ChainComplex.homologyEulerChar_eq_finsum_finrank]
+  exact homologyEulerChar_cellularChainComplex C M
 
 end RankNullity
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
 public import TauCeti.AlgebraicTopology.Cellular.Projective
 
@@ -138,11 +139,9 @@ finitely many nonempty degrees. -/
 theorem eulerChar_cellularChainComplex [StrongRankCondition k] [Module.Free k M] :
     (cellularChainComplex C M).eulerChar =
       finrank k M * cwEulerChar C := by
-  rw [HomologicalComplex.eulerChar, GradedObject.eulerChar, cwEulerChar, mul_finsum]
+  rw [ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   rw [finrank_cellularChainComplex_X]
-  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one]
   push_cast
   ring
 
