@@ -116,7 +116,7 @@ theorem entry_top_eq (P : GTPattern n) (hμ : μ.colLen 0 ≤ n)
     (hP : ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)) (i : ℕ) : P i n = (μ.rowLen i : ℤ) := by
   rcases Nat.lt_or_ge i n with hi | hi
   · simpa using hP ⟨i, hi⟩
-  · rw [P.entry_eq_zero_of_le hi, YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans hi),
+  · rw [P.entry_eq_zero_of_le hi, YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hi),
       Nat.cast_zero]
 
 /-! ### From a pattern to a tableau -/

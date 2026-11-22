@@ -29,7 +29,8 @@ space structures of the fibres.
 This file computes the trivializations and charts in coordinates. The canonical trivialization at
 `x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
 (`TauCeti.CotangentBundle.trivializationAt_mk_snd`), and it is the identity over `x` itself
-(`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
+(`TauCeti.CotangentBundle.inCoordinates_self`,
+`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
 `TauCeti.CotangentBundle.symmL_trivializationAt_self`). The preferred chart at a covector over
 `x₀` sends a covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M`
 at `x₀` (`TauCeti.CotangentBundle.extChartAt_apply`,
@@ -46,7 +47,8 @@ This is the transformation law of covector components, dual to that of tangent v
 A map into the single fibre over a fixed point `q` moves only the fibre coordinate in these
 charts, so its derivative is that of its covector part (`TauCeti.CotangentBundle.hasMFDerivAt_mk`),
 and it is stationary exactly when its covector part is
-(`TauCeti.CotangentBundle.mfderiv_mk_apply_eq_zero_iff`).
+(`TauCeti.CotangentBundle.mfderiv_mk_apply_eq_zero_iff`). The inclusion of that fibre is smooth
+(`TauCeti.CotangentBundle.contMDiff_mk`).
 
 Covectors pull back along the differential of a map `f : M → N`: a covector `p` at `f x` gives the
 covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifold this is smooth:
@@ -103,6 +105,16 @@ theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
 
 variable [IsManifold I 1 M]
 
+/-- Read in the tangent trivialization at `x`, a covector at `x` itself is its own coordinate
+covector, as tangent vectors at `x` are their own coordinates there. -/
+@[simp]
+theorem inCoordinates_self (x : M) (p : TangentSpace I x →L[𝕜] 𝕜) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) 𝕜 (fun _ : M ↦ 𝕜) x x x x p = p := by
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp]
+  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+
 /-- Read in the canonical trivialization at `x`, a covector at `x` itself is its own coordinate
 covector, as tangent vectors at `x` are in the tangent trivialization at `x`. -/
 @[simp]
@@ -112,11 +124,19 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
   refine (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _
     (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
       (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) p).trans ?_
-  ext v
-  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
-    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
-  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+  rw [hom_trivializationAt_apply]
+  exact inCoordinates_self x p
+
+/-- **The inclusion of a fibre is smooth.** The covectors at a fixed point `x` form a smooth
+family: the inclusion of the fibre over `x` into the cotangent bundle is smooth. -/
+theorem contMDiff_mk (x : M) {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(𝕜, E →L[𝕜] 𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
+      fun p : E →L[𝕜] 𝕜 ↦
+        TotalSpace.mk' (E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x p := by
+  intro p₀
+  rw [contMDiffAt_hom_bundle]
+  exact ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun p ↦ inCoordinates_self x p)⟩
 
 /-- The canonical trivialization at `x` reads a covector at `y` as its precomposition with the
 inverse of the tangent trivialization at `x`, from model vectors to tangent vectors at `y`. -/
