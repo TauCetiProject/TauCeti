@@ -13,19 +13,20 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 /-!
 # Compactoid subsets of normed spaces
 
-A subset `S` of a seminormed space `E` over a normed field `K` is *compactoid*
-(`TauCeti.IsCompactoidSet K S`) if for every `ε > 0` there are finitely many vectors
-`v₁, …, vₙ` such that every `x ∈ S` lies within `ε` of a combination `∑ aᵢ • vᵢ` with all
-`‖aᵢ‖ ≤ 1`. Over a nonarchimedean field the combinations with `‖aᵢ‖ ≤ 1` are exactly the
-`K°`-submodule spanned by the `vᵢ`, so this is the condition that `S ⊆ U + span_{K°} F` for every
-zero neighbourhood `U` and some finite `F` (`TauCeti.isCompactoidSet_iff_forall_mem_nhds`).
+A subset `S` of a seminormed space `E` over a normed field `K`, or more generally of a seminormed
+module over a seminormed ring `K`, is *compactoid* (`TauCeti.IsCompactoidSet K S`) if for every
+`ε > 0` there are finitely many vectors `v₁, …, vₙ` such that every `x ∈ S` lies within `ε` of a
+combination `∑ aᵢ • vᵢ` with all `‖aᵢ‖ ≤ 1`. Over a nonarchimedean field the combinations with
+`‖aᵢ‖ ≤ 1` are exactly the `K°`-submodule spanned by the `vᵢ`, so this is the condition that
+`S ⊆ U + span_{K°} F` for every zero neighbourhood `U` and some finite `F`
+(`TauCeti.isCompactoidSet_iff_forall_mem_nhds`).
 
 Compactoid sets replace relatively compact sets in nonarchimedean functional analysis: over a
 field such as `ℂ_p`, which is not locally compact, a bounded subset of a line need not be totally
 bounded, yet it is compactoid. Operators mapping the closed unit ball to a compactoid set are the
 compact operators of nonarchimedean Banach space theory. Every totally bounded set is compactoid,
-and over a field whose closed balls are compact, such as a nontrivially normed locally compact
-field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
+and over a field (or scalar ring) whose closed balls are compact, such as a nontrivially normed
+locally compact field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 
 ## Main definitions
 
@@ -50,8 +51,8 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TauCeti.IsCompactoidSet.isBounded`: compactoid sets are bounded.
 * `Bornology.IsBounded.isCompactoidSet`: in a finite-dimensional space over a complete nontrivially
   normed field, conversely, bounded sets are compactoid.
-* `TauCeti.isCompactoidSet_iff_totallyBounded`: over a field whose closed balls are compact,
-  compactoid sets are exactly the totally bounded sets.
+* `TauCeti.isCompactoidSet_iff_totallyBounded`: over a scalar ring whose closed balls are
+  compact, compactoid sets are exactly the totally bounded sets.
 
 ## References
 
@@ -69,15 +70,18 @@ namespace TauCeti
 
 variable {K E F : Type*}
 
-section NormedField
+section SeminormedRing
 
-variable [NormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
-  [SeminormedAddCommGroup F] [NormedSpace K F]
+variable [SeminormedRing K] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+
+section SMul
+
+variable [SMul K E]
 
 variable (K) in
-/-- A subset `S` of a seminormed `K`-space is **compactoid** if for every `ε > 0` there are
-finitely many vectors `v i` such that every `x ∈ S` is within `ε` of some `∑ i, a i • v i` with
-all `‖a i‖ ≤ 1`. -/
+/-- A subset `S` of a seminormed group `E` with scalars in a seminormed ring `K` (typically a
+seminormed `K`-space) is **compactoid** if for every `ε > 0` there are finitely many vectors `v i`
+such that every `x ∈ S` is within `ε` of some `∑ i, a i • v i` with all `‖a i‖ ≤ 1`. -/
 def IsCompactoidSet (S : Set E) : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ (n : ℕ) (v : Fin n → E), ∀ x ∈ S,
     ∃ a : Fin n → K, (∀ i, ‖a i‖ ≤ 1) ∧ ‖x - ∑ i, a i • v i‖ < ε
@@ -132,13 +136,10 @@ theorem IsCompactoidSet.exists_seq_forall_exists_finset {S : Set E} (hS : IsComp
   -- Keep the coefficients of the `n`-th family and put zero everywhere else.
   let b : (Σ n, Fin (m n)) → K := fun p ↦ if h : p.1 = n then a (Fin.cast (congrArg m h) p.2) else 0
   refine ⟨Function.extend e b 0, fun i ↦ ?_, ?_⟩
-  · by_cases hi : ∃ p, e p = i
-    · obtain ⟨p, rfl⟩ := hi
-      rw [he.extend_apply]
+  · obtain ⟨p, rfl⟩ | hi := em (∃ p, e p = i)
+    · rw [he.extend_apply]
       dsimp only [b]
-      split_ifs
-      · exact ha _
-      · simp
+      split_ifs <;> simp [ha]
     · simp [Function.extend_apply' _ _ _ hi]
   · have hsum : ∑ i ∈ Finset.univ.image fun i : Fin (m n) ↦ e ⟨n, i⟩, Function.extend e b 0 i •
         Function.extend e (fun p ↦ w p.1 p.2) 0 i = ∑ i, a i • w n i := by
@@ -159,21 +160,6 @@ theorem IsCompactoidSet.mono {S T : Set E} (hT : IsCompactoidSet K T) (hST : S �
 theorem isCompactoidSet_empty : IsCompactoidSet K (∅ : Set E) :=
   fun _ _ ↦ ⟨0, Fin.elim0, by simp⟩
 
-/-- The union of two compactoid sets is compactoid. -/
-theorem IsCompactoidSet.union {S T : Set E} (hS : IsCompactoidSet K S)
-    (hT : IsCompactoidSet K T) : IsCompactoidSet K (S ∪ T) := by
-  intro ε hε
-  obtain ⟨m, v, hv⟩ := hS ε hε
-  obtain ⟨n, w, hw⟩ := hT ε hε
-  refine ⟨m + n, Fin.append v w, ?_⟩
-  rintro x (hx | hx)
-  · obtain ⟨a, ha, hx⟩ := hv x hx
-    refine ⟨Fin.append a 0, fun i ↦ Fin.addCases (by simpa using ha) (by simp) i, ?_⟩
-    simpa [Fin.sum_univ_add] using hx
-  · obtain ⟨b, hb, hx⟩ := hw x hx
-    refine ⟨Fin.append 0 b, fun i ↦ Fin.addCases (by simp) (by simpa using hb) i, ?_⟩
-    simpa [Fin.sum_univ_add] using hx
-
 /-- The pointwise sum of two compactoid sets is compactoid. -/
 theorem IsCompactoidSet.add {S T : Set E} (hS : IsCompactoidSet K S)
     (hT : IsCompactoidSet K T) : IsCompactoidSet K (S + T) := by
@@ -188,7 +174,7 @@ theorem IsCompactoidSet.add {S T : Set E} (hS : IsCompactoidSet K S)
   rw [Fin.sum_univ_add]
   simp only [Fin.append_left, Fin.append_right]
   calc ‖x + y - (∑ i, a i • v i + ∑ i, b i • w i)‖
-      = ‖(x - ∑ i, a i • v i) + (y - ∑ i, b i • w i)‖ := by congr 1; abel
+      = ‖(x - ∑ i, a i • v i) + (y - ∑ i, b i • w i)‖ := by rw [add_sub_add_comm]
     _ ≤ ‖x - ∑ i, a i • v i‖ + ‖y - ∑ i, b i • w i‖ := norm_add_le _ _
     _ < ε / 2 + ε / 2 := add_lt_add hx hy
     _ = ε := add_halves ε
@@ -211,8 +197,8 @@ theorem isCompactoidSet_of_forall_exists_norm_sub_lt {S : Set E}
   obtain ⟨y, hy, hxy⟩ := hST x hx
   obtain ⟨a, ha, hy⟩ := hv y hy
   refine ⟨a, ha, ?_⟩
-  calc ‖x - ∑ i, a i • v i‖ = ‖(x - y) + (y - ∑ i, a i • v i)‖ := by rw [sub_add_sub_cancel]
-    _ ≤ ‖x - y‖ + ‖y - ∑ i, a i • v i‖ := norm_add_le _ _
+  calc ‖x - ∑ i, a i • v i‖ ≤ ‖x - y‖ + ‖y - ∑ i, a i • v i‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ < ε / 2 + ε / 2 := add_lt_add hxy hy
     _ = ε := add_halves ε
 
@@ -228,22 +214,36 @@ theorem isCompactoidSet_closure_iff {S : Set E} :
     IsCompactoidSet K (closure S) ↔ IsCompactoidSet K S :=
   ⟨fun h ↦ h.mono subset_closure, IsCompactoidSet.closure⟩
 
+end SMul
+
+/-- The union of two compactoid sets is compactoid. -/
+theorem IsCompactoidSet.union [SMulWithZero K E] {S T : Set E} (hS : IsCompactoidSet K S)
+    (hT : IsCompactoidSet K T) : IsCompactoidSet K (S ∪ T) := by
+  intro ε hε
+  obtain ⟨m, v, hv⟩ := hS ε hε
+  obtain ⟨n, w, hw⟩ := hT ε hε
+  refine ⟨m + n, Fin.append v w, ?_⟩
+  rintro x (hx | hx)
+  · obtain ⟨a, ha, hx⟩ := hv x hx
+    refine ⟨Fin.append a 0, fun i ↦ Fin.addCases (by simpa using ha) (by simp) i, ?_⟩
+    simpa [Fin.sum_univ_add] using hx
+  · obtain ⟨b, hb, hx⟩ := hw x hx
+    refine ⟨Fin.append 0 b, fun i ↦ Fin.addCases (by simp) (by simpa using hb) i, ?_⟩
+    simpa [Fin.sum_univ_add] using hx
+
 /-- A compactoid set is bounded. -/
-theorem IsCompactoidSet.isBounded {S : Set E} (hS : IsCompactoidSet K S) :
-    Bornology.IsBounded S := by
+theorem IsCompactoidSet.isBounded [SMulZeroClass K E] [IsBoundedSMul K E] {S : Set E}
+    (hS : IsCompactoidSet K S) : Bornology.IsBounded S := by
   obtain ⟨n, v, hv⟩ := hS 1 one_pos
-  refine isBounded_iff_forall_norm_le.2 ⟨1 + ∑ i, ‖v i‖, fun x hx ↦ ?_⟩
+  refine isBounded_iff_forall_norm_le.2 ⟨∑ i, ‖v i‖ + 1, fun x hx ↦ ?_⟩
   obtain ⟨a, ha, hx⟩ := hv x hx
-  have hsum : ‖∑ i, a i • v i‖ ≤ ∑ i, ‖v i‖ :=
-    (norm_sum_le _ _).trans <| Finset.sum_le_sum fun i _ ↦
-      (norm_smul_le _ _).trans <| mul_le_of_le_one_left (norm_nonneg _) (ha i)
-  calc ‖x‖ = ‖(x - ∑ i, a i • v i) + ∑ i, a i • v i‖ := by rw [sub_add_cancel]
-    _ ≤ ‖x - ∑ i, a i • v i‖ + ‖∑ i, a i • v i‖ := norm_add_le _ _
-    _ ≤ 1 + ∑ i, ‖v i‖ := add_le_add hx.le hsum
+  have hsum : ‖∑ i, a i • v i‖ ≤ ∑ i, ‖v i‖ := norm_sum_le_of_le _ fun i _ ↦
+    (norm_smul_le _ _).trans <| mul_le_of_le_one_left (norm_nonneg _) (ha i)
+  exact (norm_le_norm_add_norm_sub' x _).trans (add_le_add hsum hx.le)
 
 /-- The image of a compactoid set under a continuous linear map is compactoid. -/
-theorem IsCompactoidSet.image {S : Set E} (hS : IsCompactoidSet K S) (u : E →L[K] F) :
-    IsCompactoidSet K (u '' S) := by
+theorem IsCompactoidSet.image [Module K E] [Module K F] {S : Set E} (hS : IsCompactoidSet K S)
+    (u : E →L[K] F) : IsCompactoidSet K (u '' S) := by
   rw [isCompactoidSet_iff_forall_mem_nhds] at hS ⊢
   intro U hU
   obtain ⟨n, v, hv⟩ := hS _ (u.continuous.tendsto' 0 0 (map_zero u) hU)
@@ -253,20 +253,21 @@ theorem IsCompactoidSet.image {S : Set E} (hS : IsCompactoidSet K S) (u : E →L
   exact ⟨a, ha, by simpa using hx⟩
 
 /-- A scalar multiple of a compactoid set is compactoid. -/
-theorem IsCompactoidSet.smul {S : Set E} (hS : IsCompactoidSet K S) (c : K) :
+theorem IsCompactoidSet.smul [Module K E] [SMulCommClass K K E] [ContinuousConstSMul K E]
+    {S : Set E} (hS : IsCompactoidSet K S) (c : K) :
     IsCompactoidSet K (c • S) := by
   rw [← Set.image_smul]
   exact hS.image (c • ContinuousLinearMap.id K E)
 
-end NormedField
+end SeminormedRing
 
 section TotallyBounded
 
-variable [NormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
+variable [SeminormedRing K] [SeminormedAddCommGroup E] [SMul K E]
 
-/-- Over a field whose closed balls are compact, for instance a nontrivially normed locally
+/-- Over a scalar ring whose closed balls are compact, for instance a nontrivially normed locally
 compact field such as `ℚ_p`, every compactoid set is totally bounded. -/
-theorem IsCompactoidSet.totallyBounded [ProperSpace K] {S : Set E}
+theorem IsCompactoidSet.totallyBounded [ProperSpace K] [ContinuousSMul K E] {S : Set E}
     (hS : IsCompactoidSet K S) : TotallyBounded S := by
   refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
   obtain ⟨n, v, hv⟩ := hS (ε / 2) (half_pos hε)
@@ -316,7 +317,8 @@ section TotallyBounded
 
 open TauCeti
 
-variable {K E : Type*} [NormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
+variable {K E : Type*} [SeminormedRing K] [NormOneClass K] [SeminormedAddCommGroup E]
+  [MulActionWithZero K E]
 
 /-- A totally bounded set is compactoid. -/
 theorem TotallyBounded.isCompactoidSet {S : Set E} (hS : TotallyBounded S) :
@@ -339,9 +341,10 @@ theorem Set.Finite.isCompactoidSet {S : Set E} (hS : S.Finite) : IsCompactoidSet
 theorem IsCompact.isCompactoidSet {S : Set E} (hS : IsCompact S) : IsCompactoidSet K S :=
   hS.totallyBounded.isCompactoidSet
 
-/-- Over a field whose closed balls are compact, a set is compactoid if and only if it is totally
-bounded. -/
-theorem TauCeti.isCompactoidSet_iff_totallyBounded [ProperSpace K] {S : Set E} :
+/-- Over a scalar ring whose closed balls are compact, a set is compactoid if and only if it is
+totally bounded. -/
+theorem TauCeti.isCompactoidSet_iff_totallyBounded [ProperSpace K] [ContinuousSMul K E]
+    {S : Set E} :
     IsCompactoidSet K S ↔ TotallyBounded S :=
   ⟨IsCompactoidSet.totallyBounded, TotallyBounded.isCompactoidSet⟩
 
