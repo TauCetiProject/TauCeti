@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 
 /-!
 # The higher ramification groups of a place
