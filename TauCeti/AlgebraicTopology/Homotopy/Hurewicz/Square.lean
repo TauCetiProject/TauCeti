@@ -22,8 +22,8 @@ twice the constant `1`-simplex at `x`. Subtracting twice the constant `2`-simple
 boundary is the constant `1`-simplex, gives an integral singular `2`-cycle
 `GenLoop.squareChain p`, with homology class `GenLoop.squareClass p ∈ H₂(X; ℤ)`.
 
-The square class is natural in based maps (`GenLoop.squareClass_map`). Every generalized
-loop is the image of the tautological loop `TauCeti.sphereGenLoop 2` of the sphere `S²`
+The square class is natural in based maps (`GenLoop.singularHomologyMap_squareClass`). Every
+generalized loop is the image of the tautological loop `TauCeti.sphereGenLoop 2` of the sphere `S²`
 (`GenLoop.map_toSphere_sphereGenLoop`), whose Hurewicz class generates `H₂(S²; ℤ)`
 (`TauCeti.exists_zsmul_hurewicz_sphereGenLoop`). So there is one integer `k`, the coordinate of
 the square class of the tautological loop, with
@@ -48,7 +48,7 @@ homology.
 ## Main results
 
 * `GenLoop.d_squareChain`: the triangulated chain is a cycle.
-* `GenLoop.squareClass_map`: naturality in based maps.
+* `GenLoop.singularHomologyMap_squareClass`: naturality in based maps.
 * `GenLoop.exists_forall_squareClass_eq_zsmul_hurewicz`: the square class is a universal
   integer multiple of the Hurewicz class.
 
@@ -220,7 +220,7 @@ theorem singularChains_map_f_squareChain (f : C(X, Y)) (hf : f x = y) (p : Ω^ (
 
 /-- **Naturality of the square class**: a based map `f : (X, x) → (Y, y)` sends the square class
 of `p` to the square class of `f ∘ p`. -/
-theorem squareClass_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin 2) X x) :
+theorem singularHomologyMap_squareClass (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin 2) X x) :
     ContinuousMap.singularHomologyMap ℤ 2 f (squareClass p) = squareClass (GenLoop.map f hf p) := by
   rw [squareClass, squareClass, ContinuousMap.singularHomologyMap,
     homologyMap_homologyπ_moduleCatCyclesMk]
@@ -239,7 +239,8 @@ theorem exists_forall_squareClass_eq_zsmul_hurewicz :
   rw [hurewicz_eq_hurewicz_sphereGenLoop_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
     ← map_zsmul, hk]
   -- The map of the singular homology functor is `ContinuousMap.singularHomologyMap`.
-  refine Eq.trans ?_ (squareClass_map (toSphere p) (toSphere_sphereNorthPole p) _).symm
+  refine Eq.trans ?_
+    (singularHomologyMap_squareClass (toSphere p) (toSphere_sphereNorthPole p) _).symm
   rw [map_toSphere_sphereGenLoop]
 
 end GenLoop
