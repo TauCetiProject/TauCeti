@@ -66,23 +66,23 @@ namespace TauCeti.TypeALieIndex
 
 /-- The standard special linear matrix group corresponding to a validated type-A index. -/
 noncomputable abbrev StandardGroup (d : TypeALieIndex) :=
-  Matrix.SpecialLinearGroup (Fin (d.1.rank + 1)) d.1.Closure
+  Matrix.SpecialLinearGroup (Fin (d.val.rank + 1)) d.val.Closure
 
 /-- The algebraic-closure-valued points of the pinned special linear group scheme over `ℤ`. -/
 noncomputable abbrev PinnedGroup (d : TypeALieIndex) :=
-  ((Spec (CommRingCat.of d.1.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-    (SpecialLinear.groupScheme ℤ (d.1.rank + 1)).X)
+  ((Spec (CommRingCat.of d.val.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+    (SpecialLinear.groupScheme ℤ (d.val.rank + 1)).X)
 
 /-- The canonical matrix realization of the pinned special linear scheme points. -/
 noncomputable def pinnedEquivSpecialLinear (d : TypeALieIndex) :
     d.PinnedGroup ≃* d.StandardGroup :=
-  SpecialLinear.schemePointsMulEquiv (R := ℤ) (d.1.rank + 1) d.1.Closure
+  SpecialLinear.schemePointsMulEquiv (R := ℤ) (d.val.rank + 1) d.val.Closure
 
 /-- **The explicit type-A carrier is equivalent to the standard special linear matrix group.**
 The equivalence preserves the underlying matrix. -/
 noncomputable def carrierEquivSpecialLinear (d : TypeALieIndex) :
     d.AmbientGroup ≃* d.StandardGroup :=
-  SlStd.specialLinearMulEquiv d.1.rank
+  SlStd.specialLinearMulEquiv d.val.rank
 
 /-- **The explicit type-A carrier is equivalent to the points of the pinned `SL_{r+1}/ℤ`
 group scheme.** -/
@@ -94,18 +94,18 @@ noncomputable def carrierEquivPinned (d : TypeALieIndex) :
 noncomputable def specialLinearFrobenius (d : TypeALieIndex) :
     d.StandardGroup →* d.StandardGroup :=
   Matrix.SpecialLinearGroup.map
-    (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
+    (iterateFrobenius d.val.Closure d.val.characteristic d.val.fieldExponent)
 
 /-- The graph factor on the standard special linear matrix group: the identity for `A_r(q)` and
 signed reverse inverse transpose for `²A_r(q)`. -/
 noncomputable def specialLinearGraphAut (d : TypeALieIndex) : MulAut d.StandardGroup :=
-  match h : d.1.1 with
+  match h : d.val.val with
   | .A _ _ => 1
   | .twistedA _ _ =>
-      Matrix.SpecialLinearGroup.typeAGraphAutomorphism d.1.rank d.1.Closure
+      Matrix.SpecialLinearGroup.typeAGraphAutomorphism d.val.rank d.val.Closure
   | .B _ _ | .C _ _ | .D _ _ | .twistedD _ _ | .E6 _ | .E7 _ | .E8 _ | .F4 _ | .G2 _
   | .twistedE6 _ | .trialityD4 _ | .suzuki _ | .reeG2 _ | .reeF4 _ | .tits =>
-      absurd d.2 (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
+      absurd d.property (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
 
 /-- On `A_r(q)`, the standard special-linear graph factor is trivial. -/
 theorem specialLinearGraphAut_ofA (rank : ℕ) (q : PrimePower)
@@ -119,7 +119,7 @@ theorem specialLinearGraphAut_ofTwistedA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
     (ofTwistedA rank q hvalid).specialLinearGraphAut =
       Matrix.SpecialLinearGroup.typeAGraphAutomorphism
-        (ofTwistedA rank q hvalid).1.rank (ofTwistedA rank q hvalid).1.Closure := by
+        (ofTwistedA rank q hvalid).val.rank (ofTwistedA rank q hvalid).val.Closure := by
   simp only [specialLinearGraphAut]
 
 /-- **The standard matrix Steinberg map**: the graph factor composed with entrywise `q`-power
@@ -133,9 +133,9 @@ graph factor of the standard Steinberg map is trivial on the untwisted family. -
 theorem specialLinearSteinberg_ofA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.A rank q).Valid) :
     (ofA rank q hvalid).specialLinearSteinberg =
-      Matrix.SpecialLinearGroup.map (n := Fin ((ofA rank q hvalid).1.rank + 1))
-        (iterateFrobenius (ofA rank q hvalid).1.Closure (ofA rank q hvalid).1.characteristic
-          (ofA rank q hvalid).1.fieldExponent) := by
+      Matrix.SpecialLinearGroup.map (n := Fin ((ofA rank q hvalid).val.rank + 1))
+        (iterateFrobenius (ofA rank q hvalid).val.Closure (ofA rank q hvalid).val.characteristic
+          (ofA rank q hvalid).val.fieldExponent) := by
   unfold specialLinearSteinberg specialLinearFrobenius
   rw [specialLinearGraphAut_ofA]
   rfl
@@ -145,22 +145,22 @@ entrywise `q`-power Frobenius.** -/
 theorem specialLinearSteinberg_ofTwistedA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
     (ofTwistedA rank q hvalid).specialLinearSteinberg =
-      (Matrix.SpecialLinearGroup.typeAGraphAutomorphism (ofTwistedA rank q hvalid).1.rank
-          (ofTwistedA rank q hvalid).1.Closure : _ →* _).comp
-        (Matrix.SpecialLinearGroup.map (n := Fin ((ofTwistedA rank q hvalid).1.rank + 1))
-          (iterateFrobenius (ofTwistedA rank q hvalid).1.Closure
-            (ofTwistedA rank q hvalid).1.characteristic
-            (ofTwistedA rank q hvalid).1.fieldExponent)) := by
+      (Matrix.SpecialLinearGroup.typeAGraphAutomorphism (ofTwistedA rank q hvalid).val.rank
+          (ofTwistedA rank q hvalid).val.Closure : _ →* _).comp
+        (Matrix.SpecialLinearGroup.map (n := Fin ((ofTwistedA rank q hvalid).val.rank + 1))
+          (iterateFrobenius (ofTwistedA rank q hvalid).val.Closure
+            (ofTwistedA rank q hvalid).val.characteristic
+            (ofTwistedA rank q hvalid).val.fieldExponent)) := by
   unfold specialLinearSteinberg specialLinearFrobenius
   rw [specialLinearGraphAut_ofTwistedA, MulEquiv.toMonoidHom_eq_coe]
 
 /-- The positive simple-root subgroup of the pinned special linear group scheme. -/
-noncomputable def pinnedSimpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank) :
-    Multiplicative d.1.Closure →* d.PinnedGroup :=
+noncomputable def pinnedSimpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank) :
+    Multiplicative d.val.Closure →* d.PinnedGroup :=
   { toFun := fun u =>
-      (AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+      (AdditiveGroup.schemePointsMulEquiv d.val.Closure).symm u ≫
         (SpecialLinear.rootSubgroup
-          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))).hom.hom
+          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.val.rank (.inl i))).hom.hom
     map_one' := by simp
     map_mul' := by
       intro u v
@@ -190,17 +190,17 @@ noncomputable def pinnedSteinberg (d : TypeALieIndex) :
 transvection. -/
 @[simp]
 theorem pinnedEquivSpecialLinear_pinnedSimpleRootSubgroup (d : TypeALieIndex)
-    (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.pinnedEquivSpecialLinear (d.pinnedSimpleRootSubgroup i u) =
       Matrix.SpecialLinearGroup.transvection
-        (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))
+        (SlStd.rootTarget_ne_rootSource d.val.rank (.inl i))
         (Multiplicative.toAdd u) := by
   -- Expose the `toFun` of the bundled `pinnedSimpleRootSubgroup` homomorphism so that the
   -- scheme-point root-subgroup equation can recognize the displayed composition.
-  change SpecialLinear.schemePointsMulEquiv (d.1.rank + 1) d.1.Closure
-      ((AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+  change SpecialLinear.schemePointsMulEquiv (d.val.rank + 1) d.val.Closure
+      ((AdditiveGroup.schemePointsMulEquiv d.val.Closure).symm u ≫
         (SpecialLinear.rootSubgroup
-          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))).hom.hom) = _
+          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.val.rank (.inl i))).hom.hom) = _
   rw [SpecialLinear.schemePointsMulEquiv_rootSubgroup, MulEquiv.apply_symm_apply]
 
 /-- The canonical matrix realization intertwines pinned and matrix Frobenius. -/
@@ -235,10 +235,10 @@ theorem pinnedEquivSpecialLinear_pinnedSteinberg (d : TypeALieIndex) (g : d.Pinn
 transvection in the standard special linear group.** -/
 @[simp]
 theorem carrierEquivSpecialLinear_simpleRootSubgroup (d : TypeALieIndex)
-    (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.carrierEquivSpecialLinear (d.simpleRootSubgroup i u) =
       Matrix.SpecialLinearGroup.transvection
-        (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))
+        (SlStd.rootTarget_ne_rootSource d.val.rank (.inl i))
         (Multiplicative.toAdd u) := by
   rw [carrierEquivSpecialLinear, simpleRootSubgroup_def,
     SlStd.specialLinearMulEquiv_rootSubgroupPoints]
@@ -246,7 +246,7 @@ theorem carrierEquivSpecialLinear_simpleRootSubgroup (d : TypeALieIndex)
 /-- **The carrier-to-pinned equivalence matches the positive simple-root subgroups.** -/
 @[simp]
 theorem carrierEquivPinned_simpleRootSubgroup (d : TypeALieIndex)
-    (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.carrierEquivPinned (d.simpleRootSubgroup i u) =
       d.pinnedSimpleRootSubgroup i u := by
   apply d.pinnedEquivSpecialLinear.injective

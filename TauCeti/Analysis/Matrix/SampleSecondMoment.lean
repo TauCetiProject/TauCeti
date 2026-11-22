@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Convex.FiniteMean
+public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 
 /-!
 # The empirical second-moment matrix
@@ -36,6 +37,13 @@ entry by entry.
   `Matrix.posSemidef_sampleCovariance` give Hermitian and positive semidefinite.
 * `Matrix.re_trace_sampleCovariance`: its real trace is the column-normalized sum of squared
   entry norms.
+* `Matrix.sampleCovariance_updateCol_zero_add`: zeroing the `k`-th column removes exactly the
+  rank-one term `n⁻¹ xₖ xₖᴴ`, so the leave-one-out matrix depends only on the other columns.
+* `Matrix.trace_pow_sampleCovariance_eq_sum_prod`: the trace-word expansion of its moments, a sum
+  over closed walks alternating between row and column indices.
+* `Matrix.sampleCovariance_smul`: scaling the data scales the covariance quadratically.
+* `Matrix.sampleCovariance_sub_colMean`: empirical centering subtracts the outer product of the
+  empirical mean, including for an empty sample.
 
 ## References
 
@@ -112,6 +120,19 @@ theorem re_trace_sampleCovariance [Fintype p] (X : Matrix p n 𝕜) :
   simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, RCLike.mul_conj]
 
+/-- **Trace-word expansion of sample covariance moments.** For `k ≠ 0`, the trace of the `k`th
+power of the sample covariance matrix of a `p × n` matrix `X` is `(card n)⁻ᵏ` times the sum, over
+all pairs of sequences `i : Fin k → p` and `j : Fin k → n`, of the products
+`∏ₜ X (i t) (j t) * conj (X (i (t + 1)) (j t))`, the indices of `i` being read cyclically. -/
+theorem trace_pow_sampleCovariance_eq_sum_prod [Fintype p] [DecidableEq p] (X : Matrix p n 𝕜)
+    {k : ℕ} (hk : k ≠ 0) :
+    (sampleCovariance X ^ k).trace = (Fintype.card n : 𝕜)⁻¹ ^ k *
+      ∑ i : Fin k → p, ∑ j : Fin k → n,
+        ∏ t, X (i t) (j t) * star (X (i (finRotate k t)) (j t)) := by
+  rw [sampleCovariance_def, smul_pow, trace_smul, trace_mul_pow_eq_sum_prod _ _ hk,
+    RCLike.real_smul_eq_coe_mul]
+  simp
+
 /-- The sample covariance matrix of `X` is the empirical second-moment matrix of its columns. -/
 theorem sampleCovariance_eq_sampleSecondMoment (X : Matrix p n 𝕜) :
     sampleCovariance X = TauCeti.sampleSecondMoment (fun k i ↦ X i k) := by
@@ -128,5 +149,47 @@ theorem posSemidef_sampleCovariance [Finite p] (X : Matrix p n 𝕜) :
     (sampleCovariance X).PosSemidef := by
   rw [sampleCovariance_eq_sampleSecondMoment]
   exact TauCeti.posSemidef_sampleSecondMoment _
+
+/-- Zeroing the `k`-th column of `X` removes exactly the rank-one term `n⁻¹ xₖ xₖᴴ` of the column
+`xₖ = X.col k` from the sample covariance, keeping the normalization by `n = card n`. -/
+theorem sampleCovariance_updateCol_zero_add [DecidableEq n] (X : Matrix p n 𝕜) (k : n) :
+    sampleCovariance (X.updateCol k 0) +
+        (1 / (Fintype.card n : ℝ)) • vecMulVec (X.col k) (star (X.col k)) =
+      sampleCovariance X := by
+  have h : X.updateCol k 0 * (X.updateCol k 0)ᴴ + vecMulVec (X.col k) (star (X.col k)) =
+      X * Xᴴ := by
+    ext i j
+    simp only [Matrix.add_apply, Matrix.mul_apply, conjTranspose_apply, vecMulVec_apply,
+      col_apply, Pi.star_apply]
+    simp [updateCol_apply, apply_ite, Finset.sum_ite, Finset.filter_ne']
+  rw [sampleCovariance_def, sampleCovariance_def, ← h, smul_add]
+
+/-- Scaling the data scales its covariance by the scalar times its conjugate. -/
+@[simp]
+theorem sampleCovariance_smul (X : Matrix p n 𝕜) (c : 𝕜) :
+    sampleCovariance (c • X) = (c * star c) • sampleCovariance X := by
+  simp only [sampleCovariance_def, conjTranspose_smul, smul_mul, Matrix.mul_smul]
+  rw [smul_smul (star c) c, mul_comm (star c) c,
+    smul_comm (1 / (Fintype.card n : ℝ)) (c * star c)]
+
+/-- Multiplying all data by a real scalar multiplies the sample covariance by its square.
+This includes zero scalars and empty samples. -/
+@[simp]
+theorem sampleCovariance_real_smul (X : Matrix p n 𝕜) (c : ℝ) :
+    sampleCovariance (c • X) = c ^ 2 • sampleCovariance X := by
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), sampleCovariance_smul]
+  simp [sq, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+
+/-- Subtracting the empirical column mean removes its outer product from the uncentered
+sample covariance. The identity also holds for an empty sample, whose mean is zero. -/
+@[simp]
+theorem sampleCovariance_sub_colMean (X : Matrix p n 𝕜) :
+    sampleCovariance (of fun i j ↦ X i j - (TauCeti.finiteMean 𝕜 X.col) i) =
+      sampleCovariance X - vecMulVec (TauCeti.finiteMean 𝕜 X.col)
+        (star (TauCeti.finiteMean 𝕜 X.col)) := by
+  ext i j
+  simpa [sampleCovariance_apply, TauCeti.finiteMean_eq_inv_smul_sum,
+    RCLike.real_smul_eq_coe_mul, star_sum, vecMulVec_apply, mul_assoc, mul_left_comm] using
+    TauCeti.finiteMean_sub_mul_sub (fun k ↦ X i k) (fun k ↦ star (X j k))
 
 end Matrix

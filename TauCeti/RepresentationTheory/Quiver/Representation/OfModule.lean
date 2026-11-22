@@ -293,9 +293,9 @@ private theorem moduleHomAux_apply_of_mem [Fintype Q]
   -- the projection lemmas are stated on the ambient values in `M`, so `Subtype.ext` lifts them to
   -- the equalities in `eᵥ M` that the summands are built from
   have hfix : vertexProjection k M v (x : M) = x :=
-    Subtype.ext (coe_vertexProjection_apply_of_mem x.2)
+    Subtype.ext (coe_vertexProjection_apply_of_mem x.property)
   have hkill : ∀ u : Q, u ≠ v → vertexProjection k M u (x : M) = 0 := fun u hu ↦
-    Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu x.2)
+    Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu x.property)
   rw [moduleHomAux_apply, Finset.sum_eq_single v]
   · rw [hfix]
   · intro u _ hu
@@ -328,7 +328,7 @@ private theorem moduleHomAux_ofPath_smul [Fintype Q]
   rw [moduleHomAux_apply, Finset.smul_sum, Finset.sum_eq_single a]
   · intro u _ hu
     exact ofPath_smul_eq_zero_of_ne_of_mem_vertexComponent p hu
-      ((quiverRepHomComponent k Q φ u) (vertexProjection k M u x)).2
+      ((quiverRepHomComponent k Q φ u) (vertexProjection k M u x)).property
   · intro ha
     exact absurd (Finset.mem_univ a) ha
 

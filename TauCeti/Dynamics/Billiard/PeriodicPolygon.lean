@@ -18,6 +18,7 @@ import Mathlib.Analysis.Convex.StrictConvexBetween
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Calculus.Deriv.PeriodicSegment
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.Triangle
 
 /-!
 # Periodic billiard polygons by perimeter maximization
@@ -56,18 +57,29 @@ distinct, each term of `P` is differentiable in `s_k`
 local extremum gives `⟪u_(k-1), χ'(s_k)⟫ = ⟪u_k, χ'(s_k)⟫`
 (`TauCeti.inner_eq_inner_of_isLocalExtr_inscribedPerimeter`), the reflection law when
 `χ'(s_k) ≠ 0`. For `N = 2` it says that the chord is orthogonal to the velocity vectors at both
-ends. There nonconstancy of the curve suffices for the maximal chord to be nondegenerate, so
-every nonconstant differentiable periodic curve has a chord between distinct points `χ(a)` and
-`χ(b)` orthogonal to `χ'(a)` and to `χ'(b)` (`TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`),
-a double normal when `χ'(a) ≠ 0` and `χ'(b) ≠ 0`.
+ends (`TauCeti.inner_eq_inner_zmod_two_iff`). There nonconstancy of the curve suffices for the
+maximal chord to be nondegenerate, so every nonconstant differentiable periodic curve has a chord
+between distinct points `χ(a)` and `χ(b)` orthogonal to `χ'(a)` and to `χ'(b)`
+(`TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`), a double normal when `χ'(a) ≠ 0` and
+`χ'(b) ≠ 0`.
 
 Neither convexity of the curve nor injectivity of the parametrization is used. For the boundary
 of a bounded strictly convex planar table, positively oriented and parametrized by arclength,
 these polygons are closed orbits of the billiard map; for a general curve the chords of the
 polygon need not stay on one side of it.
 
+For a curve in the closed ball of radius `R`, an inscribed `N`-gon has perimeter at most `2 N R`
+(`TauCeti.inscribedPerimeter_le_of_forall_norm_le`); in a strictly convex space, one inscribed in
+the boundary sphere attains it exactly when each side is a diameter
+(`TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`). In an inner product space an inscribed
+triangle has perimeter at most `3 √3 R` (`TauCeti.inscribedPerimeter_le_three_mul_sqrt_three`),
+and one inscribed in the boundary sphere attains it exactly when its centroid is the centre
+(`TauCeti.inscribedPerimeter_eq_three_mul_sqrt_three_iff`).
+
 ## Main results
 
+* `TauCeti.inscribedPerimeter_zmod_three`: three-term expansion of `inscribedPerimeter` for
+  `N = 3`.
 * `TauCeti.exists_isMaxOn_inscribedPerimeter`: the inscribed perimeter has a global maximum.
 * `TauCeti.apply_add_one_ne_of_isMaxOn_inscribedPerimeter`: at a maximizer, consecutive vertices
   are distinct.
@@ -78,8 +90,15 @@ polygon need not stay on one side of it.
   where the curve is differentiable, have equal inner products with `χ'(s_k)`.
 * `TauCeti.exists_billiard_periodic_reflection`: periodic billiard polygons with `N` vertices, for
   every `N ≥ 2`.
+* `TauCeti.inner_eq_inner_zmod_two_iff`: for `N = 2`, equality of the incoming and outgoing
+  unit-chord inner products at both vertices is equivalent to orthogonality of the chord to both
+  tangent directions.
 * `TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`: a chord orthogonal to the velocity vectors of
   the curve at both of its endpoints.
+* `TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`: in a strictly convex space, an `N`-gon
+  inscribed in a sphere has the maximal perimeter `2 N R` exactly when its sides are diameters.
+* `TauCeti.inscribedPerimeter_eq_three_mul_sqrt_three_iff`: in an inner product space, a triangle
+  inscribed in a sphere has the maximal perimeter `3 √3 R` exactly when its centroid is the centre.
 
 ## References
 
@@ -115,6 +134,11 @@ theorem inscribedPerimeter_def (χ : α → F) (s : ZMod N → α) :
     inscribedPerimeter χ s = ∑ k, ‖χ (s (k + 1)) - χ (s k)‖ :=
   (rfl)
 
+/-- The inscribed perimeter is nonnegative. -/
+theorem inscribedPerimeter_nonneg (χ : α → F) (s : ZMod N → α) : 0 ≤ inscribedPerimeter χ s := by
+  rw [inscribedPerimeter_def]
+  exact Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+
 /-- The inscribed perimeter depends only on the vertices `χ(s_k)`. -/
 theorem inscribedPerimeter_congr {s s' : ZMod N → α} (h : ∀ k, χ (s k) = χ (s' k)) :
     inscribedPerimeter χ s = inscribedPerimeter χ s' := by
@@ -125,6 +149,18 @@ theorem inscribedPerimeter_congr {s s' : ZMod N → α} (h : ∀ k, χ (s k) = �
 theorem inscribedPerimeter_comp {β : Type*} (χ : β → F) (f : α → β) (s : ZMod N → α) :
     inscribedPerimeter χ (f ∘ s) = inscribedPerimeter (χ ∘ f) s :=
   (rfl)
+
+/-- Explicit three-term expansion of `inscribedPerimeter` for `N = 3`. -/
+theorem inscribedPerimeter_zmod_three (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s =
+      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
+  have huniv : (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} := by decide
+  have h01 : (0 : ZMod 3) + 1 = 1 := rfl
+  have h11 : (1 : ZMod 3) + 1 = 2 := rfl
+  have h21 : (2 : ZMod 3) + 1 = 0 := rfl
+  rw [inscribedPerimeter_def, huniv, Finset.sum_insert (by decide),
+    Finset.sum_insert (by decide), Finset.sum_singleton, h01, h11, h21]
+  ring
 
 theorem continuous_inscribedPerimeter [TopologicalSpace α] (hχ : Continuous χ) :
     Continuous (inscribedPerimeter (N := N) χ) :=
@@ -176,6 +212,92 @@ theorem mem_segment_of_isMaxOn_inscribedPerimeter_of_eq [NormedSpace ℝ F] [Str
     norm_sub_rev (χ (s k)) (χ (s (j + 1)))]
 
 end General
+
+/-! ### Polygons inscribed in a sphere -/
+
+section Sphere
+
+variable {χ : α → F} {R : ℝ}
+
+private theorem sum_two_mul : ∑ _k : ZMod N, 2 * R = 2 * N * R := by
+  rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]; ring
+
+private theorem norm_sub_le_two_mul_of_forall_norm_le (h : ∀ t, ‖χ t‖ ≤ R) (a b : α) :
+    ‖χ b - χ a‖ ≤ 2 * R :=
+  (norm_sub_le_of_le (h b) (h a)).trans_eq (two_mul R).symm
+
+/-- An `N`-gon inscribed in the closed ball of radius `R` has perimeter at most `2 N R`. -/
+theorem inscribedPerimeter_le_of_forall_norm_le (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod N → α) :
+    inscribedPerimeter χ s ≤ 2 * N * R := by
+  rw [inscribedPerimeter_def, ← sum_two_mul]
+  exact Finset.sum_le_sum fun k _ ↦ norm_sub_le_two_mul_of_forall_norm_le h _ _
+
+/-- In a strictly convex space, an `N`-gon inscribed in the sphere of radius `R` has the largest
+possible perimeter `2 N R` exactly when each of its sides is a diameter. -/
+theorem inscribedPerimeter_eq_iff_of_forall_norm_eq [NormedSpace ℝ F] [StrictConvexSpace ℝ F]
+    (h : ∀ t, ‖χ t‖ = R) (s : ZMod N → α) :
+    inscribedPerimeter χ s = 2 * N * R ↔ ∀ k, χ (s (k + 1)) = -χ (s k) := by
+  have hle : ∀ k ∈ Finset.univ, ‖χ (s (k + 1)) - χ (s k)‖ ≤ 2 * R := fun k _ ↦
+    norm_sub_le_two_mul_of_forall_norm_le (fun t ↦ (h t).le) _ _
+  rw [inscribedPerimeter_def, ← sum_two_mul, Finset.sum_eq_sum_iff_of_le hle]
+  simp only [Finset.mem_univ, true_implies]
+  refine forall_congr' fun k ↦ ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
+  · -- A chord of length `2 R` passes through the centre, by strict convexity.
+    refine eq_of_norm_eq_of_norm_add_eq (by rw [norm_neg, h, h]) ?_
+    rw [← sub_eq_add_neg, hk, norm_neg, h, h, two_mul]
+  · rw [hk, ← neg_add', norm_neg, ← two_smul ℝ, norm_smul, h, Real.norm_two]
+
+/-- The perimeter of an inscribed triangle is the sum of its three sides. -/
+theorem inscribedPerimeter_three (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s =
+      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
+  rw [inscribedPerimeter_def, show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide]
+  simp +decide [add_assoc, one_add_one_eq_two, show (2 : ZMod 3) + 1 = 0 by decide]
+
+variable [InnerProductSpace ℝ F]
+
+/-- The squared perimeter of a triangle is at most three times the sum of its squared sides. -/
+private theorem sq_inscribedPerimeter_three_le (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s ^ 2 ≤ 3 * (3 * (‖χ (s 0)‖ ^ 2 + ‖χ (s 1)‖ ^ 2 + ‖χ (s 2)‖ ^ 2) -
+      ‖χ (s 0) + χ (s 1) + χ (s 2)‖ ^ 2) := by
+  rw [inscribedPerimeter_three, ← norm_sub_sq_add_norm_sub_sq_add_norm_sub_sq]
+  nlinarith [sq_nonneg (‖χ (s 1) - χ (s 0)‖ - ‖χ (s 2) - χ (s 1)‖),
+    sq_nonneg (‖χ (s 2) - χ (s 1)‖ - ‖χ (s 0) - χ (s 2)‖),
+    sq_nonneg (‖χ (s 0) - χ (s 2)‖ - ‖χ (s 1) - χ (s 0)‖)]
+
+private theorem three_mul_sqrt_three_mul_sq : (3 * √3 * R) ^ 2 = 27 * R ^ 2 := by
+  rw [mul_pow, mul_pow, Real.sq_sqrt (by norm_num)]; ring
+
+/-- A triangle inscribed in the closed ball of radius `R` has perimeter at most `3 √3 R`, the
+perimeter of an equilateral triangle inscribed in a circle of radius `R`. -/
+theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s ≤ 3 * √3 * R := by
+  have hR : 0 ≤ R := (norm_nonneg _).trans (h (s 0))
+  have hle (k : ZMod 3) : ‖χ (s k)‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h _) 2
+  refine (pow_le_pow_iff_left₀ (inscribedPerimeter_nonneg χ s) (by positivity) two_ne_zero).1 ?_
+  rw [three_mul_sqrt_three_mul_sq]
+  linarith [sq_inscribedPerimeter_three_le χ s, sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖, hle 0,
+    hle 1, hle 2]
+
+/-- A triangle inscribed in the sphere of radius `R` has the largest possible perimeter `3 √3 R`
+exactly when the centre of the sphere is its centroid, in which case it is equilateral with sides
+`√3 R`. -/
+theorem inscribedPerimeter_eq_three_mul_sqrt_three_iff (h : ∀ t, ‖χ t‖ = R) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s = 3 * √3 * R ↔ χ (s 0) + χ (s 1) + χ (s 2) = 0 := by
+  constructor
+  · intro hP
+    have hle := sq_inscribedPerimeter_three_le χ s
+    rw [hP, three_mul_sqrt_three_mul_sq, h, h, h] at hle
+    rw [← norm_eq_zero, ← sq_eq_zero_iff]
+    linarith [sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖]
+  · intro h0
+    rw [inscribedPerimeter_three,
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h _) h0,
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h (s 0)) (by rw [← h0]; abel),
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h (s 1)) (by rw [← h0]; abel)]
+    ring
+
+end Sphere
 
 variable {χ : ℝ → F} {L : ℝ}
 
@@ -282,6 +404,33 @@ theorem exists_billiard_periodic_reflection (hper : Periodic χ L) (hL : L ≠ 0
     (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k))
     (by simpa only [sub_add_cancel] using hne (k - 1)) (hne k)⟩⟩
 
+/-- **For `N = 2`, the equal-angle reflection law is double normality.** Equality of the incoming
+and outgoing unit-chord inner products at both vertices of a `2`-gon is equivalent to orthogonality
+of the chord `χ(s_1) - χ(s_0)` to both `d(s_0)` and `d(s_1)`. -/
+theorem inner_eq_inner_zmod_two_iff {β G : Type*} [SeminormedAddCommGroup G]
+    [InnerProductSpace ℝ G] (χ d : β → G) (s : ZMod 2 → β) :
+    (∀ k : ZMod 2,
+        ⟪‖χ (s k) - χ (s (k - 1))‖⁻¹ • (χ (s k) - χ (s (k - 1))), d (s k)⟫ =
+          ⟪‖χ (s (k + 1)) - χ (s k)‖⁻¹ • (χ (s (k + 1)) - χ (s k)), d (s k)⟫) ↔
+      ⟪χ (s 1) - χ (s 0), d (s 0)⟫ = 0 ∧ ⟪χ (s 1) - χ (s 0), d (s 1)⟫ = 0 := by
+  have hall {P : ZMod 2 → Prop} : (∀ k, P k) ↔ P 0 ∧ P 1 :=
+    ⟨fun h ↦ ⟨h 0, h 1⟩,
+      fun ⟨h0, h1⟩ k ↦ ((by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) k).elim (· ▸ h0) (· ▸ h1)⟩
+  have hunit (v u : G) : ‖v‖⁻¹ * ⟪v, u⟫ = 0 ↔ ⟪v, u⟫ = 0 := by
+    refine ⟨fun h ↦ (mul_eq_zero.1 h).elim (fun hv ↦ ?_) id, fun h ↦ by rw [h, mul_zero]⟩
+    have habs := abs_real_inner_le_norm v u
+    rw [inv_eq_zero.1 hv, zero_mul] at habs
+    exact abs_nonpos_iff.1 habs
+  have h0_sub : (0 : ZMod 2) - 1 = 1 := rfl
+  have h0_add : (0 : ZMod 2) + 1 = 1 := rfl
+  have h1_sub : (1 : ZMod 2) - 1 = 0 := rfl
+  have h1_add : (1 : ZMod 2) + 1 = 0 := rfl
+  rw [hall, h0_sub, h0_add, h1_sub, h1_add, norm_sub_rev (χ (s 0)) (χ (s 1)),
+    ← neg_sub (χ (s 1)) (χ (s 0)), smul_neg]
+  refine and_congr ?_ ?_ <;>
+    (rw [inner_neg_left, real_inner_smul_left];
+      exact ⟨fun h ↦ (hunit _ _).1 (by linarith), fun h ↦ by rw [(hunit _ _).2 h]; ring⟩)
+
 omit [NeZero N] in
 /-- **Double normals.** A nonconstant differentiable periodic curve has a chord, between distinct
 points `χ(a)` and `χ(b)`, that is orthogonal to the velocity vectors `χ'(a)` and `χ'(b)`. When
@@ -300,20 +449,10 @@ theorem exists_ne_and_inner_sub_deriv_eq_zero (hχ : Differentiable ℝ χ) (hpe
     have h (t : ℝ) := mem_segment_of_isMaxOn_inscribedPerimeter_of_eq le_rfl hs hk t
     simp only [hkk, segment_same, mem_singleton_iff] at h
     exact hab ((h a).trans (h b).symm)
-  -- In `ℤ/2`, `k - 1 = k + 1`, so the two sides at a vertex are the same chord, reversed.
-  have h (k : ZMod 2) : ⟪χ (s (k + 1)) - χ (s k), deriv χ (s k)⟫ = 0 := by
-    have hk' : k - 1 = k + 1 := (by decide : ∀ k : ZMod 2, k - 1 = k + 1) k
-    have hk := inner_eq_inner_of_isLocalExtr_inscribedPerimeter
-      (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k)) (hk' ▸ (hne k).symm) (hne k)
-    rw [hk', ← neg_sub (χ (s (k + 1))), norm_neg, smul_neg, inner_neg_left,
-      real_inner_smul_left] at hk
-    have hpos : 0 < ‖χ (s (k + 1)) - χ (s k)‖⁻¹ :=
-      inv_pos.2 (norm_pos_iff.2 (sub_ne_zero.2 (hne k)))
-    nlinarith [hk, hpos]
-  refine ⟨s 0, s 1, (hne 0).symm, by simpa using h 0, ?_⟩
-  have h1 := h 1
-  have h11 : (1 : ZMod 2) + 1 = 0 := by decide
-  rw [h11, ← neg_sub, inner_neg_left, neg_eq_zero] at h1
-  exact h1
+  have hrefl (k : ZMod 2) := inner_eq_inner_of_isLocalExtr_inscribedPerimeter
+    (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k))
+    ((by decide : ∀ k : ZMod 2, k - 1 = k + 1) k ▸ (hne k).symm) (hne k)
+  obtain ⟨h0, h1⟩ := (inner_eq_inner_zmod_two_iff χ (deriv χ) s).1 hrefl
+  exact ⟨s 0, s 1, (hne 0).symm, h0, h1⟩
 
 end TauCeti

@@ -205,6 +205,8 @@ theorem fderiv_gradient_mul_norm_sub_apply_sub (r : ℝ) (hx : x ≠ a) :
         (((hasDerivAt_id (0 : ℝ)).smul_const (x - a)).const_add x) (by simp)
   exact hline.unique ((hasDerivAt_const _ _).congr_of_eventuallyEq hconst)
 
+end Gradient
+
 /-- **The Hessian of a cone is degenerate.** Away from its vertex `a`, the Hessian of the cone
 `x ↦ r * ‖x - a‖` has determinant `0`, since it annihilates the radial direction `x - a`. -/
 @[simp]
@@ -213,20 +215,10 @@ theorem det_fderiv_gradient_mul_norm_sub_eq_zero [FiniteDimensional ℝ E] (r : 
   rw [LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
   exact ⟨x - a, fderiv_gradient_mul_norm_sub_apply_sub r hx, sub_ne_zero.2 hx⟩
 
-end Gradient
-
 section Measure
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ ν : Measure E}
   [ν.IsAddHaarMeasure]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The cone `x ↦ r * ‖x - a‖` with `0 ≤ r` has convex real epigraph. -/
-private theorem convex_epigraph_mul_norm_sub (hr : 0 ≤ r) (a : E) :
-    Convex ℝ {p : E × ℝ | ((r * ‖p.1 - a‖ : ℝ) : EReal) ≤ p.2} := by
-  have h : ConvexOn ℝ univ fun x : E => r * ‖x - a‖ := by
-    simpa only [smul_eq_mul, dist_eq_norm] using (convexOn_dist a convex_univ).smul hr
-  simpa only [EReal.coe_le_coe_iff, mem_univ, true_and] using h.convex_epigraph
 
 /-- **The Monge–Ampère measure of a cone.** For `0 ≤ r` and a measure `μ` absolutely continuous
 with respect to a Haar measure, the Aleksandrov Monge–Ampère measure of the cone
@@ -234,8 +226,12 @@ with respect to a Haar measure, the Aleksandrov Monge–Ampère measure of the c
 theorem mongeAmpereMeasure_mul_norm_sub (hμ : μ ≪ ν) (hr : 0 ≤ r) (a : E) :
     mongeAmpereMeasure μ (fun x => ((r * ‖x - a‖ : ℝ) : EReal)) =
       μ (closedBall 0 r) • dirac a := by
+  have hconv : Convex ℝ {p : E × ℝ | ((r * ‖p.1 - a‖ : ℝ) : EReal) ≤ p.2} := by
+    have h : ConvexOn ℝ univ fun x : E => r * ‖x - a‖ := by
+      simpa only [smul_eq_mul, dist_eq_norm] using (convexOn_dist a convex_univ).smul hr
+    simpa only [EReal.coe_le_coe_iff, mem_univ, true_and] using h.convex_epigraph
   ext s hs
-  rw [mongeAmpereMeasure_apply μ (convex_epigraph_mul_norm_sub hr a)
+  rw [mongeAmpereMeasure_apply μ hconv
     (fun _ => EReal.coe_ne_bot _) hμ hs, _root_.smul_apply, dirac_apply' _ hs, smul_eq_mul]
   have hD : interior {x : E | ((r * ‖x - a‖ : ℝ) : EReal) ≠ ⊤} = univ := by
     simp only [ne_eq, EReal.coe_ne_top, not_false_eq_true, ofPred_true, interior_univ]

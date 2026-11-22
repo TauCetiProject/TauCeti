@@ -31,8 +31,8 @@ cyclotomic towers at the prime divisors of `m`. -/
 theorem adjoin_nth_roots_le_iSup_adjoin_prime_pow {K L : Type*} [Field K] [Field L]
     [Algebra K L] {m : ℕ} (hm : m ≠ 0) :
     adjoin K {ζ : L | ζ ^ m = 1} ≤
-      ⨆ q : ↥m.primeFactors, adjoin K {ζ : L | ∃ r : ℕ, ζ ^ q.1 ^ r = 1} := by
-  let F := ⨆ q : ↥m.primeFactors, adjoin K {ζ : L | ∃ r : ℕ, ζ ^ q.1 ^ r = 1}
+      ⨆ q : ↥m.primeFactors, adjoin K {ζ : L | ∃ r : ℕ, ζ ^ q.val ^ r = 1} := by
+  let F := ⨆ q : ↥m.primeFactors, adjoin K {ζ : L | ∃ r : ℕ, ζ ^ q.val ^ r = 1}
   have hroot (n : ℕ) : n ≠ 0 → n ∣ m → ∀ ζ : L, ζ ^ n = 1 → ζ ∈ F := by
     induction n using Nat.recOnPrimeCoprime with
     | zero => simp
