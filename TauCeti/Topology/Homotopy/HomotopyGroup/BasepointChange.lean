@@ -181,6 +181,16 @@ def HomotopyAlong.trans {w : X} {γ : Path x y} {δ : Path y w} {f : Ω^ N X x} 
     · exact h₁.map_boundary _ z hz
     · exact h₂.map_boundary _ z hz
 
+/-- A homotopy `H` from `f₀` to `f₁` carries a generalized loop `p` at `x` to a homotopy from
+`f₀ ∘ p` to `f₁ ∘ p` along the path `t ↦ H (t, x)` traced by the base point. -/
+def HomotopyAlong.map {Y : Type*} [TopologicalSpace Y] {f₀ f₁ : C(X, Y)}
+    (H : f₀.Homotopy f₁) (p : Ω^ N X x) :
+    HomotopyAlong (H.evalAt x) (GenLoop.map f₀ rfl p) (GenLoop.map f₁ rfl p) where
+  toHomotopy :=
+    (H.compContinuousMap p).cast (GenLoop.coe_map f₀ rfl p).symm (GenLoop.coe_map f₁ rfl p).symm
+  map_boundary t z hz := by
+    simp [ContinuousMap.Homotopy.evalAt, GenLoop.boundary p z hz]
+
 /-- Transport along a concatenation is the composite of the transports. -/
 theorem homotopic_transport_trans {w : X} (γ : Path x y) (δ : Path y w) (f : Ω^ N X x) :
     GenLoop.Homotopic (transport δ (transport γ f)) (transport (γ.trans δ) f) :=
