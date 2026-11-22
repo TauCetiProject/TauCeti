@@ -62,53 +62,53 @@ section Defs
 variable {Ω E F ι κ : Type*} [MeasurableSpace Ω] [MeasurableSpace E]
 
 /-- A family of random variables `X : ι → Ω → E` on `(Ω, μ)` is **independent and identically
-distributed** with common law `P` if each `X i` is measurable, the family `X` is mutually
-independent under `μ`, and every `X i` has law `P`. -/
+distributed** with common law `P` if the family `X` is mutually independent under `μ` and every
+`X i` is measure-preserving into `P`. -/
 def IsIndependentIdenticallyDistributed (μ : Measure Ω) (X : ι → Ω → E) (P : Measure E) : Prop :=
-  (∀ i, Measurable (X i)) ∧ iIndepFun X μ ∧ ∀ i, μ.map (X i) = P
+  iIndepFun X μ ∧ ∀ i, MeasurePreserving (X i) μ P
 
 /-- Characterization of `IsIndependentIdenticallyDistributed`. -/
 theorem isIndependentIdenticallyDistributed_iff {μ : Measure Ω} {X : ι → Ω → E} {P : Measure E} :
     IsIndependentIdenticallyDistributed μ X P ↔
-      (∀ i, Measurable (X i)) ∧ iIndepFun X μ ∧ ∀ i, μ.map (X i) = P :=
+      iIndepFun X μ ∧ ∀ i, MeasurePreserving (X i) μ P :=
   Iff.rfl
 
 variable {μ : Measure Ω} {X : ι → Ω → E} {P : Measure E}
 
+/-- Each coordinate of an i.i.d. family is measure-preserving into the common law `P`. -/
+theorem IsIndependentIdenticallyDistributed.measurePreserving
+    (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : MeasurePreserving (X i) μ P :=
+  h.2 i
+
 /-- Each coordinate of an i.i.d. family is measurable. -/
 theorem IsIndependentIdenticallyDistributed.measurable
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : Measurable (X i) :=
-  h.1 i
+  (h.measurePreserving i).measurable
 
 /-- Each coordinate of an i.i.d. family is almost-everywhere measurable. -/
 theorem IsIndependentIdenticallyDistributed.aemeasurable
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : AEMeasurable (X i) μ :=
-  (h.measurable i).aemeasurable
+  (h.measurePreserving i).aemeasurable
 
 /-- The coordinates of an i.i.d. family are mutually independent. -/
 theorem IsIndependentIdenticallyDistributed.iIndepFun
     (h : IsIndependentIdenticallyDistributed μ X P) : iIndepFun X μ :=
-  h.2.1
+  h.1
 
 /-- Each coordinate of an i.i.d. family has pushforward law `P`. -/
 theorem IsIndependentIdenticallyDistributed.map_eq
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : μ.map (X i) = P :=
-  h.2.2 i
+  (h.measurePreserving i).map_eq
 
 /-- The underlying measure of an i.i.d. family is automatically a probability measure. -/
 theorem IsIndependentIdenticallyDistributed.isProbabilityMeasure
     (h : IsIndependentIdenticallyDistributed μ X P) : IsProbabilityMeasure μ :=
   h.iIndepFun.isProbabilityMeasure
 
-/-- Each coordinate of an i.i.d. family is measure-preserving into the common law `P`. -/
-theorem IsIndependentIdenticallyDistributed.measurePreserving
-    (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : MeasurePreserving (X i) μ P :=
-  ⟨h.measurable i, h.map_eq i⟩
-
 /-- Each coordinate of an i.i.d. family satisfies `ProbabilityTheory.HasLaw` with law `P`. -/
 theorem IsIndependentIdenticallyDistributed.hasLaw
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : HasLaw (X i) P μ :=
-  ⟨h.aemeasurable i, h.map_eq i⟩
+  (h.measurePreserving i).hasLaw
 
 /-- The common law of a nonempty i.i.d. family is a probability measure. -/
 theorem IsIndependentIdenticallyDistributed.isProbabilityMeasure_law [Nonempty ι]
@@ -138,26 +138,16 @@ theorem IsIndependentIdenticallyDistributed.identDistrib
 law forward to `P.map s`. -/
 theorem IsIndependentIdenticallyDistributed.comp [MeasurableSpace F]
     (h : IsIndependentIdenticallyDistributed μ X P) {s : E → F} (hs : Measurable s) :
-    IsIndependentIdenticallyDistributed μ (fun i ω ↦ s (X i ω)) (P.map s) := by
-  refine ⟨fun i ↦ hs.comp (h.measurable i), h.iIndepFun.comp (fun _ ↦ s) (fun _ ↦ hs), fun i ↦ ?_⟩
-  rw [← h.map_eq i, Measure.map_map hs (h.measurable i)]
-  rfl
+    IsIndependentIdenticallyDistributed μ (fun i ω ↦ s (X i ω)) (P.map s) :=
+  ⟨h.iIndepFun.comp (fun _ ↦ s) (fun _ ↦ hs),
+    fun i ↦ (hs.measurePreserving P).comp (h.measurePreserving i)⟩
 
 /-- Precomposing an i.i.d. family along an injective index map yields an i.i.d. family with the same
 common law. -/
 theorem IsIndependentIdenticallyDistributed.precomp
     (h : IsIndependentIdenticallyDistributed μ X P) {g : κ → ι} (hg : Function.Injective g) :
     IsIndependentIdenticallyDistributed μ (fun k ↦ X (g k)) P :=
-  ⟨fun k ↦ h.measurable (g k), h.iIndepFun.precomp hg, fun k ↦ h.map_eq (g k)⟩
-
-/-- The coordinate projections on a finite product `Measure.pi (fun _ : ι ↦ P)` of a probability
-measure `P` form an i.i.d. family with law `P`. -/
-theorem isIndependentIdenticallyDistributed_eval_pi [Fintype ι] (P : Measure E)
-    [IsProbabilityMeasure P] :
-    IsIndependentIdenticallyDistributed (Measure.pi fun _ : ι ↦ P)
-      (fun (i : ι) (x : ι → E) ↦ x i) P := by
-  refine ⟨fun i ↦ measurable_pi_apply i, ?_, fun i ↦ (measurePreserving_eval _ i).map_eq⟩
-  exact iIndepFun_pi (μ := fun _ : ι ↦ P) (X := fun _ ↦ id) (fun _ ↦ aemeasurable_id)
+  ⟨h.iIndepFun.precomp hg, fun k ↦ h.measurePreserving (g k)⟩
 
 /-- The coordinate projections on `Measure.infinitePi (fun _ : ι ↦ P)` of a probability measure `P`
 form an i.i.d. family with law `P`, for any index type `ι`. -/
@@ -165,9 +155,17 @@ theorem isIndependentIdenticallyDistributed_eval_infinitePi (P : Measure E)
     [IsProbabilityMeasure P] :
     IsIndependentIdenticallyDistributed (Measure.infinitePi fun _ : ι ↦ P)
       (fun (i : ι) (x : ι → E) ↦ x i) P :=
-  ⟨fun i ↦ measurable_pi_apply i,
-    TauCeti.Probability.iIndepFun_eval_infinitePi (fun _ : ι ↦ P),
-    fun i ↦ Measure.infinitePi_map_eval (fun _ : ι ↦ P) i⟩
+  ⟨TauCeti.Probability.iIndepFun_eval_infinitePi (fun _ : ι ↦ P),
+    fun i ↦ measurePreserving_eval_infinitePi (fun _ : ι ↦ P) i⟩
+
+/-- The coordinate projections on a finite product `Measure.pi (fun _ : ι ↦ P)` of a probability
+measure `P` form an i.i.d. family with law `P`. -/
+theorem isIndependentIdenticallyDistributed_eval_pi [Fintype ι] (P : Measure E)
+    [IsProbabilityMeasure P] :
+    IsIndependentIdenticallyDistributed (Measure.pi fun _ : ι ↦ P)
+      (fun (i : ι) (x : ι → E) ↦ x i) P :=
+  Measure.infinitePi_eq_pi (μ := fun _ : ι ↦ P) ▸
+    isIndependentIdenticallyDistributed_eval_infinitePi P
 
 end Defs
 
@@ -206,12 +204,9 @@ theorem tendstoInMeasure_sampleMean_of_iid {μ : Measure Ω} {X : ℕ → Ω →
       (fun _ ↦ ∫ y, s y ∂P) := by
   have := h.isProbabilityMeasure
   have hmeas : ∀ n : ℕ,
-      AEStronglyMeasurable (fun ω ↦ (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, s (X i ω)) μ := fun n ↦ by
-    have hsum := (Finset.aestronglyMeasurable_sum (Finset.range n) fun i _ ↦
+      AEStronglyMeasurable (fun ω ↦ (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, s (X i ω)) μ := fun n ↦
+    (Finset.aestronglyMeasurable_fun_sum (Finset.range n) fun i _ ↦
       hs.1.comp_measurePreserving (h.measurePreserving i)).const_smul (n : ℝ)⁻¹
-    convert hsum using 1
-    ext ω
-    simp [Finset.sum_apply]
   exact tendstoInMeasure_of_tendsto_ae hmeas (ae_tendsto_sampleMean_of_iid h hs)
 
 end LawOfLargeNumbers

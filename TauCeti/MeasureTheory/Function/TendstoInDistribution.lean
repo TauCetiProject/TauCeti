@@ -235,6 +235,10 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     let L' : NNReal := max L 1
     have hL' : 0 < L' := lt_of_lt_of_le zero_lt_one (le_max_right L 1)
     have hF_lip' : LipschitzWith L' F := hF_lip.weaken (le_max_left L 1)
+    have hX_lim : Tendsto (fun i ↦ ∫ x, F x ∂(μ''.map (X i))) l (𝓝 (∫ x, F x ∂(μ'.map Z))) := by
+      simpa using ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.1 hXZ.tendsto
+        F ⟨M, hF_bd⟩ ⟨L', hF_lip'⟩
+    refine hX_lim.congr_dist ?_
     rw [Metric.tendsto_nhds]
     intro ε hε
     set δ : ℝ := ε / (2 * (L' : ℝ))
@@ -245,23 +249,18 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     have hdist : Tendsto (fun i ↦ μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)}) l (𝓝 0) := by
       rw [tendstoInMeasure_iff_measureReal_norm] at hXY
       simpa only [sub_zero, Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using hXY δ hδ
-    have hX_lim : Tendsto (fun i ↦ ∫ x, F x ∂(μ''.map (X i))) l (𝓝 (∫ x, F x ∂(μ'.map Z))) := by
-      simpa using ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.1 hXZ.tendsto
-        F ⟨M, hF_bd⟩ ⟨L', hF_lip'⟩
-    have h_rhs : Tendsto (fun i ↦ ε / 2 + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} +
-        |∫ x, F x ∂(μ''.map (X i)) - ∫ x, F x ∂(μ'.map Z)|) l (𝓝 (ε / 2)) := by
-      have h1 := ((tendsto_const_nhds (x := ε / 2)).add (hdist.const_mul M)).add
-        (tendsto_iff_dist_tendsto_zero.1 hX_lim)
-      simpa only [Real.dist_eq, mul_zero, add_zero] using h1
-    filter_upwards [h_rhs.eventually_lt_const (half_lt_self hε)] with i hi
-    rw [Real.dist_eq]
+    have h_bd : Tendsto (fun i ↦ ε / 2 + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)}) l
+        (𝓝 (ε / 2)) := by
+      simpa only [mul_zero, add_zero] using
+        (tendsto_const_nhds (x := ε / 2)).add (hdist.const_mul M)
+    filter_upwards [h_bd.eventually_lt_const (half_lt_self hε)] with i hi
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg dist_nonneg, Real.dist_eq, abs_sub_comm]
     simp only [ProbabilityMeasure.coe_mk]
-    have hstep := abs_integral_map_sub_le_of_lipschitz (hXZ.forall_aemeasurable i) (hY i)
-      hF_bd hL' hF_lip' hδ
-    rw [hLδ] at hstep
-    have htri := abs_sub_le (∫ x, F x ∂(μ''.map (Y i))) (∫ x, F x ∂(μ''.map (X i)))
-      (∫ x, F x ∂(μ'.map Z))
-    linarith
+    calc |∫ x, F x ∂(μ''.map (Y i)) - ∫ x, F x ∂(μ''.map (X i))|
+        ≤ (L' : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} :=
+          abs_integral_map_sub_le_of_lipschitz (hXZ.forall_aemeasurable i) (hY i)
+            hF_bd hL' hF_lip' hδ
+      _ < ε := by linarith
 
 /-- **Slutsky's convergence-in-distribution replacement lemma without separability.** If `X i → Z`
 in distribution and `Y i - X i → 0` in probability along an arbitrary filter `l` in a seminormed
