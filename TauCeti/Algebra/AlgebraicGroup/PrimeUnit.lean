@@ -9,8 +9,8 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Group
-import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Algebra.PointTopology.Separation
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # Prime-units of an affine group over `ℚ`
@@ -138,8 +138,8 @@ theorem IsPrimeUnit.conj {γ : WithConv (H →ₐ[ℚ] ℚ)} (hγ : IsPrimeUnit 
     rw [MulEquiv.coe_toMonoidHom]
     exact (IsTopologicalGroup.continuous_conj (ψ g)).congr fun x ↦ (MulAut.conj_apply _ _).symm
   have hψ : ψ (g * γ * g⁻¹) = (MulAut.conj (ψ g)).toMonoidHom (ψ γ) := by simp
-  rw [hψ, ← MonoidHom.map_zpowers]
-  exact Subgroup.isCompact_closure_map hc _ hcont
+  rw [hψ, ← MonoidHom.map_zpowers, Subgroup.coe_map]
+  exact hc.closure_image hcont.continuousOn
 
 /-- Conjugation preserves and reflects `l`-units. -/
 @[simp]
@@ -160,8 +160,8 @@ theorem IsPrimeUnit.mapDomain {γ : WithConv (H →ₐ[ℚ] ℚ)} (hγ : IsPrime
     (φ : H' →ₐc[ℚ] H) : IsPrimeUnit l (BialgHom.mapDomain φ γ) := by
   intro v _ hv
   rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply,
-    ← MonoidHom.map_zpowers]
-  exact Subgroup.isCompact_closure_map (hγ v hv) _ (BialgHom.continuous_mapDomain φ)
+    ← MonoidHom.map_zpowers, Subgroup.coe_map]
+  exact (hγ v hv).closure_image (BialgHom.continuous_mapDomain φ).continuousOn
 
 /-- A closed immersion of affine groups, given by a surjective bialgebra map `φ` of coordinate
 algebras, preserves and reflects `l`-units. So the `l`-unit condition can be tested after a
@@ -170,14 +170,7 @@ theorem isPrimeUnit_mapDomain_iff {φ : H' →ₐc[ℚ] H} (hφ : Function.Surje
     {γ : WithConv (H →ₐ[ℚ] ℚ)} : IsPrimeUnit l (BialgHom.mapDomain φ γ) ↔ IsPrimeUnit l γ := by
   refine ⟨fun hγ v _ hv ↦ ?_, fun hγ ↦ hγ.mapDomain φ⟩
   -- Over `ℚ_v`, precomposition with `φ` is a closed embedding of groups of points.
-  have he : IsClosedEmbedding (BialgHom.mapDomain (A := ℚ_[v]) φ) := by
-    have hcomp : ofConv ∘ BialgHom.mapDomain (A := ℚ_[v]) φ =
-        (fun x : H →ₐ[ℚ] ℚ_[v] ↦ x.comp (φ : H' →ₐ[ℚ] H)) ∘ ofConv := by
-      funext x
-      simp [BialgHom.mapDomain_apply]
-    rw [← (isHomeomorph_ofConv (A := H') (R := ℚ_[v])).isClosedEmbedding.of_comp_iff, hcomp]
-    exact (isClosedEmbedding_comap_of_surjective (φ : H' →ₐ[ℚ] H) hφ).comp
-      (isHomeomorph_ofConv (A := H) (R := ℚ_[v])).isClosedEmbedding
+  have he := BialgHom.isClosedEmbedding_mapDomain_of_surjective (R := ℚ_[v]) hφ
   have hc := hγ v hv
   rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply,
     ← MonoidHom.map_zpowers, Subgroup.coe_map, he.closure_image_eq] at hc

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Topology
 public import TauCeti.Algebra.AlgebraicGroup.PrimeUnit
-public import TauCeti.NumberTheory.Padics.RatCast
 import Mathlib.NumberTheory.Padics.ProperSpace
+import TauCeti.NumberTheory.NumberField.SUnits.Rat.Structure
 
 /-!
 # Prime-units of the multiplicative group

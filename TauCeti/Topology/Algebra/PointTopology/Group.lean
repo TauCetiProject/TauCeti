@@ -50,6 +50,8 @@ is, and an open embedding when `ψ` is and the coordinate algebra is of finite t
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
+* `BialgHom.isClosedEmbedding_mapDomain_of_surjective`: a closed immersion of affine groups induces
+  a closed embedding of groups of points over a T1 ring.
 
 ## References
 
@@ -153,3 +155,24 @@ theorem AlgHom.isOpenEmbedding_mapValue [Algebra.FiniteType k H₁] {ψ : R →�
   exact (isOpenEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isOpenEmbedding
 
 end Functoriality
+
+section ClosedImmersion
+
+variable {k H₁ H₂ R : Type*} [CommSemiring k] [Ring H₁] [Bialgebra k H₁] [Ring H₂]
+  [Bialgebra k H₂] [CommRing R] [Algebra k R] [TopologicalSpace R] [T1Space R]
+
+open Topology TauCeti.PointTopology
+
+/-- Over a T1 ring of coefficients, precomposition with a surjective bialgebra map `φ : H₁ → H₂`,
+that is, a closed immersion of affine groups, is a closed embedding of groups of points. -/
+theorem BialgHom.isClosedEmbedding_mapDomain_of_surjective {φ : H₁ →ₐc[k] H₂}
+    (hφ : Function.Surjective φ) : IsClosedEmbedding (mapDomain (A := R) φ) := by
+  have hcomp : ofConv ∘ mapDomain (A := R) φ =
+      (fun x : H₂ →ₐ[k] R ↦ x.comp (φ : H₁ →ₐ[k] H₂)) ∘ ofConv := by
+    funext x
+    simp [BialgHom.mapDomain_apply]
+  rw [← (isHomeomorph_ofConv (k := k) (A := H₁) (R := R)).isClosedEmbedding.of_comp_iff, hcomp]
+  exact (isClosedEmbedding_comap_of_surjective (φ : H₁ →ₐ[k] H₂) hφ).comp
+    (isHomeomorph_ofConv (k := k) (A := H₂) (R := R)).isClosedEmbedding
+
+end ClosedImmersion

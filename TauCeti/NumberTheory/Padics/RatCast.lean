@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.Algebra.AddCircle
-import TauCeti.NumberTheory.SmoothNumbers
 
 /-!
 # Rational numbers at almost every prime
@@ -21,9 +20,7 @@ make a rational object, such as a rational basis or a rational isometry, integra
 completion outside a finite set of primes. Conversely, a rational number that is a `p`-adic integer
 at every prime is an integer, and so is a rational number whose denominator is a power of `p` and
 which is a `p`-adic integer. Consequently two rational numbers agree in `ℚ/ℤ` when their
-difference has `p`-power denominator and is a `p`-adic integer. Finally, for a prime `l`, the
-rational numbers that are `p`-adic units at every prime `p ≠ l` are exactly the numbers `± lⁿ`,
-`n ∈ ℤ`.
+difference has `p`-power denominator and is a `p`-adic integer.
 
 ## Main results
 
@@ -36,8 +33,6 @@ rational numbers that are `p`-adic units at every prime `p ≠ l` are exactly th
   is a `p`-adic integer at every prime.
 * `Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`: a `p`-adic integer whose product with a
   power of `p` is an integer is an integer.
-* `Padic.forall_norm_rat_eq_one_iff_exists_zpow`: a rational number is a `p`-adic unit at every
-  prime `p ≠ l` exactly when it is `± lⁿ` for an integer `n`.
 * `Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
   difference has `p`-power denominator and lies in `ℤ_p`.
 -/
@@ -95,42 +90,6 @@ theorem den_eq_one_of_pow_mul_eq_of_norm_rat_le_one {p : ℕ} [Fact p.Prime] {q 
   have hp : (p : ℚ) ^ k ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
   have hqm : q = m := mul_left_cancel₀ hp (by rw [hn]; push_cast; ring)
   rw [hqm, Rat.den_intCast]
-
-/-- For a prime `l`, a rational number is a `p`-adic unit at every prime `p ≠ l` exactly when it
-is `± lⁿ` for an integer `n`. -/
-theorem forall_norm_rat_eq_one_iff_exists_zpow {l : ℕ} [Fact l.Prime] {q : ℚ} :
-    (∀ p : Nat.Primes, (p : ℕ) ≠ l → ‖(q : ℚ_[p])‖ = 1) ↔
-      ∃ n : ℤ, q = (l : ℚ) ^ n ∨ q = -(l : ℚ) ^ n := by
-  have hl : l.Prime := Fact.out
-  have hnorm_l {p : Nat.Primes} (hp : (p : ℕ) ≠ l) : ‖((l : ℚ) : ℚ_[p])‖ = 1 := by
-    rw [Rat.cast_natCast, norm_natCast_eq_one_iff]
-    exact (Nat.coprime_primes p.prop hl).mpr hp
-  constructor
-  · intro h
-    have hq : q ≠ 0 := by
-      obtain ⟨p, hlp, hp⟩ := Nat.exists_infinite_primes (l + 1)
-      rintro rfl
-      simpa using h ⟨p, hp⟩ (show p ≠ l by omega)
-    -- Away from `l` the valuations of `q` vanish, so `|num q|` and `den q` are powers of `l`.
-    have hv (p : ℕ) (hp : p.Prime) (hpl : p ∉ ({l} : Finset ℕ)) : padicValRat p q = 0 := by
-      have : Fact p.Prime := ⟨hp⟩
-      have hpq := h ⟨p, hp⟩ (by simpa using hpl)
-      rw [eq_padicNorm, padicNorm.eq_zpow_of_ne_zero hq, Rat.cast_zpow, Rat.cast_natCast,
-        zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (mod_cast hp.ne_one)] at hpq
-      exact neg_eq_zero.mp hpq
-    obtain ⟨hnum, hden⟩ := (TauCeti.forall_padicValRat_eq_zero_iff_mem_factoredNumbers hq).mp hv
-    have hS : ∀ p ∈ ({l} : Finset ℕ), p.Prime := by simpa using hl
-    have hnum' := TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hnum
-    have hden' := TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hden
-    rw [Finset.prod_singleton] at hnum' hden'
-    refine ⟨padicValNat l q.num.natAbs - padicValNat l q.den,
-      (abs_eq (zpow_nonneg (Nat.cast_nonneg l) _)).mp ?_⟩
-    rw [zpow_sub₀ (mod_cast hl.ne_zero), zpow_natCast, zpow_natCast, ← Nat.cast_pow,
-      ← Nat.cast_pow, hnum', hden', Rat.abs_def, Rat.divInt_eq_div]
-    simp [Nat.cast_natAbs]
-  · rintro ⟨n, rfl | rfl⟩ p hp
-    · rw [Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
-    · rw [Rat.cast_neg, norm_neg, Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
 
 /-- Two rational numbers agree modulo `ℤ` when their difference has `p`-power denominator and
 lies in `ℤ_p`. -/
