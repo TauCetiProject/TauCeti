@@ -274,15 +274,11 @@ theorem orientationPreservingOn_of_isOrientationPreservingAt (μ : Orientation �
   intro z hz
   obtain ⟨D, hD, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 (h z hz)
   have hg : MDifferentiableAt I I g z := mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩
-  refine ⟨by simpa [writtenInExtChartAt] using hg.differentiableWithinAt_writtenInExtChartAt, ?_⟩
+  refine ⟨by simpa only [writtenInExtChartAt_self_eq, extChartAt_self_apply] using
+    hg.differentiableWithinAt_writtenInExtChartAt, ?_⟩
   rw [orientationAt_model, orientationAt_model] at hmap
   have hdet := (Orientation.map_eq_iff_det_pos μ D.toLinearEquiv hι).1 hmap
-  convert hdet using 2
-  ext v
-  have h := congrArg (fun L ↦ L v) hD
-  rw [hg.mfderiv] at h
-  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of `E`.
-  exact h.symm
+  rwa [← hg.mfderiv_eq_fderivWithin_self, ← hD]
 
 /-- Charts of the maximal `C¹` atlas which carry the orientation `o` of `M` to one constant
 orientation of the model at every point of their sources change coordinates with positive
@@ -313,30 +309,6 @@ theorem symm_trans_mem_orientationPreservingGroupoid {o : Manifold.Orientation I
   rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
     OpenPartialHomeomorph.symm_symm]
   exact key he' ho' ho
-
-/-- A map `f` of `E` with derivative `R` of negative determinant at `I z`, read in the model `H`
-through `I`, reverses the constant orientation of the model at `z` when `I z` and `f (I z)` lie in
-the interior of the range of `I`. -/
-theorem isOrientationReversingAt_symm_comp_comp (μ : Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E} {R : E ≃L[ℝ] E} {z : H}
-    (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z)) (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
-    (hz : I z ∈ interior (range I)) (hfz : f (I z) ∈ interior (range I)) :
-    IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι) (I.symm ∘ f ∘ I) z := by
-  have hz' := mem_interior_iff_mem_nhds.1 hz
-  have hfz' := mem_interior_iff_mem_nhds.1 hfz
-  have hg : MDifferentiableAt I I (I.symm ∘ f ∘ I) z :=
-    ((I.contMDiffOn_symm (n := 1)).contMDiffAt hfz' |>.mdifferentiableAt one_ne_zero).comp z
-      (hf.differentiableAt.mdifferentiableAt.comp z I.mdifferentiableAt)
-  have heq : I ∘ (I.symm ∘ f ∘ I) ∘ I.symm =ᶠ[𝓝 (I z)] f := by
-    filter_upwards [hz', hf.continuousAt.preimage_mem_nhds hfz'] with v hv hfv
-    simp only [Function.comp_apply, I.right_inv hv, I.right_inv hfv]
-  have hR' : fderivWithin ℝ (I ∘ (I.symm ∘ f ∘ I) ∘ I.symm) (range I) (I z) = R := by
-    rw [fderivWithin_of_mem_nhds hz', heq.fderiv_eq, hf.fderiv]
-  refine (isOrientationReversingAt_iff _ _ _ _).2 ⟨R, ?_, ?_⟩
-  · rw [hg.mfderiv]
-    exact hR'.symm
-  · rw [orientationAt_model, orientationAt_model]
-    exact (Orientation.map_eq_neg_iff_det_neg μ R.toLinearEquiv hι).2 hR
 
 /-- Let `c` be a chart of the maximal `C¹` atlas which reverses the orientation `o` against a
 constant orientation `μ` of the model at every point of its source, and let `x` be a point of its
@@ -406,29 +378,27 @@ theorem isOrientedAtlas_setOf_isOrientationPreservingAt [Nontrivial E]
     have hc : c ∈ IsManifold.maximalAtlas I 1 M := IsManifold.chart_mem_maximalAtlas x
     have hcx : ContMDiffAt I I 1 c x := (contMDiffOn_of_mem_maximalAtlas hc).contMDiffAt
       (c.open_source.mem_nhds (mem_chart_source H x))
+    -- Restricting `c` to the interior of the set where a property holds gives a chart of the
+    -- maximal atlas around `x` with that property on its source, if it holds near `x`.
+    have restr : ∀ {P : M → Prop}, (∀ᶠ y in 𝓝 x, P y) →
+        c.restr (interior {y | P y}) ∈ IsManifold.maximalAtlas I 1 M ∧
+          x ∈ (c.restr (interior {y | P y})).source ∧
+            ∀ y ∈ (c.restr (interior {y | P y})).source, P y := fun hP ↦
+      ⟨restr_mem_maximalAtlas _ hc isOpen_interior, by
+        rw [c.restr_source' _ isOpen_interior]
+        exact ⟨mem_chart_source H x, mem_interior_iff_mem_nhds.2 hP⟩, fun y hy ↦ by
+        rw [c.restr_source' _ isOpen_interior] at hy
+        exact interior_subset hy.2⟩
     rcases (c.isLocalDiffeomorphAt_of_mem_maximalAtlas hc (mem_chart_source H x)
       ).isOrientationPreservingAt_or_isOrientationReversingAt one_ne_zero o
         (model (I := I) μ o.card_eq) with hx | hx
     · -- Restrict the chart to the open set where it already preserves orientation.
-      set U := interior {y | IsOrientationPreservingAt o (model (I := I) μ o.card_eq) c y}
-      have hxU : x ∈ U := mem_interior_iff_mem_nhds.2 (eventually_isOrientationPreservingAt hcx hx)
-      refine ⟨c.restr U, ⟨restr_mem_maximalAtlas _ hc isOpen_interior, fun y hy ↦ ?_⟩, ?_⟩
-      · rw [c.restr_source' U isOpen_interior] at hy
-        exact interior_subset hy.2
-      · rw [c.restr_source' U isOpen_interior]
-        exact ⟨mem_chart_source H x, hxU⟩
+      obtain ⟨he, hxe, hpres⟩ := restr (eventually_isOrientationPreservingAt hcx hx)
+      exact ⟨_, ⟨he, hpres⟩, hxe⟩
     · -- Restrict the chart to the open set where it reverses orientation, then reflect.
-      set U := interior {y | IsOrientationReversingAt o (model (I := I) μ o.card_eq) c y}
-      have hxU : x ∈ U := mem_interior_iff_mem_nhds.2 (eventually_isOrientationReversingAt hcx hx)
+      obtain ⟨hU, hxU, hrev⟩ := restr (eventually_isOrientationReversingAt hcx hx)
       obtain ⟨e, he, hxe, hpres⟩ :=
-        exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt
-          (restr_mem_maximalAtlas _ hc isOpen_interior)
-          (fun y hy ↦ by
-            rw [c.restr_source' U isOpen_interior] at hy
-            exact interior_subset hy.2)
-          (by
-            rw [c.restr_source' U isOpen_interior]
-            exact ⟨mem_chart_source H x, hxU⟩)
+        exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt hU hrev hxU
           (BoundarylessManifold.isInteriorPoint (x := x))
       exact ⟨e, ⟨he, hpres⟩, hxe⟩
   symm_trans_mem he he' := symm_trans_mem_orientationPreservingGroupoid he.1 he'.1 he.2 he'.2

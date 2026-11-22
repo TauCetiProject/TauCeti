@@ -136,6 +136,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
   chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
   smoothness hypothesis on the atlas.
+* `TauCeti.writtenInExtChartAt_self_eq` and `MDifferentiableAt.mfderiv_eq_fderivWithin_self`: a
+  map between model spaces reads in their preferred charts as `I' ∘ g ∘ I.symm`, whose derivative
+  within `range I` is its manifold derivative.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -1142,6 +1145,22 @@ theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
     (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
       fun _ h ↦ (extChartAt I x).right_inv h)
     ((extChartAt I x).right_inv (mem_extChartAt_target x))
+
+/-- A map between model spaces, read in their preferred extended charts at `z` and at `g z`, is the
+map read through the models, `I' ∘ g ∘ I.symm`. -/
+theorem writtenInExtChartAt_self_eq (g : H → H') (z : H) :
+    writtenInExtChartAt I I' z g = I' ∘ g ∘ I.symm :=
+  rfl
+
+/-- The manifold derivative at `z` of a map between model spaces, differentiable at `z`, is the
+Fréchet derivative within `range I` of the map read through the models, `I' ∘ g ∘ I.symm`, at
+`I z`. -/
+theorem _root_.MDifferentiableAt.mfderiv_eq_fderivWithin_self {g : H → H'} {z : H}
+    (hg : MDifferentiableAt I I' g z) :
+    mfderiv I I' g z = fderivWithin 𝕜 (I' ∘ g ∘ I.symm) (range I) (I z) := by
+  rw [hg.mfderiv, writtenInExtChartAt_self_eq, extChartAt_self_apply]
+  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
+  rfl
 
 end ExtChartAtSelf
 

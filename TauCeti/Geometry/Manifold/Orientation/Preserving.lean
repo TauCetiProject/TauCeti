@@ -49,7 +49,9 @@ or reverses every orientation of `E` according to the sign of its determinant
 precomposing with an automorphism of negative determinant exchanges preservation and reversal
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
 More generally, a map with negative derivative determinant reverses orientations at that point
-(`isOrientationReversingAt_of_det_fderiv_neg`).
+(`isOrientationReversingAt_of_det_fderiv_neg`), and such a map of `E`, read in a model `H` through
+`I` near interior points of the range of `I`, reverses the constant model orientation
+(`isOrientationReversingAt_symm_comp_comp`).
 
 If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
 or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
@@ -656,6 +658,29 @@ theorem isOrientationReversingAt_of_det_fderiv_neg (o : Manifold.Orientation �
     exact (fderiv ℝ f v).coe_toContinuousLinearEquivOfDetNeZero hdet.ne
   · rw [orientationAt_eq_orientationAt o (f v) v]
     exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ o.card_eq).mpr hdet
+
+/-- A map `f` of `E` with derivative `R` of negative determinant at `I z`, read in the model `H`
+through `I`, reverses the constant orientation of the model at `z` when `I z` and `f (I z)` lie in
+the interior of the range of `I`. -/
+theorem isOrientationReversingAt_symm_comp_comp (μ : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E} {R : E ≃L[ℝ] E} {z : H}
+    (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z)) (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
+    (hz : I z ∈ interior (Set.range I)) (hfz : f (I z) ∈ interior (Set.range I)) :
+    IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι) (I.symm ∘ f ∘ I) z := by
+  have hz' := mem_interior_iff_mem_nhds.1 hz
+  have hfz' := mem_interior_iff_mem_nhds.1 hfz
+  have hg : MDifferentiableAt I I (I.symm ∘ f ∘ I) z :=
+    ((I.contMDiffOn_symm (n := 1)).contMDiffAt hfz' |>.mdifferentiableAt one_ne_zero).comp z
+      (hf.differentiableAt.mdifferentiableAt.comp z I.mdifferentiableAt)
+  have heq : I ∘ (I.symm ∘ f ∘ I) ∘ I.symm =ᶠ[𝓝 (I z)] f := by
+    filter_upwards [hz', hf.continuousAt.preimage_mem_nhds hfz'] with v hv hfv
+    simp only [Function.comp_apply, I.right_inv hv, I.right_inv hfv]
+  have hR' : fderivWithin ℝ (I ∘ (I.symm ∘ f ∘ I) ∘ I.symm) (Set.range I) (I z) = R := by
+    rw [fderivWithin_of_mem_nhds hz', heq.fderiv_eq, hf.fderiv]
+  refine (isOrientationReversingAt_iff _ _ _ _).2 ⟨R, ?_, ?_⟩
+  · exact (hg.mfderiv_eq_fderivWithin_self.trans hR').symm
+  · rw [orientationAt_model, orientationAt_model]
+    exact (_root_.Orientation.map_eq_neg_iff_det_neg μ R.toLinearEquiv hι).2 hR
 
 /-- Precomposing a map which reverses orientations at `L x` with a continuous linear automorphism
 `L` of `E` of negative determinant gives a map which preserves them at `x`. -/
