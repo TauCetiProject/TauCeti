@@ -9,30 +9,36 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Chart localization of smooth bundle sections
 
 A smooth section of a vector bundle can be multiplied by a smooth cutoff supported in a coordinate
 chart and read in a bundle frame as a native test function on the chart target. This file defines
-the chart localization map and proves continuity of both chart localizations and fixed-support
-chart-coefficient readbacks for the compact derivative frame topology.
+the chart localization map and proves continuity of the unweighted chart-coefficient map, chart
+localizations, and fixed-support chart-coefficient readbacks for the compact derivative frame
+topology.
 
 Let `c` be a chart with `C^n` inverse, `t` a bundle trivialization over its source, and `ψ` a
 `C^n` scalar function whose closed support is mapped by `c` into a compact subset `L` of the chart
 target. The *chart localization* `Bundle.Trivialization.chartLocalization` reads `ψ • s` through
 the unweighted chart-coefficient map `Bundle.Trivialization.chartCoeffLinearMap` as a native test
-function supported in `L`. Both `Bundle.Trivialization.chartLocalization` and the fixed-support
-coefficient map `Bundle.Trivialization.chartTestCoeff` are continuous from the compact derivative
-frame topology to `𝓓^{n}_{L}(E, F)` (`Bundle.Trivialization.continuous_chartLocalization`,
-`Bundle.Trivialization.continuous_chartTestCoeff`), via a shared two-open-set continuity lemma.
-Extending the localization back through the chart recovers `ψ • s` when `tsupport ψ ⊆ c.source`
+function supported in `L`. Continuity of `Bundle.Trivialization.chartCoeffLinearMap` on the
+submodule `ContMDiffSection.zeroOffInChart` (`Bundle.Trivialization.continuous_chartCoeffLinearMap`)
+immediately yields continuity of both `Bundle.Trivialization.chartLocalization` and the
+fixed-support coefficient map `Bundle.Trivialization.chartTestCoeff`
+(`Bundle.Trivialization.continuous_chartLocalization`,
+`Bundle.Trivialization.continuous_chartTestCoeff`). Extending the localization back through the
+chart recovers `ψ • s` when `tsupport ψ ⊆ c.source`
 (`Bundle.Trivialization.chartTestSection_chartLocalization`).
 
 ## Main declarations
 
 * `Bundle.Trivialization.chartLocalization`: the chart localization of sections, a linear map into
   the test functions supported in a fixed compact set.
+* `Bundle.Trivialization.continuous_chartCoeffLinearMap`: continuity of the unweighted chart
+  coefficient map on `ContMDiffSection.zeroOffInChart` for the subspace frame topology.
 * `Bundle.Trivialization.continuous_chartLocalization` and
   `Bundle.Trivialization.continuous_chartTestCoeff`: continuity of chart localizations and
   fixed-support chart coefficients for the frame topology.
@@ -128,13 +134,13 @@ variable [IsManifold I n M] [LocallyCompactSpace E] {ι : Type*}
   (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-private theorem continuous_chartCoeff (hcover : ∀ x : M, ∃ i, x ∈ U i)
-    {P : Type*} [TopologicalSpace P] {L₀ L : Compacts E}
-    (hL₀ : (L₀ : Set E) ⊆ c.target) (hL₀L : (L₀ : Set E) ⊆ L)
-    (f : P → Cₛ^n⟮I; F, V⟯)
-    (hf : letI := frameTopology (I := I) (n := n) e U hU; Continuous f)
-    (hf_supp : ∀ p y, y ∈ c.target → y ∉ L₀ → (f p) (c.symm y) = 0) :
-    Continuous fun p ↦ t.chartCoeff c hc hct hL₀ hL₀L (f p) (hf_supp p) := by
+/-- **Unweighted chart coefficients are continuous** on the submodule of sections vanishing
+outside `L₀` on the chart target, equipped with the subspace topology of the compact derivative
+frame topology. -/
+theorem continuous_chartCoeffLinearMap (hcover : ∀ x : M, ∃ i, x ∈ U i)
+    {L₀ L : Compacts E} (hL₀ : (L₀ : Set E) ⊆ c.target) (hL₀L : (L₀ : Set E) ⊆ L) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (t.chartCoeffLinearMap c hc hct hL₀ hL₀L) := by
   let := frameTopology (I := I) (n := n) e U hU
   have hind : Topology.IsInducing (ContDiffMapSupportedIn.toContMDiffMap :
       𝓓^{n}_{L}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
@@ -154,28 +160,32 @@ private theorem continuous_chartCoeff (hcover : ∀ x : M, ∃ i, x ∈ U i)
   cases b with
   | false =>
     convert continuous_const (y := (0 : C^n⟮𝓘(ℝ, E), W false; 𝓘(ℝ, F), F⟯)) using 1
-    funext p
+    funext s
     ext y
     simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
-      ContDiffMapSupportedIn.coe_toContMDiffMap, ContMDiffMap.coe_zero, Pi.zero_apply]
-    exact t.chartCoeff_eq_zero c hc hct hL₀ hL₀L (f p) (hf_supp p) y.property
+      ContDiffMapSupportedIn.coe_toContMDiffMap, chartCoeffLinearMap_apply,
+      ContMDiffMap.coe_zero, Pi.zero_apply]
+    exact t.chartCoeff_eq_zero c hc hct hL₀ hL₀L s.val (mem_zeroOffInChart.1 s.property) y.property
   | true =>
     have hsymm : ContMDiff 𝓘(ℝ, E) I n (fun y : W true ↦ c.symm y) :=
       hc.comp_contMDiff (contMDiff_subtypeVal (U := W true)) fun y ↦ y.property
     let j : C^n⟮𝓘(ℝ, E), W true; I, chartSource c⟯ :=
       ⟨fun y ↦ ⟨c.symm y, c.map_target y.property⟩,
         (TauCeti.ContMDiff.subtypeVal_comp_iff (chartSource c) _).mp hsymm⟩
-    have hcoord : Continuous fun p ↦ t.frameCoordinates (U := chartSource c) hct (f p) :=
-      (continuous_frameCoordinates_of_cover e U hU hcover t (chartSource c) hct).comp hf
-    have hcomp : Continuous fun p ↦
-        (t.frameCoordinates (U := chartSource c) hct (f p)).comp j :=
+    have hcoord : Continuous fun s : zeroOffInChart I F n V c L₀ ↦
+        t.frameCoordinates (U := chartSource c) hct s.val :=
+      (continuous_frameCoordinates_of_cover e U hU hcover t (chartSource c) hct).comp
+        continuous_subtypeVal
+    have hcomp : Continuous fun s : zeroOffInChart I F n V c L₀ ↦
+        (t.frameCoordinates (U := chartSource c) hct s.val).comp j :=
       ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (hcoord.prodMk continuous_const)
     convert hcomp using 1
-    funext p
+    funext s
     ext y
     simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
-      ContDiffMapSupportedIn.coe_toContMDiffMap,
-      chartCoeff_apply_of_mem t c hc hct hL₀ hL₀L (f p) (hf_supp p) y.property,
+      ContDiffMapSupportedIn.coe_toContMDiffMap, chartCoeffLinearMap_apply,
+      chartCoeff_apply_of_mem t c hc hct hL₀ hL₀L s.val (mem_zeroOffInChart.1 s.property)
+        y.property,
       ContMDiffMap.comp_apply, frameCoordinates_apply,
       t.continuousLinearMapAt_apply_of_mem (R := ℝ) (hct (c.map_target y.property))]
     rfl
@@ -188,10 +198,8 @@ theorem continuous_chartLocalization
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartLocalization c hc hct ψ L hL hψ) := by
   let := frameTopology (I := I) (n := n) e U hU
-  refine (continuous_chartCoeff t c hc hct e U hU hcover hL Subset.rfl (smulLinearMap ψ)
-    (continuous_smulLinearMap_frameTopology e U hU ψ)
-    fun _ _ hyc hyL ↦ smul_apply_symm_eq_zero c ψ L hψ _ hyc hyL).congr fun s ↦
-    (chartLocalization_apply t c hc hct ψ L hL hψ s).symm
+  exact (continuous_chartCoeffLinearMap t c hc hct e U hU hcover hL Subset.rfl).comp
+    ((continuous_smulLinearMap_frameTopology e U hU ψ).subtype_mk _)
 
 end Continuity
 
@@ -207,15 +215,8 @@ theorem continuous_chartTestCoeff [IsManifold I n M] [LocallyCompactSpace E]
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartTestCoeff c hc hct hK hKL) := by
   let := frameTopology (I := I) (n := n) e U hU
-  refine (continuous_chartCoeff t c hc hct e U hU hcover (c.imageCompact_subset_target hK)
-    (c.coe_imageCompact hK ▸ hKL) Subtype.val continuous_subtypeVal
-    fun s _ hyc hyL₀ ↦ s.val.eq_zero_of_notMem_tsupport fun h ↦ by
-      rw [← SetLike.mem_coe, c.coe_imageCompact hK] at hyL₀
-      exact hyL₀ ⟨c.symm _, mem_supportedIn.1 s.property h, c.right_inv hyc⟩).congr fun s ↦ ?_
-  ext y
-  by_cases hy : y ∈ c.target
-  · rw [chartCoeff_apply_of_mem _ _ _ _ _ _ _ _ hy, chartTestCoeff_apply_of_mem _ _ _ _ _ _ _ hy]
-  · rw [chartCoeff_apply_of_notMem _ _ _ _ _ _ _ _ hy,
-      chartTestCoeff_apply_of_notMem _ _ _ _ _ _ _ hy]
+  rw [chartTestCoeff_eq_comp]
+  exact (continuous_chartCoeffLinearMap t c hc hct e U hU hcover (c.imageCompact_subset_target hK)
+    (c.coe_imageCompact hK ▸ hKL)).comp (continuous_subtypeVal.subtype_mk _)
 
 end Bundle.Trivialization

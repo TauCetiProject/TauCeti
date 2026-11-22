@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Native test functions in bundle charts
@@ -204,58 +205,6 @@ theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
 
 end Bundle.Trivialization
 
-namespace OpenPartialHomeomorph
-
-/-- The compact image of a compact subset of `c.source` under `c`. -/
-def imageCompact {M E : Type*} [TopologicalSpace M] [TopologicalSpace E]
-    (c : OpenPartialHomeomorph M E) {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
-    Compacts E :=
-  ⟨c '' (K : Set M), K.isCompact.image_of_continuousOn (c.continuousOn.mono hK)⟩
-
-/-- The carrier of the compact chart image is the set image. -/
-@[simp]
-theorem coe_imageCompact {M E : Type*} [TopologicalSpace M] [TopologicalSpace E]
-    (c : OpenPartialHomeomorph M E) {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
-    (c.imageCompact hK : Set E) = c '' K :=
-  (rfl)
-
-/-- The compact image of a compact subset of `c.source` lies in `c.target`. -/
-theorem imageCompact_subset_target {M E : Type*} [TopologicalSpace M] [TopologicalSpace E]
-    (c : OpenPartialHomeomorph M E) {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
-    (c.imageCompact hK : Set E) ⊆ c.target :=
-  image_subset_iff.2 fun _ hx ↦ c.map_source (hK hx)
-
-end OpenPartialHomeomorph
-
-namespace ContMDiffSection
-
-variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {n : ℕ∞ω} {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-variable (I F n V) in
-/-- The submodule of `C^n` sections vanishing outside `L₀` on the chart target when pulled back
-along `c.symm`. -/
-def zeroOffInChart (c : OpenPartialHomeomorph M E) (L₀ : Set E) :
-    Submodule 𝕜 Cₛ^n⟮I; F, V⟯ where
-  carrier := {s | ∀ y ∈ c.target, y ∉ L₀ → s (c.symm y) = 0}
-  zero_mem' := fun _ _ _ ↦ rfl
-  add_mem' := fun hs₁ hs₂ y hyc hyL ↦ by simp [hs₁ y hyc hyL, hs₂ y hyc hyL]
-  smul_mem' := fun a _ hs y hyc hyL ↦ by simp [hs y hyc hyL]
-
-/-- Membership in `zeroOffInChart` is vanishing on `c.target \ L₀` along `c.symm`. -/
-@[simp]
-theorem mem_zeroOffInChart {c : OpenPartialHomeomorph M E} {L₀ : Set E} {s : Cₛ^n⟮I; F, V⟯} :
-    s ∈ zeroOffInChart I F n V c L₀ ↔ ∀ y ∈ c.target, y ∉ L₀ → s (c.symm y) = 0 :=
-  Iff.rfl
-
-end ContMDiffSection
-
 namespace Bundle.Trivialization
 
 open ContMDiffSection
@@ -413,16 +362,35 @@ private theorem chartTestCoeff_zero_of_notMem {K : Compacts M} (hK : (K : Set M)
     (s : supportedIn I F n V K) {y : E} (hyc : y ∈ c.target)
     (hy : y ∉ (c.imageCompact hK : Set E)) :
     s.val (c.symm y) = 0 :=
-  s.val.eq_zero_of_notMem_tsupport fun h ↦
-    hy ⟨c.symm y, mem_supportedIn.1 s.property h, c.right_inv hyc⟩
+  s.val.eq_zero_of_notMem_tsupport fun h ↦ by
+    rw [c.coe_imageCompact hK] at hy
+    exact hy ⟨c.symm y, mem_supportedIn.1 s.property h, c.right_inv hyc⟩
+
+omit [ContMDiffVectorBundle n F V I] in
+/-- A section supported in a compact subset `K` of a chart source vanishes outside `c '' K` on the
+chart target. -/
+theorem supportedIn_le_zeroOffInChart {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
+    supportedIn I F n V K ≤ zeroOffInChart I F n V c (c.imageCompact hK) :=
+  fun s hs ↦ mem_zeroOffInChart.2 fun _ hyc hy ↦ chartTestCoeff_zero_of_notMem c hK ⟨s, hs⟩ hyc hy
 
 /-- Read a `C^n` section supported in a compact subset `K` of a chart source as a supported test
 function in `E`, via the inverse chart and the bundle frame. -/
 def chartTestCoeff {K : Compacts M} (hK : (K : Set M) ⊆ c.source)
     {L : Compacts E} (hKL : c '' (K : Set M) ⊆ L) :
     supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}_{L}(E, F) :=
-  (t.chartCoeffLinearMap c hc_symm hct (c.imageCompact_subset_target hK) hKL).comp
-    (Submodule.inclusion fun s hs _ hyc hy ↦ chartTestCoeff_zero_of_notMem c hK ⟨s, hs⟩ hyc hy)
+  (t.chartCoeffLinearMap c hc_symm hct (c.imageCompact_subset_target hK)
+    (c.coe_imageCompact hK ▸ hKL)).comp
+    (Submodule.inclusion (supportedIn_le_zeroOffInChart c hK))
+
+/-- `chartTestCoeff` factors through `chartCoeffLinearMap` via the support inclusion into
+`zeroOffInChart`. -/
+theorem chartTestCoeff_eq_comp {K : Compacts M} (hK : (K : Set M) ⊆ c.source)
+    {L : Compacts E} (hKL : c '' (K : Set M) ⊆ L) :
+    t.chartTestCoeff c hc_symm hct hK hKL =
+      (t.chartCoeffLinearMap c hc_symm hct (c.imageCompact_subset_target hK)
+        (c.coe_imageCompact hK ▸ hKL)).comp
+        (Submodule.inclusion (supportedIn_le_zeroOffInChart c hK)) :=
+  (rfl)
 
 /-- On the chart target, `chartTestCoeff` evaluates the bundle frame on the section at the
 inverse-chart point. -/
@@ -431,7 +399,8 @@ theorem chartTestCoeff_apply_of_mem {K : Compacts M} (hK : (K : Set M) ⊆ c.sou
     (s : supportedIn I F n V K) {y : E} (hy : y ∈ c.target) :
     t.chartTestCoeff c hc_symm hct hK hKL s y =
       t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) :=
-  chartCoeff_apply_of_mem t c hc_symm hct (c.imageCompact_subset_target hK) hKL s.val
+  chartCoeff_apply_of_mem t c hc_symm hct (c.imageCompact_subset_target hK)
+    (c.coe_imageCompact hK ▸ hKL) s.val
     (fun _ hyc hy' ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy') hy
 
 /-- Outside the chart target, `chartTestCoeff` vanishes. -/
@@ -440,7 +409,8 @@ theorem chartTestCoeff_apply_of_notMem {K : Compacts M} (hK : (K : Set M) ⊆ c.
     {L : Compacts E} (hKL : c '' (K : Set M) ⊆ L)
     (s : supportedIn I F n V K) {y : E} (hy : y ∉ c.target) :
     t.chartTestCoeff c hc_symm hct hK hKL s y = 0 :=
-  chartCoeff_apply_of_notMem t c hc_symm hct (c.imageCompact_subset_target hK) hKL s.val
+  chartCoeff_apply_of_notMem t c hc_symm hct (c.imageCompact_subset_target hK)
+    (c.coe_imageCompact hK ▸ hKL) s.val
     (fun _ hyc hy' ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy') hy
 
 /-- Extending the chart coefficients of a section supported inside the chart source recovers the
@@ -456,7 +426,7 @@ theorem chartTestSection_ofSupportedIn_chartTestCoeff [T2Space M]
   refine Subtype.ext ?_
   rw [ofSupportedIn_apply]
   exact t.chartTestSection_ofSupportedIn_chartCoeff c hc_symm hct hc
-    (c.imageCompact_subset_target hK) hKL hL s.val
+    (c.imageCompact_subset_target hK) (c.coe_imageCompact hK ▸ hKL) hL s.val
     (fun _ hyc hy ↦ chartTestCoeff_zero_of_notMem c hK s hyc hy)
     fun _ hx ↦ s.val.eq_zero_of_notMem_tsupport fun h ↦ hx (hK (mem_supportedIn.1 s.property h))
 

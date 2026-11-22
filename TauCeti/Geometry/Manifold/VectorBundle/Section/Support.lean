@@ -15,7 +15,8 @@ public import Mathlib.Topology.Sets.Compacts
 The support of a bundle section is the closure of its nonzero locus, not the support of its
 map into the total space: the zero vector varies with the base point. We define this closed
 support on native `ContMDiffSection`, the submodules of sections supported in a prescribed set,
-and their compactly supported submodule. The latter is the directed supremum of the
+sections vanishing outside a subset of a chart target (`ContMDiffSection.zeroOffInChart`), and
+their compactly supported submodule. The latter is the directed supremum of the
 fixed-compact stages. These are algebraic carriers; no topology on section spaces is installed
 here. Support-preserving linear equivalences preserve both native support submodules.
 
@@ -216,6 +217,22 @@ theorem supportedIn_inter (K L : Set M) :
     supportedIn I F n V (K ∩ L) = supportedIn I F n V K ⊓ supportedIn I F n V L := by
   ext s
   simp [subset_inter_iff]
+
+variable (I F n V) in
+/-- The submodule of `C^n` sections vanishing outside `L₀` on the chart target when pulled back
+along `c.symm`. -/
+def zeroOffInChart (c : OpenPartialHomeomorph M E) (L₀ : Set E) :
+    Submodule 𝕜 Cₛ^n⟮I; F, V⟯ where
+  carrier := {s | ∀ y ∈ c.target, y ∉ L₀ → s (c.symm y) = 0}
+  zero_mem' := fun _ _ _ ↦ rfl
+  add_mem' := fun hs₁ hs₂ y hyc hyL ↦ by simp [hs₁ y hyc hyL, hs₂ y hyc hyL]
+  smul_mem' := fun a _ hs y hyc hyL ↦ by simp [hs y hyc hyL]
+
+/-- Membership in `zeroOffInChart` is vanishing on `c.target \ L₀` along `c.symm`. -/
+@[simp]
+theorem mem_zeroOffInChart {c : OpenPartialHomeomorph M E} {L₀ : Set E} {s : Cₛ^n⟮I; F, V⟯} :
+    s ∈ zeroOffInChart I F n V c L₀ ↔ ∀ y ∈ c.target, y ∉ L₀ → s (c.symm y) = 0 :=
+  Iff.rfl
 
 variable (I F n V) in
 /-- The submodule of native smooth sections with compact closed support. Its subtype is the

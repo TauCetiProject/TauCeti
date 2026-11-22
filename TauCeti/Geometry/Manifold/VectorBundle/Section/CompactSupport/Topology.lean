@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The fixed-compact inductive topology on bundle tests
@@ -27,9 +29,12 @@ zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`)
 extensions are continuous from the native LF topology of `TestFunction`
 (`Bundle.Trivialization.continuous_chartTestSection`), so precomposing a continuous linear
 functional on bundle tests with a chart extension gives a continuous linear functional on the
-native test functions of the chart target. In any smooth frame the coefficients of an extended
-test are the test function composed with the chart and multiplied by the smooth transition
-matrix, and both operations are continuous in the weak Whitney topology on coefficient functions
+native test functions of the chart target. When a single chart with `C^n` inverse covers the
+entire manifold inside a bundle frame, chart extension is a continuous linear equivalence with
+Mathlib's `TestFunction` (`Bundle.Trivialization.chartTestSectionEquiv`). In any smooth frame the
+coefficients of an extended test are the test function composed with the chart and multiplied by the
+smooth transition matrix, and both operations are continuous in the weak Whitney topology on
+coefficient functions
 (`Bundle.Trivialization.continuous_frameCoordinates_chartTestSection_ofSupportedIn`).
 
 The topology is Hausdorff for a covering frame system, is independent of that frame cover,
@@ -349,5 +354,113 @@ theorem continuous_chartTestSection :
   refine ((continuous_ofSupportedIn e U hU K').comp (hval.subtype_mk _ : Continuous g)).congr
     fun φ ↦ ?_
   exact Subtype.ext (ofSupportedIn_apply K' (g φ))
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+open ContMDiffSection
+open scoped Distributions
+
+section GlobalChart
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target) (hct : c.source ⊆ t.baseSet)
+  (hc' : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hcsource : c.source = univ)
+  {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+  (hcover : ∀ x : M, ∃ i, x ∈ U i)
+
+/-- **Global-chart equivalence with native test functions.** When a smooth chart with `C^n` inverse
+covers the entire manifold inside a smooth bundle frame (for instance, an open subset of a normed
+space with a trivial bundle), chart extension is a continuous linear equivalence from Mathlib's
+`TestFunction` to compactly supported sections with their fixed-compact inductive topology. -/
+def chartTestSectionEquiv :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  have hsub (K : Compacts M) : (K : Set M) ⊆ c.source := hcsource ▸ subset_univ _
+  let stageReadback (K : Compacts M) :
+      supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+    (TestFunction.ofSupportedInCLM ℝ (c.imageCompact_subset_target (hsub K))).toLinearMap.comp
+      (t.chartTestCoeff c hc hct (hsub K) (c.coe_imageCompact (hsub K)).symm.subset)
+  have hstage (K : Compacts M) (sec : supportedIn I F n V K) :
+      t.chartTestSection c hc' hct (stageReadback K sec) = ofSupportedIn K sec :=
+    t.chartTestSection_ofSupportedIn_chartTestCoeff c hc hct hc' (hsub K)
+      (c.coe_imageCompact (hsub K)).symm.subset (c.imageCompact_subset_target (hsub K)) sec
+  let invFun (s : compactlySupported I F n V) : 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+    stageReadback ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
+      ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
+  have hinv_right (s : compactlySupported I F n V) :
+      t.chartTestSection c hc' hct (invFun s) = s :=
+    (hstage ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
+      ⟨s.val, mem_supportedIn.2 Subset.rfl⟩).trans (Subtype.ext (ofSupportedIn_apply _ _))
+  let invLM : compactlySupported I F n V →ₗ[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+    { toFun := invFun
+      map_add' := fun s₁ s₂ ↦ t.chartTestSection_injective c hc' hct <| by
+        rw [map_add, hinv_right, hinv_right, hinv_right]
+      map_smul' := fun a s ↦ t.chartTestSection_injective c hc' hct <| by
+        simp only [RingHom.id_apply, map_smul, hinv_right] }
+  have hright : (t.chartTestSection c hc' hct).comp invLM = LinearMap.id :=
+    LinearMap.ext hinv_right
+  have hleft : invLM.comp (t.chartTestSection c hc' hct) = LinearMap.id :=
+    LinearMap.ext fun φ ↦
+      t.chartTestSection_injective c hc' hct (LinearMap.congr_fun hright _)
+  let eqv : 𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃ₗ[ℝ] compactlySupported I F n V :=
+    LinearEquiv.ofLinearMap (t.chartTestSection c hc' hct) invLM hright hleft
+  refine
+    { toLinearEquiv := eqv
+      continuous_toFun := continuous_chartTestSection t c hc' hct e U hU
+      continuous_invFun := ?_ }
+  refine (continuous_compactlySupportedTopology_iff e U hU invLM).2 fun K ↦ ?_
+  refine ((TestFunction.continuous_ofSupportedIn (c.imageCompact_subset_target (hsub K))).comp
+    (continuous_chartTestCoeff t c hc hct (hsub K)
+      (c.coe_imageCompact (hsub K)).symm.subset e U hU hcover)).congr fun sec ↦
+    t.chartTestSection_injective c hc' hct <| by
+      simpa only [stageReadback, invLM, LinearMap.coe_comp, Function.comp_apply,
+        ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM,
+        LinearMap.coe_mk, AddHom.coe_mk] using
+        (hstage K sec).trans (hinv_right (ofSupportedIn K sec)).symm
+
+/-- The forward map of `chartTestSectionEquiv` is `chartTestSection`. -/
+@[simp]
+theorem chartTestSectionEquiv_apply (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover φ =
+      t.chartTestSection c hc' hct φ := (rfl)
+
+/-- On the chart target, the inverse of `chartTestSectionEquiv` evaluates the bundle frame on the
+section at the inverse-chart point. -/
+theorem chartTestSectionEquiv_symm_apply_of_mem (s : compactlySupported I F n V)
+    {y : E} (hy : y ∈ c.target) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).symm s y =
+      t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  have h := congrArg (fun u : compactlySupported I F n V ↦
+    t.continuousLinearMapAt ℝ (c.symm y) (u.val (c.symm y)))
+    ((t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).apply_symm_apply s)
+  simpa only [chartTestSectionEquiv_apply,
+    continuousLinearMapAt_chartTestSection t c hc' hct _ (c.map_target hy), c.right_inv hy] using h
+
+/-- Outside the chart target, the inverse of `chartTestSectionEquiv` vanishes. -/
+@[simp]
+theorem chartTestSectionEquiv_symm_apply_of_notMem (s : compactlySupported I F n V)
+    {y : E} (hy : y ∉ c.target) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).symm s y = 0 := by
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  exact ((t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).symm s).zero_on_compl hy
+
+end GlobalChart
 
 end Bundle.Trivialization

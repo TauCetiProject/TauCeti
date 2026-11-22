@@ -159,9 +159,9 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
   have hρ (j : κ) (x : M) : ρ j x = ∑ i ∈ Finset.univ with j₀ i = j, P i x := rfl
   have hsupp (j : κ) :
       tsupport (ρ j) ⊆ ⋃ i ∈ Finset.univ.filter (fun i ↦ j₀ i = j), tsupport (P i) :=
-    closure_minimal (fun x hx ↦ by
-      obtain ⟨i, hi, hPi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hρ j x ▸ mem_support.1 hx)
-      exact mem_biUnion hi (subset_tsupport _ hPi))
+    closure_minimal
+      ((Finset.support_sum (Finset.univ.filter (fun i ↦ j₀ i = j)) (fun i x ↦ P i x)).trans
+        (iUnion₂_mono fun i _ ↦ subset_tsupport (P i)))
       (isClosed_biUnion_finset fun _ _ ↦ isClosed_tsupport _)
   have hsum_eq (x : M) : ∑ j ∈ s, ρ j x = ∑ᶠ i, P i x := by
     simp_rw [hρ]
