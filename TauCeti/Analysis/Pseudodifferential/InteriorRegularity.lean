@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.BesovSpace
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 
 /-!
-# Interior elliptic regularity on Bessel-potential spaces
+# Interior elliptic regularity on Bessel-potential and Besov spaces
 
 Let `a` be a symbol of order `m` on `ℝⁿ` with a *formal left parametrix*: a symbol `b` of order
 `-m` whose formal composition with `a` is the identity,
@@ -51,6 +52,17 @@ exponent:
   since `ψ u` is the quantization of the symbol `ψ(x)`
   (`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`).
 
+For a scalar symbol `a`, the same argument runs once on all tempered distributions, with
+`TauCeti.Symbol.quantizeTempered`:
+
+* `TauCeti.Symbol.exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered`: the local
+  parametrix identity `ψ u = Op(ψ b) (Op(c) u) - Op(R) u` for every tempered distribution `u`,
+  with `R` of any prescribed order.
+* `TauCeti.Symbol.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`: interior regularity on the
+  Besov scale, for all `1 ≤ p, q ≤ ∞`: if `u ∈ B^r_{p,q}` and `Op(c) u ∈ B^s_{p,q}`, then
+  `ψ u ∈ B^{s + m}_{p,q}`, by the Besov mapping of symbols with uniform estimates
+  (`TemperedDistribution.MemBesov.quantizeTempered`).
+
 ## The local parametrix
 
 Let `q(x, ξ) = ψ(x) b(x, ξ)`. Each term of the formal composition `q # p` is `ψ` times the
@@ -71,12 +83,15 @@ The operator `Op(q)` maps `H^s` to `H^{s + m}`, and `Op(R)` maps `H^r` to `H^{s 
 has order `r - (s + m)`. Both statements follow, and the same identity on `H^{r,p}`
 (`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_sharp`,
 `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`) gives the `Lᵖ` versions.
+On tempered distributions the identity follows from `TauCeti.Symbol.quantizeTempered_sharp` and
+`TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`.
 
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
   Lecture I, (4.6)–(4.11), and Lecture II, (3.1)–(3.8) (the `Lᵖ` estimates by the same parametrix
-  argument).
+  argument); Lecture I, (3.32)–(3.34) (pseudodifferential operators on the Zygmund spaces, for the
+  Besov version).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 -/
 
@@ -118,6 +133,35 @@ private theorem norm_copy_sub_copy_le [CompleteSpace V] {p : ℝ≥0∞} [Fact (
 
 end NormBound
 
+/-! ### The remainder of the local parametrix -/
+
+section Remainder
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+
+/-- The remainder of the local parametrix behind every interior regularity statement: `ψ b # c - ψ`
+is smoothing, so for every order `μ` its coefficient is that of a symbol `R` of order `μ`, which
+has compact spatial support. -/
+private theorem exists_coefficient_eq_sharp_sub_ofSpatial {a : Symbol n V W m}
+    {b : Symbol n W V (-m)} {ψ : 𝓢(CoordinateSpace n, ℂ)} {c : Symbol n V W m}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
+    (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (μ : ℝ) :
+    ∃ R : Symbol n V V μ, R.HasCompactSpatialSupport ∧
+      R.coefficient = ((smulLeft (ψ.smooth ⊤) b).sharp c hc - inclusion (neg_add_cancel m).ge
+        (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
+          ((ψ.smooth ⊤).smul contDiff_const))).coefficient := by
+  obtain ⟨R, hR⟩ := isSmoothing_iff.1 (isSmoothing_sharp_sub_ofSpatial hab (ψ.smooth ⊤)
+    (fun x ξ ↦ coefficient_smulLeft (ψ.smooth ⊤) b (x, ξ)) hc hca) μ
+  exact ⟨R, (((hasCompactSpatialSupport_smulLeft _ hψ b).sharp hc).sub
+    (((hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right).inclusion _)).of_coefficient_eq
+      hR, hR⟩
+
+end Remainder
+
 /-! ### Interior regularity -/
 
 section Regularity
@@ -147,11 +191,7 @@ private theorem exists_toDistr_quantizeSobolev_localize
     (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
   have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
   have hqp := hq.sharp hp
-  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ'
-    (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hp hpa
-  obtain ⟨R, hR⟩ := isSmoothing_iff.1 hsmooth μ
-  have hRc : R.HasCompactSpatialSupport :=
-    (hqp.sub (hψs.inclusion _)).of_coefficient_eq hR
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hp hpa μ
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   have hcomp := congrArg (fun T ↦ (T u).toDistr) (quantizeSobolev_sharp hq hp hqp r)
   have hsub := congrArg (fun T ↦ (T u).toDistr)
@@ -254,11 +294,7 @@ private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
   have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
   have hqc := hq.sharp hc
   have hψs' := hψs.inclusion (neg_add_cancel m).ge
-  -- `q # c - ψ` is smoothing, so it has a representative `R` of order `μ`.
-  obtain ⟨R, hR⟩ := isSmoothing_iff.1
-    (isSmoothing_sharp_sub_ofSpatial hab hψ' (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hc
-      hca) μ
-  have hRc : R.HasCompactSpatialSupport := (hqc.sub hψs').of_coefficient_eq hR
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hc hca μ
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   -- `Op(R) u = Op(q # c) u - ψ u = Op(q) (Op(c) u) - ψ u`.
   have hRu : (R.quantizeBesselPotentialSpace hRc r p u).toDistr =
@@ -350,6 +386,80 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
   exact hXY ▸ norm_copy_sub_copy_le Q T _ _ _ _
 
 end BesselPotentialSpace
+
+/-! ### Interior regularity on tempered distributions and Besov spaces -/
+
+section Tempered
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {a : Symbol n ℂ ℂ m}
+  {b : Symbol n ℂ ℂ (-m)} {ψ : 𝓢(CoordinateSpace n, ℂ)} {c : Symbol n ℂ ℂ m}
+
+/-- **The local parametrix identity on tempered distributions.** Let `b` be a formal left
+parametrix of the scalar symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly
+supported Schwartz function, and `c` a symbol with compact spatial support which agrees with `a` at
+all positions near the support of `ψ`. For every order `μ` there is a symbol `R` of order `μ` with
+compact spatial support such that
+
+`ψ u = Op(ψ b) (Op(c) u) - Op(R) u`
+
+for every tempered distribution `u`. -/
+theorem exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ ℂ))) (b.sharpTerm a))
+    (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ)) (μ : ℝ) :
+    ∃ (R : Symbol n ℂ ℂ μ) (hR : R.HasCompactSpatialSupport), ∀ u : 𝓢'(CoordinateSpace n, F),
+      smulLeftCLM F (ψ : CoordinateSpace n → ℂ) u =
+        quantizeTempered F (smulLeft (ψ.smooth ⊤) b)
+            (hasCompactSpatialSupport_smulLeft _ hψ b).isUniform
+            (quantizeTempered F c hc.isUniform u) -
+          quantizeTempered F R hR.isUniform u := by
+  have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
+  set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ ℂ) (hψ'.smul contDiff_const)
+  have hψs : ψs.HasCompactSpatialSupport :=
+    (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
+  have hψs' := hψs.inclusion (neg_add_cancel m).ge
+  have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
+  have hqc := hq.sharp hc
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hc hca μ
+  -- `Op(q) ∘ Op(c) = Op(q # c) = Op(R) + Op(ψ)`, and `Op(ψ)` is the multiplication by `ψ`.
+  have hsum : quantizeTempered F (smulLeft hψ' b) hq.isUniform ∘L
+      quantizeTempered F c hc.isUniform =
+        quantizeTempered F R hRc.isUniform + smulLeftCLM F (ψ : CoordinateSpace n → ℂ) := by
+    rw [← quantizeTempered_sharp hq.isUniform hc,
+      quantizeTempered_congr _ ((hqc.sub hψs').add hψs').isUniform (sub_add_cancel _ _).symm,
+      quantizeTempered_add (hqc.sub hψs').isUniform hψs'.isUniform,
+      quantizeTempered_congr _ hRc.isUniform hR.symm,
+      quantizeTempered_inclusion hψs.isUniform,
+      quantizeTempered_ofSpatial_smul_id ψ hψs.isUniform]
+  refine ⟨R, hRc, fun u ↦ ?_⟩
+  rw [← ContinuousLinearMap.comp_apply, hsum, add_apply, add_sub_cancel_left]
+
+variable {φ : ContDiffBump (0 : CoordinateSpace n)} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+
+/-- **Interior elliptic regularity on Besov spaces.** Let `b` be a formal left parametrix of the
+scalar symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz
+function, and `c` a symbol with compact spatial support which agrees with `a` at all positions near
+the support of `ψ`. If the tempered distribution `u` lies in `B^r_{p,q}` and `Op(c) u` lies in
+`B^s_{p,q}`, then `ψ u ∈ B^{s + m}_{p,q}`. -/
+theorem memBesov_smulLeftCLM_of_memBesov_quantizeTempered [CompleteSpace F]
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ ℂ))) (b.sharpTerm a))
+    (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
+    {r s : ℝ} {u : 𝓢'(CoordinateSpace n, F)} (hu : u.MemBesov φ r p q)
+    (hcu : (quantizeTempered F c hc.isUniform u).MemBesov φ s p q) :
+    (smulLeftCLM F (ψ : CoordinateSpace n → ℂ) u).MemBesov φ (s + m) p q := by
+  obtain ⟨R, hR, hψu⟩ :=
+    exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered (F := F) hab hψ hc hca (r - (s + m))
+  -- `Op(ψ b)` has order `-m` and `Op(R)` has order `r - (s + m)`.
+  have h₁ := hcu.quantizeTempered (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b).isUniform
+  have h₂ := hu.quantizeTempered hR.isUniform
+  rw [sub_neg_eq_add] at h₁
+  rw [sub_sub_cancel] at h₂
+  exact hψu u ▸ h₁.sub h₂
+
+end Tempered
 
 end Symbol
 
