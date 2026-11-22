@@ -257,30 +257,39 @@ section Subset
 
 open scoped ENNReal
 
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
-  {s t : Set X}
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {s t : Set X}
 
 /-- A function in `Lᵖ(t)`, `1 ≤ p`, is integrable on every subset `s ⊆ t` of finite measure. -/
-theorem MemLp.integrableOn_of_subset {p : ℝ≥0∞}
-    (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+theorem MemLp.integrableOn_of_subset {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    {g : X → ε} {p : ℝ≥0∞} (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t)
+    (hs : μ s ≠ ⊤) :
     IntegrableOn g s μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   exact (hg.mono_measure (Measure.restrict_mono hst le_rfl)).integrable hp
 
 /-- For a function `g` in `L²(t)`, the squared distance `‖g - c‖²` to a constant `c` is integrable
 on every subset `s ⊆ t` of finite measure. -/
-theorem MemLp.integrableOn_norm_sub_sq_of_subset
-    (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
+theorem MemLp.integrableOn_norm_sub_sq_of_subset {F : Type*} [SeminormedAddCommGroup F]
+    {g : X → F} (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
     IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  exact ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).sub
-    (memLp_const c)).integrable_norm_pow two_ne_zero
+  have hgs : MemLp g 2 (μ.restrict s) := hg.mono_measure (Measure.restrict_mono hst le_rfl)
+  -- Dominate `‖g - c‖²` by `(‖g‖ + ‖c‖)²`; the real-valued `‖g‖ + ‖c‖` lies in `L²(s)`.
+  have hn : MemLp (fun x ↦ ‖g x‖ + ‖c‖) 2 (μ.restrict s) :=
+    (hgs.congr_eNorm hgs.aestronglyMeasurable.norm
+      (ae_of_all _ fun x ↦ (eNorm_norm (g x)).symm)).add (memLp_const ‖c‖)
+  refine (hn.integrable_norm_pow two_ne_zero).mono
+    ((hgs.aestronglyMeasurable.sub aestronglyMeasurable_const).norm.pow 2) (ae_of_all _ fun x ↦ ?_)
+  simp only [norm_pow, Real.norm_eq_abs]
+  gcongr
+  exact (norm_sub_le _ _).trans (le_abs_self _)
 
 /-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
 `L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most
 `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`. -/
-theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥0∞}
-    (hg : MemLp g q (μ.restrict t)) (hq : 2 ≤ q) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {F : Type*}
+    [SeminormedAddGroup F] {g : X → F} {q : ℝ≥0∞} (hg : MemLp g q (μ.restrict t)) (hq : 2 ≤ q)
+    (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
     ∫ x in s, ‖g x‖ ^ 2 ∂μ ≤
       (eLpNorm g q (μ.restrict t)).toReal ^ 2 * μ.real s ^ (1 - 2 / q.toReal) := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs

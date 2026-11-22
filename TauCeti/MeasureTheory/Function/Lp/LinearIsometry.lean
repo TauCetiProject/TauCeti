@@ -248,7 +248,9 @@ variable {α 𝕜 E : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ
 the isometry `(toSpanSingletonLIE 𝕜 E).symm`. -/
 @[simp]
 theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
-    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ :=
-  norm_compLp_of_isometry (toSpanSingletonLIE 𝕜 E).symm.isometry f
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ⇑(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)) = (toSpanSingletonLIE 𝕜 E).symm :=
+    funext fun φ ↦ (toSpanSingletonLIE_symm_apply 𝕜 E φ).symm
+  exact norm_compLp_of_isometry (h ▸ (toSpanSingletonLIE 𝕜 E).symm.isometry) f
 
 end ContinuousLinearMap

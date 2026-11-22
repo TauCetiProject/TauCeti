@@ -163,12 +163,11 @@ theorem exists_eLpNorm_le_mul_enorm_of_eLpNorm_le {α X F : Type*} [MeasurableSp
     (hv : ∀ u, eLpNorm (v u) p μ ≤ K * ‖u‖ₑ) :
     ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q μ ≤ C * ‖u‖ₑ := by
   rcases eq_or_ne q 0 with rfl | hq0
-  · -- `eLpNorm f 0 μ` vanishes for an a.e. strongly measurable `f`; otherwise it is
-    -- `∞ = eLpNorm f p μ`.
+  · -- `eLpNorm f 0 μ` vanishes for an a.e. strongly measurable `f`; otherwise both sides are `∞`.
     refine ⟨K, fun u ↦ le_trans ?_ (hv u)⟩
     by_cases hf : AEStronglyMeasurable (v u) μ
     · simp [hf]
-    · simp [eLpNorm, hf]
+    · simp [eLpNorm_of_not_aestronglyMeasurable hf]
   set c := μ Set.univ ^ (1 / q.toReal - 1 / p.toReal)
   have hc : c ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
     (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq) hμ

@@ -415,9 +415,10 @@ theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measur
 square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
 integrable. -/
 theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _) (hf.norm.pow 2),
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
+      ((continuous_norm.comp_aestronglyMeasurable hf).pow 2),
     ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
   congr 1
   refine lintegral_congr fun x ↦ ?_
