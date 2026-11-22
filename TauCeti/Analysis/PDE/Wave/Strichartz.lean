@@ -42,7 +42,7 @@ order `γ` are assembled by Littlewood–Paley summation.
 
 At `q = ∞` every `r ≥ 2` is admissible, and for the Littlewood–Paley blocks the homogeneous and
 dual estimates hold with `γ = n / 2 - n / r` and `L¹` in time on the dual side. The endpoint
-`q = 2` is not covered.
+`q = 2`, admissible in dimension `n ≥ 4`, is treated in `TauCeti.Analysis.PDE.Wave.Endpoint`.
 
 ## The argument
 

@@ -113,12 +113,14 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
     have hn0 : n ≠ 0 := by positivity
     field_simp
     nlinarith
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint (𝕜 := ℂ) (σ := n / 2)
+  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint (𝕜 := ℂ)
+    (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E)) (σ := n / 2)
     (p := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (b := b) (r' := r') (by linarith)
     (by rw [hbinv]; linarith [inv_pos.2 (by positivity : (0 : ℝ) < 2 * n)])
     (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
-    (U := schrodingerPropagator ℂ)
-    (A := ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal) (M := 1) (K := K)
+    ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal 1 K
+  refine ⟨C, fun F hF ↦ ?_⟩
+  have h := hC (schrodingerPropagator ℂ)
     (fun t ↦ by
       rw [ENNReal.coe_one, ← ofReal_norm]
       exact ENNReal.ofReal_le_one.2 (norm_phasePropagator_le _ _))
@@ -129,9 +131,8 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
     (fun G hG ↦ by
       simp_rw [adjoint_schrodingerPropagator]
       exact aestronglyMeasurable_phasePropagator_apply laplacianSymbol
-        continuous_neg.aestronglyMeasurable hG)
-  refine ⟨C, fun F hF ↦ ?_⟩
-  simpa only [adjoint_schrodingerPropagator] using hC F hF
+        continuous_neg.aestronglyMeasurable hG) F hF
+  simpa only [adjoint_schrodingerPropagator] using h
 
 /-- **The endpoint Strichartz estimate for the Schrödinger equation, in weak form.** In dimension
 `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate `r'`. There is

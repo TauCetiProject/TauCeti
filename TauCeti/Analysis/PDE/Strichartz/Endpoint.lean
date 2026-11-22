@@ -516,19 +516,23 @@ Suppose that `U` satisfies a dual Strichartz estimate `‖∫ U(t)* G(t) dt‖ �
 at a non-endpoint pair: `1/2 < 1/b < 1/r'` and `1/p = 1 + σ/2 - σ/b`. Then there is `C` such
 that for every integrable `F : ℝ → L²(X, μ)`,
 
-`‖∫ U(t)* F(t) dt‖ ≤ C ‖F‖_{L²_t L^{r'}_x}`. -/
+`‖∫ U(t)* F(t) dt‖ ≤ C ‖F‖_{L²_t L^{r'}_x}`.
+
+The constant `C` depends only on `σ`, the exponents and `A`, `M`, `K`, not on the family `U`: it
+is uniform over all families satisfying the three bounds with the same constants. -/
 theorem exists_enorm_integral_adjoint_le_of_endpoint {σ : ℝ} (hσ : 1 < σ)
     {p b r' : ℝ≥0∞} (hb : 2⁻¹ < b.toReal⁻¹) (hbσ : b.toReal⁻¹ < (σ + 1) / (2 * σ))
     (hp : p.toReal⁻¹ = 1 + σ / 2 - σ * b.toReal⁻¹) (hr' : r'.toReal⁻¹ = (σ + 1) / (2 * σ))
-    {U : ℝ → H →L[𝕜] Lp E 2 μ} {A M K : ℝ≥0} (hM : ∀ t, ‖U t‖ₑ ≤ M)
-    (hD : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
-      eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ)
-    (hK : ∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
-      ‖∫ t, ((U t)†) (G t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) p)
-    (hUm : ∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
-      AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) :
-    ∃ C : ℝ≥0, ∀ F : ℝ → Lp E 2 μ, Integrable F →
-      ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
+    (A M K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ U : ℝ → H →L[𝕜] Lp E 2 μ, (∀ t, ‖U t‖ₑ ≤ M) →
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (U s (((U t)†) g)) ∞ μ ≤ A * ‖s - t‖ₑ ^ (-σ) * eLpNorm g 1 μ) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G → Integrable (fun t ↦ ((U t)†) (G t)) →
+        ‖∫ t, ((U t)†) (G t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G t) b μ) p) →
+      (∀ G : ℝ → Lp E 2 μ, AEStronglyMeasurable G →
+        AEStronglyMeasurable fun t ↦ ((U t)†) (G t)) →
+      ∀ F : ℝ → Lp E 2 μ, Integrable F →
+        ‖∫ t, ((U t)†) (F t)‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 := by
   obtain ⟨hp2, hr'0, hr'2⟩ := le_two_and_ne_zero_and_le_two_of_endpoint hσ hbσ hp hr'
   obtain ⟨δ, hδ, hexp⟩ := exists_min_exponent_le hσ hb hbσ
   rw [← hp, ← hr'] at hexp
@@ -542,7 +546,7 @@ theorem exists_enorm_integral_adjoint_le_of_endpoint {σ : ℝ} (hσ : 1 < σ)
     have h2 : (2 : ℝ≥0∞) ^ (δ / 2) ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofNat_ne_top
     finiteness
-  refine ⟨(B ^ (2⁻¹ : ℝ)).toNNReal, fun F hF ↦ ?_⟩
+  refine ⟨(B ^ (2⁻¹ : ℝ)).toNNReal, fun U hM hD hK hUm F hF ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity) hB)]
   have hrhs : (B ^ (2⁻¹ : ℝ) * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2) ^ (2 : ℝ) =
       B * eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 ^ (2 : ℝ) := by
