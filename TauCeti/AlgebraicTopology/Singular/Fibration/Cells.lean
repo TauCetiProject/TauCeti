@@ -115,13 +115,8 @@ pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` of consecutive preimages of skeleta, fo
 lemma ofInclusion_preimageSkeleton_sub_one_eq_preimageSkeletonPair (n : ℕ) (s : ℤ) (hs : s = n) :
     TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (by lia : s - 1 ≤ s)) =
       preimageSkeletonPair p C n := by
-  -- The pair `ofInclusion h` only depends on the two subsets.
-  have key : ∀ {a b a' b' : Set E} (h : a ⊆ b) (h' : a' ⊆ b'), a = a' → b = b' →
-      TopPair.ofInclusion h = TopPair.ofInclusion h' := by
-    rintro _ _ _ _ _ _ rfl rfl
-    rfl
-  exact (key _ (monotone_preimageSkeleton (C := C) p (Int.le_add_one le_rfl)) rfl
-    (by rw [sub_add_cancel])).trans
+  exact (TopPair.ofInclusion_congr _ (monotone_preimageSkeleton (C := C) p (Int.le_add_one le_rfl))
+    rfl (by rw [sub_add_cancel])).trans
       (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))
 
 /-- A point of the pullback lies over the `n`-skeleton. -/
