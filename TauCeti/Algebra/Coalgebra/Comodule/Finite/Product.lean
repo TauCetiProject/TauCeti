@@ -63,8 +63,9 @@ instance isFG_isClosedUnderBinaryProducts :
   let N := F.obj ⟨.right⟩
   have : Module.Finite R M := (isFG_iff R C M).mp (hF _)
   have : Module.Finite R N := (isFG_iff R C N).mp (hF _)
-  have hprod : isFG R C (prod R C M N) :=
-    (isFG_iff R C (prod R C M N)).mpr (Module.Finite.prod : Module.Finite R (M × N))
+  have hprod : isFG R C (binaryProductLimitCone M N).cone.pt := by
+    rw [binaryProductLimitCone_cone_pt]
+    exact (isFG_iff R C (prod R C M N)).mpr (Module.Finite.prod : Module.Finite R (M × N))
   exact (isFG R C).prop_of_iso
     ((limit.isoLimitCone (binaryProductLimitCone M N)).symm ≪≫
       (HasLimit.isoOfNatIso (diagramIsoPair F)).symm) hprod

@@ -28,7 +28,8 @@ The file also records that the four standard linear maps for a product, `fst`, `
 * `TauCeti.ComoduleCat.prod`: the bundled product comodule, with projections, inclusions,
   `prodLift`, and `prodDesc`.
 * `TauCeti.ComoduleCat.binaryProductLimitCone`: the bundled product is a limit cone, so it is
-  the categorical binary product.
+  the categorical binary product; `binaryProductLimitCone_cone_pt`, `_cone_fst`, `_cone_snd`
+  and `_isLimit_lift` describe its point, projections and lift.
 
 ## References
 
@@ -599,6 +600,31 @@ open CategoryTheory.Limits
     (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
     (fun f g _ h₁ h₂ ↦ prod_hom_ext
       (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))
+
+/-- The point of `binaryProductLimitCone M N` is the bundled product comodule. -/
+@[simp]
+theorem binaryProductLimitCone_cone_pt (M N : ComoduleCat.{u, v, w} R C) :
+    (binaryProductLimitCone M N).cone.pt = prod R C M N :=
+  rfl
+
+/-- The first projection of `binaryProductLimitCone M N` is `prodFst M N`. -/
+@[simp]
+theorem binaryProductLimitCone_cone_fst (M N : ComoduleCat.{u, v, w} R C) :
+    BinaryFan.fst (binaryProductLimitCone M N).cone = prodFst M N :=
+  rfl
+
+/-- The second projection of `binaryProductLimitCone M N` is `prodSnd M N`. -/
+@[simp]
+theorem binaryProductLimitCone_cone_snd (M N : ComoduleCat.{u, v, w} R C) :
+    BinaryFan.snd (binaryProductLimitCone M N).cone = prodSnd M N :=
+  rfl
+
+/-- The universal lift into `binaryProductLimitCone M N` is `prodLift`. -/
+@[simp]
+theorem binaryProductLimitCone_isLimit_lift (M N : ComoduleCat.{u, v, w} R C)
+    (s : BinaryFan M N) :
+    (binaryProductLimitCone M N).isLimit.lift s = prodLift s.fst s.snd :=
+  rfl
 
 /-- The concrete product of comodules is their categorical binary product. -/
 instance (M N : ComoduleCat.{u, v, w} R C) : HasBinaryProduct M N :=
