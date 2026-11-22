@@ -57,8 +57,6 @@ structure is equivalent to the choice of a pseudouniformiser
   the roots in `R°` is flat, even when `R` has zero divisors.
 * `TauCeti.Perfectoid.PseudoUniformizerRoots.zpow_eq_zpow`: `ϖ ^ (m / p ^ n)` depends only on
   `m / p ^ n`.
-* `TauCeti.Perfectoid.PseudoUniformizerRoots.coe_zpow_succ_pow`: taking the `p`-th power of
-  `ϖ ^ (m / p ^ (n + 1))` in `R` gives `ϖ ^ (m / p ^ n)`.
 * `TauCeti.Perfectoid.PseudoUniformizerRoots.eq_of_root_zero_eq`: in a reduced ring of
   characteristic `p`, the roots of `ϖ` are unique.
 
@@ -299,12 +297,6 @@ theorem zpow_neg (m : ℤ) (n : ℕ) : ϖ.zpow (-m) n = (ϖ.zpow m n)⁻¹ :=
 @[simp]
 theorem zpow_mul_p (m : ℤ) (n : ℕ) : ϖ.zpow (m * p) (n + 1) = ϖ.zpow m n := by
   rw [zpow_def, zpow_def, mul_comm, zpow_mul, zpow_natCast, unitRoot_succ_pow]
-
-/-- Taking the `p`-th power after passing to the next root restores the original scale. -/
-theorem coe_zpow_succ_pow (m : ℤ) (n : ℕ) :
-    (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
-  simpa only [zpow_def, _root_.zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val] using
-    congrArg Units.val (ϖ.zpow_mul_p m n)
 
 /-- Passing to deeper roots: `ϖ ^ (m p ^ k / p ^ (n + k)) = ϖ ^ (m / p ^ n)`. -/
 theorem zpow_mul_pow (m : ℤ) (n k : ℕ) : ϖ.zpow (m * p ^ k) (n + k) = ϖ.zpow m n := by

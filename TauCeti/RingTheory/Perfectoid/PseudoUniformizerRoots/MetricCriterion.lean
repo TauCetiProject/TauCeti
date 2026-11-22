@@ -49,9 +49,12 @@ private theorem exists_scaled_gauge_sub_pow_le [IsPerfectoidTateRing p R]
     exact (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
   refine ⟨(ϖ.zpow m (n + 1) : R) * (y : R), ?_⟩
   -- Undo the scaling using the next root, so its `p`-th power supplies the original scale.
+  have hpow : (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
+    simpa only [zpow_def, _root_.zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val] using
+      congrArg Units.val (ϖ.zpow_mul_p m n)
   have heq : x - ((ϖ.zpow m (n + 1) : R) * (y : R)) ^ p =
       (ϖ.zpow m n : R) * ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) := by
-    rw [mul_pow, coe_zpow_succ_pow, mul_sub, zpow_neg, ← mul_assoc]
+    rw [mul_pow, hpow, mul_sub, zpow_neg, ← mul_assoc]
     simp
   rw [heq, gauge_zpow_mul]
   exact mul_le_mul_of_nonneg_left he (by positivity)
