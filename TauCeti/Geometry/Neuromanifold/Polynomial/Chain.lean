@@ -122,10 +122,6 @@ theorem polynomialChainPrefix_congr
       ih fun j hj => h j (Nat.lt_succ_of_lt hj)
     rw [polynomialChainPrefix_succ, polynomialChainPrefix_succ, hi, h i (Nat.lt_succ_self _)]
 
-private theorem sumElim_id_comp_inl {α β : Type*} (f : β → α) :
-    Sum.elim id f ∘ Sum.inl = id :=
-  Sum.elim_comp_inl id f
-
 /-- Step `i + 1` of `polynomialChainPrefix` is the binary composition `polynomialCompose` of
 prefix `i` with layer `P i`, after folding `W i` into `Σ j, W j`. -/
 theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose_last
@@ -139,7 +135,7 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose_last
   rcases x with w | a
   · simp
   · simp only [Sum.elim_inr, ← AlgHom.comp_apply, rename_comp_rename, Sum.map_comp_map,
-      sumElim_id_comp_inl, Function.id_comp, Sum.map_id_id, rename_id_apply]
+      Sum.elim_comp_inl, Function.id_comp, Sum.map_id_id, rename_id_apply]
 
 /-- Every prefix `polynomialChainPrefix P k` is the `k.val`-step dependent left fold `Fin.dfoldl`
 of layerwise polynomial substitution, starting from the input variables. -/
@@ -383,8 +379,7 @@ theorem inputPolynomial_polynomialChainPrefix_succ
           (rename Sum.inl :
             MvPolynomial (Σ j, W j) K →ₐ[K] MvPolynomial ((Σ j, W j) ⊕ W i) K)) =
           AlgHom.id K _ := by
-      rw [rename_comp_rename, sumElim_id_comp_inl]
-      exact AlgHom.ext rename_id_apply
+      rw [rename_comp_rename, Sum.elim_comp_inl, rename_id]
     rw [← AlgHom.comp_toRingHom, hid]
     exact map_id _
 
