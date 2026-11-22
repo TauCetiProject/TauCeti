@@ -144,10 +144,10 @@ theorem contDiffOn_wordMap (u : List (ℕ × Fin d)) (n : WithTop ℕ∞) :
     exact ih.comp (contDiffOn_branchMap a) (mapsTo_branchMap a)
 
 /-- The delay `T_u (w)` of a word read chronologically: the empty word has delay `0`, and
-`T_{a :: u} (w) = log q_a (w) + T_u (F_a w)`. -/
+`T_{a :: u} (w) = τ_a (w) + T_u (F_a w)`. -/
 noncomputable def wordDelay : List (ℕ × Fin d) → (Fin d → ℝ) → ℝ
   | [], _ => 0
-  | a :: u, x => Real.log (branchDenom a x) + wordDelay u (branchMap a x)
+  | a :: u, x => branchDelay a x + wordDelay u (branchMap a x)
 
 @[simp]
 theorem wordDelay_nil (x : Fin d → ℝ) : wordDelay [] x = 0 :=
@@ -155,11 +155,11 @@ theorem wordDelay_nil (x : Fin d → ℝ) : wordDelay [] x = 0 :=
 
 @[simp]
 theorem wordDelay_cons (a : ℕ × Fin d) (u : List (ℕ × Fin d)) (x : Fin d → ℝ) :
-    wordDelay (a :: u) x = Real.log (branchDenom a x) + wordDelay u (branchMap a x) :=
+    wordDelay (a :: u) x = branchDelay a x + wordDelay u (branchMap a x) :=
   (rfl)
 
 theorem wordDelay_singleton (a : ℕ × Fin d) (x : Fin d → ℝ) :
-    wordDelay [a] x = Real.log (branchDenom a x) := by
+    wordDelay [a] x = branchDelay a x := by
   simp
 
 /-- The delay of a concatenation: `T_{u ++ v} (w) = T_u (w) + T_v (F_u w)`. -/
@@ -176,9 +176,6 @@ theorem contDiffOn_wordDelay (u : List (ℕ × Fin d)) (n : WithTop ℕ∞) :
   induction u with
   | nil => exact contDiffOn_const
   | cons a u ih =>
-    have hcons : wordDelay (a :: u) = fun x => branchDelay a x + wordDelay u (branchMap a x) := by
-      ext x; simp [branchDelay_def]
-    rw [hcons]
     exact (contDiffOn_branchDelay a).add (ih.comp (contDiffOn_branchMap a) (mapsTo_branchMap a))
 
 /-- On the simplex every letter contributes a delay of at least `log (3 / 2)`, so
@@ -188,7 +185,7 @@ theorem length_mul_log_le_wordDelay (u : List (ℕ × Fin d)) {x : Fin d → ℝ
   induction u generalizing x with
   | nil => simp
   | cons a u ih =>
-    have h₁ := log_three_halves_le_log_branchDenom a (le_one_half_of_mem_orderedSimplex hx a.2)
+    have h₁ := log_three_halves_le_branchDelay a (le_one_half_of_mem_orderedSimplex hx a.2)
     have h₂ := ih (branchMap_mem_orderedSimplex a hx)
     simp only [wordDelay_cons, List.length_cons, Nat.cast_succ]
     linarith
@@ -224,7 +221,7 @@ theorem log_le_wordDelay_of_mem {u : List (ℕ × Fin d)} {a : ℕ × Fin d} (ha
   induction u generalizing x with
   | nil => simp at ha
   | cons b v ih =>
-    rw [wordDelay_cons, ← branchDelay_def]
+    rw [wordDelay_cons]
     rcases List.mem_cons.1 ha with rfl | hv
     · linarith [log_le_branchDelay a hx, wordDelay_nonneg v (branchMap_mem_orderedSimplex a hx)]
     · linarith [(branchDelay_pos b hx).le, ih hv (branchMap_mem_orderedSimplex b hx)]
@@ -234,29 +231,18 @@ own delay is at least `log ((A + 3) / 2)`, and the other delays are nonnegative.
 theorem fst_add_three_le_two_mul_exp_wordDelay {u : List (ℕ × Fin d)} {a : ℕ × Fin d}
     (ha : a ∈ u) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
     (a.1 : ℝ) + 3 ≤ 2 * Real.exp (wordDelay u x) := by
-  induction u generalizing x with
-  | nil => simp at ha
-  | cons b u ih =>
-    have hb := wordDelay_nonneg u (branchMap_mem_orderedSimplex b hx)
-    have hq := branchDenom_pos_of_mem_orderedSimplex b hx
-    rw [wordDelay_cons, Real.exp_add, Real.exp_log hq]
-    rcases List.mem_cons.mp ha with rfl | ha
-    · have h := add_three_div_two_le_branchDenom a (le_one_half_of_mem_orderedSimplex hx a.2)
-      have := le_mul_of_one_le_right hq.le (Real.one_le_exp hb)
-      linarith
-    · have h := ih ha (branchMap_mem_orderedSimplex b hx)
-      have := le_mul_of_one_le_left (Real.exp_pos (wordDelay u (branchMap b x))).le
-        (one_le_branchDenom b ((le_one_half_of_mem_orderedSimplex hx b.2).trans (by norm_num)))
-      linarith
+  have h := Real.exp_le_exp.2 (log_le_wordDelay_of_mem ha hx)
+  rw [Real.exp_log (by positivity)] at h
+  linarith
 
 /-! ### The homogeneous meaning of the delay -/
 
 /-- The linear map `γ_u = γ_{a_m} ⋯ γ_{a₁}` of the word `u = [a₁, …, a_m]`, where the letter
-`a = (A, j)` stands for the accelerated generator `γ_{n-1}^A γ_j`: the empty word gives the
-identity, and `γ_{a :: u} = γ_u γ_{n-1}^A γ_j`. -/
+`a = (A, j)` stands for the accelerated generator `accelMove a = γ_{n-1}^A γ_j`: the empty word
+gives the identity, and `γ_{a :: u} = γ_u γ_a`. -/
 noncomputable def wordMove : List (ℕ × Fin d) → Module.End ℝ (Fin (d + 2) → ℝ)
   | [] => 1
-  | a :: u => wordMove u * (linearMove (Fin.last d) ^ a.1 * linearMove a.2.castSucc)
+  | a :: u => wordMove u * accelMove a
 
 /-- The chronological linear move of an unaccelerated word in `Fin (d + 1)`. -/
 noncomputable def unaccelWordMove : List (Fin (d + 1)) → Module.End ℝ (Fin (d + 2) → ℝ)
@@ -269,11 +255,11 @@ theorem wordMove_nil : wordMove ([] : List (ℕ × Fin d)) = 1 :=
 
 @[simp]
 theorem wordMove_cons (a : ℕ × Fin d) (u : List (ℕ × Fin d)) :
-    wordMove (a :: u) = wordMove u * (linearMove (Fin.last d) ^ a.1 * linearMove a.2.castSucc) :=
+    wordMove (a :: u) = wordMove u * accelMove a :=
   (rfl)
 
 theorem wordMove_singleton (a : ℕ × Fin d) : wordMove [a] = accelMove a := by
-  rw [wordMove_cons, wordMove_nil, one_mul, accelMove_def, Module.End.mul_eq_comp]
+  simp
 
 @[simp]
 theorem unaccelWordMove_nil : unaccelWordMove ([] : List (Fin (d + 1))) = 1 :=
@@ -321,8 +307,8 @@ theorem wordMove_simplexLift (u : List (ℕ × Fin d)) {x : Fin d → ℝ}
   | nil => simp
   | cons a u ih =>
     have hq := branchDenom_pos_of_mem_orderedSimplex a hx
-    simp [linearMove_last_pow_linearMove_simplexLift a hq.ne',
-      ih (branchMap_mem_orderedSimplex a hx), smul_smul, Real.exp_add, Real.exp_log hq]
+    simp [accelMove_simplexLift a hq.ne', ih (branchMap_mem_orderedSimplex a hx),
+      smul_smul, Real.exp_add, branchDelay_def, Real.exp_log hq]
 
 /-- **The homogeneous identity** for words on the ordered cone: for `y ∈ H_n` over `w`,
 `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`. -/
@@ -390,8 +376,9 @@ theorem wordCount_simplexChart_smul {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) �
 /-- Only finitely many letters `(A, j)` have `A + 3 ≤ c`. -/
 private theorem finite_setOf_fst_add_three_le (c : ℝ) :
     {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite :=
-  ((finite_Iic ⌊c⌋₊).prod finite_univ).subset fun a ha =>
-    ⟨Nat.le_floor (by linarith [show (a.1 : ℝ) + 3 ≤ c from ha]), mem_univ _⟩
+  ((finite_Iic ⌊c⌋₊).prod finite_univ).subset fun a ha => by
+    rw [mem_ofPred_eq] at ha
+    exact ⟨Nat.le_floor (by linarith), mem_univ _⟩
 
 /-- On the simplex only finitely many words have delay at most `r`: such a word has length at
 most `r / log (3 / 2)`, and each of its letters `(A, j)` has `A + 3 ≤ 2 e^r`. -/
@@ -422,13 +409,9 @@ theorem wordCount_eq_one {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) {r : 
     (hr : r < Real.log (3 / 2)) : wordCount d x r = 1 := by
   rw [wordCount_def, ncard_eq_one]
   refine ⟨[], eq_singleton_iff_unique_mem.mpr ⟨by simpa using h₀, fun u hu => ?_⟩⟩
-  cases u with
-  | nil => rfl
-  | cons a u =>
-    have h := length_mul_log_le_wordDelay (a :: u) hx
-    simp only [mem_ofPred_eq] at hu
-    simp only [List.length_cons, Nat.cast_succ] at h
-    nlinarith [u.length.cast_nonneg (α := ℝ)]
+  by_contra hne
+  rw [mem_ofPred_eq] at hu
+  linarith [log_three_halves_le_wordDelay_of_ne_nil hne hx]
 
 /-- At `r = 0`, `wordCount d x 0 = 1` on `orderedSimplex d`. -/
 @[simp]
@@ -519,8 +502,8 @@ theorem measurable_wordCount_real {x : Fin d → ℝ} (hx : x ∈ orderedSimplex
 theorem mem_support_wordCount_branchMap_iff {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) (a : ℕ × Fin d) :
     a ∈ Function.support (fun a : ℕ × Fin d =>
-      wordCount d (branchMap a x) (r - Real.log (branchDenom a x))) ↔
-      Real.log (branchDenom a x) ≤ r := by
+      wordCount d (branchMap a x) (r - branchDelay a x)) ↔
+      branchDelay a x ≤ r := by
   simp only [Function.mem_support, ne_eq]
   refine ⟨fun hne => ?_, fun ha => ?_⟩
   · rw [wordCount_def] at hne
@@ -529,30 +512,26 @@ theorem mem_support_wordCount_branchMap_iff {x : Fin d → ℝ} (hx : x ∈ orde
     linarith [wordDelay_nonneg v (branchMap_mem_orderedSimplex a hx)]
   · rw [wordCount_def]
     have hnil : ([] : List (ℕ × Fin d)) ∈
-        {v | wordDelay v (branchMap a x) ≤ r - Real.log (branchDenom a x)} := by
+        {v | wordDelay v (branchMap a x) ≤ r - branchDelay a x} := by
       simp [sub_nonneg.2 ha]
     exact Set.ncard_ne_zero_of_mem hnil
       (finite_setOf_wordDelay_le (branchMap_mem_orderedSimplex a hx) _)
 
-/-- A letter `a` contributes to the renewal equation at time `r` only if `A + 3 ≤ 2 e^r`. -/
-private theorem fst_add_three_le_of_wordCount_ne_zero {x : Fin d → ℝ}
-    (hx : x ∈ orderedSimplex d) {r : ℝ} {a : ℕ × Fin d}
-    (h : wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) ≠ 0) :
+/-- A letter `a` with `branchDelay a x ≤ r` on `orderedSimplex d` satisfies `A + 3 ≤ 2 e^r`. -/
+private theorem fst_add_three_le_of_branchDelay_le {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) {r : ℝ} {a : ℕ × Fin d} (ha : branchDelay a x ≤ r) :
     (a.1 : ℝ) + 3 ≤ 2 * Real.exp r := by
-  obtain ⟨u, hu⟩ := nonempty_of_ncard_ne_zero h
-  have hu' : wordDelay (a :: u) x ≤ r := by
-    simp only [mem_ofPred_eq] at hu
-    rw [wordDelay_cons]
-    linarith
-  exact (fst_add_three_le_two_mul_exp_wordDelay (u := a :: u) (by simp) hx).trans (by gcongr)
+  have h := Real.exp_le_exp.2 ((log_le_branchDelay a hx).trans ha)
+  rw [Real.exp_log (by positivity)] at h
+  linarith
 
 /-- At each time only finitely many letters contribute to the renewal equation. -/
 theorem finite_support_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
     (Function.support fun a : ℕ × Fin d =>
-      wordCount d (branchMap a x) (r - Real.log (branchDenom a x))).Finite :=
-  (finite_setOf_fst_add_three_le (2 * Real.exp r)).subset fun _ ha =>
-    fst_add_three_le_of_wordCount_ne_zero hx ha
+      wordCount d (branchMap a x) (r - branchDelay a x)).Finite :=
+  (finite_setOf_fst_add_three_le (2 * Real.exp r)).subset fun a ha =>
+    fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)
 
 /-- **The renewal equation** `N (w, r) = 1{r ≥ 0} + ∑_a N (F_a w, r - τ_a (w))` on the simplex:
 the empty word counts exactly when `r ≥ 0`, and a nonempty word `a :: u` counts exactly when `u`
@@ -560,11 +539,11 @@ counts at `F_a w` with the delay `τ_a (w)` subtracted. The sum is finite
 (`TauCeti.finite_support_wordCount_branchMap`). -/
 theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
     wordCount d x r = (if 0 ≤ r then 1 else 0) +
-      ∑ᶠ a : ℕ × Fin d, wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) := by
+      ∑ᶠ a : ℕ × Fin d, wordCount d (branchMap a x) (r - branchDelay a x) := by
   set T := {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ 2 * Real.exp r}
   have hT : T.Finite := finite_setOf_fst_add_three_le _
   set S : ℕ × Fin d → Set (List (ℕ × Fin d)) := fun a =>
-    {u | wordDelay u (branchMap a x) ≤ r - Real.log (branchDenom a x)}
+    {u | wordDelay u (branchMap a x) ≤ r - branchDelay a x}
   have hS : ∀ a, (S a).Finite := fun a =>
     finite_setOf_wordDelay_le (branchMap_mem_orderedSimplex a hx) _
   have hdecomp : {u : List (ℕ × Fin d) | wordDelay u x ≤ r} =
@@ -575,10 +554,9 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
     | cons a u =>
       simp only [mem_ofPred_eq, wordDelay_cons, mem_union, reduceCtorEq, false_and, false_or,
         mem_iUnion, mem_image, List.cons.injEq, exists_prop, S]
-      refine ⟨fun h => ⟨a, ?_, u, by linarith, rfl, rfl⟩, ?_⟩
-      · refine (fst_add_three_le_two_mul_exp_wordDelay (u := a :: u) (by simp) hx).trans ?_
-        rw [wordDelay_cons]
-        gcongr
+      refine ⟨fun h => ⟨a, fst_add_three_le_of_branchDelay_le hx
+          (by linarith [wordDelay_nonneg u (branchMap_mem_orderedSimplex a hx)]),
+          u, by linarith, rfl, rfl⟩, ?_⟩
       · rintro ⟨b, -, v, hv, rfl, rfl⟩
         linarith
   have hdisj : Disjoint {u : List (ℕ × Fin d) | u = [] ∧ 0 ≤ r} (⋃ a ∈ T, List.cons a '' S a) := by
@@ -596,23 +574,24 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
   congr 1
   · split_ifs with h <;> simp [h]
   · simp only [ncard_image_of_injective _ List.cons_injective]
-    rw [← finsum_mem_univ fun a => wordCount d (branchMap a x) (r - Real.log (branchDenom a x))]
+    rw [← finsum_mem_univ fun a => wordCount d (branchMap a x) (r - branchDelay a x)]
     exact finsum_mem_inter_support_eq' _ T univ fun a ha =>
-      ⟨fun _ => mem_univ _, fun _ => fst_add_three_le_of_wordCount_ne_zero hx ha⟩
+      ⟨fun _ => mem_univ _, fun _ =>
+        fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)⟩
 
 private theorem hasSum_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
     HasSum
-      (fun a : ℕ × Fin d => (wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) : ℝ))
+      (fun a : ℕ × Fin d => (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ))
       (∑ a ∈ (finite_support_wordCount_branchMap hx r).toFinset,
-        (wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) : ℝ)) :=
+        (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ)) :=
   hasSum_sum_of_ne_finset_zero fun a ha => by
     simp [by_contra fun hne => ha ((finite_support_wordCount_branchMap hx r).mem_toFinset.2 hne)]
 
 /-- The real-valued terms of the renewal sum are summable (in fact finitely supported). -/
 theorem summable_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
     Summable fun a : ℕ × Fin d =>
-      (wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) : ℝ) :=
+      (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ) :=
   (hasSum_wordCount_branchMap hx r).summable
 
 /-- Real-valued `tsum` form of the renewal equation:
@@ -621,7 +600,7 @@ theorem wordCount_eq_add_tsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) 
     (wordCount d x r : ℝ) =
       (if 0 ≤ r then (1 : ℝ) else 0) +
         ∑' a : ℕ × Fin d,
-          (wordCount d (branchMap a x) (r - Real.log (branchDenom a x)) : ℝ) := by
+          (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ) := by
   have hnat := wordCount_eq_add_finsum hx r
   rw [finsum_eq_sum _ (finite_support_wordCount_branchMap hx r)] at hnat
   rw [(hasSum_wordCount_branchMap hx r).tsum_eq, ← Nat.cast_sum, hnat]
@@ -792,9 +771,8 @@ theorem unaccelWordMove_expandWord (u : List (ℕ × Fin d)) :
   | nil => rfl
   | cons a u ih =>
     have hcons : expandWord (a :: u) = expandWord ([a] ++ u) := rfl
-    rw [hcons, expandWord_append, unaccelWordMove_append, unaccelWordMove_expandWord_singleton, ih,
-      wordMove_cons, accelMove_def]
-    simp only [Module.End.mul_eq_comp]
+    rw [hcons, expandWord_append, unaccelWordMove_append, unaccelWordMove_expandWord_singleton,
+      ih, wordMove_cons]
 
 private theorem expandWord_ne_last_cons (u : List (ℕ × Fin d)) (t : List (Fin (d + 1))) :
     expandWord u ≠ Fin.last d :: t := by
@@ -863,8 +841,7 @@ theorem range_wordMove (d : ℕ) :
     | nil => exact Submonoid.one_mem _
     | cons a u ih =>
       rw [wordMove_cons]
-      exact Submonoid.mul_mem _ ih
-        (Submonoid.subset_closure ⟨a, by rw [accelMove_def, Module.End.mul_eq_comp]⟩)
+      exact Submonoid.mul_mem _ ih (Submonoid.subset_closure ⟨a, rfl⟩)
   · induction hT using Submonoid.closure_induction with
     | mem _ ha =>
       rcases ha with ⟨a, rfl⟩

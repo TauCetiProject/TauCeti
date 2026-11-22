@@ -39,6 +39,8 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.branchDelay a x`: the logarithmic delay `τ_a (w) = log (q_a (w))`.
 * `TauCeti.branchWeight a s x`: the complex weight `exp (-s * τ_a (w))`.
 * `TauCeti.branchMap a x`: the branch `F_a` in chart coordinates.
+* `TauCeti.unaccelBranchMap j x`: the unaccelerated branch `F_j` in chart coordinates for
+  `j : Fin (d + 1)`.
 * `TauCeti.linearMove j`: the linear map `γ_{j+1}` of `ℝ^{d+2}`.
 * `TauCeti.accelMove a`: the accelerated linear map `γ_{n-1}^A γ_j` of `ℝ^{d+2}`.
 
@@ -47,8 +49,10 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.accelMove_simplexLift`, `TauCeti.accelMove_of_mem_orderedCone`: the homogeneous identity
   `γ_{n-1}^A γ_j y = y_n q_a (w) (F_a (w), 1)`, which identifies `F_a` as the projective action
   of `γ_{n-1}^A γ_j` and `q_a` as the growth factor of the last coordinate.
-* `TauCeti.branchMap_mem_orderedSimplex`, `TauCeti.mapsTo_branchMap`: each branch maps the ordered
-  simplex into itself.
+* `TauCeti.branchMap_mem_orderedSimplex`, `TauCeti.mapsTo_branchMap`,
+  `TauCeti.unaccelBranchMap_mem_orderedSimplex`, `TauCeti.simplexChart_linearMove`: each
+  accelerated or unaccelerated branch maps the ordered simplex into itself and intertwines the
+  corresponding linear move.
 * `TauCeti.add_three_div_two_le_branchDenom`, `TauCeti.branchDenom_le_add_two`,
   `TauCeti.log_three_halves_le_branchDelay`: on the simplex `(A + 3) / 2 ≤ q_a ≤ A + 2`, so
   every delay is at least `log (3 / 2)`.
@@ -171,11 +175,6 @@ theorem log_three_halves_le_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ}
   have h := add_three_div_two_le_branchDenom a hx
   refine Real.log_le_log (by norm_num) (le_trans ?_ h)
   linarith [(a.1.cast_nonneg : (0 : ℝ) ≤ a.1)]
-
-/-- Every delay `τ_a = log q_a` is at least `log (3 / 2)` on the simplex. -/
-theorem log_three_halves_le_log_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
-    (hx : x a.2 ≤ 1 / 2) : Real.log (3 / 2) ≤ Real.log (branchDenom a x) :=
-  log_three_halves_le_branchDelay a hx
 
 /-- Lower bound `log ((A + 3) / 2) ≤ τ_a (w)` on `orderedSimplex d`. -/
 theorem log_le_branchDelay (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
@@ -366,27 +365,6 @@ theorem norm_fderiv_branchDelay_lt_two (a : ℕ × Fin d) {x : Fin d → ℝ}
   rw [div_lt_iff₀ (by positivity)]
   linarith
 
-/-- The delay `log q_a` depends only on `w_j`, with partial derivative `-(A + 1) / q_a`. -/
-theorem hasFDerivAt_log_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
-    (hx : branchDenom a x ≠ 0) :
-    HasFDerivAt (fun y => Real.log (branchDenom a y))
-      (-(((a.1 : ℝ) + 1) / branchDenom a x) •
-        (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ)) x :=
-  hasFDerivAt_branchDelay a hx
-
-/-- The logarithmic derivative of a denominator is bounded on the simplex:
-`‖D log q_a‖ = (A + 1) / q_a ≤ 2 (A + 1) / (A + 3)`. -/
-theorem norm_fderiv_log_branchDenom_le (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1 / 2) :
-    ‖fderiv ℝ (fun y => Real.log (branchDenom a y)) x‖ ≤
-      2 * ((a.1 : ℝ) + 1) / ((a.1 : ℝ) + 3) :=
-  norm_fderiv_branchDelay_le a hx
-
-/-- The logarithmic derivative of a denominator has norm less than `2` on the simplex, uniformly in
-the letter. -/
-theorem norm_fderiv_log_branchDenom_lt_two (a : ℕ × Fin d) {x : Fin d → ℝ}
-    (hx : x a.2 ≤ 1 / 2) : ‖fderiv ℝ (fun y => Real.log (branchDenom a y)) x‖ < 2 :=
-  norm_fderiv_branchDelay_lt_two a hx
-
 /-- The chart-variable derivative of `branchWeight a s` at a point with nonzero denominator,
 expressed using `branchWeight` and the derivative of `branchDelay`. -/
 theorem hasFDerivAt_branchWeight (a : ℕ × Fin d) (s : ℂ) {x : Fin d → ℝ}
@@ -494,32 +472,63 @@ theorem linearMove_last_of_mem_orderedCone (j : Fin (d + 1)) {y : Fin (d + 2) �
     simplexPoint_simplexChart hy, mul_sub, mul_div_cancel₀ _ (pos_last_of_mem_orderedCone hy).ne']
   ring
 
-/-- Projective chart formula for every unaccelerated move `linearMove j` (`j : Fin (d + 1)`) on
-`orderedCone d`. -/
+/-- The unaccelerated branch map `F_j` in chart coordinates for `j : Fin (d + 1)`, the projective
+action of `linearMove j` on `orderedSimplex d`: delete coordinate `j` from `simplexPoint x` and
+divide by `2 - simplexPoint x j`. -/
+noncomputable def unaccelBranchMap (j : Fin (d + 1)) (x : Fin d → ℝ) : Fin d → ℝ :=
+  fun i => simplexPoint x (j.succAbove i) / (2 - simplexPoint x j)
+
+@[simp]
+theorem unaccelBranchMap_apply (j : Fin (d + 1)) (x : Fin d → ℝ) (i : Fin d) :
+    unaccelBranchMap j x i = simplexPoint x (j.succAbove i) / (2 - simplexPoint x j) :=
+  (rfl)
+
+/-- For `j : Fin d`, `unaccelBranchMap j.castSucc` specializes to the unaccelerated branch
+`branchMap (0, j)`. -/
+@[simp]
+theorem unaccelBranchMap_castSucc (j : Fin d) (x : Fin d → ℝ) :
+    unaccelBranchMap j.castSucc x = branchMap (0, j) x := by
+  ext i
+  simp [unaccelBranchMap_apply, branchMap_apply, branchDenom_def]
+  ring
+
+/-- At `Fin.last d`, `unaccelBranchMap (Fin.last d)` divides chart coordinates by `1 + ∑ k, x k`. -/
+theorem unaccelBranchMap_last (x : Fin d → ℝ) :
+    unaccelBranchMap (Fin.last d) x = fun i => x i / (1 + ∑ k, x k) := by
+  ext i
+  simp [unaccelBranchMap_apply]
+  ring_nf
+
+/-- Projective normalisation intertwines `linearMove j` (`j : Fin (d + 1)`) and
+`unaccelBranchMap j` on `orderedCone d`. -/
 theorem simplexChart_linearMove (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
-    (hy : y ∈ orderedCone d) (i : Fin d) :
-    simplexChart (linearMove j y) i =
-      simplexPoint (simplexChart y) (j.succAbove i) /
-        (2 - simplexPoint (simplexChart y) j) := by
-  have hidx : j.castSucc.succAbove i.castSucc = (j.succAbove i).castSucc := by
-    rcases lt_or_ge i.castSucc j with h | h
-    · rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr h),
-        Fin.succAbove_of_castSucc_lt _ _ h]
-    · rw [Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.mpr h),
-        Fin.succAbove_of_le_castSucc _ _ h, Fin.succ_castSucc]
-  rw [simplexChart_apply, linearMove_apply_castSucc, hidx, linearMove_last_of_mem_orderedCone j hy,
-    ← div_div]
+    (hy : y ∈ orderedCone d) :
+    simplexChart (linearMove j y) = unaccelBranchMap j (simplexChart y) := by
+  ext i
+  rw [simplexChart_apply, linearMove_apply_castSucc, Fin.castSucc_succAbove_castSucc,
+    linearMove_last_of_mem_orderedCone j hy, unaccelBranchMap_apply, ← div_div]
   simp [simplexPoint_simplexChart hy]
+
+/-- Each unaccelerated branch maps the ordered simplex into itself. -/
+theorem unaccelBranchMap_mem_orderedSimplex (j : Fin (d + 1)) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : unaccelBranchMap j x ∈ orderedSimplex d := by
+  have h : unaccelBranchMap j x = simplexChart (linearMove j (simplexLift x)) := by
+    rw [simplexChart_linearMove j (simplexLift_mem_orderedCone hx), simplexChart_simplexLift]
+  rw [h]
+  exact simplexChart_mem_orderedSimplex
+    (linearMove_mapsTo_orderedCone j (simplexLift_mem_orderedCone hx))
+
+/-- Each unaccelerated branch maps the ordered simplex into itself. -/
+theorem mapsTo_unaccelBranchMap (j : Fin (d + 1)) :
+    MapsTo (unaccelBranchMap j) (orderedSimplex d) (orderedSimplex d) :=
+  fun _ hx => unaccelBranchMap_mem_orderedSimplex j hx
 
 /-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
 dividing chart coordinates by `1 + ∑ k, w k`. -/
 theorem simplexChart_linearMove_last {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
     simplexChart (linearMove (Fin.last d) y) =
       fun i => simplexChart y i / (1 + ∑ k, simplexChart y k) := by
-  ext i
-  rw [simplexChart_linearMove (Fin.last d) hy i, Fin.succAbove_last, simplexPoint_castSucc,
-    simplexPoint_last]
-  ring_nf
+  rw [simplexChart_linearMove (Fin.last d) hy, unaccelBranchMap_last]
 
 /-- `γ_{n-1}` replaces the last two coordinates `(p, q)` by `(q, ∑ u + q)`, where `u` collects
 the first `d` coordinates. -/
@@ -613,14 +622,6 @@ theorem accelMove_simplexLift (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : branc
       ring
     | cast i => simp [mul_div_cancel₀ _ hx]
 
-/-- **The homogeneous identity** in chart coordinates in raw power form:
-`γ_{n-1}^A γ_j (w, 1) = q_a (w) (F_a (w), 1)` for `a = (A, j)`, wherever `q_a (w) ≠ 0`. -/
-theorem linearMove_last_pow_linearMove_simplexLift (a : ℕ × Fin d) {x : Fin d → ℝ}
-    (hx : branchDenom a x ≠ 0) :
-    (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc (simplexLift x)) =
-      branchDenom a x • simplexLift (branchMap a x) :=
-  accelMove_simplexLift a hx
-
 /-- **The homogeneous identity** on the ordered cone: for `y ∈ H_n` over `w`,
 `γ_a y = y_n q_a (w) (F_a (w), 1)`. So `F_a` is the projective action of `γ_a`, and the last
 coordinate grows by the factor `q_a (w)`. -/
@@ -632,15 +633,6 @@ theorem accelMove_of_mem_orderedCone (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ
   have hq := branchDenom_pos_of_mem_orderedSimplex a (simplexChart_mem_orderedSimplex hy)
   conv_lhs => rw [← last_smul_simplexLift_simplexChart hy]
   rw [map_smul, accelMove_simplexLift a hq.ne', smul_smul]
-
-/-- **The homogeneous identity** on the ordered cone in raw power form: for `y ∈ H_n` over `w`,
-`γ_{n-1}^A γ_j y = y_n q_a (w) (F_a (w), 1)`. -/
-theorem linearMove_last_pow_linearMove_of_mem_orderedCone (a : ℕ × Fin d)
-    {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
-    (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc y) =
-      (y (Fin.last _) * branchDenom a (simplexChart y)) •
-        simplexLift (branchMap a (simplexChart y)) :=
-  accelMove_of_mem_orderedCone a hy
 
 /-- The last coordinate of `γ_{n-1}^A γ_j y` on `orderedCone d` is `y_n q_a (simplexChart y)`. -/
 theorem accelMove_last_eq_mul_branchDenom (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
@@ -661,7 +653,7 @@ with the unaccelerated branch `branchMap (0, j)`. -/
 theorem simplexChart_linearMove_castSucc (j : Fin d) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     simplexChart (linearMove j.castSucc y) = branchMap (0, j) (simplexChart y) := by
-  rw [← accelMove_zero j, simplexChart_accelMove (0, j) hy]
+  rw [simplexChart_linearMove j.castSucc hy, unaccelBranchMap_castSucc]
 
 /-- On `orderedCone d`, `branchDelay a (simplexChart y) = log ((γ_a y)_n / y_n)`. -/
 theorem branchDelay_simplexChart (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
@@ -678,11 +670,5 @@ theorem accelMove_mapsTo_orderedCone (a : ℕ × Fin d) :
   rw [accelMove_of_mem_orderedCone a hy]
   exact smul_mem_orderedCone (simplexLift_mem_orderedCone (branchMap_mem_orderedSimplex a hx))
     (mul_pos (pos_last_of_mem_orderedCone hy) hq)
-
-/-- The accelerated element `γ_{n-1}^A γ_j` maps the ordered cone into itself. -/
-theorem linearMove_last_pow_linearMove_mem_orderedCone (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
-    (hy : y ∈ orderedCone d) :
-    (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc y) ∈ orderedCone d :=
-  accelMove_mapsTo_orderedCone a hy
 
 end TauCeti
