@@ -73,8 +73,7 @@ theorem commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
     commutator (fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) = ⊤ := by
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
   exact UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq hd
-    (by rw [d.natCard_galoisField, ← d.fieldOrder_eq_characteristic_pow])
-    (congrFun d.coe_iterateFrobenius_galoisField)
+    d.natCard_galoisField (congrFun d.coe_iterateFrobenius_galoisField)
 
 /-- **The projective special unitary group `PSU₃(q)` is simple** whenever `3 ≤ d.fieldOrder`. -/
 theorem isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two
@@ -83,8 +82,7 @@ theorem isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_
       Subgroup.center (fixedSubgroup (d.galoisFieldTwistedFrobenius 2))) := by
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
   exact UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq hd
-    (by rw [d.natCard_galoisField, ← d.fieldOrder_eq_characteristic_pow])
-    (congrFun d.coe_iterateFrobenius_galoisField)
+    d.natCard_galoisField (congrFun d.coe_iterateFrobenius_galoisField)
 
 end RankTwoUnitary
 

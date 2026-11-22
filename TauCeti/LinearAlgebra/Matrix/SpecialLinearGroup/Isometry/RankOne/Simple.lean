@@ -289,11 +289,8 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
   have hσa : σ a ≠ 0 := (map_ne_zero σ).mpr ha0
   let c : K := a ^ 2 * (σ a)⁻¹ - 1
   have hc0 : c ≠ 0 := by
-    intro hc
-    apply ha
-    have h1 : a ^ 2 * (σ a)⁻¹ = 1 := sub_eq_zero.mp hc
-    calc a ^ 2 = a ^ 2 * (σ a)⁻¹ * σ a := (inv_mul_cancel_right₀ hσa (a ^ 2)).symm
-      _ = σ a := by rw [h1, one_mul]
+    simpa only [c, div_eq_mul_inv] using
+      sub_ne_zero.mpr ((div_eq_one_iff_eq hσa).not.mpr ha)
   let x₁ : K := c⁻¹ * x
   obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ htr x₁
   let t : Kˣ := Units.mk0 a ha0
