@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.TotalComplex.Basic
 
@@ -60,7 +61,8 @@ object stabilizes after finitely many pages to the corresponding graded piece of
   filtration of the flipped bicomplex is the homology of the original columns.
 * `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_pos`,
   `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg`: the first page
-  vanishes outside the range of the rows.
+  vanishes outside the range of the rows, and hence so does every later page
+  (`HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_X`).
 * `HomologicalComplex₂.rowFiltrationAbutmentIso`,
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty`,
   `HomologicalComplex₂.isZero_rowFiltration_abutmentFiltration`,
@@ -596,6 +598,17 @@ lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_neg (p q : ℤ) (hq : q
   rw [CochainComplex.filtrationEInt_coe, K.rowFiltration_eq_bot _ (by omega)]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
 
+/-- **The spectral sequence of the row filtration lives in the first quadrant.** On every page
+`r ≥ 2`, the object at `(p, q)` vanishes in the negative rows `q < 0` and when `0 < p + 2q`, that
+is, in negative total degree `k = -(p + 2q)` of the row `q`. -/
+lemma isZero_rowFiltrationSpectralSequence_page_X (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
+    (h : q < 0 ∨ 0 < p + 2 * q) : IsZero ((K.rowFiltrationSpectralSequence.page r).X (p, q)) := by
+  refine K.rowFiltrationSpectralSequence.isZero_page_X_of_le le_rfl ?_ r hr
+  by_cases hq : q < 0
+  · exact K.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg p q hq
+  · obtain ⟨s, rfl⟩ : ∃ s : ℕ, q = s := ⟨q.toNat, by omega⟩
+    exact K.isZero_rowFiltrationSpectralSequence_page_two_X_of_pos p s (by omega)
+
 /-- The abutment of the spectral sequence of the row filtration in degree `-n` is the homology of
 the total complex of `K` in degree `n`. -/
 def rowFiltrationAbutmentIso (n : ℕ) :
@@ -616,24 +629,36 @@ def columnFiltrationAbutmentIso (n : ℕ) :
 
 /-- **Convergence of the spectral sequence of the row filtration.** On every page `r ≥ 2` with
 `q + 2 ≤ r` and `p + 2q + r > 2`, the object at `(p, q)` is the limit object
-`E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, which is the `q`th graded piece of the filtration of the abutment
-(`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). In particular the object at a
-fixed position stabilizes after finitely many pages. -/
-def rowFiltrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
-    (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
+`E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, `n = p + q`, which is the `q`th graded piece of the filtration of the
+abutment (`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). In particular the object at
+a fixed position stabilizes after finitely many pages. The degree `n` is a parameter, so that it
+can be given in any form equal to `p + q`. -/
+def rowFiltrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
     (K.rowFiltrationSpectralSequence.page r).X pq ≅
       (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-        K.monotone_rowFiltration)).EInfty pq.2 (pq.1 + pq.2) :=
-  CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq _ rfl
+        K.monotone_rowFiltration)).EInfty pq.2 n :=
+  CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq n hn
     (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ (by omega)) _)
     (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by omega))
 
+/-- The isomorphism `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` is the
+epimorphism `spectralSequencePageXToEInfty` from the page object onto `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
+lemma rowFiltrationSpectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
+    (K.rowFiltrationSpectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
+      (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
+        K.monotone_rowFiltration)).spectralSequencePageXToEInfty r hr pq n hn
+        (CochainComplex.isZero_spectralObject_H_bot _ _ _ _
+          (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ (by omega)) _)) :=
+  CochainComplex.filtrationSpectralSequencePageXIsoEInfty_hom ..
+
 /-- The filtration of the abutment of the spectral sequence of the row filtration vanishes at
-`0`. -/
-lemma isZero_rowFiltration_abutmentFiltration (n : ℤ) :
+every `p ≤ 0`, the `p`th piece coming from the rows `< p`. -/
+lemma isZero_rowFiltration_abutmentFiltration (p : ℤ) (hp : p ≤ 0) (n : ℤ) :
     IsZero ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-      K.monotone_rowFiltration)).abutmentFiltration 0 n) :=
-  CochainComplex.isZero_filtrationAbutmentFiltration _ _ (K.rowFiltration_eq_bot 0 le_rfl) n
+      K.monotone_rowFiltration)).abutmentFiltration p n) :=
+  CochainComplex.isZero_filtrationAbutmentFiltration _ _ (K.rowFiltration_eq_bot p hp) n
 
 /-- The filtration of the abutment of the spectral sequence of the row filtration is exhaustive
 in each degree: its `b`th piece in degree `n` is everything when `-b < n`. -/
