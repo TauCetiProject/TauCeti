@@ -103,13 +103,14 @@ of the first coordinate divides that of the second: `⟨(σ, τ)⟩ ⊓ (G × 1)
 `orderOf σ ∣ orderOf τ`.
 
 For the meet with the second factor `1 × H`, the divisibility runs the other way. -/
+@[simp]
 theorem zpowers_inf_top_prod_bot_eq_bot_iff {G H : Type*} [Group G] [Group H] {σ : G} {τ : H} :
     zpowers ((σ, τ) : G × H) ⊓ (⊤ : Subgroup G).prod (⊥ : Subgroup H) = ⊥ ↔
       orderOf σ ∣ orderOf τ := by
   refine ⟨fun h ↦ orderOf_dvd_of_pow_eq_one ?_, fun hστ ↦ ?_⟩
   · -- `(σ, τ) ^ orderOf τ = (σ ^ orderOf τ, 1)` lies in the meet, so it is trivial.
     have hmem : ((σ, τ) : G × H) ^ orderOf τ ∈ zpowers ((σ, τ) : G × H) ⊓ (⊤ : Subgroup G).prod ⊥ :=
-      mem_inf.mpr ⟨pow_mem (mem_zpowers _) _, mem_prod.mpr ⟨mem_top _, by simp⟩⟩
+      mem_inf.mpr ⟨npow_mem_zpowers _ _, mem_prod.mpr ⟨mem_top _, by simp⟩⟩
     rw [h, mem_bot] at hmem
     simpa using congrArg Prod.fst hmem
   rw [eq_bot_iff]
@@ -148,12 +149,10 @@ theorem zpowers_pow_inf {G : Type*} [Group G] (g : G) (m n : ℕ) :
             (g ^ (↑(m' * d) * i)) ^ (n' * m'.gcdB n') := by
           rw [← zpow_mul, ← zpow_mul, ← zpow_add]; grind
       _ = g ^ (↑(m' * d) * i) := by rw [hj, ← zpow_add, hb, zpow_one]
-  · obtain ⟨c, hc⟩ := Nat.dvd_lcm_left m n
-    rw [hc, pow_mul]
-    exact zpowers_le.mpr (pow_mem (mem_zpowers _) c)
-  · obtain ⟨c, hc⟩ := Nat.dvd_lcm_right m n
-    rw [hc, pow_mul]
-    exact zpowers_le.mpr (pow_mem (mem_zpowers _) c)
+  · simpa only [zpow_natCast] using
+      zpowers_le_zpowers_of_dvd g (Int.natCast_dvd_natCast.mpr (Nat.dvd_lcm_left m n))
+  · simpa only [zpow_natCast] using
+      zpowers_le_zpowers_of_dvd g (Int.natCast_dvd_natCast.mpr (Nat.dvd_lcm_right m n))
 
 /-- **An element generates the subgroup it generates.** Inside `zpowers g`, the canonical element
 `⟨g, mem_zpowers g⟩` has all of `zpowers g` for its own `zpowers`.
