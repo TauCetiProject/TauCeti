@@ -42,6 +42,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
   possibly noncommutative semiring, linear maps of coordinate vectors are matrices acting on row
   vectors, and idempotent endomorphisms correspond to idempotent matrices.
+* `LinearMap.of_apply_single_mulVec`: over a possibly noncommutative semiring, right-linear maps of
+  coordinate vectors are matrices acting on column vectors.
 * `LinearMap.isIdempotentElem_toMatrixRight'_comp` and
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
@@ -147,6 +149,20 @@ variable {R : Type*} [Semiring R] {m n : Type*} [Fintype m] [DecidableEq m]
 theorem vecMul_toMatrixRight' (f : (m → R) →ₗ[R] n → R) (v : m → R) :
     Matrix.vecMul v f.toMatrixRight' = f v := by
   rw [← Matrix.toLinearMapRight'_apply, LinearEquiv.symm_apply_apply]
+
+/-- **A right-linear map of coordinate vectors is a matrix acting on column vectors.** Over a
+possibly noncommutative semiring, an `Rᵐᵒᵖ`-linear map `f : (m → R) → (n → R)` (one commuting with
+right scalar multiplication) is `Matrix.mulVec` by the matrix whose `j`-th column is the image
+`f eⱼ` of the `j`-th standard basis vector. -/
+@[simp]
+theorem of_apply_single_mulVec (f : (m → R) →ₗ[Rᵐᵒᵖ] n → R) (v : m → R) :
+    Matrix.mulVec (Matrix.of fun i j ↦ f (Pi.single j 1) i) v = f v := by
+  -- Both sides are `Rᵐᵒᵖ`-linear in `v`, and they agree on the `eⱼ`.
+  have h : Matrix.mulVecBilin R Rᵐᵒᵖ (Matrix.of fun i j ↦ f (Pi.single j 1) i) = f :=
+    LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring_op <| by
+      ext i
+      simp
+  exact LinearMap.congr_fun h v
 
 /-- The matrix of an endomorphism of `m → R`, acting on row vectors, is idempotent exactly when
 the endomorphism is. -/
