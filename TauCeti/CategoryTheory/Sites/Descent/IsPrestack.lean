@@ -55,8 +55,6 @@ Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_f
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_inv`,
   `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`:
   composition, identity, comparison, and restriction laws for `pullHom`.
-* `CategoryTheory.Pseudofunctor.map_map_eq_iff_map_comp`: equality of morphisms after iterated
-  restriction along `f` then `g` is equivalent to equality after restriction along `g ≫ f`.
 * `CategoryTheory.Pseudofunctor.IsPrestack.hom_ext`,
   `CategoryTheory.Pseudofunctor.IsPrestack.pullHom_ext`,
   `CategoryTheory.Pseudofunctor.IsPrestack.glue`,
@@ -131,20 +129,6 @@ lemma isSeparatedFor_presheafHom_of_hom_ext {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ 
     (hφ _ hr').trans (hψ _ hr').symm
   rw [map_eq_pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl,
     map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
-
-/-- Two morphisms `M ⟶ N` over `Z` have equal iterated pullbacks along `f : Y ⟶ Z` and `g : X ⟶ Y`
-if and only if they have equal pullbacks along `g ≫ f`. -/
-lemma map_map_eq_iff_map_comp {X Y Z : C} (f : Y ⟶ Z) (g : X ⟶ Y)
-    {M N : F.obj (.mk (op Z))} {φ ψ : M ⟶ N} :
-    (F.map g.op.toLoc).toFunctor.map ((F.map f.op.toLoc).toFunctor.map φ) =
-      (F.map g.op.toLoc).toFunctor.map ((F.map f.op.toLoc).toFunctor.map ψ) ↔
-      (F.map (g ≫ f).op.toLoc).toFunctor.map φ =
-        (F.map (g ≫ f).op.toLoc).toFunctor.map ψ := by
-  rw [← F.mapComp'_naturality_1 f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) φ,
-    ← F.mapComp'_naturality_1 f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) ψ,
-    cancel_epi, cancel_mono]
 
 namespace LocallyDiscreteOpToCat
 
@@ -260,6 +244,56 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
 
+/-- If `F` satisfies descent of morphisms for a presieve `R`, two morphisms `M₁ ⟶ M₂` in
+`F.obj (.mk (op W))` are equal if their pullbacks along every morphism in `R` agree. -/
+lemma IsPrestackFor.hom_ext {W : C} {M₁ M₂ : F.obj (.mk (op W))} {R : Presieve W}
+    (hR : F.IsPrestackFor R) {φ ψ : M₁ ⟶ M₂}
+    (h : ∀ ⦃Z : C⦄ (r : Z ⟶ W), R r →
+      (F.map r.op.toLoc).toFunctor.map φ = (F.map r.op.toLoc).toFunctor.map ψ) :
+    φ = ψ :=
+  hR.fullyFaithful.map_injective (DescentData.hom_ext fun r ↦ h r.obj.hom r.property)
+
+/-- If `F` satisfies descent of morphisms for a sieve `R`, a family of morphisms
+`r^* M₁ ⟶ r^* M₂` over `R` that is compatible with `pullHom` descends to a unique morphism
+`M₁ ⟶ M₂`. -/
+lemma IsPrestackFor.existsUnique_map_eq {W : C} {M₁ M₂ : F.obj (.mk (op W))} {R : Sieve W}
+    (hR : F.IsPrestackFor R.arrows)
+    (m : ∀ ⦃Z : C⦄ (r : Z ⟶ W), R r →
+      ((F.map r.op.toLoc).toFunctor.obj M₁ ⟶ (F.map r.op.toLoc).toFunctor.obj M₂))
+    (hm : ∀ ⦃Z' Z : C⦄ (g : Z' ⟶ Z) (r : Z ⟶ W) (hr : R r),
+      m (g ≫ r) (R.downward_closed hr g) = pullHom (m r hr) g (g ≫ r) (g ≫ r) rfl rfl) :
+    ∃! φ : M₁ ⟶ M₂, ∀ ⦃Z : C⦄ (r : Z ⟶ W) (hr : R r),
+      (F.map r.op.toLoc).toFunctor.map φ = m r hr := by
+  have hsh := (F.isPrestackFor_iff_isSheafFor R).1 hR M₁ M₂
+  have mem_hom {Z : Over W} {g : Z ⟶ Over.mk (𝟙 W)}
+      (hg : ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows g) : R Z.hom := by
+    have hg' : R g.left := (Sieve.overEquiv_symm_iff R g).1 hg
+    rw [← Over.w g]
+    simpa using hg'
+  let x : Presieve.FamilyOfElements (F.presheafHom M₁ M₂)
+      ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows := fun _ _ hg ↦ m _ (mem_hom hg)
+  have hx : x.Compatible := by
+    rw [Presieve.compatible_iff_sieveCompatible]
+    intro Z Z' g f hg
+    have haux : ∀ {w : Z'.left ⟶ W} (hw : f.left ≫ Z.hom = w),
+        m w (by rw [← hw]; exact R.downward_closed (mem_hom hg) f.left) =
+          pullHom (m Z.hom (mem_hom hg)) f.left w w (by simp [hw]) (by simp [hw]) := by
+      rintro w rfl
+      exact hm f.left Z.hom (mem_hom hg)
+    exact haux (Over.w f)
+  obtain ⟨y, hy, _⟩ := hsh x hx
+  let φ : M₁ ⟶ M₂ := F.presheafHomObjHomEquiv.symm y
+  have hφ : ∀ ⦃Z : C⦄ (r : Z ⟶ W) (hr : R r), (F.map r.op.toLoc).toFunctor.map φ = m r hr := by
+    intro Z r hr
+    let g : Over.mk r ⟶ Over.mk (𝟙 W) := Over.homMk r (Category.comp_id r)
+    have hmem : ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows g :=
+      (Sieve.overEquiv_symm_iff R g).2 hr
+    have h1 := hy g hmem
+    rw [← Equiv.apply_symm_apply F.presheafHomObjHomEquiv y,
+      presheafHom_map_presheafHomObjHomEquiv] at h1
+    exact h1
+  exact ⟨φ, hφ, fun ψ hψ ↦ hR.hom_ext fun Z r hr ↦ (hψ r hr).trans (hφ r hr).symm⟩
+
 namespace IsPrestack
 
 variable {J : GrothendieckTopology C} [F.IsPrestack J]
@@ -269,17 +303,8 @@ sieve. -/
 lemma hom_ext {Y : C} {M N : F.obj (.mk (op Y))} {R : Sieve Y} (hR : R ∈ J Y) {φ φ' : M ⟶ N}
     (h : ∀ ⦃T : C⦄ (g : T ⟶ Y), R g →
       (F.map g.op.toLoc).toFunctor.map φ = (F.map g.op.toLoc).toFunctor.map φ') :
-    φ = φ' := by
-  apply F.presheafHomObjHomEquiv.injective
-  have hR' : (Sieve.overEquiv (Over.mk (𝟙 Y))).symm R ∈ J.over Y (Over.mk (𝟙 Y)) := by
-    rwa [GrothendieckTopology.mem_over_iff, OrderIso.apply_symm_apply]
-  refine (((isSheaf_iff_isSheaf_of_type _ _).1
-    (IsPrestack.isSheaf J M N)).isSeparated _ hR').ext fun Z g hg ↦ ?_
-  rw [presheafHom_map_presheafHomObjHomEquiv, presheafHom_map_presheafHomObjHomEquiv]
-  refine h _ ?_
-  rw [Sieve.overEquiv_symm_iff] at hg
-  rw [← Over.w g]
-  simpa using hg
+    φ = φ' :=
+  (F.isPrestackFor' R hR).hom_ext h
 
 /-- In a prestack, a family of morphisms over the members of a covering sieve which is compatible
 under pullback is the family of pullbacks of a morphism. -/
@@ -290,28 +315,9 @@ lemma exists_map_eq {Y : C} {M N : F.obj (.mk (op Y))} {R : Sieve Y} (hR : R ∈
       (e : h ≫ g = g'), pullHom (s g hg) h g' g' e e = s g' hg') :
     ∃ φ : M ⟶ N, ∀ ⦃T : C⦄ (g : T ⟶ Y) (hg : R g),
       (F.map g.op.toLoc).toFunctor.map φ = s g hg := by
-  have hR' : (Sieve.overEquiv (Over.mk (𝟙 Y))).symm R ∈ J.over Y (Over.mk (𝟙 Y)) := by
-    rwa [GrothendieckTopology.mem_over_iff, OrderIso.apply_symm_apply]
-  have mem {Z : Over Y} (g : Z ⟶ Over.mk (𝟙 Y))
-      (hg : ((Sieve.overEquiv (Over.mk (𝟙 Y))).symm R).arrows g) : R Z.hom := by
-    rw [Sieve.overEquiv_symm_iff] at hg
-    rw [← Over.w g]
-    simpa using hg
-  let x : Presieve.FamilyOfElements (F.presheafHom M N)
-      ((Sieve.overEquiv (Over.mk (𝟙 Y))).symm R).arrows :=
-    fun Z g hg ↦ s Z.hom (mem g hg)
-  have hx : x.Compatible := by
-    intro Z₁ Z₂ W g₁ g₂ f₁ f₂ h₁ h₂ _
-    have hW : R W.hom := by rw [← Over.w g₁]; exact R.downward_closed (mem f₁ h₁) _
-    exact (hs _ _ g₁.left _ hW (Over.w g₁)).trans (hs _ _ g₂.left _ hW (Over.w g₂)).symm
-  let H := ((isSheaf_iff_isSheaf_of_type _ _).1 (IsPrestack.isSheaf J M N)) _ hR'
-  refine ⟨F.presheafHomObjHomEquiv.symm (H.amalgamate x hx), fun T g hg ↦ ?_⟩
-  have := H.valid_glue hx (Over.homMk g : Over.mk g ⟶ Over.mk (𝟙 Y))
-    (by rw [Sieve.overEquiv_symm_iff]; exact hg)
-  have h₂ := presheafHom_map_presheafHomObjHomEquiv F
-    (F.presheafHomObjHomEquiv.symm (H.amalgamate x hx)) (Over.homMk g : Over.mk g ⟶ Over.mk (𝟙 Y))
-  rw [Equiv.apply_symm_apply] at h₂
-  exact h₂.symm.trans this
+  obtain ⟨φ, hφ, _⟩ := (F.isPrestackFor' R hR).existsUnique_map_eq s
+    fun Z' Z g r hr ↦ (hs r hr g (g ≫ r) (R.downward_closed hr g) rfl).symm
+  exact ⟨φ, hφ⟩
 
 variable ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
   ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
@@ -408,56 +414,6 @@ lemma isPrestackFor_top (S : C) : F.IsPrestackFor (⊤ : Presieve S) := by
   rw [← IsPrestackFor_generate_iff, Sieve.generate_top, isPrestackFor_iff_isSheafFor]
   intro M N
   simpa using Presieve.isSheafFor_top (F.presheafHom M N)
-
-/-- If `F` satisfies descent of morphisms for a presieve `R`, two morphisms `M₁ ⟶ M₂` in
-`F.obj (.mk (op W))` are equal if their pullbacks along every morphism in `R` agree. -/
-lemma IsPrestackFor.hom_ext {W : C} {M₁ M₂ : F.obj (.mk (op W))} {R : Presieve W}
-    (hR : F.IsPrestackFor R) {φ ψ : M₁ ⟶ M₂}
-    (h : ∀ ⦃Z : C⦄ (r : Z ⟶ W), R r →
-      (F.map r.op.toLoc).toFunctor.map φ = (F.map r.op.toLoc).toFunctor.map ψ) :
-    φ = ψ :=
-  hR.fullyFaithful.map_injective (DescentData.hom_ext fun r ↦ h r.obj.hom r.property)
-
-/-- If `F` satisfies descent of morphisms for a sieve `R`, a family of morphisms
-`r^* M₁ ⟶ r^* M₂` over `R` that is compatible with `pullHom` descends to a unique morphism
-`M₁ ⟶ M₂`. -/
-lemma IsPrestackFor.existsUnique_map_eq {W : C} {M₁ M₂ : F.obj (.mk (op W))} {R : Sieve W}
-    (hR : F.IsPrestackFor R.arrows)
-    (m : ∀ ⦃Z : C⦄ (r : Z ⟶ W), R r →
-      ((F.map r.op.toLoc).toFunctor.obj M₁ ⟶ (F.map r.op.toLoc).toFunctor.obj M₂))
-    (hm : ∀ ⦃Z' Z : C⦄ (g : Z' ⟶ Z) (r : Z ⟶ W) (hr : R r),
-      m (g ≫ r) (R.downward_closed hr g) = pullHom (m r hr) g (g ≫ r) (g ≫ r) rfl rfl) :
-    ∃! φ : M₁ ⟶ M₂, ∀ ⦃Z : C⦄ (r : Z ⟶ W) (hr : R r),
-      (F.map r.op.toLoc).toFunctor.map φ = m r hr := by
-  have hsh := (F.isPrestackFor_iff_isSheafFor R).1 hR M₁ M₂
-  have mem_hom {Z : Over W} {g : Z ⟶ Over.mk (𝟙 W)}
-      (hg : ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows g) : R Z.hom := by
-    have hg' : R g.left := (Sieve.overEquiv_symm_iff R g).1 hg
-    rw [← Over.w g]
-    simpa using hg'
-  let x : Presieve.FamilyOfElements (F.presheafHom M₁ M₂)
-      ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows := fun _ _ hg ↦ m _ (mem_hom hg)
-  have hx : x.Compatible := by
-    rw [Presieve.compatible_iff_sieveCompatible]
-    intro Z Z' g f hg
-    have haux : ∀ {w : Z'.left ⟶ W} (hw : f.left ≫ Z.hom = w),
-        m w (by rw [← hw]; exact R.downward_closed (mem_hom hg) f.left) =
-          pullHom (m Z.hom (mem_hom hg)) f.left w w (by simp [hw]) (by simp [hw]) := by
-      rintro w rfl
-      exact hm f.left Z.hom (mem_hom hg)
-    exact haux (Over.w f)
-  obtain ⟨y, hy, _⟩ := hsh x hx
-  let φ : M₁ ⟶ M₂ := F.presheafHomObjHomEquiv.symm y
-  have hφ : ∀ ⦃Z : C⦄ (r : Z ⟶ W) (hr : R r), (F.map r.op.toLoc).toFunctor.map φ = m r hr := by
-    intro Z r hr
-    let g : Over.mk r ⟶ Over.mk (𝟙 W) := Over.homMk r (Category.comp_id r)
-    have hmem : ((Sieve.overEquiv (Over.mk (𝟙 W))).symm R).arrows g :=
-      (Sieve.overEquiv_symm_iff R g).2 hr
-    have h1 := hy g hmem
-    rw [← Equiv.apply_symm_apply F.presheafHomObjHomEquiv y,
-      presheafHom_map_presheafHomObjHomEquiv] at h1
-    exact h1
-  exact ⟨φ, hφ, fun ψ hψ ↦ hR.hom_ext fun Z r hr ↦ (hψ r hr).trans (hφ r hr).symm⟩
 
 /-- **Transitivity of `IsPrestackFor` along `J`-covering compositions.** If `F` is a prestack for
 `J`, `F` satisfies descent of morphisms for `p : ∀ j, Y j ⟶ S`, and each `u j : ∀ k, X j k ⟶ Y j`

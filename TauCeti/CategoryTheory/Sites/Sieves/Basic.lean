@@ -18,8 +18,6 @@ This file records supplementary basic lemmas about sieves and presieves compleme
 
 * `CategoryTheory.Sieve.generate_singleton_comp_of_isIso`: precomposing the generator of a
   principal sieve with an isomorphism does not change the generated sieve.
-* `CategoryTheory.Sieve.generate_ofArrows_pUnit_comp_of_isIso`: `PUnit`-indexed form of
-  `generate_singleton_comp_of_isIso`.
 * `CategoryTheory.Presieve.ofArrows_sigma_ι_comp_desc`: reindexing the composite coproduct
   inclusions `Sigma.ι X j ≫ Sigma.desc f` along `Σ _ : κ, ι` for nonempty `κ` gives
   `Presieve.ofArrows X f`.
@@ -38,14 +36,6 @@ lemma generate_singleton_comp_of_isIso {C : Type*} [Category* C] {X Y Z : C}
   refine le_antisymm ?_ ?_ <;> rw [Sieve.generate_le_iff, Presieve.singleton_le_iff]
   · exact (Sieve.comp_mem_iff i f _).mpr (Sieve.le_generate _ _ _ .mk)
   · exact (Sieve.comp_mem_iff i f _).mp (Sieve.le_generate _ _ _ .mk)
-
-/-- Precomposing the morphism of a `PUnit`-indexed presieve with an isomorphism `i` does not change
-the generated sieve. -/
-lemma generate_ofArrows_pUnit_comp_of_isIso {C : Type*} [Category* C] {X Y Z : C}
-    (i : X ⟶ Y) (f : Y ⟶ Z) [IsIso i] :
-    Sieve.generate (Presieve.ofArrows (fun _ : PUnit ↦ Y) (fun _ ↦ f)) =
-      Sieve.generate (.singleton (i ≫ f)) := by
-  rw [Presieve.ofArrows_pUnit, generate_singleton_comp_of_isIso]
 
 end CategoryTheory.Sieve
 

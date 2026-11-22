@@ -240,72 +240,51 @@ lemma PreOneHypercover.map_over_forget {X : C} (Y : Over X) (E : PreOneHypercove
     (E.over Y).map (Over.forget X) = E :=
   rfl
 
+/-- Pointwise extensionality for two `PreOneHypercover`s sharing the same index types `I₀` and
+`I₁`, discharging the commutativity field `w` by proof irrelevance. -/
+private lemma PreOneHypercover.ext_sameIndex {S : C}
+    {I₀ : Type w} {X X' : I₀ → C} {f : ∀ i, X i ⟶ S} {f' : ∀ i, X' i ⟶ S}
+    {I₁ : I₀ → I₀ → Type w}
+    {Y Y' : ∀ ⦃i₁ i₂⦄, I₁ i₁ i₂ → C}
+    {p₁ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k ⟶ X i₁}
+    {p₁' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y' k ⟶ X' i₁}
+    {p₂ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k ⟶ X i₂}
+    {p₂' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y' k ⟶ X' i₂}
+    {w : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁ k ≫ f i₁ = p₂ k ≫ f i₂}
+    {w' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁' k ≫ f' i₁ = p₂' k ≫ f' i₂}
+    (hX : ∀ i, X i = X' i) (hf : ∀ i, f i ≍ f' i)
+    (hY : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k = Y' k)
+    (hp₁ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁ k ≍ p₁' k)
+    (hp₂ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₂ k ≍ p₂' k) :
+    (⟨⟨I₀, X, f⟩, I₁, Y, p₁, p₂, w⟩ : PreOneHypercover S) =
+      ⟨⟨I₀, X', f'⟩, I₁, Y', p₁', p₂', w'⟩ := by
+  have hX' : X = X' := funext hX
+  have hY' : Y = Y' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ hY k
+  subst hX' hY'
+  obtain rfl : f = f' := funext fun i ↦ eq_of_heq (hf i)
+  obtain rfl : p₁ = p₁' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ eq_of_heq (hp₁ k)
+  obtain rfl : p₂ = p₂' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ eq_of_heq (hp₂ k)
+  rfl
+
 /-- Lifting the forgetful image of a pre-`1`-hypercover `E` in `Over X` back to `Over X` recovers
 `E`. -/
 @[simp]
 lemma PreOneHypercover.over_map_forget {X : C} {Y : Over X} (E : PreOneHypercover.{w} Y) :
     (E.map (Over.forget X)).over Y = E := by
   obtain ⟨⟨I₀, X₀, f₀⟩, I₁, Y₀, p₁, p₂, w⟩ := E
+  have h_over : ∀ {A B : Over X} (g : A ⟶ B) {A' B' : Over X},
+      A' = A → B' = B → ∀ {g' : A' ⟶ B'}, g'.left ≍ g.left → g' ≍ g := by
+    rintro A B g _ _ rfl rfl g' hg
+    exact heq_of_eq (Over.OverMorphism.ext (eq_of_heq hg))
   have hX (i : I₀) : Over.mk ((f₀ i).left ≫ Y.hom) = X₀ i := by
     rw [Over.w (f₀ i)]; rfl
   have hY ⦃i₁ i₂ : I₀⦄ (k : I₁ i₁ i₂) :
       Over.mk ((p₁ k).left ≫ (f₀ i₁).left ≫ Y.hom) = Y₀ k := by
     rw [Over.w (f₀ i₁), Over.w (p₁ k)]; rfl
-  have h_over : ∀ {A B : Over X} (g : A ⟶ B) {A' B' : Over X},
-      A' = A → B' = B → ∀ (g' : A'.left ⟶ B'.left), g' ≍ g.left →
-      ∀ (w : g' ≫ B'.hom = A'.hom), (Over.homMk g' w : A' ⟶ B') ≍ g := by
-    intro A B g A' B' hA hB g' hg w
-    subst hA hB
-    obtain rfl : g' = g.left := eq_of_heq hg
-    exact heq_of_eq (Over.OverMorphism.ext rfl)
-  dsimp only [PreOneHypercover.over, PreOneHypercover.map]
-  congr 1
-  · congr 1
-    · funext i; exact hX i
-    · refine Function.hfunext rfl fun i i' hi ↦ ?_
-      subst hi
-      exact h_over (f₀ i) (hX i) rfl (f₀ i).left .rfl rfl
-  · funext i₁ i₂ k; exact hY k
-  · refine Function.hfunext rfl fun i₁ i₁' hi₁ ↦ ?_
-    subst hi₁
-    refine Function.hfunext rfl fun i₂ i₂' hi₂ ↦ ?_
-    subst hi₂
-    refine Function.hfunext rfl fun k k' hk ↦ ?_
-    subst hk
-    exact h_over (p₁ k) (hY k) (hX i₁) (p₁ k).left .rfl rfl
-  · refine Function.hfunext rfl fun i₁ i₁' hi₁ ↦ ?_
-    subst hi₁
-    refine Function.hfunext rfl fun i₂ i₂' hi₂ ↦ ?_
-    subst hi₂
-    refine Function.hfunext rfl fun k k' hk ↦ ?_
-    subst hk
-    exact h_over (p₂ k) (hY k) (hX i₂) (p₂ k).left .rfl _
-  · refine Function.hfunext rfl fun i₁ i₁' hi₁ ↦ ?_
-    subst hi₁
-    refine Function.hfunext rfl fun i₂ i₂' hi₂ ↦ ?_
-    subst hi₂
-    refine Function.hfunext rfl fun k k' hk ↦ ?_
-    subst hk
-    have h_comp : ∀ {A B C : Over X} (f : A ⟶ B) (g : B ⟶ C) {A' B' C' : Over X},
-        A' = A → B' = B → C' = C →
-        ∀ {f' : A' ⟶ B'} {g' : B' ⟶ C'}, f' ≍ f → g' ≍ g → f' ≫ g' ≍ f ≫ g := by
-      intro A B C f g A' B' C' hA hB hC f' g' hf hg
-      subst hA hB hC
-      rw [eq_of_heq hf, eq_of_heq hg]
-    have h_eq : ∀ {A : Over X} {L R : A ⟶ Y} {A' : Over X}, A' = A →
-        ∀ {L' R' : A' ⟶ Y}, L' ≍ L → R' ≍ R → (L' = R') = (L = R) := by
-      intro A L R A' hA L' R' hL hR
-      subst hA
-      rw [eq_of_heq hL, eq_of_heq hR]
-    have h_prop_heq : ∀ {P Q : Prop} {hp : P} {hq : Q}, P = Q → hp ≍ hq := by
-      intro P Q hp hq h; subst h; rfl
-    refine h_prop_heq (h_eq (hY k) ?_ ?_)
-    · exact h_comp (p₁ k) (f₀ i₁) (hY k) (hX i₁) rfl
-        (h_over (p₁ k) (hY k) (hX i₁) (p₁ k).left .rfl rfl)
-        (h_over (f₀ i₁) (hX i₁) rfl (f₀ i₁).left .rfl rfl)
-    · exact h_comp (p₂ k) (f₀ i₂) (hY k) (hX i₂) rfl
-        (h_over (p₂ k) (hY k) (hX i₂) (p₂ k).left .rfl _)
-        (h_over (f₀ i₂) (hX i₂) rfl (f₀ i₂).left .rfl rfl)
+  exact PreOneHypercover.ext_sameIndex hX
+    (fun i ↦ h_over (f₀ i) (hX i) rfl HEq.rfl) hY
+    (fun _ _ k ↦ h_over (p₁ k) (hY k) (hX _) HEq.rfl)
+    (fun _ _ k ↦ h_over (p₂ k) (hY k) (hX _) HEq.rfl)
 
 /-- Lift a `J`-`1`-hypercover of `Y.left` in `C` to a `(J.over X)`-`1`-hypercover of `Y` in
 `Over X`. -/

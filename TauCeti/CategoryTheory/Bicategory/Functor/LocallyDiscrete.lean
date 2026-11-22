@@ -10,6 +10,8 @@ public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Comma.Over.Basic
 
+import Mathlib.CategoryTheory.Bicategory.Functor.Cat
+
 /-!
 # Prelax functors and locally discrete bicategories
 
@@ -403,5 +405,20 @@ lemma mapComp'_hom_app_comp_mapId'_hom_app {X Y : LocallyDiscrete B₀} (e : Y �
         (P.mapId' e he).hom.toNatTrans.app ((P.map f).toFunctor.obj x) = 𝟙 _ := by
   subst he
   simp [mapId'_eq_mapId, mapComp'_comp_id_hom_app]
+
+/-- Two morphisms `M ⟶ N` over `X` have equal iterated pullbacks along `f : X ⟶ Y` and
+`g : Y ⟶ Z` if and only if they have equal pullbacks along `f ≫ g`. -/
+@[simp]
+lemma map_map_eq_iff_map_comp {X Y Z : B₀} (f : X ⟶ Y) (g : Y ⟶ Z)
+    {M N : P.obj (.mk X)} {φ ψ : M ⟶ N} :
+    (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map φ) =
+      (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map ψ) ↔
+      (P.map (f ≫ g).toLoc).toFunctor.map φ =
+        (P.map (f ≫ g).toLoc).toFunctor.map ψ := by
+  rw [← P.mapComp'_naturality_1 f.toLoc g.toLoc (f ≫ g).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc]) φ,
+    ← P.mapComp'_naturality_1 f.toLoc g.toLoc (f ≫ g).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc]) ψ,
+    cancel_epi, cancel_mono]
 
 end CategoryTheory.Pseudofunctor

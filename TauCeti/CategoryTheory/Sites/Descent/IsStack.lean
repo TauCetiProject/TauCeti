@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 
 import Mathlib.CategoryTheory.Sites.Descent.Precoverage
+import TauCeti.CategoryTheory.Sites.Descent.DescentData
 import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 
 /-!
@@ -19,8 +20,6 @@ This file establishes closure properties for stacks and the local effective-desc
 
 ## Main results
 
-* `CategoryTheory.Pseudofunctor.DescentData.isoApp`: extract component isomorphisms from an
-  isomorphism of descent data.
 * `CategoryTheory.Pseudofunctor.IsStack.of_le`: a stack for a finer Grothendieck topology is a
   stack for any coarser topology.
 * `CategoryTheory.Pseudofunctor.isStackFor_top`: every pseudofunctor has effective descent for
@@ -50,22 +49,6 @@ namespace CategoryTheory.Pseudofunctor
 open LocallyDiscreteOpToCat
 
 variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-
-namespace DescentData
-
-/-- Extract the component isomorphism `D₁.obj i ≅ D₂.obj i` from an isomorphism of descent data
-`e : D₁ ≅ D₂`. -/
--- Exposed: the generated `@[simps]` field lemmas are `rfl`-proofs about this body.
-@[expose, simps]
-def isoApp {ι : Type t} {S : C} {X : ι → C} {f : ∀ i, X i ⟶ S}
-    {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
-    D₁.obj i ≅ D₂.obj i where
-  hom := e.hom.hom i
-  inv := e.inv.hom i
-  hom_inv_id := congrArg (fun φ : D₁ ⟶ D₁ ↦ φ.hom i) e.hom_inv_id
-  inv_hom_id := congrArg (fun φ : D₂ ⟶ D₂ ↦ φ.hom i) e.inv_hom_id
-
-end DescentData
 
 /-- A stack for a Grothendieck topology `J₂` is a stack for any coarser topology `J₁ ≤ J₂`. -/
 lemma IsStack.of_le {J₁ J₂ : GrothendieckTopology C} (h : J₁ ≤ J₂) [F.IsStack J₂] :
@@ -100,6 +83,41 @@ lemma isStackFor_top (S : C) : F.IsStackFor (⊤ : Presieve S) := by
 
 namespace Comp
 
+/-- Comparison isomorphism `fg^* M ≅ g^* (f^* M)` for a factorization `g ≫ f = fg`. -/
+private def compIso {A B D : C} (f : B ⟶ D) (g : A ⟶ B) (fg : A ⟶ D) (h : g ≫ f = fg)
+    (M : F.obj (.mk (op D))) :
+    (F.map fg.op.toLoc).toFunctor.obj M ≅
+      (F.map g.op.toLoc).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj M) :=
+  (Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc
+    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, h]))).app M
+
+private lemma compIso_hom {A B D : C} (f : B ⟶ D) (g : A ⟶ B) (fg : A ⟶ D) (h : g ≫ f = fg)
+    (M : F.obj (.mk (op D))) :
+    (compIso f g fg h M).hom =
+      (F.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, h])).hom.toNatTrans.app M :=
+  rfl
+
+private lemma compIso_inv {A B D : C} (f : B ⟶ D) (g : A ⟶ B) (fg : A ⟶ D) (h : g ≫ f = fg)
+    (M : F.obj (.mk (op D))) :
+    (compIso f g fg h M).inv =
+      (F.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, h])).inv.toNatTrans.app M :=
+  rfl
+
+/-- Unit comparison isomorphism `(𝟙 A)^* M ≅ M`. -/
+private def idIso {A : C} (M : F.obj (.mk (op A))) :
+    (F.map (𝟙 A).op.toLoc).toFunctor.obj M ≅ M :=
+  (Cat.Hom.toNatIso (F.mapId (.mk (op A)))).app M
+
+private lemma idIso_hom {A : C} (M : F.obj (.mk (op A))) :
+    (idIso M).hom = (F.mapId (.mk (op A))).hom.toNatTrans.app M :=
+  rfl
+
+private lemma idIso_inv {A : C} (M : F.obj (.mk (op A))) :
+    (idIso M).inv = (F.mapId (.mk (op A))).inv.toNatTrans.app M :=
+  rfl
+
 variable {J : GrothendieckTopology C} [F.IsPrestack J]
   {S : C} {κ : Type t} {Y : κ → C} {p : ∀ j, Y j ⟶ S}
   {ι : κ → Type t'} {X : ∀ j, ι j → C} {u : ∀ j k, X j k ⟶ Y j}
@@ -111,33 +129,59 @@ private abbrev restrictDatum (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 
   (DescentData.pullFunctor F (p := p j) (α := fun k ↦ ⟨j, k⟩) (p' := fun _ ↦ 𝟙 _)
     (by simp)).obj D
 
-/-- The component isomorphism `(u j k)^* (M j) ≅ D.obj ⟨j, k⟩` obtained from `DescentData.isoApp`
-and `F.mapId`. -/
+private lemma restrictDatum_hom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    {W Z : C} {q : W ⟶ S} {j : κ} {a : W ⟶ Y j} (ha : a ≫ p j = q) (r : Z ⟶ W)
+    {k₁ k₂ : ι j} (b₁ : Z ⟶ X j k₁) (b₂ : Z ⟶ X j k₂)
+    (hb₁ : b₁ ≫ u j k₁ = r ≫ a) (hb₂ : b₂ ≫ u j k₂ = r ≫ a) :
+    (restrictDatum D j).hom (r ≫ a) b₁ b₂ hb₁ hb₂ =
+      (F.map b₁.op.toLoc).toFunctor.map (idIso (D.obj ⟨j, k₁⟩)).hom ≫
+        D.hom (r ≫ q) (i₁ := ⟨j, k₁⟩) (i₂ := ⟨j, k₂⟩) b₁ b₂
+          (by rw [← Category.assoc, hb₁, Category.assoc, ha])
+          (by rw [← Category.assoc, hb₂, Category.assoc, ha]) ≫
+        (F.map b₂.op.toLoc).toFunctor.map (idIso (D.obj ⟨j, k₂⟩)).inv := by
+  dsimp only [restrictDatum, DescentData.pullFunctor, DescentData.pullFunctorObj]
+  rw [DescentData.pullFunctorObjHom_eq _ D (b₁ ≫ u j k₁) b₁ b₂ (r ≫ q) b₁ b₂ rfl
+    (hb₂.trans hb₁.symm) (by rw [hb₁, Category.assoc, ha]) (Category.comp_id b₁)
+    (Category.comp_id b₂)]
+  simp only [op_id, Quiver.Hom.id_toLoc, F.mapComp'_id_comp_inv_app_assoc,
+    F.mapComp'_id_comp_hom_app, idIso_hom, idIso_inv]
+
+/-- Component isomorphism `(u j k)^* (M j) ≅ (𝟙 (X j k))^* (D.obj ⟨j, k⟩)` extracted from
+`α j`. -/
+private def αAppIso (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
+    (F.map (u j k).op.toLoc).toFunctor.obj (M j) ≅
+      (F.map (𝟙 (X j k)).op.toLoc).toFunctor.obj (D.obj ⟨j, k⟩) :=
+  DescentData.isoApp (α j) k
+
+private lemma αAppIso_hom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
+    (αAppIso D M α j k).hom = (α j).hom.hom k :=
+  DescentData.isoApp_hom (α j) k
+
+/-- The component isomorphism `(u j k)^* (M j) ≅ D.obj ⟨j, k⟩` obtained from `αAppIso` and
+`F.mapId`. -/
 private def αIso (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
     (F.map (u j k).op.toLoc).toFunctor.obj (M j) ≅ D.obj ⟨j, k⟩ :=
-  DescentData.isoApp (α j) k ≪≫ (Cat.Hom.toNatIso (F.mapId (.mk (op (X j k))))).app (D.obj ⟨j, k⟩)
+  αAppIso D M α j k ≪≫ idIso (D.obj ⟨j, k⟩)
 
-private lemma map_αIso_hom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+private lemma αIso_hom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {Z : C} {j : κ} {k : ι j} (b : Z ⟶ X j k) :
-    (F.map b.op.toLoc).toFunctor.map (αIso D M α j k).hom =
-      (F.map b.op.toLoc).toFunctor.map (DescentData.isoApp (α j) k).hom ≫
-        (F.map b.op.toLoc).toFunctor.map
-          ((F.mapId (.mk (op (X j k)))).hom.toNatTrans.app (D.obj ⟨j, k⟩)) := by
-  dsimp [αIso]; erw [Functor.map_comp]; rfl
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
+    (αIso D M α j k).hom =
+      (αAppIso D M α j k).hom ≫ (idIso (D.obj ⟨j, k⟩)).hom :=
+  rfl
 
-private lemma map_αIso_inv (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+private lemma αIso_inv (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {Z : C} {j : κ} {k : ι j} (b : Z ⟶ X j k) :
-    (F.map b.op.toLoc).toFunctor.map (αIso D M α j k).inv =
-      (F.map b.op.toLoc).toFunctor.map
-          ((F.mapId (.mk (op (X j k)))).inv.toNatTrans.app (D.obj ⟨j, k⟩)) ≫
-        (F.map b.op.toLoc).toFunctor.map (DescentData.isoApp (α j) k).inv := by
-  dsimp [αIso]; erw [Functor.map_comp]; rfl
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
+    (αIso D M α j k).inv =
+      (idIso (D.obj ⟨j, k⟩)).inv ≫ (αAppIso D M α j k).inv :=
+  rfl
 
 /-- The conjugated transition map `ra₁^* (M j₁) ⟶ ra₂^* (M j₂)` over `Z` induced by
 factorizations `b₁ ≫ u j₁ k₁ = ra₁` and `b₂ ≫ u j₂ k₂ = ra₂`. -/
@@ -151,12 +195,12 @@ private def localTrans (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 �
     (F.map ra₁.op.toLoc).toFunctor.obj (M j₁) ⟶ (F.map ra₂.op.toLoc).toFunctor.obj (M j₂) :=
   pullHom (F := F) (X₁ := Y j₁) (X₂ := X j₁ k₁) (M₁ := M j₁) (M₂ := D.obj ⟨j₁, k₁⟩)
       (f₁ := u j₁ k₁) (f₂ := 𝟙 (X j₁ k₁))
-      (DescentData.isoApp (α j₁) k₁).hom b₁ ra₁ b₁ hb₁ (Category.comp_id b₁) ≫
+      (αAppIso D M α j₁ k₁).hom b₁ ra₁ b₁ hb₁ (Category.comp_id b₁) ≫
     D.hom rq (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩) b₁ b₂
       (by rw [← Category.assoc, hb₁, hra₁]) (by rw [← Category.assoc, hb₂, hra₂]) ≫
     pullHom (F := F) (X₁ := X j₂ k₂) (X₂ := Y j₂) (M₁ := D.obj ⟨j₂, k₂⟩) (M₂ := M j₂)
       (f₁ := 𝟙 (X j₂ k₂)) (f₂ := u j₂ k₂)
-      (DescentData.isoApp (α j₂) k₂).inv b₂ b₂ ra₂ (Category.comp_id b₂) hb₂
+      (αAppIso D M α j₂ k₂).inv b₂ b₂ ra₂ (Category.comp_id b₂) hb₂
 
 private lemma localTrans_eq (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
@@ -166,22 +210,35 @@ private lemma localTrans_eq (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 j
     {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
     (hb₁ : b₁ ≫ u j₁ k₁ = ra₁) (hb₂ : b₂ ≫ u j₂ k₂ = ra₂) :
     localTrans D M α hra₁ hra₂ b₁ b₂ hb₁ hb₂ =
-      (F.mapComp' (u j₁ k₁).op.toLoc b₁.op.toLoc ra₁.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₁])).hom.toNatTrans.app (M j₁) ≫
+      (compIso (u j₁ k₁) b₁ ra₁ hb₁ (M j₁)).hom ≫
         (F.map b₁.op.toLoc).toFunctor.map (αIso D M α j₁ k₁).hom ≫
         D.hom rq (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩) b₁ b₂
           (by rw [← Category.assoc, hb₁, hra₁]) (by rw [← Category.assoc, hb₂, hra₂]) ≫
         (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j₂ k₂).inv ≫
-        (F.mapComp' (u j₂ k₂).op.toLoc b₂.op.toLoc ra₂.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₂])).inv.toNatTrans.app (M j₂) := by
-  simp only [localTrans, pullHom, op_id, Quiver.Hom.id_toLoc,
-    F.mapComp'_id_comp_inv_app, F.mapComp'_id_comp_hom_app]
-  erw [map_αIso_hom, map_αIso_inv]
-  refine Eq.trans (Category.assoc ((F.mapComp' (u j₁ k₁).op.toLoc b₁.op.toLoc ra₁.op.toLoc
-    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₁])).hom.toNatTrans.app (M j₁)) _ _) ?_
-  refine congrArg₂ (· ≫ ·) rfl (congrArg₂ (· ≫ ·) rfl (congrArg₂ (· ≫ ·) rfl ?_))
-  exact (Category.assoc ((F.map b₂.op.toLoc).toFunctor.map
-    ((F.mapId (.mk (op (X j₂ k₂)))).inv.toNatTrans.app (D.obj ⟨j₂, k₂⟩))) _ _).symm
+        (compIso (u j₂ k₂) b₂ ra₂ hb₂ (M j₂)).inv := by
+  simp only [localTrans, pullHom, compIso_hom, compIso_inv, idIso_hom, idIso_inv,
+    op_id, Quiver.Hom.id_toLoc, F.mapComp'_id_comp_inv_app, F.mapComp'_id_comp_hom_app,
+    αIso_hom, αIso_inv, Functor.map_comp, Category.assoc]
+
+@[reassoc]
+private lemma localTrans_comp_αIso
+    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    {Z : C} {rq : Z ⟶ S} {j₁ j₂ : κ} {ra₁ : Z ⟶ Y j₁} {ra₂ : Z ⟶ Y j₂}
+    (hra₁ : ra₁ ≫ p j₁ = rq) (hra₂ : ra₂ ≫ p j₂ = rq)
+    {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
+    (hb₁ : b₁ ≫ u j₁ k₁ = ra₁) (hb₂ : b₂ ≫ u j₂ k₂ = ra₂) :
+    localTrans D M α hra₁ hra₂ b₁ b₂ hb₁ hb₂ ≫
+        (compIso (u j₂ k₂) b₂ ra₂ hb₂ (M j₂)).hom ≫
+        (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j₂ k₂).hom =
+      (compIso (u j₁ k₁) b₁ ra₁ hb₁ (M j₁)).hom ≫
+        (F.map b₁.op.toLoc).toFunctor.map (αIso D M α j₁ k₁).hom ≫
+        D.hom rq (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩) b₁ b₂
+          (by rw [← Category.assoc, hb₁, hra₁]) (by rw [← Category.assoc, hb₂, hra₂]) := by
+  rw [localTrans_eq]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← Functor.map_comp, Iso.inv_hom_id,
+    Functor.map_id, Category.comp_id]
 
 /-- Pulling back `localTrans` along `g : Z' ⟶ Z` corresponds to precomposing the factorizations
 `b₁` and `b₂` with `g`. -/
@@ -203,53 +260,35 @@ private lemma pullHom_localTrans (D : F.DescentData (fun jk : Σ j, ι j ↦ u j
   rw [pullHom_comp _ _ g (g ≫ ra₁) (g ≫ b₁) (g ≫ ra₂),
     pullHom_comp _ _ g (g ≫ b₁) (g ≫ b₂) (g ≫ ra₂)]
   erw [pullHom_pullHom, pullHom_pullHom]
-  refine congrArg (_ ≫ ·) (congrArg (· ≫ _) ?_)
+  congr 2
   exact D.pullHom_hom g rq (g ≫ rq) rfl (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩)
     b₁ b₂ (by rw [← Category.assoc, hb₁, hra₁]) (by rw [← Category.assoc, hb₂, hra₂])
     (g ≫ b₁) (g ≫ b₂) rfl rfl
 
-/-- Given a descent datum `D` for `u j k ≫ p j`, objects `M j` on `Y j`, and isomorphisms
-`α j : (toDescentData (u j)).obj (M j) ≅ restrictDatum D j`, this is the local transition map
-`r^* a₁^* M j₁ ⟶ r^* a₂^* M j₂` obtained from factorizations `b₁ ≫ u j₁ k₁ = r ≫ a₁` and
-`b₂ ≫ u j₂ k₂ = r ≫ a₂`. -/
-private def localHom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+private lemma localTrans_self (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z : C} {q : W ⟶ S} {j₁ j₂ : κ} {a₁ : W ⟶ Y j₁} {a₂ : W ⟶ Y j₂}
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) (r : Z ⟶ W)
-    {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
-    (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂) :
-    (F.map r.op.toLoc).toFunctor.obj ((F.map a₁.op.toLoc).toFunctor.obj (M j₁)) ⟶
-      (F.map r.op.toLoc).toFunctor.obj ((F.map a₂.op.toLoc).toFunctor.obj (M j₂)) :=
-  (F.mapComp' a₁.op.toLoc r.op.toLoc (r ≫ a₁).op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).inv.toNatTrans.app (M j₁) ≫
-    localTrans D M α (by rw [Category.assoc, ha₁]) (by rw [Category.assoc, ha₂]) b₁ b₂ hb₁ hb₂ ≫
-    (F.mapComp' a₂.op.toLoc r.op.toLoc (r ≫ a₂).op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app (M j₂)
+    {Z : C} {rq : Z ⟶ S} {j : κ} {ra : Z ⟶ Y j} (hra : ra ≫ p j = rq)
+    {k : ι j} (b : Z ⟶ X j k) (hb : b ≫ u j k = ra) :
+    localTrans D M α hra hra b b hb hb = 𝟙 _ := by
+  rw [localTrans_eq, D.hom_self _ (i := ⟨j, k⟩) _ (by rw [← Category.assoc, hb, hra])]
+  simp only [Category.id_comp, ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id]
 
-/-- Conjugate `localHom` by `F.mapComp'` to cancel its outer `mapComp' a r` factors across
-arbitrary equal arrow representatives `ra₁ = r ≫ a₁`, `ra₂ = r ≫ a₂`, and `rq = r ≫ q`. -/
-private lemma mapComp'_hom_localHom_mapComp'_inv
-    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+private lemma localTrans_comp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z : C} {q : W ⟶ S} {j₁ j₂ : κ} {a₁ : W ⟶ Y j₁} {a₂ : W ⟶ Y j₂}
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) (r : Z ⟶ W)
-    {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
-    (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂)
-    (ra₁ : Z ⟶ Y j₁) (ra₂ : Z ⟶ Y j₂) (rq : Z ⟶ S)
-    (hra₁ : r ≫ a₁ = ra₁) (hra₂ : r ≫ a₂ = ra₂) (hrq : r ≫ q = rq) :
-    (F.mapComp' a₁.op.toLoc r.op.toLoc ra₁.op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hra₁])).hom.toNatTrans.app (M j₁) ≫
-      localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ ≫
-      (F.mapComp' a₂.op.toLoc r.op.toLoc ra₂.op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hra₂])).inv.toNatTrans.app (M j₂) =
-      localTrans D M α (by rw [← hra₁, Category.assoc, ha₁, hrq])
-        (by rw [← hra₂, Category.assoc, ha₂, hrq]) b₁ b₂ (hb₁.trans hra₁) (hb₂.trans hra₂) := by
-  subst hra₁ hra₂ hrq
-  simp only [localHom, Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc,
-    Cat.Hom.hom_inv_id_toNatTrans_app, Category.comp_id]
+    {Z : C} {rq : Z ⟶ S} {j₁ j₂ j₃ : κ}
+    {ra₁ : Z ⟶ Y j₁} {ra₂ : Z ⟶ Y j₂} {ra₃ : Z ⟶ Y j₃}
+    (hra₁ : ra₁ ≫ p j₁ = rq) (hra₂ : ra₂ ≫ p j₂ = rq) (hra₃ : ra₃ ≫ p j₃ = rq)
+    {k₁ : ι j₁} {k₂ : ι j₂} {k₃ : ι j₃}
+    (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂) (b₃ : Z ⟶ X j₃ k₃)
+    (hb₁ : b₁ ≫ u j₁ k₁ = ra₁) (hb₂ : b₂ ≫ u j₂ k₂ = ra₂) (hb₃ : b₃ ≫ u j₃ k₃ = ra₃) :
+    localTrans D M α hra₁ hra₂ b₁ b₂ hb₁ hb₂ ≫ localTrans D M α hra₂ hra₃ b₂ b₃ hb₂ hb₃ =
+      localTrans D M α hra₁ hra₃ b₁ b₃ hb₁ hb₃ := by
+  simp only [localTrans_eq, Category.assoc, Iso.inv_hom_id_assoc, ← Functor.map_comp_assoc,
+    Iso.inv_hom_id, Functor.map_id, Category.id_comp, D.hom_comp_assoc]
 
+@[reassoc]
 private lemma αIso_comm (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
@@ -260,42 +299,38 @@ private lemma αIso_comm (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2
       D.hom (r ≫ q) (i₁ := ⟨j, k₁⟩) (i₂ := ⟨j, k₂⟩) b₁ b₂
         (by rw [← Category.assoc, hb₁, Category.assoc, ha])
         (by rw [← Category.assoc, hb₂, Category.assoc, ha]) =
-      ((F.mapComp' (u j k₁).op.toLoc b₁.op.toLoc (r ≫ a).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₁])).inv.toNatTrans.app (M j) ≫
-        (F.mapComp' (u j k₂).op.toLoc b₂.op.toLoc (r ≫ a).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₂])).hom.toNatTrans.app (M j)) ≫
-      (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j k₂).hom := by
-  have h : (F.map b₁.op.toLoc).toFunctor.map (DescentData.isoApp (α j) k₁).hom ≫
-      DescentData.pullFunctorObjHom (p := p j) (α := fun k ↦ ⟨j, k⟩) (p' := fun _ ↦ 𝟙 _)
-        (by simp) D (b₁ ≫ u j k₁) b₁ b₂ rfl (hb₂.trans hb₁.symm) =
-      ((F.mapComp' (u j k₁).op.toLoc b₁.op.toLoc (r ≫ a).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₁])).inv.toNatTrans.app (M j) ≫
-        (F.mapComp' (u j k₂).op.toLoc b₂.op.toLoc (r ≫ a).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₂])).hom.toNatTrans.app (M j)) ≫
-      (F.map b₂.op.toLoc).toFunctor.map (DescentData.isoApp (α j) k₂).hom := by
-    have h₀ := (α j).hom.comm (r ≫ a) b₁ b₂ hb₁ hb₂
-    dsimp only [toDescentData, DescentData.ofObj, restrictDatum, DescentData.pullFunctor,
-      DescentData.pullFunctorObj] at h₀
-    exact h₀
-  rw [DescentData.pullFunctorObjHom_eq (p := p j) (α := fun k ↦ ⟨j, k⟩) (p' := fun _ ↦ 𝟙 _)
-    (by simp) D (b₁ ≫ u j k₁) b₁ b₂ (r ≫ q) b₁ b₂ rfl (hb₂.trans hb₁.symm)
-    (by rw [hb₁, Category.assoc, ha]) (Category.comp_id _) (Category.comp_id _)] at h
-  simp only [op_id, Quiver.Hom.id_toLoc, F.mapComp'_id_comp_inv_app_assoc,
-    F.mapComp'_id_comp_hom_app] at h
-  have hcancel : (F.map b₂.op.toLoc).toFunctor.map
-      ((F.mapId (.mk (op (X j k₂)))).inv.toNatTrans.app (D.obj ⟨j, k₂⟩)) ≫
-      (F.map b₂.op.toLoc).toFunctor.map
-        ((F.mapId (.mk (op (X j k₂)))).hom.toNatTrans.app (D.obj ⟨j, k₂⟩)) = 𝟙 _ := by
-    rw [← Functor.map_comp, Cat.Hom.inv_hom_id_toNatTrans_app, Functor.map_id]
-  have h' := congrArg (· ≫ (F.map b₂.op.toLoc).toFunctor.map
-    ((F.mapId (.mk (op (X j k₂)))).hom.toNatTrans.app (D.obj ⟨j, k₂⟩))) h
-  conv_lhs at h' =>
-    erw [Category.assoc, Category.assoc, Category.assoc, hcancel, Category.comp_id]
-  conv_rhs at h' => erw [Category.assoc]
-  erw [map_αIso_hom, map_αIso_hom, Category.assoc]
-  exact h'
+      (compIso (u j k₁) b₁ (r ≫ a) hb₁ (M j)).inv ≫
+        (compIso (u j k₂) b₂ (r ≫ a) hb₂ (M j)).hom ≫
+        (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j k₂).hom := by
+  rw [αIso_hom, αIso_hom, Functor.map_comp, Functor.map_comp, Category.assoc,
+    ← cancel_mono ((F.map b₂.op.toLoc).toFunctor.map (idIso (D.obj ⟨j, k₂⟩)).inv)]
+  simp only [Category.assoc, ← Functor.map_comp, Iso.hom_inv_id, Category.comp_id]
+  rw [← restrictDatum_hom D ha r b₁ b₂ hb₁ hb₂]
+  erw [αAppIso_hom, αAppIso_hom, (α j).hom.comm (r ≫ a) b₁ b₂ hb₁ hb₂]
+  dsimp only [toDescentData, DescentData.ofObj]
+  simp only [compIso_inv, compIso_hom, Category.assoc]
+  rfl
 
-private lemma localHom_unique (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+@[reassoc]
+private lemma αIso_comm_inv (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    {W Z : C} {q : W ⟶ S} {j : κ} {a : W ⟶ Y j} (ha : a ≫ p j = q) (r : Z ⟶ W)
+    {k₁ k₂ : ι j} (b₁ : Z ⟶ X j k₁) (b₂ : Z ⟶ X j k₂)
+    (hb₁ : b₁ ≫ u j k₁ = r ≫ a) (hb₂ : b₂ ≫ u j k₂ = r ≫ a) :
+    D.hom (r ≫ q) (i₁ := ⟨j, k₁⟩) (i₂ := ⟨j, k₂⟩) b₁ b₂
+        (by rw [← Category.assoc, hb₁, Category.assoc, ha])
+        (by rw [← Category.assoc, hb₂, Category.assoc, ha]) ≫
+      (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j k₂).inv =
+      (F.map b₁.op.toLoc).toFunctor.map (αIso D M α j k₁).inv ≫
+        (compIso (u j k₁) b₁ (r ≫ a) hb₁ (M j)).inv ≫
+        (compIso (u j k₂) b₂ (r ≫ a) hb₂ (M j)).hom := by
+  rw [← cancel_epi ((F.map b₁.op.toLoc).toFunctor.map (αIso D M α j k₁).hom),
+    αIso_comm_assoc D M α ha r b₁ b₂ hb₁ hb₂]
+  simp only [← Functor.map_comp, Iso.hom_inv_id, Functor.map_id, Category.comp_id,
+    ← Functor.map_comp_assoc, Category.id_comp]
+
+private lemma localTrans_unique (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
     {W Z : C} {q : W ⟶ S} {j₁ j₂ : κ} {a₁ : W ⟶ Y j₁} {a₂ : W ⟶ Y j₂}
@@ -304,25 +339,12 @@ private lemma localHom_unique (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1
     (b₁ : Z ⟶ X j₁ k₁) (b₁' : Z ⟶ X j₁ k₁') (b₂ : Z ⟶ X j₂ k₂) (b₂' : Z ⟶ X j₂ k₂')
     (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₁' : b₁' ≫ u j₁ k₁' = r ≫ a₁)
     (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂) (hb₂' : b₂' ≫ u j₂ k₂' = r ≫ a₂) :
-    localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ = localHom D M α ha₁ ha₂ r b₁' b₂' hb₁' hb₂' := by
-  have h1 := αIso_comm D M α ha₁ r b₁ b₁' hb₁ hb₁'
-  have h2 : (F.map b₂'.op.toLoc).toFunctor.map (αIso D M α j₂ k₂').inv ≫
-      ((F.mapComp' (u j₂ k₂').op.toLoc b₂'.op.toLoc (r ≫ a₂).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₂'])).inv.toNatTrans.app (M j₂) ≫
-        (F.mapComp' (u j₂ k₂).op.toLoc b₂.op.toLoc (r ≫ a₂).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hb₂])).hom.toNatTrans.app (M j₂)) =
-      D.hom (r ≫ q) (i₁ := ⟨j₂, k₂'⟩) (i₂ := ⟨j₂, k₂⟩) b₂' b₂
-        (by rw [← Category.assoc, hb₂', Category.assoc, ha₂])
-        (by rw [← Category.assoc, hb₂, Category.assoc, ha₂]) ≫
-      (F.map b₂.op.toLoc).toFunctor.map (αIso D M α j₂ k₂).inv := by
-    rw [← cancel_epi ((F.map b₂'.op.toLoc).toFunctor.map (αIso D M α j₂ k₂').hom),
-      ← cancel_mono ((F.map b₂.op.toLoc).toFunctor.map (αIso D M α j₂ k₂).hom)]
-    simp only [Category.assoc, ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id,
-      Category.id_comp, ← Functor.map_comp, Iso.inv_hom_id, Category.comp_id]
-    simpa only [Category.assoc] using (αIso_comm D M α ha₂ r b₂' b₂ hb₂' hb₂).symm
+    localTrans D M α (by rw [Category.assoc, ha₁]) (by rw [Category.assoc, ha₂]) b₁ b₂ hb₁ hb₂ =
+      localTrans D M α (by rw [Category.assoc, ha₁]) (by rw [Category.assoc, ha₂])
+        b₁' b₂' hb₁' hb₂' := by
   have hD : D.hom (r ≫ q) (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩) b₁ b₂
-      (by rw [← Category.assoc, hb₁, Category.assoc, ha₁])
-      (by rw [← Category.assoc, hb₂, Category.assoc, ha₂]) =
+        (by rw [← Category.assoc, hb₁, Category.assoc, ha₁])
+        (by rw [← Category.assoc, hb₂, Category.assoc, ha₂]) =
       D.hom (r ≫ q) (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₁, k₁'⟩) b₁ b₁'
         (by rw [← Category.assoc, hb₁, Category.assoc, ha₁])
         (by rw [← Category.assoc, hb₁', Category.assoc, ha₁]) ≫
@@ -333,103 +355,13 @@ private lemma localHom_unique (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1
         (by rw [← Category.assoc, hb₂', Category.assoc, ha₂])
         (by rw [← Category.assoc, hb₂, Category.assoc, ha₂]) := by
     simp [DescentData.hom_comp]
-  unfold localHom
   rw [localTrans_eq, localTrans_eq, hD]
-  simp only [Category.assoc]
-  rw [reassoc_of% h1, Cat.Hom.hom_inv_id_toNatTrans_app_assoc, ← reassoc_of% h2,
-    Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
+  simp only [Category.assoc, αIso_comm_assoc D M α ha₁ r b₁ b₁' hb₁ hb₁',
+    αIso_comm_inv_assoc D M α ha₂ r b₂' b₂ hb₂' hb₂, Iso.hom_inv_id_assoc, Iso.hom_inv_id,
+    Category.comp_id]
 
-private lemma localHom_self (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z : C} {q : W ⟶ S} {j : κ} {a : W ⟶ Y j} (ha : a ≫ p j = q) (r : Z ⟶ W)
-    {k : ι j} (b : Z ⟶ X j k) (hb : b ≫ u j k = r ≫ a) :
-    localHom D M α ha ha r b b hb hb = 𝟙 _ := by
-  unfold localHom localTrans
-  rw [D.hom_self _ (i := ⟨j, k⟩) _ (by rw [← Category.assoc, hb, Category.assoc, ha]),
-    Category.id_comp]
-  erw [← pullHom_comp, Iso.hom_inv_id, pullHom_id_self]
-  simp only [Category.id_comp, Cat.Hom.inv_hom_id_toNatTrans_app]
-  rfl
-
-private lemma localHom_comp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z : C} {q : W ⟶ S} {j₁ j₂ j₃ : κ} {a₁ : W ⟶ Y j₁} {a₂ : W ⟶ Y j₂} {a₃ : W ⟶ Y j₃}
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) (ha₃ : a₃ ≫ p j₃ = q) (r : Z ⟶ W)
-    {k₁ : ι j₁} {k₂ : ι j₂} {k₃ : ι j₃}
-    (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂) (b₃ : Z ⟶ X j₃ k₃)
-    (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂)
-    (hb₃ : b₃ ≫ u j₃ k₃ = r ≫ a₃) :
-    localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ ≫ localHom D M α ha₂ ha₃ r b₂ b₃ hb₂ hb₃ =
-      localHom D M α ha₁ ha₃ r b₁ b₃ hb₁ hb₃ := by
-  unfold localHom localTrans
-  simp only [Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
-  erw [← pullHom_comp_assoc, Iso.inv_hom_id, pullHom_id_self]
-  rw [Category.id_comp, D.hom_comp_assoc]
-
-private lemma localHom_precomp (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z Z' : C} {q : W ⟶ S} {j₁ j₂ : κ} {a₁ : W ⟶ Y j₁} {a₂ : W ⟶ Y j₂}
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) (g : Z' ⟶ Z) (r : Z ⟶ W)
-    {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
-    (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂) :
-    localHom D M α ha₁ ha₂ (g ≫ r) (g ≫ b₁) (g ≫ b₂)
-        (by rw [Category.assoc, hb₁, Category.assoc])
-        (by rw [Category.assoc, hb₂, Category.assoc]) =
-      pullHom (localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂) g (g ≫ r) (g ≫ r) rfl rfl := by
-  symm
-  dsimp only [localHom]
-  rw [pullHom_comp _ _ g (g ≫ r) ((g ≫ r) ≫ a₁) (g ≫ r) rfl (Category.assoc g r a₁).symm rfl,
-    pullHom_comp _ _ g ((g ≫ r) ≫ a₁) ((g ≫ r) ≫ a₂) (g ≫ r)
-      (Category.assoc g r a₁).symm (Category.assoc g r a₂).symm rfl,
-    pullHom_mapComp'_inv a₁ (M j₁) r (r ≫ a₁) rfl g (g ≫ r) ((g ≫ r) ≫ a₁) rfl
-      (Category.assoc g r a₁).symm,
-    pullHom_localTrans D M α _ _ g b₁ b₂ hb₁ hb₂ ((g ≫ r) ≫ a₁) ((g ≫ r) ≫ a₂) ((g ≫ r) ≫ q)
-      (Category.assoc g r a₁).symm (Category.assoc g r a₂).symm (Category.assoc g r q).symm,
-    pullHom_mapComp'_hom a₂ (M j₂) r (r ≫ a₂) rfl g (g ≫ r) ((g ≫ r) ≫ a₂) rfl
-      (Category.assoc g r a₂).symm]
-
-/-- Existence and uniqueness of the glued transition morphism `a₁^* (M j₁) ⟶ a₂^* (M j₂)` on `W`
-matching `localHom` over the covering intersection sieve of `a₁^* (u j₁)` and `a₂^* (u j₂)`. -/
-private lemma existsUnique_gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
-    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W : C} (q : W ⟶ S) {j₁ j₂ : κ} (a₁ : W ⟶ Y j₁) (a₂ : W ⟶ Y j₂)
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) :
-    ∃! φ : (F.map a₁.op.toLoc).toFunctor.obj (M j₁) ⟶ (F.map a₂.op.toLoc).toFunctor.obj (M j₂),
-      ∀ ⦃Z : C⦄ (r : Z ⟶ W) {k₁ : ι j₁} {k₂ : ι j₂}
-        (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
-        (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂),
-        (F.map r.op.toLoc).toFunctor.map φ = localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ := by
-  let R : Sieve W :=
-    Sieve.pullback a₁ (Sieve.ofArrows (X j₁) (u j₁)) ⊓
-      Sieve.pullback a₂ (Sieve.ofArrows (X j₂) (u j₂))
-  have hR : R ∈ J W := J.intersection_covering (J.pullback_stable a₁ (hu j₁))
-    (J.pullback_stable a₂ (hu j₂))
-  have fac₁ {Z : C} {r : Z ⟶ W} (hr : R r) : ∃ k₁ b₁, b₁ ≫ u j₁ k₁ = r ≫ a₁ := by
-    obtain ⟨_, b₁, _, ⟨k₁⟩, hb₁⟩ := hr.1
-    exact ⟨k₁, b₁, hb₁⟩
-  have fac₂ {Z : C} {r : Z ⟶ W} (hr : R r) : ∃ k₂ b₂, b₂ ≫ u j₂ k₂ = r ≫ a₂ := by
-    obtain ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩ := hr.2
-    exact ⟨k₂, b₂, hb₂⟩
-  obtain ⟨φ, hφ, huniq⟩ := (F.isPrestackFor' R hR).existsUnique_map_eq
-    (fun Z r hr ↦ localHom D M α ha₁ ha₂ r (fac₁ hr).choose_spec.choose
-      (fac₂ hr).choose_spec.choose (fac₁ hr).choose_spec.choose_spec
-      (fac₂ hr).choose_spec.choose_spec)
-    (fun Z' Z g r hr ↦ by
-      rw [← localHom_precomp D M α ha₁ ha₂ g r (fac₁ hr).choose_spec.choose
-        (fac₂ hr).choose_spec.choose (fac₁ hr).choose_spec.choose_spec
-        (fac₂ hr).choose_spec.choose_spec]
-      exact localHom_unique D M α ha₁ ha₂ (g ≫ r) _ _ _ _ _ _ _ _)
-  refine ⟨φ, fun Z r k₁ k₂ b₁ b₂ hb₁ hb₂ ↦ ?_, fun ψ hψ ↦ huniq ψ fun Z r hr ↦
-    hψ r _ _ (fac₁ hr).choose_spec.choose_spec (fac₂ hr).choose_spec.choose_spec⟩
-  have hr : R r := ⟨⟨_, b₁, _, ⟨k₁⟩, hb₁⟩, ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩⟩
-  exact (hφ r hr).trans (localHom_unique D M α ha₁ ha₂ r _ b₁ _ b₂ _ hb₁ _ hb₂)
-
-/-- The glued transition morphism `a₁^* (M j₁) ⟶ a₂^* (M j₂)` on `W`. -/
+/-- The glued transition morphism `a₁^* (M j₁) ⟶ a₂^* (M j₂)` on `W`, obtained by gluing
+`localTrans` along the covering intersection sieve of `a₁^* (u j₁)` and `a₂^* (u j₂)`. -/
 private noncomputable def gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
     (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
@@ -437,19 +369,25 @@ private noncomputable def gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J
     {W : C} (q : W ⟶ S) {j₁ j₂ : κ} (a₁ : W ⟶ Y j₁) (a₂ : W ⟶ Y j₂)
     (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) :
     (F.map a₁.op.toLoc).toFunctor.obj (M j₁) ⟶ (F.map a₂.op.toLoc).toFunctor.obj (M j₂) :=
-  (existsUnique_gluedHom hu D M α q a₁ a₂ ha₁ ha₂).choose
-
-private lemma map_gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
-    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    {W Z : C} (q : W ⟶ S) {j₁ j₂ : κ} (a₁ : W ⟶ Y j₁) (a₂ : W ⟶ Y j₂)
-    (ha₁ : a₁ ≫ p j₁ = q) (ha₂ : a₂ ≫ p j₂ = q) (r : Z ⟶ W)
-    {k₁ : ι j₁} {k₂ : ι j₂} (b₁ : Z ⟶ X j₁ k₁) (b₂ : Z ⟶ X j₂ k₂)
-    (hb₁ : b₁ ≫ u j₁ k₁ = r ≫ a₁) (hb₂ : b₂ ≫ u j₂ k₂ = r ≫ a₂) :
-    (F.map r.op.toLoc).toFunctor.map (gluedHom hu D M α q a₁ a₂ ha₁ ha₂) =
-      localHom D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ :=
-  (existsUnique_gluedHom hu D M α q a₁ a₂ ha₁ ha₂).choose_spec.1 r b₁ b₂ hb₁ hb₂
+  IsPrestack.glue (F := F) (J := J)
+    (R := Sieve.pullback a₁ (Sieve.ofArrows (X j₁) (u j₁)) ⊓
+      Sieve.pullback a₂ (Sieve.ofArrows (X j₂) (u j₂)))
+    (J.intersection_covering (J.pullback_stable a₁ (hu j₁)) (J.pullback_stable a₂ (hu j₂)))
+    (fun _ r ra₁ ra₂ hra₁ hra₂ hr ↦
+      have h₁ : ∃ k : ι j₁, ∃ b₁ : _ ⟶ X j₁ k, b₁ ≫ u j₁ k = r ≫ a₁ := by
+        obtain ⟨_, b₁, _, ⟨k₁⟩, hb₁⟩ := hr.1; exact ⟨k₁, b₁, hb₁⟩
+      have h₂ : ∃ k : ι j₂, ∃ b₂ : _ ⟶ X j₂ k, b₂ ≫ u j₂ k = r ≫ a₂ := by
+        obtain ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩ := hr.2; exact ⟨k₂, b₂, hb₂⟩
+      localTrans D M α (rq := r ≫ q) (ra₁ := ra₁) (ra₂ := ra₂)
+        (hra₁ ▸ by rw [Category.assoc, ha₁]) (hra₂ ▸ by rw [Category.assoc, ha₂])
+        h₁.choose_spec.choose h₂.choose_spec.choose
+        (h₁.choose_spec.choose_spec.trans hra₁) (h₂.choose_spec.choose_spec.trans hra₂))
+    (fun T r ra₁ ra₂ hra₁ hra₂ hr T' h r' r'a₁ r'a₂ hr'a₁ hr'a₂ hr' e ↦ by
+      subst e hra₁ hra₂ hr'a₁ hr'a₂
+      rw [pullHom_localTrans D M α (by rw [Category.assoc, ha₁]) (by rw [Category.assoc, ha₂])
+        h _ _ _ _ _ _ _ (Category.assoc h r a₁).symm (Category.assoc h r a₂).symm
+        (Category.assoc h r q).symm]
+      exact localTrans_unique D M α ha₁ ha₂ (h ≫ r) _ _ _ _ _ _ _ _)
 
 /-- Pulling back `gluedHom` along a morphism `r : Z ⟶ W` gives `localTrans`. -/
 private lemma pullHom_gluedHom_eq_localTrans
@@ -467,9 +405,11 @@ private lemma pullHom_gluedHom_eq_localTrans
       localTrans D M α (by rw [← hra₁, Category.assoc, ha₁, hrq])
         (by rw [← hra₂, Category.assoc, ha₂, hrq]) b₁ b₂ (hb₁.trans hra₁) (hb₂.trans hra₂) := by
   subst hra₁ hra₂ hrq
-  dsimp only [pullHom]
-  rw [map_gluedHom hu D M α q a₁ a₂ ha₁ ha₂ r b₁ b₂ hb₁ hb₂]
-  exact mapComp'_hom_localHom_mapComp'_inv D M α ha₁ ha₂ r b₁ b₂ hb₁ hb₂ _ _ _ rfl rfl rfl
+  have hr : (Sieve.pullback a₁ (Sieve.ofArrows (X j₁) (u j₁)) ⊓
+      Sieve.pullback a₂ (Sieve.ofArrows (X j₂) (u j₂))) r :=
+    ⟨⟨_, b₁, _, ⟨k₁⟩, hb₁⟩, ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩⟩
+  rw [gluedHom, IsPrestack.pullHom_glue _ _ _ r (r ≫ a₁) (r ≫ a₂) rfl rfl hr]
+  exact localTrans_unique D M α ha₁ ha₂ r _ b₁ _ b₂ _ hb₁ _ hb₂
 
 /-- Compatibility of `gluedHom` with pullback along `g : W' ⟶ W`. -/
 private lemma pullHom_gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
@@ -489,12 +429,10 @@ private lemma pullHom_gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y 
       Sieve.pullback (g ≫ a₂) (Sieve.ofArrows (X j₂) (u j₂))
   have hR : R ∈ J W' := J.intersection_covering (J.pullback_stable _ (hu j₁))
     (J.pullback_stable _ (hu j₂))
-  refine (F.isPrestackFor' R hR).hom_ext fun Z r hr ↦ ?_
+  refine IsPrestack.pullHom_ext (F := F) (J := J) hR fun Z r hr ↦ ?_
   obtain ⟨_, b₁, _, ⟨k₁⟩, hb₁⟩ := hr.1
   obtain ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩ := hr.2
-  rw [map_eq_pullHom _ r (r ≫ g ≫ a₁) (r ≫ g ≫ a₂) rfl rfl,
-    map_eq_pullHom _ r (r ≫ g ≫ a₁) (r ≫ g ≫ a₂) rfl rfl,
-    pullHom_pullHom,
+  rw [pullHom_pullHom,
     pullHom_gluedHom_eq_localTrans hu D M α q a₁ a₂ ha₁ ha₂ (r ≫ g) _ _ _
       b₁ b₂ (by rw [hb₁, Category.assoc]) (by rw [hb₂, Category.assoc])
       (Category.assoc r g a₁) (Category.assoc r g a₂) (Category.assoc r g q),
@@ -503,6 +441,7 @@ private lemma pullHom_gluedHom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y 
 
 /-- The descent datum along `p` assembled from the descended objects `M j` and transition
 isomorphisms `gluedHom`. -/
+@[simps]
 private noncomputable def gluedDatum (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
     (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
@@ -515,10 +454,10 @@ private noncomputable def gluedDatum (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈
   hom_self W q j a ha := by
     have hR : Sieve.pullback a (Sieve.ofArrows (X j) (u j)) ∈ J W :=
       J.pullback_stable a (hu j)
-    refine (F.isPrestackFor' _ hR).hom_ext fun Z r hr ↦ ?_
+    refine IsPrestack.pullHom_ext (F := F) (J := J) hR fun Z r hr ↦ ?_
     obtain ⟨_, b, _, ⟨k⟩, hb⟩ := hr
-    rw [Functor.map_id, map_gluedHom hu D M α q a a ha ha r b b hb hb,
-      localHom_self D M α ha r b hb]
+    rw [pullHom_id_self, pullHom_gluedHom_eq_localTrans hu D M α q a a ha ha r _ _ _ b b
+      hb hb rfl rfl rfl, localTrans_self]
   hom_comp W q j₁ j₂ j₃ a₁ a₂ a₃ ha₁ ha₂ ha₃ := by
     let R : Sieve W :=
       Sieve.pullback a₁ (Sieve.ofArrows (X j₁) (u j₁)) ⊓
@@ -526,15 +465,15 @@ private noncomputable def gluedDatum (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈
           Sieve.pullback a₃ (Sieve.ofArrows (X j₃) (u j₃)))
     have hR : R ∈ J W := J.intersection_covering (J.pullback_stable a₁ (hu j₁))
       (J.intersection_covering (J.pullback_stable a₂ (hu j₂)) (J.pullback_stable a₃ (hu j₃)))
-    refine (F.isPrestackFor' R hR).hom_ext fun Z r hr ↦ ?_
+    refine IsPrestack.pullHom_ext (F := F) (J := J) hR fun Z r hr ↦ ?_
     obtain ⟨_, b₁, _, ⟨k₁⟩, hb₁⟩ := hr.1
     obtain ⟨_, b₂, _, ⟨k₂⟩, hb₂⟩ := hr.2.1
     obtain ⟨_, b₃, _, ⟨k₃⟩, hb₃⟩ := hr.2.2
-    rw [Functor.map_comp,
-      map_gluedHom hu D M α q a₁ a₂ ha₁ ha₂ r b₁ b₂ hb₁ hb₂,
-      map_gluedHom hu D M α q a₂ a₃ ha₂ ha₃ r b₂ b₃ hb₂ hb₃,
-      map_gluedHom hu D M α q a₁ a₃ ha₁ ha₃ r b₁ b₃ hb₁ hb₃,
-      localHom_comp D M α ha₁ ha₂ ha₃ r b₁ b₂ b₃ hb₁ hb₂ hb₃]
+    rw [pullHom_comp _ _ r (r ≫ a₁) (r ≫ a₂) (r ≫ a₃) rfl rfl rfl,
+      pullHom_gluedHom_eq_localTrans hu D M α q a₁ a₂ ha₁ ha₂ r _ _ _ b₁ b₂ hb₁ hb₂ rfl rfl rfl,
+      pullHom_gluedHom_eq_localTrans hu D M α q a₂ a₃ ha₂ ha₃ r _ _ _ b₂ b₃ hb₂ hb₃ rfl rfl rfl,
+      pullHom_gluedHom_eq_localTrans hu D M α q a₁ a₃ ha₁ ha₃ r _ _ _ b₁ b₃ hb₁ hb₃ rfl rfl rfl,
+      localTrans_comp]
 
 /-- Explicit formula for `gluedHom` evaluated on morphisms already factored as `f₁ ≫ u j₁ k₁` and
 `f₂ ≫ u j₂ k₂`. -/
@@ -555,31 +494,58 @@ private lemma gluedHom_comp (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
       _ _ (𝟙 W) _ _ _ f₁ f₂ (by simp) (by simp)
       (Category.id_comp _) (Category.id_comp _) (Category.id_comp _)]
 
-/-- Reassociate the `descendIso` component along a single factorization `f ≫ u ≫ p = q` from
-`f^* (u ≫ p)^* N ⟶ f^* (D.obj jk)` to `(f ≫ u)^* p^* N ⟶ f^* (D.obj jk)`. -/
-private lemma descendIso_component_eq
+/-- The component isomorphism `(p j)^* N ≅ M j` extracted from `β`. -/
+private noncomputable def βIso (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
     (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
     (M : ∀ j, F.obj (.mk (op (Y j))))
     (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
     (N : F.obj (.mk (op S)))
+    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α) (j : κ) :
+    (F.map (p j).op.toLoc).toFunctor.obj N ≅ M j :=
+  DescentData.isoApp β j
+
+private lemma βIso_hom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
+    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    (N : F.obj (.mk (op S)))
+    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α) (j : κ) :
+    (βIso hu D M α N β j).hom = β.hom.hom j :=
+  DescentData.isoApp_hom β j
+
+/-- The component isomorphism `(u ≫ p)^* N ≅ D.obj jk` for `descendIso`. -/
+private noncomputable def descendComponentIso
+    (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
+    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    (N : F.obj (.mk (op S)))
+    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α)
+    (jk : Σ j, ι j) :
+    (F.map (u jk.1 jk.2 ≫ p jk.1).op.toLoc).toFunctor.obj N ≅ D.obj jk :=
+  compIso (p jk.1) (u jk.1 jk.2) (u jk.1 jk.2 ≫ p jk.1) rfl N ≪≫
+    (F.map (u jk.1 jk.2).op.toLoc).toFunctor.mapIso (βIso hu D M α N β jk.1) ≪≫
+    αIso D M α jk.1 jk.2
+
+/-- Reassociate the `descendIso` component along a single factorization `f ≫ u ≫ p = q` from
+`f^* (u ≫ p)^* N ⟶ f^* (D.obj jk)` to `(f ≫ u)^* p^* N ⟶ f^* (D.obj jk)`. -/
+@[reassoc]
+private lemma descendIso_component_eq (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
+    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    (N : F.obj (.mk (op S)))
+    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α)
     {W : C} (q : W ⟶ S) (jk : Σ j, ι j)
-    (f : W ⟶ X jk.1 jk.2) (hf : f ≫ u jk.1 jk.2 ≫ p jk.1 = q)
-    (φ : (F.map (p jk.1).op.toLoc).toFunctor.obj N ⟶ M jk.1) :
-    (F.mapComp' (u jk.1 jk.2 ≫ p jk.1).op.toLoc f.op.toLoc q.op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hf])).hom.toNatTrans.app N ≫
-      (F.map f.op.toLoc).toFunctor.map
-        ((F.mapComp' (p jk.1).op.toLoc (u jk.1 jk.2).op.toLoc
-            (u jk.1 jk.2 ≫ p jk.1).op.toLoc
-            (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app N ≫
-          (F.map (u jk.1 jk.2).op.toLoc).toFunctor.map φ ≫
-          (αIso D M α jk.1 jk.2).hom) =
-      (F.mapComp' (p jk.1).op.toLoc (f ≫ u jk.1 jk.2).op.toLoc q.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, Category.assoc, hf])).hom.toNatTrans.app N ≫
-        (F.map (f ≫ u jk.1 jk.2).op.toLoc).toFunctor.map φ ≫
-        (F.mapComp' (u jk.1 jk.2).op.toLoc f.op.toLoc (f ≫ u jk.1 jk.2).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app (M jk.1) ≫
+    (f : W ⟶ X jk.1 jk.2) (hf : f ≫ u jk.1 jk.2 ≫ p jk.1 = q) :
+    (compIso (u jk.1 jk.2 ≫ p jk.1) f q hf N).hom ≫
+      (F.map f.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk).hom =
+      (compIso (p jk.1) (f ≫ u jk.1 jk.2) q (by rw [Category.assoc, hf]) N).hom ≫
+        (F.map (f ≫ u jk.1 jk.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk.1).hom ≫
+        (compIso (u jk.1 jk.2) f (f ≫ u jk.1 jk.2) rfl (M jk.1)).hom ≫
         (F.map f.op.toLoc).toFunctor.map (αIso D M α jk.1 jk.2).hom := by
-  simp only [Functor.map_comp]
+  dsimp only [descendComponentIso, Iso.trans_hom, Functor.mapIso_hom]
+  simp only [Functor.map_comp, compIso_hom]
   rw [← F.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app_assoc (p jk.1).op.toLoc
       (u jk.1 jk.2).op.toLoc f.op.toLoc (u jk.1 jk.2 ≫ p jk.1).op.toLoc
       (f ≫ u jk.1 jk.2).op.toLoc q.op.toLoc
@@ -587,7 +553,8 @@ private lemma descendIso_component_eq
       (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
       (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, Category.assoc, hf]) N,
     ← F.mapComp'_naturality_1_assoc (u jk.1 jk.2).op.toLoc f.op.toLoc
-      (f ≫ u jk.1 jk.2).op.toLoc (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) φ,
+      (f ≫ u jk.1 jk.2).op.toLoc (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
+      (βIso hu D M α N β jk.1).hom,
     Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
 
 /-- Component-wise transition compatibility for `descendIso`. -/
@@ -600,76 +567,43 @@ private lemma descendIso_comm (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j
     {W : C} (q : W ⟶ S) {jk₁ jk₂ : Σ j, ι j}
     (f₁ : W ⟶ X jk₁.1 jk₁.2) (f₂ : W ⟶ X jk₂.1 jk₂.2)
     (hf₁ : f₁ ≫ u jk₁.1 jk₁.2 ≫ p jk₁.1 = q) (hf₂ : f₂ ≫ u jk₂.1 jk₂.2 ≫ p jk₂.1 = q) :
-    (F.map f₁.op.toLoc).toFunctor.map
-        ((F.mapComp' (p jk₁.1).op.toLoc (u jk₁.1 jk₁.2).op.toLoc
-            (u jk₁.1 jk₁.2 ≫ p jk₁.1).op.toLoc
-            (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app N ≫
-          (F.map (u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₁.1).hom ≫
-          (αIso D M α jk₁.1 jk₁.2).hom) ≫
+    (F.map f₁.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₁).hom ≫
       D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂ =
     ((F.toDescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1)).obj N).hom q f₁ f₂ hf₁ hf₂ ≫
-      (F.map f₂.op.toLoc).toFunctor.map
-        ((F.mapComp' (p jk₂.1).op.toLoc (u jk₂.1 jk₂.2).op.toLoc
-            (u jk₂.1 jk₂.2 ≫ p jk₂.1).op.toLoc
-            (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app N ≫
-          (F.map (u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₂.1).hom ≫
-          (αIso D M α jk₂.1 jk₂.2).hom) := by
+      (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
   have ha₁ : (f₁ ≫ u jk₁.1 jk₁.2) ≫ p jk₁.1 = q := by rw [Category.assoc, hf₁]
   have ha₂ : (f₂ ≫ u jk₂.1 jk₂.2) ≫ p jk₂.1 = q := by rw [Category.assoc, hf₂]
-  have hβ : (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₁.1).hom ≫
-      localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl =
-      ((F.mapComp' (p jk₁.1).op.toLoc (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc q.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ha₁])).inv.toNatTrans.app N ≫
-        (F.mapComp' (p jk₂.1).op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc q.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ha₂])).hom.toNatTrans.app N) ≫
-      (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₂.1).hom := by
-    rw [← gluedHom_comp hu D M α q f₁ f₂ hf₁ hf₂]
-    exact β.hom.comm q (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2) ha₁ ha₂
-  dsimp only [toDescentData, DescentData.ofObj]
-  rw [← cancel_epi ((F.mapComp' (u jk₁.1 jk₁.2 ≫ p jk₁.1).op.toLoc f₁.op.toLoc q.op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hf₁])).hom.toNatTrans.app N)]
-  simp only [Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
-  erw [reassoc_of% (descendIso_component_eq D M α N q jk₁ f₁ hf₁ (DescentData.isoApp β jk₁.1).hom),
-    descendIso_component_eq D M α N q jk₂ f₂ hf₂ (DescentData.isoApp β jk₂.1).hom]
-  have hβ₁ : (F.mapComp' (p jk₁.1).op.toLoc (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc q.op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ha₁])).hom.toNatTrans.app N ≫
-      (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₁.1).hom ≫
-      (F.mapComp' (u jk₁.1 jk₁.2).op.toLoc f₁.op.toLoc (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app (M jk₁.1) ≫
-        (F.map f₁.op.toLoc).toFunctor.map (αIso D M α jk₁.1 jk₁.2).hom ≫
-        D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂ ≫
-        (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).inv ≫
-        (F.mapComp' (u jk₂.1 jk₂.2).op.toLoc f₂.op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).inv.toNatTrans.app (M jk₂.1) =
-      (F.mapComp' (p jk₂.1).op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc q.op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ha₂])).hom.toNatTrans.app N ≫
-      (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (DescentData.isoApp β jk₂.1).hom := by
-    have hβ₀ := congrArg (((F.mapComp' (p jk₁.1).op.toLoc (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc q.op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ha₁])).hom.toNatTrans.app N) ≫ ·) hβ
-    erw [localTrans_eq] at hβ₀
-    conv_rhs at hβ₀ =>
-      erw [← Category.assoc, ← Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app, Category.id_comp]
-    exact hβ₀
-  have hcancel₂ : ((F.mapComp' (u jk₂.1 jk₂.2).op.toLoc f₂.op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).hom.toNatTrans.app (M jk₂.1) ≫
-      (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom) ≫
-      ((F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).inv ≫
-      (F.mapComp' (u jk₂.1 jk₂.2).op.toLoc f₂.op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).inv.toNatTrans.app (M jk₂.1)) = 𝟙 _ := by
-    simp only [Category.assoc, ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id,
-      Category.id_comp, Cat.Hom.hom_inv_id_toNatTrans_app]
-  refine (cancel_mono ((F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).inv ≫
-    (F.mapComp' (u jk₂.1 jk₂.2).op.toLoc f₂.op.toLoc (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc
-      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])).inv.toNatTrans.app (M jk₂.1))).1 ?_
-  refine Eq.trans ?_ (hβ₁.trans ?_)
-  · refine Eq.trans (Category.assoc _ _ _) (congrArg (_ ≫ ·) ?_)
-    refine Eq.trans (Category.assoc _ _ _) (congrArg (_ ≫ ·) ?_)
-    refine Eq.trans (Category.assoc _ _ _) (congrArg (_ ≫ ·) ?_)
-    exact Category.assoc _ _ _
-  · refine Eq.symm ?_
-    refine Eq.trans (Category.assoc _ _ _) (congrArg₂ (· ≫ ·) rfl ?_)
-    exact Eq.trans (Category.assoc _ _ _)
-      (Eq.trans (congrArg₂ (· ≫ ·) rfl hcancel₂) (Category.comp_id _))
+  have hβ : (compIso (p jk₁.1) (f₁ ≫ u jk₁.1 jk₁.2) q ha₁ N).hom ≫
+        (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
+        localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl =
+      (compIso (p jk₂.1) (f₂ ≫ u jk₂.1 jk₂.2) q ha₂ N).hom ≫
+        (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom := by
+    have h₀ : (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map
+          (βIso hu D M α N β jk₁.1).hom ≫
+        localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl =
+      ((compIso (p jk₁.1) (f₁ ≫ u jk₁.1 jk₁.2) q ha₁ N).inv ≫
+          (compIso (p jk₂.1) (f₂ ≫ u jk₂.1 jk₂.2) q ha₂ N).hom) ≫
+        (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map
+          (βIso hu D M α N β jk₂.1).hom := by
+      rw [← gluedHom_comp hu D M α q f₁ f₂ hf₁ hf₂, ← gluedDatum_hom]
+      erw [βIso_hom, βIso_hom]
+      exact β.hom.comm q (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2) ha₁ ha₂
+    rw [← cancel_epi (compIso (p jk₁.1) (f₁ ≫ u jk₁.1 jk₁.2) q ha₁ N).inv,
+      Iso.inv_hom_id_assoc]
+    simpa only [Category.assoc] using h₀
+  change (F.map f₁.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₁).hom ≫
+      D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂ =
+    ((compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1) f₁ q hf₁ N).inv ≫
+        (compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1) f₂ q hf₂ N).hom) ≫
+      (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom
+  rw [← cancel_epi (compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1) f₁ q hf₁ N).hom]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  rw [descendIso_component_eq_assoc hu D M α N β q jk₁ f₁ hf₁,
+    descendIso_component_eq hu D M α N β q jk₂ f₂ hf₂,
+    ← localTrans_comp_αIso D M α ha₁ ha₂ f₁ f₂ rfl rfl,
+    ← Category.assoc _ (localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl),
+    ← Category.assoc _ (_ ≫ localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl), hβ]
+  simp only [Category.assoc]
 
 /-- Combining the descent isomorphism `β : toDescentData p N ≅ gluedDatum ...` with the local
 isomorphisms `α j : toDescentData (u j) (M j) ≅ restrictDatum D j` produces an isomorphism
@@ -682,11 +616,7 @@ private noncomputable def descendIso (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈
     (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α) :
     (F.toDescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1)).obj N ≅ D :=
   DescentData.isoMk
-    (fun jk ↦ (Cat.Hom.toNatIso (F.mapComp' (p jk.1).op.toLoc (u jk.1 jk.2).op.toLoc
-        (u jk.1 jk.2 ≫ p jk.1).op.toLoc
-        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]))).app N ≪≫
-      (F.map (u jk.1 jk.2).op.toLoc).toFunctor.mapIso (DescentData.isoApp β jk.1) ≪≫
-      αIso D M α jk.1 jk.2)
+    (fun jk ↦ descendComponentIso hu D M α N β jk)
     (fun _ q _ _ f₁ f₂ hf₁ hf₂ ↦ descendIso_comm hu D M α N β q f₁ f₂ hf₁ hf₂)
 
 end Comp

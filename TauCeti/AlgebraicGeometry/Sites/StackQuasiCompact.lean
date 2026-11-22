@@ -60,6 +60,14 @@ open _root_.AlgebraicGeometry _root_.AlgebraicGeometry.Scheme
 variable {P : MorphismProperty Scheme.{u}} [P.IsStableUnderBaseChange]
   [P.IsMultiplicative] [IsZariskiLocalAtSource P]
 
+/-- A finite affine cover `𝒱` of an affine scheme yields a quasi-compact cover with affine
+components and finite index type. -/
+private lemma isAffine_and_finite_of_affineCover {P : MorphismProperty Scheme.{u}}
+    {S : Scheme.{u}} [IsAffine S] (𝒱 : Scheme.AffineCover.{u} P S) [hfin : Finite 𝒱.I₀] :
+    (∀ j, IsAffine ((Cover.ofQuasiCompactCover 𝒱.cover).X j)) ∧
+      Finite (Cover.ofQuasiCompactCover 𝒱.cover).I₀ :=
+  ⟨fun _ ↦ inferInstanceAs <| IsAffine (Spec _), hfin⟩
+
 /-- A pseudofunctor on schemes is a prestack for `Scheme.propQCTopology P` if and only if it is a
 prestack for the big Zariski topology and satisfies descent of morphisms for every single-morphism
 `P`-covering `Spec S ⟶ Spec R` of affine schemes. -/
@@ -97,12 +105,11 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
       have haff : ∀ j, IsAffine (𝒰'.X j) := fun j ↦ by
         have _ : IsAffine (𝒱.cover.X j) := inferInstanceAs <| IsAffine (Spec _)
         exact inferInstanceAs <| IsAffine (pullback (𝒱.cover.f j) h)
-      have _ : ∀ j, QuasiCompact (𝒰'.f j) := fun _ ↦ inferInstance
+      have _ : ∀ j, AlgebraicGeometry.QuasiCompact (𝒰'.f j) := fun _ ↦ inferInstance
       exact this A (.ofQuasiCompactCover 𝒰' (qc := .of_finite)) ⟨haff, hfin⟩
     rw [← IsPrestackFor_generate_iff]
     refine ((IsPrestackFor_generate_iff F _).2
-      (this R (.ofQuasiCompactCover 𝒱.cover)
-        ⟨fun _ ↦ inferInstanceAs <| IsAffine (Spec _), hfin⟩)).of_le'
+      (this R (.ofQuasiCompactCover 𝒱.cover) (isAffine_and_finite_of_affineCover 𝒱))).of_le'
       f.sieve₀_le_sieve₀ fun V g _ M N φ ψ h ↦ ?_
     refine (F.isPrestackFor (Presieve.ofArrows V.affineCover.X V.affineCover.f)
       V.affineCover.mem_grothendieckTopology).hom_ext fun Z _ ⟨i⟩ ↦ ?_
@@ -110,11 +117,11 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
       ⟨V.affineOpenCover.X i, AffineOpenCover.openCover_X V.affineOpenCover i⟩).hom_ext
       fun W s hs ↦ ?_
     rw [Sieve.pullback_comp] at hs
-    exact (F.map_map_eq_iff_map_comp (V.affineCover.f i) s).2 (h _ hs)
+    simpa using h _ hs
   obtain ⟨S, φ, e, hP, hsurj, hφ⟩ := Cover.exists_specMap_sigma 𝒰.forgetQc h𝒰.1 h𝒰.2
   have hp : F.IsPrestackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [← IsPrestackFor_generate_iff, Sieve.generate_ofArrows_pUnit_comp_of_isIso e.hom, ← hφ,
-      IsPrestackFor_generate_iff]
+    rw [← IsPrestackFor_generate_iff, Presieve.ofArrows_pUnit,
+      ← Sieve.generate_singleton_comp_of_isIso e.hom, ← hφ, IsPrestackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)
@@ -147,14 +154,13 @@ theorem isStack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ 
   obtain ⟨R, rfl⟩ := hT
   wlog h𝒰 : (∀ i, IsAffine (𝒰.X i)) ∧ Finite 𝒰.I₀ generalizing R 𝒰
   · obtain ⟨𝒱, f, hfin, _⟩ := QuasiCompactCover.exists_hom 𝒰.forgetQc
-    have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover)
-      ⟨fun _ ↦ inferInstanceAs <| IsAffine (Spec _), hfin⟩
+    have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover) (isAffine_and_finite_of_affineCover 𝒱)
     rw [← IsStackFor_generate_iff] at h𝒱 ⊢
     exact h𝒱.of_le' F 𝒱.cover.mem_propQCTopology f.sieve₀_le_sieve₀
   obtain ⟨S, φ, e, hP, hsurj, hφ⟩ := Cover.exists_specMap_sigma 𝒰.forgetQc h𝒰.1 h𝒰.2
   have hp : F.IsStackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [← IsStackFor_generate_iff, Sieve.generate_ofArrows_pUnit_comp_of_isIso e.hom, ← hφ,
-      IsStackFor_generate_iff]
+    rw [← IsStackFor_generate_iff, Presieve.ofArrows_pUnit,
+      ← Sieve.generate_singleton_comp_of_isIso e.hom, ← hφ, IsStackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (J := Scheme.zariskiTopology) (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)
