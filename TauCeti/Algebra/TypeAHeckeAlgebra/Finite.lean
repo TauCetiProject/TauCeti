@@ -262,7 +262,7 @@ theorem adjoin_range_T : Algebra.adjoin R (Set.range (T (n := n) q)) = ⊤ := by
   have hrange : Set.range (T (n := n) q) =
       mkAlgHom R q n '' Set.range (FreeAlgebra.ι R (X := Fin (n - 1))) := by
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
-  rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
+  rw [hrange, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _)]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
 
 section Braid

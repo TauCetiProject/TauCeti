@@ -290,7 +290,7 @@ end Lift
 theorem adjoin_range_T : Algebra.adjoin R (Set.range (T q)) = ⊤ := by
   have hrange : Set.range (T q) = mkAlgHom R q '' Set.range (FreeAlgebra.ι R (X := ℕ)) := by
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
-  rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
+  rw [hrange, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _)]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
 
 section Stage
