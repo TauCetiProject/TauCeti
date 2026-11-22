@@ -11,7 +11,10 @@ public import TauCeti.Analysis.Calculus.Morse.BirthDeath
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Calculus.Sard.OutermostStratum
+import TauCeti.Analysis.Calculus.FDeriv.Add
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
@@ -46,22 +49,27 @@ model family `x³ / 3 - t x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is 
 degenerate critical point (`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`), whereas the
 constant family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_birthDeathPotential_zero`).
 
-Genericity is proved as in `TauCeti.Analysis.Calculus.Morse.Generic`. Subtracting a linear
-functional `a` from every member of the family shifts `G` by the constant `a` and leaves its
-derivative alone (`TauCeti.fderiv_fderiv_sub_eq`). So the perturbed family `f t - a` is transverse
-at all of its critical points exactly when `a` is a regular value of `G`. The map `G` goes from a
-space of dimension `dim E + 1` to one of dimension `dim E`, so the Morse–Sard theorem
-`TauCeti.addHaar_image_criticalPoints_eq_zero` applies once `G` is `C²`, that is once the family
-is jointly `C³`. Hence for almost every `a` the family `f t - a` is transverse at all of its
-critical points (`TauCeti.ae_forall_surjective_fderiv_fderiv_sub`). Unlike the Morse case, one
-derivative more than the Hessian is needed, because the source of `G` has one dimension more than
-its target.
+Genericity is proved for any linear map `P` from a finite-dimensional space `Λ` to functions on
+`E` that is jointly smooth in the parameter and the point and whose members realize every
+differential at the points considered. Subtracting `P p` from every member of the family gives the
+parametrized differential `Φ ((t, x), p) = d(f t - P p)_x`, whose derivative in the direction of
+the parameter `p` is onto. For each `p`, the slice `(t, x) ↦ Φ ((t, x), p)` goes from `ℝ × E`, of
+dimension `dim E + 1`, to the dual of `E`, of dimension `dim E`, so the parametric transversality
+theorem `TauCeti.ae_isRegularParameterOn` applies once `Φ` is `C²`, that is once the family is
+jointly `C³`. Hence for almost every `p` the family `f t - P p` is transverse at all of its
+critical points (`TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`).
+Unlike the Morse case, one derivative more than the Hessian is needed, because the source of each
+slice has one dimension more than its target. The linear functionals themselves form such a
+family, so for almost every `a` the family `f t - a` is transverse at all of its critical points
+(`TauCeti.ae_forall_surjective_fderiv_fderiv_sub`). Subtracting `a` shifts `G` by the constant `a`
+and leaves its derivative alone (`TauCeti.fderiv_fderiv_sub_eq`).
 
 The remaining conditions of Cerf's theorem concern the third derivative along the kernel of a
 degenerate Hessian. When it is nonzero, the degenerate critical point is isolated
 (`TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`, in
 `TauCeti.Analysis.Calculus.Morse.Cerf.Isolated`). That it is nonzero for a generic family needs
-perturbations by quadratic and cubic polynomials as well and is not treated here.
+perturbations by quadratic and cubic functions as well and is proved in
+`TauCeti.Analysis.Calculus.Morse.Cerf.Cubic`.
 
 ## Main declarations
 
@@ -71,6 +79,9 @@ perturbations by quadratic and cubic polynomials as well and is not treated here
   one.
 * `TauCeti.exists_eq_smul_of_fderiv_fderiv_apply_eq_zero`: at a transverse point the kernel of the
   Hessian is spanned by any of its nonzero vectors.
+* `TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`: for almost every
+  member `P p` of a linear family of perturbations realizing every differential, the family
+  `f t - P p` is transverse at all of its critical points.
 * `TauCeti.ae_forall_surjective_fderiv_fderiv_sub`: **for almost every linear functional `a`, the
   family `f t - a` is transverse at all of its critical points.**
 * `TauCeti.ae_forall_finrank_ker_fderiv_fderiv_sub_le_one`,
@@ -189,35 +200,70 @@ theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
 
 /-! ### Genericity -/
 
+/-- **For almost every member of a rich linear family of perturbations, the family is transverse
+at all of its critical points.** Let `f t` be a family of functions on a finite-dimensional real
+normed space `E`, jointly `C³` at every point of a set `W ⊆ ℝ × E`, and let `P` be a linear map
+from a finite-dimensional space `Λ` to functions on `E`, jointly `C³` in the parameter and the
+point, whose members realize every differential at the points of `W`. For a Haar measure `ν` on
+`Λ` and `ν`-almost every `p`, at every `(t, x) ∈ W` at which `x` is a critical point of
+`f t - P p`, the derivative of the parametrized differential `(t, x) ↦ d(f t - P p)_x` is onto.
+
+This is the parametric transversality theorem `TauCeti.ae_isRegularParameterOn` for the map
+`((t, x), p) ↦ d(f t - P p)_x`, whose derivative in the direction of the parameter is onto. -/
+theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : Type*}
+    [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [MeasurableSpace Λ]
+    [BorelSpace Λ] (ν : Measure Λ) [ν.IsAddHaarMeasure] {P : Λ →ₗ[ℝ] E → ℝ} {W : Set (ℝ × E)}
+    (hf : ∀ z ∈ W, ContDiffAt ℝ 3 (uncurry f) z) (hP : ContDiff ℝ 3 fun q : Λ × E ↦ P q.1 q.2)
+    (hjet : ∀ z ∈ W, ∀ a : E →L[ℝ] ℝ, ∃ q, fderiv ℝ (P q) z.2 = a) :
+    ∀ᵐ p ∂ν, ∀ z ∈ W, fderiv ℝ (fun y ↦ f z.1 y - P p y) z.2 = 0 →
+      Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - P p y) w.2) z) := by
+  set G : (ℝ × E) × Λ → E →L[ℝ] ℝ := fun w ↦ fderiv ℝ (fun y ↦ f w.1.1 y - P w.2 y) w.1.2
+  set U : Set ((ℝ × E) × Λ) := {w | w.1 ∈ W}
+  -- `G` is `C²` at the points over `W`.
+  have hGc : ∀ w ∈ U, ContDiffAt ℝ 2 G w := by
+    rintro ⟨⟨t, x⟩, p⟩ hw
+    exact (((hf (t, x) hw).sub_uncurry_prod hP.contDiffAt).fderiv_slice
+      (m := 2) le_rfl).comp ((t, x), p)
+        ((contDiffAt_fst.fst.prodMk contDiffAt_snd).prodMk contDiffAt_fst.snd)
+  -- Its derivative in the direction of the coefficients is onto.
+  have htotal : ∀ w ∈ U, G w = 0 → Surjective (fderiv ℝ G w) := by
+    rintro ⟨⟨t, x⟩, p⟩ hw - a
+    obtain ⟨q, hq⟩ := hjet (t, x) hw (-a)
+    have hu : DifferentiableAt ℝ (fun y ↦ f t y - P p y) x :=
+      (((hf (t, x) hw).sub_uncurry_prod hP.contDiffAt).comp x
+        (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num)
+    have hw' : DifferentiableAt ℝ (P q) x :=
+      (hP.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) x
+    -- Along the line in the direction of `q`, the map `G` moves by `s • a`.
+    refine ⟨((0, 0), q),
+      ((hGc _ hw).differentiableAt (by norm_num)).fderiv_apply_eq_of_add_smul
+        (.of_forall fun s ↦ ?_)⟩
+    simp only [G, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero]
+    rw [P.fderiv_sub_map_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
+  have hreg := ae_isRegularParameterOn ν (U := U) (c := 0) (n := 2) (fun w hw _ ↦ hGc w hw)
+    htotal (by
+      rw [Module.finrank_prod, Module.finrank_self, ContinuousLinearMap.dual_finrank_eq]
+      norm_num)
+  filter_upwards [hreg] with p hp z hz hz0
+  have hs := isRegularParameterOn_iff.1 hp z hz hz0
+  rwa [← fderiv_slice_left ((hGc (z, p) hz).differentiableAt (by norm_num))] at hs
+
 /-- **For almost every functional `a`, the family `f t - a` is transverse at all of its critical
 points.** Let `f t` be a family of functions on a finite-dimensional real normed space `E`, jointly
 `C³` at every point of a set `W ⊆ ℝ × E`. For a Haar measure `ν` on the dual of `E`, for
 `ν`-almost every `a`, at every point `(t, x) ∈ W` at which `x` is a critical point of `f t - a`, the
 derivative of the parametrized differential `(t, x) ↦ d(f t - a)_x` is onto.
 
-The parametrized differential of `f t - a` is that of `f t` shifted by `a`, so the exceptional
-functionals are the critical values on `W` of `(t, x) ↦ d(f t)_x`, a `C²` map from a space of
-dimension `dim E + 1` to one of dimension `dim E`. They form a null set by the Morse–Sard
-theorem. -/
+This is the case of `TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`
+in which the perturbations are the linear functionals themselves. -/
 theorem ae_forall_surjective_fderiv_fderiv_sub [MeasurableSpace (StrongDual ℝ E)]
     [BorelSpace (StrongDual ℝ E)] (ν : Measure (StrongDual ℝ E)) [ν.IsAddHaarMeasure]
     {W : Set (ℝ × E)} (hf : ∀ z ∈ W, ContDiffAt ℝ 3 (uncurry f) z) :
     ∀ᵐ a ∂ν, ∀ z ∈ W, fderiv ℝ (fun y ↦ f z.1 y - a y) z.2 = 0 →
       Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - a y) w.2) z) := by
-  set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  have hG : ∀ z ∈ W, ContDiffAt ℝ 2 G z := fun z hz ↦ (hf z hz).fderiv_slice (m := 2) le_rfl
-  have hnull : ν (G '' (W ∩ {z | ¬ Surjective (fderiv ℝ G z)})) = 0 := by
-    refine addHaar_image_criticalPoints_eq_zero ν hG ?_
-    rw [Module.finrank_prod, Module.finrank_self, ContinuousLinearMap.dual_finrank_eq]
-    norm_num
-  rw [ae_iff]
-  refine measure_mono_null (fun a ha ↦ ?_) hnull
-  obtain ⟨z, hzW, hz0, hzs⟩ : ∃ z ∈ W, fderiv ℝ (fun y ↦ f z.1 y - a y) z.2 = 0 ∧
-      ¬ Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - a y) w.2) z) := by
-    simpa using ha
-  have hf1 : ContDiffAt ℝ 1 (uncurry f) z := (hf z hzW).of_le (by norm_num)
-  rw [fderiv_fderiv_sub_eq hf1 a] at hzs
-  exact ⟨z, ⟨hzW, hzs⟩, sub_eq_zero.1 ((fderiv_sub_eq_of_contDiffAt hf1 a).symm.trans hz0)⟩
+  simpa using ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq ν
+    (P := LinearMap.ltoFun ℝ E ℝ ℝ ∘ₗ ContinuousLinearMap.coeLM ℝ) hf
+    (by simpa using contDiff_fst.clm_apply contDiff_snd) fun _ _ a ↦ ⟨a, by simp⟩
 
 /-- **For almost every functional `a`, the Hessians of `f t - a` at its critical points have corank
 at most one.** This holds on every set `W ⊆ ℝ × E` at whose points the family is jointly `C³`. -/
