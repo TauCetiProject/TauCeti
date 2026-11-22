@@ -33,6 +33,14 @@ is a submersion for every manifold structure on `Z ⧸ K` for which the orbit pr
 one (`TauCeti.BalancedProduct.isSubmersion_orbitProj_rightTranslation`). The action
 `k • [g, z] = [k g, z]` of `G` and the two maps `[g, z] ↦ g K` and `[g, z] ↦ g • ι z` are smooth.
 
+When `K` acts freely and properly on `Z`, so does `G` on `G ×_K Z`
+(`TauCeti.BalancedProduct.instProperSMulRightTranslation` and the freeness instance of
+`TauCeti.Topology.Covering.BalancedProduct.RightTranslation`). The quotient manifold theorem then
+makes the orbit space `(G ×_K Z) ⧸ G` a smooth manifold, and the bijection
+`G • [g, z] ↦ [z]` onto `Z ⧸ K` is a diffeomorphism for the charts of the quotient manifold
+theorem on both sides (`TauCeti.BalancedProduct.orbitRelQuotientDiffeomorphRightTranslation`).
+So `Z ⧸ K` is recovered from `G ×_K Z` as a manifold, not only as a set.
+
 For a Hamiltonian action with coadjoint-equivariant moment map `μ` and a regular value `c` of
 `μ`, this is the space `G ×_{G_c} μ⁻¹(c)`, with its maps to the coadjoint orbit `G ⧸ G_c`, to the
 symplectic manifold and to the reduced space `μ⁻¹(c) ⧸ G_c`, through which reduction at `c` is
@@ -42,6 +50,10 @@ compared with reduction at zero of the shifted moment map on the product with th
 
 * `TauCeti.BalancedProduct.rightTranslationChartedSpace`: the charts of the quotient manifold
   theorem on `G ×_K Z`.
+* `TauCeti.BalancedProduct.orbitRelQuotientChartedSpaceRightTranslation`: the charts of the
+  quotient manifold theorem on the orbit space `(G ×_K Z) ⧸ G`.
+* `TauCeti.BalancedProduct.orbitRelQuotientDiffeomorphRightTranslation`: the diffeomorphism
+  `(G ×_K Z) ⧸ G ≃ₘ Z ⧸ K`, `G • [g, z] ↦ [z]`.
 
 ## Main results
 
@@ -59,6 +71,9 @@ compared with reduction at zero of the shifted moment map on the product with th
 * `TauCeti.BalancedProduct.contMDiff_proj_rightTranslation`,
   `TauCeti.BalancedProduct.contMDiff_liftRightTranslation`: the maps to `G ⧸ K` and to a
   `G`-manifold are smooth.
+* `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
+  `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
+  space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
 
 ## References
 
@@ -279,6 +294,135 @@ theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [
   rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
+
+/-! ### The orbit space of `G` -/
+
+section OrbitSpace
+
+variable [ProperSMul K Z]
+
+/-- The hypotheses of the quotient manifold theorem for the action of `G` on `G ×_K Z`, other
+than freeness: `G ×_K Z` is a manifold on which `G` acts smoothly and properly. -/
+private theorem orbitRelQuotient_hypotheses :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞
+        (BalancedProduct K K.RightTranslation Z) ∧
+      ContMDiffSMul I 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ G
+        (BalancedProduct K K.RightTranslation Z) ∧
+      ProperSMul G (BalancedProduct K K.RightTranslation Z) :=
+  letI := rightTranslationChartedSpace K Z I IZ F
+  haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
+  ⟨isManifold_rightTranslation, contMDiffSMul_rightTranslation, inferInstance⟩
+
+variable [IsCancelSMul K Z]
+
+variable (K Z I IZ F) in
+/-- **The charts of the orbit space of `G` on `G ×_K Z`**: the slice charts
+`ProperSMul.orbitRelQuotientChartedSpace` of the quotient manifold theorem for the action
+`k • [g, z] = [k g, z]`, which is free and proper when `K` acts freely and properly on `Z`. The
+orbit space is diffeomorphic to `Z ⧸ K`
+(`TauCeti.BalancedProduct.orbitRelQuotientDiffeomorphRightTranslation`). -/
+@[instance_reducible]
+def orbitRelQuotientChartedSpaceRightTranslation :
+    ChartedSpace (ProperSMul.QuotientModelSpace E (ProperSMul.QuotientModelSpace F (E × EZ)))
+      (MulAction.orbitRel.Quotient G (BalancedProduct K K.RightTranslation Z)) :=
+  letI := rightTranslationChartedSpace K Z I IZ F
+  haveI := (orbitRelQuotient_hypotheses (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)).1
+  haveI := (orbitRelQuotient_hypotheses (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)).2.1
+  haveI := (orbitRelQuotient_hypotheses (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)).2.2
+  ProperSMul.orbitRelQuotientChartedSpace I G 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))
+    (BalancedProduct K K.RightTranslation Z)
+
+/-- **The orbit space of `G` on `G ×_K Z` is a smooth manifold**, for the charts
+`TauCeti.BalancedProduct.orbitRelQuotientChartedSpaceRightTranslation`. -/
+theorem isManifold_orbitRelQuotient_rightTranslation :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace E (ProperSMul.QuotientModelSpace F (E × EZ))) ∞
+      (MulAction.orbitRel.Quotient G (BalancedProduct K K.RightTranslation Z)) := by
+  let := rightTranslationChartedSpace K Z I IZ F
+  obtain ⟨_, _, _⟩ := orbitRelQuotient_hypotheses (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
+  exact ProperSMul.instIsManifoldOrbitRelQuotient
+
+/-- The orbit projection `G ×_K Z → (G ×_K Z) ⧸ G` is a smooth submersion. -/
+theorem isSubmersion_quotientMk_orbitRelQuotient_rightTranslation :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    IsSubmersion 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))
+      𝓘(ℝ, ProperSMul.QuotientModelSpace E (ProperSMul.QuotientModelSpace F (E × EZ))) ∞
+      (Quotient.mk (MulAction.orbitRel G (BalancedProduct K K.RightTranslation Z))) := by
+  let := rightTranslationChartedSpace K Z I IZ F
+  obtain ⟨_, _, _⟩ := orbitRelQuotient_hypotheses (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
+  exact ProperSMul.isSubmersion_quotientMk (I := I) (G := G)
+
+variable (K Z I IZ F) in
+/-- **The orbit space of `G` on `G ×_K Z` is diffeomorphic to `Z ⧸ K`**, by `G • [g, z] ↦ [z]`
+with inverse `[z] ↦ G • [1, z]` (`TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`),
+for the charts of the quotient manifold theorem on both sides. -/
+def orbitRelQuotientDiffeomorphRightTranslation :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+    MulAction.orbitRel.Quotient G (BalancedProduct K K.RightTranslation Z) ≃ₘ⟮
+      𝓘(ℝ, ProperSMul.QuotientModelSpace E (ProperSMul.QuotientModelSpace F (E × EZ))),
+      𝓘(ℝ, ProperSMul.QuotientModelSpace F EZ)⟯ MulAction.orbitRel.Quotient K Z :=
+  letI := rightTranslationChartedSpace K Z I IZ F
+  letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+  letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+  haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
+  { toEquiv := orbitRelQuotientEquivRightTranslation K Z
+    contMDiff_toFun :=
+      -- Through the orbit projection of `G`, the map reads as `[g, z] ↦ [z]`.
+      ((isSubmersion_quotientMk_orbitRelQuotient_rightTranslation (I := I) (IZ := IZ)
+        (F := F)).contMDiff_comp_iff Quotient.mk_surjective le_rfl).1 <|
+        (contMDiff_orbitProj_rightTranslation (I := I) (IZ := IZ) (F := F)).congr fun y ↦
+          orbitRelQuotientEquivRightTranslation_mk y
+    contMDiff_invFun :=
+      -- Through the orbit projection of `K`, the inverse reads as `z ↦ G • [1, z]`.
+      ((ProperSMul.isSubmersion_quotientMk (I := 𝓘(ℝ, F)) (G := K) (I' := IZ)
+        (M := Z)).contMDiff_comp_iff Quotient.mk_surjective le_rfl).1 <|
+        ((isSubmersion_quotientMk_orbitRelQuotient_rightTranslation (I := I) (IZ := IZ)
+          (F := F)).contMDiff.comp ((isSubmersion_quotientMk_rightTranslation (I := I)
+            (IZ := IZ) (F := F)).contMDiff.comp (contMDiff_const.prodMk contMDiff_id))).congr
+          fun z ↦ orbitRelQuotientEquivRightTranslation_symm_mk z }
+
+/-- The underlying equivalence of the diffeomorphism is
+`TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`. -/
+@[simp]
+theorem orbitRelQuotientDiffeomorphRightTranslation_toEquiv :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+    (orbitRelQuotientDiffeomorphRightTranslation K Z I IZ F).toEquiv =
+      orbitRelQuotientEquivRightTranslation K Z :=
+  (rfl)
+
+/-- The diffeomorphism sends the `G`-orbit of `y` to the projection `[z]` of `y = [g, z]`. -/
+@[simp]
+theorem orbitRelQuotientDiffeomorphRightTranslation_mk
+    (y : BalancedProduct K K.RightTranslation Z) :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+    orbitRelQuotientDiffeomorphRightTranslation K Z I IZ F (Quotient.mk _ y) = orbitProj y :=
+  orbitRelQuotientEquivRightTranslation_mk y
+
+/-- The inverse diffeomorphism sends `[z]` to the `G`-orbit of `[1, z]`. -/
+@[simp]
+theorem orbitRelQuotientDiffeomorphRightTranslation_symm_mk (z : Z) :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+    (orbitRelQuotientDiffeomorphRightTranslation K Z I IZ F).symm (Quotient.mk _ z) =
+      Quotient.mk _ (mk K (K.toRightTranslation 1) z) :=
+  orbitRelQuotientEquivRightTranslation_symm_mk z
+
+/-- Composed with the orbit projection of `G`, the diffeomorphism is the projection
+`[g, z] ↦ [z]` onto `Z ⧸ K`. -/
+@[simp]
+theorem orbitRelQuotientDiffeomorphRightTranslation_comp_quotientMk :
+    letI := orbitRelQuotientChartedSpaceRightTranslation K Z I IZ F
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
+    ⇑(orbitRelQuotientDiffeomorphRightTranslation K Z I IZ F) ∘
+      Quotient.mk (MulAction.orbitRel G (BalancedProduct K K.RightTranslation Z)) = orbitProj :=
+  funext fun y ↦ orbitRelQuotientEquivRightTranslation_mk y
+
+end OrbitSpace
 
 end Manifold
 
