@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.MeasureTheory.Group.LIntegral
@@ -55,7 +56,9 @@ rotation of the end at `∞` under `σ`. The main results are:
   datum on the disc `|w| ≤ 3`, vanishes on the annulus `2 ≤ |w - c| ≤ 10`, and off the disc
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
-  `c`, the domain point of `S` and the target point.
+  `c`, the domain point of `S` and the target point; so is each member in the domain point of `S`,
+  in real coordinates, and the target point
+  (`TauCeti.Floer.contMDiffAt_exchangePerturbation_apply`).
 * `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
   space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
   `S`, in real coordinates, and the target point; in particular every member is `C¹` jointly in
@@ -382,6 +385,17 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
         (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs)
       w x).comp (c, ((w : ℂ), x)) contMDiffAt_snd
   exact hin.add (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
+
+/-- **Each member of the family is smooth on `S`.** For period-one Hamiltonians of class `C^n` on
+`ℝ × M`, the member `c` of the family is `C^n` jointly in the domain point and the target point at
+every point of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, given in real coordinates. -/
+theorem contMDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (c : ℝ) :
+    ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × M ↦ exchangePerturbation H c p.1 p.2) (Complex.equivRealProdCLM.symm z, x) :=
+  fun _ hz x ↦
+    (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+      (f := fun p : ℂ × M ↦ (c, p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
 
 end TauCeti.Floer
 

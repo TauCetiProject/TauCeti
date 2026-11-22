@@ -148,6 +148,6 @@ theorem dualQuotEquivDualAnnihilator_symm_coadjointRepresentation_apply {N : Sub
   rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
   rw [Subgroup.quotientAdjointRepresentation, h,
     ← Representation.dualQuotEquivDualAnnihilator_symm_dual_apply]
-  simp only [coadjointRepresentation_eq_dual]
+  simp only [coadjointRepresentation_def]
 
 end TauCeti.Lie

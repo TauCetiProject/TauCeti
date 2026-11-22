@@ -89,7 +89,7 @@ theorem coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebra
     (hν : ν ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
     coadjointRepresentation ℝ I G g ν ∈
       (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator := by
-  rw [coadjointRepresentation_eq_dual]
+  rw [coadjointRepresentation_def]
   exact (adjointRepresentation ℝ I G).dualAnnihilator_le_comap_dual
     (fun _ hξ ↦ adjointRepresentation_apply_mem_groupLieSubalgebra
       (Subgroup.inv_mem _ hg) hξ) hν
@@ -101,7 +101,7 @@ theorem coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSub
     (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
     (hν : ν ∈ (N.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
     coadjointRepresentation ℝ I G n ν = ν := by
-  rw [coadjointRepresentation_eq_dual]
+  rw [coadjointRepresentation_def]
   exact Representation.dual_apply_eq_self_of_mem_dualAnnihilator
     (adjointRepresentation_apply_sub_mem_groupLieSubalgebra hN hn) hν
 

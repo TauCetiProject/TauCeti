@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.RestrictScalars
 
 /-!
@@ -19,7 +20,8 @@ Taking its mate under the pullback--pushforward adjunction constructs a natural 
 for this construction. This supplies the sectionwise input to symmetric-power pullback
 comparisons for sheaves. Restriction of scalars does not generally give an isomorphism of
 symmetric powers; the comparison is invertible when the coefficient presheaf map is an
-isomorphism.
+isomorphism. In degree zero the pushforward comparison is the unit map `S ⟶ α_* R` of the lax
+monoidal pushforward, read through the identifications `Sym⁰ M ≅ R`.
 
 The construction follows the exterior-power comparison
 `TauCeti.PresheafOfModules.pullbackExteriorPowerComparison`: it uses the module-level
@@ -136,6 +138,28 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     erw [SymmetricAlgebra.mapₛₗ_ι]
     rfl
   · exact SymmetricAlgebra.ι_injective _ _
+
+/-- In degree zero, the pushforward comparison is the unit map `S ⟶ α_* R` of the lax monoidal
+pushforward, read through the identifications `Sym⁰ M ≅ R`. -/
+@[reassoc (attr := simp)]
+theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerZeroIso
+    (M : PresheafOfModulesOfCommRing.{u} R) :
+    (pushforwardSymmetricPowerComparison α 0).app M ≫
+        (PresheafOfModulesOfCommRing.pushforward α).map
+          ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R).hom.app M) =
+      (PresheafOfModulesOfCommRing.symmetricPowerZeroIso S).hom.app
+          ((PresheafOfModulesOfCommRing.pushforward α).obj M) ≫
+        Functor.LaxMonoidal.ε (PresheafOfModulesOfCommRing.pushforward α) := by
+  ext U x
+  -- As in degree one, evaluation identifies both pushforward modules with the same underlying
+  -- type only up to unfolding, so the section formulas are rewritten with `erw`.
+  erw [PresheafOfModules.comp_app, ModuleCat.comp_apply, PresheafOfModules.comp_app,
+    ModuleCat.comp_apply, PresheafOfModules.pushforward_map_app_apply,
+    PresheafOfModulesOfCommRing.symmetricPowerZeroIso_hom_app_app M (F.op.obj U),
+    PresheafOfModulesOfCommRing.symmetricPowerZeroIso_hom_app_app
+      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U]
+  exact (TauCeti.ModuleCat.iso₀_hom_restrictScalarsSymmetricPowerComparison_app_apply
+    (α.app U).hom (M.obj (F.op.obj U)) x).trans (pushforward_ε_app_apply F α U _).symm
 
 /-- Pushforward along an isomorphism of coefficient presheaves preserves symmetric powers
 sectionwise. -/
