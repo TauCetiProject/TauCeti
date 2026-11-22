@@ -46,7 +46,8 @@ finite-dimensional `ℚ`-algebra, such as a finite product of CM fields, by the 
 * `TauCeti.CMType.typeTrace_star`: `typeTrace_{ιΦ} a = conj (typeTrace_Φ a)`.
 * `TauCeti.CMType.typeTrace_add_typeTrace_star_eq_trace`: for a number field,
   `typeTrace_Φ + typeTrace_{ιΦ} = Tr_{E/ℚ}`.
-* `TauCeti.CMType.reflexField_star`: `Φ` and `ιΦ` have the same reflex field.
+* `TauCeti.CMType.reflexField_star`: for a CM type on a number field, `Φ` and `ιΦ` have the same
+  reflex field.
 * `TauCeti.CMType.typeTrace_induced`, `TauCeti.CMType.reflexField_induced`: for number fields
   `K ⊆ L`, the type induced on `L` by `Φ₀` has type trace `typeTrace_{Φ₀} ∘ Tr_{L/K}` and the
   reflex field of `Φ₀`.
@@ -119,13 +120,17 @@ traces `∑_{φ ∈ Φ} φ a`, `a ∈ E`. -/
 noncomputable def reflexField (Φ : CMType E) : IntermediateField ℚ ℂ :=
   IntermediateField.adjoin ℚ (Set.range Φ.typeTrace)
 
+theorem reflexField_def (Φ : CMType E) :
+    Φ.reflexField = IntermediateField.adjoin ℚ (Set.range Φ.typeTrace) :=
+  (rfl)
+
 theorem typeTrace_mem_reflexField (Φ : CMType E) (a : E) : Φ.typeTrace a ∈ Φ.reflexField :=
   IntermediateField.subset_adjoin ℚ _ ⟨a, rfl⟩
 
 /-- The reflex field lies in `F` exactly when every type trace does. -/
 theorem reflexField_le_iff {Φ : CMType E} {F : IntermediateField ℚ ℂ} :
     Φ.reflexField ≤ F ↔ ∀ a, Φ.typeTrace a ∈ F := by
-  rw [reflexField, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
+  rw [reflexField_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
   simp only [SetLike.mem_coe]
 
 /-- **The reflex field is the field of definition of the type.** An automorphism `σ` of `ℂ` fixes
