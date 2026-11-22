@@ -427,10 +427,8 @@ theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
     exact eq_sub_iff_add_eq'.mp hadj.symm
   have htwoNB : (2 : R) • (N * B) = (N * B).trace • (1 : Matrix (Fin 2) (Fin 2) R) := by
     rw [two_smul, ← hanti, hcommNB.eq]
-  have hNBtr : (N * B).trace = 0 := by
-    have hsq : (N * B) ^ 2 = 0 := by
-      rw [hcommNB.mul_pow, hNsq, Matrix.zero_mul]
-    exact (Matrix.isNilpotent_trace_of_isNilpotent ⟨2, hsq⟩).eq_zero
+  have hNBtr : (N * B).trace = 0 :=
+    (Matrix.isNilpotent_trace_of_isNilpotent (hcommNB.isNilpotent_mul_right ⟨2, hNsq⟩)).eq_zero
   rw [hNBtr, zero_smul] at htwoNB
   have htwoN : (2 : R) • N = 0 :=
     Matrix.mul_left_injective_of_inv B ((b⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)
