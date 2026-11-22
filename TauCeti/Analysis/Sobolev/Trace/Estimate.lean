@@ -182,17 +182,13 @@ theorem norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff ℝ 1 g) (hs : 
       have hd := norm_fderiv_norm_rpow_le (hg.differentiable one_ne_zero) (x := t) hr1
       rw [← norm_deriv_eq_norm_fderiv, ← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs] at hd
       refine hd.trans ?_
-      -- Weighted AM-GM with weights `(r - 1) / r` and `1 / r`.
-      have hw := Real.geom_mean_le_arith_mean2_weighted
-        (div_nonneg (sub_nonneg.2 hr) (zero_le_one.trans hr))
-        (one_div_nonneg.2 (zero_le_one.trans hr))
-        (Real.rpow_nonneg (norm_nonneg (g t)) r) (Real.rpow_nonneg (norm_nonneg (deriv g t)) r)
-        (by field_simp; ring)
-      rw [← Real.rpow_mul (norm_nonneg _), ← Real.rpow_mul (norm_nonneg _),
-        show r * ((r - 1) / r) = r - 1 by field_simp, show r * (1 / r) = 1 by field_simp,
-        Real.rpow_one] at hw
+      -- Young's inequality with the conjugate exponents `r / (r - 1)` and `r`.
+      have hw := Real.young_inequality_of_nonneg (Real.rpow_nonneg (norm_nonneg (g t)) (r - 1))
+        (norm_nonneg (deriv g t)) (Real.HolderConjugate.conjExponent hr1).symm
+      rw [← Real.rpow_mul (norm_nonneg _), Real.conjExponent,
+        mul_div_cancel₀ _ (sub_ne_zero.2 hr1.ne')] at hw
       calc r * ‖g t‖ ^ (r - 1) * ‖deriv g t‖ = r * (‖g t‖ ^ (r - 1) * ‖deriv g t‖) := by ring
-        _ ≤ r * ((r - 1) / r * ‖g t‖ ^ r + 1 / r * ‖deriv g t‖ ^ r) := by gcongr
+        _ ≤ r * (‖g t‖ ^ r / (r / (r - 1)) + ‖deriv g t‖ ^ r / r) := by gcongr
         _ = (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r := by field_simp
     calc ‖g a‖ ^ r = ∫ t in Ioi a, -deriv (fun t ↦ ‖g t‖ ^ r) t := by
           rw [integral_neg, hi, neg_neg]
