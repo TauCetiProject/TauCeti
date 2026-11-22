@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Rotation
+import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -33,8 +35,9 @@ tame with respect to `e`: `c ‖d e v‖² ≤ ω(v, J_t v)` with `c > 0`.
   For every `C` and `ε > 0` there are `δ > 0` and `η > 0` such that every Floer cylinder `u` on a
   window `(a, b) × ℝ` with `a + η ≤ b - η`, with loops in `K`, `‖d (e ∘ u)‖ ≤ C` and energy less
   than `δ` over `(a, b) × [0, 1]`, stays within `ε` of a single `1`-periodic orbit `x` in `K`,
-  measured through `e`, on `[a + η, b - η] × ℝ`
-  (`IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_isCompact`).
+  measured through `e`, on `[a + η, b - η] × ℝ`, by the theorem
+  `exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_floer_of_isCompact` in the
+  namespace `TauCeti.SmoothTwoForm.IsNondegenerate`.
   The pushforward `d e (X_{H_t})` extends to a continuous field `Y` on `F`, the energy bounds the
   squared `L²` defect of the loops of `e ∘ u` from `y' = Y(t, y)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_norm_sq_sliceDefect_comp_le`), the periodic
@@ -81,6 +84,8 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDime
   [IsManifold I (⊤ : ℕ∞) M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {e : M → F}
 
+namespace IsNondegenerate
+
 /-- **A Floer cylinder of small energy and bounded derivative stays near a single orbit.** Let `ω`
 be a nondegenerate two-form on a manifold `M`, `H` a `C¹` Hamiltonian, `1`-periodic in time, `K`
 a compact set and `e : M → F` a `C¹` map, injective on `K` and with injective differential at the
@@ -93,7 +98,7 @@ solving the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `(a, b) �
 with `c ‖d e v‖² ≤ ω(v, J z v)`, and with `‖d (e ∘ u)‖ ≤ C` on the window. If the energy of `u`
 over `(a, b) × [0, 1]` is less than `δ`, then there is a `1`-periodic orbit `x` in `K` such that
 `e(u(s, t))` is within `ε` of `e(x(t))` for all `s ∈ [a + η, b - η]` and all `t`. -/
-theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_isCompact
+theorem exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_floer_of_isCompact
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
@@ -150,6 +155,8 @@ theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_di
   obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy hyK
   exact ⟨x, hx, hxK, hyd⟩
 
+end IsNondegenerate
+
 omit [FiniteDimensional ℝ F] in
 /-- On a compact manifold, the pushforwards `d e (X_{H_t})` of the Hamiltonian vector fields of a
 `C¹` Hamiltonian `H`, `1`-periodic in time, by a `C¹` map `e : M → F` are uniformly bounded. -/
@@ -157,43 +164,32 @@ private theorem IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorFie
     [CompactSpace M] (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
     ∃ B, ∀ t x, ‖mvfderiv I e x (ω.hamiltonianVectorField (H t) x)‖ ≤ B := by
-  have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-    (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-      (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
-        (by simpa using hH)).continuous
   obtain ⟨B, hB⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).prod
-    (isCompact_univ (X := M))).exists_bound_of_continuousOn hXe.continuousOn
+    (isCompact_univ (X := M))).exists_bound_of_continuousOn
+      (hω.continuous_mvfderiv_hamiltonianVectorField hH he).continuousOn
   refine ⟨B, fun t x ↦ ?_⟩
   obtain ⟨t', ht', hHt⟩ := hHper.exists_mem_Ico₀ one_pos t
   rw [hHt]
   exact hB (t', x) ⟨Ico_subset_Icc_self ht', mem_univ x⟩
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- A structure `J` on `T_x M` with `c ‖d e v‖² ≤ ω(v, J v)` for some `c > 0`, where `d e` is
-injective at `x`, is tamed by `ω`. -/
-private theorem IsNondegenerate.tames_of_mul_norm_sq_le (hω : ω.IsNondegenerate) {x : M}
-    (hde : Injective (mvfderiv I e x)) {c : ℝ} (hc : 0 < c)
-    {J : AlmostComplexStructure (TangentSpace I x)}
-    (hJc : ∀ v, c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J v)) :
-    (hω.symplecticFormAt x).Tames J := fun v hv ↦
-  (mul_pos hc (pow_pos (norm_pos_iff.2 fun h ↦ hv (hde (h.trans (map_zero _).symm))) 2)).trans_le
-    (hJc v)
+/-- The pushforward by `e` of the Hamiltonian vector field of the zero Hamiltonian is bounded by
+`max B 0`, for every `B`. -/
+private theorem norm_mvfderiv_hamiltonianVectorField_zero_le (B : ℝ) (x : M) :
+    ‖mvfderiv I e x (ω.hamiltonianVectorField (fun _ ↦ 0) x)‖ ≤ max B 0 := by
+  rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero, norm_zero]
+  exact le_max_right B 0
 
-omit [FiniteDimensional ℝ E] in
-/-- For a Hamiltonian of period one in time, the Floer energy density of a cylinder of period one
-in `t` has period one in `t`. -/
-private theorem floerEnergyDensity_add_one (hHper : Periodic H 1) {u : ℝ × ℝ → M}
-    (hper : ∀ s t, u (s, t + 1) = u (s, t)) (s t : ℝ) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t + 1) =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
-  have hu1 : (fun w ↦ u (w + ((0 : ℝ), (1 : ℝ)))) = u :=
-    funext fun ⟨s, t⟩ ↦ by simpa using hper s t
-  have hH1 : (fun w : ℝ × ℝ ↦ H (w + ((0 : ℝ), (1 : ℝ))).2) = fun w ↦ H w.2 :=
-    funext fun w ↦ by simpa using hHper w.2
-  have h := ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-    ((0 : ℝ), (1 : ℝ)) (s, t)
-  simp only [hu1, hH1, Prod.mk_add_mk, add_zero] at h
-  exact h.symm
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [IsManifold I (⊤ : ℕ∞) M] in
+/-- For `s₀ ∈ [a + 1, b - 1]`, the translation by `(s₀, 0)` maps the window
+`(-1, 1) × (-1/2, 3/2)` into `(a, b) × [-1, 2]`. -/
+private theorem mapsTo_add_ball {a b s₀ : ℝ} (hs₀ : s₀ ∈ Icc (a + 1) (b - 1)) :
+    MapsTo (· + (s₀, (0 : ℝ))) (ball ((0 : ℝ), (1 / 2 : ℝ)) 1) (Ioo a b ×ˢ Icc (-1) 2) := by
+  rintro ⟨s, t⟩ hz
+  rw [← ball_prod_same, Real.ball_eq_Ioo, Real.ball_eq_Ioo] at hz
+  obtain ⟨⟨h1, h2⟩, h3, h4⟩ := hz
+  simp only [Prod.mk_add_mk, add_zero, mem_prod, mem_Ioo, mem_Icc]
+  exact ⟨⟨by linarith [hs₀.1], by linarith [hs₀.2]⟩, by linarith, by linarith⟩
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The Floer energy of the translate `(s, t) ↦ u(s + s₀, t)` of a cylinder of period one in `t`
@@ -210,28 +206,20 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le (hHper : Periodic 
     ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)
   have hmeas : MeasurableSet (Ioo a b ×ˢ (univ : Set ℝ)) :=
     measurableSet_Ioo.prod MeasurableSet.univ
-  -- The window, translated by `(s₀, 0)`, lies in `(a, b) × [-1, 2]`.
-  have hsub : ball ((0 : ℝ), (1 / 2 : ℝ)) 1 ⊆
-      (· + (s₀, (0 : ℝ))) ⁻¹' (Ioo a b ×ˢ Icc (-1) 2) := by
-    intro z hz
-    rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt] at hz
-    obtain ⟨⟨h1, h2⟩, h3, h4⟩ := hz
-    exact ⟨⟨by simp only [Prod.fst_add]; linarith [hs₀.1], by simp only [Prod.fst_add]; linarith
-      [hs₀.2]⟩, by simp only [Prod.snd_add]; linarith, by simp only [Prod.snd_add]; linarith⟩
-  have hv : MeasurePreserving (· + (s₀, (0 : ℝ))) volume volume :=
-    (measurePreserving_add_right volume s₀).prod (measurePreserving_add_right volume 0)
+  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
+    (s₀, 0) (Ioo a b ×ˢ Icc (-1) 2)
+  simp only [Prod.snd_add, add_zero] at htr
   -- Restricted to `(a, b) × ℝ`, the energy density is still of period one in `t`.
   have hgper (s t : ℝ) : (Ioo a b ×ˢ univ).indicator g (s, t + 1) =
       (Ioo a b ×ˢ univ).indicator g (s, t) := by
-    simp only [indicator, mem_prod, mem_univ, and_true, g, floerEnergyDensity_add_one hHper hper]
+    simp only [indicator, mem_prod, mem_univ, and_true, g, ω.floerEnergyDensity_add_one hHper hper]
+  -- The window, translated by `(s₀, 0)`, lies in `(a, b) × [-1, 2]`.
   calc ∫⁻ w in ball ((0 : ℝ), (1 / 2 : ℝ)) 1, ENNReal.ofReal (ω.floerEnergyDensity
           (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w)
-      = ∫⁻ w in ball ((0 : ℝ), (1 / 2 : ℝ)) 1, g (w + (s₀, 0)) := by
-        simp only [g, floerEnergyDensity_cylindrical_comp_add_right]
-    _ ≤ ∫⁻ w in (· + (s₀, (0 : ℝ))) ⁻¹' (Ioo a b ×ˢ Icc (-1) 2), g (w + (s₀, 0)) :=
-        lintegral_mono_set hsub
-    _ = ∫⁻ z in Ioo a b ×ˢ Icc (-1) 2, g z :=
-        hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) g _
+      ≤ ∫⁻ w in (· + (s₀, (0 : ℝ))) ⁻¹' (Ioo a b ×ˢ Icc (-1) 2), ENNReal.ofReal
+          (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w) :=
+        lintegral_mono_set (mapsTo_add_ball hs₀)
+    _ = ∫⁻ z in Ioo a b ×ˢ Icc (-1) 2, g z := htr
     _ = ∫⁻ z in univ ×ˢ Icc (-1) 2, (Ioo a b ×ˢ univ).indicator g z := by
         rw [setLIntegral_indicator hmeas, prod_inter_prod, univ_inter, inter_univ]
     _ ≤ 3 * ∫⁻ z in univ ×ˢ Icc 0 1, (Ioo a b ×ˢ univ).indicator g z :=
@@ -253,11 +241,8 @@ private theorem contMDiffOn_and_isComplexLinearMap_perturbedMFDeriv_comp_add
         (J w.2 (u (w + (s₀, 0))))
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
           (fun w ↦ u (w + (s₀, 0))) w).toLinearMap := by
-  have hmaps : MapsTo (· + (s₀, (0 : ℝ))) (ball ((0 : ℝ), (1 / 2 : ℝ)) 1) (Ioo a b ×ˢ univ) := by
-    intro w hw
-    rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, abs_lt] at hw
-    exact ⟨⟨by simp only [Prod.fst_add]; linarith [hs₀.1, hw.1.1],
-      by simp only [Prod.fst_add]; linarith [hs₀.2, hw.1.2]⟩, mem_univ _⟩
+  have hmaps : MapsTo (· + (s₀, (0 : ℝ))) (ball ((0 : ℝ), (1 / 2 : ℝ)) 1) (Ioo a b ×ˢ univ) :=
+    (mapsTo_add_ball hs₀).mono_right (prod_mono le_rfl (subset_univ _))
   refine ⟨hu.comp (contDiff_id.add contDiff_const).contMDiff.contMDiffOn hmaps, fun w hw ↦ ?_⟩
   have h2 : (w + (s₀, (0 : ℝ))).2 = w.2 := by simp
   have h := hfl _ (hmaps hw)
@@ -343,9 +328,7 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
     (isCompact_closedBall ((0 : ℝ), (1 / 2 : ℝ)) 1) (subset_univ _) hJ
     (fun α ↦ by rw [hamiltonianVectorFieldInChartAt_zero]; exact contDiffOn_const) hX
     (fun z _ x ↦ hJt z.2 x) hc (fun z _ x v ↦ hJc z.2 x v) (B := max B 0)
-    (fun _ _ x ↦ by
-      rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero, norm_zero]
-      exact le_max_right B 0)
+    (fun _ _ x ↦ norm_mvfderiv_hamiltonianVectorField_zero_le B x)
     (fun z _ x ↦ (hB z.2 x).trans (le_max_left _ _))
   refine ⟨δ / 4, by positivity, ?_⟩
   by_contra! hA
@@ -355,7 +338,7 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
   -- By periodicity in `t`, the points can be taken in `{sₖ} × [0, 1)`.
   have hred (k : ℕ) : ∃ t ∈ Ico (0 : ℝ) 1, ρ k (z k) = ρ k ((z k).1, t) :=
     Periodic.exists_mem_Ico₀ (f := fun t ↦ ρ k ((z k).1, t))
-      (fun t ↦ floerEnergyDensity_add_one hHper (hper k) (z k).1 t) one_pos (z k).2
+      (fun t ↦ ω.floerEnergyDensity_add_one hHper (hper k) (z k).1 t) one_pos (z k).2
   choose t ht htz using hred
   -- Translate each cylinder by `(sₖ, 0)`; the points become `wₖ = (0, tₖ)`, with a limit `w₀`.
   set v : ℕ → ℝ × ℝ → M := fun k w ↦ u k (w + ((z k).1, 0))
@@ -367,9 +350,8 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
     (x := fun k ↦ ((0 : ℝ), t k)) fun k ↦ ⟨rfl, (ht k).1, (ht k).2.le⟩
   have hw₀Ω : w₀ ∈ ball ((0 : ℝ), (1 / 2 : ℝ)) 1 := by
     obtain ⟨h0, h1, h2⟩ := hw₀
-    rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt,
-      show w₀.1 = 0 from h0]
-    exact ⟨by norm_num, by constructor <;> linarith⟩
+    rw [← ball_prod_same, Real.ball_eq_Ioo, Real.ball_eq_Ioo]
+    exact ⟨by rw [show w₀.1 = 0 from h0]; norm_num, by linarith, by linarith⟩
   -- The densities of the translates blow up at `wₖ → w₀`.
   have hblow : Tendsto (fun n ↦ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (v (φ n))
       ((0 : ℝ), t (φ n))) atTop atTop := by
@@ -430,7 +412,7 @@ theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_di
     hJ hX (fun _ ↦ he.mdifferentiableAt one_ne_zero) he_inj hde hc hJc hB
   -- Nondegenerate orbits are isolated, so necks with bounded derivative stay near one orbit.
   obtain ⟨δ₀, hδ₀, η, hη, hneck⟩ :=
-    hω.exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_isCompact
+    hω.exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_floer_of_isCompact
       (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p)
       (fun x hx _ ↦ (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hx
         (hnd x hx)).mono fun _ hp y hy _ ↦ hp y hy) hc (2 * (√(A / c) + max B 0)) hε
@@ -444,9 +426,7 @@ theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_di
     hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he.mdifferentiableAt one_ne_zero)
       ((hu.contMDiffAt (hU.mem_nhds ⟨hsub hz.1, mem_univ _⟩)).mdifferentiableAt (by norm_num))
       (hJc z.2 (u z))
-      (by
-        rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero, norm_zero]
-        exact le_max_right B 0)
+      (norm_mvfderiv_hamiltonianVectorField_zero_le B (u z))
       ((hB z.2 (u z)).trans (le_max_left _ _))
       (hfl z ⟨hsub hz.1, mem_univ _⟩) (hρ z ⟨hz.1.1.le, hz.1.2.le⟩)
   obtain ⟨x, hx, -, hxd⟩ := hneck (a := a + 1) (b := b - 1) (by linarith)
