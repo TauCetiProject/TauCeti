@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Probability.Moments.SubGaussian
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Moment- and cumulant-generating functions of Gaussian linear functionals
@@ -18,7 +19,10 @@ This file proves that every almost everywhere measurable continuous linear funct
 Gaussian measure has finite exponential moments of every real order and computes its
 moment-generating function. It then specializes the general result to inner products against a
 multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form,
-and computes the corresponding cumulant-generating function.
+and computes the corresponding cumulant-generating function. It also computes the
+moment-generating function of a linear combination of independent real Gaussian variables, in
+particular of a linear form `y ⬝ᵥ g` of a vector `g` with independent Gaussian coordinates; this
+is the auxiliary Gaussian integral in the decoupling proof of the Hanson–Wright inequality.
 
 The general results require no norm on the source space. Almost everywhere measurability of
 the functional suffices; the default proof handles continuous functionals when open sets are
@@ -41,6 +45,12 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
+* `ProbabilityTheory.iIndepFun.mgf_sum_mul_gaussianReal` computes the moment-generating function
+  of `∑ i ∈ s, y i * X i` for independent real Gaussian variables `X i`, and
+  `TauCeti.Probability.mgf_dotProduct_pi_gaussianReal` specializes it to a linear form under a
+  finite product of real Gaussian laws.
+* `TauCeti.Probability.integrable_exp_mul_sum_mul_gaussianReal` says that such a linear
+  combination has finite exponential moments of every order, even without independence.
 * `TauCeti.Probability.integral_exp_int_mul_sin_gaussianReal` shows that the sine at frequency
   `2π` is orthogonal to every integer-exponent exponential under the standard Gaussian law.
 * `TauCeti.Probability.integral_cos_gaussianReal` computes the cosine transform of a real Gaussian
@@ -60,6 +70,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped NNReal
 
 namespace ProbabilityTheory
 
@@ -101,10 +112,38 @@ theorem lintegral_ofReal_exp_mul_dual (L : StrongDual ℝ E) (t : ℝ)
 
 end IsGaussian
 
+namespace iIndepFun
+
+variable {Ω γ : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : γ → Ω → ℝ}
+  {μ : γ → ℝ} {v : γ → ℝ≥0}
+
+/-- The moment-generating function of a linear combination `∑ i ∈ s, y i * X i` of independent
+real Gaussian variables `X i ∼ N(μ i, v i)` is that of the Gaussian law with mean
+`∑ i ∈ s, y i * μ i` and variance `∑ i ∈ s, v i * y i ^ 2`. Only the variables indexed by `s`
+need be independent and Gaussian. -/
+theorem mgf_sum_mul_gaussianReal {s : Finset γ} (hInd : iIndepFun (s.restrict X) P)
+    (hLaw : ∀ i ∈ s, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (y : γ → ℝ) (r : ℝ) :
+    mgf (fun ω ↦ ∑ i ∈ s, y i * X i ω) P r =
+      Real.exp (r * ∑ i ∈ s, y i * μ i + r ^ 2 / 2 * ∑ i ∈ s, (v i : ℝ) * y i ^ 2) := by
+  -- The scaled variables are still independent, so the mgf factors over the summands.
+  have h := (hInd.comp (fun i x ↦ y i * x) fun i ↦ measurable_const_mul (y i)).mgf_sum₀
+    (fun i ↦ (hLaw i i.property).aemeasurable.const_mul (y i)) Finset.univ (t := r)
+  rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib, Real.exp_sum,
+    ← Finset.prod_coe_sort s]
+  convert h using 1
+  · congr 1
+    ext ω
+    simp [Function.comp_def, Finset.restrict, Finset.sum_attach s fun i ↦ y i * X i ω]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [Function.comp_def, mgf_const_mul, Finset.restrict, mgf_gaussianReal (hLaw i i.property)]
+  ring_nf
+
+end iIndepFun
+
 end ProbabilityTheory
 
 open ProbabilityTheory
-open scoped RealInnerProductSpace NNReal
+open scoped RealInnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -140,6 +179,39 @@ theorem gaussian_x_exp_integrable (a : ℝ) :
     Integrable (fun x : ℝ => x * Real.exp (a * x)) (gaussianReal 0 1) := by
   simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet
     (X := fun x : ℝ => x) (μ := gaussianReal 0 1) (by simp) 1
+
+/-- A linear combination `∑ i ∈ s, y i * X i` of real Gaussian variables `X i` has finite
+exponential moments of every real order `r`: the function `ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is
+integrable. The variables need not be independent, and only those indexed by `s` need be Gaussian.
+The measure need be finite only for the empty sum, whose integrand is the constant `1`; otherwise
+the law of any summand makes it a probability measure. -/
+theorem integrable_exp_mul_sum_mul_gaussianReal {Ω γ : Type*} {mΩ : MeasurableSpace Ω}
+    {P : Measure Ω} {X : γ → Ω → ℝ} {μ : γ → ℝ} {v : γ → ℝ≥0}
+    (s : Finset γ) (hfinite : s = ∅ → IsFiniteMeasure P)
+    (hLaw : ∀ i ∈ s, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (y : γ → ℝ) (r : ℝ) :
+    Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · have := hfinite rfl
+    simp
+  -- Hölder's inequality with every exponent equal to the number of summands.
+  have hcard : (0 : ℝ) < s.card := mod_cast hs.card_pos
+  refine integrable_exp_mul_sum_of_integrable_exp_mul (p := fun _ ↦ (s.card : ℝ))
+    (fun _ _ ↦ hcard) (by simp [hcard.ne']) fun i hi ↦ ?_
+  simpa only [mul_assoc] using (hLaw i hi).integrable_fun_comp
+    (integrable_exp_mul_gaussianReal (s.card * r * y i))
+
+/-- The moment-generating function of a linear form `g ↦ y ⬝ᵥ g` under a finite product of
+real Gaussian laws `gaussianReal (μ l) (v l)`, that is, for a vector of independent Gaussian
+coordinates. -/
+theorem mgf_dotProduct_pi_gaussianReal {γ : Type*} [Fintype γ] (y μ : γ → ℝ) (v : γ → ℝ≥0)
+    (r : ℝ) :
+    mgf (fun g : γ → ℝ ↦ y ⬝ᵥ g) (Measure.pi fun l ↦ gaussianReal (μ l) (v l)) r =
+      Real.exp (r * (y ⬝ᵥ μ) + r ^ 2 / 2 * ∑ l, (v l : ℝ) * y l ^ 2) := by
+  -- The coordinate projections are independent, with the factor laws as their laws.
+  have hInd : iIndepFun (fun l (g : γ → ℝ) ↦ g l) (Measure.pi fun l ↦ gaussianReal (μ l) (v l)) :=
+    iIndepFun_pi fun _ ↦ aemeasurable_id
+  simpa only [dotProduct] using (hInd.restrict Finset.univ).mgf_sum_mul_gaussianReal
+    (fun l _ ↦ (measurePreserving_eval (fun l ↦ gaussianReal (μ l) (v l)) l).hasLaw) y r
 
 /-- The sine at frequency `2π` is orthogonal under the standard Gaussian law to every
 exponential with an integer exponent. -/

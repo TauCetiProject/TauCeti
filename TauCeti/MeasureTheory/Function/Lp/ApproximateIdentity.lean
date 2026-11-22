@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import Mathlib.MeasureTheory.Function.Holder
@@ -64,6 +65,9 @@ the set where convergence is measured.
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
   convolution of a function in `Lᵖ` with these bumps.
+* `TauCeti.tendsto_eLpNorm_apply_normed_convolution_sub`: for a continuous compactly supported
+  function, the mollification error stays small in `Lᵖ` after applying a continuous field of
+  operators.
 * `ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top`: weak-star convergence
   for bounded fields tested against integrable fields through a continuous bilinear map.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`: finite-`Lᵖ` convergence on a set
@@ -305,6 +309,45 @@ theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l 
   filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
     with x h₁ h₂
   rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
+
+open scoped Pointwise in
+/-- The error of mollifying a continuous compactly supported `k`, after applying a continuous
+operator field `b`, tends to zero in `Lᵖ`. -/
+theorem tendsto_eLpNorm_apply_normed_convolution_sub [CompleteSpace F] {F' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] (hp : p ≠ ∞) {b : E → F →L[ℝ] F'}
+    (hb : Continuous b) {k : E → F} (hkc : HasCompactSupport k) (hk : Continuous k) {I : Type*}
+    {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) :
+    Tendsto (fun i ↦ eLpNorm (fun x ↦ b x (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x - k x)) p mu)
+      l (nhds 0) := by
+  -- Once `rOut ≤ 1` the error is supported in the compact set `closedBall 0 1 + tsupport k`,
+  -- where `b` is bounded.
+  set K' := closedBall (0 : E) 1 + tsupport k
+  obtain ⟨C, hC⟩ :=
+    ((isCompact_closedBall 0 1).add hkc).exists_bound_of_continuousOn hb.continuousOn
+  have hlim := ENNReal.Tendsto.const_mul (tendsto_eLpNorm_normed_convolution_sub hp hphi
+    (hk.memLp_of_hasCompactSupport hkc (μ := mu))) (Or.inr (ENNReal.ofReal_ne_top (r := C)))
+  rw [mul_zero] at hlim
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ ↦ bot_le) ?_
+  filter_upwards [hphi.eventually (eventually_le_nhds one_pos)] with i hi
+  have hconv : Continuous fun x ↦ ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x - k x :=
+    ((phi i).hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ)
+      (phi i).continuous_normed hk.locallyIntegrable).sub hk
+  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p (hb.clm_apply hconv).aestronglyMeasurable
+    (Eventually.of_forall fun x ↦ ?_)
+  by_cases hx : x ∈ K'
+  · refine (le_opENorm _ _).trans (mul_le_mul_left ?_ _)
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (hC x hx)
+  · -- Off `K'` both `k` and its mollification vanish.
+    have h0 : k x = 0 := image_eq_zero_of_notMem_tsupport fun hxk ↦
+      hx ⟨0, mem_closedBall_self zero_le_one, x, hxk, zero_add x⟩
+    have h0' : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] k) x = 0 :=
+      image_eq_zero_of_notMem_tsupport fun hx' ↦ hx <| Set.add_subset_add
+        (closedBall_subset_closedBall hi) subset_rfl
+        ((phi i).tsupport_normed_convolution_subset hx')
+    simp [h0, h0']
 
 /-- **Mollification converges in `L¹`.** For an integrable `f` and normalized smooth bumps
 `phi i` centred at zero whose outer radii tend to zero, `∫ ‖(phi i).normed mu ⋆ f - f‖ → 0`. This

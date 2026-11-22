@@ -84,7 +84,8 @@ theorem contMDiffOn_reebVectorField_mpullback_prodMk (α : SmoothForm (J.prod I)
         p.2⟩ : TangentBundle I M)) (U ×ˢ Set.univ) := fun p hp ↦
   (contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
-    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦ hc q.1 hq)
+    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 (hc q.1 hq) q.2)
     (contMDiff_mpullback_prodMk α p)
     (contMDiff_mextDeriv_mpullback_prodMk α p)).contMDiffWithinAt
 
@@ -116,7 +117,8 @@ theorem contMDiffAt_apply_reebVectorField_mpullback_prodMk
     (contMDiff_mpullback_prodMk β p)
   have hR := contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
-    (continuous_fst.continuousAt.eventually hc) (contMDiff_mpullback_prodMk α p)
+    ((continuous_fst.continuousAt.eventually hc).mono fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 hq q.2) (contMDiff_mpullback_prodMk α p)
     (contMDiff_mextDeriv_mpullback_prodMk α p)
   simpa [degreeOneEquiv_apply_apply_vec] using hβ.clm_bundle_apply_scalar hR
 

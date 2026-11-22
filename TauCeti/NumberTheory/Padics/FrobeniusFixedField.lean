@@ -62,7 +62,10 @@ variable {K : Type*} [NontriviallyNormedField K] (σ : K →+* K)
 `ℚ_[p]`-algebra `K`, as an intermediate field of `K / ℚ_[p]`. -/
 noncomputable def padicFixedField (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K]
     (hσ : Continuous σ) : IntermediateField ℚ_[p] K :=
-  (σ.eqLocusField (RingHom.id K)).toIntermediateField (σ.map_algebraMap_padic_of_continuous hσ)
+  (σ.eqLocusField (RingHom.id K)).toIntermediateField
+    (DFunLike.congr_fun (RingHom.ext_padic_of_continuous (σ.comp (algebraMap ℚ_[p] K))
+      (algebraMap ℚ_[p] K) (hσ.comp (continuous_algebraMap ℚ_[p] K))
+      (continuous_algebraMap ℚ_[p] K)))
 
 variable {σ} {p : ℕ} [Fact p.Prime] [NormedAlgebra ℚ_[p] K] (hσ : Continuous σ)
 
