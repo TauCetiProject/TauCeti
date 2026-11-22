@@ -46,7 +46,8 @@ identity to `1`, compositions to products and inverses, or left inverses, to inv
   `Ψ` in a symplectic basis indexed by `Fin m ⊕ Fin m`, which exists by
   `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`. It equals the index of the matrices of
   `Ψ` in *every* such basis (`TauCeti.SymplecticForm.conleyZehnderIndex_eq`), since `2 m` is the
-  dimension of `V`.
+  dimension of `V`: a quantity that does not depend on the symplectic basis for a fixed index type
+  does not depend on it at all (`TauCeti.SymplecticForm.eq_of_basis_invariant`).
 * **Naturality.** A linear symplectomorphism `e : (V, ω) ≃ (W, ω')` carries a path `Ψ` to the path
   `e ∘ Ψ ∘ e⁻¹` of the same index (`TauCeti.SymplecticForm.conleyZehnderIndex_map_conj`): it
   carries symplectic bases to symplectic bases without changing matrices. This is the invariance
@@ -301,6 +302,25 @@ theorem matrixPath_trans_apply {b : Basis (ι ⊕ ι) ℝ V}
 
 /-! ### The Conley–Zehnder index -/
 
+omit [FiniteDimensional ℝ V] in
+/-- **Basis-invariant quantities agree on all symplectic bases.** A quantity `F` computed from a
+symplectic basis indexed by `Fin k ⊕ Fin k`, which takes the same value on any two such bases
+with the same `k`, takes the same value on symplectic bases indexed by `Fin k ⊕ Fin k` and by
+`Fin m ⊕ Fin m`: both bases have `2 k = 2 m` elements, the dimension of `V`. -/
+theorem eq_of_basis_invariant {α : Sort*}
+    (F : ∀ k : ℕ, (c : Basis (Fin k ⊕ Fin k) ℝ V) →
+      LinearMap.BilinForm.toMatrix c ω.toBilinForm = J (Fin k) ℝ → α)
+    (hF : ∀ k c c' hc hc', F k c hc = F k c' hc') {k m : ℕ} {c : Basis (Fin k ⊕ Fin k) ℝ V}
+    {b : Basis (Fin m ⊕ Fin m) ℝ V}
+    (hc : LinearMap.BilinForm.toMatrix c ω.toBilinForm = J (Fin k) ℝ)
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J (Fin m) ℝ) :
+    F k c hc = F m b hb := by
+  have h₁ := finrank_eq_card_basis c
+  have h₂ := finrank_eq_card_basis b
+  simp only [Fintype.card_sum, Fintype.card_fin] at h₁ h₂
+  obtain rfl : k = m := by omega
+  exact hF _ _ _ _ _
+
 /-- **The Conley–Zehnder index of a path of linear symplectic maps.** For a path `Ψ` of linear
 maps of a finite-dimensional symplectic vector space `(V, ω)` preserving `ω`, this is the
 Conley–Zehnder index of the path of its matrices in a symplectic basis indexed by `Fin m ⊕ Fin m`.
@@ -317,18 +337,9 @@ maps is the Conley–Zehnder index of its matrices in any symplectic basis index
 theorem conleyZehnderIndex_eq {m : ℕ} {b : Basis (Fin m ⊕ Fin m) ℝ V}
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J (Fin m) ℝ) {A B : V →L[ℝ] V}
     (Ψ : Path A B) (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v) :
-    ω.conleyZehnderIndex Ψ hΨ = GLSymplectic.conleyZehnderIndex (ω.matrixPath hb Ψ hΨ) := by
-  -- A symplectic basis indexed by `Fin k ⊕ Fin k` has `k = m`, since `V` has dimension `2 k`.
-  have key (k : ℕ) (c : Basis (Fin k ⊕ Fin k) ℝ V)
-      (hc : LinearMap.BilinForm.toMatrix c ω.toBilinForm = J (Fin k) ℝ) :
-      GLSymplectic.conleyZehnderIndex (ω.matrixPath hc Ψ hΨ) =
-        GLSymplectic.conleyZehnderIndex (ω.matrixPath hb Ψ hΨ) := by
-    have h₁ := finrank_eq_card_basis c
-    have h₂ := finrank_eq_card_basis b
-    simp only [Fintype.card_sum, Fintype.card_fin] at h₁ h₂
-    obtain rfl : k = m := by omega
-    exact ω.conleyZehnderIndex_matrixPath_eq hb hc Ψ hΨ
-  exact key _ _ _
+    ω.conleyZehnderIndex Ψ hΨ = GLSymplectic.conleyZehnderIndex (ω.matrixPath hb Ψ hΨ) :=
+  ω.eq_of_basis_invariant (fun _ _ hc ↦ GLSymplectic.conleyZehnderIndex (ω.matrixPath hc Ψ hΨ))
+    (fun _ _ _ hc hc' ↦ ω.conleyZehnderIndex_matrixPath_eq hc' hc Ψ hΨ) _ hb
 
 /-- The Conley–Zehnder index of a path of linear symplectic maps only depends on the path as a
 function of time, not on the way its endpoints are written. -/

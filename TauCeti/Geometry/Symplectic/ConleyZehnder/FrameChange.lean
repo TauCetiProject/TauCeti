@@ -101,18 +101,9 @@ maps is the Maslov index of its matrices in any symplectic basis indexed by `Fin
 theorem maslovIndex_eq {m : ℕ} {b : Basis (Fin m ⊕ Fin m) ℝ V}
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J (Fin m) ℝ) {A : V →L[ℝ] V}
     (g : Path A A) (hg : ∀ t u v, ω (g t u) (g t v) = ω u v) :
-    ω.maslovIndex g hg = GLSymplectic.maslovIndex (ω.matrixPath hb g hg) := by
-  -- A symplectic basis indexed by `Fin k ⊕ Fin k` has `k = m`, since `V` has dimension `2 k`.
-  have key (k : ℕ) (c : Basis (Fin k ⊕ Fin k) ℝ V)
-      (hc : LinearMap.BilinForm.toMatrix c ω.toBilinForm = J (Fin k) ℝ) :
-      GLSymplectic.maslovIndex (ω.matrixPath hc g hg) =
-        GLSymplectic.maslovIndex (ω.matrixPath hb g hg) := by
-    have h₁ := finrank_eq_card_basis c
-    have h₂ := finrank_eq_card_basis b
-    simp only [Fintype.card_sum, Fintype.card_fin] at h₁ h₂
-    obtain rfl : k = m := by omega
-    exact ω.maslovIndex_matrixPath_eq hb hc g hg
-  exact key _ _ _
+    ω.maslovIndex g hg = GLSymplectic.maslovIndex (ω.matrixPath hb g hg) :=
+  ω.eq_of_basis_invariant (fun _ _ hc ↦ GLSymplectic.maslovIndex (ω.matrixPath hc g hg))
+    (fun _ _ _ hc hc' ↦ ω.maslovIndex_matrixPath_eq hc' hc g hg) _ hb
 
 /-- The Maslov index of a loop of linear symplectic maps only depends on the loop as a function
 of time, not on the way its base point is written. -/
