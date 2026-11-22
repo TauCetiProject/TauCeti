@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
-public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Branch
@@ -151,14 +151,6 @@ noncomputable def torusFamilyLogTwistEquiv (μ : Λ) :
   simp only [torusFamilyLogTwistEquiv, Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply,
     torusFamilyLogTwistMap_symm]
 
-/-- The punctured logarithmic twist preserves the family projection to `Y`. -/
-theorem torusFamilyProjection_torusFamilyLogTwistEquiv (μ : Λ)
-    (y : letI := periodAddAction P
-      {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :
-    torusFamilyProjection P (torusFamilyLogTwistEquiv φ P μ y).val =
-      torusFamilyProjection P y.val :=
-  torusFamilyProjection_torusFamilyLogTwistMap φ P μ y.val
-
 end LogTwist
 
 /-! ### `C^n` and holomorphic logarithmic twist diffeomorphisms -/
@@ -199,8 +191,8 @@ theorem contMDiffAt_torusFamilyLogTwistMap (μ : Λ)
   have hx'y : φ y ≠ 0 := by
     have h : φ (torusFamilyProjection P ⟦(y, e)⟧) ≠ 0 := hx'
     rwa [torusFamilyProjection_mk] at h
-  rw [torusFamilyGauge_mk,
-    torusFamilyLogTwistMap_mk_of_exp_eq φ P μ (exp_log_add_log_div hx hx'y) e]
+  rw [torusFamilyGauge_mk, torusFamilyLogTwistMap_mk_of_exp_eq φ P μ
+    (by simpa using Complex.exp_log_add_inv_mul_log_div_pow (m := 1) hx hx'y) e]
 
 /-- The punctured logarithmic twist is `C^n` on the open submanifold `{φ ∘ p ≠ 0}`. -/
 private theorem contMDiff_torusFamilyLogTwistEquiv (μ : Λ) :
@@ -302,13 +294,6 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   let _ := Opens.instChartedSpace (H := ModelProd H E)
     (torusFamilyNonzeroOpens φ P hφ.continuous)
   exact Diffeomorph.toEquiv_injective (torusFamilyLogTwistEquiv_symm φ P μ)
-
-/-- The logarithmic twist diffeomorphism preserves the family projection to `Y`. -/
-theorem torusFamilyProjection_torusFamilyLogTwistDiffeomorph (μ : Λ)
-    (y : torusFamilyNonzeroOpens φ P hφ.continuous) :
-    torusFamilyProjection P (torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ y).val =
-      torusFamilyProjection P y.val :=
-  torusFamilyProjection_torusFamilyLogTwistEquiv φ P μ y
 
 end LogTwistDiffeomorph
 

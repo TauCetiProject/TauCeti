@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
-public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Branch
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
@@ -74,6 +73,13 @@ open scoped Real
 
 namespace TauCeti
 
+/-- Moving a natural-number factor out of a vector into the numerator of
+`(a / (2 * π * I)) • (m • v)`. -/
+theorem div_two_pi_I_smul_nsmul {E : Type*} [AddCommGroup E] [Module ℂ E]
+    (a : ℂ) (m : ℕ) (v : E) :
+    (a / (2 * π * I)) • (m • v) = (((m : ℂ) * a) / (2 * π * I)) • v := by
+  rw [← Nat.cast_smul_eq_nsmul ℂ, smul_smul, div_mul_eq_mul_div, mul_comm a (m : ℂ)]
+
 section
 
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type*} [AddCommGroup E]
@@ -84,6 +90,7 @@ variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type
 variable (m r) in
 /-- The pullback of a family of periods over the disc of radius `r ^ m` along the power map
 `z ↦ z ^ m` from the disc of radius `r`: the periods at `z` are those of `P` at `z ^ m`. -/
+@[expose]
 noncomputable def powPullbackPeriod : rootsOfUnityBall m r → Λ →ₗ[ℤ] E :=
   fun z ↦ P (rootsOfUnityBall.powMap m r z)
 
@@ -261,7 +268,7 @@ theorem logTranslationSection_add_nsmul (l μ : Λ) (ζ : rootsOfUnity m ℂ)
   have h := torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq (powPullbackPeriod m r P) μ hexp
     (ζ • z) ((log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l)
   simpa [logTranslationSection, powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul,
-    ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, mul_div_assoc, mul_comm _ (m : ℂ)] using h
+    div_two_pi_I_smul_nsmul _ m] using h
 
 /-- The normalized translation action depends only on the class of `l` modulo `mΛ`. -/
 theorem logTranslationMulAction_add_nsmul (l μ : Λ) :
@@ -346,23 +353,6 @@ descended base coordinate `t = z ^ m`. -/
   obtain ⟨x, rfl⟩ := Quotient.exists_rep q
   rw [logTranslationQuotientAddNsmulEquiv_mk, torusFamilyCyclicQuotientProjection_mk,
     torusFamilyCyclicQuotientProjection_mk]
-
-/-- The punctured cyclic quotient `{t ≠ 0}` as an open subset of the orbit space `Q = X / C_m`. -/
-@[expose, reducible]
-noncomputable def logTranslationQuotientNonzeroOpens [TopologicalSpace E] (l : Λ) :
-    letI := periodAddAction (powPullbackPeriod m r P)
-    letI := logTranslationMulAction P l
-    TopologicalSpace.Opens (orbitRel.Quotient (rootsOfUnity m ℂ)
-      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
-  letI := periodAddAction (powPullbackPeriod m r P)
-  letI := logTranslationMulAction P l
-  ⟨{q | torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-      (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-      (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-      (logTranslationSection_mul P l) q ≠ 0},
-    isOpen_ne_fun (continuous_torusFamilyCyclicQuotientProjection _ _ _ _ _ _ _ _ _)
-      continuous_const⟩
 
 end NormalizedAction
 
@@ -721,10 +711,8 @@ private theorem continuousAt_torusFamilyLogGauge_out
       (rootsOfUnityBall.powMap m r p.1,
         p.2 - (L p.1 / (2 * π * I)) • P (rootsOfUnityBall.powMap m r p.1) l)) ?_ ?_
   · have hLc : ContinuousAt (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) :=
-      continuousAt_const.add (((continuous_subtypeVal.comp continuous_fst).div_const _
-        ).continuousAt.clog (by
-          simp only [Function.comp_apply, div_self hz₀]
-          exact one_mem_slitPlane))
+      ContinuousAt.comp (g := L) (contDiffAt_log_add_log_div (n := 0) hz₀).continuousAt
+        (continuous_subtypeVal.comp continuous_fst).continuousAt
     have hpow := rootsOfUnityBall.continuous_powMap (m := m) (r := r)
     exact continuous_quotient_mk'.continuousAt.comp ((hpow.comp continuous_fst).continuousAt.prodMk
       (continuousAt_snd.sub ((hLc.div_const _).smul
@@ -732,7 +720,8 @@ private theorem continuousAt_torusFamilyLogGauge_out
   · filter_upwards [hopen.mem_nhds hz₀] with p hp
     obtain ⟨z, e⟩ := p
     rw [Function.comp_apply, torusFamilyLogGauge_out (by rwa [torusFamilyProjection_mk]),
-      torusFamilyLogGauge_mk_of_exp_eq P l (exp_log_add_log_div hz₀ hp)]
+      torusFamilyLogGauge_mk_of_exp_eq P l
+        (by simpa using Complex.exp_log_add_inv_mul_log_div_pow (m := 1) hz₀ hp)]
 
 include hcont in
 /-- The inverse of the logarithmic gauge is continuous on the punctured family. -/
@@ -804,7 +793,11 @@ noncomputable def torusFamilyLogGaugeHomeomorph :
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    logTranslationQuotientNonzeroOpens P l ≃ₜ
+    torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+        (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+        (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+        (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+        (logTranslationSection_mul P l) ≃ₜ
       torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal :=
   letI := periodAddAction P
   letI := periodAddAction (powPullbackPeriod m r P)

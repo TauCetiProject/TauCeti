@@ -43,6 +43,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
 ## Main definitions
 
 * `TauCeti.torusFamilyCyclicQuotientProjection`: the map `Q → ℂ` descended from `[z, v] ↦ z ^ m`.
+* `TauCeti.torusFamilyCyclicQuotientNonzeroOpens`: the punctured cyclic quotient `{t ≠ 0}` as an
+  open subset of `Q`.
 
 ## Main results
 
@@ -191,6 +193,19 @@ theorem continuous_torusFamilyCyclicQuotientProjection [TopologicalSpace E] :
   rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift]
   exact continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
     (continuous_subtypeVal.pow m)
+
+/-- The punctured cyclic quotient `{t ≠ 0}` as an open subset of the orbit space `Q = X / C_m`. -/
+@[expose, reducible]
+noncomputable def torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E] :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    TopologicalSpace.Opens (orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  letI := periodAddAction P
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  ⟨{q | torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul q ≠ 0},
+    isOpen_ne_fun (continuous_torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul)
+      continuous_const⟩
 
 /-! ### Holomorphy of the coordinate `t` -/
 

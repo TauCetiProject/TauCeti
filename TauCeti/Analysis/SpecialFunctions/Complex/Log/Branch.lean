@@ -14,12 +14,10 @@ For any `a : ℂ`, the branch `v ↦ a + Complex.log (v / Complex.exp a)` centre
 (over `ℂ`, hence holomorphic) wherever `v / Complex.exp a ∈ Complex.slitPlane`
 (`Complex.contDiffAt_logBranch`). Specializing at `a = Complex.log z₀` for `z₀ ≠ 0` gives the
 centered branch `z ↦ Complex.log z₀ + Complex.log (z / z₀)`, which avoids the principal branch cut
-near `z₀` (`Complex.contDiffAt_log_add_log_div`) and satisfies `exp (log z₀ + log (z / z₀)) = z`
-for every `z ≠ 0` (`Complex.exp_log_add_log_div`).
+near `z₀` (`Complex.contDiffAt_log_add_log_div`).
 
 ## Main declarations
 
-* `Complex.exp_log_add_log_div`: `exp (log z₀ + log (z / z₀)) = z` for nonzero `z₀` and `z`.
 * `Complex.contDiffAt_logBranch`: `v ↦ a + log (v / exp a)` is `C^n` where `v / exp a ∈ slitPlane`.
 * `Complex.contDiffAt_log_add_log_div`: the centered logarithm branch is `C^n` at `z₀ ≠ 0`.
 -/
@@ -27,12 +25,6 @@ for every `z ≠ 0` (`Complex.exp_log_add_log_div`).
 public section
 
 namespace Complex
-
-/-- The centered branch `z ↦ log z₀ + log (z / z₀)` satisfies `exp (log z₀ + log (z / z₀)) = z`
-for all nonzero `z₀` and `z`. -/
-theorem exp_log_add_log_div {z₀ z : ℂ} (hz₀ : z₀ ≠ 0) (hz : z ≠ 0) :
-    exp (log z₀ + log (z / z₀)) = z := by
-  rw [exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
 
 /-- The branch `v ↦ a + log (v / exp a)` of the logarithm centred at `a` is `C^n` (over `ℂ`, hence
 holomorphic) wherever `v / exp a` lies in the slit plane. -/
