@@ -195,7 +195,6 @@ private theorem ker_cubicLinearCLM {R : ℝ} (hR : 0 < R) :
   rw [LinearMap.ker_eq_bot']
   rintro ⟨δu, δζ, δη⟩ hx
   have h0 : (0 : ℂ) ∈ ball (0 : ℂ) R := mem_ball_self hR
-  have h0cb : (0 : ℂ) ∈ closedBall (0 : ℂ) R := ball_subset_closedBall h0
   let q₁ : discAlgebra 0 R :=
     DiscAlgebra.coord 0 R * δu - algebraMap ℂ (discAlgebra 0 R) δζ
   have h_eq1 : (DiscAlgebra.coord 0 R - algebraMap ℂ (discAlgebra 0 R) 0) * q₁ +
@@ -203,22 +202,16 @@ private theorem ker_cubicLinearCLM {R : ℝ} (hR : 0 < R) :
     rw [← hx]
     apply Subtype.ext
     ext z
-    simp only [q₁, map_zero, sub_zero, ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe,
-      Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_sub, Algebra.algebraMap_eq_smul_one,
-      Subalgebra.coe_smul, Subalgebra.coe_one, ContinuousMap.add_apply, ContinuousMap.mul_apply,
-      ContinuousMap.sub_apply, ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul,
-      mul_one, DiscAlgebra.coord_apply]
+    rw [← DiscAlgebra.extend_apply _ z, ← DiscAlgebra.extend_apply _ z]
+    simp [q₁, cubicLinearCLM, sq]
     ring
   obtain ⟨hq₁, hη⟩ := (DiscAlgebra.coord_sub_algebraMap_mul_add_eq_iff h0).1 h_eq1
-  simp only [map_zero] at hq₁
-  rw [DiscAlgebra.extend_apply _ ⟨0, h0cb⟩, Subalgebra.coe_zero, ContinuousMap.zero_apply] at hη
+  simp only [map_zero, DiscAlgebra.extend_zero, Pi.zero_apply] at hq₁ hη
   have h_eq2 : (DiscAlgebra.coord 0 R - algebraMap ℂ (discAlgebra 0 R) 0) * δu +
       algebraMap ℂ (discAlgebra 0 R) (-δζ) = 0 := by
     simpa [q₁, map_zero, sub_zero, map_neg, sub_eq_add_neg] using hq₁
   obtain ⟨hδu, hζ⟩ := (DiscAlgebra.coord_sub_algebraMap_mul_add_eq_iff h0).1 h_eq2
-  simp only [map_zero] at hδu
-  rw [DiscAlgebra.extend_apply _ ⟨0, h0cb⟩, Subalgebra.coe_zero, ContinuousMap.zero_apply,
-    neg_eq_zero] at hζ
+  simp only [map_zero, DiscAlgebra.extend_zero, Pi.zero_apply, neg_eq_zero] at hδu hζ
   simp [hδu, hζ, hη]
 
 private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
@@ -241,13 +234,12 @@ private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
       simpa [u₁] using h
     apply Subtype.ext
     ext z
-    have h1z := congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) z) h1
-    have h2z := congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) z) h2
-    simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Algebra.algebraMap_eq_smul_one,
-      Subalgebra.coe_smul, Subalgebra.coe_one, ContinuousMap.add_apply, ContinuousMap.mul_apply,
-      ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul, mul_one,
-      DiscAlgebra.coord_apply] at h1z h2z
-    rw [ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe]
+    have h1z := congrArg (fun f : discAlgebra 0 R => DiscAlgebra.extend f z.val) h1
+    have h2z := congrArg (fun f : discAlgebra 0 R => DiscAlgebra.extend f z.val) h2
+    simp only [DiscAlgebra.extend_add, DiscAlgebra.extend_mul, Pi.add_apply, Pi.mul_apply,
+      DiscAlgebra.extend_coord z.property, DiscAlgebra.extend_algebraMap _ z.property] at h1z h2z
+    rw [ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe, ← DiscAlgebra.extend_apply u z,
+      ← DiscAlgebra.extend_apply u₂ z]
     linear_combination h1z + z.val * h2z
 
 /-- The nonlinear cubic normal-form operator `(u, (ζ, η)) ↦ u ^ 3 / 3 - ζ u + η` on
@@ -357,7 +349,7 @@ private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCom
     DiscAlgebra.analyticAt_extend_of_analyticAt (mem_ball_self hR)
       (((ContinuousLinearMap.fst ℂ (discAlgebra 0 R) (ℂ × ℂ)).analyticAt _).comp hΦ_an)
   have hW0_slice : ∀ s ∈ closedBall (0 : ℂ) R, W (0, s) = s := fun s hs => by
-    simp [W, hΦ0, x₀, DiscAlgebra.extend_apply _ ⟨s, hs⟩]
+    simp [W, hΦ0, x₀, hs]
   have hW_deriv : deriv (fun s => W (0, s)) 0 = 1 := by
     have heq : (fun s => W (0, s)) =ᶠ[𝓝 0] id := by
       filter_upwards [closedBall_mem_nhds (0 : ℂ) hR] with s hs using hW0_slice s hs

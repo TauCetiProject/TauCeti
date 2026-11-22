@@ -151,17 +151,53 @@ theorem extend_apply_of_notMem (f : discAlgebra c R) {z : ℂ} (hz : z ∉ close
   rintro ⟨w, rfl⟩
   exact hz w.property
 
+/-- Zero extension sends `0` to `0`. -/
+@[simp]
+theorem extend_zero : extend (0 : discAlgebra c R) = 0 := by
+  simp [extend, ← Pi.zero_def]
+
 /-- Zero extension commutes with addition. -/
 @[simp]
 theorem extend_add (f g : discAlgebra c R) : extend (f + g) = extend f + extend g := by
   simpa [extend, ← Pi.zero_def] using
     Function.extend_add Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
+/-- Zero extension commutes with negation. -/
+@[simp]
+theorem extend_neg (f : discAlgebra c R) : extend (-f) = -extend f := by
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_neg Subtype.val (f : C(closedBall c R, ℂ)) 0
+
+/-- Zero extension commutes with subtraction. -/
+@[simp]
+theorem extend_sub (f g : discAlgebra c R) : extend (f - g) = extend f - extend g := by
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_sub Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
+
 /-- Zero extension commutes with complex scalar multiplication. -/
 @[simp]
 theorem extend_smul (a : ℂ) (f : discAlgebra c R) : extend (a • f) = a • extend f := by
   simpa [extend, ← Pi.zero_def] using
     Function.extend_smul a Subtype.val (f : C(closedBall c R, ℂ)) 0
+
+/-- Zero extension commutes with multiplication. -/
+@[simp]
+theorem extend_mul (f g : discAlgebra c R) : extend (f * g) = extend f * extend g := by
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_mul Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
+
+/-- On `closedBall c R`, the zero extension of `1` is `1`. -/
+@[simp]
+theorem extend_one {z : ℂ} (hz : z ∈ closedBall c R) :
+    extend (1 : discAlgebra c R) z = 1 := by
+  rw [extend_apply _ ⟨z, hz⟩, Subalgebra.coe_one, ContinuousMap.one_apply]
+
+/-- On `closedBall c R`, the zero extension of `algebraMap ℂ (discAlgebra c R) a` is `a`. -/
+@[simp]
+theorem extend_algebraMap (a : ℂ) {z : ℂ} (hz : z ∈ closedBall c R) :
+    extend (algebraMap ℂ (discAlgebra c R) a) z = a := by
+  rw [Algebra.algebraMap_eq_smul_one, extend_smul, Pi.smul_apply, extend_one hz, smul_eq_mul,
+    mul_one]
 
 /-- The zero extension is continuous on `closedBall c R`. -/
 theorem continuousOn_extend (f : discAlgebra c R) :
@@ -204,6 +240,12 @@ def coord (c : ℂ) (R : ℝ) : discAlgebra c R :=
 @[simp]
 theorem coord_apply (c : ℂ) (R : ℝ) (z : closedBall c R) :
     (coord c R : C(closedBall c R, ℂ)) z = z := (rfl)
+
+/-- On `closedBall c R`, the zero extension of `coord c R` is the identity. -/
+@[simp]
+theorem extend_coord {z : ℂ} (hz : z ∈ closedBall c R) :
+    extend (coord c R) z = z :=
+  extend_of id continuousOn_id differentiableOn_id hz
 
 /-- Underlying linear map for `DiscAlgebra.dslope`. -/
 private noncomputable def dslopeLinear {a : ℂ} (ha : a ∈ ball c R) :
