@@ -65,6 +65,8 @@ No topology is put on the colimit of the spaces `𝓛ⁿM`: the statement is abo
   §16.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §4.3.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
+  coefficients*, arXiv:2308.06104, §13.2, Propositions 13.2.2 and 13.2.3.
 -/
 
 public section
@@ -101,7 +103,7 @@ def cyclicDistanceCutCocone (hlt : ∀ n i, δ n i < r) (h0 : 0 ≤ δ 0 0)
     fun n ↦ by
       ext q : 2
       have h := cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst hr (hlt n)
-        (hlt (n + 1)) (hδ n 0 0) (h0.trans (le_of_lt_of_forall_le_succ hδ n.succ_pos 0 1))
+        (hlt (n + 1)) (hδ n 0 0) (h0.trans (cutoff_le_of_forall_le_succ_of_lt hδ n.succ_pos 0 1))
         (fun _ ↦ hδ n _ _) q
       rw [← cyclicDistanceCutFunctor_map_homOfLE_succ M h0 hδ] at h
       -- Both sides are the composites of the maps in `TopCat`, applied to `q`.
@@ -137,14 +139,14 @@ theorem exists_comp_homotopic_cyclicDistanceCutFunctor_map (hpos : 0 < δ 0 0)
   -- At the stage `n + N + 1` every cut-off is at least `δ 0 0`, and the samples of `L` lie in the
   -- distance cut.
   have hmaps := hN (n + (N + 1)) (by omega) (δ (n + (N + 1)))
-    fun i ↦ le_of_lt_of_forall_le_succ hδ (by omega) 0 i
+    fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i
   -- Every cut-off of the stage `n` is at most every cut-off of the stage `n + N + 1`.
   have hm (j : Fin (n + (N + 1) + 1)) :
       ∑ i, δ n i ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by
     have hj : 0 ≤ δ (n + (N + 1)) j :=
-      hpos.le.trans (le_of_lt_of_forall_le_succ hδ (by omega) 0 j)
+      hpos.le.trans (cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 j)
     calc ∑ i, δ n i ≤ ∑ _ : Fin (n + 1), δ (n + (N + 1)) j :=
-          Finset.sum_le_sum fun i _ ↦ le_of_lt_of_forall_le_succ hδ (by omega) i j
+          Finset.sum_le_sum fun i _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) i j
       _ = ((n + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by simp
       _ ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j :=
           mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega)) hj
@@ -160,14 +162,17 @@ theorem exists_comp_homotopic_cyclicDistanceCutFunctor_map (hpos : 0 < δ 0 0)
     ContinuousMap.ext fun _ ↦
       Subtype.ext (coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr (hlt n) _ hm _).symm
   rw [he, cyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ n (N + 1)
-    (le_sub_of_forall_le_succ hδ n (N + 1))]
+    (cutoff_sub_le_of_forall_le_succ hδ n (N + 1))]
   exact ((homotopic_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic hr (hlt n)
-    (le_sub_of_forall_le_succ hδ n (N + 1)) hm).comp (ContinuousMap.Homotopic.refl _)).symm
+    (cutoff_sub_le_of_forall_le_succ hδ n (N + 1)) hm).comp (ContinuousMap.Homotopic.refl _)).symm
 
 /-- **The singular homology of the free loop space is the colimit of the singular homology of the
 distance cuts.** For cut-offs `δ n i < r` which grow from each stage to the next,
 `δ n i ≤ δ (n + 1) j`, and with `δ 0 0` positive, the broken-geodesic maps `geoⁿ : 𝓛ⁿM → 𝓛M`
-induce an isomorphism `colimₙ Hₘ(𝓛ⁿM; V) ≅ Hₘ(𝓛M; V)`, with coefficients in any module `V`. -/
+induce an isomorphism `colimₙ Hₘ(𝓛ⁿM; V) ≅ Hₘ(𝓛M; V)`, with coefficients in any module `V`.
+This follows the colimit over the approximations by broken geodesics of Barraud, Damian,
+Humilière and Oancea, *Morse homology with differential graded coefficients*, §13.2
+(Propositions 13.2.2 and 13.2.3), here in singular homology. -/
 def isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone {A : Type u} [Ring A]
     (V : ModuleCat.{u} A) (m : ℕ) (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r)
     (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) :
@@ -178,7 +183,7 @@ def isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone {A : Type u} [Ring
       -- Compact families of free loops are homotopic to broken geodesics through their samples.
       obtain ⟨N, hN⟩ := exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr hK hpos
       obtain ⟨e, -, he⟩ := hN (N + 1) (by omega) (δ (N + 1))
-        (fun i ↦ le_of_lt_of_forall_le_succ hδ N.succ_pos 0 i) (hlt (N + 1))
+        (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ N.succ_pos 0 i) (hlt (N + 1))
       exact ⟨N + 1, e, by rwa [cyclicDistanceCutCocone_ι_app_hom]⟩)
     fun n K L _ hL hKL ↦ by
       -- The leg of the cocone at `n` is `geoⁿ`.
