@@ -81,9 +81,9 @@ private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
     rw [smul_smul, hcoef, mul_smul]
   simp_rw [hterm]
   rw [Finset.sum_comm]
-  have hα_lt (i : ι) : α i < m :=
+  have hmem_lt {γ : ι → ℕ} (hγ : γ ∈ univ.piAntidiag k) (i : ι) : γ i < m :=
     (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ i)).trans_lt
-      (Nat.lt_succ_self k)
+      ((mem_piAntidiag.1 hγ).1.trans_lt (Nat.lt_succ_self k))
   have hα_mem : α ∈ univ.piAntidiag k := mem_piAntidiag.2 ⟨rfl, by simp⟩
   calc ∑ β ∈ univ.piAntidiag k,
         ∑ j : ι → Fin m,
@@ -96,10 +96,7 @@ private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
           (if β = α then (m : ℂ) ^ Fintype.card ι else 0) •
             ((∏ i, ρ i ^ β i) • p.mvCoeff β) := by
         refine Finset.sum_congr rfl fun β hβ ↦ ?_
-        have hβ_lt (i : ι) : β i < m :=
-          (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ i)).trans_lt
-            ((mem_piAntidiag.1 hβ).1.trans_lt (Nat.lt_succ_self k))
-        rw [hprim.sum_prod_pow_mul_inv_pow_eq hα_lt hβ_lt]
+        rw [hprim.sum_prod_pow_mul_inv_pow_eq (hmem_lt hα_mem) (hmem_lt hβ)]
     _ = ((m : ℂ) ^ Fintype.card ι) • ((∏ i, ρ i ^ α i) • p.mvCoeff α) := by
         rw [Finset.sum_eq_single α]
         · simp
