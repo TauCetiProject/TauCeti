@@ -162,23 +162,6 @@ theorem murrayVonNeumannEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjecti
 theorem murrayVonNeumannEquiv_self_iff : MurrayVonNeumannEquiv p p ↔ IsStarProjection p :=
   ⟨MurrayVonNeumannEquiv.isStarProjection_left, MurrayVonNeumannEquiv.refl⟩
 
-/-- For equal matrix sizes, two matrices are Murray–von Neumann equivalent if and only if they
-are the initial and final projections of some partial isometry. -/
-theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A} :
-    MurrayVonNeumannEquiv p q ↔
-      ∃ v : CStarMatrix m m A, TauCeti.IsPartialIsometry v ∧ star v * v = p ∧
-        v * star v = q := by
-  constructor
-  · intro h
-    obtain ⟨v, hv, hv', hvp⟩ := h.exists_matrix_mul_eq_self
-    simp only [← star_eq_conjTranspose] at hv hv'
-    refine ⟨v, ?_, hv, hv'⟩
-    rw [TauCeti.isPartialIsometry_iff, mul_assoc, hv]
-    exact hvp
-  · rintro ⟨v, hv, rfl, rfl⟩
-    exact ⟨hv.isStarProjection_star_mul_self, hv.isStarProjection_mul_star_self, v,
-      by rw [star_eq_conjTranspose], by rw [star_eq_conjTranspose]⟩
-
 /-- Only the zero projection is equivalent to a zero projection, in any matrix size. -/
 @[simp]
 theorem murrayVonNeumannEquiv_zero_iff :

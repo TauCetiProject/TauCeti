@@ -70,6 +70,8 @@ theorem isAdjointPair_toCLM_conjTranspose (M : CStarMatrix m n A) :
 /-- Rectangular C⋆-identity `‖M.conjTranspose * M‖ = ‖M‖ ^ 2`. -/
 @[simp] theorem norm_conjTranspose_mul_self (M : CStarMatrix m n A) :
     ‖M.conjTranspose * M‖ = ‖M‖ ^ 2 := by simpa using norm_self_mul_conjTranspose M.conjTranspose
+/-- Simultaneous row and column relabeling by an equivalence preserves the square matrix operator
+norm. -/
 @[simp] theorem norm_reindexₐ [Semiring R] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) :
     ‖reindexₐ R A e M‖ = ‖M‖ :=
   (by ext; simp : reindexₐ R A e M = reindexₐ ℂ A e M) ▸ StarAlgEquiv.norm_map (reindexₐ ℂ A e) M
@@ -98,11 +100,21 @@ variable {m n X A : Type*} [TopologicalSpace X] [NonUnitalCStarAlgebra A]
 @[fun_prop] theorem continuous_ofMatrix :
     Continuous (ofMatrix : Matrix m n A → CStarMatrix m n A) := by
   rw [ofMatrix_eq_ofMatrixL]; exact ofMatrixL.continuous
+/-- `CStarMatrix.ofMatrix.symm` agrees with
+`(ofMatrixL : Matrix m n A ≃L[ℂ] CStarMatrix m n A).symm`. -/
+theorem ofMatrix_symm_eq_ofMatrixL_symm :
+    (ofMatrix.symm : CStarMatrix m n A → Matrix m n A) =
+      (ofMatrixL : Matrix m n A ≃L[ℂ] CStarMatrix m n A).symm := by
+  funext M
+  refine ofMatrix.injective ?_
+  calc
+    ofMatrix (ofMatrix.symm M) = M := ofMatrix.apply_symm_apply M
+    _ = ofMatrixL (ofMatrixL.symm M) := (ofMatrixL.apply_symm_apply M).symm
+    _ = ofMatrix (ofMatrixL.symm M) := congrFun ofMatrix_eq_ofMatrixL.symm (ofMatrixL.symm M)
 /-- `CStarMatrix.ofMatrix.symm` is continuous. -/
 @[fun_prop] theorem continuous_ofMatrix_symm :
-    Continuous (ofMatrix.symm : CStarMatrix m n A → Matrix m n A) :=
-  (show (ofMatrix.symm : CStarMatrix m n A → Matrix m n A) = ofMatrixL.symm from funext fun _ =>
-    ofMatrix.injective (by simp [ofMatrix_eq_ofMatrixL])) ▸ ofMatrixL.symm.continuous
+    Continuous (ofMatrix.symm : CStarMatrix m n A → Matrix m n A) := by
+  rw [ofMatrix_symm_eq_ofMatrixL_symm]; exact ofMatrixL.symm.continuous
 /-- A map into `CStarMatrix m n A` is continuous iff every entry function is continuous. -/
 theorem continuous_iff {f : X → CStarMatrix m n A} :
     Continuous f ↔ ∀ i j, Continuous fun x => f x i j :=

@@ -356,8 +356,8 @@ instance subsingleton_of_empty_right [IsEmpty n] : Subsingleton (CStarMatrix m n
 @[simp] theorem conjTranspose_of [Star A] (f : Matrix m n A) :
     (ofMatrix f).conjTranspose = ofMatrix fᴴ := (rfl)
 /-- A self-adjoint square `CStarMatrix` equals its conjugate transpose. -/
-theorem conjTranspose_eq_of_isSelfAdjoint [Star A] {M : CStarMatrix n n A} (hM : IsSelfAdjoint M) :
-    M.conjTranspose = M := by rw [← star_eq_conjTranspose, hM.star_eq]
+theorem _root_.IsSelfAdjoint.conjTranspose_eq [Star A] {M : CStarMatrix n n A}
+    (hM : IsSelfAdjoint M) : M.conjTranspose = M := by rw [← star_eq_conjTranspose, hM.star_eq]
 /-- Scalars pull out of both factors in a rectangular `CStarMatrix` product. -/
 protected theorem smul_mul_smul [Fintype m] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [IsScalarTower R A A] [SMulCommClass R A A] (a b : R)

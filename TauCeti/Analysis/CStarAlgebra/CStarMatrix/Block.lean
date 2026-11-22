@@ -71,7 +71,8 @@ def toBlocks₂₂ : CStarMatrix o n A := ofMatrix (ofMatrix.symm M).toBlocks₂
 @[simp] theorem toBlocks₂₁_apply (i : o) (j : l) : M.toBlocks₂₁ i j = M (.inr i) (.inl j) := (rfl)
 @[simp] theorem toBlocks₂₂_apply (i : o) (j : n) : M.toBlocks₂₂ i j = M (.inr i) (.inr j) := (rfl)
 /-- Reassembling the four extracted blocks of `M` recovers `M`. -/
-theorem fromBlocks_toBlocks : fromBlocks M.toBlocks₁₁ M.toBlocks₁₂ M.toBlocks₂₁ M.toBlocks₂₂ = M :=
+@[simp] theorem fromBlocks_toBlocks :
+    fromBlocks M.toBlocks₁₁ M.toBlocks₁₂ M.toBlocks₂₁ M.toBlocks₂₂ = M :=
   ofMatrix.symm.injective (Matrix.fromBlocks_toBlocks (ofMatrix.symm M))
 @[simp] theorem toBlocks₁₁_add [Add A] : (M + N).toBlocks₁₁ = M.toBlocks₁₁ + N.toBlocks₁₁ := (rfl)
 @[simp] theorem toBlocks₁₂_add [Add A] : (M + N).toBlocks₁₂ = M.toBlocks₁₂ + N.toBlocks₁₂ := (rfl)
@@ -158,13 +159,13 @@ variable (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A)
 @[simp] theorem map_fromBlocks (f : A → B) : (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂).map f =
     fromBlocks (M₁₁.map f) (M₁₂.map f) (M₂₁.map f) (M₂₂.map f) := by ext (_ | _) (_ | _) <;> rfl
 /-- Block-by-block multiplication of `CStarMatrix.fromBlocks`. -/
-theorem fromBlocks_mul [Fintype l] [Fintype n] [NonUnitalNonAssocSemiring A]
+theorem fromBlocks_mul [Fintype l] [Fintype n] [AddCommMonoid A] [Mul A]
     (N₁₁ : CStarMatrix l k A) (N₁₂ : CStarMatrix l p A)
     (N₂₁ : CStarMatrix n k A) (N₂₂ : CStarMatrix n p A) :
     fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ * fromBlocks N₁₁ N₁₂ N₂₁ N₂₂ =
       fromBlocks (M₁₁ * N₁₁ + M₁₂ * N₂₁) (M₁₁ * N₁₂ + M₁₂ * N₂₂)
-        (M₂₁ * N₁₁ + M₂₂ * N₂₁) (M₂₁ * N₁₂ + M₂₂ * N₂₂) :=
-  ofMatrix.symm.injective (Matrix.fromBlocks_multiply _ _ _ _ _ _ _ _)
+        (M₂₁ * N₁₁ + M₂₂ * N₂₁) (M₂₁ * N₁₂ + M₂₂ * N₂₂) := by
+  ext (_ | _) (_ | _) <;> simp [mul_apply, Fintype.sum_sum_type]
 end
 @[simp] theorem fromBlocks_inj {M₁₁ N₁₁ : CStarMatrix m l A} {M₁₂ N₁₂ : CStarMatrix m n A}
     {M₂₁ N₂₁ : CStarMatrix o l A} {M₂₂ N₂₂ : CStarMatrix o n A} :
@@ -209,12 +210,12 @@ def fromRows : CStarMatrix (m ⊕ o) l A :=
     fromRows M₁ M₂ * N = fromRows (M₁ * N) (M₂ * N) := by ext (_ | _) _ <;> simp [mul_apply]
 /-- Inner product of two vertical row stacks as a sum of `l × n` products. -/
 @[simp] theorem conjTranspose_fromRows_mul_fromRows [Fintype m] [Fintype o]
-    [NonUnitalNonAssocSemiring A] [Star A] (N₁ : CStarMatrix m n A) (N₂ : CStarMatrix o n A) :
+    [AddCommMonoid A] [Mul A] [Star A] (N₁ : CStarMatrix m n A) (N₂ : CStarMatrix o n A) :
     (fromRows M₁ M₂).conjTranspose * fromRows N₁ N₂ =
       M₁.conjTranspose * N₁ + M₂.conjTranspose * N₂ := by
   ext; simp [mul_apply, Fintype.sum_sum_type]
 /-- Outer product of two vertical row stacks as a four-block `CStarMatrix`. -/
-theorem fromRows_mul_conjTranspose_fromRows [Fintype l] [NonUnitalNonAssocSemiring A] [Star A]
+theorem fromRows_mul_conjTranspose_fromRows [Fintype l] [AddCommMonoid A] [Mul A] [Star A]
     (N₁ : CStarMatrix k l A) (N₂ : CStarMatrix p l A) :
     fromRows M₁ M₂ * (fromRows N₁ N₂).conjTranspose = fromBlocks (M₁ * N₁.conjTranspose)
       (M₁ * N₂.conjTranspose) (M₂ * N₁.conjTranspose) (M₂ * N₂.conjTranspose) := by
@@ -236,7 +237,7 @@ end
 @[simp] theorem fromRows_smul [SMul R A] (r : R) (M₁ : CStarMatrix m l A) (M₂ : CStarMatrix o l A) :
     r • fromRows M₁ M₂ = fromRows (r • M₁) (r • M₂) := by ext (_ | _) _ <;> rfl
 /-- Action of a four-block `CStarMatrix` on a vertical row stack. -/
-@[simp] theorem fromBlocks_mul_fromRows [Fintype l] [Fintype n] [NonUnitalNonAssocSemiring A]
+@[simp] theorem fromBlocks_mul_fromRows [Fintype l] [Fintype n] [AddCommMonoid A] [Mul A]
     (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A) (M₂₁ : CStarMatrix o l A)
     (M₂₂ : CStarMatrix o n A) (N₁ : CStarMatrix l k A) (N₂ : CStarMatrix n k A) :
     fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ * fromRows N₁ N₂ =
@@ -332,6 +333,30 @@ variable [Semiring R] [AddCommMonoid A] [Module R A]
     (M : CStarMatrix m m A) (N : CStarMatrix n n A) :
     reindexₐ R A (.sumComm m n) (blockSum M N) = blockSum N M := by ext (_ | _) (_ | _) <;> rfl
 end
+/-- Conjugating `blockSum (blockSum M₁ M₂) M₃` by `permMatrix A (Equiv.sumAssoc l m n)`
+reassociates the blocks to `blockSum M₁ (blockSum M₂ M₃)`. -/
+theorem permMatrix_conj_sumAssoc_blockSum [Fintype l] [Fintype m] [Fintype n]
+    [DecidableEq l] [DecidableEq m] [DecidableEq n] [NonAssocSemiring A] [StarRing A]
+    (M₁ : CStarMatrix l l A) (M₂ : CStarMatrix m m A) (M₃ : CStarMatrix n n A) :
+    (permMatrix A (Equiv.sumAssoc l m n)).conjTranspose * blockSum (blockSum M₁ M₂) M₃ *
+      permMatrix A (Equiv.sumAssoc l m n) = blockSum M₁ (blockSum M₂ M₃) := by
+  rw [permMatrix_conj_eq_reindexₐ (R := ℕ), reindexₐ_sumAssoc_blockSum]
+/-- Conjugating `blockSum M N` by `permMatrix A (.sumComm m n)` swaps the blocks to
+`blockSum N M`. -/
+theorem permMatrix_conj_sumComm_blockSum [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [NonAssocSemiring A] [StarRing A]
+    (M : CStarMatrix m m A) (N : CStarMatrix n n A) :
+    (permMatrix A (Equiv.sumComm m n)).conjTranspose * blockSum M N *
+      permMatrix A (Equiv.sumComm m n) = blockSum N M := by
+  rw [permMatrix_conj_eq_reindexₐ (R := ℕ), reindexₐ_sumComm_blockSum]
+/-- Decompose a four-block `CStarMatrix` into a diagonal `blockSum` plus a column-swapped
+off-diagonal `blockSum`. -/
+theorem fromBlocks_eq_blockSum_add_reindexₗ (R : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+    (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A)
+    (M₂₁ : CStarMatrix o l A) (M₂₂ : CStarMatrix o n A) :
+    fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ = blockSum M₁₁ M₂₂ +
+      reindexₗ R A (.refl _) (.sumComm n l) (blockSum M₁₂ M₂₁) := by
+  ext (_ | _) (_ | _) <;> simp [Matrix.reindex, Matrix.submatrix]
 section
 variable [Fintype m] [Fintype n] [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
 /-- `blockSum` bundled as a non-unital `⋆`-algebra homomorphism on square matrix algebras. -/
@@ -403,9 +428,14 @@ end
     r • amplify k M = amplify k (r • M) := by ext i j; by_cases h : i.1 = j.1 <;> simp [h]
 @[simp] theorem amplify_mul [Fintype k] [Fintype m] [NonUnitalNonAssocSemiring A]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    amplify k M * amplify k N = amplify k (M * N) := ofMatrix.symm.injective <| by
-  simpa [Matrix.blockDiagonal_mul] using
-    Matrix.submatrix_mul_equiv _ _ _ (Equiv.prodComm m k).symm _
+    amplify k M * amplify k N = amplify k (M * N) := by
+  ext ⟨i₁, i₂⟩ ⟨j₁, j₂⟩
+  simp only [mul_apply, amplify_apply, Fintype.sum_prod_type]
+  rw [Finset.sum_eq_single i₁]
+  · simp
+  · intro b _ hb
+    simp [hb.symm]
+  · simp
 @[simp] theorem amplify_pow [Fintype k] [Fintype n] [DecidableEq n] [Semiring A]
     (M : CStarMatrix n n A) (r : ℕ) : amplify k M ^ r = amplify k (M ^ r) := by
   induction r with | zero => simp | succ r ih => rw [pow_succ, ih, amplify_mul, pow_succ]
@@ -541,25 +571,32 @@ theorem norm_toBlocks₁₁_le : ‖M.toBlocks₁₁‖ ≤ ‖M‖ := by
     (CStarModule.norm_inner_le _).trans (by gcongr; exact (toCLM M).le_opNorm _)
   simpa [hinner, ← norm_def, hv', hw', mul_assoc, mul_left_comm, mul_comm] using hle
 /-- Extracting the upper-right block does not increase the operator norm. -/
-theorem norm_toBlocks₁₂_le : ‖M.toBlocks₁₂‖ ≤ ‖M‖ :=
-  (show M.toBlocks₁₂ = (reindexₗ ℂ A (.refl _) (.sumComm l n) M).toBlocks₁₁ by ext; rfl) ▸
-    (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
+theorem norm_toBlocks₁₂_le : ‖M.toBlocks₁₂‖ ≤ ‖M‖ := by
+  have h : M.toBlocks₁₂ = (reindexₗ ℂ A (.refl _) (.sumComm l n) M).toBlocks₁₁ := by
+    ext i j
+    simp [toBlocks₁₂_apply, toBlocks₁₁_apply, reindexₗ_apply]; rfl
+  rw [h]
+  exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 /-- Extracting the lower-left block does not increase the operator norm. -/
-theorem norm_toBlocks₂₁_le : ‖M.toBlocks₂₁‖ ≤ ‖M‖ :=
-  (show M.toBlocks₂₁ = (reindexₗ ℂ A (.sumComm m o) (.refl _) M).toBlocks₁₁ by ext; rfl) ▸
-    (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
+theorem norm_toBlocks₂₁_le : ‖M.toBlocks₂₁‖ ≤ ‖M‖ := by
+  have h : M.toBlocks₂₁ = (reindexₗ ℂ A (.sumComm m o) (.refl _) M).toBlocks₁₁ := by
+    ext i j
+    simp [toBlocks₂₁_apply, toBlocks₁₁_apply, reindexₗ_apply]; rfl
+  rw [h]
+  exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 /-- Extracting the lower-right block does not increase the operator norm. -/
-theorem norm_toBlocks₂₂_le : ‖M.toBlocks₂₂‖ ≤ ‖M‖ :=
-  (show M.toBlocks₂₂ = (reindexₗ ℂ A (.sumComm m o) (.sumComm l n) M).toBlocks₁₁ by ext; rfl) ▸
-    (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
+theorem norm_toBlocks₂₂_le : ‖M.toBlocks₂₂‖ ≤ ‖M‖ := by
+  have h : M.toBlocks₂₂ = (reindexₗ ℂ A (.sumComm m o) (.sumComm l n) M).toBlocks₁₁ := by
+    ext i j
+    simp [toBlocks₂₂_apply, toBlocks₁₁_apply, reindexₗ_apply]; rfl
+  rw [h]
+  exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 end
 /-- Operator norm bound for a four-block `CStarMatrix` via its diagonal and off-diagonal blocks. -/
 theorem norm_fromBlocks_le (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A)
     (M₂₁ : CStarMatrix o l A) (M₂₂ : CStarMatrix o n A) :
     ‖fromBlocks M₁₁ M₁₂ M₂₁ M₂₂‖ ≤ max ‖M₁₁‖ ‖M₂₂‖ + max ‖M₁₂‖ ‖M₂₁‖ := by
-  rw [show fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ = blockSum M₁₁ M₂₂ +
-    reindexₗ ℂ A (.refl _) (.sumComm n l) (blockSum M₁₂ M₂₁) by
-      ext (_ | _) (_ | _) <;> simp [Matrix.reindex, Matrix.submatrix]]
+  rw [fromBlocks_eq_blockSum_add_reindexₗ ℂ M₁₁ M₁₂ M₂₁ M₂₂]
   exact (norm_add_le _ _).trans (by simp [norm_reindexₗ])
 end
 /-- Finite block-diagonal amplification over a nonempty index type `k` is isometric. -/
@@ -582,30 +619,24 @@ variable {k l m n o X A : Type*} [TopologicalSpace X] [NonUnitalCStarAlgebra A]
     {f₁₂ : X → CStarMatrix m n A} {f₂₁ : X → CStarMatrix o l A} {f₂₂ : X → CStarMatrix o n A}
     (hf₁₁ : Continuous f₁₁) (hf₁₂ : Continuous f₁₂) (hf₂₁ : Continuous f₂₁)
     (hf₂₂ : Continuous f₂₂) : Continuous fun x => fromBlocks (f₁₁ x) (f₁₂ x) (f₂₁ x) (f₂₂ x) :=
-  continuous_iff.mpr fun i j => match i, j with
-    | .inl i, .inl j => by simpa only [fromBlocks_apply₁₁] using continuous_iff.mp hf₁₁ i j
-    | .inl i, .inr j => by simpa only [fromBlocks_apply₁₂] using continuous_iff.mp hf₁₂ i j
-    | .inr i, .inl j => by simpa only [fromBlocks_apply₂₁] using continuous_iff.mp hf₂₁ i j
-    | .inr i, .inr j => by simpa only [fromBlocks_apply₂₂] using continuous_iff.mp hf₂₂ i j
+  continuous_ofMatrix.comp <| Continuous.matrix_fromBlocks
+    (continuous_ofMatrix_symm.comp hf₁₁) (continuous_ofMatrix_symm.comp hf₁₂)
+    (continuous_ofMatrix_symm.comp hf₂₁) (continuous_ofMatrix_symm.comp hf₂₂)
 section
 variable {f : X → CStarMatrix (m ⊕ o) (l ⊕ n) A} (hf : Continuous f)
 include hf
 /-- Extracting the upper-left block `toBlocks₁₁` of a continuous family is continuous. -/
 @[fun_prop] theorem continuous_toBlocks₁₁ : Continuous fun x => (f x).toBlocks₁₁ :=
-  continuous_iff.mpr fun i j => by
-    simpa only [toBlocks₁₁_apply] using continuous_iff.mp hf (.inl i) (.inl j)
+  continuous_ofMatrix.comp <| (continuous_ofMatrix_symm.comp hf).matrix_submatrix .inl .inl
 /-- Extracting the upper-right block `toBlocks₁₂` of a continuous family is continuous. -/
 @[fun_prop] theorem continuous_toBlocks₁₂ : Continuous fun x => (f x).toBlocks₁₂ :=
-  continuous_iff.mpr fun i j => by
-    simpa only [toBlocks₁₂_apply] using continuous_iff.mp hf (.inl i) (.inr j)
+  continuous_ofMatrix.comp <| (continuous_ofMatrix_symm.comp hf).matrix_submatrix .inl .inr
 /-- Extracting the lower-left block `toBlocks₂₁` of a continuous family is continuous. -/
 @[fun_prop] theorem continuous_toBlocks₂₁ : Continuous fun x => (f x).toBlocks₂₁ :=
-  continuous_iff.mpr fun i j => by
-    simpa only [toBlocks₂₁_apply] using continuous_iff.mp hf (.inr i) (.inl j)
+  continuous_ofMatrix.comp <| (continuous_ofMatrix_symm.comp hf).matrix_submatrix .inr .inl
 /-- Extracting the lower-right block `toBlocks₂₂` of a continuous family is continuous. -/
 @[fun_prop] theorem continuous_toBlocks₂₂ : Continuous fun x => (f x).toBlocks₂₂ :=
-  continuous_iff.mpr fun i j => by
-    simpa only [toBlocks₂₂_apply] using continuous_iff.mp hf (.inr i) (.inr j)
+  continuous_ofMatrix.comp <| (continuous_ofMatrix_symm.comp hf).matrix_submatrix .inr .inr
 end
 /-- A row-stacked `CStarMatrix` family is continuous when both row blocks are continuous. -/
 @[fun_prop] theorem continuous_fromRows {f₁ : X → CStarMatrix m l A} {f₂ : X → CStarMatrix o l A}
@@ -620,7 +651,8 @@ end
 /-- Finite block-diagonal amplification of a continuous `CStarMatrix` family is continuous. -/
 @[fun_prop] theorem continuous_amplify [DecidableEq k] {f : X → CStarMatrix m n A}
     (hf : Continuous f) : Continuous fun x => amplify k (f x) :=
-  continuous_iff.mpr fun i j => by
-    simp only [amplify_apply]; split_ifs; exacts [continuous_iff.mp hf i.2 j.2, continuous_const]
+  continuous_ofMatrix.comp <|
+    (Continuous.matrix_blockDiagonal (continuous_pi fun _ : k =>
+      continuous_ofMatrix_symm.comp hf)).matrix_submatrix _ _
 end Continuity
 end CStarMatrix

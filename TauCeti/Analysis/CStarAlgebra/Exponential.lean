@@ -13,19 +13,22 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 /-!
 # Exponential unitaries of self-adjoint elements and projections
 
-Let `A` be a complete normed complex algebra with a continuous star structure and `h` a
-self-adjoint element of `A`. The adjoint of the unitary `selfAdjoint.expUnitary h` is
-`expUnitary (-h)` (`selfAdjoint.star_expUnitary`). For a star projection `p`,
-`expUnitary (t • p)` has value `1 + (exp (t * I) - 1) • p` (and `1 - 2 • p` at `t = π`), and every
-self-adjoint unitary `u` equals `expUnitary (π • r)` for the star projection `r = 2⁻¹ • (1 - u)`.
+Let `A` be a complete normed complex algebra with a continuous conjugate-linear star structure
+(`star (z • a) = conj z • star a`, i.e. `[StarModule ℂ A]`) and `h` a self-adjoint element of `A`.
+The adjoint of the unitary `selfAdjoint.expUnitary h` is `expUnitary (-h)`
+(`selfAdjoint.star_expUnitary`).
+For a star projection `p`, `expUnitary (t • p)` has value `1 + (exp (t * I) - 1) • p` (and
+`1 - 2 • p` at `t = π`), and every self-adjoint unitary `u` equals `expUnitary (π • r)` for the
+star projection `r = 2⁻¹ • (1 - u)` and is joined to `1` by `Unitary.expUnitaryPathToOne`.
 
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: the adjoint of `expUnitary`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: formulas for
   `expUnitary (t • p)` and `expUnitary (π • p)`.
-* `Unitary.isStarProjection_half_one_sub`, `Unitary.expUnitary_pi_smul_half_one_sub`: a
-  self-adjoint unitary `u` yields `r = 2⁻¹ • (1 - u)` with `expUnitary (π • r) = u`.
+* `Unitary.isStarProjection_half_one_sub`, `Unitary.expUnitary_pi_smul_half_one_sub`,
+  `Unitary.expUnitaryPathToOne`: a self-adjoint unitary `u` yields `r = 2⁻¹ • (1 - u)` with
+  `expUnitary (π • r) = u` and a continuous unitary path from `1` to `u`.
 
 ## References
 
@@ -64,16 +67,34 @@ theorem IsStarProjection.coe_expUnitary_smul {p : A} (hp : IsStarProjection p) (
     ((selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) : unitary A) : A) =
       1 + (Complex.exp (t * Complex.I) - 1) • p := by
   simp only [selfAdjoint.expUnitary_coe, selfAdjoint.val_smul]
-  rw [← Complex.coe_smul t p, smul_smul, mul_comm Complex.I, hp.isIdempotentElem.exp_complex_smul]
+  rw [← Complex.coe_smul t p, smul_smul, mul_comm Complex.I, hp.isIdempotentElem.exp_smul,
+    ← Complex.exp_eq_exp_ℂ]
 /-- At `t = π`, `expUnitary (π • p)` equals the reflection `1 - 2 • p`. -/
 theorem IsStarProjection.coe_expUnitary_pi_smul {p : A} (hp : IsStarProjection p) :
     ((selfAdjoint.expUnitary (Real.pi • ⟨p, hp.isSelfAdjoint⟩) : unitary A) : A) =
       1 - (2 : ℝ) • p := by
-  rw [hp.coe_expUnitary_smul Real.pi, Complex.exp_pi_mul_I,
-    show (-1 - 1 : ℂ) = -((2 : ℝ) : ℂ) by norm_num, neg_smul, Complex.coe_smul, sub_eq_add_neg]
+  rw [hp.coe_expUnitary_smul Real.pi, Complex.exp_pi_mul_I, ← Complex.coe_smul (2 : ℝ) p,
+    sub_eq_add_neg (1 : A), ← neg_smul]
+  congr 2
+  norm_num
 /-- Every self-adjoint unitary `u` is `expUnitary (π • r)` for `r = 2⁻¹ • (1 - u)`. -/
 theorem Unitary.expUnitary_pi_smul_half_one_sub (u : unitary A) (hu : IsSelfAdjoint (u : A)) :
     selfAdjoint.expUnitary (Real.pi • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
       (isStarProjection_half_one_sub u hu).isSelfAdjoint⟩) = u := by
   ext; rw [(isStarProjection_half_one_sub u hu).coe_expUnitary_pi_smul, smul_smul]; norm_num
+/-- Continuous path `t ↦ expUnitary ((t * π) • 2⁻¹ • (1 - u))` from `1` to a self-adjoint
+unitary `u`. -/
+def Unitary.expUnitaryPathToOne (u : unitary A) (hu : IsSelfAdjoint (u : A)) :
+    Path (1 : unitary A) u where
+  toFun t := selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
+    (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simpa using Unitary.expUnitary_pi_smul_half_one_sub u hu
+/-- Evaluation of `Unitary.expUnitaryPathToOne` at `t : unitInterval`. -/
+@[simp low]
+theorem Unitary.expUnitaryPathToOne_apply (u : unitary A) (hu : IsSelfAdjoint (u : A))
+    (t : unitInterval) : Unitary.expUnitaryPathToOne u hu t =
+      selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
+        (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩) := (rfl)
 end Star

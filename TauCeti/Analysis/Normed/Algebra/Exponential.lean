@@ -46,8 +46,8 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
-* `IsIdempotentElem.exp_smul`, `IsIdempotentElem.exp_complex_smul`: for an idempotent `e` in a
-  normed algebra, `exp (z • e) = 1 + (exp z - 1) • e`.
+* `IsIdempotentElem.exp_smul`: for an idempotent `e` in a normed algebra,
+  `exp (z • e) = 1 + (exp z - 1) • e`.
 -/
 
 public section
@@ -223,8 +223,4 @@ theorem exp_smul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
     fun n => by rw [smul_pow, he.pow_succ_eq n, smul_assoc]
   rw [NormedSpace.exp_eq_tsum 𝕜]
   exact ((hasSum_nat_add_iff' 1).mp (by simpa [add_comm] using he1)).tsum_eq
-/-- Complex-scalar specialization of `IsIdempotentElem.exp_smul` written with `Complex.exp`. -/
-theorem exp_complex_smul {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] {e : A}
-    (he : IsIdempotentElem e) (z : ℂ) : NormedSpace.exp (z • e) = 1 + (Complex.exp z - 1) • e := by
-  rw [he.exp_smul z, ← Complex.exp_eq_exp_ℂ]
 end IsIdempotentElem

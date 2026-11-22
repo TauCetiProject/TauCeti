@@ -7,19 +7,22 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.Data.Matrix.PEquiv
 
 /-!
-# Entrywise maps, reindexing, and corner embeddings for `CStarMatrix`
+# Entrywise maps, reindexing, permutation matrices, and corner embeddings for `CStarMatrix`
 
 Entrywise functoriality (`map_zero`, `map_one`, `map_algebraMap`, `map_add`, `map_neg`, `map_sub`,
 `map_smul`, `map_mul`, `map_conjTranspose`, `map_star`), bundled `⋆`-homomorphism lifts
-(`mapₙₐ`, `mapₐ`), rectangular and square reindexing equivalences (`reindexₗ`, `reindexₐ`), and
-diagonal corner embeddings (`singleNonUnitalStarAlgHom`).
+(`mapₙₐ`, `mapₐ`), rectangular and square reindexing equivalences (`reindexₗ`, `reindexₐ`),
+permutation matrices (`permMatrix`), and diagonal corner embeddings (`singleNonUnitalStarAlgHom`).
 
 ## Main declarations
 
-* `CStarMatrix.mapₐ`, `CStarMatrix.mapₙₐ_eq_map`, `CStarMatrix.reindexₗ_mul`,
+* `CStarMatrix.mapₐ`, `CStarMatrix.mapₙₐ_eq_map`, `CStarMatrix.ofMatrix_symm_reindexₗ`,
+  `CStarMatrix.ofMatrix_symm_reindexₐ`, `CStarMatrix.reindexₗ_mul`,
   `CStarMatrix.reindexₗ_self_eq_reindexₐ`, `CStarMatrix.isStarProjection_reindexₐ_iff`,
+  `CStarMatrix.permMatrix`, `CStarMatrix.permMatrix_conj_eq_reindexₐ`,
   `CStarMatrix.singleNonUnitalStarAlgHom`.
 
 ## References
@@ -98,6 +101,8 @@ theorem mapₐ_injective {φ : A →⋆ₐ[R] B} (hφ : Function.Injective φ) :
 end
 section
 variable [Semiring R] [AddCommMonoid A] [Module R A]
+@[simp] theorem ofMatrix_symm_reindexₗ (eₘ : m ≃ l) (eₙ : n ≃ o) (M : CStarMatrix m n A) :
+    ofMatrix.symm (reindexₗ R A eₘ eₙ M) = Matrix.reindex eₘ eₙ (ofMatrix.symm M) := (rfl)
 @[simp] theorem conjTranspose_reindexₗ [Star A] (eₘ : m ≃ l) (eₙ : n ≃ o) (M : CStarMatrix m n A) :
     (reindexₗ R A eₘ eₙ M).conjTranspose = reindexₗ R A eₙ eₘ M.conjTranspose := by ext; rfl
 /-- `reindexₗ` is multiplicative across matching intermediate equivalences. -/
@@ -113,13 +118,15 @@ theorem reindexₗ_trans (e₁ : m ≃ l) (e₂ : l ≃ k) (f₁ : n ≃ o) (f�
     reindexₗ R A (e₁.trans e₂) (f₁.trans f₂) =
       (reindexₗ R A e₁ f₁).trans (reindexₗ R A e₂ f₂) := by ext; rfl
 section
-variable [Fintype l] [Fintype m] [Fintype n] [Mul A] [Star A]
+variable [Fintype m] [Fintype n] [Mul A] [Star A]
+@[simp] theorem ofMatrix_symm_reindexₐ (e : m ≃ n) (M : CStarMatrix m m A) :
+    ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) := (rfl)
 /-- Reindexing rows and columns of a square `CStarMatrix` by `e` via `reindexₗ` is `reindexₐ`. -/
 theorem reindexₗ_self_eq_reindexₐ (e : m ≃ n) (M : CStarMatrix m m A) :
     reindexₗ R A e e M = reindexₐ R A e M := by ext; simp
 @[simp] theorem reindexₐ_refl :
     reindexₐ R A (Equiv.refl n) = StarAlgEquiv.refl R (CStarMatrix n n A) := by ext; rfl
-theorem reindexₐ_trans (e₁ : l ≃ m) (e₂ : m ≃ n) :
+theorem reindexₐ_trans [Fintype l] (e₁ : l ≃ m) (e₂ : m ≃ n) :
     reindexₐ R A (e₁.trans e₂) = (reindexₐ R A e₁).trans (reindexₐ R A e₂) := by ext; rfl
 /-- Reindexing a square `CStarMatrix` along `e : m ≃ n` preserves star projections. -/
 @[simp] theorem isStarProjection_reindexₐ_iff (e : m ≃ n) {p : CStarMatrix m m A} :
@@ -127,6 +134,60 @@ theorem reindexₐ_trans (e₁ : l ≃ m) (e₂ : m ≃ n) :
   ⟨fun h => (reindexₐ R A e).symm_apply_apply p ▸ h.map _, fun h => h.map _⟩
 end
 end
+section Permutation
+/-- The permutation `CStarMatrix` associated with a bijection `e : m ≃ n`. -/
+def permMatrix (A : Type*) [DecidableEq n] [Zero A] [One A] (e : m ≃ n) : CStarMatrix m n A :=
+  ofMatrix e.toPEquiv.toMatrix
+@[simp] theorem ofMatrix_symm_permMatrix [DecidableEq n] [Zero A] [One A] (e : m ≃ n) :
+    ofMatrix.symm (permMatrix A e) = e.toPEquiv.toMatrix := (rfl)
+@[simp] theorem permMatrix_apply [DecidableEq n] [Zero A] [One A] (e : m ≃ n) (i : m) (j : n) :
+    permMatrix A e i j = if e i = j then 1 else 0 := by
+  simp [permMatrix, PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, eq_comm]
+@[simp] theorem permMatrix_refl [DecidableEq n] [Zero A] [One A] :
+    permMatrix A (Equiv.refl n) = 1 :=
+  ofMatrix.symm.injective (by simp)
+@[simp] theorem conjTranspose_permMatrix [DecidableEq m] [DecidableEq n] [NonAssocSemiring A]
+    [StarRing A] (e : m ≃ n) : (permMatrix A e).conjTranspose = permMatrix A e.symm := by
+  ext i j; simp [Equiv.eq_symm_apply, eq_comm, apply_ite star]
+@[simp] theorem permMatrix_trans [Fintype n] [DecidableEq n] [DecidableEq o] [NonAssocSemiring A]
+    (e₁ : m ≃ n) (e₂ : n ≃ o) :
+    permMatrix A e₁ * permMatrix A e₂ = permMatrix A (e₁.trans e₂) :=
+  ofMatrix.symm.injective <| by
+    rw [ofMatrix_symm_mul, ofMatrix_symm_permMatrix, ofMatrix_symm_permMatrix,
+      ofMatrix_symm_permMatrix, ← PEquiv.toMatrix_trans, Equiv.toPEquiv_trans]
+@[simp] theorem conjTranspose_permMatrix_mul_self [Fintype m] [DecidableEq n]
+    [NonAssocSemiring A] [StarRing A] (e : m ≃ n) :
+    (permMatrix A e).conjTranspose * permMatrix A e = 1 := by
+  classical
+  rw [conjTranspose_permMatrix, permMatrix_trans, Equiv.symm_trans_self, permMatrix_refl]
+theorem permMatrix_mul_conjTranspose_self [Fintype n] [DecidableEq m] [DecidableEq n]
+    [NonAssocSemiring A] [StarRing A] (e : m ≃ n) :
+    permMatrix A e * (permMatrix A e).conjTranspose = 1 := by
+  rw [conjTranspose_permMatrix, permMatrix_trans, Equiv.self_trans_symm, permMatrix_refl]
+@[simp] theorem permMatrix_mem_unitary [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    (e : n ≃ n) : permMatrix A e ∈ unitary (CStarMatrix n n A) := by
+  rw [Unitary.mem_iff, star_eq_conjTranspose, conjTranspose_permMatrix_mul_self,
+    permMatrix_mul_conjTranspose_self, and_self]
+/-- Conjugating `M` by `permMatrix A e` computes `reindexₐ R A e M`. -/
+theorem permMatrix_conj_eq_reindexₐ [Fintype m] [Fintype n] [DecidableEq n]
+    [Semiring R] [NonAssocSemiring A] [Module R A] [StarRing A] (e : m ≃ n)
+    (M : CStarMatrix m m A) :
+    (permMatrix A e).conjTranspose * M * permMatrix A e = reindexₐ R A e M := by
+  classical
+  apply ofMatrix.symm.injective
+  rw [ofMatrix_symm_mul, ofMatrix_symm_mul, conjTranspose_permMatrix, ofMatrix_symm_permMatrix,
+    ofMatrix_symm_permMatrix, ofMatrix_symm_reindexₐ, PEquiv.toMatrix_toPEquiv_mul,
+    PEquiv.mul_toMatrix_toPEquiv, Matrix.submatrix_submatrix]
+  rfl
+/-- Conjugating `N` by `(permMatrix A e)` on the left and its adjoint on the right computes
+`reindexₐ R A e.symm N`. -/
+theorem permMatrix_mul_conjTranspose_eq_reindexₐ [Fintype m] [Fintype n] [DecidableEq n]
+    [Semiring R] [NonAssocSemiring A] [Module R A] [StarRing A] (e : m ≃ n)
+    (N : CStarMatrix n n A) :
+    permMatrix A e * N * (permMatrix A e).conjTranspose = reindexₐ R A e.symm N := by
+  classical
+  simpa [conjTranspose_permMatrix] using permMatrix_conj_eq_reindexₐ (R := R) e.symm N
+end Permutation
 section
 variable [Fintype n] [DecidableEq n] [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [StarAddMonoid A]

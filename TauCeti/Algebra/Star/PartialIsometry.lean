@@ -34,9 +34,10 @@ part of the theory.
   `TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self` (and `mul_star_self` twins):
   proper-star characterizations via idempotency / projection of `star u * u` and `u * star u`.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
-  `IsStarProjection.isPartialIsometry`, `IsStarProjection.star_mul_self_mul_of_star_mul_self_eq_one`
-  and `TauCeti.IsPartialIsometry.mul_of_star_mul_self_eq_one_of_isStarProjection` (with `unitary`
-  corollaries): isometries, unitaries, projections, and `u * p` are partial isometries.
+  `IsStarProjection.isPartialIsometry`,
+  `IsStarProjection.star_mul_self_mul_of_star_mul_self_mul_eq`,
+  `TauCeti.IsPartialIsometry.mul_of_star_mul_self_mul_eq_of_isStarProjection` (with isometry and
+  `unitary` corollaries): isometries, unitaries, projections, and `u * p` are partial isometries.
 
 ## References
 
@@ -180,21 +181,34 @@ theorem IsStarProjection.mul_star_self_mul {R : Type*} [Semigroup R] [StarMul R]
   rw [star_mul, hp.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq,
     mul_assoc]
 section
+variable {R : Type*} [Semigroup R] [StarMul R] {p u : R}
+/-- If `star u * u` acts as the identity on the range of a star projection `p`, then
+`star (u * p) * (u * p) = p`. -/
+theorem IsStarProjection.star_mul_self_mul_of_star_mul_self_mul_eq (hp : IsStarProjection p)
+    (hu : star u * u * p = p) : star (u * p) * (u * p) = p := by
+  rw [star_mul, hp.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (star u), hu,
+    hp.isIdempotentElem.eq]
+/-- If `star u * u` acts as the identity on the range of a star projection `p`, then `u * p` is a
+partial isometry. -/
+theorem TauCeti.IsPartialIsometry.mul_of_star_mul_self_mul_eq_of_isStarProjection
+    (hu : star u * u * p = p) (hp : IsStarProjection p) : TauCeti.IsPartialIsometry (u * p) := by
+  rw [TauCeti.isPartialIsometry_iff, mul_assoc,
+    hp.star_mul_self_mul_of_star_mul_self_mul_eq hu, mul_assoc, hp.isIdempotentElem.eq]
+end
+section
 variable {R : Type*} [Monoid R] [StarMul R] {p u : R}
 /-- For an isometry `u` (`star u * u = 1`) and a star projection `p`, `(u * p)⋆ * (u * p) = p`. -/
 theorem IsStarProjection.star_mul_self_mul_of_star_mul_self_eq_one (hp : IsStarProjection p)
-    (hu : star u * u = 1) : star (u * p) * (u * p) = p := by
-  rw [star_mul, hp.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (star u), hu, one_mul,
-    hp.isIdempotentElem.eq]
+    (hu : star u * u = 1) : star (u * p) * (u * p) = p :=
+  hp.star_mul_self_mul_of_star_mul_self_mul_eq (by rw [hu, one_mul])
 /-- For a unitary `u` and a star projection `p`, the initial projection of `u * p` is `p`. -/
 theorem IsStarProjection.star_mul_self_unitary_mul (hp : IsStarProjection p) (u : unitary R) :
     star ((u : R) * p) * ((u : R) * p) = p :=
   hp.star_mul_self_mul_of_star_mul_self_eq_one (Unitary.coe_star_mul_self u)
 /-- Left-multiplying a star projection `p` by an isometry `u` yields a partial isometry. -/
 theorem TauCeti.IsPartialIsometry.mul_of_star_mul_self_eq_one_of_isStarProjection
-    (hu : star u * u = 1) (hp : IsStarProjection p) : TauCeti.IsPartialIsometry (u * p) := by
-  rw [TauCeti.isPartialIsometry_iff, mul_assoc,
-    hp.star_mul_self_mul_of_star_mul_self_eq_one hu, mul_assoc, hp.isIdempotentElem.eq]
+    (hu : star u * u = 1) (hp : IsStarProjection p) : TauCeti.IsPartialIsometry (u * p) :=
+  mul_of_star_mul_self_mul_eq_of_isStarProjection (by rw [hu, one_mul]) hp
 /-- Left-multiplying a star projection `p` by a unitary `u` gives a partial isometry. -/
 theorem TauCeti.IsPartialIsometry.unitary_mul_of_isStarProjection (u : unitary R)
     (hp : IsStarProjection p) : TauCeti.IsPartialIsometry ((u : R) * p) :=
