@@ -150,6 +150,12 @@ def deRhamRestriction :
       (deRhamComplex I W).extend ComplexShape.embeddingUpNat :=
   extendMap (deRhamComplex.map (I := I) (I' := I) (Subtype.val : W → M) contMDiff_subtypeVal) _
 
+/-- The restriction map is the extension to `ℤ` of pullback along the inclusion of `W`. -/
+theorem deRhamRestriction_def :
+    deRhamRestriction I W = extendMap
+      (deRhamComplex.map (I := I) (I' := I) (Subtype.val : W → M) contMDiff_subtypeVal) _ :=
+  (rfl)
+
 /-- The restriction map pulls a form back along the inclusion of `W`. -/
 @[simp]
 theorem deRhamRestriction_f_symm_apply (k : ℕ) (p : ℤ) (hp : (k : ℤ) = p)
