@@ -53,8 +53,8 @@ noncomputable def toSchemeHopfIdealLocusGrp :
       (Algebra.TensorProduct.includeRight : H →ₐ[R] A ⊗[R] H).toRingHom))
     (Spec.map (CommRingCat.ofHom
       (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] H)) ≫
-      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1) <| by
-    rw [Category.assoc, (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).2]
+      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val) <| by
+    rw [Category.assoc, (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).property]
     exact (isPullback_SpecMap_of_isPushout _ _ _ _
       (CommRingCat.isPushout_tensorProduct R A H)).w.symm
 
@@ -74,7 +74,7 @@ theorem toSchemeHopfIdealLocusGrp_snd :
         ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
       Spec.map (CommRingCat.ofHom
         (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] H)) ≫
-        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 :=
+        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val :=
   pullback.lift_snd _ _ _
 
 /-- The ambient group scheme pulled back along the point classifying `N` has underlying
@@ -84,12 +84,12 @@ theorem isPullback_toSchemeHopfIdealLocusGrp :
       (Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] H)))
       (pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
         ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k))
-      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 := by
+      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val := by
   refine IsPullback.of_right ?_ (toSchemeHopfIdealLocusGrp_snd N hN)
     (IsPullback.of_hasPullback (Spec.map (CommRingCat.ofHom (algebraMap R H)))
       ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k))
   rw [toSchemeHopfIdealLocusGrp_fst,
-    (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).2]
+    (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).property]
   exact (isPullback_SpecMap_of_isPushout _ _ _ _
     (CommRingCat.isPushout_tensorProduct R A H)).flip
 
@@ -127,14 +127,14 @@ map into the universal family, read through the canonical identification of that
 the representative of the closed subgroup. -/
 noncomputable def toUniversalSubgroup :
     Spec (.of ((A ⊗[R] H) ⧸ N.hopfIdeal hN)) ⟶
-      ((universalSubgroup R H k).1 : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.left :=
+      ((universalSubgroup R H k).val : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.left :=
   toSchemeHopfIdealLocusFamily N hN ≫ (universalSubgroupIso R H k).inv.hom.hom.left
 
 /-- The map into the universal subgroup respects the closed-subgroup inclusion: on the fibre
 it is the quotient closed immersion defined by `N`. -/
 @[reassoc (attr := simp)]
 theorem toUniversalSubgroup_arrow :
-    toUniversalSubgroup N hN ≫ (universalSubgroup R H k).1.arrow.hom.hom.left =
+    toUniversalSubgroup N hN ≫ (universalSubgroup R H k).val.arrow.hom.hom.left =
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (R := A ⊗[R] H) (N.hopfIdeal hN))) ≫
         toSchemeHopfIdealLocusGrp N hN := by
   have h := congrArg (fun f ↦ f.hom.hom.left) (universalSubgroupIso_inv_arrow (R := R)
@@ -146,9 +146,9 @@ theorem toUniversalSubgroup_arrow :
 @[reassoc (attr := simp)]
 theorem toUniversalSubgroup_structureMap :
     toUniversalSubgroup N hN ≫
-        ((universalSubgroup R H k).1 : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom =
+        ((universalSubgroup R H k).val : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom =
       Spec.map (CommRingCat.ofHom (algebraMap A ((A ⊗[R] H) ⧸ N.hopfIdeal hN))) ≫
-        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 := by
+        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val := by
   rw [toUniversalSubgroup, Category.assoc, Over.w]
   exact toSchemeHopfIdealLocusFamily_schemeHopfIdealLocusFamilyHom N hN
 
@@ -158,7 +158,7 @@ classifying `N` is exactly the quotient closed immersion
 theorem isPullback_universalSubgroup_arrow :
     IsPullback (toUniversalSubgroup N hN)
       (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (R := A ⊗[R] H) (N.hopfIdeal hN))))
-      (universalSubgroup R H k).1.arrow.hom.hom.left (toSchemeHopfIdealLocusGrp N hN) := by
+      (universalSubgroup R H k).val.arrow.hom.hom.left (toSchemeHopfIdealLocusGrp N hN) := by
   let e := (Grp.forget _ ⋙ Over.forget _).mapIso (universalSubgroupIso R H k)
   have h := congrArg (fun f ↦ f.hom.hom.left) (universalSubgroupIso_inv_arrow (R := R)
     (H := H) (k := k))
@@ -173,8 +173,8 @@ theorem isPullback_universalSubgroup_arrow :
 theorem isPullback_universalSubgroup :
     IsPullback (toUniversalSubgroup N hN)
       (Spec.map (CommRingCat.ofHom (algebraMap A ((A ⊗[R] H) ⧸ N.hopfIdeal hN))))
-      ((universalSubgroup R H k).1 : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom
-      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 := by
+      ((universalSubgroup R H k).val : Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom
+      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val := by
   let e := (Grp.forget _ ⋙ Over.forget _).mapIso (universalSubgroupIso R H k)
   exact (isPullback_schemeHopfIdealLocusFamilyHom N hN).of_iso
     (Iso.refl _) e.symm (Iso.refl _) (Iso.refl _)

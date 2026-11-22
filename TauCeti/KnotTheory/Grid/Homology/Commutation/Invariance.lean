@@ -84,20 +84,20 @@ theorem unblockedHomologyCommutationMap_bijective :
     refine ⟨(G').commutationMap R C.reverse w - G.commutationHomotopy R C z, ?_⟩
     have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential R C) w
     simp only [LinearMap.comp_apply, hw] at hΨ
-    rw [map_sub, ← hΨ, G.commutationMap_reverse_commutationMap_of_mem_ker C R z.2,
+    rw [map_sub, ← hΨ, G.commutationMap_reverse_commutationMap_of_mem_ker C R z.property,
       add_sub_cancel_right]
   · -- The class of a cycle `z` of `GC⁻(G')` is the image of the class of `Ψ z`, since
     -- `Φ Ψ z - z = ∂' H' z`.
     obtain ⟨z, rfl⟩ := (G').unblockedHomologyClass_surjective R y
     have hΨz : (G').commutationMap R C.reverse z ∈ LinearMap.ker (G.unblockedDifferential R) := by
-      have h := (G').commutationMap_mem_ker_unblockedDifferential R C.reverse z.2
+      have h := (G').commutationMap_mem_ker_unblockedDifferential R C.reverse z.property
       simpa only [ColumnCommutationData.reverse_column, swapColumns_swapColumns] using h
     refine ⟨G.unblockedHomologyClass R ⟨_, hΨz⟩, ?_⟩
     rw [unblockedHomologyCommutationMap_unblockedHomologyClass, ← sub_eq_zero, ← map_sub,
       unblockedHomologyClass_eq_zero_iff]
     refine ⟨(G').commutationHomotopy R C.reverse z, ?_⟩
     simp only [AddSubgroupClass.coe_sub,
-      G.commutationMap_commutationMap_reverse_of_mem_ker C R z.2, add_sub_cancel_left]
+      G.commutationMap_commutationMap_reverse_of_mem_ker C R z.property, add_sub_cancel_left]
 
 end GridDiagram
 

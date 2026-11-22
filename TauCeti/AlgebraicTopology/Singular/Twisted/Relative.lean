@@ -45,6 +45,11 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
 * `TopPair.twistedHomology`, `TopPair.twistedHomologyπ` and `TopPair.twistedHomologyδ`, with the
   three exactness statements `TopPair.twistedHomology_exact_subspace`,
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
+* `TauCeti.LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty`: the twisted homology of an
+  empty space vanishes.
+* `TopPair.isIso_twistedHomologyπ_of_isEmpty`, `TopPair.isZero_twistedHomology_of_isIso`: read off
+  the long exact sequence, relative twisted homology is that of the ambient space when the subspace
+  is empty, and vanishes when the inclusion of the subspace is an isomorphism on twisted homology.
 * `TopPair.twistedHomologyConstantIso`: for a constant system, relative twisted homology is
   ordinary relative singular homology.
 
@@ -70,6 +75,19 @@ open scoped Simplicial
 
 universe u v w
 
+namespace TauCeti.LocalCoefficientSystem
+
+/-- The twisted homology of an empty space vanishes. -/
+theorem isZero_twistedHomology_of_isEmpty {R : Type u} [Ring R] {X : TopCat.{v}}
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) [IsEmpty X] (k : ℕ) :
+    IsZero (L.twistedHomology k) := by
+  have : Subsingleton ((twistedChainComplex L).X k) :=
+    ⟨fun _ _ ↦ twistedChainComplex_ext_coeff L fun ρ ↦ isEmptyElim (initialVertex ρ).as⟩
+  exact ((twistedChainComplex L).sc k).isZero_homology_of_isZero_X₂
+    (ModuleCat.isZero_of_subsingleton ((twistedChainComplex L).X k))
+
+end TauCeti.LocalCoefficientSystem
+
 namespace TopPair
 
 variable {R : Type u} [Ring R] (P : TopPair.{v})
@@ -92,7 +110,7 @@ def twistedChainComplexπ :
     L.twistedChainComplex ⟶ P.twistedChainComplex L :=
   cokernel.π _
 
-instance : Epi (P.twistedChainComplexπ L) := coequalizer.π_epi
+instance epi_twistedChainComplexπ : Epi (P.twistedChainComplexπ L) := coequalizer.π_epi
 
 @[reassoc (attr := simp)]
 lemma twistedChainComplexMap_comp_twistedChainComplexπ :
@@ -301,21 +319,8 @@ def twistedChainComplexCoefficientMap (η : L ⟶ K) :
   P.twistedChainComplexDesc L
     (LocalCoefficientSystem.twistedChainComplexCoefficientMap η ≫
       P.twistedChainComplexπ K)
-    (by
-      calc
-        _ = (LocalCoefficientSystem.twistedChainComplexMap P.map L ≫
-              LocalCoefficientSystem.twistedChainComplexCoefficientMap η) ≫
-            P.twistedChainComplexπ K := Category.assoc _ _ _ |>.symm
-        _ = (LocalCoefficientSystem.twistedChainComplexCoefficientMap
-                ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-              LocalCoefficientSystem.twistedChainComplexMap P.map K) ≫
-            P.twistedChainComplexπ K := by
-              rw [LocalCoefficientSystem.twistedChainComplexMap_naturality]
-        _ = LocalCoefficientSystem.twistedChainComplexCoefficientMap
-              ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-            (LocalCoefficientSystem.twistedChainComplexMap P.map K ≫
-              P.twistedChainComplexπ K) := Category.assoc _ _ _
-        _ = 0 := by rw [P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
+    (by rw [LocalCoefficientSystem.twistedChainComplexMap_naturality_assoc,
+      P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
 
 /-- The relative coefficient map commutes with the quotient maps from ambient twisted chains. -/
 @[reassoc (attr := simp)]
@@ -455,6 +460,17 @@ lemma twistedHomologyCoefficientMap_comp
       (P.twistedChainComplexCoefficientMap_comp f g)).trans
     (HomologicalComplex.homologyMap_comp _ _ _)
 
+variable {L} in
+/-- Relative twisted homology maps send a commuting square of coefficient morphisms to a
+commuting square. -/
+@[reassoc]
+lemma twistedHomologyCoefficientMap_comp_eq_of_comp_eq
+    {K K' J : LocalCoefficientSystem.{u, v, max v w} R P.fst} {f : L ⟶ K} {g : K ⟶ J}
+    {f' : L ⟶ K'} {g' : K' ⟶ J} (h : f ≫ g = f' ≫ g') (k : ℕ) :
+    P.twistedHomologyCoefficientMap f k ≫ P.twistedHomologyCoefficientMap g k =
+      P.twistedHomologyCoefficientMap f' k ≫ P.twistedHomologyCoefficientMap g' k := by
+  rw [← twistedHomologyCoefficientMap_comp, h, twistedHomologyCoefficientMap_comp]
+
 /-- An isomorphism of local coefficient systems induces isomorphisms on relative twisted
 homology. -/
 instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
@@ -538,6 +554,39 @@ lemma twistedHomology_exact_space (k : ℕ) :
 lemma twistedHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (P.twistedHomologyπ_comp_twistedHomologyδ L n m h)).Exact :=
   (P.shortExact_twistedChainComplexShortComplex L).homology_exact₃ n m (by simpa)
+
+/-- For a pair with empty subspace, relative twisted homology is the twisted homology of the
+ambient space. -/
+instance isIso_twistedHomologyπ_of_isEmpty [IsEmpty P.snd] (k : ℕ) :
+    IsIso (P.twistedHomologyπ L k) := by
+  have hA (j : ℕ) :=
+    LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty (P.subspaceSystem L) j
+  have : Mono (P.twistedHomologyπ L k) :=
+    (P.twistedHomology_exact_space L k).mono_g ((hA k).eq_of_src _ _)
+  cases k with
+  | zero => exact isIso_of_mono_of_epi _
+  | succ j =>
+    have : Epi (P.twistedHomologyπ L (j + 1)) :=
+      (P.twistedHomology_exact_relative L (j + 1) j).epi_f ((hA j).eq_of_tgt _ _)
+    exact isIso_of_mono_of_epi _
+
+/-- If the inclusion of the subspace induces isomorphisms on twisted homology in every degree, the
+relative twisted homology of the pair vanishes. -/
+theorem isZero_twistedHomology_of_isIso
+    (h : ∀ k, IsIso (LocalCoefficientSystem.twistedHomologyMap P.map L k)) (n : ℕ) :
+    IsZero (P.twistedHomology L n) := by
+  -- The map `Hₖ(A) ⟶ Hₖ(X)` is onto, so the quotient map `Hₖ(X) ⟶ Hₖ(X, A)` vanishes.
+  have hπ (k : ℕ) : P.twistedHomologyπ L k = 0 :=
+    (P.twistedHomology_exact_space L k).epi_f_iff.1 (by dsimp; infer_instance)
+  cases n with
+  | zero => exact IsZero.of_epi_eq_zero _ (hπ 0)
+  | succ m =>
+    -- The connecting map out of `Hₘ₊₁(X, A)` is then injective, and it vanishes since
+    -- `Hₘ(A) ⟶ Hₘ(X)` is injective.
+    have : Mono (P.twistedHomologyδ L (m + 1) m) :=
+      (P.twistedHomology_exact_relative L (m + 1) m).mono_g (hπ (m + 1))
+    exact IsZero.of_mono_eq_zero _
+      ((P.twistedHomology_exact_subspace L (m + 1) m).mono_g_iff.1 (by dsimp; infer_instance))
 
 end Homology
 

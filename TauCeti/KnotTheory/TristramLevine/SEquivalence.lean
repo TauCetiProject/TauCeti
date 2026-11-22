@@ -76,7 +76,7 @@ namespace SEquivalent
 theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) (omega : ℂ) :
     tristramLevineSignature (V.2.map ((↑) : ℤ → ℝ)) omega =
       tristramLevineSignature (W.2.map ((↑) : ℤ → ℝ)) omega := by
-  apply Relation.EqvGen.eqvGen_le (r' := Setoid.ker fun X : IntegralSquareMatrix ↦
+  apply Relation.eqvGen_le (r' := Setoid.ker fun X : IntegralSquareMatrix ↦
     tristramLevineSignature (X.2.map ((↑) : ℤ → ℝ)) omega) ?_ V W h
   intro X Y hmove
   exact (hmove.tristramLevineSignature_eq omega).symm

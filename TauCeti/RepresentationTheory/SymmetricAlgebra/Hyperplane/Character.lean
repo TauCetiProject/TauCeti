@@ -57,7 +57,7 @@ theorem det_injective_on_dual_inertia_span_singleton_ι (hG : (Nat.card G : K) �
     (ℓ.finrank_quotient_ker_eq_one_of_ne_zero hℓ)
   · intro x hx
     exact LinearMap.mem_fixedSubmodule_iff.1
-      ((ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.2 hx)
+      ((ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.property hx)
   · exact hg
   · exact hG
   · rw [← map_pow, pow_card_eq_one', map_one]

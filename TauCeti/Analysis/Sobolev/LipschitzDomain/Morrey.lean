@@ -87,7 +87,7 @@ theorem W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith
         (closure (Ω : Set (WithLp 2 (ℝ × E)))) ℝ,
       ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
   obtain ⟨X, hX, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
-  refine ⟨(HolderSpace.compLipschitzL Subtype.val (LipschitzWith.subtype_val _)).comp
+  refine ⟨(HolderSpace.compLipschitzL Subtype.val (LipschitzWith.subtypeVal _)).comp
     ((W1p.morreyEmbedding hp).comp X), fun u => ?_⟩
   have hu : W1p.restrictL le_top (X u) = u := by
     simpa using congrArg (· u) hX

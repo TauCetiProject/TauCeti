@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Tower
+public import Mathlib.Data.Set.Countable
 public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Algebra.Basic
@@ -18,17 +19,18 @@ import Mathlib.Data.Fintype.BigOperators
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
-used to recover the generator's membership in any submodule. A vector outside an integer line is
-not cancelled by adding an integer multiple of the generator. Acting on a line gives the line
+used to recover the generator's membership in any submodule. A vector outside a line is not
+cancelled by adding any multiple of the generator. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
-exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
+exactly when it sends that vector to a multiple of itself. A submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
-subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
+subspace over the division ring as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
 the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
 as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
 Over a scalar extension, the image span of a semilinear map is spanned by its values on any
-spanning family of the domain.
+spanning family of the domain. The span of any countable set admits a spanning sequence indexed
+by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
 -/
 
 public section
@@ -59,10 +61,11 @@ end TauCeti.Submodule
 
 namespace Submodule
 
-/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
-theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
-    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
-  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
+/-- A vector outside the line `R ∙ v` is not cancelled by adding any multiple of `v`. -/
+theorem add_smul_ne_zero_of_notMem_span_singleton {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] {v y : M} (hy : y ∉ R ∙ v) (r : R) : y + r • v ≠ 0 := fun h ↦
+  hy <| (Submodule.add_mem_iff_left _ (smul_mem _ r (mem_span_singleton_self v))).mp
+    (h ▸ zero_mem _)
 
 variable {K V : Type*} [DivisionSemiring K] [AddCommMonoid V] [Module K V]
 
@@ -96,22 +99,21 @@ variable {D W G : Type*} [DivisionRing D] [AddCommGroup W] [Module D W] [Group G
 /-- A group element stabilizes the line through `v` exactly when `g • v` is a multiple of `v`. -/
 theorem smul_span_singleton_eq_iff {g : G} {v : W} :
     g • (D ∙ v) = D ∙ v ↔ ∃ c : D, g • v = c • v := by
+  rw [smul_span_singleton]
+  refine ⟨fun h ↦ (mem_span_singleton.mp (h ▸ mem_span_singleton_self (g • v))).imp
+    fun _ ↦ Eq.symm, fun ⟨c, hc⟩ ↦ ?_⟩
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  rw [smul_span_singleton, span_singleton_eq_span_singleton]
-  constructor
-  · rintro ⟨z, hz⟩
-    exact ⟨((z⁻¹ : Dˣ) : D), by rw [← Units.smul_def]; exact eq_inv_smul_iff.mpr hz⟩
-  · rintro ⟨c, hc⟩
-    have hc0 : c ≠ 0 := left_ne_zero_of_smul (hc ▸ (smul_ne_zero_iff_ne g).mpr hv)
-    exact ⟨(Units.mk0 c hc0)⁻¹, by simp [hc, Units.smul_def, smul_smul, hc0]⟩
+  -- `c ≠ 0` because `g • v ≠ 0`, so `c • v` spans the same line as `v`.
+  have hc0 : c ≠ 0 := left_ne_zero_of_smul (hc ▸ (smul_ne_zero_iff_ne g).mpr hv)
+  rw [hc, span_singleton_smul_eq (IsUnit.mk0 c hc0)]
 
 end GroupAction
 
 section IdealCoefficients
 
-variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [AddCommGroup V] [Module K V]
-  [Module R V] [IsScalarTower R K V]
+variable {R K V : Type*} [CommSemiring R] [DivisionRing K] [Algebra R K] [AddCommMonoid V]
+  [Module K V] [Module R V] [IsScalarTower R K V]
 
 /-- If `Λ = ⊕ i, J i • y i` with every `J i` nonzero, then `y` spans the same `K`-subspace as
 `Λ`. -/
@@ -122,14 +124,11 @@ theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fi
   classical
   refine le_antisymm (span_le.2 <| Set.range_subset_iff.2 fun i ↦ ?_) (span_le.2 fun x hx ↦ ?_)
   · obtain ⟨b, hb, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
-    have hsum : ∑ k, (Pi.single i b : ι → R) k • y k = b • y i := by
-      rw [Fintype.sum_eq_single i fun k hk ↦ by simp [hk]]
-      simp
-    have hbΛ : b • y i ∈ Λ := hsum ▸ (hmem _).2 ⟨_, fun k ↦ by
-      by_cases hk : k = i
-      · subst hk
-        simpa using hb
-      · simp [hk], rfl⟩
+    -- The coefficient family `Pi.single i b` exhibits `b • y i` as an element of `Λ`.
+    have hbΛ : b • y i ∈ Λ := (hmem _).2 ⟨Pi.single i b, fun k ↦ by
+      obtain rfl | hk := eq_or_ne k i
+      · simpa using hb
+      · simp [hk], by simp [Pi.single_apply, ite_smul]⟩
     have hb' : algebraMap R K b ≠ 0 :=
       (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)).2 hb0
     rw [← inv_smul_smul₀ hb' (y i), algebraMap_smul]
@@ -204,3 +203,18 @@ theorem span_range_eq_span_range_comp_of_span_eq_top
 end SpanningFamily
 
 end Submodule
+
+section Countable
+
+/-- The `R`-span of a countable set `s` admits a spanning sequence `v : ℕ → Submodule.span R s`
+with `Submodule.span R (Set.range v) = ⊤`. -/
+theorem Set.Countable.exists_span_range_eq_top (R : Type*) {M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {s : Set M} (hs : s.Countable) :
+    ∃ v : ℕ → Submodule.span R s, Submodule.span R (Set.range v) = ⊤ := by
+  obtain ⟨f, hf⟩ := (hs.insert 0).exists_eq_range (Set.insert_nonempty 0 s)
+  have hfs (n : ℕ) : f n ∈ Submodule.span R s :=
+    Set.insert_subset (Submodule.zero_mem _) Submodule.subset_span (hf ▸ Set.mem_range_self n)
+  exact ⟨fun n ↦ ⟨f n, hfs n⟩, (Submodule.span_range_subtype_eq_top_iff _ hfs).2 <| by
+    rw [← hf, Submodule.span_insert_zero]⟩
+
+end Countable

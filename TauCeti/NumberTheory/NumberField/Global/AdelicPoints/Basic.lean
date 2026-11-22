@@ -7,292 +7,380 @@ module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
-public import TauCeti.Topology.Algebra.PointTopology.Group
+public import TauCeti.Topology.Algebra.PointTopology.Prod
 
 /-!
-# Adelic points of an affine algebraic group
+# Adelic points of an affine group scheme
 
-Let `F` be a number field and `H` a commutative Hopf algebra over `F`, the coordinate ring of an
-affine group `G = Spec H`. This file defines the adelic points `G(𝔸_F)` as the convolution group
-`WithConv (H →ₐ[F] 𝔸_F)` of `F`-algebra maps `H → 𝔸_F`, with Tau Ceti's point topology (the
-coarsest topology making every evaluation `x ↦ x(h)` continuous), under which it is a topological
-group (`TauCeti.PointTopology.isTopologicalGroup`). Likewise for the finite adelic points
-`G(𝔸_{F,f})`, the archimedean points `G(F_∞)` and the local points `G(F_v)` at a finite place `v`.
-The constructions here use only the bialgebra structure of `H`, which already makes the points a
-monoid, so they are stated for bialgebras.
+Let `R` be a Dedekind domain with fraction field `K`, and let `H` be a bialgebra over `K`; when `H`
+is a commutative Hopf algebra it is the coordinate ring of the affine group scheme `G = Spec H`.
+This file defines the groups of points of `G` over Mathlib's `AdeleRing R K = K_∞ × 𝔸_{K,f}`,
+written `𝔸_K`, over its two factors and over the completions at the finite places of `R`,
 
-All maps between these groups are coefficient maps `AlgHom.mapValue`, except `finiteEmbed`: the
-adele ring is the product `F_∞ × 𝔸_{F,f}`, and `finiteEmbed x = (1, x)` puts the identity point at
-the archimedean component. It is an embedding of point groups, not induced by a ring map: the
-inclusion `𝔸_{F,f} → 𝔸_F` with archimedean coordinate zero is not unital.
+* `TauCeti.AdelicPoints R K H`, the points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)`;
+* `TauCeti.AdelicPoints.FiniteAdelicPoints R K H`, the points `G(𝔸_{K,f})` over the finite
+  adeles;
+* `TauCeti.AdelicPoints.InfinitePoints K H`, the points `G(K_∞)` over the infinite adeles;
+* `TauCeti.AdelicPoints.LocalPoints R K H v`, the points `G(K_v)` over the completion at a finite
+  place `v`,
 
-## Main definitions
+each with the convolution product and Tau Ceti's point topology, the coarsest topology making
+every evaluation `x ↦ x h` continuous. For a Hopf algebra `H` these are topological groups
+(`TauCeti.PointTopology.isTopologicalGroup`). The point topology on `G(𝔸_K)` is in general not
+the subspace topology of `𝔸_K` under a chosen coordinate: for the multiplicative group it is the
+topology of the ideles, not that of `𝔸_K`.
 
-* `TauCeti.AdelicPoints F H`: the group `G(𝔸_F)`.
-* `TauCeti.AdelicPoints.FiniteAdelicPoints`, `TauCeti.AdelicPoints.InfinitePoints`,
-  `TauCeti.AdelicPoints.LocalPoints`: the groups `G(𝔸_{F,f})`, `G(F_∞)` and `G(F_v)`.
+When `K` is a number field and `R = 𝓞 K`, `AdeleRing R K` is the adele ring of `K` and these are
+the adelic points of `G` in the usual sense. For other `R` it is not the adele ring of `K`: for a
+function field `K` the factor `K_∞` is trivial, and for `R = ℤ[1/2]` the places over `2` are
+missing.
+
+The rational diagonals and the projections are changes of coefficients `AlgHom.mapValue` along
+algebra maps of the coefficient rings:
+
+* the rational diagonals `G(K) → G(𝔸_K)`, `G(K) → G(𝔸_{K,f})` and `G(K) → G(K_∞)` along the
+  diagonal embeddings of `K`;
+* the projections `G(𝔸_K) → G(𝔸_{K,f})` and `G(𝔸_K) → G(K_∞)` to the finite and infinite
+  components;
+* the projections `p_v : G(𝔸_K) → G(K_v)` to the points over the completion at a finite place
+  `v`, and `p_w : G(𝔸_K) → G(K_w)` at an infinite place `w`.
+
+The projections are continuous, and each of them carries the rational diagonal to the
+corresponding rational diagonal; in particular `p_v` sends a rational point to its image in
+`G(K_v)`. Finally, the splitting `𝔸_K = K_∞ × 𝔸_{K,f}` gives an isomorphism of topological groups
+`G(𝔸_K) ≃ G(K_∞) × G(𝔸_{K,f})`, and through it the embedding `finiteEmbed : G(𝔸_{K,f}) → G(𝔸_K)`,
+`x ↦ (1, x)`, of a finite adelic point as the adelic point with trivial infinite component.
+This is an embedding of groups of points: it is not induced by a ring map `𝔸_{K,f} → 𝔸_K`, and
+its infinite coordinate is the identity point, not zero.
+
+## Main declarations
+
+* `TauCeti.AdelicPoints`, `TauCeti.AdelicPoints.FiniteAdelicPoints`,
+  `TauCeti.AdelicPoints.InfinitePoints`, `TauCeti.AdelicPoints.LocalPoints`.
 * `TauCeti.AdelicPoints.diagonal`, `TauCeti.AdelicPoints.finiteDiagonal`,
-  `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals out of `G(F)`.
-* `TauCeti.AdelicPoints.finiteProjection`, `TauCeti.AdelicPoints.infiniteProjection`,
-  `TauCeti.AdelicPoints.localProjection`: the projections of `G(𝔸_F)` to `G(𝔸_{F,f})`, `G(F_∞)` and
-  `G(F_v)`.
-* `TauCeti.AdelicPoints.finiteEmbed`: the homomorphism `G(𝔸_{F,f}) → G(𝔸_F)`, `x ↦ (1, x)`.
-
-## Main results
-
-* `TauCeti.AdelicPoints.localProjection_diagonal`: the local component of the diagonal image of a
-  rational point is its image in `G(F_v)`.
-* `TauCeti.AdelicPoints.finiteProjection_finiteEmbed`,
-  `TauCeti.AdelicPoints.infiniteProjection_finiteEmbed`: `finiteEmbed x` has finite component `x`
-  and archimedean component `1`.
-* `TauCeti.AdelicPoints.mrange_finiteEmbed`: the image of `finiteEmbed` is the kernel of the
-  archimedean projection.
-* `TauCeti.AdelicPoints.isEmbedding_finiteEmbed`: `finiteEmbed` is a topological embedding.
+  `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals.
+* `TauCeti.AdelicPoints.finiteProjection`, `TauCeti.AdelicPoints.infiniteProjection`: the finite
+  and infinite components.
+* `TauCeti.AdelicPoints.localProjection`, `TauCeti.AdelicPoints.infinitePlaceProjection`: the
+  components at a finite and at an infinite place, factoring through
+  `TauCeti.AdelicPoints.finiteLocalProjection` and `TauCeti.AdelicPoints.infiniteLocalProjection`.
+* `TauCeti.AdelicPoints.localProjection_diagonal`,
+  `TauCeti.AdelicPoints.infinitePlaceProjection_diagonal`: the local components of a rational point
+  are its images in the local points.
+* `TauCeti.AdelicPoints.prodContinuousMulEquiv`: `G(𝔸_K) ≃ₜ* G(K_∞) × G(𝔸_{K,f})`, with
+  `TauCeti.AdelicPoints.prodContinuousMulEquiv_finiteEmbed`.
+* `TauCeti.AdelicPoints.finiteEmbed`, with `TauCeti.AdelicPoints.finiteProjection_finiteEmbed`
+  and `TauCeti.AdelicPoints.infiniteProjection_finiteEmbed`.
 
 ## References
 
-* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Proposition 2.1.
-* J. Arthur, *An introduction to the trace formula*, §2.
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
+  Prop. 2.1, p. 2, and §3.
+* J. Arthur, *An introduction to the trace formula*, Clay Math. Proc. 4 (2005), §2, p. 11.
 -/
 
 public section
 
-open IsDedekindDomain NumberField Topology WithConv TauCeti.PointTopology
+open IsDedekindDomain NumberField WithConv
 
 namespace TauCeti
 
-variable (F : Type*) [Field F] [NumberField F] (H : Type*) [Semiring H] [Bialgebra F H]
+variable (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
+  [IsFractionRing R K] [Semiring H] [Bialgebra K H]
 
-/-- The adelic points `G(𝔸_F)` of the affine group `G = Spec H` over a number field `F`: the
-convolution monoid of `F`-algebra maps `H → 𝔸_F` (a group when `H` is a Hopf algebra), with the
-point topology. -/
-abbrev AdelicPoints := WithConv (H →ₐ[F] AdeleRing (𝓞 F) F)
+/-- The points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)` of `G = Spec H` over Mathlib's
+`𝔸_K = AdeleRing R K`. They are the adelic points of `G` when `K` is a number field and `R = 𝓞 K`;
+for other `R`, `AdeleRing R K` is not the adele ring of `K`. They carry the convolution product and
+the point topology; for a Hopf algebra `H` they form a topological group. -/
+abbrev AdelicPoints := WithConv (H →ₐ[K] AdeleRing R K)
 
 namespace AdelicPoints
 
-/-- The finite adelic points `G(𝔸_{F,f})`. -/
-abbrev FiniteAdelicPoints := WithConv (H →ₐ[F] FiniteAdeleRing (𝓞 F) F)
+/-- The points `G(𝔸_{K,f}) = WithConv (H →ₐ[K] 𝔸_{K,f})` of `G = Spec H` over the finite adele
+ring `𝔸_{K,f} = FiniteAdeleRing R K`, the restricted product over the height-one primes of `R`,
+with the convolution product and the point topology. They are the finite adelic points of `G` when
+`K` is a number field and `R = 𝓞 K`. -/
+abbrev FiniteAdelicPoints := WithConv (H →ₐ[K] FiniteAdeleRing R K)
 
-/-- The archimedean points `G(F_∞)`, with values in `F_∞ = F ⊗_ℚ ℝ`, the infinite adele ring. -/
-abbrev InfinitePoints := WithConv (H →ₐ[F] InfiniteAdeleRing F)
+/-- The infinite points `G(K_∞) = WithConv (H →ₐ[K] K_∞)` of `G = Spec H`, over the infinite
+adele ring `K_∞ = ∏_{w | ∞} K_w`, with the convolution product and the point topology. -/
+abbrev InfinitePoints := WithConv (H →ₐ[K] InfiniteAdeleRing K)
 
-/-- The local points `G(F_v)` at a finite place `v`. -/
-abbrev LocalPoints (v : HeightOneSpectrum (𝓞 F)) := WithConv (H →ₐ[F] v.adicCompletion F)
+/-- The local points `G(K_v) = WithConv (H →ₐ[K] K_v)` of `G = Spec H` at the finite place `v`,
+over the completion `K_v` of `K` at `v`, with the convolution product and the point topology. -/
+abbrev LocalPoints (v : HeightOneSpectrum R) := WithConv (H →ₐ[K] v.adicCompletion K)
 
-/-- The rational diagonal `G(F) → G(𝔸_F)`, the coefficient map along `F → 𝔸_F`. -/
-noncomputable def diagonal : WithConv (H →ₐ[F] F) →* AdelicPoints F H :=
-  AlgHom.mapValue (Algebra.ofId F _)
+open TauCeti.PointTopology
 
-theorem diagonal_def : diagonal F H = AlgHom.mapValue (Algebra.ofId F _) := (rfl)
+/-! ### Rational diagonals -/
 
-/-- The finite rational diagonal `G(F) → G(𝔸_{F,f})`. -/
-noncomputable def finiteDiagonal : WithConv (H →ₐ[F] F) →* FiniteAdelicPoints F H :=
-  AlgHom.mapValue (Algebra.ofId F _)
+/-- The rational diagonal `G(K) → G(𝔸_K)`: a rational point composed with the diagonal embedding
+`K → 𝔸_K`. -/
+noncomputable def diagonal : WithConv (H →ₐ[K] K) →* AdelicPoints R K H :=
+  AlgHom.mapValue (Algebra.ofId K _)
 
-theorem finiteDiagonal_def : finiteDiagonal F H = AlgHom.mapValue (Algebra.ofId F _) := (rfl)
+/-- The rational diagonal `G(K) → G(𝔸_{K,f})` into the finite adelic points. -/
+noncomputable def finiteDiagonal : WithConv (H →ₐ[K] K) →* FiniteAdelicPoints R K H :=
+  AlgHom.mapValue (Algebra.ofId K _)
 
-/-- The archimedean rational diagonal `G(F) → G(F_∞)`. -/
-noncomputable def infiniteDiagonal : WithConv (H →ₐ[F] F) →* InfinitePoints F H :=
-  AlgHom.mapValue (Algebra.ofId F _)
+/-- The rational diagonal `G(K) → G(K_∞)` into the infinite points. -/
+noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoints K H :=
+  AlgHom.mapValue (Algebra.ofId K _)
 
-omit [NumberField F] in
-theorem infiniteDiagonal_def : infiniteDiagonal F H = AlgHom.mapValue (Algebra.ofId F _) := (rfl)
-
-/-- The projection `G(𝔸_F) → G(𝔸_{F,f})` to the finite component. -/
-noncomputable def finiteProjection : AdelicPoints F H →* FiniteAdelicPoints F H :=
-  AlgHom.mapValue (AlgHom.snd F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F))
-
-theorem finiteProjection_def : finiteProjection F H =
-    AlgHom.mapValue (AlgHom.snd F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F)) := (rfl)
-
-/-- The projection `G(𝔸_F) → G(F_∞)` to the archimedean component. -/
-noncomputable def infiniteProjection : AdelicPoints F H →* InfinitePoints F H :=
-  AlgHom.mapValue (AlgHom.fst F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F))
-
-theorem infiniteProjection_def : infiniteProjection F H =
-    AlgHom.mapValue (AlgHom.fst F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F)) := (rfl)
-
-/-- The projection `p_v : G(𝔸_F) → G(F_v)` at a finite place `v`, the coefficient map along the
-projection `𝔸_F → F_v`. -/
-noncomputable def localProjection (v : HeightOneSpectrum (𝓞 F)) :
-    AdelicPoints F H →* LocalPoints F H v :=
-  AlgHom.mapValue (((FiniteAdeleRing.proj F v : FiniteAdeleRing (𝓞 F) F →ₐ[F] _)).comp
-    (AlgHom.snd F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F)))
-
-theorem localProjection_def (v : HeightOneSpectrum (𝓞 F)) : localProjection F H v =
-    AlgHom.mapValue (((FiniteAdeleRing.proj F v : FiniteAdeleRing (𝓞 F) F →ₐ[F] _)).comp
-      (AlgHom.snd F (InfiniteAdeleRing F) (FiniteAdeleRing (𝓞 F) F))) := (rfl)
-
-variable {F H}
+variable {R K H}
 
 @[simp]
-theorem diagonal_apply (g : WithConv (H →ₐ[F] F)) (h : H) :
-    (diagonal F H g).ofConv h = algebraMap F (AdeleRing (𝓞 F) F) (g.ofConv h) := by
-  simp [diagonal_def]
+theorem diagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
+    diagonal R K H g h = algebraMap K (AdeleRing R K) (g h) := by
+  simp [diagonal]
 
 @[simp]
-theorem finiteDiagonal_apply (g : WithConv (H →ₐ[F] F)) (h : H) :
-    (finiteDiagonal F H g).ofConv h = algebraMap F (FiniteAdeleRing (𝓞 F) F) (g.ofConv h) := by
-  simp [finiteDiagonal_def]
-
-omit [NumberField F] in
-@[simp]
-theorem infiniteDiagonal_apply (g : WithConv (H →ₐ[F] F)) (h : H) :
-    (infiniteDiagonal F H g).ofConv h = algebraMap F (InfiniteAdeleRing F) (g.ofConv h) := by
-  simp [infiniteDiagonal_def]
+theorem finiteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
+    finiteDiagonal R K H g h = algebraMap K (FiniteAdeleRing R K) (g h) := by
+  simp [finiteDiagonal]
 
 @[simp]
-theorem finiteProjection_apply (x : AdelicPoints F H) (h : H) :
-    (finiteProjection F H x).ofConv h = (x.ofConv h).2 := by
-  rw [finiteProjection_def, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-    AlgHom.snd_apply]
+theorem infiniteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
+    infiniteDiagonal K H g h = algebraMap K (InfiniteAdeleRing K) (g h) := by
+  simp [infiniteDiagonal]
+
+/-! ### Finite and infinite components -/
+
+variable (R K H)
+
+/-- The finite component `G(𝔸_K) → G(𝔸_{K,f})`, along the projection `𝔸_K → 𝔸_{K,f}`. -/
+noncomputable def finiteProjection : AdelicPoints R K H →* FiniteAdelicPoints R K H :=
+  AlgHom.mapValue (AlgHom.snd K _ _)
+
+/-- The infinite component `G(𝔸_K) → G(K_∞)`, along the projection `𝔸_K → K_∞`. -/
+noncomputable def infiniteProjection : AdelicPoints R K H →* InfinitePoints K H :=
+  AlgHom.mapValue (AlgHom.fst K _ _)
+
+variable {R K H}
 
 @[simp]
-theorem infiniteProjection_apply (x : AdelicPoints F H) (h : H) :
-    (infiniteProjection F H x).ofConv h = (x.ofConv h).1 := by
-  rw [infiniteProjection_def, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-    AlgHom.fst_apply]
-
-/-- The projection at `v` factors through the finite component. -/
-theorem localProjection_eq_comp (v : HeightOneSpectrum (𝓞 F)) :
-    localProjection F H v =
-      (AlgHom.mapValue (FiniteAdeleRing.proj F v : FiniteAdeleRing (𝓞 F) F →ₐ[F] _)).comp
-        (finiteProjection F H) :=
-  AlgHom.mapValue_comp _ _
+theorem finiteProjection_apply_apply (x : AdelicPoints R K H) (h : H) :
+    finiteProjection R K H x h = (x h).2 := by
+  -- `AdeleRing R K` is a type synonym of the product, so `simp` does not see `AlgHom.snd_apply`
+  simp only [finiteProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+  exact AlgHom.snd_apply (R := K) (A := InfiniteAdeleRing K) (B := FiniteAdeleRing R K) _
 
 @[simp]
-theorem localProjection_apply (v : HeightOneSpectrum (𝓞 F)) (x : AdelicPoints F H) (h : H) :
-    (localProjection F H v x).ofConv h = (x.ofConv h).2 v := by
-  simp [localProjection_eq_comp]
-
-/-- The local component of the diagonal image of a rational point `g` is the image of `g` in
-`G(F_v)`. -/
-@[simp]
-theorem localProjection_diagonal (v : HeightOneSpectrum (𝓞 F)) (g : WithConv (H →ₐ[F] F)) :
-    localProjection F H v (diagonal F H g) = AlgHom.mapValue (Algebra.ofId F _) g := by
-  rw [localProjection_def, diagonal_def]
-  exact AlgHom.mapValue_mapValue_ofId _ g
-
-/-- The finite component of the diagonal image of a rational point is its finite diagonal
-image. -/
-@[simp]
-theorem finiteProjection_diagonal (g : WithConv (H →ₐ[F] F)) :
-    finiteProjection F H (diagonal F H g) = finiteDiagonal F H g := by
-  rw [finiteProjection_def, diagonal_def, finiteDiagonal_def]
-  exact AlgHom.mapValue_mapValue_ofId _ g
-
-/-- The archimedean component of the diagonal image of a rational point is its archimedean
-diagonal image. -/
-@[simp]
-theorem infiniteProjection_diagonal (g : WithConv (H →ₐ[F] F)) :
-    infiniteProjection F H (diagonal F H g) = infiniteDiagonal F H g := by
-  rw [infiniteProjection_def, diagonal_def, infiniteDiagonal_def]
-  exact AlgHom.mapValue_mapValue_ofId _ g
-
-/-- An adelic point is determined by its archimedean and finite components. -/
-theorem ext_iff_projection {x y : AdelicPoints F H} :
-    x = y ↔ infiniteProjection F H x = infiniteProjection F H y ∧
-      finiteProjection F H x = finiteProjection F H y := by
-  refine ⟨fun hxy ↦ hxy ▸ ⟨rfl, rfl⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  refine ofConv_injective (AlgHom.ext fun h ↦ Prod.ext ?_ ?_)
-  · simpa only [infiniteProjection_apply] using DFunLike.congr_fun (congrArg ofConv h₁) h
-  · simpa only [finiteProjection_apply] using DFunLike.congr_fun (congrArg ofConv h₂) h
-
-/-- An adelic point is determined by its archimedean and finite components. -/
-theorem ext_projection {x y : AdelicPoints F H}
-    (h₁ : infiniteProjection F H x = infiniteProjection F H y)
-    (h₂ : finiteProjection F H x = finiteProjection F H y) : x = y :=
-  ext_iff_projection.2 ⟨h₁, h₂⟩
-
-private theorem infiniteProjection_toConv_prod (a : H →ₐ[F] InfiniteAdeleRing F)
-    (b : H →ₐ[F] FiniteAdeleRing (𝓞 F) F) :
-    infiniteProjection F H (toConv (a.prod b)) = toConv a := by
-  rw [infiniteProjection_def, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.fst_prod]
-
-private theorem finiteProjection_toConv_prod (a : H →ₐ[F] InfiniteAdeleRing F)
-    (b : H →ₐ[F] FiniteAdeleRing (𝓞 F) F) :
-    finiteProjection F H (toConv (a.prod b)) = toConv b := by
-  rw [finiteProjection_def, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.snd_prod]
-
-variable (F H) in
-/-- The homomorphism `G(𝔸_{F,f}) → G(𝔸_F)`, `x ↦ (1, x)`, with the identity point at the
-archimedean component. -/
-noncomputable def finiteEmbed : FiniteAdelicPoints F H →* AdelicPoints F H where
-  toFun x := toConv (AlgHom.prod (1 : InfinitePoints F H).ofConv x.ofConv)
-  map_one' := ext_projection (by simp [infiniteProjection_toConv_prod])
-    (by simp [finiteProjection_toConv_prod])
-  map_mul' x y := ext_projection (by simp [infiniteProjection_toConv_prod])
-    (by simp [finiteProjection_toConv_prod])
-
-theorem finiteEmbed_def (x : FiniteAdelicPoints F H) :
-    finiteEmbed F H x = toConv (AlgHom.prod (1 : InfinitePoints F H).ofConv x.ofConv) :=
-  (rfl)
-
-@[simp]
-theorem finiteEmbed_apply (x : FiniteAdelicPoints F H) (h : H) :
-    (finiteEmbed F H x).ofConv h = ((1 : InfinitePoints F H).ofConv h, x.ofConv h) := by
-  rw [finiteEmbed_def, ofConv_toConv, AlgHom.prod_apply]
-
-/-- The finite component of `finiteEmbed x` is `x`. -/
-@[simp]
-theorem finiteProjection_finiteEmbed (x : FiniteAdelicPoints F H) :
-    finiteProjection F H (finiteEmbed F H x) = x := by
-  rw [finiteEmbed_def, finiteProjection_toConv_prod, toConv_ofConv]
-
-/-- The archimedean component of `finiteEmbed x` is the identity. -/
-@[simp]
-theorem infiniteProjection_finiteEmbed (x : FiniteAdelicPoints F H) :
-    infiniteProjection F H (finiteEmbed F H x) = 1 := by
-  rw [finiteEmbed_def, infiniteProjection_toConv_prod, toConv_ofConv]
-
-/-- The local component of `finiteEmbed x` at a finite place `v` is the image of `x` in
-`G(F_v)`. -/
-@[simp]
-theorem localProjection_finiteEmbed (v : HeightOneSpectrum (𝓞 F)) (x : FiniteAdelicPoints F H) :
-    localProjection F H v (finiteEmbed F H x) =
-      AlgHom.mapValue (FiniteAdeleRing.proj F v : FiniteAdeleRing (𝓞 F) F →ₐ[F] _) x := by
-  rw [localProjection_eq_comp, MonoidHom.comp_apply, finiteProjection_finiteEmbed]
-
-theorem finiteEmbed_injective : Function.Injective (finiteEmbed F H) :=
-  Function.LeftInverse.injective finiteProjection_finiteEmbed
-
-/-- The image of `finiteEmbed` consists of the adelic points with trivial archimedean
-component. -/
-theorem mrange_finiteEmbed : MonoidHom.mrange (finiteEmbed F H) =
-    MonoidHom.mker (infiniteProjection F H) := by
-  ext y
-  refine ⟨?_, fun hy ↦ ⟨finiteProjection F H y, ?_⟩⟩
-  · rintro ⟨x, rfl⟩
-    exact infiniteProjection_finiteEmbed x
-  · exact ext_projection (by rw [infiniteProjection_finiteEmbed, (MonoidHom.mem_mker).1 hy])
-      (finiteProjection_finiteEmbed _)
-
-/-! ### Continuity -/
+theorem infiniteProjection_apply_apply (x : AdelicPoints R K H) (h : H) :
+    infiniteProjection R K H x h = (x h).1 := by
+  -- `AdeleRing R K` is a type synonym of the product, so `simp` does not see `AlgHom.fst_apply`
+  simp only [infiniteProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+  exact AlgHom.fst_apply (R := K) (A := InfiniteAdeleRing K) (B := FiniteAdeleRing R K) _
 
 @[fun_prop]
-theorem continuous_finiteProjection : Continuous (finiteProjection F H) :=
+theorem continuous_finiteProjection : Continuous (finiteProjection R K H) :=
   AlgHom.continuous_mapValue continuous_snd
 
 @[fun_prop]
-theorem continuous_infiniteProjection : Continuous (infiniteProjection F H) :=
+theorem continuous_infiniteProjection : Continuous (infiniteProjection R K H) :=
   AlgHom.continuous_mapValue continuous_fst
 
-@[fun_prop]
-theorem continuous_localProjection (v : HeightOneSpectrum (𝓞 F)) :
-    Continuous (localProjection F H v) :=
-  AlgHom.continuous_mapValue ((FiniteAdeleRing.proj F v).continuous.comp continuous_snd)
+/-- The finite component of the diagonal image of a rational point is its finite diagonal image. -/
+@[simp]
+theorem finiteProjection_diagonal (g : WithConv (H →ₐ[K] K)) :
+    finiteProjection R K H (diagonal R K H g) = finiteDiagonal R K H g :=
+  AlgHom.mapValue_mapValue_ofId _ g
+
+/-- The infinite component of the diagonal image of a rational point is its infinite diagonal
+image. -/
+@[simp]
+theorem infiniteProjection_diagonal (g : WithConv (H →ₐ[K] K)) :
+    infiniteProjection R K H (diagonal R K H g) = infiniteDiagonal K H g :=
+  AlgHom.mapValue_mapValue_ofId _ g
+
+/-! ### Components at a single place -/
+
+variable (R K H)
+
+/-- The component `G(𝔸_{K,f}) → G(K_v)` of a finite adelic point at the finite place `v`, along the
+projection `𝔸_{K,f} → K_v` onto the completion at `v`. -/
+noncomputable def finiteLocalProjection (v : HeightOneSpectrum R) :
+    FiniteAdelicPoints R K H →* LocalPoints R K H v :=
+  AlgHom.mapValue (FiniteAdeleRing.proj K v).toAlgHom
+
+/-- The component `p_v : G(𝔸_K) → G(K_v)` of an adelic point at the finite place `v`: the finite
+component followed by `TauCeti.AdelicPoints.finiteLocalProjection`. -/
+noncomputable def localProjection (v : HeightOneSpectrum R) :
+    AdelicPoints R K H →* LocalPoints R K H v :=
+  (finiteLocalProjection R K H v).comp (finiteProjection R K H)
+
+/-- The component `G(K_∞) → G(K_w)` of an infinite point at the infinite place `w`, along the
+projection `K_∞ → K_w` onto the completion at `w`. -/
+noncomputable def infiniteLocalProjection (w : InfinitePlace K) :
+    InfinitePoints K H →* WithConv (H →ₐ[K] w.Completion) :=
+  AlgHom.mapValue (Pi.evalAlgHom K _ w)
+
+/-- The component `p_w : G(𝔸_K) → G(K_w)` of an adelic point at the infinite place `w`: the
+infinite component followed by `TauCeti.AdelicPoints.infiniteLocalProjection`. -/
+noncomputable def infinitePlaceProjection (w : InfinitePlace K) :
+    AdelicPoints R K H →* WithConv (H →ₐ[K] w.Completion) :=
+  (infiniteLocalProjection K H w).comp (infiniteProjection R K H)
+
+variable {R K H}
+
+@[simp]
+theorem finiteLocalProjection_apply_apply (v : HeightOneSpectrum R) (x : FiniteAdelicPoints R K H)
+    (h : H) : finiteLocalProjection R K H v x h = x h v := by
+  simp [finiteLocalProjection, FiniteAdeleRing.proj_apply]
+
+theorem localProjection_apply (v : HeightOneSpectrum R) (x : AdelicPoints R K H) :
+    localProjection R K H v x = finiteLocalProjection R K H v (finiteProjection R K H x) :=
+  (rfl)
+
+@[simp]
+theorem localProjection_apply_apply (v : HeightOneSpectrum R) (x : AdelicPoints R K H) (h : H) :
+    localProjection R K H v x h = (x h).2 v := by
+  simp [localProjection_apply]
+
+@[simp]
+theorem infiniteLocalProjection_apply_apply (w : InfinitePlace K) (x : InfinitePoints K H)
+    (h : H) : infiniteLocalProjection K H w x h = x h w := by
+  -- `InfiniteAdeleRing K` is a type synonym of the product of the completions, so `simp` does not
+  -- see `Pi.evalAlgHom_apply`
+  simp only [infiniteLocalProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+  exact Pi.evalAlgHom_apply ..
+
+theorem infinitePlaceProjection_apply (w : InfinitePlace K) (x : AdelicPoints R K H) :
+    infinitePlaceProjection R K H w x =
+      infiniteLocalProjection K H w (infiniteProjection R K H x) :=
+  (rfl)
+
+@[simp]
+theorem infinitePlaceProjection_apply_apply (w : InfinitePlace K) (x : AdelicPoints R K H)
+    (h : H) : infinitePlaceProjection R K H w x h = (x h).1 w := by
+  simp [infinitePlaceProjection_apply]
 
 @[fun_prop]
-theorem continuous_finiteEmbed : Continuous (finiteEmbed F H) :=
-  continuous_withConv_iff.2 fun h ↦ by
-    simp only [finiteEmbed_apply]
-    exact continuous_const.prodMk (continuous_eval_ofConv h)
+theorem continuous_finiteLocalProjection (v : HeightOneSpectrum R) :
+    Continuous (finiteLocalProjection R K H v) :=
+  AlgHom.continuous_mapValue (FiniteAdeleRing.proj K v).cont
 
-/-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
-`finiteProjection`. -/
-theorem isEmbedding_finiteEmbed : IsEmbedding (finiteEmbed F H) :=
-  Function.LeftInverse.isEmbedding finiteProjection_finiteEmbed continuous_finiteProjection
-    continuous_finiteEmbed
+/-- The component `p_v` at a finite place is continuous. -/
+@[fun_prop]
+theorem continuous_localProjection (v : HeightOneSpectrum R) :
+    Continuous (localProjection R K H v) :=
+  (continuous_finiteLocalProjection v).comp continuous_finiteProjection
+
+@[fun_prop]
+theorem continuous_infiniteLocalProjection (w : InfinitePlace K) :
+    Continuous (infiniteLocalProjection K H w) :=
+  AlgHom.continuous_mapValue (continuous_apply w)
+
+/-- The component `p_w` at an infinite place is continuous. -/
+@[fun_prop]
+theorem continuous_infinitePlaceProjection (w : InfinitePlace K) :
+    Continuous (infinitePlaceProjection R K H w) :=
+  (continuous_infiniteLocalProjection w).comp continuous_infiniteProjection
+
+/-- The component at a finite place `v` of the finite diagonal image of a rational point is its
+image in `G(K_v)`. -/
+@[simp]
+theorem finiteLocalProjection_finiteDiagonal (v : HeightOneSpectrum R)
+    (g : WithConv (H →ₐ[K] K)) :
+    finiteLocalProjection R K H v (finiteDiagonal R K H g) =
+      (AlgHom.mapValue (Algebra.ofId K (v.adicCompletion K)) g : LocalPoints R K H v) :=
+  AlgHom.mapValue_mapValue_ofId _ g
+
+/-- The component `p_v` at a finite place `v` of the diagonal image of a rational point is its
+image in `G(K_v)`. -/
+@[simp]
+theorem localProjection_diagonal (v : HeightOneSpectrum R) (g : WithConv (H →ₐ[K] K)) :
+    localProjection R K H v (diagonal R K H g) =
+      (AlgHom.mapValue (Algebra.ofId K (v.adicCompletion K)) g : LocalPoints R K H v) := by
+  rw [localProjection_apply, finiteProjection_diagonal, finiteLocalProjection_finiteDiagonal]
+
+/-- The component at an infinite place `w` of the infinite diagonal image of a rational point
+is its image in `G(K_w)`. -/
+@[simp]
+theorem infiniteLocalProjection_infiniteDiagonal (w : InfinitePlace K)
+    (g : WithConv (H →ₐ[K] K)) :
+    infiniteLocalProjection K H w (infiniteDiagonal K H g) =
+      AlgHom.mapValue (Algebra.ofId K w.Completion) g :=
+  AlgHom.mapValue_mapValue_ofId _ g
+
+/-- The component `p_w` at an infinite place `w` of the diagonal image of a rational point is its
+image in `G(K_w)`. -/
+@[simp]
+theorem infinitePlaceProjection_diagonal (w : InfinitePlace K) (g : WithConv (H →ₐ[K] K)) :
+    infinitePlaceProjection R K H w (diagonal R K H g) =
+      AlgHom.mapValue (Algebra.ofId K w.Completion) g := by
+  rw [infinitePlaceProjection_apply, infiniteProjection_diagonal,
+    infiniteLocalProjection_infiniteDiagonal]
+
+/-! ### The infinite and finite splitting -/
+
+variable (R K H)
+
+/-- The splitting `𝔸_K = K_∞ × 𝔸_{K,f}` as an isomorphism of topological groups of points
+`G(𝔸_K) ≃ G(K_∞) × G(𝔸_{K,f})`, sending an adelic point to its infinite and finite
+components. -/
+noncomputable def prodContinuousMulEquiv :
+    AdelicPoints R K H ≃ₜ* InfinitePoints K H × FiniteAdelicPoints R K H :=
+  PointTopology.prodContinuousMulEquiv K H (InfiniteAdeleRing K) (FiniteAdeleRing R K)
+
+variable {R K H}
+
+@[simp]
+theorem prodContinuousMulEquiv_apply (x : AdelicPoints R K H) :
+    prodContinuousMulEquiv R K H x = (infiniteProjection R K H x, finiteProjection R K H x) := by
+  rw [prodContinuousMulEquiv, PointTopology.prodContinuousMulEquiv_apply, infiniteProjection,
+    finiteProjection]
+
+/-- The adelic point with infinite component `y` and finite component `x` takes the value
+`(y h, x h)` at `h`. -/
+@[simp]
+theorem prodContinuousMulEquiv_symm_apply_apply
+    (p : InfinitePoints K H × FiniteAdelicPoints R K H) (h : H) :
+    (prodContinuousMulEquiv R K H).symm p h = (p.1 h, p.2 h) := by
+  rw [prodContinuousMulEquiv, PointTopology.prodContinuousMulEquiv_symm_apply_apply]
+
+variable (R K H)
+
+/-- The embedding `G(𝔸_{K,f}) → G(𝔸_K)`, `x ↦ (1, x)`, of a finite adelic point as the adelic point
+with finite component `x` and trivial infinite component, through the splitting
+`TauCeti.AdelicPoints.prodContinuousMulEquiv`. -/
+noncomputable def finiteEmbed : FiniteAdelicPoints R K H →* AdelicPoints R K H :=
+  (prodContinuousMulEquiv R K H).symm.toMonoidHom.comp (MonoidHom.inr _ _)
+
+variable {R K H}
+
+theorem finiteEmbed_apply (x : FiniteAdelicPoints R K H) :
+    finiteEmbed R K H x = (prodContinuousMulEquiv R K H).symm (1, x) :=
+  (rfl)
+
+@[simp]
+theorem finiteEmbed_apply_apply (x : FiniteAdelicPoints R K H) (h : H) :
+    finiteEmbed R K H x h = (algebraMap K (InfiniteAdeleRing K) (Coalgebra.counit h), x h) := by
+  rw [finiteEmbed_apply, prodContinuousMulEquiv_symm_apply_apply, AlgHom.convOne_apply]
+
+/-- The splitting sends `finiteEmbed x` to `(1, x)`. -/
+theorem prodContinuousMulEquiv_finiteEmbed (x : FiniteAdelicPoints R K H) :
+    prodContinuousMulEquiv R K H (finiteEmbed R K H x) = (1, x) :=
+  (prodContinuousMulEquiv R K H).apply_symm_apply (1, x)
+
+/-- The finite component of `finiteEmbed x` is `x`. -/
+@[simp]
+theorem finiteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
+    finiteProjection R K H (finiteEmbed R K H x) = x :=
+  congr_arg Prod.snd ((prodContinuousMulEquiv_apply _).symm.trans
+    (prodContinuousMulEquiv_finiteEmbed x))
+
+/-- The infinite component of `finiteEmbed x` is the identity point. -/
+@[simp]
+theorem infiniteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
+    infiniteProjection R K H (finiteEmbed R K H x) = 1 :=
+  congr_arg Prod.fst ((prodContinuousMulEquiv_apply _).symm.trans
+    (prodContinuousMulEquiv_finiteEmbed x))
+
+/-- The embedding of finite adelic points into adelic points is continuous. -/
+@[fun_prop]
+theorem continuous_finiteEmbed : Continuous (finiteEmbed R K H) :=
+  (prodContinuousMulEquiv R K H).symm.continuous.comp (continuous_const.prodMk continuous_id)
 
 end AdelicPoints
 

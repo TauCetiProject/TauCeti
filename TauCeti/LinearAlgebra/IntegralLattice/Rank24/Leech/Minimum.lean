@@ -179,7 +179,7 @@ theorem minimum_leechLattice : leechLattice.minimum = 4 := by
       rw [norm_apply, leechLattice_form_leechShift_leechShift] at h
       exact_mod_cast h
     · rintro k ⟨x, hx, rfl⟩
-      have h := four_le_norm_leechLattice x.2 fun h ↦ hx (Subtype.ext h)
+      have h := four_le_norm_leechLattice x.property fun h ↦ hx (Subtype.ext h)
       rw [← leechLattice.integralNorm_cast x] at h
       exact_mod_cast h
   exact_mod_cast isPosDef_leechLattice.isPosSemidef.isLeast_minimum.unique hleast

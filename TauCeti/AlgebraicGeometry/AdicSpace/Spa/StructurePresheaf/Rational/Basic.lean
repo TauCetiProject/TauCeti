@@ -282,8 +282,8 @@ theorem bijective_presentationLimitRationalIso_hom
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
     Function.Bijective fun z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ↦
-      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
+      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z) :=
   (ConcreteCategory.bijective_of_isIso
     (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))).comp
     (ConcreteCategory.bijective_of_isIso (presentationLimitRationalIso Aplus hAplus p hp).hom)
