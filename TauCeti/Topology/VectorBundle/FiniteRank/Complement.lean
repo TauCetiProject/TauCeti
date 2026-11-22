@@ -97,7 +97,8 @@ noncomputable def orthogonal : FiniteRankBundleCore 𝕜 B :=
     (euclideanMap_injective j hj)
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
-  ofBundle 𝕜 (orthogonalRank (A := A) (N := N)) (OrthogonalFiber j)
+  ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
+    (OrthogonalFiber j)
 
 @[simp] theorem rank_orthogonal : (orthogonal j hj).rank = N - A.rank := by
   simp [orthogonal, orthogonalRank]
@@ -109,7 +110,7 @@ private noncomputable def orthogonalFiberEquiv (x : B) :
     (euclideanMap_injective j hj)
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
-  pointIndexedCoreFiberEquiv 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜)
+  ofBundleFiberEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
     (OrthogonalFiber j) x
 
 private theorem continuous_orthogonalFiberEquiv :
@@ -121,10 +122,11 @@ private theorem continuous_orthogonalFiberEquiv :
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
   (continuous_snd.comp ((isEmbedding_totalSpace_range _ _).continuous.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜)
+    (ofBundleTotalSpaceHomeomorph
+      (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
       (OrthogonalFiber j)).continuous)).congr fun p ↦
     congrArg (fun q : TotalSpace _ (OrthogonalFiber j) ↦ (q.snd : EuclideanSpace 𝕜 (Fin N)))
-      (pointIndexedCoreHomeomorph_apply 𝕜 _ _ p)
+      (ofBundleTotalSpaceHomeomorph_apply _ _ p)
 
 /-- The fibre maps of the inclusion of the orthogonal complement into `Fin N → 𝕜`. -/
 private noncomputable def orthogonalFiberMap (x : B) :

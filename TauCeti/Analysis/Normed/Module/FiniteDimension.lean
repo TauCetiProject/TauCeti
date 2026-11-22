@@ -63,6 +63,8 @@ vectors span those subspaces.
   finite basis are uniformly bounded is bounded.
 * `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
   identification of maps out of a coordinate space with their values on the standard basis.
+* `ContinuousLinearEquiv.piRing_symm_trans_arrowCongr_apply`: precomposing a coordinate-space map
+  via `piRing.symm.trans (e.symm.arrowCongr (refl 𝕜 E))`.
 * `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
   into a given ball around the origin.
 -/
@@ -288,6 +290,17 @@ variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 @[simp] theorem piRing_symm_apply (f : ι → E) (v : ι → 𝕜) :
     (piRing (𝕜 := 𝕜) (E := E) ι).symm f v = ∑ i, v i • f i :=
   LinearEquiv.piRing_symm_apply (R := 𝕜) (S := 𝕜) f v
+
+/-- Evaluating `(piRing ι).symm.trans (e.symm.arrowCongr (refl 𝕜 E))` on `w` gives
+`(piRing ι).symm w ∘L e`. -/
+theorem piRing_symm_trans_arrowCongr_apply {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [TopologicalSpace F] (e : F ≃L[𝕜] (ι → 𝕜)) (w : ι → E) :
+    ((piRing (𝕜 := 𝕜) (E := E) ι).symm.trans
+        (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 E))).toContinuousLinearMap w =
+      ((piRing (𝕜 := 𝕜) (E := E) ι).symm w).comp e.toContinuousLinearMap := by
+  ext u
+  simp only [coe_coe, trans_apply, arrowCongr_apply, refl_apply, symm_symm,
+    ContinuousLinearMap.comp_apply]
 
 end ContinuousLinearEquiv
 

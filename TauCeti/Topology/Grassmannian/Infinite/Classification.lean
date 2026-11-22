@@ -257,7 +257,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {X : Type*} [TopologicalS
 variable (𝕜) in
 /-- `Tautological 𝕜 k` as an object of `FiniteRankBundleCore 𝕜 (infiniteGrassmannian 𝕜 k)`. -/
 abbrev tautologicalCore (k : ℕ) : FiniteRankBundleCore 𝕜 (infiniteGrassmannian 𝕜 k) :=
-  ofBundle 𝕜 k (Tautological 𝕜 k)
+  ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜)) (Tautological 𝕜 k)
 
 /-- Continuous fibrewise linear equivalences of `Tautological` pullbacks yield core isomorphisms. -/
 theorem nonempty_pullback_iso_of_continuousLinearEquiv_pullback [CompleteSpace 𝕜] {k : ℕ}
@@ -362,7 +362,8 @@ private theorem continuous_toInfiniteTautologicalEquiv (k n : ℕ) :
 isomorphic to `ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n)`. -/
 def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
     (tautologicalCore 𝕜 k).pullback (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)) ≅
-      ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n) :=
+      ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n) :=
   (eqToIso (pullback_ofBundle (Tautological 𝕜 k)
     (toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)))).trans
     (ofBundleIso (E₀ := finiteGrassmannian.Tautological 𝕜 k n) (E₁ := stagePullback k n)
@@ -470,13 +471,15 @@ theorem classificationEquiv_id (k : ℕ) :
 /-- `finiteGrassmannian.toInfiniteContinuousMap` classifies `finiteGrassmannian.Tautological`. -/
 theorem classificationEquiv_toInfiniteContinuousMap (k n : ℕ) :
     classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k (Quotient.mk _ toInfiniteContinuousMap) =
-      Quotient.mk _ ⟨ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩ :=
+      Quotient.mk _ ⟨ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩ :=
   Quotient.sound ⟨finiteGrassmannian.pullbackTautologicalCoreIso k n⟩
 /-- `(classificationEquiv _ _ k).symm` sends `finiteGrassmannian.Tautological` to
 `[toInfiniteContinuousMap]`. -/
 @[simp] theorem classificationEquiv_symm_finiteTautological (k n : ℕ) :
     (classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k).symm
-      (Quotient.mk _ ⟨ofBundle 𝕜 k (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩) =
+      (Quotient.mk _ ⟨ofBundle 𝕜 (ContinuousLinearEquiv.refl 𝕜 (Fin k → 𝕜))
+        (finiteGrassmannian.Tautological 𝕜 k n), rfl⟩) =
         Quotient.mk _ toInfiniteContinuousMap :=
   (classificationEquiv 𝕜 (finiteGrassmannian 𝕜 k n) k).injective <| by
     rw [Equiv.apply_symm_apply, classificationEquiv_toInfiniteContinuousMap]

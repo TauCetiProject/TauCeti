@@ -21,8 +21,8 @@ underlying bundle or core:
 * `TauCeti.pointIndexedCoreDiffeomorph`: `C^n` diffeomorphism between
   `(pointIndexedCore 𝕜 F E).TotalSpace` and `TotalSpace F E` over the identity of the base;
 * `VectorBundleCore.congrModelDiffeomorph`: `C^n` diffeomorphism between
-  `(Z.congrModel e).TotalSpace` and `Z.TotalSpace` over the identity of the base, acting by
-  `e.symm` on each fibre.
+  `Z.TotalSpace` and `(Z.congrModel e).TotalSpace` over the identity of the base, acting by
+  `e` on each fibre, matching `VectorBundleCore.congrModelHomeomorph`.
 
 ## References
 
@@ -112,16 +112,31 @@ variable {𝕜 B F F' ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpa
   [TopologicalSpace HB] [ChartedSpace HB B]
 
 /-- Transporting the model fibre of a `VectorBundleCore` along `e : F ≃L[𝕜] F'` induces a `C^n`
-diffeomorphism of total spaces over the identity of the base, acting on fibres by `e.symm`. No
+diffeomorphism of total spaces over the identity of the base, acting on fibres by `e`. No
 smoothness hypothesis on `Z` is required. -/
 noncomputable def congrModelDiffeomorph (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
     (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
-    (Z.congrModel e).TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜, F'), IB.prod 𝓘(𝕜, F)⟯ Z.TotalSpace where
-  toFun p := ⟨p.proj, e.symm p.snd⟩
-  invFun p := ⟨p.proj, e p.snd⟩
-  left_inv p := by rcases p with ⟨x, v⟩; exact congrArg (TotalSpace.mk' F' x) (e.apply_symm_apply v)
-  right_inv p := by rcases p with ⟨x, v⟩; exact congrArg (TotalSpace.mk' F x) (e.symm_apply_apply v)
+    Z.TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, F')⟯ (Z.congrModel e).TotalSpace where
+  toFun p := ⟨p.proj, e p.snd⟩
+  invFun p := ⟨p.proj, e.symm p.snd⟩
+  left_inv p := by rcases p with ⟨x, v⟩; exact congrArg (TotalSpace.mk' F x) (e.symm_apply_apply v)
+  right_inv p := by
+    rcases p with ⟨x, v⟩
+    exact congrArg (TotalSpace.mk' F' x) (e.apply_symm_apply v)
   contMDiff_toFun p₀ := by
+    rw [Bundle.contMDiffAt_totalSpace_iff]
+    refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
+    refine (e.contDiff.comp_contMDiffAt
+      (p₀.contMDiffAt_trivializationAt_snd (IB := IB) (n := n))).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun q ↦ ?_)
+    dsimp only [Function.comp_apply]
+    simp only [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def,
+      indexAt_congrModel]
+    have hq := congrArg Prod.snd
+      (Z.localTriv_congrModel_congrModelHomeomorph e (Z.indexAt p₀.proj) q)
+    rw [congrModelHomeomorph_apply] at hq
+    exact hq
+  contMDiff_invFun p₀ := by
     rw [Bundle.contMDiffAt_totalSpace_iff]
     refine ⟨(contMDiff_proj (Z.congrModel e).Fiber).contMDiffAt, ?_⟩
     refine (e.symm.contDiff.comp_contMDiffAt
@@ -136,34 +151,21 @@ noncomputable def congrModelDiffeomorph (Z : VectorBundleCore 𝕜 B F ι) (e : 
     rw [(Z.congrModelHomeomorph e).apply_symm_apply, congrModelHomeomorph_symm_apply,
       e.symm_apply_apply] at hq
     exact hq.symm
-  contMDiff_invFun p₀ := by
-    rw [Bundle.contMDiffAt_totalSpace_iff]
-    refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
-    refine (e.contDiff.comp_contMDiffAt
-      (p₀.contMDiffAt_trivializationAt_snd (IB := IB) (n := n))).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun q ↦ ?_)
-    dsimp only [Function.comp_apply]
-    simp only [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def,
-      indexAt_congrModel]
-    have hq := congrArg Prod.snd
-      (Z.localTriv_congrModel_congrModelHomeomorph e (Z.indexAt p₀.proj) q)
-    rw [congrModelHomeomorph_apply] at hq
-    exact hq
 
 @[simp]
 theorem congrModelDiffeomorph_toHomeomorph (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
     (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
-    (Z.congrModelDiffeomorph e IB n).toHomeomorph = (Z.congrModelHomeomorph e).symm :=
-  Homeomorph.ext fun p ↦ (Z.congrModelHomeomorph_symm_apply e p).symm
+    (Z.congrModelDiffeomorph e IB n).toHomeomorph = Z.congrModelHomeomorph e :=
+  Homeomorph.ext fun p ↦ (Z.congrModelHomeomorph_apply e p).symm
 
 @[simp]
 theorem congrModelDiffeomorph_apply (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) (p : (Z.congrModel e).TotalSpace) :
-    Z.congrModelDiffeomorph e IB n p = ⟨p.proj, e.symm p.snd⟩ := (rfl)
+    (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) (p : Z.TotalSpace) :
+    Z.congrModelDiffeomorph e IB n p = ⟨p.proj, e p.snd⟩ := (rfl)
 
 @[simp]
 theorem congrModelDiffeomorph_symm_apply (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) (p : Z.TotalSpace) :
-    (Z.congrModelDiffeomorph e IB n).symm p = ⟨p.proj, e p.snd⟩ := (rfl)
+    (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) (p : (Z.congrModel e).TotalSpace) :
+    (Z.congrModelDiffeomorph e IB n).symm p = ⟨p.proj, e.symm p.snd⟩ := (rfl)
 
 end VectorBundleCore

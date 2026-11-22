@@ -44,7 +44,6 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
 section Coherence
 
 variable (A D C : FiniteRankBundleCore 𝕜 B)
-  [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n]
 
 -- The monoidal coherence isomorphisms are definitionally `constIso` with the data below;
 -- using the same data lets their total-space maps be identified by the generic coe lemmas.
@@ -70,7 +69,6 @@ theorem coe_tensorAssociatorDiffeomorph_symm :
       (α_ A D C).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The left tensor unitor as a smooth bundle equivalence. -/
 noncomputable def tensorLeftUnitorDiffeomorph :
     ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).core.TotalSpace ≃ₘ^n⟮
@@ -92,7 +90,6 @@ theorem coe_tensorLeftUnitorDiffeomorph_symm :
     ⇑(tensorLeftUnitorDiffeomorph (I := I) (n := n) A).symm = (λ_ A).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The right tensor unitor as a smooth bundle equivalence. -/
 noncomputable def tensorRightUnitorDiffeomorph :
     (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).core.TotalSpace ≃ₘ^n⟮
@@ -114,7 +111,6 @@ theorem coe_tensorRightUnitorDiffeomorph_symm :
     ⇑(tensorRightUnitorDiffeomorph (I := I) (n := n) A).symm = (ρ_ A).inv.totalSpaceMap :=
   coe_constIsoDiffeomorph_symm _ _ _
 
-omit [C.core.IsContMDiff I n] in
 /-- The tensor symmetry as a smooth bundle equivalence. -/
 noncomputable def tensorBraidingDiffeomorph :
     (A ⊗ D).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜),
@@ -154,14 +150,12 @@ theorem contMDiff_totalSpaceMap_associator_inv :
   coe_tensorAssociatorDiffeomorph_symm (I := I) (n := n) A D C ▸
     (tensorAssociatorDiffeomorph (I := I) (n := n) A D C).symm.contMDiff
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_leftUnitor_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (λ_ A).hom.totalSpaceMap :=
   coe_tensorLeftUnitorDiffeomorph (I := I) (n := n) A ▸
     (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).contMDiff
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_leftUnitor_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).rank → 𝕜)) n
@@ -169,14 +163,12 @@ theorem contMDiff_totalSpaceMap_leftUnitor_inv :
   coe_tensorLeftUnitorDiffeomorph_symm (I := I) (n := n) A ▸
     (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_rightUnitor_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (ρ_ A).hom.totalSpaceMap :=
   coe_tensorRightUnitorDiffeomorph (I := I) (n := n) A ▸
     (tensorRightUnitorDiffeomorph (I := I) (n := n) A).contMDiff
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_rightUnitor_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).rank → 𝕜)) n
@@ -184,14 +176,12 @@ theorem contMDiff_totalSpaceMap_rightUnitor_inv :
   coe_tensorRightUnitorDiffeomorph_symm (I := I) (n := n) A ▸
     (tensorRightUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
 
-omit [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_braiding_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (D ⊗ A).rank → 𝕜)) n (β_ A D).hom.totalSpaceMap :=
   coe_tensorBraidingDiffeomorph (I := I) (n := n) A D ▸
     (tensorBraidingDiffeomorph (I := I) (n := n) A D).contMDiff
 
-omit [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_braiding_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin (D ⊗ A).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜)) n (β_ A D).inv.totalSpaceMap :=

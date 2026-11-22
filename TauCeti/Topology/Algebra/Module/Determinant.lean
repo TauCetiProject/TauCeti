@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
@@ -47,6 +48,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearEquiv.det_symm_comp_comp_comp`: composing with endomorphisms on either side
   multiplies the relative determinant by their determinants.
 * `ContinuousLinearEquiv.sum_cofactor_comp_apply_single`: the cofactor contraction identity.
+* `Module.Basis.det_equivFunL_symm_trans`: the determinant of the coordinate transition
+  `b₁.equivFunL ∘ b₂.equivFunL.symm` equals `b₁.det b₂`.
 -/
 
 public section
@@ -242,3 +245,21 @@ theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [Con
 end PiDet
 
 end ContinuousLinearEquiv
+
+namespace Module.Basis
+
+/-- The determinant of the coordinate transition `b₁.equivFunL ∘ b₂.equivFunL.symm` equals
+`b₁.det b₂`. -/
+theorem det_equivFunL_symm_trans {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] [T2Space E] [Fintype ι] [DecidableEq ι] (b₁ b₂ : Basis ι 𝕜 E) :
+    LinearMap.det ((b₂.equivFunL.symm.trans b₁.equivFunL).toContinuousLinearMap :
+      (ι → 𝕜) →ₗ[𝕜] (ι → 𝕜)) = b₁.det b₂ := by
+  have hconj := LinearMap.det_conj (b₁.equiv b₂ (Equiv.refl ι)).toLinearMap b₁.equivFun
+  rw [Module.Basis.det_basis b₂ b₁] at hconj
+  refine (congrArg LinearMap.det (LinearMap.ext fun v ↦ funext fun i ↦ ?_)).trans hconj
+  have hv : b₂.equivFunL.symm v = ∑ j, v j • b₂ j :=
+    b₂.equivFunL.symm_apply_eq.mpr (by ext j; simp [Finsupp.single_apply])
+  simp [hv, Module.Basis.equivFun_symm_apply, Module.Basis.equiv_apply]
+
+end Module.Basis
