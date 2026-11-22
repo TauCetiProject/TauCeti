@@ -167,7 +167,8 @@ theorem lt_and_lt_of_hasDerivAt_of_mul_pos {D : Set ℝ} {f f' : ℝ → ℝ} {a
 /-- If `f s * d s + q s = 0` for `s` near `x`, where `f x = 0`, `q` has derivative `κ` at `x` and
 `d` tends to `a ≠ 0` at `x`, then `f` has derivative `-κ / a` at `x`: near `x` the slope of `f`
 is `-(slope q x s) / d s`. -/
-theorem hasDerivAt_neg_div_of_mul_add_eq_zero {f d q : ℝ → ℝ} {x κ a : ℝ}
+theorem hasDerivAt_neg_div_of_mul_add_eq_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {f d q : 𝕜 → 𝕜} {x κ a : 𝕜}
     (hid : ∀ᶠ s in 𝓝 x, f s * d s + q s = 0) (hf : f x = 0) (hq : HasDerivAt q κ x)
     (hd : Tendsto d (𝓝 x) (𝓝 a)) (ha : a ≠ 0) : HasDerivAt f (-κ / a) x := by
   have hq0 : q x = 0 := by simpa [hf] using hid.self_of_nhds
@@ -178,7 +179,7 @@ theorem hasDerivAt_neg_div_of_mul_add_eq_zero {f d q : ℝ → ℝ} {x κ a : �
   have hs : s - x ≠ 0 := sub_ne_zero.2 (mem_compl_singleton_iff.1 hs)
   rw [Pi.div_apply, slope_def_field, slope_def_field, hq0, hf]
   field_simp
-  linarith
+  linear_combination -hsid
 
 end TauCeti
 

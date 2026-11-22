@@ -338,13 +338,14 @@ the derivative of `(t, x) ↦ (d(f t)_x, ℓ x)`, which sends `(τ, ξ)` to
 `(τ ∂ₜ (d(f t)_x) + Hess(f t)_x ξ, ℓ ξ)`, is a linear isomorphism carrying `(0, v)` to `(0, 1)`. -/
 private theorem exists_continuousLinearEquiv_fderiv_prod (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
-    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) (hv0 : v ≠ 0) {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
+    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
     ∃ e : (ℝ × E) ≃L[ℝ] StrongDual ℝ E × ℝ, (e : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ) =
       (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)).prod
         (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)) ∧ e (0, v) = (0, ℓ v) := by
   set D : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ :=
     (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)).prod
       (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E))
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hℓ
   have hD : ∀ w, D w = (w.1 • deriv (fun s ↦ fderiv ℝ (f s) x) t +
       fderiv ℝ (fderiv ℝ (f t)) x w.2, ℓ w.2) := fun w ↦ by
     simp [D, fderiv_fderiv_apply hf]
@@ -369,11 +370,11 @@ private theorem exists_continuousLinearEquiv_fderiv_prod (hf : ContDiffAt ℝ 2 
 the family is transverse and the Hessian has a nonzero kernel vector `v`, with `ℓ v = 1`, there is
 a `C²` curve `c` through `(t, x)` with velocity `(0, v)`, made of critical points of the family,
 along which `ℓ` restricted to the space component increases at unit rate, and which passes
-through every critical point of the family near `(t, x)`. It is the preimage of the line
+through every critical point of the family near `(t, x)`. It is the image of the line
 `{0} × ℝ` under the local inverse of `(t, x) ↦ (d(f t)_x, ℓ x)`. -/
 theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
-    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) (hv0 : v ≠ 0)
+    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
     {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
     ∃ c : ℝ → ℝ × E, ∃ N ∈ 𝓝 (t, x), c 0 = (t, x) ∧ ContDiffAt ℝ 2 c 0 ∧
       HasDerivAt c (0, v) 0 ∧ (∀ᶠ s in 𝓝 0, fderiv ℝ (f (c s).1) (c s).2 = 0 ∧
@@ -385,7 +386,7 @@ theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
   have hΦ : ContDiffAt ℝ 2 Φ (t, x) :=
     hG.prodMk (ℓ.contDiff.contDiffAt.comp _ contDiffAt_snd)
   obtain ⟨e, he, hev⟩ := exists_continuousLinearEquiv_fderiv_prod (hf.of_le (by norm_num)) hs hv
-    hv0 hℓ
+    hℓ
   have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] StrongDual ℝ E × ℝ) (t, x) := by
     rw [he]
     exact ((hG.differentiableAt two_ne_zero).hasFDerivAt).prodMk
@@ -438,7 +439,7 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
   have hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0 := fun h ↦ by simp [h] at hsign
   have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
-  obtain ⟨c, N, hN, hc0, hcd, hc', hcrit, hcN⟩ := exists_curve_fderiv_eq_zero hf hs hc hv hv0 hℓ
+  obtain ⟨c, N, hN, hc0, hcd, hc', hcrit, hcN⟩ := exists_curve_fderiv_eq_zero hf hs hc hv hℓ
   -- The parameter along the curve folds back at `0`.
   have hfold := eventually_fold_curve_fst hf hv hsign hc0 hcd hc' (hcrit.mono fun _ h ↦ h.1)
   obtain ⟨ε, hε, hεc⟩ := Metric.eventually_nhds_iff.1 hcrit
