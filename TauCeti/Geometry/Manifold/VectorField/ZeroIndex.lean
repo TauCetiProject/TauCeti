@@ -109,22 +109,6 @@ section Boundaryless
 
 variable [I.Boundaryless] {V : (x : M) → TangentSpace I x} {p : M}
 
-/-- Near the chart image of `p`, the fibre coordinate of the section `x ↦ (x, V x)`, written in
-the chart at `p` and the tangent-bundle chart at `(p, V p)`, is the coordinate field of `V` in the
-chart at `p`. -/
-private theorem snd_writtenInExtChartAt_eventuallyEq_mpullback (V : (x : M) → TangentSpace I x)
-    (p : M) :
-    (fun z ↦ (writtenInExtChartAt I I.tangent p (fun x ↦ (V x : TangentBundle I M)) z).2)
-      =ᶠ[𝓝 (extChartAt I p p)] mpullback 𝓘(𝕜, E) I (extChartAt I p).symm V := by
-  have h := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V p
-  rw [I.range_eq_univ, nhdsWithin_univ, mpullbackWithin_univ] at h
-  refine EventuallyEq.trans (Eventually.of_forall fun z ↦ ?_) h
-  simp only [writtenInExtChartAt, extChartAt_coe, comp_apply, modelWithCorners_prod_coe,
-    Prod.map_snd, modelWithCornersSelf_coe, id_eq]
-  -- The tangent-bundle chart at `(p, V p)` is the trivialization at `p` followed by the chart at
-  -- `p` on the base, so its fibre coordinate is that of the trivialization.
-  rfl
-
 /-- **The vertical derivative is the chart derivative.** On a boundaryless manifold, the fibre
 component of the derivative at `p` of the section `x ↦ (x, V x)` of the tangent bundle, read in
 the tangent-bundle chart at `(p, V p)`, is the derivative at the chart image of `p` of the
@@ -138,7 +122,7 @@ theorem snd_comp_mfderiv_eq_fderiv_mpullback (V : (x : M) → TangentSpace I x) 
   · have hd := hV.differentiableWithinAt_writtenInExtChartAt
     rw [I.range_eq_univ, differentiableWithinAt_univ] at hd
     rw [hV.mfderiv, I.range_eq_univ, fderivWithin_univ,
-      ← (snd_writtenInExtChartAt_eventuallyEq_mpullback V p).fderiv_eq]
+      ← (snd_writtenInExtChartAt_eventuallyEq_mpullback_extChartAt_symm V p).fderiv_eq]
     exact hd.hasFDerivAt.snd.fderiv.symm
   · have hU : ¬DifferentiableAt 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I p).symm V)
         (extChartAt I p p) := fun hU ↦

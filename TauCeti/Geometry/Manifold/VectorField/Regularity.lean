@@ -56,6 +56,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   field is `C^m` on the interior of the chart target, when `m + 1 ≤ n`.
 * `VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm`: near the
   chart centre, these pullbacks are the coordinates in the tangent-bundle trivialization.
+* `TauCeti.snd_writtenInExtChartAt_eventuallyEq_mpullback_extChartAt_symm`: on a boundaryless
+  model, the fibre coordinate of a vector field read in the tangent-bundle chart is its
+  inverse-chart pullback.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
 * `MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm`: on a boundaryless model,
@@ -427,6 +430,22 @@ theorem VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt
   have hh := VectorField.mpullbackWithin_extChartAt_symm_apply V ((extChartAt I x).map_target hz)
   rw [(extChartAt I x).right_inv hz] at hh
   exact hh.symm
+
+/-- On a boundaryless model, near the chart image of `x`, the fibre coordinate of the section
+`y ↦ (y, V y)`, written in the chart at `x` and the tangent-bundle chart at `(x, V x)`, is the
+inverse-chart pullback of `V`. -/
+theorem TauCeti.snd_writtenInExtChartAt_eventuallyEq_mpullback_extChartAt_symm [I.Boundaryless]
+    (V : (x : M) → TangentSpace I x) (x : M) :
+    (fun z ↦ (writtenInExtChartAt I I.tangent x (fun y ↦ (V y : TangentBundle I M)) z).2)
+      =ᶠ[𝓝 (extChartAt I x x)] VectorField.mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V := by
+  have h := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
+  rw [I.range_eq_univ, nhdsWithin_univ, VectorField.mpullbackWithin_univ] at h
+  refine EventuallyEq.trans (Eventually.of_forall fun z ↦ ?_) h
+  simp only [writtenInExtChartAt, extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe,
+    Prod.map_snd, modelWithCornersSelf_coe, id_eq]
+  -- The tangent-bundle chart at `(x, V x)` is the trivialization at `x` followed by the chart at
+  -- `x` on the base, so its fibre coordinate is that of the trivialization.
+  rfl
 
 /-- Differentiability of a vector field as a tangent-bundle section implies differentiability
 of its inverse-chart pullback within the corresponding chart set. No completeness of the model
