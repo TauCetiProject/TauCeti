@@ -40,12 +40,12 @@ generators `ε₁ = inl ε` and `ε₂ = ε` satisfy `ε₁ ^ 2 = ε₂ ^ 2 = 0`
 `ε₁ ε₂ = inl ε * ε` is part of an `R`-basis (`TauCeti.iteratedDualNumberBasis`). Specializing to
 `σ₁ = 1 + ε₁ a D` and `σ₂ = 1 + ε₂ b D` for `a, b ∈ R⟦X⟧` yields
 `⁅σ₁, σ₂⁆ = 1 + ε₁ ε₂ (a b' - b a') D`
-(`TauCeti.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`), acting on `R⟦X⟧` by
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`), acting on `R⟦X⟧` by
 `1 + ε₁ ε₂ ⁅a D, b D⁆`
-(`TauCeti.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map`). Because
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map`). Because
 `ε₁ ε₂` is linearly independent over `R`, `a b' - b a'` is the unique series `c ∈ R⟦X⟧` with
 `⁅σ₁, σ₂⁆ = 1 + ε₁ ε₂ c D`
-(`TauCeti.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`), pinning the
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`), pinning the
 operator-commutator sign.
 
 Over the dual numbers `R[ε]` of a commutative ring `R`, the infinitesimal substitutions are the
@@ -75,10 +75,10 @@ substitutions with the derivations `X R⟦X⟧ D` vanishing at the origin.
   1 + e₁ e₂ (a b' - b a') D`.
 * `TauCeti.FormalCoordinate.commutatorElement_infinitesimal`: in `FormalCoordinate S`,
   `⁅X + e₁ a, X + e₂ b⁆ = X + e₁ e₂ (b a' - a b')`.
-* `TauCeti.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`: over `R[ε][ε]`,
+* `PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`: over `R[ε][ε]`,
   `⁅1 + ε₁ a D, 1 + ε₂ b D⁆ = 1 + ε₁ ε₂ (a b' - b a') D`.
-* `TauCeti.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`: uniqueness of
-  the commutator parameter `a b' - b a'` over `R[ε][ε]`.
+* `PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`:
+  uniqueness of the commutator parameter `a b' - b a'` over `R[ε][ε]`.
 * `TauCeti.infinitesimalSubstitutionsEquiv_apply_map`: the `ε`-coefficient of `1 + ε a D` on
   `R⟦X⟧` is the derivation `a D`.
 -/
@@ -217,7 +217,7 @@ theorem commutatorElement_infinitesimalSubstAlgEquiv_apply {e₁ e₂ : S} (he�
 
 /-- Applying a ring homomorphism `φ : S →+* T` to coefficients intertwines
 `TauCeti.infinitesimalSubstAlgEquiv`. -/
-theorem map_infinitesimalSubstAlgEquiv_apply {T : Type*} [CommRing T] (φ : S →+* T)
+theorem _root_.RingHom.map_infinitesimalSubstAlgEquiv_apply {T : Type*} [CommRing T] (φ : S →+* T)
     (he : e ^ 2 = 0) (a f : S⟦X⟧) :
     map φ (infinitesimalSubstAlgEquiv e he a f) =
       infinitesimalSubstAlgEquiv (φ e) (by rw [← map_pow, he, map_zero]) (map φ a) (map φ f) := by
@@ -226,8 +226,8 @@ theorem map_infinitesimalSubstAlgEquiv_apply {T : Type*} [CommRing T] (φ : S �
 /-- For a ring homomorphism `φ : R →+* S` and a square-zero `e : S`, the parameter `c ∈ R⟦X⟧`
 of `1 + e (map φ c) D` is uniquely determined by the resulting automorphism of `S⟦X⟧` whenever
 `r ↦ e * φ r` is injective. -/
-theorem infinitesimalSubstAlgEquiv_map_injective {R : Type*} [CommRing R] (φ : R →+* S)
-    (he : e ^ 2 = 0) (hφ : Function.Injective fun r : R ↦ e * φ r) :
+theorem _root_.RingHom.infinitesimalSubstAlgEquiv_map_injective {R : Type*} [Semiring R]
+    (φ : R →+* S) (he : e ^ 2 = 0) (hφ : Function.Injective fun r : R ↦ e * φ r) :
     Function.Injective fun c : R⟦X⟧ ↦ infinitesimalSubstAlgEquiv e he (map φ c) := by
   intro c₁ c₂ h
   have hX : e • map φ c₁ = e • map φ c₂ := by
@@ -499,7 +499,7 @@ theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective 
     Function.Injective fun c : R⟦X⟧ ↦
       infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
         (map (algebraMap R R[ε][ε]) c) := by
-  have h := @infinitesimalSubstAlgEquiv_map_injective R[ε][ε] _
+  have h := @RingHom.infinitesimalSubstAlgEquiv_map_injective R[ε][ε] _
     ((inl (ε : R[ε]) : R[ε][ε]) * ε) R _ (algebraMap R R[ε][ε]) inl_eps_mul_eps_pow_two
     fun _ _ h ↦ smul_inl_eps_mul_eps_injective <| by
       dsimp only at h
@@ -508,7 +508,8 @@ theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective 
 
 /-- Over the iterated dual numbers `R[ε][ε]`, the group commutator of `σ₁ = 1 + (inl ε) a D` and
 `σ₂ = 1 + ε b D` in the automorphism group of `R[ε][ε]⟦X⟧` is `1 + (inl ε * ε) (a b' - b a') D`. -/
-theorem iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv (a b : R⟦X⟧) :
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv
+    (a b : R⟦X⟧) :
     ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
       infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆ =
       infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
@@ -518,7 +519,7 @@ theorem iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv (a b : R
 
 /-- On power series over `R`, the commutator of `1 + (inl ε) a D` and `1 + ε b D` over `R[ε][ε]`
 acts as `1 + (inl ε * ε) ⁅a D, b D⁆`. -/
-theorem iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map
     (a b f : R⟦X⟧) :
     ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
       infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆
@@ -526,34 +527,35 @@ theorem iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_ma
       map (algebraMap R R[ε][ε]) f +
         ((inl (ε : R[ε]) : R[ε][ε]) * ε) •
           map (algebraMap R R[ε][ε]) (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
-  rw [iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv,
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv,
     infinitesimalSubstAlgEquiv_apply, lie_mkDerivation, mkDerivation_apply, smul_eq_mul,
     mul_comm (d⁄dX f)]
   simp [derivative_map]
 
 /-- The `inl ε * ε` coordinate of the `n`-th coefficient of `⁅1 + (inl ε) a D, 1 + ε b D⁆ f` for
 `f ∈ R⟦X⟧` is the `n`-th coefficient of `⁅a D, b D⁆ f`. -/
-theorem snd_snd_coeff_iteratedDualNumber_commutatorElement_apply_map (a b f : R⟦X⟧) (n : ℕ) :
+theorem _root_.PowerSeries.snd_snd_coeff_iteratedDualNumber_commutatorElement_apply_map
+    (a b f : R⟦X⟧) (n : ℕ) :
     (coeff n
       (⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
         infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆
           (map (algebraMap R R[ε][ε]) f))).snd.snd =
       coeff n (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
-  rw [iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map, map_add,
-    TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_add, coeff_map,
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map,
+    map_add, TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_add, coeff_map,
     snd_snd_coeff_inl_eps_mul_eps_smul_map]
   simp [algebraMap_eq_inl']
 
 /-- Because `inl ε * ε` is part of an `R`-basis of `R[ε][ε]`, `a b' - b a'` is the unique power
 series `c ∈ R⟦X⟧` such that `⁅1 + (inl ε) a D, 1 + ε b D⁆ = 1 + (inl ε * ε) c D`. -/
-theorem iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff
     (a b c : R⟦X⟧) :
     ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
       infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆ =
       infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
         (map (algebraMap R R[ε][ε]) c) ↔
       c = a * d⁄dX b - b * d⁄dX a := by
-  rw [iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv]
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv]
   exact ⟨fun h ↦
     (iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective h).symm,
     fun h ↦ h ▸ rfl⟩

@@ -249,7 +249,7 @@ theorem iteratedDualNumberLift_smul_eps
 /-- The inverse of `TauCeti.iteratedDualNumberLift` evaluates an `R`-algebra map on `inl ε` and
 `ε`. -/
 @[simp]
-theorem coe_iteratedDualNumberLift_symm_apply (F : R[ε][ε] →ₐ[R] A) :
+theorem _root_.AlgHom.coe_iteratedDualNumberLift_symm_apply (F : R[ε][ε] →ₐ[R] A) :
     (iteratedDualNumberLift.symm F).val = (F (inl ε), F ε) :=
   (rfl)
 

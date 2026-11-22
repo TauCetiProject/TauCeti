@@ -22,7 +22,7 @@ derivations and powers in the associative algebra `Module.End R A`.
 * `Derivation.toLinearMapLieHom`: the inclusion of derivations into linear endomorphisms, as a
   morphism of Lie algebras.
 * `Derivation.toLinearMapLieHom_injective`: this morphism is injective.
-* `Derivation.lie_smul_self`: the bracket `⁅a • D, b • D⁆ = (a * D b - b * D a) • D`.
+* `Derivation.lie_smul_smul`: the bracket `⁅a • D, b • D⁆ = (a * D b - b * D a) • D`.
 -/
 
 public section
@@ -59,7 +59,7 @@ theorem toLinearMapLieHom_injective : Function.Injective (toLinearMapLieHom R A)
 
 /-- The Lie bracket of two scalar multiples `a • D` and `b • D` of a derivation `D` is
 `(a * D b - b * D a) • D`. -/
-theorem lie_smul_self (D : Derivation R A A) (a b : A) :
+theorem lie_smul_smul (D : Derivation R A A) (a b : A) :
     ⁅a • D, b • D⁆ = (a * D b - b * D a) • D := by
   ext c
   simp only [commutator_apply, smul_apply, smul_eq_mul, leibniz]

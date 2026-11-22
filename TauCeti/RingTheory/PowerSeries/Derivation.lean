@@ -114,7 +114,7 @@ theorem lie_mkDerivation (a b : R⟦X⟧) :
     ⁅mkDerivation R a, mkDerivation R b⁆ = mkDerivation R (a * d⁄dX b - b * d⁄dX a) := by
   have h (x : R⟦X⟧) : mkDerivation R x = x • d⁄dX := by
     rw [← mkDerivation_one, ← (mkDerivation R (M := R⟦X⟧)).map_smul x 1, smul_eq_mul, mul_one]
-  rw [h, h, h, Derivation.lie_smul_self]
+  rw [h, h, h, Derivation.lie_smul_smul]
 
 variable (R M) in
 /-- For an `X`-adically Hausdorff `R⟦X⟧`-module `M`, `PowerSeries.mkDerivation` is an
