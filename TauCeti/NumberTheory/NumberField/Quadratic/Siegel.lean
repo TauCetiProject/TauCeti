@@ -93,8 +93,8 @@ theorem exists_pos_forall_abs_discr_rpow_le_classNumber {ε : ℝ} (hε : 0 < ε
           π :=
     div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hL (Real.sqrt_nonneg _)) Real.pi_pos.le
   refine le_trans ?_ hmul
-  rw [Real.sqrt_eq_rpow, mul_left_comm _ c₀, ← Real.rpow_add hD_pos,
-    show (1 / 2 : ℝ) + -ε = (1 : ℝ) / 2 - ε by ring, mul_div_right_comm]
+  have hexp : (1 / 2 : ℝ) + -ε = (1 : ℝ) / 2 - ε := by ring
+  rw [Real.sqrt_eq_rpow, mul_left_comm _ c₀, ← Real.rpow_add hD_pos, hexp, mul_div_right_comm]
 
 /-- **Bounded class number bounds the discriminant of an imaginary quadratic field.** For every
 `B : ℕ` there exists `C : ℝ` such that every totally complex quadratic number field `K : Type u`
@@ -112,7 +112,8 @@ theorem exists_abs_discr_le_of_classNumber_le (B : ℕ) :
     (le_div_iff₀' hc).mpr hlo
   have hpow := Real.rpow_le_rpow
     (Real.rpow_nonneg (abs_nonneg _) _) hquarter (by norm_num : (0 : ℝ) ≤ 4)
-  rwa [← Real.rpow_mul (abs_nonneg _), show (1 / 4 : ℝ) * 4 = 1 by norm_num, Real.rpow_one] at hpow
+  have hexp : (1 / 4 : ℝ) * 4 = 1 := by norm_num
+  rwa [← Real.rpow_mul (abs_nonneg _), hexp, Real.rpow_one] at hpow
 
 /-- **Divergence of the imaginary quadratic class number.** For every `B : ℕ` there exists `C : ℝ`
 such that every totally complex quadratic number field `K : Type u` with `C ≤ |discr K|` satisfies

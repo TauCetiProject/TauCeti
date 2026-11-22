@@ -298,8 +298,10 @@ private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_lt {ε : ℝ} (hε
     add_pos_of_pos_of_nonneg one_pos (Real.log_nonneg hMN1)
   have hden : (ψ₀.LFunction 1).re * (1 + Real.log ((M : ℝ) * N₀)) ≤
       K * ((M : ℝ) * N₀) ^ (ε / 2) := by
-    rw [show K * ((M : ℝ) * N₀) ^ (ε / 2) =
-      (ψ₀.LFunction 1).re * ((1 + (ε / 2)⁻¹) * ((M : ℝ) * N₀) ^ (ε / 2)) by ring]
+    have hK_mul : K * ((M : ℝ) * N₀) ^ (ε / 2) =
+        (ψ₀.LFunction 1).re * ((1 + (ε / 2)⁻¹) * ((M : ℝ) * N₀) ^ (ε / 2)) := by
+      dsimp only [K]; ring
+    rw [hK_mul]
     exact mul_le_mul_of_nonneg_left hlog hψ_re.le
   refine le_trans ?_ hgold
   have hdiv : (1 / 4800000 : ℝ) * (1 - β) * ((M : ℝ) * N₀) ^ (-(ε / 2)) /
@@ -310,8 +312,9 @@ private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_lt {ε : ℝ} (hε
       (mul_le_mul_of_nonneg_left hrpow (by positivity))
       (mul_pos hψ_re hlog_pos) hden
   refine le_trans ?_ hdiv
+  have hexp : -(ε / 2) - ε / 2 = -ε := by ring
   rw [mul_comm K, ← div_div, mul_div_assoc, ← Real.rpow_sub hMN_pos,
-    show -(ε / 2) - ε / 2 = -ε by ring, Real.mul_rpow (by positivity) (by positivity)]
+    hexp, Real.mul_rpow (by positivity) (by positivity)]
   exact le_of_eq (by dsimp only [c]; ring)
 
 private theorem exists_pos_forall_rpow_le_LFunction_one_re_of_isPrimitive {ε : ℝ} (hε : 0 < ε) :
@@ -381,8 +384,8 @@ theorem exists_pos_forall_rpow_le_LFunction_one_re {ε : ℝ} (hε : 0 < ε) :
       (χ.primitiveCharacter.LFunction 1).re / (A * (M : ℝ) ^ (ε / 2)) :=
     div_le_div_of_nonneg_right ((mul_le_mul_of_nonneg_left hrpow hc₀.le).trans hlo₀) (by positivity)
   refine le_trans ?_ hstep
-  rw [mul_comm A, ← div_div, mul_div_assoc, ← Real.rpow_sub hM_pos,
-    show -(ε / 2) - ε / 2 = -ε by ring]
+  have hexp : -(ε / 2) - ε / 2 = -ε := by ring
+  rw [mul_comm A, ← div_div, mul_div_assoc, ← Real.rpow_sub hM_pos, hexp]
   exact le_of_eq (by ring)
 
 end TauCeti.DirichletCharacter
