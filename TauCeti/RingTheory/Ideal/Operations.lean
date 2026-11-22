@@ -74,6 +74,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   `I ⊔ J` are controlled by the corresponding power of the left ideal `J`.
 * `Ideal.span_pair_pow_eq_span_singleton`: if `z (1 - t) = x ^ n` with `t ∈ (x, z)` and
   the left ideals `(x, z)` and `(z)` are two-sided, then `(x, z) ^ n = (z)`.
+* `Ideal.pow_pow_sub_pow_pow_mem_pow_succ`: if `n ∈ I` and `a ≡ b` modulo `I`, then
+  `a ^ n ^ k ≡ b ^ n ^ k` modulo `I ^ (k + 1)`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
 * `Ideal.coe_span_subset_of_forall_mul_mem`: a left ideal lies in an additive submonoid containing
   every left multiple of its generators.
@@ -642,6 +644,21 @@ theorem span_singleton_pow_inf_span_singleton_pow_eq_span_singleton_mul [NoZeroD
   exact span_singleton_pow_inf_span_singleton_pow_eq_span_singleton_mul_of_isSMulRegular
     (IsRegular.of_ne_zero' hp).left.isSMulRegular
     (IsRegular.of_ne_zero' hq).left.isSMulRegular h r s
+
+/-- If `n` lies in an ideal `I` and `a ≡ b` modulo `I`, then `a ^ n ^ k ≡ b ^ n ^ k` modulo
+`I ^ (k + 1)`. This is the ideal form of `dvd_sub_pow_of_dvd_sub`, which is the case `I = (n)`. -/
+theorem pow_pow_sub_pow_pow_mem_pow_succ {I : Ideal A} {n : ℕ} (hn : (n : A) ∈ I) {a b : A}
+    (h : a - b ∈ I) (k : ℕ) : a ^ n ^ k - b ^ n ^ k ∈ I ^ (k + 1) := by
+  induction k with
+  | zero => simpa using h
+  | succ k ih =>
+    rw [pow_succ n k, pow_mul, pow_mul, ← geom_sum₂_mul, pow_succ']
+    refine mul_mem_mul ?_ ih
+    -- Modulo `I`, the geometric sum is `n * b ^ (n ^ k * (n - 1))`, and `n ∈ I`.
+    have hk : Ideal.Quotient.mk I (a ^ n ^ k) = Ideal.Quotient.mk I (b ^ n ^ k) := by
+      rw [map_pow, map_pow, Ideal.Quotient.eq.mpr h]
+    rw [← Ideal.Quotient.eq_zero_iff_mem, RingHom.map_geom_sum₂, hk, geom_sum₂_self,
+      ← map_natCast (Ideal.Quotient.mk I), Ideal.Quotient.eq_zero_iff_mem.mpr hn, zero_mul]
 
 end Ideal
 

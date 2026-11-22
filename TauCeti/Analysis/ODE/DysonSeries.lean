@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -55,6 +56,8 @@ one-parameter automorphism groups of C⋆-algebras.
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`),
   hence `Γ (n d) = Γ d ^ n` (`TauCeti.dysonSeriesLeft_natCast_mul_of_periodic`).
+* `TauCeti.exists_isInvertible_hasDerivAt_clm_Icc`: an invertible fundamental solution on a
+  closed interval, initialized at any included time.
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
@@ -78,6 +81,8 @@ one-parameter automorphism groups of C⋆-algebras.
   Theorem 3.1.33, for bounded perturbations and their Dyson expansions.
 * Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
   Section 5.4.1, for the unitary cocycles of perturbed C⋆-dynamics.
+* Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+  https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section
@@ -448,6 +453,28 @@ theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
     exact_mod_cast hp.mul hU
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+
+/-- A continuous linear equation on a closed interval admits an everywhere invertible
+fundamental solution starting at any included time. The original coefficient equation holds
+at every time of the interval, including its endpoints. -/
+theorem exists_isInvertible_hasDerivAt_clm_Icc {a b t₀ : ℝ}
+    (ht₀ : t₀ ∈ Icc a b) (A : ℝ → X →L[ℝ] X) (hA : ContinuousOn A (Icc a b)) :
+    ∃ P : ℝ → X →L[ℝ] X,
+      P t₀ = 1 ∧ (∀ t ∈ Icc a b, HasDerivAt P (A t * P t) t) ∧
+        ∀ t, (P t).IsInvertible := by
+  let B : ℝ → X →L[ℝ] X := fun t ↦ A (projIcc a b (ht₀.1.trans ht₀.2) (t + t₀))
+  have hB : Continuous B :=
+    (hA.comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
+      (fun _ ↦ (projIcc a b (ht₀.1.trans ht₀.2) _).property)).comp
+        (continuous_id.add continuous_const)
+  refine ⟨fun t ↦ dysonSeriesLeft B (t - t₀), by simp, ?_, ?_⟩
+  · intro t ht
+    simpa only [Function.comp_def, id_eq, B, sub_add_cancel, projIcc_of_mem _ ht, one_smul] using
+      (hasDerivAt_dysonSeriesLeft hB (t - t₀)).scomp t ((hasDerivAt_id t).sub_const t₀)
+  · intro t
+    exact ContinuousLinearMap.IsInvertible.of_inverse
+      (dysonSeriesLeft_mul_dysonSeries_neg hB (t - t₀))
+      (dysonSeries_neg_mul_dysonSeriesLeft hB (t - t₀))
 
 /-- **The propagator of a time-dependent linear equation.** Every solution of `w' t = M t (w t)`
 for a continuous path `M` of bounded operators is `w t = dysonSeriesLeft M t (w 0)`. -/
