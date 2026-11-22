@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
@@ -43,6 +45,8 @@ The second part of the file describes the operators on these functions when `u` 
 * if moreover `f` is `C¹`, `1 < p < ∞` and `u ∈ H^{s+1,p}(E)`, then the `Lᵖ` function of `∂_v u`
   is almost everywhere the classical derivative `x ↦ fderiv ℝ f x v`
   (`BesselPotentialSpace.coeFn_inclusionLp_lineDerivCLM_ae_eq`);
+* if `f` is `C²` and `u ∈ H^{s+2}(E)`, then the `L²` function of `Δu` is almost everywhere the
+  classical Laplacian `Δf` (`BesselPotentialSpace.coeFn_inclusionLp_laplacianCLM_ae_eq`);
 * if `w` has the tempered distribution `g u` for a bounded function `g` of temperate growth, then
   the `Lᵖ` function of `w` is almost everywhere `g` times that of `u`
   (`BesselPotentialSpace.coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM`).
@@ -64,7 +68,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory TemperedDistribution Topology
-open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv
+open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv Laplacian
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -281,6 +285,48 @@ theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1
       TauCeti.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf hu₀f hu'f]
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u', hu'f] with x h h'
   rw [hd, h, Complex.ofRealCLM_apply, h']
+
+/-- **The classical Laplacian of real elements of `H^{s+2}`.** For `s ≥ 0`, if the `L²` function
+of `u ∈ H^{s+2}(E)` is almost everywhere a real `C²` function `f`, then the `L²` function of
+`Δu ∈ H^s(E)` is almost everywhere the classical Laplacian `Δf`. In particular `Δf` is square
+integrable. -/
+theorem coeFn_inclusionLp_laplacianCLM_ae_eq {s : ℝ} (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) {u : H^{s + 2}(E)}
+    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] fun x ↦ (f x : ℂ)) :
+    ⇑(inclusionLp hs (laplacianCLM s u)) =ᵐ[volume] fun x ↦ (Δ f x : ℂ) := by
+  set b := stdOrthonormalBasis ℝ E
+  set u' : H^{s + 1 + 1}(E) := u.copy (s + 1 + 1) (by ring)
+  set D : E → H^{s + 1}(E) →L[ℂ] H^{s}(E) :=
+    lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top
+  set D' : E → H^{s + 1 + 1}(E) →L[ℂ] H^{s + 1}(E) :=
+    lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top
+  have hu' : ⇑(inclusionLp (by linarith) u') =ᵐ[volume] fun x ↦ (f x : ℂ) := by
+    have h : inclusionLp (by linarith : (0 : ℝ) ≤ s + 1 + 1) u' = inclusionLp (by linarith) u := by
+      rw [inclusionLp_eq_iff, toTemperedDistribution_inclusionLp]
+      exact (toDistr_copy u (by ring : s + 2 = s + 1 + 1)).symm
+    rwa [h]
+  -- Each second derivative `∂_{b i} ∂_{b i} u` is the classical one.
+  have hd (i : _) : ⇑(inclusionLp hs (D (b i) (D' (b i) u'))) =ᵐ[volume]
+      fun x ↦ (fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) : ℂ) :=
+    coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top hs
+      ((hf.fderiv_right le_rfl).clm_apply contDiff_const)
+      (coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top (by linarith)
+        (hf.of_le one_le_two) hu' (b i)) (b i)
+  -- `Δu` is the sum of the second derivatives `∂_{b i} ∂_{b i} u`.
+  have hsum : laplacianCLM s u = ∑ i, D (b i) (D' (b i) u') := by
+    refine ext ?_
+    have hmap := map_sum (toDistrCLM E ℂ s 2) (fun i ↦ D (b i) (D' (b i) u')) Finset.univ
+    simp only [toDistrCLM_apply] at hmap
+    rw [hmap, toDistr_laplacianCLM, TemperedDistribution.laplacian_eq_sum b]
+    have hcopy : u'.toDistr = u.toDistr := toDistr_copy u (by ring)
+    simp only [D, D', toDistr_lineDerivCLM, hcopy]
+  rw [hsum, map_sum]
+  filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
+      fun i ↦ inclusionLp hs (D (b i) (D' (b i) u')),
+    ae_all_iff.2 hd] with x h₁ h₂
+  rw [h₁, TauCeti.laplacian_eq_sum_fderiv_fderiv_apply b
+    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x), Complex.ofReal_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ h₂ i
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {r s : ℝ} {p : ℝ≥0∞}
   [Fact (1 ≤ p)]

@@ -25,8 +25,9 @@ same functions, with derivatives taken in curried form and with the recursive ma
 This file identifies the two families, preserving the underlying function. At order zero the
 two norms agree; at orders one and two the sum norm is the sum of the terms whose maximum is the
 recursive norm, so the norms are equivalent with constants `1` and `k + 1`. In general they are
-not equal: at order one the sum norm exceeds the maximum norm by the smaller of its two terms,
-which for `α ≤ 1` is `‖sin‖_∞ = 1` when `f = sin` on `ℝ`.
+not equal: at order one the sum norm exceeds the maximum norm by the smaller of its two terms
+(`TauCeti.CkHolderSpace.norm_eq_norm_equivC1HolderSpace_add_min`), which for `α ≤ 1` is
+`‖sin‖_∞ = 1` when `f = sin` on `ℝ`.
 
 ## Main declarations
 
@@ -35,8 +36,9 @@ which for `α ≤ 1` is `‖sin‖_∞ = 1` when `f = sin` on `ℝ`.
 * `TauCeti.CkHolderSpaceOn.equivHolderSpace`: the isometric identification of
   `CkHolderSpaceOn 0 α Ω F` with `HolderSpace α Ω F`.
 * `TauCeti.CkHolderSpace.equivC1HolderSpace`: the identification of `CkHolderSpace 1 α E F` with
-  `C1HolderSpace α E F`, with the norm identity `CkHolderSpace.norm_eq_norm_add_norm_fderiv` and
-  the bounds `‖e f‖ ≤ ‖f‖ ≤ 2 ‖e f‖`.
+  `C1HolderSpace α E F`, with the norm identities `CkHolderSpace.norm_eq_norm_add_norm_fderiv` and
+  `CkHolderSpace.norm_eq_norm_equivC1HolderSpace_add_min` and the bounds
+  `‖e f‖ ≤ ‖f‖ ≤ 2 ‖e f‖`.
 * `TauCeti.CkHolderSpace.equivC2HolderSpace`: the identification of `CkHolderSpace 2 α E F` with
   `C2HolderSpace α E F`, with the norm identity
   `CkHolderSpace.norm_eq_norm_add_norm_fderiv_add_norm_secondFDeriv` and the bounds
@@ -239,6 +241,14 @@ theorem norm_le_two_mul_norm_equivC1HolderSpace (f : CkHolderSpace 1 α E F) :
   have h := norm_ofC1HolderSpace_le (toC1HolderSpace f)
   rw [ofC1HolderSpace_toC1HolderSpace] at h
   exact h
+
+/-- The sum norm exceeds the `C1HolderSpace` norm by the smaller of the two terms whose maximum is
+the `C1HolderSpace` norm. -/
+theorem norm_eq_norm_equivC1HolderSpace_add_min (f : CkHolderSpace 1 α E F) :
+    ‖f‖ = ‖equivC1HolderSpace f‖ +
+      min ‖C1HolderSpace.toBoundedContinuousFunction (equivC1HolderSpace f)‖
+        ‖C1HolderSpace.fderiv (equivC1HolderSpace f)‖ := by
+  rw [norm_eq_norm_add_norm_fderiv, C1HolderSpace.norm_eq_max, add_comm (max _ _), min_add_max]
 
 /-! ### Order two -/
 
