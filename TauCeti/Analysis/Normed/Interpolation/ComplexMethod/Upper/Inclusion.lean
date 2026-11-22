@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Upper.Map
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
