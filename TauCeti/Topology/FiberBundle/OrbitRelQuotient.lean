@@ -119,10 +119,14 @@ def orbitRelQuotient (hinj : InjOn (Quotient.mk (MulAction.orbitRel G N)) e.base
         (by simp [e.target_eq]))
     baseSet := Quotient.mk (MulAction.orbitRel G N) '' e.baseSet
     open_baseSet := isOpenMap_quotient_mk'_mul _ e.open_baseSet
-    source_eq := e.image_quotientMk_source
+    source_eq := by
+      simpa only [OpenPartialHomeomorph.trans'_source, OpenPartialHomeomorph.symm_source,
+        TauCeti.quotientMkOn_target] using e.image_quotientMk_source
     target_eq := by simp
     proj_toFun := by
-      rintro _ ⟨x, hx, rfl⟩
+      simp only [OpenPartialHomeomorph.trans'_source, OpenPartialHomeomorph.symm_source,
+        TauCeti.quotientMkOn_target, forall_mem_image]
+      intro x hx
       have hx' := (e.injOn_quotientMk_source hinj hfree).leftInvOn_invFunOn hx
       simp [OpenPartialHomeomorph.trans'_apply, hx', e.coe_fst hx] }
 
@@ -139,15 +143,15 @@ theorem orbitRelQuotient_baseSet :
 of `e`. -/
 theorem orbitRelQuotient_source :
     (e.orbitRelQuotient hinj hfree).source = Quotient.mk (MulAction.orbitRel G M) '' e.source :=
-  (rfl)
+  (e.orbitRelQuotient hinj hfree).source_eq.trans e.image_quotientMk_source.symm
 
 /-- The descended trivialization is `e`, read through the inverse of the orbit projection of `M`
 on the source of `e` and the orbit projection of `N`. -/
 theorem coe_orbitRelQuotient :
     ⇑(e.orbitRelQuotient hinj hfree) =
       Prod.map (Quotient.mk (MulAction.orbitRel G N)) id ∘ e ∘
-        invFunOn (Quotient.mk (MulAction.orbitRel G M)) e.source :=
-  (rfl)
+        invFunOn (Quotient.mk (MulAction.orbitRel G M)) e.source := by
+  ext z <;> simp [orbitRelQuotient, ← coe_coe, OpenPartialHomeomorph.trans'_apply]
 
 /-- The inverse of the descended trivialization is the inverse of `e`, read through the inverse
 of the orbit projection of `N` on the base set of `e` and the orbit projection of `M`. -/
@@ -155,8 +159,9 @@ theorem coe_orbitRelQuotient_symm :
     haveI : Nonempty N := ⟨φ (Classical.arbitrary M)⟩
     ⇑(e.orbitRelQuotient hinj hfree).toOpenPartialHomeomorph.symm =
       Quotient.mk (MulAction.orbitRel G M) ∘ e.toOpenPartialHomeomorph.symm ∘
-        Prod.map (invFunOn (Quotient.mk (MulAction.orbitRel G N)) e.baseSet) id :=
-  (rfl)
+        Prod.map (invFunOn (Quotient.mk (MulAction.orbitRel G N)) e.baseSet) id := by
+  funext ⟨y, f⟩
+  simp [orbitRelQuotient, OpenPartialHomeomorph.trans'_symm_apply]
 
 /-- The descended trivialization sends the orbit of a point `x` over the base set of `e` to the
 orbit of `φ x` and the fibre coordinate of `x` in `e`. -/

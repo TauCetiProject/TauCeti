@@ -177,7 +177,7 @@ variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X] [Continuou
 
 /-- The orbit projection restricted to an open set on which it is injective, as an open partial
 homeomorphism onto the image. -/
-@[expose] noncomputable def quotientMkOn :
+noncomputable def quotientMkOn :
     OpenPartialHomeomorph X (MulAction.orbitRel.Quotient G X) :=
   OpenPartialHomeomorph.ofContinuousOpen (hinj.toPartialEquiv _ s) continuous_quot_mk.continuousOn
     isOpenMap_quotient_mk'_mul hs
