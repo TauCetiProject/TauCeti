@@ -81,17 +81,6 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
   (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
 
-omit [SecondCountableTopology M] [FiniteDimensional ℝ E'] [J.Boundaryless] [IsManifold J ∞ S] in
-include hfs hcompact hcrit in
-/-- If the critical submanifold is empty, the band has no critical points, so it carries no
-relative homology. -/
-private theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S]
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) (k : ℕ) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) :=
-  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs _ hcompact
-    (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
-      hax, hxb⟩).choose) R k
-
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level the relative homology vanishes below the index.** Let
 `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
