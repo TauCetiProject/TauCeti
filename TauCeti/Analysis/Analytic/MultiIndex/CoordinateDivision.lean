@@ -44,6 +44,17 @@ public section
 open Finset Topology
 open scoped NNReal ENNReal
 
+private theorem pi_single_le_iff {ι : Type*} [DecidableEq ι] (i : ι) (m : ℕ) (α : ι → ℕ) :
+    Pi.single i m ≤ α ↔ m ≤ α i := by
+  constructor
+  · intro h
+    simpa only [Pi.single_eq_same] using h i
+  · intro h j
+    by_cases hji : j = i
+    · subst j
+      simpa only [Pi.single_eq_same] using h
+    · simpa only [Pi.single_eq_of_ne hji] using Nat.zero_le (α j)
+
 variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -72,12 +83,9 @@ theorem exists_analyticOnNhd_eq_prod_pow_smul [CompleteSpace F] {f : (ι → �
     have hyball : y ∈ Metric.eball 0 (s : ℝ≥0∞) := mem_eball_zero_iff.2 hys
     have hnorm : ‖y‖ < (s : ℝ) := by
       simpa only [Metric.eball_coe, mem_ball_zero_iff] using hyball
-    have hsum (z : ι → 𝕜) (hz : ‖z‖ < (s : ℝ)) :
-        HasSum (fun α : ι → ℕ ↦ (∏ j, z j ^ α j) • d α) (g z) :=
-      (summable_norm_prod_pow_smul_of_le hd hz.le).of_norm.hasSum
-    obtain ⟨p, hp, -⟩ := exists_hasFPowerSeriesOnBall_of_hasSum (f := g) (x := 0) (c := d) hs hd
-      (fun z hz ↦ by simpa only [zero_add] using hsum z hz)
-    exact ⟨hp.analyticAt_of_mem hyball, hsum y hnorm⟩
+    obtain ⟨p, hp, -⟩ := exists_hasFPowerSeriesOnBall_tsum (𝕜 := 𝕜) d hs hd
+    exact ⟨hp.analyticAt_of_mem hyball,
+      (summable_norm_prod_pow_smul_of_le hd hnorm.le).of_norm.hasSum⟩
   refine ⟨g, fun y hy ↦ (hpoint y hy).1, fun y hy ↦ (hf y hy).unique ?_⟩
   exact hasSum_monomial_shift shift hzero (hpoint y hy).2
 
@@ -97,8 +105,7 @@ theorem exists_analyticOnNhd_eq_coord_pow_smul [CompleteSpace F] {f : (ι → �
   classical
   have hcone (α : ι → ℕ) (hα : ¬ Pi.single i m ≤ α) : c α = 0 := by
     apply hzero α
-    simpa only [Pi.single, update_le_iff, Pi.zero_apply, Nat.zero_le, implies_true,
-      and_true, not_le] using hα
+    simpa only [pi_single_le_iff, not_le] using hα
   simpa only [Fintype.prod_pow_pi_single] using
     exists_analyticOnNhd_eq_prod_pow_smul hc hf (Pi.single i m) hcone
 
@@ -140,8 +147,7 @@ theorem AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul [CompleteSpace F]
   have hcone (α : ι → ℕ) (hα : ¬ Pi.single i m ≤ α) :
       TauCeti.mvTaylorCoeff f x α = 0 := by
     apply hzero α
-    simpa only [Pi.single, update_le_iff, Pi.zero_apply, Nat.zero_le, implies_true,
-      and_true, not_le] using hα
+    simpa only [pi_single_le_iff, not_le] using hα
   simpa only [Fintype.prod_pow_pi_single] using
     hf.exists_eventuallyEq_prod_sub_pow_smul (Pi.single i m) hcone
 

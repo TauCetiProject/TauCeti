@@ -15,7 +15,6 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.GroupTheory.Perm.DomMulAct
-import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Algebra.Order.Antidiag.Prod
