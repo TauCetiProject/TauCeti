@@ -8,12 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.WithDensity
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
-import TauCeti.MeasureTheory.Measure.Subtype
-import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Positive continuous density measures on manifolds
@@ -60,145 +56,6 @@ open scoped ENNReal Manifold Topology
 noncomputable section
 
 namespace TauCeti
-
-/-! ### Auxiliary chart-measure lemmas -/
-
-section Helpers
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M]
-
-/-- Pulling an additive Haar measure back to a relatively open subset of `range I` yields a
-measure positive on nonempty relatively open subsets. -/
-private theorem isOpenPosMeasure_comap_range_inter
-    [MeasurableSpace E] [BorelSpace E] (ν : Measure E) [ν.IsAddHaarMeasure]
-    {U : Set H} (hU : IsOpen U) :
-    (ν.comap (Subtype.val : (I.symm ⁻¹' U ∩ range I : Set E) → E)).IsOpenPosMeasure := by
-  set V : Set E := I.symm ⁻¹' U ∩ range I
-  have hV : MeasurableSet V :=
-    (hU.preimage I.continuous_symm).measurableSet.inter I.isClosed_range.measurableSet
-  refine ⟨fun W hW ⟨⟨y, hyV⟩, hyW⟩ ↦ ?_⟩
-  obtain ⟨O, hO, hOW⟩ := isOpen_induced_iff.1 hW
-  have hyO : y ∈ O := by simpa [← hOW] using hyW
-  have hO' : IsOpen (O ∩ I.symm ⁻¹' U) := hO.inter (hU.preimage I.continuous_symm)
-  obtain ⟨z, hz⟩ := mem_closure_iff_nhds.1 (I.range_subset_closure_interior hyV.2)
-    (O ∩ I.symm ⁻¹' U) (hO'.mem_nhds ⟨hyO, hyV.1⟩)
-  have hopen : IsOpen ((O ∩ I.symm ⁻¹' U) ∩ interior (range I)) := hO'.inter isOpen_interior
-  have hsub : (O ∩ I.symm ⁻¹' U) ∩ interior (range I) ⊆ Subtype.val '' W := by
-    rintro w ⟨⟨hwO, hwU⟩, hwI⟩
-    exact ⟨⟨w, ⟨hwU, interior_subset hwI⟩⟩, by simpa [← hOW] using hwO, rfl⟩
-  rw [(MeasurableEmbedding.subtypeVal hV).comap_apply]
-  exact ((hopen.measure_pos ν ⟨z, hz⟩).trans_le (measure_mono hsub)).ne'
-
-/-- Continuous nonnegative real densities presenting the same weighted Haar measure on a
-relatively open subset of `range I` agree pointwise there. -/
-private theorem eqOn_of_withDensity_ofReal_eq [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] {ν : Measure E} [ν.IsAddHaarMeasure]
-    {U : Set H} (hU : IsOpen U) {w₁ w₂ : E → ℝ}
-    (hw₁ : ContinuousOn w₁ (I.symm ⁻¹' U ∩ range I))
-    (hw₂ : ContinuousOn w₂ (I.symm ⁻¹' U ∩ range I))
-    (h1 : ∀ y ∈ I.symm ⁻¹' U ∩ range I, 0 ≤ w₁ y)
-    (h2 : ∀ y ∈ I.symm ⁻¹' U ∩ range I, 0 ≤ w₂ y)
-    (heq : (ν.restrict (I.symm ⁻¹' U ∩ range I)).withDensity (fun y ↦ ENNReal.ofReal (w₁ y)) =
-      (ν.restrict (I.symm ⁻¹' U ∩ range I)).withDensity (fun y ↦ ENNReal.ofReal (w₂ y))) :
-    EqOn w₁ w₂ (I.symm ⁻¹' U ∩ range I) := by
-  set V : Set E := I.symm ⁻¹' U ∩ range I
-  have hV : MeasurableSet V :=
-    (hU.preimage I.continuous_symm).measurableSet.inter I.isClosed_range.measurableSet
-  have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtypeVal hV
-  have : (ν.comap (Subtype.val : V → E)).IsOpenPosMeasure :=
-    isOpenPosMeasure_comap_range_inter (I := I) ν hU
-  have hcomap (w : E → ℝ) :
-      ((ν.restrict V).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap (Subtype.val : V → E) =
-        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.val) := by
-    ext A hA
-    rw [hval.comap_apply, withDensity_apply _ (hval.measurableSet_image' hA),
-      withDensity_apply _ hA, Measure.restrict_restrict (hval.measurableSet_image' hA),
-      inter_eq_left.2 (Subtype.coe_image_subset V A),
-      hval.restrict_comap, ← hval.lintegral_map (fun y ↦ ENNReal.ofReal (w y)), hval.map_comap,
-      Subtype.range_coe, Measure.restrict_restrict hV,
-      inter_eq_right.2 (Subtype.coe_image_subset V A)]
-  have hsubEq :
-      (ν.comap (Subtype.val : V → E)).withDensity (fun y ↦ ENNReal.ofReal (w₁ y.val)) =
-        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w₂ y.val) := by
-    rw [← hcomap w₁, ← hcomap w₂, heq]
-  have hfun := MeasureTheory.continuous_eq_of_withDensity_ofReal_eq
-    (continuousOn_iff_continuous_domRestrict.1 hw₁)
-    (continuousOn_iff_continuous_domRestrict.1 hw₂)
-    (fun y ↦ h1 y.val y.property) (fun y ↦ h2 y.val y.property) hsubEq
-  exact fun y hy ↦ congrFun hfun ⟨y, hy⟩
-
-private theorem comap_restrict_eq_comap_withDensity [MeasurableSpace E] [BorelSpace E]
-    [MeasurableSpace M] [BorelSpace M] {e : OpenPartialHomeomorph M H}
-    {μ : Measure M} {ν : Measure E} {w : E → ℝ}
-    (hmap : (μ.restrict e.source).map (e.extend I) =
-      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
-    (μ.restrict e.source).comap (Subtype.val : e.source → M) =
-      ((ν.restrict (e.extend I).target).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap
-        (e.source.domRestrict (e.extend I)) := by
-  have hR := e.measurableEmbedding_extend_restrict I
-  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    .subtypeVal e.open_source.measurableSet
-  ext B hB
-  have hBs : MeasurableSet (Subtype.val '' B : Set M) := hval.measurableSet_image' hB
-  have hBim : MeasurableSet (e.source.domRestrict (e.extend I) '' B) := hR.measurableSet_image' hB
-  rw [hval.comap_apply, hR.comap_apply, ← hmap, e.map_restrict_extend_apply I μ hBim,
-    Measure.restrict_apply hBs, inter_eq_left.2 (Subtype.coe_image_subset e.source B)]
-  congr 1
-  ext x
-  refine ⟨fun ⟨z, hzB, hzx⟩ ↦ ?_, fun ⟨⟨z, hzB, hzx⟩, hxe⟩ ↦ ?_⟩
-  · subst hzx
-    exact ⟨⟨z, hzB, rfl⟩, z.property⟩
-  · have hzs : z.val ∈ (e.extend I).source := by simpa only [e.extend_source] using z.property
-    have hxs : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    exact ⟨z, hzB, (e.extend I).injOn hzs hxs hzx⟩
-
-/-- Converting a chart pushforward identity into an integral identity over measurable subsets of
-the chart source, without measurability of the integrand. -/
-private theorem setLIntegral_eq_of_map_restrict_eq [MeasurableSpace E] [BorelSpace E]
-    [MeasurableSpace M] [BorelSpace M] {e : OpenPartialHomeomorph M H}
-    {μ : Measure M} {ν : Measure E} {w : E → ℝ} (hw : ContinuousOn w (e.extend I).target)
-    (hmap : (μ.restrict e.source).map (e.extend I) =
-      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y))
-    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) (f : M → ℝ≥0∞) :
-    ∫⁻ x in s, f x ∂μ =
-      ∫⁻ y in e.extend I '' s, ENNReal.ofReal (w y) * f ((e.extend I).symm y) ∂ν := by
-  have hR := e.measurableEmbedding_extend_restrict I
-  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    .subtypeVal e.open_source.measurableSet
-  have hT := e.measurableSet_extend_target I
-  have hA := e.measurableSet_image_extend I hs hsub
-  have hAT : e.extend I '' s ⊆ (e.extend I).target := (image_mono hsub).trans
-    (by rw [← e.extend_source (I := I)]; exact (e.extend I).image_source_eq_target.subset)
-  have hrestrict : μ.restrict s =
-      ((((ν.restrict (e.extend I).target).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap
-        (e.source.domRestrict (e.extend I))).restrict (Subtype.val ⁻¹' s)).map Subtype.val := by
-    rw [← comap_restrict_eq_comap_withDensity hmap, ← hval.restrict_map, hval.map_comap,
-      Subtype.range_coe, Measure.restrict_restrict e.open_source.measurableSet, inter_self,
-      Measure.restrict_restrict hs, inter_eq_left.2 hsub]
-  have him : e.source.domRestrict (e.extend I) '' (Subtype.val ⁻¹' s) = e.extend I '' s := by
-    rw [image_domRestrict, inter_eq_left.2 hsub]
-  have hcongr (ρ : Measure e.source) :
-      ∫⁻ z, f z ∂ρ =
-        ∫⁻ z, (fun y ↦ f ((e.extend I).symm y)) (e.source.domRestrict (e.extend I) z) ∂ρ :=
-    lintegral_congr fun z ↦ by
-      have hz : z.val ∈ (e.extend I).source := by simpa only [e.extend_source] using z.property
-      simp only [domRestrict_apply, (e.extend I).left_inv hz]
-  rw [hrestrict, hval.lintegral_map, hR.restrict_comap, him, hcongr]
-  refine (hR.lintegral_map (fun y ↦ f ((e.extend I).symm y))).symm.trans ?_
-  have hw_ae : AEMeasurable (fun y ↦ ENNReal.ofReal (w y))
-      ((ν.restrict (e.extend I).target).restrict (e.extend I '' s)) :=
-    ((ENNReal.continuous_ofReal.comp_continuousOn hw).aemeasurable hT).mono_measure
-      Measure.restrict_le_self
-  rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
-    inter_eq_right.2 (him ▸ image_subset_range _ _),
-    setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ hw_ae _ hA
-      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
-    Measure.restrict_restrict hA, inter_eq_left.2 hAT]
-  rfl
-
-end Helpers
 
 /-! ### Positive continuous density measures -/
 
@@ -278,7 +135,7 @@ theorem IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq
         (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
     (hμ.map_restrict_eq_withDensity_chartWeight he ν).symm.trans hmap
   rw [e.extend_target] at heq hw hw0 ⊢
-  exact eqOn_of_withDensity_ofReal_eq (I := I) e.open_target
+  exact I.eqOn_of_withDensity_ofReal_eq e.open_target
     (by simpa only [e.extend_target] using hμ.continuousOn_chartWeight he ν) hw
     (fun y hy ↦ (hμ.chartWeight_pos he ν (by simpa only [e.extend_target] using hy)).le) hw0 heq
 
@@ -312,7 +169,7 @@ theorem IsPositiveContinuousDensity.setLIntegral_of_subset [BorelSpace E] [Borel
     ∫⁻ x in s, f x ∂μ =
       ∫⁻ y in e.extend I '' s,
         ENNReal.ofReal (hμ.chartWeight he ν y) * f ((e.extend I).symm y) ∂ν :=
-  setLIntegral_eq_of_map_restrict_eq (I := I) (hμ.continuousOn_chartWeight he ν)
+  e.setLIntegral_eq_of_map_restrict_eq I (hμ.continuousOn_chartWeight he ν)
     (hμ.map_restrict_eq_withDensity_chartWeight he ν) hs hsub f
 
 /-- Measuring a measurable subset of a chart source in coordinates. -/
@@ -374,9 +231,9 @@ private theorem setLIntegral_overlap_eq {μ : Measure M} {ν : Measure E} [ν.Is
     have hxe_s : x ∈ (e.extend I).source := by rw [e.extend_source]; exact hx.2
     simp only [Φ, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
       (e.extend I).left_inv hxe_s]
-  have h1 := setLIntegral_eq_of_map_restrict_eq (I := I) hw hmap hs_meas inter_subset_right
+  have h1 := e.setLIntegral_eq_of_map_restrict_eq I hw hmap hs_meas inter_subset_right
     (fun _ ↦ 1)
-  have h2 := setLIntegral_eq_of_map_restrict_eq (I := I) hw' hmap' hs_meas hse' (fun _ ↦ 1)
+  have h2 := e'.setLIntegral_eq_of_map_restrict_eq I hw' hmap' hs_meas hse' (fun _ ↦ 1)
   simp only [mul_one, setLIntegral_one] at h1 h2
   conv_lhs => rw [← him_e]
   rw [← h1, h2, him_e', ν.setLIntegral_extendCoordChange (I := I) he he' hB hBsub]
@@ -415,7 +272,7 @@ private theorem eqOn_abs_det_mul_of_map_restrict_eq
       (hw'.comp (I.contDiffOn_extendCoordChange he he').continuousOn fun _ hy ↦
         (Φ.map_source hy).1)
   rw [hΦ_src] at hmeq hcont_rhs ⊢
-  exact eqOn_of_withDensity_ofReal_eq (I := I) (e.symm ≫ₕ e').open_source
+  exact I.eqOn_of_withDensity_ofReal_eq (e.symm ≫ₕ e').open_source
     (hw.mono (hΦ_src ▸ hsubT)) hcont_rhs
     (fun y hy ↦ hw0 y (hsubT (hΦ_src.symm ▸ hy)))
     (fun y hy ↦ mul_nonneg (abs_nonneg _) (hw'0 _ (Φ.map_source (hΦ_src.symm ▸ hy)).1)) hmeq
@@ -529,33 +386,11 @@ private theorem atlasPullback_map_piece {μ : Measure M} {ν : Measure E} [ν.Is
       refine ⟨(e.extend I).symm y,
         ⟨by rw [mem_preimage, (e.extend I).right_inv hyT]; exact hyA, ?_⟩, hyz⟩
       simpa only [← e.extend_source (I := I)] using (e.extend I).map_target hyT
-  have h1 := setLIntegral_eq_of_map_restrict_eq (I := I) hw' hmap' hs_meas hs_e' (fun _ ↦ 1)
+  have h1 := e'.setLIntegral_eq_of_map_restrict_eq I hw' hmap' hs_meas hs_e' (fun _ ↦ 1)
   simp only [mul_one, setLIntegral_one] at h1
   rw [h1, him, ν.setLIntegral_extendCoordChange (I := I) he he' hA hAsub]
   exact setLIntegral_congr_fun hA fun y hy ↦ by
     rw [hw0_eq (hAsub hy), ENNReal.ofReal_mul (abs_nonneg _)]
-
-omit [MeasurableSpace E] [BorelSpace E] [ChartedSpace H M]
-  [MeasurableSpace M] [BorelSpace M] in
-/-- Extract a countable subcover of `(e.extend I).target` by chart-overlap domains. -/
-private theorem exists_countable_coordChange_cover {ι : Type*} {φ : ι → OpenPartialHomeomorph M H}
-    {e : OpenPartialHomeomorph M H}
-    (hcov_e : ∀ y ∈ (e.extend I).target, ∃ i, y ∈ (I.extendCoordChange e (φ i)).source) :
-    ∃ t : Set ι, t.Countable ∧
-      (e.extend I).target ⊆ ⋃ i ∈ t, (I.extendCoordChange e (φ i)).source := by
-  have hopen (i : ι) : IsOpen (I.symm ⁻¹' (e.symm ≫ₕ φ i).source) :=
-    (e.symm ≫ₕ φ i).open_source.preimage I.continuous_symm
-  obtain ⟨t, ht, htcover⟩ :=
-    (HereditarilyLindelofSpace.isLindelof (e.extend I).target).elim_countable_subcover
-      (fun i ↦ I.symm ⁻¹' (e.symm ≫ₕ φ i).source) hopen fun y hy ↦ by
-        obtain ⟨i, hyi⟩ := hcov_e y hy
-        rw [I.extendCoordChange_source, I.image_eq] at hyi
-        exact mem_iUnion.2 ⟨i, hyi.1⟩
-  refine ⟨t, ht, fun y hy ↦ ?_⟩
-  obtain ⟨i, hit, hyi⟩ := mem_iUnion₂.1 (htcover hy)
-  refine mem_iUnion₂.2 ⟨i, hit, ?_⟩
-  rw [I.extendCoordChange_source, I.image_eq]
-  exact ⟨hyi, e.extend_target_subset_range hy⟩
 
 omit [ChartedSpace H M] in
 /-- Glue local pushforward identities on a covering of `(e.extend I).target` by chart overlaps. -/
@@ -568,7 +403,7 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
     (μ.restrict e.source).map (e.extend I) =
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) := by
   have hT_meas := e.measurableSet_extend_target I
-  obtain ⟨t, ht, htcover'⟩ := exists_countable_coordChange_cover (I := I) hcov_e
+  obtain ⟨t, ht, htcover'⟩ := e.exists_countable_coordChange_cover I hcov_e
   ext A hA
   rw [withDensity_apply _ hA, Measure.restrict_restrict hA]
   have hAT_eq : ((μ.restrict e.source).map (e.extend I)) A =

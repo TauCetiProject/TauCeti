@@ -75,28 +75,6 @@ private def localChartMeasure (ν : Measure E) (i : M) (f : M → ℝ) : Measure
       fun y ↦ ENNReal.ofReal (f ((extChartAt I i).symm y))).comap
     ((chartAt H i).source.domRestrict (extChartAt I i))).map Subtype.val
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M]
-  [MeasurableSpace M] [BorelSpace M] in
-private theorem image_extChartAt_preimage_inter (x₀ i : M) (A : Set E) :
-    extChartAt I i '' ((extChartAt I x₀ ⁻¹' A ∩ (chartAt H x₀).source) ∩ (chartAt H i).source) =
-      I.extendCoordChange (chartAt H x₀) (chartAt H i) ''
-        (A ∩ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source) := by
-  ext z
-  refine ⟨fun ⟨x, ⟨⟨hxA, hx0⟩, hxi⟩, hxz⟩ ↦ ?_, fun ⟨y, ⟨hyA, hyΦ⟩, hyz⟩ ↦ ?_⟩
-  · refine ⟨extChartAt I x₀ x, ⟨hxA, ?_⟩, ?_⟩
-    · rw [← OpenPartialHomeomorph.extend_image_source_inter (f := chartAt H x₀) (f' := chartAt H i)]
-      exact mem_image_of_mem _ ⟨hx0, hxi⟩
-    · have hx0' : x ∈ (extChartAt I x₀).source := by rwa [extChartAt_source]
-      rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply, ← extChartAt, ← extChartAt,
-        (extChartAt I x₀).left_inv hx0']
-      exact hxz
-  · have hyT : y ∈ (extChartAt I x₀).target := hyΦ.1
-    have hxi : (extChartAt I x₀).symm y ∈ (chartAt H i).source :=
-      (chartAt H i).extend_source (I := I) ▸ hyΦ.2
-    refine ⟨(extChartAt I x₀).symm y,
-      ⟨⟨by rw [mem_preimage, (extChartAt I x₀).right_inv hyT]; exact hyA, ?_⟩, hxi⟩, hyz⟩
-    simpa only [← extChartAt_source (I := I)] using (extChartAt I x₀).map_target hyT
-
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
 /-- Evaluating `localChartMeasure` on a measurable set pulls the integral back to chart `i`. -/
 private theorem localChartMeasure_apply (ν : Measure E) (i : M) (f : M → ℝ)
@@ -139,8 +117,11 @@ private theorem map_localChartMeasure_apply (ν : Measure E) [ν.IsAddHaarMeasur
     e₀.measurableSet_preimage_extend_inter I hA
   conv_lhs => rw [extChartAt]
   rw [e₀.map_restrict_extend_apply I _ hA, ← extChartAt,
-    localChartMeasure_apply (I := I) ν i f hs_meas, image_extChartAt_preimage_inter,
-    ν.setLIntegral_extendCoordChange (I := I)
+    localChartMeasure_apply (I := I) ν i f hs_meas]
+  conv_lhs =>
+    dsimp only [extChartAt]
+    rw [e₀.image_extend_preimage_inter (chartAt H i) I A]
+  rw [ν.setLIntegral_extendCoordChange (I := I)
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i)
       (hA.inter hΦ_meas) inter_subset_right,
     ← lintegral_indicator (hA.inter hΦ_meas), ← lintegral_indicator (hA.inter hT₀)]
