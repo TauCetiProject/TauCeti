@@ -44,7 +44,8 @@ The second basis vector does not depend on `(h, j)`, while the first one varies 
 through the period and the rotation angle. Continuing the first one around the focus–focus value
 `(1, 0)` of `F` along a continuous lift of `Θ`, which decreases by `2π` once around that value
 (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`), is the classical
-computation of the Hamiltonian monodromy of the pendulum, carried out in
+computation of the Hamiltonian monodromy of the pendulum. What it forces on continuous sections of
+the period lattices is derived in
 `TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Monodromy`.
 
 ## Main results

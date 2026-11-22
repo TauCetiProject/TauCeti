@@ -426,16 +426,12 @@ theorem two_mul_pi_div_sqrt_le_sphericalPendulumPeriod (hj : j ≠ 0) (hz₀ : z
     2 * Real.pi / √(2 * (h + 3)) ≤ sphericalPendulumPeriod h j := by
   have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
   have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
+  have hpos := two_mul_sub_sub_sub_add_mul_sin_pos hj hz₀ hV
   rw [sphericalPendulumPeriod_eq_integral_sin hj hz₀ hV]
   set a := sphericalPendulumLowerTurningPoint h j
   set b := sphericalPendulumUpperTurningPoint h j
   -- The substituted height `z` lies in `[z₋, z₊]`, so `0 < z₃ - z < h + 3`.
   have hu (θ : ℝ) := mem_Icc_add_mul_sin hab.le θ
-  have hpos (θ : ℝ) : 0 < 2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * Real.sin θ)) := by
-    linarith [(hu θ).2]
   have hcont : Continuous fun θ ↦ (√(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 *
       Real.sin θ))))⁻¹ :=
     Continuous.inv₀ (by fun_prop) fun θ ↦ (Real.sqrt_pos.2 (hpos θ)).ne'
@@ -460,40 +456,11 @@ theorem sphericalPendulumPeriod_neg_right (h j : ℝ) :
 `V_j(z) < h` for some height `z ∈ (-1, 1)`. -/
 theorem continuousOn_sphericalPendulumPeriod :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumPeriod c.1 c.2)
-      sphericalPendulumTurningPointDomain := by
-  let R := sphericalPendulumTurningPointDomain
-  have ha : Continuous fun c : R ↦ sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 :=
-    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumLowerTurningPoint
-  have hb : Continuous fun c : R ↦ sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 :=
-    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumUpperTurningPoint
-  let G : R → ℝ → ℝ := fun c θ ↦
-    (√(2 * ((c : ℝ × ℝ).1 - sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 -
-      sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 -
-      ((sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 +
-          sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) / 2 +
-        (sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 -
-          sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) / 2 *
-            Real.sin θ))))⁻¹
-  -- The integrand is jointly continuous, since `z₃ - z > 0` on the whole domain.
-  have ha' := ha.comp (continuous_fst (X := R) (Y := ℝ))
-  have hb' := hb.comp (continuous_fst (X := R) (Y := ℝ))
-  have hG : Continuous (Function.uncurry G) := by
-    refine Continuous.inv₀ ?_ fun p ↦ (Real.sqrt_pos.2 ?_).ne'
-    · simp only [Function.comp_def] at ha' hb'
-      fun_prop
-    obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 p.1.property
-    have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-    have hc :=
-      one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint hj hz hV
-    have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-    have hu := mem_Icc_add_mul_sin hab.le p.2
-    linarith [hu.2]
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine ((continuous_const (y := (2 : ℝ))).mul
-    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
-      (-(Real.pi / 2)) (Real.pi / 2))).congr fun c ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
-  exact (sphericalPendulumPeriod_eq_integral_sin hj hz hV).symm
+      sphericalPendulumTurningPointDomain :=
+  ((continuousOn_const (c := (2 : ℝ))).mul
+    (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+    (g := fun _ _ ↦ 1) continuousOn_const)).congr fun c _ ↦ by
+      simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
 
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum

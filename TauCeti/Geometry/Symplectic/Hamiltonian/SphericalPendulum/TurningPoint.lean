@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -55,9 +56,12 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
   against the inverse square root of the radicand run between the turning points.
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin`: the sine
-  substitution turns such an integral into one over `[-π/2, π/2]` with a regular denominator.
+  substitution turns such an integral into one over `[-π/2, π/2]` with a regular denominator,
+  positive by `TauCeti.two_mul_sub_sub_sub_add_mul_sin_pos`.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
+* `TauCeti.continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq`: such integrals are
+  continuous in `(h, j)` for continuous weights.
 
 ## References
 
@@ -383,6 +387,20 @@ theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq (hj : j ≠ 0)
   rintro z ⟨hz, hzab⟩
   rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab), div_zero]
 
+/-- Above the curve of relative equilibria, the factor `2 (z₃ - z)` of the radicand stays positive
+along the sine substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ`, where
+`z₃ = h - z₋ - z₊` is the third root: `z ≤ z₊ < 1 < z₃`. -/
+theorem two_mul_sub_sub_sub_add_mul_sin_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) (θ : ℝ) :
+    0 < 2 * (h - sphericalPendulumLowerTurningPoint h j - sphericalPendulumUpperTurningPoint h j -
+      ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+        (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+          Real.sin θ)) := by
+  have hu := mem_Icc_add_mul_sin
+    (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV).le θ
+  linarith [hu.2, sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV,
+    one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint hj hz₀ hV]
+
 /-- **The sine substitution between the turning points.** Above the curve of relative equilibria,
 the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the turning points `z₋ < z₊`
 absorbs both inverse square root singularities of a height quadrature: for every function `g`,
@@ -406,9 +424,7 @@ theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin (hj 
   rw [integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV]
   have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
   have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hsin := two_mul_sub_sub_sub_add_mul_sin_pos hj hz₀ hV
   set a := sphericalPendulumLowerTurningPoint h j
   set b := sphericalPendulumUpperTurningPoint h j
   set u : ℝ → ℝ := fun θ ↦ (a + b) / 2 + (b - a) / 2 * Real.sin θ with hu
@@ -436,8 +452,7 @@ theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin (hj 
   -- On `(-π/2, π/2)`, the Jacobian `(z₊ - z₋) / 2 · cos θ` cancels the vanishing factor
   -- `√((z - z₋) (z₊ - z))` of the square root of the radicand.
   have hrc : 0 < (b - a) / 2 * Real.cos θ := mul_pos hr (Real.cos_pos_of_mem_Ioo hθ)
-  have hx : u θ ∈ Icc a b := mem_Icc_add_mul_sin hab.le θ
-  have hpos : 0 < √(2 * (h - a - b - u θ)) := Real.sqrt_pos.2 (by linarith [hx.2])
+  have hpos : 0 < √(2 * (h - a - b - u θ)) := Real.sqrt_pos.2 (hsin θ)
   have hrad : 2 * (h - u θ) * (1 - u θ ^ 2) - j ^ 2 =
       ((b - a) / 2 * Real.cos θ) ^ 2 * (2 * (h - a - b - u θ)) := by
     rw [hfac]
@@ -614,5 +629,49 @@ theorem continuousOn_sphericalPendulumUpperTurningPoint :
     have hmem := (turningPoint_spec hj hz hV).2.1
     by_contra hle
     exact (hc _ ⟨not_lt.1 hle, hmem.1.2⟩).not_ge (sub_nonneg.2 hmem.2.2)
+
+/-- **Continuity of height quadratures.** If `g` is continuous in `((h, j), z)` for `(h, j)` in
+`sphericalPendulumTurningPointDomain` and heights `z ∈ (-1, 1)`, then
+`∫_{-1}^{1} g(h, j, z) dz / √(2 (h - z) (1 - z²) - j²)` is continuous in `(h, j)` there. After the
+sine substitution its integrand is jointly continuous, since the turning points are continuous and
+the substituted height stays in `[z₋, z₊] ⊆ (-1, 1)`. -/
+theorem continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq {g : ℝ × ℝ → ℝ → ℝ}
+    (hg : ContinuousOn (Function.uncurry g) (sphericalPendulumTurningPointDomain ×ˢ Ioo (-1) 1)) :
+    ContinuousOn (fun c : ℝ × ℝ ↦ ∫ z in (-1)..1, g c z / √(2 * (c.1 - z) * (1 - z ^ 2) - c.2 ^ 2))
+      sphericalPendulumTurningPointDomain := by
+  let R := sphericalPendulumTurningPointDomain
+  have ha : Continuous fun c : R ↦ sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 :=
+    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumLowerTurningPoint
+  have hb : Continuous fun c : R ↦ sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 :=
+    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumUpperTurningPoint
+  -- The substituted height `u(c, θ)`, jointly continuous with values in `[z₋, z₊] ⊆ (-1, 1)`.
+  let u : R × ℝ → ℝ := fun p ↦
+    (sphericalPendulumLowerTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 +
+        sphericalPendulumUpperTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2) / 2 +
+      (sphericalPendulumUpperTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2 -
+        sphericalPendulumLowerTurningPoint (p.1 : ℝ × ℝ).1 (p.1 : ℝ × ℝ).2) / 2 * Real.sin p.2
+  have ha' := ha.comp (continuous_fst (X := R) (Y := ℝ))
+  have hb' := hb.comp (continuous_fst (X := R) (Y := ℝ))
+  simp only [Function.comp_def] at ha' hb'
+  have hu : Continuous u := by fun_prop
+  have hgu : Continuous fun p : R × ℝ ↦ g p.1 (u p) :=
+    hg.comp_continuous (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), u p)) fun p ↦ by
+      obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 p.1.property
+      have hmem := mem_Icc_add_mul_sin
+        (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV).le p.2
+      exact ⟨p.1.property, (neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV).trans_le hmem.1,
+        hmem.2.trans_lt (sphericalPendulumUpperTurningPoint_lt_one hj hz hV)⟩
+  let G : R → ℝ → ℝ := fun c θ ↦ g c (u (c, θ)) /
+    √(2 * ((c : ℝ × ℝ).1 - sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 -
+      sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2 - u (c, θ)))
+  have hG : Continuous (Function.uncurry G) :=
+    hgu.div (by fun_prop) fun p ↦ by
+      obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 p.1.property
+      exact (Real.sqrt_pos.2 (two_mul_sub_sub_sub_add_mul_sin_pos hj hz hV p.2)).ne'
+  rw [continuousOn_iff_continuous_domRestrict]
+  refine (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+    (μ := MeasureTheory.volume) hG (-(Real.pi / 2)) (Real.pi / 2)).congr fun c ↦ ?_
+  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
+  exact (integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin hj hz hV (g c)).symm
 
 end TauCeti

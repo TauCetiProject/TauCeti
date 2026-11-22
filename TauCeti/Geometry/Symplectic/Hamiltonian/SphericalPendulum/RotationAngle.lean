@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningP
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
 import TauCeti.Topology.Circle.Degree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -724,23 +724,14 @@ values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equili
 theorem continuousOn_sphericalPendulumRotationAngle :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumRotationAngle c.1 c.2)
       sphericalPendulumTurningPointDomain := by
-  let R := sphericalPendulumTurningPointDomain
-  let G : R → ℝ → ℝ := fun c θ ↦
-    sphericalPendulumRotationAngleSinIntegrand
-      (sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2)
-      (sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) (c : ℝ × ℝ).1
-      (c : ℝ × ℝ).2 θ
-  have hG : Continuous (Function.uncurry G) :=
-    continuousOn_sphericalPendulumRotationAngleSinIntegrand.comp_continuous
-      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.property,
-          trivial⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine ((continuous_const (y := (2 : ℝ))).mul
-    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
-      (-(π / 2)) (π / 2))).congr fun c ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
-  simp only [G, domRestrict_apply]
-  exact (sphericalPendulumRotationAngle_eq_integral_sin hj hz hV).symm
+  refine ((continuousOn_const (c := (2 : ℝ))).mul
+    (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+    (g := fun c z ↦ c.2 / (1 - z ^ 2)) (ContinuousOn.div (by fun_prop) (by fun_prop)
+      fun p hp ↦ ?_))).congr fun c _ ↦ ?_
+  · have := hp.2
+    simp only [mem_Ioo] at this
+    nlinarith
+  · simp only [sphericalPendulumRotationAngle_def, ← div_div, Pi.mul_apply]
 
 end Continuity
 
