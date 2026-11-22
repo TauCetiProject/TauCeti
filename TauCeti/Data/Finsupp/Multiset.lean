@@ -22,6 +22,7 @@ which it takes each value.
 
 * `Finsupp.card_toMultiset_eq_degree`: `card (toMultiset e) = e.degree`.
 * `Finsupp.toMultiset_add_single_one`: `toMultiset (e + single a 1) = a ::ₘ toMultiset e`.
+* `Finsupp.induction_add_single_one`: induction on exponent vectors by unit steps.
 * `Finsupp.toMultiset_sum_single_one`: `toMultiset (∑ i ∈ s, single (p i) 1) = s.val.map p`.
 * `Finsupp.sum_single_one_apply`: along a family `f` indexed by a finite type, the coefficient of
   `a` in `∑ t, single (f t) 1` is the number of indices `t` with `f t = a`;
@@ -56,6 +57,22 @@ theorem card_toMultiset_eq_degree {α : Type*} (d : α →₀ ℕ) :
 theorem toMultiset_add_single_one {α : Type*} (e : α →₀ ℕ) (a : α) :
     toMultiset (e + single a 1) = a ::ₘ toMultiset e := by
   simp [toMultiset_add, add_comm]
+
+/-- Induction on exponent vectors by unit steps: a property of `0` that is preserved by adding
+`single a 1` for every `a` holds for every exponent vector. -/
+@[elab_as_elim]
+theorem induction_add_single_one {α : Type*} {motive : (α →₀ ℕ) → Prop} (e : α →₀ ℕ)
+    (zero : motive 0) (add_single_one : ∀ a e, motive e → motive (e + single a 1)) :
+    motive e := by
+  induction e using Finsupp.induction with
+  | zero => exact zero
+  | single_add a n e _ _ ih =>
+    clear * - ih add_single_one
+    induction n with
+    | zero => simpa using ih
+    | succ n ihn =>
+      rw [single_add, add_right_comm]
+      exact add_single_one a _ ihn
 
 /-- The multiset of a sum of unit steps along a family `p` indexed by a finset `s` is the
 multiset of the values of `p` on `s`. -/
