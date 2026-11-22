@@ -48,6 +48,9 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
   to `k < p` in characteristic `p`.
 * `Polynomial.eval_eq_sum_range_iterate_derivative_eval`: Taylor's formula
   `p(x) = ∑_{k < N} p⁽ᵏ⁾(r) / k! (x - r) ^ k` over a field of characteristic zero.
+* `Polynomial.mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero`: over an integral domain,
+  if `P ≠ 0` and the Hasse derivatives of `P` of order less than `n` vanish at every point of a
+  finite set `S`, then `n * #S ≤ P.natDegree`.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`: over an integral domain, if `P ≠ 0`
   and `P.natDegree < #S * (k + 1)`, some Hasse derivative of `P` of order `≤ k` is nonzero on `S`.
 * `Polynomial.exists_int_eval_hasseDeriv_ne_zero`: over a domain of characteristic zero, if `P ≠ 0`,
@@ -111,18 +114,24 @@ theorem eval_eq_sum_range_iterate_derivative_eval {K : Type*} [Field K] [CharZer
   rw [taylor_coeff, eval_iterate_derivative_eq_factorial_mul k p r]
   field_simp
 
+/-- **The root-count inequality for Hasse derivatives.** Over an integral domain, if `P ≠ 0` and
+the Hasse derivatives of `P` of order less than `n` vanish at every point of a finite set `S`,
+then `n * #S ≤ P.natDegree`. -/
+theorem mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero {R : Type*} [CommRing R]
+    [IsDomain R] {P : R[X]} (hP : P ≠ 0) {S : Finset R} {n : ℕ}
+    (h : ∀ a ∈ S, ∀ i < n, (hasseDeriv i P).eval a = 0) : n * #S ≤ P.natDegree :=
+  mul_card_le_natDegree_of_le_rootMultiplicity fun a ha ↦
+    (le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hP).2 (h a ha)
+
 /-- Over an integral domain, if `P ≠ 0` has degree strictly less than `#S * (k + 1)`, then some
 Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`. -/
 theorem exists_eval_hasseDeriv_ne_zero_of_natDegree_lt {R : Type*} [CommRing R] [IsDomain R]
     {P : R[X]} (hP : P ≠ 0) {S : Finset R} {k : ℕ} (hdeg : P.natDegree < #S * (k + 1)) :
     ∃ a ∈ S, ∃ i ≤ k, (hasseDeriv i P).eval a ≠ 0 := by
   by_contra! h
-  have hle : #S * (k + 1) ≤ ∑ a ∈ S, P.rootMultiplicity a := by
-    rw [← smul_eq_mul, ← Finset.sum_const]
-    exact Finset.sum_le_sum fun a ha ↦
-      (le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hP).2 fun i hi ↦
-        h a ha i (Nat.lt_succ_iff.1 hi)
-  exact (hle.trans (sum_rootMultiplicity_le_natDegree P S)).not_gt hdeg
+  have hle := mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero (n := k + 1) hP
+    fun a ha i hi ↦ h a ha i (Nat.lt_succ_iff.1 hi)
+  exact (mul_comm (k + 1) #S ▸ hle).not_gt hdeg
 
 /-- **Univariate Hasse-jet nonvanishing on a bounded integer interval** (the one-variable case of
 Evertse, Lemma 25). Over a domain of characteristic zero, any nonzero polynomial `P` of degree at

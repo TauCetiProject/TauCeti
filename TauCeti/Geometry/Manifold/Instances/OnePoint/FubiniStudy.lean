@@ -13,7 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
-import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
 # The Fubini–Study form of the Riemann sphere
@@ -145,14 +145,10 @@ private theorem integral_Ioi_mul_fubiniStudyDensity :
 density integrates to `2 · π · 1 / (2π) = 1` over `ℂ`, the affine chart of the sphere, which misses
 only the point `∞`. This is the normalization of the Fubini–Study form to total area one. -/
 theorem integral_fubiniStudyDensity : ∫ z : ℂ, fubiniStudyDensity z = 1 := by
-  have h := integral_fun_norm_addHaar (volume : Measure ℂ)
-    (fun r : ℝ ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹)
-  simp only [Complex.finrank_real_complex, Complex.volume_real_ball 0 zero_le_one] at h
   simp only [fubiniStudyDensity_def]
-  rw [h]
-  simp only [Nat.add_one_sub_one, pow_one, smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
+  rw [integral_fun_norm_complex fun r ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹]
+  simp only [smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
   field_simp
-  norm_num
 
 /-! ### The Fubini–Study form -/
 

@@ -46,7 +46,10 @@ actions of Lie groups.
   (`TauCeti.Toric.IsDelzant.isManifold_delzantQuotient`) and the projection `Z → M_Δ` is a smooth
   submersion (`TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`) whose vertical tangent
   vectors are exactly the directions of the orbits of the kernel torus
-  (`TauCeti.Toric.IsDelzant.ker_mfderiv_delzantQuotientMk`).
+  (`TauCeti.Toric.IsDelzant.ker_mfderiv_delzantQuotientMk`). The reduced moment map
+  `μ_Δ : M_Δ → V*` is smooth (`TauCeti.Toric.IsDelzant.contMDiff_reducedMomentMap`), because its
+  composite with the projection is the smooth function `z ↦ μ(z) ∘ s` on the level, where `μ` is
+  the moment map of the torus `(ℝ / 2πℤ)^ι` and `s` is a right inverse of `β_ℝ : ℝ^ι → V`.
 
 The atlas is modelled on `ℝ^(d + n - k)`, where `d` is the number of facets, `n = dim V` and `k`
 is the dimension of the Lie algebra of the kernel torus.
@@ -350,6 +353,32 @@ theorem ker_mfderiv_delzantQuotientMk (x : delzantLevel i u c) :
     (mk_eq_comp 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
       (Fin (Fintype.card ι + finrank ℝ V) → ℝ)))
   exact hmk.trans (hcomp.trans (ProperSMul.ker_mfderiv_quotientMk x))
+
+/-- **The reduced moment map is smooth**, for the atlas
+`TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. Its composite with the projection from the
+level is `z ↦ μ(z) ∘ s` for a right inverse `s` of `β_ℝ : ℝ^ι → V`, since `μ(z) = β_ℝ^* μ_Δ [z]`
+(`TauCeti.Toric.DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap`). -/
+theorem contMDiff_reducedMomentMap
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j))) :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) 𝓘(ℝ, StrongDual ℝ V) ∞
+      (DelzantQuotient.reducedMomentMap hβ (c := c)) := by
+  let _ := hΔ.delzantLevelChartedSpace hi
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  obtain ⟨s, hs⟩ := (Fintype.linearCombination ℝ fun j ↦ i (u j)).exists_rightInverse_of_surjective
+    (LinearMap.range_eq_top.2 hβ)
+  refine ((hΔ.isSubmersion_delzantQuotientMk hi).contMDiff_comp_iff
+    DelzantQuotient.mk_surjective le_rfl).1 ?_
+  have h : DelzantQuotient.reducedMomentMap hβ ∘ DelzantQuotient.mk = fun x : delzantLevel i u c ↦
+      (delzantMomentMap c x).comp (LinearMap.toContinuousLinearMap s) := by
+    funext x
+    ext v
+    simp [DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap hβ x, ← LinearMap.comp_apply,
+      hs]
+  rw [h]
+  exact ((contDiff_delzantMomentMap c).contMDiff.comp (hΔ.contMDiff_coe_delzantLevel hi)).clm_comp
+    contMDiff_const
 
 end IsDelzant
 

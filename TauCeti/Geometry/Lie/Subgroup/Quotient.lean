@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
 import TauCeti.Geometry.Lie.IntegralCurve
+import TauCeti.Geometry.Lie.RightInvariantVectorField
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.RegularValue
@@ -37,7 +38,8 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
   whose one-parameter subgroups lie in `K`
   (`Subgroup.ker_mfderiv_quotientMk_eq_mulInvariantDistribution`);
 * the projection sends the generators of left multiplication on `G` to those of the action on
-  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`);
+  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`), which therefore span every
+  tangent space of `G ⧸ K` (`Subgroup.surjective_fundamentalVectorField`);
 * `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`).
 
 More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts freely and
@@ -342,6 +344,25 @@ theorem mfderiv_quotientMk_fundamentalVectorField (hK : IsClosed (K : Set G)) (g
     ((contMDiff_quotientMk hK).mdifferentiableAt (by simp))
     ((contMDiff_mul_right (I := I) (n := ∞)).mdifferentiableAt (by simp))
     (fun h ↦ (MulAction.Quotient.smul_coe K h g).symm) ξ
+
+/-- **The generators span the tangent spaces of a homogeneous space.** Every tangent vector of
+`G ⧸ K` at `x` is the value at `x` of the generator `ξ_(G ⧸ K)` of some `ξ` in the Lie algebra: the
+projection `G → G ⧸ K` is a submersion, and the generators `ξ_G(g)` of left multiplication, the
+right-invariant vector fields, exhaust `T_g G`. -/
+theorem surjective_fundamentalVectorField (hK : IsClosed (K : Set G)) (x : G ⧸ K) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    Surjective fun ξ : GroupLieAlgebra I G ↦
+      fundamentalVectorField 𝓘(ℝ, QuotientModelSpace I K) ξ x := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  intro v
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+  obtain ⟨u, rfl⟩ := (isSubmersion_quotientMk hK).surjective_mfderiv (by simp) g v
+  obtain ⟨ξ, rfl⟩ := (bijective_mulRightInvariantVectorField (I := I) g).2 u
+  refine ⟨ξ, ?_⟩
+  dsimp only
+  rw [← mfderiv_quotientMk_fundamentalVectorField hK g ξ,
+    fundamentalVectorField_eq_mulRightInvariantVectorField]
 
 /-- **`G` acts smoothly on its homogeneous space** `G ⧸ K` by left multiplication. The action
 lifts along the submersion `(g, h) ↦ (g, [h])` to the multiplication of `G`, followed by the

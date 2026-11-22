@@ -16,13 +16,17 @@ at each label depends only on which labels coincide. Consequently an eventually 
 collision relation gives eventually constant multiplicities, without any continuity or
 splitting assumptions on the polynomial family.
 
-It occurs in `f.roots` with multiplicity `f.natTrailingDegree`, so the roots satisfying a
-predicate that holds at zero number `f.natTrailingDegree` plus the nonzero roots satisfying it.
-Over any integral domain, summing `f.rootMultiplicity` over any finite set of points never exceeds
-`f.natDegree` (`Polynomial.sum_rootMultiplicity_le_natDegree`, and
+We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
+`f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
+`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
+`f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
+(`Polynomial.sum_rootMultiplicity_le_natDegree`, and
 `Polynomial.sum_rootMultiplicity_comp_le_natDegree` for indexed evaluation points injective on the
 indexing set), including for `f = 0`, and summing it over the distinct roots gives the number of
-roots counted with multiplicity (`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`).
+roots counted with multiplicity
+(`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`). So if
+`k ≤ f.rootMultiplicity a` for every `a` in a finite set `s`, then `k * #s ≤ f.natDegree`
+(`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
@@ -106,6 +110,13 @@ theorem sum_rootMultiplicity_comp_le_natDegree {ι : Type*} (f : R[X]) (s : Fins
       = ∑ b ∈ s.image β, f.rootMultiplicity b :=
         (Finset.sum_image (f := fun b ↦ f.rootMultiplicity b) fun _ hx _ hy h ↦ hβ hx hy h).symm
     _ ≤ f.natDegree := f.sum_rootMultiplicity_le_natDegree (s.image β)
+
+/-- **The root-count inequality.** Over a domain, if `k ≤ f.rootMultiplicity a` for every `a` in
+a finite set `s`, then `k * #s ≤ f.natDegree`. -/
+theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {k : ℕ}
+    (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
+  rw [mul_comm, ← smul_eq_mul]
+  exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
 
 /-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
 `r i`. -/
