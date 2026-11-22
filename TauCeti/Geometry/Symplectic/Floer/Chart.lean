@@ -376,6 +376,15 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
   · rw [hamiltonianVectorFieldInChartAt_apply]
     exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
 
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, vanishes. -/
+@[simp]
+theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) :
+    ω.hamiltonianVectorFieldInChartAt α (fun _ _ ↦ 0) = 0 := by
+  funext ⟨z, y⟩
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
+  exact map_zero _
+
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
 coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
