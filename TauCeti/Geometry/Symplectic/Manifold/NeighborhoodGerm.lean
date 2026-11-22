@@ -162,7 +162,7 @@ theorem isSymplecticMapOn_toPartialDiffeomorph_liftOpens {U : Opens M} {V : Open
   -- applies to `v` and `w` as they are.
   rw [PartialDiffeomorph.mfderiv_liftOpens_apply_coe,
     PartialDiffeomorph.mfderiv_liftOpens_apply_coe, PartialDiffeomorph.liftOpens_apply_coe,
-    toPartialDiffeomorph_toPartialEquiv]
+    coe_toPartialDiffeomorph]
   exact hφσ z v w
 
 end Diffeomorph

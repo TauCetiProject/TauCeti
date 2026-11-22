@@ -285,14 +285,13 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
   have hval (q : Q) : Ψ (i q) = g q := by
     obtain ⟨h, hφq, -⟩ := hφ q
     rw [← hφq]
-    simpa only [Diffeomorph.toPartialDiffeomorph_toPartialEquiv, Equiv.toPartialEquiv_apply,
-      Diffeomorph.coe_toEquiv] using
+    simpa only [Diffeomorph.coe_toPartialDiffeomorph] using
       φ.toPartialDiffeomorph.liftOpens_apply_coe hU₀ hU₁ ⟨i q, h⟩
   have hd (q : Q) : mfderiv I K Ψ (i q) = A q := by
     obtain ⟨h, -, hdφ⟩ := hφ q
     ext v
     have hv := φ.toPartialDiffeomorph.mfderiv_liftOpens_apply_coe hU₀ hU₁ ⟨i q, h⟩ v
-    rw [Diffeomorph.toPartialDiffeomorph_toPartialEquiv] at hv
+    rw [Diffeomorph.coe_toPartialDiffeomorph] at hv
     exact hv.trans (hdφ v)
   -- `Ψ` carries `σ` to `θ` on its source, in particular along `i(Q)`.
   have hAσ (q : Q) (v w : TangentSpace I (i q)) :
