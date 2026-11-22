@@ -105,6 +105,8 @@ property of an open subset that its duality map is bijective.
   if capping is bijective along cofinally many compact sets.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iff_of_range_eq`: bijectivity of the
   duality map of an open subset depends only on the subset.
+* `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_comap_iff`: in particular, on an open
+  subset `U ⊆ W` it is the same whether the orientation is restricted from `M` or from `W`.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_disjoint`,
   `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup_of_disjoint`: duality for the
   union of two disjoint open sets.
@@ -620,7 +622,7 @@ theorem bijective_dualityMap_of_iSup_eq_top {ι : Type} [Preorder ι] [IsDirecte
 /-- The duality map of an open subset `U ≤ W` of `M`, with the orientation pulled back from `M`,
 is bijective exactly when that of `U`, read as an open subset of `W`, with the orientation pulled
 back from `W`, is. -/
-private theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
+theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
     Function.Bijective (((o.comap W.isOpenEmbedding').comap
         (Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ U :
           Opens W).isOpenEmbedding').dualityMap hn L p q h) ↔
