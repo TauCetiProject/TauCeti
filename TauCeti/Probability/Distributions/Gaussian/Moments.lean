@@ -156,14 +156,8 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
 /-- **A real Gaussian law is determined by its moments**: every measure on `ℝ` with the finite
 moments of `gaussianReal m v` is `gaussianReal m v`. -/
 theorem isMomentDeterminate_gaussianReal (m : ℝ) (v : ℝ≥0) :
-    (gaussianReal m v).IsMomentDeterminate := by
-  refine .of_integrable_exp_mul_abs one_pos (((integrable_exp_mul_gaussianReal 1).add
-    (integrable_exp_mul_gaussianReal (-1))).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_))
-  rw [Real.norm_of_nonneg (exp_pos _).le, Pi.add_apply, one_mul, one_mul, neg_one_mul]
-  rcases le_total 0 x with hx | hx
-  · rw [abs_of_nonneg hx]
-    linarith [exp_pos (-x)]
-  · rw [abs_of_nonpos hx]
-    linarith [exp_pos x]
+    (gaussianReal m v).IsMomentDeterminate :=
+  .of_integrable_exp_mul_abs one_pos (integrable_exp_mul_abs (X := id)
+    (integrable_exp_mul_gaussianReal 1) (integrable_exp_mul_gaussianReal (-1)))
 
 end TauCeti.Probability

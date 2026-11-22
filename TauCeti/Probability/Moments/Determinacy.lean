@@ -373,11 +373,9 @@ that is concentrated on a compact set is determined by its moments among all mea
 finite moments. -/
 theorem of_isCompact {μ : Measure ℝ} [IsFiniteMeasure μ] {K : Set ℝ} (hK : IsCompact K)
     (hμK : μ Kᶜ = 0) : μ.IsMomentDeterminate := by
-  obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
-  refine of_integrable_exp_mul_abs one_pos (Integrable.of_bound (by fun_prop) (Real.exp R) ?_)
-  filter_upwards [mem_ae_iff.2 hμK] with x hx
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le, one_mul, Real.exp_le_exp]
-  exact hR x hx
+  refine of_integrable_exp_mul_abs one_pos ?_
+  rw [← restrict_eq_self_of_ae_mem (mem_ae_iff.2 hμK)]
+  exact ContinuousOn.integrableOn_compact hK (by fun_prop)
 
 end IsMomentDeterminate
 

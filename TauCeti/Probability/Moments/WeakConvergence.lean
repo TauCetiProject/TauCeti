@@ -55,10 +55,10 @@ to its moments does not identify a weak limit.
 ## Implementation notes
 
 The proof runs through Prokhorov's theorem. Convergent second moments are eventually bounded,
-so the family is tight, and along every finer ultrafilter it converges to some `ν`. A bound on
-the moment of order `2k` makes the positive and negative parts of `xⁿ`, for `n < 2k`, uniformly
-integrable along the family (`TauCeti.tendsto_lintegral_of_forall_exists_setLIntegral_le`), so
-`ν` has the limiting moments, and determinacy gives `ν = μ`. The random versions use the
+so the family is tight, and every cluster point `ν` is its limit along some finer ultrafilter. A
+bound on the moment of order `2k` makes the integrals of the positive and negative parts of `xⁿ`,
+for `n < 2k`, converge along the family (`TauCeti.tendsto_lintegral_of_rpow_bound`), so `ν` has
+the limiting moments, and determinacy gives `ν = μ`. The random versions use the
 neighbourhood form and a finite union bound.
 
 ## References
@@ -107,14 +107,6 @@ variable {ι : Type*} {l : Filter ι}
 
 /-! ### Moments along weakly convergent families -/
 
-/-- Off `[-S, S]` with `S ≥ 1`, the power `|x|ⁿ` is at most `x²ᵏ / S` when `n < 2k`. -/
-private theorem abs_pow_le_pow_div {n k : ℕ} (hn : n < 2 * k) {S x : ℝ} (hS : 1 ≤ S)
-    (hx : S ≤ |x|) : |x| ^ n ≤ x ^ (2 * k) / S := by
-  rw [le_div_iff₀ (by linarith), ← (even_two_mul k).pow_abs]
-  calc |x| ^ n * S ≤ |x| ^ n * |x| := by gcongr
-    _ = |x| ^ (n + 1) := (pow_succ _ _).symm
-    _ ≤ |x| ^ (2 * k) := pow_le_pow_right₀ (hS.trans hx) (by omega)
-
 /-- The bound `∫ x²ᵏ dμᵢ ≤ C` passes to a weak limit, as a bound on its lower integral. -/
 private theorem lintegral_ofReal_pow_two_mul_le_of_tendsto [l.NeBot]
     {μs : ι → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ} (h : Tendsto μs l (𝓝 μ))
@@ -143,7 +135,8 @@ theorem integrable_pow_two_mul_of_tendsto [l.NeBot] {μs : ι → ProbabilityMea
 
 /-- Along a weakly convergent family whose moments of order `2k` are eventually finite and at
 most `C`, the integrals of `ofReal ∘ f` converge for every continuous `f` with `|f x| ≤ |x|ⁿ`,
-where `0 < n < 2k`: the tails of these integrals are uniformly small. -/
+where `0 < n < 2k`: the power `2k / n > 1` of the integrand is at most `x²ᵏ`, so
+`TauCeti.tendsto_lintegral_of_rpow_bound` applies. -/
 private theorem tendsto_lintegral_ofReal_of_abs_le_pow {μs : ι → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ} (h : Tendsto μs l (𝓝 μ)) {k : ℕ} {C : ℝ}
     (hint : ∀ᶠ i in l, Integrable (fun x : ℝ ↦ x ^ (2 * k)) (μs i : Measure ℝ))
@@ -151,41 +144,32 @@ private theorem tendsto_lintegral_ofReal_of_abs_le_pow {μs : ι → Probability
     (hn : n < 2 * k) {f : ℝ → ℝ} (hf : Continuous f) (hfn : ∀ x, |f x| ≤ |x| ^ n) :
     Tendsto (fun i ↦ ∫⁻ x, ENNReal.ofReal (f x) ∂(μs i : Measure ℝ)) l
       (𝓝 (∫⁻ x, ENNReal.ofReal (f x) ∂(μ : Measure ℝ))) := by
+  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn₀)
+  have hp : (1 : ℝ) < ((2 * k : ℕ) : ℝ) / n := by
+    rw [one_lt_div hn']
+    exact_mod_cast hn
+  -- The power `2k / n` of the integrand is at most `x²ᵏ`.
+  have hpow (x : ℝ) : ENNReal.ofReal (f x) ^ (((2 * k : ℕ) : ℝ) / n) ≤
+      ENNReal.ofReal (x ^ (2 * k)) := by
+    calc ENNReal.ofReal (f x) ^ (((2 * k : ℕ) : ℝ) / n)
+        ≤ ENNReal.ofReal (|x| ^ n) ^ (((2 * k : ℕ) : ℝ) / n) :=
+          ENNReal.rpow_le_rpow (ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (hfn x)))
+            (by positivity)
+      _ = ENNReal.ofReal (x ^ (2 * k)) := by
+          rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity), ← Real.rpow_natCast,
+            ← Real.rpow_mul (abs_nonneg x), mul_div_cancel₀ _ hn'.ne', Real.rpow_natCast,
+            (even_two_mul k).pow_abs]
   simp_rw [← ENNReal.ofNNReal_toNNReal]
-  refine tendsto_lintegral_of_forall_exists_setLIntegral_le (continuous_real_toNNReal.comp hf)
-    ((tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds l).1 h) fun ε hε ↦ ?_
-  obtain ⟨δ, hδ, hδε⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hε
-  set S : ℝ := max 1 (C / δ)
-  have hS : 1 ≤ S := le_max_left _ _
-  have hCS : C / S ≤ δ := by
-    rw [div_le_iff₀ (by linarith), ← div_le_iff₀' (by exact_mod_cast hδ)]
-    exact le_max_right _ _
-  -- On the tail `{x | Sⁿ ≤ f x}` we have `S ≤ |x|`, so the integrand is at most `x²ᵏ / S`.
-  have htail (x : ℝ) (hx : (S ^ n).toNNReal ≤ (f x).toNNReal) :
-      ((f x).toNNReal : ℝ≥0∞) ≤ ENNReal.ofReal (x ^ (2 * k)) * (ENNReal.ofReal S)⁻¹ := by
-    have hSx : S ≤ |x| := (pow_le_pow_iff_left₀ (by linarith) (abs_nonneg x) hn₀).1
-      ((((Real.toNNReal_le_toNNReal_iff_of_pos (by positivity)).1 hx).trans
-        (le_abs_self _)).trans (hfn x))
-    rw [ENNReal.ofNNReal_toNNReal, ← div_eq_mul_inv, ← ENNReal.ofReal_div_of_pos (by linarith)]
-    exact ENNReal.ofReal_le_ofReal
-      ((le_abs_self _).trans ((hfn x).trans (abs_pow_le_pow_div hn hS hSx)))
-  refine ⟨(S ^ n).toNNReal, ?_⟩
+  refine tendsto_lintegral_of_rpow_bound (continuous_real_toNNReal.comp hf)
+    ((tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds l).1 h) hp (C := C.toNNReal) ?_
   filter_upwards [hint, hC] with i hi hiC
-  calc ∫⁻ x in {x | (S ^ n).toNNReal ≤ (f x).toNNReal}, ((f x).toNNReal : ℝ≥0∞)
-        ∂(μs i : Measure ℝ)
-      ≤ ∫⁻ x in {x | (S ^ n).toNNReal ≤ (f x).toNNReal},
-          ENNReal.ofReal (x ^ (2 * k)) * (ENNReal.ofReal S)⁻¹ ∂(μs i : Measure ℝ) :=
-        setLIntegral_mono' (measurableSet_le measurable_const (by fun_prop)) fun x hx ↦
-          htail x hx
-    _ ≤ ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) * (ENNReal.ofReal S)⁻¹ ∂(μs i : Measure ℝ) :=
-        setLIntegral_le_lintegral _ _
-    _ = ENNReal.ofReal (∫ x, x ^ (2 * k) ∂(μs i : Measure ℝ)) * (ENNReal.ofReal S)⁻¹ := by
-        rw [lintegral_mul_const _ (by fun_prop), ← ofReal_integral_eq_lintegral_ofReal hi
-          (ae_of_all _ fun x ↦ (even_two_mul k).pow_nonneg x)]
-    _ ≤ ENNReal.ofReal C * (ENNReal.ofReal S)⁻¹ := by gcongr
-    _ = ENNReal.ofReal (C / S) := by
-        rw [← div_eq_mul_inv, ENNReal.ofReal_div_of_pos (by linarith)]
-    _ ≤ ε := (ENNReal.ofReal_le_ofReal hCS).trans_eq ENNReal.ofReal_coe_nnreal |>.trans hδε.le
+  calc ∫⁻ x, ((f x).toNNReal : ℝ≥0∞) ^ (((2 * k : ℕ) : ℝ) / n) ∂(μs i : Measure ℝ)
+      ≤ ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂(μs i : Measure ℝ) :=
+        lintegral_mono fun x ↦ by simpa only [ENNReal.ofNNReal_toNNReal] using hpow x
+    _ = ENNReal.ofReal (∫ x, x ^ (2 * k) ∂(μs i : Measure ℝ)) :=
+        (ofReal_integral_eq_lintegral_ofReal hi
+          (ae_of_all _ fun x ↦ (even_two_mul k).pow_nonneg x)).symm
+    _ ≤ ENNReal.ofReal C := ENNReal.ofReal_le_ofReal hiC
 
 /-- **Moments along weak convergence.** If `μᵢ → μ` weakly and the moments of an even order
 `2k` are eventually finite and bounded, then every moment of lower order converges:
@@ -199,8 +183,14 @@ theorem tendsto_integral_pow_of_tendsto {μs : ι → ProbabilityMeasure ℝ}
   · exact tendsto_bot
   rcases eq_or_ne n 0 with rfl | hn₀
   · simp
-  have hμ := integrable_pow_of_integrable_pow_two_mul hn.le
-    (integrable_pow_two_mul_of_tendsto h hint hC)
+  -- A finite moment of order `2k` makes the moment of order `n` finite.
+  have hlow {ρ : Measure ℝ} [IsFiniteMeasure ρ]
+      (hρ : Integrable (fun x : ℝ ↦ x ^ (2 * k)) ρ) : Integrable (fun x : ℝ ↦ x ^ n) ρ :=
+    (integrable_norm_iff (by fun_prop)).1 <| by
+      simpa only [norm_pow, id] using integrable_norm_pow_of_le (f := id)
+        aestronglyMeasurable_id hn.le
+        (by simpa only [id, Real.norm_eq_abs, (even_two_mul k).pow_abs] using hρ)
+  have hμ := hlow (integrable_pow_two_mul_of_tendsto h hint hC)
   have hpos := tendsto_lintegral_ofReal_of_abs_le_pow h hint hC hn₀ hn (f := fun x ↦ x ^ n)
     (by fun_prop) fun x ↦ (abs_pow x n).le
   have hneg := tendsto_lintegral_ofReal_of_abs_le_pow h hint hC hn₀ hn (f := fun x ↦ -x ^ n)
@@ -209,8 +199,7 @@ theorem tendsto_integral_pow_of_tendsto {μs : ι → ProbabilityMeasure ℝ}
   refine (((ENNReal.tendsto_toReal hμ.lintegral_lt_top.ne).comp hpos).sub
     ((ENNReal.tendsto_toReal hμ.neg.lintegral_lt_top.ne).comp hneg)).congr' ?_
   filter_upwards [hint] with i hi
-  exact (integral_eq_lintegral_pos_part_sub_lintegral_neg_part
-    (integrable_pow_of_integrable_pow_two_mul hn.le hi)).symm
+  exact (integral_eq_lintegral_pos_part_sub_lintegral_neg_part (hlow hi)).symm
 
 /-! ### The method of moments -/
 
@@ -245,20 +234,23 @@ theorem tendsto_of_tendsto_integral_pow_of_isMomentDeterminate {μs : ι → Pro
           (ofReal_integral_eq_lintegral_ofReal hi.1
             (ae_of_all _ fun x ↦ (even_two_mul 1).pow_nonneg x)).symm
       _ ≤ _ := ENNReal.ofReal_le_ofReal hi.2
-  -- Every ultrafilter limit point `ν` has the limiting moments, hence is `μ`.
-  refine (tendsto_iff_ultrafilter _ _ _).2 fun U hU ↦ ?_
-  obtain ⟨ν, -, hν : Tendsto μs U (𝓝 ν)⟩ := hcomp.ultrafilter_le_nhds (U.map μs) <| by
-    rw [Ultrafilter.coe_map, le_principal_iff]
-    exact mem_map.2 (mem_of_superset (hU hs) fun i hi ↦ subset_closure (mem_image_of_mem μs hi))
-  have hνint (n : ℕ) : Integrable (fun x : ℝ ↦ x ^ n) (ν : Measure ℝ) :=
-    integrable_pow_of_integrable_pow_two_mul (by omega) (integrable_pow_two_mul_of_tendsto hν
-      ((hμs (2 * n)).filter_mono hU) ((hbound n).filter_mono hU))
+  -- Every cluster point `ν` is a limit along some ultrafilter `U ≤ l`, so it has the limiting
+  -- moments, hence is `μ`.
+  refine hcomp.tendsto_nhds_of_unique_mapClusterPt
+    (mem_of_superset hs fun i hi ↦ subset_closure (mem_image_of_mem μs hi)) fun ν _ hν ↦ ?_
+  obtain ⟨U, hU, hνU⟩ := mapClusterPt_iff_ultrafilter.mp hν
+  have hνint (n : ℕ) : Integrable (fun x : ℝ ↦ x ^ n) (ν : Measure ℝ) := by
+    have h2n := integrable_pow_two_mul_of_tendsto hνU ((hμs (2 * n)).filter_mono hU)
+      ((hbound n).filter_mono hU)
+    refine (integrable_norm_iff (by fun_prop)).1 ?_
+    simpa only [norm_pow, id] using integrable_norm_pow_of_le (f := id) aestronglyMeasurable_id
+      (by omega : n ≤ 2 * n)
+      (by simpa only [id, Real.norm_eq_abs, (even_two_mul n).pow_abs] using h2n)
   have hνmom (n : ℕ) : ∫ x, x ^ n ∂(ν : Measure ℝ) = ∫ x, x ^ n ∂(μ : Measure ℝ) :=
-    tendsto_nhds_unique (tendsto_integral_pow_of_tendsto hν
+    tendsto_nhds_unique (tendsto_integral_pow_of_tendsto hνU
       ((hμs (2 * (n + 1))).filter_mono hU) ((hbound (n + 1)).filter_mono hU) (by omega))
       ((h n).mono_left hU)
-  obtain rfl : ν = μ := toMeasure_injective (hμ.eq_of_forall_integral_pow_eq hνint hνmom)
-  exact hν
+  exact toMeasure_injective (hμ.eq_of_forall_integral_pow_eq hνint hνmom)
 
 /-- **Weak convergence and convergence of moments.** If every moment of `μᵢ` is eventually
 finite and the moments of each even order are eventually bounded, then `μᵢ` converges weakly to a
