@@ -48,10 +48,12 @@ theorem one_sub_single_inv_mul_sum_div {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1 =
       single y 1 - single (y / g ^ n) 1 := by
   have hterm (j : ℕ) : single (y / g ^ j) (1 : R) = single g⁻¹ 1 ^ j * single y 1 := by
-    rw [single_pow, one_pow, single_mul_single, one_mul, inv_pow, (hgy.pow_left j).inv_left.eq,
-      div_eq_mul_inv]
-  rw [Finset.sum_congr rfl fun j _ ↦ hterm j, ← Finset.sum_mul, ← mul_assoc, mul_neg_geom_sum,
-    sub_mul, one_mul, hterm]
+    simp [single_pow, (hgy.pow_left j).inv_left.eq, div_eq_mul_inv]
+  calc (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1
+      = ((1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single g⁻¹ 1 ^ j) * single y 1 := by
+        simp only [hterm, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+    _ = single y 1 - single (y / g ^ n) 1 := by
+        rw [mul_neg_geom_sum, sub_mul, one_mul, hterm]
 
 /-- For commuting `g` and `y`, multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹`
 telescopes. -/
@@ -62,10 +64,14 @@ theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1 =
       single (y * g ^ n) 1 - single y 1 := by
   have hterm (j : ℕ) : single (y * g ^ j) (1 : R) = single g 1 ^ j * single y 1 := by
-    rw [single_pow, one_pow, single_mul_single, one_mul, (hgy.pow_left j).eq]
+    simp [single_pow, (hgy.pow_left j).eq]
   have hg : (1 - single g⁻¹ (1 : R)) * single g 1 = single g 1 - 1 := by
-    rw [sub_mul, one_mul, single_mul_single, inv_mul_cancel, one_mul, one_def]
-  rw [Finset.sum_congr rfl fun j _ ↦ by rw [hterm, pow_succ'], ← Finset.sum_mul, ← Finset.mul_sum,
-    ← mul_assoc, ← mul_assoc, hg, mul_geom_sum, sub_mul, one_mul, hterm]
+    simp [sub_mul, one_def]
+  calc (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1
+      = (1 - single g⁻¹ 1) * single g 1 * (∑ j ∈ Finset.range n, single g 1 ^ j) *
+          single y 1 := by
+        simp_rw [hterm, pow_succ', mul_assoc, Finset.sum_mul, Finset.mul_sum]
+    _ = single (y * g ^ n) 1 - single y 1 := by
+        rw [hg, mul_geom_sum, sub_mul, one_mul, hterm]
 
 end Commute
