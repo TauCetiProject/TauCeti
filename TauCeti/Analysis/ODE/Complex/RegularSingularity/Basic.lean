@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
-public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import TauCeti.Analysis.ODE.Complex.LinearEquation
 public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 
-import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Data.Nat.Factorial.Cast
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
@@ -26,25 +26,28 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 For `f, g` around `z₀` with `(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and
 `(z - z₀)² g(z) = ∑ g_s (z - z₀)^s` on `0 < ‖z - z₀‖ < r`, let
-`Q(α) = TauCeti.indicialPoly (fs 0) (gs 0) α = (α - α₁)(α - α₂)` (`Re α₂ ≤ Re α₁`). On
-`{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` (via
+`Q(α) = TauCeti.indicialPoly (fs 0) (gs 0) α = (α - α₁)(α - α₂)` (`Re α₂ ≤ Re α₁`). On the slit
+punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
+(`{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`, via
 `TauCeti.Analysis.Complex.PowerSeries.BranchCut`):
 * Any sequence solving the indicial recursion at a root `ρ` of `Q` converges on `‖z - z₀‖ < r` and
-  yields a solution of `w'' + f w' + g w = 0` (`TauCeti.regularSingular_solution`, specialized to
-  `TauCeti.regularSingularCoeff_solution`). For a root `ρ` with no positive integer shift `ρ + s`
-  (`s ≥ 1`) that is also a root of `Q`, normalized series solutions (`a₀ = 1`) are unique
-  (`TauCeti.eq_regularSingularCoeff_of_solution`).
-* Pointwise logarithmic-product operator identity for `L(w * log(· - z₀)) - log(· - z₀) * L(w)`
-  (`TauCeti.deriv_deriv_add_mul_deriv_add_mul_mul_log_sub`).
-* When `α₁ - α₂ = N ∈ ℕ`, there is a second holomorphic solution
-  `w₂(z) = (z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c w₁(z) log(z - z₀)` (`b_N = 0`, `c = 1` for `N = 0`,
-  `b₀ = 1` for `N ≥ 1`) with `∑ b_s (z - z₀)^s` convergent on `‖z - z₀‖ < r`
-  (`TauCeti.regularSingular_second_solution`, uniqueness
-  `TauCeti.eq_regularSingularSecondCoeff_of_solution`).
+  yields a solution of `w'' + f w' + g w = 0` (`TauCeti.regularSingular_solution`). For a
+  non-resonant root `ρ` (`Q(ρ + s) ≠ 0` for `s ≥ 1`), the canonical series
+  `TauCeti.regularSingularSolution` satisfies `TauCeti.regularSingularCoeff_solution` (and
+  `TauCeti.isSolution_regularSingularSolution` for `TauCeti.regularSingularEquation`), with
+  normalized uniqueness `TauCeti.eq_regularSingularCoeff_of_solution`.
+* The shifted logarithmic forcing coefficients `TauCeti.regularSingularLogForcing` sum to the
+  Euler–Frobenius forcing series (`TauCeti.hasSum_regularSingularLogForcing_mul_pow`).
+* When `α₁ - α₂ = N ∈ ℕ`, `TauCeti.regularSingularSecondSolution` defines the holomorphic second
+  solution `w₂(z) = (z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c w₁(z) log(z - z₀)` (`b_N = 0`, `c = 1` for
+  `N = 0`, `b₀ = 1` for `N ≥ 1`) with `∑ b_s (z - z₀)^s` convergent on `‖z - z₀‖ < r`
+  (`TauCeti.regularSingular_second_solution`, `TauCeti.isSolution_regularSingularSecondSolution`,
+  uniqueness `TauCeti.eq_regularSingularSecondCoeff_of_solution`).
 * Worked Euler–Cauchy example: `w'' - 2 z⁻² w = 0` at `z₀ = 0` (`α₁ = 2`, `α₂ = -1`, `c = 0`).
 
-Abel–Liouville Wronskian formulas and fundamental pairs are in
-`TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian`.
+The underlying second-order operator linearity and logarithmic-product identities are in
+`TauCeti.Analysis.Calculus.Deriv.Second`, and Abel–Liouville Wronskian formulas and fundamental
+pairs are in `TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian`.
 
 ## References
 * NIST DLMF §2.7(ii), 2.7.1–2.7.6, <https://dlmf.nist.gov/2.7.ii>.
@@ -59,27 +62,6 @@ open scoped Topology ENNReal
 namespace TauCeti
 
 /-! ### Internal analytic and majorant helpers -/
-
-private theorem iteratedDeriv_two_eq (φ : ℂ → ℂ) : iteratedDeriv 2 φ = deriv (deriv φ) := by
-  simp [iteratedDeriv_succ]
-
-private theorem secondOrder_operator_add_const_mul {f g ψ Φ : ℂ → ℂ} {c' z : ℂ}
-    (hψ₁ : ∀ᶠ w in 𝓝 z, DifferentiableAt ℂ ψ w)
-    (hΦ₁ : ∀ᶠ w in 𝓝 z, DifferentiableAt ℂ Φ w)
-    (hψ₂ : DifferentiableAt ℂ (deriv ψ) z)
-    (hΦ₂ : DifferentiableAt ℂ (deriv Φ) z) :
-    (deriv (deriv fun w => ψ w + c' * Φ w) z + f z * deriv (fun w => ψ w + c' * Φ w) z +
-        g z * (ψ z + c' * Φ z)) =
-      (deriv (deriv ψ) z + f z * deriv ψ z + g z * ψ z) +
-        c' * (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) := by
-  have hd1_ev : deriv (fun w => ψ w + c' * Φ w) =ᶠ[𝓝 z] fun w => deriv ψ w + c' * deriv Φ w := by
-    filter_upwards [hψ₁, hΦ₁] with w hwψ hwΦ
-    exact ((hwψ.hasDerivAt).add ((hwΦ.hasDerivAt).const_mul c')).deriv
-  have hd2 : deriv (deriv fun w => ψ w + c' * Φ w) z =
-      deriv (deriv ψ) z + c' * deriv (deriv Φ) z :=
-    (((hψ₂.hasDerivAt).add ((hΦ₂.hasDerivAt).const_mul c')).congr_of_eventuallyEq hd1_ev).deriv
-  rw [hd1_ev.self_of_nhds, hd2]
-  ring
 
 /-- Lower bound `s² / 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖` for sufficiently large `s : ℕ`. -/
 private theorem exists_sq_div_two_le_norm_indicialPoly (f₀ g₀ σ : ℂ) :
@@ -106,7 +88,7 @@ private theorem exists_sq_div_two_le_norm_indicialPoly (f₀ g₀ σ : ℂ) :
 /-- One-step majorant inequality for a perturbed indicial convolution recursion at radius
 `ρ > 0`. -/
 private theorem indicial_rec_step_bound {σ : ℂ} {ρ Mf Mg CE : ℝ} {fs gs d E : ℕ → ℂ} {s K : ℕ}
-    (hρ_pos : 0 < ρ) (hMf_pos : 0 < Mf) (hMg_pos : 0 < Mg) (hCE0 : 0 ≤ CE) (hs1 : 1 ≤ s)
+    (hρ_pos : 0 < ρ) (hs1 : 1 ≤ s)
     (hMf : ∀ k, ‖fs k‖ * ρ ^ k ≤ Mf) (hMg : ∀ k, ‖gs k‖ * ρ ^ k ≤ Mg)
     (hCE : ‖E s‖ * ρ ^ s ≤ CE * (s + 1))
     (hK : 2 * ((Mf + Mg) * (‖σ‖ + 1) + 2 * CE) < K)
@@ -114,6 +96,10 @@ private theorem indicial_rec_step_bound {σ : ℂ} {ρ Mf Mg CE : ℝ} {fs gs d 
     (hds : indicialPoly (fs 0) (gs 0) (σ + s) * d s =
       -(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s) :
     ‖d s‖ * ρ ^ s ≤ (K : ℝ) / s * (1 + ∑ k ∈ range s, ‖d k‖ * ρ ^ k) := by
+  have hMf0 : 0 ≤ Mf := (by positivity : 0 ≤ ‖fs 0‖ * ρ ^ 0).trans (hMf 0)
+  have hMg0 : 0 ≤ Mg := (by positivity : 0 ≤ ‖gs 0‖ * ρ ^ 0).trans (hMg 0)
+  have hCE0 : 0 ≤ CE := nonneg_of_mul_nonneg_left
+    ((by positivity : 0 ≤ ‖E s‖ * ρ ^ s).trans hCE) (by positivity : (0 : ℝ) < s + 1)
   set C₁ : ℝ := (Mf + Mg) * (‖σ‖ + 1); set μ : ℕ → ℝ := fun k => ‖d k‖ * ρ ^ k
   set S : ℝ := 1 + ∑ k ∈ range s, μ k
   have hs_pos : (0 : ℝ) < s := by exact_mod_cast hs1
@@ -168,7 +154,7 @@ private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
     {fs gs d E : ℕ → ℂ} {s₁ : ℕ}
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
     (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => gs s * (z - z₀) ^ s)
-    (hE : ∀ ρ : ℝ, 0 < ρ → ρ < r → ∃ C : ℝ, 0 ≤ C ∧ ∀ s : ℕ, ‖E s‖ * ρ ^ s ≤ C * (s + 1))
+    (hE : ∀ ρ : ℝ, 0 < ρ → ρ < r → ∃ C : ℝ, ∀ s : ℕ, ‖E s‖ * ρ ^ s ≤ C * (s + 1))
     (hd : ∀ s : ℕ, s₁ ≤ s → indicialPoly (fs 0) (gs 0) (σ + s) * d s =
       -(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s) :
     ∀ z, ‖z - z₀‖ < r → Summable fun s => d s * (z - z₀) ^ s := by
@@ -177,11 +163,11 @@ private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
   have hρ_gt : ‖z - z₀‖ < ρ := by dsimp [ρ]; linarith
   have hρ_pos : 0 < ρ := (norm_nonneg _).trans_lt hρ_gt
   have hρ_lt : ρ < r := by dsimp [ρ]; linarith
-  obtain ⟨Mf, hMf_pos, hMf⟩ :=
+  obtain ⟨Mf, _, hMf⟩ :=
     FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt fs z₀ hρ_pos.le hρ_lt hf
-  obtain ⟨Mg, hMg_pos, hMg⟩ :=
+  obtain ⟨Mg, _, hMg⟩ :=
     FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt gs z₀ hρ_pos.le hρ_lt hg
-  obtain ⟨CE, hCE0, hCE⟩ := hE ρ hρ_pos hρ_lt
+  obtain ⟨CE, hCE⟩ := hE ρ hρ_pos hρ_lt
   obtain ⟨s₂, hs₂1, hQ⟩ := exists_sq_div_two_le_norm_indicialPoly (fs 0) (gs 0) σ
   set s₀ : ℕ := max s₁ s₂; have hs₀1 : 1 ≤ s₀ := hs₂1.trans (le_max_right _ _)
   obtain ⟨K, hK⟩ := exists_nat_gt (2 * ((Mf + Mg) * (‖σ‖ + 1) + 2 * CE))
@@ -189,7 +175,7 @@ private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
   have hμ0 : ∀ s, 0 ≤ μ s := fun _ => by positivity
   have hS₀_pos : 1 ≤ S₀ := by dsimp [S₀]; linarith [sum_nonneg fun k (_ : k ∈ range s₀) => hμ0 k]
   have hpoly := add_sum_range_le_mul_pow_of_le_div hs₀1 zero_le_one hμ0 fun s hs =>
-    indicial_rec_step_bound hρ_pos hMf_pos hMg_pos hCE0 (hs₀1.trans hs) hMf hMg (hCE s) hK
+    indicial_rec_step_bound hρ_pos (hs₀1.trans hs) hMf hMg (hCE s) hK
       (hQ s ((le_max_right _ _).trans hs)) (hd s ((le_max_left _ _).trans hs))
   set q : ℝ := ‖z - z₀‖ / ρ; have hq0 : 0 ≤ q := div_nonneg (norm_nonneg _) hρ_pos.le
   have hq1 : ‖q‖ < 1 := by rw [Real.norm_of_nonneg hq0, div_lt_one hρ_pos]; exact hρ_gt
@@ -247,11 +233,8 @@ private theorem hasSum_operator_cpow_series {z₀ σ : ℂ} {r : ℝ} {fs gs c :
   have hA2 : HasSum (fun s : ℕ => (s : ℂ) * ((s : ℂ) - 1) * c s * u ^ s)
       (u ^ 2 * deriv (deriv A) u) := by
     have hraw := hpA.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hue 2
-    rw [iteratedDeriv_two_eq, zero_add] at hraw
-    refine hraw.congr_fun fun s => ?_
-    rcases s with _ | s <;>
-      [simp; (simp only [Nat.descFactorial_succ, Nat.add_sub_cancel, Nat.descFactorial_zero,
-        mul_one]; push_cast; ring)]
+    rw [iteratedDeriv_succ, iteratedDeriv_one, zero_add] at hraw
+    simpa only [Nat.cast_descFactorial_two ℂ] using hraw
   have hσc_norm : Summable fun s : ℕ => ‖((σ + s) * c s) * u ^ s‖ :=
     Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun s => by
       have hsplit : ((σ + s) * c s) * u ^ s = σ * (c s * u ^ s) + (s : ℂ) * c s * u ^ s := by
@@ -317,63 +300,23 @@ private theorem operator_cpow_mul_tsum_eq {z₀ σ : ℂ} {r : ℝ} {f g : ℂ �
     (hasDerivAt_cpow_mul_tsum hc hzs hzb).deriv]
   dsimp only [ψ, A, u]; rw [hcpow1, hcpow2]; ring
 
-/-- Pointwise logarithmic-product identity for the second-order linear operator
-`L(w) = w'' + f w' + g w` on the logarithm branch `z - z₀ ∈ slitPlane`: if `w` is
-differentiable near `z` and `deriv w` is differentiable at `z`, then
-`L(w * log(· - z₀)) z - log(z - z₀) * L(w) z` equals
-`((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w z + ((z - z₀) * f z - 1) * w z)`. -/
-theorem deriv_deriv_add_mul_deriv_add_mul_mul_log_sub
-    {z₀ z : ℂ} (hzs : z - z₀ ∈ slitPlane) {f g w : ℂ → ℂ}
-    (hw : ∀ᶠ u in 𝓝 z, DifferentiableAt ℂ w u) (hdw : DifferentiableAt ℂ (deriv w) z) :
-    let Φ : ℂ → ℂ := fun u => w u * Complex.log (u - z₀)
-    (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) -
-        Complex.log (z - z₀) * (deriv (deriv w) z + f z * deriv w z + g z * w z) =
-      ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w z + ((z - z₀) * f z - 1) * w z) := by
-  intro Φ
-  have hzu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have hsub : HasDerivAt (fun u : ℂ => u - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hU_log : ∀ᶠ u in 𝓝 z, u - z₀ ∈ slitPlane :=
-    (isOpen_slitPlane.preimage (continuous_id.sub continuous_const)).mem_nhds hzs
-  have hderiv1 : ∀ᶠ u in 𝓝 z,
-      HasDerivAt Φ (deriv w u * Complex.log (u - z₀) + (u - z₀)⁻¹ * w u) u := by
-    filter_upwards [hw, hU_log] with u hu hsu
-    exact ((hu.hasDerivAt.mul (((hasDerivAt_id u).sub_const z₀).clog hsu)).congr_deriv
-      (by dsimp only [id]; rw [one_div]; ring))
-  have hd1 : deriv Φ z = deriv w z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w z :=
-    hderiv1.self_of_nhds.deriv
-  have hev : deriv Φ =ᶠ[𝓝 z]
-      (deriv w * (fun u : ℂ => Complex.log (u - z₀)) + (fun u : ℂ => (u - z₀)⁻¹) * w) :=
-    hderiv1.mono fun _ hu => hu.deriv
-  have hd2 : deriv (deriv Φ) z = deriv (deriv w) z * Complex.log (z - z₀) +
-      2 * (z - z₀)⁻¹ * deriv w z - ((z - z₀) ^ 2)⁻¹ * w z := by
-    rw [(((hdw.hasDerivAt.mul (hsub.clog hzs)).add
-      ((hsub.inv hzu0).mul hw.self_of_nhds.hasDerivAt)).congr_of_eventuallyEq hev).deriv]
-    simp only [Pi.inv_apply]; field_simp [hzu0]; ring
-  rw [hd1, hd2]
-  dsimp only [Φ]
-  field_simp [hzu0]
-  ring
-
 /-- Operator identity for `Φ(z) = w₁(z) log(z - z₀)` when `w₁` solves `w₁'' + f w₁' + g w₁ = 0` on
 the slit punctured disc. -/
-private theorem hasDerivAt_and_operator_mul_log {z₀ : ℂ} {r : ℝ} {f g w₁ : ℂ → ℂ}
+private theorem operator_mul_log {z₀ : ℂ} {r : ℝ} {f g w₁ : ℂ → ℂ}
     (hw₁ : DifferentiableOn ℂ w₁ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r})
     (hsol₁ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
       deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0) :
     let Φ : ℂ → ℂ := fun z => w₁ z * Complex.log (z - z₀)
     let U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
     DifferentiableOn ℂ Φ U ∧
-      (∀ z ∈ U, HasDerivAt Φ (deriv w₁ z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w₁ z) z) ∧
       ∀ z ∈ U, deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z =
         ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w₁ z + ((z - z₀) * f z - 1) * w₁ z) := by
   intro Φ U
   have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   have hw₁_at (z) (hz : z ∈ U) : DifferentiableAt ℂ w₁ z := hw₁.differentiableAt (hopen.mem_nhds hz)
-  have hderiv1 : ∀ z ∈ U,
-      HasDerivAt Φ (deriv w₁ z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w₁ z) z := fun z hz =>
-    ((hw₁_at z hz).hasDerivAt.mul (((hasDerivAt_id z).sub_const z₀).clog hz.1)).congr_deriv
-      (by dsimp only [id]; rw [one_div]; ring)
-  refine ⟨fun z hz => (hderiv1 z hz).differentiableAt.differentiableWithinAt, hderiv1, ?_⟩
+  refine ⟨fun z hz =>
+      ((hw₁_at z hz).hasDerivAt.mul_log_sub hz.1).differentiableAt.differentiableWithinAt,
+    ?_⟩
   rintro z ⟨hzs, hzb⟩
   have hw₁_ev : ∀ᶠ u in 𝓝 z, DifferentiableAt ℂ w₁ u :=
     Eventually.mono (hopen.mem_nhds ⟨hzs, hzb⟩) hw₁_at
@@ -382,7 +325,88 @@ private theorem hasDerivAt_and_operator_mul_log {z₀ : ℂ} {r : ℝ} {f g w₁
   have hpt := deriv_deriv_add_mul_deriv_add_mul_mul_log_sub (f := f) (g := g) hzs hw₁_ev hdw₁
   linear_combination hpt + Complex.log (z - z₀) * hsol₁ z hzs hzb
 
+/-! ### Slit punctured disc and `LinearEquation` setup -/
+
+/-- The slit punctured open disc `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` as an
+open subset of `ℂ`. -/
+def regularSingularSlitDisc (z₀ : ℂ) (r : ℝ) : TopologicalSpace.Opens ℂ :=
+  ⟨{z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r},
+    isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r⟩
+
+/-- Membership in `regularSingularSlitDisc z₀ r`. -/
+@[simp]
+theorem mem_regularSingularSlitDisc {z₀ z : ℂ} {r : ℝ} :
+    z ∈ regularSingularSlitDisc z₀ r ↔ z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r :=
+  Iff.rfl
+
+/-- Carrier set of `regularSingularSlitDisc z₀ r`. -/
+@[simp]
+theorem coe_regularSingularSlitDisc (z₀ : ℂ) (r : ℝ) :
+    (regularSingularSlitDisc z₀ r : Set ℂ) = {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
+  (rfl)
+
+private theorem differentiableOn_regularSingular_of_hasSum {z₀ : ℂ} {r : ℝ} {k : ℕ}
+    {f : ℂ → ℂ} {fs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) ^ k * f z)) :
+    DifferentiableOn ℂ f (regularSingularSlitDisc z₀ r) := by
+  intro z hz
+  have hr : 0 < r := (norm_nonneg (z - z₀)).trans_lt hz.2
+  have han := FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt fs z₀ hr
+    fun w hw0 hwr => (hf w hw0 hwr).summable
+  have hdiff : DifferentiableOn ℂ (fun w => ((w - z₀) ^ k)⁻¹ * ∑' s, fs s * (w - z₀) ^ s)
+      (regularSingularSlitDisc z₀ r) := by
+    intro w hw
+    have hw0 : w - z₀ ≠ 0 := Complex.slitPlane_ne_zero hw.1
+    exact (((((differentiableAt_id.sub_const z₀).pow k).inv (pow_ne_zero k hw0)).mul
+      ((han (w - z₀) (mem_ball_zero_iff.mpr hw.2)).differentiableAt.comp w
+        (differentiableAt_id.sub_const z₀)))).differentiableWithinAt
+  refine (hdiff.congr fun w hw => ?_) z hz
+  have hw0 : w - z₀ ≠ 0 := Complex.slitPlane_ne_zero hw.1
+  rw [(hf w (norm_pos_iff.mpr hw0) hw.2).tsum_eq, inv_mul_cancel_left₀ (pow_ne_zero k hw0)]
+
+/-- Construct the second-order `LinearEquation (regularSingularSlitDisc z₀ r) 2` associated with
+`w'' + f w' + g w = 0` from regular-singularity series expansions of `(z - z₀) f(z)` and
+`(z - z₀)² g(z)` on `0 < ‖z - z₀‖ < r`. -/
+def regularSingularEquation {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z)) :
+    LinearEquation (regularSingularSlitDisc z₀ r) 2 :=
+  LinearEquation.ofTwo f g
+    (differentiableOn_regularSingular_of_hasSum (k := 1) fun w hw0 hwr => by
+      simpa only [pow_one] using hf w hw0 hwr)
+    (differentiableOn_regularSingular_of_hasSum (k := 2) hg)
+
+/-- Solutions of `regularSingularEquation hf hg` are precisely complex-differentiable functions on
+`regularSingularSlitDisc z₀ r` satisfying `w'' + f w' + g w = 0` there. -/
+@[simp]
+theorem isSolution_regularSingularEquation_iff {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
+    (y : ℂ → ℂ) :
+    (regularSingularEquation hf hg).IsSolution y ↔
+      DifferentiableOn ℂ y (regularSingularSlitDisc z₀ r) ∧
+        ∀ z ∈ regularSingularSlitDisc z₀ r,
+          deriv (deriv y) z + f z * deriv y z + g z * y z = 0 :=
+  LinearEquation.isSolution_ofTwo_iff _ _ y
+
 /-! ### Primary series solution at a regular singularity -/
+
+/-- Canonical Frobenius series solution
+`(z - z₀)^ρ * ∑' s, regularSingularCoeff fs gs ρ s * (z - z₀)^s` attached to an indicial
+root `ρ`. -/
+def regularSingularSolution (fs gs : ℕ → ℂ) (z₀ ρ z : ℂ) : ℂ :=
+  (z - z₀) ^ ρ * ∑' s, regularSingularCoeff fs gs ρ s * (z - z₀) ^ s
+
+/-- Application formula for `regularSingularSolution`. -/
+theorem regularSingularSolution_apply (fs gs : ℕ → ℂ) (z₀ ρ z : ℂ) :
+    regularSingularSolution fs gs z₀ ρ z =
+      (z - z₀) ^ ρ * ∑' s, regularSingularCoeff fs gs ρ s * (z - z₀) ^ s :=
+  (rfl)
 
 /-- **Series solution at a regular singularity** (DLMF 2.7.2–2.7.5). Let `(z - z₀) f(z)` and
 `(z - z₀)² g(z)` have power series `∑ fs s * (z - z₀)^s` and `∑ gs s * (z - z₀)^s` on the
@@ -405,7 +429,7 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {
         deriv (deriv w) z + f z * deriv w z + g z * w z = 0 := by
   have hsum := summable_of_perturbed_indicial_rec (σ := ρ) (d := a) (E := 0) (s₁ := 1)
     (fun z hz0 hzr => (hf z hz0 hzr).summable) (fun z hz0 hzr => (hg z hz0 hzr).summable)
-    (fun _ _ _ => ⟨0, le_rfl, fun _ => by simp⟩) (fun s hs => by simp [ha s hs])
+    (fun _ _ _ => ⟨0, fun _ => by simp⟩) (fun s hs => by simp [ha s hs])
   refine ⟨hsum, fun z hz =>
       (hasDerivAt_cpow_mul_tsum hsum hz.1 hz.2).differentiableAt.differentiableWithinAt,
     fun z hzs hzb => ?_⟩
@@ -417,8 +441,8 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {
     · rw [ha s (Nat.pos_of_ne_zero hs), neg_add_cancel]
   simp [hcoeff]
 
-/-- Specialization of `regularSingular_solution` to the canonical normalized sequence
-`regularSingularCoeff fs gs ρ` (`a₀ = 1`) attached to a non-resonant indicial root `ρ`. -/
+/-- Specialization of `regularSingular_solution` to the canonical normalized series
+`regularSingularSolution fs gs z₀ ρ` (`a₀ = 1`) attached to a non-resonant indicial root `ρ`. -/
 theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
@@ -426,14 +450,29 @@ theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → �
       HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
     (hρ : indicialPoly (fs 0) (gs 0) ρ = 0)
     (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
-    let a := regularSingularCoeff fs gs ρ
-    let w : ℂ → ℂ := fun z => (z - z₀) ^ ρ * ∑' s, a s * (z - z₀) ^ s
-    (∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s) ∧
-      DifferentiableOn ℂ w {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
+    (∀ z, ‖z - z₀‖ < r → Summable fun s => regularSingularCoeff fs gs ρ s * (z - z₀) ^ s) ∧
+      DifferentiableOn ℂ (regularSingularSolution fs gs z₀ ρ)
+        {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
       ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w) z + f z * deriv w z + g z * w z = 0 :=
+        deriv (deriv (regularSingularSolution fs gs z₀ ρ)) z +
+          f z * deriv (regularSingularSolution fs gs z₀ ρ) z +
+          g z * regularSingularSolution fs gs z₀ ρ z = 0 :=
   regularSingular_solution hf hg hρ fun _ hs =>
     indicialPoly_mul_regularSingularCoeff hs (hres _ hs)
+
+/-- For a non-resonant indicial root `ρ`, `regularSingularSolution fs gs z₀ ρ` solves
+`regularSingularEquation hf hg` on `regularSingularSlitDisc z₀ r`. -/
+theorem isSolution_regularSingularSolution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
+    (hρ : indicialPoly (fs 0) (gs 0) ρ = 0)
+    (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
+    (regularSingularEquation hf hg).IsSolution (regularSingularSolution fs gs z₀ ρ) := by
+  obtain ⟨_, hdiff, hsol⟩ := regularSingularCoeff_solution hf hg hρ hres
+  exact (isSolution_regularSingularEquation_iff hf hg _).mpr
+    ⟨hdiff, fun z hz => hsol z hz.1 hz.2⟩
 
 /-- **Analytic uniqueness of the normalized series coefficients**: for `0 < r` and a non-resonant
 indicial root `ρ`, any convergent power series `∑ a_s (z - z₀)^s` with `a 0 = 1` such that
@@ -464,7 +503,7 @@ theorem eq_regularSingularCoeff_of_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ
 
 /-- Power-series expansion for the shifted logarithmic forcing terms
 `u ^ N * (2 u A₁'(u) + (2(α₂ + N) + P(u) - 1) A₁(u))` on `‖u‖ < r`. -/
-private theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
+theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
     {fs a : ℕ → ℂ}
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
     (ha : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
@@ -536,12 +575,13 @@ private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
   intro a w₁ w₂' D U
   obtain ⟨ha_sum, hw₁_diff, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
     fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
-  obtain ⟨hΦ_diff, _, hΦ_op⟩ := hasDerivAt_and_operator_mul_log hw₁_diff hw₁_sol
+  obtain ⟨hΦ_diff, hΦ_op⟩ := operator_mul_log hw₁_diff hw₁_sol
   set ψ : ℂ → ℂ := fun w => (w - z₀) ^ α₂ * ∑' s, b' s * (w - z₀) ^ s
-  set Φ : ℂ → ℂ := fun w => w₁ w * Complex.log (w - z₀)
+  set Φ : ℂ → ℂ := fun w => regularSingularSolution fs gs z₀ (α₂ + N) w * Complex.log (w - z₀)
   have hψ_diff : DifferentiableOn ℂ ψ U := fun w hw =>
     (hasDerivAt_cpow_mul_tsum hb'_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
-  have hw₂'_eq : w₂' = fun w => ψ w + c' * Φ w := by ext w; dsimp [w₂', ψ, Φ]; ring
+  have hw₂'_eq : w₂' = fun w => ψ w + c' * Φ w := by
+    ext w; simp only [w₂', ψ, Φ, w₁, a, regularSingularSolution_apply]; ring
   have hD_hasSum : ∀ u : ℂ, ‖u‖ < r → HasSum (fun s => D s * u ^ s)
       ((∑' s : ℕ, (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
           ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) * u ^ s) +
@@ -574,16 +614,36 @@ private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
   have hcpow_N : (u ^ 2)⁻¹ * u ^ (α₂ + (N : ℂ)) = u ^ (α₂ - 2) * u ^ N := by
     rw [Complex.cpow_add _ _ hu0, Complex.cpow_natCast, hcpow2]
     field_simp [hu0]
-  rw [(hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq]; dsimp only [w₁, A₁, u] at hdw₁ ⊢; rw [hdw₁]
+  have hw₁_eq : regularSingularSolution fs gs z₀ (α₂ + (N : ℂ)) = w₁ := by
+    ext w; exact regularSingularSolution_apply _ _ _ _ w
+  rw [(hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq, hw₁_eq]
+  dsimp only [w₁, A₁, u] at hdw₁ ⊢; rw [hdw₁]
   linear_combination
     c' * (2 * (u ^ 2)⁻¹ * ((α₂ + ↑N) * A₁ u + u * deriv A₁ u)) * hcpow1.symm +
     c' * (2 * u * deriv A₁ u + (2 * (α₂ + ↑N) + u * f z - 1) * A₁ u) * hcpow_N
 
+/-- Canonical logarithmic second Frobenius solution attached to indicial roots `α₁ = α₂ + N`:
+`(z - z₀)^{α₂} ∑' s, regularSingularSecondCoeff fs gs α₂ N s * (z - z₀)^s +`
+`regularSingularLogMultiplier fs gs α₂ N * regularSingularSolution fs gs z₀ (α₂ + N) z *`
+`Complex.log (z - z₀)`. -/
+def regularSingularSecondSolution (fs gs : ℕ → ℂ) (z₀ α₂ : ℂ) (N : ℕ) (z : ℂ) : ℂ :=
+  (z - z₀) ^ α₂ * (∑' s, regularSingularSecondCoeff fs gs α₂ N s * (z - z₀) ^ s) +
+    regularSingularLogMultiplier fs gs α₂ N * regularSingularSolution fs gs z₀ (α₂ + N) z *
+      Complex.log (z - z₀)
+
+/-- Application formula for `regularSingularSecondSolution`. -/
+theorem regularSingularSecondSolution_apply (fs gs : ℕ → ℂ) (z₀ α₂ : ℂ) (N : ℕ) (z : ℂ) :
+    regularSingularSecondSolution fs gs z₀ α₂ N z =
+      (z - z₀) ^ α₂ * (∑' s, regularSingularSecondCoeff fs gs α₂ N s * (z - z₀) ^ s) +
+        regularSingularLogMultiplier fs gs α₂ N * regularSingularSolution fs gs z₀ (α₂ + N) z *
+          Complex.log (z - z₀) :=
+  (rfl)
+
 /-- **Logarithmic second solution at a regular singularity** (DLMF 2.7.6). When the indicial
 polynomial factors as `(α - α₁)(α - α₂)` with `α₁ - α₂ = N ∈ ℕ`, the series
 `∑ regularSingularSecondCoeff fs gs α₂ N s * (z - z₀)^s` converges on `‖z - z₀‖ < r`, and
-`w₂(z) = (z - z₀)^{α₂} ∑' s, b s * (z - z₀)^s + c * w₁(z) * Complex.log (z - z₀)` is a
-holomorphic solution of `w'' + f w' + g w = 0` on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
+`regularSingularSecondSolution fs gs z₀ α₂ N` is a holomorphic solution of `w'' + f w' + g w = 0`
+on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
 theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
     {fs gs : ℕ → ℂ}
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
@@ -592,16 +652,14 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
       HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
     (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
     (hdiff : α₁ - α₂ = N) :
-    let a := regularSingularCoeff fs gs α₁
-    let b := regularSingularSecondCoeff fs gs α₂ N
-    let c := regularSingularLogMultiplier fs gs α₂ N
-    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) + c * w₁ z * Complex.log (z - z₀)
-    (∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s) ∧
-      DifferentiableOn ℂ w₂ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
+    (∀ z, ‖z - z₀‖ < r →
+        Summable fun s => regularSingularSecondCoeff fs gs α₂ N s * (z - z₀) ^ s) ∧
+      DifferentiableOn ℂ (regularSingularSecondSolution fs gs z₀ α₂ N)
+        {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
       ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0 := by
+        deriv (deriv (regularSingularSecondSolution fs gs z₀ α₂ N)) z +
+          f z * deriv (regularSingularSecondSolution fs gs z₀ α₂ N) z +
+          g z * regularSingularSecondSolution fs gs z₀ α₂ N z = 0 := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
   obtain ⟨ha_sum, _, _⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
@@ -619,22 +677,44 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
       (regularSingularLogForcing fs a α₂ N) z₀ hρ0.le hρr fun z _ hzr =>
       (hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
         (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hzr).summable
-    refine ⟨‖c‖ * CF, by positivity, fun s => ?_⟩
+    refine ⟨‖c‖ * CF, fun s => ?_⟩
     rw [norm_mul, norm_neg, mul_assoc]
     exact (mul_le_mul_of_nonneg_left
       ((hCF s).trans (le_mul_of_one_le_right hCF0.le (le_add_of_nonneg_left (Nat.cast_nonneg s))))
       (norm_nonneg c)).trans_eq (mul_assoc _ _ _).symm
   obtain ⟨hw₂_diff, _, hw₂_op⟩ := operator_second_ansatz_eq (c' := c) hf hg hfact hb_sum
+  have hw₂_eq : regularSingularSecondSolution fs gs z₀ α₂ N = fun w =>
+      (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
+        c * (fun w => (w - z₀) ^ (α₂ + (N : ℂ)) *
+          ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (w - z₀) ^ s) w * Complex.log (w - z₀) := by
+    ext w; simp only [regularSingularSecondSolution_apply, regularSingularSolution_apply, b, c]
+  rw [← hw₂_eq] at hw₂_diff hw₂_op
   refine ⟨hb_sum, hw₂_diff, fun z hzs hzb => ?_⟩
   rw [hw₂_op z ⟨hzs, hzb⟩]
   simp only [b, c, regularSingularSecondCoeff_rec hfact, zero_mul, tsum_zero, mul_zero]
 
+/-- When `α₁ - α₂ = N ∈ ℕ`, `regularSingularSecondSolution fs gs z₀ α₂ N` solves
+`regularSingularEquation hf hg` on `regularSingularSlitDisc z₀ r`. -/
+theorem isSolution_regularSingularSecondSolution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
+    {fs gs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
+    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
+    (hdiff : α₁ - α₂ = N) :
+    (regularSingularEquation hf hg).IsSolution
+      (regularSingularSecondSolution fs gs z₀ α₂ N) := by
+  obtain ⟨_, hdiff_on, hsol⟩ := regularSingular_second_solution hf hg hfact hdiff
+  exact (isSolution_regularSingularEquation_iff hf hg _).mpr
+    ⟨hdiff_on, fun z hz => hsol z hz.1 hz.2⟩
+
 /-- **Analytic uniqueness of the second solution's coefficients**: for `0 < r` and
 `α₁ - α₂ = N ∈ ℕ`, if `b' : ℕ → ℂ` and `c' : ℂ` satisfy `b' N = 0`, the normalization
 `(N = 0 → c' = 1) ∧ (1 ≤ N → b' 0 = 1)`, convergence of `∑ b'_s (z - z₀)^s` on `‖z - z₀‖ < r`,
-and `(z - z₀)^{α₂} ∑ b'_s (z - z₀)^s + c' w₁(z) log(z - z₀)` solves `w'' + f w' + g w = 0` on
-`{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`, then `b' = regularSingularSecondCoeff fs gs α₂ N` and
-`c' = regularSingularLogMultiplier fs gs α₂ N`. -/
+and `(z - z₀)^{α₂} ∑ b'_s (z - z₀)^s + c' * regularSingularSolution fs gs z₀ α₁ z * log(z - z₀)`
+solves `w'' + f w' + g w = 0` on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`, then
+`b' = regularSingularSecondCoeff fs gs α₂ N` and `c' = regularSingularLogMultiplier fs gs α₂ N`. -/
 theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : ℝ}
     {f g : ℂ → ℂ} {fs gs b' : ℕ → ℂ} {c' : ℂ} (hr : 0 < r)
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
@@ -648,9 +728,9 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
     (hb'0 : 1 ≤ N → b' 0 = 1)
     (hb'_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b' s * (z - z₀) ^ s)
     (hsol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      let w₁ := fun w => (w - z₀) ^ α₁ * ∑' s, regularSingularCoeff fs gs α₁ s * (w - z₀) ^ s
       let w₂' := fun w =>
-        (w - z₀) ^ α₂ * (∑' s, b' s * (w - z₀) ^ s) + c' * w₁ w * Complex.log (w - z₀)
+        (w - z₀) ^ α₂ * (∑' s, b' s * (w - z₀) ^ s) +
+          c' * regularSingularSolution fs gs z₀ α₁ w * Complex.log (w - z₀)
       deriv (deriv w₂') z + f z * deriv w₂' z + g z * w₂' z = 0) :
     b' = regularSingularSecondCoeff fs gs α₂ N ∧
       c' = regularSingularLogMultiplier fs gs α₂ N := by

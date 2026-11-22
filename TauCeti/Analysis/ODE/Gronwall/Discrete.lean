@@ -11,7 +11,7 @@ public import Mathlib.Basic.Real.Basic
 
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Ring.Pow
-import Mathlib.Analysis.ODE.DiscreteGronwall
+import Mathlib.Order.Monotone.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -21,7 +21,9 @@ import Mathlib.Tactic.Positivity
 A nonnegative sequence `μ : ℕ → ℝ` whose `s`-th term is bounded by
 `(K / s) * (c + ∑_{k < s} μ k)` for `s ≥ s₀ ≥ 1` has partial sums `c + ∑_{k < s} μ k` bounded
 polynomially by `(c + ∑_{k < s₀} μ k) * s ^ K` (`TauCeti.add_sum_range_le_mul_pow_of_le_div`),
-derived from `discrete_gronwall_prod_general` via the Bernoulli step.
+derived from `antitoneOn_nat_Ici_of_succ_le` on the normalized sequence
+`(c + ∑_{k < s} μ k) / s ^ K` via the Bernoulli step. This bound controls weighted coefficients in
+power-series convergence arguments for complex ODEs.
 -/
 
 public section
@@ -40,7 +42,7 @@ theorem add_sum_range_le_mul_pow_of_le_div {μ : ℕ → ℝ} {c : ℝ} {s₀ K 
   have hS_nn : ∀ s, 0 ≤ S s := fun s ↦
     add_nonneg hc (Finset.sum_nonneg fun k _ ↦ hμ0 k)
   set u : ℕ → ℝ := fun s ↦ S s / (s : ℝ) ^ K
-  have hu_step : ∀ s ≥ s₀, u (s + 1) ≤ (1 : ℝ) * u s + 0 := by
+  have hu_step : ∀ s ≥ s₀, u (s + 1) ≤ u s := by
     intro s hs
     have hs_pos : (0 : ℝ) < s := by exact_mod_cast (hs₀1.trans hs)
     have hpow_step : (s : ℝ) ^ K * (1 + (K : ℝ) / s) ≤ ((s + 1 : ℕ) : ℝ) ^ K := by
@@ -53,7 +55,6 @@ theorem add_sum_range_le_mul_pow_of_le_div {μ : ℕ → ℝ} {c : ℝ} {s₀ K 
     have hSs : S (s + 1) = S s + μ s := by simp [S, Finset.sum_range_succ, add_assoc]
     have hS_le : S (s + 1) ≤ S s * (1 + (K : ℝ) / s) := by linarith [hSs, hstep s hs]
     have hden_pos : (0 : ℝ) < (s : ℝ) ^ K * (1 + (K : ℝ) / s) := by positivity
-    rw [one_mul, add_zero]
     dsimp only [u]
     calc S (s + 1) / ((s + 1 : ℕ) : ℝ) ^ K
         ≤ S (s + 1) / ((s : ℝ) ^ K * (1 + (K : ℝ) / s)) :=
@@ -62,8 +63,8 @@ theorem add_sum_range_le_mul_pow_of_le_div {μ : ℕ → ℝ} {c : ℝ} {s₀ K 
       _ = S s / (s : ℝ) ^ K := by
             rw [mul_div_mul_right _ _ (by positivity)]
   intro s hs
-  have hgr := discrete_gronwall_prod_general hu_step (fun _ _ ↦ zero_le_one) hs
-  simp only [Finset.prod_const_one, mul_one, Finset.sum_const_zero, add_zero] at hgr
+  have hgr : u s ≤ u s₀ :=
+    antitoneOn_nat_Ici_of_succ_le hu_step (Set.mem_Ici.mpr le_rfl) (Set.mem_Ici.mpr hs) hs
   have hs_pos : (0 : ℝ) < (s : ℝ) ^ K := by
     have : (0 : ℝ) < s := by exact_mod_cast (hs₀1.trans hs)
     positivity

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.Data.Finset.Range
 
+import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -24,9 +25,10 @@ For `w''(z) + f(z) w'(z) + g(z) w(z) = 0` around `z₀` with `(z - z₀) f(z) = 
 `Q(α) = α(α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)` (`TauCeti.indicialPoly`).
 
 This file defines `TauCeti.indicialPoly` and the canonical coefficient sequences (DLMF §2.7(ii)):
-* `TauCeti.regularSingularCoeff`: `a_s` (`a₀ = 1`) solving
+* `TauCeti.regularSingularCoeff`: `a_s` normalized by `a₀ = 1`, and for `s ≥ 1` given by
+  `a_s = -Q(ρ + s)⁻¹ ∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`, which solves
   `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k` whenever `Q(ρ + s) ≠ 0`
-  (DLMF 2.7.5; totalized to `0` at resonant indices).
+  (DLMF 2.7.5), and evaluates to `0` at any resonant index `s ≥ 1` with `Q(ρ + s) = 0`.
 * `TauCeti.regularSingularLogMultiplier`: the logarithmic multiplier `c` when `α₁ - α₂ = N ∈ ℕ`
   (`c = 1` for `N = 0`, cancelling the resonant obstruction at `s = N` for `N ≥ 1`).
 * `TauCeti.regularSingularSecondCoeff`: second-solution coefficients `b_s` (`b_N = 0`, and `b₀ = 1`
@@ -80,10 +82,11 @@ theorem forall_indicialPoly_eq_sub_mul_sub_iff {f₀ g₀ α₁ α₂ : ℂ} :
 /-- Every complex indicial polynomial factors as `(α - α₁)(α - α₂)` with `Re α₂ ≤ Re α₁`. -/
 theorem exists_indicialPoly_roots (f₀ g₀ : ℂ) :
     ∃ α₁ α₂ : ℂ, α₂.re ≤ α₁.re ∧ ∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂) := by
-  obtain ⟨d, hd⟩ := Complex.isSquare ((1 - f₀) ^ 2 - 4 * g₀)
-  set r₁ : ℂ := (1 - f₀ + d) / 2; set r₂ : ℂ := (1 - f₀ - d) / 2
-  have hfact : ∀ α, indicialPoly f₀ g₀ α = (α - r₁) * (α - r₂) := fun α => by
-    simp only [indicialPoly, r₁, r₂]; linear_combination -(1 / 4 : ℂ) * hd
+  obtain ⟨r₁, hr₁⟩ := exists_quadratic_eq_zero (one_ne_zero : (1 : ℂ) ≠ 0)
+    (Complex.isSquare (discrim 1 (f₀ - 1) g₀))
+  obtain ⟨r₂, -, hsum, hprod⟩ :=
+    vieta_formula_quadratic (by linear_combination hr₁ : r₁ * r₁ - (1 - f₀) * r₁ + g₀ = 0)
+  have hfact := forall_indicialPoly_eq_sub_mul_sub_iff.mpr ⟨hsum, hprod⟩
   rcases le_total r₂.re r₁.re with hle | hle
   · exact ⟨r₁, r₂, hle, hfact⟩
   · exact ⟨r₂, r₁, hle, fun α => by rw [mul_comm]; exact hfact α⟩
@@ -121,11 +124,12 @@ theorem indicialPoly_add_nat_ne_zero_of_ne {f₀ g₀ α₂ : ℂ} {N s : ℕ}
 
 /-! ### Recursive coefficient sequences -/
 
-/-- The normalized series coefficients `a_s` (`a₀ = 1`) attached to an indicial exponent `ρ` via
-`a_s = -Q(ρ + s)⁻¹ ∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`. Whenever `Q(ρ + s) ≠ 0` for
-all `s ≥ 1`, this solves `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`
-(DLMF 2.7.5); at any resonant index `Q(ρ + s) = 0`, Lean's totalized inverse sets `a_s = 0`
-without enforcing the recurrence. -/
+/-- The normalized series coefficients `a_s` attached to an indicial exponent `ρ`, defined by
+`a₀ = 1` and, for `s ≥ 1`,
+`a_s = -Q(ρ + s)⁻¹ ∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`. Whenever `s ≥ 1` and
+`Q(ρ + s) ≠ 0`, this solves `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`
+(DLMF 2.7.5); at any resonant index `s ≥ 1` with `Q(ρ + s) = 0`, Lean's totalized inverse sets
+`a_s = 0` without enforcing the recurrence. -/
 def regularSingularCoeff (fs gs : ℕ → ℂ) (ρ : ℂ) (s : ℕ) : ℂ :=
   if s = 0 then 1
   else -(indicialPoly (fs 0) (gs 0) (ρ + s))⁻¹ *
@@ -150,7 +154,15 @@ theorem regularSingularCoeff_of_ne_zero (fs gs : ℕ → ℂ) (ρ : ℂ) {s : �
   rw [Finset.sum_attach (range s) fun k =>
     ((ρ + (k : ℂ)) * fs (s - k) + gs (s - k)) * regularSingularCoeff fs gs ρ k]
 
-/-- When `Q(ρ + s) ≠ 0`, `regularSingularCoeff` satisfies the linear indicial recursion
+/-- At any positive resonant index `s ≠ 0` where `Q(ρ + s) = 0`, `regularSingularCoeff` evaluates
+to `0` via Lean's totalized inverse. -/
+@[simp]
+theorem regularSingularCoeff_of_indicialPoly_eq_zero {fs gs : ℕ → ℂ} {ρ : ℂ} {s : ℕ}
+    (hs : s ≠ 0) (hQ : indicialPoly (fs 0) (gs 0) (ρ + s) = 0) :
+    regularSingularCoeff fs gs ρ s = 0 := by
+  rw [regularSingularCoeff_of_ne_zero fs gs ρ hs, hQ, inv_zero, neg_zero, zero_mul]
+
+/-- For `s ≥ 1` with `Q(ρ + s) ≠ 0`, `regularSingularCoeff` satisfies the linear indicial recursion
 (DLMF 2.7.5). -/
 theorem indicialPoly_mul_regularSingularCoeff {fs gs : ℕ → ℂ} {ρ : ℂ} {s : ℕ} (hs : 1 ≤ s)
     (hQ : indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
@@ -243,11 +255,6 @@ normalized by `b_N = 0` (omitting the resonant term) and `b₀ = 1` when `N ≥ 
 def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) : ℂ :=
   if s = N then 0
   else if s = 0 then 1
-  else if s < N then
-    -(indicialPoly (fs 0) (gs 0) (α₂ + s))⁻¹ *
-      ∑ k ∈ (range s).attach,
-        ((α₂ + k.val) * fs (s - k.val) + gs (s - k.val)) *
-          regularSingularSecondCoeff fs gs α₂ N k.val
   else
     -(indicialPoly (fs 0) (gs 0) (α₂ + s))⁻¹ *
       ((∑ k ∈ (range s).attach,
@@ -256,7 +263,7 @@ def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) :
         regularSingularLogMultiplier fs gs α₂ N *
           regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s)
 termination_by s
-decreasing_by all_goals exact mem_range.mp k.property
+decreasing_by exact mem_range.mp k.property
 
 @[simp]
 theorem regularSingularSecondCoeff_self (fs gs : ℕ → ℂ) (α₂ : ℂ) (N : ℕ) :
@@ -278,14 +285,16 @@ theorem regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt (fs gs : ℕ �
     rcases eq_or_ne s 0 with rfl | hs0
     · simp [regularSingularSecondCoeff_zero_of_pos fs gs α₂ hs]
     · conv_lhs => rw [regularSingularSecondCoeff]
-      simp only [hs.ne, hs0, hs, ↓reduceIte]
+      simp only [hs.ne, hs0, regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero,
+        ↓reduceIte]
       rw [Finset.sum_attach (range s) fun k =>
         ((α₂ + (k : ℂ)) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k,
         regularSingularCoeff_of_ne_zero fs gs α₂ hs0]
       exact congrArg _ <| sum_congr rfl fun k hk => by
         rw [ih k (mem_range.mp hk) ((mem_range.mp hk).trans hs)]
 
-/-- Recursion for `regularSingularSecondCoeff` at indices `1 ≤ s < N`. -/
+/-- Recursion for `regularSingularSecondCoeff` at indices `1 ≤ s < N` when `Q(α₂ + s) ≠ 0`
+(see `regularSingularSecondCoeff_rec` for the unified factored resonant recursion). -/
 theorem indicialPoly_mul_regularSingularSecondCoeff_of_lt {fs gs : ℕ → ℂ} {α₂ : ℂ} {N s : ℕ}
     (hs1 : 1 ≤ s) (hsN : s < N) (hQ : indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0) :
     indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s =
@@ -307,11 +316,13 @@ theorem regularSingularSecondCoeff_of_gt (fs gs : ℕ → ℂ) (α₂ : ℂ) {N 
             regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s) := by
   conv_lhs => rw [regularSingularSecondCoeff]
   have hs0 : s ≠ 0 := by omega
-  simp only [hsN.ne', hs0, not_lt_of_gt hsN, ↓reduceIte]
+  simp only [hsN.ne', hs0, ↓reduceIte]
   rw [Finset.sum_attach (range s) fun k =>
     ((α₂ + (k : ℂ)) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k]
 
-/-- Recursion for `regularSingularSecondCoeff` above the resonant index `N < s`. -/
+/-- Recursion for `regularSingularSecondCoeff` above the resonant index `N < s` when
+`Q(α₂ + s) ≠ 0` (see `regularSingularSecondCoeff_rec` for the unified factored resonant
+recursion). -/
 theorem indicialPoly_mul_regularSingularSecondCoeff_of_gt {fs gs : ℕ → ℂ} {α₂ : ℂ} {N s : ℕ}
     (hsN : N < s) (hQ : indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0) :
     indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s =

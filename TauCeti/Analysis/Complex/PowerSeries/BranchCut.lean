@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
-public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -20,7 +19,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 This file records differentiation and analytic uniqueness for complex functions of the form
 `(z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s` on the slit punctured disc
 `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`:
-* `TauCeti.hasDerivAt_cpow_mul_tsum`: termwise differentiation on the slit punctured disc.
+* `TauCeti.hasDerivAt_cpow_mul_tsum`: product-rule derivative formula on the slit punctured disc in
+  terms of the inner series `A` and `deriv A` (for termwise expansion of `deriv A`, see
+  `HasFPowerSeriesOnBall.deriv_ofScalars` and `HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
 * `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero`: vanishing on the slit punctured disc forces every
   series coefficient to vanish.
 -/

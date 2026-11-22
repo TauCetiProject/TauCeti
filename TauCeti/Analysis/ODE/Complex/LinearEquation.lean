@@ -35,7 +35,10 @@ initial-value theorem when `0 < r`, and holding vacuously on the empty ball when
 initial-jet linear isomorphism `LinearEquation.initialJetEquivBall` on positive-radius discs,
 and `Module.finrank ℂ E.solutionSpace = n`. Non-monic scalar equations
 `∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` with nowhere-zero leading coefficient
-`p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`.
+`p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`. Second-order
+equations `y'' + f y' + g y = 0` are constructed directly via `LinearEquation.ofTwo`, with
+`LinearEquation.isSolution_two_iff` and `LinearEquation.isSolution_ofTwo_iff` characterizing
+`LinearEquation.IsSolution` in terms of `DifferentiableOn` and `deriv`.
 
 ## References
 
@@ -194,6 +197,23 @@ def initialJet {a : ℂ} (ha : a ∈ U) : E.solutionSpace →ₗ[ℂ] (Fin n →
 theorem initialJet_apply {a : ℂ} (ha : a ∈ U) (f : E.solutionSpace) (j : Fin n) :
     E.initialJet ha f j = iteratedDeriv j (HolomorphicFunctions.extend f.val) a :=
   HolomorphicFunctions.jet_apply ha n f.val j
+
+/-- Bundle an ambient scalar solution as an element of `E.solutionSpace`. -/
+def IsSolution.toSolutionSpace (hy : E.IsSolution y) : E.solutionSpace :=
+  ⟨HolomorphicFunctions.of U y hy.analyticOnNhd.differentiableOn,
+    hy.congr fun z hz ↦ by simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]⟩
+
+/-- The bundled scalar solution agrees with the ambient representative on `U`. -/
+@[simp]
+theorem IsSolution.toSolutionSpace_apply (hy : E.IsSolution y) (z : U) :
+    hy.toSolutionSpace.val.val z = y z := by
+  simp [toSolutionSpace]
+
+/-- The initial jet of a bundled scalar solution records the iterated derivatives of `y` at `a`. -/
+@[simp]
+theorem IsSolution.initialJet_toSolutionSpace (hy : E.IsSolution y) {a : ℂ} (ha : a ∈ U) :
+    E.initialJet ha hy.toSolutionSpace = fun j : Fin n ↦ iteratedDeriv j y a :=
+  funext fun j ↦ HolomorphicFunctions.jet_of ha n y hy.analyticOnNhd.differentiableOn j
 
 /-- An analytic vector solves the companion system if its derivative is the matrix action. -/
 def IsCompanionSolution (v : ℂ → Fin n → ℂ) : Prop :=
@@ -625,6 +645,40 @@ theorem mem_solutionSpace_ofLeadingNeZero {U : Opens ℂ} {m : ℕ} (hm : 0 < m)
   rw [mem_solutionSpace, isSolution_ofLeadingNeZero_iff]
   exact ⟨fun h z ↦ h.2 z z.property, fun h ↦
     ⟨HolomorphicFunctions.analyticOnNhd_extend Subset.rfl f, fun z hz ↦ h ⟨z, hz⟩⟩⟩
+
+/-! ### Second-order characterization in terms of `deriv` -/
+
+/-- A second-order monic scalar linear equation `E : LinearEquation U 2` is solved by `y` iff `y`
+is complex differentiable on `U` and satisfies
+`deriv (deriv y) z + extend (E.coeff 1) z * deriv y z + extend (E.coeff 0) z * y z = 0` on `U`. -/
+theorem isSolution_two_iff (E : LinearEquation U 2) (y : ℂ → ℂ) :
+    E.IsSolution y ↔ DifferentiableOn ℂ y U ∧
+      ∀ z ∈ U, deriv (deriv y) z + HolomorphicFunctions.extend (E.coeff 1) z * deriv y z +
+        HolomorphicFunctions.extend (E.coeff 0) z * y z = 0 := by
+  rw [isSolution_iff]
+  refine and_congr ⟨fun h ↦ h.differentiableOn, fun h ↦ h.analyticOnNhd U.isOpen⟩
+    (forall₂_congr fun z _ ↦ ?_)
+  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_succ,
+    iteratedDeriv_zero]
+  ring_nf
+
+/-- Construct a second-order monic linear differential equation `y'' + f y' + g y = 0` on `U` from
+holomorphic coefficients `f` and `g`. -/
+def ofTwo {U : Opens ℂ} (f g : ℂ → ℂ) (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) : LinearEquation U 2 where
+  order_pos := by omega
+  coeff := ![HolomorphicFunctions.of U g hg, HolomorphicFunctions.of U f hf]
+
+/-- Ambient solutions of `LinearEquation.ofTwo f g hf hg` are precisely complex-differentiable
+functions on `U` satisfying `deriv (deriv y) z + f z * deriv y z + g z * y z = 0` on `U`. -/
+@[simp]
+theorem isSolution_ofTwo_iff {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) (y : ℂ → ℂ) :
+    (ofTwo f g hf hg).IsSolution y ↔ DifferentiableOn ℂ y U ∧
+      ∀ z ∈ U, deriv (deriv y) z + f z * deriv y z + g z * y z = 0 := by
+  rw [isSolution_two_iff]
+  refine and_congr_right fun _ ↦ forall₂_congr fun z hz ↦ ?_
+  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
 
 /-! The following checks fix the coefficient sign, unscaled-jet convention, and disc dimension. -/
 
