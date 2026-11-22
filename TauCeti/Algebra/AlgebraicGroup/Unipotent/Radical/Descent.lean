@@ -90,6 +90,25 @@ universe u
 
 noncomputable section
 
+/-- Finite-type presentation of
+`CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso`. -/
+private theorem mapBaseChangeHopfIdeal_eq_comapOfSurjective_finiteTypeBaseChangeTowerIso
+    {k K₁ K₂ : Type u} [Field k] [Field K₁] [Field K₂] [Algebra k K₁] [Algebra k K₂]
+    [Algebra K₁ K₂] [IsScalarTower k K₁ K₂]
+    (e : K₁ ≃ₐ[k] K₂) (he : ∀ s : K₁, algebraMap K₁ K₂ s = e s)
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (I : HopfIdeal K₁ (FiniteTypeCommHopfAlgCat.baseChange (K := K₁) H)) :
+    CommHopfAlgCat.mapBaseChangeHopfIdeal e I =
+      (CommHopfAlgCat.baseChangeHopfIdeal (K := K₂) I).comapOfSurjective
+        (FiniteTypeCommHopfAlgCat.toBialgHom
+          (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm.hom)
+        (ConcreteCategory.bijective_of_isIso
+          (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm.hom).2 := by
+  rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e he]
+  ext x
+  simp only [HopfIdeal.mem_comapOfSurjective, Iso.symm_hom,
+    FiniteTypeCommHopfAlgCat.toBialgHom, FiniteTypeCommHopfAlgCat.baseChangeTowerIso_inv_hom]
+
 namespace HopfIdeal.IsUnipotentRadicalCandidate
 
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
@@ -129,18 +148,7 @@ theorem mapBaseChangeHopfIdeal {K₁ K₂ : Type u} [Field K₁] [Field K₂]
   let _ : Algebra K₁ K₂ := e.toRingHom.toAlgebra
   let _ : IsScalarTower k K₁ K₂ :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
-  have heq : CommHopfAlgCat.mapBaseChangeHopfIdeal e I =
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := K₂) I).comapOfSurjective
-        (FiniteTypeCommHopfAlgCat.toBialgHom
-          (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm.hom)
-        (ConcreteCategory.bijective_of_isIso
-          (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm.hom).2 := by
-    rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e
-      (fun _ ↦ rfl)]
-    ext x
-    simp only [HopfIdeal.mem_comapOfSurjective, Iso.symm_hom,
-      FiniteTypeCommHopfAlgCat.toBialgHom, FiniteTypeCommHopfAlgCat.baseChangeTowerIso_inv_hom]
-  rw [heq]
+  rw [mapBaseChangeHopfIdeal_eq_comapOfSurjective_finiteTypeBaseChangeTowerIso e (fun _ ↦ rfl)]
   exact (hI.baseChange (K := K₂)).comapOfIso
     (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm
 
@@ -205,13 +213,9 @@ theorem mapBaseChangeHopfIdeal_unipotentRadicalDefiningIdeal
   let _ : Algebra K E := e.toRingHom.toAlgebra
   have _ : IsScalarTower k K E :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
-  rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e
-      (fun _ ↦ rfl),
+  rw [mapBaseChangeHopfIdeal_eq_comapOfSurjective_finiteTypeBaseChangeTowerIso e (fun _ ↦ rfl),
     baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective _ e.surjective,
     ← comapOfSurjective_unipotentRadicalDefiningIdeal (baseChangeTowerIso (E := K) k E H).symm]
-  ext x
-  simp only [HopfIdeal.mem_comapOfSurjective, Iso.symm_hom, toBialgHom,
-    baseChangeTowerIso_inv_hom]
 
 /-- Along a Galois extension `K / k`, the defining Hopf ideal of the unipotent radical commutes
 with base change. -/
