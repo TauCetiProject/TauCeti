@@ -100,8 +100,10 @@ theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Refle
 /-- A full, essentially surjective functor reflecting isomorphisms induces a homeomorphism of
 isomorphism classes when its object map is continuous and becomes open after projecting to the
 isomorphism classes of `D`. Unlike `isomorphismClassesHomeomorph`, the object map need not be
-surjective: it suffices that it meets every isomorphism class. For groupoids this applies to the
-induced functor from the pullback along an open map whose image meets every orbit. -/
+surjective: it suffices that it meets every isomorphism class. For a groupoid `D` with continuous
+source and open target, this applies to the induced functor from the pullback along a continuous
+open map whose image meets every orbit
+(`CategoryTheory.InducedCategory.isHomeomorph_isomorphismClasses_map_inducedFunctor`). -/
 theorem isHomeomorph_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
     [F.EssSurj] (hF : Continuous F.obj)
     (hF' : IsOpenMap (Quotient.mk (isIsomorphicSetoid D) ∘ F.obj)) :
