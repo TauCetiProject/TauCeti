@@ -21,7 +21,8 @@ compact set the uniform bounds are automatic for a positive exponent
 
 If one argument vanishes off a set `s`, the other need only be Hölder and bounded on `s`
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
-multiplication, with its relative form `HolderOnWith.smul_of_eq_zero` on a set `t`): this is how a
+multiplication, with its relative form `HolderOnWith.smul_of_eq_zero` on a set `t` and the
+real-valued product `HolderOnWith.mul_of_eq_zero`, which also bounds the product): this is how a
 cutoff extends a function given on `s` to the whole space, and how freezing a coefficient on the
 support of a localized function is estimated.
 
@@ -190,6 +191,24 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
     hc.holderWith (fun x hx y hy ↦ hf.edist_le ⟨hx, x.property⟩ ⟨hy, y.property⟩)
     (fun x ↦ hcnorm x x.property) (fun x hx ↦ hfnorm x ⟨hx, x.property⟩)
     fun x hx ↦ hc0 x x.property hx
+
+/-- The real-valued product form of `HolderOnWith.smul_of_eq_zero`, together with the bound on the
+product: if `c` is Hölder and bounded by `Mc` on a set `t` and vanishes at the points of `t` off a
+set `s`, and `g` is Hölder and bounded by `Mg` on `s ∩ t`, then `c g` is Hölder on `t`, and bounded
+there by `Mc Mg`. -/
+theorem mul_of_eq_zero {α Kc Kg Mc Mg : ℝ≥0} {c g : X → ℝ} {s t : Set X}
+    (hc : HolderOnWith Kc α c t) (hcM : ∀ x ∈ t, |c x| ≤ Mc) (hc0 : ∀ x ∈ t, x ∉ s → c x = 0)
+    (hg : HolderOnWith Kg α g (s ∩ t)) (hgM : ∀ x ∈ s ∩ t, |g x| ≤ Mg) :
+    HolderOnWith (Mc * Kg + Mg * Kc) α (fun x ↦ c x * g x) t ∧
+      ∀ x ∈ t, |c x * g x| ≤ Mc * Mg := by
+  have hcM' : ∀ x ∈ t, ‖c x‖ ≤ Mc := by simpa only [Real.norm_eq_abs] using hcM
+  have hgM' : ∀ x ∈ s ∩ t, ‖g x‖ ≤ Mg := by simpa only [Real.norm_eq_abs] using hgM
+  refine ⟨by simpa only [smul_eq_mul] using hc.smul_of_eq_zero hg hcM' hgM' hc0, fun x hxt ↦ ?_⟩
+  by_cases hx : x ∈ s
+  · rw [abs_mul]
+    exact mul_le_mul (hcM x hxt) (hgM x ⟨hx, hxt⟩) (abs_nonneg _) Mc.coe_nonneg
+  · simp only [hc0 x hxt hx, zero_mul, abs_zero]
+    positivity
 
 end HolderOnWith
 

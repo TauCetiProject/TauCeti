@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.VariableCoefficient
+import TauCeti.Analysis.Calculus.BumpFunction.HolderCutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
@@ -283,8 +285,14 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {ν x₀ : E} {c
   obtain ⟨hHu, hHdu⟩ := hconv.holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
     (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx.1 hy.1) hU hUs
     hu hN1 hN2
-  obtain ⟨hdu, hd2u⟩ :=
-    abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_single_le hN1 hN2
+  have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
+      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx)
+  have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
+      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
+    simpa using (norm_fderiv_fderiv_apply_orthonormalBasis_le u (EuclideanSpace.basisFun _ ℝ) i j
+      x).trans (hN2 x hx)
   have htU {t : Set E} (ht : t ⊆ Hc) : t ∩ tsupport ζ ⊆ U := fun x hx => hUs ⟨hζs hx.2, ht hx.1⟩
   have hWH := holderOnWith_fderiv_fderiv_cutoff_mul hU hζ.contDiffOn hζs (htU subset_rfl) hZ0 hZ1
     hZ2 hu hN0 hdu hd2u hHu (fun i => hHdu _ (by simp)) fun i j => by
@@ -361,7 +369,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
       exact holderOnWith_empty _ _ _⟩
   -- Cutoffs about every centre with one constant `Z`, and the constants of the estimate, which
   -- do not depend on `u`, `a`, `x₀` or the half-space.
-  obtain ⟨Z, hZ⟩ := exists_forall_exists_cutoff (n := n) hα1.le hρR
+  obtain ⟨Z, hZ⟩ := exists_forall_exists_cutoff
+    (fun i : Fin (n + 1) => EuclideanSpace.single i (1 : ℝ)) hα1.le hρR
   set δ : ℝ≥0 := (2 * R).toNNReal ^ ((1 : ℝ) - α)
   set κ : ℝ := C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
   set Q : ℝ := ((n : ℝ) + 1) ^ 2 * (L * 2 ^ (α : ℝ)) / lam *
@@ -383,11 +392,11 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   obtain ⟨⟨W, hWo, hHW, hw⟩, hsupp⟩ := exists_contDiffOn_cutoff_mul_of_halfSpace hζ2 hζs hU hUs hu
   have key := hCS hlam hEll hEll' hν hx₀ (K := Z * K + N * B₂) hR
     (by convert hsmall using 2; ring) hL hWo hHW hw hw0 hJ (fun x hx => hsupp hx.1) hLw
-  -- Comparison of the constants, using `λ ≤ Λ`.
-  have hbound := two_mul_mul_add_div_add_mul_le (e := 1 + ((n : ℝ) + 1) / 4 + α / 2) (Z := Z)
-    (B := B₂) (K := K) (N := N) hC₀.le hlam
-    (by simpa using (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1)))
-    (by positivity : 0 ≤ Q) (by positivity : 0 ≤ A₃) hL2
+  have hlamLam : lam ≤ Lam := by
+    simpa using (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
+  have hbound := two_mul_mul_add_div_add_mul_le (Z := Z) (B := B₂) (K := K) (N := N)
+    (mul_nonneg hC₀.le (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _) : 0 ≤ κ)
+    hlam.le (by positivity : 0 ≤ Q) (by positivity : 0 ≤ A₃) hL2
   -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²(ζ u) = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 (ζ * u) x = iteratedFDeriv ℝ 2 u x :=

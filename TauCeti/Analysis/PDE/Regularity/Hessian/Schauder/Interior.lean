@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.HolderCutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
@@ -37,8 +39,9 @@ compact set with finitely many small balls, or the whole space with balls of one
 ## The argument
 
 Choose a smooth cutoff `ζ` equal to one near `closedBall x₀ ρ` with support in `B_R`, the
-translate of one fixed cutoff about the origin so that its bounds do not depend on `x₀`, and put
-`w = ζ u`, which is `C²` on the whole space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). By the
+translate of one fixed cutoff about the origin so that its bounds do not depend on `x₀`
+(`TauCeti.exists_forall_exists_cutoff`), and put `w = ζ u`, which is `C²` on the whole space
+(`ContDiffOn.contDiff_smul_of_tsupport_subset`). By the
 second-order product rule (see `TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff`),
 
 `∂ᵢ∂ⱼw = ζ ∂ᵢ∂ⱼu + Tᵢⱼ`, where `Tᵢⱼ = u ∂ᵢ∂ⱼζ + ∂ᵢζ ∂ⱼu + ∂ⱼζ ∂ᵢu`,
@@ -112,8 +115,14 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
   obtain ⟨hHu, hHdu⟩ := (convex_ball x₀ R).holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
     (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx hy)
     isOpen_ball subset_rfl hu hN1 hN2
-  obtain ⟨hdu, hd2u⟩ := abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_single_le
-    (S := ball x₀ R ∩ univ) (fun x hx => hN1 x hx.1) fun x hx => hN2 x hx.1
+  have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
+      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx.1)
+  have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
+      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
+    simpa using (norm_fderiv_fderiv_apply_orthonormalBasis_le u (EuclideanSpace.basisFun _ ℝ) i j
+      x).trans (hN2 x hx.1)
   have hw : ContDiff ℝ 2 (ζ * u) := hu.contDiff_smul_of_tsupport_subset isOpen_ball hζ2 hζs
   have htU : univ ∩ tsupport ζ ⊆ ball x₀ R := fun x hx => hζs hx.2
   have hWH := holderOnWith_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs htU hZ0 hZ1 hZ2 hu
@@ -181,7 +190,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
       rw [closedBall_eq_empty.2 (hρR.trans_le hR)]
       exact holderOnWith_empty _ _ _⟩
   -- Cutoffs about every centre with one constant `Z`.
-  obtain ⟨Z, hZ⟩ := exists_forall_exists_cutoff (n := n) hα1.le hρR
+  obtain ⟨Z, hZ⟩ := exists_forall_exists_cutoff
+    (fun i : Fin (n + 1) => EuclideanSpace.single i (1 : ℝ)) hα1.le hρR
   -- The constants of the estimate, which do not depend on `u`, `a` or `x₀`.
   set δ : ℝ≥0 := (2 * R).toNNReal ^ ((1 : ℝ) - α)
   set κ : ℝ := C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
@@ -206,11 +216,10 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     hmem hsupp hLw
   -- Comparison of the constants.
   have hlamLam : lam ≤ Lam := by
-    have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
-    simpa using h
-  have hbound := two_mul_mul_add_div_add_mul_le (e := 1 + ((n : ℝ) + 1) / 4 + α / 2) (Z := Z)
-    (B := B₂) (K := K) (N := N) hC₀.le hlam hlamLam (by positivity : 0 ≤ Q)
-    (by positivity : 0 ≤ A₃) hL2
+    simpa using (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
+  have hbound := two_mul_mul_add_div_add_mul_le (Z := Z) (B := B₂) (K := K) (N := N)
+    (mul_nonneg hC₀.le (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _) : 0 ≤ κ)
+    hlam.le (by positivity : 0 ≤ Q) (by positivity : 0 ≤ A₃) hL2
   -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x :=
