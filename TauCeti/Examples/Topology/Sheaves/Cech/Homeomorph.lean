@@ -762,6 +762,7 @@ example (n : ℕ) :
   have hn := f.cechCohomologyPullback_naturality n (𝟙 _)
     ((TopCat.Presheaf.pushforward (ModuleCat.{0} ℂ) f).map φ) (𝟙 _) φ
     ((Category.id_comp _).trans (Category.id_comp _).symm)
+  -- pushforward's presheaf map is definitionally whiskering, so its identity is map_id.
   erw [CategoryTheory.Functor.map_id, Category.id_comp] at hn
   exact (cechCohomologyHomeomorphIso_inv_app_eq_pullback
     (X := TopCat.of disconnectedBase) (Y := TopCat.of disconnectedBase)

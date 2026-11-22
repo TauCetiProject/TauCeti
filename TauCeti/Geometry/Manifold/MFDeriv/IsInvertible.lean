@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Invertible manifold derivatives of composites
@@ -82,12 +83,9 @@ source model need not be assumed finite-dimensional: an injective derivative emb
 target model. -/
 theorem isInvertible_mfderiv_iff_injective [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
     {f : M → M'} {x : M} (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
-    (mfderiv I I' f x).IsInvertible ↔ Function.Injective (mfderiv I I' f x) := by
-  refine ⟨ContinuousLinearMap.IsInvertible.injective, fun hinj ↦ ?_⟩
-  let A : TangentSpace I x →ₗ[𝕜] TangentSpace I' (f x) := mfderiv I I' f x
-  have : FiniteDimensional 𝕜 (TangentSpace I x) := .of_injective A hinj
-  exact ⟨(A.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv,
-    ContinuousLinearMap.ext (A.linearEquivOfInjective_apply hinj hdim)⟩
+    (mfderiv I I' f x).IsInvertible ↔ Function.Injective (mfderiv I I' f x) :=
+  have : FiniteDimensional 𝕜 (TangentSpace I' (f x)) := inferInstanceAs (FiniteDimensional 𝕜 E')
+  ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim
 
 /-- Between manifolds whose middle model is finite-dimensional and whose target model has the same
 dimension, if a composite of differentiable maps has invertible manifold derivative, then so do

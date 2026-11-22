@@ -18,14 +18,10 @@ import Mathlib.CategoryTheory.CommSq
 /-!
 # Čech cohomology under a homeomorphism
 
-Homeomorphisms identify native point-neighborhood covers and their Čech cohomology,
-including when the spaces belong to different universes.
-
-## Main constructions
-
-* `cechComplexHomeomorphIso` identifies tuple complexes, with hom and inverse component laws.
-* `cechCohomologyHomeomorphIso` identifies the cover-colimit cohomology, preserving native
-  augmentation, refinement, degree-zero global sections and connecting maps.
+Homeomorphisms transport point-neighborhood covers and Čech cohomology across base universes.
+`cechComplexHomeomorphIso` gives tuple-complex hom and inverse component laws;
+`cechCohomologyHomeomorphIso` preserves cover-colimit cohomology, augmentation, refinement,
+degree-zero global sections and connecting maps.
 -/
 
 public noncomputable section
@@ -187,6 +183,7 @@ theorem cechAugmentation_comp_cechComplexHomeomorphIso_hom_app [HasZeroObject A]
     (cechAugmentation_comp_cechComplexReindexIso_hom_app h.symm.toEquiv U.opens P isTerminalTop)
   have hc := cechAugmentation_comp_cechComplexCompIso_hom G (U.mapHomeomorph h).opens P
     (fun _ _ ↦ inferInstance) isTerminalTop hGT
+  -- Unfold Iso.trans and NatIso.ofComponents to read the composite as r⁻¹ ≫ q ≫ c.
   change cechAugmentation U.opens isTerminalTop P ≫
     (r.inv.app P ≫ q.hom.app P ≫ c.hom) =
       (CochainComplex.single₀ A).map α ≫ _
@@ -660,6 +657,7 @@ theorem cechCohomologyδ_comp_cechCohomologyHomeomorphIso_hom_app
   have hs := hS.cechCohomologyδ_naturality_of_presheaf hT μ n
   have ht := (hS.map_of_exact _).cechCohomologyδ_naturality_of_presheaf
     (hT.map_of_exact W) φ n
+  -- sheafCongr's underlying presheaf is definitionally inverse.op ⋙ S.Xᵢ.obj.
   erw [CategoryTheory.Functor.map_id, Category.comp_id] at hs ht
   have : IsIso ((cechCohomology X (ModuleCat.{u} R) n).map c) := by
     have := hS.isIso_presheafToSheaf_map_cokernelDesc
@@ -693,6 +691,7 @@ def homeomorphPullbackRefinement :
     FormalCoproduct.mk Y (fun y ↦ (Opens.map (TopCat.isoOfHomeo h).hom).obj
       ((U.mapHomeomorph h).opens y)) ⟶ U.toFormalCoproduct :=
   ⟨h.symm, fun y ↦ homOfLE (by
+    -- FormalCoproduct.mk/toFormalCoproduct reduce the component goal to an Opens inclusion.
     change (Opens.map (TopCat.isoOfHomeo h).hom).obj ((U.mapHomeomorph h).opens y) ≤
       U.opens (h.symm y)
     rw [PointOpenCover.mapHomeomorph_opens]
