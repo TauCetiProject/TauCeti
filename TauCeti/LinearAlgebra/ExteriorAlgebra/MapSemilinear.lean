@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basic
 
 /-!
@@ -14,7 +15,7 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basic
 A `σ`-semilinear map `g : M →ₛₗ[σ] N` along `σ : A →+* B` induces a ring homomorphism
 `ExteriorAlgebra.mapSemilinear g : ExteriorAlgebra A M →+* ExteriorAlgebra B N`, compatible with
 `algebraMap`, `ι`, scalar multiplication, `ιMulti`, `ExteriorAlgebra.map`, identity, composition,
-and the grade involution.
+the grade involution, and the exterior-power grading (`mapSemilinear_mem_exteriorPower`).
 -/
 
 public section
@@ -53,6 +54,18 @@ noncomputable def mapSemilinear (g : M →ₛₗ[σ] N) :
   induction n with
   | zero => simp [ιMulti_zero_apply]
   | succ n ih => simp [ιMulti_succ_apply, ih, Matrix.vecTail, Function.comp_def]
+
+/-- `mapSemilinear` carries the `n`-th exterior power into the `n`-th exterior power. -/
+theorem mapSemilinear_mem_exteriorPower (g : M →ₛₗ[σ] N) {n : ℕ} {x : ExteriorAlgebra A M}
+    (hx : x ∈ ⋀[A]^n M) : mapSemilinear g x ∈ ⋀[B]^n N := by
+  induction hx using Submodule.pow_induction_on_left' with
+  | algebraMap a =>
+    rw [mapSemilinear_algebraMap, ExteriorAlgebra.exteriorPower, pow_zero]
+    exact Submodule.algebraMap_mem _
+  | add _ _ _ _ _ ihx ihy => exact map_add (mapSemilinear g) .. ▸ add_mem ihx ihy
+  | mem_mul _ hu _ _ _ ih =>
+    obtain ⟨m, rfl⟩ := hu; rw [map_mul, mapSemilinear_ι, ExteriorAlgebra.exteriorPower, pow_succ']
+    exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ (g m)) ih
 
 /-- For an `A`-linear map, `mapSemilinear` agrees with `ExteriorAlgebra.map`. -/
 theorem mapSemilinear_eq_map {N' : Type*} [AddCommGroup N'] [Module A N'] (g : M →ₗ[A] N') :

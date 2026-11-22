@@ -20,25 +20,6 @@ under `ExteriorAlgebra.mapSemilinear g` and restricts to `σ`-semilinear maps
 
 public section
 
-namespace ExteriorAlgebra
-
-variable {A B M N : Type*} [CommRing A] [CommRing B] {σ : A →+* B}
-  [AddCommGroup M] [Module A M] [AddCommGroup N] [Module B N]
-
-/-- `mapSemilinear` carries the `n`-th exterior power into the `n`-th exterior power. -/
-theorem mapSemilinear_mem_exteriorPower (g : M →ₛₗ[σ] N) {n : ℕ} {x : ExteriorAlgebra A M}
-    (hx : x ∈ ⋀[A]^n M) : mapSemilinear g x ∈ ⋀[B]^n N := by
-  induction hx using Submodule.pow_induction_on_left' with
-  | algebraMap a =>
-    rw [mapSemilinear_algebraMap, ExteriorAlgebra.exteriorPower, pow_zero]
-    exact Submodule.algebraMap_mem _
-  | add _ _ _ _ _ ihx ihy => exact map_add (mapSemilinear g) .. ▸ add_mem ihx ihy
-  | mem_mul _ hu _ _ _ ih =>
-    obtain ⟨m, rfl⟩ := hu; rw [map_mul, mapSemilinear_ι, ExteriorAlgebra.exteriorPower, pow_succ']
-    exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ (g m)) ih
-
-end ExteriorAlgebra
-
 namespace exteriorPower
 
 variable {A B C M N P : Type*} [CommRing A] [CommRing B] [CommRing C]

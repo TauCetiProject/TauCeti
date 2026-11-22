@@ -8,17 +8,20 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import TauCeti.RingTheory.Dagger.Omega.Map
-public import TauCeti.RingTheory.Kaehler.ExteriorDerivative
+public import TauCeti.RingTheory.Derivation.ExteriorDerivative
+public import TauCeti.RingTheory.Kaehler.DeRham.ExteriorPower
 
 /-!
 # The overconvergent de Rham complex and its functoriality
 
 For any commutative `R`-algebra `A` with Noetherian `Omega R A` (in particular any `K`-dagger
-algebra), `(Omega.d R A).TwistedExt` is Noetherian over `A`, so `(Omega.d R A).derTwistedExt`
-lifts uniquely through `Omega.d R A`, yielding the characteristic-free exterior derivative
+algebra over a complete ultrametric normed field `K`), `(Omega.d R A).TwistedExt` is Noetherian
+over `A`, so `(Omega.d R A).derTwistedExt` lifts uniquely through `Omega.d R A`, yielding the
+characteristic-free exterior derivative
 `Omega.exteriorDeriv R A q : ⋀[A]^q (Omega R A) →ₗ[R] ⋀[A]^(q + 1) (Omega R A)`, Grosse-Klönne's
 overconvergent de Rham complex `Omega.deRhamComplex R A`, and cohomology
-`Omega.deRhamCohomology R A q`, functorial in `K`-dagger algebras.
+`Omega.deRhamCohomology R A q`, functorial in `K`-dagger algebras over a complete ultrametric normed
+field `K`.
 
 ## References
 
@@ -72,10 +75,18 @@ theorem exteriorAlgebraDeriv_mul_of_mem_exteriorPower {p : ℕ} {x : ExteriorAlg
     exteriorAlgebraDeriv R A (x * y) =
       exteriorAlgebraDeriv R A x * y + (-1 : A) ^ p • (x * exteriorAlgebraDeriv R A y) :=
   Derivation.exteriorAlgebraDeriv_mul_of_mem_exteriorPower _ _ _ _ hx y
+/-- **Degree-zero identification (`simp` direction)**: under `zeroEquiv` and `oneEquiv`,
+`Omega.exteriorDeriv R A 0` identifies with `Omega.d R A`, rewriting
+`(zeroEquiv A (Omega R A)).symm a` to `(oneEquiv A (Omega R A)).symm (d R A a)`. See
+`oneEquiv_exteriorDeriv_zero` for the forward-equivalence direction extracting `Omega.d R A`. -/
 @[simp] theorem exteriorDeriv_zero_symm (a : A) :
     exteriorDeriv R A 0 ((exteriorPower.zeroEquiv A (Omega R A)).symm a) =
       (exteriorPower.oneEquiv A (Omega R A)).symm (d R A a) :=
   Derivation.exteriorDeriv_zero_symm _ _ _ _ a
+/-- **Degree-zero identification (forward-equivalence direction)**: under `zeroEquiv` and
+`oneEquiv`, `Omega.exteriorDeriv R A 0` recovers `Omega.d R A` as
+`oneEquiv A (Omega R A) (d ω) = d R A (zeroEquiv A (Omega R A) ω)`. See `exteriorDeriv_zero_symm`
+for the `simp` direction. -/
 theorem oneEquiv_exteriorDeriv_zero (ω : ⋀[A]^0 (Omega R A)) :
     exteriorPower.oneEquiv A (Omega R A) (exteriorDeriv R A 0 ω) =
       d R A (exteriorPower.zeroEquiv A (Omega R A) ω) :=
@@ -116,18 +127,35 @@ theorem exteriorDeriv_wedge (p q : ℕ) (ω : ⋀[A]^p (Omega R A)) (η : ⋀[A]
   Derivation.exteriorDeriv_wedge _ _ _ _ p q ω η
 
 /-- **Comparison with algebraic Kähler forms**: `ofKaehler` intertwines
-`KaehlerDifferential.exteriorDeriv` with `Omega.exteriorDeriv` in every degree. -/
+`TauCeti.KaehlerDeRham.exteriorDeriv` with `Omega.exteriorDeriv` in every degree. -/
 theorem map_ofKaehler_exteriorDeriv (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    exteriorPower.map (q + 1) (ofKaehler R A) (KaehlerDifferential.exteriorDeriv R A q ω) =
+    exteriorPower.map (q + 1) (ofKaehler R A) (TauCeti.KaehlerDeRham.exteriorDeriv R A q ω) =
       exteriorDeriv R A q (exteriorPower.map q (ofKaehler R A) ω) := by
+  apply Subtype.ext
   rw [← exteriorPower.mapSemilinear_eq_map (q + 1), ← exteriorPower.mapSemilinear_eq_map q]
-  exact KaehlerDifferential.mapSemilinear_exteriorDeriv_of_derivation _ _ _ _
-    (AlgHom.id R A) (ofKaehler R A) (ofKaehler_D R A) q ω
+  simp only [exteriorPower.coe_mapSemilinear_apply, coe_exteriorDeriv_apply,
+    TauCeti.KaehlerDeRham.coe_exteriorDeriv_apply]
+  suffices h : ∀ x : ExteriorAlgebra A Ω[A⁄R],
+      ExteriorAlgebra.mapSemilinear (ofKaehler R A) (TauCeti.KaehlerDeRham.extDeriv R A x) =
+        exteriorAlgebraDeriv R A (ExteriorAlgebra.mapSemilinear (ofKaehler R A) x) from h ω.val
+  intro x
+  induction x using TauCeti.KaehlerDeRham.inductionOn with
+  | algebraMap a =>
+    rw [TauCeti.KaehlerDeRham.extDeriv_algebraMap, ExteriorAlgebra.mapSemilinear_ι, ofKaehler_D,
+      ExteriorAlgebra.mapSemilinear_algebraMap, RingHom.id_apply, exteriorAlgebraDeriv_algebraMap]
+  | ι_D a =>
+    rw [TauCeti.KaehlerDeRham.extDeriv_ι_D, map_zero, ExteriorAlgebra.mapSemilinear_ι, ofKaehler_D,
+      exteriorAlgebraDeriv_ι_apply]
+  | mul x y hx hy =>
+    simp only [map_mul, TauCeti.KaehlerDeRham.extDeriv_mul, map_add,
+      ExteriorAlgebra.mapSemilinear_involute, hx, hy]
+    exact (Derivation.exteriorAlgebraDeriv_mul _ _ _ _ _ _).symm
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- When algebraic Kähler differentials are finite, `(ofKaehlerEquiv R A).exteriorPower`
 identifies the algebraic and universally finite exterior derivatives. -/
 theorem ofKaehlerEquiv_exteriorDeriv [Module.Finite A Ω[A⁄R]] (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    (ofKaehlerEquiv R A).exteriorPower (q + 1) (KaehlerDifferential.exteriorDeriv R A q ω) =
+    (ofKaehlerEquiv R A).exteriorPower (q + 1) (TauCeti.KaehlerDeRham.exteriorDeriv R A q ω) =
       exteriorDeriv R A q ((ofKaehlerEquiv R A).exteriorPower q ω) := by
   rw [← LinearEquiv.coe_toLinearMap, ← LinearEquiv.coe_toLinearMap,
     LinearEquiv.exteriorPower_toLinearMap, LinearEquiv.exteriorPower_toLinearMap,

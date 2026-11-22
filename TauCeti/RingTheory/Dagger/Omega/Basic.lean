@@ -282,9 +282,4 @@ theorem d_eq_sum [Fintype σ] (g : W) :
   conv_lhs => rw [← (washnitzerBasis σ K).sum_repr (d K W g)]
   simp
 end Omega
-
-/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
-theorem Omega.d_X_pow_charP {K : Type*} [NormedField K] [IsUltrametricDist K] (p : ℕ) [CharP K p] :
-    Omega.d K (washnitzerAlgebra (Fin 1) K) (washnitzerAlgebra.X (Fin 1) K 0 ^ p) = 0 := by
-  rw [(Omega.d K _).leibniz_pow, ← Nat.cast_smul_eq_nsmul K, CharP.cast_eq_zero, zero_smul]
 end TauCeti.Dagger

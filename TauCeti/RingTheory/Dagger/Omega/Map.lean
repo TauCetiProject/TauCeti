@@ -16,10 +16,13 @@ import TauCeti.RingTheory.Ideal.Quotient.Radical
 # Functoriality of universally finite differentials
 
 For `f : A →ₐ[R] B` where `R` and `B` are noetherian and every maximal ideal `m` of `B` has
-`B ⧸ m` module-finite over `R` (in particular any `K`-dagger algebra `B`), any `f`-semilinear map
-`Ω[A⁄R] →ₛₗ[f] M` into a finite `B`-module factors through `Omega R A`: for each maximal `m` and
-`n > 0`, `M ⧸ (m ^ n • ⊤)` is `R`-finite (hence `A`-noetherian), so Krull intersection over maximal
-ideals forces every such `g` to kill `Omega.finiteKer R A` and therefore descend to `Omega R A`.
+`B ⧸ m` module-finite over `R` (in particular any `K`-dagger algebra `B` over a complete
+ultrametric normed field `K`), any `f`-semilinear map `Ω[A⁄R] →ₛₗ[f] M` into a finite `B`-module
+factors through `Omega R A`: for each maximal `m` and `n > 0`, `M ⧸ (m ^ n • ⊤)` is `R`-finite
+(hence `A`-noetherian), so Krull intersection over maximal ideals forces every such `g` to kill
+`Omega.finiteKer R A` and therefore descend to `Omega R A`. In `section Dagger`, this specializes
+to `Omega.mapSemilinear` for morphisms into `K`-dagger algebras over a complete ultrametric normed
+field `K`.
 
 ## References
 
@@ -105,9 +108,10 @@ section Dagger
 variable {K A B C : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CommRing A] [CommRing B] [CommRing C] [Algebra K A] [Algebra K B] [Algebra K C]
 
-/-- **Functoriality of universally finite differentials into a dagger algebra.** An algebra
-homomorphism `f : A →ₐ[K] B` into a `K`-dagger algebra `B` induces `Omega K A →ₛₗ[f] Omega K B`
-sending `d a` to `d (f a)`. -/
+/-- **Functoriality of universally finite differentials into a dagger algebra over a complete
+ultrametric normed field `K`.** An algebra homomorphism `f : A →ₐ[K] B` into a `K`-dagger algebra
+`B` (over a complete ultrametric normed field `K`) induces `Omega K A →ₛₗ[f] Omega K B` sending
+`d a` to `d (f a)`. -/
 noncomputable def mapSemilinear [IsDaggerAlgebra K B] (f : A →ₐ[K] B) :
     Omega K A →ₛₗ[f.toRingHom] Omega K B :=
   have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := B)
@@ -145,7 +149,8 @@ theorem mapSemilinear_comp [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
     mapSemilinear e.symm.toAlgHom (mapSemilinear e.toAlgHom ω) = ω :=
   mapSemilinear_apply_symm_apply e.symm ω
 
-/-- A surjective homomorphism onto a dagger algebra induces a surjective map on `Omega`. -/
+/-- Over a complete ultrametric normed field `K`, a surjective homomorphism onto a dagger algebra
+induces a surjective map on `Omega`. -/
 theorem mapSemilinear_surjective [IsDaggerAlgebra K B] {f : A →ₐ[K] B}
     (hf : Function.Surjective f) : Function.Surjective (mapSemilinear f) := by
   have : RingHomSurjective f.toRingHom := ⟨hf⟩
@@ -154,11 +159,13 @@ theorem mapSemilinear_surjective [IsDaggerAlgebra K B] {f : A →ₐ[K] B}
     obtain ⟨a, rfl⟩ := hf b; exact ⟨d K A a, mapSemilinear_d f a⟩
   exact fun y ↦ h (span_range_d K B ▸ Submodule.mem_top)
 
-/-- Any algebra homomorphism `A →ₐ[K] K` induces the zero map on `Omega`. -/
+/-- Over a complete ultrametric normed field `K`, any algebra homomorphism `A →ₐ[K] K` induces the
+zero map on `Omega`. -/
 @[simp] theorem mapSemilinear_toSelf (φ : A →ₐ[K] K) (ω : Omega K A) :
     mapSemilinear φ ω = 0 := Subsingleton.elim _ _
 
-/-- **Jacobian formula for `mapSemilinear` on Monsky–Washnitzer algebras.** -/
+/-- **Jacobian formula for `mapSemilinear` on Monsky–Washnitzer algebras** over a complete
+ultrametric normed field `K`. -/
 theorem mapSemilinear_d_X {σ τ : Type*} [Fintype τ]
     (f : washnitzerAlgebra σ K →ₐ[K] washnitzerAlgebra τ K) (i : σ) :
     mapSemilinear f (d K _ (washnitzerAlgebra.X σ K i)) =

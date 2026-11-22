@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basis
 public import TauCeti.RingTheory.Dagger.Omega.DeRham
 public import TauCeti.RingTheory.Dagger.Poincare
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
@@ -441,6 +441,12 @@ end AllPositiveDegrees
 /-! ### Failure of the polydisc Poincaré lemma in positive characteristic -/
 section CharP
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+omit [CompleteSpace K] in
+/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
+theorem d_X_pow_charP (p : ℕ) [CharP K p] :
+    d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0 ^ p) = 0 := by
+  rw [(d K _).leibniz_pow, ← Nat.cast_smul_eq_nsmul K, CharP.cast_eq_zero, zero_smul]
 
 omit [CompleteSpace K] in
 /-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`.** -/

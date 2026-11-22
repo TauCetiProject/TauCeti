@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basic
 # Grade involution and graded commutativity on an exterior algebra
 
 Independently of any basis or contraction, the grade involution `CliffordAlgebra.involute` acts on
-the `n`-th exterior power `⋀[R]^n M` by `(-1) ^ n`, and every vector `ι R m` graded-commutes with
-every multivector `x` via `ι R m * x = involute x * ι R m` (and by `(-1) ^ n` on homogeneous
-elements of degree `n`).
+the `n`-th exterior power `⋀[R]^n M` by `(-1) ^ n` (and in particular on `ExteriorAlgebra.ιMulti`),
+and every vector `ι R m` graded-commutes with every multivector `x` via
+`ι R m * x = involute x * ι R m` (and by `(-1) ^ n` on homogeneous elements of degree `n`).
 -/
 
 public section
@@ -35,6 +35,19 @@ theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : 
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
       neg_one_smul]
+
+/-- **The grade involution acts on an exterior monomial by the parity of its degree.** The
+monomial is the product of its `n` generators, each of which the involution negates. -/
+@[simp]
+theorem involute_ιMulti {n : ℕ} (v : Fin n → M) :
+    CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) (ExteriorAlgebra.ιMulti R n v) =
+      (-1 : R) ^ n • ExteriorAlgebra.ιMulti R n v := by
+  -- Every exterior monomial is the product of the list of its generators.
+  have h : ExteriorAlgebra.ιMulti R n v =
+      ((List.ofFn v).map (CliffordAlgebra.ι (0 : QuadraticForm R M))).prod := by
+    rw [ExteriorAlgebra.ιMulti_apply, List.map_ofFn]
+    rfl
+  rw [h, CliffordAlgebra.involute_prod_map_ι, List.length_ofFn]
 
 end TauCeti.ExteriorAlgebra
 
