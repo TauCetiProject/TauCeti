@@ -141,25 +141,28 @@ omit [DecidableEq ι] in
 /-- **Transferring local regularity across a straightened boundary portion.** Let `Φ` and `Ψ` be
 mutually inverse continuous maps which are changes of variables of order `k ≥ 1` between open sets
 `U'` and `U`, with Jacobian determinants at least one in absolute value, such that `Φ` maps the
-part of `U'` in an open set `H` onto `Ω ∩ U`. Let `y₀ ∈ U'` with `Φ y₀ ∈ W`, and let `u ∈ H¹(Ω)`
-vanish on `∂Ω ∩ W`. Suppose that for every small ball `B = B(y₀, r)`, on `Ω' = H ∩ B` the
-function `u ∘ Φ`, which vanishes on `∂Ω' ∩ B`, is `W^{k,2}` on `Ω' ∩ V''` for every open `V''`
-with compact closure in `B`. Then `u` is `W^{k,2}` on `Ω ∩ V` for an open neighbourhood `V` of
-`Φ y₀`. -/
+part of `U'` in the half-space `H = {c₀ < ⟪x, ν⟫}` onto `Ω ∩ U`. Let `y₀ ∈ U'` lie in the closure
+of `H`, with `Φ y₀ ∈ W`, and let `u ∈ H¹(Ω)` vanish on `∂Ω ∩ W`. Suppose that for every small
+ball `B = B(y₀, r)` and open `Ω'` with `Ω' ∩ B = H ∩ B` nonempty, the function `u ∘ Φ`, which
+vanishes on `∂Ω' ∩ B`, is `W^{k,2}` on `Ω' ∩ V''` for every open `V''` with compact closure in
+`B`. Then `u` is `W^{k,2}` on `Ω ∩ V` for an open neighbourhood `V` of `Φ y₀`. -/
 private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {k : ℕ}
-    (hk : 1 ≤ k) {U' U H : Opens (EuclideanSpace ℝ ι)}
+    (hk : 1 ≤ k) {U' U : Opens (EuclideanSpace ℝ ι)}
     {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L : ℝ}
     (hΦ : Wkp.IsChangeOfVariables k U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables k U U' Ψ L 1)
     (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΦΨ : ∀ y, Φ (Ψ y) = y) (hΦc : Continuous Φ) (hΨc : Continuous Ψ)
-    (himage : Φ '' ((H : Set (EuclideanSpace ℝ ι)) ∩ U') = (Omega : Set (EuclideanSpace ℝ ι)) ∩ U)
-    {y₀ : EuclideanSpace ℝ ι} (hy₀ : y₀ ∈ (U' : Set (EuclideanSpace ℝ ι))) (hy₀W : Φ y₀ ∈ W)
-    {u : W1p mu Omega 2}
+    {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) {c₀ : ℝ}
+    (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Omega : Set (EuclideanSpace ℝ ι)) ∩ U)
+    {y₀ : EuclideanSpace ℝ ι} (hy₀ : y₀ ∈ (U' : Set (EuclideanSpace ℝ ι)))
+    (hy₀H : y₀ ∈ closure {x | c₀ < ⟪x, ν⟫_ℝ}) (hy₀W : Φ y₀ ∈ W) {u : W1p mu Omega 2}
     (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
       tsupport ψ ⊆ W → ∃ v : W1p0 mu Omega 2,
         W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
-    (hflat : ∀ r > 0, closedBall y₀ r ⊆ (U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' W →
+    (hflat : ∀ [Nonempty ι] (H : Opens (EuclideanSpace ℝ ι)), (∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) →
+      ∀ r, closedBall y₀ r ⊆ (U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' W →
       ∀ Ω' D : Opens (EuclideanSpace ℝ ι),
-      (Ω' : Set (EuclideanSpace ℝ ι)) = (H : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r →
+      (Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r = (H : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r →
+      ((Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r).Nonempty →
       ∀ (hD : D ≤ Omega) (hΦ' : Wkp.IsChangeOfVariables 1 Ω' D Φ L 1),
       Wkp.IsChangeOfVariables 1 D Ω' Ψ L 1 →
       MapsTo Φ Ω' ((Omega : Set (EuclideanSpace ℝ ι)) ∩ W) →
@@ -173,10 +176,13 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {
           (W1p.restrictL inf_le_left (hΦ'.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)))) :
     ∃ V : Opens (EuclideanSpace ℝ ι), Φ y₀ ∈ V ∧
       ∃ w : Wkp mu (Omega ⊓ V) 2 k, Wkp.value k w = W1p.value (W1p.restrictL inf_le_left u) := by
+  -- `ι` is nonempty, since `ν ≠ 0`.
+  have : Nonempty ι := not_isEmpty_iff.1 fun _ => hν (by ext i; exact isEmptyElim i)
+  let H : Opens (EuclideanSpace ℝ ι) := ⟨{x | c₀ < ⟪x, ν⟫_ℝ}, isOpen_lt continuous_const
+    (continuous_id.inner continuous_const)⟩
   -- A closed ball about `y₀` in `U'` on which `Φ` lands in `W`.
-  obtain ⟨r, hr, hrB⟩ : ∃ r > 0, closedBall y₀ r ⊆ (U' : Set _) ∩ Φ ⁻¹' W :=
-    nhds_basis_closedBall.mem_iff.1 ((U'.isOpen.inter (W.isOpen.preimage hΦc)).mem_nhds
-      ⟨hy₀, hy₀W⟩)
+  obtain ⟨r, hr, hrB⟩ := nhds_basis_closedBall.mem_iff.1
+    ((U'.isOpen.inter (W.isOpen.preimage hΦc)).mem_nhds ⟨hy₀, hy₀W⟩)
   -- The flat domain `Ω' = H ∩ B(y₀, r)` and the curved one `D = Ω ∩ O`, `O = U ∩ Ψ⁻¹ B(y₀, r)`.
   let B'' : Opens (EuclideanSpace ℝ ι) := ⟨ball y₀ r, isOpen_ball⟩
   let Ω' : Opens (EuclideanSpace ℝ ι) := H ⊓ B''
@@ -191,9 +197,7 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {
     have hmem : Φ x ∈ (Omega : Set _) ∩ U := himage ▸ mem_image_of_mem _ ⟨hx.1, hBU' hx.2⟩
     exact ⟨hmem.1, hmem.2, by rw [mem_preimage, hΨΦ]; exact hx.2⟩
   have hΨmaps : MapsTo Ψ D Ω' := fun y hy => by
-    have hy' : y ∈ Φ '' ((H : Set (EuclideanSpace ℝ ι)) ∩ U') := by
-      rw [himage]; exact ⟨hy.1, hy.2.1⟩
-    obtain ⟨x, ⟨hxH, -⟩, rfl⟩ := hy'
+    obtain ⟨x, ⟨hxH, -⟩, rfl⟩ : y ∈ Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') := himage ▸ ⟨hy.1, hy.2.1⟩
     exact ⟨by rw [hΨΦ]; exact hxH, hy.2.2⟩
   have hDU : D ≤ U := fun y hy => hy.2.1
   have hΦ' := (hΦ.mono_set (fun x hx => hBU' hx.2 : Ω' ≤ U') hΦmaps).mono hk
@@ -204,22 +208,23 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {
     (fun χ hχ hχc hχs => hu0 χ hχ hχc (hχs.trans hOW))
   -- Regularity near the flat boundary, on `Ω' ∩ B(y₀, r / 2)`.
   let V'' : Opens (EuclideanSpace ℝ ι) := ⟨ball y₀ (r / 2), isOpen_ball⟩
-  have hV''c : closure (V'' : Set (EuclideanSpace ℝ ι)) ⊆ closedBall y₀ (r / 2) :=
-    closure_ball_subset_closedBall
-  obtain ⟨w'', hw''⟩ := hflat r hr hrB Ω' D rfl inf_le_left hΦ'
+  obtain ⟨z, hzH, hz⟩ := Metric.mem_closure_iff.1 hy₀H r hr
+  obtain ⟨w'', hw''⟩ := hflat H (fun _ => Iff.rfl) r hrB Ω' D
+    (by rw [Opens.coe_inf, inter_assoc]; exact congrArg _ (inter_self _))
+    ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩ inf_le_left hΦ'
     ((hΨ.mono_set hDU hΨmaps).mono hk) (fun x hx => ⟨(hΦmaps hx).1, hOW (hΦmaps hx).2⟩) hu0' V''
-    ((isCompact_closedBall y₀ (r / 2)).of_isClosed_subset isClosed_closure hV''c)
-    (hV''c.trans (closedBall_subset_ball (half_lt_self hr)))
+    ((isCompact_closedBall y₀ (r / 2)).of_isClosed_subset isClosed_closure
+      closure_ball_subset_closedBall)
+    (closure_ball_subset_closedBall.trans (closedBall_subset_ball (half_lt_self hr)))
   -- Push forward to `Ω ∩ V` with `V = U ∩ Ψ⁻¹(B(y₀, r / 2))`.
   let V : Opens (EuclideanSpace ℝ ι) := ⟨U ∩ Ψ ⁻¹' ball y₀ (r / 2),
     hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩
-  have hVD' : ((Omega ⊓ V : Opens _) : Set (EuclideanSpace ℝ ι)) ⊆ D := fun y hy => by
-    simp only [D, O, V, Opens.coe_inf, Opens.coe_mk, mem_inter_iff, mem_preimage] at hy ⊢
+  have hVD : Omega ⊓ V ≤ D := fun y hy => by
+    simp only [D, O, V, Opens.mem_inf, Opens.mem_mk, mem_inter_iff, mem_preimage] at hy ⊢
     exact ⟨hy.1, hy.2.1, ball_subset_ball (half_le_self hr.le) hy.2.2⟩
-  have hVD : Omega ⊓ V ≤ D := SetLike.coe_subset_coe.mp hVD'
   exact ⟨V, ⟨hΦ.mapsTo hy₀, by rw [mem_preimage, hΨΦ]; exact mem_ball_self (half_pos hr)⟩,
     Wkp.exists_value_eq_value_restrictL_of_w1pCompL ENNReal.ofNat_ne_top inf_le_left hVD hΦ'
-      (hΨ.mono_set (hVD.trans hDU) fun y hy => ⟨hΨmaps (hVD' hy), hy.2.2⟩) (fun y _ => hΦΨ y)
+      (hΨ.mono_set (hVD.trans hDU) fun y hy => ⟨hΨmaps (hVD hy), hy.2.2⟩) (fun y _ => hΦΨ y)
       hw''⟩
 
 /-- **Local `H²` regularity near a straightened boundary portion.** Let `Φ` and `Ψ` be mutually
@@ -248,34 +253,23 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables
         W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x) :
     ∃ V : Opens (EuclideanSpace ℝ ι), Φ y₀ ∈ V ∧
       ∃ w : Wkp mu (Omega ⊓ V) 2 2, Wkp.lowerOrder 1 w = W1p.restrictL inf_le_left u := by
-  -- `ι` is nonempty, since `ν ≠ 0`.
-  have : Nonempty ι := by
-    by_contra hι
-    rw [not_nonempty_iff] at hι
-    exact hν (by ext i; exact isEmptyElim i)
-  let H : Opens (EuclideanSpace ℝ ι) := ⟨{x | c₀ < ⟪x, ν⟫_ℝ}, isOpen_lt continuous_const
-    (continuous_id.inner continuous_const)⟩
-  obtain ⟨V, hV, w, hw⟩ := exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat (H := H)
-    one_le_two hΦ hΨ hΨΦ hΦΨ hΦc hΨc himage hy₀ hy₀W hu0
-    fun r hr hrB Ω' D hΩ' hD hΦ' hΨ' hΦmaps hu0' V'' hV hVU => by
+  obtain ⟨V, hV, w, hw⟩ := exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat
+    one_le_two hΦ hΨ hΨΦ hΦΨ hΦc hΨc hν himage hy₀ hy₀H hy₀W hu0
+    fun H hH r hrB Ω' D hΩU hne hD hΦ' hΨ' hΦmaps hu0' V'' hV hVU => by
       -- On the flat side, `u ∘ Φ` solves an equation of the same form, with uniformly elliptic
       -- and Lipschitz principal coefficient.
       obtain ⟨hb', hc', f', hu₁⟩ := exists_forall_energyFormH1_compL_restrictL_eq (mu := mu) hD
         hΦ' hΨ' (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hb hc hu
-      obtain ⟨z, hzH, hz⟩ := Metric.mem_closure_iff.1 hy₀H r hr
       obtain ⟨lam', Lam', K', hellip, hK'⟩ :=
         exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal (hΦ.mono one_le_two) hΨ
           (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) (isCompact_closedBall y₀ r)
           (convex_closedBall y₀ r) (hrB.trans inter_subset_left)
           (fun x (hx : x ∈ (Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r) =>
             ball_subset_closedBall hx.2)
-          ⟨z, by rw [hΩ']; exact ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩
-          (fun x hx => hΦmaps hx.1) ha hK
+          hne (fun x hx => hΦmaps hx.1) ha hK
       -- `H²` regularity near the flat boundary.
       obtain ⟨w'', hw''⟩ := UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_halfSpace
-        (H := H) (U := ⟨ball y₀ r, isOpen_ball⟩) hν (fun _ => Iff.rfl)
-        (by rw [hΩ', inter_assoc]; exact congrArg _ (inter_self _)) hellip hK' hb' hc' hu₁ hu0' hV
-        hVU
+        (H := H) (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hK' hb' hc' hu₁ hu0' hV hVU
       exact ⟨w'', by rw [← Wkp.value_lowerOrder_one, hw'']⟩
   exact ⟨V, hV, w, W1p.ext_value (by rw [Wkp.value_lowerOrder_one, hw])⟩
 
@@ -557,25 +551,16 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables
         W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x) :
     ∃ V : Opens (EuclideanSpace ℝ ι), Φ y₀ ∈ V ∧
       ∃ w : Wkp mu (Omega ⊓ V) 2 3, Wkp.value 3 w = W1p.value (W1p.restrictL inf_le_left u) := by
-  -- `ι` is nonempty, since `ν ≠ 0`.
-  have : Nonempty ι := by
-    by_contra hι
-    rw [not_nonempty_iff] at hι
-    exact hν (by ext i; exact isEmptyElim i)
-  let H : Opens (EuclideanSpace ℝ ι) := ⟨{x | c₀ < ⟪x, ν⟫_ℝ}, isOpen_lt continuous_const
-    (continuous_id.inner continuous_const)⟩
-  refine exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat (H := H) (by norm_num) hΦ
-    hΨ hΨΦ hΦΨ hΦs.continuous hΨs.continuous himage hy₀ hy₀W hu0
-    fun r hr hrB Ω' D hΩ' hD hΦ' hΨ' hΦmaps hu0' V'' hV hVU => ?_
+  refine exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat (by norm_num) hΦ hΨ hΨΦ
+    hΦΨ hΦs.continuous hΨs.continuous hν himage hy₀ hy₀H hy₀W hu0
+    fun H hH r hrB Ω' D hΩU hne hD hΦ' hΨ' hΦmaps hu0' V'' hV hVU => ?_
   have hBU' : ball y₀ r ⊆ (U' : Set (EuclideanSpace ℝ ι)) :=
     ball_subset_closedBall.trans (hrB.trans inter_subset_left)
   -- The transformed coefficient is uniformly elliptic on `Ω'` and smooth on `B(y₀, r)`.
-  obtain ⟨z, hzH, hz⟩ := Metric.mem_closure_iff.1 hy₀H r hr
   obtain ⟨lam', Lam', hellip⟩ := exists_uniformlyEllipticOn_pullbackPrincipal
     (hΦ.mono (by norm_num : 1 ≤ 3)) (hΨ.mono (by norm_num : 1 ≤ 3)) (fun x _ => hΨΦ x)
     (fun y _ => hΦΨ y) (s := (Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r) (fun x hx => hBU' hx.2)
-    ⟨z, by rw [hΩ']; exact ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩
-    (fun x hx => hΦmaps hx.1) ha
+    hne (fun x hx => hΦmaps hx.1) ha
   have hsm' (i j : ι) : ContDiffOn ℝ ∞ (fun x => pullbackPrincipal Φ a x i j) (ball y₀ r) :=
     contDiffOn_pullbackPrincipal_apply (hΦ.mono (by norm_num : 1 ≤ 3))
       (hΨ.mono (by norm_num : 1 ≤ 3)) (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hBU'
@@ -583,8 +568,7 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables
       (hΨs.of_le (by simp)).contDiffOn hsmooth i j
   -- `H³` regularity near the flat boundary, since `u ∘ Φ` solves `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
-    (U := ⟨ball y₀ r, isOpen_ball⟩) hν (fun _ => Iff.rfl)
-    (by rw [hΩ', inter_assoc]; exact congrArg _ (inter_self _)) hellip hsm'
+    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm'
     (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦ' hΨ' (fun x _ => hΨΦ x)
       (fun y _ => hΦΨ y) hu) hu0' hV hVU
 
