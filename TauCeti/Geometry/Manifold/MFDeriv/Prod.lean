@@ -72,7 +72,10 @@ fields on a product manifold.
 * `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
   differentiable jointly is differentiable in each variable separately.
 * `MDifferentiableAt.mfderiv_uncurry_apply_zero_mk`: the differential of an uncurried family on
-  a vertical vector `(0, v)` is the differential of the member of the family on `v`.
+  a vertical vector `(0, v)` is the differential of the member of the family on `v`, and
+  `MDifferentiableAt.mfderiv_uncurry_apply_mk_zero` is its counterpart on a horizontal vector
+  `(u, 0)`, with `MDifferentiableAt.mvfderiv_apply_mk_zero` its version for vector-valued
+  functions.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -554,6 +557,23 @@ theorem MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
     mfderiv (I.prod I') J (Function.uncurry f) (x, y) (0, v) = mfderiv I' J (f x) y v :=
   -- The product rule, whose first summand vanishes at the zero vector.
   (mfderiv_prod_eq_add_apply hf).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
+
+/-- The differential of an uncurried family `(x, y) ↦ f x y` on a horizontal tangent vector
+`(u, 0)` is the differential of `x ↦ f x y` on `u`. -/
+theorem MDifferentiableAt.mfderiv_uncurry_apply_mk_zero
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) (u : TangentSpace I x) :
+    mfderiv (I.prod I') J (Function.uncurry f) (x, y) (u, 0) = mfderiv I J (fun x ↦ f x y) x u :=
+  -- The product rule, whose second summand vanishes at the zero vector.
+  (mfderiv_prod_eq_add_apply hf).trans ((congrArg (_ + ·) (map_zero _)).trans (add_zero _))
+
+/-- The differential of a vector-valued function on a product along a horizontal vector `(u, 0)`
+is the differential of its slice with fixed second coordinate. -/
+theorem MDifferentiableAt.mvfderiv_apply_mk_zero {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] {g : M × M' → V} {p : M × M'}
+    (hg : MDifferentiableAt (I.prod I') 𝓘(𝕜, V) g p) (u : TangentSpace I p.1) :
+    mvfderiv (I.prod I') g p (u, 0) = mvfderiv I (fun y ↦ g (y, p.2)) p.1 u :=
+  congrArg (NormedSpace.fromTangentSpace (g p))
+    (hg.mfderiv_uncurry_apply_mk_zero (f := fun x y ↦ g (x, y)) u)
 
 end Curry
 
