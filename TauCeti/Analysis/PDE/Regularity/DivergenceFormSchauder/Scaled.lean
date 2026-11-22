@@ -105,28 +105,6 @@ private theorem inner_toLp_add_inner_toLp_eq_sub {B : Opens (EuclideanSpace ℝ 
     filter_upwards [hGc.coeFn_toLp] with x hx
     rw [hx, ← inner_neg_left, neg_sub]
 
-/-- The `L²` pairings of the weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `B`, with a constant
-subtracted from `G`, tested against a test function `φ` on `B`, are the original pairings. -/
-private theorem inner_toLp_add_inner_toLp_ofTestFunctionₗ
-    {B : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {c : EuclideanSpace ℝ (Fin (n + 1))}
-    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hf : MemLp f 2 (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (φ : 𝓓(B, ℝ)) :
-    ⟪hGc.toLp, W1p.gradient (W1p.ofTestFunctionₗ volume B 2 φ)⟫_ℝ +
-        ⟪hf.toLp, W1p.value (W1p.ofTestFunctionₗ volume B 2 φ)⟫_ℝ =
-      (∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in B, f x * φ x := by
-  rw [inner_toLp_gradient_ofTestFunctionₗ hGc φ, L2.inner_def]
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [hf.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ]
-    with x hx hφx
-  rw [hx, hφx]
-  simp [RCLike.inner_apply, mul_comm]
-
 /-- On an open `B ⊆ Ω` inside a ball `B(x₀, ρ)` on which `a` and `G` are `α`-Hölder, with `a`
 uniformly elliptic on `B`, the weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `Ω`, tested against
 test functions, holds for the restriction of `u` against all of `H¹₀(B)`, in the form
@@ -154,35 +132,6 @@ private theorem energyFormH1_restrictL_eq_sub_of_holderOnWith
   have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf v).trans
     (inner_toLp_add_inner_toLp_eq_sub hGc hf _)
-
-/-- **Restricting a weak solution.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on
-`Ω`, tested against test functions. On an open `B ⊆ Ω` inside a ball `B(x₀, ρ)` on which `a` and `G`
-are `α`-Hölder, with `a` uniformly elliptic on `B` and `f ∈ L²(B)`, the restriction of `u` to `B`
-solves the same equation on `B`, tested against test functions on `B`. -/
-theorem energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith
-    {Omega B : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hB : B ≤ Omega)
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ}
-    (hBρ : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball x₀ ρ)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
-    (h : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
-    {α : ℝ≥0} (hα : 0 < α) {Ka KG : ℝ≥0}
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ))
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hGK : HolderOnWith KG α G (ball x₀ ρ)) {u : W1p volume Omega 2}
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hf : MemLp f 2 (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
-      (∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Omega, f x * φ x)
-    (φ : 𝓓(B, ℝ)) :
-    energyFormH1 a 0 0 (W1p.restrictL hB u) (W1p.ofTestFunctionₗ volume B 2 φ) =
-      (∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in B, f x * φ x := by
-  have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBρ h hα haK
-  have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
-  exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf
-    ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
-    (inner_toLp_add_inner_toLp_ofTestFunctionₗ hGc hf φ)
 
 /-- The scaling of the three terms of the Caccioppoli bound: with `d = n + 1`, `a₁ = r^{-d/2} √U`,
 `a₂ = r^{2-d/t} F` and `a₃ = r^{1+α} K`, the term `U / r²` is `r^{d-2} a₁²`, the term
@@ -529,8 +478,10 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_ball
   have hfB' : MemLp f q (volume.restrict (ball x₀ (r / 2 + r))) :=
     hf.mono_measure (Measure.restrict_mono hsub le_rfl)
   -- The restriction of `u` to `B(x₀, 3r/2)` solves the same equation there.
-  have hu' := energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith (B := B') hB' hsub
-    (h.mono_set hsub) hα haK hGK (hfB'.mono_exponent hq) hu
+  have hu' := energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral hB'
+    (memLp_energyIntegrand_of_holderOnWith (mu := volume) hsub (h.mono_set hsub) hα haK) hu
+    (memLp_sub_of_holderOnWith (μ := volume) (p := 2) B'.isOpen.measurableSet hsub hα hGK)
+    (hfB'.mono_exponent hq)
   have hM' : (Ka : ℝ) * (r / 2) ^ (α : ℝ) ≤ M := (mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow (by positivity) (half_le_self hr.le) α.property) Ka.property).trans hM
   have hH := hS (Omega := B') (u := W1p.restrictL hB' u) (S := ball x₀ r) (R := r / 2)

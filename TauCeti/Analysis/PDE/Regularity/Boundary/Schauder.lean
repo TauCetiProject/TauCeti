@@ -175,8 +175,10 @@ private theorem exists_gradient_ae_eq_sub_and_energyFormH1
       W1p.gradient_restrictL_ae hB u, hℓ] with y h1 h2 h3
     rw [h1, Pi.sub_apply, h2, h3]
   · have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBR h hα haK
+    have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα hGK
     rw [energyFormH1_sub_left (b := 0) (c := 0) hcoeff,
-      energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith hB hBR h hα haK hGK hf hu φ,
+      energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral hB hcoeff hu hGc
+        hf φ,
       energyFormH1_zero_zero_eq_setIntegral]
     -- The energy of `ℓ` against `φ` is `∫_B ⟪a p, ∇φ⟫`.
     have hℓφ : ∫ x in B,
@@ -189,7 +191,6 @@ private theorem exists_gradient_ae_eq_sub_and_energyFormH1
     rw [hℓφ]
     -- Split `∫_B ⟪G - a p, ∇φ⟫` through the `L²` pairings.
     have hwK := holderOnWith_coefficientField haK p
-    have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα hGK
     have hwc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα hwK
     have hGwc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBR hα
       (hGK.sub hwK)

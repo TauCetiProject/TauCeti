@@ -950,9 +950,13 @@ theorem holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le {α : ℝ�
     HolderOnWith (Real.toNNReal (2 * 2 ^ (α : ℝ) *
       (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ))) * M + B * ρ ^ (-(α : ℝ))))) α
       (preciseRepresentative μ f) S := by
-  simpa using holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
-    (Ω := univ) (c := 1) hα one_pos hρ (fun _ _ _ _ _ ↦ by simp) (by simpa using hf)
-    (by simpa using hosc) (by simpa using havg)
+  simpa only [Measure.restrict_univ, NNReal.coe_one, one_mul] using
+    holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
+      (Ω := univ) (c := 1) hα one_pos hρ
+      (fun _ _ _ _ _ ↦ by rw [inter_univ, ENNReal.coe_one, one_mul])
+      (by simpa only [Measure.restrict_univ] using hf)
+      (by simpa only [Measure.restrict_univ] using hosc)
+      (by simpa only [Measure.restrict_univ] using havg)
 
 /-- **Campanato's theorem.** Let `α > 0`, and let `f` be locally integrable, with mean oscillation
 on every closed ball of radius `r > 0` at most `M r^α`. Then the precise representative of `f`
