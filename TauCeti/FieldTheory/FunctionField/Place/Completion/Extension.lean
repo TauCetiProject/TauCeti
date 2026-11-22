@@ -24,8 +24,8 @@ agree, `isScalarTower_completionExtensionAlgebra` also identifies the original c
 through the completed extension. The completed extension restricts to an injective local
 homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
 `completionIntegersExtensionAlgebra` is likewise installed locally and makes `𝒪̂_{P'}` a
-torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`completionIntegersExtension_injective`,
-`isScalarTower_completionIntegersExtensionAlgebra`, `isTorsionFree_completionIntegers`).
+torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`isScalarTower_completionIntegersExtensionAlgebra`,
+`isTorsionFree_completionIntegers`).
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -248,11 +248,6 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
       P.completionExtension P' hP x :=
   (rfl)
 
-/-- The canonical map of completed valuation rings is injective. -/
-theorem completionIntegersExtension_injective :
-    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
-  Subtype.ext ((P.completionExtension P' hP).injective (congrArg Subtype.val h))
-
 /-- The completed valuation-ring extension forms a scalar tower inside the completed upper field. -/
 instance isScalarTower_completionIntegersExtensionAlgebra :
     letI := P.completionExtensionAlgebra P' hP
@@ -272,7 +267,12 @@ instance isTorsionFree_completionIntegers :
   letI := P.completionIntegersExtensionAlgebra P' hP
   Module.isTorsionFree_iff_algebraMap_injective.mpr <| by
     rw [algebraMap_completionIntegersExtensionAlgebra]
-    exact P.completionIntegersExtension_injective P' hP
+    exact MonoidHom.restrict_injective
+      (M' := P.completionPlace.integers.toSubmonoid)
+      (N' := P'.completionPlace.integers.toSubmonoid)
+      (f := (P.completionExtension P' hP).toMonoidHom)
+      (fun _ hx ↦ P.completionExtension_mem_integers P' hP hx)
+      (P.completionExtension P' hP).injective
 
 end Integers
 

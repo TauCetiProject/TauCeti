@@ -163,13 +163,8 @@ theorem valuationSubringAtPrime_eq_integers :
 /-- The valuation ring of a place finite on a Dedekind affine model `R` is the localization of `R`
 at the centre of `P`. -/
 theorem isLocalization_integers_center [Algebra R P.integers] [IsScalarTower R P.integers F] :
-    IsLocalization.AtPrime P.integers (P.center hR).asIdeal := by
-  have hloc (O : ValuationSubring F) [Algebra R O] [IsScalarTower R O F]
-      (hO : O = ((P.center hR).valuation F).valuationSubring) :
-      IsLocalization.AtPrime O (P.center hR).asIdeal := by
-    subst O
-    exact HeightOneSpectrum.isLocalization_valuationSubring (K := F) (P.center hR)
-  exact hloc P.integers (by rw [integers_def, P.valuation_center hR])
+    IsLocalization.AtPrime P.integers (P.center hR).asIdeal :=
+  (P.center hR).isLocalization_of_eq_valuationSubring (by rw [integers_def, P.valuation_center hR])
 
 /-- Distinct places finite on an affine model have distinct centres: a place is recovered from its
 centre. -/

@@ -48,8 +48,10 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
   element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
   the maximal ideal.
-* `IsDedekindDomain.HeightOneSpectrum.isLocalization_valuationSubring`: the adic valuation ring
-  is a localization at the prime, exposing Mathlib's quotient-to-residue equivalence.
+* `IsDedekindDomain.HeightOneSpectrum.isLocalization_valuationSubring` and
+  `IsDedekindDomain.HeightOneSpectrum.isLocalization_of_eq_valuationSubring`: the adic valuation
+  ring (and any valuation subring equal to it) is a localization at the prime, exposing Mathlib's
+  quotient-to-residue equivalence.
 * `IsDedekindDomain.HeightOneSpectrum.finite_residueField_valuationSubring`: its residue field is
   finite whenever the quotient of the original domain by the prime is finite.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
@@ -275,6 +277,14 @@ instance isLocalization_valuationSubring
         exact (IsScalarTower.algebraMap_apply R (valuationSubringAtPrime K v) K r).symm.trans
           (IsScalarTower.algebraMap_apply R (v.valuation K).valuationSubring K r) }
   exact IsLocalization.isLocalization_of_algEquiv v.asIdeal.primeCompl e
+
+/-- Any valuation subring equal to the adic valuation ring at `v` is a localization at
+`v.asIdeal`, for any algebra structure compatible with its inclusion in the fraction field. -/
+theorem isLocalization_of_eq_valuationSubring {O : ValuationSubring K}
+    [Algebra R O] [IsScalarTower R O K] (hO : O = (v.valuation K).valuationSubring) :
+    IsLocalization.AtPrime O v.asIdeal := by
+  subst O
+  exact v.isLocalization_valuationSubring
 
 /-- The valuation residue field at `v` is finite when the quotient by `v` is finite. -/
 instance finite_residueField_valuationSubring

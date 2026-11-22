@@ -88,10 +88,7 @@ private theorem isScalarTower_integers_extension {k F F' B : Type*} [Field k] [F
     IsScalarTower B P.integers F' :=
   letI := integersAlgebra P hB
   have := isScalarTower_integers P hB
-  .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply B P.integers F,
-      IsScalarTower.algebraMap_apply B F F']
+  IsScalarTower.to₁₂₄ B P.integers F F'
 
 /-- The canonical ring homomorphism from an affine model `C` to the local integral closure
 `𝒪'_P` when the base affine model `B` lies in `𝒪_P`. -/
@@ -149,11 +146,7 @@ private theorem isScalarTower_integralClosure {k F F' B C : Type*}
     [Algebra C (integralClosure P.integers F')]
     [IsScalarTower C (integralClosure P.integers F') F'] :
     IsScalarTower B C (integralClosure P.integers F') :=
-  .of_algebraMap_eq fun x ↦
-    IsIntegralClosure.algebraMap_injective (integralClosure P.integers F') P.integers F' <| by
-      rw [← IsScalarTower.algebraMap_apply B (integralClosure P.integers F') F',
-        ← IsScalarTower.algebraMap_apply C (integralClosure P.integers F') F',
-        ← IsScalarTower.algebraMap_apply B C F']
+  IsScalarTower.to₁₂₃ B C (integralClosure P.integers F') F'
 
 omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 /-- The local integral closure `𝒪'_P` is the localization of `C` at the complement of the centre
@@ -167,10 +160,7 @@ private theorem isLocalization_integralClosure_center (P : Place k F)
       (integralClosure P.integers F') := by
   have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
     P.isLocalization_integers_center hB
-  have : IsScalarTower B P.integers F' := .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply B P.integers F,
-      IsScalarTower.algebraMap_apply B F F']
+  have : IsScalarTower B P.integers F' := IsScalarTower.to₁₂₄ B P.integers F F'
   exact isLocalization_algebraMapSubmonoid_of_isIntegralClosure (R := B) (Rₘ := P.integers)
     (S := C) (Sₘ := integralClosure P.integers F') (L := F') (M := (P.center hB).asIdeal.primeCompl)
 
