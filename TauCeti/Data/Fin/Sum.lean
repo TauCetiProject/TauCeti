@@ -58,6 +58,9 @@ two- or three-variable object can rewrite rather than unfold them.
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
   `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
+* `TauCeti.finSumFinSumFinComm`: the four-block equivalence
+  `Fin ((a + b) + (c + d)) ≃ Fin ((a + c) + (b + d))` exchanging the middle two blocks, with its
+  coordinate-injection evaluation lemmas and inverse `finSumFinSumFinComm_symm`.
 
 ## Implementation notes
 
@@ -248,5 +251,48 @@ theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
     Fin.coe_finRotate_eq_ite]
   simp only [val_finSumFinInterleaveEquiv_inr]
   split_ifs <;> omega
+
+/-- The four-block equivalence `Fin ((a + b) + (c + d)) ≃ Fin ((a + c) + (b + d))` exchanging the
+middle two blocks of sizes `b` and `c`. -/
+def finSumFinSumFinComm (a b c d : ℕ) :
+    Fin ((a + b) + (c + d)) ≃ Fin ((a + c) + (b + d)) :=
+  (finSumFinEquiv.symm.trans (Equiv.sumCongr finSumFinEquiv.symm finSumFinEquiv.symm)).trans <|
+    (Equiv.sumSumSumComm (Fin a) (Fin b) (Fin c) (Fin d)).trans <|
+      (Equiv.sumCongr finSumFinEquiv finSumFinEquiv).trans finSumFinEquiv
+
+/-- Evaluating `finSumFinSumFinComm a b c d` on the first block (`Fin a`). -/
+@[simp]
+theorem finSumFinSumFinComm_castAdd_castAdd (a b c d : ℕ) (i : Fin a) :
+    finSumFinSumFinComm a b c d (Fin.castAdd (c + d) (Fin.castAdd b i)) =
+      Fin.castAdd (b + d) (Fin.castAdd c i) := by
+  simp [finSumFinSumFinComm]
+
+/-- Evaluating `finSumFinSumFinComm a b c d` on the second block (`Fin b`). -/
+@[simp]
+theorem finSumFinSumFinComm_castAdd_natAdd (a b c d : ℕ) (j : Fin b) :
+    finSumFinSumFinComm a b c d (Fin.castAdd (c + d) (Fin.natAdd a j)) =
+      Fin.natAdd (a + c) (Fin.castAdd d j) := by
+  simp [finSumFinSumFinComm]
+
+/-- Evaluating `finSumFinSumFinComm a b c d` on the third block (`Fin c`). -/
+@[simp]
+theorem finSumFinSumFinComm_natAdd_castAdd (a b c d : ℕ) (k : Fin c) :
+    finSumFinSumFinComm a b c d (Fin.natAdd (a + b) (Fin.castAdd d k)) =
+      Fin.castAdd (b + d) (Fin.natAdd a k) := by
+  simp [finSumFinSumFinComm]
+
+/-- Evaluating `finSumFinSumFinComm a b c d` on the fourth block (`Fin d`). -/
+@[simp]
+theorem finSumFinSumFinComm_natAdd_natAdd (a b c d : ℕ) (l : Fin d) :
+    finSumFinSumFinComm a b c d (Fin.natAdd (a + b) (Fin.natAdd c l)) =
+      Fin.natAdd (a + c) (Fin.natAdd b l) := by
+  simp [finSumFinSumFinComm]
+
+/-- The inverse of `finSumFinSumFinComm a b c d` is `finSumFinSumFinComm a c b d`. -/
+@[simp]
+theorem finSumFinSumFinComm_symm (a b c d : ℕ) :
+    (finSumFinSumFinComm a b c d).symm = finSumFinSumFinComm a c b d := by
+  refine Equiv.ext fun i ↦ (finSumFinSumFinComm a b c d).symm_apply_eq.mpr ?_
+  refine Fin.addCases (Fin.addCases ?_ ?_) (Fin.addCases ?_ ?_) i <;> simp
 
 end TauCeti

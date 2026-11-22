@@ -262,6 +262,7 @@ theorem spinGroupMap_spinCircle (f : Q →qᵢ P) (huw : Q.IsOrtho u w) (h : Q u
 
 /-- **Quadratic isometries carry Spin rotations to Spin rotations**: the Spin-group map induced by
 `f` sends `spinRotation Q x y` to `spinRotation P (f x) (f y)`. -/
+@[simp]
 theorem spinGroupMap_spinRotation (f : Q →qᵢ P) {x y : V} (hx : Q x = 1) (hy : Q y = 1)
     (hxy : Q.IsOrtho x y) (t : ℝ) :
     f.spinGroupMap (CliffordAlgebra.spinRotation Q x y hx hy hxy t) =

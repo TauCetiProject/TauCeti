@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.DiagonalLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 
 /-!
 # Topology, uniqueness, and full-turn loop for the compact real diagonal Spin lift
@@ -235,10 +234,10 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_lift (k : ℕ)
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
     exact funext fun _ ↦ Subsingleton.elim _ _
   have : NeZero (k + k) := ⟨by omega⟩
-  refine (isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom (k + k)).eq_of_comp_eq
+  refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm (k + k)).eq_of_comp_eq
     hf (continuous_realCliffordSpinDiagonalLift k) ?_ 1 (by rw [h1, map_one])
   funext g
-  simpa using (hlift g).trans (spinToSpecialOrthogonal_realCliffordSpinDiagonalLift k g).symm
+  exact (hlift g).trans (spinToSpecialOrthogonal_realCliffordSpinDiagonalLift k g).symm
 
 /-- **Classification of all continuous diagonal lifts in positive rank**: any continuous map
 `SO(k) → Spin(k + k)` lifting `g ↦ diag(g, g)` equals either `realCliffordSpinDiagonalLift k` or

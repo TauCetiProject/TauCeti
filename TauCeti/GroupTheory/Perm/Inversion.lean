@@ -36,6 +36,8 @@ rotating index blocks.
   its two halves, has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
+* `TauCeti.sign_finSumFinSumFinComm_trans_finCongr`: exchanging the middle two blocks of
+  `Fin ((a + b) + (c + d))` along `TauCeti.finSumFinSumFinComm` has sign `(-1) ^ (b * c)`.
 * `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
   sizes `d i` that lists them in the order of a permutation `σ`, and its sign
   `(-1) ^ ∑ d (σ i) * d (σ j)` over the pairs `i < j` inverted by `σ`; it is even when all the
@@ -176,6 +178,55 @@ theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
     Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
   rw [sign_eq_neg_one_pow_card_inversion, Finset.inversions_univ,
     card_inversion_finAddFlip_trans_finCongr]
+
+/-- Exchanging the middle two blocks of `Fin ((a + b) + (c + d))` along
+`finSumFinSumFinComm` has sign `(-1) ^ (b * c)`: it conjugates the block swap of the middle
+`b + c` indices. -/
+theorem sign_finSumFinSumFinComm_trans_finCongr (a b c d : ℕ) :
+    Equiv.Perm.sign
+        ((finSumFinSumFinComm a b c d).trans (finCongr (add_add_add_comm a c b d))) =
+      (-1) ^ (b * c) := by
+  let e : Fin a ⊕ (Fin (b + c) ⊕ Fin d) ≃ Fin ((a + b) + (c + d)) :=
+    ((Equiv.refl (Fin a)).sumCongr finSumFinEquiv).trans <|
+      finSumFinEquiv.trans (finCongr (by omega))
+  let τ : Equiv.Perm (Fin a ⊕ (Fin (b + c) ⊕ Fin d)) :=
+    Equiv.Perm.sumCongr 1
+      (Equiv.Perm.sumCongr (finAddFlip.trans (finCongr (add_comm c b))) 1)
+  have hperm : e.permCongr τ =
+      (finSumFinSumFinComm a b c d).trans (finCongr (add_add_add_comm a c b d)) := by
+    refine Equiv.ext fun x ↦ ?_
+    obtain ⟨y, rfl⟩ := e.surjective x
+    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply]
+    rcases y with i | (x | l)
+    · have hi : e (Sum.inl i) = Fin.castAdd (c + d) (Fin.castAdd b i) :=
+        Fin.ext (by simp [e])
+      have hi' : e (τ (Sum.inl i)) =
+          Fin.cast (add_add_add_comm a c b d) (Fin.castAdd (b + d) (Fin.castAdd c i)) :=
+        Fin.ext (by simp [e, τ])
+      rw [hi, hi', Equiv.trans_apply, finSumFinSumFinComm_castAdd_castAdd, finCongr_apply]
+    · refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) x
+      · have hj : e (Sum.inr (Sum.inl (Fin.castAdd c j))) =
+            Fin.castAdd (c + d) (Fin.natAdd a j) :=
+          Fin.ext (by simp [e])
+        have hj' : e (τ (Sum.inr (Sum.inl (Fin.castAdd c j)))) =
+            Fin.cast (add_add_add_comm a c b d) (Fin.natAdd (a + c) (Fin.castAdd d j)) :=
+          Fin.ext (by simp [e, τ, finAddFlip_apply_castAdd]; omega)
+        rw [hj, hj', Equiv.trans_apply, finSumFinSumFinComm_castAdd_natAdd, finCongr_apply]
+      · have hk : e (Sum.inr (Sum.inl (Fin.natAdd b k))) =
+            Fin.natAdd (a + b) (Fin.castAdd d k) :=
+          Fin.ext (by simp [e]; omega)
+        have hk' : e (τ (Sum.inr (Sum.inl (Fin.natAdd b k)))) =
+            Fin.cast (add_add_add_comm a c b d) (Fin.castAdd (b + d) (Fin.natAdd a k)) :=
+          Fin.ext (by simp [e, τ, finAddFlip_apply_natAdd])
+        rw [hk, hk', Equiv.trans_apply, finSumFinSumFinComm_natAdd_castAdd, finCongr_apply]
+    · have hl : e (Sum.inr (Sum.inr l)) = Fin.natAdd (a + b) (Fin.natAdd c l) :=
+        Fin.ext (by simp [e]; omega)
+      have hl' : e (τ (Sum.inr (Sum.inr l))) =
+          Fin.cast (add_add_add_comm a c b d) (Fin.natAdd (a + c) (Fin.natAdd b l)) :=
+        Fin.ext (by simp [e, τ]; omega)
+      rw [hl, hl', Equiv.trans_apply, finSumFinSumFinComm_natAdd_natAdd, finCongr_apply]
+  rw [← hperm, Equiv.Perm.sign_permCongr]
+  simp [τ, sign_finAddFlip_trans_finCongr]
 
 section
 

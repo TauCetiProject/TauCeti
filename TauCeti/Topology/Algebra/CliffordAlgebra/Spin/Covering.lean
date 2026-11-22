@@ -35,6 +35,8 @@ of the Clifford algebra over the trivial group `SO(0)`
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
+* `CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm` states the same covering
+  property directly for `spinToSpecialOrthogonal (realCliffordForm n 0)`.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero` gives the same result for the
   bundled continuous homomorphism.
 * `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
@@ -117,6 +119,14 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
+
+/-- The Spin projection `spinToSpecialOrthogonal (realCliffordForm n 0)` is a covering map
+in positive rank. -/
+theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm
+    (n : ℕ) [NeZero n] :
+    IsCoveringMap (spinToSpecialOrthogonal (realCliffordForm n 0)) := by
+  have h := isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
+  rwa [realCliffordSpinDoubleCoverZero_rightHom] at h
 
 /-- The bundled compact real Spin projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinProjectionZero
@@ -219,12 +229,12 @@ theorem not_exists_continuous_lift_of_spinLift_ne {n N : ℕ}
   obtain ⟨γ⟩ := joined_one_negOne_realCliffordSpinGroupZero_add_two n
   have heq : (fun t : unitInterval ↦ f' (spinToSpecialOrthogonal (realCliffordForm (n + 2) 0)
       (γ t))) = fun t ↦ ψ (γ t) := by
-    refine (isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom N).eq_of_comp_eq
+    refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm N).eq_of_comp_eq
       ((continuous_const.mul hf_cont).comp
         ((continuous_spinToSpecialOrthogonal_pi (realCliffordForm (n + 2) 0)).comp γ.continuous))
       (hψ_cont.comp γ.continuous) ?_ 0 ?_
     · funext t
-      simpa using (hf'_lift _).trans (hψ_lift (γ t)).symm
+      exact (hf'_lift _).trans (hψ_lift (γ t)).symm
     · simp [f', γ.source]
   have h1 := congrFun heq 1
   simp only [γ.target, spinGroup.spinToSpecialOrthogonal_negOne, f', mul_assoc,

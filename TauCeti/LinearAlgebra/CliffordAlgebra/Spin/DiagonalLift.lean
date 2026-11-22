@@ -21,16 +21,19 @@ receives the diagonal homomorphism
 `CliffordAlgebra.spinDiagonalLift Q hQ hsurj : SO(Q) →* Spin(Q ⊕ Q)`
 
 sending `g ∈ SO(Q)` to `spinGroupProd Q Q (x, x)` for any preimage `x ∈ Spin(Q)` of `g`. This is
-independent of the choice of `x`, because the kernel of `Spin(Q) →* SO(Q)` is contained in
+independent of the choice of `x`: in rank zero (`dim V = 0`) the kernel of `Spin(Q) →* SO(Q)` is
+trivial and the preimage `x` is unique, whereas in positive dimension (`dim V > 0`) the kernel is
 `{1, -1}` and `spinGroupProd Q Q (-1, -1) = 1`.
 
 Composing with the Spin projection of `Q ⊕ Q` recovers the diagonal embedding `g ↦ (g, g)` of
 `SO(Q)` into `SO(Q ⊕ Q)`, so `spinDiagonalLift` is injective and acts diagonally on `V × V`. It
 is natural under isometric equivalences `e : Q₁ ≃qᵢ Q₂`, invariant under swapping the two summands
 of `Q ⊕ Q`, trivial when `dim V ≤ 1`, and compatible with orthogonal sums via the middle-block
-exchange `QuadraticMap.IsometryEquiv.prodProdProdComm`: since even Clifford elements on orthogonal
-summands commute, transporting `spinDiagonalLift (Q₁ ⊕ Q₂)` along `prodProdProdComm` gives the
-`spinGroupProd` of `spinDiagonalLift Q₁` and `spinDiagonalLift Q₂` with no sign.
+exchange `QuadraticMap.IsometryEquiv.prodProdProdComm`: assuming surjectivity of the Spin
+projection for both summands `Q₁`, `Q₂` and for their sum `Q₁ ⊕ Q₂`, since even Clifford elements
+on orthogonal summands commute, transporting `spinDiagonalLift (Q₁ ⊕ Q₂)` along
+`prodProdProdComm` gives the `spinGroupProd` of `spinDiagonalLift Q₁` and `spinDiagonalLift Q₂`
+with no sign.
 
 Over `ℝ`, the diagonal lift of the rotation induced by a circle element `spinCircle Q u w` (or
 `spinRotation Q u w t`) is the commuting product of the two circle elements in the first and second
@@ -103,8 +106,10 @@ private theorem ker_spinToSpecialOrthogonal_le_ker_spinDiag
 
 For a finite-dimensional nondegenerate quadratic form `Q` over a field with `2` invertible whose
 Spin projection `Spin(Q) →* SO(Q)` is surjective, sending `g ∈ SO(Q)` to
-`spinGroupProd Q Q (x, x)` for any Spin lift `x` of `g` is independent of the sign choice `±x` and
-defines a group homomorphism lifting the diagonal embedding `g ↦ (g, g)`. -/
+`spinGroupProd Q Q (x, x)` for any Spin preimage `x` of `g` defines a group homomorphism lifting
+the diagonal embedding `g ↦ (g, g)`. In rank zero (`dim V = 0`) the kernel is trivial and `x` is
+unique; in positive dimension (`dim V > 0`) `x` is defined up to a sign choice `±x`, which
+`spinGroupProd Q Q (-1, -1) = 1` kills. -/
 def spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) :
     specialOrthogonalGroup Q →* spinGroup (Q.prod Q) :=
@@ -228,9 +233,11 @@ theorem spinGroupEquiv_prodComm_spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q
     Prod.swap_prod_mk]
 
 -- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
-/-- **Orthogonal-sum coherence for `spinDiagonalLift`**: transporting the diagonal lift of a block
-sum `(g₁, g₂) ∈ SO(Q₁) × SO(Q₂)` along the middle-block exchange `IsometryEquiv.prodProdProdComm`
-recovers the `spinGroupProd` of the diagonal lifts of `g₁` and `g₂`. -/
+/-- **Orthogonal-sum coherence for `spinDiagonalLift`**: assuming surjectivity of the Spin
+projection for both summands `Q₁`, `Q₂` and for their orthogonal sum `Q₁ ⊕ Q₂`, transporting the
+diagonal lift of a block sum `(g₁, g₂) ∈ SO(Q₁) × SO(Q₂)` along the middle-block exchange
+`IsometryEquiv.prodProdProdComm` recovers the `spinGroupProd` of the diagonal lifts of `g₁` and
+`g₂`. -/
 theorem spinGroupEquiv_prodProdProdComm_spinDiagonalLift {W : Type*} [AddCommGroup W] [Module K W]
     [FiniteDimensional K W] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K W}
     (hQ₁ : Q₁.Nondegenerate) (hsurj₁ : Function.Surjective (spinToSpecialOrthogonal Q₁))
