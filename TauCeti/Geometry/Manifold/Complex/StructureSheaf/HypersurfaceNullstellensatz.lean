@@ -238,12 +238,9 @@ theorem mem_radical_span_singleton_iff {x : X}
     t ∈ (Ideal.span {s}).radical ↔ ∀ᶠ y in 𝓝 x, F y = 0 → G y = 0 := by
   constructor
   · rintro ⟨k, hk⟩
-    obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.1 hk
-    obtain ⟨Q, -, hQ⟩ := exists_toFilterGerm_eq x q
-    have := congrArg (toFilterGerm I X x (𝓝 x) le_rfl) hq
-    simp only [map_mul, map_pow, hQ _ le_rfl, hF, hG, ← Germ.coe_mul, ← Germ.coe_pow] at this
-    filter_upwards [Germ.coe_eq.1 this] with y hy h0
-    exact (pow_eq_zero_iff'.1 (by rw [← Pi.pow_apply, ← hy, Pi.mul_apply, h0, mul_zero])).1
+    filter_upwards [eventually_eq_zero_of_dvd hF (by rw [map_pow, hG, ← Germ.coe_pow])
+      (Ideal.mem_span_singleton.1 hk)] with y hy h0
+    exact eq_zero_of_pow_eq_zero (hy h0)
   · intro hFG
     by_cases hs0 : s = 0
     · have hG0 : G =ᶠ[𝓝 x] 0 := by
@@ -254,15 +251,12 @@ theorem mem_radical_span_singleton_iff {x : X}
     classical
     -- Each irreducible factor of `s` divides `t`, so `s` divides a power of `t`.
     have hdvd (p) (hp : p ∈ UniqueFactorizationMonoid.factors s) : p ∣ t := by
-      obtain ⟨r, hr⟩ := UniqueFactorizationMonoid.dvd_of_mem_factors hp
       obtain ⟨P, -, hP⟩ := exists_toFilterGerm_eq x p
-      obtain ⟨R, -, hR⟩ := exists_toFilterGerm_eq x r
-      have := congrArg (toFilterGerm I X x (𝓝 x) le_rfl) hr
-      simp only [map_mul, hF, hP _ le_rfl, hR _ le_rfl, ← Germ.coe_mul] at this
       refine dvd_of_irreducible (UniqueFactorizationMonoid.irreducible_of_factor p hp)
         (hP _ le_rfl) hG ?_
-      filter_upwards [Germ.coe_eq.1 this, hFG] with y hy hyG h0
-      exact hyG (by rw [hy, Pi.mul_apply, h0, zero_mul])
+      filter_upwards [eventually_eq_zero_of_dvd (hP _ le_rfl) hF
+        (UniqueFactorizationMonoid.dvd_of_mem_factors hp), hFG] with y hy hyG h0
+      exact hyG (hy h0)
     refine ⟨(UniqueFactorizationMonoid.factors s).card, Ideal.mem_span_singleton.2 ?_⟩
     refine (UniqueFactorizationMonoid.factors_prod hs0).symm.dvd.trans ?_
     simpa using Multiset.prod_dvd_prod_of_dvd id (fun _ ↦ t) hdvd
@@ -274,7 +268,6 @@ theorem dvd_iff_of_irreducible {x : X}
     {s t : (holomorphicStructureSheaf I X).presheaf.stalk x} (hs : Irreducible s) {F G : X → ℂ}
     (hF : toFilterGerm I X x (𝓝 x) le_rfl s = F) (hG : toFilterGerm I X x (𝓝 x) le_rfl t = G) :
     s ∣ t ↔ ∀ᶠ y in 𝓝 x, F y = 0 → G y = 0 :=
-  ⟨fun h ↦ (mem_radical_span_singleton_iff hF hG).1
-    (Ideal.le_radical (Ideal.mem_span_singleton.2 h)), dvd_of_irreducible hs hF hG⟩
+  ⟨eventually_eq_zero_of_dvd hF hG, dvd_of_irreducible hs hF hG⟩
 
 end TauCeti.holomorphicStructureSheaf
