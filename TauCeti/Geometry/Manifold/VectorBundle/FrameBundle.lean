@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.FiberBundle.Principal.FrameBundle
+public import TauCeti.Topology.VectorBundle.FrameBundle
 public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
@@ -65,6 +65,8 @@ attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
+attribute [local instance] memTrivializationAtlas_trivialization
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ} {k : WithTop ℕ∞}
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
   {IB : ModelWithCorners 𝕜 EB HB} {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
@@ -82,14 +84,10 @@ variable (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (σ : F ≃L
 frames over the base set of `e`. -/
 theorem contMDiffOn_matrixIn :
     ContMDiffOn (IB.prod 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] F)) 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) k
-      (matrixIn e σ : FrameBundle 𝕜 n F E → _) (FrameBundle.proj ⁻¹' e.baseSet) := by
-  have : MemTrivializationAtlas (Trivial.trivialization B (Fin n → 𝕜)) := ⟨mem_singleton _⟩
-  let eH := (Trivial.trivialization B (Fin n → 𝕜)).continuousLinearMap (RingHom.id 𝕜) e
-  have hmaps : MapsTo (Subtype.val : FrameBundle 𝕜 n F E → _) (proj ⁻¹' e.baseSet) eH.source :=
-    fun v hv ↦ by simpa [eH, eH.mem_source, Trivialization.baseSet_continuousLinearMap] using hv
-  refine (((matrixEquiv σ).contDiff.contMDiff.comp contMDiff_snd).comp_contMDiffOn
-    (eH.contMDiffOn.comp contMDiff_subtypeVal.contMDiffOn hmaps)).congr fun v hv ↦ ?_
-  exact matrixIn_eq e σ hv
+      (e.matrixIn σ : FrameBundle 𝕜 n F E → _) (FrameBundle.proj ⁻¹' e.baseSet) :=
+  ((σ.toMatrixCLE.contDiff.contMDiff.comp contMDiff_snd).comp_contMDiffOn
+    ((Trivialization.contMDiffOn _).comp contMDiff_subtypeVal.contMDiffOn
+      e.mapsTo_coe_source_continuousLinearMap)).congr fun v _ ↦ e.matrixIn_eq σ v
 
 /-- The trivializations of the frame bundle induced by those of `E` are `C^k` on their sources. -/
 theorem contMDiffOn_frameBundle :
@@ -101,9 +99,9 @@ theorem contMDiffOn_frameBundle :
     contMDiff_subtypeVal).contMDiffOn.prodMk ?_
   -- Smoothness into `GL n 𝕜`, an open subset of the matrices, is smoothness of the matrix.
   have hval : ContMDiffOn (IB.prod 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] F)) 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) k
-      (fun v : FrameBundle 𝕜 n F E ↦ (unitIn e σ v : Matrix (Fin n) (Fin n) 𝕜))
+      (fun v : FrameBundle 𝕜 n F E ↦ (e.unitIn σ v : Matrix (Fin n) (Fin n) 𝕜))
       (proj ⁻¹' e.baseSet) :=
-    (contMDiffOn_matrixIn e σ).congr fun v hv ↦ coe_unitIn e σ hv
+    (e.contMDiffOn_matrixIn σ).congr fun v hv ↦ e.coe_unitIn σ hv
   refine ((contMDiffOn_isOpenEmbedding_symm (I := 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜)) (n := k)
     Units.isOpenEmbedding_val).comp hval fun v _ ↦ mem_range_self _).congr fun v _ ↦ ?_
   exact (Units.isOpenEmbedding_val.toOpenPartialHomeomorph_left_inv _).symm
@@ -115,21 +113,17 @@ theorem contMDiffOn_frameBundle_symm :
       (e.frameBundle σ : Trivialization (GL (Fin n) 𝕜)
         (proj : FrameBundle 𝕜 n F E → B)).toOpenPartialHomeomorph.symm
       (e.frameBundle σ).target := by
-  have : MemTrivializationAtlas (Trivial.trivialization B (Fin n → 𝕜)) := ⟨mem_singleton _⟩
   let eH := (Trivial.trivialization B (Fin n → 𝕜)).continuousLinearMap (RingHom.id 𝕜) e
-  have hmaps : MapsTo (fun p : B × GL (Fin n) 𝕜 ↦ (p.1, (matrixEquiv σ).symm p.2))
-      (e.baseSet ×ˢ univ) eH.target := fun p hp ↦ by
-    simpa [eH, eH.target_eq, Trivialization.baseSet_continuousLinearMap] using hp.1
   have hval := (eH.contMDiffOn_symm (IB := IB) (n := k)).comp (contMDiff_fst.prodMk
-    (((matrixEquiv σ).symm.contDiff.contMDiff.comp Units.contMDiff_val).comp
-      contMDiff_snd)).contMDiffOn hmaps
+    ((σ.toMatrixCLE.symm.contDiff.contMDiff.comp Units.contMDiff_val).comp
+      contMDiff_snd)).contMDiffOn (e.mapsTo_toMatrixCLE_symm_target_continuousLinearMap σ)
   rw [target_frameBundle]
   intro p hp
   have key : ∀ q ∈ e.baseSet ×ˢ (univ : Set (GL (Fin n) 𝕜)),
       ((e.frameBundle σ).toOpenPartialHomeomorph.symm q).val =
-        eH.toPartialEquiv.symm (q.1, (matrixEquiv σ).symm q.2) := fun q hq ↦ by
+        eH.toPartialEquiv.symm (q.1, σ.toMatrixCLE.symm q.2) := fun q hq ↦ by
     rw [frameBundle_symm_apply]
-    exact coe_smul_localFrame e σ hq.1 q.2
+    exact e.coe_smul_frameAt σ hq.1 q.2
   -- A map into the open subset of frames is `C^k` when its composite with the inclusion is.
   exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1
     ((hval p hp).congr key (key p hp))
