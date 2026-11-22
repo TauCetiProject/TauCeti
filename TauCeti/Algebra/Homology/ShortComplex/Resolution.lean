@@ -183,13 +183,25 @@ lemma resolutionComplexMap_f_add_two (φ : S ⟶ S') (n : ℕ) :
 @[simp]
 lemma resolutionComplexMap_id (S : ShortComplex C) :
     resolutionComplexMap (𝟙 S) = 𝟙 S.resolutionComplex := by
-  ext <;> exact (rfl)
+  -- The component lemmas leave `𝟙 S.X₂ = 𝟙 (S.resolutionComplex.X 0)` and its degree-one
+  -- analogue. The objects agree by definition (`resolutionComplex_X_zero`, `_X_one`), and an
+  -- equation of objects cannot be rewritten inside `𝟙`, so `rfl` closes the goals.
+  apply from_resolutionComplex_hom_ext <;>
+    simp only [resolutionComplexMap_f_zero, resolutionComplexMap_f_one, id_τ₁, id_τ₂,
+      HomologicalComplex.id_f] <;>
+    rfl
 
 /-- The induced chain maps preserve composition of short-complex morphisms. -/
 @[simp]
 lemma resolutionComplexMap_comp {S'' : ShortComplex C} (φ : S ⟶ S') (ψ : S' ⟶ S'') :
     resolutionComplexMap (φ ≫ ψ) = resolutionComplexMap φ ≫ resolutionComplexMap ψ := by
-  ext <;> exact (rfl)
+  -- As in `resolutionComplexMap_id`, both sides become `φ.τ₂ ≫ ψ.τ₂` (resp. `φ.τ₁ ≫ ψ.τ₁`),
+  -- composed through `S'.X₂` on one side and the definitionally equal
+  -- `S'.resolutionComplex.X 0` on the other, so `rfl` closes the goals.
+  apply from_resolutionComplex_hom_ext <;>
+    simp only [resolutionComplexMap_f_zero, resolutionComplexMap_f_one, comp_τ₁, comp_τ₂,
+      HomologicalComplex.comp_f] <;>
+    rfl
 
 /-- The chain map induced by `φ` lies over `φ.τ₃`. -/
 @[reassoc (attr := simp)]
