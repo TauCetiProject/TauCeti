@@ -34,6 +34,10 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   an isomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
+* `CategoryTheory.Over.isPullback_pullback_obj`,
+  `CategoryTheory.Over.isPullback_pullback_obj_mk`, and
+  `CategoryTheory.Over.pullback_map_left_fst`: the pullback square defining
+  `(Over.pullback f).obj A` and the first-projection equation for `(Over.pullback f).map k`.
 * `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
   can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
@@ -64,6 +68,26 @@ theorem isPullback_pullback_map_left {C : Type u} [Category.{v} C] {S T : C} (f 
       g.left := by
   refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback B.hom f).flip
   simpa using (IsPullback.of_hasPullback A.hom f).flip
+
+/-- The pullback square defining `(Over.pullback f).obj A`. -/
+theorem isPullback_pullback_obj {C : Type u} [Category.{v} C] {X Y : C} (f : X ⟶ Y)
+    [HasPullbacksAlong f] (A : Over Y) :
+    IsPullback (pullback.fst A.hom f) ((pullback f).obj A).hom A.hom f := by
+  simpa only [pullback_obj_hom] using IsPullback.of_hasPullback A.hom f
+
+/-- The pullback square defining `(Over.pullback f).obj (Over.mk g)`. -/
+theorem isPullback_pullback_obj_mk {C : Type u} [Category.{v} C] {X Y Z : C} (f : X ⟶ Y)
+    [HasPullbacksAlong f] (g : Z ⟶ Y) :
+    IsPullback (pullback.fst g f) ((pullback f).obj (mk g)).hom g f := by
+  simpa only [mk_hom] using isPullback_pullback_obj f (mk g)
+
+/-- The first projection of `(Over.pullback f).map k` commutes with `k.left`. -/
+@[reassoc]
+theorem pullback_map_left_fst {C : Type u} [Category.{v} C] {X Y : C} (f : X ⟶ Y)
+    [HasPullbacksAlong f] {A B : Over Y} (k : A ⟶ B) :
+    ((pullback f).map k).left ≫ pullback.fst B.hom f =
+      pullback.fst A.hom f ≫ k.left :=
+  (isPullback_pullback_map_left f k).w
 
 /-- The identification `T ×_S X ≅ T ×_{S'} (S' ×_S X)` of the two base changes of `f : X ⟶ S` to
 an object `T` over `S'`, where `T` lies over `S` through `g : S' ⟶ S`, commutes with the morphisms

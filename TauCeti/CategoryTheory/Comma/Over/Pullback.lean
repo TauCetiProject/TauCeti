@@ -36,9 +36,6 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
   family `U` whose second projections are jointly epimorphic);
 * `CategoryTheory.Over.preservesEpimorphisms_star`: `Over.star X` preserves epimorphisms whenever
   `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change);
-* `CategoryTheory.Over.isPullback_pullback_obj` and `CategoryTheory.Over.pullback_map_left_fst`:
-  the pullback square defining `(Over.pullback f).obj A` and the first-projection equation for
-  `(Over.pullback f).map k`;
 * `CategoryTheory.Over.pullback_map_injective_of_fac_iso` and
   `CategoryTheory.Over.pullback_map_surjective_of_fac_iso`: injectivity and surjectivity of
   `(Over.pullback j).map` on morphisms over `X` follow from those of `(Over.pullback i).map`
@@ -108,24 +105,6 @@ theorem pullback_iso_triangle {X Y : C} (e : X ≅ Y) (A : Over Y) :
   · exact (Over.w _).trans (Category.id_comp _).symm
 
 end Coherence
-
-/-- The pullback square defining `(Over.pullback f).obj A`. -/
-theorem isPullback_pullback_obj {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f] (A : Over Y) :
-    IsPullback (Limits.pullback.fst A.hom f) ((pullback f).obj A).hom A.hom f := by
-  simpa only [pullback_obj_hom] using IsPullback.of_hasPullback A.hom f
-
-/-- The pullback square defining `(Over.pullback f).obj (Over.mk g)`. -/
-theorem isPullback_pullback_obj_mk {X Y Z : C} (f : X ⟶ Y) [HasPullbacksAlong f] (g : Z ⟶ Y) :
-    IsPullback (Limits.pullback.fst g f) ((pullback f).obj (mk g)).hom g f := by
-  simpa only [mk_hom] using isPullback_pullback_obj f (mk g)
-
-/-- The first projection of `(Over.pullback f).map k` commutes with `k.left`. -/
-@[reassoc]
-theorem pullback_map_left_fst {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f] {A B : Over Y}
-    (k : A ⟶ B) :
-    ((pullback f).map k).left ≫ Limits.pullback.fst B.hom f =
-      Limits.pullback.fst A.hom f ≫ k.left :=
-  (isPullback_pullback_map_left f k).w
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/

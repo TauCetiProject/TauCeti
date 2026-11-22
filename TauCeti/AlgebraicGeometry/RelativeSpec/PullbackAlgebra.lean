@@ -402,8 +402,9 @@ theorem pullbackCongr_hom_app_hom_hom_hom {f g : X ⟶ Y} (h : f = g) (A : Quasi
       eqToHom (pullback_obj_X f A) ≫ (Scheme.Modules.pullbackCongr h).hom.app A.obj.X ≫
         eqToHom (pullback_obj_X g A).symm := by
   subst h
-  simp [pullbackCongr, Scheme.Modules.pullbackCongr, ObjectProperty.FullSubcategory.id_hom,
-    CommMon.id_hom]
+  simp only [pullbackCongr_refl, Iso.refl_hom, NatTrans.id_app,
+    ObjectProperty.FullSubcategory.id_hom, CommMon.id_hom, Scheme.Modules.pullbackCongr,
+    eqToIso_refl, Category.id_comp, eqToHom_trans, eqToHom_refl]
   -- Identical up to unfolding `Scheme.Modules` to `SheafOfModules X.ringCatSheaf`.
   rfl
 
@@ -413,12 +414,8 @@ theorem pullbackCongr_hom_app_hom_hom_hom {f g : X ⟶ Y} (h : f = g) (A : Quasi
 theorem pullbackCongr_inv_app_hom_hom_hom {f g : X ⟶ Y} (h : f = g) (A : QuasicoherentAlgebra Y) :
     ((pullbackCongr h).inv.app A).hom.hom.hom =
       eqToHom (pullback_obj_X g A) ≫ (Scheme.Modules.pullbackCongr h).inv.app A.obj.X ≫
-        eqToHom (pullback_obj_X f A).symm := by
-  subst h
-  simp [pullbackCongr, Scheme.Modules.pullbackCongr, ObjectProperty.FullSubcategory.id_hom,
-    CommMon.id_hom]
-  -- Identical up to unfolding `Scheme.Modules` to `SheafOfModules X.ringCatSheaf`.
-  rfl
+        eqToHom (pullback_obj_X f A).symm :=
+  pullbackCongr_hom_app_hom_hom_hom h.symm A
 
 /-- The composition comparison of algebra pullback followed by `pullbackCongr` along a commuting
 triangle `f ≫ g = h` agrees with the corresponding module pullback comparison on underlying

@@ -17,6 +17,7 @@ import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Etale
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
+import TauCeti.CategoryTheory.Comma.Over.Pullback
 import TauCeti.CategoryTheory.EqToHom
 import TauCeti.CategoryTheory.Monoidal.EqToHom
 
@@ -637,11 +638,13 @@ theorem overPullback_map_injective_of_completion_finiteLocallyFree
   dsimp only at h
   have hg₁ : g₁.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₁
   have hg₂ : g₂.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₂
-  have hg₀ :
-      (Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
-          (by rw [← Scheme.IdealSheafData.comap_comp, hg₁])).app 0 =
-        (Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left
-          (by rw [← Scheme.IdealSheafData.comap_comp, hg₂])).app 0 := by
+  have hle₁ : (I.comap q).comap g₁.left ≤ I.comap p := by
+    rw [← Scheme.IdealSheafData.comap_comp, hg₁]
+  have hle₂ : (I.comap q).comap g₂.left ≤ I.comap p := by
+    rw [← Scheme.IdealSheafData.comap_comp, hg₂]
+  let m₁ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left hle₁
+  let m₂ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left hle₂
+  have hg₀ : m₁.app 0 = m₂.app 0 := by
     apply (cancel_mono (Scheme.formalCompletion.levelIsoPullback q rfl 0).hom).mp
     rw [Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₁ 0,
       Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₂ 0, h]
@@ -649,11 +652,7 @@ theorem overPullback_map_injective_of_completion_finiteLocallyFree
       ((Scheme.formalCompletion.map (I := I.comap q) q le_rfl).app n) := fun n ↦
     MorphismProperty.of_isPullback (P := @FormallyUnramified)
       (Scheme.formalCompletion.isPullback_map_app q rfl n) inferInstance
-  have hfc :
-      Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
-          (by rw [← Scheme.IdealSheafData.comap_comp, hg₁]) =
-        Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left
-          (by rw [← Scheme.IdealSheafData.comap_comp, hg₂]) :=
+  have hfc : m₁ = m₂ :=
     AdicThickeningSystem.hom_ext_of_formallyUnramified
       (Scheme.formalCompletion.map (I := I.comap q) q le_rfl)
       ((Scheme.formalCompletion.map_comp_eq (I := I.comap p) (J := I.comap q) (K := I)

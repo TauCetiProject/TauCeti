@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Spf
-public import TauCeti.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The formal completion of a scheme along a closed subscheme
@@ -217,16 +217,20 @@ theorem subschemeIsoLevelZero_inv_subschemeι :
 `toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` via an isomorphism `X₀ ≅ V(I ^ 1)`. -/
 noncomputable def isoLevelZeroOfKerEq {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
     [IsClosedImmersion j] (hj : j.ker = I) :
-    X₀ ≅ (X.formalCompletion I).X 0 := by
-  subst hj
-  exact asIso j.toImage ≪≫ subschemeIsoLevelZero X j.ker
+    X₀ ≅ (X.formalCompletion I).X 0 :=
+  asIso j.toImage ≪≫
+    ⟨inclusion ((pow_one I).le.trans hj.ge), inclusion (hj.le.trans (pow_one I).ge),
+      (inclusion_comp _ _).trans (inclusion_id _),
+      (inclusion_comp _ _).trans (inclusion_id _)⟩
 
 @[reassoc (attr := simp)]
 theorem isoLevelZeroOfKerEq_hom_toScheme {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
     [IsClosedImmersion j] (hj : j.ker = I) :
     (isoLevelZeroOfKerEq j hj).hom ≫ toScheme X I 0 = j := by
-  subst hj
-  simp [isoLevelZeroOfKerEq]
+  have h : inclusion ((pow_one I).le.trans hj.ge) ≫ toScheme X I 0 = j.ker.subschemeι :=
+    inclusion_subschemeι _
+  rw [isoLevelZeroOfKerEq, Iso.trans_hom, asIso_hom, Category.assoc]
+  exact (congrArg (j.toImage ≫ ·) h).trans j.toImage_imageι
 
 @[reassoc (attr := simp)]
 theorem isoLevelZeroOfKerEq_inv_comp {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
