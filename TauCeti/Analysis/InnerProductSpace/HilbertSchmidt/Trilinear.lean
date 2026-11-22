@@ -34,9 +34,9 @@ variable {𝕜 E₁ E₂ E₃ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃] [FiniteDimensional 𝕜 E₃]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-local instance : CompleteSpace E₁ := FiniteDimensional.completeSpace 𝕜 E₁
-local instance : CompleteSpace E₂ := FiniteDimensional.completeSpace 𝕜 E₂
-local instance : CompleteSpace E₃ := FiniteDimensional.completeSpace 𝕜 E₃
+local instance trilinearCompleteSpace₁ : CompleteSpace E₁ := FiniteDimensional.completeSpace 𝕜 E₁
+local instance trilinearCompleteSpace₂ : CompleteSpace E₂ := FiniteDimensional.completeSpace 𝕜 E₂
+local instance trilinearCompleteSpace₃ : CompleteSpace E₃ := FiniteDimensional.completeSpace 𝕜 E₃
 
 /-- Linearize a continuous trilinear map on the tensor product of its three input spaces. -/
 private def trilinearTensorLinearMap (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
