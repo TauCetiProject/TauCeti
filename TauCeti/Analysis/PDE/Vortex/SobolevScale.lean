@@ -133,7 +133,7 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_s
         (f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields k →
           (Q f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
+  have hlim := tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem
   obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
     (μ := volume) (hxs.of_le (by exact_mod_cast le_top)) hsol hlim
   refine ⟨Q, hQ, hQK, fun k f hf ↦ ?_⟩
