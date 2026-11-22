@@ -86,9 +86,7 @@ theorem cpow_mul_exp_mul_wronskian_eq {z₀ : ℂ} {r : ℝ} {f g w₁ w₂ : �
     dsimp only [id]
     rw [cpow_eq_cpow_sub_natCast_mul_pow hzu0 (fs 0) 1, Nat.cast_one, pow_one]
     field_simp [hzu0]; ring
-  have hpre : IsPreconnected U := by
-    dsimp only [U]; rw [← coe_regularSingularSlitDisc z₀ r]
-    exact isPreconnected_regularSingularSlitDisc z₀ r
+  have hpre : IsPreconnected U := isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   exact mul_wronskian_eq_of_hasDerivAt (g := g) hopen hpre
     hE (fun z hz => (hw₁.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
     (fun z hz => ((hw₁.deriv hopen).differentiableAt (hopen.mem_nhds hz)).hasDerivAt.congr_deriv
@@ -196,10 +194,12 @@ private theorem abel_liouville_wronskian_ansatz_eq {z₀ α₁ α₂ c : ℂ} {N
     fun w _ => ha_sum w
   have hB_an := FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt b z₀ hr
     fun w _ => hb_sum w
-  have := (hA₁_an 0 (mem_ball_self hr)).continuousAt
-  have := (hB_an 0 (mem_ball_self hr)).continuousAt
-  have := (hA₁_an.deriv 0 (mem_ball_self hr)).continuousAt
-  have := (hB_an.deriv 0 (mem_ball_self hr)).continuousAt
+  -- `fun_prop` uses `hH_cont`, `hA₁_cont`, `hB_cont`, `hdA₁_cont`, and `hdB_cont`
+  -- to prove `hG_cont0`.
+  have hA₁_cont : ContinuousAt A₁ 0 := (hA₁_an 0 (mem_ball_self hr)).continuousAt
+  have hB_cont : ContinuousAt B 0 := (hB_an 0 (mem_ball_self hr)).continuousAt
+  have hdA₁_cont : ContinuousAt (deriv A₁) 0 := (hA₁_an.deriv 0 (mem_ball_self hr)).continuousAt
+  have hdB_cont : ContinuousAt (deriv B) 0 := (hB_an.deriv 0 (mem_ball_self hr)).continuousAt
   set G : ℂ → ℂ := fun u =>
     cexp (H u) * ((α₂ - α₁) * A₁ u * B u + u * (A₁ u * deriv B u - deriv A₁ u * B u) +
       c * u ^ N * A₁ u ^ 2)
@@ -227,7 +227,7 @@ private theorem eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq {u p h w c : ℂ} (hu : u
     mul_ne_zero (Complex.cpow_ne_zero_iff.mpr (.inl hu)) (Complex.exp_ne_zero h)
   rw [← eq_inv_mul_iff_mul_eq₀ hne, (Commute.all _ _).mul_inv, ← Complex.cpow_neg,
     ← Complex.exp_neg] at heq
-  simpa only [mul_assoc, mul_left_comm, mul_comm] using heq
+  linear_combination heq
 
 /-- **Abel–Liouville Wronskian formula** for two pure-series solutions
 `regularSingularSolution fs gs z₀ α₁` and `regularSingularSolution fs gs z₀ α₂` attached to
@@ -312,8 +312,7 @@ theorem wronskian_regularSingular_second_eq {z₀ α₁ α₂ : ℂ} {N : ℕ} {
   set a := regularSingularCoeff fs gs (α₂ + N)
   set b := regularSingularSecondCoeff fs gs α₂ N
   set c := regularSingularLogMultiplier fs gs α₂ N
-  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
+  obtain ⟨ha_sum, hw₁_sol, -⟩ := regularSingularCoeff_solution_add_nat hf hg hfact
   obtain ⟨hb_sum, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hdiff
   have hw₁_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₁_sol).2
   have hw₂_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₂_sol).2

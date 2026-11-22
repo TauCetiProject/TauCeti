@@ -37,9 +37,9 @@ the Euler operator `y * f' y` as `∑ n * c n * y ^ n`
 (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
 
 It also proves coefficient uniqueness for scalar power series vanishing near a point of a
-preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), proving that
-the series with coefficients divided by `n` for `n ≥ 1`
-(`FormalMultilinearSeries.le_radius_ofScalars_div_natCast`,
+preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), proving over
+any complete nontrivially normed field with `[NormedAlgebra ℝ 𝕜]` that the series with
+coefficients divided by `n` for `n ≥ 1` (`FormalMultilinearSeries.le_radius_ofScalars_div_natCast`,
 `FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast`) is a primitive of
 `(f (x + y) - c 0) / y` away from the center `x`
 (`HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), and computes the scalar series of

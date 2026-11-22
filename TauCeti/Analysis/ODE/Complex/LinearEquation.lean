@@ -660,7 +660,7 @@ theorem isSolution_two_iff (E : LinearEquation U 2) (y : ℂ → ℂ) :
     (forall₂_congr fun z _ ↦ ?_)
   simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_succ,
     iteratedDeriv_zero]
-  ring_nf
+  exact Iff.of_eq (congrArg (· = 0) (by ring))
 
 /-- Construct a second-order monic linear differential equation `y'' + f y' + g y = 0` on `U` from
 holomorphic coefficients `f` and `g`. -/

@@ -19,6 +19,7 @@ import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Gronwall.Discrete
+import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -30,9 +31,8 @@ For `f, g` around `z₀` with `(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and
 punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
 (`{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`, via
 `TauCeti.Analysis.Complex.PowerSeries.BranchCut`):
-* Second-order linear operator linearity (`TauCeti.secondOrder_operator_add_const_mul`) and the
-  slit-plane logarithmic-product identities (`HasDerivAt.mul_log_sub`,
-  `TauCeti.deriv_deriv_add_mul_deriv_add_mul_mul_log_sub`, `TauCeti.operator_mul_log`).
+* Slit-plane logarithmic-product forcing identities for the second-order operator
+  (`TauCeti.deriv_deriv_add_mul_deriv_add_mul_mul_log_sub`, `TauCeti.operator_mul_log`).
 * Any sequence solving the indicial recursion at a root `ρ` of `Q` converges on `‖z - z₀‖ < r` and
   yields a solution of `w'' + f w' + g w = 0` (`TauCeti.regularSingular_solution`). For a
   non-resonant root `ρ` (`Q(ρ + s) ≠ 0` for `s ≥ 1`), the canonical series
@@ -65,37 +65,7 @@ open scoped Topology ENNReal
 
 namespace TauCeti
 
-/-! ### Second-order operator linearity and logarithmic product identities -/
-
-/-- Pointwise linearity `L(ψ + c' Φ) = L(ψ) + c' L(Φ)` for the second-order linear differential
-operator `L(w) = w'' + f w' + g w` under local differentiability assumptions near `z`. -/
-theorem secondOrder_operator_add_const_mul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {f g ψ Φ : 𝕜 → 𝕜} {c' z : 𝕜}
-    (hψ₁ : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 ψ w)
-    (hΦ₁ : ∀ᶠ w in 𝓝 z, DifferentiableAt 𝕜 Φ w)
-    (hψ₂ : DifferentiableAt 𝕜 (deriv ψ) z)
-    (hΦ₂ : DifferentiableAt 𝕜 (deriv Φ) z) :
-    (deriv (deriv fun w ↦ ψ w + c' * Φ w) z + f z * deriv (fun w ↦ ψ w + c' * Φ w) z +
-        g z * (ψ z + c' * Φ z)) =
-      (deriv (deriv ψ) z + f z * deriv ψ z + g z * ψ z) +
-        c' * (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) := by
-  have hd1_ev : deriv (fun w ↦ ψ w + c' * Φ w) =ᶠ[𝓝 z] fun w ↦ deriv ψ w + c' * deriv Φ w := by
-    filter_upwards [hψ₁, hΦ₁] with w hwψ hwΦ
-    exact ((hwψ.hasDerivAt).add ((hwΦ.hasDerivAt).const_mul c')).deriv
-  have hd2 : deriv (deriv fun w ↦ ψ w + c' * Φ w) z =
-      deriv (deriv ψ) z + c' * deriv (deriv Φ) z :=
-    (((hψ₂.hasDerivAt).add ((hΦ₂.hasDerivAt).const_mul c')).congr_of_eventuallyEq hd1_ev).deriv
-  rw [hd1_ev.self_of_nhds, hd2]
-  ring
-
-/-- Pointwise first derivative of `u ↦ w u * Complex.log (u - z₀)` at a point `z` with
-`z - z₀ ∈ Complex.slitPlane`. -/
-theorem _root_.HasDerivAt.mul_log_sub {w : ℂ → ℂ} {w' z₀ z : ℂ}
-    (hw : HasDerivAt w w' z) (hzs : z - z₀ ∈ Complex.slitPlane) :
-    HasDerivAt (fun u ↦ w u * Complex.log (u - z₀))
-      (w' * Complex.log (z - z₀) + (z - z₀)⁻¹ * w z) z :=
-  (hw.mul (((hasDerivAt_id z).sub_const z₀).clog hzs)).congr_deriv
-    (by dsimp only [id]; rw [one_div]; ring)
+/-! ### Logarithmic product identities for the second-order operator -/
 
 /-- Pointwise logarithmic-product identity for the second-order linear operator
 `L(w) = w'' + f w' + g w` on the logarithm branch `z - z₀ ∈ Complex.slitPlane`: if `w` is
@@ -766,6 +736,31 @@ theorem regularSingularSecondSolution_eq (fs gs : ℕ → ℂ) (z₀ α₂ : ℂ
           Complex.log (z - z₀) :=
   funext fun z => regularSingularSecondSolution_apply fs gs z₀ α₂ N z
 
+/-- In the resonant case `α₁ = α₂ + N` (`N : ℕ`), the primary root `α₂ + N` satisfies the
+non-resonance condition, so `regularSingularCoeff fs gs (α₂ + N)` converges on `‖z - z₀‖ < r`,
+`regularSingularSolution fs gs z₀ (α₂ + N)` solves `regularSingularEquation hf hg`, and the
+shifted logarithmic forcing coefficients sum to the Euler–Frobenius forcing series. -/
+theorem regularSingularCoeff_solution_add_nat {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
+    {fs gs : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
+    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - (α₂ + N)) * (α - α₂)) :
+    (∀ z, ‖z - z₀‖ < r →
+        Summable fun s => regularSingularCoeff fs gs (α₂ + N) s * (z - z₀) ^ s) ∧
+      (regularSingularEquation hf hg).IsSolution
+        (regularSingularSolution fs gs z₀ (α₂ + N)) ∧
+      ∀ u : ℂ, ‖u‖ < r →
+        let a := regularSingularCoeff fs gs (α₂ + N)
+        HasSum (fun s => regularSingularLogForcing fs a α₂ N s * u ^ s)
+          (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
+            (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s)) := by
+  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
+    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
+  exact ⟨ha_sum, hw₁_sol, fun u hu => hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
+    (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu⟩
+
 /-- **Logarithmic second solution at a regular singularity** (DLMF 2.7.6). When the indicial
 polynomial factors as `(α - α₁)(α - α₂)` with `α₁ - α₂ = N ∈ ℕ`, the series
 `∑ regularSingularSecondCoeff fs gs α₂ N s * (z - z₀)^s` converges on `‖z - z₀‖ < r`, and
@@ -785,14 +780,10 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
         (regularSingularSecondSolution fs gs z₀ α₂ N) := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
-  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
+  obtain ⟨ha_sum, hw₁_sol, hlog_sum⟩ := regularSingularCoeff_solution_add_nat hf hg hfact
   set a := regularSingularCoeff fs gs (α₂ + N)
   set b := regularSingularSecondCoeff fs gs α₂ N
   set c := regularSingularLogMultiplier fs gs α₂ N
-  have hlog_sum := fun u (hu : ‖u‖ < r) =>
-    hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
-      (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu
   have hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s := by
     refine summable_of_perturbed_indicial_rec (σ := α₂)
       (E := fun s => -c * regularSingularLogForcing fs a α₂ N s) (s₁ := 0)
@@ -844,11 +835,7 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
       c' = regularSingularLogMultiplier fs gs α₂ N := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
-  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
-  have hlog_sum := fun u (hu : ‖u‖ < r) =>
-    hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
-      (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu
+  obtain ⟨ha_sum, hw₁_sol, hlog_sum⟩ := regularSingularCoeff_solution_add_nat hf hg hfact
   obtain ⟨_, hD_sum, hD_op⟩ :=
     operator_second_ansatz_eq (c' := c') hf hg ha_sum hw₁_sol hlog_sum hb'_sum
   exact eq_regularSingularSecondCoeff_of_rec hfact hb'N hc'0 hb'0 <|

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -17,13 +18,16 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 # Branch-cut power series on a slit punctured disc
 
 This file records differentiation and analytic uniqueness for complex functions of the form
-`(z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s` on the slit punctured disc
-`{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`:
+`(z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s` and `w z * Complex.log (z - z₀)` on the slit punctured
+disc `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`:
+* `_root_.HasDerivAt.mul_log_sub`: first derivative of `u ↦ w u * Complex.log (u - z₀)` on the
+  translated slit plane `z - z₀ ∈ Complex.slitPlane`.
 * `TauCeti.hasDerivAt_cpow_mul_tsum`: product-rule derivative formula on the slit punctured disc in
   terms of the inner series `A` and `deriv A` (for termwise expansion of `deriv A`, see
   `HasFPowerSeriesOnBall.deriv_ofScalars` and `HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
-* `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero`: vanishing on the slit punctured disc forces every
-  series coefficient to vanish.
+* `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero`: for a series with positive radius `0 < r` converging
+  on the punctured disc `0 < ‖u‖ < r`, vanishing on the slit punctured disc forces every series
+  coefficient to vanish.
 -/
 
 public section
@@ -32,6 +36,15 @@ open Complex Metric
 open scoped Topology ENNReal
 
 namespace TauCeti
+
+/-- Pointwise first derivative of `u ↦ w u * Complex.log (u - z₀)` at a point `z` with
+`z - z₀ ∈ Complex.slitPlane`. -/
+theorem _root_.HasDerivAt.mul_log_sub {w : ℂ → ℂ} {w' z₀ z : ℂ}
+    (hw : HasDerivAt w w' z) (hzs : z - z₀ ∈ Complex.slitPlane) :
+    HasDerivAt (fun u ↦ w u * Complex.log (u - z₀))
+      (w' * Complex.log (z - z₀) + (z - z₀)⁻¹ * w z) z :=
+  (hw.mul (((hasDerivAt_id z).sub_const z₀).clog hzs)).congr_deriv
+    (by dsimp only [id]; rw [one_div]; ring)
 
 /-- First derivative of `(z - z₀)^σ ∑' s, c s * (z - z₀)^s` on the slit punctured disc,
 requiring only convergence of `∑ c_s (z - z₀)^s` on `‖z - z₀‖ < r`. -/
