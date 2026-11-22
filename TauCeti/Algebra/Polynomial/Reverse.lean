@@ -443,15 +443,10 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
 theorem eval_reflect_comp_X_sub_C {K : Type*} [Field K] {a₀ z : K} {d : ℕ} {P : K[X]}
     (hP : P.natDegree ≤ d) (hz : z ≠ a₀) :
     ((P.reflect d).comp (X - C a₀)).eval z = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by
-  have hu : z - a₀ ≠ 0 := sub_ne_zero.mpr hz
-  let : Invertible (z - a₀)⁻¹ := invertibleOfNonzero (inv_ne_zero hu)
-  have h := eval₂_reflect_mul_pow (RingHom.id K) (z - a₀)⁻¹ d P hP
-  simp only [eval₂_id, invOf_eq_inv, inv_inv] at h
-  rw [eval_comp, eval_sub, eval_X, eval_C]
-  calc (P.reflect d).eval (z - a₀)
-      = ((P.reflect d).eval (z - a₀) * ((z - a₀)⁻¹) ^ d) * (z - a₀) ^ d := by
-        rw [mul_assoc, ← mul_pow, inv_mul_cancel₀ hu, one_pow, mul_one]
-    _ = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by rw [h, mul_comm]
+  have h := (P.reflect d).eval₂_inv_reflect_mul_pow (RingHom.id K) (sub_ne_zero.mpr hz)
+    (natDegree_reflect_le_of_natDegree_le hP)
+  simp only [reflect_reflect, eval₂_id] at h
+  rw [eval_comp, eval_sub, eval_X, eval_C, ← h, mul_comm]
 
 /-- Reflecting at a degree bound `d` and translating by `X - C a₀` preserves the degree bound
 `d`. -/
@@ -465,12 +460,13 @@ theorem natDegree_reflect_comp_X_sub_C_le [Ring R] (a₀ : R) {d : ℕ} {P : R[X
 `Q.natDegree ≤ d`. -/
 theorem coeff_reflect_comp_X_sub_C [CommRing R] (a₀ : R) {d : ℕ} {Q : R[X]}
     (hQ : Q.natDegree ≤ d) : ((Q.reflect d).comp (X - C a₀)).coeff d = Q.eval 0 := by
-  rw [sub_eq_add_neg, ← C_neg, ← taylor_apply, ← coeff_zero_eq_eval_zero, ← coeff_reflect_self Q d]
-  set q := Q.reflect d
-  have hq : q.natDegree ≤ d := natDegree_reflect_le_of_natDegree_le hQ
-  rcases hq.eq_or_lt with hdeg | hlt
-  · rw [← hdeg, coeff_taylor_natDegree, coeff_natDegree]
-  · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
-      coeff_eq_zero_of_natDegree_lt hlt]
+  have hcoeff (q : R[X]) (hq : q.natDegree ≤ d) (r : R) : (taylor r q).coeff d = q.coeff d := by
+    rcases hq.eq_or_lt with hdeg | hlt
+    · rw [← hdeg, coeff_taylor_natDegree, coeff_natDegree]
+    · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
+        coeff_eq_zero_of_natDegree_lt hlt]
+  rw [sub_eq_add_neg, ← C_neg, ← taylor_apply,
+    hcoeff _ (natDegree_reflect_le_of_natDegree_le hQ), coeff_reflect_self,
+    coeff_zero_eq_eval_zero]
 
 end Polynomial

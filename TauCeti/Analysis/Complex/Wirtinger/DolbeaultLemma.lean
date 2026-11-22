@@ -28,7 +28,7 @@ transform gives a solution `h k` of `\bar∂ (h k) = f` on `K (k + 1)`
 (`IsCompact.exists_contDiff_conjWirtingerDeriv_apply_one_eq`). These local solutions do not
 converge, but consecutive ones differ by a function `h (k + 1) - h k` that is holomorphic on the
 interior of `K (k + 1)`, a neighbourhood of `K k`. Since `K k` is filled in `Ω`, Runge's theorem
-(`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`) gives a function `P k`,
+(`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) gives a function `P k`,
 holomorphic on all of `Ω`, within `2⁻ᵏ` of that difference on `K k`. The corrected solutions
 `h k - ∑_{j < k} P j` then converge on `Ω`: on the interior of `K m` the limit is `h m` plus a
 uniform limit of holomorphic functions (`IsOpen.exists_differentiableOn_eqOn_add_tsum`), so it is
@@ -91,7 +91,8 @@ theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq {f : ℂ
   -- Runge corrections `P k`, holomorphic on `Ω` and within `2⁻ᵏ` of the differences on `K k`.
   have happrox (k : ℕ) : ∃ P : ℂ → W, DifferentiableOn ℂ P Ω ∧
       ∀ z ∈ K k, ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
-    (hΩ.isRungeCompactPair_filledExhaustion k).exists_differentiableOn_norm_sub_lt isOpen_interior
+    (hΩ.isFilledIn_filledExhaustion k).exists_differentiableOn_norm_sub_lt
+      (isCompact_filledExhaustion Ω k) (filledExhaustion_subset Ω k) isOpen_interior
       (hK_int k) (hdiff k) (by positivity)
   choose P hP hP_lt using happrox
   -- On the interior of `K m`, the limit is `h m` plus a holomorphic function.

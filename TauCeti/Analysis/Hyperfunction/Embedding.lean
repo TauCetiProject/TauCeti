@@ -146,10 +146,11 @@ private theorem exists_cauchyTransform_runge (u : 𝓓'(U, ℂ)) :
     exact ⟨G, (mem_holomorphicSections_iff.1 hG).1, fun z hz ↦ hGf hz⟩
   choose G hGd hGe using hG
   have hR (n : ℕ) : ∃ R : ℂ → ℂ, DifferentiableOn ℂ R (complexNeighborhood U) ∧
-      ∀ z ∈ complexStage U n, ‖G n z - R z‖ < (1 / 2 : ℝ) ^ n :=
-    ((complexNeighborhood U).isOpen.isRungeCompactPair_filledExhaustion n
-      ).exists_differentiableOn_norm_sub_lt (complexNeighborhood (O n)).isOpen
-      (complexStage_subset_complexNeighborhood U (hO n)) (hGd n) (by positivity)
+      ∀ z ∈ complexStage U n, ‖G n z - R z‖ < (1 / 2 : ℝ) ^ n := by
+    have hp := (complexNeighborhood U).isOpen.isRungeCompactPair_filledExhaustion n
+    exact hp.isFilledIn.exists_differentiableOn_norm_sub_lt hp.isCompact hp.subset
+      (complexNeighborhood (O n)).isOpen (complexStage_subset_complexNeighborhood U (hO n))
+      (hGd n) (by positivity)
   choose R hRd hRb using hR
   exact ⟨ψ, O, G, R, hψ, hO, hGd, hGe, hRd, hRb⟩
 

@@ -19,7 +19,7 @@ import TauCeti.Analysis.Complex.Runge.Approximation
 
 Let `(Ω, K)` be a Runge compact pair in `ℂ` (`TauCeti.IsRungeCompactPair`): `K` is a compact
 subset of the open set `Ω` and no connected component of `Ω \ K` is relatively compact in `Ω`.
-Ordinary Runge approximation (`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`)
+Ordinary Runge approximation (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`)
 approximates a function holomorphic near `K` by functions holomorphic on `Ω`, but says nothing
 about the zeros of the approximants away from `K`. This file proves that a function holomorphic
 and nowhere zero near `K` is a uniform limit on `K` of functions holomorphic and nowhere zero on
@@ -270,8 +270,8 @@ theorem IsRungeCompactPair.exists_differentiableOn_ne_zero_norm_sub_lt
   obtain ⟨H, hH, hH0, W, hW, hKW, ℓ, hℓ, heq⟩ := hRunge.exists_eqOn_mul_exp hU hKU hu hu0
   obtain ⟨M, hM⟩ := hRunge.isCompact.exists_bound_of_continuousOn (hu.continuousOn.mono hKU)
   have hB : 0 < |M| + 1 := by positivity
-  obtain ⟨L, hL, hLℓ⟩ := hRunge.exists_differentiableOn_norm_sub_lt hW hKW hℓ
-    (ε := min 1 (ε / (2 * (|M| + 1)))) (by positivity)
+  obtain ⟨L, hL, hLℓ⟩ := hRunge.isFilledIn.exists_differentiableOn_norm_sub_lt
+    hRunge.isCompact hRunge.subset hW hKW hℓ (ε := min 1 (ε / (2 * (|M| + 1)))) (by positivity)
   refine ⟨fun z ↦ H z * exp (L z), hH.mul hL.cexp,
     fun z hz ↦ mul_ne_zero (hH0 z hz) (exp_ne_zero _), fun z hz ↦ ?_⟩
   have hd : ‖L z - ℓ z‖ < min 1 (ε / (2 * (|M| + 1))) := by

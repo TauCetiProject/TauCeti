@@ -32,6 +32,10 @@ estimates that describe a Cauchy-type integral far from its data.
 
 ## Main results
 
+* `TauCeti.inv_sub_injective` and `TauCeti.continuousOn_inv_sub_compl_singleton`: injectivity and
+  continuity of `z ↦ (z - q)⁻¹` on `{q}ᶜ`.
+* `IsCompact.image_inv_sub`: inverting a compact set about a point outside it preserves
+  compactness.
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
@@ -74,12 +78,16 @@ section DivisionRing
 
 variable {𝕜 : Type*} [DivisionRing 𝕜] {q : 𝕜}
 
+/-- The inversion `z ↦ (z - q)⁻¹` is injective on `𝕜`. -/
+theorem inv_sub_injective (q : 𝕜) : Function.Injective fun z : 𝕜 ↦ (z - q)⁻¹ :=
+  inv_injective.comp (sub_left_injective (b := q))
+
 /-- The map `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹`: it is a bijection from the
 inverted image of any set `S` back onto `S`. -/
 theorem bijOn_add_inv_image_inv_sub (S : Set 𝕜) :
     BijOn (fun w : 𝕜 => q + w⁻¹) ((fun z : 𝕜 => (z - q)⁻¹) '' S) S :=
   BijOn.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
-    (inv_injective.comp (sub_left_injective (b := q))).injOn.bijOn_image
+    (inv_sub_injective q).injOn.bijOn_image
 
 /-- The inversion `z ↦ (z - q)⁻¹` is a bijection of `𝕜` (sending `q` to `0⁻¹ = 0`) with inverse
 `w ↦ q + w⁻¹`, so it maps any set onto the preimage of that set under `w ↦ q + w⁻¹`. -/
@@ -183,6 +191,17 @@ theorem norm_inv_sub_sub_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ}
 section Completion
 
 variable {q : 𝕜} {U : Set 𝕜}
+
+/-- The inversion `z ↦ (z - q)⁻¹` is continuous on the punctured space `{q}ᶜ`. -/
+theorem continuousOn_inv_sub_compl_singleton (q : 𝕜) :
+    ContinuousOn (fun z : 𝕜 ↦ (z - q)⁻¹) {q}ᶜ :=
+  (continuousOn_id.sub continuousOn_const).inv₀ fun _ hz h ↦ hz (sub_eq_zero.mp h)
+
+/-- Inverting a compact set `K` about a point `q ∉ K` yields a compact set. -/
+theorem _root_.IsCompact.image_inv_sub (hK : IsCompact K) (hq : q ∉ K) :
+    IsCompact ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :=
+  hK.image_of_continuousOn
+    ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦ hq (h ▸ hz))
 
 /-- Inverting a set `U` about a point `q` outside its closure gives a bounded set. -/
 theorem isBounded_image_inv_sub (hq : q ∉ closure U) :
@@ -292,12 +311,12 @@ theorem interior_image_inv_sub (hq : q ∉ U) :
   obtain ⟨u, hu, rfl⟩ := interior_subset hw
   -- the points off `q` inverted into the interior of the image form an open subset of `U`
   have hN : IsOpen ({q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U)) :=
-    (continuousOn_inv₀.comp (continuousOn_id.sub continuousOn_const) fun z hz => by
-      simpa [sub_ne_zero] using hz).isOpen_inter_preimage isOpen_compl_singleton isOpen_interior
+    (continuousOn_inv_sub_compl_singleton q).isOpen_inter_preimage isOpen_compl_singleton
+      isOpen_interior
   have hNU : {q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U) ⊆ U :=
     fun z hz => by
       obtain ⟨v, hv, hvz⟩ := interior_subset hz.2
-      exact (inv_injective.comp (sub_left_injective (b := q)) hvz) ▸ hv
+      exact (inv_sub_injective q hvz) ▸ hv
   exact ⟨u, hN.subset_interior_iff.mpr hNU ⟨fun h => hq (h ▸ hu), hw⟩, rfl⟩
 
 /-- Inverting an unbounded set `U` about a point `q` outside it, the frontier of the image is the
@@ -308,8 +327,7 @@ theorem frontier_image_inv_sub (hq : q ∉ U) (hUb : ¬IsBounded U) :
   have hU0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
     simpa [sub_eq_zero] using fun h => hq (interior_subset h)
   rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
-    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
-      (inv_injective.comp (sub_left_injective (b := q)))]
+    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (inv_sub_injective q)]
 
 /-- Inverting a set `U` with bounded complement about a point `q` outside its closure, and adding
 `0`, the image of infinity, the frontier of the resulting set is the inverted frontier of `U`. -/
@@ -333,8 +351,7 @@ theorem frontier_insert_zero_image_inv_sub (hq : q ∉ closure U) (hUc : IsBound
     refine mem_insert_of_mem _ (interior_mono ?_ hw')
     exact fun x hx => (mem_insert_iff.mp hx.1).resolve_left hx.2
   rw [frontier, closure_insert_zero_image_inv_sub, hint, insert_sdiff_of_mem _ (mem_insert _ _),
-    sdiff_insert_of_notMem h0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
-      (inv_injective.comp (sub_left_injective (b := q)))]
+    sdiff_insert_of_notMem h0, frontier, image_sdiff (inv_sub_injective q)]
 
 end Completion
 

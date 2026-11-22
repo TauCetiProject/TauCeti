@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Monic
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Abel
 
 /-!
@@ -197,13 +198,13 @@ theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Field K] (s : Finset ι)
   refine ⟨∑ i ∈ s, C (a i) * p i * ∏ j ∈ s.erase i, q j, ∏ j ∈ s, q j,
     Finset.prod_ne_zero_iff.mpr hq, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · simpa only [eval_prod, Finset.prod_eq_zero_iff] using hz
-  · rw [eval_finsetSum, div_eq_mul_inv, Finset.sum_mul]
+  · rw [eval_finsetSum, Finset.sum_div]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     have herase : ∏ j ∈ s.erase i, (q j).eval z ≠ 0 :=
       Finset.prod_ne_zero_iff.mpr fun j hj ↦ hz j (Finset.mem_of_mem_erase hj)
     rw [← Finset.mul_prod_erase s q hi]
     simp only [eval_mul, eval_C, eval_prod]
-    rw [← div_eq_mul_inv, mul_div_mul_right _ _ herase]
+    rw [mul_div_mul_right _ _ herase]
     ring
 
 end Polynomial

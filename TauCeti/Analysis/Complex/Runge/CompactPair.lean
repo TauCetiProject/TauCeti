@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Topology.Connected.LocallyPathConnected
 
 /-!
 # Runge compact pairs in the complex plane
@@ -74,6 +74,9 @@ protected theorem IsRungeCompactPair.isFilledIn {Ω K : Set ℂ} (h : IsRungeCom
 theorem isRungeCompactPair_empty_right {Ω : Set ℂ} :
     IsRungeCompactPair Ω ∅ ↔ IsOpen Ω := by
   refine ⟨fun h => h.isOpen, fun hΩ => ⟨hΩ, isCompact_empty, empty_subset Ω, ?_⟩⟩
+  have : LocallyPathConnectedSpace ℂ :=
+    LocallyPathConnectedSpace.of_bases (fun _ ↦ Metric.nhds_basis_ball)
+      (fun x _ hr ↦ (convex_ball x _).isPathConnected (Metric.nonempty_ball.mpr hr))
   rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
     isClosed_empty hΩ (empty_subset Ω),
     filledHull_eq_self (by simpa using isPreconnected_univ)

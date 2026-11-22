@@ -9,13 +9,12 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Analysis.Complex.Inversion.Basic
-import TauCeti.Analysis.Complex.Inversion.FilledHull
+import TauCeti.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Complex.Runge.Rational.Basic
+import TauCeti.Analysis.Normed.Field.FilledHull
+import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.LinearAlgebra.Complex.Finrank
 
@@ -64,11 +63,16 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
       compl_filledHull_eq_connectedComponentIn Complex.one_lt_rank_real hK.isBounded hx₀]
   have ha₀K : a₀ ∉ K := fun h ↦ ha₀ (subset_filledHull h)
   set φ : ℂ → ℂ := fun z ↦ (z - a₀)⁻¹
+  have hKU' : φ '' K ⊆ ({0}ᶜ : Set ℂ) ∩ (fun w : ℂ ↦ a₀ + w⁻¹) ⁻¹' U := by
+    rw [image_inv_sub_eq_preimage_add_inv]
+    refine subset_inter (fun w hw hw0 ↦ ha₀K ?_) (preimage_mono hKU)
+    simpa [mem_singleton_iff.mp hw0] using hw
   obtain ⟨P, Q, -, hQA', happrox⟩ := (hK.image_inv_sub ha₀K).exists_rational_norm_sub_lt
-    (hU.compl_singleton_inter_preimage_add_inv a₀)
-    (image_inv_sub_subset_compl_singleton_inter_preimage_add_inv hKU ha₀K)
-    (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty ha₀ hA)
-    (hf.comp_add_inv a₀) hε
+    ((continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hU)
+    hKU'
+    (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty Complex.one_lt_rank_real ha₀
+      fun x hx ↦ hA x hx.2)
+    (hf.comp ((differentiableOn_add_inv a₀).mono inter_subset_left) inter_subset_right) hε
   have hQ0 : Q.eval 0 ≠ 0 := by
     intro h0
     obtain ⟨b, ⟨-, hba⟩, hb0⟩ := (hQA' 0 h0).1
@@ -86,7 +90,7 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
     · rw [eval_reflect_comp_X_sub_C (le_max_right _ _) hza, mul_eq_zero] at hz
       have hQz : Q.eval (φ z) = 0 := hz.resolve_left (pow_ne_zero d (sub_ne_zero.mpr hza))
       obtain ⟨⟨b, ⟨hbA, -⟩, hbz⟩, hzK'⟩ := hQA' (φ z) hQz
-      exact ⟨sub_left_injective (inv_injective hbz) ▸ hbA, fun hzK ↦ hzK' ⟨z, hzK, rfl⟩⟩
+      exact ⟨inv_sub_injective a₀ hbz ▸ hbA, fun hzK ↦ hzK' ⟨z, hzK, rfl⟩⟩
   · have hza : z ≠ a₀ := fun h ↦ ha₀K (h ▸ hz)
     rw [eval_reflect_comp_X_sub_C (le_max_left _ _) hza,
       eval_reflect_comp_X_sub_C (le_max_right _ _) hza,

@@ -100,13 +100,14 @@ theorem _root_.IsCompact.exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : I
   let evalAt (z : K) : S →ₐ[ℂ] ℂ := (ContinuousMap.evalAlgHom ℂ ℂ z).comp S.val
   have hevalAt (z : K) (u : S) : evalAt z u = (u : C(K, ℂ)) z := by
     simp only [evalAt, AlgHom.comp_apply, Subalgebra.val_apply, ContinuousMap.evalAlgHom_apply]
-  let x : S := ⟨⟨Subtype.val, continuous_subtypeVal⟩,
-    R.le_topologicalClosure (mem_rationalSubalgebra_coord K A)⟩
-  have hxval (z : K) : evalAt z x = z := by
-    rw [hevalAt]
-    dsimp only [x]
-    rw [ContinuousMap.coe_mk]
-  have hx : spectrum ℂ (x : C(K, ℂ)) = K := by
+  have heval_mk (z : K) (u : C(K, ℂ)) (hu : u ∈ S) : evalAt z ⟨u, hu⟩ = u z :=
+    hevalAt z ⟨u, hu⟩
+  let x₀ : C(K, ℂ) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let x : S := ⟨x₀, R.le_topologicalClosure (mem_rationalSubalgebra_coord K A)⟩
+  have heval_sub (b : ℂ) (z : K) : evalAt z (algebraMap ℂ S b - x) = b - (z : ℂ) := by
+    rw [map_sub, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, heval_mk,
+      ContinuousMap.coe_mk]
+  have hx : spectrum ℂ x₀ = K := by
     rw [ContinuousMap.spectrum_eq_range]
     exact Subtype.range_coe
   have houtside (b : ℂ) (hb : b ∈ A \ K) : b ∉ spectrum ℂ x := by
@@ -115,29 +116,28 @@ theorem _root_.IsCompact.exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : I
     refine ⟨⟨y, R.le_topologicalClosure hyR⟩, Subtype.ext <| ContinuousMap.ext fun z ↦ ?_⟩
     have hz : evalAt z ((algebraMap ℂ S b - x) * ⟨y, R.le_topologicalClosure hyR⟩) =
         evalAt z 1 := by
-      rw [map_mul, map_sub, map_one, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
-        hxval, hevalAt]
-      dsimp only
-      rw [hyval z]
+      rw [map_mul, map_one, heval_sub, heval_mk, hyval z]
       exact mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb.2 (h ▸ z.property))
-    simpa only [hevalAt, OneMemClass.coe_one, ContinuousMap.one_apply] using hz
+    rwa [hevalAt, hevalAt, OneMemClass.coe_one, ContinuousMap.one_apply] at hz
   have hspec : a ∉ spectrum ℂ x := by
     intro haspec
     have hbd := Subalgebra.isBounded_connectedComponentIn_spectrum_compl S x haspec
-    rw [hx] at hbd
+    have hcoe : (x : C(K, ℂ)) = x₀ := rfl
+    rw [hcoe, hx] at hbd
     obtain ⟨b, hbA, hbc⟩ := hA (mem_filledHull_iff.mpr hbd)
     apply houtside b ⟨hbA, connectedComponentIn_subset _ _ hbc⟩
-    rw [Subalgebra.spectrum_eq_union_sUnion_connectedComponentIn S x]
-    exact Or.inr <| mem_biUnion ⟨haspec, by rwa [hx]⟩ <| by rwa [hx]
+    rw [Subalgebra.spectrum_eq_union_sUnion_connectedComponentIn S x, hcoe, hx]
+    exact Or.inr <| mem_biUnion ⟨haspec, ha⟩ hbc
   have hu : IsUnit (x - algebraMap ℂ S a) := by
     simpa only [neg_sub] using (spectrum.notMem_iff.mp hspec).neg
   let v : S := ↑hu.unit⁻¹
   have hv (z : K) : (v : C(K, ℂ)) z = ((z : ℂ) - a)⁻¹ := by
     apply eq_inv_of_mul_eq_one_left
     have h := congrArg (evalAt z) hu.unit.inv_mul
-    simp only [map_mul, map_sub, map_one, AlgHom.commutes, Algebra.algebraMap_self,
-      RingHom.id_apply, IsUnit.unit_spec, hxval] at h
-    rwa [hevalAt] at h
+    have hxsub : evalAt z (x - algebraMap ℂ S a) = (z : ℂ) - a := by
+      rw [← neg_sub (algebraMap ℂ S a) x, map_neg, heval_sub, neg_sub]
+    rw [map_mul, map_one, IsUnit.unit_spec, hxsub, hevalAt] at h
+    exact h
   obtain ⟨g, ⟨p, q, hq, hqA, hgval⟩, hdist⟩ := Metric.mem_closure_iff.mp v.property ε hε
   refine ⟨p, q, hq, hqA, fun z hz ↦ ?_⟩
   rw [← hgval ⟨z, hz⟩, ← hv ⟨z, hz⟩]

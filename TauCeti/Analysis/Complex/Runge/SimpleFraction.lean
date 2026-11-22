@@ -81,23 +81,20 @@ theorem _root_.IsOpen.isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_
   have hf_cl : DiffContOnCl ℂ f C :=
     ⟨hf_diff.mono ((connectedComponentIn_subset _ _).trans sdiff_subset),
       hf_diff.continuousOn.mono hsub⟩
+  have hle_K : ∀ z ∈ K, ‖f z‖ ≤ ‖z - a‖ * (2 * M)⁻¹ := by
+    intro z hz
+    have hza : z - a ≠ 0 := sub_ne_zero.mpr fun hza ↦ ha.2 (hza ▸ hz)
+    have hfz : f z = (z - a) * ((z - a)⁻¹ - g z) := by
+      simp only [f]; field_simp [hza]
+    rw [hfz, norm_mul]
+    exact mul_le_mul_of_nonneg_left (hga z hz).le (norm_nonneg (z - a))
   have hf_fr : ∀ y ∈ frontier C, ‖f y‖ ≤ 1 / 2 := by
     intro y hy
-    have hcont : ContinuousAt (fun z ↦ ‖f z‖ - ‖z - a‖ * (2 * M)⁻¹) y :=
-      ((hf_diff.continuousOn.continuousAt (hΩ.mem_nhds (hsub hy.1))).norm).sub
-        (((continuous_id.sub continuous_const).norm.mul continuous_const).continuousAt)
-    have hle_K : ∀ z ∈ K, ‖f z‖ - ‖z - a‖ * (2 * M)⁻¹ ≤ 0 := by
-      intro z hz
-      have hza : z - a ≠ 0 := sub_ne_zero.mpr fun hza ↦ ha.2 (hza ▸ hz)
-      have hfz : f z = (z - a) * ((z - a)⁻¹ - g z) := by
-        simp only [f]; field_simp [hza]
-      rw [hfz, norm_mul]
-      linarith [mul_le_mul_of_nonneg_left (hga z hz).le (norm_nonneg (z - a))]
-    have hy_le : ‖f y‖ ≤ ‖y - a‖ * (2 * M)⁻¹ := by
-      have hnb : (𝓝[K] y).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (hfr hy)
-      have h0 := le_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds)
-        (eventually_nhdsWithin_of_forall hle_K)
-      linarith
+    have hy_le : ‖f y‖ ≤ ‖y - a‖ * (2 * M)⁻¹ :=
+      ContinuousWithinAt.closure_le (hfr hy)
+        (hf_diff.continuousOn.continuousAt (hΩ.mem_nhds (hsub hy.1))).norm.continuousWithinAt
+        ((continuous_id.sub continuous_const).norm.mul_const (2 * M)⁻¹).continuousWithinAt
+        hle_K
     have hyM : ‖y - a‖ ≤ M :=
       (dist_eq_norm y a ▸ mem_closedBall.mp (hR hy.1)).trans (le_max_left _ _)
     calc ‖f y‖ ≤ ‖y - a‖ * (2 * M)⁻¹ := hy_le

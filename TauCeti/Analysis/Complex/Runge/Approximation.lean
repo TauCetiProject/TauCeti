@@ -6,19 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Complex.Runge.Hull
 public import TauCeti.Analysis.Complex.Runge.CompactPair
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.SummableUniformlyOn
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import TauCeti.Analysis.Analytic.HermiteInterpolation
-import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Complex.Runge.Rational.Basic
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
@@ -41,8 +36,7 @@ functions on arbitrary open plane sets.
 Building on rational-kernel Runge approximation (`IsCompact.exists_rational_norm_sub_sum_smul_lt` in
 `TauCeti.Analysis.Complex.Runge.Rational.Basic`), the file provides vector-valued Runge
 approximation (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) without requiring openness
-of `Ω`, as well as finite-jet Hermite interpolation Runge approximation
-(`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq`).
+of `Ω`.
 
 From scalar Runge approximation we identify `TauCeti.holomorphicHull Ω K` with
 `TauCeti.fillIn K Ω`, the union of `K` and all relatively compact connected components of `Ω \ K` in
@@ -57,15 +51,12 @@ connected complement.
   `IsOpen.exists_subset_interior_and_isRungeCompactPair`: holomorphic hulls of compact subsets and
   stages of `TauCeti.filledExhaustion` form Runge compact pairs with `Ω`, which absorb every compact
   subset of `Ω` into their interior.
-* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt` and
-  `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`: vector-valued uniform Runge
-  approximation without requiring `Ω` to be open, and its specialization to a Runge compact pair.
+* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: vector-valued uniform Runge
+  approximation without requiring `Ω` to be open.
 * `TauCeti.differentiableOn_tsum_of_forall_norm_le_filledExhaustion`: a series of holomorphic
   functions whose `k`-th term is bounded on the `k`-th stage by a summable sequence has a
   holomorphic sum.
 * `TauCeti.isRungeCompactPair_iff_approximation`: the full domain-relative Runge equivalence.
-* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq`: Runge
-  approximation matching prescribed finite jets at finitely many points of `Ω`.
 * `TauCeti.holomorphicHull_eq_fill` and `TauCeti.holomorphicHull_eq_self_iff_isFilledIn`:
   topological characterization of `TauCeti.holomorphicHull Ω K` for open `Ω` and compact `K ⊆ Ω`.
 * `TauCeti.isRungeCompactPair_iff_holomorphicHull_eq`: holomorphic-hull criterion for Runge compact
@@ -133,15 +124,6 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {K Ω U : Set ℂ} {F : T
     fun z hz h0 ↦ (hqΩ i z h0).1 hz).smul_const (f (ζ i))
 
 /-! ### Domain-relative Runge theorem and holomorphic hulls -/
-
-/-- Forward Runge approximation for a `IsRungeCompactPair`: every function with values in a complex
-normed space that is holomorphic on an open neighbourhood `U` of `K` can be approximated uniformly
-on `K` by functions holomorphic on `Ω`. -/
-theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℂ W] {Ω K U : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
-    (hKU : K ⊆ U) {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → W, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε :=
-  hRunge.isFilledIn.exists_differentiableOn_norm_sub_lt hRunge.isCompact hRunge.subset hU hKU hf hε
 
 /-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
 `u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each
@@ -308,53 +290,5 @@ theorem _root_.IsCompact.isConnected_compl_iff_forall_differentiableOn_exists_po
     fun U hU hKU f hf ε hε =>
       let ⟨p, hp⟩ := h U hU hKU f hf ε hε
       ⟨fun z => p.eval z, p.differentiable.differentiableOn, hp⟩).isFilledIn
-
-/-! ### Finite-jet interpolation refinement -/
-
-/-- **Runge approximation with finite-jet interpolation.** Let `K` be a compact set filled in
-`Ω ⊆ ℂ` (without requiring `Ω` to be open), let `f : ℂ → ℂ` be holomorphic on an open neighbourhood
-`U` of `K`, and let `S ⊆ Ω` be a finite set with orders `m : ℂ → ℕ`. For every `ε > 0` there is a
-function `g : ℂ → ℂ` holomorphic on `Ω` such that `‖f z - g z‖ < ε` on `K` and
-`iteratedDeriv k g a = iteratedDeriv k f a` for all `a ∈ S` and `k < m a`. -/
-theorem IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq
-    {K Ω U : Set ℂ} (hfill : IsFilledIn K Ω) (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) (hU : IsOpen U) (hKU : K ⊆ U) {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
-    (S : Finset ℂ) (hSΩ : (S : Set ℂ) ⊆ Ω) (m : ℂ → ℕ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ (∀ z ∈ K, ‖f z - g z‖ < ε) ∧
-      ∀ a ∈ S, ∀ k < m a, iteratedDeriv k g a = iteratedDeriv k f a := by
-  obtain ⟨P, U', q, hU', hKU', hq_an, hq_eq, hP⟩ :=
-    ((hf.analyticOnNhd hU).mono hKU).exists_hermite_quotient S m
-  set Q : ℂ → ℂ := fun z ↦ ∏ a ∈ S, (z - a) ^ m a
-  have hQ_diff : Differentiable ℂ Q := by fun_prop
-  obtain ⟨M₀, hM₀⟩ := hK.bddAbove_image hQ_diff.continuous.norm.continuousOn
-  set M : ℝ := max M₀ 0
-  have hM0 : 0 ≤ M := le_max_right _ _
-  obtain ⟨p_r, q_r, -, hqrΩ, hqr⟩ := hK.exists_rational_norm_sub_lt hU' hKU'
-    (fun _ hx ↦ hfill.compl_inter_connectedComponentIn_nonempty hKΩ hx) hq_an.differentiableOn
-    (ε := ε / (M + 1)) (by positivity)
-  set r : ℂ → ℂ := fun z ↦ p_r.eval z / q_r.eval z
-  set W : Set ℂ := {z : ℂ | q_r.eval z ≠ 0}
-  have hW_open : IsOpen W := isOpen_ne_fun q_r.differentiable.continuous continuous_const
-  have hΩW : Ω ⊆ W := fun z hz h0 ↦ (hqrΩ z h0).1 hz
-  have hrW : DifferentiableOn ℂ r W :=
-    p_r.differentiable.differentiableOn.div q_r.differentiable.differentiableOn fun _ hz ↦ hz
-  refine ⟨fun z ↦ P.eval z + Q z * r z,
-    P.differentiable.differentiableOn.add (hQ_diff.differentiableOn.mul (hrW.mono hΩW)),
-    fun z hz ↦ ?_, fun a ha k hk ↦ ?_⟩
-  · have hfg : f z - (P.eval z + Q z * r z) = Q z * (q z - r z) := by
-      linear_combination hq_eq z (hKU' hz)
-    have hQz : ‖Q z‖ ≤ M := (hM₀ ⟨z, hz, rfl⟩).trans (le_max_left _ _)
-    rw [hfg, norm_mul]
-    calc ‖Q z‖ * ‖q z - r z‖ ≤ M * (ε / (M + 1)) :=
-          mul_le_mul hQz (hqr z hz).le (norm_nonneg _) hM0
-      _ = (M / (M + 1)) * ε := by ring
-      _ < 1 * ε := mul_lt_mul_of_pos_right ((div_lt_one (by positivity)).mpr (lt_add_one M)) hε
-      _ = ε := one_mul ε
-  · have hra : AnalyticAt ℂ r a := hrW.analyticAt (hW_open.mem_nhds (hΩW (hSΩ ha)))
-    have hvan : iteratedDeriv k (fun z ↦ Q z * r z) a = 0 := by
-      simpa only [smul_eq_mul] using
-        iteratedDeriv_prod_pow_sub_smul_eq_zero S m ha hra.contDiffAt hk
-    rw [iteratedDeriv_fun_add (P.differentiable.analyticAt a).contDiffAt
-      ((hQ_diff.analyticAt a).fun_mul hra).contDiffAt, hvan, add_zero, hP a ha k hk]
 
 end TauCeti
