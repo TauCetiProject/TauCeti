@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 
 /-!
 # Hölder continuity of the gradient up to a flat boundary
