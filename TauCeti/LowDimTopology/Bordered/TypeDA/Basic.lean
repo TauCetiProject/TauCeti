@@ -44,6 +44,13 @@ below; strict unitality is not needed.
   `δ¹ (y ⊗ x) = ∑_k (δ¹_{k+1} ⊗ 1) (y ⊗ δᵏ x)` (`TauCeti.TypeDAStructure.boxTypeD`), where
   `δᵏ` is the iterate `TauCeti.TypeDStructure.iteratedCoeff`. The sum is finite when `N` is
   bounded or the operations of `P` vanish from some arity on.
+* **Boundedness of `P ⊠ N`.** A finite set of generators does not make `P ⊠ N` bounded, so its
+  boundedness is a separate statement. If the coefficients of `N` strictly increase a height `h`
+  and those of `δ¹₁` of `P` strictly increase a height `g`, then the coefficients of `P ⊠ N`
+  strictly increase the height `(c + 1) h(x) + g(y)` on its generators `(y, x)`, with `c` the
+  largest value of `g` (`TauCeti.TypeDAStructure.lt_of_boxCoeff_ne_zero`), and `P ⊠ N` is bounded
+  (`TauCeti.TypeDAStructure.isBounded_boxTypeD_of_lt`). It can then be paired in turn with type `A`
+  modules and type `DA` bimodules whose operations do not vanish from any arity on.
 * **Associativity.** The box tensor differential of the type `A` module `M ⊠ P` with `N`
   (`TauCeti.TypeDStructure.typeABoxDifferential`) is the box tensor differential
   `∂ φ = dM φ + φ ⬝ δ` of `M` with `P ⊠ N` (`TauCeti.TypeDStructure.boxDifferential`)
@@ -96,6 +103,10 @@ The associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is not t
 
 * `TauCeti.TypeDAStructure.map_boxCoeff_add_boxCoeff_mul_boxCoeff`: the structure equation of
   `P ⊠ N`.
+* `TauCeti.TypeDAStructure.lt_of_boxCoeff_ne_zero`,
+  `TauCeti.TypeDAStructure.isBounded_boxTypeD_of_lt` and
+  `TauCeti.TypeDAStructure.isBounded_boxTensorTypeD_of_lt`: `P ⊠ N` and `P ⊠_I N` are bounded when
+  `N` and `δ¹₁` of `P` increase heights.
 * `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply` and
   `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
   `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`, on row vectors and through the type `D` structure `P ⊠ N`.
@@ -366,6 +377,37 @@ theorem idem_mul_boxCoeff (p q : Y × X) : ιB (P.idem p.1) * P.boxCoeff N p q =
 theorem boxCoeff_mul_idem (p q : Y × X) : P.boxCoeff N p q * ιB (P.idem q.1) = P.boxCoeff N p q :=
   finsum_mul_of_forall fun k => (P.idem_mul_lift_coeff_mul_idem k _ p.1 q.1).2
 
+/-- **The coefficients of `P ⊠ N` increase a height.** Suppose that the coefficients of `N`
+strictly increase a height `h` on its generators and that those of `δ¹₁` of `P` strictly increase
+a height `g` on its generators. Then a nonzero coefficient of `P ⊠ N` from `(y, x)` to `(y', x')`
+strictly increases the height `(c + 1) h(x) + g(y)`, where `c` is the largest value of `g`: such a
+coefficient comes either from `δ¹₁` of `P` with `x' = x`, raising `g`, or from a nonzero iterate
+`δᵏ` of `N` with `k ≥ 1`, raising `h`. -/
+theorem lt_of_boxCoeff_ne_zero (g : Y → ℕ) (hg : ∀ a y y', P.coeff 0 a y y' ≠ 0 → g y < g y')
+    (h : X → ℕ) (hh : ∀ x x', N.coeff x x' ≠ 0 → h x < h x') {p q : Y × X}
+    (hpq : P.boxCoeff N p q ≠ 0) :
+    (univ.sup g + 1) * h p.2 + g p.1 < (univ.sup g + 1) * h q.2 + g q.1 := by
+  obtain ⟨k, hk⟩ : ∃ k, PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k p.2 q.2) p.1 q.1 ≠ 0 :=
+    not_forall.mp fun h0 => hpq (finsum_eq_zero_of_forall_eq_zero h0)
+  rcases Nat.eq_zero_or_pos k with rfl | hk0
+  · -- `δ⁰` is the identity, so `x` stays put while `δ¹₁` of `P` raises `g`.
+    rw [N.iteratedCoeff_zero] at hk
+    split_ifs at hk with hx
+    · rw [PiTensorProduct.lift.tprod] at hk
+      rw [hx]
+      have := hg _ _ _ hk
+      omega
+    · rw [map_zero, Matrix.zero_apply] at hk
+      exact absurd rfl hk
+  · -- A nonzero iterate `δᵏ` with `k ≥ 1` raises `h`, which outweighs any change of `g`.
+    have hN : N.iteratedCoeff k p.2 q.2 ≠ 0 := fun h0 => hk (by
+      rw [h0, map_zero, Matrix.zero_apply])
+    have h₁ : (univ.sup g + 1) * (h p.2 + 1) ≤ (univ.sup g + 1) * h q.2 :=
+      Nat.mul_le_mul_left _ (by have := N.add_le_of_iteratedCoeff_ne_zero h hh hN; omega)
+    have h₂ := Finset.le_sup (f := g) (Finset.mem_univ p.1)
+    rw [mul_add, mul_one] at h₁
+    omega
+
 end BoxTypeD
 
 /-! ### Associativity -/
@@ -536,6 +578,17 @@ theorem boxTypeD_coeff (hdB : IsUngradedDGAlgebra dB)
     (P.boxTypeD N hdB h).coeff = P.boxCoeff N :=
   (rfl)
 
+/-- **Boundedness of `P ⊠ N`.** If the coefficients of `N` strictly increase a height on its
+generators and those of `δ¹₁` of `P` strictly increase a height on its generators, then the type
+`D` structure `P ⊠ N` is bounded, so that it can itself be paired with type `A` modules and type
+`DA` bimodules whose operations do not vanish from any arity on. -/
+theorem isBounded_boxTypeD_of_lt [DecidableEq Y] (hdB : IsUngradedDGAlgebra dB)
+    (hN : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (g : Y → ℕ)
+    (hg : ∀ a y y', P.coeff 0 a y y' ≠ 0 → g y < g y') (h : X → ℕ)
+    (hh : ∀ x x', N.coeff x x' ≠ 0 → h x < h x') : (P.boxTypeD N hdB hN).IsBounded :=
+  TypeDStructure.isBounded_of_lt _ (fun p => (univ.sup g + 1) * h p.2 + g p.1)
+    fun _ _ hpq => P.lt_of_boxCoeff_ne_zero N g hg h hh hpq
+
 /-- **Associativity of the box tensor product**, `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`: the box tensor
 differential of the type `A` module `M ⊠ P` with `N` is the box tensor differential of the
 differential module `M` with the type `D` structure `P ⊠ N`, under the identification of the row
@@ -621,6 +674,22 @@ noncomputable def boxTensorTypeD (hP : P.IsRightIdemCompatible ιA idemA)
     fun _ _ hp hq => by
       rw [boxTypeD_coeff]
       exact P.boxCoeff_eq_zero_of_isRightIdemCompatible N hP hιA hp hq
+
+/-- **Boundedness of `P ⊠_I N`.** If the coefficients of `N` strictly increase a height on its
+generators and those of `δ¹₁` of `P` strictly increase a height on its generators, then the box
+tensor product over the idempotents is bounded, as `P ⊠ N` is
+(`TauCeti.TypeDAStructure.isBounded_boxTypeD_of_lt`). -/
+theorem isBounded_boxTensorTypeD_of_lt [DecidableEq Y]
+    (hP : P.IsRightIdemCompatible ιA idemA)
+    (hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0) (hdB : IsUngradedDGAlgebra dB)
+    (hN : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (g : Y → ℕ)
+    (hg : ∀ a y y', P.coeff 0 a y y' ≠ 0 → g y < g y') (h : X → ℕ)
+    (hh : ∀ x x', N.coeff x x' ≠ 0 → h x < h x') :
+    (P.boxTensorTypeD N hP hιA hdB hN).IsBounded :=
+  TypeDStructure.isBounded_of_lt _ (fun p => (univ.sup g + 1) * h p.val.2 + g p.val.1)
+    fun p q hpq => by
+      rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff] at hpq
+      exact P.lt_of_boxCoeff_ne_zero N g hg h hh hpq
 
 variable {hP : P.IsRightIdemCompatible ιA idemA} {hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0}
   {hdB : IsUngradedDGAlgebra dB} {h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0}
