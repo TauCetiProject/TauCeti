@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Twist.CExponential
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The Ma–Trudinger–Wang tensor and conditions
@@ -274,12 +273,14 @@ theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempt
   have : Nontrivial F := rank_pos_iff_nontrivial.1 (zero_lt_one.trans hF)
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : F)
   obtain ⟨ζ, hζ⟩ := exists_linearIndependent_pair_of_one_lt_rank hF hξ
-  -- Remove from `ζ` its component along `ξ`; what remains is nonzero and orthogonal to `ξ`.
-  set ζ' := ζ - (⟪ξ, ζ⟫ / ‖ξ‖ ^ 2) • ξ
-  have hζ' : ζ' ≠ 0 := fun h0 ↦ (LinearIndependent.pair_iff' hξ).1 hζ _ (sub_eq_zero.1 h0).symm
-  have hξζ' : innerSL ℝ ζ' ξ = 0 := by
-    simpa only [innerSL_apply_apply, RCLike.ofReal_real_eq_id, id_eq] using
-      TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) ζ ξ
+  -- Project `ζ` onto the subspace orthogonal to `ξ`; the result is nonzero and orthogonal to `ξ`.
+  set ζ' := (ℝ ∙ ξ)ᗮ.starProjection ζ with hζ'_eq
+  have hζ' : ζ' ≠ 0 := fun h0 ↦ by
+    rw [hζ'_eq, Submodule.starProjection_orthogonal_val, sub_eq_zero,
+      Submodule.starProjection_singleton] at h0
+    exact (LinearIndependent.pair_iff' hξ).1 hζ _ h0.symm
+  have hξζ' : innerSL ℝ ζ' ξ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 ((ℝ ∙ ξ)ᗮ.starProjection_apply_mem ζ)
   have hη : innerSL ℝ ζ' ≠ 0 := by
     rw [← norm_ne_zero_iff, innerSL_apply_norm]
     exact norm_ne_zero_iff.2 hζ'

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Expansions and contractions against orthonormal bases
@@ -16,10 +17,12 @@ curvature:
 
 * `OrthonormalBasis.sum_apply_mul_inner`: a linear functional `ℓ` satisfies
   `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`, the expansion of `a` in `b` pushed through `ℓ`.
-* `OrthonormalBasis.sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection`: replacing the
-  basis vectors `b i` by their projections `P (b i)` onto `(𝕜 ∙ ν)ᗮ` in this expansion gives a
-  tangential sum, and subtracting it from the original sum gives `ℓ (ν / ‖ν‖²) * ⟪ν, a⟫`, the part
-  of `ℓ a` along `ν`.
+* `OrthonormalBasis.sum_apply_mul_inner_starProjection`: replacing `⟪b i, a⟫` by
+  `⟪P (b i), a⟫` in this expansion, for the orthogonal projection `P` onto a subspace `K`, while
+  keeping the coefficients `ℓ (b i)`, gives `ℓ (P a)`.
+* `OrthonormalBasis.sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection`: for the projection
+  `P` onto `(𝕜 ∙ ν)ᗮ`, the resulting sum is tangential, and subtracting it from the original sum
+  gives `ℓ (ν / ‖ν‖²) * ⟪ν, a⟫`, the part of `ℓ a` along `ν`.
 * `OrthonormalBasis.sum_apply_mul_inner_mul_inner`: a scalar-valued bilinear map `B` satisfies
   `∑ i, ∑ j, B (u i) (v j) * ⟪u i, x⟫ * ⟪v j, y⟫ = B x y` in a pair of orthonormal bases.
 * `OrthonormalBasis.bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection`: the same expansion
@@ -58,26 +61,27 @@ theorem sum_apply_mul_inner {F : Type*} [FunLike F E 𝕜] [LinearMapClass F �
   conv_rhs => rw [← b.sum_repr' a]
   simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
 
-/-- A linear functional at the projection of `a` onto the line `𝕜 ∙ ν` is
-`⟪ν, a⟫ * ℓ (ν / ‖ν‖²)`. -/
-private theorem apply_starProjection_span_singleton {F : Type*} [FunLike F E 𝕜]
-    [LinearMapClass F 𝕜 E 𝕜] (ℓ : F) (ν a : E) :
-    ℓ ((𝕜 ∙ ν).starProjection a) = ⟪ν, a⟫_𝕜 * ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) := by
-  rw [Submodule.starProjection_singleton, RCLike.ofReal_pow, div_eq_mul_inv, ← smul_smul,
-    map_smul, smul_eq_mul]
+/-- **A linear functional at a projection.** Replacing `⟪b i, a⟫` by `⟪P (b i), a⟫` in the
+expansion `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`, where `P` is the orthogonal projection onto a subspace
+`K`, and keeping the coefficients `ℓ (b i)` gives `ℓ (P a)`. -/
+theorem sum_apply_mul_inner_starProjection {F : Type*} [FunLike F E 𝕜] [LinearMapClass F 𝕜 E 𝕜]
+    (b : OrthonormalBasis ι 𝕜 E) (ℓ : F) (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] (a : E) :
+    ∑ i, ℓ (b i) * ⟪K.starProjection (b i), a⟫_𝕜 = ℓ (K.starProjection a) := by
+  simp only [Submodule.inner_starProjection_left_eq_right, b.sum_apply_mul_inner]
 
-/-- **The normal part of a linear functional.** Replacing the basis vectors `b i` by their
-orthogonal projections `P (b i)` onto `(𝕜 ∙ ν)ᗮ` in the expansion `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`
-gives a tangential sum. Subtracting it from the original sum gives `ℓ (ν / ‖ν‖²) * ⟪ν, a⟫`, the
-value of `ℓ` at the projection of `a` onto `𝕜 ∙ ν`. -/
+/-- **The normal part of a linear functional.** Replacing `⟪b i, a⟫` by `⟪P (b i), a⟫` in the
+expansion `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`, where `P` is the orthogonal projection onto
+`(𝕜 ∙ ν)ᗮ`, and keeping the coefficients `ℓ (b i)` gives a tangential sum. Subtracting it from the
+original sum gives `ℓ (ν / ‖ν‖²) * ⟪ν, a⟫`, the value of `ℓ` at the projection of `a` onto
+`𝕜 ∙ ν`. -/
 theorem sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection {F : Type*} [FunLike F E 𝕜]
     [LinearMapClass F 𝕜 E 𝕜] (b : OrthonormalBasis ι 𝕜 E) (ℓ : F) (ν a : E) :
     ∑ i, ℓ (b i) * ⟪b i, a⟫_𝕜 - ∑ i, ℓ (b i) * ⟪(𝕜 ∙ ν)ᗮ.starProjection (b i), a⟫_𝕜 =
       ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) * ⟪ν, a⟫_𝕜 := by
-  -- By self-adjointness the two sums are `ℓ a` and `ℓ (P a)`, and `a - P a` lies on `𝕜 ∙ ν`.
-  simp only [Submodule.inner_starProjection_left_eq_right, b.sum_apply_mul_inner, ← map_sub]
-  rw [Submodule.starProjection_orthogonal_val (K := 𝕜 ∙ ν), sub_sub_cancel,
-    apply_starProjection_span_singleton, mul_comm]
+  -- The two sums are `ℓ a` and `ℓ (P a)`, and `a - P a` is the projection of `a` onto `𝕜 ∙ ν`.
+  rw [b.sum_apply_mul_inner, b.sum_apply_mul_inner_starProjection, ← map_sub,
+    Submodule.starProjection_orthogonal_val (K := 𝕜 ∙ ν), sub_sub_cancel,
+    Submodule.apply_starProjection_singleton, smul_eq_mul, mul_comm]
 
 /-- The vectors of an orthonormal basis have unit length, so `∑ i, ⟪b i, b i⟫ = card ι`. -/
 theorem sum_inner_self (b : OrthonormalBasis ι 𝕜 E) : ∑ i, ⟪b i, b i⟫_𝕜 = Fintype.card ι := by
@@ -122,15 +126,15 @@ theorem bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection (u : Orthonormal
     (v : OrthonormalBasis κ 𝕜 F) (B : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜) (ν g : E) (w : F) :
     B g w = ⟪ν, g⟫_𝕜 * ∑ j, B (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) (v j) * ⟪v j, w⟫_𝕜 +
       ∑ i, ∑ j, ⟪(𝕜 ∙ ν)ᗮ.starProjection (u i), g⟫_𝕜 * (B (u i) (v j) * ⟪v j, w⟫_𝕜) := by
-  -- By self-adjointness, the double sum evaluates `B` at the projection `P g` of `g` and at `w`;
-  -- the sum over `j` evaluates `B ν'` at `w`. Then `g` is its projection onto `𝕜 ∙ ν` plus `P g`.
+  -- The sums over `j` evaluate `B (u i)` and `B ν'` at `w`, and the sum over `i` then evaluates
+  -- `B.flip w` at the projection `P g` of `g`. Then `g` is its projection onto `𝕜 ∙ ν` plus `P g`.
   have hP : ∑ i, ∑ j, ⟪(𝕜 ∙ ν)ᗮ.starProjection (u i), g⟫_𝕜 * (B (u i) (v j) * ⟪v j, w⟫_𝕜) =
       B ((𝕜 ∙ ν)ᗮ.starProjection g) w := by
-    rw [← u.sum_apply_mul_inner_mul_inner v B ((𝕜 ∙ ν)ᗮ.starProjection g) w]
-    simp only [Submodule.inner_starProjection_left_eq_right]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hν := apply_starProjection_span_singleton (B.flip w) ν g
-  simp only [LinearMap.flip_apply] at hν
+    simp only [← Finset.mul_sum, v.sum_apply_mul_inner]
+    simpa only [LinearMap.flip_apply, mul_comm] using
+      u.sum_apply_mul_inner_starProjection (B.flip w) (𝕜 ∙ ν)ᗮ g
+  have hν := Submodule.apply_starProjection_singleton (B.flip w) ν g
+  simp only [LinearMap.flip_apply, smul_eq_mul] at hν
   rw [v.sum_apply_mul_inner, hP, ← hν, ← LinearMap.add_apply, ← map_add,
     (𝕜 ∙ ν).starProjection_add_starProjection_orthogonal g]
 

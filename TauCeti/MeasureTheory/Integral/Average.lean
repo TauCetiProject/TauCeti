@@ -961,10 +961,11 @@ section Subspace
 variable {X 𝕜 F : Type*} [MeasurableSpace X] {μ : Measure X} [RCLike 𝕜] [NormedAddCommGroup F]
   [InnerProductSpace 𝕜 F] [NormedSpace ℝ F] [CompleteSpace F] {s : Set X} {f : X → F}
 
-/-- **The best constant in a subspace.** Among the constants `c` in a `𝕜`-subspace `K` that admits
-an orthogonal projection, the projection `K.starProjection f_s` of the average `f_s` of `f` over a
-set `s` of finite measure minimizes the integrated squared error `∫_s ‖f - c‖²`. If `f` is not
-square integrable on `s`, both sides are `0`. -/
+/-- **The best constant in a subspace.** Let `f` be almost everywhere strongly measurable on a set
+`s` of finite measure. Among the constants `c` in a `𝕜`-subspace `K` that admits an orthogonal
+projection, the projection `K.starProjection f_s` of the average `f_s` of `f` over `s` minimizes
+the integrated squared error `∫_s ‖f - c‖²`. If such an `f` is not square integrable on `s`, both
+sides are `0`. -/
 theorem setIntegral_norm_sub_starProjection_setAverage_sq_le (hs : μ s ≠ ⊤)
     (hfm : AEStronglyMeasurable f (μ.restrict s)) (K : Submodule 𝕜 F) [K.HasOrthogonalProjection]
     {c : F} (hc : c ∈ K) :

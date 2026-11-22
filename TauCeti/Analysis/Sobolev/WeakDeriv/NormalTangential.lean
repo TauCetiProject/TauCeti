@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
 # Weak derivatives from a normal and the tangential directions
@@ -47,14 +47,18 @@ theorem exists_hasWeakLineDerivOn_of_normal_of_tangential {u : E → F} {ν : E}
       ∃ G : Lp F p (mu.restrict Omega), HasWeakLineDerivOn mu Omega u G τ)
     (z : E) : ∃ G : Lp F p (mu.restrict Omega), HasWeakLineDerivOn mu Omega u G z := by
   obtain ⟨G₁, h₁⟩ := hnor
-  obtain ⟨G₂, h₂⟩ := htan (z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) (by
-    simpa only [RCLike.ofReal_real_eq_id, id_eq, real_inner_comm z ν] using
-      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) z ν)
-  have h := (h₁.smul_direction (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2)).add_direction h₂
-  rw [add_sub_cancel] at h
-  refine ⟨(⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • G₁ + G₂, h.congr_ae_deriv ?_⟩
-  filter_upwards [Lp.coeFn_add ((⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • G₁) G₂,
-    Lp.coeFn_smul (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) G₁] with x hx hx'
+  -- The tangential part of `z` is its projection onto `(ℝ ∙ ν)ᗮ`, and its normal part is
+  -- `(⟪ν, z⟫ / ‖ν‖²) ν`, the projection onto `ℝ ∙ ν`.
+  obtain ⟨G₂, h₂⟩ := htan ((ℝ ∙ ν)ᗮ.starProjection z)
+    (Submodule.mem_orthogonal_singleton_iff_inner_left.1 ((ℝ ∙ ν)ᗮ.starProjection_apply_mem z))
+  have h := (h₁.smul_direction (⟪ν, z⟫_ℝ / ‖ν‖ ^ 2)).add_direction h₂
+  have hz : (⟪ν, z⟫_ℝ / ‖ν‖ ^ 2) • ν + (ℝ ∙ ν)ᗮ.starProjection z = z := by
+    simpa only [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq] using
+      (ℝ ∙ ν).starProjection_add_starProjection_orthogonal z
+  rw [hz] at h
+  refine ⟨(⟪ν, z⟫_ℝ / ‖ν‖ ^ 2) • G₁ + G₂, h.congr_ae_deriv ?_⟩
+  filter_upwards [Lp.coeFn_add ((⟪ν, z⟫_ℝ / ‖ν‖ ^ 2) • G₁) G₂,
+    Lp.coeFn_smul (⟪ν, z⟫_ℝ / ‖ν‖ ^ 2) G₁] with x hx hx'
   rw [hx, Pi.add_apply, Pi.add_apply, hx']
 
 end TauCeti
