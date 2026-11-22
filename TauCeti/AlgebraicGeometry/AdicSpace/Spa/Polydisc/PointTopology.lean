@@ -46,8 +46,6 @@ points is completely metrizable and a Baire space.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.evalAtHom_weightedPolynomialHom`: on polynomials, `evalAtHom` agrees
-  with `MvPolynomial.eval`.
 * `TauCeti.ValuationSpectrum.evalAtHom_eq_restrictedEval₂`: over a complete ultrametric normed
   commutative ring, `evalAtHom` agrees with `MvPowerSeries.restrictedEval₂` through
   `restrictedMvPowerSeriesGaussEquiv`.
@@ -85,24 +83,6 @@ namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber Filter Topology
 open scoped NNReal
-
-section EvalPolynomial
-
-variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-  [NonarchimedeanRing A] [CompleteSpace A] [T3Space A]
-
-/-- On polynomials, `evalAtHom a ha` agrees with `MvPolynomial.eval a`. -/
-@[simp]
-theorem evalAtHom_weightedPolynomialHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
-    (p : MvPolynomial (Fin k) A) :
-    evalAtHom a ha (weightedPolynomialHom _ isWeightFamily_one_weight p) =
-      MvPolynomial.eval a p := by
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
-
-end EvalPolynomial
 
 section EvalLipschitz
 
@@ -329,13 +309,8 @@ theorem isOpen_val_preimage_rationalSubset_closedPolydisc {k : ℕ} {R : Type*}
     (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     IsOpen (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :
       Set (closedPolydisc k R)) := by
-  have h : (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :
-      Set (closedPolydisc k R)) = Subtype.val ⁻¹' basicOpenFinset T s := by
-    ext v
-    have hv : v.1 ∈ spa (powerBoundedSubring _) := closedPolydisc_def k R ▸ v.2
-    simp only [Set.mem_preimage, rationalSubset_def, Set.mem_inter_iff, hv, true_and]
-  rw [h]
-  exact (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  rw [closedPolydisc_def]
+  exact isOpen_val_preimage_rationalSubset _ T s
 
 end RationalBall
 

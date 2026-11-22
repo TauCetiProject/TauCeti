@@ -63,6 +63,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.continuous_evalAtHom` and
   `TauCeti.ValuationSpectrum.evalAtHom_mem_powerBoundedSubring`: evaluation at `a` is a morphism
   of Huber pairs `(A⟨T⟩, A⟨T⟩°) → (A, A°)`.
+* `TauCeti.ValuationSpectrum.evalAtHom_weightedPolynomialHom`: on polynomials, `evalAtHom` agrees
+  with `MvPolynomial.eval`.
 * `TauCeti.ValuationSpectrum.evalAtHom_surjective`: evaluation is surjective with closed kernel;
   over a field this kernel is a maximal ideal with residue field finite over the field.
 * `TauCeti.ValuationSpectrum.classicalPoint_vle`: the classical point compares `f` and `g` as `x`
@@ -181,6 +183,17 @@ theorem evalAtHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
 theorem evalAtHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
     evalAtHom a ha (weightedC _ isWeightFamily_one_weight c) = c :=
   weightedEvalHom_weightedC _ _ _ c
+
+/-- On polynomials, `evalAtHom a ha` agrees with `MvPolynomial.eval a`. -/
+@[simp]
+theorem evalAtHom_weightedPolynomialHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    (p : MvPolynomial (Fin k) A) :
+    evalAtHom a ha (weightedPolynomialHom _ isWeightFamily_one_weight p) =
+      MvPolynomial.eval a p := by
+  induction p using MvPolynomial.induction_on with
+  | C c => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => simp [hp]
 
 /-- Evaluation at `a ∈ (A°)ᵏ` as an `A`-algebra map `A⟨T₁, …, Tₖ⟩ → A`. -/
 noncomputable def evalAtAlgHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :

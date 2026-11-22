@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 
+import TauCeti.Analysis.Normed.Ring.UnitBall
+
 /-!
 # Bounded and power-bounded elements of normed rings
 
@@ -52,6 +54,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   pseudouniformisers are the nonzero elements of norm less than one.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
   closed unit ball.
+* `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`: in an ultrametric normed field `K°°` is a
+  maximal ideal of `K°`, so `K° ⧸ K°°` is a field.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms.
 * `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
@@ -259,6 +263,23 @@ theorem coe_powerBoundedSubring_eq_closedBall :
   simp
 
 end Ultrametric
+
+/-- Over any ultrametric normed field (trivially or nontrivially normed), `K°°` is a maximal ideal
+of `K°`, so `K° ⧸ K°°` is a field (`Ideal.Quotient.field`). -/
+instance isMaximal_topologicallyNilpotentIdeal {K : Type*} [NormedField K] [IsUltrametricDist K] :
+    (topologicallyNilpotentIdeal K).IsMaximal := by
+  have hsub : powerBoundedSubring K = Subring.unitClosedBall K := by
+    ext x
+    rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Subring.mem_unitClosedBall]
+  let e : powerBoundedSubring K ≃+* Subring.unitClosedBall K := RingEquiv.subringCongr hsub
+  have hcomap : topologicallyNilpotentIdeal K = (unitBallIdeal K).comap e.toRingHom := by
+    ext a
+    rw [mem_topologicallyNilpotentIdeal,
+      isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _,
+      Ideal.mem_comap, mem_unitBallIdeal]
+    rfl
+  rw [hcomap]
+  exact Ideal.comap_isMaximal_of_surjective e.toRingHom e.surjective
 
 /-- **An ultrametric seminormed ring has an open bounded subring**: the elements
 acting contractively by multiplication. This is the closed unit ball when `‖1‖ = 1`, and it is

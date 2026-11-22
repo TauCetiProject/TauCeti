@@ -125,31 +125,25 @@ section UnitGaussValuation
 
 variable (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
 
-/-- The norm valuation on an ultrametric normed field is continuous for the norm topology. -/
-private theorem isContinuous_normedFieldValuation :
-    (NormedField.valuation (K := K)).IsContinuous := by
-  let : Valued K ℝ≥0 := NormedField.toValued
-  exact Valued.isContinuous_v (R := K) (Γ₀ := ℝ≥0)
-
 /-- **The unit Gauss valuation on `K⟨T₁, …, Tₙ⟩`**, sending `f = ∑_ν a_ν T^ν` to `max_ν ‖a_ν‖₊`. -/
 noncomputable def unitGaussValuation :
     Valuation
       (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
       ℝ≥0 :=
-  weightedGaussValuation n (isContinuous_normedFieldValuation (K := K))
+  weightedGaussValuation n (NormedField.isContinuous_valuation (K := K))
 
 /-- Every coefficient of `f` has `nnNorm` at most `unitGaussValuation n K f`. -/
 theorem nnNorm_coeff_le_unitGaussValuation
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
     (ν : Fin n →₀ ℕ) :
     ‖MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) K)‖₊ ≤ unitGaussValuation n K f :=
-  coeff_le_weightedGaussValuation (isContinuous_normedFieldValuation (K := K)) f ν
+  coeff_le_weightedGaussValuation (NormedField.isContinuous_valuation (K := K)) f ν
 
 /-- The unit Gauss valuation is attained at some multi-index. -/
 theorem exists_nnNorm_coeff_eq_unitGaussValuation
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
     ∃ ν, ‖MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) K)‖₊ = unitGaussValuation n K f :=
-  exists_coeff_eq_weightedGaussValuation (isContinuous_normedFieldValuation (K := K)) (f := f)
+  exists_coeff_eq_weightedGaussValuation (NormedField.isContinuous_valuation (K := K)) (f := f)
 
 /-- `unitGaussValuation n K f ≤ r` if and only if every coefficient of `f` has `nnNorm` at most
 `r`. -/
@@ -158,7 +152,7 @@ theorem unitGaussValuation_le_iff
     {r : ℝ≥0} :
     unitGaussValuation n K f ≤ r ↔
       ∀ ν, ‖MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) K)‖₊ ≤ r :=
-  weightedGaussValuation_le_iff (isContinuous_normedFieldValuation (K := K))
+  weightedGaussValuation_le_iff (NormedField.isContinuous_valuation (K := K))
 
 /-- `unitGaussValuation n K f < r` if and only if every coefficient of `f` has `nnNorm` strictly
 less than `r`. -/
@@ -167,7 +161,7 @@ theorem unitGaussValuation_lt_iff
     {r : ℝ≥0} :
     unitGaussValuation n K f < r ↔
       ∀ ν, ‖MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) K)‖₊ < r :=
-  weightedGaussValuation_lt_iff (isContinuous_normedFieldValuation (K := K))
+  weightedGaussValuation_lt_iff (NormedField.isContinuous_valuation (K := K))
 
 /-- The unit Gauss valuation vanishes only on the zero series. -/
 @[simp]
@@ -183,14 +177,14 @@ theorem unitGaussValuation_eq_zero_iff
 theorem unitGaussValuation_weightedC (a : K) :
     unitGaussValuation n K
         (weightedC (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight a) = ‖a‖₊ :=
-  weightedGaussValuation_weightedC (isContinuous_normedFieldValuation (K := K)) a
+  weightedGaussValuation_weightedC (NormedField.isContinuous_valuation (K := K)) a
 
 /-- Every coordinate variable has unit Gauss valuation `1`. -/
 @[simp]
 theorem unitGaussValuation_weightedX (i : Fin n) :
     unitGaussValuation n K
         (weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight i) = 1 :=
-  weightedGaussValuation_weightedX (isContinuous_normedFieldValuation (K := K)) i
+  weightedGaussValuation_weightedX (NormedField.isContinuous_valuation (K := K)) i
 
 /-- The unit Gauss valuation coerces to Mathlib's unit-radius `MvPowerSeries.gaussNorm`. -/
 theorem coe_unitGaussValuation
@@ -209,7 +203,7 @@ theorem coe_unitGaussValuation
 
 /-- The unit Gauss valuation is continuous for the restricted-series topology. -/
 theorem isContinuous_unitGaussValuation : (unitGaussValuation n K).IsContinuous :=
-  isContinuous_weightedGaussValuation (isContinuous_normedFieldValuation (K := K))
+  isContinuous_weightedGaussValuation (NormedField.isContinuous_valuation (K := K))
 
 /-- A series has unit Gauss valuation at most `1` if and only if it lies in `K°⟨T₁, …, Tₙ⟩`. -/
 theorem unitGaussValuation_le_one_iff_mem_weightedSubring
@@ -384,23 +378,6 @@ end UnitGaussPoint
 section ReductionAndClosure
 
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-- Over any ultrametric normed field (trivially or nontrivially normed), `K°°` is a maximal ideal
-of `K°`, so `K° ⧸ K°°` is a field. -/
-private theorem isMaximal_topologicallyNilpotentIdeal :
-    (topologicallyNilpotentIdeal K).IsMaximal := by
-  have hsub : powerBoundedSubring K = Subring.unitClosedBall K := by
-    ext x
-    rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Subring.mem_unitClosedBall]
-  let e : powerBoundedSubring K ≃+* Subring.unitClosedBall K := RingEquiv.subringCongr hsub
-  have hcomap : topologicallyNilpotentIdeal K = (unitBallIdeal K).comap e.toRingHom := by
-    ext a
-    rw [mem_topologicallyNilpotentIdeal,
-      isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _,
-      Ideal.mem_comap, mem_unitBallIdeal]
-    rfl
-  rw [hcomap]
-  exact Ideal.comap_isMaximal_of_surjective e.toRingHom e.surjective
 
 /-- Coefficientwise restriction of a series in `K°⟨T₁, …, Tₙ⟩` to a formal series over `K°`. -/
 private def weightedSubringToMvPowerSeries
@@ -848,7 +825,6 @@ theorem unitGaussPoint_notMem_closure_classicalPoint_of_finite
     unitGaussPoint n K ∉ closure (Set.range
       (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.1 a.2)) := by
-  have : (topologicallyNilpotentIdeal K).IsMaximal := isMaximal_topologicallyNilpotentIdeal
   let : Field (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K) :=
     Ideal.Quotient.field (topologicallyNilpotentIdeal K)
   let : Fintype (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K) := Fintype.ofFinite _
