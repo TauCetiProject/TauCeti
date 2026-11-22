@@ -183,6 +183,28 @@ variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A]
   [DecidableEq ι] [AddCommMonoid ι] {𝒜 : ι → Submodule R A} [GradedAlgebra 𝒜]
   {s : ι → ℤˣ} {q : ι} {d : A →ₗ[R] A}
 
+private theorem one_mem_comap_signedLeibniz
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b)) :
+    (1 : A) ∈ (𝒜 (0 + q)).comap d :=
+  Submodule.mem_comap.2 <| by
+    rw [map_one_eq_zero_of_leibniz 𝒜 hl]
+    exact zero_mem _
+
+private theorem mul_mem_comap_signedLeibniz
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
+    {i j : ι} {a b : A} (ha : a ∈ 𝒜 i) (hda : a ∈ (𝒜 (i + q)).comap d)
+    (hb : b ∈ 𝒜 j) (hdb : b ∈ (𝒜 (j + q)).comap d) :
+    a * b ∈ (𝒜 ((i + j) + q)).comap d :=
+  Submodule.mem_comap.2 <| by
+    rw [hl ha b]
+    have hda_b : d a * b ∈ 𝒜 ((i + j) + q) :=
+      add_right_comm i q j ▸ SetLike.GradedMul.mul_mem hda hb
+    have ha_db : a * d b ∈ 𝒜 ((i + j) + q) :=
+      add_assoc i j q ▸ SetLike.GradedMul.mul_mem ha hdb
+    refine add_mem hda_b ?_
+    rw [Units.smul_def]
+    exact DirectSum.Decomposition.zsmul_mem ha_db _
+
 /-- An `s`-signed Leibniz endomorphism is homogeneous of degree `q` if an algebra-generating set
 lies in the sum of the subspaces `𝒜 i ⊓ d⁻¹(𝒜 (i + q))`. -/
 theorem isHomogeneous_of_signedLeibniz_of_adjoin_eq_top
@@ -190,21 +212,11 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_eq_top
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
     (hS : S ⊆ (⨆ i : ι, 𝒜 i ⊓ (𝒜 (i + q)).comap d : Submodule R A)) :
     LinearMap.IsHomogeneous d 𝒜 𝒜 q :=
-  LinearMap.isHomogeneous_def.2 fun k a ha ↦
+  LinearMap.isHomogeneous_def.2 fun k _ ha ↦
     GradedAlgebra.grade_le_of_adjoin_eq_top 𝒜
       (ℬ := fun i ↦ (𝒜 (i + q)).comap d)
-      (Submodule.mem_comap.2 <| by
-        rw [map_one_eq_zero_of_leibniz 𝒜 hl]
-        exact zero_mem _)
-      (fun {i j a b} ha hda hb hdb ↦ Submodule.mem_comap.2 <| by
-        rw [hl ha b]
-        have hda_b : d a * b ∈ 𝒜 ((i + j) + q) :=
-          add_right_comm i q j ▸ SetLike.GradedMul.mul_mem hda hb
-        have ha_db : a * d b ∈ 𝒜 ((i + j) + q) :=
-          add_assoc i j q ▸ SetLike.GradedMul.mul_mem ha hdb
-        refine add_mem hda_b ?_
-        rw [Units.smul_def]
-        exact DirectSum.Decomposition.zsmul_mem ha_db _)
+      (one_mem_comap_signedLeibniz (𝒜 := 𝒜) (q := q) hl)
+      (fun ha hda hb hdb ↦ mul_mem_comap_signedLeibniz (𝒜 := 𝒜) (q := q) hl ha hda hb hdb)
       hadj hS k ha
 
 /-- If `g : V →ₗ[R] A` is homogeneous of degree `0`, its image generates `A`, `𝒱` spans `V`, and
@@ -215,15 +227,13 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top
     (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
     {g : V →ₗ[R] A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (h𝒱 : ⨆ i, 𝒱 i = ⊤)
     (hg : LinearMap.IsHomogeneous g 𝒱 𝒜 0) (hdg : LinearMap.IsHomogeneous (d ∘ₗ g) 𝒱 𝒜 q) :
-    LinearMap.IsHomogeneous d 𝒜 𝒜 q := by
-  refine isHomogeneous_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) hl hadj ?_
-  rintro _ ⟨v, rfl⟩
-  have hle : (⊤ : Submodule R V) ≤
-      (⨆ i : ι, 𝒜 i ⊓ (𝒜 (i + q)).comap d).comap g := by
-    rw [← h𝒱]
-    refine iSup_le fun i x hx ↦
-      le_iSup (fun k ↦ 𝒜 k ⊓ (𝒜 (k + q)).comap d) i ⟨by simpa using hg.map_mem hx, hdg.map_mem hx⟩
-  exact hle Submodule.mem_top
+    LinearMap.IsHomogeneous d 𝒜 𝒜 q :=
+  LinearMap.isHomogeneous_def.2 fun k _ ha ↦
+    GradedAlgebra.grade_le_of_adjoin_range_eq_top 𝒜
+      (ℬ := fun i ↦ (𝒜 (i + q)).comap d)
+      (one_mem_comap_signedLeibniz (𝒜 := 𝒜) (q := q) hl)
+      (fun ha hda hb hdb ↦ mul_mem_comap_signedLeibniz (𝒜 := 𝒜) (q := q) hl ha hda hb hdb)
+      hadj h𝒱 (fun hx ↦ by simpa using hg.map_mem hx) (fun hx ↦ hdg.map_mem hx) k ha
 
 end Homogeneity
 

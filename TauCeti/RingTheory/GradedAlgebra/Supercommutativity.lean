@@ -159,17 +159,6 @@ theorem mul_eq_smul_mul_of_adjoin_range_eq_top {S : Type*} {s : ι → ι → M}
 
 end Generators
 
-private theorem adjoin_range_sigma_eq_top {R A ι V : Type*} [CommSemiring R] [Semiring A]
-    [Algebra R A] [AddCommMonoid V] [Module R V] {𝒱 : ι → Submodule R V}
-    {g : V →ₗ[R] A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (h𝒱 : ⨆ i, 𝒱 i = ⊤) :
-    Algebra.adjoin R (Set.range fun x : (i : ι) × 𝒱 i ↦ g x.2.val) = ⊤ := by
-  rw [eq_top_iff, ← hadj, Algebra.adjoin_le_iff]
-  rintro _ ⟨v, rfl⟩
-  have hv : v ∈ ⨆ i, 𝒱 i := h𝒱 ▸ Submodule.mem_top
-  refine Submodule.iSup_induction 𝒱 (motive := fun v ↦ g v ∈ Algebra.adjoin R _) hv
-    (fun i x hx ↦ Algebra.subset_adjoin ⟨⟨i, x, hx⟩, rfl⟩)
-    (by simp) (fun _ _ hx hy ↦ by rw [map_add]; exact add_mem hx hy)
-
 section IsHomogeneous
 
 variable {R A M ι V : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
@@ -188,7 +177,8 @@ theorem mul_eq_smul_mul_right_of_adjoin_range_eq_top_of_isHomogeneous {a : A} {c
     {j : ι} {b : A} (hb : b ∈ 𝒜 j) :
     a * b = c j • (b * a) :=
   mul_eq_smul_mul_right_of_adjoin_range_eq_top (𝒜 := 𝒜) hc0 hc
-    (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst (adjoin_range_sigma_eq_top hadj h𝒱)
+    (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
+    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property) (fun x ↦ hcomm x.2.property) hb
 
 /-- If `b : A` satisfies `g x * b = c i • (b * g x)` for every homogeneous generator `x ∈ 𝒱 i`,
@@ -202,7 +192,8 @@ theorem mul_eq_smul_mul_left_of_adjoin_range_eq_top_of_isHomogeneous {b : A} {c 
     {i : ι} {a : A} (ha : a ∈ 𝒜 i) :
     a * b = c i • (b * a) :=
   mul_eq_smul_mul_left_of_adjoin_range_eq_top (𝒜 := 𝒜) hc0 hc
-    (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst (adjoin_range_sigma_eq_top hadj h𝒱)
+    (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
+    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property) (fun x ↦ hcomm x.2.property) ha
 
 /-- **Graded supercommutativity from a homogeneous linear generator map.** If a degree-`0` linear
@@ -220,7 +211,8 @@ theorem mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous {s : ι → ι �
     {i j : ι} {a b : A} (ha : a ∈ 𝒜 i) (hb : b ∈ 𝒜 j) :
     a * b = s i j • (b * a) :=
   mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := 𝒜) hs_zero_right hs_add_right hs_zero_left
-    hs_add_left (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst (adjoin_range_sigma_eq_top hadj h𝒱)
+    hs_add_left (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
+    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property)
     (fun x y ↦ hcomm x.2.property y.2.property) ha hb
 
