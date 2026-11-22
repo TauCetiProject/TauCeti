@@ -89,6 +89,9 @@ matrix-valued interior regularity on `H^r` then gives `φ u ∈ H^(s + m)`, whos
 ## Main results
 
 * `TauCeti.Symbol.quantizeTempered_cutoffTempered`: `Op(ψ a) (χ T) = ψ Op(a) T`.
+* `TauCeti.Symbol.HasNearDiagonalKernel.exists_cutoffs_of_mem_nhds`: the nested cutoffs `φ`, `ψ`
+  and `χ` at a point, reducing local elliptic regularity of a scalar operator to interior
+  regularity on any regularity scale.
 * `Distribution.memSobolev_cutoffTempered_quantizeDistribution`: properly supported operators of
   order `m` map `H^(s + m)_loc` to `H^s_loc`.
 * `vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantizeDistribution`:
@@ -207,6 +210,53 @@ theorem quantizeTempered_cutoffTempered (ha : a.HasNearDiagonalKernel R) (hp : p
   · simp only [hχ x hx, one_mul]
   · have h0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hsupp h)
     simp only [h0, map_zero, mul_zero]
+
+/-- **Cutoffs for local elliptic regularity.** Let `Op(a)` have kernel supported within distance
+`R` of the diagonal, and let `U` be a neighbourhood of `x`. There are test functions `φ`, `ψ` and
+`χ`, with `φ = 1` near `x` and `ψ` supported in `U`, and a compactly supported Schwartz function
+`φS`, such that `ψ a` agrees with `a` near the support of `φS` and, for every distribution `T`,
+`Op(ψ a) (χ T) = ψ Op(a) T` and `φS (χ T) = φ T`. They reduce local elliptic regularity of
+`Op(a)` at `x` to interior regularity for the tempered distribution `χ T`. -/
+theorem HasNearDiagonalKernel.exists_cutoffs_of_mem_nhds (ha : a.HasNearDiagonalKernel R)
+    {U : Set (CoordinateSpace n)} {x : CoordinateSpace n} (hU : U ∈ 𝓝 x) :
+    ∃ (φ ψ χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) (φS : 𝓢(CoordinateSpace n, ℂ)),
+      (∀ᶠ y in 𝓝 x, φ y = 1) ∧ tsupport ψ ⊆ U ∧ HasCompactSupport φS ∧
+      (∀ᶠ y in 𝓝ˢ (tsupport φS), ∀ ξ,
+        (smulLeft ψ.contDiff a).coefficient (y, ξ) = a.coefficient (y, ξ)) ∧
+      ∀ T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ),
+        quantizeTempered ℂ (smulLeft ψ.contDiff a)
+            (hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a).isUniform
+            (T.cutoffTempered χ) = (quantizeDistribution ha T).cutoffTempered ψ ∧
+          smulLeftCLM ℂ (φS : CoordinateSpace n → ℂ) (T.cutoffTempered χ) =
+            T.cutoffTempered φ := by
+  obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
+  -- Nested cutoffs: `φ = 1` near `x`, `ψ = 1` near the support of `φ`, and `χ = 1` on the closed
+  -- `R`-neighbourhood of the support of `ψ`.
+  obtain ⟨φ, hφx, hφs⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    (Ω := ⊤) isCompact_singleton (Metric.isOpen_ball : IsOpen (Metric.ball x (ε / 2)))
+    (singleton_subset_iff.2 (Metric.mem_ball_self (half_pos hε))) (by simp)
+  obtain ⟨ψ, hψ1, hψs⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    φ.hasCompactSupport.isCompact (Metric.isOpen_ball : IsOpen (Metric.ball x ε))
+    (hφs.trans (Metric.ball_subset_ball (by linarith))) (by simp)
+  obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    (ψ.hasCompactSupport.isCompact.cthickening (r := R)) isOpen_univ (subset_univ _) (by simp)
+  have hχψ (y : CoordinateSpace n) (hy : y ∈ Metric.cthickening R (tsupport ψ)) : χ y = 1 :=
+    hχ1.self_of_nhdsSet y hy
+  have hφψ : tsupport φ ⊆ tsupport ψ := fun y hy ↦
+    subset_tsupport _ (by simp [hψ1.self_of_nhdsSet y hy])
+  have hφS : (φ.hasCompactSupport.toSchwartzMap φ.contDiff : CoordinateSpace n → ℂ) = φ :=
+    funext (φ.hasCompactSupport.toSchwartzMap_toFun φ.contDiff)
+  refine ⟨φ, ψ, χ, φ.hasCompactSupport.toSchwartzMap φ.contDiff,
+    by rwa [nhdsSet_singleton] at hφx, hψs.trans hεU, hφS ▸ φ.hasCompactSupport, ?_,
+    fun T ↦ ⟨quantizeTempered_cutoffTempered ha _
+      (fun y ξ ↦ coefficient_smulLeft ψ.contDiff a (y, ξ)) hχψ T, ?_⟩⟩
+  · -- Near the support of `φ`, `ψ = 1`, so `ψ a` agrees with `a` there.
+    rw [hφS]
+    filter_upwards [hψ1] with y hy ξ
+    rw [coefficient_smulLeft, hy, one_smul]
+  · rw [hφS]
+    exact Distribution.smulLeftCLM_cutoffTempered T fun y hy ↦
+      hχψ y (Metric.self_subset_cthickening _ (hφψ hy))
 
 /-! ### Matrix-valued symbols -/
 
