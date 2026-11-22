@@ -170,21 +170,25 @@ private theorem exists_countable_closedBall_cover_injOn {G : Set (ℝ × ℝ)} (
       mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds p (hr p hp))
   exact ⟨T, hTc, r, hGT, fun p hp ↦ hrG p (hTG hp), fun p hp ↦ hrinj p (hTG hp)⟩
 
-/-- **Continuous choice of competitors on an open set, by Baire's theorem.** Let
-`u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and let `G` be an open set whose
-complement is countable, near each point of which `(s, t) ↦ (u(s, t), t)` is injective. If every
-point `(s, t)` of a nonempty open set `U` has a competitor `s' ≠ s` on its slice, with
-`u(s', t) = u(s, t)`, then on some nonempty open `W ⊆ U` these competitors can be chosen
-continuously and in `G`: there is `φ`, continuous on `W`, with `φ(z) ≠ z.1`,
-`u(φ(z), z.2) = u(z)` and `(φ(z), z.2) ∈ G` for every `z ∈ W`. -/
-theorem exists_continuousOn_slice_eq_of_forall_exists_ne {G U : Set (ℝ × ℝ)} (hu : Continuous u)
-    (hG : IsOpen G) (hGinj : ∀ p ∈ G, ∃ N ∈ 𝓝 p, InjOn (fun z ↦ (u z, z.2)) N)
-    (hGc : Gᶜ.Countable) (hU : IsOpen U) (hUne : U.Nonempty)
+omit [TopologicalSpace X] [T2Space X] in
+/-- A horizontal line in `ℝ × ℝ` has empty interior. -/
+private theorem interior_preimage_snd_singleton (t : ℝ) :
+    interior (Prod.snd ⁻¹' {t} : Set (ℝ × ℝ)) = ∅ := by
+  rw [← isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd, interior_singleton,
+    preimage_empty]
+
+/-- **The Baire step.** Let `u : ℝ × ℝ → X` be continuous, let `G` be a set with countable
+complement, covered by the closed balls of a countable family indexed by `T`, and suppose that
+every point `(s, t)` of a nonempty open set `U` has a competitor `s' ≠ s` on its slice, with
+`u(s', t) = u(s, t)`. Then for some `p ∈ T` and `m : ℕ`, the set of points with a competitor in the
+ball of `p` at distance at least `1 / (m + 1)` has interior points in `U`. -/
+private theorem exists_nonempty_inter_interior_setOf_slice_eq {G U T : Set (ℝ × ℝ)}
+    {r : ℝ × ℝ → ℝ} (hu : Continuous u) (hGc : Gᶜ.Countable) (hTc : T.Countable)
+    (hGT : G ⊆ ⋃ p ∈ T, closedBall p (r p)) (hU : IsOpen U) (hUne : U.Nonempty)
     (h : ∀ z ∈ U, ∃ s ≠ z.1, u (s, z.2) = u z) :
-    ∃ W ⊆ U, IsOpen W ∧ W.Nonempty ∧ ∃ φ : ℝ × ℝ → ℝ, ContinuousOn φ W ∧
-      ∀ z ∈ W, φ z ≠ z.1 ∧ u (φ z, z.2) = u z ∧ (φ z, z.2) ∈ G := by
+    ∃ p ∈ T, ∃ m : ℕ, (U ∩ interior {z | ∃ q ∈ closedBall p (r p), q.2 = z.2 ∧ u q = u z ∧
+      1 / ((m : ℝ) + 1) ≤ |q.1 - z.1|}).Nonempty := by
   classical
-  obtain ⟨T, hTc, r, hGT, hrG, hrinj⟩ := exists_countable_closedBall_cover_injOn hG hGinj
   -- The closed sets of points with a competitor in the ball of `p ∈ T` at distance at least
   -- `1 / (m + 1)`, the complement of `U` and the horizontal lines through the countably many
   -- points outside `G` cover the plane.
@@ -216,22 +220,40 @@ theorem exists_continuousOn_slice_eq_of_forall_exists_ne {G U : Set (ℝ × ℝ)
   obtain ⟨i, hi⟩ := mem_iUnion.1 hz
   rcases i with _ | i | q
   · exact absurd hzU (interior_subset hi)
-  swap
-  · have hint : interior (Prod.snd ⁻¹' {(q : ℝ × ℝ).2} : Set (ℝ × ℝ)) = ∅ := by
-      rw [← isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd, interior_singleton,
-        preimage_empty]
-    exact absurd hi (by simp only [f, hint, notMem_empty, not_false_eq_true])
-  -- On `U ∩ interior (A i)`, the competitor in the ball is unique, hence continuous.
-  have hinj := hrinj i.1 i.1.property
-  have hA (w) (hw : w ∈ U ∩ interior (A i)) : ∃ q ∈ closedBall (i.1 : ℝ × ℝ) (r i.1),
-      q.2 = w.2 ∧ u q = u w ∧ 1 / ((i.2 : ℝ) + 1) ≤ |q.1 - w.1| :=
+  · exact ⟨i.1, i.1.property, i.2, z, hzU, hi⟩
+  · exact absurd hi (by
+      simp only [f, interior_preimage_snd_singleton, notMem_empty, not_false_eq_true])
+
+/-- **Continuous choice of competitors on an open set, by Baire's theorem.** Let
+`u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and let `G` be an open set whose
+complement is countable, near each point of which `(s, t) ↦ (u(s, t), t)` is injective. If every
+point `(s, t)` of a nonempty open set `U` has a competitor `s' ≠ s` on its slice, with
+`u(s', t) = u(s, t)`, then on some nonempty open `W ⊆ U` these competitors can be chosen
+continuously and in `G`: there is `φ`, continuous on `W`, with `φ(z) ≠ z.1`,
+`u(φ(z), z.2) = u(z)` and `(φ(z), z.2) ∈ G` for every `z ∈ W`. -/
+theorem exists_continuousOn_slice_eq_of_forall_exists_ne {G U : Set (ℝ × ℝ)} (hu : Continuous u)
+    (hG : IsOpen G) (hGinj : ∀ p ∈ G, ∃ N ∈ 𝓝 p, InjOn (fun z ↦ (u z, z.2)) N)
+    (hGc : Gᶜ.Countable) (hU : IsOpen U) (hUne : U.Nonempty)
+    (h : ∀ z ∈ U, ∃ s ≠ z.1, u (s, z.2) = u z) :
+    ∃ W ⊆ U, IsOpen W ∧ W.Nonempty ∧ ∃ φ : ℝ × ℝ → ℝ, ContinuousOn φ W ∧
+      ∀ z ∈ W, φ z ≠ z.1 ∧ u (φ z, z.2) = u z ∧ (φ z, z.2) ∈ G := by
+  obtain ⟨T, hTc, r, hGT, hrG, hrinj⟩ := exists_countable_closedBall_cover_injOn hG hGinj
+  -- Some set `A` of points with a competitor in the ball of `p ∈ T` at distance at least
+  -- `1 / (m + 1)` has interior points in `U`.
+  obtain ⟨p, hp, m, hne⟩ := exists_nonempty_inter_interior_setOf_slice_eq hu hGc hTc hGT hU hUne h
+  let A : Set (ℝ × ℝ) := {z | ∃ q ∈ closedBall p (r p), q.2 = z.2 ∧ u q = u z ∧
+    1 / ((m : ℝ) + 1) ≤ |q.1 - z.1|}
+  -- On `U ∩ interior A`, the competitor in the ball is unique, hence continuous.
+  have hinj := hrinj p hp
+  have hA (w) (hw : w ∈ U ∩ interior A) : ∃ q ∈ closedBall p (r p), q.2 = w.2 ∧ u q = u w ∧
+      1 / ((m : ℝ) + 1) ≤ |q.1 - w.1| :=
     interior_subset hw.2
   obtain ⟨φ, hφc, hφ⟩ := exists_continuousOn_slice_eq_of_injOn hu (isCompact_closedBall _ _) hinj
     (hU.inter isOpen_interior) fun w hw ↦ by
       obtain ⟨q, hq, hq2, hqu, -⟩ := hA w hw
       exact ⟨q, hq, hq2, hqu⟩
-  refine ⟨U ∩ interior (A i), inter_subset_left, hU.inter isOpen_interior, ⟨z, hzU, hi⟩, φ, hφc,
-    fun w hw ↦ ⟨fun he ↦ ?_, (hφ w hw).2, hrG i.1 i.1.property (hφ w hw).1⟩⟩
+  refine ⟨U ∩ interior A, inter_subset_left, hU.inter isOpen_interior, hne, φ, hφc,
+    fun w hw ↦ ⟨fun he ↦ ?_, (hφ w hw).2, hrG p hp (hφ w hw).1⟩⟩
   obtain ⟨q, hq, hq2, hqu, hd⟩ := hA w hw
   have hqφ : q = (φ w, w.2) := hinj hq (hφ w hw).1 (by simp only [hq2, hqu, (hφ w hw).2])
   rw [hqφ, he, sub_self, abs_zero] at hd
