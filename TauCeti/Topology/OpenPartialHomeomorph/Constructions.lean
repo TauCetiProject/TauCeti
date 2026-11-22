@@ -35,7 +35,7 @@ Finite products of open partial homeomorphisms commute with inverses and composi
 
 This construction abstracts the concrete subtype charts in the following Tau Ceti formalizations:
 
-* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`.
+* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/OfHomeomorph.lean`.
 * `TauCeti.levelSetChart` in `TauCeti/Analysis/Fredholm/LevelSet/Basic.lean`.
 -/
 
