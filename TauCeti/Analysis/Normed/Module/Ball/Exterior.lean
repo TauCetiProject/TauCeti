@@ -5,15 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+import TauCeti.Topology.Homotopy.StarConvexComplement
 
 /-!
-# The exterior of a closed ball is path-connected
+# Path-connectedness and simple connectivity of the exterior of a closed ball
 
 In a real normed space of dimension at least two the complement of a closed ball is path-connected:
 it is the image of the product of the unit sphere with the ray `(r, ∞)` of radii exceeding the
-ball's under the polar-coordinate map `(u, t) ↦ x + t • u`.
+ball's under the polar-coordinate map `(u, t) ↦ x + t • u`. In dimension at least three it is
+moreover simply connected, since it deformation retracts radially onto a sphere, which is then
+simply connected.
 
 Every unbounded complementary component of a bounded set meets the exterior of any closed ball
 containing that set. Connectedness of the exterior therefore forces all such components to
@@ -24,6 +30,8 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
   a real normed space of dimension at least two.
+* `TauCeti.simplyConnectedSpace_compl_closedBall` — the exterior of a closed ball is simply
+  connected in a real normed space of dimension at least three.
 
 ## References
 
@@ -56,5 +64,16 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
       by simp [smul_smul, hw']⟩
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
+
+/-- **The exterior of a closed ball is simply connected** in a real normed space of dimension at
+least three: it deformation retracts radially onto a sphere. -/
+theorem simplyConnectedSpace_compl_closedBall (h : 2 < Module.rank ℝ E) (x : E) (r : ℝ) :
+    SimplyConnectedSpace ↥(closedBall x r)ᶜ := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [closedBall_eq_empty.mpr hr, compl_empty]
+    exact (Homeomorph.Set.univ E).toHomotopyEquiv.simplyConnectedSpace
+  exact (((convex_closedBall x r).starConvex (mem_closedBall_self hr)).complSphereHomotopyEquiv
+    (mem_closedBall_self hr) (closedBall_subset_ball (lt_add_one r))).symm
+    |>.simplyConnectedSpace_of_sphere h (by linarith)
 
 end TauCeti
