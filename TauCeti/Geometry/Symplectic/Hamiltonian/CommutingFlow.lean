@@ -298,15 +298,11 @@ theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
       (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
   refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
-  have h := congrArg (fun α ↦ α x ![a, b])
-    (mpullback_timeDependentFlowOf_of_isHamiltonianVectorField
-      (fun t ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H t))
-      hσ.isClosed hH hc hX s t)
-  simp only [mpullback_apply] at h
-  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  convert h using 2
-  ext i
-  fin_cases i <;> simp
+  simpa only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+    timeDependentFlowMFDerivEquiv_apply] using
+    eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField (s := s) (t := t)
+      (fun u _ ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H u))
+      hσ.isClosed (fun u _ ↦ hH u) hX (mem_timeDependentFlowDomain.2 (hc.mem_flowDomain _ _)) a b
 
 /-- **Twisted structures stay tame.** For a symplectic form `σ`, if `σ` tames a structure `J` at
 `φ_{s, t} x`, it tames the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along the
