@@ -219,7 +219,7 @@ theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
 theorem algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) :
     σ = sqrtEmbedding r ∨ σ = negSqrtEmbedding r := by
   simpa only [negSqrtEmbedding_eq_comp_starAlgEquiv] using
-    algHom_eq_or_eq_comp_starAlgEquiv_of_noZeroDivisors σ (sqrtEmbedding r)
+    algHom_eq_or_eq_comp_starAlgEquiv σ (sqrtEmbedding r)
 
 /-- A `ℚ`-algebra map `QuadraticAlgebra ℚ r 0 → ℂ` sends `ω` to a complex number of norm `√|r|`. -/
 theorem norm_apply_omega (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) : ‖σ ω‖ = √|(r : ℝ)| := by

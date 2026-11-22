@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
+import TauCeti.Algebra.QuadraticAlgebra.Star
 import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
 
 /-!
@@ -140,7 +141,8 @@ theorem map_toSubalgebra_eq_complexOrder {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 =
     (φ : QuadraticAlgebra ℚ (D : ℚ) 0 →+* ℂ) :
     (toSubalgebra D hD).map φ.toIntAlgHom = complexOrder D hD0 hD := by
   rw [toSubalgebra_eq_adjoin, AlgHom.map_adjoin, Set.image_singleton, complexOrder_eq_adjoin]
-  rcases algHom_eq_or_eq_comp_starAlgEquiv (Int.cast_nonpos.mpr hD0) φ.toRatAlgHom with h | h
+  rcases algHom_eq_or_eq_comp_starAlgEquiv φ.toRatAlgHom
+      (complexEmbedding (Int.cast_nonpos.mpr hD0)) with h | h
   · have hφ : φ (generator D) = complexGenerator D := by
       simpa using AlgHom.congr_fun h (generator D)
     rw [RingHom.toIntAlgHom_apply, hφ]

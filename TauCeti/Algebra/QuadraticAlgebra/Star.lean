@@ -21,7 +21,7 @@ commutative `R`-algebra without zero divisors agree up to conjugation.
 ## Main results
 
 * `QuadraticAlgebra.star_omega`: `star ω = b - ω`.
-* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv_of_noZeroDivisors`: two `R`-algebra maps
+* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: two `R`-algebra maps
   from `QuadraticAlgebra R a b` into a commutative `R`-algebra without zero divisors agree, or
   agree after precomposing one of them with conjugation.
 * `QuadraticAlgebra.algHom_eq_id_or_eq_starAlgEquiv`: when `QuadraticAlgebra R a b` has no zero
@@ -47,17 +47,17 @@ may coincide with `ω`. -/
 
 /-- Two `R`-algebra maps from `QuadraticAlgebra R a b` into a commutative `R`-algebra without
 zero divisors are equal, or equal after precomposing one of them with conjugation. -/
-theorem algHom_eq_or_eq_comp_starAlgEquiv_of_noZeroDivisors {B : Type*} [CommRing B]
+theorem algHom_eq_or_eq_comp_starAlgEquiv {B : Type*} [CommRing B]
     [Algebra R B] [NoZeroDivisors B] (f g : QuadraticAlgebra R a b →ₐ[R] B) :
     f = g ∨ f = g.comp (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
   -- `f ω` and `g ω` are both roots of `X ^ 2 - b X - a`.
-  have hf : f ω * f ω = algebraMap R B a + algebraMap R B b * f ω := by
-    simpa [Algebra.smul_def] using (lift.symm f).property
-  have hg : g ω * g ω = algebraMap R B a + algebraMap R B b * g ω := by
-    simpa [Algebra.smul_def] using (lift.symm g).property
+  have root (k : QuadraticAlgebra R a b →ₐ[R] B) :
+      k ω * k ω = algebraMap R B a + algebraMap R B b * k ω := by
+    rw [← map_mul, omega_mul_omega_eq_algebraMap, map_add, map_mul, AlgHom.commutes,
+      AlgHom.commutes]
   have h : (f ω - g ω) * (f ω - g (star ω)) = 0 := by
     rw [star_omega, map_sub, AlgHom.commutes]
-    linear_combination hf - hg
+    linear_combination root f - root g
   rcases mul_eq_zero.mp h with h | h
   · exact .inl (algHom_ext (sub_eq_zero.mp h))
   · exact .inr (algHom_ext (by simpa using sub_eq_zero.mp h))
@@ -68,6 +68,6 @@ theorem algHom_eq_id_or_eq_starAlgEquiv [NoZeroDivisors (QuadraticAlgebra R a b)
     (f : QuadraticAlgebra R a b →ₐ[R] QuadraticAlgebra R a b) :
     f = AlgHom.id R _ ∨ f = (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
   simpa only [AlgHom.id_comp] using
-    algHom_eq_or_eq_comp_starAlgEquiv_of_noZeroDivisors f (AlgHom.id R _)
+    algHom_eq_or_eq_comp_starAlgEquiv f (AlgHom.id R _)
 
 end QuadraticAlgebra
