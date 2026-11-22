@@ -12,9 +12,9 @@ public import Mathlib.Analysis.Normed.Module.RieszLemma
 
 Mathlib's `riesz_lemma_of_norm_lt` finds, outside a proper closed subspace `F` of a normed space,
 a vector of controlled norm at distance at least `1` from `F`. This file records the relative
-form: when `F` is a proper subspace of a subspace `G` and is closed in `G`, the vector can be
-chosen in `G`. This is the form used to build separated sequences along strictly decreasing chains
-of closed subspaces, as in the Riesz theory of compact operators.
+form, for seminormed spaces: when `F` is a proper subspace of a subspace `G` and is closed in `G`,
+the vector can be chosen in `G`. This is the form used to build separated sequences along strictly
+decreasing chains of closed subspaces, as in the Riesz theory of compact operators.
 
 It also records the translated form `TauCeti.riesz_lemma_translate`: in a seminormed group, a
 prescribed vector `x` can be moved by an element of a closed submodule `F` to a vector `x - y` with
@@ -26,19 +26,33 @@ public section
 
 namespace TauCeti
 
-/-- **Riesz's lemma** relative to a larger subspace: if a subspace `F` is properly contained in a
-subspace `G` and is closed in `G`, then `G` contains a vector of norm at most `R` at distance at
-least `1` from `F`. If `hF : IsClosed (F : Set E)`, then `hF.preimage continuous_subtypeVal`
-supplies `hFc`. -/
-theorem riesz_lemma_of_norm_lt_of_lt {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E]
+open SeparationQuotient in
+/-- **Riesz's lemma** relative to a larger subspace: if a subspace `F` of a seminormed space is
+properly contained in a subspace `G` and is closed in `G`, then `G` contains a vector of norm at
+most `R` at distance at least `1` from `F`. If `hF : IsClosed (F : Set E)`, then
+`hF.preimage continuous_subtypeVal` supplies `hFc`. -/
+theorem riesz_lemma_of_norm_lt_of_lt {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E]
     [NormedSpace 𝕜 E] {c : 𝕜} (hc : 1 < ‖c‖) {R : ℝ} (hR : ‖c‖ < R) {F G : Submodule 𝕜 E}
     (hFc : IsClosed (((↑) : G → E) ⁻¹' F)) (hFG : F < G) :
     ∃ x₀ ∈ G, ‖x₀‖ ≤ R ∧ ∀ y ∈ F, 1 ≤ ‖x₀ - y‖ := by
   obtain ⟨x, hxG, hxF⟩ := IsConcreteLE.exists_of_lt hFG
-  -- `F.comap G.subtype` is `F` seen inside `G`; its carrier is by definition the preimage in `hFc`.
-  obtain ⟨x₀, hx₀R, hx₀⟩ :=
-    riesz_lemma_of_norm_lt hc hR (F := F.comap G.subtype) hFc ⟨⟨x, hxG⟩, hxF⟩
-  exact ⟨x₀, x₀.property, hx₀R, fun y hy => hx₀ ⟨y, hFG.le hy⟩ hy⟩
+  -- Apply Mathlib's lemma in the normed space `SeparationQuotient G`, to the image `F'` of `F`.
+  -- The quotient map `mk` preserves norms and is closed.
+  let F' := (F.comap G.subtype).map (mkCLM 𝕜 G).toLinearMap
+  have hF' : (F' : Set (SeparationQuotient G)) = mk '' (((↑) : G → E) ⁻¹' F) :=
+    Submodule.map_coe _ _
+  -- As `F` is closed in `G`, it is saturated for inseparability, so `mk a ∈ F'` iff `a ∈ F`
+  -- (membership in a preimage is membership of the image point, by `Set.mem_preimage`).
+  have hmem (a : G) : mk a ∈ F' ↔ (a : E) ∈ F := by
+    rw [← SetLike.mem_coe, hF']
+    exact Set.ext_iff.mp (preimage_image_mk_closed hFc) a
+  obtain ⟨q₀, hq₀R, hq₀⟩ := riesz_lemma_of_norm_lt hc hR (F := F')
+    (hF' ▸ isClosedMap_mk _ hFc) ⟨mk ⟨x, hxG⟩, (hmem _).not.2 hxF⟩
+  obtain ⟨x₀, rfl⟩ := surjective_mk q₀
+  refine ⟨x₀, x₀.property, ?_, fun y hy => ?_⟩
+  · rwa [norm_mk, ← Submodule.norm_coe] at hq₀R
+  · have h := hq₀ _ ((hmem ⟨y, hFG.le hy⟩).2 hy)
+    rwa [← mk_sub, norm_mk, ← Submodule.norm_coe, Submodule.coe_sub] at h
 
 /-- **Riesz's lemma**, translated form: for a closed submodule `F` of a seminormed group, a vector
 `x` and `r < 1`, some `y ∈ F` satisfies `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`, so `x - y`
