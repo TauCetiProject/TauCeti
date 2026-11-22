@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Twist.CExponential
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The Ma–Trudinger–Wang tensor and conditions
@@ -277,11 +278,8 @@ theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempt
   set ζ' := ζ - (⟪ξ, ζ⟫ / ‖ξ‖ ^ 2) • ξ
   have hζ' : ζ' ≠ 0 := fun h0 ↦ (LinearIndependent.pair_iff' hξ).1 hζ _ (sub_eq_zero.1 h0).symm
   have hξζ' : innerSL ℝ ζ' ξ = 0 := by
-    have : ‖ξ‖ ^ 2 ≠ 0 := by positivity
-    simp only [innerSL_apply_apply, ζ', inner_sub_left, real_inner_smul_left,
-      real_inner_self_eq_norm_sq, real_inner_comm ξ ζ]
-    field_simp
-    ring
+    simpa only [innerSL_apply_apply, RCLike.ofReal_real_eq_id, id_eq] using
+      TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) ζ ξ
   have hη : innerSL ℝ ζ' ≠ 0 := by
     rw [← norm_ne_zero_iff, innerSL_apply_norm]
     exact norm_ne_zero_iff.2 hζ'

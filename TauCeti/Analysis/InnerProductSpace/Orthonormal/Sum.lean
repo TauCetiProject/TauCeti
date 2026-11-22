@@ -122,15 +122,16 @@ theorem bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection (u : Orthonormal
     (v : OrthonormalBasis κ 𝕜 F) (B : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜) (ν g : E) (w : F) :
     B g w = ⟪ν, g⟫_𝕜 * ∑ j, B (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) (v j) * ⟪v j, w⟫_𝕜 +
       ∑ i, ∑ j, ⟪(𝕜 ∙ ν)ᗮ.starProjection (u i), g⟫_𝕜 * (B (u i) (v j) * ⟪v j, w⟫_𝕜) := by
-  -- Evaluate the sums over `j` at `w`, and the sum over `i` at the projection `P g` of `g`, by
-  -- self-adjointness; then `g` is its projection onto `𝕜 ∙ ν` plus `P g`.
-  have hP := u.sum_apply_mul_inner (B.flip w) ((𝕜 ∙ ν)ᗮ.starProjection g)
-  simp only [LinearMap.flip_apply] at hP
-  simp only [← Finset.mul_sum, v.sum_apply_mul_inner]
-  simp only [Submodule.inner_starProjection_left_eq_right, mul_comm ⟪u _, _⟫_𝕜, hP]
+  -- By self-adjointness, the double sum evaluates `B` at the projection `P g` of `g` and at `w`;
+  -- the sum over `j` evaluates `B ν'` at `w`. Then `g` is its projection onto `𝕜 ∙ ν` plus `P g`.
+  have hP : ∑ i, ∑ j, ⟪(𝕜 ∙ ν)ᗮ.starProjection (u i), g⟫_𝕜 * (B (u i) (v j) * ⟪v j, w⟫_𝕜) =
+      B ((𝕜 ∙ ν)ᗮ.starProjection g) w := by
+    rw [← u.sum_apply_mul_inner_mul_inner v B ((𝕜 ∙ ν)ᗮ.starProjection g) w]
+    simp only [Submodule.inner_starProjection_left_eq_right]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
   have hν := apply_starProjection_span_singleton (B.flip w) ν g
   simp only [LinearMap.flip_apply] at hν
-  rw [← hν, ← LinearMap.add_apply, ← map_add,
+  rw [v.sum_apply_mul_inner, hP, ← hν, ← LinearMap.add_apply, ← map_add,
     (𝕜 ∙ ν).starProjection_add_starProjection_orthogonal g]
 
 /-- **Expansion in rank-one operators.** For orthonormal bases `(uᵢ)` of `E` and `(vⱼ)` of `F`,
