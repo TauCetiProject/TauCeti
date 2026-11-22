@@ -54,7 +54,8 @@ This file develops the strongly nondegenerate case on any model.
 * `TauCeti.SmoothTwoForm.flatEquiv`: the flat map at a point where it is onto the dual, as a
   continuous linear equivalence `T_x M ≃L[ℝ] (T_x M →L[ℝ] ℝ)`.
 * `TauCeti.SmoothTwoForm.contMDiff_inverse_flat`: invertible flat maps have contraction inverses
-  forming a smooth section of `Hom(T*M, TM)`.
+  forming a smooth section of `Hom(T*M, TM)`, with the pointwise form
+  `TauCeti.SmoothTwoForm.contMDiffAt_inverse_flat` at a point where the flat map is invertible.
 * `TauCeti.SmoothTwoForm.contMDiff_inverse_flat_apply`: the contraction inverse of a `C^n`
   covector field is a `C^n` vector field.
 
@@ -145,6 +146,16 @@ theorem flatEquiv_symm_apply (hx : Function.Surjective (σ.flat x))
   rw [coe_flatEquiv] at h
   rw [h, ContinuousLinearEquiv.coe_coe]
 
+/-- **Smooth dependence of the contraction inverse at a point.** On a Banach manifold, if the
+flat map of `σ` at `x` is invertible, the contraction inverses `y ↦ (σ♭_y)⁻¹`, as a section of the
+bundle of linear maps from the cotangent bundle to the tangent bundle, are smooth at `x`. -/
+theorem contMDiffAt_inverse_flat (hx : (σ.flat x).IsInvertible) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) →L[ℝ] E)) ∞
+      (fun y ↦ TotalSpace.mk' ((E →L[ℝ] ℝ) →L[ℝ] E)
+        (E := fun y : M ↦ (TangentSpace I y →L[ℝ] ℝ) →L[ℝ] TangentSpace I y) y
+        (σ.flat y).inverse) x :=
+  σ.contMDiff_flat.contMDiffAt.clm_bundle_inverse hx
+
 /-- **Smooth dependence of the contraction inverse.** On a Banach manifold, if every flat map of
 `σ` is invertible, as for a strongly nondegenerate form (`isInvertible_flat_iff_surjective`), the
 contraction inverses `x ↦ (σ♭_x)⁻¹` form a smooth section of the bundle of linear maps from the
@@ -154,7 +165,7 @@ theorem contMDiff_inverse_flat (h : ∀ x, (σ.flat x).IsInvertible) :
       (fun x ↦ TotalSpace.mk' ((E →L[ℝ] ℝ) →L[ℝ] E)
         (E := fun x : M ↦ (TangentSpace I x →L[ℝ] ℝ) →L[ℝ] TangentSpace I x) x
         (σ.flat x).inverse) :=
-  σ.contMDiff_flat.clm_bundle_inverse h
+  fun x ↦ contMDiffAt_inverse_flat (h x)
 
 /-- **The contraction inverse of a smooth covector field is smooth.** On a Banach manifold, if
 every flat map of `σ` is invertible, as for a strongly nondegenerate form, then for a `C^n`

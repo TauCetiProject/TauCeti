@@ -543,6 +543,22 @@ theorem hamiltonianVectorField_eq_zero_iff_of_isInvertible (hx : (σ.flat x).IsI
   rw [← flat_hamiltonianVectorField_of_isInvertible hx f]
   exact (map_eq_zero_iff _ hx.injective).symm
 
+/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** On a Banach
+manifold, if `H : N → M → ℝ` is a family of Hamiltonians which is jointly `C^(n+1)` at
+`q ∈ N × M` and the flat map of `σ` at `q.2` is invertible, the Hamiltonian vector fields
+`(p, x) ↦ X_{H p}(x)` are jointly `C^n` at `q`, for `n ≤ ∞`. This applies to families which are
+only regular over an open set of parameters, such as Hamiltonian perturbations on a punctured
+domain. -/
+theorem contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace E]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+    {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ} {q : N × M} (hq : (σ.flat q.2).IsInvertible)
+    (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
+    ContMDiffAt (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
+  (((contMDiffAt_inverse_flat hq).of_le hn).comp q contMDiffAt_snd).clm_bundle_apply
+    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+
 variable (hσ : ∀ x, (σ.flat x).IsInvertible)
 include hσ
 
@@ -568,21 +584,6 @@ theorem contMDiff_hamiltonianVectorField_of_isInvertible [CompleteSpace E] {n : 
     ContMDiff I I.tangent n (T% (σ.hamiltonianVectorField f)) :=
   contMDiff_inverse_flat_apply hσ hn hf.contMDiff_totalSpaceMk_mvfderiv
 
-/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** On a Banach
-manifold, if every flat map of `σ` is invertible, and `H : N → M → ℝ` is a family of Hamiltonians
-which is jointly `C^(n+1)` at `q ∈ N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are
-jointly `C^n` at `q`, for `n ≤ ∞`. This applies to families which are only regular over an open set
-of parameters, such as Hamiltonian perturbations on a punctured domain. -/
-theorem contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace E]
-    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
-    {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ} {q : N × M}
-    (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
-    ContMDiffAt (J.prod I) I.tangent n
-      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
-  ((((contMDiff_inverse_flat hσ).of_le hn).comp contMDiff_snd) q).clm_bundle_apply
-    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
-
 /-- **Joint regularity of Hamiltonian vector fields of a family.** On a Banach manifold, if every
 flat map of `σ` is invertible, and `H : N → M → ℝ` is a family of Hamiltonians which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
@@ -595,7 +596,7 @@ theorem contMDiff_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace 
     (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
     ContMDiff (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
-  fun q ↦ contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible hσ hn (hH q)
+  fun q ↦ contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible hn (hσ q.2) (hH q)
 
 end IsInvertible
 
@@ -753,7 +754,7 @@ theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddC
     {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
     ContMDiffAt (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
-  contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible h.isInvertible_flat hn hH
+  contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible hn (h.isInvertible_flat q.2) hH
 
 /-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on a
 finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
