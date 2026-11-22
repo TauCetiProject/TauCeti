@@ -222,22 +222,6 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
     ((shiftEquiv lo hi h a b).symm f).val = f.val + h :=
   (rfl)
 
-/-- Shifting interval excess by the zero assignment fixes the underlying assignment. -/
-theorem shiftEquiv_zero_apply_val (lo hi : Assignment Q K) (a b : V → K)
-    (f : ExcessIntervalFlow lo hi a b) :
-    (shiftEquiv lo hi 0 a b f).val = f.val := by
-  simp only [shiftEquiv_apply_val, sub_zero]
-
-/-- Successive interval-excess shifts by `h` and `k` agree arrowwise with the single shift by
-`h + k`. The two codomains present the same bounds with different parenthesizations. -/
-theorem shiftEquiv_add_apply_val (lo hi h k : Assignment Q K) (a b : V → K)
-    (f : ExcessIntervalFlow lo hi a b) :
-    (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h)
-      (shiftEquiv lo hi h a b f)).val =
-        (shiftEquiv lo hi (h + k) a b f).val := by
-  ext x y e
-  simp only [shiftEquiv_apply_val, Pi.sub_apply, Pi.add_apply, sub_sub]
-
 /-- Interval-excess shifts also preserve any additive subgroup containing the reference. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (a b : V → K)
     {M : Type*} [SetLike M K] [AddSubgroupClass M K] (H : M)
@@ -286,22 +270,6 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
     (f : ExcessFlow (lo - h) (hi - h) (b - excessAt h)) :
     ((shiftEquiv lo hi h b).symm f).val = f.val + h :=
   (rfl)
-
-/-- Shifting prescribed excess by the zero assignment fixes the underlying assignment. -/
-theorem shiftEquiv_zero_apply_val (lo hi : Assignment Q K) (b : V → K)
-    (f : ExcessFlow lo hi b) :
-    (shiftEquiv lo hi 0 b f).val = f.val := by
-  simp only [shiftEquiv_apply_val, sub_zero]
-
-/-- Successive prescribed-excess shifts by `h` and `k` agree arrowwise with the single shift by
-`h + k`. The two codomains present the same bounds with different parenthesizations. -/
-theorem shiftEquiv_add_apply_val (lo hi h k : Assignment Q K) (b : V → K)
-    (f : ExcessFlow lo hi b) :
-    (shiftEquiv (lo - h) (hi - h) k (b - excessAt h)
-      (shiftEquiv lo hi h b f)).val =
-        (shiftEquiv lo hi (h + k) b f).val := by
-  ext x y e
-  simp only [shiftEquiv_apply_val, Pi.sub_apply, Pi.add_apply, sub_sub]
 
 /-- A shift by a subgroup-valued reference preserves subgroup membership arrowwise. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (b : V → K)
