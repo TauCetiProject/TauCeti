@@ -43,7 +43,8 @@ theorem hasWittGoodReductionAt_projModelOver_map (E : WeierstrassCurve ℤ) (p :
     HasWittGoodReductionAt (E.map (algebraMap ℤ ℚ)).projModelOver p := by
   -- the discriminant of `E` is a unit in `ℤₚ`, so `E` is elliptic over `ℤₚ`
   have : (E.map (algebraMap ℤ ℤ_[p])).IsElliptic := ⟨by
-    rw [map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.isUnit_iff]
+    simp only [map_Δ, algebraMap_int_eq, eq_intCast]
+    rw [PadicInt.isUnit_iff]
     exact le_antisymm (PadicInt.norm_le_one _)
       (not_lt.1 ((PadicInt.norm_int_lt_one_iff_dvd _).not.2 hp))⟩
   -- both base changes of `E` to `ℚₚ` are the same curve

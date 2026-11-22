@@ -216,18 +216,14 @@ theorem HasEverywhereWittGoodReduction.of_int {Y : Scheme.{0}} (g : Y ⟶ Spec (
     (hY : IsPullback φ f g (Spec.map (CommRingCat.ofHom (algebraMap ℤ ℚ)))) :
     HasEverywhereWittGoodReduction f := by
   intro p _
-  -- base change `Y ⟶ Spec ℤ` to `ℤₚ`, whose generic fibre is `X ×_ℚ ℚₚ`
-  set a := Spec.map (CommRingCat.ofHom (algebraMap ℚ ℚ_[p]))
-  have hYL := (IsPullback.of_hasPullback f a).paste_horiz hY
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, RingHom.ext_int ((algebraMap ℚ ℚ_[p]).comp _)
-    ((algebraMap ℤ_[p] ℚ_[p]).comp (algebraMap ℤ ℤ_[p])), CommRingCat.ofHom_comp,
-    Spec.map_comp] at hYL
-  exact .of_padicInt (pullback.snd g (Spec.map (CommRingCat.ofHom (algebraMap ℤ ℤ_[p]))))
-    (pullback.fst f a) (pullback.lift (pullback.fst f a ≫ φ)
-      (pullback.snd f a ≫ Spec.map (CommRingCat.ofHom (algebraMap ℤ_[p] ℚ_[p])))
-      (by simpa using hYL.w))
-    (pullback.snd f a) (.of_hasPullback _ _)
-    (IsPullback.of_right (by simpa using hYL) (by simp) (.of_hasPullback _ _))
+  -- `ℤₚ ≅ W(𝔽ₚ) → W` is injective, so `W` and its fraction field have characteristic zero
+  have : CharZero (WittVector p (AlgebraicClosure (ZMod p))) :=
+    charZero_of_injective_ringHom (f := (WittVector.map (algebraMap (ZMod p) _)).comp
+        (WittVector.equiv p).symm.toRingHom) <|
+      (WittVector.map_injective _ (algebraMap (ZMod p) _).injective).comp
+        (WittVector.equiv p).symm.injective
+  exact .of_isPullback (RingHom.id ℚ) (algebraMap ℤ ℚ) (Int.castRingHom _) (algebraMap ℚ _)
+    (RingHom.ext_int _ _) g (𝟙 X) φ f (by simpa using IsPullback.of_id_fst) hY
 
 variable {f' : X' ⟶ Spec (.of ℚ)}
 
