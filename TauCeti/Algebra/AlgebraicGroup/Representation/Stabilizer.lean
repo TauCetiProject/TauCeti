@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.HopfAlgebra.Antipode
@@ -36,6 +37,11 @@ This file constructs that Hopf ideal and characterizes it in four ways.
 The last statement is the infinitesimal input to the comparison of `G`-stable and
 `Lie(G)`-stable subspaces.
 
+Embedding a subspace in the first summand of a direct-sum representation preserves its
+scheme-theoretic stabilizer. In particular, the line through `(m, 0)` has the same stabilizer
+as the line through `m`. The proof compares the defining matrix coefficients, so it applies
+to nonreduced subgroup schemes over any field.
+
 ## Main declarations
 
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
@@ -47,6 +53,10 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
 * `Submodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `W` is a subcomodule.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
+* `Submodule.stabilizerHopfIdeal_map_inl`: embedding a subspace in the first summand preserves
+  its stabilizer.
+* `Submodule.stabilizerHopfIdeal_span_singleton_prod_zero`: the lines through `(m, 0)` and `m`
+  have the same stabilizer.
 
 ## References
 
@@ -59,7 +69,7 @@ public section
 open scoped TensorProduct
 open TauCeti
 
-universe u v w
+universe u v w x
 
 noncomputable section
 
@@ -337,5 +347,49 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
 end Hopf
+
+section Product
+
+variable {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
+  {M : Type w} {V : Type x} [AddCommGroup M] [Module k M] [Comodule k H M]
+  [AddCommGroup V] [Module k V] [Comodule k H V]
+
+attribute [local instance] Comodule.Prod
+
+/-- Adding a direct summand preserves the stabilizer of a subspace in the first summand. -/
+theorem stabilizerHopfIdeal_map_inl (W : Submodule k M) :
+    (W.map (LinearMap.inl k M V)).stabilizerHopfIdeal H = W.stabilizerHopfIdeal H := by
+  let U := W.map (LinearMap.inl k M V)
+  apply le_antisymm
+  · rw [stabilizerHopfIdeal_le_iff]
+    intro ψ y hy
+    obtain ⟨z, hz, rfl⟩ := hy
+    let f := (ψ ∘ₗ U.mkQ) ∘ₗ LinearMap.inl k M V
+    have hf : W ≤ LinearMap.ker f := by
+      intro z hz
+      simp only [LinearMap.mem_ker, f, LinearMap.comp_apply, mkQ_apply,
+        (Quotient.mk_eq_zero U).mpr (mem_map_of_mem hz), map_zero]
+    rw [LinearMap.inl_apply, ← Comodule.prodInl_apply (R := k) (C := H) (N := V) z,
+      Comodule.matrixCoefficient_map]
+    simpa only [liftQ_mkQ, Comodule.prodInl_toLinearMap] using
+      W.matrixCoefficient_mem_stabilizerHopfIdeal (W.liftQ f hf) hz
+  · rw [stabilizerHopfIdeal_le_iff]
+    intro ψ z hz
+    let f := (ψ ∘ₗ W.mkQ) ∘ₗ LinearMap.fst k M V
+    have hf : U ≤ LinearMap.ker f := by
+      rintro y ⟨z, hz, rfl⟩
+      simp only [LinearMap.mem_ker, f, LinearMap.comp_apply, LinearMap.inl_apply,
+        LinearMap.fst_apply, mkQ_apply, (Quotient.mk_eq_zero W).mpr hz, map_zero]
+    have hzU : LinearMap.inl k M V z ∈ U := mem_map_of_mem hz
+    have h := U.matrixCoefficient_mem_stabilizerHopfIdeal (H := H) (U.liftQ f hf) hzU
+    simpa only [liftQ_mkQ, f, Comodule.matrixCoefficient_prod_inl] using h
+
+/-- The line through `(m, 0)` has the same stabilizer as the line through `m`. -/
+theorem stabilizerHopfIdeal_span_singleton_prod_zero (m : M) :
+    (k ∙ (m, (0 : V))).stabilizerHopfIdeal H = (k ∙ m).stabilizerHopfIdeal H := by
+  simpa only [map_span, Set.image_singleton, LinearMap.inl_apply] using
+    stabilizerHopfIdeal_map_inl (H := H) (V := V) (k ∙ m)
+
+end Product
 
 end Submodule

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Product
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Product
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
@@ -20,9 +20,6 @@ its generator as `(m, 0)`. This preserves the line stabilizer and makes the repr
 
 Equality of Hopf ideals is recovered from points over all commutative value algebras, retaining
 the subgroup's infinitesimal structure. Neither algebraic closedness nor reducedness is needed.
-
-This proves the faithful-line prerequisite of TauCetiRoadmap/FlagVarieties/README.md,
-Layer 4.0(c), step 1.
 
 ## References
 
@@ -57,20 +54,16 @@ theorem exists_isFaithful_line_stabilizer {k H : Type u} [Field k]
   let : AddCommGroup U := Module.addCommMonoidToAddCommGroup k
   let : AddCommGroup (⋀[k]^n U) := Module.addCommMonoidToAddCommGroup k
   let : AddCommGroup L := Module.addCommMonoidToAddCommGroup k
-  obtain ⟨m, hm, hgen⟩ := (finrank_eq_one_iff' (K := k) (V := L)).mp hL
-  have hspan : L = k ∙ (m : ⋀[k]^n U) := by
-    apply le_antisymm
-    · intro z hz
-      obtain ⟨c, hc⟩ := hgen ⟨z, hz⟩
-      exact Submodule.mem_span_singleton.mpr ⟨c, congrArg Subtype.val hc⟩
-    · exact Submodule.span_le.mpr (Set.singleton_subset_iff.mpr m.property)
+  obtain ⟨m, hm, _⟩ := (finrank_eq_one_iff' (K := k) (V := L)).mp hL
+  have hspan : L = k ∙ (m : ⋀[k]^n U) :=
+    eq_span_singleton_of_mem_of_finrank_eq_one hL m.property (fun h ↦ hm (Subtype.ext h))
   have hLI : L.stabilizerHopfIdeal H = I := by
     apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := K)
     intro A
     ext g
     rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-    change ((L.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv) ↔ _
-    exact (L.stabilizerHopfIdeal_le_ker_iff g).trans (hstab A g).symm
+    simpa only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker] using
+      (L.stabilizerHopfIdeal_le_ker_iff g).trans (hstab A g).symm
   obtain ⟨V, hV⟩ := Comodule.exists_isFaithful (k := k) (H := H)
   let M := FGComoduleCat.of (R := k) (C := H) ((⋀[k]^n U) × V)
   have hne : ((m : ⋀[k]^n U), (0 : V)) ≠ 0 := by
