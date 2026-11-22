@@ -8,11 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
-import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
 import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
-import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
-import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -238,23 +235,18 @@ theorem forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup {x y : H} :
     (∀ p ∈ lieInvariants K L (Dual K L),
         lift (Dual.eval K L (x : L)) p = lift (Dual.eval K L (y : L)) p) ↔
       ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv x = y := by
-  constructor
-  · intro hp
-    -- Chevalley surjectivity transfers equality on `S(L*)^L` to equality on `S(H)^W`.
-    have hlin : ∀ q ∈ linearInvariants H,
-        lift (cartanEquivDual H x) q = lift (cartanEquivDual H y) q := by
-      intro q hq
-      obtain ⟨r, hr, rfl⟩ := Subalgebra.mem_map.mp
-        ((LieSubalgebra.map_lieInvariants_lieCartanRestriction H).ge hq)
-      have hr' : killingSymmetricEquiv K L r ∈ lieInvariants K L (Dual K L) :=
-        (killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr hr
-      rw [← lift_eval_killingSymmetricEquiv_coe, ← lift_eval_killingSymmetricEquiv_coe]
-      exact hp _ hr'
-    exact forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff.mp hlin
-  · rintro ⟨w, rfl⟩ p hp
-    let := ratLieAlgebra K L
-    obtain ⟨g, hg, hgw⟩ := exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv w
-    rw [← hgw x, lift_eval_smul_of_mem_intLieAlgebra hg hp]
+  refine ⟨fun hp ↦ ?_, fun hw p hp ↦ lift_eval_coe_eq_of_coweightEquiv_eq hw hp⟩
+  -- Chevalley surjectivity transfers equality on `S(L*)^L` to equality on `S(H)^W`.
+  have hlin : ∀ q ∈ linearInvariants H,
+      lift (cartanEquivDual H x) q = lift (cartanEquivDual H y) q := by
+    intro q hq
+    obtain ⟨r, hr, rfl⟩ := Subalgebra.mem_map.mp
+      ((LieSubalgebra.map_lieInvariants_lieCartanRestriction H).ge hq)
+    have hr' : killingSymmetricEquiv K L r ∈ lieInvariants K L (Dual K L) :=
+      (killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr hr
+    rw [← lift_eval_killingSymmetricEquiv_coe, ← lift_eval_killingSymmetricEquiv_coe]
+    exact hp _ hr'
+  exact forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff.mp hlin
 
 end CartanSeparation
 

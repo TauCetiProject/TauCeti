@@ -44,8 +44,7 @@ Malcev–Kostant conjugacy at a shared neutral element
 every `h ∈ b.dominantNeutralElements` determines a well-defined nonzero rational adjoint orbit
 `b.dominantVectorOrbit h` (`RootPairing.Base.dominantVectorOrbit`), exhausting the nonzero
 nilpotent `G(k)`-orbits. Consequently `G(k)` has only finitely many nilpotent orbits in `𝔤`
-(`TauCeti.Comodule.VectorOrbit.finite_setOf_isNilpotentAd`,
-`TauCeti.finite_image_vectorOrbit_mk_setOf_isNilpotent_ad`), with bounds
+(`TauCeti.Comodule.VectorOrbit.finite_setOf_isNilpotentAd`), with bounds
 `3 ^ finrank k 𝔥 - 1` and `3 ^ finrank k 𝔥`
 (`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_le`,
 `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_le`), without assuming `G` is connected.
@@ -156,17 +155,15 @@ theorem dominantVectorOrbit_eq_mk_iff (b : (LieAlgebra.IsKilling.rootSystem 𝔥
         IsSl2Triple (h : Module.Dual k (Bialgebra.CotangentSpace k H))
           (Comodule.basePointsRepresentation
             (Module.Dual k (Bialgebra.CotangentSpace k H)) g x) f := by
-  obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h
-  rw [he, Comodule.VectorOrbit.mk_eq_mk_iff]
   constructor
-  · rintro ⟨g, rfl⟩
+  · intro horb
+    obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h
+    rw [he, Comodule.VectorOrbit.mk_eq_mk_iff] at horb
+    obtain ⟨g, rfl⟩ := horb
     refine ⟨g⁻¹, f, ?_⟩
     rwa [Representation.inv_self_apply]
   · rintro ⟨g, f', t'⟩
-    obtain ⟨c, -, -, hce, -⟩ :=
-      t.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t'
-    refine ⟨g⁻¹ * c, ?_⟩
-    rw [map_mul, mul_apply_eq_comp, hce, Representation.inv_self_apply]
+    rw [b.dominantVectorOrbit_eq_mk t', Comodule.VectorOrbit.mk_basePointsRepresentation]
 
 /-- A dominant nilpotent orbit is never the zero orbit. -/
 @[simp]
@@ -449,49 +446,6 @@ theorem finite_setOf_lt_of_isNilpotentAd {O : VectorOrbit k H 𝔤} (hO : O.IsNi
     hlt.le
 
 end Comodule.VectorOrbit
-
-section FiniteOrbits
-
-variable (H) in
-/-- **Finiteness of nonzero nilpotent `G`-orbits.** -/
-theorem finite_image_vectorOrbit_mk_setOf_exists_isSl2Triple :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : 𝔤 | ∃ h f, IsSl2Triple h e f}).Finite := by
-  rw [image_vectorOrbit_mk_setOf_exists_isSl2Triple]
-  exact Comodule.VectorOrbit.finite_setOf_isNilpotentAd.subset fun _ h ↦ h.1
-
-variable (H) in
-/-- **Finiteness of nilpotent `G`-orbits.** An affine group of finite type with Killing Lie
-algebra over an algebraically closed field of characteristic zero has only finitely many rational
-nilpotent orbits in its Lie algebra (no connectedness hypothesis is required). -/
-theorem finite_image_vectorOrbit_mk_setOf_isNilpotent_ad :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : 𝔤 | IsNilpotent (LieAlgebra.ad k 𝔤 e)}).Finite := by
-  rw [image_vectorOrbit_mk_setOf_isNilpotent_ad]
-  exact Comodule.VectorOrbit.finite_setOf_isNilpotentAd
-
-/-- **Bound on the number of nonzero nilpotent `G`-orbits.** There are at most `3 ^ finrank k 𝔥`
-nonzero nilpotent `G`-orbits, for any Cartan subalgebra `𝔥`. -/
-theorem ncard_image_vectorOrbit_mk_setOf_exists_isSl2Triple_le
-    (𝔥 : LieSubalgebra k 𝔤) [𝔥.IsCartanSubalgebra] :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : 𝔤 | ∃ h f, IsSl2Triple h e f}).ncard ≤
-      3 ^ Module.finrank k 𝔥 := by
-  rw [image_vectorOrbit_mk_setOf_exists_isSl2Triple]
-  exact (Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_le 𝔥).trans
-    (Nat.sub_le _ _)
-
-/-- **Bound on the total number of nilpotent `G`-orbits.** Including the zero orbit, there are at
-most `3 ^ finrank k 𝔥 + 1` nilpotent `G`-orbits. -/
-theorem ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_le
-    (𝔥 : LieSubalgebra k 𝔤) [𝔥.IsCartanSubalgebra] :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : 𝔤 | IsNilpotent (LieAlgebra.ad k 𝔤 e)}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 := by
-  rw [image_vectorOrbit_mk_setOf_isNilpotent_ad]
-  exact (Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_le 𝔥).trans (Nat.le_succ _)
-
-end FiniteOrbits
 
 end Finiteness
 
@@ -887,8 +841,9 @@ theorem finite_image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval :
       {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
         nilpotentConeIdeal k H ≤
           RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))}).Finite := by
-  rw [image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval H]
-  exact finite_image_vectorOrbit_mk_setOf_isNilpotent_ad H
+  rw [image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval H,
+    image_vectorOrbit_mk_setOf_isNilpotent_ad]
+  exact Comodule.VectorOrbit.finite_setOf_isNilpotentAd
 
 variable {H}
 

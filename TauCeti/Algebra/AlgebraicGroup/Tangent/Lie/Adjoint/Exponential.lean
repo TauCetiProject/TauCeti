@@ -68,7 +68,7 @@ nilpotence of the left-invariant derivation on `H` holds in two geometric settin
   specialized to `C_G(e)(k)` and `C_G(e)°(k)` in
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_e_eq`
   and `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq`.
-* `TauCeti.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad`,
+* `TauCeti.exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero`,
   `TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup`,
   `TauCeti.exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_smul_of_mem_intLieAlgebra`,
   `TauCeti.expAdPoint`, `TauCeti.expAdPoint_mem_identityComponent`,
@@ -142,9 +142,9 @@ theorem basePointsRepresentation_adjoint_expPoint
   have hnil : IsNilpotent (Comodule.differential (R := R) (H := H)
       (M := Module.Dual R (Bialgebra.CotangentSpace R H))
       (Derivation.cotangentDualLieEquiv (R := R) (H := H) x)) := by
-    rwa [differential_adjointComodule_cotangentDualLieEquiv]
+    rwa [Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
   rw [Comodule.basePointsRepresentation_expPoint hd hnil,
-    differential_adjointComodule_cotangentDualLieEquiv]
+    Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
 
 /-- **The exponential one-parameter subgroup of an `ad`-nilpotent tangent vector acts on `𝔤` as
 `exp (t • ad x)`.** -/
@@ -160,9 +160,9 @@ theorem basePointsRepresentation_adjoint_expPointAt
   have hnil : IsNilpotent (Comodule.differential (R := R) (H := H)
       (M := Module.Dual R (Bialgebra.CotangentSpace R H))
       (Derivation.cotangentDualLieEquiv (R := R) (H := H) x)) := by
-    rwa [differential_adjointComodule_cotangentDualLieEquiv]
+    rwa [Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
   rw [Comodule.basePointsRepresentation_expPointAt_of_isNilpotent _ hd hnil t,
-    differential_adjointComodule_cotangentDualLieEquiv]
+    Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
 
 end ModuleRat
 
@@ -271,23 +271,21 @@ section IsKilling
 
 variable {k : Type u} [Field k] [CharZero k]
 
-/-- **Every `ad`-nilpotent tangent vector of a Killing Lie algebra has a locally nilpotent
-left-invariant derivation.** -/
-theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad
+/-- **An `ad`-nilpotent element of a Killing tangent Lie algebra induces a locally nilpotent
+left-invariant derivation on `H`.** -/
+theorem exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero
     {H : Type v} [CommRing H] [HopfAlgebra k H]
     [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
     {x : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (hx : IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x))
-    (a : H) :
-    ∃ n, (Bialgebra.leftInvariantDerivation
-      (Derivation.cotangentDualLieEquiv (R := k) (H := H) x))^[n] a = 0 := by
+    (hx : IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x)) :
+    ∀ a : H, ∃ m,
+      (Bialgebra.leftInvariantDerivation
+        (Derivation.cotangentDualLieEquiv (R := k) (H := H) x))^[m] a = 0 := by
+  intro a
   refine Bialgebra.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_isNilpotent
     (fun N hN ↦ ?_) a
   have : Module.Finite k N := hN
-  let ρ : Module.Dual k (Bialgebra.CotangentSpace k H) →ₗ⁅k⁆ Module.End k N :=
-    (Comodule.differential (R := k) (H := H) (M := N)).comp
-      (Derivation.cotangentDualLieEquiv (R := k) (H := H)).toLieHom
-  exact isNilpotent_apply_of_isNilpotent_ad (ρ := ρ) hx
+  exact Comodule.isNilpotent_differential_cotangentDualLieEquiv_of_isNilpotent_ad hx
 
 /-- **Every inner automorphism in `Int(𝔤)` lies in the adjoint image of any closed subgroup with
 full Lie algebra.** -/
@@ -304,7 +302,7 @@ theorem intLieAlgebra_le_map_quotientPointsSubgroup
             (Module.Dual k (Bialgebra.CotangentSpace k H))).toHomUnits := by
   let : Algebra ℚ H := ((algebraMap k H).comp (algebraMap ℚ k)).toAlgebra
   refine intLieAlgebra_le_iff.mpr fun x hx ↦ ?_
-  have hd := exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx
+  have hd := exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx
   have hxJ : Derivation.cotangentDualLieEquiv (R := k) (H := H) x ∈ J.lieSubalgebra (B := k) :=
     hJ.symm ▸ LieSubalgebra.mem_top _
   refine ⟨toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x) hd),
@@ -344,22 +342,12 @@ variable {k H : Type u} [Field k] [CharZero k] [CommRing H] [HopfAlgebra k H]
 
 local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
 
-omit [Algebra.FiniteType k H] in
-/-- **An `ad`-nilpotent element of a Killing tangent Lie algebra induces a locally nilpotent
-left-invariant derivation on `H`.** -/
-theorem exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero
-    {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
-    ∀ a : H, ∃ m,
-      (Bialgebra.leftInvariantDerivation
-        (Derivation.cotangentDualLieEquiv (R := k) (H := H) x))^[m] a = 0 :=
-  exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx
-
 /-- **The exponential `k`-point `exp x ∈ G(k)` attached to an `ad`-nilpotent element `x ∈ 𝔤`.** -/
 noncomputable def expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     WithConv (H →ₐ[k] k) :=
   letI : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)
-    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx))
+    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx))
 
 omit [Algebra.FiniteType k H] in
 /-- **`expAdPoint` unfolds to the Taylor exponential point of `cotangentDualLieEquiv x`.** -/
@@ -367,7 +355,7 @@ theorem expAdPoint_def {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     expAdPoint (H := H) hx =
       let : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
       toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)
-        (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)) :=
+        (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)) :=
   (rfl)
 
 omit [Algebra.FiniteType k H] in
@@ -390,7 +378,7 @@ theorem Comodule.basePointsRepresentation_expAdPoint
         (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)) := by
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   exact Comodule.basePointsRepresentation_expPoint
-    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)
+    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
     (Comodule.isNilpotent_differential_cotangentDualLieEquiv_of_isNilpotent_ad hx)
 
 /-- **The adjoint action of `expAdPoint hx` on `𝔤` is the operator exponential `exp (ad x)`.** -/
@@ -398,11 +386,8 @@ theorem Comodule.basePointsRepresentation_expAdPoint
 theorem basePointsRepresentation_expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 (expAdPoint hx) =
       IsNilpotent.exp (LieAlgebra.ad k 𝔤 x) := by
-  have hdiff : Comodule.differential (R := k) (H := H) (M := 𝔤)
-      (Derivation.cotangentDualLieEquiv (R := k) (H := H) x) = LieAlgebra.ad k 𝔤 x := by
-    ext y
-    rw [Derivation.differential_adjointComodule, LieEquiv.symm_apply_apply, LieAlgebra.ad_apply]
-  rw [Comodule.basePointsRepresentation_expAdPoint (M := 𝔤) hx, hdiff]
+  rw [Comodule.basePointsRepresentation_expAdPoint (M := 𝔤) hx,
+    Derivation.cotangentDualLieEquiv_apply, differential_adjointComodule_cotangentLinearEquiv]
 
 /-- **Two `ad`-nilpotent elements have the same exponential point if and only if they are equal.**
 -/
@@ -442,7 +427,7 @@ theorem expAdPoint_mem_quotientPointsSubgroup (I : HopfIdeal k H)
       CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of k H) I (CommAlgCat.of k k) := by
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   exact I.toConv_expPoint_mem_quotientPointsSubgroup hxI
-    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)
+    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
 
 /-- **As a Lie automorphism, `expAdPoint hx` acts on `𝔤` by `expAd x`.** -/
 theorem basePointsAdjointLieEquiv_expAdPoint [LieAlgebra ℚ 𝔤]

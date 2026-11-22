@@ -9,6 +9,7 @@ public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.Flip
 
 /-!
 # Permutation actions of Weyl groups
@@ -431,21 +432,10 @@ theorem weylGroup.ofIdx_neg (i : ι) :
 /-- Every coweight action of `P.weylGroup` is realized as a weight action of `P.flip.weylGroup`. -/
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
     ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = (w : P.Aut).coweightEquiv z := by
-  suffices ∀ u ∈ P.weylGroup, ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = u.coweightEquiv z from
-    this w w.property
-  intro u hu
-  induction hu using weylGroup.induction with
-  | mem i =>
-    refine ⟨weylGroup.ofIdx P.flip i, fun z ↦ ?_⟩
-    rw [weylGroup.ofIdx_smul, Equiv.reflection_coweightEquiv]
-    rfl
-  | one => exact ⟨1, fun z ↦ by simp⟩
-  | mul u v _ _ ihu ihv =>
-    obtain ⟨u', hu'⟩ := ihu
-    obtain ⟨v', hv'⟩ := ihv
-    refine ⟨v' * u', fun z ↦ ?_⟩
-    rw [mul_smul, hu', hv', Equiv.mul_eq_comp, Equiv.coweightEquiv_comp_toLin,
-      LinearEquiv.trans_apply]
+  refine ⟨⟨Equiv.autFlip P ((w⁻¹ : P.weylGroup) : P.Aut),
+    Equiv.autFlip_mem_weylGroup (w⁻¹).property⟩, fun z ↦ ?_⟩
+  rw [Subgroup.smul_def, Equiv.autFlip_smul_coweight, Subgroup.coe_inv, Equiv.coweightEquiv_inv]
+  rfl
 
 end
 
