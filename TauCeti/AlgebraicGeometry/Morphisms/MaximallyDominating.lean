@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicGeometry.Noetherian
 
 A *maximal point* of a scheme is the generic point of one of its irreducible components; these
 are Mathlib's `genericPoints`. A morphism of schemes `f : X ⟶ Y` is *maximally dominating*
-(`AlgebraicGeometry.IsMaximallyDominating`) if it sends every maximal point of `X` to a maximal
-point of `Y`.
+(`TauCeti.AlgebraicGeometry.IsMaximallyDominating`) if it sends every maximal point of `X` to a
+maximal point of `Y`.
 
 This is the form of dominance used for alterations of possibly reducible schemes. For reducible
 targets it differs from Mathlib's `AlgebraicGeometry.IsDominant`, which asks for dense image:
@@ -34,25 +34,26 @@ field are dense, but miss its maximal point.
 
 ## Main definitions
 
-* `AlgebraicGeometry.IsMaximallyDominating`: a morphism sending maximal points to maximal points.
+* `TauCeti.AlgebraicGeometry.IsMaximallyDominating`: a morphism sending maximal points to maximal
+  points.
 
 ## Main results
 
-* `AlgebraicGeometry.IsMaximallyDominating.comp`: composites of maximally dominating morphisms are
-  maximally dominating. Open immersions, in particular isomorphisms and the identity, are
-  maximally dominating, and so is any morphism from the empty scheme.
-* `AlgebraicGeometry.IsMaximallyDominating.of_comp_of_isOpenImmersion`: maximal domination of a
-  composite with an open immersion descends to the first factor. Hence the restriction
-  `f ∣_ U` of a maximally dominating morphism over an open `U ⊆ Y` is maximally dominating, and
-  so is the restriction `U.ι ≫ f` to an open subscheme `U` of `X`.
-* `AlgebraicGeometry.isMaximallyDominating_iff_dense_preimage_genericPoints`: for locally
+* `TauCeti.AlgebraicGeometry.IsMaximallyDominating.comp`: composites of maximally dominating
+  morphisms are maximally dominating. Open immersions, in particular isomorphisms and the
+  identity, are maximally dominating, and so is any morphism from the empty scheme.
+* `TauCeti.AlgebraicGeometry.IsMaximallyDominating.of_comp_of_isOpenImmersion`: maximal
+  domination of a composite with an open immersion descends to the first factor. Hence the
+  restriction `f ∣_ U` of a maximally dominating morphism over an open `U ⊆ Y` is maximally
+  dominating, and so is the restriction `U.ι ≫ f` to an open subscheme `U` of `X`.
+* `TauCeti.AlgebraicGeometry.isMaximallyDominating_iff_dense_preimage_genericPoints`: for locally
   Noetherian `X`, maximal domination is density of the generic fibre.
-* `AlgebraicGeometry.isMaximallyDominating_iff_genericPoint_mem`: for irreducible `X`, maximal
-  domination says the generic point of `X` maps to a maximal point.
-* `AlgebraicGeometry.isMaximallyDominating_iff_isDominant`: between irreducible schemes, maximal
-  domination is dominance.
-* `AlgebraicGeometry.isMaximallyDominating_fromSpecResidueField_iff`: the residue-field point
-  `Spec κ(y) ⟶ Y` is maximally dominating exactly when `y` is a maximal point.
+* `TauCeti.AlgebraicGeometry.isMaximallyDominating_iff_genericPoint_mem`: for irreducible `X`,
+  maximal domination says the generic point of `X` maps to a maximal point.
+* `TauCeti.AlgebraicGeometry.isMaximallyDominating_iff_isDominant`: between irreducible schemes,
+  maximal domination is dominance.
+* `TauCeti.AlgebraicGeometry.isMaximallyDominating_fromSpecResidueField_iff`: the residue-field
+  point `Spec κ(y) ⟶ Y` is maximally dominating exactly when `y` is a maximal point.
 
 ## References
 
@@ -65,9 +66,9 @@ field are dense, but miss its maximal point.
 
 public section
 
-open CategoryTheory Set Topology
+open CategoryTheory Set Topology _root_.AlgebraicGeometry
 
-namespace AlgebraicGeometry
+namespace TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -80,8 +81,8 @@ class IsMaximallyDominating : Prop where
   mapsTo_genericPoints : MapsTo f (genericPoints X) (genericPoints Y)
 
 /-- A maximally dominating morphism maps maximal points to maximal points. -/
-theorem Scheme.Hom.mapsTo_genericPoints [IsMaximallyDominating f] :
-    MapsTo f (genericPoints X) (genericPoints Y) :=
+theorem _root_.AlgebraicGeometry.Scheme.Hom.mapsTo_genericPoints
+    [IsMaximallyDominating f] : MapsTo f (genericPoints X) (genericPoints Y) :=
   IsMaximallyDominating.mapsTo_genericPoints
 
 /-- An open immersion is maximally dominating: the maximal points of an open subscheme are the
@@ -150,8 +151,8 @@ instance IsMaximallyDominating.morphismRestrict [IsMaximallyDominating f] (U : Y
 
 /-- The generic fibre `f ⁻¹' genericPoints Y` of a maximally dominating morphism is dense, since it
 contains every maximal point of the source. -/
-theorem Scheme.Hom.dense_preimage_genericPoints [IsMaximallyDominating f] :
-    Dense (f ⁻¹' genericPoints Y) :=
+theorem _root_.AlgebraicGeometry.Scheme.Hom.dense_preimage_genericPoints
+    [IsMaximallyDominating f] : Dense (f ⁻¹' genericPoints Y) :=
   (dense_iff_closure_eq.mpr genericPoints.closure).mono
     (mapsTo_iff_subset_preimage.mp f.mapsTo_genericPoints)
 
@@ -162,7 +163,7 @@ theorem isMaximallyDominating_iff_dense_preimage_genericPoints [IsLocallyNoether
     IsMaximallyDominating f ↔ Dense (f ⁻¹' genericPoints Y) :=
   ⟨fun _ ↦ f.dense_preimage_genericPoints, fun h ↦ ⟨fun _ hx ↦
     (genericPoints.stableUnderGeneralization.preimage f.continuous).mem_of_dense h
-      (TauCeti.AlgebraicGeometry.nonempty_interior_closure_of_mem_genericPoints hx)⟩⟩
+      (nonempty_interior_closure_of_mem_genericPoints hx)⟩⟩
 
 /-- A morphism from an irreducible scheme is maximally dominating exactly when it maps the generic
 point of the source to a maximal point of the target. -/
@@ -177,9 +178,11 @@ theorem isMaximallyDominating_iff_isDominant [IrreducibleSpace X] [IrreducibleSp
   rw [isMaximallyDominating_iff_genericPoint_mem, genericPoints_eq_singleton, mem_singleton_iff,
     isDominant_iff_genericPoint_eq]
 
-/-- A dominant morphism between irreducible schemes is maximally dominating. -/
+/-- A dominant morphism from an irreducible scheme is maximally dominating; its target is then
+irreducible as well. -/
 instance (priority := 100) IsMaximallyDominating.of_isDominant [IrreducibleSpace X]
-    [IrreducibleSpace Y] [IsDominant f] : IsMaximallyDominating f :=
+    [IsDominant f] : IsMaximallyDominating f :=
+  have := f.irreducibleSpace_of_isDominant
   (isMaximallyDominating_iff_isDominant f).mpr inferInstance
 
 /-- The canonical morphism `Spec κ(y) ⟶ Y` from the spectrum of the residue field at `y` is
@@ -189,4 +192,4 @@ theorem isMaximallyDominating_fromSpecResidueField_iff (y : Y) :
     IsMaximallyDominating (Y.fromSpecResidueField y) ↔ y ∈ genericPoints Y := by
   rw [isMaximallyDominating_iff_genericPoint_mem, Scheme.fromSpecResidueField_apply]
 
-end AlgebraicGeometry
+end TauCeti.AlgebraicGeometry

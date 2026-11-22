@@ -20,8 +20,8 @@ Noetherianity or a dimension argument.
 The set of component-generic points is stable under generalization. A dense set that is stable
 under generalization contains every point whose closure has nonempty interior, and the closure of a
 component-generic point has nonempty interior as soon as the point has an open Noetherian
-neighbourhood. So in a space covered by open Noetherian subspaces, such as a locally Noetherian
-scheme, a set stable under generalization is dense exactly when it contains every
+neighbourhood. So in a quasi-sober space covered by open Noetherian subspaces, such as a locally
+Noetherian scheme, a set stable under generalization is dense exactly when it contains every
 component-generic point.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
@@ -38,6 +38,12 @@ public section
 
 open Set Topology
 
+/-- A generalization of the generic point of an irreducible component is inseparable from it. -/
+theorem Specializes.inseparable_of_mem_genericPoints {X : Type*} [TopologicalSpace X] {x y : X}
+    (h : y ⤳ x) (hx : x ∈ genericPoints X) : Inseparable y x :=
+  h.antisymm (specializes_iff_closure_subset.mpr
+    (hx.2 isIrreducible_singleton.closure (specializes_iff_closure_subset.mp h)))
+
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [QuasiSober X] [T0Space X]
@@ -47,11 +53,7 @@ with no proper generization. -/
 theorem mem_genericPoints_iff {x : X} :
     x ∈ genericPoints X ↔ ∀ y : X, y ⤳ x → y = x := by
   constructor
-  · intro hx y hy
-    have hle : closure ({x} : Set X) ⊆ closure {y} :=
-      specializes_iff_closure_subset.mp hy
-    exact (hy.antisymm (specializes_iff_closure_subset.mpr
-      (hx.2 isIrreducible_singleton.closure hle))).eq
+  · exact fun hx y hy ↦ (hy.inseparable_of_mem_genericPoints hx).eq
   · intro hx
     refine ⟨isIrreducible_singleton.closure, fun t ht hxt ↦ ?_⟩
     have hgen := ht.isGenericPoint_genericPoint_closure
@@ -243,15 +245,12 @@ section Generalization
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- The set of component-generic points is stable under generalization: in a `T₀` space, a
-generalization of the generic point of an irreducible component is that generic point. -/
-theorem genericPoints.stableUnderGeneralization [T0Space X] :
-    StableUnderGeneralization (genericPoints X) := by
-  intro x y hyx hx
-  have hle := specializes_iff_closure_subset.mp hyx
-  have hyx' : x ⤳ y :=
-    specializes_iff_closure_subset.mpr (hx.2 isIrreducible_singleton.closure hle)
-  rwa [(hyx.antisymm hyx').eq]
+/-- The set of component-generic points is stable under generalization: a generalization of the
+generic point of an irreducible component has the same closure. -/
+theorem genericPoints.stableUnderGeneralization : StableUnderGeneralization (genericPoints X) :=
+  fun _ _ hyx hx ↦ by
+    rwa [genericPoints, mem_ofPred_eq,
+      inseparable_iff_closure_eq.mp (hyx.inseparable_of_mem_genericPoints hx)]
 
 /-- A dense set stable under generalization contains every point whose closure has nonempty
 interior. -/
