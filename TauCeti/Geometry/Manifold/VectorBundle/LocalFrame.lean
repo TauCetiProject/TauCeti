@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -297,25 +297,27 @@ end TauCeti.Manifold
 namespace Bundle.Trivialization
 
 /-- Near a point `x` of the base set of a trivialization `e` of a `C^n` real vector bundle over a
-finite-dimensional Hausdorff smooth manifold, the local frame `e.localFrame b` agrees with a family
+finite-dimensional Hausdorff `C^n` manifold, the local frame `e.localFrame b` agrees with a family
 of globally `C^n` sections, for `n ≤ ∞`. -/
 theorem exists_contMDiff_eventuallyEq_localFrame
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+    {n : ℕ∞ω} [IsManifold I n M]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] {n : ℕ∞ω} [ContMDiffVectorBundle n G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle n G W I]
     {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
     {x : M} (hn : n ≤ ∞) (hx : x ∈ e.baseSet) :
     ∃ F : ι → Π y : M, W y, (∀ i, CMDiff n (T% (F i))) ∧
       ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
-  -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
+  -- Cut the frame off by a bump function equal to one near `x`, supported in `e.baseSet`.
+  let : ENat.LEInfty n := ⟨hn⟩
   have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
   refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
-  · exact (ρ.contMDiff.of_le hn).contMDiffOn
+  · exact ρ.contMDiff_of_isManifold.contMDiffOn
       |>.smul_section_of_tsupport e.open_baseSet hρ
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
