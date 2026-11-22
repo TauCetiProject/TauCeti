@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
+public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Cartan
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.NoncommRing
@@ -67,6 +68,10 @@ Lie algebra.
   `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`.
 * `LieAlgebra.Symplectic.killingForm_cartanInvolution_self_neg`: `κ(X, θ X) < 0` for nonzero `X`
   over an ordered field.
+* `LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`: `θ` is a Cartan involution
+  (`LieEquiv.IsCartanInvolution`) over an ordered field.
+* `LieAlgebra.Symplectic.not_isCartanInvolution_refl`: for nonempty `l`, the identity is not a
+  Cartan involution of `sp l K`.
 
 ## References
 
@@ -206,30 +211,6 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- The linear involution `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`. -/
-private noncomputable def jConj : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
-  LinearMap.mulLeft R (J l R) ∘ₗ LinearMap.mulRight R (J l R) ∘ₗ
-    (transposeLinearEquiv (l ⊕ l) (l ⊕ l) R R).toLinearMap
-
-private theorem jConj_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj Z = J l R * Zᵀ * J l R := by
-  simp [jConj, mul_assoc]
-
-private theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := by
-  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg,
-    neg_neg, ← mul_assoc]
-  simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
-
-/-- The map `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on `sp l R`. -/
-private noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
-  toFun Z := ⟨Z + jConj Z, by
-    rw [mem_sp_iff_J_mul_transpose_mul_J_eq, ← jConj_apply, map_add, jConj_jConj, add_comm]⟩
-  map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
-  map_smul' c Z := by ext1; simp
-
-private theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
-    (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
-  rfl
-
 /-- The trace of `Z ↦ J (A Z B)ᵀ J` on the matrices. -/
 private theorem trace_jConj_comp (A B : Matrix (l ⊕ l) (l ⊕ l) R) :
     LinearMap.trace R _ (jConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
@@ -250,10 +231,7 @@ private theorem trace_jConj_comp_ad_comp_ad {A B : Matrix (l ⊕ l) (l ⊕ l) R}
   have hA' := (mem_sp_iff_J_mul_transpose_mul_J_eq A).mp hA
   have hB' := (mem_sp_iff_J_mul_transpose_mul_J_eq B).mp hB
   have hBA : J l R * (B * A)ᵀ * J l R = -(A * B) := by
-    calc J l R * (B * A)ᵀ * J l R = J l R * Aᵀ * -(J l R * J l R) * Bᵀ * J l R := by
-          rw [transpose_mul, J_squared]; noncomm_ring
-      _ = -((J l R * Aᵀ * J l R) * (J l R * Bᵀ * J l R)) := by noncomm_ring
-      _ = -(A * B) := by rw [hA', hB']
+    rw [← jConj_apply, jConj_mul, jConj_apply, jConj_apply, hA', hB']
   have hl : jConj ∘ₗ LinearMap.mulLeft R (A * B) =
       jConj ∘ₗ LinearMap.mulLeft R (A * B) ∘ₗ LinearMap.mulRight R 1 := by
     ext1 Z; simp
@@ -282,15 +260,15 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
   have h1 : symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap =
       (2 : K) • (ad K (sp l K) X ∘ₗ ad K (sp l K) Y) := by
     ext1 W
-    have hW : jConj (L W) = L W := by
-      rw [jConj_apply, ← mem_sp_iff_J_mul_transpose_mul_J_eq]
-      exact (sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2)
+    have hW : jConj (L W) = L W :=
+      (mem_sp_iff_jConj_eq _).mp ((sp l K).lie_mem X.property
+          ((sp l K).lie_mem Y.property W.property))
     apply Subtype.ext
     simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
       LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
     simp [hL, two_smul]
   have h2 : (sp l K).incl.toLinearMap ∘ₗ symmetrize = LinearMap.id + jConj := by
-    ext1 Z; simp [coe_symmetrize_apply]
+    ext1 Z; simp
   -- Cycling the trace moves the computation to the matrices.
   have htrace : LinearMap.trace K _ (symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap) =
       LinearMap.trace K _ L + LinearMap.trace K _ (jConj ∘ₗ L) := by
@@ -298,7 +276,8 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
       LinearMap.add_comp, map_add, LinearMap.id_comp]
   rw [h1, map_smul, smul_eq_mul, ← killingForm_apply_apply] at htrace
   rw [htrace, hL, ← killingForm_apply_apply, Matrix.killingForm_apply,
-    trace_eq_zero_of_mem_sp X.2, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.2 Y.2]
+    trace_eq_zero_of_mem_sp X.property, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.property
+        Y.property]
   push_cast
   ring
 
@@ -322,9 +301,8 @@ theorem killingForm_cartanInvolution_apply (X Y : sp l K) :
 
 end Field
 
-/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field: `κ(X, θ X) < 0`
-for every nonzero `X`, since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the
-entries of `X`. -/
+/-- Over an ordered field, `κ(X, θ X) < 0` for every nonzero `X ∈ sp l K`, where `θ X = -Xᵀ`,
+since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the entries of `X`. -/
 theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {X : sp l K} (hX : X ≠ 0) :
     killingForm K (sp l K) X (cartanInvolution l K X) < 0 := by
@@ -338,5 +316,36 @@ theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder
       ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
         ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
   positivity
+
+/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field. -/
+theorem isCartanInvolution_cartanInvolution {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] : (cartanInvolution l K).IsCartanInvolution :=
+  LieEquiv.isCartanInvolution_iff.mpr
+    ⟨cartanInvolution_cartanInvolution, fun _ ↦ killingForm_cartanInvolution_self_neg⟩
+
+/-- For nonempty `l`, the symplectic Lie algebra `sp l K` over an ordered field is noncompact: the
+identity automorphism is not a Cartan involution. -/
+theorem not_isCartanInvolution_refl [Nonempty l] {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] :
+    ¬ (LieEquiv.refl : sp l K ≃ₗ⁅K⁆ sp l K).IsCartanInvolution := by
+  intro hrefl
+  let Hmat : Matrix (l ⊕ l) (l ⊕ l) K := Matrix.fromBlocks 1 0 0 (-1)
+  have hHmem : Hmat ∈ sp l K := by
+    simp [Hmat, mem_sp, Matrix.J, Matrix.fromBlocks_transpose, Matrix.fromBlocks_multiply,
+      Matrix.fromBlocks_neg]
+  let H : sp l K := ⟨Hmat, hHmem⟩
+  have hHne : H ≠ 0 := by
+    intro h0
+    have hval := congrArg (fun M : sp l K ↦
+      (M : Matrix (l ⊕ l) (l ⊕ l) K) (Sum.inl (Classical.arbitrary l))
+        (Sum.inl (Classical.arbitrary l))) h0
+    simp [H, Hmat] at hval
+  have hHp : H ∈ (cartanInvolution l K).cartanP := by
+    simp [H, Hmat, Matrix.fromBlocks_transpose]
+  have hpos : 0 < killingForm K (sp l K) H H :=
+    (isCartanInvolution_cartanInvolution).killingForm_apply_self_pos_of_mem_cartanP hHp hHne
+  have hneg : killingForm K (sp l K) H H < 0 :=
+    (LieEquiv.isCartanInvolution_refl_iff.mp hrefl) H hHne
+  exact lt_asymm hpos hneg
 
 end LieAlgebra.Symplectic

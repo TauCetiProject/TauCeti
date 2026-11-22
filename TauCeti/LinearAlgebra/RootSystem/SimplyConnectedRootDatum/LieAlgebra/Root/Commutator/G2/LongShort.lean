@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.RootString
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 import TauCeti.RingTheory.Nilpotent.RootString.G2.Basic
 
 /-!

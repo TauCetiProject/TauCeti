@@ -542,7 +542,7 @@ private theorem presentationLimitCompletionLeg_comp_restrictionHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_restrictionHom]
@@ -659,7 +659,7 @@ private theorem presentationLimitCompletionHom_comp_presentationLimitDescendHom
   -- with the completion map, which is how the compatibility lemmas below are stated
   let ι : TopCommRingCat.of A ⟶ TopCommRingCat.of (Completion A) :=
     ⟨Completion.coeRingHom, Completion.continuous_coeRingHom⟩
-  change (ι ≫ _).1 = (ι ≫ _).1
+  change (ι ≫ _).val = (ι ≫ _).val
   refine congrArg Subtype.val ?_
   simp only [ι, Presentation.coeRingHom_comp_completionExtendTopHom_assoc,
     Presentation.toCompletionLocTopHom_comp_mapHom_assoc,

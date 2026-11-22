@@ -84,9 +84,9 @@ variable {R}
 /-- An operator of order at most `0`, as an `A`-linear map. -/
 private def toLinearMapOfOrderZero : differentialOperators R A M N 0 →ₗ[R] M →ₗ[A] N where
   toFun D :=
-    { toFun := D.1
-      map_add' := map_add D.1
-      map_smul' := mem_differentialOperators_zero_iff.1 D.2 }
+    { toFun := D.val
+      map_add' := map_add D.val
+      map_smul' := mem_differentialOperators_zero_iff.1 D.property }
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -94,7 +94,8 @@ private def toLinearMapOfOrderZero : differentialOperators R A M N 0 →ₗ[R] M
 bilinear map in the operator and `a`. -/
 private def smulCommutatorOfOrderSucc {m : ℕ} :
     differentialOperators R A M N (m + 1) →ₗ[R] A →ₗ[R] differentialOperators R A M N m :=
-  LinearMap.mk₂ R (fun D a ↦ ⟨smulCommutator R a D, smulCommutator_mem_differentialOperators D.2 a⟩)
+  LinearMap.mk₂ R (fun D a ↦ ⟨smulCommutator R a D, smulCommutator_mem_differentialOperators
+      D.property a⟩)
     (fun D E a ↦ by ext; simp) (fun r D a ↦ by ext; simp)
     (fun D a b ↦ by ext; simp [smulCommutator_add]) (fun r D a ↦ by ext; simp [smulCommutator_smul])
 
@@ -123,7 +124,7 @@ theorem commutatorSymbol_succ_apply {m : ℕ} (D : differentialOperators R A M N
     (a : Fin (m + 1) → A) :
     commutatorSymbol R A M N (m + 1) D a =
       commutatorSymbol R A M N m
-        ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.2 _⟩
+        ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.property _⟩
         (Fin.tail a) :=
   (rfl)
 
@@ -176,7 +177,7 @@ theorem commutatorSymbol_comp_perm {m : ℕ} (D : differentialOperators R A M N 
 
 /-- Multiplying the values of `D` by `g : A` multiplies its commutator symbol by `g`. -/
 theorem commutatorSymbol_mk_smul {m : ℕ} (D : differentialOperators R A M N m) (g : A) :
-    commutatorSymbol R A M N m ⟨g • (D : M →ₗ[R] N), smul_mem_differentialOperators g D.2⟩ =
+    commutatorSymbol R A M N m ⟨g • (D : M →ₗ[R] N), smul_mem_differentialOperators g D.property⟩ =
       g • commutatorSymbol R A M N m D := by
   ext a x
   simp [list_prod_smulCommutator_apply_smul]
@@ -195,7 +196,7 @@ theorem commutatorSymbol_cons_mul {m : ℕ} (D : differentialOperators R A M N (
     simp [P]
   -- The `(m + 2)`-fold commutator `P [[D, f], g]` of an operator of order `m + 1` vanishes.
   have hPD : P (D : M →ₗ[R] N) ∈ differentialOperators R A M N 1 :=
-    list_prod_smulCommutator_mem_differentialOperators (by rw [add_comm]; exact D.2) a
+    list_prod_smulCommutator_mem_differentialOperators (by rw [add_comm]; exact D.property) a
   have h0 : P (smulCommutator R g (smulCommutator R f (D : M →ₗ[R] N))) = 0 := by
     rw [← mul_apply_eq_comp P, ← (commute_smulCommutator_list_prod g a).eq, mul_apply_eq_comp,
       ← mul_apply_eq_comp P, ← (commute_smulCommutator_list_prod f a).eq, mul_apply_eq_comp,
@@ -267,12 +268,12 @@ factorials shows that principal symbols multiply. -/
 theorem commutatorSymbol_comp_const {m k : ℕ} (P : differentialOperators R A N O m)
     (Q : differentialOperators R A M N k) (f : A) :
     commutatorSymbol R A M O (m + k)
-        ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.2 Q.2⟩
+        ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.property Q.property⟩
         (fun _ ↦ f) =
       (m + k).choose m •
         (commutatorSymbol R A N O m P fun _ ↦ f) ∘ₗ (commutatorSymbol R A M N k Q fun _ ↦ f) := by
   ext x
-  simp only [commutatorSymbol_const_apply, smulCommutator_pow_comp_of_mem P.2 Q.2,
+  simp only [commutatorSymbol_const_apply, smulCommutator_pow_comp_of_mem P.property Q.property,
     LinearMap.smul_apply, LinearMap.comp_apply]
 
 /-- The commutator symbol of an operator `D : A →ₗ[R] M` of order at most one at `f` is
@@ -281,7 +282,7 @@ theorem commutatorSymbol_one_apply (D : differentialOperators R A A N 1) (f g : 
     commutatorSymbol R A A N 1 D ![f] g =
       g • ((D : A →ₗ[R] N) f - f • (D : A →ₗ[R] N) 1) := by
   have h := congr($(smulCommutator_eq_zero_of_mem_differentialOperators_zero
-    (smulCommutator_mem_differentialOperators D.2 f) g) 1)
+    (smulCommutator_mem_differentialOperators D.property f) g) 1)
   simp only [smulCommutator_apply_apply, smul_eq_mul, mul_one, LinearMap.zero_apply] at h
   simp only [commutatorSymbol_apply_apply, List.ofFn_succ, Matrix.cons_val_zero,
     List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one, smulCommutator_apply_apply,
@@ -424,7 +425,7 @@ noncomputable def cotangentSymbol {m : ℕ} (D : differentialOperators R A M N m
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
     have h0 (v : N) : (y : A) • Submodule.Quotient.mk (p := (I • ⊤ : Submodule A N)) v = 0 := by
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-      exact Submodule.smul_mem_smul y.2 Submodule.mem_top
+      exact Submodule.smul_mem_smul y.property Submodule.mem_top
     simp [h0]
 
 /-- The cotangent symbol on the classes of `a₁, …, aₘ ∈ I` is the reduction of the iterated
@@ -463,7 +464,7 @@ times the composition of the cotangent symbols at `(ω, …, ω)`. -/
 theorem cotangentSymbol_comp_const {m k : ℕ} (P : differentialOperators R A N O m)
     (Q : differentialOperators R A M N k) (ω : I.Cotangent) :
     cotangentSymbol R I
-        ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.2 Q.2⟩
+        ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.property Q.property⟩
         (fun _ ↦ ω) =
       (m + k).choose m •
         (cotangentSymbol R I P fun _ ↦ ω) ∘ₗ (cotangentSymbol R I Q fun _ ↦ ω) := by

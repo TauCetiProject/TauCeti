@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
 # Incidence and equality loci of closed subschemes
@@ -156,13 +157,10 @@ theorem comap_incidenceLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'
   let _ : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
     MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
   -- both sides have the same morphisms factoring through their closed subschemes
-  have key {T : Scheme.{u}} (s : T ⟶ S') : (incidenceLocus f I J).comap t ≤ s.ker ↔
-      incidenceLocus f' (I.comap g) (J.comap g) ≤ s.ker := by
-    rw [← le_map_iff_comap_le, map_ker, incidenceLocus_le_ker_iff_of_isPullback I J
-      ((IsPullback.of_hasPullback s f').flip.paste_horiz H), incidenceLocus_le_ker_iff,
-      comap_comp, comap_comp]
-  exact le_antisymm (((key _).2 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
-    (((key _).1 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
+  refine eq_of_forall_le_ker_iff fun s ↦ ?_
+  rw [← le_map_iff_comap_le, map_ker, incidenceLocus_le_ker_iff_of_isPullback I J
+    ((IsPullback.of_hasPullback s f').flip.paste_horiz H), incidenceLocus_le_ker_iff,
+    comap_comp, comap_comp]
 
 end Incidence
 

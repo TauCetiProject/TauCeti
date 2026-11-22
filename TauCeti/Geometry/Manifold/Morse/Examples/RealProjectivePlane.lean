@@ -118,7 +118,7 @@ private theorem nonempty_singularHomology_sublevelPair_iso (hw : StrictMono w) {
     { default := ⟨⟨_, (Set.ext_iff.1 hk _).2 rfl⟩,
         by rw [manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k,
           Module.finrank_self, one_mul]⟩
-      uniq := fun p ↦ Subtype.ext (Subtype.ext ((Set.ext_iff.1 hk p.1.1).1 p.1.2)) }
+      uniq := fun p ↦ Subtype.ext (Subtype.ext ((Set.ext_iff.1 hk p.val.val).1 p.val.property)) }
   exact ⟨e ≪≫ coproductUniqueIso _⟩
 
 /-- Across a band of the moment function on `ℝℙ²` whose only critical value is `w k`, the relative
@@ -134,8 +134,8 @@ private theorem isZero_singularHomology_sublevelPair (hw : StrictMono w) {s t : 
       manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = n} := by
     refine ⟨fun p ↦ hn ?_⟩
     have hp := (Set.ext_iff.1 (criticalPoints_projectiveMomentFunction_inter_preimage_singleton
-      hw.injective k) p.1.1).1 p.1.2
-    rw [← p.2, mem_singleton_iff.1 hp,
+      hw.injective k) p.val.val).1 p.val.property
+    rw [← p.property, mem_singleton_iff.1 hp,
       manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k, Module.finrank_self, one_mul]
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
 
@@ -258,8 +258,8 @@ private theorem mono_singularHomologyMap_innerToTotal_zero {t : ℝ} (h : s₁ �
   -- The common subspace `{f ≤ s₀}` is empty, so both relative groups are absolute ones.
   have hempty : ∀ x, ¬ projectiveMomentFunction ℝ w x ≤ s₀ := fun x hx ↦
     ((projectiveMomentFunction_mem_Icc hw.monotone x).1.trans hx).not_gt h₀
-  have : IsEmpty (TopTriple.innerPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
-  have : IsEmpty (TopTriple.totalPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
+  have : IsEmpty (TopTriple.innerPair.obj T).snd := ⟨fun x ↦ hempty x.val x.property⟩
+  have : IsEmpty (TopTriple.totalPair.obj T).snd := ⟨fun x ↦ hempty x.val x.property⟩
   -- On absolute homology, the map is injective since `{f ≤ s₁}` is path-connected.
   have : PathConnectedSpace (TopTriple.innerPair.obj T).fst :=
     isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_setOf_projectiveMomentFunction_le

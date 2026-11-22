@@ -13,7 +13,9 @@ public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 # Compact supports in relative CW complexes
 
 A compact subset of a relative CW complex meets only finitely many open cells outside the
-base. Consequently it lies in a skeleton of finite dimension, even when the complex is
+base; in particular, in a Hausdorff ambient space the closure of every open cell meets only
+finitely many open cells (`TauCeti.finite_setOf_nonempty_closure_openCell_inter_openCell`).
+Consequently every compact subset lies in a skeleton of finite dimension, even when the complex is
 infinite-dimensional. The base itself need not be compact or finite-dimensional. So the preimages
 of the skeleta under a continuous map into the complex absorb every compact set
 (`TauCeti.exists_subset_preimageSkeleton_of_isCompact`).
@@ -70,8 +72,8 @@ theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCo
     {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}.Finite := by
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
   -- Pick a point `x a` of `K` in each open cell `a` that `K` meets.
-  choose x hxK hxO using fun a : A ↦ a.2
-  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.1 = ⟨m, j⟩ :=
+  choose x hxK hxO using fun a : A ↦ a.property
+  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.val = ⟨m, j⟩ :=
     eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨x a, hxO a, h⟩)
   have hxinj : Function.Injective x := fun a b hab ↦ Subtype.ext (hx (hab ▸ hxO b))
   have hSC : range x ⊆ C := range_subset_iff.2 fun a ↦ openCell_subset_complex _ _ (hxO a)
@@ -89,6 +91,13 @@ theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCo
   have : Finite A := (finite_range_iff hxinj).1
     (hcompact.finite (isDiscrete_of_finite_inter_openCell hSC hSD.isDiscrete hS))
   exact Set.toFinite A
+
+/-- In a Hausdorff relative CW complex, the closure of every open cell meets only finitely many
+relative open cells. -/
+theorem finite_setOf_nonempty_closure_openCell_inter_openCell (n : ℕ) (i : cell C n) :
+    {a : Σ m, cell C m | (closure (openCell n i) ∩ openCell a.1 a.2).Nonempty}.Finite := by
+  rw [closure_openCell_eq_closedCell]
+  exact finite_setOf_nonempty_inter_openCell_of_isCompact isCompact_closedCell
 
 /-- Every compact subset of a relative CW complex is contained in a skeleton of finite
 relative dimension. The skeleton contains the entire base, so no restriction on the base is

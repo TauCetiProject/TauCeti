@@ -61,12 +61,12 @@ namespace IsCartanInvolution
 
 section Uniqueness
 
-variable {R L : Type*} [CommRing R] [PartialOrder R] [Invertible (2 : R)]
-  [LieRing L] [LieAlgebra R L] {θ θ' : L ≃ₗ⁅R⁆ L}
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [LieRing L] [LieAlgebra K L] {θ θ' : L ≃ₗ⁅K⁆ L}
 
 /-- Two commuting Cartan involutions are equal. -/
-theorem eq_of_commute [IsOrderedAddMonoid R] (hθ : θ.IsCartanInvolution)
-    (hθ' : θ'.IsCartanInvolution) (hcomm : ∀ x, θ (θ' x) = θ' (θ x)) :
+theorem eq_of_commute (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution)
+    (hcomm : ∀ x, θ (θ' x) = θ' (θ x)) :
     θ = θ' := by
   ext x
   let u : L := (x + θ x) - (θ' x + θ (θ' x))
@@ -87,44 +87,26 @@ theorem eq_of_commute [IsOrderedAddMonoid R] (hθ : θ.IsCartanInvolution)
     abel
   have hu0 : u = 0 := by
     by_contra hne
-    have hpos1 : 0 < -killingForm R L u u := by
-      simpa only [hu_θ] using hθ.neg_killingForm_pos u hne
-    have hpos2 : 0 < killingForm R L u u := by
-      simpa only [hu_θ', map_neg, neg_neg] using hθ'.neg_killingForm_pos u hne
-    have hcontra : (0 : R) < 0 := by simpa only [neg_add_cancel] using add_pos hpos1 hpos2
+    have hpos1 : 0 < -killingForm K L u u := by
+      simpa only [hu_θ, neg_pos] using hθ.killingForm_apply_apply_neg hne
+    have hpos2 : 0 < killingForm K L u u := by
+      simpa only [hu_θ', map_neg, neg_neg, neg_lt_zero] using hθ'.killingForm_apply_apply_neg hne
+    have hcontra : (0 : K) < 0 := by simpa only [neg_add_cancel] using add_pos hpos1 hpos2
     exact lt_irrefl 0 hcontra
   have hw0 : w = 0 := by
     by_contra hne
-    have hpos1 : 0 < killingForm R L w w := by
-      simpa only [hw_θ, map_neg, neg_neg] using hθ.neg_killingForm_pos w hne
-    have hpos2 : 0 < -killingForm R L w w := by
-      simpa only [hw_θ'] using hθ'.neg_killingForm_pos w hne
-    have hcontra : (0 : R) < 0 := by simpa only [add_neg_cancel] using add_pos hpos1 hpos2
+    have hpos1 : 0 < killingForm K L w w := by
+      simpa only [hw_θ, map_neg, neg_neg, neg_lt_zero] using hθ.killingForm_apply_apply_neg hne
+    have hpos2 : 0 < -killingForm K L w w := by
+      simpa only [hw_θ', neg_pos] using hθ'.killingForm_apply_apply_neg hne
+    have hcontra : (0 : K) < 0 := by simpa only [add_neg_cancel] using add_pos hpos1 hpos2
     exact lt_irrefl 0 hcontra
-  have h2mul : (2 : R) • (θ x - θ' x) = 0 := by
-    have heq : (2 : R) • (θ x - θ' x) = u - w := by
+  have h2mul : (2 : K) • (θ x - θ' x) = 0 := by
+    have heq : (2 : K) • (θ x - θ' x) = u - w := by
       simp only [u, w, two_smul]
       abel
     rw [heq, hu0, hw0, sub_self]
-  exact sub_eq_zero.mp ((isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2mul)
-
-/-- A Cartan involution is uniquely determined by its fixed subalgebra `𝔨`: two Cartan
-involutions with the same fixed subalgebra are equal. -/
-theorem eq_of_fixedSubalgebra_eq (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution)
-    (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) :
-    θ = θ' := by
-  have hP : θ.cartanP = θ'.cartanP := by
-    rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP,
-      ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
-  have hcompl := isCompl_fixedSubalgebra_cartanP_of_involutive hθ.involutive
-  ext x
-  obtain ⟨k, hk, p, hp, rfl⟩ :=
-    Submodule.mem_sup.mp (hcompl.sup_eq_top ▸ Submodule.mem_top (x := x))
-  have hk1 : θ k = k := LieHom.mem_fixedSubalgebra.mp hk
-  have hk2 : θ' k = k := LieHom.mem_fixedSubalgebra.mp (h ▸ hk)
-  have hp1 : θ p = -p := mem_cartanP.mp hp
-  have hp2 : θ' p = -p := mem_cartanP.mp (hP ▸ hp)
-  rw [map_add, map_add, hk1, hk2, hp1, hp2]
+  exact sub_eq_zero.mp ((smul_eq_zero.mp h2mul).resolve_left two_ne_zero)
 
 /-- A Cartan involution is uniquely determined by its `-1`-eigenspace `𝔭`: two Cartan involutions
 with the same `-1`-eigenspace are equal. -/
@@ -139,20 +121,19 @@ theorem eq_of_cartanP_eq (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvol
 /-- On a compact Lie algebra (negative-definite Killing form), the identity is the unique Cartan
 involution. -/
 theorem eq_refl_of_killingForm_neg (hθ : θ.IsCartanInvolution)
-    (hneg : ∀ x : L, x ≠ 0 → killingForm R L x x < 0) :
+    (hneg : ∀ x : L, x ≠ 0 → killingForm K L x x < 0) :
     θ = LieEquiv.refl := by
   have hP : θ.cartanP = ⊥ := by
     rw [Submodule.eq_bot_iff]
     intro p hp
     by_contra hne
-    exact lt_asymm (hθ.killingForm_pos_of_mem_cartanP hp hne) (hneg p hne)
-  have hcompl := isCompl_fixedSubalgebra_cartanP_of_involutive hθ.involutive
-  ext x
-  obtain ⟨k, hk, p, hp, rfl⟩ :=
-    Submodule.mem_sup.mp (hcompl.sup_eq_top ▸ Submodule.mem_top (x := x))
-  rw [hP, Submodule.mem_bot] at hp
-  have hk' : θ k = k := LieHom.mem_fixedSubalgebra.mp hk
-  simp [hp, hk']
+    exact lt_asymm (hθ.killingForm_apply_self_pos_of_mem_cartanP hp hne) (hneg p hne)
+  exact LinearMap.ext_on_codisjoint
+    (θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit hθ.involutive).codisjoint
+    (fun k hk ↦ LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk))
+    fun p hp ↦ by
+      obtain rfl : p = 0 := by simpa [hP] using hp
+      simp
 
 end Uniqueness
 
@@ -175,11 +156,11 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     ∃ (B : Basis (Fin (finrank ℝ L)) ℝ L) (lam : Fin (finrank ℝ L) → ℝ),
       (∀ i, 0 < lam i) ∧
         ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i := by
-  have := hθ.finite
+  have := hθ.finiteDimensional
   let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
   let P : L ≃ₗ⁅ℝ⁆ L := ω.trans ω
-  have hω_symm_form (x y : L) : θ.cartanForm (ω x) y = θ.cartanForm x (ω y) := by
-    simp only [cartanForm_apply, ω, trans_apply]
+  have hω_symm_form (x y : L) : θ.twistedKillingForm (ω x) y = θ.twistedKillingForm x (ω y) := by
+    simp only [twistedKillingForm_apply, ω, trans_apply]
     congr 1
     calc
       killingForm ℝ L (θ' (θ x)) (θ y)
@@ -189,13 +170,13 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
       _ = killingForm ℝ L (θ (θ x)) (θ (θ' (θ y))) :=
             (LieAlgebra.killingForm_of_equiv_apply θ (θ x) (θ' (θ y))).symm
       _ = killingForm ℝ L x (θ (θ' (θ y))) := by rw [hθ.involutive]
-  have hP_symm_form (x y : L) : θ.cartanForm (P x) y = θ.cartanForm x (P y) := by
+  have hP_symm_form (x y : L) : θ.twistedKillingForm (P x) y = θ.twistedKillingForm x (P y) := by
     simp only [P, trans_apply, hω_symm_form]
-  have hP_pos_form {x : L} (hx : x ≠ 0) : 0 < θ.cartanForm (P x) x := by
+  have hP_pos_form {x : L} (hx : x ≠ 0) : 0 < θ.twistedKillingForm (P x) x := by
     have hωne : ω x ≠ 0 := fun h ↦ hx (by simpa using congrArg ω.symm h)
-    simpa only [P, trans_apply, hω_symm_form] using hθ.cartanForm_pos hωne
+    simpa only [P, trans_apply, hω_symm_form] using hθ.twistedKillingForm_pos hωne
   obtain ⟨e, he⟩ := LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply
-    hθ.cartanForm_isSymm (fun v hv ↦ hθ.cartanForm_pos hv)
+    hθ.twistedKillingForm_isSymm (fun v hv ↦ hθ.twistedKillingForm_pos hv)
   let P_E :
       EuclideanSpace ℝ (Fin (finrank ℝ L)) →ₗ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ L)) :=
     (e.symm.toLinearMap.comp (P : L →ₗ[ℝ] L)).comp e.toLinearMap
@@ -208,7 +189,7 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   refine ⟨b.toBasis.map e, hP_E_symm.eigenvalues hn, fun i ↦ ?_, fun i ↦ ?_⟩
   · have hbi := hP_E_symm.apply_eigenvectorBasis hn i
     have hinner : ⟪P_E (b i), b i⟫_ℝ = hP_E_symm.eigenvalues hn i := by
-      rw [hbi, real_inner_smul_left, real_inner_self_eq_norm_sq, b.orthonormal.1 i, one_pow,
+      rw [hbi, real_inner_smul_left, real_inner_self_eq_norm_sq, b.orthonormal.left i, one_pow,
         mul_one]
       simp only [RCLike.ofReal_real_eq_id, id_eq]
     rw [← hinner, ← he, hP_E_apply]
@@ -454,7 +435,7 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
       ∃ Z ∈ θ.cartanP,
         ∀ (μ : ℝ) (y : L), ⁅Z, y⁆ = μ • y → φ y = Real.exp μ • y := by
   have := hθ.isKilling
-  have := hθ.finite
+  have := hθ.finiteDimensional
   let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
   obtain ⟨B, lam, hlam_pos, hB_eig⟩ := exists_pos_eigenbasis_trans_sq hθ hθ'
   let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam_pos hB_eig s
@@ -487,9 +468,8 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
       _ = Ppow (1 / 2) (θ (θ' y)) := by
           rw [trans_symm_apply_of_involutive hθ.involutive hθ'.involutive]
       _ = θ'' (θ' y) := (hθ''_apply (θ' y)).symm
-  have hθ'_eq_θ'' : θ' = θ'' := by
-    let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
-    exact hθ'.eq_of_commute (hθ.conj φ) hcomm_θ'
+  have hθ'_eq_θ'' : θ' = θ'' :=
+    hθ'.eq_of_commute (hθ.conj φ) hcomm_θ'
   have hφ_intertwine (y : L) : θ' (φ y) = φ (θ y) := by
     rw [hθ'_eq_θ'']
     simp [θ'']
@@ -529,11 +509,11 @@ theorem exists_conj_exp_ad
     [TopologicalSpace (L →L[ℝ] L)] [IsTopologicalRing (L →L[ℝ] L)]
     [ContinuousSMul ℝ (L →L[ℝ] L)] [T2Space (L →L[ℝ] L)]
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
-    let _ : FiniteDimensional ℝ L := hθ.finite
+    let _ : FiniteDimensional ℝ L := hθ.finiteDimensional
     ∃ Z ∈ θ.cartanP, ∀ y : L,
       θ' (NormedSpace.exp (LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)) y) =
         NormedSpace.exp (LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)) (θ y) := by
-  have := hθ.finite
+  have := hθ.finiteDimensional
   dsimp only
   obtain ⟨φ, hφ, Z, hZ, hspec⟩ := hθ.exists_conj_spectral hθ'
   refine ⟨Z, hZ, fun y ↦ ?_⟩
