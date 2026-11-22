@@ -146,9 +146,7 @@ theorem isNonface_hirzebruch_iff (hb : 0 < b) (ha : 0 < a) (hab : k * b < a)
       have h3 := three_mem_activeSet_hirzebruch_iff.1 (hs (by simp))
       obtain ⟨-, hq₀, hqb, -⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
       rw [h0, zero_add] at h3
-      rcases le_or_gt 0 (k : ℝ) with hk | hk
-      · exact ((mul_le_mul_of_nonneg_left hqb hk).trans_lt hab).ne h3
-      · exact ((mul_nonpos_of_nonpos_of_nonneg hk.le hq₀).trans_lt ha).ne h3
+      exact (intCast_mul_lt_of_nonneg_of_le ha hab hq₀ hqb).ne h3
 
 variable (R : Type*) [CommRing R]
 
@@ -253,14 +251,10 @@ private theorem facetIdeal_hirzebruch_le_ker (hb : 0 < b) (ha : 0 < a) (hab : k 
   constructor
   · -- `D₁ D₂` goes to `(y + k x) y = y² + k x y` and `D₀ D₃` to `x²`.
     rintro _ (rfl | rfl) <;>
-      rw [SetLike.mem_coe, RingHom.mem_ker, map_mul, hirzebruchGeneratorHom_X,
-        hirzebruchGeneratorHom_X, ← map_mul, Ideal.Quotient.eq_zero_iff_mem, hirzebruchIdeal_def]
-    · refine Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_singleton_iff.2 ?_))
-      simp only [hirzebruchGenerator, Matrix.cons_val]
-      ring
-    · refine Ideal.subset_span (Set.mem_insert_iff.2 (Or.inl ?_))
-      simp only [hirzebruchGenerator, Matrix.cons_val]
-      ring
+      simp only [SetLike.mem_coe, RingHom.mem_ker, hirzebruchGeneratorHom, AlgHom.comp_apply,
+        Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, hirzebruchIdeal_def]
+    · exact Ideal.subset_span (Or.inr (by simp [hirzebruchGenerator]; ring))
+    · exact Ideal.subset_span (Or.inl (by simp [hirzebruchGenerator, pow_two]))
   · rintro _ (rfl | rfl) <;> simp [hirzebruchGeneratorHom, hirzebruchGenerator]
 
 /-- The map of the facet ring of the Hirzebruch trapezoid to `R[x, y] ⧸ (x², y² + k x y)`. -/
@@ -276,18 +270,18 @@ private theorem facetRingHirzebruchHom_mk (hb : 0 < b) (ha : 0 < a) (hab : k * b
   rw [← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, facetRingHirzebruchHom,
     Ideal.Quotient.liftₐ_comp]
 
-/-- In the facet ring of the Hirzebruch normals, `D₀ = D₃`. -/
-private theorem mk_X_zero_hirzebruch :
-    Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-      (hirzebruchSupport a b) R) (X 0) = Ideal.Quotient.mk _ (X 3) := by
+/-- In the facet ring of the Hirzebruch normals, for any support constants, `D₀ = D₃`. -/
+theorem mk_X_zero_hirzebruch (c : Fin 4 → ℝ) :
+    Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k) c R)
+      (X 0) = Ideal.Quotient.mk _ (X 3) := by
   rw [Ideal.Quotient.eq]
   exact linearRelationIdeal_le_facetIdeal _ _ _ R
     (by rw [linearRelationIdeal_hirzebruch]; exact Ideal.subset_span (by simp))
 
-/-- In the facet ring of the Hirzebruch normals, `D₁ = D₂ + k D₃`. -/
-private theorem mk_X_one_hirzebruch :
-    Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-      (hirzebruchSupport a b) R) (X 1) = Ideal.Quotient.mk _ (X 2 + C (k : R) * X 3) := by
+/-- In the facet ring of the Hirzebruch normals, for any support constants, `D₁ = D₂ + k D₃`. -/
+theorem mk_X_one_hirzebruch (c : Fin 4 → ℝ) :
+    Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k) c R)
+      (X 1) = Ideal.Quotient.mk _ (X 2 + C (k : R) * X 3) := by
   rw [Ideal.Quotient.eq, show (X 1 - (X 2 + C (k : R) * X 3) : MvPolynomial (Fin 4) R) =
     X 1 - X 2 - C (k : R) * X 3 by ring]
   exact linearRelationIdeal_le_facetIdeal _ _ _ R
@@ -314,18 +308,14 @@ private def hirzebruchFacetRingHom (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
     -- are monomials of nonfaces.
     have h₀ := mk_mul_hirzebruch R hb ha hab (i := 0) (j := 3) (by decide) (Or.inr rfl)
     have h₁ := mk_mul_hirzebruch R hb ha hab (i := 1) (j := 2) (by decide) (Or.inl rfl)
-    rw [map_mul, mk_X_zero_hirzebruch] at h₀
-    rw [map_mul, mk_X_one_hirzebruch] at h₁
+    rw [map_mul, mk_X_zero_hirzebruch R (hirzebruchSupport a b)] at h₀
+    rw [map_mul, mk_X_one_hirzebruch R (hirzebruchSupport a b), map_add, map_mul] at h₁
     obtain ⟨c, d, rfl⟩ := Ideal.mem_span_pair.1 hp
     rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
     simp only [map_add, map_mul, map_pow, aeval_X, aeval_C, algebraMap_eq, Matrix.cons_val_zero,
       Matrix.cons_val_one]
-    rw [pow_two, h₀, show Ideal.Quotient.mk _ (X 2) ^ 2 +
-      Ideal.Quotient.mk _ (C (k : R)) * Ideal.Quotient.mk _ (X 3) * Ideal.Quotient.mk _ (X 2) =
-        Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-          (hirzebruchSupport a b) R) (X 2 + C (k : R) * X 3) * Ideal.Quotient.mk _ (X 2) by
-      simp only [map_add, map_mul]; ring, h₁]
-    ring
+    linear_combination Ideal.Quotient.mk _ (aeval ![X 3, X 2] c) * h₀ +
+      Ideal.Quotient.mk _ (aeval ![X 3, X 2] d) * h₁
 
 private theorem hirzebruchFacetRingHom_mk (hb : 0 < b) (ha : 0 < a) (hab : k * b < a)
     (p : MvPolynomial (Fin 2) R) :
@@ -350,8 +340,9 @@ def facetRingHirzebruchEquiv (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
     (Ideal.Quotient.algHom_ext _ (MvPolynomial.algHom_ext fun j ↦ by
       fin_cases j <;>
         simp [Ideal.Quotient.mkₐ_eq_mk, hirzebruchFacetRingHom_mk, facetRingHirzebruchHom_mk,
-          hirzebruchGeneratorHom_X, hirzebruchGenerator, mk_X_zero_hirzebruch (R := R),
-          mk_X_one_hirzebruch (R := R)]))
+          hirzebruchGeneratorHom_X, hirzebruchGenerator,
+          mk_X_zero_hirzebruch R (hirzebruchSupport a b),
+          mk_X_one_hirzebruch R (hirzebruchSupport a b)]))
 
 /-- The isomorphism `facetRingHirzebruchEquiv` sends `D₀`, `D₁`, `D₂`, `D₃` to `x`, `y + k x`,
 `y`, `x`. -/
@@ -390,8 +381,9 @@ theorem facetRingHirzebruchEquiv_mk_neg_supportClass (hb : 0 < b) (ha : 0 < a)
     facetRingHirzebruchEquiv ℝ hb ha hab
         (Ideal.Quotient.mk _ (-supportClass (hirzebruchSupport a b))) =
       a • Ideal.Quotient.mk (hirzebruchIdeal ℝ k) (X 0) + b • Ideal.Quotient.mk _ (X 1) := by
-  rw [supportClass_hirzebruch, neg_neg, C_mul', C_mul', ← Ideal.Quotient.mkₐ_eq_mk ℝ, map_add,
-    map_smul, map_smul, Ideal.Quotient.mkₐ_eq_mk, map_add, map_smul, map_smul]
+  -- Write the class as the image of `b • D₂ + a • D₃` under the linear quotient map `mkₐ`.
+  rw [supportClass_hirzebruch, neg_neg, C_mul', C_mul', ← Ideal.Quotient.mkₐ_eq_mk ℝ]
+  simp only [map_add, map_smul]
   simp [add_comm]
 
 /-- **The square of the class `a x + b y`.** In `R[x, y] ⧸ (x², y² + k x y)`,
