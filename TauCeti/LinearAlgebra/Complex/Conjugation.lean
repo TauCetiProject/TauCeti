@@ -64,8 +64,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.span_realPoints_eq_top`: the real points of an involutive conjugation span `V` over
   `ℂ`, so an identity between `ℂ`-linear or `ℂ`-bilinear maps may be checked on real vectors
   alone.
-* `TauCeti.comp_eq_comp_of_mapsTo_realPoints`: in particular a `ℂ`-linear map carrying the real
-  points of one conjugation into those of another intertwines the two conjugations.
+* `TauCeti.comp_eq_comp_iff_mapsTo_realPoints`: in particular a `ℂ`-linear map intertwines two
+  conjugations exactly when it carries the real points of one into those of the other;
+  `TauCeti.mapsTo_realPoints_of_comp_eq_comp` is the forward direction, for any conjugations.
 * `TauCeti.finrank_realPoints`: the real points have the `ℝ`-dimension that `V` has over `ℂ`.
 * `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
   star module have the `ℝ`-dimension that the module has over `ℂ`.
@@ -223,13 +224,22 @@ theorem span_realPoints_eq_top (hK : Function.Involutive K) :
   exact Submodule.add_mem _ (Submodule.subset_span (conjRealPart_mem hK v))
     (Submodule.smul_mem _ _ (Submodule.subset_span (conjImaginaryPart_mem hK v)))
 
-/-- **A `ℂ`-linear map carrying real points to real points intertwines the conjugations.**  Both
-sides are conjugate-linear and agree on the real points of `K`, which span `V` over `ℂ`.  Only `K`
-need be involutive. -/
-theorem comp_eq_comp_of_mapsTo_realPoints {V' : Type*} [AddCommGroup V'] [Module ℂ V']
-    {K' : V' →ₛₗ[starRingEnd ℂ] V'} (hK : Function.Involutive K) (A : V →ₗ[ℂ] V')
-    (hA : Set.MapsTo A (realPoints K : Set V) (realPoints K' : Set V')) :
-    K' ∘ₛₗ A = A ∘ₛₗ K := by
+/-- **A `ℂ`-linear map intertwining two conjugations carries real points to real points**: if
+`K v = v` then `K' (A v) = A (K v) = A v`.  Neither conjugation need be involutive. -/
+theorem mapsTo_realPoints_of_comp_eq_comp {V' : Type*} [AddCommGroup V'] [Module ℂ V']
+    {K' : V' →ₛₗ[starRingEnd ℂ] V'} (A : V →ₗ[ℂ] V') (h : K' ∘ₛₗ A = A ∘ₛₗ K) :
+    Set.MapsTo A (realPoints K : Set V) (realPoints K' : Set V') := fun v hv ↦ by
+  rw [SetLike.mem_coe, mem_realPoints, ← LinearMap.comp_apply, h, LinearMap.comp_apply,
+    mem_realPoints.mp hv]
+
+/-- **A `ℂ`-linear map intertwines two conjugations exactly when it carries real points to real
+points.**  For the reverse direction both sides are conjugate-linear and agree on the real points
+of `K`, which span `V` over `ℂ`.  Only `K` need be involutive, and the forward direction,
+`TauCeti.mapsTo_realPoints_of_comp_eq_comp`, needs no involutivity at all. -/
+theorem comp_eq_comp_iff_mapsTo_realPoints {V' : Type*} [AddCommGroup V'] [Module ℂ V']
+    {K' : V' →ₛₗ[starRingEnd ℂ] V'} (hK : Function.Involutive K) (A : V →ₗ[ℂ] V') :
+    K' ∘ₛₗ A = A ∘ₛₗ K ↔ Set.MapsTo A (realPoints K : Set V) (realPoints K' : Set V') := by
+  refine ⟨mapsTo_realPoints_of_comp_eq_comp A, fun hA ↦ ?_⟩
   refine LinearMap.ext_on (span_realPoints_eq_top hK) fun v hv ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, mem_realPoints.mp (hA hv),
     mem_realPoints.mp hv]
@@ -551,14 +561,14 @@ theorem tmulConj_baseChange (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
 end Complexification
 
 /-- Real descent intertwines tensor conjugation with the original conjugation.  This is
-`TauCeti.comp_eq_comp_of_mapsTo_realPoints`: the real points `1 ⊗ₜ w` of the tensor conjugation
+`TauCeti.comp_eq_comp_iff_mapsTo_realPoints`: the real points `1 ⊗ₜ w` of the tensor conjugation
 go to the real points `w` of `K`. -/
 @[simp]
 theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
     (x : ℂ ⊗[ℝ] realPoints K) :
     realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
-  have h := comp_eq_comp_of_mapsTo_realPoints (tmulConj_involutive (realPoints K))
-    (realPointsEquiv hK).toLinearMap fun u hu ↦ by
+  have h := (comp_eq_comp_iff_mapsTo_realPoints (tmulConj_involutive (realPoints K))
+    (realPointsEquiv hK).toLinearMap).mpr fun u hu ↦ by
       obtain ⟨w, rfl⟩ := (tmulConj_eq_self_iff (realPoints K) u).mp (mem_realPoints.mp hu)
       simpa only [LinearEquiv.coe_coe, realPointsEquiv_tmul, one_smul, SetLike.mem_coe] using
         w.property
@@ -616,8 +626,8 @@ theorem conjugationOfComplexification_unique (K : V →ₛₗ[starRingEnd ℂ] V
     (hfix : ∀ w : W, K (e (1 ⊗ₜ[ℝ] w)) = e (1 ⊗ₜ[ℝ] w)) :
     K = conjugationOfComplexification e := by
   -- the identity carries the real points of the transported conjugation into those of `K`
-  have h := comp_eq_comp_of_mapsTo_realPoints (conjugationOfComplexification_involutive e)
-    LinearMap.id fun v hv ↦ by
+  have h := (comp_eq_comp_iff_mapsTo_realPoints (conjugationOfComplexification_involutive e)
+    LinearMap.id).mpr fun v hv ↦ by
       obtain ⟨w, rfl⟩ := (conjugationOfComplexification_eq_self_iff e v).mp (mem_realPoints.mp hv)
       simpa only [LinearMap.id_apply, SetLike.mem_coe, mem_realPoints] using hfix w
   simpa only [LinearMap.comp_id, LinearMap.id_comp] using h
@@ -629,8 +639,8 @@ theorem conjugationOfComplexification_natural {W' V' : Type*} [AddCommGroup W'] 
     [AddCommGroup V'] [Module ℂ V'] (e' : (ℂ ⊗[ℝ] W') ≃ₗ[ℂ] V') (A : V →ₗ[ℂ] V')
     (hreal : ∀ w, ∃ w' : W', A (e (1 ⊗ₜ[ℝ] w)) = e' (1 ⊗ₜ[ℝ] w')) (v : V) :
     conjugationOfComplexification e' (A v) = A (conjugationOfComplexification e v) := by
-  have h := comp_eq_comp_of_mapsTo_realPoints (conjugationOfComplexification_involutive e) A
-    fun u hu ↦ by
+  have h := (comp_eq_comp_iff_mapsTo_realPoints (conjugationOfComplexification_involutive e)
+    A).mpr fun u hu ↦ by
       obtain ⟨w, rfl⟩ := (conjugationOfComplexification_eq_self_iff e u).mp (mem_realPoints.mp hu)
       obtain ⟨w', hw'⟩ := hreal w
       exact mem_realPoints.mpr
