@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -63,6 +64,8 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   adjoint-composition bridges for `toEuclideanLin`;
 * `Matrix.trace_adjoint_comp_toEuclideanLin` — operator trace of
   `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equals `(Aᴴ * B).trace`;
+* `Matrix.normalPart`, `Matrix.toEuclideanLin_normalPart` — canonical normal part of a matrix
+  and its correspondence with `LinearMap.normalPart`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
 * `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
@@ -226,6 +229,23 @@ theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix κ ι 𝕜) :
   rw [← toEuclideanLin_conjTranspose_mul, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
 
 end MultiplicationAndTrace
+
+section NormalPart
+
+omit [DecidableEq κ] in
+/-- The canonical normal part of a matrix `Δ` with respect to `Θ`:
+the matrix inducing `Θ.toEuclideanLin.normalPart Δ.toEuclideanLin` on Euclidean space. -/
+noncomputable def normalPart (Θ Δ : Matrix κ ι 𝕜) : Matrix κ ι 𝕜 :=
+  toEuclideanLin.symm (Θ.toEuclideanLin.normalPart Δ.toEuclideanLin)
+
+omit [DecidableEq κ] in
+/-- `Matrix.normalPart` corresponds under `Matrix.toEuclideanLin` to `LinearMap.normalPart`. -/
+@[simp]
+theorem toEuclideanLin_normalPart (Θ Δ : Matrix κ ι 𝕜) :
+    (Θ.normalPart Δ).toEuclideanLin = Θ.toEuclideanLin.normalPart Δ.toEuclideanLin :=
+  toEuclideanLin.apply_symm_apply _
+
+end NormalPart
 
 /-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
 @[simp]

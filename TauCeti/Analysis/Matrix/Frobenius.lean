@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.UnitaryGroup
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 /-!
 # The Frobenius inner product on matrices
@@ -41,8 +40,6 @@ and the inner product together.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
-* `Matrix.frobenius_toEuclideanLin` — the Frobenius unitarily invariant seminorm of
-  `A.toEuclideanLin` equals the scoped Frobenius norm of `A`.
 -/
 
 public section
@@ -164,17 +161,5 @@ theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : 
   refine (norm_apply_le_frobenius_norm L i j).trans (le_of_eq ?_)
   rw [frobenius_norm_def, ← Real.sqrt_eq_rpow]
   simp [trace, Matrix.mul_apply, sq]
-
-open scoped Matrix.Norms.Frobenius in
-/-- The Frobenius seminorm of `A.toEuclideanLin` is the scoped Frobenius norm of `A`. -/
-theorem frobenius_toEuclideanLin [DecidableEq n] (A : Matrix m n 𝕜) :
-    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
-        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
-      ‖A‖ := by
-  classical
-  have h := LinearMap.frobenius_norm_toMatrix A.toEuclideanLin
-    (EuclideanSpace.basisFun n 𝕜) (EuclideanSpace.basisFun m 𝕜)
-  rw [toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin] at h
-  exact h.symm
 
 end Matrix

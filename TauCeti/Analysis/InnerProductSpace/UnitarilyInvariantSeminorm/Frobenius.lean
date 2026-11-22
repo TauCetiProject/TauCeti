@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.Trace.Projection
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.KyFan
 
 /-!
@@ -34,8 +35,8 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
 * `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_sq_singularValues`: `tr (A† A) = ∑ᵢ σᵢ(A)²`.
-* `LinearMap.frobenius_norm_toMatrix`: the Frobenius norm of the matrix in orthonormal
-  bases equals the operator Frobenius seminorm.
+* `LinearMap.frobenius_norm_toMatrix`, `Matrix.frobenius_toEuclideanLin`: the Frobenius norm of
+  the coordinate matrix and of `A.toEuclideanLin` equal the operator Frobenius seminorm.
 * `LinearMap.sum_norm_apply_sq_eq_sum_norm_apply_sq`: `∑ᵢ ‖A bᵢ‖²` is independent of the
   orthonormal basis.
 * `LinearMap.sum_sq_norm_apply_orthonormal_le`: compression to an orthonormal family
@@ -53,6 +54,9 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_add_of_re_trace_adjoint_comp_eq_zero`:
   expansion of `‖A + B‖_F²` via the trace pairing `re tr(A† B)` and the Frobenius Pythagorean
   identity.
+* `TauCeti.UnitarilyInvariantSeminorm.frobenius_sub_starProjection_comp_le`,
+  `TauCeti.UnitarilyInvariantSeminorm.frobenius_sub_normalPart_le`:
+  Frobenius contraction of the tangent–normal projection split.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply`:
   `‖A‖₁ ≤ √(rank A) ‖A‖_F`.
 
@@ -192,6 +196,24 @@ theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : Orth
 
 end LinearMap
 
+section Matrix
+
+open scoped Matrix.Norms.Frobenius
+
+/-- The Frobenius seminorm of `A.toEuclideanLin` is the scoped Frobenius norm of `A`. -/
+theorem _root_.Matrix.frobenius_toEuclideanLin {m n : Type*} [Fintype m] [Fintype n]
+    [DecidableEq n] (A : Matrix m n 𝕜) :
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
+        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
+      ‖A‖ := by
+  classical
+  have h := LinearMap.frobenius_norm_toMatrix A.toEuclideanLin
+    (EuclideanSpace.basisFun n 𝕜) (EuclideanSpace.basisFun m 𝕜)
+  rw [Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin] at h
+  exact h.symm
+
+end Matrix
+
 section SingularValues
 
 variable [FiniteDimensional 𝕜 F]
@@ -243,12 +265,14 @@ theorem sq_frobenius_add (A B : E →ₗ[𝕜] F) :
         2 * RCLike.re (LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)) +
         frobenius 𝕜 E F B ^ 2 := by
   let b := stdOrthonormalBasis 𝕜 E
-  rw [sq_frobenius_apply b, sq_frobenius_apply b, sq_frobenius_apply b,
-    LinearMap.trace_eq_sum_inner _ b, map_sum, Finset.mul_sum, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
+  have htr : 2 * RCLike.re (LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)) =
+      ∑ i, 2 * RCLike.re ⟪A (b i), B (b i)⟫_𝕜 := by
+    rw [LinearMap.trace_eq_sum_inner _ b, map_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [LinearMap.comp_apply, LinearMap.adjoint_inner_right]
+  simp only [sq_frobenius_apply b, htr, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.add_apply, norm_add_sq (𝕜 := 𝕜), LinearMap.comp_apply,
-    LinearMap.adjoint_inner_right]
+  rw [LinearMap.add_apply, norm_add_sq (𝕜 := 𝕜)]
 
 /-- **Frobenius Pythagorean identity**: if `re tr(A† B) = 0`, then
 `‖A + B‖_F² = ‖A‖_F² + ‖B‖_F²`. -/
@@ -256,6 +280,26 @@ theorem sq_frobenius_add_of_re_trace_adjoint_comp_eq_zero {A B : E →ₗ[𝕜] 
     (h : RCLike.re (LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)) = 0) :
     frobenius 𝕜 E F (A + B) ^ 2 = frobenius 𝕜 E F A ^ 2 + frobenius 𝕜 E F B ^ 2 := by
   rw [sq_frobenius_add, h, mul_zero, add_zero]
+
+/-- The tangent part `Δ - P_W Δ P_K` has Frobenius seminorm at most `‖Δ‖_F`. -/
+theorem frobenius_sub_starProjection_comp_le (W : Submodule 𝕜 F) (K : Submodule 𝕜 E)
+    (Δ : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) ≤
+      frobenius 𝕜 E F Δ := by
+  set Δ₂ := W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap
+  have hpyth := sq_frobenius_add_of_re_trace_adjoint_comp_eq_zero (A := Δ - Δ₂) (B := Δ₂) (by
+    rw [Δ.trace_adjoint_comp_eq_zero_sub_starProjection_comp W K, map_zero])
+  rw [sub_add_cancel] at hpyth
+  have hsq : frobenius 𝕜 E F (Δ - Δ₂) ^ 2 ≤ frobenius 𝕜 E F Δ ^ 2 := by
+    rw [hpyth]
+    exact le_add_of_nonneg_right (sq_nonneg _)
+  exact le_of_sq_le_sq hsq (apply_nonneg _ _)
+
+/-- The canonical tangent part `Δ - Θ.normalPart Δ` has Frobenius seminorm at most `‖Δ‖_F`. -/
+theorem frobenius_sub_normalPart_le (Θ Δ : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F (Δ - Θ.normalPart Δ) ≤ frobenius 𝕜 E F Δ := by
+  rw [LinearMap.normalPart_def]
+  exact frobenius_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ) Δ
 
 /-- **Rank-sharp comparison of the nuclear and Frobenius seminorms**:
 `‖A‖₁ ≤ √(rank A) ‖A‖_F`. -/

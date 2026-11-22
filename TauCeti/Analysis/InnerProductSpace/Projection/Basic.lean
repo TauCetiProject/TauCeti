@@ -118,12 +118,12 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `U.starProjection`, commutation with `Uᗮ.starProjection` is equivalent to commutation with
   `U.starProjection`, and operators commuting with `U.starProjection` leave `U` invariant.
 * `LinearMap.apply_sub_starProjection_ker`,
-  `LinearMap.comp_ker_starProjection`,
-  `LinearMap.adjoint_comp_orthogonal_range_starProjection`,
-  `LinearMap.adjoint_comp_orthogonal_range_starProjection_comp_ker`,
-  `LinearMap.comp_adjoint_orthogonal_range_starProjection_comp_ker`,
+  `LinearMap.comp_starProjection_ker`,
+  `LinearMap.adjoint_comp_starProjection_orthogonal_range`,
+  `LinearMap.normalPart`, `LinearMap.normalPart_def`,
+  `LinearMap.adjoint_comp_normalPart`, `LinearMap.comp_adjoint_normalPart`,
   `LinearMap.finrank_range_sub_starProjection_comp_le`,
-  `LinearMap.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le`,
+  `LinearMap.finrank_range_sub_normalPart_le`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: kernel, range, and tangent–normal
   projection identities and rank bounds.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
@@ -232,15 +232,31 @@ theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
   exact ((Submodule.finrank_mono (LinearMap.range_add_le T₁ T₂)).trans
     (Submodule.finrank_add_le_finrank_add_finrank _ _)).trans (Nat.add_le_add h1 h2)
 
-/-- For a target map `Θ`, the canonical tangent part `Δ - P_{(range Θ)ᗮ} Δ P_{ker Θ}` has rank
-at most `2 * rank Θ`. -/
-theorem _root_.LinearMap.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E]
+/-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` of `Δ` with respect to `Θ`. -/
+@[expose] def _root_.LinearMap.normalPart {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (Θ Δ : E →ₗ[𝕜] F) [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection]
+    [(LinearMap.ker Θ).HasOrthogonalProjection] : E →ₗ[𝕜] F :=
+  (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+    (LinearMap.ker Θ).starProjection.toLinearMap
+
+/-- Unfolding theorem for `LinearMap.normalPart`:
+`Θ.normalPart Δ = P_{(range Θ)ᗮ} ∘ₗ Δ ∘ₗ P_{ker Θ}`. -/
+theorem _root_.LinearMap.normalPart_def {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (Θ Δ : E →ₗ[𝕜] F) [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection]
+    [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart Δ =
+      (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+        (LinearMap.ker Θ).starProjection.toLinearMap :=
+  rfl
+
+/-- For a target map `Θ`, the canonical tangent part `Δ - Θ.normalPart Δ` has rank at most
+`2 * rank Θ`. -/
+theorem _root_.LinearMap.finrank_range_sub_normalPart_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E]
     [FiniteDimensional 𝕜 F] (Θ Δ : E →ₗ[𝕜] F) :
-    Module.finrank 𝕜
-        (LinearMap.range (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-          (LinearMap.ker Θ).starProjection.toLinearMap)) ≤
+    Module.finrank 𝕜 (LinearMap.range (Δ - Θ.normalPart Δ)) ≤
       2 * Module.finrank 𝕜 (LinearMap.range Θ) := by
+  rw [LinearMap.normalPart_def]
   have h := Δ.finrank_range_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ)
   rwa [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker,
     LinearMap.finrank_range_adjoint, ← two_mul] at h
@@ -713,7 +729,7 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
 
 /-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
 @[simp]
-theorem comp_ker_starProjection (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
+theorem comp_starProjection_ker (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
     Θ ∘ₗ (ker Θ).starProjection.toLinearMap = 0 := by
   ext x
   exact mem_ker.mp ((ker Θ).starProjection_apply_mem x)
@@ -725,27 +741,22 @@ variable {F' : Type*} [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
 
 /-- Composing `Θ†` on the right with the orthogonal projection onto `(range Θ)ᗮ` vanishes. -/
 @[simp]
-theorem adjoint_comp_orthogonal_range_starProjection (Θ : E →ₗ[𝕜] F') :
+theorem adjoint_comp_starProjection_orthogonal_range (Θ : E →ₗ[𝕜] F') :
     adjoint Θ ∘ₗ (range Θ)ᗮ.starProjection.toLinearMap = 0 := by
-  ext x
-  have hx : (range Θ)ᗮ.starProjection x ∈ ker (adjoint Θ) :=
-    orthogonal_range Θ ▸ (range Θ)ᗮ.starProjection_apply_mem x
-  exact mem_ker.mp hx
+  convert (adjoint Θ).comp_starProjection_ker
+  exact orthogonal_range Θ
 
-/-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` satisfies
-`Θ† (P_{(range Θ)ᗮ} Δ P_{ker Θ}) = 0`. -/
-theorem adjoint_comp_orthogonal_range_starProjection_comp_ker (Θ Δ : E →ₗ[𝕜] F') :
-    adjoint Θ ∘ₗ ((range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-      (ker Θ).starProjection.toLinearMap) = 0 := by
-  rw [← comp_assoc, adjoint_comp_orthogonal_range_starProjection, zero_comp]
+/-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ† (Θ.normalPart Δ) = 0`. -/
+theorem adjoint_comp_normalPart (Θ Δ : E →ₗ[𝕜] F') :
+    adjoint Θ ∘ₗ Θ.normalPart Δ = 0 := by
+  rw [normalPart_def, ← comp_assoc, adjoint_comp_starProjection_orthogonal_range, zero_comp]
 
-/-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` satisfies
-`Θ (P_{(range Θ)ᗮ} Δ P_{ker Θ})† = 0`. -/
-theorem comp_adjoint_orthogonal_range_starProjection_comp_ker (Θ Δ : E →ₗ[𝕜] F') :
-    Θ ∘ₗ adjoint ((range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-      (ker Θ).starProjection.toLinearMap) = 0 := by
-  rw [adjoint_comp, adjoint_comp, (ker Θ).starProjection_isSymmetric.adjoint_eq,
-    ← comp_assoc, ← comp_assoc, comp_ker_starProjection, zero_comp, zero_comp]
+/-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ (Θ.normalPart Δ)† = 0`. -/
+theorem comp_adjoint_normalPart (Θ Δ : E →ₗ[𝕜] F') :
+    Θ ∘ₗ adjoint (Θ.normalPart Δ) = 0 := by
+  rw [normalPart_def]
+  simp only [adjoint_comp, (ker Θ).starProjection_isSymmetric.adjoint_eq,
+    ← comp_assoc, comp_starProjection_ker, zero_comp]
 
 end Adjoint
 

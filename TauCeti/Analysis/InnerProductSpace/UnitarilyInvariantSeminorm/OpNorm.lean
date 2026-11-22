@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
@@ -26,6 +27,8 @@ needs to be finite-dimensional.
   associated continuous linear map.
 * `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_orthogonal`: if `A† B = 0` and
   `A B† = 0`, then `‖A + B‖ = max ‖A‖ ‖B‖`.
+* `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
+  `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
 
 ## References
 
@@ -86,35 +89,43 @@ theorem opNorm_add_eq_max_of_orthogonal [FiniteDimensional 𝕜 F] {A B : E →�
   have hAB_inner (x : E) : ⟪A x, B x⟫_𝕜 = 0 := by
     rw [← LinearMap.adjoint_inner_right, ← LinearMap.comp_apply, h₁, LinearMap.zero_apply,
       inner_zero_right]
-  have hle_of_proj (U : Submodule 𝕜 E) {C : E →ₗ[𝕜] F}
-      (hC : ∀ x, (A + B) (U.starProjection x) = C x) :
-      opNorm 𝕜 E F C ≤ opNorm 𝕜 E F (A + B) := by
-    rw [opNorm_apply]
-    refine ContinuousLinearMap.opNorm_le_bound _ (apply_nonneg _ _) fun x ↦ ?_
-    calc ‖LinearMap.toContinuousLinearMap C x‖
-        = ‖(A + B) (U.starProjection x)‖ := by rw [LinearMap.coe_toContinuousLinearMap', hC]
-      _ ≤ opNorm 𝕜 E F (A + B) * ‖U.starProjection x‖ :=
-          (LinearMap.toContinuousLinearMap (A + B)).le_opNorm _
-      _ ≤ opNorm 𝕜 E F (A + B) * ‖x‖ :=
-          mul_le_mul_of_nonneg_left (U.norm_starProjection_apply_le x) (apply_nonneg _ _)
+  have hcompV : (A + B) ∘ₗ (V.starProjection : E →ₗ[𝕜] E) = A := by
+    ext x
+    rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearMap.add_apply,
+      hA_proj, hB_proj, add_zero]
+  have hcompV_orth : (A + B) ∘ₗ (Vᗮ.starProjection : E →ₗ[𝕜] E) = B := by
+    ext x
+    rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearMap.add_apply,
+      hA_orth, hB_orth, zero_add]
   refine le_antisymm ?_ (max_le
-    (hle_of_proj V fun x ↦ by rw [LinearMap.add_apply, hA_proj, hB_proj, add_zero])
-    (hle_of_proj Vᗮ fun x ↦ by rw [LinearMap.add_apply, hA_orth, hB_orth, zero_add]))
+    (by simpa only [hcompV] using (opNorm 𝕜 E F).map_comp_starProjection_le V (A + B))
+    (by simpa only [hcompV_orth] using (opNorm 𝕜 E F).map_comp_starProjection_le Vᗮ (A + B)))
   -- Upper bound via Pythagoras on both the codomain (`A x ⊥ B x`) and the domain (`V ⊥ Vᗮ`).
   set M := max (opNorm 𝕜 E F A) (opNorm 𝕜 E F B)
   have hM : 0 ≤ M := le_max_of_le_left (apply_nonneg _ A)
   rw [opNorm_apply]
   refine ContinuousLinearMap.opNorm_le_bound _ hM fun x ↦ ?_
-  have hA_le : ‖A x‖ ≤ M * ‖V.starProjection x‖ :=
-    (hA_proj x ▸ (LinearMap.toContinuousLinearMap A).le_opNorm (V.starProjection x)).trans
-      (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  have hB_le : ‖B x‖ ≤ M * ‖Vᗮ.starProjection x‖ :=
-    (hB_orth x ▸ (LinearMap.toContinuousLinearMap B).le_opNorm (Vᗮ.starProjection x)).trans
-      (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
-  have hsq : ‖(A + B) x‖ ^ 2 ≤ (M * ‖x‖) ^ 2 := by
-    calc ‖(A + B) x‖ ^ 2
-        = ‖A x‖ ^ 2 + ‖B x‖ ^ 2 := by
-          simpa only [LinearMap.add_apply, sq] using
+  have hA_le : ‖A x‖ ≤ M * ‖V.starProjection x‖ := by
+    calc ‖A x‖ = ‖LinearMap.toContinuousLinearMap A (V.starProjection x)‖ := by
+          rw [LinearMap.coe_toContinuousLinearMap', hA_proj]
+      _ ≤ opNorm 𝕜 E F A * ‖V.starProjection x‖ := by
+          rw [opNorm_apply]
+          exact (LinearMap.toContinuousLinearMap A).le_opNorm (V.starProjection x)
+      _ ≤ M * ‖V.starProjection x‖ :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
+  have hB_le : ‖B x‖ ≤ M * ‖Vᗮ.starProjection x‖ := by
+    calc ‖B x‖ = ‖LinearMap.toContinuousLinearMap B (Vᗮ.starProjection x)‖ := by
+          rw [LinearMap.coe_toContinuousLinearMap', hB_orth]
+      _ ≤ opNorm 𝕜 E F B * ‖Vᗮ.starProjection x‖ := by
+          rw [opNorm_apply]
+          exact (LinearMap.toContinuousLinearMap B).le_opNorm (Vᗮ.starProjection x)
+      _ ≤ M * ‖Vᗮ.starProjection x‖ :=
+          mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
+  have hsq : ‖LinearMap.toContinuousLinearMap (A + B) x‖ ^ 2 ≤ (M * ‖x‖) ^ 2 := by
+    calc ‖LinearMap.toContinuousLinearMap (A + B) x‖ ^ 2
+        = ‖A x + B x‖ ^ 2 := by rw [LinearMap.coe_toContinuousLinearMap', LinearMap.add_apply]
+      _ = ‖A x‖ ^ 2 + ‖B x‖ ^ 2 := by
+          simpa only [sq] using
             norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (A x) (B x) (hAB_inner x)
       _ ≤ (M * ‖V.starProjection x‖) ^ 2 + (M * ‖Vᗮ.starProjection x‖) ^ 2 :=
           add_le_add (pow_le_pow_left₀ (norm_nonneg _) hA_le 2)
@@ -125,3 +136,19 @@ theorem opNorm_add_eq_max_of_orthogonal [FiniteDimensional 𝕜 F] {A B : E →�
   exact le_of_sq_le_sq hsq (mul_nonneg hM (norm_nonneg x))
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+section Matrix
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The operator-norm unitarily invariant seminorm of `A.toEuclideanLin` equals the scoped `ℓ²`
+operator norm of `A`. -/
+theorem _root_.Matrix.opNorm_toEuclideanLin {𝕜 m n : Type*} [RCLike 𝕜]
+    [Fintype m] [Fintype n] [DecidableEq n] (A : Matrix m n 𝕜) :
+    TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜
+        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
+      ‖A‖ := by
+  rw [TauCeti.UnitarilyInvariantSeminorm.opNorm_apply, Matrix.l2_opNorm_def,
+    LinearEquiv.trans_apply]
+
+end Matrix

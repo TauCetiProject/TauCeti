@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Traces of compressions to subspaces
@@ -20,6 +20,10 @@ vectors, such as `k`-nonnegativity and `k`-positivity of an operator, be restate
 basis-independent conditions on the traces of the compressions of `T` to `k`-dimensional
 subspaces, without assuming that `E` itself is finite-dimensional.
 
+For a rectangular map `Δ : E →ₗ[𝕜] F` between finite-dimensional inner product spaces, the
+tangent–normal split `Δ = (Δ - P_W Δ P_K) + P_W Δ P_K` is orthogonal for the Hilbert–Schmidt
+trace pairing `tr (A† B)`.
+
 ## Main statements
 
 * `LinearMap.trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner`: the trace of the
@@ -32,6 +36,9 @@ subspaces, without assuming that `E` itself is finite-dimensional.
 * `LinearMap.forall_orthonormal_sum_re_inner_iff_forall_re_trace`: the same statement for a
   condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums and the real parts of the
   traces.
+* `LinearMap.trace_adjoint_comp_eq_zero_sub_starProjection_comp`,
+  `LinearMap.trace_adjoint_comp_eq_zero_sub_normalPart`: trace orthogonality of the tangent–normal
+  projection split.
 -/
 
 public section
@@ -103,5 +110,52 @@ theorem forall_orthonormal_sum_re_inner_iff_forall_re_trace (T : E →ₗ[𝕜] 
     exact sum_congr rfl fun i _ ↦ inner_re_symm _ _
   simp only [h]
   exact T.forall_orthonormal_sum_inner_iff_forall_trace fun z ↦ P (RCLike.re z)
+
+section NormalPart
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+
+/-- The tangent part `Δ - P_W Δ P_K` and the normal part `P_W Δ P_K` are orthogonal for the
+Hilbert–Schmidt trace pairing: `tr ((Δ - P_W Δ P_K)† (P_W Δ P_K)) = 0`. -/
+theorem trace_adjoint_comp_eq_zero_sub_starProjection_comp (Δ : E →ₗ[𝕜] F) (W : Submodule 𝕜 F)
+    (K : Submodule 𝕜 E) :
+    trace 𝕜 E
+      (adjoint (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) ∘ₗ
+        (W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap)) = 0 := by
+  set PW : F →ₗ[𝕜] F := W.starProjection.toLinearMap
+  set PK : E →ₗ[𝕜] E := K.starProjection.toLinearMap
+  have hPW_adj : adjoint PW = PW := W.starProjection_isSymmetric.adjoint_eq
+  have hPK_adj : adjoint PK = PK := K.starProjection_isSymmetric.adjoint_eq
+  have hPW_idem : PW ∘ₗ PW = PW := (Module.End.mul_eq_comp PW PW).symm.trans
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap W.isIdempotentElem_starProjection).eq
+  have hPK_idem : PK ∘ₗ PK = PK := (Module.End.mul_eq_comp PK PK).symm.trans
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap K.isIdempotentElem_starProjection).eq
+  have hΔ₂ : adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK) = PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ ∘ₗ PK := by
+    calc adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)
+        = PK ∘ₗ adjoint Δ ∘ₗ (PW ∘ₗ PW) ∘ₗ Δ ∘ₗ PK := by
+          simp only [adjoint_comp, hPW_adj, hPK_adj, comp_assoc]
+      _ = PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ ∘ₗ PK := by rw [hPW_idem]
+  have htr : trace 𝕜 E (adjoint Δ ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) =
+      trace 𝕜 E (adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) := by
+    calc trace 𝕜 E (adjoint Δ ∘ₗ (PW ∘ₗ Δ ∘ₗ PK))
+        = trace 𝕜 E ((adjoint Δ ∘ₗ PW ∘ₗ Δ) ∘ₗ PK) := by simp only [comp_assoc]
+      _ = trace 𝕜 E (PK ∘ₗ (adjoint Δ ∘ₗ PW ∘ₗ Δ)) := trace_comp_comm' _ _
+      _ = trace 𝕜 E ((PK ∘ₗ PK) ∘ₗ (adjoint Δ ∘ₗ PW ∘ₗ Δ)) := by rw [hPK_idem]
+      _ = trace 𝕜 E (PK ∘ₗ (PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ)) := by simp only [comp_assoc]
+      _ = trace 𝕜 E ((PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ) ∘ₗ PK) := trace_comp_comm' _ _
+      _ = trace 𝕜 E (adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) := by
+          rw [hΔ₂]; simp only [comp_assoc]
+  rw [map_sub, sub_comp, map_sub, htr, sub_self]
+
+/-- The canonical tangent part `Δ - Θ.normalPart Δ` and normal part `Θ.normalPart Δ` are
+orthogonal for the Hilbert–Schmidt trace pairing:
+`tr ((Δ - Θ.normalPart Δ)† (Θ.normalPart Δ)) = 0`. -/
+theorem trace_adjoint_comp_eq_zero_sub_normalPart (Θ Δ : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint (Δ - Θ.normalPart Δ) ∘ₗ Θ.normalPart Δ) = 0 := by
+  rw [normalPart_def]
+  exact Δ.trace_adjoint_comp_eq_zero_sub_starProjection_comp (range Θ)ᗮ (ker Θ)
+
+end NormalPart
 
 end LinearMap

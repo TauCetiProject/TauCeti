@@ -15,6 +15,8 @@ public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
+import Mathlib.Analysis.InnerProductSpace.Trace
+
 /-!
 # Singular values, the two Gram spectra, and the singular system
 
@@ -74,6 +76,7 @@ of `A` run over the whole basis without splitting off the kernel.
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+* `LinearMap.trace_adjoint_comp_eq_sum_singularValues`: `tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`.
 
 ## Comparison of singular values
 
@@ -506,6 +509,16 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   have hj : j ∈ s := by simpa [s, ← hij] using hi
   rw [hw j hj]
   simp [u, ← hij]
+
+/-- The Hilbert–Schmidt trace pairing `tr (A† B)` expanded in the singular system of `B`:
+`tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_singularValues (B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint A ∘ₗ B) =
+      ∑ i : Fin (finrank 𝕜 E), ((B.singularValues i : ℝ) : 𝕜) *
+        ⟪A (B.rightSingularBasis i), B.leftSingularVector i⟫ := by
+  rw [trace_eq_sum_inner _ B.rightSingularBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
 
 end SingularSystem
 
