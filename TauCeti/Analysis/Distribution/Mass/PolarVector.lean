@@ -45,7 +45,7 @@ representation `T φ = ∫ ⟪η' x, φ x⟫ dμ`, by an almost everywhere stron
 norm one, dominates `‖T‖`, by the minimality of the mass measure; comparing the two
 representations shows that `η'` is the Radon–Nikodym derivative of `‖T‖` with respect to `μ` times
 `η`, and `‖η'‖ = 1` forces that derivative to be one. Measurability of `η'` is needed: the
-integral of a non-measurable pairing is `0` by convention.
+integral of a pairing that is not almost everywhere strongly measurable is `0` by convention.
 
 ## Main declarations
 
@@ -117,7 +117,7 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
   have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
   have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
   have hKT' : massMeasure T' ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
   refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT', hKT⟩)
     fun ε hε => ?_
@@ -126,7 +126,7 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
   have hsub : tsupport (φ - monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) ⊆ K := by
     simpa [coe_monoCLM] using hsub'
   have hφm : Measurable fun x : Ω => ‖φ x‖ₑ :=
-    (φ.continuous.comp continuous_subtype_val).eNorm.measurable
+    (φ.continuous.comp continuous_subtypeVal).eNorm.measurable
   calc ‖T φ‖ₑ = ‖T' ψ + T (φ - monoCLM ℝ ψ)‖ₑ := by simp [T', smoothRestrict_apply]
     _ ≤ ‖T' ψ‖ₑ + ‖T (φ - monoCLM ℝ ψ)‖ₑ := eNorm_add_le _ _
     _ ≤ ∫⁻ x, ‖φ x‖ₑ + ‖ψ x - φ x‖ₑ ∂massMeasure T' + localMass T K * ENNReal.ofReal ε := by
@@ -170,7 +170,7 @@ private theorem apply_eq_integral_polarDensity_smoothRestrict (hT : HasLocallyFi
   have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
   have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
   have hKμ : massMeasure T ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
   rw [← sub_eq_zero, ← eNorm_eq_zero, ← nonpos_iff_eq_zero]
   refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT, hKμ⟩)
@@ -240,7 +240,7 @@ def polarVector (T : 𝓕) : Ω → F :=
       ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂massMeasure T then h.choose
   else 0
 
-omit [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The polar vector field is strongly measurable. -/
 @[fun_prop]
 theorem stronglyMeasurable_polarVector : StronglyMeasurable (polarVector T) := by
@@ -248,7 +248,7 @@ theorem stronglyMeasurable_polarVector : StronglyMeasurable (polarVector T) := b
   split_ifs with h
   exacts [h.choose_spec.1, stronglyMeasurable_const]
 
-omit [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The polar vector field of a map without locally finite mass is `0`, by convention. -/
 @[simp]
 theorem polarVector_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
@@ -337,7 +337,7 @@ private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasure
   have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
   have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
   refine ne_top_of_le_ne_top (hKc.measure_lt_top (μ := μ)).ne
     (localMass_le_iff.2 fun φ hφK hφ => ?_)
   simpa using (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h φ).trans
