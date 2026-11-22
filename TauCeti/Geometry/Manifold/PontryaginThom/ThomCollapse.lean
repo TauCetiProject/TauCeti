@@ -185,12 +185,12 @@ lemma coe_coreHom_apply [TopologicalSpace V] [Zero V] {τ : S × V → B} (hτ :
   (rfl)
 
 /-- The Thom collapse of a framed tube, as a morphism of topological spaces. -/
-def thomCollapseHom [NormedAddCommGroup V] [T2Space B] {τ : S × V → B} (hτ : IsFramedTube f τ) :
-    B ⟶ _root_.TopCat.of (OnePoint (S × V)) :=
+def thomCollapseHom [TopologicalSpace V] [Zero V] [T2Space B] {τ : S × V → B}
+    (hτ : IsFramedTube f τ) : B ⟶ _root_.TopCat.of (OnePoint (S × V)) :=
   _root_.TopCat.ofHom ⟨thomCollapse τ, continuous_thomCollapse hτ.isOpenEmbedding⟩
 
 @[simp]
-lemma thomCollapseHom_apply [NormedAddCommGroup V] [T2Space B] {τ : S × V → B}
+lemma thomCollapseHom_apply [TopologicalSpace V] [Zero V] [T2Space B] {τ : S × V → B}
     (hτ : IsFramedTube f τ) (b : B) : hτ.thomCollapseHom b = thomCollapse τ b :=
   (rfl)
 
@@ -217,19 +217,35 @@ theorem isIso_singularHomologyπ_onePointProd (m : ℕ) :
     contractibleSpace_compl_range_onePoint_zeroSection m
 
 omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The range of the zero section `S → S × V → OnePoint (S × V)` is its preimage under the
+identity, the form of the core in `TauCeti.IsFramedTube.coreHom`. -/
+private lemma range_coe_comp_prodMk_zero :
+    range (((↑) : S × V → OnePoint (S × V)) ∘ fun x : S ↦ (x, (0 : V))) =
+      (𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
+        range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)) := by
+  ext y
+  rw [mem_preimage, ConcreteCategory.id_apply, comp_def]
+
+omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- The zero section `S → OnePoint (S × V)` is a homeomorphism onto its image. -/
 private def zeroSectionHomeomorph :
     S ≃ₜ ↥((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
       range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V))) :=
-  (isOpenEmbedding_coe.isEmbedding.comp (isEmbedding_prodMkLeft (0 : V))).toHomeomorph
+  (isOpenEmbedding_coe.isEmbedding.comp (isEmbedding_prodMkLeft (0 : V))).toHomeomorph.trans
+    (.setCongr range_coe_comp_prodMk_zero)
 
 omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- The zero section is the core of the framed tube of the Thom space. -/
 private lemma isoOfHomeo_zeroSectionHomeomorph_hom :
     (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).hom =
       isFramedTube_onePoint_coe.coreHom := by
+  -- `ext` also applies `Subtype.ext`, so the goal is about the points of `OnePoint (S × V)`.
   ext x
-  rfl
+  rw [IsFramedTube.coe_coreHom_apply]
+  simp only [_root_.TopCat.isoOfHomeo_hom, _root_.TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
+    zeroSectionHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr,
+    Homeomorph.homeomorph_mk_coe, equivOfEq_apply, IsEmbedding.toHomeomorph_apply_coe,
+    comp_apply]
 
 /-- **The Thom isomorphism of a trivial bundle, on its Thom space.** For a compact Hausdorff space
 `S` and a real normed space `V` of finite dimension `k`, the homology of the Thom space

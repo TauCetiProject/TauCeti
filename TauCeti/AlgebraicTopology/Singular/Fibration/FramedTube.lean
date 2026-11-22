@@ -135,6 +135,21 @@ end Core
 
 /-! ### Maps of framed tubes -/
 
+section TubeCore
+
+variable {V : Type*} [TopologicalSpace V] [Zero V] {B B' : _root_.TopCat.{u}} {S S' : Type*}
+  [TopologicalSpace S] [TopologicalSpace S'] {f : S → B} {τ : S × V → B} {f' : S' → B'}
+  {τ' : S' × V → B'} {s : B' ⟶ B} {φ : S' → S}
+
+/-- A map of the bases carrying the tube `τ'` to the tube `τ` fibrewise carries the core of `τ'`
+into the core of `τ`. -/
+lemma mapsTo_range_of_apply_eq (hτ : IsFramedTube f τ) (hτ' : IsFramedTube f' τ')
+    (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) : MapsTo s (range f') (range f) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
+
+end TubeCore
+
 section TubeMap
 
 variable {V : Type u} [NormedAddCommGroup V] {E B E' B' : _root_.TopCat.{u}} {p : E ⟶ B}
@@ -142,13 +157,6 @@ variable {V : Type u} [NormedAddCommGroup V] {E B E' B' : _root_.TopCat.{u}} {p 
   {τ : S × V → B} {f' : S' → B'} {τ' : S' × V → B'} (hτ : IsFramedTube f τ)
   (hτ' : IsFramedTube f' τ') {s : B' ⟶ B} {g : E' ⟶ E} (hg : g ≫ p = p' ≫ s) {φ : S' → S}
   (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) (hsf : ∀ x, s x ∈ range f → x ∈ range f')
-
-include hτ hτ' hs in
-/-- A map of the bases carrying the tube `τ'` to the tube `τ` fibrewise carries the core of `τ'`
-into the core of `τ`. -/
-lemma mapsTo_range_of_apply_eq : MapsTo s (range f') (range f) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
 
 omit [TopologicalSpace S] [TopologicalSpace S'] in
 include hg hsf in

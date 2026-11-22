@@ -88,6 +88,16 @@ private lemma onePointPushOut_notMem_range_zeroSection {t : ℝ} {y : OnePoint (
     rw [coe_eq_coe, Prod.ext_iff]
     exact ⟨hx.1, h2.symm⟩
 
+/-- The radial push of a point `z` of `S × V` at a time `t ∈ [0, 1]` lands at `∞` or outside a set
+`K` as soon as, for `t < 1`, the rescaled point `(z.1, (1 - t)⁻¹ • z.2)` is outside `K`. -/
+private lemma onePointPushOut_mem_image_compl_union {K : Set (S × V)} {t : I} {z : S × V}
+    (h : 0 < 1 - (t : ℝ) → (z.1, (1 - (t : ℝ))⁻¹ • z.2) ∉ K) :
+    onePointPushOut (t : ℝ) (z : OnePoint (S × V)) ∈ (↑) '' Kᶜ ∪ {∞} := by
+  by_cases ht : (t : ℝ) = 1
+  · rw [ht, onePointPushOut_one]
+    exact Or.inr rfl
+  exact Or.inl ⟨_, h (sub_pos.2 (lt_of_le_of_ne (le_one t) ht)), (onePointPushOut_coe ht _).symm⟩
+
 variable [TopologicalSpace S]
 
 /-- The radial push at time `1`, near a point `(x₀, v₀)` with `v₀ ≠ 0`, lands outside every compact
@@ -109,11 +119,7 @@ private lemma tendsto_onePointPushOut_coe_one {z₀ : S × V} (hz₀ : z₀.2 �
       (x := ((1 : I), z₀))).eventually (gt_mem_nhds ?_)
     simpa using div_pos ha₀ (by positivity : (0 : ℝ) < |R| + 1)
   filter_upwards [h₁, h₂] with q hq₁ hq₂
-  by_cases ht : (q.1 : ℝ) = 1
-  · simp only [mem_preimage, ht, onePointPushOut_one]
-    exact Or.inr rfl
-  refine Or.inl ⟨(q.2.1, (1 - (q.1 : ℝ))⁻¹ • q.2.2), fun hmem ↦ ?_, (onePointPushOut_coe ht _).symm⟩
-  have hpos : 0 < 1 - (q.1 : ℝ) := sub_pos.2 (lt_of_le_of_ne (le_one q.1) ht)
+  refine onePointPushOut_mem_image_compl_union fun hpos hmem ↦ ?_
   have hbound := hR _ ⟨_, hmem, rfl⟩
   rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hpos] at hbound
   have hlt : |R| + 1 < (1 - (q.1 : ℝ))⁻¹ * ‖q.2.2‖ := by
@@ -139,13 +145,8 @@ private lemma tendsto_onePointPushOut_infty (t₀ : I) :
   refine mem_of_superset (prod_mem_prod univ_mem
     (hasBasis_nhds_infty.mem_of_mem ⟨hC.isClosed, hC⟩)) ?_
   rintro ⟨t, y⟩ ⟨-, hy⟩
-  by_cases ht : (t : ℝ) = 1
-  · simp only [mem_preimage, ht, onePointPushOut_one]
-    exact Or.inr rfl
   obtain ⟨z, hz, rfl⟩ | rfl := hy
-  · refine Or.inl ⟨(z.1, (1 - (t : ℝ))⁻¹ • z.2), fun hmem ↦ hz ?_,
-      (onePointPushOut_coe ht _).symm⟩
-    have hpos : 0 < 1 - (t : ℝ) := sub_pos.2 (lt_of_le_of_ne (le_one t) ht)
+  · refine onePointPushOut_mem_image_compl_union fun hpos hmem ↦ hz ?_
     refine ⟨(1 - (t : ℝ), (z.1, (1 - (t : ℝ))⁻¹ • z.2)), ⟨⟨hpos.le, by linarith [nonneg t]⟩, hmem⟩,
       ?_⟩
     simp [smul_smul, hpos.ne']
