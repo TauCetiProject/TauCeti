@@ -84,7 +84,7 @@ omit [Finite Mˣ] [Fintype (MulChar M R)] in
 characters of the finite group `Mˣ ⧸ H`. -/
 instance finite_subtype_mulChar (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)] :
     Finite {χ : MulChar M R // ∀ h ∈ H, χ h = 1} :=
-  Finite.of_equiv _ (MulChar.subtypeTrivialOnEquivQuotient H).symm
+  Finite.of_equiv _ (MulChar.subtypeTrivialOnEquivQuotientToUnitHom H).symm
 
 omit [Finite Mˣ] [Fintype (MulChar M R)] in
 /-- **Orthogonality for the characters trivial on a subgroup.** For a subgroup `H` of `Mˣ` of
@@ -100,9 +100,9 @@ theorem sum_subtype_mulChar_apply_eq_ite (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)]
     ∑ χ : {χ : MulChar M R // ∀ h ∈ H, χ h = 1}, (χ : MulChar M R) u =
       if u ∈ H then (H.index : R) else 0 := by
   classical
-  rw [Fintype.sum_equiv (MulChar.subtypeTrivialOnEquivQuotient H) _
+  rw [Fintype.sum_equiv (MulChar.subtypeTrivialOnEquivQuotientToUnitHom H) _
       (fun ψ ↦ (ψ (u : Mˣ ⧸ H) : R))
-      fun χ ↦ (MulChar.subtypeTrivialOnEquivQuotient_apply H χ u).symm,
+      fun χ ↦ (MulChar.subtypeTrivialOnEquivQuotientToUnitHom_apply H χ u).symm,
     CommGroup.sum_monoidHom_apply_eq_ite]
   simp only [QuotientGroup.eq_one_iff, index_eq_card]
 
