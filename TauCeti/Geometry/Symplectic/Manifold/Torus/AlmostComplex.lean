@@ -19,8 +19,8 @@ translations, so it descends to a smooth almost complex structure on `T`
 (`TauCeti.torusAlmostComplexStructure p`), the unique one for which `π` is pseudoholomorphic
 (`TauCeti.isPseudoholomorphic_complexPiTorusCover`). In the real coordinates of the circles it
 sends the direction `∂_(inl j)` of the real part of `z_j` to the direction `∂_(inr j)` of its
-imaginary part, and `∂_(inr j)` to `-∂_(inl j)` (`TauCeti.torusAlmostComplexStructure_apply_inl`,
-`TauCeti.torusAlmostComplexStructure_apply_inr`). Since `π` pulls the standard symplectic form
+imaginary part, and `∂_(inr j)` to `-∂_(inl j)` (`TauCeti.torusAlmostComplexStructure_apply_inr`,
+`TauCeti.torusAlmostComplexStructure_apply_inl`). Since `π` pulls the standard symplectic form
 `ω_T` back to the standard form of `ι → ℂ`, which is compatible with multiplication by `i`, the
 structure is compatible with `ω_T` (`TauCeti.compatible_torusAlmostComplexStructure`).
 
@@ -93,8 +93,8 @@ private theorem mfderiv_complexPiTorusCover_I_smul ⦃z z' : ι → ℂ⦄ (v : 
 /-- The **standard almost complex structure** of the torus `∀ i : ι ⊕ ι, AddCircle (p i)`: the
 descent of multiplication by `i` on `ι → ℂ` along the covering map
 `π z = ([Re z_j], [Im z_j])`. It sends `∂_(inl j)` to `∂_(inr j)` and `∂_(inr j)` to
-`-∂_(inl j)` (`TauCeti.torusAlmostComplexStructure_apply_inl`,
-`TauCeti.torusAlmostComplexStructure_apply_inr`). -/
+`-∂_(inl j)` (`TauCeti.torusAlmostComplexStructure_apply_inr`,
+`TauCeti.torusAlmostComplexStructure_apply_inl`). -/
 def torusAlmostComplexStructure :
     SmoothAlmostComplexStructure (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
       (∀ i, AddCircle (p i)) :=
@@ -123,8 +123,9 @@ private theorem exists_mfderiv_complexPiTorusCover_eq (z : ι → ℂ)
     rw [mfderiv_complexPiTorusCover]
     exact (complexToRealPi ι).apply_symm_apply v⟩
 
-/-- In the real coordinates of the circles, the standard structure sends the direction of the real
-part of `z_j` to that of its imaginary part: `(J v)_(inl j) = -v_(inr j)`. -/
+/-- In the real coordinates of the circles, the real-part coordinate of `J v` is minus the
+imaginary-part coordinate of `v`, `(J v)_(inl j) = -v_(inr j)`: the standard structure sends
+`∂_(inr j)` to `-∂_(inl j)`. -/
 @[simp]
 theorem torusAlmostComplexStructure_apply_inl (x : ∀ i, AddCircle (p i))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) x) (j : ι) :
@@ -133,8 +134,9 @@ theorem torusAlmostComplexStructure_apply_inl (x : ∀ i, AddCircle (p i))
   obtain ⟨w, rfl⟩ := exists_mfderiv_complexPiTorusCover_eq p z v
   simp
 
-/-- In the real coordinates of the circles, the standard structure sends the direction of the
-imaginary part of `z_j` to minus that of its real part: `(J v)_(inr j) = v_(inl j)`. -/
+/-- In the real coordinates of the circles, the imaginary-part coordinate of `J v` is the
+real-part coordinate of `v`, `(J v)_(inr j) = v_(inl j)`: the standard structure sends `∂_(inl j)`
+to `∂_(inr j)`. -/
 @[simp]
 theorem torusAlmostComplexStructure_apply_inr (x : ∀ i, AddCircle (p i))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) x) (j : ι) :
