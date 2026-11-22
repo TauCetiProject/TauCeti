@@ -7,7 +7,6 @@ module
 
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.RingTheory.PrincipalIdealDomain
-public import Mathlib.Algebra.Field.Rat
 public import TauCeti.KnotTheory.Khovanov.EulerCharacteristic
 
 /-!
