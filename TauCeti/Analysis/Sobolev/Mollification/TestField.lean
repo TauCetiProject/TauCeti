@@ -26,7 +26,7 @@ test functions extends to Sobolev test fields such as `ψ`.
 
 As an application, the symmetry `∫ ⟪∂_v φ, Dξ w⟫ = ∫ ⟪∂_w φ, Dξ v⟫` of the weak derivative of
 a field `ξ`, tested against test functions `φ`
-(`TauCeti.HasWeakFDerivOn.integral_inner_fderiv_apply_comm`), extends to such `ψ`
+(`TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_comm`), extends to such `ψ`
 (`TauCeti.HasWeakFDerivOn.setIntegral_inner_apply_comm`).
 
 ## Main results
@@ -156,7 +156,10 @@ theorem HasWeakFDerivOn.setIntegral_inner_apply_comm [FiniteDimensional ℝ V] {
   have hK' : ∫ z in K', ⟪Dψ z v, Dξ z w⟫_ℝ ∂μ = ∫ z in K', ⟪Dψ z w, Dξ z v⟫_ℝ ∂μ :=
     tendsto_nhds_unique (tendsto_integral_inner_fderiv_mollify hK'm hK'Ω hρ hφs hderiv hDψ v
       (hDξK w)) ((tendsto_integral_inner_fderiv_mollify hK'm hK'Ω hρ hφs hderiv hDψ w
-        (hDξK v)).congr fun n => (hξ.integral_inner_fderiv_apply_comm (φ n) v w).symm)
+        (hDξK v)).congr fun n => by
+          simpa only [TestFunction.lineDeriv_eq_fderiv] using
+            (hξ.hasWeakLineDerivOn v).integral_inner_lineDeriv_comm (hξ.hasWeakLineDerivOn w)
+              (φ n))
   -- Both integrands vanish almost everywhere on `Ω` off `K'`.
   have hDψ0 (c d : E) : ∀ᵐ z ∂μ, z ∈ (Ω : Set E) \ K' → ⟪Dψ z c, Dξ z d⟫_ℝ = 0 := by
     filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1

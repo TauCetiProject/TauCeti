@@ -43,10 +43,11 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
-(`ContinuousLinearMap.enorm_comp_sub_comp_le`). The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`,
-with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a combination of
-`‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`), using the
-triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`. Precomposition by an
+(`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
+`ContinuousLinearMap.norm_comp_sub_comp_le` in operator norms). The conjugates `G ∘ K ∘ M` and
+`G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a
+combination of `‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`),
+using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`. Precomposition by an
 operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
 (`ContinuousLinearMap.norm_precomp_le`).
 
@@ -122,6 +123,8 @@ obtained by replacing one coordinate. The coordinate arguments are adapted from
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
+The identity operator `1` has operator norm at most one on every seminormed space
+(`ContinuousLinearMap.norm_one_le`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -245,6 +248,12 @@ variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
+/-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
+Mathlib's `norm_one` does not apply. -/
+theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
+  rw [one_def]
+  exact norm_id_le
+
 /-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
 the moving evaluations `T i (g i)` tend to `w`. -/
 theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
@@ -288,6 +297,16 @@ theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpa
   calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
         (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
     _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
+
+/-- The three-term estimate for the difference of two compositions:
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`. This is the version of
+`ContinuousLinearMap.enorm_comp_sub_comp_le` for operator norms. -/
+theorem norm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (A' A : Y →L[𝕜] Z) (B' B : X →L[𝕜] Y) :
+    ‖A'.comp B' - A.comp B‖ ≤ ‖A' - A‖ * ‖B' - B‖ + ‖A' - A‖ * ‖B‖ + ‖A‖ * ‖B' - B‖ := by
+  have h := enorm_comp_sub_comp_le A' A B' B
+  simp only [eNorm_eq_nnNorm] at h
+  exact_mod_cast h
 
 /-- The operator norm of a triple composition is at most the product of the operator norms. -/
 theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]

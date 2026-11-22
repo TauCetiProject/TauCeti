@@ -18,15 +18,18 @@ agree as soon as one of them exists. No regularity beyond the existence of the t
 derivatives is assumed.
 
 The proof moves both derivatives onto the test function and uses that directional derivatives of
-test functions commute (`TestFunction.lineDerivOp_comm`). The same argument shows, with no second
-weak derivative assumed, that the first weak derivatives of `u` pair symmetrically with the
-derivatives of a vector-valued test function.
+test functions commute (`TestFunction.lineDerivOp_comm`).
+
+For vector-valued test functions paired through an inner product, the same computation shows that
+the first weak derivatives of a single function already satisfy the symmetry of mixed partials in
+the sense of distributions: `∫ ⟪∂_w φ, ∂_v u⟫ = ∫ ⟪∂_v φ, ∂_w u⟫`, with no second weak derivative
+assumed.
 
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
-* `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_apply_comm`: for a weak derivative `Du` and a
-  test function `φ`, `∫ ⟪∂_v φ, Du w⟫ = ∫ ⟪∂_w φ, Du v⟫`.
+* `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_comm`: the distributional symmetry of
+  mixed partials, tested against vector-valued test functions.
 -/
 
 public section
@@ -34,7 +37,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions InnerProductSpace
+open scoped Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -60,21 +63,26 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
 
-/-- **Mixed weak derivatives commute against test functions.** If `u` has a weak derivative `Du`
-on `Ω`, then for every test function `φ` and all directions `v` and `w`,
-`∫ ⟪∂_v φ, Du w⟫ = ∫ ⟪∂_w φ, Du v⟫`: both sides are `-∫ ⟪∂_w ∂_v φ, u⟫`. No second weak
-derivative of `u` is assumed to exist. -/
-theorem HasWeakFDerivOn.integral_inner_fderiv_apply_comm [OpensMeasurableSpace E]
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    {u : E → V} {Du : E → E →L[ℝ] V} (hu : HasWeakFDerivOn μ Ω u Du) (φ : 𝓓(Ω, V)) (v w : E) :
-    ∫ x, ⟪fderiv ℝ (φ : E → V) x v, Du x w⟫_ℝ ∂μ =
-      ∫ x, ⟪fderiv ℝ (φ : E → V) x w, Du x v⟫_ℝ ∂μ := by
-  have h1 := (hu.hasWeakLineDerivOn w).integral_inner_lineDeriv_eq_neg (∂_{v} φ)
-  have h2 := (hu.hasWeakLineDerivOn v).integral_inner_lineDeriv_eq_neg (∂_{w} φ)
-  have h3 : (fun x => ⟪lineDeriv ℝ ((∂_{v} φ : 𝓓(Ω, V)) : E → V) x w, u x⟫_ℝ) =
-      fun x => ⟪lineDeriv ℝ ((∂_{w} φ : 𝓓(Ω, V)) : E → V) x v, u x⟫_ℝ :=
-    funext fun x => by rw [TestFunction.lineDeriv_lineDerivOp_comm]
-  rw [h3, h2] at h1
-  simpa only [TestFunction.lineDerivOp_apply_eq_fderiv, neg_inj] using h1.symm
+section Inner
+
+open scoped InnerProductSpace
+
+variable [OpensMeasurableSpace E] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] {f f₁ f₂ : E → V}
+
+/-- **Mixed partials of a weakly differentiable function are symmetric as distributions.** If `f`
+has weak derivatives `f₁ = ∂_v f` and `f₂ = ∂_w f` on `Ω`, then
+`∫ ⟪∂_w φ, f₁⟫ = ∫ ⟪∂_v φ, f₂⟫` for every `φ ∈ 𝓓(Ω, V)`: both sides are `-∫ ⟪∂_v ∂_w φ, f⟫`.
+No second weak derivative of `f` is assumed. -/
+theorem HasWeakLineDerivOn.integral_inner_lineDeriv_comm (h₁ : HasWeakLineDerivOn μ Ω f f₁ v)
+    (h₂ : HasWeakLineDerivOn μ Ω f f₂ w) (φ : 𝓓(Ω, V)) :
+    ∫ x, ⟪lineDeriv ℝ (φ : E → V) x w, f₁ x⟫_ℝ ∂μ =
+      ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, f₂ x⟫_ℝ ∂μ := by
+  have e₁ := h₁.integral_inner_lineDeriv_eq_neg (∂_{w} φ)
+  have e₂ := h₂.integral_inner_lineDeriv_eq_neg (∂_{v} φ)
+  simp only [TestFunction.lineDeriv_lineDerivOp_comm φ w v] at e₁
+  simpa only [TestFunction.lineDerivOp_apply, neg_inj] using e₁.symm.trans e₂
+
+end Inner
 
 end TauCeti

@@ -196,7 +196,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_partial
   have hS'ξ : LocallyIntegrableOn (fun z => S' z (ξ z)) Ω :=
     hS'.locallyIntegrableOn_clm_apply hξq hpq hloc
   -- `∫ ⟪∂_s φ, ∂_e ξ⟫ = ∫ ⟪∂_e φ, ∂_s ξ⟫`.
-  have F1 := hξ.integral_inner_fderiv_apply_comm φ 1 e
+  have F1 := (hξ.hasWeakLineDerivOn e).integral_inner_lineDeriv_comm (hξ.hasWeakLineDerivOn 1) φ
+  simp only [TestFunction.lineDeriv_eq_fderiv] at F1
   -- `∫ ⟪∂_t (Jᵀ φ), ∂_e ξ⟫ = ∫ ⟪∂_e (Jᵀ φ), ∂_t ξ⟫`.
   have F2 := integral_inner_coeff_partial_comm hc hpq hp hq hξ hDξq φ e
   -- `∫ ⟪∂_e φ, S ξ⟫ = -∫ ⟪φ, (∂_e S) ξ + S ∂_e ξ⟫`, by the weak Leibniz rule for `S ξ`.
