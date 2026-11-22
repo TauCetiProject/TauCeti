@@ -158,7 +158,7 @@ theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ F]
     exact LinearMap.map_zero₂ _ _
   have hdim : finrank ℝ (TangentSpace K x) = finrank ℝ (TangentSpace J (b x)) :=
     ea.toLinearEquiv.finrank_eq.trans hEF
-  have : FiniteDimensional ℝ (TangentSpace J (b x)) := ‹FiniteDimensional ℝ F›
+  have : FiniteDimensional ℝ (TangentSpace J (b x)) := inferInstanceAs (FiniteDimensional ℝ F)
   exact (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim).2 hinj
 
 /-- **Isotropic relations project to local diffeomorphisms together.** In equal finite
