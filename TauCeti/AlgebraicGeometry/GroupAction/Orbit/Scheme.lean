@@ -84,6 +84,13 @@ instance : IsImmersion (orbitι G x) := by
 theorem range_orbitι : Set.range (orbitι G x) = orbit G x := by
   rw [orbitι_def, Scheme.Hom.range_locallyClosedImageι, orbit_def]
 
+/-- The orbit model is a closed subscheme exactly when the full geometric orbit is closed. -/
+@[simp]
+theorem isClosedImmersion_orbitι_iff :
+    IsClosedImmersion (orbitι G x) ↔ IsClosed (orbit G x) := by
+  rw [IsClosedImmersion.iff_isPreimmersion, range_orbitι]
+  exact and_iff_right (inferInstance : IsPreimmersion (orbitι G x))
+
 /-- The orbit morphism factors through its locally closed scheme image. -/
 def toOrbit : G.left ⟶ orbitScheme G x :=
   (orbitMap G x).left.toLocallyClosedImage

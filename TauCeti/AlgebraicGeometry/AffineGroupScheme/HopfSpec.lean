@@ -37,6 +37,7 @@ same-universe restriction is inherited from Mathlib's current `hopfSpec` constru
   ordinary spectrum.
 * `TauCeti.hopfSpec_obj_tensor_X_left`: the source of its multiplication.
 * `TauCeti.algSpec_map_left_ofAlgHom`: the underlying spectrum map of an algebra morphism.
+* `TauCeti.hopfSpec_map_op_hom_hom_left`: the underlying spectrum map of a Hopf-algebra morphism.
 * `TauCeti.hopfSpec_obj_one_left`, `TauCeti.hopfSpec_obj_mul_left`, and
   `TauCeti.hopfSpec_obj_inv_left`: its three group operations.
 * `CommHopfAlgCat.preimage_unop_comp_eq_of_hopfSpec_map_comp_eq` and
@@ -181,6 +182,13 @@ lemma algSpec_map_left_ofAlgHom {A B : Type u} [CommRing A] [CommRing B]
       (CommAlgCat.ofHom f).op).left =
         Spec.map (CommRingCat.ofHom f) := by
   rw [AlgebraicGeometry.algSpec_map_left, ← AlgHom.toRingHom_eq_coe]
+  rfl
+
+/-- The underlying scheme morphism of `(hopfSpec (CommRingCat.of R)).map f.op` is `Spec.map` of
+the underlying ring homomorphism of `f`. -/
+lemma hopfSpec_map_op_hom_hom_left {H K : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) :
+    ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op).hom.hom.left =
+      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) :=
   rfl
 
 /-- Mathlib's `hopfSpec` object is the group object on the ordinary spectrum.

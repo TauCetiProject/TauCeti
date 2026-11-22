@@ -46,6 +46,9 @@ No smoothness, reducedness, finite-type, or normality hypothesis is imposed on `
   `Spec H ⟶ X` and its left-coset point-fibre characterization.
 * `CommHopfAlgCat.representedQuotientHomEquiv`, `CommHopfAlgCat.representedQuotientDesc`: universal
   property and descent for `N`-invariant `R`-scheme morphisms out of `Spec H`.
+* `CommHopfAlgCat.fppfHomogeneousQuotientDesc`,
+  `CommHopfAlgCat.isIso_fppfHomogeneousQuotientDesc`: sheaf-level descent and recognition of
+  schemes representing `G/N`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf`,
   `CommHopfAlgCat.isIso_representedQuotientDesc`: recognition of schemes representing `G/N`.
 * `CommHopfAlgCat.eq_fppfHomogeneousQuotientSchemeMap_iff_comp`: the subgroup-induced morphism
@@ -203,6 +206,48 @@ underlying schemes. -/
 instance epi_representedQuotientProjection_left : Epi (representedQuotientProjection H I e).left :=
   inferInstanceAs (Epi ((Over.forget _).map (representedQuotientProjection H I e)))
 
+section SheafDesc
+
+variable {Y : Over (Spec (CommRingCat.of R))}
+  (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y)
+  (hq : ∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
+    (n : quotientPointsSubgroup H I A),
+    Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q)
+
+/-- **Sheaf-level descent of an `N`-invariant scheme morphism to `G/N`.** Every `R`-scheme
+morphism `q : Spec H ⟶ Y` invariant under right multiplication by `N` descends to a morphism of
+fppf sheaves `fppfHomogeneousQuotient H I ⟶ CommAlgCat.pointsSheaf Y`. -/
+def fppfHomogeneousQuotientDesc :
+    fppfHomogeneousQuotient H I ⟶ CommAlgCat.pointsSheaf Y :=
+  (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
+    ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
+      rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
+        hq A.unop.unop g n]⟩
+
+/-- Restricting `fppfHomogeneousQuotientDesc` along the quotient projection recovers `q` on
+convolution points. -/
+@[reassoc (attr := simp)] theorem fppfHomogeneousQuotientProjection_comp_desc :
+    fppfHomogeneousQuotientProjection H I ≫ (fppfHomogeneousQuotientDesc H I q hq).hom =
+      specPointsHomEquiv H Y q :=
+  fppfHomogeneousQuotientHomEquiv_symm_apply H I (CommAlgCat.pointsSheaf Y) _ _
+
+/-- **Sheaf-level quotient recognition.** If `q : Spec H ⟶ Y` is right `N`-invariant, locally
+surjective on fppf point sheaves, and has left cosets of `N` as its point-level fibres, then
+`fppfHomogeneousQuotientDesc H I q hq` is an isomorphism of fppf sheaves. -/
+theorem isIso_fppfHomogeneousQuotientDesc
+    [Sheaf.IsLocallySurjective ((CommAlgCat.pointsSheafFunctor R).map q)]
+    (hcoset : ∀ (A : CommAlgCat.{u} R) (g g' : HopfAlgebra.points (R := R) (H := H) A),
+      Spec.mapMulEquiv g ≫ q = Spec.mapMulEquiv g' ≫ q → g⁻¹ * g' ∈ quotientPointsSubgroup H I A) :
+    IsIso (fppfHomogeneousQuotientDesc H I q hq) := by
+  have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R) (specPointsHomEquiv H Y q) := by
+    rw [specPointsHomEquiv_eq_comp]; infer_instance
+  exact isIso_fppfHomogeneousQuotientHomEquiv_symm H I (CommAlgCat.pointsSheaf Y)
+    (specPointsHomEquiv H Y q) _ fun A g g' hgg' ↦ hcoset A.unop.unop g g' <|
+      ULift.up_inj.mp <| (specPointsHomEquiv_apply_app_apply H q A g).symm.trans
+        (hgg'.trans (specPointsHomEquiv_apply_app_apply H q A g'))
+
+end SheafDesc
+
 section Desc
 
 variable {Y : Over (Spec (CommRingCat.of R))}
@@ -221,11 +266,8 @@ def representedQuotientDesc : X ⟶ Y :=
 of `specPointsHomEquiv H Y q` precomposed with `e.inv`. -/
 @[simp] theorem pointsSheafFunctor_map_representedQuotientDesc :
     (CommAlgCat.pointsSheafFunctor R).map (representedQuotientDesc H I e q hq) =
-      e.inv ≫ (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-        ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-          rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-            hq A.unop.unop g n]⟩ := by
-  unfold representedQuotientDesc representedQuotientHomEquiv; simp
+      e.inv ≫ fppfHomogeneousQuotientDesc H I q hq := by
+  unfold fppfHomogeneousQuotientDesc representedQuotientDesc representedQuotientHomEquiv; simp
 
 /-- Composing `representedQuotientProjection` with `representedQuotientDesc` recovers `q`. -/
 @[reassoc (attr := simp)] theorem representedQuotientProjection_comp_desc :
@@ -290,28 +332,14 @@ fibres on `A`-valued points are the left cosets of `N(A)` exhibits `Y` as repres
 `fppfHomogeneousQuotient H I`. -/
 def fppfHomogeneousQuotientIsoPointsSheaf :
     fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf Y :=
-  @asIso _ _ _ _
-    ((fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-      ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-        rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-          hq A.unop.unop g n]⟩)
-    (by
-      have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
-          (specPointsHomEquiv H Y q) := by
-        rw [specPointsHomEquiv_eq_comp]; infer_instance
-      exact isIso_fppfHomogeneousQuotientHomEquiv_symm H I (CommAlgCat.pointsSheaf Y)
-        (specPointsHomEquiv H Y q) _ fun A g g' hgg' ↦ hcoset A.unop.unop g g' <|
-          ULift.up_inj.mp <| (specPointsHomEquiv_apply_app_apply H q A g).symm.trans
-            (hgg'.trans (specPointsHomEquiv_apply_app_apply H q A g')))
+  @asIso _ _ _ _ (fppfHomogeneousQuotientDesc H I q hq)
+    (isIso_fppfHomogeneousQuotientDesc H I q hq hcoset)
 
-/-- The forward morphism of `fppfHomogeneousQuotientIsoPointsSheaf` is the sheaf-level quotient
-descent of `specPointsHomEquiv H Y q`. -/
+/-- The forward morphism of `fppfHomogeneousQuotientIsoPointsSheaf` is
+`fppfHomogeneousQuotientDesc`. -/
 @[simp] theorem fppfHomogeneousQuotientIsoPointsSheaf_hom :
     (fppfHomogeneousQuotientIsoPointsSheaf H I q hq hcoset).hom =
-      (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-        ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-          rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-            hq A.unop.unop g n]⟩ := (rfl)
+      fppfHomogeneousQuotientDesc H I q hq := (rfl)
 
 /-- Under `fppfHomogeneousQuotientIsoPointsSheaf`, `representedQuotientProjection` is `q`. -/
 @[simp] theorem representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf :
@@ -319,7 +347,7 @@ descent of `specPointsHomEquiv H Y q`. -/
       q := by
   apply (specPointsHomEquiv H Y).injective
   rw [specPointsHomEquiv_representedQuotientProjection,
-    fppfHomogeneousQuotientIsoPointsSheaf_hom, fppfHomogeneousQuotientHomEquiv_symm_apply]
+    fppfHomogeneousQuotientIsoPointsSheaf_hom, fppfHomogeneousQuotientProjection_comp_desc]
 
 end Iso
 

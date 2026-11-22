@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fibers
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lifting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
-public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
-import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flat
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
+import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
 # Projective orbits represent homogeneous quotients
@@ -28,8 +29,8 @@ The orbit scheme defines an fppf sheaf on affine `k`-schemes, `CommAlgCat.points
 the fppf topology is subcanonical. The orbit map from `G` is invariant under `N` and descends to
 `G/N`. The descended map is locally injective because the orbit-map fibers are exactly the left
 cosets of `N` (`Comodule.projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient`),
-and it is locally surjective because every point of the orbit lifts to `G` after a faithfully
-flat, finitely presented extension (`Comodule.exists_faithfullyFlat_lift_toProjectiveOrbit`).
+and it is locally surjective because `toProjectiveOrbit` is fppf
+(`CommAlgCat.isLocallySurjective_pointsSheafFunctor_map`).
 A locally bijective morphism of sheaves is an isomorphism.
 
 ## Main declarations
@@ -147,25 +148,41 @@ theorem toProjectiveOrbitPoints_app_eq_iff (m : M) (hm : Module.IsUnimodular k m
   exact ⟨fun h ↦ congrArg (fun x ↦ (ULift.down x).left) h,
     fun h ↦ congrArg ULift.up (Over.OverMorphism.ext h)⟩
 
+/-- `specPointsHomEquiv` sends `toProjectiveOrbit` over `Spec k` to `toProjectiveOrbitPoints`. -/
+@[simp] theorem specPointsHomEquiv_toProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
+    CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
+        (Over.homMk (toProjectiveOrbit (H := H) m hm)
+          (toProjectiveOrbit_projectiveOrbitToSpec m hm)) =
+      toProjectiveOrbitPoints (H := H) m hm := by
+  ext A ⟨g⟩
+  exact (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
+    (congrArg ULift.up <| Over.OverMorphism.ext <|
+      congrArg (· ≫ toProjectiveOrbit (H := H) m hm)
+        (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)).trans
+      (toProjectiveOrbitPoints_app_apply m hm A g).symm
+
 /-- **Points of the orbit lift fppf locally to the group.** For a reduced group, the orbit map
 on points is locally surjective for the fppf topology. -/
 instance isLocallySurjective_toProjectiveOrbitPoints [_root_.IsReduced H] (m : M)
     (hm : Module.IsUnimodular k m) :
     Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology k)
-      (toProjectiveOrbitPoints (H := H) m hm) where
-  imageSieve_mem {U} s := by
-    obtain ⟨y⟩ := s
-    obtain ⟨B, φ, g, hflat, hfp, hg⟩ :=
-      exists_faithfullyFlat_lift_toProjectiveOrbit (H := H) m hm U.unop y.left (Over.w y)
-    refine GrothendieckTopology.superset_covering _ ?_
-      (CommAlgCat.generate_singleton_op_mem_fppfTopology φ hflat hfp)
-    rw [Sieve.generate_le_iff]
-    rintro _ _ ⟨⟩
-    refine ⟨ULift.up g, ?_⟩
-    rw [toProjectiveOrbitPoints_app_apply]
-    refine congrArg ULift.up (Over.OverMorphism.ext ?_)
-    -- The restriction of `y` along `φ` is `Spec φ ≫ y`, which is the lifted orbit point.
-    exact hg.trans (congrArg (· ≫ y.left) (algSpec_map_left_ofAlgHom (R := k) φ.hom).symm)
+      (toProjectiveOrbitPoints (H := H) m hm) := by
+  rw [← specPointsHomEquiv_toProjectiveOrbit, CommHopfAlgCat.specPointsHomEquiv_eq_comp,
+    Presheaf.comp_isLocallySurjective_iff]
+  let p : (algSpec (CommRingCat.of k)).obj (op (CommAlgCat.of k H)) ⟶
+      Over.mk (projectiveOrbitToSpec (H := H) m hm) :=
+    Over.homMk (toProjectiveOrbit (H := H) m hm)
+      (toProjectiveOrbit_projectiveOrbitToSpec m hm)
+  have : Flat p.left := by
+    change Flat (toProjectiveOrbit (H := H) m hm)
+    infer_instance
+  have : Surjective p.left := by
+    change Surjective (toProjectiveOrbit (H := H) m hm)
+    infer_instance
+  have : LocallyOfFinitePresentation p.left := by
+    change LocallyOfFinitePresentation (toProjectiveOrbit (H := H) m hm)
+    infer_instance
+  exact TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map p
 
 section Descent
 
@@ -229,19 +246,6 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
   (rfl)
 
 end Descent
-
-/-- `specPointsHomEquiv` sends `toProjectiveOrbit` over `Spec k` to `toProjectiveOrbitPoints`. -/
-@[simp] theorem specPointsHomEquiv_toProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
-    CommHopfAlgCat.specPointsHomEquiv H (Over.mk (projectiveOrbitToSpec (H := H) m hm))
-        (Over.homMk (toProjectiveOrbit (H := H) m hm)
-          (toProjectiveOrbit_projectiveOrbitToSpec m hm)) =
-      toProjectiveOrbitPoints (H := H) m hm := by
-  ext A ⟨g⟩
-  exact (CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H _ A g).trans <|
-    (congrArg ULift.up <| Over.OverMorphism.ext <|
-      congrArg (· ≫ toProjectiveOrbit (H := H) m hm)
-        (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)).trans
-      (toProjectiveOrbitPoints_app_apply m hm A g).symm
 
 /-- For a reduced group `G` and Chevalley's representing isomorphism
 `fppfHomogeneousQuotientIsoProjectiveOrbitPoints`, the descended quotient projection in

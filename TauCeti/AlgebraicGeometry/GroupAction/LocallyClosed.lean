@@ -68,11 +68,7 @@ theorem isConstructible_orbit {S : Scheme.{u}} (G : Over S) {X : Over S} [MonObj
     [LocallyOfFiniteType G.hom] [CompactSpace G.left] [IsLocallyNoetherian X.left]
     [CompactSpace X.left] (x : 𝟙_ (Over S) ⟶ X) :
     IsConstructible (orbit G x) := by
-  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
-    rw [Over.w]
-    infer_instance
-  have : LocallyOfFiniteType (orbitMap G x).left :=
-    locallyOfFiniteType_of_comp (orbitMap G x).left X.hom
+  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
   have h : orbit G x = Set.range (orbitMap G x).left := Set.ext (mem_orbit G x)
   simpa [h] using (orbitMap G x).left.isConstructible_image IsConstructible.univ
 

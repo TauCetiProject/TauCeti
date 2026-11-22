@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Stabilizer
-import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Proper
 import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Smooth
 import TauCeti.Topology.Constructible.Jacobson
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -14,15 +13,17 @@ import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 /-!
 # Homogeneous schemes and orbit-scheme identification
 
-When an algebraic group scheme `G` of finite type over an algebraically closed field `k` acts on
-a finite-type `k`-scheme `X`, the orbit of a rational point `x : Spec k ⟶ X` covers all of `X`
-(including nonclosed points) if and only if the rational points of `G` act transitively on the
-rational points of `X`.
+When an algebraic group scheme `G` of finite type over a field `k` acts on a locally finite-type
+`k`-scheme `X`, the orbit of a rational point `x : Spec k ⟶ X` covers all of `X` (including
+nonclosed points) if and only if it contains every closed point of `X`; when `k` is algebraically
+closed, this holds if and only if the rational points of `G` act transitively on the rational points
+of `X`.
 
-If moreover `X` is reduced, then the canonical equivariant orbit immersion
+If moreover `X` is quasi-compact and reduced, then the canonical equivariant orbit immersion
 `orbitInclusion G x : orbitOver G x ⟶ X` is a surjective closed immersion into a reduced scheme,
 hence an equivariant isomorphism `orbitInclusionIso G x h : orbitOver G x ≅ X`. Transporting the
-orbit-scheme theory along this isomorphism shows that for a reduced finite-type group `G`:
+orbit-scheme theory along this isomorphism shows that for a geometrically reduced finite-type group
+`G`:
 
 * `X` itself is smooth over `Spec k`;
 * the orbit morphism `orbitMap G x` is faithfully flat and locally of finite presentation;
@@ -32,8 +33,8 @@ orbit-scheme theory along this isomorphism shows that for a reduced finite-type 
 
 ## Main declarations
 
-* `TauCeti.SchemeAction.orbit_eq_univ_iff_closedPoints_subset`: over a field, a finite-type orbit
-  covers `X` iff it contains every closed point of `X`.
+* `TauCeti.SchemeAction.orbit_eq_univ_iff_closedPoints_subset`: over a field, an orbit covers a
+  locally finite-type scheme `X` iff it contains every closed point of `X`.
 * `TauCeti.SchemeAction.orbit_eq_univ_iff_forall_exists_smul`: over an algebraically closed field,
   the orbit of `x` covers `X` iff every rational point of `X` is a translate `g • x`.
 * `TauCeti.SchemeAction.orbitInclusionIso`: for a reduced homogeneous scheme `X`, the equivariant
@@ -61,16 +62,31 @@ section Field
 variable {k : Type u} [Field k] (G : Over (Spec (.of k))) {X : Over (Spec (.of k))}
   [MonObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
-  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+  [LocallyOfFiniteType X.hom]
 
-/-- Over a field, the geometric orbit of a rational point covers a finite-type scheme `X` if and
-only if it contains every closed point of `X`. -/
+/-- Over a field, the geometric orbit of a rational point covers a locally finite-type scheme `X`
+if and only if it contains every closed point of `X`. -/
 theorem orbit_eq_univ_iff_closedPoints_subset (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     orbit G x = Set.univ ↔ closedPoints X.left ⊆ orbit G x := by
+  refine ⟨fun h ↦ h ▸ Set.subset_univ _, fun h ↦ Set.eq_univ_iff_forall.mpr fun p ↦ ?_⟩
+  by_contra hp
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
   have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  rw [(isConstructible_orbit G x).eq_iff_inter_closedPoints_eq IsConstructible.univ,
-    Set.univ_inter, Set.inter_eq_right]
+  have : IsNoetherian G.left := { __ := LocallyOfFiniteType.isLocallyNoetherian G.hom }
+  have : QuasiCompact (orbitMap G x).left :=
+    ⟨fun _ _ _ ↦ TopologicalSpace.NoetherianSpace.isCompact _⟩
+  have : LocallyOfFinitePresentation (orbitMap G x).left :=
+    locallyOfFinitePresentation_orbitMap G x
+  have hloc : IsLocallyConstructible (orbit G x) := by
+    simpa [orbit_def] using (orbitMap G x).left.isLocallyConstructible_image
+      IsLocallyConstructible.univ
+  obtain ⟨V, hV, hpV, -⟩ :=
+    exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top p)
+  have hdiff : IsConstructible ((V : Set X.left) \ (orbit G x ∩ V)) :=
+    (hV.isCompact.isConstructible V.isOpen).sdiff
+      (hloc.inter_of_isOpen_isCompact V.isOpen hV.isCompact)
+  obtain ⟨q, ⟨hqV, hqO⟩, hqc⟩ := hdiff.nonempty_inter_closedPoints ⟨p, hpV, fun hmem ↦ hp hmem.1⟩
+  exact hqO ⟨h hqc, hqV⟩
 
 end Field
 
@@ -79,7 +95,7 @@ section Transitivity
 variable {k : Type u} [Field k] [IsAlgClosed k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [MonObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
-  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+  [LocallyOfFiniteType X.hom]
 
 /-- Over an algebraically closed field, the geometric orbit of `x` covers all of `X` (including
 nonclosed points) if and only if every rational point of `X` is a translate of `x` by a rational
@@ -172,9 +188,9 @@ instance [IsReduced X.left] (h : orbit G x = Set.univ) :
   rw [orbitInclusionIso_hom]
   infer_instance
 
-/-- Every reduced finite-type homogeneous scheme for a reduced finite-type group over an
-algebraically closed field is smooth. -/
-theorem smooth_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
+/-- Every reduced finite-type homogeneous scheme for a geometrically reduced finite-type group
+over a field is smooth. -/
+theorem smooth_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Smooth X.hom := by
   have hcomp : (orbitInclusionIso G x h).inv.left ≫ orbitToBase G x = X.hom :=
@@ -182,33 +198,30 @@ theorem smooth_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.
   rw [← hcomp]
   infer_instance
 
-/-- The orbit morphism onto a reduced finite-type homogeneous scheme for a reduced finite-type
-group over an algebraically closed field is flat. -/
-theorem flat_orbitMap_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
+/-- The orbit morphism onto a reduced finite-type homogeneous scheme for a geometrically reduced
+finite-type group over a field is flat. -/
+theorem flat_orbitMap_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Flat (orbitMap G x).left := by
   have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
   rw [← toOrbit_ι G x]
   infer_instance
 
-/-- For a reduced finite-type group acting transitively on a reduced finite-type scheme `X` over
-an algebraically closed field, the orbit morphism `G ⟶ X` is smooth if and only if the
-scheme-theoretic stabilizer `stabilizer G x` is smooth over `Spec k`. -/
-theorem smooth_orbitMap_iff_of_orbit_eq_univ [IsAlgClosed k] [IsReduced G.left] [IsReduced X.left]
+/-- For a geometrically reduced finite-type group acting transitively on a reduced finite-type
+scheme `X` over a field, the orbit morphism `G ⟶ X` is smooth if and only if the scheme-theoretic
+stabilizer `stabilizer G x` is smooth over `Spec k`. -/
+theorem smooth_orbitMap_iff_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
     (h : orbit G x = Set.univ) :
     Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom := by
-  refine Iff.trans ?_ (smooth_toOrbit_iff G x)
-  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · have hinv : (orbitMap G x).left ≫ (orbitInclusionIso G x h).inv.left = toOrbit G x := by
-      rw [← Over.comp_left, orbitMap_comp_orbitInclusionIso_inv, orbitProjection_left]
-    rw [← hinv]
-    infer_instance
-  · have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
-    rw [← toOrbit_ι G x]
-    infer_instance
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  have : MorphismProperty.RespectsIso @Smooth := by
+    rw [HasRingHomProperty.eq_affineLocally @Smooth]
+    exact affineLocally_respectsIso @RingHom.Smooth RingHom.Smooth.respectsIso
+  rw [← toOrbit_ι G x, MorphismProperty.cancel_right_of_respectsIso @Smooth]
+  exact smooth_toOrbit_iff G x
 
 /-- In characteristic zero, the orbit morphism from an affine finite-type group onto a reduced
-finite-type homogeneous scheme over an algebraically closed field is smooth. -/
+finite-type homogeneous scheme over a field is smooth. -/
 theorem smooth_orbitMap_of_orbit_eq_univ_of_charZero [CharZero k] [IsAffine G.left]
     [IsReduced X.left] (h : orbit G x = Set.univ) :
     Smooth (orbitMap G x).left := by

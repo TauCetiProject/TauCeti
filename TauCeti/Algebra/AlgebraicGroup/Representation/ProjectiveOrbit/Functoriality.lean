@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Action
-public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ProperDescent
 
 /-!
