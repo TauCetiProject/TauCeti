@@ -22,14 +22,15 @@ Beltrami coefficient `μ` is `α`-Hölder near `c` for some `0 < α < 1`. This f
 has an *isothermal chart*: a `C¹` open partial homeomorphism `e` of `ℂ`, defined near `c`, with
 `α`-Hölder and invertible derivative, in which `J` becomes multiplication by `i`:
 `de_z (J z v) = i · de_z v` (`TauCeti.Beltrami.exists_isothermal_chart`). If the field `J`
-itself is `C¹` at `c` and tame at `c`, its coefficient is Lipschitz, hence Hölder, near `c`, so
-the same conclusion holds for every `0 < α < 1`
-(`TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt`). The transition maps between two such
-charts are holomorphic (`TauCeti.Beltrami.differentiableOn_symm_trans_of_fderiv_comp`).
+itself is `C¹` at `c`, the same conclusion holds for every `0 < α < 1`, with no orientation
+condition (`TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt`): if `J` is tame at `c`, its
+coefficient is Lipschitz, hence Hölder, near `c`; otherwise the field conjugated by `z ↦ conj z`
+is tame at `conj c`. The transition maps between two such charts are holomorphic
+(`TauCeti.Beltrami.differentiableOn_symm_trans_of_fderiv_comp`).
 
-No orientation need be assumed: a field `J` of real-linear endomorphisms of the plane which is
-`C¹` near `c` and squares to `-1` there, of either orientation, has an isothermal chart at `c`
-which is `C¹` with `C¹` inverse
+No orientation need be assumed either for a field `J` of real-linear endomorphisms of the plane
+which is `C¹` near `c` and squares to `-1` there: it has an isothermal chart at `c` which is `C¹`
+with `C¹` inverse
 (`TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_one`). Read through the
 charts of a surface, these planar charts give the isothermal charts of `TauCeti.IsIsothermalChart`.
 
@@ -61,7 +62,7 @@ Beltrami normalizer of the coefficient `ν = (i - K 1) / (conj (K 1) - i)` of th
 * `TauCeti.Beltrami.exists_isothermal_chart`: a tame field of structures with `α`-Hölder
   Beltrami coefficient near `c` has a `C^{1,α}` isothermal chart at `c`.
 * `TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt`: the same for a field of structures
-  that is `C¹` at `c` and tame at `c`, for every `0 < α < 1`.
+  that is `C¹` at `c`, of either orientation, for every `0 < α < 1`.
 * `TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_one`: a `C¹` field of
   complex structures of either orientation has a `C¹` isothermal chart, with `C¹` inverse, at
   every point.
@@ -243,7 +244,7 @@ private theorem exists_chart_comp_affine {α K : ℝ≥0} {φ : ℂ → ℂ} {e 
     rw [mul_one, one_mul] at h
     exact ⟨_, fun z hz z' hz' ↦ by rw [hdE z hz, hdE z' hz']; exact h z hz z' hz'⟩
   · rw [hdE z hz]
-    refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq _ rfl ?_
+    refine (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq rfl).2 ?_
     exact (hinj _ ((hEs z).mp hz).2).comp
       ((smul_right_injective ℂ (inv_ne_zero hε)).comp L.injective)
 
@@ -312,12 +313,10 @@ theorem exists_isothermal_chart {α C : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
   rw [hkey', Complex.real_smul, Complex.real_smul]
   ring
 
-/-- **Isothermal coordinates for a `C¹` structure.** Let `J` be a field of almost complex
-structures on the plane that is `C¹` at `c` in the operator norm and tame at `c`. Then for every
-`0 < α < 1`, `c` has an isothermal chart: an open partial homeomorphism `e` whose source contains
-`c`, which is `C¹` on its source with `α`-Hölder and invertible derivative, and in which `J` is
-multiplication by `i`. -/
-theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+/-- **Isothermal coordinates for a `C¹` structure, tame case.** The conclusion of
+`exists_isothermal_chart_of_contDiffAt` for a field of structures that is tame at `c`. -/
+private theorem exists_isothermal_chart_of_contDiffAt_of_tames {α : ℝ≥0} (hα0 : 0 < α)
+    (hα1 : α < 1)
     {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
     (hJ : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c)
     (hJc : stdComplexSymplecticForm.Tames (J c)) :
@@ -512,5 +511,91 @@ theorem exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_one {J : ℂ → ℂ 
     z₀ fun z _ v ↦ by
       simp [K, Units.smul_def, smul_smul, mul_inv_cancel₀ hε.ne', -Complex.real_smul]
   exact ⟨F, (hFsrc z₀).2 (by simpa using he0), hF, hFs, hFJ⟩
+
+/-! ### Untamed fields of almost complex structures -/
+
+/-- **Isothermal charts after conjugation.** If `e'` is an isothermal chart at `conj c` for the
+conjugated field `z ↦ conj ∘ J (conj z) ∘ conj`, then `e' ∘ conj` is an isothermal chart at `c`
+for `J`, with derivative `de'_(conj z) ∘ conj`, again `α`-Hölder and invertible. -/
+private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
+    {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ} (e' : OpenPartialHomeomorph ℂ ℂ)
+    (hce' : conj c ∈ e'.source) (he'C : ContDiffOn ℝ 1 e' e'.source)
+    (hK : HolderOnWith K α (fderiv ℝ e') e'.source)
+    (he'inv : ∀ z ∈ e'.source, (fderiv ℝ e' z).IsInvertible)
+    (he'J : ∀ z ∈ e'.source, ∀ v, fderiv ℝ e' z ((J (conj z)).transport conjCLE.toLinearEquiv v) =
+      I * fderiv ℝ e' z v) :
+    ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧
+      ContDiffOn ℝ 1 e e.source ∧ (∃ K : ℝ≥0, HolderOnWith K α (fderiv ℝ e) e.source) ∧
+      (∀ z ∈ e.source, (fderiv ℝ e z).IsInvertible) ∧
+      ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
+  set σ : ℂ ≃L[ℝ] ℂ := conjCLE with hσdef
+  have hσ (z : ℂ) : σ z = conj z := conjCLE_apply z
+  set e := σ.toHomeomorph.toOpenPartialHomeomorph.trans e'
+  have hes (z : ℂ) : z ∈ e.source ↔ σ z ∈ e'.source := by simp [e]
+  have hecoe : (e : ℂ → ℂ) = e' ∘ σ := by
+    simp [e, OpenPartialHomeomorph.coe_trans]
+  have hde (z : ℂ) : fderiv ℝ e z = (fderiv ℝ e' (σ z)).comp (σ : ℂ →L[ℝ] ℂ) := by
+    rw [hecoe]
+    exact σ.comp_right_fderiv
+  refine ⟨e, (hes c).2 hce', ?_, ⟨K, fun z hz w hw ↦ ?_⟩, fun z hz ↦ ?_, fun z hz v ↦ ?_⟩
+  · rw [hecoe]
+    exact he'C.comp σ.contDiff.contDiffOn fun z hz ↦ (hes z).1 hz
+  · -- Precomposition with the linear isometry `σ = conjLIE` preserves distances of operators.
+    rw [hde, hde]
+    calc edist ((fderiv ℝ e' (σ z)).comp (σ : ℂ →L[ℝ] ℂ))
+          ((fderiv ℝ e' (σ w)).comp (σ : ℂ →L[ℝ] ℂ))
+        = edist (fderiv ℝ e' (σ z)) (fderiv ℝ e' (σ w)) := by
+          rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← ContinuousLinearMap.sub_comp,
+            hσdef, ← conjLIE_toCLE]
+          exact congrArg ENNReal.ofReal
+            (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ conjLIE)
+      _ ≤ K * edist (σ z) (σ w) ^ (α : ℝ) := hK.edist_le ((hes z).1 hz) ((hes w).1 hw)
+      _ = K * edist z w ^ (α : ℝ) := by rw [hσ, hσ, isometry_conj.edist_eq]
+  · rw [hde]
+    exact (he'inv _ ((hes z).1 hz)).comp ContinuousLinearMap.isInvertible_equiv
+  · -- `σ (J z v)` is the conjugated structure at `σ z` applied to `σ v`.
+    have hJ'z : σ (J z v) = (J (conj (σ z))).transport σ.toLinearEquiv (σ v) := by
+      simp only [σ, AlmostComplexStructure.transport_conjCLE_apply, conjCLE_apply, conj_conj]
+    rw [hde, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, hJ'z, he'J _ ((hes z).1 hz)]
+
+/-- **Isothermal coordinates for a `C¹` structure.** Let `J` be a field of almost complex
+structures on the plane that is `C¹` at `c` in the operator norm. Then for every `0 < α < 1`, `c`
+has an isothermal chart: an open partial homeomorphism `e` whose source contains `c`, which is `C¹`
+on its source with `α`-Hölder and invertible derivative, and in which `J` is multiplication by `i`.
+
+No orientation condition is needed: if `J c` is not tamed by the standard area form, then its
+conjugate by complex conjugation is (`stdComplexSymplecticForm_tames_or_tames_transport_conj`). -/
+theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
+    (hJ : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c) :
+    ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧
+      ContDiffOn ℝ 1 e e.source ∧ (∃ K : ℝ≥0, HolderOnWith K α (fderiv ℝ e) e.source) ∧
+      (∀ z ∈ e.source, (fderiv ℝ e z).IsInvertible) ∧
+      ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
+  rcases stdComplexSymplecticForm_tames_or_tames_transport_conj (J c) with hJc | hJc
+  · exact exists_isothermal_chart_of_contDiffAt_of_tames hα0 hα1 hJ hJc
+  -- Otherwise the conjugated field `J'` is `C¹` and tame at `conj c`.
+  set σ : ℂ ≃L[ℝ] ℂ := conjCLE
+  have hσc : σ (σ c) = c := by simp only [σ, conjCLE_apply, conj_conj]
+  set J' : ℂ → AlmostComplexStructure ℂ := fun z ↦ (J (conj z)).transport σ.toLinearEquiv
+  have hJ'eq : (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap) = fun z ↦
+      (σ : ℂ →L[ℝ] ℂ) ∘L LinearMap.toContinuousLinearMap (J (σ z)).toLinearMap ∘L
+        (σ : ℂ →L[ℝ] ℂ) := by
+    funext z
+    ext1 v
+    simp only [J', σ, AlmostComplexStructure.transport_conjCLE_apply,
+      LinearMap.coe_toContinuousLinearMap', ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, conjCLE_apply]
+  have hJ' : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap)
+      (σ c) := by
+    rw [hJ'eq]
+    exact contDiffAt_const.clm_comp
+      (((hσc ▸ hJ).comp (σ c) σ.contDiff.contDiffAt).clm_comp contDiffAt_const)
+  have hJ'c : stdComplexSymplecticForm.Tames (J' (σ c)) := by
+    simpa [J', σ] using hJc
+  obtain ⟨e', hce', he'C, ⟨K, hK⟩, he'inv, he'J⟩ :=
+    exists_isothermal_chart_of_contDiffAt_of_tames hα0 hα1 hJ' hJ'c
+  exact exists_isothermal_chart_of_transport_conj e' hce' he'C hK he'inv he'J
 
 end TauCeti.Beltrami
