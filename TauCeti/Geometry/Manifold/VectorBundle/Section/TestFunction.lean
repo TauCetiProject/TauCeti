@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -30,7 +30,10 @@ compactly supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source` into
 `𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartCutoffTestFunction`).
 On a Hausdorff base when `c` is also forward `C^n`, extending these readings by zero recovers the
 original or localized section (`Bundle.Trivialization.chartTestSection_chartReadTestFunction`,
-`Bundle.Trivialization.chartTestSection_chartCutoffTestFunction`).
+`Bundle.Trivialization.chartTestSection_chartCutoffTestFunction`). This chart-reading, cutoff, and
+extension-back API is adapted from `Bundle.Trivialization.chartLocalization` and
+`Bundle.Trivialization.chartTestSection_chartLocalization` in
+`TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`.
 
 These are algebraic chart extension and chart-reading maps for constructing locally convex
 test-section spaces. No topology on compactly supported sections is installed here. Extension only

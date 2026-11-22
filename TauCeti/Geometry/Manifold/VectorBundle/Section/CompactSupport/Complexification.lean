@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.FinalTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
@@ -16,7 +16,7 @@ The algebraic comparisons in `CompactSupport.Complexification.Basic` identify na
 of a complexified real bundle with real pairs at all orders `n : ℕ∞ω`. This module adds
 continuity at orders `n : ℕ∞`, including every prescribed compact-support stage.
 On a finite-dimensional boundaryless smooth
-Hausdorff sigma-compact base, this is a real continuous linear equivalence for the existing
+Hausdorff base, this is a real continuous linear equivalence for the existing
 compactly-supported final locally convex topologies. The fibre model can be arbitrary normed,
 infinite dimensional or incomplete. These results make no LF or strict inductive-limit assertion.
 
@@ -171,7 +171,7 @@ end Charts
 
 
 section Topology
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [SigmaCompactSpace M]
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M]
   [IsManifold I ∞ M]
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
@@ -185,16 +185,14 @@ theorem CompactlySupported.continuous_realPart :
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     Continuous (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V)) := by
   let _ := compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-  apply (continuous_compactlySupportedTopology_iff_chartTestSection
-    (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
-      hcover (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V))).2
-  intro t ht c hc hct
+  dsimp only
+  rw [← chartTestTopology_eq_compactlySupportedTopology (fun i ↦ (e i).complexification) U
+    (by simpa only [Trivialization.baseSet_complexification] using hU) hcover]
+  refine (continuous_chartTestTopology_iff
+    (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V))).2 fun t ht c hc hct ↦ ?_
   obtain ⟨t₀, ht₀, rfl⟩ := mem_trivializationAtlas_complexification_iff.mp ht
   let _ := ht₀
   have hct₀ : c.source ⊆ t₀.baseSet := by simpa only [Trivialization.baseSet_complexification]
@@ -212,16 +210,15 @@ theorem CompactlySupported.continuous_imaginaryPart :
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     Continuous (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V)) := by
   let _ := compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-  apply (continuous_compactlySupportedTopology_iff_chartTestSection
-    (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
-      hcover (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V))).2
-  intro t ht c hc hct
+  dsimp only
+  rw [← chartTestTopology_eq_compactlySupportedTopology (fun i ↦ (e i).complexification) U
+    (by simpa only [Trivialization.baseSet_complexification] using hU) hcover]
+  refine (continuous_chartTestTopology_iff
+    (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V))).2
+    fun t ht c hc hct ↦ ?_
   obtain ⟨t₀, ht₀, rfl⟩ := mem_trivializationAtlas_complexification_iff.mp ht
   let _ := ht₀
   have hct₀ : c.source ⊆ t₀.baseSet := by simpa only [Trivialization.baseSet_complexification]
@@ -237,7 +234,6 @@ theorem CompactlySupported.continuous_oneTmul :
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     Continuous (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
@@ -249,9 +245,10 @@ theorem CompactlySupported.continuous_oneTmul :
   let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n)
     (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
       using hU)
-  apply (continuous_compactlySupportedTopology_iff_chartTestSection e U hU hcover
-    (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V))).2
-  intro t ht c hc hct
+  dsimp only
+  rw [← chartTestTopology_eq_compactlySupportedTopology e U hU hcover]
+  refine (continuous_chartTestTopology_iff
+    (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V))).2 fun t _ c hc hct ↦ ?_
   exact ((t.complexification.continuous_chartTestSection c hc
     (by simpa only [Trivialization.baseSet_complexification] using hct)
     (fun i ↦ (e i).complexification) U
@@ -268,7 +265,6 @@ theorem CompactlySupported.continuous_ITmul :
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     Continuous (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := compactlySupportedTopology (I := I) (n := n) e U hU
   let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
@@ -280,9 +276,10 @@ theorem CompactlySupported.continuous_ITmul :
   let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n)
     (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
       using hU)
-  apply (continuous_compactlySupportedTopology_iff_chartTestSection e U hU hcover
-    (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V))).2
-  intro t ht c hc hct
+  dsimp only
+  rw [← chartTestTopology_eq_compactlySupportedTopology e U hU hcover]
+  refine (continuous_chartTestTopology_iff
+    (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V))).2 fun t _ c hc hct ↦ ?_
   exact ((t.complexification.continuous_chartTestSection c hc
     (by simpa only [Trivialization.baseSet_complexification] using hct)
     (fun i ↦ (e i).complexification) U

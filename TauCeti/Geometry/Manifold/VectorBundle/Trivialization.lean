@@ -74,7 +74,8 @@ section.
   `TauCeti.contMDiffOn_bundleChartAt`, `TauCeti.contMDiffOn_bundleChartAt_symm`: on a
   boundaryless manifold, a manifold chart at a point restricted to the base set of
   `trivializationAt` and read in the model space, together with its source and two-sided `C^n`
-  regularity.
+  regularity (adapted from the private `testChart` construction and companion lemmas formerly in
+  `TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`).
 -/
 
 public noncomputable section
@@ -460,7 +461,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [FiberBundle F V]
 
 /-- On a boundaryless manifold, a manifold chart at `x` restricted to the base set of
-`trivializationAt F V x` and read in the model vector space `E`. -/
+`trivializationAt F V x` and read in the model vector space `E`. Adapted from the private
+`testChart` construction and companion lemmas formerly in
+`TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`. -/
 def bundleChartAt (x : M) : OpenPartialHomeomorph M E :=
   ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
 

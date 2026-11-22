@@ -20,7 +20,12 @@ fixed-compact stages. These are algebraic carriers; no topology on section space
 here. Support-preserving linear equivalences preserve both native support submodules.
 
 Nonzero constant scalars from a normed algebra over the base field preserve exact support
-(`ContMDiffSection.tsupport_smul_of_normedAlgebra`). Smooth scalar multiplication preserves
+(`ContMDiffSection.tsupport_smul_of_normedAlgebra`), and arbitrary constant scalars do not enlarge
+closed support (`ContMDiffSection.tsupport_smul_subset_of_normedAlgebra`), so the fixed-support
+submodules `ContMDiffSection.supportedIn` and the compactly supported submodule
+`ContMDiffSection.compactlySupported` inherit compatible `Module 𝕜'` and `IsScalarTower 𝕜 𝕜'`
+instances, and the stage inclusions `ContMDiffSection.ofSupportedIn` are `𝕜'`-linear
+(`ContMDiffSection.ofSupportedInOfNormedAlgebra`). Smooth scalar multiplication preserves
 support and compact support. A compactly supported
 scalar function localizes even a section without compact support, and a cutoff equal to one
 on the support acts as the identity. These operations provide the support stages and
@@ -364,5 +369,92 @@ theorem smul_function_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯
   by_cases hx : x ∈ s.tsupport
   · simp [hf hx]
   · simp [s.eq_zero_of_notMem_tsupport hx]
+
+section NormedAlgebraSupport
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- Constant extension-scalar multiplication does not enlarge closed support. -/
+theorem tsupport_smul_subset_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
+    (c • s).tsupport ⊆ s.tsupport := by
+  apply (tsupport_subset_iff s.isClosed_tsupport).2
+  intro x hx
+  rw [coe_smul_of_normedAlgebra, Pi.smul_apply, s.eq_zero_of_notMem_tsupport hx, smul_zero]
+
+/-- Constant extension-scalar multiplication preserves each fixed-support stage. -/
+theorem smul_mem_supportedIn_of_normedAlgebra (c : 𝕜') {K : Set M} {s : Cₛ^n⟮I; F, V⟯}
+    (hs : s ∈ supportedIn I F n V K) :
+    c • s ∈ supportedIn I F n V K :=
+  mem_supportedIn.2 ((tsupport_smul_subset_of_normedAlgebra c s).trans (mem_supportedIn.1 hs))
+
+/-- Constant extension-scalar multiplication preserves compact support. -/
+theorem smul_mem_compactlySupported_of_normedAlgebra (c : 𝕜') {s : Cₛ^n⟮I; F, V⟯}
+    (hs : s ∈ compactlySupported I F n V) :
+    c • s ∈ compactlySupported I F n V :=
+  mem_compactlySupported.2 ((mem_compactlySupported.1 hs).of_isClosed_subset
+    (isClosed_tsupport _) (tsupport_smul_subset_of_normedAlgebra c s))
+
+/-- Low-priority `SMul 𝕜'` instance on a fixed-support stage; when `𝕜' = 𝕜`, the submodule
+instance takes precedence and is definitionally equal. -/
+noncomputable instance (priority := low) instSMulSupportedInOfNormedAlgebra {K : Set M} :
+    SMul 𝕜' (supportedIn I F n V K) :=
+  ⟨fun c s ↦ ⟨c • s.val, smul_mem_supportedIn_of_normedAlgebra c s.property⟩⟩
+
+@[simp]
+theorem coe_smul_supportedIn_of_normedAlgebra {K : Set M} (c : 𝕜')
+    (s : supportedIn I F n V K) :
+    ((c • s : supportedIn I F n V K) : Cₛ^n⟮I; F, V⟯) = c • (s : Cₛ^n⟮I; F, V⟯) :=
+  (rfl)
+
+/-- Low-priority `Module 𝕜'` instance on a fixed-support stage. -/
+noncomputable instance (priority := low) instModuleSupportedInOfNormedAlgebra {K : Set M} :
+    Module 𝕜' (supportedIn I F n V K) :=
+  Subtype.val_injective.module 𝕜' (supportedIn I F n V K).subtype.toAddMonoidHom
+    coe_smul_supportedIn_of_normedAlgebra
+
+instance instIsScalarTowerSupportedIn [∀ x, IsScalarTower 𝕜 𝕜' (V x)] {K : Set M} :
+    IsScalarTower 𝕜 𝕜' (supportedIn I F n V K) where
+  smul_assoc r c s := Subtype.ext (smul_assoc r c s.val)
+
+/-- Low-priority `SMul 𝕜'` instance on compactly supported sections; when `𝕜' = 𝕜`, the submodule
+instance takes precedence and is definitionally equal. -/
+noncomputable instance (priority := low) instSMulCompactlySupportedOfNormedAlgebra :
+    SMul 𝕜' (compactlySupported I F n V) :=
+  ⟨fun c s ↦ ⟨c • s.val, smul_mem_compactlySupported_of_normedAlgebra c s.property⟩⟩
+
+@[simp]
+theorem coe_smul_compactlySupported_of_normedAlgebra (c : 𝕜')
+    (s : compactlySupported I F n V) :
+    ((c • s : compactlySupported I F n V) : Cₛ^n⟮I; F, V⟯) = c • (s : Cₛ^n⟮I; F, V⟯) :=
+  (rfl)
+
+/-- Low-priority `Module 𝕜'` instance on compactly supported sections. -/
+noncomputable instance (priority := low) instModuleCompactlySupportedOfNormedAlgebra :
+    Module 𝕜' (compactlySupported I F n V) :=
+  Subtype.val_injective.module 𝕜' (compactlySupported I F n V).subtype.toAddMonoidHom
+    coe_smul_compactlySupported_of_normedAlgebra
+
+instance instIsScalarTowerCompactlySupported [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
+    IsScalarTower 𝕜 𝕜' (compactlySupported I F n V) where
+  smul_assoc r c s := Subtype.ext (smul_assoc r c s.val)
+
+variable (𝕜') in
+/-- Inclusion of a fixed-compact support stage into compactly supported sections, regarded as
+linear over the extension field `𝕜'`. -/
+def ofSupportedInOfNormedAlgebra (K : Compacts M) :
+    supportedIn I F n V K →ₗ[𝕜'] compactlySupported I F n V where
+  toFun := ofSupportedIn K
+  map_add' := (ofSupportedIn K).map_add
+  map_smul' _ _ := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_ofSupportedInOfNormedAlgebra (K : Compacts M) :
+    ⇑(ofSupportedInOfNormedAlgebra 𝕜' (I := I) (F := F) (n := n) (V := V) K) =
+      ofSupportedIn K :=
+  (rfl)
+
+end NormedAlgebraSupport
 
 end ContMDiffSection

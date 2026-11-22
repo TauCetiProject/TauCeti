@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
+public import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.BumpFunction
@@ -27,9 +27,7 @@ and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
 `SmoothBumpCovering.embeddingPiTangent`.
 
-Any `BumpCovering` by `C^n` functions yields a `C^n` partition of unity
-(`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from Mathlib's
-`BumpCovering.contMDiff_toPartitionOfUnity`). Combining this with
+Combining `BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff` with
 `SmoothBumpFunction.contMDiff_of_isManifold` and
 `IsCompact.exists_smoothBumpCovering_isSubordinate` gives a finite `C^n` partition of unity by
 compactly supported functions subordinate to any neighbourhood cover of `K`, without assuming
@@ -113,17 +111,6 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
 section FiniteOrder
 
 omit [IsManifold I ∞ M]
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of
-unity is `C^n`. Adapted from Mathlib's `BumpCovering.contMDiff_toPartitionOfUnity`, generalized
-from `C^∞` to `C^n`. -/
-theorem BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff {ι : Type*} {s : Set M} {n : ℕ∞ω}
-    (f : BumpCovering ι M s) (hf : ∀ i, ContMDiff I 𝓘(ℝ) n (f i)) (i : ι) :
-    ContMDiff I 𝓘(ℝ) n (f.toPartitionOfUnity i) :=
-  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
-    simp only [mulSupport_one_sub]
-    exact f.locallyFinite
 
 variable (I) in
 /-- **A finite `C^n` partition of unity on a compact set.** Let `K` be a compact subset of a

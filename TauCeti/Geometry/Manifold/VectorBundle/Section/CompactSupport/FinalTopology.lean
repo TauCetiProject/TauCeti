@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
-public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
@@ -47,6 +46,16 @@ regularity), this yields the equality
 `chartTestTopology` with the final locally convex topology of the bundle chart extensions
 (`TauCeti.bundleChartAt`) at points of `M`
 (`ContMDiffSection.chartTestTopology_eq_finalLocallyConvexTopology_bundleChartAt`).
+
+This construction supersedes the earlier `σ`-compact `C^∞` comparison and continuity criterion in
+`TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization` (originally
+`ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection` and
+`ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`).
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, 2nd ed., §6.3, for test
+  functions and distributions on manifolds through partitions of unity subordinate to charts.
 -/
 
 public noncomputable section
@@ -288,7 +297,7 @@ private theorem compactlySupportedTopology_le_finalLocallyConvexTopology_chartTe
     (TauCeti.FinalLocallyConvexTopology.continuous
       (fun j ↦ (t j).chartTestSection (c j) (hc j) (hct j)) (r a)).comp
       (((t (r a)).continuous_chartCutoffTestFunction (c (r a)) (hc_symm (r a)) (hct (r a))
-        e U hU (fun x _ ↦ hcover x) (χ a) (hχc a) (hχs a)).comp continuous_subtypeVal)
+        e U hU (χ a) (hχc a) (hχs a) fun x _ ↦ hcover x).comp continuous_subtypeVal)
   refine (continuous_finsetSum Finset.univ fun a _ ↦ hterm a).congr fun s ↦ ?_
   apply Subtype.ext
   ext x
