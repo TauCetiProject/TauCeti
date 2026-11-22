@@ -519,38 +519,6 @@ theorem waveFrontSet_zero [I.Boundaryless] : waveFrontSet I (0 : BundleTest I F 
     rw [chartComponent_zero]
     exact Distribution.isMicrolocallySmoothAt_zero (c.map_source hx) _
 
-/-! ### Covectors read in a chart -/
-
-omit [T2Space M] [IsManifold I ∞ M] in
-/-- Reading a nonzero covector at `x` in a smooth chart with smooth inverse gives a nonzero
-vector: the differential of the inverse chart at `c x` is onto. -/
-private theorem toDual_symm_comp_mfderiv_ne_zero {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
-    (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) ≠ 0 := by
-  have he : c.MDifferentiable I 𝓘(ℝ, E) :=
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
-  intro h
-  have h0 := (LinearIsometryEquiv.map_eq_zero_iff (toDual ℝ E).symm).1 h
-  refine hξ (ContinuousLinearMap.ext fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := he.symm.mfderiv_surjective (c.map_source hx) w
-  exact congr($h0 u)
-
-omit [T2Space M] [IsManifold I ∞ M] in
-/-- Every vector is the reading of a covector at `x` in a smooth chart with smooth inverse. -/
-private theorem exists_toDual_symm_comp_mfderiv_eq {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    {x : M} (hx : x ∈ c.source) (η : E) :
-    ∃ ξ : TangentSpace I x →L[ℝ] ℝ,
-      (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = η := by
-  have he : c.MDifferentiable I 𝓘(ℝ, E) :=
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
-  have hid := he.comp_symm_deriv (c.map_source hx)
-  refine ⟨toDual ℝ E η ∘L mfderiv I 𝓘(ℝ, E) c (c.symm (c x)), ?_⟩
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext u
-  exact congr_arg (toDual ℝ E η) congr($hid u)
-
 /-! ### Conicity and linearity -/
 
 /-- Microlocal smoothness on the manifold depends only on the ray through the covector. -/
@@ -663,15 +631,19 @@ private theorem forall_notMem_singularSupport_chartComponent_iff
     (∀ v, c x ∉ Distribution.singularSupport (t.chartComponent c hc hct T v)) ↔
       ∀ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 → IsMicrolocallySmoothAt T x ξ := by
   have hcx : c x ∈ (⟨c.target, c.open_target⟩ : Opens E) := c.map_source hx
+  -- Reading covectors at `x` in the chart is a bijection onto the covectors of `E`.
+  have hb := OpenPartialHomeomorph.MDifferentiable.bijective_comp_mfderiv_symm
+    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx
   refine ⟨fun h ξ hξ ↦ (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦
     (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).1 (h v) _
-      (toDual_symm_comp_mfderiv_ne_zero hc hcs hx hξ), fun h v ↦ ?_⟩
+      fun h0 ↦ hξ (hb.1 (((toDual ℝ E).symm.map_eq_zero_iff.1 h0).trans (zero_comp _).symm)),
+      fun h v ↦ ?_⟩
   refine (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).2 fun η hη ↦ ?_
-  obtain ⟨ξ, rfl⟩ := exists_toDual_symm_comp_mfderiv_eq hc hcs hx η
+  obtain ⟨ξ, hξη⟩ := hb.2 (toDual ℝ E η)
+  rw [← (toDual ℝ E).symm_apply_apply η, ← hξη] at hη ⊢
   have hξ : ξ ≠ 0 := by
     rintro rfl
-    simp only [ne_eq, LinearIsometryEquiv.map_eq_zero_iff] at hη
-    exact hη (ContinuousLinearMap.zero_comp _)
+    exact hη ((toDual ℝ E).symm.map_eq_zero_iff.2 (zero_comp _))
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
 
 /-- **The singular support in any chart and frame.** For a smooth chart `c` at `x` with smooth
@@ -790,13 +762,19 @@ theorem waveFrontSet_delta [I.Boundaryless] {x : M} {ℓ : V x →L[ℝ] ℝ} (h
   simp only [mem_waveFrontSet_iff, mem_ofPred_eq]
   obtain ⟨c, hc, hcs, hct, hy⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) y
   rw [isMicrolocallySmoothAt_iff _ hc hcs hct hy]
+  -- A nonzero covector at `y` is read in the chart as a nonzero vector.
+  have hne {ξ : TangentSpace I y →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+      (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c y)) ≠ 0 := fun h0 ↦
+    hξ ((OpenPartialHomeomorph.MDifferentiable.bijective_comp_mfderiv_symm
+      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hy).1
+      (((toDual ℝ E).symm.map_eq_zero_iff.1 h0).trans (zero_comp _).symm))
   refine ⟨fun ⟨hξ, hT⟩ ↦ ⟨by_contra fun hyx ↦ hT fun v ↦ ?_, hξ⟩, ?_⟩
   · -- Away from `x`, every component is microlocally smooth at `c y`.
     by_cases hx : x ∈ c.source
     · rw [chartComponent_delta_of_mem _ _ _ _ hx]
       refine not_not.1 fun h ↦ ?_
       have hmem := Distribution.waveFrontSet_smul_subset _ _ (Distribution.mem_waveFrontSet_iff.2
-        ⟨c.map_source hy, toDual_symm_comp_mfderiv_ne_zero hc hcs hy hξ, h⟩)
+        ⟨c.map_source hy, hne hξ, h⟩)
       rw [Distribution.waveFrontSet_delta (c.map_source hx)] at hmem
       exact hyx (c.injOn hy hx hmem.1)
     · rw [chartComponent_delta_of_notMem _ _ _ _ hx]
@@ -815,7 +793,7 @@ theorem waveFrontSet_delta [I.Boundaryless] {x : M} {ℓ : V x →L[ℝ] ℝ} (h
           (Distribution.delta (c y) : 𝓓'(⟨c.target, c.open_target⟩, ℝ))).waveFrontSet := by
       rw [Distribution.waveFrontSet_smul (Complex.ofReal_ne_zero.2 hw),
         Distribution.waveFrontSet_delta (c.map_source hy)]
-      exact ⟨rfl, toDual_symm_comp_mfderiv_ne_zero hc hcs hy hξ⟩
+      exact ⟨rfl, hne hξ⟩
     exact (Distribution.mem_waveFrontSet_iff.1 hmem).2.2 hv
 
 /-- On a manifold without boundary of positive dimension, the point mass `δ_x ℓ` with a nonzero
