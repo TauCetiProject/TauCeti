@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Primitive
 import TauCeti.Algebra.Group.Hom.Rational
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -18,12 +18,14 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 Over every commutative ring and for **any** Chevalley datum `D`, a product of distinct positive
 root elements in any fixed order determines all its parameters. The result applies to any
 duplicate-free list of positive roots, and in particular to any enumeration of all positive roots,
-regardless of the isogeny type of `D`. As a special case on singleton lists together with Weyl
-conjugation, every root subgroup of `D` is injective on `A`-points.
+regardless of the isogeny type of `D`. Independently, surjectivity of every ambient root
+coordinate map (`ChevalleyDatum.rootCoordinateMap_surjective`) implies that every root subgroup of
+`D` is injective on `A`-points.
 
 This is the uniqueness half of positive-root factorization on `D.positivePoints A`, pairing with
-positive-root collection in `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection` to build
-the coordinate bijection `ChevalleyDatum.positivePointsEquiv` in
+positive-root collection in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic` to
+build the coordinate bijection `ChevalleyDatum.positiveRootEquiv` in
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates`, and supplying the point-level
 faithfulness needed for scheme-theoretic monomorphicity of `D.rootProduct` in
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Scheme`.
@@ -102,17 +104,32 @@ theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
 nonreduced rings and rings of small characteristic. -/
 theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
     Function.Injective (D.rootSubgroupPoints γ A) := by
-  -- Every root subgroup is conjugate to a positive simple-root subgroup by a word in the simple
-  -- Weyl elements, with a sign in its parameter, so no generation theorem is needed.
-  refine (D.rootSubgroupPoints_injective_iff γ A).2 <|
-    chevalleyRootSubgroup_injective_of_simple D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A)
-      (fun i => (D.rootSubgroupPoints_injective_iff _ A).1 fun u v huv => ?_) γ
-  have h := (D.list_prod_map_rootSubgroupPoints_inj A (List.nodup_singleton (t.simpleIndex ht i))
-    (fun _ hγ => List.mem_singleton.mp hγ ▸ simpleIndex_mem_posRoots i)
-    (u := Function.const _ u.toAdd) (v := Function.const _ v.toAdd)).mp
-    (by simpa using huv) (t.simpleIndex ht i) (List.mem_singleton_self _)
-  exact Multiplicative.toAdd.injective h
+  intro u v huv
+  let q₁ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u
+  let q₂ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm v
+  have hmat :
+      (D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+        (D.rootSubgroupPoints γ A v : Matrix.GeneralLinearGroup (Fin D.dim) A) :=
+    congrArg Subtype.val huv
+  rw [D.coe_rootSubgroupPoints, D.coe_rootSubgroupPoints] at hmat
+  have hu : u = AdditiveGroup.gaPointsMulEquiv q₁ :=
+    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply u).symm
+  have hv : v = AdditiveGroup.gaPointsMulEquiv q₂ :=
+    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply v).symm
+  rw [hu, hv, ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
+    ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
+    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap,
+    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap] at hmat
+  have hpt := (GeneralLinear.pointsMulEquiv D.dim).injective (by
+    simpa only [GeneralLinear.pointsMulEquiv_apply] using hmat)
+  have hcomp := congrArg WithConv.ofConv hpt
+  have hq : q₁ = q₂ := by
+    apply WithConv.ofConv_injective
+    apply AlgHom.ext
+    intro x
+    obtain ⟨y, rfl⟩ := D.rootCoordinateMap_surjective γ x
+    exact congrArg (fun f : GeneralLinear.coordinateHopfAlgebra ℤ D.dim →ₐ[ℤ] A => f y) hcomp
+  exact AdditiveGroup.gaPointsMulEquiv.symm.injective hq
 
 /-- Two elements of the same root subgroup of a Chevalley datum are equal if and only if their
 parameters coincide. -/

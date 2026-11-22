@@ -14,15 +14,16 @@ import Mathlib.SetTheory.Cardinal.Finite
 # Positive-root coordinates in Chevalley groups
 
 For **any** Chevalley datum `D` of **any** valid Dynkin type and **any** commutative ring `A`,
-multiplication of the positive root subgroups in any order without repetitions is a bijection onto
-the positive point subgroup `D.positivePoints A` (`ChevalleyDatum.positiveRootEquiv`). The
-parameters are indexed only by positive roots: there are no unused coordinates at negative roots.
-The resulting equivalence and its inverse commute with changes of the value ring, including
-noninjective ring maps.
+multiplying the positive root subgroups along any list `l` enumerating every positive root
+exactly once (in any order without repetitions) is a bijection onto the positive point subgroup
+`D.positivePoints A` (`ChevalleyDatum.positiveRootEquiv`). The parameters are indexed only by
+positive roots: there are no unused coordinates at negative roots. The resulting equivalence and
+its inverse commute with changes of the value ring, including noninjective ring maps.
 
 In particular, every element of `D.positivePoints A` admits a **unique** ordered product
-representation along `l`, the positive point subgroup over a finite commutative ring `A` is finite,
-and `Nat.card (D.positivePoints A) = Nat.card A ^ (posRoots ...).ncard` unconditionally.
+representation along any such list `l`, the positive point subgroup over a finite commutative
+ring `A` is finite, and `Nat.card (D.positivePoints A) = Nat.card A ^ (posRoots ...).ncard`
+unconditionally.
 
 This combines the collection theorem
 `mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod` with the integral
@@ -196,8 +197,9 @@ theorem positiveRootProduct_injective (l : List PositiveRoot) (hl : l.Nodup)
     Function.Injective (D.positiveRootProduct l A) :=
   fun _ _ huv => funext fun γ => (D.positiveRootProduct_inj l hl A).mp huv γ (hcover γ)
 
-/-- For any Chevalley datum, every positive point has exactly one positive-root parameter tuple in
-any prescribed duplicate-free order. No characteristic or reducedness hypothesis is needed. -/
+/-- For any Chevalley datum, every positive point has exactly one positive-root parameter tuple
+along any list enumerating every positive root exactly once. No characteristic or reducedness
+hypothesis is needed. -/
 theorem mem_positivePoints_iff_existsUnique_prod
     (A : Type v) [CommRing A]
     {l : List PositiveRoot} (hl : l.Nodup) (hall : ∀ γ, γ ∈ l) (g : D.points A) :

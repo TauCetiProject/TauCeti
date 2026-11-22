@@ -59,6 +59,7 @@ variable (D : ChevalleyDatum t ht)
 
 /-- A root subgroup detects whether its root character is trivial on a torus point: it suffices to
 commute with the root element of parameter one. -/
+@[simp]
 theorem commute_torusPoints_rootSubgroupPoints_ofAdd_one_iff (γ : Fin t.numRoots)
     (s : Fin t.rank → Aˣ) :
     Commute (D.torusPoints A s) (D.rootSubgroupPoints γ A (Multiplicative.ofAdd 1)) ↔

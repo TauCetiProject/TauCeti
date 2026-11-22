@@ -140,26 +140,30 @@ theorem genEigenspace_eq_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
 /-- **Scalars outside a spanning family of generalized eigenspaces have trivial generalized
 eigenspace.** Fix an exponent `n : ℕ∞`. If the `W j` span `V` and every `W j` lies in the
 generalized eigenspace `A.genEigenspace (g j) n`, then `A.genEigenspace μ n = ⊥` for every scalar
-`μ` outside `Set.range g`. -/
+`μ` not attained on any nonzero summand `W j`. -/
 theorem genEigenspace_eq_bot_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
     {W : ι → Submodule K V} {g : ι → K} {n : ℕ∞} (hW : ∀ j, W j ≤ A.genEigenspace (g j) n)
-    (htop : ⨆ j, W j = ⊤) {μ : K} (hμ : μ ∉ Set.range g) :
+    (htop : ⨆ j, W j = ⊤) {μ : K} (hμ : ∀ j, W j ≠ ⊥ → g j ≠ μ) :
     A.genEigenspace μ n = ⊥ := by
-  have hle : ⊤ ≤ ⨆ (c : K) (_ : c ≠ μ), A.genEigenspace c n :=
-    htop ▸ iSup_le fun j ↦ (hW j).trans (le_iSup₂_of_le (g j) (fun h ↦ hμ ⟨j, h⟩) le_rfl)
+  have hle : ⊤ ≤ ⨆ (c : K) (_ : c ≠ μ), A.genEigenspace c n := by
+    refine htop ▸ iSup_le fun j ↦ ?_
+    by_cases hbot : W j = ⊥
+    · simp [hbot]
+    · exact (hW j).trans (le_iSup₂_of_le (g j) (hμ j hbot) le_rfl)
   exact disjoint_top.mp ((A.independent_genEigenspace n μ).mono_right hle)
 
 /-- **An eigenvector whose eigenvalue misses a spanning family of eigenvectors is zero.** If
 `V` is spanned by vectors `b j` satisfying `A (b j) = g j • b j`, then any vector `v` with
-`A v = μ • v` and `∀ j, g j ≠ μ` vanishes. -/
+`A v = μ • v` and `∀ j, b j ≠ 0 → g j ≠ μ` vanishes. -/
 theorem eq_zero_of_apply_eq_smul_of_span_eq_top {ι : Type w} (A : Module.End K V)
     {b : ι → V} (hspan : Submodule.span K (Set.range b) = ⊤) {g : ι → K}
     (hb : ∀ j, A (b j) = g j • b j) {μ : K} {v : V}
-    (hv : A v = μ • v) (hμ : ∀ j, g j ≠ μ) : v = 0 := by
+    (hv : A v = μ • v) (hμ : ∀ j, b j ≠ 0 → g j ≠ μ) : v = 0 := by
   have hbot : A.genEigenspace μ 1 = ⊥ :=
     A.genEigenspace_eq_bot_of_iSup_eq_top (W := fun j ↦ Submodule.span K {b j})
       (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr (mem_eigenspace_iff.mpr (hb j)))
-      (by rwa [← Submodule.span_range_eq_iSup]) (by rintro ⟨j, rfl⟩; exact hμ j rfl)
+      (by rwa [← Submodule.span_range_eq_iSup])
+      (fun j hj ↦ hμ j fun h0 ↦ hj (by simp [h0]))
   simpa [hbot] using (mem_eigenspace_iff.mpr hv : v ∈ A.genEigenspace μ 1)
 
 end Module.End

@@ -451,12 +451,6 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
     {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
     (hbdd : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
     ∃ r : η, 0 < wt r ∧ v r ≠ 0 := by
-  have hspanS : Submodule.span K (Set.range fun r : {r : η // v r ≠ 0} ↦ v r) = ⊤ := by
-    refine eq_top_iff.mpr (hspan ▸ Submodule.span_le.mpr ?_)
-    rintro _ ⟨r, rfl⟩
-    exact (eq_or_ne (v r) 0).elim (fun h0 ↦ by simp [h0])
-      (fun h0 ↦ Submodule.subset_span ⟨⟨r, h0⟩, rfl⟩)
-  have hwtS : ∀ r : {r : η // v r ≠ 0}, toEnd K L M h (v r) = (wt r : K) • v r := fun r ↦ hwt r
   by_contra! hnonpos
   have hle0 : ∀ r : η, v r ≠ 0 → wt r ≤ 0 := fun r hr ↦ not_lt.mp fun hpos ↦ hr (hnonpos r hpos)
   obtain ⟨r₀, hr₀ne, hr₀wt⟩ : ∃ r : η, v r ≠ 0 ∧ wt r ≠ 0 := by
@@ -473,12 +467,13 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
     (lt_of_le_of_ne (hle0 r₀ hr₀ne) hr₀wt)
   have hfj₀ : ⁅f, v j₀⁆ = 0 := by
     have hmem := TauCeti.lie_mem_eigenspace_sub_two (K := K) t
-      (Module.End.mem_eigenspace_iff.mpr (hwtS ⟨j₀, hj₀ne⟩))
+      (Module.End.mem_eigenspace_iff.mpr (hwt j₀))
     have heig : toEnd K L M h ⁅f, v j₀⁆ = ((wt j₀ - 2 : ℤ) : K) • ⁅f, v j₀⁆ := by
       simpa [Module.End.mem_eigenspace_iff] using hmem
-    refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_
-    have := hj₀min (wt r.val) ⟨r.val, r.property, rfl⟩
-    exact_mod_cast (by omega : wt r.val ≠ wt j₀ - 2)
+    refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspan (fun r ↦ hwt r) heig
+      fun r hr ↦ ?_
+    have := hj₀min (wt r) ⟨r, hr, rfl⟩
+    exact_mod_cast (by omega : wt r ≠ wt j₀ - 2)
   let n : ℕ := (-wt j₀).toNat
   have hn : (n : ℤ) = -wt j₀ := Int.toNat_of_nonneg (by omega)
   have hP : t.symm.HasPrimitiveVectorWith (v j₀) (n : K) :=
@@ -491,9 +486,10 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
     have hneg := neg_eq_iff_eq_neg.mp (by simpa only [neg_lie] using hP.lie_h_pow_toEnd_f n)
     rw [toEnd_apply_apply, hneg, ← neg_smul]
     congr 1; push_cast; ring
-  refine hne ((toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_)
-  have := hle0 r.val r.property
-  exact_mod_cast (by omega : wt r.val ≠ (n : ℤ))
+  refine hne ((toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspan (fun r ↦ hwt r) heig
+    fun r hr ↦ ?_)
+  have := hle0 r hr
+  exact_mod_cast (by omega : wt r ≠ (n : ℤ))
 
 /-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
 on its nonzero vectors bounded both below and above and `h` acts nontrivially on `M`, then a
@@ -505,12 +501,6 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
     (hbdd_below : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r))
     (hbdd_above : BddAbove (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
     ∃ j : η, 0 < wt j ∧ t.HasPrimitiveVectorWith (v j) (wt j : K) := by
-  have hspanS : Submodule.span K (Set.range fun r : {r : η // v r ≠ 0} ↦ v r) = ⊤ := by
-    refine eq_top_iff.mpr (hspan ▸ Submodule.span_le.mpr ?_)
-    rintro _ ⟨r, rfl⟩
-    exact (eq_or_ne (v r) 0).elim (fun h0 ↦ by simp [h0])
-      (fun h0 ↦ Submodule.subset_span ⟨⟨r, h0⟩, rfl⟩)
-  have hwtS : ∀ r : {r : η // v r ≠ 0}, toEnd K L M h (v r) = (wt r : K) • v r := fun r ↦ hwt r
   obtain ⟨r₁, hr₁pos, hr₁ne⟩ := t.exists_pos_weight_of_span_eq_top hspan hh hwt hbdd_below
   obtain ⟨b, hb⟩ := hbdd_above
   obtain ⟨_, ⟨j, hjne, rfl⟩, hjmax⟩ := Int.exists_greatest_of_bdd
@@ -521,12 +511,13 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
       lie_h := hwt j
       lie_e := ?_ }⟩
   have hmem := TauCeti.lie_mem_eigenspace_add_two (K := K) t
-    (Module.End.mem_eigenspace_iff.mpr (hwtS ⟨j, hjne⟩))
+    (Module.End.mem_eigenspace_iff.mpr (hwt j))
   have heig : toEnd K L M h ⁅e, v j⁆ = ((wt j + 2 : ℤ) : K) • ⁅e, v j⁆ := by
     simpa [Module.End.mem_eigenspace_iff] using hmem
-  refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_
-  have := hjmax (wt r.val) ⟨r.val, r.property, rfl⟩
-  exact_mod_cast (by omega : wt r.val ≠ wt j + 2)
+  refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspan (fun r ↦ hwt r) heig
+    fun r hr ↦ ?_
+  have := hjmax (wt r) ⟨r, hr, rfl⟩
+  exact_mod_cast (by omega : wt r ≠ wt j + 2)
 
 end SpanningWeights
 
