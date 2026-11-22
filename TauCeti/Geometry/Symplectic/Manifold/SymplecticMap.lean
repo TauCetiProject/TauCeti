@@ -41,8 +41,8 @@ dynamics are transported, and the maps whose fixed points fixed-point Floer theo
 * `TauCeti.SmoothTwoForm.IsSymplecticMap`: maps whose differential preserves the forms.
 * `TauCeti.SmoothTwoForm.isSymplecticMap_iff_mpullback_eq`: for smooth maps, `φ^* σ' = σ`.
 * `TauCeti.SmoothTwoForm.IsSymplecticMap.comp`: composites of differentiable symplectic maps.
-* `TauCeti.SmoothTwoForm.IsSymplecticMap.injective_mfderiv`: symplectic maps out of nondegenerate
-  forms are immersions.
+* `TauCeti.SmoothTwoForm.IsSymplecticMap.mfderiv_injective`: the differential of a symplectic map
+  out of a nondegenerate form is injective.
 * `TauCeti.SmoothTwoForm.IsSymplecticMap.flat_apply`: the flat map of `σ` is that of `σ'` read
   through the differential.
 * `TauCeti.SmoothTwoForm.IsSymplectomorphism`: diffeomorphisms that are symplectic maps, with
@@ -138,15 +138,14 @@ theorem IsSymplecticMap.flat_apply (h : σ.IsSymplecticMap σ' φ) (x : M) (v : 
     rw [SmoothTwoForm.flat_apply, ContinuousLinearMap.comp_apply, SmoothTwoForm.flat_apply,
       h x v w]
 
-/-- **Symplectic maps are immersions.** Out of a nondegenerate form, the differential of a
-symplectic map is injective at every point: a vector in its kernel pairs to zero with every
-tangent vector. -/
-theorem IsSymplecticMap.injective_mfderiv (h : σ.IsSymplecticMap σ' φ) (hσ : σ.IsNondegenerate)
+/-- **Symplectic maps have injective differentials.** Out of a nondegenerate form, the
+differential of a symplectic map is injective at every point: a vector in its kernel pairs to zero
+with every tangent vector. -/
+theorem IsSymplecticMap.mfderiv_injective (h : σ.IsSymplecticMap σ' φ) (hσ : σ.IsNondegenerate)
     (x : M) : Function.Injective (mfderiv I I' φ x) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦
     (isNondegenerate_iff_separatingLeft.1 hσ) x v fun w ↦ ?_
-  rw [← h x v w, hv, SmoothBundleForm.eval₂_apply]
-  exact (σ'.val (φ x)).map_coord_zero 0 rfl
+  rw [← h x v w, hv, SmoothBundleForm.eval₂_zero_left]
 
 /-! ### Symplectomorphisms -/
 
