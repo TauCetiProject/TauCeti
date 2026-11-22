@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -47,6 +48,8 @@ Morse index is the negative index of inertia of the critical Hessian.
   `TauCeti.finrank_ker_criticalHessian_eq_of_mem_maximalAtlas`: at a critical point the kernel of
   the critical Hessian is the preimage, under the chart derivative, of the kernel of the Hessian in
   any chart, so the two kernels have the same dimension.
+* `ContMDiffAt.eventually_lt_of_criticalHessian_pos`: a positive-definite critical Hessian
+  gives a strict local minimum at an interior point of a finite-dimensional manifold.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
 * `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
   computes the Hessian against the value of the vector field `Y`.
@@ -86,6 +89,9 @@ Morse index is the negative index of inertia of the critical Hessian.
 
 ## References
 
+* The strict minimum test is adapted from Giada Franz's formalization in
+  `riccardobrasca/ColdingMinicozziTheory`,
+  `ForTauCeti/Geometry/Manifold/Riemannian/Hessian/SecondDerivativeTest.lean`.
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
@@ -130,6 +136,39 @@ theorem criticalHessian_apply_eq_fderiv_fderiv (v w : TangentSpace I x) :
   rw [criticalHessian_def]
   -- `tangentSpaceCastModel I x` is the identity on the model space `E`.
   rfl
+
+/-- **The strict second derivative test at an interior point.** On a finite-dimensional
+manifold, a function which is `C²` at an interior critical point with positive-definite critical
+Hessian has a strict local minimum there. No Riemannian metric is required. -/
+theorem _root_.ContMDiffAt.eventually_lt_of_criticalHessian_pos [FiniteDimensional ℝ E]
+    [IsManifold I 1 M] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hx : I.IsInteriorPoint x)
+    (hcrit : mvfderiv I f x = 0)
+    (hpos : ∀ v : TangentSpace I x, v ≠ 0 → 0 < criticalHessian I f x v v) :
+    ∀ᶠ y in 𝓝[≠] x, f x < f y := by
+  let φ := extChartAt I x
+  let g := f ∘ φ.symm
+  have hg : ContDiffAt ℝ 2 g (φ x) :=
+    hf.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx
+  -- This chart bridge also applies to models with boundary.
+  have hd : fderiv ℝ g (φ x) = 0 :=
+    (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero (mem_extChartAt_source x)
+      (hg.differentiableAt (by norm_num))).1 (mvfderiv_eq_zero_iff.1 hcrit)
+  have hpos' (v : E) (hv : v ≠ 0) : 0 < fderiv ℝ (fderiv ℝ g) (φ x) v v := by
+    have h := hpos ((tangentSpaceCastModel I x).symm v)
+      (by
+        intro h
+        apply hv
+        simpa using congrArg (tangentSpaceCastModel I x) h)
+    simpa only [criticalHessian_apply_eq_fderiv_fderiv,
+      ContinuousLinearEquiv.apply_symm_apply] using h
+  have hmin := hg.eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos hd hpos'
+  filter_upwards [(I.tendsto_extChartAt_nhdsNE x).eventually hmin,
+    (comp_extChartAt_symm_comp_extChartAt_eventuallyEq (I := I) f x).filter_mono
+      nhdsWithin_le_nhds] with y hy heq
+  change g (φ y) = f y at heq
+  change g (φ x) < g (φ y) at hy
+  rw [heq] at hy
+  simpa only [g, φ, Function.comp_apply, extChartAt_to_inv] using hy
 
 /-- On a manifold modelled on a real normed space, the second derivative in the preferred chart is
 the critical Hessian. -/
