@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.Map
 
 /-!
 # Composing, inverting and conjugating equivalences of root pairings
@@ -358,23 +359,18 @@ theorem mapDual_coroot_apply (i : ι₂) (x : M₂) :
     (P.mapDual e f).coroot i x = P.coroot' (e.symm i) (f.symm x) := by simp
 
 /-- The canonical equivalence of root pairings from `P` to `P.mapDual e f`. -/
-noncomputable def equivMapDual : P.Equiv (P.mapDual e f) where
-  weightMap := f.toLinearMap
-  coweightMap := (P.flip.toPerfPair.trans f.symm.dualMap).symm.toLinearMap
-  indexEquiv := e
-  weight_coweight_transpose := by ext φ x; simp
-  root_weightMap := by ext i; simp
-  coroot_coweightMap := by
-    ext i; exact P.flip.toPerfPair.injective (LinearMap.ext fun y ↦ by simp [coroot'])
-  bijective_weightMap := f.bijective
-  bijective_coweightMap := (P.flip.toPerfPair.trans f.symm.dualMap).symm.bijective
+noncomputable def equivMapDual : P.Equiv (P.mapDual e f) :=
+  P.equivMap e f (P.flip.toPerfPair.trans f.symm.dualMap)
 
-@[simp] theorem equivMapDual_weightMap : (P.equivMapDual e f).weightMap = f.toLinearMap := by rfl
+@[simp] theorem equivMapDual_weightMap : (P.equivMapDual e f).weightMap = f.toLinearMap :=
+  LinearMap.ext (P.weightMap_equivMap_apply e f _)
 @[simp] theorem equivMapDual_weightEquiv : (P.equivMapDual e f).weightEquiv = f :=
-  LinearEquiv.ext fun _ ↦ rfl
+  P.weightEquiv_equivMap e f _
 @[simp] theorem equivMapDual_coweightMap : (P.equivMapDual e f).coweightMap =
-    (P.flip.toPerfPair.trans f.symm.dualMap).symm.toLinearMap := by rfl
-@[simp] theorem equivMapDual_indexEquiv : (P.equivMapDual e f).indexEquiv = e := by rfl
+    (P.flip.toPerfPair.trans f.symm.dualMap).symm.toLinearMap :=
+  LinearMap.ext (P.coweightMap_equivMap_apply e f _)
+@[simp] theorem equivMapDual_indexEquiv : (P.equivMapDual e f).indexEquiv = e :=
+  P.indexEquiv_equivMap e f _
 
 end MapDual
 end RootPairing

@@ -125,7 +125,7 @@ def typeAZeroSumNegRevEquiv (m : ℕ) :
   LinearEquiv.ext fun _ ↦ by simp [LinearEquiv.symm_apply_eq]
 
 /-- Reversal sends `eₐ - e_b` to `e_{rev b} - e_{rev a}`. -/
-@[simp] theorem typeAZeroSumNegRevEquiv_vec (a b : Fin (m + 1)) :
+@[simp] theorem typeAZeroSumNegRevEquiv_typeAZeroSumVec (a b : Fin (m + 1)) :
     typeAZeroSumNegRevEquiv R m (typeAZeroSumVec R a b) = typeAZeroSumVec R b.rev a.rev := by
   ext k; simp only [coe_typeAZeroSumNegRevEquiv_apply, typeAZeroSumVec_apply, Fin.rev_eq_iff]; ring
 
@@ -133,7 +133,7 @@ def typeAZeroSumNegRevEquiv (m : ℕ) :
 @[simp] theorem typeAZeroSumNegRevEquiv_singleParityCheckCodeBasis (i : Fin m) :
     typeAZeroSumNegRevEquiv R m (singleParityCheckCodeBasis R m i) =
       singleParityCheckCodeBasis R m i.rev := by
-  rw [singleParityCheckCodeBasis_eq_typeAZeroSumVec, typeAZeroSumNegRevEquiv_vec,
+  rw [singleParityCheckCodeBasis_eq_typeAZeroSumVec, typeAZeroSumNegRevEquiv_typeAZeroSumVec,
     singleParityCheckCodeBasis_eq_typeAZeroSumVec, Fin.rev_succ, Fin.rev_castSucc]
 
 end CommRing
@@ -338,7 +338,7 @@ theorem typeAZeroSumSimplePair_injective (m : ℕ) : Injective (typeAZeroSumSimp
   fun _ _ h ↦ Fin.castSucc_injective m (congrArg (fun p : TypeAIndex m ↦ p.val.1) h)
 
 /-- `(typeAIndexEquiv m).symm` maps `typeASimpleIndex m i` to `typeAZeroSumSimplePair m i`. -/
-theorem typeAIndexEquiv_symm_typeASimpleIndex_eq_simplePair (m : ℕ) (i : Fin m) :
+theorem typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair (m : ℕ) (i : Fin m) :
     (typeAIndexEquiv m).symm (typeASimpleIndex m i) = typeAZeroSumSimplePair m i := by
   refine Subtype.ext (Prod.ext (Fin.ext ?_) (Fin.ext ?_)) <;>
     simp [typeAIndexEquiv_symm_typeASimpleIndex]
@@ -351,11 +351,11 @@ theorem mem_support_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
   refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨typeASimpleIndex m i,
     (mem_support_typeABaseChangeBase_iff K m _).mpr ((typeASimpleIndex_val i).symm ▸ i.isLt),
     by rw [hi, indexEquiv_typeABaseChangeEquivZeroSum,
-      typeAIndexEquiv_symm_typeASimpleIndex_eq_simplePair]⟩⟩
+      typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]⟩⟩
   rintro ⟨k, hk, rfl⟩; rw [mem_support_typeABaseChangeBase_iff] at hk
   exact ⟨⟨k, hk⟩, by
     rw [indexEquiv_typeABaseChangeEquivZeroSum,
-      ← typeAIndexEquiv_symm_typeASimpleIndex_eq_simplePair]
+      ← typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]
     exact congrArg _ (Fin.ext (by simp))⟩
 
 /-- `typeAZeroSumBase K m` has Cartan type `A m`. -/
@@ -435,7 +435,7 @@ theorem orbitIndices_typeAZeroSumRevAut (m : ℕ) (p : TypeAIndex m) :
     rw [indexEquiv_typeAZeroSumRevAut]; exact finDistinctPairsRevSwap_finDistinctPairsRevSwap p)
 
 /-- `typeAZeroSumRevAut K m` reverses the Bourbaki-numbered simple pairs. -/
-theorem indexEquiv_typeAZeroSumRevAut_simplePair (m : ℕ) (i : Fin m) :
+theorem indexEquiv_typeAZeroSumRevAut_typeAZeroSumSimplePair (m : ℕ) (i : Fin m) :
     (typeAZeroSumRevAut K m).indexEquiv (typeAZeroSumSimplePair m i) =
       typeAZeroSumSimplePair m i.rev := Subtype.ext <| by
   rw [indexEquiv_typeAZeroSumRevAut, finDistinctPairsRevSwap_apply_val,
@@ -446,11 +446,11 @@ theorem indexEquiv_typeAZeroSumRevAut_mem_support {m : ℕ} {p : TypeAIndex m}
     (hp : p ∈ (typeAZeroSumBase K m).support) :
     (typeAZeroSumRevAut K m).indexEquiv p ∈ (typeAZeroSumBase K m).support := by
   obtain ⟨i, rfl⟩ := (mem_support_typeAZeroSumBase_iff K).mp hp
-  exact indexEquiv_typeAZeroSumRevAut_simplePair K m i ▸
+  exact indexEquiv_typeAZeroSumRevAut_typeAZeroSumSimplePair K m i ▸
     (mem_support_typeAZeroSumBase_iff K).mpr ⟨i.rev, rfl⟩
 
 /-- Conjugating `typeABaseChangeGraphAut` to zero-sum coordinates gives `typeAZeroSumRevAut`. -/
-theorem autCongr_typeABaseChangeEquivZeroSum_graphAut (m : ℕ) :
+theorem autCongr_typeABaseChangeEquivZeroSum_typeABaseChangeGraphAut (m : ℕ) :
     (typeABaseChangeEquivZeroSum K m).autCongr (typeABaseChangeGraphAut K m) =
       typeAZeroSumRevAut K m := by
   apply RootPairing.Equiv.weightHom_injective
