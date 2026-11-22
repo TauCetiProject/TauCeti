@@ -201,10 +201,11 @@ theorem inner_apply_apply_of_adapted {J : AlmostComplexStructure V} {n : ℕ}
     rcases i₂ with ⟨c, q⟩
     fin_cases p <;> fin_cases q <;>
       simp [hb_even, hb_odd, orthonormal_iff_ite.mp b₀.orthonormal]
-  conv_lhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
-  conv_rhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
-  simp only [map_sum, map_smul, sum_inner, inner_sum, real_inner_smul_left,
-    real_inner_smul_right, hbasis]
+  have hJ_orth : Orthonormal ℝ (J.toLinearMap ∘ b₀.toBasis) := by
+    rw [orthonormal_iff_ite]
+    intro i₁ i₂
+    exact (hbasis i₁ i₂).trans (orthonormal_iff_ite.mp b₀.orthonormal i₁ i₂)
+  exact (J.toLinearMap.isometryOfOrthonormal b₀.orthonormal hJ_orth).inner_map_map u w
 
 end EvenDimension
 

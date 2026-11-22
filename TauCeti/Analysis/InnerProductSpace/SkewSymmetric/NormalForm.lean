@@ -411,26 +411,16 @@ theorem exists_orthonormalBasis_skew_normalForm {r : ℕ}
   let eSum : Fin r₀ ⊕ Fin (r - r₀) ≃ Fin r :=
     finSumFinEquiv.trans (finCongr (Nat.add_sub_of_le hr₀))
   let e : ((Fin r₀ × Fin 2) ⊕ (Fin (r - r₀) × Fin 2)) ≃ Fin r × Fin 2 :=
-    { toFun := Sum.elim (fun ⟨k, t⟩ ↦ (eSum (.inl k), t)) (fun ⟨j, t⟩ ↦ (eSum (.inr j), t))
-      invFun := fun ⟨i, t⟩ ↦ Sum.elim (fun k ↦ .inl (k, t)) (fun j ↦ .inr (j, t)) (eSum.symm i)
-      left_inv := by rintro (⟨k, t⟩ | ⟨j, t⟩) <;> simp
-      right_inv := fun ⟨i, t⟩ ↦ by
-        obtain ⟨jk, rfl⟩ := eSum.surjective i
-        rcases jk with k | j <;> simp }
-  have he_inl (k : Fin r₀) (t : Fin 2) : e (.inl (k, t)) = (eSum (.inl k), t) := rfl
-  have he_inr (j : Fin (r - r₀)) (t : Fin 2) : e (.inr (j, t)) = (eSum (.inr j), t) := rfl
+    (Equiv.sumProdDistrib (Fin r₀) (Fin (r - r₀)) (Fin 2)).symm.trans
+      (eSum.prodCongr (Equiv.refl (Fin 2)))
   let b : OrthonormalBasis (Fin r × Fin 2) ℝ E :=
     ((bP.prod bK).map P.orthogonalDecomposition.symm).reindex e
   have hb_inl (k : Fin r₀) (t : Fin 2) :
       b (eSum (.inl k), t) = vP (k, t) := by
-    have he' : e.symm (eSum (.inl k), t) = .inl (k, t) := by
-      rw [← he_inl, Equiv.symm_apply_apply]
-    simp [b, he', bP, Basis.span_apply]
+    simp [b, e, bP, Basis.span_apply]
   have hb_inr (j : Fin (r - r₀)) (t : Fin 2) :
       b (eSum (.inr j), t) = (bK (j, t) : E) := by
-    have he' : e.symm (eSum (.inr j), t) = .inr (j, t) := by
-      rw [← he_inr, Equiv.symm_apply_apply]
-    simp [b, he']
+    simp [b, e]
   let μ₀ : Fin r₀ ⊕ Fin (r - r₀) → ℝ := Sum.elim (fun k ↦ |a k ()|) (fun _ ↦ 0)
   refine ⟨b, μ₀ ∘ eSum.symm, fun j ↦ ?_, fun j ↦ ?_, fun j ↦ ?_⟩
   · rcases hj : eSum.symm j with k | j' <;> simp [μ₀, hj]

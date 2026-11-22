@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TwoForm
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
-import TauCeti.Geometry.Symplectic.Wirtinger
+public import TauCeti.Geometry.Symplectic.Wirtinger
 
 /-!
 # Degree-two Wirtinger inequality and Kähler two-form calibration
@@ -33,6 +33,8 @@ complex inner product spaces:
 
 ## Main results
 
+* `TauCeti.AlmostComplexStructure.norm_ιMulti_two_eq_wedgeNorm_symplecticForm`: `‖v ∧ w‖` is the
+  wedge norm of the canonical symplectic form `J.symplecticForm hJ`.
 * `TauCeti.AlmostComplexStructure.inner_apply_eq_norm_ιMulti_iff`: non-orthonormal degree-two
   Wirtinger equality for an orthogonal almost complex structure.
 * `TauCeti.norm_kahlerTwoForm_le`, `TauCeti.norm_kahlerTwoForm`: degree-two Wirtinger comass
@@ -65,21 +67,23 @@ namespace AlmostComplexStructure
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- The area `‖v ∧ w‖` of the parallelogram on `(v, w)` is the wedge norm
+`√(‖v‖² ‖w‖² - ⟪v, w⟫²)` of the canonical symplectic form `ω(x, y) = ⟪J x, y⟫`. -/
+theorem norm_ιMulti_two_eq_wedgeNorm_symplecticForm {J : AlmostComplexStructure V}
+    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) (v w : V) :
+    ‖ιMulti ℝ 2 ![v, w]‖ = (J.symplecticForm hJ).wedgeNorm J v w := by
+  rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
+  simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
+    real_inner_comm v w, sq]
+
 /-- **Non-orthonormal degree-two Wirtinger equality** for an orthogonal almost complex structure:
 for linearly independent `v` and `w`, `⟪J v, w⟫ = ‖v ∧ w‖` exactly when `w = a • v + b • J v`
 with `0 < b`. -/
 theorem inner_apply_eq_norm_ιMulti_iff {J : AlmostComplexStructure V}
     (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {v w : V} (h : LinearIndependent ℝ ![v, w]) :
     ⟪J v, w⟫ = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ a b : ℝ, 0 < b ∧ w = a • v + b • J v := by
-  have hcompat : (J.symplecticForm hJ).Compatible J := symplecticForm_compatible hJ
-  have hwedge : (J.symplecticForm hJ).wedgeNorm J v w = ‖ιMulti ℝ 2 ![v, w]‖ := by
-    rw [SymplecticForm.wedgeNorm_def, symplecticForm_associatedBilinForm_apply hJ,
-      symplecticForm_associatedBilinForm_apply hJ, symplecticForm_associatedBilinForm_apply hJ,
-      ← Real.sqrt_sq (norm_nonneg _), norm_ιMulti_sq]
-    congr 1
-    simp [Matrix.gram, Matrix.det_fin_two, sq, real_inner_comm]
-  rw [← J.symplecticForm_apply hJ, ← hwedge]
-  exact hcompat.apply_eq_wedgeNorm_iff_of_linearIndependent h
+  rw [← J.symplecticForm_apply hJ, norm_ιMulti_two_eq_wedgeNorm_symplecticForm hJ]
+  exact (symplecticForm_compatible hJ).apply_eq_wedgeNorm_iff_of_linearIndependent h
 
 end AlmostComplexStructure
 
@@ -174,8 +178,7 @@ theorem alternatingFormEquiv_ofComplexModule_kahlerForm :
     alternatingFormEquiv E 2 (AlmostComplexStructure.ofComplexModule E).kahlerForm =
       kahlerTwoForm E := by
   ext v
-  have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-  rw [hv, alternatingFormEquiv_apply,
+  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, alternatingFormEquiv_apply,
     AlmostComplexStructure.inner_kahlerForm_ιMulti
       AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
     AlmostComplexStructure.ofComplexModule_apply, kahlerTwoForm_apply_eq_inner]
@@ -186,26 +189,27 @@ theorem ofComplexModule_kahlerForm_eq_sum {ι : Type*} [Fintype ι] (b : Orthono
     (AlmostComplexStructure.ofComplexModule E).kahlerForm =
       ∑ j : ι, ιMulti ℝ 2 ![b j, Complex.I • b j] := by
   let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-  let u : Fin (Fintype.card ι) → E := b ∘ e
-  have hu : Orthonormal ℂ u := b.orthonormal.comp e e.injective
-  have hon : Orthonormal ℝ (complexToRealFamily u) := orthonormal_complexToRealFamily hu
-  have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
-  have hcard : Fintype.card (Fin (2 * Fintype.card ι)) = finrank ℝ E := by
-    rw [Fintype.card_fin, finrank_real_eq_two_mul_finrank_complex,
-      Module.finrank_eq_card_basis b.toBasis]
-  let b₀ : OrthonormalBasis (Fin (2 * Fintype.card ι)) ℝ E :=
-    (basisOfLinearIndependentOfCardEqFinrank' (complexToRealFamily u) hon.linearIndependent
-      hcard).toOrthonormalBasis
-      (by simpa only [coe_basisOfLinearIndependentOfCardEqFinrank'] using hon)
-  have hb₀ (i : Fin (2 * Fintype.card ι)) : b₀ i = complexToRealFamily u i := by
-    simp [b₀]
+  let bC : Basis (Fin (Fintype.card ι)) ℂ E := b.toBasis.reindex (Fintype.equivFin ι)
+  let b₀Basis : Basis (Fin (2 * Fintype.card ι)) ℝ E :=
+    bC.complexToReal.reindex (complexRealIndexEquiv (Fintype.card ι))
+  have hb₀_eq : ⇑b₀Basis = complexToRealFamily ⇑bC :=
+    bC.coe_complexToReal_reindex_complexRealIndexEquiv
+  have hbC_on : Orthonormal ℂ bC := by
+    simpa [bC, Basis.coe_reindex, e] using b.orthonormal.comp e e.injective
+  have hb₀_on : Orthonormal ℝ b₀Basis := by
+    rw [hb₀_eq]
+    exact orthonormal_complexToRealFamily hbC_on
+  let b₀ : OrthonormalBasis (Fin (2 * Fintype.card ι)) ℝ E := b₀Basis.toOrthonormalBasis hb₀_on
+  have hb₀ (i : Fin (2 * Fintype.card ι)) : b₀ i = complexToRealFamily ⇑bC i := by
+    simp [b₀, hb₀_eq]
   have hadapt (k : Fin (Fintype.card ι)) :
       b₀ ⟨2 * (k : ℕ) + 1, by omega⟩ =
         AlmostComplexStructure.ofComplexModule E (b₀ ⟨2 * (k : ℕ), by omega⟩) := by
     simp only [hb₀]
-    exact complexToRealFamily_odd_eq_ofComplexModule u k
+    exact complexToRealFamily_odd_eq_ofComplexModule ⇑bC k
   rw [AlmostComplexStructure.kahlerForm_eq_sum_of_adapted b₀ hadapt]
-  simp_rw [hb₀, complexToRealFamily_even, complexToRealFamily_odd, u, Function.comp_apply]
+  simp_rw [hb₀, complexToRealFamily_even, complexToRealFamily_odd, bC, Basis.coe_reindex,
+    OrthonormalBasis.coe_toBasis, Function.comp_apply]
   exact Fintype.sum_equiv e _ (fun j ↦ ιMulti ℝ 2 ![b j, Complex.I • b j]) (fun _ ↦ rfl)
 
 end FiniteDimensional

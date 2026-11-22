@@ -10,7 +10,10 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
 /-!
 # Alternating forms on a real inner product space
@@ -24,11 +27,10 @@ wedge of the covectors `⟪uⱼ, ·⟫` in the determinant normalization,
 
 The identification carries the exterior product to the wedge product of forms,
 `ContinuousAlternatingMap.wedge`, normalized by `1 / (k! l!)` as in Lee's *Introduction to Smooth
-Manifolds*, and therefore commutes with taking `r`-th exterior powers (`exteriorPower.pow`) and
-pulling back along continuous linear maps
-(`TauCeti.alternatingFormEquiv_pow_compContinuousLinearMap`). On two-vectors, pulling back along `L`
-conjugates `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`, which for a subspace inclusion
-becomes orthogonal projection onto the subspace
+Manifolds*, and therefore carries exterior powers `exteriorPower.pow` to
+`ContinuousAlternatingMap.wedgePow` (`TauCeti.alternatingFormEquiv_pow`). On two-vectors, pulling
+back along `L` conjugates `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`, which for a
+subspace inclusion becomes orthogonal projection onto the subspace
 (`TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap`,
 `TauCeti.coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL`).
 It carries the contraction by `⟪u, ·⟫` to the interior product `ContinuousAlternatingMap.curryLeft`
@@ -47,9 +49,8 @@ increasing wedges of the dual coframe are orthonormal. For an arbitrary basis `b
 ## Main results
 
 * `TauCeti.alternatingFormEquiv_wedge`: the identification carries `x ∧ y` to the wedge of forms.
-* `TauCeti.alternatingFormEquiv_pow_zero`, `TauCeti.alternatingFormEquiv_pow_succ`, and
-  `TauCeti.alternatingFormEquiv_pow_compContinuousLinearMap`: zero, wedge recurrence, and pullback
-  compatibility for forms of exterior powers `exteriorPower.pow`.
+* `TauCeti.alternatingFormEquiv_pow`: the identification carries `exteriorPower.pow x r` to
+  `ContinuousAlternatingMap.wedgePow`.
 * `TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap` and
   `TauCeti.coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL`:
   pullback–contraction laws for two-vectors along arbitrary linear maps and subspace inclusions.
@@ -159,43 +160,21 @@ theorem alternatingFormEquiv_wedge {k l : ℕ} (x : ⋀[ℝ]^k V) (y : ⋀[ℝ]^
     simp [B, alternatingFormEquiv_ιMulti_append]
   exact LinearMap.congr_fun₂ key x y
 
-/-- The form of the zeroth exterior power `x ^ 0` is the constant form `1`. -/
-theorem alternatingFormEquiv_pow_zero {k : ℕ} (x : ⋀[ℝ]^k V) :
-    alternatingFormEquiv V (k * 0) (exteriorPower.pow x 0) =
-      ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) (1 : ℝ) := by
-  ext v
-  rw [exteriorPower.pow_zero, ContinuousAlternatingMap.constOfIsEmpty_apply]
-  -- `k * 0` is definitionally `0` by `Nat.mul`.
-  exact (alternatingFormEquiv_ιMulti_apply ![] v).trans Matrix.det_isEmpty
-
-/-- The form of the `(r + 1)`-st exterior power `x ^ (r + 1)` is the wedge of the form of `x ^ r`
-with the form of `x`. -/
-theorem alternatingFormEquiv_pow_succ {k : ℕ} (x : ⋀[ℝ]^k V) (r : ℕ) :
-    alternatingFormEquiv V (k * (r + 1)) (exteriorPower.pow x (r + 1)) =
-      (alternatingFormEquiv V (k * r) (exteriorPower.pow x r)).wedge
-        (alternatingFormEquiv V k x) := by
-  rw [exteriorPower.pow_succ]
-  -- `k * (r + 1)` is definitionally `k * r + k` by `Nat.mul`.
-  exact alternatingFormEquiv_wedge (exteriorPower.pow x r) x
-
-/-- **Pullback compatibility for exterior powers**: if a continuous linear map `L : V →L[ℝ] W`
-pulls the `k`-form of `B'` back to the `k`-form of `B`, then it pulls the `(k * r)`-form of
-`B' ^ r` back to the `(k * r)`-form of `B ^ r` for every `r`. -/
-theorem alternatingFormEquiv_pow_compContinuousLinearMap {W : Type*} [NormedAddCommGroup W]
-    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] {k : ℕ} (L : V →L[ℝ] W)
-    (B : ⋀[ℝ]^k V) (B' : ⋀[ℝ]^k W)
-    (h : (alternatingFormEquiv W k B').compContinuousLinearMap L = alternatingFormEquiv V k B)
-    (r : ℕ) :
-    (alternatingFormEquiv W (k * r) (exteriorPower.pow B' r)).compContinuousLinearMap L =
-      alternatingFormEquiv V (k * r) (exteriorPower.pow B r) := by
+/-- **The form of an exterior power is the wedge power of the form**:
+`alternatingFormEquiv` carries `exteriorPower.pow x r` to `ContinuousAlternatingMap.wedgePow`. -/
+@[simp]
+theorem alternatingFormEquiv_pow {k : ℕ} (x : ⋀[ℝ]^k V) (r : ℕ) :
+    alternatingFormEquiv V (k * r) (exteriorPower.pow x r) =
+      ContinuousAlternatingMap.wedgePow (alternatingFormEquiv V k x) r := by
   induction r with
   | zero =>
-    rw [alternatingFormEquiv_pow_zero, alternatingFormEquiv_pow_zero]
     ext v
-    simp
+    rw [exteriorPower.pow_zero, ContinuousAlternatingMap.wedgePow_zero_apply]
+    exact (alternatingFormEquiv_ιMulti_apply ![] v).trans Matrix.det_isEmpty
   | succ r ih =>
-    rw [alternatingFormEquiv_pow_succ, alternatingFormEquiv_pow_succ,
-      ← ContinuousAlternatingMap.wedge_compContinuousLinearMap, ih, h]
+    rw [exteriorPower.pow_succ]
+    exact (alternatingFormEquiv_wedge (exteriorPower.pow x r) x).trans <| by
+      rw [ih, ContinuousAlternatingMap.wedge_def, ContinuousAlternatingMap.wedgePow_succ]
 
 /-- **Pullback–contraction law for two-forms**: under the Riesz identification
 `alternatingFormEquiv`, pulling back the two-form of `B ∈ ⋀² W` along a continuous linear map
@@ -209,9 +188,8 @@ theorem twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap
       LinearMap.adjoint L.toLinearMap ∘ₗ twoVectorContraction B ∘ₗ L.toLinearMap := by
   ext u
   refine ext_inner_right ℝ fun w ↦ ?_
-  have hLuw : (L ∘ ![u, w]) = ![L u, L w] := by ext i; fin_cases i <;> simp
   rw [inner_twoVectorContraction_apply, inner_alternatingFormEquiv_symm_ιMulti,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, hLuw, alternatingFormEquiv_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two, alternatingFormEquiv_apply,
     LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.adjoint_inner_left,
     inner_twoVectorContraction_apply, ContinuousLinearMap.coe_coe]
 
@@ -223,14 +201,12 @@ theorem coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearM
         ((alternatingFormEquiv P 2).symm
           ((alternatingFormEquiv V 2 B).compContinuousLinearMap P.subtypeL)) x : V) =
       P.starProjection (twoVectorContraction B x.val) := by
-  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
-    (twoVectorContraction _ x).property fun y hy ↦ ?_).symm
-  have hcontr := LinearMap.congr_fun
-    (twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap P.subtypeL B) x
-  have hinner := congrArg (fun z : P ↦ ⟪z, (⟨y, hy⟩ : P)⟫) hcontr
-  simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_left, Submodule.coe_inner,
-    ContinuousLinearMap.coe_coe, Submodule.subtypeL_apply] at hinner
-  rw [inner_sub_left, sub_eq_zero, hinner]
+  rw [twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap,
+    LinearMap.comp_apply, LinearMap.comp_apply,
+    show (P.subtypeL : P →ₗ[ℝ] V) = P.subtype from rfl,
+    P.adjoint_subtype, ContinuousLinearMap.coe_coe,
+    Submodule.coe_orthogonalProjectionOnto_apply]
+  rfl
 
 /-- **Contraction is the interior product**: the form of the contraction `ι_u x` of
 `x ∈ ⋀ᵏ⁺¹ V` by `⟪u, ·⟫` is the interior product of the form of `x` by `u`. -/

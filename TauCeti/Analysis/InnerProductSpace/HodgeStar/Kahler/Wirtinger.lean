@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
@@ -13,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Wirtinger
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
@@ -41,14 +41,9 @@ and calibrated-frame classification (`TauCeti.isCalibratedFrame_kahlerPowerForm_
 finite-dimensional Hermitian vector space `E` in terms of `TauCeti.complexToRealFamily`.
 
 In degree two (`r = 1`), the Lagrange-type identity also characterizes non-orthonormal equality
-`ω(v, w) = ‖v ∧ w‖` for `v ≠ 0` (`alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`),
-and on `ℂⁿ = EuclideanSpace ℂ (Fin n)` the Kähler form is the standard Kähler form
-`ω(v, w) = Im ⟪v, w⟫_ℂ = ∑ⱼ dxⱼ ∧ dyⱼ` (`TauCeti.standardKahlerForm`), with `ω(1, i) = 1` on `ℂ`.
-
-## Main definitions
-
-* `TauCeti.standardKahlerForm n`: the standard Kähler form on `ℂⁿ`, a real continuous alternating
-  two-form.
+`ω(v, w) = ‖v ∧ w‖` for `v ≠ 0` (`alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`, and
+`TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` on Hermitian vector spaces, including
+`ℂⁿ = EuclideanSpace ℂ (Fin n)`).
 
 ## Main results
 
@@ -60,23 +55,16 @@ In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
 * `norm_alternatingFormEquiv_kahlerForm` and
   `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: degree-two comass one and calibrated
   pairs `(v, J v)` with `‖v‖ = 1` for `alternatingFormEquiv V 2 J.kahlerForm`.
-* `norm_ιMulti_two_eq_wedgeNorm_symplecticForm`: `‖v ∧ w‖` is the wedge norm of the canonical
-  symplectic form `J.symplecticForm hJ`.
 * `alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`: for `v ≠ 0`, the equality
   `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a v + b J v` with `b ≥ 0`.
 
-On finite-dimensional Hermitian vector spaces and `ℂⁿ`:
+On finite-dimensional Hermitian vector spaces:
 
 * `TauCeti.norm_kahlerPowerForm_le`, `TauCeti.norm_kahlerPowerForm`, and
   `TauCeti.isCalibratedFrame_kahlerPowerForm_iff`: the Wirtinger inequality and calibrated-frame
   classification on any finite-dimensional Hermitian vector space in every power index `r` (form
   degree `2 * r`).
-* `TauCeti.standardKahlerForm_apply`: `ω(v, w) = Im ⟪v, w⟫_ℂ`.
-* `TauCeti.norm_standardKahlerForm`: `ω` has comass one for `n ≠ 0`; for `n = 0` it vanishes
-  (`TauCeti.standardKahlerForm_zero`).
-* `TauCeti.isCalibratedFrame_standardKahlerForm_iff`: the calibrated frames are `(v, i v)` with
-  `‖v‖ = 1`.
-* `TauCeti.standardKahlerForm_apply_eq_norm_ιMulti_iff`: for `v ≠ 0`, `ω(v, w) = ‖v ∧ w‖`
+* `TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero`: for `v ≠ 0`, `ω(v, w) = ‖v ∧ w‖`
   exactly when `w = c v` for a complex number `c` with `0 ≤ Im c`.
 
 ## References
@@ -110,7 +98,7 @@ private theorem apply_eq_of_norm_starProjection_eq_one {J : AlmostComplexStructu
   have hnorm : ‖P.starProjection (J u.val)‖ = ‖J u.val‖ := by
     rw [hproj, Submodule.norm_coe, hw, J.norm_apply hJ, Submodule.norm_coe, hu]
   rw [← hproj]
-  exact P.starProjection_eq_self_iff.2 ((P.mem_iff_norm_starProjection _).2 hnorm)
+  exact (P.eq_starProjection_of_norm_le hnorm.ge).symm
 
 /-- Core normal-form decomposition of `J.kahlerPowerForm r` restricted to the span of an
 orthonormal `2r`-frame `v`: yields a companion orthonormal frame `w` of the same span, weights
@@ -275,14 +263,6 @@ theorem norm_alternatingFormEquiv_kahlerForm [Nontrivial V] :
   exact (norm_alternatingFormEquiv_kahlerForm_le hJ).antisymm
     (isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one hJ hv).one_le_norm
 
-/-- The area `‖v ∧ w‖` of the parallelogram on `(v, w)` is the wedge norm
-`√(‖v‖² ‖w‖² - ⟪v, w⟫²)` of the canonical symplectic form `ω(x, y) = ⟪J x, y⟫`. -/
-theorem norm_ιMulti_two_eq_wedgeNorm_symplecticForm (v w : V) :
-    ‖ιMulti ℝ 2 ![v, w]‖ = (J.symplecticForm hJ).wedgeNorm J v w := by
-  rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
-  simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
-    real_inner_comm v w, sq]
-
 /-- **The equality case of Wirtinger's inequality**: for `v ≠ 0`, the Kähler form attains the area
 `‖v ∧ w‖` of the parallelogram on `(v, w)` exactly when `w = a v + b J v` with `b ≥ 0`. For
 linearly independent `v, w` this says that their plane is `J`-invariant and that `(v, w)` is
@@ -331,100 +311,42 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) 
     AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule v]
   refine and_congr_right fun _ ↦ ⟨?_, ?_⟩
   · rintro ⟨w, hw, hadapt, hι⟩
-    let u : Fin r → E := fun j ↦ w ⟨2 * (j : ℕ), by omega⟩
-    have hu : Orthonormal ℂ u := by
-      refine ⟨fun j ↦ hw.1 _, fun j k hjk ↦ ?_⟩
-      have hre : (inner ℂ (u j) (u k)).re = 0 := by
-        rw [← RCLike.re_to_complex, ← TauCeti.inner_real_eq_re_inner ℂ]
-        have hne : (⟨2 * (j : ℕ), by omega⟩ : Fin (2 * r)) ≠ ⟨2 * (k : ℕ), by omega⟩ := by
-          rw [← complexRealIndexEquiv_zero, ← complexRealIndexEquiv_zero]
-          exact (complexRealIndexEquiv r).injective.ne (by simp [hjk])
-        exact hw.2 hne
-      have him : (inner ℂ (u j) (u k)).im = 0 := by
-        have hω : (inner ℂ (u j) (u k)).im = ⟪Complex.I • u j, u k⟫_ℝ := by
-          simpa [kahlerTwoForm_apply] using kahlerTwoForm_apply_eq_inner (u j) (u k)
-        have hI : Complex.I • u j = w ⟨2 * (j : ℕ) + 1, by omega⟩ := by
-          simpa only [AlmostComplexStructure.ofComplexModule_apply] using (hadapt j).symm
-        have hne : (⟨2 * (j : ℕ) + 1, by omega⟩ : Fin (2 * r)) ≠ ⟨2 * (k : ℕ), by omega⟩ := by
-          rw [← complexRealIndexEquiv_one, ← complexRealIndexEquiv_zero]
-          exact (complexRealIndexEquiv r).injective.ne (by simp)
-        rw [hω, hI]
-        exact hw.2 hne
-      exact Complex.ext hre him
+    let evenIdx : Fin r → Fin (2 * r) := fun j ↦ ⟨2 * (j : ℕ), by omega⟩
+    let u : Fin r → E := w ∘ evenIdx
+    have huR : Orthonormal ℝ u :=
+      hw.comp evenIdx fun j k h ↦ Fin.ext (by simp [evenIdx] at h; omega)
+    have hu : Orthonormal ℂ u := huR.complex_iff.2 fun j k _ ↦ by
+      dsimp only
+      have him : (inner ℂ (u j) (u k)).im = ⟪Complex.I • u j, u k⟫_ℝ := by
+        simpa [kahlerTwoForm_apply] using kahlerTwoForm_apply_eq_inner (u j) (u k)
+      have hI : Complex.I • u j = w ⟨2 * (j : ℕ) + 1, by omega⟩ := by
+        simpa only [u, evenIdx, Function.comp_apply,
+          AlmostComplexStructure.ofComplexModule_apply] using (hadapt j).symm
+      rw [him, hI]
+      exact hw.2 (Fin.ne_of_val_ne (by dsimp [evenIdx]; omega))
     have hw_eq : complexToRealFamily u = w := by
       ext i
       obtain ⟨⟨j, k⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
       fin_cases k
-      · simp [u, complexRealIndexEquiv_zero]
-      · simpa [u, complexRealIndexEquiv_one] using (hadapt j).symm
+      · simp [u, evenIdx, complexRealIndexEquiv_zero]
+      · simpa [u, evenIdx, complexRealIndexEquiv_one] using (hadapt j).symm
     exact ⟨u, hu, by rwa [hw_eq]⟩
   · rintro ⟨u, hu, hι⟩
     exact ⟨complexToRealFamily u, orthonormal_complexToRealFamily hu,
       complexToRealFamily_odd_eq_ofComplexModule u, hι⟩
 
-end HermitianWirtinger
-
-section StandardKahlerForm
-
-/-- The **standard Kähler form** `ω(v, w) = Im ⟪v, w⟫_ℂ = ∑ⱼ dxⱼ ∧ dyⱼ` on `ℂⁿ`, a real continuous
-alternating two-form on the underlying real Euclidean space. It is the Kähler form of the
-complex structure `v ↦ i v`, so `ω(1, i) = 1` on `ℂ`. -/
-def standardKahlerForm (n : ℕ) : EuclideanSpace ℂ (Fin n) [⋀^Fin 2]→L[ℝ] ℝ :=
-  alternatingFormEquiv _ 2
-    (AlmostComplexStructure.ofComplexModule (EuclideanSpace ℂ (Fin n))).kahlerForm
-
-/-- The standard Kähler form is the alternating form of the Kähler two-vector of `v ↦ i v`. -/
-theorem standardKahlerForm_def (n : ℕ) :
-    standardKahlerForm n = alternatingFormEquiv _ 2
-      (AlmostComplexStructure.ofComplexModule (EuclideanSpace ℂ (Fin n))).kahlerForm :=
-  (rfl)
-
-/-- The standard Kähler form evaluates on `(v, w)` as `Im ⟪v, w⟫_ℂ`. -/
-@[simp]
-theorem standardKahlerForm_apply (n : ℕ) (v : Fin 2 → EuclideanSpace ℂ (Fin n)) :
-    standardKahlerForm n v = (⟪v 0, v 1⟫_ℂ).im := by
-  rw [standardKahlerForm_def, AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply
-    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule]
-  simp only [AlmostComplexStructure.ofComplexModule_apply, PiLp.inner_apply, PiLp.smul_apply,
-    Complex.inner, Complex.im_sum]
-  refine Finset.sum_congr rfl fun _ _ ↦ ?_
-  simp [sub_eq_neg_add]
-
-/-- The standard Kähler form on `ℂ⁰` is zero; this is why `norm_standardKahlerForm` needs
-`n ≠ 0`. -/
-@[simp]
-theorem standardKahlerForm_zero : standardKahlerForm 0 = 0 := by
-  ext v
-  simp [PiLp.inner_apply]
-
-/-- **Wirtinger's inequality on `ℂⁿ`**: for `n ≠ 0` the standard Kähler form has comass one. -/
-theorem norm_standardKahlerForm (n : ℕ) [NeZero n] : ‖standardKahlerForm n‖ = 1 :=
-  AlmostComplexStructure.norm_alternatingFormEquiv_kahlerForm
-    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule
-
-/-- The frames calibrated by the standard Kähler form on `ℂⁿ` are the pairs `(v, i v)` with
-`‖v‖ = 1`. -/
-theorem isCalibratedFrame_standardKahlerForm_iff {n : ℕ}
-    {v : Fin 2 → EuclideanSpace ℂ (Fin n)} :
-    (standardKahlerForm n).IsCalibratedFrame v ↔ ‖v 0‖ = 1 ∧ v 1 = Complex.I • v 0 := by
-  rw [standardKahlerForm_def,
-    AlmostComplexStructure.isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
-    AlmostComplexStructure.ofComplexModule_apply]
-
-/-- **The equality case of Wirtinger's inequality on `ℂⁿ`**: for `v ≠ 0`, the standard Kähler
-form attains the area `‖v ∧ w‖` exactly when `w` is a complex multiple `c v` with `0 ≤ Im c`,
-that is, when `(v, w)` lies in the complex line of `v` with its complex orientation. -/
-theorem standardKahlerForm_apply_eq_norm_ιMulti_iff {n : ℕ} {v w : EuclideanSpace ℂ (Fin n)}
-    (hv : v ≠ 0) :
-    standardKahlerForm n ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ c : ℂ, 0 ≤ c.im ∧ w = c • v := by
-  rw [standardKahlerForm_def,
+/-- **Non-orthonormal degree-two Wirtinger equality**: for `v ≠ 0` in a finite-dimensional
+Hermitian vector space, `kahlerTwoForm E` attains the area `‖v ∧ w‖` exactly when `w` is a complex
+multiple `c • v` with `0 ≤ Im c`. -/
+theorem kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero {v w : E} (hv : v ≠ 0) :
+    kahlerTwoForm E ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ c : ℂ, 0 ≤ c.im ∧ w = c • v := by
+  rw [← alternatingFormEquiv_ofComplexModule_kahlerForm,
     AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff
       AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule hv]
   simp only [AlmostComplexStructure.ofComplexModule_apply]
   exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (Complex.re_smul_add_im_smul ⟨a, b⟩ v)⟩,
     fun ⟨c, hc, hw⟩ ↦ ⟨c.re, c.im, hc, hw.trans (Complex.re_smul_add_im_smul c v).symm⟩⟩
 
-end StandardKahlerForm
+end HermitianWirtinger
 
 end TauCeti
