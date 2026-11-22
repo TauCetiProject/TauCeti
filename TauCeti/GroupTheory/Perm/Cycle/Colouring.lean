@@ -42,7 +42,7 @@ variable {α σ : Type*}
 
 /-- The induced colouring and its cycle labels use the same number of colours.
 See `Equiv.Perm.range_invariantColouringEquiv` for equality of the colour sets. -/
-theorem card_image_invariantColouringEquiv [Fintype α] [DecidableEq σ] (π : Perm α)
+@[simp] theorem card_image_invariantColouringEquiv [Fintype α] [DecidableEq σ] (π : Perm α)
     (g : Quotient (SameCycle.setoid π) → σ) :
     (Finset.univ.image (invariantColouringEquiv π g).val).card = Nat.card (Set.range g) := by
   rw [← π.range_invariantColouringEquiv, ← Set.image_univ, ← Finset.coe_univ,
