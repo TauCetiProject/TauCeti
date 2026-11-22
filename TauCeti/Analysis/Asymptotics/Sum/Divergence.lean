@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Defs
 import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Topology.MetricSpace.Bounded
 import TauCeti.Algebra.Order.BigOperators.Sum.IcoMulLe
 import TauCeti.Analysis.SpecificLimits.Basic
 
@@ -82,14 +84,15 @@ theorem tendsto_norm_sum_Ico_atTop_iff {E : Type*} [SeminormedAddCommGroup E] {T
       Tendsto (fun n => ‖∑ m ∈ Ico M n, T m‖) atTop atTop := by
     let K := max N M
     let C := (∑ m ∈ Ico N K, T m) - ∑ m ∈ Ico M K, T m
-    refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (-‖C‖) hN)
+    refine ((Metric.tendsto_dist_right_atTop_iff C).2
+      (tendsto_norm_atTop_iff_cobounded.1 hN)).congr' ?_
     filter_upwards [eventually_ge_atTop K] with n hn
     have hdiff : (∑ m ∈ Ico N n, T m) - C = ∑ m ∈ Ico M n, T m := by
       rw [← sum_Ico_consecutive T (le_max_left N M) hn,
         ← sum_Ico_consecutive T (le_max_right N M) hn]
       simp only [C]
       abel
-    simpa only [← sub_eq_add_neg, hdiff] using norm_sub_norm_le (∑ m ∈ Ico N n, T m) C
+    rw [dist_eq_norm, hdiff]
   exact ⟨hmp N M, hmp M N⟩
 
 /-- If `2 ≤ c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then the norms
