@@ -48,6 +48,7 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
 * `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`,
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent`,
   `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first`,
+  `TauCeti.FourTensor.finiteDimensional_algebraicCurvatureSubmodule_iff`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm`.
 
@@ -354,24 +355,43 @@ private theorem finrank_algebraicCurvatureSubmodule_of_finiteDimensional :
     LinearMap.BilinForm.finrank_symmSubmodule, exteriorPower.finrank_eq] at hrk
   exact choose_symm_sub_choose_four hrk
 
-/-- For `dim V = 2`, the space of algebraic curvature tensors is `1`-dimensional. -/
-theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_two (hdim : Module.finrank ℝ V = 2) :
-    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 1 := by
-  rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, hdim]; norm_num
-
-/-- For `dim V = 3`, the space of algebraic curvature tensors is `6`-dimensional. -/
-theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_three (hdim : Module.finrank ℝ V = 3) :
-    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 6 := by
-  rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, hdim]; norm_num
-
-/-- For `dim V = 4`, the space of algebraic curvature tensors is `20`-dimensional. -/
-theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_four (hdim : Module.finrank ℝ V = 4) :
-    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 20 := by
-  rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, hdim]; norm_num
-
 end FiniteDimensional
 
 section NormedSpaceDimension
+
+/-- `algebraicCurvatureSubmodule V` is finite-dimensional if and only if `V` is
+finite-dimensional. -/
+theorem finiteDimensional_algebraicCurvatureSubmodule_iff {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] :
+    FiniteDimensional ℝ (algebraicCurvatureSubmodule V) ↔ FiniteDimensional ℝ V := by
+  refine ⟨fun _ ↦ by_contra fun hV ↦ ?_, fun hV ↦ ?_⟩
+  · let b := Module.Basis.ofVectorSpace ℝ V
+    have : Infinite (Module.Basis.ofVectorSpaceIndex ℝ V) :=
+      not_finite_iff_infinite.mp fun _ ↦ hV (Module.Finite.of_basis b)
+    let m := Module.finrank ℝ (algebraicCurvatureSubmodule V)
+    let v : Fin (m + 3) → V := fun k ↦ b (Infinite.natEmbedding _ k)
+    have hv : LinearIndependent ℝ v :=
+      b.linearIndependent.comp _ ((Infinite.natEmbedding _).injective.comp Fin.val_injective)
+    let p : Submodule ℝ V := Submodule.span ℝ (Set.range v)
+    let bp : Module.Basis (Fin (m + 3)) ℝ p := Module.Basis.span hv
+    have : FiniteDimensional ℝ p := Module.Finite.of_basis bp
+    obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_finiteDimensional p
+    have hP_surj : Function.Surjective P := fun x ↦ ⟨(x : V), hP x⟩
+    have hle := LinearMap.finrank_le_finrank_of_injective
+      (f := P.pullbackAlgebraicCurvature.toLinearMap)
+      (by simpa only [ContinuousLinearMap.coe_coe] using
+        P.pullbackAlgebraicCurvature_injective hP_surj.denseRange)
+    rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, Module.finrank_eq_card_basis bp,
+      Fintype.card_fin] at hle
+    have hsub : (m + 3) ^ 2 - 1 = (m + 4) * (m + 2) := by
+      have hsq : (m + 3) ^ 2 = (m + 4) * (m + 2) + 1 := by ring
+      omega
+    have hexpand : (m + 3) ^ 2 * ((m + 4) * (m + 2)) =
+        m ^ 4 + 12 * m ^ 3 + 53 * m ^ 2 + 102 * m + 72 := by ring
+    rw [hsub, hexpand] at hle
+    omega
+  · have := hV
+    infer_instance
 
 /-- **Dimension of `algebraicCurvatureSubmodule V`**: on any real normed space `V` of `finrank`
 `n`, `algebraicCurvatureSubmodule V` has `finrank` `n ^ 2 * (n ^ 2 - 1) / 12` (both sides being `0`
@@ -381,34 +401,28 @@ theorem finrank_algebraicCurvatureSubmodule {V : Type*} [NormedAddCommGroup V] [
       Module.finrank ℝ V ^ 2 * (Module.finrank ℝ V ^ 2 - 1) / 12 := by
   by_cases hV : FiniteDimensional ℝ V
   · exact finrank_algebraicCurvatureSubmodule_of_finiteDimensional
-  · have hnot : ¬ FiniteDimensional ℝ (algebraicCurvatureSubmodule V) := fun _ ↦ by
-      let b := Module.Basis.ofVectorSpace ℝ V
-      have : Infinite (Module.Basis.ofVectorSpaceIndex ℝ V) :=
-        not_finite_iff_infinite.mp fun _ ↦ hV (Module.Finite.of_basis b)
-      let m := Module.finrank ℝ (algebraicCurvatureSubmodule V)
-      let v : Fin (m + 3) → V := fun k ↦ b (Infinite.natEmbedding _ k)
-      have hv : LinearIndependent ℝ v :=
-        b.linearIndependent.comp _ ((Infinite.natEmbedding _).injective.comp Fin.val_injective)
-      let p : Submodule ℝ V := Submodule.span ℝ (Set.range v)
-      let bp : Module.Basis (Fin (m + 3)) ℝ p := Module.Basis.span hv
-      have : FiniteDimensional ℝ p := Module.Finite.of_basis bp
-      obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_finiteDimensional p
-      have hP_surj : Function.Surjective P := fun x ↦ ⟨(x : V), hP x⟩
-      have hle := LinearMap.finrank_le_finrank_of_injective
-        (f := P.pullbackAlgebraicCurvature.toLinearMap)
-        (by simpa only [ContinuousLinearMap.coe_coe] using
-          P.pullbackAlgebraicCurvature_injective hP_surj.denseRange)
-      rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, Module.finrank_eq_card_basis bp,
-        Fintype.card_fin] at hle
-      have hsub : (m + 3) ^ 2 - 1 = (m + 4) * (m + 2) := by
-        have hsq : (m + 3) ^ 2 = (m + 4) * (m + 2) + 1 := by ring
-        omega
-      have hexpand : (m + 3) ^ 2 * ((m + 4) * (m + 2)) =
-          m ^ 4 + 12 * m ^ 3 + 53 * m ^ 2 + 102 * m + 72 := by ring
-      rw [hsub, hexpand] at hle
-      omega
+  · have hnot : ¬ FiniteDimensional ℝ (algebraicCurvatureSubmodule V) :=
+      mt finiteDimensional_algebraicCurvatureSubmodule_iff.mp hV
     rw [Module.finrank_of_infinite_dimensional hnot, Module.finrank_of_infinite_dimensional hV]
     rfl
+
+/-- For `dim V = 2`, the space of algebraic curvature tensors is `1`-dimensional. -/
+theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_two {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (hdim : Module.finrank ℝ V = 2) :
+    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 1 := by
+  rw [finrank_algebraicCurvatureSubmodule, hdim]; norm_num
+
+/-- For `dim V = 3`, the space of algebraic curvature tensors is `6`-dimensional. -/
+theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_three {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (hdim : Module.finrank ℝ V = 3) :
+    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 6 := by
+  rw [finrank_algebraicCurvatureSubmodule, hdim]; norm_num
+
+/-- For `dim V = 4`, the space of algebraic curvature tensors is `20`-dimensional. -/
+theorem finrank_algebraicCurvatureSubmodule_of_finrank_eq_four {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (hdim : Module.finrank ℝ V = 4) :
+    Module.finrank ℝ (algebraicCurvatureSubmodule V) = 20 := by
+  rw [finrank_algebraicCurvatureSubmodule, hdim]; norm_num
 
 end NormedSpaceDimension
 

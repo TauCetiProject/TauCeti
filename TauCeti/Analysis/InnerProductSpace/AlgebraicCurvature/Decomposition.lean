@@ -575,7 +575,7 @@ theorem IsAlgebraicCurvature.bilinFormTrace_schouten {r : FourTensor V}
     smul_eq_mul]; field_simp; ring
 
 /-- In dimension at least `3`, `schouten (constantCurvature V) = (1 / 2) • innerₗ V`. -/
-theorem schouten_constantCurvature_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) :
+@[simp] theorem schouten_constantCurvature_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) :
     schouten (constantCurvature V) = (1 / 2 : ℝ) • innerₗ V := by
   rw [constantCurvature_eq_half_smul_kulkarniNomizu, map_smul,
     schouten_kulkarniNomizu_innerₗ_of_three_le_finrank hn]
