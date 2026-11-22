@@ -239,9 +239,8 @@ theorem isConvexChart_source_inter_preimage {F : Type*} [NormedAddCommGroup F] [
   have himage : ∀ W ⊆ e.source ∩ e ⁻¹' B, f '' W = g '' (e '' W) := fun W hW ↦ by
     rw [(hf.mono (hW.trans inter_subset_left)).image_eq, image_comp]
   have hB : e '' (e.source ∩ e ⁻¹' B) = B := by
-    refine Subset.antisymm (image_subset_iff.2 fun z hz ↦ hz.2) fun w hw ↦ ?_
-    exact ⟨e.symm w, ⟨e.map_target (hBt hw), by rwa [mem_preimage, e.right_inv (hBt hw)]⟩,
-      e.right_inv (hBt hw)⟩
+    rw [← e.symm_image_eq_source_inter_preimage hBt]
+    exact e.image_symm_image_of_subset_target hBt
   refine ⟨e.isOpen_inter_preimage hBo, ?_, fun W hW hWo x hx ↦ ?_, fun v ↦ ?_⟩
   · rw [himage _ subset_rfl, hB]
     exact hBc.linear_image g
@@ -250,14 +249,8 @@ theorem isConvexChart_source_inter_preimage {F : Type*} [NormedAddCommGroup F] [
     exact hg _ (e.isOpen_image_of_subset_source hWo (hW.trans inter_subset_left))
   · -- The fibre is the image under `e⁻¹` of the convex slice `B ∩ g⁻¹ {v}`.
     have hfib : e.source ∩ e ⁻¹' B ∩ f ⁻¹' {v} = e.symm '' (B ∩ g ⁻¹' {v}) := by
-      ext z
-      refine ⟨fun ⟨⟨hz, hzB⟩, hzv⟩ ↦ ⟨e z, ⟨hzB, ?_⟩, e.left_inv hz⟩, ?_⟩
-      · rw [mem_preimage, mem_singleton_iff, ← hzv, hf hz, comp_apply]
-      · rintro ⟨w, ⟨hwB, hwv⟩, rfl⟩
-        have hw := hBt hwB
-        refine ⟨⟨e.map_target hw, by rwa [mem_preimage, e.right_inv hw]⟩, ?_⟩
-        rw [mem_preimage, hf (e.map_target hw), comp_apply, e.right_inv hw]
-        exact hwv
+      rw [inter_right_comm, hf.inter_preimage_eq, preimage_comp, inter_assoc, ← preimage_inter,
+        inter_comm (g ⁻¹' {v}), e.symm_image_eq_source_inter_preimage (inter_subset_left.trans hBt)]
     rw [hfib]
     exact ((hBc.inter ((convex_singleton v).linear_preimage g)).isPreconnected).image _
       (e.continuousOn_symm.mono (inter_subset_left.trans hBt))
