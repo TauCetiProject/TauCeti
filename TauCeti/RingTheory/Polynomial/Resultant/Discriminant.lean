@@ -68,8 +68,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   resultant as its cross term.
 * `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
   with the pairwise resultants as cross terms.
-* `Polynomial.discr_X_pow_sub_C`, `Polynomial.discr_X_pow_sub_C_mul_X`,
-  `Polynomial.discr_X_pow_sub_X`: the discriminants of `X ^ n - C a`, `X ^ n - C a * X`, and
+* `Polynomial.discr_X_pow_sub_C`, `Polynomial.discr_X`, `Polynomial.discr_X_pow_sub_C_mul_X`,
+  `Polynomial.discr_X_pow_sub_X`: the discriminants of `X ^ n - C a`, `X`, `X ^ n - C a * X`, and
   `X ^ n - X`.
 * `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
@@ -196,6 +196,10 @@ are `1`. -/
       = ((-1 : R) ^ (n * (n - 1) / 2)) ^ 2 * (X ^ n - C a).discr := by rw [hsq, one_mul]
     _ = (-1) ^ (n * (n - 1) / 2) * ((-1) ^ (n * (n - 1) / 2) * (X ^ n - C a).discr) := by ring
     _ = _ := by rw [← h]; ring
+
+/-- The discriminant of `X` is `1`. -/
+@[simp] theorem discr_X : (X : R[X]).discr = 1 := by
+  simpa using discr_X_pow_sub_C (0 : R) 1
 
 end Polynomial
 
@@ -455,13 +459,12 @@ theorem discr_X_pow_sub_C_mul_X (a : R) {n : ℕ} (hn : 2 ≤ n) :
   have hfac : X ^ n - C a * X = X * g := by
     dsimp only [g]
     rw [mul_sub, ← pow_succ', Nat.sub_add_cancel (by omega), mul_comm X (C a)]
-  have hX_discr : (X : R[X]).discr = 1 := by simpa using discr_X_pow_sub_C (0 : R) 1
   have hres : X.resultant g = -a := by
     have hX1 := resultant_X_pow_left g 1 g.natDegree le_rfl
     rw [pow_one, pow_one, ← natDegree_X (R := R)] at hX1
     rw [hX1, coeff_sub, coeff_X_pow, coeff_C, ite_eq_right (by omega : 0 ≠ n - 1),
       ite_eq_left rfl, zero_sub]
-  rw [hfac, monic_X.discr_mul hg_mon, hX_discr, hres, one_mul, discr_X_pow_sub_C]
+  rw [hfac, monic_X.discr_mul hg_mon, discr_X, hres, one_mul, discr_X_pow_sub_C]
   have hn_eq : n - 1 - 1 = n - 2 := rfl
   have hn2 : (n - 2) + 2 = n := by omega
   rw [hn_eq, mul_assoc, ← pow_add, hn2]

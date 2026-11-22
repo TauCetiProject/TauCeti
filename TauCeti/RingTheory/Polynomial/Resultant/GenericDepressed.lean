@@ -30,13 +30,19 @@ The discriminant of the generic depressed polynomial is weighted homogeneous of 
 
 ## Main results
 
+* `TauCeti.coeff_genericDepressed`, `TauCeti.coeff_genericDepressed_self`,
+  `TauCeti.coeff_genericDepressed_sub_two_sub`: coefficient formulas for `genericDepressed R m`.
 * `TauCeti.monic_genericDepressed`, `TauCeti.natDegree_genericDepressed`,
   `TauCeti.degree_genericDepressed`, `TauCeti.nextCoeff_genericDepressed`: the generic depressed
   polynomial is monic of degree `m` with vanishing subleading coefficient.
-* `TauCeti.map_eval_genericDepressed`: every monic depressed polynomial of degree `m` over an
-  `R`-algebra is a specialization of the generic one.
-* `TauCeti.discr_genericDepressed`: `depressedDiscr R m` is the discriminant of
-  `genericDepressed R m`.
+* `TauCeti.map_map_genericDepressed`, `TauCeti.map_genericDepressed_eq_iff`,
+  `TauCeti.map_algHom_genericDepressed_eq_iff`, `TauCeti.map_eval_genericDepressed`: base change
+  and universal specialization property for monic depressed polynomials of degree `m`.
+* `TauCeti.genericDepressed_zero`, `TauCeti.genericDepressed_one`,
+  `TauCeti.genericDepressed_two`, `TauCeti.genericDepressed_three`,
+  `TauCeti.genericDepressed_four`: explicit formulas in degrees `0` through `4`.
+* `TauCeti.discr_genericDepressed`, `TauCeti.map_depressedDiscr`, `TauCeti.aeval_depressedDiscr`,
+  `TauCeti.discr_eq_eval_depressedDiscr`: base change and evaluation of `depressedDiscr R m`.
 * `TauCeti.depressedDiscr_mem_smul`, `TauCeti.depressedDiscr_mem`: the discriminant is weighted
   homogeneous of weight `(m * (m - 1)) • u` (and `m * (m - 1)` for `depressedWeight m`).
 * `TauCeti.depressedDiscr_two`, `TauCeti.depressedDiscr_three`: the discriminants in degrees `2`
@@ -80,6 +86,12 @@ theorem coeff_genericDepressed (k : ℕ) :
     exact ite_eq_left (by simp only; omega)
   · exact (zero_add _).trans
       (Finset.sum_eq_zero fun j _ ↦ ite_eq_right (by have := j.isLt; omega))
+
+/-- The coefficient of `X ^ m` in `TauCeti.genericDepressed R m` is `1`. -/
+@[simp]
+theorem coeff_genericDepressed_self (R : Type*) [CommSemiring R] (m : ℕ) :
+    (genericDepressed R m).coeff m = 1 := by
+  rw [coeff_genericDepressed, ite_eq_left rfl]
 
 /-- The variable `aⱼ₊₂` is the coefficient of `Xᵐ⁻²⁻ʲ` in the generic depressed polynomial. -/
 @[simp]
@@ -142,6 +154,57 @@ theorem nextCoeff_genericDepressed : (genericDepressed R m).nextCoeff = 0 := by
   · rfl
   rw [coeff_genericDepressed, ite_eq_right (by omega), dite_eq_right (by omega)]
 
+/-- Mapping the base ring commutes with forming `TauCeti.genericDepressed`. -/
+@[simp]
+theorem map_map_genericDepressed {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R →+* S)
+    (m : ℕ) :
+    (genericDepressed R m).map (MvPolynomial.map φ) = genericDepressed S m := by
+  ext k : 2
+  rw [Polynomial.coeff_map, coeff_genericDepressed, coeff_genericDepressed]
+  split_ifs <;> simp
+
+/-- **Characteristic specialization property of `TauCeti.genericDepressed`.** For any monic
+depressed polynomial `f : S[X]` of `natDegree` `m`, a ring homomorphism
+`φ : MvPolynomial (Fin (m - 1)) R →+* S` realizes `f` from `genericDepressed R m` if and only
+if it sends each variable `X i` to the coefficient `f.coeff (m - 2 - i)`. -/
+theorem map_genericDepressed_eq_iff {R S : Type*} [CommSemiring R] [CommSemiring S]
+    {f : S[X]} {m : ℕ} (hf : f.Monic) (hdeg : f.natDegree = m) (hnext : f.nextCoeff = 0)
+    (φ : MvPolynomial (Fin (m - 1)) R →+* S) :
+    (genericDepressed R m).map φ = f ↔
+      ∀ i : Fin (m - 1), φ (MvPolynomial.X i) = f.coeff (m - 2 - (i : ℕ)) := by
+  constructor
+  · intro h i
+    have hc := congrArg (fun p : S[X] ↦ p.coeff (m - 2 - (i : ℕ))) h
+    simpa [Polynomial.coeff_map, coeff_genericDepressed_sub_two_sub] using hc
+  · intro hφ
+    refine AddMonoidAlgebra.ext (DFunLike.ext _ _ fun k ↦ ?_)
+    rw [Polynomial.coeff_map, coeff_genericDepressed]
+    split_ifs with hkm hk
+    · rw [hkm, map_one, ← hdeg]
+      exact hf.leadingCoeff.symm
+    · have hk_eq : m - 2 - (m - 2 - k) = k := by omega
+      simpa [hk_eq] using hφ ⟨m - 2 - k, by omega⟩
+    · simp only [map_zero]
+      rcases eq_or_ne k (m - 1) with rfl | hkne
+      · have hm1 : 1 ≤ m := by omega
+        have hpos : 0 < f.natDegree := by omega
+        have hsub : m - 1 = f.natDegree - 1 := by omega
+        rw [hsub, ← nextCoeff_of_natDegree_pos hpos, hnext]
+      · exact (coeff_eq_zero_of_natDegree_lt (by omega)).symm
+
+/-- **Unique `R`-algebra specialization of `TauCeti.genericDepressed`.** For any monic depressed
+polynomial `f : S[X]` of `natDegree` `m` over an `R`-algebra `S`, an `R`-algebra homomorphism
+`φ : MvPolynomial (Fin (m - 1)) R →ₐ[R] S` maps `genericDepressed R m` to `f` if and only if
+`φ = MvPolynomial.aeval fun i : Fin (m - 1) ↦ f.coeff (m - 2 - i)`. -/
+theorem map_algHom_genericDepressed_eq_iff (R : Type*) [CommSemiring R] {S : Type*}
+    [CommSemiring S] [Algebra R S] {f : S[X]} {m : ℕ} (hf : f.Monic) (hdeg : f.natDegree = m)
+    (hnext : f.nextCoeff = 0) (φ : MvPolynomial (Fin (m - 1)) R →ₐ[R] S) :
+    (genericDepressed R m).map φ.toRingHom = f ↔
+      φ = MvPolynomial.aeval (R := R) fun i : Fin (m - 1) ↦ f.coeff (m - 2 - (i : ℕ)) := by
+  rw [map_genericDepressed_eq_iff hf hdeg hnext]
+  exact ⟨fun h ↦ MvPolynomial.algHom_ext fun i ↦ by simpa using h i,
+    fun h i ↦ by simp [h]⟩
+
 /-- **Universal property of the generic depressed polynomial.** A monic polynomial `p` of degree
 `m` with vanishing subleading coefficient over an `R`-algebra `S` is the specialization of
 `genericDepressed R m` at `aⱼ₊₂ = p.coeff (m - 2 - j)`. -/
@@ -149,19 +212,54 @@ theorem map_eval_genericDepressed {S : Type*} [CommSemiring S] [Algebra R S]
     {p : S[X]} (hp : p.Monic) (hdeg : p.natDegree = m) (hnext : p.nextCoeff = 0) :
     (genericDepressed R m).map
         (MvPolynomial.aeval (R := R) fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)).toRingHom =
-      p := by
+      p :=
+  (map_genericDepressed_eq_iff hp hdeg hnext _).mpr fun j ↦ by simp
+
+/-- For `m = 0`, `TauCeti.genericDepressed R 0` is the constant polynomial `1`. -/
+@[simp]
+theorem genericDepressed_zero (R : Type*) [CommSemiring R] :
+    genericDepressed R 0 = 1 := by
   ext k : 2
-  rw [coeff_map, coeff_genericDepressed]
-  split_ifs with hm hk
-  · rw [map_one, hm, ← hdeg, hp.coeff_natDegree]
-  · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X]
-    congr 1
-    omega
-  · rw [map_zero, eq_comm]
-    rcases lt_or_ge m k with hlt | hle
-    · exact coeff_eq_zero_of_natDegree_lt (hdeg ▸ hlt)
-    · rw [nextCoeff, hdeg, ite_eq_right (by omega)] at hnext
-      rwa [show k = m - 1 by omega]
+  rw [coeff_genericDepressed, Polynomial.coeff_one]
+  split_ifs
+  · simp
+  · omega
+  · simp
+
+/-- For `m = 1`, `TauCeti.genericDepressed R 1` is `X`. -/
+@[simp]
+theorem genericDepressed_one (R : Type*) [CommSemiring R] :
+    genericDepressed R 1 = Polynomial.X := by
+  ext k : 2
+  rw [coeff_genericDepressed, Polynomial.coeff_X]
+  split_ifs <;> first | omega | rfl
+
+/-- For `m = 2`, `TauCeti.genericDepressed R 2` is `X ^ 2 + C (X 0)`. -/
+theorem genericDepressed_two (R : Type*) [CommSemiring R] :
+    genericDepressed R 2 = Polynomial.X ^ 2 + Polynomial.C (MvPolynomial.X 0) := by
+  ext k : 2
+  rw [coeff_genericDepressed]
+  rcases k with _ | _ | _ | k <;> simp [Fin.eq_zero]
+
+/-- For `m = 3`, `TauCeti.genericDepressed R 3` is `X ^ 3 + C (X 0) * X + C (X 1)`. -/
+theorem genericDepressed_three (R : Type*) [CommSemiring R] :
+    genericDepressed R 3 =
+      Polynomial.X ^ 3 + Polynomial.C (MvPolynomial.X 0) * Polynomial.X +
+        Polynomial.C (MvPolynomial.X 1) := by
+  ext k : 2
+  rw [coeff_genericDepressed]
+  rcases k with _ | _ | _ | _ | k <;> simp [Polynomial.coeff_X]
+
+/-- For `m = 4`, `TauCeti.genericDepressed R 4` is
+`X ^ 4 + C (X 0) * X ^ 2 + C (X 1) * X + C (X 2)`. -/
+theorem genericDepressed_four (R : Type*) [CommSemiring R] :
+    genericDepressed R 4 =
+      Polynomial.X ^ 4 + Polynomial.C (MvPolynomial.X 0) * Polynomial.X ^ 2 +
+        Polynomial.C (MvPolynomial.X 1) * Polynomial.X +
+        Polynomial.C (MvPolynomial.X 2) := by
+  ext k : 2
+  rw [coeff_genericDepressed]
+  rcases k with _ | _ | _ | _ | _ | k <;> simp [Polynomial.coeff_X]
 
 end Semiring
 
@@ -178,6 +276,22 @@ variable {R m}
 
 /-- `depressedDiscr R m` is the discriminant of the generic depressed polynomial. -/
 theorem discr_genericDepressed : (genericDepressed R m).discr = depressedDiscr R m := (rfl)
+
+/-- Mapping the base ring commutes with forming `TauCeti.depressedDiscr`. -/
+@[simp]
+theorem map_depressedDiscr {R S : Type*} [CommRing R] [CommRing S] (φ : R →+* S) (m : ℕ) :
+    MvPolynomial.map φ (depressedDiscr R m) = depressedDiscr S m := by
+  rw [← discr_genericDepressed, ← (monic_genericDepressed (R := R) (m := m)).discr_map
+    (MvPolynomial.map φ), map_map_genericDepressed, discr_genericDepressed]
+
+/-- Evaluating `TauCeti.depressedDiscr R m` at `a : Fin (m - 1) → S` computes the discriminant of
+the specialized depressed polynomial `(genericDepressed R m).map (aeval a)`. -/
+theorem aeval_depressedDiscr {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {m : ℕ}
+    (a : Fin (m - 1) → S) :
+    MvPolynomial.aeval a (depressedDiscr R m) =
+      ((genericDepressed R m).map (MvPolynomial.aeval a).toRingHom).discr := by
+  rw [← discr_genericDepressed, (monic_genericDepressed (R := R) (m := m)).discr_map]
+  rfl
 
 /-- The discriminant of a monic polynomial `p` of degree `m` with vanishing subleading coefficient
 over an `R`-algebra `S` is `depressedDiscr R m` evaluated at `aⱼ₊₂ = p.coeff (m - 2 - j)`. -/

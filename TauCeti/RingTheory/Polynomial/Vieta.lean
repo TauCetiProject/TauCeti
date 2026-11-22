@@ -42,8 +42,10 @@ injective `R`-algebra endomorphism `MvPolynomial.vietaAlgHom`) sending each coef
 * `MvPolynomial.aeval_esymm_eq_coeff_prod_X_sub_C`: the elementary symmetric polynomials at `x`
   are the signed coefficients of `∏ i, (X - C (x i))`.
 * `MvPolynomial.vietaAlgEquiv`, `MvPolynomial.vietaAlgHom`, `MvPolynomial.range_vietaAlgHom`,
-  `MvPolynomial.mem_range_vietaAlgHom_iff`: universal Vieta correspondence identifying
-  `MvPolynomial (Fin m) R` with `symmetricSubalgebra (Fin m) R`.
+  `MvPolynomial.mem_range_vietaAlgHom_iff`, `MvPolynomial.vietaAlgEquiv_X`,
+  `MvPolynomial.vietaAlgEquiv_symm_esymm`: universal Vieta correspondence identifying
+  `MvPolynomial (Fin m) R` with `symmetricSubalgebra (Fin m) R` and its forward and inverse
+  generator rules.
 * `MvPolynomial.map_vietaAlgHom_freeMonic`: `Polynomial.freeMonic R m` maps along
   `MvPolynomial.vietaAlgHom R m` to `∏ j, (X - C (X j))`.
 * `MvPolynomial.isUnit_of_isUnit_vietaAlgHom`: over a reduced ring, `MvPolynomial.vietaAlgHom R m`
@@ -155,6 +157,29 @@ theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
     rescale_X, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, map_pow, map_neg, map_one,
     esymmAlgEquiv_apply, esymmAlgHom, map_mul, aeval_X, hrev]
   rfl
+
+/-- On variables, `MvPolynomial.vietaAlgEquiv` sends `X i` to the signed elementary symmetric
+polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)` in `symmetricSubalgebra (Fin m) R`. -/
+@[simp]
+theorem vietaAlgEquiv_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
+    vietaAlgEquiv R m (X i) =
+      ⟨(-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)), by
+        rw [← vietaAlgHom_X]
+        exact isSymmetric_vietaAlgHom (X i)⟩ :=
+  Subtype.ext (vietaAlgHom_X i)
+
+/-- The inverse of `MvPolynomial.vietaAlgEquiv` maps the elementary symmetric generator
+`esymm (Fin m) R (j + 1)` to `(-1) ^ (j + 1) * X j.rev`. -/
+@[simp]
+theorem vietaAlgEquiv_symm_esymm {R : Type*} [CommRing R] {m : ℕ} (j : Fin m) :
+    (vietaAlgEquiv R m).symm ⟨esymm (Fin m) R (j + 1), esymm_isSymmetric (Fin m) R _⟩ =
+      (-1) ^ ((j : ℕ) + 1) * X j.rev := by
+  rw [AlgEquiv.symm_apply_eq]
+  apply Subtype.ext
+  rw [← vietaAlgHom_apply, map_mul, map_pow, map_neg, map_one, vietaAlgHom_X, Fin.val_rev]
+  have hj := j.isLt
+  have hj' : m - (m - ((j : ℕ) + 1)) = (j : ℕ) + 1 := by omega
+  rw [hj', ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
 
 /-- Mapping `Polynomial.freeMonic R m` along `MvPolynomial.vietaAlgHom` factors it into linear
 root factors `∏ j, (Polynomial.X - Polynomial.C (MvPolynomial.X j))`. -/

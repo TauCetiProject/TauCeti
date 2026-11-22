@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.Polynomial.Resultant.Normalization
 
+import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
+
 /-!
 # Weighted homogeneity of the discriminant
 
@@ -22,8 +24,8 @@ In the natural-number case `u = 1`, substituting `cᵢ ↦ cᵢ T ^ i` turns `p`
 `p.scaleRoots T`, whose discriminant is `T ^ (n (n - 1))` times that of `p`
 (`Polynomial.discr_scaleRoots`); the coefficient of `T ^ (n (n - 1))` in the substitution is the
 weighted homogeneous component of that weight. Pushing the natural weights of the universal
-degree-`n` polynomial along `multiplesHom M u` and evaluating at the coefficients of `p` yields the
-general monoid statement.
+degree-`n` polynomial `Polynomial.freePoly R n` along `multiplesHom M u` and evaluating at the
+coefficients of `p` yields the general monoid statement.
 
 ## Main results
 
@@ -67,43 +69,19 @@ private theorem isWeightedHomogeneous_discr_nat {w : σ → ℕ} {p : (MvPolynom
   rw [hcomp]
   exact MvPolynomial.weightedHomogeneousComponent_isWeightedHomogeneous _ _
 
-private noncomputable def universalPoly (R : Type*) [CommRing R] (n : ℕ) :
-    (MvPolynomial (Fin (n + 1)) R)[X] :=
-  ∑ i : Fin (n + 1), C (MvPolynomial.X i) * X ^ (i : ℕ)
-
-private theorem universalPoly_coeff (n k : ℕ) :
-    (universalPoly R n).coeff k =
-      if hk : k ≤ n then MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ else 0 := by
-  simp only [universalPoly, finsetSum_coeff, coeff_C_mul_X_pow]
-  split_ifs with hk
-  · rw [Finset.sum_eq_single_of_mem (⟨k, Nat.lt_succ_of_le hk⟩ : Fin (n + 1)) (Finset.mem_univ _)
-      fun i _ hi ↦ ite_eq_right fun h : k = ↑i ↦ hi (Fin.ext h.symm)]
-    exact ite_eq_left rfl
-  · exact Finset.sum_eq_zero fun i _ ↦
-      ite_eq_right fun h : k = ↑i ↦ hk (h ▸ Nat.le_of_lt_succ i.isLt)
-
-private theorem natDegree_universalPoly [Nontrivial R] (n : ℕ) :
-    (universalPoly R n).natDegree = n := by
-  refine le_antisymm ?_ ?_
-  · refine natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ ?_
-    rw [universalPoly_coeff, dite_eq_right (not_le.mpr hk)]
-  · refine le_natDegree_of_ne_zero ?_
-    rw [universalPoly_coeff, dite_eq_left le_rfl]
-    exact MvPolynomial.X_ne_zero _
-
-private theorem isWeightedHomogeneous_discr_universal [Nontrivial R] (n : ℕ) :
-    (universalPoly R n).discr.IsWeightedHomogeneous (fun i : Fin (n + 1) ↦ n - (i : ℕ))
+private theorem isWeightedHomogeneous_discr_freePoly [Nontrivial R] (n : ℕ) :
+    (freePoly R n).discr.IsWeightedHomogeneous (fun i : Fin (n + 1) ↦ n - (i : ℕ))
       (n * (n - 1)) := by
   let w : Fin (n + 1) → ℕ := fun i ↦ n - (i : ℕ)
-  have hp : ∀ k, ((universalPoly R n).coeff k).IsWeightedHomogeneous w
-      ((universalPoly R n).natDegree - k) := by
+  have hp : ∀ k, ((freePoly R n).coeff k).IsWeightedHomogeneous w
+      ((freePoly R n).natDegree - k) := by
     intro k
-    rw [natDegree_universalPoly, universalPoly_coeff]
+    rw [natDegree_freePoly, coeff_freePoly]
     split_ifs with hk
     · exact MvPolynomial.isWeightedHomogeneous_X R w ⟨k, Nat.lt_succ_of_le hk⟩
     · exact MvPolynomial.isWeightedHomogeneous_zero R w (n - k)
   have h := isWeightedHomogeneous_discr_nat hp
-  rwa [natDegree_universalPoly] at h
+  rwa [natDegree_freePoly] at h
 
 /-- **The discriminant is isobaric.** If the coefficient of `X ^ i` in `p` is weighted homogeneous
 of weight `(p.natDegree - i) • u` in an additive commutative monoid `M` for every `i`, then the
@@ -116,20 +94,15 @@ theorem isWeightedHomogeneous_discr {M : Type*} [AddCommMonoid M] {w : σ → M}
   · rw [Subsingleton.elim p.discr 0]
     exact MvPolynomial.isWeightedHomogeneous_zero R _ _
   let n := p.natDegree
-  have hP_smul : (universalPoly R n).discr.IsWeightedHomogeneous
+  have hP_smul : (freePoly R n).discr.IsWeightedHomogeneous
       (fun i : Fin (n + 1) ↦ (n - (i : ℕ)) • u) ((n * (n - 1)) • u) := by
     simpa [Function.comp_def, multiplesHom_apply] using
-      (isWeightedHomogeneous_discr_universal (R := R) n).comp_weight (multiplesHom M u)
+      (isWeightedHomogeneous_discr_freePoly (R := R) n).comp_weight (multiplesHom M u)
   let φ : MvPolynomial (Fin (n + 1)) R →ₐ[R] MvPolynomial σ R :=
     MvPolynomial.aeval fun i : Fin (n + 1) ↦ p.coeff i
-  have hmap : (universalPoly R n).map φ.toRingHom = p := by
-    rw [universalPoly, Polynomial.map_sum]
-    simp_rw [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, φ, MvPolynomial.aeval_X]
-    rw [Fin.sum_univ_eq_sum_range (fun i ↦ C (p.coeff i) * X ^ i) (n + 1)]
-    exact p.as_sum_range_C_mul_X_pow.symm
-  have hdiscr : p.discr = φ (universalPoly R n).discr := by
-    rw [← hmap, discr_map_of_natDegree_eq φ.toRingHom (by rw [hmap, natDegree_universalPoly])]
+  have hmap : (freePoly R n).map φ.toRingHom = p := map_aeval_coeff_freePoly le_rfl
+  have hdiscr : p.discr = φ (freePoly R n).discr := by
+    rw [← hmap, discr_map_of_natDegree_eq φ.toRingHom (by rw [hmap, natDegree_freePoly])]
     rfl
   rw [hdiscr]
   exact hP_smul.aeval fun i ↦ hp i
