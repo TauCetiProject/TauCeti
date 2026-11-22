@@ -250,19 +250,6 @@ theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsInt
   simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
     LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
-/-- Contracting independent prescribed characters in a direction transverse to their
-common real kernel gives a nonzero integral character. -/
-theorem IsIntegralLattice.apply_smul_sub_apply_smul_ne_zero (h : IsIntegralLattice i)
-    (f g : N →+ ℤ) (v : N)
-    (hind : LinearIndependent ℝ ![h.realCharacter f, h.realCharacter g])
-    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
-    f v • g - g v • f ≠ 0 := by
-  intro he
-  apply LinearMap.apply_smul_sub_apply_smul_ne_zero
-    (h.realCharacter f) (h.realCharacter g) hind hv
-  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ, map_zero] using
-    congrArg h.realCharacter he
-
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/
 theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+ ℤ}

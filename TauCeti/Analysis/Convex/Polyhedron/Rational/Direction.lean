@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 public import TauCeti.LinearAlgebra.Dual.Basic
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Integral equations for rational-normal polyhedral directions
@@ -120,14 +121,34 @@ theorem exists_swept_direction_normal (hP : IsRationalNormalPolyhedron h P)
     (hne : P.Nonempty)
     (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + 2 = Module.finrank ℝ V)
     (v : N) (hv : i v ∉ (affineSpan ℝ P).direction) :
-    ∃ f g : N →+ ℤ, LinearIndependent ℝ ![h.realCharacter f, h.realCharacter g] ∧
-      (affineSpan ℝ P).direction = (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ∧
-      f v • g - g v • f ≠ 0 ∧
-      (h.realCharacter (f v • g - g v • f)).ker =
-        (affineSpan ℝ P).direction ⊔ ℝ ∙ i v := by
+    ∃ m : N →+ ℤ, m ≠ 0 ∧
+      (h.realCharacter m).ker = (affineSpan ℝ P).direction ⊔ ℝ ∙ i v := by
   obtain ⟨f, g, hind, hfg⟩ := hP.exists_direction_eq_inf_ker hne hdim
   have hv' := hfg ▸ hv
-  exact ⟨f, g, hind, hfg, h.apply_smul_sub_apply_smul_ne_zero f g v hind hv', by
-    rw [h.ker_realCharacter_apply_smul_sub_apply_smul f g v hv', ← hfg]⟩
+  refine ⟨f v • g - g v • f, ?_, ?_⟩
+  · have hi : LinearIndependent ℤ ![f.toIntLinearMap, g.toIntLinearMap] := by
+      rw [LinearIndependent.pair_iffₛ]
+      intro a b a' b' he
+      have he' : (a : ℝ) • h.realCharacter f + (b : ℝ) • h.realCharacter g =
+          (a' : ℝ) • h.realCharacter f + (b' : ℝ) • h.realCharacter g := by
+        have hm : a • f + b • g = a' • f + b' • g := by
+          ext n
+          exact DFunLike.congr_fun he n
+        simpa only [map_add, map_zsmul, ← Int.cast_smul_eq_zsmul ℝ] using
+          congrArg h.realCharacter hm
+      obtain ⟨ha, hb⟩ := hind.eq_of_pair he'
+      exact ⟨Int.cast_injective ha, Int.cast_injective hb⟩
+    have hvI : v ∉ f.toIntLinearMap.ker ⊓ g.toIntLinearMap.ker := by
+      intro hmem
+      apply hv'
+      obtain ⟨hf, hg⟩ := Submodule.mem_inf.mp hmem
+      have hf' : f v = 0 := LinearMap.mem_ker.mp hf
+      have hg' : g v = 0 := LinearMap.mem_ker.mp hg
+      simp [Submodule.mem_inf, LinearMap.mem_ker, hf', hg']
+    intro he
+    apply LinearMap.apply_smul_sub_apply_smul_ne_zero f.toIntLinearMap g.toIntLinearMap hi hvI
+    ext n
+    exact DFunLike.congr_fun he n
+  · rw [h.ker_realCharacter_apply_smul_sub_apply_smul f g v hv', ← hfg]
 
 end TauCeti.IsRationalNormalPolyhedron

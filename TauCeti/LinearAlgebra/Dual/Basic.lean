@@ -8,8 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.Data.Fin.VecNotation
-import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Common kernels and dual coannihilators
@@ -51,45 +52,47 @@ end Submodule
 
 namespace LinearMap
 
-/-- Contracting two functionals at a vector outside their common kernel adds its line
-to that common kernel.
+/-- If the two evaluations are coprime, contraction adds the line of the
+evaluation vector to the common kernel, over any commutative ring.
 
 Adapted from `Mei/LinearAlgebra/Dual/Kernel.lean`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
+theorem ker_apply_smul_sub_apply_smul_of_isCoprime {R V : Type*}
+    [CommRing R] [AddCommGroup V] [Module R V]
+    (f g : V →ₗ[R] R) {v : V} (hv : IsCoprime (f v) (g v)) :
+    (f v • g - g v • f).ker = (f.ker ⊓ g.ker) ⊔ R ∙ v := by
+  have hmem (x : V) : x ∈ (f v • g - g v • f).ker ↔ f v * g x = g v * f x := by
+    simp only [mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero]
+  apply le_antisymm
+  · intro x hx
+    obtain ⟨a, b, hab⟩ := hv
+    let t := a * f x + b * g x
+    have he := (hmem x).mp hx
+    have hf : f x = t * f v := by
+      dsimp only [t]
+      linear_combination -(f x) * hab - b * he
+    have hg : g x = t * g v := by
+      dsimp only [t]
+      linear_combination -(g x) * hab + a * he
+    refine Submodule.mem_sup.mpr ⟨x - t • v, ?_, t • v,
+      Submodule.mem_span_singleton.mpr ⟨t, rfl⟩, sub_add_cancel ..⟩
+    exact Submodule.mem_inf.mpr
+      ⟨mem_ker.mpr (by simp only [map_sub, map_smul, smul_eq_mul, hf, sub_self]),
+        mem_ker.mpr (by simp only [map_sub, map_smul, smul_eq_mul, hg, sub_self])⟩
+  · refine sup_le (fun x hx => ?_) ((Submodule.span_singleton_le_iff_mem _ _).mpr ?_)
+    · obtain ⟨hf, hg⟩ := Submodule.mem_inf.mp hx
+      exact (hmem x).mpr (by simp only [mem_ker.mp hf, mem_ker.mp hg, mul_zero])
+    · exact (hmem v).mpr (mul_comm _ _)
+
+/-- Over a field, contracting at a vector outside the common kernel adds that
+vector's line to the common kernel. -/
 theorem ker_apply_smul_sub_apply_smul {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
     (f g : V →ₗ[K] K) {v : V} (hv : v ∉ f.ker ⊓ g.ker) :
     (f v • g - g v • f).ker = (f.ker ⊓ g.ker) ⊔ K ∙ v := by
-  have step (f g : V →ₗ[K] K) (hf : f v ≠ 0) :
-      (f v • g - g v • f).ker = (f.ker ⊓ g.ker) ⊔ K ∙ v := by
-    have hmem (x : V) : x ∈ (f v • g - g v • f).ker ↔ f v * g x = g v * f x := by
-      simp only [mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero]
-    have hline : K ∙ v ≤ (f v • g - g v • f).ker :=
-      (Submodule.span_singleton_le_iff_mem _ _).mpr ((hmem v).mpr (mul_comm _ _))
-    have hinter : f.ker ⊓ (f v • g - g v • f).ker = f.ker ⊓ g.ker := by
-      ext x
-      constructor
-      · intro hx
-        obtain ⟨hfx, hx⟩ := Submodule.mem_inf.mp hx
-        have hzero : f v * g x = 0 := by
-          simpa only [mem_ker.mp hfx, mul_zero] using (hmem x).mp hx
-        exact Submodule.mem_inf.mpr ⟨hfx, mem_ker.mpr ((mul_eq_zero.mp hzero).resolve_left hf)⟩
-      · intro hx
-        obtain ⟨hfx, hgx⟩ := Submodule.mem_inf.mp hx
-        exact Submodule.mem_inf.mpr ⟨hfx, (hmem x).mpr (by
-          simp only [mem_ker.mp hfx, mem_ker.mp hgx, mul_zero])⟩
-    calc
-      _ = (K ∙ v ⊔ f.ker) ⊓ (f v • g - g v • f).ker := by
-        rw [span_singleton_sup_ker_eq_top f hf, top_inf_eq]
-      _ = K ∙ v ⊔ f.ker ⊓ (f v • g - g v • f).ker := sup_inf_assoc_of_le _ hline
-      _ = _ := by rw [hinter, sup_comm]
-  by_cases hf : f v = 0
-  · have hg : g v ≠ 0 := fun hg => hv (Submodule.mem_inf.mpr
-      ⟨LinearMap.mem_ker.mpr hf, LinearMap.mem_ker.mpr hg⟩)
-    have hswap : g v • f - f v • g = -(f v • g - g v • f) := (neg_sub _ _).symm
-    have hs := step g f hg
-    rw [hswap, ker_neg, inf_comm] at hs
-    exact hs
-  · exact step f g hf
+  apply ker_apply_smul_sub_apply_smul_of_isCoprime
+  rw [Semifield.isCoprime_iff]
+  by_contra! h
+  exact hv (Submodule.mem_inf.mpr ⟨mem_ker.mpr h.1, mem_ker.mpr h.2⟩)
 
 /-- Contracting independent functionals at a vector outside their common kernel
 is nonzero. The coefficient ring need not be a field or a domain. -/
