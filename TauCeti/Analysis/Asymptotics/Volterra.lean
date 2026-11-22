@@ -262,8 +262,8 @@ private lemma integral_weight_smul_le {F : ℝ → E} {x C : ℝ} (k : ℕ) (hx 
         have hQψ : 0 ≤ Q v * ‖ψ v‖ := mul_nonneg (hQ0 v (hx.trans hv)) (norm_nonneg _)
         rw [norm_smul, ← mul_assoc]
         calc Q v * ‖ψ v‖ * ‖F v‖
-            ≤ Q v * ‖ψ v‖ * (C * P v * (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) :=
-              mul_le_mul_of_nonneg_left (hFle v hv) hQψ
+            ≤ Q v * ‖ψ v‖ * (C * P v * (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) := by
+              grw [hFle v hv]
           _ = _ := by ring
     _ = C * (∫ u in Ioi x, P u * Q u * ‖ψ u‖) ^ (k + 1) / (k + 1)! := by
         rw [integral_const_mul, (hΨ x hx).integral_Ioi_mul_pow_integral_Ioi k,
@@ -305,9 +305,9 @@ private lemma picardTerm_spec (k : ℕ) :
       calc ‖picardTerm K J ψ k v‖
           ≤ P v * (∫ u in Ioi v, Q u * ‖J u‖) * ((∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) :=
             hle v hva
-        _ ≤ P v * Φx * ((∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) :=
-            mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hΦle (hP0 v hva))
-              (div_nonneg (pow_nonneg hΨv k) (Nat.cast_nonneg _))
+        _ ≤ P v * Φx * ((∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) := by
+            have := hP0 v hva
+            grw [hΦle]
         _ = _ := by ring
     refine (norm_integral_kernel_smul_le hKle hx (hFint x hx)).trans ?_
     calc P x * ∫ v in Ioi x, Q v * ‖ψ v • picardTerm K J ψ k v‖
@@ -492,7 +492,7 @@ private lemma integrableOn_weight_add_of_isBigO (hJ : ContinuousOn J (Ioi a))
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
   have hQv := hQ0 v (hx.trans hv)
   rw [Real.norm_of_nonneg (mul_nonneg hQv (norm_nonneg _)), Pi.add_apply, ← mul_add]
-  exact mul_le_mul_of_nonneg_left (norm_add_le _ _) hQv
+  grw [norm_add_le]
 
 /-- **Volterra integral equations, uniqueness.** Under the hypotheses of
 `exists_volterra_solution`, two solutions of `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that
@@ -530,7 +530,8 @@ theorem volterra_solution_unique (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧
     | zero =>
       intro v hv
       have hva : a < v := hx₀.trans_le hv
-      rw [hd v hva, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one, mul_one, mul_comm C]
+      suffices ‖h₁ v - h₂ v‖ ≤ P v * C by simpa [mul_comm C] using this
+      rw [hd v hva]
       refine (norm_integral_kernel_smul_le hKle hva (hdint v hva)).trans
         (mul_le_mul_of_nonneg_left (setIntegral_mono_set (hdint x₀ hx₀) ?_
           (Ioi_subset_Ioi hv).eventuallySubset) (hP0 v hva))
@@ -613,14 +614,15 @@ private lemma norm_picardTerm_le_pow_succ
     ‖picardTerm K J ψ k x‖ ≤ (∫ v in Ioi x, P₀ * Q v * ‖ψ v‖) ^ (k + 1) / (k + 1)! := by
   induction k generalizing x with
   | zero =>
-    rw [zero_add, pow_one, Nat.factorial_one, Nat.cast_one, div_one, picardTerm]
+    suffices ‖picardTerm K J ψ 0 x‖ ≤ ∫ v in Ioi x, P₀ * Q v * ‖ψ v‖ by simpa using this
+    rw [picardTerm]
     refine (norm_integral_kernel_smul_le (P := fun _ ↦ P₀) hKle hx (hΦ x hx)).trans ?_
     rw [← integral_const_mul]
     refine setIntegral_mono_on ((hΦ x hx).const_mul P₀) (hΨ x hx) measurableSet_Ioi
       fun v (hv : x < v) ↦ ?_
+    have := hQ0 v (hx.trans hv)
     rw [mul_assoc]
-    exact mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left (hJψ v (hx.trans hv)) (hQ0 v (hx.trans hv))) hP₀.le
+    grw [hJψ v (hx.trans hv)]
   | succ k ih =>
     have hFint := integrableOn_weight_smul_picardTerm (P := fun _ ↦ P₀) hK hJ hψ
       continuousOn_const hQ (fun _ _ ↦ hP₀.le) hQ0 hKle hΦ hΨ k hx
@@ -663,7 +665,7 @@ theorem norm_volterra_solution_le_exp_sub_one [CompleteSpace E]
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
     have hQv := hQ0 v (hx.trans hv)
     rw [Real.norm_of_nonneg (mul_nonneg hQv (norm_nonneg _))]
-    exact mul_le_mul_of_nonneg_left (hJψ v (hx.trans hv)) hQv
+    grw [hJψ v (hx.trans hv)]
   have hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P₀ * Q v * ‖ψ v‖) (Ioi x) := fun x hx ↦ by
     have := (hψint x hx).const_mul P₀
     simp only [← mul_assoc] at this
@@ -758,7 +760,7 @@ private lemma integral_Ioc_indicator_kernel_smul [CompleteSpace E]
         hmem).smul continuousOn_const))
   calc _ = ∫ s in Ioc c y, (Iic v).indicator (fun s ↦ K₁ s v • F v) s := by
         refine setIntegral_congr_fun measurableSet_Ioc fun s hs ↦ ?_
-        simp only [indicator, mem_ofPred_eq, mem_Iic, hc.trans hs.1, true_and]
+        simp only [indicator_apply, mem_ofPred_eq, mem_Iic, hc.trans hs.1, true_and]
     _ = K (y ⊓ v) v • F v - K c v • F v := by
         rw [setIntegral_indicator measurableSet_Iic, Ioc_inter_Iic,
           ← intervalIntegral.integral_of_le hm, hFTC]
@@ -790,7 +792,7 @@ private lemma integral_Ioc_integral_kernel_smul [CompleteSpace E]
         have hcs : c < s := hs.1
         have hind (v : ℝ) : {p : ℝ × ℝ | a < p.1 ∧ p.1 ≤ p.2}.indicator
             (fun p ↦ K₁ p.1 p.2 • F p.2) (s, v) = (Ici s).indicator (fun v ↦ K₁ s v • F v) v := by
-          simp only [indicator, mem_ofPred_eq, mem_Ici, hc.trans hcs, true_and]
+          simp only [indicator_apply, mem_ofPred_eq, mem_Ici, hc.trans hcs, true_and]
         simp only [hind]
         rw [setIntegral_indicator measurableSet_Ici, inter_eq_right.2 (Ici_subset_Ioi.2 hcs),
           integral_Ici_eq_integral_Ioi]
@@ -876,7 +878,7 @@ theorem contDiffOn_volterra_solution [CompleteSpace E]
     (h_isBigO : h =O[atTop] P) : ContDiffOn ℝ 1 h (Ioi a) := by
   have hd {x : ℝ} (hx : x ∈ Ioi a) := hasDerivAt_volterra_solution hK hJ hψ hQ hP0 hQ0 hKle hΦ hΨ
     hKdiag hK₁ hKderiv hP₁ hK₁le h_cont h_eq h_isBigO hx
-  rw [show (1 : WithTop ℕ∞) = 0 + 1 from rfl, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioi,
+  rw [← zero_add (1 : WithTop ℕ∞), contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioi,
     contDiffOn_zero]
   refine ⟨fun x hx ↦ (hd hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   exact (continuousOn_integral_kernel_smul (F := fun v ↦ J v + ψ v • h v) hK₁ hK₁le hP₁ hQ0
@@ -933,10 +935,10 @@ theorem norm_deriv_volterra_solution_le [CompleteSpace E]
       antitoneOn_integral_Ioi (forcing_weight_nonneg hQ0 le_rfl) hΦ hx' hva hv.le
     rw [norm_smul, ← mul_assoc]
     calc Q v * ‖ψ v‖ * ‖h v‖
-        ≤ Q v * ‖ψ v‖ * (P v * Φx * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) :=
-          mul_le_mul_of_nonneg_left (hhv.trans (mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_left hΦle (hP0 v hva)) (Real.exp_pos _).le))
-            (mul_nonneg (hQ0 v hva) (norm_nonneg _))
+        ≤ Q v * ‖ψ v‖ * (P v * Φx * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) := by
+          have := hP0 v hva
+          have := hQ0 v hva
+          grw [hhv, hΦle]
       _ = Φx * (P v * Q v * ‖ψ v‖ * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) := by ring
   calc _ ≤ Φx + Φx * (Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖) - 1) :=
         by linarith
