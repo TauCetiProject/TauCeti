@@ -180,6 +180,13 @@ theorem boundary_boundary (n : ℕ) : boundary X R M n ∘ₗ boundary X R M (n 
     ← pow_add, Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel
 
+/-- The boundary with module coefficients commutes with push-forward along a continuous map. -/
+theorem lmapDomain_comp_boundary (f : C(X, Y)) (n : ℕ) :
+    lmapDomain M R f.comp ∘ₗ boundary X R M n = boundary Y R M n ∘ₗ lmapDomain M R f.comp := by
+  refine lhom_ext fun c a ↦ ?_
+  simp only [LinearMap.comp_apply, boundary_single, map_sum, map_zsmul, map_sub, lmapDomain_apply,
+    mapDomain_single, face_comp]
+
 end Boundary
 
 section RingBoundary
