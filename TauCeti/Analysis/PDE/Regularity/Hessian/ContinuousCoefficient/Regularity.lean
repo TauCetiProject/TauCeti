@@ -270,13 +270,10 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_continuousOn
   have hBK : ball x₀ ρ ⊆ K :=
     ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith : ρ ≤ 2 * ρ))
   -- A cutoff `ζ`, equal to `1` on `closedBall x₀ ρ` and supported in `B(x₀, 2ρ)`.
-  obtain ⟨zeta, hzeta, hrange, hone, hcpt, hts⟩ :=
+  obtain ⟨zeta, hzeta, -, hone, hcpt, hts⟩ :=
     (isCompact_closedBall x₀ ρ).exists_contDiff_cutoff isOpen_ball
       (closedBall_subset_ball (by linarith : ρ < 2 * ρ))
-  have hzetaTop : MemLp zeta ∞ volume :=
-    memLp_top_of_bound hzeta.continuous.aestronglyMeasurable 1 (ae_of_all _ fun x ↦ by
-      obtain ⟨h₀, h₁⟩ := hrange (mem_range_self x)
-      exact (Real.norm_eq_abs _).trans_le (abs_le.2 ⟨by linarith, h₁⟩))
+  have hzetaTop : MemLp zeta ∞ volume := hzeta.continuous.memLp_top_of_hasCompactSupport hcpt _
   obtain ⟨w, hwv, hwD, hR⟩ := exists_wkp_value_ae_eq_indicator_mul hp_top hKΩ hzeta hcpt
     (hts.trans ball_subset_closedBall) u
   -- The whole-space integrability gain for `w = ζ u` and the coefficient `A + 1_K (a - A)`.
