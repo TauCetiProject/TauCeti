@@ -16,6 +16,7 @@ public import Mathlib.Algebra.Star.Unitary
 -- `QuadraticMap.comp` and `QuadraticMap.weightedSumSquares`, which is why that file is not
 -- imported again here.
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # The norm form of a quaternion algebra
@@ -52,6 +53,8 @@ question about `⟨1, -a, -b, ab⟩`.
 * `QuaternionAlgebra.equivalent_normForm_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
   diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
+* `QuaternionAlgebra.posDef_normForm_of_neg`: over a strictly ordered field, the norm form of
+  `ℍ[K,a,b]` with `a < 0` and `b < 0` is positive definite, as for the Hamilton quaternions.
 * `QuaternionAlgebra.equivalent_pureNormForm_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
   is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.
@@ -225,6 +228,20 @@ theorem equivalent_pureNormForm_weightedSumSquares :
   ⟨pureNormFormIsometryEquivWeightedSumSquares a b⟩
 
 end Diagonal
+
+/-- **Definite quaternion algebras.** Over a strictly ordered commutative ring, the norm form
+`⟨1, -a, -b, ab⟩` of `ℍ[R,a,b]` is positive definite when `a < 0` and `b < 0`; the Hamilton
+quaternions `ℍ[R,-1,-1]` are the basic example. -/
+theorem posDef_normForm_of_neg [LinearOrder R] [IsStrictOrderedRing R] {a b : R} (ha : a < 0)
+    (hb : b < 0) : (normForm a 0 b).PosDef := by
+  have hw : ∀ i, 0 < ![(1 : R), -a, -b, a * b] i := by
+    intro i
+    fin_cases i <;> simp [ha, hb, mul_pos_of_neg_of_neg ha hb]
+  convert ((QuadraticMap.posDef_weightedSumSquares_iff _).mpr hw).comp
+    (normFormIsometryEquivWeightedSumSquares a b).toLinearMap
+    (normFormIsometryEquivWeightedSumSquares a b).injective
+  ext x
+  exact ((normFormIsometryEquivWeightedSumSquares a b).map_app x).symm
 
 end QuaternionAlgebra
 
