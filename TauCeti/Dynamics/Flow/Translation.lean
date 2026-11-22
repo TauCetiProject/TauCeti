@@ -58,6 +58,8 @@ stabilizers. Only continuity is used; no equation is involved.
   times `t` with `Function.Periodic u (t • v)`.
 * `Function.Periodic.eq_of_tendsto_atBot`: a map on `ℝ × Y` with a constant end at `-∞` and a
   period with nonzero first component is constant.
+* `Function.Periodic.eq_or_eq_of_tendsto`: a map on `ℝ × Y` with a period `(a, 0)`, `a ≠ 0`, takes
+  on each slice only its limits at the two ends.
 * `Function.Periodic.exists_periods_translationFlow_eq_zmultiples_inv`: the time-rotation periods
   of a cylinder which is not time-invariant are `(1 / n) ℤ`.
 * `Function.Periodic.exists_periodic_iff_of_tendsto_atBot`: the periods of a cylinder with a
@@ -114,6 +116,25 @@ theorem fst_eq_zero_of_tendsto_atBot (h : Periodic u c) (hu : Tendsto u (atBot �
   by_contra hc
   obtain ⟨θ, hθ⟩ := hθ
   exact hθ fun z ↦ by rw [h.eq_of_tendsto_atBot hc hu, h.eq_of_tendsto_atBot hc hu]
+
+/-- **A horizontal period moves every point to an end.** If `u : ℝ × Y → X` has a period `(a, 0)`
+with `a ≠ 0`, and on the slice through `y` it tends to `xm` and `xp` as the first coordinate tends
+to `-∞` and `+∞`, then `u (s, y)` is `xm` or `xp` for every `s`. -/
+theorem eq_or_eq_of_tendsto {a : ℝ} (h : Periodic u (a, 0)) (ha : a ≠ 0) {y : Y} {xm xp : X}
+    (hm : Tendsto (fun s ↦ u (s, y)) atBot (𝓝 xm)) (hp : Tendsto (fun s ↦ u (s, y)) atTop (𝓝 xp))
+    (s : ℝ) : u (s, y) = xm ∨ u (s, y) = xp := by
+  have hslice : Periodic (fun s ↦ u (s, y)) a := fun s ↦ by
+    simpa [Prod.mk_add_mk] using h (s, y)
+  -- Iterate the period towards the end that it points to.
+  rcases ha.lt_or_gt with ha | ha
+  · refine .inl (hslice.eq_of_tendsto_of_tendsto_add_nsmul hm ?_)
+    simp only [nsmul_eq_mul]
+    exact tendsto_atBot_add_const_left _ _
+      (Tendsto.atTop_mul_const_of_neg ha tendsto_natCast_atTop_atTop)
+  · refine .inr (hslice.eq_of_tendsto_of_tendsto_add_nsmul hp ?_)
+    simp only [nsmul_eq_mul]
+    exact tendsto_atTop_add_const_left _ _
+      (Tendsto.atTop_mul_const ha tendsto_natCast_atTop_atTop)
 
 end Function.Periodic
 

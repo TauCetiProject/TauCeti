@@ -224,74 +224,6 @@ section Dense
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ}
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The set of pairs `(z, s)` such that `(s, z.2)` lies in `D`, at distance at least `ε` from `z`
-on its slice, with the same value `u(s, z.2) = u z`, is closed. -/
-private theorem isClosed_setOf_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
-    (hD : IsClosed D) (ε : ℝ) :
-    IsClosed {q : (ℝ × ℝ) × ℝ | (q.2, q.1.2) ∈ D ∧ ε ≤ |q.2 - q.1.1| ∧ u (q.2, q.1.2) = u q.1} := by
-  have hc : Continuous fun q : (ℝ × ℝ) × ℝ ↦ (q.2, q.1.2) := by fun_prop
-  exact (hD.preimage hc).inter ((isClosed_le continuous_const
-    (by fun_prop : Continuous fun q : (ℝ × ℝ) × ℝ ↦ |q.2 - q.1.1|)).inter
-    (isClosed_eq (hu.comp hc) (hu.comp continuous_fst)))
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- For a compact set `D`, the points `z` with a partner `s` on their slice, `(s, z.2) ∈ D`, at
-distance at least `ε` from `z` and with `u(s, z.2) = u z`, form a closed set. -/
-private theorem isClosed_setOf_exists_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
-    (hD : IsCompact D) (ε : ℝ) :
-    IsClosed {z : ℝ × ℝ | ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z} := by
-  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_)
-  have h := (hD.image continuous_fst).eventually_forall_of_forall_eventually (x₀ := z)
-    (P := fun z' s ↦ ¬((s, z'.2) ∈ D ∧ ε ≤ |s - z'.1| ∧ u (s, z'.2) = u z')) fun s _ ↦
-      (isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds fun hq ↦ hz ⟨s, hq⟩
-  filter_upwards [h] with z' hz' ⟨s, hs⟩
-  exact hz' s ⟨_, hs.1, rfl⟩ hs
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **Continuity of a unique slice partner.** Let `D` be compact with `(s, t) ↦ (u(s, t), t)`
-injective on `D`, and let `φ` pick for every `z` of an open set `U` a partner on its slice,
-`(φ z, z.2) ∈ D`, at distance at least `ε` from `z`, with `u(φ z, z.2) = u z`. Then `φ` is
-continuous on `U`. -/
-private theorem continuousAt_of_forall_slicePartner (hu : Continuous u) {D U : Set (ℝ × ℝ)}
-    {ε : ℝ} {φ : ℝ × ℝ → ℝ} (hD : IsCompact D) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
-    (hU : IsOpen U) (hφ : ∀ z ∈ U, (φ z, z.2) ∈ D ∧ ε ≤ |φ z - z.1| ∧ u (φ z, z.2) = u z)
-    {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ U) : ContinuousAt φ z₀ := by
-  have hmem : ∀ᶠ z in 𝓝 z₀, φ z ∈ Prod.fst '' D :=
-    eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ ⟨(φ z, z.2), (hφ z hz).1, rfl⟩
-  refine (hD.image continuous_fst).tendsto_nhds_of_unique_mapClusterPt hmem fun s _ hs ↦ ?_
-  -- A cluster value of `φ` at `z₀` is a partner of `z₀`, since the partner condition is closed.
-  have hs₀ : (s, z₀.2) ∈ D ∧ ε ≤ |s - z₀.1| ∧ u (s, z₀.2) = u z₀ := by
-    by_contra hns
-    obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1
-      ((isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds
-        (show (z₀, s) ∈ _ from hns))
-    obtain ⟨z, hzB, hzA, hzU⟩ := ((mapClusterPt_iff_frequently.1 hs B hB).and_eventually
-      (inter_mem hA (hU.mem_nhds hz₀))).exists
-    exact hAB (show (z, φ z) ∈ A ×ˢ B from ⟨hzA, hzB⟩) (hφ z hzU)
-  -- The partner in `D` is unique.
-  exact congrArg Prod.fst (hinj hs₀.1 (hφ z₀ hz₀).1
-    (Prod.ext (hs₀.2.2.trans (hφ z₀ hz₀).2.2.symm) rfl))
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **A horizontal period moves every point to an end.** If `u` converges uniformly to `xm` and
-`xp` as `s → -∞` and `s → +∞` and has a period `(c, 0)` with `c ≠ 0`, then at every point
-`u(s, t)` is `xm(t)` or `xp(t)`. -/
-private theorem eq_or_eq_of_periodic (hm : TendstoUniformly (fun s t ↦ u (s, t)) xm atBot)
-    (hp : TendstoUniformly (fun s t ↦ u (s, t)) xp atTop) {c : ℝ} (hc : c ≠ 0)
-    (hper : Periodic u (c, 0)) (z : ℝ × ℝ) : u z = xm z.2 ∨ u z = xp z.2 := by
-  have hslice : Periodic (fun s ↦ u (s, z.2)) c := fun s ↦ by
-    simpa [Prod.mk_add_mk] using hper (s, z.2)
-  rcases hc.lt_or_gt with hc | hc
-  · refine .inl (hslice.eq_of_tendsto_of_tendsto_add_nsmul (hm.tendsto_at z.2) ?_)
-    simp only [nsmul_eq_mul]
-    exact tendsto_atBot_add_const_left _ _
-      (Tendsto.atTop_mul_const_of_neg hc tendsto_natCast_atTop_atTop)
-  · refine .inr (hslice.eq_of_tendsto_of_tendsto_add_nsmul (hp.tendsto_at z.2) ?_)
-    simp only [nsmul_eq_mul]
-    exact tendsto_atTop_add_const_left _ _
-      (Tendsto.atTop_mul_const hc tendsto_natCast_atTop_atTop)
-
 /-- **The derivative of a slice partner.** Let `u` solve the Floer equation
 `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` for cylindrical data at `z₀` and at `w₀ = (φ z₀, z₀.2)`, and
 let `u(φ(s, t), t) = u(s, t)` near `z₀`. If `φ` is differentiable at `z₀`, `u` is differentiable at
@@ -569,7 +501,7 @@ theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2
   obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slicePartner hJ hJJ hH
     (hu.of_le (by norm_num)) hF hU₀ hU₀ne hD hDs hinj hε hpart₀
   -- A period `(c, 0)` with `c ≠ 0` moves `z₀` to an end, where `u` is an asymptotic orbit.
-  exact (eq_or_eq_of_periodic hm hp hc hper z₀).elim hz₀G.2.1 hz₀G.2.2
+  exact (hper.eq_or_eq_of_tendsto hc (hm.tendsto_at _) (hp.tendsto_at _) _).elim hz₀G.2.1 hz₀G.2.2
 
 end Dense
 

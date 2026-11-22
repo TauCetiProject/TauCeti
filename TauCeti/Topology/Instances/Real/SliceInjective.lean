@@ -19,7 +19,14 @@ slice with its value (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`). T
 the competitors to a compact interval, and a compactness argument separates them uniformly
 nearby.
 
-This is the topological part of the openness of the regular points of Floer trajectories.
+A *partner* of `z` on its slice is a point `(s, z.2)` with `u(s, z.2) = u z`. For a compact set
+`D`, the points with a partner in `D` at distance at least `ε` form a closed set
+(`TauCeti.isClosed_setOf_exists_slicePartner`). If moreover `(s, t) ↦ (u(s, t), t)` is injective
+on `D`, a choice of such partners on an open set is continuous
+(`TauCeti.continuousAt_of_forall_slicePartner`).
+
+This is the topological part of the openness and density of the regular points of Floer
+trajectories.
 -/
 
 public section
@@ -81,5 +88,53 @@ theorem eventually_forall_slice_eq_imp_eq_of_tendsto {z₀ : ℝ × ℝ} (hu : C
     rcases le_or_gt Sp s with hle' | hlt'
     · exact h₂ s (hSp s hle') hs
     · exact h₃ s ⟨⟨hlt.le, hlt'.le⟩, hsδ⟩ hs
+
+/-! ### Partners on a slice -/
+
+/-- The set of pairs `(z, s)` such that `(s, z.2)` lies in `D`, at distance at least `ε` from `z`
+on its slice, with the same value `u(s, z.2) = u z`, is closed. -/
+theorem isClosed_setOf_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
+    (hD : IsClosed D) (ε : ℝ) :
+    IsClosed {q : (ℝ × ℝ) × ℝ | (q.2, q.1.2) ∈ D ∧ ε ≤ |q.2 - q.1.1| ∧ u (q.2, q.1.2) = u q.1} := by
+  have hc : Continuous fun q : (ℝ × ℝ) × ℝ ↦ (q.2, q.1.2) := by fun_prop
+  exact (hD.preimage hc).inter ((isClosed_le continuous_const
+    (by fun_prop : Continuous fun q : (ℝ × ℝ) × ℝ ↦ |q.2 - q.1.1|)).inter
+    (isClosed_eq (hu.comp hc) (hu.comp continuous_fst)))
+
+/-- For a compact set `D`, the points `z` with a partner `s` on their slice, `(s, z.2) ∈ D`, at
+distance at least `ε` from `z` and with `u(s, z.2) = u z`, form a closed set. -/
+theorem isClosed_setOf_exists_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (ε : ℝ) :
+    IsClosed {z : ℝ × ℝ | ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z} := by
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_)
+  have h := (hD.image continuous_fst).eventually_forall_of_forall_eventually (x₀ := z)
+    (P := fun z' s ↦ ¬((s, z'.2) ∈ D ∧ ε ≤ |s - z'.1| ∧ u (s, z'.2) = u z')) fun s _ ↦
+      (isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds fun hq ↦ hz ⟨s, hq⟩
+  filter_upwards [h] with z' hz' ⟨s, hs⟩
+  exact hz' s ⟨_, hs.1, rfl⟩ hs
+
+/-- **Continuity of a unique slice partner.** Let `D` be compact with `(s, t) ↦ (u(s, t), t)`
+injective on `D`, and let `φ` pick for every `z` of an open set `U` a partner on its slice,
+`(φ z, z.2) ∈ D`, at distance at least `ε` from `z`, with `u(φ z, z.2) = u z`. Then `φ` is
+continuous on `U`. -/
+theorem continuousAt_of_forall_slicePartner (hu : Continuous u) {D U : Set (ℝ × ℝ)}
+    {ε : ℝ} {φ : ℝ × ℝ → ℝ} (hD : IsCompact D) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
+    (hU : IsOpen U) (hφ : ∀ z ∈ U, (φ z, z.2) ∈ D ∧ ε ≤ |φ z - z.1| ∧ u (φ z, z.2) = u z)
+    {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ U) : ContinuousAt φ z₀ := by
+  have hmem : ∀ᶠ z in 𝓝 z₀, φ z ∈ Prod.fst '' D :=
+    eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ ⟨(φ z, z.2), (hφ z hz).1, rfl⟩
+  refine (hD.image continuous_fst).tendsto_nhds_of_unique_mapClusterPt hmem fun s _ hs ↦ ?_
+  -- A cluster value of `φ` at `z₀` is a partner of `z₀`, since the partner condition is closed.
+  have hs₀ : (s, z₀.2) ∈ D ∧ ε ≤ |s - z₀.1| ∧ u (s, z₀.2) = u z₀ := by
+    by_contra hns
+    obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1
+      ((isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds
+        (Set.mem_compl hns))
+    obtain ⟨z, hzB, hzA, hzU⟩ := ((mapClusterPt_iff_frequently.1 hs B hB).and_eventually
+      (inter_mem hA (hU.mem_nhds hz₀))).exists
+    exact hAB (Set.mk_mem_prod hzA hzB) (hφ z hzU)
+  -- The partner in `D` is unique.
+  exact congrArg Prod.fst (hinj hs₀.1 (hφ z₀ hz₀).1
+    (Prod.ext (hs₀.2.2.trans (hφ z₀ hz₀).2.2.symm) rfl))
 
 end TauCeti
