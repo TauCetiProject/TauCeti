@@ -105,7 +105,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
-* `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_le_mul_exp_arg`, `Complex.norm_cpow_le_mul_exp` --
+  `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (|w.arg| * |d.im|) ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
@@ -768,6 +769,18 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
     (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])]
   congr 1
   ring
+
+/-- For any complex base `w` and exponent `d`,
+`‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (|w.arg| * |d.im|)`. -/
+theorem norm_cpow_le_mul_exp_arg (w d : ℂ) :
+    ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (|w.arg| * |d.im|) := by
+  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
+    _ = ‖w‖ ^ d.re * Real.exp (-(w.arg * d.im)) := by rw [div_eq_mul_inv, Real.exp_neg]
+    _ ≤ ‖w‖ ^ d.re * Real.exp (|w.arg| * |d.im|) := by
+        refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_)
+          (Real.rpow_nonneg (norm_nonneg w) _)
+        rw [← abs_mul]
+        exact neg_le_abs _
 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
 theorem norm_cpow_le_mul_exp (w d : ℂ) :

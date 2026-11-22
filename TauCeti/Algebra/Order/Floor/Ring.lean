@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Order.Interval.Finset.Nat
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Int.Interval
@@ -34,6 +35,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
+* `TauCeti.mem_Ico_ceil_iff`, `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in
+  `Finset.Ico ⌈a⌉₊ ⌈b⌉₊` and `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as `(n : R) ∈ [a, b)` and `-(n : R) ∈ (a, b]`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -41,6 +44,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   than `δ` in each entry, every family with entries in `[-R, R]`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
+* `TauCeti.exists_pos_lt_abs_add_natCast`: any element avoiding `-ℕ` stays a positive distance
+  away from all `-n` (`n : ℕ`).
 -/
 
 public section
@@ -66,6 +71,53 @@ theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder
     [IsStrictOrderedRing R] [FloorSemiring R] (n : ℕ) {a : R} :
     (n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1 := by
   rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
+
+/-- In a linearly ordered semiring with a natural ceiling, `n ∈ [⌈a⌉₊, ⌈b⌉₊)` if and only if
+`(n : R) ∈ [a, b)`. -/
+theorem mem_Ico_ceil_iff {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]
+    {a b : R} {n : ℕ} :
+    n ∈ Finset.Ico ⌈a⌉₊ ⌈b⌉₊ ↔ (n : R) ∈ Set.Ico a b := by
+  rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, Set.mem_Ico]
+
+/-- In a linearly ordered ring with a natural ceiling, `n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if
+`-(n : R) ∈ (a, b]`. -/
+theorem mem_Ico_ceil_neg_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorSemiring R] {a b : R} {n : ℕ} :
+    n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioc a b := by
+  rw [mem_Ico_ceil_iff, Set.mem_Ico, Set.mem_Ioc, neg_le, lt_neg, and_comm]
+
+/-- In a linearly ordered field with a natural floor, any element `x` avoiding the nonpositive
+integers `-ℕ` stays at a positive uniform distance `ε > 0` from all `-n` (`n : ℕ`). -/
+theorem exists_pos_lt_abs_add_natCast {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [FloorSemiring K] {x : K} (hx : ∀ n : ℕ, x ≠ -n) :
+    ∃ ε : K, 0 < ε ∧ ∀ n : ℕ, ε < |x + n| := by
+  rcases lt_or_ge 0 x with hx0 | hx0
+  · refine ⟨x / 2, half_pos hx0, fun n ↦ ?_⟩
+    rw [abs_of_pos (by linarith [n.cast_nonneg (α := K)])]
+    linarith [n.cast_nonneg (α := K)]
+  · set N : ℕ := ⌊-x⌋₊
+    have hlo : -((N + 1 : ℕ) : K) < x := by
+      have hlt : -x < (N : K) + 1 := Nat.lt_floor_add_one (-x)
+      push_cast
+      linarith
+    have hhi : x < -(N : K) :=
+      lt_of_le_of_ne (le_neg.mp (Nat.floor_le (neg_nonneg.mpr hx0))) (hx N)
+    set ε : K := min (x + ((N + 1 : ℕ) : K)) (-(N : K) - x) / 2
+    have hε : 0 < ε := half_pos (lt_min (by linarith) (by linarith))
+    refine ⟨ε, hε, fun n ↦ ?_⟩
+    rcases le_or_gt n N with hn | hn
+    · have hle : (n : K) ≤ N := Nat.cast_le.mpr hn
+      have h1 : 2 * ε ≤ -(N : K) - x := by
+        dsimp [ε]
+        linarith [min_le_right (x + ((N + 1 : ℕ) : K)) (-(N : K) - x)]
+      have hneg : x + (n : K) < -ε := by linarith
+      exact (lt_neg.mp hneg).trans_le (neg_le_abs _)
+    · have hle : ((N + 1 : ℕ) : K) ≤ n := Nat.cast_le.mpr hn
+      have h1 : 2 * ε ≤ x + ((N + 1 : ℕ) : K) := by
+        dsimp [ε]
+        linarith [min_le_left (x + ((N + 1 : ℕ) : K)) (-(N : K) - x)]
+      have hpos : ε < x + (n : K) := by linarith
+      exact hpos.trans_le (le_abs_self _)
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 

@@ -118,6 +118,8 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.exists_mem_Ioo_zero_one_sub_ne_intCast`: every element `r` of a linearly ordered field
+  admits `δ ∈ (0, 1)` such that `r - δ` is not an integer.
 -/
 
 public section
@@ -491,6 +493,24 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- For any element `r` of a linearly ordered field, there exists `δ ∈ (0, 1)` such that
+`r - δ` is not an integer. -/
+theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (r : K) :
+    ∃ δ ∈ Set.Ioo (0 : K) 1, ∀ m : ℤ, r - δ ≠ m := by
+  by_cases h : ∃ m : ℤ, r = (m : K) + 1 / 2
+  · obtain ⟨m₀, hm₀⟩ := h
+    have h14 : (1 / 4 : K) < 1 := by linarith [zero_lt_one' K]
+    refine ⟨1 / 4, ⟨by positivity, h14⟩, fun m hm ↦ ?_⟩
+    have hdiff : ((m - m₀ : ℤ) : K) = 1 / 4 := by push_cast; linarith
+    have h1 : (0 : ℤ) < m - m₀ :=
+      Int.cast_lt (R := K).mp (by rw [Int.cast_zero, hdiff]; positivity)
+    have h2 : m - m₀ < (1 : ℤ) :=
+      Int.cast_lt (R := K).mp (by rw [Int.cast_one, hdiff]; exact h14)
+    omega
+  · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
+    exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
 
 end TauCeti
 
