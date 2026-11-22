@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import TauCeti.Algebra.Module.ZMod.Annihilator
@@ -62,7 +63,10 @@ variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
   (S : Submodule (ZMod n) M) (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
 
 omit [NeZero n] in
-private theorem ker_compl₂_toAddSubgroup_eq_orthogonalBilin
+/-- The kernel of the restricted flipped biadditive pairing attached to a `ℤ/n`-bilinear form
+`P : A →ₗ[ZMod n] B' →ₗ[ZMod n] ZMod n` and a submodule `S ≤ A` has the same carrier as
+`S.orthogonalBilin P`. -/
+theorem ker_compl₂_toAddSubgroup_eq_orthogonalBilin
     {A B' : Type*} [AddCommGroup A] [AddCommGroup B'] [Module (ZMod n) A] [Module (ZMod n) B']
     (S : Submodule (ZMod n) A) (P : A →ₗ[ZMod n] B' →ₗ[ZMod n] ZMod n) :
     (((AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp

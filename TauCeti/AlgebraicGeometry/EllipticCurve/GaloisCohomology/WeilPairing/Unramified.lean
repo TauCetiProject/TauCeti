@@ -26,8 +26,7 @@ nonarchimedean local field, the general isotropy/orthogonality statements live i
 Over a number field, combined with `TauCeti.Isogeny.range_kummerMap_eq_unramifiedKerCohomology`,
 this identifies the local conditions of `Sel_φ` and `Sel_φ̂` at finite places away from `deg φ`
 where the base-changed equations of both curves are integral over `𝒪[K_v]` with elliptic integral
-models (unit discriminant) — and by transport along a change of variables, at any finite place of
-good reduction for both curves away from `deg φ` — with a pair of exact mutual annihilators in
+models (unit discriminant) with a pair of exact mutual annihilators in
 `H¹(G_{K_v}, E₁[φ]) × H¹(G_{K_v}, E₂[φ̂])`, as required by the Poitou–Tate / Greenberg–Wiles
 comparison of Selmer groups in Cassels' theorem.
 

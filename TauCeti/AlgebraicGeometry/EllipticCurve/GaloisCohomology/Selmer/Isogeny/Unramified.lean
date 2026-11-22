@@ -189,7 +189,7 @@ theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectru
   have : Finite (R ⧸ v.asIdeal) := hfinite v hv
   obtain ⟨_, _⟩ := hgood v hv
   exact φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v
-    (v.residueField_natCast_ne_zero_of_notMem (hS v hv)) hc
+    (v.residueField_adicCompletion_natCast_ne_zero_of_notMem (hS v hv)) hc
 
 /-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain whose
 height-one primes outside `S` have finite residue fields.** If both displayed base-changed
@@ -198,7 +198,7 @@ discriminant) for every `v ∉ S` and no prime outside `S` divides `deg φ`, the
 `H¹(G_K, E₁[φ])` belongs to `Sel_φ` (relative to all height-one completions) if and only if it is
 unramified outside `S` and satisfies the local condition at the primes in `S`. When `S` is finite,
 this reduces `Sel_φ` to finitely many local conditions outside the unramified locus. -/
-theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
+theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition
     {S : Set (HeightOneSpectrum R)}
     (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal))
     (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
@@ -236,6 +236,24 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
   (τ : ∀ v : HeightOneSpectrum R,
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+
+/-- Global-instance version of
+`mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition`
+when all residue fields `R ⧸ v.asIdeal` are finite. -/
+theorem
+  mem_selmerGroup_iff_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition_of_finite
+    {S : Set (HeightOneSpectrum R)}
+    (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
+    (hgood₂ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K))).IsElliptic)
+    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal)
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔
+      c ∈ φ.unramifiedOutsideKerCohomology τ S (fun _ _ ↦ inferInstance) ∧
+        ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v :=
+  φ.mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition τ
+    (fun _ _ ↦ inferInstance) hgood₁ hgood₂ hS
 
 variable (R) in
 /-- **There is a finite set of primes containing `S` outside which every `φ`-Selmer class is

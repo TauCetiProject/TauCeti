@@ -115,12 +115,20 @@ theorem natCard_H1_eq_mul (M : Type) [AddCommGroup M] [TopologicalSpace M]
       Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F) M) *
         Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) *
         p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card M)) := by
-  let : Module (ZMod (Nat.card M)) M :=
-    AddCommGroup.zmodModule (fun (_ : M) ↦ card_nsmul_eq_zero')
+  suffices h : ∀ [Module (ZMod (Nat.card M)) M],
+      Nat.card (ContCohomology.H1 (AbsoluteGaloisGroup F) M) =
+        Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F) M) *
+          Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) *
+          p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card M)) by
+    let : Module (ZMod (Nat.card M)) M :=
+      AddCommGroup.zmodModule (fun (_ : M) ↦ card_nsmul_eq_zero')
+    exact h
+  intro _
   let A := galRepOfZModModule (Nat.card M) F M
-  have h := @eulerCharacteristic_mixed p _ F _ _ _ _ _ (Nat.card M) Nat.card_pos.ne' A
-    (Finite.of_equiv M (galRepOfZModModuleEquiv (Nat.card M) F M).toEquiv)
+  have : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) A) :=
     ⟨isSmoothDiscrete_galRepOfZModModule (Nat.card M) F M⟩
+  have h := eulerCharacteristic_mixed p F (Nat.card M) Nat.card_pos.ne' A
+    (Finite.of_equiv M (galRepOfZModModuleEquiv (Nat.card M) F M).toEquiv)
   rw [← Nat.card_congr (galRepOfZModModuleH0Equiv (Nat.card M) F M).toEquiv,
     ← Nat.card_congr (galRepOfZModModuleH1Equiv (Nat.card M) F M).toEquiv,
     ← Nat.card_congr (galRepOfZModModuleH2Equiv (Nat.card M) F M).toEquiv,

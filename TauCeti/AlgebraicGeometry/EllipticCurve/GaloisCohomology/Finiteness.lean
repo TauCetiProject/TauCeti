@@ -87,7 +87,7 @@ unramified outside `S` to Kummer classes unramified outside `S`. -/
 theorem explicitCoeff1_weilPairingCoeff_mem_unramifiedOutsideKummerCohomology [W.IsElliptic]
     (hm : IsUnit (m : K)) (T : AddSubgroup.torsionBy W.toAffine.Point m)
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
-    (hc : c ∈ W.unramifiedOutsideTorsionCohomology τ S m) :
+    (hc : c ∈ W.unramifiedOutsideTorsionCohomology τ S m (fun _ _ ↦ inferInstance)) :
     explicitCoeff1 _ _ (W.weilPairingCoeff m hm T) continuous_of_discreteTopology c ∈
       unramifiedOutsideKummerCohomology τ S m := by
   rw [mem_unramifiedOutsideKummerCohomology_iff]
@@ -123,7 +123,7 @@ classes of `H¹(G_K, E[m])` are unramified outside `S`. Through the Weil pairing
 outside `S`. -/
 theorem finite_unramifiedOutsideTorsionCohomology [W.IsElliptic] (hSf : S.Finite) (hm : m ≠ 0)
     (h : ∀ (σ : AbsoluteGaloisGroup K) (P : W.TorsionCoeff m), σ • P = P) :
-    Finite (W.unramifiedOutsideTorsionCohomology τ S m) := by
+    Finite (W.unramifiedOutsideTorsionCohomology τ S m (fun _ _ ↦ inferInstance)) := by
   classical
   have hmK : IsUnit (m : K) := (Nat.cast_ne_zero.2 hm).isUnit
   have := finite_unramifiedOutsideKummerCohomology (τ := τ) hSf hmK
@@ -151,7 +151,7 @@ theorem finite_selmerGroup_of_forall_smul_eq [W.IsElliptic] (hSf : S.Finite)
       fun v hv ↦ Ideal.dvd_span_singleton.2 hv
   have := W.finite_unramifiedOutsideTorsionCohomology (τ := τ) hTf hm h
   exact Finite.of_injective _ (AddSubgroup.inclusion_injective
-    (selmerGroup_le_unramifiedOutsideTorsionCohomology (S := T)
+    (selmerGroup_le_unramifiedOutsideTorsionCohomology (S := T) (fun _ _ ↦ inferInstance)
       (fun v hv ↦ hgood v fun hvS ↦ hv (Or.inl hvS)) fun v hv hvm ↦ hv (Or.inr hvm)))
 
 end NumberField

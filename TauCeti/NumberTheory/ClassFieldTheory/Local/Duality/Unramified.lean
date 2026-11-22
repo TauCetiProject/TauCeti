@@ -125,6 +125,16 @@ theorem natCard_unramifiedH1_mul_internalHom_eq_natCard_H1 (hpn : ¬ p ∣ n)
     ← natCard_H2_eq_natCard_H0_internalHom hn M hM,
     natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_exponent p hpn M hM]
 
+private theorem finite_H1_internalHom (hpn : ¬ p ∣ n)
+    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Finite (H1 (AbsoluteGaloisGroup K)
+      (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
+  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
+  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
+  finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hM)
+
 /-- **Unramified local Tate duality (Milne, *ADT* I, Theorem 2.6; NSW (7.2.15)).** Let `K` be a
 finite extension of `ℚ_p` and `M` a finite discrete `G_K`-module killed by `n` with `p ∤ n`. Then
 `H¹_ur(G_K, M)` is the exact left annihilator of `H¹_ur(G_K, Hom(M, μₙ))` under `dualityMap1`. -/
@@ -138,16 +148,14 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))).subtype).ker := by
   have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
   have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  have hM' : ∀ φ : InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n), n • φ = 0 :=
-    InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
+    finite_H1_internalHom p hpn M hM
   rw [(dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
       ((galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn))
       (dualityMap1_kummerCoeff_bijective hn M hM)
-      (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hM')]
+      (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) (InternalHom.nsmul_eq_zero_of_domain hM))]
   exact ⟨fun _ hx _ hy ↦ dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1 hx hy,
     natCard_unramifiedH1_mul_internalHom_eq_natCard_H1 p hpn M hM⟩
 
@@ -163,17 +171,15 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
         (unramifiedH1 K M).subtype).ker := by
   have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
   have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  have hM' : ∀ φ : InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n), n • φ = 0 :=
-    InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
+    finite_H1_internalHom p hpn M hM
   rw [unramifiedH1_eq_ker_compl₂_dualityMap1 p hpn M hM,
     (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
       ).ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
       ((galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn))
       (dualityMap1_kummerCoeff_bijective hn M hM)
-      (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hM')]
+      (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) (InternalHom.nsmul_eq_zero_of_domain hM))]
 
 /-- **Pointwise criterion for unramified classes in `H¹(G_K, M)`.** Over a finite extension `K` of
 `ℚ_p`, for `M` finite discrete and killed by `n` with `p ∤ n`, a class in `H¹(G_K, M)` is
@@ -226,21 +232,10 @@ theorem mem_unramifiedH1_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
         (explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b)))
     (a : H1 (AbsoluteGaloisGroup K) M) :
     a ∈ unramifiedH1 K M ↔ ∀ b ∈ unramifiedH1 K N, P a b = 0 := by
-  let e : N ≃+ InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n) :=
-    AddEquiv.ofBijective d hd
-  have hequiv : ∀ g x, e (g • x) = g • e x := fun g x ↦ d.map_smul g x
-  let e1 := explicitCoeff1Equiv (AbsoluteGaloisGroup K) N e
-    continuous_of_discreteTopology continuous_of_discreteTopology hequiv
-  have he1 (b : H1 (AbsoluteGaloisGroup K) N) :
-      e1 b = explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b :=
-    explicitCoeff1Equiv_apply _ _ _ _ _ _ b
-  have hmem (b : H1 (AbsoluteGaloisGroup K) N) :
-      e1 b ∈ unramifiedH1 K (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n)) ↔
-        b ∈ unramifiedH1 K N :=
-    explicitCoeff1Equiv_mem_unramifiedH1_iff e _ _ hequiv
-  rw [mem_unramifiedH1_iff_forall_dualityMap1_eq_zero p hpn hM a, e1.surjective.forall]
+  rw [mem_unramifiedH1_iff_forall_dualityMap1_eq_zero p hpn hM a,
+    (explicitCoeff1_bijective (AbsoluteGaloisGroup K) N hd).surjective.forall]
   refine forall_congr' fun b ↦ ?_
-  rw [hmem b, he1 b, hP a b, map_eq_zero_iff iC hiC]
+  rw [d.explicitCoeff1_mem_unramifiedH1_iff hd, hP a b, map_eq_zero_iff iC hiC]
 
 /-- **Transported right-hand pointwise criterion for unramified cohomology.** Under the same
 duality dictionary `d` and injective target homomorphism `iC`, a class in `H¹(G_K, N)` is
@@ -261,18 +256,10 @@ theorem mem_unramifiedH1_right_iff_forall_pairing_eq_zero (hpn : ¬ p ∣ n)
         (explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b)))
     (b : H1 (AbsoluteGaloisGroup K) N) :
     b ∈ unramifiedH1 K N ↔ ∀ a ∈ unramifiedH1 K M, P a b = 0 := by
-  let e : N ≃+ InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n) :=
-    AddEquiv.ofBijective d hd
-  have hequiv : ∀ g x, e (g • x) = g • e x := fun g x ↦ d.map_smul g x
-  let e1 := explicitCoeff1Equiv (AbsoluteGaloisGroup K) N e
-    continuous_of_discreteTopology continuous_of_discreteTopology hequiv
-  have he1 : e1 b = explicitCoeff1 (AbsoluteGaloisGroup K) N d continuous_of_discreteTopology b :=
-    explicitCoeff1Equiv_apply _ _ _ _ _ _ b
-  rw [← explicitCoeff1Equiv_mem_unramifiedH1_iff e continuous_of_discreteTopology
-      continuous_of_discreteTopology hequiv (c := b),
-    mem_unramifiedH1_internalHom_iff_forall_dualityMap1_eq_zero p hpn hM (e1 b)]
+  rw [← d.explicitCoeff1_mem_unramifiedH1_iff hd (c := b),
+    mem_unramifiedH1_internalHom_iff_forall_dualityMap1_eq_zero p hpn hM _]
   refine forall₂_congr fun a _ ↦ ?_
-  rw [he1, hP a b, map_eq_zero_iff iC hiC]
+  rw [hP a b, map_eq_zero_iff iC hiC]
 
 end Padic
 

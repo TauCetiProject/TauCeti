@@ -27,7 +27,7 @@ Bijectivity of the left adjoint is not asserted to be two-sided perfection for i
 
 The proofs use Mathlib's identification of the kernel of character restriction with the
 characters of the quotient, and `TauCeti.natCard_addMonoidHom_zmod` for their order. For finite `N`,
-`AddMonoidHom.bijective_flip_zmod` (`TauCeti.Algebra.Module.ZMod.Dual`) and
+`AddMonoidHom.flip_bijective_zmod` (`TauCeti.Algebra.Module.ZMod.Dual`) and
 `AddMonoidHom.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod` give perfection of the flipped
 pairing and the double-annihilator identity, with companions for pairings valued in an arbitrary
 group `C ≃+ ZMod n`.
@@ -100,14 +100,12 @@ theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod [Finite N] (he : Fun
     (e.flip.compl₂ (e.compl₂ H.subtype).ker.subtype).ker = H := by
   have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
   have : Finite M := Finite.of_injective e he.1
-  have hM : ∀ x : M, n • x = 0 := fun x ↦ he.1 <| by
-    ext y
-    rw [map_nsmul, map_zero, nsmul_apply, nsmul_eq_mul, ZMod.natCast_self, zero_mul, zero_apply]
+  have hM : ∀ x : M, n • x = 0 := fun x ↦ he.1 <| by ext y; simp
   have ⟨horth, hcard⟩ :=
     (e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN _ H).mp rfl
   symm
   refine (e.flip.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod
-    (e.bijective_flip_zmod he hN) hM H _).mpr ⟨fun y hy x hx ↦ horth x hx y hy, ?_⟩
+    (e.flip_bijective_zmod he hN) hM H _).mpr ⟨fun y hy x hx ↦ horth x hx y hy, ?_⟩
   rw [mul_comm, hcard, Nat.card_congr (Equiv.ofBijective e he),
     TauCeti.natCard_addMonoidHom_zmod hN]
 

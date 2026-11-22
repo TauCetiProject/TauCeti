@@ -186,6 +186,24 @@ theorem ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology
   rw [← W.range_kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit]
   exact W.range_kummerMap_le_unramifiedTorsionCohomology m hmres
 
+private theorem natCard_submodule_torsionBy_eq_addSubgroup (A : Type*) [AddCommGroup A] (m : ℕ) :
+    Nat.card (Submodule.torsionBy ℤ A m) = Nat.card (AddSubgroup.torsionBy A m) :=
+  Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
+    rw [Submodule.mem_torsionBy_iff, natCast_zsmul, AddSubgroup.torsionBy.nsmul_iff])
+
+private theorem index_range_nsmul_eq_natCard_torsionBy [DecidableEq K] (hmres : (m : 𝓀[K]) ≠ 0) :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) m).range.index =
+      Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) := by
+  have hmU : IsUnit (m : K) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
+  have hmO : IsUnit (m : 𝒪[K]) :=
+    (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp (by simpa using hmres)
+  have hcard : Nat.card (𝒪[K] ⧸ Ideal.span {(m : 𝒪[K])}) = 1 :=
+    have : Subsingleton (𝒪[K] ⧸ Ideal.span {(m : 𝒪[K])}) :=
+      Ideal.Quotient.subsingleton_iff.mpr (Ideal.span_singleton_eq_top.mpr hmO)
+    Nat.card_unique
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hmU.ne_zero,
+    hcard, mul_one, natCard_submodule_torsionBy_eq_addSubgroup]
+
 /-- **When `W` is integral over `𝒪[K]` with unit discriminant away from `m`, the local Selmer
 condition equals unramified cohomology** (Milne, *ADT* I, Proposition 3.8): over a nonarchimedean
 local field `K`, if `W` is integral over `𝒪[K]` with unit discriminant (an elliptic integral model)
@@ -197,18 +215,16 @@ theorem ker_explicitCoeff1_torsionCoeffIncl_eq_unramifiedTorsionCohomology
       continuous_of_discreteTopology).ker = W.unramifiedTorsionCohomology m := by
   classical
   have hmU : IsUnit (m : K) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
-  have hmO : IsUnit (m : 𝒪[K]) :=
-    (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp (by simpa using hmres)
-  have hspan : Ideal.span {(m : 𝒪[K])} = ⊤ := Ideal.span_singleton_eq_top.mpr hmO
   have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hmU.ne_zero⟩)
-  apply AddSubgroup.eq_of_le_of_card_ge
-    (W.ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology m hmres)
-  rw [W.natCard_unramifiedTorsionCohomology m, ← W.range_kummerMap m hmU,
-    ← AddSubgroup.index_ker, W.ker_kummerMap m hmU,
-    W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hmU.ne_zero, hspan,
-    Nat.card_eq_one_iff_unique.mpr ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, ⟨0⟩⟩, mul_one]
-  exact (Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-    rw [Submodule.mem_torsionBy_iff, natCast_zsmul, AddSubgroup.torsionBy.nsmul_iff])).le
+  -- Compare orders: `#(im δ_m) = [E(K) : m E(K)] = #E(K)[m] = #H¹_ur(K, E[m])`.
+  have hcard : Nat.card (W.unramifiedTorsionCohomology m) ≤
+      Nat.card ((explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
+        (W.torsionCoeffIncl m) continuous_of_discreteTopology).ker) := by
+    rw [W.natCard_unramifiedTorsionCohomology m, ← W.range_kummerMap m hmU,
+      ← AddSubgroup.index_ker, W.ker_kummerMap m hmU,
+      W.index_range_nsmul_eq_natCard_torsionBy m hmres]
+  exact AddSubgroup.eq_of_le_of_card_ge
+    (W.ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology m hmres) hcard
 
 /-- **When `W` is integral over `𝒪[K]` with unit discriminant away from `m`, the local Kummer image
 equals unramified cohomology** over any nonarchimedean local field `K`. -/
@@ -237,10 +253,10 @@ and `m ∉ u`, then `im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, 
 theorem range_kummerMap_eq_unramifiedTorsionCohomology
     (hm : (m : A) ∉ u.asIdeal) :
     (V.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero
-      (u.residueField_natCast_ne_zero_of_notMem (K := F) hm)).isUnit).range =
+      (u.residueField_adicCompletion_natCast_ne_zero_of_notMem (K := F) hm)).isUnit).range =
       V.unramifiedTorsionCohomology m :=
   V.range_kummerMap_eq_unramifiedTorsionCohomology_of_localField m
-    (u.residueField_natCast_ne_zero_of_notMem hm)
+    (u.residueField_adicCompletion_natCast_ne_zero_of_notMem hm)
 
 end AdicCompletion
 
@@ -291,7 +307,6 @@ section Dedekind
 open IsDedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K)
   (τ : ∀ v : HeightOneSpectrum R,
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -300,9 +315,10 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 /-- **The classes of `H¹(G_K, E[m])` unramified outside `S`**: those whose restriction to the
 completion `K_v` along `τ v`, for every prime `v ∉ S`, is unramified, that is, vanishes on the
 inertia subgroup of `K_v`. -/
-def unramifiedOutsideTorsionCohomology :
+def unramifiedOutsideTorsionCohomology (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)) :
     AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
-  ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
+  ⨅ (v : HeightOneSpectrum R) (hv : v ∉ S),
+    letI : Finite (R ⧸ v.asIdeal) := hfinite v hv
     ((W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m).comap (W.torsionRes (τ v) m)
 
 variable {W τ S m}
@@ -311,9 +327,12 @@ variable {W τ S m}
 is unramified. -/
 @[simp]
 theorem mem_unramifiedOutsideTorsionCohomology_iff
+    {hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)}
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
-    c ∈ W.unramifiedOutsideTorsionCohomology τ S m ↔
-      ∀ v ∉ S, W.torsionRes (τ v) m c ∈ (W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m := by
+    c ∈ W.unramifiedOutsideTorsionCohomology τ S m hfinite ↔
+      ∀ (v : HeightOneSpectrum R) (hv : v ∉ S),
+        letI : Finite (R ⧸ v.asIdeal) := hfinite v hv
+        W.torsionRes (τ v) m c ∈ (W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m := by
   simp only [unramifiedOutsideTorsionCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
 
 /-- **Selmer classes are unramified outside the bad primes.** If the base-changed equation `W⁄K_v`
@@ -321,16 +340,18 @@ is integral over `𝒪[K_v]` with an elliptic integral model at every prime `v �
 outside `S` divides `m`, then every class of the `m`-Selmer group relative to the completions `K_v`
 is unramified outside `S`. -/
 theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal))
     (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K)),
       (integralModel 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K))).IsElliptic)
     (hS : ∀ v ∉ S, (m : R) ∉ v.asIdeal) :
-    W.selmerGroup τ m ≤ W.unramifiedOutsideTorsionCohomology τ S m := by
+    W.selmerGroup τ m ≤ W.unramifiedOutsideTorsionCohomology τ S m hfinite := by
   intro c hc
   rw [mem_unramifiedOutsideTorsionCohomology_iff]
   intro v hv
+  have : Finite (R ⧸ v.asIdeal) := hfinite v hv
   obtain ⟨_, _⟩ := hgood v hv
   exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
-    (v.residueField_natCast_ne_zero_of_notMem (hS v hv)) hc
+    (v.residueField_adicCompletion_natCast_ne_zero_of_notMem (hS v hv)) hc
 
 end Dedekind
 

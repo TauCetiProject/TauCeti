@@ -272,7 +272,7 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
       ψ.unramifiedKerCohomology := by
   classical
   have hdeg : (ψ.degree : 𝓀[u.adicCompletion F]) ≠ 0 :=
-    u.residueField_natCast_ne_zero_of_notMem hψ
+    u.residueField_adicCompletion_natCast_ne_zero_of_notMem hψ
   have := (ψ.isSeparable_dual_and_self_iff.2
     (natCast_ne_zero_of_residueField_natCast_ne_zero hdeg)).2
   refine AddSubgroup.eq_of_le_of_card_ge

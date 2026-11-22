@@ -44,7 +44,7 @@ The case `n = p` prime is the linear algebra of the `𝔽_p`-vector space `M`.
   finite and killed by `n`, one of whose adjoints `M' → (M →+ ZMod n)` is bijective, is perfect;
   `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip_of_addEquiv` reads it through additive
   equivalences.
-* `AddMonoidHom.bijective_flip_zmod`: if `N` is finite and killed by `n` and `e : M →+ N →+ ZMod n`
+* `AddMonoidHom.flip_bijective_zmod`: if `N` is finite and killed by `n` and `e : M →+ N →+ ZMod n`
   is bijective, then `e.flip` is bijective.
 -/
 
@@ -173,7 +173,7 @@ theorem AddEquiv.natCard_linearMap_zmod {N : Type*} [AddCommGroup N] [Module (ZM
 
 /-- For finite `N` killed by `n ≠ 0`, if the left adjoint `e : M →+ N →+ ZMod n` is bijective,
 then the right adjoint `e.flip : N →+ M →+ ZMod n` is also bijective. -/
-theorem AddMonoidHom.bijective_flip_zmod {N : Type*} [AddCommGroup N] (e : M →+ N →+ ZMod n)
+theorem AddMonoidHom.flip_bijective_zmod {N : Type*} [AddCommGroup N] (e : M →+ N →+ ZMod n)
     [Finite N] (he : Function.Bijective e) (hN : ∀ y : N, n • y = 0) :
     Function.Bijective e.flip := by
   obtain ⟨hsep, hrep⟩ := TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip hN e.flip he
