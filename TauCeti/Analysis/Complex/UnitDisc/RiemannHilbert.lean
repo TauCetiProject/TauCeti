@@ -6,16 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import TauCeti.Analysis.Complex.BoundaryHolder
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
+import TauCeti.Analysis.Complex.UnitDisc.CauchyIntegralHolder
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.MeasureTheory.Integral.Circle.Haar
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The Riemann–Hilbert problem on the disc with boundary values on a rotating line
@@ -48,6 +53,20 @@ disc has vanishing negative Fourier coefficients on the circle. A function `φ` 
 of a continuous `θ ↦ φ(e^{iθ})` sum to `φ` on the circle
 (`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
 
+**Hölder data.** For `α`-Hölder data, `0 < α < 1`, the Fourier coefficients need not be summable,
+and the solution is built from the Cauchy integral instead: by Privalov's theorem it extends to an
+`α`-Hölder function `G` on the closed disc whose boundary values have the Fourier coefficients `c n`
+for `n ≥ 0` and `0` for `n < 0`. So `h = G - ∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` has on the circle the
+Fourier coefficients `aₙ` above, and solves the problem when `c n = 0` for `k < n < 0`, in
+particular for every `k ≥ -1`
+(`TauCeti.exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero`,
+`TauCeti.exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq`). If moreover `φ` has an
+`α`-Hölder derivative along the rotations, the derivative of `h` extends to an `α`-Hölder function
+on the closed disc
+(`TauCeti.exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero`):
+the boundary values of `G` then have the extension of the Cauchy integral of that derivative as
+their derivative along the rotations, and `TauCeti.Analysis.Complex.BoundaryHolder` applies.
+
 **Surjectivity.** For `k ≥ -1` the operator `∂/∂(conj z)` with this boundary condition is
 onto, on compactly supported `C²` data
 (`TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj`): a solution of
@@ -76,6 +95,12 @@ cokernel on this class of data, and the index `k + 1` predicted by the Riemann�
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq_iff`: the problem is solvable exactly when
   `c n = 0` for `k < n < 0`.
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq`: for `k ≥ -1` it is always solvable.
+* `TauCeti.exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero`,
+  `TauCeti.exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq`: for `α`-Hölder data there is a
+  solution `α`-Hölder on the closed disc.
+* `TauCeti.exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero`:
+  for data with an `α`-Hölder derivative along the rotations there is a solution whose derivative
+  is `α`-Hölder on the closed disc.
 * `TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_fourierCoeffOn_eq_zero`: for every
   `k`, `∂u/∂(conj z) = f` with boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is solvable when the
   boundary defect of the Cauchy transform of `f` has vanishing Fourier coefficients for
@@ -96,7 +121,7 @@ public section
 namespace TauCeti
 
 open AddCircle Complex MeasureTheory Metric Set
-open scoped ComplexConjugate Real
+open scoped ComplexConjugate NNReal Real
 
 /-! ### The explicit solution -/
 
@@ -277,6 +302,194 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq (hk : -1 ≤ k)
     ∃ h : ℂ → ℂ, DiffContOnCl ℂ h (ball 0 1) ∧
       ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w :=
   (exists_diffContOnCl_sub_zpow_mul_conj_eq_iff hφ hs hb).mpr fun n hkn hn ↦ by omega
+
+/-! ### Hölder boundary data -/
+
+/-- The power series of the Hölder solution: on the open disc, the Cauchy integral `G` of `φ`
+minus the polynomial `∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` has the coefficients of the explicit solution. -/
+private theorem hasSum_sub_sum_range_toNat {c : ℤ → ℂ} {G : ℂ → ℂ} {z : ℂ}
+    (hG : HasSum (fun n : ℕ ↦ c n * z ^ n) (G z)) :
+    HasSum (fun n : ℕ ↦ ((if (n : ℤ) ≤ k then 2⁻¹ else 1) * c n) * z ^ n)
+      (G z - ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n) := by
+  have hp : HasSum (fun n : ℕ ↦ if (n : ℤ) ≤ k then 2⁻¹ * c n * z ^ n else 0)
+      (∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n) := by
+    have : HasSum (fun n : ℕ ↦ if (n : ℤ) ≤ k then 2⁻¹ * c n * z ^ n else 0)
+        (∑ n ∈ Finset.range (k + 1).toNat, if (n : ℤ) ≤ k then 2⁻¹ * c n * z ^ n else 0) :=
+      hasSum_sum_of_ne_finset_zero fun n hn ↦ by
+        simp only [Finset.mem_range] at hn
+        exact ite_eq_right_iff.2 fun h ↦ absurd h (by omega)
+    have hsum : ∑ n ∈ Finset.range (k + 1).toNat,
+        (if (n : ℤ) ≤ k then 2⁻¹ * c n * z ^ n else 0) =
+          ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n :=
+      Finset.sum_congr rfl fun n hn ↦ by
+        simp only [Finset.mem_range] at hn
+        exact ite_eq_left_iff.2 fun h ↦ absurd (by omega) h
+    rwa [hsum] at this
+  convert hG.sub hp using 2 with n
+  split_ifs <;> ring
+
+/-- The boundary identity of the Hölder solution: if `G` is holomorphic on the open disc,
+continuous on the closed disc and equal on the open disc to the Cauchy integral of `φ`, then
+`h = G - ∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` satisfies `h w - w ^ k * conj (h w) = φ w` on the unit
+circle, by comparing Fourier coefficients. -/
+private theorem sub_sum_range_toNat_sub_zpow_mul_conj_eq {G : ℂ → ℂ}
+    (hφc : ContinuousOn φ (sphere 0 1)) (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
+    (hvan : ∀ n : ℤ, k < n → n < 0 →
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0)
+    (hGd : DiffContOnCl ℂ G (ball 0 1))
+    (hGF : EqOn G (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1))
+    {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
+    let c : ℤ → ℂ := fun n ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n
+    let h : ℂ → ℂ := fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n
+    h w - w ^ k * conj (h w) = φ w := by
+  intro c h
+  have hp : Differentiable ℂ fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n := by
+    fun_prop
+  have hhd : DiffContOnCl ℂ h (ball 0 1) := hGd.sub hp.diffContOnCl
+  -- On the circle, `h` has the Fourier coefficients of the explicit solution.
+  have hcoeff (n : ℤ) :
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ h (circleMap 0 1 θ)) n = solutionCoeff k c n := by
+    rcases le_or_gt 0 n with hn | hn
+    · lift n to ℕ using hn
+      simp only [solutionCoeff, Nat.cast_nonneg, ↓reduceIte]
+      refine hhd.fourierCoeffOn_circleMap_eq_of_hasSum
+        (a := fun n : ℕ ↦ (if (n : ℤ) ≤ k then 2⁻¹ else 1) * c n) (fun z hz ↦ ?_) n
+      refine hasSum_sub_sum_range_toNat ?_
+      rw [hGF hz]
+      exact hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
+        (hφc.circleIntegrable zero_le_one) hz
+    · simp only [solutionCoeff, not_le.2 hn, ↓reduceIte]
+      rw [← fourierCoeff_comp_toCircle]
+      exact hhd.fourierCoeff_comp_toCircle_eq_zero hn
+  -- The boundary defect is continuous on the circle with vanishing Fourier coefficients.
+  have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
+    refine hhd.continuousOn.comp_continuous (continuous_subtypeVal.comp continuous_toCircle)
+      fun x ↦ ?_
+    rw [closure_ball 0 one_ne_zero]
+    exact sphere_subset_closedBall (coe_toCircle_mem_sphere x)
+  have hc' : Continuous fun x : AddCircle (2 * π) ↦ fourier k x * conj (h (toCircle x)) :=
+    (map_continuous (fourier k)).mul (continuous_conj.comp hc)
+  have hcφ : Continuous fun x : AddCircle (2 * π) ↦ φ (toCircle x) :=
+    hφc.comp_continuous (continuous_subtypeVal.comp continuous_toCircle) coe_toCircle_mem_sphere
+  have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) : Integrable g haarAddCircle :=
+    hg.integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hD := ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero
+    ⟨fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)) - φ (toCircle x),
+      (hc.sub hc').sub hcφ⟩ fun n ↦ by
+    simp only [ContinuousMap.coe_mk]
+    rw [fourierCoeff_sub (f := fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)))
+      (hi (hc.sub hc')) (hi hcφ), fourierCoeff_sub (hi hc) (hi hc'),
+      fourierCoeff_fourier_mul_conj, fourierCoeff_comp_toCircle, fourierCoeff_comp_toCircle,
+      fourierCoeff_comp_toCircle, hcoeff, hcoeff,
+      solutionCoeff_sub_conj (fun n ↦ fourierCoeffOn_eq_neg_conj hb n) hvan n, sub_self]
+  have := congrArg (fun F : C(AddCircle (2 * π), ℂ) ↦ F (arg w : AddCircle (2 * π))) hD
+  simp only [ContinuousMap.coe_mk, ContinuousMap.zero_apply, fourier_apply_eq_coe_toCircle_zpow,
+    toCircle_arg_of_mem_sphere hw] at this
+  exact sub_eq_zero.1 this
+
+/-- **The Riemann–Hilbert problem with Hölder data.** Let `φ` be `α`-Hölder on the unit circle,
+for `0 < α < 1`, with `φ w = -(w ^ k * conj (φ w))` there, and let the Fourier coefficients `c n` of
+`θ ↦ φ(e^{iθ})` on `[0, 2π]` vanish for `k < n < 0`. Then there is `h`, holomorphic on the open
+disc and `α`-Hölder on the closed disc, with `h w - w ^ k * conj (h w) = φ w` on the unit circle.
+On the open disc, `h` is the Cauchy integral of `φ` minus the polynomial
+`∑_{0 ≤ n ≤ k} (c n / 2) zⁿ`; on the circle its Fourier coefficients are those of the explicit
+solution `TauCeti.unitDiscRiemannHilbertSolution`, whose series need not converge for Hölder
+data. -/
+theorem exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero
+    {K α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hφ : HolderOnWith K α φ (sphere 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
+    (hvan : ∀ n : ℤ, k < n → n < 0 →
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0) :
+    ∃ h : ℂ → ℂ, DiffContOnCl ℂ h (ball 0 1) ∧ (∃ C, HolderOnWith C α h (closedBall 0 1)) ∧
+      ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w := by
+  set c : ℤ → ℂ := fun n ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n
+  obtain ⟨G, hGF, hG, hGd⟩ :=
+    exists_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_holderOnWith_closedBall hα0 hα1 hφ
+  set p : ℂ → ℂ := fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n
+  have hp : ContDiff ℂ 1 p := by fun_prop
+  obtain ⟨Cp, hpC⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
+    (s := univ) hp.locallyLipschitz.locallyLipschitzOn hα1.le (isCompact_closedBall 0 1)
+    (subset_univ _)
+  exact ⟨fun z ↦ G z - p z, hGd.sub (hp.differentiable one_ne_zero).diffContOnCl,
+    ⟨_, hG.sub hpC⟩, fun w hw ↦ sub_sum_range_toNat_sub_zpow_mul_conj_eq (hφ.continuousOn hα0)
+      hb hvan hGd hGF hw⟩
+
+/-- **The Riemann–Hilbert problem with `C^{1,α}` data.** Let `φ` have at every point `w` of the
+unit circle a derivative `v w` along the rotations, that is of `t ↦ φ (e^{it} w)` at `t = 0`, where
+`v` is `α`-Hölder on the circle, for `0 < α < 1`. Let
+`φ w = -(w ^ k * conj (φ w))` on the circle, and let the Fourier coefficients `c n` of
+`θ ↦ φ(e^{iθ})` on `[0, 2π]` vanish for `k < n < 0`. Then there is `h`, holomorphic on the open
+disc and `α`-Hölder on the closed disc, whose derivative extends from the open disc to an
+`α`-Hölder function on the closed disc, with `h w - w ^ k * conj (h w) = φ w` on the unit
+circle. -/
+theorem exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero
+    {L α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) {v : ℂ → ℂ}
+    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
+    (hvH : HolderOnWith L α v (sphere 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
+    (hvan : ∀ n : ℤ, k < n → n < 0 →
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0) :
+    ∃ h : ℂ → ℂ, DiffContOnCl ℂ h (ball 0 1) ∧ (∃ C, HolderOnWith C α h (closedBall 0 1)) ∧
+      (∃ (h' : ℂ → ℂ) (C : ℝ≥0), HolderOnWith C α h' (closedBall 0 1) ∧
+        ∀ z ∈ ball (0 : ℂ) 1, h' z = deriv h z) ∧
+      ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w := by
+  -- `φ` is Lipschitz, hence `α`-Hölder, on the circle.
+  obtain ⟨Mv, hMv⟩ :=
+    (isCompact_sphere (0 : ℂ) 1).exists_bound_of_continuousOn (hvH.continuousOn hα0)
+  have hlip := lipschitzOnWith_sphere_of_hasDerivAt_exp_mul (M := Mv.toNNReal) hv fun w hw ↦
+    (hMv w hw).trans (Real.le_coe_toNNReal Mv)
+  obtain ⟨Mφ, hMφ⟩ := (isCompact_sphere (0 : ℂ) 1).exists_bound_of_continuousOn hlip.continuousOn
+  have hφ := hlip.holderOnWith_of_norm_le (M := Mφ.toNNReal)
+    (fun w hw ↦ (hMφ w hw).trans (Real.le_coe_toNNReal Mφ)) hα1.le
+  set c : ℤ → ℂ := fun n ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n
+  obtain ⟨G, hGF, hG, hGd⟩ :=
+    exists_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_holderOnWith_closedBall hα0 hα1 hφ
+  obtain ⟨G', hG'F, hG', -⟩ :=
+    exists_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_holderOnWith_closedBall hα0 hα1 hvH
+  set p : ℂ → ℂ := fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n
+  have hp : ContDiff ℂ 2 p := by fun_prop
+  have hp' : ContDiff ℂ 1 fun z ↦ I * z * deriv p z :=
+    contDiff_const.mul contDiff_id |>.mul (contDiff_succ_iff_deriv.1 hp).2.2
+  obtain ⟨Cp, hpC⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
+    (s := univ) (hp.of_le one_le_two).locallyLipschitz.locallyLipschitzOn hα1.le
+    (isCompact_closedBall 0 1) (subset_univ _)
+  obtain ⟨Cp', hpC'⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
+    (s := univ) hp'.locallyLipschitz.locallyLipschitzOn hα1.le (isCompact_closedBall 0 1)
+    (subset_univ _)
+  set h : ℂ → ℂ := fun z ↦ G z - p z
+  have hhd : DiffContOnCl ℂ h (ball 0 1) := hGd.sub (hp.differentiable two_ne_zero).diffContOnCl
+  -- The boundary values of `h` have the Hölder derivative `G' w - i w p'(w)` along the rotations.
+  have hV (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) :
+      HasDerivAt (fun t : ℝ ↦ h (exp (I * t) * w)) (G' w - I * w * deriv p w) 0 := by
+    have hpath : HasDerivAt (fun t : ℝ ↦ exp (I * t) * w) (I * w) 0 := by
+      convert (((ofRealCLM.hasDerivAt (x := 0)).const_mul I).cexp).mul_const w using 1
+      · simp only [ofRealCLM_apply]
+      · simp
+    have hpd : HasDerivAt p (deriv p w) (exp (I * ((0 : ℝ) : ℂ)) * w) := by
+      rw [ofReal_zero, mul_zero, exp_zero, one_mul]
+      exact ((hp.differentiable two_ne_zero).differentiableAt (x := w)).hasDerivAt
+    have hpw : HasDerivAt (fun t : ℝ ↦ p (exp (I * t) * w)) ((I * w) • deriv p w) 0 := by
+      convert hpd.scomp 0 hpath using 2
+      simp
+    exact (hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hv
+      (hvH.continuousOn hα0) (hG.continuousOn hα0) hGF (hG'.continuousOn hα0) hG'F hw).sub
+      (by simpa only [smul_eq_mul] using hpw)
+  obtain ⟨h', K', hh', hh'd, -⟩ := hhd.exists_holderOnWith_closedBall_deriv hV hα0 hα1
+    ((hG'.mono sphere_subset_closedBall).sub (hpC'.mono sphere_subset_closedBall))
+  exact ⟨h, hhd, ⟨_, hG.sub hpC⟩, ⟨h', K', hh', hh'd⟩, fun w hw ↦
+    sub_sum_range_toNat_sub_zpow_mul_conj_eq (hφ.continuousOn hα0) hb hvan hGd hGF hw⟩
+
+/-- **The Riemann–Hilbert problem with Hölder data is solvable for `k ≥ -1`.** If `φ` is
+`α`-Hölder on the unit circle, for `0 < α < 1`, and `φ w = -(w ^ k * conj (φ w))` there, then
+there is `h`, holomorphic on the open disc and `α`-Hölder on the closed disc, with
+`h w - w ^ k * conj (h w) = φ w` on the unit circle. -/
+theorem exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq (hk : -1 ≤ k) {K α : ℝ≥0}
+    (hα0 : 0 < α) (hα1 : α < 1) (hφ : HolderOnWith K α φ (sphere 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w))) :
+    ∃ h : ℂ → ℂ, DiffContOnCl ℂ h (ball 0 1) ∧ (∃ C, HolderOnWith C α h (closedBall 0 1)) ∧
+      ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w :=
+  exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero hα0 hα1 hφ hb
+    fun _ _ _ ↦ by omega
 
 /-! ### Solving `∂u/∂(conj z) = f` with boundary values on a rotating line -/
 

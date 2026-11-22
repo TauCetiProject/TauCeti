@@ -32,13 +32,22 @@ For a function `f : ℂ → E` and a circle `C(c, R)` with `R ≠ 0`, write
   (`TauCeti.intervalIntegral_circleMap_zpow_mul`, `TauCeti.circleIntegral_pow_mul`);
 * the Fourier coefficients of the boundary defect `θ ↦ e^{ikθ} conj (T(e^{iθ})) - T(e^{iθ})` are
   `conj (a (k - n)) - a n` in terms of those `a` of `θ ↦ T(e^{iθ})`
-  (`TauCeti.fourierCoeffOn_circleMap_zpow_mul_conj_sub`).
+  (`TauCeti.fourierCoeffOn_circleMap_zpow_mul_conj_sub`);
+* on the unit circle, the coefficients of `cauchyPowerSeries F 0 1` are the Fourier coefficients
+  of `θ ↦ F(e^{iθ})` (`TauCeti.coeff_cauchyPowerSeries_zero_one`), so the Cauchy integral
+  `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ cₙ zⁿ` on the open disc, with
+  `cₙ` the Fourier coefficients of `θ ↦ φ(e^{iθ})`
+  (`TauCeti.hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`);
+* conversely, a function holomorphic on the open unit disc, continuous on the closed disc and
+  equal on the open disc to a power series `∑ aₙ zⁿ` has `aₙ` as the `n`-th Fourier coefficient of
+  its boundary values for every `n ≥ 0`, whether or not the series converges on the circle
+  (`DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum`): both are its Taylor coefficients.
 -/
 
 public section
 
 open Complex Metric
-open scoped ComplexConjugate Real
+open scoped ComplexConjugate NNReal ENNReal Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
@@ -122,6 +131,66 @@ theorem circleIntegral_pow_mul (F : ℂ → ℂ) (j : ℕ) :
   have h := circleIntegral_sub_zpow_sub_one_smul F 0 one_ne_zero ((j : ℤ) + 1)
   simp only [sub_zero, add_sub_cancel_right, zpow_natCast, smul_eq_mul] at h
   rw [h, intervalIntegral_circleMap_zpow_mul]
+
+/-- The coefficients of the Cauchy power series of `F` on the unit circle are the Fourier
+coefficients of `θ ↦ F(e^{iθ})` on `[0, 2π]`. -/
+theorem coeff_cauchyPowerSeries_zero_one (F : ℂ → ℂ) (n : ℕ) :
+    (cauchyPowerSeries F 0 1).coeff n =
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ F (circleMap 0 1 θ)) n := by
+  rw [coeff_cauchyPowerSeries F 0 one_ne_zero, smul_eq_mul]
+  simp only [smul_eq_mul]
+  rw [intervalIntegral_circleMap_zpow_mul, neg_neg]
+  field_simp
+
+/-- **The Taylor series of the Cauchy integral.** For a function `φ` integrable on the unit circle,
+the Cauchy integral `(2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is the power series `∑ cₙ zⁿ` on the
+open unit disc, where `cₙ` is the `n`-th Fourier coefficient of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
+theorem hasSum_fourierCoeffOn_mul_pow_two_pi_I_inv_smul_circleIntegral_sub_inv_smul {φ : ℂ → ℂ}
+    (hφ : CircleIntegrable φ 0 1) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    HasSum (fun n : ℕ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n)
+      ((2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) := by
+  have h := (hasFPowerSeriesOn_cauchy_integral (R := 1) (by simpa using hφ) one_pos).hasSum
+    (y := z) (by rw [Metric.eball_coe, NNReal.coe_one]; exact hz)
+  simp only [zero_add, NNReal.coe_one, FormalMultilinearSeries.apply_eq_pow_smul_coeff,
+    coeff_cauchyPowerSeries_zero_one] at h
+  simpa only [smul_eq_mul, mul_comm] using h
+
+end TauCeti
+
+/-- **The boundary Fourier coefficients of a power series.** If `H` is holomorphic on the open unit
+disc, continuous on the closed disc, and equal on the open disc to a power series `∑ aₙ zⁿ`, then
+for every `n ≥ 0` the `n`-th Fourier coefficient of `θ ↦ H(e^{iθ})` on `[0, 2π]` is `aₙ`. The
+negative coefficients vanish (`DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero`). -/
+theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum {H : ℂ → ℂ} {a : ℕ → ℂ}
+    (hH : DiffContOnCl ℂ H (ball 0 1))
+    (ha : ∀ z ∈ ball (0 : ℂ) 1, HasSum (fun n ↦ a n * z ^ n) (H z)) (n : ℕ) :
+    fourierCoeffOn Real.two_pi_pos (fun θ ↦ H (circleMap 0 1 θ)) n = a n := by
+  set p := FormalMultilinearSeries.ofScalars ℂ a
+  have hhalf : ((2⁻¹ : ℝ≥0) : ℂ) ∈ ball (0 : ℂ) 1 := by
+    rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, NNReal.abs_eq]
+    norm_num
+  -- The series converges at `z = 1 / 2`, so its radius of convergence is at least `1 / 2`.
+  have hr : ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ≤ p.radius := by
+    refine p.le_radius_of_tendsto (l := 0) ?_
+    have := (ha _ hhalf).summable.tendsto_atTop_zero.norm
+    simpa [p, norm_mul, norm_pow] using this
+  have h₂ : HasFPowerSeriesOnBall H p 0 ((2⁻¹ : ℝ≥0) : ℝ≥0∞) :=
+    { r_le := hr
+      r_pos := by simp
+      hasSum := fun {y} hy ↦ by
+        have hy' : y ∈ ball (0 : ℂ) 1 := by
+          rw [Metric.eball_coe] at hy
+          exact ball_subset_ball (by norm_num) hy
+        simpa [p, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using ha y hy' }
+  have hH' : DiffContOnCl ℂ H (ball 0 ((1 : ℝ≥0) : ℝ)) := by simpa using hH
+  have h₁ := hH'.hasFPowerSeriesOnBall one_pos
+  have hc := congrArg (fun q ↦ q.coeff n)
+    (h₁.hasFPowerSeriesAt.eq_formalMultilinearSeries h₂.hasFPowerSeriesAt)
+  simp only [p, FormalMultilinearSeries.coeff_ofScalars, NNReal.coe_one,
+    TauCeti.coeff_cauchyPowerSeries_zero_one] at hc
+  exact hc
+
+namespace TauCeti
 
 /-- The Fourier coefficients of the boundary defect `θ ↦ e^{ikθ} conj (T(e^{iθ})) - T(e^{iθ})` of a
 continuous function `T` are `conj (a (k - n)) - a n`, where `a` are the Fourier coefficients of
