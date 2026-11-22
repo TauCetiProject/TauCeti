@@ -20,6 +20,7 @@ with `Xᵢ`.
 
 ## Main results
 
+* `MvPolynomial.totalDegree_X_le`: `(X i).totalDegree ≤ 1`, over any commutative semiring.
 * `MvPolynomial.degreeOf_map_le`: `degreeOf i (P.map f) ≤ degreeOf i P`.
 * `MvPolynomial.exists_totalDegree_le_one_aeval_eq_of_mem_span`: every
   `t ∈ Submodule.span R (Set.range x)` is `aeval x P` for some `P` with `P.totalDegree ≤ 1`.
@@ -28,6 +29,12 @@ with `Xᵢ`.
 public section
 
 namespace MvPolynomial
+
+/-- A variable has total degree at most one. Unlike Mathlib's `MvPolynomial.totalDegree_X`, this
+needs no nontriviality assumption on the coefficients. -/
+theorem totalDegree_X_le {σ R : Type*} [CommSemiring R] (i : σ) :
+    (X i : MvPolynomial σ R).totalDegree ≤ 1 := by
+  simpa [← X_pow_eq_monomial] using totalDegree_monomial_le (Finsupp.single i 1) (1 : R)
 
 /-- Mapping the coefficients of `P` does not raise its degree in `Xᵢ`. -/
 theorem degreeOf_map_le {σ R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
@@ -43,9 +50,7 @@ theorem exists_totalDegree_le_one_aeval_eq_of_mem_span {σ R S : Type*} [CommSem
   induction ht using Submodule.span_induction with
   | mem _ h =>
     obtain ⟨i, rfl⟩ := h
-    exact ⟨X i,
-      by simpa [← X_pow_eq_monomial] using totalDegree_monomial_le (Finsupp.single i 1) (1 : R),
-      aeval_X x i⟩
+    exact ⟨X i, totalDegree_X_le i, aeval_X x i⟩
   | zero => exact ⟨0, by simp, map_zero _⟩
   | add _ _ _ _ hp hq =>
     obtain ⟨P, hPd, rfl⟩ := hp

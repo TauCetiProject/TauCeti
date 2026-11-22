@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MvPolynomial.Degrees
 public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Algebra.MvPolynomial.Funext
@@ -55,6 +56,8 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
 * `MvPolynomial.mul_mem_restrictTotalDegree`: total degree bounds add under multiplication.
 * `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
   not raise the total degree.
+* `MvPolynomial.aeval_option_elim_one_X_mem_restrictTotalDegree`: setting the variable `none` to
+  `1` does not raise the total degree.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
@@ -296,6 +299,16 @@ theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R
   | zero => simp
   | add p q _ _ hp hq => simpa using add_mem hp hq
   | smul a p _ hp => simpa using Submodule.smul_mem _ a hp
+
+/-- Setting the variable `none` to `1` and keeping the variables `some j` does not raise the total
+degree. -/
+theorem aeval_option_elim_one_X_mem_restrictTotalDegree {d : ℕ}
+    {F : MvPolynomial (Option σ) R} (hF : F ∈ restrictTotalDegree (Option σ) R d) :
+    aeval (Option.elim' 1 X) F ∈ restrictTotalDegree σ R d := by
+  refine aeval_mem_restrictTotalDegree (fun v ↦ ?_) hF
+  cases v
+  · simp
+  · exact totalDegree_X_le _
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
