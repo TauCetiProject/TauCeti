@@ -25,7 +25,8 @@ as does the image of a smoothing symbol (`TauCeti.Symbol.IsSmoothing.map`).
 The product `ψ(x) a(x, ξ)` of a symbol with a smooth function of the position
 (`TauCeti.Symbol.smulLeft`) is a symbol of the same order, with compact spatial support when `a`
 or `ψ` has compact support (`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
-`TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`).
+`TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`), and smoothing when `a` is smoothing
+(`TauCeti.Symbol.IsSmoothing.smulLeft`).
 -/
 
 public section
@@ -172,6 +173,11 @@ theorem hasCompactSpatialSupport_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ 
     (smulLeft hψ a).HasCompactSpatialSupport :=
   hasCompactSpatialSupport_iff.2
     ⟨tsupport ψ, hψc, fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]⟩
+
+/-- Multiplying a smoothing symbol by a smooth function of the position keeps it smoothing. -/
+theorem IsSmoothing.smulLeft {a : Symbol n V W m} (ha : a.IsSmoothing)
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) : (Symbol.smulLeft hψ a).IsSmoothing :=
+  (ha.comp_left _).inclusion _
 
 end SmulLeft
 

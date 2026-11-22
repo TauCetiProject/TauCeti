@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Pseudodifferential.MicrolocalCutoff
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
@@ -42,12 +41,14 @@ Let `a` be elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖
 `(x₀, ξ₀) ∈ U × Γ`. A microlocal cutoff, multiplied by the dilated frequency cutoff `χ(ξ / t)`,
 gives a symbol `c` of order `0` with compact spatial support which vanishes outside that set and is
 the identity at large frequencies over a neighbourhood `U'` of `x₀` and an open cone `Γ'` containing
-`ξ₀`. A microlocal left parametrix symbol `b` of order `-m` has `c ∼ ∑ₖ sharpTerm b a k`
+`ξ₀` (`TauCeti.Symbol.exists_microlocalCutoff_of_mem`). A microlocal left parametrix symbol `b` of
+order `-m` has `c ∼ ∑ₖ sharpTerm b a k`
 (`TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`). Since `b # a` is an
 asymptotic sum of the same terms, `b # a - c` is smoothing; multiplying `b` by a cutoff `ψ(x)` equal
 to `1` where `c` lives gives a symbol `q` with compact spatial support and
 
-`Op(c) v = Op(q) (Op(a) v) - Op(e) v`, `e` smoothing.
+`Op(c) v = Op(q) (Op(a) v) - Op(e) v`, `e` smoothing
+(`TauCeti.Symbol.exists_toDistr_quantizeSobolev_eq_sub`).
 
 Now `Op(c)` is microlocally the identity on `U' × Γ'`
 (`TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev`), `Op(q)` does not
@@ -56,6 +57,8 @@ enlarge wave front sets, and `Op(e) v` lies in every `H^s`, so its wave front se
 ## Main results
 
 * `TauCeti.Symbol.characteristicSet`: the characteristic set of a symbol.
+* `TauCeti.Symbol.exists_toDistr_quantizeSobolev_eq_sub`: the microlocal parametrix identity
+  `Op(c) v = Op(q) (Op(a) v) - Op(e) v` on `H^t`, with `e` smoothing.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
   if `a` is elliptic on `U × Γ` at large frequencies, then `WF(v) ∩ (U × Γ) ⊆ WF(Op(a) v)`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`:
@@ -127,72 +130,6 @@ theorem IsEllipticAbove.characteristicSet_eq_empty {a : Symbol n V W m} {R : ℝ
 
 end CharacteristicSet
 
-/-! ### Microlocal cutoffs vanishing at small frequencies -/
-
-section Cutoff
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- **Microlocal target symbols.** For an open set `U` containing `x₀`, an open cone `Γ` containing
-`ξ₀` and a radius `R`, there is a symbol `c` of order `0` with compact spatial support that
-vanishes outside the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, and is the identity at
-large frequencies over a neighbourhood of `x₀` and an open cone containing `ξ₀`. -/
-private theorem exists_microlocalTarget {U Γ : Set (CoordinateSpace n)} {x₀ ξ₀ : CoordinateSpace n}
-    (hU : IsOpen U) (hx₀ : x₀ ∈ U) (hΓ : IsOpen Γ) (hξ₀ : ξ₀ ∈ Γ)
-    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) (R : ℝ) :
-    ∃ c : Symbol n V V 0, c.HasCompactSpatialSupport ∧
-      (∀ p ∉ {q : CoordinateSpace n × CoordinateSpace n | q.1 ∈ U ∧ q.2 ∈ Γ ∧ R ≤ ‖q.2‖},
-        c.coefficient p = 0) ∧
-      ∃ U' Γ' : Set (CoordinateSpace n), IsOpen U' ∧ x₀ ∈ U' ∧ IsOpen Γ' ∧ ξ₀ ∈ Γ' ∧
-        (∀ t : ℝ, 0 < t → ∀ η ∈ Γ', t • η ∈ Γ') ∧ ∃ R' : ℝ, ∀ x ∈ U', ∀ ξ ∈ Γ', R' ≤ ‖ξ‖ →
-          c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V := by
-  -- A closed ball of positions around `x₀` inside `U`, and an open cone `Γ'` around `ξ₀` inside a
-  -- closed cone `F` whose nonzero elements lie in `Γ`.
-  obtain ⟨δ, hδ, hδU⟩ := Metric.isOpen_iff.1 hU x₀ hx₀
-  obtain ⟨F, Γ', hF, hFcone, hFΓ, hΓ', hξ₀', hcone', hΓ'F⟩ :=
-    hΓ.exists_isOpen_cone_subset_isClosed_cone hcone hξ₀
-  obtain ⟨c₀, hc₀1, -, hc₀c, L', G, -, hLU, -, -, hGΓ, hc₀0⟩ :=
-    ClassicalSymbol.exists_microlocalCutoff (V := V) (isCompact_closedBall x₀ (δ / 2)) hU
-      ((closedBall_subset_ball (half_lt_self hδ)).trans hδU) hF hFcone hΓ hcone hFΓ
-  obtain ⟨K, hK, hKc₀⟩ := hasCompactSpatialSupport_iff.1 hc₀c
-  -- Cut `c₀` off below the radius `t = max R 1`.
-  have ht : 1 ≤ max R 1 := le_max_right R 1
-  have ht0 : 0 < max R 1 := one_pos.trans_le ht
-  obtain ⟨χ⟩ : Nonempty (FrequencyCutoff (CoordinateSpace n)) := ⟨default⟩
-  -- The frequency-only symbol `χ(ξ / t) • id`, and `c = χ(ξ / t) c₀`.
-  have hg : ContDiff ℝ ∞ fun ξ : CoordinateSpace n ↦ χ ((max R 1)⁻¹ • ξ) :=
-    χ.contDiff.comp (contDiff_const_smul _)
-  set L : ℝ →L[ℝ] V →L[ℂ] V := (ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℂ V)
-  have hd (k : ℕ) : ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k (L ∘ fun ξ ↦ χ ((max R 1)⁻¹ • ξ)) ξ‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2) := by
-    obtain ⟨C, -, hC⟩ := χ.exists_norm_iteratedFDeriv_comp_inv_smul_le k
-    refine ⟨‖L‖ * C, fun ξ ↦ (L.norm_iteratedFDeriv_comp_left hg.contDiffAt
-      (mod_cast le_top)).trans ?_⟩
-    rw [zero_sub, mul_assoc]
-    exact mul_le_mul_of_nonneg_left (hC _ ht ξ) (norm_nonneg L)
-  obtain ⟨c, hc⟩ : ∃ c : Symbol n V V 0, ∀ p, c.coefficient p =
-      χ ((max R 1)⁻¹ • p.2) • c₀.toSymbol.coefficient p :=
-    ⟨inclusion (add_zero 0).le ((ofFrequency _ (L.contDiff.comp hg) hd).comp c₀.toSymbol),
-      fun p ↦ by
-        rw [coefficient_inclusion, coefficient_comp, coefficient_ofFrequency]
-        simp [L, ContinuousLinearMap.smul_comp]⟩
-  refine ⟨c, hasCompactSpatialSupport_iff.2
-    ⟨K, hK, fun x hx ξ ↦ by rw [hc, hKc₀ x hx ξ, smul_zero]⟩, fun p hp ↦ ?_,
-    ball x₀ (δ / 2), Γ', isOpen_ball, mem_ball_self (half_pos hδ), hΓ', hξ₀', hcone',
-    2 * max R 1 + 1, fun x hx ξ hξ hR ↦ ?_⟩
-  · -- `c` vanishes unless `‖ξ‖ > max R 1` and `c₀(x, ξ) ≠ 0`.
-    by_contra hne
-    rw [hc, smul_eq_zero, not_or] at hne
-    obtain ⟨hp₁, hp₂, -⟩ := hc₀0 p.1 p.2 hne.2
-    have hR : max R 1 < ‖p.2‖ := not_le.1 fun h ↦ hne.1 (χ.apply_inv_smul_eq_zero ht0 h)
-    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (ht0.trans hR)
-    exact hp ⟨hLU hp₁, hGΓ _ hp₂ hp0, (le_max_left R 1).trans hR.le⟩
-  · -- At large frequencies over `U' × Γ'` both factors are the identity.
-    rw [hc, χ.apply_inv_smul_eq_one ht0 (by linarith), one_smul]
-    exact (hc₀1 x (ball_subset_closedBall hx) ξ (hΓ'F hξ) (by linarith)).self_of_nhds
-
-end Cutoff
-
 /-! ### Microlocal elliptic regularity -/
 
 section EllipticRegularity
@@ -201,7 +138,7 @@ section EllipticRegularity
 and be elliptic on a set `S`, and let `c` of order `0` have compact spatial support and vanish
 outside `S`. Then there are a symbol `q` of order `-m` and a smoothing symbol `e`, both with compact
 spatial support, such that `Op(c) v = Op(q) (Op(a) v) - Op(e) v` for every `v ∈ H^t`. -/
-private theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n ℂ ℂ m}
+theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n ℂ ℂ m}
     (ha : a.HasCompactSpatialSupport) {S : Set (CoordinateSpace n × CoordinateSpace n)}
     (hell : a.IsEllipticOn S) {c : Symbol n ℂ ℂ 0} (hc : c.HasCompactSpatialSupport)
     (hcS : ∀ p ∉ S, c.coefficient p = 0) :
@@ -230,15 +167,11 @@ private theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n ℂ ℂ m}
     · simp [hKc x hx ξ]
   -- `q # a - c = ψ (b # a - c)` is smoothing.
   have he : (((smulLeft hψ b).sharp a ha) - inclusion (neg_add_cancel m).ge c).IsSmoothing := by
-    refine isSmoothing_iff.2 fun μ ↦ ?_
-    obtain ⟨r, hr⟩ := isSmoothing_iff.1 hsm μ
-    refine ⟨smulLeft hψ r, funext fun ⟨x, ξ⟩ ↦ ?_⟩
-    have hr' := congrFun hr (x, ξ)
-    simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply] at hr'
-    simp only [coefficient_sub, coefficient_inclusion, coefficient_smulLeft, Pi.sub_apply, hr',
+    convert hsm.smulLeft hψ using 1
+    refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
+    simp only [coefficient_sub, coefficient_inclusion, coefficient_smulLeft, Pi.sub_apply,
       coefficient_sharp_of_coefficient_eq_smul (a := b) (a' := smulLeft hψ b) ha (x := x)
-        (t := (φ x : ℂ)) (fun η ↦ coefficient_smulLeft hψ b (x, η)),
-      smul_sub, hcψ]
+        (t := (φ x : ℂ)) (fun η ↦ coefficient_smulLeft hψ b (x, η)), smul_sub, hcψ]
   have hsub := (hq.sharp ha).sub (hc.inclusion (neg_add_cancel m).ge)
   refine ⟨_, hq, _, hsub, he, fun t v ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_sharp hq ha, toDistr_quantizeSobolev_sub_apply (hq.sharp ha)
@@ -258,7 +191,7 @@ theorem waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn
       (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet := by
   rintro ⟨x₀, ξ₀⟩ ⟨hp, hx₀, hξ₀⟩
   obtain ⟨c, hc, hcS, U', Γ', hU', hx₀', hΓ', hξ₀', hcone', R', hc1⟩ :=
-    exists_microlocalTarget (V := ℂ) hU hx₀ hΓ hξ₀ hcone R
+    exists_microlocalCutoff_of_mem (V := ℂ) hU hx₀ hΓ hξ₀ hcone R
   obtain ⟨q, hq, e, he, hes, hid⟩ := exists_toDistr_quantizeSobolev_eq_sub ha hell hc hcS
   -- `(x₀, ξ₀) ∈ WF(Op(c) v)`, and `Op(c) v = Op(q) (Op(a) v) - Op(e) v`.
   have h := waveFrontSet_toDistribution_inter_subset_quantizeSobolev hc t v hU' hΓ' hcone' hc1
@@ -271,8 +204,8 @@ theorem waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn
     exact h.elim
 
 /-- **Microlocal elliptic regularity.** For a scalar symbol `a` with compact spatial support and
-every `v ∈ H^t`, the singularities of `v` are those of `Op(a) v` together with characteristic
-points of `a`: `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`. -/
+every `v ∈ H^t`, every singularity of `v` is a singularity of `Op(a) v` or a characteristic point
+of `a`: `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`. -/
 theorem waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet
     {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
     (v : H^{t}(CoordinateSpace n, ℂ)) :
