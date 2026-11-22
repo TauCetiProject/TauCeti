@@ -208,12 +208,12 @@ variable (J) in
 `∂s + J ∂t + A` with zeroth-order term `A`. -/
 noncomputable def cauchyRiemannAddJetCoeff (A : ℝ × ℝ → V →L[ℝ] V) (z : ℝ × ℝ) :
     V × V × V →L[ℝ] V :=
-  cauchyRiemannJetCoeff J + (A z).comp (ContinuousLinearMap.fst ℝ V (V × V))
+  firstOrderJetCoeff (LinearMap.toContinuousLinearMap J.toLinearMap) (A z)
 
 @[simp]
 theorem cauchyRiemannAddJetCoeff_apply (A : ℝ × ℝ → V →L[ℝ] V) (z : ℝ × ℝ) (v : V × V × V) :
-    cauchyRiemannAddJetCoeff J A z v = v.2.1 + J v.2.2 + A z v.1 := by
-  simp [cauchyRiemannAddJetCoeff]
+    cauchyRiemannAddJetCoeff J A z v = v.2.1 + J v.2.2 + A z v.1 :=
+  firstOrderJetCoeff_apply _ _ v
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient field gives `∂s ξ + J ∂t ξ + A ξ`. -/
 theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × ℝ → V →L[ℝ] V)
@@ -226,19 +226,24 @@ theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × 
 @[simp]
 theorem cauchyRiemannAddJetCoeff_zero (J : AlmostComplexStructure V) :
     cauchyRiemannAddJetCoeff J 0 = fun _ ↦ cauchyRiemannJetCoeff J :=
-  funext fun _ ↦ by simp [cauchyRiemannAddJetCoeff]
+  funext fun _ ↦ by rw [cauchyRiemannAddJetCoeff, cauchyRiemannJetCoeff, Pi.zero_apply]
 
 /-- A continuous zeroth-order term gives a continuous coefficient field. -/
 theorem continuous_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) :
     Continuous (cauchyRiemannAddJetCoeff J A) :=
-  continuous_const.add (hA.clm_comp continuous_const)
+  continuous_iff_continuousAt.2 fun _ ↦ continuousAt_firstOrderJetCoeff continuousAt_const
+    hA.continuousAt
 
 /-- A continuous zeroth-order term vanishing for `|s| > T` gives an essentially bounded coefficient
 field on the strip. -/
 theorem memLp_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
-    MemLp (cauchyRiemannAddJetCoeff J A) ∞ stripMeasure :=
-  (memLp_top_const (cauchyRiemannJetCoeff J)).add (memLp_stripMeasure_of_continuous
+    MemLp (cauchyRiemannAddJetCoeff J A) ∞ stripMeasure := by
+  have h : cauchyRiemannAddJetCoeff J A =
+      fun z ↦ cauchyRiemannJetCoeff J + (A z).comp (ContinuousLinearMap.fst ℝ V (V × V)) :=
+    funext fun z ↦ ContinuousLinearMap.ext fun v ↦ by simp [add_assoc]
+  rw [h]
+  exact (memLp_top_const (cauchyRiemannJetCoeff J)).add (memLp_stripMeasure_of_continuous
     (u := fun z ↦ (A z).comp (ContinuousLinearMap.fst ℝ V (V × V)))
     (hA.clm_comp continuous_const) (R := T) (fun z hz ↦ by simp [hAT z hz]) ∞)
 
