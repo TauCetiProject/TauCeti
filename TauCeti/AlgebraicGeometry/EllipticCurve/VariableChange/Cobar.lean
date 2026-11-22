@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.HopfAlgebroid
+public import TauCeti.AlgebraicTopology.AlternatingCofaceMapComplex
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Nerve
 
 /-!
@@ -59,6 +59,17 @@ degree-one cocycle vanishes on identity arrows, so the unnormalized and normaliz
 cocycle conditions agree. At weight `0` these are the formulas of the differentials of
 `cobarComplex` in degrees `0` and `1`.
 
+These differentials extend to the cobar complex of weight `k` in every degree. A cochain is read
+as a section of `ω^k` trivialized at the last curve of a string, so the weight-`k` structure map
+of `f : [m] ⟶ [n]` is `cobarMap f` followed by multiplication with the character `u⁻ᵏ` of the
+change of variables from the curve `W_{f m}` to the last curve `W_n` (`cobarWeight`). These
+weights form a cocycle because the character is multiplicative under the coproduct, so the
+weight-`k` structure maps form a cosimplicial abelian group `weightedCobarObject k`, with
+alternating coface complex `weightedCobarComplex k`. Its differentials in degrees `0` and `1` are
+`cobarD₀ k` and `cobarD₁ k`. In weight `0` its structure maps are those of `cobarObject`, so
+`weightedCobarComplex 0` is `cobarComplex`, and the differentials and degree `0` cocycles of
+`cobarComplex` in low degrees are the weight-`0` cases of those of `weightedCobarComplex k`.
+
 ## Main definitions
 
 * `TauCeti.WeierstrassHopfAlgebroid.cobarRing`: the ring `Γ^{⊗_A n}`.
@@ -71,6 +82,9 @@ cocycle conditions agree. At weight `0` these are the formulas of the differenti
 * `TauCeti.WeierstrassHopfAlgebroid.cobarD₀`, `TauCeti.WeierstrassHopfAlgebroid.cobarD₁`,
   `TauCeti.WeierstrassHopfAlgebroid.cobarShortComplex`: the first two weighted cobar
   differentials and their short complex.
+* `TauCeti.WeierstrassHopfAlgebroid.weightedCobarObject`,
+  `TauCeti.WeierstrassHopfAlgebroid.weightedCobarComplex`: the weight-`k` cosimplicial abelian
+  group `[n] ↦ Γ^{⊗_A n}`, with structure maps `weightedCobarMap k`, and its cobar complex.
 
 ## Main results
 
@@ -94,6 +108,19 @@ cocycle conditions agree. At weight `0` these are the formulas of the differenti
 * `ker_cobarD₀_natCast`: in weight `k ≥ 0`, the degree-zero weighted cocycles are the integral
   modular forms of weight `k`.
 * `counit_eq_zero_of_cobarD₁_eq_zero`: every degree-one weighted cocycle is normalized.
+* `cobarWeight_comp`: the weights of the structure maps are a cocycle, so `weightedCobarMap_comp`
+  holds and `weightedCobarObject k` is a cosimplicial object.
+* `cobarWeight_δ_one_eq_weightCharacter`, `cobarWeight_δ_two_eq_map_weightCharacter`: the
+  nontrivial weights of the cofaces in degrees `0` and `1`.
+* `weightedCobarComplex_d_hom_apply`: the differential of the weight-`k` cobar complex is
+  `∑ᵢ (-1)ⁱ δⁱ`; `weightedCobarComplex_d_zero_one_hom_apply` and
+  `weightedCobarComplex_d_one_two_hom_apply` identify it in degrees `0` and `1` with `cobarD₀ k`
+  and `cobarD₁ k`.
+* `WeierstrassCurve.isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_zero`:
+  for `k ≥ 0`, the degree `0` cocycles of the weight-`k` cobar complex are the integral modular
+  forms of weight `k`.
+* `weightedCobarObject_zero`, `weightedCobarComplex_zero`: in weight `0` the weighted cobar
+  construction and its complex are `cobarObject` and `cobarComplex`.
 
 ## References
 
@@ -721,55 +748,258 @@ def cobarComplex : CochainComplex AddCommGrpCat.{0} ℕ :=
 theorem cobarComplex_X (n : ℕ) : cobarComplex.X n = AddCommGrpCat.of (cobarRing n) :=
   (rfl)
 
-/-- The forgetful functors to additive groups keep the underlying function of a structure map of
-`cobarObject`. -/
-private theorem hom_forget₂_map_cobarObject_map_apply {m n : SimplexCategory} (f : m ⟶ n)
-    (x : cobarRing m.len) :
-    ((forget₂ RingCat AddCommGrpCat).map ((forget₂ CommRingCat RingCat).map
-      (cobarObject.map f))).hom x = cobarMap f x :=
-  (rfl)
-
 /-- The differential `Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` of the cobar complex is the alternating sum
 `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
 theorem cobarComplex_d_hom_apply (n : ℕ) (x : cobarRing n) :
     (cobarComplex.d n (n + 1)).hom x =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x := by
-  have h : cobarComplex.d n (n + 1) = AlgebraicTopology.AlternatingCofaceMapComplex.objD
-      (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n :=
-    CochainComplex.of_d (fun n ↦ (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙
-      forget₂ RingCat AddCommGrpCat).obj (SimplexCategory.mk n)) _ n
-  rw [h]
-  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
-  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD
-    (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n).hom x = _
-  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
-  -- Evaluating a morphism of additive groups is additive in the morphism.
-  refine (congrArg (fun g : cobarRing n →+ cobarRing (n + 1) ↦ g x)
-    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
-  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [map_zsmul]
-  exact congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) (hom_forget₂_map_cobarObject_map_apply _ x)
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x :=
+  -- The forgetful functors to additive groups keep the underlying functions of the cofaces.
+  AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply
+    (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n x
 
-/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
+/-! ### The weighted cobar complex -/
+
+/-- The twist of the weight-`k` structure map of `f : [m] ⟶ [n]`: the weight-`k` character `u⁻ᵏ`
+of the composite change of variables from the curve `W_{f m}` to the last curve `W_n` of the
+universal string over `Γ^{⊗_A n}`. A cochain is read as a section of `ω^k` trivialized at the last
+curve of a string, and this factor transports it from `W_{f m}` to `W_n`. -/
+def cobarWeight (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) : cobarRing n.len :=
+  cobarMap (SimplexCategory.mkOfLe (f.toOrderHom (Fin.last m.len)) (Fin.last n.len)
+    (Fin.le_last _)) (weightCharacter k : ArrowRing)
+
+/-- The weight of `f : [m] ⟶ [n]` is the structure map of the edge from `f m` to `n` applied to
+the weight-`k` character. -/
+theorem cobarWeight_def (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) :
+    cobarWeight k f = cobarMap (SimplexCategory.mkOfLe (f.toOrderHom (Fin.last m.len))
+      (Fin.last n.len) (Fin.le_last _)) (weightCharacter k : ArrowRing) :=
+  (rfl)
+
+/-- A map `f : [m] ⟶ [n]` keeping the last vertex has trivial weight. -/
+theorem cobarWeight_eq_one (k : ℤ) {m n : SimplexCategory} {f : m ⟶ n}
+    (hf : f.toOrderHom (Fin.last m.len) = Fin.last n.len) : cobarWeight k f = 1 := by
+  -- The edge from the last vertex to itself factors through `[0]` by the codegeneracy `σ⁰`.
+  have h : SimplexCategory.mkOfLe (f.toOrderHom (Fin.last m.len)) (Fin.last n.len)
+      (Fin.le_last _) =
+        SimplexCategory.σ (n := 0) 0 ≫ SimplexCategory.const ⦋0⦌ n (Fin.last n.len) :=
+    SimplexCategory.Hom.ext_one_left _ _ hf
+  rw [cobarWeight_def, h, cobarMap_comp, RingHom.comp_apply, cobarMap_σ_zero_eq_counit,
+    counit_weightCharacter, map_one]
+
+@[simp]
+theorem cobarWeight_id (k : ℤ) (n : SimplexCategory) : cobarWeight k (𝟙 n) = 1 :=
+  cobarWeight_eq_one k rfl
+
+/-- In weight `0` every weight is trivial. -/
+@[simp]
+theorem cobarWeight_zero {m n : SimplexCategory} (f : m ⟶ n) : cobarWeight 0 f = 1 := by
+  rw [cobarWeight_def, weightCharacter_zero, Units.val_one, map_one]
+
+/-- The coface `δ¹ : [0] ⟶ [1]` keeps the first vertex, so its weight is the weight-`k` character
+of the universal arrow. -/
+@[simp]
+theorem cobarWeight_δ_one_eq_weightCharacter (k : ℤ) :
+    cobarWeight k (SimplexCategory.δ (n := 0) 1) = weightCharacter k := by
+  rw [cobarWeight_def, show SimplexCategory.mkOfLe _ _ _ = 𝟙 ⦋1⦌ from
+    SimplexCategory.Hom.ext_one_left _ _, cobarMap_id, RingHom.id_apply]
+
+/-- The coface `δ² : [1] ⟶ [2]` forgets the second arrow, so its weight is the weight-`k`
+character of the second arrow. -/
+@[simp]
+theorem cobarWeight_δ_two_eq_map_weightCharacter (k : ℤ) :
+    cobarWeight k (SimplexCategory.δ (n := 1) 2) =
+      ChangeRing.map rightUnit (weightCharacter k : ArrowRing) := by
+  rw [cobarWeight_def, show SimplexCategory.mkOfLe _ _ _ = SimplexCategory.δ (n := 1) 0 from
+    SimplexCategory.Hom.ext_one_left _ _, cobarMap_δ_zero_eq_map_rightUnit]
+
+/-- **The weights are a cocycle**: transporting from `W_{g (f l)}` to `W_{g m}` and then to `W_n` is
+transporting from `W_{g (f l)}` to `W_n`. This is the multiplicativity of the weight character
+under the coproduct, `coproduct_weightCharacter`. -/
+theorem cobarWeight_comp (k : ℤ) {l m n : SimplexCategory} (f : l ⟶ m) (g : m ⟶ n) :
+    cobarWeight k (f ≫ g) = cobarMap g (cobarWeight k f) * cobarWeight k g := by
+  -- The three edges between `g (f l)`, `g m` and `n` are the faces of one `2`-simplex `T`.
+  let T := SimplexCategory.mkOfLeComp (g.toOrderHom (f.toOrderHom (Fin.last l.len)))
+    (g.toOrderHom (Fin.last m.len)) (Fin.last n.len)
+    (g.toOrderHom.monotone (Fin.le_last _)) (Fin.le_last _)
+  have h₀ : SimplexCategory.mkOfLe (g.toOrderHom (Fin.last m.len)) (Fin.last n.len)
+      (Fin.le_last _) = SimplexCategory.δ (n := 1) 0 ≫ T :=
+    SimplexCategory.Hom.ext_one_left _ _
+  have h₁ : SimplexCategory.mkOfLe ((f ≫ g).toOrderHom (Fin.last l.len)) (Fin.last n.len)
+      (Fin.le_last _) = SimplexCategory.δ (n := 1) 1 ≫ T :=
+    SimplexCategory.Hom.ext_one_left _ _
+  have h₂ : SimplexCategory.mkOfLe (f.toOrderHom (Fin.last l.len)) (Fin.last m.len)
+      (Fin.le_last _) ≫ g = SimplexCategory.δ (n := 1) 2 ≫ T :=
+    SimplexCategory.Hom.ext_one_left _ _
+  rw [cobarWeight_def, cobarWeight_def, cobarWeight_def, ← RingHom.comp_apply, ← cobarMap_comp,
+    h₀, h₁, h₂]
+  simp only [cobarMap_comp, RingHom.comp_apply, cobarMap_δ_zero_eq_map_rightUnit,
+    cobarMap_δ_one_eq_coproduct, cobarMap_δ_two_eq_algebraMap, coproduct_weightCharacter, map_mul]
+  exact mul_comm _ _
+
+/-- The weight-`k` structure map `Γ^{⊗_A m} → Γ^{⊗_A n}` of `f : [m] ⟶ [n]`: the structure map
+`cobarMap f` followed by multiplication with the weight `cobarWeight k f`. -/
+def weightedCobarMap (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) :
+    cobarRing m.len →+ cobarRing n.len :=
+  (AddMonoidHom.mulLeft (cobarWeight k f)).comp (cobarMap f).toAddMonoidHom
+
+@[simp]
+theorem weightedCobarMap_apply (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n)
+    (x : cobarRing m.len) : weightedCobarMap k f x = cobarWeight k f * cobarMap f x :=
+  (rfl)
+
+@[simp]
+theorem weightedCobarMap_id (k : ℤ) (n : SimplexCategory) :
+    weightedCobarMap k (𝟙 n) = AddMonoidHom.id (cobarRing n.len) := by
+  ext x
+  rw [weightedCobarMap_apply, cobarWeight_id, cobarMap_id, one_mul, RingHom.id_apply,
+    AddMonoidHom.id_apply]
+
+/-- The weight-`k` structure maps compose contravariantly to the simplicial operators. -/
+@[simp]
+theorem weightedCobarMap_comp (k : ℤ) {l m n : SimplexCategory} (f : l ⟶ m) (g : m ⟶ n) :
+    weightedCobarMap k (f ≫ g) = (weightedCobarMap k g).comp (weightedCobarMap k f) := by
+  ext x
+  rw [AddMonoidHom.comp_apply, weightedCobarMap_apply, weightedCobarMap_apply,
+    weightedCobarMap_apply, cobarWeight_comp, cobarMap_comp, RingHom.comp_apply, map_mul]
+  ring
+
+/-- In weight `0` the weighted structure maps are the structure maps `cobarMap`. -/
+theorem weightedCobarMap_zero {m n : SimplexCategory} (f : m ⟶ n) :
+    weightedCobarMap 0 f = (cobarMap f).toAddMonoidHom := by
+  ext x
+  rw [weightedCobarMap_apply, cobarWeight_zero, one_mul, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass]
+
+/-- **The weight-`k` cobar construction** of the Weierstrass Hopf algebroid: the cosimplicial
+abelian group `[n] ↦ Γ^{⊗_A n}` of cochains with coefficients in `ω^k`, with structure maps
+`weightedCobarMap k`. In weight `0` these are the structure maps of `cobarObject`. -/
+@[expose]
+def weightedCobarObject (k : ℤ) : CosimplicialObject AddCommGrpCat.{0} where
+  obj n := AddCommGrpCat.of (cobarRing n.len)
+  map f := AddCommGrpCat.ofHom (weightedCobarMap k f)
+  map_id n := by
+    ext1
+    rw [AddCommGrpCat.hom_ofHom, weightedCobarMap_id, AddCommGrpCat.hom_id]
+  map_comp f g := by
+    ext1
+    rw [AddCommGrpCat.hom_ofHom, weightedCobarMap_comp, AddCommGrpCat.hom_comp,
+      AddCommGrpCat.hom_ofHom, AddCommGrpCat.hom_ofHom]
+
+/-- The objects of `weightedCobarObject k` are the additive groups of the rings `Γ^{⊗_A n}`. -/
+theorem weightedCobarObject_obj (k : ℤ) (n : SimplexCategory) :
+    (weightedCobarObject k).obj n = AddCommGrpCat.of (cobarRing n.len) :=
+  (rfl)
+
+/-- The structure maps of `weightedCobarObject k` are the weight-`k` structure maps. -/
+@[simp]
+theorem weightedCobarObject_map_hom (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) :
+    ((weightedCobarObject k).map f).hom = weightedCobarMap k f :=
+  (rfl)
+
+/-- The cofaces of `weightedCobarObject k` are the weight-`k` structure maps of the `δ i`. -/
+@[simp]
+theorem weightedCobarObject_δ_hom (k : ℤ) {n : ℕ} (i : Fin (n + 2)) :
+    ((weightedCobarObject k).δ i).hom = weightedCobarMap k (SimplexCategory.δ i) :=
+  (rfl)
+
+/-- The codegeneracies of `weightedCobarObject k` are the weight-`k` structure maps of the
+`σ i`. -/
+@[simp]
+theorem weightedCobarObject_σ_hom (k : ℤ) {n : ℕ} (i : Fin (n + 1)) :
+    ((weightedCobarObject k).σ i).hom = weightedCobarMap k (SimplexCategory.σ i) :=
+  (rfl)
+
+/-- **The cobar complex of weight `k`** of the Weierstrass Hopf algebroid, with coefficients in the
+`k`-th power `ω^k` of the Hodge line: the alternating coface complex of `weightedCobarObject k`,
+with `n`-cochains `Γ^{⊗_A n}` and differential `∑ᵢ (-1)ⁱ δⁱ` of the weight-`k` cofaces. In degrees
+`0` and `1` its differentials are `cobarD₀ k` and `cobarD₁ k`. -/
+@[expose]
+def weightedCobarComplex (k : ℤ) : CochainComplex AddCommGrpCat.{0} ℕ :=
+  (AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj (weightedCobarObject k)
+
+/-- The `n`-cochains of the weight-`k` cobar complex are the additive group of `Γ^{⊗_A n}`. -/
+theorem weightedCobarComplex_X (k : ℤ) (n : ℕ) :
+    (weightedCobarComplex k).X n = AddCommGrpCat.of (cobarRing n) :=
+  (rfl)
+
+/-- The differential `Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` of the weight-`k` cobar complex is the
+alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the weight-`k` cofaces. -/
+theorem weightedCobarComplex_d_hom_apply (k : ℤ) (n : ℕ) (x : cobarRing n) :
+    ((weightedCobarComplex k).d n (n + 1)).hom x =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • weightedCobarMap k (SimplexCategory.δ i) x :=
+  -- The cofaces of `weightedCobarObject k` are the maps `weightedCobarMap k (δ i)`.
+  AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply (weightedCobarObject k) n x
+
+/-- The differential `A → Γ` of the weight-`k` cobar complex in degree `0` is the first weighted
+cobar differential `f ↦ η_R(f) - u⁻ᵏ η_L(f)`. -/
+theorem weightedCobarComplex_d_zero_one_hom_apply (k : ℤ) (x : MvPolynomial Coeff ℤ) :
+    ((weightedCobarComplex k).d 0 1).hom x = cobarD₀ k x := by
+  have h₀ : cobarWeight k (SimplexCategory.δ (n := 0) 0) = 1 := cobarWeight_eq_one k rfl
+  rw [weightedCobarComplex_d_hom_apply, Fin.sum_univ_two, weightedCobarMap_apply,
+    weightedCobarMap_apply, h₀, cobarWeight_δ_one_eq_weightCharacter,
+    cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap, cobarD₀_apply]
+  simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul, one_mul,
+    ← sub_eq_add_neg]
+  -- The two sides differ only in spelling `Γ` as `cobarRing 1` or `ArrowRing`.
+  rfl
+
+/-- The differential `Γ → Γ ⊗_A Γ` of the weight-`k` cobar complex in degree `1` is the second
+weighted cobar differential `a ↦ 1 ⊗ a - Δ a + (1 ⊗ u⁻ᵏ)(a ⊗ 1)`. -/
+theorem weightedCobarComplex_d_one_two_hom_apply (k : ℤ) (x : ArrowRing) :
+    ((weightedCobarComplex k).d 1 2).hom x = cobarD₁ k x := by
+  have h₀ : cobarWeight k (SimplexCategory.δ (n := 1) 0) = 1 := cobarWeight_eq_one k rfl
+  have h₁ : cobarWeight k (SimplexCategory.δ (n := 1) 1) = 1 := cobarWeight_eq_one k rfl
+  rw [weightedCobarComplex_d_hom_apply, Fin.sum_univ_three, weightedCobarMap_apply,
+    weightedCobarMap_apply, weightedCobarMap_apply, h₀, h₁,
+    cobarWeight_δ_two_eq_map_weightCharacter, cobarMap_δ_zero_eq_map_rightUnit,
+    cobarMap_δ_one_eq_coproduct, cobarMap_δ_two_eq_algebraMap, cobarD₁_apply]
+  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul,
+    neg_one_sq, one_mul, ← sub_eq_add_neg]
+  -- The two sides differ only in spelling `Γ ⊗_A Γ` as `cobarRing 2` or `ChangeRing ArrowRing`.
+  rfl
+
+/-! ### The cobar complex as the cobar complex of weight `0` -/
+
+/-- In weight `0` the weight-`k` cobar construction is the cobar construction `cobarObject`,
+viewed as a cosimplicial abelian group. -/
+theorem weightedCobarObject_zero :
+    weightedCobarObject 0 =
+      cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat :=
+  CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ f ↦ by
+    ext x
+    -- The objects agree definitionally, so both `eqToHom`s are identities, and the forgetful
+    -- functors to additive groups keep the underlying function of `cobarMap f`.
+    exact DFunLike.congr_fun (weightedCobarMap_zero f) x
+
+/-- In weight `0` the weight-`k` cobar complex is the cobar complex. -/
+theorem weightedCobarComplex_zero : weightedCobarComplex 0 = cobarComplex :=
+  congrArg (AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj
+    weightedCobarObject_zero
+
+/-- The differentials of the weight-`0` cobar complex are those of the cobar complex. -/
+theorem weightedCobarComplex_zero_d (i j : ℕ) :
+    (weightedCobarComplex 0).d i j = cobarComplex.d i j := by
+  have h := (eqToHom weightedCobarComplex_zero).comm i j
+  -- The two complexes have the same cochains, so the components of `eqToHom` are identities.
+  have h₁ (n : ℕ) (e : (weightedCobarComplex 0).X n = cobarComplex.X n) : eqToHom e = 𝟙 _ := rfl
+  rw [HomologicalComplex.eqToHom_f, HomologicalComplex.eqToHom_f, h₁, h₁] at h
+  exact (Category.comp_id _).symm.trans (h.symm.trans (Category.id_comp _))
+
+/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`, the first
+weighted cobar differential `cobarD₀ 0`. -/
 theorem cobarComplex_d_zero_one_hom_apply (x : MvPolynomial Coeff ℤ) :
     (cobarComplex.d 0 1).hom x = rightUnit x - algebraMap (MvPolynomial Coeff ℤ) ArrowRing x := by
-  have h := cobarComplex_d_hom_apply 0 x
-  rw [Fin.sum_univ_two, cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap] at h
-  simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul,
-    ← sub_eq_add_neg] at h
-  exact h
+  refine (congrArg (·.hom x) (weightedCobarComplex_zero_d 0 1)).symm.trans ?_
+  rw [weightedCobarComplex_d_zero_one_hom_apply, cobarD₀_apply, weightCharacter_zero,
+    Units.val_one, one_mul]
 
 /-- The differential `Γ → Γ ⊗_A Γ` of the cobar complex in degree `1` is
-`x ↦ 1 ⊗ x - Δ x + x ⊗ 1`. -/
+`x ↦ 1 ⊗ x - Δ x + x ⊗ 1`, the second weighted cobar differential `cobarD₁ 0`. -/
 theorem cobarComplex_d_one_two_hom_apply (x : ArrowRing) :
     (cobarComplex.d 1 2).hom x =
       ChangeRing.map rightUnit x - coproduct x + algebraMap ArrowRing (ChangeRing ArrowRing) x := by
-  have h := cobarComplex_d_hom_apply 1 x
-  rw [Fin.sum_univ_three, cobarMap_δ_zero_eq_map_rightUnit, cobarMap_δ_one_eq_coproduct,
-    cobarMap_δ_two_eq_algebraMap] at h
-  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul,
-    neg_one_sq, ← sub_eq_add_neg] at h
-  exact h
+  refine (congrArg (·.hom x) (weightedCobarComplex_zero_d 1 2)).symm.trans ?_
+  rw [weightedCobarComplex_d_one_two_hom_apply, cobarD₁_apply, weightCharacter_zero,
+    Units.val_one, map_one, one_mul]
 
 end TauCeti.WeierstrassHopfAlgebroid
 
@@ -777,13 +1007,22 @@ namespace WeierstrassCurve
 
 open TauCeti.WeierstrassHopfAlgebroid
 
+/-- **The degree `0` cocycles of the weight-`k` cobar complex are the integral modular forms of
+weight `k`**, for `k ≥ 0`. -/
+theorem isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_zero (k : ℕ)
+    (f : MvPolynomial Coeff ℤ) :
+    IsIntegralModularForm k f ↔ ((weightedCobarComplex k).d 0 1).hom f = 0 := by
+  rw [weightedCobarComplex_d_zero_one_hom_apply]
+  exact (cobarD₀_natCast_eq_zero_iff k f).symm
+
 /-- The degree `0` cocycles of the cobar complex of the Weierstrass Hopf algebroid are the
 integral modular forms of weight `0`. -/
 theorem isIntegralModularForm_zero_iff_cobarComplex_d_zero_one_hom_apply_eq_zero
     (f : MvPolynomial Coeff ℤ) :
     IsIntegralModularForm 0 f ↔ (cobarComplex.d 0 1).hom f = 0 := by
-  rw [cobarComplex_d_zero_one_hom_apply, isIntegralModularForm_iff_rightUnit, pow_zero, one_mul]
-  exact sub_eq_zero.symm
+  rw [isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_zero, Nat.cast_zero,
+    weightedCobarComplex_zero_d]
+  -- The two sides differ only in spelling the cochains of `cobarComplex`.
+  exact Iff.rfl
 
 end WeierstrassCurve
-
