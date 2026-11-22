@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LivesOver
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 
 /-!
@@ -66,6 +67,12 @@ then `TauCeti.TopCat.singularHomologyComplFiberIso`.
   fibre is nonzero, independently of the chart.
 * `TauCeti.TopCat.twistedHomologyComplFiberIso_hom_constant`: for a constant system the
   isomorphism is the untwisted `TauCeti.TopCat.singularHomologyComplFiberIso`.
+* `TauCeti.TopCat.livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero`: a class
+  of `Hₙ₊ᵣ(E; p*L)` lives over the fundamental class at `b`
+  (`TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`) exactly when its image under the
+  twisted shriek map is nonzero.
+* `TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass.finrank_le`: such a class has degree at
+  least the dimension of the base.
 
 ## References
 
@@ -324,3 +331,42 @@ lemma twistedHomologyComplFiberIso_hom_constant (M : ModuleCat.{u} R) (hε₀ : 
     (Category.assoc _ _ _)
 
 end TauCeti.TopCat
+
+/-! ### Classes living over the fundamental class -/
+
+namespace TauCeti
+
+variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type*} [Ring R]
+  {L : LocalCoefficientSystem.{_, u, u} R B} (e : OpenPartialHomeomorph B V) {b : B}
+  (hb : b ∈ e.source)
+
+/-- **Living over the fundamental class through the twisted shriek map.** For a Serre fibration
+`p : E ⟶ B` over a `T₁` space with a chart `e` of dimension `r` at `b`, and a local system `L` on
+`B`, a class `α ∈ Hₙ₊ᵣ(E; p*L)` lives over the fundamental class at `b` exactly when its image under
+the twisted shriek map `Hₙ₊ᵣ(E; p*L) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b); p*L) ≅ Hₙ(p⁻¹(b); L_b)` of the inclusion
+of `b` is nonzero, for any ball about `e b` inside the target of `e`. -/
+theorem TopCat.livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero {ε : ℝ}
+    (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) (hp : TopCat.serreFibrations p) {n m : ℕ}
+    (h : n + finrank ℝ V = m) (α : ((pullback p.hom).obj L).twistedHomology m) :
+    ((pullback p.hom).obj L).LivesOverFundamentalClass p b α ↔
+      (TopCat.twistedHomologyComplFiberIso L e hb hε hε₀ hp n m h).hom.hom
+        ((((pullback p.hom).obj L).fiberLocalization p b m).hom α) ≠ 0 :=
+  (LocalCoefficientSystem.livesOverFundamentalClass_iff _ _ _ α).trans
+    (TopCat.twistedHomologyπ_comp_twistedHomologyComplFiberIso_hom_ne_zero_iff L e hb hε hε₀ hp n
+      m h α).symm
+
+include hb in
+/-- **A class living over the fundamental class has degree at least the dimension of the base.**
+For a Serre fibration `p : E ⟶ B` over a `T₁` space with a chart of dimension `r` at `b`, and a
+local system `L` on `B`, the local homology `Hₖ(E, E ∖ p⁻¹(b); p*L)` vanishes for `k < r`, so no
+class of `Hₖ(E; p*L)` of degree below `r` lives over the fundamental class at `b`. -/
+theorem LocalCoefficientSystem.LivesOverFundamentalClass.finrank_le
+    (hp : TopCat.serreFibrations p) {d : ℕ} {α : ((pullback p.hom).obj L).twistedHomology d}
+    (h : ((pullback p.hom).obj L).LivesOverFundamentalClass p b α) : finrank ℝ V ≤ d := by
+  by_contra hd
+  have := ModuleCat.isZero_iff_subsingleton.1
+    (TopCat.isZero_twistedHomology_complFiber L e hb hp (not_le.1 hd))
+  exact (LocalCoefficientSystem.livesOverFundamentalClass_iff _ _ _ _).1 h (Subsingleton.elim _ _)
+
+end TauCeti
