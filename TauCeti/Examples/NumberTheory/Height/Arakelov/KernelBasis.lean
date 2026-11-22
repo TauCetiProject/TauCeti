@@ -86,8 +86,7 @@ example :
     Fin.prod_univ_one, hH] at hxle
   obtain ⟨z, hz0, hLz, hzle⟩ :=
     Matrix.exists_ne_zero_int_mulVec_eq_zero_height2_le (A := Matrix.of L) hL (by decide)
-  rw [Fintype.card_fin, Fintype.card_fin, Fin.prod_univ_one,
-    show (Matrix.of L).row 0 = L 0 from rfl, hH] at hzle
+  rw [Fintype.card_fin, Fintype.card_fin, Fin.prod_univ_one, Matrix.row_of, hH] at hzle
   have hgen : height2 ![-2, (1 : ℚ)] = √5 := by
     have : ![-2, (1 : ℚ)] = ((↑) : ℤ → ℚ) ∘ ![-2, 1] := by ext j; fin_cases j <;> simp
     rw [this, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]; norm_num [Fin.sum_univ_two]
@@ -138,7 +137,8 @@ example :
 open scoped Classical in
 example :
     let A : Matrix (Fin 1) (Fin 1) ℚ := !![1]
-    LinearMap.ker A.mulVecLin = ⊥ ∧ Fintype.card (Fin 1) - A.rank = 0 := by
+    LinearMap.ker A.mulVecLin = ⊥ ∧ Fintype.card (Fin 1) - A.rank = 0 ∧
+      ¬ ∃ x : Fin 1 → ℚ, x ≠ 0 ∧ A *ᵥ x = 0 := by
   intro A
   have hker : LinearMap.ker A.mulVecLin = ⊥ := by
     ext v; simp only [LinearMap.mem_ker, Submodule.mem_bot]
@@ -147,7 +147,8 @@ example :
   have h := A.mulVecLin.finrank_range_add_finrank_ker
   rw [Matrix.finrank_range_mulVecLin, hker, finrank_bot, add_zero,
     Module.finrank_fintype_fun_eq_card, Fintype.card_fin] at h
-  exact ⟨hker, by simp [h]⟩
+  exact ⟨hker, by simp [h], fun ⟨x, hx0, hAx⟩ ↦
+    hx0 ((Submodule.mem_bot ℚ).mp (hker ▸ LinearMap.mem_ker.mpr hAx))⟩
 
 /-! ### 4. Gaussian-rational kernel basis over `ℚ(i)` -/
 

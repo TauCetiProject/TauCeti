@@ -215,18 +215,17 @@ theorem height2_le_sqrt_sum_mult_mul_sum_norm_sq_div [Fintype ι] (y : ι → �
   have hD : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
   have hnn (w : InfinitePlace K) : 0 ≤ ∑ i, ‖w.embedding (y i : K)‖ ^ 2 :=
     Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
-  have hsum_w : ∑ w : InfinitePlace K, (w.mult : ℝ) / finrank ℚ K = 1 := by
-    rw [← Finset.sum_div, ← Nat.cast_sum, InfinitePlace.sum_mult_eq, div_self hD.ne']
+  have hsum_w : ∑ w : InfinitePlace K, (w.mult : ℝ) = finrank ℚ K := by
+    rw [← Nat.cast_sum, InfinitePlace.sum_mult_eq]
   have hAMGM :
-      ∏ w : InfinitePlace K,
-          (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / finrank ℚ K) ≤
+      (∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ (w.mult : ℝ)) ^
+          (finrank ℚ K : ℝ)⁻¹ ≤
         (∑ w : InfinitePlace K, (w.mult : ℝ) * ∑ i, ‖w.embedding (y i : K)‖ ^ 2) /
           finrank ℚ K := by
-    have h := Real.geom_mean_le_arith_mean_weighted Finset.univ
-      (fun w : InfinitePlace K ↦ (w.mult : ℝ) / finrank ℚ K)
+    simpa only [hsum_w] using Real.geom_mean_le_arith_mean Finset.univ
+      (fun w : InfinitePlace K ↦ (w.mult : ℝ))
       (fun w : InfinitePlace K ↦ ∑ i, ‖w.embedding (y i : K)‖ ^ 2)
-      (fun _ _ ↦ by positivity) hsum_w (fun w _ ↦ hnn w)
-    simpa only [div_mul_eq_mul_div, Finset.sum_div] using h
+      (fun _ _ ↦ Nat.cast_nonneg _) (by rw [hsum_w]; exact hD) (fun w _ ↦ hnn w)
   have harak :
       arakelovMulHeight (fun i ↦ (y i : K)) ≤
         ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
@@ -234,28 +233,27 @@ theorem height2_le_sqrt_sum_mult_mul_sum_norm_sq_div [Fintype ι] (y : ι → �
     exact mul_le_of_le_one_right
       (Finset.prod_nonneg fun _ _ ↦ by positivity)
       (NumberField.finprod_iSup_finitePlace_le_one y)
-  have hrew :
-      (∏ w : InfinitePlace K,
-          (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) ^ ((1 : ℝ) / finrank ℚ K) =
-        √(∏ w : InfinitePlace K,
-          (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / finrank ℚ K)) := by
-    rw [Real.sqrt_eq_rpow,
-      ← Real.finsetProd_rpow _ _ (fun w _ ↦ Real.rpow_nonneg (hnn w) _),
-      ← Real.finsetProd_rpow _ _ (fun w _ ↦ Real.rpow_nonneg (hnn w) _)]
+  have harak_sq :
+      arakelovMulHeight (fun i ↦ (y i : K)) ^ 2 ≤
+        ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ (w.mult : ℝ) := by
+    refine (pow_le_pow_left₀ (arakelovMulHeight_nonneg _) harak 2).trans_eq ?_
+    rw [← Finset.prod_pow]
     refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [← Real.rpow_mul (hnn w), ← Real.rpow_mul (hnn w)]
-    congr 1; ring
+    rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul (hnn w), Nat.cast_ofNat,
+      div_mul_cancel₀ _ two_ne_zero]
   have h := arakelovMulHeight_eq_height2 (fun i ↦ (y i : K))
   rw [ite_eq_right hy'] at h
-  rw [← h]
-  calc arakelovMulHeight (fun i ↦ (y i : K)) ^ ((1 : ℝ) / finrank ℚ K)
-      ≤ (∏ w : InfinitePlace K,
-          (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) ^ ((1 : ℝ) / finrank ℚ K) :=
-        Real.rpow_le_rpow (arakelovMulHeight_nonneg _) harak (by positivity)
-    _ = √(∏ w : InfinitePlace K,
-          (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / finrank ℚ K)) := hrew
-    _ ≤ √((∑ w : InfinitePlace K, (w.mult : ℝ) * ∑ i, ‖w.embedding (y i : K)‖ ^ 2) /
-          finrank ℚ K) := Real.sqrt_le_sqrt hAMGM
+  refine Real.le_sqrt_of_sq_le ?_
+  calc height2 (fun i ↦ (y i : K)) ^ 2
+      = (arakelovMulHeight (fun i ↦ (y i : K)) ^ 2) ^ (finrank ℚ K : ℝ)⁻¹ := by
+        rw [← h, ← Real.rpow_natCast _ 2, ← Real.rpow_mul (arakelovMulHeight_nonneg _),
+          ← Real.rpow_natCast _ 2, ← Real.rpow_mul (arakelovMulHeight_nonneg _), one_div,
+          mul_comm]
+    _ ≤ (∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ (w.mult : ℝ)) ^
+          (finrank ℚ K : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (sq_nonneg _) harak_sq (by positivity)
+    _ ≤ (∑ w : InfinitePlace K, (w.mult : ℝ) * ∑ i, ‖w.embedding (y i : K)‖ ^ 2) /
+          finrank ℚ K := hAMGM
 
 /-- A tuple of algebraic integers whose embedding at every infinite place has Euclidean norm at
 most `c` has absolute Euclidean height at most `c`. -/

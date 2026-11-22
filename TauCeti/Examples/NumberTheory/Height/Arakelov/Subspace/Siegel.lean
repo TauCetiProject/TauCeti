@@ -17,8 +17,9 @@ This file illustrates `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul
   (`Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow`, where
   `2 / √π * Γ(3 / 2) = 1`) and the rational bound
   (`Submodule.exists_ne_zero_mem_intPoints_height2_le`).
-* A single nonzero linear form in `ℚ¹` (`U = V = 1`) has trivial kernel, showing that the strict
-  inequality `Fintype.card m < Fintype.card ι` is necessary.
+
+See `TauCeti.Examples.NumberTheory.Height.Arakelov.KernelBasis` for the full-rank `U = V = 1`
+boundary example showing that `Fintype.card m < Fintype.card ι` is necessary.
 
 ## References
 
@@ -29,7 +30,7 @@ This file illustrates `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul
 noncomputable section
 
 open Module NumberField TauCeti
-open scoped BigOperators Matrix
+open scoped BigOperators
 
 /-- Over `ℚ` on the `1`-dimensional subspace `V = ℚ ∙ ![(1 : ℚ), 2]`, both the Minkowski-ball
 bound `Submodule.exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow` and the rational bound
@@ -66,14 +67,5 @@ example :
   · obtain ⟨z, hzV, hz0, hle⟩ := Submodule.exists_ne_zero_mem_intPoints_height2_le hV
     refine ⟨z, hzV, hz0, hle.trans_eq ?_⟩
     simp [hdim]
-
-/-- A single nonzero linear form in one variable has trivial kernel, confirming that the strict
-inequality `Fintype.card m < Fintype.card ι` cannot be weakened to `≤`. -/
-example : ¬ ∃ x : Fin 1 → ℚ, x ≠ 0 ∧ ![(1 : ℚ)] ⬝ᵥ x = 0 := by
-  rintro ⟨x, hx0, hdot⟩
-  apply hx0
-  ext i
-  fin_cases i
-  simpa [dotProduct] using hdot
 
 end

@@ -29,29 +29,6 @@ public section
 
 open Module
 
-namespace MeasureTheory
-
-/-- **Minkowski's convex body theorem for the integer lattice.** A compact convex set
-`s ⊆ η → ℝ`, symmetric about the origin, of volume at least `2 ^ |η|` contains a nonzero integer
-vector. -/
-theorem exists_ne_zero_int_vec_mem_of_two_pow_le_volume {η : Type*} [Fintype η] [Nonempty η]
-    {s : Set (η → ℝ)} (h_symm : ∀ x ∈ s, -x ∈ s) (h_conv : Convex ℝ s) (h_cpt : IsCompact s)
-    (h : 2 ^ Fintype.card η ≤ volume s) :
-    ∃ z : η → ℤ, z ≠ 0 ∧ (fun k ↦ (z k : ℝ)) ∈ s := by
-  set b := Pi.basisFun ℝ η
-  have : Countable (Submodule.span ℤ (Set.range b)).toAddSubgroup :=
-    inferInstanceAs (Countable (Submodule.span ℤ (Set.range b)))
-  obtain ⟨⟨v, hv⟩, hv0, hvs⟩ := exists_ne_zero_mem_lattice_of_measure_mul_two_pow_le_measure
-    (ZSpan.isAddFundamentalDomain' b volume) h_symm h_conv h_cpt (by
-      rw [ZSpan.fundamentalDomain_pi_basisFun, Real.volume_pi_Ico, finrank_fintype_fun_eq_card]
-      simpa using h)
-  choose z hz using fun k ↦ by simpa [b] using (b.mem_span_iff_repr_mem ℤ v).1 hv k
-  have hvz : v = fun k ↦ (z k : ℝ) := funext fun k ↦ (hz k).symm
-  subst hvz
-  exact ⟨z, fun h0 ↦ hv0 (Subtype.ext (funext fun k ↦ by simp [h0])), hvs⟩
-
-end MeasureTheory
-
 namespace ZLattice
 
 open MeasureTheory
@@ -80,3 +57,31 @@ theorem exists_ne_zero_mem_of_covolume_mul_two_pow_le
   exact ⟨x, (Submodule.mem_toAddSubgroup L).mp hxL, fun h0 ↦ hx0 (Subtype.ext h0), hxs⟩
 
 end ZLattice
+
+namespace MeasureTheory
+
+/-- **Minkowski's convex body theorem for the integer lattice.** A compact convex set
+`s ⊆ η → ℝ`, symmetric about the origin, of volume at least `2 ^ |η|` contains a nonzero integer
+vector. -/
+theorem exists_ne_zero_int_vec_mem_of_two_pow_le_volume {η : Type*} [Fintype η] [Nonempty η]
+    {s : Set (η → ℝ)} (h_symm : ∀ x ∈ s, -x ∈ s) (h_conv : Convex ℝ s) (h_cpt : IsCompact s)
+    (h : 2 ^ Fintype.card η ≤ volume s) :
+    ∃ z : η → ℤ, z ≠ 0 ∧ (fun k ↦ (z k : ℝ)) ∈ s := by
+  set b := Pi.basisFun ℝ η
+  set L : Submodule ℤ (η → ℝ) := Submodule.span ℤ (Set.range b)
+  have : DiscreteTopology L := inferInstance
+  have hcov : ZLattice.covolume L volume = 1 := by
+    rw [ZLattice.covolume_eq_measure_fundamentalDomain L volume
+        (ZSpan.isAddFundamentalDomain' b volume),
+      measureReal_def, ZSpan.fundamentalDomain_pi_basisFun, Real.volume_pi_Ico]
+    simp
+  have hvol : ENNReal.ofReal (ZLattice.covolume L volume) * 2 ^ finrank ℝ (η → ℝ) ≤ volume s := by
+    rwa [hcov, ENNReal.ofReal_one, one_mul, finrank_fintype_fun_eq_card]
+  obtain ⟨v, hv, hv0, hvs⟩ :=
+    ZLattice.exists_ne_zero_mem_of_covolume_mul_two_pow_le L volume h_symm h_conv h_cpt hvol
+  choose z hz using fun k ↦ by simpa [b] using (b.mem_span_iff_repr_mem ℤ v).1 hv k
+  have hvz : v = fun k ↦ (z k : ℝ) := funext fun k ↦ (hz k).symm
+  subst hvz
+  exact ⟨z, fun h0 ↦ hv0 (funext fun k ↦ by simp [h0]), hvs⟩
+
+end MeasureTheory

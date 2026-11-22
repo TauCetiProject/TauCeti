@@ -567,9 +567,11 @@ theorem covolume_comap_mulMixedSubmodule_multSqrt (W : Submodule K (ι → K)) :
       (√|(discr K : ℝ)|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
   let eT := W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)
   have hdet_symm : |eT.symm.toLinearMap.det|⁻¹ = (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
-    rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm]
-    change |(eT : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan).det⁻¹|⁻¹ = _
-    rw [W.toLinearMap_mulMixedSubmoduleEquiv, abs_inv, inv_inv, W.det_mulMixedSubmodule,
+    have hdet := ContinuousLinearEquiv.det_coe_symm eT
+    dsimp only [ContinuousLinearMap.det] at hdet
+    rw [← ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap eT.symm, hdet,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      W.toLinearMap_mulMixedSubmoduleEquiv, abs_inv, inv_inv, W.det_mulMixedSubmodule,
       algebraNorm_multSqrt, ← pow_mul, abs_of_pos (by positivity)]
   rw [ZLattice.covolume_comap_continuousLinearEquiv W.integerLattice eT.symm volume,
     W.covolume_integerLattice, hdet_symm, mul_pow, ← pow_mul, inv_pow]
