@@ -76,7 +76,8 @@ made here.
   completely integrable system.
 * `TauCeti.isProperMap_sphericalPendulumEnergyMomentum`: `F` is proper.
 * `isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonian_comp_subtypeVal`,
-  `isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`: the
+  `isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`,
+  `isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentum`: the
   Hamiltonian flows of `H` and `J` are complete.
 
 ## References
@@ -410,6 +411,19 @@ theorem isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonia
         0).of_le (by simp))
       isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal
 
+/-- **The flows of the energy–momentum map are complete**: `F = (H, J)` is a proper integrable
+system, so the Hamiltonian vector fields of both of its components are complete. -/
+theorem isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentum (i : Fin 2) :
+    IsCompleteVectorField (sphericalPendulumSymplecticForm.hamiltonianVectorField
+      fun y : sphericalPendulumPhaseSpace ↦
+        ![sphericalPendulumHamiltonian y,
+          angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
+            (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))] i) :=
+  isIntegrableSystem_sphericalPendulumEnergyMomentum
+    |>.isCompleteVectorField_hamiltonianVectorField_of_isProperMap
+      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
+      isProperMap_sphericalPendulumEnergyMomentum i
+
 /-- **The rotation flow of the spherical pendulum is complete**: the energy is a proper first
 integral of the vertical angular momentum, so the Hamiltonian vector field of the vertical angular
 momentum on the phase space is complete. -/
@@ -417,9 +431,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPe
     IsCompleteVectorField (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
         (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) := by
-  simpa using isIntegrableSystem_sphericalPendulumEnergyMomentum
-    |>.isCompleteVectorField_hamiltonianVectorField_of_isProperMap
-      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
-      isProperMap_sphericalPendulumEnergyMomentum 1
+  simpa using isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentum 1
 
 end TauCeti

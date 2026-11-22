@@ -44,6 +44,8 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_pos`,
   `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_nonpos`: the radicand is positive strictly between the
   turning points and nonpositive elsewhere below the north pole.
+* `TauCeti.snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace`: on the
+  fibre, the vertical momentum vanishes exactly at the turning points.
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
   against the inverse square root of the radicand run between the turning points.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
@@ -364,6 +366,30 @@ theorem image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc (hj : j 
     refine ⟨Ioo_subset_Icc_self hzI, ?_, by linarith⟩
     by_contra hzh
     nlinarith [mul_pos (sub_pos.2 (not_le.1 hzh)) h₁, sq_pos_of_ne_zero hj]
+
+/-- **The vertical momentum vanishes exactly at the turning points.** Above the curve of relative
+equilibria, a point of the fibre `F⁻¹(h, j)` has nonzero vertical momentum `p₃` if and only if its
+height lies strictly between the turning points. -/
+theorem snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h)
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)} (hx : x ∈ sphericalPendulumPhaseSpace)
+    (hF : sphericalPendulumEnergyMomentum x = (h, j)) :
+    x.2 2 ≠ 0 ↔ x.1 2 ∈ Ioo (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j) := by
+  have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hsq
+  have hz : x.1 2 ∈ Icc (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j) := by
+    rw [← image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc hj hz₀ hV]
+    exact ⟨x, ⟨hx, hF⟩, rfl⟩
+  refine ⟨fun hp ↦ ?_, fun hz hp ↦ ?_⟩
+  · by_contra hz'
+    have := two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV
+      (hz.2.trans (sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV).le) hz'
+    exact hp (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm (hsq ▸ this) (sq_nonneg _)))
+  · have := two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz
+    rw [← hsq, hp] at this
+    simp at this
 
 end Regular
 
