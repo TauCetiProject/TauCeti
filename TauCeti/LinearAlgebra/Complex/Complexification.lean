@@ -37,7 +37,8 @@ for a real seminormed space `X`, and the complexification of bounded operators, 
 * `TauCeti.Complexification.ext_ofReal`: complex-(semi)linear maps out of `X_ℂ` are determined on
   `X`.
 * `LinearMap.complexify`: the complex-linear extension `T_ℂ` of a real-linear map `T`, the unique
-  one (`LinearMap.eq_complexify_iff`); it has finite rank exactly when `T` does
+  one (`LinearMap.eq_complexify_iff`); it is injective exactly when `T` is
+  (`LinearMap.injective_complexify_iff`) and has finite rank exactly when `T` does
   (`LinearMap.hasFiniteRange_complexify_iff`); it commutes with conjugation
   (`LinearMap.conj_complexify`).
 * `TauCeti.tensorEquivComplexification`: the algebraic isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] W_ℂ`, which
@@ -225,23 +226,24 @@ variable {W : Type*} [AddCommGroup W] [Module ℝ W]
 
 variable (W) in
 /-- The canonical `ℂ`-linear isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] TauCeti.Complexification W` sending
-`u` to `⟨realPart W u, imaginaryPart W u⟩` and `⟨x, y⟩` to `1 ⊗ₜ x + I ⊗ₜ y`. -/
+`u` to `⟨realPart W u, imaginaryPart W u⟩` and `⟨x, y⟩` to `1 ⊗ₜ x + I ⊗ₜ y`: the real-linear
+`TauCeti.complexificationLinearEquivProd W` followed by `(Complexification.equivProdLm W).symm`,
+which is complex-linear. -/
 def tensorEquivComplexification : ℂ ⊗[ℝ] W ≃ₗ[ℂ] Complexification W where
-  toFun u := ⟨realPart W u, imaginaryPart W u⟩
-  map_add' _ _ := by ext <;> simp
-  map_smul' _ _ := by ext <;> simp [realPart_smul, imaginaryPart_smul, add_comm]
-  invFun z := 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im
-  left_inv := one_tmul_realPart_add_I_tmul_imaginaryPart W
-  right_inv _ := by ext <;> simp
+  __ := (complexificationLinearEquivProd W).trans (Complexification.equivProdLm W).symm
+  map_smul' _ _ := by ext <;> simp [add_comm]
 
 @[simp] theorem tensorEquivComplexification_re (u : ℂ ⊗[ℝ] W) :
-    (tensorEquivComplexification W u).re = realPart W u := (rfl)
+    (tensorEquivComplexification W u).re = realPart W u := by
+  simp [tensorEquivComplexification]
 @[simp] theorem tensorEquivComplexification_im (u : ℂ ⊗[ℝ] W) :
-    (tensorEquivComplexification W u).im = imaginaryPart W u := (rfl)
+    (tensorEquivComplexification W u).im = imaginaryPart W u := by
+  simp [tensorEquivComplexification]
 @[simp] theorem tensorEquivComplexification_tmul (c : ℂ) (w : W) :
     tensorEquivComplexification W (c ⊗ₜ[ℝ] w) = c • Complexification.ofReal w := by ext <;> simp
 @[simp] theorem tensorEquivComplexification_symm_apply (z : Complexification W) :
-    (tensorEquivComplexification W).symm z = 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im := (rfl)
+    (tensorEquivComplexification W).symm z = 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im := by
+  simp [tensorEquivComplexification]
 
 /-- `tensorEquivComplexification` intertwines `tmulConj` with `Complexification.conj`. -/
 theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :
@@ -304,24 +306,48 @@ theorem complexify_ofReal (T : X →ₗ[ℝ] Y) (x : X) :
 /-- Complexification sends the zero map to the zero map. -/
 @[simp]
 theorem complexify_zero : (0 : X →ₗ[ℝ] Y).complexify = 0 := by
-  ext z <;> simp
+  simp [complexify]
 
 /-- Complexification is additive. -/
 @[simp]
 theorem complexify_add (S T : X →ₗ[ℝ] Y) : (S + T).complexify = S.complexify + T.complexify := by
-  ext z <;> simp
+  simp [complexify, baseChange_add, add_comp, comp_add]
+
+/-- Complexification commutes with negation. -/
+@[simp]
+theorem complexify_neg (T : X →ₗ[ℝ] Y) : (-T).complexify = -T.complexify := by
+  simp [complexify, baseChange_neg, neg_comp, comp_neg]
+
+/-- Complexification commutes with subtraction. -/
+@[simp]
+theorem complexify_sub (S T : X →ₗ[ℝ] Y) : (S - T).complexify = S.complexify - T.complexify := by
+  simp [complexify, baseChange_sub, sub_comp, comp_sub]
+
+/-- Complexification commutes with real scalar multiplication. -/
+@[simp]
+theorem complexify_smul (r : ℝ) (T : X →ₗ[ℝ] Y) : (r • T).complexify = r • T.complexify := by
+  simp [complexify, baseChange_smul, smul_comp, comp_smul]
 
 /-- Complexification preserves identity maps. -/
 @[simp]
 theorem complexify_id : (LinearMap.id : X →ₗ[ℝ] X).complexify = LinearMap.id := by
-  rw [complexify, baseChange_id, id_comp, LinearEquiv.comp_symm]
+  simp [complexify, baseChange_id]
 
 /-- Complexification preserves composition. -/
 @[simp]
 theorem complexify_comp {Z : Type*} [AddCommGroup Z] [Module ℝ Z] (T : Y →ₗ[ℝ] Z)
     (S : X →ₗ[ℝ] Y) : (T ∘ₗ S).complexify = T.complexify ∘ₗ S.complexify := by
-  rw [complexify, complexify, complexify, baseChange_comp]
-  exact LinearMap.ext fun z ↦ by simp
+  simp [complexify, baseChange_comp, comp_assoc]
+
+/-- Complexification preserves and reflects injectivity. -/
+@[simp]
+theorem injective_complexify_iff (T : X →ₗ[ℝ] Y) :
+    Function.Injective T.complexify ↔ Function.Injective T := by
+  refine ⟨fun h x y hxy ↦ ?_, fun h z w hzw ↦ ?_⟩
+  · simpa using congrArg re (h (a₁ := ofReal x) (a₂ := ofReal y) (by simp [hxy]))
+  · ext
+    · exact h (by simpa using congrArg re hzw)
+    · exact h (by simpa using congrArg im hzw)
 
 /-- Complexification preserves and reflects finite rank. -/
 @[simp]
@@ -352,9 +378,8 @@ theorem eq_complexify_iff (T : X →ₗ[ℝ] Y) (S : Complexification X →ₗ[�
 theorem conj_complexify (T : X →ₗ[ℝ] Y) (z : Complexification X) :
     conj Y (T.complexify z) = T.complexify (conj X z) := by
   obtain ⟨u, rfl⟩ := (tensorEquivComplexification X).surjective z
-  rw [← tensorEquivComplexification_baseChange, ← tensorEquivComplexification_tmulConj,
-    tmulConj_baseChange, tensorEquivComplexification_baseChange,
-    tensorEquivComplexification_tmulConj]
+  simpa [tensorEquivComplexification_baseChange, tensorEquivComplexification_tmulConj] using
+    congrArg (tensorEquivComplexification Y) (tmulConj_baseChange T u)
 
 end LinearMap
 
@@ -376,12 +401,21 @@ def linearMapEquiv :
   left_inv _ := by ext <;> simp
   right_inv _ := ext_ofReal fun _ ↦ by ext <;> simp
 
+/-- `u` extends to `u.re_ℂ + i u.im_ℂ`. -/
+theorem linearMapEquiv_apply (u : Complexification (X →ₗ[ℝ] Y)) :
+    linearMapEquiv X Y u = u.re.complexify + Complex.I • u.im.complexify := (rfl)
+
+/-- The inverse takes the real and imaginary parts of the restriction to real vectors. -/
+theorem linearMapEquiv_symm_apply (T : Complexification X →ₗ[ℂ] Complexification Y) :
+    (linearMapEquiv X Y).symm T = ⟨reLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X,
+      imLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X⟩ := (rfl)
+
 @[simp] theorem linearMapEquiv_apply_re (u : Complexification (X →ₗ[ℝ] Y))
     (v : Complexification X) : (linearMapEquiv X Y u v).re = u.re v.re - u.im v.im := by
-  simp [linearMapEquiv, sub_eq_add_neg]
+  simp [linearMapEquiv_apply, sub_eq_add_neg]
 @[simp] theorem linearMapEquiv_apply_im (u : Complexification (X →ₗ[ℝ] Y))
     (v : Complexification X) : (linearMapEquiv X Y u v).im = u.im v.re + u.re v.im := by
-  simp [linearMapEquiv, add_comm]
+  simp [linearMapEquiv_apply, add_comm]
 
 /-- Real-linear maps extend by their complexification. -/
 @[simp] theorem linearMapEquiv_ofReal (T : X →ₗ[ℝ] Y) :

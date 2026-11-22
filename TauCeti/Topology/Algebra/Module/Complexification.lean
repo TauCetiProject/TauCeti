@@ -873,38 +873,47 @@ private def homComplexificationRestriction
     Complex.I ⊗ₜ[ℝ]
       (imaginaryPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W))
 
+/-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
+forward comparison is `TauCeti.Complexification.linearMapEquiv`. -/
+private theorem coe_homComplexificationForward (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (homComplexificationForward u : (ℂ ⊗[ℝ] W) →ₗ[ℂ] (ℂ ⊗[ℝ] D)) =
+      ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)).symm
+        (Complexification.linearMapEquiv W D ((ContinuousLinearMap.coeLM ℝ).complexify
+          (tensorEquivComplexification _ u))) := by
+  ext v
+  apply complexification_ext <;>
+    simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart]
+
+/-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
+restriction is the inverse of `TauCeti.Complexification.linearMapEquiv`. -/
+private theorem complexify_coeLM_homComplexificationRestriction
+    (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) :
+    (ContinuousLinearMap.coeLM ℝ).complexify
+        (tensorEquivComplexification _ (homComplexificationRestriction A)) =
+      (Complexification.linearMapEquiv W D).symm
+        ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D) A) := by
+  rw [Complexification.linearMapEquiv_symm_apply]
+  ext1 <;> ext x <;> simp [homComplexificationRestriction]
+
 /-- The intrinsic scalar-extension comparison on continuous real Hom. It is complex-linear
-on the literal tensor and Hom fibres, with no norms or bundle frames. -/
+on the literal tensor and Hom fibres, with no norms or bundle frames; its algebraic laws come
+from `TauCeti.Complexification.linearMapEquiv`. -/
 def homComplexificationLinearEquiv : (ℂ ⊗[ℝ] (W →L[ℝ] D)) ≃ₗ[ℂ]
     ((ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) where
   toFun := homComplexificationForward
   invFun := homComplexificationRestriction
-  map_add' u v := by
-    ext x
-    apply complexification_ext <;>
-      simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart] <;> abel
-  map_smul' c u := by
-    ext v
-    apply complexification_ext <;>
-      simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart,
-        realPart_smul, imaginaryPart_smul] <;> module
-  left_inv u := by
-    apply complexification_ext <;> ext v <;>
-      simp [homComplexificationRestriction, homComplexificationForward_realPart,
-        homComplexificationForward_imaginaryPart]
-  right_inv A := by
-    apply DFunLike.ext
-    intro v
-    induction v with
-    | tmul c v =>
-      have ht : c ⊗ₜ[ℝ] v = c • (1 ⊗ₜ[ℝ] v) := by
-        simp only [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [ht, map_smul, map_smul]
-      congr 1
-      apply complexification_ext <;>
-        simp [homComplexificationRestriction, homComplexificationForward_realPart,
-          homComplexificationForward_imaginaryPart]
-    | add u v hu hv => simp only [map_add, hu, hv]
+  map_add' u v := ContinuousLinearMap.coe_injective <| by
+    simp only [ContinuousLinearMap.toLinearMap_add, coe_homComplexificationForward, map_add]
+  map_smul' c u := ContinuousLinearMap.coe_injective <| by
+    simp only [ContinuousLinearMap.toLinearMap_smul, coe_homComplexificationForward, map_smul,
+      RingHom.id_apply]
+  left_inv u := (((ContinuousLinearMap.coeLM ℝ).injective_complexify_iff.2
+      ContinuousLinearMap.coe_injective).comp (tensorEquivComplexification _).injective) <| by
+    simp only [Function.comp_apply, complexify_coeLM_homComplexificationRestriction,
+      coe_homComplexificationForward, LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply]
+  right_inv A := ContinuousLinearMap.coe_injective <| by
+    simp only [coe_homComplexificationForward, complexify_coeLM_homComplexificationRestriction,
+      LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply]
 
 /-- Application is the sum of the real scalar extension and i times the imaginary one. -/
 theorem homComplexificationLinearEquiv_apply (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :

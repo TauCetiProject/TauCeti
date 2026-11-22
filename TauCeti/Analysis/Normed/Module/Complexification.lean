@@ -59,7 +59,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   homeomorphic to `ι → ℂ`.
 * `TauCeti.Complexification.continuousLinearMapEquiv`: complexification of real continuous Hom
   agrees with complex Hom between complexifications (the bounded counterpart of
-  `TauCeti.Complexification.linearMapEquiv`).
+  `TauCeti.Complexification.linearMapEquiv`, to which it reduces on underlying linear maps:
+  `TauCeti.Complexification.coe_continuousLinearMapEquiv_apply`).
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
   extension of bounded real operators and equivalences, with
   `ContinuousLinearMap.norm_complexify` and the continuous algebra homomorphism
@@ -368,6 +369,21 @@ theorem complexify_zero : (0 : X →L[ℝ] Y).complexify = 0 :=
 theorem complexify_add (S T : X →L[ℝ] Y) : (S + T).complexify = S.complexify + T.complexify :=
   coe_injective <| by simp only [coe_complexify, toLinearMap_add, LinearMap.complexify_add]
 
+/-- Complexification of bounded operators commutes with negation. -/
+@[simp]
+theorem complexify_neg (T : X →L[ℝ] Y) : (-T).complexify = -T.complexify :=
+  coe_injective <| by simp only [coe_complexify, toLinearMap_neg, LinearMap.complexify_neg]
+
+/-- Complexification of bounded operators commutes with subtraction. -/
+@[simp]
+theorem complexify_sub (S T : X →L[ℝ] Y) : (S - T).complexify = S.complexify - T.complexify :=
+  coe_injective <| by simp only [coe_complexify, toLinearMap_sub, LinearMap.complexify_sub]
+
+/-- Complexification of bounded operators commutes with real scalar multiplication. -/
+@[simp]
+theorem complexify_smul (r : ℝ) (T : X →L[ℝ] Y) : (r • T).complexify = r • T.complexify :=
+  coe_injective <| by simp only [coe_complexify, toLinearMap_smul, LinearMap.complexify_smul]
+
 /-- Complexification preserves identity maps. -/
 @[simp]
 theorem complexify_id : (ContinuousLinearMap.id ℝ X).complexify = ContinuousLinearMap.id ℂ _ :=
@@ -484,42 +500,32 @@ private def homExtension (u : Complexification (X →L[ℝ] Y)) :
     Complexification X →L[ℂ] Complexification Y :=
   u.re.complexify + Complex.I • u.im.complexify
 
-private theorem homExtension_re (u : Complexification (X →L[ℝ] Y)) (v : Complexification X) :
-    (homExtension u v).re = u.re v.re - u.im v.im := by simp [homExtension, sub_eq_add_neg]
-private theorem homExtension_im (u : Complexification (X →L[ℝ] Y)) (v : Complexification X) :
-    (homExtension u v).im = u.im v.re + u.re v.im := by simp [homExtension, add_comm]
-
 private def homRestriction (T : Complexification X →L[ℂ] Complexification Y) :
     Complexification (X →L[ℝ] Y) :=
   ⟨(reCLM Y).comp ((T.restrictScalars ℝ).comp (ofRealLI X).toContinuousLinearMap),
     (imCLM Y).comp ((T.restrictScalars ℝ).comp (ofRealLI X).toContinuousLinearMap)⟩
-
-private theorem homRestriction_re_apply (T : Complexification X →L[ℂ] Complexification Y)
-    (x : X) : (homRestriction T).re x = (T (ofReal x)).re := by simp [homRestriction]
-private theorem homRestriction_im_apply (T : Complexification X →L[ℂ] Complexification Y)
-    (x : X) : (homRestriction T).im x = (T (ofReal x)).im := by simp [homRestriction]
 
 /-- Componentwise, the extension of bounded operators is the extension of their underlying
 linear maps. -/
 private theorem coe_homExtension (u : Complexification (X →L[ℝ] Y)) :
     (homExtension u : Complexification X →ₗ[ℂ] Complexification Y) =
       linearMapEquiv X Y ((ContinuousLinearMap.coeLM ℝ).complexify u) := by
-  ext <;> simp [homExtension_re, homExtension_im]
+  simp [homExtension, linearMapEquiv_apply]
 
 /-- Componentwise, the restriction of a bounded operator is the restriction of its underlying
 linear map. -/
 private theorem complexify_coeLM_homRestriction
     (T : Complexification X →L[ℂ] Complexification Y) :
     (ContinuousLinearMap.coeLM ℝ).complexify (homRestriction T) = (linearMapEquiv X Y).symm T := by
-  ext <;> simp [homRestriction_re_apply, homRestriction_im_apply]
+  rw [linearMapEquiv_symm_apply]
+  ext1 <;> simp [homRestriction]
 
-/-- Taking underlying linear maps componentwise is injective. -/
-private theorem complexify_coeLM_injective :
-    Function.Injective ((ContinuousLinearMap.coeLM ℝ : (X →L[ℝ] Y) →ₗ[ℝ] X →ₗ[ℝ] Y).complexify) :=
-  fun u v h ↦ by
-    ext1 <;> apply ContinuousLinearMap.coe_injective
-    · simpa using congrArg re h
-    · simpa using congrArg im h
+private theorem homRestriction_re_apply (T : Complexification X →L[ℂ] Complexification Y)
+    (x : X) : (homRestriction T).re x = (T (ofReal x)).re := by
+  simpa using congrArg (fun u ↦ u.re x) (complexify_coeLM_homRestriction T)
+private theorem homRestriction_im_apply (T : Complexification X →L[ℂ] Complexification Y)
+    (x : X) : (homRestriction T).im x = (T (ofReal x)).im := by
+  simpa using congrArg (fun u ↦ u.im x) (complexify_coeLM_homRestriction T)
 
 private theorem homExtension_norm_le (u : Complexification (X →L[ℝ] Y)) :
     ‖homExtension u‖ ≤ 2 * ‖u‖ := by
@@ -553,39 +559,57 @@ def continuousLinearMapEquiv :
       map_smul' := fun c u ↦ ContinuousLinearMap.coe_injective <| by
         simp only [ContinuousLinearMap.toLinearMap_smul, coe_homExtension, map_smul,
           RingHom.id_apply]
-      left_inv := fun u ↦ complexify_coeLM_injective <| by
+      left_inv := fun u ↦ ((ContinuousLinearMap.coeLM ℝ).injective_complexify_iff.2
+          ContinuousLinearMap.coe_injective) <| by
         rw [complexify_coeLM_homRestriction, coe_homExtension, LinearEquiv.symm_apply_apply]
       right_inv := fun T ↦ ContinuousLinearMap.coe_injective <| by
         rw [coe_homExtension, complexify_coeLM_homRestriction, LinearEquiv.apply_symm_apply] }
     2 2 homExtension_norm_le homRestriction_norm_le
 
+/-- Forgetting continuity, `continuousLinearMapEquiv` is `linearMapEquiv` applied to the
+underlying linear maps of the two components. -/
+@[simp] theorem coe_continuousLinearMapEquiv_apply (u : Complexification (X →L[ℝ] Y)) :
+    (continuousLinearMapEquiv X Y u : Complexification X →ₗ[ℂ] Complexification Y) =
+      linearMapEquiv X Y ((ContinuousLinearMap.coeLM ℝ).complexify u) :=
+  coe_homExtension u
+
+/-- Forgetting continuity, the inverse of `continuousLinearMapEquiv` is the inverse of
+`linearMapEquiv`, componentwise. -/
+@[simp] theorem complexify_coeLM_continuousLinearMapEquiv_symm_apply
+    (T : Complexification X →L[ℂ] Complexification Y) :
+    (ContinuousLinearMap.coeLM ℝ).complexify ((continuousLinearMapEquiv X Y).symm T) =
+      (linearMapEquiv X Y).symm T :=
+  complexify_coeLM_homRestriction T
+
 @[simp] theorem continuousLinearMapEquiv_apply_re (u : Complexification (X →L[ℝ] Y))
     (v : Complexification X) :
-    (continuousLinearMapEquiv X Y u v).re = u.re v.re - u.im v.im := homExtension_re u v
+    (continuousLinearMapEquiv X Y u v).re = u.re v.re - u.im v.im := by
+  simpa [-coe_continuousLinearMapEquiv_apply] using
+    congrArg (fun T ↦ (T v).re) (coe_continuousLinearMapEquiv_apply u)
 @[simp] theorem continuousLinearMapEquiv_apply_im (u : Complexification (X →L[ℝ] Y))
     (v : Complexification X) :
-    (continuousLinearMapEquiv X Y u v).im = u.im v.re + u.re v.im := homExtension_im u v
+    (continuousLinearMapEquiv X Y u v).im = u.im v.re + u.re v.im := by
+  simpa [-coe_continuousLinearMapEquiv_apply] using
+    congrArg (fun T ↦ (T v).im) (coe_continuousLinearMapEquiv_apply u)
 
 /-- Real operators extend by the existing complexification map. -/
 @[simp] theorem continuousLinearMapEquiv_ofReal (T : X →L[ℝ] Y) :
-    continuousLinearMapEquiv X Y (ofReal T) = T.complexify := by
-  ext v <;> simp
-
-private theorem continuousLinearMapEquiv_symm_apply
-    (T : Complexification X →L[ℂ] Complexification Y) :
-    (continuousLinearMapEquiv X Y).symm T = homRestriction T := by rfl
+    continuousLinearMapEquiv X Y (ofReal T) = T.complexify :=
+  ContinuousLinearMap.coe_injective <| by simp
 
 /-- Real coordinate of the inverse is restriction to included real vectors followed by Re. -/
 @[simp] theorem continuousLinearMapEquiv_symm_apply_re
     (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
     ((continuousLinearMapEquiv X Y).symm T).re x = (T (ofReal x)).re := by
-  rw [continuousLinearMapEquiv_symm_apply, homRestriction_re_apply]
+  simpa [-complexify_coeLM_continuousLinearMapEquiv_symm_apply] using
+    congrArg (fun u ↦ u.re x) (complexify_coeLM_continuousLinearMapEquiv_symm_apply T)
 
 /-- Imaginary coordinate of the inverse is restriction to included real vectors followed by Im. -/
 @[simp] theorem continuousLinearMapEquiv_symm_apply_im
     (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
     ((continuousLinearMapEquiv X Y).symm T).im x = (T (ofReal x)).im := by
-  rw [continuousLinearMapEquiv_symm_apply, homRestriction_im_apply]
+  simpa [-complexify_coeLM_continuousLinearMapEquiv_symm_apply] using
+    congrArg (fun u ↦ u.im x) (complexify_coeLM_continuousLinearMapEquiv_symm_apply T)
 
 /-- The model comparison increases norms by at most two. -/
 theorem norm_continuousLinearMapEquiv_apply_le (u : Complexification (X →L[ℝ] Y)) :
@@ -594,7 +618,7 @@ theorem norm_continuousLinearMapEquiv_apply_le (u : Complexification (X →L[ℝ
 /-- The inverse comparison increases norms by at most two. -/
 theorem norm_continuousLinearMapEquiv_symm_apply_le
     (T : Complexification X →L[ℂ] Complexification Y) :
-    ‖(continuousLinearMapEquiv X Y).symm T‖ ≤ 2 * ‖T‖ := by
-  simpa only [continuousLinearMapEquiv_symm_apply] using homRestriction_norm_le T
+    ‖(continuousLinearMapEquiv X Y).symm T‖ ≤ 2 * ‖T‖ :=
+  homRestriction_norm_le T
 
 end TauCeti.Complexification
