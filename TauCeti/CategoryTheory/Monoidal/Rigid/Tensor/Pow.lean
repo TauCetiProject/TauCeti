@@ -15,7 +15,8 @@ In a monoidal `k`-linear category, specializing the `k`-linear Frobenius recipro
 `TauCeti.tensorLeftHomLinearEquiv` to `tensorPow V 2` identifies `𝟙_ C ⟶ tensorPow V 2`
 `k`-linearly with `W ⟶ V` for an exact pairing of `V` and `W`
 (`TauCeti.homTensorPowTwoLinearEquiv`). Taking `W = Vᘁ` when `V` has a right dual gives the hom
-space `Vᘁ ⟶ V`, which Schur's lemma controls when `V` and `Vᘁ` are simple.
+space `Vᘁ ⟶ V`. In a category with kernels, Schur's lemma controls this hom space when `V` and
+`Vᘁ` are simple; the equivalence itself needs no kernels.
 
 ## Main declarations
 

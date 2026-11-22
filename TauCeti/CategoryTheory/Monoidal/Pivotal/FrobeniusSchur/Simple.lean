@@ -7,8 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Basic
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
-public import TauCeti.CategoryTheory.Monoidal.Rigid.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Tensor.Pow
 
 /-!
 # Second Frobenius–Schur indicators of simple objects
@@ -18,8 +17,9 @@ identifies the invariant space `𝟙_ C ⟶ tensorPow V 2` with `Vᘁ ⟶ V`
 (`TauCeti.homTensorPowTwoLinearEquiv`).
 
 In a `k`-linear pivotal category with kernels, Schur's lemma controls this hom space whenever `V`
-and `Vᘁ` are simple (which holds automatically for `Vᘁ` when `C` is abelian, by
-`TauCeti.simple_rightDual`):
+and `Vᘁ` are simple (which holds automatically for `Vᘁ` when `C` is abelian, by the instance
+`TauCeti.simple_rightDual` of `TauCeti.CategoryTheory.Monoidal.Rigid.Simple`, which this file does
+not import):
 
 * If `V` is not isomorphic to `Vᘁ`, then `Vᘁ ⟶ V` is zero and `ν₂(V) = 0` over any commutative
   ring `k` (`TauCeti.frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso`).
