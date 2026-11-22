@@ -75,7 +75,7 @@ theorem integrable_exp_mul_sum_mul_natCast_negativeMultinomialMeasure_iff {r p�
   · simp only [negativeMultinomialMeasure_zero hp₀ hp, true_or, iff_true]
     exact integrable_dirac' (.of_discrete) (by simp)
   rw [negativeMultinomialMeasure_of_pos hr hp₀ hp,
-    Measure.integrable_bind_iff (measurable_pi_poissonMeasure_mul_toNNReal p)
+    Measure.integrable_bind_iff (measurable_pi_poissonMeasure_mul_toNNReal p).aemeasurable
       (.of_discrete)]
   have hcomponent : ∀ x : ℝ, Integrable
       (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))

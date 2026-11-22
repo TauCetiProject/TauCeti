@@ -29,6 +29,8 @@ of the form `Ωᵏ N`.
 
 * `CategoryTheory.ObjectProperty.isSyzygy_succ_iff`: the recursive description.
 * `CategoryTheory.ObjectProperty.IsSyzygy.of_succ`: a `(k + 1)`-st syzygy is a `k`-th syzygy.
+* `CategoryTheory.ObjectProperty.IsSyzygy.mono`: syzygies relative to `P` are syzygies relative to
+  every weaker property.
 * `CategoryTheory.ObjectProperty.isSyzygy_of_prop`: objects of `P` are `k`-th syzygies for every `k`
   when a zero object satisfies `P`.
 * `CategoryTheory.ObjectProperty.IsSyzygy.map`: functors preserving short exact sequences preserve
@@ -107,6 +109,16 @@ theorem IsSyzygy.map {D : Type*} [Category* D] [HasZeroMorphisms D] {P' : Object
   | succ k ih =>
     obtain ⟨S, hS, ⟨e⟩, hQ, hX'⟩ := (P.isSyzygy_succ_iff k X).1 h
     exact (P'.isSyzygy_succ_iff k _).2 ⟨S.map F, hF S hS, ⟨F.mapIso e⟩, hP _ hQ, ih hX'⟩
+
+/-- **Weakening the property.** A `k`-th syzygy relative to `P` is a `k`-th syzygy relative to every
+property `P'` implied by `P`. -/
+theorem IsSyzygy.mono {P' : ObjectProperty C} (hPP' : P ≤ P') {k : ℕ} {X : C}
+    (h : P.IsSyzygy k X) : P'.IsSyzygy k X := by
+  induction k generalizing X with
+  | zero => exact isSyzygy_zero P' X
+  | succ k ih =>
+    obtain ⟨S, hS, e, hQ, hX'⟩ := (P.isSyzygy_succ_iff k X).1 h
+    exact (P'.isSyzygy_succ_iff k X).2 ⟨S, hS, e, hPP' _ hQ, ih hX'⟩
 
 section HasZeroObject
 

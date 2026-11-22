@@ -9,12 +9,14 @@ public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import TauCeti.RingTheory.Polynomial.RootEnumeration
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Characteristic roots of matrices
@@ -39,6 +41,13 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 `Matrix.charpoly_aeval_eq_resultant` over the split characteristic polynomial. In particular
 `det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
 
+Over a field, the characteristic roots of an invertible matrix `A⁻¹` are the inverses of those of
+`A`, counted with algebraic multiplicity.
+
+In any algebraically closed field `E`, the characteristic roots of a square matrix can be listed
+with multiplicity by the index type of the matrix, which factors its characteristic polynomial
+over `E` into linear factors.
+
 ## Main results
 
 * `Matrix.eval_ne_zero_of_det_aeval_ne_zero`: if `det (p(A)) ≠ 0`, then `p(λ) ≠ 0` for every
@@ -56,6 +65,12 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 * `Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`: `tr (p(A)) = ∑ p(λ)`; for `p = X ^ k` the
   trace of `A ^ k` is the `k`-th power sum of the characteristic roots.
 * `Matrix.charpolyRev_eq_prod_roots_charpoly_of_splits`: `det (1 - X A) = ∏ (1 - λ X)`.
+* `Matrix.charpoly_inv_eq_prod_X_sub_C`: if `χ_A = ∏ (X - αᵢ)` for invertible `A`, then
+  `χ_{A⁻¹} = ∏ (X - αᵢ⁻¹)`.
+* `Matrix.exists_isRootEnumeration_charpoly`: the characteristic roots of `A` in an algebraically
+  closed field, listed by the index type of `A`.
+* `Matrix.exists_charpoly_map_eq_prod_X_sub_C`: over an algebraically closed field, `χ_A` is
+  `∏ (X - βᵢ)` for some family `β` indexed by the index type of `A`.
 * `Matrix.coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits`: Vieta's formula for
   `det (1 - X A)`, whose `r`-th coefficient is `(-1) ^ r` times the `r`-th elementary symmetric
   function of the characteristic roots.
@@ -176,6 +191,55 @@ theorem coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits (hA : A.charpoly.Spl
   · rw [coeff_charpolyRev_eq_zero A hr, Multiset.esymm_of_card_lt (hcard ▸ hr), mul_zero]
 
 end Splits
+
+section Inverse
+
+variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
+
+/-- **Characteristic roots of the inverse.** If the characteristic polynomial of an invertible
+matrix `A` is `∏ (X - αᵢ)`, then that of `A⁻¹` is `∏ (X - αᵢ⁻¹)`. -/
+theorem charpoly_inv_eq_prod_X_sub_C {A : Matrix n n K} (hA : IsUnit A) {α : n → K}
+    (h : A.charpoly = ∏ i, (X - C (α i))) : A⁻¹.charpoly = ∏ i, (X - C (α i)⁻¹) := by
+  have hdet : A.det = ∏ i, α i := by
+    have hs : A.charpoly.Splits := h ▸ Splits.prod fun i _ ↦ Splits.X_sub_C (α i)
+    rw [det_eq_prod_roots_charpoly_of_splits hs, h, roots_prod_X_sub_C_map,
+      Finset.prod_eq_multiset_prod]
+  have hx : ∏ i, α i ≠ 0 := hdet ▸ ((isUnit_iff_isUnit_det A).1 hA).ne_zero
+  -- `A⁻¹` has characteristic polynomial `(-1)ⁿ det(A)⁻¹ · det(1 - X A)`, and `det(1 - X A)` is
+  -- the reverse `∏ (1 - αᵢ X) = (∏ -αᵢ) ∏ (X - αᵢ⁻¹)` of `∏ (X - αᵢ)`.
+  have hrev := reverse_C_mul_prod_X_sub_C Finset.univ α 1 fun i _ ↦
+    (Finset.prod_ne_zero_iff.1 hx) i (Finset.mem_univ i)
+  have hc : ((-1) ^ Fintype.card n : K) * (∏ i, α i)⁻¹ * ((-1) ^ Fintype.card n * ∏ i, α i) =
+      1 := by
+    simp [mul_mul_mul_comm _ (∏ i, α i)⁻¹, ← mul_pow, hx]
+  rw [C_1, one_mul, one_mul, Finset.prod_neg, Finset.card_univ] at hrev
+  rw [charpoly_inv A hA, ← reverse_charpoly, h, hrev, hdet, Ring.inverse_eq_inv', ← mul_assoc]
+  simp only [← map_neg, ← map_one C, ← map_pow, ← map_mul]
+  rw [hc, C_1, one_mul]
+
+end Inverse
+
+section RootEnumeration
+
+variable {n R E : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Nontrivial R] [Field E]
+  [IsAlgClosed E] [Algebra R E]
+
+/-- The characteristic roots of a square matrix in an algebraically closed field `E` can be listed
+with multiplicity by the index type of the matrix. -/
+theorem exists_isRootEnumeration_charpoly (A : Matrix n n R) :
+    ∃ β : n → E, A.charpoly.IsRootEnumeration β :=
+  (charpoly_monic A).exists_isRootEnumeration (charpoly_natDegree_eq_dim A)
+
+/-- Over an algebraically closed field `E`, the characteristic polynomial of a square matrix
+factors as `∏ (X - βᵢ)` for a family `β` indexed by the index type of the matrix. -/
+theorem exists_charpoly_map_eq_prod_X_sub_C (A : Matrix n n R) :
+    ∃ β : n → E, (A.map (algebraMap R E)).charpoly = ∏ i, (X - C (β i)) := by
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := E) A
+  refine ⟨β, ?_⟩
+  simpa [charpoly_map, ((charpoly_monic A).map _).leadingCoeff] using
+    hβ.eq_C_mul_prod_X_sub_C (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
+
+end RootEnumeration
 
 section IsAlgClosed
 

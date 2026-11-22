@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.Divisors
 import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
@@ -37,6 +38,9 @@ integers.
 strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
+
+`Nat.prod_Ioc_prod_divisors` (and its additive form `Nat.sum_Ioc_sum_divisors`) regroups a
+product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
@@ -458,5 +462,21 @@ theorem pairwiseDisjoint_divisors_pow_filter_dvd {P : ℕ} (hP : IsRadical P) (M
   have hji' : j ∣ i := (hPsq.squarefree_of_dvd (Nat.dvd_of_mem_divisors hj)).isRadical
     M i (hjm.trans (Nat.dvd_of_mem_divisors hmi))
   exact hij (Nat.dvd_antisymm hij' hji')
+
+/-- Regrouping a product over the divisors of `1, …, N` by divisor: each `d ≤ N` divides exactly
+`N / d` of the integers `1, …, N`, so it contributes `f d ^ (N / d)`. -/
+@[to_additive /-- Regrouping a sum over the divisors of `1, …, N` by divisor: each `d ≤ N`
+divides exactly `N / d` of the integers `1, …, N`, so it contributes `(N / d) • f d`. -/]
+theorem prod_Ioc_prod_divisors {M : Type*} [CommMonoid M] (N : ℕ) (f : ℕ → M) :
+    ∏ i ∈ Ioc 0 N, ∏ d ∈ i.divisors, f d = ∏ d ∈ Ioc 0 N, f d ^ (N / d) := by
+  rw [prod_comm' (t' := Ioc 0 N) (s' := fun d ↦ {i ∈ Ioc 0 N | d ∣ i})]
+  · simp [Nat.Ioc_filter_dvd_card_eq_div]
+  · intro i d
+    simp only [mem_Ioc, mem_divisors, mem_filter]
+    constructor
+    · rintro ⟨⟨hi, hiN⟩, hdi, -⟩
+      exact ⟨⟨⟨hi, hiN⟩, hdi⟩, Nat.pos_of_dvd_of_pos hdi hi, (Nat.le_of_dvd hi hdi).trans hiN⟩
+    · rintro ⟨⟨⟨hi, hiN⟩, hdi⟩, -⟩
+      exact ⟨⟨hi, hiN⟩, hdi, hi.ne'⟩
 
 end Nat
