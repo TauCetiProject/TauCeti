@@ -729,7 +729,7 @@ theorem laplacian_comp_inner (g : ℝ → F) (θ y : E) :
     Δ (fun z ↦ g ⟪θ, z⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y⟫_ℝ := by
   rcases eq_or_ne θ 0 with rfl | hθ
   · simp
-  set Ψ := ContinuousLinearMap.smulRightL ℝ E F (innerSL ℝ θ)
+  set Ψ := ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (innerSL ℝ θ)
   have hD : fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) = fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ) :=
     funext (fderiv_comp_inner g hθ)
   -- `Ψ` has the left inverse given by evaluation at `θ / ‖θ‖²`, so it commutes with `fderiv`.
