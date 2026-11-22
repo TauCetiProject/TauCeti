@@ -52,7 +52,8 @@ it is a **Darboux chart**: a smooth partial diffeomorphism pulling the standard 
   `ω_Δ` (`TauCeti.Toric.IsDelzant.eval₂_delzantQuotientSymplecticForm_eq_vertexDarbouxChart`).
 
 Every point of `M_Δ` lies in the source of the chart at some vertex
-(`TauCeti.Toric.IsDelzant.exists_mem_vertexChart_source`). So the Delzant quotient is covered by
+(`TauCeti.Toric.IsDelzant.exists_mem_vertexChart_source`, in
+`TauCeti.Geometry.Toric.Delzant.Quotient.Vertex`). So the Delzant quotient is covered by
 equivariant Darboux charts in which the moment map is the translated weight model: these are the
 local vertex models of a symplectic toric manifold.
 
@@ -71,7 +72,6 @@ local vertex models of a symplectic toric manifold.
 * `TauCeti.Toric.IsDelzant.eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm`,
   `TauCeti.Toric.IsDelzant.eval₂_delzantQuotientSymplecticForm_eq_vertexDarbouxChart`: the vertex
   chart identifies `ω_Δ` with the standard symplectic form of `ℂ^A`.
-* `TauCeti.Toric.IsDelzant.exists_mem_vertexChart_source`: the vertex charts cover `M_Δ`.
 
 ## References
 
@@ -497,20 +497,6 @@ theorem eval₂_delzantQuotientSymplecticForm_eq_vertexDarbouxChart {q : Delzant
   rw [hinv, hinv, (vertexChart hv hi hvP).left_inv hq] at h
   rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, coe_vertexDarbouxChart]
   exact h
-
-open Classical in
-/-- **The vertex Darboux charts cover the Delzant quotient.** Every point of `M_Δ` lies in the
-source of the chart at some vertex of `Δ`: the facets active at its moment value are among those
-active at some vertex. -/
-theorem exists_mem_vertexChart_source (q : DelzantQuotient i u c) :
-    ∃ (v : StrongDual ℝ V) (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ),
-      q ∈ (vertexChart (hΔ.isSmoothVertex v hv) hi hv.1).source := by
-  have hβ := surjective_linearCombination_real hi.span_range_eq_top
-    hΔ.surjective_linearCombination
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset
-    (isCompact_facetPolyhedron_of_isBounded hΔ.isBounded)
-    (reducedMomentMap_mem_facetPolyhedron hβ q)
-  exact ⟨v, hv, (mem_vertexChart_source_iff _ hi _).2 hsub⟩
 
 end IsDelzant
 
