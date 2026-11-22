@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
+public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.TwistedHomology
 
 /-!
 # The first page of the critical-band spectral sequence of a Morse–Bott function
@@ -45,7 +46,13 @@ negative normal spaces form vector bundles `ν⁻ j` of rank `r j`, the object a
 coproduct of the groups `Hₙ(ν⁻ j, (ν⁻ j)₀)` over the pieces on the level `c`
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_thomPair`, in the namespace
 `TauCeti.IsMorseBottFamily`). This is the form in which the Thom isomorphism computes the first
-page from the homology of the critical submanifolds, shifted by their indices.
+page from the homology of the critical submanifolds, shifted by their indices. Over a field `K` in
+which `2` is invertible, such as `ℚ`, and with no orientation of the negative normal bundles, the
+twisted Thom isomorphism does so: the object at `(p, q)` is the coproduct of the groups
+`H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces on the level `c` of index `r j ≤ n`, with
+coefficients in the orientation local systems `o(ν⁻ j)` of their negative normal bundles
+(`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the namespace
+`TauCeti.IsMorseBottFamily`).
 
 The identification of one band needs neither a global Morse–Bott family nor a compact manifold:
 it holds whenever the band `f⁻¹[a q, a (q + 1)]` is compact and its critical points lie on finitely
@@ -71,6 +78,10 @@ In the namespace `TauCeti.IsMorseBottFamily`:
 * `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_thomPair`: at such a band, the first
   page is the coproduct over the critical submanifolds on the level `c` of the homologies of the
   Thom pairs of their negative normal bundles.
+* `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`: at such a band,
+  with coefficients in a field in which `2` is invertible, the first page is the coproduct over the
+  critical submanifolds on the level `c` of index at most `n` of their homologies in degree
+  `n - r j` with coefficients in the orientation local systems of their negative normal bundles.
 
 ## References
 
@@ -290,5 +301,92 @@ theorem IsMorseBottFamily.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_
     ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hpq ≪≫ e⟩
 
 end ThomPair
+
+section TwistedHomology
+
+open LocalCoefficientSystem Module VectorBundleOrientationCover
+
+variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
+  {S : ι → Type} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
+  [∀ j, FiniteDimensional ℝ (E' j)] [∀ j, TopologicalSpace (H' j)]
+  {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)} [∀ j, TopologicalSpace (S j)]
+  [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
+  [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpace ℝ (P j)] [∀ j, FiniteDimensional ℝ (P j)]
+  {f : M → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M} (hn : (∞ : ℕ∞ω) ≠ 0)
+
+namespace IsMorseBottFamily
+
+/-- **The first page of the critical-band spectral sequence of a Morse–Bott function, with
+orientation-twisted coefficients.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott
+function (`TauCeti.IsMorseBottFamily`) on a compact Hausdorff second-countable boundaryless
+manifold, with pieces modelled on boundaryless models, and let `g j` be a smooth fibre metric on the
+normal bundle of `i j`. Suppose that the negative normal spaces relative to `g j` have continuous
+local frames of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r j`, the
+index of the piece. Let `a : ℤ → ℝ` be monotone, let `a q < c < a (q + 1)` be such that every
+critical point of `f` with value in `[a q, a (q + 1)]` lies on the level `c`, and let `K` be a
+field in which `2` is invertible.
+
+Then on the first page of the spectral sequence of the filtration `q ↦ {f ≤ a q}` with
+coefficients in `K`, the object at `(p, q)` with `p + q = -n` is the coproduct, over the pieces on
+the level `c` of index `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` with
+coefficients in the orientation local systems `o(ν⁻ j)`. No orientation of the bundles `ν⁻ j` is
+assumed. -/
+theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology
+    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    (h : IsMorseBottFamily i f) {a : ℤ → ℝ} (ha : Monotone a) {q : ℤ} {c : ℝ}
+    (hc : c ∈ Ioo (a q) (a (q + 1)))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc (a q) (a (q + 1)) → f x = c)
+    (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    {r : ι → ℕ}
+    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
+    (K : Type) [Field K] [Invertible (2 : K)] (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
+    (hpq : pq.1 + pq.2 = -n) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
+        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) :=
+      fun j ↦ subbundleTopology (P j)
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).fiberBundle
+    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).vectorBundle
+    -- The pieces are finitely many, so the coproduct exists.
+    haveI := h.finite
+    Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha)).page 2).X pq ≅
+      ∐ fun j : {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} ↦
+        twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+          (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
+          (n - r j)) := by
+  subst hq
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology hn hc.1 hc.2
+    hcrit hdim g hV K n
+  exact ⟨filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) (ModuleCat.of K K)
+    ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hpq ≪≫ e⟩
+
+end IsMorseBottFamily
+
+end TwistedHomology
 
 end TauCeti
