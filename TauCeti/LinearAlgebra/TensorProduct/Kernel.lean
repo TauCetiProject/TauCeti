@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.RingTheory.Flat.Equalizer
@@ -37,6 +38,8 @@ where flatness of the cokernel is its torsion-freeness.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
   linear map is the extension of its kernel**, with no hypothesis on the coefficient algebra.
 * `LinearMap.ker_baseChange_of_flat_quotient_range`: the same for a map with flat cokernel.
+* `Submodule.ker_baseChange_mkQ_prod_mkQ`: the kernel of `A ⊗ M → A ⊗ (M ⧸ M₁ × M ⧸ M₂)` is the
+  intersection of `A ⊗ M₁` and `A ⊗ M₂` inside `A ⊗ M`.
 * `LinearMap.finite_tensorProduct_ker`: over a flat coefficient algebra, the scalar extension of
   the kernel of a surjection is finite if the extended source is finite and the extended target is
   finitely presented.
@@ -116,3 +119,21 @@ theorem finite_ker_baseChange {F A M N : Type*} [Field F] [Ring A] [Algebra F A]
   exact Module.Finite.range ((ker f).subtype.baseChange A)
 
 end LinearMap
+
+namespace Submodule
+
+variable {R : Type*} (A : Type*) {M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Ring A]
+  [Algebra R A] (M₁ M₂ : Submodule R M)
+
+/-- The kernel of the extension of scalars of `M → M ⧸ M₁ × M ⧸ M₂` is the intersection of the
+extensions of `M₁` and `M₂`. -/
+theorem ker_baseChange_mkQ_prod_mkQ :
+    LinearMap.ker ((M₁.mkQ.prod M₂.mkQ).baseChange A) = M₁.baseChange A ⊓ M₂.baseChange A := by
+  have h : (TensorProduct.prodRight R A A (M ⧸ M₁) (M ⧸ M₂)).toLinearMap ∘ₗ
+      (M₁.mkQ.prod M₂.mkQ).baseChange A = (M₁.mkQ.baseChange A).prod (M₂.mkQ.baseChange A) := by
+    ext x <;> simp
+  rw [← LinearEquiv.ker_comp (TensorProduct.prodRight R A A (M ⧸ M₁) (M ⧸ M₂)), h,
+    LinearMap.ker_prod, LinearMap.ker_baseChange_of_surjective A _ M₁.mkQ_surjective,
+    LinearMap.ker_baseChange_of_surjective A _ M₂.mkQ_surjective, ker_mkQ, ker_mkQ]
+
+end Submodule
