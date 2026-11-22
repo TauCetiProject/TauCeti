@@ -106,6 +106,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 * `TauCeti.SobolevSection.chartValueL_add_ae_coord`,
   `TauCeti.SobolevSection.chartValueL_smul_ae_coord`: the chart data of a sum or a multiple are the
   coordinates of the sum or the multiple of the sections.
+* `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn_of_ae_eq`: functions continuous on the
+  chart images that agree almost everywhere with the chart expressions of a section are the chart
+  expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
 * `TauCeti.FiniteBundleAtlas.chartDerivL_ae_overlap`: native weak chart derivatives obey the
@@ -1247,6 +1250,27 @@ theorem FiniteBundleAtlas.aeTransition_sectionChartData [IsManifold 𝓘(ℝ, E)
   · rw [A.sectionChartData_transition_of_mem hy,
       A.sectionChartData_transition_of_mem (A.transition_mem_overlap hy)]
     exact A.transition_transition hy
+
+variable {A μ} in
+/-- **Continuous representatives of chart expressions glue.** If the chart expression of a section
+`s` in every chart `i` agrees almost everywhere on `A.image i` with a function `g i` continuous on
+`A.image i`, then the `g i` are the chart expressions of a continuous section. -/
+theorem FiniteBundleAtlas.exists_continuous_coord_eqOn_of_ae_eq [IsManifold 𝓘(ℝ, E) 1 M]
+    {s : ∀ x, V x} {g : Fin A.n → E → F} (hg : ∀ i, ContinuousOn (g i) (A.image i))
+    (hs : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] g i) :
+    ∃ t : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (t x)) ∧
+      ∀ i, EqOn (A.coord i t) (g i) (A.image i) := by
+  refine A.exists_continuous_coord_eqOn hg fun i i' ↦ ?_
+  -- The `g i` satisfy the cocycle relation of the chart expressions of `s` almost everywhere on
+  -- the overlaps, since chart transitions preserve null sets, hence everywhere there, both sides
+  -- being continuous on the open overlap.
+  refine Measure.eqOn_open_of_ae_eq (μ := μ) ?_ (A.isOpen_overlap i i')
+    ((hg i').mono (A.overlap_subset_image i i')) (A.continuousOn_coordChange_transition (hg i))
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.overlap_subset_image i i') (hs i'),
+      A.sectionChartData.aeTransition_iff.1 (A.aeTransition_sectionChartData μ) (i' := i') (hs i),
+      ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h' h hy
+  rw [A.sectionChartData_transition_of_mem hy] at h
+  rw [← h', ← h, A.coord_eq_coordChange s hy]
 
 variable [FiniteDimensional ℝ F]
 
