@@ -16,12 +16,13 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 /-!
 # The integral Grönwall inequality with an integrable kernel
 
-Let `β ≥ 0` be integrable on `[a, b]` and let `u` satisfy `u s ≤ α + ∫ₐˢ β u` at almost every
-`s ∈ [a, b]`, with `β u` integrable there. Then `u t ≤ α exp (∫ₐᵗ β)` at every `t ∈ [a, b]` where
-the inequality itself holds (`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`); in particular
-at every `t ∈ [a, b]` if it holds everywhere there. The backward form, with `∫ₜᵇ` in place of
-`∫ₐᵗ`, is `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be
-bounded, nor `u` continuous.
+Let `β` be integrable and almost everywhere nonnegative on `[a, b]`, and let `u` satisfy
+`u s ≤ α + ∫ₐˢ β u` at almost every `s ∈ [a, b]`, with `β u` integrable there. Then
+`u t ≤ α exp (∫ₐᵗ β)` at every `t ∈ [a, b]` where the inequality itself holds
+(`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`); in particular at every `t ∈ [a, b]` if it
+holds everywhere there. The backward form, with `∫ₜᵇ` in place of `∫ₐᵗ`, is
+`TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be bounded, nor `u`
+continuous.
 
 Energy estimates for evolution equations produce such a recurrence with a constant kernel
 `K ≥ 0`. For an integrable `φ` with `φ s ≤ c + K ∫ₐˢ φ` at almost every `s ∈ [a, b]`, the bound
@@ -88,9 +89,9 @@ theorem le_mul_exp_integral_of_le_add_integral_mul {u β : ℝ → ℝ} {a b α 
         ((0 + β x * u x) * exp (-B x) + (α + v x) * (exp (-B x) * -β x)) x :=
       ((hasDerivAt_const x α).add (hv hx' a left_mem_uIcc)).mul
         (hB hx' a left_mem_uIcc).neg.exp
+    have hxrec : u x ≤ α + v x := by simpa only [v] using hxu
     rw [hd.deriv]
-    nlinarith [mul_nonneg (mul_nonneg hx₀ (exp_pos (-B x)).le)
-      (sub_nonneg.2 (show u x ≤ α + v x from hxu))]
+    nlinarith [mul_nonneg (mul_nonneg hx₀ (exp_pos (-B x)).le) (sub_nonneg.2 hxrec)]
   have hle := intervalIntegral.integral_mono_ae_restrict ht.1 hgAC.intervalIntegrable_deriv
     intervalIntegrable_const hderiv
   rw [hgAC.integral_deriv_eq_sub, intervalIntegral.integral_const, smul_zero] at hle
