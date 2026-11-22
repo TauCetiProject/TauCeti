@@ -91,6 +91,14 @@ noncomputable def finiteProjectiveModulesK0Extend :
       ExactK0.{u} (finiteProjectiveModulesExactStructure S) :=
   ExactK0.map _ f.isConflationExact_finiteProjectiveModulesExtendScalars
 
+/-- Extension of scalars commutes with the canonical comparison from split to exact `K₀`. -/
+theorem finiteProjectiveModulesK0Extend_comp_fromSplit :
+    f.finiteProjectiveModulesK0Extend.comp
+        (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) =
+      (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure S)).comp
+        (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) :=
+  ExactK0.map_comp_fromSplit.{u, u} _ f.isConflationExact_finiteProjectiveModulesExtendScalars
+
 @[simp]
 theorem finiteProjectiveModulesK0Extend_of (P : (finiteProjectiveModules R).FullSubcategory) :
     f.finiteProjectiveModulesK0Extend (ExactK0.of P) =

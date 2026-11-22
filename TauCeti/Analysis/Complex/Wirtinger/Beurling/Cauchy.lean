@@ -202,8 +202,6 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   rw [← hc.toSchwartzMap_toLp hf]
   set G := beurlingL2 F ((hc.toSchwartzMap hf).toLp 2 volume)
   set u := cauchyTransform f
-  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 :=
-    hc.continuous_wirtingerDeriv_cauchyTransform (hf.of_le (by simp))
   -- The support radius `r` and the decay constant `M`.
   obtain ⟨r₀, hr₀⟩ := hc.isCompact.isBounded.subset_closedBall (0 : ℂ)
   set r := max r₀ 1
@@ -254,9 +252,7 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
     have := (Nat.le_ceil ‖x‖).trans (Nat.cast_le.2 hn)
     simp only [R]
     linarith
-  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le two_ne_zero
-    (fun n ↦ (Lp.aestronglyMeasurable G).sub ((hχs n 0).continuous.smul hwu).aestronglyMeasurable)
-    ((Lp.aestronglyMeasurable G).sub hwu.aestronglyMeasurable) (.of_forall hlim)
+  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le two_ne_zero (.of_forall hlim)
     (fun n ↦ eLpNorm_beurlingL2_sub_smul_wirtingerDeriv_cauchyTransform_le hc hf hCb (hχs n ⊤)
       (hχc n) (hχf n) (hb n)) htend
   filter_upwards [hzero] with x hx
