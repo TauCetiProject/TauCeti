@@ -626,14 +626,6 @@ theorem itoIntegral_mul_isometry
     (hW.itoIntegral_ae_eq_l2Integral hH hI)
     (hW.itoIntegral_ae_eq_l2Integral hK hJ) T
 
-/-- **Itô isometry** for any process satisfying `IsItoIntegral` of a `BrownianIntegrable`
-integrand. -/
-theorem itoIntegral_isometry
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
-    ∫ ω, I T ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hW.itoIntegral_mul_isometry hH hH hI hI T
-
 /-- Any strongly adapted Itô integral of a `BrownianIntegrable` integrand is a true martingale on
 the original raw filtration, with square-compensation martingale `I_t² - ∫_{(0, t]} H_s² ds`. -/
 theorem itoIntegral_martingale

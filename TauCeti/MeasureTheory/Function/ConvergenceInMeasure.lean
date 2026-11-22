@@ -288,8 +288,12 @@ theorem continuous_comp {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Mea
     apply TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist hr
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hr (fun _ ↦ zero_le)
     intro n
-    exact (measure_mono (s := {x | r n < edist (f (ns n) x) (g x)})
-      (fun x hx ↦ show r n ≤ edist (f (ns n) x) (g x) from le_of_lt hx)).trans (hbound n)
+    have hsubset : {x | r n < edist (f (ns n) x) (g x)} ⊆
+        {x | r n ≤ edist (f (ns n) x) (g x)} := by
+      intro x hx
+      simp only [Set.mem_ofPred_eq] at hx ⊢
+      exact le_of_lt hx
+    exact (measure_mono hsubset).trans (hbound n)
   obtain ⟨ks, _, hlim⟩ := hseq.exists_seq_tendsto_ae
   have hcomp := tendstoInMeasure_of_tendsto_ae (fun n ↦ hmeas (ks n))
     (hlim.mono fun x hx ↦ (hφ.tendsto (g x)).comp hx)
@@ -353,7 +357,7 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
     (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [hint] with k hk
-  exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+  exact TauCeti.meas_ge_le_integral_sq_div_sq hk hε
 
 section Algebra
 
