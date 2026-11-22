@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Basic
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Geometry.Manifold.VectorBundle.Associated.BilinMap
 
 /-!
 # Smooth invariant metrics on associated bundles
@@ -110,17 +111,9 @@ theorem _root_.ContMDiffWithinAt.inner_associatedBundle
       (fun m ↦ (⟨b m, v m⟩ : TotalSpace F (AssociatedBundle G P F))) s x)
     (hw : ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, F)) n
       (fun m ↦ (⟨b m, w m⟩ : TotalSpace F (AssociatedBundle G P F))) s x) :
-    ContMDiffWithinAt IM 𝓘(ℝ, 𝕜) n (fun m ↦ ⟪v m, w m⟫_𝕜) s x := by
-  obtain ⟨hb, hv'⟩ := (contMDiffWithinAt_totalSpace_iff.mp hv)
-  have hw' := (contMDiffWithinAt_totalSpace_iff.mp hw).2
-  have hx := mem_baseSet_trivializationAt G P (b x)
-  have hmem := hb.continuousWithinAt.preimage_mem_nhdsWithin
-    ((trivializationAt G P (b x)).open_baseSet.mem_nhds hx)
-  apply ((contDiff_inner (𝕜 := 𝕜) (E := F)).contMDiff.contMDiffAt.comp_contMDiffWithinAt x
-    (hv'.prodMk_space hw')).congr_of_eventuallyEq
-  · filter_upwards [hmem] with y hy
-    exact (inner_trivializationAt hy (v y) (w y)).symm
-  · exact (inner_trivializationAt hx (v x) (w x)).symm
+    ContMDiffWithinAt IM 𝓘(ℝ, 𝕜) n (fun m ↦ ⟪v m, w m⟫_𝕜) s x :=
+  contMDiffWithinAt_of_trivializationAt (contDiff_inner (𝕜 := 𝕜) (E := F)) hv hw fun y hy ↦
+    (inner_trivializationAt hy (v y) (w y)).symm
 
 /-- Hermitian pairings of associated-bundle-valued maps smooth at a point are smooth there. -/
 theorem _root_.ContMDiffAt.inner_associatedBundle

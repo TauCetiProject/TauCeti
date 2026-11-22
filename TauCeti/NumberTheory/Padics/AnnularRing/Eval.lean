@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.NumberTheory.Padics.AnnularRing.Gauge
-public import TauCeti.NumberTheory.Padics.AnnularRing.Quotient
+public import TauCeti.NumberTheory.Padics.AnnularRing.Presentation
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Complex.Valuation
 import Mathlib.Analysis.Normed.Algebra.Ultra
@@ -184,11 +184,22 @@ theorem hasSum_eval_ofPowerSeriesU (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (
     simp [coeff_ofPowerSeriesU_of_pos g hpos]
   · simp [coeff_ofPowerSeriesU_neg_natCast, div_eq_mul_inv, mul_pow]; ring
 
-/-- Evaluating `F ∈ ℤ_p⟦X_0, X_1⟧` termwise at `(t, p / t)` converges to `eval ht (evalTU F)`. -/
-theorem hasSum_eval_evalTU (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (F : MvPowerSeries (Fin 2) ℤ_[p]) :
+private def diagIdx (m : ℤ) (k : ℕ) : Fin 2 →₀ ℕ :=
+  Finsupp.single 0 (m.toNat + k) + Finsupp.single 1 ((-m).toNat + k)
+
+private def diagIdxEquiv : (ℤ × ℕ) ≃ (Fin 2 →₀ ℕ) where
+  toFun mk := diagIdx mk.1 mk.2
+  invFun d := ((d 0 : ℤ) - d 1, min (d 0) (d 1))
+  left_inv mk := by ext <;> simp [diagIdx]; omega
+  right_inv d := by ext i; fin_cases i <;> simp [diagIdx]; omega
+
+/-- Evaluating `F ∈ ℤ_p⟦X_0, X_1⟧` termwise at `(t, p / t)` converges to
+`eval ht (ofMvPowerSeries F)`. -/
+theorem hasSum_eval_ofMvPowerSeries (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
+    (F : MvPowerSeries (Fin 2) ℤ_[p]) :
     HasSum (fun d : Fin 2 →₀ ℕ ↦
       padicIntAlgebraMap p K (MvPowerSeries.coeff d F) * t ^ d 0 * ((p : K) / t) ^ d 1)
-      (eval ht (evalTU F)) := by
+      (eval ht (ofMvPowerSeries F)) := by
   have hs := summable_evalTUTerm_eval ht F
   have hcomp := hs.comp_injective diagIdxEquiv.injective
   dsimp only [Function.comp_def] at hcomp
@@ -196,18 +207,25 @@ theorem hasSum_eval_evalTU (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (F : MvPo
   rw [← Equiv.tsum_eq diagIdxEquiv, hcomp.tsum_prod' hcomp.prod_factor, eval_apply]
   refine tsum_congr fun m ↦ ?_
   have hdiag (k : ℕ) : padicIntAlgebraMap p K (MvPowerSeries.coeff (diagIdx m k) F) *
-        t ^ diagIdx m k 0 * ((p : K) / t) ^ diagIdx m k 1 =
-      padicIntAlgebraMap p K ((p : ℤ_[p]) ^ (-m).toNat) *
-        padicIntAlgebraMap p K ((p : ℤ_[p]) ^ k * MvPowerSeries.coeff (diagIdx m k) F) *
-        t ^ m := by
-    rw [diagIdx_apply_zero, diagIdx_apply_one, div_pow, ← map_natCast (padicIntAlgebraMap p K),
-      map_mul, map_pow, map_pow, mul_assoc _ (t ^ _), div_eq_mul_inv, mul_left_comm (t ^ _),
+        t ^ (diagIdx m k) 0 * ((p : K) / t) ^ (diagIdx m k) 1 =
+      padicIntAlgebraMap p K ((p : ℤ_[p]) ^ ((-m).toNat + k) *
+        MvPowerSeries.coeff (diagIdx m k) F) * t ^ m := by
+    have h0 : (diagIdx m k) 0 = m.toNat + k := by simp [diagIdx]
+    have h1 : (diagIdx m k) 1 = (-m).toNat + k := by simp [diagIdx]
+    rw [h0, h1, div_pow, ← map_natCast (padicIntAlgebraMap p K),
+      map_mul, map_pow, mul_assoc _ (t ^ _), div_eq_mul_inv, mul_left_comm (t ^ _),
       ← div_eq_mul_inv, show t ^ (m.toNat + k) / t ^ ((-m).toNat + k) = t ^ m by
         rw [← zpow_natCast t, ← zpow_natCast t, ← zpow_sub₀ (ne_zero_of_norm_mem_Ioo ht)]
-        congr 1; omega, pow_add]; ring
-  simp_rw [diagIdxEquiv_apply, hdiag]; rw [coeff_evalTU F m, map_mul]
-  exact ((((PadicInt.summable_pow_mul _).hasSum.map (padicIntAlgebraMap p K)
-    continuous_padicIntAlgebraMap).mul_left _).mul_right (t ^ m)).tsum_eq.symm
+        congr 1; omega]
+    ring
+  simp_rw [diagIdxEquiv, Equiv.coe_fn_mk, hdiag]
+  rw [coeff_ofMvPowerSeries F m]
+  have hsum : Summable fun k : ℕ ↦ (p : ℤ_[p]) ^ ((-m).toNat + k) *
+      MvPowerSeries.coeff (diagIdx m k) F := by
+    simpa [pow_add, mul_assoc] using (PadicInt.summable_pow_mul
+      (fun k ↦ MvPowerSeries.coeff (diagIdx m k) F)).mul_left ((p : ℤ_[p]) ^ (-m).toNat)
+  exact ((hsum.hasSum.map (padicIntAlgebraMap p K)
+    continuous_padicIntAlgebraMap).mul_right (t ^ m)).tsum_eq.symm
 end NormedAlgebra
 end Eval
 
@@ -304,10 +322,10 @@ theorem mem_span_iff_forall_eval_annulus (F : MvPowerSeries (Fin 2) ℤ_[p]) :
       ∀ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 →
         ∑' d : Fin 2 →₀ ℕ, padicIntAlgebraMap p ℂ_[p] (MvPowerSeries.coeff d F) *
           t ^ d 0 * ((p : ℂ_[p]) / t) ^ d 1 = 0 := by
-  rw [← ker_evalTU, RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-  exact ⟨fun h t ht ↦ by rw [(hasSum_eval_evalTU ht F).tsum_eq, h, map_zero],
+  rw [← ker_ofMvPowerSeries, RingHom.mem_ker]
+  exact ⟨fun h t ht ↦ by rw [(hasSum_eval_ofMvPowerSeries ht F).tsum_eq, h, map_zero],
     fun h ↦ eq_of_forall_eval_eq fun t ht ↦ by
-      rw [← (hasSum_eval_evalTU ht F).tsum_eq, h t ht, map_zero]⟩
+      rw [← (hasSum_eval_ofMvPowerSeries ht F).tsum_eq, h t ht, map_zero]⟩
 
 instance instNoZeroDivisors : NoZeroDivisors (AnnularRing p) where
   eq_zero_or_eq_zero_of_mul_eq_zero {x y} hxy := by

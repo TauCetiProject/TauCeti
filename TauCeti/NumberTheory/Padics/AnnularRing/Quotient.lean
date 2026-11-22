@@ -8,22 +8,19 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.MvPowerSeries.Equiv
-public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
+public import TauCeti.NumberTheory.Padics.AnnularRing.Presentation
 import Mathlib.RingTheory.MvPowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.MvPowerSeries.Equiv
-import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
-# Power-series presentation, local structure, and boundary quotient of `ℤ_p⟦T, p/T⟧`
+# Local structure and boundary quotient of `ℤ_p⟦T, p/T⟧`
 
-`TauCeti.AnnularRing.evalTU : MvPowerSeries (Fin 2) ℤ_p →ₐ[ℤ_p] AnnularRing p` (`X 0 ↦ T`,
-`X 1 ↦ U = p / T`) is surjective with kernel `(X 0 * X 1 - p)` (`quotientMvPowerSeriesEquiv`).
-The `U`-coefficients `uCoeff x n` (`p ^ n * uCoeff x n = x.coeff (-n)`) yield
+Building on the presentation `TauCeti.AnnularRing.ofMvPowerSeries` from
+`TauCeti.NumberTheory.Padics.AnnularRing.Presentation`, the `U`-coefficients `uCoeff x n`
+(`p ^ n * uCoeff x n = x.coeff (-n)`) yield
 `quotientSpanTEquiv : AnnularRing p ⧸ (T) ≃+* (ZMod p)⟦X⟧`, `isPrime_span_T`,
 `residueTU : AnnularRing p →+* ZMod p`, and `maximalIdeal_eq_span_T_U`.
 
@@ -40,240 +37,7 @@ namespace TauCeti.AnnularRing
 
 variable {p : ℕ} [Fact p.Prime]
 private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-private theorem p_pos : (0 : ℝ) < p := zero_lt_one.trans one_lt_p
-private theorem zpow_p_nonneg (z : ℤ) : (0 : ℝ) ≤ (p : ℝ) ^ z := (zpow_pos p_pos z).le
 private theorem p_ne_zero : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-
-/-! ### Two-variable power-series evaluation `X 0 ↦ T, X 1 ↦ U` -/
-
-private def evalTUTerm (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) (d : Fin 2 →₀ ℕ) : ℤ_[p] :=
-  MvPowerSeries.coeff d F * ((T : AnnularRing p) ^ d 0 * U ^ d 1).coeff m
-private theorem evalTUTerm_eq_zero_of_ne (F : MvPowerSeries (Fin 2) ℤ_[p]) {m : ℤ}
-    {d : Fin 2 →₀ ℕ} (hd : m ≠ (d 0 : ℤ) - d 1) : evalTUTerm F m d = 0 := by
-  rw [evalTUTerm, coeff_T_pow_mul_U_pow, ite_eq_right hd, mul_zero]
-private theorem norm_evalTUTerm_le_zpow_neg (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ)
-    (d : Fin 2 →₀ ℕ) : ‖evalTUTerm F m d‖ ≤ (p : ℝ) ^ (-(d 1 : ℤ)) := by
-  rw [evalTUTerm, coeff_T_pow_mul_U_pow]; split_ifs
-  · rw [norm_mul, PadicInt.norm_p_pow]
-    exact mul_le_of_le_one_left (zpow_p_nonneg _) (PadicInt.norm_le_one _)
-  · simp
-private theorem norm_evalTUTerm_le (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ)
-    (d : Fin 2 →₀ ℕ) : ‖evalTUTerm F m d‖ ≤ (p : ℝ) ^ min 0 m := by
-  by_cases hd : m = (d 0 : ℤ) - d 1
-  · exact (norm_evalTUTerm_le_zpow_neg F m d).trans
-      (zpow_le_zpow_right₀ (one_lt_p (p := p)).le (by omega))
-  · simpa [evalTUTerm_eq_zero_of_ne F hd] using zpow_p_nonneg (p := p) _
-private theorem summable_evalTUTerm (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
-    Summable (evalTUTerm F m) := by
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
-  refine eventually_cofinite.2 <| (Set.finite_Iic (Finsupp.single (0 : Fin 2)
-    (m + N).toNat + Finsupp.single 1 N)).subset fun d hd ↦ ?_
-  simp only [Set.mem_ofPred_eq, dist_zero_right, not_lt] at hd; have hne : m = (d 0 : ℤ) - d 1 := by
-    by_contra h; rw [evalTUTerm_eq_zero_of_ne F h, norm_zero] at hd; linarith
-  have hd1 : d 1 < N := by
-    by_contra! hle; linarith [(norm_evalTUTerm_le_zpow_neg F m d).trans
-      (zpow_le_zpow_right₀ (one_lt_p (p := p)).le (neg_le_neg (Nat.cast_le.2 hle)))]
-  intro i; fin_cases i <;> simp <;> omega
-
-private def evalTUAux (F : MvPowerSeries (Fin 2) ℤ_[p]) : AnnularRing p :=
-  ⟨fun m ↦ ∑' d : Fin 2 →₀ ℕ, evalTUTerm F m d, fun m ↦
-    IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (zpow_p_nonneg _)
-      (norm_evalTUTerm_le F m)⟩
-private theorem coeff_evalTUAux (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
-    (evalTUAux F).coeff m = ∑' d : Fin 2 →₀ ℕ, evalTUTerm F m d := (rfl)
-private def evalTUMulTerm (F G : MvPowerSeries (Fin 2) ℤ_[p]) (m r : ℤ)
-    (d : (Fin 2 →₀ ℕ) × (Fin 2 →₀ ℕ)) : ℤ_[p] := evalTUTerm F r d.1 * evalTUTerm G (m - r) d.2
-private theorem summable_evalTUMulTerm (F G : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
-    Summable (Function.uncurry (evalTUMulTerm F G m)) := by
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
-  let B : Fin 2 →₀ ℕ := Finsupp.single 0 (m + 2 * N).toNat + Finsupp.single 1 N
-  refine eventually_cofinite.2 <| ((Set.finite_Icc (-(N : ℤ)) (m + 2 * N)).prod
-    ((Set.finite_Iic B).prod (Set.finite_Iic B))).subset fun ⟨r, d₁, d₂⟩ h ↦ ?_
-  simp only [Set.mem_ofPred_eq, Function.uncurry_apply_pair, dist_zero_right, not_lt] at h
-  have hr1 : r = (d₁ 0 : ℤ) - d₁ 1 := by
-    by_contra hne; simp [evalTUMulTerm, evalTUTerm_eq_zero_of_ne F hne] at h; linarith
-  have hr2 : m - r = (d₂ 0 : ℤ) - d₂ 1 := by
-    by_contra hne; simp [evalTUMulTerm, evalTUTerm_eq_zero_of_ne G hne] at h; linarith
-  have hd_sum : d₁ 1 + d₂ 1 < N := by
-    by_contra! hle
-    have hbd : ‖evalTUMulTerm F G m r (d₁, d₂)‖ ≤ (p : ℝ) ^ (-((d₁ 1 + d₂ 1 : ℕ) : ℤ)) := by
-      rw [evalTUMulTerm, norm_mul, Nat.cast_add, neg_add, zpow_add₀ (p_pos (p := p)).ne']
-      exact mul_le_mul (norm_evalTUTerm_le_zpow_neg F r d₁)
-        (norm_evalTUTerm_le_zpow_neg G (m - r) d₂) (norm_nonneg _) (zpow_p_nonneg _)
-    linarith [hbd.trans
-      (zpow_le_zpow_right₀ (one_lt_p (p := p)).le (neg_le_neg (Nat.cast_le.2 hle)))]
-  exact ⟨⟨by omega, by omega⟩, fun i ↦ by fin_cases i <;> simp [B] <;> omega,
-    fun i ↦ by fin_cases i <;> simp [B] <;> omega⟩
-
-private theorem tsum_evalTUMulTerm_col (F G : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ)
-    (d : (Fin 2 →₀ ℕ) × (Fin 2 →₀ ℕ)) : (∑' r : ℤ, evalTUMulTerm F G m r d) =
-    MvPowerSeries.coeff d.1 F * MvPowerSeries.coeff d.2 G *
-      ((T : AnnularRing p) ^ (d.1 + d.2) 0 * U ^ (d.1 + d.2) 1).coeff m := by
-  rw [tsum_eq_single ((d.1 0 : ℤ) - d.1 1) fun r hr ↦ by
-    rw [evalTUMulTerm, evalTUTerm_eq_zero_of_ne F hr, zero_mul]]
-  simp only [evalTUMulTerm, evalTUTerm, coeff_T_pow_mul_U_pow, ite_true, Finsupp.add_apply]
-  by_cases hm : m - ((d.1 0 : ℤ) - d.1 1) = (d.2 0 : ℤ) - d.2 1
-  · rw [ite_eq_left hm, ite_eq_left (by omega), pow_add]; ring
-  · rw [ite_eq_right hm, ite_eq_right (by omega)]; simp
-
-private theorem evalTUAux_mul (F G : MvPowerSeries (Fin 2) ℤ_[p]) :
-    evalTUAux (F * G) = evalTUAux F * evalTUAux G := by
-  classical ext m : 2; have hΦ := summable_evalTUMulTerm F G m; have hpair := hΦ.prod_symm.prod
-  simp only [Function.uncurry, Prod.swap_prod_mk, tsum_evalTUMulTerm_col] at hpair
-  rw [coeff_mul, show (∑' r : ℤ, (evalTUAux F).coeff r * (evalTUAux G).coeff (m - r)) =
-      ∑' d : (Fin 2 →₀ ℕ) × (Fin 2 →₀ ℕ), ∑' r : ℤ, evalTUMulTerm F G m r d by
-    rw [hΦ.tsum_comm]; exact tsum_congr fun r ↦
-      (summable_evalTUTerm F r).tsum_mul_tsum (summable_evalTUTerm G (m - r)) (hΦ.prod_factor r)]
-  simp_rw [tsum_evalTUMulTerm_col]; rw [hpair.tsum_prod_eq_tsum_sum_antidiagonal, coeff_evalTUAux]
-  exact tsum_congr fun d ↦ by
-    rw [evalTUTerm, MvPowerSeries.coeff_mul, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun kl hkl ↦ by rw [Finset.mem_antidiagonal.1 hkl]
-
-/-- Substitution `X 0 ↦ T, X 1 ↦ U` on two-variable integral power series over `ℤ_p`. -/
-def evalTU : MvPowerSeries (Fin 2) ℤ_[p] →ₐ[ℤ_[p]] AnnularRing p where
-  toFun := evalTUAux
-  map_one' := by ext m : 2; rw [coeff_evalTUAux, tsum_eq_single 0 fun d hd ↦ by
-    simp [evalTUTerm, MvPowerSeries.coeff_one, hd]]; simp [evalTUTerm, coeff_one]
-  map_mul' := evalTUAux_mul
-  map_zero' := by ext m : 2; simp [coeff_evalTUAux, evalTUTerm]
-  map_add' F G := by
-    ext m : 2; rw [coeff_evalTUAux, coeff_add, coeff_evalTUAux, coeff_evalTUAux,
-      ← (summable_evalTUTerm F m).tsum_add (summable_evalTUTerm G m)]
-    exact tsum_congr fun d ↦ by simp [evalTUTerm, add_mul]
-  commutes' c := by
-    ext m : 2; rw [MvPowerSeries.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
-      coeff_evalTUAux, tsum_eq_single 0 fun d hd ↦ by rw [evalTUTerm,
-        MvPowerSeries.coeff_C_of_ne_zero hd, zero_mul]]; simp [evalTUTerm, coeff_algebraMap]
-
-private theorem evalTU_apply (F : MvPowerSeries (Fin 2) ℤ_[p]) : evalTU F = evalTUAux F := (rfl)
-@[simp] theorem evalTU_C (c : ℤ_[p]) :
-    evalTU (MvPowerSeries.C c) = algebraMap ℤ_[p] (AnnularRing p) c := evalTU.commutes c
-@[simp] theorem evalTU_X_zero : evalTU (MvPowerSeries.X 0 : MvPowerSeries (Fin 2) ℤ_[p]) = T := by
-  ext m : 2; rw [evalTU_apply, coeff_evalTUAux, tsum_eq_single (Finsupp.single 0 1) fun d hd ↦ by
-    simp [evalTUTerm, MvPowerSeries.coeff_X, hd]]; simp [evalTUTerm, MvPowerSeries.coeff_X, coeff_T]
-@[simp] theorem evalTU_X_one : evalTU (MvPowerSeries.X 1 : MvPowerSeries (Fin 2) ℤ_[p]) = U := by
-  ext m : 2; rw [evalTU_apply, coeff_evalTUAux, tsum_eq_single (Finsupp.single 1 1) fun d hd ↦ by
-    simp [evalTUTerm, MvPowerSeries.coeff_X, hd]]; simp [evalTUTerm, MvPowerSeries.coeff_X, coeff_U]
-
-/-- Diagonal exponent `(m.toNat + k, (-m).toNat + k)` parameterising `{d | d 0 - d 1 = m}`. -/
-def diagIdx (m : ℤ) (k : ℕ) : Fin 2 →₀ ℕ :=
-  Finsupp.single 0 (m.toNat + k) + Finsupp.single 1 ((-m).toNat + k)
-@[simp] theorem diagIdx_apply_zero (m : ℤ) (k : ℕ) :
-    diagIdx m k 0 = m.toNat + k := by simp [diagIdx]
-@[simp] theorem diagIdx_apply_one (m : ℤ) (k : ℕ) :
-    diagIdx m k 1 = (-m).toNat + k := by simp [diagIdx]
-private theorem diagIdx_injective (m : ℤ) : Function.Injective (diagIdx m) := fun k₁ k₂ h ↦ by
-  have h0 := congr_arg (fun d : Fin 2 →₀ ℕ ↦ d 0) h; simp only [diagIdx_apply_zero] at h0; omega
-
-/-- Bijection between `(m, k) : ℤ × ℕ` and bivariate exponents `d : Fin 2 →₀ ℕ`. -/
-def diagIdxEquiv : (ℤ × ℕ) ≃ (Fin 2 →₀ ℕ) where
-  toFun mk := diagIdx mk.1 mk.2
-  invFun d := ((d 0 : ℤ) - d 1, min (d 0) (d 1))
-  left_inv mk := by ext <;> simp; omega
-  right_inv d := by ext i; fin_cases i <;> simp [diagIdx]; omega
-@[simp] theorem diagIdxEquiv_apply (mk : ℤ × ℕ) : diagIdxEquiv mk = diagIdx mk.1 mk.2 := (rfl)
-
-/-- Explicit diagonal formula for the `m`-th coefficient of `evalTU F`. -/
-theorem coeff_evalTU (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
-    (evalTU F).coeff m = (p : ℤ_[p]) ^ (-m).toNat *
-      ∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (diagIdx m k) F := by
-  rw [evalTU_apply, coeff_evalTUAux,
-    ← ((PadicInt.summable_pow_mul fun k ↦ MvPowerSeries.coeff (diagIdx m k) F).hasSum.mul_left
-      ((p : ℤ_[p]) ^ (-m).toNat)).tsum_eq, ← (diagIdx_injective m).tsum_eq]
-  · exact tsum_congr fun k ↦ by
-      simp only [evalTUTerm, diagIdx_apply_zero, diagIdx_apply_one, coeff_T_pow_mul_U_pow]
-      rw [ite_eq_left (by omega), pow_add]; ring
-  · intro d hd
-    have hm : m = (d 0 : ℤ) - d 1 := by by_contra h; exact hd (evalTUTerm_eq_zero_of_ne F h)
-    exact ⟨min (d 0) (d 1), by ext i; fin_cases i <;> (simp [diagIdx]; omega)⟩
-
-private theorem diagIdx_eq_single_zero_iff {m : ℤ} {k : ℕ} :
-    diagIdx m k = Finsupp.single 0 (diagIdx m k 0) ↔ 0 ≤ m ∧ k = 0 :=
-  ⟨fun h ↦ by have h1 := congr_arg (fun d : Fin 2 →₀ ℕ ↦ d 1) h; simp at h1; omega,
-   fun ⟨hm, hk⟩ ↦ by ext i; fin_cases i <;> simp [diagIdx, hk, hm]⟩
-private theorem diagIdx_eq_single_one_iff {m : ℤ} {k : ℕ} :
-    diagIdx m k = Finsupp.single 1 (diagIdx m k 1) ↔ m ≤ 0 ∧ k = 0 :=
-  ⟨fun h ↦ by have h0 := congr_arg (fun d : Fin 2 →₀ ℕ ↦ d 0) h; simp at h0; omega,
-   fun ⟨hm, hk⟩ ↦ by ext i; fin_cases i <;> simp [diagIdx, hk, hm]⟩
-
-@[simp] theorem evalTU_toMvPowerSeries_zero (f : ℤ_[p]⟦X⟧) :
-    evalTU (f.toMvPowerSeries (0 : Fin 2)) = ofPowerSeriesT f := by
-  ext m : 2; rw [coeff_evalTU]; simp_rw [coeff_toMvPowerSeries, diagIdx_eq_single_zero_iff]
-  rcases lt_or_ge m 0 with hm | hm
-  · simp [coeff_ofPowerSeriesT_of_neg _ hm, not_le.2 hm]
-  · lift m to ℕ using hm; simp [coeff_ofPowerSeriesT_natCast, Int.toNat_of_nonpos, mul_ite]
-@[simp] theorem evalTU_toMvPowerSeries_one (g : ℤ_[p]⟦X⟧) :
-    evalTU (g.toMvPowerSeries (1 : Fin 2)) = ofPowerSeriesU g := by
-  ext m : 2; rw [coeff_evalTU]; simp_rw [coeff_toMvPowerSeries, diagIdx_eq_single_one_iff]
-  rcases lt_or_ge 0 m with hm | hm
-  · simp [coeff_ofPowerSeriesU_of_pos _ hm, not_le.2 hm]
-  · obtain ⟨n, rfl⟩ : ∃ n : ℕ, m = -n := ⟨(-m).toNat, by omega⟩
-    simp [coeff_ofPowerSeriesU_neg_natCast, mul_ite]
-
-/-- `evalTU` is surjective, via the normal form decomposition `f(T) + U g(U)`. -/
-theorem evalTU_surjective : Function.Surjective (evalTU (p := p)) := fun x ↦ by
-  obtain ⟨⟨f, g⟩, hfg⟩ := normalForm.surjective x
-  exact ⟨f.toMvPowerSeries 0 + MvPowerSeries.X 1 * g.toMvPowerSeries 1,
-    by simpa [normalForm_apply] using hfg⟩
-
-/-! ### Kernel of `evalTU` and the presentation `ℤ_p⟦T, U⟧ ⧸ (T U - p)` -/
-
-private def diagStep : Fin 2 →₀ ℕ := Finsupp.single 0 1 + Finsupp.single 1 1
-private def evalTUKerQuot (F : MvPowerSeries (Fin 2) ℤ_[p]) : MvPowerSeries (Fin 2) ℤ_[p] :=
-  fun d ↦ ∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (d + (k + 1) • diagStep) F
-private theorem tsum_pow_mul_coeff_add_nsmul (F : MvPowerSeries (Fin 2) ℤ_[p]) (d : Fin 2 →₀ ℕ) :
-    (∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (d + k • diagStep) F) =
-      MvPowerSeries.coeff d F + (p : ℤ_[p]) * MvPowerSeries.coeff d (evalTUKerQuot F) := by
-  rw [(PadicInt.summable_pow_mul _).tsum_eq_zero_add]
-  simp only [pow_zero, zero_nsmul, add_zero, one_mul, pow_succ', mul_assoc]
-  rw [MvPowerSeries.coeff_apply (evalTUKerQuot F) d, evalTUKerQuot,
-    ((PadicInt.summable_pow_mul _).hasSum.mul_left (p : ℤ_[p])).tsum_eq]
-
-/-- The kernel of `evalTU` is the principal ideal `(X 0 * X 1 - p)`. -/
-theorem ker_evalTU : RingHom.ker (evalTU (p := p)).toRingHom =
-    Ideal.span {MvPowerSeries.X 0 * MvPowerSeries.X 1 - MvPowerSeries.C (p : ℤ_[p])} := by
-  refine le_antisymm (fun F hF ↦ Ideal.mem_span_singleton.2 ⟨evalTUKerQuot F,
-    MvPowerSeries.ext fun d ↦ ?_⟩) (Ideal.span_le.2 (by rintro _ rfl; simp [RingHom.mem_ker]))
-  rw [RingHom.mem_ker] at hF
-  have hdiag (m : ℤ) : ∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (diagIdx m k) F = 0 := by
-    have hm := congr_arg (coeff · m) hF
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coeff_evalTU, coeff_zero] at hm
-    exact (mul_eq_zero.1 hm).resolve_left (pow_ne_zero _ (p_ne_zero (p := p)))
-  rw [sub_mul, map_sub, MvPowerSeries.coeff_C_mul, show (MvPowerSeries.X 0 * MvPowerSeries.X 1 :
-      MvPowerSeries (Fin 2) ℤ_[p]) = MvPowerSeries.monomial diagStep 1 by
-    rw [MvPowerSeries.X_def 0, MvPowerSeries.X_def 1, MvPowerSeries.monomial_mul_monomial,
-      one_mul, diagStep], MvPowerSeries.coeff_monomial_mul]; split_ifs with he
-  · rw [one_mul, show MvPowerSeries.coeff (d - diagStep) (evalTUKerQuot F) =
-        MvPowerSeries.coeff d F + (p : ℤ_[p]) * MvPowerSeries.coeff d (evalTUKerQuot F) by
-      rw [MvPowerSeries.coeff_apply, evalTUKerQuot, ← tsum_pow_mul_coeff_add_nsmul]
-      exact tsum_congr fun k ↦ by
-        rw [add_nsmul, one_nsmul, ← add_assoc, add_right_comm _ _ diagStep,
-          tsub_add_cancel_of_le he], add_sub_cancel_right]
-  · rw [zero_sub]; have h01 : d 0 = 0 ∨ d 1 = 0 := by
-      by_contra h; rw [not_or] at h; exact he fun i ↦ by fin_cases i <;> simp [diagStep] <;> omega
-    have h0 := hdiag ((d 0 : ℤ) - d 1)
-    simp_rw [show ∀ k : ℕ, diagIdx ((d 0 : ℤ) - d 1) k = d + k • diagStep from fun k ↦ by
-      ext i; rcases h01 with h0' | h1 <;> fin_cases i <;> simp [diagIdx, diagStep, *]] at h0
-    exact eq_neg_of_add_eq_zero_left ((tsum_pow_mul_coeff_add_nsmul F d).symm.trans h0)
-
-/-- Algebra isomorphism `ℤ_p⟦X_0, X_1⟧ ⧸ (X_0 X_1 - p) ≃ₐ[ℤ_p] AnnularRing p`. -/
-def quotientMvPowerSeriesEquiv : (MvPowerSeries (Fin 2) ℤ_[p] ⧸ Ideal.span
-    {MvPowerSeries.X 0 * MvPowerSeries.X 1 - MvPowerSeries.C (p : ℤ_[p])}) ≃ₐ[ℤ_[p]]
-    AnnularRing p :=
-  (Ideal.quotientEquivAlgOfEq ℤ_[p] ker_evalTU.symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective evalTU_surjective)
-@[simp] theorem quotientMvPowerSeriesEquiv_mk (F : MvPowerSeries (Fin 2) ℤ_[p]) :
-    quotientMvPowerSeriesEquiv (Ideal.Quotient.mk _ F) = evalTU F := (rfl)
-@[simp] theorem quotientMvPowerSeriesEquiv_symm_T : quotientMvPowerSeriesEquiv.symm
-    (T : AnnularRing p) = Ideal.Quotient.mk _ (MvPowerSeries.X 0) :=
-  quotientMvPowerSeriesEquiv.injective (by simp)
-@[simp] theorem quotientMvPowerSeriesEquiv_symm_U : quotientMvPowerSeriesEquiv.symm
-    (U : AnnularRing p) = Ideal.Quotient.mk _ (MvPowerSeries.X 1) :=
-  quotientMvPowerSeriesEquiv.injective (by simp)
 
 /-! ### `U`-coefficients, boundary quotient `AnnularRing p ⧸ (T)`, and local structure -/
 
@@ -421,7 +185,7 @@ theorem isPrime_span_T : (Ideal.span {(T : AnnularRing p)}).IsPrime :=
   (Ideal.Quotient.isDomain_iff_prime _).1 quotientSpanTEquiv.toMulEquiv.isDomain
 
 instance : IsLocalRing (AnnularRing p) :=
-  IsLocalRing.of_surjective' evalTU.toRingHom evalTU_surjective
+  IsLocalRing.of_surjective' ofMvPowerSeries.toRingHom ofMvPowerSeries_surjective
 
 /-- The residue homomorphism `AnnularRing p →+* ZMod p` sending `x ↦ x.coeff 0 mod p`. -/
 def residueTU : AnnularRing p →+* ZMod p := (PowerSeries.constantCoeff (R := ZMod p)).comp modT
@@ -450,7 +214,7 @@ theorem isUnit_iff {x : AnnularRing p} : IsUnit x ↔ IsUnit (x.coeff 0) := by
 /-- `U` is not a unit in `AnnularRing p`, since its constant term is `0`. -/
 @[simp] theorem not_isUnit_U : ¬ IsUnit (U : AnnularRing p) := by simp [isUnit_iff, coeff_U]
 /-- The prime `p` is not a unit in `AnnularRing p`, since `p ∈ ℤ_p` is not a unit. -/
-@[simp] theorem not_isUnit_p : ¬ IsUnit (p : AnnularRing p) := by
+theorem not_isUnit_p : ¬ IsUnit (p : AnnularRing p) := by
   simpa [isUnit_iff, mem_nonunits_iff] using PadicInt.p_nonunit (p := p)
 
 /-- The maximal ideal of `AnnularRing p` is `(T, U)` (containing `p = T U`). -/

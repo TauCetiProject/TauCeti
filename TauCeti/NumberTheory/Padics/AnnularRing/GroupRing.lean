@@ -82,7 +82,7 @@ def quotientMvPowerSeriesMonoidAlgebraEquiv : (MvPowerSeries (Fin 2) (MonoidAlge
       MvPowerSeries.C (p : MonoidAlgebra ℤ_[p] M)}) ≃ₐ[ℤ_[p]] MonoidAlgebra (AnnularRing p) M :=
   (Ideal.quotientEquivAlg _ _ (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm
     (map_span_rel_mvPowerSeriesAlgEquiv_symm M)).trans <| (MonoidAlgebra.quotientAlgEquiv ℤ_[p] M
-      _).trans (MonoidAlgebra.mapAlgEquiv ℤ_[p] M (quotientMvPowerSeriesEquiv (p := p)))
+      _).trans (MonoidAlgebra.mapAlgEquiv ℤ_[p] M (quotientEquiv (p := p)))
 
 @[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_zero :
     quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 0)) =
@@ -95,13 +95,15 @@ def quotientMvPowerSeriesMonoidAlgebraEquiv : (MvPowerSeries (Fin 2) (MonoidAlge
 @[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_C_single (m : M) (c : ℤ_[p]) :
     quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.C
         (MonoidAlgebra.single m c))) = MonoidAlgebra.single m (algebraMap ℤ_[p] _ c) := by
-  simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv, evalTU_C]
+  simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv, ofMvPowerSeries_C]
 
-/-- Evaluating `quotientMvPowerSeriesMonoidAlgebraEquiv` computes `evalTU` on each coordinate. -/
+/-- Evaluating `quotientMvPowerSeriesMonoidAlgebraEquiv` computes `ofMvPowerSeries` on each
+coordinate. -/
 theorem coeff_quotientMvPowerSeriesMonoidAlgebraEquiv_mk
     (F : MvPowerSeries (Fin 2) (MonoidAlgebra ℤ_[p] M)) (m : M) :
     (quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ F)).coeff m =
-      evalTU (((MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm F).coeff m) := by
+      ofMvPowerSeries
+        (((MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm F).coeff m) := by
   simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv,
     Ideal.quotientEquivAlg_mk]
 

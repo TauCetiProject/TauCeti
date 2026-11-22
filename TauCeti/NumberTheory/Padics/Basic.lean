@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Basic instances for the `p`-adic numbers
@@ -34,7 +35,8 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`). It also records that `ℚ_[p]` has no element of norm
+(`TauCeti.norm_natCast_eq_norm_padic`), and a nonzero integer `n` has norm at least `1 / |n|` in
+`K` (`TauCeti.inv_abs_le_norm_intCast`). It also records that `ℚ_[p]` has no element of norm
 strictly between `p⁻¹` and `1` (`Padic.not_exists_norm_mem_Ioo`).
 
 A continuous ring homomorphism between normed `ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear
@@ -139,6 +141,13 @@ theorem norm_padicIntAlgebraMap_le_one [NormOneClass K] (a : ℤ_[p]) :
 /-- The norm of a natural number in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
 theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
+
+/-- In a normed `ℚ_p`-algebra with `‖1‖ = 1`, an integer `n` has norm at least `1 / |n|`, because
+the `p`-part of `n` divides `n`. For `n = 0` both sides are `0` by the convention `0⁻¹ = 0`. -/
+theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [SeminormedRing K]
+    [NormedAlgebra ℚ_[p] K] [NormOneClass K] (n : ℤ) : (|n| : ℝ)⁻¹ ≤ ‖(n : K)‖ := by
+  rw [← norm_natAbs n, norm_natCast_eq_norm_padic (p := p), ← Int.cast_abs, ← Nat.cast_natAbs]
+  exact Padic.inv_natCast_le_norm_natCast n.natAbs
 
 theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
   (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective
