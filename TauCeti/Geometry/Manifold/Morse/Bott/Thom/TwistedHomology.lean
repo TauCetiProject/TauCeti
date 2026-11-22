@@ -90,16 +90,13 @@ private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomolo
   -- contribute.
   have hW (j : ι) (hj : ¬r j ≤ n) : IsZero (W j) :=
     isZero_singularHomology_thomPair _ (by rw [finrank_fin_fun]; omega)
-  -- From rank `r j` on, the twisted Thom isomorphism, normalized by an orientation of the model
-  -- fibre and a generator of `H^{r j}(ℝ^{r j}, ℝ^{r j} ∖ {0}; K)`, shifts the twisted homology of
-  -- the base up by the rank.
+  -- From rank `r j` on, the twisted Thom isomorphism shifts the twisted homology of the base up by
+  -- the rank.
   have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
       ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
-    (thomPairSingularHomologyEquivTwistedHomology
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) (Pi.basisFun ℝ (Fin (r j))).orientation
-      (exists_span_singularCohomology_complSingleton_eq_top (k := K)
-        (OpenPartialHomeomorph.refl (Fin (r j) → ℝ)) (mem_univ 0)).choose_spec
-      (by rw [finrank_fin_fun]; omega)).toModuleIso
+    (nonempty_singularHomology_thomPair_linearEquiv_twistedHomology (Fin (r j) → ℝ) (V j)
+      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) K
+      (by rw [finrank_fin_fun]; omega)).some.toModuleIso
   exact ⟨(biproduct.isoCoproduct W).symm ≪≫
     (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
     biproduct.isoCoproduct _⟩
@@ -175,13 +172,12 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
     fun j ↦ subbundleTopology (P j) ((h j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
   have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
-  -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h j).finrank_negativeNormalSpace hn (g j).toRiemannianMetric, (hV j).finrank_eq,
-      Fintype.card_fin]
-  -- The band has the homology of the direct sum of the Thom pairs of the submanifolds.
+  -- The band has the homology of the direct sum of the Thom pairs of the submanifolds, whose
+  -- ranks are the indices.
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn h hfs hc hd hac hcb
-    hcompact hcrit hdim g hr (ModuleCat.of K K) n
+    hcompact hcrit hdim g
+    (fun j ↦ (h j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j))
+    (ModuleCat.of K K) n
   exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology K n).some⟩
 
 /-- **The relative homology across a critical level of a Morse–Bott function, with
@@ -251,14 +247,13 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
   have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
-  -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
   have := h.finite
-  -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`.
+  -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`,
+  -- whose ranks are the indices.
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim g
-    hr (ModuleCat.of K K) n
+    (fun j ↦ (h.isNondegenerateCriticalSubmanifold j)
+      |>.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j))
+    (ModuleCat.of K K) n
   -- Reindex the pieces of index at most `n` among those on the level `c`.
   exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
     (V := fun j : {j // ∀ s, f (i j s) = c} ↦ V j) K n).some ≪≫
