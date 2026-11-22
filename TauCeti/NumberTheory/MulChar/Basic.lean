@@ -40,18 +40,24 @@ its inverse carry the trivial character `1` and the trivial unit homomorphism `1
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
+A quadratic character takes the value `1` or `-1` at every unit
+(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so it is trivial when `2 = 0` in the
+coefficient ring (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters are closed
+under multiplication (`MulChar.IsQuadratic.mul`), and hence a
+finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
+
+A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
+(`MulChar.pow_eq_one_iff_forall_mem_range_apply_eq_one`). At a unit `v`, the inverse character
+takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`). With values in a domain, the sum of a
+character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and
+zero otherwise (`MulChar.sum_eq_ite`).
+
 With values in a commutative group with zero, an integer power of a character at a unit is the
 integer power of its value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
 `MulChar.pow_apply_coe`.
 
 On a monoid with finitely many units, every value of a character is an algebraic integer
 (`MulChar.isIntegral_apply`): `0` at nonunits and a root of unity at units.
-
-A quadratic character takes the value `1` or `-1` at every unit
-(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so it is trivial when `2 = 0` in the
-coefficient ring (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters are closed
-under multiplication (`MulChar.IsQuadratic.mul`), and hence a
-finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
 public section
@@ -165,6 +171,32 @@ theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
     {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
     (∏ i ∈ s, χ i).IsQuadratic :=
   Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
+
+/-- A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units. -/
+theorem pow_eq_one_iff_forall_mem_range_apply_eq_one {M R : Type*} [CommMonoid M]
+    [CommMonoidWithZero R] (χ : MulChar M R) (d : ℕ) :
+    χ ^ d = 1 ↔ ∀ h ∈ (powMonoidHom d : Mˣ →* Mˣ).range, χ h = 1 := by
+  simp only [eq_one_iff, MonoidHom.mem_range, powMonoidHom_apply, forall_exists_index,
+    forall_apply_eq_imp_iff, pow_apply_coe, Units.val_pow_eq_pow_val, map_pow]
+
+/-- At a unit `v`, the inverse of a character takes the value `χ v⁻¹`, with the inverse in `Mˣ`. -/
+theorem inv_apply_coe {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : MulChar M R)
+    (v : Mˣ) : χ⁻¹ v = χ ↑v⁻¹ := by
+  have h : mulEquivToUnitHom χ⁻¹ v = mulEquivToUnitHom χ v⁻¹ := by
+    simp only [map_inv, MonoidHom.inv_apply]
+  simpa only [mulEquivToUnitHom_apply, coe_equivToUnitHom] using congrArg Units.val h
+
+/-- The sum of a character over a finite commutative monoid `M` is the cast of the number of
+units of `M` for the trivial character and zero otherwise. This puts Mathlib's
+`MulChar.sum_eq_zero_of_ne_one` and `MulChar.sum_one_eq_card_units` into one statement. -/
+@[simp]
+theorem sum_eq_ite {M R : Type*} [CommMonoid M] [Fintype M] [CommRing R] [IsDomain R]
+    (χ : MulChar M R) [Decidable (χ = 1)] :
+    ∑ a, χ a = if χ = 1 then (Nat.card Mˣ : R) else 0 := by
+  classical
+  split_ifs with hχ
+  · rw [hχ, sum_one_eq_card_units, Nat.card_eq_fintype_card]
+  · exact sum_eq_zero_of_ne_one hχ
 
 /-- With values in a commutative group with zero, an integer power of a character takes the
 integer power of its value at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulChar.zpow_apply_coe`

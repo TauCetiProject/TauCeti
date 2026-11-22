@@ -10,10 +10,10 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.BigOperators.ZPow
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.MulChar.Basic
-import TauCeti.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Cyclic
 
 /-!
 # Finite hypergeometric sums

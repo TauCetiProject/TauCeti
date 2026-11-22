@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -608,25 +609,26 @@ open Function
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
-/-- A solution at `equivRealProdCLM y` of the coordinate Floer equation for `J` and `X` on
-`ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`, solves it at `y` for `J` and
-`X ∘L equivRealProdCLM`, with `∂ₛ` and `∂ₜ` the derivatives in the directions `1` and `I`. -/
-private theorem fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub
-    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V} {u : ℝ × ℝ → V} {y : ℂ}
-    (hfl : fderiv ℝ u (equivRealProdCLM y) stdComplexLineImag -
-        X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineImag =
-      J (equivRealProdCLM y, u (equivRealProdCLM y))
-        (fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal -
-          X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineReal)) :
+/-- In the complex coordinate `equivRealProdCLM` of the domain, the coordinate Floer equation for
+`J` and `X ∘L equivRealProdCLM` at `y`, with `∂ₛ` and `∂ₜ` the derivatives in the directions `1`
+and `I`, is the coordinate Floer equation for `J` and `X` on `ℝ × ℝ` at `equivRealProdCLM y`. -/
+theorem fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {J : (ℝ × ℝ) × F → F →L[ℝ] F}
+    {X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F} {u : ℝ × ℝ → F} {y : ℂ} :
     fderiv ℝ (u ∘ equivRealProdCLM) y I -
         (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
       J (equivRealProdCLM y, u (equivRealProdCLM y))
         (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
           (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L
-            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) := by
-  simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) ↔
+      fderiv ℝ u (equivRealProdCLM y) stdComplexLineImag -
+          X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineImag =
+        J (equivRealProdCLM y, u (equivRealProdCLM y))
+          (fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal -
+            X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineReal) := by
+  simp only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-    equivRealProdCLM_I] using hfl
+    equivRealProdCLM_I]
 
 /-- `TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for
 solutions of the coordinate Floer equations on the domain `ℝ × ℝ`, read through the complex
@@ -688,7 +690,7 @@ private theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_f
       (hΩ.preimage e.continuous) (preimage_mono hΩD) hpC
       (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
       (fun k y hy ↦
-        fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl k (e y) hy))
+        fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub.2 (hfl k (e y) hy))
       (fun k y hy ↦ huK k hy)
       (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
   -- The bubbling set and the limit in the original coordinates.
@@ -890,8 +892,8 @@ private theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_sq_le_of_small_energ
     (hu.comp e.contDiff.contDiffOn hball)
     ((hu'.comp e.continuous.continuousOn hcball).congr fun y _ ↦
       fderiv_comp_equivRealProdCLM_one u y)
-    (fun y hy ↦
-      fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl (e y) (hball hy)))
+    (fun y hy ↦ fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub.2
+      (hfl (e y) (hball hy)))
     (fun y hy ↦ huK _ (hball hy)) (by simpa only [he, fderiv_comp_equivRealProdCLM_one] using hE)
   simpa only [he, fderiv_comp_equivRealProdCLM_one, ContinuousLinearEquiv.apply_symm_apply] using h
 
@@ -1172,6 +1174,18 @@ theorem isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_su
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
     equivRealProdCLM_I]
 
+/-- The Floer equation `(du - X_K)^{0,1} = 0` at `z` is the coordinate equation
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` for the Hamiltonian one-form `X = X_K`. -/
+theorem isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} {z : ℝ × ℝ} :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) ↔
+      fderiv ℝ u z stdComplexLineImag - ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineImag =
+        J z (u z) (fderiv ℝ u z stdComplexLineReal -
+          ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineReal) := by
+  rw [isComplexLinearMap_stdComplexLine_iff]
+  simp only [perturbedFDeriv_eq_sub, sub_apply, ContinuousLinearMap.coe_coe]
+
 /-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
 `J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in
 `C × D × K` with compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ V`. There are constants `A, B ≥ 0` such
@@ -1322,14 +1336,9 @@ theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SymplecticForm 
     (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
     (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
-      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
-  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
-  have hlin := (lintegral_mono_set hΩS).trans hE
-  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity hS hu hKs hKt).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hKs hKt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end TauCeti.SymplecticForm

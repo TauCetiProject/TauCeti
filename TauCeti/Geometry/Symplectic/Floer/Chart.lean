@@ -36,8 +36,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   `-1` on the chart target (`TauCeti.Floer.almostComplexInChartAt_apply_apply`). For a jointly
   `Cⁿ` family it is the coordinate expression `ContMDiffAlmostComplexStructureFamily.inChart`
   (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target; for a
-  smooth domain-independent structure it is `SmoothAlmostComplexStructure.inChart`
-  (`TauCeti.Floer.almostComplexInChartAt_const`).
+  family of smooth structures `J z`, such as a domain-independent one, it is
+  `SmoothAlmostComplexStructure.inChart` of `J z`
+  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -49,11 +50,12 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
 * For a map `u` into the chart source, with coordinate expression `v = extChartAt I α ∘ u`, the
   perturbed derivative `du - X_K` in tangent coordinates is `dv` minus the Hamiltonian vector
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
-  So if `u` solves the Floer equation, `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` with the
-  data read in the chart
-  (`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). The two vector fields
-  together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` read in the chart
-  (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this coordinate equation.
+  So `u` solves the Floer equation exactly when `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})`
+  with the data read in the chart (in the namespace `TauCeti.SmoothTwoForm`,
+  `isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). The
+  two vector fields together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
+  read in the chart (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this
+  coordinate equation.
 
 Compactness of solutions with values in one chart, of either kind, is
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`, and the mean-value inequality in a chart
@@ -124,23 +126,24 @@ namespace Floer
 /-- The almost complex structures `J(z, x)` on the tangent spaces of `M`, read in the chart at
 `α`: at `(z, y)`, the structure `J(z, x)` at the point `x = (extChartAt I α).symm y` with chart
 coordinate `y`, written in the tangent coordinates of the chart at `α`. Outside the chart target
-the value is junk.
+the value is junk. The parameter `z` ranges over any type `P`, such as the domain `ℝ × ℝ` of the
+Floer equation.
 
 This is the coordinate expression `ContMDiffAlmostComplexStructureFamily.inChart` for the unbundled
 families of structures in which the manifold Floer equation `SmoothTwoForm.perturbedMFDeriv` is
 stated (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`). -/
 def almostComplexInChartAt (I : ModelWithCorners ℝ E H) [IsManifold I (⊤ : ℕ∞) M] (α : M)
-    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : (ℝ × ℝ) × E) :
+    {P : Type*} (J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : P × E) :
     E →L[ℝ] E :=
   inCoordinates E (TangentSpace I) E (TangentSpace I) α ((extChartAt I α).symm p.2) α
     ((extChartAt I α).symm p.2)
     (J p.1 ((extChartAt I α).symm p.2)).toLinearMap.toContinuousLinearMap
 
-variable {α : M} {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+variable {α : M} {P : Type*} {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
 
 /-- At a chart coordinate `y`, the structure in the chart is the structure at
 `x = (extChartAt I α).symm y` conjugated by the tangent coordinates of the chart. -/
-theorem almostComplexInChartAt_apply (z : ℝ × ℝ) (y v : E) :
+theorem almostComplexInChartAt_apply (z : P) (y v : E) :
     almostComplexInChartAt I α J (z, y) v =
       (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm y)
         (J z ((extChartAt I α).symm y)
@@ -150,7 +153,7 @@ theorem almostComplexInChartAt_apply (z : ℝ × ℝ) (y v : E) :
 
 /-- On the chart target, the structure in the chart squares to `-1`. -/
 theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α).target)
-    (z : ℝ × ℝ) (v : E) :
+    (z : P) (v : E) :
     almostComplexInChartAt I α J (z, y) (almostComplexInChartAt I α J (z, y) v) = -v := by
   have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
@@ -178,18 +181,19 @@ theorem almostComplexInChartAt_eq_inChart {n : ℕ∞}
   -- The two sides apply the same endomorphism, once through its underlying linear map.
   rfl
 
-/-- For a domain-independent smooth structure `J`, the structure in the chart is `J` read in the
-chart at `α`. In particular it is smooth on the chart target
-(`SmoothAlmostComplexStructure.contDiffOn_inChart`). -/
+/-- For a family of smooth structures `J p`, the structure in the chart at `(p, y)` is `J p` read
+in the chart at `α`. For a domain-independent structure (a constant family) it is therefore smooth
+on the chart target (`SmoothAlmostComplexStructure.contDiffOn_inChart`). -/
 @[simp]
-theorem almostComplexInChartAt_const (J : SmoothAlmostComplexStructure I M) (α : M)
-    (p : (ℝ × ℝ) × E) :
-    almostComplexInChartAt I α (fun _ ↦ J.almostComplexStructureAt) p = J.inChart α p.2 := by
+theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostComplexStructure I M)
+    (α : M) (p : P × E) :
+    almostComplexInChartAt I α (fun z ↦ (J z).almostComplexStructureAt) p =
+      (J p.1).inChart α p.2 := by
   rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def]
   congr 1
   ext v
   rw [LinearMap.coe_toContinuousLinearMap']
-  exact J.almostComplexStructureAt_apply _ v
+  exact (J p.1).almostComplexStructureAt_apply _ v
 
 end Floer
 
@@ -221,16 +225,16 @@ coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The str
 by `ω` at `x` exactly when this form is positive on nonzero vectors. It is continuous wherever the
 structures in the chart are (`continuousOn_associatedBilinFormInChartAt`). Outside the chart target
 the value is junk. -/
-def associatedBilinFormInChartAt (ω : SmoothTwoForm I M) (α : M)
-    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : (ℝ × ℝ) × E) :
+def associatedBilinFormInChartAt (ω : SmoothTwoForm I M) (α : M) {P : Type*}
+    (J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : P × E) :
     E →L[ℝ] E →L[ℝ] ℝ :=
   ((compL ℝ E E ℝ).flip (Floer.almostComplexInChartAt I α J p)).comp
     (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
 
 /-- The form `ω(·, J ·)` in the chart evaluates the coordinate expression of `ω` on the first
 vector and the image of the second under the structure read in the chart. -/
-theorem associatedBilinFormInChartAt_apply_eq_inChartAt (ω : SmoothTwoForm I M)
-    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : (ℝ × ℝ) × E)
+theorem associatedBilinFormInChartAt_apply_eq_inChartAt (ω : SmoothTwoForm I M) {P : Type*}
+    (J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : P × E)
     (a b : E) :
     ω.associatedBilinFormInChartAt α J p a b =
       RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2
@@ -241,8 +245,8 @@ theorem associatedBilinFormInChartAt_apply_eq_inChartAt (ω : SmoothTwoForm I M)
 /-- At a chart coordinate `y`, the form `ω(·, J ·)` in the chart evaluates `ω` at
 `x = (extChartAt I α).symm y` on the tangent vectors with chart coordinates `a` and `b`, the
 second one rotated by `J(z, x)`. -/
-theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M)
-    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : ℝ × ℝ) {y : E}
+theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M) {P : Type*}
+    (J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : P) {y : E}
     (hy : y ∈ (extChartAt I α).target) (a b : E) :
     ω.associatedBilinFormInChartAt α J (z, y) a b =
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
@@ -272,8 +276,8 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M)
 
 /-- At the chart image of a point `x` of the chart source, the form `ω(·, J ·)` in the chart,
 evaluated on the chart coordinates of tangent vectors `v` and `w` at `x`, is `ω_x(v, J(z, x) w)`. -/
-theorem associatedBilinFormInChartAt_extChartAt (ω : SmoothTwoForm I M)
-    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : ℝ × ℝ) {x : M}
+theorem associatedBilinFormInChartAt_extChartAt (ω : SmoothTwoForm I M) {P : Type*}
+    (J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : P) {x : M}
     (hx : x ∈ (extChartAt I α).source) (v w : TangentSpace I x) :
     ω.associatedBilinFormInChartAt α J (z, extChartAt I α x)
         ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x v)
@@ -289,8 +293,9 @@ theorem associatedBilinFormInChartAt_extChartAt (ω : SmoothTwoForm I M)
 
 /-- The form `ω(·, J ·)` in the chart is continuous on every set of pairs `(z, y)` with `y` in the
 chart target on which the structures in the chart are continuous. -/
-theorem continuousOn_associatedBilinFormInChartAt {ω : SmoothTwoForm I M}
-    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {S : Set ((ℝ × ℝ) × E)}
+theorem continuousOn_associatedBilinFormInChartAt {ω : SmoothTwoForm I M} {P : Type*}
+    [TopologicalSpace P] {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {S : Set (P × E)}
     (hS : ∀ p ∈ S, p.2 ∈ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) S) :
     ContinuousOn (ω.associatedBilinFormInChartAt α J) S :=
@@ -302,7 +307,8 @@ theorem continuousOn_associatedBilinFormInChartAt {ω : SmoothTwoForm I M}
 `K = K_s ds + K_t dt`, read in the chart at `α`: at `(z, y)` it sends a tangent vector `(a, b)` of
 the domain to `a X_{K_s} + b X_{K_t}`, with the Hamiltonian vector fields read in the chart. This is
 the one-form of the coordinate Floer equation solved by the coordinate expressions of solutions
-(`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
+(in the namespace `TauCeti.SmoothTwoForm`,
+`isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
 def hamiltonianOneFormInChartAt (ω : SmoothTwoForm I M) (α : M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (p : (ℝ × ℝ) × E) : ℝ × ℝ →L[ℝ] E :=
   (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Ks p) +
@@ -360,20 +366,21 @@ theorem continuousLinearMapAt_perturbedMFDeriv_apply (ω : SmoothTwoForm I M)
   -- The two sides differ only in the identification of `TangentSpace 𝓘(ℝ, E)` with `E`.
   rfl
 
-/-- **The Floer equation in a chart.** Let `u` solve the Floer equation
-`∂ₛu - X_{K_s} + J (∂ₜu - X_{K_t}) = 0` at `z`, with `u z` in the source of the chart at `α`.
-Then its coordinate expression `v = extChartAt I α ∘ u` solves the coordinate Floer equation
-`∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` at `z`, where `J` and the Hamiltonian vector fields are
-read in the chart. -/
-theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) (hz : u z ∈ (extChartAt I α).source)
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
-        ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
-      Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
-        (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
-          ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
+/-- **The Floer equation in a chart.** Let `u` be differentiable at `z`, with `u z` in the source
+of the chart at `α`. Then `u` solves the Floer equation `∂ₛu - X_{K_s} + J (∂ₜu - X_{K_t}) = 0` at
+`z` exactly when its coordinate expression `v = extChartAt I α ∘ u` solves the coordinate Floer
+equation `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` at `z`, where `J` and the Hamiltonian vector fields
+are read in the chart. -/
+theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+    (ω : SmoothTwoForm I M) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
+    (hz : u z ∈ (extChartAt I α).source) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap ↔
+      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+          ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
+        Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
+          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
   have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hz
   have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
@@ -382,10 +389,14 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
     stdComplexLineImag
   simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
     stdComplexLineImag_snd, zero_smul, one_smul, sub_zero] at hre him
-  have h' := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at h'
-  rw [← hre, ← him, h', Floer.almostComplexInChartAt_apply, (extChartAt I α).left_inv hz,
-    Trivialization.symmL_continuousLinearMapAt _ hb]
+  rw [isComplexLinearMap_stdComplexLine_iff, ← hre, ← him, Floer.almostComplexInChartAt_apply,
+    (extChartAt I α).left_inv hz, Trivialization.symmL_continuousLinearMapAt _ hb]
+  simp only [ContinuousLinearMap.coe_coe]
+  -- The tangent coordinates of the chart are injective on the fibre over `u z`.
+  refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
+  have h' := congrArg ((trivializationAt E (TangentSpace I) α).symmL ℝ (u z)) h
+  rwa [Trivialization.symmL_continuousLinearMapAt _ hb,
+    Trivialization.symmL_continuousLinearMapAt _ hb] at h'
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
