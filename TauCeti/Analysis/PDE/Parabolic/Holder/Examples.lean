@@ -33,8 +33,8 @@ built into these spaces measures.
 * `u = t ^ ((1 + α) / 2)` lies in `C_{par,b}^{1+α}` for `α ≤ 1`, with temporal
   `(1 + α) / 2`-seminorm at most `1`
   (`TauCeti.exists_parabolicC1HolderSpace_eq_rpow_time_and_timeEHolderNorm_le_one`),
-  although its time derivative is unbounded near `t = 0`: the order-one space asks for fractional
-  time regularity, not for a time derivative.
+  although for `α < 1` its time derivative is unbounded near `t = 0`: the order-one space asks for
+  fractional time regularity, not for a time derivative.
 
 So the temporal seminorm of exponent `(1 + α) / 2` distinguishes `t ^ ((1 + α) / 2)` from `√t`; a
 definition of the order-one space without it would admit `√t`.
@@ -53,19 +53,6 @@ open Set Filter Topology ParabolicSpaceTime
 open scoped NNReal ENNReal BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {T : ℝ}
-
-/-- For `γ > 1 / 2`, no bound `√t ≤ C t ^ γ` holds on all of `(0, T]`. -/
-private theorem not_forall_sqrt_le_mul_rpow {γ C : ℝ} (hγ : 1 / 2 < γ) (hT : 0 < T) :
-    ¬ ∀ t ∈ Ioc 0 T, √t ≤ C * t ^ γ := by
-  intro h
-  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.2 hγ) C one_pos).and
-    (Ioo_mem_nhdsGT hT)).exists
-  have hsqrt : 0 < √t := Real.sqrt_pos.2 ht.1
-  have hsplit : C * t ^ γ = C * t ^ (γ - 1 / 2) * √t := by
-    rw [Real.sqrt_eq_rpow, mul_assoc, ← Real.rpow_add ht.1, sub_add_cancel]
-  have hle := h t ⟨ht.1, ht.2.le⟩
-  rw [hsplit] at hle
-  nlinarith
 
 omit [NormedSpace ℝ E] in
 /-- **`√t` is parabolically Hölder.** For `α ≤ 1`, the map `(x, t) ↦ √t` lies in `C_b^{α,α/2}` on
@@ -100,14 +87,11 @@ the closed slab, while `√t` is not Lipschitz in time at `t = 0`. -/
 theorem not_exists_parabolicC2HolderSpace_eq_sqrt_time {α : ℝ≥0} (hT : 0 < T) :
     ¬ ∃ f : ParabolicC2HolderSpace α E ℝ hT, ∀ p, f p = √(p : ParabolicSpaceTime E).time := by
   rintro ⟨f, hf⟩
-  refine not_forall_sqrt_le_mul_rpow (γ := 1) (C := ‖timeDerivL f‖) (by norm_num) hT
-    fun t ht ↦ ?_
+  refine absurd (le_of_forall_mem_Ioc_rpow_le_mul_rpow (a := 1 / 2) (b := 1)
+    (C := ‖timeDerivL f‖) hT fun t ht ↦ ?_) (by norm_num)
   have h := f.norm_apply_slabMk_sub_le 0 ⟨t, Ioc_subset_Icc_self ht⟩ ⟨0, left_mem_Icc.2 hT.le⟩
-  rw [hf, hf, time_slabMk, time_slabMk, Real.sqrt_zero, sub_zero, sub_zero, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg t), abs_of_pos ht.1] at h
-  rwa [Real.rpow_one]
-
-
+  rw [← Real.sqrt_eq_rpow]
+  simpa [hf, abs_of_pos ht.1, abs_of_nonneg (Real.sqrt_nonneg t)] using h
 
 /-- **`√t` is not of order one.** For `α > 0`, no element of `C_{par,b}^{1+α}` on the slab
 `E × [0, T]`, `T > 0`, is the map `(x, t) ↦ √t`: its time slices would be `(1 + α) / 2`-Hölder,
@@ -120,15 +104,17 @@ theorem not_exists_parabolicC1HolderSpace_eq_sqrt_time {α : ℝ≥0} (hα : 0 <
     have : (0 : ℝ) < α := hα
     push_cast
     linarith
-  refine not_forall_sqrt_le_mul_rpow (C := C) hγ hT fun t ht ↦ ?_
+  refine absurd (le_of_forall_mem_Ioc_rpow_le_mul_rpow (a := 1 / 2) (C := C) hT fun t ht ↦ ?_)
+    hγ.not_ge
   have ht' : t ∈ Icc 0 T := Ioc_subset_Icc_self ht
   have h := hC.dist_le ⟨t, ht'⟩ ⟨0, left_mem_Icc.2 hT.le⟩
+  rw [← Real.sqrt_eq_rpow]
   simpa [hf, Subtype.dist_eq, Real.dist_eq, abs_of_pos ht.1, abs_of_nonneg (Real.sqrt_nonneg t)]
     using h
 
 /-- **`t ^ ((1 + α) / 2)` is of order one.** For `α ≤ 1`, the map `(x, t) ↦ t ^ ((1 + α) / 2)`
 lies in `C_{par,b}^{1+α}` on the slab `E × [0, T]`, with temporal `(1 + α) / 2`-seminorm at most
-`1`, although its time derivative is unbounded near `t = 0`. -/
+`1`, although for `α < 1` its time derivative is unbounded near `t = 0`. -/
 theorem exists_parabolicC1HolderSpace_eq_rpow_time_and_timeEHolderNorm_le_one {α : ℝ≥0}
     (hα : α ≤ 1) (T : ℝ) :
     ∃ f : ParabolicC1HolderSpace α E ℝ 0 T,
@@ -175,6 +161,5 @@ theorem exists_parabolicC1HolderSpace_eq_rpow_time_and_timeEHolderNorm_le_one {�
     congr 1
     funext p
     rw [ParabolicC1HolderSpace.mk_apply]
-
 
 end TauCeti
