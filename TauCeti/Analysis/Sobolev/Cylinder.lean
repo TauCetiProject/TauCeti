@@ -73,7 +73,14 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   to `H1` has finite-dimensional kernel
   (`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`) and closed range
   (`TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`), by Rellich's theorem and
-  `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`. The estimate is stated in the
+  `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`. The argument is carried out
+  for any space `S` of sections with square integrable jets, so that the strip with boundary
+  conditions shares it: the estimate for a single section gives a bound on its jet
+  (`TauCeti.CylinderSobolev.norm_jetLp_le_of_setIntegral_le`), and such bounds on the jets of the
+  elements of `S` give finite-dimensional kernel and closed range on `jetClosure S`
+  (`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`
+  and `TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`).
+  The estimate is stated in the
   form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`. The operator depends Lipschitz-continuously
   on its coefficient field in `L^∞` (`TauCeti.CylinderSobolev.norm_jetOperator_sub_le`), hence
@@ -82,8 +89,9 @@ setting of the linearized operators of Floer theory along Floer cylinders.
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
   `‖x‖ ≤ K ‖D x‖` on `H1`
-  (`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`), so it is
-  injective (`TauCeti.CylinderSobolev.ker_jetOperator_comp_subtypeL_eq_bot`).
+  (`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`, from
+  `TauCeti.CylinderSobolev.norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`), so
+  it is injective (`TauCeti.CylinderSobolev.ker_jetOperator_comp_subtypeL_eq_bot`).
 * Integrals of functions of period one in `t` over `ℝ × [-1, 2]` are controlled by those over the
   strip (`TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`), and the smooth cutoff comes from
   `IsCompact.exists_contDiff_cutoff_eventuallyEq_one`.
@@ -198,18 +206,6 @@ theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :
       fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
   filter_upwards [hev] with z hz
   exact (jet_eq_zero_of_lt_abs hR hz).symm
-
-/-- A continuous function that vanishes wherever the jet of a test section vanishes is integrable
-on the strip. -/
-theorem integrable_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E] (hξ : ξ ∈ testSection V)
-    {F : ℝ × ℝ → E} (hF : Continuous F) (h0 : ∀ z, jet ξ z = 0 → F z = 0) :
-    Integrable F stripMeasure := by
-  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
-  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (hF.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
-    (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ h0 z (jet_eq_zero_of_lt_abs hR ?_)
-  have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
-  rwa [mem_Icc, ← abs_le, not_le] at h
 
 /-- The jet of a test section is square integrable on the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
@@ -444,14 +440,23 @@ theorem coeFn_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : Mem
     (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, ContinuousLinearMap.id_apply, h₂]
 
-/-- On the jet of a test section `ξ`, the first-order operator of a coefficient field `M` is
-`z ↦ M z (ξ z, ∂s ξ z, ∂t ξ z)`. -/
+variable {S : Submodule ℝ (ℝ × ℝ → V)} [HasL2Jets S]
+
+/-- On the jet of an element `ξ` of a space of sections with square integrable jets, the
+first-order operator of a coefficient field `M` is `z ↦ M z (ξ z, ∂s ξ z, ∂t ξ z)`. -/
 theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    (ξ : testSection V) :
-    jetOperator M (jetLp (testSection V) ξ) =ᵐ[stripMeasure]
-      fun z ↦ M z (jet (ξ : ℝ × ℝ → V) z) := by
-  filter_upwards [coeFn_jetOperator hM (jetLp (testSection V) ξ), coeFn_jetLp ξ] with z h₁ h₂
+    (ξ : S) :
+    jetOperator M (jetLp S ξ) =ᵐ[stripMeasure] fun z ↦ M z (jet (ξ : ℝ × ℝ → V) z) := by
+  filter_upwards [coeFn_jetOperator hM (jetLp S ξ), coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂]
+
+/-- The squared norm of the first-order operator of `M` on the jet of an element `ξ` of a space of
+sections with square integrable jets is the integral of `‖M (ξ, ∂s ξ, ∂t ξ)‖²` over the strip. -/
+theorem sq_norm_jetOperator_jetLp {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) (ξ : S) :
+    ‖jetOperator M (jetLp S ξ)‖ ^ 2 = ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact integral_congr_ae ((jetOperator_jetLp_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz])
 
 /-- The first-order operator depends Lipschitz-continuously on its coefficient field: its operator
 norm on `L²` jets is at most the essential supremum of the difference of the coefficients. -/
@@ -484,6 +489,154 @@ theorem continuousOn_jetOperator {X : Type*} [TopologicalSpace X] {s : Set X}
   exact tendsto_iff_norm_sub_tendsto_zero.mpr
     (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hle hlim)
 
+/-! #### Peetre's argument on a space of sections with square integrable jets
+
+The steps below hold for any space `S` of sections with square integrable jets: they produce
+estimates on `jetClosure S` from estimates on the jets of the elements of `S`. The Sobolev spaces
+of the cylinder and of the strip with boundary conditions are both of the form `jetClosure S`. -/
+
+/-- If `a ^ 2 ≤ max C 0 * b ^ 2` with `0 ≤ b`, then `a ≤ √(max C 0) * b`. -/
+private theorem le_sqrt_max_mul_of_sq_le {a b C : ℝ} (hb : 0 ≤ b)
+    (h : a ^ 2 ≤ max C 0 * b ^ 2) : a ≤ √(max C 0) * b := by
+  rw [← Real.sqrt_sq hb, ← Real.sqrt_mul (le_max_right _ _)]
+  exact Real.le_sqrt_of_sq_le h
+
+/-- The squared `L²` norm of the jet of a `C¹` element of `S` vanishing for `|s| ≥ R` is at most
+its `W^{1,2}` energy over `[-R, R] × [0, 1]`. -/
+private theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
+    {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0) :
+    ‖jetLp S ξ‖ ^ 2 ≤ ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1,
+      (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 + ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 +
+        ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) := by
+  have := hξ.continuous_fderiv (by norm_num)
+  have := hξ.continuous
+  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  rw [sq_norm_jetLp, integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ by simp [hz]]
+  refine setIntegral_mono_on ?_ ?_ (measurableSet_Icc.prod measurableSet_Icc)
+    fun z _ ↦ sq_norm_jet_le _ z
+  · exact ((continuous_jet hξ).norm.pow 2).continuousOn.integrableOn_compact hK
+  · exact ContinuousOn.integrableOn_compact hK (Continuous.continuousOn (by fun_prop))
+
+/-- **The pointwise step of Peetre's argument.** Let `ξ` be a `C¹` element of a space `S` of
+sections with square integrable jets, vanishing for `|s| ≥ R`, and suppose that the first-order
+operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm estimate
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
+
+for `ξ`, the first two integrals over `[-R, R] × [0, 1]`. Then the jet `f` of `ξ` satisfies
+`‖f‖ ≤ √C (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)`. -/
+theorem norm_jetLp_le_of_setIntegral_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C T R : ℝ} {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
+    (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0)
+    (hest : ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ≤
+      C * ((∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2) +
+        ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2)) :
+    ‖jetLp S ξ‖ ≤
+      √(max C 0) * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖) := by
+  set x := ‖jetOperator M (jetLp S ξ)‖
+  set y := ‖restrictValue T (jetLp S ξ)‖
+  -- The squared norms of the two terms of the estimate as integrals.
+  have hx : x ^ 2 = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 := by
+    rw [sq_norm_jetOperator_jetLp hM]
+    exact integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ by simp [hz]
+  have hy : y ^ 2 = ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 :=
+    sq_norm_restrictValue_jetLp T ξ
+  rw [← hx, ← hy] at hest
+  refine le_sqrt_max_mul_of_sq_le (by positivity) ?_
+  calc ‖jetLp S ξ‖ ^ 2 ≤ C * (x ^ 2 + y ^ 2) := (sq_norm_jetLp_le_setIntegral hξ hR).trans hest
+    _ ≤ max C 0 * (x ^ 2 + y ^ 2) := by gcongr; exact le_max_left _ _
+    _ ≤ max C 0 * (x + y) ^ 2 := by
+        refine mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)
+        nlinarith [norm_nonneg (jetOperator M (jetLp S ξ)),
+          norm_nonneg (restrictValue T (jetLp S ξ))]
+
+/-- An `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` over the strip, for a continuous element `ξ` of a space
+`S` of sections with square integrable jets vanishing for `|s| ≥ R`, bounds the restricted value
+of the jet of `ξ` by `√C' ‖D ξ‖`. -/
+theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C' : ℝ} (T : ℝ) {ξ : S} (hξ : Continuous (ξ : ℝ × ℝ → V))
+    {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0)
+    (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ‖restrictValue T (jetLp S ξ)‖ ≤ √(max C' 0) * ‖jetOperator M (jetLp S ξ)‖ := by
+  have hint := integrable_of_jet_eq_zero hR (hξ.norm.pow 2)
+    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
+  have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
+      ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
+    setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)
+      (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
+  refine le_sqrt_max_mul_of_sq_le (norm_nonneg _) ?_
+  rw [sq_norm_restrictValue_jetLp, sq_norm_jetOperator_jetLp hM]
+  refine hsub.trans (hL2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ?_))
+  exact integral_nonneg fun z ↦ by positivity
+
+/-- A bound `‖f‖ ≤ c (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the jets `f` of the elements of `S`
+extends to `jetClosure S`, with the restricted value as a compact error term. -/
+private theorem norm_le_of_forall_norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
+    (hest : ∀ ξ : S, ‖jetLp S ξ‖ ≤
+      c * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖))
+    (x : jetClosure S) :
+    ‖x‖ ≤ c * ‖(jetOperator M).comp (jetClosure S).subtypeL x‖ +
+      ‖(c • (restrictValue T).comp (jetClosure S).subtypeL) x‖ := by
+  -- The estimate is a closed condition, and it holds on the jets of the elements of `S`.
+  have hx := jetClosure_subset_of_isClosed
+    (s := {f | ‖f‖ ≤ c * (‖jetOperator M f‖ + ‖restrictValue T f‖)})
+    (isClosed_le continuous_norm (by fun_prop)) (by rintro _ ⟨ξ, rfl⟩; exact hest ξ) x.property
+  simp only [mem_ofPred_eq] at hx
+  simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, smul_apply, norm_smul,
+    Real.norm_eq_abs, ← Submodule.norm_coe]
+  nlinarith [mul_le_mul_of_nonneg_right (le_abs_self c)
+    (norm_nonneg (restrictValue T (x : Lp (V × V × V) 2 stripMeasure)))]
+
+/-- **Peetre's argument: finite-dimensional kernel.** Let `S` be a space of sections with square
+integrable jets such that restriction to `[-T, T] × [0, 1]` is a compact operator on
+`jetClosure S`, as Rellich's theorem gives for the Sobolev spaces of the cylinder and the strip.
+If the first-order operator `D` of `M` satisfies `‖f‖ ≤ c (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the
+jets `f` of the elements of `S`, then its realization on `jetClosure S` has finite-dimensional
+kernel. -/
+theorem finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
+    (hK : IsCompactOperator ((restrictValue (V := V) T).comp (jetClosure S).subtypeL))
+    (hest : ∀ ξ : S, ‖jetLp S ξ‖ ≤
+      c * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖)) :
+    FiniteDimensional ℝ ((jetOperator M).comp (jetClosure S).subtypeL).ker :=
+  ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate _ (hK.smul c)
+    (norm_le_of_forall_norm_jetLp_le hest)
+
+/-- **Peetre's argument: closed range.** Under the hypotheses of
+`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`,
+the realization on `jetClosure S` of the first-order operator `D` of `M` has closed range. -/
+theorem isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le [CompleteSpace V]
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
+    (hK : IsCompactOperator ((restrictValue (V := V) T).comp (jetClosure S).subtypeL))
+    (hest : ∀ ξ : S, ‖jetLp S ξ‖ ≤
+      c * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖)) :
+    IsClosed (((jetOperator M).comp (jetClosure S).subtypeL).range :
+      Set (Lp W 2 stripMeasure)) :=
+  ContinuousLinearMap.isClosed_range_of_compact_estimate _ (hK.smul c)
+    (norm_le_of_forall_norm_jetLp_le hest)
+
+/-- **An estimate from below on `jetClosure S`.** Suppose that the first-order operator `D` of `M`
+satisfies `‖f‖ ≤ c (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` with `0 ≤ c`, and that it bounds the
+restricted value, `‖f|_{[-T, T] × [0, 1]}‖ ≤ c' ‖D f‖`, on the jets `f` of the elements of `S`.
+Then `‖x‖ ≤ c (1 + c') ‖D x‖` for every `x` in `jetClosure S`. -/
+theorem norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c c' T : ℝ} (hc : 0 ≤ c)
+    (hest : ∀ ξ : S, ‖jetLp S ξ‖ ≤
+      c * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖))
+    (hL2 : ∀ ξ : S, ‖restrictValue T (jetLp S ξ)‖ ≤ c' * ‖jetOperator M (jetLp S ξ)‖)
+    (x : jetClosure S) :
+    ‖x‖ ≤ c * (1 + c') * ‖(jetOperator M).comp (jetClosure S).subtypeL x‖ := by
+  -- The estimate is a closed condition, and it holds on the jets of the elements of `S`.
+  refine jetClosure_subset_of_isClosed (s := {f | ‖f‖ ≤ c * (1 + c') * ‖jetOperator M f‖})
+    (isClosed_le continuous_norm (by fun_prop)) ?_ x.property
+  rintro _ ⟨ξ, rfl⟩
+  calc ‖jetLp S ξ‖ ≤ c * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖) := hest ξ
+    _ ≤ c * (‖jetOperator M (jetLp S ξ)‖ + c' * ‖jetOperator M (jetLp S ξ)‖) := by
+        gcongr; exact hL2 ξ
+    _ = c * (1 + c') * ‖jetOperator M (jetLp S ξ)‖ := by ring
+
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
 vanishes for `s ∉ (a, b)`,
@@ -511,117 +664,18 @@ theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W}
               ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
   Iff.rfl
 
-/-- The squared `L²` norm of the jet of a test section is at most its `W^{1,2}` energy. -/
-private theorem sq_norm_jetLp_le_integral (ξ : testSection V) :
-    ‖jetLp (testSection V) ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
-      ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ∂stripMeasure := by
-  have hjm := memLp_jet ξ.property
-  rw [jetLp_apply, hjm.norm_toLp_sq]
-  refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ by positivity) ?_
-    (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
-  refine ((hjm.integrable_norm_pow two_ne_zero).const_mul 3).mono' ?_
-    (Eventually.of_forall fun z ↦ ?_)
-  · have hξ2 := (mem_testSection_iff.1 ξ.property).1
-    have h := hξ2.continuous_fderiv (by norm_num)
-    have h0 := hξ2.continuous
-    exact Continuous.aestronglyMeasurable (by fun_prop)
-  · have h₁ := norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) z
-    have h₂ := norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) z
-    have h₃ := norm_le_norm_jet (ξ : ℝ × ℝ → V) z
-    rw [Real.norm_of_nonneg (by positivity)]
-    linarith [pow_le_pow_left₀ (norm_nonneg _) h₁ 2, pow_le_pow_left₀ (norm_nonneg _) h₂ 2,
-      pow_le_pow_left₀ (norm_nonneg _) h₃ 2]
-
-/-- The squared `L²` norm of the restricted value of the jet of a test section is the integral of
-`‖ξ‖²` over `[-T, T] × [0, 1]`. -/
-private theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : testSection V) :
-    ‖restrictValue T (jetLp (testSection V) ξ)‖ ^ 2 =
-      ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 := by
-  have hμ : stripMeasure.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) =
-      volume.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) := by
-    rw [Measure.restrict_restrict (measurableSet_Icc.prod measurableSet_Icc),
-      inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
-  rw [← Lp.integral_norm_sq_eq_norm_sq, ← hμ]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_restrictValue T (jetLp (testSection V) ξ),
-    ae_restrict_of_ae (coeFn_jetLp ξ)] with z h₁ h₂
-  rw [h₁, h₂, jet_apply]
-
 /-- A semi-Fredholm estimate for test sections, as for the linearized Floer operator, gives
 `‖f‖ ≤ √C (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the jets of test sections. -/
 private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    {C T : ℝ}
-    (hest : HasSemiFredholmEstimate M C T)
-    (ξ : testSection V) :
+    {C T : ℝ} (hest : HasSemiFredholmEstimate M C T) (ξ : testSection V) :
     ‖jetLp (testSection V) ξ‖ ≤ √(max C 0) * (‖jetOperator M (jetLp (testSection V) ξ)‖ +
       ‖restrictValue T (jetLp (testSection V) ξ)‖) := by
   obtain ⟨hξ, hper, R, hR⟩ := mem_testSection_iff.1 ξ.property
-  set R₀ := max R 0
-  have hR₀ : ∀ s t, R₀ ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
+  have hR₀ : ∀ s t, max R 0 ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
     hR s t ((le_max_left R 0).trans hs)
-  have hvan : ∀ s t, s ∉ Ioo (-R₀) R₀ → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
-    hR₀ s t (by rwa [mem_Ioo, ← abs_lt, not_lt] at hs)
-  set x := ‖jetOperator M (jetLp (testSection V) ξ)‖
-  set y := ‖restrictValue T (jetLp (testSection V) ξ)‖
-  -- The squared norms of the two terms of the estimate as integrals.
-  have hx : x ^ 2 = ∫ z in Icc (-R₀) R₀ ×ˢ Icc (0 : ℝ) 1,
-      ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 := by
-    have hae : (fun z ↦ ‖jetOperator M (jetLp (testSection V) ξ) z‖ ^ 2) =ᵐ[stripMeasure]
-        fun z ↦ ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 :=
-      (jetOperator_jetLp_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz]
-    rw [← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae hae]
-    exact integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ fun z hz ↦ by
-      rw [hz, map_zero, norm_zero, zero_pow two_ne_zero]
-  have hy : y ^ 2 = ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 :=
-    sq_norm_restrictValue_jetLp T ξ
-  have hmain := hest hξ hper (neg_le_self (le_max_right R 0)) hvan
-  have hF : ∀ z, jet (ξ : ℝ × ℝ → V) z = 0 → ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
-      ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 = 0 := fun z hz ↦ by
-    simp only [jet_apply, Prod.mk_eq_zero] at hz
-    obtain ⟨h₀, h₁, h₂⟩ := hz
-    simp [h₀, h₁, h₂]
-  rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ hF, ← hx, ← hy] at hmain
-  -- Conclude by taking square roots.
-  have hsq : ‖jetLp (testSection V) ξ‖ ^ 2 ≤ (√(max C 0) * (x + y)) ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt (le_max_right _ _)]
-    calc ‖jetLp (testSection V) ξ‖ ^ 2 ≤ C * (x ^ 2 + y ^ 2) :=
-          (sq_norm_jetLp_le_integral ξ).trans hmain
-      _ ≤ max C 0 * (x ^ 2 + y ^ 2) := by gcongr; exact le_max_left _ _
-      _ ≤ max C 0 * (x + y) ^ 2 := by
-          refine mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)
-          nlinarith [norm_nonneg (jetOperator M (jetLp (testSection V) ξ)),
-            norm_nonneg (restrictValue T (jetLp (testSection V) ξ))]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
-
-/-- The estimate of `norm_jetLp_le` extends from the jets of test sections to `H¹`, with a
-compact error term. -/
-private theorem exists_compact_estimate [FiniteDimensional ℝ V] {M : ℝ × ℝ → V × V × V →L[ℝ] W}
-    (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
-    (hest : HasSemiFredholmEstimate M C T) :
-    ∃ K : H1 V →L[ℝ] Lp V 2 (stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)),
-      IsCompactOperator K ∧ ∀ x : H1 V,
-        ‖x‖ ≤ √(max C 0) * ‖(jetOperator M).comp (H1 V).subtypeL x‖ + ‖K x‖ := by
-  set c := √(max C 0)
-  have hc : 0 ≤ c := Real.sqrt_nonneg _
-  set D := jetOperator M
-  refine ⟨c • (restrictValue T).comp (H1 V).subtypeL,
-    (isCompactOperator_restrictValue_comp_subtypeL T).smul c, ?_⟩
-  -- The estimate holds on a closed set containing the jets of all test sections.
-  set S : Set (Lp (V × V × V) 2 stripMeasure) := {f | ‖f‖ ≤ c * ‖D f‖ + c * ‖restrictValue T f‖}
-  have hS : IsClosed S := isClosed_le continuous_norm
-    ((continuous_const.mul (continuous_norm.comp D.continuous)).add
-      (continuous_const.mul (continuous_norm.comp (restrictValue T).continuous)))
-  have hrange : Set.range (jetLp (testSection V)) ⊆ S := by
-    rintro _ ⟨ξ, rfl⟩
-    have := norm_jetLp_le hM hest ξ
-    simp only [S, mem_ofPred_eq]
-    linarith
-  have hH1 : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S :=
-    jetClosure_subset_of_isClosed hS hrange
-  intro x
-  have := hH1 x.property
-  simp only [S, mem_ofPred_eq] at this
-  simpa [smul_apply, norm_smul, Real.norm_of_nonneg hc] using this
+  exact norm_jetLp_le_of_setIntegral_le hM (hξ.of_le (by norm_num)) hR₀
+    (hest hξ hper (neg_le_self (le_max_right R 0)) fun s t hs ↦
+      hR₀ s t (by rwa [mem_Ioo, ← abs_lt, not_lt] at hs))
 
 /-- **Peetre's argument on the cylinder: finite-dimensional kernel.** Let `M` be an essentially
 bounded coefficient field on the cylinder, and suppose the first-order operator
@@ -635,9 +689,9 @@ over `[a, b] × [0, 1]` for every `C²` section `ξ` of period one in `t` vanish
 theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate M C T) :
-    FiniteDimensional ℝ ((jetOperator M).comp (H1 V).subtypeL).ker := by
-  obtain ⟨K, hK, hbound⟩ := exists_compact_estimate hM hest
-  exact ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate _ hK hbound
+    FiniteDimensional ℝ ((jetOperator M).comp (H1 V).subtypeL).ker :=
+  finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
 
 /-- **Peetre's argument on the cylinder: closed range.** Under the semi-Fredholm estimate of
 `finiteDimensional_ker_jetOperator_comp_subtypeL`, the extension of `D` to
@@ -646,35 +700,9 @@ theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate M C T) :
     IsClosed (((jetOperator M).comp (H1 V).subtypeL).range :
-      Set (Lp W 2 stripMeasure)) := by
-  obtain ⟨K, hK, hbound⟩ := exists_compact_estimate hM hest
-  exact ContinuousLinearMap.isClosed_range_of_compact_estimate _ hK hbound
-
-/-- An `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` over the strip bounds the restricted value of the jet of
-a test section by `√C' ‖D ξ‖`. -/
-private theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
-    (hM : MemLp M ∞ stripMeasure) {C' : ℝ} (T : ℝ) (ξ : testSection V)
-    (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
-      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
-    ‖restrictValue T (jetLp (testSection V) ξ)‖ ≤
-      √(max C' 0) * ‖jetOperator M (jetLp (testSection V) ξ)‖ := by
-  have hint := integrable_of_jet_eq_zero ξ.property
-      ((mem_testSection_iff.1 ξ.property).1.continuous.norm.pow 2)
-    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
-  have hD : ‖jetOperator M (jetLp (testSection V) ξ)‖ ^ 2 =
-      ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    exact integral_congr_ae ((jetOperator_jetLp_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz])
-  have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
-      ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
-    setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)
-      (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
-  have hsq : ‖restrictValue T (jetLp (testSection V) ξ)‖ ^ 2 ≤
-      (√(max C' 0) * ‖jetOperator M (jetLp (testSection V) ξ)‖) ^ 2 := by
-    rw [sq_norm_restrictValue_jetLp, mul_pow, Real.sq_sqrt (le_max_right _ _), hD]
-    refine hsub.trans (hL2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ?_))
-    exact integral_nonneg fun z ↦ by positivity
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+      Set (Lp W 2 stripMeasure)) :=
+  isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
 
 /-- **An estimate from below on `W^{1,2}`.** Let `M` be an essentially bounded coefficient field on
 the cylinder whose first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm
@@ -687,29 +715,12 @@ theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
     (hest : HasSemiFredholmEstimate M C T)
     (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
-    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator M).comp (H1 V).subtypeL x‖ := by
-  set c := √(max C 0) * (1 + √(max C' 0))
-  have hc : 0 ≤ c := by positivity
-  refine ⟨⟨c, hc⟩, ?_⟩
-  -- The estimate holds on a closed set containing the jets of all test sections.
-  set S : Set (Lp (V × V × V) 2 stripMeasure) := {f | ‖f‖ ≤ c * ‖jetOperator M f‖}
-  have hS : IsClosed S := isClosed_le continuous_norm
-    (continuous_const.mul (continuous_norm.comp (jetOperator M).continuous))
-  have hrange : Set.range (jetLp (testSection V)) ⊆ S := by
-    rintro _ ⟨ξ, rfl⟩
-    have h₁ := norm_jetLp_le hM hest ξ
-    have h₂ := norm_restrictValue_jetLp_le hM T ξ (hL2 ξ)
-    simp only [S, mem_ofPred_eq]
-    calc ‖jetLp (testSection V) ξ‖
-        ≤ √(max C 0) * (‖jetOperator M (jetLp (testSection V) ξ)‖ +
-          ‖restrictValue T (jetLp (testSection V) ξ)‖) := h₁
-      _ ≤ √(max C 0) * (‖jetOperator M (jetLp (testSection V) ξ)‖ +
-          √(max C' 0) * ‖jetOperator M (jetLp (testSection V) ξ)‖) := by gcongr
-      _ = c * ‖jetOperator M (jetLp (testSection V) ξ)‖ := by ring
-  intro x
-  have := jetClosure_subset_of_isClosed hS hrange x.property
-  simp only [S, mem_ofPred_eq] at this
-  exact this
+    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator M).comp (H1 V).subtypeL x‖ :=
+  ⟨⟨√(max C 0) * (1 + √(max C' 0)), by positivity⟩,
+    norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le (Real.sqrt_nonneg _)
+      (norm_jetLp_le hM hest) fun ξ ↦
+        have ⟨hξ, _, _, hR⟩ := mem_testSection_iff.1 ξ.property
+        norm_restrictValue_jetLp_le hM T hξ.continuous hR (hL2 ξ)⟩
 
 /-- **Injectivity on `W^{1,2}`.** Under the hypotheses of
 `TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`, a semi-Fredholm

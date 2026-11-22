@@ -572,7 +572,8 @@ end TauCeti.SymplecticForm
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp
+  integrable_of_jet_eq_zero)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
@@ -609,11 +610,11 @@ theorem exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperat
   obtain ⟨a, ha, b, -, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
     isCompact_Icc hJc.continuousOn fun t _ ↦ (hJ t).tames
   refine ⟨a⁻¹ * C * b, fun ξ hξm ↦ ?_⟩
-  obtain ⟨hξ, hper, -⟩ := mem_testSection_iff.1 hξm
+  obtain ⟨hξ, hper, R, hR⟩ := mem_testSection_iff.1 hξm
   set D := stationaryCylinderOperator J S ξ
   have hDc : Continuous D := continuous_stationaryCylinderOperator hJc hSc (hξ.of_le one_le_two)
   have hgD : Integrable (fun z ↦ ω.associatedBilinForm (J z.2) (D z) (D z)) stripMeasure :=
-    integrable_of_jet_eq_zero hξm (continuous_associatedBilinForm_apply_self hJc' hDc)
+    integrable_of_jet_eq_zero hR (continuous_associatedBilinForm_apply_self hJc' hDc)
       fun z h ↦ by simp [D, stationaryCylinderOperator_eq_zero_of_jet_eq_zero h]
   have hdecay : Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
       (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
@@ -627,7 +628,7 @@ theorem exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperat
   have h₁ : ∫ z in univ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤
       a⁻¹ * ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) := by
     rw [← integral_const_mul]
-    refine setIntegral_mono_on (integrable_of_jet_eq_zero hξm (hξ.continuous.norm.pow 2)
+    refine setIntegral_mono_on (integrable_of_jet_eq_zero hR (hξ.continuous.norm.pow 2)
       fun z h ↦ ?_) (hgξ.const_mul _) hstrip fun z hz ↦ ?_
     · rw [jet_apply, Prod.mk_eq_zero] at h
       simp [h.1]
@@ -636,7 +637,7 @@ theorem exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperat
   have h₂ : ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (D z) (D z) ≤
       b * ∫ z in univ ×ˢ Icc 0 1, ‖D z‖ ^ 2 := by
     rw [← integral_const_mul]
-    exact setIntegral_mono_on hgD ((integrable_of_jet_eq_zero hξm (hDc.norm.pow 2) fun z h ↦ by
+    exact setIntegral_mono_on hgD ((integrable_of_jet_eq_zero hR (hDc.norm.pow 2) fun z h ↦ by
       simp [D, stationaryCylinderOperator_eq_zero_of_jet_eq_zero h]).const_mul b) hstrip
       fun z hz ↦ (hab z.2 hz.2 _).2
   calc ∫ z in univ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2

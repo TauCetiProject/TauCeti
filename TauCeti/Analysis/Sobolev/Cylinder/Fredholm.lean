@@ -26,7 +26,9 @@ Fredholmness and the index are constant on `s`
 (`TauCeti.CylinderSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`). This is the
 abstract stability of operators with closed range and finite-dimensional kernel,
 `ContinuousOn.isFredholm_of_isPreconnected`, which needs the target `L²(ℝ × S¹, W)` to be a Hilbert
-space, so `W` is an inner product space.
+space, so `W` is an inner product space. It holds for the realization of `D` on any complete
+subspace of `L²` jets (`TauCeti.CylinderSobolev.isFredholm_and_index_eq_of_isPreconnected`), and so
+also serves the strip with boundary conditions.
 
 Semi-Fredholm estimates hold for the linearized Floer operators along cylinders asymptotic to
 nondegenerate orbits (`TauCeti.Geometry.Symplectic.Floer.SemiFredholm`). By this file, the
@@ -51,30 +53,53 @@ namespace TauCeti.CylinderSobolev
 
 open StripSobolev (stripMeasure)
 
-variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W] [TopologicalSpace X]
+
+/-- **Fredholmness and the index along families of first-order operators.** Let `M x` be
+essentially bounded coefficient fields on the strip, depending continuously on `x` in `L^∞` on a
+preconnected set `s`, and let `H` be a complete subspace of `L²` jets, such as the Sobolev space of
+the cylinder or of the strip with boundary conditions. If the realizations of the first-order
+operators `D_x ξ = M x (ξ, ∂s ξ, ∂t ξ)` on `H` all have finite-dimensional kernel and closed range,
+and `D_{x₀}` is Fredholm for one `x₀ ∈ s`, then every `D_x` with `x ∈ s` is Fredholm, with the same
+index. -/
+theorem isFredholm_and_index_eq_of_isPreconnected
+    {H : Submodule ℝ (Lp (V × V × V) 2 stripMeasure)} [CompleteSpace H] {s : Set X}
+    (hs : IsPreconnected s) {M : X → ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
+    (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
+    (hker : ∀ x ∈ s, FiniteDimensional ℝ ((jetOperator (M x)).comp H.subtypeL).ker)
+    (hrange : ∀ x ∈ s, IsClosed (((jetOperator (M x)).comp H.subtypeL).range :
+      Set (Lp W 2 stripMeasure)))
+    {x₀ x : X} (hx₀ : x₀ ∈ s) (hx : x ∈ s)
+    (h₀ : ((jetOperator (M x₀)).comp H.subtypeL).IsFredholm) :
+    ((jetOperator (M x)).comp H.subtypeL).IsFredholm ∧
+      ((jetOperator (M x)).comp H.subtypeL).index =
+        ((jetOperator (M x₀)).comp H.subtypeL).index := by
+  have hT : ContinuousOn (fun y ↦ (jetOperator (M y)).comp H.subtypeL) s :=
+    (continuousOn_jetOperator hM hcont).clm_comp continuousOn_const
+  have hF : ∀ y ∈ s, ((jetOperator (M y)).comp H.subtypeL).IsFredholm := fun y hy ↦
+    hT.isFredholm_of_isPreconnected hker hrange hs hx₀ h₀ hy
+  exact ⟨hF x hx, ContinuousOn.index_eq_of_isPreconnected hT hF hs hx hx₀⟩
 
 /-- **Fredholmness and the index along families of cylinder operators.** Let `M x` be
 essentially bounded coefficient fields, depending continuously on `x` in `L^∞` on a preconnected
 set `s`, whose first-order operators `D_x ξ = M x (ξ, ∂s ξ, ∂t ξ)` each satisfy a semi-Fredholm
 estimate. If the realization `D_{x₀} : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, W)` is Fredholm for one
 `x₀ ∈ s`, then every `D_x` with `x ∈ s` is Fredholm, with the same index. -/
-theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate {s : Set X} (hs : IsPreconnected s)
-    {M : X → ℝ × ℝ → V × V × V →L[ℝ] W} (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
+theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate [FiniteDimensional ℝ V] {s : Set X}
+    (hs : IsPreconnected s) {M : X → ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
     (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
     (hest : ∀ x ∈ s, ∃ C T, HasSemiFredholmEstimate (M x) C T) {x₀ x : X} (hx₀ : x₀ ∈ s)
     (hx : x ∈ s) (h₀ : ((jetOperator (M x₀)).comp (H1 V).subtypeL).IsFredholm) :
     ((jetOperator (M x)).comp (H1 V).subtypeL).IsFredholm ∧
       ((jetOperator (M x)).comp (H1 V).subtypeL).index =
-        ((jetOperator (M x₀)).comp (H1 V).subtypeL).index := by
-  have hT : ContinuousOn (fun y ↦ (jetOperator (M y)).comp (H1 V).subtypeL) s :=
-    (continuousOn_jetOperator hM hcont).clm_comp continuousOn_const
-  have hF : ∀ y ∈ s, ((jetOperator (M y)).comp (H1 V).subtypeL).IsFredholm := fun y hy ↦
-    hT.isFredholm_of_isPreconnected
-      (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
-        finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)
-      (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
-        isClosed_range_jetOperator_comp_subtypeL (hM z hz) h) hs hx₀ h₀ hy
-  exact ⟨hF x hx, ContinuousOn.index_eq_of_isPreconnected hT hF hs hx hx₀⟩
+        ((jetOperator (M x₀)).comp (H1 V).subtypeL).index :=
+  isFredholm_and_index_eq_of_isPreconnected hs hM hcont
+    (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
+      finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)
+    (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
+      isClosed_range_jetOperator_comp_subtypeL (hM z hz) h) hx₀ hx h₀
 
 end TauCeti.CylinderSobolev
