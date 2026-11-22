@@ -97,7 +97,7 @@ lemma zariskiTopology_le_hTopology : zariskiTopology.{u} ≤ hTopology := by
   exact sInf_le (fun _ _ h ↦ .of _ _ (Or.inl h))
 
 /-- Every proper surjection is an h-cover. -/
-lemma Hom.singleton_mem_hTopology {X Y : Scheme.{u}} (f : X ⟶ Y) [IsProper f]
+lemma Hom.generate_singleton_mem_hTopology {X Y : Scheme.{u}} (f : X ⟶ Y) [IsProper f]
     [Surjective f] : Sieve.generate (Presieve.singleton f) ∈ hTopology Y :=
   Precoverage.generate_mem_toGrothendieck f.singleton_mem_hPrecoverage
 
@@ -113,7 +113,7 @@ lemma hTopology_le_iff (J : GrothendieckTopology Scheme.{u}) :
     intro X Y f hf hs
     let := hf
     let := hs
-    exact h _ f.singleton_mem_hTopology
+    exact h _ f.generate_singleton_mem_hTopology
   · rintro ⟨hZ, hP⟩
     rw [hTopology, Precoverage.toGrothendieck_eq_sInf]
     apply sInf_le
@@ -172,7 +172,7 @@ private lemma exists_finite_refinement_of_mem_hPrecoverage {X : Scheme.{u}} [Com
     refine ⟨PUnit, inferInstance, fun _ ↦ Y, fun _ ↦ f, ?_, ?_, ?_⟩
     · exact fun _ ↦ QuasiCompact.compactSpace_of_compactSpace f
     · exact fun _ ↦ Sieve.le_generate R _ _ hf
-    · simpa only [Sieve.ofArrows, Presieve.ofArrows_pUnit] using f.singleton_mem_hTopology
+    · simpa only [Sieve.ofArrows, Presieve.ofArrows_pUnit] using f.generate_singleton_mem_hTopology
 
 /-- Every h-covering sieve of a quasi-compact scheme admits a finite jointly surjective
 h-covering refinement by quasi-compact schemes. -/

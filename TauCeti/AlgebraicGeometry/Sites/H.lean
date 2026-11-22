@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Big.H
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Over
 
-import TauCeti.CategoryTheory.Sites.Coverage
+import TauCeti.CategoryTheory.Sites.DenseSubsite.InducedTopology
 
 /-!
 # The finite-type h-site
@@ -20,6 +20,11 @@ For a quasi-separated base this generated topology agrees with the topology rest
 the big h-site. The comparison uses affine refinements of Zariski covering families.
 
 Finite type refers to quasi-compact morphisms locally of finite type.
+
+The family-level comparison is `ofArrows_mem_finiteTypeHTopology_iff`.
+`FiniteType.ofArrows_mem_finiteTypeHTopology_of_isOpenImmersion` introduces Zariski
+covering families without assuming that the base is quasi-separated, and
+`FiniteType.generate_singleton_mem_finiteTypeHTopology` introduces proper surjections.
 -/
 
 public section
@@ -49,14 +54,25 @@ lemma finiteTypeHTopology_eq_toGrothendieck (S : Scheme.{u}) :
 
 /-- A proper surjection of finite-type schemes over the base is an h-cover in the finite-type
 site. -/
-lemma FiniteType.singleton_mem_finiteTypeHTopology {S : Scheme.{u}} {X Y : S.FiniteType}
+lemma FiniteType.generate_singleton_mem_finiteTypeHTopology {S : Scheme.{u}} {X Y : S.FiniteType}
     (f : X ⟶ Y) [IsProper f.left] [Surjective f.left] :
     Sieve.generate (Presieve.singleton f) ∈ S.finiteTypeHTopology Y := by
   apply Precoverage.generate_mem_toGrothendieck
-  rw [mem_finiteTypeHPrecoverage_iff, Presieve.map_singleton]
-  -- The composite forgetful functor sends this arrow to its underlying scheme morphism.
-  change Presieve.singleton f.left ∈ hPrecoverage Y.left
+  rw [mem_finiteTypeHPrecoverage_iff, Presieve.map_singleton,
+    MorphismProperty.Over.forget_comp_forget_map]
   exact f.left.singleton_mem_hPrecoverage
+
+/-- A jointly surjective family of open immersions in finite-type schemes over any base is
+an h-cover in the finite-type site. -/
+lemma FiniteType.ofArrows_mem_finiteTypeHTopology_of_isOpenImmersion
+    {S : Scheme.{u}} {X : S.FiniteType} {ι : Type v} {Y : ι → S.FiniteType}
+    (f : ∀ i, Y i ⟶ X) [∀ i, IsOpenImmersion (f i).left]
+    (hf : ∀ x : X.left, ∃ i, x ∈ Set.range (f i).left) :
+    Sieve.ofArrows Y f ∈ S.finiteTypeHTopology X := by
+  apply Precoverage.generate_mem_toGrothendieck
+  rw [mem_finiteTypeHPrecoverage_iff, Presieve.map_ofArrows]
+  exact ofArrows_mem_hPrecoverage_iff.mpr
+    (Or.inl ⟨hf, fun i ↦ (inferInstance : IsOpenImmersion (f i).left)⟩)
 
 private lemma finiteType_affine_cover (S : Scheme.{u}) [QuasiSeparatedSpace S]
     {X : S.FiniteType} {Y : Over S} (f : Y ⟶ (FiniteType.forget S).obj X)
@@ -84,30 +100,27 @@ private lemma exists_finiteType_zariski_refinement (S : Scheme.{u}) [QuasiSepara
       ((Y t.1).left.affineCover.f t.2 ≫ (Y t.1).hom) (finiteType_affine_cover S (f t.1) t.2)
   let g (t : T) : Z t ⟶ X := MorphismProperty.Over.homMk
     ((Y t.1).left.affineCover.f t.2 ≫ (f t.1).left) (by
-      -- State the commutativity equation in the ordinary over category, where Over.w applies.
-      change _ ≫ ((FiniteType.forget S).obj X).hom = _
-      exact (Category.assoc _ _ _).trans
-        (congrArg (fun k ↦ (Y t.1).left.affineCover.f t.2 ≫ k) (Over.w (f t.1))))
+      -- Name the ordinary over-category equation so that `Over.w` matches its target.
+      have hw : ((Y t.1).left.affineCover.f t.2 ≫ (f t.1).left) ≫
+          ((FiniteType.forget S).obj X).hom =
+            (Y t.1).left.affineCover.f t.2 ≫ (Y t.1).hom := by
+        rw [Category.assoc, Over.w]
+      exact hw)
   refine ⟨Presieve.ofArrows Z g, ?_, ?_⟩
-  · -- Comap membership first forgets finite type, then the base scheme.
-    change ((Presieve.ofArrows Z g).map (FiniteType.forget S)).map
-      (Over.forget S) ∈ hPrecoverage _
-    rw [Presieve.map_ofArrows, Presieve.map_ofArrows, mem_hPrecoverage_iff]
+  · rw [Precoverage.mem_comap_iff, Presieve.map_ofArrows, Presieve.map_ofArrows,
+      mem_hPrecoverage_iff]
     left
     rw [ofArrows_mem_precoverage_iff]
+    -- Typed composition proofs let elaboration identify the dependent forgetful carriers.
     constructor
     · intro x
       obtain ⟨i, y, hy⟩ := hR.1 x
       obtain ⟨j, z, hz⟩ := (Y i).left.affineCover.exists_eq y
       refine ⟨⟨i, j⟩, z, ?_⟩
-      -- Evaluate the composite after forgetting both over-category structures.
-      change (f i).left (((Y i).left.affineCover.f j) z) = x
-      rw [hz]
-      exact hy
+      exact (congrArg (f i).left hz).trans hy
     · intro t
-      -- Apply stability of open immersions under composition to the underlying scheme map.
-      change IsOpenImmersion ((Y t.1).left.affineCover.f t.2 ≫ (f t.1).left)
-      infer_instance
+      exact (inferInstance : IsOpenImmersion
+        ((Y t.1).left.affineCover.f t.2 ≫ (f t.1).left))
   · rw [Presieve.map_ofArrows]
     refine (Presieve.ofArrows_le_iff).mpr ?_
     intro t
@@ -132,10 +145,7 @@ private lemma exists_finiteType_proper_refinement (S : Scheme.{u}) {X : S.Finite
   let Z : S.FiniteType := MorphismProperty.Over.mk ⊤ Y.hom hft
   let g : Z ⟶ X := MorphismProperty.Over.homMk f.left (Over.w f)
   refine ⟨Presieve.singleton g, ?_, ?_⟩
-  · -- The two forgetful functors recover the original proper surjection.
-    change ((Presieve.singleton g).map (FiniteType.forget S)).map
-      (Over.forget S) ∈ hPrecoverage _
-    rw [Presieve.map_singleton, Presieve.map_singleton]
+  · rw [Precoverage.mem_comap_iff, Presieve.map_singleton, Presieve.map_singleton]
     exact f.left.singleton_mem_hPrecoverage
   · rw [Presieve.map_singleton, Presieve.singleton_le_iff]
     exact Sieve.le_generate _ _ _ (Presieve.singleton_self f)
@@ -147,13 +157,9 @@ private lemma exists_finiteType_h_refinement (S : Scheme.{u}) [QuasiSeparatedSpa
       (hPrecoverage.over S) ((FiniteType.forget S).obj X) ∧
         r.map (FiniteType.forget S) ≤ (Sieve.generate R).arrows := by
   obtain ⟨ι, Y, f, rfl⟩ := R.exists_eq_ofArrows
-  -- The over precoverage checks the underlying family of scheme morphisms.
-  change (Presieve.ofArrows Y f).map (Over.forget S) ∈ hPrecoverage _ at hR
-  rw [Presieve.map_ofArrows, ofArrows_mem_hPrecoverage_iff] at hR
-  -- Use the underlying scheme morphisms as the simple types for the two cases.
-  change ((∀ x : X.left, ∃ i, x ∈ Set.range (f i).left) ∧
-    ∀ i, IsOpenImmersion (f i).left) ∨ Nonempty ι ∧
-      (∀ i, IsProper (f i).left ∧ Surjective (f i).left) at hR
+  rw [Precoverage.mem_comap_iff, Presieve.map_ofArrows,
+    ofArrows_mem_hPrecoverage_iff] at hR
+  simp only [Over.forget_map] at hR
   rcases hR with hR | ⟨⟨i⟩, hR⟩
   · exact exists_finiteType_zariski_refinement S Y f hR
   · obtain ⟨r, hr, hle⟩ := exists_finiteType_proper_refinement S (f i) (hR i)
@@ -173,5 +179,15 @@ theorem mem_finiteTypeHTopology_iff (S : Scheme.{u}) [QuasiSeparatedSpace S]
     Coverage.mem_toGrothendieck_comap_iff_of_refine_generators
       (hPrecoverage.over S).toCoverage (FiniteType.forget S)
       (exists_finiteType_h_refinement S) (X := X) (S := R)
+
+/-- Over a quasi-separated base, a family of finite-type schemes generates an h-cover
+exactly when its underlying family of scheme morphisms generates a big h-cover. -/
+theorem ofArrows_mem_finiteTypeHTopology_iff {S : Scheme.{u}} [QuasiSeparatedSpace S]
+    {X : S.FiniteType} {ι : Type v} {Y : ι → S.FiniteType} (f : ∀ i, Y i ⟶ X) :
+    Sieve.ofArrows Y f ∈ S.finiteTypeHTopology X ↔
+      Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈ hTopology X.left := by
+  rw [mem_finiteTypeHTopology_iff, Sieve.functorPushforward_ofArrows,
+    GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
+  rfl
 
 end AlgebraicGeometry.Scheme
