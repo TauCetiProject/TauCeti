@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
 public import TauCeti.RepresentationTheory.Spin.Weight
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
@@ -20,6 +20,10 @@ algebra and then with the quadratic elements of the Clifford algebra.
 The standard diagonal matrix indexed by `i` acts by `1` on the `i`-th isotropic basis vector and
 by `-1` on its dual. Under the comparison it is therefore the diagonal Clifford bivector used to
 compute the spin weights.
+
+Quadratic Clifford elements are even, so the comparison is also a Lie homomorphism
+`TauCeti.SpinPolarizationData.typeDToEvenLieHom` to the even Clifford subalgebra, on whose image
+reversal acts by `-1` (`TauCeti.SpinPolarizationData.reverseEven_typeDToEvenLieHom`).
 -/
 
 public section
@@ -73,6 +77,15 @@ theorem typeDBasis_inr (hline : P.line = ⊥) (i : ι) :
     P.typeDBasis b hline (.inr i) = (P.dualVector b i : V) := by
   simp [typeDBasis, P.evenDecompositionEquiv_apply]
 
+omit [DecidableEq ι] in
+include b in
+/-- An even polarization with isotropic basis indexed by `ι` has dimension `2 * Fintype.card ι`,
+read off from its hyperbolic basis. -/
+theorem finrank_eq_two_mul_card [StrongRankCondition K] (hline : P.line = ⊥) :
+    Module.finrank K V = 2 * Fintype.card ι := by
+  classical
+  rw [Module.finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, two_mul]
+
 /-- In the hyperbolic basis, the polar form has the standard split type-`D` Gram matrix. -/
 theorem polarBilin_toMatrix_typeDBasis (hline : P.line = ⊥) :
     LinearMap.BilinForm.toMatrix (P.typeDBasis b hline) Q.polarBilin =
@@ -121,6 +134,39 @@ theorem typeDQuadraticEquiv_lie_ι (hline : P.line = ⊥)
       CliffordAlgebra.ι Q x⁆ = _
   exact skewAdjointMatricesEquivQuadratic_lie_ι Q (P.nondegenerate_of_line_eq_bot hline)
     (P.typeDBasis b hline) (P.polarBilin_toMatrix_typeDBasis b hline) A x
+
+/-- The quadratic Clifford realization of the split type-`D` matrix Lie algebra, as a Lie
+homomorphism to the even Clifford subalgebra. -/
+noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
+    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra.even Q := by
+  let f : LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra Q :=
+    (quadraticLieSubalgebra Q).incl.comp (P.typeDQuadraticEquiv b hline).toLieHom
+  exact {
+    toFun := fun x => ⟨f x,
+      quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩
+    map_add' := fun x y => SetCoe.ext (f.map_add x y)
+    map_smul' := fun r x => SetCoe.ext (f.map_smul r x)
+    map_lie' := @fun x y => SetCoe.ext (f.map_lie x y) }
+
+/-- Coercing the even Clifford image of a split type-`D` matrix recovers its quadratic Clifford
+realization. -/
+@[simp]
+theorem coe_typeDToEvenLieHom_apply (hline : P.line = ⊥)
+    (x : LieAlgebra.Orthogonal.typeD ι K) :
+    ((P.typeDToEvenLieHom b hline x : CliffordAlgebra.even Q) : CliffordAlgebra Q) =
+      (P.typeDQuadraticEquiv b hline x : CliffordAlgebra Q) := by
+  rw [typeDToEvenLieHom]
+  rfl
+
+/-- Reversal negates the even Clifford image of a split type-`D` matrix, since that image is a
+quadratic Clifford element. -/
+@[simp]
+theorem reverseEven_typeDToEvenLieHom (hline : P.line = ⊥)
+    (x : LieAlgebra.Orthogonal.typeD ι K) :
+    reverseEven Q (P.typeDToEvenLieHom b hline x) = -P.typeDToEvenLieHom b hline x :=
+  Subtype.ext <| by
+    rw [coe_reverseEven_apply, NegMemClass.coe_neg, coe_typeDToEvenLieHom_apply,
+      reverse_eq_neg_of_mem_quadraticLieSubalgebra Q (P.typeDQuadraticEquiv b hline x).property]
 
 /-- The standard one-coordinate diagonal matrix is the diagonal Clifford bivector of the
 corresponding polarization coordinate. -/

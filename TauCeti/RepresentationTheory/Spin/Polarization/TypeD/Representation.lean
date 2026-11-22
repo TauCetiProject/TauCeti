@@ -24,11 +24,9 @@ actions directly with the full spin action after coercion to the exterior algebr
 
 * `TauCeti.SpinPolarizationData.typeDSpinLieRep`: the spin representation of the split type-`D`
   matrix Lie algebra.
-* `TauCeti.SpinPolarizationData.typeDToEvenLieHom`: its quadratic Clifford realization, as a Lie
-  homomorphism to the even Clifford subalgebra.
 * `TauCeti.SpinPolarizationData.typeDSpinPlusLieRep` and
   `TauCeti.SpinPolarizationData.typeDSpinMinusLieRep`: its restrictions to the two exterior
-  parity summands.
+  parity summands, acting through `TauCeti.SpinPolarizationData.typeDToEvenLieHom`.
 * `TauCeti.SpinPolarizationData.coe_typeDSpinPlusLieRep_apply` and
   `TauCeti.SpinPolarizationData.coe_typeDSpinMinusLieRep_apply`: the restricted actions agree
   with the full action after coercion.
@@ -74,29 +72,6 @@ theorem typeDSpinLieRep_apply (hline : P.line = ⊥)
   rfl
 
 /-! ## The half-spin representations -/
-
-/-- The quadratic Clifford realization of the split type-`D` matrix Lie algebra, as a Lie
-homomorphism to the even Clifford subalgebra. -/
-noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
-    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra.even Q := by
-  let f : LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra Q :=
-    (quadraticLieSubalgebra Q).incl.comp (P.typeDQuadraticEquiv b hline).toLieHom
-  exact {
-    toFun := fun x => ⟨f x,
-      quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩
-    map_add' := fun x y => SetCoe.ext (f.map_add x y)
-    map_smul' := fun r x => SetCoe.ext (f.map_smul r x)
-    map_lie' := @fun x y => SetCoe.ext (f.map_lie x y) }
-
-/-- Coercing the even Clifford image of a split type-`D` matrix recovers its quadratic Clifford
-realization. -/
-@[simp]
-theorem coe_typeDToEvenLieHom_apply (hline : P.line = ⊥)
-    (x : LieAlgebra.Orthogonal.typeD ι K) :
-    ((P.typeDToEvenLieHom b hline x : CliffordAlgebra.even Q) : CliffordAlgebra Q) =
-      (P.typeDQuadraticEquiv b hline x : CliffordAlgebra Q) := by
-  rw [typeDToEvenLieHom]
-  rfl
 
 /-- The split type-`D` matrix Lie algebra acting on the even half-spin summand. -/
 noncomputable def typeDSpinPlusLieRep (hline : P.line = ⊥) :

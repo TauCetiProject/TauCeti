@@ -170,7 +170,7 @@ private theorem spinSixTransvectionFirstVector_isotropic {i j : Fin 4} (hij : i 
     simp [spinSixTransvectionFirstVector, P.isotropic_W, P.isotropic_W']
 
 /-- The two vectors of an elementary Spin-six transvection lift are orthogonal. -/
-theorem spinSixTransvectionVectors_polar {i j : Fin 4} (hij : i ≠ j) (c : R) :
+theorem polar_spinSixTransvectionVectors_eq_zero {i j : Fin 4} (hij : i ≠ j) (c : R) :
     QuadraticMap.polar Q (spinSixTransvectionFirstVector P b i j)
       (spinSixTransvectionSecondVector P b i j c) = 0 := by
   fin_cases i <;> fin_cases j
@@ -704,7 +704,7 @@ polarized six-dimensional quadratic space. -/
 noncomputable def spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) : spinGroup Q :=
   spinTransvection (P.nondegenerate_of_line_eq_bot hline)
     (spinSixTransvectionFirstVector_isotropic P b hij)
-    (spinSixTransvectionVectors_polar P b hij c)
+    (polar_spinSixTransvectionVectors_eq_zero P b hij c)
 
 /-- The canonical lift of an elementary transvection with parameter zero is the identity. -/
 @[simp]
@@ -717,6 +717,7 @@ theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
 
 /-- The canonical lift is the Clifford element `1 + ι w * ι u` built from its two transvection
 vectors. -/
+@[simp]
 theorem coe_spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) :
     (spinSixTransvectionLift P hline b hij c : CliffordAlgebra Q) =
       1 + ι Q (spinSixTransvectionSecondVector P b i j c) *
