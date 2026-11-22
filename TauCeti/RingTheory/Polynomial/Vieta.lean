@@ -61,6 +61,8 @@ first-order equations for the coefficients of `P` become equations for its simpl
 * `Multiset.prod_map_sub_eq_pow_add_sum_esymm`: `∏_{w ∈ s} (v - w) = vᵐ + ∑ (-1)ʲ e_j(s) v^(m-j)`.
 * `Multiset.prod_map_sub_eq_zero_iff`: over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly
   when `v ∈ s`.
+* `Multiset.eq_zero_of_mem_of_forall_esymm_eq_zero`: over a reduced ring, a multiset whose
+  elementary symmetric functions of positive degree vanish consists of zeros.
 * `Multiset.prod_map_sub_erase_eq_sum_esymm`: the derivative at a root,
   `∏_{w ∈ s ∖ v} (v - w) = m v^(m-1) + ∑ (-1)ʲ (m - j) e_j(s) v^(m-j-1)`.
 * `Multiset.prod_map_sub_erase_ne_zero`: it is nonzero at a simple root of a multiset over a
@@ -117,7 +119,7 @@ theorem vietaAlgHom_injective (R : Type*) [CommRing R] (m : ℕ) :
 /-- Every polynomial in the image of `MvPolynomial.vietaAlgHom` is symmetric. -/
 theorem isSymmetric_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}
     (p : MvPolynomial (Fin m) R) : (vietaAlgHom R m p).IsSymmetric :=
-  (vietaAlgEquiv R m p).2
+  (vietaAlgEquiv R m p).property
 
 /-- The range of `MvPolynomial.vietaAlgHom` is `symmetricSubalgebra (Fin m) R`. -/
 @[simp]
@@ -127,7 +129,7 @@ theorem range_vietaAlgHom (R : Type*) [CommRing R] (m : ℕ) :
   simp only [AlgHom.mem_range, vietaAlgHom_apply, mem_symmetricSubalgebra]
   constructor
   · rintro ⟨p, rfl⟩
-    exact (vietaAlgEquiv R m p).2
+    exact (vietaAlgEquiv R m p).property
   · intro hq
     exact ⟨(vietaAlgEquiv R m).symm ⟨q, hq⟩, by simp⟩
 
@@ -146,7 +148,7 @@ theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
       (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
   have hrev : (i.rev : ℕ) + 1 = m - (i : ℕ) := by
     rw [Fin.val_rev]
-    have := i.2
+    have := i.isLt
     omega
   simp only [vietaAlgHom, vietaAlgEquiv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     AlgEquiv.trans_apply, renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply,
@@ -172,7 +174,7 @@ theorem map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
     rw [aeval_X, vietaAlgHom_X]
     have hv := aeval_esymm_eq_coeff_prod_X_sub_C
       (R := R) (X : Fin m → MvPolynomial (Fin m) R) (k := m - k) (by simp)
-    rw [aeval_X_left, AlgHom.id_apply, Fintype.card_fin, Nat.sub_sub_self k.2.le] at hv
+    rw [aeval_X_left, AlgHom.id_apply, Fintype.card_fin, Nat.sub_sub_self k.isLt.le] at hv
     rw [hv, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
     simp [P]
   rw [hv_eq]
@@ -237,6 +239,16 @@ theorem prod_map_sub_eq_pow_add_sum_esymm (hs : card s = m) (v : R) :
 /-- Over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly when `v ∈ s`. -/
 theorem prod_map_sub_eq_zero_iff [IsDomain R] : (s.map fun w ↦ v - w).prod = 0 ↔ v ∈ s := by
   simp [prod_eq_zero_iff, sub_eq_zero]
+
+/-- Over a reduced ring, if the elementary symmetric functions of positive degree of `s` vanish,
+then every element of `s` is `0`: it is a root of `∏_{w ∈ s} (W - w) = Wᵐ`. -/
+theorem eq_zero_of_mem_of_forall_esymm_eq_zero [IsReduced R] (h : ∀ j, j ≠ 0 → s.esymm j = 0)
+    (hv : v ∈ s) : v = 0 := by
+  have hP := prod_map_sub_eq_pow_add_sum_esymm (s := s) rfl v
+  rw [prod_eq_zero (mem_map.2 ⟨v, hv, sub_self v⟩), Finset.sum_eq_zero fun j hj ↦ by
+    rw [h j (Nat.one_le_iff_ne_zero.1 (Finset.mem_Icc.1 hj).1), mul_zero, zero_mul],
+    add_zero] at hP
+  exact IsNilpotent.eq_zero ⟨_, hP.symm⟩
 
 variable [DecidableEq R]
 

@@ -63,7 +63,9 @@ generators along an orientation-preserving isometry intertwines the chirality el
 equivalence doing so restricts to the positive half-spinors. These are the frame changes and
 `Spinᶜ` transformations under which the Seiberg–Witten equations are invariant. The same holds for
 a semilinear map commuting with the generators whose twist fixes the real scalars, such as a
-conjugate-linear map of complex Clifford modules; a conjugate-linear isometric equivalence of
+conjugate-linear map of complex Clifford modules: it maps each eigenspace of `Γ` to the eigenspace
+of the twisted eigenvalue (`CliffordAlgebra.map_mem_eigenspace_chirality`), so it preserves the
+half-spinors, whose eigenvalues `±1` are real. A conjugate-linear isometric equivalence of
 Hermitian Clifford modules thus restricts to the positive half-spinors, as charge conjugation of
 spinors does.
 
@@ -285,8 +287,8 @@ private theorem basis_mul_basis_compl (hcard : 2 + 2 = Fintype.card (Fin 4))
       ((powersetCard.compl hcard).symm_apply_apply s).symm
   have hunion : (powersetCard.disjUnion hst : Finset (Fin 4)) = Finset.univ :=
     Finset.eq_univ_of_card _ <| by
-      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.2,
-        powersetCard.mem_iff.1 t.2]
+      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.property,
+        powersetCard.mem_iff.1 t.property]
       exact hcard
   rw [basis_mul_basis_of_disjoint ((frame o).isOrthoᵢ_associated hQ) hst,
     ← powersetCard.sign_eq_permOfDisjoint_sign hcard s t hst, hunion,
@@ -309,7 +311,7 @@ theorem bivectorExterior_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2
   set ε := powersetCard.sign s
   have hAC : A * C = ε • -chirality Q o := basis_mul_basis_compl o hQ hcard s
   have hAA : A * A = -1 := by
-    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
+    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.property]
     norm_num
   have hcomm : A * chirality Q o = chirality Q o * A := by
     have h := (commute_chirality_bivectorExterior (Q := Q) o (b.toBasis.exteriorPower 2 s)).eq.symm
@@ -344,7 +346,7 @@ private theorem basis_frame_mul_ι_of_mem (s : powersetCard (Fin 4) 2) {i : Fin 
     (hi : i ∈ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
       -(ι Q (frame o i) * basis Q (frame o).toBasis s) := by
   rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_mem ((frame o).isOrthoᵢ_associated hQ) hi,
-    powersetCard.mem_iff.1 s.2]
+    powersetCard.mem_iff.1 s.property]
   simp
 
 /-- `e_s` commutes with the generators `c(e_i)` it does not contain. -/
@@ -352,7 +354,7 @@ private theorem basis_frame_mul_ι_of_notMem (s : powersetCard (Fin 4) 2) {i : F
     (hi : i ∉ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
       ι Q (frame o i) * basis Q (frame o).toBasis s := by
   rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem ((frame o).isOrthoᵢ_associated hQ) hi,
-    powersetCard.mem_iff.1 s.2]
+    powersetCard.mem_iff.1 s.property]
   simp
 
 /-- `e_t` commutes with `e_s` when `s` and `t` are disjoint, since each generator of `e_t` is
@@ -410,7 +412,7 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
   by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
     have hts : t = s := Subtype.ext <| Finset.eq_of_subset_of_card_le hts
-      (by rw [powersetCard.mem_iff.1 s.2, powersetCard.mem_iff.1 t.2])
+      (by rw [powersetCard.mem_iff.1 s.property, powersetCard.mem_iff.1 t.property])
     subst hts
     obtain ⟨k, l, hmem, -⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
     have hk : k ∈ t.val := (hmem k).2 (Or.inl rfl)
@@ -418,7 +420,7 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
       have hk' : k ∈ powersetCard.compl hcard t := by rw [h]; exact hk
       exact powersetCard.mem_compl.1 hk' hk
     have hAA : basis Q (frame o).toBasis t * basis Q (frame o).toBasis t = -1 := by
-      rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 t.2]
+      rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 t.property]
       norm_num
     rw [ite_eq_left rfl, ite_eq_right hne, hAA, Algebra.algebraMap_eq_smul_one]
     module
@@ -622,6 +624,12 @@ variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W
 def positiveHalfSpinors : Submodule K W :=
   Module.End.eigenspace (ρ (chirality Q o)) 1
 
+/-- The positive half-spinors are the `1`-eigenspace of `Γ`, the space on which the half-spin
+representations with `ε = 1` act. -/
+theorem positiveHalfSpinors_eq_eigenspace :
+    positiveHalfSpinors o ρ = Module.End.eigenspace (ρ (chirality Q o)) 1 :=
+  (rfl)
+
 variable {o ρ} in
 /-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
 @[simp]
@@ -724,18 +732,27 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
 
 variable {o} in
 /-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
+the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps the
+`ε`-eigenspace of the chirality element `Γ` to its `σ ε`-eigenspace. For complex modules `U` can
+be conjugate-linear, as for charge conjugation of spinors; it then preserves the half-spinors
+`W^±`, the eigenspaces for the real eigenvalues `±1`. -/
+theorem map_mem_eigenspace_chirality (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
+    {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {ε : K} {w : W}
+    (hw : w ∈ Module.End.eigenspace (ρ (chirality Q o)) ε) :
+    U w ∈ Module.End.eigenspace (ρ' (chirality Q o)) (σ ε) := by
+  rw [Module.End.mem_eigenspace_iff] at hw ⊢
+  rw [← map_apply_of_forall_ιₛₗ hσ hU, hw, map_smulₛₗ]
+
+variable {o} in
+/-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
 the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps positive
 half-spinors to positive half-spinors. For complex modules `U` can be conjugate-linear, as for
 charge conjugation of spinors. -/
 theorem map_mem_positiveHalfSpinors (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
     {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {w : W}
     (hw : w ∈ positiveHalfSpinors o ρ) : U w ∈ positiveHalfSpinors o ρ' := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q) hσ
-    (fun v ↦ LinearMap.ext (hU v)) (chirality Q o)
-  have hw' : U (ρ (chirality Q o) w) = ρ' (chirality Q o) (U w) := by
-    simpa [map_id] using LinearMap.congr_fun h w
-  rw [mem_positiveHalfSpinors] at hw ⊢
-  rw [← hw', hw]
+  rw [positiveHalfSpinors_eq_eigenspace] at hw ⊢
+  simpa using map_mem_eigenspace_chirality hσ hU hw
 
 end Semilinear
 
@@ -752,11 +769,11 @@ conjugate-linear isometric equivalence `W⁺ ≃ W'⁺` of the positive half-spi
 def positiveHalfSpinorsConjEquiv :
     positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' where
   toFun ψ := ⟨j ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
-    (U := j.toLinearEquiv.toLinearMap) hj ψ.2⟩
+    (U := j.toLinearEquiv.toLinearMap) hj ψ.property⟩
   invFun ψ := ⟨j.symm ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
     (U := j.symm.toLinearEquiv.toLinearMap)
     (fun v w ↦ by rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, j.symm_apply_eq,
-      hj, j.apply_symm_apply]) ψ.2⟩
+      hj, j.apply_symm_apply]) ψ.property⟩
   map_add' ψ φ := Subtype.ext <| by simp
   map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
   left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)

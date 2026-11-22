@@ -134,7 +134,7 @@ theorem Monic.isWeightedHomogeneous_discr {R σ M : Type*} [CommRing R] [AddComm
     simpa only [Finsupp.weight_apply, map_finsuppSum, map_nsmul, multiplesHom_apply, smul_eq_mul,
       mul_smul] using congrArg (multiplesHom M u) (isWeightedHomogeneous_discr_freeMonic R n hd)
   rw [hdiscr]
-  exact hfree.aeval fun i ↦ hc i i.2
+  exact hfree.aeval fun i ↦ hc i i.isLt
 
 /-! ### Primality of the generic monic discriminant -/
 

@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.CyclicQuotient
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Basic
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedOrientation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
 
 /-!
@@ -17,10 +21,12 @@ This file collects the steps of a vanishing argument for the cyclic quotient in 
 which do not depend on the graph: once every path of positive length is known to be a sum of
 commutators, the same holds for the graded pieces of positive degree, the commutator submodule is
 the kernel of the augmentation, so that the cyclic quotient is the module of vertex coefficients,
-and, for a two-coloured graph, the vanishing transfers to the additive preprojective algebra of
-every orientation. The only paths which need a graph-specific
-argument are the closed ones: a path between distinct vertices is a commutator with its target
-idempotent.
+and, for a two-coloured graph, the vanishing, as well as a homogeneous class outside the
+commutators, transfers to the additive preprojective algebra of every orientation. Conversely, any
+closed path in a quiver or in one of its reorientations yields a homogeneous element of the same
+path degree in `Π_k(Q)` outside `[Π_k(Q), Π_k(Q)]`, via the retraction
+`TauCeti.preprojectiveToPathAlgebra`. The only paths which need a graph-specific argument are the
+closed ones: a path between distinct vertices is a commutator with its target idempotent.
 
 ## Main results
 
@@ -35,9 +41,20 @@ idempotent.
   `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra`: in that case the augmentation
   identifies the cyclic quotient with the module of vertex coefficients, of dimension the number of
   vertices over a nontrivial ring.
+* `TauCeti.forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso` and
+  `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso`: graph
+  isomorphisms preserve and reflect positive-length path vanishing and the existence of nonzero
+  homogeneous cyclic classes in the signless preprojective algebra.
+* `TauCeti.pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule` and
+  `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient`: over a nontrivial
+  commutative ring, any closed path in `Q` or in a reorientation of `Q` yields a homogeneous
+  element of the same path degree in `Π_k(Q)` outside the commutator submodule.
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
+* `SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule`: for a
+  two-coloured graph, a homogeneous signless class outside the commutators gives one of the same
+  degree for every orientation.
 
 ## References
 
@@ -131,6 +148,64 @@ theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra [Nontrivial k]
 
 end Signless
 
+section SignlessIso
+
+open DoubledQuiver
+
+variable (k : Type w) [CommRing k] {V : Type u} {W : Type v} [Finite V] [Finite W]
+  {G : SimpleGraph V} {H : SimpleGraph W}
+  [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+
+/-- A graph isomorphism preserves and reflects whether every positive-length path in the signless
+preprojective algebra lies in the commutator submodule. -/
+theorem forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+    (e : G ≃g H) :
+    (∀ x : Quiver.TotalPath (DoubledQuiver G), 0 < x.2.2.length →
+      signlessPreprojectiveMk k (DoubledQuiver G) (ofPath x) ∈
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) ↔
+    (∀ y : Quiver.TotalPath (DoubledQuiver H), 0 < y.2.2.length →
+      signlessPreprojectiveMk k (DoubledQuiver H) (ofPath y) ∈
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H))) := by
+  constructor
+  · intro hG y hy
+    let E := signlessPreprojectiveAlgebraEquiv k e.symm
+    have hmap : E (signlessPreprojectiveMk k (DoubledQuiver H) (ofPath y)) ∈
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+      rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofPath]
+      exact hG _ (by rwa [Prefunctor.length_mapTotalPath])
+    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm hmap
+  · intro hH x hx
+    let E := signlessPreprojectiveAlgebraEquiv k e
+    have hmap : E (signlessPreprojectiveMk k (DoubledQuiver G) (ofPath x)) ∈
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
+      rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofPath]
+      exact hH _ (by rwa [Prefunctor.length_mapTotalPath])
+    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm hmap
+
+/-- A graph isomorphism preserves and reflects the existence of a nonzero degree-`d` cyclic class
+in the signless preprojective algebra. -/
+theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso
+    (e : G ≃g H) {d : ℕ} :
+    (∃ z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d,
+      z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) ↔
+    (∃ z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d,
+      z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H))) := by
+  constructor
+  · rintro ⟨z, hz, hz0⟩
+    let E := signlessPreprojectiveAlgebraEquiv k e
+    refine ⟨E z, (signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff k e).mpr hz,
+      fun h => hz0 ?_⟩
+    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+  · rintro ⟨z, hz, hz0⟩
+    let E := signlessPreprojectiveAlgebraEquiv k e
+    refine ⟨E.symm z, ?_, fun h => hz0 ?_⟩
+    · rw [signlessPreprojectiveAlgebraEquiv_symm,
+        signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff]
+      exact hz
+    · simpa only [AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule E h
+
+end SignlessIso
+
 section Preprojective
 
 variable (k : Type w) [CommRing k] {Q : Type u} [Quiver.{v} Q] [Fintype Q]
@@ -151,6 +226,31 @@ theorem preprojectiveGrade_le_commutatorSubmodule
       (preprojectiveMk k Q).toLinearMap)).2 ?_ hy
   rintro _ ⟨⟨p, hp⟩, rfl⟩
   exact h p (hp ▸ hd)
+
+/-- Over a nontrivial commutative ring, the image in `Π_k(Q)` of any closed basis path of `Q`
+does not lie in the commutator submodule `[Π_k(Q), Π_k(Q)]`. -/
+theorem pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule [Nontrivial k]
+    {a : Q} (p : Path a a) :
+    pathAlgebraToPreprojective k Q (ofPath ⟨a, a, p⟩) ∉
+      commutatorSubmodule k (preprojectiveAlgebra k Q) := by
+  intro hp
+  have hret := map_mem_commutatorSubmodule (preprojectiveToPathAlgebra k Q) hp
+  rw [preprojectiveToPathAlgebra_pathAlgebraToPreprojective] at hret
+  exact ofPath_notMem_commutatorSubmodule p hret
+
+/-- Any closed path in a reorientation of `Q` produces a homogeneous element of the same path
+degree in `Π_k(Q)` outside the commutator submodule over a nontrivial commutative ring. -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient [Nontrivial k]
+    (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) {a : Reorient Q σ} (p : Path a a) :
+    ∃ x ∈ preprojectiveGrade k Q p.length,
+      x ∉ commutatorSubmodule k (preprojectiveAlgebra k Q) := by
+  let y := pathAlgebraToPreprojective k (Reorient Q σ) (ofPath ⟨a, a, p⟩)
+  refine ⟨reorientPreprojectiveAlgebraEquiv k σ y,
+    (reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k σ).2
+      (pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade k ⟨a, a, p⟩), fun hx => ?_⟩
+  apply pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule k p
+  simpa only [AlgEquiv.symm_apply_apply] using
+    map_mem_commutatorSubmodule (reorientPreprojectiveAlgebraEquiv k σ).symm hx
 
 end Preprojective
 
@@ -185,5 +285,22 @@ theorem preprojectiveMk_ofPath_mem_commutatorSubmodule (C : G.Coloring Bool) (o 
     exact Submodule.smul_mem _ _ (h _ (by rwa [Prefunctor.length_mapTotalPath]))
   have hmap := map_mem_commutatorSubmodule e hsymm
   rwa [AlgEquiv.apply_symm_apply] at hmap
+
+/-- **Nonzero cyclic classes transfer to every orientation.** A homogeneous element of degree `d`
+of the signless algebra of a two-coloured graph which is not a sum of commutators gives one of the
+same degree in the additive preprojective algebra of each of its orientations: the bipartite sign
+rescaling identifies the two algebras and preserves the grading. -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule (C : G.Coloring Bool)
+    (o : Orientation G) {d : ℕ}
+    (h : ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver G),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
+      z ∈ preprojectiveGrade k (OrientedQuiver G o) d ∧
+        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+  obtain ⟨z, hz, hz0⟩ := h
+  let e := C.signlessPreprojectiveAlgebraEquiv k o
+  refine ⟨e z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, fun he => hz0 ?_⟩
+  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule e.symm he
 
 end SimpleGraph.Coloring

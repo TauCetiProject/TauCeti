@@ -16,7 +16,8 @@ The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x
 Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both sides vanish: the
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
-For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling.
+For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling,
+and likewise its real powers are `(√t)⁻¹ ^ x = t ^ (-x/2)`.
 Splitting `1 - x² = (1 - x) (1 + x)` gives `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`,
 again for every real `x`.
 
@@ -26,6 +27,8 @@ the form in which power weights `x ^ q` are compared with exponential tilting we
 The square root of a natural power of a nonnegative real is the real power with half the exponent:
 `√(x ^ n) = x ^ (n / 2)`. This is the form in which a determinant `det (c • G) = c ^ n det G` of
 an `n × n` matrix contributes to a volume density `√(det G)`.
+
+In particular `x ^ (3 / 2) = x * √x`.
 
 A real power of a nonnegative base can also be written as a power of its square:
 `(x ^ 2) ^ (s / 2) = x ^ s`, and as the square of a power: `(x ^ (s / 2)) ^ 2 = x ^ s`.
@@ -48,6 +51,8 @@ For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` m
 a geometric series.
 For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
+For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
+nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -65,6 +70,8 @@ A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 
 norms, as for the monomials of a weighted Sobolev algebra.
 Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`; this is how a
 power-law exponent is read off from testing an inequality on `n` copies of one vector.
+If `c ^ e` is bounded for all `c > 0`, then `e = 0`; this is how a scaling argument pins an
+exponent.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -80,6 +87,10 @@ A nonnegative factor splits off a real power of any real number, including a neg
 `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
 the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
+A common nonnegative factor comes out of a weighted geometric mean:
+`(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for `0 ≤ c`. This is how a common factor is
+pulled out of the bound `A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
 with the corresponding integral of `q`-th powers.
@@ -88,6 +99,7 @@ with the corresponding integral of `q`-th powers.
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-1 / 2)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
+* `Real.inv_sqrt_rpow_eq_rpow`: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t` and real `x`.
 * `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
   `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
@@ -105,6 +117,8 @@ with the corresponding integral of `q`-th powers.
   for `0 < a`.
 * `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
   and `|x - y| ≤ L`.
+* `Real.rpow_mul_mul_rpow_neg_mul_le_one`: `b ^ (s x) b ^ (-s y) ≤ 1` when `1 ≤ b`, `s ≤ 0` and
+  `y ≤ x`.
 * `Real.pow_div_pow_pow_eq_rpow_of_le`: `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))` for `0 < x`
   and `a ≤ b`.
 * `Real.rpow_mul_natCast_le_of_mem_Ico`, `Real.rpow_mul_natCast_le_of_mem_Ico'`:
@@ -112,15 +126,22 @@ with the corresponding integral of `q`-th powers.
   the natural number `k` lies in the window `j - L ≤ k < j + L`.
 * `Real.rpow_neg_pow_mul_rpow_mul_natCast_add`: `(b ^ (-s)) ^ d b ^ (s (d + k)) = b ^ (s k)` for
   `0 < b` and natural numbers `d`, `k`.
+* `Real.le_mul_rpow_neg_pow_of_rpow_mul_le`: `x ≤ K (b ^ (-s)) ^ j` when `b ^ (s j) x ≤ K` and
+  `0 < b`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
+* `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
+* `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
+  `0 ≤ c`.
+* `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
+  `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -161,6 +182,13 @@ theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-1 / 2 : ℝ) := by
 theorem inv_sqrt_pow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (n : ℕ) : (√t)⁻¹ ^ n = t ^ (-(n : ℝ) / 2) := by
   rw [rpow_div_two_eq_sqrt _ ht, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
 
+/-- A real power of the inverse square root: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t`. This is the
+factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` on an `Lᵖ` norm. -/
+theorem inv_sqrt_rpow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (x : ℝ) : (√t)⁻¹ ^ x = t ^ (-x / 2) := by
+  rw [sqrt_eq_rpow, ← rpow_neg ht, ← rpow_mul ht]
+  congr 1
+  ring
+
 /-- For every real `x`, `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`. For `|x| > 1` both
 sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y ≠ 0` and
 `a / 0 = 0`. This is the form in which the integrand `(1 - k sin θ) (1 - k² sin² θ)^(-1/2)` of a
@@ -189,6 +217,15 @@ theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ (
 exponent: `√x ^ n = x ^ (n / 2)`. -/
 theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n : ℝ) / 2) := by
   rw [← rpow_natCast, ← rpow_div_two_eq_sqrt _ hx]
+
+/-- The power `x ^ (3 / 2)` is `x * √x` for every real `x`. For `x < 0` both sides vanish: the
+square root is `0`, and `x ^ (3 / 2)` has the factor `cos (3 π / 2) = 0`. -/
+theorem rpow_three_div_two_eq_mul_sqrt (x : ℝ) : x ^ (3 / 2 : ℝ) = x * √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' hx (by norm_num), rpow_one,
+      ← sqrt_eq_rpow]
+  · rw [sqrt_eq_zero'.mpr hx.le, mul_zero, rpow_def_of_neg hx,
+      show 3 / 2 * π = π / 2 + π by ring, cos_add_pi, cos_pi_div_two, neg_zero, mul_zero]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
 @[simp]
@@ -258,6 +295,13 @@ theorem rpow_mul_natCast_le_of_mem_Ico' {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k 
   refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
   all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
+/-- For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`. -/
+theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs : s ≤ 0) {x y : ℝ}
+    (hxy : y ≤ x) : b ^ (s * x) * b ^ (-s * y) ≤ 1 := by
+  rw [← rpow_add (by linarith)]
+  refine rpow_le_one_of_one_le_of_nonpos hb ?_
+  nlinarith
+
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/
 theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (d k : ℕ) :
@@ -265,6 +309,16 @@ theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (
   rw [← rpow_mul_natCast hb.le, ← rpow_add hb]
   push_cast
   ring_nf
+
+/-- For `0 < b`, a weighted bound `b ^ (s j) x ≤ K` gives the geometric bound
+`x ≤ K (b ^ (-s)) ^ j`. -/
+theorem le_mul_rpow_neg_pow_of_rpow_mul_le {b : ℝ} (hb : 0 < b) {s x K : ℝ} {j : ℕ}
+    (h : b ^ (s * j) * x ≤ K) : x ≤ K * (b ^ (-s)) ^ j := by
+  have hj : (b ^ (-s)) ^ j * b ^ (s * j) = 1 := by
+    simpa using rpow_neg_pow_mul_rpow_mul_natCast_add hb s j 0
+  calc x = (b ^ (-s)) ^ j * (b ^ (s * j) * x) := by rw [← mul_assoc, hj, one_mul]
+    _ ≤ (b ^ (-s)) ^ j * K := by gcongr
+    _ = K * (b ^ (-s)) ^ j := mul_comm _ _
 
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
@@ -314,6 +368,18 @@ theorem le_of_forall_natCast_rpow_le_mul_rpow {a b C : ℝ}
   simp only [Function.comp_apply] at hCn
   nlinarith
 
+/-- If `c ^ e` is bounded on `(0, ∞)`, then `e = 0`: otherwise `c = (K + 1) ^ e⁻¹` gives
+`c ^ e = K + 1`. This is how a scaling argument pins an exponent. -/
+theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e ≤ K) : e = 0 := by
+  by_contra he
+  have hK : 0 < K + 1 := by
+    have := h 1 one_pos
+    rw [one_rpow] at this
+    linarith
+  have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
+  rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
+  linarith
+
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
     A ^ c ≤ exp (-(c * t)) := by
@@ -334,6 +400,23 @@ theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
     · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
         log_mul ha.ne' ht.ne, add_mul, exp_add]
       ring
+
+/-- A common factor `c ≥ 0` comes out of a weighted geometric mean:
+`(c a) ^ (1 - θ) (c b) ^ θ = c (a ^ (1 - θ) b ^ θ)`, for all real `a`, `b` and `θ`. -/
+theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
+    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
+  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
+    ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+
+/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
+every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
+theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
+  calc P = P ^ δ * P ^ (1 - δ) := by
+        rw [← rpow_add' hP (by norm_num), add_sub_cancel, rpow_one]
+    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
+        (rpow_le_rpow hP hB (by linarith)) (by positivity)
+        (rpow_nonneg (hP.trans hA) _)
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

@@ -69,7 +69,7 @@ theorem isIntegral_iff_exists_pow_add_sum_mul_eq_zero {R : Type*} [CommRing R] {
     IsIntegral S x ↔ ∃ (n : ℕ) (c : ℕ → R), (∀ i < n + 1, c i ∈ S) ∧
       x ^ (n + 1) + ∑ i ∈ Finset.range (n + 1), c i * x ^ i = 0 := by
   rw [isIntegral_iff_exists_pow_add_sum_smul_eq_zero]
-  refine ⟨fun ⟨n, c, h⟩ ↦ ⟨n, (c ·), fun i _ ↦ (c i).2, by simpa [Subring.smul_def] using h⟩,
+  refine ⟨fun ⟨n, c, h⟩ ↦ ⟨n, (c ·), fun i _ ↦ (c i).property, by simpa [Subring.smul_def] using h⟩,
     fun ⟨n, c, hcS, h⟩ ↦ ⟨n, fun i ↦ if hi : i < n + 1 then ⟨c i, hcS i hi⟩ else 0, ?_⟩⟩
   refine .trans (congrArg _ (Finset.sum_congr rfl fun i hi ↦ ?_)) h
   simp [Subring.smul_def, Finset.mem_range.mp hi]
