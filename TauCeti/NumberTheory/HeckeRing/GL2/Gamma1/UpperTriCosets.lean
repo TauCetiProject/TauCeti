@@ -207,7 +207,8 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd {γ : SL(2, ℤ)} (hγ : γ ∈ Gam
     rw [Matrix.det_fin_two_of]
     linear_combination γ.fin_two_mul_sub_mul_eq_one + γ 1 0 * hm
   obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), δ 0 0 = γ 0 0 ∧ δ 0 1 = m ∧
-      δ 1 0 = p * γ 1 0 ∧ δ 1 1 = γ 1 1 - γ 1 0 * j := ⟨.mk _ hdet, rfl, rfl, rfl, rfl⟩
+      δ 1 0 = p * γ 1 0 ∧ δ 1 1 = γ 1 1 - γ 1 0 * j := by
+    refine ⟨.mk _ hdet, ?_, ?_, ?_, ?_⟩ <;> simp
   refine ⟨δ, mem_Gamma1_iff_dvd_lowerRow.mpr ?_, ?_⟩
   · rw [e10, e11, sub_right_comm]
     exact ⟨hc.mul_left _, hd.sub (hc.mul_right _)⟩
