@@ -55,8 +55,15 @@ change of chain coefficients `TopCat.singularCohomologyChainCoefficientMap` alon
 `TauCeti.uliftIntIso`, an isomorphism
 (`TauCeti.MappingTorus.isOfFinAddOrder_sub_evalFundamentalClass_chainCoefficientMap_smul`).
 
-The intersection numbers `v · v = t · t = 0` and `v · t = 1` of the two classes are not proved
-here.
+Against the homology cross product `[ℝ / pℤ] × y` of the circuit class with a class
+`y ∈ H₃(Y_φ; ℤ)`, the cup pairings of the two classes are `v · v = t · t = 0` and
+`v · t = t · v = ⟨v ⌣ a, y⟩`
+(`TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross`,
+`TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross`,
+`TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross` and
+`TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross`). That
+`⟨v ⌣ a, [Y_φ]⟩ = 1` for the fundamental class of `Y_φ` and a suitable generator `a`, which makes
+`v, t` a hyperbolic pair of the intersection form, is not proved here.
 
 ## Main results
 
