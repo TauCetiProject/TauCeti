@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.Spectrum
 import Mathlib.LinearAlgebra.Semisimple
+import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -361,13 +362,11 @@ theorem IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval
       fun i ↦ (Q i).comp ((aeval (ω.hamiltonianEnd P) p).maxGenEigenspace 0).subtype := by
   refine h.restrict (ω.isSymplectic_maxGenEigenspace_aeval
     (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P) hp) fun i ↦
-      (Module.End.mem_invtSubmodule _).2 fun _ hv ↦
-        Module.End.mapsTo_maxGenEigenspace_of_comm ?_ 0 hv
-  have hPQ := ω.quadraticPoissonBracket_eq_zero_iff.1 <|
+      (Module.End.mem_invtSubmodule _).2 <|
+        Module.End.mapsTo_genEigenspace_aeval_of_comm ?_ p 0 ⊤
+  exact (ω.quadraticPoissonBracket_eq_zero_iff.1 <|
     ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero
-      (Submodule.subset_span ⟨i, rfl⟩) hP
-  exact (Algebra.commute_of_mem_adjoin_singleton_of_commute
-    (aeval_mem_adjoin_singleton ℝ (ω.hamiltonianEnd P)) hPQ).symm
+      (Submodule.subset_span ⟨i, rfl⟩) hP).symm
 
 end Restrict
 
