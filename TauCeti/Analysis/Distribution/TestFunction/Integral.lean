@@ -125,6 +125,14 @@ theorem toCompactlySupportedContinuousMap_smul {R : Type*} [Semiring R] [Module 
     (c • φ).toCompactlySupportedContinuousMap = c • φ.toCompactlySupportedContinuousMap :=
   (rfl)
 
+/-- The restriction of a test function to `Ω` is supported in the preimage of its support. -/
+theorem tsupport_toCompactlySupportedContinuousMap_subset (φ : 𝓓^{n}(Ω, F)) :
+    tsupport φ.toCompactlySupportedContinuousMap ⊆ ((↑) : Ω → E) ⁻¹' tsupport φ := by
+  have h : ⇑φ.toCompactlySupportedContinuousMap = fun x : Ω => φ x :=
+    funext (toCompactlySupportedContinuousMap_apply φ)
+  rw [h]
+  exact tsupport_comp_subset_preimage φ continuous_subtypeVal
+
 variable [MeasurableSpace E]
 
 /-- The integral of a test function supported in a compact `K ⊆ Ω` against a measure on `Ω` that

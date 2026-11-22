@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Convolution
+public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
@@ -35,6 +36,9 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 * `Continuous.exists_testFunction_dist_le`: a continuous function supported in a compact set `K`
   is uniformly approximated by test functions supported in any closed thickening of `K` that lies
   in `Ω`.
+* `CompactlySupportedContinuousMap.exists_isCompact_forall_exists_testFunction_dist_le`: a
+  compactly supported continuous function on the subspace `Ω` is uniformly approximated by test
+  functions supported in one compact subset of `Ω`.
 * `ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le`: a `C¹` function supported in a
   compact set `K` is approximated in the same way, uniformly together with its derivative.
 
@@ -47,7 +51,7 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 public section
 
 open MeasureTheory TopologicalSpace Metric Set
-open scoped Distributions Convolution
+open scoped Distributions Convolution CompactlySupported
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -95,6 +99,26 @@ theorem Continuous.exists_testFunction_dist_le {f : E → F} (hf : Continuous f)
   rw [hφ]
   exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
     (hfη ((mem_ball.mp hy).trans_le (min_le_left _ _))).le
+
+/-- A compactly supported continuous function on the subspace `Ω` is a uniform limit of test
+functions on `Ω` supported in one compact subset of `Ω`: there is a compact `K ⊆ Ω` containing the
+support of `f` such that for every `ε > 0` some test function supported in `K` is within `ε` of `f`
+at every point of `Ω`. -/
+theorem CompactlySupportedContinuousMap.exists_isCompact_forall_exists_testFunction_dist_le
+    (f : C_c(Ω, F)) :
+    ∃ K : Set E, IsCompact K ∧ K ⊆ Ω ∧ (↑) '' tsupport f ⊆ K ∧
+      ∀ ε > 0, ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ K ∧ ∀ x : Ω, dist (φ x) (f x) ≤ ε := by
+  have hK : IsCompact (((↑) : Ω → E) '' tsupport f) :=
+    f.hasCompactSupport.isCompact.image continuous_subtypeVal
+  obtain ⟨δ, hδ, hδΩ⟩ :=
+    hK.exists_cthickening_subset_open Ω.isOpen (Subtype.coe_image_subset _ _)
+  refine ⟨cthickening δ _, hK.cthickening, hδΩ, self_subset_cthickening _, fun ε hε => ?_⟩
+  -- Approximate the extension of `f` by zero to `E`.
+  obtain ⟨φ, hφK, hφ⟩ := (f.hasCompactSupport.continuous_extend_zero Ω.isOpen
+    f.continuous).exists_testFunction_dist_le hK
+    (f.hasCompactSupport.tsupport_extend_zero_subset continuous_subtypeVal) hδ hδΩ hε
+  refine ⟨φ, hφK, fun x => ?_⟩
+  simpa [Subtype.val_injective.extend_apply] using hφ x
 
 omit [FiniteDimensional ℝ E] in
 /-- A `C¹` function supported in a compact set `K` is approximated by test functions on `Ω`
