@@ -29,9 +29,9 @@ For any subset `A : Set E` with weakly compact closure (and any relatively compa
 `s : Set (WeakSpace 𝕜 E)`), the same norming-set construction yields the Kaplansky–Šmulian
 sequential-closure property: every point in the weak closure is the weak limit of a sequence in
 the set, so a relatively compact subset of `WeakSpace 𝕜 E` is closed if and only if it is
-sequentially closed. Consequently every relatively compact subset of `WeakSpace 𝕜 E` is
-Fréchet–Urysohn (hence a sequential space) in the subspace topology, and topological and
-sequential lower semicontinuity into any preordered type agree there.
+sequentially closed (and compact if sequentially closed). Consequently every relatively compact
+subset of `WeakSpace 𝕜 E` is Fréchet–Urysohn (hence a sequential space) in the subspace topology,
+and topological and sequential lower semicontinuity into any preordered type agree there.
 
 ## References
 
@@ -205,6 +205,12 @@ theorem isClosed_weakSpace_iff_isSeqClosed {s : Set (WeakSpace 𝕜 E)}
     (hs : IsCompact (closure s)) : IsClosed s ↔ IsSeqClosed s := by
   rw [← closure_eq_iff_isClosed, isSeqClosed_iff, seqClosure_weakSpace_eq_closure hs]
 
+/-- A relatively compact, sequentially closed subset of `WeakSpace 𝕜 E` is compact. -/
+theorem isCompact_weakSpace_of_isCompact_closure_of_isSeqClosed {s : Set (WeakSpace 𝕜 E)}
+    (hs : IsCompact (closure s)) (hseq : IsSeqClosed s) : IsCompact s := by
+  have hclosed : IsClosed s := (isClosed_weakSpace_iff_isSeqClosed hs).2 hseq
+  simpa only [hclosed.closure_eq] using hs
+
 /-- **Eberlein–Šmulian.** Weak compactness is equivalent to weak sequential compactness,
 without completeness or separability assumptions. -/
 theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
@@ -217,11 +223,8 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
     obtain ⟨_, ⟨x, _, rfl⟩, σ, hσ, hlim⟩ :=
       hK (fun n ↦ mem_image_of_mem (toWeakSpace 𝕜 E) (hu n))
     exact ⟨x, σ, hσ, hlim⟩
-  have hcomp_cl : IsCompact (closure (toWeakSpace 𝕜 E '' K)) :=
-    isCompact_closure_toWeakSpace_iff.mpr hrelative
-  have hclosed : IsClosed (toWeakSpace 𝕜 E '' K) :=
-    (isClosed_weakSpace_iff_isSeqClosed hcomp_cl).mpr hK.isSeqClosed
-  simpa only [hclosed.closure_eq] using hcomp_cl
+  exact isCompact_weakSpace_of_isCompact_closure_of_isSeqClosed
+    (isCompact_closure_toWeakSpace_iff.mpr hrelative) hK.isSeqClosed
 
 /-- Every relatively compact subset of `WeakSpace 𝕜 E` is Fréchet–Urysohn in the subspace
 topology. -/

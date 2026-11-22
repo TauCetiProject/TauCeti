@@ -1018,10 +1018,11 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_le_liminf_ereal {X Y : T
       ∀ (u : ℕ → X) (x : X), (∀ n, u n ∈ s) → x ∈ s →
         Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
         (f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop := by
-  rw [e.seqLowerSemicontinuousOn_image_iff]
-  refine forall₅_congr fun u x _ _ _ ↦ ?_
-  rw [le_liminf_iff, EReal.forall]
-  simp
+  rw [seqLowerSemicontinuousOn_real_iff_le_liminf_ereal, e.surjective.forall]
+  simp_rw [(Equiv.arrowCongr (Equiv.refl ℕ) e).surjective.forall]
+  simp only [Equiv.arrowCongr_apply, Equiv.refl_symm, Equiv.coe_refl, Function.comp_apply,
+    id_eq, e.injective.mem_set_image, e.symm_apply_apply]
+  exact ⟨fun h u x hu hx ↦ h x hx u hu, fun h x hx u hu ↦ h u x hu hx⟩
 
 section SeqCompact
 
