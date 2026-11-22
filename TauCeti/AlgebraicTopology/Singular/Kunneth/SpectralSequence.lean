@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.CrossProduct
 
 /-!
@@ -99,8 +98,7 @@ variable (X Y : TopCat.{u}) (R : Type u) [CommRing R]
 `Q` of `C(Y; R)`. -/
 abbrev singularKunnethBicomplex :
     HomologicalComplex₂ (ModuleCat.{u} R) (ComplexShape.down ℕ) (ComplexShape.down ℕ) :=
-  kunnethBicomplex ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
-    ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))
+  kunnethBicomplex ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)
 
 /-- **The Künneth spectral sequence for singular homology** of `X` and `Y` with coefficients in
 the commutative ring `R`: the algebraic Künneth spectral sequence
@@ -109,8 +107,7 @@ the commutative ring `R`: the algebraic Künneth spectral sequence
 (`TopCat.singularKunnethSpectralSequenceSecondPageXIso`) and it converges to `H_{p+q}(X × Y; R)`
 (`TopCat.singularKunnethAbutmentIso`). -/
 abbrev singularKunnethSpectralSequence :=
-  kunnethSpectralSequence ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
-    ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))
+  kunnethSpectralSequence ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)
 
 /-- **The second page of the singular Künneth spectral sequence.** The object of the second page
 (numbered `3`) at column `p`, degree `q` is `⨁_{i + j = q} Torₚ(Hᵢ(X; R), Hⱼ(Y; R))`: this is
@@ -130,16 +127,15 @@ induced on degree-`n` homology by, in this order, the augmentation of the total 
 def singularKunnethTotalHomologyIso (n : ℕ) :
     ((singularKunnethBicomplex X Y R).total (ComplexShape.down ℕ)).homology n ≅
       ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).obj (X ⊗ Y) :=
-  -- the unit `𝟙_ (ModuleCat R)` is projective, so the singular chain modules are flat
-  have : Module.Flat R (𝟙_ (ModuleCat.{u} R)) := Module.Flat.of_projective
+  -- the singular chain modules, with coefficients the flat module `R`, are flat
+  have (Z : TopCat.{u}) (i : ℕ) : Module.Flat R (((TauCeti.singularChains R).obj Z).X i) :=
+    SSet.flat_chainComplex_X (toSSet.obj Z) (ModuleCat.of R R) i
   have := quasiIso_kunnethBicomplexAugmentation
-    ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
-    ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))
+    ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)
   -- the homology of `C(X × Y; R)` is by definition `Hₙ(X × Y; R)`; the ascription keeps the
-  -- composite well typed up to reducible unfolding, so that `Iso.trans_hom` applies to it
+  -- composite syntactically well typed, so that `Iso.trans_hom` applies to it
   (isoOfQuasiIsoAt (kunnethBicomplexAugmentation
-      ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
-      ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≪≫
+      ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)) n ≪≫
     isoOfQuasiIsoAt (TauCeti.singularCrossProduct R X Y) n :
       _ ≅ ((TauCeti.singularChains R).obj (X ⊗ Y)).homology n)
 
@@ -148,21 +144,19 @@ total complex, followed by the simplicial cross product. -/
 lemma singularKunnethTotalHomologyIso_hom (n : ℕ) :
     (singularKunnethTotalHomologyIso X Y R n).hom =
       homologyMap (kunnethBicomplexAugmentation
-          ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
-          ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≫
-        homologyMap (TauCeti.singularCrossProduct R X Y) n :=
-  -- `Iso.trans_hom` and `isoOfQuasiIsoAt_hom`, which hold by `rfl`; `rw` cannot use them, since
-  -- the composite is well typed only after unfolding `singularChainComplexFunctor`
-  (rfl)
+          ((TauCeti.singularChains R).obj X) ((TauCeti.singularChains R).obj Y)) n ≫
+        homologyMap (TauCeti.singularCrossProduct R X Y) n := by
+  simp only [singularKunnethTotalHomologyIso, Iso.trans_hom, isoOfQuasiIsoAt_hom]
+  -- the two sides agree syntactically except for the proofs of the `Prop`-valued instance
+  -- arguments, which simp does not identify
+  with_reducible rfl
 
 /-- The spectral object of the filtration of the total complex of the flipped Künneth bicomplex of
 `C(X; R)` and `C(Y; R)` by its rows, whose spectral sequence is
 `TopCat.singularKunnethSpectralSequence X Y R`. Its abutment is `H(X × Y; R)`
 (`TopCat.singularKunnethAbutmentIso`). -/
 abbrev singularKunnethSpectralObject :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor
-    (singularKunnethBicomplex X Y R).flip.rowFiltration
-    (singularKunnethBicomplex X Y R).flip.monotone_rowFiltration)
+  (singularKunnethBicomplex X Y R).flip.rowFiltrationSpectralObject
 
 /-- **The abutment of the singular Künneth spectral sequence.** The abutment in total degree `n`
 (cohomological degree `-n`) is `Hₙ(X × Y; R)`. -/
