@@ -42,7 +42,7 @@ mapped into the algebra or used as a scalar.
   `m • (1 / m) • a = a` and `(1 / m) • m • a = a` in a module over a `K`-algebra, when
   `(m : K) ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • (a * (k + 1)) = a` in a
-  `K`-algebra, when `(k : K) + 1 ≠ 0`.
+  semiring that is a `K`-module, when `(k : K) + 1 ≠ 0`.
 * `TauCeti.algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul`:
   `(1 / (k + 1)) • ((k + 1) * a) = a` in a semiring that is a module over a `K`-algebra, when
   `(k : K) + 1 ≠ 0`.
@@ -105,16 +105,15 @@ theorem algebraMap_inv_natCast_smul_nsmul {K R M : Type*} [Semifield K] [Semirin
   rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← Nat.cast_comm, natCast_mul_algebraMap_inv hm,
     one_smul]
 
-/-- Multiplying on the right by `k + 1` and then dividing by `k + 1` cancel in an algebra over a
-semifield `K`, provided `k + 1` is nonzero in `K`. This is the simp-normal form of
-`(k + 1)⁻¹ • a * (k + 1)`. -/
+/-- Multiplying on the right by `k + 1` and then dividing by `k + 1` cancel in a semiring that is
+a module over a semifield `K`, for instance a `K`-algebra, provided `k + 1` is nonzero in `K`. In a
+`K`-algebra this is the simp-normal form of `(k + 1)⁻¹ • a * (k + 1)`. -/
 @[simp]
 theorem inv_natCast_add_one_smul_mul_natCast_add_one {K R : Type*} [Semifield K] [Semiring R]
-    [Algebra K R] (a : R) (k : ℕ) (hk : (k : K) + 1 ≠ 0) :
+    [Module K R] (a : R) (k : ℕ) (hk : (k : K) + 1 ≠ 0) :
     ((k : K) + 1)⁻¹ • (a * ((k : R) + 1)) = a := by
   have h : a * ((k : R) + 1) = ((k : K) + 1) • a := by
-    rw [Algebra.smul_def, Algebra.commutes]
-    simp
+    rw [← Nat.cast_add_one, ← nsmul_eq_mul', ← Nat.cast_smul_eq_nsmul K, Nat.cast_add_one]
   rw [h, inv_smul_smul₀ hk]
 
 /-- Multiplying by `k + 1` and then applying the scalar `1 / (k + 1)` of a semifield `K`, acting
