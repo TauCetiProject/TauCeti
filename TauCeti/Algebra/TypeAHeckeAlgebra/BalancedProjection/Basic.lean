@@ -87,8 +87,6 @@ no such change of generators, is not treated.
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`: the eigenprojection
   decomposition of a generator, and the projection parameter of a Markov trace in terms of the
   eigenprojection.
-* `TauCeti.mul_sub_val_inv_mul_one_sub`: converting a projection parameter `η` to the scaled
-  Markov parameter `q * z`.
 
 ## References
 
@@ -639,11 +637,5 @@ theorem IsMarkovTrace.map_mul_eigenprojection (hμ : IsMarkovTrace z μ)
   linear_combination η * μ x * hs'
 
 end InfiniteTypeAHeckeAlgebra
-
-/-- Converting a projection parameter `η` to the scaled Markov parameter `q * z`:
-`q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`. -/
-theorem mul_sub_val_inv_mul_one_sub {R : Type*} [CommRing R] (q : Rˣ) (η : R) :
-    (q : R) * ((q : R) * η - ↑q⁻¹ * (1 - η)) = (1 + (q : R) ^ 2) * η - 1 := by
-  linear_combination -(1 - η) * Units.mul_inv q
 
 end TauCeti

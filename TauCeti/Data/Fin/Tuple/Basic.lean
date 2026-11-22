@@ -35,6 +35,7 @@ once.
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.snoc_comp_swap_castSucc` and `Fin.snoc_comp_swap_last`: exchanging two entries other
   than the last one, or the last two entries, of a `Fin.snoc` tuple.
+* `Fin.cons_comp_swap_zero`: exchanging the first two entries of a `Fin.cons` tuple.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.init_comp_rev`: dropping the last entry of the reversed tuple is reversing the tail.
@@ -145,6 +146,13 @@ theorem snoc_comp_swap_last {n : ℕ} (c : Fin (n + 1) → α) (z : α) :
       snoc (Function.update c (last n) z) (c (last n)) := by
   rw [Equiv.comp_swap_eq_update]
   simp [← snoc_update, update_snoc_last]
+
+/-- Exchanging the first two entries of `Fin.cons z c` replaces the first entry of `c` by `z` and
+puts the old first entry at the front. -/
+theorem cons_comp_swap_zero {n : ℕ} (z : α) (c : Fin (n + 1) → α) :
+    cons z c ∘ Equiv.swap 0 (0 : Fin (n + 1)).succ = cons (c 0) (Function.update c 0 z) := by
+  rw [Equiv.comp_swap_eq_update, Function.update_comm (succ_ne_zero _)]
+  simp
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :

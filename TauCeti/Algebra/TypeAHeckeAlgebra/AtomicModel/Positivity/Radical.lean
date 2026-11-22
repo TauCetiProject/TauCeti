@@ -36,6 +36,7 @@ variable {R : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing
 
 /-- **Null space of a strictly positive atomic trace** over a `StarOrderedRing` without zero
 divisors: `atomicTrace (star x * x) = 0 ↔ signedChecked pos q x = 0`. -/
+@[simp]
 theorem atomicTrace_star_mul_self_eq_zero_iff [Finite ι] {p : ι → R} (hp : ∀ a, 0 < p a)
     (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p n (star x * x) = 0 ↔ signedChecked pos q x = 0 := by

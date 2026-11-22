@@ -28,6 +28,8 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
 * `Units.one_add_sq_eq_mul_add_inv`: for a unit `q`, `1 + q ^ 2 = q * (q + q⁻¹)`.
+* `Units.mul_sub_val_inv_mul_one_sub`: for a unit `q`,
+  `q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`.
 -/
 
 public section
@@ -57,6 +59,13 @@ variable {R : Type*} [Ring R]
 theorem one_add_sq_eq_mul_add_inv (q : Rˣ) :
     1 + (q : R) ^ 2 = q * ((q : R) + ↑q⁻¹) := by
   rw [mul_add, ← sq, Units.mul_inv, add_comm]
+
+/-- Converting a projection parameter `η` to the scaled Markov parameter `q * z`:
+`q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`. -/
+theorem mul_sub_val_inv_mul_one_sub (q : Rˣ) (η : R) :
+    (q : R) * ((q : R) * η - ↑q⁻¹ * (1 - η)) = (1 + (q : R) ^ 2) * η - 1 := by
+  rw [mul_sub, ← mul_assoc, ← sq, ← mul_assoc, Units.mul_inv, one_mul, add_mul, one_mul]
+  abel
 
 /-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
 theorem val_sub_val_inv_ne_zero [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :

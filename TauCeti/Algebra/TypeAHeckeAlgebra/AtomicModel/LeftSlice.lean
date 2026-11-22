@@ -9,6 +9,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Tail
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # First-site Markov rules and left-slice geometric atomic models
@@ -98,11 +99,8 @@ theorem signedChecked_tailIncl_mul_T_zero_single_cons_apply
   have hj : BraidGroup.strand (n := n + 2) (0 : Fin (n + 1)) = 0 := Fin.ext (by simp)
   have hk : BraidGroup.strandSucc (n := n + 2) (0 : Fin (n + 1)) = (0 : Fin (n + 1)).succ :=
     Fin.ext (by simp)
-  have hswap : Fin.cons a w ∘ Equiv.swap (0 : Fin (n + 2)) (0 : Fin (n + 1)).succ =
-      Fin.cons (w 0) (update w 0 a) := by
-    rw [Equiv.comp_swap_eq_update, update_comm (Fin.succ_ne_zero _)]; simp
   simp only [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
-    signedCheckedR_single_one, Fin.cons_zero, Fin.cons_succ, hswap]
+    signedCheckedR_single_one, Fin.cons_zero, Fin.cons_succ, Fin.cons_comp_swap_zero]
   rcases lt_trichotomy a (w 0) with h | rfl | h
   · simp only [h.ne, h.ne', h, ↓reduceIte, map_sub, map_smul, Finsupp.smul_apply,
       Finsupp.sub_apply, smul_eq_mul, signedChecked_tailIncl_single_cons_apply_cons]; ring

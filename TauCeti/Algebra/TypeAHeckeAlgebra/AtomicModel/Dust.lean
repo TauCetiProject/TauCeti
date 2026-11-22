@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Order.Sum.Order
-public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.CycleWord
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # The continuous-dust limit for cycle-trace generating functions
 
-Splitting residual weight `γ : ℂ` across `N` positive (`b = true`) or negative (`b = false`)
-letters of weight `γ / N` produces a factor `(1 ∓ γ * x / N) ^ N / (1 ∓ q ^ 2 * γ * x / N) ^ N`
-whose limit as `N → ∞` is `Complex.exp (((q : ℂ) ^ 2 - 1) * γ * x)`.
+Splitting residual weight `γ` across `N` positive (`b = true`) or negative (`b = false`) letters of
+weight `γ / N` contributes `γ` in degree `1` (`m = 0`) and `0` in higher degrees when `Q = 1`
+(`TauCeti.TypeAHeckeAlgebra.tendsto_atomicTrace_dust_cycleWord_of_sq_eq_one`), and in general
+produces a factor `(1 ∓ γ * x / N) ^ N / (1 ∓ q ^ 2 * γ * x / N) ^ N` whose limit as `N → ∞` is
+`Complex.exp (((q : ℂ) ^ 2 - 1) * γ * x)`.
 
 This module records:
 * `TauCeti.TypeAHeckeAlgebra.tendsto_atomicTrace_dust_generating_function`: the pure-dust limit for
@@ -23,6 +26,9 @@ This module records:
   limit for an arbitrary countable atomic background `ι` augmented by `N` dust letters of weight
   `γ / N`, converging to the background infinite cycle-trace product times
   `Complex.exp (((q : ℂ) ^ 2 - 1) * γ * x)`.
+* `TauCeti.TypeAHeckeAlgebra.tendsto_atomicTrace_dust_cycleWord_of_sq_eq_one` and
+  `TauCeti.TypeAHeckeAlgebra.tendsto_countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one`: the
+  coefficientwise pure-dust and mixed-dust limits at `Q = 1`.
 
 ## References
 
@@ -72,6 +78,40 @@ theorem tendsto_atomicTrace_dust_generating_function (b : Bool) (q : ℂˣ) (γ 
     Fintype.card_fin]
   cases b <;> · simp only [Bool.false_eq_true, ↓reduceIte]; congr 1; congr 1 <;> ring
 
+/-- **Pure-dust coefficientwise limit at `Q = 1`:** splitting weight `γ` across `N` letters of
+weight `γ / N` contributes `γ` in degree `1` (`m = 0`) and `0` in higher degrees (`m ≥ 1`). -/
+theorem tendsto_atomicTrace_dust_cycleWord_of_sq_eq_one {𝕜 : Type*} [RCLike 𝕜]
+    (b : Bool) (q : 𝕜ˣ) (hq : (q : 𝕜) ^ 2 = 1) (γ : 𝕜) (m : ℕ) :
+    Tendsto (fun N : ℕ ↦
+        atomicTrace (fun _ : Fin N ↦ b = true) q (fun _ ↦ γ / N) (m + 1) (cycleWord q (m + 1)))
+      atTop (𝓝 (if m = 0 then γ else 0)) := by
+  have hrewrite : ∀ᶠ N : ℕ in atTop,
+      atomicTrace (fun _ : Fin N ↦ b = true) q (fun _ ↦ γ / N) (m + 1) (cycleWord q (m + 1)) =
+        (if m = 0 then γ else
+          (if b = true then (1 : 𝕜) else -1) ^ m * γ ^ (m + 1) * ((N : 𝕜)⁻¹) ^ m) := by
+    filter_upwards [eventually_ge_atTop 1] with N hN
+    have hN0 : (N : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+    rw [atomicTrace_cycleWord_of_sq_eq_one _ q hq, Finset.sum_const, Finset.card_univ,
+      Fintype.card_fin, nsmul_eq_mul]
+    rcases m with _ | m
+    · simp [mul_div_cancel₀ _ hN0]
+    · simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte, div_eq_mul_inv,
+        mul_pow, pow_succ' (N : 𝕜)⁻¹ (m + 1)]
+      linear_combination (if b = true then (1 : 𝕜) else -1) ^ (m + 1) *
+        γ ^ (m + 2) * (N : 𝕜)⁻¹ ^ (m + 1) * mul_inv_cancel₀ hN0
+  refine Tendsto.congr' (EventuallyEq.symm hrewrite) ?_
+  rcases m with _ | m
+  · simp only [↓reduceIte]
+    exact tendsto_const_nhds
+  · simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte]
+    have hinv : Tendsto (fun N : ℕ ↦ ((N : 𝕜)⁻¹)) atTop (𝓝 0) := by
+      have hreal : Tendsto (fun N : ℕ ↦ (N : ℝ)⁻¹) atTop (𝓝 0) :=
+        tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
+      simpa [Function.comp_def, map_inv₀, RCLike.ofReal_natCast] using
+        ((RCLike.continuous_ofReal (K := 𝕜)).tendsto 0).comp hreal
+    simpa using (hinv.pow (m + 1)).const_mul
+      ((if b = true then (1 : 𝕜) else -1) ^ (m + 1) * γ ^ (m + 2))
+
 /-- Sign predicate on the lexicographic sum `ι ⊕ₗ Fin N`, extending `pos : ι → Prop` by `N`
 dust letters of sign `b : Bool`. -/
 def dustPos {ι : Type*} (pos : ι → Prop) (b : Bool) (N : ℕ) (a : ι ⊕ₗ Fin N) : Prop :=
@@ -95,12 +135,53 @@ theorem dustPos_inl {ι : Type*} (pos : ι → Prop) (b : Bool) (N : ℕ) (i : �
 theorem dustPos_inr {ι : Type*} (pos : ι → Prop) (b : Bool) (N : ℕ) (k : Fin N) :
     dustPos pos b N (Sum.inrₗ k) ↔ b = true := Iff.rfl
 
-/-- Augmenting an absolutely summable weight family `p : ι → ℂ` with `N` dust letters of weight
+/-- Augmenting an absolutely summable weight family `p : ι → K` with `N` dust letters of weight
 `γ / N` remains absolutely summable on `ι ⊕ₗ Fin N`. -/
-theorem summable_norm_sum_elim_ofLex {ι : Type*} {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖)
-    (γ : ℂ) (N : ℕ) :
+theorem summable_norm_sum_elim_ofLex {K ι : Type*} [NormedField K] {p : ι → K}
+    (hp : Summable fun a ↦ ‖p a‖) (γ : K) (N : ℕ) :
     Summable fun a : ι ⊕ₗ Fin N ↦ ‖Sum.elim p (fun _ ↦ γ / N) (ofLex a)‖ :=
   toLex.symm.summable_iff.mp <| Summable.sum _ hp (hasSum_fintype _).summable
+
+/-- Splitting identity for the countable cycle-word trace of a background augmented by `N` dust
+letters at `Q = 1`. -/
+private theorem countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one {K ι : Type*}
+    [NormedField K] [CompleteSpace K] [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
+    (b : Bool) (q : Kˣ) (hq : (q : K) ^ 2 = 1) (p : ι → K) (hp : Summable fun a ↦ ‖p a‖)
+    (γ : K) (N m : ℕ) :
+    countableAtomicTrace (dustPos pos b N) q (fun a ↦ Sum.elim p (fun _ ↦ γ / N) (ofLex a))
+        (summable_norm_sum_elim_ofLex hp γ N) (m + 1) (cycleWord q (m + 1)) =
+      (∑' a, (if pos a then (1 : K) else -1) ^ m * p a ^ (m + 1)) +
+        atomicTrace (fun _ : Fin N ↦ b = true) q (fun _ ↦ γ / N) (m + 1) (cycleWord q (m + 1)) := by
+  rw [countableAtomicTrace_cycleWord_of_sq_eq_one (dustPos pos b N) q hq,
+    atomicTrace_cycleWord_of_sq_eq_one (fun _ : Fin N ↦ b = true) q hq]
+  let f : ι → K := fun a ↦ (if pos a then (1 : K) else -1) ^ m * p a ^ (m + 1)
+  let g : Fin N → K := fun _ ↦ (if b = true then (1 : K) else -1) ^ m * (γ / N) ^ (m + 1)
+  have hbg : Summable f := (summable_signed_pow_mul_pow pos hp m).of_norm
+  have hsum : HasSum (fun a : ι ⊕ₗ Fin N ↦
+      (if dustPos pos b N a then (1 : K) else -1) ^ m *
+        Sum.elim p (fun _ ↦ γ / N) (ofLex a) ^ (m + 1))
+      ((∑' a, f a) + ∑ k : Fin N, g k) :=
+    toLex.hasSum_iff.mp ((HasSum.sum (f := Sum.elim f g) hbg.hasSum
+      (hasSum_fintype g)).congr_fun fun s ↦ by
+      cases s <;> simp only [Function.comp_apply, ofLex_toLex, Sum.elim_inl, Sum.elim_inr,
+        dustPos_inl, dustPos_inr, f, g])
+  exact hsum.tsum_eq
+
+/-- **Mixed atomic-and-dust coefficientwise limit at `Q = 1`:** augmenting a countable atomic
+background `(ι, pos, p)` by `N` dust letters of sign `b` and weight `γ / N` converges as `N → ∞`
+in degree `m + 1` to the background signed `(m + 1)`-th power sum plus `γ` when `m = 0` and `0`
+otherwise. -/
+theorem tendsto_countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one {𝕜 : Type*} [RCLike 𝕜]
+    {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] (b : Bool) (q : 𝕜ˣ)
+    (hq : (q : 𝕜) ^ 2 = 1) (p : ι → 𝕜) (hp : Summable fun a ↦ ‖p a‖) (γ : 𝕜) (m : ℕ) :
+    Tendsto (fun N : ℕ ↦
+        countableAtomicTrace (dustPos pos b N) q (fun a ↦ Sum.elim p (fun _ ↦ γ / N) (ofLex a))
+          (summable_norm_sum_elim_ofLex hp γ N) (m + 1) (cycleWord q (m + 1)))
+      atTop
+      (𝓝 ((∑' a, (if pos a then (1 : 𝕜) else -1) ^ m * p a ^ (m + 1)) +
+        if m = 0 then γ else 0)) :=
+  (tendsto_const_nhds.add (tendsto_atomicTrace_dust_cycleWord_of_sq_eq_one b q hq γ m)).congr
+    fun N ↦ (countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one pos b q hq p hp γ N m).symm
 
 /-- **Mixed atomic-and-dust cycle-trace generating limit.** Augmenting a countable atomic
 background `(ι, pos, p)` by `N` dust letters of sign `b` and weight `γ / N` converges as `N → ∞`
@@ -165,11 +246,11 @@ theorem tendsto_countableAtomicTrace_add_dust_generating_function {ι : Type*} [
     refine toLex.hasProd_iff.mp ?_
     refine (HasProd.sum (f := Sum.elim f (fun _ ↦ d)) hbg_prod hd_prod).congr_fun fun s ↦ ?_
     rcases s with i | k
-    · change (if dustPos pos b N (Sum.inlₗ i) then _ else _) = f i
-      simp [f, Sum.elim_inl]
-    · change (if dustPos pos b N (Sum.inrₗ k) then _ else _) = d
-      cases b <;> · simp only [d, Sum.elim_inr, dustPos_inr, Bool.false_eq_true, ↓reduceIte,
-        ofLex_toLex]; ring_nf
+    · simp only [Function.comp_apply, ofLex_toLex, Sum.elim_inl, dustPos_inl, f]
+    · cases b <;>
+        simp only [Function.comp_apply, ofLex_toLex, Sum.elim_inr, dustPos_inr,
+          Bool.false_eq_true, ↓reduceIte, d] <;>
+        ring_nf
   exact hsum_prod.unique hprodN
 
 end TauCeti.TypeAHeckeAlgebra

@@ -60,7 +60,8 @@ Positivity is not considered: everything here is algebraic, over any commutative
 * `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_eq_of_forall_T`: a map of Hecke algebras and a
   linear map of word spaces intertwining the representations on generators intertwine them
   everywhere.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_strictMono_single_apply`: alphabet embedding invariance
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_lmapDomain_strictMono` and
+  `TauCeti.TypeAHeckeAlgebra.signedChecked_strictMono_single_apply`: alphabet embedding invariance
   under strictly monotone sign-preserving maps.
 * `TauCeti.TypeAHeckeAlgebra.signedChecked_strandIncl_mul_T_last_single_snoc_apply`: the diagonal
   matrix entry of `strandIncl x * T n` at a `Fin.snoc` word.
@@ -161,20 +162,27 @@ theorem signedChecked_comp_eq_of_forall_T {ι' : Type*} [LinearOrder ι'] {pos' 
     rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
       LinearMap.comp_assoc, hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
 
-/-- **Alphabet embedding invariance of `signedChecked`** under strictly monotone sign-preserving
+/-- **Alphabet embedding intertwining of `signedChecked`** under strictly monotone sign-preserving
 maps `g : ι' → ι`. -/
+theorem signedChecked_comp_lmapDomain_strictMono {ι' : Type*} [LinearOrder ι']
+    (pos' : ι' → Prop) [DecidablePred pos'] {g : ι' → ι} (hg : StrictMono g)
+    (hpos : ∀ a, pos (g a) ↔ pos' a) (x : TypeAHeckeAlgebra R q n) :
+    (signedChecked pos q x).comp (lmapDomain R R (fun v : Fin n → ι' ↦ g ∘ v)) =
+      (lmapDomain R R (fun v : Fin n → ι' ↦ g ∘ v)).comp (signedChecked pos' q x) := by
+  refine signedChecked_comp_eq_of_forall_T pos q (AlgHom.id R _) _ (fun i ↦ ?_) x
+  rw [AlgHom.id_apply, signedChecked_T, signedChecked_T, LinearMap.smul_comp,
+    LinearMap.comp_smul, signedCheckedR_comp_lmapDomain_strictMono pos pos' (q : R) hg hpos]
+
+/-- **Alphabet embedding invariance of `signedChecked`** on matrix entries under strictly monotone
+sign-preserving maps `g : ι' → ι`. -/
 theorem signedChecked_strictMono_single_apply {ι' : Type*} [LinearOrder ι']
     (pos' : ι' → Prop) [DecidablePred pos'] {g : ι' → ι} (hg : StrictMono g)
     (hpos : ∀ a, pos (g a) ↔ pos' a) (x : TypeAHeckeAlgebra R q n) (w u : Fin n → ι') :
     signedChecked pos q x (single (g ∘ w) 1) (g ∘ u) =
       signedChecked pos' q x (single w 1) u := by
-  set L := lmapDomain R R (fun v : Fin n → ι' ↦ g ∘ v)
-  have hcomp : (signedChecked pos q x).comp L = L.comp (signedChecked pos' q x) := by
-    refine signedChecked_comp_eq_of_forall_T pos q (AlgHom.id R _) L (fun i ↦ ?_) x
-    rw [AlgHom.id_apply, signedChecked_T, signedChecked_T, LinearMap.smul_comp,
-      LinearMap.comp_smul, signedCheckedR_comp_lmapDomain_strictMono pos pos' (q : R) hg hpos]
-  have hw := LinearMap.congr_fun hcomp (single w 1)
-  simp only [LinearMap.coe_comp, comp_apply, L, lmapDomain_apply, mapDomain_single] at hw
+  have hw := LinearMap.congr_fun
+    (signedChecked_comp_lmapDomain_strictMono pos q pos' hg hpos x) (single w 1)
+  simp only [LinearMap.coe_comp, comp_apply, lmapDomain_apply, mapDomain_single] at hw
   rw [hw, mapDomain_apply_of_injective hg.injective.comp_left]
 
 /-- The action of an element after adding an uncrossed last strand is its original action with
@@ -358,6 +366,18 @@ theorem atomicTrace_eq_ocneanuTrace {z : R} (hp : ∑ a, p a = 1)
     (fun _ _ ↦ by rw [atomicTrace_strandIncl, hp, mul_one]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ ↦ atomicTrace_strandIncl_mul_T_last pos q p hz) n x
 
+omit [LinearOrder ι] [Fintype ι] in
+/-- If `w : Fin n → ι` is not in the range of `(Subtype.val ∘ ·)` on
+`Fin n → {a : ι // P a}` and `p` vanishes outside `P`, then the product weight `∏ i, p (w i)` is
+zero. -/
+theorem prod_eq_zero_of_notMem_range_subtype (P : ι → Prop)
+    (hp : ∀ a, ¬ P a → p a = 0) {w : Fin n → ι}
+    (hw : w ∉ Set.range (fun (u : Fin n → {a : ι // P a}) ↦ Subtype.val ∘ u)) :
+    ∏ i, p (w i) = 0 := by
+  have hnot : ¬ ∀ i, P (w i) := fun hP ↦ hw ⟨fun i ↦ ⟨w i, hP i⟩, rfl⟩
+  obtain ⟨i, hi⟩ := not_forall.mp hnot
+  exact Finset.prod_eq_zero (Finset.mem_univ i) (hp (w i) hi)
+
 omit [Fintype ι] in
 /-- Restricting the alphabet of a finite atomic model to a predicate outside which all weights
 vanish does not change `atomicTrace`. -/
@@ -373,10 +393,8 @@ theorem atomicTrace_subtype_eq_of_eq_zero [Finite ι] (P : ι → Prop)
         signedChecked pos q x (single w 1) w * ∏ i, p (w i)) =
       ∑ w : Fin n → ι, signedChecked pos q x (single w 1) w * ∏ i, p (w i) := by
     refine Finset.sum_subset (Finset.subset_univ _) fun w _ hw ↦ ?_
-    have hnot : ¬ ∀ i, P (w i) := fun hP ↦
-      hw (Finset.mem_image.mpr ⟨fun i ↦ ⟨w i, hP i⟩, Finset.mem_univ _, rfl⟩)
-    obtain ⟨i, hi⟩ := not_forall.mp hnot
-    rw [Finset.prod_eq_zero (Finset.mem_univ i) (hp (w i) hi), mul_zero]
+    rw [prod_eq_zero_of_notMem_range_subtype p P hp fun ⟨u, hu⟩ ↦
+      hw (Finset.mem_image.mpr ⟨u, Finset.mem_univ _, hu⟩), mul_zero]
   rw [← hsub, Finset.sum_image (Subtype.val_injective.comp_left.injOn)]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   rw [signedChecked_strictMono_single_apply pos q (fun a : {a : ι // P a} ↦ pos a)
