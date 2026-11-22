@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 
 /-!
@@ -129,8 +130,8 @@ unitor `R ⊗ R ≅ R` (`TopCat.singularKunnethTotalHomologyIso_hom`). -/
 def singularKunnethTotalHomologyIso (n : ℕ) :
     ((singularKunnethBicomplex X Y R).total (ComplexShape.down ℕ)).homology n ≅
       ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).obj (X ⊗ Y) :=
-  -- the unit `𝟙_ (ModuleCat R)` is `R`, so the singular chain modules are flat
-  have : Module.Flat R (𝟙_ (ModuleCat.{u} R)) := inferInstanceAs (Module.Flat R R)
+  -- the unit `𝟙_ (ModuleCat R)` is projective, so the singular chain modules are flat
+  have : Module.Flat R (𝟙_ (ModuleCat.{u} R)) := Module.Flat.of_projective
   have := quasiIso_kunnethBicomplexAugmentation
     ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
     ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))

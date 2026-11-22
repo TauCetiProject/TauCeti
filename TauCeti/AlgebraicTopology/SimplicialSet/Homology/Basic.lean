@@ -20,10 +20,11 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 This file records how the coproduct inclusion associated to a simplex behaves under the
 simplicial operators and under a morphism of coefficient objects, and how the degreewise
 components of the chain maps induced by maps of simplicial sets compose with each other and with
-changes of coefficients. It also records that simplicial chain modules with semisimple
-coefficients are semisimple, those with flat coefficients are flat, and those with projective
-coefficients are projective, both as modules and, for coefficients in any preadditive category
-with coproducts, as objects of that category.
+changes of coefficients. It also records that, for modules over a ring, simplicial chain modules
+with semisimple coefficients are semisimple and, over a commutative ring, those with flat
+coefficients are flat. Simplicial chains with projective coefficients are projective, both as
+modules and, for coefficients in any preadditive category with coproducts, as objects of that
+category.
 
 For a module `V` over a ring `k`, the simplicial `n`-chains
 `(X.chainComplex (ModuleCat.of k V)).X n` are the finitely supported functions from the
