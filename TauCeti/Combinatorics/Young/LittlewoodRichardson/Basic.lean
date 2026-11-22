@@ -173,8 +173,7 @@ theorem card_eq (T : LRTableau inner outer μ) : outer.card = inner.card + μ.ca
     have hs : T.val.content.support ⊆ Finset.range (μ.colLen 0) := by
       intro k hk
       rw [Finsupp.mem_support_iff, T.property.1] at hk
-      exact Finset.mem_range.mpr
-        (not_le.mp (mt YoungDiagram.rowLen_eq_zero_iff.mpr hk))
+      exact Finset.mem_range.mpr (YoungDiagram.rowLen_pos_iff.mp (Nat.pos_of_ne_zero hk))
     rw [Finsupp.sum_of_support_subset _ hs _ fun _ _ => rfl, T.property.1]
     exact (YoungDiagram.card_eq_sum_range_rowLen μ le_rfl).symm
   have := T.val.sum_content

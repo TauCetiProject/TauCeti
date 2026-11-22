@@ -60,11 +60,16 @@ public section
 
 namespace YoungDiagram
 
+/-- A row of a Young diagram is nonempty exactly when it is one of the rows of the diagram, that
+is, when it lies above the end of the first column. -/
+theorem rowLen_pos_iff {μ : YoungDiagram} {i : ℕ} : 0 < μ.rowLen i ↔ i < μ.colLen 0 :=
+  -- both sides say that the cell `(i, 0)` lies in the diagram
+  mem_iff_lt_rowLen.symm.trans mem_iff_lt_colLen
+
 /-- A row of a Young diagram is empty exactly when it lies past the last row, that is, at or
 below the end of the first column. -/
 theorem rowLen_eq_zero_iff {μ : YoungDiagram} {i : ℕ} : μ.rowLen i = 0 ↔ μ.colLen 0 ≤ i := by
-  -- both sides say that the cell `(i, 0)` is missing from the diagram
-  rw [← Nat.not_lt, ← mem_iff_lt_colLen, mem_iff_lt_rowLen, Nat.not_lt, Nat.le_zero]
+  rw [← Nat.not_lt, ← rowLen_pos_iff, Nat.not_lt, Nat.le_zero]
 
 /-- The row of a cell is one of the rows of the diagram. -/
 theorem lt_colLen_zero_of_mem {μ : YoungDiagram} {i j : ℕ} (h : (i, j) ∈ μ) :
