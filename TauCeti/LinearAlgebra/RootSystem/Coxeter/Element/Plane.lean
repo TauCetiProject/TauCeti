@@ -144,18 +144,22 @@ private theorem coxeterPlane_linearIndependent [Nontrivial b.support]
     (mul_ne_zero hsinθ.ne' (hx i_t).ne')
   intro k; fin_cases k <;> assumption
 
+private theorem cos_eq_one_of_planePoint_eq_zero [Nontrivial b.support]
+    (hconn : (diagramGraph b.cartanMatrix).Preconnected) {θ : ℝ} {x : b.support → ℝ}
+    (hx : ∀ i, 0 < x i) (hsinθ : 0 < Real.sin θ) {t : ℝ}
+    (ht : b.planePoint col θ x t = b.planePoint col θ x 0) : Real.cos t = 1 := by
+  have hcomb : (Real.cos t - 1) • b.planeBasis₁ col θ x +
+      Real.sin t • b.planeBasis₂ col θ x = 0 := by
+    have h0 : b.planePoint col θ x t - b.planePoint col θ x 0 = 0 := sub_eq_zero.mpr ht
+    rw [← h0]; simp [planePoint, sub_smul]; abel
+  have hg := Fintype.linearIndependent_iff.mp
+    (coxeterPlane_linearIndependent b col hconn hx hsinθ) ![Real.cos t - 1, Real.sin t]
+  rw [Fin.sum_univ_two] at hg
+  exact sub_eq_zero.mp (hg hcomb 0)
+
 variable {κ : ℝ} {x : b.support → ℝ}
   (hxC : x ᵥ* b.cartanMatrix.map (Int.castRingHom ℝ) = κ • x)
 include hxC
-
-private theorem colorClassMatrix_mulVec_colorVec [DecidableEq ι] (s : Bool) :
-    let C := (b.colorClassMatrix col s).map (Int.castRingHom ℝ)
-    C *ᵥ b.colorVec col x s = -b.colorVec col x s ∧
-      C *ᵥ b.colorVec col x (!s) = b.colorVec col x (!s) + (2 - κ) • b.colorVec col x s :=
-  ⟨by unfold colorVec; simpa [two_smul, sub_eq_add_neg] using
-      b.colorClassMatrix_mulVec_ite_color col hxC s s,
-    by unfold colorVec; simpa [Bool.not_eq_self, sub_eq_add_neg, ← neg_smul] using
-      b.colorClassMatrix_mulVec_ite_color col hxC s (!s)⟩
 
 variable {θ : ℝ} (hμ_eq : 2 - κ = 2 * Real.cos θ)
 include hμ_eq
@@ -169,42 +173,56 @@ private theorem coxeterPlane_rotation [DecidableEq ι] :
         (((b.colorClassMatrix col false * b.colorClassMatrix col true).map
           (Int.castRingHom ℝ)) ^ k) *ᵥ b.planePoint col θ x φ =
             b.planePoint col θ x (φ + 2 * (k : ℝ) * θ) := by
-  set C₁ := (b.colorClassMatrix col true).map (Int.castRingHom ℝ)
-  set C₂ := (b.colorClassMatrix col false).map (Int.castRingHom ℝ)
-  obtain ⟨hC₁t, hC₁f⟩ := colorClassMatrix_mulVec_colorVec b col hxC true
-  obtain ⟨hC₂f, hC₂t⟩ := colorClassMatrix_mulVec_colorVec b col hxC false
-  simp only [Bool.not_true, Bool.not_false] at hC₁f hC₂t
+  set W := (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ)
+  set Winv := (b.colorClassMatrix col false * b.colorClassMatrix col true).map (Int.castRingHom ℝ)
+  have hWt := b.bipartiteCoxeterMatrix_mulVec_ite_color_true col hxC
+  have hWf := b.bipartiteCoxeterMatrix_mulVec_ite_color_false col hxC
+  change W *ᵥ b.colorVec col x true =
+    ((2 - κ) ^ 2 - 1) • b.colorVec col x true + (2 - κ) • b.colorVec col x false at hWt
+  change W *ᵥ b.colorVec col x false =
+    -b.colorVec col x false - (2 - κ) • b.colorVec col x true at hWf
   have hsin2 : Real.sin θ ^ 2 = 1 - Real.cos θ ^ 2 := by linarith [Real.cos_sq_add_sin_sq θ]
-  have hC₁_e₁ : C₁ *ᵥ b.planeBasis₁ col θ x = b.planeBasis₁ col θ x := funext fun i ↦ by
-    simp only [planeBasis₁, mulVec_add, mulVec_smul, C₁, hC₁t, hC₁f, hμ_eq, Pi.add_apply,
-      Pi.smul_apply, Pi.neg_apply, smul_eq_mul]; ring
-  have hC₁_e₂ : C₁ *ᵥ b.planeBasis₂ col θ x = -b.planeBasis₂ col θ x := by
-    rw [planeBasis₂, mulVec_smul, hC₁t, smul_neg]
-  have hC₂_e₁ : C₂ *ᵥ b.planeBasis₁ col θ x =
-      Real.cos (2 * θ) • b.planeBasis₁ col θ x + Real.sin (2 * θ) • b.planeBasis₂ col θ x :=
+  have hWe₁ : W *ᵥ b.planeBasis₁ col θ x =
+      Real.cos (2 * θ) • b.planeBasis₁ col θ x - Real.sin (2 * θ) • b.planeBasis₂ col θ x :=
     funext fun i ↦ by
-      simp only [planeBasis₁, planeBasis₂, mulVec_add, mulVec_smul, C₂, hC₂t, hC₂f, hμ_eq,
-        Real.cos_two_mul, Real.sin_two_mul, Pi.add_apply, Pi.smul_apply, Pi.neg_apply, smul_eq_mul]
-      linear_combination -2 * b.colorVec col x true i * Real.cos θ * hsin2
-  have hC₂_e₂ : C₂ *ᵥ b.planeBasis₂ col θ x =
-      Real.sin (2 * θ) • b.planeBasis₁ col θ x - Real.cos (2 * θ) • b.planeBasis₂ col θ x :=
+      simp only [planeBasis₁, planeBasis₂, mulVec_add, mulVec_smul, hWt, hWf, hμ_eq,
+        Real.cos_two_mul, Real.sin_two_mul, Pi.add_apply, Pi.sub_apply, Pi.neg_apply,
+        Pi.smul_apply, smul_eq_mul]
+      linear_combination 2 * b.colorVec col x true i * Real.cos θ * hsin2
+  have hWe₂ : W *ᵥ b.planeBasis₂ col θ x =
+      Real.sin (2 * θ) • b.planeBasis₁ col θ x + Real.cos (2 * θ) • b.planeBasis₂ col θ x :=
     funext fun i ↦ by
-      simp only [planeBasis₁, planeBasis₂, mulVec_smul, C₂, hC₂t, hμ_eq, Real.cos_two_mul,
-        Real.sin_two_mul, Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring
-  have hW : (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ) = C₁ * C₂ :=
-    (congrArg (Matrix.map · _) (b.bipartiteCoxeterMatrix_def col)).trans (Matrix.map_mul ..)
-  refine ⟨by simp only [hW, ← mulVec_mulVec, hC₂_e₁, mulVec_add, mulVec_smul, hC₁_e₁, hC₁_e₂,
-      smul_neg, sub_eq_add_neg], by simp only [hW, ← mulVec_mulVec, hC₂_e₂, mulVec_sub,
-      mulVec_smul, hC₁_e₁, hC₁_e₂, smul_neg, sub_neg_eq_add], fun k φ ↦ ?_⟩
+      simp only [planeBasis₁, planeBasis₂, mulVec_smul, hWt, hμ_eq, Real.cos_two_mul,
+        Real.sin_two_mul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+      ring
+  have hWinvW : Winv * W = 1 := by
+    rw [← Matrix.map_mul, bipartiteCoxeterMatrix_def, mul_assoc (b.colorClassMatrix col false),
+      ← mul_assoc (b.colorClassMatrix col true), colorClassMatrix_mul_self, one_mul,
+      colorClassMatrix_mul_self, Matrix.map_one _ (map_zero _) (map_one _)]
+  have h1 : Winv *ᵥ (Real.cos (2 * θ) • b.planeBasis₁ col θ x -
+      Real.sin (2 * θ) • b.planeBasis₂ col θ x) = b.planeBasis₁ col θ x := by
+    rw [← hWe₁, mulVec_mulVec, hWinvW, one_mulVec]
+  have h2 : Winv *ᵥ (Real.sin (2 * θ) • b.planeBasis₁ col θ x +
+      Real.cos (2 * θ) • b.planeBasis₂ col θ x) = b.planeBasis₂ col θ x := by
+    rw [← hWe₂, mulVec_mulVec, hWinvW, one_mulVec]
+  refine ⟨hWe₁, hWe₂, fun k φ ↦ ?_⟩
   induction k generalizing φ with
   | zero => simp [planePoint]
   | succ k ih =>
     rw [pow_succ', ← mulVec_mulVec, ih, Nat.cast_succ, show φ + 2 * ((k : ℝ) + 1) * θ =
-      (φ + 2 * (k : ℝ) * θ) + 2 * θ by ring, show (b.colorClassMatrix col false *
-      b.colorClassMatrix col true).map (Int.castRingHom ℝ) = C₂ * C₁ from Matrix.map_mul ..]
-    simp only [← mulVec_mulVec, planePoint, mulVec_add, mulVec_smul, hC₁_e₁, hC₁_e₂, smul_neg,
-      mulVec_neg, hC₂_e₁, hC₂_e₂, Real.cos_add, Real.sin_add]; ext i
-    simp only [Pi.add_apply, Pi.sub_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]; ring
+      (φ + 2 * (k : ℝ) * θ) + 2 * θ by ring]
+    set ψ := φ + 2 * (k : ℝ) * θ
+    have hcs := Real.cos_sq_add_sin_sq (2 * θ)
+    ext i
+    have hi1 := congrFun h1 i; have hi2 := congrFun h2 i
+    simp only [mulVec_sub, mulVec_add, mulVec_smul, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul] at hi1 hi2
+    simp only [planePoint, mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
+      Real.cos_add, Real.sin_add]
+    linear_combination (Real.cos ψ * Real.cos (2 * θ) - Real.sin ψ * Real.sin (2 * θ)) * hi1 +
+      (Real.sin ψ * Real.cos (2 * θ) + Real.cos ψ * Real.sin (2 * θ)) * hi2 -
+      (Real.cos ψ * (Winv *ᵥ b.planeBasis₁ col θ x) i +
+        Real.sin ψ * (Winv *ᵥ b.planeBasis₂ col θ x) i) * hcs
 
 private theorem coxeterPlane_corootEval (k : b.support) (φ : ℝ) :
     b.corootEval ℝ (k : ι) (b.planePoint col θ x φ) =
@@ -260,12 +278,9 @@ private theorem coxeterPlane_angle_eq_pi_div_orderOf [Nontrivial b.support]
         (b.actsBy_bipartiteCoxeterElement_inv col).pow h : b.ActsBy 1 _).unique b.actsBy_one
     rw [← Matrix.map_pow, h1, Matrix.map_one _ (map_zero _) (map_one _)]
   have hcos : Real.cos (2 * (h : ℝ) * θ) = 1 := by
-    have hrot := hWinv_pow h 0; rw [hWinv_h, one_mulVec] at hrot
-    simpa [sub_eq_zero] using Fintype.linearIndependent_iff.mp
-      (coxeterPlane_linearIndependent b col hconn hx hsinθ)
-      ![Real.cos (2 * (h : ℝ) * θ) - 1, Real.sin (2 * (h : ℝ) * θ)]
-      (by simpa [Fin.sum_univ_two, planePoint, sub_smul, sub_add_eq_add_sub, sub_eq_zero] using
-        hrot.symm) 0
+    have hrot := hWinv_pow h 0
+    rw [hWinv_h, one_mulVec, zero_add] at hrot
+    exact cos_eq_one_of_planePoint_eq_zero b col hconn hx hsinθ hrot.symm
   refine eq_pi_div_of_cos_two_mul_eq_one (orderOf_pos c) hθpos hcos (fun h' hh'0 hh'lt hcos' ↦ ?_)
     fun n q ⟨h0, hlt⟩ ↦ let ⟨j, hj⟩ := coxeterPlane_exists_corootEval_zero b col hxC hμ_eq hconn n q
       b.corootEval_ne_zero_of_forall_pos
@@ -428,7 +443,8 @@ private theorem exists_eigenvector_of_isConj (b : P.Base)
   obtain ⟨hv₀_ne, hW₀_eigen, hv₀_reg, hv₀_stab⟩ := hv₀; classical
   obtain ⟨u, hu⟩ := isConj_iff.mp hconj.symm; obtain ⟨lu, rfl⟩ := exists_wordProd_eq P b u
   obtain ⟨lu', hlu'⟩ := exists_wordProd_eq P b (wordProd P b lu)⁻¹
-  set U := (lu.map (reflMatrix b.cartanMatrix)).prod; have hU := b.actsBy_wordProd lu
+  set U := (lu.map (reflMatrix b.cartanMatrix)).prod
+  have hU : b.ActsBy (wordProd P b lu) U := b.actsBy_wordProd lu
   set Uinv := (lu'.map (reflMatrix b.cartanMatrix)).prod
   have hUinv : b.ActsBy (wordProd P b lu)⁻¹ Uinv := hlu' ▸ b.actsBy_wordProd lu'
   have hUinvU (x : b.support → ℂ) :
@@ -438,7 +454,7 @@ private theorem exists_eigenvector_of_isConj (b : P.Base)
   refine ⟨(U.map (Int.castRingHom ℂ)) *ᵥ v₀, fun hv0 ↦ hv₀_ne (by
       simpa only [hUinvU, mulVec_zero] using congrArg ((Uinv.map (Int.castRingHom ℂ)) *ᵥ ·) hv0),
     by rw [hW.unique (hu ▸ (hU.mul hW₀).mul hUinv), hconj.choose_spec.orderOf_eq]
-       simp only [Matrix.map_mul, ← mulVec_mulVec, hUinvU, hW₀_eigen, mulVec_smul]; rfl,
+       simp only [Matrix.map_mul, ← mulVec_mulVec, hUinvU, hW₀_eigen, mulVec_smul],
     fun j ↦ b.corootEval_weylGroupToPerm_inv hU ℂ j v₀ ▸ hv₀_reg _, fun g G hG hGv ↦ by
       simpa [mul_assoc] using congrArg (wordProd P b lu * · * (wordProd P b lu)⁻¹) <|
         hv₀_stab ((wordProd P b lu)⁻¹ * g * wordProd P b lu) (Uinv * G * U)

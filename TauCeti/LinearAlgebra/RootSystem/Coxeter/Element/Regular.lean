@@ -116,18 +116,6 @@ private theorem coroot'_colorPart_add
   simpa [Matrix.vecMul, dotProduct, mul_comm] using
     congrArg (algebraMap ℝ K) (congrFun hy j)
 
-/-- The product of the simple reflections of colour `x` negates the colour part of colour `x`,
-and adds `2 - κ` times it to the colour part of the other colour. -/
-private theorem colorClassProd_smul_colorPart
-    (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom ℝ) = κ • y) (x z : Bool) :
-    (weylCoxeterSystem P b).colorClassProd c x • colorPart P b c y z =
-      colorPart P b c y z - algebraMap ℝ K (if z = x then 2 else κ - 2) • colorPart P b c y x := by
-  classical
-  rw [colorPart, (b.actsBy_colorClassProd c x).smul_sum_map_smul_root (algebraMap ℝ K),
-    b.colorClassMatrix_mulVec_ite_color c hy x z]
-  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, map_sub, map_mul, sub_smul, mul_smul,
-    Finset.sum_sub_distrib, ← Finset.smul_sum, colorPart]
-
 /-- The bipartite Coxeter element maps the colour part `u₀` of colour `true` to
 `(λ ^ 2 - 1) u₀ + λ u₁`, where `λ = 2 - κ` and `u₁` is the colour part of colour `false`. -/
 private theorem bipartiteCoxeterElement_smul_colorPart_true
@@ -135,11 +123,11 @@ private theorem bipartiteCoxeterElement_smul_colorPart_true
     (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y true =
       (algebraMap ℝ K (2 - κ) ^ 2 - 1) • colorPart P b c y true +
         algebraMap ℝ K (2 - κ) • colorPart P b c y false := by
-  rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false true, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true true, colorClassProd_smul_colorPart hy true false]
-  simp only [Bool.true_eq_false, Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
-  module
+  classical
+  rw [colorPart, (b.actsBy_bipartiteCoxeterElement c).smul_sum_map_smul_root (algebraMap ℝ K),
+    b.bipartiteCoxeterMatrix_mulVec_ite_color_true c hy]
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, map_add, map_sub, map_pow, map_mul,
+    map_one, map_ofNat, add_smul, mul_smul, Finset.sum_add_distrib, ← Finset.smul_sum, colorPart]
 
 /-- The bipartite Coxeter element maps the colour part `u₁` of colour `false` to `-u₁ - λ u₀`,
 where `λ = 2 - κ` and `u₀` is the colour part of colour `true`. -/
@@ -147,11 +135,12 @@ private theorem bipartiteCoxeterElement_smul_colorPart_false
     (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom ℝ) = κ • y) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y false =
       -colorPart P b c y false - algebraMap ℝ K (2 - κ) • colorPart P b c y true := by
-  rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false false, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true false]
-  simp only [Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
-  module
+  classical
+  rw [colorPart, (b.actsBy_bipartiteCoxeterElement c).smul_sum_map_smul_root (algebraMap ℝ K),
+    b.bipartiteCoxeterMatrix_mulVec_ite_color_false c hy]
+  simp only [Pi.sub_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul, map_sub, map_neg, map_mul,
+    sub_smul, neg_smul, mul_smul, Finset.sum_sub_distrib, Finset.sum_neg_distrib,
+    ← Finset.smul_sum, colorPart]
 
 /-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the vector `(1 + μ) u₀ + λ u₁` of the Coxeter
 plane is an eigenvector of the bipartite Coxeter element for `μ`. -/

@@ -383,10 +383,13 @@ theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self {O : Finse
               (mapsTo_posRoots_negRoots_longestElement P b
                 ((mem_posRoots P b y).mpr (hall_pos y hy)))))
   refine ⟨?_, hnot_all_pos hOne hw₀⟩
-  obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos (hOne.map (f := (P.weylGroupToPerm w₀).toEmbedding)) (by
-    rw [show ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y by
-      simpa only [Finset.sum_map, Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root]
-        using hw₀]; exact hw₀)
+  have hsum_map :
+      ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y := by
+    rw [Finset.sum_map]
+    simp_rw [Equiv.coe_toEmbedding, ← P.weylGroup_apply_root]
+    rw [← Finset.smul_sum, hw₀]
+  obtain ⟨_, hz, hnot_pos⟩ :=
+    hnot_all_pos (hOne.map (f := (P.weylGroupToPerm w₀).toEmbedding)) (hsum_map.symm ▸ hw₀)
   obtain ⟨y, hyO, rfl⟩ := Finset.mem_map.mp hz
   exact ⟨y, hyO, by_contra fun hy_neg ↦ hnot_pos ((mem_posRoots P b _).mp
     (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))⟩

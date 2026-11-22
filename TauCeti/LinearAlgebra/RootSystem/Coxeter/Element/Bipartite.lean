@@ -20,8 +20,10 @@ Given a two-colouring `col` of the Coxeter graph of a base `b`, we construct the
 * `RootPairing.Base.colorClassMatrix`, `RootPairing.Base.bipartiteCoxeterMatrix`: integer matrices
   for the colour-class involutions and bipartite Coxeter element, with entries
   (`colorClassMatrix_apply`), involutivity (`colorClassMatrix_mul_self`), colour-part actions
-  (`corootEval_ite_color`, `colorClassMatrix_mulVec_ite_color`), and `ActsBy` relations
-  (`actsBy_colorClassProd`, `actsBy_bipartiteCoxeterElement`, `actsBy_bipartiteCoxeterElement_inv`).
+  (`corootEval_ite_color`, `colorClassMatrix_mulVec_ite_color`,
+  `bipartiteCoxeterMatrix_mulVec_ite_color_true`, `bipartiteCoxeterMatrix_mulVec_ite_color_false`),
+  and `ActsBy` relations (`actsBy_colorClassProd`, `actsBy_bipartiteCoxeterElement`,
+  `actsBy_bipartiteCoxeterElement_inv`).
 
 ## References
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2;
@@ -122,6 +124,35 @@ theorem colorClassMatrix_mulVec_ite_color {S : Type*} [CommRing S] {y : b.suppor
       rw [← b.corootEval_ite_color col hy z k, b.corootEval_coe_support]; simp [hck]]
     rcases eq_or_ne z s with rfl | hzs <;> [simp [hck]; simp [hck, hzs, hzs.symm]]
   · rcases eq_or_ne z s with rfl | hzs <;> simp [*]
+
+/-- On a left `κ`-eigenvector `y` of `b.cartanMatrix`, `b.bipartiteCoxeterMatrix col` sends the
+`true`-colour part `u₀` of `y` to `((2 - κ) ^ 2 - 1) • u₀ + (2 - κ) • u₁`. -/
+theorem bipartiteCoxeterMatrix_mulVec_ite_color_true {S : Type*} [CommRing S] {y : b.support → S}
+    {κ : S} (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom S) = κ • y) :
+    (b.bipartiteCoxeterMatrix col).map (Int.castRingHom S) *ᵥ
+        (fun i ↦ if col i = true then y i else 0) =
+      ((2 - κ) ^ 2 - 1) • (fun i ↦ if col i = true then y i else 0) +
+        (2 - κ) • (fun i ↦ if col i = false then y i else 0) := by
+  rw [b.bipartiteCoxeterMatrix_def, Matrix.map_mul, ← mulVec_mulVec,
+    b.colorClassMatrix_mulVec_ite_color col hy false true]
+  simp only [Bool.true_eq_false, ↓reduceIte, mulVec_sub, mulVec_smul,
+    b.colorClassMatrix_mulVec_ite_color col hy true true,
+    b.colorClassMatrix_mulVec_ite_color col hy true false, Bool.false_eq_true]
+  ext i; simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul]; ring
+
+/-- On a left `κ`-eigenvector `y` of `b.cartanMatrix`, `b.bipartiteCoxeterMatrix col` sends the
+`false`-colour part `u₁` of `y` to `-u₁ - (2 - κ) • u₀`. -/
+theorem bipartiteCoxeterMatrix_mulVec_ite_color_false {S : Type*} [CommRing S] {y : b.support → S}
+    {κ : S} (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom S) = κ • y) :
+    (b.bipartiteCoxeterMatrix col).map (Int.castRingHom S) *ᵥ
+        (fun i ↦ if col i = false then y i else 0) =
+      -(fun i ↦ if col i = false then y i else 0) -
+        (2 - κ) • (fun i ↦ if col i = true then y i else 0) := by
+  rw [b.bipartiteCoxeterMatrix_def, Matrix.map_mul, ← mulVec_mulVec,
+    b.colorClassMatrix_mulVec_ite_color col hy false false]
+  simp only [↓reduceIte, mulVec_sub, mulVec_smul,
+    b.colorClassMatrix_mulVec_ite_color col hy true false, Bool.false_eq_true]
+  ext i; simp only [Pi.sub_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]; ring
 
 variable [P.IsReduced]
 
