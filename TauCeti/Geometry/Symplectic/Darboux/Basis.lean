@@ -46,7 +46,10 @@ In a Darboux basis, pairing with the basis vectors reads off the coordinates of 
 Conversely, a family satisfying the Darboux relations has Gram matrix `Matrix.J` after
 relabelling (`TauCeti.SymplecticForm.apply_darbouxIndexEquiv_symm_eq_J_iff`), so it is linearly
 independent (`TauCeti.SymplecticForm.linearIndependent_of_apply_fst_snd`), and `finrank V` such
-vectors form a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_coe_eq`).
+vectors form a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_coe_eq`). In
+particular, pairs `(xᵢ, yᵢ)` with `ω(xᵢ, yᵢ) = 1` taken from pairwise `ω`-orthogonal subspaces
+form a Darboux basis when there are `dim V / 2` of them
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_of_forall_mem`).
 
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
@@ -237,6 +240,31 @@ theorem exists_isDarbouxBasis_coe_eq [FiniteDimensional ℝ V] (hn : finrank ℝ
   refine ⟨basisOfLinearIndependentOfCardEqFinrank' v hv hcard, ⟨?_, ?_, ?_⟩,
     coe_basisOfLinearIndependentOfCardEqFinrank' v hv hcard⟩ <;>
     simpa only [coe_basisOfLinearIndependentOfCardEqFinrank']
+
+/-- **Darboux bases from orthogonal pairs.** Pairs `(xₖ, yₖ)` with `ω(xₖ, yₖ) = 1`, taken from
+pairwise `ω`-orthogonal subspaces `Gₖ`, form a Darboux basis `(x₁, y₁, …, xₙ, yₙ)` when
+`finrank ℝ V = n * 2`. -/
+theorem exists_isDarbouxBasis_of_forall_mem [FiniteDimensional ℝ V] (hn : finrank ℝ V = n * 2)
+    {G : Fin n → Submodule ℝ V} (hG : Pairwise fun k l ↦ ∀ v ∈ G k, ∀ w ∈ G l, ω v w = 0)
+    {x y : Fin n → V} (hx : ∀ k, x k ∈ G k) (hy : ∀ k, y k ∈ G k)
+    (hxy : ∀ k, ω (x k) (y k) = 1) :
+    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧ (∀ k, b (k, 0) = x k) ∧
+      ∀ k, b (k, 1) = y k := by
+  obtain ⟨b, hb, hbf⟩ := exists_isDarbouxBasis_coe_eq (ω := ω) hn
+    (v := fun i ↦ ![x i.1, y i.1] i.2)
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · exact ω.self_eq_zero _
+      · exact hG hkl _ (hx k) _ (hx l))
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · exact ω.self_eq_zero _
+      · exact hG hkl _ (hy k) _ (hy l))
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · simpa using hxy k
+      · simpa [hkl] using hG hkl _ (hx k) _ (hy l))
+  exact ⟨b, hb, fun k ↦ by simp [hbf], fun k ↦ by simp [hbf]⟩
 
 /-- **Darboux bases have unit relative determinant**: the change of basis between two Darboux
 bases of `(V, ω)` is a symplectic matrix, of determinant `1`. -/

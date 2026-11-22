@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Complexification.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # Native density-valued Hom test coefficients
@@ -74,12 +75,9 @@ theorem exists_nonzero_density_coefficient : ∃ s : BundleTest 𝓘(ℝ, ℝ) (
     (V := fun x : ℝ ↦ ℂ ⊗[ℝ] (Bundle.Trivial ℝ ℝ x →L[ℝ] DensityBundle 𝓘(ℝ, ℝ) ℝ x))
     0 (1 ⊗ₜ[ℝ] t)
   refine ⟨s, ?_⟩
-  rw [BundleTest.homComplexificationCLE_apply, hs]
-  rw [bundleHomComplexificationEquiv_coe]
-  change homComplexificationLinearEquiv (1 ⊗ₜ[ℝ] t) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0
+  rw [BundleTest.homComplexificationCLE_apply_apply, hs]
   rw [homComplexificationLinearEquiv_tmul_apply_tmul]
   simp only [one_mul, t, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
-  change (1 : ℂ) ⊗ₜ[ℝ] ρ ≠ 0
   intro h
   apply hρ
   have h' := congrArg (realPart (DensityBundle 𝓘(ℝ, ℝ) ℝ 0)) h
@@ -108,5 +106,45 @@ example :
   let _ := ChartedSpace.empty ℝ Empty
   exact BundleTest.homComplexificationCLE (I := 𝓘(ℝ, ℝ)) (M := Empty)
     (F := ℝ) (G := ℝ) (V := Bundle.Trivial Empty ℝ) (L := Bundle.Trivial Empty ℝ)
+
+/-- A non-Hom use of generic native transport sends an actual real test value `1` to `-1`. -/
+example : ∃ T : BundleTest 𝓘(ℝ, ℝ) ℝ (Bundle.Trivial ℝ ℝ) ≃L[ℝ]
+      BundleTest 𝓘(ℝ, ℝ) ℝ (Bundle.Trivial ℝ ℝ),
+    ∃ s : BundleTest 𝓘(ℝ, ℝ) ℝ (Bundle.Trivial ℝ ℝ), T s 0 = -1 := by
+  let e := fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x
+  let U : ℝ → TopologicalSpace.Opens ℝ := fun x ↦ ⟨(e x).baseSet, (e x).open_baseSet⟩
+  let he : ∀ i, (U i : Set ℝ) ⊆ (e i).baseSet := fun _ ↦ Subset.rfl
+  have hcover : ∀ x : ℝ, ∃ i, x ∈ U i := fun x ↦
+    ⟨x, mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x⟩
+  let φ := fun x : ℝ ↦ (LinearEquiv.neg ℝ : Bundle.Trivial ℝ ℝ x ≃ₗ[ℝ] Bundle.Trivial ℝ ℝ x)
+  have hf : ContMDiff ((𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ) ∞
+      (fun p : TotalSpace ℝ (Bundle.Trivial ℝ ℝ) ↦ p.snd) :=
+    ((Bundle.Trivial.contMDiff_mk_iff
+      (f := fun p : TotalSpace ℝ (Bundle.Trivial ℝ ℝ) ↦ p.snd)).mp contMDiff_id).2
+  have hφ : ContMDiff ((𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)) ((𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)) ∞
+      (fun p : TotalSpace ℝ (Bundle.Trivial ℝ ℝ) ↦
+        (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace ℝ (Bundle.Trivial ℝ ℝ))) :=
+    Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _, hf.neg⟩
+  have hφ' : ContMDiff ((𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)) ((𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)) ∞
+      (fun p : TotalSpace ℝ (Bundle.Trivial ℝ ℝ) ↦
+        (⟨p.proj, (φ p.proj).symm p.snd⟩ : TotalSpace ℝ (Bundle.Trivial ℝ ℝ))) := by
+    simpa only [φ, LinearEquiv.symm_neg] using hφ
+  have hsec : mapEquiv (I := 𝓘(ℝ, ℝ)) (n := ∞) φ hφ hφ' = LinearEquiv.neg ℝ := by
+    ext s x
+    simp only [mapEquiv_apply, φ, LinearEquiv.neg_apply, ContMDiffSection.coe_neg, Pi.neg_apply]
+  let T := BundleTest.mapCLE (I := 𝓘(ℝ, ℝ)) e e U he he hcover φ hφ hφ'
+    (fun _ ↦ -ContinuousLinearMap.id ℝ ℝ) (fun _ ↦ -ContinuousLinearMap.id ℝ ℝ)
+    (by
+      intro i s x
+      rw [hsec, LinearEquiv.neg_apply, map_neg]
+      rfl)
+    (by
+      intro i s x
+      rw [hsec, LinearEquiv.symm_neg, LinearEquiv.neg_apply, map_neg]
+      rfl)
+  obtain ⟨s, hs⟩ := BundleTest.exists_apply_eq (I := 𝓘(ℝ, ℝ)) (F := ℝ)
+    (V := Bundle.Trivial ℝ ℝ) 0 1
+  refine ⟨T, s, ?_⟩
+  simp only [T, BundleTest.mapCLE_apply, hs, φ, LinearEquiv.neg_apply]
 
 end TauCeti.Examples.HomTestCoefficients
