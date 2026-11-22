@@ -11,12 +11,11 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Tower
 /-!
 # Stabilization, regularity, and degeneration of spectral sequences
 
-This file defines the pointwise and global vanishing conditions on the differentials of a spectral
-sequence `E : SpectralSequence C c r₀` and relates them to the cycle and boundary towers of
-`TauCeti.Algebra.Homology.SpectralSequence.Tower`:
+This file defines the regularity and degeneration conditions on the differentials of a spectral
+sequence `E : SpectralSequence C c r₀` and relates stabilization (`StabilizesAt` and
+`pageXIsoOfStabilizesAt`, defined in `TauCeti.Algebra.Homology.SpectralSequence.Degeneration`) to
+the cycle and boundary towers of `TauCeti.Algebra.Homology.SpectralSequence.Tower`:
 
-* `CategoryTheory.SpectralSequence.StabilizesAt`: both the leaving and entering differentials at a
-  position `pq` vanish on all pages `r ≥ s`.
 * `CategoryTheory.SpectralSequence.IsRegularAt`: the leaving differentials at `pq` vanish on all
   sufficiently large pages, equivalently the cycle tower `Z_r(pq)` is eventually constant
   (`isRegularAt_iff_eventually_cyclesSubobject_eq`).
@@ -25,10 +24,9 @@ sequence `E : SpectralSequence C c r₀` and relates them to the cycle and bound
   (`isCoregularAt_iff_eventually_boundariesSubobject_eq`).
 * `CategoryTheory.SpectralSequence.DegeneratesAt`: every differential on every page `r ≥ s`
   vanishes; this implies stabilization at every position from page `s`.
-* `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt`: when `E` stabilizes at `pq` from page
-  `s`, the composite of homology isomorphisms gives canonical isomorphisms
-  `(E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq` for `r ≥ s`, compatible with
-  composition, subquotient presentations, and morphisms of spectral sequences.
+* Compatibility of `CategoryTheory.SpectralSequence.pageXIsoOfStabilizesAt` with composition,
+  subquotient presentations, and morphisms of spectral sequences (`pageXIsoOfStabilizesAt_trans`,
+  `pageXIsoOfStabilizesAt_eq_isoOfEq`, `Hom.pageXIsoOfStabilizesAt_naturality`).
 
 ## References
 
@@ -46,16 +44,6 @@ variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} 
 section Definitions
 
 variable (E : SpectralSequence C c r₀)
-
-/-- A spectral sequence `E` **stabilizes at `pq` from page `s`** (`s ≥ r₀`) if on every page
-`r ≥ s`, both the differential leaving `pq` and the differential entering `pq` vanish. -/
-structure StabilizesAt (pq : κ) (s : ℤ) : Prop where
-  /-- The stabilization page `s` is at least the starting page `r₀`. -/
-  le : r₀ ≤ s
-  /-- Every differential leaving `pq` on pages `r ≥ s` vanishes. -/
-  dFrom_eq_zero : ∀ r (hsr : s ≤ r), (E.page r (le.trans hsr)).dFrom pq = 0
-  /-- Every differential entering `pq` on pages `r ≥ s` vanishes. -/
-  dTo_eq_zero : ∀ r (hsr : s ≤ r), (E.page r (le.trans hsr)).dTo pq = 0
 
 /-- A spectral sequence `E` is **regular at `pq`** if the differentials leaving `pq` vanish on all
 sufficiently large pages. -/
@@ -76,12 +64,6 @@ structure DegeneratesAt (s : ℤ) : Prop where
   d_eq_zero : ∀ r (hsr : s ≤ r) (i j : κ), (E.page r (le.trans hsr)).d i j = 0
 
 variable {E}
-
-lemma StabilizesAt.mono {pq : κ} {s s' : ℤ} (h : E.StabilizesAt pq s) (hss' : s ≤ s') :
-    E.StabilizesAt pq s' where
-  le := h.le.trans hss'
-  dFrom_eq_zero r hs'r := h.dFrom_eq_zero r (hss'.trans hs'r)
-  dTo_eq_zero r hs'r := h.dTo_eq_zero r (hss'.trans hs'r)
 
 lemma DegeneratesAt.mono {s s' : ℤ} (h : E.DegeneratesAt s) (hss' : s ≤ s') :
     E.DegeneratesAt s' where
@@ -178,32 +160,11 @@ theorem stabilizesAt_iff_cyclesSubobject_and_boundariesSubobject_eq (pq : κ) (s
   · exact (E.boundariesSubobject_add_one_eq_iff pq r (hs.trans hsr)).1
       (by rw [hB (r + 1) (Int.le_add_one hsr), hB r hsr])
 
-/-- If the object at `pq` vanishes on page `s`, then `E` stabilizes at `pq` from page `s`. -/
-lemma stabilizesAt_of_isZero_page_X {s : ℤ} (hs : r₀ ≤ s) {pq : κ}
-    (h : IsZero ((E.page s hs).X pq)) : E.StabilizesAt pq s :=
-  ⟨hs, fun r hsr ↦ E.page_d_eq_zero_of_le hs (Or.inl h) r hsr,
-    fun r hsr ↦ E.page_d_eq_zero_of_le hs (Or.inr h) r hsr⟩
-
-/-- If on page `s` every object joined to `pq` by a differential of some page `r ≥ s` vanishes,
-then `E` stabilizes at `pq` from page `s`. -/
-lemma stabilizesAt_of_forall_isZero {s : ℤ} (hs : r₀ ≤ s) {pq : κ}
-    (h : ∀ r, s ≤ r → ∀ pq', (c r).Rel pq pq' ∨ (c r).Rel pq' pq → IsZero ((E.page s hs).X pq')) :
-    E.StabilizesAt pq s :=
-  ⟨hs, fun r hsr ↦ E.page_d_eq_zero_of_forall_isZero hs h r hsr (Or.inl rfl),
-    fun r hsr ↦ E.page_d_eq_zero_of_forall_isZero hs h r hsr (Or.inr rfl)⟩
-
 end TowerCharacterization
 
 section StabilizationIso
 
 variable (E : SpectralSequence C c r₀)
-
-/-- The canonical one-step isomorphism `(E.page r hr).X pq ≅ (E.page (r + 1) _).X pq` when both
-the entering and leaving differentials at `pq` on page `r` vanish. -/
-noncomputable def pageXStepIso (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
-    (hdTo : (E.page r hr).dTo pq = 0) (hdFrom : (E.page r hr).dFrom pq = 0) :
-    (E.page r hr).X pq ≅ (E.page (r + 1) (Int.le_add_one hr)).X pq :=
-  (E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom ≪≫ E.iso r (r + 1) pq rfl hr
 
 /-- The one-step isomorphism `pageXStepIso` agrees with the canonical comparison isomorphism
 between the page-`r` and page-`(r + 1)` subquotient presentations. -/
@@ -243,34 +204,9 @@ lemma pageXStepIso_eq_isoOfEq (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
       (kernelSubobject ((E.page r hr).dFrom pq)).arrow = p.π := by
     rw [p.preimageπ_arrow, Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_comp_ofLE_assoc,
       Subobject.ofLE_refl, Category.id_comp]
-  rw [hsc_π, pageXStepIso, Iso.trans_hom]
+  rw [hsc_π, pageXStepIso_hom]
   simp only [Category.assoc]
   rw [reassoc_of% hlift]
-
-/-- **Canonical stabilization isomorphism.** If `E` stabilizes at `pq` from page `s`, then the
-composites of the homology isomorphisms yield canonical isomorphisms
-`(E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq` for all `r ≥ s`. -/
-noncomputable def pageXIsoOfStabilizesAt {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
-    (r : ℤ) (hsr : s ≤ r) :
-    (E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq :=
-  Int.leInduction
-    (motive := fun r hsr ↦ (E.page s h.le).X pq ≅ (E.page r (h.le.trans hsr)).X pq)
-    (Iso.refl _)
-    (fun r hsr e ↦
-      e ≪≫ E.pageXStepIso pq r (h.le.trans hsr) (h.dTo_eq_zero r hsr) (h.dFrom_eq_zero r hsr))
-    r hsr
-
-@[simp]
-lemma pageXIsoOfStabilizesAt_self {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s) :
-    E.pageXIsoOfStabilizesAt h s le_rfl = Iso.refl _ :=
-  Int.leInduction_base _ _
-
-lemma pageXIsoOfStabilizesAt_add_one {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
-    (r : ℤ) (hsr : s ≤ r) :
-    E.pageXIsoOfStabilizesAt h (r + 1) (Int.le_add_one hsr) =
-      E.pageXIsoOfStabilizesAt h r hsr ≪≫
-        E.pageXStepIso pq r (h.le.trans hsr) (h.dTo_eq_zero r hsr) (h.dFrom_eq_zero r hsr) :=
-  Int.leInduction_add_one _ _ r hsr
 
 /-- The stabilization isomorphism `pageXIsoOfStabilizesAt` agrees with the canonical comparison
 isomorphism `SubquotientPresentation.isoOfEq` between the page-`s` and page-`r` presentations. -/

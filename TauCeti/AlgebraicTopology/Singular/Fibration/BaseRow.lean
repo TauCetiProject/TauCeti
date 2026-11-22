@@ -286,8 +286,9 @@ def serreSpectralSequenceIdSecondPageXIsoSingularHomology (k : ℕ) (pq : ℤ ×
     ((serreSpectralSequence univ (𝟙 B) R).page 3).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
         (ModuleCat.of R R)).obj B :=
-  ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
-      (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia)) (k + 3) (by lia)).symm ≪≫
+  (serreSpectralSequence univ (𝟙 B) R).pageXIsoOfStabilizesAt
+      ((serreSpectralSequence univ (𝟙 B) R).stabilizesAt_of_forall_isZero (by norm_num)
+        (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia))) (k + 3) (by lia) ≪≫
     serreSpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R (K := univ)
       (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia) ≪≫
     cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha
@@ -300,8 +301,10 @@ that graded piece with `H_k(B; R)`
 lemma serreSpectralSequenceIdSecondPageXIsoSingularHomology_hom (k : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -k) :
     (serreSpectralSequenceIdSecondPageXIsoSingularHomology R k pq hb ha).hom =
-      ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
-        (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia)) (k + 3) (by lia)).inv ≫
+      ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfStabilizesAt
+        ((serreSpectralSequence univ (𝟙 B) R).stabilizesAt_of_forall_isZero (by norm_num)
+          (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia)))
+        (k + 3) (by lia)).hom ≫
       (serreSpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R (K := univ)
         (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia)).hom ≫
       (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha).hom :=

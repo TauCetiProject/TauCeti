@@ -649,19 +649,17 @@ morphism `X ⟶ X'` between the presented subquotients. -/
 noncomputable def map (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
     (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
     X ⟶ X' :=
-  P.iso.inv ≫ cokernel.desc (ofLE P.B P.Z P.le)
-    (Q.Z.factorThru (P.Z.arrow ≫ f) hZ ≫ Q.π) (by
-      have hsq : ofLE P.B P.Z P.le ≫ Q.Z.factorThru (P.Z.arrow ≫ f) hZ =
-          Q.B.factorThru (P.B.arrow ≫ f) hB ≫ ofLE Q.B Q.Z Q.le := by
-        rw [← cancel_mono Q.Z.arrow]
-        simp
-      rw [reassoc_of% hsq, ofLE_π, comp_zero])
+  P.iso.inv ≫ cokernel.map (ofLE P.B P.Z P.le) (ofLE Q.B Q.Z Q.le)
+    (Q.B.factorThru (P.B.arrow ≫ f) hB) (Q.Z.factorThru (P.Z.arrow ≫ f) hZ) (by
+      rw [← cancel_mono Q.Z.arrow]
+      simp) ≫ Q.iso.hom
 
 @[reassoc (attr := simp)]
 lemma π_comp_map (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
     (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
     P.π ≫ P.map Q f hB hZ = Q.Z.factorThru (P.Z.arrow ≫ f) hZ ≫ Q.π := by
-  rw [map, ← cokernel_π_iso_hom_assoc, Iso.hom_inv_id_assoc, cokernel.π_desc]
+  rw [map, ← cokernel_π_iso_hom_assoc, Iso.hom_inv_id_assoc, cokernel.π_desc_assoc,
+    Category.assoc, cokernel_π_iso_hom]
 
 lemma map_eq_of_π_comp (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
     (f : A ⟶ A') (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f))
@@ -710,17 +708,6 @@ lemma map_mapIso_right (P : SubquotientPresentation A X) (Q : SubquotientPresent
   apply map_eq_of_π_comp
   rw [π_comp_map_assoc, π_mapIso]
   rfl
-
-@[simp]
-lemma map_mapIso (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
-    (e : X ≅ Y) {Y' : C} (e' : X' ≅ Y') (f : A ⟶ A')
-    (hB : Q.B.Factors (P.B.arrow ≫ f)) (hZ : Q.Z.Factors (P.Z.arrow ≫ f)) :
-    (P.mapIso e).map (Q.mapIso e') f hB hZ = e.inv ≫ P.map Q f hB hZ ≫ e'.hom := by
-  apply map_eq_of_π_comp
-  rw [π_mapIso', Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, π_comp_map_assoc,
-    π_mapIso]
-  dsimp only [mapIso]
-  rw [ofLE_refl, Category.id_comp]
 
 /-- The morphism induced by `f : A ⟶ A'` between identity presentations `refl A` and `refl A'`
 is `f` itself. -/

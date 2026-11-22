@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.ShortComplex.Subquotient
+import TauCeti.CategoryTheory.Subobject.Limits
 
 /-!
 # Cycle and boundary towers of a spectral sequence
@@ -329,8 +330,16 @@ private lemma naturality_step (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ 
   have hcomp := TauCeti.SubquotientPresentation.trans_map p p' q q' ((f.hom r₀).f pq) hB hZ hI hK
   have hqmap : q.map q' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
       (f.hom (r + 1) (Int.le_add_one hr)).f pq := by
-    dsimp only [q, q']
-    rw [TauCeti.SubquotientPresentation.map_mapIso]
+    have hq₁ : q.map q' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
+        (E.iso r (r + 1) pq rfl hr).inv ≫
+          q₀.map q₀' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK ≫
+          (E'.iso r (r + 1) pq rfl hr).hom :=
+      (TauCeti.SubquotientPresentation.map_mapIso_left q₀
+          (q₀'.mapIso (E'.iso r (r + 1) pq rfl hr)) _ _ hI hK).trans
+        (congrArg ((E.iso r (r + 1) pq rfl hr).inv ≫ ·)
+          (TauCeti.SubquotientPresentation.map_mapIso_right q₀ q₀'
+            (E'.iso r (r + 1) pq rfl hr) _ hI hK))
+    rw [hq₁]
     have hsc : q₀.map q₀' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
         HomologicalComplex.homologyMap (f.hom r hr) pq := by
       have h1 : ∀ (g : (E.page r hr).X pq ⟶ (E'.page r hr).X pq) (_ : g = φ.τ₂) h1 h2,

@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.Homology.ImageToKernel
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import TauCeti.CategoryTheory.Abelian.SubquotientPresentation
-public import TauCeti.CategoryTheory.Subobject.Limits
-import TauCeti.CategoryTheory.Subobject.Image
 
 /-!
 # Subquotient presentation of the homology of a short complex
@@ -35,52 +33,34 @@ namespace CategoryTheory.ShortComplex
 
 variable {C : Type*} [Category* C] [Abelian C]
 
-private noncomputable def cyclesSubobjectIso (S : ShortComplex C) :
-    (kernelSubobject S.g : C) ≅ S.cycles :=
-  kernelSubobjectIso S.g ≪≫ S.cyclesIsoKernel.symm
-
-@[reassoc]
-private lemma cyclesSubobjectIso_hom_iCycles (S : ShortComplex C) :
-    (cyclesSubobjectIso S).hom ≫ S.iCycles = (kernelSubobject S.g).arrow := by
-  simp [cyclesSubobjectIso]
-
-@[reassoc]
-private lemma factorThruImageSubobject_comp_ofLE_comp_cyclesSubobjectIso (S : ShortComplex C) :
-    factorThruImageSubobject S.f ≫
-        Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
-          (image_le_kernel S.f S.g S.zero) ≫ (cyclesSubobjectIso S).hom =
-      S.toCycles := by
-  rw [← cancel_mono S.iCycles]
-  simp [cyclesSubobjectIso_hom_iCycles]
-
-private noncomputable def isColimitCokernelImageToKernel (S : ShortComplex C) :
-    IsColimit (CokernelCofork.ofπ ((cyclesSubobjectIso S).hom ≫ S.homologyπ)
-      (by
-        rw [← cancel_epi (factorThruImageSubobject S.f), comp_zero,
-          factorThruImageSubobject_comp_ofLE_comp_cyclesSubobjectIso_assoc,
-          toCycles_comp_homologyπ])) :=
-  CokernelCofork.isColimitOfIsColimitOfIff S.homologyIsCokernel
-    (Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g) (image_le_kernel S.f S.g S.zero))
-    (cyclesSubobjectIso S) fun _ φ ↦ by
-      rw [← factorThruImageSubobject_comp_ofLE_comp_cyclesSubobjectIso_assoc,
-        ← comp_zero (f := factorThruImageSubobject S.f), cancel_epi]
-
 /-- The canonical isomorphism between the cokernel of the inclusion
 `imageSubobject S.f ⟶ kernelSubobject S.g` and the homology `S.homology` of a short complex `S`
 in an abelian category. -/
 noncomputable def cokernelImageToKernelIsoHomology (S : ShortComplex C) :
     cokernel (Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
       (image_le_kernel S.f S.g S.zero)) ≅ S.homology :=
-  IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel _) (isColimitCokernelImageToKernel S)
+  (cokernelEpiComp
+    (Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g) (image_le_kernel S.f S.g S.zero))
+    (factorThruImageSubobject S.f)).symm ≪≫
+    cokernel.mapIso _ (kernel.lift S.g S.f S.zero) (Iso.refl _) (kernelSubobjectIso S.g) (by
+      rw [Category.assoc, subobject_ofLE_as_imageToKernel, ← Category.assoc,
+        factorThruImageSubobject_comp_imageToKernel, Iso.refl_hom, Category.id_comp,
+        factorThruKernelSubobject_comp_kernelSubobjectIso]) ≪≫
+    S.homologyIsoCokernelLift.symm
 
 @[reassoc]
 lemma cokernel_π_comp_cokernelImageToKernelIsoHomology_hom (S : ShortComplex C) :
     cokernel.π (Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
         (image_le_kernel S.f S.g S.zero)) ≫ S.cokernelImageToKernelIsoHomology.hom =
       (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ := by
-  refine (IsColimit.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel _)
-    (isColimitCokernelImageToKernel S) WalkingParallelPair.one).trans ?_
-  simp [cyclesSubobjectIso]
+  simp only [cokernelImageToKernelIsoHomology, Iso.trans_hom, Iso.symm_hom, cokernelEpiComp_inv,
+    cokernel.mapIso_hom, cokernel.π_desc_assoc, Category.assoc]
+  have hcyc :
+      (LeftHomologyData.ofHasKernelOfHasCokernel S).cyclesIso.inv = S.cyclesIsoKernel.inv := by
+    rw [← cancel_mono S.iCycles, LeftHomologyData.cyclesIso_inv_comp_iCycles]
+    simp
+  rw [← hcyc, ← (LeftHomologyData.ofHasKernelOfHasCokernel S).π_comp_homologyIso_inv]
+  rfl
 
 /-- The canonical subquotient presentation of `S.homology` inside `S.X₂`, with smaller subobject
 `imageSubobject S.f` and larger subobject `kernelSubobject S.g`. -/
@@ -102,15 +82,15 @@ lemma homologyPresentation_π (S : ShortComplex C) :
 `kernelSubobject S₂.g`. -/
 lemma factors_kernelSubobject_map {S₁ S₂ : ShortComplex C} (φ : S₁ ⟶ S₂) :
     (kernelSubobject S₂.g).Factors ((kernelSubobject S₁.g).arrow ≫ φ.τ₂) :=
-  kernelSubobject_factors _ _ (by rw [Category.assoc, φ.comm₂₃, kernelSubobject_arrow_comp_assoc,
-    zero_comp])
+  (Subobject.factors_iff _ _).mpr
+    ⟨kernelSubobjectMap (Arrow.homMk φ.τ₂ φ.τ₃ φ.comm₂₃), kernelSubobjectMap_arrow _⟩
 
 /-- A morphism of short complexes `φ : S₁ ⟶ S₂` carries `imageSubobject S₁.f` into
 `imageSubobject S₂.f`. -/
 lemma factors_imageSubobject_map {S₁ S₂ : ShortComplex C} (φ : S₁ ⟶ S₂) :
-    (imageSubobject S₂.f).Factors ((imageSubobject S₁.f).arrow ≫ φ.τ₂) := by
-  rw [← Subobject.exists_le_iff, Subobject.exists_obj_imageSubobject, ← φ.comm₁₂]
-  exact imageSubobject_comp_le φ.τ₁ S₂.f
+    (imageSubobject S₂.f).Factors ((imageSubobject S₁.f).arrow ≫ φ.τ₂) :=
+  (Subobject.factors_iff _ _).mpr
+    ⟨imageSubobjectMap (Arrow.homMk φ.τ₁ φ.τ₂ φ.comm₁₂), imageSubobjectMap_arrow _⟩
 
 /-- The morphism induced by `φ.τ₂` between the canonical homology presentations of `S₁` and `S₂`
 is `ShortComplex.homologyMap φ`. -/
