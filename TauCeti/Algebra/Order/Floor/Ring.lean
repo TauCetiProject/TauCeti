@@ -37,8 +37,10 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.mem_Ico_ceil_iff`, `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in
   `Finset.Ico ⌈a⌉₊ ⌈b⌉₊` and `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as `(n : R) ∈ [a, b)` and `-(n : R) ∈ (a, b]`.
-* `TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo`: widening `(a, b]` by `ε > 0` preserves membership
-  of `-(n : R)` when `ε ≤ |a + n|` and `ε ≤ |b + n|`.
+* `TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo`,
+  `TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo`: widening `(a, b]` by `ε > 0`
+  preserves membership of `-(n : R)` when `ε ≤ |a + n|` and `ε ≤ |b + n|`, and uniformly for
+  all small `δ ∈ (0, ε]` whenever `a` and `b` avoid `-ℕ`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
@@ -109,38 +111,55 @@ theorem mem_Ico_ceil_neg_iff_mem_Ioo {R : Type*} [Ring R] [LinearOrder R] [IsStr
     rw [neg_add, add_comm, ← sub_eq_add_neg]
     exact sub_lt_iff_lt_add'.mpr h₂
 
+/-- In a linearly ordered ring with a natural floor, any element `x` avoiding the nonpositive
+integers `-ℕ` stays at a positive uniform distance `ε > 0` from all `-n` (`n : ℕ`). -/
+private lemma exists_pos_le_abs_add_natCast {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] {x : R} (hx : ∀ n : ℕ, x ≠ -n) :
+    ∃ ε : R, 0 < ε ∧ ∀ n : ℕ, ε ≤ |x + n| := by
+  rcases lt_or_ge 0 x with hx0 | hx0
+  · refine ⟨x, hx0, fun n ↦ ?_⟩
+    exact (le_add_of_nonneg_right (Nat.cast_nonneg n)).trans (le_abs_self _)
+  · set N : ℕ := ⌊-x⌋₊
+    have hlo : 0 < x + ((N + 1 : ℕ) : R) := by
+      have hlt : -x < (N : R) + 1 := Nat.lt_floor_add_one (-x)
+      push_cast
+      exact neg_lt_iff_pos_add'.mp hlt
+    have hhi : 0 < -(N : R) - x := by
+      have hlt : x < -(N : R) :=
+        lt_of_le_of_ne (le_neg.mp (Nat.floor_le (neg_nonneg.mpr hx0))) (hx N)
+      exact sub_pos.mpr hlt
+    refine ⟨min (x + ((N + 1 : ℕ) : R)) (-(N : R) - x), lt_min hlo hhi, fun n ↦ ?_⟩
+    rcases le_or_gt n N with hn | hn
+    · have hle : (n : R) ≤ N := Nat.cast_le.mpr hn
+      have hsub : -(N : R) - x ≤ -(x + (n : R)) := by
+        rw [neg_add_rev, ← sub_eq_add_neg]
+        exact sub_le_sub_right (neg_le_neg hle) x
+      exact (min_le_right _ _).trans (hsub.trans (neg_le_abs _))
+    · have hle : ((N + 1 : ℕ) : R) ≤ n := Nat.cast_le.mpr hn
+      exact (min_le_left _ _).trans ((add_le_add_right hle x).trans (le_abs_self _))
+
+/-- In a linearly ordered ring with a natural ceiling, if `a` and `b` avoid `-ℕ`, then there is
+`ε > 0` such that widening `(a, b]` by any `δ ∈ (0, ε]` captures the exact same negative-natural
+lattice points `-(n : R)`: `n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if `-(n : R) ∈ (a - δ, b + δ)`. -/
+theorem exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] {a b : R}
+    (ha : ∀ n : ℕ, a ≠ -n) (hb : ∀ n : ℕ, b ≠ -n) :
+    ∃ ε : R, 0 < ε ∧ ∀ ⦃δ : R⦄, 0 < δ → δ ≤ ε → ∀ n : ℕ,
+      n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioo (a - δ) (b + δ) := by
+  obtain ⟨ε₁, hε₁, h₁⟩ := exists_pos_le_abs_add_natCast ha
+  obtain ⟨ε₂, hε₂, h₂⟩ := exists_pos_le_abs_add_natCast hb
+  exact ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun δ hδ hδε n ↦
+    mem_Ico_ceil_neg_iff_mem_Ioo hδ
+      (hδε.trans ((min_le_left _ _).trans (h₁ n)))
+      (hδε.trans ((min_le_right _ _).trans (h₂ n)))⟩
+
 /-- In a linearly ordered field with a natural floor, any element `x` avoiding the nonpositive
 integers `-ℕ` stays at a positive uniform distance `ε > 0` from all `-n` (`n : ℕ`). -/
 theorem exists_pos_lt_abs_add_natCast {K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] [FloorSemiring K] {x : K} (hx : ∀ n : ℕ, x ≠ -n) :
     ∃ ε : K, 0 < ε ∧ ∀ n : ℕ, ε < |x + n| := by
-  rcases lt_or_ge 0 x with hx0 | hx0
-  · refine ⟨x / 2, half_pos hx0, fun n ↦ ?_⟩
-    rw [abs_of_pos (by linarith [n.cast_nonneg (α := K)])]
-    linarith [n.cast_nonneg (α := K)]
-  · set N : ℕ := ⌊-x⌋₊
-    have hlo : -((N + 1 : ℕ) : K) < x := by
-      have hlt : -x < (N : K) + 1 := Nat.lt_floor_add_one (-x)
-      push_cast
-      linarith
-    have hhi : x < -(N : K) :=
-      lt_of_le_of_ne (le_neg.mp (Nat.floor_le (neg_nonneg.mpr hx0))) (hx N)
-    set ε : K := min (x + ((N + 1 : ℕ) : K)) (-(N : K) - x) / 2
-    have hε : 0 < ε := half_pos (lt_min (by linarith) (by linarith))
-    refine ⟨ε, hε, fun n ↦ ?_⟩
-    rcases le_or_gt n N with hn | hn
-    · have hle : (n : K) ≤ N := Nat.cast_le.mpr hn
-      have h1 : 2 * ε ≤ -(N : K) - x := by
-        dsimp [ε]
-        linarith [min_le_right (x + ((N + 1 : ℕ) : K)) (-(N : K) - x)]
-      have hneg : x + (n : K) < -ε := by linarith
-      exact (lt_neg.mp hneg).trans_le (neg_le_abs _)
-    · have hle : ((N + 1 : ℕ) : K) ≤ n := Nat.cast_le.mpr hn
-      have h1 : 2 * ε ≤ x + ((N + 1 : ℕ) : K) := by
-        dsimp [ε]
-        linarith [min_le_left (x + ((N + 1 : ℕ) : K)) (-(N : K) - x)]
-      have hpos : ε < x + (n : K) := by linarith
-      exact hpos.trans_le (le_abs_self _)
+  obtain ⟨ε, hε, h⟩ := exists_pos_le_abs_add_natCast hx
+  exact ⟨ε / 2, half_pos hε, fun n ↦ (half_lt_self hε).trans_le (h n)⟩
 
 /-- The number of integers in `[a, y)` is `max (y - a) 0` up to an error of at most one. -/
 theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]

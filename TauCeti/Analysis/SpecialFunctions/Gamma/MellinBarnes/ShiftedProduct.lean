@@ -143,18 +143,14 @@ theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp {c p : ℂ} (hc : c 
   set α : ℝ := (π - |c.arg|) / 2
   have hα : 0 < α := half_pos (sub_pos.mpr harg)
   obtain ⟨KΓ, Y, hKΓ, hY, hΓ⟩ := TauCeti.exists_norm_Gamma_mul_Gamma_add_le_exp p a b hα
-  set M_c : ℝ := max (‖c‖ ^ (-a)) (‖c‖ ^ (-b))
+  set M_c : ℝ := max (‖c‖ ^ (-b)) (‖c‖ ^ (-a))
   have hM_c : 0 < M_c :=
     lt_of_lt_of_le (Real.rpow_pos_of_pos (norm_pos_iff.mpr hc0) _) (le_max_left _ _)
   refine ⟨M_c * KΓ, Y, mul_pos hM_c hKΓ, hY, fun s hs hsim ↦ ?_⟩
   have hcpow : ‖c ^ (-s)‖ ≤ M_c * Real.exp (|c.arg| * |s.im|) := by
-    refine (norm_cpow_le_mul_exp_arg c (-s)).trans ?_
-    rw [neg_re, neg_im, abs_neg]
-    refine mul_le_mul_of_nonneg_right ?_ (Real.exp_pos _).le
-    rcases le_total 1 ‖c‖ with h1 | h1
-    · exact (Real.rpow_le_rpow_of_exponent_le h1 (neg_le_neg hs.1)).trans (le_max_left _ _)
-    · exact (Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.mpr hc0) h1
-        (neg_le_neg hs.2)).trans (le_max_right _ _)
+    simpa only [neg_im, abs_neg] using
+      norm_cpow_le_max_mul_exp_arg_of_re_mem_Icc hc0 (d := -s)
+        ⟨by simpa using hs.2, by simpa using hs.1⟩
   rw [norm_mul]
   calc ‖c ^ (-s)‖ * ‖Gamma s * Gamma (s + p)‖
       ≤ (M_c * Real.exp (|c.arg| * |s.im|)) * (KΓ * Real.exp (-((π - α) * |s.im|))) := by
@@ -362,23 +358,14 @@ private lemma exists_open_strip_avoiding_poles {p : ℂ} {σ₁ σ₂ : ℝ}
       ((∃ k : ℕ, s = -(k : ℂ)) ∨ (∃ k : ℕ, s = -p - k)) →
       s ∈ (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
           (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k) := by
-  obtain ⟨ε₁, hε₁, h1⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₁
-  obtain ⟨ε₂, hε₂, h2⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₂
-  obtain ⟨ε₃, hε₃, h3⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₁p
-  obtain ⟨ε₄, hε₄, h4⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₂p
-  set ε : ℝ := min (min ε₁ ε₂) (min ε₃ ε₄)
-  have hε : 0 < ε := lt_min (lt_min hε₁ hε₂) (lt_min hε₃ hε₄)
-  refine ⟨ε, hε, fun s hs1 hs2 hpole ↦ ?_⟩
+  obtain ⟨ε₁, hε₁, h1⟩ := TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo hσ₁ hσ₂
+  obtain ⟨ε₂, hε₂, h2⟩ := TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo hσ₁p hσ₂p
+  refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun s hs1 hs2 hpole ↦ ?_⟩
   rcases hpole with ⟨k, rfl⟩ | ⟨k, rfl⟩
-  · refine Finset.mem_union_left _ (Finset.mem_image.mpr ⟨k,
-      (TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo hε
-        (((min_le_left _ _).trans (min_le_left _ _)).trans (h1 k).le)
-        (((min_le_left _ _).trans (min_le_right _ _)).trans (h2 k).le)).mpr
-        ⟨by simpa using hs1, by simpa using hs2⟩, rfl⟩)
-  · refine Finset.mem_union_right _ (Finset.mem_image.mpr ⟨k,
-      (TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo hε
-        (((min_le_right _ _).trans (min_le_left _ _)).trans (h3 k).le)
-        (((min_le_right _ _).trans (min_le_right _ _)).trans (h4 k).le)).mpr
+  · exact Finset.mem_union_left _ (Finset.mem_image.mpr ⟨k,
+      (h1 (lt_min hε₁ hε₂) (min_le_left _ _) k).mpr ⟨by simpa using hs1, by simpa using hs2⟩, rfl⟩)
+  · exact Finset.mem_union_right _ (Finset.mem_image.mpr ⟨k,
+      (h2 (lt_min hε₁ hε₂) (min_le_right _ _) k).mpr
         ⟨by simp only [sub_re, neg_re, natCast_re] at hs1; linarith,
          by simp only [sub_re, neg_re, natCast_re] at hs2; linarith⟩, rfl⟩)
 

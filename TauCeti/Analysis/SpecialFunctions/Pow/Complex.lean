@@ -106,8 +106,11 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
-* `Complex.norm_cpow_le_mul_exp_arg`, `Complex.norm_cpow_le_mul_exp` --
-  `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (|w.arg| * |d.im|) ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_le_mul_exp_arg`, `Complex.norm_cpow_le_max_mul_exp_arg_of_re_mem_Icc`,
+  `Complex.norm_cpow_le_mul_exp` --
+  `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (|w.arg| * |d.im|) ≤ ‖w‖ ^ d.re * exp (π |d.im|)`, and the
+  uniform vertical-strip bound `‖w ^ d‖ ≤ max (‖w‖ ^ a) (‖w‖ ^ b) * exp (|w.arg| * |d.im|)`
+  for `d.re ∈ [a, b]` and `w ≠ 0`.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
@@ -788,6 +791,16 @@ theorem norm_cpow_le_mul_exp_arg (w d : ℂ) :
           (Real.rpow_nonneg (norm_nonneg w) _)
         rw [← abs_mul]
         exact neg_le_abs _
+
+/-- On a vertical strip `d.re ∈ [a, b]`, a nonzero base `w` satisfies the uniform bound
+`‖w ^ d‖ ≤ max (‖w‖ ^ a) (‖w‖ ^ b) * exp (|w.arg| * |d.im|)`. -/
+theorem norm_cpow_le_max_mul_exp_arg_of_re_mem_Icc {w : ℂ} (hw : w ≠ 0) {a b : ℝ} {d : ℂ}
+    (hd : d.re ∈ Set.Icc a b) :
+    ‖w ^ d‖ ≤ max (‖w‖ ^ a) (‖w‖ ^ b) * Real.exp (|w.arg| * |d.im|) := by
+  refine (norm_cpow_le_mul_exp_arg w d).trans <| mul_le_mul_of_nonneg_right ?_ (Real.exp_pos _).le
+  rcases le_total 1 ‖w‖ with h1 | h1
+  · exact (Real.rpow_le_rpow_of_exponent_le h1 hd.2).trans (le_max_right _ _)
+  · exact (Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.mpr hw) h1 hd.1).trans (le_max_left _ _)
 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
 theorem norm_cpow_le_mul_exp (w d : ℂ) :
