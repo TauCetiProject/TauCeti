@@ -493,8 +493,7 @@ theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2
   -- Without regular points in `U`, every point of `U ∩ G` has a partner on its slice.
   have hpart : ∀ z ∈ U ∩ G, ∃ s ≠ z.1, u (s, z.2) = u z := by
     rintro z ⟨hzU, hzG⟩
-    by_contra h
-    push Not at h
+    by_contra! h
     exact hreg ⟨z, hzU, hzG.1, hzG.2.1, hzG.2.2, fun s hs ↦ by_contra fun hsz ↦ h s hsz hs⟩
   obtain ⟨U₀, D, ε, hU₀, hU₀ne, hD, hDs, hinj, hε, hpart₀⟩ :=
     exists_isCompact_forall_exists_slicePartner (hu.of_le (by norm_num)) hcrit (hU.inter hGo)
@@ -502,7 +501,8 @@ theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2
   obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slicePartner hJ hJJ hH
     (hu.of_le (by norm_num)) hF hU₀ hU₀ne hD hDs hinj hε hpart₀
   -- A period `(c, 0)` with `c ≠ 0` moves `z₀` to an end, where `u` is an asymptotic orbit.
-  exact (hper.eq_or_eq_of_tendsto hc (hm _) (hp _) _).elim hz₀G.2.1 hz₀G.2.2
+  have hslice : Periodic (fun s ↦ u (s, z₀.2)) c := fun s ↦ by simpa using hper (s, z₀.2)
+  exact (hslice.eq_or_eq_of_tendsto hc (hm _) (hp _) z₀.1).elim hz₀G.2.1 hz₀G.2.2
 
 end Dense
 
