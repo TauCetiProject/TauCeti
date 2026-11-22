@@ -25,7 +25,7 @@ recorded here as well: the permutation representation itself is faithful as soon
 independent coordinate directions with which to tell tensor slots apart, that is, exactly when
 `2 ≤ n` or `d ≤ 1`.
 
-Both answers are read off the monomial basis `tensorPowerBasis` of `(Rⁿ)^{⊗d}`, indexed by the
+Both answers are read off the monomial basis `piTensorPowerBasis` of `(Rⁿ)^{⊗d}`, indexed by the
 functions `Fin d → Fin n`, on which a permutation acts by precomposition with its inverse.
 
 ## Main results
@@ -65,14 +65,15 @@ element off the image of its basis vector: this is the mechanism behind faithful
 private theorem repr_permTensorActionAlgHom_apply_tensorPowerBasis
     (a : MonoidAlgebra R (Equiv.Perm (Fin d))) {f : Fin d → Fin n} (hf : Function.Injective f)
     (ρ : Equiv.Perm (Fin d)) :
-    (tensorPowerBasis R n d).repr
-        (permTensorActionAlgHom R n d a (tensorPowerBasis R n d f))
+    (piTensorPowerBasis R (Fin d) (Fin n)).repr
+        (permTensorActionAlgHom R n d a (piTensorPowerBasis R (Fin d) (Fin n) f))
         (fun i => f (ρ.symm i)) = a.coeff ρ := by
   classical
   rw [permTensorActionAlgHom_apply_tensorPowerBasis, map_sum, Finset.sum_apply']
   have hterm : ∀ σ ∈ a.coeff.support,
-      ((tensorPowerBasis R n d).repr
-          (a.coeff σ • tensorPowerBasis R n d fun i => f (σ.symm i))) (fun i => f (ρ.symm i)) =
+      ((piTensorPowerBasis R (Fin d) (Fin n)).repr
+          (a.coeff σ • piTensorPowerBasis R (Fin d) (Fin n) fun i => f (σ.symm i)))
+          (fun i => f (ρ.symm i)) =
         if σ = ρ then a.coeff σ else 0 := by
     intro σ _
     rw [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one,
@@ -108,7 +109,7 @@ theorem permTensorActionAlgHom_sum_sign_eq_zero (h : n < d) :
     permTensorActionAlgHom R n d
         (∑ σ : Equiv.Perm (Fin d), MonoidAlgebra.single σ ((Equiv.Perm.sign σ : ℤ) : R)) = 0 := by
   classical
-  refine (tensorPowerBasis R n d).ext fun f => ?_
+  refine (piTensorPowerBasis R (Fin d) (Fin n)).ext fun f => ?_
   obtain ⟨i, j, hij, hfij⟩ := Fintype.exists_ne_map_eq_of_card_lt f (by simpa using h)
   set τ : Equiv.Perm (Fin d) := Equiv.swap i j with hτ
   have hsign : Equiv.Perm.sign τ = -1 := by rw [hτ, Equiv.Perm.sign_swap hij]
@@ -175,7 +176,7 @@ permutation action on `(Rⁿ)^{⊗d}` is trivial. -/
 theorem permTensorAction_eq_one_of_le_one (h : n ≤ 1) (σ : Equiv.Perm (Fin d)) :
     permTensorAction R n d σ = 1 := by
   have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr h
-  refine (tensorPowerBasis R n d).ext fun f => ?_
+  refine (piTensorPowerBasis R (Fin d) (Fin n)).ext fun f => ?_
   rw [permTensorAction_tensorPowerBasis, one_apply_eq_self]
   exact congrArg _ (funext fun i => Subsingleton.elim _ _)
 
@@ -190,12 +191,12 @@ theorem permTensorAction_injective_of_two_le [Nontrivial R] (h : 2 ≤ n) :
   have hsymm : σ.symm = τ.symm := by
     refine Equiv.ext fun x => ?_
     have himg : permTensorAction R n d σ
-          (tensorPowerBasis R n d fun y => if y = σ.symm x then a else b) =
+          (piTensorPowerBasis R (Fin d) (Fin n) fun y => if y = σ.symm x then a else b) =
         permTensorAction R n d τ
-          (tensorPowerBasis R n d fun y => if y = σ.symm x then a else b) := by
+          (piTensorPowerBasis R (Fin d) (Fin n) fun y => if y = σ.symm x then a else b) := by
       rw [hστ]
     rw [permTensorAction_tensorPowerBasis, permTensorAction_tensorPowerBasis] at himg
-    have hfun := congrFun ((tensorPowerBasis R n d).injective himg) x
+    have hfun := congrFun ((piTensorPowerBasis R (Fin d) (Fin n)).injective himg) x
     rw [ite_eq_left rfl] at hfun
     by_contra hne
     rw [ite_eq_right fun hc => hne hc.symm] at hfun

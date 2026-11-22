@@ -110,7 +110,8 @@ strands is at most the dimension `n`, distinct elements of `B_k(n)` act differen
 `(Rⁿ)^{⊗k}`. -/
 theorem brauerActionOrth_injective (hk : k ≤ n) : Function.Injective (brauerActionOrth R n k) := by
   intro x y h
-  have hmat := congrArg (LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)) h
+  have hmat := congrArg (LinearMap.toMatrix (piTensorPowerBasis R (Fin k) (Fin n))
+    (piTensorPowerBasis R (Fin k) (Fin n))) h
   rw [toMatrix_brauerActionOrth, toMatrix_brauerActionOrth] at hmat
   exact BrauerAlgebra.ext ((BrauerDiagram.linearIndependent_orthogonalActionMatrix R (Fin n)
     (by simpa using hk)).finsuppLinearCombination_injective hmat)
@@ -124,7 +125,8 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
     [StarOrderedRing K] (hk : k ≤ n) : IsSemisimpleRing (BrauerAlgebra K (n : K) k) := by
   -- the matrix of the action, an injective algebra map
   let Φ : BrauerAlgebra K (n : K) k →ₐ[K] Matrix (Fin k → Fin n) (Fin k → Fin n) K :=
-    (LinearMap.toMatrixAlgEquiv (tensorPowerBasis K n k)).toAlgHom.comp (brauerActionOrth K n k)
+    (LinearMap.toMatrixAlgEquiv (piTensorPowerBasis K (Fin k) (Fin n))).toAlgHom.comp
+      (brauerActionOrth K n k)
   have hΦ (x : BrauerAlgebra K (n : K) k) : Φ x = Finsupp.linearCombination K
       (fun D : BrauerDiagram k => D.orthogonalActionMatrix K (Fin n)) x.coeff := by
     rw [← toMatrix_brauerActionOrth]

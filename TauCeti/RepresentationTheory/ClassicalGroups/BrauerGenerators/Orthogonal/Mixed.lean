@@ -46,7 +46,7 @@ theorem permTensorAction_swap_mul_orthogonalCupCapAt_mul_orthogonalCupCapAt
         (orthogonalCupCapAt k n d j l * orthogonalCupCapAt k n d i j) =
       permTensorAction k n d (Equiv.swap j l) * orthogonalCupCapAt k n d i j := by
   classical
-  apply (tensorPowerBasis k n d).ext
+  apply (piTensorPowerBasis k (Fin d) (Fin n)).ext
   intro f
   simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis]
   by_cases hf : f i = f j

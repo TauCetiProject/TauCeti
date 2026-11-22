@@ -148,8 +148,8 @@ theorem commute_brauerActionOrth_piTensorProductMap (x : BrauerAlgebra R (n : R)
     {A : Matrix (Fin n) (Fin n) R} (hA : Aᵀ * A = 1) :
     Commute (brauerActionOrth R n k x) (PiTensorProduct.map fun _ : Fin k => A.mulVecLin) := by
   set T := PiTensorProduct.map fun _ : Fin k => A.mulVecLin
-  have hT : T = Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-      (A.kroneckerPower (Fin k)) := by
+  have hT : T = Matrix.toLin (piTensorPowerBasis R (Fin k) (Fin n))
+      (piTensorPowerBasis R (Fin k) (Fin n)) (A.kroneckerPower (Fin k)) := by
     rw [← A.toMatrix_piTensorProductMap_tensorPowerBasis, Matrix.toLin_toMatrix]
   -- Both products are linear in `x`, so it suffices to compare them on the diagram basis.
   have hlin : (LinearMap.mulRight R T).comp (brauerActionOrth R n k).toLinearMap =

@@ -389,12 +389,13 @@ private theorem permTensorAction_realIsotropicPower (d : ℕ) (a b : Fin n)
 omit [Algebra ℚ k] in
 /-- The coefficient of `e_a^{⊗d}` in the real part of `(e_a + i e_b)^{⊗d}` is `1`. -/
 private theorem repr_realIsotropicPower (d : ℕ) {a b : Fin n} (hab : a ≠ b) :
-    (tensorPowerBasis k n d).repr (realIsotropicPower k n d a b) (fun _ => a) = 1 := by
+    (piTensorPowerBasis k (Fin d) (Fin n)).repr (realIsotropicPower k n d a b) (fun _ => a) =
+      1 := by
   classical
   have key : ∀ g : Fin d → Bool,
       PiTensorProduct.tprod k (fun j => (Pi.single (bif g j then b else a) (1 : k) : Fin n → k)) =
-        tensorPowerBasis k n d (fun j => bif g j then b else a) :=
-    fun g => (tensorPowerBasis_apply k n d _).symm
+        piTensorPowerBasis k (Fin d) (Fin n) (fun j => bif g j then b else a) :=
+    fun g => (piTensorPowerBasis_apply k (Fin d) (Fin n) _).symm
   simp only [realIsotropicPower, key, map_sum, map_smul, Module.Basis.repr_self,
     Finset.sum_apply', Finsupp.smul_apply, Finsupp.single_apply]
   rw [Finset.sum_eq_single (fun _ => false) (fun g _ hg => ?_) (by simp)]
@@ -424,7 +425,8 @@ theorem orthShapeSpace_ne_bot_of_colLen_le_one [Nontrivial k] (t : YoungTableau 
   rw [← Subrepresentation.mem_toSubmodule, hbot, Subrepresentation.toSubmodule_bot,
     Submodule.mem_bot, permTensorActionAlgHom_youngSymmetrizerOver_of_colLen_le_one k n t h hsymm]
     at hmem
-  have hzero := congrArg (fun w => (tensorPowerBasis k n μ.card).repr w fun _ => a) hmem
+  have hzero :=
+    congrArg (fun w => (piTensorPowerBasis k (Fin μ.card) (Fin n)).repr w fun _ => a) hmem
   simp [repr_realIsotropicPower μ.card hab, Nat.factorial_ne_zero] at hzero
 
 /-- **Weyl's vanishing criterion for one-row shapes**: the shape space of a one-row shape vanishes

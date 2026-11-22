@@ -88,17 +88,17 @@ theorem trace_permTensorAction_mul_tensorPowerRep_diagGL (σ : Equiv.Perm (Fin d
   classical
   -- the diagonal entry of `σ ∘ diag x` at `e_f` is `∏ⱼ x_{f j}` exactly when `f ∘ σ⁻¹ = f`
   have hdiag : ∀ f : Fin d → Fin n,
-      (tensorPowerBasis k n d).repr
+      (piTensorPowerBasis k (Fin d) (Fin n)).repr
           ((permTensorAction k n d σ * tensorPowerRep k n d (diagGL x))
-            (tensorPowerBasis k n d f)) f =
+            (piTensorPowerBasis k (Fin d) (Fin n) f)) f =
         if f ∘ σ = f then ∏ j, (x (f j) : k) else 0 := fun f => by
     have hσ : (fun j => f (σ.symm j)) = f ↔ f ∘ σ = f := by
       rw [funext_iff, funext_iff, ← σ.forall_congr_right]
       simp [eq_comm]
     rw [mul_apply_eq_comp, tensorPowerRep_diagGL_apply_basis, map_smul,
       permTensorAction_tensorPowerBasis]
-    simp [-tensorPowerBasis_apply, Finsupp.single_apply, ← hσ]
-  rw [LinearMap.trace_eq_matrix_trace k (tensorPowerBasis k n d), Matrix.trace,
+    simp [-piTensorPowerBasis_apply, Finsupp.single_apply, ← hσ]
+  rw [LinearMap.trace_eq_matrix_trace k (piTensorPowerBasis k (Fin d) (Fin n)), Matrix.trace,
     psumPart_partition_eq_sum_prod_X, map_sum, Finset.sum_filter]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, hdiag, eval_prod, eval_X]
 

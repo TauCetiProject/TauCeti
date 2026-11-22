@@ -193,9 +193,9 @@ row of the label `ℓ`. The `r`-coordinate of `c_t • e_r` in the monomial basi
 permutations lying in the row group of `t`. -/
 private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : YoungTableau μ)
     (hn : μ.colLen 0 ≤ n) :
-    (tensorPowerBasis k n μ.card).repr
+    (piTensorPowerBasis k (Fin μ.card) (Fin n)).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+          (piTensorPowerBasis k (Fin μ.card) (Fin n) (rowFilling t hn)))
         (rowFilling t hn) =
       (Nat.card (rowSubgroup t) : k) := by
   classical
@@ -216,9 +216,9 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hSNat, permTensorActionAlgHom_apply_tensorPowerBasis, map_sum, Finset.sum_apply']
   have hterm : ∀ σ ∈ (youngSymmetrizerOver k t).coeff.support,
-      ((tensorPowerBasis k n μ.card).repr
+      ((piTensorPowerBasis k (Fin μ.card) (Fin n)).repr
           ((youngSymmetrizerOver k t).coeff σ •
-            tensorPowerBasis k n μ.card fun i => r (σ.symm i))) r =
+            piTensorPowerBasis k (Fin μ.card) (Fin n) fun i => r (σ.symm i))) r =
         if σ ∈ rowSubgroup t then (youngSymmetrizerOver k t).coeff σ else 0 := by
     intro σ _
     rw [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one,
@@ -245,9 +245,9 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
 the row of the label `ℓ`; the `r`-coordinate of `c_t • e_r` in the monomial basis is nonzero. -/
 private theorem repr_symmetrizer_tensorPowerBasis_ne_zero [Nontrivial k] (t : YoungTableau μ)
     (hn : μ.colLen 0 ≤ n) :
-    (tensorPowerBasis k n μ.card).repr
+    (piTensorPowerBasis k (Fin μ.card) (Fin n)).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+          (piTensorPowerBasis k (Fin μ.card) (Fin n) (rowFilling t hn)))
         (rowFilling t hn) ≠ 0 := by
   classical
   -- the coefficient is the order of the row group, and characteristic zero keeps it nonzero
@@ -263,7 +263,7 @@ This nonzero image witnesses `TauCeti.YoungTableau.weylModule_ne_bot`. -/
 theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) (rowFilling t hn)) ≠ 0 := by
   intro h
   exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero, Finsupp.zero_apply])
 
@@ -272,7 +272,7 @@ module. -/
 theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
     (t : YoungTableau μ) (p : Fin μ.card → Fin n) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) ∈ (weylModule k n t).toSubmodule := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) ∈ (weylModule k n t).toSubmodule := by
   rw [weylModule_toSubmodule]
   exact LinearMap.mem_range_self _ _
 
@@ -298,18 +298,18 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_
     (t : YoungTableau μ) {p : Fin μ.card → Fin n} {a b : Fin μ.card}
     (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) =
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) =
       -permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) := by
   have hτ : Equiv.swap a b ∈ colSubgroup t := swap_mem_colSubgroup hcol
   -- the transposition permutes the index function back to itself
   have hswap : (fun i => p ((Equiv.swap a b).symm i)) = p :=
     funext fun i => by rw [Equiv.symm_swap]; exact Equiv.apply_swap_eq_self hpab i
   have h : permTensorActionAlgHom k n μ.card
         (youngSymmetrizerOver k t * MonoidAlgebra.single (Equiv.swap a b) 1)
-        (tensorPowerBasis k n μ.card p) =
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) =
       permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) := by
     rw [map_mul, mul_apply_eq_comp, permTensorActionAlgHom_single_tensorPowerBasis, one_smul,
       hswap]
   -- a transposition of the column group has sign `-1`, and `c_t` is alternating under it
@@ -326,12 +326,12 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero
     (t : YoungTableau μ) {p : Fin μ.card → Fin n} {a b : Fin μ.card}
     (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) = 0 := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) = 0 := by
   have : Invertible (2 : k) := invertibleTwoOfAlgebraRat k
   have hneg :=
     permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t hcol hab hpab
   have htwo : (2 : k) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-      (tensorPowerBasis k n μ.card p) = 0 := by
+      (piTensorPowerBasis k (Fin μ.card) (Fin n) p) = 0 := by
     rw [two_smul]
     nth_rewrite 2 [hneg]
     rw [add_neg_cancel]
@@ -343,7 +343,7 @@ criterion above applies. -/
 private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
     (hn : n < μ.colLen 0) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
-  refine (tensorPowerBasis k n μ.card).ext fun p => ?_
+  refine (piTensorPowerBasis k (Fin μ.card) (Fin n)).ext fun p => ?_
   rw [LinearMap.zero_apply]
   obtain ⟨a, b, ha, hb, hab, hpab⟩ :=
     exists_ne_and_apply_eq_of_lt_colLen t (by simpa only [Fintype.card_fin] using hn) p

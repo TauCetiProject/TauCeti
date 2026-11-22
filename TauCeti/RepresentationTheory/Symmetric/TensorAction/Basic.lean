@@ -25,8 +25,6 @@ The construction reuses `PiTensorProduct.reindex`; the convention is
   and module.
 * `permTensorAction` specializes it to `(Fin n → R)^{⊗d}`.
 * `permTensorActionAlgHom` is its `Representation.asAlgebraHom` extension to `R[S_d]`.
-* `TauCeti.tensorPowerBasis` is the monomial basis of `(Rⁿ)^{⊗d}`, on which the action is a
-  reindexing.
 
 ## Main results
 
@@ -200,29 +198,11 @@ theorem map_reindex_range_permTensorAction_asAlgebraHom {m : ℕ} (h : m = d)
     PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom R (Fin n → R) (Fin m)
       (finCongr h) a
 
-/-- The monomial basis of `(Rⁿ)^{⊗d}`: the basis vector at `f : Fin d → Fin n` is the pure tensor
-whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
-noncomputable def tensorPowerBasis :
-    Module.Basis (Fin d → Fin n) R (⨂[R] _ : Fin d, Fin n → R) :=
-  piTensorPowerBasis R (Fin d) (Fin n)
-
-/-- The monomial basis is the tensor product of the standard bases.  The definition is not
-exposed, so this is its defining equation, used to compare it with the `Basis.piTensorProduct`
-spelling of the weight theory. -/
-theorem tensorPowerBasis_def :
-    tensorPowerBasis R n d = Basis.piTensorProduct fun _ : Fin d => Pi.basisFun R (Fin n) :=
-  piTensorPowerBasis_def R (Fin d) (Fin n)
-
-@[simp]
-theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
-    tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) :=
-  piTensorPowerBasis_apply R (Fin d) (Fin n) f
-
 /-- **The dimension of `(Rⁿ)^{⊗d}` is `nᵈ`**, read off the monomial basis
-`TauCeti.tensorPowerBasis`, whose index type is `Fin d → Fin n`. -/
+`TauCeti.piTensorPowerBasis`, whose index type is `Fin d → Fin n`. -/
 theorem finrank_tensorPower [StrongRankCondition R] :
     Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
-  rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
+  rw [Module.finrank_eq_card_basis (piTensorPowerBasis R (Fin d) (Fin n)), Fintype.card_fun]
   simp
 
 /-- **A matrix acting diagonally on the monomial basis of `(Rⁿ)^{⊗d}`.** Applying `A` in every
@@ -230,26 +210,27 @@ tensor factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) •
 the monomial basis is the Kronecker power of `A`. -/
 theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n d : ℕ}
     (A : Matrix (Fin n) (Fin n) R) (u : Fin d → Fin n) :
-    PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (tensorPowerBasis R n d u) =
-      ∑ v, A.kroneckerPower (Fin d) v u • tensorPowerBasis R n d v := by
+    PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (piTensorPowerBasis R (Fin d) (Fin n) u) =
+      ∑ v, A.kroneckerPower (Fin d) v u • piTensorPowerBasis R (Fin d) (Fin n) v := by
   have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
       ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
     rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
       (A.col (u i))]
     simp [Matrix.col_apply]
-  simp only [tensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
+  simp only [piTensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
     MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
   simp
 
 /-- **The matrix of `A^{⊗d}` in the monomial basis is the Kronecker power of `A`.** The matrix of
-`A` acting in every tensor factor of `(Rⁿ)^{⊗d}`, in the basis `TauCeti.tensorPowerBasis`, is
+`A` acting in every tensor factor of `(Rⁿ)^{⊗d}`, in the basis `TauCeti.piTensorPowerBasis`, is
 `Matrix.kroneckerPower (Fin d) A`. -/
 theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R]
     {n d : ℕ} (A : Matrix (Fin n) (Fin n) R) :
-    LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+    LinearMap.toMatrix (piTensorPowerBasis R (Fin d) (Fin n))
+        (piTensorPowerBasis R (Fin d) (Fin n))
         (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
       A.kroneckerPower (Fin d) := by
-  rw [tensorPowerBasis_def]
+  rw [piTensorPowerBasis_def]
   exact A.toMatrix_piTensorProductMap_mulVecLin
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
@@ -257,16 +238,17 @@ theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} 
 /-- A permutation acts on the monomial basis of `(Rⁿ)^{⊗d}` by precomposing the index function
 with its inverse. -/
 theorem permTensorAction_tensorPowerBasis (σ : Equiv.Perm (Fin d)) (f : Fin d → Fin n) :
-    permTensorAction R n d σ (tensorPowerBasis R n d f) =
-      tensorPowerBasis R n d fun i => f (σ.symm i) := by
+    permTensorAction R n d σ (piTensorPowerBasis R (Fin d) (Fin n) f) =
+      piTensorPowerBasis R (Fin d) (Fin n) fun i => f (σ.symm i) := by
   simp
 
 /-- A group-algebra basis element acts on a monomial basis vector by precomposition and
 scaling. -/
 theorem permTensorActionAlgHom_single_tensorPowerBasis (ρ : Equiv.Perm (Fin d)) (r : R)
     (f : Fin d → Fin n) :
-    permTensorActionAlgHom R n d (MonoidAlgebra.single ρ r) (tensorPowerBasis R n d f) =
-      r • tensorPowerBasis R n d fun i => f (ρ.symm i) := by
+    permTensorActionAlgHom R n d (MonoidAlgebra.single ρ r)
+        (piTensorPowerBasis R (Fin d) (Fin n) f) =
+      r • piTensorPowerBasis R (Fin d) (Fin n) fun i => f (ρ.symm i) := by
   rw [permTensorActionAlgHom_def, Representation.asAlgebraHom_single, LinearMap.smul_apply,
     permTensorAction_tensorPowerBasis]
 
@@ -274,10 +256,10 @@ theorem permTensorActionAlgHom_single_tensorPowerBasis (ρ : Equiv.Perm (Fin d))
 precomposed monomial basis vectors. -/
 theorem permTensorActionAlgHom_apply_tensorPowerBasis
     (a : MonoidAlgebra R (Equiv.Perm (Fin d))) (f : Fin d → Fin n) :
-    permTensorActionAlgHom R n d a (tensorPowerBasis R n d f) =
+    permTensorActionAlgHom R n d a (piTensorPowerBasis R (Fin d) (Fin n) f) =
       ∑ σ ∈ a.coeff.support,
-        a.coeff σ • tensorPowerBasis R n d fun i => f (σ.symm i) := by
-  rw [tensorPowerBasis_apply, permTensorActionAlgHom_apply_tprod, Finsupp.sum]
-  exact Finset.sum_congr rfl fun σ _ => by rw [tensorPowerBasis_apply]
+        a.coeff σ • piTensorPowerBasis R (Fin d) (Fin n) fun i => f (σ.symm i) := by
+  rw [piTensorPowerBasis_apply, permTensorActionAlgHom_apply_tprod, Finsupp.sum]
+  exact Finset.sum_congr rfl fun σ _ => by rw [piTensorPowerBasis_apply]
 
 end TauCeti

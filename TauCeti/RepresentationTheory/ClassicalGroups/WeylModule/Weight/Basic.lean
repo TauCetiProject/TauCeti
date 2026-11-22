@@ -131,7 +131,7 @@ private theorem
     (h : (Finset.univ.filter fun x => rowIndex t x < m).card <
       (Finset.univ.filter fun x => (p x : ℕ) < m).card) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card p) = 0 := by
+        (piTensorPowerBasis k (Fin μ.card) (Fin n) p) = 0 := by
   classical
   by_cases hp : Function.Injective fun x => ((p x : ℕ), colIndex t x)
   · exact absurd (card_filter_lt_le_card_filter_rowIndex_lt t hp m) (not_le.mpr h)
@@ -269,7 +269,7 @@ variable [CommRing k] [Algebra ℚ k]
 /-- The monomial basis vector of the row filling has the weight of the shape. -/
 private theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
     (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
-    tensorPowerBasis R n μ.card (rowFilling t hn) ∈
+    piTensorPowerBasis R (Fin μ.card) (Fin n) (rowFilling t hn) ∈
       weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).val := by
   rw [← weightOfMultiset_ofFn_rowFilling t hn]
   exact basis_mem_weightSpace_tensorPowerRep _
@@ -291,7 +291,7 @@ theorem weightSpace_weylRep_weightOfShape_ne_bot [Nontrivial k] (t : YoungTablea
   refine permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     (k := k) t hn ?_
   have hmem : permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-      (tensorPowerBasis k n μ.card (rowFilling t hn)) ∈
+      (piTensorPowerBasis k (Fin μ.card) (Fin n) (rowFilling t hn)) ∈
       (weylModule k n t).toSubmodule ⊓
         weightSpace (tensorPowerRep k n μ.card) (weightOfShape n μ).val := by
     refine ⟨?_, map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ _

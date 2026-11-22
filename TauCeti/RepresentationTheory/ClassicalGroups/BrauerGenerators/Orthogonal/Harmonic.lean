@@ -167,7 +167,7 @@ power is spanned by `e^{⊗d}`, and the arc on the first two strands fixes it be
 `cap (e ⊗ e) = 1`. -/
 theorem harmonicTensors_rankOne_eq_bot_of_two_le (hd : 2 ≤ d) : harmonicTensors k 1 d = ⊥ := by
   have hid : orthogonalCupCapAt k 1 d ⟨0, by omega⟩ ⟨1, by omega⟩ = LinearMap.id :=
-    (tensorPowerBasis k 1 d).ext fun f => by
+    (piTensorPowerBasis k (Fin d) (Fin 1)).ext fun f => by
       rw [orthogonalCupCapAt_tensorPowerBasis, ite_eq_left (Subsingleton.elim _ _),
         Fintype.sum_unique, LinearMap.id_apply]
       exact congrArg _ (Subsingleton.elim _ _)

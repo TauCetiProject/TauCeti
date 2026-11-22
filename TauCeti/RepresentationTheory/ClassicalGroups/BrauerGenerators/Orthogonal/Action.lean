@@ -16,7 +16,7 @@ Equip `V = Rⁿ` with its standard symmetric bilinear form, the coordinate dot p
 copairing is `∑ c, e_c ⊗ e_c`. A Brauer diagram `D` on `k` strands acts on the tensor power
 `V^{⊗k}`: its through strands carry tensor slots from the bottom to the top, its caps contract two
 input slots against the form, and its cups insert the copairing into two output slots. In the
-monomial basis `TauCeti.tensorPowerBasis` the coefficient of the output basis tensor `e_v` in the
+monomial basis `TauCeti.piTensorPowerBasis` the coefficient of the output basis tensor `e_v` in the
 image of the input basis tensor `e_u` is `1` when the labelling `Sum.elim u v` of the boundary
 points of `D` is constant on its arcs, and `0` otherwise
 (`TauCeti.BrauerDiagram.orthogonalActionMatrix`).
@@ -154,8 +154,8 @@ matrices obey the loop rule (`TauCeti.BrauerDiagram.orthogonalActionMatrix_mul`)
 noncomputable def brauerActionOrth :
     BrauerAlgebra R (n : R) k →ₐ[R] Module.End R (⨂[R] _ : Fin k, Fin n → R) :=
   BrauerAlgebra.lift
-    (fun D => Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-      (D.orthogonalActionMatrix R (Fin n)))
+    (fun D => Matrix.toLin (piTensorPowerBasis R (Fin k) (Fin n))
+      (piTensorPowerBasis R (Fin k) (Fin n)) (D.orthogonalActionMatrix R (Fin n)))
     (by
       rw [BrauerDiagram.orthogonalActionMatrix_permToBrauer_one, Matrix.toLin_one,
         Module.End.one_eq_id])
@@ -166,18 +166,19 @@ noncomputable def brauerActionOrth :
 /-- A Brauer diagram acts by its matrix in the monomial basis. -/
 theorem brauerActionOrth_of (D : BrauerDiagram k) :
     brauerActionOrth R n k (BrauerAlgebra.of D) =
-      Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-        (D.orthogonalActionMatrix R (Fin n)) :=
+      Matrix.toLin (piTensorPowerBasis R (Fin k) (Fin n))
+        (piTensorPowerBasis R (Fin k) (Fin n)) (D.orthogonalActionMatrix R (Fin n)) :=
   BrauerAlgebra.lift_of ..
 
 /-- **The matrix of the action.** In the monomial basis, an element `x` of the Brauer algebra acts
 by the combination `∑ D, x.coeff D • M(D)` of the matrices of the diagrams. -/
 theorem toMatrix_brauerActionOrth (x : BrauerAlgebra R (n : R) k) :
-    LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-        (brauerActionOrth R n k x) =
+    LinearMap.toMatrix (piTensorPowerBasis R (Fin k) (Fin n))
+        (piTensorPowerBasis R (Fin k) (Fin n)) (brauerActionOrth R n k x) =
       Finsupp.linearCombination R (fun D : BrauerDiagram k => D.orthogonalActionMatrix R (Fin n))
         x.coeff := by
-  have h : (LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)).toLinearMap ∘ₗ
+  have h : (LinearMap.toMatrix (piTensorPowerBasis R (Fin k) (Fin n))
+          (piTensorPowerBasis R (Fin k) (Fin n))).toLinearMap ∘ₗ
         (brauerActionOrth R n k).toLinearMap =
       Finsupp.linearCombination R (fun D : BrauerDiagram k => D.orthogonalActionMatrix R (Fin n)) ∘ₗ
         (BrauerAlgebra.coeffLinearEquiv R (n : R) k).toLinearMap :=
@@ -189,8 +190,8 @@ theorem toMatrix_brauerActionOrth (x : BrauerAlgebra R (n : R) k) :
 to the sum of the basis tensors `e_v` for which the labelling `Sum.elim u v` is constant on the
 arcs of `D`. -/
 theorem brauerActionOrth_of_tensorPowerBasis (D : BrauerDiagram k) (u : Fin k → Fin n) :
-    brauerActionOrth R n k (BrauerAlgebra.of D) (tensorPowerBasis R n k u) =
-      ∑ v with D.IsConstantOnArcs (Sum.elim u v), tensorPowerBasis R n k v := by
+    brauerActionOrth R n k (BrauerAlgebra.of D) (piTensorPowerBasis R (Fin k) (Fin n) u) =
+      ∑ v with D.IsConstantOnArcs (Sum.elim u v), piTensorPowerBasis R (Fin k) (Fin n) v := by
   rw [brauerActionOrth_of, Matrix.toLin_self, Finset.sum_filter]
   refine Finset.sum_congr rfl fun v _ => ?_
   rw [BrauerDiagram.orthogonalActionMatrix_apply]
@@ -201,7 +202,7 @@ theorem brauerActionOrth_of_tensorPowerBasis (D : BrauerDiagram k) (u : Fin k �
 @[simp]
 theorem brauerActionOrth_of_permToBrauer (σ : Equiv.Perm (Fin k)) :
     brauerActionOrth R n k (BrauerAlgebra.of (permToBrauer σ)) = permTensorAction R n k σ := by
-  refine (tensorPowerBasis R n k).ext fun u => ?_
+  refine (piTensorPowerBasis R (Fin k) (Fin n)).ext fun u => ?_
   rw [brauerActionOrth_of_tensorPowerBasis, permTensorAction_tensorPowerBasis]
   have hfilter : Finset.univ.filter (fun v => (permToBrauer σ).IsConstantOnArcs (Sum.elim u v)) =
       {fun i => u (σ.symm i)} := by
@@ -230,7 +231,7 @@ the two slots against the dot product and re-expanding them through its copairin
 @[simp]
 theorem brauerActionOrth_of_capCup {a b : Fin k} (hab : a ≠ b) :
     brauerActionOrth R n k (BrauerAlgebra.of (capCup a b)) = orthogonalCupCapAt R n k a b := by
-  refine (tensorPowerBasis R n k).ext fun u => ?_
+  refine (piTensorPowerBasis R (Fin k) (Fin n)).ext fun u => ?_
   rw [brauerActionOrth_of_tensorPowerBasis, orthogonalCupCapAt_tensorPowerBasis]
   split_ifs with hu
   · have hfilter : Finset.univ.filter (fun v => (capCup a b).IsConstantOnArcs (Sum.elim u v)) =

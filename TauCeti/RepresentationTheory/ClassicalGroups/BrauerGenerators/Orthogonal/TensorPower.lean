@@ -233,25 +233,26 @@ theorem orthogonalCupCapAt_self_tprod (i : Fin d) (v : Fin d → (Fin n → k)) 
     Finset.smul_sum]
   exact Finset.sum_congr rfl fun c _ => Finset.sum_smul.symm
 
--- Keep this as an explicit rewrite: simp expands the basis vector using tensorPowerBasis_apply,
+-- Keep this as an explicit rewrite: simp expands the basis vector using piTensorPowerBasis_apply,
 -- so the left-hand side is not in simp normal form.
 /-- On a coordinate tensor, an arc kills unequal coordinates and replaces an equal-coordinate
 pair by the sum of all equal-coordinate pairs. -/
 theorem orthogonalCupCapAt_tensorPowerBasis {i j : Fin d} (f : Fin d → Fin n) :
-    orthogonalCupCapAt k n d i j (tensorPowerBasis k n d f) =
+    orthogonalCupCapAt k n d i j (piTensorPowerBasis k (Fin d) (Fin n) f) =
       if f i = f j then
-        ∑ c : Fin n, tensorPowerBasis k n d (Function.update (Function.update f i c) j c)
+        ∑ c : Fin n,
+          piTensorPowerBasis k (Fin d) (Fin n) (Function.update (Function.update f i c) j c)
       else 0 := by
   classical
   rcases eq_or_ne i j with rfl | hij
-  · rw [tensorPowerBasis_apply, orthogonalCupCapAt_self_tprod]
+  · rw [piTensorPowerBasis_apply, orthogonalCupCapAt_self_tprod]
     simp only [Pi.single_apply, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
       one_smul, Function.update_idem]
     refine Finset.sum_congr rfl fun c _ => ?_
-    rw [tensorPowerBasis_apply]
+    rw [piTensorPowerBasis_apply]
     congr 1
     exact ((Function.comp_update (fun a : Fin n => (Pi.single a (1 : k) : Fin n → k)) f i c).symm)
-  rw [tensorPowerBasis_apply, orthogonalCupCapAt_tprod hij]
+  rw [piTensorPowerBasis_apply, orthogonalCupCapAt_tprod hij]
   have htuple (c : Fin n) :
       Function.update (Function.update (fun t => Pi.single (f t) (1 : k)) i (Pi.single c 1))
         j (Pi.single c 1) =
@@ -264,7 +265,7 @@ theorem orthogonalCupCapAt_tensorPowerBasis {i j : Fin d} (f : Fin d → Fin n) 
   simp only [single_dotProduct, one_mul, Pi.single_apply]
   split_ifs with hf
   · simp only [one_smul]
-    exact Finset.sum_congr rfl fun c _ => by rw [htuple, tensorPowerBasis_apply]
+    exact Finset.sum_congr rfl fun c _ => by rw [htuple, piTensorPowerBasis_apply]
   · simp
 
 /-- **The matrix coefficients of an arc** in the monomial basis: the coefficient of `e_w` in the
@@ -273,7 +274,8 @@ image of `e_u` is `1` when the two capped coordinates of `u` agree, the two cupp
 symmetric in `u` and `w`, so the matrix of the arc is symmetric. -/
 theorem tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis {i j : Fin d}
     (u w : Fin d → Fin n) :
-    (tensorPowerBasis k n d).repr (orthogonalCupCapAt k n d i j (tensorPowerBasis k n d u)) w =
+    (piTensorPowerBasis k (Fin d) (Fin n)).repr
+        (orthogonalCupCapAt k n d i j (piTensorPowerBasis k (Fin d) (Fin n) u)) w =
       if u i = u j ∧ w i = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t then 1 else 0 := by
   classical
   -- The basis tensor `e_w` occurs in the arc's sum exactly once, at `c = w i`, when `w` has the
@@ -309,7 +311,8 @@ it is symmetric, by `TauCeti.tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowe
 entries are `0` and `1`, which `star` fixes. So an arc is self-adjoint for the Hermitian form in
 which the monomial basis is orthonormal. -/
 theorem isHermitian_toMatrix_orthogonalCupCapAt [StarRing k] {i j : Fin d} :
-    (LinearMap.toMatrix (tensorPowerBasis k n d) (tensorPowerBasis k n d)
+    (LinearMap.toMatrix (piTensorPowerBasis k (Fin d) (Fin n))
+      (piTensorPowerBasis k (Fin d) (Fin n))
       (orthogonalCupCapAt k n d i j)).IsHermitian := by
   refine Matrix.IsHermitian.ext fun w u => ?_
   have hsymm : (w i = w j ∧ u i = u j ∧ ∀ t, t ≠ i → t ≠ j → u t = w t) ↔
@@ -506,7 +509,7 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     (hil : i ≠ l) :
     orthogonalCupCapAt k n d i j * orthogonalCupCapAt k n d j l * orthogonalCupCapAt k n d i j =
       orthogonalCupCapAt k n d i j := by
-  refine (tensorPowerBasis k n d).ext fun f => ?_
+  refine (piTensorPowerBasis k (Fin d) (Fin n)).ext fun f => ?_
   simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis]
   by_cases hf : f i = f j
   · -- The arc on `j, l` keeps only the label `f l` of the first cup, the outer arc only the label

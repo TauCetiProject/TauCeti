@@ -244,7 +244,7 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_noZeroDivisors [NoZeroDivis
     (brauerActionOrth R n 2).range =
       Subalgebra.centralizer R (Set.range ((stdOrthogonalRep R n).tensorPower 2)) := by
   refine le_antisymm (range_brauerActionOrth_le_centralizer R n 2) fun T hT => ?_
-  set b := tensorPowerBasis R n 2 with hb
+  set b := piTensorPowerBasis R (Fin 2) (Fin n) with hb
   set M := LinearMap.toMatrix b b T
   -- The matrix of `T` commutes with the Kronecker square of every orthogonal matrix.
   have hM : ∀ A : Matrix (Fin n) (Fin n) R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)) := by
