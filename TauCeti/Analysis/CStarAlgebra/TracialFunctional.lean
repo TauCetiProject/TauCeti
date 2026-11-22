@@ -80,7 +80,7 @@ structure PositiveTracialFunctional (A : Type*) [NonUnitalCStarAlgebra A] [Parti
 
 namespace PositiveTracialFunctional
 
-instance : FunLike (PositiveTracialFunctional A) A ℂ where
+instance instFunLike : FunLike (PositiveTracialFunctional A) A ℂ where
   coe τ := τ.toPositiveLinearMap
   coe_injective τ σ h := by
     cases τ
@@ -88,11 +88,11 @@ instance : FunLike (PositiveTracialFunctional A) A ℂ where
     congr
     exact DFunLike.coe_injective h
 
-instance : LinearMapClass (PositiveTracialFunctional A) ℂ A ℂ where
+instance instLinearMapClass : LinearMapClass (PositiveTracialFunctional A) ℂ A ℂ where
   map_add τ := map_add τ.toPositiveLinearMap
   map_smulₛₗ τ := map_smulₛₗ τ.toPositiveLinearMap
 
-instance : OrderHomClass (PositiveTracialFunctional A) A ℂ where
+instance instOrderHomClass : OrderHomClass (PositiveTracialFunctional A) A ℂ where
   map_rel τ := fun {_ _} h => τ.toPositiveLinearMap.monotone h
 
 /-- Positive tracial functionals are determined by their values. -/
@@ -135,7 +135,8 @@ noncomputable def comp (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[�
     PositiveTracialFunctional A where
   toPositiveLinearMap := τ.toPositiveLinearMap.comp (.ofClass φ)
   map_mul_comm' a b := by
-    -- the composite evaluates as `τ ∘ φ` by definition; there is no `comp_apply` lemma yet
+    -- The composite evaluates as `τ ∘ φ` by definition; `comp_apply` is stated after this
+    -- structure, so the field is proved by unfolding the composite here.
     change τ (φ (a * b)) = τ (φ (b * a))
     rw [map_mul φ, map_mul φ]
     exact τ.map_mul_comm (φ a) (φ b)
@@ -146,12 +147,14 @@ theorem comp_apply (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[ℂ] 
   (rfl)
 
 @[simp]
-theorem comp_id (τ : PositiveTracialFunctional A) : τ.comp (NonUnitalStarAlgHom.id ℂ A) = τ :=
-  (rfl)
+theorem comp_id (τ : PositiveTracialFunctional A) : τ.comp (NonUnitalStarAlgHom.id ℂ A) = τ := by
+  ext a
+  simp
 
 theorem comp_comp (τ : PositiveTracialFunctional C) (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
-    (τ.comp ψ).comp φ = τ.comp (ψ.comp φ) :=
-  (rfl)
+    (τ.comp ψ).comp φ = τ.comp (ψ.comp φ) := by
+  ext a
+  simp
 
 /-- A positive tracial functional is a tracial state, a `0`-KMS state of the trivial dynamics,
 exactly when it has norm one. -/
