@@ -81,8 +81,9 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   orbit; that conjugation is not treated here.
 
 The Fredholm property and the index of `D_u` depend only on the asymptotic orbits, and in a unitary
-trivialization `D_u` is Fredholm of index zero when both ends are the same nondegenerate orbit;
-both are proved by deformation in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
+trivialization, for the `s`-independent Floer data `(i, 0, H_t)` of a Hamiltonian `H` with a
+nondegenerate one-periodic orbit `x`, `D_u` is Fredholm of index zero along maps `u` from `x` to
+itself; both are proved by deformation in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
 (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
 `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`,
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). For distinct

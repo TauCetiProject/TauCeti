@@ -30,8 +30,10 @@ Fredholm property and the index of `D_u` do not depend on `u` beyond its asympto
   then the two have the same index
   (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`).
 * **Equal ends.** In a unitary trivialization, where `V = F` is a finite-dimensional complex inner
-  product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator along any map `u` from a
-  nondegenerate one-periodic orbit `x` of a Hamiltonian `H` to itself is Fredholm
+  product space with `ω = Im ⟪·, ·⟫`, take the `s`-independent Floer data `(i, 0, H_t)` of a
+  Hamiltonian `H`: complex structure `J = i`, `K_s = 0` and `K_t = H_t`. The linearized operator for
+  these data along any map `u` from a nondegenerate one-periodic orbit `x` of `H` to itself is
+  Fredholm
   (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`) of index
   zero (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). This
   holds for any `C¹` map `u` whose loops converge uniformly to `x` at both ends, with slice defects
@@ -505,9 +507,9 @@ a finite-dimensional complex inner product space whose symplectic form `ω` is `
 `x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose
 suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate fixed point of the
 time-one map. Let `u` be a `C¹` map whose loops converge uniformly to `x` at both ends, with slice
-defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both ends. Then, with the complex structure
-`i`, the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator
-is Fredholm. -/
+defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both ends. Then, for the `s`-independent
+Floer data `(i, 0, H_t)`, the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the
+linearized Floer operator is Fredholm. -/
 theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
