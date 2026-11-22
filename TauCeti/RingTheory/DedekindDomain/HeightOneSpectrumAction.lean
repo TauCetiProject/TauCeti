@@ -76,12 +76,13 @@ theorem stabilizer_eq_stabilizer_asIdeal (w : HeightOneSpectrum R) :
   ext σ
   simp [HeightOneSpectrum.ext_iff]
 
-variable {A : Type*} [CommRing A] [Algebra A R]
-
 /-- A group acting on `R` over `A` does not change the contraction of a place to `A`. -/
-theorem under_smul [SMulCommClass G A R] (σ : G) (w : HeightOneSpectrum R) :
+theorem under_smul {A : Type*} [CommSemiring A] [Algebra A R] [SMulCommClass G A R] (σ : G)
+    (w : HeightOneSpectrum R) :
     (σ • w).asIdeal.under A = w.asIdeal.under A :=
   Ideal.under_smul A w.asIdeal σ
+
+variable {A : Type*} [CommRing A] [Algebra A R]
 
 /-- For a finite group `G` acting on `R` with invariants `A`, two places of `R` lie in one orbit
 exactly when they have the same contraction to `A`. -/
