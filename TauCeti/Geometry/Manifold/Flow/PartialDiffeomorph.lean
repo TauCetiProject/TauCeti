@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Topology.Order.Interval
 import TauCeti.Geometry.Manifold.VectorField.Chart.PartialDiffeomorph
 
 /-!
@@ -88,20 +89,11 @@ theorem flowOf_eq_symm_flowOf (hX : CMDiff 1 (fun x ↦ (⟨x, X x⟩ : TangentB
   have hS : IsOpen S := (isOpen_setOf_mem_flowDomain_and_flowOf_mem hY Φ.open_target).preimage
     (continuous_id.prodMk continuous_const)
   have hIcc : uIcc 0 t ⊆ S := fun s hs ↦ ⟨uIcc_subset_setOf_mem_flowDomain ht hs, htarget s hs⟩
-  obtain ⟨l, r, ⟨hl, hr⟩, hlr⟩ := mem_nhds_iff_exists_Ioo_subset.1
-    (hS.mem_nhds (hIcc ⟨le_rfl, inf_le_sup⟩))
-  obtain ⟨l', r', ⟨hl', hr'⟩, hlr'⟩ := mem_nhds_iff_exists_Ioo_subset.1
-    (hS.mem_nhds (hIcc ⟨inf_le_sup, le_rfl⟩))
-  have hsub : Ioo l r' ⊆ S := fun s hs ↦ by
-    rcases lt_or_ge s (min 0 t) with h | h
-    · exact hlr ⟨hs.1, h.trans hr⟩
-    rcases lt_or_ge (max 0 t) s with h' | h'
-    · exact hlr' ⟨hl'.trans h', hs.2⟩
-    exact hIcc ⟨h, h'⟩
-  have h0 : (0 : ℝ) ∈ Ioo l r' := ⟨hl.trans_le (min_le_left _ _), (le_max_left _ _).trans_lt hr'⟩
-  have ht' : t ∈ Ioo l r' := ⟨hl.trans_le (min_le_right _ _), (le_max_right _ _).trans_lt hr'⟩
+  obtain ⟨l, r, hlr, hsub⟩ := hS.exists_Ioo_subset_of_uIcc_subset hIcc
+  have h0 : (0 : ℝ) ∈ Ioo l r := hlr left_mem_uIcc
+  have ht' : t ∈ Ioo l r := hlr right_mem_uIcc
   -- On that interval, `Φ⁻¹` carries the trajectory of `Y` to an integral curve of `X` through `x`.
-  have hγ : IsMIntegralCurveOn (Φ.symm ∘ fun s ↦ flowOf Y s (Φ x)) X (Ioo l r') :=
+  have hγ : IsMIntegralCurveOn (Φ.symm ∘ fun s ↦ flowOf Y s (Φ x)) X (Ioo l r) :=
     ((isMIntegralCurveOn_flowOf hY (Φ x)).mono fun s hs ↦ (hsub hs).1).map_of_mfderiv_eq
       (fun s hs ↦ Φ.symm.mdifferentiableAt hn (hsub hs).2)
       (fun s hs ↦ Φ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq hn hXY (hsub hs).2)

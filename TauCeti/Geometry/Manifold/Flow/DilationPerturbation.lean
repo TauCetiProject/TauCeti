@@ -43,8 +43,7 @@ Since the orbit has least period `T₀`, it crosses the box only once in each pe
 orbit stays away from the segment where `W` is supported, which is where the leastness of the
 period enters. The comparison of the two return maps, for any field agreeing with `v` off a closed
 set avoided by the rest of the orbit, holds on every manifold
-(`TauCeti.returnDerivative_eq_smul_of_eqOn_compl`); it rests on the composition of the flow
-through a region where two fields agree, `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`.
+(`TauCeti.returnDerivative_eq_smul_of_eqOn_compl` in `TauCeti.Geometry.Manifold.Flow.Monodromy`).
 
 **Nondegeneracy of every cover.** The linearized return map at time `m * T₀` is the `m`-th power of
 the one at time `T₀` (`TauCeti.returnDerivative_natCast_mul`), so the `m`-fold cover of the orbit
@@ -73,10 +72,6 @@ straightening chart and the transplanted field `W` are smooth.
 
 ## Main results
 
-* `TauCeti.returnDerivative_eq_smul_of_eqOn_compl`: a field agreeing with `v` off a closed set
-  avoided by the orbit after time `σ`, whose time-`σ` map at `p` differs from that of `v` by a map
-  acting as `c` modulo `ℝ ∙ v p`, keeps the closed orbit and multiplies the linearized return maps
-  by `c`.
 * `TauCeti.exists_contDiff_returnDerivative_add_smul_eq_exp_smul`: a smooth compactly supported
   field `W`, supported near `0` and vanishing on the orbit, such that `v + a • W` keeps the closed
   orbit and has linearized return map `exp a • DP`.
@@ -105,59 +100,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {v : E → E} {T₀ : ℝ} {u : E}
-
-/-- **Perturbing a closed orbit off a closed set.** Let `p` return to itself at time `T₀` under a
-`C¹` field `v`, and let `w` be a `C¹` field agreeing with `v` off a closed set `S` which the orbit
-of `p` avoids after time `σ`, with `0 ≤ σ ≤ T₀`. Suppose that the time-`σ` maps of `w` and `v` carry
-`p` to the same point, and that there the derivative of the time-`σ` map of `w` is that of `v`
-composed with a map `D` acting as multiplication by `c` modulo `ℝ ∙ v p`. Then `p` returns to
-itself at time `T₀` under `w` too, and the linearized return maps of `w` are `c` times those of
-`v`. -/
-theorem returnDerivative_eq_smul_of_eqOn_compl {H M : Type*} [TopologicalSpace H]
-    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-    [IsManifold I 1 M] [BoundarylessManifold I M] {v w : (x : M) → TangentSpace I x} {p : M}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hP : (T₀, p) ∈ flowDomain v)
-    (hp : flowOf v T₀ p = p) {σ c : ℝ} (hσ : 0 ≤ σ) (hσT : σ ≤ T₀)
-    (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hw0 : w p = v p)
-    (hσw : (σ, p) ∈ flowDomain w) (hσvw : flowOf w σ p = flowOf v σ p)
-    {D : TangentSpace I p → TangentSpace I p} (hD : ∀ ξ, D ξ - c • ξ ∈ ℝ ∙ v p)
-    (hM : ∀ ξ : TangentSpace I p,
-      -- The tangent spaces at the two values are both the model space `E`.
-      @Eq E (mfderiv I I (flowOf w σ) p ξ) (mfderiv I I (flowOf v σ) p (D ξ)))
-    {S : Set M} (hS : IsClosed S) (hwv : EqOn w v Sᶜ)
-    (hSv : ∀ t ∈ Icc σ T₀, flowOf v t p ∉ S) :
-    (T₀, p) ∈ flowDomain w ∧ flowOf w T₀ p = p ∧
-      ∀ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g p → mvfderiv I g p (v p) ≠ 0 →
-        returnDerivative w g T₀ p = c • returnDerivative v g T₀ p := by
-  have hdom : ∀ t ∈ Icc 0 T₀, (t, p) ∈ flowDomain v := fun t ht ↦
-    uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc ht)
-  have hσdom := hdom σ ⟨hσ, hσT⟩
-  set q := flowOf v σ p
-  -- After time `σ`, the trajectory runs where `w = v`, back to `p` at time `T₀`.
-  have hleg : (T₀ - σ, q) ∈ flowDomain v := by
-    rw [mem_flowDomain_flowOf_iff hv hσdom, add_sub_cancel]
-    exact hP
-  have hlegS : MapsTo (fun s ↦ flowOf v s q) (uIcc 0 (T₀ - σ)) Sᶜ := by
-    intro s hs
-    rw [uIcc_of_le (by linarith)] at hs
-    have hσs : σ + s ∈ Icc σ T₀ := ⟨by linarith [hs.1], by linarith [hs.2]⟩
-    dsimp only [q]
-    rw [(flowOf_add hv hσdom ((mem_flowDomain_flowOf_iff hv hσdom).2
-      (hdom _ ⟨hσ.trans hσs.1, hσs.2⟩))).2]
-    exact hSv _ hσs
-  obtain ⟨hdomw, hvalw, hderw⟩ :=
-    mfderiv_flowOf_add_eq_of_eqOn hv hw hS.isOpen_compl hwv hσw hσvw hleg hlegS
-  rw [add_sub_cancel] at hdomw hvalw hderw
-  have hvalv : flowOf v (T₀ - σ) q = p := by
-    rw [(flowOf_add hv hσdom hleg).2, add_sub_cancel, hp]
-  refine ⟨hdomw, hvalw.trans hvalv, fun g hg hgv ↦
-    returnDerivative_eq_smul_of_mfderiv_flowOf_eq hv hP hp hg hgv hw hdomw (hvalw.trans hvalv)
-      hw0 hD fun ξ ↦ ?_⟩
-  -- The monodromy of `w` is that of `v` composed with `D`.
-  have h₁ := mfderiv_flowOf_add_apply hv hσdom rfl hleg (D ξ)
-  rw [add_sub_cancel] at h₁
-  rw [hderw ξ, hM ξ]
-  exact h₁
 
 omit [FiniteDimensional ℝ E] in
 /-- A short initial segment `[0, σ] • u` of the axis, with `σ < T₀`, lies in a given ball around
@@ -284,6 +226,15 @@ private theorem axis_add_smul_cutoff [CompleteSpace E] {ℓ : StrongDual ℝ E} 
       (hseg ⟨hσ, le_rfl⟩)
     rwa [zero_add, zero_smul, hΨ₁ σ hs₁, hΨ₀ 0 hs₀, mul_one, mul_zero, sub_zero] at h
 
+omit [FiniteDimensional ℝ E] in
+/-- The transverse dilation `1 + (c - 1) • (1 - ℓ.smulRight u)` differs from multiplication by `c`
+by a multiple of `u`. -/
+private theorem dilation_apply_sub_smul (ℓ : StrongDual ℝ E) (c : ℝ) (ζ : E) :
+    (1 + (c - 1) • (1 - ℓ.smulRight u) : E →L[ℝ] E) ζ - c • ζ = ((1 - c) * ℓ ζ) • u := by
+  simp only [add_apply, smul_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
+    one_apply_eq_self]
+  module
+
 /-- **The flow-box dilation of a closed orbit.** Let `v` be a `C¹` field on `E` with a closed
 orbit through `0` of least period `T₀ > 0`, equal to a constant field `u` near `0`. For every
 neighbourhood `N` of `0` there is a smooth compactly supported field `W`, supported in `N` and
@@ -357,12 +308,6 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
   -- `exp a`.
   obtain ⟨hw, hw_axis, hw_deriv⟩ := axis_add_smul_cutoff hℓ hΨ hs₀.le hs₁.le hσ.le hΨ₀ hΨ₁ hZ
     hZout hTDF hχ hχ1 hball hv (fun z hz ↦ (hrv z hz).1) a
-  -- The dilation acts as `exp a` modulo the flow line `ℝ ∙ u`.
-  have hD (ξ : E) : ((1 - Real.exp a) * ℓ ξ) • u =
-      (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u) : E →L[ℝ] E) ξ - Real.exp a • ξ := by
-    simp only [add_apply, smul_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
-      one_apply_eq_self]
-    module
   have hv0 : v 0 = u := (hrv 0 (mem_ball_self hr)).1
   have hW0 : W 0 = 0 := by simpa using hWaxis 0
   have hv_deriv' : HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) v σ) (1 : E →L[ℝ] E) 0 := by
@@ -372,11 +317,22 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
     simp only [Pi.add_apply, Pi.smul_apply, hW0, smul_zero, add_zero]
   refine returnDerivative_eq_smul_of_eqOn_compl hv hP hp hσ.le hσT.le hw hw0 (hw_axis σ hσσ).1
     ((hw_axis σ hσσ).2.trans (hv_axis σ hσσ).2.symm)
-    (fun ξ ↦ Submodule.mem_span_singleton.2 ⟨(1 - Real.exp a) * ℓ ξ, by rw [hv0]; exact hD ξ⟩)
+    -- The dilation acts as `exp a` modulo the flow line `ℝ ∙ u`.
+    (fun ξ ↦ Submodule.mem_span_singleton.2 ⟨(1 - Real.exp a) * ℓ ξ, by
+      rw [hv0]; exact (dilation_apply_sub_smul ℓ (Real.exp a) ξ).symm⟩)
     -- The tangent spaces of `E` are definitionally `E`, so the two derivatives agree by `rfl`.
     (fun ξ ↦ by rw [hw_deriv.hasMFDerivAt.mfderiv, hv_deriv'.hasMFDerivAt.mfderiv]; rfl)
     (isClosed_tsupport W) (fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz])
     fun t ht hW ↦ hχR t ht (htsW hW)
+
+/-- If `R a = exp a • R₀` for every `a`, only countably many `a` give a positive power of `R a` the
+eigenvalue `1`. -/
+private theorem countable_setOf_hasEigenvalue_one_pow_of_eq_exp_smul {V : Type*}
+    [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V] {R : ℝ → Module.End ℝ V}
+    (R₀ : Module.End ℝ V) (hR : ∀ a, R a = Real.exp a • R₀) :
+    {a : ℝ | ∃ m ≠ 0, (R a ^ m).HasEigenvalue 1}.Countable :=
+  ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul R₀).preimage
+    Real.exp_injective).mono fun a ha ↦ by rwa [Set.mem_ofPred_eq, hR] at ha
 
 /-- **Every cover of a closed orbit becomes nondegenerate under a flow-box dilation.** Let `v` be
 a `C¹` field on `E` with a closed orbit through `0` of least period `T₀ > 0`, equal to a constant
@@ -403,10 +359,7 @@ theorem exists_contDiff_countable_setOf_hasEigenvalue_one_pow
   obtain ⟨W, hW, hWc, hWN, hWorb, hWa⟩ :=
     exists_contDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hvu hN
   refine ⟨W, hW, hWc, hWN, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦ ?_⟩
-  refine ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul
-    (returnDerivative (I := 𝓘(ℝ, E)) v g T₀ 0)).preimage Real.exp_injective).mono fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, (hWa a).2.2 g hg hgv] at ha
-  exact ha
+  exact countable_setOf_hasEigenvalue_one_pow_of_eq_exp_smul _ fun a ↦ (hWa a).2.2 g hg hgv
 
 section Manifold
 
@@ -419,9 +372,7 @@ private theorem inverse_dilation_sub_smul_mem_span {X : Type*} [AddCommGroup X] 
     A.inverse ((1 + (c - 1) • (1 - ℓ.smulRight u)) (A ξ)) - c • ξ ∈ ℝ ∙ x := by
   refine Submodule.mem_span_singleton.2 ⟨(1 - c) * ℓ (A ξ), hA.injective ?_⟩
   rw [map_smul, hx, map_sub, map_smul, hA.self_apply_inverse]
-  simp only [add_apply, smul_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
-    one_apply_eq_self]
-  module
+  exact (dilation_apply_sub_smul ℓ c (A ξ)).symm
 
 variable {H M : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
@@ -648,10 +599,7 @@ theorem exists_contMDiff_countable_setOf_hasEigenvalue_one_pow {v : (x : M) → 
   obtain ⟨W, hW, hWK, hWorb, hWa⟩ :=
     exists_contMDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hN
   refine ⟨W, hW, hWK, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦ ?_⟩
-  refine ((Module.End.countable_setOf_exists_hasEigenvalue_one_pow_smul
-    (returnDerivative v g T₀ p)).preimage Real.exp_injective).mono fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, (hWa a).2.2 g hg hgv] at ha
-  exact ha
+  exact countable_setOf_hasEigenvalue_one_pow_of_eq_exp_smul _ fun a ↦ (hWa a).2.2 g hg hgv
 
 end Manifold
 

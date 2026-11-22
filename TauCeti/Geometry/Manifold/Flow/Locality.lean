@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Flows depend only on the field near a trajectory
@@ -102,18 +103,9 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
   obtain ⟨u, V, hu, hV, hKu, hxV, huV⟩ :=
     generalized_tube_lemma isCompact_uIcc isCompact_singleton hO hsub
   -- Since `u` is open, it contains an open interval `Ioo a b` around `uIcc 0 t`.
-  obtain ⟨a, ha, hau⟩ := exists_Ioc_subset_of_mem_nhds (hu.mem_nhds (hKu ⟨le_rfl, inf_le_sup⟩))
-    ⟨0 ⊓ t - 1, by linarith⟩
-  obtain ⟨b, hb, hbu⟩ := exists_Ico_subset_of_mem_nhds (hu.mem_nhds (hKu ⟨inf_le_sup, le_rfl⟩))
-    ⟨0 ⊔ t + 1, by linarith⟩
-  have hab : Ioo a b ⊆ u := fun s hs ↦ by
-    rcases le_or_gt s (0 ⊓ t) with hs₁ | hs₁
-    · exact hau ⟨hs.1, hs₁⟩
-    rcases le_or_gt s (0 ⊔ t) with hs₂ | hs₂
-    · exact hKu ⟨hs₁.le, hs₂⟩
-    · exact hbu ⟨hs₂.le, hs.2⟩
-  have h0 : (0 : ℝ) ∈ Ioo a b := ⟨ha.trans_le inf_le_left, le_sup_left.trans_lt hb⟩
-  have htab : t ∈ Ioo a b := ⟨ha.trans_le inf_le_right, le_sup_right.trans_lt hb⟩
+  obtain ⟨a, b, hKab, hab⟩ := hu.exists_Ioo_subset_of_uIcc_subset hKu
+  have h0 : (0 : ℝ) ∈ Ioo a b := hKab left_mem_uIcc
+  have htab : t ∈ Ioo a b := hKab right_mem_uIcc
   filter_upwards [prod_mem_nhds (isOpen_Ioo.mem_nhds htab) (hV.mem_nhds (hxV rfl))]
     with y ⟨hy₁, hy₂⟩
   have hO' : ∀ s ∈ Ioo a b, (s, y.2) ∈ O := fun s hs ↦ huV ⟨hab hs, hy₂⟩
