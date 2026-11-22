@@ -104,9 +104,8 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
   have : SecondCountableTopology M := f.isEmbedding.isInducing.secondCountableTopology
   have : LocallyCompactSpace G := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
-  have : LocallyCompactSpace (ModelProd H P) := (I.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H P) _
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   have : MetrizableSpace N := Manifold.metrizableSpace J N
   have : MetrizableSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
