@@ -6,16 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import Mathlib.Topology.ContinuousMap.Compact
-public import Mathlib.Topology.ContinuousMap.Ordered
-public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 public import TauCeti.Analysis.Normed.Order.OrderUnit.PositiveLinearMap
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Convex.Cone.Dual
-import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
-import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
 # State spaces of order-unit spaces
@@ -28,6 +22,9 @@ A **state** of an order-unit space `(E, e)` is a monotone continuous real-linear
 with `φ e = 1`. The **state space** `TauCeti.OrderUnit.stateSpace e` is defined as a subset of the
 weak-star dual `WeakDual ℝ E`, carrying the weak-star subspace topology.
 
+Unique weak-star homeomorphic extension of states to the norm completion is treated in
+`TauCeti.Analysis.Normed.Order.OrderUnit.State.Completion`.
+
 ## Main definitions and results
 
 * `TauCeti.OrderUnit.stateSpace`: the state space `{φ : WeakDual ℝ E | Monotone φ ∧ φ e = 1}`.
@@ -36,11 +33,10 @@ weak-star dual `WeakDual ℝ E`, carrying the weak-star subspace topology.
   nonemptiness (by Hahn–Banach), convexity, weak-star closedness, and weak-star compactness (by
   Banach–Alaoglu).
 * `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`,
-  `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`,
-  `TauCeti.IsOrderUnitNorm.existsUnique_state_extension_completion`,
-  `TauCeti.IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive maps
-  (via `ContinuousLinearMap.pullbackFunctional`), extension from unital subspaces, and unique
-  weak-star homeomorphic extension to the norm completion.
+  `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace`,
+  `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`: pullback along unital positive
+  maps (via `ContinuousLinearMap.pullbackFunctional`) and extension along unit-preserving linear
+  isometries and from unital subspaces.
 * `TauCeti.IsOrderUnitNorm.nonneg_iff_forall_stateSpace`,
   `exists_mem_stateSpace_abs_apply_eq_norm`, `norm_eq_iSup_states`, `nnNorm_eq_iSup_states`,
   `TauCeti.OrderUnit.evalContinuousMap`, `evalContinuousMap_apply_convexCombo`,
@@ -106,15 +102,8 @@ theorem convex_stateSpace : Convex ℝ (stateSpace e) := by
     simp [hφ.2, hψ.2, hst]
 
 /-- The state space is weak-star closed. -/
-theorem isClosed_stateSpace : IsClosed (stateSpace e) := by
-  have h : stateSpace e =
-      (⋂ (a : E) (b : E) (_ : a ≤ b), {φ : WeakDual ℝ E | φ a ≤ φ b}) ∩
-        {φ : WeakDual ℝ E | φ e = 1} := by
-    ext φ
-    simp [mem_stateSpace_iff, Monotone]
-  rw [h]
-  refine (isClosed_iInter fun a => isClosed_iInter fun b => isClosed_iInter fun _ =>
-    isClosed_le (eval_continuous a) (eval_continuous b)).inter
+theorem isClosed_stateSpace : IsClosed (stateSpace e) :=
+  (isClosed_monotone.preimage WeakDual.coeFn_continuous).inter
     (isClosed_eq (eval_continuous e) continuous_const)
 
 end GeneralStateSpace
@@ -235,31 +224,17 @@ variable [IsOrderedAddMonoid E]
 
 /-- A functional in `WeakDual ℝ E` is a state iff its strong norm is `1` and `φ e = 1`. -/
 theorem IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one_and_map_unit {φ : WeakDual ℝ E} :
-    φ ∈ stateSpace e ↔ ‖toStrongDual φ‖ = 1 ∧ φ e = 1 :=
-  he.monotone_and_apply_unit_eq_one_iff (toStrongDual φ)
-
-/-- **Existence of states.** Every order-unit space admits at least one state, obtained by
-extending `r • e ↦ r` with norm `1` via Hahn–Banach. -/
-theorem IsOrderUnitNorm.stateSpace_nonempty : (stateSpace e).Nonempty := by
-  let i : ℝ →ₗᵢ[ℝ] E :=
-    { toFun := fun r => r • e
-      map_add' := fun r s => add_smul r s e
-      map_smul' := fun r s => by simp [mul_smul]
-      norm_map' := fun r => by simpa [Real.norm_eq_abs] using he.norm_smul_unit r }
-  obtain ⟨g, hg, hnorm⟩ :=
-    LinearIsometry.exists_extension_norm_eq i (ContinuousLinearMap.id ℝ ℝ)
-  have hge : g e = 1 := by
-    have h1 := DFunLike.congr_fun hg 1
-    simpa [i] using h1
-  have hgnorm : ‖g‖ = 1 := by simpa using hnorm
-  exact ⟨StrongDual.toWeakDual g,
-    he.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨hgnorm, hge⟩⟩
+    φ ∈ stateSpace e ↔ ‖toStrongDual φ‖ = 1 ∧ φ e = 1 := by
+  rw [mem_stateSpace_iff]
+  exact and_congr_left fun h => by
+    simpa [h] using (show Monotone φ ↔ ‖toStrongDual φ‖ = φ e from
+      he.monotone_iff_opNorm_eq_apply_unit (toStrongDual φ))
 
 end NormedStateSpace
 
 end StateSpace
 
-/-! ### Pullback, subspace extension, and completion extension -/
+/-! ### Pullback, subspace extension, and nonemptiness -/
 
 section Functoriality
 
@@ -276,102 +251,47 @@ theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {E F : T
   · simpa [ContinuousLinearMap.pullbackFunctional_apply] using hφ.1 (hT hab)
   · simpa [hTe] using hφ.2
 
+/-- **Extension of states along a unit-preserving linear isometry.** Every state on the domain of
+a unit-preserving linear isometry between order-unit spaces extends to a state on the codomain. -/
+theorem IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace {E F : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F]
+    {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
+    (T : E →ₗᵢ[ℝ] F) (hTe : T e = f) :
+    SurjOn T.toContinuousLinearMap.pullbackFunctional (stateSpace f) (stateSpace e) := by
+  intro φ hφ
+  let _ : NormedAddCommGroup E :=
+    { ‹SeminormedAddCommGroup E› with
+      eq_of_dist_eq_zero := fun h =>
+        sub_eq_zero.mp (he.norm_eq_zero_iff.mp (by simpa [dist_eq_norm] using h)) }
+  have hφnorm : ‖toStrongDual φ‖ = 1 := he.norm_toStrongDual_of_mem_stateSpace hφ
+  obtain ⟨g, hg, hgnorm⟩ := T.exists_extension_norm_eq (toStrongDual φ)
+  have hgf : g f = 1 := by
+    simpa [hTe, hφ.2] using DFunLike.congr_fun hg e
+  refine ⟨StrongDual.toWeakDual g,
+    hf.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨hgnorm.trans hφnorm, hgf⟩, ?_⟩
+  exact DFunLike.ext _ _ fun x => by simpa using DFunLike.congr_fun hg x
+
 /-- **Extension of states from a unital subspace.** Restriction of states from `E` to a unital
 subspace `S` is surjective, by Hahn–Banach. -/
 theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (S : Submodule ℝ E) (heS : e ∈ S) :
     SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) := by
-  intro φ hφ
-  have hS := he.submodule S heS
-  have hφnorm : ‖toStrongDual φ‖ = 1 := hS.norm_toStrongDual_of_mem_stateSpace hφ
-  obtain ⟨g, hg, hgnorm⟩ := _root_.exists_extension_norm_eq S (toStrongDual φ)
-  have hge : g e = 1 := by
-    simpa [hφ.2] using hg ⟨e, heS⟩
-  refine ⟨StrongDual.toWeakDual g,
-    he.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨hgnorm.trans hφnorm, hge⟩, ?_⟩
-  exact DFunLike.ext _ _ fun x => by simpa using hg x
+  simpa [Submodule.subtypeₗᵢ_toContinuousLinearMap] using
+    (he.submodule S heS).surjOn_pullbackFunctional_stateSpace he S.subtypeₗᵢ rfl
 
-section CompletionStates
-
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
-  [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
-
-include he
-
-/-- **Unique extension of states to the norm completion.** Every state on an order-unit space `E`
-extends uniquely to a state on `UniformSpace.Completion E`. -/
-theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual ℝ E}
-    (hφ : φ ∈ stateSpace e) :
-    ∃! ψ ∈ @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
-      (e : UniformSpace.Completion E),
-      (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ := by
-  let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
-  have : IsOrderedAddMonoid (UniformSpace.Completion E) := he.completionIsOrderedAddMonoid
-  have hcompl := he.isOrderUnitNorm_completion
-  let g : UniformSpace.Completion E →L[ℝ] ℝ := (toStrongDual φ).fromCompletion
-  have hg_coe (a : E) : g a = φ a := (toStrongDual φ).fromCompletion_apply_coe a
-  have hge : g (e : UniformSpace.Completion E) = 1 := (hg_coe e).trans hφ.2
-  have hgnorm : ‖g‖ = 1 :=
-    (toStrongDual φ).norm_fromCompletion.trans (he.norm_toStrongDual_of_mem_stateSpace hφ)
-  have hψmem : StrongDual.toWeakDual g ∈ stateSpace (e : UniformSpace.Completion E) :=
-    hcompl.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨hgnorm, hge⟩
-  have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional
-      (StrongDual.toWeakDual g) = φ :=
-    DFunLike.ext _ _ fun a => by simpa using hg_coe a
-  refine ⟨StrongDual.toWeakDual g, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => ?_⟩
-  have huniq := (toStrongDual φ).fromCompletion_unique (toStrongDual ψ') fun a => by
-    have h := DFunLike.congr_fun hψ'eq a
-    simpa [UniformSpace.Completion.toComplL] using h.symm
-  exact DFunLike.ext _ _ fun x => (DFunLike.congr_fun huniq x).symm
-
-/-- Restriction along `E → UniformSpace.Completion E` induces a weak-star homeomorphism between the
-state space of the completion and `stateSpace e`. -/
-noncomputable def IsOrderUnitNorm.completionStateSpaceHomeomorph :
-    @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
-      (e : UniformSpace.Completion E) ≃ₜ stateSpace e := by
-  letI : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
-  haveI : IsOrderedAddMonoid (UniformSpace.Completion E) := he.completionIsOrderedAddMonoid
-  have hcompl := he.isOrderUnitNorm_completion
-  haveI : CompactSpace (stateSpace (e : UniformSpace.Completion E)) :=
-    hcompl.compactSpace_stateSpace
-  let T := UniformSpace.Completion.toComplL (S := ℝ) (α := E)
-  have hTmono : Monotone T := fun a b hab => he.completion_coe_le_coe_iff.mpr hab
-  have hmaps : MapsTo T.pullbackFunctional
-      (stateSpace (e : UniformSpace.Completion E)) (stateSpace e) :=
-    T.mapsTo_pullbackFunctional_stateSpace hTmono rfl
-  let f : stateSpace (e : UniformSpace.Completion E) → stateSpace e :=
-    fun ψ => ⟨T.pullbackFunctional ψ.val, hmaps ψ.property⟩
-  have hbij : Function.Bijective f := by
-    refine ⟨fun ψ₁ ψ₂ h => ?_, fun φ => ?_⟩
-    · obtain ⟨_, _, huniq⟩ := he.existsUnique_state_extension_completion (f ψ₂).property
-      have h1 : ψ₁.val = _ := huniq ψ₁.val ⟨ψ₁.property, congrArg Subtype.val h⟩
-      have h2 : ψ₂.val = _ := huniq ψ₂.val ⟨ψ₂.property, rfl⟩
-      exact Subtype.ext (h1.trans h2.symm)
-    · obtain ⟨ψ, ⟨hψmem, hψeq⟩, _⟩ := he.existsUnique_state_extension_completion φ.property
-      exact ⟨⟨ψ, hψmem⟩, Subtype.ext hψeq⟩
-  exact Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hbij)
-    ((T.pullbackFunctional.continuous.comp continuous_subtypeVal).subtype_mk _)
-
-/-- Evaluating `completionStateSpaceHomeomorph` restricts a completion state to `E`. -/
-@[simp]
-theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_apply
-    (ψ : @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
-      (e : UniformSpace.Completion E)) (a : E) :
-    (he.completionStateSpaceHomeomorph ψ).val a = ψ.val (a : UniformSpace.Completion E) := by
-  change (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val a = _
-  simp
-
-/-- Evaluating the inverse of `completionStateSpaceHomeomorph` on a coerced element recovers the
-original state. -/
-@[simp]
-theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_apply
-    (φ : stateSpace e) (a : E) :
-    (he.completionStateSpaceHomeomorph.symm φ).val (a : UniformSpace.Completion E) = φ.val a := by
-  rw [← he.completionStateSpaceHomeomorph_apply,
-    he.completionStateSpaceHomeomorph.apply_symm_apply]
-
-end CompletionStates
+/-- **Existence of states.** Every order-unit space admits at least one state, obtained by
+extending `r • e ↦ r` with norm `1` via Hahn–Banach. -/
+theorem IsOrderUnitNorm.stateSpace_nonempty {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    (stateSpace e).Nonempty := by
+  let i : ℝ →ₗᵢ[ℝ] E := LinearIsometry.toSpanSingleton ℝ E he.norm_eq_one
+  have hi : i 1 = e := by simp [i, LinearIsometry.toSpanSingleton_apply]
+  have hid : StrongDual.toWeakDual (ContinuousLinearMap.id ℝ ℝ) ∈ stateSpace (1 : ℝ) :=
+    ⟨fun _ _ h => h, rfl⟩
+  obtain ⟨φ, hφ, _⟩ := isOrderUnitNorm_real_one.surjOn_pullbackFunctional_stateSpace he i hi hid
+  exact ⟨φ, hφ⟩
 
 end Functoriality
 

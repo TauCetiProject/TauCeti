@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # Functoriality of the continuous dual
@@ -99,8 +100,15 @@ theorem precomp_precomp_comp_inclusionInDoubleDual (T : E →L[𝕜] F) :
 /-- The bidual adjoint `T**` is continuous between the weak-star topologies of the biduals. -/
 theorem continuous_toWeakDual_precomp_precomp (T : E →L[𝕜] F) :
     Continuous fun Φ : WeakDual 𝕜 (StrongDual 𝕜 E) ↦ StrongDual.toWeakDual
-      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ)) :=
-  WeakDual.continuous_of_continuous_eval fun f ↦ WeakDual.eval_continuous (f.comp T)
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)
+        (WeakDual.toStrongDual Φ)) := by
+  have h : (fun Φ : WeakDual 𝕜 (StrongDual 𝕜 E) ↦ StrongDual.toWeakDual
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)
+        (WeakDual.toStrongDual Φ))) =
+      (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).pullbackFunctional := by
+    funext Φ
+    exact DFunLike.ext _ _ fun f => (ContinuousLinearMap.pullbackFunctional_apply _ Φ f).symm
+  exact h ▸ (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).pullbackFunctional.continuous
 
 /-- On the canonical image of `E` in the weak-star bidual, the bidual adjoint `T**` acts as `T`. -/
 theorem toWeakDual_precomp_precomp_inclusionInDoubleDualWeak (T : E →L[𝕜] F) (x : E) :

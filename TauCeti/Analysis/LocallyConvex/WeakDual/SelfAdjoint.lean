@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
@@ -16,13 +15,13 @@ public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 For a topological complex star module `A`, taking the real part restricts a complex-linear
 functional `φ : WeakDual ℂ A` to a real-linear functional on `selfAdjoint A`
-(`WeakDual.restrictToSelfAdjoint`), defined by composing `WeakDual.extendRCLikeL.symm` with
-pullback along the inclusion `selfAdjoint A →L[ℝ] A`. Conversely, any real-linear functional
-`ψ : WeakDual ℝ (selfAdjoint A)` extends uniquely to a complex-linear functional on `A` whose
-value at each self-adjoint `a` is `(ψ a : ℂ)`, given by `a ↦ ψ (ℜ a) + I * ψ (ℑ a)`
-(`WeakDual.extendFromSelfAdjoint`). Restricting the extension recovers `ψ`
-(`WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`), and any complex-linear functional that is
-real-valued on `selfAdjoint A` is the extension of its restriction
+(`WeakDual.restrictToSelfAdjoint`), defined by restricting scalars, postcomposing with
+`Complex.reCLM`, and pulling back along `(selfAdjoint.submodule ℝ A).subtypeL`. Conversely, any
+real-linear functional `ψ : WeakDual ℝ (selfAdjoint A)` extends uniquely to a complex-linear
+functional on `A` whose value at each self-adjoint `a` is `(ψ a : ℂ)`, given by
+`a ↦ ψ (ℜ a) + I * ψ (ℑ a)` (`WeakDual.extendFromSelfAdjoint`). Restricting the extension recovers
+`ψ` (`WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`), and any complex-linear functional
+that is real-valued on `selfAdjoint A` is the extension of its restriction
 (`WeakDual.extendFromSelfAdjoint_restrictToSelfAdjoint`).
 
 ## Main definitions and results
@@ -49,23 +48,28 @@ namespace WeakDual
 section Restrict
 
 variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModule ℂ A]
-  [TopologicalSpace A] [ContinuousConstSMul ℂ A]
+  [TopologicalSpace A]
 
 /-- Restriction of a complex-linear functional on `A` to a real-linear functional on
 `selfAdjoint A`, taking the real part, as a weak-star continuous real-linear map. -/
 noncomputable def restrictToSelfAdjoint : WeakDual ℂ A →L[ℝ] WeakDual ℝ (selfAdjoint A) :=
-  let incl : selfAdjoint A →L[ℝ] A :=
-    { toLinearMap := (selfAdjoint.submodule ℝ A).subtype
-      cont := continuous_subtypeVal }
-  incl.pullbackFunctional.comp
-    (WeakDual.extendRCLikeL (𝕜 := ℂ) (F := A)).symm.toContinuousLinearMap
+  let toReal : WeakDual ℂ A →L[ℝ] WeakDual ℝ A :=
+    { toFun := fun φ =>
+        StrongDual.toWeakDual (Complex.reCLM.comp ((toStrongDual φ).restrictScalars ℝ))
+      map_add' := fun _ _ => DFunLike.ext _ _ fun _ => by simp
+      map_smul' := fun _ _ => DFunLike.ext _ _ fun _ => by simp
+      cont := WeakDual.continuous_of_continuous_eval fun a =>
+        Complex.continuous_re.comp (WeakDual.eval_continuous a) }
+  (selfAdjoint.submodule ℝ A).subtypeL.pullbackFunctional.comp toReal
 
 /-- Evaluating `restrictToSelfAdjoint φ` at a self-adjoint element `a` yields `(φ a).re`. -/
 @[simp]
 theorem restrictToSelfAdjoint_apply (φ : WeakDual ℂ A) (a : selfAdjoint A) :
     restrictToSelfAdjoint φ a = (φ (a : A)).re := by
-  simp [restrictToSelfAdjoint, WeakDual.extendRCLikeL_symm_apply_apply]
-  rfl
+  change ((selfAdjoint.submodule ℝ A).subtypeL.pullbackFunctional
+    (StrongDual.toWeakDual (Complex.reCLM.comp ((toStrongDual φ).restrictScalars ℝ))))
+    ⟨(a : A), a.property⟩ = (φ (a : A)).re
+  simp [ContinuousLinearMap.pullbackFunctional_apply]
 
 end Restrict
 

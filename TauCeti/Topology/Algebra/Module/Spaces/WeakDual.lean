@@ -73,6 +73,13 @@ theorem pullbackFunctional_apply [AddCommMonoid F] [Module 𝕜 F] [TopologicalS
     T.pullbackFunctional φ a = φ (T a) :=
   (rfl)
 
+/-- Viewing the pullback of a functional as a strong dual element gives precomposition with `T`. -/
+@[simp]
+theorem toStrongDual_pullbackFunctional [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (T : E →L[𝕜] F) (φ : WeakDual 𝕜 F) :
+    WeakDual.toStrongDual (T.pullbackFunctional φ) = (WeakDual.toStrongDual φ).comp T :=
+  (rfl)
+
 /-- Pulling back along the identity map is the identity on `WeakDual 𝕜 E`. -/
 @[simp]
 theorem pullbackFunctional_id :

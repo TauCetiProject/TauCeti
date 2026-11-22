@@ -17,8 +17,8 @@ import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 Every state of a unital C⋆-subalgebra extends to a state of the ambient C⋆-algebra.
 
 * `TauCeti.surjOn_pullbackFunctional_stateSpace`: along an injective unital star homomorphism
-  `f : A → B`, restriction of states `pullbackFunctional A f` maps the state space of `B` onto the
-  state space of `A`.
+  `f : A → B`, restriction of states along `(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B)`
+  maps the state space of `B` onto the state space of `A`.
 * `StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq`: every state of a closed star
   subalgebra `S` of `A` (containing the unit of `A`) is the restriction of a state of `A`.
 * `TauCeti.isExtreme_stateSpace_inter_preimage_pullbackFunctional`: the states of `B` restricting
@@ -66,9 +66,10 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 /-- The states of `B` restricting along `f` to a given functional `φ` of `A` form a weak-* compact
 set. -/
 theorem isCompact_stateSpace_inter_preimage (f : F) (φ : WeakDual ℂ A) :
-    IsCompact (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) :=
-  isCompact_stateSpace.inter_right <|
-    isClosed_singleton.preimage (pullbackFunctional A f).continuous
+    IsCompact (stateSpace B ∩
+      (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ⁻¹' {φ}) :=
+  isCompact_stateSpace.inter_right <| isClosed_singleton.preimage
+    (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional.continuous
 
 end Compact
 
@@ -83,31 +84,34 @@ C⋆-algebras, the states of `B` restricting to a pure state `φ` of `A` form an
 state space of `B`. Neither `A`, `B` nor `f` need be unital. -/
 theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) :
-    IsExtreme ℝ (stateSpace B) (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) := by
+    IsExtreme ℝ (stateSpace B) (stateSpace B ∩
+      (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional ⁻¹' {φ}) := by
+  let T : A →L[ℂ] B := PositiveContinuousLinearMap.ofClass f
   refine ⟨inter_subset_left, fun ψ₁ hψ₁ ψ₂ hψ₂ ψ hψ hseg => ⟨hψ₁, ?_⟩⟩
   obtain ⟨a, b, ha, hb, hab, rfl⟩ := hseg
-  have hcomb : a • pullbackFunctional A f ψ₁ + b • pullbackFunctional A f ψ₂ = φ := by
-    rw [← (hψ.2 : pullbackFunctional A f (a • ψ₁ + b • ψ₂) = φ)]
-    exact DFunLike.ext _ _ fun x => by simp
+  have hcomb : a • T.pullbackFunctional ψ₁ + b • T.pullbackFunctional ψ₂ = φ := by
+    rw [← (hψ.2 : T.pullbackFunctional (a • ψ₁ + b • ψ₂) = φ)]
+    exact DFunLike.ext _ _ fun x => by simp [T]
   -- the restriction of a state of `B` is nonnegative and has norm at most `1`
   have hres {χ : WeakDual ℂ B} (hχ : χ ∈ stateSpace B) :
-      (∀ x, 0 ≤ x → 0 ≤ pullbackFunctional A f χ x) ∧
-        ‖toStrongDual (pullbackFunctional A f χ)‖ ≤ 1 := by
+      (∀ x, 0 ≤ x → 0 ≤ T.pullbackFunctional χ x) ∧
+        ‖toStrongDual (T.pullbackFunctional χ)‖ ≤ 1 := by
     refine ⟨fun x hx => ?_, ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_⟩
-    · rw [pullbackFunctional_apply]
+    · rw [ContinuousLinearMap.pullbackFunctional_apply]
       exact map_nonneg_of_mem_stateSpace hχ (map_nonneg f hx)
-    calc ‖toStrongDual (pullbackFunctional A f χ) x‖ = ‖χ (f x)‖ := by
-          rw [toStrongDual_apply, pullbackFunctional_apply]
+    calc ‖toStrongDual (T.pullbackFunctional χ) x‖ = ‖χ (f x)‖ := by
+          rw [toStrongDual_apply, ContinuousLinearMap.pullbackFunctional_apply]
+          rfl
       _ ≤ ‖f x‖ := norm_apply_le_of_mem_stateSpace hχ _
       _ ≤ ‖x‖ := NonUnitalStarAlgHom.norm_apply_le f x
       _ = 1 * ‖x‖ := (one_mul _).symm
   obtain ⟨hpos₁, hle₁⟩ := hres hψ₁
   obtain ⟨hpos₂, hle₂⟩ := hres hψ₂
   -- the norms of the restrictions average to at least `‖φ‖ = 1`, so both are `1`
-  have h1 : 1 ≤ a * ‖toStrongDual (pullbackFunctional A f ψ₁)‖ +
-      b * ‖toStrongDual (pullbackFunctional A f ψ₂)‖ := by
-    have hsplit : toStrongDual φ = (a : ℂ) • toStrongDual (pullbackFunctional A f ψ₁) +
-        (b : ℂ) • toStrongDual (pullbackFunctional A f ψ₂) := by
+  have h1 : 1 ≤ a * ‖toStrongDual (T.pullbackFunctional ψ₁)‖ +
+      b * ‖toStrongDual (T.pullbackFunctional ψ₂)‖ := by
+    have hsplit : toStrongDual φ = (a : ℂ) • toStrongDual (T.pullbackFunctional ψ₁) +
+        (b : ℂ) • toStrongDual (T.pullbackFunctional ψ₂) := by
       rw [← hcomb]
       exact ContinuousLinearMap.ext fun x => by simp
     calc (1 : ℝ) = ‖toStrongDual φ‖ := (norm_toStrongDual_of_mem_stateSpace hφ.1).symm
@@ -125,7 +129,8 @@ variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- **Extension of states.** Along an injective unital star homomorphism `f : A → B` of C⋆-algebras,
 every state of `A` is the restriction `φ ∘ f` of a state `φ` of `B`. -/
 theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (stateSpace B) (stateSpace A) := by
   intro φ hφ
   let i : A →ₗᵢ[ℂ] B := ⟨(f : A →ₗ[ℂ] B), NonUnitalStarAlgHom.norm_map f hf⟩
   obtain ⟨ψ, hψ, hnorm⟩ := i.exists_extension_norm_eq (toStrongDual φ)
@@ -139,10 +144,11 @@ theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f)
 /-- **Extension of pure states.** Along an injective unital star homomorphism `f : A → B` of
 C⋆-algebras, every pure state of `A` is the restriction `φ ∘ f` of a pure state `φ` of `B`. -/
 theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Function.Injective f) :
-    SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
-      (extremePoints ℝ (stateSpace A)) := by
+    SurjOn (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
+      (extremePoints ℝ (stateSpace B)) (extremePoints ℝ (stateSpace A)) := by
   have h := surjOn_extremePoints_image
-    ((pullbackFunctional A f).restrictScalars ℝ).toContinuousAffineMap
+    (((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional).restrictScalars ℝ
+      ).toContinuousAffineMap
     (isCompact_stateSpace (A := B))
   rwa [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.coe_restrictScalars',
     (surjOn_pullbackFunctional_stateSpace f hf).image_eq_of_mapsTo
@@ -162,7 +168,7 @@ theorem exists_mem_stateSpace_forall_apply_coe_eq (S : StarSubalgebra ℂ A)
     [IsClosed (S : Set A)] {φ : WeakDual ℂ S} (hφ : φ ∈ stateSpace S) :
     ∃ ψ ∈ stateSpace A, ∀ s : S, ψ s = φ s := by
   obtain ⟨ψ, hψ, rfl⟩ := surjOn_pullbackFunctional_stateSpace S.subtype Subtype.val_injective hφ
-  exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
+  exact ⟨ψ, hψ, fun s => by simp [ContinuousLinearMap.pullbackFunctional_apply]⟩
 
 /-- **Extension of pure states from a C⋆-subalgebra.** Every pure state of a closed star subalgebra
 `S` of a unital C⋆-algebra `A`, containing the unit of `A`, is the restriction of a pure state of
@@ -172,6 +178,6 @@ theorem exists_mem_extremePoints_stateSpace_forall_apply_coe_eq (S : StarSubalge
     ∃ ψ ∈ extremePoints ℝ (stateSpace A), ∀ s : S, ψ s = φ s := by
   obtain ⟨ψ, hψ, rfl⟩ :=
     surjOn_pullbackFunctional_extremePoints_stateSpace S.subtype Subtype.val_injective hφ
-  exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
+  exact ⟨ψ, hψ, fun s => by simp [ContinuousLinearMap.pullbackFunctional_apply]⟩
 
 end StarSubalgebra

@@ -28,8 +28,8 @@ functionals, positivity is equivalent to `‖φ‖ = φ e`.
   `norm_apply_le_of_monotone_of_map_unit`: automatic boundedness and operator-norm formulas for
   positive linear maps between order-unit spaces.
 * `TauCeti.IsOrderUnitNorm.opNorm_eq_apply_unit_of_monotone`,
-  `monotone_iff_opNorm_eq_apply_unit`, `monotone_and_apply_unit_eq_one_iff`: operator-norm
-  characterization of positive continuous real-linear functionals.
+  `monotone_iff_opNorm_eq_apply_unit`: operator-norm characterization of positive continuous
+  real-linear functionals.
 
 ## References
 
@@ -48,7 +48,9 @@ namespace TauCeti
 
 section PositiveMaps
 
-variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
+section Pointwise
+
+variable {E F : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E]
   [SeminormedAddCommGroup F] [NormedSpace ℝ F] [PartialOrder F]
   [IsOrderedAddMonoid F] {e : E} {f : F}
 
@@ -64,7 +66,7 @@ theorem IsOrderUnitNorm.norm_map_le {M : Type*} [FunLike M E F] [LinearMapClass 
     have h := OrderHomClass.mono T (he.le_norm_smul a)
     rwa [map_smul] at h
   calc
-    ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_norm_of_le hlo hhi
+    ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_norm_of_neg_le_of_le hlo hhi
     _ = ‖T e‖ * ‖a‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
 
 /-- A positive linear map between order-unit spaces is `‖T e‖`-Lipschitz. -/
@@ -94,6 +96,14 @@ theorem IsOrderUnitNorm.toPositiveContinuousLinearMap_apply (he : IsOrderUnitNor
     he.toPositiveContinuousLinearMap hf T a = T a :=
   (rfl)
 
+end Pointwise
+
+section OpNorm
+
+variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
+  [SeminormedAddCommGroup F] [NormedSpace ℝ F] [PartialOrder F]
+  [IsOrderedAddMonoid F] {e : E} {f : F}
+
 /-- A monotone continuous linear map between order-unit spaces has operator norm `‖T e‖`. -/
 theorem IsOrderUnitNorm.opNorm_eq_norm_apply_unit (he : IsOrderUnitNorm e)
     (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F) (hT : Monotone T) : ‖T‖ = ‖T e‖ := by
@@ -113,6 +123,8 @@ theorem IsOrderUnitNorm.norm_apply_le_of_monotone_of_map_unit (he : IsOrderUnitN
     (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (a : E) :
     ‖T a‖ ≤ ‖a‖ := by
   simpa [he.opNorm_eq_one_of_monotone_of_map_unit hf T hT hTe] using T.le_opNorm a
+
+end OpNorm
 
 end PositiveMaps
 
@@ -139,13 +151,6 @@ theorem IsOrderUnitNorm.monotone_iff_opNorm_eq_apply_unit (φ : E →L[ℝ] ℝ)
     LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm φ
       (fun g => by simpa [Real.norm_eq_abs, h] using φ.le_opNorm g)
       (he.nonneg_iff_norm_smul_sub_le.mp ha)
-
-/-- A continuous real-linear functional is positive and normalized at `e` iff `‖φ‖ = 1` and
-`φ e = 1`. -/
-theorem IsOrderUnitNorm.monotone_and_apply_unit_eq_one_iff (φ : E →L[ℝ] ℝ) :
-    (Monotone φ ∧ φ e = 1) ↔ ‖φ‖ = 1 ∧ φ e = 1 := by
-  refine ⟨fun ⟨hmono, h1⟩ => ⟨by rw [he.opNorm_eq_apply_unit_of_monotone φ hmono, h1], h1⟩,
-    fun ⟨hnorm, h1⟩ => ⟨(he.monotone_iff_opNorm_eq_apply_unit φ).mpr (by rw [hnorm, h1]), h1⟩⟩
 
 end Functionals
 

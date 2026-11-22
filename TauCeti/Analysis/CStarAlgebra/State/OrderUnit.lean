@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import TauCeti.Analysis.LocallyConvex.WeakDual.SelfAdjoint
-public import TauCeti.Analysis.Normed.Order.OrderUnit.State
+public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
 
 /-!
 # Correspondence between C⋆-algebra states and order-unit states
@@ -24,10 +24,13 @@ order-unit state space `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
   extension preserve state spaces.
 * `TauCeti.OrderUnit.extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace`: every
   C⋆-algebra state is recovered by extending its restriction to `selfAdjoint A`.
-* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`: weak-star homeomorphism between
-  `TauCeti.stateSpace A` and `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
-* `TauCeti.OrderUnit.cstarPositiveLinearMapEquivStateSpace`: bijection between normalized positive
-  continuous complex-linear functionals `{ω : A →P[ℂ] ℂ // ω 1 = 1}` and
+* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_convexCombo`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_convexCombo`: weak-star homeomorphism between
+  `TauCeti.stateSpace A` and `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`, preserving convex
+  combinations.
+* `TauCeti.OrderUnit.cstarPositiveContinuousLinearMapEquivStateSpace`: bijection between normalized
+  positive continuous complex-linear functionals `{ω : A →P[ℂ] ℂ // ω 1 = 1}` and
   `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 
 ## References
@@ -71,14 +74,9 @@ theorem mapsTo_extendFromSelfAdjoint_stateSpace :
   refine ⟨fun a ha => ?_, ?_⟩
   · let a' : selfAdjoint A := ⟨a, IsSelfAdjoint.of_nonneg ha⟩
     have ha' : (0 : selfAdjoint A) ≤ a' := ha
-    have hre : ℜ a = a' := selfAdjoint.realPart_coe (x := a')
-    have him : ℑ a = 0 := selfAdjoint.imaginaryPart_coe (x := a')
-    rw [extendFromSelfAdjoint_apply, hre, him, map_zero, Complex.ofReal_zero, mul_zero, add_zero]
+    rw [show a = (a' : A) from rfl, extendFromSelfAdjoint_apply_coe]
     exact Complex.le_def.mpr ⟨map_nonneg_of_mem_stateSpace hψ ha', rfl⟩
-  · have hre : ℜ (1 : A) = (1 : selfAdjoint A) :=
-      selfAdjoint.realPart_coe (x := (1 : selfAdjoint A))
-    have him : ℑ (1 : A) = 0 := selfAdjoint.imaginaryPart_coe (x := (1 : selfAdjoint A))
-    rw [extendFromSelfAdjoint_apply, hre, him, map_zero, Complex.ofReal_zero, mul_zero, add_zero,
+  · rw [show (1 : A) = ((1 : selfAdjoint A) : A) from rfl, extendFromSelfAdjoint_apply_coe,
       map_unit_of_mem_stateSpace hψ, Complex.ofReal_one]
 
 /-- On any C⋆-algebra state `φ`, extending the restriction to `selfAdjoint A` recovers `φ`. -/
@@ -119,9 +117,31 @@ theorem cstarStateSpaceHomeomorph_symm_apply (ψ : stateSpace (1 : selfAdjoint A
       (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) := by
   simp [cstarStateSpaceHomeomorph]
 
+/-- `cstarStateSpaceHomeomorph` preserves convex combinations of states. -/
+theorem cstarStateSpaceHomeomorph_convexCombo {φ₁ φ₂ : TauCeti.stateSpace A}
+    {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (hst : s + t = 1) :
+    cstarStateSpaceHomeomorph
+        ⟨s • φ₁.val + t • φ₂.val, TauCeti.convex_stateSpace φ₁.property φ₂.property hs ht hst⟩ =
+      ⟨s • (cstarStateSpaceHomeomorph φ₁).val + t • (cstarStateSpaceHomeomorph φ₂).val,
+        convex_stateSpace (cstarStateSpaceHomeomorph φ₁).property
+          (cstarStateSpaceHomeomorph φ₂).property hs ht hst⟩ :=
+  Subtype.ext (by simp [cstarStateSpaceHomeomorph])
+
+/-- The inverse of `cstarStateSpaceHomeomorph` preserves convex combinations of states. -/
+theorem cstarStateSpaceHomeomorph_symm_convexCombo
+    {ψ₁ ψ₂ : stateSpace (1 : selfAdjoint A)} {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t)
+    (hst : s + t = 1) :
+    cstarStateSpaceHomeomorph.symm
+        ⟨s • ψ₁.val + t • ψ₂.val, convex_stateSpace ψ₁.property ψ₂.property hs ht hst⟩ =
+      ⟨s • (cstarStateSpaceHomeomorph.symm ψ₁).val +
+          t • (cstarStateSpaceHomeomorph.symm ψ₂).val,
+        TauCeti.convex_stateSpace (cstarStateSpaceHomeomorph.symm ψ₁).property
+          (cstarStateSpaceHomeomorph.symm ψ₂).property hs ht hst⟩ :=
+  Subtype.ext (by simp [cstarStateSpaceHomeomorph])
+
 /-- The bijection between normalized positive continuous complex-linear functionals
 `{ω : A →P[ℂ] ℂ // ω 1 = 1}` and `OrderUnit.stateSpace (1 : selfAdjoint A)`. -/
-noncomputable def cstarPositiveLinearMapEquivStateSpace :
+noncomputable def cstarPositiveContinuousLinearMapEquivStateSpace :
     {ω : A →P[ℂ] ℂ // ω 1 = 1} ≃ stateSpace (1 : selfAdjoint A) where
   toFun ω := cstarStateSpaceHomeomorph
     ⟨StrongDual.toWeakDual (ω.val : A →L[ℂ] ℂ),
@@ -144,19 +164,20 @@ noncomputable def cstarPositiveLinearMapEquivStateSpace :
       (cstarStateSpaceHomeomorph.right_inv ψ)
     exact h
 
-/-- Evaluating `cstarPositiveLinearMapEquivStateSpace` restricts `ω` to `selfAdjoint A`. -/
+/-- Evaluating `cstarPositiveContinuousLinearMapEquivStateSpace` restricts `ω` to
+`selfAdjoint A`. -/
 @[simp]
-theorem cstarPositiveLinearMapEquivStateSpace_apply (ω : {ω : A →P[ℂ] ℂ // ω 1 = 1})
+theorem cstarPositiveContinuousLinearMapEquivStateSpace_apply (ω : {ω : A →P[ℂ] ℂ // ω 1 = 1})
     (a : selfAdjoint A) :
-    (cstarPositiveLinearMapEquivStateSpace ω).val a = (ω.val (a : A)).re := by
-  simp [cstarPositiveLinearMapEquivStateSpace]
+    (cstarPositiveContinuousLinearMapEquivStateSpace ω).val a = (ω.val (a : A)).re := by
+  simp [cstarPositiveContinuousLinearMapEquivStateSpace]
 
-/-- Evaluating the inverse of `cstarPositiveLinearMapEquivStateSpace` gives the complex-linear
-extension of `ψ`. -/
+/-- Evaluating the inverse of `cstarPositiveContinuousLinearMapEquivStateSpace` gives the
+complex-linear extension of `ψ`. -/
 @[simp]
-theorem cstarPositiveLinearMapEquivStateSpace_symm_apply (ψ : stateSpace (1 : selfAdjoint A))
-    (a : A) :
-    (cstarPositiveLinearMapEquivStateSpace.symm ψ).val a =
+theorem cstarPositiveContinuousLinearMapEquivStateSpace_symm_apply
+    (ψ : stateSpace (1 : selfAdjoint A)) (a : A) :
+    (cstarPositiveContinuousLinearMapEquivStateSpace.symm ψ).val a =
       (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) :=
   cstarStateSpaceHomeomorph_symm_apply ψ a
 
