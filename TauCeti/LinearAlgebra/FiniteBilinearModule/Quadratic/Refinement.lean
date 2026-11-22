@@ -212,9 +212,10 @@ theorem exists_quadraticMap_polar_eq_pairing :
   have hpolar' (x y : ι → ℤ) : QuadraticMap.polar Q x y = A.pairing (π x) (π y) := by
     rw [hpolar, hsum, hsum]
   -- `Q` vanishes on the kernel of `π`, and so does its polar form, so `Q` descends to `A`.
-  have hrad : LinearMap.ker π.toIntLinearMap ≤ Q.radical := fun k hk ↦
-    ⟨hQ k ((hker k).1 hk), LinearMap.ext fun y ↦ by
-      rw [QuadraticMap.polarBilin_apply_apply, hpolar', show π k = 0 from hk, pairing_zero_left,
+  have hrad : LinearMap.ker π.toIntLinearMap ≤ Q.radical := fun k hk ↦ by
+    have hk' : π k = 0 := LinearMap.mem_ker.1 hk
+    exact ⟨hQ k ((hker k).1 hk'), LinearMap.ext fun y ↦ by
+      rw [QuadraticMap.polarBilin_apply_apply, hpolar', hk', pairing_zero_left,
         LinearMap.zero_apply]⟩
   let q := Q.liftOfSurjective π.toIntLinearMap hπ hrad
   have hq (x : ι → ℤ) : q (π x) = Q x := Q.liftOfSurjective_apply π.toIntLinearMap hπ hrad x
