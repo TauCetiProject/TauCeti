@@ -17,12 +17,19 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
+* `TauCeti.one_sub_mul_circleMap_ne_zero`: a scaled circle subtracted from `1` avoids zero
+  whenever its radius after scaling differs from `1`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
   `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
 * `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
   `circleMap c R θ` is `e^{iθ}`.
 * `TauCeti.circleMap_mem_setOf_le_norm_sub_le`: a circle of radius `r ∈ [a, b]`, `0 ≤ a`, about
   `z₀` lies in the closed annulus `a ≤ |z - z₀| ≤ b`.
+* `TauCeti.circleMap_im`: the imaginary part of `circleMap c r θ` is `c.im + r sin θ`.
+* `TauCeti.isClosed_upperHalfAnnulus`: the closed upper half of the annulus `a ≤ |z - z₀| ≤ b` is
+  closed.
+* `TauCeti.circleMap_mem_upperHalfAnnulus`: for `θ ∈ [0, π]`, the point at angle `θ` of a circle
+  of radius `r ∈ [a, b]`, `0 ≤ a`, about `z₀` lies in the closed upper half of the annulus.
 * `TauCeti.circleMap_mem_ball_diff_singleton`: the circle of radius `r < R` about `z₀` lies in the
   punctured disc of radius `R`.
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
@@ -35,11 +42,20 @@ public section
 namespace TauCeti
 
 open Complex Metric Set
+open scoped Real
 
 /-- The circle of radius `R ≥ 0` about `c` has distance `R` from `c`. -/
 theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
     ‖circleMap c R θ - c‖ = R := by
   rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- Subtracting a point of the scaled circle `z * circleMap 0 ρ θ` from `1` gives a nonzero
+point whenever the scaled radius differs from `1`. -/
+theorem one_sub_mul_circleMap_ne_zero {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ| ≠ 1) (θ : ℝ) :
+    1 - z * circleMap 0 ρ θ ≠ 0 := by
+  intro heq
+  have hn := congrArg norm (sub_eq_zero.mp heq)
+  exact hzρ (by simpa [norm_mul, norm_circleMap_zero] using hn.symm)
 
 /-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
 `c + w`. -/
@@ -68,6 +84,27 @@ theorem circleMap_mem_setOf_le_norm_sub_le {z₀ : ℂ} {a b r : ℝ} (ha : 0 �
     (θ : ℝ) : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
   rw [mem_ofPred_eq, norm_circleMap_sub_center z₀ (ha.trans hr.1)]
   exact hr
+
+/-- The imaginary part of the point at angle `θ` of the circle of radius `r` about `c`. -/
+theorem circleMap_im (c : ℂ) (r θ : ℝ) : (circleMap c r θ).im = c.im + r * Real.sin θ := by
+  rw [← circleMap_zero_im, ← add_im, ← circleMap_sub_center c, add_sub_cancel]
+
+/-- The closed upper half `{z | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}` of the annulus of
+radii `a` and `b` about `z₀` is closed. -/
+theorem isClosed_upperHalfAnnulus (z₀ : ℂ) (a b : ℝ) :
+    IsClosed {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  have hn : Continuous (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
+  exact (isClosed_le continuous_const continuous_im).inter
+    ((isClosed_le continuous_const hn).inter (isClosed_le hn continuous_const))
+
+/-- For `θ ∈ [0, π]`, the point at angle `θ` of a circle of radius `r ∈ [a, b]` about `z₀`, with
+`0 ≤ a`, lies in the closed upper half of the annulus `a ≤ |z - z₀| ≤ b`. -/
+theorem circleMap_mem_upperHalfAnnulus {z₀ : ℂ} {a b r θ : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b)
+    (hθ : θ ∈ Icc 0 π) :
+    circleMap z₀ r θ ∈ {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  refine ⟨?_, circleMap_mem_setOf_le_norm_sub_le ha hr θ⟩
+  rw [circleMap_im, le_add_iff_nonneg_right]
+  exact mul_nonneg (ha.trans hr.1) (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
 
 /-- The circle of radius `0 < r < R` about `z₀` lies in the punctured disc of radius `R`. -/
 theorem circleMap_mem_ball_diff_singleton {z₀ : ℂ} {r R : ℝ} (hr : 0 < r) (hrR : r < R)

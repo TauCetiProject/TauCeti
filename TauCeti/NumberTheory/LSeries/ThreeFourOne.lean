@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.VecNotation
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.NonnegCombination
+import Mathlib.Data.List.GetD
 
 /-!
 # The 3-4-1 positivity combination
@@ -25,8 +25,9 @@ applications provide those analytic inputs separately.
 
 ## Main declarations
 
-* `TauCeti.LSeries.isNonnegativeTrigonometricCombination_threeFourOne` packages the frequencies
-  `0`, `1`, and `2` with weights `3`, `4`, and `1`.
+* `TauCeti.LSeries.threeFourOneCoeff` is the coefficient sequence `3, 4, 1, 0, 0, …`.
+* `TauCeti.LSeries.isNonnegativeTrigonometricCombination_threeFourOne` packages these coefficients
+  at the frequencies `k ∈ Finset.range 3`.
 * `TauCeti.LSeries.threeFourOne_re_neg_log_one_sub_nonneg` is the corresponding inequality for
   logarithms of Euler factors in the open unit disk.
 
@@ -48,44 +49,38 @@ noncomputable section
 
 /-! ### The concrete 3-4-1 combination -/
 
-/-- The three nonnegative weights `3`, `4`, and `1` in the `3-4-1` combination, as complex
-numbers. -/
-def threeFourOneWeight : Fin 3 → ℂ := ![3, 4, 1]
-
-/-- The frequencies `0`, `1`, and `2` in the `3-4-1` combination. -/
-def threeFourOneFrequency : Fin 3 → ℕ := ![0, 1, 2]
+/-- The `3-4-1` coefficients indexed by frequency: `3`, `4`, and `1` at `0`, `1`, and `2`, and
+`0` at every larger frequency. -/
+def threeFourOneCoeff (k : ℕ) : ℝ := ([3, 4, 1] : List ℝ).getD k 0
 
 /-- The `3-4-1` trigonometric expression evaluated at a complex phase. -/
 def threeFourOneCombination (z : ℂ) : ℝ := 3 + 4 * z.re + (z ^ 2).re
 
-/-- The first `3-4-1` weight is `3`. -/
-@[simp] theorem threeFourOneWeight_zero : threeFourOneWeight 0 = 3 := (rfl)
+/-- The `3-4-1` coefficient at frequency `0` is `3`. -/
+@[simp] theorem threeFourOneCoeff_zero : threeFourOneCoeff 0 = 3 := (rfl)
 
-/-- The second `3-4-1` weight is `4`. -/
-@[simp] theorem threeFourOneWeight_one : threeFourOneWeight 1 = 4 := (rfl)
+/-- The `3-4-1` coefficient at frequency `1` is `4`. -/
+@[simp] theorem threeFourOneCoeff_one : threeFourOneCoeff 1 = 4 := (rfl)
 
-/-- The third `3-4-1` weight is `1`. -/
-@[simp] theorem threeFourOneWeight_two : threeFourOneWeight 2 = 1 := (rfl)
+/-- The `3-4-1` coefficient at frequency `2` is `1`. -/
+@[simp] theorem threeFourOneCoeff_two : threeFourOneCoeff 2 = 1 := (rfl)
 
-/-- The first `3-4-1` frequency is `0`. -/
-@[simp] theorem threeFourOneFrequency_zero : threeFourOneFrequency 0 = 0 := (rfl)
-
-/-- The second `3-4-1` frequency is `1`. -/
-@[simp] theorem threeFourOneFrequency_one : threeFourOneFrequency 1 = 1 := (rfl)
-
-/-- The third `3-4-1` frequency is `2`. -/
-@[simp] theorem threeFourOneFrequency_two : threeFourOneFrequency 2 = 2 := (rfl)
+/-- The `3-4-1` coefficients vanish above frequency `2`. -/
+@[simp] theorem threeFourOneCoeff_eq_zero {k : ℕ} (hk : 2 < k) : threeFourOneCoeff k = 0 := by
+  unfold threeFourOneCoeff
+  exact List.getD_eq_default _ _ (by simp only [List.length_cons, List.length_nil]; omega)
 
 /-- The defining formula for `threeFourOneCombination`. -/
 theorem threeFourOneCombination_def (z : ℂ) :
     threeFourOneCombination z = 3 + 4 * z.re + (z ^ 2).re := (rfl)
 
-/-- The abstract finite combination with `3-4-1` weights is the usual concrete expression. -/
+/-- The abstract finite combination with the `3-4-1` coefficients is the usual concrete
+expression. -/
 @[simp]
 theorem trigonometricCombination_threeFourOne (z : ℂ) :
-    trigonometricCombination Finset.univ threeFourOneWeight threeFourOneFrequency z =
+    trigonometricCombination (Finset.range 3) (fun k ↦ (threeFourOneCoeff k : ℂ)) id z =
       threeFourOneCombination z := by
-  simp [trigonometricCombination_def, threeFourOneCombination_def, Fin.sum_univ_three]
+  simp [trigonometricCombination_def, threeFourOneCombination_def, Finset.sum_range_succ]
 
 /-- On the unit circle the `3-4-1` expression is twice a square. -/
 theorem threeFourOneCombination_eq_two_mul_sq {z : ℂ} (hz : ‖z‖ = 1) :
@@ -94,11 +89,11 @@ theorem threeFourOneCombination_eq_two_mul_sq {z : ℂ} (hz : ‖z‖ = 1) :
     ← Complex.sq_norm_sub_sq_re, hz]
   ring
 
-/-- The weights and frequencies of the `3-4-1` expression form a finite nonnegative
+/-- The `3-4-1` coefficients at the frequencies `0`, `1`, and `2` form a finite nonnegative
 trigonometric combination. -/
 theorem isNonnegativeTrigonometricCombination_threeFourOne :
-    IsNonnegativeTrigonometricCombination Finset.univ threeFourOneWeight
-      threeFourOneFrequency := by
+    IsNonnegativeTrigonometricCombination (Finset.range 3) (fun k ↦ (threeFourOneCoeff k : ℂ))
+      id := by
   intro z hz
   rw [trigonometricCombination_threeFourOne, threeFourOneCombination_eq_two_mul_sq hz]
   positivity
@@ -119,7 +114,7 @@ theorem threeFourOne_re_neg_log_one_sub_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha�
       (-log (1 - a * z ^ 2)).re := by
   have h := sum_re_neg_log_one_sub_nonneg
     isNonnegativeTrigonometricCombination_threeFourOne ha₀ ha₁ hz
-  simp [Fin.sum_univ_three] at h ⊢
+  simp [Finset.sum_range_succ] at h ⊢
   linarith
 
 end

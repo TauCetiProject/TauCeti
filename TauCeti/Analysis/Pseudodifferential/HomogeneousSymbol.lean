@@ -32,12 +32,15 @@ the frequency: `a (x, t • ξ) = t ^ m • a (x, ξ)` for every `t > 0`. These 
 A homogeneous term of degree `m` need not extend continuously to `ξ = 0` (think of
 `ξ / ‖ξ‖`, of degree `0`), so its value there is a convention: `TauCeti.HomogeneousSymbol` fixes
 it to be zero, which makes the carrier extensional on its coefficient, and `HomogeneousSymbol.mk'`
-builds a homogeneous symbol from a function given only away from `ξ = 0`.
+builds a homogeneous symbol from a function given only away from `ξ = 0`. A nonzero
+homogeneous symbol has only one degree (`HomogeneousSymbol.degree_eq_of_coefficient_eq`).
 
 The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
-  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
+  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), with the joint continuity of
+  straight lines `s ↦ (1 - s) a + s b` (`HomogeneousSymbol.continuousOn_coefficient_lineMap`),
+  and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
@@ -59,7 +62,8 @@ The file develops:
   derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are those of `a` with one more derivative of each kind
   (`HomogeneousSymbol.mixedDeriv_spatialDeriv_frequencyDeriv`); for positive degree the growth
   bound makes a homogeneous symbol, with its value `0` at the zero frequency, continuous on all
-  of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
+  of `X × E` (`HomogeneousSymbol.continuous_coefficient`), while a nonzero symbol of nonpositive
+  degree is discontinuous at the zero frequency (`HomogeneousSymbol.continuous_coefficient_iff`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -82,6 +86,10 @@ The file develops:
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
+* the image `HomogeneousSymbol.map Φ a`, `(x, ξ) ↦ Φ (a (x, ξ))`, under a continuous real-linear
+  map `Φ` of the coefficient spaces, of the same degree; it commutes with the spatial and
+  frequency derivatives (`HomogeneousSymbol.spatialDeriv_map`,
+  `HomogeneousSymbol.frequencyDeriv_map`).
 
 Higher derivatives are full Fréchet derivatives on `X × E`; a derivative in `j` position
 directions `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -136,6 +144,40 @@ theorem ext_of_ne_zero {a b : HomogeneousSymbol X E V W m}
 theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) :
     ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
   rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
+
+/-- A homogeneous symbol of degree `m` bounded at a position `x` by `C ⟨ξ⟩ ^ m'` at all
+frequencies of norm at least `R`, for some `m' < m`, vanishes at `x`: homogeneity transports the
+extra decay at large frequencies to every frequency. -/
+theorem coefficient_eq_zero_of_norm_le {m' : ℝ} (hm : m' < m) (a : HomogeneousSymbol X E V W m)
+    {x : X} {C R : ℝ} (h : ∀ ξ : E, R ≤ ‖ξ‖ → ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.zero_covector x
+  rw [← norm_le_zero_iff]
+  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  set D := max C 0 * 2 ^ (|m'| / 2) * ‖ξ‖ ^ m'
+  -- For large `t`, homogeneity at `t • ξ` and the bound there give
+  -- `t ^ m ‖a (x, ξ)‖ ≤ D t ^ m'`.
+  have key : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
+    filter_upwards [eventually_ge_atTop (max R 1 / ‖ξ‖), eventually_gt_atTop 0] with t ht ht0
+    have htξ : max R 1 ≤ ‖t • ξ‖ := by
+      rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
+    have h' := (h (t • ξ) (le_of_max_le_left htξ)).trans
+      (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity))
+    have hw := one_add_norm_sq_rpow_le_norm_rpow (le_of_max_le_right htξ) m'
+    rw [a.norm_homogeneous x ξ ht0] at h'
+    simp only [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at h' hw
+    refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
+    calc t ^ m * ‖a.coefficient (x, ξ)‖
+        ≤ max C 0 * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) :=
+          h'.trans (mul_le_mul_of_nonneg_left hw (le_max_right C 0))
+      _ = t ^ m * (D * t ^ (m' - m)) := by
+          rw [Real.rpow_sub ht0]
+          field_simp
+          ring
+  have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
+    simpa [neg_sub] using (tendsto_rpow_neg_atTop (by linarith : 0 < m - m')).const_mul D
+  exact ge_of_tendsto hlim key
 
 section Regularity
 
@@ -214,6 +256,19 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 theorem coefficient_zero : (0 : HomogeneousSymbol X E V W m).coefficient = 0 :=
   (rfl)
 
+/-- **Uniqueness of the degree.** A nonzero homogeneous symbol has only one degree: if its
+coefficient is also the coefficient of a homogeneous symbol of degree `m'`, then `m' = m`. -/
+theorem degree_eq_of_coefficient_eq {a : HomogeneousSymbol X E V W m}
+    {b : HomogeneousSymbol X E V W m'} (h : b.coefficient = a.coefficient) (ha : a ≠ 0) :
+    m' = m := by
+  obtain ⟨⟨x, ξ⟩, hp⟩ : ∃ p, a.coefficient p ≠ 0 := by
+    by_contra! H
+    exact ha (HomogeneousSymbol.ext (funext H))
+  have h₂ := b.norm_homogeneous x ξ (two_pos (α := ℝ))
+  rw [h, a.norm_homogeneous x ξ two_pos] at h₂
+  exact ((Real.rpow_right_inj two_pos (by norm_num)).1
+    (mul_right_cancel₀ (norm_ne_zero_iff.2 hp) h₂)).symm
+
 @[simp]
 theorem coefficient_add (a b : HomogeneousSymbol X E V W m) :
     (a + b).coefficient = a.coefficient + b.coefficient :=
@@ -252,6 +307,24 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
     (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
   map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
+/-- The coefficient of a real affine combination `(1 - s) a + s b` of homogeneous symbols is the
+same combination of their coefficients. -/
+@[simp]
+theorem coefficient_lineMap (a b : HomogeneousSymbol X E V W m) (s : ℝ) (p : X × E) :
+    (AffineMap.lineMap a b s).coefficient p =
+      AffineMap.lineMap (a.coefficient p) (b.coefficient p) s := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The straight line `s ↦ (1 - s) a + s b` between two homogeneous symbols is jointly continuous
+in the time and the point at every nonzero frequency. -/
+theorem continuousOn_coefficient_lineMap (a b : HomogeneousSymbol X E V W m) :
+    ContinuousOn (fun q : ℝ × X × E ↦ (AffineMap.lineMap a b q.1).coefficient q.2)
+      {q | q.2.2 ≠ 0} := by
+  simp only [coefficient_lineMap]
+  exact ContinuousOn.lineMap (a.continuousOn_coefficient.comp continuous_snd.continuousOn
+    fun _ hq ↦ hq) (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)
+    continuous_fst.continuousOn
 
 /-! ### Changing the degree -/
 
@@ -334,6 +407,13 @@ def comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
 theorem coefficient_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m)
     (p : X × E) : (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) :=
   (rfl)
+
+/-- If the composite `b a` of two homogeneous symbols vanishes, so does the composite of their
+values at every point. -/
+theorem coefficient_comp_coefficient_eq_zero {b : HomogeneousSymbol X E W U m'}
+    {a : HomogeneousSymbol X E V W m} (h : b.comp a = 0) (p : X × E) :
+    b.coefficient p ∘L a.coefficient p = 0 := by
+  simpa using congrFun (congrArg coefficient h) p
 
 @[simp]
 theorem comp_add (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
@@ -791,6 +871,67 @@ theorem frequencyDeriv_castDegree (h : m = m') (w : E) :
 
 end Deriv
 
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W'] (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : HomogeneousSymbol X E V W m)
+
+/-- The image `(x, ξ) ↦ Φ (a (x, ξ))` of a homogeneous symbol under a continuous real-linear map
+`Φ` of the coefficient spaces is a homogeneous symbol of the same degree. For instance, a scalar
+symbol `p` gives the symbol `p · Id` with values in the endomorphisms of any space. -/
+def map : HomogeneousSymbol X E V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient := Φ.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by simp [a.homogeneous x ξ t ht]
+
+@[simp]
+theorem coefficient_map (p : X × E) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+@[simp]
+protected theorem map_zero : (0 : HomogeneousSymbol X E V W m).map Φ = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_add (b : HomogeneousSymbol X E V W m) :
+    (a + b).map Φ = a.map Φ + b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_neg : (-a).map Φ = -a.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_sub (b : HomogeneousSymbol X E V W m) :
+    (a - b).map Φ = a.map Φ - b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+theorem map_castDegree (h : m = m') : (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
+  (rfl)
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (v : X) : (a.map Φ).spatialDeriv v = (a.spatialDeriv v).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_spatialDeriv_eq_fderiv, coefficient_map, coefficient_spatialDeriv_eq_fderiv,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (w : E) : (a.map Φ).frequencyDeriv w = (a.frequencyDeriv w).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map,
+      coefficient_frequencyDeriv_eq_fderiv _ _ hξ,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+end Map
+
 /-! ### The product rule for composition -/
 
 section CompDeriv
@@ -874,6 +1015,40 @@ theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm
     filter_upwards [prod_mem_nhds hKx univ_mem] with q hq
     exact hC q.1 hq.1 q.2
   · exact (a.contDiffAt_coefficient hξ).continuousAt
+
+/-- **Discontinuity at the zero frequency.** A homogeneous symbol of nonpositive degree that is
+continuous at a point `(x, 0)` vanishes at every frequency over `x`: as `t → 0⁺` the norm
+`‖a (x, t • ξ)‖ = t ^ m ‖a (x, ξ)‖` stays at least `‖a (x, ξ)‖`, while it tends to the value `0`
+at the zero frequency. -/
+theorem coefficient_eq_zero_of_continuousAt (hm : m ≤ 0) {x : X}
+    (h : ContinuousAt a.coefficient (x, 0)) (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  have hray : Tendsto (fun t : ℝ ↦ (x, t • ξ)) (𝓝[>] 0) (𝓝 (x, 0)) := by
+    have hc : Continuous fun t : ℝ ↦ (x, t • ξ) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hlim : Tendsto (fun t : ℝ ↦ ‖a.coefficient (x, t • ξ)‖) (𝓝[>] 0) (𝓝 0) := by
+    simpa using (h.tendsto.comp hray).norm
+  refine norm_le_zero_iff.1 (ge_of_tendsto hlim ?_)
+  filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with t ht
+  rw [a.norm_homogeneous x ξ ht.1]
+  exact le_mul_of_one_le_left (norm_nonneg _)
+    (Real.one_le_rpow_of_pos_of_le_one_of_nonpos ht.1 ht.2.le hm)
+
+/-- A homogeneous symbol of nonpositive degree is continuous on all of `X × E` only if it is zero.
+Compare `HomogeneousSymbol.continuous_coefficient` for positive degree. -/
+theorem continuous_coefficient_iff_eq_zero (hm : m ≤ 0) : Continuous a.coefficient ↔ a = 0 := by
+  refine ⟨fun h ↦ HomogeneousSymbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_), ?_⟩
+  · simpa using a.coefficient_eq_zero_of_continuousAt hm h.continuousAt ξ
+  · rintro rfl
+    rw [coefficient_zero]
+    exact continuous_zero
+
+/-- A nonzero homogeneous symbol on a proper frequency space is continuous on all of `X × E`
+exactly when its degree is positive. -/
+theorem continuous_coefficient_iff [ProperSpace E] [WeaklyLocallyCompactSpace X] (ha : a ≠ 0) :
+    Continuous a.coefficient ↔ 0 < m := by
+  refine ⟨fun h ↦ ?_, a.continuous_coefficient⟩
+  by_contra! hm
+  exact ha ((a.continuous_coefficient_iff_eq_zero hm).1 h)
 
 /-- For a frequency cutoff `χ` and a scale `R`, the cut-off term `χ(ξ / R) • a(x, ξ)` is smooth on
 the whole space, including the zero frequency. -/
@@ -1203,13 +1378,8 @@ variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 /-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
 Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
 degree. -/
-noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
-  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
-  zero_covector x := by simp
-  contDiffOn_coefficient :=
-    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
-  homogeneous x ξ t ht := by
-    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m :=
+  a.map ContinuousLinearMap.adjointRealCLM
 
 @[simp]
 theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :

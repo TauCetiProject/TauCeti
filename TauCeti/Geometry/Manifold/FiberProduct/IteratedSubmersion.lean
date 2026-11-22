@@ -567,6 +567,21 @@ theorem mem_range_mfderiv_coe_iteratedFiberProduct_iff (m : ℕ) :
           tangentSpaceCast IM (π (y.val j)) (π (y.val i)) (mfderiv IY IM π (y.val j) (v j)) :=
   (exists_isManifold_iteratedFiberProduct_isSmoothEmbedding hn hπ m).choose_spec.2.2
 
+/-- **Pointwise smooth universal property of `IteratedFiberProduct`.** For `m' ≤ n`, a map into
+`IteratedFiberProduct π (m + 1)` is `C^{m'}` at `x` if and only if each coordinate map into `Y` is
+`C^{m'}` at `x`. No separate continuity assumption is required. -/
+theorem contMDiffAt_iteratedFiberProduct_iff {EX HX X : Type*}
+    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
+    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+    {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) {f : X → IteratedFiberProduct π (m + 1)} {x : X} :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    ContMDiffAt IX 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) m' f x ↔
+      ∀ i : Fin (m + 1), ContMDiffAt IX IY m' (fun x ↦ IteratedFiberProduct.eval i (f x)) x := by
+  let := iteratedFiberProductChartedSpace hn hπ m
+  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiffAt_iff_comp,
+    contMDiffAt_pi_iff]
+  rfl
+
 /-- **Smooth universal property of `IteratedFiberProduct`.** For `m' ≤ n`, a map into
 `IteratedFiberProduct π (m + 1)` is `C^{m'}` if and only if each coordinate map into `Y` is
 `C^{m'}`. No separate continuity assumption is required. -/
@@ -578,9 +593,7 @@ theorem contMDiff_iteratedFiberProduct_iff {EX HX X : Type*}
     ContMDiff IX 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) m' f ↔
       ∀ i : Fin (m + 1), ContMDiff IX IY m' (fun x ↦ IteratedFiberProduct.eval i (f x)) := by
   let := iteratedFiberProductChartedSpace hn hπ m
-  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiff_iff_comp,
-    contMDiff_pi_iff]
-  rfl
+  exact (forall_congr' fun _ ↦ contMDiffAt_iteratedFiberProduct_iff hn hπ hm').trans forall_comm
 
 /-- Every factor projection `eval i : Y^[m + 1] → Y` is `C^{m'}` for `m' ≤ n`. -/
 theorem contMDiff_eval {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 1)) :

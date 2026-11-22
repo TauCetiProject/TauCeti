@@ -54,6 +54,8 @@ of the circle, while the ambient `Diff(N)`-action is postcomposition.
 * `Manifold.IsSmoothEmbedding.eq_diffeomorphOfRangeEq_iff` and
   `TauCeti.SmoothEmbedding.eq_diffeomorphOfRangeEq_iff`: a diffeomorphism coincides with the
   canonical equal-range comparison if and only if it intertwines the two embeddings.
+* `Manifold.IsSmoothEmbedding.exists_diffeomorph_of_range_eq`: conversely, two smooth embeddings
+  with the same image differ by a diffeomorphism of their sources.
 
 ## Main definitions
 
@@ -287,6 +289,26 @@ namespace TauCeti
 
 open _root_.Manifold Set
 open scoped _root_.Manifold ContDiff
+
+section RangeEq
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+  [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'} {J : ModelWithCorners 𝕜 F G}
+  {M P N : Type*} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace P]
+  [ChartedSpace H' P] [TopologicalSpace N] [ChartedSpace G N] {n : ℕ∞ω} {f : M → N} {g : P → N}
+
+/-- **Smooth embeddings with the same image differ by a diffeomorphism.** If `f : M → N` and
+`g : P → N` are `C^n` embeddings with the same image, then `g⁻¹ ∘ f` is a `C^n` diffeomorphism from
+`M` to `P`, which may be modelled on a different space. -/
+theorem _root_.Manifold.IsSmoothEmbedding.exists_diffeomorph_of_range_eq
+    (hf : IsSmoothEmbedding I J n f) (hg : IsSmoothEmbedding I' J n g) (h : range f = range g) :
+    ∃ e : M ≃ₘ^n⟮I, I'⟯ P, ∀ x, g (e x) = f x :=
+  ⟨hf.diffeomorphOfRangeEq hg h, hf.apply_diffeomorphOfRangeEq hg h⟩
+
+end RangeEq
 
 namespace SmoothEmbedding
 

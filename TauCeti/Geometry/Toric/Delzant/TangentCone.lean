@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.TangentCone
 public import TauCeti.Geometry.Convex.Cone.Basis
-import Mathlib.LinearAlgebra.Dual.Basis
 
 /-!
 # Tangent cones at smooth vertices
@@ -24,8 +23,8 @@ The results require the point to lie in the polyhedron: the existing `IsSmoothVe
 only tests the active normals. No compactness or Delzant hypothesis on the whole presentation is
 needed. Empty bases in rank zero are included.
 
-The edge basis uses Mathlib's `IsBaseChange.basis` and `Module.Basis.dualBasis`, followed by the
-finite-dimensional identification of the algebraic and continuous duals.
+The edge basis is the dual basis `TauCeti.Toric.IsIntegralLattice.dualBasis` of the lattice basis
+formed by the active normals.
 
 ## References
 
@@ -50,23 +49,15 @@ namespace IsSmoothVertex
 /-- The inward edge basis at a smooth vertex, dual to the real basis of active inward normals.
 The normalization pairs an edge with its corresponding normal to `1`. -/
 def edgeBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
-    Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) := by
-  classical
-  letI := hi.finiteDimensional
-  exact (hi.isBaseChange.basis (Classical.choose (isSmoothVertex_def.1 hx))).dualBasis.map
-    LinearMap.toContinuousLinearMap
+    Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) :=
+  hi.dualBasis hx.basis
 
 /-- The edge coordinates of a covector are its values on the active normals. -/
 @[simp]
 theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
     (v : StrongDual ℝ V) (j : activeSet (facetPairing i u) c x) :
     (hx.edgeBasis hi).repr v j = v (i (u j)) := by
-  classical
-  let := hi.finiteDimensional
-  simp only [edgeBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
-    LinearMap.coe_toContinuousLinearMap_symm, Module.Basis.dualBasis_repr,
-    hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap,
-    Classical.choose_spec (isSmoothVertex_def.1 hx) j, ContinuousLinearMap.coe_coe]
+  rw [edgeBasis, IsIntegralLattice.dualBasis_repr, hx.basis_apply j]
 
 /-- The covector with prescribed edge coordinates takes the prescribed values on the active
 normals. -/
