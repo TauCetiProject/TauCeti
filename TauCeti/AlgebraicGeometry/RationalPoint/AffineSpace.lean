@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineSpace
 public import TauCeti.AlgebraicGeometry.RationalPoint.Frobenius
 import Mathlib.Algebra.MvPolynomial.Funext
+import TauCeti.RingTheory.MvPolynomial.OrderAt
 
 /-!
 # The points of affine space
@@ -31,6 +32,10 @@ by fixed points of Frobenius. In terms of the point count over the extension of 
 affine `n`-space has `AlgebraicGeometry.Scheme.Hom.pointCount` equal to `(q ^ r) ^ |n|` for
 `r ≠ 0` (`AlgebraicGeometry.AffineSpace.pointCount_eq`).
 
+Over any commutative ring `R`, a translation of `Spec R[X_σ]` over `Spec R` moves a given
+`R`-point to the origin (`AlgebraicGeometry.exists_isIso_comp_eq_SpecMap_constantCoeff`). This
+centres étale coordinates at a rational point.
+
 ## Main results
 
 * `AlgebraicGeometry.AffineSpace.numberOfRationalPoints_eq`: for finite `n`, `𝔸(n; Spec k)` has
@@ -39,6 +44,8 @@ affine `n`-space has `AlgebraicGeometry.Scheme.Hom.pointCount` equal to `(q ^ r)
   `r`-th power of Frobenius has `(q ^ r) ^ |n|` fixed points on affine `n`-space.
 * `AlgebraicGeometry.AffineSpace.pointCount_eq`: affine `n`-space has `(q ^ r) ^ |n|` points over
   the extension of degree `r ≠ 0` of a finite field with `q` elements.
+* `AlgebraicGeometry.exists_isIso_comp_eq_SpecMap_constantCoeff`: an automorphism of
+  `Spec R[X_σ]` over `Spec R` moves a given `R`-point to the origin.
 
 ## References
 
@@ -50,7 +57,7 @@ public section
 
 open CategoryTheory IntermediateField
 
-universe u
+universe u v
 
 namespace AlgebraicGeometry.AffineSpace
 
@@ -132,3 +139,42 @@ theorem pointCount_eq {k : Type u} [Field k] [Finite k] (n : Type u) [Finite n] 
     Fintype.card_eq_nat_card]
 
 end AlgebraicGeometry.AffineSpace
+
+namespace AlgebraicGeometry
+
+/-- **Moving a point to the origin.** Every `R`-point `p` of `Spec R[X_σ]`, that is a section of
+the structure morphism `Spec R[X_σ] ⟶ Spec R`, is sent to the origin by an automorphism of
+`Spec R[X_σ]` over `Spec R`: the translation by `-a`, with comorphism `X_i ↦ X_i - a_i`, where
+`a_i` is the value of `X_i` at `p`. -/
+theorem exists_isIso_comp_eq_SpecMap_constantCoeff {R : Type max u v} {σ : Type v} [CommRing R]
+    (p : Spec (.of R) ⟶ Spec (.of (MvPolynomial σ R)))
+    (hp : p ≫ Spec.map (CommRingCat.ofHom MvPolynomial.C) = 𝟙 _) :
+    ∃ τ : Spec (.of (MvPolynomial σ R)) ⟶ Spec (.of (MvPolynomial σ R)), IsIso τ ∧
+      τ ≫ Spec.map (CommRingCat.ofHom MvPolynomial.C) =
+        Spec.map (CommRingCat.ofHom MvPolynomial.C) ∧
+      p ≫ τ = Spec.map (CommRingCat.ofHom MvPolynomial.constantCoeff) := by
+  obtain ⟨ψ, rfl⟩ := Spec.map_surjective p
+  rw [← Spec.map_comp, ← Spec.map_id, Spec.map_inj] at hp
+  have hψ (r : R) : ψ (MvPolynomial.C r) = r := congr($hp r)
+  -- the translations `p ↦ p(X + a)`, on the spectrum
+  let t (a : σ → R) := Spec.map (CommRingCat.ofHom (MvPolynomial.taylor a).toRingHom)
+  have ht (a b : σ → R) : t a ≫ t b = t (a + b) := by
+    rw [← Spec.map_comp]
+    exact congrArg Spec.map
+      (CommRingCat.hom_ext (RingHom.ext fun q ↦ by simp [MvPolynomial.taylor_taylor]))
+  have ht0 : t 0 = 𝟙 _ := by
+    rw [← Spec.map_id]
+    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext fun q ↦ by simp))
+  let a : σ → R := fun i ↦ ψ (MvPolynomial.X i)
+  refine ⟨t (-a), ⟨t a, ?_, ?_⟩, ?_, ?_⟩
+  · rw [ht, neg_add_cancel, ht0]
+  · rw [ht, add_neg_cancel, ht0]
+  · rw [← Spec.map_comp]
+    exact congrArg Spec.map (CommRingCat.hom_ext (MvPolynomial.taylor _).comp_algebraMap)
+  · rw [← Spec.map_comp]
+    refine congrArg Spec.map
+      (CommRingCat.hom_ext (MvPolynomial.ringHom_ext (fun r ↦ ?_) fun i ↦ ?_))
+    · simp [hψ]
+    · simp [a, hψ]
+
+end AlgebraicGeometry
