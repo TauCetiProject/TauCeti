@@ -7,18 +7,16 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.GradedPair.Basic
 public import TauCeti.RepresentationTheory.Quiver.Multisegment.Basic
-public import Mathlib.LinearAlgebra.Basis.Defs
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Standard interval pairs of a multisegment
 
 For a multisegment `m`, the standard graded space `m.standardSpace` has one basis vector for
-every *valid label* `(i, a)`: an occurrence label `i : Fin m.card` together with an integer degree
-`a` in the interval `m.occurrenceInterval i`. The basis vector of `(i, a)` lies in degree `a`.
-Repeated intervals of `m` have different occurrence labels and hence different basis vectors.
+every *valid label* `(i, a) : m.StandardIndex`: an occurrence label `i : Fin m.card` together
+with an integer degree `a` in the interval `m.occurrenceInterval i`. The basis vector of `(i, a)`
+lies in degree `a`. Repeated intervals of `m` have different occurrence labels and hence
+different basis vectors.
 
 The standard raising operator moves each basis vector one step up inside its interval block and
 kills the last vector of the block; the standard lowering operator moves one step down and kills
@@ -32,7 +30,6 @@ lies in the `i`-th interval and `0` otherwise.
 
 ## Main definitions
 
-* `TauCeti.Multisegment.StandardIndex`: the valid occurrence–degree labels of `m`.
 * `TauCeti.Multisegment.standardSpace`: the graded coordinate space spanned by these labels.
 * `TauCeti.Multisegment.standardBasis`: its basis indexed by the valid labels.
 * `TauCeti.Multisegment.standardVector`: the basis vector of a label, or `0` for an invalid one.
@@ -48,6 +45,8 @@ lies in the `i`-th interval and `0` otherwise.
 * `TauCeti.Multisegment.standardVector_eq_zero_iff`: a standard vector vanishes exactly when its
   degree lies outside its interval.
 * `TauCeti.Multisegment.standardVector_inj`: distinct valid labels give distinct vectors.
+* `TauCeti.Multisegment.mem_grade_standardSpace_iff`: grade membership in the coordinates of
+  `standardBasis m`.
 * `TauCeti.Multisegment.standardPair_operator_standardVector`: on a valid label the operator in
   direction `d` sends the vector of degree `a` to that of degree `a + d.step`.
 * `TauCeti.Multisegment.standardPair_operator_pow_standardVector`: its `k`-th power moves `k`
@@ -71,18 +70,7 @@ namespace Multisegment
 
 variable (m : Multisegment)
 
-/-! ### Valid labels and the standard space -/
-
-/-- The valid labels of the standard basis of `m`: an occurrence label `i` together with a degree
-in the interval `m.occurrenceInterval i`. -/
-abbrev StandardIndex : Type :=
-  Σ i : Fin m.card, Set.Icc (occurrenceInterval m i).fst (occurrenceInterval m i).snd
-
-/-- The number of valid labels is the total length of `m`. -/
-theorem card_standardIndex : Fintype.card (StandardIndex m) = totalLength m := by
-  rw [Fintype.card_sigma, ← sum_length_occurrenceInterval]
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [IntInterval.length_eq_card_Icc, ← Fintype.card_Icc]
+/-! ### The standard space -/
 
 /-- The standard graded space of `m`: one coordinate for each valid label `(i, a)`, placed in
 degree `a`. -/
@@ -131,9 +119,9 @@ theorem finrank_grade_standardSpace (a : ℤ) :
   -- A coordinate of degree `a` is a valid label `(i, a)`, which is determined by `i`.
   let f : {x : StandardIndex m // (x.2 : ℤ) = a} ≃
       {i : Fin m.card // a ∈ occurrenceInterval m i} :=
-    { toFun x := ⟨x.val.1,
-        (congrArg (· ∈ occurrenceInterval m x.val.1) x.property).mp x.val.2.property⟩
-      invFun i := ⟨⟨i.val, a, i.property⟩, rfl⟩
+    { toFun x := ⟨x.val.1, (congrArg (· ∈ occurrenceInterval m x.val.1) x.property).mp
+        (NonemptyInterval.mem_iff_mem_Icc.2 x.val.2.property)⟩
+      invFun i := ⟨⟨i.val, a, NonemptyInterval.mem_iff_mem_Icc.1 i.property⟩, rfl⟩
       left_inv := by
         rintro ⟨⟨i, b, hb⟩, rfl⟩
         rfl
@@ -147,16 +135,19 @@ open Classical in
 /-- The standard vector of the label `(i, a)`: the basis vector of `(i, a)` when `a` lies in the
 `i`-th interval of `m`, and `0` otherwise. -/
 noncomputable def standardVector (i : Fin m.card) (a : ℤ) : (standardSpace m).Carrier :=
-  if h : a ∈ occurrenceInterval m i then standardBasis m ⟨i, a, h⟩ else 0
+  if h : a ∈ occurrenceInterval m i then
+    standardBasis m ⟨i, a, NonemptyInterval.mem_iff_mem_Icc.1 h⟩
+  else 0
 
 variable {m}
 
 /-- On a valid label the standard vector is the corresponding basis vector. -/
 theorem standardVector_of_mem {i : Fin m.card} {a : ℤ} (h : a ∈ occurrenceInterval m i) :
-    standardVector m i a = standardBasis m ⟨i, a, h⟩ := by
+    standardVector m i a = standardBasis m ⟨i, a, NonemptyInterval.mem_iff_mem_Icc.1 h⟩ := by
   simp [standardVector, h]
 
 /-- On an invalid label the standard vector is zero. -/
+@[simp]
 theorem standardVector_of_notMem {i : Fin m.card} {a : ℤ} (h : a ∉ occurrenceInterval m i) :
     standardVector m i a = 0 := by
   simp [standardVector, h]
@@ -164,7 +155,7 @@ theorem standardVector_of_notMem {i : Fin m.card} {a : ℤ} (h : a ∉ occurrenc
 /-- Each basis vector of the standard space is a standard vector. -/
 theorem standardBasis_eq_standardVector (x : StandardIndex m) :
     standardBasis m x = standardVector m x.1 x.2 :=
-  (standardVector_of_mem x.2.property).symm
+  (standardVector_of_mem (NonemptyInterval.mem_iff_mem_Icc.2 x.2.property)).symm
 
 /-- A standard vector vanishes exactly when its degree lies outside its interval. -/
 @[simp]
@@ -174,37 +165,41 @@ theorem standardVector_eq_zero_iff {i : Fin m.card} {a : ℤ} :
   rw [standardVector_of_mem h] at h0
   exact (standardBasis m).ne_zero _ h0
 
-/-- A standard vector is nonzero exactly when its degree lies in its interval. -/
-theorem standardVector_ne_zero_iff {i : Fin m.card} {a : ℤ} :
-    standardVector m i a ≠ 0 ↔ a ∈ occurrenceInterval m i := by
-  simp
-
 /-- A standard vector lies in the grade of its degree, also when it is zero. -/
 theorem standardVector_mem_grade (i : Fin m.card) (a : ℤ) :
     standardVector m i a ∈ (standardSpace m).grade a := by
   by_cases h : a ∈ occurrenceInterval m i
   · rw [standardVector_of_mem h]
-    exact standardBasis_mem_grade m ⟨i, a, h⟩
+    exact standardBasis_mem_grade m ⟨i, a, _⟩
   · rw [standardVector_of_notMem h]
     exact zero_mem _
 
-/-- Distinct valid labels give distinct standard vectors. -/
-theorem standardVector_inj {i j : Fin m.card} {a b : ℤ} (ha : a ∈ occurrenceInterval m i)
-    (hb : b ∈ occurrenceInterval m j) :
+/-- Distinct labels give distinct standard vectors, provided one of them is valid. -/
+theorem standardVector_inj {i j : Fin m.card} {a b : ℤ} (ha : a ∈ occurrenceInterval m i) :
     standardVector m i a = standardVector m j b ↔ i = j ∧ a = b := by
-  rw [standardVector_of_mem ha, standardVector_of_mem hb, (standardBasis m).injective.eq_iff]
-  constructor
-  · intro h
-    cases h
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
+  refine ⟨fun h ↦ ?_, fun ⟨hi, hab⟩ ↦ hi ▸ hab ▸ rfl⟩
+  -- The left side is nonzero, so the label `(j, b)` is valid as well.
+  have hb : b ∈ occurrenceInterval m j := by
+    by_contra hb
+    rw [standardVector_of_notMem hb, standardVector_eq_zero_iff] at h
+    exact h ha
+  rw [standardVector_of_mem ha, standardVector_of_mem hb] at h
+  have hx := (standardBasis m).injective h
+  exact ⟨congrArg Sigma.fst hx, congrArg (fun x : StandardIndex m ↦ (x.2 : ℤ)) hx⟩
 
 /-- The standard vectors of the valid labels are linearly independent. -/
 theorem linearIndependent_standardVector :
     LinearIndependent ℂ fun x : StandardIndex m ↦ standardVector m x.1 x.2 := by
   convert (standardBasis m).linearIndependent with x
   exact (standardBasis_eq_standardVector x).symm
+
+/-- A vector lies in the degree-`a` piece of the standard space exactly when its coordinates in
+`standardBasis m` vanish at every label of degree different from `a`. -/
+theorem mem_grade_standardSpace_iff {a : ℤ} {v : (standardSpace m).Carrier} :
+    v ∈ (standardSpace m).grade a ↔
+      ∀ x : StandardIndex m, (x.2 : ℤ) ≠ a → (standardBasis m).repr v x = 0 := by
+  rw [GradedCoordSpace.mem_grade_iff, ← (standardIndexEquiv m).forall_congr_right]
+  simp [standardBasis]
 
 variable (m) in
 /-- The degree-`a` piece of the standard space is spanned by the standard vectors of degree `a`.
@@ -231,11 +226,6 @@ private noncomputable def standardOperator (m : Multisegment) (d : StepDirection
     Module.End ℂ (standardSpace m).Carrier :=
   (standardBasis m).constr ℂ fun x ↦ standardVector m x.1 (x.2 + d.step)
 
-private theorem standardOperator_standardVector (d : StepDirection) {i : Fin m.card} {a : ℤ}
-    (h : a ∈ occurrenceInterval m i) :
-    standardOperator m d (standardVector m i a) = standardVector m i (a + d.step) := by
-  rw [standardVector_of_mem h, standardOperator, Basis.constr_basis]
-
 private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirection) :
     LinearMap.IsHomogeneous (standardOperator m d) (standardSpace m).grade
       (standardSpace m).grade d.step := by
@@ -247,7 +237,8 @@ private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirec
   rintro _ ⟨i, rfl⟩
   dsimp only
   by_cases h : a ∈ occurrenceInterval m i
-  · rw [SetLike.mem_coe, Submodule.mem_comap, standardOperator_standardVector d h]
+  · rw [SetLike.mem_coe, Submodule.mem_comap, standardVector_of_mem h, standardOperator,
+      Basis.constr_basis]
     exact standardVector_mem_grade i _
   · rw [SetLike.mem_coe, Submodule.mem_comap, standardVector_of_notMem h, map_zero]
     exact zero_mem _
@@ -260,41 +251,36 @@ noncomputable def standardPair (d : StepDirection) : GradedPair (standardSpace m
   operator := standardOperator m d
   isHomogeneous := isHomogeneous_standardOperator m d
 
+/-- The standard operator in direction `d` sends the basis vector of a valid label `(i, a)` to the
+standard vector of `(i, a + d.step)`, which is zero when this step leaves the interval. -/
+@[simp]
+theorem standardPair_operator_standardBasis (d : StepDirection) (x : StandardIndex m) :
+    (standardPair m d).operator (standardBasis m x) = standardVector m x.1 (x.2 + d.step) :=
+  (standardBasis m).constr_basis ℂ _ x
+
 /-- On a valid label the standard operator in direction `d` moves the standard vector one step in
 direction `d`; the result is zero when this step leaves the interval. -/
 theorem standardPair_operator_standardVector (d : StepDirection) {i : Fin m.card} {a : ℤ}
     (h : a ∈ occurrenceInterval m i) :
-    (standardPair m d).operator (standardVector m i a) = standardVector m i (a + d.step) :=
-  standardOperator_standardVector d h
-
-/-- The standard raising operator moves a vector of an interval block to the next one. -/
-theorem standardPair_up_operator_standardVector {i : Fin m.card} {a : ℤ}
-    (h : a ∈ occurrenceInterval m i) :
-    (standardPair m .up).operator (standardVector m i a) = standardVector m i (a + 1) := by
-  rw [standardPair_operator_standardVector .up h, StepDirection.step_up]
-
-/-- The standard lowering operator moves a vector of an interval block to the previous one. -/
-theorem standardPair_down_operator_standardVector {i : Fin m.card} {a : ℤ}
-    (h : a ∈ occurrenceInterval m i) :
-    (standardPair m .down).operator (standardVector m i a) = standardVector m i (a - 1) := by
-  rw [standardPair_operator_standardVector .down h, StepDirection.step_down, ← sub_eq_add_neg]
+    (standardPair m d).operator (standardVector m i a) = standardVector m i (a + d.step) := by
+  rw [standardVector_of_mem h, standardPair_operator_standardBasis]
 
 /-- The standard raising operator kills the last vector of each interval block. -/
 @[simp]
 theorem standardPair_up_operator_standardVector_snd (i : Fin m.card) :
     (standardPair m .up).operator (standardVector m i (occurrenceInterval m i).snd) = 0 := by
-  rw [standardPair_up_operator_standardVector
+  rw [standardPair_operator_standardVector .up
     (NonemptyInterval.mem_def.2 ⟨(occurrenceInterval m i).fst_le_snd, le_rfl⟩),
-    standardVector_eq_zero_iff, NonemptyInterval.mem_def]
+    StepDirection.step_up, standardVector_eq_zero_iff, NonemptyInterval.mem_def]
   omega
 
 /-- The standard lowering operator kills the first vector of each interval block. -/
 @[simp]
 theorem standardPair_down_operator_standardVector_fst (i : Fin m.card) :
     (standardPair m .down).operator (standardVector m i (occurrenceInterval m i).fst) = 0 := by
-  rw [standardPair_down_operator_standardVector
+  rw [standardPair_operator_standardVector .down
     (NonemptyInterval.mem_def.2 ⟨le_rfl, (occurrenceInterval m i).fst_le_snd⟩),
-    standardVector_eq_zero_iff, NonemptyInterval.mem_def]
+    StepDirection.step_down, standardVector_eq_zero_iff, NonemptyInterval.mem_def]
   omega
 
 /-- On a valid label the `k`-th power of the standard operator in direction `d` moves the
@@ -318,6 +304,17 @@ theorem standardPair_operator_pow_standardVector (d : StepDirection) {i : Fin m.
       rw [NonemptyInterval.mem_def] at h hk ⊢
       cases d <;> simp only [StepDirection.step_up, StepDirection.step_down] at hk ⊢ <;>
         push_cast <;> omega
+
+/-- The `k`-th power of the standard operator in direction `d` sends the basis vector of a valid
+label `(i, a)` to the standard vector of `(i, a + k * d.step)`, which is zero once the block is
+left. -/
+@[simp]
+theorem standardPair_operator_pow_standardBasis (d : StepDirection) (x : StandardIndex m)
+    (k : ℕ) :
+    ((standardPair m d).operator ^ k) (standardBasis m x) =
+      standardVector m x.1 (x.2 + k * d.step) := by
+  rw [standardBasis_eq_standardVector,
+    standardPair_operator_pow_standardVector d (NonemptyInterval.mem_iff_mem_Icc.2 x.2.property)]
 
 end Multisegment
 

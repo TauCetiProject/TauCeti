@@ -46,6 +46,8 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate`: right shortening applied to every occurrence.
 * `TauCeti.Multisegment.shift`: integer translation applied to every occurrence.
 * `TauCeti.Multisegment.occurrenceInterval`: finite indexing of occurrences by `Fin m.card`.
+* `TauCeti.Multisegment.StandardIndex`: occurrence–degree labels `(i, a)` with `a` in the
+  `i`-th occurrence.
 
 ## Main results
 
@@ -57,6 +59,7 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate_shift`: right truncation commutes with translation.
 * `TauCeti.Multisegment.card_filter_occurrenceInterval_eq`: occurrence labels recover exact
   interval multiplicities and are invariant under label permutations.
+* `TauCeti.Multisegment.card_standardIndex`: there are `totalLength m` occurrence–degree labels.
 
 ## References
 
@@ -727,6 +730,19 @@ theorem card_filter_mem_occurrenceInterval (m : Multisegment) (a : ℤ) :
       Multiset.card_map]
   rw [Finset.card_def, Finset.filter_val]
   exact congrArg Multiset.card (Multiset.filter_congr fun _ _ => Iff.rfl)
+
+/-- The occurrence–degree labels of `m`: an occurrence label `i` together with a degree in the
+interval `m.occurrenceInterval i`. They index the standard basis of the standard graded space
+of `m`. -/
+abbrev StandardIndex (m : Multisegment) : Type :=
+  Σ i : Fin m.card, Set.Icc (occurrenceInterval m i).fst (occurrenceInterval m i).snd
+
+/-- The number of occurrence–degree labels is the total length of `m`. -/
+theorem card_standardIndex (m : Multisegment) :
+    Fintype.card (StandardIndex m) = totalLength m := by
+  rw [Fintype.card_sigma, ← sum_length_occurrenceInterval]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [IntInterval.length_eq_card_Icc, ← Fintype.card_Icc]
 
 end Multisegment
 
