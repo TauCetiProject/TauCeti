@@ -247,31 +247,20 @@ private theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_le (φ φ' : ContD
     simp_rw [hf, hg]
     exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
   · -- Within the window the weights `2^{js}` and `2^{(j + i)s}` differ by at most `2^{|s| L}`.
-    have hw (i : ℤ) (hi : i ∈ Finset.Ico (-(L : ℤ)) L) :
-        (2 : ℝ) ^ (s * j) ≤ 2 ^ (|s| * L) * 2 ^ (s * (j + i : ℤ)) := by
-      rw [Finset.mem_Ico] at hi
-      rw [← Real.rpow_add two_pos]
-      refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
-      have hi' : |(i : ℝ)| ≤ L := abs_le.2 ⟨by exact_mod_cast hi.1, by exact_mod_cast hi.2.le⟩
-      have := neg_abs_le (s * i)
-      rw [abs_mul] at this
+    refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+    rw [Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_le_sum fun i hi ↦ ?_
+    rw [Finset.mem_Ico] at hi
+    have hji : |(j : ℝ) - ((j + i : ℤ) : ℝ)| ≤ L := by
       push_cast
-      nlinarith [abs_nonneg s]
-    calc 2 ^ (s * j) * ‖∑ i ∈ Finset.Ico (-(L : ℤ)) L, g j (j + i)‖
-        ≤ 2 ^ (s * j) * ∑ i ∈ Finset.Ico (-(L : ℤ)) L, max C 0 * ‖f (j + i)‖ := by
+      rw [sub_add_cancel_left, abs_neg]
+      exact abs_le.2 ⟨by exact_mod_cast hi.1, by exact_mod_cast hi.2.le⟩
+    calc 2 ^ (s * j) * ‖g j (j + i)‖
+        ≤ 2 ^ (|s| * L) * 2 ^ (s * (j + i : ℤ)) * (max C 0 * ‖f (j + i)‖) := by
           gcongr
-          refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-          exact (hgC j (j + i)).trans (by gcongr; exact le_max_left C 0)
-      _ = ∑ i ∈ Finset.Ico (-(L : ℤ)) L, max C 0 * (2 ^ (s * j) * ‖f (j + i)‖) := by
-          rw [Finset.mul_sum]
-          ring_nf
-      _ ≤ ∑ i ∈ Finset.Ico (-(L : ℤ)) L,
-            max C 0 * (2 ^ (|s| * L) * 2 ^ (s * (j + i : ℤ)) * ‖f (j + i)‖) := by
-          gcongr with i hi
-          exact hw i hi
-      _ = _ := by
-          rw [Finset.mul_sum]
-          ring_nf
+          · exact Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s hji
+          · exact (hgC j (j + i)).trans (by gcongr; exact le_max_left C 0)
+      _ = _ := by ring
 
 /-- **Independence of the bump function.** A tempered distribution in the homogeneous Besov
 space `\dot B^s_{p,q}` built from the Littlewood–Paley partition of `φ` lies in the homogeneous
