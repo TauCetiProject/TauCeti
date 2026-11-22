@@ -87,7 +87,7 @@ def kerCoeffBaseChange :
     (ofIsogeny φ).KerCoeff →+ (ofIsogeny (φ.baseChange L)).KerCoeff :=
   ((W₁.pointCoeffBaseChange τ).comp
       ((ofIsogeny φ).pointCoeffMap : W₁.PointCoeff →+ W₂.PointCoeff).ker.subtype).codRestrict _
-    fun P ↦ φ.pointCoeffBaseChange_mem_kerCoeff τ P.2
+    fun P ↦ φ.pointCoeffBaseChange_mem_kerCoeff τ P.property
 
 @[simp]
 theorem coe_kerCoeffBaseChange (P : (ofIsogeny φ).KerCoeff) :

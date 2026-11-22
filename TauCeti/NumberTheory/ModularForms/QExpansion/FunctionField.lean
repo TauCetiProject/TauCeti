@@ -240,7 +240,7 @@ theorem mem_coeffSubfield_iff_exists_mapRingHom_eq {K : Subfield ℂ} :
     F ∈ coeffSubfield D K ↔
       ∃ φ : LaurentSeries K, HahnSeries.mapRingHom K.subtype φ = laurentQExpansion D F := by
   rw [← RingHom.mem_rangeS, HahnSeries.mem_map_rangeS, mem_coeffSubfield]
-  exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.2⟩
+  exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.property⟩
 
 /-- A constant function lies in `coeffSubfield D K` exactly when its value lies in `K`. -/
 @[simp]

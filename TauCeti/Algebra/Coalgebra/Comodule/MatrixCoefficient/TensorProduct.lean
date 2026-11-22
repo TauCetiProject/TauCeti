@@ -40,6 +40,8 @@ structural fact relating that subalgebra to the tensor product of representation
   coefficient of `N` is a coefficient of `M ⊗[R] N`.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_mul_le`: the coefficient submodules multiply
   into the coefficient submodule of the tensor product.
+* `TauCeti.Comodule.matrixCoefficientSubmodule_tensor`: when `M` is finite projective, the
+  coefficient submodule of `M ⊗[R] N` is the product of the two coefficient submodules.
 
 ## References
 
@@ -140,6 +142,49 @@ theorem matrixCoefficientSubmodule_mul_le :
   rw [matrixCoefficientSubmodule, matrixCoefficientSubmodule, matrixCoefficientSubmodule,
     Submodule.span_mul_span]
   exact Submodule.span_mono matrixCoefficientSet_mul_subset
+
+section Finite
+
+variable [Module.Finite R M] [Module.Projective R M]
+
+/-- **The coefficient submodule of a tensor product is the product.** If `M` is finite
+projective, every functional on `M ⊗[R] N` is a sum of product functionals: currying it gives a
+map `M →ₗ[R] Module.Dual R N`, which comes from `Module.Dual R M ⊗[R] Module.Dual R N` by
+`TensorProduct.dualTensorHom_bijective`. So every coefficient of `M ⊗[R] N` is a sum of products
+of a coefficient of `M` and a coefficient of `N`. The reverse inclusion is
+`matrixCoefficientSubmodule_mul_le`. -/
+@[simp]
+theorem matrixCoefficientSubmodule_tensor :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M ⊗[R] N) =
+      matrixCoefficientSubmodule (R := R) (C := C) (M := M) *
+        matrixCoefficientSubmodule (R := R) (C := C) (M := N) := by
+  refine le_antisymm (matrixCoefficientSubmodule_le fun φ z ↦ ?_) matrixCoefficientSubmodule_mul_le
+  obtain ⟨t, ht⟩ := (dualTensorHom_bijective (R := R) (M := M) (N := Module.Dual R N)).2
+    (TensorProduct.curry φ)
+  have hφ : φ = dualDistrib R M N t := by
+    refine TensorProduct.ext' fun m n ↦ ?_
+    rw [← TensorProduct.curry_apply, ← ht]
+    clear ht
+    induction t using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [map_add, LinearMap.add_apply, hs, ht]
+    | tmul f g => rfl
+  subst hφ
+  clear ht
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht =>
+    rw [map_add, matrixCoefficient_add_functional]
+    exact add_mem hs ht
+  | tmul φ ψ =>
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy =>
+      rw [matrixCoefficient_add]
+      exact add_mem hx hy
+    | tmul m n =>
+      rw [matrixCoefficient_tensor]
+      exact Submodule.mul_mem_mul (matrixCoefficient_mem_submodule (R := R) (C := C) φ m)
+        (matrixCoefficient_mem_submodule (R := R) (C := C) ψ n)
+
+end Finite
 
 end Comodule
 

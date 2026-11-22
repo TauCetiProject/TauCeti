@@ -135,7 +135,7 @@ noncomputable def homComplexData : DGCategoryData R (DGSingleObj h) :=
     (fun {_ _ _ q p n} hn g f ↦ (homComplexXEquiv h (n + 1)).injective <| Subtype.ext <| by
       simpa only [map_add, Units.smul_def, map_zsmul, Submodule.coe_add,
         Submodule.coe_smul_of_tower, homComplexXEquiv_d, homComplexXEquiv_kellerComp] using
-        h.leibniz (homComplexXEquiv h q g).2 (homComplexXEquiv h p f))
+        h.leibniz (homComplexXEquiv h q g).property (homComplexXEquiv h p f))
     (fun {_ _ _ _ r q p rq qp n} hrq hqp hn k g f ↦
       (homComplexXEquiv h n).injective <| Subtype.ext <| by
         simp only [homComplexXEquiv_kellerComp, mul_assoc])
@@ -217,6 +217,14 @@ theorem dgHomEquiv_dgComp {X Y Z : DGSingleObj h} {p q n : ℤ} (f : DGHom R p X
       (p * q).negOnePow • (dgHomEquiv Y Z q g * dgHomEquiv X Y p f) := by
   rw [(homComplexData h).dgComp_toDGCategory f g hpq]
   exact homComplexData_comp hpq f g
+
+/-- The differential of the Hom complex between any two consecutive indices `a` and `b = a + 1`
+is the differential of the algebra. -/
+theorem dgHomEquiv_dgHomComplex_d {X Y : DGSingleObj h} {a b : ℤ} (hab : a + 1 = b)
+    (f : DGHom R a X Y) :
+    (dgHomEquiv X Y b (((dgHomComplex R X Y).d a b).hom f) : A) = d (dgHomEquiv X Y a f) := by
+  subst hab
+  exact dgHomEquiv_dgDifferential a f
 
 end DGSingleObj
 

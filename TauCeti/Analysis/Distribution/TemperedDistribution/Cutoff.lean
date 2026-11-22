@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.SmulLeft
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
@@ -45,13 +45,16 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
-* `Distribution.cutoffTempered_add`, `Distribution.cutoffTempered_smul`,
-  `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
+  `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
   `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
   `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
+* `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
+  by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
+  with `φ`.
 
 ## References
 
@@ -154,7 +157,7 @@ theorem eq_cutoffTempered_of_forall [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ
 
 /-- **Cutoff independence.** The tempered distribution `φ T` only depends on the germ of `φ` along
 the support of `T`. -/
-theorem cutoffTempered_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
+theorem cutoffTempered_congr (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
     (h : (φ : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] φ') : T.cutoffTempered φ = T.cutoffTempered φ' := by
   ext ψ
   rw [cutoffTempered_def, cutoffTempered_def]
@@ -175,6 +178,12 @@ theorem cutoffTempered_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) 
   ext ψ
   simp only [smul_apply, cutoffTempered_def, complexPairing_smul, smul_eq_mul]
 
+/-- The cutoff of the zero distribution is zero. -/
+@[simp]
+theorem cutoffTempered_zero (φ : 𝓓(Ω, ℂ)) : (0 : 𝓓'(Ω, ℂ)).cutoffTempered φ = 0 := by
+  ext ψ
+  simp [cutoffTempered_def, complexPairing_apply]
+
 /-- The tempered distribution `φ T` is additive in `T` over finite sums. -/
 @[simp]
 theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
@@ -188,6 +197,12 @@ theorem cutoffTempered_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ φ' : 𝓓(Ω, ℂ)) 
     T.cutoffTempered (φ + φ') = T.cutoffTempered φ + T.cutoffTempered φ' := by
   ext ψ
   simp only [add_apply, cutoffTempered_def, map_add]
+
+/-- The tempered distribution `φ T` is additive in the cutoff `φ`, over finite sums. -/
+@[simp]
+theorem cutoffTempered_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (φ : ι → 𝓓(Ω, ℂ)) :
+    T.cutoffTempered (∑ i ∈ s, φ i) = ∑ i ∈ s, T.cutoffTempered (φ i) :=
+  map_sum (AddMonoidHom.mk' T.cutoffTempered T.cutoffTempered_add_cutoff) φ s
 
 /-- The tempered distribution `φ T` is complex-linear in the cutoff `φ`. -/
 @[simp]
@@ -270,7 +285,7 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ 
     set v := m 0
     set R := ∂^{Fin.tail m} (T.cutoffTempered χ)
     have hfd : (fun x ↦ fderiv ℝ φ x v) = ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) :=
-      funext fun x ↦ (TestFunction.lineDerivOp_apply_eq_fderiv φ v x).symm
+      (TestFunction.coe_lineDerivOp_eq_fderiv φ v).symm
     have hL : TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂_{v} R) =
         ∂_{v} (TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) R) -
           TemperedDistribution.smulLeftCLM ℂ ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) R := by
@@ -283,5 +298,37 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ 
     abel
 
 end Operations
+
+/-! ### Restrictions of tempered distributions -/
+
+section ToDistribution
+
+/-- The complex-linear extension of the restriction of a tempered distribution `u` to `Ω` is `u`
+itself on complex test functions. -/
+@[simp]
+theorem complexPairing_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.toDistribution Ω u).complexPairing φ = u (toSchwartzMapCLM ℝ φ) := by
+  rw [complexPairing_apply, TemperedDistribution.toDistribution_apply,
+    TemperedDistribution.toDistribution_apply, ← smul_eq_mul,
+    ← map_smul, ← map_add]
+  congr 1
+  ext x
+  simpa [postcompCLM_apply, mul_comm] using re_add_im (φ x)
+
+/-- **Cutting off a tempered distribution.** For a tempered distribution `u` restricted to `Ω`
+and a test function `φ` on `Ω`, the tempered distribution `φ u` of `Distribution.cutoffTempered`
+is the product of `u` with `φ`. -/
+@[simp]
+theorem cutoffTempered_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.toDistribution Ω u).cutoffTempered φ =
+      TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) u := by
+  ext ψ
+  rw [cutoffTempered_def, complexPairing_toDistribution,
+    TemperedDistribution.smulLeftCLM_apply_apply]
+  congr 1
+  ext x
+  simp [SchwartzMap.smulLeftCLM_apply_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)]
+
+end ToDistribution
 
 end Distribution

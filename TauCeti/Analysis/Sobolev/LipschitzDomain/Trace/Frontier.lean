@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Kernel
 import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # The boundary trace of a bounded Lipschitz domain
@@ -94,7 +95,7 @@ def W1p.lipschitzChartFrontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
     W1p volume Ω p →L[ℝ] Lp ℝ p ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
       (frontier (Ω : Set (WithLp 2 (ℝ × E))))) :=
   (extendByZeroLpₗᵢ ℝ (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E)))
-      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)
+      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b).nullMeasurableSet
       inter_subset_left).toContinuousLinearMap.comp <|
     ((Lp.compMeasurePreservingₗᵢ ℝ (fun x => (e x).snd)
         (e.measurable_snd_apply.measurePreserving _)).toContinuousLinearMap.comp
@@ -130,7 +131,7 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq (hp : p ≠ (∞ : ℝ≥0∞))
         h.map_snd_euclideanHausdorffMeasure_frontier_inter_le g)] with x hx hx'
     rw [Lp.compMeasurePreservingₗᵢ_apply]
     exact hx.trans hx'
-  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch inter_subset_left _).trans ?_
+  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch.nullMeasurableSet inter_subset_left _).trans ?_
   exact ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq hpatch).1 hcomp)
 
 /-- **A local chart trace on the frontier of a function continuous up to the boundary.** If
@@ -392,8 +393,7 @@ theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0�
   -- `R v` is zero exactly when the local trace of `v` vanishes almost everywhere on `S`.
   have hR (v : W1p volume Ω p) :
       R v = 0 ↔ W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs v =ᵐ[volume.restrict S] 0 :=
-    Lp.eq_zero_iff_ae_eq_zero.trans ⟨(LpToLpRestrictCLM_coeFn ℝ S _).symm.trans,
-      (LpToLpRestrictCLM_coeFn ℝ S _).trans⟩
+    LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) S _
   -- On restrictions of test functions, the local trace is the cutoff product at the graph point,
   -- which vanishes on `S`; the general case follows by density.
   have hu : R u = 0 := (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u

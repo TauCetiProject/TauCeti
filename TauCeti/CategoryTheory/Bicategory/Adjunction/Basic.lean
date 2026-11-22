@@ -11,12 +11,12 @@ public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 # Inverses and composites of adjoint equivalences in a bicategory
 
 An adjoint equivalence `a ≌ b` in a bicategory (Mathlib's `Bicategory.Equivalence`) has an
-inverse `e.symm : b ≌ a`, exchanging the two `1`-morphisms, and equivalences `a ≌ b` and
-`b ≌ c` compose to `e₁.trans e₂ : a ≌ c`, with `1`-morphisms the composites. Both are built
-with `Bicategory.Equivalence.mkOfAdjointifyCounit`, so only the unit and counit isomorphisms
-are given and the counit is adjointified. The given counits already satisfy the triangle
-identities, so adjointification leaves them unchanged (`adjointifyCounit_eq_of_left_triangle`),
-and `symm_counit` and `trans_counit` state them directly.
+inverse `e.symm : b ≌ a`, exchanging the two `1`-morphisms and inverting the counit and unit, and
+equivalences `a ≌ b` and `b ≌ c` compose to `e₁.trans e₂ : a ≌ c`, with `1`-morphisms the
+composites. The composite is built with `Bicategory.Equivalence.mkOfAdjointifyCounit`, so only the
+unit and counit isomorphisms are given and the counit is adjointified; the given counit already
+satisfies the left triangle identity, so adjointification leaves it unchanged
+(`adjointifyCounit_eq_of_left_triangle`), and `trans_counit` states it directly.
 
 ## Main definitions
 
@@ -50,11 +50,19 @@ lemma adjointifyCounit_eq_of_left_triangle {f : a ⟶ b} {g : b ⟶ a} {η : �
 namespace Equivalence
 
 /-- The inverse of an adjoint equivalence in a bicategory: its `1`-morphisms are exchanged, and
-its unit and counit are the inverses of the counit and the unit, adjointified. -/
+its unit and counit are the inverses of the counit and the unit. -/
 -- The body is exposed so that the types of `symm_unit` and `symm_counit`, which mention the
 -- `1`-morphisms of `e.symm`, can be computed.
-@[expose] def symm (e : a ≌ b) : b ≌ a :=
-  mkOfAdjointifyCounit e.counit.symm e.unit.symm
+@[implicit_reducible, expose] def symm (e : a ≌ b) : b ≌ a where
+  hom := e.inv
+  inv := e.hom
+  unit := e.counit.symm
+  counit := e.unit.symm
+  left_triangle := by
+    rw [← Iso.symm_symm_eq (leftZigzagIso _ _), leftZigzagIso_symm, Iso.symm_symm_eq,
+      Iso.symm_symm_eq, e.right_triangle]
+    ext
+    simp
 
 @[simp]
 lemma symm_hom (e : a ≌ b) : e.symm.hom = e.inv :=
@@ -68,15 +76,10 @@ lemma symm_inv (e : a ≌ b) : e.symm.inv = e.hom :=
 lemma symm_unit (e : a ≌ b) : e.symm.unit = e.counit.symm :=
   (rfl)
 
-/-- The counit of `e.symm` is the inverse of the unit of `e`: adjointification does not change
-it, by the right triangle identity of `e`. -/
+/-- The counit of `e.symm` is the inverse of the unit of `e`. -/
 @[simp]
 lemma symm_counit (e : a ≌ b) : e.symm.counit = e.unit.symm :=
-  adjointifyCounit_eq_of_left_triangle <| by
-    rw [← Iso.symm_symm_eq (leftZigzagIso _ _), leftZigzagIso_symm, Iso.symm_symm_eq,
-      Iso.symm_symm_eq, e.right_triangle]
-    ext
-    simp
+  (rfl)
 
 /-- The composite of adjoint equivalences `e₁ : a ≌ b` and `e₂ : b ≌ c` in a bicategory. Its
 `1`-morphisms are `e₁.hom ≫ e₂.hom` and `e₂.inv ≫ e₁.inv`; its unit inserts the unit of `e₂`

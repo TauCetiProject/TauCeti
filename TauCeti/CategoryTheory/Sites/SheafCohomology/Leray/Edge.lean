@@ -79,9 +79,24 @@ namespace CategoryTheory.Sheaf.H
 
 variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
   {D : Type*} [Category* D] {K : GrothendieckTopology D}
-  [HasSheafify J AddCommGrpCat.{w}] [HasSheafify K AddCommGrpCat.{w}]
+  [HasSheafify J AddCommGrpCat.{w}]
+
+/-- A right adjoint whose left adjoint preserves monomorphisms sends injective sheaves to
+sheaves with vanishing higher cohomology (Stacks, Lemma 21.14.1 (072Z)). -/
+lemma subsingleton_H_succ_obj_of_injective [HasExt.{w₁} (Sheaf J AddCommGrpCat.{w})]
+    {pb : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCat.{w}}
+    {pf : Sheaf K AddCommGrpCat.{w} ⥤ Sheaf J AddCommGrpCat.{w}} (adj : pb ⊣ pf)
+    [pb.PreservesMonomorphisms] (I : Sheaf K AddCommGrpCat.{w}) [Injective I] (n : ℕ) :
+    Subsingleton (H (pf.obj I) (n + 1)) :=
+  have := Injective.injective_of_adjoint adj I
+  inferInstance
+
+variable [HasSheafify K AddCommGrpCat.{w}]
   [HasExt.{w₁} (Sheaf J AddCommGrpCat.{w})] [HasExt.{w₂} (Sheaf K AddCommGrpCat.{w})]
-  {pb : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCat.{w}} [pb.Additive]
+
+section Adjunction
+
+variable {pb : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCat.{w}} [pb.Additive]
   [PreservesFiniteLimits pb] [PreservesFiniteColimits pb]
   {pf : Sheaf K AddCommGrpCat.{w} ⥤ Sheaf J AddCommGrpCat.{w}} (adj : pb ⊣ pf)
   (c : (constantSheaf K AddCommGrpCat.{w}).obj (of (ULift ℤ)) ⟶
@@ -167,17 +182,6 @@ lemma lerayEdge_zero_bijective [IsIso c] (F : Sheaf K AddCommGrpCat.{w}) :
     ((adj.homEquiv _ _).symm.bijective.comp Ext.addEquiv₀.bijective))
 
 end
-
-omit [pb.Additive] [PreservesFiniteLimits pb] [PreservesFiniteColimits pb]
-    [HasExt.{w₂} (Sheaf K AddCommGrpCat.{w})] [HasSheafify K AddCommGrpCat.{w}] in
-include adj in
-/-- A right adjoint whose left adjoint preserves monomorphisms sends injective sheaves to
-sheaves with vanishing higher cohomology (Stacks, Lemma 21.14.1 (072Z)). -/
-lemma subsingleton_H_succ_obj_of_injective [pb.PreservesMonomorphisms]
-    (I : Sheaf K AddCommGrpCat.{w}) [Injective I] (n : ℕ) :
-    Subsingleton (H (pf.obj I) (n + 1)) :=
-  have := Injective.injective_of_adjoint adj I
-  inferInstance
 
 /-- When the comparison `c` of constant sheaves is an isomorphism, the edge map is injective in
 degree one: `H¹(C, f_* F) ⟶ H¹(D, F)` is the first map of the five-term exact sequence of the
@@ -313,17 +317,7 @@ lemma lerayEdge_bijective [IsIso c] [EnoughInjectives (Sheaf K AddCommGrpCat.{w}
   have := Functor.preservesHomology_of_preservesEpis_and_kernels pf
   exact lerayEdge_bijective_of_isZero_rightDerived adj c fun q _ ↦ pf.isZero_rightDerived_succ F q
 
-end CategoryTheory.Sheaf.H
-
-namespace CategoryTheory.Sheaf.H
-
-variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
-  {D : Type*} [Category* D] {K : GrothendieckTopology D}
-  [HasSheafify J AddCommGrpCat.{w}] [HasSheafify K AddCommGrpCat.{w}]
-  [HasExt.{w₁} (Sheaf J AddCommGrpCat.{w})] [HasExt.{w₂} (Sheaf K AddCommGrpCat.{w})]
-  (u : C ⥤ D) [u.IsContinuous J K]
-  [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint] [u.Final]
-  [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{w} J K)]
+end Adjunction
 
 /-- **Leray acyclicity for a morphism of sites.** For a morphism of sites given by `u : C ⥤ D`,
 with pushforward `f_* = u.sheafPushforwardContinuous` and exact inverse image
@@ -331,6 +325,9 @@ with pushforward `f_* = u.sheafPushforwardContinuous` and exact inverse image
 `Rᵠ f_* F = 0` for `q > 0`, then the edge map `Hⁿ(C, f_* F) ⟶ Hⁿ(D, F)` is bijective in every
 degree (Stacks, Lemma 21.14.6 (0733)). -/
 theorem lerayEdge_sheafAdjunctionContinuous_bijective
+    (u : C ⥤ D) [u.IsContinuous J K]
+    [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint] [u.Final]
+    [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{w} J K)]
     [EnoughInjectives (Sheaf K AddCommGrpCat.{w})] {F : Sheaf K AddCommGrpCat.{w}}
     (hF : ∀ q, IsZero ((u.sheafHigherDirectImage AddCommGrpCat.{w} J K (q + 1)).obj F)) (n : ℕ) :
     Function.Bijective (lerayEdge (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K)

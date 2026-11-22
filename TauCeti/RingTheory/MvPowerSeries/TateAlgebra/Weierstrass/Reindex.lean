@@ -52,7 +52,7 @@ theorem norm_mul_add_eq_max_of_isMulDistinguished_split {g : Flat}
       (restrictedSplitEquiv e g : PowerSeries Inner)) (q : Flat) {r : Flat}
     (hr : ∀ t : ι →₀ ℕ, s ≤ t (e.symm none) → coeff t (r : MvPowerSeries ι R) = 0) :
     ‖g * q + r‖ = max (‖g‖ * ‖q‖) ‖r‖ := by
-  have h := hg.gaussNorm_mul_add_eq_max Fact.out (restrictedSplitEquiv e q).2
+  have h := hg.gaussNorm_mul_add_eq_max Fact.out (restrictedSplitEquiv e q).property
     ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r s).mpr hr)
   simpa only [← PowerSeries.norm_eq_gaussNorm, ← Subring.coe_mul, ← Subring.coe_add,
     ← map_mul, ← map_add, norm_restrictedSplitEquiv] using h
@@ -67,8 +67,9 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isMulDistinguished_split {g : Flat}
     (h : g * q + r = g * q' + r') : q = q' ∧ r = r' := by
   have h' := congrArg (fun x : Flat ↦ (restrictedSplitEquiv e x : PowerSeries Inner)) h
   simp only [map_add, map_mul, Subring.coe_add, Subring.coe_mul] at h'
-  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedSplitEquiv e q).2
-    (restrictedSplitEquiv e q').2 ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r s).mpr hr)
+  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedSplitEquiv e q).property
+    (restrictedSplitEquiv e q').property ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r s).mpr
+        hr)
     ((forall_coeff_restrictedSplitEquiv_eq_zero_iff e r' s).mpr hr') h'
   exact ⟨(restrictedSplitEquiv e).injective (Subtype.ext hq),
     (restrictedSplitEquiv e).injective (Subtype.ext hr)⟩
@@ -142,7 +143,7 @@ theorem exists_isNormMulUnit_isMonicOfDegree_mul_eq_of_isMulDistinguished_split
         c none ^ s ∧
       u * (restrictedSplitEquiv e).symm (PowerSeries.polynomialToRestricted (c none) ω) = g := by
   obtain ⟨u, ω, hu, hω, hn, huω⟩ :=
-    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedSplitEquiv e g).2
+    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedSplitEquiv e g).property
   refine ⟨(restrictedSplitEquiv e).symm u, ω, ?_, hω, ?_, ?_⟩
   · exact (MulEquiv.isNormMulUnit_iff (restrictedSplitEquiv e).toMulEquiv
       (norm_restrictedSplitEquiv e) _).mp (by simpa using hu)

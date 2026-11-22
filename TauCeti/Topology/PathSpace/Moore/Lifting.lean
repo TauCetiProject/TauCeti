@@ -81,15 +81,15 @@ def mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : MooreReplacement p :=
 
 /-- The point of `E` of a pair `(e, γ)`. -/
 def point (x : MooreReplacement p) : E :=
-  x.1.1
+  x.val.1
 
 /-- The Moore path of a pair `(e, γ)`. -/
 def path (x : MooreReplacement p) : MoorePath B :=
-  x.1.2
+  x.val.2
 
 @[simp]
 theorem source_path (x : MooreReplacement p) : x.path.source = p x.point :=
-  x.2
+  x.property
 
 @[simp]
 theorem point_mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : (mk e γ h).point = e :=
@@ -110,11 +110,11 @@ theorem mk_point_path (x : MooreReplacement p) : mk x.point x.path x.source_path
 
 @[fun_prop]
 theorem continuous_point : Continuous (point : MooreReplacement p → E) :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 @[fun_prop]
 theorem continuous_path : Continuous (path : MooreReplacement p → MoorePath B) :=
-  continuous_snd.comp continuous_subtype_val
+  continuous_snd.comp continuous_subtypeVal
 
 /-- A family of pairs is continuous when its points and its paths are. -/
 @[fun_prop]

@@ -50,6 +50,8 @@ namespace Matrix.FullShellLieAlgebra
 open Module
 open ShellLieAlgebra (rootReindex)
 
+section Integral
+
 variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
   {Y : Type*} [AddCommGroup Y] (D : ShellCartanDatum B Y)
   (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) (γ : Y ≃ₗ[ℤ] Y)
@@ -88,7 +90,12 @@ theorem equivProd_fixedCartanRootEquiv_symm
   · simpa using (fixedCartanRootEquiv_apply_snd D σ hσ γ
       ((fixedCartanRootEquiv D σ hσ γ).symm x)).symm
 
-variable (A : Type*) [Ring A]
+end Integral
+
+section CartanRootBaseChange
+
+variable {I : Type*} [Fintype I] {B : Matrix I I ℤ}
+  {Y : Type*} [AddCommGroup Y] (D : ShellCartanDatum B Y) (A : Type*) [Ring A]
 
 /-- Product coordinates after scalar extension, retaining the full tensor-extended Cartan
 module rather than a chosen complement to the coroots. -/
@@ -97,13 +104,21 @@ noncomputable def cartanRootBaseChangeEquiv :
       (A ⊗[ℤ] Y) × (A ⊗[ℤ] (B.normTwoShell →₀ ℤ)) :=
   (equivProd D).baseChange ℤ A _ _ ≪≫ₗ TensorProduct.prodRight ℤ A A Y (B.normTwoShell →₀ ℤ)
 
-omit [LinearOrder I] in
 /-- Scalar-extended product coordinates on a pure tensor. -/
 @[simp]
 theorem cartanRootBaseChangeEquiv_tmul (a : A) (x : FullShellLieAlgebra D) :
     cartanRootBaseChangeEquiv D A (a ⊗ₜ x) =
       (a ⊗ₜ (equivProd D x).1, a ⊗ₜ (equivProd D x).2) := by
   simp [cartanRootBaseChangeEquiv]
+
+end CartanRootBaseChange
+
+section FixedBaseChange
+
+variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
+  {Y : Type*} [AddCommGroup Y] (D : ShellCartanDatum B Y)
+  (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) (γ : Y ≃ₗ[ℤ] Y)
+  (A : Type*) [Ring A]
 
 /-- Scalar-extended product coordinates intertwine the action with the product of the two
 scalar-extended actions. No exactness assumption on scalar extension is needed. -/
@@ -195,5 +210,7 @@ theorem fixedSubmoduleBaseChange_surjective_iff :
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, LinearMap.coe_prodMap] at h
   rw [← EquivLike.comp_surjective _ (fixedCartanRootBaseChangeEquiv D σ hσ γ A), h]
   exact (EquivLike.surjective_comp e _).trans Prod.map_surjective
+
+end FixedBaseChange
 
 end Matrix.FullShellLieAlgebra
