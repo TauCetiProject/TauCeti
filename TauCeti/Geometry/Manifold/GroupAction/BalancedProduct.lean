@@ -23,7 +23,9 @@ action of `K`. This action is free and proper (`TauCeti.isCancelSMul_prod`,
 dimension `dim P + dim Z - dim K` (`TauCeti.BalancedProduct.chartedSpace`), for which
 `(p, z) ↦ [p, z]` is a smooth submersion. Smoothness of maps out of `P ×_K Z` can therefore be
 checked on representatives (`TauCeti.BalancedProduct.contMDiff_iff`), and the projection
-`[p, z] ↦ [z]` onto `Z ⧸ K` is smooth when `K` acts freely and properly on `Z`.
+`[p, z] ↦ [z]` onto `Z ⧸ K` is smooth for every manifold structure on `Z ⧸ K` making the orbit
+projection `Z → Z ⧸ K` smooth, such as that of the quotient manifold theorem when `K` acts freely
+and properly on `Z`.
 
 The case `P = G` of a Lie group with right translation by a closed subgroup `K` is in
 `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
@@ -39,7 +41,10 @@ The case `P = G` of a Lie group with right translation by a closed subgroup `K` 
   `P ×_K Z` is a smooth manifold and the projection from `P × Z` is a smooth submersion.
 * `TauCeti.BalancedProduct.contMDiff_iff`: a map out of `P ×_K Z` is smooth exactly when its
   composite with the projection is.
-* `TauCeti.BalancedProduct.contMDiff_orbitProj`: the projection onto `Z ⧸ K` is smooth.
+* `TauCeti.BalancedProduct.contMDiff_orbitProj_of_contMDiff`,
+  `TauCeti.BalancedProduct.contMDiff_orbitProj`: the projection onto `Z ⧸ K` is smooth for any
+  charts on `Z ⧸ K` for which `Z → Z ⧸ K` is smooth, in particular for those of the quotient
+  manifold theorem.
 
 ## References
 
@@ -118,6 +123,23 @@ theorem contMDiff_iff {EN HN : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ E
   exact ((isSubmersion_quotientMk (IK := IK) (IP := IP) (IZ := IZ)).contMDiff_comp_iff
     Quotient.mk_surjective hm).symm
 
+/-- The projection `[p, z] ↦ [z]` onto `Z ⧸ K` is smooth for any charts on `Z ⧸ K` for which the
+orbit projection `Z → Z ⧸ K` is smooth. -/
+theorem contMDiff_orbitProj_of_contMDiff {EQ HQ : Type*} [NormedAddCommGroup EQ]
+    [NormedSpace ℝ EQ] [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ}
+    [ChartedSpace HQ (MulAction.orbitRel.Quotient K Z)]
+    (hπ : ContMDiff IZ IQ ∞ (Quotient.mk (MulAction.orbitRel K Z))) :
+    letI := chartedSpace IK K IP P IZ Z
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ)) IQ ∞
+      (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) := by
+  let _ := chartedSpace IK K IP P IZ Z
+  rw [contMDiff_iff (IK := IK) (IP := IP) (IZ := IZ) le_rfl]
+  have hcomp : orbitProj ∘ Quotient.mk (MulAction.orbitRel K (P × Z)) =
+      Quotient.mk (MulAction.orbitRel K Z) ∘ Prod.snd :=
+    funext fun x ↦ orbitProj_mk x.1 x.2
+  rw [hcomp]
+  exact hπ.comp (contMDiff_snd (I := IP) (M := P))
+
 /-- **The projection onto `Z ⧸ K` is smooth** when `K` acts freely and properly on `Z`, for the
 charts `ProperSMul.orbitRelQuotientChartedSpace` of the quotient manifold theorem on `Z ⧸ K`. -/
 theorem contMDiff_orbitProj [ProperSMul K Z] [IsCancelSMul K Z] :
@@ -125,14 +147,8 @@ theorem contMDiff_orbitProj [ProperSMul K Z] [IsCancelSMul K Z] :
     letI := ProperSMul.orbitRelQuotientChartedSpace IK K IZ Z
     ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ))
       𝓘(ℝ, ProperSMul.QuotientModelSpace EK EZ) ∞
-      (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) := by
-  let _ := chartedSpace IK K IP P IZ Z
-  let _ := ProperSMul.orbitRelQuotientChartedSpace IK K IZ Z
-  rw [contMDiff_iff (IK := IK) (IP := IP) (IZ := IZ) le_rfl]
-  have hcomp : orbitProj ∘ Quotient.mk (MulAction.orbitRel K (P × Z)) =
-      Quotient.mk (MulAction.orbitRel K Z) ∘ Prod.snd :=
-    funext fun x ↦ orbitProj_mk x.1 x.2
-  rw [hcomp]
-  exact (ProperSMul.contMDiff_quotientMk (I := IK)).comp (contMDiff_snd (I := IP) (M := P))
+      (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) :=
+  letI := ProperSMul.orbitRelQuotientChartedSpace IK K IZ Z
+  contMDiff_orbitProj_of_contMDiff (IK := IK) (IP := IP) (ProperSMul.contMDiff_quotientMk (I := IK))
 
 end TauCeti.BalancedProduct
