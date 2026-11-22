@@ -16,6 +16,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Append
 
 /-!
 # Smooth pullback of differential forms
@@ -30,7 +31,10 @@ not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtyp
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
 `TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
-(`TauCeti.SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd`). Pullback along a smooth map
+(`TauCeti.SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd`). On a frame whose first vectors
+are tangent to the first factor and whose last vectors are tangent to the second, the wedge of a
+form pulled back from each factor is the product of their values
+(`TauCeti.SmoothForm.wedge_mpullback_fst_snd_apply_append`). Pullback along a smooth map
 with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
 of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
 (`TauCeti.SmoothForm.diffeomorphStabilizer`).
@@ -629,6 +633,29 @@ theorem mpullback_prodMap_wedge_mpullback_fst_snd {f : M → M''} {g : M' → M'
       SmoothForm.wedge (mpullback Prod.fst contMDiff_fst (mpullback f hf α))
         (mpullback Prod.snd contMDiff_snd (mpullback g hg β)) := by
   rw [mpullback_wedge, mpullback_prodMap_mpullback_fst hf hg, mpullback_prodMap_mpullback_snd hf hg]
+
+/-- **The wedge of pullbacks from the two factors on a block frame.** On a tangent frame of
+`M × M'` whose first `k` vectors `(u i, 0)` are tangent to the first factor and whose last `l`
+vectors `(0, w j)` are tangent to the second, `pr₁^* α ∧ pr₂^* β` takes the value `α u * β w`. -/
+theorem wedge_mpullback_fst_snd_apply_append (α : SmoothForm I M ℝ k) (β : SmoothForm I' M' ℝ l)
+    (q : M × M') (u : Fin k → TangentSpace I q.1) (w : Fin l → TangentSpace I' q.2) :
+    (SmoothForm.wedge (mpullback Prod.fst contMDiff_fst α)
+        (mpullback Prod.snd contMDiff_snd β)).val q
+      (Fin.append (fun i ↦ ((u i, 0) : E × E')) fun j ↦ ((0, w j) : E × E')) =
+      α.val q.1 u * β.val q.2 w := by
+  rw [SmoothForm.coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply']
+  refine (ContinuousAlternatingMap.pairedWedge_apply_append_of_forall _ _ _ _ _ _
+    fun y i j ↦ ?_).trans ?_
+  · -- The second factor vanishes on a frame containing a vector tangent to the first factor.
+    exact (mpullback_snd_apply _ q _).trans
+      (ContinuousAlternatingMap.map_coord_zero _ j
+        ((congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q _)).trans
+          (congrArg Prod.snd (Function.update_self j _ y))))
+  · rw [ContinuousLinearMap.mul_apply']
+    refine (congrArg₂ (· * ·) (mpullback_fst_apply _ q _) (mpullback_snd_apply _ q _)).trans ?_
+    exact congrArg₂ (fun u w ↦ α.val q.1 u * β.val q.2 w)
+      (funext fun i ↦ congrArg Prod.fst (Manifold.tangentSpaceProdEquiv_apply q _))
+      (funext fun j ↦ congrArg Prod.snd (Manifold.tangentSpaceProdEquiv_apply q _))
 
 end SmoothForm
 

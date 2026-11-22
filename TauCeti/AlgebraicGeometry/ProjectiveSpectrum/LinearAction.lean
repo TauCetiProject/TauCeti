@@ -86,17 +86,26 @@ theorem symmetricAlgebraMapIso_hom_toSpecZero (e : M ≃ₗ[R] M) :
   rw [symmetricAlgebraMapIso_hom, map_toSpecZero]
   simp
 
+/-- The projective morphism induced by a linear map lies over the coefficient ring: it commutes
+with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. -/
+@[reassoc (attr := simp)]
+theorem map_gradedMap_projToSpec (f : M →ₗ[R] N)
+    (hf : HomogeneousIdeal.irrelevant (homogeneousSubmodule R N) ≤
+      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).map
+        (SymmetricAlgebra.gradedMap R f)) :
+    map (SymmetricAlgebra.gradedMap R f) hf ≫ projToSpec R M = projToSpec R N := by
+  rw [projToSpec_def, projToSpec_def, ← toSpecCoeff_def, ← toSpecCoeff_def, map_toSpecCoeff]
+  intro r
+  apply Subtype.ext
+  simp [GradedRingHom.gradedZeroRingHom]
+
 /-- The projective isomorphism induced by a linear equivalence lies over the coefficient ring:
 it commutes with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. -/
 -- Preserve this square before simplifying the isomorphism to `Proj.map`.
 @[reassoc (attr := simp↓)]
 theorem symmetricAlgebraMapIso_hom_projToSpec (e : M ≃ₗ[R] N) :
     (symmetricAlgebraMapIso R e).hom ≫ projToSpec R M = projToSpec R N := by
-  rw [symmetricAlgebraMapIso_hom, projToSpec_def, projToSpec_def, ← toSpecCoeff_def,
-    ← toSpecCoeff_def, map_toSpecCoeff]
-  intro r
-  apply Subtype.ext
-  simp [GradedRingHom.gradedZeroRingHom]
+  rw [symmetricAlgebraMapIso_hom, map_gradedMap_projToSpec]
 
 /-- Inverting a linear equivalence inverts its projective isomorphism. -/
 @[simp]
