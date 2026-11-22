@@ -9,9 +9,9 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.Topology.CWComplex.Abstract.Basic
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
-public import TauCeti.Geometry.Convex.ConvexSpace.CellBall
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import Mathlib.CategoryTheory.Limits.Types.Colimits
 
@@ -33,9 +33,6 @@ realized boundary inclusion with `TopCat.diskBoundaryInclusion n`
 
 ## Main definitions and results
 
-* `SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm`: on the realization of a standard simplex,
-  realizing the classifying map `yonedaEquiv.symm σ : Δ[n] ⟶ X` sends a barycentric point `w` to
-  `SSet.toTopObjMk σ w`.
 * `SSet.isClosedEmbedding_toTop_map_boundary_ι`: `|∂Δ[n].ι|` is a closed embedding.
 * `SSet.range_toTopHomeo_comp_toTop_map_boundary_ι`: the image of `|∂Δ[n].ι|` in
   `StdSimplex ℝ (Fin (n + 1))` consists of the points with a vanishing barycentric weight.
@@ -55,30 +52,12 @@ universe u
 
 namespace SSet
 
-/-- Realizing the classifying map `yonedaEquiv.symm σ : Δ[n] ⟶ X` of an `n`-simplex `σ` sends
-the point with barycentric coordinates `w` to `SSet.toTopObjMk σ w`. -/
-lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {X : SSet.{u}} {n : ℕ} (σ : X _⦋n⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    toTop.map (yonedaEquiv.symm σ) (⦋n⦌.toTopHomeo.symm w) = toTopObjMk σ w := by
-  rw [toTopObjMk_def]
-  have hunit := sSetTopAdj_unit_app_app_down X (op ⦋n⦌) σ
-  exact (ConcreteCategory.congr_hom hunit (ULift.up w)).symm
-
-/-- The geometric realization of a standard simplex is compact. -/
-instance compactSpace_toTop_stdSimplex (n : ℕ) : CompactSpace |(Δ[n] : SSet.{u})| :=
-  (SimplexCategory.toTopHomeo.{u} ⦋n⦌).symm.compactSpace
-
-/-- The geometric realization of a standard simplex is Hausdorff. -/
-private instance t2Space_toTop_stdSimplex (n : ℕ) : T2Space |(Δ[n] : SSet.{u})| :=
-  (SimplexCategory.toTopHomeo.{u} ⦋n⦌).isEmbedding.t2Space
-
 /-- The geometric realization of `∂Δ[0]` is empty. -/
-instance isEmpty_toTop_boundary_zero : IsEmpty |(∂Δ[0] : SSet.{u})| := by
-  have hinit : IsInitial (∂Δ[0] : SSet.{u}) :=
-    Subcomplex.isInitialBot.ofIso (Subcomplex.eqToIso boundary_zero).symm
+instance isEmpty_toTop_boundary_zero : IsEmpty |(∂Δ[0] : SSet.{u})| :=
   have f : |(∂Δ[0] : SSet.{u})| ⟶ TopCat.of PEmpty.{u + 1} :=
-    (sSetTopAdj.homEquiv _ _).symm (hinit.to _)
-  exact ⟨fun x ↦ PEmpty.elim (f x)⟩
+    ((isInitialToTopBot (Δ[0] : SSet.{u})).ofIso
+      (toTop.mapIso (Subcomplex.eqToIso boundary_zero).symm)).to _
+  ⟨fun x ↦ PEmpty.elim (f x)⟩
 
 /-- Every point of `|∂Δ[n + 1]|` lies in the image of one of the codimension-one faces
 `|boundary.ι j| : |Δ[n]| ⟶ |∂Δ[n + 1]|`. -/
@@ -110,26 +89,14 @@ instance compactSpace_toTop_boundary (n : ℕ) : CompactSpace |(∂Δ[n] : SSet.
   | succ m =>
     let f : Fin (m + 2) × |(Δ[m] : SSet.{u})| → |(∂Δ[m + 1] : SSet.{u})| :=
       fun p ↦ toTop.map (boundary.ι p.1) p.2
-    have hf_cont : Continuous f := by
-      rw [continuous_iff_continuousAt]
-      intro ⟨j, z⟩
-      have hj : ({j} : Set (Fin (m + 2))) ×ˢ (Set.univ : Set |(Δ[m] : SSet.{u})|) ∈ nhds (j, z) :=
-        IsOpen.mem_nhds ((isOpen_discrete _).prod isOpen_univ) ⟨rfl, trivial⟩
-      refine ((toTop.map (boundary.ι j)).hom.continuous.comp continuous_snd).continuousAt.congr ?_
-      filter_upwards [hj] with ⟨k, w⟩ ⟨hk, _⟩
-      cases hk
-      rfl
+    have hf_cont : Continuous f :=
+      continuous_prod_of_discrete_left.2 fun j ↦ (toTop.map (boundary.ι j)).hom.continuous
     have hf_surj : Function.Surjective f := fun x ↦ by
       obtain ⟨j, z, rfl⟩ := exists_toTop_map_boundary_ι x
       exact ⟨(j, z), rfl⟩
     refine ⟨?_⟩
     rw [← hf_surj.range_eq, ← Set.image_univ]
     exact isCompact_univ.image hf_cont
-
-private lemma toTopHomeo_toTop_map_δ {m : ℕ} (j : Fin (m + 2)) (z : |(Δ[m] : SSet.{u})|) :
-    ⦋m + 1⦌.toTopHomeo (toTop.map (stdSimplex.δ j) z) =
-      (⦋m⦌.toTopHomeo z).map j.succAbove :=
-  SimplexCategory.toTopHomeo_naturality_apply (SimplexCategory.δ j) z
 
 private lemma toTop_map_boundary_ι_eq_of_lt {m : ℕ} {j k : Fin (m + 2)} (hjk : j < k)
     {z₁ z₂ : |(Δ[m] : SSet.{u})|}
@@ -231,6 +198,14 @@ def toTopStdSimplexIsoDisk (n : ℕ) : |(Δ[n] : SSet.{u})| ≅ TopCat.disk.{u} 
       (TauCeti.standardCellBallToOrderedSimplex n).symm.trans
         (TauCeti.diskHomeomorphClosedBall.{u} n).symm
 
+/-- Reading `(toTopStdSimplexIsoDisk n).hom x` through `TauCeti.diskHomeomorphClosedBall n`
+applies `(standardCellBallToOrderedSimplex n).symm` to the barycentric coordinates of `x`. -/
+@[simp]
+lemma toTopStdSimplexIsoDisk_hom_apply (n : ℕ) (x : |(Δ[n] : SSet.{u})|) :
+    TauCeti.diskHomeomorphClosedBall.{u} n ((toTopStdSimplexIsoDisk.{u} n).hom x) =
+      (TauCeti.standardCellBallToOrderedSimplex n).symm (⦋n⦌.toTopHomeo x) := by
+  simp [toTopStdSimplexIsoDisk]
+
 /-- Reading the inverse of `toTopStdSimplexIsoDisk n` through `TauCeti.diskHomeomorphClosedBall n`
 cancels the ball-to-disk comparison and recovers `standardCellBallToOrderedSimplex n`. -/
 @[simp]
@@ -254,47 +229,31 @@ private lemma mem_range_toTopBoundary_toDisk_iff (n : ℕ) (z : TopCat.disk.{u} 
     rw [range_toTopHomeo_comp_toTop_map_boundary_ι]
     rfl
   rw [← hrange]
-  simp only [Set.mem_range, Function.comp_apply, ConcreteCategory.comp_apply]
+  simp only [Set.mem_range, Function.comp_apply]
   constructor
-  · rintro ⟨x, hx⟩
+  · rintro ⟨x, rfl⟩
     refine ⟨x, ?_⟩
-    rw [← hx]
-    simp [toTopStdSimplexIsoDisk]
+    rw [ConcreteCategory.comp_apply, toTopStdSimplexIsoDisk_hom_apply, Homeomorph.apply_symm_apply]
   · rintro ⟨x, hx⟩
-    refine ⟨x, ?_⟩
-    apply (TauCeti.diskHomeomorphClosedBall.{u} n).injective
-    apply (TauCeti.standardCellBallToOrderedSimplex n).injective
-    simpa [toTopStdSimplexIsoDisk] using hx
+    refine ⟨x, (TauCeti.diskHomeomorphClosedBall.{u} n).injective ?_⟩
+    rw [ConcreteCategory.comp_apply, toTopStdSimplexIsoDisk_hom_apply, hx,
+      Homeomorph.symm_apply_apply]
+
+private lemma range_toTopBoundary_toDisk_eq (n : ℕ) :
+    Set.range (toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]) ≫
+        (toTopStdSimplexIsoDisk.{u} n).hom) =
+      Set.range (TopCat.diskBoundaryInclusion.{u} n) :=
+  Set.ext (mem_range_toTopBoundary_toDisk_iff n)
 
 /-- The canonical isomorphism `|∂Δ[n]| ≅ ∂𝔻 n` in `TopCat` compatible with
 `toTopStdSimplexIsoDisk n`. -/
 def toTopBoundaryIsoDiskBoundary (n : ℕ) :
-    |(∂Δ[n] : SSet.{u})| ≅ TopCat.diskBoundary.{u} n := by
-  have hcl := TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion.{u} n
-  have hex : ∀ x : |(∂Δ[n] : SSet.{u})|, ∃ s : TopCat.diskBoundary.{u} n,
-      TopCat.diskBoundaryInclusion.{u} n s =
-        (toTopStdSimplexIsoDisk.{u} n).hom (toTop.map ∂Δ[n].ι x) :=
-    fun x ↦ (mem_range_toTopBoundary_toDisk_iff n _).1 ⟨x, rfl⟩
-  choose f hf using hex
-  have hf_cont : Continuous f := by
-    rw [hcl.isInducing.continuous_iff]
-    have heq : (TopCat.diskBoundaryInclusion.{u} n) ∘ f =
-        (toTopStdSimplexIsoDisk.{u} n).hom ∘ toTop.map ∂Δ[n].ι := funext hf
-    rw [heq]
-    exact (toTopStdSimplexIsoDisk.{u} n).hom.hom.continuous.comp
-      (toTop.map ∂Δ[n].ι).hom.continuous
-  have hf_inj : Function.Injective f := fun x₁ x₂ h ↦ by
-    have h1 : (toTopStdSimplexIsoDisk.{u} n).hom (toTop.map ∂Δ[n].ι x₁) =
-        (toTopStdSimplexIsoDisk.{u} n).hom (toTop.map ∂Δ[n].ι x₂) := by
-      rw [← hf x₁, ← hf x₂, h]
-    exact toTop_map_boundary_ι_injective n
-      ((TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)).injective h1)
-  have hf_surj : Function.Surjective f := fun s ↦ by
-    obtain ⟨x, hx⟩ := (mem_range_toTopBoundary_toDisk_iff n
-      (TopCat.diskBoundaryInclusion.{u} n s)).2 ⟨s, rfl⟩
-    exact ⟨x, hcl.injective ((hf x).trans hx)⟩
-  exact TopCat.isoOfHomeo
-    (hf_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f ⟨hf_inj, hf_surj⟩))
+    |(∂Δ[n] : SSet.{u})| ≅ TopCat.diskBoundary.{u} n :=
+  TopCat.isoOfHomeo <|
+    ((TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)).isEmbedding.comp
+      (isClosedEmbedding_toTop_map_boundary_ι.{u} n).isEmbedding).toHomeomorph.trans <|
+    (Homeomorph.setCongr (range_toTopBoundary_toDisk_eq.{u} n)).trans
+      (TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion.{u} n).isEmbedding.toHomeomorph.symm
 
 /-- The boundary isomorphism `toTopBoundaryIsoDiskBoundary n` commutes with the boundary inclusions
 into `|Δ[n]|` and `𝔻 n`. -/
@@ -303,9 +262,14 @@ lemma toTopBoundaryIsoDiskBoundary_hom_comp_diskBoundaryInclusion (n : ℕ) :
     (toTopBoundaryIsoDiskBoundary.{u} n).hom ≫ TopCat.diskBoundaryInclusion.{u} n =
       toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]) ≫ (toTopStdSimplexIsoDisk.{u} n).hom := by
   ext x
-  dsimp [toTopBoundaryIsoDiskBoundary]
-  exact Classical.choose_spec
-    ((mem_range_toTopBoundary_toDisk_iff.{u} n _).1 ⟨x, rfl⟩)
+  have hι := (TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion.{u} n).isEmbedding
+  have hg := (TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)).isEmbedding.comp
+    (isClosedEmbedding_toTop_map_boundary_ι.{u} n).isEmbedding
+  change TopCat.diskBoundaryInclusion.{u} n
+    (hι.toHomeomorph.symm (Homeomorph.setCongr (range_toTopBoundary_toDisk_eq.{u} n)
+      (hg.toHomeomorph x))) = _
+  rw [← hι.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply]
+  exact hg.toHomeomorph_apply_coe x
 
 /-- The canonical isomorphism in `Arrow TopCat` identifying the realized simplex boundary inclusion
 `|∂Δ[n].ι| : |∂Δ[n]| ⟶ |Δ[n]|` with the standard sphere-to-disk inclusion
@@ -317,13 +281,18 @@ def toTopBoundaryInclusionArrowIso (n : ℕ) :
     (toTopBoundaryIsoDiskBoundary_hom_comp_diskBoundaryInclusion.{u} n)
 
 @[simp]
-lemma toTopBoundaryInclusionArrowIso_left (n : ℕ) :
+lemma toTopBoundaryInclusionArrowIso_hom_left (n : ℕ) :
     (toTopBoundaryInclusionArrowIso.{u} n).hom.left = (toTopBoundaryIsoDiskBoundary.{u} n).hom :=
   (rfl)
 
 @[simp]
-lemma toTopBoundaryInclusionArrowIso_right (n : ℕ) :
+lemma toTopBoundaryInclusionArrowIso_hom_right (n : ℕ) :
     (toTopBoundaryInclusionArrowIso.{u} n).hom.right = (toTopStdSimplexIsoDisk.{u} n).hom :=
+  (rfl)
+
+@[simp]
+lemma toTopBoundaryInclusionArrowIso_inv_left (n : ℕ) :
+    (toTopBoundaryInclusionArrowIso.{u} n).inv.left = (toTopBoundaryIsoDiskBoundary.{u} n).inv :=
   (rfl)
 
 @[simp]

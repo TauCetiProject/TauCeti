@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.RelativeCellComplex.Basic
+public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Preorder
 
 /-!
 # Functoriality and reindexing of relative cell complexes
@@ -50,7 +51,9 @@ variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
   (c : AttachCells.{w} g f)
 
 /-- A functor preserving the relevant coproducts and pushout sends a cell attachment to a cell
-attachment with the same cell index type and mapped basic cells. -/
+attachment with the same cell index type and mapped basic cells. Exposed so that the cell index
+type `ι` and indexing map `π` remain definitionally equal to those of `c`, which statements about
+attached cells in `RelativeCellComplex.map` require in order to typecheck. -/
 @[expose] noncomputable def map (F : C ⥤ D)
     [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
     [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
@@ -104,12 +107,36 @@ variable (F : C ⥤ D) [PreservesWellOrderContinuousOfShape J F] [PreservesColim
   [∀ j hj, PreservesColimit (span (c.attachCells j hj).g₁ (c.attachCells j hj).m) F]
 
 /-- Push a relative cell complex forward along a functor preserving the relevant colimits.
-The stages are the images of the stages of `c`, and the cells at each step are unchanged. -/
+The stages are the images of the stages of `c`, and the cells at each step are unchanged. Exposed so
+that the cell index types `(c.map F).attachCells j hj` remain definitionally those of `c`, which
+`map_cells_ι` and `mapCellsEquiv` require in order to typecheck. -/
 @[expose] noncomputable def map :
     RelativeCellComplex.{w} (fun j i ↦ F.map (basicCell j i)) (F.map f) :=
   .mk (c.toTransfiniteCompositionOfShape.map F) fun j hj ↦ (c.attachCells j hj).map F
 
-/-- The cells of `c.map F` are the cells of `c`. -/
+/-- The stage functor of `c.map F` is `c.F ⋙ F`. -/
+@[simp]
+lemma map_F : (c.map F).F = c.F ⋙ F := rfl
+
+/-- The `j`-th stage inclusion of `c.map F` into `F.obj Y` is `F.map (c.incl.app j)`. -/
+@[simp, reassoc]
+lemma map_incl_app (j : J) : (c.map F).incl.app j = F.map (c.incl.app j) :=
+  Category.comp_id _
+
+/-- The initial stage isomorphism of `c.map F` is `F.mapIso c.isoBot`. -/
+@[simp]
+lemma map_isoBot : (c.map F).isoBot = F.mapIso c.isoBot := rfl
+
+/-- The colimit witness of `c.map F` is the transported colimit witness of `c`. -/
+lemma map_isColimit :
+    (c.map F).isColimit =
+      IsColimit.ofIsoColimit (isColimitOfPreserves F c.isColimit)
+        ((Cocone.ext (Iso.refl _) :
+          F.mapCocone (Cocone.mk Y c.incl) ≅ Cocone.mk (F.obj Y) (c.map F).incl)) :=
+  Subsingleton.elim _ _
+
+/-- The cells of `c.map F` are the cells of `c`. Exposed so that a cell and its image are attached
+at the same step by definition, as `map_cells_ι'` needs. -/
 @[expose] def mapCellsEquiv : (c.map F).Cells ≃ c.Cells where
   toFun γ := ⟨γ.j, γ.hj, γ.k⟩
   invFun γ := ⟨γ.j, γ.hj, γ.k⟩
@@ -144,11 +171,34 @@ variable {X' Y' : C} {f' : X' ⟶ Y'} (e : Arrow.mk f ≅ Arrow.mk f')
 
 /-- Transport a relative cell complex along an isomorphism of arrows `Arrow.mk f ≅ Arrow.mk f'`.
 The functor of stages and cell attachments are unchanged; the colimit cocone is postcomposed with
-the target isomorphism. -/
+the target isomorphism. Exposed so that the cell attachment data remain definitionally those of
+`c`, which `ofArrowIso_cells_ι` and `ofArrowIsoCellsEquiv` require in order to typecheck. -/
 @[expose] def ofArrowIso : RelativeCellComplex.{w} basicCell f' :=
   .mk (c.toTransfiniteCompositionOfShape.ofArrowIso e) c.attachCells
 
-/-- The cells of `c.ofArrowIso e` are the cells of `c`. -/
+/-- The stage functor of `c.ofArrowIso e` is `c.F`. -/
+@[simp]
+lemma ofArrowIso_F : (c.ofArrowIso e).F = c.F := rfl
+
+/-- The `j`-th stage inclusion of `c.ofArrowIso e` is `c.incl.app j ≫ e.hom.right`. -/
+@[simp, reassoc]
+lemma ofArrowIso_incl_app (j : J) : (c.ofArrowIso e).incl.app j = c.incl.app j ≫ e.hom.right :=
+  rfl
+
+/-- The initial stage isomorphism of `c.ofArrowIso e` is `c.isoBot ≪≫ Arrow.leftFunc.mapIso e`. -/
+@[simp]
+lemma ofArrowIso_isoBot : (c.ofArrowIso e).isoBot = c.isoBot ≪≫ Arrow.leftFunc.mapIso e := rfl
+
+/-- The colimit witness of `c.ofArrowIso e` is obtained from `c.isColimit` along `e.hom.right`. -/
+lemma ofArrowIso_isColimit :
+    (c.ofArrowIso e).isColimit =
+      IsColimit.ofIsoColimit c.isColimit
+        ((Cocone.ext (Arrow.rightFunc.mapIso e) :
+          Cocone.mk Y c.incl ≅ Cocone.mk Y' (c.ofArrowIso e).incl)) :=
+  Subsingleton.elim _ _
+
+/-- The cells of `c.ofArrowIso e` are the cells of `c`. Exposed so that a cell and its image are
+attached at the same step by definition, as `ofArrowIso_cells_ι'` needs. -/
 @[expose] def ofArrowIsoCellsEquiv : (c.ofArrowIso e).Cells ≃ c.Cells where
   toFun γ := ⟨γ.j, γ.hj, γ.k⟩
   invFun γ := ⟨γ.j, γ.hj, γ.k⟩
@@ -188,12 +238,33 @@ variable {α' : J → Type t'} {A' B' : (j : J) → α' j → C}
 
 /-- Replace the basic cells of a relative cell complex along arrow isomorphisms `ha`. The stages
 and cell index types are unchanged; each cell inclusion is precomposed with the inverse target
-isomorphism. -/
+isomorphism. Exposed so that the cell index types remain definitionally those of `c`, which
+`reindexCellTypes_cells_ι` and `reindexCellTypesCellsEquiv` require in order to typecheck. -/
 @[expose] def reindexCellTypes : RelativeCellComplex.{w} basicCell' f :=
   .mk c.toTransfiniteCompositionOfShape fun j hj ↦
     (c.attachCells j hj).reindexCellTypes (basicCell' j) (a j) (ha j)
 
-/-- The cells of `c.reindexCellTypes basicCell' a ha` are the cells of `c`. -/
+/-- The stage functor of `c.reindexCellTypes basicCell' a ha` is `c.F`. -/
+@[simp]
+lemma reindexCellTypes_F : (c.reindexCellTypes basicCell' a ha).F = c.F := rfl
+
+/-- The `j`-th stage inclusion of `c.reindexCellTypes basicCell' a ha` is `c.incl.app j`. -/
+@[simp, reassoc]
+lemma reindexCellTypes_incl_app (j : J) :
+    (c.reindexCellTypes basicCell' a ha).incl.app j = c.incl.app j :=
+  rfl
+
+/-- The initial stage isomorphism of `c.reindexCellTypes basicCell' a ha` is `c.isoBot`. -/
+@[simp]
+lemma reindexCellTypes_isoBot : (c.reindexCellTypes basicCell' a ha).isoBot = c.isoBot := rfl
+
+/-- The colimit witness of `c.reindexCellTypes basicCell' a ha` is `c.isColimit`. -/
+lemma reindexCellTypes_isColimit :
+    (c.reindexCellTypes basicCell' a ha).isColimit = c.isColimit :=
+  rfl
+
+/-- The cells of `c.reindexCellTypes basicCell' a ha` are the cells of `c`. Exposed so that a cell
+and its image are attached at the same step by definition, as `reindexCellTypes_cells_ι'` needs. -/
 @[expose] def reindexCellTypesCellsEquiv :
     (c.reindexCellTypes basicCell' a ha).Cells ≃ c.Cells where
   toFun γ := ⟨γ.j, γ.hj, γ.k⟩

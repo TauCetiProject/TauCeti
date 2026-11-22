@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
+import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 
 /-!
 # Naturality of singular simplices
@@ -37,7 +38,11 @@ coordinates `w` is the point `SSet.toTopObjMk x w`. These points are natural in 
 simplex, and continuous maps out of `|X|` are determined by their values on them
 (`SSet.toTop_hom_ext`). In particular, the singular simplices of the unit interval given by the
 simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through `SSet.stdSimplex.toSSetObjI` are affine in barycentric
-coordinates (`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
+coordinates (`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`). On a standard simplex,
+the classifying map of a simplex acts via `SSet.toTopObjMk`
+(`SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm`), face inclusions act on barycentric coordinates
+(`SSet.toTopHomeo_toTop_map_δ`), `|Δ[n]|` is compact and Hausdorff, and the realization of the
+empty subcomplex `⊥` is initial (`SSet.isInitialToTopBot`).
 -/
 
 public section
@@ -346,6 +351,37 @@ lemma stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app {n : ℕ}
   change ((StdSimplex.homeomorphI ((SimplexCategory.toTopHomeo ⦋1⦌) _)) : ℝ) = _
   rw [hnat]
   exact StdSimplex.homeomorphI_apply_coe _
+
+/-- Realizing the classifying map `yonedaEquiv.symm σ : Δ[n] ⟶ X` of an `n`-simplex `σ` sends
+the point with barycentric coordinates `w` to `SSet.toTopObjMk σ w`. -/
+lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (σ : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTop.map (yonedaEquiv.symm σ) (⦋n⦌.toTopHomeo.symm w) = toTopObjMk σ w := by
+  rw [toTopObjMk_def]
+  have hunit := sSetTopAdj_unit_app_app_down X (Opposite.op ⦋n⦌) σ
+  exact (ConcreteCategory.congr_hom hunit (ULift.up w)).symm
+
+/-- Realizing a simplicial face map `stdSimplex.δ j` acts on barycentric coordinates via
+`StdSimplex.map j.succAbove`. -/
+@[simp]
+lemma toTopHomeo_toTop_map_δ {m : ℕ} (j : Fin (m + 2)) (z : |(Δ[m] : SSet.{u})|) :
+    ⦋m + 1⦌.toTopHomeo (toTop.map (stdSimplex.δ j) z) =
+      (⦋m⦌.toTopHomeo z).map j.succAbove :=
+  SimplexCategory.toTopHomeo_naturality_apply (SimplexCategory.δ j) z
+
+/-- The geometric realization of a standard simplex is compact. -/
+instance compactSpace_toTop_stdSimplex (n : ℕ) : CompactSpace |(Δ[n] : SSet.{u})| :=
+  (SimplexCategory.toTopHomeo.{u} ⦋n⦌).symm.compactSpace
+
+/-- The geometric realization of a standard simplex is Hausdorff. -/
+instance t2Space_toTop_stdSimplex (n : ℕ) : T2Space |(Δ[n] : SSet.{u})| :=
+  (SimplexCategory.toTopHomeo.{u} ⦋n⦌).isEmbedding.t2Space
+
+/-- The geometric realization of the empty subcomplex `⊥` of any simplicial set is initial in
+`TopCat`. -/
+noncomputable def isInitialToTopBot (X : SSet.{u}) :
+    Limits.IsInitial |((⊥ : X.Subcomplex) : SSet.{u})| :=
+  Limits.IsInitial.isInitialObj toTop _ Subcomplex.isInitialBot
 
 end SSet
 

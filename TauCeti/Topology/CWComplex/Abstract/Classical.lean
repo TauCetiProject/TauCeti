@@ -352,6 +352,8 @@ lemma range_incl_app_eq_toCWComplex_skeletonLT (c : CWComplex X) [T2Space X] (n 
   refine (c.range_incl_app_eq_union_toRelCWComplex_closedCell n).trans ?_
   rw [union_eq_right.2 ((range_eq_empty (initial.to X)).subset.trans (empty_subset _))]
   simp only [ENat.natCast_lt_natCast]
+  -- `c.toCWComplex` inherits `cell` and `map` (hence `closedCell`) definitionally
+  -- from `c.toRelCWComplex`.
   rfl
 
 /-- **A space with a categorical CW structure has CW type.** -/
