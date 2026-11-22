@@ -135,6 +135,25 @@ end Defs
 
 /-! ### Coordinate projections and inclusions on `[PiLp q₀ X₀, PiLp q₁ X₁]_θ` -/
 
+/-- If `toSum u` decomposes as `x₀ + x₁` in `C.SumSpace`, then `map θ T₀ T₁ h u` decomposes as
+`T₀ x₀ + T₁ x₁` in `D.SumSpace`. -/
+theorem ComplexMethodSpace.toSum_map_of_eq_add {X₀ X₁ V Y₀ Y₁ W : Type*}
+    [NormedAddCommGroup X₀] [NormedSpace ℂ X₀] [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
+    [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
+    [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁] [NormedSpace ℂ Y₁]
+    [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W] [T1Space W]
+    {C : CompatibleCouple ℂ X₀ X₁ V} {D : CompatibleCouple ℂ Y₀ Y₁ W} {θ : ℝ}
+    (T₀ : X₀ →L[ℂ] Y₀) (T₁ : X₁ →L[ℂ] Y₁)
+    (h : ∀ x : C.inter, D.fstToSum (T₀ (C.interFst x)) = D.sndToSum (T₁ (C.interSnd x)))
+    {u : C.ComplexMethodSpace θ} {x₀ : X₀} {x₁ : X₁}
+    (hx : C.fstToSum x₀ + C.sndToSum x₁ = ComplexMethodSpace.toSum u) :
+    ComplexMethodSpace.toSum (ComplexMethodSpace.map θ T₀ T₁ h u) =
+      D.fstToSum (T₀ x₀) + D.sndToSum (T₁ x₁) :=
+  (ComplexMethodSpace.toSum_map T₀ T₁ h u).trans <|
+    (congrArg (C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h) hx.symm).trans <|
+      (map_add _ _ _).trans <|
+        congr_arg₂ (· + ·) (C.sumLift_fstToSum _ _ h x₀) (C.sumLift_sndToSum _ _ h x₁)
+
 section ComplexPiLp
 
 variable {ι : Type*} [Fintype ι] {X₀ X₁ V : ι → Type*}
