@@ -50,8 +50,9 @@ The symbol at the spectral parameter `λ` is `a(x, ξ, λ⁻¹)`. This is the cl
 * `TauCeti.WeakParameterSymbol.toSymbol`, `TauCeti.WeakParameterSymbol.iteratedDerivSymbol`: the
   value at `r ∈ R` is a symbol of order `m`, and its `j`-th derivative in `r` one of order
   `m + d j`, both `ℂ`-linear in the weakly parameter-dependent symbol;
-  `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` says that the seminorms of
-  the latter are bounded uniformly in `r`.
+  `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` and
+  `TauCeti.WeakParameterSymbol.exists_bound_iteratedDerivSymbol` say that the seminorms and the
+  estimates on compact sets of the latter are bounded uniformly in `r`.
 * `TauCeti.WeakParameterSymbol.inclusion`: the class grows with `m` and with `d`, and it is a
   complex vector space.
 * `TauCeti.WeakParameterSymbol.ofSymbol`: a symbol independent of the parameter is weakly
@@ -355,6 +356,18 @@ theorem bddAbove_seminorm_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d
   refine ⟨C, ?_⟩
   rintro _ ⟨r, rfl⟩
   exact Symbol.seminorm_le_bound K α β _ hC fun x hx ξ => hCb x hx ξ r r.property
+
+/-- **Uniform estimates on compact sets.** The `j`-th parameter derivatives
+`∂_r^j a(·, ·, r)`, `r ∈ R`, form a family of symbols of order `m + d j` whose estimates on a
+compact set `K` of positions hold with constants independent of `r`. -/
+theorem exists_bound_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d m) (j : ℕ)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ r : R, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (a.iteratedDerivSymbol j r.property).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m + d * j - β.length) / 2) :=
+  (a.exists_bound K hK j α β).imp fun _ hC => ⟨hC.1, fun r x hx ξ => by
+    simpa only [← funext (coefficient_iteratedDerivSymbol a j r.property)] using
+      hC.2 x hx ξ r r.property⟩
 
 /-- **Uniform estimates for the values.** Every seminorm of the value at `r` is bounded uniformly
 in the parameter `r ∈ R`. -/
