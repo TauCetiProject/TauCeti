@@ -172,6 +172,17 @@ theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommG
       have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
       rwa [mem_Icc, ← abs_le, not_le] at h))
 
+/-- For a section vanishing for `|s| ≥ R`, a continuous function vanishing wherever the jet of the
+section vanishes is integrable on the strip. -/
+theorem integrable_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E] {R : ℝ}
+    (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {F : ℝ × ℝ → E} (hF : Continuous F)
+    (h0 : ∀ z, jet ξ z = 0 → F z = 0) : Integrable F stripMeasure := by
+  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (hF.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ h0 z (jet_eq_zero_of_lt_abs hR ?_)
+  have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
+  rwa [mem_Icc, ← abs_le, not_le] at h
+
 /-- Multiplying a `C¹` map by a `C¹` cutoff `χ` with `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, whose topological
 support lies in a measurable set `P`, gives a map whose derivative is bounded in `Lᵖ(ℝ × ℝ)` by
 `C + 2` times the jet in `Lᵖ(P)`. -/
@@ -388,6 +399,22 @@ its jet over the strip. -/
 theorem sq_norm_jetLp (ξ : S) :
     ‖jetLp S ξ‖ ^ 2 = ∫ z, ‖jet (ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure := by
   rw [jetLp_apply, MemLp.norm_toLp_sq]
+
+/-- The squared norm of the restricted value of the jet of an element `ξ` of `S` is the integral
+of `‖ξ‖²` over `[-T, T] × [0, 1]`. -/
+theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : S) :
+    ‖restrictValue T (jetLp S ξ)‖ ^ 2 =
+      ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 := by
+  -- On subsets of the strip, the strip measure is Lebesgue measure.
+  have hμ : stripMeasure.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) =
+      volume.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) := by
+    rw [Measure.restrict_restrict (measurableSet_Icc.prod measurableSet_Icc),
+      inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
+  rw [← Lp.integral_norm_sq_eq_norm_sq, ← hμ]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_restrictValue T (jetLp S ξ), ae_restrict_of_ae (coeFn_jetLp ξ)]
+    with z h₁ h₂
+  rw [h₁, h₂, jet_apply]
 
 /-- A closed set containing the jets of all elements of `S` contains `jetClosure S`. -/
 theorem jetClosure_subset_of_isClosed {s : Set (Lp (V × V × V) 2 stripMeasure)}
