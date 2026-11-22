@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
+import TauCeti.Geometry.Symplectic.Manifold.NeighborhoodGerm
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
@@ -268,20 +269,9 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
           SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by
   refine ⟨fun ⟨U₀, U₁, φ, hφ, hpull⟩ ↦ ?_, fun ⟨hg, hgi, hA, hAinv, hAi, hAσ⟩ ↦
     exists_diffeomorph_opens_mfderiv_eq i hg hgi hθ hnd hσ hA hAinv hAi hAσ⟩
-  -- `φ` carries `σ` to `θ` on every tangent space of `U₀`, in particular along `i(Q)`.
-  have hφσ (z : U₀) (v w : TangentSpace I z) :
-      SmoothBundleForm.eval₂ σ (φ z : N) (mfderiv I K φ z v) (mfderiv I K φ z w) =
-        SmoothBundleForm.eval₂ θ (z : M) v w := by
-    simpa only [SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val_apply] using
-      congrArg (fun α : SmoothTwoForm I U₀ ↦ SmoothBundleForm.eval₂ α z v w) hpull
-  have hAσ (q : Q) (v w : TangentSpace I (i q)) :
-      SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by
-    obtain ⟨h, hφq, hdφ⟩ := hφ q
-    have hz := hφσ ⟨i q, h⟩ v w
-    rwa [hdφ v, hdφ w, hφq] at hz
   rcases isEmpty_or_nonempty Q with hQ | hQ
   · exact ⟨fun q ↦ isEmptyElim q, (Topology.IsEmbedding.of_subsingleton g).isInducing,
-      fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, hAσ⟩
+      fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q⟩
   -- Read `φ` as a partial diffeomorphism `Ψ` from `M` to `N`, whose restriction and differentials
   -- along `i(Q)` are `g` and `A`.
   obtain ⟨q₀⟩ := id hQ
@@ -303,6 +293,14 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
     ext v
     exact (Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := φ) (A := Ψ) hΨ.symm v).symm.trans
       (hdφ v)
+  -- `Ψ` carries `σ` to `θ` on its source, in particular along `i(Q)`.
+  have hAσ (q : Q) (v w : TangentSpace I (i q)) :
+      SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by
+    have hz : SmoothBundleForm.eval₂ σ (Ψ (i q)) (mfderiv I K Ψ (i q) v)
+        (mfderiv I K Ψ (i q) w) = SmoothBundleForm.eval₂ θ (i q) v w :=
+      (φ.isSymplecticMapOn_toPartialDiffeomorph_liftOpens hU₀ hU₁ hpull).apply
+        (hsrc ⟨q, rfl⟩) v w
+    rwa [hd q, hval q] at hz
   obtain ⟨hg, hgi, hA, hAinv, hAi⟩ :=
     (i.exists_partialDiffeomorph_mfderiv_eq_iff (g := g) (A := A)).1 ⟨Ψ, hsrc, hval, hd⟩
   exact ⟨hg, hgi, hA, hAinv, hAi, hAσ⟩

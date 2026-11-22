@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Germ
+import TauCeti.Logic.Equiv.PartialEquiv
+import TauCeti.Topology.OpenPartialHomeomorph.Germ
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -24,11 +25,12 @@ back to `θ` on an open neighbourhood of `S`. Two of them define the same **germ
 they agree after shrinking around the whole of `S`, that is, when they are eventually equal for
 the neighbourhood filter `𝓝ˢ S`.
 
-The operations on partial diffeomorphisms descend to germs along subsets of their sources
-(`TauCeti.Geometry.Manifold.LocalDiffeomorph.Germ`): inverses and composites of germs are well
-defined, and differentials compose by the chain rule (`PartialDiffeomorph.mfderiv_trans`). This
-file shows that the symplectic neighbourhood maps are closed under these operations, so that
-symplectic neighbourhood germs have restriction, identity, inverse and composition laws.
+The operations on partial diffeomorphisms descend to germs along subsets of their sources, as for
+all open partial homeomorphisms (`TauCeti.Topology.OpenPartialHomeomorph.Germ`): inverses and
+composites of germs are well defined, and differentials compose by the chain rule
+(`PartialDiffeomorph.mfderiv_trans`). This file shows that the symplectic neighbourhood maps are
+closed under these operations, so that symplectic neighbourhood germs have restriction, identity,
+inverse and composition laws.
 
 * **Restriction.** Restricting a symplectic neighbourhood map to an open set gives one with the
   same underlying map (`PartialDiffeomorph.isSymplecticMapOn_restrOpen`).
@@ -185,12 +187,14 @@ theorem eqOn_and_forall_mfderiv_eq_iff_exists_eventuallyEq_comp
         (∀ x ∈ S, Θ x = x) ∧
         (∀ x ∈ S, mfderiv I I Θ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
         ⇑Φ₁ =ᶠ[𝓝ˢ S] Φ₂ ∘ Θ := by
-  refine ⟨fun ⟨h, hd⟩ ↦ ⟨Φ₁.trans Φ₂.symm, PartialDiffeomorph.subset_trans_symm_source h₁ h₂ h,
+  refine ⟨fun ⟨h, hd⟩ ↦ ⟨Φ₁.trans Φ₂.symm,
+    PartialEquiv.subset_trans_symm_source (e₁ := Φ₁.toPartialEquiv) h₁ h₂ h,
     Φ₁.isSymplecticMapOn_trans Φ₂.symm hΦ₁ (Φ₂.isSymplecticMapOn_symm hΦ₂ hn) hn,
-    fun x hx ↦ PartialDiffeomorph.trans_symm_apply_eq_self (h₂ hx) (h hx),
+    fun x hx ↦ PartialEquiv.trans_symm_apply_eq_self (e₁ := Φ₁.toPartialEquiv) (h₂ hx) (h hx),
     fun x hx ↦ ContinuousLinearMap.ext
       (Φ₁.mfderiv_trans_symm_apply Φ₂ hn (h₁ hx) (h₂ hx) (h hx) (hd x hx)),
-    PartialDiffeomorph.eventuallyEq_comp_trans_symm h₁ h₂ h⟩, ?_⟩
+    OpenPartialHomeomorph.eventuallyEq_comp_trans_symm (e₁ := Φ₁.toOpenPartialHomeomorph)
+      (e₂ := Φ₂.toOpenPartialHomeomorph) h₁ h₂ h⟩, ?_⟩
   rintro ⟨Θ, hΘ, -, hΘx, hdΘ, hΦ⟩
   -- Along `S`, `Φ₁` has the value and the differential of `Φ₂ ∘ Θ`, and `Θ` is the identity there
   -- to first order.

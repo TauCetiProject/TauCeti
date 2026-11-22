@@ -128,15 +128,6 @@ theorem isSymplecticMap_id (σ : SmoothTwoForm I M) : σ.IsSymplecticMap σ id :
   rw [mfderiv_id]
   rfl
 
-/-- **Composites of symplectic maps.** If `φ` is a differentiable symplectic map from `σ` to `σ'`
-and `ψ`, differentiable on the image of `φ`, is a symplectic map from `σ'` to `σ''`, then `ψ ∘ φ`
-is a symplectic map from `σ` to `σ''`. -/
-theorem IsSymplecticMap.comp (hψ : σ'.IsSymplecticMap σ'' ψ) (hφ : σ.IsSymplecticMap σ' φ)
-    (hψd : ∀ x, MDifferentiableAt I' I'' ψ (φ x)) (hφd : MDifferentiable I I' φ) :
-    σ.IsSymplecticMap σ'' (ψ ∘ φ) := fun x v w ↦ by
-  rw [mfderiv_comp x (hψd x) (hφd x)]
-  exact (hψ (φ x) _ _).trans (hφ x v w)
-
 /-- **The flat map through a symplectic map.** For a symplectic map `φ`, the flat map of `σ` at
 `x` sends `v` to the flat of `dφ v` for `σ'`, precomposed with `dφ`. -/
 theorem IsSymplecticMap.flat_apply (h : σ.IsSymplecticMap σ' φ) (x : M) (v : TangentSpace I x) :
@@ -203,6 +194,15 @@ theorem IsSymplecticMapOn.comp {s : Set M} {t : Set M'} (hψ : σ'.IsSymplecticM
     σ.IsSymplecticMapOn σ'' (ψ ∘ φ) s := fun x hx v w ↦ by
   rw [mfderiv_comp x (hψd x hx) (hφd x hx)]
   exact (hψ (φ x) (hst hx) _ _).trans (hφ x hx v w)
+
+/-- **Composites of symplectic maps.** If `φ` is a differentiable symplectic map from `σ` to `σ'`
+and `ψ`, differentiable on the image of `φ`, is a symplectic map from `σ'` to `σ''`, then `ψ ∘ φ`
+is a symplectic map from `σ` to `σ''`. -/
+theorem IsSymplecticMap.comp (hψ : σ'.IsSymplecticMap σ'' ψ) (hφ : σ.IsSymplecticMap σ' φ)
+    (hψd : ∀ x, MDifferentiableAt I' I'' ψ (φ x)) (hφd : MDifferentiable I I' φ) :
+    σ.IsSymplecticMap σ'' (ψ ∘ φ) :=
+  isSymplecticMapOn_univ.1 ((hψ.isSymplecticMapOn _).comp (hφ.isSymplecticMapOn _)
+    (Set.mapsTo_univ _ _) (fun x _ ↦ hψd x) (fun x _ ↦ hφd x))
 
 /-- **Symplectic maps on open sets depend only on the map there.** If `φ` is a symplectic map on
 an open set `s` and `φ'` agrees with `φ` on `s`, then `φ'` is a symplectic map on `s`. -/
