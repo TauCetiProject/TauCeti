@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Operations
-public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
-import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Prime avoidance for the translates of a prime
@@ -16,17 +14,17 @@ import Mathlib.RingTheory.Ideal.Operations
 Let a monoid `G` act on a commutative ring `A` by ring endomorphisms and let `Q` be a prime of `A`.
 The preimages `{a | g • a ∈ Q}` are primes, the translates `g⁻¹ • Q` when `G` is a group. If only
 finitely many of them occur, prime avoidance gives an element of an ideal outside all of them as
-soon as the ideal lies in none of them. For a finite group `G`, the invariant norm `∏ g, g • u` of
-such an element `u` lies outside `Q`; applied to the annihilator of an invariant, which is
-`G`-stable, this shows that an invariant killed by an element outside `Q` is killed by an invariant
-outside `Q`.
+soon as the ideal lies in none of them. For a group `G`, if such an element `u` has finite orbit,
+for instance when `G` is finite, its invariant norm, the product of the elements of its orbit, lies
+outside `Q`; applied to the annihilator of an invariant, which is `G`-stable, this shows that an
+invariant killed by an element outside `Q` is killed by an invariant outside `Q`.
 
 ## Main results
 
 * `Ideal.exists_mem_forall_smul_notMem`: prime avoidance for finitely many preimages
   `{a | g • a ∈ Q}` of a prime `Q`.
-* `Ideal.exists_notMem_dvd_of_forall_smul_notMem`: for a finite group `G` acting on a commutative
-  semiring, an element outside every `g⁻¹ • Q` divides an invariant outside `Q`.
+* `Ideal.exists_notMem_dvd_of_forall_smul_notMem`: for a group `G` acting on a commutative semiring,
+  an element with finite orbit outside every `g⁻¹ • Q` divides an invariant outside `Q`.
 * `TauCeti.FixedPoints.exists_mul_eq_zero_of_mul_eq_zero`: for a finite group `G`, an invariant
   killed by an element outside a prime `Q` is killed by an invariant outside `Q`.
 -/
@@ -52,23 +50,30 @@ theorem _root_.Ideal.exists_mem_forall_smul_notMem {G A : Type*} [Monoid G] [Com
         exact Set.mem_biUnion (Set.mem_range_self g) hg
   exact hI g hg
 
+/-- **Norms of elements avoiding every translate of a prime.** For a group `G`, if the orbit of
+`u` is finite and `g • u ∉ Q` for every `g`, then the invariant norm of `u`, the product of the
+elements of its orbit, lies outside `Q` and is divisible by `u`. -/
+theorem _root_.Ideal.exists_notMem_dvd_of_forall_smul_notMem {G A : Type*} [Group G]
+    [CommSemiring A] [MulSemiringAction G A] (Q : Ideal A) [Q.IsPrime] {u : A}
+    (hfin : (MulAction.orbit G u).Finite) (hu : ∀ g : G, g • u ∉ Q) :
+    ∃ r ∈ FixedPoints.submonoid G A, r ∉ Q ∧ u ∣ r := by
+  refine ⟨∏ v ∈ hfin.toFinset, v, fun g ↦ ?_, fun hmem ↦ ?_,
+    Finset.dvd_prod_of_mem _ (hfin.mem_toFinset.mpr (MulAction.mem_orbit_self u))⟩
+  · -- `g` permutes the orbit of `u`.
+    rw [Finset.smul_prod']
+    exact Finset.prod_nbij' (g • ·) (g⁻¹ • ·)
+      (fun v hv ↦ hfin.mem_toFinset.mpr <|
+        MulAction.mapsTo_smul_orbit g u <| hfin.mem_toFinset.mp hv)
+      (fun v hv ↦ hfin.mem_toFinset.mpr <|
+        MulAction.mapsTo_smul_orbit g⁻¹ u <| hfin.mem_toFinset.mp hv)
+      (fun v _ ↦ inv_smul_smul g v) (fun v _ ↦ smul_inv_smul g v) fun _ _ ↦ rfl
+  · obtain ⟨v, hv, hvQ⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp hmem
+    obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.mp (hfin.mem_toFinset.mp hv)
+    exact hu g hvQ
+
 section Group
 
-variable {G : Type*} [Group G] [Finite G]
-
-/-- **Norms of elements avoiding every translate of a prime.** For a finite group `G`, if
-`g • u ∉ Q` for every `g`, then the invariant norm `∏ g, g • u` lies outside `Q` and is divisible
-by `u`. -/
-theorem _root_.Ideal.exists_notMem_dvd_of_forall_smul_notMem {A : Type*} [CommSemiring A]
-    [MulSemiringAction G A] (Q : Ideal A) [Q.IsPrime] {u : A} (hu : ∀ g : G, g • u ∉ Q) :
-    ∃ r ∈ FixedPoints.submonoid G A, r ∉ Q ∧ u ∣ r := by
-  have := Fintype.ofFinite G
-  refine ⟨∏ g : G, g • u, fun g ↦ Finset.smul_prod_perm u g, fun hmem ↦ ?_, ?_⟩
-  · obtain ⟨g, -, hg⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp hmem
-    exact hu g hg
-  · simpa using Finset.dvd_prod_of_mem (fun g : G ↦ g • u) (Finset.mem_univ 1)
-
-variable {A : Type*} [CommRing A] [MulSemiringAction G A]
+variable {G : Type*} [Group G] [Finite G] {A : Type*} [CommRing A] [MulSemiringAction G A]
 
 /-- If an invariant `x` is killed by an element outside a prime `Q`, it is killed by an invariant
 element outside `Q`. This is prime avoidance for the `G`-stable annihilator of `x` and the
@@ -85,8 +90,8 @@ theorem exists_mul_eq_zero_of_mul_eq_zero (Q : Ideal A) [Q.IsPrime] (x : FixedPo
       have hmem : g⁻¹ • t ∈ I := by
         rw [hI, ← x.property g⁻¹, ← smul_mul', htx, smul_zero]
       exact htQ (by simpa using hg hmem)
-  obtain ⟨r, hr, hrQ, c, hc⟩ := Q.exists_notMem_dvd_of_forall_smul_notMem hu
-  exact ⟨r, hr, hrQ, by rw [hc, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]⟩
+  obtain ⟨r, hr, hrQ, hur⟩ := Q.exists_notMem_dvd_of_forall_smul_notMem (Set.finite_range _) hu
+  exact ⟨r, hr, hrQ, (hI r).mp (I.mem_of_dvd hur huI)⟩
 
 end Group
 

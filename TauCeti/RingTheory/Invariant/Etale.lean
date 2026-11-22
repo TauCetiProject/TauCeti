@@ -98,7 +98,7 @@ theorem exists_span_smul_sub_eq_top_of_inertia_eq_bot [Finite G] (q : Ideal B) [
         (Algebra.algebraMapSubmonoid B (Submonoid.powers r)) ↦ g • s - s) = ⊤ := by
   obtain ⟨t, htJ, ht⟩ := exists_mem_span_smul_sub_forall_smul_notMem q hq
   -- The norm `r = ∏_h h • t` is invariant, lies outside `q`, and is divisible by `t`.
-  obtain ⟨r, hr, hrq, htr⟩ := q.exists_notMem_dvd_of_forall_smul_notMem ht
+  obtain ⟨r, hr, hrq, htr⟩ := q.exists_notMem_dvd_of_forall_smul_notMem (Set.finite_range _) ht
   obtain ⟨r, rfl⟩ : ∃ r' : FixedPoints.subring B G, (r' : B) = r := ⟨⟨r, hr⟩, rfl⟩
   refine ⟨r, hrq, fun g hg ↦ ?_⟩
   let S := Localization (Algebra.algebraMapSubmonoid B (Submonoid.powers r))
