@@ -20,22 +20,32 @@ carries its own form and the two factors are orthogonal to each other. It is the
 counterpart of `QuadraticMap.prod`, and it is the form an orthogonal direct sum of bilinear
 modules carries.
 
-Symmetry, separation and nondegeneracy are componentwise, flipping is componentwise, and a
-product of perfect pairings is a perfect pairing.
+Symmetry, alternation, separation and nondegeneracy are componentwise, flipping is
+componentwise, and a product of perfect pairings is a perfect pairing.
+
+The same holds for the orthogonal sum of a finite family of bilinear forms on the product of
+their modules, the bilinear counterpart of `QuadraticMap.pi`. For a single form `B` on `M` it
+gives the orthogonal-sum form `∑ᵢ B (x i) (y i)` on `ι → M`.
 
 ## Main declarations
 
 * `LinearMap.BilinForm.prod`: the block-diagonal form on a product module.
 * `LinearMap.BilinForm.toQuadraticMap_prod`: the quadratic map of the product form is the
   product of the quadratic maps.
-* `LinearMap.BilinForm.isSymm_prod_iff`: the product form is symmetric exactly when both factors
-  are.
+* `LinearMap.BilinForm.isSymm_prod_iff`, `LinearMap.BilinForm.isAlt_prod_iff`: the product form
+  is symmetric (alternating) exactly when both factors are.
 * `LinearMap.BilinForm.flip_prod`: flipping the product form flips both factors.
 * `LinearMap.BilinForm.separatingLeft_prod_iff`, `LinearMap.BilinForm.separatingRight_prod_iff`:
   the product form is left (right) separating exactly when both factors are.
 * `LinearMap.BilinForm.nondegenerate_prod_iff`: the product form is nondegenerate exactly when
   both factors are.
 * `LinearMap.BilinForm.instIsPerfPairProd`: a product of perfect pairings is a perfect pairing.
+* `LinearMap.BilinForm.pi`: the orthogonal sum of a finite family of forms on a product module.
+* `LinearMap.BilinForm.pi_apply_single_left`, `LinearMap.BilinForm.pi_apply_single_right`: a
+  vector supported in one factor pairs through the form of that factor.
+* `LinearMap.BilinForm.isAlt_pi_iff`, `LinearMap.BilinForm.isSymm_pi_iff`,
+  `LinearMap.BilinForm.nondegenerate_pi_iff`: the orthogonal sum is alternating (symmetric,
+  nondegenerate) exactly when every member is.
 -/
 
 public section
@@ -98,6 +108,13 @@ theorem isSymm_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R
   · simpa using h.eq (0, x) (0, y)
   · simp [hB.eq x.1, hC.eq x.2]
 
+/-- A product of bilinear forms is alternating exactly when both factors are. -/
+@[simp]
+theorem isAlt_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
+    (B.prod C).IsAlt ↔ B.IsAlt ∧ C.IsAlt :=
+  ⟨fun h ↦ ⟨fun x ↦ by simpa using h (x, 0), fun x ↦ by simpa using h (0, x)⟩,
+    fun ⟨hB, hC⟩ x ↦ by simp [hB.self_eq_zero, hC.self_eq_zero]⟩
+
 /-- Curried, the product form is the product of the two curried forms followed by the
 identification of a product of duals with the dual of the product. -/
 private theorem prod_eq_dualProdDualEquivDual_comp_prodMap (B : LinearMap.BilinForm R M)
@@ -145,5 +162,88 @@ instance instIsPerfPairProd {B : LinearMap.BilinForm R M} {C : LinearMap.BilinFo
   bijective_right := by
     rw [flip_prod]
     exact bijective_prod (IsPerfPair.bijective_right B) (IsPerfPair.bijective_right C)
+
+section Pi
+
+variable {ι : Type*} {Mᵢ : ι → Type*} [∀ i, AddCommMonoid (Mᵢ i)] [∀ i, Module R (Mᵢ i)]
+  [Fintype ι]
+
+/-- The orthogonal sum of a finite family of bilinear forms on the product module: each factor
+carries its own form and distinct factors pair to zero. -/
+def pi (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) : LinearMap.BilinForm R (∀ i, Mᵢ i) :=
+  ∑ i, (B i).comp (LinearMap.proj i) (LinearMap.proj i)
+
+/-- The orthogonal sum pairs two vectors factor by factor. -/
+@[simp]
+theorem pi_apply (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) (x y : ∀ i, Mᵢ i) :
+    pi B x y = ∑ i, B i (x i) (y i) := by
+  simp [pi]
+
+/-- Pairing with a vector supported in one factor reads off the form of that factor. -/
+theorem pi_apply_single_left [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) (i : ι)
+    (x : Mᵢ i) (y : ∀ i, Mᵢ i) : pi B (Pi.single i x) y = B i x (y i) := by
+  rw [pi_apply, Fintype.sum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]]
+  simp
+
+/-- Pairing with a vector supported in one factor reads off the form of that factor. -/
+theorem pi_apply_single_right [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R (Mᵢ i))
+    (x : ∀ i, Mᵢ i) (i : ι) (y : Mᵢ i) : pi B x (Pi.single i y) = B i (x i) y := by
+  rw [pi_apply, Fintype.sum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]]
+  simp
+
+/-- The orthogonal sum of a family of bilinear forms is alternating exactly when every member
+is. -/
+@[simp]
+theorem isAlt_pi_iff {B : ∀ i, LinearMap.BilinForm R (Mᵢ i)} :
+    (pi B).IsAlt ↔ ∀ i, (B i).IsAlt := by
+  classical
+  exact ⟨fun h i x ↦ by
+      simpa only [pi_apply_single_left, Pi.single_eq_same] using h (Pi.single i x),
+    fun h x ↦ by simp [fun i ↦ (h i).self_eq_zero]⟩
+
+/-- The orthogonal sum of a family of bilinear forms is symmetric exactly when every member
+is. -/
+@[simp]
+theorem isSymm_pi_iff {B : ∀ i, LinearMap.BilinForm R (Mᵢ i)} :
+    (pi B).IsSymm ↔ ∀ i, (B i).IsSymm := by
+  classical
+  exact ⟨fun h i ↦ ⟨fun x y ↦ by
+      simpa only [pi_apply_single_left, Pi.single_eq_same] using
+        h.eq (Pi.single i x) (Pi.single i y)⟩,
+    fun h ↦ ⟨fun x y ↦ by simp [fun i ↦ (h i).eq (x i)]⟩⟩
+
+/-- Flipping the orthogonal sum of a family of bilinear forms flips each member. -/
+@[simp]
+theorem flip_pi (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) :
+    LinearMap.flip (pi B) = pi fun i ↦ LinearMap.flip (B i) := by
+  ext x y
+  simp
+
+/-- The orthogonal sum of a family of bilinear forms is left-separating exactly when every
+member is. -/
+@[simp]
+theorem separatingLeft_pi_iff {B : ∀ i, LinearMap.BilinForm R (Mᵢ i)} :
+    (pi B).SeparatingLeft ↔ ∀ i, (B i).SeparatingLeft := by
+  classical
+  refine ⟨fun h i x hx ↦ ?_, fun h x hx ↦ funext fun i ↦ h i (x i) fun y ↦ ?_⟩
+  · simpa using h (Pi.single i x) fun y ↦ by rw [pi_apply_single_left]; exact hx (y i)
+  · rw [← pi_apply_single_right]; exact hx (Pi.single i y)
+
+/-- The orthogonal sum of a family of bilinear forms is right-separating exactly when every
+member is. -/
+@[simp]
+theorem separatingRight_pi_iff {B : ∀ i, LinearMap.BilinForm R (Mᵢ i)} :
+    (pi B).SeparatingRight ↔ ∀ i, (B i).SeparatingRight := by
+  simp only [← flip_separatingLeft, flip_pi, separatingLeft_pi_iff]
+
+/-- The orthogonal sum of a family of bilinear forms is nondegenerate exactly when every member
+is. -/
+@[simp]
+theorem nondegenerate_pi_iff {B : ∀ i, LinearMap.BilinForm R (Mᵢ i)} :
+    (pi B).Nondegenerate ↔ ∀ i, (B i).Nondegenerate := by
+  simp only [Nondegenerate, LinearMap.Nondegenerate, separatingLeft_pi_iff,
+    separatingRight_pi_iff, forall_and]
+
+end Pi
 
 end LinearMap.BilinForm
