@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card
-import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic
 
 /-!
 # Meromorphic continuation and analytic properties of the Dedekind zeta function
@@ -108,24 +107,6 @@ theorem dedekindZetaC_eventuallyEq_mul_completedDedekindZeta (s : ℂ) :
   exact (AnalyticLFunctionData.continuedL_eventuallyEq
     (dedekindZetaData_hasMeromorphicContinuation K).meromorphic s).trans
     (Eventually.of_forall uncompletedProduct_dedekindZetaData)
-
-/-- Away from `0` (including at `s = 1`, where both sides take the canonical normal-form value
-`0`), `dedekindZetaC K s` equals `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂ Λ_K(s)`. -/
-theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) :
-    dedekindZetaC K s =
-      ((|discr K| : ℤ) : ℂ) ^ (-s / 2) *
-        (Gammaℝ s)⁻¹ ^ nrRealPlaces K * (Gammaℂ s)⁻¹ ^ nrComplexPlaces K *
-        completedDedekindZeta K s := by
-  rw [← dedekindZetaData_continuedL K, ← uncompletedProduct_dedekindZetaData]
-  by_cases h1 : s = 1
-  · subst h1
-    exact (dedekindZetaData_hasMeromorphicContinuation K).continuedL_eq_of_gammaFactor_ne_zero
-      (dedekindZetaData_gammaFactor_ne_zero K (by norm_num))
-  · refine AnalyticLFunctionData.continuedL_eq_uncompletedProduct_of_analyticAt
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic
-      (AnalyticLFunctionData.analyticAt_uncompletedProduct ?_)
-    rw [dedekindZetaData_completed]
-    exact analyticAt_completedDedekindZeta h0 h1
 
 /-- On `Re s > 1`, the continued Dedekind zeta function agrees with Mathlib's Dirichlet series
 `NumberField.dedekindZeta K`. -/
@@ -311,13 +292,37 @@ theorem dedekindZetaC_zero_of_rank_pos (hr : 0 < NumberField.Units.rank K) :
   rw [analyticOrderAt_dedekindZetaC_zero K] at hord
   exact hr.ne' (by exact_mod_cast hord)
 
+/-- Away from `0` (including at `s = 1`, where both sides take the canonical normal-form value
+`0`), or at `s = 0` when `K` has positive unit rank (where both sides vanish), `dedekindZetaC K s`
+equals `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂ Λ_K(s)`. -/
+theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ}
+    (hs : s ≠ 0 ∨ 0 < NumberField.Units.rank K) :
+    dedekindZetaC K s =
+      ((|discr K| : ℤ) : ℂ) ^ (-s / 2) *
+        (Gammaℝ s)⁻¹ ^ nrRealPlaces K * (Gammaℂ s)⁻¹ ^ nrComplexPlaces K *
+        completedDedekindZeta K s := by
+  rcases eq_or_ne s 0 with rfl | h0
+  · have hr : 0 < NumberField.Units.rank K := hs.resolve_left (not_not.mpr rfl)
+    rw [dedekindZetaC_zero_of_rank_pos hr, completedDedekindZeta_zero, mul_zero]
+  · rw [← dedekindZetaData_continuedL K, ← uncompletedProduct_dedekindZetaData]
+    by_cases h1 : s = 1
+    · subst h1
+      exact (dedekindZetaData_hasMeromorphicContinuation K).continuedL_eq_of_gammaFactor_ne_zero
+        (dedekindZetaData_gammaFactor_ne_zero K (by norm_num))
+    · refine AnalyticLFunctionData.continuedL_eq_uncompletedProduct_of_analyticAt
+        (dedekindZetaData_hasMeromorphicContinuation K).meromorphic
+        (AnalyticLFunctionData.analyticAt_uncompletedProduct ?_)
+      rw [dedekindZetaData_completed]
+      exact analyticAt_completedDedekindZeta h0 h1
+
 /-! ### Simple pole and complex class number formula at `s = 1` -/
 
 /- The simple-pole, analyticity characterization, and canonical pole-value proofs below follow
-the corresponding partial-zeta API in
+the corresponding class-indexed partial-zeta API in
 `TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta`
-(`meromorphicOrderAt_completedPartialZeta_one`, `analyticAt_completedPartialZeta_iff`, and
-`completedPartialZeta_one`) as their formal template. -/
+(`meromorphicOrderAt_completedPartialZetaClass_one`,
+`analyticAt_completedPartialZetaClass_iff`, and `completedPartialZetaClass_one`) as their formal
+template. -/
 
 variable (K) in
 /-- The continued Dedekind zeta function has a simple pole at `s = 1`. -/

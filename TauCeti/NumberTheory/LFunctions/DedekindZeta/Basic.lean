@@ -14,11 +14,15 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 Mathlib's `NumberField.dedekindZeta K` is the Dirichlet series `∑_𝔞 N𝔞 ^ (-s)` over the nonzero
 integral ideals of `𝓞 K`, and its values are only meaningful on `Re s > 1`, where the series
 converges. `TauCeti.LFunctions.dedekindZetaC K` is its canonical meromorphic continuation
-(`TauCeti.meromorphicContinuation`): the function in meromorphic normal form on the whole plane
-that agrees with `ζ_K` on `Re s > 1`, and `0` if there is none. Two such functions agreeing on a
-half-plane agree everywhere, so the continued function is well defined, and every statement about
-`ζ_K` off the half-plane of convergence, such as a factorization through other L-functions, is a
-statement about `dedekindZetaC K`.
+(`TauCeti.meromorphicContinuation`): the generic constructor returns a meromorphic normal form
+agreeing with `ζ_K` on `Re s > 1` when one exists, and `0` as a fallback if none does. Two such
+functions agreeing on a half-plane agree everywhere, so the continued function is well defined. For
+a number field `K`, a whole-plane meromorphic continuation does exist, so the fallback never
+occurs and `dedekindZetaC K` agrees unconditionally with `ζ_K` on `Re s > 1`
+(`TauCeti.LFunctions.dedekindZetaC_eq` in
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`).
+Every statement about `ζ_K` off the half-plane of convergence, such as a factorization through
+other L-functions, is a statement about `dedekindZetaC K`.
 
 For the comparison of `ζ_ℚ` and `dedekindZetaC ℚ` with `riemannZeta`, see
 `TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic`.
@@ -50,9 +54,11 @@ namespace TauCeti.LFunctions
 variable (K : Type*) [Field K] [NumberField K]
 
 /-- **The continued Dedekind zeta function** of a number field `K`: the canonical meromorphic
-continuation from `Re s > 1` of Mathlib's `NumberField.dedekindZeta K`. It agrees with `ζ_K` on
-`Re s > 1` once a continuation to the plane exists (`meromorphicContinuation_eqOn`), and is `0`
-otherwise. -/
+continuation from `Re s > 1` of Mathlib's `NumberField.dedekindZeta K`. Generically,
+`TauCeti.meromorphicContinuation` falls back to `0` if no whole-plane meromorphic continuation
+exists; for `dedekindZetaC K`, a continuation exists and unconditional agreement with `ζ_K` on
+`Re s > 1` is proved in `TauCeti.LFunctions.dedekindZetaC_eq`
+(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`). -/
 def dedekindZetaC : ℂ → ℂ :=
   meromorphicContinuation 1 (NumberField.dedekindZeta K)
 

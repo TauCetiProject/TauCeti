@@ -105,7 +105,7 @@ theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
   · simp
   · simp
   · simp [completedRiemannZeta_conj]
-  · simp [AnalyticLFunctionData.single_zero_add_single_one_conj]
+  · simp [AnalyticLFunctionData.single_zero_one_add_single_one_one_conj]
 
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
@@ -122,21 +122,16 @@ theorem riemannZetaData_hasDirichletAgreement : riemannZetaData.HasDirichletAgre
     rw [hL, riemannZeta_def_of_ne_zero hs0]
     simp [field]
 
+open AnalyticLFunctionData in
 /-- The completed Riemann zeta function is meromorphic, with simple poles at `0` and `1` and no
 others. -/
 theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation :=
-  AnalyticLFunctionData.hasMeromorphicContinuation_of_meromorphicOrderAt
-    (fun p hp ↦ by
-      rw [riemannZetaData_polarOrder] at hp ⊢
-      rcases eq_or_ne p 0 with rfl | hp0
-      · simp [meromorphicOrderAt_completedRiemannZeta_zero]
-      rcases eq_or_ne p 1 with rfl | hp1
-      · simp [meromorphicOrderAt_completedRiemannZeta_one]
-      · simp [Ne.symm hp0, Ne.symm hp1] at hp)
-    fun p hp ↦ by
-      rw [riemannZetaData_polarOrder] at hp
-      exact analyticAt_completedRiemannZeta (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
+  hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
+    riemannZetaData_polarOrder
+    meromorphicOrderAt_completedRiemannZeta_zero
+    meromorphicOrderAt_completedRiemannZeta_one
+    fun _ h0 h1 ↦ analyticAt_completedRiemannZeta h0 h1
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/
@@ -144,7 +139,7 @@ theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEqu
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
     simpa only [riemannZetaData_polarOrder] using
-      AnalyticLFunctionData.single_zero_add_single_one_one_sub_conj s
+      AnalyticLFunctionData.single_zero_one_add_single_one_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]

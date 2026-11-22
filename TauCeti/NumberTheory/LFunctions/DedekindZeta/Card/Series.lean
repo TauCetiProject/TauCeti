@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.Series
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 /-!
@@ -16,7 +16,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 This downstream module proves that `TauCeti.LFunctions.dedekindZetaData K` satisfies
 `HasAverageCoefficientGrowth` and is recovered identically by `AnalyticLFunctionData.ofSeries`,
 keeping the card's growth and `ofSeries` results separate from
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card`.
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic`.
 
 The `ofSeries` recovery proof is adapted from `TauCeti.LFunctions.ofSeries_riemannZetaData`
 (`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`).

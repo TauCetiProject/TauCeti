@@ -138,7 +138,7 @@ theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K :
   · simp
   · simp
   · simp [completedDedekindZeta_conj]
-  · simp [AnalyticLFunctionData.single_zero_add_single_one_conj]
+  · simp [AnalyticLFunctionData.single_zero_one_add_single_one_one_conj]
 
 /-- On `Re s > 1`, `completedDedekindZeta K` agrees with the completed Dirichlet series of
 `dedekindZetaData K`. -/
@@ -156,21 +156,16 @@ theorem dedekindZetaData_hasDirichletAgreement :
       dedekindZetaData_gammaFactor, hcoeff, dedekindZeta_eq_LSeries_normCoeff_one K s]
     ring
 
+open AnalyticLFunctionData in
 /-- The completed Dedekind zeta function is meromorphic on `ℂ` with simple poles at `0` and `1`
 and no other singularities. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation :=
-  AnalyticLFunctionData.hasMeromorphicContinuation_of_meromorphicOrderAt
-    (fun p hp ↦ by
-      rw [dedekindZetaData_polarOrder] at hp ⊢
-      rcases eq_or_ne p 0 with rfl | hp0
-      · simp [meromorphicOrderAt_completedDedekindZeta_zero]
-      rcases eq_or_ne p 1 with rfl | hp1
-      · simp [meromorphicOrderAt_completedDedekindZeta_one]
-      · simp [Ne.symm hp0, Ne.symm hp1] at hp)
-    fun p hp ↦ by
-      rw [dedekindZetaData_polarOrder] at hp
-      exact analyticAt_completedDedekindZeta (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
+  hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
+    (dedekindZetaData_polarOrder K)
+    (meromorphicOrderAt_completedDedekindZeta_zero K)
+    (meromorphicOrderAt_completedDedekindZeta_one K)
+    fun _ h0 h1 ↦ analyticAt_completedDedekindZeta h0 h1
 
 /-- The completed Dedekind zeta function satisfies the functional equation `Λ_K(s) = Λ_K(1 - s)`
 with root number `1`. -/
@@ -179,7 +174,7 @@ theorem dedekindZetaData_hasFunctionalEquation :
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
     simpa only [dedekindZetaData_polarOrder] using
-      AnalyticLFunctionData.single_zero_add_single_one_one_sub_conj s
+      AnalyticLFunctionData.single_zero_one_add_single_one_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [dedekindZetaData_dual, dedekindZetaData_rootNumber, one_mul, dedekindZetaData_completed,
       completedDedekindZeta_one_sub]

@@ -47,9 +47,8 @@ reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
   `TauCeti.LFunctions.meromorphicOrderAt_completedDedekindZeta_one`: analyticity, canonical pole
   values, residues, and simple poles of `completedDedekindZeta`.
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`,
-  `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_one_sub`,
   `TauCeti.LFunctions.completedDedekindZeta_conj`: the functional equation `Λ_K(1 - s) = Λ_K(s)`
-  (pointwise and as punctured germs) and reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
+  and reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
 
 ## References
 
@@ -244,13 +243,15 @@ corresponding class-indexed partial-zeta API in
 `meromorphicOrderAt_completedPartialZetaClass_one`, `analyticAt_completedPartialZetaClass_iff`,
 `completedPartialZetaClass_zero`, and `completedPartialZetaClass_one`) as their formal template. -/
 
+private theorem completedDedekindZeta_eq_sum_fun :
+    completedDedekindZeta K = fun z : ℂ ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z :=
+  funext completedDedekindZeta_eq_sum_completedPartialZetaClass
+
 /-- The completed Dedekind zeta function is analytic away from `0` and `1`. -/
 @[fun_prop]
 theorem analyticAt_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
     AnalyticAt ℂ (completedDedekindZeta K) s := by
-  rw [show completedDedekindZeta K =
-      fun z ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z from
-    funext completedDedekindZeta_eq_sum_completedPartialZetaClass]
+  rw [completedDedekindZeta_eq_sum_fun]
   exact analyticAt_sum_completedPartialZetaClass h0 h1
 
 variable (K) in
@@ -280,9 +281,7 @@ variable (K) in
 @[simp]
 theorem meromorphicOrderAt_completedDedekindZeta_zero :
     meromorphicOrderAt (completedDedekindZeta K) 0 = (-1 : ℤ) := by
-  rw [show completedDedekindZeta K =
-      fun z ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z from
-    funext completedDedekindZeta_eq_sum_completedPartialZetaClass]
+  rw [completedDedekindZeta_eq_sum_fun]
   exact meromorphicOrderAt_sum_completedPartialZetaClass_zero
 
 variable (K) in
@@ -290,9 +289,7 @@ variable (K) in
 @[simp]
 theorem meromorphicOrderAt_completedDedekindZeta_one :
     meromorphicOrderAt (completedDedekindZeta K) 1 = (-1 : ℤ) := by
-  rw [show completedDedekindZeta K =
-      fun z ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z from
-    funext completedDedekindZeta_eq_sum_completedPartialZetaClass]
+  rw [completedDedekindZeta_eq_sum_fun]
   exact meromorphicOrderAt_sum_completedPartialZetaClass_one
 
 /-- `completedDedekindZeta K` is analytic at `s` if and only if `s ≠ 0` and `s ≠ 1`. -/
@@ -339,14 +336,6 @@ theorem completedDedekindZeta_one_sub (s : ℂ) :
     completedDedekindZeta_eq_sum_completedPartialZetaClass]
   simp_rw [fun c ↦ completedPartialZetaClass_one_sub c s]
   exact Equiv.sum_comp e (fun c ↦ completedPartialZetaClass c s)
-
-variable (K) in
-/-- **Punctured-germ form of Hecke's functional equation for the completed Dedekind zeta
-function**: `completedDedekindZeta K =ᶠ[𝓝[≠] s] fun z ↦ completedDedekindZeta K (1 - z)` at
-every `s : ℂ`. -/
-theorem completedDedekindZeta_eventuallyEq_one_sub (s : ℂ) :
-    completedDedekindZeta K =ᶠ[𝓝[≠] s] fun z : ℂ ↦ completedDedekindZeta K (1 - z) :=
-  Eventually.of_forall fun z ↦ (completedDedekindZeta_one_sub K z).symm
 
 variable (K) in
 /-- **Reflection symmetry of the completed Dedekind zeta function**:
