@@ -154,9 +154,10 @@ def quadraticHandleDeformation (ε : ℝ) :
   toFun p :=
     (p.2.1, (1 - (p.1 : ℝ)) • radialRetraction √(‖p.2.1‖ ^ 2 - ε) p.2.2 + (p.1 : ℝ) • p.2.2)
   continuous_toFun := by
-    have hr : Continuous fun p : I × (Eᵤ × Eₛ) ↦ radialRetraction √(‖p.2.1‖ ^ 2 - ε) p.2.2 :=
-      (by fun_prop : Continuous fun p : I × (Eᵤ × Eₛ) ↦ √(‖p.2.1‖ ^ 2 - ε)).radialRetraction
-        (fun _ ↦ .inr (Real.sqrt_nonneg _)) (by fun_prop)
+    -- The radial component is the second component of the bundled retraction.
+    have hr : Continuous fun p : I × (Eᵤ × Eₛ) ↦ (quadraticHandleRetraction ε p.2).2 := by
+      fun_prop
+    simp only [quadraticHandleRetraction_apply] at hr
     fun_prop
   map_zero_left z := by simp
   map_one_left z := by simp
