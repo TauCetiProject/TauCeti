@@ -88,8 +88,9 @@ then `outerRow g h a Dh y ≤ h y` for every `y ∈ E`. -/
 theorem outerRow_le_of_convexOn {E : Set (ι → ℝ)} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ} {a : X}
     {Dh : (ι → ℝ) →L[ℝ] ℝ} {y : ι → ℝ} (hhc : ConvexOn ℝ E h) (haE : g a ∈ E) (hyE : y ∈ E)
     (hh : HasFDerivAt h Dh (g a)) :
-    outerRow g h a Dh y ≤ h y :=
-  hhc.add_le_of_hasFDerivAt haE hh y hyE
+    outerRow g h a Dh y ≤ h y := by
+  rw [outerRow_apply]
+  exact hhc.add_le_of_hasFDerivAt haE hh y hyE
 
 end OuterRow
 
@@ -388,8 +389,9 @@ h (g x)` for every `x ∈ D`. -/
 theorem directRow_le_of_convexOn_comp {D : Set X} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ} {a x : X}
     {Dg : X →L[ℝ] (ι → ℝ)} {Dh : (ι → ℝ) →L[ℝ] ℝ} (hc : ConvexOn ℝ D (h ∘ g))
     (ha : a ∈ D) (hx : x ∈ D) (hg : HasFDerivAt g Dg a) (hh : HasFDerivAt h Dh (g a)) :
-    directRow g h a Dg Dh x ≤ h (g x) :=
-  hc.add_le_of_hasFDerivAt ha (hh.comp_tvs hg) x hx
+    directRow g h a Dg Dh x ≤ h (g x) := by
+  simpa only [directRow_apply, ContinuousLinearMap.comp_apply, Function.comp_apply] using
+    hc.add_le_of_hasFDerivAt ha (hh.comp_tvs hg) x hx
 
 /-- **Matched outer approximation comparison with exact rows on selected coordinates.**
 If `g` maps `D` into `E`, component rows are exact on `J`, every component off `J` is convex on

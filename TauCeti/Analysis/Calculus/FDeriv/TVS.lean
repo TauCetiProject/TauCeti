@@ -94,8 +94,9 @@ theorem HasFDerivAtFilter.proj {ι : Type*} {F : ι → Type*}
     [∀ i, AddCommGroup (F i)] [∀ i, Module 𝕜 (F i)] [∀ i, TopologicalSpace (F i)]
     {g : E → ∀ i, F i} {g' : E →L[𝕜] ∀ i, F i} {L : Filter (E × E)}
     (hg : HasFDerivAtFilter g g' L) (j : ι) :
-    HasFDerivAtFilter (fun z => g z j) ((ContinuousLinearMap.proj (R := 𝕜) j).comp g') L :=
-  (ContinuousLinearMap.proj (R := 𝕜) (φ := F) j).comp_hasFDerivAtFilter_tvs hg
+    HasFDerivAtFilter (fun z => g z j) ((ContinuousLinearMap.proj (R := 𝕜) j).comp g') L := by
+  simpa only [Function.comp_def, ContinuousLinearMap.proj_apply] using
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := F) j).comp_hasFDerivAtFilter_tvs hg
 
 /-- If `g : E → ∀ i, F i` has Fréchet derivative `g'` at `x`, then its `j`-th coordinate has
 Fréchet derivative `(ContinuousLinearMap.proj j).comp g'` at `x`, for arbitrary (possibly infinite)
