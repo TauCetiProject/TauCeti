@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Deriv
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
 
 /-!
 # The relative volume and its dependence on a family of metrics
@@ -50,8 +50,6 @@ family is not required to fix the boundary.
   volume is the difference of the total volumes.
 * `Bundle.ContMDiffRiemannianMetric.relativeVolume_add_relativeVolume`: on a compact manifold,
   relative volumes add up along a chain of metrics.
-* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_relativeVolumeDensity`: the relative
-  density of a family of metrics is jointly `C^k`.
 * `Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume`,
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume`: regularity and the first
@@ -139,24 +137,6 @@ section Family
 
 variable {g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
   {g : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : ℝ}
-
-/-- **Joint regularity of the relative density of a family of metrics.** If the inner products of
-a family of metrics `g_t` are `C^k` jointly in `(t, x)` at `(t₀, x₀)`, and those of a fixed
-metric `g₀` are `C^k` at `x₀`, then the relative volume density of `g_t` with respect to `g₀` is
-`C^k` jointly in `(t, x)` at `(t₀, x₀)`. -/
-theorem contMDiffAt_uncurry_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M] {x₀ : M}
-    (hg₀ : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
-      (fun x : M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (g₀.inner x)) x₀)
-    (hg : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
-        ((g p.1).inner p.2)) (t₀, x₀)) :
-    ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) k
-      (fun p : ℝ × M ↦ relativeVolumeDensity g₀ (g p.1) p.2) (t₀, x₀) :=
-  contMDiffWithinAt_univ.1 <| contMDiffWithinAt_relativeVolumeDensity (b := Prod.snd)
-    (fun _ ↦ g₀) (fun p ↦ g p.1) (hg₀.comp (t₀, x₀) contMDiffAt_snd).contMDiffWithinAt
-    hg.contMDiffWithinAt
 
 /-- The integrand `(t, x) ↦ J(g_{t₀}, g_t)(x) - 1` of the relative volume with respect to
 `g_{t₀}`, on the copy of `M` carrying `g_{t₀}`, is `C^k` at `(t₀, x)` for every `x` when the
