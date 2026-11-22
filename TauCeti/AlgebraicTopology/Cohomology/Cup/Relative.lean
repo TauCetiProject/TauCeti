@@ -330,7 +330,7 @@ theorem singularCup_gradedComm (P : TopPair.{w})
   subst hu hμ
   rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
       (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
-    TauCeti.NatChainComplex.cup_koszulBraiding_hom]
+    TauCeti.NatChainComplex.cup_koszulBraidingHom]
 
 end GradedComm
 

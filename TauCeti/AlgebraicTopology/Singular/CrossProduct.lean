@@ -55,9 +55,9 @@ In a braided coefficient category the cross product is graded commutative: the s
 `X × Y ⟶ Y × X`, together with the coefficient braiding `R ⊗ S ⟶ S ⊗ R`, sends `a × b` to
 `(-1)^(p * q) b × a` for `a ∈ Hₚ(X; R)` and `b ∈ H_q(Y; S)`
 (`TopCat.singularHomologyCross_comp_map_braiding`).  At chain level, the shuffle map commutes
-with the interchange of factors, with the Koszul sign (`TopCat.koszulBraiding_hom_shuffle`); on
+with the interchange of factors, with the Koszul sign (`TopCat.koszulBraidingHom_shuffle`); on
 homology this sign is that of the algebraic cross product
-(`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom`).  With
+(`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).  With
 coefficients in the monoidal unit, such as `k` in `ModuleCat k`, and `𝟙_ C ⊗ 𝟙_ C` identified
 with `𝟙_ C` through the left unitor, the statement needs no coefficient braiding
 (`TopCat.singularHomologyCross_comp_map_leftUnitor_comp_map_braiding`).
@@ -467,10 +467,9 @@ lemma singularHomologyCross_comp_map_braiding :
   -- the singular homology maps are by definition those of the induced chain maps
   have key := (homologyCross _ _ p q n h ≫= (homologyMap_comp _ _ n).symm).trans <|
     (homologyCross _ _ p q n h ≫=
-      congrArg (homologyMap · n) (koszulBraiding_hom_shuffle X Y R S)).symm.trans <|
+      congrArg (homologyMap · n) (koszulBraidingHom_shuffle X Y R S)).symm.trans <|
       (homologyCross _ _ p q n h ≫= homologyMap_comp _ _ n).trans <|
-        TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom_assoc
-          _ _ p q n h _
+        TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom_assoc _ _ p q n h _
   simp only [homologyMap_comp, Preadditive.zsmul_comp, Category.assoc] at key
   exact (Category.assoc _ _ _).trans key
 

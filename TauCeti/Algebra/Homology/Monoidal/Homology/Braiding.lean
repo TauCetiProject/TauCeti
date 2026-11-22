@@ -11,12 +11,11 @@ public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
 /-!
 # The Künneth map and the interchange of factors
 
-For nonnegative chain complexes `K` and `L` in a braided preadditive monoidal category whose two
-tensor products `tensorObj K L` and `tensorObj L K` exist, the Koszul interchange
-`(HomologicalComplex.koszulBraiding K L).hom : tensorObj K L ⟶ tensorObj L K` sends the tensor
+For nonnegative chain complexes `K` and `L` in a braided preadditive monoidal category, the Koszul
+interchange `K ⊗ L ⟶ L ⊗ K` (`TauCeti.NatChainComplex.koszulBraidingHom`) sends the tensor
 product `x ⊗ y` of cycles of degrees `p` and `q` to `(-1)^(p * q) • y ⊗ x`.  So on homology it
 sends the cross product `x × y` to `(-1)^(p * q) • y × x`
-(`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom`).
+(`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).
 
 In a braided category, the signed interchange of the summands `Hₚ(K) ⊗ H_q(L)` is an
 isomorphism of the sources of the Künneth maps, so the Künneth map of `K` and `L` is an
@@ -25,8 +24,8 @@ isomorphism exactly when that of `L` and `K` is
 
 ## Main results
 
-* `TauCeti.NatChainComplex.cyclesCross_comp_cyclesMap_koszulBraiding_hom` and
-  `TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom`: interchange on
+* `TauCeti.NatChainComplex.cyclesCross_comp_cyclesMap_koszulBraidingHom` and
+  `TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`: interchange on
   tensor products of cycles and on cross products.
 * `TauCeti.NatChainComplex.isIso_homologyKunneth_comm`: symmetry of the Künneth theorem.
 
@@ -57,8 +56,8 @@ variable (p q n : ℕ) (h : p + q = n) [K.HasHomology p] [L.HasHomology q]
 
 /-- Koszul interchange sends the tensor product of cycles `x ⊗ y` to `(-1)^(p*q) • y ⊗ x`. -/
 @[reassoc]
-lemma cyclesCross_comp_cyclesMap_koszulBraiding_hom :
-    cyclesCross K L p q n h ≫ cyclesMap (HomologicalComplex.koszulBraiding K L).hom n =
+lemma cyclesCross_comp_cyclesMap_koszulBraidingHom :
+    cyclesCross K L p q n h ≫ cyclesMap (koszulBraidingHom K L) n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (K.cycles p) (L.cycles q)).hom ≫
         cyclesCross L K q p n (by omega)) := by
   rw [← cancel_mono ((tensorObj L K).iCycles n)]
@@ -80,12 +79,12 @@ variable (p q n : ℕ) (h : p + q = n) [K.HasHomology p] [L.HasHomology q]
 /-- Koszul interchange on homology: the cross product `x × y` is sent to
 `(-1)^(p*q) • y × x`. -/
 @[reassoc]
-lemma homologyCross_comp_homologyMap_koszulBraiding_hom :
-    homologyCross K L p q n h ≫ homologyMap (HomologicalComplex.koszulBraiding K L).hom n =
+lemma homologyCross_comp_homologyMap_koszulBraidingHom :
+    homologyCross K L p q n h ≫ homologyMap (koszulBraidingHom K L) n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (K.homology p) (L.homology q)).hom ≫
         homologyCross L K q p n (by omega)) := by
   refine homology_tensor_homology_hom_ext K L p q ?_
-  simp [cyclesCross_comp_cyclesMap_koszulBraiding_hom_assoc,
+  simp [cyclesCross_comp_cyclesMap_koszulBraidingHom_assoc,
     BraidedCategory.braiding_naturality_assoc]
 
 end Homology
@@ -141,13 +140,12 @@ theorem isIso_homologyKunneth_comm :
     rw [← pow_add, ← two_mul, pow_mul]
     simp
   -- Koszul interchange carries the Künneth map of `K` and `L` to that of `L` and `K`
-  have hκ : homologyKunneth K L n ≫ homologyMap (HomologicalComplex.koszulBraiding K L).hom n =
+  have hκ : homologyKunneth K L n ≫ homologyMap (koszulBraidingHom K L) n =
       σ _ _ ≫ homologyKunneth L K n := by
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-    simp [σ, homologyCross_comp_homologyMap_koszulBraiding_hom]
+    simp [σ, homologyCross_comp_homologyMap_koszulBraidingHom]
   have : IsIso (σ (fun p ↦ K.homology p) (fun q ↦ L.homology q)) := ⟨τ _ _, hστ _ _, hτσ _ _⟩
-  rw [← isIso_comp_right_iff _ (homologyMap (HomologicalComplex.koszulBraiding K L).hom n), hκ,
-    isIso_comp_left_iff]
+  rw [← isIso_comp_right_iff _ (homologyMap (koszulBraidingHom K L) n), hκ, isIso_comp_left_iff]
 
 end Kunneth
 

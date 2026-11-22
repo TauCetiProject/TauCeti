@@ -32,8 +32,8 @@ Both homotopies are transported from the simplicial statement
 
 The shuffle map commutes with the interchange of factors on the nose: the Koszul braiding followed
 by the shuffle map of `Y × X` is the shuffle map of `X × Y` followed by the coefficient braiding
-and the swap (`TopCat.koszulBraiding_hom_shuffle`), transported from the simplicial statement
-`SSet.koszulBraiding_hom_shuffle` along the comparison map `Sing X × Sing Y ⟶ Sing (X × Y)`.  This
+and the swap (`TopCat.koszulBraidingHom_shuffle`), transported from the simplicial statement
+`SSet.koszulBraidingHom_shuffle` along the comparison map `Sing X × Sing Y ⟶ Sing (X × Y)`.  This
 is the chain-level form of the graded commutativity of the homology cross product.
 
 ## References
@@ -67,8 +67,8 @@ braiding, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`, is chain homo
 braiding `R ⊗ S ⟶ S ⊗ R` followed by the map induced by the swap `X × Y ⟶ Y × X` and the
 Alexander–Whitney map of `Y × X`. -/
 def alexanderWhitneyKoszulBraidingHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (alexanderWhitney X Y R S ≫ (HomologicalComplex.koszulBraiding
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)).hom)
+    Homotopy (alexanderWhitney X Y R S ≫ TauCeti.NatChainComplex.koszulBraidingHom
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S))
       (((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
         SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) ≫ alexanderWhitney Y X S R) :=
   (Homotopy.ofEq (by rw [alexanderWhitney_def, Category.assoc])).trans <|
@@ -100,11 +100,11 @@ lemma alexanderWhitneyKoszulBraidingHomotopy_hom_naturality {X X' Y Y' : TopCat.
 `C(X; R) ⊗ C(Y; S) ⟶ C(Y; S) ⊗ C(X; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`,
 followed by the shuffle map of `Y × X`, is the shuffle map of `X × Y` followed by the maps induced
 by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap `X × Y ⟶ Y × X`. This is an equality of
-chain maps, transported from `SSet.koszulBraiding_hom_shuffle`. -/
+chain maps, transported from `SSet.koszulBraidingHom_shuffle`. -/
 @[reassoc]
-lemma koszulBraiding_hom_shuffle (X Y : TopCat.{w}) (R S : C) :
-    (HomologicalComplex.koszulBraiding ((toSSet.obj X).chainComplex R)
-        ((toSSet.obj Y).chainComplex S)).hom ≫ shuffle Y X S R =
+lemma koszulBraidingHom_shuffle (X Y : TopCat.{w}) (R S : C) :
+    TauCeti.NatChainComplex.koszulBraidingHom ((toSSet.obj X).chainComplex R)
+        ((toSSet.obj Y).chainComplex S) ≫ shuffle Y X S R =
       shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
         SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) := by
   -- the comparison `Sing X × Sing Y ⟶ Sing (X × Y)` commutes with the swaps
@@ -112,7 +112,7 @@ lemma koszulBraiding_hom_shuffle (X Y : TopCat.{w}) (R S : C) :
       Functor.LaxMonoidal.μ toSSet X Y ≫ toSSet.map (β_ X Y).hom := by
     let := Functor.Braided.ofChosenFiniteProducts toSSet
     exact (Functor.LaxBraided.braided X Y).symm
-  rw [shuffle_def, shuffle_def, SSet.koszulBraiding_hom_shuffle_assoc, Category.assoc,
+  rw [shuffle_def, shuffle_def, SSet.koszulBraidingHom_shuffle_assoc, Category.assoc,
     ← Functor.map_comp, hμ, Functor.map_comp]
   simp only [NatTrans.naturality_assoc]
 
@@ -122,8 +122,8 @@ variable {R S T : C}
 the Alexander–Whitney diagonal `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` of `u : T ⟶ R ⊗ S` followed by the
 Koszul braiding is chain homotopic to the Alexander–Whitney diagonal of `u ≫ (β_ R S).hom`. -/
 def alexanderWhitneyDiagonalKoszulBraidingHomotopy (X : TopCat.{w}) (u : T ⟶ R ⊗ S) :
-    Homotopy (X.alexanderWhitneyDiagonal u ≫ (HomologicalComplex.koszulBraiding
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S)).hom)
+    Homotopy (X.alexanderWhitneyDiagonal u ≫ TauCeti.NatChainComplex.koszulBraidingHom
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S))
       (X.alexanderWhitneyDiagonal (u ≫ (β_ R S).hom)) :=
   (Homotopy.ofEq (by simp only [TauCeti.alexanderWhitneyDiagonal_def, Category.assoc])).trans <|
     ((alexanderWhitneyKoszulBraidingHomotopy X X R S).compLeft

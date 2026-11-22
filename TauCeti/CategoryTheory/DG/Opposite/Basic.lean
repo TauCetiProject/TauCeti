@@ -70,8 +70,8 @@ theorem dgCompMap_op (X Y Z : C) (p q n : ℤ)
   rw [dgCompMap_def, CategoryTheory.eComp_op_eq, HomologicalComplex.comp_f,
     ← Category.assoc]
   simp only [dgHomComplex_op]
-  rw [braiding_eq_koszulBraiding, ι_koszulBraiding_hom,
-    Linear.units_smul_comp, Category.assoc, dgCompMap_def]
+  rw [braiding_eq_tensorBraiding, HomologicalComplex.ιTensorObj_tensorBraiding_hom_f,
+    ComplexShape.σ_up_ℤ, Linear.units_smul_comp, Category.assoc, dgCompMap_def]
 
 /-- Composition in the opposite DG category reverses the factors and contributes the Koszul
 sign. The sign is the value of the cochain-complex braiding on the bidegree-`(p,q)` summand. -/
