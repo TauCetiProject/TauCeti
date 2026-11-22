@@ -28,9 +28,9 @@ entry set is nonempty and bounded below
 (`IsClosed.csInf_mem_or_leftLim_mem_of_continuousWithinAt`). In any preorder with closed lower
 rays, upper bounds on `(-∞, t]` or `(-∞, T]` are preserved by strict left limits
 (`TauCeti.leftLim_le_of_forall_le`, `TauCeti.upperBounds_image_Iic_subset_leftLim`). On a compact
-lower ray `(-∞, T]`, no value or left limit of a càdlàg function into a linear order with the
-order topology reaches `ε` if and only if its values on `(-∞, T]` admit a uniform upper bound
-strictly below `ε` (`IsCadlag.forall_lt_and_leftLim_lt_iff_exists_le`), yielding the
+lower ray `(-∞, T]`, no value or left limit of a càdlàg function into a linear order with closed
+upper and lower rays reaches `ε` if and only if its values on `(-∞, T]` admit a uniform upper
+bound strictly below `ε` (`IsCadlag.forall_lt_and_leftLim_lt_iff_exists_le`), yielding the
 complete-order supremum equivalence `IsCadlag.exists_le_or_le_leftLim_iff_le_biSup`.
 
 For any path `f` into a pseudometric space and threshold `ε : ℝ`,
@@ -160,11 +160,11 @@ end TauCeti
 namespace IsCadlag
 
 /-- On a compact lower ray `(-∞, T]`, no value or strict left limit of a càdlàg function into a
-linear order with the order topology reaches `ε` if and only if its values on `(-∞, T]` admit a
-uniform upper bound strictly below `ε`. -/
+linear order with closed upper and lower rays reaches `ε` if and only if its values on `(-∞, T]`
+admit a uniform upper bound strictly below `ε`. -/
 theorem forall_lt_and_leftLim_lt_iff_exists_le {X α : Type*}
     [LinearOrder X] [TopologicalSpace X] [OrderTopology X]
-    [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [LinearOrder α] [TopologicalSpace α] [ClosedIciTopology α] [ClosedIicTopology α]
     {g : X → α} (hg : IsCadlag g) {T : X} (hT : IsCompact (Iic T)) (ε : α) :
     (∀ t ≤ T, g t < ε ∧ g.leftLim t < ε) ↔ ∃ c < ε, ∀ t ≤ T, g t ≤ c := by
   constructor
@@ -203,12 +203,12 @@ theorem forall_lt_and_leftLim_lt_iff_exists_le {X α : Type*}
     exact ⟨(hg_le t ht).trans_lt hc_lt,
       (TauCeti.leftLim_le_of_forall_le fun s hs => hg_le s (hs.trans ht)).trans_lt hc_lt⟩
 
-/-- On a compact lower ray `(-∞, T]`, a càdlàg function into a complete linear order with the
-order topology reaches `ε` in value or left limit at some time `t ≤ T` if and only if the supremum
-of its values up to `T` is at least `ε`. -/
+/-- On a compact lower ray `(-∞, T]`, a càdlàg function into a complete linear order with closed
+upper and lower rays reaches `ε` in value or left limit at some time `t ≤ T` if and only if the
+supremum of its values up to `T` is at least `ε`. -/
 theorem exists_le_or_le_leftLim_iff_le_biSup {X α : Type*}
     [LinearOrder X] [TopologicalSpace X] [OrderTopology X]
-    [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [CompleteLinearOrder α] [TopologicalSpace α] [ClosedIciTopology α] [ClosedIicTopology α]
     {g : X → α} (hg : IsCadlag g) {T : X} (hT : IsCompact (Iic T)) (ε : α) :
     (∃ t ≤ T, ε ≤ g t ∨ ε ≤ g.leftLim t) ↔ ε ≤ ⨆ t ≤ T, g t := by
   rw [← not_iff_not]
