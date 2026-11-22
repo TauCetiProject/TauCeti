@@ -361,12 +361,12 @@ theorem pairSign_self
 
 /-- **The signed count of a critical point to itself is `1`**, for a single pseudo-gradient and the
 same chart and orientation at both ends: `W^u(x) ∩ W^s(x)` is the critical point `x` alone. -/
-theorem signedPairCount_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+theorem signedPairCount_self
     (o : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
     hX.signedPairCount hX φ φ o o rfl = 1 := by
   have hset : hX.flow.unstableSet x ∩ hX.flow.stableSet x = {x} :=
     eq_singleton_iff_unique_mem.2
-      ⟨hX.mem_unstableSet_inter_stableSet_self hx,
+      ⟨hX.mem_unstableSet_inter_stableSet_self φ.toMorseBottChart.mfderiv_self,
         fun _ hy ↦ hX.eq_of_mem_unstableSet_inter_stableSet hy⟩
   rw [signedPairCount_def, hset, finsum_mem_singleton, pairSign_self hφ]
 
@@ -519,8 +519,7 @@ theorem IsMorseSmale.signedPairCoeff_self {𝔬 : MorseOrientation f X} (h : hX.
     hX.signedPairCoeff hX 𝔬 𝔬 p q = if p = q then 1 else 0 := by
   by_cases hpq : p = q
   · subst hpq
-    rw [signedPairCoeff_of_morseIndex_eq rfl, signedPairCount_self (𝔬.coord_mfderiv_chart p)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)]
+    rw [signedPairCoeff_of_morseIndex_eq rfl, signedPairCount_self (𝔬.coord_mfderiv_chart p)]
     simp
   simp only [hpq, ↓reduceIte]
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q
