@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -32,9 +33,10 @@ Fredholm property and the index of `D_u` do not depend on `u` beyond its asympto
   product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator along any map `u` from a
   nondegenerate one-periodic orbit `x` of a Hamiltonian `H` to itself is Fredholm
   (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`) of index
-  zero (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). The
-  map `u` need not solve the Floer equation; it may be, for instance, a pre-glued map, or a point
-  of the space of maps on which the Floer section is defined.
+  zero (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). This
+  holds for any `C¹` map `u` whose loops converge uniformly to `x` at both ends, with slice defects
+  tending uniformly to zero there; `u` need not solve the Floer equation (it may be, for instance,
+  a pre-glued map).
 
 The proof deforms `u` into `u'` along the segment `u_λ = u + λ (u' - u)`. Every `u_λ` has the
 same asymptotic orbits, so the semi-Fredholm estimate
@@ -312,8 +314,9 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
   have hd := hu.differentiable one_ne_zero
   have hd' := hu'.differentiable one_ne_zero
   -- Every point of the segment has the asymptotics of `u` and `u'`.
-  have hseg (μ : ℝ) := And.intro (tendstoUniformlyOn_add_smul_sub hXmc hd hd' hxmc huxm hδm
-    hu'xm hδ'm μ) (tendstoUniformlyOn_add_smul_sub hXpc hd hd' hxpc huxp hδp hu'xp hδ'p μ)
+  have hseg (μ : ℝ) := And.intro
+    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXmc hd hd' hxmc huxm hδm hu'xm hδ'm μ)
+    (tendstoUniformlyOn_add_smul_sub_and_sliceDefect hXpc hd hd' hxpc huxp hδp hu'xp hδ'p μ)
   set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦
     ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt (u + μ • (u' - u))
   have hcylμ (μ : ℝ) :=
@@ -328,9 +331,11 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
       hxp hndp hJp (fun t ↦ hJxp t _) (hseg μ).2.1 (hseg μ).2.2
   -- `u`, `u'` and their derivatives in `t` are bounded on the strip.
   obtain ⟨C, hC⟩ :=
-    exists_forall_norm_le_and_norm_fderiv_apply_le hXmc hXpc hu hxmc hxpc huxm hδm huxp hδp
+    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu hxmc hxpc huxm hδm
+      huxp hδp
   obtain ⟨C', hC'⟩ :=
-    exists_forall_norm_le_and_norm_fderiv_apply_le hXmc hXpc hu' hxmc hxpc hu'xm hδ'm hu'xp hδ'p
+    exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect hXmc hXpc hu' hxmc hxpc hu'xm hδ'm
+      hu'xp hδ'p
   have hcont (μ : ℝ) (_ : μ ∈ univ) :
       Tendsto (fun ν ↦ eLpNorm (M ν - M μ) ∞ stripMeasure) (𝓝[univ] μ) (𝓝 0) := by
     rw [nhdsWithin_univ]

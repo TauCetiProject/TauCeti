@@ -14,6 +14,10 @@ If each summand `f i : E → F` (`i ∈ s`) is uniformly approximable on `K ⊆ 
 by functions `𝕜`-differentiable on `Ω ⊆ E`, then the finite sum `∑ i ∈ s, f i` is likewise
 uniformly approximable on `K` by functions `𝕜`-differentiable on `Ω`
 (`TauCeti.exists_differentiableOn_norm_sum_sub_lt`).
+
+The derivative of a point `u + μ • (u' - u)` of the segment between two differentiable maps is the
+corresponding point of the segment between their derivatives
+(`TauCeti.fderiv_add_smul_sub_apply`).
 -/
 
 public section
@@ -46,5 +50,14 @@ theorem exists_differentiableOn_norm_sum_sub_lt {𝕜 E F ι : Type*}
   refine lt_of_le_of_lt (Finset.sum_le_sum fun i hi => (hbound i hi z hz).le) ?_
   rw [Finset.sum_const, nsmul_eq_mul, mul_div_left_comm]
   exact mul_lt_of_lt_one_right hε ((div_lt_one hpos).mpr (lt_add_one (s.card : ℝ)))
+
+/-- The derivative of a point `u + μ • (u' - u)` of the segment between two differentiable maps. -/
+theorem fderiv_add_smul_sub_apply {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {u u' : E → F} (hu : Differentiable 𝕜 u) (hu' : Differentiable 𝕜 u') (μ : 𝕜) (z v : E) :
+    fderiv 𝕜 (u + μ • (u' - u)) z v = fderiv 𝕜 u z v + μ • (fderiv 𝕜 u' z v - fderiv 𝕜 u z v) := by
+  rw [((hu z).hasFDerivAt.add (((hu' z).hasFDerivAt.sub (hu z).hasFDerivAt).const_smul
+    μ)).fderiv]
+  simp
 
 end TauCeti
