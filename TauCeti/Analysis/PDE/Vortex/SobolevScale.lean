@@ -68,8 +68,8 @@ private theorem forall_mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq
   cases k with
   | zero => simpa using hy
   | succ k =>
-    exact_mod_cast mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx
-      (fun i n _ ↦ hbound i n) hy (hf k) hweak
+    exact_mod_cast mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
+      (hx.of_le (by simp)) (fun i n _ ↦ hbound i n) hy (hf k) hweak
 
 /-- **Weak `L²` solutions are smooth.** Let `x` be a smooth field whose coordinates have bounded
 derivatives of every order, and let `y` be a square-integrable weak solution of `L_x y = f`, with
@@ -137,7 +137,8 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_s
   obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
     (μ := volume) (hxs.of_le (by exact_mod_cast le_top)) hsol hlim
   refine ⟨Q, hQ, hQK, fun k f hf ↦ ?_⟩
-  exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
+  exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
+    (hxs.of_le (by simp))
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
     (Lp.memLp _) hf fun η hη hηc ↦ hQ f η (hη.of_le (by norm_cast)) hηc
 

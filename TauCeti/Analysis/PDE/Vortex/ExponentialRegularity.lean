@@ -331,7 +331,8 @@ private theorem memLp_and_lpNorm_gaugeFixedOperatorSymbol_le {c : ℝ}
         |c| * lpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume := by
   have hGL : MemLp (fun z ↦ gaugeFixedOperatorSymbol
       (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z) (y z)) 2 volume := by
-    have h := mulVec_mem_sobolevFields_natCast 0 (contDiff_expWeightCoeff c)
+    have h := mulVec_mem_sobolevFields_natCast 0
+      (fun i j ↦ (contDiff_expWeightCoeff c i j).of_le (by simp))
       (fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j 0) (by simpa using hy)
     simpa only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq] using
       memLp_of_mem_sobolevFields h

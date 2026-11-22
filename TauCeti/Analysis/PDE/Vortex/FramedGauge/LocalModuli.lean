@@ -232,7 +232,8 @@ private theorem exists_continuousRepField_eq (hk : 2 ≤ k)
   have hxs := contDiff_of_forall_mem_framedFieldSpace x.continuous hmem
   -- `y` is a weak solution of `L_x y = 0`, so it lies in `H^(k+1)`.
   have hyk : y ∈ sobolevFields ((k : ℝ) + 1) := by
-    refine mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
+    refine mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
+      (hxs.of_le (by simp))
       (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace x.continuous i n
         (hmem (n + 2))) hyL (zero_mem _) fun η hη hηc ↦ ?_
     exact (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) x.continuous

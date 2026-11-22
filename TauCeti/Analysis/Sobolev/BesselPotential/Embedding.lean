@@ -110,8 +110,9 @@ spaces.
   `∫ ‖ξ‖ ^ j ‖v ξ‖ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-(s - j) / 2)‖₂ ‖f‖_{H^s}` of `v = 𝓕 f`, `2 (s - j) > n`.
 * `TemperedDistribution.MemSobolev.contDiff_of_ae_eq`: a continuous representative of an `L²`
   function in `H^s`, `s > k + n / 2`, is `C^k`.
-* `TemperedDistribution.MemSobolev.tendsto_iteratedFDeriv_cocompact_of_ae_eq`: its derivatives
-  of order `j`, `s > j + n / 2`, vanish at infinity.
+* `TemperedDistribution.MemSobolev.tendsto_iteratedFDeriv_cocompact_of_ae_eq`,
+  `TemperedDistribution.tendsto_iteratedFDeriv_cocompact_of_mem_realSobolevFunctions`: its
+  derivatives of order `j`, `s > j + n / 2`, vanish at infinity.
 * `TemperedDistribution.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`: the bound
   `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for `j ≤ k`, `s > k + n / 2`.
 * `TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`: convergence in
@@ -522,6 +523,24 @@ theorem MemSobolev.tendsto_iteratedFDeriv_cocompact_of_ae_eq {s : ℝ} {j : ℕ}
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)])
   rw [Lp.eq_fourierInv_of_ae_eq hv hg hug, hu.iteratedFDeriv_fourierInv hs hv]
   exact (tendsto_integral_exp_inner_smul_cocompact _).congr fun w => (Real.fourier_eq _ w).symm
+
+/-- **Derivatives of continuous real Sobolev functions vanish at infinity.** For a continuous real
+function `f ∈ H^s` and `s > j + dim E / 2`, the `j`-th derivative of `f` tends to zero at
+infinity. -/
+theorem tendsto_iteratedFDeriv_cocompact_of_mem_realSobolevFunctions {s : ℝ} {j : ℕ}
+    (hs : finrank ℝ E < 2 * (s - j)) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hcont : Continuous f) :
+    Tendsto (iteratedFDeriv ℝ j f) (cocompact E) (𝓝 0) := by
+  have hcd : ContDiff ℝ j f := contDiff_of_mem_realSobolevFunctions (by linarith) hf hcont
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  have hae : (Complex.ofRealCLM.compLp u : E → ℂ) =ᵐ[volume] fun x ↦ (f x : ℂ) := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu] with x h₁ h₂
+    simp [h₁, h₂]
+  have hlim := hS.tendsto_iteratedFDeriv_cocompact_of_ae_eq hs
+    (Complex.continuous_ofReal.comp hcont) hae
+  refine tendsto_zero_iff_norm_tendsto_zero.2 <| squeeze_zero (fun _ ↦ norm_nonneg _) (fun x ↦ ?_)
+    (tendsto_zero_iff_norm_tendsto_zero.1 hlim)
+  exact (Complex.ofRealLI.norm_iteratedFDeriv_comp_left hcd.contDiffAt le_rfl).symm.le
 
 /-- **The quantitative Sobolev embedding `H^s ⊆ C^k`, `s > k + n / 2`.** There is a constant `C`,
 depending only on `s`, `k` and `E`, such that every continuous representative `g` of an `L²`
