@@ -19,12 +19,10 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 # Smooth solutions of the Poisson equation on a closed manifold
 
 Let `M` be a closed connected smooth Riemannian manifold without boundary, with Riemannian volume
-`dV` and nonnegative Laplacian `Δ⁺ = -div grad`. By weak Lax–Milgram solvability
-(`TauCeti.Manifold.SobolevH1.existsUnique_dirichletForm_eq`) together with interior elliptic
-regularity
-(`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`),
-for every smooth function `f` with `∫ f dV = 0` there is a unique smooth function `u` with
-`∫ u dV = 0` and `Δ⁺u = f`
+`dV` and nonnegative Laplacian `Δ⁺ = -div grad`. Combining the smooth Poisson existence theorem
+(`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`) with weak uniqueness from
+`TauCeti.Manifold.SobolevH1.existsUnique_dirichletForm_eq`, for every smooth function `f` with
+`∫ f dV = 0` there is a unique smooth function `u` with `∫ u dV = 0` and `Δ⁺u = f`
 (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`).
 
 The smooth functions of vanishing Riemannian integral form the submodule
@@ -117,31 +115,27 @@ theorem existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
     ∃! u : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ u ∧
       ∫ x, u x ∂riemannianVolume I M = 0 ∧ ∀ x, -laplaceBeltrami I u x = f x := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨u, hu0, hueq⟩ := SobolevH1.exists_neg_laplaceBeltrami_eq hf hf0
+  refine ⟨u, ⟨u.contMDiff, hu0, hueq⟩, fun u' ⟨hu'_smooth, hu'0, hu'eq⟩ ↦ ?_⟩
   set F : Lp ℝ 2 (riemannianVolume I M) :=
     ContinuousMap.toLp 2 (riemannianVolume I M) ℝ ⟨f, hf.continuous⟩
   have hF_ae : (F : M → ℝ) =ᵐ[riemannianVolume I M] f :=
     ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I M) ⟨f, hf.continuous⟩
   have hF0 : ∫ x, F x ∂riemannianVolume I M = 0 := (integral_congr_ae hF_ae).trans hf0
-  obtain ⟨w, ⟨hw0, hw⟩, huniq⟩ := SobolevH1.existsUnique_dirichletForm_eq F hF0
-  obtain ⟨u, rfl, hu⟩ :=
-    SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq
-      (V := 0) contMDiff_const hf fun v ↦ by
-        simp only [Pi.zero_apply, zero_mul, integral_zero, add_zero]
-        rw [hw (SobolevH1.ofSmooth v)]
-        refine integral_congr_ae ?_
-        filter_upwards [hF_ae, SobolevH1.toLp_ofSmooth_ae_eq v] with x hFx hvx
-        rw [hFx, hvx]
-  have hu' : ∀ x, -laplaceBeltrami I u x = f x := fun x ↦ by simpa using hu x
-  refine ⟨u, ⟨u.contMDiff, (integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq u)).symm.trans hw0,
-    hu'⟩, fun u' ⟨hu'_smooth, hu'0, hu'eq⟩ ↦ ?_⟩
   set u'm : C^∞⟮I, M; ℝ⟯ := ⟨u', hu'_smooth⟩
-  have hofSmooth : SobolevH1.ofSmooth u'm = SobolevH1.ofSmooth u := by
-    refine huniq (SobolevH1.ofSmooth u'm) ⟨?_, fun v ↦ ?_⟩
-    · exact (integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq u'm)).trans hu'0
-    · rw [SobolevH1.dirichletForm_comm, SobolevH1.dirichletForm_ofSmooth_right]
-      refine integral_congr_ae ?_
-      filter_upwards [hF_ae] with x hFx
-      simp only [u'm, ContMDiffMap.coeFn_mk, hFx, ← hu'eq x, mul_comm]
+  have hsol (g : C^∞⟮I, M; ℝ⟯) (hg0 : ∫ x, g x ∂riemannianVolume I M = 0)
+      (hgeq : ∀ x, -laplaceBeltrami I g x = f x) :
+      ∫ x, SobolevH1.toLp (SobolevH1.ofSmooth g) x ∂riemannianVolume I M = 0 ∧
+        ∀ v, SobolevH1.dirichletForm (SobolevH1.ofSmooth g) v =
+          ∫ x, F x * SobolevH1.toLp v x ∂riemannianVolume I M := by
+    refine ⟨(integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq g)).trans hg0, fun v ↦ ?_⟩
+    rw [SobolevH1.dirichletForm_comm, SobolevH1.dirichletForm_ofSmooth_right]
+    refine integral_congr_ae ?_
+    filter_upwards [hF_ae] with x hFx
+    rw [hFx, ← hgeq x, mul_comm]
+  have hofSmooth : SobolevH1.ofSmooth u'm = SobolevH1.ofSmooth u :=
+    (SobolevH1.existsUnique_dirichletForm_eq F hF0).unique
+      (hsol u'm hu'0 hu'eq) (hsol u hu0 hueq)
   have hae : u' =ᵐ[riemannianVolume I M] u :=
     (SobolevH1.toLp_ofSmooth_ae_eq u'm).symm.trans
       (hofSmooth ▸ SobolevH1.toLp_ofSmooth_ae_eq u)

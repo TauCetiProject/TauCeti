@@ -16,6 +16,7 @@ import TauCeti.Analysis.PDE.Regularity.Smooth
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -56,7 +57,12 @@ transfers Euclidean interior regularity to `H¹(M)`:
   Euclidean interior smoothness
   (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`) applies. In particular
   weak eigenfunctions of `Δ⁺` are smooth
-  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`).
+  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`). With
+  the weak Poisson theory of `TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic` this solves
+  `Δ⁺u = f` with `u` smooth for every smooth `f` of integral zero
+  (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`). For a smooth `1`-form `a` on a
+  closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of the global Coulomb gauge
+  `d*(a - 2 dξ) = 0`.
 
 Local continuous or smooth representatives constructed in charts are glued to a global one by
 `TauCeti.exists_contMDiff_ae_eq_of_locally`, since the Riemannian volume charges every nonempty
@@ -81,6 +87,8 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   every dimension.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`:
   a weak solution of `Δ⁺w = μ w` is a smooth classical eigenfunction.
+* `TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`: a smooth `f` of integral zero is
+  `Δ⁺u` for a smooth `u` of integral zero.
 
 ## References
 
@@ -1137,6 +1145,27 @@ theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletF
   obtain ⟨hu_smooth, hw_eq, hΔ⟩ :=
     contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw_u
   exact ⟨⟨u, hu_smooth⟩, hw_eq, hΔ⟩
+
+/-- **The smooth Poisson equation on a closed manifold.** On a closed connected manifold of any
+dimension with a smooth Riemannian metric, every smooth function `f` of integral zero is `Δ⁺u` for
+a smooth function `u` of integral zero. -/
+theorem exists_neg_laplaceBeltrami_eq [PreconnectedSpace M] {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∫ x, f x ∂riemannianVolume I M = 0) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, ∫ x, u x ∂riemannianVolume I M = 0 ∧
+      ∀ x, -laplaceBeltrami I u x = f x := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have hf2 : MemLp f 2 (riemannianVolume I M) :=
+    hf.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  obtain ⟨w, hw₀, hw⟩ := (existsUnique_dirichletForm_eq (hf2.toLp f)
+    ((integral_congr_ae hf2.coeFn_toLp).trans hf₀)).exists
+  obtain ⟨u, rfl, hu⟩ :=
+    exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq (V := 0)
+      contMDiff_const hf (w := w) fun φ ↦ by
+        rw [hw, integral_congr_ae ((hf2.coeFn_toLp.mul (toLp_ofSmooth_ae_eq φ)).mono
+          fun x hx ↦ by simpa only [Pi.mul_apply] using hx)]
+        simp
+  exact ⟨u, (integral_congr_ae (toLp_ofSmooth_ae_eq u)).symm.trans hw₀,
+    fun x ↦ by simpa using hu x⟩
 
 end SmoothRegularity
 
