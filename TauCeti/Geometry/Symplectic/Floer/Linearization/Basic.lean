@@ -345,15 +345,19 @@ theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
-direction, where the operator has the leading term `∂s`. -/
+direction, where the operator has the leading term `∂s`. This is the case `f = β ∘ Prod.fst` of
+`floerLinearization_fun_smul`. -/
 theorem floerLinearization_smul_fst (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
     (hξ : DifferentiableAt ℝ ξ z) :
     ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
       β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
-  simp only [floerLinearization_eq_add]
-  exact cauchyRiemann_smul_fst (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hβ hξ
+  have hf : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
+      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) β').comp (fst ℝ ℝ ℝ)) z :=
+    hβ.hasFDerivAt.comp z (hasFDerivAt_fst (p := z))
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf.differentiableAt hξ, hf.fderiv]
+  simp [stdComplexLineReal, stdComplexLineImag]
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
