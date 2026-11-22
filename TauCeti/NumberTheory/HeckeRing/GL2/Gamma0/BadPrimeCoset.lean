@@ -226,7 +226,7 @@ theorem mem_doubleCoset_natDiagGL_of_intWitness (N m : ℕ) (β : GL (Fin 2) ℚ
   -- the factors as genuine `SL(2, ℤ)` variables is what avoids that.
   obtain ⟨L_sl, hL_sl⟩ : ∃ g : SL(2, ℤ), (g : Matrix (Fin 2) (Fin 2) ℤ) = L := ⟨⟨L, hL_det⟩, rfl⟩
   obtain ⟨R_sl, hR_sl⟩ : ∃ g : SL(2, ℤ),
-      (g : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![(1 : ℤ), r], ![0, 1]] := ⟨⟨_, hR_det⟩, rfl⟩
+      (g : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![(1 : ℤ), r], ![0, 1]] := ⟨.mk _ hR_det, rfl⟩
   have hDiag := natDiagGL_coe_eq_map_intCast 2 ![1, m] fun i ↦ by fin_cases i <;> simp [hm_pos]
   rw [DoubleCoset.mem_doubleCoset]
   refine ⟨mapGL ℚ L_sl, Subgroup.mem_map_of_mem _ (mem_Gamma0_iff_dvd.mpr ?_),

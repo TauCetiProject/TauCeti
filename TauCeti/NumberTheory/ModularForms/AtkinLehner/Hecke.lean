@@ -244,8 +244,8 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
     have hQn : (Q : ℤ) * n ≠ 0 :=
       mul_ne_zero (by exact_mod_cast h.pos.ne') (by exact_mod_cast NeZero.ne n)
     exact mul_left_cancel₀ hQn (by linear_combination -hdet)
-  let A : SL(2, ℤ) := ⟨Am, hdetAm⟩
-  let B : SL(2, ℤ) := ⟨Bm, by simp [Bm, Matrix.det_fin_two_of]⟩
+  let A : SL(2, ℤ) := .mk Am hdetAm
+  let B : SL(2, ℤ) := .mk Bm (by simp [Bm, Matrix.det_fin_two_of])
   have hA : A ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr ⟨-b * (n - 1), by simp [A, Am, hN]; ring⟩
   -- the diamond label of `A` is its lower-right entry
   have hlabel : (((Gamma0Map N).toHomUnits ⟨A, hA⟩ : (ZMod N)ˣ) : ZMod N) =

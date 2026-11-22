@@ -221,15 +221,15 @@ theorem exists_gamma0_mul_mul_coprime_upperLeft
   set R : Matrix (Fin 2) (Fin 2) ℤ := Matrix.of ![![1, 0], ![(N : ℤ) * t₀, 1]] with hR
   have hR_det : R.det = 1 := by
     simp [hR, Matrix.det_fin_two]
-  have hL_Gamma0 : (⟨L, hL_det⟩ : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
+  have hL_Gamma0 : (.mk L hL_det : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
     Gamma0_mem.mpr (by simp [hL])
-  have hR_Gamma0 : (⟨R, hR_det⟩ : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
+  have hR_Gamma0 : (.mk R hR_det : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
     Gamma0_mem.mpr (by simp [hR])
   obtain ⟨h00, h10⟩ := unipotent_translate_entries A l₀ ((N : ℤ) * t₀)
   rw [← hL, ← hR] at h00 h10
-  refine ⟨⟨mapGL ℚ ⟨L, hL_det⟩, Subgroup.mem_map_of_mem _ hL_Gamma0⟩,
-    ⟨mapGL ℚ ⟨R, hR_det⟩, Subgroup.mem_map_of_mem _ hR_Gamma0⟩, L * A * R, ?_, ?_, ?_, ?_⟩
-  · exact mapGL_mul_coe_eq_intMatrix 2 ⟨L, hL_det⟩ ⟨R, hR_det⟩ g A hA
+  refine ⟨⟨mapGL ℚ (.mk L hL_det), Subgroup.mem_map_of_mem _ hL_Gamma0⟩,
+    ⟨mapGL ℚ (.mk R hR_det), Subgroup.mem_map_of_mem _ hR_Gamma0⟩, L * A * R, ?_, ?_, ?_, ?_⟩
+  · exact mapGL_mul_coe_eq_intMatrix 2 (.mk L hL_det) (.mk R hR_det) g A hA
   · -- the translate adds a multiple of `N` to the lower-left entry
     have hlow : A 1 0 + A 1 1 * ((N : ℤ) * t₀) = A 1 0 + (N : ℤ) * (A 1 1 * t₀) := by ring
     rw [h10, hlow]

@@ -312,8 +312,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left (hQ : Q ≠ 0) (hQN : 
     rw [Matrix.det_mul, h.det_eq, h'.det_eq] at hd
     exact mul_right_cancel₀ hQ' (by rw [one_mul]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨c' * d - c * d', by rw [hG, hN]; simp⟩
-  exact ⟨⟨G, hdetG⟩,
-    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
+  exact ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
 
 /-- **Two Atkin–Lehner matrices for the same `Q` differ by `Γ₀(N)` on the right**, the mirror of
 `IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left` with witness `W⁻¹ W'`. -/
@@ -342,8 +341,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right (hQ : Q ≠ 0) (hQN :
     rw [Matrix.det_mul, h.det_eq, h'.det_eq] at hd
     exact mul_left_cancel₀ hQ' (by rw [mul_one]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨a * c' - a' * c, by rw [hG, hN]; simp⟩
-  exact ⟨⟨G, hdetG⟩,
-    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
+  exact ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
 
 /-- At level `N = 0`, an Atkin–Lehner matrix for `Q = 0` has only its upper-right entry nonzero. -/
 private lemma IsAtkinLehnerMatrix.eq_of_eq_zero (hQ : Q = 0) (hN : N = 0)
