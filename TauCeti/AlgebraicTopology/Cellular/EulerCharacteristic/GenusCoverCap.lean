@@ -14,9 +14,10 @@ public import TauCeti.Topology.Covering.Proper
 /-!
 # Genus relation for connected finite surface covers under cap duality
 
-If the rational middle-degree cap maps are injective on both connected oriented surfaces,
-their Euler characteristics satisfy the genus identity. The Euler characteristic of a finite
-cover then gives `genus(T) - 1 = degree * (genus(S) - 1)`.
+If the rational middle-degree cap map is injective on the base connected oriented surface,
+its Euler characteristic is even. Cover multiplicativity transfers evenness to the covering
+surface, so both satisfy the genus identity. This gives
+`genus(T) - 1 = degree * (genus(S) - 1)`.
 -/
 
 public noncomputable section
@@ -35,16 +36,12 @@ variable {E F : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {q : T → S}
 
 /-- For a connected finite cover of closed oriented surfaces with base of finite CW type,
-middle-degree cap injectivity on both surfaces implies the usual genus relation. -/
+middle-degree cap injectivity on the base implies the usual genus relation. -/
 theorem IsFiniteCover.genus_sub_one_eq_mul_of_injective_cap (hq : IsFiniteCover q)
     (oT : HomologicalOrientation T E 2) (oS : HomologicalOrientation S F 2)
     (hnT : finrank ℝ E = 2) (hnS : finrank ℝ F = 2)
-    (μT : ((singularHomologyFunctor (ModuleCat ℚ) 2).obj (𝟙_ (ModuleCat ℚ))).obj
-      (TopCat.of T))
     (μS : ((singularHomologyFunctor (ModuleCat ℚ) 2).obj (𝟙_ (ModuleCat ℚ))).obj
       (TopCat.of S))
-    (hinjT : Function.Injective
-      ((TopCat.of T).singularCapLinearMap ℚ (by decide : 1 + 1 = 2) μT))
     (hinjS : Function.Injective
       ((TopCat.of S).singularCapLinearMap ℚ (by decide : 1 + 1 = 2) μS)) (y : S) :
     letI := hq.isCoveringMap.compactSpace hq.finite_fiber
@@ -53,13 +50,16 @@ theorem IsFiniteCover.genus_sub_one_eq_mul_of_injective_cap (hq : IsFiniteCover 
       Nat.card (q ⁻¹' {y}) * ((RiemannSurface.genus S : ℤ) - 1) := by
   let : CompactSpace T := hq.isCoveringMap.compactSpace hq.finite_fiber
   let : FiniteCWType T := hq.isCoveringMap.finiteCWType hq.finite_fiber
-  have hχT := oT.eulerChar_eq_two_sub_two_mul_genus_of_injective_cap hnT μT hinjT
   have hχS := oS.eulerChar_eq_two_sub_two_mul_genus_of_injective_cap hnS μS hinjS
   have hχ : eulerChar T = (Nat.card (q ⁻¹' {y}) : ℤ) * eulerChar S :=
     eulerChar_eq_mul_of_isCoveringMap hq.isCoveringMap hq.finite_fiber
       (fun x ↦ by
         simpa only [IsCoveringMap.degree_apply] using
           hq.isCoveringMap.degree.apply_eq_of_preconnectedSpace x y)
+  have hχT := RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff.mpr
+    ⟨oT.eulerChar_le_two hnT, by
+      rw [hχ]
+      exact (RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff.mp hχS).2.mul_left _⟩
   rw [hχT, hχS] at hχ
   nlinarith
 
