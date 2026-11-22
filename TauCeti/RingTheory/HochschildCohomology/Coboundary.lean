@@ -214,7 +214,7 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 /-- The zeroth coface `(∂₀ψ)(a₀, …, aₙ) = a₀ • ψ(a₁, …, aₙ)`. -/
 private def leftCoface :
     ((Fin n → A) →ₘₗ[R] M) →ₗ[R] ((Fin (n + 1) → A) →ₘₗ[R] M) :=
-  (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
+  (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R (Algebra.lsmul R R M).toLinearMap.flip
 
 /-- The last coface `(∂ₙ₊₁ψ)(a₀, …, aₙ) = ψ(a₀, …, aₙ₋₁) • aₙ`. -/

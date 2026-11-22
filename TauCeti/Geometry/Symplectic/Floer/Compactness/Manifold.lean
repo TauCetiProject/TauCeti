@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 public import TauCeti.Geometry.Symplectic.Floer.Chart
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -59,6 +59,10 @@ needs no closedness of `ω` and no inner product on `E`, and for a symplectic ch
   uniformly off a finite set `Z` of bubbling points, with derivatives bounded on compact subsets
   of the complement and Floer energy at least a fixed `δ > 0` concentrating at each point of `Z`.
   The solutions themselves converge pointwise off `Z` in `M`.
+* **The energy over a window** (in the namespace `TauCeti.SmoothTwoForm`,
+  `integrableOn_and_setIntegral_floerEnergyDensity_le`): a bound on the energy over an open set
+  `S` bounds the Bochner integral of a nonnegative energy density over every measurable `Ω ⊆ S`,
+  which is the form of an energy bound the compactness theorems take.
 
 The coordinate compactness theorem for a finite-dimensional normed target (in the namespace
 `TauCeti.Floer`,
@@ -87,14 +91,20 @@ in a compact subset `C` of the source of a symplectic chart, in the namespace
 The data are read in the chart: the Hamiltonians are `K'(z, y) = K(z, φ⁻¹ y)`, and the almost
 complex structures are any family `J'(z, y)` on `V` with `dφ_x ∘ J(z, x) = J'(z, φ x) ∘ dφ_x`.
 The regularity hypotheses, `C³` for `K'` and `C²` for `J'`, are those of the vector-space theorem
-for this coordinate data. By `TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps
-`φ ∘ u` solve the Floer equation of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and
-`J'` is tamed by `ω₀` where `J` is tamed by `ω`. So a sequence of such solutions on an open subset
+for this coordinate data. If `K` is `C³` on `Ω' × M` for an open set `Ω'` of the domain, then `K'`
+is `C³` on `Ω' × φ.target`
+(`PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn`). By
+`TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps `φ ∘ u` solve the Floer equation
+of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and `J'` is tamed by `ω₀` where `J`
+is tamed by `ω`. So a sequence of such solutions on an open subset
 `Ω` of a compact window `D` of the domain, with Floer energy at most `A`, has a subsequence which
 converges off a finite set `Z` of bubbling points: the coordinate maps converge locally uniformly
 on `Ω \ Z` with locally bounded derivatives, the maps themselves converge pointwise in `M` to a
 continuous limit with values in `C`, `#Z δ ≤ A` for a threshold `δ > 0` depending only on the
 data, and at least the energy `δ` concentrates at every point of `Z`.
+The theorems take the energy bound as an integrable density with bounded integral over `Ω`;
+`TauCeti.SmoothTwoForm.integrableOn_and_setIntegral_floerEnergyDensity_le` derives it from a bound
+on the energy over a larger open domain.
 
 The same holds over a compact window `C` of parameters `p` in a real inner product space, for
 perturbations `K_p` and structures `J_p` whose chart readings `K_p(z, φ⁻¹ y)` and `J'_p(z, y)` are
@@ -113,13 +123,17 @@ For smooth solutions and fixed data the convergence holds in `C¹`
 (`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`): the
 derivatives of the coordinate maps converge locally uniformly on `Ω \ Z` as well, the limit is a
 `C¹` solution of the Floer equation `(dv - X_K)^{0,1} = 0` on `Ω \ Z`, and its Floer energy over
-`Ω \ Z` is at most `A`. This is the coordinate theorem of
-`TauCeti.Geometry.Symplectic.Floer.Compactness.Limit` read back through the chart.
+`Ω \ Z` is at most `A`. Moreover every bubbling point carries an energy mass of at least `δ`, and
+the energy of the limit together with the masses is at most `A`
+(`IsNondegenerate.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`).
+This is the coordinate theorem of `TauCeti.Geometry.Symplectic.Floer.Compactness.Limit` read back
+through the chart, and the `C¹` statement is read off from it.
 
 Here the image of the solutions is assumed to stay in a single chart. The mean-value inequality for
 solutions in a chart is in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`. Gromov–Floer
 compactness on a closed manifold also needs the images of small discs of small energy to be
-localized into charts; that step is not treated here.
+localized into charts; that step, and the compactness theorem without the single-chart assumption,
+are in `TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`.
 
 ## References
 
@@ -150,34 +164,17 @@ variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ ×
 of the chart at `α`, the coordinate expression of `ω` on a vector `a` and its image under the
 structure `J(z, ·)` read in the chart is `ω(a', J(z, x) a')`, at the point
 `x = (extChartAt I α).symm y` and for the tangent vector `a'` at `x` with tangent coordinate `a`. -/
-theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
-    (hy : y ∈ (extChartAt I α).target) (z : ℝ × ℝ) (a : E) :
+theorem inChartAt_apply_almostComplexInChartAt {P : Type*}
+    {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)} (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (z : P) (a : E) :
     RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y
         ![a, Floer.almostComplexInChartAt I α J (z, y) a] =
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) := by
-  set e := extChartAt I α with he
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hbase : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [he, extChartAt_source] using e.map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [he, extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ (e.symm y)) (Floer.almostComplexInChartAt_apply z y a)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hbase _)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) :=
+  (ω.associatedBilinFormInChartAt_apply_eq_inChartAt J (z, y) a a).symm.trans
+    (ω.associatedBilinFormInChartAt_apply J z hy a a)
 
 /-- **The Floer energy density in a chart.** Let `u` be differentiable at `z`, with `u z` in the
 source of the chart at `α`, and solve the Floer equation for `J(z, u z)` at `z`. Then its energy
@@ -194,9 +191,9 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
           Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
             (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
               ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)))] := by
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hub : u z ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using hus
+  set T := trivializationAt E (TangentSpace I) α
+  have hub : u z ∈ T.baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
   -- The chart coordinate of `∂ₛu - X_{K_s}`.
   have hPs : T.symmL ℝ (u z) (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
       ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) =
@@ -255,13 +252,15 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   exact floerEnergyDensity_nonneg hω hJ h
 
 /-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
-structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
-compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0` and `C`
-such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`, the energy form
-`ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the chart at `α`
-satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
-theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
-    (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
+structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for a
+compact set `D` of parameters, such as a compact window of the domain `ℝ × ℝ` or a compact family
+of almost complex structures, and a compact set `K` of chart coordinates. There are constants
+`c > 0` and `C` such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`,
+the energy form `ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
+chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq {P : Type*}
+    [TopologicalSpace P] {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hω : ω.IsNondegenerate) (α : M) {D : Set P} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
     (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
@@ -277,31 +276,17 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
             ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
           C * ‖ξ‖ ^ 2 := by
   set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  set Jc := Floer.almostComplexInChartAt I α J
+  set T := trivializationAt E (TangentSpace I) α
   have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
-  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun p ↦
-    ((compL ℝ E E ℝ).flip (Jc p)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
-    with hb_def
-  have hb_apply (p : (ℝ × ℝ) × E) (a : E) : b p a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2)
-      α p.2 ![a, Jc p a] := by
-    simp only [hb_def, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
+  set b := ω.associatedBilinFormInChartAt α J
   have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
-      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) := by
-    rintro ⟨z, y⟩ hp a
-    rw [hb_apply]
-    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hp.2) z a
+      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) :=
+    fun p hp a ↦ ω.associatedBilinFormInChartAt_apply J p.1 (hKα hp.2) a a
   have hbc : ContinuousOn b (D ×ˢ K) :=
-    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd
-          fun p hp ↦ hKα hp.2))
+    continuousOn_associatedBilinFormInChartAt (fun p hp ↦ hKα hp.2) hJ
   obtain ⟨c, hc, hcb⟩ := hDK.exists_pos_forall_mul_norm_sq_le hbc fun p hp a ha ↦ by
     rw [hb p hp]
     have hy : p.2 ∈ e.target := hKα hp.2
@@ -480,6 +465,28 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   refine h.congr fun n ↦ ?_
   simp only [Function.comp_apply]
   exact e.left_inv (hus (φ n) hz.1)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Floer energy over a subdomain as a Bochner integral, for a manifold target.** Let `u` be
+`C¹` on an open set `S ⊆ ℝ × ℝ`, let the Hamiltonian vector fields of `K = K_s ds + K_t dt` be
+continuous on `S × M` as maps into the tangent bundle, and let `Ω ⊆ S` be measurable with Floer
+energy density nonnegative on `Ω`. If the energy of `u` over `S` is at most `E ≥ 0`, then the
+density is integrable on `Ω` and its integral over `Ω` is at most `E`. The vector-space case is
+`TauCeti.SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I M)
+    {S Ω : Set (ℝ × ℝ)} (hS : IsOpen S) (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u S)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
+    (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end SmoothTwoForm
 
@@ -770,6 +777,105 @@ private theorem tames_of_mem_image (hω : ω.IsNondegenerate)
     (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
     (hJt z hz x hx)
 
+/-- **The energy of the bubbling points in a symplectic chart.** Under the hypotheses of
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`, a further
+subsequence `ψ` attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small `ε > 0`
+the Floer energy of `u_{ψ n}` over the disc `B_ε(z)` converges to `m z` plus the energy of the
+limit `v` over the punctured disc, and the energy of `v` over `Ω \ Z` together with the masses is at
+most `A`. This is the coordinate theorem
+`SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`
+read back through the chart, which preserves the energy densities. -/
+theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
+    (hω : ω.IsNondegenerate) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
+      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Ks p.1 (φ.symm p.2)) W)
+    (hKt : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Kt p.1 (φ.symm p.2)) W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hC : IsCompact C) (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W)
+    (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedMFDeriv Ks Kt (u k) z).toLinearMap) →
+      (∀ k, MapsTo (u k) Ω C) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω) →
+      (∀ k, ∫ z in Ω, ω.floerEnergyDensity Ks Kt (u k) z ≤ A) →
+      ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M) (m : ℝ × ℝ → ℝ), StrictMono ψ ∧
+        ↑Z ⊆ Ω ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (ψ n)) y) ∧
+        ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) C ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (φ ∘ u (ψ n))) (fderiv ℝ (φ ∘ v)) atTop
+          (Ω \ ↑Z) ∧
+        (∀ z ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (v z))
+          (ω.perturbedMFDeriv Ks Kt v z).toLinearMap) ∧
+        IntegrableOn (ω.floerEnergyDensity Ks Kt v) (Ω \ ↑Z) ∧
+        (∀ z ∈ Z, δ ≤ m z) ∧
+        (∀ z ∈ Z, ∀ᶠ ε in 𝓝[>] 0,
+          Tendsto (fun n ↦ ∫ y in ball z ε, ω.floerEnergyDensity Ks Kt (u (ψ n)) y) atTop
+            (𝓝 (m z + ∫ y in ball z ε \ {z}, ω.floerEnergyDensity Ks Kt v y))) ∧
+        (∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z) + ∑ z ∈ Z, m z ≤ A := by
+  have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
+  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
+  obtain ⟨δ, hδ, hconv⟩ :=
+    ω₀.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
+      (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
+      hDCW hJ't
+  refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu hfl huC hint hA ↦ ?_⟩
+  -- At a point of `Ω` where a map is differentiable with a value in `C`, the chart transports the
+  -- energy density and the Floer equation.
+  have hpt {w : ℝ × ℝ → M} {z : ℝ × ℝ} (hz : z ∈ Ω) (hwC : w z ∈ C)
+      (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w z) :=
+    floerEnergyDensity_comp_and_isComplexLinearMap_iff hω φ (hφ _ hwC)
+      (hJJ' z (hΩD hz) _ hwC) hW hKs hKt (hCφ hwC) (hDCW ⟨hΩD hz, w z, hwC, rfl⟩) hw
+  have hptu (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
+    hpt hz (huC k hz) (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by simp))
+  obtain ⟨ψ, Z, w, m, hψ, hZΩ, hconc, hw1, hwC, hlim, hdlim, hweq, hwint, hm, hmlim, hmE⟩ :=
+    hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD
+      (fun k ↦ contMDiffOn_iff_contDiffOn.1 <| φ.contMDiffOn.comp (hu k) ((huC k).mono_right hCφ))
+      (fun k z hz ↦ ((hptu k hz).2).2 (hfl k z hz)) (fun k z hz ↦ ⟨u k z, huC k hz, rfl⟩)
+      (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hptu k hy).1).symm) hΩ.measurableSet)
+      (fun k ↦ (setIntegral_congr_fun hΩ.measurableSet fun y hy ↦ (hptu k hy).1).trans_le
+        (hA k))
+  set S := Ω \ (Z : Set (ℝ × ℝ))
+  have hS : IsOpen S := hΩ.sdiff Z.finite_toSet.isClosed
+  -- The limit in `M` is read back through the inverse of the chart.
+  have hwt : MapsTo w S φ.target := hwC.mono_right (φ.mapsTo.mono_left hCφ).image_subset
+  set v : ℝ × ℝ → M := φ.symm ∘ w
+  have hv1 : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v S :=
+    (φ.symm.contMDiffOn.of_le (by simp)).comp (contMDiffOn_iff_contDiffOn.2 hw1) hwt
+  have hvC : MapsTo v S C := ((φ.leftInvOn.mono hCφ).mapsTo (surjOn_image _ _)).comp hwC
+  have hφv (y : ℝ × ℝ) (hy : y ∈ S) : φ ∘ v =ᶠ[𝓝 y] w :=
+    Filter.eventually_of_mem (hS.mem_nhds hy) fun y' hy' ↦ φ.right_inv (hwt hy')
+  have hvpt (y : ℝ × ℝ) (hy : y ∈ S) :=
+    hpt hy.1 (hvC hy) ((hv1.contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
+  have hvE (y : ℝ × ℝ) (hy : y ∈ S) :
+      ω.floerEnergyDensity Ks Kt v y = ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y))
+        (fun z y ↦ Kt z (φ.symm y)) w y :=
+    ((hvpt y hy).1).symm.trans (ω₀.floerEnergyDensity_congr_of_eventuallyEq _ _ (hφv y hy))
+  refine ⟨ψ, Z, v, m, hψ, hZΩ, fun z hz ε hε ↦ ?_, hv1, hvC,
+    hlim.congr_right fun y hy ↦ (φ.right_inv (hwt hy)).symm,
+    hdlim.congr_right fun y hy ↦ ((hφv y hy).fderiv_eq).symm, fun y hy ↦ ?_,
+    hwint.congr_fun (fun y hy ↦ (hvE y hy).symm) hS.measurableSet, hm, fun z hz ↦ ?_,
+    by rwa [setIntegral_congr_fun hS.measurableSet hvE]⟩
+  · filter_upwards [hconc z hz ε hε] with n hn
+    rwa [setIntegral_congr_fun (measurableSet_ball.inter hΩ.measurableSet)
+      fun y hy ↦ (hptu (ψ n) hy.2).1] at hn
+  · refine ((hvpt y hy).2).1 ?_
+    have hvy : φ (v y) = w y := φ.right_inv (hwt hy)
+    rw [ω₀.perturbedFDeriv_congr_of_eventuallyEq _ _ (hφv y hy), hvy]
+    exact hweq y hy
+  · -- The chart transports the energy densities, on `Ω` along the sequence and on `Ω \ Z` in the
+    -- limit.
+    exact eventually_tendsto_setIntegral_ball_congr hΩ (hZΩ hz)
+      (fun n y hy ↦ ((hptu (ψ n) hy).1).symm) hvE (hmlim z hz)
+
 /-- **Floer solutions of bounded energy in a symplectic chart converge in `C¹` off finitely many
 bubbling points.** Under the hypotheses of the `C⁰` theorem
 `IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for fixed
@@ -780,7 +886,9 @@ set `Z ⊆ Ω` with `#Z * δ ≤ A`, and a map `v` with values in `C` on `Ω \ Z
 disc about a point of `Z` eventually carries Floer energy at least `δ`, the coordinate maps
 `φ ∘ u_{ψ n}` and their derivatives converge to `φ ∘ v` and its derivative locally uniformly on
 `Ω \ Z`, `v` is a `C¹` solution of the Floer equation for `J(z, v)` on `Ω \ Z`, and the Floer
-energy of `v` over `Ω \ Z` is finite and at most `A`. -/
+energy of `v` over `Ω \ Z` is finite and at most `A`. See also
+`IsNondegenerate.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`
+for the energy masses at the bubbling points. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     (hω : ω.IsNondegenerate) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
     {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}
@@ -813,55 +921,18 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
           (ω.perturbedMFDeriv Ks Kt v z).toLinearMap) ∧
         IntegrableOn (ω.floerEnergyDensity Ks Kt v) (Ω \ ↑Z) ∧
         ∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z ≤ A := by
-  have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
-  obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
-    (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
-    hDCW hJ't
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset φ hφ hJJ'
+      hW hKs hKt hJ' hD hC hCφ hDCW hJt
   refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu hfl huC hint hA ↦ ?_⟩
-  -- At a point of `Ω` where a map is differentiable with a value in `C`, the chart transports the
-  -- energy density and the Floer equation.
-  have hpt {w : ℝ × ℝ → M} {z : ℝ × ℝ} (hz : z ∈ Ω) (hwC : w z ∈ C)
-      (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w z) :=
-    floerEnergyDensity_comp_and_isComplexLinearMap_iff hω φ (hφ _ hwC)
-      (hJJ' z (hΩD hz) _ hwC) hW hKs hKt (hCφ hwC) (hDCW ⟨hΩD hz, w z, hwC, rfl⟩) hw
-  have hptu (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
-    hpt hz (huC k hz) (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by simp))
-  obtain ⟨ψ, Z, w, hψ, hZΩ, hcard, hconc, hw1, hwC, hlim, hdlim, hweq, hwint, hwE⟩ :=
-    hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD
-      (fun k ↦ contMDiffOn_iff_contDiffOn.1 <| φ.contMDiffOn.comp (hu k) ((huC k).mono_right hCφ))
-      (fun k z hz ↦ ((hptu k hz).2).2 (hfl k z hz)) (fun k z hz ↦ ⟨u k z, huC k hz, rfl⟩)
-      (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hptu k hy).1).symm) hΩ.measurableSet)
-      (fun k ↦ (setIntegral_congr_fun hΩ.measurableSet fun y hy ↦ (hptu k hy).1).trans_le
-        (hA k))
-  set S := Ω \ (Z : Set (ℝ × ℝ))
-  have hS : IsOpen S := hΩ.sdiff Z.finite_toSet.isClosed
-  -- The limit in `M` is read back through the inverse of the chart.
-  have hwt : MapsTo w S φ.target := hwC.mono_right (φ.mapsTo.mono_left hCφ).image_subset
-  set v : ℝ × ℝ → M := φ.symm ∘ w
-  have hv1 : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v S :=
-    (φ.symm.contMDiffOn.of_le (by simp)).comp (contMDiffOn_iff_contDiffOn.2 hw1) hwt
-  have hvC : MapsTo v S C := ((φ.leftInvOn.mono hCφ).mapsTo (surjOn_image _ _)).comp hwC
-  have hφv (y : ℝ × ℝ) (hy : y ∈ S) : φ ∘ v =ᶠ[𝓝 y] w :=
-    Filter.eventually_of_mem (hS.mem_nhds hy) fun y' hy' ↦ φ.right_inv (hwt hy')
-  have hvpt (y : ℝ × ℝ) (hy : y ∈ S) :=
-    hpt hy.1 (hvC hy) ((hv1.contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
-  have hvE (y : ℝ × ℝ) (hy : y ∈ S) :
-      ω.floerEnergyDensity Ks Kt v y = ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y))
-        (fun z y ↦ Kt z (φ.symm y)) w y :=
-    ((hvpt y hy).1).symm.trans (ω₀.floerEnergyDensity_congr_of_eventuallyEq _ _ (hφv y hy))
-  refine ⟨ψ, Z, v, hψ, hZΩ, hcard, fun z hz ε hε ↦ ?_, hv1, hvC,
-    hlim.congr_right fun y hy ↦ (φ.right_inv (hwt hy)).symm,
-    hdlim.congr_right fun y hy ↦ ((hφv y hy).fderiv_eq).symm, fun y hy ↦ ?_,
-    hwint.congr_fun (fun y hy ↦ (hvE y hy).symm) hS.measurableSet,
-    (setIntegral_congr_fun hS.measurableSet hvE).trans_le hwE⟩
-  · filter_upwards [hconc z hz ε hε] with n hn
-    rwa [setIntegral_congr_fun (measurableSet_ball.inter hΩ.measurableSet)
-      fun y hy ↦ (hptu (ψ n) hy.2).1] at hn
-  · refine ((hvpt y hy).2).1 ?_
-    have hvy : φ (v y) = w y := φ.right_inv (hwt hy)
-    rw [ω₀.perturbedFDeriv_congr_of_eventuallyEq _ _ (hφv y hy), hvy]
-    exact hweq y hy
+  obtain ⟨ψ, Z, v, m, hψ, hZΩ, hconc, hv1, hvC, hlim, hdlim, hveq, hvint, hm, -, hmA⟩ :=
+    hconv hΩ hΩD hu hfl huC hint hA
+  have hv0 : 0 ≤ ∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z :=
+    setIntegral_nonneg (hΩ.sdiff Z.finite_toSet.isClosed).measurableSet fun z hz ↦
+      SmoothTwoForm.floerEnergyDensity_nonneg hω (hJt z (hΩD hz.1) _ (hvC hz)) (hveq z hz)
+  have hcard : Z.card * δ ≤ ∑ z ∈ Z, m z := by simpa using Z.card_nsmul_le_sum m δ hm
+  have hδ0 : 0 ≤ Z.card * δ := by positivity
+  exact ⟨ψ, Z, v, hψ, hZΩ, by linarith, hconc, hv1, hvC, hlim, hdlim, hveq, hvint, by linarith⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
 

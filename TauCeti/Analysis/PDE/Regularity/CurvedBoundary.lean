@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
-import TauCeti.Analysis.PDE.Regularity.Interior
+import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 import TauCeti.Topology.Instances.Matrix
@@ -47,7 +47,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
 * **The transformed equation.** The function `u ∘ Φ` is a weak solution of an equation of the same
   form on the flat side (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`), whose principal
   coefficient is again uniformly elliptic (`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`) and
-  Lipschitz (`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`), since `DΦ`
+  Lipschitz (`TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_pullbackPrincipal`), since `DΦ`
   is `C¹` and so Lipschitz on compact convex sets, and whose lower-order terms and right-hand side
   stay bounded and square integrable. Zero boundary values are carried along by cutting off
   near the image of the support and pulling back.

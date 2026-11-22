@@ -52,6 +52,7 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
   continuous action of a finite-dimensional real Lie group is an embedded Lie subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer`: **the Lie algebra of `G_x` is the isotropy
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
+* `TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer`: in particular `dim G_x = dim 𝔤_x`.
 * `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot`: the stabilizer is discrete
   exactly when the isotropy algebra is trivial.
 * `TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`: a point with trivial stabilizer has
@@ -139,6 +140,17 @@ theorem lieSubalgebraOfSubgroup_stabilizer [CompleteSpace E'] (h₁ : I.IsInteri
     LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom,
     leftInvariantDerivationLieEquivGroupLieAlgebra_apply, mem_isotropy_fundamental_iff]
   simp only [lieExp_eq_mulInvariantExp, map_smul]
+
+/-- **The dimension of the stabilizer.** The Lie algebra of `G_x` has the dimension of the
+isotropy algebra `𝔤_x = {ξ | ξ_M(x) = 0}`. -/
+theorem finrank_lieSubalgebraOfSubgroup_stabilizer [CompleteSpace E']
+    (h₁ : I.IsInteriorPoint (1 : G)) (x : M) :
+    Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) (MulAction.stabilizer G x)) =
+      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy x) := by
+  rw [lieSubalgebraOfSubgroup_stabilizer (I' := I') h₁ x]
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G) h₁
+  exact (e.toLinearEquiv.ofSubmodules _ _
+    (Submodule.map_comap_eq_of_surjective e.surjective _)).finrank_eq
 
 /-- **Locally free points.** The stabilizer of `x` is discrete exactly when the isotropy algebra
 `𝔤_x` is trivial, that is, when `ξ ↦ ξ_M(x)` is injective

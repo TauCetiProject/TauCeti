@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
-public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 import Mathlib.Algebra.Module.ZMod
 
