@@ -74,7 +74,7 @@ and a family continuous and invertible on a compact set does so uniformly there
 (`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of norm
-at most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
+at most one, such as an orthonormal family, is bounded by `#s * ‖A‖`
 (`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
 and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
 `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
@@ -91,7 +91,8 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
 Two first-order estimates for semilinear maps: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with
-`t ≠ 0` rescales to `‖(σ t)⁻¹ w - L v‖ ≤ c ‖v‖` (`ContinuousLinearMap.norm_inv_smul_sub_le`),
+`t ≠ 0` and `‖t‖ ≤ ‖σ t‖` rescales to `‖(σ t)⁻¹ w - L v‖ ≤ c ‖v‖`
+(`ContinuousLinearMap.norm_inv_smul_sub_le`),
 and if `B` sends `y` to `v` and `u` is close to `y`, then any `B'` close to `B` sends `u` close
 to `v` (`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
 
@@ -120,7 +121,7 @@ On a finite product `ι → R`, a nonzero continuous linear map is nonzero at so
 every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
 functional is injective over a semiring with cancellative addition if its coefficient there is
 right-regular (`ContinuousLinearMap.pi_update_injective`), and a continuous linear equivalence over
-a ring with continuous right multiplications if that coefficient is a unit
+a ring if that coefficient is a unit `c` and right multiplication by `-c⁻¹` is continuous
 (`ContinuousLinearMap.exists_pi_update_equiv`).
 The coordinate arguments are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
@@ -476,8 +477,8 @@ variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [No
   {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of
-norm at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of
-`A` by the dimension times its norm. -/
+norm at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the diagonal
+sum by the dimension times `‖A‖`. -/
 theorem norm_sum_apply_apply_le {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric τ] {ι : Type*} (s : Finset ι)
     (A : E →SL[σ₁₃] E →SL[τ] G) {v : ι → E} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
     ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
@@ -680,11 +681,12 @@ theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R
   · exact hi
   · exact hoff m hm
 
-/-- Replacing one coordinate by a functional whose coefficient at that coordinate is a unit
-is a continuous linear equivalence. Only right multiplication by constants has to be continuous
-on `R`. -/
-theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [ContinuousConstSMul Rᵐᵒᵖ R]
-    (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1))) :
+/-- Replacing one coordinate by a functional whose coefficient `c` at that coordinate is a unit
+is a continuous linear equivalence, provided right multiplication by `-c⁻¹` is continuous on `R`.
+No other continuity on `R` is needed. -/
+theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R]
+    (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1)))
+    (hcont : Continuous fun x : R ↦ x * -↑hα.unit⁻¹) :
     ∃ e : (ι → R) ≃L[R] (ι → R),
       (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
   set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
@@ -700,15 +702,14 @@ theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [ContinuousConstSMu
     · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply]
     · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply, hm]
   -- With `d` the inverse of the coefficient, the inverse map sets the coordinate `i` of `u` to
-  -- `(u i - α (update u i 0)) * d`. Written with `α` and right multiplications by constants
-  -- only, it is visibly continuous.
+  -- `(u i - α (update u i 0)) * d`. Written with `α` and right multiplication by `-d` only, it is
+  -- visibly continuous.
   set d : R := ↑hα.unit⁻¹
   have hd : d * α (Pi.single i 1) = 1 := hα.val_inv_mul
-  have hmul (a : R) : Continuous fun x : R ↦ x * a := continuous_const_smul (MulOpposite.op a)
   have hinv : Continuous fun u : ι → R ↦
       Function.update u i (α (Function.update u i (u i * -d)) * -d) :=
-    continuous_id.update i <| (hmul _).comp <| α.continuous.comp <|
-      continuous_id.update i <| (hmul _).comp (continuous_apply i)
+    continuous_id.update i <| hcont.comp <| α.continuous.comp <|
+      continuous_id.update i <| hcont.comp (continuous_apply i)
   refine ⟨⟨e, f.continuous.congr fun v ↦ (he v).symm, hinv.congr fun u ↦ ?_⟩, ?_⟩
   · refine (e.symm_apply_eq.2 ?_).symm
     rw [he]
@@ -851,21 +852,25 @@ namespace ContinuousLinearMap
 section Rescale
 
 variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
-  [RingHomIsometric σ] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E]
-  [Module 𝕜₂ F] [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜₂ F]
+  [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
 
 /-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t ≠ 0`, then `(σ t)⁻¹ • w` is within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) {w : F} {v : E} {L : E →SL[σ] F} {c : ℝ}
-    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
+`L (t • v)` with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F} {v : E}
+    {L : E →SL[σ] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
+    ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
   have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
   have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
     rw [map_smulₛₗ, smul_sub, inv_smul_smul₀ hσ]
-  have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
-  rw [this, norm_smul, norm_inv, RingHomIsometric.norm_map]
+  rw [this, norm_smul, norm_inv]
   rw [norm_smul] at h
-  calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
-    _ = c * ‖v‖ := by field_simp
+  have hcv : 0 ≤ c * ‖v‖ := (mul_nonneg_iff_of_pos_left (norm_pos_iff.2 ht)).1 <| by
+    linarith [norm_nonneg (w - L (t • v))]
+  calc ‖σ t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖σ t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
+    _ = ‖t‖ / ‖σ t‖ * (c * ‖v‖) := by ring
+    _ ≤ 1 * (c * ‖v‖) := by gcongr; exact div_le_one_of_le₀ hσt (norm_nonneg _)
+    _ = c * ‖v‖ := one_mul _
 
 end Rescale
 

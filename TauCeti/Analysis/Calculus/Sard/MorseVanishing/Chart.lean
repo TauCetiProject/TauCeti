@@ -60,6 +60,7 @@ theorem exists_graph {k : ℕ} (hk : 1 ≤ k) {w : (Fin (n + 1) → ℝ) → ℝ
     omega
   have hdiff : Differentiable ℝ w := hw.differentiable hkne
   obtain ⟨Le, hLecoe⟩ := (fderiv ℝ w x₀).exists_pi_update_equiv i hi.isUnit
+    (continuous_mul_const _)
   have hΦc : ContDiffAt ℝ k (fun x => Function.update x i (w x)) x₀ :=
     (hw.update_self i).contDiffAt
   have hΦd : HasFDerivAt (fun x => Function.update x i (w x))
