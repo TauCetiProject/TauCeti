@@ -65,13 +65,18 @@ class of the Killing form.
 
 ## Main results
 
+* `TauCeti.LieAlgebra.LoopAlgebra.loopAlgebra_induction_linear`,
+  `TauCeti.LieAlgebra.LoopAlgebra.linearMap_ext_single_tmul`, and
+  `TauCeti.LieAlgebra.LoopAlgebra.single_tmul_mem_decomposeTensor`: linear induction, linear-map
+  extensionality on pure modes, and graded-piece membership for `loopAlgebra`.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul`: the residue pairing on modes.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_one_tmul`: the residue pairing vanishes when its
   first argument is a constant loop.
 * `TauCeti.LieAlgebra.LoopAlgebra.single_add_tmul_mem_span_lie`: for a perfect Lie algebra, every
   mode `x_{a + b}` is a linear combination of brackets `⁅y_a, z_b⁆`.
-* `TauCeti.LieAlgebra.LoopAlgebra.twoCochainOfBilinear_smul`: rescaling the form rescales the
-  residue 2-cochain.
+* `TauCeti.LieAlgebra.LoopAlgebra.twoCochainOfBilinear_smul` and
+  `TauCeti.LieAlgebra.LoopAlgebra.twoCocycleOfBilinear_smul`: rescaling the form rescales the
+  residue 2-cochain and 2-cocycle.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_twoCocycleOfBilinear_iff`: **for a perfect Lie algebra,
   a 2-cocycle is a residue cocycle if and only if it vanishes on constant loops**.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_smul_twoCocycleOfBilinear_iff`: a 2-cocycle is a
@@ -108,6 +113,47 @@ open scoped TensorProduct
 namespace TauCeti.LieAlgebra.LoopAlgebra
 
 open _root_.LieAlgebra _root_.LieAlgebra.LoopAlgebra _root_.LieModule.Cohomology
+
+section Modes
+
+variable {R A L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- Linear induction on `loopAlgebra R A L` reduced to `0`, `+`, and pure modes `tᵃ ⊗ x`. -/
+theorem loopAlgebra_induction_linear (P : loopAlgebra R A L → Prop)
+    (zero : P 0) (add : ∀ u v, P u → P v → P (u + v))
+    (single : ∀ (a : A) (x : L), P (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x))
+    (u : loopAlgebra R A L) : P u := by
+  obtain ⟨f, rfl⟩ := (toFinsupp R A L).symm.surjective u
+  induction f using Finsupp.induction_linear with
+  | zero => simpa using zero
+  | add f₁ f₂ h₁ h₂ =>
+    rw [map_add]
+    exact add _ _ h₁ h₂
+  | single a x =>
+    rw [toFinsupp_symm_single]
+    exact single a x
+
+/-- Two `R`-linear maps out of `loopAlgebra R A L` agree if they agree on all pure modes
+`tᵃ ⊗ x`. -/
+theorem linearMap_ext_single_tmul {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : loopAlgebra R A L →ₗ[R] M}
+    (h : ∀ (a : A) (x : L),
+      f (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) =
+        g (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x)) :
+    f = g := by
+  refine LinearMap.ext fun u ↦ ?_
+  refine loopAlgebra_induction_linear (fun u ↦ f u = g u) (by simp)
+    (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂]) h u
+
+open DirectSum in
+/-- Every pure mode `tᵃ ⊗ x` lies in the `a`-th graded piece of `loopAlgebra R A L`. -/
+theorem single_tmul_mem_decomposeTensor (a : A) (x : L) :
+    (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x : loopAlgebra R A L) ∈
+      decomposeTensor (AddMonoidAlgebra.grade R) L a := by
+  rw [decomposeTensor_apply]
+  exact ⟨⟨AddMonoidAlgebra.single a 1, AddMonoidAlgebra.single_mem_grade a 1⟩ ⊗ₜ[R] x, by simp⟩
+
+end Modes
 
 section ResiduePairing
 
@@ -147,6 +193,15 @@ theorem twoCochainOfBilinear_smul {K A L : Type*} [CommRing K] [CommRing A] [Has
   rw [Submodule.coe_smul, LinearMap.smul_apply, LinearMap.smul_apply, twoCochain_val_apply,
     twoCochain_val_apply, twoCochainOfBilinear_apply_apply, twoCochainOfBilinear_apply_apply,
     residuePairing_smul, LinearMap.smul_apply, LinearMap.smul_apply, map_smul]
+
+/-- Rescaling the form rescales the residue 2-cocycle. -/
+theorem twoCocycleOfBilinear_smul {K A L : Type*} [CommRing K] [CommRing A] [HasUniqueDiv K]
+    [Algebra A K] [LieRing L] [LieAlgebra K L] (t : K) {Ψ : LinearMap.BilinForm K L}
+    (hΨ : Ψ.lieInvariant L) (htΨ : (t • Ψ).lieInvariant L)
+    (hΨs : Ψ.IsSymm) (htΨs : (t • Ψ).IsSymm) :
+    twoCocycleOfBilinear K A L (t • Ψ) htΨ htΨs =
+      t • twoCocycleOfBilinear K A L Ψ hΨ hΨs :=
+  Subtype.ext (twoCochainOfBilinear_smul t hΨs htΨs)
 
 section ResiduePairingConstant
 
@@ -355,7 +410,7 @@ theorem exists_eq_smul_twoCocycleOfBilinear_iff [HasUniqueDiv K]
       twoCochainOfBilinear_apply_apply, residuePairing_one_tmul, map_zero, smul_zero]
   obtain ⟨Φ, hΦ, hΦs, rfl⟩ := (exists_eq_twoCocycleOfBilinear_iff hL c).mpr hc
   obtain ⟨t, rfl⟩ := hspan Φ hΦ
-  exact ⟨t, Subtype.ext (twoCochainOfBilinear_smul t hΨs hΦs)⟩
+  exact ⟨t, twoCocycleOfBilinear_smul t hΨ hΦ hΨs hΦs⟩
 
 /-- **The 2-cocycles on the loop algebra of a simple Lie algebra vanishing on constant loops are
 the multiples of the residue cocycle of the Killing form.** Here `L` is a finite-dimensional Lie

@@ -49,7 +49,9 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieDerivation.lineHom`: a single derivation `D`, as the Lie homomorphism `t ↦ t • D` out of the
   one-dimensional abelian Lie algebra `R`. The semidirect sum `L ⋊⁅D.lineHom⁆ R` adjoins `D` to `L`
   as an element `inr 1` whose bracket with `inl x` is `inl (D x)`
-  (`LieDerivation.lie_inr_lineHom_one_inl`).
+  (`LieDerivation.lie_inr_lineHom_one_inl`), with general bracket `LieDerivation.lie_lineHom_eq_mk`.
+* `LieDerivation.liftLineHom`: lifting a Lie homomorphism `f : L →ₗ⁅R⁆ L'` intertwining derivations
+  `D` and `D'` to `L ⋊⁅D.lineHom⁆ R →ₗ⁅R⁆ L' ⋊⁅D'.lineHom⁆ R`.
 
 ## Main statements
 
@@ -357,11 +359,55 @@ def lineHom (D : LieDerivation R L L) : R →ₗ⁅R⁆ LieDerivation R L L wher
 theorem lineHom_apply (D : LieDerivation R L L) (t : R) : D.lineHom t = t • D :=
   LinearMap.toSpanSingleton_apply R _ D t
 
+/-- The bracket in the one-dimensional semidirect sum adjoining `D`:
+`⁅(x, a), (y, b)⁆ = (⁅x, y⁆ + a • D y - b • D x, 0)`. -/
+theorem lie_lineHom_eq_mk (D : LieDerivation R L L) (x y : L ⋊⁅D.lineHom⁆ R) :
+    ⁅x, y⁆ = ⟨⁅x.left, y.left⁆ + x.right • D y.left - y.right • D x.left, 0⟩ := by
+  simp [lie_eq_mk, Ring.lie_def, mul_comm]
+
 /-- In the semidirect sum adjoining `D`, the bracket of the adjoined generator with `x` is `D x`. -/
 theorem lie_inr_lineHom_one_inl (D : LieDerivation R L L) (x : L) :
     ⁅inr D.lineHom (1 : R), inl D.lineHom x⁆ = inl D.lineHom (D x) := by
-  simp only [inl_eq_mk, inr_eq_mk, lie_eq_mk]
-  ext <;> simp [Ring.lie_def]
+  rw [lie_lineHom_eq_mk]
+  simp
+
+/-- Lifting a Lie algebra homomorphism `f : L →ₗ⁅R⁆ L'` intertwining derivations `D` and `D'` to
+the one-dimensional semidirect sums `L ⋊⁅D.lineHom⁆ R →ₗ⁅R⁆ L' ⋊⁅D'.lineHom⁆ R`. -/
+def liftLineHom {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) :
+    (L ⋊⁅D.lineHom⁆ R) →ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R) where
+  toFun x := ⟨f x.left, x.right⟩
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+  map_lie' {x y} := by
+    simp only [lie_lineHom_eq_mk, map_sub, map_add, map_smul, LieHom.map_lie, hf]
+
+@[simp]
+theorem liftLineHom_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineHom D D' f hf x).left = f x.left :=
+  (rfl)
+
+@[simp]
+theorem liftLineHom_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineHom D D' f hf x).right = x.right :=
+  (rfl)
+
+theorem liftLineHom_inl {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L) :
+    liftLineHom D D' f hf (inl D.lineHom x) = inl D'.lineHom (f x) :=
+  (rfl)
+
+theorem liftLineHom_inr {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (t : R) :
+    liftLineHom D D' f hf (inr D.lineHom t) = inr D'.lineHom t := by
+  ext <;> simp
 
 /-- Every element of `L ⋊⁅D.lineHom⁆ R` is the sum of an element of `L` and a multiple of the
 adjoined generator `inr D.lineHom 1`. -/
