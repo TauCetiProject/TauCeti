@@ -76,7 +76,7 @@ letters are `[0, 2, 0, 3]`. -/
 private theorem exponent_replay_J1 :
     (replay J1.presentation.generatorCount
       (J1.presentation.relatorLetters.map (List.map signedLetter)) [0, 2, 0, 3] parentCodes
-      stepCodes).exponent = 19 := by
+      stepCodes).extra = 19 := by
   rw [presentation_J1, Sporadic.j1Presentation_generatorCount,
     Sporadic.j1Presentation_relatorLetters]
   decide +kernel

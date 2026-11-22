@@ -560,8 +560,8 @@ private theorem wordValue_wordK_inv : wordValue m12Of (wordK.reverse.map invLett
     simp only [wordK, List.mem_cons, List.not_mem_nil, or_false] at ht
     simp only [presentation_M12, Sporadic.m12Presentation_generatorCount]
     omega
-  rw [wordValue_def, List.map_map, ← List.map_reverse, hinv, List.map_reverse,
-    ← List.prod_inv_reverse, ← wordValue_def, wordValue_wordK]
+  rw [wordValue_def, List.map_map, List.map_reverse, hinv, ← List.prod_inv_reverse,
+    ← wordValue_def, wordValue_wordK]
 
 private theorem wordValue_wordA5 : wordValue m12Of wordA5 = 1 :=
   M12.presentation.wordValue_eq_one_of_checkRelators check_stage1 (131, wordA5)
@@ -614,8 +614,9 @@ private theorem gK_pow_five : gK ^ 5 = 1 := by
 private theorem gH_pow_eleven : gH ^ 11 = 1 := by
   have haab11 : (gA * gA * gB) ^ 11 = 1 := by
     have h := wordValue_wordAAB11
-    simpa [wordAAB11, wordValue_def, List.map_flatten, List.prod_flatten, Function.comp_def,
-      List.map_replicate, List.prod_replicate, letter_zero, letter_two, mul_assoc] using h
+    rw [wordAAB11, wordValue_def, List.map_flatten, List.prod_flatten, List.map_replicate,
+      List.map_replicate, List.prod_replicate] at h
+    simpa [letter_zero, letter_two, mul_assoc] using h
   have hh : gH = MulAut.conj gA⁻¹ (gA * gA * gB) := by
     simp [gH, mul_assoc]
   rw [hh, ← map_pow, haab11, map_one]
