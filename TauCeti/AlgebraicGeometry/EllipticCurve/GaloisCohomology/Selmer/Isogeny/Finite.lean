@@ -41,6 +41,9 @@ Cassels' isogeny formula.
 * `TauCeti.Isogeny.finite_selmerGroup_place`: unconditional finiteness over a number field.
 * `TauCeti.Isogeny.card_shafarevichTateGroup_eq_card_shafarevichTateGroupKer_mul`: factoring
   `#Sha(W₁)` into kernel and image orders of `φ` for any family of local conditions.
+* `TauCeti.Isogeny.shafarevichTateGroupKerEquivKerShaMap` and
+  `TauCeti.Isogeny.card_shafarevichTateGroupKer_eq_card_ker_shaMap`: comparison of
+  `φ.shafarevichTateGroupKer τ` with `(ofIsogeny φ).shaMap.ker` over a number field.
 * `TauCeti.Isogeny.card_sha_eq_card_shafarevichTateGroupKer_mul`: factoring `#Sha(W₁/K)` into
   kernel and image orders of `φ` over a number field.
 
@@ -141,6 +144,57 @@ theorem finite_selmerGroup_place
   have := WeierstrassCurve.Affine.fg_point_of_numberField (W := W₂.toAffine)
   exact φ.finite_selmerGroup_of_finite_torsionBy τ
 
+/-- Over a number field `K`, the kernel `φ.shafarevichTateGroupKer τ` along any family `τ` of
+embeddings over the places of `K` is canonically isomorphic to `(ofIsogeny φ).shaMap.ker`. -/
+def shafarevichTateGroupKerEquivKerShaMap
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    φ.shafarevichTateGroupKer τ ≃+ (ofIsogeny φ).shaMap.ker where
+  toFun c :=
+    ⟨⟨(c : W₁.shafarevichTateGroup τ), (W₁.sha_eq_shafarevichTateGroup τ).ge c.val.property⟩,
+      by
+        rw [AddMonoidHom.mem_ker, ← Subtype.val_inj, Hom.coe_shaMap, ZeroMemClass.coe_zero,
+          Hom.pointH1Map_def]
+        exact (φ.mem_shafarevichTateGroupKer_iff τ).1 c.property⟩
+  invFun c := ⟨⟨(c : W₁.sha), (W₁.sha_eq_shafarevichTateGroup τ).le c.val.property⟩,
+    (φ.mem_shafarevichTateGroupKer_iff τ).2 <| by
+      simpa only [← Subtype.val_inj, Hom.coe_shaMap, ZeroMemClass.coe_zero,
+        Hom.pointH1Map_def] using AddMonoidHom.mem_ker.1 c.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- Applying `shafarevichTateGroupKerEquivKerShaMap` preserves the underlying cohomology class. -/
+@[simp]
+theorem coe_shafarevichTateGroupKerEquivKerShaMap
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
+    (c : φ.shafarevichTateGroupKer τ) :
+    ((φ.shafarevichTateGroupKerEquivKerShaMap τ c : W₁.sha) :
+        H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) =
+      (c : W₁.shafarevichTateGroup τ) :=
+  (rfl)
+
+/-- Applying the inverse of `shafarevichTateGroupKerEquivKerShaMap` preserves the underlying
+cohomology class. -/
+@[simp]
+theorem coe_shafarevichTateGroupKerEquivKerShaMap_symm
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
+    (c : (ofIsogeny φ).shaMap.ker) :
+    (((φ.shafarevichTateGroupKerEquivKerShaMap τ).symm c : W₁.shafarevichTateGroup τ) :
+        H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) =
+      (c : W₁.sha) :=
+  (rfl)
+
+/-- Over a number field `K`, the order of `φ.shafarevichTateGroupKer τ` equals the order of
+`(ofIsogeny φ).shaMap.ker` for any family `τ` of embeddings over the places of `K`. -/
+theorem card_shafarevichTateGroupKer_eq_card_ker_shaMap
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card (φ.shafarevichTateGroupKer τ) = Nat.card (ofIsogeny φ).shaMap.ker :=
+  Nat.card_congr (φ.shafarevichTateGroupKerEquivKerShaMap τ).toEquiv
+
 /-- **Factoring `#Sha(W₁/K)` into kernel and image orders of an isogeny**: along any family `τ`
 of embeddings of separable closures over the places of a number field `K`,
 `#Sha(W₁/K) = #Sha(W₁/K)[φ] · #φ(Sha(W₁/K))`. -/
@@ -149,9 +203,8 @@ theorem card_sha_eq_card_shafarevichTateGroupKer_mul
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     Nat.card W₁.sha =
       Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (ofIsogeny φ).shaMap.range := by
-  rw [(ofIsogeny φ).card_range_shaMap τ,
-    ← φ.card_shafarevichTateGroup_eq_card_shafarevichTateGroupKer_mul τ,
-    W₁.sha_eq_shafarevichTateGroup τ]
+  rw [φ.card_shafarevichTateGroupKer_eq_card_ker_shaMap τ]
+  exact (AddSubgroup.card_ker_mul_card_range (ofIsogeny φ).shaMap).symm
 
 end NumberField
 

@@ -50,6 +50,8 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
   `Sha(W₁) ≃+ Sha(W₂)` induced by a degree-one morphism.
 * `TauCeti.Isogeny.Hom.shaMap`: over a number field, the induced map `Sha(W₁/K) → Sha(W₂/K)`
   independent of any choice of embeddings.
+* `TauCeti.Isogeny.Hom.shaMapEquivOfDegreeEqOne`: over a number field, the group isomorphism
+  `Sha(W₁/K) ≃+ Sha(W₂/K)` induced by a degree-one morphism.
 
 ## Main results
 
@@ -458,13 +460,49 @@ theorem finite_sha_iff (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0) :
   rw [W₂.sha_eq_shafarevichTateGroup τ] at h₂ ⊢
   exact f.finite_shafarevichTateGroup_iff τ
 
+/-- **A degree-one morphism induces an isomorphism on `Sha(E/K)`** over any number field `K`,
+with inverse induced by its dual. -/
+def shaMapEquivOfDegreeEqOne (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
+    W₁.sha ≃+ W₂.sha where
+  toFun := f.shaMap
+  invFun := f.dual.shaMap
+  left_inv c := by rw [dual_shaMap_shaMap, hf, one_smul]
+  right_inv c := by rw [shaMap_dual_shaMap, hf, one_smul]
+  map_add' := f.shaMap.map_add'
+
+/-- Applying `shaMapEquivOfDegreeEqOne` is `shaMap`. -/
+@[simp]
+theorem shaMapEquivOfDegreeEqOne_apply (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1)
+    (c : W₁.sha) :
+    f.shaMapEquivOfDegreeEqOne hf c = f.shaMap c :=
+  (rfl)
+
+/-- Applying the inverse of `shaMapEquivOfDegreeEqOne` is the dual map. -/
+@[simp]
+theorem shaMapEquivOfDegreeEqOne_symm_apply (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1)
+    (c : W₂.sha) :
+    (f.shaMapEquivOfDegreeEqOne hf).symm c = f.dual.shaMap c :=
+  (rfl)
+
+/-- The underlying additive homomorphism of `shaMapEquivOfDegreeEqOne` is `shaMap`. -/
+@[simp]
+theorem shaMapEquivOfDegreeEqOne_toAddMonoidHom (f : Hom W₁.toAffine W₂.toAffine)
+    (hf : f.degree = 1) :
+    (f.shaMapEquivOfDegreeEqOne hf : W₁.sha →+ W₂.sha) = f.shaMap :=
+  (rfl)
+
+/-- The underlying additive homomorphism of `(shaMapEquivOfDegreeEqOne).symm` is
+`f.dual.shaMap`. -/
+@[simp]
+theorem shaMapEquivOfDegreeEqOne_symm_toAddMonoidHom (f : Hom W₁.toAffine W₂.toAffine)
+    (hf : f.degree = 1) :
+    ((f.shaMapEquivOfDegreeEqOne hf).symm : W₂.sha →+ W₁.sha) = f.dual.shaMap :=
+  (rfl)
+
 /-- **Degree-one morphisms preserve the order of `Sha(E/K)`** over any number field `K`. -/
 theorem card_sha_eq_of_degree_eq_one (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
-    Nat.card W₁.sha = Nat.card W₂.sha := by
-  let τ (v : GlobalNumberFields.Place K) :
-      SeparableClosure K →ₐ[K] SeparableClosure v.Completion := IsSepClosed.lift
-  rw [W₁.sha_eq_shafarevichTateGroup τ, W₂.sha_eq_shafarevichTateGroup τ]
-  exact Nat.card_congr (f.shafarevichTateMapEquivOfDegreeEqOne τ hf).toEquiv
+    Nat.card W₁.sha = Nat.card W₂.sha :=
+  Nat.card_congr (f.shaMapEquivOfDegreeEqOne hf).toEquiv
 
 end NumberField
 
