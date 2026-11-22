@@ -25,9 +25,12 @@ equivariant continuous linear equivalences, so objects are Banach spaces up to e
 
 This file builds the category `TauCeti.BanachRep 𝕜 G`, with its additive structure, a zero object
 and binary biproducts, and the objects used to build its exact structure: closed invariant
-subspaces and quotients by them, with their universal properties. By the open mapping theorem, a
-morphism is an isomorphism as soon as it is bijective. The action is a `TauCeti.ContinuousRep`,
-so joint continuity is part of every object, as for Galois representations.
+subspaces and quotients by them, with their universal properties. The quotient by the zero
+subspace is isomorphic to the representation itself, and the quotient by the whole space is
+zero. By the open mapping theorem, a morphism is an isomorphism as soon as it is bijective, and a
+surjective morphism induces an isomorphism from the quotient by its kernel. The action is a
+`TauCeti.ContinuousRep`, so joint continuity is part of every object, as for Galois
+representations.
 
 ## Main definitions
 
@@ -46,6 +49,8 @@ so joint continuity is part of every object, as for Galois representations.
 
 * `TauCeti.BanachRep.isIso_iff_bijective`: a morphism is an isomorphism exactly when it is
   bijective.
+* `TauCeti.BanachRep.isIso_quotientDesc_ker`: the first isomorphism theorem, a surjective morphism
+  induces an isomorphism from the quotient by its kernel.
 * `TauCeti.BanachRep.isZero_iff_subsingleton`: the zero objects are the zero spaces.
 * `TauCeti.BanachRep` has a zero object and binary biproducts, and the forgetful functor to
   topological modules reflects isomorphisms.
@@ -452,6 +457,18 @@ theorem quotientπ_hom_apply_eq_iff (x y : X) :
 theorem quotientπ_hom_apply_eq_zero_iff (x : X) : (quotientπ X W hW hWc).hom x = 0 ↔ x ∈ W :=
   Submodule.Quotient.mk_eq_zero W
 
+/-- The projection onto the quotient by the zero subspace is an isomorphism. -/
+instance isIso_quotientπ_bot (hW : ∀ (g : G), ∀ x ∈ (⊥ : Submodule 𝕜 X), X.ρ g x ∈ ⊥)
+    (hWc : IsClosed ((⊥ : Submodule 𝕜 X) : Set X)) : IsIso (quotientπ X ⊥ hW hWc) :=
+  isIso_of_bijective _ ⟨fun x y h => by
+    simpa [sub_eq_zero] using (quotientπ_hom_apply_eq_iff X ⊥ hW hWc x y).mp h,
+    quotientπ_surjective X ⊥ hW hWc⟩
+
+/-- The quotient by the whole space is a zero object. -/
+theorem isZero_quotient_top (hW : ∀ (g : G), ∀ x ∈ (⊤ : Submodule 𝕜 X), X.ρ g x ∈ ⊤)
+    (hWc : IsClosed ((⊤ : Submodule 𝕜 X) : Set X)) : IsZero (quotient X ⊤ hW hWc) :=
+  isZero_iff_subsingleton.mpr inferInstanceAs (Subsingleton (X ⧸ (⊤ : Submodule 𝕜 X)))
+
 /-- **The universal property of the quotient**: a morphism killing `W` factors through the
 quotient by `W`. -/
 noncomputable def quotientDesc {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
@@ -478,6 +495,22 @@ theorem quotientπ_comp_quotientDesc {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
   hom_ext (ContinuousLinearMap.ext fun _ => rfl)
 
 end Subquotient
+
+/-- **The first isomorphism theorem**: a surjective morphism of Banach representations induces
+an isomorphism from the quotient by its kernel. -/
+theorem isIso_quotientDesc_ker {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
+    (hk : Function.Surjective k.hom) :
+    IsIso (quotientDesc X _ (ker_invariant k) k.hom.isClosed_ker k fun _ hx => hx) := by
+  have hkc := k.hom.isClosed_ker
+  refine isIso_of_bijective _ ⟨fun x y hxy => ?_, fun t => ?_⟩
+  · obtain ⟨x, rfl⟩ := quotientπ_surjective X _ (ker_invariant k) hkc x
+    obtain ⟨y, rfl⟩ := quotientπ_surjective X _ (ker_invariant k) hkc y
+    rw [quotientDesc_hom_quotientπ_hom X _ (ker_invariant k) hkc k (fun _ hx => hx) x,
+      quotientDesc_hom_quotientπ_hom X _ (ker_invariant k) hkc k (fun _ hx => hx) y] at hxy
+    rw [quotientπ_hom_apply_eq_iff]
+    simp [hxy]
+  · obtain ⟨x, rfl⟩ := hk t
+    exact ⟨_, quotientDesc_hom_quotientπ_hom X _ (ker_invariant k) hkc k (fun _ hx => hx) x⟩
 
 end BanachRep
 

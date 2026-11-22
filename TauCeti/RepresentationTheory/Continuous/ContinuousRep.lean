@@ -47,6 +47,8 @@ dual basis writes each functional through its values on finitely many vectors.
   quotient topology.
 * `TauCeti.ContinuousRep.trivial`, `TauCeti.ContinuousRep.prod`: the trivial action, and the
   componentwise action on a product.
+* `TauCeti.ContinuousRep.ofDistribMulAction`: the representation given by a jointly continuous
+  distributive action commuting with the scalars.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
   and `trans`.
 * `TauCeti.ContinuousRep.ofCharacter`: the rank-one representation of a continuous character
@@ -221,6 +223,20 @@ def trivial (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A] [Add
 
 @[simp]
 theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
+  (rfl)
+
+/-- **The continuous representation of a jointly continuous action**: a distributive action of
+`Γ` on `M` commuting with the scalars `A` and continuous as a map `Γ × M → M` is a continuous
+representation, with underlying representation `Representation.ofDistribMulAction`. -/
+def ofDistribMulAction (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
+    [AddCommMonoid M] [Module A M] [TopologicalSpace M] [DistribMulAction Γ M]
+    [SMulCommClass Γ A M] [ContinuousSMul Γ M] : ContinuousRep Γ A M where
+  toRepresentation := Representation.ofDistribMulAction A Γ M
+  continuous_action := continuous_smul
+
+@[simp]
+theorem ofDistribMulAction_apply [DistribMulAction Γ M] [SMulCommClass Γ A M]
+    [ContinuousSMul Γ M] (g : Γ) (x : M) : ofDistribMulAction Γ A M g x = g • x :=
   (rfl)
 
 /-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with

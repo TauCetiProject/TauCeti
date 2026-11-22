@@ -39,7 +39,9 @@ dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
 dimensions, an endomorphism of a finite-dimensional space has kernel and cokernel of the same
 dimension, and the preimage of a submodule `p` inside another submodule `q` has the same
-`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`).
+`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`). The preimage of a
+finite-dimensional subspace `p` under a map `f` with finite-dimensional kernel has dimension
+`dim (range f ⊓ p) + dim (ker f)` (`LinearMap.finrank_comap`).
 -/
 
 public section
@@ -332,6 +334,27 @@ theorem finrank_quotient_range_eq_finrank_ker {K V : Type*} [DivisionRing K] [Ad
   have h₁ := Submodule.finrank_quotient_add_finrank (range T)
   have h₂ := T.finrank_range_add_finrank_ker
   omega
+
+/-- The `finrank` form of `LinearMap.rank_comap`: the preimage of a finite-dimensional subspace
+`p` under a linear map with finite-dimensional kernel has dimension
+`dim (range f ⊓ p) + dim (ker f)`. -/
+theorem finrank_comap {K : Type*} {M : Type u} {N : Type v} [DivisionRing K] [AddCommGroup M]
+    [Module K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N) (p : Submodule K N)
+    [FiniteDimensional K p] [FiniteDimensional K (ker f)] :
+    Module.finrank K (p.comap f) = Module.finrank K (range f ⊓ p :) + Module.finrank K (ker f) := by
+  have h := f.lift_rank_comap p
+  rw [← Module.finrank_eq_rank, ← Module.finrank_eq_rank, ← Module.finrank_eq_rank] at h
+  simp only [Cardinal.lift_natCast, ← Nat.cast_add] at h
+  exact_mod_cast h
+
+/-- The preimage of a finite-dimensional subspace `p` under a surjective linear map with
+finite-dimensional kernel has dimension `dim p + dim (ker f)`. -/
+theorem finrank_comap_of_surjective {K : Type*} {M : Type u} {N : Type v} [DivisionRing K]
+    [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N] {f : M →ₗ[K] N}
+    (hf : Function.Surjective f) (p : Submodule K N) [FiniteDimensional K p]
+    [FiniteDimensional K (ker f)] :
+    Module.finrank K (p.comap f) = Module.finrank K p + Module.finrank K (ker f) := by
+  rw [finrank_comap, range_eq_top.mpr hf, top_inf_eq]
 
 end LinearMap
 
