@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
+import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -34,8 +35,20 @@ inequality**
 so for a normal current `T` and a smooth `u` with bounded derivative almost every slice is a
 normal current. The mass here is taken with respect to the operator norm on alternating forms
 (`Distribution.mass`); the factor `k + 1` comes from the unnormalized alternatization defining the
-wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here. If `E` is
-infinite-dimensional, every test form is zero, so every current and every slice is zero.
+wedge `du ∧ φ`. If `E` is infinite-dimensional, every test form is zero, so every current and every
+slice is zero.
+
+The slice depends on `u` only through its sublevel sets, so when functions `vᵢ` converge pointwise
+on `Ω` to `u`, the slices `⟨T, vᵢ, t⟩` converge to `⟨T, u, t⟩` at every level `t` that is charged
+neither by `‖T‖` nor by `‖∂T‖`, which excludes only countably many levels. Approximating a function
+`u` that is `L`-Lipschitz on `Ω` by smooth functions with `‖dvⱼ‖ ≤ L`, lower semicontinuity of mass
+and Fatou's lemma carry the slicing inequality over to `u`, also localized to a strip:
+
+`∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)`, `∫_a^b M(⟨T, u, t⟩) dt ≤ (k + 1) L ‖T‖{a < u < b}`.
+
+For the strip, `u` is truncated to `[a', b']` with `a < a' < b' < b` before smoothing, so that the
+smooth approximations have vanishing differential off the strip. In particular almost every slice
+of a normal current by a Lipschitz function is normal.
 
 ## Main declarations
 
@@ -48,11 +61,21 @@ infinite-dimensional, every test form is zero, so every current and every slice 
   `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)`.
 * `Distribution.ae_mass_slice_lt_top`, `Distribution.ae_isNormal_slice`: almost every slice has
   finite mass, and almost every slice of a normal current is normal.
+* `Distribution.slice_congr`: the slice depends only on the sublevel set `{x ∈ Ω | u x < t}`.
+* `Distribution.tendsto_slice_apply`: slices converge when the slicing functions converge pointwise
+  on `Ω`, at levels charged neither by `‖T‖` nor by `‖∂T‖`.
+* `Distribution.lintegral_mass_slice_le_mul_mass_of_lipschitzOnWith`: the slicing inequality
+  `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)` for `u` that is `L`-Lipschitz on `Ω`.
+* `Distribution.setLIntegral_mass_slice_le_of_lipschitzOnWith`: its localization
+  `∫_a^b M(⟨T, u, t⟩) dt ≤ (k + 1) L ‖T‖{a < u < b}` to a strip.
+* `Distribution.ae_mass_slice_lt_top_of_lipschitzOnWith`,
+  `Distribution.ae_isNormal_slice_of_lipschitzOnWith`: almost every Lipschitz slice of a current of
+  finite mass has finite mass, and almost every Lipschitz slice of a normal current is normal.
 
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.2.1 (slicing normal currents by a Lipschitz
-  function, and the slicing inequality).
+  function, and the slicing inequality on strips `{a < u < b}`).
 * L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §5 (slicing).
 -/
 
@@ -61,7 +84,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter TestFunction
-open scoped ENNReal Distributions Topology ContDiff
+open scoped ENNReal NNReal Distributions Topology ContDiff
 
 namespace Distribution
 
@@ -289,6 +312,257 @@ theorem ae_isNormal_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ
     have hT' : IsNormal (T ∘L extDerivCLM) := hT.comp_extDerivCLM
     filter_upwards [ae_mass_slice_lt_top hT.isLocallyNormal hu (hfin hT),
       ae_mass_slice_lt_top hT'.isLocallyNormal hu (hfin hT')] with t ht ht'
+    refine isNormal_succ_iff.2 ⟨ht.ne, ?_⟩
+    simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne
+
+/-! ### Convergence of slices
+
+The slice `⟨T, u, t⟩` depends on `u` only through the sublevel set `{x ∈ Ω | u x < t}`. If `vᵢ → u`
+pointwise on `Ω`, these sublevel sets converge to that of `u` off the level set `u⁻¹{t}`, so the
+slices converge at every level `t` charged neither by `‖T‖` nor by `‖∂T‖`. Since these measures are
+σ-finite, Mathlib's `MeasureTheory.Measure.countable_meas_level_set_pos` shows that this excludes
+only countably many levels. -/
+
+/-- A slice depends on the slicing function only through its sublevel set in `Ω`. -/
+theorem slice_congr (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) {v : E → ℝ}
+    (hu : Measurable u) (hv : Measurable v) (h : {x : Ω | u x < t} = {x : Ω | v x < t}) :
+    slice T u t = slice T v t := by
+  ext φ
+  have key {A B : Set Ω} (hA : MeasurableSet A) (hB : MeasurableSet B) (hAB : A = B) :
+      massRestrict T hA = massRestrict T hB ∧
+        massRestrict (T ∘L extDerivCLM) hA = massRestrict (T ∘L extDerivCLM) hB := by
+    subst hAB
+    exact ⟨rfl, rfl⟩
+  obtain ⟨h₁, h₂⟩ := key _ _ h
+  rw [slice_apply _ hu, slice_apply _ hv, h₁, h₂]
+
+/-- **Convergence of slices.** If measurable functions `vᵢ` converge pointwise on `Ω` to a
+measurable `u`, and neither `‖T‖` nor `‖∂T‖` charges the level set `u⁻¹{t}`, then
+`⟨T, vᵢ, t⟩ → ⟨T, u, t⟩` on every test form. -/
+theorem tendsto_slice_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) {v : ι → E → ℝ} (hv : ∀ i, Measurable (v i))
+    (hu : Measurable u) (hlim : ∀ x ∈ Ω, Tendsto (fun i => v i x) l (𝓝 (u x)))
+    (hT : massMeasure T {x | u x = t} = 0)
+    (hdT : massMeasure (T ∘L extDerivCLM) {x | u x = t} = 0) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Tendsto (fun i => slice T (v i) t φ) l (𝓝 (slice T u t φ)) := by
+  -- Off the level set, membership in the sublevel sets of `vᵢ` eventually matches that of `u`.
+  have hev (x : Ω) (hx : x ∉ {x : Ω | u x = t}) : ∀ᶠ i in l, (v i x < t ↔ u x < t) := by
+    rcases lt_or_gt_of_ne hx with h | h
+    · filter_upwards [(hlim x x.property).eventually_lt_const h] with i hi
+      simp [hi, h]
+    · filter_upwards [(hlim x x.property).eventually_const_lt h] with i hi
+      simp [hi.not_gt, h.not_gt]
+  simp_rw [slice_apply _ (hv _), slice_apply _ hu]
+  exact (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hT |>.mono hev) _).sub
+    (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hdT |>.mono hev) _)
+
+/-- If smooth functions `vⱼ` converge pointwise on `Ω` to a measurable `u`, and
+`∫ ‖dvⱼ‖ d‖T‖ ≤ C` for all `j`, then `t ↦ M(⟨T, u, t⟩)` has, off a null set, a measurable majorant
+of integral at most `(k + 1) C`: the `liminf` of the majorants from the smooth slicing
+inequality, by convergence of slices, lower semicontinuity of mass and Fatou's lemma. -/
+private theorem exists_measurable_ae_mass_slice_le_of_tendsto
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {v : ℕ → E → ℝ}
+    (hv : ∀ j, ContDiff ℝ ∞ (v j)) (hu : Measurable u)
+    (hlim : ∀ x ∈ Ω, Tendsto (fun j => v j x) atTop (𝓝 (u x))) {C : ℝ≥0∞}
+    (hC : ∀ j, ∫⁻ x, ‖fderiv ℝ (v j) x‖ₑ ∂massMeasure T ≤ C) :
+    ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ᵐ t, mass (slice T u t) ≤ G t) ∧
+      ∫⁻ t, G t ≤ (k + 1) * C := by
+  choose G hGm hG hGint using fun j => exists_measurable_mass_slice_le hT (hv j)
+  have hum : Measurable fun x : Ω => u x := hu.comp measurable_subtypeVal
+  have hcount := (Measure.countable_meas_level_set_pos (μ := massMeasure T) hum).union
+    (Measure.countable_meas_level_set_pos (μ := massMeasure (T ∘L extDerivCLM)) hum)
+  refine ⟨fun t => liminf (fun j => G j t) atTop, .liminf hGm, ?_, ?_⟩
+  · filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hcount.measure_zero volume)] with t ht
+    simp only [mem_union, mem_ofPred_eq, not_or, not_lt, nonpos_iff_eq_zero] at ht
+    exact (mass_le_liminf (tendsto_slice_apply T (fun j => (hv j).continuous.measurable) hu hlim
+      ht.1 ht.2)).trans (liminf_le_liminf (.of_forall fun j => hG j t))
+  · refine (lintegral_liminf_le hGm).trans (liminf_le_of_frequently_le' (.of_forall fun j => ?_))
+    exact (hGint j).trans (by gcongr; exact hC j)
+
+/-! ### The slicing inequality for Lipschitz functions
+
+A Lipschitz function `u` is the pointwise limit of smooth functions `vⱼ` with `‖dvⱼ‖ ≤ Lip(u)`, so
+the slicing inequality passes to `u` through the convergence of slices. To localize it to a strip
+`{a < u < b}`, `u` is first truncated to `max a' (min u b')` for `a < a' < b' < b`: mollifying the
+truncation on a scale finer than `a' - a` and `b - b'` gives smooth functions whose differential
+vanishes off the strip. -/
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A smooth approximation of the truncation `max a (min w b)` of a Lipschitz function `w`, within
+`2η`, whose differential is bounded by `Lip(w)` and vanishes off the strip `{a < w < b}`. -/
+private theorem exists_contDiff_approx_truncation [FiniteDimensional ℝ E] {w : E → ℝ} {L : ℝ≥0}
+    (hw : LipschitzWith L w) {a b η : ℝ} (hη : 0 < η) :
+    ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧ (∀ x, ‖fderiv ℝ g x‖ₑ ≤ L) ∧
+      (∀ x, w x ∉ Ioo a b → fderiv ℝ g x = 0) ∧ ∀ x, dist (g x) (max a (min (w x) b)) ≤ 2 * η := by
+  set c : E → ℝ := fun x => max (a + η) (min (w x) (b - η))
+  set r := η / (L + 1)
+  have hLr : (L : ℝ) * r < η := by
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+    nlinarith [L.coe_nonneg]
+  obtain ⟨g, hsmooth, hLip, herr, hconst⟩ :=
+    ((hw.min_const _).const_max _).exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero
+      (f := c) (r := r) (by positivity) hη
+  -- On the ball of radius `r`, `w` moves by less than `η`.
+  have hnear (x z : E) (hz : z ∈ Metric.ball x r) : |w z - w x| < η := by
+    refine (hw.dist_le_mul z x).trans_lt (lt_of_le_of_lt ?_ hLr)
+    exact mul_le_mul_of_nonneg_left (Metric.mem_ball.1 hz).le L.coe_nonneg
+  refine ⟨g, hsmooth, fun x => ?_, fun x hx => ?_, fun x => ?_⟩
+  · rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+    exact ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hLip)
+  · -- Off the strip, the truncation `c` is constant on the ball of radius `r` about `x`.
+    refine hconst x fun z hz => ?_
+    have h := abs_lt.1 (hnear x z hz)
+    rcases not_and_or.1 hx with hxa | hxb
+    · replace hxa := not_lt.1 hxa
+      have hz : min (w z) (b - η) ≤ a + η := (min_le_left _ _).trans (by linarith)
+      have hx : min (w x) (b - η) ≤ a + η := (min_le_left _ _).trans (by linarith)
+      simp only [c, max_eq_left hz, max_eq_left hx]
+    · replace hxb := not_lt.1 hxb
+      simp only [c, min_eq_right (by linarith : b - η ≤ w z),
+        min_eq_right (by linarith : b - η ≤ w x)]
+  · refine (dist_triangle _ (c x) _).trans ?_
+    have h₁ : dist (c x) (max a (min (w x) b)) ≤ η := by
+      refine (abs_max_sub_max_le_max _ _ _ _).trans (max_le (by simp [abs_of_pos hη]) ?_)
+      refine (abs_min_sub_min_le_max _ _ _ _).trans (max_le (by simp [hη.le]) ?_)
+      simp [abs_of_pos hη]
+    linarith [(herr x).le]
+
+/-- The Lipschitz slicing inequality with a measurable majorant, for a Lipschitz function on all
+of `E`. -/
+private theorem exists_measurable_ae_mass_slice_le_of_lipschitzWith [FiniteDimensional ℝ E]
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {L : ℝ≥0}
+    (hu : LipschitzWith L u) :
+    ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ᵐ t, mass (slice T u t) ≤ G t) ∧
+      ∫⁻ t, G t ≤ (k + 1) * (L * mass T) := by
+  obtain ⟨v, hv, -, hvL, -, hlim⟩ := hu.exists_seq_contDiff_lipschitzWith_tendsto
+  refine exists_measurable_ae_mass_slice_le_of_tendsto hT hv hu.continuous.measurable
+    (fun x _ => hlim x) fun j => lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass
+      fun x => ?_
+  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ (hvL j))
+
+/-- The Lipschitz slicing inequality on a strip, with a measurable majorant, for the truncation
+`max a (min u b)` of a Lipschitz function on all of `E`. -/
+private theorem exists_measurable_ae_mass_slice_truncation_le [FiniteDimensional ℝ E]
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {L : ℝ≥0}
+    (hu : LipschitzWith L u) {a b : ℝ} (hab : a < b) :
+    ∃ G : ℝ → ℝ≥0∞, Measurable G ∧
+      (∀ᵐ t, mass (slice T (fun x => max a (min (u x) b)) t) ≤ G t) ∧
+      ∫⁻ t, G t ≤ (k + 1) * (L * massMeasure T {x | u x ∈ Ioo a b}) := by
+  have hη (j : ℕ) : 0 < (b - a) * (1 / ((j : ℝ) + 1)) := by
+    have := sub_pos.2 hab
+    positivity
+  choose v hv hvL hv0 hvd using fun j : ℕ => exists_contDiff_approx_truncation hu (hη j)
+  refine exists_measurable_ae_mass_slice_le_of_tendsto hT hv
+    (continuous_const.max (hu.continuous.min continuous_const)).measurable (fun x _ => ?_)
+    fun j => ?_
+  · rw [tendsto_iff_dist_tendsto_zero]
+    refine squeeze_zero (fun j => dist_nonneg) (fun j => hvd j x) ?_
+    simpa using (tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (b - a)).const_mul 2
+  · refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_const_le _ _)
+    by_cases hx : (x : Ω) ∈ {x : Ω | u x ∈ Ioo a b}
+    · rw [indicator_of_mem hx]
+      exact hvL j x
+    · rw [indicator_of_notMem hx, hv0 j x hx, ← ofReal_norm]
+      simp
+
+/-- A function that is Lipschitz on `Ω` agrees on `Ω` with a Lipschitz function `w` on `E`, by
+McShane extension. Its slices are those of `w` if it is measurable, and zero otherwise. -/
+private theorem exists_lipschitzWith_eqOn_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    {L : ℝ≥0} (hu : LipschitzOnWith L u Ω) :
+    ∃ w : E → ℝ, LipschitzWith L w ∧ EqOn u w Ω ∧ ∀ t,
+      slice T u t = 0 ∨ slice T u t = slice T w t := by
+  obtain ⟨w, hw, huw⟩ := hu.extend_real
+  refine ⟨w, hw, huw, fun t => ?_⟩
+  by_cases hum : Measurable u
+  · exact .inr (slice_congr T hum hw.continuous.measurable (by ext x; simp [huw x.property]))
+  · exact .inl (slice_of_not_measurable T hum)
+
+/-- In infinite dimension every test form is zero, so every slice has mass zero. -/
+private theorem mass_slice_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E)
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (t : ℝ) :
+    mass (slice T u t) = 0 := by
+  rw [mass_eq_zero_iff]
+  exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+
+/-- The Lipschitz slicing inequality with a measurable majorant. -/
+private theorem exists_measurable_ae_mass_slice_le_of_lipschitzOnWith
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {L : ℝ≥0}
+    (hu : LipschitzOnWith L u Ω) :
+    ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ᵐ t, mass (slice T u t) ≤ G t) ∧
+      ∫⁻ t, G t ≤ (k + 1) * L * mass T := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact ⟨0, measurable_const, .of_forall fun t => by
+      simp [mass_slice_eq_zero_of_not_finiteDimensional hE], by simp⟩
+  obtain ⟨w, hw, -, hslice⟩ := exists_lipschitzWith_eqOn_slice (T := T) hu
+  obtain ⟨G, hGm, hG, hGint⟩ := exists_measurable_ae_mass_slice_le_of_lipschitzWith hT hw
+  refine ⟨G, hGm, hG.mono fun t ht => ?_, hGint.trans_eq (mul_assoc _ _ _).symm⟩
+  rcases hslice t with h | h <;> simp [h, ht]
+
+/-- **The slicing inequality for Lipschitz functions.** For a locally normal `(k + 1)`-current `T`
+and a function `u` that is `L`-Lipschitz on `Ω`, `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)`. -/
+theorem lintegral_mass_slice_le_mul_mass_of_lipschitzOnWith
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {L : ℝ≥0}
+    (hu : LipschitzOnWith L u Ω) :
+    ∫⁻ t, mass (slice T u t) ≤ (k + 1) * L * mass T := by
+  obtain ⟨G, -, hG, hGint⟩ := exists_measurable_ae_mass_slice_le_of_lipschitzOnWith hT hu
+  exact (lintegral_mono_ae hG).trans hGint
+
+/-- **The slicing inequality on a strip.** For a locally normal `(k + 1)`-current `T` and a function
+`u` that is `L`-Lipschitz on `Ω`, the slices at levels in `(a, b)` satisfy
+`∫_a^b M(⟨T, u, t⟩) dt ≤ (k + 1) L ‖T‖{a < u < b}`. -/
+theorem setLIntegral_mass_slice_le_of_lipschitzOnWith
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {L : ℝ≥0}
+    (hu : LipschitzOnWith L u Ω) (a b : ℝ) :
+    ∫⁻ t in Ioo a b, mass (slice T u t) ≤ (k + 1) * L * massMeasure T {x | u x ∈ Ioo a b} := by
+  by_cases hab : a < b
+  swap
+  · simp [Ioo_eq_empty hab]
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [mass_slice_eq_zero_of_not_finiteDimensional hE]
+  obtain ⟨w, hw, huw, hslice⟩ := exists_lipschitzWith_eqOn_slice (T := T) hu
+  obtain ⟨G, hGm, hG, hGint⟩ := exists_measurable_ae_mass_slice_truncation_le hT hw hab
+  have hset : {x : Ω | w x ∈ Ioo a b} = {x : Ω | u x ∈ Ioo a b} := by
+    ext x
+    simp [huw x.property]
+  rw [hset, ← mul_assoc] at hGint
+  refine (setLIntegral_mono_ae hGm.aemeasurable (hG.mono fun t ht hts => ?_)).trans
+    ((setLIntegral_le_lintegral _ _).trans hGint)
+  -- At levels in `(a, b)`, slicing by `w` or by its truncation to `[a, b]` is the same.
+  have htrunc : slice T w t = slice T (fun x => max a (min (w x) b)) t := by
+    refine slice_congr T hw.continuous.measurable
+      (continuous_const.max (hw.continuous.min continuous_const)).measurable (ext fun x => ?_)
+    simp only [mem_ofPred_eq, max_lt_iff, min_lt_iff, hts.1, true_and]
+    exact ⟨Or.inl, fun h => h.resolve_right hts.2.not_gt⟩
+  rcases hslice t with h | h <;> simp [h, htrunc, ht]
+
+/-- If `T` is a locally normal `(k + 1)`-current of finite mass and `u` is Lipschitz on `Ω`, then
+almost every slice `⟨T, u, t⟩` has finite mass. -/
+theorem ae_mass_slice_lt_top_of_lipschitzOnWith {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hT : IsLocallyNormal T) (hfin : mass T ≠ ⊤) {L : ℝ≥0} (hu : LipschitzOnWith L u Ω) :
+    ∀ᵐ t, mass (slice T u t) < ⊤ := by
+  obtain ⟨G, hGm, hG, hGint⟩ := exists_measurable_ae_mass_slice_le_of_lipschitzOnWith hT hu
+  filter_upwards [hG, ae_lt_top hGm (ne_top_of_le_ne_top
+    (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) (by simp)) hfin) hGint)] with t ht ht'
+  exact ht.trans_lt ht'
+
+/-- **Lipschitz slices of normal currents are normal.** If `T` is a normal `(k + 1)`-current and `u`
+is Lipschitz on `Ω`, then almost every slice `⟨T, u, t⟩` is a normal current. -/
+theorem ae_isNormal_slice_of_lipschitzOnWith {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hT : IsNormal T) {L : ℝ≥0} (hu : LipschitzOnWith L u Ω) :
+    ∀ᵐ t, IsNormal (slice T u t) := by
+  cases k with
+  | zero =>
+    filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT.mass_ne_top hu]
+      with t ht
+    exact isNormal_finZero_iff.2 ht.ne
+  | succ j =>
+    have hT' : IsNormal (T ∘L extDerivCLM) := hT.comp_extDerivCLM
+    filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT.mass_ne_top hu,
+      ae_mass_slice_lt_top_of_lipschitzOnWith hT'.isLocallyNormal hT'.mass_ne_top hu]
+      with t ht ht'
     refine isNormal_succ_iff.2 ⟨ht.ne, ?_⟩
     simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne
 

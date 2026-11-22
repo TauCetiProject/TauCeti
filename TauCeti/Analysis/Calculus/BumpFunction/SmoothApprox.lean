@@ -25,7 +25,9 @@ The construction combines Mathlib's McShane extension and normalized smooth bump
 `LipschitzWith.normed_convolution`. Derivative bounds follow directly from Mathlib's
 `norm_fderiv_le_of_lipschitz`.
 `LipschitzWith.exists_contDiffBump_normed_convolution` also bounds the bump's outer radius,
-so additional local properties can be proved for the same approximating convolution.
+so additional local properties can be proved for the same approximating convolution; for instance
+`LipschitzWith.exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero` gives approximations whose
+differential vanishes wherever the function is constant on a ball of fixed radius.
 
 ## References
 
@@ -71,6 +73,28 @@ theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt (hf : LipschitzWith 
   borelize E
   obtain ⟨φ, -, hsmooth, hLip, herr⟩ := hf.exists_contDiffBump_normed_convolution one_pos hε
   exact ⟨φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f, hsmooth, hLip, herr⟩
+
+/-- A Lipschitz function has smooth uniform approximations with exactly the same Lipschitz bound
+whose differential vanishes at every point `x` such that the function is constant on the ball of
+radius `r` about `x`. -/
+theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero (hf : LipschitzWith K f)
+    {r ε : ℝ} (hr : 0 < r) (hε : 0 < ε) :
+    ∃ g : E → F, ContDiff ℝ ∞ g ∧ LipschitzWith K g ∧ (∀ x, dist (g x) (f x) < ε) ∧
+      ∀ x, (∀ y ∈ ball x r, f y = f x) → fderiv ℝ g x = 0 := by
+  borelize E
+  obtain ⟨φ, hφr, hsmooth, hLip, herr⟩ :=
+    hf.exists_contDiffBump_normed_convolution (half_pos hr) hε
+  refine ⟨φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f, hsmooth, hLip, herr,
+    fun x hx => ?_⟩
+  -- On the ball of radius `r / 2` about `x`, the convolution only averages the constant `f x`.
+  have hg : (φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f) =ᶠ[𝓝 x] fun _ => f x := by
+    filter_upwards [ball_mem_nhds x (half_pos hr)] with y hy
+    have hfy : f y = f x := hx y (ball_subset_ball (half_le_self hr.le) hy)
+    rw [← hfy]
+    refine φ.normed_convolution_eq_right fun z hz => (hx z ?_).trans hfy.symm
+    rw [mem_ball] at hy hz ⊢
+    linarith [dist_triangle z y x, hz.trans_le hφr]
+  rw [hg.fderiv_eq, fderiv_const_apply]
 
 /-- Bounded real Lipschitz data on any subset have globally defined smooth approximations
 with the same Lipschitz bound and the same closed interval of values.
