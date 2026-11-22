@@ -444,6 +444,20 @@ theorem coeFn_restrictWeightedValue (K : Set (ℝ × ℝ))
   (LpToLpRestrictCLM_coeFn ℝ _ _).trans
     (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
 
+/-- On a subset `K` of `U`, the squared `L²(K)` norm of the restricted weighted value of an `L²`
+jet represented by the jet `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is `∫_K ‖√ρ ξ‖²`. -/
+theorem sq_norm_restrictWeightedValue_of_ae_eq_jet {K : Set (ℝ × ℝ)} (hKU : K ⊆ U)
+    {f : Lp (V × V × V) 2 (volume.restrict U)} (hf : f =ᵐ[volume.restrict U] jet ρ ξ) :
+    ‖restrictWeightedValue V U K f‖ ^ 2 = ∫ z in K, ‖√(ρ z) • ξ z‖ ^ 2 := by
+  have hae : restrictWeightedValue V U K f =ᵐ[(volume.restrict U).restrict K]
+      fun z ↦ √(ρ z) • ξ z := by
+    filter_upwards [coeFn_restrictWeightedValue K f, ae_restrict_of_ae hf] with z h₁ h₂
+    rw [h₁, h₂, jet_apply]
+  have hm : MemLp (fun z ↦ √(ρ z) • ξ z) 2 ((volume.restrict U).restrict K) :=
+    (Lp.memLp _).ae_eq hae
+  rw [show restrictWeightedValue V U K f = hm.toLp _ from Lp.ext (hae.trans hm.coeFn_toLp.symm),
+    hm.norm_toLp_sq, Measure.restrict_restrict_of_subset hKU]
+
 /-- A continuous function with compact support inside `U` is bounded by a multiple of `√ρ`. -/
 private theorem exists_abs_le_mul_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
     (hgc : HasCompactSupport g) (hgU : tsupport g ⊆ U) :

@@ -185,6 +185,16 @@ theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × �
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
+/-- **The Jacobian of the end lift.** In real coordinates, the Jacobian determinant of the end lift
+`φ` at `ζ` is `4π² |φ(ζ)|²`. -/
+theorem det_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det =
+      (2 * π * ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖) ^ 2 := by
+  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _),
+    TauCeti.Complex.equivRealProdCLM_symm_realChart, Complex.normSq_eq_norm_sq, norm_mul,
+    Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_endSign, mul_one,
+    abs_of_pos Real.two_pi_pos]
+
 /-- The end lift sends a point with longitudinal coordinate `s` to a point of norm
 `exp (2π ε s)`. -/
 theorem norm_symm_realChart_cylindricalEndLift (p : PSSPlane) (w : ℝ × ℝ) :
@@ -207,6 +217,28 @@ theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
   rw [realChart_apply, realChart_apply, Complex.equivRealProdCLM_symm_apply,
     Complex.equivRealProdCLM_symm_apply]
   exact congrArg _ (p.periodic_cylindricalEndLift s t)
+
+/-- **The end coordinates of a point of the end.** A point `w` of the plane with
+`|w| > exp (2π T)` is the image under the end lift of a point `ζ` with `ε s > T` and angular
+coordinate `t ∈ [0, 1)`. -/
+theorem exists_realChart_cylindricalEndLift_eq (p : PSSPlane) {T : ℝ} {z : ℝ × ℝ}
+    (hz : Real.exp (2 * π * T) < ‖Complex.equivRealProdCLM.symm z‖) :
+    ∃ ζ : ℝ × ℝ, T < p.endSign * ζ.1 ∧ ζ.2 ∈ Ico (0 : ℝ) 1 ∧
+      realChart p.cylindricalEndLift ζ = z := by
+  have hne : Complex.equivRealProdCLM.symm z ≠ 0 :=
+    norm_pos_iff.1 ((Real.exp_pos _).trans hz)
+  set c := p.endCoord (Complex.equivRealProdCLM.symm z)
+  have hc : realChart p.cylindricalEndLift (c.re, c.im) = z := by
+    rw [← Complex.equivRealProdCLM_apply, TauCeti.Complex.realChart_equivRealProdCLM,
+      p.cylindricalEndLift_endCoord hne, ContinuousLinearEquiv.apply_symm_apply]
+  have hper : Periodic (fun t ↦ realChart p.cylindricalEndLift (c.re, t)) 1 :=
+    fun t ↦ p.realChart_cylindricalEndLift_add_one c.re t
+  have h := hper.sub_int_mul_eq (x := c.im) ⌊c.im⌋
+  rw [mul_one] at h
+  have hζ : realChart p.cylindricalEndLift (c.re, Int.fract c.im) = z := h.trans hc
+  refine ⟨(c.re, Int.fract c.im), ?_, ⟨Int.fract_nonneg _, Int.fract_lt_one _⟩, hζ⟩
+  rw [← hζ] at hz
+  exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.1 hz
 
 /-- The end lift of the positive plane in real coordinates, at a point `(s, t)`, is the image of
 `s + i t`. -/
