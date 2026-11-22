@@ -414,11 +414,8 @@ def periodicSolutionsEquivFixedPoints (hT : Periodic X T) (hT0 : T ≠ 0) (s : �
       (by rwa [x.property.2.eq])).2
     dsimp only
     rw [← htr, x.property.2.eq, heq]⟩
-  left_inv γ := Subtype.ext <| funext fun t ↦ by
-    have hγ (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := γ.property.1 u
-    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ
-      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  left_inv γ := Subtype.ext <| funext <| timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX
+    γ.property.1 s
   right_inv x := Subtype.ext (timeDependentFlowOf_self X s x)
 
 omit [CompleteSpace E] in
@@ -451,11 +448,8 @@ theorem eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt {
     ∀ᶠ p in 𝓝 (γ s), ∀ δ ∈ periodicSolutions X T, δ s = p → δ = γ := by
   -- A solution defined for all time is the trajectory of the flow from time `s`.
   have hflow {δ : ℝ → M} (hδ : δ ∈ periodicSolutions X T) (t : ℝ) :
-      timeDependentFlowOf X s t (δ s) = δ t := by
-    have hδ' (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := hδ.1 u
-    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hδ'
-      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+      timeDependentFlowOf X s t (δ s) = δ t :=
+    timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hδ.1 s t
   filter_upwards [eventually_nhdsWithin_iff.1 hiso] with p hp δ hδ hδp
   -- The value `δ s` is a fixed point of the return map close to `γ s`, hence equal to it.
   have hδγ : δ s = γ s := by
@@ -558,10 +552,7 @@ theorem isNondegenerateFixedPt_timeDependentFlowOf_iff_of_mem_periodicSolutions
     IsNondegenerateFixedPt I (timeDependentFlowOf X s' (s' + T)) (γ s') ↔
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s) := by
   -- A solution defined for all time is the trajectory of the flow from time `s`.
-  have hγ' (u : ℝ) (_ : u ∈ Ioo (min s s' - 1) (max s s' + 1)) := hγ.1 u
-  rw [← timeDependentFlowOf_eq_of_hasMFDerivAt hX (s := s) (t := s') hγ'
-    ⟨by linarith [min_le_left s s'], by linarith [le_max_left s s']⟩
-    ⟨by linarith [min_le_right s s'], by linarith [le_max_right s s']⟩]
+  rw [← timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ.1 s s']
   exact isNondegenerateFixedPt_timeDependentFlowOf_iff hX hc hT s s' (γ s)
 
 omit [CompleteSpace E] in
@@ -600,9 +591,7 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
     (periodicSolutions X T).Finite := by
   -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
   have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
-  have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-    ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
-      ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
+  have hφ := continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T)
   set e := periodicSolutionsEquivFixedPoints hX hT hT0 s
   -- Every fixed point of the return map is the initial point of a periodic solution.
   have hfin := finite_fixedPoints_of_isNondegenerateFixedPt hφ fun x hx ↦ by
@@ -665,9 +654,8 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
     exact hflow.comp (by fun_prop)
   have hY : IsClosed {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} := by
-    have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-      hflow.comp (by fun_prop : Continuous fun x : M ↦ ((s, s + T), x))
-    convert isClosed_fixedPoints hφ using 1
+    convert isClosed_fixedPoints (continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T))
+      using 1
     ext x
     simp [timeDependentFlowDomain_eq_univ hcomplete]
   -- The initial points of the contractible solutions form a closed set of nondegenerate fixed
