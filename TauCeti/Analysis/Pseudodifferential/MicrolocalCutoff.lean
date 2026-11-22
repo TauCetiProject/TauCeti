@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Normalize
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.Constructions.SumProd
 
@@ -32,7 +33,8 @@ of norm greater than `2`, whose principal symbol is the identity on `K × (F \ {
 vanishes outside `L × G` for a compact `L ⊆ U` and a closed cone `G` with `G \ {0} ⊆ Γ`. Since
 `L × G` is again a compact set of positions times a closed cone, cutoffs can be nested: a second
 cutoff can be chosen to be the identity near every point of `L × G` at frequencies of norm greater
-than `2`.
+than `2`. Composed with a dilated frequency cutoff, a microlocal cutoff also vanishes below any
+given frequency radius (`TauCeti.Symbol.exists_microlocalCutoff_of_mem`).
 
 A cutoff that is the identity near the region where a symbol `b` lives does not change `b` at the
 level of operators, up to smoothing operators: `Op(c) Op(b)` and `Op(b) Op(c)` are `Op(b)` modulo
@@ -48,6 +50,8 @@ microlocal elliptic regularity, `WF(u) ⊆ WF(P u) ∪ Char(P)`.
 * `TauCeti.HomogeneousSymbol.microlocalCutoff`: the homogeneous symbol `φ(x) ψ(ξ / ‖ξ‖) • id`.
 * `TauCeti.ClassicalSymbol.exists_microlocalCutoff`: existence of microlocal cutoffs, and
   `TauCeti.Symbol.exists_microlocalCutoff`: cutoffs that also vanish below a given frequency radius.
+* `TauCeti.Symbol.exists_microlocalCutoff_of_mem`: microlocal cutoffs with compact spatial support
+  around a point that vanish below a given frequency radius.
 * `TauCeti.Symbol.isSmoothing_sharp_sub_of_eventuallyEq_id_left`,
   `TauCeti.Symbol.isSmoothing_sharp_sub_of_eventuallyEq_id_right`: `c # b` and `b # c` agree with
   `b` modulo smoothing symbols when, at every large frequency, `b` vanishes or `c` is the identity
@@ -271,6 +275,54 @@ theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)}
   · simp only [coefficient_inclusion, hd]
     rw [χ.apply_inv_smul_eq_one hR₁ (by linarith), one_smul]
     exact (hc₀ x hx ξ hξ (by linarith)).self_of_nhds
+
+open Metric
+
+/-- **Microlocal cutoffs vanishing at small frequencies.** For an open set `U` containing `x₀`, an
+open cone `Γ` containing `ξ₀` and a radius `R`, there is a symbol `c` of order `0` with compact
+spatial support that vanishes outside the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, and
+is the identity at large frequencies over a neighbourhood of `x₀` and an open cone containing
+`ξ₀`. -/
+theorem exists_microlocalCutoff_of_mem {U Γ : Set (CoordinateSpace n)} {x₀ ξ₀ : CoordinateSpace n}
+    (hU : IsOpen U) (hx₀ : x₀ ∈ U) (hΓ : IsOpen Γ) (hξ₀ : ξ₀ ∈ Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) (R : ℝ) :
+    ∃ c : Symbol n V V 0, c.HasCompactSpatialSupport ∧
+      (∀ p ∉ {q : CoordinateSpace n × CoordinateSpace n | q.1 ∈ U ∧ q.2 ∈ Γ ∧ R ≤ ‖q.2‖},
+        c.coefficient p = 0) ∧
+      ∃ U' Γ' : Set (CoordinateSpace n), IsOpen U' ∧ x₀ ∈ U' ∧ IsOpen Γ' ∧ ξ₀ ∈ Γ' ∧
+        (∀ t : ℝ, 0 < t → ∀ η ∈ Γ', t • η ∈ Γ') ∧ ∃ R' : ℝ, ∀ x ∈ U', ∀ ξ ∈ Γ', R' ≤ ‖ξ‖ →
+          c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V := by
+  -- A closed ball of positions around `x₀` inside `U`, and an open cone `Γ'` around `ξ₀` inside a
+  -- closed cone `F` whose nonzero elements lie in `Γ`.
+  obtain ⟨δ, hδ, hδU⟩ := Metric.isOpen_iff.1 hU x₀ hx₀
+  obtain ⟨F, Γ', hF, hFcone, hFΓ, hΓ', hξ₀', hcone', hΓ'F⟩ :=
+    hΓ.exists_isOpen_cone_subset_isClosed_cone hcone hξ₀
+  obtain ⟨c₀, hc₀1, -, hc₀c, L', G, -, hLU, -, -, hGΓ, hc₀0⟩ :=
+    ClassicalSymbol.exists_microlocalCutoff (V := V) (isCompact_closedBall x₀ (δ / 2)) hU
+      ((closedBall_subset_ball (half_lt_self hδ)).trans hδU) hF hFcone hΓ hcone hFΓ
+  obtain ⟨K, hK, hKc₀⟩ := hasCompactSpatialSupport_iff.1 hc₀c
+  -- Cut `c₀` off below the radius `t = max R 1`: `c = χ(ξ / t) c₀`.
+  have ht : 1 ≤ max R 1 := le_max_right R 1
+  have ht0 : 0 < max R 1 := one_pos.trans_le ht
+  obtain ⟨χ⟩ : Nonempty (FrequencyCutoff (CoordinateSpace n)) := ⟨default⟩
+  set c := inclusion (add_zero 0).le ((dilatedCutoff χ ht).comp c₀.toSymbol)
+  have hc (p : CoordinateSpace n × CoordinateSpace n) :
+      c.coefficient p = χ ((max R 1)⁻¹ • p.2) • c₀.toSymbol.coefficient p := by
+    rw [coefficient_inclusion, coefficient_dilatedCutoff_comp]
+  refine ⟨c, hasCompactSpatialSupport_iff.2
+    ⟨K, hK, fun x hx ξ ↦ by rw [hc, hKc₀ x hx ξ, smul_zero]⟩, fun p hp ↦ ?_,
+    ball x₀ (δ / 2), Γ', isOpen_ball, mem_ball_self (half_pos hδ), hΓ', hξ₀', hcone',
+    2 * max R 1 + 1, fun x hx ξ hξ hR ↦ ?_⟩
+  · -- `c` vanishes unless `‖ξ‖ > max R 1` and `c₀(x, ξ) ≠ 0`.
+    by_contra hne
+    rw [hc, smul_eq_zero, not_or] at hne
+    obtain ⟨hp₁, hp₂, -⟩ := hc₀0 p.1 p.2 hne.2
+    have hR : max R 1 < ‖p.2‖ := not_le.1 fun h ↦ hne.1 (χ.apply_inv_smul_eq_zero ht0 h)
+    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (ht0.trans hR)
+    exact hp ⟨hLU hp₁, hGΓ _ hp₂ hp0, (le_max_left R 1).trans hR.le⟩
+  · -- At large frequencies over `U' × Γ'` both factors are the identity.
+    rw [hc, χ.apply_inv_smul_eq_one ht0 (by linarith), one_smul]
+    exact (hc₀1 x (ball_subset_closedBall hx) ξ (hΓ'F hξ) (by linarith)).self_of_nhds
 
 end Symbol
 

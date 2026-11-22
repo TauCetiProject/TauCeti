@@ -75,6 +75,8 @@ homogeneous symbols of degrees `m - j`.
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
+* `TauCeti.Symbol.dilatedCutoff`: the dilated cutoff `χ(ξ / t) id` as a symbol of order `0`;
+  composing with it gives `χ(ξ / t) a(x, ξ)` (`TauCeti.Symbol.coefficient_dilatedCutoff_comp`).
 * `TauCeti.Symbol.IsAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ`.
 * `TauCeti.Symbol.IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub`: asymptotic sums are unique
   modulo smoothing symbols.
@@ -226,6 +228,7 @@ theorem coefficient_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t 
   simp [dilatedCutoff]
 
 /-- Composing with `dilatedCutoff χ ht` multiplies the coefficient by `χ(ξ / t)`. -/
+@[simp]
 theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
     (ht : 1 ≤ t) {μ : ℝ} (a : Symbol n V W μ) :
     ((dilatedCutoff χ ht).comp a).coefficient = fun p => χ (t⁻¹ • p.2) • a.coefficient p :=
