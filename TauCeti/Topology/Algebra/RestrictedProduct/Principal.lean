@@ -36,8 +36,8 @@ declaration has an additive counterpart via `@[to_additive]`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
   box-preimage formulas for `levelMonoidHom`.
 * `TauCeti.levelOpenSubgroup`, `TauCeti.levelOpenSubgroupEquiv`,
-  `TauCeti.coe_comp_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
-  its topological group chart, and inclusion identity.
+  `TauCeti.coe_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
+  its topological group chart, and inclusion formula.
 
 ## References
 
@@ -302,16 +302,6 @@ def levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
     ((Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) ≃ₜ* levelOpenSubgroup B S hB :=
   ContinuousMulEquiv.mk' (isEmbedding_levelMonoidHom B S).toHomeomorph
     (map_mul (levelMonoidHom B S).rangeRestrict)
-
-/-- Composing `levelOpenSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
-recovers `levelMonoidHom B S`. -/
-@[to_additive /-- Composing `levelOpenAddSubgroupEquiv B S hB` with the subtype inclusion into
-`Πʳ i, [G i, B i]` recovers `levelAddMonoidHom B S`. -/]
-theorem coe_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
-    ((↑) : levelOpenSubgroup B S hB → Πʳ i, [G i, B i]) ∘ levelOpenSubgroupEquiv B S hB =
-      levelMonoidHom B S := by
-  rfl
 
 /-- Applying `levelOpenSubgroupEquiv B S hB` and coercing to `Πʳ i, [G i, B i]` agrees with
 `levelMonoidHom B S`. -/
