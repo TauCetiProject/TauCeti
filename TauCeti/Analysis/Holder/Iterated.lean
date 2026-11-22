@@ -821,6 +821,7 @@ theorem coe_fderivL (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivL k α E F f)
 
 /-- The derivative fields of `fderivL f` are those of `f` of one order more, with the last
 variable separated. -/
+@[simp]
 theorem iteratedFDeriv_fderivL (f : CkHolderSpace (k + 1) α E F) (i : Fin (k + 1)) (x : E) :
     (fderivL k α E F f).iteratedFDeriv i x =
       continuousMultilinearCurryRightEquiv' ℝ i E F (f.iteratedFDeriv i.succ x) :=
