@@ -16,9 +16,8 @@ import TauCeti.RingTheory.Derivation.TrivSqZeroExt
 
 Continuous `A`-derivations out of `B ⊗̂_A C` into a Hausdorff space are determined by their values
 on `inl` and `inr` (`derivation_ext`). Any compatible pair of continuous `A`-derivations on `B` and
-`C` valued in a complete Hausdorff nonarchimedean module `M` over a topological ring `R` extends
-uniquely to `B ⊗̂_A C` (`liftDerivation`), built over `T = B ⊗̂_A C` via `CompletedTensor.lift`
-into `TrivSqZeroExt T M` and `TauCeti.derivationToTrivSqZeroExtEquivLift` and restricted to `R`.
+`C` valued in a complete Hausdorff nonarchimedean module extends uniquely to `B ⊗̂_A C`
+(`liftDerivation`).
 
 ## References
 
@@ -32,8 +31,7 @@ open TensorProduct
 
 namespace TauCeti.Huber.CompletedTensor
 
-variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
-  [Algebra A B] [Algebra A C]
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra A C]
   [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
   [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
@@ -49,16 +47,11 @@ theorem derivation_ext {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [T2Spa
   refine Derivation.coe_injective <|
     (denseRange_toCompletion A B C).equalizer hd₁ hd₂ <| funext fun x ↦ ?_
   induction x using TensorProduct.inductionOn with
-  | tmul b c =>
-    simp only [Function.comp_apply, toCompletion_tmul, Derivation.leibniz, hB, hC]
-  | add x y hx hy =>
-    simp only [Function.comp_apply, map_add] at hx hy ⊢
-    rw [hx, hy]
+  | tmul b c => simp only [Function.comp_apply, toCompletion_tmul, Derivation.leibniz, hB, hC]
+  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
 
 section LiftDerivation
 
-/-- Package a continuous `A`-derivation `B → M` as an `A`-algebra map `B →ₐ[A] TrivSqZeroExt T M`
-over a compatible `B →+* T`. -/
 private noncomputable def mkLiftAlgHom {T M : Type*} [CommRing T] [AddCommGroup M]
     [Algebra A T] [Module A M] [Module B M] [Module T M] [Module Tᵐᵒᵖ M]
     [IsScalarTower A T M] [IsCentralScalar T M]
@@ -67,14 +60,11 @@ private noncomputable def mkLiftAlgHom {T M : Type*} [CommRing T] [AddCommGroup 
     B →ₐ[A] TrivSqZeroExt T M where
   toFun b := TrivSqZeroExt.inl (ι b) + TrivSqZeroExt.inr (dB b)
   map_one' := by ext <;> simp
-  map_mul' b₁ b₂ := by
-    ext <;> simp [TrivSqZeroExt.snd_mul, op_smul_eq_smul, hBM, add_comm]
+  map_mul' b₁ b₂ := by ext <;> simp [TrivSqZeroExt.snd_mul, op_smul_eq_smul, hBM, add_comm]
   map_zero' := by ext <;> simp
   map_add' b₁ b₂ := by ext <;> simp
   commutes' a := by ext <;> simp [TrivSqZeroExt.algebraMap_eq_inl', hι]
 
-/-- Core derivation extension over `T = B ⊗̂_A C`, requiring completeness and nonarchimedeanness
-only on `M` (since `T` is already a complete Hausdorff Huber ring). -/
 private noncomputable def liftDerivationBase
     {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
     [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
@@ -93,37 +83,31 @@ private noncomputable def liftDerivationBase
   haveI : ContinuousSMul Tᵐᵒᵖ M :=
     ⟨(MulOpposite.continuous_unop.comp continuous_fst).smul continuous_snd⟩
   letI : NonarchimedeanRing (TrivSqZeroExt T M) :=
-    { is_nonarchimedean := (inferInstance : NonarchimedeanAddGroup (T × M)).is_nonarchimedean }
+    ⟨(inferInstance : NonarchimedeanAddGroup (T × M)).is_nonarchimedean⟩
   let ψB := mkLiftAlgHom (inl A B C) (inl_algebraMap A B C) hBM dB
   let ψC := mkLiftAlgHom (inr A B C) (inr_algebraMap A B C) hCM dC
-  have hψB : Continuous ψB :=
-    (TrivSqZeroExt.continuous_inl.comp (continuous_inl A B C)).add
-      (TrivSqZeroExt.continuous_inr.comp hdB)
-  have hψC : Continuous ψC :=
-    (TrivSqZeroExt.continuous_inl.comp (continuous_inr A B C)).add
-      (TrivSqZeroExt.continuous_inr.comp hdC)
+  have hψB : Continuous ψB := (TrivSqZeroExt.continuous_inl.comp (continuous_inl A B C)).add
+    (TrivSqZeroExt.continuous_inr.comp hdB)
+  have hψC : Continuous ψC := (TrivSqZeroExt.continuous_inl.comp (continuous_inr A B C)).add
+    (TrivSqZeroExt.continuous_inr.comp hdC)
   have hcomm : ψB.toRingHom.comp (algebraMap A B) = ψC.toRingHom.comp (algebraMap A C) :=
     RingHom.ext fun a ↦ (ψB.commutes a).trans (ψC.commutes a).symm
-  let Φ : T →+* TrivSqZeroExt T M :=
-    CompletedTensor.lift ψB.toRingHom ψC.toRingHom hcomm hψB hψC
-  let Φₐ : T →ₐ[A] TrivSqZeroExt T M :=
-    { Φ with
-      commutes' a := by
-        rw [← inl_algebraMap]
-        exact (lift_inl ψB.toRingHom ψC.toRingHom hcomm hψB hψC _).trans (ψB.commutes a) }
-  have hfst : (TrivSqZeroExt.fstHom A T M).comp Φₐ = IsScalarTower.toAlgHom A T T := by
-    apply AlgHom.toRingHom_injective
-    refine CompletedTensor.hom_ext
-      (TrivSqZeroExt.continuous_fst.comp (continuous_lift _ _ hcomm hψB hψC)) continuous_id ?_ ?_
-    · ext b; simp [Φₐ, Φ, ψB, mkLiftAlgHom]
-    · ext c; simp [Φₐ, Φ, ψC, mkLiftAlgHom]
-  refine ⟨(TauCeti.derivationToTrivSqZeroExtEquivLift A T T).symm ⟨Φₐ, hfst⟩, ?_, ?_, ?_⟩
-  · exact (TrivSqZeroExt.continuous_snd.comp (continuous_lift _ _ hcomm hψB hψC)).congr fun z ↦
-      (TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply ⟨Φₐ, hfst⟩ z).symm
-  · intro b
-    rw [TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply]; simp [Φₐ, Φ, ψB, mkLiftAlgHom]
-  · intro c
-    rw [TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply]; simp [Φₐ, Φ, ψC, mkLiftAlgHom]
+  let Φ := CompletedTensor.lift ψB.toRingHom ψC.toRingHom hcomm hψB hψC
+  let Φₐ : T →ₐ[A] TrivSqZeroExt T M := { Φ with
+    commutes' a := by
+      rw [← inl_algebraMap]
+      exact (lift_inl ψB.toRingHom ψC.toRingHom hcomm hψB hψC _).trans (ψB.commutes a) }
+  have hfst : (TrivSqZeroExt.fstHom A T M).comp Φₐ = IsScalarTower.toAlgHom A T T :=
+    AlgHom.toRingHom_injective <| CompletedTensor.hom_ext
+      (TrivSqZeroExt.continuous_fst.comp (continuous_lift _ _ hcomm hψB hψC)) continuous_id
+      (by ext b; simp [Φₐ, Φ, ψB, mkLiftAlgHom]) (by ext c; simp [Φₐ, Φ, ψC, mkLiftAlgHom])
+  refine ⟨(TauCeti.derivationToTrivSqZeroExtEquivLift A T T).symm ⟨Φₐ, hfst⟩,
+    (TrivSqZeroExt.continuous_snd.comp (continuous_lift _ _ hcomm hψB hψC)).congr fun z ↦
+      (TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply ⟨Φₐ, hfst⟩ z).symm, ?_, ?_⟩
+  · intro b; rw [TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply]
+    simp [Φₐ, Φ, ψB, mkLiftAlgHom]
+  · intro c; rw [TauCeti.derivationToTrivSqZeroExtEquivLift_symm_apply]
+    simp [Φₐ, Φ, ψC, mkLiftAlgHom]
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R]
   [Algebra B R] [Algebra C R] [Algebra (CompletedTensor A B C) R]
@@ -133,9 +117,8 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R]
   [IsScalarTower A B M] [IsScalarTower B R M] [IsScalarTower C R M]
   [IsScalarTower (CompletedTensor A B C) R M] [ContinuousSMul R M]
 
-variable (dB : Derivation A B M) (dC : Derivation A C M)
-  (hdB : Continuous dB) (hdC : Continuous dC)
-  (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
+variable (dB : Derivation A B M) (dC : Derivation A C M) (hdB : Continuous dB)
+  (hdC : Continuous dC) (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
   (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
   (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R)
 

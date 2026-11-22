@@ -46,10 +46,12 @@ local instance isAdicHom_self : IsAdicHom (algebraMap A A) := by
 
 namespace CompletedTensor
 
+attribute [local instance] leftAlgebra
+
 /-- The right unit of the completed tensor product, for a complete Hausdorff Huber algebra. -/
 noncomputable def rightUnitor : CompletedTensor A B A ≃+* B :=
   (Pair.finiteAlgebra.baseChangeEquiv A B A
-    (IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A))).symm.trans
+    (IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A))).toRingEquiv.symm.trans
     (Algebra.TensorProduct.rid A B B).toRingEquiv
 
 /-- The right unit sends the left coprojection to the identity. -/

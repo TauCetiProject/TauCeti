@@ -26,6 +26,8 @@ open TensorProduct Algebra.TensorProduct TauCeti.Huber
 
 namespace TauCeti.Examples.FiniteAlgebraBaseChange
 
+attribute [local instance] CompletedTensor.leftAlgebra
+
 section Unit
 
 variable (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
@@ -107,8 +109,8 @@ variable (A C B : Type*) [CommRing A] [CommRing C] [CommRing B]
 example : Nonempty (C ⊗[A] B ≃+* CompletedTensor A C B) := by
   have : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
   have : Module.Projective A B := Module.Flat.projective_of_finitePresentation
-  exact ⟨Pair.finiteAlgebra.baseChangeEquiv A C B
-    (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B))⟩
+  exact ⟨(Pair.finiteAlgebra.baseChangeEquiv A C B
+    (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B))).toRingEquiv⟩
 
 end Etale
 

@@ -25,7 +25,8 @@ needed: that map only supplies the commuting square.
 
 This file also provides the tower specialization `mapTower : Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]` and
 base-change specialization `mapBaseChange : C ⊗[B] Ωᶜ[B⁄A] →ₗ[C] Ωᶜ[C⁄A]` together with their
-functoriality (`mapTower_mapTower`, `mapTower_mapBaseChange`).
+functoriality (`mapTower_mapTower`, `mapTower_mapBaseChange`) and surjectivity of `mapTower`
+(`mapTower_surjective`).
 
 ## References
 
@@ -206,8 +207,7 @@ section MapTower
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
-  [TopologicalSpace A] [IsTopologicalRing A]
-  [TopologicalSpace B] [IsTopologicalRing B]
+  [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B]
   [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
   [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)]
 
@@ -224,8 +224,7 @@ theorem mapTower_eq_mapSemilinear :
         (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id := (rfl)
 
 /-- `mapTower` sends a diagonal class in `ideal A C` to the class of its image in `ideal B C`. -/
-@[simp]
-theorem mapTower_fromIdeal (x : ideal A C) :
+@[simp] theorem mapTower_fromIdeal (x : ideal A C) :
     mapTower A B C (fromIdeal A C x) =
       fromIdeal B C
         ⟨CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
@@ -236,41 +235,113 @@ theorem mapTower_fromIdeal (x : ideal A C) :
   mapSemilinear_fromIdeal _ _ _ continuous_id x
 
 /-- `mapTower` carries `d_A c` to `d_B c`. -/
-@[simp]
-theorem mapTower_D (c : C) : mapTower A B C (D A C c) = D B C c :=
+@[simp] theorem mapTower_D (c : C) : mapTower A B C (D A C c) = D B C c :=
   mapSemilinear_D _ _ _ continuous_id c
+
+private theorem tmul_mem_idealImage_of_left_mem_pow {A C : Type*} [CommRing A] [CommRing C]
+    [Algebra A C] [TopologicalSpace A] [TopologicalSpace C] (D : TensorDatum A C C)
+    {k : ℕ} {b : D.left.ringOfDefinition} (hb : b ∈ D.left.idealOfDefinition ^ k)
+    {c : C} (hc : c ∈ D.right.ringOfDefinition) : (b : C) ⊗ₜ[A] c ∈ D.idealImage k := by
+  rw [← D.map_idealOfDefinition_left, ← Ideal.map_pow] at hb
+  induction hb using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨a, ha, rfl⟩ := hy
+    refine D.mem_idealImage.mpr ⟨D.toRingOfDefinition a *
+      ⟨1 ⊗ₜ[A] c, D.one_tmul_mem_ringOfDefinition hc⟩, ?_, by
+        simp [TensorDatum.coe_toRingOfDefinition, Algebra.TensorProduct.algebraMap_apply]⟩
+    rw [D.idealOfDefinition_def, ← Ideal.map_pow]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha)
+  | zero => simp
+  | add x y _ _ hx hy => simpa [add_tmul] using (D.idealImage k).add_mem hx hy
+  | smul r x _ hx =>
+    obtain ⟨y, hy, hyx⟩ := D.mem_idealImage.mp hx
+    refine D.mem_idealImage.mpr
+      ⟨⟨(r : C) ⊗ₜ[A] 1, D.tmul_one_mem_ringOfDefinition r.property⟩ * y,
+        Ideal.mul_mem_left _ _ hy, by simp [hyx, Algebra.TensorProduct.tmul_mul_tmul]⟩
+
+omit [IsScalarTower A B C] [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
+private theorem isOpenQuotientMap_mapRingHom_mapTower
+    (h : (RingHom.id C).comp (algebraMap A C) = (algebraMap B C).comp (algebraMap A B)) :
+    letI := tensorTopology A C C; letI := tensorTopology B C C
+    IsOpenQuotientMap (Algebra.TensorProduct.mapRingHom (algebraMap A B)
+      (RingHom.id C) (RingHom.id C) h h) := by
+  let := tensorTopology A C C; let := isTopologicalRing_tensorTopology A C C
+  let := tensorTopology B C C; let := isTopologicalRing_tensorTopology B C C
+  have := isHuberRing_tensorTopology B C C
+  set f := Algebra.TensorProduct.mapRingHom (algebraMap A B) (RingHom.id C) (RingHom.id C) h h
+  refine ⟨fun y ↦ ?_, (RingHom.continuous_tensorTopology_iff f).mpr ⟨?_, ?_⟩, ?_⟩
+  · induction y using TensorProduct.inductionOn with
+    | tmul c₁ c₂ => exact ⟨c₁ ⊗ₜ[A] c₂, by simp [f]⟩
+    | add x y hx hy =>
+      obtain ⟨x', rfl⟩ := hx; obtain ⟨y', rfl⟩ := hy; exact ⟨x' + y', map_add f x' y'⟩
+  · convert (isAdicHom_includeLeft_tensorTopology B C C).continuous; ext c; simp [f]
+  · convert (isAdicHom_includeRight_tensorTopology B C C).continuous; ext c; simp [f]
+  · rw [IsTopologicalAddGroup.isOpenMap_iff_nhds_zero]
+    intro s hs
+    obtain ⟨D⟩ := TensorDatum.nonempty A C C; obtain ⟨D'⟩ := TensorDatum.nonempty B C C
+    obtain ⟨k, -, hk⟩ := (hasBasis_tensorTopology A C C D).mem_iff.mp hs
+    obtain ⟨n, -, hn⟩ := D'.left.hasBasis_nhds_zero.mem_iff.mp
+      ((D.left.isOpen_idealImage k).mem_nhds (D.left.idealImage k).zero_mem)
+    obtain ⟨m, -, hm⟩ := D'.right.hasBasis_nhds_zero.mem_iff.mp
+      (D.right.isOpen_ringOfDefinition.mem_nhds (zero_mem _))
+    refine Filter.mem_of_superset
+      ((hasBasis_tensorTopology B C C D').mem_of_mem (i := n + m) trivial) fun x hx ↦ ?_
+    have hle : D'.idealImage (n + m) ≤
+        ((D.idealImage k).map f.toAddMonoidHom).comap (RingHom.id _).toAddMonoidHom := by
+      refine D'.map_idealImage_le (RingHom.id _) _ n m fun c₁ hc₁ c₂ hc₂ ↦ ?_
+      obtain ⟨y₁, hy₁, hy₁c⟩ := (D.left.mem_idealImage k).mp
+        (hn ((D'.left.mem_idealImage n).mpr ⟨c₁, hc₁, rfl⟩))
+      have hy₂ : (c₂ : C) ∈ D.right.ringOfDefinition :=
+        hm ((D'.right.mem_idealImage m).mpr ⟨c₂, hc₂, rfl⟩)
+      exact ⟨(c₁ : C) ⊗ₜ[A] (c₂ : C),
+        by simpa [hy₁c] using tmul_mem_idealImage_of_left_mem_pow D hy₁ hy₂, by simp [f]⟩
+    obtain ⟨y, hy, rfl⟩ := AddSubgroup.mem_map.mp (hle hx); exact hk hy
+
+/-- **Surjectivity in the first fundamental sequence** (Huber 1996, Proposition 1.6.3(i)): in a
+tower `A → B → C` with `A → C` and `B → C` adic into complete Hausdorff nonarchimedean `C`,
+`Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is surjective, with no finite-type, noetherian, or Huber hypotheses. -/
+theorem mapTower_surjective : Function.Surjective (mapTower A B C) := by
+  have h : (RingHom.id C).comp (algebraMap A C) = (algebraMap B C).comp (algebraMap A B) := by
+    ext a; exact IsScalarTower.algebraMap_apply A B C a
+  let F := CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
+    h h continuous_id continuous_id
+  have hF := (CompletedTensor.isOpenQuotientMap_of_comp_toCompletion F
+    (CompletedTensor.continuous_map ..) _ (isOpenQuotientMap_mapRingHom_mapTower A B C h)
+    (CompletedTensor.map_comp_toCompletion ..)).surjective
+  intro ω
+  obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective B C ω
+  obtain ⟨x, hxF⟩ := hF y
+  have hx : x ∈ ideal A C := (mem_ideal_iff).mpr <| by
+    simpa [F, hxF, mem_ideal_iff.mp hy] using
+      (CompletedTensor.mulRingHom_map (algebraMap A B) (RingHom.id C) h continuous_id x).symm
+  exact ⟨fromIdeal A C ⟨x, hx⟩, by simp [F, hxF]⟩
 
 end MapTower
 
 section MapTowerComp
 
 variable (A B C E : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing E]
-  [Algebra A B] [Algebra B C] [Algebra C E]
-  [Algebra A C] [Algebra B E] [Algebra A E]
+  [Algebra A B] [Algebra B C] [Algebra C E] [Algebra A C] [Algebra B E] [Algebra A E]
   [IsScalarTower B C E] [IsScalarTower A B E] [IsScalarTower A C E]
-  [TopologicalSpace A] [IsTopologicalRing A]
-  [TopologicalSpace B] [IsTopologicalRing B]
+  [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B]
   [TopologicalSpace C] [IsTopologicalRing C]
   [UniformSpace E] [IsUniformAddGroup E] [NonarchimedeanRing E] [CompleteSpace E] [T0Space E]
   [IsAdicHom (algebraMap A E)] [IsAdicHom (algebraMap B E)] [IsAdicHom (algebraMap C E)]
 
 /-- Applying two consecutive relative projections in a tower `A → B → C → E` equals the single
 projection `Ωᶜ[E⁄A] → Ωᶜ[E⁄C]`. -/
-@[simp]
-theorem mapTower_mapTower (ω : ContinuousKaehlerDifferential A E) :
+@[simp] theorem mapTower_mapTower (ω : ContinuousKaehlerDifferential A E) :
     mapTower B C E (mapTower A B E ω) = mapTower A C E ω := by
   rw [mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear,
     mapSemilinear_comp]
   obtain ⟨x, rfl⟩ := fromIdeal_surjective A E ω
-  simp only [mapSemilinear_fromIdeal]
-  congr 1; ext
+  simp only [mapSemilinear_fromIdeal]; congr 1; ext
   exact congrArg (fun f : CompletedTensor A E E →+* CompletedTensor C E E ↦ f x) <|
     CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
       (CompletedTensor.continuous_map ..) (by ext e; simp) (by ext e; simp)
 
 /-- Composing relative projections in a tower `A → B → C → E` equals `mapTower A C E`. -/
-@[simp]
-theorem mapTower_comp_mapTower : (mapTower B C E).comp (mapTower A B E) = mapTower A C E :=
+@[simp] theorem mapTower_comp_mapTower : (mapTower B C E).comp (mapTower A B E) = mapTower A C E :=
   LinearMap.ext (mapTower_mapTower A B C E)
 
 end MapTowerComp
@@ -297,8 +368,7 @@ theorem mapBaseChange_eq_map [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap
   (rfl)
 
 /-- Evaluating `mapBaseChange` on a pure tensor `c ⊗ₜ ω`. -/
-@[simp]
-theorem mapBaseChange_tmul [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+@[simp] theorem mapBaseChange_tmul [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
     (hc : Continuous (algebraMap B C)) (c : C) (ω : ContinuousKaehlerDifferential A B) :
     mapBaseChange A B C hc (c ⊗ₜ[B] ω) =
       c • mapSemilinear (RingHom.id A) (algebraMap B C)
@@ -313,8 +383,7 @@ theorem mapBaseChange_tmul_D [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap
 
 /-- The composite `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is zero on every class, without any
 noetherian or finite-type hypotheses. -/
-@[simp]
-theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)]
+@[simp] theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)]
     [IsAdicHom (algebraMap A C)] (hc : Continuous (algebraMap B C))
     (z : C ⊗[B] ContinuousKaehlerDifferential A B) :
     mapTower A B C (mapBaseChange A B C hc z) = 0 := by
@@ -330,13 +399,9 @@ theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraM
       CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
         ((continuous_inl B C C).comp (hc.comp (continuous_mulRingHom A B)))
         (by ext b; simp) (by ext b; simp)
-    have hx0 : CompletedTensor.map ((algebraMap A B).comp (RingHom.id A))
-        ((RingHom.id C).comp (algebraMap B C)) ((RingHom.id C).comp (algebraMap B C))
-        rfl rfl (continuous_id.comp hc) (continuous_id.comp hc) x = 0 := by
-      rw [RingHom.congr_fun hmap x]; simp [mem_ideal_iff.mp hx]
     have hzero : (⟨_, ideal_le_comap_map ((algebraMap A B).comp (RingHom.id A))
         ((RingHom.id C).comp (algebraMap B C)) _ (continuous_id.comp hc) hx⟩ : ideal B C) = 0 :=
-      Subtype.ext hx0
+      Subtype.ext <| (RingHom.congr_fun hmap x).trans (by simp [mem_ideal_iff.mp hx])
     rw [hzero, map_zero, smul_zero]
   | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 

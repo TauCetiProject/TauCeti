@@ -43,6 +43,7 @@ variable {A C B : Type*} [CommRing A] [CommRing C] [CommRing B]
   [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A B)]
 
+attribute [local instance] CompletedTensor.leftAlgebra in
 private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Etale A B]
     [IsModuleTopology A B] (S : Pair A) (T : Pair C)
     (f : Hom S T) (hf : f.toRingHom = algebraMap A C) :
@@ -55,11 +56,7 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
   let : IsHuberRing (C ⊗[A] B) := IsHuberRing.of_isModuleTopology (A := C)
   have hnc : IsNaturallyComplete C (C ⊗[A] B) :=
     IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B)
-  let : Algebra C (CompletedTensor A C B) := (CompletedTensor.inl A C B).toAlgebra
-  let e : C ⊗[A] B ≃ₐ[C] CompletedTensor A C B :=
-    { finiteAlgebra.baseChangeEquiv A C B hnc with
-      commutes' := fun c ↦ by
-        simp [RingHom.algebraMap_toAlgebra, Algebra.TensorProduct.algebraMap_apply] }
+  let e := finiteAlgebra.baseChangeEquiv A C B hnc
   have he : IsHomeomorph e := finiteAlgebra.isHomeomorph_baseChangeEquiv A C B hnc
   have : Module.Finite C (CompletedTensor A C B) := Module.Finite.equiv e.toLinearEquiv
   have : Algebra.Etale C (CompletedTensor A C B) := Algebra.Etale.of_equiv e
@@ -68,12 +65,15 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
       { e.toLinearEquiv with
         continuous_toFun := he.continuous
         continuous_invFun := e.toEquiv.continuous_symm_iff.mpr he.isOpenMap }
-  refine ⟨?_, ?_, ?_, ?_⟩ <;>
-    rw [completedTensor.toRingHom_inl, ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B)]
-  · exact RingHom.finite_algebraMap.mpr inferInstance
-  · exact RingHom.etale_algebraMap.mpr inferInstance
-  · simpa only [_root_.toAlgebra_algebraMap] using htop
-  · rw [← finiteAlgebra_plus]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [completedTensor.toRingHom_inl, ← CompletedTensor.algebraMap_leftAlgebra A C B]
+    exact RingHom.finite_algebraMap.mpr inferInstance
+  · rw [completedTensor.toRingHom_inl, ← CompletedTensor.algebraMap_leftAlgebra A C B]
+    exact RingHom.etale_algebraMap.mpr inferInstance
+  · rw [completedTensor.toRingHom_inl]
+    exact htop
+  · rw [completedTensor.toRingHom_inl, ← CompletedTensor.algebraMap_leftAlgebra A C B,
+      ← finiteAlgebra_plus]
     apply le_antisymm
     · rw [← finiteAlgebra.map_plus_baseChangeEquiv hnc S T f hf]
       rintro _ ⟨x, hx, rfl⟩
@@ -82,7 +82,7 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
         e.toAlgHom).map_mem_plus x hx
     · intro x hx
       have hmem := (finiteAlgebra.lift (completedTensor.inl A T (S.finiteAlgebra B))
-        (by simp [RingHom.algebraMap_toAlgebra]) (AlgHom.id C _)).map_mem_plus x hx
+        (by simp [CompletedTensor.algebraMap_leftAlgebra]) (AlgHom.id C _)).map_mem_plus x hx
       rwa [finiteAlgebra.lift_toRingHom] at hmem
 
 /-- **Finite étale morphisms of Huber pairs are stable under completed base change.**

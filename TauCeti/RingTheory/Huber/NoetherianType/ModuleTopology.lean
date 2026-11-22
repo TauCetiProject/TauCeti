@@ -15,36 +15,15 @@ public import TauCeti.RingTheory.Huber.StrictMorphism
 # Finite modules over a Huber ring of noetherian type
 
 Let `A` be a complete Hausdorff Huber ring of noetherian type (`TauCeti.Huber.IsNoetherianType`).
-This file unifies the module-topology properties of finitely generated `A`-modules across the two
-defining branches of `IsNoetherianType` — existence of a noetherian ring of definition and strong
-noetherianness of a Tate ring:
-
-* every finite `A`-module with its natural topology is Hausdorff and naturally complete,
-* every `A`-submodule of a finite `A`-module is closed,
-* every `A`-linear map between finite `A`-modules with their natural topologies is strict, and
-* every finitely generated submodule of a finite `A`-module carries the `A`-module topology as its
-  subspace topology.
-
-Note that a Huber ring with a noetherian ring of definition need not be a noetherian ring itself
-(for instance an arbitrary discrete commutative ring has its prime subring as a noetherian ring of
-definition), so a submodule of a finite `A`-module need not be finitely generated automatically;
-`Submodule.isModuleTopology_of_isNoetherianType` therefore takes `[Module.Finite A L]` explicitly.
-
-## Main results
-
-* `TauCeti.Huber.IsNoetherianType.t2Space_of_isModuleTopology`,
-  `TauCeti.Huber.IsNoetherianType.t2Space_moduleTopology`: a finite module over `A` is Hausdorff in
-  its natural topology.
-* `TauCeti.Huber.IsNoetherianType.isNaturallyComplete`: every finite `A`-module is naturally
-  complete.
-* `TauCeti.Huber.IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology`: the canonical
-  right uniformity of a finite module with its natural topology is uniform-additive, complete,
-  Hausdorff, and nonarchimedean.
-* `Submodule.isClosed_of_isNoetherianType`: every `A`-submodule of a finite `A`-module is closed.
-* `LinearMap.isStrictMap_of_isNoetherianType`: every `A`-linear map between finite `A`-modules
-  with their natural topologies is strict.
-* `Submodule.isModuleTopology_of_isNoetherianType`: the subspace topology on a finitely generated
-  submodule of a finite `A`-module is its `A`-module topology.
+This file establishes the module-topology properties of finitely generated `A`-modules across the
+two defining branches of `IsNoetherianType` (noetherian ring of definition or strongly noetherian
+Tate ring): Hausdorffness (`t2Space_of_isModuleTopology`, `t2Space_moduleTopology`), natural
+completeness (`isNaturallyComplete`), uniform-group completeness and nonarchimedeanness
+(`complete_t2_nonarchimedean_of_isModuleTopology`), closedness of submodules
+(`Submodule.isClosed_of_isNoetherianType`), strictness of `A`-linear maps
+(`LinearMap.isStrictMap_of_isNoetherianType`), and subspace module topology on finitely generated
+submodules (`Submodule.isModuleTopology_of_isNoetherianType`, taking `[Module.Finite A L]` since
+`A` itself need not be noetherian).
 
 ## References
 
@@ -76,8 +55,7 @@ theorem IsNoetherianType.t2Space_of_isModuleTopology [TopologicalSpace M] [IsMod
   refine IsNoetherianType.elim ‹_› (fun P _ ↦ P.t2Space_of_isNoetherianRing) fun _ _ ↦ ?_
   have : IsNoetherianRing A := isNoetherianRing_of_isStronglyNoetherian <| by
     rwa [IsUniformAddGroup.rightUniformSpace_eq]
-  rw [eq_moduleTopology A M]
-  exact IsTateRing.t2Space_moduleTopology
+  rw [eq_moduleTopology A M]; exact IsTateRing.t2Space_moduleTopology
 
 /-- **The module topology on a finite module over a complete Hausdorff Huber ring of noetherian
 type is Hausdorff.** -/
@@ -100,14 +78,13 @@ theorem IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology
     letI : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
     letI : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
     IsUniformAddGroup M ∧ CompleteSpace M ∧ T2Space M ∧ NonarchimedeanAddGroup M := by
-  let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
-  let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
+  let _ := IsModuleTopology.isTopologicalAddGroup A M
+  let _ := IsTopologicalAddGroup.rightUniformSpace M
   have : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
-  obtain ⟨hcomp, ht2⟩ := isNaturallyComplete_iff.mp (IsNoetherianType.isNaturallyComplete (A := A)
-    (M := M))
+  obtain ⟨hcomp, ht2⟩ :=
+    isNaturallyComplete_iff.mp (IsNoetherianType.isNaturallyComplete (A := A) (M := M))
   have hna : NonarchimedeanAddGroup M := by
-    rw [eq_moduleTopology A M]
-    exact TauCeti.nonarchimedeanAddGroup_moduleTopology (A := A)
+    rw [eq_moduleTopology A M]; exact TauCeti.nonarchimedeanAddGroup_moduleTopology (A := A)
   exact ⟨‹_›, hcomp, ht2, hna⟩
 
 /-- **Every submodule of a finite module over a complete Hausdorff Huber ring of noetherian type is
@@ -120,8 +97,7 @@ theorem _root_.Submodule.isClosed_of_isNoetherianType [TopologicalSpace M] [IsMo
   have : T2Space (M ⧸ N) := IsNoetherianType.t2Space_of_isModuleTopology (A := A)
   convert (isClosed_singleton (x := (0 : M ⧸ N))).preimage
     (IsModuleTopology.continuous_of_linearMap N.mkQ) using 1
-  ext x
-  simp [Submodule.Quotient.mk_eq_zero]
+  ext x; simp [Submodule.Quotient.mk_eq_zero]
 
 end SingleModule
 
@@ -134,30 +110,26 @@ theorem _root_.LinearMap.isStrictMap_of_isNoetherianType
     {M : Type*} [AddCommGroup M] [Module A M] [Module.Finite A M]
     [TopologicalSpace M] [IsModuleTopology A M]
     {N : Type*} [AddCommGroup N] [Module A N] [Module.Finite A N]
-    [TopologicalSpace N] [IsModuleTopology A N]
-    (f : M →ₗ[A] N) : IsStrictMap f := by
+    [TopologicalSpace N] [IsModuleTopology A N] (f : M →ₗ[A] N) : IsStrictMap f := by
   refine IsNoetherianType.elim ‹_› (fun P _ ↦ P.isStrictMap_of_isNoetherianRing f) fun _ _ ↦ ?_
-  have : IsNoetherianRing A := isNoetherianRing_of_isStronglyNoetherian <| by
-    rwa [IsUniformAddGroup.rightUniformSpace_eq]
+  have : IsNoetherianRing A :=
+    isNoetherianRing_of_isStronglyNoetherian <| by rwa [IsUniformAddGroup.rightUniformSpace_eq]
   have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
-  let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
+  let _ := IsModuleTopology.isTopologicalAddGroup A M
+  let _ := IsTopologicalAddGroup.rightUniformSpace M
   obtain ⟨_, _, _, _⟩ :=
     IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology (A := A) (M := M)
-  have : FirstCountableTopology M := by
-    rw [eq_moduleTopology A M]
-    exact firstCountableTopology_moduleTopology (A := A)
+  have : FirstCountableTopology M :=
+    (eq_moduleTopology A M).symm ▸ firstCountableTopology_moduleTopology (A := A)
   have : (𝓤 M).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  let _ : IsTopologicalAddGroup N := IsModuleTopology.isTopologicalAddGroup A N
-  let _ : UniformSpace N := IsTopologicalAddGroup.rightUniformSpace N
+  let _ := IsModuleTopology.isTopologicalAddGroup A N
+  let _ := IsTopologicalAddGroup.rightUniformSpace N
   obtain ⟨_, _, _, _⟩ :=
     IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology (A := A) (M := N)
-  have : FirstCountableTopology N := by
-    rw [eq_moduleTopology A N]
-    exact firstCountableTopology_moduleTopology (A := A)
+  have : FirstCountableTopology N :=
+    (eq_moduleTopology A N).symm ▸ firstCountableTopology_moduleTopology (A := A)
   have : (𝓤 N).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  have : ContinuousSMul A M := IsModuleTopology.toContinuousSMul A M
-  have : ContinuousSMul A N := IsModuleTopology.toContinuousSMul A N
+  have := IsModuleTopology.toContinuousSMul A M; have := IsModuleTopology.toContinuousSMul A N
   exact f.isStrictMap_of_module_finite
 
 /-- **The subspace topology on a finitely generated submodule of a finite module over a complete
@@ -168,9 +140,9 @@ theorem _root_.Submodule.isModuleTopology_of_isNoetherianType
     (L : Submodule A M) [Module.Finite A L] : IsModuleTopology A L := by
   have := IsModuleTopology.isTopologicalAddGroup A M
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A L
-  have hf_strict : IsStrictMap f :=
-    IsEmbedding.subtypeVal.isStrictMap_iff.mpr (L.subtype.comp f).isStrictMap_of_isNoetherianType
-  have hq : IsQuotientMap f := isQuotientMap_iff_isStrictMap_surjective.mpr ⟨hf_strict, hf⟩
+  have hq := isQuotientMap_iff_isStrictMap_surjective.mpr
+    ⟨IsEmbedding.subtypeVal.isStrictMap_iff.mpr (L.subtype.comp f).isStrictMap_of_isNoetherianType,
+      hf⟩
   exact ⟨hq.eq_coinduced.trans (ModuleTopology.eq_coinduced_of_surjective hf).symm⟩
 
 end Strict

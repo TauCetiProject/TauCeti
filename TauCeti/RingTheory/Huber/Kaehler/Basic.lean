@@ -291,9 +291,7 @@ theorem fromKaehler_bijective_of_bijective_toCompletion
   have hmem (x : B ⊗[A] B) : e x ∈ ideal A B ↔ x ∈ KaehlerDifferential.ideal A B := by
     simp [e, mem_ideal_iff, KaehlerDifferential.ideal]
   have hmap_sq : ((KaehlerDifferential.ideal A B) ^ 2).map e.toRingHom = ideal A B ^ 2 := by
-    rw [Ideal.map_pow]
-    congr 1; ext y
-    obtain ⟨x, rfl⟩ := e.surjective y
+    rw [Ideal.map_pow]; congr 1; ext y; obtain ⟨x, rfl⟩ := e.surjective y
     rw [Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective, hmem]
     exact ⟨fun ⟨z, hz, hze⟩ ↦ e.injective hze ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
   refine ⟨LinearMap.ker_eq_bot.mp (eq_bot_iff.mpr fun η hη ↦ ?_), fun ω ↦ ?_⟩
@@ -301,13 +299,10 @@ theorem fromKaehler_bijective_of_bijective_toCompletion
     rw [LinearMap.mem_ker, fromKaehler_fromIdeal, fromIdeal_eq_zero_iff, ← hmap_sq] at hη
     obtain ⟨z, hz, hze⟩ := (Ideal.mem_map_iff_of_surjective _ e.surjective).mp hη
     obtain rfl := e.injective hze
-    rw [KaehlerDifferential.fromIdeal]
     exact ((KaehlerDifferential.ideal A B).toCotangent_eq_zero _).mpr hz
   · obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective A B ω
-    have hx : e.symm y ∈ KaehlerDifferential.ideal A B := (hmem _).mp (by simpa using hy)
-    refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, hx⟩, ?_⟩
-    rw [fromKaehler_fromIdeal]
-    congr 1; ext; exact e.apply_symm_apply y
+    refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, (hmem _).mp (by simpa using hy)⟩, ?_⟩
+    rw [fromKaehler_fromIdeal]; congr 1; ext; exact e.apply_symm_apply y
 
 /-- **Continuous differentials vanish along a surjection**: if `A → B` is surjective, then
 `Ωᶜ[B⁄A] = 0`, because multiplication `B ⊗̂_A B → B` is then injective. -/
@@ -339,28 +334,22 @@ private theorem inr_sub_inl_mem_closure_span {S : Set B}
       algebraMap_mem' a := by simp
       add_mem' {x y} hx hy := by
         have hxy : inr A B B (x + y) - inl A B B (x + y) =
-            (inr A B B x - inl A B B x) + (inr A B B y - inl A B B y) := by
-          simp only [map_add]; ring
-        rw [Set.mem_ofPred_eq, hxy]
-        exact I₀.closure.add_mem hx hy
+            (inr A B B x - inl A B B x) + (inr A B B y - inl A B B y) := by simp; ring
+        rw [Set.mem_ofPred_eq, hxy]; exact I₀.closure.add_mem hx hy
       mul_mem' {x y} hx hy := by
         have hxy : inr A B B (x * y) - inl A B B (x * y) =
             inr A B B x * (inr A B B y - inl A B B y) +
-              inl A B B y * (inr A B B x - inl A B B x) := by
-          simp only [map_mul]; ring
+              inl A B B y * (inr A B B x - inl A B B x) := by simp; ring
         rw [Set.mem_ofPred_eq, hxy]
-        exact I₀.closure.add_mem (I₀.closure.mul_mem_left _ hy)
-          (I₀.closure.mul_mem_left _ hx) }
+        exact I₀.closure.add_mem (I₀.closure.mul_mem_left _ hy) (I₀.closure.mul_mem_left _ hx) }
   have hclosed : IsClosed (R₀ : Set B) := by
     convert (isClosed_closure (s := (I₀ : Set _))).preimage
       ((continuous_inr A B B).sub (continuous_inl A B B)) using 1
-    ext x
-    simp [R₀, ← Ideal.coe_closure]
-  have hle : (Algebra.adjoin A S : Set B) ⊆ R₀ :=
-    Algebra.adjoin_le fun s hs ↦ by
-      rw [SetLike.mem_coe, Subalgebra.mem_mk, Subsemiring.mem_mk, Submonoid.mem_mk,
-        Subsemigroup.mem_mk, Set.mem_ofPred_eq, ← SetLike.mem_coe, Ideal.coe_closure]
-      exact subset_closure (Ideal.subset_span ⟨s, hs, rfl⟩)
+    ext x; simp [R₀, ← Ideal.coe_closure]
+  have hle : (Algebra.adjoin A S : Set B) ⊆ R₀ := Algebra.adjoin_le fun s hs ↦ by
+    rw [SetLike.mem_coe, Subalgebra.mem_mk, Subsemiring.mem_mk, Submonoid.mem_mk,
+      Subsemigroup.mem_mk, Set.mem_ofPred_eq, ← SetLike.mem_coe, Ideal.coe_closure]
+    exact subset_closure (Ideal.subset_span ⟨s, hs, rfl⟩)
   exact closure_minimal hle hclosed (hS b)
 
 omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
@@ -396,8 +385,7 @@ theorem closure_span_inr_sub_inl_eq_ideal {S : Set B}
   · rw [← SetLike.coe_subset_coe, Ideal.coe_closure]
     refine closure_minimal ?_ (isClosed_ideal A B)
     rw [SetLike.coe_subset_coe, Ideal.span_le]
-    rintro _ ⟨s, -, rfl⟩
-    exact inr_sub_inl_mem_ideal A B s
+    rintro _ ⟨s, -, rfl⟩; exact inr_sub_inl_mem_ideal A B s
   · have hclosed : IsClosed {w : CompletedTensor A B B |
         w - inl A B B (mulRingHom A B w) ∈ J.closure} :=
       (Ideal.coe_closure J ▸ isClosed_closure).preimage
@@ -425,26 +413,18 @@ theorem span_D_eq_top_of_span_eq_ideal {S : Set B}
   let M := Submodule.span B (D A B '' S)
   let P : Ideal (CompletedTensor A B B) :=
     { carrier := {z | ∃ hz : z ∈ ideal A B, fromIdeal A B ⟨z, hz⟩ ∈ M}
-      zero_mem' := ⟨zero_mem _, by
-        rw [(Submodule.mk_eq_zero _ _).mpr rfl, map_zero]
-        exact M.zero_mem⟩
-      add_mem' {x y} := fun ⟨hx, hfx⟩ ⟨hy, hfy⟩ ↦
-        ⟨add_mem hx hy, by
-          rw [← AddMemClass.mk_add_mk (hx := hx) (hy := hy), map_add]
-          exact M.add_mem hfx hfy⟩
-      smul_mem' r {x} := fun ⟨hx, hfx⟩ ↦
-        ⟨(ideal A B).mul_mem_left r hx, by
-          rw [← SetLike.mk_smul_mk (hx := hx), map_smul, smul_eq_mulRingHom_smul]
-          exact M.smul_mem _ hfx⟩ }
+      zero_mem' :=
+        ⟨zero_mem _, by rw [(Submodule.mk_eq_zero _ _).mpr rfl, map_zero]; exact M.zero_mem⟩
+      add_mem' {x y} := fun ⟨hx, hfx⟩ ⟨hy, hfy⟩ ↦ ⟨add_mem hx hy, by
+        rw [← AddMemClass.mk_add_mk (hx := hx) (hy := hy), map_add]; exact M.add_mem hfx hfy⟩
+      smul_mem' r {x} := fun ⟨hx, hfx⟩ ↦ ⟨(ideal A B).mul_mem_left r hx, by
+        rw [← SetLike.mk_smul_mk (hx := hx), map_smul, smul_eq_mulRingHom_smul]
+        exact M.smul_mem _ hfx⟩ }
   have hle : ideal A B ≤ P := by
-    rw [← hspan, Ideal.span_le]
-    rintro _ ⟨s, hs, rfl⟩
+    rw [← hspan, Ideal.span_le]; rintro _ ⟨s, hs, rfl⟩
     exact ⟨inr_sub_inl_mem_ideal A B s, Submodule.subset_span ⟨s, hs, D_apply A B s⟩⟩
-  rw [eq_top_iff]
-  rintro ω -
-  obtain ⟨⟨z, hz⟩, rfl⟩ := fromIdeal_surjective A B ω
-  obtain ⟨_, hfz⟩ := hle hz
-  exact hfz
+  rw [eq_top_iff]; rintro ω -
+  obtain ⟨⟨z, hz⟩, rfl⟩ := fromIdeal_surjective A B ω; exact (hle hz).2
 
 end TopologicalGeneration
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.UniversalProperty
 public import TauCeti.RingTheory.Huber.Pair
-public import Mathlib.RingTheory.Adjoin.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Topology.Algebra.UniformRing
 import TauCeti.RingTheory.Huber.Completion.Basic
@@ -165,13 +164,13 @@ section LeftAlgebra
 
 /-- The algebra structure on the completed tensor induced by its left coprojection.
 Use this as a local instance when extending scalars along the left factor. -/
-@[instance_reducible] noncomputable def leftAlgebra : Algebra B (CompletedTensor A B C) :=
+@[expose, instance_reducible] noncomputable def leftAlgebra : Algebra B (CompletedTensor A B C) :=
   (inl A B C).toAlgebra
 
 attribute [local instance] leftAlgebra
 
 /-- The structure map for the left algebra is the left coprojection. -/
-@[simp] theorem algebraMap_leftAlgebra :
+theorem algebraMap_leftAlgebra :
     algebraMap B (CompletedTensor A B C) = inl A B C := (rfl)
 
 /-- The left algebra structure map is adic. -/
@@ -260,6 +259,25 @@ canonical image of `x`. -/
 /-- The identification with the uniform completion is a homeomorphism. -/
 theorem isHomeomorph_equivCompletion : IsHomeomorph (equivCompletion A B C) :=
   (Homeomorph.refl (Completion (B ⊗[A] C))).isHomeomorph
+
+/-- When `B ⊗[A] C` is complete and `T₀` for the tensor topology, the canonical map to its
+separated completion is a homeomorphism. -/
+theorem isHomeomorph_toCompletion
+    (hc : letI := tensorTopology A B C
+      letI := isTopologicalRing_tensorTopology A B C
+      letI := IsTopologicalAddGroup.rightUniformSpace (B ⊗[A] C)
+      CompleteSpace (B ⊗[A] C))
+    (ht : letI := tensorTopology A B C; T0Space (B ⊗[A] C)) :
+    letI := tensorTopology A B C
+    IsHomeomorph (toCompletion A B C) := by
+  let e : CompletedTensor A B C ≃+* B ⊗[A] C :=
+    Completion.completeRingEquivSelf (B ⊗[A] C)
+  have he : ⇑e.symm = toCompletion A B C :=
+    Completion.coe_completeRingEquivSelf_symm (B ⊗[A] C)
+  rw [← he]
+  exact e.symm.toEquiv.isHomeomorph_iff.mpr
+    ⟨(Completion.uniformContinuous_completeRingEquivSelf_symm _).continuous,
+      (Completion.uniformContinuous_completeRingEquivSelf _).continuous⟩
 
 /-- The closure of the image of a ring of integral elements of `B ⊗[A] C` with the tensor
 topology is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/

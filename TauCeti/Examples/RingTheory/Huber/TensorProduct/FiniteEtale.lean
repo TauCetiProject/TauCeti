@@ -47,6 +47,7 @@ example (n : ℕ) :
     (Pair.finiteAlgebra.algebraHom_toRingHom _ _)
     (Pair.finiteAlgebra.isFiniteEtale_algebraHom _ _)
 
+attribute [local instance] CompletedTensor.leftAlgebra in
 /-- The completed base change of the empty cover is still zero. -/
 example : Subsingleton (CompletedTensor ℤ (ZMod 2) (Fin 0 → ℤ)) :=
   (Pair.finiteAlgebra.baseChangeEquiv ℤ (ZMod 2) (Fin 0 → ℤ)

@@ -102,7 +102,7 @@ of `inr A B C` is dense in `B ⊗̂_A C`. -/
 theorem dense_adjoin_range_inr :
     Dense (Algebra.adjoin B (Set.range (inr A B C)) : Set (CompletedTensor A B C)) := by
   let e : CompletedTensor A C B →ₐ[B] CompletedTensor A B C :=
-    { (comm A C B).toRingHom with commutes' := fun b ↦ by simp }
+    { (comm A C B).toRingHom with commutes' := fun b ↦ by simp [algebraMap_leftAlgebra] }
   have himg : e '' (Algebra.adjoin B (Set.range (inl A C B)) : Set (CompletedTensor A C B)) =
       (Algebra.adjoin B (Set.range (inr A B C)) : Set (CompletedTensor A B C)) := by
     rw [← Subalgebra.coe_map, AlgHom.map_adjoin, SetLike.coe_set_eq]
