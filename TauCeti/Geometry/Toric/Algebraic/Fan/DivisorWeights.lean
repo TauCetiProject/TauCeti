@@ -64,18 +64,6 @@ namespace TauCeti.Toric.Fan
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
   (Phi : Fan i)
 
-/-! ### Dual semigroups through fan rays -/
-
-/-- An integral character lies in the dual semigroup of a cone of a fan exactly when it is
-nonnegative on the primitive generator of every fan ray contained in the cone. -/
-theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ) :
-    u ∈ dualSemigroup Phi.lattice sigma.val ↔
-      ∀ rho : Phi.Ray, rho.toCone ≤ sigma → 0 ≤ u rho.primitiveGenerator := by
-  rw [mem_dualSemigroup_iff_primitiveGenerator Phi.lattice (Phi.isToricCone sigma.property)]
-  refine ⟨fun h rho hrho ↦ ?_, fun h rho ↦ ?_⟩
-  · simpa using h (rho.toToricRay Phi sigma hrho)
-  · simpa using h (Ray.ofToricRay Phi sigma rho) (Ray.toCone_ofToricRay_le Phi sigma rho)
-
 /-! ### The divisor of a character -/
 
 /-- The coefficients of the divisor of the character `χ ^ u` along the invariant divisors: the

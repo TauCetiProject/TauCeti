@@ -30,6 +30,8 @@ boundary components under toric isomorphisms and restriction to invariant open s
 * `TauCeti.Toric.Fan.rayEquiv`: the equivalence between rays below a cone and its toric rays.
 * `TauCeti.Toric.Fan.Ray.primitiveGenerator`: the primitive lattice generator of a fan ray, which
   is its canonical primitive generator as a ray of every cone of the fan containing it.
+* `TauCeti.Toric.Fan.mem_dualSemigroup_iff_forall_ray_le`: dual-semigroup membership is
+  nonnegativity on the primitive generators of the fan rays in the cone.
 * `TauCeti.Toric.Fan.isEmpty_ray_ofCone_bot`: the fan of the zero cone has no rays.
 * `TauCeti.Toric.Fan.exists_ray_le_of_ne_bot`: every nonzero cone of a fan contains a ray.
 * `TauCeti.Toric.Fan.le_iff_forall_ray_le`: containment of cones is detected by their rays.
@@ -162,6 +164,16 @@ theorem primitiveGenerator_isPrimitive (rho : Phi.Ray) : IsPrimitive rho.primiti
   (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).isPrimitive
 
 end Ray
+
+/-- An integral character lies in the dual semigroup of a cone of a fan exactly when it is
+nonnegative on the primitive generator of every fan ray contained in the cone. -/
+theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ) :
+    u ∈ dualSemigroup Phi.lattice sigma.val ↔
+      ∀ rho : Phi.Ray, rho.toCone ≤ sigma → 0 ≤ u rho.primitiveGenerator := by
+  rw [mem_dualSemigroup_iff_primitiveGenerator Phi.lattice (Phi.isToricCone sigma.property)]
+  refine ⟨fun h rho hrho ↦ ?_, fun h rho ↦ ?_⟩
+  · simpa using h (rho.toToricRay Phi sigma hrho)
+  · simpa using h (Ray.ofToricRay Phi sigma rho) (Ray.toCone_ofToricRay_le Phi sigma rho)
 
 /-- The fan rays contained in a cone are exactly the toric rays of that cone. -/
 def rayEquiv (sigma : Phi.cones) :
