@@ -470,7 +470,8 @@ theorem isStrictlyTopologicallyFiniteType_of_surjective {k : ℕ}
     IsUniformAddGroup.uniformity_countably_generated
   exact isStrictlyTopologicallyFiniteType_iff.mpr
     ⟨k, π.toRingHom, ⟨hs, continuous_of_continuousAt_zero π.toLinearMap hπ,
-      π.toLinearMap.isOpenMap_of_isTateRing hs hπ⟩, π.comp_algebraMap⟩
+      TauCeti.HasZeroSequenceOfUnits.isOpenMap π.toLinearMap hs hπ
+        fun _ ↦ (continuous_id.smul continuous_const).continuousAt⟩, π.comp_algebraMap⟩
 
 end OpenMappingPresentation
 

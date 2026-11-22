@@ -24,15 +24,25 @@ under `Φ` is `{p : E × G | p.2 = 0}`, which is closed in `E × G`.
 
 ## Main results
 
-* `ContinuousLinearMap.isClosed_range_of_isCompl`: if `f : E →L[R] F` is a continuous linear map
-  from a complete first-countable uniform module `E` into a `T₀` Baire uniform module `F` over a
-  topological ring with a zero sequence of units, and `G` is a complete first-countable algebraic
-  complement of `f.range` with continuous scalar multiplication, then `f.range` is closed.
+* `ContinuousLinearMap.isClosed_range_of_isCompl_of_completeSpace_right`: if `f : E →L[R] F` is a
+  continuous linear map from a complete first-countable uniform module `E` into a `T₀` Baire
+  uniform module `F` over a topological ring with a zero sequence of units, and `G` is a complete
+  first-countable algebraic complement of `f.range`, with scalar orbits continuous at zero on both
+  `E` and `G`, then `f.range` is closed.
 * `ContinuousLinearMap.isClosed_range_of_isCompl_of_isClosed_right_of_complete`: specialization
   where `F` is itself complete and first countable and `G` is a closed algebraic complement.
 * `ContinuousLinearMap.isClosed_range_of_finite_coker`: over a complete nontrivially normed field,
   a continuous linear map from a complete first-countable uniform vector space into a `T₀` Baire
   topological vector space with finite-dimensional cokernel has closed range.
+
+## Attribution & References
+
+The coproduct argument generalizes the former Banach-space proof of
+`ContinuousLinearMap.isClosed_range_of_finite_coker` in
+`TauCeti/Analysis/Fredholm/ClosedRange.lean`.
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1 (for the
+  Banach-space closed-range criterion from a finite-dimensional cokernel).
 -/
 
 public section
@@ -46,23 +56,24 @@ section Complement
 
 variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
-  [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E] [ContinuousSMul R E]
+  [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E]
   [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [T0Space F] [BaireSpace F]
   [Module R F] [ContinuousConstSMul R F]
 
 /-- **Closed range from a complete first-countable algebraic complement.** If `f : E →L[R] F` is a
 continuous linear map from a complete first-countable uniform module `E` into a `T₀` Baire uniform
 module `F` over a topological ring with a zero sequence of units, and `G` is a complete
-first-countable algebraic complement of `f.range` with `[ContinuousSMul R G]`, then `f.range` is
-closed.
+first-countable algebraic complement of `f.range` with scalar orbits continuous at zero on both `E`
+and `G`, then `f.range` is closed.
 
 No injectivity assumption (`f.ker = ⊥`) and no completeness or first-countability on the ambient
 codomain `F` is required: the coproduct `Φ(x, y) = f x + y` from `E × G` onto `F` is a quotient
 map by `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`, and the preimage
 `Φ ⁻¹' f.range = {p | p.2 = 0}` is closed. -/
-theorem isClosed_range_of_isCompl (f : E →L[R] F) (G : Submodule R F)
+theorem isClosed_range_of_isCompl_of_completeSpace_right (f : E →L[R] F) (G : Submodule R F)
     (hG : IsCompl f.range G) [CompleteSpace G] [(𝓝 (0 : G)).IsCountablyGenerated]
-    [ContinuousSMul R G] :
+    (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcG : ∀ y : G, ContinuousAt (fun a : R ↦ a • y) 0) :
     IsClosed (f.range : Set F) := by
   let Φ : (E × G) →L[R] F := f.coprod G.subtypeL
   have hsurj : Surjective Φ := LinearMap.range_eq_top.mp <| by
@@ -71,14 +82,17 @@ theorem isClosed_range_of_isCompl (f : E →L[R] F) (G : Submodule R F)
       hG.sup_eq_top]
   have hpre : Φ ⁻¹' (f.range : Set F) = {p : E × G | p.snd = 0} := by
     ext p
-    change f.toLinearMap p.fst + (p.snd : F) ∈ f.range ↔ p.snd = 0
+    simp only [Φ, Set.mem_preimage, SetLike.mem_coe, Set.mem_ofPred_eq,
+      ContinuousLinearMap.coprod_apply, Submodule.subtypeL_apply]
     exact (f.range.add_mem_iff_right (f.mem_range_self p.fst)).trans
       (Submodule.mem_left_iff_eq_zero_of_disjoint hG.disjoint)
   have hclosed : IsClosed (Φ ⁻¹' (f.range : Set F)) := by
     rw [hpre]
     exact isClosed_eq continuous_snd continuous_const
-  have hq : IsQuotientMap Φ := TauCeti.HasZeroSequenceOfUnits.isQuotientMap Φ hsurj
-    Φ.continuous.continuousAt fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+  have hc : ∀ p : E × G, ContinuousAt (fun a : R ↦ a • p) 0 := fun p ↦
+    (hcE p.1).prodMk (hcG p.2)
+  have hq : IsQuotientMap Φ :=
+    TauCeti.HasZeroSequenceOfUnits.isQuotientMap Φ hsurj Φ.continuous.continuousAt hc
   exact hq.isClosed_preimage.mp hclosed
 
 end Complement
@@ -101,7 +115,9 @@ theorem isClosed_range_of_isCompl_of_isClosed_right_of_complete
     IsClosed (f.range : Set F) := by
   have : CompleteSpace G := hG_closed.completeSpace_coe
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact f.isClosed_range_of_isCompl G hG
+  exact f.isClosed_range_of_isCompl_of_completeSpace_right G hG
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
 
 end ClosedComplement
 
@@ -130,7 +146,9 @@ theorem isClosed_range_of_finite_coker {𝕜 E F : Type*}
   have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   have : FirstCountableTopology G := (Module.finBasis 𝕜 G).equivFun
     |>.toContinuousLinearEquiv.toHomeomorph.isInducing.firstCountableTopology
-  exact f.isClosed_range_of_isCompl G hG
+  exact f.isClosed_range_of_isCompl_of_completeSpace_right G hG
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
 
 end FiniteCoker
 

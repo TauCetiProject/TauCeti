@@ -20,9 +20,8 @@ Let `A` be a Tate ring and `B` a complete Hausdorff Huber `A`-algebra with conti
 map. Evaluation `A⟨X₁, …, Xₙ⟩_T → B` at a weight-bounded family `b₁, …, bₙ`, extended to the
 completion (`weightedEvalHomCompletion`), is an open quotient map as soon as the `bᵢ` span `B` as
 an `A`-module. It is surjective because already the linear polynomials `∑ aᵢ Xᵢ` hit every element
-of `B`, and open by the open mapping theorem over a Tate ring
-(`LinearMap.isOpenMap_of_isTateRing`), applied to the evaluation as an `A`-linear
-map between complete metrizable modules.
+of `B`, and open by Henkel's open mapping theorem (`TauCeti.HasZeroSequenceOfUnits.isOpenMap`),
+applied to the evaluation as an `A`-linear map between complete metrizable modules.
 
 ## Main results
 
@@ -72,6 +71,7 @@ theorem isOpenQuotientMap_weightedEvalHomCompletion (hcont : Continuous (algebra
   have : (𝓤 (Completion (weightedRestrictedSubring T hT))).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   have : (𝓤 B).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact ⟨hsurj, hψc, π.toLinearMap.isOpenMap_of_isTateRing hsurj hψc.continuousAt⟩
+  exact ⟨hsurj, hψc, TauCeti.HasZeroSequenceOfUnits.isOpenMap π.toLinearMap hsurj
+    hψc.continuousAt fun _ ↦ (continuous_id.smul continuous_const).continuousAt⟩
 
 end TauCeti.Huber

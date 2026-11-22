@@ -36,8 +36,7 @@ form of Gauss's sum.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 Along a sequence of sets `V : ℕ → Set M` with `0 ∈ V n` and `V (n + 1) + V (n + 1) ⊆ V n`, any
-sequence satisfying `x i ∈ V (i + 1)` has tail sums `∑ i ∈ Ico n (n + m), x i` in `V n` and
-ordered partial-sum differences `(∑ i ∈ range q, x i) - ∑ i ∈ range p, x i` in `V p`.
+sequence satisfying `x i ∈ V (i + 1)` has tail sums `∑ i ∈ Ico n (n + m), x i` in `V n`.
 
 ## Main results
 
@@ -58,9 +57,8 @@ ordered partial-sum differences `(∑ i ∈ range q, x i) - ∑ i ∈ range p, x
   `k (k - 1)` for every `k : ℤ`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
-* `Finset.sum_Ico_mem_of_add_subset` and `Finset.sum_range_sub_sum_range_mem_of_add_subset`:
-  tail-sum and partial-sum difference bounds along a doubling sequence `V (n + 1) + V (n + 1) ⊆ V n`
-  for errors `x i ∈ V (i + 1)`.
+* `Finset.sum_Ico_mem_of_add_subset`: tail-sum bounds along a doubling sequence
+  `V (n + 1) + V (n + 1) ⊆ V n` for errors `x i ∈ V (i + 1)`.
 -/
 
 public section
@@ -263,16 +261,5 @@ theorem sum_Ico_mem_of_add_subset {M : Type*} [AddCommMonoid M]
     have hend : n + (m + 1) = (n + 1) + m := by omega
     rw [sum_eq_sum_Ico_succ_bot hlt, hend]
     exact hadd n (Set.add_mem_add (hx n) (ih (n + 1)))
-
-/-- Ordered differences of partial sums of errors satisfying `x i ∈ V (i + 1)` along a doubling
-sequence `V (n + 1) + V (n + 1) ⊆ V n` stay inside `V p`. -/
-theorem sum_range_sub_sum_range_mem_of_add_subset {M : Type*} [AddCommGroup M]
-    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
-    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
-    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) {p q : ℕ} (hpq : p ≤ q) :
-    (∑ i ∈ range q, x i) - ∑ i ∈ range p, x i ∈ V p := by
-  have hend : p + (q - p) = q := Nat.add_sub_of_le hpq
-  rw [(sum_Ico_eq_sub x hpq).symm, ← hend]
-  exact sum_Ico_mem_of_add_subset h0 hadd hx (q - p) p
 
 end Finset

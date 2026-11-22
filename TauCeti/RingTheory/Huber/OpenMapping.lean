@@ -24,26 +24,23 @@ continuous additive operations, and continuous constant scalar actions; its Bair
 hypotheses are stated directly. A completely metrisable target satisfies both, but no uniform
 structure or metrisability is required of the target in the open and quotient forms.
 
-The closed-range strictness form uses a completely metrisable target. Its closed range is again
-completely metrisable and hence Baire, so applying the open mapping theorem to the corestriction
-shows that the original map is strict. In all three forms, continuity at zero suffices because
-an additive map between topological groups is continuous everywhere as soon as it is continuous
-at zero.
+The closed-range strictness form
+(`LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`) uses a completely metrisable
+target. Its closed range is again completely metrisable and hence Baire, so applying the open
+mapping theorem to the corestriction shows that the original map is strict. In all three forms,
+continuity at zero suffices because an additive map between topological groups is continuous
+everywhere as soon as it is continuous at zero.
 
 A finite spanning family gives a surjective linear-combination map from `ι → A`. When the Tate
-ring's additive uniformity is complete, the preceding theorem makes this presentation
-open for every Hausdorff Baire topological module. The quotient form determines its topology:
-a finitely generated Hausdorff Baire topological module over such a Tate ring carries the module
-topology. Consequently every linear map from it to a topological module is continuous, by
-Mathlib's `IsModuleTopology.continuous_of_linearMap`.
+ring's additive uniformity is complete, `TauCeti.HasZeroSequenceOfUnits.isOpenMap` makes this
+presentation open for every Hausdorff Baire topological module. The quotient form
+(`TauCeti.HasZeroSequenceOfUnits.isQuotientMap`) determines its topology: a finitely generated
+Hausdorff Baire topological module over such a Tate ring carries the module topology. Consequently
+every linear map from it to a topological module is continuous, by Mathlib's
+`IsModuleTopology.continuous_of_linearMap`.
 
 ## Main results
 
-* `LinearMap.isOpenMap_of_isTateRing`: a surjective linear map continuous at zero, from a complete
-  first-countable uniform module to a Hausdorff Baire module over a Tate ring, is open.
-* `LinearMap.isQuotientMap_of_isTateRing`: the same map induces the quotient topology.
-* `LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`: a linear map continuous at zero with
-  closed range in a completely metrisable target is strict.
 * `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination` and
   `TauCeti.Huber.IsTateRing.isQuotientMap_linearCombination`: a finite spanning family presents a
   Hausdorff Baire topological module as an open quotient of `ι → A`.
@@ -56,9 +53,9 @@ Mathlib's `IsModuleTopology.continuous_of_linearMap`.
   assumes `A` noetherian and both modules finitely generated with the topology of 6.18(1), and
   concludes continuity as well as openness onto the image. Here
   `TauCeti.Huber.IsTateRing.isModuleTopology` supplies continuity, while
-  `LinearMap.isStrictMap_of_isClosed_range_of_isTateRing` supplies strictness under a closed-range
-  hypothesis. The proposition itself is `LinearMap.isStrictMap_of_module_finite`, which obtains
-  closedness of the range from `TauCeti.Huber.isClosed_of_isNoetherian`.
+  `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits` supplies strictness under a
+  closed-range hypothesis. The proposition itself is `LinearMap.isStrictMap_of_module_finite`,
+  which obtains closedness of the range from `TauCeti.Huber.isClosed_of_isNoetherian`.
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
   [arXiv:1407.5647](https://arxiv.org/abs/1407.5647).
 
@@ -88,53 +85,6 @@ public section
 
 open Filter Topology
 
-namespace LinearMap
-
-open TauCeti.Huber
-
-variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
-  [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
-  [(𝓝 (0 : M)).IsCountablyGenerated] [Module A M] [ContinuousSMul A M]
-  [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-  [Module A N] [ContinuousConstSMul A N]
-
-section Baire
-
-variable [T0Space N] [BaireSpace N]
-
-/-- **The open mapping theorem over a Tate ring.** A surjective linear map continuous at zero,
-from a complete first-countable uniform module to a Hausdorff Baire module, is open.
-The target needs only continuous constant scalar actions. -/
-theorem isOpenMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjective f)
-    (hfc : ContinuousAt (f : M → N) 0) : IsOpenMap (f : M → N) :=
-  TauCeti.HasZeroSequenceOfUnits.isOpenMap f hf hfc
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
-
-/-- **The quotient form of the open mapping theorem over a Tate ring.** Under the hypotheses of
-`LinearMap.isOpenMap_of_isTateRing`, the topology of the target is coinduced along the map. -/
-theorem isQuotientMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjective f)
-    (hfc : ContinuousAt (f : M → N) 0) : IsQuotientMap (f : M → N) :=
-  TauCeti.HasZeroSequenceOfUnits.isQuotientMap f hf hfc
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
-
-end Baire
-
-/-- **Strictness from a closed range over a Tate ring.** A linear map continuous at zero from a
-complete first-countable uniform module to a completely metrisable module is strict when
-its range is closed. The target needs only continuous constant scalar actions.
-
-The closed range supplies a Baire target for the corestriction. This is the strictness step of
-Wedhorn Proposition 6.18(2); `LinearMap.isStrictMap_of_module_finite` additionally obtains
-continuity and closedness of the range from its finite and noetherian module hypotheses. -/
-theorem isStrictMap_of_isClosed_range_of_isTateRing
-    [TopologicalSpace.IsCompletelyMetrizableSpace N] (f : M →ₗ[A] N)
-    (hfc : ContinuousAt (f : M → N) 0) (hr : IsClosed (f.range : Set N)) :
-    Topology.IsStrictMap (f : M → N) :=
-  f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hfc
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
-
-end LinearMap
-
 namespace TauCeti.Huber
 
 section LinearCombination
@@ -147,7 +97,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Comple
 
 /-- **A finite spanning family presents `N` as an open quotient of `Aᶥ`.** The
 linear-combination map `a ↦ ∑ aᵢ • gᵢ` is surjective because `g` spans and continuous because
-the action is, hence open by `LinearMap.isOpenMap_of_isTateRing`.
+the action is, hence open by `TauCeti.HasZeroSequenceOfUnits.isOpenMap`.
 
 Openness is the content. It is what turns "every element of `N` is a combination of the `gᵢ`" into
 "every *small* element is a combination with *small* coefficients", and that quantitative form is
@@ -155,27 +105,29 @@ what the Banach-theorem arguments over a Tate ring consume. It is the open prese
 the BGR §3.7.2/1 density argument, `TauCeti.Huber.eq_top_of_dense_of_module_finite`.
 
 The target is Hausdorff and Baire, and `g` spans. The source of
-`LinearMap.isOpenMap_of_isTateRing` is instantiated at `ι → A`. The Tate ring is first countable,
-and the `Pi` instances transfer first-countability and completeness to `ι → A`. -/
+`TauCeti.HasZeroSequenceOfUnits.isOpenMap` is instantiated at `ι → A`. The Tate ring is first
+countable, and the `Pi` instances transfer first-countability and completeness to `ι → A`. -/
 theorem IsTateRing.isOpenMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsOpenMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  (Fintype.linearCombination A g).isOpenMap_of_isTateRing
+  TauCeti.HasZeroSequenceOfUnits.isOpenMap (Fintype.linearCombination A g)
     (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 /-- **The quotient form of `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination`.** A finite
 spanning family does not merely present `N` as an open image of `ι → A`: the topology of `N` is
 the one coinduced along the linear-combination map.
 
-This is the pairing that `LinearMap.isQuotientMap_of_isTateRing` makes with
-`LinearMap.isOpenMap_of_isTateRing`, at the named finite-presentation API. -/
+This is the pairing that `TauCeti.HasZeroSequenceOfUnits.isQuotientMap` makes with
+`TauCeti.HasZeroSequenceOfUnits.isOpenMap`, at the named finite-presentation API. -/
 theorem IsTateRing.isQuotientMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsQuotientMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  (Fintype.linearCombination A g).isQuotientMap_of_isTateRing
+  TauCeti.HasZeroSequenceOfUnits.isQuotientMap (Fintype.linearCombination A g)
     (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 end LinearCombination
 
@@ -215,8 +167,8 @@ target is asked only to be a topological `A`-module — no completeness, no sepa
 generated uniformity, not even a uniform structure. Both are genuine weakenings, not oversights;
 the source carries the whole burden, as it must, since it is the source being finitely generated
 that makes the quotient presentation available. The openness conjunct of 6.18(2) is
-`LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`, which takes the closed range as a
-hypothesis; `LinearMap.isStrictMap_of_module_finite` combines the two conjuncts into 6.18(2).
+`LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`, which takes the closed range as
+a hypothesis; `LinearMap.isStrictMap_of_module_finite` combines the two conjuncts into 6.18(2).
 
 Mathlib's `LinearMap.continuous_of_finiteDimensional` is the same phenomenon over a complete
 nontrivially normed field, where finite-dimensionality plays the role finite generation plays here;

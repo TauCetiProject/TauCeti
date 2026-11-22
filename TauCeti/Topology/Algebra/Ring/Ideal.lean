@@ -45,8 +45,8 @@ continuous surjection can land on a strictly coarser topology than the quotient 
 bijection is continuous but need not be open. What closes the gap is exactly the hypothesis that
 `f` is a *quotient map*, and with it the algebraic isomorphism becomes a homeomorphism.
 
-Over a Tate ring the quotient-map hypothesis is `LinearMap.isQuotientMap_of_isTateRing`, an open
-mapping theorem.
+Over a Tate ring the quotient-map hypothesis is `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`, an
+open mapping theorem.
 
 Note that closedness of `ker f` comes for free once `S` is `T1`, since a kernel is the preimage of
 a point; it is not a further hypothesis of the theorem but a consequence for its consumers, and

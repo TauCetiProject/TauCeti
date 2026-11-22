@@ -148,8 +148,9 @@ theorem isClosedEmbedding_moduleAugmentation
     rw [hrange]
     exact isClosed_singleton.preimage (continuous_moduleDiff M f hA)
   exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨(moduleAugmentation M f).isStrictMap_of_isClosed_range_of_isTateRing
-      hc.continuousAt hclosed, moduleAugmentation_injective M hA f⟩, hclosed⟩
+    ⟨(moduleAugmentation M f).isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
+      hc.continuousAt (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hclosed,
+      moduleAugmentation_injective M hA f⟩, hclosed⟩
 
 omit [IsTopologicalAddGroup (L(f) ⊗[A] M)] [IsTopologicalAddGroup (G(f) ⊗[A] M)] in
 /-- **Strictness of the Laurent differential.** The overlap module carries the quotient
@@ -165,8 +166,9 @@ theorem isOpenQuotientMap_moduleDiff
   have : ContinuousSMul A (O(f) ⊗[A] M) := IsScalarTower.continuousSMul O(f)
   have hc := continuous_moduleDiff M f hA
   exact ⟨moduleDiff_surjective M f, hc,
-    (moduleDiff M f).isOpenMap_of_isTateRing
-      (moduleDiff_surjective M f) hc.continuousAt⟩
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap (moduleDiff M f)
+      (moduleDiff_surjective M f) hc.continuousAt
+      fun _ ↦ (continuous_id.smul continuous_const).continuousAt⟩
 
 end Strictness
 

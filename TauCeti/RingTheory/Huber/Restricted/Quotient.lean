@@ -93,8 +93,9 @@ theorem mem_map_weightedC_iff {J : Ideal A} (hJ : J.FG) (hJc : IsClosed (J : Set
     exact hg
   -- The presentation `Aⁿ → J` is open, by the open mapping theorem.
   have hopen := LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp <|
-    u.isStrictMap_of_isClosed_range_of_isTateRing (LinearMap.continuous_on_pi u).continuousAt
-      (hu ▸ hJc)
+    u.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
+      (LinearMap.continuous_on_pi u).continuousAt
+      (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) (hu ▸ hJc)
   have hf₀ : Tendsto (fun ν ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A))
       cofinite (𝓝 0) :=
     isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.property)

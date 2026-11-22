@@ -449,7 +449,7 @@ theorem isOpenMap_rationalEvalHom [IsTateRing A] {k : ℕ}
     IsUniformAddGroup.uniformity_countably_generated
   have _ : (uniformity (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
-  exact LinearMap.isOpenMap_of_isTateRing
+  exact TauCeti.HasZeroSequenceOfUnits.isOpenMap
     ({ rationalEvalHom P T s S hden t ht with
         commutes' := fun a ↦ by
           have h := congrArg (fun f ↦ f a) (rationalEvalHom_comp_algebraMap P T s S hden t ht)
@@ -457,6 +457,7 @@ theorem isOpenMap_rationalEvalHom [IsTateRing A] {k : ℕ}
           exact h } : restrictedMvPowerSeriesCompletion k A →ₐ[A] Completion S).toLinearMap
     (rationalEvalHom_surjective P T s S hden t ht hspan hTt)
     (continuous_rationalEvalHom P T s S hden t ht).continuousAt
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 /-- **The evaluation map `A⟨X₁, …, Xₖ⟩ → A⟨T/s⟩` is an open quotient map**: it presents `A⟨T/s⟩`
 as a topological quotient of the restricted power series ring.

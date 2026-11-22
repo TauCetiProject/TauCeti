@@ -22,30 +22,32 @@ Two settings are handled here.
 
 * **General complete uniform additive groups**
   (`TauCeti.mem_image_of_mem_closure_image_of_add_subset` and
-  `TauCeti.isOpenMap_of_closure_image_mem_nhds`): along a sequence of sets `V : ℕ → Set M`
-  with `V 0` closed, `0 ∈ V n`, `V (n + 1) + V (n + 1) ⊆ V n`, and shrinking into every
-  neighbourhood of zero, if the errors satisfy `x i ∈ V (i + 1)`, every tail sum
-  `∑_{i = n}^{n + m - 1} x i` lies in `V n`, so the partial sums form a Cauchy sequence inside
-  `V 0`. Completeness gives a limit in `V 0`, and regularity of the target (`hasBasis_nhds_closure`)
-  sends the residuals to zero. When `𝓝 (0 : M)` is countably generated, such a sequence exists
-  inside any neighbourhood of zero, so `f` is open once the closure of the image of every
-  neighbourhood of zero is a neighbourhood of zero. No nonarchimedean, locally convex, or normed
-  structure is needed.
+  `TauCeti.isOpenMap_of_closure_image_mem_nhds`): for an additive map into a `T₀` topological
+  additive group `N`, along a sequence of sets `V : ℕ → Set M` with `V 0` closed, `0 ∈ V n`,
+  `V (n + 1) + V (n + 1) ⊆ V n`, and shrinking into every neighbourhood of zero, if the errors
+  satisfy `x i ∈ V (i + 1)`, every tail sum `∑_{i = n}^{n + m - 1} x i` lies in `V n`, so the
+  partial sums form a Cauchy sequence inside `V 0`. Completeness gives a limit in `V 0`, and
+  regularity of the `T₀` target (`hasBasis_nhds_closure`, together with uniqueness of limits) sends
+  the residuals to zero and identifies the image. When `𝓝 (0 : M)` is countably generated, such a
+  sequence exists inside any neighbourhood of zero, so `f` is open once the closure of the image
+  of every neighbourhood of zero is a neighbourhood of zero. No nonarchimedean, locally convex, or
+  normed structure is needed.
 * **Subgroup bases** (`TauCeti.mem_image_of_mem_closure_image`): when the basis consists of
   subgroups `V n`, `V 0 + V 0 ⊆ V 0` keeps the limit in the *same* subgroup `V 0` rather than a
   strictly larger neighbourhood, giving the sharper inclusion `closure (f '' V 0) ⊆ f '' V 0`.
 
 ## Main results
 
-* `TauCeti.mem_image_of_mem_closure_image_of_add_subset`: for `f` continuous at zero along a
-  shrinking sequence `V` of sets containing `0` with `V 0` closed, `V (n + 1) + V (n + 1) ⊆ V n`,
-  and `closure (f '' V (n + 2)) ∈ 𝓝 0` for all `n`, we have `closure (f '' V 1) ⊆ f '' V 0`.
+* `TauCeti.mem_image_of_mem_closure_image_of_add_subset`: for `f` continuous at zero into a `T₀`
+  topological additive group `N`, along a shrinking sequence `V` of sets containing `0` with `V 0`
+  closed, `V (n + 1) + V (n + 1) ⊆ V n`, and `closure (f '' V (n + 2)) ∈ 𝓝 0` for all `n`, we
+  have `closure (f '' V 1) ⊆ f '' V 0`.
 * `TauCeti.mem_image_of_mem_closure_image`: the sharper subgroup form
-  `closure (f '' V 0) ⊆ f '' V 0` for an antitone basis of subgroups when `f` is continuous at
-  zero and `closure (f '' V (n + 1)) ∈ 𝓝 0` for all `n`.
-* `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map out of a complete
-  first-countable uniform additive group is open once the closures of the images of neighbourhoods
-  of zero are neighbourhoods of zero.
+  `closure (f '' V 0) ⊆ f '' V 0` into a `T₀` topological additive group for an antitone basis of
+  subgroups when `f` is continuous at zero and `closure (f '' V (n + 1)) ∈ 𝓝 0` for all `n`.
+* `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map from a complete first-countable
+  uniform additive group to a `T₀` topological additive group is open once the closures of the
+  images of neighbourhoods of zero are neighbourhoods of zero.
 
 ## References
 
@@ -68,8 +70,9 @@ variable {M N : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [
 /-- **Banach–Schauder / Henkel closure removal.** Let `V : ℕ → Set M` be a shrinking sequence of
 sets containing `0` in a complete uniform additive group `M` such that `V 0` is closed,
 `V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0` contains some `V n`.
-If `f : M → N` is an additive map continuous at zero and each `closure (f '' V (n + 2))` is a
-neighbourhood of zero, then every point of `closure (f '' V 1)` lies in `f '' V 0`.
+If `f : M → N` is an additive map into a `T₀` topological additive group `N`, continuous at zero,
+and each `closure (f '' V (n + 2))` is a neighbourhood of zero, then every point of
+`closure (f '' V 1)` lies in `f '' V 0`.
 
 No nonarchimedean or vector-space hypothesis is needed: for errors `x i ∈ V (i + 1)`, the doubling
 bound `V (n + 1) + V (n + 1) ⊆ V n` controls arbitrary finite tail sums, making the partial sums
@@ -94,7 +97,9 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
   have hs_cauchy : CauchySeq s :=
     (𝓝 (0 : M)).basis_sets.uniformity_of_nhds_zero_swapped.cauchySeq_iff'.mpr fun U hU ↦
       let ⟨K, hK⟩ := hbasis U hU
-      ⟨K, fun _ hn ↦ hK (Finset.sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hn)⟩
+      ⟨K, fun n hn ↦ hK <| by
+        rw [← Finset.sum_Ico_eq_sub x hn, ← Nat.add_sub_of_le hn]
+        exact Finset.sum_Ico_mem_of_add_subset h0 hadd hxV (n - K) K⟩
   obtain ⟨a, ha⟩ := cauchySeq_tendsto_of_complete hs_cauchy
   refine ⟨a, hV0.mem_of_tendsto ha (Eventually.of_forall hs_mem), ?_⟩
   have hpart : Tendsto (fun n ↦ (f : M → N) (s (n + 1))) atTop (𝓝 ((f : M → N) a)) :=
@@ -112,10 +117,10 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
   simpa [s] using hres.neg.add_const y
 
 /-- **Henkel's approximation converges (subgroup form).** Let `V` be an antitone basis of subgroups
-at zero in a complete group `M`, let `f : M → N` be an additive map continuous at zero, and suppose
-each `closure (f '' V (n + 1))` is a neighbourhood of zero — which is what the Baire step of
-Henkel's theorem provides. Then every point of `closure (f '' V 0)` is already the image of a point
-of `V 0`.
+at zero in a complete group `M`, let `f : M → N` be an additive map into a `T₀` topological
+additive group `N` continuous at zero, and suppose each `closure (f '' V (n + 1))` is a
+neighbourhood of zero — which is what the Baire step of Henkel's theorem provides. Then every point
+of `closure (f '' V 0)` is already the image of a point of `V 0`.
 
 `M` is not assumed nonarchimedean: this follows directly from
 `TauCeti.mem_image_of_mem_closure_image_of_add_subset` applied to the shifted sequence
@@ -131,7 +136,7 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
   have hW0 : IsClosed (W 0) :=
     (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
   have hadd : ∀ n, W (n + 1) + W (n + 1) ⊆ W n := by
-    rintro (_ | n) x ⟨a, ha, b, hb, rfl⟩
+    rintro (_ | n) <;> refine Set.add_subset_iff.mpr fun a ha b hb ↦ ?_
     · exact (V 0).add_mem ha hb
     · exact (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
   have hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, W n ⊆ U := by
@@ -142,8 +147,9 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
     hadd hbasis hVN hy
 
 /-- **Openness from the closure step.** Let `f : M → N` be an additive map, continuous at zero,
-out of a complete first-countable uniform additive group. If the closure of the image of every
-neighbourhood of zero is a neighbourhood of zero, then `f` is open.
+from a complete first-countable uniform additive group `M` into a `T₀` topological additive group
+`N`. If the closure of the image of every neighbourhood of zero is a neighbourhood of zero, then `f`
+is open.
 
 The hypothesis is what the Baire step of Henkel's theorem provides, and it can also be checked
 directly by approximating a dense subset of a neighbourhood of zero in `N` with control. No

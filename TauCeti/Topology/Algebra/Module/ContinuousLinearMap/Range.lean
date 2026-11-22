@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 Equality after restriction to the range of a continuous linear map is equivalent to equality
 after precomposition with that map. This identifies derivatives on parametrized tangent planes.
+For an injective continuous linear map, `ContinuousLinearMap.coe_ofInjective_eq_rangeRestrict`
+identifies the coercion of `LinearEquiv.ofInjective` with `ContinuousLinearMap.rangeRestrict`.
 -/
 
 public section
@@ -36,5 +38,14 @@ theorem comp_subtypeL_range_eq_iff
     obtain ⟨x, hx⟩ := LinearMap.mem_range.mp v.property
     rw [coe_coe] at hx
     simpa only [comp_apply, Submodule.subtypeL_apply, ← hx] using congrArg (· x) h
+
+/-- The coercion of `LinearEquiv.ofInjective f.toLinearMap hinj` agrees with `f.rangeRestrict`. -/
+theorem coe_ofInjective_eq_rangeRestrict {R E F : Type*} [Semiring R]
+    [AddCommMonoid E] [TopologicalSpace E] [Module R E]
+    [AddCommMonoid F] [TopologicalSpace F] [Module R F]
+    (f : E →L[R] F) (hinj : Function.Injective f) :
+    ⇑(LinearEquiv.ofInjective f.toLinearMap hinj) = f.rangeRestrict := by
+  ext x
+  rw [LinearEquiv.ofInjective_apply, coe_codRestrict_apply, coe_coe]
 
 end ContinuousLinearMap

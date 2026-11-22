@@ -63,7 +63,8 @@ theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap 
     rw [_root_.eq_moduleTopology A M]
     exact TauCeti.nonarchimedeanAddGroup_moduleTopology
   have hcont : Continuous f := IsModuleTopology.continuous_of_linearMap f
-  exact f.isStrictMap_of_isClosed_range_of_isTateRing hcont.continuousAt
+  exact f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hcont.continuousAt
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
     (TauCeti.Huber.isClosed_of_isNoetherian (LinearMap.range f))
 
 end LinearMap

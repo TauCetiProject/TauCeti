@@ -15,9 +15,13 @@ import TauCeti.Topology.Algebra.OpenMapping.BanachSchauder
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap` proves Henkel's topological open mapping theorem for
 surjective equivariant additive maps out of a complete first-countable uniform additive group into
 a `T₀` Baire topological additive group over any scalar monoid admitting a zero sequence of units,
-and `TauCeti.Topology.Algebra.OpenMapping.BanachSchauder` packages the qualitative Banach–Schauder
-theorems (open mapping, continuous inverse, closed graph, strictness, and range equivalence) for
-complete first-countable uniform modules. When the scalar ring is a Tate normed ring
+assuming continuity of the map at zero, continuity at zero in the scalar variable on the source, and
+continuity of each fixed scalar action on the target.
+`TauCeti.Topology.Algebra.OpenMapping.BanachSchauder` packages the qualitative Banach–Schauder
+theorems (open mapping, continuous inverse, closed graph, and closed-range strictness) for
+complete first-countable uniform modules, while `ContinuousLinearMap.equivRangeOfIsStrictMap` in
+`TauCeti.Topology.Maps.Strict.Module` promotes an injective strict continuous linear map to a
+continuous linear equivalence onto its range. When the scalar ring is a Tate normed ring
 (`TauCeti.NormedRing.IsTate`), the powers of a multiplicative pseudo-uniformiser supply that zero
 sequence of units, and exact scaling by integer powers of the pseudo-uniformiser turns topological
 openness into quantitative linear preimage bounds.
@@ -41,6 +45,8 @@ Tate seminormed ring `R` (no commutativity or ultrametric hypothesis is needed):
   preimage bounds on its range
   (`ContinuousLinearMap.exists_preimage_norm_le_of_isClosed_range_of_isTate`); if it is also
   injective, it is antilipschitz
+  (`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range_of_isTate`). When the source
+  is a complete *normed* module, closedness of the range is equivalent to being antilipschitz
   (`ContinuousLinearMap.isClosed_range_iff_antilipschitz_of_injective_of_isTate`).
 * **Quantitative finite spanning**: any finite family `v : ι → N` satisfying
   `Submodule.span R (Set.range v) = ⊤` in a complete normed module over a complete Tate ring admits
