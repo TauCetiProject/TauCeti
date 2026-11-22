@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Algebra.Ring.CayleyChart
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator

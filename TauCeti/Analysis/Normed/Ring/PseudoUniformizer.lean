@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.Analysis.Normed.Group.Rounding
+import TauCeti.Analysis.Normed.MulAction
 import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
@@ -131,22 +132,15 @@ for a unit `u` by which left multiplication scales the norm exactly, under a
 contractive scalar action. -/
 theorem norm_units_zpow_smul_of_norm_mul (n : ℤ) (m : M) :
     ‖((u ^ n : Rˣ) : R) • m‖ = ‖(u : R)‖ ^ n * ‖m‖ := by
-  rcases (norm_nonneg (u : R)).eq_or_lt with h0 | hu0
-  · rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · rw [← h0, zero_zpow _ hn, zero_mul]
-      exact le_antisymm ((norm_smul_le _ _).trans_eq
-        (by rw [norm_eq_zero_of_norm_mul h0.symm hu, zero_mul])) (norm_nonneg _)
-  induction n generalizing m with
-  | zero => simp
-  | succ n ih =>
-    simp only [zpow_add_one, Units.val_mul, mul_smul, ih, norm_units_smul_of_norm_mul hu,
-      zpow_add_one₀ hu0.ne']
-    ring
-  | pred n ih =>
-    simp only [zpow_sub_one, Units.val_mul, mul_smul, ih, norm_units_inv_smul_of_norm_mul hu,
-      zpow_sub_one₀ hu0.ne']
-    ring
+  rw [mul_comm]
+  cases n with
+  | ofNat n =>
+    simpa using norm_pow_smul_mul_pow (u := (u : R)) (r := ‖(u : R)‖) (s := 1)
+      (fun m ↦ by rw [mul_one, norm_units_smul_of_norm_mul hu, mul_comm]) n m
+  | negSucc n =>
+    simpa [zpow_negSucc, ← inv_pow] using
+      norm_pow_smul_mul_pow (u := ((u⁻¹ : Rˣ) : R)) (r := ‖(u : R)‖⁻¹) (s := 1)
+        (fun m ↦ by rw [mul_one, norm_units_inv_smul_of_norm_mul hu, mul_comm]) (n + 1) m
 
 end Module
 

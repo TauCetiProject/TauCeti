@@ -70,6 +70,10 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
+* `Matrix.IsUpperUnitriangular.mul_single_zero_last`,
+  `Matrix.IsUpperUnitriangular.single_zero_last_mul` — upper-unitriangular factors absorb the
+  corner matrix unit `E₀ₙ`, and `Matrix.IsUpperUnitriangular.eq_one_add_single_zero_last` — an
+  upper-unitriangular matrix vanishing away from the diagonal and the corner is `1 + t E₀ₙ`.
 * `Matrix.isNilpotent_of_apply_eq_zero_of_le` — a matrix that is strictly block triangular for a
   ranking of its indices, not necessarily injective, is nilpotent.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
@@ -109,6 +113,12 @@ def IsUpperUnitriangular [LT m] [Zero R] [One R] (M : Matrix m m R) : Prop :=
 /-- Upper unitriangularity consists of upper triangularity and diagonal entries equal to one. -/
 theorem isUpperUnitriangular_def [LT m] [Zero R] [One R] (M : Matrix m m R) :
     M.IsUpperUnitriangular ↔ M.IsUpperTriangular ∧ ∀ i, M i i = 1 :=
+  Iff.rfl
+
+/-- A matrix is upper unitriangular exactly when its entries strictly below the diagonal vanish
+and its diagonal entries are one. -/
+theorem isUpperUnitriangular_iff [LT m] [Zero R] [One R] (M : Matrix m m R) :
+    M.IsUpperUnitriangular ↔ (∀ ⦃i j⦄, j < i → M i j = 0) ∧ ∀ i, M i i = 1 :=
   Iff.rfl
 
 /-- An upper-unitriangular matrix is upper triangular. -/
@@ -524,6 +534,73 @@ theorem IsUpperUnitriangular.mul_apply_of_covBy {T p : Type*} [NonAssocSemiring 
   · have hjk : j < k :=
       lt_of_le_of_ne (le_of_not_gt fun hkj' ↦ (hij.le_of_lt hkj').not_gt hik) (Ne.symm hkj)
     rw [hN.isUpperTriangular hjk, mul_zero]
+
+/-- An entry strictly above the diagonal of a product of upper-unitriangular matrices is the sum
+of the two entries and of the products through the intermediate indices:
+`(M * N) i j = M i j + N i j + ∑_{i < k < j} M i k * N k j`. -/
+theorem IsUpperUnitriangular.mul_apply_of_lt {T p : Type*} [NonAssocSemiring T] [Fintype p]
+    [LinearOrder p] [LocallyFiniteOrder p] {M N : Matrix p p T} (hM : M.IsUpperUnitriangular)
+    (hN : N.IsUpperUnitriangular) {i j : p} (hij : i < j) :
+    (M * N) i j = M i j + N i j + ∑ k ∈ Finset.Ioo i j, M i k * N k j := by
+  rw [Matrix.mul_apply, ← Finset.sum_subset (Finset.subset_univ (Finset.Icc i j))]
+  · rw [Finset.Icc_eq_cons_Ioc hij.le, Finset.sum_cons, Finset.Ioc_eq_cons_Ioo hij,
+      Finset.sum_cons, hM.apply_diag, hN.apply_diag, one_mul, mul_one]
+    abel
+  · intro k _ hk
+    rcases lt_trichotomy k i with hki | rfl | hik
+    · rw [hM.isUpperTriangular hki, zero_mul]
+    · exact absurd (Finset.left_mem_Icc.2 hij.le) hk
+    · have hjk : j < k := lt_of_not_ge fun hkj ↦ hk (Finset.mem_Icc.2 ⟨hik.le, hkj⟩)
+      rw [hN.isUpperTriangular hjk, mul_zero]
+
+/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the right with an
+upper-unitriangular matrix: its first column is that of the identity. -/
+theorem IsUpperUnitriangular.mul_single_zero_last {T : Type*} [NonAssocSemiring T] {n : ℕ}
+    {G : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hG : G.IsUpperUnitriangular) (c : T) :
+    G * single 0 (Fin.last n) c = single 0 (Fin.last n) c := by
+  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
+  ext a b
+  by_cases hb : b = Fin.last n
+  · subst hb
+    rw [mul_single_apply_same]
+    rcases Fin.eq_zero_or_eq_succ a with rfl | ⟨k, rfl⟩
+    · rw [hG.apply_diag, one_mul, single_apply_same]
+    · rw [hlt (Fin.succ_pos k), zero_mul,
+        single_apply_of_row_ne (Fin.succ_ne_zero k).symm]
+  · rw [mul_single_apply_of_ne (hbj := hb), single_apply_of_col_ne _ _ (Ne.symm hb)]
+
+/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the left with an
+upper-unitriangular matrix: its last row is that of the identity. -/
+theorem IsUpperUnitriangular.single_zero_last_mul {T : Type*} [NonAssocSemiring T] {n : ℕ}
+    {G : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hG : G.IsUpperUnitriangular) (c : T) :
+    single (0 : Fin (n + 1)) (Fin.last n) c * G = single 0 (Fin.last n) c := by
+  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
+  ext a b
+  by_cases ha : a = 0
+  · subst ha
+    rw [single_mul_apply_same]
+    rcases eq_or_lt_of_le (Fin.le_last b) with rfl | h
+    · rw [hG.apply_diag, mul_one, single_apply_same]
+    · rw [hlt h, mul_zero, single_apply_of_col_ne _ _ h.ne']
+  · rw [single_mul_apply_of_ne (h := ha), single_apply_of_row_ne (Ne.symm ha)]
+
+/-- An upper-unitriangular matrix whose entries above the diagonal vanish away from the corner
+`(0, n)`, `n > 0`, is `1 + t E₀ₙ`, with `t` its corner entry. -/
+theorem IsUpperUnitriangular.eq_one_add_single_zero_last {T : Type*} [NonAssocSemiring T]
+    {n : ℕ} {Z : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hZ : Z.IsUpperUnitriangular) (hn : 0 < n)
+    (hz : ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) → Z i j = 0) :
+    Z = 1 + single 0 (Fin.last n) (Z 0 (Fin.last n)) := by
+  have : NeZero n := NeZero.of_pos hn
+  ext a b
+  by_cases hab : a = 0 ∧ b = Fin.last n
+  · obtain ⟨rfl, rfl⟩ := hab
+    rw [Matrix.add_apply, single_apply_same, one_apply_ne Fin.last_pos'.ne, zero_add]
+  · rw [Matrix.add_apply, single_apply_of_ne (h := fun h : 0 = a ∧ Fin.last n = b ↦
+      hab ⟨h.1.symm, h.2.symm⟩), add_zero]
+    rcases lt_trichotomy a b with h | rfl | h
+    · rw [hz a b h hab, one_apply_ne h.ne]
+    · rw [hZ.apply_diag, one_apply_eq]
+    · rw [hZ.isUpperTriangular h, one_apply_ne h.ne']
 
 /-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearOrder p]
