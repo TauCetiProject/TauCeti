@@ -42,6 +42,9 @@ map of internal homs) and, contravariantly, in `A` (precomposition with the map 
 group, with precomposition by the compatible coefficient map on the internal-hom side
 (`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`).
 
+Tensor coinvariants `(A ⊗ B)_G` are additive in each variable; Mathlib provides additivity in `B`,
+and this file adds it in `A`, both as a functor to the functors of `B` and for each fixed `B`.
+
 ## Main definitions
 
 * `MonoidHom.coinvariantsTensorMap`: the map `(A ⊗ X)_G ⟶ (B ⊗ Y)_H` induced by `f`, `φ`
@@ -169,6 +172,20 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A`, as a functor
+to the functors of `B`; Mathlib provides additivity in `B`. -/
+instance : (coinvariantsTensor k G).Additive where
+  map_add := by
+    intros
+    ext : 2
+    apply coinvariantsTensor_hom_ext
+    ext
+    simp
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A` for a fixed `B`.
+-/
+instance (B : Rep.{u} k G) : ((coinvariantsTensor k G).flip.obj B).Additive where
 
 end Monoid
 
