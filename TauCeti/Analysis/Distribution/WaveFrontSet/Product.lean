@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
@@ -581,43 +582,6 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
 
 /-! ### Independence of the cutoff -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The derivatives of order at most `r` of the modulated cutoffs `g e_ζ` grow at most polynomially
-in the frequency `ζ`, with a constant independent of `ζ`. -/
-private theorem exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le (g : 𝓓(Ω, ℂ))
-    (r : ℕ) : ∃ A : ℝ, 0 ≤ A ∧ ∀ ζ : E, ∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i
-      (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ) g) y‖ ≤
-        A * (1 + 2 * Real.pi * ‖ζ‖) ^ r := by
-  let K : Compacts E := ⟨tsupport g, g.hasCompactSupport⟩
-  let gK : 𝓓_{K}(E, ℂ) :=
-    ContDiffMapSupportedIn.of_support_subset g.contDiff (subset_tsupport _)
-  refine ⟨ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK, apply_nonneg _ _,
-    fun ζ i hi y ↦ ?_⟩
-  -- `g e_ζ` is the modulation of `g` by `-ζ`.
-  have hcoe : ⇑(bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ) g) =
-      gK.modulate (-ζ) := by
-    ext x
-    simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-      ContDiffMapSupportedIn.modulate_apply, gK, ContDiffMapSupportedIn.coe_of_support_subset,
-      TauCeti.fourierAtom_apply, inner_neg_right, smul_eq_mul]
-    -- Both sides are `g x` times the exponential of the same phase, up to sign placement.
-    rw [mul_comm]
-    congr 2
-    push_cast
-    ring
-  have hsup : ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK ≤
-      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK :=
-    Seminorm.le_def.1 (Finset.sup_mono (Finset.Iic_subset_Iic.2 hi)) gK
-  rw [hcoe]
-  calc ‖iteratedFDeriv ℝ i (gK.modulate (-ζ)) y‖ ≤ N[ℂ]_{K, i} (gK.modulate (-ζ)) :=
-        ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℂ
-    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK * (1 + 2 * Real.pi * ‖-ζ‖) ^ i :=
-        ContDiffMapSupportedIn.seminorm_modulate_le gK (-ζ) i
-    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK * (1 + 2 * Real.pi * ‖ζ‖) ^ r := by
-        rw [norm_neg]
-        gcongr
-        · exact le_add_of_nonneg_right (by positivity)
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- If `S` and `T` have no opposite covectors over the support of `φ ⊇ supp g`, then
 `S (φ e_η) T (g e_(ζ - η))` decays rapidly in `η` and grows at most polynomially in `ζ`:
@@ -780,15 +744,6 @@ private theorem exists_eqOn_one_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
   exact ⟨⟨V ∩ Ω, hV.inter Ω.isOpen⟩, φ, ⟨hxV, hx⟩, fun y hy ↦ hy.2, hφV.mono inter_subset_left,
     hWc.mono hφW⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A distribution vanishes on an open set `W` if it vanishes on `U x ∩ W` for open sets `U x`
-containing the points `x` of `Ω`. -/
-private theorem isVanishingOn_of_forall_inter {P : 𝓓'(Ω, ℂ)} {U : Ω → Opens E}
-    (hxU : ∀ x, (x : E) ∈ U x) {W : Set E} (hW : IsOpen W)
-    (hP : ∀ x, IsVanishingOn P ((U x : Set E) ∩ W)) : IsVanishingOn P W := fun ψ hψ ↦
-  isVanishingOn_iUnion P (fun x ↦ (U x).isOpen.inter hW) hP ψ fun y hy ↦
-    mem_iUnion.2 ⟨⟨y, ψ.tsupport_subset hy⟩, hxU _, hψ hy⟩
-
 /-- The cutoff products `φ² S T` glue to a distribution which agrees with `φ² S T` on the test
 functions `ψ` such that `φ = 1` near the support of `ψ`. -/
 private theorem exists_forall_apply_eq_cutoffProduct (h : ∀ x, NoOppositeCovectorsOn S T {x}) :
@@ -824,7 +779,7 @@ private theorem exists_forall_apply_eq_cutoffProduct (h : ∀ x, NoOppositeCovec
   refine ⟨P', fun φ' hφ' ψ hφ'ψ ↦ ?_⟩
   obtain ⟨V, hV, hψV, hφ'V⟩ := mem_nhdsSet_iff_exists.1 hφ'ψ
   have hvan : IsVanishingOn (P' - S.cutoffProduct T φ' hφ') V :=
-    isVanishingOn_of_forall_inter hxU hV fun x χ hχ ↦ by
+    isVanishingOn_of_forall_inter _ (fun x ↦ (U x).isOpen) hxU hV fun x χ hχ ↦ by
       have hm : (U x : Set E) ∩ V ∈ 𝓝ˢ (tsupport χ) := ((U x).isOpen.inter hV).mem_nhdsSet.2 hχ
       rw [sub_apply, hPx x χ (hχ.trans inter_subset_left),
         cutoffProduct_congr (hφc x) hφ' (((hφ1 x).mono inter_subset_left).eventuallyEq_of_mem hm)
@@ -936,7 +891,7 @@ private theorem isVanishingOn_product (h : ∀ x, NoOppositeCovectorsOn S T {x})
     IsVanishingOn (S.product T h) W := by
   choose U φ hxU _ hφ1 hφc using fun x : Ω ↦
     exists_eqOn_one_noOppositeCovectorsOn x.property (h x)
-  refine isVanishingOn_of_forall_inter hxU hW fun x χ hχ ↦ ?_
+  refine isVanishingOn_of_forall_inter _ (fun x ↦ (U x).isOpen) hxU hW fun x χ hχ ↦ ?_
   rw [product_apply_of_eventuallyEq_one h (hφc x) (((hφ1 x).mono
     inter_subset_left).eventuallyEq_of_mem (((U x).isOpen.inter hW).mem_nhdsSet.2 hχ))]
   exact hloc (hφc x) (U x).isOpen (hφ1 x) χ hχ
