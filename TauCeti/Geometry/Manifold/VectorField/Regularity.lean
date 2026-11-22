@@ -646,7 +646,7 @@ theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → 
 the points near `y` with the velocity of `V` at every time near `t`, moves the points near the
 chart centre at every time near `t` with the coordinate velocity of `V`, the pullback of `V` to the
 chart, evaluated at their current position. -/
-theorem eventually_hasDerivAt_extChartAt_family_of_forall {ψ : 𝕜 → M → M}
+theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : 𝕜 → M → M}
     {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
     (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),

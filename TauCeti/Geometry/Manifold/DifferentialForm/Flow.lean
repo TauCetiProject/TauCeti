@@ -65,14 +65,15 @@ instances. The maximal flow of a `C¹` field is only a `C¹` family, but it move
 `y` with the velocity of `V` at every time near `t`; then the spatial derivative of its chart
 expression solves the variational equation by
 `TauCeti.hasDerivAt_fderiv_slice_of_contDiffAt_velocity`, with no second derivative of the family,
-and the same conclusion holds (`TauCeti.hasDerivAt_mpullback_of_eq_id_of_contMDiffAt`).
+and the same conclusion holds (`TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod`).
 
 ## Main results
 
 * `TauCeti.hasDerivAt_mpullback_of_eq_id`: along a `C²` family of maps which is the identity
   near `y` at time `t`, the velocity of the pullbacks at `y` at time `t` is the Lie derivative.
-* `TauCeti.hasDerivAt_mpullback_of_eq_id_of_contMDiffAt`: the same along a `C¹` family moving with
-  the velocity of a `C¹` field at all times near `t`, such as the flow of a `C¹` field.
+* `TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod`: the same along a `C¹` family
+  moving with the velocity of a `C¹` field at all times near `t`, such as the flow of a `C¹`
+  field.
 * `TauCeti.hasDerivAt_mpullback_of_eq_comp`: for a family factoring as `ψᵤ = χᵤ ∘ g`, the
   velocity of the pullbacks by `ψᵤ` is the pullback by `g` of the velocity of those by `χᵤ`.
 * `TauCeti.mpullback_eq_of_forall_mlieDerivForm_eq_zero`: pullbacks whose velocities are the
@@ -119,10 +120,10 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- The common step of `TauCeti.hasDerivAt_mpullback_of_eq_id` and
-`TauCeti.hasDerivAt_mpullback_of_eq_id_of_contMDiffAt`: read in the chart at `y`, a `C¹` family
-which is the identity near `y` at time `t`, moves the chart centre with the coordinate velocity
-`W` of `V` and has spatial derivative solving the variational equation `∂ᵤ D_z G = DW` at time
-`t`, pulls `α` back with velocity `L_V α`. -/
+`TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod`: read in the chart at `y`, a
+`C¹` family which is the identity near `y` at time `t`, moves the chart centre with the coordinate
+velocity `W` of `V` and has spatial derivative solving the variational equation `∂ᵤ D_z G = DW` at
+time `t`, pulls `α` back with velocity `L_V α`. -/
 private theorem hasDerivAt_mpullback_of_eq_id_of_hasDerivAt_fderiv {ψ : ℝ → M → M}
     {V : (x : M) → TangentSpace I x} {t : ℝ} (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
@@ -195,7 +196,7 @@ every time near `t`. Then for a form `α` differentiable at `y`,
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y`. Unlike `TauCeti.hasDerivAt_mpullback_of_eq_id`, no second
 derivative of the family is needed; the velocity is required at all times near `t` instead. The
 maximal flow of a `C¹` vector field is such a family. -/
-theorem hasDerivAt_mpullback_of_eq_id_of_contMDiffAt {ψ : ℝ → M → M}
+theorem hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod {ψ : ℝ → M → M}
     {V : (x : M) → TangentSpace I x} {t : ℝ} (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
     (hV : ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, V x⟩ : TangentBundle I M)) y)
@@ -223,7 +224,8 @@ theorem hasDerivAt_mpullback_of_eq_id_of_contMDiffAt {ψ : ℝ → M → M}
   -- its spatial derivative solves the variational equation.
   have hvel' : ∀ᶠ p in 𝓝 (t, extChartAt I y y),
       HasDerivAt (fun u ↦ G (u, p.2)) (W (G p)) p.1 :=
-    eventually_hasDerivAt_extChartAt_family_of_forall hid.self_of_nhds hsmooth.continuousAt hvel
+    eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod hid.self_of_nhds
+      hsmooth.continuousAt hvel
   have hWG : (fun z ↦ W (G (t, z)) : E → E) =ᶠ[𝓝 (extChartAt I y y)] (W : E → E) :=
     hGt_nhds.mono fun _ hz ↦ congrArg (W : E → E) hz
   have hWt : ContDiffAt ℝ 1 W (G (t, extChartAt I y y)) := by rw [hGt]; exact hWsmooth
@@ -296,7 +298,7 @@ theorem hasDerivAt_mpullback_flowOf_zero (y : M)
       (mlieDerivForm Z α y) 0 := by
   have hD := isOpen_flowDomain hZ
   -- The flow moves every point of its open domain with the velocity of `Z`.
-  refine hasDerivAt_mpullback_of_eq_id_of_contMDiffAt (ψ := flowOf Z) (V := Z) y
+  refine hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod (ψ := flowOf Z) (V := Z) y
     (Eventually.of_forall (flowOf_zero Z))
     ((contMDiffOn_flowOf (n := 1) le_rfl hZ).contMDiffAt
       (hD.mem_nhds (mem_flowDomain_zero hZ y))) (hZ y) ?_ hα
