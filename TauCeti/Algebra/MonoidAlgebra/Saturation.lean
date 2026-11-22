@@ -35,8 +35,8 @@ Conversely, over any nontrivial commutative ring `R`, if `R[S]` is integrally cl
 saturated inside the group it generates: an element `x` of that group with `n • x ∈ S` for some
 `n ≠ 0` already lies in `S`. This uses `IsIntegrallyClosedIn.pow_dvd_pow_iff` on `FractionRing R[S]`
 together with the fact that coefficient-one monomials are non-zero-divisors for cancellative
-monoids (`AddMonoidAlgebra.single_mem_nonZeroDivisors_iff`), requiring no domain hypothesis on
-`R[S]`.
+monoids (`TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff`), requiring no domain
+hypothesis on `R[S]`.
 
 For the integral closure and normality of `R[S]` inside `R[AddSubgroup.closure S]` and inside any
 fraction ring of `R[S]`, see `TauCeti.Algebra.MonoidAlgebra.IntegrallyClosed`.
@@ -165,7 +165,7 @@ theorem mem_of_nsmul_mem_of_add_mem_of_isIntegrallyClosed_addMonoidAlgebra (S : 
     (A := FractionRing (AddMonoidAlgebra R S)) (a := single (⟨b, hb⟩ : S) (1 : R)) hn
     (IsLocalization.map_units (FractionRing (AddMonoidAlgebra R S))
       ⟨single (⟨b, hb⟩ : S) (1 : R),
-        single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩)).mp hpow
+        TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩)).mp hpow
   by_contra hx
   have hne (e : S) : ⟨b, hb⟩ + e ≠ ⟨x + b, hxb⟩ := fun he ↦ by
     have he' : (e : N) + b = x + b := by rw [add_comm]; exact congr_arg Subtype.val he

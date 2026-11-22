@@ -151,7 +151,7 @@ theorem groupClosureToFractionRing_single_zero (r : R) :
 theorem groupClosureToFractionRing_single_sub_toGroupClosure (a b : S) (r : R) :
     groupClosureToFractionRing S R K (single (S.toGroupClosure a - S.toGroupClosure b) r) =
       IsLocalization.mk' K (single a r)
-        ⟨single b 1, single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩ := by
+        ⟨single b 1, TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩ := by
   rw [IsLocalization.eq_mk'_iff_mul_eq]
   dsimp only
   rw [← groupClosureToFractionRing_single_toGroupClosure S R K b 1,

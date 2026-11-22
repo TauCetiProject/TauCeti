@@ -427,7 +427,7 @@ theorem nsmulSaturationInfClosureToFractionRing_single_eq_mk'_of_coe_eq_sub (S :
     (hx : (x : G) = a - b) (r : R) :
     nsmulSaturationInfClosureToFractionRing S R K (single x r) =
       IsLocalization.mk' K (single a r)
-        ⟨single b 1, single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩ := by
+        ⟨single b 1, TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff.mpr (one_mem _)⟩ := by
   rw [nsmulSaturationInfClosureToFractionRing_single]
   have hsub : S.nsmulSaturationInfClosureToGroupClosure x =
       S.toGroupClosure a - S.toGroupClosure b :=
