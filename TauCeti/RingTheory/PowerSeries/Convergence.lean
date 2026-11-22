@@ -481,10 +481,11 @@ theorem lt_convergenceRadius_iff_exists_isRestricted [SMul R A] [NormSMulClass R
     s < f.convergenceRadius A ↔ ∃ x : A, f.IsRestricted ‖x‖ ∧ s < ‖x‖ₑ := by
   simp [convergenceRadius_eq_iSup_isRestricted, lt_iSup_iff, and_comm]
 
-/-- If the coefficients of `g` are no larger in norm than those of `f`, then the pointwise
-convergence radius of `g` in `A` is at least that of `f`. -/
+/-- If the coefficients of `g` are no larger in norm than those of `f`, and the `S`-action on `A`
+satisfies `‖s • a‖ ≤ ‖s‖ * ‖a‖`, then the pointwise convergence radius of `g` in `A` is at least
+that of `f`. -/
 theorem convergenceRadius_le_convergenceRadius_of_norm_coeff_le {S : Type*} [NormedRing S]
-    [SMul R A] [NormSMulClass R A] [SMul S A] [NormSMulClass S A]
+    [SMul R A] [NormSMulClass R A] [SMul S A] (hsmul : ∀ (s : S) (a : A), ‖s • a‖ ≤ ‖s‖ * ‖a‖)
     [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {g : S⟦X⟧}
     (h : ∀ n, ‖coeff n g‖ ≤ ‖coeff n f‖) :
     f.convergenceRadius A ≤ g.convergenceRadius A := by
@@ -492,8 +493,9 @@ theorem convergenceRadius_le_convergenceRadius_of_norm_coeff_le {S : Type*} [Nor
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
     tendsto_zero_iff_norm_tendsto_zero] at hfy ⊢
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hfy
-  rw [norm_smul, norm_smul]
-  exact mul_le_mul_of_nonneg_right (h n) (norm_nonneg _)
+  calc ‖coeff n g • y ^ n‖ ≤ ‖coeff n g‖ * ‖y ^ n‖ := hsmul _ _
+    _ ≤ ‖coeff n f‖ * ‖y ^ n‖ := mul_le_mul_of_nonneg_right (h n) (norm_nonneg _)
+    _ = ‖coeff n f • y ^ n‖ := (norm_smul _ _).symm
 
 private theorem min_convergenceRadius_le_of_isRestricted [SMul R A] [NormSMulClass R A]
     [NormMulClass A] [IsUltrametricDist A] [CompleteSpace A] {f g h : R⟦X⟧}
