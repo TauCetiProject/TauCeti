@@ -24,14 +24,24 @@ Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`), so its index i
 dimension of its kernel. This file computes that dimension, completing Taubes's computation of the
 index of the linearized vortex operator.
 
-* **The kernel is the weak kernel.** At every continuous field, taking the `L²` class of the values
-  identifies the kernel of the realization with the weak `L²` kernel `weakGaugeFixedKernel x`, the
-  square-integrable weak solutions of `L_x y = 0`
+* **The kernel is the weak and classical kernel.** At every continuous field, taking the `L²` class
+  of the values identifies the kernel of the realization with the weak `L²` kernel
+  `weakGaugeFixedKernel x`, the square-integrable weak solutions of `L_x y = 0`
   (`TauCeti.Vortex.sobolevGaugeFixedKernelEquiv`). The map is injective because an element of
   `H¹(ℂ)` is determined by its values, it lands in the weak kernel by integration by parts
   (`TauCeti.Vortex.mem_ker_sobolevGaugeFixedOperator_iff`), and it is onto because every weak
   `L²` solution is the value of a strong `H¹` solution
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
+  At a smooth field whose coordinates have bounded derivatives through order `3`, composing with
+  `TauCeti.Vortex.gaugeFixedKernelEquivWeak` identifies `(sobolevGaugeFixedOperator a).ker`
+  with the classical `C²` kernel `gaugeFixedKernel x`
+  (`TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`), yielding exact kernel dimensions and real
+  Fredholm indices `2 |D|` (`TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_card`) and
+  `2 m`
+  (`TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`),
+  as well as bijectivity when the section has no zeros or in degree `0`
+  (`TauCeti.Vortex.bijective_sobolevGaugeFixedOperator_of_forall_sectionValue_ne_zero`,
+  `TauCeti.Vortex.bijective_sobolevGaugeFixedOperator`).
 * **Index `2m`.** At a continuous plane vortex lying in the affine field space `A_m^k` for every
   `k`, the weak kernel has real dimension `2m`
   (`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`), the dimension of the divisor space
@@ -52,6 +62,16 @@ of degree `m` is the divisor of such a vortex, so these results apply over all o
 * `TauCeti.Vortex.sobolevGaugeFixedKernelEquiv`: the kernel of the realization is linearly
   isomorphic to the weak `L²` kernel, at every continuous field, by taking the `L²` class of the
   values (`TauCeti.Vortex.coeFn_sobolevGaugeFixedKernelEquiv`).
+* `TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`: canonical real-linear equivalence between
+  `(sobolevGaugeFixedOperator a).ker` and the classical `C²` kernel `gaugeFixedKernel x`.
+* `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_card`,
+  `finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`,
+  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_card`, and
+  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`:
+  exact kernel dimension and real Fredholm index `2 |D|` and `2 m`.
+* `TauCeti.Vortex.bijective_sobolevGaugeFixedOperator_of_forall_sectionValue_ne_zero` and
+  `TauCeti.Vortex.bijective_sobolevGaugeFixedOperator`: bijectivity when the section has no zeros
+  and in degree zero.
 * `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul`: at a plane vortex in every
   `A_m^k`, the kernel of the realization has real dimension `2m`.
 * `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace`: at such a
@@ -178,6 +198,194 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_finrank_weakGaugeFixedKernel (h
     (hax : a =ᵐ[μ⊤] x) :
     finrank ℝ (sobolevGaugeFixedOperator a).ker = finrank ℝ (weakGaugeFixedKernel x) :=
   (sobolevGaugeFixedKernelEquiv hx hax).finrank_eq
+
+/-! ### Identification with the classical kernel, index `2|D|`, and degree-zero bijectivity -/
+
+/-- **Canonical equivalence between `H¹` and `C²` kernels.** At a smooth field `x` with bounded
+derivatives through order `3` and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a` is
+canonically linearly isomorphic to `gaugeFixedKernel x`. -/
+def kerSobolevGaugeFixedOperatorEquiv (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedOperator a).ker ≃ₗ[ℝ] gaugeFixedKernel x :=
+  (sobolevGaugeFixedKernelEquiv hx.continuous hax).trans
+    (gaugeFixedKernelEquivWeak hx hbound).symm
+
+/-- The image of an `H¹` kernel element under `kerSobolevGaugeFixedOperatorEquiv` agrees almost
+everywhere with its value coordinates. -/
+theorem kerSobolevGaugeFixedOperatorEquiv_apply_ae (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hax : a =ᵐ[μ⊤] x) (y : (sobolevGaugeFixedOperator a).ker) (j : Fin 4) :
+    W1p.value (y.val j) =ᵐ[μ⊤]
+      fun z ↦ (kerSobolevGaugeFixedOperatorEquiv hx hbound hax y).val z j := by
+  set Y := kerSobolevGaugeFixedOperatorEquiv hx hbound hax y
+  have hY :
+      gaugeFixedKernelEquivWeak hx hbound Y = sobolevGaugeFixedKernelEquiv hx.continuous hax y :=
+    (gaugeFixedKernelEquivWeak hx hbound).apply_symm_apply _
+  have h1 := coe_gaugeFixedKernelEquivWeak_ae_eq hx hbound Y
+  have h2 := coeFn_sobolevGaugeFixedKernelEquiv hx.continuous hax y
+  rw [hY] at h1
+  refine ae_restrict_of_ae ?_
+  filter_upwards [h1, h2] with z hz1 hz2
+  simpa using congr($(hz2.symm.trans hz1) j)
+
+/-- The preimage of a classical kernel element under `kerSobolevGaugeFixedOperatorEquiv` has value
+coordinates agreeing almost everywhere with that classical element. -/
+theorem kerSobolevGaugeFixedOperatorEquiv_symm_value_ae (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hax : a =ᵐ[μ⊤] x) (Y : gaugeFixedKernel x) (j : Fin 4) :
+    W1p.value (((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y).val j) =ᵐ[μ⊤]
+      fun z ↦ Y.val z j := by
+  simpa [LinearEquiv.apply_symm_apply] using
+    kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax
+      ((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y) j
+
+/-- Characteristic property of `kerSobolevGaugeFixedOperatorEquiv`: an `H¹` kernel element `y` maps
+to `Y ∈ gaugeFixedKernel x` if and only if each coordinate value of `y` agrees almost everywhere
+with the corresponding coordinate of `Y`. -/
+theorem kerSobolevGaugeFixedOperatorEquiv_eq_iff (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hax : a =ᵐ[μ⊤] x) (y : (sobolevGaugeFixedOperator a).ker) (Y : gaugeFixedKernel x) :
+    kerSobolevGaugeFixedOperatorEquiv hx hbound hax y = Y ↔
+      ∀ j : Fin 4, W1p.value (y.val j) =ᵐ[μ⊤] fun z ↦ Y.val z j := by
+  refine ⟨fun h j ↦ h ▸ kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax y j, fun h ↦ ?_⟩
+  set Y' := kerSobolevGaugeFixedOperatorEquiv hx hbound hax y
+  have hae : (Y' : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] Y := by
+    have hae_j (j : Fin 4) :
+        (fun z ↦ Y'.val z j) =ᵐ[volume] fun z ↦ Y.val z j := by
+      simpa only [Opens.coe_top, Measure.restrict_univ] using
+        (kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax y j).symm.trans (h j)
+    filter_upwards [ae_all_iff.2 hae_j] with z hz
+    ext j
+    exact hz j
+  exact Subtype.ext (((continuous_of_mem_gaugeFixedKernel Y'.property).ae_eq_iff_eq volume
+    (continuous_of_mem_gaugeFixedKernel Y.property)).1 hae)
+
+/-- **Exact real dimension `2 |D|` of the `H¹` kernel of `L_x`.** At a smooth field `x` with
+bounded derivatives through order `3`, vanishing holomorphicity rows `∂bar_a α = 0`, `|α|² → 1`
+at infinity, zero divisor `D`, and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a`
+has real dimension `2 |D|`. -/
+theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hax : a =ᵐ[μ⊤] x) :
+    finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * Multiset.card D := by
+  rw [(kerSobolevGaugeFixedOperatorEquiv hx hbound hax).finrank_eq,
+    finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD]
+
+/-- **Exact real dimension `2 m` of the `H¹` kernel of `L_x` at a framed field.** At a smooth field
+`x` with bounded derivatives through order `3`, vanishing holomorphicity rows, the degree-`m` end
+framing `α(z) (z / |z|)⁻ᵐ → 1`, and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a`
+has real dimension `2 m`. -/
+theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
+    {m : ℕ} (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hax : a =ᵐ[μ⊤] x) :
+    finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * m := by
+  rw [(kerSobolevGaugeFixedOperatorEquiv hx hbound hax).finrank_eq,
+    finrank_gaugeFixedKernel_eq_two_mul hx hhol hframe]
+
+/-- **Real Fredholm index `2 |D|` of `L_x : H¹ → L²`.** At a smooth plane vortex `x` with bounded
+derivatives through order `3`, `|α|² → 1` at infinity, zero divisor `D`, and `L∞` class `a`,
+the Sobolev realization `sobolevGaugeFixedOperator a` has real Fredholm index `2 |D|`. -/
+theorem index_sobolevGaugeFixedOperator_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedOperator a).index = 2 * Multiset.card D := by
+  rw [(sobolevGaugeFixedOperator a).index_of_surjective
+      (sobolevGaugeFixedOperator_surjective (hx.of_le (by simp)) hsol hlim hax),
+    finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_card hx hbound
+      (fun w ↦ by simp [hsol w]) hlim hD hax]
+  push_cast
+  rfl
+
+/-- **Real Fredholm index `2 m` of `L_x : H¹ → L²` at a framed vortex.** At a smooth plane vortex
+`x` with bounded derivatives through order `3`, the degree-`m` end framing
+`α(z) (z / |z|)⁻ᵐ → 1`, and `L∞` class `a`, the Sobolev realization `sobolevGaugeFixedOperator a`
+has real Fredholm index `2 m`. -/
+theorem index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
+    {m : ℕ} (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedOperator a).index = 2 * m := by
+  rw [(sobolevGaugeFixedOperator a).index_of_surjective
+      (sobolevGaugeFixedOperator_surjective (hx.of_le (by simp)) hsol
+        (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hax),
+    finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow hx hbound
+      (fun w ↦ by simp [hsol w]) hframe hax]
+  push_cast
+  rfl
+
+/-- Transport triviality of `gaugeFixedKernel x` back to `(sobolevGaugeFixedOperator a).ker` via
+`kerSobolevGaugeFixedOperatorEquiv`. -/
+private theorem ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hax : a =ᵐ[μ⊤] x) (hbot : gaugeFixedKernel x = ⊥) :
+    (sobolevGaugeFixedOperator a).ker = ⊥ :=
+  Submodule.subsingleton_iff_eq_bot.1 <|
+    have : Subsingleton (gaugeFixedKernel x) := Submodule.subsingleton_iff_eq_bot.2 hbot
+    (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).injective.subsingleton
+
+/-- **Trivial `H¹` kernel when the section has no zeros.** At a smooth field `x` with bounded
+derivatives through order `3`, vanishing holomorphicity rows, `|α|² → 1` at infinity, no zeros of
+`α`, and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a` is trivial. -/
+theorem ker_sobolevGaugeFixedOperator_eq_bot_of_forall_sectionValue_ne_zero (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hne : ∀ z, sectionValue x z ≠ 0) (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedOperator a).ker = ⊥ :=
+  ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot hx hbound hax
+    (gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero (hx.of_le (by simp)) hhol hlim hne)
+
+/-- **Trivial `H¹` kernel in degree zero.** At a smooth field `x` with bounded derivatives through
+order `3`, vanishing holomorphicity rows, `α(z) → 1` at infinity, and `L∞` class `a`, the kernel
+of `sobolevGaugeFixedOperator a` is trivial. -/
+theorem ker_sobolevGaugeFixedOperator_eq_bot (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hframe : Tendsto (sectionValue x) (cocompact ℂ) (𝓝 1)) (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedOperator a).ker = ⊥ :=
+  ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot hx hbound hax
+    (gaugeFixedKernel_eq_bot (hx.of_le (by simp)) hhol hframe)
+
+/-- **Bijectivity of `L_x : H¹ → L²` when the section has no zeros.** At a smooth plane vortex `x`
+with bounded derivatives through order `3`, `|α|² → 1` at infinity, no zeros of `α`, and `L∞`
+class `a`, `sobolevGaugeFixedOperator a` is bijective (hence a continuous linear equivalence by
+`ContinuousLinearEquiv.ofBijective`). -/
+theorem bijective_sobolevGaugeFixedOperator_of_forall_sectionValue_ne_zero (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hne : ∀ z, sectionValue x z ≠ 0) (hax : a =ᵐ[μ⊤] x) :
+    Function.Bijective (sobolevGaugeFixedOperator a) :=
+  ⟨LinearMap.ker_eq_bot.1 (ker_sobolevGaugeFixedOperator_eq_bot_of_forall_sectionValue_ne_zero
+      hx hbound (fun w ↦ by simp [hsol w]) hlim hne hax),
+    sobolevGaugeFixedOperator_surjective (hx.of_le (by simp)) hsol hlim hax⟩
+
+/-- **Bijectivity of `L_x : H¹ → L²` in degree zero.** At a smooth plane vortex `x` with bounded
+derivatives through order `3`, `α(z) → 1` at infinity, and `L∞` class `a`,
+`sobolevGaugeFixedOperator a` is bijective. -/
+theorem bijective_sobolevGaugeFixedOperator (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (sectionValue x) (cocompact ℂ) (𝓝 1)) (hax : a =ᵐ[μ⊤] x) :
+    Function.Bijective (sobolevGaugeFixedOperator a) := by
+  have hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+    tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (m := 0) (by simpa using hframe)
+  exact ⟨LinearMap.ker_eq_bot.1 (ker_sobolevGaugeFixedOperator_eq_bot hx hbound
+      (fun w ↦ by simp [hsol w]) hframe hax),
+    sobolevGaugeFixedOperator_surjective (hx.of_le (by simp)) hsol hlim hax⟩
 
 /-! ### Plane vortices in every `A_m^k` -/
 
