@@ -313,7 +313,7 @@ theorem _root_.TopologicalSpace.Opens.coe_reflectionCore_inter_setOf_im_nonneg (
 
 /-- A compact subset `K` of the reflection core of `Ω` lies in the reflection core of an open
 subset `V` of `Ω` whose closure is compact and contained in `Ω`. -/
-theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_reflectionCore
+theorem _root_.TopologicalSpace.Opens.exists_subset_reflectionCore_and_isCompact_closure
     {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω.reflectionCore) :
     ∃ V : Opens ℂ, IsCompact (closure (V : Set ℂ)) ∧ closure (V : Set ℂ) ⊆ Ω ∧
       K ⊆ V.reflectionCore := by

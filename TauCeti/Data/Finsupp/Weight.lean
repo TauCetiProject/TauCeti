@@ -9,13 +9,13 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.Data.Set.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
 
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.Data.Set.Card
 
 /-!
 # Weights of finitely supported functions
@@ -70,6 +70,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   finitely many exponent vectors of each degree, and of degree at most `n`.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.ncard_setOf_degree_eq`: in `d` variables there are `d.multichoose n` exponent vectors
+  of degree `n`.
 * `Finsupp.card_degree_le_eq_choose`: there are `(m + d choose d)` exponent vectors of degree at
   most `m` in `d` variables.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
@@ -286,6 +288,16 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree = n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+/-- In `d = card σ` variables there are `d.multichoose n` exponent vectors of degree `n`. -/
+theorem ncard_setOf_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) :
+    {s : σ →₀ ℕ | s.degree = n}.ncard = (Fintype.card σ).multichoose n := by
+  classical
+  have h : {s : σ →₀ ℕ | s.degree = n} =
+      ((Finset.univ : Finset σ).finsuppAntidiag n : Set (σ →₀ ℕ)) := by
+    ext s
+    simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+  rw [h, Set.ncard_coe_finset, Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
 form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
