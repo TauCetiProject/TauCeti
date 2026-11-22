@@ -42,6 +42,8 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
 
 * `TauCeti.tangentRepresentation`: the representation of the stabilizer of `x` on `T_x M` by
   derivatives at `x`.
+* `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
+  of `T_x M`.
 
 ## Main results
 
@@ -101,13 +103,35 @@ noncomputable def tangentRepresentation
           ext y
           simp [mul_smul]
         rw [hgh]
-        exact mfderiv_comp_of_apply_eq_self (hd g g.2) (hd h h.2) h.2 }
+        exact mfderiv_comp_of_apply_eq_self (hd g g.property) (hd h h.property) h.property }
 
 @[simp]
 theorem tangentRepresentation_apply
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
     (g : stabilizer G x) :
     tangentRepresentation hd g = mfderiv I I (fun y : M ↦ (g : G) • y) x :=
+  (rfl)
+
+/-- The tangent representation of the stabilizer of `x`, as a homomorphism to the group of linear
+automorphisms of `T_x M`. -/
+noncomputable def tangentAut
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    stabilizer G x →* TangentSpace I x ≃ₗ[𝕜] TangentSpace I x :=
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv 𝕜 (TangentSpace I x)).toMonoidHom.comp
+    (tangentRepresentation hd).toRepresentation.asGroupHom
+
+@[simp]
+theorem tangentAut_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentAut hd g v = tangentRepresentation hd g v :=
+  (rfl)
+
+@[simp]
+theorem tangentAut_symm_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    (tangentAut hd g).symm v = tangentRepresentation hd g⁻¹ v :=
   (rfl)
 
 /-- The invariant vectors of the tangent representation at `x` are the tangent vectors fixed by
@@ -147,8 +171,8 @@ theorem mfderiv_smul_comp_tangentRepresentation {h : G}
       (fun y : M ↦ (g' : G) • y) ∘ fun y : M ↦ h • y := by
     ext y
     simp [g', stabilizerEquivStabilizer_apply, mul_smul]
-  have hl := mfderiv_comp_of_apply_eq_self hh (hd g g.2) g.2
-  rw [hcomm, mfderiv_comp x (hd' g' g'.2) hh] at hl
+  have hl := mfderiv_comp_of_apply_eq_self hh (hd g g.property) g.property
+  rw [hcomm, mfderiv_comp x (hd' g' g'.property) hh] at hl
   rw [tangentRepresentation_apply, tangentRepresentation_apply]
   exact hl.symm
 
@@ -182,9 +206,9 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
       (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val =
         (tangentRepresentation hd : stabilizer G x → _) :=
     funext fun g ↦ (Manifold.inTangentCoordinates_eq_self_of_eq (x₀ := (g₀ : G)) (x := g) _ _ _
-      rfl (g.2.trans g₀.2.symm)).trans (tangentRepresentation_apply hd g).symm
+      rfl (g.property.trans g₀.property.symm)).trans (tangentRepresentation_apply hd g).symm
   rw [← hcomp]
-  exact h.comp continuous_subtype_val.continuousAt
+  exact h.comp continuous_subtypeVal.continuousAt
 
 end Continuity
 
@@ -221,13 +245,13 @@ theorem tangentRepresentation_eq_one_iff
   -- In the chart `χ`, each element of the stabilizer has strict derivative its image under `σ`.
   have hσ (k : stabilizer G x) :
       HasStrictFDerivAt (χ ∘ (k • ·) ∘ χ.symm) (σ k) (χ x) := by
-    have h := (hs k k.2).hasStrictFDerivAt_extChartAt_conj
-    rw [mem_stabilizer_iff.mp k.2] at h
-    rw [tangentRepresentation_apply, ((hs k k.2).mdifferentiableAt one_ne_zero
-      ).mfderiv_eq_fderiv_extChartAt_conj k.2, hχ, hχs]
+    have h := (hs k k.property).hasStrictFDerivAt_extChartAt_conj
+    rw [mem_stabilizer_iff.mp k.property] at h
+    rw [tangentRepresentation_apply, ((hs k k.property).mdifferentiableAt one_ne_zero
+      ).mfderiv_eq_fderiv_extChartAt_conj k.property, hχ, hχs]
     exact h
   -- `σ`, a representation on `T_x M`, is used as a representation on the model space `E`.
-  refine (χ.map_eq_one_iff_mem_germKernel hxχ (fun k ↦ k.2) σ hσ g).trans ?_
+  refine (χ.map_eq_one_iff_mem_germKernel hxχ (fun k ↦ k.property) σ hσ g).trans ?_
   simp only [mem_germKernel, Subgroup.smul_def]
 
 omit [CompleteSpace E] in
@@ -253,7 +277,7 @@ theorem tangentRepresentation_eq_one_iff_forall_smul_eq [T2Space M] [Preconnecte
   refine ⟨fun h y ↦ ?_, fun h ↦ ?_⟩
   · have hg : IsOfFinOrder (g : G) :=
       (stabilizer G x).subtype.isOfFinOrder (isOfFinOrder_of_finite g)
-    exact interior_subset (subset_interior_fixedBy_of_isPreconnected (g : G) hg (hs g g.2)
+    exact interior_subset (subset_interior_fixedBy_of_isPreconnected (g : G) hg (hs g g.property)
       isPreconnected_univ ⟨x, mem_univ x, h⟩ (mem_univ y))
   · rw [(Set.eq_univ_iff_forall (s := fixedBy M (g : G))).mpr h, interior_univ]
     exact mem_univ x

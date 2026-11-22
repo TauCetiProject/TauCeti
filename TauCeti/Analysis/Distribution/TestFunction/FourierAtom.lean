@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Test functions cut off by a Fourier atom
@@ -19,11 +22,17 @@ Multiplying a complex test function `φ` by the Fourier atom `e_η x = 𝐞 (-�
 distribution with it is the localized Fourier transform `Distribution.localFourier`. This file
 records the product rule for its directional derivatives,
 
-`∂_v (φ e_η) = (∂_v φ) e_η - 2πi ⟪v, η⟫ φ e_η`.
+`∂_v (φ e_η) = (∂_v φ) e_η - 2πi ⟪v, η⟫ φ e_η`,
+
+and, viewing `φ e_η` as a Schwartz function, that modulation is translation in frequency:
+the Fourier transform of `φ e_η` is `𝓕 φ (· + η)`.
 
 ## Main declarations
 
 * `TestFunction.lineDerivOp_bilinLeftCLM_fourierAtom`: the directional derivative of `φ e_η`.
+* `TestFunction.fourierAtomMulSchwartzMap`: `φ e_η` as a Schwartz function.
+* `TestFunction.fourier_fourierAtomMulSchwartzMap`: the Fourier transform of `φ e_η` is
+  `𝓕 φ (· + η)`.
 -/
 
 public section
@@ -31,7 +40,7 @@ public section
 noncomputable section
 
 open Complex LineDeriv Real TopologicalSpace
-open scoped Distributions FourierTransform RealInnerProductSpace
+open scoped Distributions FourierTransform RealInnerProductSpace SchwartzMap
 
 namespace TestFunction
 
@@ -62,5 +71,28 @@ theorem lineDerivOp_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) (v η : E) :
   rw [(hφ.hasLineDerivAt v).lineDeriv]
   simp [TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply, hL, real_inner_comm v η]
   ring
+
+/-- The modulated cutoff `x ↦ φ x e_η x`, the product of `φ` with the Fourier atom
+`e_η x = 𝐞 (-⟪x, η⟫)` (`TauCeti.fourierAtom η`), as a Schwartz function. Pairing a distribution
+with it is the localized Fourier transform `Distribution.localFourier`. -/
+def fourierAtomMulSchwartzMap (φ : 𝓓(Ω, ℂ)) (η : E) : 𝓢(E, ℂ) :=
+  toSchwartzMapCLM ℂ (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
+
+@[simp]
+theorem fourierAtomMulSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
+    φ.fourierAtomMulSchwartzMap η x = φ x * TauCeti.fourierAtom η x := by
+  simp [fourierAtomMulSchwartzMap, bilinLeftCLM_apply]
+
+/-- **Modulation is translation in frequency.** The Fourier transform of `φ e_η` is
+`ξ ↦ 𝓕 φ (ξ + η)`. -/
+theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
+    𝓕 (φ.fourierAtomMulSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
+  have hmod : ⇑(φ.fourierAtomMulSchwartzMap η) = fun y ↦ 𝐞 ⟪y, -η⟫ • toSchwartzMapCLM ℂ φ y := by
+    ext y
+    rw [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+      inner_neg_right, Circle.smul_def, smul_eq_mul, mul_comm]
+  rw [SchwartzMap.fourier_coe, hmod, TauCeti.fourier_fourierChar_smul, sub_neg_eq_add,
+    SchwartzMap.fourier_coe]
 
 end TestFunction

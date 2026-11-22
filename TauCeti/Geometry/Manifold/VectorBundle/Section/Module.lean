@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The smooth-function module of bundle sections
@@ -23,8 +22,9 @@ These structures allow function-linear maps on sections, in particular tensorial
 operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
 as needed by the algebraic theory of differential operators between modules of sections.
-For a trivial bundle `Bundle.Trivial M F`, `ContMDiffSection.trivialEquiv` identifies `C^n`
-sections `C^n(M, 𝕜)`-linearly with `C^n` maps `M → F`.
+
+For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`), linearly over the
+ground field.
 
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
 ground field and intertwines multiplication with composition of scalar functions.
@@ -87,6 +87,16 @@ def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
 theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
   (rfl)
 
+/-- For `m ≤ n`, `Cⁿ` sections as `Cᵐ` sections, as a ground-field linear map. -/
+def ofLE {m : ℕ∞ω} (hmn : m ≤ n) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^m⟮I; F, V⟯ where
+  toFun s := ⟨s, s.contMDiff.of_le hmn⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_ofLE {m : ℕ∞ω} (hmn : m ≤ n) (s : Cₛ^n⟮I; F, V⟯) : ⇑(ofLE hmn s) = s :=
+  (rfl)
+
 /-- The points of `M` separate sections: a section lying in `ker (ev x) • Γ(V)` for every point
 `x` is zero. -/
 theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top (s : Cₛ^n⟮I; F, V⟯)
@@ -102,29 +112,6 @@ theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top (s : Cₛ^n⟮I; F, V⟯)
     simp [ht, hu]
 
 end Module
-
-section TrivialEquiv
-
-/-- `C^n` sections of `Bundle.Trivial M F` are `C^n(M, 𝕜)`-linearly equivalent to `C^n` maps
-`M → F`. -/
-def trivialEquiv :
-    Cₛ^n⟮I; F, Bundle.Trivial M F⟯ ≃ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝓘(𝕜, F), F⟯ where
-  toFun s := ⟨⇑s, (Bundle.Trivial.contMDiff_mk_iff.mp s.contMDiff).2⟩
-  invFun f := ⟨⇑f, Bundle.Trivial.contMDiff_mk_iff.mpr ⟨contMDiff_id, f.contMDiff⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' f s := by ext x; exact smul_apply f s x
-
-@[simp]
-theorem trivialEquiv_apply (s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯) (x : M) :
-    trivialEquiv s x = s x := (rfl)
-
-@[simp]
-theorem trivialEquiv_symm_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) :
-    trivialEquiv.symm f x = f x := (rfl)
-
-end TrivialEquiv
 
 section Pullback
 
@@ -203,8 +190,8 @@ variable [∀ x, Nonempty (V x)]
 
 /-- Restriction of a section to an open subset, in the pullback bundle along its inclusion. -/
 def restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
-    Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯ :=
-  s.pullback (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯)
+    Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ :=
+  s.pullback (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)
 
 /-- Restriction keeps the value at each point of the open subset. -/
 -- Normalize the bundled inclusion in the implicit pullback-fibre type for simplification.
@@ -222,8 +209,8 @@ theorem tsupport_restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s.restrict U).tsupport = Subtype.val ⁻¹' s.tsupport := by
   rw [tsupport_def, tsupport_def]
   -- The open carrier and the subtype of its underlying set are the same manifold.
-  erw [U.isOpen.isOpenMap_subtype_val.preimage_closure_eq_closure_preimage
-    continuous_subtype_val {x | s x ≠ 0}]
+  erw [U.isOpen.isOpenMap_subtypeVal.preimage_closure_eq_closure_preimage
+    continuous_subtypeVal {x | s x ≠ 0}]
   -- Restriction evaluates at the inclusion, so the two nonzero loci agree.
   congr 1
 
@@ -247,15 +234,15 @@ theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
 @[simp]
 theorem restrict_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+      f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
   pullback_smul_function f s _
 
 variable (I F n V) in
 /-- Restriction of sections to an open subset as a ground-field linear map. -/
 def restrictLinearMap (U : Opens M) :
     Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
-      Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯ :=
-  pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯)
+      Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ :=
+  pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)
 
 -- As for `restrict_apply`, normalize the inclusion in the implicit pullback-bundle type.
 @[simp]
@@ -319,7 +306,7 @@ theorem pullback_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜
 theorem restrict_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
     (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+      f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
   pullback_smul_function_of_normedAlgebra f s _
 
 end Pullback

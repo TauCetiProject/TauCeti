@@ -64,10 +64,10 @@ theorem charpoly_lmapDomain_eq_mul_subtypePerm [Finite α] (π : Perm α) (p : �
   rw [← LinearMap.charpoly_prodMap, ← e.charpoly_conj]
   congr 1
   apply LinearMap.prod_ext <;> apply Finsupp.lhom_ext <;> intro y c
-  · have hy : p (π y) := (h y).mpr y.2
+  · have hy : p (π y) := (h y).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_pos hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
-  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.2
+  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_neg hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
 
@@ -84,12 +84,10 @@ theorem charpoly_lmapDomain_of_forall_sameCycle (π : Perm α) {x : α}
     rw [minimalPeriod_eq_natCard_of_forall_sameCycle π hx y, Nat.card_eq_fintype_card]
   have hpos : 0 < n := Fintype.card_pos_iff.mpr ⟨x⟩
   have hTn : Finsupp.lmapDomain R R π ^ n = 1 := by
-    have : π ^ n = 1 := by
-      ext y
-      rw [Perm.one_apply, ← iterate_eq_pow, ← hn y, Function.iterate_minimalPeriod]
-    rw [lmapDomain_pow, this, coe_one, Finsupp.lmapDomain_id, Module.End.one_eq_id]
+    have : π^[n] = id := funext fun y ↦ by rw [← hn y, Function.iterate_minimalPeriod, id_eq]
+    rw [Finsupp.lmapDomain_pow, this, Finsupp.lmapDomain_id, Module.End.one_eq_id]
   -- `single x 1` is a cyclic vector: its translates under the first `n` powers of the map are
-  -- the distinct basis vectors `single ((π ^ i) x) 1`, so no nonzero polynomial of degree
+  -- the distinct basis vectors `single (π^[i] x) 1`, so no nonzero polynomial of degree
   -- below `n` annihilates it.
   have hind : ∀ q : R[X], q.natDegree < n →
       aeval (Finsupp.lmapDomain R R π) q (Finsupp.single x 1) = 0 → q = 0 := by
@@ -98,16 +96,15 @@ theorem charpoly_lmapDomain_of_forall_sameCycle (π : Perm α) {x : α}
     ext j
     rw [coeff_zero]
     rcases lt_or_ge j n with hj | hj
-    · have := congrArg (fun f ↦ f ((π ^ j) x)) h0
-      simp only [aeval_eq_sum_range' hq, LinearMap.sum_apply, LinearMap.smul_apply, lmapDomain_pow,
-        Finsupp.lmapDomain_apply, Finsupp.mapDomain_single, Finset.sum_apply', Finsupp.smul_apply,
-        Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finsupp.coe_zero,
-        Pi.zero_apply] at this
+    · have := congrArg (fun f ↦ f (π^[j] x)) h0
+      simp only [aeval_eq_sum_range' hq, LinearMap.sum_apply, LinearMap.smul_apply,
+        Finsupp.lmapDomain_pow, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single,
+        Finset.sum_apply', Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one,
+        mul_zero, Finsupp.coe_zero, Pi.zero_apply] at this
       rw [Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)] at this
       · simpa using this
       · intro i hi hij
         refine ite_eq_right_iff.mpr fun h ↦ (hij ?_).elim
-        rw [← iterate_eq_pow, ← iterate_eq_pow] at h
         exact Function.iterate_injOn_Iio_minimalPeriod (by simpa [hn] using hi)
           (by simpa [hn] using hj) h
     · exact coeff_eq_zero_of_natDegree_lt (hq.trans_le hj)
@@ -142,7 +139,7 @@ theorem charpoly_lmapDomain (π : Perm α) :
       Multiset.map_add, Multiset.prod_add]
     congr 1
     · have hc : ∀ y, (π.subtypePerm h).SameCycle ⟨x, SameCycle.refl π x⟩ y :=
-        fun y ↦ sameCycle_subtypePerm.mpr y.2
+        fun y ↦ sameCycle_subtypePerm.mpr y.property
       rw [charpoly_lmapDomain_of_forall_sameCycle _ hc, fullCycleType_of_forall_sameCycle _ hc,
         Multiset.map_singleton, Multiset.prod_singleton]
     · refine ih _ ?_ _ rfl

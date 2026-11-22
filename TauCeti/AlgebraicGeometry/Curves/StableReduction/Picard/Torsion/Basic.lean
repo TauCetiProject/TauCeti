@@ -110,8 +110,8 @@ theorem finrank_torsion_eq_zero_of_card_eq_one (h : Fintype.card T.Component = 1
   have := T.isTorsionFree_pic_of_card_eq_one h
   have := HasUniqueDiv.of_isTorsionFree ℤ T.Pic
   have : Subsingleton (T.torsion ℓ) := ⟨fun x y ↦ Subtype.ext <| by
-    rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.2),
-      (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.2)]⟩
+    rw [(nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp x.property),
+      (nsmul_eq_zero_iff_right hℓ).mp (AddSubgroup.torsionBy.nsmul_iff.mp y.property)]⟩
   exact Module.finrank_zero_of_subsingleton
 
 namespace Equiv

@@ -146,13 +146,13 @@ def wedgeWith (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
       (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y))) :
     SmoothBundleForm I F₁ V₁ k →ₗ[ℝ] SmoothBundleForm I F₂ V₂ l →ₗ[ℝ]
       SmoothBundleForm I F₃ V₃ (k + l) :=
-  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨bundleWedgeWith μ hμ φ.1 ψ.1,
+  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨bundleWedgeWith μ hμ φ.val ψ.val,
       mem_smoothBundleForms.mpr <| IsSmoothBundleForm.bundleWedgeWith hμ hpair
-        (mem_smoothBundleForms.mp φ.2) (mem_smoothBundleForms.mp ψ.2)⟩)
-    (fun φ φ' ψ ↦ Subtype.ext <| bundleWedgeWith_add_left μ hμ φ.1 φ'.1 ψ.1)
-    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_left μ hμ c φ.1 ψ.1)
-    (fun φ ψ ψ' ↦ Subtype.ext <| bundleWedgeWith_add_right μ hμ φ.1 ψ.1 ψ'.1)
-    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_right μ hμ c φ.1 ψ.1)
+        (mem_smoothBundleForms.mp φ.property) (mem_smoothBundleForms.mp ψ.property)⟩)
+    (fun φ φ' ψ ↦ Subtype.ext <| bundleWedgeWith_add_left μ hμ φ.val φ'.val ψ.val)
+    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_left μ hμ c φ.val ψ.val)
+    (fun φ ψ ψ' ↦ Subtype.ext <| bundleWedgeWith_add_right μ hμ φ.val ψ.val ψ'.val)
+    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_right μ hμ c φ.val ψ.val)
 
 /-- The smooth bundle wedge has the existing rough bundle wedge as its underlying form. -/
 @[simp]
@@ -162,7 +162,7 @@ theorem coe_wedgeWith (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y
       (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
     (φ : SmoothBundleForm I F₁ V₁ k) (ψ : SmoothBundleForm I F₂ V₂ l) :
     (wedgeWith μ hμ hpair φ ψ : RoughBundleForm I M V₃ (k + l)) =
-      bundleWedgeWith μ hμ φ.1 ψ.1 := by
+      bundleWedgeWith μ hμ φ.val ψ.val := by
   rw [wedgeWith, LinearMap.mk₂_apply]
 
 /-- Evaluation of the smooth bundle wedge on a tangent tuple. -/
@@ -172,11 +172,11 @@ theorem wedgeWith_apply (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃
       (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
     (φ : SmoothBundleForm I F₁ V₁ k) (ψ : SmoothBundleForm I F₂ V₂ l)
     (y : M) (v : Fin (k + l) → TangentSpace I y) :
-    (wedgeWith μ hμ hpair φ ψ).1 y v =
+    (wedgeWith μ hμ hpair φ ψ).val y v =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
         ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
-          μ y (φ.1 y (fun i ↦ v (σ (Fin.castAdd l i))))
-            (ψ.1 y (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+          μ y (φ.val y (fun i ↦ v (σ (Fin.castAdd l i))))
+            (ψ.val y (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, bundleWedgeWith_apply]
 
 /-- The smooth bundle wedge of two one-forms is the alternating two-term pairing. -/
@@ -187,10 +187,10 @@ theorem wedgeWith_apply_one_one
       (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
     (φ : SmoothBundleForm I F₁ V₁ 1) (ψ : SmoothBundleForm I F₂ V₂ 1)
     (y : M) (v w : TangentSpace I y) :
-    (wedgeWith μ hμ hpair φ ψ).1 y ![v, w] =
-      μ y (φ.1 y ![v]) (ψ.1 y ![w]) - μ y (φ.1 y ![w]) (ψ.1 y ![v]) := by
+    (wedgeWith μ hμ hpair φ ψ).val y ![v, w] =
+      μ y (φ.val y ![v]) (ψ.val y ![w]) - μ y (φ.val y ![w]) (ψ.val y ![v]) := by
   simpa only [coe_wedgeWith] using
-    (bundleWedgeWith_apply_one_one μ hμ φ.1 ψ.1 y v w)
+    (bundleWedgeWith_apply_one_one μ hμ φ.val ψ.val y v w)
 
 end SmoothBundleForm
 

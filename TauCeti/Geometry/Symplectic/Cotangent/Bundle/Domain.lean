@@ -79,7 +79,7 @@ theorem isLiouvilleDomain_codiscBundle [CompactSpace M] :
   subset_interior := by simp [ModelWithCorners.interior_eq_univ]
   exists_liouville_outward := by
     refine ⟨vectorBundleEulerField I, contMDiff_vectorBundleEulerField, ?_,
-      fun z ↦ ‖z.2‖, 1, continuous_norm_snd, Set.ext fun _ ↦ mem_codiscBundle, fun z hz ↦
+      fun z ↦ ‖z.snd‖, 1, continuous_norm_snd, Set.ext fun _ ↦ mem_codiscBundle, fun z hz ↦
         ⟨contMDiffAt_norm_snd_of_mem_cosphereBundle z hz, ?_⟩⟩
     · rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
     · -- `mvfderiv` is `mfderiv` read in `ℝ`, and the norm of covectors sends `p ∂_p` to `‖p‖`.
@@ -97,11 +97,11 @@ theorem isLiouvilleCompletion_codiscBundle [CompactSpace M] [T2Space M] :
   exists_isCompleteVectorField := by
     have hc := isCompleteVectorField_vectorBundleEulerField (I := I)
       (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (F := E →L[ℝ] ℝ)
-    refine ⟨vectorBundleEulerField I, ?_, hc, fun z ↦ ⟨-‖z.2‖, ?_⟩⟩
+    refine ⟨vectorBundleEulerField I, ?_, hc, fun z ↦ ⟨-‖z.snd‖, ?_⟩⟩
     · rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
     -- The flow line of `z` is the fibre ray `t ↦ e^t z`.
     have hflow := globalFlow_eq_of_isMIntegralCurve (contMDiff_vectorBundleEulerField (m := 1))
-      hc (isMIntegralCurve_vectorBundleEulerField z) (-‖z.2‖)
+      hc (isMIntegralCurve_vectorBundleEulerField z) (-‖z.snd‖)
     simp only [Real.exp_zero, one_smul] at hflow
     rw [flowOf_apply, ← globalFlow_apply (contMDiff_vectorBundleEulerField (m := 1)) hc, hflow,
       mem_codiscBundle]
@@ -109,7 +109,7 @@ theorem isLiouvilleCompletion_codiscBundle [CompactSpace M] [T2Space M] :
     -- `TauCeti.CotangentBundle.mfderiv_norm_snd_vectorBundleEulerField`.
     rw [(NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul,
       Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_neg, inv_mul_le_one₀ (Real.exp_pos _)]
-    linarith [Real.add_one_le_exp ‖z.2‖]
+    linarith [Real.add_one_le_exp ‖z.snd‖]
 
 end CotangentBundle
 

@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 public import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
 import Mathlib.Geometry.Manifold.BumpFunction

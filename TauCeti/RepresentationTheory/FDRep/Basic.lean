@@ -90,6 +90,8 @@ of `Representation.Equiv` apply to isomorphic objects.
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
+* `FDRep.comp_hom_hom_hom_apply`: a composite of finite-representation morphisms evaluates
+  by successive application on the underlying vectors.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
 * `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
   product, read on the underlying linear maps.
@@ -284,6 +286,37 @@ definitional equality it records is too deep for the unifier to find on its own.
 theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
     (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
       (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
+
+/-- Forgetting finite generation gives the object bundled from the carried representation.
+This object equality is used through `eqToIso` to bridge categorical endpoints. Over a
+commutative ring the carried action on the right is `V.ρ`; the formula also applies over
+noncommutative rings. -/
+theorem forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G] (V : FDRep R G) :
+    (forget₂ (FDRep R G) (Rep R G)).obj V =
+      Rep.of ((ModuleCat.endRingEquiv V.V.obj).toMonoidHom.comp
+        (InducedCategory.endEquiv.toMonoidHom.comp (Action.ρ V))) := (rfl)
+
+open CategoryTheory.Limits in
+/-- Forgetting finite generation preserves binary biproducts. -/
+instance preservesBinaryBiproducts_forget₂ {R : Type u} {G : Type v} [Ring R] [Monoid G] :
+    PreservesBinaryBiproducts (forget₂ (FDRep R G) (Rep R G)) :=
+  preservesBinaryBiproducts_of_preservesBiproducts _
+
+/-- Under the named object comparisons, forgetting finite generation preserves the evaluation
+of a morphism on vectors. Use this equation at the categorical boundary, before evaluating
+the composite; both endpoints are transported to their carried representations. -/
+theorem eqToIso_inv_forget₂_map_hom_apply {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    {X Y : FDRep R G} (f : X ⟶ Y) (x : X.V) :
+    ((eqToIso (forget₂_obj X)).inv ≫ (forget₂ (FDRep R G) (Rep R G)).map f ≫
+      (eqToIso (forget₂_obj Y)).hom).hom x = f.hom.hom.hom x := (rfl)
+
+/-- A composite of finite-representation morphisms evaluates by successive application on
+the underlying vectors. -/
+@[simp]
+theorem comp_hom_hom_hom_apply {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    {X Y Z : FDRep R G} (f : X ⟶ Y) (g : Y ⟶ Z) (x : X.V) :
+    (f ≫ g).hom.hom.hom x = g.hom.hom.hom (f.hom.hom.hom x) := by
+  simp only [Action.comp_hom, FGModuleCat.hom_hom_comp, LinearMap.comp_apply]
 
 /-- **A morphism of `FDRep R G` intertwines the two actions**, read on the underlying linear maps:
 `CategoryTheory.Action.Hom.comm` with the two layers of bundling, by morphisms of `FGModuleCat R`
