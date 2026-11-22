@@ -204,6 +204,19 @@ theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
 
+/-- Pulling back along the identity map leaves a local coefficient system unchanged. This is the
+equality underlying `TauCeti.LocalCoefficientSystem.pullbackIdIso`. -/
+theorem pullback_obj_id (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X) :
+    (pullback (R := R) (.id X)).obj L = L :=
+  congrArg (· ⋙ L) FundamentalGroupoid.map_id
+
+/-- Pulling back along a composite is pulling back twice. This is the equality underlying
+`TauCeti.LocalCoefficientSystem.pullbackCompIso`. -/
+theorem pullback_obj_comp {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z) :
+    (pullback (R := R) (g.comp f)).obj L = (pullback f).obj ((pullback g).obj L) :=
+  congrArg (· ⋙ L) (FundamentalGroupoid.map_comp g f)
+
 /-- For a commuting square `b.comp a = d.comp c` of continuous maps, the two iterated pullbacks
 of a local coefficient system around the square are canonically isomorphic. -/
 def pullbackSquareIso {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}} {D : TopCat.{v₄}}
@@ -236,6 +249,36 @@ theorem pullbackSquareIso_inv {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCa
         eqToHom (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h.symm) ≫
         (pullbackCompIso (R := R) a b).hom.app L := by
   simp [pullbackSquareIso, Category.assoc]
+
+/-- On every fibre, the forward morphism of `pullbackSquareIso` is the `eqToHom` identifying the
+fibres of `L` over the two equal images of the point around the square. -/
+@[simp]
+theorem pullbackSquareIso_hom_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+    {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
+    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c)
+    (x : FundamentalGroupoid A) :
+    ((pullbackSquareIso (R := R) a b c d L h).hom.app x) =
+      eqToHom (Functor.congr_obj (congrArg (fun k : C(A, D) ↦
+        (pullback (R := R) k).obj L) h) x) := by
+  simp only [pullbackSquareIso, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, eqToIso.hom,
+    eqToHom_app, Iso.app_hom, Iso.app_inv, pullbackCompIso_hom_app_app,
+    pullbackCompIso_inv_app_app]
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
+/-- On every fibre, the inverse morphism of `pullbackSquareIso` is the `eqToHom` identifying the
+fibres of `L` in the reverse direction around the square. -/
+@[simp]
+theorem pullbackSquareIso_inv_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+    {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
+    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c)
+    (x : FundamentalGroupoid A) :
+    ((pullbackSquareIso (R := R) a b c d L h).inv.app x) =
+      eqToHom (Functor.congr_obj (congrArg (fun k : C(A, D) ↦
+        (pullback (R := R) k).obj L) h.symm) x) := by
+  simp only [pullbackSquareIso, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, eqToIso.inv,
+    eqToHom_app, Iso.app_hom, Iso.app_inv, pullbackCompIso_hom_app_app,
+    pullbackCompIso_inv_app_app]
+  exact (Category.comp_id _).trans (Category.id_comp _)
 
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
@@ -312,6 +355,31 @@ theorem pullbackTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C
     (L K : LocalCoefficientSystem.{w, v₂, w} S Y) (x : FundamentalGroupoid X) :
     (pullbackTensorIso f L K).inv.app x = 𝟙 _ := by
   rfl
+
+/-- The tensor product of the constant system `M` with the pullback of `K` along `f` is the
+pullback of the tensor product of the constant system `M` with `K`. -/
+def pullbackConstantTensorIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (constantFunctor X).obj M ⊗ (pullback f).obj K ≅
+      (pullback f).obj ((constantFunctor Y).obj M ⊗ K) :=
+  whiskerRightIso (pullbackConstantIso f M).symm _ ≪≫
+    (pullbackTensorIso f ((constantFunctor Y).obj M) K).symm
+
+/-- The comparison `M ⊗ f^*K ≅ f^*(M ⊗ K)` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).hom.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
+
+/-- The inverse comparison `f^*(M ⊗ K) ≅ M ⊗ f^*K` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).inv.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
 
 end Tensor
 
@@ -397,6 +465,15 @@ theorem transport_refl (L : LocalCoefficientSystem.{u, v, w} R X) (x : X) :
     (FundamentalGroupoid.id_eq_path_refl _).symm
   rw [h]
   exact L.map_id_apply _ a
+
+/-- Transport in a constant system is the identity of its fibre, along any path class. -/
+@[simp]
+theorem transport_constantFunctor (M : ModuleCat.{w} R) {x y : X}
+    (p : Path.Homotopic.Quotient x y) :
+    transport ((constantFunctor X).obj M) p = LinearEquiv.refl R M := by
+  ext a
+  rw [transport_apply, constantFunctor_obj_map]
+  exact ModuleCat.id_apply M a
 
 /-- Transport along a concatenation of paths is the composite of the two transports. -/
 @[simp]

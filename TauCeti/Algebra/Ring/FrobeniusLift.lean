@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.Data.Nat.Factorization.Defs
+
+import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.NumberTheory.Basic
 
 /-!
 # Iterates of lifts of power maps
@@ -20,6 +24,8 @@ the Frobenius of `R / p R`, for a prime `p`, with `c = p` and `q = p`. Then the 
 
 * `TauCeti.dvd_pow_apply_sub_pow_pow`: if `c ∣ φ a - a ^ q` for all `a`, then
   `c ∣ φⁱ a - a ^ q ^ i`.
+* `TauCeti.pow_factorization_succ_dvd_pow_sub_pow`: if `p ∣ u - v`, then
+  `p ^ (m.factorization p + 1) ∣ u ^ m - v ^ m`, without primality assumptions on `p`.
 -/
 
 public section
@@ -27,6 +33,16 @@ public section
 namespace TauCeti
 
 variable {R : Type*} [CommRing R]
+
+/-- A congruence modulo a natural number `p` gives a congruence between `m`-th powers modulo
+`p ^ (m.factorization p + 1)`. This holds for all `p` and `m`, including zero, without assuming
+that `p` is prime. -/
+theorem pow_factorization_succ_dvd_pow_sub_pow {p : ℕ} {u v : R}
+    (h : (p : R) ∣ u - v) (m : ℕ) :
+    (p : R) ^ (m.factorization p + 1) ∣ u ^ m - v ^ m := by
+  refine (dvd_sub_pow_of_dvd_sub h (m.factorization p)).trans ?_
+  conv_rhs => rw [← Nat.ordProj_mul_ordCompl_eq_self m p, pow_mul, pow_mul]
+  exact sub_dvd_pow_sub_pow _ _ _
 
 /-- If a ring endomorphism `φ` lifts the `q`-th power map modulo `c`, that is `c ∣ φ a - a ^ q`
 for every `a`, then its `i`-th iterate lifts the `q ^ i`-th power map: `c ∣ φⁱ a - a ^ q ^ i`. -/
