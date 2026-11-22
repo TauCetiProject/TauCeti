@@ -36,6 +36,10 @@ in setoids.
 * `CategoryTheory.Pseudofunctor.ofPresheafMap`: the strong transformation induced by a morphism
   of presheaves, with `ofPresheafMapId` and `ofPresheafMapComp` comparing it with identities and
   composites.
+* `CategoryTheory.Pseudofunctor.ofPresheafMapCompIso`,
+  `CategoryTheory.Pseudofunctor.eq_of_ofPresheafMap_modification`: a commutative square of
+  presheaves gives an invertible modification between the composites of the induced strong
+  transformations, and a modification `ofPresheafMap φ ⟶ ofPresheafMap ψ` forces `φ = ψ`.
 * `CategoryTheory.Pseudofunctor.ofPresheaf.descentDataEquivCompatible`: descent data for the
   discrete pseudofunctor along a presieve `R` are equivalent to compatible families of `P` along
   `R`.
@@ -194,6 +198,22 @@ def ofPresheafMapComp {Q R : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) (β : Q ⟶ R) :
     (fun _ ↦ Cat.Hom.isoMk (NatIso.ofComponents (fun _ ↦ isoMk rfl)
       (fun _ ↦ Subsingleton.elim _ _)))
     (fun _ ↦ by ext; exact Subsingleton.elim _ _)
+
+open scoped StrongTrans in
+/-- A commutative square `f ≫ α = g ≫ β` of presheaves of types gives an invertible
+modification between the composites of the induced strong transformations. -/
+def ofPresheafMapCompIso {Q₁ Q₂ R : Cᵒᵖ ⥤ Type w} {f : P ⟶ Q₁} {g : P ⟶ Q₂} {α : Q₁ ⟶ R}
+    {β : Q₂ ⟶ R} (w : f ≫ α = g ≫ β) :
+    Iso (C := ofPresheaf.{w'} P ⟶ ofPresheaf.{w'} R)
+      ((ofPresheafMap f).vcomp (ofPresheafMap α)) ((ofPresheafMap g).vcomp (ofPresheafMap β)) :=
+  (ofPresheafMapComp f α).symm ≪≫ eqToIso (by rw [w]) ≪≫ ofPresheafMapComp g β
+
+/-- A modification `ofPresheafMap φ ⟶ ofPresheafMap ψ` exists only if `φ = ψ`: its components
+are morphisms in discrete fibres. -/
+lemma eq_of_ofPresheafMap_modification {Q : Cᵒᵖ ⥤ Type w} {φ ψ : P ⟶ Q}
+    (m : StrongTrans.Modification (ofPresheafMap.{w'} φ) (ofPresheafMap.{w'} ψ)) : φ = ψ := by
+  ext X x
+  exact eq_of_hom (X := X) ((m.app (.mk X)).toNatTrans.app ⟨⟨x⟩⟩)
 
 variable {S : C}
 
