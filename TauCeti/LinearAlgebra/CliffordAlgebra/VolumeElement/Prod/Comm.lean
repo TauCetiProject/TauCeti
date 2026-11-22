@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Koszul symmetry of `CliffordAlgebra.complexProdTensor`
@@ -70,15 +71,10 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
             (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
           (equivOfIsometry
             ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).toAlgHom := by
-    refine AlgHom.ext fun x ↦ ?_
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-      AlgEquiv.coe_toAlgHom,
-      ← equivOfIsometry_apply (QuadraticMap.IsometryEquiv.prodComm
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)),
-      ← AlgEquiv.trans_apply, ← AlgEquiv.trans_apply, equivOfIsometry_trans,
-      equivOfIsometry_trans,
-      QuadraticMap.IsometryEquiv.baseChange_withLpProdComm_trans_baseChangeProd
-        (A := ℂ) hQ hQ']
+    rw [← equivOfIsometry_toAlgHom (QuadraticMap.IsometryEquiv.prodComm
+          (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)),
+      equivOfIsometry_toAlgHom_comp, equivOfIsometry_toAlgHom_comp,
+      QuadraticMap.IsometryEquiv.baseChange_withLpProdComm_trans_baseChangeProd (A := ℂ) hQ hQ']
   have hcomm_a := AlgHom.congr_fun hcomm a
   simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] at hcomm_a
   rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply,

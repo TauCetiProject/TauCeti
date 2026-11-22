@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
@@ -17,7 +18,10 @@ When a quadratic map `Q` on `WithLp p (M₁ × M₂)` decomposes orthogonally as
 isometrically with `Q₁.prod Q₂`, and the structural equivalences of Cartesian products (swapping
 factors, reassociating iterated `WithLp` products, and deleting trivial factors) lift to isometric
 equivalences of quadratic maps on `WithLp` (`withLpProd`, `withLpProdComm`, `withLpProdAssoc`,
-`withLpUniqueProd`, `withLpProdUnique`), together with their base-change compatibility diagrams.
+`withLpUniqueProd`, `withLpProdUnique`), together with their comparisons to
+`LinearIsometryEquiv` and their base-change compatibility diagrams. We also record
+`QuadraticMap.apply_eq_neg_norm_sq_of_withLp_prod` for orthogonal sums of negative
+norm-squared forms on `WithLp 2 (U × V)`.
 -/
 
 public section
@@ -60,15 +64,26 @@ def withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) : Q.IsometryEquiv Q' :=
   ((withLpProd hQ).trans (QuadraticMap.IsometryEquiv.prodComm Q₁ Q₂)).trans (withLpProd hQ').symm
 
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
+    (withLpProdComm hQ hQ').toLinearEquiv = (LinearEquiv.prodComm R M₁ M₂).withLpCongr p :=
+  LinearEquiv.ext fun x ↦ by
+    rw [coe_toLinearEquiv, withLpProdComm, LinearEquiv.coe_withLpCongr]
+    simp [WithLp.map, LinearEquiv.prodComm_apply]
+
 /-- `QuadraticMap.IsometryEquiv.withLpProdComm` swaps the two coordinates inside `WithLp`. -/
 @[simp]
 theorem withLpProdComm_apply {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) (x : WithLp p (M₁ × M₂)) :
     withLpProdComm hQ hQ' x = WithLp.toLp p ((WithLp.ofLp x).2, (WithLp.ofLp x).1) := by
-  rw [withLpProdComm, ← coe_toLinearEquiv]
-  simp
-  rfl
+  rw [← coe_toLinearEquiv, toLinearEquiv_withLpProdComm, LinearEquiv.coe_withLpCongr]
+  simp only [WithLp.map, LinearEquiv.prodComm_apply, WithLp.ofLp_snd, WithLp.ofLp_fst,
+    WithLp.toLp.injEq]
+  ext <;> simp
 
 /-- The inverse of `QuadraticMap.IsometryEquiv.withLpProdComm` swaps the two coordinates back. -/
 @[simp]
@@ -77,16 +92,6 @@ theorem withLpProdComm_symm_apply {Q' : QuadraticMap R (WithLp p (M₂ × M₁))
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) (y : WithLp p (M₂ × M₁)) :
     (withLpProdComm hQ hQ').symm y = WithLp.toLp p ((WithLp.ofLp y).2, (WithLp.ofLp y).1) := by
   rw [symm_apply_eq, withLpProdComm_apply]
-
-/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
-@[simp]
-theorem toLinearEquiv_withLpProdComm {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
-    (withLpProdComm hQ hQ').toLinearEquiv = (LinearEquiv.prodComm R M₁ M₂).withLpCongr p :=
-  LinearEquiv.ext fun x ↦ by
-    rw [coe_toLinearEquiv, withLpProdComm_apply]
-    rfl
 
 /-- Deleting a trivial left factor from `WithLp p (M₁ × M₂)` as a quadratic isometric
 equivalence. -/
@@ -303,4 +308,74 @@ theorem baseChangeProd_trans_prodAssoc
 
 end BaseChange
 
+section LinearIsometryEquiv
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {R M₁ M₂ M₃ P : Type*} [CommSemiring R]
+  [SeminormedAddCommGroup M₁] [SeminormedAddCommGroup M₂] [SeminormedAddCommGroup M₃]
+  [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R M₃] [Module R P]
+  {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {Q₃ : QuadraticMap R M₃ P}
+  {Q : QuadraticMap R (WithLp p (M₁ × M₂)) P} {Q' : QuadraticMap R (WithLp p (M₂ × M₁)) P}
+
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdComm` is that of
+`LinearIsometryEquiv.withLpProdComm`. -/
+theorem toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
+    (withLpProdComm hQ hQ').toLinearEquiv =
+      (LinearIsometryEquiv.withLpProdComm p R M₁ M₂).toLinearEquiv :=
+  LinearEquiv.ext fun x ↦ by
+    simp only [toLinearEquiv_withLpProdComm, LinearEquiv.coe_withLpCongr, WithLp.map,
+      LinearEquiv.prodComm_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+      LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp.injEq]
+    ext <;> simp
+
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpUniqueProd` is that of
+`LinearIsometryEquiv.withLpUniqueProd`. -/
+theorem toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv [Unique M₁]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
+    (withLpUniqueProd hQ).toLinearEquiv =
+      (LinearIsometryEquiv.withLpUniqueProd p R M₁ M₂).toLinearEquiv :=
+  LinearEquiv.ext fun x ↦ by simp
+
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdUnique` is that of
+`LinearIsometryEquiv.withLpProdUnique`. -/
+theorem toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv [Unique M₂]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
+    (withLpProdUnique hQ).toLinearEquiv =
+      (LinearIsometryEquiv.withLpProdUnique p R M₁ M₂).toLinearEquiv :=
+  LinearEquiv.ext fun x ↦ by simp
+
+/-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdAssoc` is that of
+`LinearIsometryEquiv.withLpProdAssoc`. -/
+theorem toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv
+    {Q₁₂ : QuadraticMap R (WithLp p (M₁ × M₂)) P} {Q₂₃ : QuadraticMap R (WithLp p (M₂ × M₃)) P}
+    {Q₁₂_₃ : QuadraticMap R (WithLp p (WithLp p (M₁ × M₂) × M₃)) P}
+    {Q₁_₂₃ : QuadraticMap R (WithLp p (M₁ × WithLp p (M₂ × M₃))) P}
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2) :
+    (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).toLinearEquiv =
+      (LinearIsometryEquiv.withLpProdAssoc p R M₁ M₂ M₃).toLinearEquiv :=
+  LinearEquiv.ext fun x ↦ by simp
+
+end LinearIsometryEquiv
+
 end QuadraticMap.IsometryEquiv
+
+namespace QuadraticMap
+
+/-- The orthogonal sum of negative norm-squared quadratic forms on `U` and `V` is again negative
+norm-squared on `WithLp 2 (U × V)`. -/
+theorem apply_eq_neg_norm_sq_of_withLp_prod {U V : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {Q₁ : QuadraticForm ℝ U} {Q₂ : QuadraticForm ℝ V}
+    (Q : QuadraticForm ℝ (WithLp 2 (U × V)))
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₁ : ∀ u, Q₁ u = -‖u‖ ^ 2) (hQ₂ : ∀ v, Q₂ v = -‖v‖ ^ 2) :
+    ∀ x, Q x = -‖x‖ ^ 2 := fun x ↦ by
+  rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2, WithLp.ofLp_fst, WithLp.ofLp_snd]
+  ring
+
+end QuadraticMap

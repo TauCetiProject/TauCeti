@@ -134,14 +134,13 @@ theorem complexProdTensor_neg_orientation_complexVolume
   obtain ⟨b₂, hQb₂⟩ := Q₂.exists_orthonormalBasis_isOrthoᵢ_associated (m := m) Fact.out
   let B : OrthonormalBasis (Fin (n + m)) ℝ (WithLp 2 (V × W)) :=
     (b₁.prod b₂).reindex finSumFinEquiv
-  have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
   have hbase : complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (complexVolume Q B.toBasis.orientation) =
       (-1 : ℂ) ^ m •
         complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q B.toBasis.orientation) := by
     rw [complexProdTensor_complexVolume_eq_smul_map hQ (-o₁) hQ₁ hn ρ₁ ρ₂ B.toBasis.orientation
-          b₁ hQb₁ b₂ hQb₂ rfl,
+          b₁ b₂ hQb₂ rfl,
         complexProdTensor_complexVolume_eq_smul_map hQ o₁ hQ₁ hn ρ₁ ρ₂ B.toBasis.orientation
-          b₁ hQb₁ b₂ hQb₂ rfl,
+          b₁ b₂ hQb₂ rfl,
         complexVolume_neg_orientation, map_neg, ← neg_one_smul ℂ (ρ₁ (complexVolume Q₁ o₁)),
         smul_pow, mul_smul_comm, TensorProduct.map_smul_left, smul_comm]
   rcases B.toBasis.orientation_eq_or_eq_neg o with rfl | rfl <;> simp [hbase]
@@ -155,7 +154,7 @@ private theorem complexProdTensor_complexVolume_eq_map_pow_left (o₂ : Orientat
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
       TensorProduct.map (ρ₁ (complexVolume Q₁ o₁) ^ (m + 1)) (ρ₂ (complexVolume Q₂ o₂)) := by
   have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
-  rw [complexProdTensor_complexVolume_eq_smul_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ hQb₁ b₂ hQb₂ ho,
+  rw [complexProdTensor_complexVolume_eq_smul_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ b₂ hQb₂ ho,
     pow_succ']
   -- Only the first factor `Γ_V` of `Γ_V ^ (m + 1) = Γ_V * Γ_V ^ m` is expanded in the frame.
   generalize ρ₁ (complexVolume Q₁ o₁) ^ m = g
@@ -290,10 +289,10 @@ theorem equivOfIsometry_withLpProdComm_complexVolume
     LinearEquiv.ext fun x ↦ by simp [LinearEquiv.coe_withLpCongr, Prod.swap]
   have hnorm : ∀ x : WithLp 2 (V × W),
       ‖QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ' x‖ = ‖x‖ := fun x ↦ by
-    have hx : QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ' x =
-        LinearIsometryEquiv.withLpProdComm 2 ℝ V W x := by
-      simp [QuadraticMap.IsometryEquiv.withLpProdComm_apply]
-    rw [hx, (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).norm_map]
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).norm_map]
   rcases Nat.even_or_odd (n * m) with hnm | hnm
   · rw [hnm.neg_one_pow, one_smul]
     refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
@@ -347,10 +346,10 @@ theorem equivOfIsometry_withLpProdAssoc_complexVolume
     rw [Module.finrank_prod, Fact.out (p := finrank ℝ V = n), Fact.out (p := finrank ℝ W = m)]
   have hnorm : ∀ x : WithLp 2 (WithLp 2 (U × V) × W),
       ‖QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x‖ = ‖x‖ := fun x ↦ by
-    have hx : QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x =
-        LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W x := by
-      simp [QuadraticMap.IsometryEquiv.withLpProdAssoc_apply]
-    rw [hx, (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).norm_map]
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
     (QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃)
     hnorm (add_assoc k n m) ?_
@@ -389,10 +388,10 @@ theorem equivOfIsometry_withLpUniqueProd_complexVolume
       complexVolume Q₂ o₂ := by
   have hnorm : ∀ x : WithLp 2 (V × W),
       ‖QuadraticMap.IsometryEquiv.withLpUniqueProd hQ x‖ = ‖x‖ := fun x ↦ by
-    have hx : QuadraticMap.IsometryEquiv.withLpUniqueProd hQ x =
-        LinearIsometryEquiv.withLpUniqueProd 2 ℝ V W x := by
-      simp [QuadraticMap.IsometryEquiv.withLpUniqueProd_apply]
-    rw [hx, (LinearIsometryEquiv.withLpUniqueProd 2 ℝ V W).norm_map]
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      (LinearIsometryEquiv.withLpUniqueProd 2 ℝ V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
     (QuadraticMap.IsometryEquiv.withLpUniqueProd hQ) hnorm (zero_add m) ?_
   rw [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpUniqueProd, Orientation.map_trans,
@@ -416,10 +415,10 @@ theorem equivOfIsometry_withLpProdUnique_complexVolume
       complexVolume Q₁ o₁ := by
   have hnorm : ∀ x : WithLp 2 (V × W),
       ‖QuadraticMap.IsometryEquiv.withLpProdUnique hQ x‖ = ‖x‖ := fun x ↦ by
-    have hx : QuadraticMap.IsometryEquiv.withLpProdUnique hQ x =
-        LinearIsometryEquiv.withLpProdUnique 2 ℝ V W x := by
-      simp [QuadraticMap.IsometryEquiv.withLpProdUnique_apply]
-    rw [hx, (LinearIsometryEquiv.withLpProdUnique 2 ℝ V W).norm_map]
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      (LinearIsometryEquiv.withLpProdUnique 2 ℝ V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
     (QuadraticMap.IsometryEquiv.withLpProdUnique hQ) hnorm rfl ?_
   rw [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdUnique, Orientation.map_trans,

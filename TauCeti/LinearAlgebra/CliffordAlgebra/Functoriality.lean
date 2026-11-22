@@ -279,6 +279,21 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
   rw [← map_evenOdd_equivOfIsometry e i]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
+/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
+`CliffordAlgebra.map e.toIsometry`. -/
+@[simp]
+theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
+  AlgHom.ext (equivOfIsometry_apply e)
+
+/-- Composition of the algebra homomorphisms underlying `CliffordAlgebra.equivOfIsometry` respects
+composition of quadratic isometry equivalences. -/
+theorem equivOfIsometry_toAlgHom_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (equivOfIsometry e₂₃).toAlgHom.comp (equivOfIsometry e₁₂).toAlgHom =
+      (equivOfIsometry (e₁₂.trans e₂₃)).toAlgHom :=
+  congrArg AlgEquiv.toAlgHom (equivOfIsometry_trans e₁₂ e₂₃)
+
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/
 noncomputable def evenEquivOfIsometry (e : Q₁.IsometryEquiv Q₂) :

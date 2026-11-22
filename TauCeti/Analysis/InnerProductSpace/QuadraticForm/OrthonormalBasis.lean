@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 
 /-!
 # Orthogonal orthonormal bases for real quadratic forms
@@ -34,17 +35,11 @@ theorem exists_orthonormalBasis_isOrthoᵢ_associated {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
     (Q : QuadraticForm ℝ W) {m : ℕ} (hm : finrank ℝ W = m) :
     ∃ b : OrthonormalBasis (Fin m) ℝ W, (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis := by
-  let T : W →ₗ[ℝ] W :=
-    ((InnerProductSpace.toDual ℝ W).symm.toLinearIsometry.toLinearMap : StrongDual ℝ W →ₗ[ℝ] W).comp
-      ((LinearMap.toContinuousLinearMap : (W →ₗ[ℝ] ℝ) ≃ₗ[ℝ] StrongDual ℝ W).toLinearMap.comp
-        (QuadraticMap.associated (R := ℝ) Q))
-  have hinner : ∀ u v, ⟪T u, v⟫ = QuadraticMap.associated (R := ℝ) Q u v := fun u v ↦ by
-    have h : InnerProductSpace.toDual ℝ W (T u) =
-        (QuadraticMap.associated (R := ℝ) Q u).toContinuousLinearMap :=
-      (InnerProductSpace.toDual ℝ W).apply_symm_apply _
-    simpa [InnerProductSpace.toDual_apply_apply] using congrArg (· v) h
-  have hT : T.IsSymmetric := fun u v ↦ by
-    rw [hinner, QuadraticMap.associated_isSymm ℝ Q u v, real_inner_comm, hinner]
+  let T : W →ₗ[ℝ] W := TauCeti.bilinFormToEnd (QuadraticMap.associated (R := ℝ) Q)
+  have hinner : ∀ u v, ⟪T u, v⟫ = QuadraticMap.associated (R := ℝ) Q u v :=
+    LinearMap.BilinForm.inner_bilinFormToEnd_left _
+  have hT : T.IsSymmetric :=
+    TauCeti.isSymmetric_bilinFormToEnd_iff.mpr ⟨(QuadraticForm.associated_isSymm ℝ Q).eq⟩
   refine ⟨hT.eigenvectorBasis hm, fun i j hij ↦ ?_⟩
   dsimp only [Function.onFun]
   rw [OrthonormalBasis.coe_toBasis, ← hinner, hT.apply_eigenvectorBasis, real_inner_smul_left,

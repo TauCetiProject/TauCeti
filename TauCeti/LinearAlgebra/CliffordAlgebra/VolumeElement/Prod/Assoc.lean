@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Assoc
 
 /-!
@@ -16,9 +17,9 @@ For even-dimensional oriented real inner product spaces `U` and `V` with `Q₁ u
 `Q₂ v = -‖v‖²`, any real inner product space `W` with form `Q₃`, and the ordered product orientation
 `o₁₂` on `U ⊕ V`, the chirality of `U ⊕ V` on `E ⊗ F` is `Γ_U ⊗ Γ_V`. Consequently:
 
-* `CliffordAlgebra.conjAlgEquiv_assoc_complexProdTensor` and
-  `CliffordAlgebra.assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G` intertwines the two
-  iterated `complexProdTensor` representations along `QuadraticMap.IsometryEquiv.withLpProdAssoc`.
+* `CliffordAlgebra.conjAlgEquiv_assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G`
+  intertwines the two iterated `complexProdTensor` representations along
+  `QuadraticMap.IsometryEquiv.withLpProdAssoc`.
 * `CliffordAlgebra.conj_assoc_complexProdTensor_complexVolume`: `TensorProduct.assoc` conjugates the
   left-associated action of `complexVolume` to the right-associated one for the iterated product
   orientations.
@@ -38,19 +39,6 @@ open Module TensorProduct
 namespace CliffordAlgebra
 
 attribute [local instance] instFactFinrankWithLpProd
-
-/-- The orthogonal sum of negative norm-squared quadratic forms on `U` and `V` is again negative
-norm-squared on `WithLp 2 (U × V)`. -/
-theorem withLp_prod_neg_norm_sq {U V : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    {Q₁ : QuadraticForm ℝ U} {Q₂ : QuadraticForm ℝ V}
-    {Q₁₂ : QuadraticForm ℝ (WithLp 2 (U × V))}
-    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ₁ : ∀ u, Q₁ u = -‖u‖ ^ 2) (hQ₂ : ∀ v, Q₂ v = -‖v‖ ^ 2) :
-    ∀ x, Q₁₂ x = -‖x‖ ^ 2 := fun x ↦ by
-  rw [hQ₁₂ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2, WithLp.ofLp_fst, WithLp.ofLp_snd]
-  ring
 
 variable {U V W : Type*}
   [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
@@ -77,7 +65,8 @@ variable {U V W : Type*}
 private theorem complexProdTensor_assoc_lhs
     (ho₁₂ : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (k + n))
       (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂) :
-    complexProdTensor hQ₁₂_₃ o₁₂ (withLp_prod_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn)
+    complexProdTensor hQ₁₂_₃ o₁₂
+        (QuadraticMap.apply_eq_neg_norm_sq_of_withLp_prod Q₁₂ hQ₁₂ hQ₁ hQ₂) (hk.add hn)
         (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃ =
       (AlgHom.cliffordProdTensor
           (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
@@ -102,10 +91,9 @@ private theorem complexProdTensor_assoc_lhs
   rw [hzx, LinearMap.map_smul, LinearMap.map_smul, LinearMap.comp_apply, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply]
   congr 1
-  simp [equivOfIsometry_apply, QuadraticMap.IsometryEquiv.toIsometry_apply,
-    AlgHom.cliffordProdTensor_ι, hvol]
-  simp [complexProdTensor_eq_comp, equivOfIsometry_apply,
-    QuadraticMap.IsometryEquiv.toIsometry_apply, AlgHom.cliffordProdTensor_ι]
+  simp [QuadraticMap.IsometryEquiv.toIsometry_apply, AlgHom.cliffordProdTensor_ι, hvol]
+  simp [complexProdTensor_eq_comp, QuadraticMap.IsometryEquiv.toIsometry_apply,
+    AlgHom.cliffordProdTensor_ι]
 
 private theorem complexProdTensor_assoc_rhs :
     complexProdTensor hQ₁_₂₃ o₁ hQ₁ hk ρ₁ (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃) =
@@ -126,8 +114,8 @@ private theorem complexProdTensor_assoc_rhs :
   rw [hzx, LinearMap.map_smul, LinearMap.map_smul, LinearMap.comp_apply, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply]
   congr 1
-  simp [equivOfIsometry_apply, QuadraticMap.IsometryEquiv.toIsometry_apply,
-    AlgHom.cliffordProdTensor_ι, complexProdTensor_eq_comp]
+  simp [QuadraticMap.IsometryEquiv.toIsometry_apply, AlgHom.cliffordProdTensor_ι,
+    complexProdTensor_eq_comp]
 
 omit [FiniteDimensional ℝ U] [FiniteDimensional ℝ V] in
 private theorem prodAssoc_comp_withLpProd_diag :
@@ -145,15 +133,9 @@ private theorem prodAssoc_comp_withLpProd_diag :
           ((QuadraticMap.IsometryEquiv.withLpProd hQ₁_₂₃).baseChangeProd ℂ)).toAlgHom).comp
         (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProdAssoc
           hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange ℂ)).toAlgHom := by
-  refine AlgHom.ext fun x ↦ ?_
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-  rw [← AlgEquiv.trans_apply, ← AlgEquiv.trans_apply, ← AlgEquiv.trans_apply,
-    ← AlgEquiv.trans_apply, equivOfIsometry_trans, equivOfIsometry_trans,
-    equivOfIsometry_trans, equivOfIsometry_trans]
-  exact congrArg (fun e ↦ equivOfIsometry e x)
-    (DFunLike.ext _ _ fun y ↦ DFunLike.congr_fun
-      (QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodAssoc
-        (A := ℂ) hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃) y)
+  rw [equivOfIsometry_toAlgHom_comp, equivOfIsometry_toAlgHom_comp,
+    equivOfIsometry_toAlgHom_comp, equivOfIsometry_toAlgHom_comp,
+    QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodAssoc (A := ℂ) hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃]
 
 /-- **Associativity of `CliffordAlgebra.complexProdTensor`**: when `U` and `V` are even-dimensional
 with `Q₁ u = -‖u‖²` and `Q₂ v = -‖v‖²` and `U ⊕ V` carries the ordered product orientation `o₁₂`,
@@ -164,7 +146,7 @@ theorem conjAlgEquiv_assoc_complexProdTensor
       (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂) :
     ((TensorProduct.assoc ℂ E F G).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ₁₂_₃ o₁₂
-          (withLp_prod_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn)
+          (QuadraticMap.apply_eq_neg_norm_sq_of_withLp_prod Q₁₂ hQ₁₂ hQ₁ hQ₂) (hk.add hn)
           (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃) =
       (complexProdTensor hQ₁_₂₃ o₁ hQ₁ hk ρ₁
           (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃)).comp
@@ -178,25 +160,6 @@ theorem conjAlgEquiv_assoc_complexProdTensor
       (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃,
     AlgHom.comp_assoc,
     prodAssoc_comp_withLpProd_diag hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃, ← AlgHom.comp_assoc]
-
-/-- Applied form of `CliffordAlgebra.conjAlgEquiv_assoc_complexProdTensor`: `TensorProduct.assoc`
-intertwines the two iterated `complexProdTensor` actions on every Clifford element and tensor. -/
-theorem assoc_complexProdTensor
-    (ho₁₂ : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (k + n))
-      (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂)
-    (a : CliffordAlgebra (Q₁₂_₃.baseChange ℂ)) (t : (E ⊗[ℂ] F) ⊗[ℂ] G) :
-    TensorProduct.assoc ℂ E F G
-        (complexProdTensor hQ₁₂_₃ o₁₂
-          (withLp_prod_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn)
-          (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃ a t) =
-      complexProdTensor hQ₁_₂₃ o₁ hQ₁ hk ρ₁ (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃)
-        (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProdAssoc
-          hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange ℂ) a)
-        (TensorProduct.assoc ℂ E F G t) := by
-  simpa [LinearEquiv.conjAlgEquiv_apply] using LinearMap.congr_fun
-    (AlgHom.congr_fun (conjAlgEquiv_assoc_complexProdTensor hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ o₁ hQ₁ hk
-      o₂ hQ₂ hn o₁₂ ρ₁ ρ₂ ρ₃ ho₁₂) a)
-    (TensorProduct.assoc ℂ E F G t)
 
 /-- **Compatibility of `TensorProduct.assoc` with the product volume elements**: for oriented
 `U`, `V`, `W` of dimensions `k`, `n`, `m` (`k`, `n` even) and the iterated `Orientation.prod`
@@ -217,7 +180,7 @@ theorem conj_assoc_complexProdTensor_complexVolume
       (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))).symm = o₁_₂₃) :
     (TensorProduct.assoc ℂ E F G).conj
         (complexProdTensor hQ₁₂_₃ o₁₂
-          (withLp_prod_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn)
+          (QuadraticMap.apply_eq_neg_norm_sq_of_withLp_prod Q₁₂ hQ₁₂ hQ₁ hQ₂) (hk.add hn)
           (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃ (complexVolume Q₁₂_₃ o₁₂_₃)) =
       complexProdTensor hQ₁_₂₃ o₁ hQ₁ hk ρ₁
         (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃) (complexVolume Q₁_₂₃ o₁_₂₃) := by

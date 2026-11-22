@@ -80,6 +80,19 @@ theorem cliffordReverseDual_complexVolume :
   ext φ s
   simp [cliffordReverseDual_apply_apply, reverse_complexVolume]
 
+/-- **Parity-adjusted chirality of the reverse dual**: flipping the orientation when `n / 2` is
+odd cancels the sign `(-1) ^ (n / 2)`, so `Γ` acts on the reverse dual by
+`(ρ (complexVolume Q o)).dualMap`. -/
+theorem cliffordReverseDual_complexVolume_if_even :
+    cliffordReverseDual ρ (complexVolume Q (if Even (n / 2) then o else -o)) =
+      (ρ (complexVolume Q o)).dualMap := by
+  split_ifs with h
+  · rw [cliffordReverseDual_complexVolume, h.neg_one_pow, one_smul]
+  · have ho : Odd (n / 2) := Nat.not_even_iff_odd.mp h
+    rw [complexVolume_neg_orientation, map_neg, cliffordReverseDual_complexVolume,
+      ho.neg_one_pow]
+    ext φ; simp
+
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
