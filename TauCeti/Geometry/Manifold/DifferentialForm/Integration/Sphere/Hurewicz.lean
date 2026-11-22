@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 Let `M` be a simply connected compact boundaryless manifold and `φ` a closed `C¹` two-form on
 `M`. The Hurewicz map `π₂(M, x) → H₂(M; ℤ)` is then an isomorphism at every base point
 (`HomotopyGroup.hurewiczAddEquiv`), so the integral of `φ` over the second homotopy group
-(`TauCeti.sphereIntegralHom`) descends (`HomotopyGroup.hurewiczLift`) to a homomorphism
+(`TauCeti.sphereIntegralHom`) descends to a homomorphism
 `TauCeti.homologySphereIntegralHom : H₂(M; ℤ) →+ F`. Since both the sphere integral and the
 Hurewicz map are invariant under base-point change, it agrees with the sphere integral on the
 Hurewicz class of every sphere, at every base point
@@ -54,8 +54,8 @@ variable {E H F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- **The integral of a closed `C¹` two-form on `H₂(M; ℤ)`** for a simply connected manifold `M`:
 the sphere integral at a base point, transported along the Hurewicz isomorphism
-`π₂(M, x) ≅ H₂(M; ℤ)`. It does not depend on the base point: it agrees with the sphere integral on
-the Hurewicz class of every sphere, at every base point
+`π₂(M, x) ≅ H₂(M; ℤ)` (`HomotopyGroup.hurewiczLift`). It does not depend on the base point: it
+agrees with the sphere integral on the Hurewicz class of every sphere, at every base point
 (`TauCeti.homologySphereIntegralHom_hurewiczIntHom`). -/
 def homologySphereIntegralHom (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of M) →+
@@ -68,7 +68,7 @@ classes**, at every base point. -/
 theorem homologySphereIntegralHom_hurewiczIntHom (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (x : M) (a : Additive (π_ 2 M x)) :
     homologySphereIntegralHom hφ hdφ (hurewiczIntHom M x 1 a) = sphereIntegralHom x hφ hdφ a :=
-  hurewiczLift_hurewiczIntHom
-    (fun γ a ↦ by simp [sphereIntegral_homotopyGroupTransport hφ hdφ]) x a
+  hurewiczLift_hurewiczIntHom (fun γ a ↦ by
+    simpa using sphereIntegral_homotopyGroupTransport hφ hdφ γ a) x a
 
 end TauCeti

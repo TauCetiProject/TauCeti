@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Data.Nat.Interval
 
 /-!
 # Fourier multipliers of order `m` on Littlewood–Paley blocks
@@ -200,8 +201,8 @@ theorem exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le 
           rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ 2 * L * (K * W * 2 ^ (m * j) * ‖f‖) := by
           gcongr
-          rw [Nat.card_Ico]
-          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+          exact_mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L
+            (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * K * W * 2 ^ (m * j) * ‖f‖ := by ring
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -315,8 +316,7 @@ theorem exists_besselPotential_eq_and_norm_le_of_isVanishingOn [CompleteSpace F]
         rw [Finset.sum_const, nsmul_eq_mul]
     _ ≤ 2 * L * (K * 2 ^ (t * j) * ‖v‖) := by
         gcongr
-        rw [Nat.card_Ico]
-        exact_mod_cast (by omega)
+        exact_mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L le_rfl
     _ = 2 * L * K * 2 ^ (t * j) * ‖v‖ := by ring
 
 end TemperedDistribution

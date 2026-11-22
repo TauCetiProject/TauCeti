@@ -9,6 +9,7 @@ public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # The Hurewicz class of the tautological loop of a sphere
@@ -24,7 +25,9 @@ in any abelian category with coproducts (`TauCeti.isIso_hurewicz_diskBoundaryGen
 sends the fundamental class of the cube to a fundamental class of the sphere, inducing an
 isomorphism `Hₙ₊₁(Iⁿ⁺¹, ∂Iⁿ⁺¹; R) ≅ Hₙ₊₁(Sⁿ⁺¹, N; R)`
 (`TauCeti.isIso_singularHomologyMap_toCubeBoundaryPairHom_diskBoundaryGenLoop`,
-`TauCeti.isIso_singularHomologyMap_toCubeBoundaryPairHom_sphereGenLoop`).
+`TauCeti.isIso_singularHomologyMap_toCubeBoundaryPairHom_sphereGenLoop`). Transported along a
+homeomorphism `Sⁿ⁺¹ ≃ₜ X`, the class of the image of the tautological loop generates
+`Hₙ₊₁(X; ℤ)` (`TauCeti.zmultiples_hurewiczIntHom_map_sphereGenLoop`).
 
 Every generalized loop factors through the tautological one
 (`GenLoop.map_diskBoundaryMap_diskBoundaryGenLoop`, `GenLoop.map_toSphere_sphereGenLoop`), so this
@@ -416,6 +419,22 @@ theorem exists_zsmul_hurewicz_sphereGenLoop
     ∃ k : ℤ, k • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 1))).hom 1 = b :=
   AddSubgroup.mem_zmultiples_iff.1
     ((AddSubgroup.eq_top_iff' _).1 (zmultiples_hurewicz_sphereGenLoop n) b)
+
+variable {n} in
+/-- **The top integral homology of a space homeomorphic to a sphere is cyclic**: for a
+homeomorphism `e : Sⁿ⁺¹ ≃ₜ X`, every class in `Hₙ₊₁(X; ℤ)` is an integer multiple of the integral
+Hurewicz class of the image under `e` of the tautological loop. -/
+theorem zmultiples_hurewiczIntHom_map_sphereGenLoop {X : Type} [TopologicalSpace X]
+    (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 ≃ₜ X) :
+    AddSubgroup.zmultiples (HomotopyGroup.hurewiczIntHom X (e (sphereNorthPole (n + 1))) n
+      (Additive.ofMul (HomotopyGroup.map (e : C(_, X)) rfl
+        (⟦sphereGenLoop (n + 1)⟧ : HomotopyGroup (Fin (n + 1)) _ _)))) = ⊤ := by
+  -- By naturality, the class is the image of the generator of `Hₙ₊₁(Sⁿ⁺¹; ℤ)` under `e`.
+  refine (congrArg AddSubgroup.zmultiples (HomotopyGroup.hurewiczIntHom_map _ rfl _)).trans <|
+    zmultiples_apply_eq_top_of_surjective
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).mapIso
+        (TopCat.isoOfHomeo e)).toLinearEquiv.surjective
+      (zmultiples_hurewiczIntHom_sphereGenLoop n)
 
 end TauCeti
 
