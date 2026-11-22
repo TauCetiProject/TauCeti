@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
+import TauCeti.Geometry.Manifold.DeRham.Harmonic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
@@ -42,7 +43,8 @@ when the forms involved are compactly supported.
   (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`).
 * **Orthogonality**: exact forms are `L²`-orthogonal to coclosed forms,
   `∫_M ⟨df, b⟩ vol = ∫_M ⟨f, d*b⟩ vol = 0`
-  (`TauCeti.SmoothForm.integralTopForm_inner_mextDerivₗ_eq_zero_of_codifferential_eq_zero`).
+  (`TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero`, in
+  `TauCeti.Geometry.Manifold.DeRham.Harmonic`).
 * **The `L²` estimate**: hence
   `∫_M |a|² vol = ∫_M |a - df|² vol + ∫_M |df|² vol` when `d*(a - df) = 0`
   (`TauCeti.SmoothForm.integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero`), so both
@@ -62,8 +64,6 @@ through a gauge transformation in the identity component, unique up to constant 
 * `TauCeti.SmoothForm.integralTopForm_codifferential_smul_riemannianVolumeForm_eq_zero`,
   `TauCeti.SmoothForm.integral_codifferential_eq_zero`: `∫_M d*a vol = 0`, as the integral of a
   top form and against the Riemannian measure.
-* `TauCeti.SmoothForm.integralTopForm_inner_mextDerivₗ_eq_zero_of_codifferential_eq_zero`: exact
-  one-forms are `L²`-orthogonal to coclosed one-forms.
 * `TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`: every one-form on a closed
   connected manifold is `df` plus a coclosed form, with `f` of integral zero.
 * `TauCeti.SmoothForm.mextDerivₗ_eq_of_codifferential_sub_eq_zero`: the coclosed summand is unique.
@@ -98,24 +98,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {m l : ℕ} (o : Manifold.Orientation I M (Fin m))
 
-/-! ### Exact forms are orthogonal to coclosed forms -/
+/-! ### Uniqueness and the `L²` estimate -/
 
 section Boundaryless
 
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] {k : ℕ}
   (hkl : k + 1 + l = m)
-
-/-- **Exact forms are `L²`-orthogonal to coclosed forms**: on an oriented boundaryless Riemannian
-manifold, `∫_M ⟨dα, b⟩ vol = 0` for a smooth `k`-form `α` and a smooth `(k + 1)`-form `b` with
-`d*b = 0`, one of them compactly supported. -/
-theorem integralTopForm_inner_mextDerivₗ_eq_zero_of_codifferential_eq_zero
-    (α : SmoothForm I M ℝ k) {b : SmoothForm I M ℝ (k + 1)} (hb : codifferential o hkl b = 0)
-    (h : α ∈ compactlySupportedForms I M k ∨ b ∈ compactlySupportedForms I M (k + 1)) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-      ((mextDerivₗ I k α).val x) (b.val x) • riemannianVolumeForm o x) = 0 := by
-  rw [integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl α b h, hb]
-  simp only [ZeroMemClass.coe_zero, Pi.zero_apply, map_zero, zero_smul]
-  exact integralTopForm_zero o
 
 /-- **The coclosed summand is unique**: on an oriented boundaryless Riemannian manifold, if both
 `a - dα` and `a - dβ` are coclosed and `α - β` is compactly supported, then `dα = dβ`, so the two
@@ -155,7 +143,7 @@ theorem integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero
   have hc : c ∈ compactlySupportedForms I M (k + 1) := mextDerivₗ_mem_compactlySupportedForms I hαc
   have hb : b ∈ compactlySupportedForms I M (k + 1) := Submodule.sub_mem _ ha hc
   -- The cross terms vanish by orthogonality of exact and coclosed forms.
-  have hcb := integralTopForm_inner_mextDerivₗ_eq_zero_of_codifferential_eq_zero o hkl α hα
+  have hcb := integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero o hkl α hα
     (.inl hαc)
   have hbc : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1) (b.val x)
       (c.val x) • riemannianVolumeForm o x) = 0 := by
