@@ -53,6 +53,8 @@ zero (`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`).
 
 ## Main results
 
+* `TauCeti.MappingTorus.det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff`: the
+  hypothesis `det (𝟙 - φ_*) ≠ 0` is the same for `φ` and `φ⁻¹`.
 * `TauCeti.MappingTorus.ker_wangδ_zero_eq_torsion`: the kernel of `δ : H₁(T_φ) ⟶ H₀(F)` is the
   torsion submodule.
 * `TauCeti.MappingTorus.homologyOneQuotTorsionEquiv`: `H₁(T_φ) ⧸ torsion ≃ H₀(F)`.
@@ -79,6 +81,40 @@ universe w
 namespace TauCeti.MappingTorus
 
 variable {k : Type w} [CommRing k] [IsDomain k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
+
+/-- **The monodromy and its inverse.** On `Hₙ(F)`, `det (𝟙 - (φ⁻¹)_*) ≠ 0` exactly when
+`det (𝟙 - φ_*) ≠ 0`, since
+`𝟙 - (φ⁻¹)_* = -(φ⁻¹)_* ∘ (𝟙 - φ_*)` and `(φ⁻¹)_*` is invertible. -/
+theorem det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff (n : ℕ) :
+    (LinearMap.id -
+      (homologyMap (monodromyChainMap φ.symm (ModuleCat.of k k)) n).hom).det ≠ 0 ↔
+      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det ≠ 0 := by
+  -- The maps induced by `ψ⁻¹` and `ψ` are mutually inverse.
+  have hinv (ψ : F ≃ₜ F) :
+      (homologyMap (monodromyChainMap ψ.symm (ModuleCat.of k k)) n).hom ∘ₗ
+        (homologyMap (monodromyChainMap ψ (ModuleCat.of k k)) n).hom = LinearMap.id := by
+    rw [← ModuleCat.hom_comp, ← homologyMap_comp, monodromyChainMap_def, monodromyChainMap_def,
+      ← Functor.map_comp, ← TopCat.ofHom_comp]
+    have h : (⟨ψ.symm, ψ.symm.continuous⟩ : C(F, F)).comp ⟨ψ, ψ.continuous⟩ = ContinuousMap.id F :=
+      ContinuousMap.ext ψ.symm_apply_apply
+    rw [h, TopCat.ofHom_id, CategoryTheory.Functor.map_id, homologyMap_id, ModuleCat.hom_id]
+  -- If `Q ∘ P = 𝟙`, then `det (𝟙 - Q) = det (-Q) det (𝟙 - P)` and `det (-Q)` is a unit.
+  have key (ψ : F ≃ₜ F) (h : (LinearMap.id -
+      (homologyMap (monodromyChainMap ψ (ModuleCat.of k k)) n).hom).det ≠ 0) :
+      (LinearMap.id -
+        (homologyMap (monodromyChainMap ψ.symm (ModuleCat.of k k)) n).hom).det ≠ 0 := by
+    set P := (homologyMap (monodromyChainMap ψ (ModuleCat.of k k)) n).hom
+    set Q := (homologyMap (monodromyChainMap ψ.symm (ModuleCat.of k k)) n).hom
+    have hQP : Q ∘ₗ P = LinearMap.id := hinv ψ
+    have hsplit : LinearMap.id - Q = (-Q) ∘ₗ (LinearMap.id - P) := by
+      rw [LinearMap.comp_sub, LinearMap.comp_id, LinearMap.neg_comp, hQP]
+      abel
+    have hunit : (-Q).det * (-P).det = 1 := by
+      rw [← LinearMap.det_comp, LinearMap.neg_comp, LinearMap.comp_neg, neg_neg, hQP,
+        LinearMap.det_id]
+    rw [hsplit, LinearMap.det_comp]
+    exact mul_ne_zero (left_ne_zero_of_mul_eq_one hunit) h
+  exact ⟨fun h ↦ by simpa using key φ.symm h, key φ⟩
 
 /-- **The kernel of the Wang connecting morphism is the torsion.** If `H₁(F)` is free of finite
 rank and `det (𝟙 - φ_*) ≠ 0` on it, the kernel of `δ : H₁(T_φ) ⟶ H₀(F)` is the torsion

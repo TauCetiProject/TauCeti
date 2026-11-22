@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Refl
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 
@@ -42,9 +43,11 @@ projection `T_φ → ℝ/ℤ` (`TauCeti.MappingTorus.proj`).
   pullback of a generator of `H¹(ℝ/ℤ; ℤ)` needs the universal coefficient identification
   `Hom(H₁(ℝ/ℤ), ℤ) ≅ H¹(ℝ/ℤ; ℤ)`, which is not made here.
 
-Which generator this is, that is, the value of `circleWangClass` on the circuit class
-`AddCircle.fundamentalClass` (one of `1` and `-1` with integer coefficients), is not computed
-here.
+With integer coefficients, `circleWangClass` is the winding number times the constant
+`TauCeti.MappingTorus.circleWangSign`, its value on the circuit class `AddCircle.fundamentalClass 1`
+(`TauCeti.MappingTorus.circleWangClass_hom_apply`), and this constant is `1` or `-1`
+(`TauCeti.MappingTorus.circleWangSign_eq_one_or_eq_neg_one`). Which of the two it is, that is,
+which generator of `H¹(ℝ/ℤ; ℤ)` the Wang class is, is not computed here.
 
 ## References
 
@@ -74,6 +77,16 @@ def wangClass : ((singularHomologyFunctor A 1).obj R).obj (TopCat.of (MappingTor
 
 /-- The Wang class is the Wang connecting morphism followed by the augmentation. -/
 lemma wangClass_def : wangClass R φ = wangδ φ R 0 ≫ (TopCat.of F).singularHomology₀ε R :=
+  (rfl)
+
+/-- With module coefficients, the Wang class of a class `c ∈ H₁(T_φ)` is the augmentation of its
+image `δ c ∈ H₀(F)` under the Wang connecting morphism. -/
+theorem wangClass_hom_apply {k : Type*} [Ring k] [HasCoproducts.{w} (ModuleCat.{v} k)]
+    (U : ModuleCat.{v} k)
+    (c : ((singularHomologyFunctor (ModuleCat.{v} k) 1).obj U).obj (TopCat.of (MappingTorus φ))) :
+    (wangClass U φ).hom c = ((TopCat.of F).singularHomology₀ε U).hom ((wangδ φ U 0).hom c) :=
+  -- The source of `wangδ` is the homology in degree `0 + 1`, which is the degree `1` of
+  -- `wangClass` only definitionally, so `rw [wangClass_def]` cannot form the motive.
   (rfl)
 
 /-- **Naturality of the Wang class.** For a map `g : F → G` intertwining the monodromies,
@@ -182,5 +195,36 @@ theorem wangClass_eq_singularHomologyMap_proj_comp_circleWangClass {F : Type}
     singularHomologyMap_proj_comp_circleWangClass, singularHomologyMap_map_comp_wangClass]
 
 end Circle
+
+/-! ### The integral Wang class of the circle -/
+
+/-- **The sign of the Wang class of the circle**: the value of the integral Wang class
+`H₁(ℝ/ℤ; ℤ) ⟶ ℤ` of the circle on the circuit class `AddCircle.fundamentalClass 1`. It is `1` or
+`-1` (`TauCeti.MappingTorus.circleWangSign_eq_one_or_eq_neg_one`). -/
+def circleWangSign : ℤ :=
+  (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1)
+
+/-- The integral Wang class of the circle is the winding number times `circleWangSign`. -/
+theorem circleWangClass_hom_apply
+    (c : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology 1) :
+    (circleWangClass (ModuleCat.of ℤ ℤ)).hom c =
+      AddCircle.firstHomologyAddEquiv 1 c * circleWangSign := by
+  -- The source of `circleWangClass` is `H₁(ℝ/ℤ; ℤ)` written through `singularHomologyFunctor`,
+  -- definitionally the homology of `singularChains ℤ` used by `AddCircle.fundamentalClass`; `rw`
+  -- cannot form the motive across the two spellings, so the steps are chained in term mode.
+  exact (congrArg _ (AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass 1 c)).trans
+    ((map_zsmul _ _ _).trans (smul_eq_mul _ _))
+
+/-- **The Wang class of the circle is a generator**: its value `circleWangSign` on the circuit
+class is `1` or `-1`, since it is an isomorphism `H₁(ℝ/ℤ; ℤ) ≅ ℤ`. -/
+theorem circleWangSign_eq_one_or_eq_neg_one : circleWangSign = 1 ∨ circleWangSign = -1 := by
+  obtain ⟨c, hc⟩ := (ConcreteCategory.bijective_of_isIso (circleWangClass (ModuleCat.of ℤ ℤ))).2 1
+  exact Int.eq_one_or_neg_one_of_mul_eq_one
+    ((mul_comm _ _).trans ((circleWangClass_hom_apply c).symm.trans hc))
+
+/-- The square of `circleWangSign` is `1`. -/
+@[simp]
+theorem circleWangSign_mul_self : circleWangSign * circleWangSign = 1 := by
+  rcases circleWangSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> norm_num
 
 end TauCeti.MappingTorus
