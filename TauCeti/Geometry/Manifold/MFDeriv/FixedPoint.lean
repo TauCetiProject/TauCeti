@@ -819,7 +819,7 @@ theorem _root_.Filter.EventuallyEq.fixedPointDet_eq {g : M → M} (h : g =ᶠ[�
 /-- At a fixed point `x`, `TauCeti.fixedPointDet I f x` is the determinant of `1` minus the
 fixed-point derivative of `f` at `x`. -/
 theorem fixedPointDet_eq_det_id_sub_fixedPointDerivative (x : {x // f x = x}) :
-    fixedPointDet I f x.1 = LinearMap.det (LinearMap.id - fixedPointDerivative I f x) := by
+    fixedPointDet I f x.val = LinearMap.det (LinearMap.id - fixedPointDerivative I f x) := by
   rw [fixedPointDet_def]
   -- Both sides are `det (1 - df_x)`, computed on `E` and on `T_x M`, which is `E` by definition.
   congr 2
