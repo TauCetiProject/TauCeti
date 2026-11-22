@@ -11,8 +11,8 @@ public import Mathlib.MeasureTheory.Group.Prod
 # The leapfrog step of Hamiltonian Monte Carlo
 
 On the phase space `E × E` of positions and momenta of a real vector space `E`, one
-**leapfrog step** with identity mass matrix, force field `g` (the gradient of the potential)
-and step size `h` is the composition of a half kick `p ↦ p - (h/2) g(x)`, a drift
+**leapfrog step** with identity mass matrix, gradient `g` of the potential (the negative of
+the force) and step size `h` is the composition of a half kick `p ↦ p - (h/2) g(x)`, a drift
 `x ↦ x + h p` and a second half kick. The **momentum flip** is `(x, p) ↦ (x, -p)`.
 
 The step is reversible: the flip, the step, the flip and the step compose to the identity, so
@@ -70,7 +70,8 @@ theorem involutive_momentumFlip [InvolutiveNeg E] : Function.Involutive (momentu
 
 variable [AddCommGroup E] [Module ℝ E]
 
-/-- One **leapfrog step** with identity mass matrix, force `g` and step size `h`:
+/-- One **leapfrog step** with identity mass matrix, gradient `g` of the potential (the
+negative of the force) and step size `h`:
 `p' = p - (h/2) g(x)`, `x' = x + h p'`, `p'' = p' - (h/2) g(x')`. -/
 def leapfrogStep (g : E → E) (h : ℝ) (z : E × E) : E × E :=
   (z.1 + h • (z.2 - (h / 2) • g z.1),
@@ -102,7 +103,8 @@ theorem leapfrogStep_injective (g : E → E) (h : ℝ) : Function.Injective (lea
   (involutive_momentumFlip_comp_leapfrogStep g h).injective.of_comp
 
 /-- The **leapfrog step preserves** `μ.prod μ` for a right-invariant measure `μ` and a
-measurable force `g`; in particular it preserves Lebesgue measure on `ℝᵈ × ℝᵈ`. -/
+measurable gradient `g` of the potential; in particular it preserves Lebesgue measure on
+`ℝᵈ × ℝᵈ`. -/
 theorem measurePreserving_leapfrogStep [MeasurableSpace E] [MeasurableAdd₂ E]
     [MeasurableConstSMul ℝ E] {μ : Measure E} [SFinite μ] [μ.IsAddRightInvariant]
     {g : E → E} (hg : Measurable g) (h : ℝ) :

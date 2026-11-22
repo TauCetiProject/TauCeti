@@ -17,7 +17,8 @@ probability `q x y` times the acceptance, and stays at `x` with the remaining pr
 
 For nonnegative weights and a nonnegative proposal whose rows sum to at most `1`, the kernel is
 Markov. For a nonnegative proposal it satisfies detailed balance with respect to the weight
-measure `∑ x, π x • δ_x`, in Mathlib's form `Kernel.IsReversible`. The key identity is that
+measure `∑ x, ofReal (π x) • δ_x` of the positive parts of the weights, in Mathlib's form
+`Kernel.IsReversible`. The key identity is that
 for nonnegative weights the probability flux `π x q x y` times the acceptance is
 `min (π x q x y) (π y q y x)`, which is symmetric in `x` and `y`. States of negative weight
 have mass `0` in the weight measure and receive no flux from states of nonnegative weight.
@@ -27,7 +28,8 @@ Invariance of the weight measure then follows from Mathlib's `Kernel.IsReversibl
 
 * `TauCeti.metropolisAcceptance π q x y`: the acceptance probability of a move from `x` to `y`.
 * `TauCeti.metropolisHastingsMatrix π q`: the transition matrix of the chain.
-* `TauCeti.metropolisHastingsKernel π q`: the Markov kernel with that transition matrix.
+* `TauCeti.metropolisHastingsKernel π q`: the kernel with that transition matrix (negative
+  entries clipped to `0`).
 
 ## Main results
 
@@ -91,14 +93,13 @@ theorem metropolisAcceptance_le_one (π : ι → ℝ) (q : Matrix ι ι ℝ) (x 
   split_ifs
   exacts [le_rfl, min_le_left _ _]
 
-/-- For nonnegative weights and proposal, the acceptance is nonnegative. -/
-theorem metropolisAcceptance_nonneg {π : ι → ℝ} {q : Matrix ι ι ℝ} (hπ : 0 ≤ π)
-    (hq : ∀ x y, 0 ≤ q x y) (x y : ι) : 0 ≤ metropolisAcceptance π q x y := by
+/-- For nonnegative weights and proposal at `x` and `y`, the acceptance is nonnegative. -/
+theorem metropolisAcceptance_nonneg {π : ι → ℝ} {q : Matrix ι ι ℝ} {x y : ι} (hx : 0 ≤ π x)
+    (hy : 0 ≤ π y) (hxy : 0 ≤ q x y) (hyx : 0 ≤ q y x) : 0 ≤ metropolisAcceptance π q x y := by
   rw [metropolisAcceptance_def]
   split_ifs
   · exact zero_le_one
-  · exact le_min zero_le_one
-      (div_nonneg (mul_nonneg (hπ y) (hq y x)) (mul_nonneg (hπ x) (hq x y)))
+  · exact le_min zero_le_one (div_nonneg (mul_nonneg hy hyx) (mul_nonneg hx hxy))
 
 /-- The accepted flux `π x q x y` times the acceptance is `min (π x q x y) (π y q y x)`, for
 nonnegative weights and proposal. -/
@@ -134,6 +135,13 @@ theorem metropolisHastingsMatrix_apply (π : ι → ℝ) (q : Matrix ι ι ℝ) 
     metropolisHastingsMatrix π q x y = q x y * metropolisAcceptance π q x y +
       if x = y then 1 - ∑ z, q x z * metropolisAcceptance π q x z else 0 := (rfl)
 
+/-- The diagonal entry of the Metropolis–Hastings matrix: the accepted proposal to stay at `x`
+plus the probability of a rejected proposal. -/
+theorem metropolisHastingsMatrix_apply_self (π : ι → ℝ) (q : Matrix ι ι ℝ) (x : ι) :
+    metropolisHastingsMatrix π q x x = q x x * metropolisAcceptance π q x x +
+      (1 - ∑ z, q x z * metropolisAcceptance π q x z) := by
+  simp [metropolisHastingsMatrix_apply]
+
 @[simp]
 theorem metropolisHastingsMatrix_apply_of_ne (π : ι → ℝ) (q : Matrix ι ι ℝ) {x y : ι}
     (h : x ≠ y) : metropolisHastingsMatrix π q x y = q x y * metropolisAcceptance π q x y := by
@@ -154,23 +162,30 @@ theorem metropolisHastingsMatrix_nonneg {π : ι → ℝ} {q : Matrix ι ι ℝ}
     (Finset.sum_le_sum fun z _ ↦
       mul_le_of_le_one_right (hq x z) (metropolisAcceptance_le_one π q x z)).trans (hq₁ x)
   rw [metropolisHastingsMatrix_apply]
-  refine add_nonneg (mul_nonneg (hq x y) (metropolisAcceptance_nonneg hπ hq x y)) ?_
+  refine add_nonneg
+    (mul_nonneg (hq x y) (metropolisAcceptance_nonneg (hπ x) (hπ y) (hq x y) (hq y x))) ?_
   split_ifs
   exacts [sub_nonneg.mpr hrow, le_rfl]
+
+/-- **Detailed balance** at a pair of states: for nonnegative weights and proposal at `x` and
+`y`, `π x P x y = π y P y x`. -/
+theorem mul_metropolisHastingsMatrix_comm {π : ι → ℝ} {q : Matrix ι ι ℝ} {x y : ι}
+    (hx : 0 ≤ π x) (hy : 0 ≤ π y) (hxy : 0 ≤ q x y) (hyx : 0 ≤ q y x) :
+    π x * metropolisHastingsMatrix π q x y = π y * metropolisHastingsMatrix π q y x := by
+  rcases eq_or_ne x y with rfl | h
+  · rfl
+  rw [metropolisHastingsMatrix_apply_of_ne _ _ h, metropolisHastingsMatrix_apply_of_ne _ _ h.symm,
+    ← mul_assoc, ← mul_assoc, mul_mul_metropolisAcceptance_eq_min hx hy hxy hyx,
+    mul_mul_metropolisAcceptance_eq_min hy hx hyx hxy, min_comm]
 
 /-- **Detailed balance**: for nonnegative weights and proposal,
 `π x P x y = π y P y x`, that is, `diagonal π * P` is symmetric. -/
 theorem isSymm_diagonal_mul_metropolisHastingsMatrix {π : ι → ℝ} {q : Matrix ι ι ℝ}
     (hπ : 0 ≤ π) (hq : ∀ x y, 0 ≤ q x y) :
-    (Matrix.diagonal π * metropolisHastingsMatrix π q).IsSymm := by
-  refine Matrix.IsSymm.ext fun x y ↦ ?_
-  simp only [Matrix.diagonal_mul]
-  by_cases hxy : y = x
-  · rw [hxy]
-  · rw [metropolisHastingsMatrix_apply_of_ne _ _ hxy,
-      metropolisHastingsMatrix_apply_of_ne _ _ (Ne.symm hxy), ← mul_assoc, ← mul_assoc,
-      mul_mul_metropolisAcceptance_eq_min (hπ x) (hπ y) (hq x y) (hq y x),
-      mul_mul_metropolisAcceptance_eq_min (hπ y) (hπ x) (hq y x) (hq x y), min_comm]
+    (Matrix.diagonal π * metropolisHastingsMatrix π q).IsSymm :=
+  Matrix.IsSymm.ext fun x y ↦ by
+    simpa only [Matrix.diagonal_mul] using
+      mul_metropolisHastingsMatrix_comm (hπ y) (hπ x) (hq y x) (hq x y)
 
 /-- Detailed balance for the positive parts of the weights and of the entries of the
 Metropolis–Hastings matrix, for a nonnegative proposal. -/
@@ -191,12 +206,20 @@ theorem toNNReal_mul_toNNReal_metropolisHastingsMatrix_comm {π : ι → ℝ} {q
   · rw [hneg hxy hy, Real.toNNReal_of_nonpos hy.le, zero_mul]
   rcases lt_or_ge (π x) 0 with hx | hx
   · rw [hneg (Ne.symm hxy) hx, Real.toNNReal_of_nonpos hx.le, zero_mul]
-  rw [← Real.toNNReal_mul hx, ← Real.toNNReal_mul hy, metropolisHastingsMatrix_apply_of_ne _ _ hxy,
-    metropolisHastingsMatrix_apply_of_ne _ _ (Ne.symm hxy), ← mul_assoc, ← mul_assoc,
-    mul_mul_metropolisAcceptance_eq_min hx hy (hq x y) (hq y x),
-    mul_mul_metropolisAcceptance_eq_min hy hx (hq y x) (hq x y), min_comm]
+  rw [← Real.toNNReal_mul hx, ← Real.toNNReal_mul hy,
+    mul_metropolisHastingsMatrix_comm hx hy (hq x y) (hq y x)]
 
 variable [MeasurableSpace ι] [MeasurableSingletonClass ι]
+
+omit [DecidableEq ι] [MeasurableSingletonClass ι] in
+/-- A finite sum of finitely weighted Dirac measures is a finite measure. -/
+private theorem isFiniteMeasure_sum_smul_dirac (c : ι → ℝ≥0∞) (hc : ∀ y, c y ≠ ∞) :
+    IsFiniteMeasure (∑ y, c y • Measure.dirac y) :=
+  ⟨by simpa using fun y ↦ (hc y).lt_top⟩
+
+/-- The positive part of a real number, through `ℝ≥0∞`, is `Real.toNNReal`. -/
+private theorem toNNReal_ofReal (r : ℝ) : (ENNReal.ofReal r).toNNReal = r.toNNReal :=
+  ENNReal.toNNReal_coe r.toNNReal
 
 /-- The **Metropolis–Hastings kernel**, with transition matrix `metropolisHastingsMatrix π q`
 (negative entries, which do not occur under the hypotheses of
@@ -212,19 +235,22 @@ theorem metropolisHastingsKernel_apply (π : ι → ℝ) (q : Matrix ι ι ℝ) 
 @[simp]
 theorem metropolisHastingsKernel_apply_singleton (π : ι → ℝ) (q : Matrix ι ι ℝ) (x y : ι) :
     metropolisHastingsKernel π q x {y} = ENNReal.ofReal (metropolisHastingsMatrix π q x y) := by
-  rw [metropolisHastingsKernel_apply, FunLike.coe_sum, Finset.sum_apply,
-    Finset.sum_eq_single y]
-  · simp
-  · intro z _ hz
-    simp [hz]
-  · simp
+  rw [metropolisHastingsKernel_apply, ← Measure.sum_fintype, Measure.sum_smul_dirac_singleton]
+
+/-- The transition matrix of the Metropolis–Hastings kernel is the positive part of the
+Metropolis–Hastings matrix. -/
+@[simp]
+theorem toMatrix_metropolisHastingsKernel_apply (π : ι → ℝ) (q : Matrix ι ι ℝ) (x y : ι) :
+    (metropolisHastingsKernel π q).toMatrix x y = (metropolisHastingsMatrix π q x y).toNNReal := by
+  rw [Kernel.toMatrix_apply, metropolisHastingsKernel_apply_singleton, toNNReal_ofReal]
 
 instance (π : ι → ℝ) (q : Matrix ι ι ℝ) : IsFiniteKernel (metropolisHastingsKernel π q) := by
-  refine ⟨⟨∑ x, ∑ y, ENNReal.ofReal (metropolisHastingsMatrix π q x y),
-    ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top,
-    fun x ↦ ?_⟩⟩
-  refine le_of_eq_of_le ?_ (Finset.single_le_sum (fun x _ ↦ bot_le) (Finset.mem_univ x))
-  simp [metropolisHastingsKernel_apply]
+  have (x : ι) : IsFiniteMeasure (metropolisHastingsKernel π q x) :=
+    isFiniteMeasure_sum_smul_dirac _ fun _ ↦ ENNReal.ofReal_ne_top
+  exact ⟨⟨∑ x, metropolisHastingsKernel π q x Set.univ,
+    ENNReal.sum_lt_top.2 fun _ _ ↦ measure_lt_top _ _,
+    fun x ↦ Finset.single_le_sum (f := fun x ↦ metropolisHastingsKernel π q x Set.univ)
+      (fun _ _ ↦ bot_le) (Finset.mem_univ x)⟩⟩
 
 /-- For nonnegative weights and a nonnegative proposal whose rows sum to at most `1`, the
 Metropolis–Hastings kernel is Markov. -/
@@ -238,26 +264,19 @@ theorem isMarkovKernel_metropolisHastingsKernel {π : ι → ℝ} {q : Matrix ι
     sum_metropolisHastingsMatrix, ENNReal.ofReal_one]
 
 /-- **Reversibility** of the Metropolis–Hastings kernel: for a nonnegative proposal, the kernel
-satisfies detailed balance with respect to the weight measure `∑ x, π x • δ_x`. -/
+satisfies detailed balance with respect to the weight measure `∑ x, ofReal (π x) • δ_x` of the
+positive parts of the weights. -/
 theorem isReversible_metropolisHastingsKernel {π : ι → ℝ} {q : Matrix ι ι ℝ}
     (hq : ∀ x y, 0 ≤ q x y) :
     (metropolisHastingsKernel π q).IsReversible
       (∑ x, ENNReal.ofReal (π x) • Measure.dirac x) := by
-  set w : Measure ι := ∑ x, ENNReal.ofReal (π x) • Measure.dirac x
+  set w : Measure ι := ∑ x, ENNReal.ofReal (π x) • Measure.dirac x with hw_def
   have hw (a : ι) : w {a} = ENNReal.ofReal (π a) := by
-    rw [FunLike.coe_sum, Finset.sum_apply, Finset.sum_eq_single a]
-    · simp
-    · intro z _ hz
-      simp [hz]
-    · simp
-  have : IsFiniteMeasure w := ⟨by
-    simp only [w, FunLike.coe_sum, Finset.sum_apply, smul_apply, measure_univ,
-      smul_eq_mul, mul_one]
-    exact ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top⟩
+    rw [hw_def, ← Measure.sum_fintype, Measure.sum_smul_dirac_singleton]
+  have : IsFiniteMeasure w := isFiniteMeasure_sum_smul_dirac _ fun _ ↦ ENNReal.ofReal_ne_top
   rw [Kernel.isReversible_iff_isSymm_diagonal_mul]
   refine Matrix.IsSymm.ext fun a b ↦ ?_
-  simp only [Matrix.diagonal_mul, Kernel.toMatrix_apply, hw,
-    metropolisHastingsKernel_apply_singleton, ENNReal.ofReal, ENNReal.toNNReal_coe]
+  simp only [Matrix.diagonal_mul, toMatrix_metropolisHastingsKernel_apply, hw, toNNReal_ofReal]
   exact toNNReal_mul_toNNReal_metropolisHastingsMatrix_comm hq b a
 
 end TauCeti
