@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.BergmanCochains
+public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.Bergman.Cochains
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization

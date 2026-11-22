@@ -139,8 +139,8 @@ theorem slotSum_comp_wreathTensor {ι : Type x} [Fintype ι] [DecidableEq ι]
 wreath-product action preserves the total degree of the tensor power. -/
 theorem isHomogeneous_wreathTensor {ι : Type x} [Fintype ι] {A : Type*} [AddCommMonoid A]
     {ℳ : A → Submodule R M} (ρ : Representation R D M)
-    (hρ : ∀ g, TauCeti.LinearMap.IsHomogeneous (ρ g) ℳ ℳ 0) (a : TauCeti.WreathProduct D ι) :
-    TauCeti.LinearMap.IsHomogeneous (ρ.wreathTensor ι a)
+    (hρ : ∀ g, LinearMap.IsHomogeneous (ρ g) ℳ ℳ 0) (a : TauCeti.WreathProduct D ι) :
+    LinearMap.IsHomogeneous (ρ.wreathTensor ι a)
       (TauCeti.PiTensorProduct.totalDegreePiece ι (fun _ ↦ ℳ))
       (TauCeti.PiTensorProduct.totalDegreePiece ι (fun _ ↦ ℳ)) 0 := by
   have h := (TauCeti.PiTensorProduct.isHomogeneous_map fun i ↦ hρ (a.left i)).comp
