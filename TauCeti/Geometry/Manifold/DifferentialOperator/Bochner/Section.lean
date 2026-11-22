@@ -81,7 +81,8 @@ density `e^(sin x) dx`, but its Bochner connection `d + ½ cos x dx` is not metr
 ## Main definitions
 
 * `CovariantDerivative.bochnerConnection`: the Bochner connection `∇ + A` of an operator `P` for
-  which `P - c ∇*∇` has order at most one.
+  which `P - c ∇*∇` has order at most one; `CovariantDerivative.bochnerConnection_apply` gives its
+  value.
 
 ## Main results
 
@@ -297,6 +298,18 @@ instance ContMDiffCovariantDerivative.bochnerConnection {P : Cₛ^∞⟮I; F, V�
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1) :
     ContMDiffCovariantDerivative (cov.bochnerConnection h1) ∞ :=
   (inferInstance : ContMDiffCovariantDerivative cov ∞).addOneForm (contMDiff_bochnerForm h1 c)
+
+/-- Evaluation of the Bochner connection on any section, including sections that are not
+differentiable: `∇'_w σ = ∇_w σ - (2 c)⁻¹ σ(P - c ∇*∇)(⟪w, ·⟫) (σ x)`. -/
+@[simp]
+theorem bochnerConnection_apply {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {c : ℝ}
+    (h1 : P - c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1)
+    (σ : Π x, V x) (x : M) (w : TangentSpace I x) :
+    cov.bochnerConnection h1 σ x w = cov σ x w - (2 * c)⁻¹ •
+      sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint ⟨_, h1⟩ (innerSL ℝ w)
+        (σ x) := by
+  simp [bochnerConnection, bochnerForm, addOneForm_apply, sub_eq_add_neg]
 
 /-- **The Bochner connection absorbs the first-order part.** Let `∇` be a smooth connection on `V`
 and `c ≠ 0`. If `P - c ∇*∇` is an operator of order at most one, then for the Bochner connection
