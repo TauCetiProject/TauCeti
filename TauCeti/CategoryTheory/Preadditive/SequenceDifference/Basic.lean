@@ -60,19 +60,6 @@ variable (X : ℕ ⥤ T) [HasCoproduct X.obj]
 private instance hasProduct_op_obj : HasProduct (fun n : ℕ ↦ X.op.obj (op n)) :=
   inferInstanceAs (HasProduct fun n : ℕ ↦ op (X.obj n))
 
-omit [Preadditive T] in
-@[reassoc]
-private lemma opCoproductIsoProduct_hom_comp_π_opObj (k : ℕ) :
-    (opCoproductIsoProduct X.obj).hom ≫ Pi.π (fun n : ℕ ↦ X.op.obj (op n)) k =
-      (Sigma.ι X.obj k).op :=
-  opCoproductIsoProduct_hom_comp_π (Z := X.obj) k
-
-omit [Preadditive T] in
-private lemma opCoproductIsoProduct_inv_comp_ι_opObj (k : ℕ) :
-    (opCoproductIsoProduct X.obj).inv ≫ (Sigma.ι X.obj k).op =
-      Pi.π (fun n : ℕ ↦ X.op.obj (op n)) k :=
-  opCoproductIsoProduct_inv_comp_ι (Z := X.obj) k
-
 /-- The *sequence–difference map* `1 - s` of a sequence `X₀ → X₁ → ⋯`: the endomorphism
 of `∐ X.obj` sending the `n`-th summand `Xₙ` to `ιₙ - φₙ ≫ ιₙ₊₁` (`ι_sequenceDifference`),
 constructed by duality from `X.op.towerDifference`. Its cone in a pretriangulated category is a
@@ -92,12 +79,12 @@ lemma ι_sequenceDifference (n : ℕ) :
     Sigma.ι X.obj n ≫ X.sequenceDifference =
       Sigma.ι X.obj n - X.map (homOfLE (Nat.le_add_right n 1)) ≫ Sigma.ι X.obj (n + 1) :=
   Quiver.Hom.op_inj <| by
+    have hπ := X.op.towerDifference_π n
+    dsimp only [Functor.op_obj, Functor.op_map, Quiver.Hom.unop_op] at hπ
     rw [op_comp, sequenceDifference_op, Category.assoc, Category.assoc,
-      X.opCoproductIsoProduct_inv_comp_ι_opObj, towerDifference_π, Preadditive.comp_sub,
-      X.opCoproductIsoProduct_hom_comp_π_opObj,
-      X.opCoproductIsoProduct_hom_comp_π_opObj_assoc]
-    dsimp only [Functor.op_map, Quiver.Hom.unop_op]
-    rw [← op_comp, op_sub]
+      opCoproductIsoProduct_inv_comp_ι (Z := X.obj), hπ, Preadditive.comp_sub,
+      opCoproductIsoProduct_hom_comp_π (Z := X.obj),
+      opCoproductIsoProduct_hom_comp_π_assoc (Z := X.obj), ← op_comp, op_sub]
 
 private lemma towerDifference_eq_zero_of_sequenceDifference_comp_eq_zero {Y : T}
     {ψ : (∐ X.obj) ⟶ Y} (w : X.sequenceDifference ≫ ψ = 0) :
@@ -120,10 +107,10 @@ lemma sequenceDifference_comp_eq_zero_iff {Y : T} (ψ : (∐ X.obj) ⟶ Y) :
     simp [← Category.assoc, h]
   rw [hop, X.op.comp_towerDifference_eq_zero_iff]
   refine forall_congr' fun n ↦ ?_
-  rw [Category.assoc, Category.assoc, X.opCoproductIsoProduct_hom_comp_π_opObj_assoc,
-    X.opCoproductIsoProduct_hom_comp_π_opObj, ← Category.assoc, ← op_comp]
-  dsimp only [Functor.op_map, Quiver.Hom.unop_op]
-  rw [← op_comp, ← op_comp]
+  dsimp only [Functor.op_obj, Functor.op_map, Quiver.Hom.unop_op]
+  rw [Category.assoc, Category.assoc, opCoproductIsoProduct_hom_comp_π_assoc (Z := X.obj),
+    opCoproductIsoProduct_hom_comp_π (Z := X.obj), ← Category.assoc, ← op_comp, ← op_comp,
+    ← op_comp]
   exact Quiver.Hom.op_inj.eq_iff
 
 variable {X} in
@@ -164,26 +151,14 @@ def isColimitCoconeOfSequenceDifference {c : CokernelCofork X.sequenceDifference
   have hc' : IsColimit (CokernelCofork.ofπ c.π c.condition) :=
     IsColimit.ofIsoColimit hc (Cofork.ext (Iso.refl _) (by simp))
   have hforkOp := CokernelCofork.IsColimit.ofπOp c.π c.condition hc'
-  let trans {W : Tᵒᵖ} (k : W ⟶ ∏ᶜ fun n ↦ X.op.obj (op n)) (hk : k ≫ X.op.towerDifference = 0) :
-      KernelFork X.sequenceDifference.op :=
-    KernelFork.ofι (k ≫ (opCoproductIsoProduct X.obj).inv) <| by
-      rw [Category.assoc, sequenceDifference_op]; simp [reassoc_of% hk]
   let ιOp := c.π.op ≫ (opCoproductIsoProduct X.obj).hom
   have hιOp : ιOp ≫ X.op.towerDifference = 0 :=
     X.towerDifference_eq_zero_of_sequenceDifference_comp_eq_zero c.condition
-  let kf : KernelFork X.op.towerDifference := KernelFork.ofι ιOp hιOp
-  have hfork : IsLimit kf := by
-    refine KernelFork.IsLimit.ofι _ _ (fun k hk ↦ hforkOp.lift (trans k hk))
-      (fun k hk ↦ ?_) (fun k hk m hm ↦ ?_)
-    · have hfac := hforkOp.fac (trans k hk) .zero
-      dsimp only [trans, Fork.ofι_π_app, Functor.const_obj_obj] at hfac
-      rw [← Category.assoc, hfac, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    · refine Fork.IsLimit.hom_ext hforkOp ?_
-      have hfac := hforkOp.fac (trans k hk) .zero
-      dsimp only [trans, Fork.ofι_π_app, Functor.const_obj_obj] at hfac
-      change m ≫ c.π.op = hforkOp.lift (trans k hk) ≫ c.π.op
-      rw [hfac, Iso.eq_comp_inv]
-      simpa [Category.assoc] using hm
+  let kf : KernelFork (X.op.towerDifference : (∏ᶜ fun n : ℕ ↦ op (X.obj n)) ⟶ _) :=
+    KernelFork.ofι ιOp hιOp
+  have hfork : IsLimit kf :=
+    IsKernel.ofIso _ hforkOp kf (opCoproductIsoProduct X.obj) (opCoproductIsoProduct X.obj)
+      (Iso.refl _) (by simp [sequenceDifference_op, Category.assoc]) (by simp [kf, ιOp])
   exact IsColimit.ofIsoColimit (isLimitConeOfTowerDifference hfork).unop
     (Cocone.ext (Iso.refl _) fun n ↦ by
       have hcomp : ((coneOfTowerDifference kf.ι kf.condition).unop.ι.app n ≫
@@ -192,8 +167,8 @@ def isColimitCoconeOfSequenceDifference {c : CokernelCofork X.sequenceDifference
         change (coneOfTowerDifference kf.ι kf.condition).π.app (op n) =
           (Sigma.ι X.obj n ≫ c.π).op
         rw [coneOfTowerDifference_π_app]
-        dsimp only [kf, ιOp, Fork.ι_ofι, unop_op]
-        rw [Category.assoc, X.opCoproductIsoProduct_hom_comp_π_opObj, ← op_comp]
+        dsimp only [kf, ιOp, Fork.ι_ofι, unop_op, Functor.op_obj]
+        rw [Category.assoc, opCoproductIsoProduct_hom_comp_π (Z := X.obj), ← op_comp]
       exact Quiver.Hom.op_inj hcomp)
 
 variable {X} in
@@ -206,32 +181,17 @@ def isColimitCokernelCoforkOfIsColimit {c : Cocone X} (hc : IsColimit c) :
       ((Sigma.desc fun n : ℕ ↦ c.ι.app n).op ≫ (opCoproductIsoProduct X.obj).hom)
       (by
         rw [desc_op_comp_opCoproductIsoProduct_hom]
-        exact X.op.lift_π_app_towerDifference c.op)) :=
+        exact X.op.lift_π_app_towerDifference c.op) :
+      KernelFork (X.op.towerDifference : (∏ᶜ fun n : ℕ ↦ op (X.obj n)) ⟶ _)) :=
     IsLimit.ofIsoLimit (isLimitKernelForkOfIsLimit hc.op)
       (Fork.ext (Iso.refl _) (by simp [desc_op_comp_opCoproductIsoProduct_hom]))
-  let trans {W : Tᵒᵖ} (k : W ⟶ op (∐ X.obj)) (hk : k ≫ X.sequenceDifference.op = 0) :
-      KernelFork X.op.towerDifference :=
-    KernelFork.ofι (k ≫ (opCoproductIsoProduct X.obj).hom) <| by
-      have h : (opCoproductIsoProduct X.obj).hom ≫ X.op.towerDifference =
-          X.sequenceDifference.op ≫ (opCoproductIsoProduct X.obj).hom := by
-        simp [sequenceDifference_op, Category.assoc]
-      rw [Category.assoc, h, reassoc_of% hk, zero_comp]
-  have hforkOp : IsLimit (KernelFork.ofι (Sigma.desc fun n : ℕ ↦ c.ι.app n).op
-      (by rw [← op_comp, sequenceDifference_desc_ι_app, op_zero])) := by
-    refine KernelFork.IsLimit.ofι _ _ (fun k hk ↦ hfork.lift (trans k hk))
-      (fun k hk ↦ ?_) (fun k hk m hm ↦ ?_)
-    · have hfac := hfork.fac (trans k hk) .zero
-      dsimp only [trans, Fork.ofι_π_app, Functor.const_obj_obj] at hfac
-      refine (cancel_mono (opCoproductIsoProduct X.obj).hom).1 ?_
-      rw [Category.assoc]
-      exact hfac
-    · refine Fork.IsLimit.hom_ext hfork ?_
-      have hfac := hfork.fac (trans k hk) .zero
-      dsimp only [trans, Fork.ofι_π_app, Functor.const_obj_obj] at hfac
-      change m ≫ (Sigma.desc fun n ↦ c.ι.app n).op ≫ (opCoproductIsoProduct X.obj).hom =
-        hfork.lift (trans k hk) ≫
-          (Sigma.desc fun n ↦ c.ι.app n).op ≫ (opCoproductIsoProduct X.obj).hom
-      rw [hfac, ← Category.assoc, hm]
+  let kfOp : KernelFork X.sequenceDifference.op :=
+    KernelFork.ofι (Sigma.desc fun n : ℕ ↦ c.ι.app n).op
+      (by rw [← op_comp, sequenceDifference_desc_ι_app, op_zero])
+  have hforkOp : IsLimit kfOp :=
+    IsKernel.ofIso _ hfork kfOp (opCoproductIsoProduct X.obj).symm
+      (opCoproductIsoProduct X.obj).symm (Iso.refl _)
+      (by simp [sequenceDifference_op]) (by simp [kfOp])
   exact IsColimit.ofIsoColimit (KernelFork.IsLimit.ofιUnop _ _ hforkOp)
     (Cofork.ext (Iso.refl _) (by dsimp; exact Category.comp_id _))
 

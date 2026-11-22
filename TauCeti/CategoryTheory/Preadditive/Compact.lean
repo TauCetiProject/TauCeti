@@ -439,17 +439,15 @@ theorem not_isCompactForCoproducts_sigma {T : Type u} [Category.{v} T] [Preaddit
   intro hC
   obtain ⟨s, h, hid⟩ := hC.exists_finset_sum_comp_ι f (𝟙 (∐ f))
   obtain ⟨m, hmS, hm0⟩ : ∃ m ∈ {j | ¬ IsZero (f j)}, m ∉ s := hf.exists_notMem_finset s
-  let p : (∐ f) ⟶ f m := Sigma.desc fun j ↦ if hjm : j = m then eqToHom (congrArg f hjm) else 0
-  have hp (j : J) : Sigma.ι f j ≫ p = if hjm : j = m then eqToHom (congrArg f hjm) else 0 :=
-    Sigma.ι_comp_desc _ j
   refine hmS ((IsZero.iff_id_eq_zero (f m)).2 ?_)
   calc
-    𝟙 (f m) = Sigma.ι f m ≫ (∑ j ∈ s, h j ≫ Sigma.ι f j) ≫ p := by
-      rw [← hid]; simp [hp]
-    _ = ∑ j ∈ s, Sigma.ι f m ≫ h j ≫ (Sigma.ι f j ≫ p) := by
+    𝟙 (f m) = Sigma.ι f m ≫ (∑ j ∈ s, h j ≫ Sigma.ι f j) ≫ Sigma.π f m := by
+      rw [← hid, Category.id_comp, Sigma.ι_π]; simp
+    _ = ∑ j ∈ s, Sigma.ι f m ≫ h j ≫ (Sigma.ι f j ≫ Sigma.π f m) := by
       simp [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
     _ = 0 := Finset.sum_eq_zero fun j hj ↦ by
-      have hjm : j ≠ m := fun h' ↦ hm0 (h' ▸ hj); simp [hp, hjm]
+      have hjm : j ≠ m := fun h' ↦ hm0 (h' ▸ hj)
+      simp [Sigma.ι_π_of_ne f hjm]
 
 /-- The free abelian group of rank one (`ULift ℤ`) is compact for coproducts in
 `AddCommGrpCat`. -/

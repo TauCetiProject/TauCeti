@@ -43,40 +43,6 @@ open scoped DirectSum
 
 universe v u
 
-namespace CategoryTheory
-
-section YonedaApply
-
-variable {T : Type u} [Category.{v} T] [Preadditive T]
-
-/-- Evaluating `(preadditiveYonedaObj Y).map f` on a morphism `g : X.unop ⟶ Y` is precomposition
-with `f.unop`. -/
-theorem preadditiveYonedaObj_map_apply (Y : T) {X X' : Tᵒᵖ} (f : X ⟶ X') (g : X.unop ⟶ Y) :
-    (preadditiveYonedaObj Y).map f g = f.unop ≫ g :=
-  rfl
-
-/-- Evaluating `(preadditiveYoneda.obj Y).map f` on a morphism `g : X.unop ⟶ Y` is precomposition
-with `f.unop`. -/
-theorem preadditiveYoneda_obj_map_apply (Y : T) {X X' : Tᵒᵖ} (f : X ⟶ X') (g : X.unop ⟶ Y) :
-    (preadditiveYoneda.obj Y).map f g = f.unop ≫ g :=
-  rfl
-
-/-- Evaluating `(preadditiveCoyonedaObj A).map f` on a morphism `g : A ⟶ Y` is postcomposition
-with `f`. -/
-theorem preadditiveCoyonedaObj_map_apply (A : T) {Y Z : T} (f : Y ⟶ Z) (g : A ⟶ Y) :
-    (preadditiveCoyonedaObj A).map f g = g ≫ f :=
-  rfl
-
-/-- Evaluating `(preadditiveCoyoneda.obj A).map f` on a morphism `g : A.unop ⟶ Y` is
-postcomposition with `f`. -/
-theorem preadditiveCoyoneda_obj_map_apply (A : Tᵒᵖ) {Y Z : T} (f : Y ⟶ Z) (g : A.unop ⟶ Y) :
-    (preadditiveCoyoneda.obj A).map f g = g ≫ f :=
-  rfl
-
-end YonedaApply
-
-end CategoryTheory
-
 namespace TauCeti
 
 section SequenceDifferenceCompact
@@ -145,8 +111,6 @@ theorem compactSeqDirectSumEquiv_telescopeDiff (A : T) (X : ℕ ⥤ T) [HasCopro
     rw [← DirectSum.lof_eq_of (End A)ᵐᵒᵖ, ModuleCat.telescopeDiff_lof, map_sub]
     refine (congrArg₂ (· - ·) (compactSeqDirectSumEquiv_lof A X n g)
       (compactSeqDirectSumEquiv_lof A X (n + 1) _)).trans ?_
-    refine (congrArg (fun z ↦ g' ≫ Sigma.ι X.obj n - z ≫ Sigma.ι X.obj (n + 1))
-      (preadditiveCoyonedaObj_map_apply A (X.map (homOfLE (n.le_add_right 1))) g)).trans ?_
     exact hsub.symm.trans (congrArg (· ≫ X.sequenceDifference)
       (compactSeqDirectSumEquiv_of A X n g).symm)
   | add a b ha hb =>

@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Triangulated.Subcategory
 public import TauCeti.CategoryTheory.Preadditive.Compact
 
 import Mathlib.Algebra.FiveLemma
+import Mathlib.CategoryTheory.Triangulated.Yoneda
 import TauCeti.Algebra.DirectSum.Exact
 
 /-!
@@ -55,12 +56,11 @@ theorem IsCompactForCoproducts.of_distTriang {t : Triangle T} (ht : t ∈ distTr
           (coprodComparisonAddHom B f).toIntLinearMap =
         (coprodComparisonAddHom A f).toIntLinearMap.comp
           (DirectSum.lmap (R := ℤ) fun j ↦ (Preadditive.leftComp (f j) u).toIntLinearMap) :=
-    DirectSum.linearMap_ext _ fun j ↦ LinearMap.ext fun g ↦ by
-      simp [DirectSum.lof_eq_of, Preadditive.leftComp, Category.assoc]
+    LinearMap.ext fun a ↦ (coprodComparisonAddHom_naturality_left u f a).symm
   have hex {s : Triangle T} (hs : s ∈ distTriang T) (W : T) :
       Function.Exact (Preadditive.leftComp W s.mor₂).toIntLinearMap
-        (Preadditive.leftComp W s.mor₁).toIntLinearMap := fun g ↦
-    ⟨fun hg ↦ let ⟨h, hh⟩ := s.yoneda_exact₂ hs g hg; ⟨h, hh.symm⟩,
+        (Preadditive.leftComp W s.mor₁).toIntLinearMap :=
+    fun g ↦ ⟨(ShortComplex.ab_exact_iff _).1 (preadditiveYoneda_map_distinguished s hs W) g,
       fun ⟨h, hh⟩ ↦ hh ▸ (comp_distTriang_mor_zero₁₂_assoc _ hs h).trans zero_comp⟩
   exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective
     (DirectSum.lmap (R := ℤ) fun j ↦

@@ -104,8 +104,8 @@ theorem InCellClosure.coproduct_of_small {J : Type w} [Small.{v} J] (f : J → T
 
 /-- Every zero object lies in `InCellClosure G` (as the empty coproduct). -/
 theorem InCellClosure.of_isZero (G : I → T) {Z : T} (hZ : IsZero Z) : InCellClosure G Z := by
-  have h0 : IsZero (∐ (PEmpty.elim : PEmpty.{v + 1} → T)) := by
-    rw [IsZero.iff_id_eq_zero]; exact Sigma.hom_ext _ _ fun j ↦ PEmpty.elim j
+  have h0 : IsZero (∐ (PEmpty.elim : PEmpty.{v + 1} → T)) :=
+    (coproductIsCoproduct _).isZero_pt ((Functor.isZero_iff _).2 fun ⟨j⟩ ↦ PEmpty.elim j)
   exact (InCellClosure.coproduct (G := G) (PEmpty.elim : PEmpty.{v + 1} → T)
     fun j ↦ PEmpty.elim j).of_iso (h0.iso hZ)
 
@@ -169,7 +169,7 @@ theorem inCellClosure_empty_iff (R : T) :
   refine ⟨fun hR ↦ ?_, InCellClosure.of_isZero _⟩
   refine hR.induction_on (fun i ↦ PEmpty.elim i) (fun e hA ↦ hA.of_iso e.symm)
     (fun _ f hf ↦ ?_) (fun t ht h₁ h₂ ↦ ?_)
-  · rw [IsZero.iff_id_eq_zero]; exact Sigma.hom_ext _ _ fun j ↦ (hf j).eq_of_src _ _
+  · exact (coproductIsCoproduct f).isZero_pt ((Functor.isZero_iff _).2 fun ⟨j⟩ ↦ hf j)
   · have hm : t.mor₁ = (h₁.iso h₂).hom := h₁.eq_of_src _ _
     have : IsIso t.mor₁ := hm ▸ inferInstance
     exact t.isZero₃_of_isIso₁ ht inferInstance
@@ -242,8 +242,7 @@ theorem isZero_obj_shift_of_inCellClosure {A : Type*} [Category A] [Abelian A] (
     have hc :
         IsColimit (H.mapCocone ((shiftFunctor T k).mapCocone (Cofan.mk (∐ f) (Sigma.ι f)))) :=
       isColimitOfPreserves H (isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f))
-    rw [IsZero.iff_id_eq_zero]
-    exact hc.hom_ext fun ⟨j⟩ ↦ (hf j k hk).eq_of_src _ _
+    exact hc.isZero_pt ((Functor.isZero_iff _).2 fun ⟨j⟩ ↦ hf j k hk)
   · intro t ht h₁ h₂ k hk
     let ts := (CategoryTheory.shiftFunctor (Triangle T) k).obj t
     have hrot : ts.rotate ∈ distTriang T := rot_of_distTriang _ (t.shift_distinguished ht k)
