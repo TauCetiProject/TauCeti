@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
+public import TauCeti.Topology.MetricSpace.SeparatedBalls
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 
@@ -36,6 +37,12 @@ constant in the first variable.
 * `IsCompact.exists_enorm_sub_sum_indicator_le` — a function continuous on a product of compact
   sets and zero outside it is uniformly close to a function that is piecewise constant in the
   first variable on a finite measurable partition, with values the slices at the centres.
+* `TauCeti.measurable_ballIndex` — for `2 s`-separated points `θ i`, the index of the ball of
+  radius `s` containing a point is measurable, for an arbitrary index type.
+* `TauCeti.nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear order, the
+  least index of a nearest point; it is measurable (`TauCeti.measurable_nearestIndex`), minimizes
+  the distance (`TauCeti.dist_nearestIndex_le`), and lands within twice the distance to any
+  `θ j` (`TauCeti.dist_nearestIndex_le_two_mul`).
 -/
 
 public section
@@ -182,5 +189,65 @@ theorem _root_.IsCompact.exists_enorm_sub_sum_indicator_le {α β E : Type*} [Me
     · simp [hK0 x y fun h ↦ hy h.2, hK0 (c i) y fun h ↦ hy h.2]
   · simp [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
       hK0 x y fun h ↦ hx h.1]
+
+/-- For `2 s`-separated points, `ballIndex θ s i₀` is measurable, for every σ-algebra on the
+index set and with no countability assumption: every preimage is the union of an open set and a
+closed set. -/
+@[fun_prop]
+theorem measurable_ballIndex {ι Y : Type*} [PseudoMetricSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] [MeasurableSpace ι] {θ : ι → Y} {s : ℝ}
+    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) :
+    Measurable (ballIndex θ s i₀) := fun A _ ↦ by
+  rw [ballIndex_preimage hθ i₀ A]
+  exact (isOpen_biUnion fun i _ ↦ isOpen_ball).measurableSet.union
+    ((MeasurableSet.const _).inter
+      (isClosed_iInter fun i ↦ isOpen_ball.isClosed_compl).measurableSet)
+
+section NearestIndex
+
+variable {ι Y : Type*} [PseudoMetricSpace Y] [Fintype ι] [Nonempty ι] [LinearOrder ι]
+
+open scoped Classical in
+/-- The index of a nearest point to `y` among the `θ i`: the least `i`, for the linear order of
+`ι`, such that `dist y (θ i) ≤ dist y (θ j)` for every `j`. -/
+def nearestIndex (θ : ι → Y) (y : Y) : ι :=
+  (Finset.univ.filter fun i ↦ ∀ j, dist y (θ i) ≤ dist y (θ j)).min' <| by
+    obtain ⟨i, -, hi⟩ :=
+      Finset.univ.exists_min_image (fun i ↦ dist y (θ i)) Finset.univ_nonempty
+    exact ⟨i, by simpa using hi⟩
+
+/-- `nearestIndex θ y = i` exactly when `θ i` is a nearest point to `y` and every index of a
+nearest point is at least `i`. -/
+theorem nearestIndex_eq_iff {θ : ι → Y} {y : Y} {i : ι} :
+    nearestIndex θ y = i ↔ (∀ j, dist y (θ i) ≤ dist y (θ j)) ∧
+      ∀ j, (∀ k, dist y (θ j) ≤ dist y (θ k)) → i ≤ j := by
+  simp [nearestIndex, Finset.min'_eq_iff]
+
+/-- `θ (nearestIndex θ y)` is a nearest point to `y`. -/
+theorem dist_nearestIndex_le (θ : ι → Y) (y : Y) (j : ι) :
+    dist y (θ (nearestIndex θ y)) ≤ dist y (θ j) :=
+  (nearestIndex_eq_iff.1 rfl).1 j
+
+/-- The nearest point to `y` is within twice the distance from `y` to `θ j` of `θ j`. -/
+theorem dist_nearestIndex_le_two_mul (θ : ι → Y) (y : Y) (j : ι) :
+    dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j) := by
+  calc dist (θ (nearestIndex θ y)) (θ j) ≤ dist y (θ (nearestIndex θ y)) + dist y (θ j) :=
+        dist_triangle_left _ _ _
+    _ ≤ 2 * dist y (θ j) := by linarith [dist_nearestIndex_le θ y j]
+
+/-- `nearestIndex θ` is measurable, for every σ-algebra on the index set: each fibre is a finite
+Boolean combination of the closed sets `{y | dist y (θ j) ≤ dist y (θ k)}`. -/
+@[fun_prop]
+theorem measurable_nearestIndex [MeasurableSpace Y] [OpensMeasurableSpace Y] [MeasurableSpace ι]
+    (θ : ι → Y) : Measurable (nearestIndex θ) := by
+  have hle (j k : ι) : Measurable fun y ↦ dist y (θ j) ≤ dist y (θ k) :=
+    (continuous_id.dist continuous_const).measurable.le'
+      (continuous_id.dist continuous_const).measurable
+  refine measurable_to_countable' fun i ↦ ?_
+  simp_rw [preimage, mem_singleton_iff, nearestIndex_eq_iff]
+  exact (Measurable.forall fun k ↦ hle i k).and
+    (Measurable.forall fun j ↦ (Measurable.forall fun k ↦ hle j k).imp measurable_const) |>.setOf
+
+end NearestIndex
 
 end TauCeti

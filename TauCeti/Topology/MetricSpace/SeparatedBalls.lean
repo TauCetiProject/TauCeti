@@ -29,11 +29,22 @@ over the roots of a polynomial.
 * `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
   by less than the radius and onto a target is determined by the points of the target near the
   source points.
+
+For a family `θ : ι → Y` of points of a pseudometric space with `2 s ≤ dist (θ i) (θ j)` for
+`i ≠ j`, the open balls of radius `s` around them are pairwise disjoint, so a point of `Y` has a
+well-defined ball index: `TauCeti.ballIndex θ s i₀ y` is the index of the ball containing `y`, and
+the default `i₀` when `y` lies in no ball.
+
+* `TauCeti.ballIndex_eq_iff`: `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball around
+  `θ i`, or `i = i₀` and `y` lies in no ball.
+* `TauCeti.le_dist_of_ballIndex_ne`: a point whose ball index is not `i` is at distance at least
+  `s` from `θ i`.
+* `TauCeti.ballIndex_preimage`: the preimage of a set of indices.
 -/
 
 public section
 
-open Filter Metric Topology
+open Filter Metric Set Topology
 
 namespace TauCeti
 
@@ -83,6 +94,82 @@ theorem mem_and_apply_eq_of_surjOn_of_dist_lt [PseudoMetricSpace X] {A B T : Set
   obtain rfl : z = z' :=
     eq_of_dist_lt_of_dist_lt (hsep z hz z' (hA hz')) hwz (hclose z' hz')
   exact ⟨hz', rfl⟩
+
+section BallIndex
+
+variable {ι Y : Type*} [PseudoMetricSpace Y]
+
+open scoped Classical in
+/-- The index of the open ball of radius `s` around a point `θ i` that contains `y`, and `i₀`
+when `y` lies in no such ball. For `2 s`-separated points the balls are pairwise disjoint, so the
+index is unique (`TauCeti.ballIndex_eq_of_mem_ball`). -/
+noncomputable def ballIndex (θ : ι → Y) (s : ℝ) (i₀ : ι) (y : Y) : ι :=
+  if h : ∃ i, y ∈ ball (θ i) s then h.choose else i₀
+
+/-- For `2 s`-separated points, the open balls of radius `s` around them meet only when they are
+equal. -/
+private theorem eq_of_mem_ball_of_mem_ball {θ : ι → Y} {s : ℝ}
+    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) {y : Y} {i j : ι}
+    (hi : y ∈ ball (θ i) s) (hj : y ∈ ball (θ j) s) : i = j := by
+  by_contra hij
+  exact (ball_disjoint_ball (by linarith [hθ i j hij])).ne_of_mem hi hj rfl
+
+/-- A point in the ball around `θ i` has index `i`. -/
+theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
+    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
+    (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i := by
+  have h : ∃ j, y ∈ ball (θ j) s := ⟨i, hy⟩
+  rw [ballIndex, dite_eq_left h]
+  exact eq_of_mem_ball_of_mem_ball hθ h.choose_spec hy
+
+/-- A point in no ball has the default index. -/
+@[simp]
+theorem ballIndex_eq_of_forall_notMem {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y}
+    (hy : ∀ i, y ∉ ball (θ i) s) : ballIndex θ s i₀ y = i₀ := by
+  rw [ballIndex, dite_eq_right (by simpa using hy)]
+
+/-- For `2 s`-separated points, `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball of
+radius `s` around `θ i`, or `i` is the default index `i₀` and `y` lies in no ball. -/
+@[simp]
+theorem ballIndex_eq_iff {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j))
+    {i₀ : ι} {y : Y} {i : ι} :
+    ballIndex θ s i₀ y = i ↔ y ∈ ball (θ i) s ∨ i = i₀ ∧ ∀ j, y ∉ ball (θ j) s := by
+  by_cases hy : ∃ j, y ∈ ball (θ j) s
+  · obtain ⟨j, hj⟩ := hy
+    rw [ballIndex_eq_of_mem_ball hθ i₀ hj]
+    refine ⟨fun h ↦ .inl (h ▸ hj), ?_⟩
+    rintro (hi | ⟨-, hno⟩)
+    · exact eq_of_mem_ball_of_mem_ball hθ hj hi
+    · exact (hno j hj).elim
+  · push Not at hy
+    simp [hy, eq_comm]
+
+/-- For `2 s`-separated points, a point whose index is not `i` is at distance at least `s`
+from `θ i`. -/
+theorem le_dist_of_ballIndex_ne {θ : ι → Y} {s : ℝ}
+    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) {i₀ : ι} {y : Y} {i : ι}
+    (h : ballIndex θ s i₀ y ≠ i) : s ≤ dist y (θ i) :=
+  not_lt.1 fun hy ↦ h (ballIndex_eq_of_mem_ball hθ i₀ (mem_ball.2 hy))
+
+/-- For `2 s`-separated points, the preimage of a set `A` of indices under `ballIndex` is the
+union of the balls with index in `A`, together with the complement of all balls when `i₀ ∈ A`. -/
+theorem ballIndex_preimage {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j))
+    (i₀ : ι) (A : Set ι) :
+    ballIndex θ s i₀ ⁻¹' A =
+      (⋃ i ∈ A, ball (θ i) s) ∪ ({_y | i₀ ∈ A} ∩ ⋂ i, (ball (θ i) s)ᶜ) := by
+  ext y
+  by_cases hy : ∃ i, y ∈ ball (θ i) s
+  · obtain ⟨i, hi⟩ := hy
+    simp only [mem_preimage, ballIndex_eq_of_mem_ball hθ i₀ hi, mem_union, mem_iUnion₂,
+      mem_inter_iff, mem_ofPred_eq, mem_iInter, mem_compl_iff]
+    refine ⟨fun hA ↦ .inl ⟨i, hA, hi⟩, ?_⟩
+    rintro (⟨j, hj, hyj⟩ | ⟨-, hy⟩)
+    · rwa [eq_of_mem_ball_of_mem_ball hθ hi hyj]
+    · exact (hy i hi).elim
+  · push Not at hy
+    simp [hy]
+
+end BallIndex
 
 end TauCeti
 

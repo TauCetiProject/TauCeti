@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
-public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 
 /-!
