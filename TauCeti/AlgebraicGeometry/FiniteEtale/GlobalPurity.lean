@@ -83,7 +83,7 @@ theorem finiteEtale_extend_of_purity {X : Scheme.{u}} [NoetherianSpace X] (U : X
       obtain ⟨W, V'', ⟨eV''⟩⟩ :=
         exists_extend_of_purity_at_point hpunc (hpurity s fun hs ↦ hsU' (hUU' hs)) V'
       have hlt : U' < U' ⊔ W.opens := lt_of_le_of_ne le_sup_left fun heq ↦
-        hsU' (heq.symm ▸ (Or.inr W.mem : s ∈ U' ⊔ W.opens))
+        hsU' (heq.symm ▸ (le_sup_right : W.opens ≤ U' ⊔ W.opens) W.mem)
       obtain ⟨Y, ⟨eY⟩⟩ := ih (U' ⊔ W.opens) hlt (hUU'.trans le_sup_left) V''
       exact ⟨Y, ⟨((pullbackCompIsoOfEq (X.homOfLE (U := U') (V := U' ⊔ W.opens) le_sup_left)
           (U' ⊔ W.opens).ι U'.ι (X.homOfLE_ι le_sup_left)).app Y).symm ≪≫

@@ -325,26 +325,55 @@ def stalkOpensObjIso {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
     j.left.opens.toScheme.isoOfEq
       (by simp [← Scheme.Hom.comp_preimage, X.homOfLE_ι])
 
+/-- Transition maps of `stalkOpensDiagram` correspond via `stalkOpensObjIso` to `Scheme.Hom.resLE`
+along `X.homOfLE`. -/
+@[reassoc]
+theorem stalkOpensDiagram_map_comp_objIso_hom {W₀ : X.AffineOpenNhds x} {j k : Over W₀}
+    (f : j ⟶ k) :
+    (X.stalkOpensDiagram U x W₀).map f ≫ (X.stalkOpensObjIso U x k).hom =
+      (X.stalkOpensObjIso U x j).hom ≫
+        (X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f.left))).resLE
+          (k.left.opens.ι ⁻¹ᵁ U) (j.left.opens.ι ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, X.homOfLE_ι]) := by
+  simp only [stalkOpensDiagram, stalkOpensObjIso, Iso.trans_hom, Category.assoc,
+    opensDiagram_map_comp_objIso_hom_assoc]
+  rw [← cancel_mono (k.left.opens.ι ⁻¹ᵁ U).ι]
+  simp only [Category.assoc, Scheme.isoOfEq_hom_ι, Scheme.Hom.resLE_comp_ι,
+    X.affineOpenNhdsDiagram_map x f.left]
+  simp
+
 /-- Compatibility of `stalkOpensDiagram` transition maps with `stalkOpensObjIso` and inclusions. -/
 theorem stalkOpensDiagram_map_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} {j k : Over W₀}
     (f : j ⟶ k) :
     (X.stalkOpensDiagram U x W₀).map f ≫ (X.stalkOpensObjIso U x k).hom ≫ (k.left.opens.ι ⁻¹ᵁ U).ι =
       (X.stalkOpensObjIso U x j).hom ≫ (j.left.opens.ι ⁻¹ᵁ U).ι ≫
         X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f.left)) := by
-  simp only [stalkOpensDiagram, stalkOpensObjIso, Iso.trans_hom, Category.assoc,
-    Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc, opensDiagram_map_comp_objIso_hom_assoc,
-    Scheme.Hom.resLE_comp_ι, X.affineOpenNhdsDiagram_map x f.left, eqToHom_refl, Category.id_comp,
-    Category.comp_id]
+  rw [← Category.assoc, X.stalkOpensDiagram_map_comp_objIso_hom U x f, Category.assoc,
+    Scheme.Hom.resLE_comp_ι]
+
+/-- Projections of `stalkOpensCone` correspond via `stalkOpensObjIso` and `stalkOpensConePtIso`
+to `Scheme.Hom.resLE` along `fromSpecStalkOfMem`. -/
+@[reassoc]
+theorem stalkOpensCone_π_app_comp_objIso_hom {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
+    (X.stalkOpensCone U x W₀).π.app j ≫ (X.stalkOpensObjIso U x j).hom =
+      (X.stalkOpensConePtIso U x W₀).hom ≫
+        (j.left.opens.fromSpecStalkOfMem x j.left.mem).resLE
+          (j.left.opens.ι ⁻¹ᵁ U) (X.fromSpecStalk x ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, Scheme.Opens.fromSpecStalkOfMem_ι]) := by
+  simp only [stalkOpensCone, stalkOpensObjIso, stalkOpensConePtIso, Iso.trans_hom, Category.assoc,
+    opensCone_π_app_comp_objIso_hom_assoc]
+  rw [← cancel_mono (j.left.opens.ι ⁻¹ᵁ U).ι]
+  simp only [Category.assoc, Scheme.isoOfEq_hom_ι, Scheme.Hom.resLE_comp_ι,
+    X.specStalkCone_π_app x j.left]
+  simp
 
 /-- Compatibility of `stalkOpensCone` projections with `stalkOpensConePtIso` and inclusions. -/
 theorem stalkOpensCone_π_app_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
     (X.stalkOpensCone U x W₀).π.app j ≫ (X.stalkOpensObjIso U x j).hom ≫ (j.left.opens.ι ⁻¹ᵁ U).ι =
       (X.stalkOpensConePtIso U x W₀).hom ≫ (X.fromSpecStalk x ⁻¹ᵁ U).ι ≫
         j.left.opens.fromSpecStalkOfMem x j.left.mem := by
-  simp only [stalkOpensCone, stalkOpensObjIso, stalkOpensConePtIso, Iso.trans_hom, Category.assoc,
-    Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc, opensCone_π_app_comp_objIso_hom_assoc,
-    Scheme.Hom.resLE_comp_ι, X.specStalkCone_π_app x j.left, eqToHom_refl, Category.id_comp,
-    Category.comp_id]
+  rw [← Category.assoc, X.stalkOpensCone_π_app_comp_objIso_hom U x j, Category.assoc,
+    Scheme.Hom.resLE_comp_ι]
 
 /-- Canonical open immersion from the top stage `Over.mk (𝟙 W₀)` to `U.toScheme`. -/
 def stalkOpensTopToOpen (W₀ : X.AffineOpenNhds x) :
@@ -360,6 +389,18 @@ def stalkOpensTopToNhds (W₀ : X.AffineOpenNhds x) :
 theorem stalkOpensTopToOpen_ι (W₀ : X.AffineOpenNhds x) :
     X.stalkOpensTopToOpen U x W₀ ≫ U.ι = X.stalkOpensTopToNhds U x W₀ ≫ W₀.opens.ι := by
   simp [stalkOpensTopToOpen, stalkOpensTopToNhds]
+
+/-- `X.stalkOpensTopToNhds U x W₀` is an open immersion. -/
+instance isOpenImmersion_stalkOpensTopToNhds (W₀ : X.AffineOpenNhds x) :
+    IsOpenImmersion (X.stalkOpensTopToNhds U x W₀) := by
+  dsimp only [stalkOpensTopToNhds]; infer_instance
+
+/-- `X.stalkOpensTopToOpen U x W₀` is an open immersion. -/
+instance isOpenImmersion_stalkOpensTopToOpen (W₀ : X.AffineOpenNhds x) :
+    IsOpenImmersion (X.stalkOpensTopToOpen U x W₀) :=
+  have : IsOpenImmersion (X.stalkOpensTopToOpen U x W₀ ≫ U.ι) := by
+    rw [X.stalkOpensTopToOpen_ι]; infer_instance
+  IsOpenImmersion.of_comp _ U.ι
 
 /-- Top-stage projection of `stalkOpensCone` composed with `stalkOpensTopToNhds`. -/
 theorem stalkOpensCone_π_top_toNhds (W₀ : X.AffineOpenNhds x) :

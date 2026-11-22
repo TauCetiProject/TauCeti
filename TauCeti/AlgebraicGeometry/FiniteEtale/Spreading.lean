@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Stalk
 import TauCeti.AlgebraicGeometry.FiniteEtale.BaseChange
 import TauCeti.AlgebraicGeometry.FiniteEtale.Gluing
 import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
-import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
 import TauCeti.RingTheory.Etale.DirectLimit
 
@@ -84,119 +83,6 @@ section LimitSpreading
 
 variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Limits.Cone D)
 
-private theorem pullbackSymmetry_conj_snd {T S : Scheme.{u}} (f : T ⟶ S)
-    {Y₁ Y₂ : FiniteEtaleScheme S}
-    (b : Limits.pullback f Y₁.obj.hom ⟶ Limits.pullback f Y₂.obj.hom)
-    (hb : b ≫ Limits.pullback.fst f Y₂.obj.hom = Limits.pullback.fst f Y₁.obj.hom) :
-    ((Limits.pullbackSymmetry Y₁.obj.hom f).hom ≫ b ≫ (Limits.pullbackSymmetry f Y₂.obj.hom).hom) ≫
-        Limits.pullback.snd Y₂.obj.hom f =
-      Limits.pullback.snd Y₁.obj.hom f := by
-  simp [hb]
-
-private theorem pullbackSymmetry_conj_fst {T S : Scheme.{u}} (f : T ⟶ S)
-    {Y₁ Y₂ : FiniteEtaleScheme S}
-    (g : (pullback f).obj Y₁ ⟶ (pullback f).obj Y₂) :
-    ((Limits.pullbackSymmetry f Y₁.obj.hom).hom ≫ g.hom.left ≫
-        (Limits.pullbackSymmetry Y₂.obj.hom f).hom) ≫
-        Limits.pullback.fst f Y₂.obj.hom =
-      Limits.pullback.fst f Y₁.obj.hom := by
-  have hw : g.hom.left ≫ Limits.pullback.snd Y₂.obj.hom f = Limits.pullback.snd Y₁.obj.hom f :=
-    Over.w g.hom
-  have h1 : g.hom.left ≫ (Limits.pullbackSymmetry Y₂.obj.hom f).hom ≫
-      Limits.pullback.fst f Y₂.obj.hom = Limits.pullback.snd Y₁.obj.hom f :=
-    (congrArg (g.hom.left ≫ ·) (Limits.pullbackSymmetry_hom_comp_fst Y₂.obj.hom f)).trans hw
-  exact (Category.assoc _ _ _).trans ((congrArg ((Limits.pullbackSymmetry f Y₁.obj.hom).hom ≫ ·)
-    ((Category.assoc _ _ _).trans h1)).trans (Limits.pullbackSymmetry_hom_comp_snd f Y₁.obj.hom))
-
-/-- The symmetry comparison intertwines the raw pullback map of `b` along `m : A ⟶ B` with the
-bundled base change of its `pullbackSymmetry`-conjugate along `m ≫ g = mg`. -/
-private theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
-    {A B S : Scheme.{u}} {m : A ⟶ B} {g : B ⟶ S} {mg : A ⟶ S} (h : m ≫ g = mg)
-    {Y₁ Y₂ : FiniteEtaleScheme S}
-    (b : Limits.pullback g Y₁.obj.hom ⟶ Limits.pullback g Y₂.obj.hom)
-    (hb : b ≫ Limits.pullback.fst g Y₂.obj.hom = Limits.pullback.fst g Y₁.obj.hom) :
-    let β : (pullback g).obj Y₁ ⟶ (pullback g).obj Y₂ :=
-      (finiteEtaleSchemeProperty B).homMk
-        (Over.homMk ((Limits.pullbackSymmetry _ _).hom ≫ b ≫ (Limits.pullbackSymmetry _ _).hom)
-          (pullbackSymmetry_conj_snd g b hb))
-    ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫ (pullback m).map β ≫
-      (pullbackCompIsoOfEq m g mg h).hom.app Y₂).hom.left =
-      (Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫
-        (Limits.pullbackRightPullbackFstIso g Y₁.obj.hom m ≪≫
-          Limits.pullback.congrHom h rfl).inv ≫
-        Limits.pullback.map m (Limits.pullback.fst g Y₁.obj.hom)
-          m (Limits.pullback.fst g Y₂.obj.hom) (𝟙 A) b (𝟙 B) (by simp) (by simp [hb]) ≫
-        (Limits.pullbackRightPullbackFstIso g Y₂.obj.hom m ≪≫
-          Limits.pullback.congrHom h rfl).hom ≫
-        (Limits.pullbackSymmetry mg Y₂.obj.hom).hom := by
-  intro β
-  let ψ {Z : Scheme.{u}} (r : Z ⟶ S) :=
-    Limits.pullbackRightPullbackFstIso g r m ≪≫ Limits.pullback.congrHom h rfl
-  change _ = (Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫ (ψ Y₁.obj.hom).inv ≫
-      Limits.pullback.map m (Limits.pullback.fst g Y₁.obj.hom)
-        m (Limits.pullback.fst g Y₂.obj.hom) (𝟙 A) b (𝟙 B) (by simp) (by simp [hb]) ≫
-      (ψ Y₂.obj.hom).hom ≫ (Limits.pullbackSymmetry mg Y₂.obj.hom).hom
-  have hψ_fst {Z : Scheme.{u}} (r : Z ⟶ S) :
-      (ψ r).inv ≫ Limits.pullback.fst m (Limits.pullback.fst g r) =
-        Limits.pullback.fst mg r := by
-    simp [ψ]
-  have hψ_hom_fst {Z : Scheme.{u}} (r : Z ⟶ S) :
-      (ψ r).hom ≫ Limits.pullback.fst mg r =
-        Limits.pullback.fst m (Limits.pullback.fst g r) := by
-    simp [ψ]
-  have hψ_hom_snd {Z : Scheme.{u}} (r : Z ⟶ S) :
-      (ψ r).hom ≫ Limits.pullback.snd mg r =
-        Limits.pullback.snd m (Limits.pullback.fst g r) ≫ Limits.pullback.snd g r := by
-    simp [ψ]
-  have hkey : (ψ Y₁.obj.hom).inv ≫
-        Limits.pullback.snd m (Limits.pullback.fst g Y₁.obj.hom) =
-      Limits.pullback.map mg Y₁.obj.hom g Y₁.obj.hom m (𝟙 _) (𝟙 _)
-        (by simp [h]) (by simp) := by
-    apply Limits.pullback.hom_ext <;> simp [ψ]
-  apply Limits.pullback.hom_ext
-  · have hβ_fst : β.hom.left ≫ Limits.pullback.fst Y₂.obj.hom g =
-        (Limits.pullbackSymmetry Y₁.obj.hom g).hom ≫ b ≫ Limits.pullback.snd g Y₂.obj.hom := by
-      change ((Limits.pullbackSymmetry Y₁.obj.hom g).hom ≫ b ≫
-          (Limits.pullbackSymmetry g Y₂.obj.hom).hom) ≫ Limits.pullback.fst Y₂.obj.hom g = _
-      simp only [Category.assoc, Limits.pullbackSymmetry_hom_comp_fst]
-    have hLHS : ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫ (pullback m).map β ≫
-          (pullbackCompIsoOfEq m g mg h).hom.app Y₂).hom.left ≫
-        Limits.pullback.fst Y₂.obj.hom mg =
-        (Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫
-          Limits.pullback.map mg Y₁.obj.hom g Y₁.obj.hom m (𝟙 _) (𝟙 _)
-            (by simp [h]) (by simp) ≫
-          b ≫ Limits.pullback.snd g Y₂.obj.hom := by
-      rw [pullbackCompIsoOfEq_conj_hom_left_fst h β]
-      refine (congrArg (Limits.pullback.map Y₁.obj.hom mg Y₁.obj.hom g (𝟙 _) m (𝟙 _)
-        (by simp) (by simp [h]) ≫ ·) hβ_fst).trans ?_
-      rw [Limits.pullback_map_pullbackSymmetry_assoc]
-    have hRHS_fst : ((Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫ (ψ Y₁.obj.hom).inv ≫
-          Limits.pullback.map m (Limits.pullback.fst g Y₁.obj.hom)
-            m (Limits.pullback.fst g Y₂.obj.hom) (𝟙 A) b (𝟙 B) (by simp) (by simp [hb]) ≫
-          (ψ Y₂.obj.hom).hom ≫ (Limits.pullbackSymmetry mg Y₂.obj.hom).hom) ≫
-        Limits.pullback.fst Y₂.obj.hom mg =
-        (Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫
-          Limits.pullback.map mg Y₁.obj.hom g Y₁.obj.hom m (𝟙 _) (𝟙 _)
-            (by simp [h]) (by simp) ≫
-          b ≫ Limits.pullback.snd g Y₂.obj.hom := by
-      simp only [Category.assoc, Limits.pullbackSymmetry_hom_comp_fst, hψ_hom_snd,
-        Limits.pullback.lift_snd_assoc, reassoc_of% hkey]
-    exact hLHS.trans hRHS_fst.symm
-  · have hw : ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫ (pullback m).map β ≫
-          (pullbackCompIsoOfEq m g mg h).hom.app Y₂).hom.left ≫
-        Limits.pullback.snd Y₂.obj.hom mg = Limits.pullback.snd Y₁.obj.hom mg :=
-      Over.w ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫ (pullback m).map β ≫
-        (pullbackCompIsoOfEq m g mg h).hom.app Y₂).hom
-    have hRHS_snd : ((Limits.pullbackSymmetry Y₁.obj.hom mg).hom ≫ (ψ Y₁.obj.hom).inv ≫
-          Limits.pullback.map m (Limits.pullback.fst g Y₁.obj.hom)
-            m (Limits.pullback.fst g Y₂.obj.hom) (𝟙 A) b (𝟙 B) (by simp) (by simp [hb]) ≫
-          (ψ Y₂.obj.hom).hom ≫ (Limits.pullbackSymmetry mg Y₂.obj.hom).hom) ≫
-        Limits.pullback.snd Y₂.obj.hom mg = Limits.pullback.snd Y₁.obj.hom mg := by
-      simp only [Category.assoc, Limits.pullbackSymmetry_hom_comp_snd,
-        Limits.pullbackSymmetry_hom_comp_fst, hψ_hom_fst, Limits.pullback.lift_fst,
-        Category.comp_id, hψ_fst]
-    exact hw.trans hRHS_snd.symm
-
 private theorem exists_hom_pullback_of_isLimit_aux [IsCofiltered I]
     [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
     [∀ i, QuasiSeparatedSpace (D.obj i)] (hc : Limits.IsLimit c) {i₀ : I}
@@ -207,81 +93,30 @@ private theorem exists_hom_pullback_of_isLimit_aux [IsCofiltered I]
       (hb₁ : b ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _),
       let β : (pullback (D.map fj)).obj Y₁ ⟶ (pullback (D.map fj)).obj Y₂ :=
         (finiteEtaleSchemeProperty (D.obj j)).homMk
-          (Over.homMk ((Limits.pullbackSymmetry _ _).hom ≫ b ≫ (Limits.pullbackSymmetry _ _).hom)
-            (pullbackSymmetry_conj_snd (D.map fj) b hb₁))
+          (Over.pullbackHomOfFstEq (D.map fj) b hb₁)
       (pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).inv.app Y₁ ≫
         (pullback (c.π.app j)).map β ≫
         (pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).hom.app Y₂ = α ∧
       Limits.pullback.map (c.π.app i₀) Y₁.obj.hom (D.map fj) Y₁.obj.hom (c.π.app j) (𝟙 _) (𝟙 _)
           (by simp) (by simp) ≫ b =
-        ((Limits.pullbackSymmetry _ _).hom ≫ α.hom.left ≫ (Limits.pullbackSymmetry _ _).hom) ≫
+        Over.pullbackLeftSymm (c.π.app i₀) α.hom ≫
           Limits.pullback.map (c.π.app i₀) Y₂.obj.hom (D.map fj) Y₂.obj.hom (c.π.app j)
             (𝟙 _) (𝟙 _) (by simp) (by simp) := by
   have : QuasiCompact Y₁.obj.hom := inferInstance
   have : QuasiSeparated Y₁.obj.hom := inferInstance
   have : LocallyOfFinitePresentation Y₂.obj.hom := inferInstance
-  let a : Limits.pullback (c.π.app i₀) Y₁.obj.hom ⟶ Limits.pullback (c.π.app i₀) Y₂.obj.hom :=
-    (Limits.pullbackSymmetry _ _).hom ≫ α.hom.left ≫ (Limits.pullbackSymmetry _ _).hom
+  let α' : (Over.pullback (c.π.app i₀)).obj Y₁.obj ⟶
+      (Over.pullback (c.π.app i₀)).obj Y₂.obj := α.hom
+  let a := Over.pullbackLeftSymm (c.π.app i₀) α'
   have ha : a ≫ Limits.pullback.fst (c.π.app i₀) Y₂.obj.hom =
       Limits.pullback.fst (c.π.app i₀) Y₁.obj.hom :=
-    pullbackSymmetry_conj_fst (c.π.app i₀) α
+    Over.pullbackLeftSymm_fst (c.π.app i₀) α'
   obtain ⟨j, fj, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq a ha
-  let β : (pullback (D.map fj)).obj Y₁ ⟶ (pullback (D.map fj)).obj Y₂ :=
-    (finiteEtaleSchemeProperty (D.obj j)).homMk
-      (Over.homMk ((Limits.pullbackSymmetry _ _).hom ≫ b ≫ (Limits.pullbackSymmetry _ _).hom)
-        (pullbackSymmetry_conj_snd (D.map fj) b hb₁))
-  let ψ {Z : Scheme.{u}} (r : Z ⟶ D.obj i₀) :=
-    Limits.pullbackRightPullbackFstIso (D.map fj) r (c.π.app j) ≪≫
-      Limits.pullback.congrHom (c.w fj) rfl
-  have hraw : (ψ Y₁.obj.hom).inv ≫
-      Limits.pullback.map (c.π.app j) (Limits.pullback.fst (D.map fj) Y₁.obj.hom)
-        (c.π.app j) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) (𝟙 c.pt) b (𝟙 (D.obj j))
-        (by simp) (by simp [hb₁]) ≫ (ψ Y₂.obj.hom).hom = a := by
-    rw [Iso.inv_comp_eq, ← Iso.eq_comp_inv]
-    apply Limits.pullback.hom_ext
-    · simp [ψ, ha]
-    · have hkey₁ : (ψ Y₁.obj.hom).hom ≫
-          Limits.pullback.map (c.π.app i₀) Y₁.obj.hom (D.map fj) Y₁.obj.hom
-            (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) = Limits.pullback.snd _ _ := by
-        apply Limits.pullback.hom_ext <;> simp [ψ, Limits.pullback.condition]
-      have hkey₂ : (ψ Y₂.obj.hom).inv ≫
-          Limits.pullback.snd (c.π.app j) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) =
-          Limits.pullback.map (c.π.app i₀) Y₂.obj.hom (D.map fj) Y₂.obj.hom
-            (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
-        apply Limits.pullback.hom_ext <;> simp [ψ]
-      rw [Limits.pullback.lift_snd, Category.assoc, Category.assoc, hkey₂, ← hb₂, reassoc_of% hkey₁]
-  have h1 : ((pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).inv.app Y₁ ≫
-        (pullback (c.π.app j)).map β ≫
-        (pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).hom.app Y₂).hom.left =
-      (Limits.pullbackSymmetry Y₁.obj.hom (c.π.app i₀)).hom ≫
-        ((ψ Y₁.obj.hom).inv ≫
-          Limits.pullback.map (c.π.app j) (Limits.pullback.fst (D.map fj) Y₁.obj.hom)
-            (c.π.app j) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) (𝟙 c.pt) b (𝟙 (D.obj j))
-            (by simp) (by simp [hb₁]) ≫
-          (ψ Y₂.obj.hom).hom) ≫
-        (Limits.pullbackSymmetry (c.π.app i₀) Y₂.obj.hom).hom :=
-    (pullbackCompIsoOfEq_conj_left_eq_pullbackMap (c.w fj) b hb₁).trans <| by
-      simp only [Category.assoc]; rfl
-  have h2 : (Limits.pullbackSymmetry Y₁.obj.hom (c.π.app i₀)).hom ≫
-      ((ψ Y₁.obj.hom).inv ≫
-        Limits.pullback.map (c.π.app j) (Limits.pullback.fst (D.map fj) Y₁.obj.hom)
-          (c.π.app j) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) (𝟙 c.pt) b (𝟙 (D.obj j))
-          (by simp) (by simp [hb₁]) ≫
-        (ψ Y₂.obj.hom).hom) ≫
-      (Limits.pullbackSymmetry (c.π.app i₀) Y₂.obj.hom).hom =
-      (Limits.pullbackSymmetry Y₁.obj.hom (c.π.app i₀)).hom ≫ a ≫
-        (Limits.pullbackSymmetry (c.π.app i₀) Y₂.obj.hom).hom :=
-    congrArg (fun k ↦ _ ≫ k ≫ _) hraw
-  have h3 : (Limits.pullbackSymmetry Y₁.obj.hom (c.π.app i₀)).hom ≫ a ≫
-      (Limits.pullbackSymmetry (c.π.app i₀) Y₂.obj.hom).hom = α.hom.left := by
-    let α' : Limits.pullback Y₁.obj.hom (c.π.app i₀) ⟶
-        Limits.pullback Y₂.obj.hom (c.π.app i₀) := α.hom.left
-    have ha' : a = (Limits.pullbackSymmetry (c.π.app i₀) Y₁.obj.hom).hom ≫ α' ≫
-        (Limits.pullbackSymmetry Y₂.obj.hom (c.π.app i₀)).hom := rfl
-    rw [ha', ← Category.assoc, Limits.pullbackSymmetry_hom_comp_pullbackSymmetry_hom_assoc,
-      Category.assoc, Limits.pullbackSymmetry_hom_comp_pullbackSymmetry_hom, Category.comp_id]
-  exact ⟨j, fj, b, hb₁, ObjectProperty.hom_ext _ <| Over.OverMorphism.ext (h1.trans (h2.trans h3)),
-    hb₂⟩
+  refine ⟨j, fj, b, hb₁, ObjectProperty.hom_ext _ ?_, hb₂⟩
+  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackCompIsoOfEq_inv_app_hom,
+    pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom]
+  exact (Over.pullbackCompIsoOfEq_conj_hom_of_fstEq (c.w fj) hb₁ ha hb₂).trans
+    (Over.pullbackHomOfFstEq_pullbackLeftSymm (c.π.app i₀) α')
 
 variable [IsCofiltered I] [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
   [∀ i, CompactSpace (D.obj i)]
@@ -355,98 +190,55 @@ theorem exists_iso_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)]
   have : QuasiCompact Y₂.obj.hom := inferInstance
   have : QuasiSeparated Y₂.obj.hom := inferInstance
   obtain ⟨j, fj, b, hb₁, hβ, hb₂⟩ := exists_hom_pullback_of_isLimit_aux D c hc Y₁ Y₂ e.hom
-  let a := (Limits.pullbackSymmetry (c.π.app i₀) Y₁.obj.hom).hom ≫ e.hom.hom.left ≫
-    (Limits.pullbackSymmetry Y₂.obj.hom (c.π.app i₀)).hom
-  have ha : a ≫ Limits.pullback.fst (c.π.app i₀) Y₂.obj.hom =
-      Limits.pullback.fst (c.π.app i₀) Y₁.obj.hom :=
-    pullbackSymmetry_conj_fst (c.π.app i₀) e.hom
-  have ha_iso : IsIso a := by
-    let eHom : Limits.pullback Y₁.obj.hom (c.π.app i₀) ⟶
-        Limits.pullback Y₂.obj.hom (c.π.app i₀) := e.hom.hom.left
-    let eInv : Limits.pullback Y₂.obj.hom (c.π.app i₀) ⟶
-        Limits.pullback Y₁.obj.hom (c.π.app i₀) := e.inv.hom.left
-    have ha' : a = (Limits.pullbackSymmetry (c.π.app i₀) Y₁.obj.hom).hom ≫ eHom ≫
-        (Limits.pullbackSymmetry Y₂.obj.hom (c.π.app i₀)).hom := rfl
-    have he1 : eHom ≫ eInv = 𝟙 _ := congr(($e.hom_inv_id).hom.left)
-    have he2 : eInv ≫ eHom = 𝟙 _ := congr(($e.inv_hom_id).hom.left)
-    refine ⟨(Limits.pullbackSymmetry (c.π.app i₀) Y₂.obj.hom).hom ≫ eInv ≫
-      (Limits.pullbackSymmetry Y₁.obj.hom (c.π.app i₀)).hom, ?_, ?_⟩
-    · simp [ha', reassoc_of% he1]
-    · simp [ha', reassoc_of% he2]
+  let eOver : (Over.pullback (c.π.app i₀)).obj Y₁.obj ≅
+      (Over.pullback (c.π.app i₀)).obj Y₂.obj :=
+    { hom := e.hom.hom
+      inv := e.inv.hom
+      hom_inv_id := congr(($e.hom_inv_id).hom)
+      inv_hom_id := congr(($e.inv_hom_id).hom) }
+  let eSymm := Over.pullbackLeftSymmIso (c.π.app i₀) eOver
+  have ha_iso : IsIso (Over.pullbackLeftSymm (c.π.app i₀) eOver.hom) := by
+    rw [← Over.pullbackLeftSymmIso_hom (c.π.app i₀) eOver]
+    exact eSymm.isIso_hom
   have : IsIso (Limits.pullback.map (c.π.app j) (Limits.pullback.fst (D.map fj) Y₁.obj.hom)
       (c.π.app j) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) (𝟙 _) b (𝟙 _) (by simp)
       (by exact hb₁.symm)) :=
     (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
-      (.isomorphisms Scheme) fj ha hb₁ hb₂).mpr ha_iso
+      (.isomorphisms Scheme) fj (Over.pullbackLeftSymm_fst (c.π.app i₀) eOver.hom) hb₁ hb₂).mpr
+      ha_iso
   obtain ⟨k, hkj, hk⟩ := hc.exists_isIso_pullbackMap b hb₁
   let β : (pullback (D.map fj)).obj Y₁ ⟶ (pullback (D.map fj)).obj Y₂ :=
-    (finiteEtaleSchemeProperty (D.obj j)).homMk
-      (Over.homMk ((Limits.pullbackSymmetry _ _).hom ≫ b ≫ (Limits.pullbackSymmetry _ _).hom)
-        (pullbackSymmetry_conj_snd (D.map fj) b hb₁))
+    (finiteEtaleSchemeProperty (D.obj j)).homMk (Over.pullbackHomOfFstEq (D.map fj) b hb₁)
   let βK := (pullbackCompIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
       (D.map_comp _ _).symm).inv.app Y₁ ≫
     (pullback (D.map hkj)).map β ≫
     (pullbackCompIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
       (D.map_comp _ _).symm).hom.app Y₂
-  let ψ {Z : Scheme.{u}} (r : Z ⟶ D.obj i₀) :
-      Limits.pullback (D.map hkj) (Limits.pullback.fst (D.map fj) r) ≅
-        Limits.pullback (D.map (hkj ≫ fj)) r :=
-    Limits.pullbackRightPullbackFstIso (D.map fj) r (D.map hkj) ≪≫
-      Limits.pullback.congrHom (D.map_comp hkj fj).symm rfl
   let bK := Limits.pullback.map (D.map hkj) (Limits.pullback.fst (D.map fj) Y₁.obj.hom)
     (D.map hkj) (Limits.pullback.fst (D.map fj) Y₂.obj.hom) (𝟙 _) b (𝟙 _) (by simp)
     (by exact hb₁.symm)
   have : IsIso bK := hk
   let eIso := Limits.pullbackSymmetry Y₁.obj.hom (D.map (hkj ≫ fj)) ≪≫
-    (ψ Y₁.obj.hom).symm ≪≫ asIso bK ≪≫ ψ Y₂.obj.hom ≪≫
+    (Limits.pullbackRightPullbackFstIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
+      (D.map_comp hkj fj).symm Y₁.obj.hom).symm ≪≫
+    asIso bK ≪≫
+    Limits.pullbackRightPullbackFstIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
+      (D.map_comp hkj fj).symm Y₂.obj.hom ≪≫
     Limits.pullbackSymmetry (D.map (hkj ≫ fj)) Y₂.obj.hom
-  have hbK : βK.hom.left = eIso.hom :=
-    pullbackCompIsoOfEq_conj_left_eq_pullbackMap (D.map_comp hkj fj).symm b hb₁
-  have hbK_left : IsIso βK.hom.left :=
-    ⟨eIso.inv, (congrArg (· ≫ eIso.inv) hbK).trans eIso.hom_inv_id,
-      (congrArg (eIso.inv ≫ ·) hbK).trans eIso.inv_hom_id⟩
-  have hbK_hom : IsIso βK.hom :=
-    @isIso_of_reflects_iso _ _ _ _ _ _ βK.hom (Over.forget _) hbK_left inferInstance
-  have hbK_iso : IsIso βK :=
-    @isIso_of_reflects_iso _ _ _ _ _ _ βK (finiteEtaleSchemeProperty (D.obj k)).ι hbK_hom
-      inferInstance
-  refine ⟨k, hkj ≫ fj, @asIso _ _ _ _ βK hbK_iso, ?_⟩
+  have hbK : (Over.forget (D.obj k)).map βK.hom = eIso.hom := by
+    simp only [βK, β, eIso, bK, ObjectProperty.FullSubcategory.comp_hom,
+      pullbackCompIsoOfEq_inv_app_hom, pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom,
+      Iso.trans_hom, Iso.symm_hom, asIso_hom]
+    exact Over.pullbackCompIsoOfEq_conj_left_eq_pullbackMap (D.map_comp hkj fj).symm b hb₁
+  have : IsIso ((Over.forget (D.obj k)).map βK.hom) := by rw [hbK]; exact eIso.isIso_hom
+  have : IsIso ((finiteEtaleSchemeProperty (D.obj k)).ι.map βK) :=
+    isIso_of_reflects_iso βK.hom (Over.forget (D.obj k))
+  have : IsIso βK := isIso_of_reflects_iso βK (finiteEtaleSchemeProperty (D.obj k)).ι
+  refine ⟨k, hkj ≫ fj, asIso βK, ?_⟩
   rw [asIso_hom, pullbackCompIsoOfEq_conj_comp (c.w hkj) (D.map_comp _ _).symm
     (D.map_comp _ _).symm (c.w (hkj ≫ fj)) (c.w (hkj ≫ fj)) (c.w fj) (c.w fj) β, hβ]
 
 end LimitSpreading
-
-private theorem pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
-    {Inf U UW : Scheme.{u}} {f : Inf ⟶ U} {j : U ⟶ UW} {ij : Inf ⟶ UW} (h : f ≫ j = ij)
-    {V' : FiniteEtaleScheme UW} {V : FiniteEtaleScheme U} (e : (pullback j).obj V' ≅ V) :
-    ((pullbackCompIsoOfEq f j ij h).inv.app V' ≫ (pullback f).map e.hom).hom.left ≫
-        Limits.pullback.fst V.obj.hom f ≫ e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j =
-      Limits.pullback.fst V'.obj.hom ij := by
-  have he : e.hom.hom.left ≫ e.inv.hom.left = 𝟙 _ := congr(($e.hom_inv_id).hom.left)
-  have h1 : (((pullback f).map e.hom).hom.left ≫ Limits.pullback.fst V.obj.hom f) ≫
-      (e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j) =
-      (Limits.pullback.fst ((pullback j).obj V').obj.hom f ≫ e.hom.hom.left) ≫
-        (e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j) :=
-    congrArg (· ≫ (e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j))
-      (pullback_map_left_fst f e.hom)
-  have h2 : (Limits.pullback.fst ((pullback j).obj V').obj.hom f ≫ e.hom.hom.left) ≫
-      (e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j) =
-      Limits.pullback.fst (Limits.pullback.snd V'.obj.hom j) f ≫
-        Limits.pullback.fst V'.obj.hom j :=
-    (Category.assoc _ _ _).trans <|
-      congrArg (Limits.pullback.fst ((pullback j).obj V').obj.hom f ≫ ·)
-        ((Category.assoc _ _ _).symm.trans <|
-          (congrArg (· ≫ Limits.pullback.fst V'.obj.hom j) he).trans (Category.id_comp _))
-  have hfst : ((pullback f).map e.hom).hom.left ≫
-      (Limits.pullback.fst V.obj.hom f ≫ e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j) =
-      Limits.pullback.fst (Limits.pullback.snd V'.obj.hom j) f ≫ Limits.pullback.fst V'.obj.hom j :=
-    (Category.assoc _ _ _).symm.trans (h1.trans h2)
-  have h3 : ((pullbackCompIsoOfEq f j ij h).inv.app V').hom.left ≫
-      Limits.pullback.fst (Limits.pullback.snd V'.obj.hom j) f ≫ Limits.pullback.fst V'.obj.hom j =
-      Limits.pullback.fst V'.obj.hom ij := by
-    rw [pullbackCompIsoOfEq_inv_app_hom_left_fst_assoc, Limits.pullback.lift_fst, Category.comp_id]
-  exact (Category.assoc _ _ _).trans
-    ((congrArg (((pullbackCompIsoOfEq f j ij h).inv.app V').hom.left ≫ ·) hfst).trans h3)
 
 /-- Two finite étale schemes over open subschemes `U, W : X.Opens` equipped with an isomorphism
 `eGlue` between their restrictions to `(U ⊓ W).toScheme` glue to a finite étale scheme `V'` over
@@ -514,10 +306,19 @@ theorem exists_sup_of_iso_inf {X : Scheme.{u}} {U W : X.Opens}
       simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left, Category.assoc]
       rw [← hcompat]
       rfl
-    exact hstep.trans
-      (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst (X.homOfLE_homOfLE inf_le_left le_sup_left) eU)
-  have hRHS := pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
-    (X.homOfLE_homOfLE (U := U ⊓ W) (V := W) (W := U ⊔ W) inf_le_right le_sup_right) eW
+    exact hstep.trans <|
+      pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst (X.homOfLE_homOfLE inf_le_left le_sup_left) eU
+  have hRHS : ((pullbackCompIsoOfEq (X.homOfLE (U := U ⊓ W) (V := W) inf_le_right)
+          (X.homOfLE le_sup_right)
+          (X.homOfLE (U := U ⊓ W) (V := U ⊔ W) (inf_le_left.trans le_sup_left))
+          (X.homOfLE_homOfLE _ _)).inv.app V' ≫
+        (pullback (X.homOfLE inf_le_right)).map eW.hom).hom.left ≫
+      Limits.pullback.fst YW.obj.hom (X.homOfLE inf_le_right) ≫
+        eW.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom (X.homOfLE le_sup_right) =
+      Limits.pullback.fst V'.obj.hom
+        (X.homOfLE (U := U ⊓ W) (V := U ⊔ W) (inf_le_left.trans le_sup_left)) :=
+    pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
+      (X.homOfLE_homOfLE (U := U ⊓ W) (V := W) (W := U ⊔ W) inf_le_right le_sup_right) eW
   exact (Category.assoc _ _ _).trans ((Category.assoc _ _ _).trans
     (hLHS.trans (hRHS.symm.trans ((Category.assoc _ _ _).symm.trans (Category.assoc _ _ _).symm))))
 
@@ -531,6 +332,26 @@ private noncomputable def pullbackTransport {A B S₁ S₂ : Scheme.{u}} {m : A 
     (pullback a₁).obj Y₁ ⟶ (pullback a₂).obj Y₂ :=
   (pullbackCompIsoOfEq m g₁ a₁ h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
     (pullbackCompIsoOfEq m g₂ a₂ h₂).hom.app Y₂
+
+/-- Transport an isomorphism between pullbacks of finite étale schemes along `m : A ⟶ B` using
+identifications `h₁ : m ≫ g₁ = a₁` and `h₂ : m ≫ g₂ = a₂`. -/
+private noncomputable def pullbackTransportIso {A B S₁ S₂ : Scheme.{u}} {m : A ⟶ B}
+    {g₁ : B ⟶ S₁} {g₂ : B ⟶ S₂} {a₁ : A ⟶ S₁} {a₂ : A ⟶ S₂}
+    (h₁ : m ≫ g₁ = a₁) (h₂ : m ≫ g₂ = a₂)
+    {Y₁ : FiniteEtaleScheme S₁} {Y₂ : FiniteEtaleScheme S₂}
+    (e : (pullback g₁).obj Y₁ ≅ (pullback g₂).obj Y₂) :
+    (pullback a₁).obj Y₁ ≅ (pullback a₂).obj Y₂ :=
+  ((pullbackCompIsoOfEq m g₁ a₁ h₁).app Y₁).symm ≪≫ (pullback m).mapIso e ≪≫
+    (pullbackCompIsoOfEq m g₂ a₂ h₂).app Y₂
+
+@[simp]
+private theorem pullbackTransportIso_hom {A B S₁ S₂ : Scheme.{u}} {m : A ⟶ B}
+    {g₁ : B ⟶ S₁} {g₂ : B ⟶ S₂} {a₁ : A ⟶ S₁} {a₂ : A ⟶ S₂}
+    (h₁ : m ≫ g₁ = a₁) (h₂ : m ≫ g₂ = a₂)
+    {Y₁ : FiniteEtaleScheme S₁} {Y₂ : FiniteEtaleScheme S₂}
+    (e : (pullback g₁).obj Y₁ ≅ (pullback g₂).obj Y₂) :
+    (pullbackTransportIso h₁ h₂ e).hom = pullbackTransport h₁ h₂ e.hom :=
+  rfl
 
 private theorem pullbackTransport_comp {A B D S₁ S₂ : Scheme.{u}}
     {m₁ : A ⟶ B} {m₂ : B ⟶ D} {m : A ⟶ D}
@@ -549,6 +370,40 @@ private theorem pullbackTransport_of_eq_id {B S₁ S₂ : Scheme.{u}} {m : B ⟶
     pullbackTransport h₁ h₂ φ = φ :=
   pullbackCompIsoOfEq_conj_of_eq_id hm h₁ h₂ φ
 
+private theorem pullbackTransport_pullbackCompIsoOfEq_conj {A B C S₁ S₂ : Scheme.{u}}
+    {a : A ⟶ B} {b : B ⟶ C} {ab : A ⟶ C} (hab : a ≫ b = ab)
+    {f₁ : C ⟶ S₁} {f₂ : C ⟶ S₂} {bf₁ : B ⟶ S₁} {bf₂ : B ⟶ S₂} {abf₁ : A ⟶ S₁} {abf₂ : A ⟶ S₂}
+    (hbf₁ : b ≫ f₁ = bf₁) (hbf₂ : b ≫ f₂ = bf₂) (habf₁ : a ≫ bf₁ = abf₁) (habf₂ : a ≫ bf₂ = abf₂)
+    (hflat₁ : ab ≫ f₁ = abf₁) (hflat₂ : ab ≫ f₂ = abf₂)
+    {Y₁ : FiniteEtaleScheme S₁} {Y₂ : FiniteEtaleScheme S₂}
+    (φ : (pullback b).obj ((pullback f₁).obj Y₁) ⟶ (pullback b).obj ((pullback f₂).obj Y₂)) :
+    pullbackTransport habf₁ habf₂
+        ((pullbackCompIsoOfEq b f₁ bf₁ hbf₁).inv.app Y₁ ≫ φ ≫
+          (pullbackCompIsoOfEq b f₂ bf₂ hbf₂).hom.app Y₂) =
+      (pullbackCompIsoOfEq ab f₁ abf₁ hflat₁).inv.app Y₁ ≫
+        pullbackTransport hab hab φ ≫
+        (pullbackCompIsoOfEq ab f₂ abf₂ hflat₂).hom.app Y₂ := by
+  simp only [pullbackTransport, Functor.map_comp, Category.assoc]
+  rw [← pullbackCompIsoOfEq_comp_inv_app_assoc hab hbf₁ habf₁ hflat₁ Y₁,
+    ← pullbackCompIsoOfEq_comp_hom_app hab hbf₂ habf₂ hflat₂ Y₂]
+
+private theorem pullbackTransport_comp_map_inv {A B C D S₂ : Scheme.{u}}
+    {m : A ⟶ B} {i₁ : B ⟶ C} {g₁ : A ⟶ C} {j₁ : C ⟶ D} {ij₁ : B ⟶ D} {gj₁ : A ⟶ D}
+    {g₂ : B ⟶ S₂} {a₂ : A ⟶ S₂}
+    (hmi : m ≫ i₁ = g₁) (hij : i₁ ≫ j₁ = ij₁) (hmij : m ≫ ij₁ = gj₁) (hgj : g₁ ≫ j₁ = gj₁)
+    (h₂ : m ≫ g₂ = a₂)
+    {Y₁ : FiniteEtaleScheme D} {Y₂ : FiniteEtaleScheme S₂}
+    {V : FiniteEtaleScheme C} (e : (pullback j₁).obj Y₁ ⟶ V)
+    (φ : (pullback i₁).obj V ⟶ (pullback g₂).obj Y₂) :
+    (pullbackCompIsoOfEq g₁ j₁ gj₁ hgj).inv.app Y₁ ≫ (pullback g₁).map e ≫
+        pullbackTransport hmi h₂ φ =
+      pullbackTransport hmij h₂
+        ((pullbackCompIsoOfEq i₁ j₁ ij₁ hij).inv.app Y₁ ≫ (pullback i₁).map e ≫ φ) := by
+  simp only [pullbackTransport]
+  rw [reassoc_of% ((pullbackCompIsoOfEq m i₁ g₁ hmi).inv.naturality e),
+    pullbackCompIsoOfEq_comp_inv_app_assoc hmi hij hmij hgj Y₁,
+    ← (pullback m).map_comp_assoc, ← (pullback m).map_comp_assoc, Category.assoc]
+
 /-- Limit-to-overlap compatibility: if `ek` at a finite stage `B` pulls back along `a : A ⟶ B`
 to the cone-vertex transport of `e₀'`, then transporting `ek` along `eRange : Stage ≅ B` and
 pulling back along `m = iPt.inv ≫ a ≫ eRange.inv` recovers `e₀'`. -/
@@ -561,27 +416,24 @@ private theorem overlap_of_limit_desc {Pt Stage A B C S₁ S₂ : Scheme.{u}}
     (hm₂ : (iPt.inv ≫ a ≫ eRange.inv) ≫ i₂ = g₂) {Y₁ : FiniteEtaleScheme S₁}
     {Y₂ : FiniteEtaleScheme S₂} (e₀' : (pullback g₁).obj Y₁ ≅ (pullback g₂).obj Y₂)
     (ek : (pullback b).obj ((pullback f₁).obj Y₁) ≅ (pullback b).obj ((pullback f₂).obj Y₂))
-    (hek : (pullbackCompIsoOfEq a b ab hab).inv.app ((pullback f₁).obj Y₁) ≫
-        (pullback a).map ek.hom ≫ (pullbackCompIsoOfEq a b ab hab).hom.app ((pullback f₂).obj Y₂) =
+    (hek : pullbackTransport hab hab ek.hom =
       ((pullbackCompIsoOfEq ab f₁ (ab ≫ f₁) rfl).app Y₁ ≪≫
-        (((pullbackCompIsoOfEq iPt.hom g₁ _ htop₁).app Y₁).symm ≪≫ (pullback iPt.hom).mapIso e₀' ≪≫
-          (pullbackCompIsoOfEq iPt.hom g₂ _ htop₂).app Y₂) ≪≫
+        pullbackTransportIso htop₁ htop₂ e₀' ≪≫
         ((pullbackCompIsoOfEq ab f₂ (ab ≫ f₂) rfl).app Y₂).symm).hom) :
-    pullbackTransport hm₁ hm₂
-        ((((pullbackCompIsoOfEq eRange.hom (b ≫ f₁) i₁ hstage₁).app Y₁).symm ≪≫
-          (pullback eRange.hom).mapIso (((pullbackCompIsoOfEq b f₁ _ rfl).app Y₁).symm ≪≫ ek ≪≫
-            (pullbackCompIsoOfEq b f₂ _ rfl).app Y₂) ≪≫
-          (pullbackCompIsoOfEq eRange.hom (b ≫ f₂) i₂ hstage₂).app Y₂).hom) = e₀'.hom := by
-  let eLimFlat := pullbackTransport htop₁ htop₂ e₀'.hom
-  let ekFlat := (pullbackCompIsoOfEq b f₁ _ rfl).inv.app Y₁ ≫ ek.hom ≫
-    (pullbackCompIsoOfEq b f₂ _ rfl).hom.app Y₂
+    pullbackTransport hm₁ hm₂ (pullbackTransportIso hstage₁ hstage₂
+        (((pullbackCompIsoOfEq b f₁ _ rfl).app Y₁).symm ≪≫ ek ≪≫
+          (pullbackCompIsoOfEq b f₂ _ rfl).app Y₂)).hom =
+      e₀'.hom := by
+  let ekFlat := ((pullbackCompIsoOfEq b f₁ _ rfl).app Y₁).symm ≪≫ ek ≪≫
+    (pullbackCompIsoOfEq b f₂ _ rfl).app Y₂
   have hab₁ : a ≫ (b ≫ f₁) = ab ≫ f₁ := by rw [← Category.assoc, hab]
   have hab₂ : a ≫ (b ≫ f₂) = ab ≫ f₂ := by rw [← Category.assoc, hab]
-  have hekFlat : pullbackTransport hab₁ hab₂ ekFlat = eLimFlat := by
-    simp only [pullbackTransport, ekFlat, Functor.map_comp, Category.assoc]
-    rw [← pullbackCompIsoOfEq_comp_inv_app_assoc hab rfl hab₁ rfl Y₁,
-      ← pullbackCompIsoOfEq_comp_hom_app hab rfl hab₂ rfl Y₂, reassoc_of% hek]
-    simp [eLimFlat, pullbackTransport]
+  have hekFlat :
+      pullbackTransport hab₁ hab₂ ekFlat.hom = pullbackTransport htop₁ htop₂ e₀'.hom := by
+    rw [← pullbackTransportIso_hom htop₁ htop₂ e₀']
+    simpa [ekFlat] using
+      (pullbackTransport_pullbackCompIsoOfEq_conj hab rfl rfl hab₁ hab₂ rfl rfl ek.hom).trans <|
+        by rw [hek]; simp
   have hae₁ : (iPt.inv ≫ a) ≫ (b ≫ f₁) = g₁ := by
     rw [Category.assoc, hab₁, ← htop₁, Iso.inv_hom_id_assoc]
   have hae₂ : (iPt.inv ≫ a) ≫ (b ≫ f₂) = g₂ := by
@@ -591,16 +443,9 @@ private theorem overlap_of_limit_desc {Pt Stage A B C S₁ S₂ : Scheme.{u}}
   have hinv_id₁ : (iPt.inv ≫ iPt.hom) ≫ g₁ = g₁ := by rw [iPt.inv_hom_id, Category.id_comp]
   have hinv_id₂ : (iPt.inv ≫ iPt.hom) ≫ g₂ = g₂ := by rw [iPt.inv_hom_id, Category.id_comp]
   have hm_eRange : (iPt.inv ≫ a ≫ eRange.inv) ≫ eRange.hom = iPt.inv ≫ a := by simp
-  have hflat :
-      (((pullbackCompIsoOfEq eRange.hom (b ≫ f₁) i₁ hstage₁).app Y₁).symm ≪≫
-        (pullback eRange.hom).mapIso (((pullbackCompIsoOfEq b f₁ _ rfl).app Y₁).symm ≪≫ ek ≪≫
-          (pullbackCompIsoOfEq b f₂ _ rfl).app Y₂) ≪≫
-        (pullbackCompIsoOfEq eRange.hom (b ≫ f₂) i₂ hstage₂).app Y₂).hom =
-      pullbackTransport hstage₁ hstage₂ ekFlat := by
-    simp [pullbackTransport, ekFlat]
-  rw [hflat,
-    pullbackTransport_comp hm_eRange hstage₁ hstage₂ hm₁ hm₂ hae₁ hae₂ ekFlat,
-    ← pullbackTransport_comp rfl hab₁ hab₂ ha₁ ha₂ hae₁ hae₂ ekFlat,
+  rw [pullbackTransportIso_hom,
+    pullbackTransport_comp hm_eRange hstage₁ hstage₂ hm₁ hm₂ hae₁ hae₂ ekFlat.hom,
+    ← pullbackTransport_comp rfl hab₁ hab₂ ha₁ ha₂ hae₁ hae₂ ekFlat.hom,
     hekFlat,
     pullbackTransport_comp rfl htop₁ htop₂ ha₁ ha₂ hinv_id₁ hinv_id₂ e₀'.hom,
     pullbackTransport_of_eq_id iPt.inv_hom_id hinv_id₁ hinv_id₂ e₀'.hom]
@@ -627,8 +472,7 @@ private theorem spread_gluing_compat {O Inf U W UW W₀ S : Scheme.{u}}
         (pullbackCompIsoOfEq ιOs sW₀ (ιOs ≫ sW₀) rfl).app YW₀).hom) :
     (pullbackCompIsoOfEq gU jU (ιOs ≫ sUW) hgUjU).inv.app V' ≫ (pullback gU).map eU.hom ≫ e₀.hom =
       (pullbackCompIsoOfEq ιOs sUW (ιOs ≫ sUW) rfl).inv.app V' ≫ (pullback ιOs).map
-        (((pullbackCompIsoOfEq sW jW sUW hsWjW).app V').symm ≪≫ (pullback sW).mapIso eW ≪≫
-          (pullbackCompIsoOfEq sW mapk sW₀ hsWmapk).app YW₀ ≪≫ eW₀).hom := by
+        (pullbackTransportIso hsWjW hsWmapk eW ≪≫ eW₀).hom := by
   let tailIso := (pullback ιOs).mapIso eW₀.symm ≪≫
     (pullbackCompIsoOfEq ιOs sW₀ (ιOs ≫ sW₀) rfl).app YW₀
   rw [← cancel_mono tailIso.hom]
@@ -644,29 +488,22 @@ private theorem spread_gluing_compat {O Inf U W UW W₀ S : Scheme.{u}}
       Iso.inv_hom_id_app, Category.comp_id] using h
   have hRHS :
       (pullbackCompIsoOfEq ιOs sUW (ιOs ≫ sUW) rfl).inv.app V' ≫
-          (pullback ιOs).map (((pullbackCompIsoOfEq sW jW sUW hsWjW).app V').symm ≪≫
-            (pullback sW).mapIso eW ≪≫ (pullbackCompIsoOfEq sW mapk sW₀ hsWmapk).app YW₀ ≪≫
-              eW₀).hom ≫
-          tailIso.hom =
+          (pullback ιOs).map (pullbackTransportIso hsWjW hsWmapk eW ≪≫ eW₀).hom ≫ tailIso.hom =
         pullbackTransport hOsW_jW hOsW_mapk eW.hom := by
-    have hes : (pullback ιOs).map (((pullbackCompIsoOfEq sW jW sUW hsWjW).app V').symm ≪≫
-          (pullback sW).mapIso eW ≪≫ (pullbackCompIsoOfEq sW mapk sW₀ hsWmapk).app YW₀ ≪≫ eW₀).hom ≫
+    have hes : (pullback ιOs).map (pullbackTransportIso hsWjW hsWmapk eW ≪≫ eW₀).hom ≫
           tailIso.hom =
         (pullback ιOs).map (pullbackTransport hsWjW hsWmapk eW.hom) ≫
           (pullbackCompIsoOfEq ιOs sW₀ (ιOs ≫ sW₀) rfl).hom.app YW₀ := by
-      simp only [tailIso, pullbackTransport, Iso.trans_hom, Iso.symm_hom, Iso.app_hom, Iso.app_inv,
-        Functor.mapIso_hom, Functor.map_comp, Category.assoc, Iso.hom_inv_id_map_assoc]
+      simp [tailIso, ← (pullback ιOs).map_comp_assoc]
     rw [hes]
     exact pullbackTransport_comp rfl hsWjW hsWmapk rfl rfl hOsW_jW hOsW_mapk eW.hom
   have hLHS :
       (pullbackCompIsoOfEq gU jU (ιOs ≫ sUW) hgUjU).inv.app V' ≫
           (pullback gU).map eU.hom ≫ e₀.hom ≫ tailIso.hom =
         pullbackTransport hOsW_jW hOsW_mapk eW.hom := by
-    rw [← Iso.trans_hom e₀ tailIso, ← hmGlue]
-    simp only [pullbackTransport]
-    rw [reassoc_of% ((pullbackCompIsoOfEq m iU gU hmU).inv.naturality eU.hom),
-      pullbackCompIsoOfEq_comp_inv_app_assoc hmU hiUjU hm_ij hgUjU V',
-      ← (pullback m).map_comp_assoc, ← (pullback m).map_comp_assoc, hSup]
+    rw [← Iso.trans_hom e₀ tailIso, ← hmGlue,
+      pullbackTransport_comp_map_inv hmU hiUjU hm_ij hgUjU hm_sW₀ eU.hom eGlueFlat.hom,
+      ← Category.assoc, hSup]
     exact pullbackTransport_comp hmW hiWjW rfl hm_ij hm_sW₀ hOsW_jW hOsW_mapk eW.hom
   simp only [Category.assoc]
   exact hLHS.trans hRHS.symm
@@ -715,8 +552,7 @@ theorem exists_spread_fromSpecStalk {X : Scheme.{u}} {U : X.Opens} [QuasiCompact
   obtain ⟨k, fk, ek, hek⟩ := exists_iso_pullback_of_isLimit DO cO (X.isLimitStalkOpensCone U s W₀)
     ((pullback fV).obj V) ((pullback fW).obj YW₀)
     ((pullbackCompIsoOfEq (cO.π.app j₀) fV _ rfl).app V ≪≫
-      (((pullbackCompIsoOfEq iPt.hom gU _ htopV).app V).symm ≪≫ (pullback iPt.hom).mapIso e₀' ≪≫
-        (pullbackCompIsoOfEq iPt.hom (ιOs ≫ sW₀) _ htopW).app YW₀) ≪≫
+      pullbackTransportIso htopV htopW e₀' ≪≫
       ((pullbackCompIsoOfEq (cO.π.app j₀) fW _ rfl).app YW₀).symm)
   -- Phase 3: Transport `ek` to `U ⊓ W` and glue `V` with `YW₀|_{W}` over `U ⊔ W`.
   let W : X.AffineOpenNhds s := k.left; let eRange := X.stalkOpensStageIso U s k
@@ -725,10 +561,9 @@ theorem exists_spread_fromSpecStalk {X : Scheme.{u}} {U : X.Opens} [QuasiCompact
   let iW := X.homOfLE (U := U ⊓ W.opens) (V := W.opens) inf_le_right
   have hstageV : eRange.hom ≫ (DO.map fk ≫ fV) = iU := X.stalkOpensStageIso_hom_map_toOpen U s fk
   have hstageW := X.stalkOpensStageIso_hom_map_toNhds U s fk
-  let eGlueFlat := ((pullbackCompIsoOfEq eRange.hom (DO.map fk ≫ fV) iU hstageV).app V).symm ≪≫
-    (pullback eRange.hom).mapIso (((pullbackCompIsoOfEq (DO.map fk) fV _ rfl).app V).symm ≪≫ ek ≪≫
-      (pullbackCompIsoOfEq (DO.map fk) fW _ rfl).app YW₀) ≪≫
-    (pullbackCompIsoOfEq eRange.hom (DO.map fk ≫ fW) (iW ≫ mapk) hstageW).app YW₀
+  let ekFlat := ((pullbackCompIsoOfEq (DO.map fk) fV _ rfl).app V).symm ≪≫ ek ≪≫
+    (pullbackCompIsoOfEq (DO.map fk) fW _ rfl).app YW₀
+  let eGlueFlat := pullbackTransportIso hstageV hstageW ekFlat
   obtain ⟨V', eU, eW, hglueSup⟩ := exists_sup_of_iso_inf V ((pullback mapk).obj YW₀)
     (eGlueFlat ≪≫ ((pullbackCompIsoOfEq iW mapk (iW ≫ mapk) rfl).app YW₀).symm)
   -- Phase 4: Assemble the stalk isomorphism `es` and deduce overlap compatibility.
@@ -742,8 +577,7 @@ theorem exists_spread_fromSpecStalk {X : Scheme.{u}} {U : X.Opens} [QuasiCompact
   have hm_mapk : (iPt.inv ≫ cO.π.app k ≫ eRange.inv) ≫ (iW ≫ mapk) = ιOs ≫ sW₀ := by
     rw [← Category.assoc, X.stalkOpensConePtIso_inv_π_stageIso_inv_nhds U s k, Category.assoc,
       hsW_mapk]
-  let es := ((pullbackCompIsoOfEq sW (X.homOfLE le_sup_right) sUW hsW_jW).app V').symm ≪≫
-    (pullback sW).mapIso eW ≪≫ (pullbackCompIsoOfEq sW mapk sW₀ hsW_mapk).app YW₀ ≪≫ eW₀
+  let es := pullbackTransportIso hsW_jW hsW_mapk eW ≪≫ eW₀
   refine ⟨W, V', eU, es, spread_gluing_compat (X.homOfLE_homOfLE _ _) (X.homOfLE_homOfLE _ _)
     hgU_jU hsW_jW hsW_mapk (X.stalkOpensConePtIso_inv_π_stageIso_inv U s k)
     (X.stalkOpensConePtIso_inv_π_stageIso_inv_nhds U s k) eW₀ e₀ eGlueFlat eU eW hglueSup

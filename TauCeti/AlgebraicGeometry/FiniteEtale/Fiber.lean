@@ -441,6 +441,24 @@ theorem pullbackCompIsoOfEq_conj_of_eq_id {B S₁ S₂ : Scheme.{u}} {m : B ⟶ 
     pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom]
   exact Over.pullbackCompIsoOfEq_conj_of_eq_id hm h₁ h₂ φ.hom
 
+/-- Projection cancellation for an isomorphism `e : (pullback j).obj V' ≅ V` of finite étale
+schemes transported along `pullbackCompIsoOfEq f j ij h`. -/
+theorem pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
+    {Inf U UW : Scheme.{u}} {f : Inf ⟶ U} {j : U ⟶ UW} {ij : Inf ⟶ UW}
+    (h : f ≫ j = ij) {V' : FiniteEtaleScheme UW} {V : FiniteEtaleScheme U}
+    (e : (pullback j).obj V' ≅ V) :
+    ((pullbackCompIsoOfEq f j ij h).inv.app V' ≫ (pullback f).map e.hom).hom.left ≫
+        Limits.pullback.fst V.obj.hom f ≫ e.inv.hom.left ≫ Limits.pullback.fst V'.obj.hom j =
+      Limits.pullback.fst V'.obj.hom ij := by
+  let eOver : (Over.pullback j).obj V'.obj ≅ V.obj :=
+    { hom := e.hom.hom
+      inv := e.inv.hom
+      hom_inv_id := congr(($e.hom_inv_id).hom)
+      inv_hom_id := congr(($e.inv_hom_id).hom) }
+  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackCompIsoOfEq_inv_app_hom,
+    pullback_map_hom]
+  exact Over.pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst h eOver
+
 end CompIsoOfEq
 
 /-- Base change of finite étale schemes along a scheme isomorphism is an equivalence, with unit and
