@@ -81,6 +81,9 @@ the base stalk. The uniqueness statements are also restated for functions rather
   `TauCeti.holomorphicStructureSheaf.finite_quotientMk_comp_stalkPrecomp_fst`: any hypersurface
   germ whose vertical slice does not vanish identically defines a flat and finite algebra over the
   base stalk `𝒪_{E, x₀}`.
+* `TauCeti.holomorphicStructureSheaf.isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
+  `TauCeti.holomorphicStructureSheaf.prime_evalVertical_iff_of_isDistinguishedAt`: primality of
+  distinguished Weierstrass polynomials matches that of their vertical evaluations.
 
 ## Attribution
 
@@ -795,6 +798,29 @@ theorem quotientEquivOfIsDistinguishedAt_comp_algebraMap {x₀ : E} {w₀ : ℂ}
   rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← Ideal.Quotient.mk_algebraMap,
     Polynomial.algebraMap_eq, quotientEquivOfIsDistinguishedAt_mk, evalVertical_C,
     RingHom.comp_apply]
+
+/-- A distinguished polynomial over `𝒪_{E, x₀}` generates a prime ideal after vertical evaluation
+at `(x₀, w₀)` if and only if it generates a prime ideal in `(𝒪_{E, x₀})[X]`. -/
+theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime := by
+  rw [← Ideal.Quotient.isDomain_iff_prime, ← Ideal.Quotient.isDomain_iff_prime]
+  exact (MulEquiv.isDomain_iff (quotientEquivOfIsDistinguishedAt x₀ w₀ hP).toMulEquiv).symm
+
+/-- A distinguished polynomial over `𝒪_{E, x₀}` has prime vertical evaluation at `(x₀, w₀)` if and
+only if it is prime in `(𝒪_{E, x₀})[X]`. -/
+theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    Prime (evalVertical x₀ w₀ P) ↔ Prime P := by
+  have hP0 : P ≠ 0 := hP.monic.ne_zero
+  have hev0 : evalVertical x₀ w₀ P ≠ 0 :=
+    (map_ne_zero_iff _ (evalVertical_injective x₀ w₀)).mpr hP0
+  rw [← Ideal.span_singleton_prime hP0, ← Ideal.span_singleton_prime hev0,
+    isPrime_span_evalVertical_iff_of_isDistinguishedAt hP]
 
 /-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, evaluating polynomials
 vertically induces a canonical ring isomorphism

@@ -26,6 +26,8 @@ over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span th
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
+* `IsLocalRing.cotangentSpaceEquiv`: a ring isomorphism between local rings induces a semilinear
+  equivalence between their cotangent spaces over the induced isomorphism of residue fields.
 * `IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv`: a ring isomorphism between local rings
   preserves the dimension of the cotangent space over the residue field.
 
@@ -109,45 +111,72 @@ end AlgHom
 
 namespace IsLocalRing
 
+/-- `ResidueField.mapEquiv σ` and `ResidueField.mapEquiv σ.symm` form an inverse pair of ring
+homomorphisms, allowing semilinear equivalences over `ResidueField.mapEquiv σ`. -/
+instance ResidueField.ringHomInvPair_mapEquiv {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
+    RingHomInvPair (ResidueField.mapEquiv σ : ResidueField R →+* ResidueField S)
+      (ResidueField.mapEquiv σ.symm : ResidueField S →+* ResidueField R) :=
+  .of_ringEquiv (ResidueField.mapEquiv σ)
+
+/-- A ring isomorphism between local rings induces a semilinear equivalence between their
+cotangent spaces over `ResidueField.mapEquiv σ`. -/
+def cotangentSpaceEquiv {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
+    CotangentSpace R ≃ₛₗ[(ResidueField.mapEquiv σ : ResidueField R →+* ResidueField S)]
+      CotangentSpace S where
+  toFun := Ideal.mapCotangent (maximalIdeal R) (maximalIdeal S) σ.toRingHom.toIntAlgHom
+    (maximalIdeal_comap (σ : R →+* S)).symm.le
+  invFun := Ideal.mapCotangent (maximalIdeal S) (maximalIdeal R) σ.symm.toRingHom.toIntAlgHom
+    (maximalIdeal_comap (σ.symm : S →+* R)).symm.le
+  left_inv v := by
+    obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
+    simp
+  right_inv w := by
+    obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ w
+    simp
+  map_add' := map_add _
+  map_smul' r m := by
+    obtain ⟨r, rfl⟩ := residue_surjective r
+    obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ m
+    change Ideal.mapCotangent _ _ _ _ (residue R r • Ideal.toCotangent _ m) =
+      (ResidueField.mapEquiv σ : ResidueField R →+* ResidueField S) (residue R r) •
+        Ideal.mapCotangent _ _ _ _ (Ideal.toCotangent _ m)
+    rw [← ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul,
+      RingHom.coe_coe, ResidueField.mapEquiv_apply, ResidueField.algebraMap_eq,
+      ResidueField.map_residue, ← ResidueField.algebraMap_eq,
+      IsScalarTower.algebraMap_smul]
+    apply congrArg (Ideal.toCotangent _)
+    ext
+    exact map_mul σ r m
+
+/-- On `Ideal.toCotangent` representatives, `cotangentSpaceEquiv` acts by applying `σ`. -/
+@[simp]
+theorem cotangentSpaceEquiv_toCotangent {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) (x : maximalIdeal R) :
+    cotangentSpaceEquiv σ (Ideal.toCotangent (maximalIdeal R) x) =
+      Ideal.toCotangent (maximalIdeal S) ⟨σ x, map_nonunit (σ : R →+* S) x x.property⟩ :=
+  Ideal.mapCotangent_toCotangent (maximalIdeal R) (maximalIdeal S) σ.toRingHom.toIntAlgHom _ x
+
+/-- On `Ideal.toCotangent` representatives, `(cotangentSpaceEquiv σ).symm` acts by applying
+`σ.symm`. -/
+@[simp]
+theorem cotangentSpaceEquiv_symm_toCotangent {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) (y : maximalIdeal S) :
+    (cotangentSpaceEquiv σ).symm (Ideal.toCotangent (maximalIdeal S) y) =
+      Ideal.toCotangent (maximalIdeal R)
+        ⟨σ.symm y, map_nonunit (σ.symm : S →+* R) y y.property⟩ :=
+  Ideal.mapCotangent_toCotangent (maximalIdeal S) (maximalIdeal R) σ.symm.toRingHom.toIntAlgHom _ y
+
 /-- A ring isomorphism between local rings preserves the dimension of the cotangent space over the
 residue field. -/
 theorem finrank_cotangentSpace_eq_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S]
     [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
     Module.finrank (ResidueField R) (CotangentSpace R) =
       Module.finrank (ResidueField S) (CotangentSpace S) := by
-  have h₁ : maximalIdeal R ≤ (maximalIdeal S).comap σ.toRingHom.toIntAlgHom :=
-    fun x hx ↦ (mem_maximalIdeal _).2
-      (mt (fun hu ↦ by simpa using hu.map σ.symm.toRingHom) ((mem_maximalIdeal _).1 hx))
-  have h₂ : maximalIdeal S ≤ (maximalIdeal R).comap σ.symm.toRingHom.toIntAlgHom :=
-    fun y hy ↦ (mem_maximalIdeal _).2
-      (mt (fun hu ↦ by simpa using hu.map σ.toRingHom) ((mem_maximalIdeal _).1 hy))
-  let f₁ := Ideal.mapCotangent (maximalIdeal R) (maximalIdeal S) σ.toRingHom.toIntAlgHom h₁
-  let f₂ := Ideal.mapCotangent (maximalIdeal S) (maximalIdeal R) σ.symm.toRingHom.toIntAlgHom h₂
-  let eCot : CotangentSpace R ≃+ CotangentSpace S :=
-    { toFun := f₁
-      invFun := f₂
-      left_inv := fun v ↦ by
-        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
-        simp [f₁, f₂]
-      right_inv := fun w ↦ by
-        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ w
-        simp [f₁, f₂]
-      map_add' := f₁.map_add }
-  let κ : ResidueField R ≃+* ResidueField S := ResidueField.mapEquiv σ
-  have hsmul : ∀ (r : ResidueField R) (m : CotangentSpace R), eCot (r • m) = κ r • eCot m :=
-    fun r m ↦ by
-      obtain ⟨r, rfl⟩ := residue_surjective r
-      obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ m
-      change f₁ (residue R r • Ideal.toCotangent _ m) =
-        κ (residue R r) • f₁ (Ideal.toCotangent _ m)
-      rw [← ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul,
-        ResidueField.mapEquiv_apply, ResidueField.algebraMap_eq,
-        ResidueField.map_residue, ← ResidueField.algebraMap_eq,
-        IsScalarTower.algebraMap_smul]
-      apply congrArg (Ideal.toCotangent _)
-      ext
-      exact map_mul σ r m
+  let e := cotangentSpaceEquiv σ
   simpa [Module.finrank] using congrArg Cardinal.toNat
-    (lift_rank_eq_of_equiv_equiv κ eCot κ.bijective hsmul)
+    (lift_rank_eq_of_equiv_equiv (ResidueField.mapEquiv σ) e.toAddEquiv
+      (ResidueField.mapEquiv σ).bijective e.map_smulₛₗ)
 
 end IsLocalRing

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.LinearAlgebra.Dual.Basis
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
@@ -24,7 +25,11 @@ is introduced.
 The identification sends centered linear coordinate germs to their coordinate functionals.
 In particular the coordinate classes form a basis, which describes the first-order
 independence of local holomorphic parameters. The construction uses Hadamard's lemma
-and the square-ideal criterion from `StructureSheaf.MaximalIdeal`.
+and the square-ideal criterion from `StructureSheaf.MaximalIdeal`, yielding the chart-local and
+manifold cotangent-dimension formulas
+(`OpenPartialHomeomorph.finrank_cotangentSpace_holomorphicStalk`,
+`TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_stalk`, and
+`TauCeti.holomorphicStructureSheaf.finrank_cotangentSpace_smoothStalk`).
 
 ## References
 
@@ -330,3 +335,34 @@ theorem holomorphicStalkFDeriv_holomorphicCoordinateGerm :
 end Curves
 
 end OpenPartialHomeomorph
+
+namespace TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+
+/-- The dimension of the algebraic cotangent space of a holomorphic stalk over its residue field
+equals the complex dimension of the manifold model. -/
+@[simp]
+theorem finrank_cotangentSpace_stalk (x : X) :
+    Module.finrank (IsLocalRing.ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
+      (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) =
+      Module.finrank ℂ E := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact (chartAt H x).finrank_cotangentSpace_holomorphicStalk x (mem_chart_source H x)
+    (IsManifold.chart_mem_maximalAtlas x)
+
+/-- The dimension of the algebraic cotangent space of a complex-smooth structure-sheaf stalk over
+its residue field equals the complex dimension of the manifold model. -/
+@[simp]
+theorem finrank_cotangentSpace_smoothStalk (x : X) :
+    Module.finrank
+      (IsLocalRing.ResidueField ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x))
+      (IsLocalRing.CotangentSpace ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)) =
+      Module.finrank ℂ E := by
+  rw [← IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv
+      (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
+    finrank_cotangentSpace_stalk]
+
+end TauCeti.holomorphicStructureSheaf
