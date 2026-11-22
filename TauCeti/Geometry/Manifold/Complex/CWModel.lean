@@ -45,6 +45,7 @@ dimensions strictly above `n + q`
 (`TauCeti.IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt`,
 `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt`), together with
 finite CW models of compact regular bands and sublevels (in `TauCeti.IsMorse`:
+`exists_cwComplex_extension_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt`,
 `exists_finite_cwComplex_extension_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt`,
 `exists_finite_cwComplex_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt`, and
 `exists_finite_cwComplex_homotopyEquiv_sublevel_of_isManifoldStrictlyPlurisubharmonicAt`).
@@ -183,6 +184,37 @@ namespace IsMorse
 variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 1 M] [T2Space M] {f : M → ℝ}
 
+/-- **Extending CW models across a compact regular band of a strongly `q`-pseudoconvex Morse
+function.** Let `f` be a real Morse function on a complex manifold of complex dimension `n`, and let
+`a ≤ b` be regular values with compact band `f⁻¹[a, b]` such that `f` is strongly `q`-pseudoconvex
+at every critical point in `f⁻¹(a, b]`. Any CW model `h : W ≃ₕ {f ≤ a}` with no cells above
+dimension `n + q` extends along a closed cofibration `ι : C(W, W')` to a CW model
+`h' : W' ≃ₕ {f ≤ b}` with one new `m`-cell per index-`m` critical point in `f⁻¹(a, b]`, no cells
+above dimension `n + q`, and finiteness whenever `W` is finite. -/
+theorem
+    exists_cwComplex_extension_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt
+    {q : ℕ} (hf : IsMorse 𝓘(ℝ, E) f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) f a) (hb : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) f b)
+    (hq : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioc a b, IsManifoldStronglyPseudoconvexAt E q f x)
+    (W : Type u) [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)]
+    (h : W ≃ₕ {x | f x ≤ a})
+    (hW : ∀ k, finrank ℂ E + q < k → IsEmpty (cell (univ : Set W) k)) :
+    ∃ (W' : Type u) (_ : TopologicalSpace W') (_ : T2Space W') (_ : CWComplex (univ : Set W'))
+      (ι : C(W, W')) (h' : W' ≃ₕ {x | f x ≤ b}),
+      (RelCWComplex.Finite (univ : Set W) → RelCWComplex.Finite (univ : Set W')) ∧
+      IsClosedEmbedding ι ∧ HasHomotopyExtensionProperty (range ι) ∧
+      (∀ w, (h' (ι w) : M) = h w) ∧
+      (∀ k, finrank ℂ E + q < k → IsEmpty (cell (univ : Set W') k)) ∧
+      ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
+          ↥{x ∈ criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex 𝓘(ℝ, E) f x = m},
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  have : FiniteDimensional ℝ E := .trans ℝ ℂ E
+  have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+  have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
+  exact hf.exists_cwComplex_extension_homotopyEquiv_sublevel_of_manifoldMorseIndex_le
+    hab hcompact ha hb
+    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx.1) W h hW
+
 /-- **Extending finite CW models across a compact regular band of a strongly `q`-pseudoconvex Morse
 function.** Let `f` be a real Morse function on a complex manifold of complex dimension `n`, and let
 `a ≤ b` be regular values with compact band `f⁻¹[a, b]` such that `f` is strongly `q`-pseudoconvex
@@ -206,12 +238,10 @@ theorem
       ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
           ↥{x ∈ criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex 𝓘(ℝ, E) f x = m},
         ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
-  have : FiniteDimensional ℝ E := .trans ℝ ℂ E
-  have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
-  have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
-  exact hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel_of_manifoldMorseIndex_le
-    hab hcompact ha hb
-    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx.1) W h hW
+  obtain ⟨W', _, _, _, ι, h', hfin, hι, hA, hh, hW', e, he⟩ :=
+    hf.exists_cwComplex_extension_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt
+      hab hcompact ha hb hq W h hW
+  exact ⟨W', _, ‹_›, ‹_›, ι, h', hfin ‹_›, hι, hA, hh, hW', e, he⟩
 
 /-- **Finite CW model of a compact regular sublevel of a strongly `q`-pseudoconvex Morse function.**
 If `b` is a regular value of a real Morse function `f` on a complex manifold of complex dimension
@@ -459,20 +489,17 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStrictlyPluri
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
-  have ⟨g, hgm, hgp, hg_bdd, hg_pos⟩ : ∃ g : M → ℝ, IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧
-      BddBelow (range g) ∧ ∀ x, IsManifoldStrictlyPlurisubharmonicAt E g x := by
-    rcases isEmpty_or_nonempty M with hM | _
-    · exact ⟨f, isMorse_iff.2 ⟨hf, fun x ↦ hM.elim x⟩, hp, hbdd, hpos⟩
-    · have := hp.weaklyLocallyCompactSpace
-      have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
-      have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
-      obtain ⟨g, hgm, hgp, hg_bdd, hg_pos, -, -⟩ :=
-        exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt hf hp hbdd hpos
-      exact ⟨g, hgm, hgp, hg_bdd, hg_pos⟩
-  obtain ⟨X, instTop, instT2, instCW, hfd, hMX, -, hempty⟩ :=
-    hgm.exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt hgp hg_bdd
-      fun x _ ↦ hg_pos x
-  exact ⟨X, instTop, instT2, instCW, hfd, hMX, hempty⟩
+  rcases isEmpty_or_nonempty M with hM | _
+  · have hgm : IsMorse 𝓘(ℝ, E) f := isMorse_iff.2 ⟨hf, fun x ↦ hM.elim x⟩
+    obtain ⟨X, instTop, instT2, instCW, hfd, hMX, -, hempty⟩ :=
+      hgm.exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt
+        hp hbdd fun x _ ↦ hM.elim x
+    exact ⟨X, instTop, instT2, instCW, hfd, hMX, hempty⟩
+  · have := hp.weaklyLocallyCompactSpace
+    have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
+    simpa only [add_zero] using
+      exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0)
+        hf hp hbdd fun x ↦ (hpos x).isManifoldStronglyPseudoconvexAt 0
 
 end PseudoconvexExhaustion
 
