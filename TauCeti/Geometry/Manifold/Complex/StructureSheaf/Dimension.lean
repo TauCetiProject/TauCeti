@@ -103,9 +103,8 @@ countability or Noetherianity hypothesis is needed. -/
 theorem finrank_le_ringKrullDim_stalk (x : X) :
     (Module.finrank ℂ E : WithBot ℕ∞) ≤
       ringKrullDim ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  rw [(stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
-    (ContinuousLinearEquiv.ofFinrankEq (by simp))).ringKrullDim]
+  rw [((chartAt H x).holomorphicStalkEquivFin
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)).ringKrullDim]
   calc
     _ = (Module.finrank ℂ (Fin (Module.finrank ℂ E) → ℂ) : WithBot ℕ∞) := by simp
     _ ≤ _ := finrank_le_ringKrullDim_stalk_modelSpace _

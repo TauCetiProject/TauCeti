@@ -45,7 +45,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   span of a range.
 * `TauCeti.isRegular_cons_iff_isRegular_quotient`: `x :: rs` is `R`-regular exactly
   when `x` is a non-zero-divisor and the images of `rs` are regular on `R ⧸ (x)`.
-* `RingTheory.Sequence.IsRegular.of_append_left`: a prefix of a regular sequence is regular.
+* `RingTheory.Sequence.isRegular_append_iff`, `RingTheory.Sequence.IsRegular.of_append_left`:
+  characterization of regularity of a concatenated sequence and prefix projection.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
   `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
   and also after multiplication by a power of `b`, already lies in `R`.
@@ -120,14 +121,37 @@ end Cons
 
 section Append
 
-variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+namespace RingTheory.Sequence
+
+variable {R : Type u} [CommRing R] (M : Type v) [AddCommGroup M] [Module R M]
+
+/-- Concatenating two sequences gives an `M`-regular sequence if and only if the prefix is
+`M`-regular and the suffix is regular on `M ⧸ (rs)M`. -/
+theorem isRegular_append_iff (rs ss : List R) :
+    IsRegular M (rs ++ ss) ↔
+      IsRegular M rs ∧ IsRegular (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M)) ss := by
+  have htop : (⊤ : Submodule R M) = Ideal.ofList (rs ++ ss) • ⊤ ↔
+      (⊤ : Submodule R (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M))) = Ideal.ofList ss • ⊤ := by
+    conv => congr <;> rw [eq_comm, ← Submodule.Quotient.subsingleton_iff]
+    refine (Submodule.quotEquivOfEq _ _ (by rw [Ideal.ofList_append, Submodule.sup_smul]) ≪≫ₗ
+      (Submodule.quotientQuotientEquivQuotientSup _ _).symm ≪≫ₗ
+      Submodule.quotEquivOfEq _ _ (by
+        rw [Submodule.map_smul'', Submodule.map_top,
+          Submodule.range_mkQ])).toEquiv.subsingleton_congr
+  refine ⟨fun h ↦ ?_, fun ⟨hrs, hss⟩ ↦ ?_⟩
+  · obtain ⟨hw1, hw2⟩ := (isWeaklyRegular_append_iff M rs ss).1 h.toIsWeaklyRegular
+    exact ⟨⟨hw1, fun h1 ↦ h.top_ne_smul (top_le_iff.1 (h1.le.trans (Submodule.smul_mono_left
+      (by rw [Ideal.ofList_append]; exact le_sup_left)))).symm⟩,
+      ⟨hw2, mt htop.2 h.top_ne_smul⟩⟩
+  · exact ⟨(isWeaklyRegular_append_iff M rs ss).2 ⟨hrs.toIsWeaklyRegular, hss.toIsWeaklyRegular⟩,
+      mt htop.1 hss.top_ne_smul⟩
 
 /-- A prefix of a regular sequence is regular. -/
-theorem RingTheory.Sequence.IsRegular.of_append_left {rs ss : List R}
-    (h : IsRegular M (rs ++ ss)) : IsRegular M rs := by
-  refine ⟨((isWeaklyRegular_append_iff M rs ss).1 h.toIsWeaklyRegular).1, fun htop ↦ ?_⟩
-  exact h.top_ne_smul (top_le_iff.1 (htop.le.trans (Submodule.smul_mono_left
-    (by rw [Ideal.ofList_append]; exact le_sup_left)))).symm
+theorem IsRegular.of_append_left {M : Type v} [AddCommGroup M] [Module R M] {rs ss : List R}
+    (h : IsRegular M (rs ++ ss)) : IsRegular M rs :=
+  ((isRegular_append_iff M rs ss).1 h).1
+
+end RingTheory.Sequence
 
 end Append
 

@@ -104,18 +104,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
   {X : Type} [TopologicalSpace X] [ChartedSpace H X]
 
-/-- Identifies the holomorphic stalk at a point of a chart with a stalk on `Fin d → ℂ`. -/
-private def holomorphicStalkEquivFin (e : OpenPartialHomeomorph X H)
-    (he : e ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ e.source) :
-    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
-      (holomorphicStructureSheaf 𝓘(ℂ, Fin (finrank ℂ E) → ℂ)
-        (Fin (finrank ℂ E) → ℂ)).presheaf.stalk
-        ((ContinuousLinearEquiv.ofFinrankEq (by simp) :
-          E ≃L[ℂ] Fin (finrank ℂ E) → ℂ) (e.extend I x)) :=
-  e.holomorphicStalkEquivModelSpace (V := Fin (finrank ℂ E) → ℂ)
-    ((IsManifold.maximalAtlas_eq_of_ne_zero one_ne_zero (by simp)).subset he) x hx
-    (ContinuousLinearEquiv.ofFinrankEq (by simp))
-
 /-- The holomorphic stalk at any point in the domain of a holomorphic chart is a regular local
 ring, with no global manifold assumption beyond the chart itself. -/
 theorem isRegularLocalRing_holomorphicStalk (e : OpenPartialHomeomorph X H)

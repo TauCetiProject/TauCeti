@@ -96,28 +96,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 any basis `b` of `E`, and any duplicate-free list `l` of indices of `b`, the centered linear
 coordinate germs `y ↦ b.coord i (e y - e x)` along `l` form a regular sequence on `𝒪_{X, x}`. -/
 theorem isRegular_map_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) {ι : Type*} (b : Module.Basis ι ℂ E) {x : X}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 1 X) {ι : Type*} (b : Module.Basis ι ℂ E) {x : X}
     (hx : x ∈ e.source) {l : List ι} (hl : l.Nodup) :
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
-      (l.map fun i ↦ e.holomorphicLinearCoordinateGerm he x
+      (l.map fun i ↦ e.holomorphicLinearCoordinateGerm
+        ((IsManifold.maximalAtlas_eq_of_ne_zero one_ne_zero (by simp)).subset he) x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
-  have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 1 X :=
-    IsManifold.maximalAtlas_subset_of_le le_top he
-  have := e.isRegularLocalRing_holomorphicStalk he₁ hx
+  have heω : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X :=
+    (IsManifold.maximalAtlas_eq_of_ne_zero one_ne_zero (by simp)).subset he
+  have := e.isRegularLocalRing_holomorphicStalk he hx
   have := Module.Finite.finite_basis b
   exact TauCeti.IsRegularLocalRing.isRegular_map_of_span_range_eq_maximalIdeal
-    (by rw [maximalIdeal_stalk, e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx])
-    (by rw [e.spanFinrank_maximalIdeal_holomorphicStalk he₁ hx, Module.finrank_eq_nat_card_basis b])
+    (by rw [maximalIdeal_stalk, e.ker_eval_eq_span_holomorphicLinearCoordinateGerm heω b hx])
+    (by rw [e.spanFinrank_maximalIdeal_holomorphicStalk he hx, Module.finrank_eq_nat_card_basis b])
     hl
 
 /-- Centered coordinates of a holomorphic chart, in any ordered basis, form a regular sequence
 in the holomorphic local ring. In particular each coordinate is a non-zero-divisor after
 quotienting by the preceding coordinates. -/
 theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 1 X) (x : X) (hx : x ∈ e.source)
     {n : ℕ} (b : Module.Basis (Fin n) ℂ E) :
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
-      (List.ofFn fun i ↦ e.holomorphicLinearCoordinateGerm he x
+      (List.ofFn fun i ↦ e.holomorphicLinearCoordinateGerm
+        ((IsManifold.maximalAtlas_eq_of_ne_zero one_ne_zero (by simp)).subset he) x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
   rw [List.ofFn_eq_map]
   exact e.isRegular_map_holomorphicLinearCoordinateGerm he b hx (List.nodup_finRange n)
