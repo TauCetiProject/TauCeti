@@ -100,17 +100,17 @@ the Levi-Civita connection in the tangent-bundle trivialization at `x`.  Both co
 in the tangent-bundle chart centred at the argument, in which the base direction is read in the
 extended chart of `M` at `x` and the fibre direction in the trivialization at `x`. -/
 def geodesicSpray (z : TangentBundle I M) : TangentSpace I.tangent z :=
-  (z.2, -christoffelMap (finBasis ℝ E)
+  (z.snd, -christoffelMap (finBasis ℝ E)
     ((leviCivitaConnection I M).isCovariantDerivativeOn
-      (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2)
+      (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.snd z.snd)
 
 /-- **The chart formula for the geodesic spray**, restating the definition, whose body is not
 exposed across the module boundary. -/
 theorem geodesicSpray_apply (z : TangentBundle I M) :
     geodesicSpray I M z =
-      (z.2, -christoffelMap (finBasis ℝ E)
+      (z.snd, -christoffelMap (finBasis ℝ E)
         ((leviCivitaConnection I M).isCovariantDerivativeOn
-          (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :=
+          (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.snd z.snd) :=
   (rfl)
 
 /-- The geodesic spray vanishes on the zero section of the tangent bundle. -/

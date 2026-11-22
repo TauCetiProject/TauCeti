@@ -44,11 +44,14 @@ even, `halfCount n n = 1`, and `halfCount n k = 0` when `n < k` or `n - k` is od
 * `TauCeti.halfCount n k`: their number.
 * `TauCeti.HalfDiagram.rightmostDefect D`: the rightmost defect of a half-diagram with at least
   one defect.
+* `TauCeti.HalfDiagram.id k`: the half-diagram on `k` points whose `k` points are all defects.
 
 ## Main results
 
 * `TauCeti.HalfDiagram.lastDefectEquiv`, `TauCeti.HalfDiagram.lastArcEquiv`: the branching
   bijections obtained by deleting the last point.
+* `TauCeti.HalfDiagram.exists_val_apply_eq_val_add_one`: a half-diagram with fewer defects than
+  points has an innermost arc joining two consecutive boundary points.
 * `TauCeti.halfCount_succ_succ`, `TauCeti.halfCount_succ_zero`, `TauCeti.halfCount_zero_zero`,
   `TauCeti.halfCount_zero_succ`: the ballot recurrence and its initial values.
 * `TauCeti.halfCount_eq_zero_of_lt`, `TauCeti.halfCount_eq_zero_of_odd`: there is no half-diagram
@@ -94,6 +97,18 @@ theorem isHalfDiagram_iff {σ : Perm α} :
 instance [Fintype α] (σ : Perm α) : Decidable σ.IsHalfDiagram :=
   inferInstanceAs <| Decidable <| (∀ x, σ (σ x) = x) ∧ σ.IsNoncrossingMatching ∧
     ∀ ⦃a x : α⦄, a < x → x < σ a → σ x ≠ x
+
+/-- **Innermost arc of a half-diagram permutation.** A nontrivial half-diagram involution on `Fin n`
+has an arc joining two consecutive boundary points `a` and `a + 1`: an innermost arc can enclose
+neither another arc nor a fixed point. -/
+theorem IsHalfDiagram.exists_val_apply_eq_val_add_one {n : ℕ} {σ : Perm (Fin n)}
+    (hσ : σ.IsHalfDiagram) (h1 : σ ≠ 1) : ∃ a : Fin n, (σ a : ℕ) = a + 1 := by
+  obtain ⟨hinv, hnc, hdef⟩ := isHalfDiagram_iff.mp hσ
+  obtain ⟨a, ha, hin⟩ := hnc.exists_forall_apply_eq_self hinv h1
+  refine ⟨a, le_antisymm ?_ (Fin.lt_def.mp ha)⟩
+  by_contra! h
+  exact hdef (x := ⟨a + 1, h.trans (σ a).isLt⟩) (Fin.lt_def.mpr (Nat.lt_succ_self _))
+    (Fin.lt_def.mpr h) (hin _ (Fin.lt_def.mpr (Nat.lt_succ_self _)) (Fin.lt_def.mpr h))
 
 end Equiv.Perm
 
@@ -319,25 +334,26 @@ private theorem isHalfDiagram_insertLast {τ : Perm (Fin n)} (hτ : τ.IsHalfDia
 correspond to the half-diagrams on `n` points with one defect fewer. -/
 def lastDefectEquiv (n k : ℕ) :
     {D : HalfDiagram (n + 1) (k + 1) // D.val (Fin.last n) = Fin.last n} ≃ HalfDiagram n k where
-  toFun D := ⟨(eraseLast_involutive D.1.2.1.1).toPerm _, isHalfDiagram_eraseLast D.1.2.1, by
-    have := card_eraseLast_eq_self D.1.2.1.1
-    simp only [D.2, ite_true, D.1.2.2] at this
+  toFun D := ⟨(eraseLast_involutive D.val.property.1.1).toPerm _,
+      isHalfDiagram_eraseLast D.val.property.1, by
+    have := card_eraseLast_eq_self D.val.property.1.1
+    simp only [D.property, ite_true, D.val.property.2] at this
     rw [card_toPerm_eq_self]
     omega⟩
   invFun D :=
-    have hp : ∀ i : Fin n, i.castSucc = Fin.last n → D.1 i = i :=
+    have hp : ∀ i : Fin n, i.castSucc = Fin.last n → D.val i = i :=
       fun i h => absurd h (Fin.castSucc_ne_last i)
-    ⟨⟨(insertLast_involutive D.2.1.1 hp).toPerm _,
-      isHalfDiagram_insertLast D.2.1 hp fun i _ => Fin.le_last _, by
-        have := card_eraseLast_eq_self (insertLast_involutive D.2.1.1 hp)
+    ⟨⟨(insertLast_involutive D.property.1.1 hp).toPerm _,
+      isHalfDiagram_insertLast D.property.1 hp fun i _ => Fin.le_last _, by
+        have := card_eraseLast_eq_self (insertLast_involutive D.property.1.1 hp)
         rw [eraseLast_insertLast hp] at this
-        simp only [insertLast_last, ite_true, D.2.2] at this
+        simp only [insertLast_last, ite_true, D.property.2] at this
         rw [card_toPerm_eq_self]
         omega⟩, by simp⟩
   left_inv D := by
     refine Subtype.ext <| Subtype.ext <| Equiv.ext fun x => ?_
-    have h := insertLast_eraseLast D.1.2.1.1
-    rw [D.2] at h
+    have h := insertLast_eraseLast D.val.property.1.1
+    rw [D.property] at h
     simpa using congrFun h x
   right_inv D := Subtype.ext <| Equiv.ext fun i => by
     simp [eraseLast_insertLast fun i h => absurd h (Fin.castSucc_ne_last i)]
@@ -346,27 +362,27 @@ def lastDefectEquiv (n k : ℕ) :
 @[simp]
 theorem lastDefectEquiv_apply_castSucc
     (D : {D : HalfDiagram (n + 1) (k + 1) // D.val (Fin.last n) = Fin.last n}) (i : Fin n) :
-    ((lastDefectEquiv n k D).val i).castSucc = D.1.val i.castSucc := by
-  refine castSucc_eraseLast fun h => Fin.castSucc_ne_last i (D.1.val.injective ?_)
-  rw [h, D.2]
+    ((lastDefectEquiv n k D).val i).castSucc = D.val.val i.castSucc := by
+  refine castSucc_eraseLast fun h => Fin.castSucc_ne_last i (D.val.val.injective ?_)
+  rw [h, D.property]
 
 /-- Adjoining a last defect. -/
 @[simp]
 theorem lastDefectEquiv_symm_apply_last (D : HalfDiagram n k) :
-    ((lastDefectEquiv n k).symm D).1.val (Fin.last n) = Fin.last n :=
-  ((lastDefectEquiv n k).symm D).2
+    ((lastDefectEquiv n k).symm D).val.val (Fin.last n) = Fin.last n :=
+  ((lastDefectEquiv n k).symm D).property
 
 /-- Adjoining a last defect keeps every arc and every other defect. -/
 @[simp]
 theorem lastDefectEquiv_symm_apply_castSucc (D : HalfDiagram n k) (i : Fin n) :
-    ((lastDefectEquiv n k).symm D).1.val i.castSucc = (D.val i).castSucc := by
+    ((lastDefectEquiv n k).symm D).val.val i.castSucc = (D.val i).castSucc := by
   simp [lastDefectEquiv, Fin.castSucc_ne_last]
 
 /-! ### The rightmost defect -/
 
 private theorem nonempty_defects (D : HalfDiagram n (k + 1)) :
     ({i | D.val i = i} : Finset (Fin n)).Nonempty :=
-  Finset.card_pos.mp (D.2.2.symm ▸ k.succ_pos)
+  Finset.card_pos.mp (D.property.2.symm ▸ k.succ_pos)
 
 /-- The **rightmost defect** of a half-diagram with at least one defect. -/
 def rightmostDefect (D : HalfDiagram n (k + 1)) : Fin n :=
@@ -397,24 +413,24 @@ defect. -/
 private def eraseLastArc
     (D : {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n}) :
     HalfDiagram n (k + 1) :=
-  ⟨(eraseLast_involutive D.1.2.1.1).toPerm _, isHalfDiagram_eraseLast D.1.2.1, by
-    have := card_eraseLast_eq_self D.1.2.1.1
-    simp only [D.2, ite_false, D.1.2.2] at this
+  ⟨(eraseLast_involutive D.val.property.1.1).toPerm _, isHalfDiagram_eraseLast D.val.property.1, by
+    have := card_eraseLast_eq_self D.val.property.1.1
+    simp only [D.property, ite_false, D.val.property.2] at this
     rw [card_toPerm_eq_self]
     omega⟩
 
 @[simp]
 private theorem coe_eraseLastArc
     (D : {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n}) :
-    ⇑(eraseLastArc D).val = eraseLast D.1.val := by
+    ⇑(eraseLastArc D).val = eraseLast D.val.val := by
   simp [eraseLastArc]
 
 /-- After deleting the last point, the former partner of the last point is the rightmost defect:
 a defect further right would lie under the arc ending at the last point. -/
 private theorem rightmostDefect_eraseLastArc
     (D : {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n}) :
-    rightmostDefect (eraseLastArc D) = (D.1.val (Fin.last n)).castPred D.2 := by
-  have hinv := D.1.2.1.1
+    rightmostDefect (eraseLastArc D) = (D.val.val (Fin.last n)).castPred D.property := by
+  have hinv := D.val.property.1.1
   refine (eq_rightmostDefect _ ?_ fun i hi => ?_).symm
   · rw [coe_eraseLastArc]
     exact eraseLast_of_eq (by rw [Fin.castSucc_castPred, hinv])
@@ -423,8 +439,8 @@ private theorem rightmostDefect_eraseLastArc
     by_contra hlt
     rw [not_le] at hlt
     rcases eraseLast_eq_self_iff.mp hi with hi | hi
-    · exact D.1.2.1.2.2 hlt (by rw [hinv]; exact Fin.castSucc_lt_last i) hi
-    · have h := congrArg D.1.val hi
+    · exact D.val.property.1.2.2 hlt (by rw [hinv]; exact Fin.castSucc_lt_last i) hi
+    · have h := congrArg D.val.val hi
       rw [hinv] at h
       exact hlt.ne h.symm
 
@@ -436,19 +452,19 @@ def lastArcEquiv (n k : ℕ) :
     {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n} ≃ HalfDiagram n (k + 1) where
   toFun := eraseLastArc
   invFun D :=
-    have hp : ∀ i : Fin n, i.castSucc = (rightmostDefect D).castSucc → D.1 i = i :=
+    have hp : ∀ i : Fin n, i.castSucc = (rightmostDefect D).castSucc → D.val i = i :=
       fun i h => by rw [Fin.castSucc_inj.mp h, val_rightmostDefect]
-    ⟨⟨(insertLast_involutive D.2.1.1 hp).toPerm _,
-      isHalfDiagram_insertLast D.2.1 hp fun i hi =>
+    ⟨⟨(insertLast_involutive D.property.1.1 hp).toPerm _,
+      isHalfDiagram_insertLast D.property.1 hp fun i hi =>
         Fin.castSucc_le_castSucc_iff.mpr (le_rightmostDefect D hi), by
-        have := card_eraseLast_eq_self (insertLast_involutive D.2.1.1 hp)
+        have := card_eraseLast_eq_self (insertLast_involutive D.property.1.1 hp)
         rw [eraseLast_insertLast hp] at this
-        simp only [insertLast_last, Fin.castSucc_ne_last, ite_false, D.2.2] at this
+        simp only [insertLast_last, Fin.castSucc_ne_last, ite_false, D.property.2] at this
         rw [card_toPerm_eq_self]
         omega⟩, by simp [Fin.castSucc_ne_last]⟩
   left_inv D := by
     refine Subtype.ext <| Subtype.ext <| Equiv.ext fun x => ?_
-    have h := insertLast_eraseLast D.1.2.1.1
+    have h := insertLast_eraseLast D.val.property.1.1
     simp only [Function.Involutive.coe_toPerm, coe_eraseLastArc, rightmostDefect_eraseLastArc,
       Fin.castSucc_castPred]
     exact congrFun h x
@@ -459,28 +475,28 @@ def lastArcEquiv (n k : ℕ) :
 /-- Deleting a last point joined by an arc keeps the partner of every point not joined to it. -/
 theorem lastArcEquiv_apply_castSucc
     (D : {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n}) {i : Fin n}
-    (h : D.1.val i.castSucc ≠ Fin.last n) :
-    ((lastArcEquiv n k D).val i).castSucc = D.1.val i.castSucc :=
+    (h : D.val.val i.castSucc ≠ Fin.last n) :
+    ((lastArcEquiv n k D).val i).castSucc = D.val.val i.castSucc :=
   castSucc_eraseLast h
 
 /-- Deleting the last point turns its former partner into a defect. -/
 @[simp]
 theorem lastArcEquiv_apply_castPred
     (D : {D : HalfDiagram (n + 1) k // D.val (Fin.last n) ≠ Fin.last n}) :
-    (lastArcEquiv n k D).val ((D.1.val (Fin.last n)).castPred D.2) =
-      (D.1.val (Fin.last n)).castPred D.2 :=
-  eraseLast_of_eq (by rw [Fin.castSucc_castPred, D.1.2.1.1])
+    (lastArcEquiv n k D).val ((D.val.val (Fin.last n)).castPred D.property) =
+      (D.val.val (Fin.last n)).castPred D.property :=
+  eraseLast_of_eq (by rw [Fin.castSucc_castPred, D.val.property.1.1])
 
 /-- The new last point is joined to the rightmost defect. -/
 @[simp]
 theorem lastArcEquiv_symm_apply_last (D : HalfDiagram n (k + 1)) :
-    ((lastArcEquiv n k).symm D).1.val (Fin.last n) = (rightmostDefect D).castSucc := by
+    ((lastArcEquiv n k).symm D).val.val (Fin.last n) = (rightmostDefect D).castSucc := by
   simp [lastArcEquiv]
 
 /-- Joining a new last point to the rightmost defect keeps every other arc and defect. -/
 @[simp]
 theorem lastArcEquiv_symm_apply_castSucc (D : HalfDiagram n (k + 1)) (i : Fin n) :
-    ((lastArcEquiv n k).symm D).1.val i.castSucc =
+    ((lastArcEquiv n k).symm D).val.val i.castSucc =
       if i = rightmostDefect D then Fin.last n else (D.val i).castSucc := by
   simp [lastArcEquiv]
 
@@ -488,23 +504,69 @@ theorem lastArcEquiv_symm_apply_castSucc (D : HalfDiagram n (k + 1)) (i : Fin n)
 
 /-- A half-diagram without defects is a planar matching. -/
 def zeroEquivPlanarMatching (n : ℕ) : HalfDiagram n 0 ≃ PlanarMatching n where
-  toFun D := ⟨⟨D.1, isPerfectMatching_iff.mpr ⟨D.2.1.1, fun a ha =>
-      Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp D.2.2) (Finset.mem_univ a) ha⟩⟩,
-    D.2.1.2.1⟩
-  invFun x := ⟨x.1.1, ⟨x.1.2.involutive, x.2, fun _ y _ _ => x.1.apply_ne y⟩,
-    Finset.card_eq_zero.mpr <| Finset.filter_eq_empty_iff.mpr fun y _ => x.1.apply_ne y⟩
+  toFun D := ⟨⟨D.val, isPerfectMatching_iff.mpr ⟨D.property.1.1, fun a ha =>
+      Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp D.property.2) (Finset.mem_univ a) ha⟩⟩,
+    D.property.1.2.1⟩
+  invFun x := ⟨x.val.val, ⟨x.val.property.involutive, x.property, fun _ y _ _ => x.val.apply_ne y⟩,
+    Finset.card_eq_zero.mpr <| Finset.filter_eq_empty_iff.mpr fun y _ => x.val.apply_ne y⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
 /-- A half-diagram without defects is a planar matching with the same partners. -/
 @[simp]
 theorem zeroEquivPlanarMatching_apply_val (D : HalfDiagram n 0) :
-    (zeroEquivPlanarMatching n D).1.val = D.val := (rfl)
+    (zeroEquivPlanarMatching n D).val.val = D.val := (rfl)
 
 /-- A planar matching is a half-diagram without defects with the same partners. -/
 @[simp]
 theorem zeroEquivPlanarMatching_symm_apply_val (x : PlanarMatching n) :
-    ((zeroEquivPlanarMatching n).symm x).val = x.1.val := (rfl)
+    ((zeroEquivPlanarMatching n).symm x).val = x.val.val := (rfl)
+
+/-! ### All defects and innermost arcs -/
+
+/-- Two half-diagrams are equal when they assign the same partner to every boundary point. -/
+@[ext]
+theorem ext {D E : HalfDiagram n k} (h : ∀ i, D.val i = E.val i) : D = E :=
+  Subtype.ext (Equiv.ext h)
+
+/-- The **identity half-diagram** on `k` points: every point is a defect and there are no arcs. -/
+def id (k : ℕ) : HalfDiagram k k :=
+  ⟨1, Perm.isHalfDiagram_iff.mpr ⟨fun _ => rfl, Perm.isNoncrossingMatching_one,
+    fun _ _ hax hxa => absurd (hax.trans hxa) (lt_irrefl _)⟩, by simp⟩
+
+@[simp] theorem id_val (k : ℕ) : (id k).val = 1 := (rfl)
+
+theorem id_apply (k : ℕ) (i : Fin k) : (id k).val i = i := (rfl)
+
+/-- The identity half-diagram is the only half-diagram with as many defects as points. -/
+instance (k : ℕ) : Unique (HalfDiagram k k) where
+  default := id k
+  uniq D := ext fun i => by
+    have hi : i ∈ ({x : Fin k | D.val x = x} : Finset (Fin k)) := by
+      rw [eq_univ_of_card _ (D.property.2.trans (Fintype.card_fin k).symm)]; exact mem_univ i
+    exact (mem_filter.mp hi).2
+
+/-- A half-diagram has underlying permutation `1` precisely when every point is a defect. -/
+theorem val_eq_one_iff {D : HalfDiagram n k} : D.val = 1 ↔ k = n :=
+  ⟨fun h => by simp [← D.property.2, h], fun h => by subst h; simp [Subsingleton.elim D (id k)]⟩
+
+/-- **Innermost arc of a half-diagram.** A half-diagram whose defects do not exhaust all boundary
+points has an arc joining two consecutive boundary points `a` and `a + 1`: an innermost arc can
+enclose neither another arc nor a defect. -/
+theorem exists_val_apply_eq_val_add_one (D : HalfDiagram n k) (hkn : k ≠ n) :
+    ∃ a : Fin n, (D.val a : ℕ) = a + 1 :=
+  D.property.1.exists_val_apply_eq_val_add_one (mt val_eq_one_iff.mp hkn)
+
+/-- In a half-diagram on `n + 1` points whose defects do not exhaust all boundary points, some
+consecutive pair `c.castSucc`, `c.succ` forms an arc. -/
+theorem exists_apply_castSucc_eq_succ (D : HalfDiagram (n + 1) k) (hk : k ≠ n + 1) :
+    ∃ c : Fin n, D.val c.castSucc = c.succ := by
+  obtain ⟨a, ha⟩ := D.exists_val_apply_eq_val_add_one hk
+  refine ⟨⟨a, by have := (D.val a).isLt; omega⟩, Fin.ext ?_⟩
+  have hc : (⟨a, by have := (D.val a).isLt; omega⟩ : Fin n).castSucc = a :=
+    Fin.ext (Fin.val_castSucc _)
+  rw [hc, Fin.val_succ]
+  exact ha
 
 end HalfDiagram
 
@@ -529,8 +591,8 @@ theorem halfCount_succ_succ (n k : ℕ) :
 /-- Without defects, the last point ends an arc. -/
 theorem halfCount_succ_zero (n : ℕ) : halfCount (n + 1) 0 = halfCount n 1 := by
   have : IsEmpty {D : HalfDiagram (n + 1) 0 // D.val (Fin.last n) = Fin.last n} :=
-    ⟨fun D => Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp D.1.2.2)
-      (Finset.mem_univ (Fin.last n)) D.2⟩
+    ⟨fun D => Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp D.val.property.2)
+      (Finset.mem_univ (Fin.last n)) D.property⟩
   rw [halfCount_succ_eq, Fintype.card_eq_zero, Fintype.card_congr (HalfDiagram.lastArcEquiv n 0),
     zero_add, halfCount]
 
@@ -541,7 +603,7 @@ theorem halfCount_zero_zero : halfCount 0 0 = 1 := by
 /-- There is no defect without points. -/
 @[simp]
 theorem halfCount_zero_succ (k : ℕ) : halfCount 0 (k + 1) = 0 :=
-  Fintype.card_eq_zero_iff.mpr ⟨fun D => by simpa using D.2.2⟩
+  Fintype.card_eq_zero_iff.mpr ⟨fun D => by simpa using D.property.2⟩
 
 private theorem halfCount_eq_zero_of_lt_or_odd :
     ∀ {n k : ℕ}, n < k ∨ Odd (n + k) → halfCount n k = 0

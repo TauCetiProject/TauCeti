@@ -121,6 +121,22 @@ lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
   rw [← HomologicalComplex.homologyMap_comp]
   exact (singularChainHomotopy φ R).homologyMap_eq n
 
+/-- On singular homology, the fibre inclusion induces the homology map of
+`TauCeti.MappingTorus.fibreInclusionChainMap`. -/
+lemma singularHomologyMap_incl_eq [CategoryWithHomology C] (n : ℕ) :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) =
+      HomologicalComplex.homologyMap (fibreInclusionChainMap φ R) n :=
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
+  (rfl)
+
+/-- On singular homology, the monodromy induces the homology map of
+`TauCeti.MappingTorus.monodromyChainMap`. -/
+lemma singularHomologyMap_monodromy_eq [CategoryWithHomology C] (n : ℕ) :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) =
+      HomologicalComplex.homologyMap (monodromyChainMap φ R) n :=
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
+  (rfl)
+
 /-- The Wang endomorphism `id - φ_*` on the singular chains of the fibre. -/
 noncomputable def wangEndomorphism :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) ⟶

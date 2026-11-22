@@ -21,6 +21,11 @@ summands, so the real-valued form is not a substitution instance of the polarize
 The real-valued form is the shape consumers state coefficient decay in; its instance for the
 Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
 
+On finite orthonormal bases, the file also provides coisometric Parseval contractions: if
+`f : E → F` has an inner-product-preserving adjoint `g : F → E` (`⟪f x, y⟫ = ⟪x, g y⟫` and
+`⟪g x, g y⟫ = ⟪x, y⟫`), then pulling linear or bilinear maps into an inner product space back along
+`f` preserves their inner-product contractions over orthonormal bases.
+
 ## Main declarations
 
 * `HilbertBasis.hasSum_norm_sq_inner` — Parseval in norm-square form, as a `HasSum` statement.
@@ -29,6 +34,10 @@ Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
   bookkeeping and can be reordered freely against other unconditional sums.
 * `OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq` — the squared values of a continuous linear
   functional on a finite orthonormal basis sum to the square of its operator norm.
+* `OrthonormalBasis.sum_inner_comp_eq_of_inner_eq` — coisometric Parseval contraction of two
+  linear maps along a map whose adjoint preserves inner products.
+* `OrthonormalBasis.sum_sum_inner_comp_eq_of_inner_eq` — double coisometric Parseval contraction
+  of two bilinear maps along a map whose adjoint preserves inner products.
 * `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
   of a continuous linear functional on an orthonormal family are summable.
 -/
@@ -79,6 +88,76 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
   have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map A, ← b.sum_sq_norm_inner_left]
   simp_rw [InnerProductSpace.toDual_symm_apply]
+
+/-- **Coisometric Parseval contraction for linear maps.** If `f : E → F` has an
+inner-product-preserving adjoint `g : F → E` (`⟪f x, y⟫ = ⟪x, g y⟫` and `⟪g x, g y⟫ = ⟪x, y⟫`),
+then pulling two linear maps `φ, ψ : F →ₗ[𝕜] G` back along `f` preserves their inner-product
+contraction over orthonormal bases:
+`∑ p, ⟪φ (f (bE p)), ψ (f (bE p))⟫ = ∑ a, ⟪φ (bF a), ψ (bF a)⟫`. -/
+theorem _root_.OrthonormalBasis.sum_inner_comp_eq_of_inner_eq [Fintype ι] {κ F G : Type*}
+    [Fintype κ] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (bE : OrthonormalBasis ι 𝕜 E) (bF : OrthonormalBasis κ 𝕜 F)
+    {f : E → F} {g : F → E} (hfg : ∀ x y, inner 𝕜 (f x) y = inner 𝕜 x (g y))
+    (hg : ∀ x y, inner 𝕜 (g x) (g y) = inner 𝕜 x y)
+    (φ ψ : F →ₗ[𝕜] G) :
+    ∑ p, inner 𝕜 (φ (f (bE p))) (ψ (f (bE p))) = ∑ a, inner 𝕜 (φ (bF a)) (ψ (bF a)) := by
+  classical
+  have hexp (h : F →ₗ[𝕜] G) (p : ι) :
+      h (f (bE p)) = ∑ a, inner 𝕜 (g (bF a)) (bE p) • h (bF a) := by
+    conv_lhs => rw [← bF.sum_repr' (f (bE p)), map_sum]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [map_smul, ← inner_conj_symm (bF a) (f (bE p)), hfg, inner_conj_symm]
+  simp_rw [hexp φ, hexp ψ, sum_inner, inner_sum, inner_smul_left, inner_smul_right,
+    inner_conj_symm (bE _)]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [Finset.sum_comm]
+  have hsum : ∀ c,
+      (∑ p, inner 𝕜 (bE p) (g (bF a)) *
+          (inner 𝕜 (g (bF c)) (bE p) * inner 𝕜 (φ (bF a)) (ψ (bF c)))) =
+        inner 𝕜 (bF c) (bF a) * inner 𝕜 (φ (bF a)) (ψ (bF c)) := by
+    intro c
+    have hp : (∑ p, inner 𝕜 (g (bF c)) (bE p) * inner 𝕜 (bE p) (g (bF a))) =
+        inner 𝕜 (bF c) (bF a) := by
+      rw [bE.sum_inner_mul_inner, hg]
+    calc (∑ p, inner 𝕜 (bE p) (g (bF a)) *
+            (inner 𝕜 (g (bF c)) (bE p) * inner 𝕜 (φ (bF a)) (ψ (bF c))))
+        = (∑ p, inner 𝕜 (g (bF c)) (bE p) * inner 𝕜 (bE p) (g (bF a))) *
+            inner 𝕜 (φ (bF a)) (ψ (bF c)) := by
+          rw [Finset.sum_mul]
+          exact Finset.sum_congr rfl fun p _ ↦ by ring
+      _ = inner 𝕜 (bF c) (bF a) * inner 𝕜 (φ (bF a)) (ψ (bF c)) := by rw [hp]
+  simp_rw [hsum, orthonormal_iff_ite.mp bF.orthonormal]
+  simp
+
+/-- **Double coisometric Parseval contraction for bilinear maps.** If `f : E → F` has an
+inner-product-preserving adjoint `g : F → E` (`⟪f x, y⟫ = ⟪x, g y⟫` and `⟪g x, g y⟫ = ⟪x, y⟫`),
+then pulling two bilinear maps `M, N : F →ₗ[𝕜] F →ₗ[𝕜] G` back along `f` preserves their double
+inner-product contraction over orthonormal bases:
+`∑ p, ∑ q, ⟪M (f (bE p)) (f (bE q)), N (f (bE p)) (f (bE q))⟫ =
+  ∑ a, ∑ c, ⟪M (bF a) (bF c), N (bF a) (bF c)⟫`. -/
+theorem _root_.OrthonormalBasis.sum_sum_inner_comp_eq_of_inner_eq [Fintype ι] {κ F G : Type*}
+    [Fintype κ] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (bE : OrthonormalBasis ι 𝕜 E) (bF : OrthonormalBasis κ 𝕜 F)
+    {f : E → F} {g : F → E} (hfg : ∀ x y, inner 𝕜 (f x) y = inner 𝕜 x (g y))
+    (hg : ∀ x y, inner 𝕜 (g x) (g y) = inner 𝕜 x y)
+    (M N : F →ₗ[𝕜] F →ₗ[𝕜] G) :
+    (∑ p, ∑ q, inner 𝕜 (M (f (bE p)) (f (bE q))) (N (f (bE p)) (f (bE q)))) =
+      ∑ a, ∑ c, inner 𝕜 (M (bF a) (bF c)) (N (bF a) (bF c)) := by
+  have hinner (p : ι) :
+      (∑ q, inner 𝕜 (M (f (bE p)) (f (bE q))) (N (f (bE p)) (f (bE q)))) =
+        ∑ c, inner 𝕜 (M (f (bE p)) (bF c)) (N (f (bE p)) (bF c)) :=
+    bE.sum_inner_comp_eq_of_inner_eq bF hfg hg (M (f (bE p))) (N (f (bE p)))
+  simp_rw [hinner]
+  rw [Finset.sum_comm]
+  have houter (c : κ) :
+      (∑ p, inner 𝕜 (M (f (bE p)) (bF c)) (N (f (bE p)) (bF c))) =
+        ∑ a, inner 𝕜 (M (bF a) (bF c)) (N (bF a) (bF c)) :=
+    bE.sum_inner_comp_eq_of_inner_eq bF hfg hg (M.flip (bF c)) (N.flip (bF c))
+  simp_rw [houter]
+  exact Finset.sum_comm
 
 end Normed
 

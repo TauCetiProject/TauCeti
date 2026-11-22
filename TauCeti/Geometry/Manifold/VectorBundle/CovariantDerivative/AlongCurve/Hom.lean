@@ -74,8 +74,8 @@ theorem alongCurveWithin_clm_apply_of_eq_zero
   have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     hAc.1.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hbase)
   have hread (r : 𝕜) (hr : γ r ∈ e.baseSet) :
-      sectionCoord (F := E) γ (fun q ↦ A q (V q)) (γ t) r =
-        a r (sectionCoord (F := E) γ V (γ t) r) := by
+      sectionCoord 𝕜 (F := E) γ (fun q ↦ A q (V q)) (γ t) r =
+        a r (sectionCoord 𝕜 (F := E) γ V (γ t) r) := by
     simp only [a, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
       sectionCoord_apply]
     rw [(trivializationAt E (TangentSpace I) (γ t)).symmL_continuousLinearMapAt hr]

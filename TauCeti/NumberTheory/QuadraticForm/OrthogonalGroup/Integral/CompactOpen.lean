@@ -143,7 +143,7 @@ theorem eventually_localSpinorNormImage_eq_unitSquareClasses {Q : QuadraticForm 
     (QuadraticForm.Nondegenerate.baseChange hQ) hp, ← hbc, ← hUp]
   ext x
   rw [mem_localSpinorNormImage_iff, Subgroup.mem_map]
-  exact ⟨fun ⟨g, hg⟩ ↦ ⟨g, (U.mem_specialOrthogonal_iff p g).mp g.2, hg⟩,
+  exact ⟨fun ⟨g, hg⟩ ↦ ⟨g, (U.mem_specialOrthogonal_iff p g).mp g.property, hg⟩,
     fun ⟨g, hg, hgx⟩ ↦ ⟨⟨g, (U.mem_specialOrthogonal_iff p g).mpr hg⟩, hgx⟩⟩
 
 /-- At almost every prime, the local spinor-norm image of the integral family of a rational basis

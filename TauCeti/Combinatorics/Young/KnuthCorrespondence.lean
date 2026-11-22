@@ -417,10 +417,11 @@ noncomputable def robinsonSchenstedKnuthEquiv :
       {p : List (List β) × List (List α) // p.1.IsTableauRows ∧ p.2.IsTableauRows ∧
         ∀ i, (p.1.getD i []).length = (p.2.getD i []).length} :=
   Equiv.ofBijective
-    (fun ws => ⟨robinsonSchenstedKnuth ws.1,
-      exists_robinsonSchenstedKnuth_eq_iff.mp ⟨ws.1, ws.2, rfl⟩⟩)
-    ⟨fun ws vs h => Subtype.ext (robinsonSchenstedKnuth_injOn ws.2 vs.2 (congrArg Subtype.val h)),
-      fun p => (exists_robinsonSchenstedKnuth_eq_iff.mpr p.2).elim fun ws hws =>
+    (fun ws => ⟨robinsonSchenstedKnuth ws.val,
+      exists_robinsonSchenstedKnuth_eq_iff.mp ⟨ws.val, ws.property, rfl⟩⟩)
+    ⟨fun ws vs h => Subtype.ext (robinsonSchenstedKnuth_injOn ws.property vs.property
+        (congrArg Subtype.val h)),
+      fun p => (exists_robinsonSchenstedKnuth_eq_iff.mpr p.property).elim fun ws hws =>
         ⟨⟨ws, hws.1⟩, Subtype.ext hws.2⟩⟩
 
 /-- `robinsonSchenstedKnuthEquiv` sends a two-line array to its insertion and recording
@@ -429,7 +430,7 @@ tableaux. -/
 theorem robinsonSchenstedKnuthEquiv_apply_coe
     (ws : {ws : List (α × β) // (ws.map toLex).SortedLE}) :
     (robinsonSchenstedKnuthEquiv ws : List (List β) × List (List α)) =
-      robinsonSchenstedKnuth ws.1 := (rfl)
+      robinsonSchenstedKnuth ws.val := (rfl)
 
 end Correspondence
 

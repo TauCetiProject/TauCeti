@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.ModelTheory.Order
 public import Mathlib.SetTheory.Cardinal.Aleph
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
 import Mathlib.Algebra.Order.Ring.Rat
@@ -14,17 +15,28 @@ import Mathlib.SetTheory.Cardinal.Regular
 import TauCeti.Logic.Function.Update
 import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.Infinitary.Sublanguage
+import TauCeti.ModelTheory.Infinitary.Theory
+import TauCeti.ModelTheory.Order
+import TauCeti.SetTheory.Cardinal.AlephOne
+import TauCeti.SetTheory.Ordinal.ToType
 
 /-!
 # Boundedness of well-orderings in `L_{ω₁ω}`
 
 Fix a binary relation symbol `lt` of an arbitrary language. An `L_{ω₁ω}` sentence `φ` whose models
 carry `lt`-chains of every countable length also has a countable model carrying an `lt`-chain
-indexed by the rationals (Marker, *Lectures on Infinitary Model Theory*, 4.4.1). Such a chain is
+indexed by the rationals (Marker, *Lectures on Infinitary Model Theory*, §4.4). Such a chain is
 not well-founded, so a sentence all of whose models are well-founded for `lt` bounds their chains
 by a countable ordinal. Consequently the order types of the models of a sentence all of whose
 models are well-ordered are bounded by a countable ordinal, and no sentence defines the class of
 well-orders.
+
+In the language of orders, whose symbol is `≤`, a sentence that holds in every countable ordinal
+also holds in a countable linear order that is not well-founded, so no sentence defines the
+countable well-orders among the countable nonempty linear orders. This is the `L_{ω₁ω}`
+counterpart of `TauCeti.exists_countable_model_not_wellFoundedLT` for first-order theories. A
+chain for `≤` could be constant, so the chain theorem is applied in the language with a second
+binary symbol read as the strict order.
 
 The proof applies model existence to a consistency property. Name each rational `q` by a Henkin
 constant `d_q`. A member is `{φ} ∪ {d_q < d_r : q < r} ∪ σ` with `σ` finite and mentioning finitely
@@ -51,12 +63,18 @@ constant that does not occur in `σ`.
   order, for an irreflexive `lt`, is injective.
 * `FirstOrder.Language.Sentenceω.exists_model_relChain_rat`: a sentence with well-ordered chains of
   every countable length has a countable nonempty model with a chain indexed by `ℚ`.
-* `FirstOrder.Language.Sentenceω.wellFounded_boundedness`: if `lt` is well-founded in every nonempty
-  model of a sentence, some countable ordinal indexes a chain in no such model.
+* `FirstOrder.Language.Sentenceω.wellFounded_boundedness`: if `lt` is well-founded in every
+  countable nonempty model of a sentence, some countable ordinal indexes a chain in no nonempty
+  model.
 * `FirstOrder.Language.Sentenceω.wellOrder_type_boundedness`: if `lt` well-orders every model of a
   sentence, the order types of its models are bounded by a countable ordinal.
 * `FirstOrder.Language.wellOrdering_undefinable`: no `L_{ω₁ω}` sentence defines the structures in
-  which `lt` is a well-order.
+  which `lt` is a well-order, not even among the countable nonempty structures.
+* `TauCeti.exists_countable_realize_not_wellFoundedLT`: a sentence of the language of orders true
+  in some ordinal `β ≥ α` for every countable ordinal `α` is true in a countable linear order that
+  is not well-founded.
+* `TauCeti.not_exists_sentenceω_realize_iff_wellFoundedLT`: no sentence defines the countable
+  well-orders among the countable nonempty linear orders.
 
 ## References
 
@@ -260,9 +278,7 @@ private theorem insert (h : Gapped Q x γ (α + 1 + α)) (s : ℚ) :
       hx q (Finset.mem_filter.1 hq).1 (Finset.mem_filter.1 hq).2
   have hmax {c : Ordinal.{w}} : ∀ a, a + (α + 1 + α) < c → ∀ b, b + (α + 1 + α) < c →
       (a ⊔ b) + (α + 1 + α) < c := fun a ha b hb => by
-    obtain h | h := le_total a b
-    · rwa [sup_eq_right.2 h]
-    · rwa [sup_eq_left.2 h]
+    simpa only [max_add, max_lt_iff] using And.intro ha hb
   have hβ : α ≤ α + 1 + α := le_add_self
   have hlt_top : lo + (α + 1 + α) < γ :=
     hsup (by simpa using h.lt_top) hmax fun q hq _ => h.add_lt_top hq
@@ -465,9 +481,10 @@ sentences suffice because `ω₁` is regular. -/
 private theorem exists_insert_mem (h : Member.{u, v, w} φ lt Q σ) {κ : Type} [Countable κ]
     {S : Set ℕ} (hS : S.Finite) (ξ : κ → L[[ℕ]].Sentenceω)
     (hξ : ∀ k, (ξ k).constantSupport ⊆ S)
-    (hw : ∀ (Q' : Finset ℚ) (α : Ordinal.{w}) (M : Type w) [L.Structure M] (e : ℕ → M),
-      Witness φ lt Q' σ α M e → (∀ P ∈ base φ lt ∪ σ, P.constantSupport ⊆ S → Sat e P) →
-        ∃ k e', Witness φ lt Q' σ α M e' ∧ Sat e' (ξ k)) :
+    (hw : ∀ α : Ordinal.{w}, α < ω₁ → ∀ (M : Type w) [L.Structure M] (e : ℕ → M),
+      Witness φ lt (Q ∪ ratsIn hS) σ α M e →
+        (∀ P ∈ base φ lt ∪ σ, P.constantSupport ⊆ S → Sat e P) →
+          ∃ k e', Witness φ lt (Q ∪ ratsIn hS) σ α M e' ∧ Sat e' (ξ k)) :
     ∃ k, insert (ξ k) (base φ lt ∪ σ) ∈ chainSets.{u, v, w} φ lt := by
   classical
   have hm := h.union (ratsIn hS)
@@ -487,7 +504,7 @@ private theorem exists_insert_mem (h : Member.{u, v, w} φ lt Q σ) {κ : Type} 
     · exact hall
   choose a ha hna using hbad
   obtain ⟨M, _, e, hW⟩ := hm.exists_witness (⨆ k, a k) (iSup_lt_omega_one ha)
-  obtain ⟨k, e', hW', hsat⟩ := hw _ _ M e hW fun P hP hPS =>
+  obtain ⟨k, e', hW', hsat⟩ := hw _ (iSup_lt_omega_one ha) M e hW fun P hP hPS =>
     hW.sat_of_mem hP fun q hq => Finset.mem_union_right _ (mem_ratsIn.2 (hPS hq))
   refine hna k ⟨M, inferInstance, e', ?_⟩
   obtain ⟨hφ, hσ, hrest⟩ := hW'.mono (le_ciSup (f := a) bddAbove_of_small k)
@@ -499,12 +516,13 @@ private theorem exists_insert_mem (h : Member.{u, v, w} φ lt Q σ) {κ : Type} 
 /-- The extension step for a single sentence. -/
 private theorem insert_mem (h : Member.{u, v, w} φ lt Q σ) {S : Set ℕ} (hS : S.Finite)
     (ξ : L[[ℕ]].Sentenceω) (hξ : ξ.constantSupport ⊆ S)
-    (hw : ∀ (Q' : Finset ℚ) (α : Ordinal.{w}) (M : Type w) [L.Structure M] (e : ℕ → M),
-      Witness φ lt Q' σ α M e → (∀ P ∈ base φ lt ∪ σ, P.constantSupport ⊆ S → Sat e P) →
-        ∃ e', Witness φ lt Q' σ α M e' ∧ Sat e' ξ) :
+    (hw : ∀ α : Ordinal.{w}, α < ω₁ → ∀ (M : Type w) [L.Structure M] (e : ℕ → M),
+      Witness φ lt (Q ∪ ratsIn hS) σ α M e →
+        (∀ P ∈ base φ lt ∪ σ, P.constantSupport ⊆ S → Sat e P) →
+          ∃ e', Witness φ lt (Q ∪ ratsIn hS) σ α M e' ∧ Sat e' ξ) :
     insert ξ (base φ lt ∪ σ) ∈ chainSets.{u, v, w} φ lt := by
-  obtain ⟨-, hk⟩ := h.exists_insert_mem hS (fun _ : Unit => ξ) (fun _ => hξ) fun Q' α M _ e hW hP =>
-    (hw Q' α M e hW hP).elim fun e' he' => ⟨(), e', he'⟩
+  obtain ⟨-, hk⟩ := h.exists_insert_mem hS (fun _ : Unit => ξ) (fun _ => hξ) fun α hα M _ e hW hP =>
+    (hw α hα M e hW hP).elim fun e' he' => ⟨(), e', he'⟩
   exact hk
 
 end Member
@@ -512,7 +530,7 @@ end Member
 variable (φ lt) in
 /-- **Marker's consistency property**: its members are the sets `base φ lt ∪ σ` for the pairs
 `(Q, σ)` of `Member`. -/
-private noncomputable def chainProperty : ConsistencyProperty L where
+private def chainProperty : ConsistencyProperty L where
   sets := chainSets.{u, v, w} φ lt
   no_falsum := by
     rintro _ ⟨Q, σ, hm, rfl⟩ hbot
@@ -526,7 +544,7 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     rintro _ ⟨Q, σ, hm, rfl⟩ χ ξ h
     obtain ⟨b, hb⟩ := hm.exists_insert_mem (hm.finite_constantSupport_of_mem h)
       (fun b : Bool => bif b then χ.not else ξ) (by rintro (_ | _) <;> simp)
-      fun Q' α M _ e hW hP => by
+      fun α _ M _ e hW hP => by
         by_cases hχ : Sat e χ
         · exact ⟨false, e, hW, sat_imp.1 (hP _ h subset_rfl) hχ⟩
         · exact ⟨true, e, hW, sat_not.2 hχ⟩
@@ -539,39 +557,39 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     have hsat {M : Type w} [L.Structure M] {e : ℕ → M}
         (hP : ∀ P ∈ base φ lt ∪ σ, P.constantSupport ⊆ (χ.imp ξ).not.constantSupport → Sat e P) :
         ¬(Sat e χ → Sat e ξ) := fun hn => sat_not.1 (hP _ h subset_rfl) (sat_imp.2 hn)
-    refine ⟨hm.insert_mem hS _ (by simp) fun Q' α M _ e hW hP => ⟨e, hW, ?_⟩,
-      hm.insert_mem hS _ (by simp) fun Q' α M _ e hW hP => ⟨e, hW, ?_⟩⟩
+    refine ⟨hm.insert_mem hS _ (by simp) fun α _ M _ e hW hP => ⟨e, hW, ?_⟩,
+      hm.insert_mem hS _ (by simp) fun α _ M _ e hW hP => ⟨e, hW, ?_⟩⟩
     · exact (Classical.not_imp.1 (hsat hP)).1
     · exact sat_not.2 (Classical.not_imp.1 (hsat hP)).2
   iInf := by
     rintro _ ⟨Q, σ, hm, rfl⟩ χs h k
     refine hm.insert_mem (hm.finite_constantSupport_of_mem h) _
       (by simpa using Set.subset_iUnion (fun i => (χs i).constantSupport) k)
-      fun Q' α M _ e hW hP => ⟨e, hW, sat_iInf.1 (hP _ h subset_rfl) k⟩
+      fun α _ M _ e hW hP => ⟨e, hW, sat_iInf.1 (hP _ h subset_rfl) k⟩
   not_iInf := by
     rintro _ ⟨Q, σ, hm, rfl⟩ χs h
     refine hm.exists_insert_mem (hm.finite_constantSupport_of_mem h) (fun k => (χs k).not)
       (fun k => by simpa using Set.subset_iUnion (fun i => (χs i).constantSupport) k)
-      fun Q' α M _ e hW hP => ?_
+      fun α _ M _ e hW hP => ?_
     obtain ⟨k, hk⟩ := not_forall.1 (mt sat_iInf.2 (sat_not.1 (hP _ h subset_rfl)))
     exact ⟨k, e, hW, sat_not.2 hk⟩
   iSup := by
     rintro _ ⟨Q, σ, hm, rfl⟩ χs h
     refine hm.exists_insert_mem (hm.finite_constantSupport_of_mem h) χs
       (fun k => by simpa using Set.subset_iUnion (fun i => (χs i).constantSupport) k)
-      fun Q' α M _ e hW hP => ?_
+      fun α _ M _ e hW hP => ?_
     obtain ⟨k, hk⟩ := sat_iSup.1 (hP _ h subset_rfl)
     exact ⟨k, e, hW, hk⟩
   not_iSup := by
     rintro _ ⟨Q, σ, hm, rfl⟩ χs h k
     refine hm.insert_mem (hm.finite_constantSupport_of_mem h) _
       (by simpa using Set.subset_iUnion (fun i => (χs i).constantSupport) k)
-      fun Q' α M _ e hW hP =>
+      fun α _ M _ e hW hP =>
         ⟨e, hW, sat_not.2 fun hk => sat_not.1 (hP _ h subset_rfl) (sat_iSup.2 ⟨k, hk⟩)⟩
   all := by
     rintro _ ⟨Q, σ, hm, rfl⟩ ψ h c
     have hS := hm.finite_constantSupport_of_mem h
-    refine hm.insert_mem (hS.insert c) _ ?_ fun Q' α M _ e hW hP =>
+    refine hm.insert_mem (hS.insert c) _ ?_ fun α _ M _ e hW hP =>
       ⟨e, hW, sat_inst.2 (sat_all.1 (hP _ h (Set.subset_insert _ _)) _)⟩
     refine (constantSupport_inst_subset _ _).trans ?_
     simp [Set.union_comm]
@@ -580,7 +598,7 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     have hS := hm.finite_constantSupport_of_mem h
     obtain ⟨c, hcS, hcσ, hcq⟩ := hm.exists_fresh hS
     rw [constantSupport_not, constantSupport_all] at hS hcS
-    refine ⟨c, hm.insert_mem (hS.insert c) _ ?_ fun Q' α M _ e hW hP => ?_⟩
+    refine ⟨c, hm.insert_mem (hS.insert c) _ ?_ fun α _ M _ e hW hP => ?_⟩
     · rw [constantSupport_not]
       refine (constantSupport_inst_subset _ _).trans ?_
       simp [Set.union_comm]
@@ -591,11 +609,11 @@ private noncomputable def chainProperty : ConsistencyProperty L where
   eq_refl := by
     rintro _ ⟨Q, σ, hm, rfl⟩ t
     exact hm.insert_mem t.finite_constantSupport _ (by simp)
-      fun Q' α M _ e hW _ => ⟨e, hW, sat_equal.2 rfl⟩
+      fun α _ M _ e hW _ => ⟨e, hW, sat_equal.2 rfl⟩
   eq_subst := by
     rintro _ ⟨Q, σ, hm, rfl⟩ t t' ψ _ ht hψ
     refine hm.insert_mem ((hm.finite_constantSupport_of_mem ht).union
-      (hm.finite_constantSupport_of_mem hψ)) _ ?_ fun Q' α M _ e hW hP => ⟨e, hW, ?_⟩
+      (hm.finite_constantSupport_of_mem hψ)) _ ?_ fun α _ M _ e hW hP => ⟨e, hW, ?_⟩
     · refine (constantSupport_inst_subset _ _).trans (Set.union_subset
         ((constantSupport_subset_inst _ t).trans Set.subset_union_right) ?_)
       exact Set.subset_union_of_subset_left (by simp) _
@@ -605,7 +623,7 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     rintro _ ⟨Q, σ, hm, rfl⟩ t
     have hS := t.finite_constantSupport
     obtain ⟨c, hcS, hcσ, hcq⟩ := hm.exists_fresh hS
-    refine ⟨c, hm.insert_mem (hS.insert c) _ (by simp) fun Q' α M _ e hW _ =>
+    refine ⟨c, hm.insert_mem (hS.insert c) _ (by simp) fun α _ M _ e hW _ =>
       ⟨Function.update e c (val e t), hW.update hcσ (fun q _ => hcq q) _, sat_equal.2 ?_⟩⟩
     rw [val_con, Function.update_self]
     exact val_congr (Set.eqOn_update_of_notMem hcS _)
@@ -641,13 +659,12 @@ private theorem exists_model_relChain_rat_of_countable [Countable (Σ n, L.Funct
   · exact ((L.lhomWithConstants ℕ).map_onRelation lt _).mp ((realize_ltSentence lt _ _).1
       (Theoryω.Model.realize_of_mem hN (Set.mem_insert_of_mem _ ⟨q, r, hqr, rfl⟩)))
 
-/-- **Boundedness of well-ordered chains, positive form** (Marker, 4.4.1). If models of `φ`
+/-- **Boundedness of well-ordered chains, positive form** (Marker, §4.4). If models of `φ`
 carry `lt`-chains of every countable length, then `φ` has a countable nonempty model, in any
 universe, carrying an `lt`-chain indexed by the rationals. The language is arbitrary. -/
 theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
     ∃ (M : Type w') (_ : L.Structure M), Nonempty M ∧ Countable M ∧ SentenceInf.Realize φ M ∧
       ∃ f : ℚ → M, RelChain lt f := by
-  classical
   let F : Set (Σ n, L.Functions n) := φ.functionsIn
   let R : Set (Σ n, L.Relations n) := insert ⟨2, lt⟩ φ.relationsIn
   have : Countable F := φ.functionsIn_countable.to_subtype
@@ -660,31 +677,31 @@ theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
     obtain ⟨M, _, hne, hφ, f, hf⟩ := h α hα
     let := ι.reduct M
     refine ⟨M, inferInstance, hne, ?_, f, fun x y hxy => ?_⟩
-    · simpa only [φ₀, SentenceInf.realize_def, FormulaInf.realize_def, realize_restrictSymbols]
-        using hφ
+    · exact (SentenceInf.realize_restrictSymbols φ _ _).2 hφ
     · exact (ι.map_onRelation lt₀ _).mp (hlt₀ ▸ hf x y hxy)
   obtain ⟨N, _, hne, hc, hφ, f, hf⟩ := exists_model_relChain_rat_of_countable.{u, v, w, w'} h₀
-  have : Inhabited N := Classical.inhabited_of_nonempty hne
-  let : L.Structure N := ι.defaultExpansion N
-  have : ι.IsExpansionOn N := (symbSublangIncl_injective F R).isExpansionOn_default N
+  have : Nonempty N := hne
+  let : L.Structure N := expandSymbStructure F R N
   refine ⟨N, inferInstance, hne, hc, ?_, f, fun x y hxy => ?_⟩
-  · simpa only [φ₀, SentenceInf.realize_def, FormulaInf.realize_def, realize_restrictSymbols]
-      using hφ
+  · exact (SentenceInf.realize_restrictSymbols φ _ _).1 hφ
   · exact hlt₀ ▸ (ι.map_onRelation lt₀ _).mpr (hf x y hxy)
 
 /-! ### Boundedness -/
 
-/-- **Boundedness of chains.** If `lt` is well-founded in every nonempty model of `φ` in `Type w`,
-some countable ordinal indexes an `lt`-chain in no such model. -/
+/-- **Boundedness of chains.** If `lt` is well-founded in every countable nonempty model of `φ`
+in `Type w'`, then some countable ordinal indexes an `lt`-chain in no nonempty model of `φ` in
+`Type w`, of any cardinality; the universes `w` and `w'` are independent. Taking `w' = w` and
+forgetting `Countable M` recovers the form of chain boundedness in Marker, §4.4, where `lt` is
+assumed well-founded in every nonempty model of `φ` in `Type w`. -/
 theorem wellFounded_boundedness
-    (hwf : ∀ (M : Type w) (_ : L.Structure M), Nonempty M → SentenceInf.Realize φ M →
-      WellFounded fun x y : M => RelMap lt ![x, y]) :
+    (hwf : ∀ (M : Type w') (_ : L.Structure M), Nonempty M → Countable M →
+      SentenceInf.Realize φ M → WellFounded fun x y : M => RelMap lt ![x, y]) :
     ∃ α : Ordinal.{w}, α < ω₁ ∧ ∀ (M : Type w) (_ : L.Structure M), Nonempty M →
       SentenceInf.Realize φ M → ∀ f : α.ToType → M, ¬RelChain lt f := by
   by_contra hcon
   push Not at hcon
-  obtain ⟨M, _, hne, -, hφ, f, hf⟩ := exists_model_relChain_rat.{u, v, w, w} hcon
-  exact hf.not_wellFounded (hwf M _ hne hφ)
+  obtain ⟨M, _, hne, hc, hφ, f, hf⟩ := exists_model_relChain_rat.{u, v, w, w'} hcon
+  exact hf.not_wellFounded (hwf M _ hne hc hφ)
 
 /-- **Boundedness of order types** (Marker, Chapter 4). If `lt` well-orders every model of `φ` in
 `Type w`, of any cardinality, then their order types are bounded by a countable ordinal. -/
@@ -695,7 +712,7 @@ theorem wellOrder_type_boundedness
       (h : SentenceInf.Realize φ M),
         @Ordinal.type M (fun x y => RelMap lt ![x, y]) (hwo M inst h) < α := by
   obtain ⟨α, hα, hbound⟩ := wellFounded_boundedness (φ := φ) (lt := lt)
-    fun M _ _ hφ => (hwo M _ hφ).wf
+    fun M _ _ _ hφ => (hwo M _ hφ).wf
   refine ⟨α + 1, (Cardinal.isSuccLimit_omega 1).add_one_lt hα, fun M _ hφ => ?_⟩
   by_contra hlt
   have := hwo M _ hφ
@@ -719,14 +736,16 @@ private def ltStructure (lt : L.Relations 2) {M : Type w} [LT M] (m : M) : L.Str
     | 2, R, xs => R = lt ∧ xs 0 < xs 1
     | _, _, _ => False
 
-/-- **Undefinability of well-ordering.** No `L_{ω₁ω}` sentence has as its models exactly the
-structures in `Type w` in which `lt` is a well-order. -/
+/-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
+`L_{ω₁ω}` sentence holds in a structure if and only if `lt` is a well-order. A fortiori no
+sentence has as its models exactly the structures in `Type w` in which `lt` is a well-order, which
+is the statement in Marker, §4.4. -/
 theorem wellOrdering_undefinable (lt : L.Relations 2) :
-    ¬∃ φ : L.Sentenceω, ∀ (M : Type w) (_ : L.Structure M),
-      SentenceInf.Realize φ M ↔ IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
+    ¬∃ φ : L.Sentenceω, ∀ (M : Type w) (_ : L.Structure M), Nonempty M → Countable M →
+      (SentenceInf.Realize φ M ↔ IsWellOrder M fun x y : M => RelMap lt ![x, y]) := by
   rintro ⟨φ, hφ⟩
-  obtain ⟨α, -, hbound⟩ := Sentenceω.wellFounded_boundedness (φ := φ) (lt := lt)
-    fun M _ _ h => ((hφ M _).1 h).wf
+  obtain ⟨α, hα, hbound⟩ := Sentenceω.wellFounded_boundedness (φ := φ) (lt := lt)
+    fun M _ hne hc h => ((hφ M _ hne hc).1 h).wf
   -- `α + 1` is a nonempty well-order of length at least `α`
   let M := (α + 1).ToType
   have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
@@ -734,9 +753,133 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := and_iff_right rfl
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
-  let f : α.ToType → M := fun a => ToType.mk
-    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
-  exact hbound M _ hne ((hφ M _).2 hwo) f fun x y hxy => (hrel _ _).2
-    (ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy)))
+  have hc : Countable M := TauCeti.countable_toType_add_one_of_lt_omega_one hα
+  let f := TauCeti.toTypeOrderEmbeddingOfLE (Order.le_succ α)
+  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2 (f.strictMono hxy)
 
 end FirstOrder.Language
+
+/-! ### No sentence defines the countable well-orders -/
+
+namespace TauCeti
+
+open FirstOrder FirstOrder.Language Structure Ordinal
+
+/-- The language of orders with a second binary symbol, read as the strict order. -/
+private abbrev LtLang : Language := Language.order.sum Language.order
+
+/-- The strict-order symbol of `LtLang`. -/
+private noncomputable abbrev ltRel : LtLang.Relations 2 := Sum.inl .le
+
+/-- The structure on an ordered type in `LtLang` reading the first symbol as `<` and the second
+as `≤`. -/
+private noncomputable abbrev ltLeStructure (M : Type w) [LE M] [LT M] : LtLang.Structure M :=
+  @sumStructure _ _ M (@orderStructure M ⟨fun x y => x < y⟩) (orderStructure M)
+
+/-- `ltLeStructure` reads the strict-order symbol as `<`. -/
+private theorem relMap_ltRel_ltLeStructure {M : Type w} [LE M] [LT M] (x : Fin 2 → M) :
+    @RelMap LtLang M (ltLeStructure M) _ ltRel x ↔ x 0 < x 1 :=
+  Iff.rfl
+
+/-- The sentence saying that the strict-order symbol is the strict part of the order symbol. -/
+private noncomputable def ltAxiom : LtLang.Sentence :=
+  ∀' ∀' (ltRel.boundedFormula₂ &0 &1).iff ((&0).lt &1)
+
+/-- A structure satisfies `ltAxiom` when its strict-order symbol is the strict part of its order
+symbol. -/
+private theorem realize_ltAxiom {M : Type w} [LtLang.Structure M] :
+    M ⊨ ltAxiom ↔ ∀ x y : M, RelMap ltRel ![x, y] ↔
+      RelMap (leSymb : LtLang.Relations 2) ![x, y] ∧
+        ¬RelMap (leSymb : LtLang.Relations 2) ![y, x] := by
+  simp [ltAxiom, Term.lt, Term.le, Sentence.Realize, Formula.Realize,
+    BoundedFormula.realize_rel₂, Fin.snoc]
+
+/-- The sentence of `LtLang` saying that `φ` holds of the order symbol, which is a linear order, and
+that the strict-order symbol is its strict part. -/
+private noncomputable def chainSentence (φ : Language.order.Sentenceω) : LtLang.Sentenceω :=
+  LHom.sumInr.onBoundedFormulaInf
+      (φ ⊓ Theoryω.conjunction _
+        (Language.order.finite_linearOrderTheory.countable.image BoundedFormula.toOmega)) ⊓
+    ltAxiom.toOmega
+
+/-- An expansion of an order structure satisfies `chainSentence φ` exactly when the order structure
+is a linear order satisfying `φ` and the strict-order symbol is its strict part. -/
+private theorem realize_chainSentence_iff (φ : Language.order.Sentenceω) (M : Type w)
+    [Language.order.Structure M] [LtLang.Structure M]
+    [(LHom.sumInr : Language.order →ᴸ LtLang).IsExpansionOn M] :
+    SentenceInf.Realize (chainSentence φ) M ↔
+      (SentenceInf.Realize φ M ∧ M ⊨ Language.order.linearOrderTheory) ∧
+        ∀ x y : M, RelMap ltRel ![x, y] ↔
+          RelMap (leSymb : Language.order.Relations 2) ![x, y] ∧
+            ¬RelMap (leSymb : Language.order.Relations 2) ![y, x] := by
+  -- the order symbol of `LtLang` is the image of that of `Language.order`
+  have hle (x : Fin 2 → M) :
+      RelMap (leSymb : LtLang.Relations 2) x ↔ RelMap (leSymb : Language.order.Relations 2) x :=
+    (LHom.map_onRelation (LHom.sumInr : Language.order →ᴸ LtLang) leSymb x).to_iff
+  simp only [chainSentence, SentenceInf.realize_inf, LHom.realize_sentenceInf_onBoundedFormulaInf,
+    Theoryω.realize_conjunction_iff, Theoryω.model_image_toOmega_iff, Sentence.realize_toInf,
+    realize_ltAxiom, hle]
+
+/-- **A sentence true in ordinals above every countable ordinal has a non-well-ordered countable
+model.** A sentence of the language of orders that, for every countable ordinal `α`, holds in
+some ordinal `β ≥ α` also holds in a countable linear order, in any universe, that is not
+well-founded. -/
+theorem exists_countable_realize_not_wellFoundedLT (φ : Language.order.Sentenceω)
+    (hφ : ∀ α : Ordinal.{w}, α < ω₁ → ∃ β ≥ α,
+      letI := orderStructure β.ToType
+      SentenceInf.Realize φ β.ToType) :
+    ∃ (N : Type w') (_ : Language.order.Structure N) (_ : LinearOrder N)
+      (_ : Language.order.OrderedStructure N),
+        Countable N ∧ SentenceInf.Realize φ N ∧ ¬WellFoundedLT N := by
+  classical
+  -- the models `(β, <, ≤)` with `β > γ` carry chains indexed by every countable ordinal `γ`
+  have hch : Sentenceω.HasWellOrderedChains.{0, 0, w} (chainSentence φ) ltRel := by
+    refine Sentenceω.hasWellOrderedChains_iff.2 fun γ hγ => ?_
+    obtain ⟨β, hγβ, hβ⟩ := hφ (γ + 1) ((Cardinal.isSuccLimit_omega 1).add_one_lt hγ)
+    let M := β.ToType
+    let := orderStructure M
+    let := ltLeStructure M
+    refine ⟨M, inferInstance, nonempty_toType_iff.2 (((Order.lt_succ γ).trans_le hγβ).ne_bot),
+      (realize_chainSentence_iff φ M).2 ⟨⟨hβ, inferInstance⟩, fun x y => ?_⟩,
+      toTypeOrderEmbeddingOfLE ((Order.le_succ γ).trans hγβ),
+      relChain_iff.2 fun x y hxy => (relMap_ltRel_ltLeStructure _).2
+        ((toTypeOrderEmbeddingOfLE _).strictMono hxy)⟩
+    simp only [relMap_ltRel_ltLeStructure, relMap_leSymb, Matrix.cons_val_zero,
+      Matrix.cons_val_one]
+    exact lt_iff_le_not_ge
+  -- so some countable model carries an `ltRel`-chain indexed by `ℚ`
+  obtain ⟨N, _, -, hc, hN, f, hf⟩ := Sentenceω.exists_model_relChain_rat.{0, 0, w, w'} hch
+  let := (LHom.sumInr : Language.order →ᴸ LtLang).reduct N
+  obtain ⟨⟨hNφ, hlin⟩, hlt⟩ := (realize_chainSentence_iff φ N).1 hN
+  let := Language.order.linearOrderOfModels N
+  refine ⟨N, inferInstance, inferInstance, inferInstance, hc, hNφ, fun _ => ?_⟩
+  -- the chain is increasing for `<`, which is well-founded
+  refine hf.not_wellFounded (Subrelation.wf (fun {x y} hxy => ?_) wellFounded_lt)
+  have h := (hlt x y).1 hxy
+  simp only [relMap_leSymb, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  exact lt_iff_le_not_ge.2 h
+
+/-- **Undefinability of countable well-orders.** No `L_{ω₁ω}` sentence of the language of orders
+holds in exactly the well-founded ones among the countable nonempty linear orders. It is the
+counterpart of `FirstOrder.Language.wellOrdering_undefinable`, which concerns a symbol interpreted
+as a strict well-order, for the language whose only symbol `≤` is interpreted reflexively.
+
+By `TauCeti.WellOrdersOfBoundedType.realize_boundedTypeSentence_iff_type_lt`, the well-orders of
+type below each countable ordinal do form a definable class; so the countable well-orders are a
+union of `ω₁` definable classes, one for each countable ordinal, that is not itself definable. -/
+theorem not_exists_sentenceω_realize_iff_wellFoundedLT :
+    ¬∃ φ : Language.order.Sentenceω, ∀ (M : Type w) [Language.order.Structure M] [LinearOrder M]
+      [Language.order.OrderedStructure M] [Countable M] [Nonempty M],
+        SentenceInf.Realize φ M ↔ WellFoundedLT M := by
+  rintro ⟨φ, hφ⟩
+  obtain ⟨N, _, _, _, _, hN, hwf⟩ := exists_countable_realize_not_wellFoundedLT.{w, w} φ
+    fun α hα =>
+      letI := orderStructure (α + 1).ToType
+      have := countable_toType_add_one_of_lt_omega_one hα
+      have : Nonempty (α + 1).ToType := nonempty_toType_iff.2 (by simp)
+      ⟨α + 1, Order.le_succ α, (hφ (α + 1).ToType).2 inferInstance⟩
+  -- an empty order is well-founded, so `N` is nonempty
+  have : Nonempty N := not_isEmpty_iff.1 fun _ => hwf inferInstance
+  exact hwf ((hφ N).1 hN)
+
+end TauCeti

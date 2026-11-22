@@ -504,19 +504,19 @@ def cylinderHomEquiv {X Y : SimplicialObject C} (f g : X ⟶ Y) :
       { Φ : (cylinder C).obj X ⟶ Y //
         (cylinderι₀ C).app X ≫ Φ = f ∧ (cylinderι₁ C).app X ≫ Φ = g } where
   toFun H := ⟨H.toCylinderHom, cylinderι₀_comp_toCylinderHom H, cylinderι₁_comp_toCylinderHom H⟩
-  invFun Φ := ofCylinderHom Φ.1 Φ.2.1 Φ.2.2
+  invFun Φ := ofCylinderHom Φ.val Φ.property.left Φ.property.right
   left_inv H := ofCylinderHom_toCylinderHom H
-  right_inv Φ := Subtype.ext (toCylinderHom_ofCylinderHom Φ.1 Φ.2.1 Φ.2.2)
+  right_inv Φ := Subtype.ext (toCylinderHom_ofCylinderHom Φ.val Φ.property.left Φ.property.right)
 
 @[simp]
 lemma cylinderHomEquiv_apply {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) :
-    (cylinderHomEquiv f g H).1 = H.toCylinderHom := (rfl)
+    (cylinderHomEquiv f g H).val = H.toCylinderHom := (rfl)
 
 @[simp]
 lemma cylinderHomEquiv_symm_apply {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (Φ : { Φ : (cylinder C).obj X ⟶ Y //
       (cylinderι₀ C).app X ≫ Φ = f ∧ (cylinderι₁ C).app X ≫ Φ = g }) :
-    (cylinderHomEquiv f g).symm Φ = ofCylinderHom Φ.1 Φ.2.1 Φ.2.2 := (rfl)
+    (cylinderHomEquiv f g).symm Φ = ofCylinderHom Φ.val Φ.property.left Φ.property.right := (rfl)
 
 end Homotopy
 

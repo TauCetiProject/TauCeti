@@ -43,6 +43,12 @@ evaluates `φ` on the front `p`-face of a singular simplex and keeps its back `q
 * `TauCeti.ChainComplex.cap`: the cap product on homology, with
   `TauCeti.ChainComplex.cap_homologyπ` computing it on classes of cycles and cocycles and
   `TauCeti.ChainComplex.cap_naturality` its naturality.
+* `TauCeti.ChainComplex.capChain_coefficient_naturality`,
+  `TauCeti.ChainComplex.capCycles_coefficient_naturality` and
+  `TauCeti.ChainComplex.cap_coefficient_naturality`: simultaneous transport of the diagonal,
+  its two factors, the cochain value object and the cap output object along compatible maps.
+* `TauCeti.ChainComplex.capChain_coefficient_naturality_comp_d`: this transport preserves the
+  boundary formula, including its degree sign.
 
 ## References
 
@@ -129,6 +135,57 @@ lemma capChain_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} [A'.HasTensor 
     simpa using congrArg (fun F ↦ F.f n) hD.symm
   rw [capChain_apply, capChain_apply, Category.assoc, hg, ← tensorHom_f_comp_tensorCochain,
     reassoc_of% hD']
+
+section Coefficients
+
+variable {A' B₁ E' N : ChainComplex C ℕ} [A'.HasTensor B₁] {M' : C}
+  (D' : E' ⟶ HomologicalComplex.tensorObj A' B₁)
+  (a' : ((tensorLeft M').mapHomologicalComplex _).obj B₁ ⟶ N)
+  (c : E' ⟶ E) (f : A' ⟶ A) (g : B₁ ⟶ B) (v : M ⟶ M') (e : B' ⟶ N)
+  (hD : c ≫ D = D' ≫ HomologicalComplex.tensorHom f g)
+  (ha : ∀ q, (v ▷ B₁.X q) ≫ a'.f q = (M ◁ g.f q) ≫ a.f q ≫ e.f q)
+
+include hD ha in
+/-- If the diagonal and action squares commute, cap sends cochain pullback along `f` and
+value postcomposition by `v` to chain precomposition by `c` and output postcomposition by `e`. -/
+theorem capChain_coefficient_naturality (p q n : ℕ) (h : p + q = n)
+    (φ : A.X p ⟶ M) :
+    capChain k D' a' p q n h (f.f p ≫ φ ≫ v) =
+      c.f n ≫ capChain k D a p q n h φ ≫ e.f q := by
+  have hd : c.f n ≫ D.f n = D'.f n ≫ (HomologicalComplex.tensorHom f g).f n :=
+    congrArg (fun z ↦ z.f n) hD
+  have hp : tensorCochain (a'.f q) ((f.f p ≫ φ) ≫ v) (𝟙 (B₁.X q)) n =
+      tensorCochain (a.f q ≫ e.f q) (f.f p ≫ φ) (g.f q) n := by
+    rw [← tensorCochain_whiskerRight_comp v, ha q,
+      tensorCochain_whiskerLeft_comp, Category.id_comp]
+  have ht := tensorHom_f_comp_tensorCochain (μ := a.f q ≫ e.f q)
+    f g φ (𝟙 (B.X q)) n
+  simp only [Category.comp_id] at ht
+  rw [capChain_apply, capChain_apply]
+  calc
+    _ = D'.f n ≫ tensorCochain (a.f q ≫ e.f q) (f.f p ≫ φ) (g.f q) n := by
+      simpa only [Category.assoc] using congrArg (D'.f n ≫ ·) hp
+    _ = (D'.f n ≫ (HomologicalComplex.tensorHom f g).f n) ≫
+        tensorCochain (a.f q ≫ e.f q) φ (𝟙 (B.X q)) n := by rw [← ht, Category.assoc]
+    _ = _ := by rw [← hd, ← tensorCochain_comp]; simp only [Category.assoc]
+
+include hD ha in
+/-- Coefficient transport preserves the cap boundary formula, with degree sign `(-1)^p`. -/
+theorem capChain_coefficient_naturality_comp_d (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) :
+    capChain k D' a' p (q + 1) (n + 1) (by omega) (f.f p ≫ φ ≫ v) ≫ N.d (q + 1) q =
+      ((-1 : ℤ) ^ p) •
+        (E'.d (n + 1) n ≫ c.f n ≫ capChain k D a p q n h φ ≫ e.f q -
+          c.f (n + 1) ≫ capChain k D a (p + 1) q (n + 1) (by omega)
+            (A.d (p + 1) p ≫ φ) ≫ e.f q) := by
+  have hcob : A'.d (p + 1) p ≫ (f.f p ≫ φ ≫ v) =
+      f.f (p + 1) ≫ (A.d (p + 1) p ≫ φ) ≫ v := by
+    rw [← f.comm_assoc]
+    simp only [Category.assoc]
+  rw [capChain_comp_d, hcob,
+    capChain_coefficient_naturality D a D' a' c f g v e hD ha,
+    capChain_coefficient_naturality D a D' a' c f g v e hD ha]
+
+end Coefficients
 
 end Chain
 
@@ -224,13 +281,13 @@ private def capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
   (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp))
     (capCycles k D a p q n h φ ≫ B'.homologyπ q)
     (by rw [← Category.assoc, toCycles_capCycles, Category.assoc, toCycles_comp_homologyπ,
-      comp_zero])).1
+      comp_zero])).val
 
 private lemma homologyπ_capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
     E.homologyπ n ≫ capHomologyOfCycles k D a p q n h φ =
       capCycles k D a p q n h φ ≫ B'.homologyπ q :=
-  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).2
+  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).property
 
 /-- Capping with a coboundary is zero on homology. -/
 private lemma capHomologyOfCycles_toCycles (p q n : ℕ) (h : p + q = n) (i : ℕ)
@@ -272,7 +329,7 @@ a cycle `x`, the class of `x ⌢ φ` (`TauCeti.ChainComplex.cap_homologyπ`). -/
 def cap (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (E.homology n ⟶ B'.homology q) :=
   (CokernelCofork.IsColimit.desc' ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl)
-    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).1.hom
+    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).val.hom
 
 /-- **The cap product on classes**: capping the class of a cycle with the class of a cocycle `φ`
 is the class of the cap product of the cycle with `φ`. -/
@@ -282,7 +339,7 @@ lemma cap_homologyπ (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M)
       capCycles k D a p q n h φ ≫ B'.homologyπ q := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (capCyclesHomology k D a p q n h)
-    (toCycles_comp_capCyclesHomology D a p q n h)).2 φ
+    (toCycles_comp_capCyclesHomology D a p q n h)).property φ
   rw [cap]
   exact (congrArg (E.homologyπ n ≫ ·) hfac).trans (homologyπ_capHomologyOfCycles D a p q n h φ)
 
@@ -309,6 +366,77 @@ lemma cap_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} [A'.HasTensor B₁]
   rw [← cancel_mono (B'.iCycles q), Category.assoc, cyclesMap_i, capCycles_i_assoc,
     Category.assoc, capCycles_i, cyclesMap_i_assoc, iCycles_cyclesMap_linearYonedaFunctor_map_apply]
   exact congrArg (E'.iCycles n ≫ ·) (capChain_naturality D a D' a' e f g g' hD ha p q n h _)
+
+section Coefficients
+
+variable {A' B₁ E' N : ChainComplex C ℕ} [A'.HasTensor B₁] {M' : C}
+  (D' : E' ⟶ HomologicalComplex.tensorObj A' B₁)
+  (a' : ((tensorLeft M').mapHomologicalComplex _).obj B₁ ⟶ N)
+  (c : E' ⟶ E) (f : A' ⟶ A) (g : B₁ ⟶ B) (v : M ⟶ M') (e : B' ⟶ N)
+  (hD : c ≫ D = D' ≫ HomologicalComplex.tensorHom f g)
+  (ha : ∀ q, (v ▷ B₁.X q) ≫ a'.f q = (M ◁ g.f q) ≫ a.f q ≫ e.f q)
+
+include hD ha in
+/-- The coefficient square for cap restricts to cycles: cochain pullback and value postcomposition
+commute with the cycle maps of `c` and `e`. -/
+theorem capCycles_coefficient_naturality (p q n : ℕ) (h : p + q = n)
+    (φ : (A.linearYonedaObj k M).cycles p) :
+    capCycles k D' a' p q n h
+        (cyclesMap (((linearYonedaFunctor k M).map f.op :
+          A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M) ≫ A'.linearYonedaObjMap k v) p φ) =
+      cyclesMap c n ≫ capCycles k D a p q n h φ ≫ cyclesMap e q := by
+  let t : A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M' :=
+    ((linearYonedaFunctor k M).map f.op :
+      A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M) ≫ A'.linearYonedaObjMap k v
+  have hr : (A'.linearYonedaObj k M').iCycles p (cyclesMap t p φ) =
+      f.f p ≫ (A.linearYonedaObj k M).iCycles p φ ≫ v := by
+    let t₁ : A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M :=
+      (linearYonedaFunctor k M).map f.op
+    let t₂ := A'.linearYonedaObjMap k v
+    have hcomp : cyclesMap t p φ = cyclesMap t₂ p (cyclesMap t₁ p φ) :=
+      (ConcreteCategory.congr_hom (cyclesMap_comp t₁ t₂ p) φ).trans
+        (ConcreteCategory.comp_apply _ _ _)
+    have hpost := ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
+      (k := k) A' v p (cyclesMap t₁ p φ)
+    have hpre := iCycles_cyclesMap_linearYonedaFunctor_map_apply (k := k) (Y := M) f p φ
+    exact (congrArg ((A'.linearYonedaObj k M').iCycles p) hcomp).trans hpost
+      |>.trans (congrArg (· ≫ v) hpre) |>.trans (Category.assoc _ _ _)
+  -- The typed cochain composite lets the cycle inclusion match across the functor-object alias.
+  have hc : capCycles k D' a' p q n h (cyclesMap t p φ) =
+      cyclesMap c n ≫ capCycles k D a p q n h φ ≫ cyclesMap e q := by
+    apply (cancel_mono (N.iCycles q)).mp
+    simp only [Category.assoc, capCycles_i, cyclesMap_i, capCycles_i_assoc,
+      cyclesMap_i_assoc]
+    rw [hr]
+    exact congrArg (E'.iCycles n ≫ ·)
+      (capChain_coefficient_naturality D a D' a' c f g v e hD ha p q n h _)
+  exact hc
+
+include hD ha in
+/-- The coefficient square for cap descends to homology, using cochain pullback along `f` and
+value postcomposition by `v`, and homology maps of `c` and `e`. -/
+theorem cap_coefficient_naturality (p q n : ℕ) (h : p + q = n)
+    (α : (A.linearYonedaObj k M).homology p) :
+    cap k D' a' p q n h
+        (homologyMap (((linearYonedaFunctor k M).map f.op :
+      A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M) ≫ A'.linearYonedaObjMap k v) p α) =
+      homologyMap c n ≫ cap k D a p q n h α ≫ homologyMap e q := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  let t : A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M' :=
+    ((linearYonedaFunctor k M).map f.op :
+      A.linearYonedaObj k M ⟶ A'.linearYonedaObj k M) ≫ A'.linearYonedaObjMap k v
+  have hc : homologyMap t p ((A.linearYonedaObj k M).homologyπ p φ) =
+      (A'.linearYonedaObj k M').homologyπ p (cyclesMap t p φ) :=
+    ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality t p) φ
+  have hcycles : capCycles k D' a' p q n h (cyclesMap t p φ) =
+      cyclesMap c n ≫ capCycles k D a p q n h φ ≫ cyclesMap e q :=
+    capCycles_coefficient_naturality D a D' a' c f g v e hD ha p q n h φ
+  refine (congrArg (cap k D' a' p q n h) hc).trans ?_
+  rw [← cancel_epi (E'.homologyπ n), cap_homologyπ,
+    homologyπ_naturality_assoc, cap_homologyπ_assoc, homologyπ_naturality]
+  simpa only [Category.assoc] using congrArg (· ≫ N.homologyπ q) hcycles
+
+end Coefficients
 
 end Homology
 

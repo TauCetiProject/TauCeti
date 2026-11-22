@@ -302,7 +302,7 @@ theorem not_levelPreserving_powerSeries (k : Type u) [Field k] :
       (powerSeriesSpanXSq k).ideal.adicTopology (RingHom.id (PowerSeries k)) ∧
     ¬ (powerSeriesSpanX k).ideal ≤ (powerSeriesSpanXSq k).ideal.comap (RingHom.id _) ∧
     ¬ ∃ f : Spf (powerSeriesSpanXSq k) ⟶ Spf (powerSeriesSpanX k),
-        (Spf.homEquiv (powerSeriesSpanX k) (powerSeriesSpanXSq k) f).1 = RingHom.id _ := by
+        (Spf.homEquiv (powerSeriesSpanX k) (powerSeriesSpanXSq k) f).val = RingHom.id _ := by
   have htop : (powerSeriesSpanX k).ideal.adicTopology =
       (powerSeriesSpanXSq k).ideal.adicTopology := by
     let I₁ := (powerSeriesSpanX k).ideal
@@ -326,7 +326,7 @@ theorem not_levelPreserving_powerSeries (k : Type u) [Field k] :
     rw [← htop]
     exact continuous_id
   · rintro ⟨f, hf⟩
-    have hle := (Spf.homEquiv (powerSeriesSpanX k) (powerSeriesSpanXSq k) f).2
+    have hle := (Spf.homEquiv (powerSeriesSpanX k) (powerSeriesSpanXSq k) f).property
     rw [hf] at hle
     exact hnotle hle
 

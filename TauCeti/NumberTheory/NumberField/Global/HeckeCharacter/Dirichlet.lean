@@ -215,7 +215,7 @@ theorem coe_infiniteComponent_ofDirichletCharacter_neg_one (ψ : DirichletCharac
   -- The modulus `(n)·∞` has a single real place, so the sign pattern is constant.
   have hsign : (Pi.mulSingle ⟨_, hw⟩ (-1) : (ratModulus n hn).infinitePart → ℤˣ) = fun _ ↦ -1 :=
     funext fun w' ↦ by
-      rw [Subtype.ext (Subtype.ext (Subsingleton.elim w'.1.1 _)), Pi.mulSingle_eq_same]
+      rw [Subtype.ext (Subtype.ext (Subsingleton.elim w'.val.val _)), Pi.mulSingle_eq_same]
   rw [infiniteComponent_apply, ofDirichletCharacter_eq_ofRayClassCharacter,
     ofRayClassCharacter_apply, rayClassQuotient_ofCompletion_neg_one (ratModulus n hn) ⟨_, hw⟩,
     hsign, ← ratDirichletEquiv_neg_one, MulEquiv.apply_symm_apply]

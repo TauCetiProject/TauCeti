@@ -13,6 +13,8 @@ import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.AddCircle
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -61,6 +63,11 @@ points.
   `[t] ↦ [∑ j, t j • i (u j)]`, a homomorphism of tori when `p ≠ 0`.
 * `TauCeti.Toric.faceSubtorus i u p s`: the image in `V / p i(N)` of the real span of the normals
   of the facets in `s`.
+* `TauCeti.Toric.IsSmoothVertex.vertexTorusHom`: at a smooth vertex `x` with active facets `A`,
+  the homomorphism `(ℝ / pℤ)^ι → (ℝ / pℤ)^A` reading `π` in the lattice basis of the active
+  normals.
+* `TauCeti.Toric.IsSmoothVertex.vertexTorusEquiv`: the residual torus `(ℝ / pℤ)^ι / ker π` as the
+  standard torus `(ℝ / pℤ)^A`, sending `φ` to the class of its extension by zero.
 
 ## Main results
 
@@ -74,8 +81,17 @@ points.
   `π` is surjective.
 * `TauCeti.Toric.exists_facetTorusHom_eq`: every element of `V / p i(N)` is the image under `π`
   of the classes of real angles.
+* `TauCeti.Toric.facetTorusHom_comp_equiv`, `TauCeti.Toric.ker_facetTorusHom_comp_left`:
+  relabelling the facets relabels the angles, and a compatible change of lattice does not change
+  the kernel of `π`.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.mem_ker_facetTorusHom_iff_of_basis`,
+  `TauCeti.Toric.IsSmoothVertex.ker_vertexTorusHom`: the kernel of `π` in the coordinates of a
+  lattice basis, and at a smooth vertex.
+* `TauCeti.Toric.exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom`: conversely, for
+  `p ≠ 0`, normals spanning `V` whose coordinate subtorus meets the kernel of `π` trivially form a
+  lattice basis.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
   kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
@@ -172,8 +188,7 @@ theorem coe_ker_facetTorusHom (hu : Function.Surjective (Fintype.linearCombinati
   ext θ
   constructor
   · intro hθ
-    choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-    obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
     rw [SetLike.mem_coe, AddMonoidHom.mem_ker, facetTorusHom_coe,
       QuotientAddGroup.eq_zero_iff] at hθ
     obtain ⟨n, hn⟩ := hθ
@@ -218,46 +233,179 @@ theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
     exact surjective_linearCombination_real hi hu
   exact fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hspan q; ⟨_, h⟩
 
+/-- **The kernel torus in lattice coordinates.** Let `b` be a basis of the integral lattice `N`,
+and write `u j = Σ_k a_(j k) b k` with integers `a_(j k)`. An element `θ` of `(ℝ / pℤ)^ι` lies in
+the kernel of `(ℝ / pℤ)^ι → V / p i(N)` exactly when `Σ_j a_(j k) θ_j = 0` in `ℝ / pℤ` for every
+`k`: these are the coordinates of `facetTorusHom θ` in the basis `i ∘ b`. -/
+theorem mem_ker_facetTorusHom_iff_of_basis (hi : IsIntegralLattice i) {κ : Type*} [Finite κ]
+    (b : Module.Basis κ ℤ N) {θ : ι → AddCircle p} :
+    θ ∈ (facetTorusHom i u p).ker ↔ ∀ k, ∑ j, b.repr (u j) k • θ j = 0 := by
+  have := Fintype.ofFinite κ
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
+  -- Read `Σ_j t_j i(u_j)` and the lattice points `p i(n)` in the real basis `i ∘ b` of `V`.
+  set B := hi.isBaseChange.basis b
+  have hrepr (n : N) (k : κ) : B.repr (i n) k = b.repr n k := by
+    simpa using hi.isBaseChange.basis_repr_comp_apply b n k
+  have hx (k : κ) : B.repr (Fintype.linearCombination ℝ (fun j ↦ i (u j)) t) k =
+      ∑ j, (b.repr (u j) k : ℝ) * t j := by
+    simp [Fintype.linearCombination_apply, hrepr, mul_comm]
+  have hcoe (k : κ) : ∑ j, b.repr (u j) k • (t j : AddCircle p) =
+      ((∑ j, (b.repr (u j) k : ℝ) * t j : ℝ) : AddCircle p) := by
+    simp [QuotientAddGroup.mk_sum, ← zsmul_eq_mul, QuotientAddGroup.mk_zsmul]
+  simp only [hcoe, AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff,
+    AddMonoidHom.mem_range, AddMonoidHom.smul_apply, AddSubgroup.mem_zmultiples_iff]
+  constructor
+  · rintro ⟨n, hn⟩ k
+    refine ⟨b.repr n k, ?_⟩
+    rw [← hx, ← hn, map_smul, Finsupp.smul_apply, hrepr]
+    simp [zsmul_eq_mul, mul_comm]
+  · intro h
+    choose m hm using h
+    refine ⟨∑ k, m k • b k, B.ext_elem fun k ↦ ?_⟩
+    rw [hx, ← hm, map_smul, Finsupp.smul_apply, hrepr, b.repr_sum_self]
+    simp [zsmul_eq_mul, mul_comm]
+
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
 of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates outside `s` vanish is zero. -/
 theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
     (hs : ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) {θ : ι → AddCircle p}
     (hθ : θ ∈ (facetTorusHom i u p).ker) (hθs : ∀ j ∉ s, θ j = 0) : θ = 0 := by
-  classical
   obtain ⟨b, hb⟩ := hs
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  -- Lift `θ` to angles supported in `s`.
-  set t' : ι → ℝ := fun j ↦ if j ∈ s then t j else 0 with ht'
-  have hθt' : θ = fun j ↦ (t' j : AddCircle p) := funext fun j ↦ by
-    by_cases hj : j ∈ s
-    · simp [t', hj, ht]
-    · simp [t', hj, hθs j hj]
-  rw [hθt', AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff] at hθ
-  obtain ⟨n, hn⟩ := hθ
-  -- Comparing coefficients in the real basis `i (u j)`, `j ∈ s`, of `V` gives `t j ∈ pℤ`.
-  have hcoeff : ∀ j : s, t j = p * b.repr n j := by
-    have hli := hi.linearIndependent_basis b
-    simp only [hb] at hli
-    have hsum : ∑ j : s, (t j - p * b.repr n j) • i (u j) = 0 := by
-      have h1 : Fintype.linearCombination ℝ (fun j ↦ i (u j)) t' = ∑ j : s, t j • i (u j) := by
-        rw [Fintype.linearCombination_apply]
-        simp only [t', ite_smul, zero_smul]
-        rw [← Finset.sum_filter]
-        exact Finset.sum_subtype _ (by simp) fun j ↦ t j • i (u j)
-      have h2 : (p • i) n = ∑ j : s, (p * b.repr n j) • i (u j) := by
-        conv_lhs => rw [← b.sum_repr n]
-        simp only [AddMonoidHom.smul_apply, map_sum, map_zsmul, hb, mul_smul,
-          Int.cast_smul_eq_zsmul]
-        exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
-      simp only [sub_smul, Finset.sum_sub_distrib, ← h1, ← h2, hn, sub_self]
-    intro j
-    exact sub_eq_zero.1 (Fintype.linearIndependent_iff.1 hli _ hsum j)
+  rw [mem_ker_facetTorusHom_iff_of_basis hi b] at hθ
   funext j
   by_cases hj : j ∈ s
-  · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
-    exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
+  · -- In the basis `b` of normals indexed by `s`, the `j`-th coordinate equation reads `θ j = 0`.
+    exact (b.sum_repr_smul_eq_of_forall_notMem hb hθs ⟨j, hj⟩).symm.trans (hθ ⟨j, hj⟩)
   · exact hθs j hj
+
+/-- If the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` supported on `s` is zero, then
+real angles supported on `s` whose combination of normals lies in `p i(N)` lie in `pℤ`. -/
+private theorem exists_eq_intCast_mul_of_forall_mem_ker {s : Set ι}
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) {t : ι → ℝ}
+    (hts : ∀ j ∉ s, t j = 0)
+    (ht : Fintype.linearCombination ℝ (fun j ↦ i (u j)) t ∈ (p • i).range) (j : ι) :
+    ∃ k : ℤ, t j = k * p := by
+  have h0 := h (fun j ↦ (t j : AddCircle p))
+    (by rwa [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff])
+    fun j hj ↦ by rw [hts j hj, AddCircle.coe_zero]
+  obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff p).1 (congrFun h0 j)
+  exact ⟨k, by rw [← hk, zsmul_eq_mul]⟩
+
+/-- For `p ≠ 0`, if the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` supported on `s`
+is zero, then the normals in `s` are linearly independent: a real relation `r` among them would
+give the elements `[t • r]` of the kernel for all real `t`. -/
+private theorem linearIndepOn_of_forall_mem_ker (hp : p ≠ 0) {s : Set ι}
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) :
+    LinearIndepOn ℤ u s := by
+  have hR : LinearIndepOn ℝ (fun j ↦ i (u j)) s := by
+    refine linearIndepOn_iff.2 fun l hl hl0 ↦ Finsupp.ext fun j ↦ by_contra fun hj ↦ ?_
+    have hlc : Fintype.linearCombination ℝ (fun j ↦ i (u j)) l = 0 := by
+      simpa [hl0] using
+        (Finsupp.linearCombination_eq_fintype_linearCombination_apply ℝ (fun j ↦ i (u j)) ⇑l).symm
+    -- Rescale the relation so that its `j`-th coefficient is `p / 2`, which is not in `pℤ`.
+    obtain ⟨k, hk⟩ := exists_eq_intCast_mul_of_forall_mem_ker h (t := (p / (2 * l j)) • ⇑l)
+      (fun j' hj' ↦ by simp [(Finsupp.mem_supported' ℝ l).1 hl j' hj'])
+      ⟨0, by simp [hlc]⟩ j
+    have hj' : l j ≠ 0 := hj
+    simp only [Pi.smul_apply, smul_eq_mul] at hk
+    have h1 : p / 2 = k * p := by rw [← hk]; field_simp
+    have h2 : (1 : ℝ) * p = 2 * k * p := by linarith
+    have : (1 : ℤ) = 2 * k := by exact_mod_cast mul_right_cancel₀ hp h2
+    omega
+  exact LinearIndependent.of_comp i.toIntLinearMap (hR.restrict_scalars' ℤ)
+
+/-- For `p ≠ 0`, if the normals in `s` span `V` over `ℝ` and the only element of the kernel of
+`(ℝ / pℤ)^ι → V / p i(N)` supported on `s` is zero, then the normals in `s` generate `N`: the
+real coordinates of a lattice vector in these normals are integers. -/
+private theorem span_eq_top_of_forall_mem_ker (hi : IsIntegralLattice i) (hp : p ≠ 0)
+    {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤)
+    (h : ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0) :
+    Submodule.span ℤ (u '' s) = ⊤ := by
+  classical
+  refine eq_top_iff.2 fun n _ ↦ ?_
+  obtain ⟨l, hl, hln⟩ := (Finsupp.mem_span_image_iff_linearCombination ℝ).1
+    (hs ▸ Submodule.mem_top : i n ∈ Submodule.span ℝ ((fun j ↦ i (u j)) '' s))
+  have hls := (Finsupp.mem_supported' ℝ l).1 hl
+  have hlc : Fintype.linearCombination ℝ (fun j ↦ i (u j)) l = i n := by
+    simpa [hln] using
+      (Finsupp.linearCombination_eq_fintype_linearCombination_apply ℝ (fun j ↦ i (u j)) ⇑l).symm
+  choose k hk using exists_eq_intCast_mul_of_forall_mem_ker h (t := p • ⇑l)
+    (fun j hj ↦ by simp [hls j hj]) ⟨n, by rw [map_smul, hlc, AddMonoidHom.smul_apply]⟩
+  have hlk (j : ι) : l j = k j := by
+    have := hk j
+    rw [Pi.smul_apply, smul_eq_mul, mul_comm] at this
+    exact mul_right_cancel₀ hp this
+  -- So `n` is the integral combination of the normals with the coefficients `k`, supported on `s`.
+  have hn : n = Fintype.linearCombination ℤ u k := by
+    refine hi.injective ?_
+    rw [← Fintype.linearCombination_intCast (R := ℝ), ← hlc]
+    exact congrArg _ (funext hlk)
+  rw [hn, Fintype.linearCombination_apply]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  by_cases hj : j ∈ s
+  · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, hj, rfl⟩)
+  · rw [show k j = 0 by exact_mod_cast (hlk j).symm.trans (hls j hj), zero_smul]
+    exact Submodule.zero_mem _
+
+/-- **Lattice bases of normals, through the kernel torus.** Let `p ≠ 0` and suppose that the
+normals `u j` with `j ∈ s` span `V` over `ℝ`. They form a basis of the integral lattice `N`
+exactly when the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates
+outside `s` vanish is zero. The forward direction is
+`TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`, which needs neither `p ≠ 0` nor the spanning
+hypothesis. -/
+theorem exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i)
+    (hp : p ≠ 0) {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤) :
+    (∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) ↔
+      ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0 := by
+  refine ⟨fun hb θ hθ hθs ↦ eq_zero_of_mem_ker_facetTorusHom hi hb hθ hθs, fun h ↦ ?_⟩
+  have hli := linearIndepOn_of_forall_mem_ker hp h
+  have hspan : Submodule.span ℤ (Set.range fun j : s ↦ u j) = ⊤ := by
+    rw [← Set.image_eq_range]
+    exact span_eq_top_of_forall_mem_ker hi hp hs h
+  exact ⟨Module.Basis.mk hli hspan.ge, Module.Basis.mk_apply hli hspan.ge⟩
+
+/-! ### Changes of presentation -/
+
+section Presentation
+
+variable {ι' N' V' : Type*} [Fintype ι'] [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+  {i' : N' →+ V'} {p : ℝ}
+
+variable (i u p) in
+/-- **Relabelling the facets.** Listing the normals along a bijection `e : ι' ≃ ι` turns the
+homomorphism `(ℝ / pℤ)^ι → V / p i(N)` into its composite with the relabelling `θ ↦ θ ∘ e.symm`
+of angles. -/
+theorem facetTorusHom_comp_equiv (e : ι' ≃ ι) (θ : ι' → AddCircle p) :
+    facetTorusHom i (u ∘ e) p θ = facetTorusHom i u p (θ ∘ e.symm) := by
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
+  -- The relabelled angles are the classes of the relabelled representatives `t ∘ e.symm`.
+  refine (facetTorusHom_coe i (u ∘ e) p t).trans (Eq.trans ?_ (facetTorusHom_coe i u p
+    (t ∘ e.symm)).symm)
+  simp only [Fintype.linearCombination_apply, Function.comp_apply]
+  exact congrArg _ (Fintype.sum_equiv e _ _ fun j ↦ by simp)
+
+/-- **Changing the lattice.** For a surjective map of lattices `f` and an injective linear map `g`
+with `g ∘ i = i' ∘ f`, the homomorphism of tori of the mapped normals `f ∘ u` has the same kernel
+as that of `u`. -/
+theorem ker_facetTorusHom_comp_left {f : N → N'} {g : V →ₗ[ℝ] V'} (hf : Function.Surjective f)
+    (hg : Function.Injective g) (hfg : ∀ n, g (i n) = i' (f n)) :
+    (facetTorusHom i' (fun j ↦ f (u j)) p).ker = (facetTorusHom i u p).ker := by
+  ext θ
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
+  have hβ : Fintype.linearCombination ℝ (fun j ↦ i' (f (u j))) t =
+      g (Fintype.linearCombination ℝ (fun j ↦ i (u j)) t) := by
+    simp [Fintype.linearCombination_apply, map_sum, hfg]
+  simp only [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff,
+    AddMonoidHom.mem_range, AddMonoidHom.smul_apply, hβ]
+  constructor
+  · rintro ⟨n', hn'⟩
+    obtain ⟨n, rfl⟩ := hf n'
+    exact ⟨n, hg (by rw [map_smul, hfg, hn'])⟩
+  · rintro ⟨n, hn⟩
+    exact ⟨f n, by rw [← hn, map_smul, hfg]⟩
+
+end Presentation
 
 /-! ### Closedness of the kernel -/
 
@@ -374,6 +522,102 @@ theorem faceSubtorus_eq_top_iff [Countable N] {s : Set ι} :
 
 end FaceSubtorus
 
+/-! ### Smooth vertices -/
+
+section SmoothVertex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V} {u : ι → N}
+  {c : ι → ℝ} {x : StrongDual ℝ V}
+
+/-- The facet normals generate the lattice as soon as the presentation has a smooth vertex: the
+normals active there already form a basis of it. -/
+theorem IsSmoothVertex.surjective_linearCombination (hx : IsSmoothVertex i u c x) :
+    Function.Surjective (Fintype.linearCombination ℤ u) := by
+  rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, eq_top_iff, ← hx.basis.span_eq]
+  refine Submodule.span_mono ?_
+  rintro _ ⟨j, rfl⟩
+  exact ⟨j, (hx.basis_apply j).symm⟩
+
+/-- At a smooth vertex of a presentation in an integral lattice, the real extension `β_ℝ` of the
+lattice map is surjective. -/
+theorem IsSmoothVertex.surjective_linearCombination_real (hx : IsSmoothVertex i u c x)
+    (hi : IsIntegralLattice i) :
+    Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)) :=
+  Toric.surjective_linearCombination_real hi.span_range_eq_top hx.surjective_linearCombination
+
+namespace IsSmoothVertex
+
+variable (hx : IsSmoothVertex i u c x)
+
+variable (p) in
+/-- The homomorphism `facetTorusHom` read in the coordinates of the lattice basis formed by the
+normals active at a smooth vertex `x`: writing `u j = Σ_(k ∈ A) a_(j k) u_k`, it sends `θ` to
+`(Σ_j a_(j k) θ_j)_(k ∈ A)`. Its kernel is the kernel torus
+(`TauCeti.Toric.IsSmoothVertex.ker_vertexTorusHom`). -/
+def vertexTorusHom : (ι → AddCircle p) →+ (activeSet (facetPairing i u) c x → AddCircle p) where
+  toFun θ k := ∑ j, hx.basis.repr (u j) k • θ j
+  map_zero' := by ext; simp
+  map_add' θ θ' := by ext; simp [smul_add, Finset.sum_add_distrib]
+
+@[simp]
+theorem vertexTorusHom_apply (θ : ι → AddCircle p) (k : activeSet (facetPairing i u) c x) :
+    hx.vertexTorusHom p θ k = ∑ j, hx.basis.repr (u j) k • θ j :=
+  (rfl)
+
+/-- The homomorphism `vertexTorusHom` is continuous. -/
+theorem continuous_vertexTorusHom : Continuous (hx.vertexTorusHom p) :=
+  continuous_pi fun _ ↦ continuous_finsetSum _ fun j _ ↦
+    (continuous_zsmul _).comp (continuous_apply j)
+
+/-- The kernel of `vertexTorusHom` is the kernel torus. -/
+theorem ker_vertexTorusHom (hi : IsIntegralLattice i) :
+    (hx.vertexTorusHom p).ker = (facetTorusHom i u p).ker := by
+  ext θ
+  rw [mem_ker_facetTorusHom_iff_of_basis hi hx.basis, AddMonoidHom.mem_ker, funext_iff]
+  simp only [vertexTorusHom_apply, Pi.zero_apply]
+
+/-- `vertexTorusHom` is the identity on the angles supported on the active facets: it sends the
+extension by zero of `φ : (ℝ / pℤ)^A` back to `φ`. -/
+@[simp]
+theorem vertexTorusHom_extend (φ : activeSet (facetPairing i u) c x → AddCircle p) :
+    hx.vertexTorusHom p (Function.extend Subtype.val φ 0) = φ := by
+  ext k
+  rw [vertexTorusHom_apply, hx.basis.sum_repr_smul_eq_of_forall_notMem hx.basis_apply
+    (fun j hj ↦ by rw [Function.extend_val_apply' hj, Pi.zero_apply]),
+    Subtype.val_injective.extend_apply]
+
+variable (p) in
+/-- **The residual torus at a smooth vertex.** The homomorphism `vertexTorusHom` identifies the
+residual torus `(ℝ / pℤ)^ι / N_Δ` with the standard torus `(ℝ / pℤ)^A` on the facets active at
+`x`. Its inverse, this equivalence, sends `φ` to the class of the extension of `φ` by zero
+(`TauCeti.Toric.IsSmoothVertex.vertexTorusEquiv_apply`). -/
+def vertexTorusEquiv (hi : IsIntegralLattice i) :
+    (activeSet (facetPairing i u) c x → AddCircle p) ≃+
+      (ι → AddCircle p) ⧸ (facetTorusHom i u p).ker :=
+  ((QuotientAddGroup.quotientAddEquivOfEq (hx.ker_vertexTorusHom hi).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfRightInverse (hx.vertexTorusHom p)
+      (Function.extend Subtype.val · 0) hx.vertexTorusHom_extend)).symm
+
+@[simp]
+theorem vertexTorusEquiv_symm_mk (hi : IsIntegralLattice i) (θ : ι → AddCircle p) :
+    (hx.vertexTorusEquiv p hi).symm θ = hx.vertexTorusHom p θ := by
+  rw [vertexTorusEquiv, AddEquiv.symm_symm, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk]
+  -- The forward map of `quotientKerEquivOfRightInverse` is `kerLift` by definition.
+  exact QuotientAddGroup.kerLift_mk (hx.vertexTorusHom p) θ
+
+@[simp]
+theorem vertexTorusEquiv_apply (hi : IsIntegralLattice i)
+    (φ : activeSet (facetPairing i u) c x → AddCircle p) :
+    hx.vertexTorusEquiv p hi φ =
+      ((Function.extend Subtype.val φ 0 : ι → AddCircle p) :
+        (ι → AddCircle p) ⧸ (facetTorusHom i u p).ker) := by
+  rw [← AddEquiv.eq_symm_apply, vertexTorusEquiv_symm_mk, vertexTorusHom_extend]
+
+end IsSmoothVertex
+
+end SmoothVertex
+
 /-! ### Delzant polytopes -/
 
 section Delzant
@@ -389,13 +633,9 @@ include hΔ
 /-- The facet normals of a Delzant polytope generate the lattice: the normals at any vertex
 already form a basis of it. -/
 theorem surjective_linearCombination :
-    Function.Surjective (Fintype.linearCombination ℤ u) := by
-  obtain ⟨x, hx⟩ := hΔ.extremePoints_nonempty
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 (hΔ.isSmoothVertex x hx)
-  rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, eq_top_iff, ← b.span_eq]
-  refine Submodule.span_mono ?_
-  rintro _ ⟨j, rfl⟩
-  exact ⟨j, (hb j).symm⟩
+    Function.Surjective (Fintype.linearCombination ℤ u) :=
+  let ⟨x, hx⟩ := hΔ.extremePoints_nonempty
+  (hΔ.isSmoothVertex x hx).surjective_linearCombination
 
 /-- The kernel of the homomorphism `facetTorusHom` of a Delzant polytope is connected. -/
 theorem isConnected_ker_facetTorusHom (p : ℝ) :

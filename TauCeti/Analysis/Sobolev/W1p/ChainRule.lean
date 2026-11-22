@@ -73,7 +73,8 @@ by approximation, and the *order* of the two limits matters.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`, and
-  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels.
+  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels, and
+  `TauCeti.W1p.value_posPartAbove_nonneg_ae`: the truncation is nonnegative.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
 * `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
@@ -496,7 +497,7 @@ omit [FiniteDimensional ℝ E] in
 theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 < ε)
     (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
     Integrable (fun x => (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) (mu.restrict Omega) := by
-  refine ((W1p.integrable_norm_gradient_sq u).const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
+  refine ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
@@ -811,6 +812,12 @@ theorem W1p.value_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     ⇑(W1p.value (W1p.posPartAbove hp hk u)) =ᵐ[mu.restrict Omega]
       fun x => max (W1p.value u x - k) 0 := by
   exact W1p.value_posPartAboveOfMemLp_ae hp k u (W1p.memLp_posPartAbove hk u)
+
+/-- The truncation `(u - k)⁺` is nonnegative almost everywhere. -/
+theorem W1p.value_posPartAbove_nonneg_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+    (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPartAbove hp hk u) x :=
+  (W1p.value_posPartAbove_ae hp hk u).mono fun _ hx ↦ hx ▸ le_max_right _ _
 
 /-- The weak gradient of `(u - k)⁺` is `1_{u > k} ∇u` almost everywhere. -/
 @[simp]

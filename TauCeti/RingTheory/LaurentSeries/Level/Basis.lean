@@ -40,7 +40,10 @@ The contraction and decomposition API follows the design proposed in
 ## Main definitions
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
-* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d` and scalar
+  tower `K → K⸨X⸩ → Level K d`.
+* `TauCeti.LaurentSeries.Level.algEquivLaurentSeries`: the `K`-algebra equivalence
+  `Level K d ≃ₐ[K] K⸨X⸩` in the level parameter.
 * `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
@@ -116,6 +119,39 @@ theorem algebraMap_apply (f : K⸨X⸩) :
 @[simp]
 theorem ringEquivLaurentSeries_ofLaurentSeries (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (.ofLaurentSeries f) = f := (rfl)
+
+/-- Level `d` is a `K`-algebra through its base Laurent-series field. -/
+noncomputable instance : Algebra K (Level K d) :=
+  ((algebraMap K d).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
+
+instance : IsScalarTower K K⸨X⸩ (Level K d) where
+  smul_assoc r f x := by
+    rw [← C_mul_eq_smul, ← _root_.LaurentSeries.algebraMap_apply, Algebra.smul_def,
+      Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
+    -- `Algebra K (Level K d)` is `((algebraMap K d).comp (algebraMap K K⸨X⸩)).toAlgebra` and
+    -- `Algebra K⸨X⸩ (Level K d)` is `(algebraMap K d).toAlgebra`, so both `algebraMap` paths agree
+    -- definitionally.
+    rfl
+
+/-- Constants embed into a ramified level as constant Laurent series. -/
+@[simp]
+theorem ringEquivLaurentSeries_algebraMap_const (c : K) :
+    ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) c) =
+      Algebra.algebraMap K K⸨X⸩ c := by
+  rw [IsScalarTower.algebraMap_apply K K⸨X⸩ (Level K d), algebraMap_apply, AlgHom.commutes]
+
+/-- Reading a ramified level in its Laurent variable is a `K`-algebra equivalence. -/
+noncomputable def algEquivLaurentSeries : Level K d ≃ₐ[K] K⸨X⸩ where
+  __ := ringEquivLaurentSeries K d
+  commutes' := ringEquivLaurentSeries_algebraMap_const K d
+
+@[simp]
+theorem algEquivLaurentSeries_apply (f : Level K d) :
+    algEquivLaurentSeries K d f = ringEquivLaurentSeries K d f := (rfl)
+
+@[simp]
+theorem algEquivLaurentSeries_symm_apply (f : K⸨X⸩) :
+    (algEquivLaurentSeries K d).symm f = (ringEquivLaurentSeries K d).symm f := (rfl)
 
 end Level
 
@@ -496,8 +532,8 @@ theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
   simp only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val,
     Units.val_mk0] at hu
   rw [← hu, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
-  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
-    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
+  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.property) _)
+    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.property) _)
 
 /-- The levels exhaust the Puiseux field. -/
 @[simp]

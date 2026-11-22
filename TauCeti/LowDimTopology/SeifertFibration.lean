@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Seifert fibrations
@@ -182,21 +183,17 @@ private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 
       exact ⟨t, rfl, by simp only at ht; rw [ht, inv_mul_cancel_right]⟩
     · rintro ⟨-, h₁, -⟩
       exact ⟨b.2, Prod.ext (Subtype.ext h₁) rfl⟩
-  · obtain ⟨u, v, huv⟩ := hpq
-    have hmem (t : Circle) : ((t ^ p : Circle) : ℂ) * a.1 ∈ closedBall (0 : ℂ) 1 := by
+  · have hmem (t : Circle) : ((t ^ p : Circle) : ℂ) * a.1 ∈ closedBall (0 : ℂ) 1 := by
       rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, one_mul]
-      exact mem_closedBall_zero_iff.1 a.1.2
+      exact mem_closedBall_zero_iff.1 a.1.property
     refine ⟨fun t ↦ (⟨_, hmem t⟩, t ^ q * a.2), ?_, fun t s h ↦ ?_, ?_⟩
-    · have hcoe : Continuous fun t : Circle ↦ (t : ℂ) := continuous_subtype_val
+    · have hcoe : Continuous fun t : Circle ↦ (t : ℂ) := continuous_subtypeVal
       exact (((hcoe.comp (continuous_zpow p)).mul continuous_const).subtype_mk hmem).prodMk
         ((continuous_zpow q).mul continuous_const)
     · obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 h
       have hp : t ^ p = s ^ p :=
         Circle.coe_injective (mul_right_cancel₀ ha (congrArg Subtype.val h₁))
-      have hq' : t ^ q = s ^ q := mul_right_cancel h₂
-      have key (x : Circle) : x = (x ^ p) ^ u * (x ^ q) ^ v := by
-        rw [← zpow_mul, ← zpow_mul, ← zpow_add, mul_comm p u, mul_comm q v, huv, zpow_one]
-      rw [key t, key s, hp, hq']
+      exact hpq.eq_of_zpow_eq_zpow hp (mul_right_cancel h₂)
     · ext b
       exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, by rw [← ht], by rw [← ht]⟩,
         fun ⟨t, h₁, h₂⟩ ↦ ⟨t, Prod.ext (Subtype.ext h₁) h₂⟩⟩
