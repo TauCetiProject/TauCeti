@@ -49,6 +49,8 @@ use.
   the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
   map into the dual is the kernel of the map.
+* `ContinuousLinearMap.exists_apply_self_eq_sum_mul_sq`: a weighted sum of squares of finitely
+  many continuous linear functionals is the diagonal `x ↦ Q x x` of a continuous bilinear form.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -77,9 +79,17 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
+  compact set is bounded by a uniform multiple of `‖v‖²`.
+* `ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul`: the diagonal of a
+  continuous bilinear form at `v` is `‖v‖²` times its value at the unit vector `‖v‖⁻¹ • v`.
+* `TauCeti.mul_norm_sq_le_of_forall_mem_sphere`: a lower bound `c` for the diagonal of a
+  continuous bilinear form on the unit sphere gives `c ‖v‖² ≤ b v v` for every `v`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
+* `IsCompact.eventually_forall_mul_norm_sq_le`: coercivity of such a family at a point persists,
+  with any smaller constant, on a neighbourhood of the point, uniformly over a compact family.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
   `B` in a compact set of endomorphisms, which gives uniform tameness constants.
 * `IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add`: the case of Finsler's
@@ -136,6 +146,14 @@ the map takes symmetric values. -/
 theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
   LinearMap.BilinForm.isSymm_def
+
+/-- A weighted sum of squares `∑ⱼ c j (ℓ j x)²` of finitely many continuous linear functionals
+`ℓ j` is the diagonal `x ↦ Q x x` of a continuous bilinear form `Q`, namely
+`Q x y = ∑ⱼ c j * ℓ j x * ℓ j y`. -/
+theorem _root_.ContinuousLinearMap.exists_apply_self_eq_sum_mul_sq {ι : Type*} [Fintype ι]
+    (ℓ : ι → E →L[𝕜] 𝕜) (c : ι → 𝕜) :
+    ∃ Q : E →L[𝕜] E →L[𝕜] 𝕜, ∀ x, Q x x = ∑ j, c j * ℓ j x ^ 2 :=
+  ⟨∑ j, c j • (ℓ j).smulRight (ℓ j), fun x ↦ by simp [sq]⟩
 
 end
 
@@ -361,6 +379,26 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
   simpa only [star_trivial, RCLike.re_to_real] using
     (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ)).preimage hA
 
+/-- The diagonal of a continuous bilinear form at `v` is `‖v‖²` times its value at the unit
+vector `‖v‖⁻¹ • v` (both sides vanish at `v = 0`). -/
+theorem _root_.ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (b : E →L[ℝ] E →L[ℝ] ℝ) (v : E) :
+    b v v = ‖v‖ ^ 2 * b (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  simp only [map_smul, _root_.smul_apply, smul_eq_mul]
+  field_simp [norm_ne_zero_iff.2 hv]
+
+/-- On a real normed space, a continuous bilinear form `b` with `c ≤ b u u` on the unit sphere
+satisfies `c ‖v‖² ≤ b v v` for every `v`. -/
+theorem mul_norm_sq_le_of_forall_mem_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {b : E →L[ℝ] E →L[ℝ] ℝ} {c : ℝ}
+    (h : ∀ u ∈ Metric.sphere (0 : E) 1, c ≤ b u u) (v : E) : c * ‖v‖ ^ 2 ≤ b v v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  rw [ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (h _ (by simp [norm_smul, hv])) (by positivity)
+
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
 `b x` be a family of continuous bilinear forms, continuous on a compact set `K`, such that
 `b x v v` is positive for every `x ∈ K` and every nonzero `v`. Then one positive constant `c`
@@ -376,18 +414,32 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
       continuousOn_snd).clm_apply continuousOn_snd
   obtain ⟨c, hc, hle⟩ := (hK.prod (isCompact_sphere 0 1)).exists_forall_le' hcont
     fun p hp ↦ hpos p.1 hp.1 p.2 (ne_zero_of_mem_sphere one_ne_zero ⟨p.2, hp.2⟩)
-  refine ⟨c, hc, fun x hx v ↦ ?_⟩
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  have hu : ‖v‖⁻¹ • v ∈ Metric.sphere (0 : E) 1 := by
-    simp [norm_smul, hn.ne']
-  have hh := hle (x, ‖v‖⁻¹ • v) ⟨hx, hu⟩
-  have heq : b x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * b x v v := by
-    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
-    ring
-  rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
-  linarith
+  exact ⟨c, hc, fun x hx ↦ mul_norm_sq_le_of_forall_mem_sphere fun u hu ↦ hle (x, u) ⟨hx, hu⟩⟩
+
+/-- **Coercivity persists near a point, uniformly over a compact family.** On a finite-dimensional
+real normed space, let `b (x, y)` be continuous bilinear forms, continuous on `D × L` for a compact
+set `D`, and let `y₀ ∈ L` with `c ‖v‖² ≤ b (x, y₀) v v` for every `x ∈ D`. Then for every `c' < c`,
+every `y ∈ L` near `y₀` satisfies `c' ‖v‖² ≤ b (x, y) v v` for every `x ∈ D`. -/
+theorem _root_.IsCompact.eventually_forall_mul_norm_sq_le
+    {X Y E : Type*} [TopologicalSpace X] [TopologicalSpace Y] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {D : Set X} {L : Set Y} (hD : IsCompact D)
+    {b : X × Y → E →L[ℝ] E →L[ℝ] ℝ} (hb : ContinuousOn b (D ×ˢ L)) {y₀ : Y} (hy₀ : y₀ ∈ L)
+    {c c' : ℝ} (hc' : c' < c) (hcb : ∀ x ∈ D, ∀ v, c * ‖v‖ ^ 2 ≤ b (x, y₀) v v) :
+    ∀ᶠ y in nhdsWithin y₀ L, ∀ x ∈ D, ∀ v, c' * ‖v‖ ^ 2 ≤ b (x, y) v v := by
+  -- By the tube lemma, the diagonal on unit vectors stays above `c'` near `y₀`, over all of `D`.
+  set S := D ×ˢ Metric.sphere (0 : E) 1
+  have hψ : ContinuousOn (fun p : Y × X × E ↦ b (p.2.1, p.1) p.2.2 p.2.2) (L ×ˢ S) :=
+    ((hb.comp (continuous_snd.fst.prodMk continuous_fst).continuousOn
+      fun _ (hp : _ ∈ L ×ˢ S) ↦ ⟨hp.2.1, hp.1⟩).clm_apply continuous_snd.snd.continuousOn).clm_apply
+      continuous_snd.snd.continuousOn
+  have hunit : ∀ᶠ y in nhds y₀, ∀ q ∈ S, (y, q) ∈ L ×ˢ S → c' < b (q.1, y) q.2 q.2 :=
+    (hD.prod (isCompact_sphere 0 1)).eventually_forall_of_forall_eventually fun q hq ↦ by
+      have h₀ := hcb q.1 hq.1 q.2
+      rw [mem_sphere_zero_iff_norm.1 hq.2, one_pow, mul_one] at h₀
+      exact (eventually_nhdsWithin_iff.1 ((hψ _ ⟨hy₀, hq⟩).eventually
+        (lt_mem_nhds (hc'.trans_le h₀)))).mono fun _ hp ↦ hp
+  exact eventually_nhdsWithin_iff.2 (hunit.mono fun y hy hyL x hx ↦
+    mul_norm_sq_le_of_forall_mem_sphere fun u hu ↦ (hy (x, u) ⟨hx, hu⟩ ⟨hyL, hx, hu⟩).le)
 
 /-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
 subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
@@ -400,6 +452,21 @@ theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
     (b := fun _ ↦ -(L.bilinearComp N.subtypeL N.subtypeL)) continuousOn_const
     fun _ _ v hv ↦ by simpa using hN v v.property (by simpa using hv)
   exact ⟨c, hc, fun x hx ↦ by have := h () rfl ⟨x, hx⟩; simp at this; linarith⟩
+
+/-- **Uniform bound over a compact family.** On a real normed space, let `b x` be a family of
+continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
+`b x v v ≤ C ‖v‖²` for every `x ∈ K` and every `v`. -/
+theorem _root_.IsCompact.exists_forall_le_mul_norm_sq
+    {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hb : ContinuousOn b K) : ∃ C, ∀ x ∈ K, ∀ v, b x v v ≤ C * ‖v‖ ^ 2 := by
+  -- `hb` is stated for the topology of `→L[ℝ]`, which is the operator-norm topology only up to
+  -- unfolding instances, so it is passed by `exact`.
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := b) (by exact hb)
+  refine ⟨C, fun x hx v ↦ ?_⟩
+  calc b x v v ≤ ‖b x‖ * ‖v‖ * ‖v‖ := (Real.le_norm_self _).trans ((b x).le_opNorm₂ v v)
+    _ = ‖b x‖ * ‖v‖ ^ 2 := by ring
+    _ ≤ C * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (hC x hx) (sq_nonneg _)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms
@@ -448,14 +515,10 @@ theorem _root_.IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add
     @IsTopologicalAddGroup.toContinuousAdd _ _ _ ContinuousLinearMap.isTopologicalAddGroup
   obtain ⟨c, hc, hle⟩ := hK.exists_pos_forall_mul_norm_sq_le (b := fun x ↦ t • a x + b x)
     ((ha.const_smul t).add hb) fun x hx v hv ↦ by
-      have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-      have h := ht (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hn.ne']⟩
-      simp only [map_smul, smul_apply, smul_eq_mul] at h
-      have heq : t * (‖v‖⁻¹ * (‖v‖⁻¹ * a x v v)) + ‖v‖⁻¹ * (‖v‖⁻¹ * b x v v) =
-          (‖v‖ ^ 2)⁻¹ * (t * a x v v + b x v v) := by
-        ring
-      rw [heq] at h
-      simpa using pos_of_mul_pos_right h (by positivity)
+      rw [ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul]
+      exact mul_pos (by positivity) (by
+        simpa only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]
+          using ht (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hv]⟩)
   exact ⟨c, hc, fun x hx v ↦ by simpa using hle x hx v⟩
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on

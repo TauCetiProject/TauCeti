@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Perfectoid.Integral
+public import TauCeti.RingTheory.Perfectoid.Integral.Tilt
 public import TauCeti.RingTheory.Perfectoid.Plus
 
 /-!
@@ -131,9 +131,9 @@ theorem exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta
 Tate ring if and only if `ξ` is distinguished. -/
 theorem ker_fontaineTheta_eq_span_iff_isDistinguished (hplus : IsRingOfIntegralElements Rplus)
     {ξ : WittVector p (PreTilt Rplus p)} (hξ : ξ ∈ RingHom.ker (WittVector.fontaineTheta Rplus p)) :
-    RingHom.ker (WittVector.fontaineTheta Rplus p) = span {ξ} ↔ ξ.IsDistinguished := by
-  obtain ⟨π, hdvd, hc, hreg, hbij⟩ := hplus.exists_adic_frobenius (p := p)
-  exact WittVector.ker_fontaineTheta_eq_span_iff_isDistinguished hreg hbij hξ
+    RingHom.ker (WittVector.fontaineTheta Rplus p) = span {ξ} ↔ ξ.IsDistinguished :=
+  have := hplus.isIntegralPerfectoid (p := p)
+  Perfectoid.IsIntegralPerfectoid.ker_fontaineTheta_eq_span_iff_isDistinguished hξ
 
 end FontaineTheta
 

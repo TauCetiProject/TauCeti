@@ -17,8 +17,8 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.Order.Fin.InsertNth
 import Mathlib.Topology.Order.Compact
+import TauCeti.Order.Fin.Basic
 
 /-!
 # The ordered projective simplex
@@ -123,32 +123,11 @@ theorem inv_succ_le_one_sub_sum {x : Fin d → ℝ} (hx : ∀ i, x i ≤ 1 - ∑
   rw [inv_le_iff_one_le_mul₀ (by positivity)]
   linarith
 
-/-- Appending a coordinate that bounds all previous coordinates preserves monotonicity. -/
-theorem monotone_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
-    (hf : Monotone f) (ha : ∀ i, f i ≤ a) :
-    Monotone (Fin.snoc (α := fun _ => α) f a) := by
-  cases n with
-  | zero => rw [Fin.monotone_iff_le_succ]; exact fun i => Fin.elim0 i
-  | succ m =>
-    rw [← Fin.insertNth_last']
-    exact Fin.insertNth_last_monotone hf a (ha (Fin.last m))
-
-/-- Appending a coordinate strictly above all previous coordinates preserves strict
-monotonicity. -/
-theorem strictMono_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
-    (hf : StrictMono f) (ha : ∀ i, f i < a) :
-    StrictMono (Fin.snoc (α := fun _ => α) f a) := by
-  cases n with
-  | zero => rw [Fin.strictMono_iff_lt_succ]; exact fun i => Fin.elim0 i
-  | succ m =>
-    rw [← Fin.insertNth_last']
-    exact Fin.strictMono_insertNth_last hf a (ha (Fin.last m))
-
 /-- A chart point lies in the ordered simplex exactly when its full point `w` has nonnegative
 nondecreasing coordinates. -/
 theorem mem_orderedSimplex_iff_simplexPoint {x : Fin d → ℝ} :
     x ∈ orderedSimplex d ↔ (∀ i, 0 ≤ simplexPoint x i) ∧ Monotone (simplexPoint x) := by
-  refine ⟨fun ⟨h0, hmono, hlast⟩ => ⟨fun i => ?_, monotone_snoc hmono hlast⟩,
+  refine ⟨fun ⟨h0, hmono, hlast⟩ => ⟨fun i => ?_, Fin.monotone_snoc hmono hlast⟩,
     fun ⟨h0, hmono⟩ => ⟨fun i => by simpa using h0 i.castSucc, fun i j hij => ?_, fun i => ?_⟩⟩
   · have hpos : (0 : ℝ) < ((d : ℝ) + 1)⁻¹ := by positivity
     refine Fin.lastCases ?_ (fun i => ?_) i
@@ -280,7 +259,7 @@ theorem snoc_sum_mem_orderedCone {f : Fin (d + 1) → ℝ} (hne : f ≠ 0) (h0 :
   refine ⟨fun h => hne (funext fun i => by simpa using congrFun h i.castSucc),
     Fin.lastCases (by simpa using Finset.sum_nonneg fun i _ => h0 i)
       (fun i => by simpa using h0 i),
-    monotone_snoc hmono fun i => Finset.single_le_sum (fun m _ => h0 m) (Finset.mem_univ i),
+    Fin.monotone_snoc hmono fun i => Finset.single_le_sum (fun m _ => h0 m) (Finset.mem_univ i),
     by simp⟩
 
 /-- The normalisation `y ↦ (y₁ / y_n, …, y_d / y_n)` of the ordered cone, in chart
@@ -406,7 +385,7 @@ theorem mem_coneSpan_iff {y : Fin (d + 2) → ℝ} :
 /-- Every point of `orderedCone d` lies in `coneSpan d`. -/
 theorem orderedCone_subset_coneSpan (d : ℕ) :
     orderedCone d ⊆ (coneSpan d : Set (Fin (d + 2) → ℝ)) :=
-  fun _ hy => hy.2.2.2
+  fun _ hy => mem_coneSpan_iff.mpr (mem_orderedCone_iff.mp hy).2.2.2
 
 /-- The vectors `e_j + e_n` (`j : Fin (d + 1)`) form a basis of `coneSpan d`. -/
 noncomputable def coneSpanBasis (d : ℕ) : Module.Basis (Fin (d + 1)) ℝ (coneSpan d) := by

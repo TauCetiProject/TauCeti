@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Fin.Tuple
+
 import Mathlib.Order.Fin.Basic
+import Mathlib.Order.Fin.InsertNth
 
 /-!
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`).
+`i'.castSucc` (`i' : Fin k`), and provides monotonicity lemmas for `Fin.snoc`.
 
 ## Main results
 
@@ -20,6 +23,8 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   below every `i'` with `j ≤ i'.castSucc`.
 * `Fin.eq_iff_forall_castSucc_lt_and_le`: two indices `r, j : Fin (k + 1)` are equal if and only
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
+* `Fin.monotone_snoc`, `Fin.strictMono_snoc`: appending a coordinate above (resp. strictly above)
+  all previous coordinates preserves monotonicity (resp. strict monotonicity).
 -/
 
 public section
@@ -72,5 +77,26 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
       replace hlt := lt_of_not_ge hlt
       let i' : Fin k := ⟨r.val, by omega⟩
       exact (lt_irrefl r) (hlow i' hlt)
+
+/-- Appending a coordinate that bounds all previous coordinates preserves monotonicity. -/
+theorem monotone_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : Monotone f) (ha : ∀ i, f i ≤ a) :
+    Monotone (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.monotone_iff_le_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.insertNth_last_monotone hf a (ha (Fin.last m))
+
+/-- Appending a coordinate strictly above all previous coordinates preserves strict
+monotonicity. -/
+theorem strictMono_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}
+    (hf : StrictMono f) (ha : ∀ i, f i < a) :
+    StrictMono (Fin.snoc (α := fun _ => α) f a) := by
+  cases n with
+  | zero => rw [Fin.strictMono_iff_lt_succ]; exact fun i => Fin.elim0 i
+  | succ m =>
+    rw [← Fin.insertNth_last']
+    exact Fin.strictMono_insertNth_last hf a (ha (Fin.last m))
 
 end Fin
