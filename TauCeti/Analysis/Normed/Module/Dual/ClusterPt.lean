@@ -61,15 +61,9 @@ theorem Ultrafilter.exists_tendsto_toWeakDual [ProperSpace 𝕜]
     (hC : ∀ᶠ a in U, ‖u a‖ ≤ C) :
     ∃ φ : StrongDual 𝕜 X, ‖φ‖ ≤ C ∧
       Tendsto (fun a ↦ StrongDual.toWeakDual (u a)) U (𝓝 (StrongDual.toWeakDual φ)) := by
-  obtain ⟨φ, hφC, hφ⟩ :=
-    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 X) C).ultrafilter_le_nhds'
-      (U.map (StrongDual.toWeakDual ∘ u))
-      (Ultrafilter.mem_map.2 <| hC.mono fun a ha ↦ by
-        simpa only [Set.mem_preimage, Function.comp_apply, StrongDual.toStrongDual_toWeakDual,
-          mem_closedBall_zero_iff] using ha)
-  refine ⟨φ.toStrongDual, mem_closedBall_zero_iff.mp hφC, ?_⟩
-  rw [WeakDual.toWeakDual_toStrongDual]
-  exact hφ
+  obtain ⟨φ, hφC, hφ⟩ := (hC : ∀ᶠ a in (U : Filter α), ‖u a‖ ≤ C).exists_mapClusterPt_toWeakDual
+  rw [mapClusterPt_def, ← Ultrafilter.coe_map, Ultrafilter.clusterPt_iff] at hφ
+  exact ⟨φ, hφC, hφ⟩
 
 /-- An eventually bounded proper filter has a weak-star bidual cluster point with the
 same norm bound. No completeness of the space is required. -/

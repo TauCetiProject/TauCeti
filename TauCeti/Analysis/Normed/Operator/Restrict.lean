@@ -115,4 +115,28 @@ theorem norm_restrictAction_le (M : B →L[𝕜] E →L[𝕜] E) (p : Submodule 
   intro a x
   exact M.le_opNorm₂ a x.val
 
+/-- Restriction to an invariant submodule preserves the left-action law. -/
+theorem restrictAction_mul_apply_of_left [Mul B] {L : B →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (p : Submodule 𝕜 E)
+    (hLp : ∀ a x, x ∈ p → L a x ∈ p) (a b : B) (x : p) :
+    L.restrictAction p hLp (a * b) x =
+      L.restrictAction p hLp a (L.restrictAction p hLp b x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hL])
+
+/-- Restriction to an invariant submodule preserves the right-action law. -/
+theorem restrictAction_mul_apply_of_right [Mul B] {R : B →L[𝕜] E →L[𝕜] E}
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (p : Submodule 𝕜 E)
+    (hRp : ∀ a x, x ∈ p → R a x ∈ p) (a b : B) (x : p) :
+    R.restrictAction p hRp (a * b) x =
+      R.restrictAction p hRp b (R.restrictAction p hRp a x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hR])
+
+/-- Restriction to a jointly invariant submodule preserves commutativity of two actions. -/
+theorem restrictAction_apply_comm {L R : B →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (p : Submodule 𝕜 E)
+    (hLp : ∀ a x, x ∈ p → L a x ∈ p) (hRp : ∀ a x, x ∈ p → R a x ∈ p) (a b : B) (x : p) :
+    L.restrictAction p hLp a (R.restrictAction p hRp b x) =
+      R.restrictAction p hRp b (L.restrictAction p hLp a x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hLR])
+
 end ContinuousLinearMap

@@ -74,22 +74,18 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
       fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hLR a hx
     let Less : A →L[𝕜] Eess →L[𝕜] Eess := L.restrictAction Eess hL_inv
     let Ress : A →L[𝕜] Eess →L[𝕜] Eess := R.restrictAction Eess hR_inv
-    have hLess (a b : A) (x : Eess) : Less (a * b) x = Less a (Less b x) :=
-      Subtype.ext (by simp [Less, hL])
-    have hRess (a b : A) (x : Eess) : Ress (a * b) x = Ress b (Ress a x) :=
-      Subtype.ext (by simp [Ress, hR])
-    have hLRess (a b : A) (x : Eess) : Less a (Ress b x) = Ress b (Less a x) :=
-      Subtype.ext (by simp [Less, Ress, hLR])
-    have hL_top : Less.essentialSubmodule = ⊤ := eq_top_iff.2 fun x _ ↦
-      (tendsto_apply_iff_mem_essentialSubmodule Less hLess hC hl.tendsto_mul_right).1 <|
-        tendsto_subtype_rng.2 <|
-          (tendsto_apply_of_mem_essentialSubmodule L hL hC hl.tendsto_mul_right
-            x.property.1).congr fun e ↦ (coe_restrictAction_apply L Eess hL_inv e x).symm
-    have hR_top : Ress.essentialSubmodule = ⊤ := eq_top_iff.2 fun x _ ↦
-      (tendsto_apply_iff_mem_essentialSubmodule_right Ress hRess hC hl.tendsto_mul_left).1 <|
-        tendsto_subtype_rng.2 <|
-          (tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl.tendsto_mul_left
-            x.property.2).congr fun e ↦ (coe_restrictAction_apply R Eess hR_inv e x).symm
+    have hLess : ∀ a b x, Less (a * b) x = Less a (Less b x) :=
+      L.restrictAction_mul_apply_of_left hL Eess hL_inv
+    have hRess : ∀ a b x, Ress (a * b) x = Ress b (Ress a x) :=
+      R.restrictAction_mul_apply_of_right hR Eess hR_inv
+    have hLRess : ∀ a b x, Less a (Ress b x) = Ress b (Less a x) :=
+      restrictAction_apply_comm hLR Eess hL_inv hR_inv
+    have hL_top : Less.essentialSubmodule = ⊤ :=
+      essentialSubmodule_restrictAction_eq_top L hL hC hl.tendsto_mul_right Eess
+        (essentialBimoduleSubmodule_le_left L R) hL_inv
+    have hR_top : Ress.essentialSubmodule = ⊤ :=
+      essentialSubmodule_restrictAction_eq_top_right R hR hC hl.tendsto_mul_left Eess
+        (essentialBimoduleSubmodule_le_right L R) hR_inv
     let Dess : A →L[𝕜] StrongDual 𝕜 Eess := (precomp 𝕜 Eess.subtypeL) ∘L D
     have hDess := precomp_subtypeL_comp_derivation Eess hL_inv hR_inv hD
     obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess

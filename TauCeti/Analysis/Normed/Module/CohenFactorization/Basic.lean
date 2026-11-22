@@ -316,7 +316,8 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
     (hx : x ∈ (span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ C ∧ y ∈ closure (Set.range fun b ↦ L b x) ∧ ‖y - x‖ < ε ∧ L a y = x := by
-  have hlx := tendsto_apply_of_mem_topologicalClosure_span L hL hC hl hx
+  have hlx := tendsto_apply_of_mem_essentialSubmodule L hL hC hl
+    ((essentialSubmodule_eq_topologicalClosure_span L).symm ▸ hx)
   /- Fix `t` with `t * (1 + C) = 1 / 2`. -/
   have hC0 : 0 ≤ C := let ⟨e, he⟩ := hC.exists; (norm_nonneg e).trans he
   set t : ℝ := 1 / (2 * (1 + C)) with ht_def
@@ -367,8 +368,9 @@ theorem exists_mul_eq_of_tendsto_mul_right (𝕜 : Type*) [RCLike 𝕜] [NormedS
   have hL : ∀ a b z : A, ContinuousLinearMap.mul 𝕜 A (a * b) z =
       ContinuousLinearMap.mul 𝕜 A a (ContinuousLinearMap.mul 𝕜 A b z) := fun a b z ↦ by
     simp [mul_assoc]
-  have hx := (ContinuousLinearMap.tendsto_apply_iff_mem_topologicalClosure_span _ hL hC hl).1
-    (by simpa using hl x)
+  have hx := (ContinuousLinearMap.essentialSubmodule_eq_topologicalClosure_span _).le
+    ((ContinuousLinearMap.tendsto_apply_iff_mem_essentialSubmodule _ hL hC hl).1
+      (by simpa using hl x))
   obtain ⟨a, y, ha, -, -, h⟩ :=
     ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span _ hL hC hl hx one_pos
   exact ⟨a, y, ha, by simpa using h⟩

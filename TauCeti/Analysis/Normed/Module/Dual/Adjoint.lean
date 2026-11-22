@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.LocallyConvex.Bipolar
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
@@ -178,23 +179,24 @@ theorem mem_closure_image_closedBall_iff [SeminormedAddCommGroup F] [NormedSpace
       _ ≤ ‖g.comp T‖ * r := by gcongr; exact mem_closedBall_zero_iff.1 hx
       _ = r * ‖g.comp T‖ := mul_comm _ _
   · intro h
-    by_contra hy
-    -- Separate `y` from the closed real-convex set `closure (T '' closedBall 0 r)`.
-    obtain ⟨f, u, hfK, hfy⟩ : ∃ (f : StrongDual 𝕜 F) (u : ℝ),
-        (∀ a ∈ closure (T '' closedBall (0 : E) r), RCLike.re (f a) < u) ∧
-          u < RCLike.re (f y) := by
-      let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-      let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-      have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-      have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
-      have hconv : Convex ℝ (T '' closedBall (0 : E) r) :=
-        (convex_closedBall 0 r).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
-      exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
-    have hfT := StrongDual.re_apply_add_mul_norm_le (f := f.comp T) (x := 0) hr fun x hx ↦
-      (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
-    rw [map_zero, map_zero, zero_add] at hfT
-    have hfy' := (RCLike.re_le_norm (f y)).trans (h f)
-    linarith
+    let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+    let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
+    have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+    have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+    open scoped ComplexOrder in
+    have habs : AbsConvex 𝕜 (T '' closedBall (0 : E) r) :=
+      ⟨(balanced_closedBall_zero (𝕜 := 𝕜) (E := E) (r := r)).image (T : E →ₗ[𝕜] F),
+        convex_RCLike_iff_convex_real.mpr
+          ((convex_closedBall (0 : E) r).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ))⟩
+    have hne : (T '' closedBall (0 : E) r).Nonempty := ⟨T 0, 0, mem_closedBall_self hr, rfl⟩
+    open scoped ComplexOrder in
+    rw [← habs.bipolar_eq_closure hne]
+    intro g hg
+    rw [StrongDual.mem_polar_iff] at hg
+    have hgT := StrongDual.re_apply_add_mul_norm_le (f := g.comp T) (x := 0) hr fun x hx ↦
+      (RCLike.re_le_norm _).trans (hg (T x) ⟨x, hx, rfl⟩)
+    rw [map_zero, map_zero, zero_add] at hgT
+    exact (h g).trans hgT
 
 /-- If the adjoint of `S` is bounded below with constant `K`, then every `y` lies in the closure
 of the image of the closed ball of radius `K * ‖y‖`. -/

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
+public import TauCeti.Analysis.Normed.Algebra.Derivation.Basic
 public import TauCeti.Analysis.Normed.Module.Essential
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 
 /-!
@@ -18,33 +17,25 @@ Let `A` be a normed algebra with a bounded approximate identity, and let `E` be 
 `E_R = R.essentialSubmodule` for the one-sided essential submodules, and
 `E_ess = essentialBimoduleSubmodule L R = E_L ⊓ E_R` for the two-sided essential submodule.
 
-This file provides basic closure and restriction lemmas for bounded derivations together with the
-classical reductions of innerness for bounded derivations into dual bimodules to essential
-submodules (Runde, Proposition 2.1.5):
+Using the basic derivation restriction and Hahn–Banach residual lemmas from
+`TauCeti.Analysis.Normed.Algebra.Derivation.Basic`, this file proves the classical reductions of
+innerness for bounded derivations into dual bimodules to essential submodules (Runde, Proposition
+2.1.5):
 
-1. Subtracting an inner derivation from a bounded derivation into any bounded bimodule yields a
-   bounded derivation (`TauCeti.derivation_sub_inner` and
-   `TauCeti.derivation_sub_inner_dualAction`), and restricting the values of a dual-valued bounded
-   derivation to a jointly invariant submodule preserves the Leibniz law
-   (`TauCeti.precomp_subtypeL_comp_derivation`).
-2. **Left-essential reduction.** Given a bounded right approximate identity, a bounded derivation
+1. **Left-essential reduction.** Given a bounded right approximate identity, a bounded derivation
    `D : A →L[𝕜] E*` is inner as soon as its restriction to `E_L` is inner. Extending the
    implementing functional from `E_L` to `E` by Hahn–Banach leaves a residual derivation `D₁`
    annihilating `E_L`, so `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`; any weak-star limit of
    `D₁ e` along an ultrafilter finer than the approximate identity implements `D₁`.
-3. **Right-essential reduction.** Transporting to the opposite algebra `Aᵐᵒᵖ` reduces the symmetric
+2. **Right-essential reduction.** Transporting to the opposite algebra `Aᵐᵒᵖ` reduces the symmetric
    statement for a bounded left approximate identity and `E_R` directly to the left-essential
    reduction.
-4. **Two-sided reduction.** Applying the left- and right-essential reductions successively shows
+3. **Two-sided reduction.** Applying the left- and right-essential reductions successively shows
    that in the presence of a bounded two-sided approximate identity, `D` is inner as soon as its
    restriction to `E_L ⊓ E_R` is inner.
 
 ## Main results
 
-* `TauCeti.derivation_sub_inner` and `TauCeti.derivation_sub_inner_dualAction`: bounded derivations
-  are closed under subtracting inner derivations.
-* `TauCeti.precomp_subtypeL_comp_derivation`: restricting a dual-valued derivation to a jointly
-  invariant submodule preserves its Leibniz law.
 * `TauCeti.exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential` and
   `TauCeti.exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential`: one-sided essential
   reductions for bounded derivations into dual bimodules.
@@ -65,85 +56,12 @@ open Filter Topology Submodule ContinuousLinearMap
 
 namespace TauCeti
 
-section DerivationHelpers
-
-variable {𝕜 A E F : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup A] [NormedSpace 𝕜 A] [Mul A]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Subtracting an inner derivation from a bounded derivation into a bounded bimodule yields a
-bounded derivation. -/
-theorem derivation_sub_inner {L R : A →L[𝕜] F →L[𝕜] F}
-    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
-    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) {D : A →L[𝕜] F}
-    (hD : ∀ a b, D (a * b) = L a (D b) + R b (D a)) (x : F) (a b : A) :
-    (D - (L.flip x - R.flip x)) (a * b) =
-      L a ((D - (L.flip x - R.flip x)) b) + R b ((D - (L.flip x - R.flip x)) a) := by
-  simp only [sub_apply, flip_apply, hD, hL, hR, hLR, map_sub]
-  abel
-
-/-- Subtracting an inner derivation from a bounded derivation into a dual bimodule yields a
-bounded derivation. -/
-theorem derivation_sub_inner_dualAction {L R : A →L[𝕜] E →L[𝕜] E}
-    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
-    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) {D : A →L[𝕜] StrongDual 𝕜 E}
-    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
-    (ψ : StrongDual 𝕜 E) (a b : A) :
-    (D - ((dualAction R).flip ψ - (dualAction L).flip ψ)) (a * b) =
-      dualAction R a ((D - ((dualAction R).flip ψ - (dualAction L).flip ψ)) b) +
-        dualAction L b ((D - ((dualAction R).flip ψ - (dualAction L).flip ψ)) a) :=
-  derivation_sub_inner (dualAction_mul_apply_of_right hR)
-    (dualAction_mul_apply_of_left hL) (dualAction_apply_dualAction_apply_comm hLR) hD ψ a b
-
-/-- Restricting the values of a dual-valued bounded derivation to any jointly invariant submodule
-preserves its Leibniz law for the restricted actions. -/
-theorem precomp_subtypeL_comp_derivation {L R : A →L[𝕜] E →L[𝕜] E} (p : Submodule 𝕜 E)
-    (hLp : ∀ a, ∀ x ∈ p, L a x ∈ p) (hRp : ∀ a, ∀ x ∈ p, R a x ∈ p)
-    {D : A →L[𝕜] StrongDual 𝕜 E}
-    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) (a b : A) :
-    ((precomp 𝕜 p.subtypeL) ∘L D) (a * b) =
-      dualAction (R.restrictAction p hRp) a (((precomp 𝕜 p.subtypeL) ∘L D) b) +
-        dualAction (L.restrictAction p hLp) b (((precomp 𝕜 p.subtypeL) ∘L D) a) := by
-  simp only [comp_apply, hD, map_add, precomp_apply, dualAction_restrictAction_comp_subtypeL]
-
-end DerivationHelpers
-
 section Reduction
 
 variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [ProperSpace 𝕜]
   [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {L R : A →L[𝕜] E →L[𝕜] E}
-
-omit [ProperSpace 𝕜] in
-/-- If a bounded derivation `D : A →L[𝕜] E*` restricts to an inner derivation on a jointly invariant
-submodule `p`, Hahn–Banach produces a residual bounded derivation `D₁` annihilating `p`. -/
-private theorem exists_residual_derivation_of_restrict
-    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
-    (hLR : ∀ a b x, L a (R b x) = R b (L a x))
-    (p : Submodule 𝕜 E) (hLp : ∀ a, ∀ x ∈ p, L a x ∈ p) (hRp : ∀ a, ∀ x ∈ p, R a x ∈ p)
-    {D : A →L[𝕜] StrongDual 𝕜 E}
-    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
-    (hp : ∃ ψ₀ : StrongDual 𝕜 p,
-      ∀ a, (D a).comp p.subtypeL =
-        dualAction (R.restrictAction p hRp) a ψ₀ -
-        dualAction (L.restrictAction p hLp) a ψ₀) :
-    ∃ (ψ : StrongDual 𝕜 E) (D₁ : A →L[𝕜] StrongDual 𝕜 E),
-      (∀ a b, D₁ (a * b) = dualAction R a (D₁ b) + dualAction L b (D₁ a)) ∧
-      (∀ a, ∀ x ∈ p, D₁ a x = 0) ∧
-      (∀ a, D a = D₁ a + (dualAction R a ψ - dualAction L a ψ)) := by
-  obtain ⟨ψ₀, hψ₀⟩ := hp
-  obtain ⟨ψ, hψ⟩ := StrongDual.exists_extension p ψ₀
-  have hψ_comp : ψ.comp p.subtypeL = ψ₀ := by ext x; exact hψ x
-  refine ⟨ψ, D - ((dualAction R).flip ψ - (dualAction L).flip ψ),
-    derivation_sub_inner_dualAction hL hR hLR hD ψ, fun a x hx ↦ ?_, fun a ↦ ?_⟩
-  · have hcomp : (D a - (dualAction R a ψ - dualAction L a ψ)).comp p.subtypeL = 0 := by
-      rw [sub_comp, sub_comp, hψ₀ a, ← dualAction_restrictAction_comp_subtypeL R p hRp a ψ,
-        ← dualAction_restrictAction_comp_subtypeL L p hLp a ψ, hψ_comp, sub_self]
-    simpa only [sub_apply, flip_apply, comp_apply, Submodule.subtypeL_apply, zero_apply] using
-      congrArg (fun f : StrongDual 𝕜 p ↦ f ⟨x, hx⟩) hcomp
-  · simp
 
 /-- **Left-essential reduction.** If `A` has a bounded right approximate identity, then a bounded
 derivation `D : A →L[𝕜] E*` is inner as soon as its restriction to the left-essential part
@@ -239,16 +157,15 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
     exact add_comm _ _
   have hE_eq : Lop.essentialSubmodule = R.essentialSubmodule := by
     have hset : Set.range (fun p : Aᵐᵒᵖ × E ↦ Lop p.1 p.2) =
-        Set.range fun p : A × E ↦ R p.1 p.2 := by
-      ext x
-      constructor
-      · rintro ⟨⟨a, y⟩, rfl⟩; exact ⟨(a.unop, y), rfl⟩
-      · rintro ⟨⟨a, y⟩, rfl⟩; exact ⟨(MulOpposite.op a, y), rfl⟩
+        Set.range fun p : A × E ↦ R p.1 p.2 :=
+      (MulOpposite.unop_surjective.prodMap Function.surjective_id).range_comp
+        (fun p : A × E ↦ R p.1 p.2)
     simp only [essentialSubmodule_eq_topologicalClosure_span, hset]
   obtain ⟨ψ₀, hψ₀⟩ := hER
   let eSub : Lop.essentialSubmodule →L[𝕜] R.essentialSubmodule :=
-    Lop.essentialSubmodule.subtypeL.codRestrict R.essentialSubmodule fun x ↦ hE_eq ▸ x.property
-  have heSub_coe (x : Lop.essentialSubmodule) : (eSub x : E) = (x : E) := rfl
+    (LinearIsometryEquiv.ofEq _ _ hE_eq).toLinearIsometry.toContinuousLinearMap
+  have heSub_coe (x : Lop.essentialSubmodule) : (eSub x : E) = (x : E) :=
+    LinearIsometryEquiv.coe_ofEq_apply hE_eq x
   obtain ⟨φ, hφ⟩ := exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
     hLop hRop hLRop hCop hlop Dop hDop ⟨-(ψ₀.comp eSub), fun a ↦ by
       ext x
@@ -301,10 +218,12 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm hLR a hx
   let LL : A →L[𝕜] EL →L[𝕜] EL := L.restrictAction EL hLL_inv
   let RL : A →L[𝕜] EL →L[𝕜] EL := R.restrictAction EL hRL_inv
-  have hLL (a b : A) (x : EL) : LL (a * b) x = LL a (LL b x) := Subtype.ext (by simp [LL, hL])
-  have hRL (a b : A) (x : EL) : RL (a * b) x = RL b (RL a x) := Subtype.ext (by simp [RL, hR])
-  have hLRL (a b : A) (x : EL) : LL a (RL b x) = RL b (LL a x) :=
-    Subtype.ext (by simp [LL, RL, hLR])
+  have hLL : ∀ a b x, LL (a * b) x = LL a (LL b x) :=
+    L.restrictAction_mul_apply_of_left hL EL hLL_inv
+  have hRL : ∀ a b x, RL (a * b) x = RL b (RL a x) :=
+    R.restrictAction_mul_apply_of_right hR EL hRL_inv
+  have hLRL : ∀ a b x, LL a (RL b x) = RL b (LL a x) :=
+    restrictAction_apply_comm hLR EL hLL_inv hRL_inv
   -- Step 1: reduce `E` to `EL`.
   let DL : A →L[𝕜] StrongDual 𝕜 EL := (precomp 𝕜 EL.subtypeL) ∘L D
   have hDL := precomp_subtypeL_comp_derivation EL hLL_inv hRL_inv hD
@@ -318,14 +237,13 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     hl.tendsto_mul_right DL hDL ?_
   let ELR := RL.essentialSubmodule
   have hELR_mem (x : ELR) : (x.val : E) ∈ essentialBimoduleSubmodule L R := by
-    refine ⟨x.val.property, ?_⟩
-    have hle : (span 𝕜 (Set.range fun p : A × EL ↦ RL p.1 p.2)).map EL.subtypeL.toLinearMap ≤
-        span 𝕜 (Set.range fun p : A × E ↦ R p.1 p.2) := by
-      rw [Submodule.map_span_le]
-      rintro _ ⟨⟨a, y⟩, rfl⟩
-      exact subset_span ⟨(a, y.val), by simp [RL]⟩
-    exact ((Submodule.topologicalClosure_map EL.subtypeL _).trans
-      (Submodule.topologicalClosure_mono hle)) (Submodule.mem_map_of_mem x.property)
+    refine (mem_essentialBimoduleSubmodule_iff L R).2 ⟨x.val.property, ?_⟩
+    exact (essentialSubmodule_le_iff (M := RL) (p := R.essentialSubmodule.comap EL.subtype)
+      ((isClosed_essentialSubmodule R).preimage continuous_subtypeVal)).2
+      (fun a y ↦ by
+        simp only [Submodule.mem_comap, Submodule.coe_subtype, RL, coe_restrictAction_apply]
+        exact apply_mem_essentialSubmodule R a y.val)
+      x.property
   let ι : ELR →L[𝕜] essentialBimoduleSubmodule L R :=
     (EL.subtypeL.comp ELR.subtypeL).codRestrict (essentialBimoduleSubmodule L R) hELR_mem
   have hι_coe (x : ELR) : (ι x : E) = (x.val : E) := rfl
@@ -343,7 +261,9 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   obtain ⟨ψ₀, hψ₀⟩ := hEss
   refine ⟨precomp 𝕜 ι ψ₀, fun a ↦ ?_⟩
   have h1 : (DL a).comp ELR.subtypeL =
-      precomp 𝕜 ι ((D a).comp (essentialBimoduleSubmodule L R).subtypeL) := rfl
+      precomp 𝕜 ι ((D a).comp (essentialBimoduleSubmodule L R).subtypeL) := by
+    ext x
+    simp only [DL, comp_apply, precomp_apply, Submodule.subtypeL_apply, hι_coe]
   rw [h1, hψ₀ a, map_sub, precomp_dualAction_apply hιR, precomp_dualAction_apply hιL]
 
 end Reduction
