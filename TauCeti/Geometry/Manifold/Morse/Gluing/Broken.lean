@@ -100,6 +100,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The points of the chart source whose coordinates have norm less than `ρ > 0` form a
+neighbourhood of the critical point. -/
+private theorem MorseChart.eventually_mem_source_norm_coord_lt {q : M} (φ : MorseChart E f q)
+    {ρ : ℝ} (hρ : 0 < ρ) : ∀ᶠ w in 𝓝 q, w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ := by
+  have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
+    (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
+  filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
+    hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
+
 namespace IsAdaptedPseudoGradient
 
 /-- **A Morse chart with a box at a critical point.** At the critical point `q` there are a Morse
@@ -143,12 +153,8 @@ private theorem eventually_exists_flow_norm_coord_eq (hX : IsAdaptedPseudoGradie
       ‖φ.coord (φ.toChart (hX.flow T a₁))‖ = ε := by
   obtain ⟨ρ, hρ, hc⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ
   -- A point `b` of the trajectory in the cube of radius `ρ`, where the flow contracts linearly.
-  have hN : {w | w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ} ∈ 𝓝 q := by
-    have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
-      (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
-    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
-      hcont.eventually (gt_mem_nhds (by simpa using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
-  obtain ⟨t, hb, hbρ⟩ := ((Flow.mem_stableSet.1 ha₁.2).eventually hN).exists
+  obtain ⟨t, hb, hbρ⟩ :=
+    ((Flow.mem_stableSet.1 ha₁.2).eventually (φ.eventually_mem_source_norm_coord_lt hρ)).exists
   set b := hX.flow t a₁
   have hbm : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
     hX.flow.isInvariant_unstableSet_inter_stableSet p q t ha₁
@@ -944,10 +950,7 @@ private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdapted
   -- Near `q`, the unstable set of `q` is the kernel of `u`; `Z` contains a disc transverse to it.
   have hlocq : ∀ᶠ w in 𝓝 q,
       w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0 := by
-    have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) q :=
-      (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
-    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
-      hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ
+    filter_upwards [φ.eventually_mem_source_norm_coord_lt hρ] with w ⟨hw, hwρ⟩
     exact hloc w hw hwρ
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
@@ -1017,7 +1020,7 @@ private theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceCha
   have hw : splitQuadraticFlow T (WithLp.toLp 2 (g y, y)) = WithLp.toLp 2
       ((splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst,
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst) :=
-    WithLp.ofLp_injective 2 (Prod.ext rfl hgraph)
+    WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hgraph))
   refine ⟨φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
     (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))))), ⟨?_, by rw [hw]; exact hkZ _ hxη⟩, hW,
     -T₁ + (-(T + τ)), ?_⟩

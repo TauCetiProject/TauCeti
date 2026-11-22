@@ -28,8 +28,8 @@ large `T` this map is a contraction of a closed ball, with Lipschitz constant
 large `T`, some orbit from the entrance disc reaches the disc through the centre at time `T`, close
 to the centre.
 
-A disc through the centre which is strictly differentiable at `0`, with the derivative of its
-contracting component `x` invertible, is such a graph near the centre
+The image of a disc through the centre which is strictly differentiable at `0`, with the
+derivative of its contracting component `x` invertible, contains such a graph near the centre
 (`TauCeti.exists_lipschitzOnWith_graph_of_hasStrictFDerivAt`), by the inverse function theorem.
 
 In Morse theory, the entrance disc is a piece of the unstable manifold of a critical point `p`
@@ -40,8 +40,9 @@ submanifold converging to `a`.
 
 ## Main results
 
-* `TauCeti.exists_lipschitzOnWith_graph_of_hasStrictFDerivAt`: near the centre, a disc through the
-  centre transverse to the unstable set is a Lipschitz graph `x ↦ (x, k x)` with `k 0 = 0`.
+* `TauCeti.exists_lipschitzOnWith_graph_of_hasStrictFDerivAt`: near the centre, the image of a disc
+  through the centre transverse to the unstable set contains a Lipschitz graph `x ↦ (x, k x)` with
+  `k 0 = 0`.
 * `TauCeti.eventually_exists_splitQuadraticFlow_snd_eq`: for all large `T`, the orbit through some
   point of the entrance graph stays in the box up to time `T` and meets the graph of `k` at time
   `T`, in a prescribed neighbourhood of the centre.
@@ -62,11 +63,11 @@ namespace TauCeti
 variable {G Eₛ Eᵤ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
 
-/-- **A disc through the centre transverse to the unstable set is a graph.** Let `χ` be a disc
-through the centre `(0, 0)` of the split model, strictly differentiable at `0` with the derivative
-of its contracting component `x` invertible. Near the centre, its points form a Lipschitz graph
-`x ↦ (x, k x)` over a closed ball of the contracting factor, with `k 0 = 0`, and every point of
-this graph is `χ z` for some `z` in a prescribed neighbourhood `V` of `0`. -/
+/-- **A disc through the centre transverse to the unstable set contains a graph.** Let `χ` be a
+disc through the centre `(0, 0)` of the split model, strictly differentiable at `0` with the
+derivative of its contracting component `x` invertible. There is a Lipschitz graph `x ↦ (x, k x)`
+over a closed ball of the contracting factor, with `k 0 = 0`, every point of which is `χ z` for
+some `z` in a prescribed neighbourhood `V` of `0`. -/
 theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
     {χ : G → WithLp 2 (Eₛ × Eᵤ)} {χ' : G →L[ℝ] WithLp 2 (Eₛ × Eᵤ)}
     (hχ : HasStrictFDerivAt χ χ' 0) (hχ' : (WithLp.fstL 2 ℝ Eₛ Eᵤ ∘L χ').IsInvertible)
@@ -96,8 +97,7 @@ theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
   obtain ⟨η, hη, hηs⟩ := nhds_basis_closedBall.mem_iff.1 (inter_mem hs (inter_mem (hσt hV) hright))
   refine ⟨η, hη, K, k, hks.mono fun x hx ↦ (hηs hx).1, by simp [k, hσ₀, hχ₀], fun x hx ↦ ?_⟩
   obtain ⟨-, hxV, hxa⟩ := hηs hx
-  refine ⟨σ x, hxV, WithLp.ofLp_injective 2 (Prod.ext ?_ rfl)⟩
-  exact hxa
+  exact ⟨σ x, hxV, WithLp.ofLp_injective 2 (Prod.ext (by simpa [ha_def] using hxa) (by simp [k]))⟩
 
 omit [NormedSpace ℝ Eᵤ] in
 /-- Along the entrance graph `y ↦ (g y, y)` in the face `‖x‖ = ε`, scaled by a rate `l` with
@@ -222,9 +222,8 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
     · rw [norm_smul, Real.norm_of_nonneg hl.le, hgε y hy]
       exact h₅
     · exact hkg.trans_lt (by linarith)
-  · rw [hT']
+  · rw [hT', WithLp.toLp_fst]
     exact hgη
-  · rw [hT']
-    rfl
+  · rw [hT', WithLp.toLp_snd, WithLp.toLp_fst]
 
 end TauCeti

@@ -27,7 +27,7 @@ of one of two kinds:
 This file proves the converse, the gluing step: every such configuration is a limit of points of
 `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, along orbits following the broken trajectory. This includes the
 configurations in which `y` is the critical point `a` (or `b`) itself, which occur for instance
-when `X₀ = X₁` and `a` is a critical point of both functions. At the source, `W^s_{X₁}(r)` is a
+when `X₀ = X₁` and `a = r` (or `b = p`). At the source, `W^s_{X₁}(r)` is a
 set flattened near `y` and transverse there to `W^u_{X₀}(a)`, by the Morse–Smale condition of the
 pair, so the gluing of `X₀` into a transverse set applies
 (`IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart`), whether or not `y = a`.
