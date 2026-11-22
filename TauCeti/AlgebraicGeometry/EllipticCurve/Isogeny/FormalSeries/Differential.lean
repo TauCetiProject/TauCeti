@@ -101,8 +101,12 @@ theorem subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDiffe
   have := φ.isElliptic
   have h := congrArg W₁.differentialLaurentSeries hc
   rw [φ.differentialLaurentSeries_pullbackDifferential,
-    W₂.differentialLaurentSeries_invariantDifferential, map_smul,
-    W₁.differentialLaurentSeries_invariantDifferential, LaurentSeries.substAlgHom_coe,
+    W₂.differentialLaurentSeries_invariantDifferential
+      (Affine.invariantDifferentialDenom_ne_zero W₂.toAffine),
+    map_smul,
+    W₁.differentialLaurentSeries_invariantDifferential
+      (Affine.invariantDifferentialDenom_ne_zero W₁.toAffine),
+    LaurentSeries.substAlgHom_coe,
     ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, ← PowerSeries.coe_smul] at h
   exact ofPowerSeries_injective h
 
