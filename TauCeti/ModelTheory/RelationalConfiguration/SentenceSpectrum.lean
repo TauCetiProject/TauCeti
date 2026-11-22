@@ -233,8 +233,8 @@ theorem isThinOn_modelsOf_of_countable_quotient_inf_or_not
         Countable (Quotient (isoSetoidOn V (φ ⊓ θ.not)))) :
     (isoSetoid L V).IsThinOn (modelsOf (V := V) φ) := by
   refine isThinOn_of_sentence_splits fun θ => ?_
-  simpa only [isoSetoidOn, Setoid.countable_quotient_comap_val_iff, modelsOf_inf, modelsOf_not,
-    ← Set.sdiff_eq] using h θ
+  simpa only [isoSetoidOn, classIso, Setoid.countable_quotient_comap_val_iff, modelsOf_inf,
+    modelsOf_not, ← Set.sdiff_eq] using h θ
 
 end Splits
 

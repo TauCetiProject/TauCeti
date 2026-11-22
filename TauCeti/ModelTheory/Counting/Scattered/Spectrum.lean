@@ -157,8 +157,8 @@ theorem concentratedAtBFLevels_modelsOf_iff_forall_countable_quotient_isoSetoidO
   refine concentratedAtBFLevels_of_measurableSet_of_sentence_splits (measurableSet_modelsOf φ)
     fun θ => ?_
   have hθ := hsplit θ
-  simp only [isoSetoidOn, Setoid.countable_quotient_comap_val_iff, modelsOf_inf, modelsOf_not,
-    ← sdiff_eq] at hθ
+  simp only [isoSetoidOn, classIso, Setoid.countable_quotient_comap_val_iff, modelsOf_inf,
+    modelsOf_not, ← sdiff_eq] at hθ
   exact hθ
 
 /-- **Single-sentence splits force thinness on `ℕ`.** If `classOf : modelsOf (V := ℕ) φ → Q`

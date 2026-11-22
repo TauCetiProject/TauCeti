@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
+public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 import TauCeti.ModelTheory.Syntax
 
@@ -39,6 +40,8 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.mem_modelsOf_toInf`: the model class of a first-order sentence
+  consists of the configurations satisfying it.
 * `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_sup`, `modelsOf_iInf`,
   `modelsOf_iSup`, `modelsOf_not`, `modelsOf_imp`, `modelsOf_top` and `modelsOf_bot`: model
   classes turn the connectives into the Boolean set operations.
@@ -75,6 +78,13 @@ def modelsOf (φ : L.SentenceInf ι) : Set (RelationalConfiguration L V) :=
 theorem mem_modelsOf {φ : L.SentenceInf ι} {c : RelationalConfiguration L V} :
     c ∈ modelsOf φ ↔ @SentenceInf.Realize L ι φ V c.toStructure :=
   Iff.rfl
+
+/-- A configuration lies in the model class of a first-order sentence, embedded in the infinitary
+logic, exactly when its decoded structure satisfies the sentence. Not a simp lemma: `simp` already
+reaches the right side through `mem_modelsOf` and `Sentence.realize_toInf`. -/
+theorem mem_modelsOf_toInf {φ : L.Sentence} {c : RelationalConfiguration L V} :
+    c ∈ modelsOf (φ.toInf (ι := ι)) ↔ @Sentence.Realize L V c.toStructure φ :=
+  @Sentence.realize_toInf L ι φ V c.toStructure
 
 /-- The false sentence has no models. -/
 @[simp]
@@ -224,11 +234,11 @@ theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
 
 variable (V) in
 /-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
-models of `φ`. Its classes are the isomorphism classes of the models of `φ` with carrier `V`.
-It is an abbreviation, so results stated for the restriction of `isoSetoid L V` to an arbitrary
-set of configurations apply to it. -/
+models of `φ`: isomorphism on the class `modelsOf φ`. Its classes are the isomorphism classes of
+the models of `φ` with carrier `V`. It is an abbreviation, so results stated for `classIso` apply
+to it. -/
 abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
-  (isoSetoid L V).comap Subtype.val
+  classIso (modelsOf φ)
 
 /-- Two models of `φ` are related exactly when their decoded structures are isomorphic. -/
 @[simp]

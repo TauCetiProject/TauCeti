@@ -101,14 +101,9 @@ pair `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` of consecutive preimages of skeleta, fo
 lemma ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (k : ℕ) (b : ℤ) (hb : b = k - 1) :
     TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (Int.le_add_one le_rfl) :
         preimageSkeleton C p b ⊆ preimageSkeleton C p (b + 1)) =
-      preimageSkeletonPair p C k := by
-  -- The pair `ofInclusion h` only depends on the two subsets.
-  suffices ∀ {s t s' t' : Set E} (h : s ⊆ t) (h' : s' ⊆ t'), s = s' → t = t' →
-      TopPair.ofInclusion h = TopPair.ofInclusion h' from
-    this _ _ (by rw [preimageSkeleton_def, show (b + 1).toNat = k by lia])
-      (by rw [preimageSkeleton_def, show (b + 1 + 1).toNat = k + 1 by lia])
-  rintro s t _ _ h h' rfl rfl
-  rfl
+      preimageSkeletonPair p C k :=
+  TopPair.ofInclusion_congr _ _ (preimageSkeleton_eq_preimage_skeletonLT p k b hb)
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT p k b hb)
 
 /-- A point of the pullback lies over the `n`-skeleton. -/
 lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
@@ -120,7 +115,7 @@ lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
 lemma cellPullback_mem_preimage_skeletonLT_of_norm_eq_one {n : ℕ} {x : cellPullback p C n}
     (hx : ‖(x.val.1.2 : Fin n → ℝ)‖ = 1) : x.val.2 ∈ p ⁻¹' (skeletonLT C n : Set B) := by
   rw [mem_preimage, ← x.property, sigmaCellMap_apply]
-  exact cellFrontier_subset_skeletonLT n _ ⟨_, mem_sphere_zero_iff_norm.2 hx, rfl⟩
+  exact map_mem_skeletonLT_of_norm_eq_one _ hx
 
 variable (p C) in
 /-- **The projection to `E`** `(q, e) ↦ e` from the pullback `P` of `p` to the disks of the
@@ -175,34 +170,6 @@ private def shellHomotopyRel (n : ℕ) :
   map_zero_left q := Subtype.ext ((sigmaRadialHomotopy (cell C n) n).apply_zero q.val)
   map_one_left q := rfl
   prop' t q hq := Subtype.ext (sigmaRadialHomotopy_apply_of_norm_eq_one _ _ t hq)
-
-variable (C) in
-/-- The deformation of `N = TauCeti.skeletonNeighborhood C n` onto `Xⁿ⁻¹`, relative to `Xⁿ⁻¹`. -/
-private def neighborhoodHomotopyRel (n : ℕ) :
-    (ContinuousMap.id (skeletonNeighborhood C n)).HomotopyRel
-      ⟨fun x ↦ ⟨skeletonNeighborhoodEndpoint C n ⟨x, skeletonNeighborhood_subset_skeletonLT_succ C n
-          x.property⟩, skeletonLT_subset_skeletonNeighborhood n (skeletonNeighborhoodEndpoint_mem _
-              x.property)⟩,
-        by fun_prop⟩
-      (Subtype.val ⁻¹' (skeletonLT C n : Set B)) where
-  toFun z := ⟨skeletonNeighborhoodHomotopy C n
-      (z.1, ⟨z.2, skeletonNeighborhood_subset_skeletonLT_succ C n z.2.property⟩),
-    skeletonNeighborhoodHomotopy_mem _ _ z.2.property⟩
-  continuous_toFun := by fun_prop
-  map_zero_left x := Subtype.ext <| by
-    -- Read the deformation of `Xⁿ` on the points of `N`, as points of `B`.
-    change (skeletonNeighborhoodHomotopy C n (0, _) : B) = x
-    rw [ContinuousMap.Homotopy.apply_zero]
-    rfl
-  map_one_left x := Subtype.ext <| by
-    -- As above, read the deformation on the points of `N`.
-    change (skeletonNeighborhoodHomotopy C n (1, _) : B) = skeletonNeighborhoodEndpoint C n _
-    rw [ContinuousMap.Homotopy.apply_one]
-  prop' t x hx := Subtype.ext <| by
-    -- As above, read the deformation on the points of `N`.
-    change (skeletonNeighborhoodHomotopy C n (t, _) : B) = x
-    rw [skeletonNeighborhoodHomotopy_apply_of_mem t
-      ⟨x.val, skeletonNeighborhood_subset_skeletonLT_succ C n x.property⟩ (by exact hx)]
 
 variable (p C) in
 omit [T2Space B] in
@@ -432,7 +399,7 @@ private lemma isIso_singularHomologyMap_cellPullbackPairToShellPair (n k : ℕ) 
   have hz (m : ℕ) := isZero_singularHomology_preimage_of_homotopyRel
     (mem_serreFibrations_pullbackFst hp (_root_.TopCat.ofHom (sigmaCellMap C n)))
     (sigma_sphere_subset_shell _ n) (shellHomotopyRel C n)
-    (fun q ↦ norm_sigmaRadialHomotopy_one _ n q.property) R m
+    (fun q ↦ norm_sigmaRadialHomotopy_one _ n q.property) (ModuleCat.of R R) m
   have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
     (TopTriple.ofSubset (X := cellPullback p C n) (cellPullbackSphere_subset_shell p C n)) _ k
     (hz k) fun m _ ↦ hz m
@@ -443,8 +410,8 @@ private lemma isIso_singularHomologyMap_preimageSkeletonPairToNeighborhood (n k 
       (preimageSkeletonPairToNeighborhood p C n) (ModuleCat.of R R) k) := by
   -- The part of `E` over `N`, relative to the part over `Xⁿ⁻¹`, is acyclic.
   have hz (m : ℕ) := isZero_singularHomology_preimage_of_homotopyRel hp
-    (skeletonLT_subset_skeletonNeighborhood (C := C) n) (neighborhoodHomotopyRel C n)
-    (fun x ↦ skeletonNeighborhoodEndpoint_mem _ x.property) R m
+    (skeletonLT_subset_skeletonNeighborhood (C := C) n) (skeletonNeighborhoodHomotopyRel C n)
+    (fun x ↦ skeletonNeighborhoodEndpoint_mem _ x.property) (ModuleCat.of R R) m
   have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
     (TopTriple.ofInclusions (X := E)
       (preimage_mono (f := p) (skeletonLT_subset_skeletonNeighborhood (C := C) n))

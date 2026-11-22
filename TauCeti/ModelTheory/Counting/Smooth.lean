@@ -46,7 +46,7 @@ theorem countable_quotient_isoSetoidOn_nat_iff_isThinOnNatModels_and_isSmooth
     {κ : Type uκ} [Countable κ] {φ : L.SentenceInf κ} :
     Countable (Quotient (isoSetoidOn ℕ φ)) ↔
       IsThinOnNatModels φ ∧ (isoSetoidOn ℕ φ).IsSmooth := by
-  rw [isoSetoidOn, countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth
+  rw [isoSetoidOn, classIso, countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth
     (measurableSet_modelsOf φ), isThinOnNatModels_iff_isThinOn]
 
 end TauCeti
