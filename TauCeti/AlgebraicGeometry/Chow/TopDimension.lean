@@ -184,8 +184,8 @@ dimension `n` is that component. -/
 lemma closure_pointsOfDimensionEquivIrreducibleComponents_symm_apply
     (hX : topologicalKrullDim X ≤ n)
     (Z : {Z : Set X // Z ∈ irreducibleComponents X ∧ topologicalKrullDim Z = n}) :
-    closure {((pointsOfDimensionEquivIrreducibleComponents hX).symm Z : X)} = Z :=
-  genericPoints.isGenericPoint_ofComponent ⟨Z.1, Z.2.1⟩
+    closure {((pointsOfDimensionEquivIrreducibleComponents hX).symm Z : X)} = Z := by
+  rw [← coe_pointsOfDimensionEquivIrreducibleComponents_apply hX, Equiv.apply_symm_apply]
 
 variable [IsLocallyNoetherian X]
 
