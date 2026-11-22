@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Compactness.Paracompact
+import TauCeti.Topology.Compactness.Lindelof
 import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
@@ -791,7 +792,7 @@ section Levelwise
 /-- For any fixed test-space universe `v`, stage `skₙ |X|` of the skeletal filtration satisfies
 `UCompactlyGeneratedSpace.{v}` whenever each level `X _⦋k⦌` (`k ≤ n`) satisfies
 `UCompactlyGeneratedSpace.{v}`. -/
-theorem uCompactlyGeneratedSpace_skeleton.{v} (n : ℕ)
+instance instUCompactlyGeneratedSpaceSkeleton.{v} (n : ℕ)
     [hcg : ∀ k : {k : ℕ // k ≤ n}, UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌)] :
     UCompactlyGeneratedSpace.{v} ((skeleton X).obj n) := by
   have : ∀ k : {k : ℕ // k ≤ n},
@@ -829,7 +830,7 @@ theorem normalSpace_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace
   normalSpace X hσ
 
 /-- If each `X _⦋k⦌` (`k ≤ n`) is `T3` and Lindelöf, stage `skₙ |X|` is paracompact. -/
-theorem paracompactSpace_skeleton (n : ℕ)
+instance instParacompactSpaceSkeleton (n : ℕ)
     [hT : ∀ k : {k : ℕ // k ≤ n}, T3Space (X _⦋k.val⦌)]
     [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
     ParacompactSpace ((skeleton X).obj n) := by
@@ -841,14 +842,14 @@ theorem paracompactSpace_skeleton (n : ℕ)
   have : LindelofSpace ((skeleton X).obj n) := inferInstance
   exact TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
 
-/-- If all degeneracies are closed embeddings, each `X _⦋n⦌ × Δⁿ` is normal, each `X _⦋n⦌` is
-`T1`, and `|X|` is Lindelöf, then `|X|` is paracompact in its colimit topology. -/
-theorem paracompactSpace_of_isClosedEmbedding_σ_of_normalSpace_of_lindelofSpace
-    (hσ : ∀ {n : ℕ} (j : Fin (n + 1)), IsClosedEmbedding (X.σ j))
-    [∀ n : ℕ, NormalSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)]
-    [∀ n : ℕ, T1Space (X _⦋n⦌)] [LindelofSpace X.geometricRealization] :
+/-- If each `X _⦋n⦌` is `T3` and Lindelöf, `|X|` is paracompact in its colimit topology. -/
+instance instParacompactSpace [∀ n : ℕ, T3Space (X _⦋n⦌)] [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
     ParacompactSpace X.geometricRealization :=
-  have : NormalSpace X.geometricRealization := normalSpace X hσ
+  have : NormalSpace X.geometricRealization :=
+    normalSpace_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace X fun {_} j ↦
+      X.isClosedEmbedding_σ j
+  have : ∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
+  have : LindelofSpace X.geometricRealization := inferInstance
   TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
 
 end Levelwise

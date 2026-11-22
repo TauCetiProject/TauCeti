@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
+public import Mathlib.Topology.Compactness.Lindelof
 public import TauCeti.AlgebraicTopology.FatRealization
-public import TauCeti.Topology.Compactness.Lindelof
 import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
@@ -101,7 +101,7 @@ instance [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj
 /-- For any fixed test-space universe `v`, if each level `X _⦋n⦌` satisfies
 `UCompactlyGeneratedSpace.{v}`, then `X.geometricRealization` satisfies
 `UCompactlyGeneratedSpace.{v}` in its colimit topology. -/
-theorem uCompactlyGeneratedSpace [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌)] :
+instance instUCompactlyGeneratedSpace [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
   have : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
     fun _ ↦ UCompactlyGeneratedSpace.prod_right
