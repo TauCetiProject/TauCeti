@@ -83,6 +83,7 @@ open scoped Manifold ContDiff
 universe u
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+  isClosed_stabilizer_coadjointRepresentation
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -154,8 +155,6 @@ theorem even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply
       (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) x) := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
   exact ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap.even_manifoldMorseIndex
     ν.isSymplectic_coadjointOrbitForm.isNondegenerate ν.eval₂_coadjointOrbitForm_mfderiv_smul hx
 
@@ -172,8 +171,6 @@ theorem isPerfectMorse_orbitMap_coadjointRepresentation_apply
       fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
   exact ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap.isPerfectMorse
     ν.isSymplectic_coadjointOrbitForm.isNondegenerate ν.eval₂_coadjointOrbitForm_mfderiv_smul k hX
 
@@ -196,10 +193,6 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard
 group, `bⱼ(O; k) = 0` for every odd `j` and every division ring `k`. -/
 theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_zero_of_odd {j : ℕ}
     (hj : Odd j) : bettiNumber k (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) j = 0 := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
   obtain ⟨X, hX⟩ := ν.exists_isMorse_orbitMap_coadjointRepresentation_apply
   exact hX.bettiNumber_eq_zero_of_odd
     (fun _ ↦ ν.even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply) hj
@@ -223,10 +216,6 @@ theorem sum_bettiNumber_quotient_stabilizer_coadjointRepresentation
 connected Lie group `G` and `ν ∈ 𝔤*`, the coadjoint orbit `G ⧸ G_ν` is simply connected. -/
 theorem simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation [ConnectedSpace G] :
     SimplyConnectedSpace (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
   have : ConnectedSpace (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
     QuotientGroup.mk_surjective.connectedSpace continuous_quot_mk
   -- A Morse height has no critical point of index one, as its indices are even, so it attaches
