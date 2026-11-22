@@ -11,9 +11,10 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 /-!
 # Factoring an operator through the range of a dominating operator
 
-Let `g : E →L[𝕜] G` and `f : E →L[𝕜] F` be bounded operators with `‖f x‖ ≤ C ‖g x‖` for every
-`x`. Then `f` vanishes on the kernel of `g`, so it factors as `f = S ∘ g` through the range of
-`g`, with a factor `S` of norm at most `C`. When `F` is complete, `S` extends by continuity to the
+Let `g : E →L[𝕜] G` and `f : E →L[𝕜] F` be continuous linear maps into normed spaces, from a
+module `E` with any topology (no norm on `E` is needed), with `‖f x‖ ≤ C ‖g x‖` for every `x`.
+Then `f` vanishes on the kernel of `g`, so it factors as `f = S ∘ g` through the range of `g`,
+with a factor `S` of norm at most `C`. When `F` is complete, `S` extends by continuity to the
 closure of that range, with the same bound. Conversely, any such factorization gives the bound.
 
 The factor on the range is Mathlib's `LinearMap.compLeftInverse` and its extension to the closure
@@ -58,8 +59,8 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] [RingHomIsometric σ₁₂]
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeminormedAddCommGroup G]
+  [NormedSpace 𝕜 G] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] [RingHomIsometric σ₁₂]
 
 /-- An operator `f` factors as `S ∘ g` through the range of `g`, with `‖S‖ ≤ C`, if and only if
 `‖f x‖ ≤ C ‖g x‖` for all `x`. -/
@@ -69,7 +70,7 @@ theorem exists_eq_comp_rangeRestrict_iff {f : E →SL[σ₁₂] F} {g : E →L[�
       ∀ x, ‖f x‖ ≤ C * ‖g x‖ := by
   refine ⟨fun ⟨S, hS, hf⟩ x ↦ ?_, fun h ↦ ?_⟩
   · rw [hf]
-    exact (S.le_opNorm _).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
+    exact S.le_of_opNorm_le hS _
   · refine ⟨(f : E →ₛₗ[σ₁₂] F).compLeftInverse (g : E →ₗ[𝕜] G),
       LinearMap.opNorm_compLeftInverse_le hC h, ?_⟩
     ext x
@@ -85,7 +86,7 @@ theorem exists_eq_comp_codRestrict_topologicalClosure_iff [CompleteSpace F] {f :
       ∀ x, ‖f x‖ ≤ C * ‖g x‖ := by
   refine ⟨fun ⟨S, hS, hf⟩ x ↦ ?_, fun h ↦ ?_⟩
   · rw [hf]
-    exact (S.le_opNorm _).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
+    exact S.le_of_opNorm_le hS _
   · set j := g.codRestrict _
       fun x ↦ Submodule.le_topologicalClosure _ (LinearMap.mem_range_self (g : E →ₗ[𝕜] G) x)
     have hd : DenseRange j := g.denseRange_codRestrict_topologicalClosure
