@@ -74,7 +74,7 @@ private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ 
       Matrix.cons_val_zero, Matrix.cons_val_one]
     have hσ_det := σ.prop; simp only [Matrix.det_fin_two] at hσ_det
     rw [hc] at hσ_det; linarith
-  let τ : SL(2, ℤ) := ⟨τ_mat, h_det⟩
+  let τ : SL(2, ℤ) := .mk τ_mat h_det
   refine (mem_SLnZ_iff 2).mpr ⟨τ, ?_⟩
   have ha1 := a1_eq_a0_mul_ratio h_ratio h_dvd_a
   have hcQ : (σ.val 1 0 : ℚ) = (N : ℚ) * (c : ℚ) := by exact_mod_cast hc
@@ -87,7 +87,8 @@ private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ 
   simp only [natDiagGL_coe 2 a ha, Matrix.diagonal_mul, Matrix.mul_diagonal,
     Matrix.map_apply]
   fin_cases i <;> fin_cases j <;>
-    simp only [τ, τ_mat, Matrix.of_apply, Matrix.cons_val', Fin.isValue] <;>
+    simp only [τ, τ_mat, Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply, Matrix.cons_val',
+      Fin.isValue] <;>
     push_cast <;> (try rw [hcQ]) <;> (try rw [ha1]) <;> ring
 
 private lemma dvd_of_conj_natDiagGL_mem (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ i, 0 < a i)

@@ -69,7 +69,8 @@ variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDis
     (Pi.evalRingHom (fun _ : WeightSpace p K ↦ K) κ).comp
       ((measureFun K).comp (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm.toRingHom)
   have hΦ_cont : Continuous Φ := ((continuous_extendCoefficients_apply_weak
-    norm_padicIntAlgebraMap_le_one continuous_padicIntAlgebraMap κ.weightTest).comp
+    (norm_padicIntAlgebraMap_le_one norm_one.le)
+    (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K)) κ.weightTest).comp
       (continuous_completedGroupAlgebraEquiv_symm_weak (Γ := ℤ_[p]ˣ))).congr fun z ↦ by
         simp [Φ, measureFun_apply]
   have heq := κ.eq_specializeRingHom_of_continuous hΦ_cont fun x ↦ by simp [Φ]

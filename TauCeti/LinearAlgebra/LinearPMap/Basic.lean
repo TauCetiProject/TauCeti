@@ -23,6 +23,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
   `f.supSpanSingleton x y hx` is `s + c • x` with `s` in the domain of `f`, sent to `f s + σ c • y`.
 * `LinearPMap.supSpanSingleton_injective`: extending an injective partial map by `x ↦ y` with `y`
   outside its range keeps it injective.
+* `LinearPMap.mem_ker_iff_mem_graph`: the kernel consists of the vectors `x` with `(x, 0)` in the
+  graph.
 -/
 
 public section
@@ -105,6 +107,11 @@ theorem supSpanSingleton_injective {f : E →ₛₗ.[σ] F} (hf : Function.Injec
   simp [hz', hf hz]
 
 end supSpanSingleton
+
+/-- A vector lies in the kernel of a partial linear map exactly when `(x, 0)` lies in its graph. -/
+theorem mem_ker_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M) {x : E} :
+    x ∈ f.ker ↔ (x, 0) ∈ f.graph := by
+  simp [mem_ker_iff, eq_comm]
 
 end LinearPMap
 
