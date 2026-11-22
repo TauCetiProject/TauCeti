@@ -74,6 +74,8 @@ finite-dimensional space, where the regularity of the cokernel is automatic.
 
 * `TauCeti.WeakDerivStep.inner_familyDomainTrajectoryOperator_compLpL_prev`: the formal adjoint of
   `D_A` is `-D_{-A}`.
+* `TauCeti.WeakDerivStep.inner_domainTrajectoryOperator_compLpL_prev`: the same for the
+  autonomous operator `D_B` of a constant `B`.
 * `exists_compLpL_prev_eq_of_mem_orthogonal_range_familyDomainTrajectoryOperator` (in the namespace
   `TauCeti.WeakDerivStep`): the paths orthogonal to the range of `D_A` lie in the graph space.
 * `TauCeti.WeakDerivStep.orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker`: the
@@ -106,13 +108,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace
 /-! ### The formal adjoint -/
 
 omit [CompleteSpace D] [CompleteSpace H] in
-/-- The negative of an `ι`-symmetric operator is `ι`-symmetric. -/
-private theorem inner_neg_apply_eq_inner {B : D →L[ℝ] H}
-    (hB : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) (x y : D) :
-    ⟪(-B) x, ι y⟫_ℝ = ⟪ι x, (-B) y⟫_ℝ := by
-  simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
-
-omit [CompleteSpace D] [CompleteSpace H] in
 /-- If `A - B` is bounded through `ι`, then `A` and `B` agree on the kernel of `ι`. -/
 private theorem apply_eq_of_map_eq_zero {A B : D →L[ℝ] H} {c : ℝ}
     (h : ∀ x, ‖(A - B) x‖ ≤ c * ‖ι x‖) {x : D} (hx : ι x = 0) : A x = B x := by
@@ -132,9 +127,10 @@ theorem inner_familyDomainTrajectoryOperator_compLpL_prev {AL : Lp (D →L[ℝ] 
     Lp.inner_operatorMultiplication_compLpL hSymm, inner_weakFDeriv_apply_one_compLpL_eq_neg_inner]
   ring
 
-/-- For a constant `ι`-symmetric `B`, the formal adjoint of the autonomous operator
-`D_B u = (ι ∘ u)' + B u` is `-D_{-B}`. -/
-private theorem inner_domainTrajectoryOperator_compLpL_prev {B : D →L[ℝ] H}
+/-- **The formal adjoint of the autonomous trajectory operator.** For a constant `ι`-symmetric
+`B`, `⟪D_B u, ι ∘ w⟫ = -⟪ι ∘ u, D_{-B} w⟫` in `L²(ℝ, H)`, where `D_B u = (ι ∘ u)' + B u`: the
+formal adjoint of `d/ds + B` is `-D_{-B}`. -/
+theorem inner_domainTrajectoryOperator_compLpL_prev {B : D →L[ℝ] H}
     (hSymmB : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ)
     (u w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
     ⟪domainTrajectoryOperator ι B u, ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) w)⟫_ℝ =

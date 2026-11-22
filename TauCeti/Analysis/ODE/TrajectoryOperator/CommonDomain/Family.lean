@@ -61,6 +61,8 @@ compactness of `D → H` enters.
   and `..._atBot` at the two ends.
 * `exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of_tendsto`: the same
   for a limit that is invertible only after subtracting a multiple of `ι`.
+* `TauCeti.WeakDerivStep.inner_neg_apply_eq_inner`: the negative of an `ι`-symmetric operator is
+  `ι`-symmetric.
 * `TauCeti.WeakDerivStep.inner_apply_eq_inner_of_tendsto`: a limit of `ι`-symmetric operators is
   `ι`-symmetric.
 
@@ -257,6 +259,13 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto
   obtain ⟨T, hT⟩ := mem_atBot_sets.1 hS
   exact ⟨C, T, fun u hu ↦ hC u (hu.mono fun s hs hsS ↦
     hs (lt_of_not_ge fun h ↦ hsS (hT s h)))⟩
+
+omit [CompleteSpace D] [CompleteSpace H] in
+/-- The negative of an `ι`-symmetric operator is `ι`-symmetric. -/
+theorem inner_neg_apply_eq_inner {B : D →L[ℝ] H}
+    (hB : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) (x y : D) :
+    ⟪(-B) x, ι y⟫_ℝ = ⟪ι x, (-B) y⟫_ℝ := by
+  simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
 
 omit [CompleteSpace D] [CompleteSpace H] in
 /-- **A limit of `ι`-symmetric operators is `ι`-symmetric.** If `A s → B` along `l` and `A s` is
