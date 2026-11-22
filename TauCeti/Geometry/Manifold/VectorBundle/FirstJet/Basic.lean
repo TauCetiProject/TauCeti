@@ -37,7 +37,10 @@ change of charts.
   (`TauCeti.FirstJetBundle.contMDiffVectorBundle`).
 * `TauCeti.FirstJetBundle.localRep`: the local representative of a section in a chart and
   trivialization. Local representatives in two charts are related by the coordinate change of `V`
-  and the change of charts (`TauCeti.FirstJetBundle.localRep_eventuallyEq_fiberCoordChange`).
+  and the change of charts (`TauCeti.FirstJetBundle.localRep_eventuallyEq_fiberCoordChange`), and
+  near the image of the base point it is linear in the section
+  (`TauCeti.FirstJetBundle.localRep_add_eventuallyEq`,
+  `TauCeti.FirstJetBundle.localRep_smul_eventuallyEq`).
 * `TauCeti.FirstJetBundle.jet`: the first jet `j¹s(x)` of a section. For a section differentiable
   at the point, in every chart it is the value and the chart derivative of the local
   representative (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of
@@ -586,6 +589,37 @@ theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
       (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) :=
   (localRep_eventuallyEq_fiberCoordChange_nhds I F s hi hj).filter_mono nhdsWithin_le_nhds
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of the zero section is zero. -/
+theorem localRep_zero_eventuallyEq {i y : M} (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (0 : ∀ x, V x) i =ᶠ[𝓝 (extChartAt I i y)] 0 := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_zero
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of a sum of sections is the sum of the local representatives. -/
+theorem localRep_add_eventuallyEq (s t : ∀ x, V x) {i y : M} (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (s + t) i =ᶠ[𝓝 (extChartAt I i y)] localRep I F s i + localRep I F t i := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_add _ _
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of the product of a section with a scalar function `f` is the product of the local
+representative with `f` read in the chart at `i`. -/
+theorem localRep_smul_eventuallyEq (f : M → 𝕜) (s : ∀ x, V x) {i y : M}
+    (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (fun x ↦ f x • s x) i =ᶠ[𝓝 (extChartAt I i y)]
+      fun z ↦ f ((extChartAt I i).symm z) • localRep I F s i z := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_smul _ _
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of a constant multiple of a section is the same multiple of the local representative. -/
+theorem localRep_const_smul_eventuallyEq (c : 𝕜) (s : ∀ x, V x) {i y : M}
+    (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (c • s) i =ᶠ[𝓝 (extChartAt I i y)] c • localRep I F s i :=
+  localRep_smul_eventuallyEq I F (fun _ ↦ c) s hi
 
 section
 
