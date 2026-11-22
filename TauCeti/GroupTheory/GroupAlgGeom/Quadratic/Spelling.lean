@@ -97,8 +97,8 @@ theorem exists_crossCap_or_handle_or_boundary_with_prefix {l : List (G ⊕ X × 
   -- an innermost pair `x^e A x^d` of `l = p ++ x^e A x^d q`
   obtain ⟨x, e, d, p, A, q, hpq, hxA, hA⟩ := exists_innermost_pair p₀ A₀ q₀ x₀ e₀ d₀
   rw [hpq] at hl ⊢
-  obtain rfl | rfl : e = d ∨ d = !e := by cases d <;> cases e <;> simp
-  · exact .inl ⟨x, e, p, A, q, rfl⟩
+  rcases Bool.eq_or_eq_not d e with rfl | rfl
+  · exact .inl ⟨x, d, p, A, q, rfl⟩
   by_cases hvar : ∀ z, countVar z A = 0
   · obtain ⟨L, rfl⟩ := exists_eq_map_inl hvar
     exact .inr (.inr ⟨x, e, L, p, q, rfl⟩)
@@ -114,12 +114,12 @@ theorem exists_crossCap_or_handle_or_boundary_with_prefix {l : List (G ⊕ X × 
     omega
   rcases hzpq with hzp | hzq
   · obtain ⟨P₁, θ, P₂, hP, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hzp)
-    obtain rfl | rfl : θ = η ∨ η = !θ := by cases θ <;> cases η <;> simp
-    · exact .inl ⟨z, θ, P₁, P₂ ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: q, by simp [hP]⟩
+    rcases Bool.eq_or_eq_not η θ with rfl | rfl
+    · exact .inl ⟨z, η, P₁, P₂ ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: q, by simp [hP]⟩
     · exact .inr (.inl ⟨z, x, θ, e, P₁, P₂, A₁, A₂, q, hxz.symm, by simp [hP]⟩)
   · obtain ⟨Q₁, θ, Q₂, hQ, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hzq)
-    obtain rfl | rfl : η = θ ∨ θ = !η := by cases θ <;> cases η <;> simp
-    · exact .inl ⟨z, η, p ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: Q₁, Q₂, by simp [hQ]⟩
+    rcases Bool.eq_or_eq_not θ η with rfl | rfl
+    · exact .inl ⟨z, θ, p ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: Q₁, Q₂, by simp [hQ]⟩
     · exact .inr (.inl ⟨x, z, e, η, p, A₁, A₂, Q₁, Q₂, hxz, by simp [hQ]⟩)
 
 /-- In a word in which no variable is spelled exactly once and some variable is spelled, some

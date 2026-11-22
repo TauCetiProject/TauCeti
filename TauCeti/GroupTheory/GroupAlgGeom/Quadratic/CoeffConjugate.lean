@@ -17,9 +17,9 @@ ends, after a conjugation, either at a coefficient `c ∈ G` or at a standard qu
 file shows that the two alternatives exclude each other: no standard quadratic word is conjugate
 in `G[X]` to a coefficient, the trivial coefficient included
 (`TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`). Consequently a conjugate
-`v⁻¹ c v` of a coefficient is not carried to a standard quadratic word by any homomorphism fixing
-`c` followed by a conjugation (`Standard.toWord_ne_conj_map_conj_inl`). For `z⁻¹ c z` with
-`c ≠ 1` this shows that the coefficient alternative cannot be avoided.
+`v⁻¹ c v` of a coefficient is not carried to a standard quadratic word by any homomorphism sending
+`c` to a coefficient `d` followed by a conjugation (`Standard.toWord_ne_conj_map_conj_inl`). For
+`z⁻¹ c z` with `c ≠ 1` this shows that the coefficient alternative cannot be avoided.
 
 The separation follows from cyclic reduction relative to `G`: a standard quadratic word has a
 cyclically reduced normal form (`Standard.isCyclicallyReduced_reducedWord`) in which every variable
@@ -32,8 +32,8 @@ coefficient has no variable letters (`GX.IsCyclicallyReduced.countVar_eq_zero_of
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`: a standard quadratic
   word is not conjugate to a coefficient.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_map_conj_inl`: a homomorphism
-  fixing a coefficient and a conjugation do not carry a conjugate of that coefficient to a standard
-  quadratic word.
+  sending a coefficient to a coefficient and a conjugation do not carry a conjugate of that
+  coefficient to a standard quadratic word.
 
 ## References
 
@@ -65,13 +65,13 @@ theorem toWord_ne_conj_inl (S : Standard G X) (u : GX G X) (g : G) :
   rw [occurrences_eq_countVar_reducedWord, hc] at ho
   exact absurd ho (by decide)
 
-/-- A homomorphism `G[Y] → G[X]` fixing the coefficient `c`, followed by a conjugation, does not
-carry a conjugate `v⁻¹ c v` of `c` to a standard quadratic word. For instance the strictly
-quadratic word `z⁻¹ c z` is not brought to a standard quadratic word by a change of coordinates
-over `G` and a conjugation. -/
-theorem toWord_ne_conj_map_conj_inl {Y : Type*} (S : Standard G X) {f : GX G Y →* GX G X} {c : G}
-    (hf : f (inl c) = inl c) (u : GX G X) (v : GX G Y) :
+/-- A homomorphism `G[Y] → G[X]` sending the coefficient `inl c` to a coefficient `inl d`,
+followed by a conjugation, does not carry a conjugate `v⁻¹ c v` of `c` to a standard quadratic
+word. For instance the strictly quadratic word `z⁻¹ c z` is not brought to a standard quadratic
+word by a change of coordinates over `G` and a conjugation. -/
+theorem toWord_ne_conj_map_conj_inl {Y : Type*} (S : Standard G X) {f : GX G Y →* GX G X}
+    {c d : G} (hf : f (inl c) = inl d) (u : GX G X) (v : GX G Y) :
     S.toWord ≠ u * f (v⁻¹ * inl c * v) * u⁻¹ := by
-  simpa [hf, mul_assoc] using S.toWord_ne_conj_inl (u * (f v)⁻¹) c
+  simpa [hf, mul_assoc] using S.toWord_ne_conj_inl (u * (f v)⁻¹) d
 
 end TauCeti.GroupAlgGeom.Quadratic.Standard

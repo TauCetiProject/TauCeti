@@ -21,7 +21,7 @@ import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 import TauCeti.Data.Fintype.BigOperators
-import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
+public import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 
 /-!
 # Quadratic words and standard quadratic equations
@@ -89,6 +89,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_le`,
   `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_eq_zero`: bounds on the occurrence counts in the
   images under a homomorphism `G[X] → H[Y]`, from those in the images of the generators.
+* `TauCeti.GroupAlgGeom.Quadratic.mem_varSubgroup_iff_occVars_subset`: a word belongs to
+  `GX.varSubgroup G s` iff all of its occurring variables belong to `s`.
 * `TauCeti.GroupAlgGeom.Quadratic.eval_congr`,
   `TauCeti.GroupAlgGeom.Quadratic.mem_V_congr`,
   `TauCeti.GroupAlgGeom.Quadratic.update_mem_V_iff_of_occurrences_eq_zero`: evaluation and
@@ -368,22 +370,35 @@ theorem notMem_occVars_prod_of_countVar_eq_zero {x : X} {L : List (G ⊕ X × Bo
   rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
   exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq h)
 
+/-- A word of `G[X]` belongs to `GX.varSubgroup G s` if and only if every variable occurring in
+it belongs to `s`. -/
+theorem mem_varSubgroup_iff_occVars_subset {w : GX G X} {s : Set X} :
+    w ∈ varSubgroup G s ↔ (occVars w : Set X) ⊆ s := by
+  refine ⟨fun hw x hx => ?_, fun hs => ?_⟩
+  · rw [varSubgroup_eq_closure] at hw
+    induction hw using Subgroup.closure_induction with
+    | mem u hu => rcases hu with ⟨g, rfl⟩ | ⟨y, hy, rfl⟩ <;> simp_all
+    | one => simp at hx
+    | mul u v _ _ hu hv =>
+      simp only [Finset.mem_coe, mem_occVars_iff] at hu hv hx
+      by_cases hu0 : occurrences x u = 0
+      · exact hv fun hv0 => hx (by have := occurrences_mul_le x u v; omega)
+      · exact hu hu0
+    | inv u _ hu => exact hu (by simpa using hx)
+  · rw [← prod_reducedWord w]
+    refine list_prod_mem <| List.forall_mem_map.2 fun a ha => ?_
+    rcases a with g | ⟨x, b⟩
+    · simp
+    · have hx : x ∈ s := hs <| mem_occVars_iff.2 <| by
+        rw [occurrences_eq_countVar_reducedWord]; exact fun h0 => countVar_eq_zero.1 h0 b ha
+      cases b <;> simp [inr_of_mem_varSubgroup hx]
+
 /-- The value of `w ∈ G[X]` at a point depends only on the coordinates of the variables that occur
 in `w` (simultaneously across all occurring variables, without requiring `DecidableEq X`; for a
 single avoided variable see `GX.eval_congr_of_mem_avoiding`). -/
 theorem eval_congr (ι : G →* H) {w : GX G X} {v v' : X → H}
-    (h : ∀ x, occurrences x w ≠ 0 → v x = v' x) : eval ι v w = eval ι v' w := by
-  set s : Set X := {x | occurrences x w ≠ 0}
-  have hw : w ∈ varSubgroup G s := by
-    rw [← prod_reducedWord w]
-    refine list_prod_mem <| List.forall_mem_map.2 fun a ha => ?_
-    rcases a with g | ⟨x, b⟩
-    · simp
-    · have hx : x ∈ s := by
-        rw [Set.mem_ofPred_eq, occurrences_eq_countVar_reducedWord]
-        exact fun h0 => countVar_eq_zero.1 h0 b ha
-      cases b <;> simp [inr_of_mem_varSubgroup hx]
-  exact eval_eq_eval_of_mem_varSubgroup hw ι h
+    (h : ∀ x, occurrences x w ≠ 0 → v x = v' x) : eval ι v w = eval ι v' w :=
+  eval_eq_eval_of_mem_varSubgroup (mem_varSubgroup_iff_occVars_subset.2 (coe_occVars w).le) ι h
 
 /-- Membership in `V ι T` depends only on the coordinates of the variables that occur in the
 equations of `T`. -/
@@ -588,15 +603,28 @@ inductive Standard (G X : Type*) [Group G] where
 
 namespace Standard
 
+private inductive AtomSpec (G X : Type*) where
+  | comm (x y : X)
+  | sq (x : X)
+  | conj (z : X) (c : G)
+
+private def AtomSpec.toWord : AtomSpec G X → GX G X
+  | .comm x y => commWord (x, y)
+  | .sq x => sqWord x
+  | .conj z c => conjWord (z, c)
+
+private def atomSpecs : Standard G X → List (AtomSpec G X)
+  | orientable _ _ x y _ => List.ofFn fun i => .comm (x i) (y i)
+  | orientableCoeff _ _ _ x y z _ c _ _ _ =>
+    List.ofFn (fun i => .comm (x i) (y i)) ++ List.ofFn fun j => .conj (z j) (c j)
+  | nonorientable _ _ x _ => List.ofFn fun i => .sq (x i)
+  | nonorientableCoeff _ _ _ x z _ c _ _ _ =>
+    List.ofFn (fun i => .sq (x i)) ++ List.ofFn fun j => .conj (z j) (c j)
+
 /-- The atoms of a standard quadratic equation, in order: the commutators `[xᵢ, yᵢ]` or the
 squares `xᵢ²`, followed by the conjugates `zⱼ⁻¹ cⱼ zⱼ`. -/
-def atoms : Standard G X → List (GX G X)
-  | orientable _ _ x y _ => List.ofFn fun i => commWord (x i, y i)
-  | orientableCoeff _ _ _ x y z _ c _ _ _ =>
-    List.ofFn (fun i => commWord (x i, y i)) ++ List.ofFn fun j => conjWord (z j, c j)
-  | nonorientable _ _ x _ => List.ofFn fun i => sqWord (x i)
-  | nonorientableCoeff _ _ _ x z _ c _ _ _ =>
-    List.ofFn (fun i => sqWord (x i)) ++ List.ofFn fun j => conjWord (z j, c j)
+def atoms (S : Standard G X) : List (GX G X) :=
+  S.atomSpecs.map AtomSpec.toWord
 
 /-- The constant coefficient `d` of a standard quadratic equation of type (2) or (4), and `1` for
 the types (1) and (3), which have no constant. -/
@@ -668,7 +696,8 @@ variable {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d 
 theorem atoms_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (orientable n hn x y inj).atoms =
       List.ofFn fun i => ⁅(inr (FreeGroup.of (x i)) : GX G X)⁻¹,
-        (inr (FreeGroup.of (y i)) : GX G X)⁻¹⁆ := (rfl)
+        (inr (FreeGroup.of (y i)) : GX G X)⁻¹⁆ := by
+  simp [atoms, atomSpecs, AtomSpec.toWord, Function.comp_def, commWord_def]
 
 @[simp]
 theorem atoms_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
@@ -677,12 +706,14 @@ theorem atoms_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) 
       List.ofFn (fun i => ⁅(inr (FreeGroup.of (x i)) : GX G X)⁻¹,
           (inr (FreeGroup.of (y i)) : GX G X)⁻¹⁆) ++
         List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-          inr (FreeGroup.of (z j)) := (rfl)
+          inr (FreeGroup.of (z j)) := by
+  simp [atoms, atomSpecs, AtomSpec.toWord, Function.comp_def, commWord_def, conjWord_def]
 
 @[simp]
 theorem atoms_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
     (nonorientable (G := G) n hn x inj).atoms =
-      List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2 := (rfl)
+      List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2 := by
+  simp [atoms, atomSpecs, AtomSpec.toWord, Function.comp_def, sqWord_def]
 
 @[simp]
 theorem atoms_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
@@ -690,7 +721,8 @@ theorem atoms_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim
     (nonorientableCoeff n m hn x z inj c hc d hd).atoms =
       List.ofFn (fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2) ++
         List.ofFn fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
-          inr (FreeGroup.of (z j)) := (rfl)
+          inr (FreeGroup.of (z j)) := by
+  simp [atoms, atomSpecs, AtomSpec.toWord, Function.comp_def, sqWord_def, conjWord_def]
 
 @[simp]
 theorem constant_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
@@ -970,31 +1002,33 @@ private def sqLetters (x : X) : List (G ⊕ X × Bool) := [.inr (x, true), .inr 
 private def conjLetters (z : X) (c : G) : List (G ⊕ X × Bool) :=
   [.inr (z, false), .inl c, .inr (z, true)]
 
-private def atomBlocks : Standard G X → List (List (G ⊕ X × Bool))
-  | orientable _ _ x y _ => List.ofFn fun i => commLetters (x i) (y i)
-  | orientableCoeff _ _ _ x y z _ c _ _ _ =>
-    (List.ofFn fun i => commLetters (x i) (y i)) ++ List.ofFn fun j => conjLetters (z j) (c j)
-  | nonorientable _ _ x _ => List.ofFn fun i => sqLetters (x i)
-  | nonorientableCoeff _ _ _ x z _ c _ _ _ =>
-    (List.ofFn fun i => sqLetters (x i)) ++ List.ofFn fun j => conjLetters (z j) (c j)
+private def AtomSpec.letters : AtomSpec G X → List (G ⊕ X × Bool)
+  | .comm x y => commLetters x y
+  | .sq x => sqLetters x
+  | .conj z c => conjLetters z c
 
 private def wordLetters : Standard G X → List (G ⊕ X × Bool)
-  | S@(orientable ..) => (atomBlocks S).flatten
-  | S@(orientableCoeff _ _ _ _ _ _ _ _ _ d _) => (atomBlocks S).flatten ++ [.inl d]
-  | S@(nonorientable ..) => (atomBlocks S).flatten
-  | S@(nonorientableCoeff _ _ _ _ _ _ _ _ d _) => (atomBlocks S).flatten ++ [.inl d]
+  | S@(orientable ..) | S@(nonorientable ..) => (S.atomSpecs.map AtomSpec.letters).flatten
+  | S@(orientableCoeff _ _ _ _ _ _ _ _ _ d _) | S@(nonorientableCoeff _ _ _ _ _ _ _ _ d _) =>
+    (S.atomSpecs.map AtomSpec.letters).flatten ++ [.inl d]
+
+private theorem AtomSpec.prod_letters (a : AtomSpec G X) :
+    (a.letters.map GX.letter).prod = a.toWord := by
+  cases a with
+  | comm a b => simp [AtomSpec.letters, AtomSpec.toWord, commLetters, commWord_def,
+      commutatorElement_def, mul_assoc]
+  | sq a => simp [AtomSpec.letters, AtomSpec.toWord, sqLetters, sqWord_def, pow_two]
+  | conj a c => simp [AtomSpec.letters, AtomSpec.toWord, conjLetters, conjWord_def, mul_assoc]
 
 private theorem prod_wordLetters (S : Standard G X) :
     ((wordLetters S).map GX.letter).prod = S.toWord := by
-  have hcomm (a b : X) : ((commLetters (G := G) a b).map GX.letter).prod = commWord (a, b) := by
-    simp [commLetters, commWord_def, commutatorElement_def, mul_assoc]
-  have hsq (a : X) : ((sqLetters (G := G) a).map GX.letter).prod = sqWord a := by
-    simp [sqLetters, sqWord_def, pow_two]
-  have hconj (a : X) (c : G) : ((conjLetters a c).map GX.letter).prod = conjWord (a, c) := by
-    simp [conjLetters, conjWord_def, mul_assoc]
+  have hprod : ((S.atomSpecs.map AtomSpec.letters).flatten.map GX.letter).prod = S.atoms.prod := by
+    simp [atoms, List.map_flatten, List.prod_flatten, List.map_map, Function.comp_def,
+      AtomSpec.prod_letters]
   cases S <;>
-    simp [wordLetters, atomBlocks, toWord_def, Standard.atoms, Function.comp_def, hcomm, hsq,
-      hconj, mul_assoc]
+    simp only [wordLetters, List.map_append, List.map_cons, List.map_nil, List.prod_append,
+      List.prod_cons, List.prod_nil, GX.letter_inl, mul_one, hprod, toWord_def, constant_orientable,
+      constant_orientableCoeff, constant_nonorientable, constant_nonorientableCoeff, map_one]
 
 private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     (f : Fin n → List (G ⊕ X × Bool)) (z : Fin m → X) (c : Fin m → G) {d : G}
@@ -1022,86 +1056,77 @@ private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     exact ⟨hred, fun j => by simp [conjLetters, hc j]⟩
   · rw [hblocks, List.isChain_map]; exact hnd.isChain.imp hsep
   · rcases x with g | p
-    · have hl' : l ∈ (List.ofFn f ++ List.ofFn fun j => conjLetters (z j) (c j)).head? := hl
-      rcases n with _ | n
-      · rw [List.ofFn_zero, List.nil_append] at hl'
-        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl')
-        simp [conjLetters] at hx
-      · rw [List.head?_append_of_ne_nil _ (by simp)] at hl'
-        exact absurd rfl (hhead l hl' (.inl g) hx g)
+    · rcases n with _ | n
+      · rw [List.ofFn_zero, List.nil_append] at hl
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl); simp [conjLetters] at hx
+      · rw [List.head?_append_of_ne_nil _ (by simp)] at hl
+        exact absurd rfl (hhead l hl (.inl g) hx g)
     · simp
   · rcases x with g | p
-    · have hl' : l ∈ (List.ofFn f ++ List.ofFn fun j => conjLetters (z j) (c j)).getLast? := hl
-      rcases m with _ | m
-      · rw [List.ofFn_zero, List.append_nil] at hl'
-        exact absurd rfl (hlast rfl l hl' (.inl g) hx g)
-      · rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl'
-        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl')
-        simp [conjLetters] at hx
+    · rcases m with _ | m
+      · rw [List.ofFn_zero, List.append_nil] at hl; exact absurd rfl (hlast rfl l hl (.inl g) hx g)
+      · rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl); simp [conjLetters] at hx
     · simp
-
-private theorem isCyclicallyReduced_orientableCoeff {n m : ℕ} {x y : Fin n → X} {z : Fin m → X}
-    {c : Fin m → G} {d : G} (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
-    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
-    GX.IsCyclicallyReduced (wordLetters (orientableCoeff n m hnm x y z inj c hc d hd)) := by
-  have hinj₁ := (Sum.elim_injective.1 inj).1
-  refine isCyclicallyReduced_ofFn_append_conjLetters (fun i => commLetters (x i) (y i)) z c
-    (by simp [commLetters]) (fun i => ?_) hc hd
-    (fun l hl => by obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl); simp [commLetters])
-    (fun _ l hl => by
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl); simp [commLetters])
-    fun s₁ s₂ hs => ?_
-  · have hxy := (Sum.elim_injective.1 hinj₁).2.2 i i
-    simp [commLetters, hxy, hxy.symm]
-  · rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
-      simp only [Sum.elim_inl, Sum.elim_inr, commLetters, conjLetters, List.getLast?_cons_cons,
-        List.getLast?_singleton, List.head?_cons, Option.mem_def, Option.some.injEq,
-        forall_eq', GX.combines_inr_inr]
-    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 hinj₁).2.2 i₂ i₁ h.symm
-    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inr i₁) j₂ h
-    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inl i₂) j₁ h.symm
-    · rintro ⟨h, -⟩; exact hs (congrArg Sum.inr ((Sum.elim_injective.1 inj).2.1 h))
-
-private theorem isCyclicallyReduced_nonorientableCoeff {n m : ℕ} {x : Fin n → X} {z : Fin m → X}
-    {c : Fin m → G} {d : G} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
-    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
-    GX.IsCyclicallyReduced (wordLetters (nonorientableCoeff n m hn x z inj c hc d hd)) := by
-  refine isCyclicallyReduced_ofFn_append_conjLetters (fun i => sqLetters (x i)) z c
-    (by simp [sqLetters]) (by simp [sqLetters]) hc hd
-    (fun l hl => by obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl); simp [sqLetters])
-    (fun _ l hl => by
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl); simp [sqLetters])
-    fun s₁ s₂ hs => ?_
-  have hne_v : Sum.elim x z s₁ ≠ Sum.elim x z s₂ := inj.ne hs
-  rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
-    simp only [Sum.elim_inl, Sum.elim_inr] at hne_v <;> simp [sqLetters, conjLetters, hne_v]
 
 private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     GX.IsCyclicallyReduced (wordLetters S) := by
   cases S with
   | orientable n hn x y inj =>
     have hxy (i j : Fin n) : y i ≠ x j := ((Sum.elim_injective.1 inj).2.2 j i).symm
-    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, commLetters]) ?_ ?_ ?_
-    · simp only [atomBlocks, List.mem_ofFn, forall_exists_index, forall_apply_eq_imp_iff]
+    refine GX.isCyclicallyReduced_flatten_of_blocks
+      (by simp [atomSpecs, AtomSpec.letters, commLetters]) ?_ ?_ ?_
+    · simp only [atomSpecs, AtomSpec.letters, List.map_ofFn, Function.comp_def, List.mem_ofFn,
+        forall_exists_index, forall_apply_eq_imp_iff]
       intro i; simp [commLetters, hxy i i, (hxy i i).symm]
     · exact List.isChain_iff_getElem.2 fun i hi => by
-        simp [atomBlocks, commLetters, hxy _ _]
+        simp [atomSpecs, AtomSpec.letters, commLetters, hxy _ _]
     · intro _ l₁ hl₁ l₂ hl₂
+      simp only [atomSpecs, AtomSpec.letters, List.map_ofFn, Function.comp_def] at hl₁ hl₂
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl₁)
       obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl₂)
       simp [commLetters, hxy i j]
   | nonorientable n hn x inj =>
-    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, sqLetters])
-      (by simp [atomBlocks, sqLetters]) ?_ ?_
-    · exact List.isChain_iff_getElem.2 fun i hi => by simp [atomBlocks, sqLetters]
+    refine GX.isCyclicallyReduced_flatten_of_blocks
+      (by simp [atomSpecs, AtomSpec.letters, sqLetters])
+      (by simp [atomSpecs, AtomSpec.letters, sqLetters]) ?_ ?_
+    · exact List.isChain_iff_getElem.2 fun i hi => by
+        simp [atomSpecs, AtomSpec.letters, sqLetters]
     · intro _ l₁ hl₁ l₂ hl₂
+      simp only [atomSpecs, AtomSpec.letters, List.map_ofFn, Function.comp_def] at hl₁ hl₂
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl₁)
       obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl₂)
       simp [sqLetters]
-  | orientableCoeff _ _ hnm _ _ _ inj _ hc _ hd =>
-    exact isCyclicallyReduced_orientableCoeff hnm inj hc hd
-  | nonorientableCoeff _ _ hn _ _ inj _ hc _ hd =>
-    exact isCyclicallyReduced_nonorientableCoeff hn inj hc hd
+  | orientableCoeff n m hnm x y z inj c hc d hd =>
+    have hinj₁ := (Sum.elim_injective.1 inj).1
+    simpa [wordLetters, atomSpecs, AtomSpec.letters, Function.comp_def] using
+      isCyclicallyReduced_ofFn_append_conjLetters (fun i => commLetters (x i) (y i)) z c
+        (by simp [commLetters])
+        (fun i => by have h := (Sum.elim_injective.1 hinj₁).2.2 i i; simp [commLetters, h, h.symm])
+        hc hd (fun l hl => by
+          obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl); simp [commLetters])
+        (fun _ l hl => by
+          obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl); simp [commLetters])
+        fun s₁ s₂ hs => by
+          rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
+            simp only [Sum.elim_inl, Sum.elim_inr, commLetters, conjLetters,
+              List.getLast?_cons_cons, List.getLast?_singleton, List.head?_cons, Option.mem_def,
+              Option.some.injEq, forall_eq', GX.combines_inr_inr]
+          · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 hinj₁).2.2 i₂ i₁ h.symm
+          · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inr i₁) j₂ h
+          · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inl i₂) j₁ h.symm
+          · rintro ⟨h, -⟩; exact hs (congrArg Sum.inr ((Sum.elim_injective.1 inj).2.1 h))
+  | nonorientableCoeff n m hn x z inj c hc d hd =>
+    simpa [wordLetters, atomSpecs, AtomSpec.letters, Function.comp_def] using
+      isCyclicallyReduced_ofFn_append_conjLetters (fun i => sqLetters (x i)) z c
+        (by simp [sqLetters]) (by simp [sqLetters]) hc hd
+        (fun l hl => by obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl); simp [sqLetters])
+        (fun _ l hl => by
+          obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl); simp [sqLetters])
+        fun s₁ s₂ hs => by
+          have hne_v : Sum.elim x z s₁ ≠ Sum.elim x z s₂ := inj.ne hs
+          rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
+            simp only [Sum.elim_inl, Sum.elim_inr] at hne_v <;> simp [sqLetters, conjLetters, hne_v]
 
 /-- The reduced word of the left side of a standard quadratic equation is cyclically reduced. -/
 @[simp]
@@ -1115,9 +1140,8 @@ open Classical in
 zero times otherwise. -/
 theorem occurrences_toWord (S : Standard G X) (x : X) :
     occurrences x S.toWord = if x ∈ S.vars then 2 else 0 := by
-  have hcomm (u v : X) :
-      GX.countVar x (commLetters (G := G) u v) =
-        (if u = x then 2 else 0) + (if v = x then 2 else 0) := by
+  have hcomm (u v : X) : GX.countVar x (commLetters (G := G) u v) =
+      (if u = x then 2 else 0) + (if v = x then 2 else 0) := by
     by_cases hu : u = x <;> by_cases hv : v = x <;> simp [commLetters, hu, hv]
   have hsq (u : X) : GX.countVar x (sqLetters (G := G) u) = if u = x then 2 else 0 := by
     by_cases hu : u = x <;> simp [sqLetters, hu]
@@ -1125,31 +1149,30 @@ theorem occurrences_toWord (S : Standard G X) (x : X) :
     by_cases hu : u = x <;> simp [conjLetters, hu]
   rw [← prod_wordLetters S, (isCyclicallyReduced_wordLetters S).isReduced.occurrences_prod]
   cases S with
-  | orientable n hn a b inj =>
-    simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
-      Function.comp_def, hcomm, Finset.sum_add_distrib, vars_orientable]
+  | orientable _ _ a b inj =>
+    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten,
+      List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hcomm, Finset.sum_add_distrib,
+      vars_orientable]
     have h := Fintype.sum_ite_eq_of_injective inj x 2
-    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
-    exact h
-  | orientableCoeff n m hnm a b z inj c hc d hd =>
-    simp only [wordLetters, atomBlocks, GX.countVar_append, List.flatten_append,
-      GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hcomm, hconj,
-      GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib, vars_orientableCoeff,
-      add_zero]
+    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h; exact h
+  | orientableCoeff _ _ _ a b z inj _ _ _ _ =>
+    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_append,
+      List.flatten_append, List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
+      Function.comp_def, hcomm, hconj, GX.countVar_cons_inl, GX.countVar_nil,
+      Finset.sum_add_distrib, vars_orientableCoeff, add_zero]
     have h := Fintype.sum_ite_eq_of_injective inj x 2
-    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
-    exact h
-  | nonorientable n hn a inj =>
-    simp only [wordLetters, atomBlocks, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
-      Function.comp_def, hsq, vars_nonorientable]
+    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h; exact h
+  | nonorientable _ _ a inj =>
+    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten,
+      List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq, vars_nonorientable]
     exact Fintype.sum_ite_eq_of_injective inj x 2
-  | nonorientableCoeff n m hn a z inj c hc d hd =>
-    simp only [wordLetters, atomBlocks, GX.countVar_append, List.flatten_append,
-      GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq, hconj,
-      GX.countVar_cons_inl, GX.countVar_nil, vars_nonorientableCoeff, add_zero]
+  | nonorientableCoeff _ _ _ a z inj _ _ _ _ =>
+    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_append,
+      List.flatten_append, List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn,
+      Function.comp_def, hsq, hconj, GX.countVar_cons_inl, GX.countVar_nil,
+      vars_nonorientableCoeff, add_zero]
     have h := Fintype.sum_ite_eq_of_injective inj x 2
-    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h
-    exact h
+    simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at h; exact h
 
 /-- Every variable in `S.vars` occurs twice in the standard quadratic equation `S`. -/
 theorem occurrences_toWord_of_mem_vars {S : Standard G X} {x : X} (hx : x ∈ S.vars) :
@@ -1291,7 +1314,8 @@ theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is degenerate. -/
 theorem isDegenerate_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (orientable n hn x y inj).IsDegenerate ι 1 :=
-  ⟨_, List.mem_ofFn.2 ⟨⟨0, hn⟩, rfl⟩, by simp [commWord_def, map_commutatorElement]⟩
+  ⟨_, (atoms_orientable (G := G) hn inj).symm ▸ List.mem_ofFn.2 ⟨⟨0, hn⟩, rfl⟩,
+    by simp [map_commutatorElement]⟩
 
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is commutative. -/
 theorem isCommutative_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :

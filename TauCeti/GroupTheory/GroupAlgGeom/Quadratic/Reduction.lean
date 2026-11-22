@@ -40,10 +40,11 @@ coefficient or a standard quadratic equation.
   occurring in the word) and a conjugation either to a coefficient `inl c` (`c ∈ G`) or to
   `S.toWord` for a standard quadratic equation `S : Standard G X` whose variables `S.vars` all
   occur in the word.
-* `TauCeti.GroupAlgGeom.Quadratic.not_exists_standard_of_conj_mulEquiv_eq_inl`: reaching a
-  coefficient `inl c` by an isomorphism fixing `inl c` and arbitrary conjugation in its target
-  rules out reaching a standard quadratic equation by any homomorphism fixing `inl c` and arbitrary
-  conjugation in its target.
+* `TauCeti.GroupAlgGeom.Quadratic.not_exists_standard_of_isConj_inl`,
+  `TauCeti.GroupAlgGeom.Quadratic.not_exists_standard_of_conj_mulEquiv_eq_inl`: reaching a
+  coefficient `inl c` by conjugacy in `G[X]` (or by an isomorphism sending `inl c` to `inl c₁` and
+  arbitrary conjugation in its target) rules out reaching a standard quadratic equation by any
+  homomorphism sending `inl c` to a coefficient and arbitrary conjugation in its target.
 
 ## References
 
@@ -106,6 +107,10 @@ private theorem eq_prod_of_reducedWord_eq {w : GX G X} {L : List (G ⊕ X × Boo
     (hl : GX.reducedWord w = L) : w = (L.map GX.letter).prod :=
   (GX.prod_reducedWord w).symm.trans (congrArg (fun l => (l.map GX.letter).prod) hl)
 
+private theorem letter_inr_not (x : X) (b : Bool) :
+    (GX.letter (.inr (x, !b)) : GX G X) = (GX.letter (.inr (x, b)))⁻¹ := by
+  cases b <;> simp
+
 variable [DecidableEq X]
 
 private def signAut (x : X) (b : Bool) : MulAut (GX G X) :=
@@ -119,10 +124,6 @@ private theorem signAut_letter_self (x : X) (b : Bool) :
     signAut (G := G) x b (GX.letter (.inr (x, b))) = inr (FreeGroup.of x) := by
   cases b <;> simp [signAut]
 
-private theorem signAut_letter_not (x : X) (b : Bool) :
-    signAut (G := G) x b (GX.letter (.inr (x, !b))) = (inr (FreeGroup.of x))⁻¹ := by
-  cases b <;> simp [signAut]
-
 private theorem signAut_apply_of_mem_avoiding {x : X} {b : Bool} {a : GX G X}
     (ha : a ∈ GX.avoiding x) : signAut x b a = a := by
   cases b <;> simp [signAut, ha]
@@ -131,7 +132,7 @@ private theorem step_sameSign {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x : X
     {P M Q : List (G ⊕ X × Bool)}
     (hl : GX.reducedWord w = P ++ [.inr (x, b)] ++ M ++ [.inr (x, b)] ++ Q) :
     ∃ f ∈ GX.elementaryAut G X, ∃ R' : GX G X,
-      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w ∧ x ∈ occVars w ∧ x ∉ occVars R' ∧
+      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w \ {x} ∧ x ∈ occVars w ∧
       (∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f a = a) ∧
       f w = sqWord x * R' := by
   obtain ⟨hx2, hxk⟩ := countVar_reducedWord_eq_two_of_mem (x := x) (b := b) hw (by simp [hl])
@@ -168,9 +169,7 @@ private theorem step_sameSign {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x : X
   have hstep₃ : f₃ (f₂ (f₁ w)) = sqWord x * (p * m⁻¹ * q) := by
     rw [hstep₂, GX.transvection_crossCap (mul_mem hm (inv_mem hp)) hq]
     simp [sqWord_def, mul_assoc]
-  refine ⟨f₃ * f₂ * f₁, hf_mem, (L.map GX.letter).prod, hrem.1,
-    hrem.2.trans Finset.sdiff_subset, hxk,
-    fun h => (Finset.mem_sdiff.1 (hrem.2 h)).2 (Finset.mem_singleton_self x),
+  refine ⟨f₃ * f₂ * f₁, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hxk,
     fun a ha => ?_, ?_⟩
   · simp [f₁, f₂, f₃, signAut_apply_of_mem_avoiding (ha x hxk), ha x hxk]
   · have hLprod : (L.map GX.letter).prod = p * m⁻¹ * q := by
@@ -195,23 +194,14 @@ private theorem exists_aut_signed_handle {x y : X} {bx by_ : Bool} {p u v w₀ z
   have hφ₁₂_fix : ∀ a, a ∈ GX.avoiding x → a ∈ GX.avoiding y → φ₁₂ a = a := fun a hax hay => by
     simp [φ₁₂, signAut_apply_of_mem_avoiding hax, signAut_apply_of_mem_avoiding hay, hax]
   have hφ₁₂_xbx : φ₁₂ (GX.letter (.inr (x, bx))) = p⁻¹ * inr (FreeGroup.of x) := by
-    rw [MulAut.mul_apply, MulAut.mul_apply, signAut_letter_self,
-      signAut_apply_of_mem_avoiding (GX.inr_of_mem_avoiding hxy),
-      GX.transvection_inr_of_self, mul_one]
+    simp [φ₁₂, signAut_letter_self, signAut_apply_of_mem_avoiding, GX.inr_of_mem_avoiding hxy]
   have hφ₁₂_yby : φ₁₂ (GX.letter (.inr (y, by_))) = inr (FreeGroup.of y) := by
-    rw [MulAut.mul_apply, MulAut.mul_apply,
-      signAut_apply_of_mem_avoiding (GX.letter_inr_mem_avoiding_iff.2 hxy.symm),
-      signAut_letter_self,
-      GX.transvection_apply_of_mem_avoiding _ _ (GX.inr_of_mem_avoiding hxy.symm)]
+    simp [φ₁₂, signAut_letter_self, signAut_apply_of_mem_avoiding, GX.inr_of_mem_avoiding hxy.symm,
+      hxy.symm]
   have hφ₁₂_xnot : φ₁₂ (GX.letter (.inr (x, !bx))) = (inr (FreeGroup.of x))⁻¹ * p := by
-    rw [MulAut.mul_apply, MulAut.mul_apply, signAut_letter_not,
-      signAut_apply_of_mem_avoiding (inv_mem (GX.inr_of_mem_avoiding hxy)),
-      map_inv, GX.transvection_inr_of_self, mul_one, mul_inv_rev, inv_inv]
+    rw [letter_inr_not, map_inv, hφ₁₂_xbx, mul_inv_rev, inv_inv]
   have hφ₁₂_ynot : φ₁₂ (GX.letter (.inr (y, !by_))) = (inr (FreeGroup.of y))⁻¹ := by
-    rw [MulAut.mul_apply, MulAut.mul_apply,
-      signAut_apply_of_mem_avoiding (GX.letter_inr_mem_avoiding_iff.2 hxy.symm),
-      signAut_letter_not,
-      GX.transvection_apply_of_mem_avoiding _ _ (inv_mem (GX.inr_of_mem_avoiding hxy.symm))]
+    rw [letter_inr_not, map_inv, hφ₁₂_yby]
   have hstep : φ₁₂ (p * GX.letter (.inr (x, bx)) * u * GX.letter (.inr (y, by_)) * v *
       GX.letter (.inr (x, !bx)) * w₀ * GX.letter (.inr (y, !by_)) * z) =
       inr (FreeGroup.of x) * u * inr (FreeGroup.of y) * v * (inr (FreeGroup.of x))⁻¹ *
@@ -229,8 +219,8 @@ private theorem step_alt {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x y : X} {
     (hl : GX.reducedWord w = P ++ [.inr (x, bx)] ++ U ++ [.inr (y, by_)] ++ V ++
       [.inr (x, !bx)] ++ W ++ [.inr (y, !by_)] ++ Z) :
     ∃ f ∈ GX.elementaryAut G X, ∃ R' : GX G X,
-      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w ∧
-      x ∈ occVars w ∧ y ∈ occVars w ∧ x ∉ occVars R' ∧ y ∉ occVars R' ∧
+      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w \ {x, y} ∧
+      x ∈ occVars w ∧ y ∈ occVars w ∧
       (∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f a = a) ∧
       f w = commWord (x, y) * R' := by
   obtain ⟨hx2, hxk⟩ := countVar_reducedWord_eq_two_of_mem (x := x) (b := bx) hw (by simp [hl])
@@ -263,10 +253,7 @@ private theorem step_alt {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x y : X} {
       GX.letter (.inr (y, by_)) * (V.map GX.letter).prod * GX.letter (.inr (x, !bx)) *
       (W.map GX.letter).prod * GX.letter (.inr (y, !by_)) * (Z.map GX.letter).prod := by
     simpa [mul_assoc] using eq_prod_of_reducedWord_eq hl
-  refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2.trans Finset.sdiff_subset,
-    hxk, hyk, fun h => (Finset.mem_sdiff.1 (hrem.2 h)).2 (Finset.mem_insert_self _ _),
-    fun h => (Finset.mem_sdiff.1 (hrem.2 h)).2
-      (Finset.mem_insert_of_mem (Finset.mem_singleton_self _)),
+  refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hxk, hyk,
     fun a ha => hf_fix a (ha x hxk) (ha y hyk), ?_⟩
   rw [hw_eq, hf_eq]
   simp [L, mul_assoc]
@@ -275,8 +262,8 @@ private theorem step_conj {w : GX G X} (hw : IsStrictlyQuadratic {w}) {z : X} {b
     {P Q : List (G ⊕ X × Bool)}
     (hl : GX.reducedWord w = P ++ [.inr (z, b)] ++ [.inl c] ++ [.inr (z, !b)] ++ Q) :
     ∃ f ∈ GX.elementaryAut G X, ∃ R' : GX G X,
-      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w ∧
-      z ∈ occVars w ∧ z ∉ occVars R' ∧
+      IsStrictlyQuadratic {R'} ∧ occVars R' ⊆ occVars w \ {z} ∧
+      z ∈ occVars w ∧
       (∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f a = a) ∧
       f w = conjWord (z, c) * R' := by
   obtain ⟨hz2, hzk⟩ := countVar_reducedWord_eq_two_of_mem (x := z) (b := b) hw (by simp [hl])
@@ -297,12 +284,10 @@ private theorem step_conj {w : GX G X} (hw : IsStrictlyQuadratic {w}) {z : X} {b
     fun v hv => by
       simp only [Finset.mem_singleton] at hv
       simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hv]
-  refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2.trans Finset.sdiff_subset,
-    hzk, fun h => (Finset.mem_sdiff.1 (hrem.2 h)).2 (Finset.mem_singleton_self z),
-    fun a ha => ?_, ?_⟩
+  refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hzk, fun a ha => ?_, ?_⟩
   · simp [f, signAut_apply_of_mem_avoiding (ha z hzk), ha z hzk]
   · have hb_eq : signAut (G := G) z (!b) (GX.letter (.inr (z, b))) = (inr (FreeGroup.of z))⁻¹ := by
-      simpa using signAut_letter_not (G := G) z (!b)
+      rw [← Bool.not_not b, letter_inr_not, Bool.not_not, map_inv, signAut_letter_self]
     have hLprod : (L.map GX.letter).prod = p * q := by simp [L, p, q]
     rw [hLprod, hw_eq]
     simp [f, conjWord_def, hb_eq, signAut_letter_self, signAut_apply_of_mem_avoiding,
@@ -315,12 +300,14 @@ private def IsAtomicReduction (w : GX G X) (f : MulAut (GX G X)) (P : AtomicForm
 private theorem atomic_step_sq {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x : X}
     {P : AtomicForm G X}
     (hf₁ : f₁ ∈ GX.elementaryAut G X) (hf₂ : f₂ ∈ GX.elementaryAut G X)
-    (hR_sub : occVars R' ⊆ occVars w) (hxw : x ∈ occVars w) (hxR : x ∉ occVars R')
+    (hR_sub : occVars R' ⊆ occVars w \ {x}) (hxw : x ∈ occVars w)
     (hf₁_fix : ∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f₁ a = a)
     (hf₁_eq : f₁ w = sqWord x * R')
     (hred : IsAtomicReduction R' f₂ P) :
     ∃ f ∈ GX.elementaryAut G X,
       IsAtomicReduction w f ⟨P.comms, x :: P.squares, P.conjs, P.const⟩ := by
+  have hxR : x ∉ occVars R' := fun h => (Finset.mem_sdiff.1 (hR_sub h)).2 (by simp)
+  have hR_sub' : occVars R' ⊆ occVars w := hR_sub.trans Finset.sdiff_subset
   obtain ⟨hf₂_eq, hnd, hsub, hf₂_fix⟩ := hred
   have hx_not : x ∉ P.vars := fun hm => hxR (hsub x hm)
   obtain ⟨hC, hSq, hCj⟩ := P.commsProd_squaresProd_conjsProd_mem_avoiding hx_not
@@ -334,29 +321,32 @@ private theorem atomic_step_sq {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x 
     ?_, hnd', fun v hv => ?_, fun a ha => ?_⟩
   · have hf₂_sq : f₂ (sqWord x) = sqWord x :=
       hf₂_fix _ fun v hv => sqWord_mem_avoiding (ne_of_mem_of_not_mem hv hxR).symm
-    rw [MulAut.mul_apply, MulAut.mul_apply, hf₁_eq, map_mul, hf₂_sq, hf₂_eq, AtomicForm.toWord_def,
-      AtomicForm.toWord_def]
-    simp only [AtomicForm.commsProd_cons_squares, AtomicForm.squaresProd_cons,
-      AtomicForm.conjsProd_cons_squares, map_mul, sqWord_def, φ,
+    rw [MulAut.mul_apply, MulAut.mul_apply, hf₁_eq, map_mul, hf₂_sq, hf₂_eq,
+      AtomicForm.toWord_def, AtomicForm.toWord_def]
+    dsimp only [φ]
+    simp only [AtomicForm.commsProd_def, AtomicForm.squaresProd_def,
+      AtomicForm.conjsProd_def] at hC hSq hCj ⊢
+    simp only [List.map_cons, List.prod_cons, map_mul, sqWord_def,
       GX.transvection_inr_of_self, GX.transvection_apply_of_mem_avoiding, hC, hSq, hCj,
-      GX.inl_mem_avoiding, pow_two, mul_assoc]
-    have hmk : (⟨P.comms, P.squares, P.conjs, P.const⟩ : AtomicForm G X) = P := rfl
-    simp only [hmk, inv_mul_cancel_left]
+      GX.inl_mem_avoiding, pow_two, mul_assoc, inv_mul_cancel_left]
   · rcases List.mem_cons.1 (hperm.subset hv) with rfl | hv'
     · exact hxw
-    · exact hR_sub (hsub v hv')
-  · simp [φ, hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub hv), ha x hxw]
+    · exact hR_sub' (hsub v hv')
+  · simp [φ, hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub' hv), ha x hxw]
 
 private theorem atomic_step_comm {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x y : X}
     {P : AtomicForm G X}
     (hf₁ : f₁ ∈ GX.elementaryAut G X) (hf₂ : f₂ ∈ GX.elementaryAut G X)
-    (hR_sub : occVars R' ⊆ occVars w) (hxy : x ≠ y)
-    (hxw : x ∈ occVars w) (hyw : y ∈ occVars w) (hxR : x ∉ occVars R') (hyR : y ∉ occVars R')
+    (hR_sub : occVars R' ⊆ occVars w \ {x, y}) (hxy : x ≠ y)
+    (hxw : x ∈ occVars w) (hyw : y ∈ occVars w)
     (hf₁_fix : ∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f₁ a = a)
     (hf₁_eq : f₁ w = commWord (x, y) * R')
     (hred : IsAtomicReduction R' f₂ P) :
     ∃ f ∈ GX.elementaryAut G X,
       IsAtomicReduction w f ⟨(x, y) :: P.comms, P.squares, P.conjs, P.const⟩ := by
+  have hxR : x ∉ occVars R' := fun h => (Finset.mem_sdiff.1 (hR_sub h)).2 (by simp)
+  have hyR : y ∉ occVars R' := fun h => (Finset.mem_sdiff.1 (hR_sub h)).2 (by simp)
+  have hR_sub' : occVars R' ⊆ occVars w := hR_sub.trans Finset.sdiff_subset
   obtain ⟨hf₂_eq, hnd, hsub, hf₂_fix⟩ := hred
   have hx_not : x ∉ P.vars := fun hm => hxR (hsub x hm)
   have hy_not : y ∉ P.vars := fun hm => hyR (hsub y hm)
@@ -365,29 +355,31 @@ private theorem atomic_step_comm {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {
     simp [AtomicForm.vars_def, List.append_assoc]
   refine ⟨f₂ * f₁, mul_mem hf₂ hf₁, ?_,
     hperm.nodup_iff.2 (List.nodup_cons.2 ⟨by simp [hxy, hx_not], List.nodup_cons.2 ⟨hy_not, hnd⟩⟩),
-    fun v hv => ?_, fun a ha => by simp [hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub hv)]⟩
+    fun v hv => ?_, fun a ha => by simp [hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub' hv)]⟩
   · have hf₂_c : f₂ (commWord (x, y)) = commWord (x, y) :=
       hf₂_fix _ fun v hv => commWord_mem_avoiding
         (ne_of_mem_of_not_mem hv hxR).symm (ne_of_mem_of_not_mem hv hyR).symm
     rw [MulAut.mul_apply, hf₁_eq, map_mul, hf₂_c, hf₂_eq, AtomicForm.toWord_def,
       AtomicForm.toWord_def]
-    simp only [AtomicForm.commsProd_cons, AtomicForm.squaresProd_cons_comms,
-      AtomicForm.conjsProd_cons_comms, mul_assoc]
+    simp only [AtomicForm.commsProd_def, AtomicForm.squaresProd_def, AtomicForm.conjsProd_def,
+      List.map_cons, List.prod_cons, mul_assoc]
   · rcases List.mem_cons.1 (hperm.subset hv) with rfl | hv'
     · exact hxw
     · rcases List.mem_cons.1 hv' with rfl | hv''
       · exact hyw
-      · exact hR_sub (hsub v hv'')
+      · exact hR_sub' (hsub v hv'')
 
 private theorem atomic_step_conj {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {z : X} {c : G}
     {P : AtomicForm G X}
     (hf₁ : f₁ ∈ GX.elementaryAut G X) (hf₂ : f₂ ∈ GX.elementaryAut G X)
-    (hR_sub : occVars R' ⊆ occVars w) (hzw : z ∈ occVars w) (hzR : z ∉ occVars R')
+    (hR_sub : occVars R' ⊆ occVars w \ {z}) (hzw : z ∈ occVars w)
     (hf₁_fix : ∀ a, (∀ v ∈ occVars w, a ∈ GX.avoiding v) → f₁ a = a)
     (hf₁_eq : f₁ w = conjWord (z, c) * R')
     (hred : IsAtomicReduction R' f₂ P) :
     ∃ f ∈ GX.elementaryAut G X,
       IsAtomicReduction w f ⟨P.comms, P.squares, (z, c) :: P.conjs, P.const⟩ := by
+  have hzR : z ∉ occVars R' := fun h => (Finset.mem_sdiff.1 (hR_sub h)).2 (by simp)
+  have hR_sub' : occVars R' ⊆ occVars w := hR_sub.trans Finset.sdiff_subset
   obtain ⟨hf₂_eq, hnd, hsub, hf₂_fix⟩ := hred
   have hz_not : z ∉ P.vars := fun hm => hzR (hsub z hm)
   obtain ⟨hC, hSq, hCj⟩ := P.commsProd_squaresProd_conjsProd_mem_avoiding hz_not
@@ -402,18 +394,18 @@ private theorem atomic_step_conj {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {
     ?_, hperm.nodup_iff.2 (List.nodup_cons.2 ⟨hz_not, hnd⟩), fun v hv => ?_, fun a ha => ?_⟩
   · have hf₂_cj : f₂ (conjWord (z, c)) = conjWord (z, c) :=
       hf₂_fix _ fun v hv => conjWord_mem_avoiding (ne_of_mem_of_not_mem hv hzR).symm
-    rw [MulAut.mul_apply, MulAut.mul_apply, hf₁_eq, map_mul, hf₂_cj, hf₂_eq, AtomicForm.toWord_def,
-      AtomicForm.toWord_def]
-    simp only [AtomicForm.commsProd_cons_conjs, AtomicForm.squaresProd_cons_conjs,
-      AtomicForm.conjsProd_cons, map_mul, conjWord_def, map_inv, φ,
+    rw [MulAut.mul_apply, MulAut.mul_apply, hf₁_eq, map_mul, hf₂_cj, hf₂_eq,
+      AtomicForm.toWord_def, AtomicForm.toWord_def]
+    dsimp only [φ]
+    simp only [AtomicForm.commsProd_def, AtomicForm.squaresProd_def,
+      AtomicForm.conjsProd_def] at hC hSq hCj ⊢
+    simp only [List.map_cons, List.prod_cons, map_mul, conjWord_def, map_inv,
       GX.transvection_inr_of_self, GX.transvection_apply_of_mem_avoiding, hC, hSq, hCj,
-      GX.inl_mem_avoiding, one_mul, mul_inv_rev, inv_inv, mul_assoc]
-    have hmk : (⟨P.comms, P.squares, P.conjs, P.const⟩ : AtomicForm G X) = P := rfl
-    simp only [hmk, inv_mul_cancel_left]
+      GX.inl_mem_avoiding, one_mul, mul_inv_rev, inv_inv, mul_assoc, inv_mul_cancel_left]
   · rcases List.mem_cons.1 (hperm.subset hv) with rfl | hv'
     · exact hzw
-    · exact hR_sub (hsub v hv')
-  · simp [φ, hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub hv), ha z hzw]
+    · exact hR_sub' (hsub v hv')
+  · simp [φ, hf₁_fix a ha, hf₂_fix a fun v hv => ha v (hR_sub' hv), ha z hzw]
 
 private theorem exists_atomic_aux (n : ℕ) : ∀ w : GX G X, (occVars w).card = n →
     IsStrictlyQuadratic {w} →
@@ -432,32 +424,33 @@ private theorem exists_atomic_aux (n : ℕ) : ∀ w : GX G X, (occVars w).card =
       have hq : ∀ v, GX.countVar v (GX.reducedWord w) ≠ 1 := fun v => by
         rcases isStrictlyQuadratic_singleton.1 hw v with h | h <;>
           rw [occurrences_eq_countVar_reducedWord] at h <;> omega
-      have step_ih {R' : GX G X} (hR_sq : IsStrictlyQuadratic {R'})
-          (hR_sub : occVars R' ⊆ occVars w) {v : X} (hvw : v ∈ occVars w) (hvR : v ∉ occVars R') :
+      have step_ih {R' : GX G X} {s : Finset X} (hR_sq : IsStrictlyQuadratic {R'})
+          (hR_sub : occVars R' ⊆ occVars w \ s) {v : X} (hvw : v ∈ occVars w) (hvs : v ∈ s) :
           ∃ f₂ ∈ GX.elementaryAut G X, ∃ P : AtomicForm G X, IsAtomicReduction R' f₂ P :=
-        ih _ (hcard ▸ Finset.card_lt_card
-          (Finset.ssubset_iff_subset_ne.2 ⟨hR_sub, fun h => hvR (h ▸ hvw)⟩)) R' rfl hR_sq
+        ih _ (hcard ▸ Finset.card_lt_card (Finset.ssubset_iff_subset_ne.2
+          ⟨hR_sub.trans Finset.sdiff_subset,
+            fun h => (Finset.mem_sdiff.1 (hR_sub (h ▸ hvw))).2 hvs⟩)) R' rfl hR_sq
       rcases GX.exists_crossCap_or_handle_or_boundary_with_prefix hq hne with
         ⟨x, b, P, M, Q, hl⟩ | ⟨x, y, bx, by_, P, U, V, W, Z, hxy, hl⟩ | ⟨z, b, L, P, Q, hl⟩
-      · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hxw, hxR, hf₁_fix, hf₁_eq⟩ :=
+      · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hxw, hf₁_fix, hf₁_eq⟩ :=
           step_sameSign hw (by simpa [List.append_assoc] using hl)
-        obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hxw hxR
-        obtain ⟨f, hf, hred'⟩ := atomic_step_sq hf₁ hf₂ hR_sub hxw hxR hf₁_fix hf₁_eq hred
+        obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hxw (by simp)
+        obtain ⟨f, hf, hred'⟩ := atomic_step_sq hf₁ hf₂ hR_sub hxw hf₁_fix hf₁_eq hred
         exact ⟨f, hf, _, hred'⟩
-      · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hxw, hyw, hxR, hyR, hf₁_fix, hf₁_eq⟩ :=
+      · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hxw, hyw, hf₁_fix, hf₁_eq⟩ :=
           step_alt hw hxy (by simpa [List.append_assoc] using hl)
-        obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hxw hxR
+        obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hxw (by simp)
         obtain ⟨f, hf, hred'⟩ :=
-          atomic_step_comm hf₁ hf₂ hR_sub hxy hxw hyw hxR hyR hf₁_fix hf₁_eq hred
+          atomic_step_comm hf₁ hf₂ hR_sub hxy hxw hyw hf₁_fix hf₁_eq hred
         exact ⟨f, hf, _, hred'⟩
       · have hsub : GX.IsReduced (.inr (z, b) :: (L.map .inl ++ [.inr (z, !b)])) :=
           (GX.isReduced_reducedWord w).infix ⟨P, Q, by simp [hl, List.append_assoc]⟩
         rcases L with _ | ⟨c, _ | ⟨c', L'⟩⟩
         · simp at hsub
-        · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hzw, hzR, hf₁_fix, hf₁_eq⟩ :=
+        · obtain ⟨f₁, hf₁, R', hR_sq, hR_sub, hzw, hf₁_fix, hf₁_eq⟩ :=
             step_conj hw (c := c) (by simpa [List.append_assoc] using hl)
-          obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hzw hzR
-          obtain ⟨f, hf, hred'⟩ := atomic_step_conj hf₁ hf₂ hR_sub hzw hzR hf₁_fix hf₁_eq hred
+          obtain ⟨f₂, hf₂, Q, hred⟩ := step_ih hR_sq hR_sub hzw (by simp)
+          obtain ⟨f, hf, hred'⟩ := atomic_step_conj hf₁ hf₂ hR_sub hzw hf₁_fix hf₁_eq hred
           exact ⟨f, hf, _, hred'⟩
         · simp at hsub
 
@@ -501,27 +494,36 @@ section Exclusivity
 
 variable {G X Y Z : Type*} [Group G]
 
+/-- If `w ∈ G[X]` is conjugate in `G[X]` to a coefficient `inl c`, then no homomorphism
+`φ : G[X] →* G[Z]` sending `inl c` to a coefficient `inl d` followed by a conjugation in `G[Z]`
+can carry `w` to `S.toWord` for any `S : Standard G Z`. -/
+theorem not_exists_standard_of_isConj_inl
+    {F : Type*} [FunLike F (GX G X) (GX G Z)] [MonoidHomClass F (GX G X) (GX G Z)]
+    {w : GX G X} {c d : G} (hw : IsConj (inl c : GX G X) w)
+    (φ : F) (hφ : φ (inl c) = inl d) (u : GX G Z) :
+    ¬∃ S : Standard G Z, u * φ w * u⁻¹ = S.toWord := by
+  rintro ⟨S, hS⟩
+  obtain ⟨v, hv⟩ := isConj_iff.1 hw.symm
+  have hw_eq : w = v⁻¹ * inl c * v := by simp [← hv, mul_assoc]
+  exact S.toWord_ne_conj_map_conj_inl (f := (φ : GX G X →* GX G Z)) hφ u v
+    (by simpa [hw_eq] using hS.symm)
+
 /-- The coefficient and standard-equation branches of `exists_standardForm` are mutually exclusive,
-even across isomorphisms and homomorphisms fixing `inl c` followed by arbitrary conjugation in
-their targets: if `w` is carried by an isomorphism `φ₁ : G[X] ≃* G[Y]` fixing `inl c` and an
-arbitrary conjugation in `G[Y]` to `inl c`, then no homomorphism `φ₂ : G[X] →* G[Z]` fixing
-`inl c` followed by an arbitrary conjugation in `G[Z]` can carry `w` to `S.toWord` for any
-`S : Standard G Z`. -/
+even across isomorphisms and homomorphisms mapping `inl c` to coefficients followed by arbitrary
+conjugation in their targets: if `w` is carried by an isomorphism `φ₁ : G[X] ≃* G[Y]` with
+`φ₁ (inl c) = inl c₁` and a conjugation in `G[Y]` to `inl c₁`, then no homomorphism
+`φ₂ : G[X] →* G[Z]` with `φ₂ (inl c) = inl c₂` followed by a conjugation in `G[Z]` can carry `w`
+to `S.toWord` for any `S : Standard G Z`. -/
 theorem not_exists_standard_of_conj_mulEquiv_eq_inl
     {F : Type*} [FunLike F (GX G X) (GX G Z)] [MonoidHomClass F (GX G X) (GX G Z)]
-    {w : GX G X} {u₁ : GX G Y} {c : G}
-    (φ₁ : GX G X ≃* GX G Y) (hφ₁ : φ₁ (inl c) = inl c) (hw₁ : u₁ * φ₁ w * u₁⁻¹ = inl c)
-    (φ₂ : F) (hφ₂ : φ₂ (inl c) = inl c) (u₂ : GX G Z) :
+    {w : GX G X} {u₁ : GX G Y} {c c₁ c₂ : G}
+    (φ₁ : GX G X ≃* GX G Y) (hφ₁ : φ₁ (inl c) = inl c₁) (hw₁ : u₁ * φ₁ w * u₁⁻¹ = inl c₁)
+    (φ₂ : F) (hφ₂ : φ₂ (inl c) = inl c₂) (u₂ : GX G Z) :
     ¬∃ S : Standard G Z, u₂ * φ₂ w * u₂⁻¹ = S.toWord := by
-  rintro ⟨S, hS⟩
-  have h1 : IsConj (inl c : GX G X) w := by
-    have h : IsConj (φ₁ w) (inl c) := isConj_iff.2 ⟨u₁, hw₁⟩
+  have hw : IsConj (inl c : GX G X) w := by
+    have h : IsConj (φ₁ w) (inl c₁) := isConj_iff.2 ⟨u₁, hw₁⟩
     simpa [φ₁.symm_apply_eq.2 hφ₁.symm] using (φ₁.symm.toMonoidHom.map_isConj h).symm
-  obtain ⟨v, hv⟩ := isConj_iff.1 h1.symm
-  have hw_eq : w = v⁻¹ * inl c * v := by
-    simp [← hv, mul_assoc]
-  exact S.toWord_ne_conj_map_conj_inl (f := (φ₂ : GX G X →* GX G Z)) hφ₂ u₂ v
-    (hS.symm.trans (by rw [hw_eq]; rfl))
+  exact not_exists_standard_of_isConj_inl hw φ₂ hφ₂ u₂
 
 end Exclusivity
 

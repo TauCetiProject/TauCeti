@@ -20,6 +20,8 @@ ordered pairs, dropping a possible final unpaired element.
 * `List.prod_map_pairAdjacent` recovers a mapped product from the pairs of an even-length list;
   `List.sum_map_pairAdjacent` is its additive version.
 * `List.length_pairAdjacent` computes the number of pairs.
+* `List.length_flatMap_pair` and `List.getElem_flatMap_pair` give the length and entries of
+  flattening a list of pairs into `[p.1, p.2]`.
 -/
 
 public section
@@ -51,5 +53,25 @@ theorem prod_map_pairAdjacent [Semigroup β] [One β] (f : α → β) :
 theorem length_pairAdjacent : ∀ (l : List α), (pairAdjacent l).length = l.length / 2
   | [] | [_] => by simp [pairAdjacent]
   | _ :: _ :: l => by simp [pairAdjacent, length_pairAdjacent l]; omega
+
+/-- Flattening a list of pairs `C` into `[p.1, p.2]` produces a list of length `2 * C.length`. -/
+theorem length_flatMap_pair (C : List (α × α)) :
+    (C.flatMap fun p => [p.1, p.2]).length = 2 * C.length := by
+  induction C with
+  | nil => simp
+  | cons p C ih => simp [ih, Nat.mul_succ]
+
+/-- The entries at indices `2 * i` and `2 * i + 1` of `C.flatMap fun p => [p.1, p.2]` are the two
+components of `C[i]`. -/
+theorem getElem_flatMap_pair (C : List (α × α)) {i : ℕ} (hi : i < C.length) :
+    (C.flatMap fun p => [p.1, p.2])[2 * i]'(by rw [length_flatMap_pair]; omega) = C[i].1 ∧
+    (C.flatMap fun p => [p.1, p.2])[2 * i + 1]'(by rw [length_flatMap_pair]; omega) = C[i].2 := by
+  induction C generalizing i with
+  | nil => simp at hi
+  | cons p C ih =>
+    cases i with
+    | zero => simp
+    | succ i =>
+      simpa [Nat.mul_succ, add_assoc] using ih (Nat.succ_lt_succ_iff.1 hi)
 
 end List

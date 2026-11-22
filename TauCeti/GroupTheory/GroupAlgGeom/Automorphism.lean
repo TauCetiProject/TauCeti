@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
-public import TauCeti.Algebra.Group.End
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Ker
-import Mathlib.Algebra.Group.Subgroup.Pointwise
-import Mathlib.Algebra.Group.Submonoid.Membership
 import Mathlib.GroupTheory.FreeGroup.Reduce
 
 /-!
@@ -424,61 +421,6 @@ theorem apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ element
   | one => rfl
   | mul f f' _ _ hf hf' => simp [hf, hf']
   | inv f _ hf => simpa [MulEquiv.symm_apply_eq] using hf.symm
-
-private theorem elementaryAut_toSubmonoid_eq_closure :
-    (elementaryAut G X).toSubmonoid =
-      Submonoid.closure ({φ | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
-        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G)) := by
-  open scoped Pointwise in
-  have hinv :
-      ({φ : MulAut (GX G X) | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
-        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G))⁻¹ =
-      ({φ : MulAut (GX G X) | ∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x)
-        (hb : b ∈ avoiding x), φ = transvection x a b ha hb} ∪ Set.range (invertVar G)) := by
-    refine Set.inv_eq_self_iff_inv_subset.mpr fun φ hφ => ?_
-    simp only [Set.mem_inv, Set.mem_union, Set.mem_ofPred_eq, Set.mem_range] at hφ ⊢
-    rcases hφ with ⟨x, a, b, ha, hb, h⟩ | ⟨x, h⟩
-    · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb,
-        by rw [← transvection_inv ha hb, ← h, inv_inv]⟩
-    · exact .inr ⟨x, by rw [← invertVar_inv x, h, inv_inv]⟩
-  rw [elementaryAut_eq_closure, Subgroup.closure_toSubmonoid, hinv, Set.union_self]
-
-/-- Every elementary automorphism is a finite product of transvections and variable
-inversions. -/
-theorem mem_elementaryAut_iff_exists_list {f : MulAut (GX G X)} :
-    f ∈ elementaryAut G X ↔
-      ∃ fs : List (MulAut (GX G X)), f = fs.prod ∧
-        ∀ φ ∈ fs,
-          (∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
-            φ = transvection x a b ha hb) ∨
-          ∃ x : X, φ = invertVar G x := by
-  rw [← Subgroup.mem_toSubmonoid, elementaryAut_toSubmonoid_eq_closure, ← SetLike.mem_coe,
-    Submonoid.closure_eq_image_prod]
-  refine ⟨fun ⟨fs, hfs, h⟩ => ⟨fs, h.symm, fun φ hφ => ?_⟩,
-    fun ⟨fs, h, hfs⟩ => ⟨fs, fun φ hφ => ?_, h.symm⟩⟩
-  · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
-  · simpa [Set.mem_union, Set.mem_ofPred_eq, Set.mem_range, eq_comm] using hfs φ hφ
-
-/-- Elimination principle for `elementaryAut G X`: to prove a property of every elementary
-automorphism, it suffices to prove it for `1`, for every `transvection`, for every `invertVar`,
-and for products. -/
-@[elab_as_elim]
-theorem elementaryAut_induction {motive : (f : MulAut (GX G X)) → f ∈ elementaryAut G X → Prop}
-    (one : motive 1 (one_mem _))
-    (transvection : ∀ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
-      motive (GX.transvection x a b ha hb) (transvection_mem_elementaryAut x ha hb))
-    (invertVar : ∀ x : X, motive (GX.invertVar G x) (invertVar_mem_elementaryAut x))
-    (mul : ∀ f g (hf : f ∈ elementaryAut G X) (hg : g ∈ elementaryAut G X),
-      motive f hf → motive g hg → motive (f * g) (mul_mem hf hg))
-    {f : MulAut (GX G X)} (hf : f ∈ elementaryAut G X) : motive f hf := by
-  have hf' : f ∈ (elementaryAut G X).toSubmonoid := (Subgroup.mem_toSubmonoid _ _).2 hf
-  rw [elementaryAut_toSubmonoid_eq_closure] at hf'
-  refine Submonoid.closure_induction (motive := fun g hg =>
-    motive g (by rwa [← Subgroup.mem_toSubmonoid, elementaryAut_toSubmonoid_eq_closure]))
-    (fun φ hφ => ?_) one (fun g₁ g₂ hg₁ hg₂ ih₁ ih₂ => mul g₁ g₂ _ _ ih₁ ih₂) hf'
-  rcases hφ with ⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩
-  · exact transvection x a b ha hb
-  · exact invertVar x
 
 /-- Simultaneous transvections: for a finite set `Y` of variables and words `a y`, `b y` in which
 no variable of `Y` occurs, there is an elementary automorphism with `y ↦ a y * y * b y` for every

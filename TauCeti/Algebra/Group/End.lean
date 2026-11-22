@@ -40,8 +40,6 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 ## Main results
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
-* `MulAut.list_prod_apply`, `MulAut.list_prod_inv_apply`: evaluation of a list product of
-  automorphisms and its inverse as a right fold and a left fold of inverse applications.
 * `MulAut.mul_conj_mul_inv`: `φ * conj g * φ⁻¹ = conj (φ g)`.
 * `MulAut.congr_conj`: transport along an isomorphism `e` sends `conj g` to `conj (e g)`.
 * `MulAut.congr_refl`, `MulAut.congr_symm`, `MulAut.congr_trans`: functoriality of `MulAut.congr`.
@@ -55,21 +53,6 @@ namespace MulAut
 /-- The permutation underlying an automorphism acts as the automorphism does. -/
 @[simp]
 theorem toPerm_apply {M : Type*} [Mul M] (f : MulAut M) (x : M) : toPerm M f x = f x := rfl
-
-/-- Evaluating a list product of automorphisms applies them from right to left. -/
-theorem list_prod_apply {M : Type*} [Mul M] (fs : List (MulAut M)) (x : M) :
-    fs.prod x = fs.foldr (fun f y => f y) x := by
-  induction fs with
-  | nil => rfl
-  | cons f fs ih => simp [ih]
-
-/-- Evaluating the inverse of a list product of automorphisms applies the inverse automorphisms from
-left to right. -/
-theorem list_prod_inv_apply {M : Type*} [Mul M] (fs : List (MulAut M)) (x : M) :
-    (fs.prod)⁻¹ x = fs.foldl (fun y f => f⁻¹ y) x := by
-  induction fs generalizing x with
-  | nil => rfl
-  | cons f fs ih => simp [mul_inv_rev, ih]
 
 section Group
 

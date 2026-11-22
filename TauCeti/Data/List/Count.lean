@@ -22,13 +22,10 @@ namespace List
 /-- A list in which at least one entry satisfies `p` splits at its first matching entry. -/
 theorem exists_split_of_countP_pos {α : Type*} {p : α → Bool} {l : List α} (h : 0 < l.countP p) :
     ∃ l₁ a l₂, l = l₁ ++ a :: l₂ ∧ p a = true ∧ l₁.countP p = 0 := by
-  induction l with
-  | nil => simp at h
-  | cons b l ih =>
-    by_cases hb : p b
-    · exact ⟨[], b, l, rfl, hb, rfl⟩
-    · obtain ⟨l₁, a, l₂, rfl, ha, h₁⟩ := ih (by simpa [hb] using h)
-      exact ⟨b :: l₁, a, l₂, rfl, ha, by simp [hb, h₁]⟩
+  have ⟨x, hx, hpx⟩ := List.countP_pos_iff.1 h
+  obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.1 (List.find?_eq_none.not.2 fun h => h x hx hpx)
+  obtain ⟨hpa, l₁, l₂, rfl, hl₁⟩ := List.find?_eq_some_iff_append.1 ha
+  exact ⟨l₁, a, l₂, rfl, hpa, List.countP_eq_zero.2 fun y hy => by simpa using hl₁ y hy⟩
 
 /-- A list in which at least two entries satisfy `p` splits at its first two matching entries. -/
 theorem exists_two_split_of_two_le_countP {α : Type*} {p : α → Bool} {l : List α}

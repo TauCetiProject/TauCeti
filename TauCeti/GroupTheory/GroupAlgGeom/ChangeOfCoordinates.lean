@@ -44,8 +44,9 @@ carries its solutions, the centralizer of `ι g`, onto themselves.
 * `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`,
-  `TauCeti.GroupAlgGeom.mem_V_singleton_iff_of_conj_mulEquiv`: membership in the solutions of the
-  image of a system under a `G`-isomorphism, and under a `G`-isomorphism followed by conjugation.
+  `TauCeti.GroupAlgGeom.mem_V_singleton_iff_of_conj_gHom`: membership in the solutions of the
+  image of a system under a `G`-isomorphism, and of a single equation under a `G`-homomorphism
+  followed by conjugation.
 * `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
   `TauCeti.GroupAlgGeom.Rad_singleton_of_conj_mulEquiv`: a `G`-isomorphism carries the radical of
   a system to the radical of its image, and of a conjugate of the image of a single equation.
@@ -371,13 +372,6 @@ theorem equivVOfConjMulEquiv_symm_apply_coe (hw' : u * φ w * u⁻¹ = w') (v : 
   simp [equivVOfConjMulEquiv]
 
 include hφ in
-/-- When `u * φ w * u⁻¹ = w'` for a `G`-isomorphism `φ`, a point solves `w' = 1` if and only if
-the tuple of its values at the words `φ x` solves `w = 1`. -/
-theorem mem_V_singleton_iff_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') (v : Y → H) :
-    v ∈ V ι {w'} ↔ wordMap ι (fun x => φ (inr (FreeGroup.of x))) v ∈ V ι {w} := by
-  rw [← hw', V_singleton_conj, ← Set.image_singleton, mem_V_image_mulEquiv_iff ι φ hφ]
-
-include hφ in
 /-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` carries the radical of `{w}` to the radical of any
 conjugate `w' = u * φ w * u⁻¹` of `φ w`. -/
 theorem Rad_singleton_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
@@ -458,6 +452,20 @@ end CoordGroup
 end ConjMulEquiv
 
 end MulEquiv
+
+section ConjGHom
+
+variable {w : GX G X} {u w' : GX G Y}
+
+/-- When `u * σ w * u⁻¹ = w'` for a `G`-homomorphism `σ : G[X] →* G[Y]`, a point solves `w' = 1`
+if and only if the tuple of its values at the words `σ x` solves `w = 1`. -/
+theorem mem_V_singleton_iff_of_conj_gHom (σ : GHom (inl : G →* GX G X) (inl : G →* GX G Y))
+    (hw' : u * σ w * u⁻¹ = w') (v : Y → H) :
+    v ∈ V ι {w'} ↔ wordMap ι (fun x => σ (inr (FreeGroup.of x))) v ∈ V ι {w} := by
+  rw [← hw', V_singleton_conj, ← Set.image_singleton]
+  simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι σ {w}) v).symm
+
+end ConjGHom
 
 /-! ### The commutator equation -/
 
