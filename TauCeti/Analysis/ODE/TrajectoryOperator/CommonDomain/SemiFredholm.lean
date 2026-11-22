@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Family
 public import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
+public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
 # The semi-Fredholm estimate for the trajectory operator over a compactly embedded domain
@@ -23,10 +22,11 @@ the linearized Floer operator on a strip or a cylinder in a unitary trivializati
 `A(s) = J₀ ∂ₜ + S(s, t)` acts on loops or paths in `t`, with `D = H¹` and `H = L²`.
 
 Suppose that `A(s)` converges to invertible `ι`-symmetric operators `B₋` and `B₊`
-(`⟪B x, ι y⟫ = ⟪ι x, B y⟫`) as `s → -∞` and `s → ∞`, and that `A(s)` differs from `B₊` by an
-operator of lower order, bounded through `ι`: `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`.
-For `A(s) = J₀ ∂ₜ + S(s, t)` and `B₊ = J₀ ∂ₜ + S₊(t)` this is the bound of the multiplication
-operator `S(s, ·) - S₊` on `L²`. Then the semi-Fredholm estimate
+(`⟪B x, ι y⟫ = ⟪ι x, B y⟫`) as `s → -∞` and `s → ∞`, and that on every bounded interval `A(s)`
+differs from `B₊` by an operator of lower order, bounded through `ι`: for every `T` there is `c`
+with `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s ∈ (-T, T)`. For `A(s) = J₀ ∂ₜ + S(s, t)` and
+`B₊ = J₀ ∂ₜ + S₊(t)` this is the bound of the multiplication operator `S(s, ·) - S₊` on `L²`. Then
+the semi-Fredholm estimate
 
 `‖u‖ ≤ C (‖D_A u‖ + ‖ι ∘ u‖_{L²((-T, T), H)})`
 
@@ -41,10 +41,12 @@ of the three properties making `D_A` Fredholm; the finite dimension of its coker
 here.
 
 The estimate is spliced from three pieces by smooth cutoffs `χ₋`, `χ₀ = 1 - χ₋ - χ₊` and `χ₊`
-supported in `(-∞, -a]`, `[-a - 1, a + 1]` and `[a, ∞)`. Multiplying a path by a cutoff `χ`
-changes `D_A` by the commutator term `χ' (ι ∘ u)`, which lives on the window where `χ'` is
-supported. On the two ends, `A(s)` is close to `B±`, and the estimate without error term holds for
-paths supported there
+supported in `(-∞, -a]`, `[-a - 1, a + 1]` and `[a, ∞)`
+(`TauCeti.exists_cutoffs_add_add_eq_one`). Multiplying a path by a cutoff `χ`
+(`TauCeti.WeakDerivStep.smulLeftCLM`) changes `D_A` by the commutator term `χ' (ι ∘ u)`
+(`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator_smulLeftCLM_ae`), which lives on the window
+where `χ'` is supported. On the two ends, `A(s)` is close to `B±`, and the estimate without error
+term holds for paths supported there
 (`exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop` and its `atBot`
 version). In the middle, `D_A` differs from the invertible autonomous operator of
 `B₊` by `A(s) - B₊`, whose action on a path supported in the window is bounded by `c` times the
@@ -52,6 +54,8 @@ version). In the middle, `D_A` differs from the invertible autonomous operator o
 
 ## Main results
 
+* `TauCeti.WeakDerivStep.familyDomainTrajectoryOperator_smulLeftCLM_ae`: the commutator
+  `D_A (χ u) = χ D_A u + χ' (ι ∘ u)` of `D_A` with a smooth cutoff `χ`.
 * `exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL`: the
   semi-Fredholm estimate with the window error term.
 * `TauCeti.WeakDerivStep.finiteDimensional_ker_familyDomainTrajectoryOperator`: for compact `ι`,
@@ -76,6 +80,35 @@ namespace TauCeti.WeakDerivStep
 
 open Filter _root_.MeasureTheory Set TopologicalSpace
 open scoped ENNReal InnerProductSpace Topology ContDiff
+
+/-! ### The commutator with a cutoff -/
+
+section Commutator
+
+variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
+  [NormedSpace ℝ H] [CompleteSpace H] {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu]
+  {Omega : Opens ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {χ : ℝ → ℝ}
+
+/-- **The commutator of the trajectory operator with a cutoff.** For `χ` smooth on `Ω` with `χ` and
+`χ'` bounded there, `D_A (χ u) = χ D_A u + χ' (ι ∘ u)` almost everywhere. -/
+theorem familyDomainTrajectoryOperator_smulLeftCLM_ae (ι : D →L[ℝ] H)
+    (A : Lp (D →L[ℝ] H) ∞ (mu.restrict Omega)) (hχ : ContDiffOn ℝ ∞ χ Omega)
+    (h₀ : ∃ C, ∀ s ∈ Omega, ‖χ s‖ ≤ C) (h₁ : ∃ C, ∀ s ∈ Omega, ‖fderiv ℝ χ s‖ ≤ C)
+    (u : WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))) :
+    familyDomainTrajectoryOperator ι A
+        (smulLeftCLM χ hχ h₀ h₁ ι.compLpL_multiplicationOperator u) =ᵐ[mu.restrict Omega]
+      fun s ↦ χ s • familyDomainTrajectoryOperator ι A u s + deriv χ s • ι (prev _ u s) := by
+  filter_upwards [familyDomainTrajectoryOperator_apply_ae ι A
+      (smulLeftCLM χ hχ h₀ h₁ ι.compLpL_multiplicationOperator u),
+    prev_smulLeftCLM_ae hχ h₀ h₁ ι.compLpL_multiplicationOperator u,
+    weakFDeriv_smulLeftCLM_ae hχ h₀ h₁ ι.compLpL_multiplicationOperator u,
+    familyDomainTrajectoryOperator_apply_ae ι A u, ι.coeFn_compLpL (prev _ u)]
+    with s hD hp hd hDu hι
+  rw [hD, hp, hd, hDu, hι, add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, fderiv_apply_one_eq_deriv, (A s).map_smul, smul_add]
+  abel
+
+end Commutator
 
 local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
 
@@ -119,232 +152,60 @@ private theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
 
 /-! ### Multiplication by a cutoff -/
 
-/-- The `L∞` class of a bounded continuous function on the line. -/
-private def linftyOf {f : ℝ → ℝ} (hf : Continuous f) {C : ℝ} (hC : ∀ s, |f s| ≤ C) :
-    Lp ℝ ∞ μ₀ :=
-  (memLp_top_of_bound hf.aestronglyMeasurable C (ae_of_all _ hC)).toLp f
-
-private theorem linftyOf_ae {f : ℝ → ℝ} (hf : Continuous f) {C : ℝ} (hC : ∀ s, |f s| ≤ C) :
-    ⇑(linftyOf hf hC) =ᵐ[μ₀] f :=
-  MemLp.coeFn_toLp _
-
-/-- Multiplication by the `L∞` class of `f` acts by `s ↦ f s • g s`. -/
-private theorem multiplicationOperator_linftyOf_ae {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : ℝ → ℝ} (hf : Continuous f) {C : ℝ} (hC : ∀ s, |f s| ≤ C)
-    (g : Lp E 2 μ₀) :
-    ⇑(Lp.multiplicationOperator (linftyOf hf hC) g) =ᵐ[μ₀] fun s ↦ f s • g s := by
-  filter_upwards [Lp.multiplicationOperator_ae (linftyOf hf hC) g, linftyOf_ae hf hC]
-    with s h₁ h₂
-  rw [h₁, h₂]
-
-variable {χ : ℝ → ℝ} {C₀ C₁ : ℝ}
-
-/-- The value `χ u` of the product of a path with a smooth cutoff `χ`. -/
-private def cutoffPrev (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) : Lp D 2 μ₀ :=
-  Lp.multiplicationOperator (linftyOf hχ.continuous h₀) (prev _ u)
-
-/-- The derivative `χ (ι ∘ u)' + χ' (ι ∘ u)` of the product of a path with a smooth cutoff `χ`. -/
-private def cutoffDeriv (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀)
-    (h₁ : ∀ s, |deriv χ s| ≤ C₁) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    Lp H 2 μ₀ :=
-  Lp.multiplicationOperator (linftyOf hχ.continuous h₀)
-      ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv _ u)) +
-    Lp.multiplicationOperator (linftyOf (hχ.continuous_deriv (by simp)) h₁)
-      (ι.compLpL 2 μ₀ (prev _ u))
-
-omit [CompleteSpace D] in
-private theorem cutoffDeriv_ae (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀)
-    (h₁ : ∀ s, |deriv χ s| ≤ C₁) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ⇑(cutoffDeriv hχ h₀ h₁ u) =ᵐ[μ₀]
-      fun s ↦ χ s • weakFDeriv _ u s 1 + deriv χ s • ι (prev _ u s) := by
-  filter_upwards [Lp.coeFn_add (Lp.multiplicationOperator (linftyOf hχ.continuous h₀)
-        ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv _ u)))
-        (Lp.multiplicationOperator (linftyOf (hχ.continuous_deriv (by simp)) h₁)
-          (ι.compLpL 2 μ₀ (prev _ u))),
-      multiplicationOperator_linftyOf_ae hχ.continuous h₀
-        ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv _ u)),
-      multiplicationOperator_linftyOf_ae (hχ.continuous_deriv (by simp)) h₁
-        (ι.compLpL 2 μ₀ (prev _ u)),
-      (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLpL (weakFDeriv _ u),
-      ι.coeFn_compLpL (prev _ u)] with s h₁ h₂ h₃ h₄ h₅
-  rw [cutoffDeriv, h₁, Pi.add_apply, h₂, h₃, h₄, h₅, ContinuousLinearMap.apply_apply]
-
-omit [CompleteSpace D] in
-/-- **The Leibniz rule on the graph space.** For a smooth cutoff `χ`, the path `ι ∘ (χ u)` has
-weak derivative `χ (ι ∘ u)' + χ' (ι ∘ u)`. -/
-private theorem hasWeakLineDerivOn_cutoff (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀)
-    (h₁ : ∀ s, |deriv χ s| ≤ C₁) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    HasWeakLineDerivOn volume ⊤ (ι.compLpL 2 μ₀ (cutoffPrev hχ h₀ u))
-      (cutoffDeriv hχ h₀ h₁ u) 1 := by
-  have h := ((hasWeakFDerivOn_base_prev _ u).hasWeakLineDerivOn 1).contDiffOn_smul hχ.contDiffOn
-  refine (h.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [ι.coeFn_compLpL (cutoffPrev hχ h₀ u),
-      multiplicationOperator_linftyOf_ae hχ.continuous h₀ (prev _ u),
-      ι.coeFn_compLpL (prev _ u)] with s h₁ h₂ h₃
-    rw [h₁, cutoffPrev, h₂, h₃, map_smul]
-  · filter_upwards [cutoffDeriv_ae hχ h₀ h₁ u, ι.coeFn_compLpL (prev _ u)] with s h₁ h₂
-    rw [h₁, h₂, fderiv_apply_one_eq_deriv]
-
-/-- The product `χ u` of a path `u` of the graph space with a smooth cutoff `χ`. -/
-private def cutoffMul (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀) (h₁ : ∀ s, |deriv χ s| ≤ C₁)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) :=
-  mkLine _ _ _ (hasWeakLineDerivOn_cutoff hχ h₀ h₁ u)
-
-omit [CompleteSpace D] in
-private theorem prev_cutoffMul_ae (hχ : ContDiff ℝ ∞ χ) (h₀ : ∀ s, |χ s| ≤ C₀)
-    (h₁ : ∀ s, |deriv χ s| ≤ C₁) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ⇑(prev _ (cutoffMul hχ h₀ h₁ u)) =ᵐ[μ₀] fun s ↦ χ s • prev _ u s := by
-  rw [cutoffMul, prev_mkLine, cutoffPrev]
-  exact multiplicationOperator_linftyOf_ae hχ.continuous h₀ (prev _ u)
-
-omit [CompleteSpace D] in
-/-- **The commutator of `D_A` with a cutoff.** `D_A (χ u) = χ D_A u + χ' (ι ∘ u)`. -/
-private theorem familyDomainTrajectoryOperator_cutoffMul (hχ : ContDiff ℝ ∞ χ)
-    (h₀ : ∀ s, |χ s| ≤ C₀) (h₁ : ∀ s, |deriv χ s| ≤ C₁) (AL : Lp (D →L[ℝ] H) ∞ μ₀)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    familyDomainTrajectoryOperator ι AL (cutoffMul hχ h₀ h₁ u) =
-      Lp.multiplicationOperator (linftyOf hχ.continuous h₀)
-          (familyDomainTrajectoryOperator ι AL u) +
-        Lp.multiplicationOperator (linftyOf (hχ.continuous_deriv (by simp)) h₁)
-          (ι.compLpL 2 μ₀ (prev _ u)) := by
-  refine Lp.ext ?_
-  filter_upwards [familyDomainTrajectoryOperator_apply_ae ι AL (cutoffMul hχ h₀ h₁ u),
-    weakFDeriv_mkLine_apply_one_ae _ _ _ (hasWeakLineDerivOn_cutoff hχ h₀ h₁ u),
-    prev_cutoffMul_ae hχ h₀ h₁ u, cutoffDeriv_ae hχ h₀ h₁ u,
-    Lp.coeFn_add (Lp.multiplicationOperator (linftyOf hχ.continuous h₀)
-        (familyDomainTrajectoryOperator ι AL u))
-      (Lp.multiplicationOperator (linftyOf (hχ.continuous_deriv (by simp)) h₁)
-        (ι.compLpL 2 μ₀ (prev _ u))),
-    multiplicationOperator_linftyOf_ae hχ.continuous h₀ (familyDomainTrajectoryOperator ι AL u),
-    multiplicationOperator_linftyOf_ae (hχ.continuous_deriv (by simp)) h₁
-      (ι.compLpL 2 μ₀ (prev _ u)),
-    ι.coeFn_compLpL (prev _ u), familyDomainTrajectoryOperator_apply_ae ι AL u]
-    with s hD hW hP hd hadd hm hm' hι hDu
-  rw [hD, hP, cutoffMul, hW, hd, hadd, Pi.add_apply, hm, hm', hι, hDu, map_smul, smul_add]
-  abel
+/-- The derivative bound of a cutoff on the line, in the form taken by `smulLeftCLM`. -/
+private theorem exists_forall_norm_fderiv_le {χ : ℝ → ℝ} {C₁ : ℝ} (h : ∀ s, |deriv χ s| ≤ C₁) :
+    ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C :=
+  ⟨C₁, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv]; exact h s⟩
 
 omit [CompleteSpace D] in
 /-- **The error of a cutoff.** If `|χ| ≤ 1`, `|χ'| ≤ C₁` and `χ'` vanishes off the window
 `(-b, b)`, then `‖D_A (χ u)‖ ≤ ‖D_A u‖ + C₁ ‖ι ∘ u‖_{L²((-b, b), H)}`. -/
-private theorem norm_familyDomainTrajectoryOperator_cutoffMul_le (hχ : ContDiff ℝ ∞ χ)
-    (h₀ : ∀ s, |χ s| ≤ 1) (h₁ : ∀ s, |deriv χ s| ≤ C₁) {b : ℝ}
-    (hχ' : ∀ s ∉ Ioo (-b) b, deriv χ s = 0) (AL : Lp (D →L[ℝ] H) ∞ μ₀)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ‖familyDomainTrajectoryOperator ι AL (cutoffMul hχ h₀ h₁ u)‖ ≤
+private theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ → ℝ}
+    (hχ : ContDiffOn ℝ ∞ χ ((⊤ : Opens ℝ) : Set ℝ)) (h₀ : ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖χ s‖ ≤ C)
+    (h₁ : ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C) (hχ₀ : ∀ s, |χ s| ≤ 1) {C₁ b : ℝ}
+    (hχ₁ : ∀ s, |deriv χ s| ≤ C₁) (hχ' : ∀ s ∉ Ioo (-b) b, deriv χ s = 0)
+    (AL : Lp (D →L[ℝ] H) ∞ μ₀) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+    ‖familyDomainTrajectoryOperator ι AL
+        (smulLeftCLM χ hχ h₀ h₁ ι.compLpL_multiplicationOperator u)‖ ≤
       ‖familyDomainTrajectoryOperator ι AL u‖ +
         C₁ * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
-  have hC₁ : 0 ≤ C₁ := (abs_nonneg _).trans (h₁ 0)
-  rw [familyDomainTrajectoryOperator_cutoffMul]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  have hC₁ : 0 ≤ C₁ := (abs_nonneg _).trans (hχ₁ 0)
+  set f := familyDomainTrajectoryOperator ι AL
+    (smulLeftCLM χ hχ h₀ h₁ ι.compLpL_multiplicationOperator u)
+  set g := familyDomainTrajectoryOperator ι AL u
+  -- `D_A (χ u)` is `χ D_A u` up to the commutator term `χ' (ι ∘ u)`.
+  set m := Lp.multiplicationOperator
+    (linftyOfContinuousOn volume hχ.continuousOn (⊤ : Opens ℝ).isOpen.measurableSet h₀) g
+  have hm := Lp.multiplicationOperator_linftyOfContinuousOn_ae hχ.continuousOn
+    (⊤ : Opens ℝ).isOpen.measurableSet h₀ g
+  refine (norm_le_insert' f m).trans (add_le_add ?_ ?_)
   · refine (Lp.norm_le_mul_norm_of_ae_le_mul (c := 1) ?_).trans_eq (one_mul _)
-    filter_upwards [multiplicationOperator_linftyOf_ae hχ.continuous h₀
-      (familyDomainTrajectoryOperator ι AL u)] with s hs
+    filter_upwards [hm] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (h₀ s) (norm_nonneg _)
-  · have hm := ae_top_iff.1 (multiplicationOperator_linftyOf_ae
-      (hχ.continuous_deriv (by simp)) h₁ (ι.compLpL 2 μ₀ (prev _ u)))
-    have hι := ae_top_iff.1 (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
+    exact mul_le_mul_of_nonneg_right (hχ₀ s) (norm_nonneg _)
+  · have hfm : ∀ᵐ s ∂volume, (f - m) s = deriv χ s • ι (prev _ u s) := by
+      filter_upwards [ae_top_iff.1 (Lp.coeFn_sub f m),
+        ae_top_iff.1 (familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hχ h₀ h₁ u),
+        ae_top_iff.1 hm] with s h₁ h₂ h₃
+      rw [h₁, Pi.sub_apply, h₂, h₃, add_sub_cancel_left]
     refine norm_le_mul_norm_restrictBaseL hC₁ u ?_ ?_
-    · filter_upwards [hm, hι] with s hs hιs
-      rw [hs, hιs, norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right (h₁ s) (norm_nonneg _)
-    · filter_upwards [hm] with s hs hsW
+    · filter_upwards [hfm] with s hs
+      rw [hs, norm_smul, Real.norm_eq_abs]
+      exact mul_le_mul_of_nonneg_right (hχ₁ s) (norm_nonneg _)
+    · filter_upwards [hfm] with s hs hsW
       rw [hs, hχ' s hsW, zero_smul]
-
-/-! ### The cutoffs at the two ends -/
-
-/-- The cutoff `s ↦ ψ (s - a)` of the positive end, built from the smooth transition `ψ`; the cutoff
-of the negative end is `s ↦ ψ (-s - a)`. -/
-private def endCutoff (a s : ℝ) : ℝ := Real.smoothTransition (s - a)
-
-private theorem contDiff_endCutoff (a : ℝ) : ContDiff ℝ ∞ (endCutoff a) :=
-  Real.smoothTransition.contDiff.comp (by fun_prop)
-
-private theorem contDiff_endCutoff_neg (a : ℝ) : ContDiff ℝ ∞ fun s ↦ endCutoff a (-s) :=
-  (contDiff_endCutoff a).comp contDiff_neg
-
-private theorem endCutoff_eq_zero {a s : ℝ} (h : s ≤ a) : endCutoff a s = 0 :=
-  Real.smoothTransition.zero_of_nonpos (by linarith)
-
-private theorem endCutoff_eq_one {a s : ℝ} (h : a + 1 ≤ s) : endCutoff a s = 1 :=
-  Real.smoothTransition.one_of_one_le (by linarith)
-
-private theorem abs_endCutoff_le_one (a s : ℝ) : |endCutoff a s| ≤ 1 :=
-  Real.smoothTransition.abs_le_one _
-
-private theorem deriv_endCutoff (a s : ℝ) :
-    deriv (endCutoff a) s = deriv Real.smoothTransition (s - a) := by
-  have h := ((hasDerivAt_id s).sub_const a).smoothTransition
-  unfold endCutoff
-  simpa using h.deriv
-
-private theorem deriv_endCutoff_neg (a s : ℝ) :
-    deriv (fun s ↦ endCutoff a (-s)) s = -deriv Real.smoothTransition (-s - a) := by
-  have h := ((hasDerivAt_neg s).sub_const a).smoothTransition
-  simpa [endCutoff] using h.deriv
-
-private theorem abs_deriv_endCutoff_le {L : ℝ} (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L)
-    (a s : ℝ) : |deriv (endCutoff a) s| ≤ L := by
-  rw [deriv_endCutoff]; exact hL _
-
-private theorem abs_deriv_endCutoff_neg_le {L : ℝ}
-    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
-    |deriv (fun s ↦ endCutoff a (-s)) s| ≤ L := by
-  rw [deriv_endCutoff_neg, abs_neg]; exact hL _
-
-/-- The derivative of the transition `ψ (t - a)` vanishes off `(a, a + 1)`. -/
-private theorem deriv_smoothTransition_sub_eq_zero {a t : ℝ} (h : t ∉ Ioo a (a + 1)) :
-    deriv Real.smoothTransition (t - a) = 0 := by
-  rcases not_and_or.1 h with h | h
-  · exact Real.smoothTransition.deriv_of_nonpos (by linarith [not_lt.1 h])
-  · exact Real.smoothTransition.deriv_of_one_le (by linarith [not_lt.1 h])
-
-private theorem deriv_endCutoff_eq_zero {a s : ℝ} (ha : 0 ≤ a) (hs : s ∉ Ioo (-(a + 2)) (a + 2)) :
-    deriv (endCutoff a) s = 0 := by
-  rw [deriv_endCutoff]
-  exact deriv_smoothTransition_sub_eq_zero fun h ↦ hs ⟨by linarith [h.1], by linarith [h.2]⟩
-
-private theorem deriv_endCutoff_neg_eq_zero {a s : ℝ} (ha : 0 ≤ a)
-    (hs : s ∉ Ioo (-(a + 2)) (a + 2)) :
-    deriv (fun s ↦ endCutoff a (-s)) s = 0 := by
-  rw [deriv_endCutoff_neg, neg_eq_zero]
-  exact deriv_smoothTransition_sub_eq_zero fun h ↦ hs ⟨by linarith [h.2], by linarith [h.1]⟩
-
-/-- For `a ≥ 0` the two end cutoffs have disjoint supports, so the middle weight
-`1 - ψ (-s - a) - ψ (s - a)` lies in `[0, 1]`. -/
-private theorem abs_one_sub_endCutoff_neg_sub_endCutoff_le_one {a : ℝ} (ha : 0 ≤ a) (s : ℝ) :
-    |1 - endCutoff a (-s) - endCutoff a s| ≤ 1 := by
-  rcases le_total s 0 with hs | hs
-  · rw [endCutoff_eq_zero (by linarith : s ≤ a)]
-    have := Real.smoothTransition.nonneg (-s - a); have := Real.smoothTransition.le_one (-s - a)
-    rw [abs_le, endCutoff]; constructor <;> linarith
-  · rw [endCutoff_eq_zero (by linarith : -s ≤ a)]
-    have := Real.smoothTransition.nonneg (s - a); have := Real.smoothTransition.le_one (s - a)
-    rw [abs_le, endCutoff]; constructor <;> linarith
-
-/-- The middle weight `1 - ψ (-s - a) - ψ (s - a)` vanishes off `(-(a + 2), a + 2)`. -/
-private theorem one_sub_endCutoff_neg_sub_endCutoff_eq_zero {a s : ℝ} (ha : 0 ≤ a)
-    (hs : s ∉ Ioo (-(a + 2)) (a + 2)) : 1 - endCutoff a (-s) - endCutoff a s = 0 := by
-  rcases not_and_or.1 hs with h | h
-  · rw [endCutoff_eq_zero (by linarith [not_lt.1 h] : s ≤ a),
-      endCutoff_eq_one (by linarith [not_lt.1 h])]
-    ring
-  · rw [endCutoff_eq_zero (by linarith [not_lt.1 h] : -s ≤ a),
-      endCutoff_eq_one (by linarith [not_lt.1 h])]
-    ring
 
 /-! ### The middle piece -/
 
 variable {B Bbot Btop : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {c : ℝ}
 
 /-- **The estimate on a window.** Let `A(s)` differ from an invertible `ι`-symmetric `B` by at most
-`c ‖ι x‖`, with `c ≥ 0`. A path `w = φ u`, for a weight `|φ| ≤ 1` vanishing off the window
-`(-b, b)`, satisfies `‖w‖ ≤ M (‖D_A w‖ + c ‖ι ∘ u‖_{L²((-b, b), H)})` with `M = √(1 + ‖B⁻¹‖²)`. -/
+`c ‖ι x‖` on the window `(-b, b)`, with `c ≥ 0`. A path `w = φ u`, for a weight `|φ| ≤ 1` vanishing
+off the window, satisfies `‖w‖ ≤ M (‖D_A w‖ + c ‖ι ∘ u‖_{L²((-b, b), H)})` with
+`M = √(1 + ‖B⁻¹‖²)`. -/
 private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ)
-    (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hc₀ : 0 ≤ c)
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) {b : ℝ} {φ : ℝ → ℝ}
+    (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hc₀ : 0 ≤ c) {b : ℝ}
+    (hc : ∀ᵐ s ∂volume, s ∈ Ioo (-b) b → ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) {φ : ℝ → ℝ}
     (hφ : ∀ s, |φ s| ≤ 1) (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0)
     {u w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)}
     (hw : ∀ᵐ s ∂volume, prev _ w s = φ s • prev _ u s) :
@@ -362,7 +223,10 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
     refine norm_le_mul_norm_restrictBaseL hc₀ u ?_ ?_
     · filter_upwards [hm, hs, hk, ae_top_iff.1 hAL, hc, hw] with s h₁ h₂ h₃ h₄ h₅ h₆
       rw [h₁, h₂, Pi.sub_apply, h₃, h₄, h₆, map_smul, norm_smul, Real.norm_eq_abs]
-      exact (mul_le_mul (hφ s) (h₅ _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
+      by_cases hsW : s ∈ Ioo (-b) b
+      · exact (mul_le_mul (hφ s) (h₅ hsW _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
+      · rw [hφ₀ s hsW, abs_zero, zero_mul]
+        exact mul_nonneg hc₀ (norm_nonneg _)
     · filter_upwards [hm, hw] with s h₁ h₂ hsW
       rw [h₁, h₂, hφ₀ s hsW, zero_smul, map_zero]
   refine (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hB w).trans ?_
@@ -401,20 +265,23 @@ private theorem ae_prev_sub_sub_eq_smul {φ ψ : ℝ → ℝ}
 
 /-- **Splicing the three pieces.** Let `D_A` satisfy `‖w‖ ≤ C₊ ‖D_A w‖` for the paths vanishing on
 `(-∞, T₊)` and `‖w‖ ≤ C₋ ‖D_A w‖` for those vanishing on `(T₋, ∞)`, and let `A(s)` differ from an
-invertible `ι`-symmetric `B` by at most `c ‖ι x‖`. For `a ≥ max T₊ (-T₋) 0`, cutting a path `u` by
-`ψ (s - a)`, `ψ (-s - a)` and the rest bounds it by `‖D_A u‖` and the `L²` norm `R` of `ι ∘ u` on
-`(-(a + 2), a + 2)`. -/
+invertible `ι`-symmetric `B` by at most `c ‖ι x‖` on `(-(a + 2), a + 2)`. For `a ≥ max T₊ (-T₋)`,
+cutting a path `u` by the cutoffs `βp`, `βm` and `β₀` of `TauCeti.exists_cutoffs_add_add_eq_one`
+bounds it by `‖D_A u‖` and the `L²` norm `R` of `ι ∘ u` on `(-(a + 2), a + 2)`. -/
 private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ)
-    (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hc₀ : 0 ≤ c)
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) {Ctop Cbot Ttop Tbot a L : ℝ}
+    (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hc₀ : 0 ≤ c) {Ctop Cbot Ttop Tbot a L : ℝ}
+    (hc : ∀ᵐ s ∂volume, s ∈ Ioo (-(a + 2)) (a + 2) → ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖)
     (hCtop : ∀ w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       (∀ᵐ s ∂volume, s < Ttop → prev _ w s = 0) →
         ‖w‖ ≤ Ctop * ‖familyDomainTrajectoryOperator ι AL w‖)
     (hCbot : ∀ w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       (∀ᵐ s ∂volume, Tbot < s → prev _ w s = 0) →
         ‖w‖ ≤ Cbot * ‖familyDomainTrajectoryOperator ι AL w‖)
-    (ha₀ : 0 ≤ a) (haT : Ttop ≤ a) (haT' : -Tbot ≤ a)
-    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L)
+    (haT : Ttop ≤ a) (haT' : -Tbot ≤ a) {βp βm β₀ : ℝ → ℝ} (hsum : ∀ s, βp s + βm s + β₀ s = 1)
+    (hβp : ∀ s, s ≤ a → βp s = 0) (hβm : ∀ s, -a ≤ s → βm s = 0)
+    (hβ₀ : ∀ s, s ∉ Ioo (-(a + 1)) (a + 1) → β₀ s = 0)
+    (hβ : ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ ∞ β ∧ (∀ s, |β s| ≤ 1) ∧
+      (∀ s, |deriv β s| ≤ L) ∧ ∀ s, s < -(a + 1) ∨ a + 1 < s → deriv β s = 0)
     (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
     ‖u‖ ≤ (max Ctop 0 + max Cbot 0) * (‖familyDomainTrajectoryOperator ι AL u‖ + L *
         ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖) +
@@ -422,29 +289,38 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
         ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖) := by
   set R := ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖
   set N := ‖familyDomainTrajectoryOperator ι AL u‖
-  have h₁top := abs_deriv_endCutoff_le hL a
-  have h₁bot := abs_deriv_endCutoff_neg_le hL a
-  set wtop := cutoffMul (contDiff_endCutoff a) (abs_endCutoff_le_one a) h₁top u
-  set wbot := cutoffMul (contDiff_endCutoff_neg a) (fun s ↦ abs_endCutoff_le_one a (-s)) h₁bot u
-  have hptop := ae_top_iff.1 (prev_cutoffMul_ae (contDiff_endCutoff a) (abs_endCutoff_le_one a)
-    h₁top u)
-  have hpbot := ae_top_iff.1 (prev_cutoffMul_ae (contDiff_endCutoff_neg a)
-    (fun s ↦ abs_endCutoff_le_one a (-s)) h₁bot u)
-  -- The two ends `w₊ = ψ (s - a) u` and `w₋ = ψ (-s - a) u`.
+  obtain ⟨hpc, hp1, hpL, hpT⟩ := hβ βp (by simp)
+  obtain ⟨hmc, hm1, hmL, hmT⟩ := hβ βm (by simp)
+  obtain ⟨-, h01, -, -⟩ := hβ β₀ (by simp)
+  have hwin (s : ℝ) (hs : s ∉ Ioo (-(a + 2)) (a + 2)) : s < -(a + 1) ∨ a + 1 < s := by
+    rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+    rcases hs with hs | hs
+    · exact Or.inl (by linarith)
+    · exact Or.inr (by linarith)
+  set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩ (exists_forall_norm_fderiv_le hpL)
+    ι.compLpL_multiplicationOperator u
+  set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩ (exists_forall_norm_fderiv_le hmL)
+    ι.compLpL_multiplicationOperator u
+  have hptop := ae_top_iff.1 (prev_smulLeftCLM_ae hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
+    (exists_forall_norm_fderiv_le hpL) ι.compLpL_multiplicationOperator u)
+  have hpbot := ae_top_iff.1 (prev_smulLeftCLM_ae hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
+    (exists_forall_norm_fderiv_le hmL) ι.compLpL_multiplicationOperator u)
+  -- The two ends `w₊ = βp u` and `w₋ = βm u`.
   have hDtop : ‖familyDomainTrajectoryOperator ι AL wtop‖ ≤ N + L * R :=
-    norm_familyDomainTrajectoryOperator_cutoffMul_le _ _ h₁top
-      (fun _ ↦ deriv_endCutoff_eq_zero ha₀) _ u
+    norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL
+      (fun s hs ↦ hpT s (hwin s hs)) _ u
   have hDbot : ‖familyDomainTrajectoryOperator ι AL wbot‖ ≤ N + L * R :=
-    norm_familyDomainTrajectoryOperator_cutoffMul_le _ _ h₁bot
-      (fun _ ↦ deriv_endCutoff_neg_eq_zero ha₀) _ u
+    norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hm1 hmL
+      (fun s hs ↦ hmT s (hwin s hs)) _ u
   have hwtop := norm_le_max_mul_of_ae_prev_eq_smul (S := Iio Ttop) hCtop
-    (fun s hs ↦ endCutoff_eq_zero (by linarith [mem_Iio.1 hs])) hptop hDtop
+    (fun s hs ↦ hβp s (by linarith [mem_Iio.1 hs])) hptop hDtop
   have hwbot := norm_le_max_mul_of_ae_prev_eq_smul (S := Ioi Tbot) hCbot
-    (fun s hs ↦ endCutoff_eq_zero (by linarith [mem_Ioi.1 hs])) hpbot hDbot
-  -- The middle `u - w₋ - w₊ = (1 - ψ (-s - a) - ψ (s - a)) u`.
-  have hw₀ := norm_le_of_ae_prev_eq_smul hSymm hB hAL hc₀ hc
-    (abs_one_sub_endCutoff_neg_sub_endCutoff_le_one ha₀)
-    (fun _ ↦ one_sub_endCutoff_neg_sub_endCutoff_eq_zero ha₀) (ae_prev_sub_sub_eq_smul hpbot hptop)
+    (fun s hs ↦ hβm s (by linarith [mem_Ioi.1 hs])) hpbot hDbot
+  -- The middle `u - w₋ - w₊ = (1 - βm - βp) u = β₀ u`.
+  have h₀ (s : ℝ) : 1 - βm s - βp s = β₀ s := by linarith [hsum s]
+  have hw₀ := norm_le_of_ae_prev_eq_smul hSymm hB hAL hc₀ hc (fun s ↦ h₀ s ▸ h01 s)
+    (fun s hs ↦ (h₀ s).trans (hβ₀ s fun h ↦ hs ⟨by linarith [h.1], by linarith [h.2]⟩))
+    (ae_prev_sub_sub_eq_smul hpbot hptop)
   have hD₀ : ‖familyDomainTrajectoryOperator ι AL (u - wbot - wtop)‖ ≤ 3 * N + 2 * L * R := by
     rw [map_sub, map_sub]
     linarith [norm_sub_le (familyDomainTrajectoryOperator ι AL u -
@@ -455,12 +331,12 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     calc ‖u‖ = ‖wbot + (u - wbot - wtop) + wtop‖ := by congr 1; abel
       _ ≤ _ := (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
   have hM := mul_le_mul_of_nonneg_left hD₀ (Real.sqrt_nonneg (1 + ‖B.inverse‖ ^ 2))
-  nlinarith
+  linarith [hwtop, hwbot, hw₀, hM, htri]
 
 /-- **The semi-Fredholm estimate for the trajectory operator over a common domain.** Let `A(s)`
 converge to invertible `ι`-symmetric operators `Bbot` and `Btop` at `-∞` and `∞`, and differ from
-`Btop` by an operator bounded through `ι`: `‖(A(s) - Btop) x‖ ≤ c ‖ι x‖` for almost every `s`.
-Then there are `C` and `T` with
+`Btop` on every bounded interval by an operator bounded through `ι`: for every `T` there is `c` with
+`‖(A(s) - Btop) x‖ ≤ c ‖ι x‖` for almost every `s ∈ (-T, T)`. Then there are `C` and `T` with
 
 `‖u‖ ≤ C (‖(ι ∘ u)' + A u‖ + ‖ι ∘ u‖_{L²((-T, T), H)})`
 
@@ -469,7 +345,7 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_r
     (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) (hBbot : Bbot.IsInvertible)
     (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ) (hBtop : Btop.IsInvertible)
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     ∃ C T : ℝ, ∀ u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       ‖u‖ ≤ C * (‖familyDomainTrajectoryOperator ι AL u‖ +
         ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖) := by
@@ -479,25 +355,28 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_r
   obtain ⟨Ctop, Ttop, hCtop⟩ :=
     exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop
       hSymmtop hBtop hAL htop
-  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
-  have hL₀ : 0 ≤ L := (norm_nonneg _).trans (hL 0)
-  have hc' : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ max c 0 * ‖ι x‖ := by
-    filter_upwards [hc] with s hs x
-    exact (hs x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
   set a := max (max Ttop (-Tbot)) 0
+  obtain ⟨L, βp, βm, β₀, hsum, hβp, hβm, hβ₀, hβ⟩ :=
+    exists_cutoffs_add_add_eq_one (le_max_right _ _ : (0 : ℝ) ≤ a)
+  have hL₀ : 0 ≤ L := (abs_nonneg _).trans ((hβ βp (by simp)).2.2.1 0)
+  obtain ⟨c, hc⟩ := hc (a + 2)
+  have hc' : ∀ᵐ s ∂volume, s ∈ Ioo (-(a + 2)) (a + 2) →
+      ∀ x, ‖(A s - Btop) x‖ ≤ max c 0 * ‖ι x‖ := by
+    filter_upwards [hc] with s hs hsW x
+    exact (hs hsW x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
   set K := max Ctop 0 + max Cbot 0
   set M := √(1 + ‖Btop.inverse‖ ^ 2)
   refine ⟨K * (1 + L) + M * (3 + 2 * L + max c 0), a + 2, fun u ↦ ?_⟩
   have h := norm_le_of_end_estimates hSymmtop hBtop hAL (le_max_right c 0) hc' hCtop hCbot
-    (le_max_right _ _) ((le_max_left _ _).trans (le_max_left _ _))
-    ((le_max_right _ _).trans (le_max_left _ _)) hL u
+    ((le_max_left _ _).trans (le_max_left _ _)) ((le_max_right _ _).trans (le_max_left _ _))
+    hsum hβp hβm hβ₀ hβ u
   -- Every coefficient is at most the constant, since all the terms are nonnegative.
   have hK : 0 ≤ K := add_nonneg (le_max_right _ _) (le_max_right _ _)
   have hM : 0 ≤ M := Real.sqrt_nonneg _
   have hN := norm_nonneg (familyDomainTrajectoryOperator ι AL u)
   have hR := norm_nonneg
     (restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u)
-  nlinarith [mul_nonneg (mul_nonneg hK hL₀) hN, mul_nonneg hK hR,
+  linarith [h, mul_nonneg (mul_nonneg hK hL₀) hN, mul_nonneg hK hR,
     mul_nonneg (mul_nonneg hM hL₀) hN, mul_nonneg (mul_nonneg hM (le_max_right c 0)) hN,
     mul_nonneg hM hR]
 
@@ -507,7 +386,7 @@ private theorem exists_isCompactOperator_and_norm_le (hι : IsCompactOperator ι
     (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) (hBbot : Bbot.IsInvertible)
     (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ) (hBtop : Btop.IsInvertible)
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     ∃ (T C : ℝ) (K : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ]
       Lp H 2 (volume.restrict (Ioo (-T) T))), IsCompactOperator K ∧
         ∀ u, ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ + ‖K u‖ := by
@@ -530,7 +409,7 @@ theorem finiteDimensional_ker_familyDomainTrajectoryOperator (hι : IsCompactOpe
     (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) (hBbot : Bbot.IsInvertible)
     (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ) (hBtop : Btop.IsInvertible)
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι AL).ker := by
   obtain ⟨T, C, K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le hι hSymmbot hBbot hSymmtop
     hBtop hAL hbot htop hc
@@ -545,7 +424,7 @@ theorem isClosed_range_familyDomainTrajectoryOperator (hι : IsCompactOperator �
     (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) (hBbot : Bbot.IsInvertible)
     (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ) (hBtop : Btop.IsInvertible)
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     IsClosed ((familyDomainTrajectoryOperator (p := 2) ι AL).range : Set (Lp H 2 μ₀)) := by
   obtain ⟨T, C, K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le hι hSymmbot hBbot hSymmtop
     hBtop hAL hbot htop hc
