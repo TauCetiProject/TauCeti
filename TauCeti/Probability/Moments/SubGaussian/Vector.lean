@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 
 /-!
 # Sub-Gaussian random vectors
@@ -84,7 +83,7 @@ theorem isSubgaussianVector_iff_forall_norm_eq_one (hμ : μ Set.univ ≤ 1) {x 
     (ae_of_all _ fun ω ↦ ?_)).mono (le_of_eq ?_)
   · simp [real_inner_smul_left, hu]
   · rw [mul_comm]
-    congr 1
+    exact congrArg (· * c) (Subtype.ext (by simp))
 
 /-- The zero random vector is sub-Gaussian, with any variance proxy, exactly when the total mass
 is at most `1`. -/
@@ -111,8 +110,9 @@ theorem isSubgaussianVector_zero_proxy_iff [FiniteDimensional ℝ E] {x : Ω →
     have hb (i) : (fun ω ↦ ⟪b i, x ω⟫) =ᵐ[μ] 0 :=
       ((h (b i)).mono (zero_mul _).le).ae_eq_zero_of_hasSubgaussianMGF_zero
     filter_upwards [ae_all_iff.2 hb] with ω hω
+    simp only [Pi.zero_apply] at hω
     rw [← b.sum_repr' (x ω)]
-    simp [fun i ↦ show ⟪b i, x ω⟫ = 0 from hω i]
+    simp [hω]
   · exact fun u ↦ (isSubgaussianVector_zero_iff.2 hμ u).congr (hx.mono fun ω hω ↦ by simp [hω])
 
 namespace IsSubgaussianVector
