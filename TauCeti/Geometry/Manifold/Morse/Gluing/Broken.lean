@@ -264,6 +264,45 @@ private theorem eventually_of_morseBox (hX : IsAdaptedPseudoGradient f X) {q y�
       hy₂fst.eventually (gt_mem_nhds hε)] with w h₁ h₂ h₃ h₄
     exact ⟨h₁, h₂, h₃, h₄, (hρ w h₁ (by linarith) h₃).2⟩
 
+/-- **The flow through a gluing pair of a Morse box.** Let `φ` be a Morse chart at `q` in which
+`X` is linear and which contains the cube of radius `2 ε`, and let `z` be a gluing pair of the box
+of radius `ε` whose entrance point is the model entry point of a point `w` near the entrance face,
+and whose exit point is the model exit point of a point `w'` near the exit face. Then `w` flows
+to the point with the coordinates of the entrance point at its entry time, that point flows to the
+point with the coordinates of the exit point at its exit time, and `w'` reaches the latter at its
+own exit time. -/
+private theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f X) {q : M}
+    (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε r₀ : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
+    {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ}
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) ×
+      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : z ∈ splitGluingPairs ε r₀ g k) {w w' : M} (hw : w ∈ φ.toChart.source)
+    (hwf : ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ < 2 * ε)
+    (hws : ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖ < ε)
+    (hwz : splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
+      (φ.splitCoord (φ.coord (φ.toChart w))) = z.1)
+    (hw' : w' ∈ φ.toChart.source) (hw'f : ‖(φ.splitCoord (φ.coord (φ.toChart w'))).fst‖ < ε)
+    (hw's : ‖(φ.splitCoord (φ.coord (φ.toChart w'))).snd‖ < 2 * ε)
+    (hw'z : splitQuadraticFlow (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w'))))
+      (φ.splitCoord (φ.coord (φ.toChart w'))) = z.2) :
+    hX.flow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w)))) w =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1)) ∧
+      hX.flow (splitExitTime ε z.1) (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1))) =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) ∧
+      hX.flow (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w')))) w' =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) := by
+  have h₁ := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
+  have h₂ := hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw' hw'f hw's
+  rw [hwz] at h₁
+  rw [hw'z] at h₂
+  obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
+  refine ⟨h₁, ?_, h₂⟩
+  rw [hpass]; exact hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
+
 /-- **Gluing pairs of a Morse box lie on trajectories from `p` to `r`.** Let `φ` be a Morse chart
 at `q` in which `X` is linear and which contains the cube of radius `2 ε`, and let `z` be a gluing
 pair of the box of radius `ε` whose entrance point is the model entry point of a point `w` of
@@ -294,14 +333,8 @@ private theorem mem_unstableSet_inter_stableSet_of_mem_splitGluingPairs
         hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
       hX.flow (splitExitTime ε z.1) (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1))) =
         φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) := by
-  have h₁ := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
-  have h₂ := hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw' hw'f hw's
-  rw [hwz] at h₁
-  rw [hw'z] at h₂
-  obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
-  have h₃ : hX.flow (splitExitTime ε z.1) (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1))) =
-      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) := by
-    rw [hpass]; exact hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
+  obtain ⟨h₁, h₃, h₂⟩ := hX.flow_eq_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws hwz hw'
+    hw'f hw's hw'z
   refine ⟨⟨h₁ ▸ (Flow.apply_mem_unstableSet_iff _ _).2 hwu, ?_⟩, h₃⟩
   have h₄ := h₂ ▸ (Flow.apply_mem_stableSet_iff _ _).2 hw'r
   rw [← h₃] at h₄
@@ -331,13 +364,8 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
     (hw'z : splitQuadraticFlow (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w'))))
       (φ.splitCoord (φ.coord (φ.toChart w'))) = z.2) :
     ∃ τ : ℝ, hX.flow τ w = w' := by
-  have h₁ := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
-  have h₂ := hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw' hw'f hw's
-  rw [hwz] at h₁
-  rw [hw'z] at h₂
-  obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
-  have h₃ := hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
-  rw [← hpass] at h₃
+  obtain ⟨h₁, h₃, h₂⟩ := hX.flow_eq_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws hwz hw'
+    hw'f hw's hw'z
   -- Enter the box, cross it, and leave it backwards from `w'`.
   refine ⟨-splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w'))) +
     (splitExitTime ε z.1 + splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w)))), ?_⟩
@@ -844,7 +872,7 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) (hA₂.mono fun w hw ↦ hw.2.2.2.2) hφ' hZ' hy₂φ hy₂φ'
-      (show hX.flow (-T₂) y₂ ∈ Z from hy₂Z ▸ hyZ) hy₂ htr'
+      (mem_preimage.2 (hy₂Z ▸ hyZ)) hy₂ htr'
   have hΦy₁ : WithLp.toLp 2 ((Φ y₁).fst, 0) = Φ y₁ :=
     WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hy₁s.symm))
   have hΦy₂ : WithLp.toLp 2 (0, (Φ y₂).snd) = Φ y₂ :=
