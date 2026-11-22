@@ -109,6 +109,13 @@ theorem baseChange_model [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel 
     (M.baseChange sq).model = (Over.pullback g).obj M.model :=
   (rfl)
 
+@[simp]
+theorem baseChange_genericIso_hom [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
+    (M.baseChange sq).genericIso.hom =
+      ((Over.pullbackComp j' g).inv ≫ eqToHom (by simp only [sq.w]) ≫
+        (Over.pullbackComp g' j).hom).app M.model ≫ (Over.pullback g').map M.genericIso.hom :=
+  (rfl)
+
 /-- Base change commutes with extension of morphisms to Néron models: the base change of the
 extension of `φ : A ⟶ B` is the extension of the base change of `φ`. -/
 theorem pullback_map_extendHom [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A)
@@ -116,8 +123,11 @@ theorem pullback_map_extendHom [Smooth g] (sq : IsPullback j' g' g j) (M : Neron
     (Over.pullback g).map (M.extendHom N φ) =
       (M.baseChange sq).extendHom (N.baseChange sq) ((Over.pullback g').map φ) := by
   refine ((M.baseChange sq).eq_extendHom_iff (N := N.baseChange sq)).2 ?_
-  simp only [baseChange, Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom]
-  rw [← Functor.comp_map, NatTrans.naturality_assoc]
+  simp only [baseChange_genericIso_hom]
+  -- The objects of the left side are `(M.baseChange sq).model` and `(N.baseChange sq).model`,
+  -- which `rw` does not unfold to base changes, so naturality is applied by unification.
+  refine (NatTrans.naturality_assoc (F := Over.pullback g ⋙ Over.pullback j') _
+    (M.extendHom N φ) _).trans ((Category.assoc _ _ _).trans ?_).symm
   simp [← Functor.map_comp]
 
 end NeronModel
