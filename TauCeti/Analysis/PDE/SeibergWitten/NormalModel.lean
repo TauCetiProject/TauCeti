@@ -91,15 +91,18 @@ rows (`flatDeformationGauge_familyNormalModel`,
 `inner_flatDeformationCurvature_familyNormalModel_zero_one` and its companions,
 `flatDeformationDirac_familyNormalModel`), with `L_x` and `L_x*` replaced by
 
-`N = L_x Ξ (w, ·) + normalBaseCoupling (∂_w Η)`,  `P = L_x* Η (w, ·) + pairedBaseCoupling (∂_w Ξ)`,
+`N = L_x Ξ (w, ·) + normalBaseCoupling (D_w Η)`,  `P = L_x* Η (w, ·) + pairedBaseCoupling (D_w Ξ)`,
 
-where, for the base derivative `D` of a family, `normalBaseCoupling D = D 1 + K (D i)` and
+where `D_w Φ : ℂ →L[ℝ] ℝ⁴` is the real derivative of the base slice `w' ↦ Φ (w', z(y))` at `w(y)`
+and, for such a base derivative `D`, `normalBaseCoupling D = D 1 + K (D i)` and
 `pairedBaseCoupling D = D 1 + K' (D i)` with `K (v₀, v₁, v₂, v₃) = (-v₁, v₀, v₃, -v₂)` and
-`K' (v₀, v₁, v₂, v₃) = (-v₁, v₀, -v₃, v₂)`. So along the base the paired family enters the normal
-rows and the normal family the paired rows, and the operator vanishes at a point exactly when `N`
-and `P` do (`flatDeformation_familyNormalModel_eq_zero_iff`). A family constant along the base has
-vanishing base couplings, and the results for base-independent variations are this special case
-(`familyNormalModelConnection_comp_snd`, `familyNormalModelSpinor_comp_snd`).
+`K' (v₀, v₁, v₂, v₃) = (-v₁, v₀, -v₃, v₂)`. Writing `w = s + i t`, the two directions are the
+partial derivatives `∂_s Φ = D_w Φ 1` and `∂_t Φ = D_w Φ i` along the base. So along the base the
+paired family enters the normal rows and the normal family the paired rows, and the operator
+vanishes at a point exactly when `N` and `P` do (`flatDeformation_familyNormalModel_eq_zero_iff`).
+A family constant along the base has vanishing base couplings, and the results for
+base-independent variations are this special case (`familyNormalModelConnection_comp_snd`,
+`familyNormalModelSpinor_comp_snd`).
 
 ## References
 
@@ -189,6 +192,16 @@ end FrameValues
 section Deformation
 
 variable [Fact (finrank ℝ V = 4)]
+
+/-- The two-vector `F' = -db'` of a one-form `b'` differentiable at `y`, paired with a bivector
+`u ∧ v`: the derivative of `b'(u)` along `v` minus that of `b'(v)` along `u`. -/
+theorem inner_alternatingFormEquiv_symm_neg_extDeriv {b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {y : V}
+    (hb' : DifferentiableAt ℝ b' y) (u v : V) :
+    ⟪(alternatingFormEquiv V 2).symm (-extDeriv b' y), ιMulti ℝ 2 ![u, v]⟫ =
+      fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ u)) y v - fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ v)) y u := by
+  rw [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply,
+    extDeriv_apply_pair_of_differentiableAt hb']
+  ring
 
 variable (e) in
 /-- The **gauge-fixing row** of the linearized flat limiting equations at a spinor `ψ`, applied to
@@ -589,6 +602,14 @@ theorem familyNormalModelSpinor_comp_snd (u₀ : positiveHalfSpinors o ρ)
     familyNormalModelSpinor e u₀ (ξ ∘ Prod.snd) (η ∘ Prod.snd) = normalModelSpinor e u₀ ξ η :=
   (rfl)
 
+/-- The spinor of the normal model of a family at `y`: `α_Ξ u₀ + α_Η β₀` at `(w(y), z(y))`. -/
+theorem familyNormalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
+    (Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
+    familyNormalModelSpinor e u₀ Ξ Η y =
+      Vortex.sectionValue (fun z ↦ Ξ (baseCoord e y, z)) (normalCoord e y) • u₀ +
+        Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) • pairedSpinor e u₀ :=
+  (rfl)
+
 /-- The spinor of the normal model of a family as a spinor of `W`. -/
 theorem coe_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
     (Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
@@ -626,23 +647,20 @@ theorem fderiv_familyNormalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
           (normalCoord e v)) • (pairedSpinor e u₀ : W) := by
   have hf := differentiableAt_familySectionValue hΞ
   have hg := differentiableAt_familySectionValue hΗ
+  -- The spinor as a function of the pair `(w(y'), z(y'))`, in the shape of the chain rule
+  -- `fderiv_comp_baseCoord_normalCoord_apply`.
   have hsum : (fun y' ↦ (familyNormalModelSpinor e u₀ Ξ Η y' : W)) =
       fun y' ↦ Vortex.sectionValue (fun z ↦ Ξ ((baseCoord e y', normalCoord e y').1, z))
             (baseCoord e y', normalCoord e y').2 • (u₀ : W) +
           Vortex.sectionValue (fun z ↦ Η ((baseCoord e y', normalCoord e y').1, z))
             (baseCoord e y', normalCoord e y').2 • (pairedSpinor e u₀ : W) :=
-    (rfl)
+    funext fun y' ↦ coe_familyNormalModelSpinor u₀ Ξ Η y'
   rw [hsum, fderiv_comp_baseCoord_normalCoord_apply ((hf.smul_const (u₀ : W)).fun_add
       (hg.smul_const (pairedSpinor e u₀ : W)))]
-  have hw : DifferentiableAt ℝ (fun w : ℂ ↦ (w, normalCoord e y)) (baseCoord e y) :=
-    differentiableAt_id.prodMk (differentiableAt_const _)
-  have hz : DifferentiableAt ℝ (fun z : ℂ ↦ (baseCoord e y, z)) (normalCoord e y) :=
-    (differentiableAt_const _).prodMk differentiableAt_id
-  have hfw := DifferentiableAt.comp (baseCoord e y) hf hw
-  have hgw := DifferentiableAt.comp (baseCoord e y) hg hw
-  have hfz := DifferentiableAt.comp (normalCoord e y) hf hz
-  have hgz := DifferentiableAt.comp (normalCoord e y) hg hz
-  simp only [Function.comp_def] at hfw hgw hfz hgz
+  have hfw := hf.hasFDerivAt_slice_fst.differentiableAt
+  have hgw := hg.hasFDerivAt_slice_fst.differentiableAt
+  have hfz := hf.hasFDerivAt_slice_snd.differentiableAt
+  have hgz := hg.hasFDerivAt_slice_snd.differentiableAt
   rw [fderiv_fun_add (hfw.smul_const _) (hgw.smul_const _),
     fderiv_fun_add (hfz.smul_const _) (hgz.smul_const _), fderiv_smul_const hfw,
     fderiv_smul_const hgw, fderiv_smul_const hfz, fderiv_smul_const hgz]
@@ -725,90 +743,18 @@ section Rows
 
 variable {ξ η : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
 
-/-- The derivative along `v` of the coefficient `η₀(z)` of the connection of the normal model on
-`e₀`, through the normal coordinate. -/
-theorem fderiv_normalModelConnection_apply_zero (hη : DifferentiableAt ℝ η (normalCoord e y))
-    (v : V) :
-    fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 0)) y v =
-      fderiv ℝ (fun w ↦ η w 0) (normalCoord e y) (normalCoord e v) := by
-  simp only [normalModelConnection_apply_zero,
-    fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hη 0)]
-
-/-- The derivative along `v` of the coefficient `-η₁(z)` of the connection of the normal model on
-`e₁`, through the normal coordinate. -/
-theorem fderiv_normalModelConnection_apply_one (hη : DifferentiableAt ℝ η (normalCoord e y))
-    (v : V) :
-    fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 1)) y v =
-      -fderiv ℝ (fun w ↦ η w 1) (normalCoord e y) (normalCoord e v) := by
-  simp only [normalModelConnection_apply_one, fderiv_fun_neg, neg_apply,
-    fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hη 1)]
-
-/-- The derivative along `v` of the coefficient `ξ₀(z)` of the connection of the normal model on
-`e₂`, through the normal coordinate. -/
-theorem fderiv_normalModelConnection_apply_two (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
-    (v : V) :
-    fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 2)) y v =
-      fderiv ℝ (fun w ↦ ξ w 0) (normalCoord e y) (normalCoord e v) := by
-  simp only [normalModelConnection_apply_two,
-    fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hξ 0)]
-
-/-- The derivative along `v` of the coefficient `ξ₁(z)` of the connection of the normal model on
-`e₃`, through the normal coordinate. -/
-theorem fderiv_normalModelConnection_apply_three (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
-    (v : V) :
-    fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 3)) y v =
-      fderiv ℝ (fun w ↦ ξ w 1) (normalCoord e y) (normalCoord e v) := by
-  simp only [normalModelConnection_apply_three,
-    fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hξ 1)]
-
-/-- The connection of the normal model is differentiable where its plane fields are. -/
-theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
-    (hη : DifferentiableAt ℝ η (normalCoord e y)) :
-    DifferentiableAt ℝ (normalModelConnection e ξ η) y :=
-  (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
-
-/-- The base slice `w ↦ Φ (w, z(y))` of a family differentiable at `(w(y), z(y))` is
-differentiable at `w(y)`. -/
-private theorem differentiableAt_baseSlice {Φ : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hΦ : DifferentiableAt ℝ Φ (baseCoord e y, normalCoord e y)) :
-    DifferentiableAt ℝ (fun w ↦ Φ (w, normalCoord e y)) (baseCoord e y) :=
-  DifferentiableAt.comp (f := fun w : ℂ ↦ (w, normalCoord e y)) (baseCoord e y) hΦ
-    (differentiableAt_id.prodMk (differentiableAt_const _))
-
-/-- The normal slice `z ↦ Φ (w(y), z)` of a family differentiable at `(w(y), z(y))` is
-differentiable at `z(y)`. -/
-private theorem differentiableAt_normalSlice {Φ : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hΦ : DifferentiableAt ℝ Φ (baseCoord e y, normalCoord e y)) :
-    DifferentiableAt ℝ (fun z ↦ Φ (baseCoord e y, z)) (normalCoord e y) :=
-  DifferentiableAt.comp (f := fun z : ℂ ↦ (baseCoord e y, z)) (normalCoord e y) hΦ
-    ((differentiableAt_const _).prodMk differentiableAt_id)
-
 variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
   {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
   (x : ℂ → EuclideanSpace ℝ (Fin 4))
 
-omit [FiniteDimensional ℂ W] in
-/-- The two-vector `F' = -db'` of the connection of the normal model, paired with a bivector
-`u ∧ w`: `∂_w b'(u) - ∂_u b'(w)`. -/
-theorem inner_alternatingFormEquiv_symm_neg_extDeriv_normalModelConnection
-    (hξ : DifferentiableAt ℝ ξ (normalCoord e y)) (hη : DifferentiableAt ℝ η (normalCoord e y))
-    (u w : V) :
-    ⟪(alternatingFormEquiv V 2).symm (-extDeriv (normalModelConnection e ξ η) y),
-        ιMulti ℝ 2 ![u, w]⟫ =
-      fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ u)) y w -
-        fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ w)) y u := by
-  rw [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply,
-    extDeriv_apply_pair_of_differentiableAt (differentiableAt_normalModelConnection hξ hη)]
-  ring
-
 include hQ hkl he h₀ h₂ hρ hu₀ in
 /-- **The gauge-fixing row of the normal model of a family**: at the pullback `(b_x, α_x u₀)` of a
 plane field `x`, the gauge-fixing row of the linearized flat limiting equations, applied to the
 normal model of a family `(Ξ, Η)`, is the gauge row of `L_x` on the plane field `Ξ (w, ·)` over the
-base point `w = w(y)`, plus the gauge row `∂_s Η₀ - ∂_t Η₁` of the base coupling of the paired
-family (`normalBaseCoupling`), at the normal coordinate. -/
+base point `w = w(y)`, plus the gauge row `∂_s Η₀ - ∂_t Η₁` (`w = s + i t`) of the base coupling
+of the paired family (`normalBaseCoupling`), at the normal coordinate. -/
 theorem flatDeformationGauge_familyNormalModel (hu₀₁ : ‖u₀‖ = 1)
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
     (hΗ : DifferentiableAt ℝ Η (baseCoord e y, normalCoord e y)) :
@@ -829,15 +775,11 @@ theorem flatDeformationGauge_familyNormalModel (hu₀₁ : ‖u₀‖ = 1)
     fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
     fderiv_familyNormalModelConnection_apply_two hΞ,
-    fderiv_familyNormalModelConnection_apply_three hΞ, baseCoord_apply_zero, baseCoord_apply_one,
-    baseCoord_apply_two, baseCoord_apply_three, normalCoord_apply_zero, normalCoord_apply_one,
-    normalCoord_apply_two, normalCoord_apply_three, map_zero, zero_add, add_zero]
+    fderiv_familyNormalModelConnection_apply_three hΞ]
   rw [hψ, coe_familyNormalModelSpinor, inner_smul_left, inner_smul_left, inner_add_right,
     inner_smul_right, inner_smul_right, hu, hβ]
-  simp only [mul_one, mul_zero, add_zero, conj_I, neg_mul, neg_re, I_mul_re, neg_neg,
-    Vortex.conj_sectionValue_mul_sectionValue_im, PiLp.add_apply,
-    Vortex.gaugeFixedOperator_apply_zero, Vortex.gaugeAdjoint_def, normalBaseCoupling_apply_zero,
-    ← (differentiableAt_baseSlice hΗ).fderiv_piLp_apply]
+  simp [Vortex.gaugeAdjoint_def,
+    ← hΗ.hasFDerivAt_slice_fst.differentiableAt.fderiv_piLp_apply]
   ring
 
 /-- The curvature row of a variation `(b', ζ)` paired with `e₀ ∧ eⱼ`, where
@@ -854,13 +796,9 @@ private theorem inner_flatDeformationCurvature_ιMulti_zero {b' : V → V [⋀^F
         2⁻¹ * ⟪(quadraticTwoFormPolar o ρ hkl (ψ y) (ζ y) : ⋀[ℝ]^2 V), ιMulti ℝ 2 ![e 0, e j]⟫ := by
   have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
     o.isSymmetric_hodgeStar_of_even even_two hkl
-  have hF (u w : V) : ⟪(alternatingFormEquiv V 2).symm (-extDeriv b' y), ιMulti ℝ 2 ![u, w]⟫ =
-      fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ u)) y w - fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ w)) y u := by
-    rw [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply,
-      extDeriv_apply_pair_of_differentiableAt hb']
-    ring
   rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs, hj,
-    real_inner_smul_right, hF, hF]
+    real_inner_smul_right, inner_alternatingFormEquiv_symm_neg_extDeriv hb',
+    inner_alternatingFormEquiv_symm_neg_extDeriv hb']
 
 section Curvature
 
@@ -869,8 +807,8 @@ include hQ hkl he h₀ h₂ hρ hu₀
 /-- **The curvature row of the normal model of a family along `e₀ ∧ e₁`**: at the pullback
 `(b_x, α_x u₀)` of a plane field `x`, the curvature row of the linearized flat limiting equations,
 applied to the normal model of a family `(Ξ, Η)`, pairs with `e₀ ∧ e₁` to the first equation row of
-`L_x` on `Ξ (w, ·)`, plus the corresponding row `∂_s Η₁ + ∂_t Η₀` of the base coupling of the
-paired family, at the normal coordinate. -/
+`L_x` on `Ξ (w, ·)`, plus the corresponding row `∂_s Η₁ + ∂_t Η₀` (`w = s + i t`) of the base
+coupling of the paired family, at the normal coordinate. -/
 theorem inner_flatDeformationCurvature_familyNormalModel_zero_one (hu₀₁ : ‖u₀‖ = 1)
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
     (hΗ : DifferentiableAt ℝ Η (baseCoord e y, normalCoord e y)) :
@@ -882,24 +820,22 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_one (hu₀₁ : �
   rw [inner_flatDeformationCurvature_ιMulti_zero hkl
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_one hkl he).trans (one_smul ℝ _).symm),
-    normalModelSpinor_zero_right, familyNormalModelSpinor, normalModelSpinor_apply,
+    normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
     Vortex.conj_sectionValue_mul_sectionValue_re]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
     fderiv_familyNormalModelConnection_apply_two hΞ,
-    fderiv_familyNormalModelConnection_apply_three hΞ, baseCoord_apply_zero, baseCoord_apply_one,
-    baseCoord_apply_two, baseCoord_apply_three, normalCoord_apply_zero, normalCoord_apply_one,
-    normalCoord_apply_two, normalCoord_apply_three, map_zero, zero_add, add_zero, PiLp.add_apply,
-    Vortex.gaugeFixedOperator_apply_one, Vortex.linearizedEquation_apply_zero,
-    normalBaseCoupling_apply_one, ← (differentiableAt_baseSlice hΗ).fderiv_piLp_apply]
+    fderiv_familyNormalModelConnection_apply_three hΞ]
+  simp [Vortex.gaugeFixedOperator_apply_one, Vortex.linearizedEquation_apply_zero,
+    ← hΗ.hasFDerivAt_slice_fst.differentiableAt.fderiv_piLp_apply]
   ring
 
 /-- **The curvature row of the normal model of a family along `e₀ ∧ e₂`**: the curvature row of the
 linearized flat limiting equations at the pullback of `x`, applied to the normal model of a family
 `(Ξ, Η)`, pairs with `e₀ ∧ e₂` to minus the gauge row of `L_x*` on `Η (w, ·)`, minus the
-corresponding row `∂_s Ξ₀ - ∂_t Ξ₁` of the base coupling of the normal family, at the normal
-coordinate. -/
+corresponding row `∂_s Ξ₀ - ∂_t Ξ₁` (`w = s + i t`) of the base coupling of the normal family, at
+the normal coordinate. -/
 theorem inner_flatDeformationCurvature_familyNormalModel_zero_two (hu₀₁ : ‖u₀‖ = 1)
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
     (hΗ : DifferentiableAt ℝ Η (baseCoord e y, normalCoord e y)) :
@@ -911,24 +847,22 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_two (hu₀₁ : �
   rw [inner_flatDeformationCurvature_ιMulti_zero hkl
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_two hkl he).trans (neg_one_smul ℝ _).symm),
-    normalModelSpinor_zero_right, familyNormalModelSpinor, normalModelSpinor_apply,
+    normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
     mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_im]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
     fderiv_familyNormalModelConnection_apply_two hΞ,
-    fderiv_familyNormalModelConnection_apply_three hΞ, baseCoord_apply_zero, baseCoord_apply_one,
-    baseCoord_apply_two, baseCoord_apply_three, normalCoord_apply_zero, normalCoord_apply_one,
-    normalCoord_apply_two, normalCoord_apply_three, map_zero, zero_add, add_zero, PiLp.add_apply,
-    Vortex.gaugeFixedAdjoint_apply_zero, pairedBaseCoupling_apply_zero,
-    ← (differentiableAt_baseSlice hΞ).fderiv_piLp_apply]
+    fderiv_familyNormalModelConnection_apply_three hΞ]
+  simp [Vortex.gaugeFixedAdjoint_apply_zero,
+    ← hΞ.hasFDerivAt_slice_fst.differentiableAt.fderiv_piLp_apply]
   ring
 
 /-- **The curvature row of the normal model of a family along `e₀ ∧ e₃`**: the curvature row of the
 linearized flat limiting equations at the pullback of `x`, applied to the normal model of a family
 `(Ξ, Η)`, pairs with `e₀ ∧ e₃` to minus the curvature row of `L_x*` on `Η (w, ·)`, minus the
-corresponding row `∂_s Ξ₁ + ∂_t Ξ₀` of the base coupling of the normal family, at the normal
-coordinate. -/
+corresponding row `∂_s Ξ₁ + ∂_t Ξ₀` (`w = s + i t`) of the base coupling of the normal family, at
+the normal coordinate. -/
 theorem inner_flatDeformationCurvature_familyNormalModel_zero_three (hu₀₁ : ‖u₀‖ = 1)
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
     (hΗ : DifferentiableAt ℝ Η (baseCoord e y, normalCoord e y)) :
@@ -940,17 +874,15 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_three (hu₀₁ : 
   rw [inner_flatDeformationCurvature_ιMulti_zero hkl
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_three hkl he).trans (one_smul ℝ _).symm),
-    normalModelSpinor_zero_right, familyNormalModelSpinor, normalModelSpinor_apply,
+    normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
     mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_re]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
     fderiv_familyNormalModelConnection_apply_two hΞ,
-    fderiv_familyNormalModelConnection_apply_three hΞ, baseCoord_apply_zero, baseCoord_apply_one,
-    baseCoord_apply_two, baseCoord_apply_three, normalCoord_apply_zero, normalCoord_apply_one,
-    normalCoord_apply_two, normalCoord_apply_three, map_zero, zero_add, add_zero, PiLp.add_apply,
-    Vortex.gaugeFixedAdjoint_apply_one, pairedBaseCoupling_apply_one,
-    ← (differentiableAt_baseSlice hΞ).fderiv_piLp_apply]
+    fderiv_familyNormalModelConnection_apply_three hΞ]
+  simp [Vortex.gaugeFixedAdjoint_apply_one,
+    ← hΞ.hasFDerivAt_slice_fst.differentiableAt.fderiv_piLp_apply]
   ring
 
 end Curvature
@@ -991,8 +923,9 @@ include hQ hkl he h₀ h₂ hu₀ in
 /-- **The Dirac row of the normal model of a family**: at the pullback `(b_x, α_x u₀)` of a plane
 field `x`, the Dirac row of the linearized flat limiting equations, applied to the normal model of
 a family `(Ξ, Η)`, is `2 (P₂ + i P₃) c(e₀) u₀ + 2 (N₂ + i N₃) c(e₂) u₀` at the normal coordinate,
-where `N = L_x Ξ (w, ·) + normalBaseCoupling (∂_w Η)` and
-`P = L_x* Η (w, ·) + pairedBaseCoupling (∂_w Ξ)`. Along the base, the paired family thus enters
+where `N = L_x Ξ (w, ·) + normalBaseCoupling (D_w Η)` and
+`P = L_x* Η (w, ·) + pairedBaseCoupling (D_w Ξ)`, `D_w Φ` being the real derivative of the base
+slice `Φ (·, z(y))` at `w = w(y)`. Along the base, the paired family thus enters
 the normal rows and the normal family the paired rows. -/
 theorem flatDeformationDirac_familyNormalModel
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
@@ -1031,30 +964,22 @@ theorem flatDeformationDirac_familyNormalModel
   rw [flatDeformationDirac_familyNormalModel_eq_sum x hΞ hΗ,
     sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
     sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀]
-  obtain ⟨hΞw, hΗw⟩ := And.intro (differentiableAt_baseSlice hΞ) (differentiableAt_baseSlice hΗ)
-  obtain ⟨hΞz, hΗz⟩ := And.intro (differentiableAt_euclidean.1 (differentiableAt_normalSlice hΞ))
-    (differentiableAt_euclidean.1 (differentiableAt_normalSlice hΗ))
+  have hΞw := hΞ.hasFDerivAt_slice_fst.differentiableAt
+  have hΗw := hΗ.hasFDerivAt_slice_fst.differentiableAt
+  have hΞz := differentiableAt_euclidean.1 hΞ.hasFDerivAt_slice_snd.differentiableAt
+  have hΗz := differentiableAt_euclidean.1 hΗ.hasFDerivAt_slice_snd.differentiableAt
   have hAB : X 0 + I * X 1 - (Y 2 - I * Y 3) = 2 * ((P 2 : ℂ) + P 3 * I) ∧
       X 2 + I * X 3 + (Y 0 - I * Y 1) = 2 * ((N 2 : ℂ) + N 3 * I) := by
-    simp only [hX, hY, hN, hP, normalModelConnection_apply_zero, normalModelConnection_apply_one,
-      normalModelConnection_apply_two, normalModelConnection_apply_three,
-      familyNormalModelConnection_apply_zero, familyNormalModelConnection_apply_one,
-      familyNormalModelConnection_apply_two, familyNormalModelConnection_apply_three,
-      Pi.zero_apply, PiLp.zero_apply, baseCoord_apply_zero, baseCoord_apply_one,
-      baseCoord_apply_two, baseCoord_apply_three, normalCoord_apply_zero, normalCoord_apply_one,
-      normalCoord_apply_two, normalCoord_apply_three, map_zero, Vortex.sectionValue_apply,
+    simp [hX, hY, hN, hP, Vortex.sectionValue_apply,
       Vortex.fderiv_sectionValue_apply (differentiableAt_euclidean.1 hΞw 2)
         (differentiableAt_euclidean.1 hΞw 3),
       Vortex.fderiv_sectionValue_apply (differentiableAt_euclidean.1 hΗw 2)
         (differentiableAt_euclidean.1 hΗw 3),
       Vortex.fderiv_sectionValue_apply (hΞz 2) (hΞz 3),
-      Vortex.fderiv_sectionValue_apply (hΗz 2) (hΗz 3),
-      PiLp.add_apply, Vortex.gaugeFixedAdjoint_apply_two, Vortex.gaugeFixedAdjoint_apply_three,
-      Vortex.gaugeFixedOperator_apply_two, Vortex.gaugeFixedOperator_apply_three,
-      Vortex.linearizedEquation_apply_one, Vortex.linearizedEquation_apply_two,
-      normalBaseCoupling_apply_two, normalBaseCoupling_apply_three, pairedBaseCoupling_apply_two,
-      pairedBaseCoupling_apply_three, ← hΞw.fderiv_piLp_apply, ← hΗw.fderiv_piLp_apply]
-    push_cast
+      Vortex.fderiv_sectionValue_apply (hΗz 2) (hΗz 3), Vortex.gaugeFixedAdjoint_apply_two,
+      Vortex.gaugeFixedAdjoint_apply_three, Vortex.gaugeFixedOperator_apply_two,
+      Vortex.gaugeFixedOperator_apply_three, Vortex.linearizedEquation_apply_one,
+      Vortex.linearizedEquation_apply_two, ← hΞw.fderiv_piLp_apply, ← hΗw.fderiv_piLp_apply]
     constructor <;> grind [I_sq]
   rw [← hAB.1, ← hAB.2]
   module
@@ -1130,23 +1055,6 @@ theorem differentiableAt_normalModelSpinor (hξ : DifferentiableAt ℝ ξ (norma
     ((Vortex.differentiableAt_sectionValue_of_differentiableAt hη).smul_const _)).comp y
       (normalCoord e).differentiableAt
 
-omit [FiniteDimensional ℂ W] in
-/-- The derivative of the spinor of the normal model along a vector `v`:
-`α_ξ'(z v) u₀ + α_η'(z v) β₀`. -/
-theorem fderiv_normalModelSpinor_apply (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
-    (hη : DifferentiableAt ℝ η (normalCoord e y)) (v : V) :
-    fderiv ℝ (fun y' ↦ (normalModelSpinor e u₀ ξ η y' : W)) y v =
-      fderiv ℝ (Vortex.sectionValue ξ) (normalCoord e y) (normalCoord e v) • (u₀ : W) +
-        fderiv ℝ (Vortex.sectionValue η) (normalCoord e y) (normalCoord e v) •
-          (pairedSpinor e u₀ : W) := by
-  have hf := Vortex.differentiableAt_sectionValue_of_differentiableAt hξ
-  have hg := Vortex.differentiableAt_sectionValue_of_differentiableAt hη
-  simp only [coe_normalModelSpinor]
-  rw [fderiv_comp_normalCoord_apply ((hf.smul_const (u₀ : W)).fun_add
-      (hg.smul_const (pairedSpinor e u₀ : W))),
-    fderiv_fun_add (hf.smul_const _) (hg.smul_const _), fderiv_smul_const hf, fderiv_smul_const hg,
-    add_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.smulRight_apply]
-
 include hQ hkl he h₀ h₂ hu₀ in
 /-- **The Dirac row of the normal model is the `∂bar`-row of `L_x` plus that of `L_x*`**: at the
 pullback `(b_x, α_x u₀)` of a plane field `x`, the Dirac row of the linearized flat limiting
@@ -1182,8 +1090,9 @@ include hQ hkl he h₀ h₂ hρ hu₀ in
 /-- **The kernel of the normal model of a family at a point**: at the pullback `(b_x, α_x u₀)` of
 a plane field `x`, the three rows of the linearized flat limiting equations vanish at `y` on the
 normal model of a family `(Ξ, Η)` exactly when, at the base point `w = w(y)` and the normal
-coordinate `z = z(y)`, `L_x Ξ (w, ·) + normalBaseCoupling (∂_w Η)` and
-`L_x* Η (w, ·) + pairedBaseCoupling (∂_w Ξ)` vanish. -/
+coordinate `z = z(y)`, `L_x Ξ (w, ·) + normalBaseCoupling (D_w Η)` and
+`L_x* Η (w, ·) + pairedBaseCoupling (D_w Ξ)` vanish, `D_w Φ` being the real derivative of the base
+slice `Φ (·, z)` at `w`. -/
 theorem flatDeformation_familyNormalModel_eq_zero_iff (x : ℂ → EuclideanSpace ℝ (Fin 4))
     {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)} {y : V} (hu₀₁ : ‖u₀‖ = 1)
     (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))

@@ -60,8 +60,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
-* `DifferentiableAt.hasFDerivAt_slice_fst`: the derivative of a slice `y ↦ g (y, t)` of a map
-  differentiable at the point `(y, t)`.
+* `DifferentiableAt.hasFDerivAt_slice_fst`, `DifferentiableAt.hasFDerivAt_slice_snd`: the
+  derivatives of the slices `y ↦ g (y, t)` and `t ↦ g (y, t)` of a map differentiable at the point
+  `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
@@ -515,7 +516,7 @@ theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace �
 
 end TauCeti
 
-section SliceFst
+section Slice
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -530,6 +531,14 @@ theorem DifferentiableAt.hasFDerivAt_slice_fst {g : E × H → G} {p : E × H}
   simpa [Function.comp_def] using
     hg.hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
 
-end SliceFst
+/-- The derivative of a slice `t ↦ g (p.1, t)` of a map on a product that is differentiable at `p`,
+in the second variable. -/
+theorem DifferentiableAt.hasFDerivAt_slice_snd {g : E × H → G} {p : E × H}
+    (hg : DifferentiableAt 𝕜 g p) :
+    HasFDerivAt (fun t ↦ g (p.1, t)) ((fderiv 𝕜 g p).comp (ContinuousLinearMap.inr 𝕜 E H)) p.2 := by
+  simpa [Function.comp_def] using
+    hg.hasFDerivAt.comp p.2 (hasFDerivAt_prodMk_right p.1 p.2)
+
+end Slice
 
 end
