@@ -386,7 +386,7 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     have hxright : 0 ≤ 2 - x := by linarith [hx.2]
     nlinarith [mul_nonneg hxleft hxright]
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq hq.le hqdef hreal hx2
+    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
     nlinarith [h]
@@ -592,11 +592,13 @@ theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : �
         (((-x₀ / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x₀ ^ 2 / 4) : ℂ) * Complex.I))) := by
     simpa only [Function.comp_apply, Complex.ofReal_div] using hmul
   have harg (ε : ℝ) :
-      (((x : ℂ) + (ε : ℂ) * Complex.I) - a) / (s : ℂ) =
+      (((x : ℂ) + (ε : ℂ) * Complex.I) - a) / (Real.sqrt v : ℂ) =
         (x₀ : ℂ) + ((ε : ℂ) / (s : ℂ)) * Complex.I := by
+    have hsum : (x : ℂ) + (ε : ℂ) * Complex.I - a =
+        ((x : ℂ) - a) + (ε : ℂ) * Complex.I := by ring
+    rw [hsum, add_div]
     dsimp [x₀, s]
     push_cast
-    field_simp [ne_of_gt hs]
     ring
   have hEq : ∀ ε : ℝ,
       resolventTransform (semicircleReal a v) ((x : ℂ) + (ε : ℂ) * Complex.I) =
@@ -604,7 +606,7 @@ theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : �
           resolventTransform (semicircleReal 0 1)
             ((x₀ : ℂ) + (ε / s : ℂ) * Complex.I) := by
     intro ε
-    rw [resolventTransform_semicircleReal_eq_standard a hv, ← show s = Real.sqrt v from rfl, harg]
+    rw [resolventTransform_semicircleReal_eq_standard a hv, harg]
   have hfinal := Filter.Tendsto.congr' (EventuallyEq.symm
     (Filter.Eventually.of_forall hEq)) hmul'
   simpa [s, x₀] using hfinal

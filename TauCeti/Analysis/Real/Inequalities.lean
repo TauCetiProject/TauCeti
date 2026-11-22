@@ -39,9 +39,10 @@ theorem abs_le_abs_add_of_mem_Icc (a y r : ℝ) (hy : y ∈ Set.Icc (a - r) (a +
   · linarith [le_abs_self a, hy.2]
 
 /-- A quadratic scalar relation and `x² ≤ 4` imply a bound on `q * (1 - q)²`. -/
-theorem mul_one_sub_sq_le_sq_mul_add_one_sq {a b q x : ℝ} (hq : 0 ≤ q)
+theorem mul_one_sub_sq_le_sq_mul_add_one_sq {a b q x : ℝ}
     (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
     q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hq : 0 ≤ q := by rw [hqdef]; exact add_nonneg (sq_nonneg a) (sq_nonneg b)
   have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
     nlinarith [h]
