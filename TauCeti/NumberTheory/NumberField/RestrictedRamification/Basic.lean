@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.AlgEquiv
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Hermite
-import TauCeti.NumberTheory.NumberField.UnramifiedSubextension
+import TauCeti.NumberTheory.NumberField.Unramified.Subextension
 
 /-!
 # The maximal extension unramified outside a set of places
@@ -30,7 +30,7 @@ Unramifiedness at a place `v` is read on the inertia groups of a finite Galois e
 the fields in question (`Ideal.isUnramifiedIn_iff_forall_inertia_le`), so it passes to composita
 and subextensions. It is also invariant under isomorphisms of extensions, in particular under
 conjugation by `Gal(Ω / K)`; these facts are in
-`TauCeti/NumberTheory/NumberField/UnramifiedSubextension.lean`. So a finite subextension lies in
+`TauCeti/NumberTheory/NumberField/Unramified/Subextension.lean`. So a finite subextension lies in
 `K_S` exactly when it is unramified outside `S`, and `K_S / K` is Galois when `Ω / K` is normal.
 
 For finite `S`, Hermite's theorem

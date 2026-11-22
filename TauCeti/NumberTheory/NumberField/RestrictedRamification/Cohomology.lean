@@ -11,6 +11,7 @@ import Mathlib.FieldTheory.Galois.Profinite
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.BoundedIndex
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
 # Finiteness of `H¹(G_{K,S}, M)`
@@ -103,13 +104,7 @@ theorem finite_H1_galoisGroupS [Normal K Ω]
   let V : Subgroup (galoisGroupS K Ω S) := (MulAction.toPermHom _ M).ker
   have hVmem (g : galoisGroupS K Ω S) : g ∈ V ↔ ∀ m : M, g • m = m := by
     simp [V, MonoidHom.mem_ker, Equiv.Perm.ext_iff]
-  have hV : IsOpen (V : Set (galoisGroupS K Ω S)) := by
-    have : (V : Set (galoisGroupS K Ω S)) =
-        ⋂ m : M, (MulAction.stabilizer (galoisGroupS K Ω S) m : Set _) := by
-      ext g
-      simp [hVmem]
-    rw [this]
-    exact isOpen_iInter_of_finite fun m ↦ stabilizer_isOpen _ m
+  have hV : IsOpen (V : Set (galoisGroupS K Ω S)) := isOpen_ker_toPermHom (galoisGroupS K Ω S) M
   have : V.FiniteIndex := OpenSubgroup.finiteIndex_toSubgroup ⟨V, hV⟩
   refine ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal_of_prime hV 1
     (N := Nat.card M) ?_ M (fun a ↦ card_nsmul_eq_zero') fun v hv a ↦ (hVmem v).1 hv a
