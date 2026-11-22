@@ -66,7 +66,7 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 
 In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
 as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
-(`OpenPartialHomeomorph.MDifferentiable.bijective_comp_mfderiv_symm`).
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -455,7 +455,7 @@ variable {𝕜 E H G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
 /-- **Covectors read in a chart.** For an open partial homeomorphism `c` into a normed space,
 differentiable with its inverse, and `x` in its source, reading a covector `ξ` at `x` in `c` as
 `ξ ∘ D(c⁻¹)(c x)` is a bijection onto the covectors of `G`. -/
-theorem bijective_comp_mfderiv_symm (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
+theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
     (hx : x ∈ c.source) :
     Function.Bijective fun ξ : TangentSpace I x →L[𝕜] 𝕜 ↦ ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) := by
   refine ⟨fun ξ₁ ξ₂ h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun η ↦ ?_⟩
