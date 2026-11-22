@@ -20,8 +20,7 @@ measure both pushforwards are zero.
 
 For an ordered target, if a function `f` is bounded almost everywhere by an a.e. measurable
 function `g` and pointwise by a measurable majorant `u`, then `g` has a measurable representative
-that still bounds `f` everywhere; when the target has a greatest element, taking `u = ⊤` yields a
-measurable majorant of an a.e. measurable function in its own a.e. equivalence class.
+that still bounds `f` everywhere.
 
 ## Main results
 
@@ -31,8 +30,6 @@ measurable majorant of an a.e. measurable function in its own a.e. equivalence c
   embedding `f`, with no measurability assumption on `g`.
 * `AEMeasurable.exists_measurable_ge_ae_eq_of_ae_le`: a measurable representative of an a.e.
   measurable a.e. majorant that still dominates pointwise.
-* `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
-  a.e. equivalence class.
 -/
 
 public section
@@ -62,14 +59,6 @@ theorem exists_measurable_ge_ae_eq_of_ae_le {α β : Type*} [MeasurableSpace α]
       simp [hx, hle]
   · filter_upwards [hg.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
     simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
-
-/-- An a.e. measurable function into an ordered space with a greatest element admits a
-measurable majorant that agrees with it almost everywhere. -/
-theorem exists_measurable_ge_ae_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    [Preorder β] [OrderTop β] {μ : Measure α} {f : α → β} (hf : AEMeasurable f μ) :
-    ∃ g : α → β, Measurable g ∧ f ≤ g ∧ f =ᵐ[μ] g :=
-  hf.exists_measurable_ge_ae_eq_of_ae_le (ae_of_all _ fun _ ↦ le_rfl) measurable_const
-    fun _ ↦ le_top
 
 end AEMeasurable
 

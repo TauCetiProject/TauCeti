@@ -285,6 +285,7 @@ theorem exists_minimal_measurable_ge_outerLIntegral (μ : Measure α) [SFinite �
     lintegral_mono_ae (hg_min h hh.aemeasurable (ae_of_all _ hfh))
 
 /-- `outerLIntegral μ f = 0` if and only if `f =ᵐ[μ] 0`. -/
+@[simp]
 theorem outerLIntegral_eq_zero_iff {μ : Measure α} {f : α → ℝ≥0∞} :
     outerLIntegral μ f = 0 ↔ f =ᵐ[μ] 0 := by
   constructor

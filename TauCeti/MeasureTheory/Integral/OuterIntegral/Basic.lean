@@ -159,16 +159,11 @@ theorem ae_le_of_integral_eq_outerIntegral {μ : Measure α} {f g h : α → ℝ
   have hle : ∫ ω, g ω ∂μ ≤ ∫ ω, m ω ∂μ := by
     rw [hg_eq]
     exact outerIntegral_le_integral_of_ae hm_int hfm hu ⟨l₀, hl₀_int, hl₀f⟩
-  have hsub_zero : ∫ ω, (g ω - m ω) ∂μ = 0 := by
-    rw [integral_sub hg hm_int]
-    exact le_antisymm (sub_nonpos.mpr hle)
-      (sub_nonneg.mpr (integral_mono hm_int hg fun _ ↦ min_le_left _ _))
-  have heq : (fun ω ↦ g ω - m ω) =ᵐ[μ] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun _ ↦ sub_nonneg.mpr (min_le_left _ _)) (hg.sub hm_int)).mp
-      hsub_zero
-  exact heq.mono fun ω hω ↦ by
-    have hgm : g ω = min (g ω) (h ω) := sub_eq_zero.mp hω
-    linarith [min_le_right (g ω) (h ω)]
+  have hm_eq : ∫ ω, m ω ∂μ = ∫ ω, g ω ∂μ :=
+    le_antisymm (integral_mono hm_int hg fun _ ↦ min_le_left _ _) hle
+  have heq : m =ᵐ[μ] g :=
+    (integral_eq_iff_of_ae_le hm_int hg (ae_of_all _ fun _ ↦ min_le_left _ _)).mp hm_eq
+  exact heq.mono fun ω hω ↦ hω ▸ min_le_right (g ω) (h ω)
 
 private theorem exists_antitone_measurable_ge_lt {μ : Measure α} {f : α → ℝ}
     (hu : ∃ u, Measurable u ∧ Integrable u μ ∧ f ≤ u) :
@@ -730,6 +725,18 @@ theorem integral_le_innerIntegral {μ : Measure α} {f g : α → ℝ}
   rw [innerIntegral_def, le_neg, ← integral_neg]
   exact outerIntegral_le_integral hg_meas.neg hg_int.neg (neg_le_neg hgf)
     ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
+
+/-- The integral of any integrable minorant `g ≤ᵐ[μ] f` is bounded above by `innerIntegral μ f`,
+provided `f` admits a measurable minorant and an integrable majorant. -/
+theorem integral_le_innerIntegral_of_ae {μ : Measure α} {f g : α → ℝ}
+    (hg : Integrable g μ) (hgf : g ≤ᵐ[μ] f)
+    (hl : ∃ l, Measurable l ∧ l ≤ f) (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
+    ∫ ω, g ω ∂μ ≤ innerIntegral μ f := by
+  obtain ⟨l, hl_meas, hlf⟩ := hl
+  obtain ⟨u, hu_int, hfu⟩ := hu
+  rw [innerIntegral_def, le_neg, ← integral_neg]
+  exact outerIntegral_le_integral_of_ae hg.neg (hgf.mono fun _ hω ↦ neg_le_neg hω)
+    ⟨-l, hl_meas.neg, neg_le_neg hlf⟩ ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
 
 /-- `innerIntegral μ f` is bounded above by the integral of any integrable majorant `u ≥ᵐ[μ] f`,
 provided `f` admits a measurable integrable minorant. -/
