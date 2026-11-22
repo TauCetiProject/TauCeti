@@ -31,7 +31,7 @@ Adding a fresh element to a set removes one element from its complement
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`),
 and the fibre of `Sigma.fst` over `x` has `encard` equal to `ENat.card (Y x)`
-(`Set.encard_sigma_fst_fiber_eq`).
+(`TauCeti.encard_sigma_fst_fiber_eq`).
 
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`). A property of the first coordinate of `α × β` holds
@@ -217,17 +217,17 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
 
+end Set
+
 /-- The fibre of `Sigma.fst : (Σ y, Y y) → α` over `x` has `encard` equal to `ENat.card (Y x)`. -/
 @[simp]
-theorem encard_sigma_fst_fiber_eq {α : Type*} (Y : α → Type*) (x : α) :
+theorem TauCeti.encard_sigma_fst_fiber_eq {α : Type*} (Y : α → Type*) (x : α) :
     {p : Σ y : α, Y y | p.1 = x}.encard = ENat.card (Y x) := by
-  have heq : {p : Σ y : α, Y y | p.1 = x} = range (Sigma.mk x : Y x → Σ y : α, Y y) := by
+  have heq : {p : Σ y : α, Y y | p.1 = x} = Set.range (Sigma.mk x : Y x → Σ y : α, Y y) := by
     ext ⟨y, k⟩
-    simp only [mem_ofPred_eq, mem_range]
+    simp only [Set.mem_ofPred_eq, Set.mem_range]
     exact ⟨by rintro rfl; exact ⟨k, rfl⟩, by rintro ⟨_, h⟩; exact (congrArg Sigma.fst h).symm⟩
   rw [heq, sigma_mk_injective.encard_range]
-
-end Set
 
 /-- The fibre of `Function.Pullback.fst` over `a` has the same `Set.ncard` as the fibre of `q`
 over `f a`. Both sides are zero for infinite fibres. -/

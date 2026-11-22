@@ -17,10 +17,12 @@ import TauCeti.Analysis.Normed.Ring.Basic
 
 An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
-ball is an open subring. In an ultrametric normed ring, a finite or infinite product of elements
-each within `ε ≤ 1` of `1` is again within `ε` of `1`, and over a complete ultrametric commutative
-ring an infinite product `∏' i, (1 + f i)` or `∏' i, (1 - f i)` converges whenever `f` tends to
-`0` along the cofinite filter. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
+ball is an open subring. In an ultrametric seminormed ring, a finite product, a convergent
+`HasProd` limit, or the totalized infinite product `∏' i, f i` (which defaults to `1` for
+nonmultipliable families) of elements each within `B` of `1` (`0 ≤ B ≤ 1`) or strictly within `ε`
+of `1` (`0 < ε ≤ 1`) satisfies the same bound, and over a complete ultrametric seminormed
+commutative ring `∏' i, (1 + f i)` or `∏' i, (1 - f i)` converges whenever `f` tends to `0` along
+the cofinite filter. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
 arguments is bounded by its first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way
 when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
 `t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
@@ -62,13 +64,17 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_le`, `TauCeti.norm_prod_sub_one_le` and
-  `TauCeti.norm_tprod_sub_one_le`: finite and infinite products of elements within `B ≤ 1` of `1`
-  remain within `B` of `1`.
+  `TauCeti.norm_tprod_sub_one_le`: finite products and totalized infinite products `∏' i, f i`
+  (which default to `1` for nonmultipliable families) of elements within `B` of `1` (`0 ≤ B ≤ 1`)
+  remain within `B` of `1` (see `HasProd.norm_sub_one_le` for actual limits).
 * `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
-  `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
-  of `1` remain strictly within `ε` of `1`.
-* `HasProd.norm_sub_one_le` and `HasProd.norm_sub_one_lt`: closed and strict perturbation bounds
-  near `1` for a supplied convergent product, without a Hausdorff hypothesis.
+  `TauCeti.norm_tprod_sub_one_lt`: finite products and totalized infinite products `∏' i, f i`
+  (which default to `1` for nonmultipliable families) of elements strictly within `ε` of `1`
+  (`0 < ε ≤ 1`) remain strictly within `ε` of `1` (see `HasProd.norm_sub_one_lt` for actual
+  limits).
+* `HasProd.norm_sub_one_le` and `HasProd.norm_sub_one_lt`: closed (`0 ≤ B ≤ 1`) and strict
+  (`0 < ε ≤ 1`) perturbation bounds near `1` for a supplied convergent product, without a
+  Hausdorff hypothesis.
 * `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`: factors of a convergent product with
   `‖f i - 1‖ < 1` tend to `1` along `cofinite`.
 * `IsUltrametricDist.multipliable_of_tendsto_cofinite_one` and
@@ -464,7 +470,7 @@ theorem _root_.HasProd.norm_sub_one_le {ι R : Type*} [SeminormedCommRing R] [Is
     TauCeti.norm_prod_sub_one_le s f hB0 hB1 fun i _ ↦ h i
 
 /-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
-strictly within `ε ≤ 1` of `1`, then `‖a - 1‖ < ε`. This is the `HasProd` form of
+strictly within `ε` of `1` (`0 < ε ≤ 1`), then `‖a - 1‖ < ε`. This is the `HasProd` form of
 `TauCeti.norm_tprod_sub_one_lt`, which needs no Hausdorff hypothesis. -/
 theorem _root_.HasProd.norm_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     {f : ι → R} {a : R} (hf : HasProd f a) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
@@ -477,8 +483,10 @@ theorem _root_.HasProd.norm_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [Is
     _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
     _ < ε := max_lt h1 (TauCeti.norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ h i)
 
-/-- In an ultrametric seminormed commutative ring, an infinite product of elements each within
-`B ≤ 1` of `1` is again within `B` of `1` (for `0 ≤ B`). -/
+/-- In an ultrametric seminormed commutative ring, the totalized infinite product `∏' i, f i`
+(which defaults to `1` when `f` is not multipliable) of elements each within `B` of `1`
+(`0 ≤ B ≤ 1`) satisfies `‖(∏' i, f i) - 1‖ ≤ B`. See `HasProd.norm_sub_one_le` for bounds on
+actual limits of convergent products. -/
 theorem norm_tprod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     (f : ι → R) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
     (hf : ∀ i, ‖f i - 1‖ ≤ B) : ‖(∏' i, f i) - 1‖ ≤ B := by
@@ -486,8 +494,10 @@ theorem norm_tprod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametr
   · exact hm.hasProd.norm_sub_one_le hB0 hB1 hf
   · simpa [tprod_eq_one_of_not_multipliable hm] using hB0
 
-/-- In an ultrametric seminormed commutative ring, an infinite product of elements each strictly
-within `ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
+/-- In an ultrametric seminormed commutative ring, the totalized infinite product `∏' i, f i`
+(which defaults to `1` when `f` is not multipliable) of elements each strictly within `ε` of `1`
+(`0 < ε ≤ 1`) satisfies `‖(∏' i, f i) - 1‖ < ε`. See `HasProd.norm_sub_one_lt` for bounds on
+actual limits of convergent products. -/
 theorem norm_tprod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
     (hf : ∀ i, ‖f i - 1‖ < ε) : ‖(∏' i, f i) - 1‖ < ε := by

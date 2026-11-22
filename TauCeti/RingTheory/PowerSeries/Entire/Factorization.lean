@@ -46,6 +46,8 @@ accumulate towards the boundary, and the corresponding products need not converg
 * `PowerSeries.IsEntire.tendsto_gaussNorm_sub_prod_zeroMultiset` and
   `PowerSeries.IsEntire.tendsto_polynomialHom_prod_zeroMultiset`: the product expansion, in each
   Gauss norm and in the topology of entire series.
+* `PowerSeries.IsEntire.exists_eq_C_mul_X_pow_mul_constantCoeff_one`: normalising a nonzero entire
+  series after factoring out its zero at the origin preserves its nonzero-point Taylor orders.
 * `PowerSeries.IsEntire.eq_of_order_taylor_eq` and
   `PowerSeries.IsEntire.exists_eq_C_mul_of_order_taylor_eq`: an entire series with constant
   coefficient `1` is determined by the multiplicities of its zeros, and arbitrary entire series
@@ -106,13 +108,12 @@ theorem finite_setOf_norm_le_of_encard_le_order_taylor {ι L : Type*} [NormedFie
   have hF0 : F ≠ 0 := fun h ↦ hf0 <| _root_.PowerSeries.ext fun n ↦
     (map_eq_zero_iff (algebraMap K L) (algebraMap K L).injective).mp
       (by simpa [F] using congrArg (_root_.PowerSeries.coeff n) h)
-  have hFid : _root_.PowerSeries.map (algebraMap L L) F = F := by ext n; simp
   set R : ℝ := max r 1
   have hR0 : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right r 1)
   have hcount : ∀ i, ‖α i‖ ≤ R → {j : ι | α j = α i}.encard ≤ (F.zeroMultiset R L).count (α i) := by
     intro i hi
     have ho := (hF.isRestricted R).order_taylor_eq_count_zeroMultiset (L := L) hR0 hF0 hi
-    rw [hFid] at ho
+    simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id] at ho
     exact (hα i).trans_eq ho
   refine ((F.zeroMultiset R L).toFinset.finite_toSet.biUnion (t := fun x ↦ {j : ι | α j = x})
       fun x hx ↦ ?_).subset fun i hi ↦ ?_
@@ -157,6 +158,36 @@ theorem tendsto_norm_cofinite_atTop_of_injective_of_evalAt_eq_zero {ι L : Type*
     _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
     _root_.PowerSeries.constantCoeff_taylor]
   exact hα i
+
+omit [IsUltrametricDist K] in
+/-- **Normalised factorisation at the origin.** A nonzero entire series `f` over a complete normed
+field factors as `f = C (coeff f.order.toNat f) * X ^ f.order.toNat * g`, where `g` is entire
+with `constantCoeff g = 1` and has the same Taylor orders as `f` at every nonzero point. -/
+theorem exists_eq_C_mul_X_pow_mul_constantCoeff_one (hf : f.IsEntire) (hf0 : f ≠ 0) :
+    ∃ g : PowerSeries K, g.IsEntire ∧ constantCoeff g = 1 ∧
+      f = C (coeff f.order.toNat f) * X ^ f.order.toNat * g ∧
+      ∀ x : K, x ≠ 0 →
+        (_root_.PowerSeries.taylor x g).order = (_root_.PowerSeries.taylor x f).order := by
+  have hnf : f.IsGoodZero 0 f.order.toNat := by
+    rw [_root_.PowerSeries.isGoodZero_iff_order_taylor_eq, _root_.PowerSeries.taylor_zero,
+      ENat.natCast_toNat (order_eq_top.not.mpr hf0)]
+  obtain ⟨g₀, hg₀, hfg₀, hg₀0⟩ := hf.isGoodZero_iff.mp hnf
+  rw [map_zero, sub_zero] at hfg₀
+  simp only [_root_.PowerSeries.evalAt_at_zero, Algebra.algebraMap_self_apply,
+    isUnit_iff_ne_zero] at hg₀0
+  have hcoeff : coeff f.order.toNat f = constantCoeff g₀ := by
+    nth_rw 2 [hfg₀]
+    simp [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply]
+  refine ⟨C (constantCoeff g₀)⁻¹ * g₀, (isEntire_C _).mul hg₀, by simp [hg₀0], ?_, fun x hx0 ↦ ?_⟩
+  · rw [hcoeff]
+    calc f = X ^ f.order.toNat * g₀ := hfg₀
+      _ = (C (constantCoeff g₀) * C (constantCoeff g₀)⁻¹) * (X ^ f.order.toNat * g₀) := by
+          rw [← map_mul, mul_inv_cancel₀ hg₀0, map_one, one_mul]
+      _ = C (constantCoeff g₀) * X ^ f.order.toNat * (C (constantCoeff g₀)⁻¹ * g₀) := by ring
+  · rw [hg₀.order_taylor_C_mul (inv_ne_zero hg₀0) x]
+    conv_rhs => rw [hfg₀]
+    rw [(isEntire_X.pow _).taylor_mul hg₀ x, _root_.PowerSeries.order_mul,
+      _root_.PowerSeries.order_taylor_X_pow_of_ne_zero hx0, zero_add]
 
 variable [IsAlgClosed K]
 
@@ -239,46 +270,45 @@ theorem exists_eq_C_mul_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire)
       have h0 := h 0
       simpa [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.order_eq_top] using h0.symm
     exact ⟨1, one_ne_zero, by simp [hg0]⟩
-  obtain ⟨n, hnf⟩ := hf.exists_isGoodZero hf0 0
-  have hng : g.IsGoodZero 0 n :=
-    _root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mpr
-      ((h 0).symm.trans (_root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mp hnf))
-  obtain ⟨f₁, hf₁, hff₁, hf₁0⟩ := hf.isGoodZero_iff.mp hnf
-  obtain ⟨g₁, hg₁, hgg₁, hg₁0⟩ := hg.isGoodZero_iff.mp hng
-  rw [map_zero, sub_zero] at hff₁ hgg₁
-  simp only [_root_.PowerSeries.evalAt_at_zero, Algebra.algebraMap_self_apply,
-    isUnit_iff_ne_zero] at hf₁0 hg₁0
-  -- Normalise `f₁` and `g₁` to constant coefficient `1`; their Taylor orders agree everywhere.
-  set f₂ := C (constantCoeff f₁)⁻¹ * f₁
-  set g₂ := C (constantCoeff g₁)⁻¹ * g₁
-  have hf₂ : f₂.IsEntire := (isEntire_C _).mul hf₁
-  have hg₂ : g₂.IsEntire := (isEntire_C _).mul hg₁
-  have hord2 (x : K) : (_root_.PowerSeries.taylor x f₂).order =
-      (_root_.PowerSeries.taylor x g₂).order := by
-    have hX : (_root_.PowerSeries.taylor x (X ^ n : PowerSeries K)).order ≠ ⊤ := by
-      rcases eq_or_ne x 0 with rfl | hx0
-      · simp
-      · simp [_root_.PowerSeries.order_taylor_X_pow_of_ne_zero hx0]
-    have hfg1 : (_root_.PowerSeries.taylor x f₁).order =
-        (_root_.PowerSeries.taylor x g₁).order := by
-      have hx := h x
-      rw [hff₁, hgg₁, (isEntire_X.pow n).taylor_mul hf₁,
-        (isEntire_X.pow n).taylor_mul hg₁, _root_.PowerSeries.order_mul,
-        _root_.PowerSeries.order_mul] at hx
-      exact WithTop.add_left_cancel hX hx
-    rw [hf₁.order_taylor_C_mul (inv_ne_zero hf₁0) x,
-      hg₁.order_taylor_C_mul (inv_ne_zero hg₁0) x, hfg1]
-  have heq : f₂ = g₂ :=
-    hf₂.eq_of_order_taylor_eq hg₂ (by simp [f₂, hf₁0]) (by simp [g₂, hg₁0]) hord2
-  refine ⟨constantCoeff f₁ * (constantCoeff g₁)⁻¹, mul_ne_zero hf₁0 (inv_ne_zero hg₁0), ?_⟩
-  have hf₁eq : f₁ = C (constantCoeff f₁) * f₂ := by
-    dsimp [f₂]
-    rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ hf₁0, map_one, one_mul]
-  calc f = X ^ n * (C (constantCoeff f₁) * f₂) := by rw [hff₁, ← hf₁eq]
-    _ = C (constantCoeff f₁ * (constantCoeff g₁)⁻¹) * g := by
-        rw [heq, hgg₁, map_mul]
-        dsimp [g₂]
+  have hg0 : g ≠ 0 := by
+    rintro rfl
+    have h0 := h 0
+    simp [_root_.PowerSeries.taylor_zero, _root_.PowerSeries.order_eq_top, hf0] at h0
+  obtain ⟨f₁, hf₁, hf₁_const, hff₁, hf₁_ord⟩ := hf.exists_eq_C_mul_X_pow_mul_constantCoeff_one hf0
+  obtain ⟨g₁, hg₁, hg₁_const, hgg₁, hg₁_ord⟩ := hg.exists_eq_C_mul_X_pow_mul_constantCoeff_one hg0
+  have hord1 (x : K) :
+      (_root_.PowerSeries.taylor x f₁).order = (_root_.PowerSeries.taylor x g₁).order := by
+    by_cases hx0 : x = 0
+    · subst hx0
+      have hfz : (_root_.PowerSeries.taylor 0 f₁).order = 0 := by
+        rw [_root_.PowerSeries.taylor_zero]
+        exact not_not.mp (_root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.not.mpr
+          (by simp [hf₁_const]))
+      have hgz : (_root_.PowerSeries.taylor 0 g₁).order = 0 := by
+        rw [_root_.PowerSeries.taylor_zero]
+        exact not_not.mp (_root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.not.mpr
+          (by simp [hg₁_const]))
+      exact hfz.trans hgz.symm
+    · rw [hf₁_ord x hx0, hg₁_ord x hx0, h x]
+  have heq : f₁ = g₁ := hf₁.eq_of_order_taylor_eq hg₁ hf₁_const hg₁_const hord1
+  have hord0 : f.order.toNat = g.order.toNat := by
+    simpa [_root_.PowerSeries.taylor_zero] using congrArg ENat.toNat (h 0)
+  have hcf0 : coeff f.order.toNat f ≠ 0 :=
+    (_root_.PowerSeries.order_eq_nat.mp (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm).1
+  have hcg0 : coeff g.order.toNat g ≠ 0 :=
+    (_root_.PowerSeries.order_eq_nat.mp (ENat.natCast_toNat (order_eq_top.not.mpr hg0)).symm).1
+  refine ⟨coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹,
+    mul_ne_zero hcf0 (inv_ne_zero hcg0), ?_⟩
+  have hcg : C (coeff g.order.toNat g) * C (coeff g.order.toNat g)⁻¹ = (1 : PowerSeries K) := by
+    rw [← map_mul, mul_inv_cancel₀ hcg0, map_one]
+  calc f = C (coeff f.order.toNat f) * X ^ f.order.toNat * f₁ := hff₁
+    _ = (C (coeff g.order.toNat g) * C (coeff g.order.toNat g)⁻¹) *
+          (C (coeff f.order.toNat f) * X ^ f.order.toNat * f₁) := by rw [hcg, one_mul]
+    _ = C (coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹) *
+          (C (coeff g.order.toNat g) * X ^ g.order.toNat * g₁) := by
+        rw [heq, hord0, map_mul]
         ring
+    _ = C (coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹) * g := by rw [← hgg₁]
 
 /-- **Finitely many zeros, normalised form.** Let `f` be an entire series with constant coefficient
 `1` over an algebraically closed complete ultrametric normed field. If all zeros of `f` lie in the

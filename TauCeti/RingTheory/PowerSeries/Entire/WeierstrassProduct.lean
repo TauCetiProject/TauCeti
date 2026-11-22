@@ -167,25 +167,8 @@ theorem eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq {ι : Type*} (hf : f.IsEntir
     f = C (coeff f.order.toNat f) * X ^ f.order.toNat *
       ((∏' i, IsEntire.polynomialHom (1 - Polynomial.C (a i)⁻¹ * Polynomial.X) :
         IsEntire.subring K) : K⟦X⟧) := by
-  set m := f.order.toNat
-  have hm : f.order = m := (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm
-  obtain ⟨hcoeff, hlt⟩ := order_eq_nat.mp hm
-  obtain ⟨g, hg, hfg⟩ := hf.exists_eq_X_sub_C_pow_mul (a := 0) (h := m) fun j hj ↦ by
-    simpa [evalAt_at_zero, ← coeff_zero_eq_constantCoeff_apply, coeff_hasseDeriv] using hlt j hj
-  rw [map_zero, sub_zero] at hfg
-  have hg0 : constantCoeff g = coeff m f := by
-    simp [hfg, coeff_X_pow_mul']
-  set c := coeff m f
-  let g₁ : K⟦X⟧ := C c⁻¹ * g
-  have hg₁ : g₁.IsEntire := (isEntire_C c⁻¹).mul hg
-  have hg₁_const : constantCoeff g₁ = 1 := by
-    simp [g₁, hg0, inv_mul_cancel₀ hcoeff]
-  have hfg₁ : f = C c * X ^ m * g₁ := by
-    have hc1 : C c * C c⁻¹ = (1 : K⟦X⟧) := by
-      rw [← map_mul, mul_inv_cancel₀ hcoeff, map_one]
-    simp only [g₁]
-    rw [hfg]
-    linear_combination (-(X ^ m * g)) * hc1
+  obtain ⟨g₁, hg₁, hg₁_const, hfg₁, hord_nz⟩ :=
+    hf.exists_eq_C_mul_X_pow_mul_constantCoeff_one hf0
   have hord (x : K) : (_root_.PowerSeries.taylor x g₁).order = {i : ι | a i = x}.encard := by
     by_cases hx0 : x = 0
     · subst hx0
@@ -193,21 +176,12 @@ theorem eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq {ι : Type*} (hf : f.IsEntir
         not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr (hg₁_const.symm ▸ one_ne_zero)),
         eq_comm, Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
       exact fun i hi ↦ ha0 i hi
-    · have hmon : ((C c * X ^ m : K⟦X⟧)).IsEntire := (isEntire_C c).mul (isEntire_X.pow m)
-      have hmon_ord : (_root_.PowerSeries.taylor x (C c * X ^ m : K⟦X⟧)).order = 0 := by
-        refine not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr ?_)
-        rw [constantCoeff_taylor, (isEntire_C c).evalAt_mul (isEntire_X.pow m), evalAt_C,
-          Algebra.algebraMap_self_apply, isEntire_X.evalAt_pow m, evalAt_X]
-        exact mul_ne_zero hcoeff (pow_ne_zero m hx0)
-      have hmul_ord : (_root_.PowerSeries.taylor x f).order =
-          (_root_.PowerSeries.taylor x g₁).order := by
-        rw [hfg₁, hmon.taylor_mul hg₁ x, order_mul, hmon_ord, zero_add]
-      rw [← hmul_ord, ha x hx0]
+    · rw [hord_nz x hx0, ha x hx0]
   have hprod : ((∏' i, IsEntire.polynomialHom (1 - Polynomial.C (a i)⁻¹ * Polynomial.X) :
       IsEntire.subring K) : K⟦X⟧) = g₁ :=
     congrArg Subtype.val
       (hg₁.hasProd_polynomialHom_one_sub_C_inv_mul_X hg₁_const fun x ↦ (hord x).symm).tprod_eq
-  rw [hprod, hfg₁]
+  rw [hprod, ← hfg₁]
 
 /-- **The Weierstrass entire product theorem.** Over an algebraically closed complete ultrametric
 normed field `K`, every nonzero entire series `f` equals `C (coeff m f) * X ^ m` (where

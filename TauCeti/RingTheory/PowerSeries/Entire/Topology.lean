@@ -619,20 +619,18 @@ theorem _root_.HasProd.tendsto_gaussNorm_sub_prod {ι : Type*} {f : ι → IsEnt
   have hs1 : 0 < s + 1 := by linarith
   have : Fact (0 < s + 1) := ⟨hs1⟩
   let r : Set.Ioi (0 : ℝ) := ⟨s + 1, hs1⟩
-  have hlim : Tendsto (fun t : Finset ι ↦ dist (restrict r g) (∏ i ∈ t, restrict r (f i)))
-      atTop (𝓝 0) := by
-    simpa only [dist_comm, SummationFilter.unconditional_filter] using
+  have hlim : Tendsto (fun t : Finset ι ↦ ‖restrict r (g - ∏ i ∈ t, f i)‖) atTop (𝓝 0) := by
+    simpa only [dist_eq_norm, norm_sub_rev, map_sub, map_prod,
+      SummationFilter.unconditional_filter] using
       tendsto_iff_dist_tendsto_zero.mp (hasProd_iff.mp hf r)
   refine squeeze_zero (fun t ↦ PowerSeries.gaussNorm_nonneg norm s _ norm_nonneg) (fun t ↦ ?_) hlim
-  have hcoe : ((restrict r g - ∏ i ∈ t, restrict r (f i) :
-      IsRestricted.subring (R := R) (r : ℝ)) : R⟦X⟧) = (g : R⟦X⟧) - ∏ i ∈ t, (f i : R⟦X⟧) := by
-    rw [AddSubgroupClass.coe_sub, ← map_prod (restrict r), coe_restrict, coe_restrict,
-      ← Subring.coe_subtype (IsEntire.subring R), map_prod]
-  rw [dist_eq_norm, TauCeti.PowerSeries.norm_eq_gaussNorm, hcoe]
-  refine TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le norm_nonneg hs (by linarith) ?_
-  rw [← hcoe]
-  exact TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-    (restrict r g - ∏ i ∈ t, restrict r (f i)).property
+  have hcoe : ((restrict r (g - ∏ i ∈ t, f i) : IsRestricted.subring (R := R) (r : ℝ)) : R⟦X⟧) =
+      (g : R⟦X⟧) - ∏ i ∈ t, (f i : R⟦X⟧) := by
+    rw [coe_restrict, AddSubgroupClass.coe_sub, ← Subring.coe_subtype (IsEntire.subring R),
+      map_prod]
+  rw [TauCeti.PowerSeries.norm_eq_gaussNorm, ← hcoe]
+  exact TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le norm_nonneg hs (by linarith)
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r (g - ∏ i ∈ t, f i)).property)
 
 /-- If every factor of a convergent infinite product of entire series lies strictly within `ε ≤ 1`
 of `1` in the Gauss norm at `r > 0`, then so does the infinite product. -/
