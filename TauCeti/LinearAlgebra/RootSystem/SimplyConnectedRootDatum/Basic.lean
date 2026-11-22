@@ -16,7 +16,7 @@ The pinned simply connected root data are integral root data, one per valid Dynk
 the lattices `Fin n → ℤ` with the dot product as pairing, and each carrying a base whose support is
 the image of an injective *simple index* map `e` naming the simple roots in Bourbaki order. This
 file holds the part of that construction which carries no information about the type: only the
-per-type files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` and
+per-type files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic` and
 `...SimplyConnectedRootDatum.D.Basic`, supply the mathematics of their own root system.
 
 ## Main definitions
