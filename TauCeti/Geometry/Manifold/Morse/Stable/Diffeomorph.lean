@@ -24,11 +24,14 @@ transverse intersections to transverse intersections
 pseudo-gradient.
 
 The intertwining hypothesis holds for the pullbacks `σ^* X₀'` and `σ^* X₁'`
-(`TauCeti.IsAdaptedPseudoGradient.mpullback`, `Diffeomorph.mfderiv_apply_mpullback`). For
-instance, the stable manifolds of the pullback of a Morse–Smale pseudo-gradient `X₁` along the
-transition diffeomorphism of a continuation are again those of a Morse–Smale pseudo-gradient,
-which is what the transversality condition for continuations compares with the unstable manifolds
-of the pseudo-gradient at the other end.
+(`TauCeti.IsAdaptedPseudoGradient.mpullback`, `Diffeomorph.mfderiv_apply_mpullback`), whose
+unstable and stable manifolds are therefore the preimages under `σ` of those of `X₀'` and `X₁'`
+(`TauCeti.IsAdaptedPseudoGradient.unstableSet_mpullback`,
+`TauCeti.IsAdaptedPseudoGradient.stableSet_mpullback`). For instance, the stable manifolds of
+the pullback of a Morse–Smale pseudo-gradient `X₁` along the transition diffeomorphism of a
+continuation are again those of a Morse–Smale pseudo-gradient, which is what the transversality
+condition for continuations compares with the unstable manifolds of the pseudo-gradient at the
+other end.
 
 ## Main results
 
@@ -38,6 +41,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   diffeomorphism intertwining the fields.
 * `IsMorseSmale.pullback`: the Morse–Smale condition pulls back along a diffeomorphism
   intertwining the fields.
+* `unstableSet_mpullback`, `stableSet_mpullback`: the unstable and stable manifolds of the pullback
+  `σ^* X'` are the preimages under `σ` of those of `X'`.
 * `isMorseSmalePair_mpullback_iff`: the pair `(X₀, Φ^* X₁)` is Morse–Smale exactly when the
   unstable manifolds of `X₀` meet the preimages under `Φ` of the stable manifolds of `X₁`
   transversally.
@@ -59,6 +64,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {X₀' X₁' : (x : M') → TangentSpace 𝓘(ℝ, E) x} {σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M'}
 
 namespace IsAdaptedPseudoGradient
+
+section Pullback
+
+variable {f' : M' → ℝ} {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x}
+  (hX' : IsAdaptedPseudoGradient f' X') (σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M')
+
+/-- The unstable manifolds of the pullback `σ^* X'` are the preimages under `σ` of those of `X'`:
+`W^u_{σ^* X'}(p) = σ⁻¹ (W^u_{X'}(σ p))`. -/
+theorem unstableSet_mpullback (p : M) :
+    (hX'.mpullback σ).flow.unstableSet p = σ ⁻¹' hX'.flow.unstableSet (σ p) :=
+  (preimage_unstableSet_diffeomorph (hX'.mpullback σ) hX'
+    (σ.mfderiv_apply_mpullback (by simp) X') p).symm
+
+/-- The stable manifolds of the pullback `σ^* X'` are the preimages under `σ` of those of `X'`:
+`W^s_{σ^* X'}(q) = σ⁻¹ (W^s_{X'}(σ q))`. -/
+theorem stableSet_mpullback (q : M) :
+    (hX'.mpullback σ).flow.stableSet q = σ ⁻¹' hX'.flow.stableSet (σ q) :=
+  (preimage_stableSet_diffeomorph (hX'.mpullback σ) hX'
+    (σ.mfderiv_apply_mpullback (by simp) X') q).symm
+
+end Pullback
 
 /-- **The Morse–Smale condition for a pair pulls back along a diffeomorphism.** If `σ` intertwines
 `X₀` with `X₀'` and `X₁` with `X₁'`, and `(X₀', X₁')` is a Morse–Smale pair, then so is
@@ -98,10 +124,7 @@ theorem isMorseSmalePair_mpullback_iff {hX₀ : IsAdaptedPseudoGradient f₀ X�
       y ∈ hX₀.flow.unstableSet a ∩ Φ ⁻¹' hX₁.flow.stableSet b →
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
           Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (Φ ⁻¹' hX₁.flow.stableSet b) y) = ⊤ := by
-  have hs (b : M) : (hX₁.mpullback Φ).flow.stableSet b = Φ ⁻¹' hX₁.flow.stableSet (Φ b) :=
-    (preimage_stableSet_diffeomorph (hX₁.mpullback Φ) hX₁
-      (Φ.mfderiv_apply_mpullback (by simp) X₁) b).symm
-  simp_rw [isMorseSmalePair_iff, hs]
+  simp_rw [isMorseSmalePair_iff, stableSet_mpullback hX₁ Φ]
   refine ⟨fun h a b y hy ↦ ?_, fun h a b y hy ↦ h hy⟩
   have h' := @h a (Φ.symm b) y
   rw [Φ.apply_symm_apply] at h'

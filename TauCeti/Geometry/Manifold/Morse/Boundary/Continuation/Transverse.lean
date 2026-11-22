@@ -50,8 +50,9 @@ continuation trajectories from `(p, 0)` to `(q, 1)` are finitely many when `ind 
 (`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`), and there are none when
 `ind q > ind p` (`TauCeti.IsTransverseContinuation.morseContinuationSlice_eq_empty`). So the
 continuation map counts finite sets, and the criterion for it to be a chain map holds without any
-finiteness hypothesis: `∂₁ ∘ Φ = Φ ∘ ∂₀` exactly when, between any two critical points, the
-continuation trajectories broken at the two ends of the slab are evenly many in total
+finiteness hypothesis: the continuation map commutes with the Morse boundaries exactly when,
+between any two critical points, the continuation trajectories broken at the two ends of the slab
+are evenly many in total
 (`TauCeti.IsTransverseContinuation.morseBoundary_comp_morseContinuationMap_eq_iff`).
 
 **The constant continuation.** For a Morse–Smale pseudo-gradient `X`, the constant continuation
@@ -64,7 +65,6 @@ its transition maps are the time maps of the flow of `X`, which preserve the sta
 
 * `TauCeti.IsTransverseContinuation`: the transversality condition for a continuation, unfolded
   by `TauCeti.isTransverseContinuation_iff`.
-* `TauCeti.continuationTransition`: the transition diffeomorphism of a smooth field on `M × ℝ`.
 * `TauCeti.isTransverseContinuation_iff_eventually_isMorseSmalePair`: transversality is the
   Morse–Smale condition for the pairs `(X₀, Φ^* X₁)`.
 * `TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_mpullback`: the
@@ -129,30 +129,12 @@ theorem isTransverseContinuation_iff {hX₀ : IsAdaptedPseudoGradient f₀ X₀}
           (timeDependentFlowOf (continuationSpaceField C V) a b ⁻¹' hX₁.flow.stableSet q) y) = ⊤ :=
   Iff.rfl
 
-/-! ### The transition diffeomorphism -/
+/-! ### Transversality through the transition diffeomorphism -/
 
 section Transition
 
 variable (hVs : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent ∞
   fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
-
-variable (C) in
-/-- The **transition diffeomorphism** from time `a` to time `b` of a smooth field `V` on `M × ℝ`:
-the time-dependent flow `φ_{a, b}` of the space component of `V` along the base trajectory
-`TauCeti.intervalBaseOrbit C` (`TauCeti.continuationSpaceField`), a smooth diffeomorphism of the
-compact manifold `M`. For a continuation field, very negative `a` and very positive `b`, it
-carries the level of the slab where `V` is `X₀` to the level where `V` is `X₁`. -/
-noncomputable def continuationTransition (a b : ℝ) : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
-  timeDependentFlowDiffeomorph
-    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace
-      ((contMDiff_continuationSpaceField (C := C) hVs).of_le (by simp)))
-    (n := ⊤) le_top (contMDiff_continuationSpaceField (C := C) hVs) a b
-
-/-- The transition diffeomorphism is the time-dependent flow of the space component. -/
-@[simp]
-theorem coe_continuationTransition (a b : ℝ) :
-    ⇑(continuationTransition C hVs a b) = timeDependentFlowOf (continuationSpaceField C V) a b :=
-  funext (timeDependentFlowDiffeomorph_apply _ _ _ a b)
 
 /-- **Transversality is the Morse–Smale condition for the transported pairs.** For a smooth field
 `V`, the continuation along `V` is transverse exactly when, for all sufficiently negative `a` and
@@ -189,20 +171,16 @@ theorem eventually_morseContinuationSlice_eq_preimage_mpullback {σ : ℝ}
   have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
   filter_upwards [hV.eventually_morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs₁ hσ] with a ha
   filter_upwards [ha] with b hb p q
-  set Φ := continuationTransition C hVs a b
-  -- The stable manifolds of `Φ^* X₁` are the preimages under `Φ` of those of `X₁`.
-  have hs : (hX₁.mpullback Φ).flow.stableSet (Φ.symm q) = Φ ⁻¹' hX₁.flow.stableSet q := by
-    rw [← IsAdaptedPseudoGradient.preimage_stableSet_diffeomorph (hX₁.mpullback Φ) hX₁
-      (Φ.mfderiv_apply_mpullback (by simp) X₁), Φ.apply_symm_apply]
-  -- The flow from `σ` to `b` is the flow from `σ` to `a` followed by the transition `Φ`.
+  -- The stable manifolds of `Φ^* X₁` are the preimages under `Φ` of those of `X₁`, and the flow
+  -- from `σ` to `b` is the flow from `σ` to `a` followed by the transition `Φ`.
   ext x
-  rw [hb, hs]
-  simp only [Φ, mem_inter_iff, mem_preimage, coe_continuationTransition,
+  rw [hb, IsAdaptedPseudoGradient.stableSet_mpullback hX₁, Diffeomorph.apply_symm_apply]
+  simp only [mem_inter_iff, mem_preimage, coe_continuationTransition,
     timeDependentFlowOf_trans hcomp hY]
 
 /-- **The continuation coefficients are intersection counts of a transported pair.** Let `V` be a
-smooth continuation field from `X₀` to `X₁` at rate `C > 0`, between pseudo-gradients adapted to
-Morse functions. For all sufficiently negative `a` and sufficiently positive `b`, with `Φ` the
+smooth continuation field from `X₀` to `X₁` at rate `C > 0`. For all sufficiently negative `a`
+and sufficiently positive `b`, with `Φ` the
 transition diffeomorphism from `a` to `b`, the coefficient of `q` in the continuation of `p`, for
 critical points of equal index, is the number of points of `W^u_{X₀}(p) ∩ W^s_{Φ^* X₁}(Φ⁻¹ q)`
 modulo two. -/
@@ -213,14 +191,11 @@ theorem eventually_morseContinuationCoeff_eq_ncard_mpullback :
         morseContinuationCoeff f₀ f₁ V p q = ((hX₀.flow.unstableSet p ∩
           (hX₁.mpullback (continuationTransition C hVs a b)).flow.stableSet
             ((continuationTransition C hVs a b).symm q)).ncard : ZMod 2) := by
-  obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
-  filter_upwards [hV.eventually_morseContinuationSlice_eq_preimage_mpullback hVs hX₀ hX₁ hC hσ]
-    with a ha
+  filter_upwards [hV.eventually_morseContinuationCoeff_eq_ncard_inter_preimage hX₀ hX₁ hC
+    (hVs.of_le (by simp))] with a ha
   filter_upwards [ha] with b hb p q hind
-  -- The transition diffeomorphism from `σ` to `a` is a bijection of `M`.
-  set Ψ := continuationTransition C hVs σ a
-  rw [morseContinuationCoeff_eq_ncard hind, hb,
-    ncard_preimage_of_injective_subset_range (f := Ψ) Ψ.injective fun y _ ↦ Ψ.surjective y]
+  rw [hb p q hind, IsAdaptedPseudoGradient.stableSet_mpullback hX₁, Diffeomorph.apply_symm_apply,
+    coe_continuationTransition]
 
 end IsContinuationField
 
@@ -289,7 +264,7 @@ theorem finite_morseContinuationSlice (h₀ : hX₀.IsMorseSmale) (h₁ : hX₁.
 
 /-- **The chain-map criterion for a transverse continuation.** For a transverse smooth continuation
 field at rate `C > 0` between Morse–Smale pseudo-gradients adapted to Morse functions, the mod-two
-continuation map commutes with the Morse boundaries, `∂₁ ∘ Φ = Φ ∘ ∂₀`, exactly when, between any
+continuation map commutes with the Morse boundaries exactly when, between any
 critical point `p` of `f₀` and any critical point `r` of `f₁`, the continuation trajectories
 broken at the source and at the target are evenly many in total. -/
 theorem morseBoundary_comp_morseContinuationMap_eq_iff (h₀ : hX₀.IsMorseSmale)

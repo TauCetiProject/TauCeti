@@ -44,9 +44,11 @@ For a Morse–Smale pair the following hold, for critical points `a` of `f₀` a
   `ind a < ind p`, and `b = q` or `ind q < ind b`
   (`IsMorseSmalePair.exists_mem_unstableSet_inter_stableSet_of_mem_closure`).
 * **Finiteness.** Hence when `ind p ≤ ind q` the intersection is finite
-  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). Once continuation trajectories are
-  identified with these intersections, its points are expected to give the counts of the
-  continuation map between Morse complexes.
+  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). For the pair transported by the
+  transition diffeomorphism of a continuation, its points give the counts of the continuation map
+  between Morse complexes
+  (`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_mpullback`), and the
+  continuation slices are finite (`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`).
 * **One-dimensional ends.** When `ind p = ind q + 1`, the intersection is one-dimensional, and its
   closure adds only once-broken configurations: a trajectory of `X₀` from `p` to a critical point
   `a` with `ind a = ind q`, followed by a point of `W^u_{X₀}(a) ∩ W^s_{X₁}(q)`, or a point of
@@ -295,9 +297,9 @@ theorem isClosed_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
 /-- **Rigid intersections for a pair are finite.** Let `(X₀, X₁)` be a Morse–Smale pair of
 Morse–Smale pseudo-gradients. If the index of `p` for `f₀` is at most the index of `q` for `f₁`,
 then `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` is finite. By `unstableSet_inter_stableSet_eq_empty` it is empty
-unless the indices are equal. Once continuation trajectories are identified with these
-intersections, they are expected to give the counts of a continuation map between Morse complexes.
--/
+unless the indices are equal. For the pair transported by the transition diffeomorphism of a
+continuation, these intersections give the counts of the continuation map between Morse complexes
+(`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_mpullback`). -/
 theorem finite_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
     (h₀ : hX₀.IsMorseSmale) (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
