@@ -91,7 +91,8 @@ function by a function of temperate growth multiplies the function pointwise
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
-  open sets, a bounded continuous function is determined by its tempered distribution.
+  open sets, a bounded continuous function is determined by its tempered distribution, which is
+  integration against it (`BoundedContinuousFunction.toTemperedDistribution_toLpTop_apply`).
 
 ## References
 
@@ -455,5 +456,11 @@ theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTempera
     Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) :=
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   Lp.toTemperedDistribution_injective.comp (toLpTop_injective (𝕜 := ℂ) μ)
+
+/-- The tempered distribution of a bounded continuous function `f` is integration against `f`. -/
+theorem toTemperedDistribution_toLpTop_apply {μ : Measure E} [μ.HasTemperateGrowth] (f : E →ᵇ F)
+    (g : SchwartzMap E ℂ) : Lp.toTemperedDistribution (toLpTop μ ℂ f) g = ∫ x, g x • f x ∂μ := by
+  rw [Lp.toTemperedDistribution_apply]
+  exact integral_congr_ae ((coeFn_toLpTop (𝕜 := ℂ) μ f).mono fun x hx ↦ by simp only [hx])
 
 end BoundedContinuousFunction
