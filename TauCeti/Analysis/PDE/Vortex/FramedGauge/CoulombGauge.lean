@@ -225,7 +225,12 @@ private theorem hasStrictFDerivAt_expIRemainder_zero :
     hasFDerivAt_subOne_expGauge_zero (by simp)
   have hL := (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL
     ).hasStrictFDerivAt (x := 0)
-  rw [← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
+  have hfun : (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      fun F ↦ subOne (expGauge hs F) -
+        (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL) F := by
+    funext F
+    rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
+  rw [hfun, ← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
   exact h.sub hL
 
 /-- **`sin f - f` vanishes to second order at `0`**: its strict derivative at `0` is `0`. -/
@@ -236,7 +241,15 @@ private theorem hasStrictFDerivAt_sinSubSelf_zero :
   have hS := ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
     ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))
     ).hasStrictFDerivAt.comp 0 hasStrictFDerivAt_expIRemainder_zero
+  have hfun : (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
+        ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))) ∘
+          expIRemainder := by
+    funext F
+    rw [Function.comp_apply, ContinuousLinearMap.comp_apply, smul_apply,
+      ContinuousLinearMap.id_apply, sinSubSelf]
   rw [ContinuousLinearMap.comp_zero] at hS
+  rw [hfun]
   exact hS
 
 /-- **`cos f - 1` vanishes to second order at `0`**: its strict derivative at `0` is `0`. -/
@@ -246,7 +259,12 @@ private theorem hasStrictFDerivAt_cosSubOne_zero :
         realSubmodule ℂ (natCast_add_two_add_one_nonneg j)) 0 := by
   have hC := (realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).hasStrictFDerivAt.comp 0
     hasStrictFDerivAt_expIRemainder_zero
+  have hfun : (cosSubOne : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      realPartCLM ℂ (natCast_add_two_add_one_nonneg j) ∘ expIRemainder := by
+    funext F
+    rw [Function.comp_apply, cosSubOne]
   rw [ContinuousLinearMap.comp_zero] at hC
+  rw [hfun]
   exact hC
 
 variable (j) in
