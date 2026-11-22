@@ -121,7 +121,7 @@ private theorem quotientRangeLoopOperatorEquiv_symm_I_smul
       range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) =
       Submodule.Quotient.mk (I • y) := by
     rw [Submodule.Quotient.eq, map_smul, ← smul_sub, ← hb]
-    exact ⟨I • b, loopOperator_I_smul T hS b⟩
+    exact ⟨I • b, loopOperator_apply_I_smul T hS b⟩
   rw [← hIf, LinearEquiv.symm_apply_eq, quotientRangeLoopOperatorEquiv_mk]
   rw [LinearEquiv.symm_apply_eq, ← hf, quotientRangeLoopOperatorEquiv_mk] at hxy
   -- Both sides are `I` times the classes in `hxy`, and `1 - Ψ(T)` commutes with `I`.

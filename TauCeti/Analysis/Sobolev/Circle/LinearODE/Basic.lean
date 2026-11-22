@@ -51,7 +51,7 @@ comparing weak and classical derivatives
   `H^s(E) → H⁰(E)` multiplying the continuous representative pointwise by `S`.
 * `TauCeti.CircleSobolev.loopOperator T S`: the operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`.
 * `TauCeti.CircleSobolev.complexLoopOperator`: `L_S` as a complex-linear operator, for a loop `S`
-  of complex-linear maps (`TauCeti.CircleSobolev.loopOperator_I_smul`).
+  of complex-linear maps (`TauCeti.CircleSobolev.loopOperator_apply_I_smul`).
 
 ## Main statements
 
@@ -299,16 +299,16 @@ section ComplexLinear
 variable {S : C(AddCircle T, E →L[ℝ] E)}
 
 /-- Multiplication by a loop of complex-linear maps commutes with multiplication by `I`. -/
-theorem mulLoop_I_smul (hs : 1 / 2 < s) (hS : ∀ t v, S t (I • v) = I • S t v)
+theorem mulLoop_apply_I_smul (hs : 1 / 2 < s) (hS : ∀ t v, S t (I • v) = I • S t v)
     (a : CircleSobolev s E) : mulLoop T hs S (I • a) = I • mulLoop T hs S a := by
   rw [mulLoop_apply, mulLoop_apply, map_smul (toContinuousMap T hs), ← map_smul (ofContinuousMap T)]
   refine congrArg (ofContinuousMap T) (ContinuousMap.ext fun t ↦ ?_)
   simp [hS]
 
 /-- The loop operator of a loop of complex-linear maps commutes with multiplication by `I`. -/
-theorem loopOperator_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
+theorem loopOperator_apply_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
     loopOperator T S (I • a) = I • loopOperator T S a := by
-  rw [loopOperator_apply, loopOperator_apply, map_smul, mulLoop_I_smul T _ hS, smul_sub]
+  rw [loopOperator_apply, loopOperator_apply, map_smul, mulLoop_apply_I_smul T _ hS, smul_sub]
 
 /-- **The loop operator of a loop of complex-linear maps is complex linear.** This is
 `ζ ↦ ζ' - S ζ` as a complex-linear operator `H¹(E) → H⁰(E)`. It is given by its fields, rather
@@ -322,7 +322,7 @@ def complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
   map_add' := map_add _
   map_smul' := by
     exact (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).map_smul_of_map_I_smul
-      (loopOperator_I_smul T hS)
+      (loopOperator_apply_I_smul T hS)
   cont := (loopOperator T S).continuous
 
 @[simp]
