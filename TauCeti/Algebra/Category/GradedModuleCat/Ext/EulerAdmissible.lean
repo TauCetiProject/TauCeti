@@ -90,8 +90,8 @@ theorem IsMinimal.subsingleton_gradedExt_of_lt (hr : r.IsMinimal) {c : ℤ}
         by_contra hne
         have := hlb m hne
         omega)
-      (p := j) hjn _ fun q hq ↦ by
-        simpa [sub_eq_add_neg] using hN (q - j) (sub_ne_zero.mpr hq)
+      (p := j) hjn _ <| by
+        simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
 
 /-- Each fixed internal shift `N{j}` of a degree-zero target is Ext-bounded against `M` by the
 explicit cutoff `(j - c + 1).toNat`. -/

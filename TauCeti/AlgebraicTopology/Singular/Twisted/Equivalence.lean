@@ -14,7 +14,9 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 A map of topological pairs whose ambient and subspace components are homotopy equivalences
 induces a quasi-isomorphism of relative singular chains with local coefficients. The source
 coefficients are the pullback of the target system along the ambient map. The inverses need not
-commute with the inclusions. In particular, a homotopy inverse in the category of pairs suffices.
+commute with the inclusions. In particular, a homotopy inverse in the category of pairs suffices,
+and an isomorphism of pairs induces isomorphisms on relative twisted homology
+(`TauCeti.LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_isIso`).
 Neither pair needs to be a cofibration or have CW type.
 
 The proof applies the comparison theorem for short exact sequences of chain complexes to the
@@ -92,5 +94,12 @@ theorem isIso_relativeTwistedHomologyMap_of_homotopyInverse (f : P ⟶ Q) (g : Q
       left_inv := ⟨H.some.snd⟩
       right_inv := ⟨K.some.snd⟩ }
   exact L.isIso_relativeTwistedHomologyMap f e eSub rfl rfl n
+
+/-- An isomorphism of pairs induces isomorphisms on relative singular homology with local
+coefficients, with the source system pulled back along its ambient component. -/
+instance isIso_relativeTwistedHomologyMap_of_isIso (f : P ⟶ Q) [IsIso f] (n : ℕ) :
+    IsIso (TopPair.twistedHomologyMap f L n) :=
+  L.isIso_relativeTwistedHomologyMap_of_homotopyInverse f (inv f)
+    ⟨IsIso.hom_inv_id f ▸ TopPair.Homotopy.refl _⟩ ⟨IsIso.inv_hom_id f ▸ TopPair.Homotopy.refl _⟩ n
 
 end TauCeti.LocalCoefficientSystem

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -43,8 +44,11 @@ boundary terms of the Floer energy identity combine into actions. For a map `u` 
 
 For a solution of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` with `J` tamed by `ω`,
 the energy density is nonnegative, so the action increases along the cylinder
-(`SymplecticForm.hamiltonianAction_le_hamiltonianAction`), and the energy of a Floer solution on
-the whole cylinder `ℝ × [0, 1]` is the difference of the limiting actions at its two ends
+(`SymplecticForm.hamiltonianAction_le_hamiltonianAction`) and the lower integral of the energy
+density over `[a, b] × [0, 1]` is the increase of the action
+(`SymplecticForm.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub`), and the
+energy of a Floer solution on the whole cylinder `ℝ × [0, 1]` is the difference of the limiting
+actions at its two ends
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`), by exhausting the
 cylinder with rectangles (`TauCeti.tendsto_setLIntegral_Icc_neg_prod`). These are the
 end and neck terms of the energy identity `E = A₁ + A₂ - A₀ + ω(A) - ∫ R_K` for pairs of pants.
@@ -69,7 +73,12 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
 `∫₀¹ (½ ω(ξ, ξ') + H_t(γ) - H_t(x) - dH_t(x) ξ) dt`
 (`SymplecticForm.hamiltonianAction_sub_hamiltonianAction_eq_integral`).
 
-The action is continuous for uniform `C¹` convergence of loops
+The action of the loop `u(s, ·)` of a `C¹` map depends continuously on `s`
+(`SymplecticForm.continuous_hamiltonianAction_slice`), and it is bounded in terms of bounds for the
+loop, its speed and the Hamiltonian along it (`SymplecticForm.abs_hamiltonianAction_le`); hence
+the actions of the loops of `L`-Lipschitz maps with periodic loops in a compact set are bounded
+uniformly in the map (`SymplecticForm.exists_forall_abs_hamiltonianAction_le`). The action
+is continuous for uniform `C¹` convergence of loops
 (`SymplecticForm.tendsto_hamiltonianAction`). Uniform convergence of the loops alone, with a bound
 on their speed, still controls differences of actions: loops `x i` and `y i` with a common uniform
 limit have `A_H(x i) - A_H(y i) → 0`
@@ -88,17 +97,30 @@ derivatives.
 
 * `SymplecticForm.hamiltonianAction_add_const`: adding a function `c` of time to the Hamiltonian
   adds `∫₀¹ c` to the action of every loop.
+* `SymplecticForm.hamiltonianAction_comp_neg`: traversing a loop backwards negates its action for
+  the time-reversed Hamiltonian `-H(-t)`.
 * `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
   the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
   the two boundary circles, is the change of action minus the integrated curvature.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`: the energy of a map over
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
+* `SymplecticForm.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq`: the same identity
+  through Fubini's theorem, for the energies `∫₀¹ e(r, t) dt` of the slices.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
+* `SymplecticForm.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub`: the energy of a
+  Floer solution over `[a, b] × [0, 1]` is the increase of its action, as a lower integral.
 * `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
   Floer solution on an open interval of `s`-values.
+* `SymplecticForm.monotone_hamiltonianAction_of_floer`: the action is monotone in `s` along a
+  Floer solution on the whole cylinder.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
+* `SymplecticForm.continuous_hamiltonianAction_slice`: the action of the loops of a `C¹` map is
+  continuous in the loop parameter.
+* `SymplecticForm.abs_hamiltonianAction_le`: a bound for the action of a loop.
+* `SymplecticForm.exists_forall_abs_hamiltonianAction_le`: a uniform bound for the actions of the
+  loops of Lipschitz maps with periodic loops in a compact set.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
   convergence of loops.
 * `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`: loops of bounded speed with a
@@ -350,6 +372,29 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticFor
     ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
       (H := fun w ↦ H w.2) (contDiff_uncurry_cylindrical hH) hU hu hab hRU hper
 
+/-- **The energy identity in slices.** Let `u` be a `C²` map on an open set containing
+`[a, b] × [0, 1]` whose loops satisfy `u(s, 1) = u(s, 0)`, and let `H` be a `C¹` Hamiltonian. For
+the cylindrical perturbation `K = H_t dt`, the energy `∫₀¹ e(r, t) dt` of the slice at `r` is
+integrable over `[a, b]`, and its integral is the change `A_H(u(b, ·)) - A_H(u(a, ·))` of the
+action. This is `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub` read
+through Fubini's theorem. -/
+theorem integrableOn_and_integral_setIntegral_floerEnergyDensity_eq (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
+    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1,
+        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) (Icc a b) ∧
+      ∫ r in Icc a b, ∫ t in Icc (0 : ℝ) 1,
+          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) =
+        ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
+  have hRint : IntegrableOn e (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
+    ((ω.continuousOn_floerEnergyDensity hU (hu.of_le one_le_two) contDiffOn_const
+      (contDiff_uncurry_cylindrical hH).contDiffOn).mono hRU).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
+  refine ⟨integrableOn_setIntegral_slice hRint, ?_⟩
+  rw [setIntegral_setIntegral_slice_eq_setIntegral_rect hRint]
+  exact ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hu hab hRU hper
+
 /-- The Floer energy density of a solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical perturbation `K = H_t dt` is
 nonnegative when `J` is tamed by `ω`. -/
@@ -376,6 +421,30 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
   ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
 
+/-- **The energy of a Floer solution over a rectangle.** Under the hypotheses of
+`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction`, with the Floer equation stated as
+complex linearity of the perturbed derivative, the Floer energy of `u` over `[a, b] × [0, 1]`, as
+the lower Lebesgue integral of its nonnegative energy density, is the increase
+`A_H(u(b, ·)) - A_H(u(a, ·))` of the action. -/
+theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫⁻ z in Icc a b ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
+      ENNReal.ofReal (ω.hamiltonianAction H (fun t ↦ u (b, t)) -
+        ω.hamiltonianAction H (fun t ↦ u (a, t))) := by
+  rw [← ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hu hab hRU hper,
+    ofReal_integral_eq_lintegral_ofReal
+      (((ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) hU
+        (hu.of_le one_le_two) contDiffOn_const (contDiff_uncurry_cylindrical hH).contDiffOn).mono
+        hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+      (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
+        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz))]
+
 /-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
 for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
 `S × [0, 1]` with `1`-periodic loops and tame almost complex structures. Then the action
@@ -395,6 +464,20 @@ theorem monotoneOn_hamiltonianAction_of_floer (ω : SymplecticForm V)
     (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
     (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
       simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
+
+/-- **The action increases along a Floer solution on the whole cylinder.** Let `u` be a `C²`
+solution of the Floer equation on `ℝ × [0, 1]` with `1`-periodic loops and tame almost complex
+structures. Then the action `A_H(u(s, ·))` of the loop at `s` is monotone in `s`. -/
+theorem monotone_hamiltonianAction_of_floer (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hper : ∀ s, Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    Monotone fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t)) :=
+  monotoneOn_univ.1 <| ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn
+    (fun s _ ↦ hper s) hJ hfloer
 
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
@@ -493,6 +576,75 @@ theorem hamiltonianAction_sub_hamiltonianAction_eq_integral (ω : SymplecticForm
   linear_combination h
 
 end Expansion
+
+section Slices
+
+variable [FiniteDimensional ℝ V] {H : ℝ → V → ℝ}
+
+/-- **The action of the loops of a `C¹` map is continuous.** For a continuous time-dependent
+Hamiltonian `H` and a `C¹` map `u`, the action `A_H(u(s, ·))` of the loop at `s` depends
+continuously on `s`. -/
+theorem continuous_hamiltonianAction_slice (ω : SymplecticForm V) (hH : Continuous (uncurry H))
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) :
+    Continuous fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t)) := by
+  -- The derivative of the loop at `s` is the derivative of `u` in the direction `(0, 1)`.
+  have hd (s t : ℝ) : deriv (fun t ↦ u (s, t)) t = fderiv ℝ u (s, t) (0, 1) :=
+    (hasDerivAt_slice_right ((hu.differentiable one_ne_zero) (s, t))).deriv
+  simp only [hamiltonianAction_def, loopArea_def, hd]
+  refine (continuous_const.mul
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+      (f := fun s t ↦ ω (u (s, t)) (fderiv ℝ u (s, t) (0, 1))) ?_ 0 1)).add
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+      (f := fun s t ↦ H t (u (s, t))) ?_ 0 1)
+  · exact ω.continuous_apply_comp hu.continuous
+      ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+  · exact hH.comp (continuous_snd.prodMk hu.continuous)
+
+/-- **A bound for the action of a loop.** Let `x` be a loop with `x 1 = x 0`, differentiable at
+every point of `[0, 1]` with derivative continuous there. If `‖x t‖ ≤ R`, `‖x' t‖ ≤ L` and
+`|H_t(x t)| ≤ B` for `t ∈ [0, 1]`, then `|A_H(x)| ≤ ‖ω‖ L R + B`. -/
+theorem abs_hamiltonianAction_le (ω : SymplecticForm V) {x : ℝ → V} {R L B : ℝ}
+    (hx : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ x t) (hx' : ContinuousOn (deriv x) (Icc 0 1))
+    (hx₁ : x 1 = x 0) (hxL : ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv x t‖ ≤ L)
+    (hxR : ∀ t ∈ Icc (0 : ℝ) 1, ‖x t‖ ≤ R) (hB : ∀ t ∈ Icc (0 : ℝ) 1, |H t (x t)| ≤ B) :
+    |ω.hamiltonianAction H x| ≤ ‖ω.toBilinForm.toContinuousBilinearMap‖ * L * R + B := by
+  have hL : 0 ≤ L := (norm_nonneg _).trans (hxL 0 ⟨le_rfl, zero_le_one⟩)
+  -- The area is compared with that of the constant loop at `0`, which vanishes.
+  have harea := ω.abs_loopArea_sub_loopArea_le (y := fun _ ↦ 0) hx
+    (fun _ _ ↦ differentiableAt_const _) hx' (by simpa using continuousOn_const) hx₁ rfl hxL
+    (fun _ _ ↦ by simpa using hL) fun t ht ↦ by simpa using hxR t ht
+  rw [loopArea_const, sub_zero] at harea
+  have hHint : |∫ t in (0 : ℝ)..1, H t (x t)| ≤ B := by
+    have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := 1)
+      (f := fun t ↦ H t (x t)) (C := B) fun t ht ↦ by
+        rw [Real.norm_eq_abs]
+        exact hB t (by simpa [uIcc_of_le zero_le_one] using uIoc_subset_uIcc ht)
+    simpa using h
+  rw [hamiltonianAction_def]
+  exact (abs_add_le _ _).trans (add_le_add harea hHint)
+
+/-- **A uniform bound for the actions of the loops of Lipschitz maps.** For a continuous
+time-dependent Hamiltonian `H` and a compact set `K`, the actions of the loops of an `L`-Lipschitz
+`C¹` map `u` with `1`-periodic loops in `K` are bounded, uniformly in `u`. -/
+theorem exists_forall_abs_hamiltonianAction_le (ω : SymplecticForm V)
+    (hH : Continuous (uncurry H)) {K : Set V} (hK : IsCompact K) (L : NNReal) :
+    ∃ B, ∀ {u : ℝ × ℝ → V}, ContDiff ℝ 1 u → (∀ s, Periodic (fun t ↦ u (s, t)) 1) →
+      (∀ z, u z ∈ K) → LipschitzWith L u →
+        ∀ s, |ω.hamiltonianAction H (fun t ↦ u (s, t))| ≤ B := by
+  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
+  obtain ⟨C, hC⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hH.continuousOn
+  refine ⟨‖ω.toBilinForm.toContinuousBilinearMap‖ * L * R + C,
+    fun {u} hu hper huK hL s ↦ ω.abs_hamiltonianAction_le ?_ ?_ ?_ ?_ ?_ ?_⟩
+  · exact fun t _ ↦
+      (hasDerivAt_slice_right ((hu.differentiable one_ne_zero) (s, t))).differentiableAt
+  · exact hu.contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _
+  · simpa using hper s 0
+  · exact fun t _ ↦ (norm_deriv_slice_right_le ((hu.differentiable one_ne_zero) (s, t))).trans
+      (norm_fderiv_le_of_lipschitz ℝ hL)
+  · exact fun t _ ↦ hR _ (huK _)
+  · exact fun t ht ↦ by simpa [← Real.norm_eq_abs] using hC (t, u (s, t)) ⟨ht, huK _⟩
+
+end Slices
 
 section Continuity
 

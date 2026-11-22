@@ -78,8 +78,11 @@ as well.
   of the cube.
 * `HomotopyGroup.hurewicz_mul`, `HomotopyGroup.hurewiczHom`: the Hurewicz map is a homomorphism
   from `π_{n+1}(X, x)`, written additively, to the group of morphisms `R ⟶ Hₙ₊₁(X; R)`.
-* `HomotopyGroup.hurewiczIntHom`: the integral Hurewicz homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`,
-  natural in the space (`HomotopyGroup.hurewiczIntHom_map`).
+* `HomotopyGroup.hurewiczIntHom`, `HomotopyGroup.hurewiczUliftIntHom`: the integral Hurewicz
+  homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, in `Type 0` and in an arbitrary universe `w`, natural in
+  the space (`HomotopyGroup.hurewiczIntHom_map`, `HomotopyGroup.hurewiczUliftIntHom_map`).
+* `HomotopyGroup.hurewiczModuleCatHom`: the integral Hurewicz homomorphism in degree `n + 2` as a
+  morphism of `ModuleCat ℤ`, natural in the space (`HomotopyGroup.hurewiczModuleCatHom_naturality`).
 
 ## References
 
@@ -107,7 +110,7 @@ variable {n : ℕ} {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y] {x :
 `x`, as a map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (X, {x})`. -/
 def toCubeBoundaryPairHom (p : Ω^ (Fin n) X x) :
     cubeBoundaryPair.{w} n ⟶ TopPair.ofSubset ({x} : Set (TopCat.of X)) :=
-  TopPair.ofSubsetMap (TopCat.ofHom (p.1.comp ⟨ULift.down, continuous_uliftDown⟩))
+  TopPair.ofSubsetMap (TopCat.ofHom (p.val.comp ⟨ULift.down, continuous_uliftDown⟩))
     fun z hz ↦ _root_.GenLoop.boundary p z.down hz
 
 @[simp]
@@ -118,7 +121,7 @@ lemma toCubeBoundaryPairHom_fst_apply (p : Ω^ (Fin n) X x) (z : (cubeBoundaryPa
 /-- A generalized loop at `x` sends the boundary of the cube into the subspace `{x}` of the pair
 `(X, {x})`. -/
 lemma mapsTo_boundary_range_ofSubset (p : Ω^ (Fin n) X x) :
-    Set.MapsTo (p.1 : C(I^(Fin n), (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst))
+    Set.MapsTo (p.val : C(I^(Fin n), (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst))
       (Cube.boundary (Fin n)) (Set.range (TopPair.ofSubset ({x} : Set (TopCat.of X))).map) :=
   fun y hy ↦ ⟨⟨_, _root_.GenLoop.boundary p y hy⟩, rfl⟩
 
@@ -138,8 +141,8 @@ lemma toCubeBoundaryPairHom_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X 
       toCubeBoundaryPairHom p ≫ TopPair.ofSubsetMap (TopCat.ofHom f)
         (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)) :=
   by
-  have h : TopCat.ofHom ((map f hf p).1.comp ⟨ULift.down, continuous_uliftDown⟩) =
-      TopCat.ofHom (p.1.comp ⟨ULift.down, continuous_uliftDown⟩) ≫ TopCat.ofHom f := by
+  have h : TopCat.ofHom ((map f hf p).val.comp ⟨ULift.down, continuous_uliftDown⟩) =
+      TopCat.ofHom (p.val.comp ⟨ULift.down, continuous_uliftDown⟩) ≫ TopCat.ofHom f := by
     rw [coe_map f hf p]
     rfl
   unfold toCubeBoundaryPairHom
@@ -155,8 +158,8 @@ theorem singularHomologyMap_toCubeBoundaryPairHom_eq {p q : Ω^ (Fin n) X x}
       TopPair.singularHomologyMap (toCubeBoundaryPairHom q) R k := by
   obtain ⟨H⟩ := h
   let d : C(ULift.{w} (I^(Fin n)), I^(Fin n)) := ⟨ULift.down, continuous_uliftDown⟩
-  exact (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom (p.1.comp d))
-    (g₁ := TopCat.ofHom (q.1.comp d)) (H.toHomotopy.compContinuousMap d)
+  exact (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom (p.val.comp d))
+    (g₁ := TopCat.ofHom (q.val.comp d)) (H.toHomotopy.compContinuousMap d)
     fun τ z hz ↦ (H.eq_fst τ hz).trans
       (_root_.GenLoop.boundary p z.down hz)).congr_singularHomologyMap R k
 
@@ -276,7 +279,7 @@ private abbrev lowerSet : Set (cubeSpace.{w} m) :=
 private lemma interior_upperSet_union_interior_lowerSet :
     interior (upperSet.{w} i) ∪ interior (lowerSet.{w} i) = Set.univ := by
   have hc : Continuous fun z : cubeSpace.{w} m ↦ (z.down i : ℝ) :=
-    continuous_subtype_val.comp ((continuous_apply i).comp continuous_uliftDown)
+    continuous_subtypeVal.comp ((continuous_apply i).comp continuous_uliftDown)
   refine Set.eq_univ_of_forall fun z ↦ ?_
   rcases lt_or_ge (1 / 4 : ℝ) (z.down i) with h | h
   · exact Or.inl (interior_maximal (fun _ h' ↦ Or.inr (le_of_lt h'))
@@ -333,11 +336,11 @@ private lemma update_mem_boundary_of {z : I^(Fin m)} {a : I} (ha : a = 0 ∨ a =
 
 /-- `s ↦ s / 4`, onto the first quarter of the unit interval. -/
 private def quarter : C(I, I) :=
-  ⟨fun s ↦ ⟨s / 4, by constructor <;> linarith [s.2.1, s.2.2]⟩, by fun_prop⟩
+  ⟨fun s ↦ ⟨s / 4, by constructor <;> linarith [s.property.1, s.property.2]⟩, by fun_prop⟩
 
 /-- `s ↦ (s + 1) / 2`, onto the second half of the unit interval. -/
 private def upperHalf : C(I, I) :=
-  ⟨fun s ↦ ⟨(s + 1) / 2, by constructor <;> linarith [s.2.1, s.2.2]⟩, by fun_prop⟩
+  ⟨fun s ↦ ⟨(s + 1) / 2, by constructor <;> linarith [s.property.1, s.property.2]⟩, by fun_prop⟩
 
 @[simp] private lemma coe_quarter (s : I) : (quarter s : ℝ) = s / 4 := (rfl)
 
@@ -347,14 +350,14 @@ private def upperHalf : C(I, I) :=
 private lemma stretch_quarter_eq (z : cubeSpace.{w} m) :
     stretch i quarter z = ⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one (z.down i / 4))⟩ :=
   ULift.ext (congrArg (Function.update z.down i) (Set.projIcc_of_mem zero_le_one
-    ⟨by linarith [(z.down i).2.1], by linarith [(z.down i).2.2]⟩).symm)
+    ⟨by linarith [(z.down i).property.1], by linarith [(z.down i).property.2]⟩).symm)
 
 /-- The upper half stretch, written with `Set.projIcc`. -/
 private lemma stretch_upperHalf_eq (z : cubeSpace.{w} m) :
     stretch i upperHalf z =
       ⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one ((z.down i + 1) / 2))⟩ :=
   ULift.ext (congrArg (Function.update z.down i) (Set.projIcc_of_mem zero_le_one
-    ⟨by linarith [(z.down i).2.1], by linarith [(z.down i).2.2]⟩).symm)
+    ⟨by linarith [(z.down i).property.1], by linarith [(z.down i).property.2]⟩).symm)
 
 /-- The cube relative to its boundary and the slab `1/4 ≤ zᵢ ≤ 1/2`. -/
 private abbrev slabPair : TopPair.{w} := ofSubset (upperSet.{w} i ∩ lowerSet.{w} i)
@@ -406,7 +409,7 @@ private lemma stretchHomotopy_quarter_mem_upperSet (τ : I) (z : cubeSpace.{w} m
   · refine Or.inr ?_
     rw [Set.mem_ofPred_eq, stretchHomotopy_apply, Function.update_self,
       Set.Icc.coe_convexComb, coe_quarter, h, Set.Icc.coe_one]
-    linarith [τ.2.2]
+    linarith [τ.property.2]
 
 /-- The straight-line homotopy from the identity to the upper half stretch keeps the boundary of
 the cube inside `lowerSet i`. -/
@@ -419,7 +422,7 @@ private lemma stretchHomotopy_upperHalf_mem_lowerSet (τ : I) (z : cubeSpace.{w}
   · refine Or.inr ?_
     rw [Set.mem_ofPred_eq, stretchHomotopy_apply, Function.update_self,
       Set.Icc.coe_convexComb, coe_upperHalf, h, Set.Icc.coe_zero]
-    linarith [τ.2.2]
+    linarith [τ.property.2]
   · refine Or.inl (update_mem_boundary_of i (Or.inr (Subtype.ext ?_)))
     simp [h]
 
@@ -428,14 +431,14 @@ private lemma stretch_upperHalf_mem_upperSet (z : cubeSpace.{w} m) :
     stretch i upperHalf z ∈ upperSet i := by
   refine Or.inr ?_
   rw [Set.mem_ofPred_eq, stretch_apply_self, coe_upperHalf]
-  linarith [(z.down i).2.1]
+  linarith [(z.down i).property.1]
 
 /-- The quarter stretch lands in `lowerSet i`. -/
 private lemma stretch_quarter_mem_lowerSet (z : cubeSpace.{w} m) :
     stretch i quarter z ∈ lowerSet i := by
   refine Or.inr ?_
   rw [Set.mem_ofPred_eq, stretch_apply_self, coe_quarter]
-  linarith [(z.down i).2.2]
+  linarith [(z.down i).property.2]
 
 section Pinch
 
@@ -525,7 +528,7 @@ private lemma fatTrans_apply_of_mem (p q : Ω^ (Fin m) X x) {z : cubeSpace.{w} m
 /-- On the first quarter, read through `stretch i quarter`, the fat concatenation is `p`. -/
 private lemma fatTrans_stretch_quarter (p q : Ω^ (Fin m) X x) (z : cubeSpace.{w} m) :
     fatTrans i p q (stretch i quarter z).down = p z.down := by
-  have hs := (z.down i).2
+  have hs := (z.down i).property
   have h₂ : (z.down i : ℝ) / 2 ∈ Set.Icc (0 : ℝ) 1 := ⟨by linarith [hs.1], by linarith [hs.2]⟩
   rw [fatTrans, GenLoop.transAt_apply_of_le i _ _ (a := ⟨_, h₂⟩)
       (by rw [stretch_apply_self, coe_quarter]; linarith [hs.2])
@@ -537,7 +540,7 @@ private lemma fatTrans_stretch_quarter (p q : Ω^ (Fin m) X x) (z : cubeSpace.{w
 /-- On the upper half, read through `stretch i upperHalf`, the fat concatenation is `q`. -/
 private lemma fatTrans_stretch_upperHalf (p q : Ω^ (Fin m) X x) (z : cubeSpace.{w} m) :
     fatTrans i p q (stretch i upperHalf z).down = q z.down := by
-  have hs := (z.down i).2
+  have hs := (z.down i).property
   rcases hs.1.eq_or_lt with h₀ | h₀
   · -- On the face `zᵢ = 0` both loops are at the base point.
     have hz : z.down i = 0 := Subtype.ext h₀.symm
@@ -582,14 +585,14 @@ theorem singularHomologyMap_cubeBoundaryPair_eq_add (R : C) {m : ℕ} (i : Fin m
       TopPair.singularHomologyMap g R k + TopPair.singularHomologyMap h R k := by
   -- `f` sends the boundary and the slab into `B`, so it factors through the cube modulo both.
   let φ : cubeSpace.{w} m ⟶ Y.fst := Hom.fst f
-  have hφ (z : (slabPair.{w} i).snd) : φ z.1 ∈ Set.range Y.map := by
-    obtain ⟨hU | hU, hV | hV⟩ := z.2
-    · exact ⟨Hom.snd f ⟨z.1, hU⟩, Hom.w_apply f _⟩
-    · exact ⟨Hom.snd f ⟨z.1, hU⟩, Hom.w_apply f _⟩
-    · exact ⟨Hom.snd f ⟨z.1, hV⟩, Hom.w_apply f _⟩
+  have hφ (z : (slabPair.{w} i).snd) : φ z.val ∈ Set.range Y.map := by
+    obtain ⟨hU | hU, hV | hV⟩ := z.property
+    · exact ⟨Hom.snd f ⟨z.val, hU⟩, Hom.w_apply f _⟩
+    · exact ⟨Hom.snd f ⟨z.val, hU⟩, Hom.w_apply f _⟩
+    · exact ⟨Hom.snd f ⟨z.val, hV⟩, Hom.w_apply f _⟩
     · exact hf _ hU hV
   let F : slabPair.{w} i ⟶ Y := TopPair.ofHom φ
-    (TopCat.ofHom (Y.liftSnd (φ.hom.comp ⟨Subtype.val, continuous_subtype_val⟩) hφ))
+    (TopCat.ofHom (Y.liftSnd (φ.hom.comp ⟨Subtype.val, continuous_subtypeVal⟩) hφ))
     (by ext z; exact map_liftSnd _ hφ z)
   have h₁ : f = ofSubsetMap (𝟙 _) (boundary_subset_inter i) ≫ F :=
     hom_ext_of_fst _ (by rw [Hom.fst_comp, ofSubsetMap_fst]; exact (Category.id_comp φ).symm)
@@ -703,6 +706,16 @@ lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
     hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
 
+/-- The integral Hurewicz class of the class of a generalized loop `p` is `p_*[Iⁿ⁺¹]`, the value at
+`1` of `GenLoop.hurewicz`. -/
+@[simp]
+lemma hurewiczIntHom_mk {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
+    hurewiczIntHom X x n (Additive.ofMul (⟦p⟧ : HomotopyGroup (Fin (n + 1)) X x)) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 :=
+  (hurewiczIntHom_apply X x n _).trans
+    (congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ ℤ) n p))
+
 /-- **Naturality of the integral Hurewicz homomorphism**: for a based map `f : (X, x) → (Y, y)`,
 the Hurewicz class of `f_* a` is the image of the Hurewicz class of `a` under
 `f_* : Hₙ₊₁(X; ℤ) → Hₙ₊₁(Y; ℤ)`. -/
@@ -712,6 +725,85 @@ theorem hurewiczIntHom_map {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y
       (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
         (TopCat.ofHom f)).hom (hurewiczIntHom X x n (Additive.ofMul a)) := by
   rw [hurewiczIntHom_apply, hurewiczIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- **The integral Hurewicz homomorphism as a morphism of `ModuleCat ℤ`**,
+`πₙ₊₂(X, x) → Hₙ₊₂(X; ℤ)`, for the `ℤ`-module structure of the homology object. In this form one
+can say that the Hurewicz map is an isomorphism modulo a Serre class of `ℤ`-modules. -/
+def hurewiczModuleCatHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
+    ModuleCat.of ℤ (Additive (HomotopyGroup (Fin (n + 2)) X x)) ⟶
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
+        (TopCat.of X) :=
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structure of the underlying additive
+  -- group of the homology object rather than that of the object of `ModuleCat ℤ`.
+  ModuleCat.ofHom
+    { hurewiczIntHom X x (n + 1) with
+      map_smul' := map_intCast_smul (hurewiczIntHom X x (n + 1)) ℤ ℤ }
+
+@[simp]
+lemma hurewiczModuleCatHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
+    (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
+    (hurewiczModuleCatHom X x n).hom a = hurewiczIntHom X x (n + 1) a :=
+  (rfl)
+
+/-- **Naturality of the Hurewicz morphism**: for a based map `f : (X, x) → (Y, y)`, the square
+formed by `f_* : πₙ₊₂(X, x) → πₙ₊₂(Y, y)`, `f_* : Hₙ₊₂(X; ℤ) → Hₙ₊₂(Y; ℤ)` and the two Hurewicz
+morphisms commutes. -/
+@[reassoc]
+theorem hurewiczModuleCatHom_naturality {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+    {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) (n : ℕ) :
+    ModuleCat.ofHom (mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap ≫
+        hurewiczModuleCatHom Y y n =
+      hurewiczModuleCatHom X x n ≫
+        ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
+          (TopCat.ofHom f) := by
+  ext a
+  simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
+    AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply, mapHom_apply]
+  -- This is `hurewiczIntHom_map` up to `Additive.ofMul a.toMul = a` and `n + 1 + 1 = n + 2`,
+  -- both definitional; `rw [ofMul_toMul]` cannot see the first through the carrier of
+  -- `ModuleCat.of`.
+  exact hurewiczIntHom_map f hf a.toMul
+
+/-- **The integral Hurewicz homomorphism in an arbitrary universe** `w`,
+`πₙ₊₁(X, x) → Hₙ₊₁(X; ULift.{w} ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the Hurewicz homomorphism
+`HomotopyGroup.hurewiczHom` with universe-lifted integer coefficients
+`ModuleCat.of ℤ (ULift.{w} ℤ)`, evaluated at `1 : ULift.{w} ℤ`. -/
+def hurewiczUliftIntHom (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ) :
+    Additive (HomotopyGroup (Fin (n + 1)) X x) →+
+      ((singularHomologyFunctor (ModuleCat.{w} ℤ) (n + 1)).obj
+        (ModuleCat.of ℤ (ULift.{w} ℤ))).obj (TopCat.of X) where
+  toFun a := (hurewiczHom (ModuleCat.of ℤ (ULift.{w} ℤ)) n a).hom 1
+  map_zero' := by simp
+  map_add' a b := by simp
+
+/-- Evaluating `HomotopyGroup.hurewiczUliftIntHom` applies `hurewicz` at `1 : ULift.{w} ℤ`. -/
+lemma hurewiczUliftIntHom_apply (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ)
+    (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
+    hurewiczUliftIntHom X x n a = (hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) n a.toMul).hom 1 :=
+  congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
+
+/-- The universe-polymorphic integral Hurewicz class of the class of a generalized loop `p` is
+`p_*[Iⁿ⁺¹]`, the value at `1 : ULift.{w} ℤ` of `GenLoop.hurewicz`. -/
+@[simp]
+lemma hurewiczUliftIntHom_mk {X : Type w} [TopologicalSpace X] {x : X} {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
+    hurewiczUliftIntHom X x n (Additive.ofMul (⟦p⟧ : HomotopyGroup (Fin (n + 1)) X x)) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) p).hom 1 :=
+  (hurewiczUliftIntHom_apply X x n _).trans
+    (congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ (ULift.{w} ℤ)) n p))
+
+/-- **Naturality of the universe-polymorphic integral Hurewicz homomorphism**: for a based map
+`f : (X, x) → (Y, y)` in universe `w`, the Hurewicz class of `f_* a` is the image of the Hurewicz
+class of `a` under `f_* : Hₙ₊₁(X; ULift.{w} ℤ) → Hₙ₊₁(Y; ULift.{w} ℤ)`. -/
+theorem hurewiczUliftIntHom_map {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+    {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) {n : ℕ}
+    (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewiczUliftIntHom Y y n (Additive.ofMul (map f hf a)) =
+      (((singularHomologyFunctor (ModuleCat.{w} ℤ) (n + 1)).obj
+        (ModuleCat.of ℤ (ULift.{w} ℤ))).map (TopCat.ofHom f)).hom
+          (hurewiczUliftIntHom X x n (Additive.ofMul a)) := by
+  rw [hurewiczUliftIntHom_apply, hurewiczUliftIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
     ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end HomotopyGroup

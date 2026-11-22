@@ -163,7 +163,7 @@ theorem reflTransGen_of_connectedSpace [ConnectedSpace (GluedCurve d)] (i j : ι
     Relation.ReflTransGen
       (fun i j ↦ ∃ f, (d.fst f = i ∧ d.snd f = j) ∨ (d.fst f = j ∧ d.snd f = i)) i j := by
   have h := ((connectedSpace_gluedCurve_iff d).mp ‹_›).2 i j
-  rw [← Relation.EqvGen.reflTransGen_symmGen] at h
+  rw [← Relation.reflTransGen_symmGen] at h
   refine Relation.ReflTransGen.mono (fun a b hab ↦ ?_) _ _ h
   rcases hab with ⟨f, ha, hb⟩ | ⟨f, hb, ha⟩
   exacts [⟨f, Or.inl ⟨ha, hb⟩⟩, ⟨f, Or.inr ⟨hb, ha⟩⟩]

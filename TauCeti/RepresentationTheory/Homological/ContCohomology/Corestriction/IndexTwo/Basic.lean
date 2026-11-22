@@ -93,7 +93,7 @@ theorem cochainsCor1_indexTwoTransversal_apply_coe [AddCommGroup M] [DistribMulA
     (hU : U.index = 2) {s : G} (hs : s ∉ U) (f : U → M) (γ : U) :
     letI : U.FiniteIndex := ⟨by omega⟩
     cochainsCor1 G M U (U.indexTwoTransversal s) (Subgroup.indexTwoTransversal_mk hU hs) f γ =
-      f γ + s • f ⟨s⁻¹ * γ * s, (Subgroup.normal_of_index_eq_two hU).conj_mem' γ γ.2 s⟩ := by
+      f γ + s • f ⟨s⁻¹ * γ * s, (Subgroup.normal_of_index_eq_two hU).conj_mem' γ γ.property s⟩ := by
   have : U.FiniteIndex := ⟨by omega⟩
   simp [hU, hs]
 

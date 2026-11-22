@@ -79,16 +79,16 @@ def transEquiv : DiscreteCoind G U (DiscreteCoind U V A) ≃+ DiscreteCoind G W 
     ((isLocallyConstant f).comp fun ψ : DiscreteCoind U V A => ψ 1)
     (fun w g => by
       -- `w` is the image of some `v : V`, and `f` is `U`-equivariant while `f g` is `V`-equivariant
-      obtain ⟨x, hx, hv⟩ := Subgroup.mem_map.1 (hW ▸ w.2 : (w : G) ∈ V.map U.subtype)
+      obtain ⟨x, hx, hv⟩ := Subgroup.mem_map.1 (hW ▸ w.property : (w : G) ∈ V.map U.subtype)
       rw [Subgroup.subtype_apply] at hv
       rw [← hv, apply_mul f x g, coe_smul, one_mul, apply_coe (f g) ⟨x, hx⟩,
         hsmul ⟨x, hx⟩ w _ hv])
   invFun φ := mk G U (DiscreteCoind U V A)
     (fun g => mk U V A (fun u => φ ((u : G) * g))
-      ((isLocallyConstant φ).comp_continuous (continuous_subtype_val.mul continuous_const))
+      ((isLocallyConstant φ).comp_continuous (continuous_subtypeVal.mul continuous_const))
       (fun v u => by
         have hvW : ((v : U) : G) ∈ W :=
-          hW ▸ Subgroup.mem_map.2 ⟨v, v.2, Subgroup.subtype_apply (v : U)⟩
+          hW ▸ Subgroup.mem_map.2 ⟨v, v.property, Subgroup.subtype_apply (v : U)⟩
         rw [Subgroup.coe_mul, mul_assoc, apply_mul φ ⟨_, hvW⟩ ((u : G) * g)]
         exact hsmul v _ _ rfl))
     ((IsLocallyConstant.iff_exists_open _).2 fun g => by
@@ -97,7 +97,7 @@ def transEquiv : DiscreteCoind G U (DiscreteCoind U V A) ≃+ DiscreteCoind G W 
       obtain ⟨N, hN, hgN, h⟩ :=
         (isLocallyConstant φ).exists_isOpen_forall_mem_mul_right_eq hU g continuous_id.continuousAt
       exact ⟨N, hN, hgN, fun g' hg' => ext fun u => by
-        rw [mk_apply, mk_apply]; exact h g' hg' u (subset_closure u.2)⟩)
+        rw [mk_apply, mk_apply]; exact h g' hg' u (subset_closure u.property)⟩)
     (fun u₀ g => ext fun u => by
       simp only [mk_apply, coe_smul, Subgroup.coe_mul, mul_assoc])
   left_inv f := ext fun g => ext fun u => by
