@@ -229,6 +229,13 @@ end Approx
 
 end TauCeti
 
+private theorem exists_mem_Ico_of_lt {α : Type*} [LinearOrder α] {a : ℕ → α} {x : α}
+    (ha₀ : a 0 ≤ x) (hex : ∃ N, x < a N) :
+    ∃ n, a n ≤ x ∧ x < a (n + 1) := by
+  obtain ⟨N, hN⟩ := hex
+  obtain ⟨n, _, hle, hlt⟩ := mem_iUnion₂.mp (Ico_subset_biUnion_Ico N a ⟨ha₀, hN⟩)
+  exact ⟨n, hle, hlt⟩
+
 namespace IsCadlag
 
 section Approx
@@ -236,15 +243,20 @@ section Approx
 variable {ι E : Type*} [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι]
   [OrderTopology ι] [PseudoMetricSpace E] {f : ι → E}
 
+/-- Every time `t` lies in the half-open interval `[τ_n, τ_{n+1})` for some index `n` of the
+iterated `ε`-oscillation exit times (`ε > 0`) of a càdlàg path. -/
+theorem exists_mem_Ico_oscillationExit (hc : IsCadlag f) {ε : ℝ} (hε : 0 < ε) (t : ι) :
+    ∃ n, TauCeti.oscillationExit f ε n ≤ (t : WithTop ι) ∧
+      (t : WithTop ι) < TauCeti.oscillationExit f ε (n + 1) :=
+  exists_mem_Ico_of_lt (TauCeti.oscillationExit_zero f ε ▸ bot_le)
+    (hc.eventually_lt_oscillationExit hε t).exists
+
 /-- For `ε > 0`, the oscillation step approximation of a càdlàg path is itself càdlàg. -/
 theorem oscillationApprox (hc : IsCadlag f) {ε : ℝ} (hε : 0 < ε) :
     IsCadlag (TauCeti.oscillationApprox f ε) where
   isRightContinuous t := by
     -- On `[t, τ_{n+1})`, the step approximation is locally constant equal to `f (τ_n)`.
-    obtain ⟨N, hN⟩ := (hc.eventually_lt_oscillationExit hε t).exists
-    obtain ⟨n, _, hle, hlt⟩ := mem_iUnion₂.mp
-      (Ico_subset_biUnion_Ico N (TauCeti.oscillationExit f ε)
-        ⟨TauCeti.oscillationExit_zero f ε ▸ bot_le, hN⟩)
+    obtain ⟨n, hle, hlt⟩ := hc.exists_mem_Ico_oscillationExit hε t
     let c := f (TauCeti.oscillationExit f ε n).untopA
     have hval : TauCeti.oscillationApprox f ε t = c :=
       TauCeti.oscillationApprox_eq_of_mem_Ico hle hlt
@@ -266,10 +278,7 @@ theorem oscillationApprox (hc : IsCadlag f) {ε : ℝ} (hε : 0 < ε) :
   tendsto_nhdsLT t := by
     -- Left of `t`, the approximation is constant on `(τ_{n-1}, t)` if `t = τ_n` and on `(τ_n, t)`
     -- if `τ_n < t`.
-    obtain ⟨N, hN⟩ := (hc.eventually_lt_oscillationExit hε t).exists
-    obtain ⟨n, _, hle, hlt⟩ := mem_iUnion₂.mp
-      (Ico_subset_biUnion_Ico N (TauCeti.oscillationExit f ε)
-        ⟨TauCeti.oscillationExit_zero f ε ▸ bot_le, hN⟩)
+    obtain ⟨n, hle, hlt⟩ := hc.exists_mem_Ico_oscillationExit hε t
     rcases eq_or_lt_of_le hle with heq | hlt_left
     · rcases n with _ | k
       · rw [TauCeti.oscillationExit_zero] at heq
@@ -334,11 +343,8 @@ theorem measurable_generateFrom_le_of_eq_on_Ico
       MeasurableSet[mRay] {p : ι × Ω | σ p.2 ≤ p.1} :=
     MeasurableSpace.measurableSet_generateFrom ⟨σ, hσ, rfl⟩
   have hcov (t : ι) (ω : Ω) :
-      ∃ n, τ n ω ≤ (t : WithTop ι) ∧ (t : WithTop ι) < τ (n + 1) ω := by
-    obtain ⟨N, hN⟩ := hexh ω t
-    obtain ⟨n, _, hle, hlt⟩ := mem_iUnion₂.mp
-      (Ico_subset_biUnion_Ico N (τ · ω) ⟨hbot ω t, hN⟩)
-    exact ⟨n, hle, hlt⟩
+      ∃ n, τ n ω ≤ (t : WithTop ι) ∧ (t : WithTop ι) < τ (n + 1) ω :=
+    exists_mem_Ico_of_lt (hbot ω t) (hexh ω t)
   intro U hU
   -- Restrict each `τ n` to the `(τ n)`-measurable event `A n = (Y n)⁻¹(U)`, turning
   -- `[τ n, τ (n + 1)) × A n` into the difference of two closed stopping-time rays.

@@ -72,7 +72,8 @@ theorem piecewise {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
   exact (((hτ.measurableSet s).mp hsτ).2 t).union (((hη.measurableSet sᶜ).mp hsη.compl).2 t)
 
 /-- Restricting a stopping time `τ` to an event known at `τ` (setting it to `⊤` on the complement)
-produces a stopping time; this is the Début/Meyer restriction `τ_A`. -/
+produces a stopping time; this is the restriction `τ_A` of `τ` to `A` (Dellacherie–Meyer,
+Chapter IV). -/
 theorem piecewise_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
     {ℱ : Filtration ι mΩ} {τ : Ω → WithTop ι} {s : Set Ω} [DecidablePred (· ∈ s)]
     (hτ : IsStoppingTime ℱ τ) (hs : MeasurableSet[hτ.measurableSpace] s) :
@@ -151,7 +152,7 @@ theorem IsCadlag.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
       ext t
       simp only [MeasureTheory.stoppedProcess, hτ]
       rw [← WithTop.coe_min]
-      rfl
+      simp only [WithTop.untopA, WithTop.untopD_coe]
     exact heq ▸ hX.comp_min_const u
 
 namespace MeasureTheory
