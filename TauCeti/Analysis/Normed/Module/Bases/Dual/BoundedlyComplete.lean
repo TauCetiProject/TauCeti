@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Bases.Dual.Basic
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 
 /-!
 # Shrinking bases and bounded completeness of the dual basic sequence
@@ -72,13 +73,12 @@ theorem IsShrinking.isBoundedlyComplete_dualBasis [ProperSpace 𝕜]
   intro a ⟨C, hC⟩
   let s (n : ℕ) := ∑ i ∈ Finset.range n, a i • hb.dualBasis i
   have hbound (n : ℕ) : ‖s n‖ ≤ C := hC (mem_range_self n)
-  obtain ⟨f, _, hf⟩ := (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 E) C).exists_mapClusterPt
+  obtain ⟨f, _, hf⟩ := (WeakDual.isCompact_closedBall' 𝕜 E C).exists_mapClusterPt
     (u := fun n ↦ StrongDual.toWeakDual (s n)) (f := atTop)
     (by
       rw [Filter.map_le_iff_le_comap, Filter.comap_principal, Filter.le_principal_iff]
       exact Eventually.of_forall fun n ↦ by
-        simpa only [Set.mem_preimage, Metric.mem_closedBall, dist_zero_right,
-          StrongDual.toStrongDual_toWeakDual] using hbound n)
+        simpa only [WeakDual.mem_closedBall_iff, StrongDual.toStrongDual_toWeakDual] using hbound n)
   refine ⟨WeakDual.toStrongDual f, fun i ↦ ?_⟩
   have hc := hf.continuousAt_comp (WeakDual.eval_continuous (b i)).continuousAt
   have ht : Tendsto (fun n ↦ s n (b i)) atTop (𝓝 (a i)) := by

@@ -30,7 +30,8 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
 * `setIntegral_sq_tail_gaussianReal_le` bounds the quadratic tail integral of `gaussianReal 0 1`
-  by `3 / t²`.
+  by `3 / t²`, and `mul_sqrt_setIntegral_sq_tail_four_mul_le` proves the `1 / 2` tail certificate
+  at `t = 4 * C`.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
 -/
@@ -245,6 +246,25 @@ theorem setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
       have h4 := integral_sub_pow_four_gaussianReal 0 1
       simp only [sub_zero, NNReal.coe_one, one_pow, mul_one] at h4
       rw [h4]
+
+/-- The threshold condition `C * (𝔼[g² 1_{|g| > 4C}])^(1/2) ≤ 1 / 2` holds for all `C ≥ 0`. -/
+theorem mul_sqrt_setIntegral_sq_tail_four_mul_le (C : ℝ≥0) :
+    (C : ℝ) * √(∫ r in {r : ℝ | 4 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ 1 / 2 := by
+  rcases eq_or_ne C 0 with rfl | hC
+  · simp
+  have hCpos : 0 < (C : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hC)
+  have htpos : 0 < 4 * (C : ℝ) := by positivity
+  calc
+    (C : ℝ) * √(∫ r in {r : ℝ | 4 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1)
+        ≤ (C : ℝ) * √(3 / (4 * (C : ℝ)) ^ 2) := by
+      gcongr
+      exact setIntegral_sq_tail_gaussianReal_le htpos
+    _ = √3 / 4 := by
+      rw [Real.sqrt_div (by norm_num), Real.sqrt_sq htpos.le]
+      field_simp [hCpos.ne']
+    _ ≤ 1 / 2 := by
+      have h3 : √3 ≤ 2 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
+      linarith
 
 end TauCeti.Probability
 

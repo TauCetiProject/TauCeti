@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.WeakDual
+public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import TauCeti.GroupTheory.Amenable.Basic
 
 /-!
@@ -99,7 +99,7 @@ theorem mem_range_toWeakDual_iff {φ : WeakDual ℝ (UCB G)} :
 /-- The means lie in the closed unit ball of the dual of `UCB G`. -/
 theorem range_toWeakDual_subset_closedBall :
     Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) ⊆
-      WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 := by
+      WeakDual.closedBall ℝ (UCB G) 1 := by
   rintro _ ⟨m, rfl⟩
   simp
 
@@ -119,7 +119,7 @@ theorem isClosed_range_toWeakDual :
 /-- The means form a weak-* compact set, by the Banach–Alaoglu theorem. -/
 theorem isCompact_range_toWeakDual :
     IsCompact (Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G))) :=
-  (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset isClosed_range_toWeakDual
+  (WeakDual.isCompact_closedBall' ℝ (UCB G) 1).of_isClosed_subset isClosed_range_toWeakDual
     range_toWeakDual_subset_closedBall
 
 /-! ### The weak-* topology on means -/

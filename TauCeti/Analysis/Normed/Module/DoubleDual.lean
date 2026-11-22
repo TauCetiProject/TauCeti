@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 
 /-!
 # The weak topology and the canonical bidual map
@@ -67,10 +68,10 @@ theorem isCompact_closure_weakSpace_of_isBounded (s : Set (WeakSpace 𝕜 E))
   apply WeakDual.isCompact_of_bounded_of_closed _ isClosed_closure
   apply WeakDual.isBounded_closure
   obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.mp hs
-  refine (WeakDual.isBounded_closedBall (0 : StrongDual 𝕜 (StrongDual 𝕜 E)) r).subset ?_
+  refine (WeakDual.isBounded_closedBall' 𝕜 (StrongDual 𝕜 E) r).subset ?_
   rintro _ ⟨x, hx, rfl⟩
-  rw [mem_preimage, inclusionInDoubleDualWeak_apply, StrongDual.toStrongDual_toWeakDual,
-    mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
+  rw [WeakDual.mem_closedBall_iff, inclusionInDoubleDualWeak_apply,
+    StrongDual.toStrongDual_toWeakDual]
   exact (double_dual_bound 𝕜 E _).trans (hr _ (by simpa using hx))
 
 end NormedSpace

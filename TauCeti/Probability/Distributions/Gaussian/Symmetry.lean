@@ -20,10 +20,12 @@ This applies in particular to odd products of centered linear observables, witho
 independence or a nonsingular covariance.
 The standard real Gaussian product law is also invariant under planar reflections, linear isometry
 equivalences intertwine scaled standard Gaussian measures on finite-dimensional real inner product
-spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), centered real
-Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line mass
-`2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
-multiplication by deterministic scalars of unit modulus.
+spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), the standard Gaussian
+measure on `EuclideanSpace ℝ ι` is invariant under coordinatewise sign flips
+(`TauCeti.Probability.stdGaussian_map_units_smul`), centered real Gaussian laws assign equal mass to
+opposite half-lines (giving positive-variance half-line mass `2⁻¹`), and centered real Gaussian laws
+and their independent products are invariant under multiplication by deterministic scalars of unit
+modulus.
 -/
 
 public section
@@ -136,6 +138,21 @@ theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
   rw [Measure.map_map f.continuous.measurable (by fun_prop),
     show f ∘ (fun x : E ↦ c • x) = (fun y : F ↦ c • y) ∘ f from funext (map_smul f c),
     ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
+
+/-- Coordinatewise sign changes preserve the standard Gaussian measure on `EuclideanSpace ℝ ι`. -/
+theorem stdGaussian_map_units_smul {ι : Type*} [Fintype ι] (ε : ι → ℤˣ) :
+    (stdGaussian (EuclideanSpace ℝ ι)).map
+        (fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i) =
+      stdGaussian (EuclideanSpace ℝ ι) := by
+  let L : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
+    LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
+      if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
+  have hL : (L : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
+      fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i := by
+    ext g i
+    simp only [L, LinearIsometryEquiv.piLpCongrRight_apply, WithLp.ofLp_toLp]
+    rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
+  simpa only [hL] using stdGaussian_map L
 
 end TauCeti.Probability
 

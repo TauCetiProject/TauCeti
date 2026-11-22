@@ -60,8 +60,8 @@ theorem surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall
   intro φ hφ
   have hmem : StrongDual.toWeakDual φ ∈
       inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 1) := by
-    rw [hgold]
-    simpa only [mem_preimage, StrongDual.toStrongDual_toWeakDual] using hφ
+    rw [hgold, WeakDual.mem_closedBall_iff, StrongDual.toStrongDual_toWeakDual]
+    exact mem_closedBall_zero_iff.1 hφ
   obtain ⟨_, ⟨x, _, rfl⟩, hx⟩ := hmem
   refine ⟨x, ?_⟩
   simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The `ℓ^p` product distance as a measurable function
@@ -22,11 +23,15 @@ The measurable structure of `WithLp p (X × Y)` is the one pulled back from `X �
 measurability is a statement about the product measurable space and only the distance changes
 along the type synonym.
 
+We also record `PiLp.measurable_coordIndicator`: coordinatewise masking of a `PiLp` vector onto
+a measurable set is measurable.
+
 ## Main statements
 
 * `TauCeti.edist_toLp_rpow` — the `p`-th power of the `ℓ^p` product distance is the sum of the
   `p`-th powers of the two factor distances;
-* `TauCeti.measurable_edist_withLp_prod` — joint measurability of the `ℓ^p` product distance.
+* `TauCeti.measurable_edist_withLp_prod` — joint measurability of the `ℓ^p` product distance;
+* `PiLp.measurable_coordIndicator` — measurability of coordinatewise masking.
 -/
 
 public section
@@ -71,3 +76,20 @@ theorem measurable_edist_withLp_prod
     fun_prop
 
 end TauCeti
+
+namespace PiLp
+
+/-- Coordinatewise masking onto a measurable set is measurable. -/
+theorem measurable_coordIndicator {p : ℝ≥0∞} {ι' α : Type*} [Zero α] [MeasurableSpace α]
+    {s : Set α} (hs : MeasurableSet s) :
+    Measurable (coordIndicator (p := p) (ι' := ι') s) := by
+  have hfun : coordIndicator (p := p) (ι' := ι') s =
+      WithLp.toLp p ∘ fun g : PiLp p (fun _ : ι' ↦ α) ↦ fun i ↦ s.indicator id (g i) := by
+    ext g i
+    exact coordIndicator_apply s g i
+  rw [hfun]
+  refine (WithLp.measurable_toLp p (ι' → α)).comp (Measurable.of_eval fun i ↦ ?_)
+  exact (measurable_id.indicator hs).comp
+    ((measurable_pi_apply i).comp (WithLp.measurable_ofLp p (ι' → α)))
+
+end PiLp

@@ -38,6 +38,9 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `MeasureTheory.MemLp.clm_comp_of_ae_norm_le`: if `g ∈ Lᵖ(μ)` and `‖f x‖ ≤ ‖g x‖` almost
+  everywhere for an almost everywhere strongly measurable `f`, then `x ↦ U (f x)` lies in
+  `Lᵖ(μ)`.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
   linear isometry, preserves `eLpNorm`.
@@ -113,6 +116,26 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
     · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
         rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA))]
       exact le_top
+
+/-- **Norm-dominated `Lᵖ` membership under a bounded linear map.** If `g ∈ Lᵖ(μ)`, `f` is
+almost everywhere strongly measurable with `‖f x‖ ≤ ‖g x‖` almost everywhere, and `U` is a
+continuous semilinear map, then `x ↦ U (f x)` belongs to `Lᵖ(μ)`. -/
+theorem MemLp.clm_comp_of_ae_norm_le {𝕜₁ 𝕜₂ E F G : Type*} [NontriviallyNormedField 𝕜₁]
+    [NontriviallyNormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    [SeminormedAddCommGroup G]
+    {p : ℝ≥0∞} {g : α → G} (hg : MemLp g p μ)
+    (U : E →SL[σ] F) {f : α → E} (hf : AEStronglyMeasurable f μ)
+    (hnorm : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖g x‖) :
+    MemLp (fun x ↦ U (f x)) p μ := by
+  refine hg.of_eNorm_le_mul (c := ‖U‖₊) (U.continuous.comp_aestronglyMeasurable hf) ?_
+  filter_upwards [hnorm] with x hx
+  calc
+    ‖U (f x)‖ₑ ≤ ‖U‖ₑ * ‖f x‖ₑ := U.le_opENorm (f x)
+    _ ≤ ‖U‖₊ * ‖g x‖ₑ := by
+      rw [eNorm_eq_nnNorm, ← ofReal_norm, ← ofReal_norm]
+      gcongr
 
 end MeasureTheory
 

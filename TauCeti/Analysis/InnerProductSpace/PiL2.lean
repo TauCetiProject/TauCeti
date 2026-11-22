@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
@@ -73,8 +73,6 @@ Borel measurable structure on the scalar field.
   extracts the `i`-th coordinate inner product.
 * `EuclideanSpace.basisFun_toBasis_constrL_apply`:
   `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` expands as `∑ i, g i • y i`.
-* `PiLp.coordIndicator`: coordinatewise masking of a `PiLp` vector onto a set, with additivity,
-  measurability, norm, and sign-equivariance laws.
 * `EuclideanSpace.truncVec` and `EuclideanSpace.tailVec`: coordinatewise truncation to `[-t, t]`
   and its complementary tail on `EuclideanSpace ℝ ι`.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
@@ -630,52 +628,6 @@ variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι �
     ⟪w, PiLp.single 2 i v⟫_𝕜 = ⟪w i, v⟫_𝕜 := by
   rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
 
-section coordIndicator
-
-open scoped ENNReal
-
-variable {p : ℝ≥0∞} {ι' : Type*}
-
-open Classical in
-/-- Coordinatewise masking of a `PiLp` vector onto a set `s : Set ℝ`. -/
-def coordIndicator (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) : PiLp p fun _ : ι' ↦ ℝ :=
-  WithLp.toLp p fun i ↦ if g i ∈ s then g i else 0
-
-open Classical in
-@[simp]
-theorem coordIndicator_apply (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) (i : ι') :
-    coordIndicator s g i = if g i ∈ s then g i else 0 := by
-  simp [coordIndicator]
-
-/-- Masking onto `s` and onto `sᶜ` partition a `PiLp` vector into two summands. -/
-theorem coordIndicator_add_compl (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) :
-    coordIndicator s g + coordIndicator sᶜ g = g := by
-  ext i
-  by_cases h : g i ∈ s <;> simp [h]
-
-/-- Coordinatewise masking onto a measurable set is measurable. -/
-theorem measurable_coordIndicator [Countable ι'] {s : Set ℝ} (hs : MeasurableSet s) :
-    Measurable (coordIndicator (p := p) (ι' := ι') s) := by
-  refine (PiLp.continuous_toLp p (fun _ : ι' ↦ ℝ)).measurable.comp (Measurable.of_eval fun i ↦ ?_)
-  exact Measurable.ite ((PiLp.continuous_apply p (fun _ : ι' ↦ ℝ) i).measurable hs)
-    (PiLp.continuous_apply p (fun _ : ι' ↦ ℝ) i).measurable measurable_const
-
-/-- Coordinatewise masking onto a set does not increase the `Lᵖ` norm. -/
-theorem norm_coordIndicator_le [Fintype ι'] (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) :
-    ‖coordIndicator s g‖ ≤ ‖g‖ := by
-  refine PiLp.norm_mono fun i ↦ ?_
-  simp only [coordIndicator_apply, Real.norm_eq_abs]
-  split_ifs <;> simp
-
-/-- Coordinatewise masking onto a symmetric set commutes with coordinatewise sign flips. -/
-theorem coordIndicator_units_smul {s : Set ℝ} (hs : ∀ r, -r ∈ s ↔ r ∈ s)
-    (ε : ι' → ℤˣ) (g : PiLp p fun _ : ι' ↦ ℝ) (i : ι') :
-    coordIndicator s (WithLp.toLp p fun j ↦ ε j • g j) i = ε i • coordIndicator s g i := by
-  classical
-  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [coordIndicator_apply, h, hs]
-
-end coordIndicator
-
 end PiLp
 
 namespace EuclideanSpace
@@ -695,12 +647,12 @@ def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
 @[simp]
 theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
     truncVec t g i = if |g i| ≤ t then g i else 0 := by
-  simp [truncVec]
+  simp [truncVec, Set.indicator_apply]
 
 @[simp]
 theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
     tailVec t g i = if t < |g i| then g i else 0 := by
-  simp [tailVec]
+  simp [tailVec, Set.indicator_apply]
 
 /-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
 theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
@@ -712,12 +664,12 @@ theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
     PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
 
 /-- Coordinatewise truncation is measurable. -/
-theorem measurable_truncVec [Countable ι] (t : ℝ) : Measurable (truncVec (ι := ι) t) := by
+theorem measurable_truncVec (t : ℝ) : Measurable (truncVec (ι := ι) t) := by
   unfold truncVec
   exact PiLp.measurable_coordIndicator (measurableSet_le continuous_abs.measurable measurable_const)
 
 /-- Coordinatewise tail masking is measurable. -/
-theorem measurable_tailVec [Countable ι] (t : ℝ) : Measurable (tailVec (ι := ι) t) := by
+theorem measurable_tailVec (t : ℝ) : Measurable (tailVec (ι := ι) t) := by
   unfold tailVec
   exact PiLp.measurable_coordIndicator (measurableSet_lt measurable_const continuous_abs.measurable)
 

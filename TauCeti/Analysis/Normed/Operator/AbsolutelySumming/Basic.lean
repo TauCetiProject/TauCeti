@@ -253,12 +253,8 @@ theorem summingENorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B :
 @[simp]
 theorem summingENorm_comp_separationQuotient (T : E →L[𝕜] F) :
     ((SeparationQuotient.mkCLM 𝕜 F).comp T).summingENorm p = T.summingENorm p := by
-  simp only [summingENorm_def]
-  refine iSup_congr fun n ↦ iSup_congr fun x ↦ congrArg (· / _) ?_
-  rw [← ofReal_norm, ← ofReal_norm]
-  exact congrArg _ <| le_antisymm
-    (PiLp.norm_mono fun i ↦ by simp [SeparationQuotient.norm_mk])
-    (PiLp.norm_mono fun i ↦ by simp [SeparationQuotient.norm_mk])
+  simp only [summingENorm_def, ContinuousLinearMap.comp_apply, SeparationQuotient.mkCLM_apply,
+    ← ofReal_norm, PiLp.norm_toLp_comp_separationQuotient]
 
 /-- The rank-one operator `x ↦ f x • y` has gauge at most `‖f‖ ‖y‖`. -/
 theorem summingENorm_smulRight_le (f : StrongDual 𝕜 E) (y : F) :

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
-import Mathlib.Analysis.Normed.Module.WeakDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import TauCeti.Analysis.Normed.Algebra.Jacobson
 import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 import TauCeti.RingTheory.Jacobson.Spectrum
@@ -204,10 +204,10 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜] [Non
 `characterSpace 𝕜 A ∪ {0}` is weak-star compact inside `WeakDual 𝕜 A`. -/
 theorem isCompact_union_zero :
     IsCompact (characterSpace 𝕜 A ∪ {0} : Set (WeakDual 𝕜 A)) := by
-  refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset
+  refine (WeakDual.isCompact_closedBall' 𝕜 A 1).of_isClosed_subset
     (union_zero_isClosed 𝕜 A) ?_
   rintro φ (hφ | rfl)
-  · rw [Set.mem_preimage, mem_closedBall_zero_iff]
+  · rw [WeakDual.mem_closedBall_iff]
     refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
     have hbound : ‖(WeakDual.toStrongDual φ) a‖ ≤ ‖a‖ :=
       NonUnitalAlgHom.norm_apply_le_self (⟨φ, hφ⟩ : characterSpace 𝕜 A) a

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
@@ -119,7 +120,8 @@ theorem closure_image_inclusionInDoubleDualWeak_closedBall (x : E) (r : ℝ) :
 image in the closed unit ball of its bidual. -/
 theorem closure_image_inclusionInDoubleDualWeak_closedBall_zero_one :
     closure (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 1)) =
-      WeakDual.toStrongDual ⁻¹' closedBall 0 1 := by
+      WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) 1 := by
+  rw [WeakDual.closedBall_def]
   simpa using closure_image_inclusionInDoubleDualWeak_closedBall 𝕜 E 0 1
 
 /-- A normed space is weak-star dense in its bidual. -/

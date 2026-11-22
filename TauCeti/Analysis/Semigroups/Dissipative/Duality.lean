@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 public import TauCeti.Analysis.Normed.Module.DualitySet
-import Mathlib.Analysis.Normed.Module.WeakDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -68,10 +68,10 @@ theorem IsDissipative.exists_mem_dualitySet_apply_nonpos {A : X →ₗ.[ℝ] X}
     ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0 := by
   -- Norming functionals for `lambda • x - A x` have a weak-* cluster point by Banach--Alaoglu.
   let K : ℕ → Set (WeakDual ℝ X) := fun n =>
-    WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 ∩ {w | w (A x) ≤ 0} ∩
+    WeakDual.closedBall ℝ X 1 ∩ {w | w (A x) ≤ 0} ∩
       {w | ‖(x : X)‖ - ‖A x‖ * (1 / ((n : ℝ) + 1)) ≤ w x}
   have hclosed : ∀ n, IsClosed (K n) := fun n =>
-    ((WeakDual.isClosed_closedBall 0 1).inter
+    ((WeakDual.isClosed_closedBall' ℝ X 1).inter
       (isClosed_le (WeakDual.eval_continuous _) continuous_const)).inter
       (isClosed_le continuous_const (WeakDual.eval_continuous _))
   have hmono : ∀ n, K (n + 1) ⊆ K n := by
@@ -85,7 +85,7 @@ theorem IsDissipative.exists_mem_dualitySet_apply_nonpos {A : X →ₗ.[ℝ] X}
     obtain ⟨g, hg, hgA, hgx⟩ := hA.exists_norm_le_one_apply_nonpos x n
     exact ⟨StrongDual.toWeakDual g, ⟨by simpa using hg, hgA⟩, hgx⟩
   have hcompact : IsCompact (K 0) :=
-    (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset (hclosed 0)
+    (WeakDual.isCompact_closedBall' ℝ X 1).of_isClosed_subset (hclosed 0)
       (fun w hw => hw.1.1)
   obtain ⟨w, hw⟩ :=
     IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K hmono hne hcompact

@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 
 /-!
 # Weakly compact operators
@@ -224,14 +225,13 @@ theorem IsWeaklyCompact.of_range_precomp_precomp_subset {T : E →L[𝕜] F}
   · rw [preimage_image_eq _ (toWeakSpace 𝕜 F).injective]
     exact T.lipschitzWith.isBounded_image isBounded_closedBall
   · have hsub : inclusionInDoubleDualWeak 𝕜 F '' (toWeakSpace 𝕜 F '' (T '' closedBall 0 1)) ⊆
-        A '' (WeakDual.toStrongDual ⁻¹' closedBall 0 1) := by
+        A '' WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) 1 := by
       rintro _ ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
       refine ⟨_, ?_, toWeakDual_precomp_precomp_inclusionInDoubleDualWeak T x⟩
-      rw [mem_preimage, inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-        StrongDual.toStrongDual_toWeakDual,
-        mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
+      rw [WeakDual.mem_closedBall_iff, inclusionInDoubleDualWeak_apply,
+        LinearEquiv.symm_apply_apply, StrongDual.toStrongDual_toWeakDual]
       exact (double_dual_bound 𝕜 E x).trans (mem_closedBall_zero_iff.1 hx)
-    refine (closure_minimal hsub ((WeakDual.isCompact_closedBall 0 1).image
+    refine (closure_minimal hsub ((WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 E) 1).image
       (continuous_toWeakDual_precomp_precomp T)).isClosed).trans ?_
     rintro _ ⟨Φ, -, rfl⟩
     exact (NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F _).2 (h ⟨_, rfl⟩)

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.Support
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Operator.Extend
-import Mathlib.Analysis.Normed.Module.WeakDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 
 /-!
 # Weak compactness under a mass bound
@@ -31,7 +31,7 @@ compactness nor preservation of integer multiplicities is asserted here.
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.1.7 (mass and weak convergence).
-* The formal compactness input is Mathlib's `WeakDual.isCompact_closedBall`;
+* The formal compactness input is `WeakDual.isCompact_closedBall'`;
   extension uses `exists_extension_norm_eq`.
 -/
 
@@ -84,7 +84,7 @@ theorem isCompact_image_coe_mass_le (C : ℝ≥0) :
   let r : WeakDual ℝ (E →ᵇ F) → (𝓓^{n}(Ω, F) → ℝ) :=
     fun L φ => L (φ : E →ᵇ F)
   have hr : Continuous r := continuous_pi fun φ => WeakDual.eval_continuous (φ : E →ᵇ F)
-  convert (WeakDual.isCompact_closedBall (0 : StrongDual ℝ (E →ᵇ F)) C).image hr using 1
+  convert (WeakDual.isCompact_closedBall' ℝ (E →ᵇ F) C).image hr using 1
   ext t
   constructor
   · rintro ⟨T, hT, rfl⟩

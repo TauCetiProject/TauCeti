@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 
 /-!
 # Weak-star cluster points in the bidual
@@ -42,10 +43,10 @@ theorem Filter.Eventually.exists_mapClusterPt_inclusionInDoubleDual [ProperSpace
       MapClusterPt (StrongDual.toWeakDual E) l
         (fun x ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x)) := by
   obtain ⟨E, hEC, hE⟩ :=
-    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 (StrongDual 𝕜 X)) C).exists_mapClusterPt
+    (WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 X) C).exists_mapClusterPt
       (u := fun x : X ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x))
       (Filter.tendsto_principal.mpr <| hC.mono fun x hx ↦ by
-        simpa only [Set.mem_preimage, StrongDual.toStrongDual_toWeakDual,
-          mem_closedBall_zero_iff] using (double_dual_bound 𝕜 X x).trans hx)
-  refine ⟨E.toStrongDual, mem_closedBall_zero_iff.mp hEC, ?_⟩
+        simpa only [WeakDual.mem_closedBall_iff, StrongDual.toStrongDual_toWeakDual] using
+          (double_dual_bound 𝕜 X x).trans hx)
+  refine ⟨E.toStrongDual, WeakDual.mem_closedBall_iff.mp hEC, ?_⟩
   simpa only [WeakDual.toWeakDual_toStrongDual] using hE

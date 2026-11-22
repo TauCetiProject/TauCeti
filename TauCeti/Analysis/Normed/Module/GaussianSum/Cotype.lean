@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.Normed.Module.GaussianSum.Basic
 public import TauCeti.Analysis.Normed.Module.RademacherSum.TypeCotype
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Probability.Distributions.Gaussian.L2
+import TauCeti.Probability.Distributions.Gaussian.MixedMoments
 
 /-!
 # Gaussian cotype
@@ -180,12 +181,8 @@ theorem HasGaussianCotype.of_map (h : HasGaussianCotype F q C) (f : 𝓕)
     exact mul_nonneg (NNReal.coe_nonneg _) (gaussianSecondMoment_nonneg _)
   · have : Fact (1 ≤ q) := ⟨one_le_two.trans h.two_le⟩
     intro n y
-    calc ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
-          calc ‖WithLp.toLp q y‖ ≤ ‖(K : ℝ) • WithLp.toLp q (fun i ↦ ‖f (y i)‖)‖ :=
-                PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.property] using hK (y i)
-            _ = K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
-                rw [norm_smul, Real.norm_eq_abs, NNReal.abs_eq,
-                  PiLp.norm_norm (WithLp.toLp q fun i ↦ f (y i))]
+    calc ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ :=
+          PiLp.norm_le_mul_of_forall_norm_le_mul fun i ↦ hK (y i)
       _ ≤ K * (C * (M * gaussianSecondMoment y)) := by
           gcongr
           exact (h n _).trans (by gcongr; exact gaussianSecondMoment_map_le f hM y)

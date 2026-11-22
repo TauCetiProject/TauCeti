@@ -9,8 +9,9 @@ public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.Probability.Distributions.Gaussian.L2
+import TauCeti.Probability.Distributions.Gaussian.MixedMoments
 
 /-!
 # Second moments of finite Gaussian sums

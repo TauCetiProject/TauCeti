@@ -18,8 +18,10 @@ For a multivariate Gaussian this gives the coordinate identity
 `E[Zᵢ Zⱼ Zₖ Zₗ] = Sᵢⱼ Sₖₗ + Sᵢₖ Sⱼₗ + Sᵢₗ Sⱼₖ` for centered coordinates.
 
 The linear-observable result is proved for Gaussian measures on real Banach spaces, then
-specialized to the multivariate law. Finite products of affine linear observables are integrable.
-Polarizing the existing scalar fourth-moment formula avoids any invertibility requirement.
+specialized to the multivariate law and to standard Gaussian inner-product observables (`‖x‖²`
+second moment, `3 ‖x‖⁴` fourth moment, and finite `Lᵖ` membership). Finite products of affine
+linear observables are integrable. Polarizing the existing scalar fourth-moment formula avoids any
+invertibility requirement.
 
 ## References
 
@@ -32,7 +34,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Nat
+open scoped ENNReal InnerProductSpace Nat
 
 namespace ProbabilityTheory.IsGaussian
 
@@ -173,6 +175,37 @@ theorem integral_mul_mul_mul_multivariateGaussian
     (∫ x, x i * x j * x k * x l ∂multivariateGaussian 0 S) =
       S i j * S k l + S i k * S j l + S i l * S j k := by
   simpa using integral_mul_mul_mul_sub_multivariateGaussian 0 hS i j k l
+
+section StdGaussianInner
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- A standard Gaussian linear observable belongs to every finite `Lᵖ` space. -/
+theorem memLp_inner_stdGaussian (x : E) (p : ℝ≥0∞) (hp : p ≠ ∞) :
+    MemLp (fun y ↦ ⟪x, y⟫_ℝ) p (stdGaussian E) :=
+  IsGaussian.memLp_dual (stdGaussian E) (innerSL ℝ x) p hp
+
+/-- The even moments of a standard Gaussian linear observable. -/
+theorem integral_pow_two_mul_inner_stdGaussian (x : E) (n : ℕ) :
+    (∫ y, ⟪x, y⟫_ℝ ^ (2 * n) ∂stdGaussian E) =
+      ‖x‖ ^ (2 * n) * (2 * n - 1 : ℕ)‼ := by
+  have h := IsGaussian.integral_pow_two_mul_sub_dual (stdGaussian E) (innerSL ℝ x) n
+  rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id,
+    variance_dual_stdGaussian, innerSL_apply_norm] at h
+  simpa only [id_eq, integral_id_stdGaussian, sub_zero, innerSL_apply_apply, pow_mul] using h
+
+/-- The second moment of a standard Gaussian linear observable. -/
+theorem integral_sq_inner_stdGaussian (x : E) :
+    (∫ y, ⟪x, y⟫_ℝ ^ 2 ∂stdGaussian E) = ‖x‖ ^ 2 := by
+  simpa using integral_pow_two_mul_inner_stdGaussian x 1
+
+/-- The fourth moment of a standard Gaussian linear observable. -/
+theorem integral_pow_four_inner_stdGaussian (x : E) :
+    (∫ y, ⟪x, y⟫_ℝ ^ 4 ∂stdGaussian E) = 3 * ‖x‖ ^ 4 := by
+  simpa [Nat.doubleFactorial, mul_comm] using integral_pow_two_mul_inner_stdGaussian x 2
+
+end StdGaussianInner
 
 end TauCeti.Probability
 

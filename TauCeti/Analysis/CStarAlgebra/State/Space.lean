@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -209,7 +210,7 @@ theorem isClosed_stateSpace : IsClosed (stateSpace A) := by
 /-- **Weak-* compactness of the state space.** For unital `A`, the state space is weak-* compact,
 by the Banach–Alaoglu theorem. -/
 theorem isCompact_stateSpace : IsCompact (stateSpace A) := by
-  refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset isClosed_stateSpace
+  refine (WeakDual.isCompact_closedBall' ℂ A 1).of_isClosed_subset isClosed_stateSpace
     fun φ hφ => ?_
   simp [norm_toStrongDual_of_mem_stateSpace hφ]
 

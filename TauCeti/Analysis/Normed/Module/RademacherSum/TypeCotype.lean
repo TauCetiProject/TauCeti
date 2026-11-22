@@ -143,12 +143,8 @@ theorem HasType.of_map [Fact (1 ≤ p)] (h : HasType F p C) (f : 𝓕) (hK : ∀
 theorem HasCotype.of_map [Fact (1 ≤ q)] (h : HasCotype F q C) (f : 𝓕)
     (hK : ∀ x, ‖x‖ ≤ K * ‖f x‖) (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) : HasCotype E q (K * C * M) :=
   fun n y ↦ calc
-  ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
-    calc ‖WithLp.toLp q y‖ ≤ ‖(K : ℝ) • WithLp.toLp q (fun i ↦ ‖f (y i)‖)‖ :=
-          PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.property] using hK (y i)
-      _ = K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
-          rw [norm_smul, Real.norm_eq_abs, NNReal.abs_eq,
-            PiLp.norm_norm (WithLp.toLp q fun i ↦ f (y i))]
+  ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ :=
+    PiLp.norm_le_mul_of_forall_norm_le_mul fun i ↦ hK (y i)
   _ ≤ K * (C * (M * rademacherSecondMoment y)) := by
     gcongr
     exact (h n _).trans (by gcongr; exact rademacherSecondMoment_map_le f hM y)
@@ -205,12 +201,8 @@ theorem HasCotype.separationQuotient (h : HasCotype E q C) :
   rw [hasCotype_iff]
   intro n z
   choose y hy using fun i ↦ SeparationQuotient.surjective_mk (z i)
-  have hnorm_eq : ‖WithLp.toLp q z‖ = ‖WithLp.toLp q y‖ :=
-    le_antisymm
-      (PiLp.norm_mono fun i ↦ by simp [← hy i, SeparationQuotient.norm_mk])
-      (PiLp.norm_mono fun i ↦ by simp [← hy i, SeparationQuotient.norm_mk])
   have hz : z = fun i ↦ SeparationQuotient.mk (y i) := funext fun i ↦ (hy i).symm
-  rw [hnorm_eq, hz, rademacherSecondMoment_comp_separationQuotient]
+  rw [hz, PiLp.norm_toLp_comp_separationQuotient, rademacherSecondMoment_comp_separationQuotient]
   exact h.norm_toLp_le y
 
 /-! ### Examples -/

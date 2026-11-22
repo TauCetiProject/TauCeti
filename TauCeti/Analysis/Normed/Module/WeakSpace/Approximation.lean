@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-public import Mathlib.Analysis.Normed.Module.WeakDual
+import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 
 /-!
@@ -68,23 +68,22 @@ theorem isCompact_closure_toWeakSpace_of_forall_exists_isCompact [CompleteSpace 
       intro ε hε
       obtain ⟨K, hK, hAK⟩ := h ε hε
       have hcpt : IsCompact (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' K) +
-          WeakDual.toStrongDual ⁻¹' closedBall 0 ε) :=
+          WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) ε) :=
         (hK.image (inclusionInDoubleDualWeak 𝕜 E).continuous).add
-          (WeakDual.isCompact_closedBall 0 ε)
+          (WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 E) ε)
       have hsub : inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' A) ⊆
           inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' K) +
-            WeakDual.toStrongDual ⁻¹' closedBall 0 ε := by
+            WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) ε := by
         rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
         obtain ⟨y, hy, hxy⟩ := hAK x hx
         refine ⟨_, ⟨_, ⟨y, hy, rfl⟩, rfl⟩, StrongDual.toWeakDual (J (x - y)), ?_, ?_⟩
-        · rw [mem_preimage, StrongDual.toStrongDual_toWeakDual,
-            mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
+        · rw [WeakDual.mem_closedBall_iff, StrongDual.toStrongDual_toWeakDual]
           exact (double_dual_bound 𝕜 E (x - y)).trans hxy
         · apply WeakDual.toStrongDual.injective
           simp [inclusionInDoubleDualWeak_apply, J]
       obtain ⟨_, ⟨_, ⟨y, -, rfl⟩, rfl⟩, ψ, hψ, hsum⟩ :=
         closure_minimal hsub hcpt.isClosed hφ
-      rw [mem_preimage, mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))] at hψ
+      rw [WeakDual.mem_closedBall_iff] at hψ
       have hdiff : WeakDual.toStrongDual φ - J y = WeakDual.toStrongDual ψ := by
         rw [← hsum]
         ext f
