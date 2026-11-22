@@ -57,7 +57,8 @@ comparing weak and classical derivatives
   `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
   coefficient loop `S`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
-  is multiplication by that scalar.
+  is multiplication by that scalar, so `L_S` is complex linear for such a loop
+  (`TauCeti.CircleSobolev.loopOperator_const_smul_id_apply_smul`).
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.norm_mulLoop_le`: for a loop with `‖S t‖ ≤ M`, the zero-order term has
   norm at most `M` for the `H⁰` norms, and `TauCeti.CircleSobolev.norm_sq_le_of_loopOperator`
@@ -189,6 +190,14 @@ theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     loopOperator T (S₁ - S₂) = loopOperator T S₁ + mulLoop T (by norm_num) S₂ := by
   rw [loopOperator, loopOperator, mulLoop_sub]
   abel
+
+/-- **Complex linearity for a constant complex scalar loop.** For `z : ℂ`, the operator
+`ζ ↦ ζ' - z ζ` commutes with multiplication by complex scalars. -/
+theorem loopOperator_const_smul_id_apply_smul (z c : ℂ) (a : CircleSobolev 1 E) :
+    loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) (c • a) =
+      c • loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a := by
+  simp only [loopOperator_apply, mulLoop_const_smul_id T (s := 1) (by norm_num), map_smul,
+    smul_sub, smul_comm z c]
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/
