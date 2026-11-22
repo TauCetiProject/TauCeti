@@ -52,6 +52,8 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 
 ## Main definitions
 
+* `TauCeti.covectorLift I hx`: a real-linear choice of smooth functions vanishing at `x` with
+  prescribed differentials at `x`.
 * `TauCeti.smoothCommutatorSymbol I hx`: the commutator symbol at an interior point `x`, a real
   multilinear form on the cotangent space `T_x*M`, linear in the operator.
 * `TauCeti.smoothPrincipalSymbol I hx D`: the principal symbol of `D` at `x`, a homogeneous
@@ -59,6 +61,9 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 
 ## Main results
 
+* `TauCeti.commutatorSymbol_covectorLift_sub_mem_smul_top`: for operators between arbitrary
+  modules over the smooth functions, iterated commutators with functions and with the lifts of
+  their differentials agree modulo `I_x`.
 * `TauCeti.smoothCommutatorSymbol_mvfderiv`, `TauCeti.smoothPrincipalSymbol_mvfderiv`: the values
   at differentials of functions are the iterated commutators.
 * `TauCeti.smoothCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
@@ -125,22 +130,56 @@ private theorem exists_vanishingIdealDifferential_comp_eq_id (hx : I.IsInteriorP
   (vanishingIdealDifferential hx).exists_rightInverse_of_surjective <| LinearMap.range_eq_top.2 <|
     (smoothCotangentEquiv hx).surjective.comp (smoothVanishingIdeal I x).toCotangent_surjective
 
+variable (I) in
 /-- A real-linear choice of a smooth function vanishing at `x` with prescribed differential at
-`x`. -/
-private def covectorLift (hx : I.IsInteriorPoint x) :
+`x` (`TauCeti.covectorLift_apply_self`, `TauCeti.mvfderiv_covectorLift`). The choice is not
+canonical; it lets the iterated commutators of a differential operator, which are multilinear
+in the functions, be read as multilinear maps on the cotangent space. -/
+def covectorLift (hx : I.IsInteriorPoint x) :
     (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
   (smoothVanishingIdeal I x).subtype.restrictScalars ℝ ∘ₗ
     (exists_vanishingIdealDifferential_comp_eq_id hx).choose
 
-private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
+/-- The lift of a covector at `x` vanishes at `x`. -/
+@[simp]
+theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift I hx ξ x = 0 :=
   mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose
       ξ).property
 
-private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
+/-- The lift of a covector `ξ` at `x` has differential `ξ` at `x`. -/
+@[simp]
+theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift I hx ξ) x = ξ := by
   have h := congr($((exists_vanishingIdealDifferential_comp_eq_id hx).choose_spec) ξ)
   rwa [LinearMap.comp_apply, vanishingIdealDifferential_apply] at h
+
+/-- **Lifting differentials does not change commutators modulo `I_x`.** For a differential
+operator `D` of order at most `m` between modules over the smooth functions, replacing the
+functions `fᵢ` in the iterated commutator `[⋯[D, f₁], …, fₘ]` by the lifts of their
+differentials at `x` changes its values only by elements of `I_x N'`. -/
+theorem commutatorSymbol_covectorLift_sub_mem_smul_top (hx : I.IsInteriorPoint x)
+    {N N' : Type*} [AddCommGroup N] [Module C^∞⟮I, M; ℝ⟯ N] [Module ℝ N]
+    [IsScalarTower ℝ C^∞⟮I, M; ℝ⟯ N] [AddCommGroup N'] [Module C^∞⟮I, M; ℝ⟯ N'] [Module ℝ N']
+    [IsScalarTower ℝ C^∞⟮I, M; ℝ⟯ N'] {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ N N' m) (f : Fin m → C^∞⟮I, M; ℝ⟯) (y : N) :
+    commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ N N' m D (fun i ↦ covectorLift I hx (mvfderiv I (f i) x)) y -
+        commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ N N' m D f y ∈
+      smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ N') := by
+  -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
+  set g : Fin m → C^∞⟮I, M; ℝ⟯ := fun i ↦ covectorLift I hx (mvfderiv I (f i) x)
+  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
+  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
+    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
+  have hg : ∀ i, (fun i ↦ g i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f i x)) i - f i ∈
+      smoothVanishingIdeal I x ^ 2 := fun i ↦ by
+    refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
+    · simp [g, hc]
+    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
+        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
+          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_covectorLift, sub_self]
+  have h := commutatorSymbol_apply_sub_mem_smul_top D hg y
+  rwa [commutatorSymbol_add_algebraMap] at h
 
 /-! ### The commutator symbol -/
 
@@ -162,9 +201,19 @@ def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
       MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ where
   toFun D := ((evalOneAt x).compMultilinearMap
       ((commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) D)).compLinearMap
-    fun _ ↦ covectorLift hx
+    fun _ ↦ covectorLift I hx
   map_add' D₁ D₂ := by ext; simp
   map_smul' c D := by ext; simp
+
+/-- The commutator symbol at `(ξ₁, …, ξₘ)` is the value at `x` of the iterated commutator with the
+lifts of the covectors `ξᵢ`, applied to `1`. -/
+theorem smoothCommutatorSymbol_apply (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) :
+    smoothCommutatorSymbol I hx D ξ =
+      commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D
+        (fun i ↦ covectorLift I hx (ξ i)) 1 x :=
+  (rfl)
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
 `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
@@ -173,22 +222,10 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
     (f : Fin m → C^∞⟮I, M; ℝ⟯) :
     smoothCommutatorSymbol I hx D (fun i ↦ mvfderiv I (f i) x) =
       commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D f 1 x := by
-  -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
-  set g : Fin m → C^∞⟮I, M; ℝ⟯ := fun i ↦ covectorLift hx (mvfderiv I (f i) x)
-  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
-    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-  have hg : ∀ i, (fun i ↦ g i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f i x)) i - f i ∈
-      smoothVanishingIdeal I x ^ 2 := fun i ↦ by
-    refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
-    · simp [g, hc, covectorLift_apply_self]
-    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
-        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
-          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_covectorLift, sub_self]
-  have h := commutatorSymbol_apply_sub_mem_smul_top D hg 1
-  rw [commutatorSymbol_add_algebraMap, smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff,
-    ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
-  exact h
+  have h := commutatorSymbol_covectorLift_sub_mem_smul_top hx D f 1
+  rw [smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
+    Pi.sub_apply, sub_eq_zero] at h
+  rwa [smoothCommutatorSymbol_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem smoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}

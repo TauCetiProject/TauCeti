@@ -57,7 +57,8 @@ comparing weak and classical derivatives
   `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
   coefficient loop `S`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
-  is multiplication by that scalar.
+  is multiplication by that scalar, so `L_S` is complex linear for such a loop
+  (`TauCeti.CircleSobolev.loopOperator_const_smul_id_apply_smul`).
 * `TauCeti.CircleSobolev.mulLoop_rotate`, `TauCeti.CircleSobolev.loopOperator_rotate`: the
   rotation of the circle by `θ` intertwines `L_S` with `L` of the translated loop
   `x ↦ S (x + θ)`, so `L_S` commutes with the rotation when `S (x + θ) = S x`
@@ -205,6 +206,14 @@ theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     loopOperator T (S₁ - S₂) = loopOperator T S₁ + mulLoop T (by norm_num) S₂ := by
   rw [loopOperator, loopOperator, mulLoop_sub]
   abel
+
+/-- **Complex linearity for a constant complex scalar loop.** For `z : ℂ`, the operator
+`ζ ↦ ζ' - z ζ` commutes with multiplication by complex scalars. -/
+theorem loopOperator_const_smul_id_apply_smul (z c : ℂ) (a : CircleSobolev 1 E) :
+    loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) (c • a) =
+      c • loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a := by
+  simp only [loopOperator_apply, mulLoop_const_smul_id T (s := 1) (by norm_num), map_smul,
+    smul_sub, smul_comm z c]
 
 /-- **Rotation equivariance.** If `ζ' - S ζ = η`, then the rotated loop `x ↦ ζ (x + θ)` solves
 the equation of the translated loop `x ↦ S (x + θ)` with right side `x ↦ η (x + θ)`. In particular

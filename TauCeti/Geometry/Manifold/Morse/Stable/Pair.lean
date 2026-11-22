@@ -63,6 +63,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmalePair`: the Morse–Smale condition for a pair of pseudo-gradients.
 * `isMorseSmalePair_iff` and `isMorseSmalePair_self_iff`: its unfolding, and the case of a single
   pseudo-gradient.
+* `unstableSet_inter_stableSet_eq_neg`: reversing both fields exchanges the unstable and stable
+  sets in an intersection.
 * `IsMorseSmalePair.neg`: reversing the pair.
 * `IsMorseSmalePair.exists_isSliceChart_unstableSet_inter_stableSet`,
   `IsMorseSmalePair.span_mtangentConeAt_unstableSet_inter_stableSet` and
@@ -130,6 +132,15 @@ theorem isMorseSmalePair_self_iff (hX : IsAdaptedPseudoGradient f X) :
   ⟨fun h ↦ IsMorseSmale.of_forall fun _ _ _ _ _ hy ↦ h hy,
     fun h _ _ _ hy ↦ h.span_mtangentConeAt_sup_eq_top hy⟩
 
+/-- **Reversing both fields in an intersection.** Reversing `X₀` and `X₁` exchanges unstable and
+stable sets: `W^u_{X₀}(a) ∩ W^s_{X₁}(b) = W^u_{-X₁}(b) ∩ W^s_{-X₀}(a)`. -/
+theorem unstableSet_inter_stableSet_eq_neg (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
+    (a b : M) :
+    hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b =
+      (hX₁.neg hf₁).flow.unstableSet b ∩ (hX₀.neg hf₀).flow.stableSet a := by
+  rw [← hX₁.stableSet_eq_unstableSet_neg hf₁, ← hX₀.unstableSet_eq_stableSet_neg hf₀, inter_comm]
+
 namespace IsMorseSmalePair
 
 variable {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGradient f₁ X₁}
@@ -149,10 +160,9 @@ Morse–Smale pair: reversing the flows exchanges unstable and stable manifolds.
 theorem neg (h : IsMorseSmalePair hX₀ hX₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁) : IsMorseSmalePair (hX₁.neg hf₁) (hX₀.neg hf₀) := by
   intro a b y hy
-  rw [hX₁.neg_flow hf₁, hX₀.neg_flow hf₀, Flow.unstableSet_reverse, Flow.stableSet_reverse]
-    at hy ⊢
-  rw [sup_comm]
-  exact h ⟨hy.2, hy.1⟩
+  rw [← hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁] at hy
+  rw [← hX₁.stableSet_eq_unstableSet_neg hf₁, ← hX₀.unstableSet_eq_stableSet_neg hf₀, sup_comm]
+  exact h hy
 
 /-- **Transverse intersections for a pair are embedded submanifolds.** For a Morse–Smale pair, near
 each point `y` of `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` a chart of the maximal atlas flattens this
