@@ -41,8 +41,8 @@ any dimension; the Morse indices are computed for finite-dimensional `V`, of com
   plurisubharmonic functions cannot be improved.
 * On a complex inner product space of any dimension, for a finite family `ℓ` of continuous
   complex linear functionals, the function `a ‖z‖² + Re (∑ⱼ c j (ℓ j z)²)` has Hessian
-  `v ↦ 2 (a ‖v‖² + Re (∑ⱼ c j (ℓ j v)²))` and Levi form `a ⟪·, ·⟫`; only the family is finite,
-  not the space. For `ℓ j = ⟪b j, ·⟫` with `b` an
+  quadratic form `v ↦ 2 (a ‖v‖² + Re (∑ⱼ c j (ℓ j v)²))` and Levi form `a ⟪·, ·⟫`; only the
+  indexing family is required to be finite. For `ℓ j = ⟪b j, ·⟫` with `b` an
   orthonormal basis of a finite-dimensional complex inner product space, its Morse index is
   `∑ⱼ ([a < ‖c j‖] + [a < -‖c j‖])`. In coordinates it is `∑ⱼ (a |zⱼ|² + Re (c j zⱼ²))`, and each
   coordinate contributes the inertia of `a |w|² + Re (c j w²)` on `ℂ`, whose real eigenvalues are
