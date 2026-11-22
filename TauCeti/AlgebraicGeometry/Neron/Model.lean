@@ -122,6 +122,11 @@ theorem map_extend {Y : Over S} [Smooth Y.hom] (f : (Over.pullback j).obj Y ⟶ 
     (Over.pullback j).map (M.extend Y f) ≫ M.genericIso.hom = f := by
   rw [← homEquiv_apply, extend, Equiv.apply_symm_apply]
 
+/-- The base change of the extension of `f` is `f` followed by the inverse of the marking. -/
+theorem map_extend_eq_comp_inv {Y : Over S} [Smooth Y.hom] (f : (Over.pullback j).obj Y ⟶ A) :
+    (Over.pullback j).map (M.extend Y f) = f ≫ M.genericIso.inv := by
+  simp [← cancel_mono M.genericIso.hom]
+
 /-- A morphism into a Néron model is the extension of `f` if and only if its marked restriction
 is `f`. -/
 theorem eq_extend_iff {Y : Over S} [Smooth Y.hom] {f : (Over.pullback j).obj Y ⟶ A}
