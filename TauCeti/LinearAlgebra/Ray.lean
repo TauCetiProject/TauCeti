@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Ray
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Vectors in the same ray: partitions, sums, finite orbits, and durations of segments
@@ -247,7 +248,7 @@ end Orbit
 
 section Duration
 
-variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+variable {R M : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
   [Module R M] {S : Set M}
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a pair `(d, v)` with `0 < d`
@@ -263,11 +264,12 @@ theorem Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem (hS : S.Pairwise fun u v ↦ �
   have hv : v ≠ 0 := by
     rintro rfl
     exact h0 (by simpa using hx.2)
-  -- Both velocities are positive multiples of `v`, hence equal.
+  -- Both velocities lie in the same ray, hence are equal: by the definition of `SameRay`, the
+  -- positive coefficients `d` and `e` witness this, since `d • d⁻¹ • v = v = e • e⁻¹ • v`.
   have hde : d⁻¹ • v = e⁻¹ • v := by
     by_contra hne
-    exact hS hx.2 hy.2 hne
-      ((SameRay.rfl.pos_smul_left (inv_pos.2 hx.1)).pos_smul_right (inv_pos.2 hy.1))
+    refine hS hx.2 hy.2 hne (.inr <| .inr ⟨d, e, hx.1, hy.1, ?_⟩)
+    rw [smul_inv_smul₀ hx.1.ne', smul_inv_smul₀ hy.1.ne']
   rw [inv_inj.1 (smul_left_injective R hv hde)]
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a list of pairs `(d, v)` with
@@ -291,14 +293,8 @@ end Duration
 
 section Velocity
 
-variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
+variable {R M : Type*} [Semifield R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
   [Module R M]
-
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
-theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
-    (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
-  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
 
 /-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
 have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/

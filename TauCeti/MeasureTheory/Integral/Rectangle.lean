@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -44,6 +45,8 @@ a doubly (twisted) periodic map are used.
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
   `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
+* `TauCeti.setIntegral_Icc_neg_prod_eq`: the integral over a reflected strip `[-d, -c] × I` is
+  the integral of the reflection `z ↦ f (-z.1, z.2)` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
@@ -190,6 +193,25 @@ theorem setIntegral_Icc_add_prod_eq (f : ℝ × ℝ → E) (c d L : ℝ) (I : Se
     ∫ z in Icc (c + L) (d + L) ×ˢ I, f z = ∫ z in Icc c d ×ˢ I, f (z + (L, 0)) := by
   rw [← (measurePreserving_add_right volume (L, 0)).setIntegral_preimage_emb
     (measurableEmbedding_addRight _) f, preimage_add_fst_Icc_prod]
+
+/-- The reflection `(s, t) ↦ (-s, t)` of a point lies in the strip `[-d, -c] × I` exactly when
+the point lies in `[c, d] × I`. -/
+private theorem preimage_neg_fst_Icc_prod (c d : ℝ) (I : Set ℝ) :
+    Prod.map Neg.neg id ⁻¹' (Icc (-d) (-c) ×ˢ I) = Icc c d ×ˢ I := by
+  ext z
+  simp only [mem_preimage, mem_prod, mem_Icc, Prod.map_fst, Prod.map_snd, id_eq]
+  constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
+
+/-- **Integrals over a reflected strip.** The integral of `f` over the strip `[-d, -c] × I` is
+the integral of its reflection `z ↦ f (-z.1, z.2)` over the strip `[c, d] × I`. -/
+theorem setIntegral_Icc_neg_prod_eq (f : ℝ × ℝ → E) (c d : ℝ) (I : Set ℝ) :
+    ∫ z in Icc (-d) (-c) ×ˢ I, f z = ∫ z in Icc c d ×ˢ I, f (-z.1, z.2) := by
+  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
+    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
+  rw [← hmp.setIntegral_preimage_emb
+    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) f,
+    preimage_neg_fst_Icc_prod]
+  simp [Prod.map]
 
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`

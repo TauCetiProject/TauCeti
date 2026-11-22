@@ -447,8 +447,8 @@ theorem iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanI
     {x : L} (hx : x ∈ θ.cartanP) :
     ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ := by
   have : FiniteDimensional ℝ L := hθ.finiteDimensional
-  exact LinearMap.BilinForm.iSup_eigenspace_eq_top_of_isSelfAdjoint
-    hθ.isSymm_twistedKillingForm (fun _ ↦ hθ.twistedKillingForm_self_pos)
+  exact LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top
+    (fun _ ↦ hθ.twistedKillingForm_self_pos)
     ((LinearMap.mem_selfAdjointSubmodule _).mp
       (θ.ad_mem_selfAdjointSubmodule_twistedKillingForm hx))
 
