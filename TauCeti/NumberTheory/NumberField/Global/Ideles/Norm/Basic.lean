@@ -81,16 +81,6 @@ section Coordinates
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
 
-/-- The finite coordinate of a principal idele is the image of the global element. -/
-@[simp]
-theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
-    (v : HeightOneSpectrum R) (x : Kˣ) :
-    v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) =
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
-  Units.ext <| by
-    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    rfl
-
 /-- The distance from one of the coordinate at `v` of a principal idele is measured by the
 `v`-adic valuation of `x - 1`. -/
 theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_sub_one

@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
 
-import TauCeti.Data.SignType.Basic
-
 /-!
 # The archimedean value of a presentation
 

@@ -204,18 +204,34 @@ theorem IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord
     (v.ideleFiniteCoord x : v.adicCompletion K) = (x : AdeleRing R K).2 v :=
   (rfl)
 
+/-- Two ideles with the same finite component have the same finite coordinate at every finite
+place. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_eq_of_toFiniteIdele_eq
+    (v : HeightOneSpectrum R) {x y : IdeleGroup R K}
+    (h : IdeleGroup.toFiniteIdele R K x = IdeleGroup.toFiniteIdele R K y) :
+    v.ideleFiniteCoord x = v.ideleFiniteCoord y :=
+  Units.ext <| by
+    have h' := congrArg (fun a : (FiniteAdeleRing R K)ˣ ↦ (a : FiniteAdeleRing R K) v) h
+    simpa [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_toFiniteIdele] using h'
+
+/-- The finite coordinate of a principal idele is the image of the global element. -/
+@[simp]
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) =
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
+  Units.ext <| by
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+    rfl
+
 /-- The finite coordinate of the diagonal finite idele of `x : Kˣ` at `v` is the local image
 of `x` in `(v.adicCompletion K)ˣ`. -/
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding
     (v : HeightOneSpectrum R) (x : Kˣ) :
     v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
-  Units.ext <| by
-    rw [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
-      FiniteAdeleRing.unitEmbedding_apply, FiniteAdeleRing.algebraMap_apply,
-      Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-      Algebra.algebraMap_self_apply]
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
+  rw [v.ideleFiniteCoord_eq_of_toFiniteIdele_eq (y := IdeleGroup.unitEmbedding R K x) (by simp),
+    v.ideleFiniteCoord_unitEmbedding]
 
 @[simp]
 theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord

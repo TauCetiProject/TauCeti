@@ -269,4 +269,15 @@ theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
     residue_eq (x := Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x)
       (a := a) (b := b) hbm habm]
 
+/-- A prime-to-`𝔫` element reduces to `1` modulo a divisor `𝔪.finitePart` of `𝔫.finitePart`
+under `finiteUnitsMap` exactly when it is locally congruent to `1` at every prime dividing
+`𝔪.finitePart`. -/
+theorem finiteUnitsMap_residueHom_eq_one_iff {𝔪 𝔫 : Modulus K}
+    (h : 𝔪.finitePart ∣ 𝔫.finitePart) (x : primeToSubgroup 𝔫) :
+    finiteUnitsMap h (residueHom 𝔫 x) = 1 ↔
+      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
+        v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
+  rw [finiteUnitsMap_residueHom, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
+  rfl
+
 end TauCeti.GlobalNumberFields

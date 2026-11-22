@@ -225,8 +225,8 @@ theorem idealCharacter_apply_toPrincipalIdeal_of_mem_primeToSubgroup (χ : Hecke
   -- The full diagonal idele is principal, so its infinite and finite values multiply to one.
   rw [eq_inv_of_mul_eq_one_right (χ.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding x)]
 
-/-- Congruence to `1` modulo the finite conductor kills the correction factors at the
-conductor primes: the local component of `χ` at such a prime vanishes on `x`. -/
+/-- Congruence to `1` modulo the finite conductor trivializes the correction factors at the
+conductor primes: the local component of `χ` at such a prime takes value `1` on `x`. -/
 private theorem finiteComponent_unitsMap_eq_one_of_isCongrOne
     (χ : HeckeCharacter K) (x : Kˣ)
     (hx : IsCongrOne ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ x)

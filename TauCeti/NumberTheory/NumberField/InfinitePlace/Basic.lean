@@ -278,6 +278,32 @@ theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank �
     IsTotallyReal K :=
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
 
+omit [NumberField K] in
+/-- At a complex infinite place, the chosen embedding is distinct from its conjugate. -/
+theorem InfinitePlace.embedding_ne_conjugate_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex) :
+    w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
+  not_isReal_iff_isComplex.mpr hw (isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
+
+open scoped Classical in
+/-- The fiber of `InfinitePlace.mk` over an infinite place `w` consists of `w.embedding` and its
+complex conjugate. -/
+theorem InfinitePlace.filter_mk_eq (w : InfinitePlace K) :
+    (Finset.univ.filter fun φ : K →+* ℂ ↦ InfinitePlace.mk φ = w) =
+      {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
+  ext φ
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+    Finset.mem_singleton]
+  have h := InfinitePlace.mk_eq_iff (φ := w.embedding) (ψ := φ)
+  rw [InfinitePlace.mk_embedding] at h
+  simpa only [eq_comm] using h
+
+open scoped Classical in
+/-- The fiber of `InfinitePlace.mk` over a real infinite place `w` is `{w.embedding}`. -/
+theorem InfinitePlace.filter_mk_eq_of_isReal {w : InfinitePlace K} (hw : w.IsReal) :
+    (Finset.univ.filter fun φ : K →+* ℂ ↦ InfinitePlace.mk φ = w) = {w.embedding} := by
+  rw [InfinitePlace.filter_mk_eq, InfinitePlace.conjugate_embedding_eq_of_isReal hw,
+    Finset.pair_eq_singleton]
+
 end NumberField
 
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of

@@ -15,9 +15,10 @@ import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 
 This file combines global weak approximation (`exists_fieldUnit_valuation_sub_lt_and_signHom_eq`)
 with the local unit filtration at finite places of a number field `K`. Given a prime `v₀` dividing
-a modulus `𝔪` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`, it produces a global
-unit `x ∈ primeToSubgroup 𝔪` approximating `z` to modulus depth at `v₀`, congruent to `1` to
-modulus depth at every other prime of `𝔪`, and congruent to `1` to depth `k` at `v₀`.
+a modulus `𝔪` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`, it produces a nonzero
+element `x ∈ primeToSubgroup 𝔪` of `K` that is a local unit at every prime dividing the finite
+modulus, approximating `z` to modulus depth at `v₀`, congruent to `1` to modulus depth at every
+other prime of `𝔪`, and congruent to `1` to depth `k` at `v₀`.
 
 ## Main results
 
@@ -67,8 +68,7 @@ private theorem exists_fieldUnit_approx_localUnit {𝔪 : Modulus K}
 /-- Given a prime `v₀ ∈ 𝔪.support` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`,
 there is a nonzero global element `x ∈ primeToSubgroup 𝔪`, a local unit at every prime dividing
 `𝔪`, approximating `z` to level `𝔪.exponent v₀` at `v₀`, congruent to `1` to level `𝔪.exponent v`
-at every other `v ∈ 𝔪.support`, and satisfying `v₀.valuation K ((x : K) - 1) ≤ exp (-k)`
-(congruent to `1` to depth `k` at `v₀`). -/
+at every other `v ∈ 𝔪.support`, and whose image in `K_{v₀}ˣ` lies in `U(K_{v₀}, k)`. -/
 theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : HeightOneSpectrum (𝓞 K)}
     (hv₀ : v₀ ∈ 𝔪.support) {k : ℕ} (hk : k ≤ 𝔪.exponent v₀)
     (z : (v₀.adicCompletion K)ˣ)
@@ -79,7 +79,8 @@ theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : Heigh
         (∀ v ∈ 𝔪.support, v ≠ v₀ →
           Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
             TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v)) ∧
-        v₀.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(k : ℤ)) := by
+        Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
+          TauCeti.unitFiltration (v₀.adicCompletion K) k := by
   obtain ⟨x, hxz, hother⟩ := exists_fieldUnit_approx_localUnit hv₀ z
   have hvpos (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ 𝔪.support) :
       WithZero.exp (-(𝔪.exponent v : ℤ)) < (1 : WithZero (Multiplicative ℤ)) := by
@@ -106,16 +107,15 @@ theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : Heigh
       Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x * z⁻¹ ∈
         TauCeti.unitFiltration (v₀.adicCompletion K) (𝔪.exponent v₀) :=
     v₀.mul_inv_mem_unitFiltration_of_sub_lt hz_mem.1 (by simpa using hxz)
-  refine ⟨⟨x, hx_mem⟩, hxz_filt,
-    fun v hv hne ↦ (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) x).mpr
-      ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv), (hother v hv hne).le⟩,
-    ?_⟩
   have hx_filt :
       Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x ∈
         TauCeti.unitFiltration (v₀.adicCompletion K) k := by
     simpa only [inv_mul_cancel_right] using
       (TauCeti.unitFiltration (v₀.adicCompletion K) k).mul_mem
         (TauCeti.unitFiltration_antitone hk hxz_filt) hz
-  exact ((v₀.unitsMap_algebraMap_mem_unitFiltration_iff k x).mp hx_filt).2
+  exact ⟨⟨x, hx_mem⟩, hxz_filt,
+    fun v hv hne ↦ (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) x).mpr
+      ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv), (hother v hv hne).le⟩,
+    hx_filt⟩
 
 end TauCeti.GlobalNumberFields

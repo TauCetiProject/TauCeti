@@ -202,6 +202,23 @@ theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
     coe_complexUnitsCharacter_intCast (n w.val.embedding)
       (n (ComplexEmbedding.conjugate w.val.embedding)) (Units.map w.val.embedding.toMonoidHom x)
 
+open scoped Classical in
+/-- Reindex a product over a finset of real places containing the support of `f` to a product over
+all infinite places extended by `1` at complex places. -/
+private theorem prod_real_dite_eq_of_subset {M : Type*} [CommMonoid M]
+    (S : Finset {w : InfinitePlace K // w.IsReal}) (f : {w : InfinitePlace K // w.IsReal} → M)
+    (hS : ∀ w : {w : InfinitePlace K // w.IsReal}, f w ≠ 1 → w ∈ S) :
+    (∏ w ∈ S, f w) = ∏ w : InfinitePlace K, if hw : w.IsReal then f ⟨w, hw⟩ else 1 := by
+  symm
+  rw [Finset.prod_dite, Finset.prod_const_one, mul_one]
+  refine (Finset.prod_bij_ne_one
+    (fun w _ _ ↦ ⟨w.val, Finset.mem_filter.mpr ⟨Finset.mem_univ _, w.property⟩⟩)
+    (fun _ _ _ ↦ Finset.mem_univ _)
+    (fun _ _ _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+    (fun w _ hne ↦ ⟨⟨w.val, (Finset.mem_filter.mp w.property).2⟩,
+      hS _ hne, fun h ↦ hne h, rfl⟩)
+    (fun _ _ _ ↦ rfl)).symm
+
 /-- For every `x : Kˣ`, the product of the infinite components of `χ` equals the embedding
 monomial of a matching algebraic infinity type `n` multiplied by the real sign twists
 `sgn(τ_w x) ^ (χ.realParity w - n_w)` over any finset `S` of real places containing all real
@@ -238,50 +255,20 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign (χ : HeckeCha
             (e ⟨w, hw⟩).val
         else 1 := by
     simp_rw [he_eq]
-    symm
-    rw [Finset.prod_dite, Finset.prod_const_one, mul_one]
-    refine (Finset.prod_bij_ne_one
-      (fun w _ _ ↦ ⟨w.val, Finset.mem_filter.mpr ⟨Finset.mem_univ _, w.property⟩⟩)
-      (fun _ _ _ ↦ Finset.mem_univ _)
-      (fun _ _ _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
-      (fun w _ hne ↦ ?_) (fun _ _ _ ↦ rfl)).symm
-    refine ⟨⟨w.val, (Finset.mem_filter.mp w.property).2⟩, ?_, fun h ↦ hne h, rfl⟩
-    by_contra hnot
-    apply hne
-    have hpar : χ.infinityType.realParity ⟨w.val, (Finset.mem_filter.mp w.property).2⟩ =
-        (AlgebraicInfinityType.toContinuous n).realParity
-          ⟨w.val, (Finset.mem_filter.mp w.property).2⟩ :=
-      not_imp_comm.mp (hS _) hnot
-    have he0 : e ⟨w.val, (Finset.mem_filter.mp w.property).2⟩ = 0 := by
-      rw [← he_eq, hpar, sub_self]
+    refine prod_real_dite_eq_of_subset (M := ℂ) S _ fun w hne ↦ hS w fun hpar ↦ hne ?_
+    have he0 : e w = 0 := by rw [← he_eq, hpar, sub_self]
     simp [he0]
   rw [AlgebraicInfinityType.coe_embeddingCharacter_apply, hsign,
     ← Finset.prod_fiberwise Finset.univ InfinitePlace.mk, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
   by_cases hw : w.IsReal
-  · have hfiber : (Finset.univ.filter fun σ : K →+* ℂ ↦ InfinitePlace.mk σ = w) =
-        {w.embedding} := by
-      ext σ
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-      have h := InfinitePlace.mk_eq_iff (φ := w.embedding) (ψ := σ)
-      rw [InfinitePlace.mk_embedding, InfinitePlace.conjugate_embedding_eq_of_isReal hw,
-        or_self] at h
-      simpa only [eq_comm] using h
-    rw [hfiber, Finset.prod_singleton, dite_eq_left hw]
+  · rw [InfinitePlace.filter_mk_eq_of_isReal hw, Finset.prod_singleton, dite_eq_left hw]
     exact coe_infiniteComponent_real_of_eq_add χ n e he ⟨w, hw⟩ x
-  · have hne : w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
-      hw (InfinitePlace.isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
-    have hfiber : (Finset.univ.filter fun σ : K →+* ℂ ↦ InfinitePlace.mk σ = w) =
-        {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
-      ext σ
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and,
-        Finset.mem_insert, Finset.mem_singleton]
-      have h := InfinitePlace.mk_eq_iff (φ := w.embedding) (ψ := σ)
-      rw [InfinitePlace.mk_embedding] at h
-      simpa only [eq_comm] using h
-    rw [hfiber, Finset.prod_pair hne, dite_eq_right hw, mul_one]
-    exact coe_infiniteComponent_complex χ n e he
-      ⟨w, InfinitePlace.not_isReal_iff_isComplex.mp hw⟩ x
+  · have hcx : w.IsComplex := InfinitePlace.not_isReal_iff_isComplex.mp hw
+    rw [InfinitePlace.filter_mk_eq,
+      Finset.prod_pair (InfinitePlace.embedding_ne_conjugate_of_isComplex hcx),
+      dite_eq_right hw, mul_one]
+    exact coe_infiniteComponent_complex χ n e he ⟨w, hcx⟩ x
 
 /-- The product of the infinite components of `χ` at `x` is exactly the monomial of an algebraic
 infinity type `n` matching the character on the identity component, provided `x` is positive at

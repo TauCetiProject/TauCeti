@@ -267,34 +267,18 @@ private theorem norm_eq_prod_of_isTotallyPositive {x : K} (hpos : IsTotallyPosit
     refine Finset.prod_congr rfl fun w _ => ?_
     by_cases hw : IsReal w
     · -- A real place has a single embedding above it, namely `embedding w`.
-      have hcard : (Finset.univ.filter fun φ : K →+* ℂ => InfinitePlace.mk φ = w).card = 1 := by
-        rw [InfinitePlace.card_filter_mk_eq, hw.mult_eq_one]
-      have hmem : embedding w ∈ Finset.univ.filter fun φ : K →+* ℂ => InfinitePlace.mk φ = w := by
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, mk_embedding]
-      rw [Finset.eq_singleton_iff_unique_mem.mpr
-          ⟨hmem, fun y hy => Finset.card_le_one.mp hcard.le y hy _ hmem⟩,
-        Finset.prod_singleton, hw.mult_eq_one, pow_one, ← embedding_of_isReal_apply hw]
+      rw [InfinitePlace.filter_mk_eq_of_isReal hw, Finset.prod_singleton, hw.mult_eq_one, pow_one,
+        ← embedding_of_isReal_apply hw]
       -- Total positivity identifies the real embedding with the place.
       have hval : w x = embedding_of_isReal hw x := by
         rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs, abs_of_pos (hpos w hw)]
       rw [hval]
     · -- A complex place has the conjugate pair `embedding w`, `conj (embedding w)` above it.
-      have hne : embedding w ≠ ComplexEmbedding.conjugate (embedding w) := fun h =>
-        hw (isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
-      have hsub : ({embedding w, ComplexEmbedding.conjugate (embedding w)} : Finset (K →+* ℂ)) ⊆
-          Finset.univ.filter fun φ : K →+* ℂ => InfinitePlace.mk φ = w := by
-        intro φ hφ
-        simp only [Finset.mem_insert, Finset.mem_singleton] at hφ
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-        rcases hφ with rfl | rfl
-        · exact mk_embedding w
-        · rw [mk_conjugate_eq]; exact mk_embedding w
-      have hcard : (Finset.univ.filter fun φ : K →+* ℂ => InfinitePlace.mk φ = w).card = 2 := by
-        rw [InfinitePlace.card_filter_mk_eq, (not_isReal_iff_isComplex.mp hw).mult_eq_two]
-      rw [(Finset.eq_of_subset_of_card_le hsub (by rw [hcard, Finset.card_pair hne])).symm,
-        Finset.prod_pair hne, ComplexEmbedding.conjugate_coe_eq, Complex.mul_conj,
-        Complex.normSq_eq_norm_sq, norm_embedding_eq,
-        (not_isReal_iff_isComplex.mp hw).mult_eq_two]
+      have hcx : IsComplex w := not_isReal_iff_isComplex.mp hw
+      rw [InfinitePlace.filter_mk_eq,
+        Finset.prod_pair (InfinitePlace.embedding_ne_conjugate_of_isComplex hcx),
+        ComplexEmbedding.conjugate_coe_eq, Complex.mul_conj, Complex.normSq_eq_norm_sq,
+        norm_embedding_eq, hcx.mult_eq_two]
   exact_mod_cast key
 
 /-- **The norm of a totally positive element is nonnegative.**
