@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.LinearAlgebra.Basis.Bilinear
+import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Real powers and logarithm of a positive-eigenbasis Lie automorphism
@@ -21,6 +23,7 @@ Lie derivation (`LieEquiv.logDerivation`) independent of the eigenbasis and sati
 
 ## Main definitions and results
 
+* `Module.Basis.diagMap_rpow_comp`: composing real-power diagonal endomorphisms adds exponents.
 * `LieEquiv.rpow`, `LieEquiv.rpow_apply_basis`, `LieEquiv.rpow_apply_of_eigenvector`,
   `LieEquiv.rpow_eq_of_basis`, `LieEquiv.rpow_zero`, `LieEquiv.rpow_one`,
   `LieEquiv.rpow_trans`, `LieEquiv.rpow_symm`.
@@ -31,24 +34,24 @@ Lie derivation (`LieEquiv.logDerivation`) independent of the eigenbasis and sati
 
 public section
 
+section RealDiagMap
+
+/-- Composing two real-power diagonal endomorphisms adds their exponents. -/
+theorem Module.Basis.diagMap_rpow_comp {ι V : Type*} [AddCommMonoid V] [Module ℝ V]
+    (b : Module.Basis ι ℝ V) {lam : ι → ℝ} (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
+    (b.diagMap fun i ↦ lam i ^ t).comp (b.diagMap fun i ↦ lam i ^ s) =
+      b.diagMap fun i ↦ lam i ^ (s + t) := by
+  rw [b.diagMap_comp]; congr 1; ext i; rw [← Real.rpow_add (hlam i), add_comm]
+
+end RealDiagMap
+
 namespace LieEquiv
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 open LieAlgebra
 
 variable {ι L : Type*} [LieRing L] [LieAlgebra ℝ L]
-
-private noncomputable def lieBilin (L : Type*) [LieRing L] [LieAlgebra ℝ L] : L →ₗ[ℝ] L →ₗ[ℝ] L :=
-  LinearMap.mk₂ ℝ (fun x y : L ↦ ⁅x, y⁆) add_lie smul_lie lie_add lie_smul
-
-private theorem map_lie_basis_of_apply_basis {P : L ≃ₗ⁅ℝ⁆ L} {b : Module.Basis ι ℝ L}
-    {lam : ι → ℝ} (hb : ∀ i, P (b i) = lam i • b i) (i j : ι) :
-    P ⁅b i, b j⁆ = (lam i * lam j) • ⁅b i, b j⁆ := by
-  rw [map_lie, hb i, hb j, smul_lie, lie_smul, smul_smul]
-
-private theorem rpowDiag_comp (b : Module.Basis ι ℝ L) {lam : ι → ℝ} (hlam : ∀ i, 0 < lam i)
-    (s t : ℝ) : (b.diagMap fun i ↦ lam i ^ t).comp (b.diagMap fun i ↦ lam i ^ s) =
-      b.diagMap fun i ↦ lam i ^ (s + t) := by
-  rw [b.diagMap_comp]; congr 1; ext i; rw [← Real.rpow_add (hlam i), add_comm]
 
 /-- **Real power of a positive-eigenbasis Lie automorphism**: if `P : L ≃ₗ⁅ℝ⁆ L` acts on a basis
 `b` by strictly positive eigenvalues `lam i > 0`, then extending `b i ↦ lam i ^ s • b i` linearly
@@ -58,19 +61,19 @@ noncomputable def rpow (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {la
   let f : ℝ → L →ₗ[ℝ] L := fun t ↦ b.diagMap fun i ↦ lam i ^ t
   have hinv (u v : ℝ) (h : u + v = 0) (x : L) : f v (f u x) = x := by
     rw [← LinearMap.comp_apply]; dsimp only [f]
-    rw [rpowDiag_comp b hlam u v, h]; simp [Real.rpow_zero, ← Pi.one_def]
+    rw [b.diagMap_rpow_comp hlam u v, h]; simp [Real.rpow_zero, ← Pi.one_def]
   { toFun := f s, invFun := f (-s)
     left_inv := hinv s (-s) (add_neg_cancel s), right_inv := hinv (-s) s (neg_add_cancel s)
     map_add' := (f s).map_add, map_smul' := (f s).map_smul
     map_lie' := fun {x y} ↦ by
-      have hbil : (LinearMap.llcomp ℝ L L L (f s)).comp (lieBilin L) =
-          ((lieBilin L).compl₂ (f s)).comp (f s) := by
+      have hbil : (LinearMap.llcomp ℝ L L L (f s)).comp (LieAlgebra.ad ℝ L).toLinearMap =
+          ((LieAlgebra.ad ℝ L).toLinearMap.compl₂ (f s)).comp (f s) := by
         refine LinearMap.ext_basis b b fun i j ↦ ?_
         have heig_ij : f s ⁅b i, b j⁆ = (lam i * lam j) ^ s • ⁅b i, b j⁆ :=
           b.apply_eq_smul_of_apply_eq_smul (f := (P : L →ₗ[ℝ] L)) hb
-            (fun k hk ↦ by simp [f, hk]) (map_lie_basis_of_apply_basis hb i j)
+            (fun k hk ↦ by simp [f, hk]) (P.toLieHom.map_lie_of_apply_eq_smul (hb i) (hb j))
         simp only [LinearMap.comp_apply, LinearMap.llcomp_apply, LinearMap.compl₂_apply,
-          lieBilin, LinearMap.mk₂_apply, f, b.diagMap_apply_basis, heig_ij,
+          LieHom.coe_toLinearMap, ad_apply, f, b.diagMap_apply_basis, heig_ij,
           Real.mul_rpow (hlam i).le (hlam j).le, smul_lie, lie_smul, smul_smul]
         rw [mul_comm (lam i ^ s)]
       exact LinearMap.congr_fun (LinearMap.congr_fun hbil x) y }
@@ -115,7 +118,7 @@ theorem rpow_one (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι
 theorem rpow_trans (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
     (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
     (P.rpow b hb hlam s).trans (P.rpow b hb hlam t) = P.rpow b hb hlam (s + t) :=
-  LieEquiv.ext fun x ↦ LinearMap.congr_fun (rpowDiag_comp b hlam s t) x
+  LieEquiv.ext fun x ↦ LinearMap.congr_fun (b.diagMap_rpow_comp hlam s t) x
 
 /-- The inverse of `P^s` is `P^(-s)`. -/
 @[simp]
@@ -132,14 +135,15 @@ noncomputable def logDerivation (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι �
   { toLinearMap := Dlin
     leibniz' := fun x y ↦ by
       rw [← lie_skew y (Dlin x), sub_neg_eq_add, add_comm]
-      have hbil : (LinearMap.llcomp ℝ L L L Dlin).comp (lieBilin L) =
-          (lieBilin L).comp Dlin + (lieBilin L).compl₂ Dlin := by
+      have hbil : (LinearMap.llcomp ℝ L L L Dlin).comp (LieAlgebra.ad ℝ L).toLinearMap =
+          (LieAlgebra.ad ℝ L).toLinearMap.comp Dlin +
+            (LieAlgebra.ad ℝ L).toLinearMap.compl₂ Dlin := by
         refine LinearMap.ext_basis b b fun i j ↦ ?_
         have heig_ij : Dlin ⁅b i, b j⁆ = Real.log (lam i * lam j) • ⁅b i, b j⁆ :=
           b.apply_eq_smul_of_apply_eq_smul (f := (P : L →ₗ[ℝ] L)) hb
-            (fun k hk ↦ by simp [Dlin, hk]) (map_lie_basis_of_apply_basis hb i j)
+            (fun k hk ↦ by simp [Dlin, hk]) (P.toLieHom.map_lie_of_apply_eq_smul (hb i) (hb j))
         simp only [LinearMap.comp_apply, LinearMap.llcomp_apply, LinearMap.add_apply,
-          LinearMap.compl₂_apply, lieBilin, LinearMap.mk₂_apply, Dlin, b.diagMap_apply_basis,
+          LinearMap.compl₂_apply, LieHom.coe_toLinearMap, ad_apply, Dlin, b.diagMap_apply_basis,
           heig_ij, Real.log_mul (hlam i).ne' (hlam j).ne', add_smul, smul_lie, lie_smul]
       exact LinearMap.congr_fun (LinearMap.congr_fun hbil x) y }
 

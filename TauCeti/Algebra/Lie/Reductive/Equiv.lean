@@ -141,6 +141,7 @@ theorem ofCenterDerived_symm
     (ofCenterDerived hcompl θZ θD).symm = ofCenterDerived hcompl θZ.symm θD.symm :=
   eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq hcompl (by simp) (by simp)
 
+@[simp]
 theorem ofCenterDerived_trans
     (hcompl : IsCompl (center R L) (derivedSeries R L 1))
     (θZ₁ θZ₂ : center R L ≃ₗ⁅R⁆ center R L)

@@ -139,7 +139,31 @@ theorem center_eq_bot (hθ : θ.IsCartanInvolution) : center K L = ⊥ := by
   rw [twistedKillingForm_apply, hz, neg_zero] at hpos
   exact lt_irrefl 0 hpos
 
+/-- Conjugating a Cartan involution by a Lie algebra equivalence yields a Cartan involution. -/
+theorem conj {M : Type*} [LieRing M] [LieAlgebra K M] (hθ : θ.IsCartanInvolution)
+    (e : L ≃ₗ⁅K⁆ M) : (e.symm.trans (θ.trans e)).IsCartanInvolution := by
+  refine ⟨fun y ↦ by simp [hθ.involutive (e.symm y)], fun y hy ↦ ?_⟩
+  have he : e.symm y ≠ 0 := fun h ↦ hy (by simpa using congrArg e h)
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply, twistedKillingForm_conj] using
+    hθ.twistedKillingForm_self_pos he
+
 end IsCartanInvolution
+
+/-- Conjugation by a Lie algebra equivalence preserves the Cartan involution property. -/
+@[simp]
+theorem isCartanInvolution_conj_iff {M : Type*} [LieRing M] [LieAlgebra K M]
+    (θ : L ≃ₗ⁅K⁆ L) (e : L ≃ₗ⁅K⁆ M) :
+    (e.symm.trans (θ.trans e)).IsCartanInvolution ↔ θ.IsCartanInvolution :=
+  ⟨fun h ↦ by simpa only [symm_symm_trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
+
+/-- If `e : L ≃ₗ⁅K⁆ M` intertwines `θ` with `θ'` (`∀ x, θ' (e x) = e (θ x)`), then `θ'` is a
+Cartan involution whenever `θ` is. -/
+theorem IsCartanInvolution.of_intertwines {M : Type*} [LieRing M] [LieAlgebra K M] {θ : L ≃ₗ⁅K⁆ L}
+    (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ M) {θ' : M ≃ₗ⁅K⁆ M}
+    (h : ∀ x, θ' (e x) = e (θ x)) : θ'.IsCartanInvolution := by
+  have hconj : θ' = e.symm.trans (θ.trans e) :=
+    LieEquiv.ext fun y ↦ by obtain ⟨x, rfl⟩ := e.surjective y; simp [h x]
+  rwa [hconj, isCartanInvolution_conj_iff]
 
 /-- A nontrivial abelian Lie algebra admits no Cartan involution, because a Lie algebra admitting
 a Cartan involution has trivial centre. -/
@@ -193,34 +217,6 @@ theorem killingForm_apply_self_pos_of_mem_cartanP (hθ : θ.IsCartanInvolution) 
     (hx : x ∈ θ.cartanP) (hx₀ : x ≠ 0) : 0 < killingForm K L x x := by
   have := hθ.killingForm_apply_apply_neg hx₀
   rwa [mem_cartanP.mp hx, map_neg, neg_lt_zero] at this
-
-/-- Conjugating a Cartan involution by a Lie algebra equivalence yields a Cartan involution. -/
-theorem conj {M : Type*} [LieRing M] [LieAlgebra K M] (hθ : θ.IsCartanInvolution)
-    (e : L ≃ₗ⁅K⁆ M) : (e.symm.trans (θ.trans e)).IsCartanInvolution := by
-  rw [isCartanInvolution_iff]
-  refine ⟨fun y ↦ by simp [hθ.involutive (e.symm y)], fun y hy ↦ ?_⟩
-  have he : e.symm y ≠ 0 := fun h ↦ hy (by simpa using congrArg e h)
-  have hB : killingForm K M y (e (θ (e.symm y))) = killingForm K L (e.symm y) (θ (e.symm y)) := by
-    rw [← killingForm_of_equiv_apply e (e.symm y) (θ (e.symm y)), e.apply_symm_apply]
-  simpa only [trans_apply, hB] using hθ.killingForm_apply_apply_neg he
-
-/-- Conjugation by a Lie algebra equivalence preserves the Cartan involution property. -/
-@[simp]
-theorem _root_.LieEquiv.isCartanInvolution_conj_iff {M : Type*} [LieRing M] [LieAlgebra K M]
-    (θ : L ≃ₗ⁅K⁆ L) (e : L ≃ₗ⁅K⁆ M) :
-    (e.symm.trans (θ.trans e)).IsCartanInvolution ↔ θ.IsCartanInvolution := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.conj e⟩
-  have heq : e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by ext x; simp
-  simpa only [heq] using h.conj e.symm
-
-/-- If `e : L ≃ₗ⁅K⁆ M` intertwines `θ` with `θ'` (`∀ x, θ' (e x) = e (θ x)`), then `θ'` is a
-Cartan involution whenever `θ` is. -/
-theorem of_intertwines {M : Type*} [LieRing M] [LieAlgebra K M] (hθ : θ.IsCartanInvolution)
-    (e : L ≃ₗ⁅K⁆ M) {θ' : M ≃ₗ⁅K⁆ M} (h : ∀ x, θ' (e x) = e (θ x)) :
-    θ'.IsCartanInvolution := by
-  have hconj : θ' = e.symm.trans (θ.trans e) :=
-    LieEquiv.ext fun y ↦ by obtain ⟨x, rfl⟩ := e.surjective y; simp [h x]
-  rwa [hconj, isCartanInvolution_conj_iff]
 
 /-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
 theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L := by

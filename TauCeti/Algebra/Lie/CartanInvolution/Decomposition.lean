@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.Killing
+public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
+public import TauCeti.LinearAlgebra.Eigenspace.Involution
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.FixedSubmodule
 
@@ -31,11 +35,19 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 ## Main results
 
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
+* `LieEquiv.projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive`,
+  `LieEquiv.projection_fixedSubalgebra_cartanP_apply`,
+  `LieEquiv.projection_cartanP_fixedSubalgebra_eq_eigenProjOfInvolutive`,
+  `LieEquiv.projection_cartanP_fixedSubalgebra_apply`: the canonical projections onto `𝔨` and `𝔭`
+  are the involution eigenprojections `x ↦ ½ (x ± θ x)`.
+* `LieEquiv.map_cartanP`, `LieEquiv.maximal_abelian_submodule_cartanP_iff`,
+  `LieEquiv.maximal_isLieAbelian_cartanP_iff`: intertwining equivalences transport `𝔭` and its
+  maximal abelian subspaces.
 * `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket
   relations `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`.
 * `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`: `B(𝔨, 𝔭) = 0`.
-* `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is invariant under automorphisms commuting
-  with `θ`.
+* `LieEquiv.twistedKillingForm_map_map_of_commute`, `LieEquiv.twistedKillingForm_conj`: invariance
+  and conjugation pullback of `B_θ`.
 * `LieEquiv.isSymm_twistedKillingForm`: `B_θ` is symmetric when `θ` is involutive.
 * `LieEquiv.ad_mem_skewAdjointSubmodule_twistedKillingForm`,
   `LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`: `ad x` is `B_θ`-skew-adjoint for
@@ -86,6 +98,96 @@ theorem isCompl_fixedSubalgebra_cartanP (h2 : IsUnit (2 : R)) (hθ : Function.In
   rw [LieHom.fixedSubalgebra_toSubmodule]
   exact this
 
+variable (θ) in
+/-- The Cartan projection onto `𝔨` along `𝔭` is the `1`-eigenprojection of `θ`. -/
+theorem projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive [Invertible (2 : R)]
+    (hθ : Function.Involutive θ)
+    (h : IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP) :
+    θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h =
+      (Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) 1).subtype.comp
+        (Module.End.eigenProjOfInvolutive
+          (show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ)
+          (one_mul 1)) := by
+  ext x
+  let g : Module.End R L := (θ.toLinearEquiv : Module.End R L)
+  have hg : Function.Involutive g := hθ
+  let u := Module.End.eigenProjOfInvolutive hg (one_mul (1 : R)) x
+  let v := Module.End.eigenProjOfInvolutive hg ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x
+  have hu : (u : L) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
+    rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace]
+    exact u.property
+  have hv : (v : L) ∈ θ.cartanP := v.property
+  have huv : (u : L) + v = x :=
+    Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg _ _ x
+  calc
+    θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h x
+        = θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h ((u : L) + v) := by
+          rw [huv]
+    _ = θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h u +
+          θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h v := map_add _ _ _
+    _ = (u : L) + 0 := by
+          rw [Submodule.projection_apply_of_mem_left h hu,
+            Submodule.projection_apply_of_mem_right h hv]
+    _ = u := add_zero _
+
+variable (θ) in
+/-- On vectors `x : L`, the Cartan projection onto `𝔨` along `𝔭` is `⅟2 • (x + θ x)`. -/
+theorem projection_fixedSubalgebra_cartanP_apply [Invertible (2 : R)]
+    (hθ : Function.Involutive θ)
+    (h : IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP) (x : L) :
+    θ.toLieHom.fixedSubalgebra.toSubmodule.projection θ.cartanP h x = (⅟2 : R) • (x + θ x) := by
+  rw [LinearMap.congr_fun (θ.projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive hθ h) x,
+    LinearMap.comp_apply, Submodule.coe_subtype,
+    Module.End.coe_eigenProjOfInvolutive_apply
+      (hg := show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ),
+    one_smul]
+  simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
+
+variable (θ) in
+/-- The Cartan projection onto `𝔭` along `𝔨` is the `-1`-eigenprojection of `θ`. -/
+theorem projection_cartanP_fixedSubalgebra_eq_eigenProjOfInvolutive [Invertible (2 : R)]
+    (hθ : Function.Involutive θ)
+    (h : IsCompl θ.cartanP θ.toLieHom.fixedSubalgebra.toSubmodule) :
+    θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h =
+      (Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) (-1)).subtype.comp
+        (Module.End.eigenProjOfInvolutive
+          (show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ)
+          ((neg_mul_neg (1 : R) 1).trans (one_mul 1))) := by
+  ext x
+  let g : Module.End R L := (θ.toLinearEquiv : Module.End R L)
+  have hg : Function.Involutive g := hθ
+  let u := Module.End.eigenProjOfInvolutive hg (one_mul (1 : R)) x
+  let v := Module.End.eigenProjOfInvolutive hg ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x
+  have hu : (u : L) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
+    rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace]
+    exact u.property
+  have hv : (v : L) ∈ θ.cartanP := v.property
+  have huv : (u : L) + v = x :=
+    Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg _ _ x
+  calc
+    θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h x
+        = θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h ((u : L) + v) := by
+          rw [huv]
+    _ = θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h u +
+          θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h v := map_add _ _ _
+    _ = 0 + v := by
+          rw [Submodule.projection_apply_of_mem_right h hu,
+            Submodule.projection_apply_of_mem_left h hv]
+    _ = v := zero_add _
+
+variable (θ) in
+/-- On vectors `x : L`, the Cartan projection onto `𝔭` along `𝔨` is `⅟2 • (x - θ x)`. -/
+theorem projection_cartanP_fixedSubalgebra_apply [Invertible (2 : R)]
+    (hθ : Function.Involutive θ)
+    (h : IsCompl θ.cartanP θ.toLieHom.fixedSubalgebra.toSubmodule) (x : L) :
+    θ.cartanP.projection θ.toLieHom.fixedSubalgebra.toSubmodule h x = (⅟2 : R) • (x - θ x) := by
+  rw [LinearMap.congr_fun (θ.projection_cartanP_fixedSubalgebra_eq_eigenProjOfInvolutive hθ h) x,
+    LinearMap.comp_apply, Submodule.coe_subtype,
+    Module.End.coe_eigenProjOfInvolutive_apply
+      (hg := show Function.Involutive (θ.toLinearEquiv : Module.End R L) from hθ),
+    neg_one_smul, ← sub_eq_add_neg]
+  simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
+
 /-- For an involutive automorphism `θ`, `x + θ x` lies in the fixed subalgebra `𝔨`. -/
 theorem add_apply_mem_fixedSubalgebra (hθ : Function.Involutive θ) (x : L) :
     x + θ x ∈ θ.toLieHom.fixedSubalgebra := by
@@ -122,6 +224,64 @@ theorem map_cartanP {M : Type*} [LieRing M] [LieAlgebra R M] (e : L ≃ₗ⁅R�
     simp only [coe_toLieHom]
     rw [← h, e.apply_symm_apply, hy, map_neg, e.apply_symm_apply])
 
+/-- An intertwining Lie equivalence preserves maximal abelian subspaces inside `𝔭`. -/
+theorem maximal_abelian_submodule_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M]
+    (e : L ≃ₗ⁅R⁆ M) {θ' : M ≃ₗ⁅R⁆ M} (h : ∀ x, θ' (e x) = e (θ x)) (𝔞 : Submodule R L) :
+    Maximal (fun 𝔟 : Submodule R M ↦ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
+        (𝔞.map (e : L →ₗ[R] M)) ↔
+      Maximal (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞 := by
+  let φ : Submodule R L ≃o Submodule R M := Submodule.orderIsoMapComap e.toLinearEquiv
+  have hP (𝔟 : Submodule R L) :
+      (φ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ φ 𝔟, ∀ y ∈ φ 𝔟, ⁅x, y⁆ = 0) ↔
+        (𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) := by
+    have hsub : φ 𝔟 ≤ θ'.cartanP ↔ 𝔟 ≤ θ.cartanP := by
+      rw [← map_cartanP (θ := θ) e h]
+      exact φ.le_iff_le
+    refine and_congr hsub ⟨fun hab x hx y hy ↦ e.injective ?_, fun hab x hx y hy ↦ ?_⟩
+    · rw [e.toLieHom.map_lie, map_zero]
+      exact hab (e x) ⟨x, hx, rfl⟩ (e y) ⟨y, hy, rfl⟩
+    · obtain ⟨x₀, hx₀, rfl⟩ := hx
+      obtain ⟨y₀, hy₀, rfl⟩ := hy
+      change ⁅e x₀, e y₀⁆ = 0
+      rw [← e.map_lie, hab x₀ hx₀ y₀ hy₀, map_zero]
+  refine ⟨fun ⟨hq, hmax⟩ ↦ ⟨(hP 𝔞).mp hq, fun 𝔟 h𝔟 hle ↦
+      φ.le_iff_le.mp (hmax ((hP 𝔟).mpr h𝔟) (φ.monotone hle))⟩,
+    fun ⟨hp, hmax⟩ ↦ ⟨(hP 𝔞).mpr hp, fun 𝔟 h𝔟 hle ↦ by
+      obtain ⟨𝔟₀, rfl⟩ := φ.surjective 𝔟
+      exact φ.monotone (hmax ((hP 𝔟₀).mp h𝔟) (φ.le_iff_le.mp hle))⟩⟩
+
+/-- An intertwining Lie equivalence preserves maximal abelian Lie subalgebras inside `𝔭`. -/
+theorem maximal_isLieAbelian_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M]
+    (e : L ≃ₗ⁅R⁆ M) {θ' : M ≃ₗ⁅R⁆ M} (h : ∀ x, θ' (e x) = e (θ x)) (𝔞 : LieSubalgebra R L) :
+    Maximal (fun 𝔟 : LieSubalgebra R M ↦ 𝔟.toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian 𝔟)
+        (𝔞.map e.toLieHom) ↔
+      Maximal (fun 𝔟 : LieSubalgebra R L ↦ 𝔟.toSubmodule ≤ θ.cartanP ∧ IsLieAbelian 𝔟) 𝔞 := by
+  have he_lin : (e.toLieHom : L →ₗ[R] M) = (e : L →ₗ[R] M) := LinearMap.ext fun _ ↦ rfl
+  have hP (𝔟 : LieSubalgebra R L) :
+      ((𝔟.map e.toLieHom).toSubmodule ≤ θ'.cartanP ∧ IsLieAbelian (𝔟.map e.toLieHom)) ↔
+        (𝔟.toSubmodule ≤ θ.cartanP ∧ IsLieAbelian 𝔟) := by
+    have hsub : (𝔟.map e.toLieHom).toSubmodule ≤ θ'.cartanP ↔ 𝔟.toSubmodule ≤ θ.cartanP := by
+      rw [LieSubalgebra.map_toSubmodule, ← map_cartanP (θ := θ) e h, ← he_lin]
+      exact Submodule.map_le_map_iff_of_injective e.injective _ _
+    exact and_congr hsub (lie_abelian_iff_equiv_lie_abelian (e.lieSubalgebraMap 𝔟)).symm
+  have hmap_mono {𝔟₁ 𝔟₂ : LieSubalgebra R L} (hle : 𝔟₁ ≤ 𝔟₂) :
+      𝔟₁.map e.toLieHom ≤ 𝔟₂.map e.toLieHom := fun _ ⟨x, hx, hxy⟩ ↦ hxy ▸ ⟨x, hle hx, rfl⟩
+  have hmap_le_iff {𝔟₁ 𝔟₂ : LieSubalgebra R L} :
+      𝔟₁.map e.toLieHom ≤ 𝔟₂.map e.toLieHom ↔ 𝔟₁ ≤ 𝔟₂ := by
+    rw [← LieSubalgebra.toSubmodule_le_toSubmodule, LieSubalgebra.map_toSubmodule,
+      LieSubalgebra.map_toSubmodule, Submodule.map_le_map_iff_of_injective e.injective _ _,
+      LieSubalgebra.toSubmodule_le_toSubmodule]
+  refine ⟨fun ⟨hq, hmax⟩ ↦ ⟨(hP 𝔞).mp hq, fun 𝔟 h𝔟 hle ↦
+      hmap_le_iff.mp (hmax ((hP 𝔟).mpr h𝔟) (hmap_mono hle))⟩,
+    fun ⟨hp, hmax⟩ ↦ ⟨(hP 𝔞).mpr hp, fun 𝔟 h𝔟 hle ↦ by
+      have hmap_symm : (𝔟.map e.symm.toLieHom).map e.toLieHom = 𝔟 := by
+        ext y
+        simp only [LieSubalgebra.mem_map, coe_toLieHom]
+        exact ⟨fun ⟨x, ⟨z, hz, hzx⟩, hxy⟩ ↦ by simpa [← hxy, ← hzx] using hz,
+          fun hy ↦ ⟨e.symm y, ⟨y, hy, rfl⟩, e.apply_symm_apply y⟩⟩
+      rw [← hmap_symm] at h𝔟 hle ⊢
+      exact hmap_mono (hmax ((hP _).mp h𝔟) (hmap_le_iff.mp hle))⟩⟩
+
 /-- `[𝔨, 𝔭] ⊆ 𝔭`. -/
 theorem lie_mem_cartanP {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
     ⁅x, y⁆ ∈ θ.cartanP := by
@@ -157,6 +317,15 @@ noncomputable def twistedKillingForm : LinearMap.BilinForm R L :=
 theorem twistedKillingForm_apply (x y : L) :
     θ.twistedKillingForm x y = -killingForm R L x (θ y) := by
   simp [twistedKillingForm]
+
+/-- Pulling back the twisted Killing form of a conjugate automorphism `e.symm.trans (θ.trans e)`
+along `e` recovers `θ.twistedKillingForm`. -/
+theorem twistedKillingForm_conj {M : Type*} [LieRing M] [LieAlgebra R M]
+    (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ M) (x y : M) :
+    (e.symm.trans (θ.trans e)).twistedKillingForm x y =
+      θ.twistedKillingForm (e.symm x) (e.symm y) := by
+  simp only [twistedKillingForm_apply, trans_apply]
+  rw [← killingForm_of_equiv_apply e (e.symm x) (θ (e.symm y)), e.apply_symm_apply]
 
 /-- On the second argument in `𝔨`, the twisted Killing form is `-B`. -/
 theorem twistedKillingForm_apply_of_mem_fixedSubalgebra {x y : L}

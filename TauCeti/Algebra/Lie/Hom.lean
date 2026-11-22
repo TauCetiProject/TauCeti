@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Lie.Basic
 /-!
 # Intertwining Lie algebra homomorphisms
 
-Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
-construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
-intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
-actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`).
+Basic constructors, simp, eigenvector, and intertwining lemmas for `LieHom`, `LieEquiv`, and
+`LinearEquiv`: construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`),
+eigenvalue multiplication under brackets (`LieHom.map_lie_of_apply_eq_smul`), composition and
+cancellation of intertwining and conjugating homomorphisms/equivalences
+(`LieHom.comp_intertwines`, `LieEquiv.symm_intertwines`, `LieEquiv.trans_conj_symm`,
+`LinearEquiv.symm_lie_eq_of_lie_eq`).
 -/
 
 public section
@@ -32,6 +34,12 @@ theorem comp_intertwines (u : L →ₗ⁅R⁆ M) (v : M →ₗ⁅R⁆ N)
     k.comp (v.comp u) = (v.comp u).comp f := by
   ext x
   exact (congr_fun hv (u x)).trans (congrArg v (congr_fun hu x))
+
+/-- A Lie algebra endomorphism multiplies eigenvalues on Lie brackets of eigenvectors. -/
+theorem map_lie_of_apply_eq_smul (f : L →ₗ⁅R⁆ L) {u v : L} {μ ν : R}
+    (hu : f u = μ • u) (hv : f v = ν • v) :
+    f ⁅u, v⁆ = (μ * ν) • ⁅u, v⁆ := by
+  rw [map_lie, hu, hv, smul_lie, lie_smul, smul_smul]
 
 end LieHom
 
@@ -70,6 +78,18 @@ theorem trans_intertwines (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N)
     (h₂ : k.comp e₂.toLieHom = e₂.toLieHom.comp g) :
     k.comp (e₁.trans e₂).toLieHom = (e₁.trans e₂).toLieHom.comp f :=
   LieHom.comp_intertwines e₁.toLieHom e₂.toLieHom h₁ h₂
+
+/-- Conjugating an automorphism by `e` and then by `e.symm` recovers the original automorphism. -/
+@[simp]
+theorem trans_conj_symm (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) :
+    e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by
+  ext x; simp
+
+/-- Conjugating an automorphism by `e` and then by `e.symm` (written with `e.symm.symm`) recovers
+the original automorphism. -/
+theorem symm_symm_trans_conj_symm (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) :
+    e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by
+  rw [e.symm_symm, trans_conj_symm]
 
 end LieEquiv
 

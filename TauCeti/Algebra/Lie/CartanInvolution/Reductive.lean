@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Reductive.Equiv
 import Mathlib.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Reductive.Basic
 
 /-!
@@ -127,14 +128,16 @@ theorem finiteDimensional_derivedSeries [IsStrictOrderedRing K]
 
 /-- Conjugating a reductive Cartan involution by a Lie algebra equivalence yields a reductive
 Cartan involution. -/
-theorem conj [IsStrictOrderedRing K] (hθ : θ.IsReductiveCartanInvolution) (e : L ≃ₗ⁅K⁆ M) :
+theorem conj (hθ : θ.IsReductiveCartanInvolution) (e : L ≃ₗ⁅K⁆ M) :
     (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution := by
   refine ⟨?_, fun y ↦ by simp [hθ.involutive (e.symm y)], ?_⟩
-  · have hZ : (center K L).toSubmodule.map e.toLinearMap = (center K M).toSubmodule :=
-      congrArg LieSubalgebra.toSubmodule e.map_center
+  · have hZ : (center K L).toSubmodule.map e.toLinearMap = (center K M).toSubmodule := by
+      rw [← LieIdeal.toLieSubalgebra_toSubmodule, ← LieSubalgebra.map_toSubmodule, e.map_center,
+        LieIdeal.toLieSubalgebra_toSubmodule]
     have hD : (derivedSeries K L 1).toSubmodule.map e.toLinearMap =
-        (derivedSeries K M 1).toSubmodule :=
-      congrArg LieSubalgebra.toSubmodule (e.map_derivedSeries 1)
+        (derivedSeries K M 1).toSubmodule := by
+      rw [← LieIdeal.toLieSubalgebra_toSubmodule, ← LieSubalgebra.map_toSubmodule,
+        e.map_derivedSeries 1, LieIdeal.toLieSubalgebra_toSubmodule]
     rw [← LieSubmodule.isCompl_toSubmodule, ← hZ, ← hD]
     exact (LieSubmodule.isCompl_toSubmodule.mpr hθ.isCompl_center_derivedSeries).map
       (Submodule.orderIsoMapComap e.toLinearEquiv)
@@ -157,12 +160,9 @@ end IsReductiveCartanInvolution
 
 /-- Conjugation by a Lie algebra equivalence preserves the reductive Cartan involution property. -/
 @[simp]
-theorem isReductiveCartanInvolution_conj_iff [IsStrictOrderedRing K] (θ : L ≃ₗ⁅K⁆ L)
-    (e : L ≃ₗ⁅K⁆ M) :
-    (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.conj e⟩
-  have heq : e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by ext x; simp
-  simpa only [heq] using h.conj e.symm
+theorem isReductiveCartanInvolution_conj_iff (θ : L ≃ₗ⁅K⁆ L) (e : L ≃ₗ⁅K⁆ M) :
+    (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution :=
+  ⟨fun h ↦ by simpa only [symm_symm_trans_conj_symm] using h.conj e.symm, fun h ↦ h.conj e⟩
 
 /-- **Extension from the derived ideal and centre**: when `L = Z(L) ⊕ [L, L]`, an assembled
 automorphism `ofCenterDerived hcompl θZ θD` is a reductive Cartan involution iff `θZ` is involutive
@@ -195,9 +195,9 @@ theorem isReductiveCartanInvolution_iff_involutive_of_isLieAbelian [IsStrictOrde
     [IsLieAbelian L] {θ : L ≃ₗ⁅K⁆ L} : θ.IsReductiveCartanInvolution ↔ Function.Involutive θ := by
   have hZ : center K L = ⊤ := (isLieAbelian_iff_center_eq_top K L).mp inferInstance
   have hD : derivedSeries K L 1 = ⊥ := by
-    rw [eq_bot_iff, derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero,
-      LieSubmodule.lie_le_iff]
-    exact fun x _ y _ ↦ by simp [trivial_lie_zero]
+    rw [derivedSeries_def, ← LieAlgebra.abelian_iff_derived_one_eq_bot,
+      lie_abelian_iff_equiv_lie_abelian LieIdeal.topEquiv]
+    infer_instance
   refine ⟨fun h ↦ h.involutive, fun hθ ↦ ⟨by rw [hZ, hD]; exact isCompl_top_bot, hθ, ?_⟩⟩
   rw [isCartanInvolution_iff]
   refine ⟨fun x ↦ Subtype.ext (by simpa using hθ (x : L)), fun x hx ↦ ?_⟩
@@ -214,8 +214,11 @@ theorem IsCartanInvolution.isReductiveCartanInvolution [IsStrictOrderedRing K] {
     LieEquiv.ofEq (⊤ : LieSubalgebra K L) (derivedSeries K L 1).toLieSubalgebra
       (by rw [hθ.derivedSeries_one_eq_top, LieIdeal.top_toLieSubalgebra])
   let e : L ≃ₗ⁅K⁆ derivedSeries K L 1 := e₁.trans e₂
-  have he (y : L) : (e y : L) = y :=
-    (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
+  have he (y : L) : (e y : L) = y := calc
+    (e y : L) = (e₂ (e₁ y) : L) := congrArg Subtype.val (LieEquiv.trans_apply e₁ e₂ y)
+    _ = ((e₁ y : (⊤ : LieSubalgebra K L)) : L) := LieEquiv.ofEq_apply _ _ _ (e₁ y)
+    _ = LieSubalgebra.topEquiv (e₁ y) := (LieSubalgebra.topEquiv_apply (e₁ y)).symm
+    _ = y := (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
   exact hθ.of_intertwines e fun y ↦ Subtype.ext (by simp [he])
 
 end LinearOrder

@@ -99,12 +99,20 @@ private theorem exists_mem_cartanP_ad_basis {ι : Type*}
   have hZ₀_apply (y : L) : ⁅Z₀, y⁆ = D y := by
     simpa using congrArg (fun f : LieDerivation ℝ L L ↦ f y) hZ₀
   have hD_anti (y : L) : D (θ y) = -θ (D y) := P.logDerivation_apply_conj b hb hlam θ
-    (fun x ↦ by rw [eq_symm_apply]; simp [P, hθ.involutive _, hθ' _]) y
+    (LinearEquiv.involutive_sq_trans_conj_left θ.toLinearEquiv θ'.toLinearEquiv
+      hθ.involutive hθ') y
   have hZ₀P : Z₀ ∈ θ.cartanP := by
     have hcent : θ Z₀ + Z₀ ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule _ _ _ _).mpr fun w ↦ by
-      have hθZ₀ : ⁅θ Z₀, w⁆ = θ (D (θ w)) := by
-        nth_rw 1 [← hθ.involutive w]; rw [← map_lie, hZ₀_apply]
-      rw [← lie_skew, add_lie, hθZ₀, hD_anti, map_neg, hθ.involutive, hZ₀_apply]; simp
+      have hθZ₀ : θ ⁅Z₀, θ w⁆ = ⁅θ Z₀, w⁆ := calc
+        θ ⁅Z₀, θ w⁆ = ⁅θ Z₀, θ (θ w)⁆ := θ.map_lie Z₀ (θ w)
+        _ = ⁅θ Z₀, w⁆ := by rw [hθ.involutive w]
+      have hanti : ⁅θ Z₀, w⁆ = -⁅Z₀, w⁆ := calc
+        ⁅θ Z₀, w⁆ = θ ⁅Z₀, θ w⁆ := hθZ₀.symm
+        _ = θ (D (θ w)) := by rw [hZ₀_apply]
+        _ = θ (-θ (D w)) := by rw [hD_anti]
+        _ = -D w := by rw [map_neg, hθ.involutive]
+        _ = -⁅Z₀, w⁆ := by rw [hZ₀_apply]
+      rw [← lie_skew, add_lie, hanti, neg_add_cancel, neg_zero]
     rw [hθ.center_eq_bot, LieSubmodule.mem_bot] at hcent
     exact mem_cartanP.mpr (eq_neg_of_add_eq_zero_left hcent)
   refine ⟨(-(1 / 4 : ℝ)) • Z₀, θ.cartanP.smul_mem _ hZ₀P, fun i ↦ ?_⟩
@@ -141,8 +149,9 @@ private theorem conj_rpow_eq {ι : Type*}
     have hNN : N (N (b i)) = lam i • b i := by rw [← trans_apply]; exact hb i
     have hN : N (b i) = lam i • N.symm (b i) := by
       simpa only [symm_apply_apply, map_smul] using congrArg N.symm hNN
-    have hNs : N.symm (b i) = θ' (θ (b i)) := by
-      rw [symm_apply_eq]; simp [N, hθ'.involutive _, hθ.involutive _]
+    have hNs : N.symm (b i) = θ' (θ (b i)) :=
+      LinearEquiv.involutive_trans_symm θ.toLinearEquiv θ'.toLinearEquiv
+        hθ.involutive hθ'.involutive (b i)
     have hθθ' : θ (θ' (b i)) = lam i • θ' (θ (b i)) := by simpa only [N, trans_apply, hNs] using hN
     rw [hθθ', smul_smul, ← Real.rpow_add_one (hlam i).ne']
     norm_num

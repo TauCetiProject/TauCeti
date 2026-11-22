@@ -58,10 +58,13 @@ algebraic closedness, and the answer names the basis vectors involved.
   `μ`, and its dimension is their number.
 * `Module.Basis.apply_eq_smul_of_apply_eq_smul`: a linear map scaling every `μ`-eigenbasis vector
   of `f` by `ν` acts on every `μ`-eigenvector of `f` as scalar multiplication by `ν`.
-* `LinearEquiv.apply_eq_inv_smul_of_conj`, `LinearEquiv.involutive_trans_symm`, and
-  `LinearEquiv.sq_trans_apply_inv_of_eigenvector`: conjugation to the inverse sends
-  `μ`-eigenvectors to `μ⁻¹`-eigenvectors, and involutions `θ, θ'` send `μ`-eigenvectors of
-  `(θ' ∘ θ)²` to `μ⁻¹`-eigenvectors.
+* `LinearEquiv.apply_eq_inv_smul_of_conj`, `LinearEquiv.involutive_trans_symm`,
+  `LinearEquiv.involutive_trans_conj_left`, `LinearEquiv.involutive_trans_conj_right`,
+  `LinearEquiv.trans_self_conj_of_conj`, `LinearEquiv.involutive_sq_trans_conj_left`,
+  `LinearEquiv.involutive_sq_trans_conj_right`, and `LinearEquiv.sq_trans_apply_inv_of_eigenvector`:
+  conjugation to the inverse sends `μ`-eigenvectors to `μ⁻¹`-eigenvectors, and involutions `θ, θ'`
+  conjugate `θ' ∘ θ` and `(θ' ∘ θ)²` to their inverses and send `μ`-eigenvectors of `(θ' ∘ θ)²`
+  to `μ⁻¹`-eigenvectors.
 -/
 
 public section
@@ -333,6 +336,58 @@ end Eigenspace
 
 /-! ### Eigenvectors inverted by conjugation -/
 
+section Semiring
+
+variable [Semiring K] [AddCommMonoid V] [Module K V]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `(θ'.trans θ).symm x = θ' (θ x)`. -/
+theorem _root_.LinearEquiv.involutive_trans_symm (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    (θ'.trans θ).symm x = θ' (θ x) := by
+  rw [LinearEquiv.symm_apply_eq, LinearEquiv.trans_apply, hθ', hθ]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ` conjugates `θ'.trans θ` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_trans_conj_left (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ ((θ'.trans θ) x) = (θ'.trans θ).symm (θ x) := by
+  rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply, hθ, hθ]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ'` conjugates `θ'.trans θ` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_trans_conj_right (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ' ((θ'.trans θ) x) = (θ'.trans θ).symm (θ' x) := by
+  rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply]
+
+/-- If a linear map `σ` conjugates `N` to `N.symm`, then `σ` conjugates `N.trans N` to
+`(N.trans N).symm`. -/
+theorem _root_.LinearEquiv.trans_self_conj_of_conj (N : V ≃ₗ[K] V) (σ : V →ₗ[K] V)
+    (hσ : ∀ x, σ (N x) = N.symm (σ x)) (x : V) :
+    σ ((N.trans N) x) = (N.trans N).symm (σ x) := by
+  simp only [LinearEquiv.trans_apply, LinearEquiv.trans_symm]
+  rw [hσ (N x), hσ x]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ` conjugates `(θ'.trans θ)²` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_sq_trans_conj_left (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ (((θ'.trans θ).trans (θ'.trans θ)) x) =
+      ((θ'.trans θ).trans (θ'.trans θ)).symm (θ x) :=
+  (θ'.trans θ).trans_self_conj_of_conj θ.toLinearMap
+    (LinearEquiv.involutive_trans_conj_left θ θ' hθ hθ') x
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ'` conjugates `(θ'.trans θ)²` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_sq_trans_conj_right (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ' (((θ'.trans θ).trans (θ'.trans θ)) x) =
+      ((θ'.trans θ).trans (θ'.trans θ)).symm (θ' x) :=
+  (θ'.trans θ).trans_self_conj_of_conj θ'.toLinearMap
+    (LinearEquiv.involutive_trans_conj_right θ θ' hθ hθ') x
+
+end Semiring
+
 section DivisionRing
 
 variable [DivisionRing K] [AddCommGroup V] [Module K V]
@@ -349,12 +404,6 @@ theorem _root_.LinearEquiv.apply_eq_inv_smul_of_conj (P : V ≃ₗ[K] V) (σ : V
     P (σ v) = μ⁻¹ • (μ • P (σ v)) := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
     _ = μ⁻¹ • σ v := congrArg (μ⁻¹ • ·) h
 
-/-- For two involutive linear equivalences `θ` and `θ'`, `(θ'.trans θ).symm x = θ' (θ x)`. -/
-theorem _root_.LinearEquiv.involutive_trans_symm (θ θ' : V ≃ₗ[K] V)
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
-    (θ'.trans θ).symm x = θ' (θ x) := by
-  rw [LinearEquiv.symm_apply_eq, LinearEquiv.trans_apply, hθ', hθ]
-
 /-- For two involutive linear equivalences `θ` and `θ'`, both `θ` and `θ'` map every
 `μ`-eigenvector of `(θ' ∘ θ)²` (with `μ ≠ 0`) to a `μ⁻¹`-eigenvector. -/
 theorem _root_.LinearEquiv.sq_trans_apply_inv_of_eigenvector (θ θ' : V ≃ₗ[K] V)
@@ -362,15 +411,11 @@ theorem _root_.LinearEquiv.sq_trans_apply_inv_of_eigenvector (θ θ' : V ≃ₗ[
     (hv : ((θ'.trans θ).trans (θ'.trans θ)) v = μ • v) :
     ((θ'.trans θ).trans (θ'.trans θ)) (θ v) = μ⁻¹ • θ v ∧
       ((θ'.trans θ).trans (θ'.trans θ)) (θ' v) = μ⁻¹ • θ' v := by
-  let N := θ'.trans θ
-  have hconj (σ : V →ₗ[K] V) (hσ : ∀ x, σ (N x) = N.symm (σ x)) : (N.trans N) (σ v) = μ⁻¹ • σ v :=
-    (N.trans N).apply_eq_inv_smul_of_conj σ (fun x ↦ by
-      simp only [LinearEquiv.trans_apply, LinearEquiv.trans_symm]; rw [hσ (N x), hσ x]) hμ hv
-  refine ⟨hconj θ.toLinearMap fun x ↦ ?_, hconj θ'.toLinearMap fun x ↦ ?_⟩
-  · rw [LinearEquiv.coe_toLinearMap, LinearEquiv.involutive_trans_symm θ θ' hθ hθ',
-      LinearEquiv.trans_apply, hθ (θ' x), hθ x]
-  · rw [LinearEquiv.coe_toLinearMap, LinearEquiv.involutive_trans_symm θ θ' hθ hθ',
-      LinearEquiv.trans_apply]
+  let P := (θ'.trans θ).trans (θ'.trans θ)
+  exact ⟨P.apply_eq_inv_smul_of_conj θ.toLinearMap
+      (LinearEquiv.involutive_sq_trans_conj_left θ θ' hθ hθ') hμ hv,
+    P.apply_eq_inv_smul_of_conj θ'.toLinearMap
+      (LinearEquiv.involutive_sq_trans_conj_right θ θ' hθ hθ') hμ hv⟩
 
 end DivisionRing
 
