@@ -167,7 +167,7 @@ end Reflection
 variable {n : ℕ} {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {ν : EuclideanSpace ℝ (Fin (n + 1))} {c₀ : ℝ}
 
-/-- The reflection-invariant neighbourhood `V = B ∪ ρ B` of a ball `B` centred in the closed
+/-- The reflection-invariant neighbourhood `V = (B ∪ ρ B) ∩ U` of a ball `B` centred in the closed
 half-space: it lies in `U` when `B` does and `ρ U ⊆ U`, and its part in `H` lies in `B`. -/
 private theorem exists_le_and_inf_subset_ball_inter
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
@@ -177,25 +177,13 @@ private theorem exists_le_and_inf_subset_ball_inter
     ∃ V : Opens (EuclideanSpace ℝ (Fin (n + 1))), MapsTo (hyperplaneReflection ν c₀) V V ∧
       V ≤ U ∧ B ≤ V ∧ ((V ⊓ H : Opens _) : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆
         ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) := by
-  have hball : ball z r ⊆ U := hBz ▸ SetLike.coe_subset_coe.mpr hBU
-  have hρball : ∀ {y : EuclideanSpace ℝ (Fin (n + 1))} {s : ℝ} {x}, x ∈ ball y s →
-      hyperplaneReflection ν c₀ x ∈ ball (hyperplaneReflection ν c₀ y) s := fun hx => by
-    rwa [mem_ball, (hyperplaneReflection ν c₀).dist_map]
-  refine ⟨⟨ball z r ∪ ball (hyperplaneReflection ν c₀ z) r, isOpen_ball.union isOpen_ball⟩,
-    fun x hx => ?_, fun x hx => ?_, fun x hx => Or.inl (by simpa [← hBz] using hx), ?_⟩
-  · rcases hx with hx | hx
-    · exact Or.inr (hρball hx)
-    · exact Or.inl (by simpa using hρball hx)
-  · rcases hx with hx | hx
-    · exact hball hx
-    · have h' := hU (hball (by simpa using hρball hx))
-      rwa [hyperplaneReflection_hyperplaneReflection] at h'
-  · rintro x ⟨hxV, hxH⟩
-    refine ⟨?_, hxH⟩
-    rcases hxV with hx | hx
-    · exact hx
-    · rw [mem_ball] at hx ⊢
-      exact (dist_le_dist_hyperplaneReflection ((hH x).1 hxH).le hz).trans_lt hx
+  obtain ⟨V, hVρ, hBV, hVH, -⟩ := exists_opens_mapsTo_hyperplaneReflection (r := r)
+    Bornology.isBounded_singleton (by simpa using hz : ∀ x ∈ ({z} : Set _), c₀ ≤ ⟪x, ν⟫_ℝ)
+  rw [thickening_singleton] at hBV hVH
+  refine ⟨V ⊓ U, fun x hx => ⟨hVρ hx.1, hU hx.2⟩, inf_le_right,
+    le_inf (fun x hx => hBV (by simpa [← hBz] using hx)) hBU, ?_⟩
+  rintro x ⟨⟨hxV, -⟩, hxH⟩
+  exact ⟨hVH ⟨hxV, (hH x).1 hxH⟩, hxH⟩
 
 /-- **Comparison with a harmonic function on balls centred in the closed half-space.** Let
 `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, and let

@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Integral lattices in a real vector space
@@ -67,6 +68,8 @@ forcing the integral and real ranks to agree.
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
   `p i(N)` of the image of an integral lattice is closed.
+* `TauCeti.Toric.IsIntegralLattice.isDiscrete_range_smul`: every rescaling `p i(N)` of the image of
+  an integral lattice is discrete.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
 * `TauCeti.Toric.isIntegralLattice_castAddHom`, `TauCeti.Toric.isIntegralLattice_intCast`: the
@@ -402,6 +405,20 @@ theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : �
     simp [eq_comm]
   rw [hrange]
   exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
+
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is discrete in `V`: it is the image
+of the discrete lattice `i(N)` under a homeomorphism for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isDiscrete_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsDiscrete ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact Set.Subsingleton.isDiscrete (by simp)
+  have := hi.discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (isDiscrete_iff_discreteTopology.2 ‹_›).image (Homeomorph.smulOfNeZero p hp).isInducing
 
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportTopology
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
@@ -51,6 +51,8 @@ The converse direction of the universal property is
   the chart recovers `ψ • s`.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 * `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: the universal
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
@@ -404,6 +406,23 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
     simp [hsum y hy]
   · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.property h),
       smul_zero]
+
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+`σ`-compact manifold with finite-dimensional model, every compactly supported section is a finite
+sum of chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
+theorem span_iUnion_range_chartTestSection_eq_top :
+    Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun s ↦ ?_
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
+  let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
+  obtain ⟨t, ψ, L, hL, hψ, hdecomp⟩ := exists_ofSupportedIn_eq_sum (I := I) (F := F) (V := V)
+    (n := n) K
+  have hs : s = ofSupportedIn K σ := Subtype.ext (ofSupportedIn_apply K σ).symm
+  rw [hs, hdecomp σ]
+  refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
+    ⟨⟨trivializationAt F V x, testChart F I V x, contMDiffOn_testChart V x,
+      testChart_source_subset V x⟩, mem_range_self _⟩)
 
 variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
