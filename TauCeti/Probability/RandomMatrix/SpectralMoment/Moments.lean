@@ -92,19 +92,24 @@ private theorem iIndepFun_padZero {Ω : Type*} [MeasurableSpace Ω] {P : Measure
     iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
       Sum.elim (padZeroOffDiag ξ n) (fun i ω ↦ (padZeroDiag η n i ω : ℂ)) idx) P := by
   have := hindep.isProbabilityMeasure
-  let e : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} → StrictUpper ⊕ ℕ :=
-    Sum.map Subtype.val Subtype.val
-  refine iIndepFun_of_ae_eq_const_outside_range (e := e) ?_ ?_
-  · refine hindep.congr fun r ↦ .of_forall fun ω ↦ ?_
-    rcases r with ⟨ij, hij⟩ | ⟨i, hi⟩
-    · simp [e, padZeroOffDiag, hij]
-    · simp [e, padZeroDiag, hi]
+  let s : Set (StrictUpper ⊕ ℕ) := {idx | Sum.elim (fun ij ↦ ij.val.2 < n) (fun i ↦ i < n) idx}
+  let g : s → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
+    fun ⟨idx, hidx⟩ ↦ match idx, hidx with
+      | .inl ij, hij => .inl ⟨ij, hij⟩
+      | .inr i, hi => .inr ⟨i, hi⟩
+  have hg : Function.Injective g := fun ⟨a, _⟩ ⟨b, _⟩ hab ↦ Subtype.ext <| by
+    rcases a with ij | i <;> rcases b with ij' | i' <;> cases hab <;> rfl
+  refine ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside (s := s) ?_ ?_
+  · refine (hindep.precomp hg).congr fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
+    rcases idx with ij | i
+    · simp [g, padZeroOffDiag, show ij.val.2 < n from hidx]
+    · simp [g, padZeroDiag, show i < n from hidx]
   · intro idx hnot
     refine ⟨0, .of_forall fun ω ↦ ?_⟩
     rcases idx with ij | i
-    · have hij : ¬ ij.val.2 < n := fun h ↦ hnot ⟨.inl ⟨ij, h⟩, rfl⟩
+    · have hij : ¬ ij.val.2 < n := hnot
       simp [padZeroOffDiag, hij]
-    · have hi : ¬ i < n := fun h ↦ hnot ⟨.inr ⟨i, h⟩, rfl⟩
+    · have hi : ¬ i < n := hnot
       simp [padZeroDiag, hi]
 
 private theorem variance_integral_pow_spectralMeasure_wignerMatrix_le_of_lt

@@ -13,10 +13,9 @@ import TauCeti.Probability.HasLaw
 /-!
 # Basic criteria for independence
 
-A dependent family of random variables is independent if `f ∘ e` is independent and every
-coordinate outside `Set.range e` is almost surely constant
-(`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range`), specializing to
-`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`.
+A dependent family of random variables is independent if all but at most one coordinate are
+almost surely constant; no measurability assumption or restriction on the index type is needed
+(`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`).
 
 Under a zero or probability measure `P`, a random variable `Z` is independent of a sub-σ-algebra `m`
 whenever restricting `P` to every `m`-measurable event `A` (or `A ∩ F` for an almost-surely holding
@@ -38,56 +37,67 @@ namespace TauCeti.Probability
 variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
   [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-/-- A dependent family `f` is independent if `f ∘ e` is independent and every coordinate outside
-`Set.range e` is almost surely constant. -/
-theorem iIndepFun_of_ae_eq_const_outside_range {κ : Type*} {e : κ → ι} {f : ∀ i, Ω → β i}
-    (hindep : iIndepFun (fun k => f (e k)) μ)
-    (hf : ∀ i ∉ Set.range e, ∃ c, f i =ᵐ[μ] fun _ => c) : iIndepFun f μ := by
+omit [IsProbabilityMeasure μ] in
+/-- An independent restriction remains independent when the other coordinates are almost
+surely constant. The constants and the exceptional null sets may depend on the coordinate. -/
+theorem _root_.ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside
+    {f : ∀ i, Ω → β i} {s : Set ι}
+    (h : iIndepFun (fun i : s ↦ f i.val) μ)
+    (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ ↦ c) : iIndepFun f μ := by
   classical
-  let g (i : ι) : Ω → β i := if hi : i ∈ Set.range e then f i else fun _ => (hf i hi).choose
-  suffices hg : iIndepFun g μ from hg.congr fun i => by
-    dsimp only [g]; split_ifs with hi; exacts [.rfl, (hf i hi).choose_spec.symm]
-  have hindep_g : iIndepFun (fun k => g (e k)) μ :=
-    hindep.congr fun k => by simp only [g, Set.mem_range_self, ↓reduceDIte]; rfl
-  rw [iIndepFun_iff]; intro S f' hf'
-  by_cases hzero : ∃ i ∈ S, i ∉ Set.range e ∧ f' i = ∅
-  · obtain ⟨i, hi, _, hfi⟩ := hzero
-    have hempty : (⋂ j ∈ S, f' j) = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun ω hω => by
-      simpa [hfi] using Set.mem_iInter₂.mp hω i hi
-    rw [hempty, measure_empty]
-    exact (Finset.prod_eq_zero hi (by rw [hfi, measure_empty])).symm
-  · have huniv (i : ι) (hi : i ∈ S) (hri : i ∉ Set.range e) : f' i = Set.univ := by
-      have hm := hf' i hi
-      have hgi : g i = fun _ => (hf i hri).choose := by simp only [g, hri, ↓reduceDIte]
-      rw [hgi, MeasurableSpace.comap_const, MeasurableSpace.measurableSet_bot_iff] at hm
-      exact hm.resolve_left fun h0 => hzero ⟨i, hi, hri, h0⟩
-    let S₁ : Finset ι := S.filter (· ∈ Set.range e)
-    let ψ (j : S₁) : κ := (Finset.mem_filter.mp j.property).2.choose
-    have hψ (j : S₁) : e (ψ j) = j.val := (Finset.mem_filter.mp j.property).2.choose_spec
-    have hcomap {a b : ι} (hab : a = b) :
-        MeasurableSpace.comap (g a) inferInstance = MeasurableSpace.comap (g b) inferInstance := by
-      subst hab; rfl
-    have hindep_S₁ : iIndep (fun j : S₁ => MeasurableSpace.comap (g j.val) inferInstance) μ := by
-      simpa only [Function.comp_def, fun j => hcomap (hψ j)] using
-        hindep_g.iIndep.precomp (g := ψ) fun a b h => Subtype.ext (by rw [← hψ a, ← hψ b, h])
-    have hinter : (⋂ i ∈ S, f' i) = ⋂ j : S₁, f' j.val := by
-      ext ω; simp only [Set.mem_iInter, Subtype.forall, S₁, Finset.mem_filter]
-      exact ⟨fun h i hi => h i hi.1, fun h i hi => if hri : i ∈ Set.range e then
-        h i ⟨hi, hri⟩ else by rw [huniv i hi hri]; trivial⟩
-    have hprod : ∏ i ∈ S, μ (f' i) = ∏ j : S₁, μ (f' j.val) := by
-      rw [Finset.prod_coe_sort S₁ (fun i => μ (f' i))]
-      exact (Finset.prod_subset (Finset.filter_subset _ S) fun i hi hni => by
-        rw [huniv i hi fun hri => hni (Finset.mem_filter.mpr ⟨hi, hri⟩), measure_univ]).symm
-    rw [hinter, hprod]
-    exact hindep_S₁.meas_iInter fun j => hf' j.val (Finset.filter_subset _ S j.property)
+  have := h.isProbabilityMeasure
+  let g (i : ι) : Ω → β i :=
+    if hi : i ∈ s then f i else fun _ ↦ (hf i hi).choose
+  have hfg (i : ι) : f i =ᵐ[μ] g i := by
+    dsimp [g]
+    split_ifs with hi
+    · exact Filter.EventuallyEq.rfl
+    · exact (hf i hi).choose_spec
+  suffices hg : iIndepFun g μ from hg.congr (fun i ↦ (hfg i).symm)
+  rw [iIndepFun_iff_measure_inter_preimage_eq_mul]
+  intro S sets hs
+  by_cases hbad : ∃ i ∈ S, ∃ c, g i = (fun _ ↦ c) ∧ c ∉ sets i
+  · obtain ⟨i, hi, c, hgi, hci⟩ := hbad
+    have hempty : g i ⁻¹' sets i = ∅ := by simp [hgi, hci]
+    have hInter : (⋂ j ∈ S, g j ⁻¹' sets j) = ∅ :=
+      Set.eq_empty_iff_forall_notMem.mpr fun ω hω ↦ by
+        have := Set.mem_iInter₂.mp hω i hi
+        simp only [hempty, Set.mem_empty_iff_false] at this
+    rw [hInter, measure_empty]
+    exact (Finset.prod_eq_zero hi (by rw [hempty, measure_empty])).symm
+  have hfull (i : ι) (hi : i ∈ S) (hsi : i ∉ s) : g i ⁻¹' sets i = Set.univ := by
+    have hg : g i = fun _ ↦ (hf i hsi).choose := by simp [g, hsi]
+    have hci : (hf i hsi).choose ∈ sets i := by
+      by_contra hn
+      exact hbad ⟨i, hi, _, hg, hn⟩
+    simp [hg, hci]
+  let T := S.subtype (· ∈ s)
+  have h' := h.measure_inter_preimage_eq_mul T (sets := fun i ↦ sets i)
+    (fun i hi ↦ hs i (Finset.mem_subtype.mp hi))
+  have hInter : (⋂ j ∈ S, g j ⁻¹' sets j) = ⋂ j ∈ T, f j.val ⁻¹' sets j := by
+    ext ω
+    simp only [Set.mem_iInter, Set.mem_preimage]
+    refine ⟨fun hw i hi ↦ ?_, fun hw i hi ↦ ?_⟩
+    · simpa [g, i.property] using hw i (Finset.mem_subtype.mp hi)
+    · by_cases his : i ∈ s
+      · simpa [g, his] using hw ⟨i, his⟩ (Finset.mem_subtype.mpr hi)
+      · have hmem : ω ∈ g i ⁻¹' sets i := (hfull i hi his).symm ▸ Set.mem_univ ω
+        exact hmem
+  rw [hInter, h']
+  calc
+    _ = ∏ j ∈ S.filter (· ∈ s), μ (f j ⁻¹' sets j) := Finset.prod_subtype_eq_prod_filter _
+    _ = ∏ j ∈ S.filter (· ∈ s), μ (g j ⁻¹' sets j) :=
+      Finset.prod_congr rfl fun j hj ↦ by simp [g, (Finset.mem_filter.mp hj).2]
+    _ = _ := Finset.prod_subset (Finset.filter_subset _ _) fun j hj hjs ↦ by
+      rw [hfull j hj (fun hjs' ↦ hjs (Finset.mem_filter.mpr ⟨hj, hjs'⟩)), measure_univ]
 
 /-- A family is independent if its coordinates are almost surely constant outside a subsingleton
 set of indices. The constants and the exceptional null sets may depend on the coordinate. -/
 theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {s : Set ι}
-    (hs : s.Subsingleton) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) : iIndepFun f μ := by
-  have : Subsingleton s := hs.coe_sort
-  exact iIndepFun_of_ae_eq_const_outside_range (e := (Subtype.val : s → ι))
-    iIndepFun.of_subsingleton (by simpa only [Subtype.range_coe] using hf)
+    (hs : s.Subsingleton) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
+    iIndepFun f μ := by
+  let : Subsingleton s := ⟨fun i j ↦ Subtype.ext (hs i.property j.property)⟩
+  exact (iIndepFun.of_subsingleton (f := fun i : s ↦ f i.val)).of_subtype_of_ae_eq_const_outside hf
 
 end TauCeti.Probability
 

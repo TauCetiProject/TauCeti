@@ -34,8 +34,10 @@ Read on `S × B`, for a point `x` of the sphere:
 
 The sequences split, through the section, which is the Künneth formula
 `Hₘ(Sᵈ × B) ≅ Hₘ(B) ⊕ H_{m-d}(B)` for a sphere factor, with no hypothesis on the coefficients or
-on `B`; the splitting itself is not packaged here. For the unit circle the same vanishing and
-isomorphism criteria are `TauCeti.isZero_singularHomology_circle_prod_succ_iff` and
+on `B`; the splitting itself is not packaged here. When `Hₘ(B)` vanishes, the connecting
+morphism gives `Hₘ(S × B) ≅ H_{m-d}(B)` (`TauCeti.singularHomologySphereProdIso`). For the unit
+circle the same vanishing and isomorphism criteria are
+`TauCeti.isZero_singularHomology_circle_prod_succ_iff` and
 `TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff`, through the Wang sequence of a
 mapping torus. These are the forms in which the homology of a space weakly equivalent to a product
 with a sphere, such as the loop space of a quaternionic projective space, is computed.
@@ -46,6 +48,7 @@ with a sphere, such as the loop space of a quaternionic projective space, is com
   isomorphism if and only if `Hₙ(B) = 0`.
 * `TauCeti.isZero_singularHomology_sphere_prod_iff`: `H_{n+d}(S × B) = 0` if and only if
   `H_{n+d}(B) = 0` and `Hₙ(B) = 0`.
+* `TauCeti.singularHomologySphereProdIso`: `H_{n+d}(S × B) ≅ Hₙ(B)` when `H_{n+d}(B) = 0`.
 
 ## References
 
@@ -171,5 +174,23 @@ theorem isZero_singularHomology_sphere_prod_iff_of_lt (hE : finrank ℝ E = d + 
   have := Module.nontrivial_of_finrank_eq_succ hE
   rw [isZero_singularHomology_sphere_prod_iff_isZero,
     and_iff_left (isZero_singularHomology_prodThomPair R B E (by omega))]
+
+/-- **`H_{n+d}(S × B) ≅ Hₙ(B)` when `H_{n+d}(B)` vanishes**, for `S` the unit sphere of a real
+normed space `E` of dimension `d + 1`, with coefficients in any abelian category with coproducts.
+It is the inverse of the connecting morphism `H_{n+d+1}(B × E, B × (E ∖ {0})) ⟶ H_{n+d}(B × (E ∖
+{0}))` of the Thom pair of the product bundle, which is an isomorphism because the next term
+`H_{n+d}(B × E) ≅ H_{n+d}(B)` vanishes, read on `S × B` through the homotopy equivalence
+`B × (E ∖ {0}) ≃ S × B` and followed by the Thom isomorphism with `Hₙ(B)`. -/
+def singularHomologySphereProdIso (hE : finrank ℝ E = d + 1) {n m : ℕ} (h : n + d = m)
+    (hB : IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of B))) :
+    ((singularHomologyFunctor A m).obj R).obj (TopCat.of (sphere (0 : E) 1 × B)) ≅
+      ((singularHomologyFunctor A n).obj R).obj (TopCat.of B) :=
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  have hδ := (shortExact_singularHomology_prodThomPair R B E m).isIso_f_iff.2
+    (hB.of_iso ((ContinuousMap.HomotopyEquiv.prodContractible B E).singularHomologyIso R m))
+  ((prodThomPairPuncturedHomotopyEquivSphere B E).singularHomologyIso R m).symm ≪≫
+    (@asIso _ _ _ _ ((prodThomPair B E).singularHomologyδ R (m + 1) m) hδ).symm ≪≫
+    prodThomPairSingularHomologyIso R B E n (m + 1) (by omega)
 
 end TauCeti
