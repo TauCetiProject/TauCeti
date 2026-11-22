@@ -18,10 +18,12 @@ For a commutative topological semiring `R` and topological `R`-modules `E` and `
 `TauCeti.ModulePontryaginDual R E M` is the `R`-module of continuous `R`-linear maps `M →L[R] E`
 with the compact-open topology induced from `C(M, E)`. For discrete `M` this coincides with
 pointwise convergence (`isClosedEmbedding_coe`); for compact `M` and discrete `E` it is discrete
-(`instDiscreteTopology`). We provide contravariant (`map`, `congr`) and covariant (`mapCodomain`,
-`congrCodomain`) functoriality and evaluation (`eval`, continuous when `M` is discrete via
-`continuous_eval_of_discrete` or when `M` is compact and `E` is discrete via
-`continuous_eval_of_compact`).
+(`instDiscreteTopology`). We provide contravariant (`ContinuousLinearMap.pontryaginDualMap`,
+`ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
+(`ContinuousLinearMap.pontryaginDualMapCodomain`,
+`ContinuousLinearEquiv.pontryaginDualCongrCodomain`) functoriality and evaluation (`eval`,
+continuous when `M` is discrete via `continuous_eval_of_discrete` or when `M` is compact and `E`
+is discrete via `continuous_eval_of_compact`).
 
 ## References
 
@@ -145,6 +147,11 @@ theorem continuous_of_continuous_eval [DiscreteTopology M] {X : Type*} [Topologi
     {f : X → ModulePontryaginDual R E M} (h : ∀ x : M, Continuous fun a : X ↦ f a x) :
     Continuous f := isEmbedding_coe.continuous_iff.mpr (continuous_pi h)
 
+/-- When `M` is compact and `E` is discrete, `ModulePontryaginDual R E M` is discrete. -/
+instance instDiscreteTopology [CompactSpace M] [DiscreteTopology E] :
+    DiscreteTopology (ModulePontryaginDual R E M) :=
+  .of_continuous_injective continuous_toContinuousMap toContinuousMap_injective
+
 end Basic
 
 section AddCommGroup
@@ -184,11 +191,6 @@ instance : IsTopologicalAddGroup (ModulePontryaginDual R E M) where
   continuous_neg := isInducing_toContinuousMap.continuous_iff.mpr <|
     (continuous_neg.comp continuous_toContinuousMap).congr fun _ ↦ ContinuousMap.ext fun _ ↦ rfl
 
-/-- When `M` is compact and `E` is discrete, `ModulePontryaginDual R E M` is discrete. -/
-instance instDiscreteTopology [CompactSpace M] [DiscreteTopology E] :
-    DiscreteTopology (ModulePontryaginDual R E M) :=
-  .of_continuous_injective continuous_toContinuousMap toContinuousMap_injective
-
 end AddCommGroup
 
 section SMul
@@ -198,6 +200,8 @@ variable {R : Type u} {S : Type*} {E : Type v} {M : Type w}
   [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousConstSMul S E]
   [AddCommGroup M] [Module R M] [TopologicalSpace M]
 
+/-- An `S`-action on `E` commuting with the `R`-action induces a pointwise `S`-module structure
+on `ModulePontryaginDual R E M`. -/
 instance : Module S (ModulePontryaginDual R E M) :=
   letI : SMul S (ModulePontryaginDual R E M) := ⟨fun s φ ↦ ⟨s • φ.toContinuousLinearMap⟩⟩
   DFunLike.coe_injective.module S
@@ -248,80 +252,6 @@ def equivLinearMap [DiscreteTopology M] : ModulePontryaginDual R E M ≃ₗ[R] (
 @[simp] theorem equivLinearMap_symm_apply [DiscreteTopology M] (f : M →ₗ[R] E) (x : M) :
     (equivLinearMap R E M).symm f x = f x := (rfl)
 
-section Domain
-
-variable {N : Type w'} [AddCommGroup N] [Module R N] [TopologicalSpace N]
-
-/-- Contravariant functoriality: precomposition by `f : M →L[R] N` is continuous. -/
-def map (f : M →L[R] N) : ModulePontryaginDual R E N →L[R] ModulePontryaginDual R E M where
-  toFun ψ := ⟨ψ.toContinuousLinearMap.comp f⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  cont := isInducing_toContinuousMap.continuous_iff.mpr <|
-    (ContinuousMap.continuous_precomp ⟨f, f.continuous⟩).comp continuous_toContinuousMap
-@[simp] theorem map_apply (f : M →L[R] N) (ψ : ModulePontryaginDual R E N) (x : M) :
-    map (E := E) f ψ x = ψ (f x) := (rfl)
-@[simp] theorem map_id :
-    map (E := E) (ContinuousLinearMap.id R M) = ContinuousLinearMap.id R _ := by ext; rfl
-@[simp] theorem map_comp {P : Type*} [AddCommGroup P] [Module R P] [TopologicalSpace P]
-    (g : N →L[R] P) (f : M →L[R] N) :
-    map (E := E) (g.comp f) = (map (E := E) f).comp (map (E := E) g) := by ext; rfl
-
-/-- A continuous linear equivalence dualizes to one in the opposite direction. -/
-def congr (e : M ≃L[R] N) : ModulePontryaginDual R E N ≃L[R] ModulePontryaginDual R E M :=
-  .ofContinuousLinearMap (map (E := E) e.toContinuousLinearMap)
-    (map (E := E) e.symm.toContinuousLinearMap) (by ext; simp) (by ext; simp)
-@[simp] theorem congr_apply (e : M ≃L[R] N) (ψ : ModulePontryaginDual R E N) (x : M) :
-    congr (E := E) e ψ x = ψ (e x) := (rfl)
-@[simp] theorem congr_symm (e : M ≃L[R] N) :
-    (congr (E := E) e).symm = congr (E := E) e.symm := (rfl)
-@[simp] theorem congr_refl :
-    congr (E := E) (ContinuousLinearEquiv.refl R M) = ContinuousLinearEquiv.refl R _ := by ext; rfl
-@[simp] theorem congr_trans {P : Type*} [AddCommGroup P] [Module R P] [TopologicalSpace P]
-    (e : M ≃L[R] N) (e' : N ≃L[R] P) :
-    congr (E := E) (e.trans e') = (congr (E := E) e').trans (congr (E := E) e) := by ext; rfl
-
-end Domain
-
-section Codomain
-
-variable {F : Type*} [AddCommGroup F] [Module R F] [TopologicalSpace F]
-  [IsTopologicalAddGroup F] [ContinuousConstSMul R F]
-
-/-- Covariant functoriality in the dualizing module: postcomposition by `f : E →L[R] F`. -/
-def mapCodomain (f : E →L[R] F) : ModulePontryaginDual R E M →L[R] ModulePontryaginDual R F M where
-  toFun φ := ⟨f.comp φ.toContinuousLinearMap⟩
-  map_add' _ _ := ext fun _ ↦ map_add f _ _
-  map_smul' _ _ := ext fun _ ↦ map_smul f _ _
-  cont := isInducing_toContinuousMap.continuous_iff.mpr <|
-    (ContinuousMap.continuous_postcomp ⟨f, f.continuous⟩).comp continuous_toContinuousMap
-@[simp] theorem mapCodomain_apply (f : E →L[R] F) (φ : ModulePontryaginDual R E M) (x : M) :
-    mapCodomain (M := M) f φ x = f (φ x) := (rfl)
-@[simp] theorem mapCodomain_id :
-    mapCodomain (M := M) (ContinuousLinearMap.id R E) = ContinuousLinearMap.id R _ := by ext; rfl
-@[simp] theorem mapCodomain_comp {G : Type*} [AddCommGroup G] [Module R G] [TopologicalSpace G]
-    [IsTopologicalAddGroup G] [ContinuousConstSMul R G] (g : F →L[R] G) (f : E →L[R] F) :
-    mapCodomain (M := M) (g.comp f) =
-      (mapCodomain (M := M) g).comp (mapCodomain (M := M) f) := by ext; rfl
-
-/-- A continuous linear equivalence of dualizing modules induces one on Pontryagin duals. -/
-def congrCodomain (e : E ≃L[R] F) :
-    ModulePontryaginDual R E M ≃L[R] ModulePontryaginDual R F M :=
-  .ofContinuousLinearMap (mapCodomain (M := M) e.toContinuousLinearMap)
-    (mapCodomain (M := M) e.symm.toContinuousLinearMap) (by ext; simp) (by ext; simp)
-@[simp] theorem congrCodomain_apply (e : E ≃L[R] F) (φ : ModulePontryaginDual R E M) (x : M) :
-    congrCodomain (M := M) e φ x = e (φ x) := (rfl)
-@[simp] theorem congrCodomain_symm (e : E ≃L[R] F) :
-    (congrCodomain (M := M) e).symm = congrCodomain (M := M) e.symm := (rfl)
-@[simp] theorem congrCodomain_refl :
-    congrCodomain (M := M) (ContinuousLinearEquiv.refl R E) = .refl R _ := by ext; rfl
-@[simp] theorem congrCodomain_trans {G : Type*} [AddCommGroup G] [Module R G] [TopologicalSpace G]
-    [IsTopologicalAddGroup G] [ContinuousConstSMul R G] (e : E ≃L[R] F) (e' : F ≃L[R] G) :
-    congrCodomain (M := M) (e.trans e') =
-      (congrCodomain (M := M) e).trans (congrCodomain (M := M) e') := by ext; rfl
-
-end Codomain
-
 variable (R E M) in
 /-- Evaluation into the double dual, sending `x : M` to the continuous functional `φ ↦ φ x`. -/
 def eval : M →ₗ[R] ModulePontryaginDual R E (ModulePontryaginDual R E M) where
@@ -330,11 +260,6 @@ def eval : M →ₗ[R] ModulePontryaginDual R E (ModulePontryaginDual R E M) whe
   map_add' _ _ := ext fun φ ↦ map_add φ _ _
   map_smul' _ _ := ext fun φ ↦ map_smul φ _ _
 @[simp] theorem eval_apply (x : M) (φ : ModulePontryaginDual R E M) : eval R E M x φ = φ x := (rfl)
-
-/-- Naturality of evaluation with respect to continuous linear maps. -/
-theorem map_map_eval {N : Type w'} [AddCommGroup N] [Module R N] [TopologicalSpace N]
-    (f : M →L[R] N) (x : M) :
-    map (E := E) (map (E := E) f) (eval R E M x) = eval R E N (f x) := ext fun _ ↦ rfl
 
 /-- Evaluation into the double dual is continuous when `M` is discrete. -/
 theorem continuous_eval_of_discrete [DiscreteTopology M] : Continuous (eval R E M) :=
@@ -349,3 +274,119 @@ end Module
 end ModulePontryaginDual
 
 end TauCeti
+
+section Functoriality
+
+open TauCeti TauCeti.ModulePontryaginDual
+
+variable {R : Type u} {E : Type v} {M : Type w} {N : Type w'}
+  [CommSemiring R] [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousConstSMul R E]
+  [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N]
+
+namespace ContinuousLinearMap
+
+section Domain
+
+/-- Contravariant functoriality on Pontryagin duals: precomposition by `f : M →L[R] N` is
+continuous. -/
+def pontryaginDualMap (f : M →L[R] N) :
+    ModulePontryaginDual R E N →L[R] ModulePontryaginDual R E M where
+  toFun ψ := ⟨ψ.toContinuousLinearMap.comp f⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  cont := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (ContinuousMap.continuous_precomp ⟨f, f.continuous⟩).comp continuous_toContinuousMap
+@[simp] theorem pontryaginDualMap_apply (f : M →L[R] N) (ψ : ModulePontryaginDual R E N) (x : M) :
+    f.pontryaginDualMap (E := E) ψ x = ψ (f x) := (rfl)
+@[simp] theorem pontryaginDualMap_id :
+    (ContinuousLinearMap.id R M).pontryaginDualMap (E := E) = ContinuousLinearMap.id R _ := by
+  ext; rfl
+@[simp] theorem pontryaginDualMap_comp {P : Type*} [AddCommGroup P] [Module R P]
+    [TopologicalSpace P] (g : N →L[R] P) (f : M →L[R] N) :
+    (g.comp f).pontryaginDualMap (E := E) =
+      (f.pontryaginDualMap (E := E)).comp (g.pontryaginDualMap (E := E)) := by ext; rfl
+
+/-- Naturality of double-dual evaluation with respect to continuous linear maps. -/
+theorem pontryaginDualMap_pontryaginDualMap_eval (f : M →L[R] N) (x : M) :
+    (f.pontryaginDualMap (E := E)).pontryaginDualMap (eval R E M x) = eval R E N (f x) :=
+  ModulePontryaginDual.ext fun _ ↦ rfl
+
+end Domain
+
+section Codomain
+
+variable {F : Type*} [AddCommGroup F] [Module R F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousConstSMul R F]
+
+/-- Covariant functoriality in the dualizing module: postcomposition by `f : E →L[R] F`. -/
+def pontryaginDualMapCodomain (f : E →L[R] F) :
+    ModulePontryaginDual R E M →L[R] ModulePontryaginDual R F M where
+  toFun φ := ⟨f.comp φ.toContinuousLinearMap⟩
+  map_add' _ _ := ModulePontryaginDual.ext fun _ ↦ map_add f _ _
+  map_smul' _ _ := ModulePontryaginDual.ext fun _ ↦ map_smul f _ _
+  cont := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (ContinuousMap.continuous_postcomp ⟨f, f.continuous⟩).comp continuous_toContinuousMap
+@[simp] theorem pontryaginDualMapCodomain_apply (f : E →L[R] F) (φ : ModulePontryaginDual R E M)
+    (x : M) : f.pontryaginDualMapCodomain (M := M) φ x = f (φ x) := (rfl)
+@[simp] theorem pontryaginDualMapCodomain_id :
+    (ContinuousLinearMap.id R E).pontryaginDualMapCodomain (M := M) =
+      ContinuousLinearMap.id R _ := by ext; rfl
+@[simp] theorem pontryaginDualMapCodomain_comp {G : Type*} [AddCommGroup G] [Module R G]
+    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul R G]
+    (g : F →L[R] G) (f : E →L[R] F) :
+    (g.comp f).pontryaginDualMapCodomain (M := M) =
+      (g.pontryaginDualMapCodomain (M := M)).comp (f.pontryaginDualMapCodomain (M := M)) := by
+  ext; rfl
+
+end Codomain
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+/-- A continuous linear equivalence dualizes to one in the opposite direction. -/
+def pontryaginDualCongr (e : M ≃L[R] N) :
+    ModulePontryaginDual R E N ≃L[R] ModulePontryaginDual R E M :=
+  .ofContinuousLinearMap (e.toContinuousLinearMap.pontryaginDualMap (E := E))
+    (e.symm.toContinuousLinearMap.pontryaginDualMap (E := E)) (by ext; simp) (by ext; simp)
+@[simp] theorem pontryaginDualCongr_apply (e : M ≃L[R] N) (ψ : ModulePontryaginDual R E N)
+    (x : M) : e.pontryaginDualCongr (E := E) ψ x = ψ (e x) := (rfl)
+@[simp] theorem pontryaginDualCongr_symm (e : M ≃L[R] N) :
+    (e.pontryaginDualCongr (E := E)).symm = e.symm.pontryaginDualCongr (E := E) := (rfl)
+@[simp] theorem pontryaginDualCongr_refl :
+    (ContinuousLinearEquiv.refl R M).pontryaginDualCongr (E := E) =
+      ContinuousLinearEquiv.refl R _ := by ext; rfl
+@[simp] theorem pontryaginDualCongr_trans {P : Type*} [AddCommGroup P] [Module R P]
+    [TopologicalSpace P] (e : M ≃L[R] N) (e' : N ≃L[R] P) :
+    (e.trans e').pontryaginDualCongr (E := E) =
+      (e'.pontryaginDualCongr (E := E)).trans (e.pontryaginDualCongr (E := E)) := by ext; rfl
+
+variable {F : Type*} [AddCommGroup F] [Module R F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousConstSMul R F]
+
+/-- A continuous linear equivalence of dualizing modules induces one on Pontryagin duals. -/
+def pontryaginDualCongrCodomain (e : E ≃L[R] F) :
+    ModulePontryaginDual R E M ≃L[R] ModulePontryaginDual R F M :=
+  .ofContinuousLinearMap (e.toContinuousLinearMap.pontryaginDualMapCodomain (M := M))
+    (e.symm.toContinuousLinearMap.pontryaginDualMapCodomain (M := M))
+    (by ext; simp) (by ext; simp)
+@[simp] theorem pontryaginDualCongrCodomain_apply (e : E ≃L[R] F) (φ : ModulePontryaginDual R E M)
+    (x : M) : e.pontryaginDualCongrCodomain (M := M) φ x = e (φ x) := (rfl)
+@[simp] theorem pontryaginDualCongrCodomain_symm (e : E ≃L[R] F) :
+    (e.pontryaginDualCongrCodomain (M := M)).symm =
+      e.symm.pontryaginDualCongrCodomain (M := M) := (rfl)
+@[simp] theorem pontryaginDualCongrCodomain_refl :
+    (ContinuousLinearEquiv.refl R E).pontryaginDualCongrCodomain (M := M) = .refl R _ := by
+  ext; rfl
+@[simp] theorem pontryaginDualCongrCodomain_trans {G : Type*} [AddCommGroup G] [Module R G]
+    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul R G]
+    (e : E ≃L[R] F) (e' : F ≃L[R] G) :
+    (e.trans e').pontryaginDualCongrCodomain (M := M) =
+      (e.pontryaginDualCongrCodomain (M := M)).trans
+        (e'.pontryaginDualCongrCodomain (M := M)) := by ext; rfl
+
+end ContinuousLinearEquiv
+
+end Functoriality
