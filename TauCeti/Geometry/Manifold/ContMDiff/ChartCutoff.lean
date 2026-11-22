@@ -161,15 +161,19 @@ theorem exists_contMDiff_comp_extChartAt_symm_eq {n : WithTop ℕ∞} [IsManifol
     ∃ u : M → F, ContMDiff I 𝓘(𝕜, F) n u ∧ HasCompactSupport u ∧
       tsupport u ⊆ (extChartAt I c).symm '' tsupport w ∧
       ∀ y ∈ (extChartAt I c).target, u ((extChartAt I c).symm y) = w y := by
+  -- `extChartAt I c` is `(chartAt H c).extend I` by definition; unfolding it lets the lemmas
+  -- about `e.extend I` with `e = chartAt H c` match syntactically.
+  unfold extChartAt at hwt ⊢
   have hsupp := (chartAt H c).tsupport_indicator_comp_extend_subset hwc hwt
-  have hK : IsCompact ((extChartAt I c).symm '' tsupport w) :=
-    hwc.isCompact.image_of_continuousOn ((continuousOn_extChartAt_symm c).mono hwt)
+  have hK : IsCompact (((chartAt H c).extend I).symm '' tsupport w) :=
+    hwc.isCompact.image_of_continuousOn ((chartAt H c).continuousOn_extend_symm.mono hwt)
   refine ⟨_, (chartAt H c).contMDiff_indicator_comp_extend
     (IsManifold.chart_mem_maximalAtlas c) hw hwc hwt,
     hK.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp, fun y hy ↦ ?_⟩
   -- On the chart target, the function is `w` read through the chart and its inverse.
-  rw [indicator_of_mem (by simpa using (extChartAt I c).map_target hy)]
-  exact congrArg w ((extChartAt I c).right_inv hy)
+  rw [indicator_of_mem (by
+    simpa only [(chartAt H c).extend_source] using ((chartAt H c).extend I).map_target hy)]
+  exact congrArg w (((chartAt H c).extend I).right_inv hy)
 
 end TauCeti.Manifold
 
