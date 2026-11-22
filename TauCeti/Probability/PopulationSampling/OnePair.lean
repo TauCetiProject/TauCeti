@@ -41,11 +41,10 @@ variation distance.
   `2 ^ r`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise;
-* `onePairSamplingExcess`: the closed form `1 - p - t * min p (1 - p)` giving the exact one-pair
-  excess when `2 ≤ n` and `m ≤ n`, together with its definitional formula, bounds, and
-  degenerate-regime values;
-* `ofReal_onePairSamplingExcess_lt_one_sub_descFactorial_div_pow`: strict upper bound below the
-  collision probability `1 - p` for `2 ≤ m ≤ n`;
+* `one_sub_descFactorial_div_pow_sub_mul_min_nonneg`: the error `1 - p - t * min p (1 - p)` is
+  nonnegative for every sample and population size;
+* `descFactorial_div_mul_min_pos`: for `2 ≤ m ≤ n` the correction `t * min p (1 - p)` is
+  positive;
 * `sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two`: under
   without-replacement sampling of the one-pair population, the probability of seeing `a` twice
   is `t`;
@@ -206,104 +205,35 @@ private theorem ofReal_one_sub_two_mul_mul_add_eq {p t : ℝ} (hp1 : p ≤ 1) (h
       (mul_nonneg (sub_nonneg.2 hp1) (sub_nonneg.2 ht1)),
     max_one_sub_two_mul_mul_add_eq]
 
-/-- The one-pair error expression `1 - p - t * min p (1 - p)` is nonnegative whenever `m ≤ n`. -/
-private theorem onePair_error_nonneg {m n : ℕ} (hmn : m ≤ n) :
-    0 ≤ 1 - onePairP m n - onePairT m n * min (onePairP m n) (1 - onePairP m n) := by
-  rw [← max_one_sub_two_mul_mul_add_eq]
-  exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
-    (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n)) (sub_nonneg.2 (onePairT_le_one hmn)))
+/-- The sampling-discrepancy error `1 - p - t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is nonnegative
+for every sample size `m` and population size `n`: for `m ≤ n` both `p` and `t` lie in `[0, 1]`,
+and for `n < m` it equals `1`. -/
+theorem one_sub_descFactorial_div_pow_sub_mul_min_nonneg (m n : ℕ) :
+    0 ≤ 1 - (n.descFactorial m / (n : ℝ) ^ m) -
+      (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
+        min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  rcases le_or_gt m n with hmn | hnm
+  · rw [← onePairP, ← onePairT, ← max_one_sub_two_mul_mul_add_eq]
+    exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
+      (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n)) (sub_nonneg.2 (onePairT_le_one hmn)))
+  · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
-/-- The closed form `1 - p - t * min p (1 - p)`, where `p = n_(m) / n^m` and `t = m_(2) / n_(2)`.
-
-When `2 ≤ n` and `m ≤ n`, this equals the exact largest eventwise excess between sampling the
-one-pair population of size `n` without and with replacement in a sample of size `m` (see
-`iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq`). When `m ≤ n ≤ 1`,
-it evaluates to `0`. When `n < m`, it evaluates to `1` (`onePairSamplingExcess_eq_one_of_lt`),
-whereas the without-replacement law is zero (so the without-over-with excess is `0`, while the
-with-over-without excess is `1` for `n ≥ 1` and `0` for `n = 0`); in that regime it serves only as
-an upper bound on both one-sided excesses. -/
-def onePairSamplingExcess (m n : ℕ) : ℝ :=
-  1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m -
-    (m.descFactorial 2 / (n.descFactorial 2 : ℝ)) *
-      min ((n.descFactorial m : ℝ) / (n : ℝ) ^ m)
-        (1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m)
-
-/-- Definitional formula for `onePairSamplingExcess`. -/
-theorem onePairSamplingExcess_def (m n : ℕ) :
-    onePairSamplingExcess m n =
-      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m -
-        (m.descFactorial 2 / (n.descFactorial 2 : ℝ)) *
-          min ((n.descFactorial m : ℝ) / (n : ℝ) ^ m)
-            (1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m) :=
-  (rfl)
-
-/-- When the sample size exceeds the population size, `onePairSamplingExcess m n = 1`. -/
-theorem onePairSamplingExcess_eq_one_of_lt {m n : ℕ} (h : n < m) :
-    onePairSamplingExcess m n = 1 := by
-  rw [onePairSamplingExcess_def, Nat.descFactorial_eq_zero_iff_lt.2 h]
-  simp
-
-/-- When the sample has size at most one and fits inside the population,
-`onePairSamplingExcess m n = 0`. -/
-theorem onePairSamplingExcess_eq_zero_of_le_one {m n : ℕ} (hm : m ≤ 1) (hmn : m ≤ n) :
-    onePairSamplingExcess m n = 0 := by
-  rw [onePairSamplingExcess_def]
-  interval_cases m
-  · simp
-  · have hn0 : (n : ℝ) ≠ 0 := by positivity
-    simp [hn0]
-
-/-- `onePairSamplingExcess m n` is always nonnegative. -/
-theorem onePairSamplingExcess_nonneg (m n : ℕ) : 0 ≤ onePairSamplingExcess m n := by
-  rcases le_or_gt m n with hmn | hlt
-  · exact onePair_error_nonneg hmn
-  · rw [onePairSamplingExcess_eq_one_of_lt hlt]
-    norm_num
-
-/-- `onePairSamplingExcess m n` never exceeds the real collision probability `1 - n_(m) / n^m`. -/
-theorem onePairSamplingExcess_le_one_sub_descFactorial_div_pow (m n : ℕ) :
-    onePairSamplingExcess m n ≤ 1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
-  rw [onePairSamplingExcess_def]
-  exact sub_le_self _ (mul_nonneg (onePairT_nonneg m n)
-    (le_min (onePairP_nonneg m n) (sub_nonneg.2 (onePairP_le_one m n))))
-
-/-- For `2 ≤ m`, the real injective-selection ratio `n_(m) / n^m` is strictly less than `1`
-(including `n = 0`, where `0 / 0 = 0`). -/
-private theorem descFactorial_div_pow_lt_one (n : ℕ) {m : ℕ} (hm : 2 ≤ m) :
-    (n.descFactorial m : ℝ) / (n : ℝ) ^ m < 1 := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · rw [Nat.descFactorial_eq_zero_iff_lt.2 (by omega)]
-    simp
-  · exact (div_lt_one (by positivity)).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn hm)
-
-/-- For `2 ≤ m ≤ n`, the repeated-value discrepancy reduction `t * min p (1 - p)` is strictly
-positive, where `p = n_(m) / n^m` and `t = m_(2) / n_(2)`. -/
-private theorem descFactorial_two_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
-    0 < (m.descFactorial 2 / (n.descFactorial 2 : ℝ)) *
+/-- For `2 ≤ m ≤ n`, the correction `t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is positive, so
+the sampling-discrepancy error `1 - p - t * min p (1 - p)` is strictly below `1 - p`. -/
+theorem descFactorial_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
+    0 < (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
       min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  have hn0 : n ≠ 0 := by omega
-  have hm2_pos : (0 : ℝ) < m.descFactorial 2 := by exact_mod_cast Nat.descFactorial_pos.2 hm
-  have hn2_pos : (0 : ℝ) < n.descFactorial 2 := by
-    exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn)
-  have hnm_pos : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
-  exact mul_pos (div_pos hm2_pos hn2_pos)
-    (lt_min (div_pos hnm_pos (by positivity)) (sub_pos.2 (descFactorial_div_pow_lt_one n hm)))
-
-/-- For `2 ≤ m ≤ n`, `ENNReal.ofReal (onePairSamplingExcess m n)` is strictly smaller than the
-collision probability `1 - n_(m) / n^m` in `ℝ≥0∞`. -/
-theorem ofReal_onePairSamplingExcess_lt_one_sub_descFactorial_div_pow {m n : ℕ}
-    (hm : 2 ≤ m) (hmn : m ≤ n) :
-    ENNReal.ofReal (onePairSamplingExcess m n) <
-      1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m := by
-  have hn_pos : (0 : ℝ) < n := Nat.cast_pos.2 (by omega)
-  have h_eq : (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m =
-      ENNReal.ofReal ((n.descFactorial m : ℝ) / (n : ℝ) ^ m) := by
-    rw [ENNReal.ofReal_div_of_pos (pow_pos hn_pos m), ENNReal.ofReal_pow hn_pos.le,
-      ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
-  rw [h_eq, ← ENNReal.ofReal_one, ← ENNReal.ofReal_sub 1 (by positivity),
-    ENNReal.ofReal_lt_ofReal_iff (sub_pos.2 (descFactorial_div_pow_lt_one n hm)),
-    onePairSamplingExcess_def]
-  exact sub_lt_self _ (descFactorial_two_div_mul_min_pos hm hmn)
+  have hn : 0 < n := by omega
+  have hpow : (0 : ℝ) < (n : ℝ) ^ m := by positivity
+  have hd : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
+  have hp1 : (n.descFactorial m / (n : ℝ) ^ m) < 1 :=
+    (div_lt_one hpow).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn.ne' hm)
+  have ht : (0 : ℝ) < m.descFactorial 2 / n.descFactorial 2 :=
+    div_pos (by exact_mod_cast Nat.descFactorial_pos.2 hm)
+      (by exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn))
+  exact mul_pos ht (lt_min (div_pos hd hpow) (sub_pos.2 hp1))
 
 variable [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] [DecidableEq κ]
 
@@ -477,7 +407,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq
   rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq hab hmn,
     ENNReal.toReal_mul, ENNReal.toReal_ofNat]
   dsimp only
-  rw [← onePairP, ← onePairT, ENNReal.toReal_ofReal (onePair_error_nonneg hmn)]
+  rw [ENNReal.toReal_ofReal (one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _)]
 
 end Discrepancy
 

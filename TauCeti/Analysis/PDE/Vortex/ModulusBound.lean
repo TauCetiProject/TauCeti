@@ -21,24 +21,36 @@ of `m` points of `ℂ`, and write `α` for its section. This file proves the exp
 
 `|α(z)|² ≥ ∏_{a ∈ D} ‖z - a‖² / (‖z - a‖² + C)`  for every `C > 16 m`
 
-(`TauCeti.Vortex.prod_div_le_normSq`). It depends on the vortex only through its zeros, so it is
-uniform over all vortices whose zeros lie in a prescribed compact set: the modulus is close to one
-at a definite distance from the divisor, with constants depending only on `m`. Three consequences
-are drawn.
+(`TauCeti.Vortex.prod_div_le_normSq`). It depends on the vortex only through the distances to its
+zeros, so it is uniform over all vortices and all divisors of degree `m`: the modulus is close to
+one at a definite distance from the divisor, with constants depending only on `m`. Three
+consequences are drawn.
 
 * **Polynomial decay.** `1 - |α(z)|² ≤ ∑_{a ∈ D} C / (‖z - a‖² + C)`
   (`TauCeti.Vortex.one_sub_normSq_le_sum`), by `1 - ∏ (1 - tₐ) ≤ ∑ tₐ`.
 * **Zero localization.** A point where `|α|² ≤ θ < 1` lies near the divisor:
   `(1 - θ) ‖z - a‖² < m C` for some `a ∈ D`
-  (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`).
-* **Uniform exponential decay.** For every rate `c < 1 / 2` and radius `R₀` there is one
-  constant `K`, depending only on `m`, `R₀` and `c`, with `1 - |α(z)|² ≤ K exp (-c |z|)` for every
-  such vortex whose zeros lie in the closed disc of radius `R₀`
-  (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`). For a single vortex
-  this is `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`; the point here is that the constant is
-  uniform over a compact window of divisors. The lower bound gives `|α|² ≥ (1 + 4 c²) / 2`
-  outside an explicit radius depending only on `m`, `R₀` and `c`, which is the input of the
-  exterior comparison `TauCeti.Vortex.one_sub_normSq_le_neg_log_mul_exp`.
+  (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`). Equivalently, `|α(z)|² > 1 - δ` at every
+  point at distance at least `√(m C / δ)` from every zero, uniformly over all divisors of degree
+  `m` (`TauCeti.Vortex.one_sub_lt_normSq_of_forall_le_norm_sub`). In particular, when the zeros
+  lie in the closed disc of radius `R₀`, the region where `|α|² ≤ θ` lies in a disc whose radius
+  depends only on `m`, `R₀` and `θ`
+  (`TauCeti.Vortex.exists_forall_lt_normSq_of_forall_mem_norm_le`).
+* **Uniform exponential decay away from the zeros.** For every rate `0 ≤ c < 1 / 2` there is one
+  constant `K`, depending only on `m` and `c`, with `1 - |α(z)|² ≤ K exp (-c ρ)` for every such
+  vortex and every point `z` at distance at least `ρ` from all of its zeros
+  (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub`), and likewise for the
+  curvature (`TauCeti.Vortex.exists_abs_curvature_le_mul_exp_of_forall_le_norm_sub`). The
+  constant does not depend on the position of the zeros, so this holds uniformly over the
+  noncompact space of all divisors of degree `m`, for instance for clusters of zeros moving apart.
+  By zero localization, `|α|² ≥ 4 b²` for a rate `c < b < 1 / 2` on the disc about `z` of radius
+  `ρ` minus a constant depending only on `m` and `c`, and the interior estimate
+  `TauCeti.Vortex.one_sub_normSq_le_mul_exp_of_forall_le_normSq` bounds the defect at its centre.
+  In particular, for every radius `R₀` and rate `c < 1 / 2`, `1 - |α(z)|² ≤ K exp (-c |z|)` for
+  every such vortex whose zeros lie in the closed disc of radius `R₀`, with `K` depending only on
+  `m`, `R₀` and `c` (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`). For
+  a single vortex this is `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`; the point is that the
+  constant is uniform over a compact window of divisors.
 
 ## The comparison argument
 
@@ -313,68 +325,104 @@ theorem exists_mem_mul_norm_sub_sq_lt {x : ℂ → EuclideanSpace ℝ (Fin 4)} (
 
 /-! ### Uniform exponential decay -/
 
-/-- **The modulus near one outside an explicit radius.** Let `0 < δ`, `C > 16 m` and
-`R ≥ R₀ + √(m C / δ)`. For a smooth plane vortex with the degree-`m` end framing whose zeros lie in
-the closed disc of radius `R₀`, `|α(z)|² ≥ 1 - δ` whenever `‖z‖ ≥ R`. -/
-private theorem one_sub_le_normSq_of_le_norm {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+/-- **The modulus near one away from the zeros.** Let `0 < δ` and `C > 16 m`. For a smooth plane
+vortex with the degree-`m` end framing and zero divisor `D`, `|α(z)|² > 1 - δ` at every point `z`
+at distance at least `√(m C / δ)` from every zero. The distance depends only on `m`, `C` and `δ`,
+so the bound is uniform over all vortices and all divisors of degree `m`. -/
+theorem one_sub_lt_normSq_of_forall_le_norm_sub {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {R₀ : ℝ}
-    (hD₀ : ∀ a ∈ D, ‖a‖ ≤ R₀) {C δ R : ℝ} (hC : 16 * (m : ℝ) < C) (hδ : 0 < δ)
-    (hR : R₀ + Real.sqrt (m * C / δ) ≤ R) {z : ℂ} (hz : R ≤ ‖z‖) :
-    1 - δ ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {C δ : ℝ}
+    (hC : 16 * (m : ℝ) < C) (hδ : 0 < δ) {z : ℂ}
+    (hz : ∀ a ∈ D, Real.sqrt (m * C / δ) ≤ ‖z - a‖) :
+    1 - δ < 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
   have hC₀ : 0 < C := lt_of_le_of_lt (by positivity) hC
-  set L : ℝ := Real.sqrt (m * C / δ)
-  have hL : L ^ 2 = m * C / δ := Real.sq_sqrt (by positivity)
-  -- Otherwise the localization lemma puts a zero within distance `L` of `z`, which is impossible.
+  have hL : Real.sqrt (m * C / δ) ^ 2 = m * C / δ := Real.sq_sqrt (by positivity)
+  -- Otherwise the localization lemma puts a zero within distance `√(m C / δ)` of `z`.
   by_contra! h
   obtain ⟨a, ha, hlt⟩ := exists_mem_mul_norm_sub_sq_lt hx hsol hframe hD hC
-    (θ := 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (by linarith) le_rfl
-  have hLa : L ≤ ‖z - a‖ := by linarith [norm_sub_norm_le z a, hD₀ a ha]
-  have hsq : m * C / δ ≤ ‖z - a‖ ^ 2 := hL ▸ pow_le_pow_left₀ (Real.sqrt_nonneg _) hLa 2
+    (by linarith : 1 - δ < 1) h
+  have hsq : m * C / δ ≤ ‖z - a‖ ^ 2 := hL ▸ pow_le_pow_left₀ (Real.sqrt_nonneg _) (hz a ha) 2
   have hcancel : δ * (m * C / δ) = m * C := by field_simp
-  nlinarith [mul_le_mul_of_nonneg_left hsq hδ.le, sq_nonneg ‖z - a‖]
+  rw [sub_sub_cancel] at hlt
+  nlinarith [mul_le_mul_of_nonneg_left hsq hδ.le]
 
-/-- The case `0 ≤ c` of `exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le`, with a
-nonnegative constant. -/
-private theorem exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le_of_nonneg (m : ℕ) (R₀ : ℝ)
-    {c : ℝ} (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
+/-- **Uniform exponential decay of plane vortices away from their zeros.** For every degree `m`
+and rate `0 ≤ c < 1 / 2` there is a constant `K ≥ 0` such that every smooth plane vortex with the
+degree-`m` end framing and zero divisor `D` satisfies
+
+`1 - |α(z)|² ≤ K exp (-c ρ)`
+
+at every point `z` whose distance to every zero is at least `ρ`. The constant depends only on `m`
+and `c`, not on the vortex or on the position of its zeros. -/
+theorem exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc : c < 1 / 2) :
     ∃ K, 0 ≤ K ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
-      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ R₀) →
-      ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  -- Outside the radius `R`, `|α|² ≥ σ = (1 + 4 c²) / 2`, which exceeds `4 c²`.
-  set σ : ℝ := (1 + 4 * c ^ 2) / 2
-  have hσ1 : σ < 1 := by simp only [σ]; nlinarith
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ z ρ, (∀ a ∈ D, ρ ≤ ‖z - a‖) →
+        1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ρ)) := by
+  -- At distance `L` from the zeros, `|α|² ≥ 4 b²` for the intermediate rate `b`, `c < b < 1 / 2`.
+  set b : ℝ := (2 * c + 1) / 4
+  have hcb : c < b := by simp only [b]; linarith
+  have hb4 : 4 * b ^ 2 < 1 := by simp only [b]; nlinarith
   set C : ℝ := 16 * m + 1
-  set R : ℝ := max R₀ 0 + Real.sqrt (m * C / (1 - σ)) + 1
-  have hR : 0 < R := by positivity
-  set M : ℝ := -Real.log σ
-  refine ⟨max 1 M * Real.exp (c * R), by positivity, fun x D hx hsol hframe hD hD₀ z ↦ ?_⟩
+  set L : ℝ := Real.sqrt (m * C / (1 - 4 * b ^ 2))
+  set A : ℝ := 2 * b / (b ^ 2 - c ^ 2)
+  have hA : 0 ≤ A :=
+    div_nonneg (by positivity) (sub_nonneg.2 (pow_le_pow_left₀ hc₀ hcb.le 2))
+  set M : ℝ := 2 * -Real.log (4 * b ^ 2)
+  refine ⟨max 1 M * Real.exp (c * (L + A)), by positivity,
+    fun x D hx hsol hframe hD z ρ hρ ↦ ?_⟩
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
   have hp : ContDiff ℝ 2 fun w ↦ x w 2 := (hxi 2).of_le (by simp)
   have hq : ContDiff ℝ 2 fun w ↦ x w 3 := (hxi 3).of_le (by simp)
-  have hfar : ∀ w, R ≤ ‖w‖ → σ ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2) := fun w hw ↦ by
-    have := one_sub_le_normSq_of_le_norm hx hsol hframe hD (fun a ha ↦ (hD₀ a ha).trans
-      (le_max_left R₀ 0)) (lt_add_one _) (sub_pos.2 hσ1) (by simp only [R]; linarith) hw
-    linarith
-  by_cases hz : R ≤ ‖z‖
-  · have hdecay := one_sub_normSq_le_neg_log_mul_exp hp hq hsol
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hR hc₀ (by positivity)
-      (by simp only [σ]; nlinarith) hfar hz
-    rw [exp_neg_mul_sub, ← mul_assoc] at hdecay
-    exact hdecay.trans (mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.exp_pos _).le) (Real.exp_pos _).le)
-  · -- Inside the radius, `1 - |α|² ≤ 1 ≤ exp (c R) exp (-c |z|)`.
-    rw [not_le] at hz
-    have hexp : 1 ≤ Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by
-      rw [← Real.exp_add]
-      exact Real.one_le_exp (by nlinarith)
+  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe
+  rw [mul_assoc, ← exp_neg_mul_sub, ← sub_sub]
+  by_cases hρL : ρ ≤ L
+  · -- Near the zeros, `1 - |α|² ≤ 1 ≤ exp (-c (ρ - L - A))`.
+    have hexp : 1 ≤ Real.exp (-(c * (ρ - L - A))) := Real.one_le_exp (by nlinarith)
     calc 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 := by nlinarith
-      _ ≤ max 1 M * (Real.exp (c * R) * Real.exp (-(c * ‖z‖))) :=
+      _ ≤ max 1 M * Real.exp (-(c * (ρ - L - A))) :=
         one_le_mul_of_one_le_of_one_le (le_max_left _ _) hexp
-      _ = _ := by rw [mul_assoc]
+  · -- Otherwise the closed disc of radius `ρ - L` about `z` stays at distance `L` from the zeros,
+    -- so `|α|² ≥ 4 b²` there, and the interior decay estimate applies.
+    rw [not_le] at hρL
+    have hball : ∀ w ∈ closedBall z (ρ - L), 4 * b ^ 2 ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2) := by
+      intro w hw
+      rw [mem_closedBall, dist_eq_norm] at hw
+      have := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD (C := C)
+        (lt_add_one _) (sub_pos.2 hb4) (z := w) fun a ha ↦ by
+          have := norm_sub_le_norm_sub_add_norm_sub z w a
+          rw [norm_sub_rev z w] at this
+          linarith [hρ a ha]
+      linarith
+    have h := one_sub_normSq_le_mul_exp_of_forall_le_normSq hp hq hsol hlim hc₀ hcb
+      (sub_nonneg.2 hρL.le) hball
+    exact h.trans (mul_le_mul_of_nonneg_right (le_max_right 1 M) (Real.exp_pos _).le)
+
+/-- **Uniform exponential decay of the curvature of plane vortices away from their zeros.** For
+every degree `m` and rate `0 ≤ c < 1 / 2` there is a constant `K ≥ 0` such that every smooth plane
+vortex with the degree-`m` end framing and zero divisor `D` has curvature coefficient
+`∂₁ b₂ - ∂₂ b₁` at most `K exp (-c ρ)` in absolute value at every point whose distance to every
+zero is at least `ρ`. -/
+theorem exists_abs_curvature_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc : c < 1 / 2) :
+    ∃ K, 0 ≤ K ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ z ρ, (∀ a ∈ D, ρ ≤ ‖z - a‖) →
+        |fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I| ≤
+          K * Real.exp (-(c * ρ)) := by
+  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
+  refine ⟨K / 8, by positivity, fun x D hx hsol hframe hD z ρ hρ ↦ ?_⟩
+  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have h₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
+  linarith [hK x D hx hsol hframe hD z ρ hρ]
 
 /-- **Uniform exponential decay of plane vortices over a compact window of divisors.** For every
 degree `m`, radius `R₀` and rate `c < 1 / 2` there is a constant `K` such that every smooth plane
@@ -387,10 +435,31 @@ theorem exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le (m : ℕ) (R₀ :
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
       IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ R₀) →
       ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le_of_nonneg m R₀
+  -- Every zero is at distance at least `‖z‖ - R₀` from `z`.
+  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m
     (le_max_right c 0) (max_lt hc (by norm_num))
-  refine ⟨K, fun x D hx hsol hframe hD hD₀ z ↦ (hK x D hx hsol hframe hD hD₀ z).trans ?_⟩
-  exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (neg_le_neg
-    (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)))) hK₀
+  refine ⟨K * Real.exp (max c 0 * R₀), fun x D hx hsol hframe hD hD₀ z ↦ ?_⟩
+  refine (hK x D hx hsol hframe hD z (‖z‖ - R₀) fun a ha ↦ by
+    linarith [norm_sub_norm_le z a, hD₀ a ha]).trans ?_
+  rw [mul_assoc, ← Real.exp_add]
+  refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hK₀
+  nlinarith [mul_le_mul_of_nonneg_right (le_max_left c 0) (norm_nonneg z)]
+
+/-- **A common vacuum radius over a window of divisors.** For every degree `m`, radius `R₀` and
+threshold `θ < 1` there is a radius `R` such that every smooth plane vortex with the degree-`m`
+end framing whose zeros lie in the closed disc of radius `R₀` satisfies `θ < |α(z)|²` for every
+`z` with `‖z‖ > R`. -/
+theorem exists_forall_lt_normSq_of_forall_mem_norm_le (m : ℕ) (R₀ : ℝ) {θ : ℝ} (hθ : θ < 1) :
+    ∃ R, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ R₀) →
+      ∀ z, R < ‖z‖ → θ < 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  -- Every zero is at distance more than `R - R₀` from `z`.
+  refine ⟨R₀ + √(m * (16 * m + 1) / (1 - θ)), fun x D hx hsol hframe hD hD₀ z hz ↦ ?_⟩
+  have h := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD
+    (by linarith : 16 * (m : ℝ) < 16 * m + 1) (sub_pos.2 hθ) (z := z) fun a ha ↦ by
+      linarith [norm_sub_norm_le z a, hD₀ a ha]
+  rwa [sub_sub_cancel] at h
 
 end TauCeti.Vortex
