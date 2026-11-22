@@ -275,16 +275,18 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
     exact ((re_thetaSeries_dual_lt_sum_iff_not_isIntegral hτ).mpr hni).ne
       (by simpa [Complex.re_sum] using congrArg Complex.re heq)
   · exfalso
-    have hspan : Submodule.span ℝ (L : Set E) = ⊤ := by
-      by_contra hne
-      exact not_finite_iff_infinite.mpr (infinite_discriminantGroup_of_span_ne_top hne)
-        inferInstance
-    let b := Module.Basis.ofSpan hspan.ge
-    have := FiniteDimensional.fintypeBasisIndex b
-    have hd : DiscreteTopology (dual (Submodule.span ℤ (Set.range b))) := inferInstance
+    have hd_inf : DiscreteTopology ↥(L ⊓ dual L) :=
+      (isIntegral_iff_le_dual.mpr (inf_le_right.trans (dual_anti inf_le_left))).discreteTopology
+    have hinf : (L ⊓ dual L).toAddSubgroup = L.toAddSubgroup ⊓ (dual L).toAddSubgroup := by
+      ext; rfl
+    have hrel : (L ⊓ dual L).toAddSubgroup.relIndex (dual L).toAddSubgroup ≠ 0 := by
+      rw [hinf, AddSubgroup.inf_relIndex_right, ← card_discriminantGroup]
+      exact Nat.card_pos.ne'
+    have : AddSubgroup.IsFiniteRelIndex (L ⊓ dual L).toAddSubgroup (dual L).toAddSubgroup :=
+      ⟨hrel⟩
     have : DiscreteTopology (dual L) :=
-      DiscreteTopology.of_subset hd
-        (dual_anti (Submodule.span_le.mpr (Module.Basis.ofSpan_subset hspan.ge)))
+      (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
+        (toAddSubgroup_mono (inf_le_right : L ⊓ dual L ≤ dual L))).mp hd_inf
     simp only [thetaCosetClass_eq_zero_of_not_discreteTopology L hL, Pi.zero_apply,
       Finset.sum_const_zero] at heq
     exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ heq
