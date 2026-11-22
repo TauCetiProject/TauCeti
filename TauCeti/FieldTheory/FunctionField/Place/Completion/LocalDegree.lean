@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
-import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -62,8 +61,8 @@ completed extension.
   `TauCeti.Place.adjoin_range_completionEmbedding_eq_top`,
   `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
   is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, the image of `F'` generates `F̂'_{P'}` over
-  `F̂_P`, separability of `F' / F` passes to `F̂'_{P'} / F̂_P`, and over a common constant field `k`
-  the completed upper place restricts to the completed lower place.
+  `F̂_P`, separability of `F' / F` passes to `F̂'_{P'} / F̂_P`, and the completed upper place
+  restricts to the completed lower place.
 
 ## References
 
@@ -533,40 +532,27 @@ theorem isSeparable_completion [Algebra.IsSeparable F F'] :
     letI := P.completionExtensionAlgebra P' hP
     Algebra.IsSeparable P.Completion P'.Completion := by
   let _ := P.completionExtensionAlgebra P' hP
-  have hcomp : (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
-      P'.completionEmbedding.toRingHom.comp (algebraMap F F') :=
-    RingHom.ext fun x ↦ by simp [P.algebraMap_completionExtensionAlgebra P' hP]
   rw [← AlgEquiv.Algebra.isSeparable_iff <|
       (IntermediateField.equivOfEq (P.adjoin_range_completionEmbedding_eq_top P' hP)).trans
         IntermediateField.topEquiv,
     IntermediateField.isSeparable_adjoin_iff_isSeparable]
   rintro _ ⟨y, rfl⟩
-  have haeval : Polynomial.aeval (P'.completionEmbedding.toRingHom y)
-      ((minpoly F y).map P.completionEmbedding.toRingHom) = 0 := by
-    rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
-      ← Polynomial.aeval_def, minpoly.aeval, map_zero]
-  exact (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
-    (minpoly.dvd P.Completion _ haeval)
+  exact P.isSeparable_completionEmbedding P' hP y
 
-end Degree
-
-section Constants
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k F') (hP : P'.restrict k F = P)
-  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
-
-/-- For an integral extension `F' / F` over `k` with finite residue extension at `P' ∣ P`, the
-completed upper place restricts to the completed lower place. -/
+/-- For an integral extension `F' / F` with finite residue extension at `P' ∣ P`, the completed
+upper place restricts to the completed lower place. -/
 @[simp]
 theorem restrict_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
     haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI : Algebra.IsIntegral P.Completion P'.Completion :=
       haveI := P.finiteDimensional_completion P' hP; .of_finite _ _
     P'.completionPlace.restrict k P.Completion = P.completionPlace := by
   let _ := P.completionExtensionAlgebra P' hP
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
   have := P.isScalarTower_completionExtensionAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have : Algebra.IsIntegral P.Completion P'.Completion := .of_finite _ _
@@ -575,6 +561,6 @@ theorem restrict_completionPlace :
   rw [P.algebraMap_completionExtensionAlgebra P' hP]
   exact P.completionExtension_mem_integers P' hP hx
 
-end Constants
+end Degree
 
 end TauCeti.Place

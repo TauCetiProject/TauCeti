@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import Mathlib.Topology.Algebra.Valued.WithVal
+public import TauCeti.Topology.Algebra.Valued.WithVal
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -312,22 +312,13 @@ theorem degree_completionPlace : P.completionPlace.degree = P.degree := by
 
 section ScopedInstances
 
-/-- Scalar multiplication on `WithVal P.valuation` by any `F`-algebra base `S` is uniformly
-continuous. Kept as an explicit theorem rather than a global instance so it cannot compete with
-`TauCeti.Place.instAlgebraCompletion` at `S = k`. -/
-theorem uniformContinuousConstSMul_withVal {S : Type*} [CommSemiring S]
-    [Algebra S F] :
-    UniformContinuousConstSMul S (WithVal P.valuation) := ⟨fun s ↦ by
-  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
-  exact (Ring.uniformContinuousConstSMul (WithVal P.valuation)).uniformContinuous_const_smul _⟩
-
 /-- The `F`-algebra structure on `F̂_P` whose scalar multiplication matches
 `UniformSpace.Completion.instSMul`. Installed in the `PlaceCompletionExtension` scope. Marked
 `@[expose]` so downstream modules retain definitional equality between its `SMul` projection and
 `UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
 @[expose, instance_reducible]
 noncomputable def completionAlgebra : Algebra F P.Completion :=
-  haveI := P.uniformContinuousConstSMul_withVal (S := F)
+  haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F P.valuation
   UniformSpace.Completion.algebra (WithVal P.valuation) F
 
 /-- The `𝒪_P`-algebra structure on `F̂_P` whose scalar multiplication matches
@@ -336,7 +327,7 @@ noncomputable def completionAlgebra : Algebra F P.Completion :=
 `UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
 @[expose, instance_reducible]
 noncomputable def completionIntegersFieldAlgebra : Algebra P.integers P.Completion :=
-  haveI := P.uniformContinuousConstSMul_withVal (S := P.integers)
+  haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower P.integers P.valuation
   UniformSpace.Completion.algebra (WithVal P.valuation) P.integers
 
 /-- The valuation ring `𝒪_P` acts on its completion `𝒪̂_P` through

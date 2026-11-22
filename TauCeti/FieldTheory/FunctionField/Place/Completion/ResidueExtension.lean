@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
 
 /-!
 # Residue extensions under completion
@@ -15,9 +15,11 @@ its residue field and the residue field of the place below, but also the embeddi
 between them. The two completion isomorphisms form a commutative square with the
 original and completed residue embeddings.
 
-Consequently the full relative residue degree and separability of the residue
-extension are unchanged by completion. No finiteness or separability assumption
-on the fields or their residues is needed. In particular, the degree here includes
+Consequently the full relative residue degree (`finrank_residueField_completion`,
+`relativeDegree_completionPlace`) and separability of the residue extension are
+unchanged by completion. No finiteness or separability assumption on the fields or
+their residues is needed for the residue-field identifications; `relativeDegree_completionPlace`
+only requires the residue extension to be finite. In particular, the degree here includes
 any inseparable factor; this is the residue degree occurring in local different
 and discriminant formulas.
 
@@ -41,8 +43,11 @@ open IsLocalRing
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P' : Place k' F')
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
+
+section Residue
+
+variable (P' : Place k' F')
 
 /-- The canonical residue-field identifications commute with the embedding induced
 by the extension of valuation rings. -/
@@ -101,5 +106,48 @@ theorem isSeparable_residueField_completion_iff :
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
     (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
+
+end Residue
+
+section RelativeDegree
+
+variable (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
+  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- Completion preserves the full relative degree `f(P' ∣ P)`, including any inseparable
+residue factor. -/
+theorem relativeDegree_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
+    haveI := P.isScalarTower_completionExtensionAlgebra P' hP
+    haveI : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
+    relativeDegree k P.Completion P'.completionPlace = relativeDegree k F P' := by
+  subst hP
+  let P := P'.restrict k F
+  let _ := P.completionExtensionAlgebra P' rfl
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
+  have := P.isScalarTower_completionExtensionAlgebra P' rfl
+  let _ := P.completionIntegersExtensionAlgebra P' rfl
+  have : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' rfl
+  have hsub : (P'.completionPlace.restrict k P.Completion).integers.toSubring =
+      P.completionPlace.integers.toSubring :=
+    congrArg (fun R : Place k P.Completion ↦ R.integers.toSubring)
+      (restrict_completionPlace P P' rfl)
+  rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
+  refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv (RingEquiv.subringCongr hsub))
+    (.refl _) ?_
+  ext x
+  obtain ⟨a, rfl⟩ := residue_surjective x
+  simp only [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_apply,
+    RingEquiv.refl_apply, ResidueField.mapEquiv_apply, ResidueField.map_residue,
+    ResidueField.algebraMap_residue]
+  congr 1
+  apply Subtype.ext
+  rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
+    algebraMap_completionExtensionAlgebra, RingEquiv.coe_subringCongr_apply]
+
+end RelativeDegree
 
 end TauCeti.Place

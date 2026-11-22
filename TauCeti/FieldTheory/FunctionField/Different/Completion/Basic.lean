@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Localization
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.IntegralClosure
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 import TauCeti.FieldTheory.FunctionField.Place.Completion.Adic
 import TauCeti.RingTheory.DedekindDomain.Different.Completion
@@ -431,27 +431,22 @@ theorem ord_discr_completionIntegers_eq (P' : Place k' F')
     differentExponent_eq_multiplicity_center (B := (P'.restrict k F).integers) (C := P'.integers)
       P' hC, P'.center_integers_asIdeal hC, relativeDegree_def]
 
-end Different
-
-section Constants
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- **Completing an extension over `k` preserves `TauCeti.Place.differentExponent`.** -/
+/-- **Completing an extension preserves `TauCeti.Place.differentExponent`.** -/
 @[simp]
-theorem differentExponent_completionPlace [FiniteDimensional F F'] [Algebra.IsSeparable F F']
-    (P : Place k F) (P' : Place k F') (hP : P'.restrict k F = P) :
+theorem differentExponent_completionPlace (P : Place k F) (P' : Place k' F')
+    (hP : P'.restrict k F = P) :
     letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
     haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI := P.finiteDimensional_completion P' hP
     haveI := P.isSeparable_completion P' hP
     differentExponent k P.Completion P'.completionPlace = differentExponent k F P' := by
   let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.completionIntegersExtensionAlgebra P' hP
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
   have := P.isScalarTower_completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have := P.isIntegralClosure_completionIntegers P' hP
   have := P.isSeparable_completion P' hP
@@ -463,7 +458,7 @@ theorem differentExponent_completionPlace [FiniteDimensional F F'] [Algebra.IsSe
     P'.completionPlace.center_integers_asIdeal hC,
     P.multiplicity_differentIdeal_completionIntegers P' hP]
 
-end Constants
+end Different
 
 end TauCeti.Place
 

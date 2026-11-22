@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
@@ -20,8 +21,9 @@ Dedekind domain `R` with fraction field `F` is canonically `p.adicCompletion F`
 ring equivalence of completed valuation rings
 (`TauCeti.Place.completionIntegersRingEquivAdicCompletionIntegersOfValuationEq`), upgrades to a
 `k`-algebra equivalence when `R` is a `k`-algebra, identifies maximal ideals and residue fields,
-and commutes with completed field extensions
-(`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`).
+carries the centre on `𝒪'_P` to the completed maximal ideal
+(`TauCeti.Place.map_centerIntegralClosure_completionIntegers`), and commutes with completed field
+extensions (`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`).
 
 The field comparison uses Mathlib's `HeightOneSpectrum.adicCompletion.equiv` and
 `adicCompletion.uniformEquiv`; the residue comparison uses
@@ -334,6 +336,44 @@ theorem algebraMap_comp_completionEquivAdicCompletionOfValuationEq :
   exact (completionEquivAdicCompletionOfValuationEq_completionExtension v w P P' hP hv hw x).symm
 
 end Extension
+
+section CenterIntegralClosure
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+variable (k F : Type*) {k' F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- **The centre of `P'` on `𝒪'_P` generates the completed maximal ideal `𝔪̂_{P'}`.** -/
+theorem map_centerIntegralClosure_completionIntegers
+    [FiniteDimensional F F'] [Algebra.IsSeparable F F'] (P' : Place k' F') :
+    (centerIntegralClosure k F P').asIdeal.map
+        ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+      IsLocalRing.maximalIdeal P'.completionPlace.integers := by
+  let w := centerIntegralClosure k F P'
+  have hw : P'.valuation = w.valuation F' :=
+    (P'.valuation_center _).symm.trans
+      (congrArg (IsDedekindDomain.HeightOneSpectrum.valuation F')
+        (centerIntegralClosure_def k F P').symm)
+  let eB := completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k' F' w P' hw
+  have hcomp : eB.toRingHom.comp ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl) =
+      algebraMap (integralClosure (P'.restrict k F).integers F') (w.adicCompletionIntegers F') := by
+    ext b
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply,
+      coe_completionIntegersIntegralClosureHom,
+      completionEquivAdicCompletionOfValuationEq_completionEmbedding]
+    rfl
+  have hmap : ((w.asIdeal.map ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl)).map
+      eB.toRingHom) =
+      (IsLocalRing.maximalIdeal P'.completionPlace.integers).map eB.toRingHom := by
+    rw [Ideal.map_map, hcomp, w.map_asIdeal_adicCompletionIntegers (K := F'),
+      RingEquiv.toRingHom_eq_coe, ← IsLocalRing.map_ringEquiv_maximalIdeal eB]
+    rfl
+  exact eB.idealComapOrderIso.symm.injective hmap
+
+end CenterIntegralClosure
 
 end TauCeti.Place
 

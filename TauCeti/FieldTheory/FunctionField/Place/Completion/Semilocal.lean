@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import Mathlib.RingTheory.Nakayama
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Approximation
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.IntegralClosure
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
@@ -388,7 +388,7 @@ multiplication matches `UniformSpace.Completion.instSMul`. Installed in the
 def completionFibreBaseAlgebra [Algebra.IsIntegral F F'] (P : Place k F)
     (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     Algebra F Q.val.Completion :=
-  haveI := Q.val.uniformContinuousConstSMul_withVal (S := F)
+  haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F Q.val.valuation
   UniformSpace.Completion.algebra (WithVal Q.val.valuation) F
 
 /-- For each place `Q` in the fibre above `P`, the local field extension algebra `F̂_P → F̂_Q`.
