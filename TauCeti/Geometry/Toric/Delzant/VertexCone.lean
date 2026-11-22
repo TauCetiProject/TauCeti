@@ -134,24 +134,6 @@ private theorem dualBasis_apply_of_basis [DecidableEq s] (m k : s) :
     hi.dualBasis b m (i k) = if k = m then 1 else 0 := by
   simpa [hb] using hi.dualBasis_apply_apply b m k
 
-/-- A vector killed by all edge directions of a corner but one, `e_l₀`, is a multiple of the
-normal `l₀`. -/
-private theorem eq_smul_of_dualBasis_apply_eq_zero {z : V} {l₀ : s}
-    (hz : ∀ l, l ≠ l₀ → hi.dualBasis b l z = 0) : z = hi.dualBasis b l₀ z • i l₀ := by
-  have := Fintype.ofFinite s
-  conv_lhs => rw [← hi.sum_dualBasis_apply_smul b z]
-  rw [Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp), hb]
-
-omit hb in
-/-- A nonzero vector with nonnegative coordinates along the edge directions has a positive one. -/
-private theorem exists_dualBasis_apply_pos {z : V} (hz : z ≠ 0)
-    (ht : ∀ m, 0 ≤ hi.dualBasis b m z) : ∃ m, 0 < hi.dualBasis b m z := by
-  have := Fintype.ofFinite s
-  by_contra! hneg
-  refine hz ?_
-  rw [← hi.sum_dualBasis_apply_smul b z]
-  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
-
 /-- The edge directions of a corner are nonnegative on its normals. -/
 private theorem dualBasis_apply_nonneg (m : s) {k : N} (hk : k ∈ s) :
     0 ≤ hi.dualBasis b m (i k) := by
@@ -235,11 +217,11 @@ private theorem mem_of_apply_eq {v v' : StrongDual ℝ V} (hv : v ∈ Δ.extreme
     exact (mul_eq_zero.1 (by linarith)).resolve_left hε0.ne'
   -- Some coordinate of `n` is positive, since `n ≠ 0`.
   have hprim : IsPrimitive n := by simpa [hb'] using b'.isPrimitive ⟨n, hn⟩
-  obtain ⟨m, hm⟩ := exists_dualBasis_apply_pos hi
+  obtain ⟨m, hm⟩ := hi.exists_dualBasis_apply_pos
     ((map_ne_zero_iff i hi.injective).2 hprim.ne_zero) ht
   -- So `m` is a multiple of `n`, by a positive factor, and both are primitive.
-  have hmn : i m = w' ⟨n, hn⟩ (i m) • i n :=
-    eq_smul_of_dualBasis_apply_eq_zero hi hb' (hedge m hm)
+  have hmn : i m = w' ⟨n, hn⟩ (i m) • i n := by
+    simpa only [hb'] using hi.eq_smul_of_dualBasis_apply_eq_zero (hedge m hm)
   have h1 : w' ⟨n, hn⟩ (i m) * w m (i n) = 1 := by
     have hmm : w m (i m) = 1 := by simpa using dualBasis_apply_of_basis hi hb m m
     have h := congrArg (w m) hmn

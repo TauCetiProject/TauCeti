@@ -490,6 +490,24 @@ theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp [dualBasis, IsBaseChange.basis_apply]
 
+/-- A vector of `V` vanishing on every vector of the dual basis of `b` but one, `l₀`, is its
+value there times the matching lattice vector `i (b l₀)`. -/
+theorem eq_smul_of_dualBasis_apply_eq_zero {b : Basis κ ℤ N} {z : V} {l₀ : κ}
+    (hz : ∀ l, l ≠ l₀ → h.dualBasis b l z = 0) : z = h.dualBasis b l₀ z • i (b l₀) := by
+  have := Fintype.ofFinite κ
+  conv_lhs => rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp)
+
+/-- A nonzero vector of `V` that is nonnegative on the dual basis of `b` is positive on one of its
+vectors. -/
+theorem exists_dualBasis_apply_pos {b : Basis κ ℤ N} {z : V} (hz : z ≠ 0)
+    (ht : ∀ m, 0 ≤ h.dualBasis b m z) : ∃ m, 0 < h.dualBasis b m z := by
+  have := Fintype.ofFinite κ
+  by_contra! hneg
+  refine hz ?_
+  rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
+
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/
 theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
