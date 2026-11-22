@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.Algebra.Group.PowerClassGroup.Basic
-import TauCeti.FieldTheory.Kummer.Degree
-import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
+import TauCeti.FieldTheory.Kummer.AbsoluteGalois
 
 /-!
 # The Artin-defined norm-residue symbol
@@ -23,9 +22,9 @@ of the absolute Artin symbol in the absolute Galois group. The symbol is bimulti
 is trivial on `n`-th powers in either argument. `normResidueSymbolPairing` is the resulting
 bimultiplicative pairing on the existing power-class quotient `Kˣ ⧸ (Kˣ)ⁿ`.
 
-The construction uses the absolute local Artin map of `TauCeti.ClassFieldTheory` and the Kummer
-ratio identities in `TauCeti.FieldTheory.Kummer.Degree`. It does not identify this symbol with a
-cohomological cup product or assert a tame formula.
+The construction uses the absolute local Artin map of `TauCeti.ClassFieldTheory` and
+`TauCeti.abelianizedKummerPairing`. It does not identify this symbol with a cohomological cup
+product or assert a tame formula.
 
 ## References
 
@@ -44,76 +43,11 @@ open ClassFieldTheory
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity K n]
 
-/-- The roots of unity in the algebraic closure descend to the base field. -/
-private def symbolRootsEquiv : rootsOfUnity n K ≃* rootsOfUnity n (AlgebraicClosure K) :=
-  rootsOfUnityEquivOfPrimitiveRoots (algebraMap K (AlgebraicClosure K)).injective (by
-    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
-    exact ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩)
-
-/-- An auxiliary radical used only to construct the symbol. -/
-private def symbolRoot (b : Kˣ) : AlgebraicClosure K :=
-  (IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) (b : K))
-    (NeZero.pos n)).choose
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [HasEnoughRootsOfUnity K n] in
-private theorem symbolRoot_pow (b : Kˣ) :
-    symbolRoot K n b ^ n = algebraMap K (AlgebraicClosure K) (b : K) :=
-  (IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) (b : K))
-    (NeZero.pos n)).choose_spec
-
-/-- The radical character, before descent through the topological abelianization. -/
-private def symbolCharacter (b : Kˣ) :
-    Gal(AlgebraicClosure K/K) →* rootsOfUnity n K :=
-  (symbolRootsEquiv K n).symm.toMonoidHom.comp
-    { toFun σ := rootsOfUnity.mkOfPowEq (σ (symbolRoot K n b) / symbolRoot K n b)
-        (by
-          rw [div_pow, ← map_pow, symbolRoot_pow, AlgEquiv.commutes, div_self (by simp)])
-      map_one' := by
-        ext
-        simp [ne_zero_of_pow_eq_algebraMap (symbolRoot_pow K n b)]
-      map_mul' σ τ := by
-        ext
-        simp only [rootsOfUnity.coe_mkOfPowEq, Subgroup.coe_mul, Units.val_mul]
-        exact σ.mul_apply_div_self_of_pow_eq τ (symbolRoot_pow K n b) }
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-private theorem algebraMap_symbolCharacter (b : Kˣ) (σ : Gal(AlgebraicClosure K/K)) :
-    algebraMap K (AlgebraicClosure K) ((symbolCharacter K n b σ : Kˣ) : K) =
-      σ (symbolRoot K n b) / symbolRoot K n b := by
-  simp [symbolCharacter, symbolRootsEquiv, rootsOfUnityEquivOfPrimitiveRoots_symm_apply]
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-private theorem symbolCharacter_eq_one_iff (b : Kˣ) (σ : Gal(AlgebraicClosure K/K)) :
-    symbolCharacter K n b σ = 1 ↔ σ (symbolRoot K n b) = symbolRoot K n b := by
-  rw [← Subtype.coe_inj, ← Units.val_inj,
-    ← (algebraMap K (AlgebraicClosure K)).injective.eq_iff,
-    algebraMap_symbolCharacter]
-  simp only [Subgroup.coe_one, Units.val_one, map_one,
-    div_eq_one_iff_eq (ne_zero_of_pow_eq_algebraMap (symbolRoot_pow K n b))]
-
-omit [ValuativeRel K] [IsNonarchimedeanLocalField K] in
-/-- The radical character has open kernel, the stabilizer of the radical. -/
-private theorem continuous_symbolCharacter (b : Kˣ) : Continuous (symbolCharacter K n b) := by
-  apply MonoidHom.continuous_of_isOpen_ker
-  have hker : (symbolCharacter K n b).ker =
-      MulAction.stabilizer Gal(AlgebraicClosure K/K) (symbolRoot K n b) := by
-    ext σ
-    exact symbolCharacter_eq_one_iff K n b σ
-  rw [hker]
-  exact stabilizer_isOpen_of_isIntegral (K := K) (symbolRoot K n b)
-
-/-- The radical character descends to the topological abelianization. -/
-private def symbolCharacterAb (b : Kˣ) :
-    TopologicalAbelianization Gal(AlgebraicClosure K/K) →ₜ* rootsOfUnity n K :=
-  TopologicalAbelianization.lift
-    ⟨symbolCharacter K n b, continuous_symbolCharacter K n b⟩
-
 /-- The **degree-`n` norm-residue symbol**, normalized by arithmetic Frobenius.
 The first argument enters the absolute local Artin map, and the second supplies an `n`-th root.
 No primitive root of unity is chosen as a coordinate. -/
 def normResidueSymbol (a b : Kˣ) : rootsOfUnity n K :=
-  symbolCharacterAb K n b (artinMap K a)
+  abelianizedKummerPairing K n b (artinMap K a)
 
 variable {K n}
 
@@ -124,9 +58,8 @@ theorem algebraMap_normResidueSymbol (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K)
     {β : AlgebraicClosure K} (hβ : β ^ n = algebraMap K (AlgebraicClosure K) (b : K)) :
     algebraMap K (AlgebraicClosure K) ((normResidueSymbol K n a b : Kˣ) : K) =
       σ β / β := by
-  rw [normResidueSymbol, ← hσ, symbolCharacterAb, TopologicalAbelianization.lift_mk,
-    ContinuousMonoidHom.coe_mk, algebraMap_symbolCharacter]
-  exact σ.apply_div_self_eq_of_pow_eq ((symbolRoot_pow K n b).trans hβ.symm)
+  rw [normResidueSymbol, ← hσ]
+  exact algebraMap_abelianizedKummerPairing b σ hβ
 
 /-- **The Artin characterization of the norm-residue symbol.** Every representative of
 `Art_K(a)` moves every `n`-th root of `b` by the root of unity `(a,b)`. -/
@@ -135,8 +68,8 @@ theorem normResidueSymbol_spec (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
     {β : AlgebraicClosure K} (hβ : β ^ n = algebraMap K (AlgebraicClosure K) (b : K)) :
     σ β =
       algebraMap K (AlgebraicClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
-  rw [algebraMap_normResidueSymbol a b σ hσ hβ,
-    div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap hβ)]
+  rw [normResidueSymbol, ← hσ]
+  exact abelianizedKummerPairing_spec b σ hβ
 
 /-- **The Artin characterization of the norm-residue symbol in a normal extension.** Every
 representative of `Art_K(a)` restricts along any `K`-embedding `ι : L →ₐ[K] SeparableClosure K` of
@@ -176,51 +109,34 @@ theorem normResidueSymbol_spec_separableClosure (a b : Kˣ) (σ : Gal(AlgebraicC
 /-- The norm-residue symbol is multiplicative in the Artin argument. -/
 theorem normResidueSymbol_mul_left (a a' b : Kˣ) :
     normResidueSymbol K n (a * a') b =
-      normResidueSymbol K n a b * normResidueSymbol K n a' b := by
-  rw [normResidueSymbol, map_mul]
-  exact map_mul (symbolCharacterAb K n b) _ _
+      normResidueSymbol K n a b * normResidueSymbol K n a' b :=
+  map_mul ((abelianizedKummerPairing K n b).comp (artinMap K)) a a'
 
 /-- The norm-residue symbol is multiplicative in the radical argument. -/
 theorem normResidueSymbol_mul_right (a b b' : Kˣ) :
     normResidueSymbol K n a (b * b') =
-      normResidueSymbol K n a b * normResidueSymbol K n a b' := by
-  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (α := Gal(AlgebraicClosure K/K)) (artinMap K a)
-  apply Subtype.ext
-  apply Units.ext
-  apply (algebraMap K (AlgebraicClosure K)).injective
-  simp only [Subgroup.coe_mul, Units.val_mul, map_mul]
-  rw [algebraMap_normResidueSymbol a (b * b') σ hσ
-    (β := symbolRoot K n b * symbolRoot K n b') (by
-      rw [mul_pow, symbolRoot_pow, symbolRoot_pow, Units.val_mul, map_mul]),
-    algebraMap_normResidueSymbol a b σ hσ (symbolRoot_pow K n b),
-    algebraMap_normResidueSymbol a b' σ hσ (symbolRoot_pow K n b'),
-    map_mul, mul_div_mul_comm]
+      normResidueSymbol K n a b * normResidueSymbol K n a b' :=
+  map_mul ((abelianizedKummerPairing K n).flip (artinMap K a)) b b'
 
 /-- The symbol is trivial when the Artin argument is one. -/
 @[simp]
-theorem normResidueSymbol_one_left (b : Kˣ) : normResidueSymbol K n 1 b = 1 := by
-  rw [normResidueSymbol, map_one]
-  exact map_one (symbolCharacterAb K n b)
+theorem normResidueSymbol_one_left (b : Kˣ) : normResidueSymbol K n 1 b = 1 :=
+  map_one ((abelianizedKummerPairing K n b).comp (artinMap K))
 
 /-- The symbol is trivial when the radical argument is one. -/
 @[simp]
-theorem normResidueSymbol_one_right (a : Kˣ) : normResidueSymbol K n a 1 = 1 := by
-  have h := normResidueSymbol_mul_right (n := n) a 1 1
-  apply mul_left_cancel (a := normResidueSymbol K n a 1)
-  simpa only [mul_one, one_mul] using h.symm
+theorem normResidueSymbol_one_right (a : Kˣ) : normResidueSymbol K n a 1 = 1 :=
+  map_one ((abelianizedKummerPairing K n).flip (artinMap K a))
 
 /-- Powers in the Artin argument become powers of the symbol. -/
 theorem normResidueSymbol_pow_left (a b : Kˣ) (k : ℕ) :
-    normResidueSymbol K n (a ^ k) b = normResidueSymbol K n a b ^ k := by
-  rw [normResidueSymbol, map_pow]
-  exact map_pow (symbolCharacterAb K n b) _ _
+    normResidueSymbol K n (a ^ k) b = normResidueSymbol K n a b ^ k :=
+  map_pow ((abelianizedKummerPairing K n b).comp (artinMap K)) a k
 
 /-- Powers in the radical argument become powers of the symbol. -/
 theorem normResidueSymbol_pow_right (a b : Kˣ) (k : ℕ) :
-    normResidueSymbol K n a (b ^ k) = normResidueSymbol K n a b ^ k := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [pow_succ, normResidueSymbol_mul_right, ih, pow_succ]
+    normResidueSymbol K n a (b ^ k) = normResidueSymbol K n a b ^ k :=
+  map_pow ((abelianizedKummerPairing K n).flip (artinMap K a)) b k
 
 /-- An `n`-th power in the Artin argument pairs trivially with every radical. -/
 @[simp]

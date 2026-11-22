@@ -40,10 +40,6 @@ open scoped WithZero
 
 variable {K : Type*} [Field K]
 
-/-- An archimedean completion has characteristic zero, as it embeds in `ℂ`. -/
-instance Completion.instCharZero (v : InfinitePlace K) : CharZero v.Completion :=
-  (Completion.extensionEmbedding v).charZero
-
 /-- An archimedean completion is a nontrivially normed field. -/
 instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
     NontriviallyNormedField v.Completion where

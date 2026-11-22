@@ -142,8 +142,7 @@ theorem natCard_monoidHom_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
   have hortho : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j) := fun _ _ hij ↦
     QuadraticMap.associated_isOrtho.mp (hb hij)
   have : Finite (monomialGroup Q b) := finite_monomialGroup hb hQ
-  have : HasEnoughRootsOfUnity F 2 :=
-    { prim := ⟨-1, IsPrimitiveRoot.neg_one_of_two_ne_zero hF⟩, cyc := inferInstance }
+  have : NeZero (2 : F) := ⟨hF⟩
   have : HasEnoughRootsOfUnity F
       (Monoid.exponent (monomialGroup Q b ⧸ monomialGroupSign Q b)) :=
     HasEnoughRootsOfUnity.of_dvd F (exponent_quotient_monomialGroupSign_dvd_two b hortho hQ)
