@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+
 /-!
 # Tensor products of regular-form classes
 
@@ -313,8 +315,8 @@ theorem presentedForm_tmul_one (p : RegularFormPresentation K) :
     (presentedForm (p.tmul (RegularFormPresentation.one (K := K)))).Equivalent
       (presentedForm p) := by
   rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
-  refine QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (finCongr (mul_one p.1)) ?_
-  funext i
+  refine QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (finCongr (mul_one p.1))
+    fun i ↦ congrArg (· • (1 : K)) ?_
   simp only [RegularFormPresentation.one, RegularFormPresentation.tmul, finProdFinEquiv,
     Equiv.symm_mk, Equiv.coe_fn_mk, mul_one]
   exact congrArg p.2 (Fin.ext (by simp [Fin.divNat]; rfl))

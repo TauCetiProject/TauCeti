@@ -9,11 +9,15 @@ public import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.AddChar
 
 /-!
-# Automorphisms as permutations, and powers of an additively indexed family of endomorphisms
+# Automorphisms as permutations, inner automorphisms, and powers of endomorphism families
 
 The permutation underlying an automorphism, `MulAut.toPerm`, acts as the automorphism does, and
 it determines the automorphism by `MulEquiv.toEquiv_injective`. This moves `orderOf` and cycle
 arguments from automorphisms to permutations.
+
+For groups, conjugating the inner automorphism `MulAut.conj g` by an automorphism `φ` gives
+`MulAut.conj (φ g)`, and transport of automorphisms along an isomorphism, `MulAut.congr`, is
+functorial and carries `MulAut.conj g` to `MulAut.conj (e g)`.
 
 A permutation representation `ρ : Γ →* Equiv.Perm α` restricts, through Mathlib's
 `Equiv.Perm.subtypePerm`, to every subset that each `ρ g` preserves (`MonoidHom.subtypePerm`).
@@ -36,6 +40,9 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 ## Main results
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
+* `MulAut.mul_conj_mul_inv`: `φ * conj g * φ⁻¹ = conj (φ g)`.
+* `MulAut.congr_conj`: transport along an isomorphism `e` sends `conj g` to `conj (e g)`.
+* `MulAut.congr_refl`, `MulAut.congr_symm`, `MulAut.congr_trans`: functoriality of `MulAut.congr`.
 * `Monoid.End.one_eq_id`, `Monoid.End.mul_eq_comp`: identification of the monoid unit and
   multiplication on `Monoid.End M` with `MonoidHom.id` and `MonoidHom.comp`.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
@@ -48,6 +55,38 @@ namespace MulAut
 /-- The permutation underlying an automorphism acts as the automorphism does. -/
 @[simp]
 theorem toPerm_apply {M : Type*} [Mul M] (f : MulAut M) (x : M) : toPerm M f x = f x := rfl
+
+section Group
+
+variable {G H K : Type*} [Group G] [Group H] [Group K]
+
+/-- Conjugating the inner automorphism by `g` by an automorphism `φ` gives the inner automorphism
+by `φ g`. -/
+theorem mul_conj_mul_inv (φ : MulAut G) (g : G) : φ * conj g * φ⁻¹ = conj (φ g) := by
+  ext x
+  simp
+
+/-- Transporting the inner automorphism by `g` along an isomorphism `e` gives the inner
+automorphism by `e g`. -/
+theorem congr_conj (e : G ≃* H) (g : G) : congr e (conj g) = conj (e g) := by
+  ext x
+  simp
+
+@[simp]
+theorem congr_refl : congr (MulEquiv.refl G) = MulEquiv.refl (MulAut G) := by
+  ext φ x
+  simp
+
+@[simp]
+theorem congr_symm (e : G ≃* H) : (congr e).symm = congr e.symm :=
+  (rfl)
+
+@[simp]
+theorem congr_trans (e : G ≃* H) (f : H ≃* K) : congr (e.trans f) = (congr e).trans (congr f) := by
+  ext φ x
+  simp
+
+end Group
 
 end MulAut
 
