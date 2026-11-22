@@ -72,6 +72,7 @@ variable {f' : M' → ℝ} {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x}
 
 /-- The unstable manifolds of the pullback `σ^* X'` are the preimages under `σ` of those of `X'`:
 `W^u_{σ^* X'}(p) = σ⁻¹ (W^u_{X'}(σ p))`. -/
+@[simp]
 theorem unstableSet_mpullback (p : M) :
     (hX'.mpullback σ).flow.unstableSet p = σ ⁻¹' hX'.flow.unstableSet (σ p) :=
   (preimage_unstableSet_diffeomorph (hX'.mpullback σ) hX'
@@ -79,6 +80,7 @@ theorem unstableSet_mpullback (p : M) :
 
 /-- The stable manifolds of the pullback `σ^* X'` are the preimages under `σ` of those of `X'`:
 `W^s_{σ^* X'}(q) = σ⁻¹ (W^s_{X'}(σ q))`. -/
+@[simp]
 theorem stableSet_mpullback (q : M) :
     (hX'.mpullback σ).flow.stableSet q = σ ⁻¹' hX'.flow.stableSet (σ q) :=
   (preimage_stableSet_diffeomorph (hX'.mpullback σ) hX'
