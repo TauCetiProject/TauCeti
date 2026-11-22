@@ -45,12 +45,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 @[expose] def normalQuotientMap (hf : IsImmersion I J n f) (hn : n ≠ 0)
     (p : TotalSpace F (f *ᵖ (TangentSpace J))) :
     TotalSpace K (fun x => hf.NormalSpace x hn) :=
-  ⟨p.proj, hf.normalClass p.proj hn p.2⟩
+  ⟨p.proj, hf.normalClass p.proj hn p.snd⟩
 
 /-- The quotient map preserves the base and takes the fibrewise normal class. -/
 @[simp] theorem normalQuotientMap_apply (hf : IsImmersion I J n f) (hn : n ≠ 0)
     (p : TotalSpace F (f *ᵖ (TangentSpace J))) :
-    hf.normalQuotientMap (K := K) hn p = ⟨p.proj, hf.normalClass p.proj hn p.2⟩ := (rfl)
+    hf.normalQuotientMap (K := K) hn p = ⟨p.proj, hf.normalClass p.proj hn p.snd⟩ := (rfl)
 
 /-- Every point of the normal total space has an ambient tangent representative. -/
 theorem normalQuotientMap_surjective (hf : IsImmersion I J n f) (hn : n ≠ 0) :
