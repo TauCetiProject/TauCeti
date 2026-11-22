@@ -76,7 +76,7 @@ private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
       LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
     Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X →
     realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) = lieExp (t • Y) →
-    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).1 :
+    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).val :
         (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ) =
       NormedSpace.exp (t • A) := by
   intro X Y A hY hmap
@@ -86,7 +86,7 @@ private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
           Matrix (Fin n) (Fin n) ℝ) := by
       simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
         (fun z : SpecialOrthogonalUnitsRange(n) ↦
-          ((z.1 : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
+          ((z.val : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
     _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
         ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y)) :=
       (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).coe_lieExp_smul Y t
@@ -125,20 +125,20 @@ private theorem coe_symm_lieExp_smul_eq_exp (n : ℕ)
   have hequiv := (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply
     (lieExp (t • X))
   have hsval : (s : CliffordAlgebra Q) =
-      ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
+      ((((realCliffordSpinContinuousMulEquivUnitsRange n s).val :
         (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
     rw [realCliffordSpinContinuousMulEquivUnitsRange_apply]
     rfl
   calc
     (s : CliffordAlgebra Q) =
-        ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
+        ((((realCliffordSpinContinuousMulEquivUnitsRange n s).val :
           (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := hsval
     _ =
-        ((((lieExp (t • X) : SpinUnitsRange(n)).1 :
+        ((((lieExp (t • X) : SpinUnitsRange(n)).val :
           (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
       exact congrArg
         (fun z : SpinUnitsRange(n) ↦
-          ((z.1 : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hequiv
+          ((z.val : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hequiv
     _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
         ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X)) :=
       by simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using

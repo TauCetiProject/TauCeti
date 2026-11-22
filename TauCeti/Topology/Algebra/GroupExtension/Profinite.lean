@@ -32,10 +32,11 @@ off the twisted product it builds, through the canonical section, which is conti
 `TauCeti.FactorSet.continuous_canonicalSection`. So the two constructions are mutually inverse up
 to equivalence of extensions.
 
-The continuous section is the only step that uses the topology of `E` in an essential way. It comes
-from the continuous section of a profinite group over the quotient by a closed subgroup, applied to
-the kernel, which is closed as the preimage of `1` under the continuous projection onto the
-Hausdorff base `G`. When the extension is decomposed as a twisted product, compactness of `M`
+The continuous section is the only step that uses the topology of `E` in an essential way. It is
+`MonoidHom.exists_continuous_section_of_surjective` for the projection, which comes from the
+continuous section of a profinite group over the quotient by a closed subgroup, applied to the
+kernel, which is closed as the preimage of `1` under the continuous projection onto the Hausdorff
+base `G`. When the extension is decomposed as a twisted product, compactness of `M`
 enters only to turn the continuity of the inclusion into an embedding, in order to apply
 `TauCeti.GroupExtension.continuous_factorSet` in
 `TauCeti.GroupExtension.exists_continuous_factorSet`, and to make the twisted product compact in
@@ -175,23 +176,9 @@ section.** The hypotheses are a profinite total group `E`, a Hausdorff base `G` 
 projection `S.rightHom`; no topology on the kernel `M` and no continuity of `S.inl` is needed. -/
 theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
     ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
-  -- identify `G` with the quotient of `E` by the kernel of the projection
-  let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
-  set N := f.toMonoidHom.ker
-  -- Bundling continuity leaves the projection's values unchanged.
-  have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
-  let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
-  -- pull the continuous section of `E → E ⧸ N` back along that identification
-  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N f.isClosed_ker
-  have hone : e.symm 1 = QuotientGroup.mk 1 := by
-    rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
-  have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
-    rw [← hf, ← f.quotientKerEquivOfSurjective_apply_mk S.rightHom_surjective, hsec,
-      ContinuousMulEquiv.apply_symm_apply]
-  have hone' : s (e.symm 1) = 1 := by rw [hone]; exact hs₁
-  -- the coercion of a `GroupExtension.Section` is its underlying function, so `hone'` is the
-  -- normalization of the section just built
-  exact ⟨⟨fun g => s (e.symm g), hsec'⟩, hs.comp e.symm.continuous, hone'⟩
+  obtain ⟨s, hs, hsec, h1⟩ :=
+    S.rightHom.exists_continuous_section_of_surjective hrh S.rightHom_surjective
+  exact ⟨⟨s, hsec⟩, hs, h1⟩
 
 end Profinite
 

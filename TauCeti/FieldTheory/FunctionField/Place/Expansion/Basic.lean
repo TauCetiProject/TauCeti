@@ -156,14 +156,14 @@ at a rational place. Its remainder is characterized by
 `TauCeti.Place.truncatedExpansion_eq_iff`; successive lengths agree on their common indices. -/
 noncomputable def truncatedExpansion (hP : P.degree = 1) (ht : P.ord t = 1)
     (n : ℕ) (x : P.integers) : Fin n → k :=
-  (P.existsUnique_sub_sum_mem_filtration hP ht n x x.2).exists.choose
+  (P.existsUnique_sub_sum_mem_filtration hP ht n x x.property).exists.choose
 
 /-- Subtracting the truncated expansion leaves a function vanishing to the stated order. -/
 theorem sub_sum_truncatedExpansion_mem_filtration (hP : P.degree = 1) (ht : P.ord t = 1)
     (n : ℕ) (x : P.integers) :
     (x : F) - ∑ i, algebraMap k F (P.truncatedExpansion hP ht n x i) * t ^ (i : ℕ) ∈
       P.filtration n :=
-  (P.existsUnique_sub_sum_mem_filtration hP ht n x x.2).exists.choose_spec
+  (P.existsUnique_sub_sum_mem_filtration hP ht n x x.property).exists.choose_spec
 
 /-- A coefficient vector is the truncated expansion precisely when its remainder vanishes
 to order at least the length of the vector. This characterizes the coefficients without
@@ -177,7 +177,7 @@ theorem truncatedExpansion_eq_iff (hP : P.degree = 1) (ht : P.ord t = 1)
     rw [← h]
     exact P.sub_sum_truncatedExpansion_mem_filtration hP ht n x
   · intro hc
-    exact (P.existsUnique_sub_sum_mem_filtration hP ht n x x.2).unique
+    exact (P.existsUnique_sub_sum_mem_filtration hP ht n x x.property).unique
       (P.sub_sum_truncatedExpansion_mem_filtration hP ht n x) hc
 
 /-- The zero function has zero coefficients at every truncation length. -/
@@ -298,7 +298,7 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
   have hrem : (x : F) * (y : F) - u * v ∈ P.filtration n := by
     have hx := P.mul_mem_filtration
       (P.sub_sum_truncatedExpansion_mem_filtration hP ht n x)
-      (P.mem_filtration_zero_iff.mpr y.2)
+      (P.mem_filtration_zero_iff.mpr y.property)
     have hy := P.mul_mem_filtration hu
       (P.sub_sum_truncatedExpansion_mem_filtration hP ht n y)
     rw [← Polynomial.eval₂_ofFn, add_zero] at hx

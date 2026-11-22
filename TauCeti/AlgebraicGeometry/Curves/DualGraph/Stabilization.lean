@@ -100,9 +100,11 @@ bijection of their edges compatible with the ends and the markings in `G`. Contr
 bridges deletes a vertex in this way, so this applies to any two double contractions of `G`, in
 either order. -/
 private def Iso.ofSubtypeSubtype (τ : E₁ ≃ E₂)
-    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
-    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) :
-    Iso ⟨_, E₁, f₁, fun w ↦ G.genus w.1.1, m₁, c₁⟩ ⟨_, E₂, f₂, fun w ↦ G.genus w.1.1, m₂, c₂⟩ :=
+    (hτ : ∀ e, s((f₂ (τ e) 0).val.val, (f₂ (τ e) 1).val.val) = s((f₁ e 0).val.val,
+        (f₁ e 1).val.val))
+    (hm : ∀ i, (m₂ i).val.val = (m₁ i).val.val) :
+    Iso ⟨_, E₁, f₁, fun w ↦ G.genus w.val.val, m₁, c₁⟩ ⟨_, E₂, f₂, fun w ↦ G.genus w.val.val, m₂,
+        c₂⟩ :=
   Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
     (Subtype.val_injective.comp Subtype.val_injective)
     (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
@@ -113,10 +115,13 @@ private def Iso.ofSubtypeSubtype (τ : E₁ ≃ E₂)
 
 /-- The isomorphism `Iso.ofSubtypeSubtype` fixes the underlying vertices of `G`. -/
 private lemma Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply (τ : E₁ ≃ E₂)
-    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
-    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) (w : {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}) :
-    ((Iso.ofSubtypeSubtype (n₁ := n₁) (n₂ := n₂) (c₁ := c₁) (c₂ := c₂) τ hτ hm).vertexEquiv w).1.1 =
-      w.1.1 := by
+    (hτ : ∀ e, s((f₂ (τ e) 0).val.val, (f₂ (τ e) 1).val.val) = s((f₁ e 0).val.val,
+        (f₁ e 1).val.val))
+    (hm : ∀ i, (m₂ i).val.val = (m₁ i).val.val) (w : {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂,
+        hne₁⟩}) :
+    ((Iso.ofSubtypeSubtype (n₁ := n₁) (n₂ := n₂) (c₁ := c₁) (c₂
+        := c₂) τ hτ hm).vertexEquiv w).val.val =
+      w.val.val := by
   simp [Iso.ofSubtypeSubtype]
 
 end SubtypeSubtype
@@ -177,26 +182,28 @@ private lemma bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq {u w : G.Vertex}
   · -- The other branches of the two nodes at `u` are two distinct half-edges at `w`, hence all of
     -- them.
     refine .inl ?_
-    have hx (l : Fin 2) : G.endpoint (G.halfEdgeOfValenceEqTwo hu l).1.1
-        (G.halfEdgeOfValenceEqTwo hu l).1.2.rev = w :=
+    have hx (l : Fin 2) : G.endpoint (G.halfEdgeOfValenceEqTwo hu l).val.1
+        (G.halfEdgeOfValenceEqTwo hu l).val.2.rev = w :=
       (endpoint_halfEdgeOfValenceEqTwo_rev hu l).trans (hnb l)
     obtain ⟨m, hm⟩ := exists_eq_halfEdgeOfValenceEqTwo hw (h := (e, i)) hi
     obtain ⟨m₀, hm₀⟩ := exists_eq_halfEdgeOfValenceEqTwo hw
-      (h := ((G.halfEdgeOfValenceEqTwo hu 0).1.1, (G.halfEdgeOfValenceEqTwo hu 0).1.2.rev)) (hx 0)
+      (h := ((G.halfEdgeOfValenceEqTwo hu 0).val.1, (G.halfEdgeOfValenceEqTwo hu 0).val.2.rev))
+          (hx 0)
     obtain ⟨m₁, hm₁⟩ := exists_eq_halfEdgeOfValenceEqTwo hw
-      (h := ((G.halfEdgeOfValenceEqTwo hu 1).1.1, (G.halfEdgeOfValenceEqTwo hu 1).1.2.rev)) (hx 1)
+      (h := ((G.halfEdgeOfValenceEqTwo hu 1).val.1, (G.halfEdgeOfValenceEqTwo hu 1).val.2.rev))
+          (hx 1)
     have h01 : m₀ ≠ m₁ := by
       rintro rfl
       exact halfEdgeOfValenceEqTwo_fst_ne hu hloopu (Prod.ext_iff.mp (hm₀.symm.trans hm₁)).1
-    obtain ⟨l, hl⟩ : ∃ l, (e, i) = ((G.halfEdgeOfValenceEqTwo hu l).1.1,
-        (G.halfEdgeOfValenceEqTwo hu l).1.2.rev) := by
+    obtain ⟨l, hl⟩ : ∃ l, (e, i) = ((G.halfEdgeOfValenceEqTwo hu l).val.1,
+        (G.halfEdgeOfValenceEqTwo hu l).val.2.rev) := by
       rcases Fin.fin_two_eq_or_eq_rev m₀ m with rfl | rfl
       · exact ⟨0, hm.symm.trans hm₀⟩
       · obtain rfl : m₁ = m₀.rev := (Fin.fin_two_eq_or_eq_rev m₀ m₁).resolve_left (Ne.symm h01)
         exact ⟨1, hm.symm.trans hm₁⟩
     obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp hl
     rw [Fin.rev_rev]
-    exact (G.halfEdgeOfValenceEqTwo hu l).2
+    exact (G.halfEdgeOfValenceEqTwo hu l).property
 
 /-! ### The diamond property -/
 
@@ -209,8 +216,8 @@ private lemma exists_iso_contractTail_contractTail (c : G.Vertex → α)
     {v₁ v₂ : G.Vertex} (hne : v₁ ≠ v₂) (hc₁ : P (c v₁)) (hg₁ : G.genus v₁ = 0)
     (hv₁ : G.valence v₁ = 1) (hm₁ : G.numMarkings v₁ ≤ 1) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0)
     (hv₂ : G.valence v₂ = 1) (hm₂ : G.numMarkings v₂ ≤ 1) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractTail hv₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractTail hv₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   -- The two tails are not attached to each other: otherwise they would make up the whole graph.
   have hatt₁ : G.attachment hv₁ ≠ v₂ := by
@@ -254,15 +261,15 @@ private lemma exists_iso_contractTail_contractBridge_of_ne (c : G.Vertex → α)
     (hm₁ : G.numMarkings v₁ ≤ 1) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0) (hv₂ : G.valence v₂ = 2)
     (hloop₂ : ∀ e, G.endpoint e 0 = v₂ → G.endpoint e 1 ≠ v₂) (hm₂ : ∀ i, G.marking i ≠ v₂)
     (hatt : G.attachment hv₁ ≠ v₂) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   -- The tail is attached elsewhere, so it is not a neighbour of the bridge.
   have hnb (k : Fin 2) : G.bridgeNeighbor hv₂ k ≠ v₁ := by
     intro hk
     rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
     have := endpoint_rev_eq_attachment hv₁ hk
-    rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv₂ k).2] at this
+    rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv₂ k).property] at this
     exact hatt this.symm
   have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 2 :=
     (valence_contractTail_of_attachment_ne hv₁ hne.symm hatt).trans hv₂
@@ -280,12 +287,12 @@ private lemma exists_iso_contractTail_contractBridge_of_ne (c : G.Vertex → α)
     Iso.ofSubtypeSubtype
       { toFun := fun
           | none => ⟨none, fun k h ↦ hnb k (congrArg Subtype.val h)⟩
-          | some e => ⟨some ⟨e.1.1, fun i h ↦ e.2 i (Subtype.ext h)⟩,
-              fun i h ↦ e.1.2 i (congrArg Subtype.val h)⟩
+          | some e => ⟨some ⟨e.val.val, fun i h ↦ e.property i (Subtype.ext h)⟩,
+              fun i h ↦ e.val.property i (congrArg Subtype.val h)⟩
         invFun := fun
           | ⟨none, _⟩ => none
-          | ⟨some e, h⟩ => some ⟨⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | ⟨some e, h⟩ => some ⟨⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         left_inv := by rintro (_ | _) <;> rfl
         right_inv := by rintro ⟨_ | _, _⟩ <;> rfl }
       (fun e ↦ ?_) (fun i ↦ ?_),
@@ -305,8 +312,8 @@ private lemma exists_iso_contractTail_contractBridge_of_eq (c : G.Vertex → α)
     (hm₁ : G.numMarkings v₁ ≤ 1) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0) (hv₂ : G.valence v₂ = 2)
     (hloop₂ : ∀ e, G.endpoint e 0 = v₂ → G.endpoint e 1 ≠ v₂) (hm₂ : ∀ i, G.marking i ≠ v₂)
     (hatt : G.attachment hv₁ = v₂) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   -- The tail is one of the two neighbours of the bridge, and is not the other one.
   obtain ⟨k, hk⟩ : ∃ k, G.bridgeNeighbor hv₂ k = v₁ := by
@@ -328,13 +335,13 @@ private lemma exists_iso_contractTail_contractBridge_of_eq (c : G.Vertex → α)
   have hmark₁ := (numMarkings_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans_le hm₁
   -- After either contraction, the remaining component is attached to the other neighbour of the
   -- bridge.
-  have ha₂ : ((G.contractTail hv₁).attachment hval₂).1 = G.bridgeNeighbor hv₂ k.rev := by
+  have ha₂ : ((G.contractTail hv₁).attachment hval₂).val = G.bridgeNeighbor hv₂ k.rev := by
     rw [← endpoint_rev_eq_attachment hval₂
       (e := ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hv₂ hne.symm hk'⟩)
-      (i := (G.halfEdgeOfValenceEqTwo hv₂ k.rev).1.2)
-      (Subtype.ext (G.halfEdgeOfValenceEqTwo hv₂ k.rev).2)]
+      (i := (G.halfEdgeOfValenceEqTwo hv₂ k.rev).val.2)
+      (Subtype.ext (G.halfEdgeOfValenceEqTwo hv₂ k.rev).property)]
     exact endpoint_halfEdgeOfValenceEqTwo_rev hv₂ k.rev
-  have ha₁ : ((G.contractBridge hv₂ hloop₂ hm₂).attachment hval₁).1 =
+  have ha₁ : ((G.contractBridge hv₂ hloop₂ hm₂).attachment hval₁).val =
       G.bridgeNeighbor hv₂ k.rev := by
     rw [← endpoint_rev_eq_attachment hval₁ (e := none) (i := k) (Subtype.ext hk),
       endpoint_contractBridge_none]
@@ -346,12 +353,12 @@ private lemma exists_iso_contractTail_contractBridge_of_eq (c : G.Vertex → α)
     .contractTail _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁
       hc₁,
     Iso.ofSubtypeSubtype
-      { toFun := fun e ↦ ⟨some ⟨e.1.1, fun i h ↦ e.2 i (Subtype.ext h)⟩,
-          fun i h ↦ e.1.2 i (congrArg Subtype.val h)⟩
+      { toFun := fun e ↦ ⟨some ⟨e.val.val, fun i h ↦ e.property i (Subtype.ext h)⟩,
+          fun i h ↦ e.val.property i (congrArg Subtype.val h)⟩
         invFun := fun
           | ⟨none, h⟩ => (hnone h).elim
-          | ⟨some e, h⟩ => ⟨⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | ⟨some e, h⟩ => ⟨⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         left_inv _ := rfl
         right_inv := by
           rintro ⟨_ | _, h⟩
@@ -368,8 +375,8 @@ private lemma exists_iso_contractTail_contractBridge (c : G.Vertex → α) {v₁
     (hne : v₁ ≠ v₂) (hc₁ : P (c v₁)) (hg₁ : G.genus v₁ = 0) (hv₁ : G.valence v₁ = 1)
     (hm₁ : G.numMarkings v₁ ≤ 1) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0) (hv₂ : G.valence v₂ = 2)
     (hloop₂ : ∀ e, G.endpoint e 0 = v₂ → G.endpoint e 1 ≠ v₂) (hm₂ : ∀ i, G.marking i ≠ v₂) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractTail hv₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   by_cases hatt : G.attachment hv₁ = v₂
   · exact exists_iso_contractTail_contractBridge_of_eq c hne hc₁ hg₁ hv₁ hm₁ hc₂ hg₂ hv₂ hloop₂
@@ -385,8 +392,8 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne (c : G.Verte
     (hm₁ : ∀ i, G.marking i ≠ v₁) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0) (hv₂ : G.valence v₂ = 2)
     (hloop₂ : ∀ e, G.endpoint e 0 = v₂ → G.endpoint e 1 ≠ v₂) (hm₂ : ∀ i, G.marking i ≠ v₂)
     (hnb₁ : ∀ k, G.bridgeNeighbor hv₁ k ≠ v₂) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractBridge hv₁ hloop₁ hm₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractBridge hv₁ hloop₁ hm₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   have hnb₂ (k : Fin 2) : G.bridgeNeighbor hv₂ k ≠ v₁ := fun hk ↦ by
     obtain ⟨l, hl⟩ := exists_bridgeNeighbor_eq hv₂ hv₁ hk
@@ -407,13 +414,13 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne (c : G.Verte
       { toFun := fun
           | none => some ⟨none, fun k h ↦ hnb₂ k (congrArg Subtype.val h)⟩
           | some ⟨none, _⟩ => none
-          | some ⟨some e, h⟩ => some ⟨some ⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | some ⟨some e, h⟩ => some ⟨some ⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         invFun := fun
           | none => some ⟨none, fun k h ↦ hnb₁ k (congrArg Subtype.val h)⟩
           | some ⟨none, _⟩ => none
-          | some ⟨some e, h⟩ => some ⟨some ⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | some ⟨some e, h⟩ => some ⟨some ⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         left_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl
         right_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl }
       (fun e ↦ ?_) (fun _ ↦ by simp),
@@ -433,8 +440,8 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq (c : G.Vertex → �
     (hm₁ : ∀ i, G.marking i ≠ v₁) (hc₂ : P (c v₂)) (hg₂ : G.genus v₂ = 0) (hv₂ : G.valence v₂ = 2)
     (hloop₂ : ∀ e, G.endpoint e 0 = v₂ → G.endpoint e 1 ≠ v₂) (hm₂ : ∀ i, G.marking i ≠ v₂)
     {k : Fin 2} (hk : G.bridgeNeighbor hv₁ k = v₂) :
-    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractBridge hv₁ hloop₁ hm₁, fun w ↦ c w.1⟩ y₁ ∧
-      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.1⟩ y₂ ∧
+    ∃ y₁ y₂, LabelledStabilizationStep P ⟨G.contractBridge hv₁ hloop₁ hm₁, fun w ↦ c w.val⟩ y₁ ∧
+      LabelledStabilizationStep P ⟨G.contractBridge hv₂ hloop₂ hm₂, fun w ↦ c w.val⟩ y₂ ∧
       ∃ f : y₁.1.Iso y₂.1, ∀ w, y₂.2 (f.vertexEquiv w) = y₁.2 w := by
   obtain ⟨l, hl⟩ := exists_bridgeNeighbor_eq hv₁ hv₂ hk
   have hk' := bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq
@@ -462,13 +469,13 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq (c : G.Vertex → �
       { toFun := fun
           | none => none
           | some ⟨none, h⟩ => (hnone₁ h).elim
-          | some ⟨some e, h⟩ => some ⟨some ⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | some ⟨some e, h⟩ => some ⟨some ⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         invFun := fun
           | none => none
           | some ⟨none, h⟩ => (hnone₂ h).elim
-          | some ⟨some e, h⟩ => some ⟨some ⟨e.1, fun i h' ↦ h i (Subtype.ext h')⟩,
-              fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
+          | some ⟨some e, h⟩ => some ⟨some ⟨e.val, fun i h' ↦ h i (Subtype.ext h')⟩,
+              fun i h' ↦ e.property i (congrArg Subtype.val h')⟩
         left_inv := by
           rintro (_ | ⟨_ | _, h⟩)
           · rfl
