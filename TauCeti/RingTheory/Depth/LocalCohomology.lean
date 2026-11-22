@@ -31,9 +31,14 @@ module `N` supported in `V(I)`. Equivalently, `I.depth M ≤ N.depth M` for such
 (`ModuleCat.depth_le_depth_of_support_subset` in `TauCeti.RingTheory.Depth.Basic`), which also
 holds when `I M = M`, as then `N` and `M` have comaximal annihilators.
 
+The zero module has depth `⊤`, and its local cohomology vanishes in every degree over any
+commutative ring, Noetherian or not: every `Extⁱ(R ⧸ Iⁿ, 0)` is computed by a complex of zero
+modules.
+
 ## Main results
 
 * `localCohomology.isZero_obj_of_lt_depth`: `H^i_I(M) = 0` for `i < I.depth M`.
+* `localCohomology.isZero_obj_of_subsingleton`: `H^i_I(0) = 0` for every `i`.
 
 ## References
 
@@ -52,6 +57,17 @@ namespace localCohomology
 
 variable {R : Type u} [CommRing R]
 
+/-- `H^i_I(M)` vanishes as soon as every `Extⁱ(R ⧸ Iⁿ, M)` does: by definition it is the colimit
+over `n` of these groups. -/
+private theorem isZero_obj_of_forall_isZero_ext (I : Ideal R) (M : ModuleCat.{u} R) {i : ℕ}
+    (hExt : ∀ n : ℕ,
+      IsZero (((Ext R (ModuleCat.{u} R) i).obj (Opposite.op (.of R (R ⧸ I ^ n)))).obj M)) :
+    IsZero ((localCohomology I i).obj M) := by
+  -- The `n`-th term of the diagram is `hExt n` by definition of `localCohomology`.
+  refine IsZero.of_iso ?_ (colimitObjIsoColimitCompEvaluation _ M)
+  rw [IsZero.iff_id_eq_zero]
+  exact colimit.hom_ext fun n ↦ (hExt n.unop.unop).eq_of_src _ _
+
 /-- **Local cohomology vanishes below the depth.** For a finite module `M` over a Noetherian ring
 and an ideal `I`, the local cohomology module `H^i_I(M)` vanishes for every `i < I.depth M`. -/
 @[stacks 0AVZ "The vanishing part. Stacks states it for `I M ≠ M`; when `I M = M` the depth is
@@ -66,10 +82,18 @@ theorem isZero_obj_of_lt_depth [IsNoetherianRing R] (I : Ideal R) (M : ModuleCat
     refine hi.trans_le (ModuleCat.depth_le_depth_of_support_subset I _ M fun p hp ↦ ?_)
     rw [Module.support_eq_zeroLocus, Ideal.annihilator_quotient] at hp
     exact Ideal.IsPrime.le_of_pow_le hp
-  -- `H^i_I(M)` is the colimit over `n` of the groups `Extⁱ(R ⧸ Iⁿ, M)`, all of which vanish;
-  -- the `n`-th term of the diagram is `hExt n` by definition of `localCohomology`.
-  refine IsZero.of_iso ?_ (colimitObjIsoColimitCompEvaluation _ M)
-  rw [IsZero.iff_id_eq_zero]
-  exact colimit.hom_ext fun n ↦ (hExt n.unop.unop).eq_of_src _ _
+  exact isZero_obj_of_forall_isZero_ext I M hExt
+
+/-- **Local cohomology of the zero module vanishes.** For any commutative ring `R`, ideal `I` and
+degree `i`, the local cohomology module `H^i_I(M)` of a zero module `M` is zero. -/
+theorem isZero_obj_of_subsingleton (I : Ideal R) (i : ℕ) (M : ModuleCat.{u} R) [Subsingleton M] :
+    IsZero ((localCohomology I i).obj M) := by
+  have hM : IsZero M := ModuleCat.isZero_iff_subsingleton.2 ‹_›
+  refine isZero_obj_of_forall_isZero_ext I M fun n ↦ ?_
+  -- Compute `Extⁱ(R ⧸ Iⁿ, M)` by a projective resolution `P`: the `i`-th term of the complex
+  -- `Hom(P, M)` is a module of morphisms into the zero module, hence zero.
+  rw [(projectiveResolution _).isZero_Ext_iff_exactAt R, HomologicalComplex.exactAt_iff]
+  refine ShortComplex.exact_of_isZero_X₂ _ (ModuleCat.isZero_iff_subsingleton.2 ?_)
+  exact ⟨fun f g ↦ hM.eq_of_tgt f g⟩
 
 end localCohomology
