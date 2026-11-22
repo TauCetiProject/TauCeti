@@ -16,8 +16,8 @@ import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 import TauCeti.Analysis.CStarAlgebra.Representation.Ideal
 import TauCeti.Analysis.LocallyConvex.Mazur
-import TauCeti.Analysis.Normed.Operator.Dense
-import TauCeti.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -441,15 +441,6 @@ private theorem exists_seq_step (dA : ℕ → A) (dI : ℕ → I.toNonUnitalStar
   refine ⟨y, hxv.trans hve, hx₀.trans (hxv.trans hve), he_norm, (hv hy_in_v).2, fun k hk => ?_⟩
   exact he_comm (dA k) (Finset.mem_image_of_mem dA (Finset.mem_range.mpr (Nat.lt_succ_of_le hk)))
 
-/-- A sequence whose `(m + 1)`-th term has norm `< (m + 1)⁻¹` for all `m ≥ k` tends to `0`. -/
-private theorem tendsto_zero_of_norm_succ_lt_inv {E : Type*} [SeminormedAddCommGroup E]
-    {g : ℕ → E} {k : ℕ} (hg : ∀ m ≥ k, ‖g (m + 1)‖ < ((m + 1 : ℕ) : ℝ)⁻¹) :
-    Tendsto g atTop (𝓝 0) := by
-  rw [← tendsto_add_atTop_iff_nat 1, tendsto_zero_iff_norm_tendsto_zero]
-  refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _)
-    ((Filter.eventually_ge_atTop k).mono fun m hm => (hg m hm).le) ?_
-  simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
-
 /-- In a separable C⋆-algebra, every closed two-sided ideal admits a monotone increasing sequence
 of positive strict contractions forming a quasicentral approximate unit. -/
 theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace A] :
@@ -477,39 +468,43 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
     ⟨I.mem_toNonUnitalStarSubalgebra.mp (seq n).val.property,
       (seq n).property.1, (seq n).property.2⟩
   -- Extend left and right approximate-unit convergence from `dI` to all of `I`.
-  have hS_lim : ∀ x : S, Tendsto (fun n => (seq n).val * x) atTop (𝓝 x) := fun x =>
-    ContinuousLinearMap.tendsto_apply_of_dense hdI (C := 1)
-      (f := fun n => ContinuousLinearMap.mul ℂ S (seq n).val) (g := ContinuousLinearMap.id ℂ S)
-      (.of_forall fun n => (ContinuousLinearMap.opNorm_mul_apply_le ℂ S (seq n).val).trans
-        (seq n).property.2.le)
-      (by
-        rintro _ ⟨k, rfl⟩
-        exact tendsto_sub_nhds_zero_iff.mp <| tendsto_zero_of_norm_succ_lt_inv fun m hm =>
-          hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k hm)
-      x
+  have hS_lim : ∀ x : S, Tendsto (fun n => (seq n).val * x) atTop (𝓝 x) :=
+    TauCeti.tendsto_mul_right_of_dense hdI (C := 1)
+      (.of_forall fun n => (seq n).property.2.le) <| by
+      rintro _ ⟨k, rfl⟩
+      refine tendsto_sub_nhds_zero_iff.mp <| (tendsto_add_atTop_iff_nat 1).mp ?_
+      refine TauCeti.tendsto_zero_of_eventually_norm_le_inv ?_
+      filter_upwards [Filter.eventually_ge_atTop (max k 1)] with m hm
+      refine (hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k
+        ((le_max_left k 1).trans hm)).le.trans ?_
+      exact inv_anti₀ (Nat.cast_pos.mpr (lt_of_lt_of_le Nat.zero_lt_one
+        ((le_max_right k 1).trans hm))) (by norm_cast; omega)
   have hu_mul_right : ∀ a ∈ I, Tendsto (fun n => u n * a) atTop (𝓝 a) := fun a ha =>
-    (continuous_subtypeVal.tendsto _).comp (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
+    ((continuous_subtypeVal.tendsto _).comp
+      (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)).congr fun n => by
+        simp only [Function.comp_apply, MulMemClass.coe_mul, u]
   have hS_approx : (atTop.map (fun n => (seq n).val)).IsIncreasingApproximateUnit :=
     .of_tendsto_mul_right
       (eventually_map.mpr (Eventually.of_forall fun n => (seq n).property.1))
       (eventually_map.mpr (Eventually.of_forall fun n => (seq n).property.2.le))
       (fun x => tendsto_map'_iff.mpr (hS_lim x))
   have hu_mul_left : ∀ a ∈ I, Tendsto (fun n => a * u n) atTop (𝓝 a) := fun a ha =>
-    (continuous_subtypeVal.tendsto _).comp
+    ((continuous_subtypeVal.tendsto _).comp
       (tendsto_map'_iff.mp
-        (hS_approx.tendsto_mul_left ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩))
+        (hS_approx.tendsto_mul_left ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩))).congr
+      fun n => by simp only [Function.comp_apply, MulMemClass.coe_mul, u]
   -- Extend commutator convergence from `dA` to all of `A`.
-  have hu_comm : ∀ a : A, Tendsto (fun n => u n * a - a * u n) atTop (𝓝 0) := fun a =>
-    ContinuousLinearMap.tendsto_apply_of_dense hdA (C := 2)
-      (f := fun n => ContinuousLinearMap.mul ℂ A (u n) - (ContinuousLinearMap.mul ℂ A).flip (u n))
-      (g := 0)
-      (.of_forall fun n => (ContinuousLinearMap.opNorm_mul_sub_flip_le (u n)).trans
-        (by linarith [(hu_prop n).2.2]))
-      (by
-        rintro _ ⟨k, rfl⟩
-        exact tendsto_zero_of_norm_succ_lt_inv fun m hm =>
-          hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k hm)
-      a
+  have hu_comm : ∀ a : A, Tendsto (fun n => u n * a - a * u n) atTop (𝓝 0) :=
+    TauCeti.tendsto_commutator_of_dense hdA (C := 1)
+      (.of_forall fun n => (hu_prop n).2.2.le) <| by
+      rintro _ ⟨k, rfl⟩
+      refine (tendsto_add_atTop_iff_nat 1).mp ?_
+      refine TauCeti.tendsto_zero_of_eventually_norm_le_inv ?_
+      filter_upwards [Filter.eventually_ge_atTop (max k 1)] with m hm
+      refine (hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k
+        ((le_max_left k 1).trans hm)).le.trans ?_
+      exact inv_anti₀ (Nat.cast_pos.mpr (lt_of_lt_of_le Nat.zero_lt_one
+        ((le_max_right k 1).trans hm))) (by norm_cast; omega)
   exact ⟨u, hu_mono, hu_prop, hu_mul_right, hu_mul_left, hu_comm⟩
 
 end Quasicentral

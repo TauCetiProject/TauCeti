@@ -35,7 +35,10 @@ We prove:
   approximate identity (`Filter.IsApproximateUnit.map_mul_self`);
 * `IsClosed.mem_of_tendsto_mul`: if an eventually norm-bounded filter of elements `e` is a
   two-sided approximate unit for `x` and `e * x * e` eventually lies in a closed set `s`, then
-  `x ∈ s`.
+  `x ∈ s`;
+* `TauCeti.tendsto_mul_right_of_dense` and `TauCeti.tendsto_commutator_of_dense`: extending left
+  approximate-unit convergence and commutator convergence from a dense subset for any eventually
+  norm-bounded family.
 
 ## References
 
@@ -211,6 +214,67 @@ theorem tendsto_mul_mul_of_isBoundedUnder {ι : Type*} {l : Filter ι} {u v : ι
   have hzero : Tendsto (fun i => u i * (a * v i - a)) l (𝓝 0) :=
     Filter.isBoundedUnder_le_mul_tendsto_zero hu (by simpa using hright.sub_const a)
   simpa only [mul_sub, ← mul_assoc, sub_add_cancel, zero_add] using hzero.add hleft
+
+/-- If `u` is eventually norm-bounded along `l` and `u i * d → d` for every `d` in a dense set `D`
+of a seminormed ring, then `u i * x → x` for every `x`. -/
+theorem tendsto_mul_right_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {D : Set A}
+    (hD : Dense D) (hC : ∀ᶠ i in l, ‖u i‖ ≤ C)
+    (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d) l (𝓝 d)) (x : A) :
+    Tendsto (fun i => u i * x) l (𝓝 x) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (2 * (|C| + 1)))
+  rw [dist_eq_norm] at hxd
+  filter_upwards [hC, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
+  rw [dist_eq_norm] at hid ⊢
+  have hsub : u i * x - x = u i * (x - d) + (u i * d - d) + (d - x) := by
+    simp only [mul_sub]
+    abel
+  have hnorm : ‖u i * (x - d) + (u i * d - d) + (d - x)‖ ≤
+      (‖u i‖ + 1) * ‖x - d‖ + ‖u i * d - d‖ := by
+    have h1 : ‖u i * (x - d) + (u i * d - d) + (d - x)‖ ≤
+        ‖u i * (x - d)‖ + ‖u i * d - d‖ + ‖d - x‖ := norm_add₃_le
+    have h2 : ‖u i * (x - d)‖ ≤ ‖u i‖ * ‖x - d‖ := norm_mul_le _ _
+    have h3 : ‖d - x‖ = ‖x - d‖ := norm_sub_rev d x
+    linarith
+  have hC1 : ‖u i‖ + 1 ≤ |C| + 1 := by linarith [hi.trans (le_abs_self C)]
+  have hprod : (‖u i‖ + 1) * ‖x - d‖ < ε / 2 := by
+    calc (‖u i‖ + 1) * ‖x - d‖
+        ≤ (|C| + 1) * ‖x - d‖ := mul_le_mul_of_nonneg_right hC1 (norm_nonneg _)
+      _ < (|C| + 1) * (ε / (2 * (|C| + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
+      _ = ε / 2 := by field_simp
+  linarith [hsub ▸ hnorm]
+
+/-- If `u` is eventually norm-bounded along `l` and `u i * d - d * u i → 0` for every `d` in a
+dense set `D` of a seminormed ring, then `u i * x - x * u i → 0` for every `x`. -/
+theorem tendsto_commutator_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {D : Set A}
+    (hD : Dense D) (hC : ∀ᶠ i in l, ‖u i‖ ≤ C)
+    (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d - d * u i) l (𝓝 0)) (x : A) :
+    Tendsto (fun i => u i * x - x * u i) l (𝓝 0) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (4 * (|C| + 1)))
+  rw [dist_eq_norm] at hxd
+  filter_upwards [hC, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
+  rw [dist_zero_right] at hid ⊢
+  have hsub : u i * x - x * u i =
+      (u i * (x - d) - (x - d) * u i) + (u i * d - d * u i) := by
+    simp only [mul_sub, sub_mul]
+    abel
+  have hnorm : ‖(u i * (x - d) - (x - d) * u i) + (u i * d - d * u i)‖ ≤
+      2 * ‖u i‖ * ‖x - d‖ + ‖u i * d - d * u i‖ := by
+    have h1 := norm_add_le (u i * (x - d) - (x - d) * u i) (u i * d - d * u i)
+    have h2 := norm_sub_le (u i * (x - d)) ((x - d) * u i)
+    have h3 : ‖u i * (x - d)‖ ≤ ‖u i‖ * ‖x - d‖ := norm_mul_le _ _
+    have h4 : ‖(x - d) * u i‖ ≤ ‖x - d‖ * ‖u i‖ := norm_mul_le _ _
+    linarith
+  have hC1 : 2 * ‖u i‖ ≤ 2 * (|C| + 1) := by linarith [hi.trans (le_abs_self C)]
+  have hprod : 2 * ‖u i‖ * ‖x - d‖ < ε / 2 := by
+    calc 2 * ‖u i‖ * ‖x - d‖
+        ≤ 2 * (|C| + 1) * ‖x - d‖ := mul_le_mul_of_nonneg_right hC1 (norm_nonneg _)
+      _ < 2 * (|C| + 1) * (ε / (4 * (|C| + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
+      _ = ε / 2 := by field_simp; ring
+  linarith [hsub ▸ hnorm]
 
 end TauCeti
 

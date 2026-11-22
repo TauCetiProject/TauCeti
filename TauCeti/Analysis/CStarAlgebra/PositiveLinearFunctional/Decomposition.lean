@@ -170,8 +170,10 @@ theorem exists_sub_positiveContinuousLinearMap_of_map_star (φ : A →L[ℂ] ℂ
       ‖(ω₁ : A →L[ℂ] ℂ)‖ + ‖(ω₂ : A →L[ℂ] ℂ)‖ = ‖φ‖ := by
   let i : A →ₗᵢ[ℂ] Unitization ℂ A :=
     ⟨Unitization.inrHom ℂ ℂ A, fun a => Unitization.norm_inr a⟩
+  have hi_apply : ∀ a : A, i.toContinuousLinearMap a = (a : A⁺¹) := fun _ => rfl
   obtain ⟨ψ₀, hψ₀_ext, hψ₀_norm⟩ := i.exists_extension_norm_eq φ
-  have hψ₀_apply : ∀ a : A, ψ₀ (a : A⁺¹) = φ a := fun a => DFunLike.congr_fun hψ₀_ext a
+  have hψ₀_apply : ∀ a : A, ψ₀ (a : A⁺¹) = φ a := fun a => by
+    simpa only [ContinuousLinearMap.comp_apply, hi_apply] using DFunLike.congr_fun hψ₀_ext a
   let ψ : Unitization ℂ A →L[ℂ] ℂ :=
     (realPart (WithConv.toConv ψ₀) : WithConv (Unitization ℂ A →L[ℂ] ℂ)).ofConv
   have hψ_star : ∀ x, ψ (star x) = star (ψ x) :=
@@ -190,14 +192,22 @@ theorem exists_sub_positiveContinuousLinearMap_of_map_star (φ : A →L[ℂ] ℂ
       exact (ψ.le_opNorm (a : A⁺¹)).trans_eq (by rw [Unitization.norm_inr]))
   obtain ⟨η₁, η₂, hη_eq, hη_norm⟩ := exists_sub_positiveContinuousLinearMap_unital ψ hψ_star
   let j : A →P[ℂ] Unitization ℂ A := .ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  have hj_apply : ∀ a : A, j a = (a : A⁺¹) := fun _ => rfl
   let ω₁ : A →P[ℂ] ℂ := η₁.comp j
   let ω₂ : A →P[ℂ] ℂ := η₂.comp j
+  have hω₁_apply : ∀ a : A, ω₁ a = η₁ (a : A⁺¹) := fun a => by
+    rw [PositiveContinuousLinearMap.comp_apply, hj_apply]
+  have hω₂_apply : ∀ a : A, ω₂ a = η₂ (a : A⁺¹) := fun a => by
+    rw [PositiveContinuousLinearMap.comp_apply, hj_apply]
   have hω_eq : ∀ a, φ a = ω₁ a - ω₂ a := fun a => by
-    simp [ω₁, ω₂, j, ← hψ_ext a, hη_eq (a : A⁺¹)]
+    rw [hω₁_apply, hω₂_apply, ← hψ_ext a, hη_eq (a : A⁺¹)]
   have hω_le : ∀ η : Unitization ℂ A →P[ℂ] ℂ,
       ‖((η.comp j : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ ≤ ‖(η : Unitization ℂ A →L[ℂ] ℂ)‖ := fun η =>
     opNorm_le_bound _ (norm_nonneg _) fun a => by
-      simpa [j, Unitization.norm_inr] using (η : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : A⁺¹)
+      rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+        PositiveContinuousLinearMap.comp_apply, hj_apply,
+        ← Unitization.norm_inr (𝕜 := ℂ) a]
+      exact (η : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : A⁺¹)
   have hsum_le : ‖(ω₁ : A →L[ℂ] ℂ)‖ + ‖(ω₂ : A →L[ℂ] ℂ)‖ ≤ ‖φ‖ :=
     (add_le_add (hω_le η₁) (hω_le η₂)).trans (by rw [hη_norm, hψ_norm])
   have hφ_le : ‖φ‖ ≤ ‖(ω₁ : A →L[ℂ] ℂ)‖ + ‖(ω₂ : A →L[ℂ] ℂ)‖ := by

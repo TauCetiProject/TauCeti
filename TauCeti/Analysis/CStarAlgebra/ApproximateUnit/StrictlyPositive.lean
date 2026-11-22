@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal
+public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
@@ -59,8 +60,11 @@ every `a : A`. When `h` is strictly positive, `eₙ` is an increasing approximat
   3. `Dense (Set.range (· * h))`;
   4. `∀ φ : A →P[ℂ] ℂ, φ ≠ 0 → 0 < (φ h).re`;
   5. `(Filter.atTop.map (strictlyPositiveApproximateUnit h)).IsIncreasingApproximateUnit`.
-* `TauCeti.CStarAlgebra.IsStrictlyPositive.of_le`, `add_nonneg`, `nonneg_add`, `smul`, and `map`:
-  order, cone, and dense-range *-homomorphism permanence of strict positivity.
+* `TauCeti.CStarAlgebra.IsStrictlyPositive.of_le`, `add_nonneg`, `nonneg_add`, `smul`, `map`,
+  `dense_range_of_isNondegenerate`, and
+  `tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate`:
+  order, cone, dense-range *-homomorphism permanence, and nondegenerate-representation actions
+  of strict positivity.
 * `TauCeti.CStarAlgebra.IsStrictlyPositive.iff_of_unital`:
   in a unital C⋆-algebra, `TauCeti.CStarAlgebra.IsStrictlyPositive h` coincides with
   `0 ≤ h ∧ IsUnit h`.
@@ -116,6 +120,7 @@ theorem IsStrictlyPositive.dense_range_mul_right {h : A} (hh : CStarAlgebra.IsSt
   exact ⟨h * a, rfl⟩
 
 /-- `0 : A` is strictly positive if and only if `A` is subsingleton (the zero C⋆-algebra). -/
+@[simp]
 theorem isStrictlyPositive_zero_iff :
     CStarAlgebra.IsStrictlyPositive (0 : A) ↔ Subsingleton A := by
   constructor
@@ -186,13 +191,21 @@ theorem norm_strictlyPositiveApproximateUnit_le_one (h : A) (n : ℕ) :
     ‖strictlyPositiveApproximateUnit h n‖ ≤ 1 :=
   (norm_strictlyPositiveApproximateUnit_lt_one h n).le
 
+private theorem continuous_inv_add_nnreal {c : ℝ≥0} (hc : 0 < c) :
+    Continuous (fun t : ℝ≥0 => (c + t)⁻¹) :=
+  (continuous_const.add continuous_id).inv₀ fun t => (add_pos_of_pos_of_nonneg hc t.property).ne'
+
+private theorem continuous_mul_inv_add_nnreal {c : ℝ≥0} (hc : 0 < c) :
+    Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) :=
+  continuous_id.mul (continuous_inv_add_nnreal hc)
+
 /-- The sequence `strictlyPositiveApproximateUnit h` is monotone increasing. -/
 theorem strictlyPositiveApproximateUnit_monotone (h : A) :
     Monotone (strictlyPositiveApproximateUnit h) := by
   intro m n hmn
   have hcont : ∀ k : ℕ, ContinuousOn (fun t : ℝ≥0 => t * (((k + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹)
       (quasispectrum ℝ≥0 h) := fun k =>
-    Continuous.continuousOn (by fun_prop (disch := intro x; positivity))
+    (continuous_mul_inv_add_nnreal (by positivity : (0 : ℝ≥0) < ((k + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
   refine cfcₙ_mono (a := h) (fun t _ => ?_) (hcont m) (hcont n) (by simp) (by simp)
   gcongr
 
@@ -209,8 +222,8 @@ theorem map_strictlyPositiveApproximateUnit {B F : Type*} [NonUnitalCStarAlgebra
     f (strictlyPositiveApproximateUnit h n) = strictlyPositiveApproximateUnit (f h) n := by
   rw [strictlyPositiveApproximateUnit_def, strictlyPositiveApproximateUnit_def]
   exact NonUnitalStarAlgHomClass.map_cfcₙ f _ h
-    (Continuous.continuousOn (by fun_prop (disch := intro x; positivity))) (by simp)
-    (map_continuous f) hh (map_nonneg f hh)
+    (continuous_mul_inv_add_nnreal (by positivity : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
+    (by simp) (map_continuous f) hh (map_nonneg f hh)
 
 /-- Algebraic `cfcₙ` identity for the approximation error
 `h - h * strictlyPositiveApproximateUnit h n`. -/
@@ -220,12 +233,11 @@ private theorem sub_mul_strictlyPositiveApproximateUnit_eq {h : A} (hh : 0 ≤ h
         t * (((n + 1 : ℕ) : ℝ≥0)⁻¹ * (((n + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹)) h := by
   let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
   have hc_pos : 0 < c := by positivity
-  have hf_cont : Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) := by
-    fun_prop (disch := intro x; positivity)
+  have hf_cont : Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) := continuous_mul_inv_add_nnreal hc_pos
   have htf_cont : Continuous (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) :=
     continuous_id.mul hf_cont
-  have hg_cont : Continuous (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) := by
-    fun_prop (disch := intro x; positivity)
+  have hg_cont : Continuous (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) :=
+    continuous_id.mul (continuous_const.mul (continuous_inv_add_nnreal hc_pos))
   have hmul : h * strictlyPositiveApproximateUnit h n =
       cfcₙ (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) h := by
     calc h * strictlyPositiveApproximateUnit h n
@@ -300,7 +312,7 @@ theorem inr_strictlyPositiveApproximateUnit_eq (h : A) (n : ℕ) :
   · let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
     have hh' : 0 ≤ (h : A⁺¹) := (Unitization.inr_nonneg_iff ℂ).mpr hh
     have hr_cont : ContinuousOn (fun t : ℝ≥0 => (c + t)⁻¹) (spectrum ℝ≥0 (h : A⁺¹)) :=
-      Continuous.continuousOn (by fun_prop (disch := intro x; positivity))
+      (continuous_inv_add_nnreal (by positivity : 0 < c)).continuousOn
     have hL : ((strictlyPositiveApproximateUnit h n : A) : A⁺¹) =
         (h : A⁺¹) * cfc (fun t : ℝ≥0 => (c + t)⁻¹) (h : A⁺¹) := by
       rw [strictlyPositiveApproximateUnit_def,
@@ -404,7 +416,7 @@ private theorem eq_zero_of_forall_re_apply_pos {h : A}
 
 /-- If `0 ≤ h` is strictly positive on every nonzero positive functional of `A`, then `π h` has
 dense range in any nondegenerate Hilbert-space representation `π` of `A`. -/
-private theorem dense_range_of_isNondegenerate {H : Type*}
+private theorem dense_range_of_forall_re_apply_pos {H : Type*}
     [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hπ : π.IsNondegenerate) {h : A} (hh : 0 ≤ h)
     (hpos : ∀ φ : A →P[ℂ] ℂ, φ ≠ 0 → 0 < (φ h).re) :
@@ -434,13 +446,13 @@ private theorem dense_range_of_isNondegenerate {H : Type*}
 /-- If `0 ≤ h` is strictly positive on every nonzero positive functional of `A`, then in any
 nondegenerate Hilbert-space representation `π` of `A`, `π (strictlyPositiveApproximateUnit h n)`
 converges strongly to the identity. -/
-private theorem tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate {H : Type*}
+private theorem tendsto_apply_strictlyPositiveApproximateUnit_of_forall_re_apply_pos {H : Type*}
     [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hπ : π.IsNondegenerate) {h : A} (hh : 0 ≤ h)
     (hpos : ∀ φ : A →P[ℂ] ℂ, φ ≠ 0 → 0 < (φ h).re) (η : H) :
     Tendsto (fun n => π (strictlyPositiveApproximateUnit h n) η) atTop (𝓝 η) := by
   refine ContinuousLinearMap.tendsto_apply_of_dense
-    (dense_range_of_isNondegenerate π hπ hh hpos) (C := 1)
+    (dense_range_of_forall_re_apply_pos π hπ hh hpos) (C := 1)
     (f := fun n => π (strictlyPositiveApproximateUnit h n)) (g := ContinuousLinearMap.id ℂ H)
     (.of_forall fun n =>
       (NonUnitalStarAlgHom.norm_apply_le π _).trans
@@ -474,7 +486,7 @@ private theorem dense_range_mul_left_of_forall_pos {h : A} (hh : 0 ≤ h)
   let ξ := ω.extendUnitization.toPositiveLinearMap.gnsVector
   have hstrong : Tendsto (fun n => ω.gnsInr (strictlyPositiveApproximateUnit h n) (ω.gnsInr a ξ))
       atTop (𝓝 (ω.gnsInr a ξ)) :=
-    tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate ω.gnsInr
+    tendsto_apply_strictlyPositiveApproximateUnit_of_forall_re_apply_pos ω.gnsInr
       ω.isNondegenerate_gnsInr hh hpos (ω.gnsInr a ξ)
   have hinner : Tendsto
       (fun n => ⟪ξ, ω.gnsInr (strictlyPositiveApproximateUnit h n) (ω.gnsInr a ξ)⟫_ℂ)
@@ -575,6 +587,25 @@ theorem IsStrictlyPositive.isIncreasingApproximateUnit {h : A}
     (hh : CStarAlgebra.IsStrictlyPositive h) :
     (atTop.map (strictlyPositiveApproximateUnit h)).IsIncreasingApproximateUnit :=
   isStrictlyPositive_iff_isIncreasingApproximateUnit.mp hh
+
+/-- If `h` is strictly positive, then `π h` has dense range in any nondegenerate Hilbert-space
+representation `π` of `A`. -/
+theorem IsStrictlyPositive.dense_range_of_isNondegenerate {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {h : A} (hh : CStarAlgebra.IsStrictlyPositive h)
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hπ : π.IsNondegenerate) :
+    Dense (Set.range (π h)) :=
+  dense_range_of_forall_re_apply_pos π hπ hh.nonneg fun _ hφ => hh.re_apply_pos_of_ne_zero hφ
+
+/-- If `h` is strictly positive, then in any nondegenerate Hilbert-space representation `π` of `A`,
+`π (strictlyPositiveApproximateUnit h n)` converges strongly to the identity. -/
+theorem IsStrictlyPositive.tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {h : A} (hh : CStarAlgebra.IsStrictlyPositive h)
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hπ : π.IsNondegenerate) (η : H) :
+    Tendsto (fun n => π (strictlyPositiveApproximateUnit h n) η) atTop (𝓝 η) :=
+  tendsto_apply_strictlyPositiveApproximateUnit_of_forall_re_apply_pos π hπ hh.nonneg
+    (fun _ hφ => hh.re_apply_pos_of_ne_zero hφ) η
 
 /-- Any element dominating a strictly positive element is strictly positive. -/
 theorem IsStrictlyPositive.of_le {h₁ h₂ : A} (hh₁ : CStarAlgebra.IsStrictlyPositive h₁)

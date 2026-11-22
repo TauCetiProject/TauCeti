@@ -60,7 +60,8 @@ theorem exists_isClosed_not_isHereditary_matrix :
 /-- `CStarMatrix (Fin 2) (Fin 2) ℂ` contains a positive full element that is not strictly
 positive. -/
 theorem exists_isFull_and_not_isStrictlyPositive_matrix :
-    ∃ e : CStarMatrix (Fin 2) (Fin 2) ℂ, 0 ≤ e ∧ IsFull e ∧ ¬IsStrictlyPositive e := by
+    ∃ e : CStarMatrix (Fin 2) (Fin 2) ℂ,
+      0 ≤ e ∧ IsFull e ∧ ¬CStarAlgebra.IsStrictlyPositive e := by
   let e : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.ofMatrix (Matrix.single 0 0 1)
   have he_sq : star e * e = e := by
     ext i j
@@ -80,7 +81,7 @@ theorem exists_isFull_and_not_isStrictlyPositive_matrix :
       fin_cases i <;> fin_cases j <;>
         simp [e, u, v, CStarMatrix.mul_apply, Fin.sum_univ_two]
     exact hsum ▸ I.add_mem heI he11
-  have he_not_sp : ¬IsStrictlyPositive e := by
+  have he_not_sp : ¬CStarAlgebra.IsStrictlyPositive e := by
     rw [isStrictlyPositive_iff_of_unital]
     intro h
     obtain ⟨u, hu⟩ := h.isUnit
