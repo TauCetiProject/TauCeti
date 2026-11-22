@@ -41,7 +41,7 @@ isomorphisms on all right mapping spaces).
   `SSet.SpacesΔ.ι_toCatInftyΔ_map`, `SSet.SpacesΔ.isIso_toCatInftyΔ_map`: projection,
   injectivity, hom-identification, and invertibility properties of `SSet.SpacesΔ.toCatInftyΔ`.
 * `SSet.spacesToCatInfty_def`, `SSet.spacesToCatInfty_app`,
-  `SSet.vertexEquiv_spacesToCatInfty_app`, `SSet.kanComplex_iff_mem_range_toCatInftyΔ`:
+  `SSet.vertexEquiv_spacesToCatInfty_app`, `SSet.mem_range_toCatInftyΔ_iff`:
   characterization of `SSet.spacesToCatInfty` as a simplicial nerve map, its action on simplices
   and vertices, and the characterization of the object range of `SSet.SpacesΔ.toCatInftyΔ`.
 * `SSet.spacesIsoFullSubcategory_hom_ι`, `SSet.spacesIsoFullSubcategory_hom_app_val`,
@@ -72,24 +72,62 @@ namespace SpacesΔ
 private def toCatInftyΔObj (A : SpacesΔ.{u}) : CatInftyΔ.{u} :=
   ⟨CoreEnriched.of A.obj, have := A.property; inferInstance⟩
 
+private lemma toCatInftyΔObj_sHom_eq_core (A B : SpacesΔ.{u}) :
+    sHom (toCatInftyΔObj A) (toCatInftyΔObj B) = ((sHom A.obj B.obj).core : SSet.{u}) :=
+  (ObjectProperty.FullSubcategory.eHom_eq SSet (toCatInftyΔObj A) (toCatInftyΔObj B)).trans
+    (CoreEnriched.sHom_eq (toCatInftyΔObj A).obj (toCatInftyΔObj B).obj)
+
 private lemma toCatInftyΔObj_sHom_eq (A B : SpacesΔ.{u}) :
     sHom (toCatInftyΔObj A) (toCatInftyΔObj B) = ((sHom A B).core : SSet.{u}) :=
-  (ObjectProperty.FullSubcategory.eHom_eq SSet _ _).trans
-    ((CoreEnriched.sHom_eq _ _).trans
-      (congrArg (fun X : SSet.{u} ↦ (X.core : SSet.{u}))
-        (ObjectProperty.FullSubcategory.eHom_eq SSet A B).symm))
+  (toCatInftyΔObj_sHom_eq_core A B).trans
+    (congrArg coreFunctor.obj (ObjectProperty.FullSubcategory.eHom_eq SSet A B).symm)
 
 private lemma toCatInftyΔObj_eqToHom_comp_ι (A B : SpacesΔ.{u}) :
-    eqToHom (toCatInftyΔObj_sHom_eq A B) ≫ (sHom A B).core.ι = (sHom A.obj B.obj).core.ι :=
-  rfl
+    eqToHom (toCatInftyΔObj_sHom_eq A B) ≫ (sHom A B).core.ι =
+      eqToHom (toCatInftyΔObj_sHom_eq_core A B) ≫
+        (sHom A.obj B.obj).core.ι ≫
+        eqToHom (ObjectProperty.FullSubcategory.eHom_eq SSet A B).symm := by
+  calc eqToHom (toCatInftyΔObj_sHom_eq A B) ≫ (sHom A B).core.ι
+      = eqToHom (toCatInftyΔObj_sHom_eq_core A B) ≫
+          core.map (eqToHom (ObjectProperty.FullSubcategory.eHom_eq SSet A B).symm) ≫
+          (sHom A B).core.ι := by
+        refine congrArg (· ≫ _) ?_
+        refine (eqToHom_trans (toCatInftyΔObj_sHom_eq_core A B)
+          (congrArg coreFunctor.obj
+            (ObjectProperty.FullSubcategory.eHom_eq SSet A B).symm)).symm.trans ?_
+        exact congrArg (_ ≫ ·) (eqToHom_map coreFunctor _).symm
+    _ = _ := congrArg (_ ≫ ·) (core.map_ι _)
 
-private lemma toCatInftyΔObj_eqToHom_symm (A B : SpacesΔ.{u}) :
-    eqToHom (toCatInftyΔObj_sHom_eq A B).symm = 𝟙 ((sHom A.obj B.obj).core : SSet.{u}) :=
-  rfl
-
-private lemma spacesΔ_core_ι (A B : SpacesΔ.{u}) :
-    (sHom A B).core.ι = (sHom A.obj B.obj).core.ι :=
-  rfl
+private lemma toCatInftyΔObj_eComp_ι (A B C : SpacesΔ.{u}) :
+    (eqToHom (toCatInftyΔObj_sHom_eq A B).symm ⊗ₘ
+        eqToHom (toCatInftyΔObj_sHom_eq B C).symm) ≫
+      eComp SSet (toCatInftyΔObj A) (toCatInftyΔObj B) (toCatInftyΔObj C) ≫
+      eqToHom (toCatInftyΔObj_sHom_eq A C) ≫ (sHom A C).core.ι =
+    ((sHom A B).core.ι ⊗ₘ (sHom B C).core.ι) ≫ eComp SSet A B C := by
+  have hsymm (X Y : SpacesΔ.{u}) :
+      eqToHom (toCatInftyΔObj_sHom_eq X Y).symm =
+        core.map (eqToHom (ObjectProperty.FullSubcategory.eHom_eq SSet X Y)) ≫
+          eqToHom (toCatInftyΔObj_sHom_eq_core X Y).symm :=
+    (eqToHom_trans (congrArg coreFunctor.obj
+      (ObjectProperty.FullSubcategory.eHom_eq SSet X Y))
+      (toCatInftyΔObj_sHom_eq_core X Y).symm).symm.trans
+      (congrArg (· ≫ _) (eqToHom_map coreFunctor _).symm)
+  have hCoreComp :
+      (eqToHom (toCatInftyΔObj_sHom_eq_core A B).symm ⊗ₘ
+          eqToHom (toCatInftyΔObj_sHom_eq_core B C).symm) ≫
+        eComp SSet (toCatInftyΔObj A) (toCatInftyΔObj B) (toCatInftyΔObj C) ≫
+        eqToHom (toCatInftyΔObj_sHom_eq_core A C) =
+      eComp SSet (CoreEnriched.of A.obj) (CoreEnriched.of B.obj) (CoreEnriched.of C.obj) := by
+    rw [ObjectProperty.FullSubcategory.eComp_eq SSet (toCatInftyΔObj A) (toCatInftyΔObj B)
+      (toCatInftyΔObj C)]
+    rfl
+  rw [hsymm A B, hsymm B C, toCatInftyΔObj_eqToHom_comp_ι A C,
+    ← tensorHom_comp_tensorHom_assoc, reassoc_of% hCoreComp,
+    CoreEnriched.eComp_ι_assoc]
+  dsimp only
+  rw [tensorHom_comp_tensorHom_assoc, core.map_ι, core.map_ι,
+    ← tensorHom_comp_tensorHom_assoc, ← ObjectProperty.FullSubcategory.eComp_eq SSet A B C]
+  simp only [eqToHom_refl, id_tensorHom_id, Category.id_comp, Category.comp_id]
 
 /-- The canonical simplicial functor from `SpacesΔ` to `CatInftyΔ`, viewing each Kan complex as a
 quasicategory and inverting the core inclusion `Fun(A, B)^≃ ⟶ Fun(A, B)`. -/
@@ -101,50 +139,18 @@ noncomputable def toCatInftyΔ : EnrichedFunctor SSet.{u} SpacesΔ.{u} CatInfty�
     have hId :
         eId SSet (toCatInftyΔObj A) ≫ eqToHom (toCatInftyΔObj_sHom_eq A A) ≫ (sHom A A).core.ι =
           eId SSet A := by
-      rw [ObjectProperty.FullSubcategory.eId_eq SSet (toCatInftyΔObj A),
+      rw [toCatInftyΔObj_eqToHom_comp_ι,
+        ObjectProperty.FullSubcategory.eId_eq SSet (toCatInftyΔObj A),
         ObjectProperty.FullSubcategory.eId_eq SSet A]
-      calc eId SSet (toCatInftyΔObj A).obj ≫
-            eqToHom (toCatInftyΔObj_sHom_eq A A) ≫ (sHom A A).core.ι
-          = eId SSet (CoreEnriched.of A.obj) ≫ (sHom A.obj A.obj).core.ι :=
-            congrArg (eId SSet (CoreEnriched.of A.obj) ≫ ·) (toCatInftyΔObj_eqToHom_comp_ι A A)
-        _ = eId SSet A.obj := CoreEnriched.eId_ι (CoreEnriched.of A.obj)
+      simp only [eqToHom_refl, Category.comp_id]
+      exact CoreEnriched.eId_ι (CoreEnriched.of A.obj)
     simp [hId]
   map_comp A B C := by
     rw [← cancel_mono (eqToHom (toCatInftyΔObj_sHom_eq A C) ≫ (sHom A C).core.ι)]
-    have hComp :
-        (eqToHom (toCatInftyΔObj_sHom_eq A B).symm ⊗ₘ
-            eqToHom (toCatInftyΔObj_sHom_eq B C).symm) ≫
-          eComp SSet (toCatInftyΔObj A) (toCatInftyΔObj B) (toCatInftyΔObj C) ≫
-          eqToHom (toCatInftyΔObj_sHom_eq A C) ≫ (sHom A C).core.ι =
-        ((sHom A B).core.ι ⊗ₘ (sHom B C).core.ι) ≫ eComp SSet A B C := by
-      rw [ObjectProperty.FullSubcategory.eComp_eq SSet (toCatInftyΔObj A) (toCatInftyΔObj B)
-          (toCatInftyΔObj C),
-        ObjectProperty.FullSubcategory.eComp_eq SSet A B C]
-      calc (eqToHom (toCatInftyΔObj_sHom_eq A B).symm ⊗ₘ
-              eqToHom (toCatInftyΔObj_sHom_eq B C).symm) ≫
-            eComp SSet (toCatInftyΔObj A).obj (toCatInftyΔObj B).obj (toCatInftyΔObj C).obj ≫
-            eqToHom (toCatInftyΔObj_sHom_eq A C) ≫ (sHom A C).core.ι
-          = (𝟙 ((sHom A.obj B.obj).core : SSet.{u}) ⊗ₘ
-                𝟙 ((sHom B.obj C.obj).core : SSet.{u})) ≫
-              eComp SSet (CoreEnriched.of A.obj) (CoreEnriched.of B.obj) (CoreEnriched.of C.obj) ≫
-              (sHom A.obj C.obj).core.ι := by
-            refine congrArg₂ (· ≫ eComp SSet (CoreEnriched.of A.obj) (CoreEnriched.of B.obj)
-                (CoreEnriched.of C.obj) ≫ ·) ?_ (toCatInftyΔObj_eqToHom_comp_ι A C)
-            exact congrArg₂ (· ⊗ₘ ·) (toCatInftyΔObj_eqToHom_symm A B)
-              (toCatInftyΔObj_eqToHom_symm B C)
-        _ = eComp SSet (CoreEnriched.of A.obj) (CoreEnriched.of B.obj) (CoreEnriched.of C.obj) ≫
-              (sHom A.obj C.obj).core.ι := by
-            rw [id_tensorHom_id, Category.id_comp]
-        _ = ((sHom A.obj B.obj).core.ι ⊗ₘ (sHom B.obj C.obj).core.ι) ≫
-              eComp SSet A.obj B.obj C.obj :=
-            CoreEnriched.eComp_ι (CoreEnriched.of A.obj) (CoreEnriched.of B.obj)
-              (CoreEnriched.of C.obj)
-        _ = ((sHom A B).core.ι ⊗ₘ (sHom B C).core.ι) ≫ eComp SSet A.obj B.obj C.obj := by
-            refine congrArg (· ≫ eComp SSet A.obj B.obj C.obj) ?_
-            exact congrArg₂ (· ⊗ₘ ·) (spacesΔ_core_ι A B).symm (spacesΔ_core_ι B C).symm
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
       IsIso.inv_hom_id, Category.comp_id]
-    rw [← tensorHom_comp_tensorHom_assoc, hComp, tensorHom_comp_tensorHom_assoc]
+    rw [← tensorHom_comp_tensorHom_assoc, toCatInftyΔObj_eComp_ι,
+      tensorHom_comp_tensorHom_assoc]
     simp
 
 /-- `SpacesΔ.toCatInftyΔ` sends a Kan complex `A` to `CoreEnriched.of A.obj` in `CatInftyΔ`. -/
@@ -226,10 +232,11 @@ lemma vertexEquiv_spacesToCatInfty_app (x : spaces.{u} _⦋0⦌) :
 
 /-- An object of `CatInftyΔ` lies in the object range of `SpacesΔ.toCatInftyΔ` if and only if its
 underlying simplicial set is a Kan complex. -/
-lemma kanComplex_iff_mem_range_toCatInftyΔ (A : CatInftyΔ.{u}) :
-    KanComplex A.obj.toSSet ↔ A ∈ Set.range SpacesΔ.toCatInftyΔ.{u}.obj :=
-  ⟨fun h ↦ ⟨⟨A.obj.toSSet, h⟩, ObjectProperty.FullSubcategory.ext rfl⟩,
-    by rintro ⟨B, rfl⟩; exact B.property⟩
+@[simp↓]
+lemma mem_range_toCatInftyΔ_iff (A : CatInftyΔ.{u}) :
+    A ∈ Set.range SpacesΔ.toCatInftyΔ.{u}.obj ↔ KanComplex A.obj.toSSet :=
+  ⟨by rintro ⟨B, rfl⟩; exact B.property,
+    fun h ↦ ⟨⟨A.obj.toSSet, h⟩, ObjectProperty.FullSubcategory.ext rfl⟩⟩
 
 /-- The quasicategory `Spaces` of small Kan complexes is isomorphic to the full enhanced
 subcategory of `Cat∞` spanned by the Kan complexes. -/
@@ -240,7 +247,7 @@ noncomputable def spacesIsoFullSubcategory :
           SSet.{u + 1}) :=
   SimplicialNerve.fullSubcategoryIso SpacesΔ.toCatInftyΔ.{u}
     SpacesΔ.toCatInftyΔ_obj_injective (fun A ↦ KanComplex A.obj.toSSet)
-    kanComplex_iff_mem_range_toCatInftyΔ
+    fun A ↦ (mem_range_toCatInftyΔ_iff A).symm
 
 /-- Under `spacesIsoFullSubcategory`, the full enhanced subcategory inclusion corresponds to
 `spacesToCatInfty`. -/
@@ -265,7 +272,7 @@ lemma range_spacesToCatInfty :
       catInfty.{u}.fullEnhancedSubcategory
         fun x ↦ KanComplex (SimplicialNerve.vertexEquiv CatInftyΔ.{u} x).obj.toSSet :=
   SimplicialNerve.range_simplicialNerveMap SpacesΔ.toCatInftyΔ.{u}
-    (fun A ↦ KanComplex A.obj.toSSet) kanComplex_iff_mem_range_toCatInftyΔ
+    (fun A ↦ KanComplex A.obj.toSSet) fun A ↦ (mem_range_toCatInftyΔ_iff A).symm
 
 /-- The inclusion `Spaces ⟶ Cat∞` is a monomorphism of simplicial sets. -/
 instance mono_spacesToCatInfty : Mono spacesToCatInfty.{u} :=

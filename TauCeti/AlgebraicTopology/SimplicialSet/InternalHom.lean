@@ -36,6 +36,8 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 
 * `SSet.ihomObjEquiv`: the `n`-simplices of `K ⟶[SSet] X` are the maps `K ⊗ Δ[n] ⟶ X`.
 * `SSet.ihomObj₀Equiv`: the vertices of `K ⟶[SSet] X` are the maps `K ⟶ X`.
+* `SSet.sHom_eq_ihom`: the mapping simplicial set `sHom A B` of `SSet` is the internal hom
+  `(ihom A).obj B`.
 * `SSet.sHomObj₀Iso`: the function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`.
 * `SSet.ihomOver p f`: the simplicial set `Fun_B(K, E)` of functors over `f`.
 * `SSet.coherentSections p`: the simplicial set of sections of `p`.
@@ -186,6 +188,10 @@ lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) 
     yonedaEquiv.symm (((ihom X).obj Z).δ i (yonedaEquiv (curry h))) =
       curry (X ◁ stdSimplex.δ i ≫ h) := by
   rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, curry_natural_left]
+
+/-- The mapping simplicial set `sHom A B` of `SSet` is the internal hom `(ihom A).obj B`. -/
+lemma sHom_eq_ihom (A B : SSet.{u}) : sHom A B = (ihom A).obj B :=
+  rfl
 
 /-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`, obtained by
 transporting `Δ[0] ≅ 𝟙_ SSet` along `MonoidalClosed.internalHom` into `MonoidalClosed.unitIsoSelf`.

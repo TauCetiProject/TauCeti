@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
+import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 import TauCeti.CategoryTheory.Enriched.Ordinary.Basic
 
 /-!
@@ -53,9 +54,6 @@ noncomputable abbrev spaces : SSet.{u + 1} :=
   SimplicialNerve SpacesΔ.{u}
 
 namespace SpacesΔ
-
-private lemma sHom_eq_ihom (A B : SSet.{u}) : sHom A B = (ihom A).obj B :=
-  rfl
 
 /-- The mapping simplicial sets of `SpacesΔ` are Kan complexes, as function complexes into Kan
 complexes. -/
