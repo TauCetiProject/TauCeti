@@ -7,9 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
-public import Mathlib.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.Category.TopCat.MappingSpace
+public import TauCeti.Topology.Category.TopCat.Monoidal
 import TauCeti.CategoryTheory.Monoidal.Closed.Unit
 
 /-!
@@ -293,14 +293,37 @@ theorem prodComparison_compactlyGeneratedToTop :
     CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
       adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) := by
   apply CartesianMonoidalCategory.hom_ext
-  · rw [CartesianMonoidalCategory.prodComparison_fst]; rfl
-  · rw [CartesianMonoidalCategory.prodComparison_snd]; rfl
+  · rw [CartesianMonoidalCategory.prodComparison_fst]
+    ext p
+    have h1 : (compactlyGeneratedToTop.map (CartesianMonoidalCategory.fst X Y)) p = p.1 :=
+      fst_apply X Y p
+    have h2 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).1 = p.1 :=
+      congrArg Prod.fst (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p)
+    have h3 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) ≫
+        CartesianMonoidalCategory.fst (compactlyGeneratedToTop.obj X)
+          (compactlyGeneratedToTop.obj Y)) p =
+        (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).1 :=
+      (CategoryTheory.comp_apply _ _ p).trans (TopCat.fst_apply _)
+    exact h1.trans (h2.symm.trans h3.symm)
+  · rw [CartesianMonoidalCategory.prodComparison_snd]
+    ext p
+    have h1 : (compactlyGeneratedToTop.map (CartesianMonoidalCategory.snd X Y)) p = p.2 :=
+      snd_apply X Y p
+    have h2 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).2 = p.2 :=
+      congrArg Prod.snd (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p)
+    have h3 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) ≫
+        CartesianMonoidalCategory.snd (compactlyGeneratedToTop.obj X)
+          (compactlyGeneratedToTop.obj Y)) p =
+        (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).2 :=
+      (CategoryTheory.comp_apply _ _ p).trans (TopCat.snd_apply _)
+    exact h1.trans (h2.symm.trans h3.symm)
 
 @[simp]
 theorem prodComparison_compactlyGeneratedToTop_apply (p : ↑(X ⊗ Y)) :
     CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y p =
       (p : X × Y) := by
-  rw [prodComparison_compactlyGeneratedToTop]; rfl
+  rw [prodComparison_compactlyGeneratedToTop, adj_counit]
+  exact adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p
 
 /-- The convenient product `X ⊗ Y` has the ordinary product topology if and only if `X × Y` is
 `u`-compactly generated. -/
@@ -542,24 +565,12 @@ theorem ihom_obj_ext {Y Z : CompactlyGenerated.{u, w}} {f g : ↑((ihom Y).obj Z
 theorem ihomUncurry_apply (Y X Z : CompactlyGenerated.{u, w})
     (g : ↑((ihom X).obj ((ihom Y).obj Z))) (p : ↑(Y ⊗ X)) :
     (MonoidalClosed.ihomUncurry Y X Z g) p = (g p.2) p.1 := by
-  let p2g : ↑(X ⊗ (ihom X).obj ((ihom Y).obj Z)) := (p.2, g)
-  let p1_p2g : ↑(Y ⊗ (X ⊗ (ihom X).obj ((ihom Y).obj Z))) := (p.1, p2g)
-  let pg : ↑((Y ⊗ X) ⊗ (ihom X).obj ((ihom Y).obj Z)) := ((p.1, p.2), g)
-  calc
-    (MonoidalClosed.ihomUncurry Y X Z g) p
-      = MonoidalClosed.uncurry (MonoidalClosed.ihomUncurry Y X Z) (p, g) :=
-        (uncurry_apply _ (p, g)).symm
-    _ = ((α_ Y X _).hom ≫ Y ◁ (ihom.ev X).app ((ihom Y).obj Z) ≫ (ihom.ev Y).app Z) pg := by
-        rw [MonoidalClosed.uncurry_ihomUncurry]; rfl
-    _ = (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) ((α_ Y X _).hom pg)) := rfl
-    _ = (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) p1_p2g) :=
-        congrArg (fun q ↦ (ihom.ev Y).app Z ((Y ◁ (ihom.ev X).app ((ihom Y).obj Z)) q))
-          (associator_hom_apply p.1 p.2 g)
-    _ = (ihom.ev Y).app Z (p.1, (ihom.ev X).app ((ihom Y).obj Z) p2g) := by
-        rw [whiskerLeft_apply]
-    _ = (g p.2) p.1 := by
-        rw [ihom_ev_app_apply X ((ihom Y).obj Z) p2g]
-        exact ihom_ev_app_apply Y Z (p.1, g p.2)
+  have h := congrArg
+    (fun φ : (ihom X).obj ((ihom Y).obj Z) ⟶ (ihom X).obj ((ihom Y).obj Z) ↦
+      ((φ g) p.2) p.1)
+    (MonoidalClosed.ihomUncurry_ihomCurry Y X Z)
+  simp only [CategoryTheory.comp_apply, ihomCurry_apply, CategoryTheory.id_apply] at h
+  exact h
 
 /-- Evaluation at a point `y : Y` as a morphism `(ihom Y).obj Z ⟶ Z` in
 `CompactlyGenerated.{u, w}`. -/

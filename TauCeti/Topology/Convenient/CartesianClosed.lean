@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
-public import Mathlib.Topology.Category.TopCat.Monoidal
+public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
@@ -346,15 +346,38 @@ theorem prodComparison_toTopCat :
     CartesianMonoidalCategory.prodComparison toTopCat Y Z =
       (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) := by
   apply CartesianMonoidalCategory.hom_ext
-  · rw [CartesianMonoidalCategory.prodComparison_fst]; ext p; rfl
-  · rw [CartesianMonoidalCategory.prodComparison_snd]; ext p; rfl
+  · rw [CartesianMonoidalCategory.prodComparison_fst]
+    ext p
+    calc
+      (toTopCat.map (CartesianMonoidalCategory.fst Y Z)) p
+        = (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).1 := fst_apply Y Z p
+      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p).1 :=
+          congrArg Prod.fst (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
+      _ = CartesianMonoidalCategory.fst (toTopCat.obj Y) (toTopCat.obj Z)
+            ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p) := (TopCat.fst_apply _).symm
+      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) ≫
+            CartesianMonoidalCategory.fst (toTopCat.obj Y) (toTopCat.obj Z)) p :=
+          (CategoryTheory.comp_apply _ _ _).symm
+  · rw [CartesianMonoidalCategory.prodComparison_snd]
+    ext p
+    calc
+      (toTopCat.map (CartesianMonoidalCategory.snd Y Z)) p
+        = (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).2 := snd_apply Y Z p
+      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p).2 :=
+          congrArg Prod.snd (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
+      _ = CartesianMonoidalCategory.snd (toTopCat.obj Y) (toTopCat.obj Z)
+            ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p) := (TopCat.snd_apply _).symm
+      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) ≫
+            CartesianMonoidalCategory.snd (toTopCat.obj Y) (toTopCat.obj Z)) p :=
+          (CategoryTheory.comp_apply _ _ _).symm
 
 @[simp]
 theorem prodComparison_toTopCat_apply (p : ↑(Y ⊗ Z)) :
     ConcreteCategory.hom (X := (Y ⊗ Z).obj) (Y := Y.obj ⊗ Z.obj)
       (CartesianMonoidalCategory.prodComparison toTopCat Y Z) p =
       WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p := by
-  rw [prodComparison_toTopCat]; rfl
+  rw [prodComparison_toTopCat]
+  exact adjCounit_app_apply G (Y.obj ⊗ Z.obj) p
 
 /-- The convenient product `Y ⊗ Z` has the ordinary product topology if and only if `Y × Z` is
 `G`-generated. -/
@@ -643,12 +666,13 @@ theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
     (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
       (compactOpenToIhom Y Z f)) y =
       WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f y := by
-  have h := congrArg (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z))
-    (TopCat.toGeneratedByTopCat_map_apply (G := G)
+  have h : WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+      (compactOpenToIhom Y Z f) =
+      (WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f).toContinuousMapGeneratedBy G :=
+    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
       (TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
-        ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f)
-  rw [Equiv.apply_symm_apply] at h
-  exact congrArg (fun k : ContinuousMapGeneratedBy G Y Z ↦ k y) h
+        ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f
+  simp [h]
 
 section CompactOpen
 
@@ -678,10 +702,16 @@ theorem ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv (Z : GeneratedByTop
   apply (WithGeneratedByTopology.equiv (X := G)
     (Y := ContinuousMapGeneratedBy G Y Z)).injective
   refine DFunLike.ext _ _ fun y ↦ ?_
-  rw [equiv_compactOpenToIhom_apply]
-  exact congrArg (fun k : ContinuousMapGeneratedBy G Y Z ↦ k y)
-    (Equiv.apply_symm_apply (WithGeneratedByTopology.equiv (X := G)
-      (Y := ContinuousMapGeneratedBy G Y Z)) _)
+  let e := ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
+    (G := G) (Z := Z) hK
+  have h : WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv f) =
+      e.symm (WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f) :=
+    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
+      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
+        (Y := TopCat.of C(Y, Z)) e).inv f
+  rw [equiv_compactOpenToIhom_apply Y Z f y]
+  simp [h, e]
 
 @[simp]
 theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_hom_apply
@@ -689,21 +719,15 @@ theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_hom_apply
     WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))
       ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).hom f) y =
       (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) y := by
-  let g₀ : WithGeneratedByTopology G C(Y, Z) :=
-    (WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))).symm
-      (WithGeneratedByTopology.equiv (X := G)
-        (Y := ContinuousMapGeneratedBy G Y Z) f).toContinuousMap
-  have hinv : (ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv g₀ = f := by
-    rw [ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv]
-    apply (WithGeneratedByTopology.equiv (X := G)
-      (Y := ContinuousMapGeneratedBy G Y Z)).injective
-    refine DFunLike.ext _ _ fun y' ↦ ?_
-    rw [equiv_compactOpenToIhom_apply]
-    simp [g₀]
-  have hhom := (ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv_hom_id_apply g₀
-  rw [hinv] at hhom
-  simp only [hhom, g₀, Equiv.apply_symm_apply,
-    Topology.ContinuousMapGeneratedBy.toContinuousMap_apply]
+  let e := ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
+    (G := G) (Z := Z) hK
+  have h : WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))
+      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).hom f) =
+      e (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) :=
+    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
+      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
+        (Y := TopCat.of C(Y, Z)) e).hom f
+  simp [h, e]
 
 end CompactOpen
 

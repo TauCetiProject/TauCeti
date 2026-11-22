@@ -47,6 +47,15 @@ variable {ι : Type t} (G : ι → Type u) [∀ i, TopologicalSpace (G i)]
       (Topology.WithGeneratedByTopology.equiv (X := G)).symm
         (f (Topology.WithGeneratedByTopology.equiv (X := G) x)) := (rfl)
 
+/-- Applying `WithGeneratedByTopology.equiv` after `(TopCat.toGeneratedByTopCat.map f)` evaluates
+`f` on `WithGeneratedByTopology.equiv x`. -/
+theorem equiv_toGeneratedByTopCat_map_apply {X Y : TopCat.{v}} (f : X ⟶ Y)
+    (x : ↑((TopCat.toGeneratedByTopCat (X := G)).obj X)) :
+    Topology.WithGeneratedByTopology.equiv (X := G)
+        ((TopCat.toGeneratedByTopCat (X := G)).map f x) =
+      f (Topology.WithGeneratedByTopology.equiv (X := G) x) :=
+  Equiv.apply_symm_apply _ _
+
 end TopCat
 
 namespace GeneratedByTopCat

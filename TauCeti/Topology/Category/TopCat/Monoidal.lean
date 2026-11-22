@@ -28,6 +28,14 @@ universe u
 
 namespace TopCat
 
+/-- The first projection from `X ⊗ Y` in `TopCat` acts as `Prod.fst`. -/
+@[simp]
+theorem fst_apply {X Y : TopCat.{u}} (p : ↑(X ⊗ Y)) : fst X Y p = p.1 := (rfl)
+
+/-- The second projection from `X ⊗ Y` in `TopCat` acts as `Prod.snd`. -/
+@[simp]
+theorem snd_apply {X Y : TopCat.{u}} (p : ↑(X ⊗ Y)) : snd X Y p = p.2 := (rfl)
+
 variable (X F : TopCat.{u})
 
 /-- The inclusion `f ↦ (x, f)` of the fibre `F` over `x : X` into the product `X × F`. -/
