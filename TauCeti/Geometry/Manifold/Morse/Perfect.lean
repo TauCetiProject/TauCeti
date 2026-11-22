@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
@@ -59,6 +60,13 @@ the coefficients, as projective spaces show.
   coefficients are the ranks of the cellular differentials of the standard cell structure of
   `ℝPⁿ`, which has one cell in each dimension
   (`TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`).
+* **Dimension zero and the empty manifold.** On a manifold modelled on a zero-dimensional space
+  every point is a critical point of index `0` of every function, and the manifold is discrete. So
+  every function is perfect exactly when the manifold is finite
+  (`TauCeti.isPerfectMorse_iff_finite_of_subsingleton`): `r` points give critical counts and Betti
+  numbers `r, 0, 0, …`, while on an infinite discrete manifold such as `ℕ` the count of index `0`
+  is `⊤` and `H₀` is infinite-dimensional. On the empty manifold every function is perfect, with
+  all counts and Betti numbers `0` (`TauCeti.isPerfectMorse_of_isEmpty`).
 * **Tori.** On the torus `Tᵐ = ∀ i, AddCircle (p i)` the cosine function
   `x ↦ ∑ᵢ cos (2π xᵢ / pᵢ)` has `(m choose j)` critical points of index `j`, which is the dimension
   of `Hⱼ(Tᵐ; k)`. So it is perfect over every field (`TauCeti.isPerfectMorse_torusCos`), although
@@ -172,6 +180,56 @@ theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
   have h := hf.isMorse.criticalCount_finrank_ne_zero
   rw [hf.criticalCount_eq] at h
   exact_mod_cast h
+
+/-! ### Zero-dimensional and empty manifolds -/
+
+section Discrete
+
+variable {k : Type u} [DivisionRing k]
+
+/-- On a finite discrete space the homology is free on the points in degree `0` and vanishes in
+positive degrees, so a Morse function is perfect as soon as its critical points of index `0` are
+counted by the points and it has none of positive index. -/
+private theorem isPerfectMorse_of_discreteTopology [DiscreteTopology M] [Finite M]
+    (hf : IsMorse I f) (h₀ : criticalCount I f 0 = Nat.card M)
+    (hpos : ∀ j ≠ 0, criticalCount I f j = 0) : IsPerfectMorse I k f := by
+  refine ⟨hf, fun n ↦ ?_, fun n ↦ ?_⟩
+  · rcases eq_or_ne n 0 with rfl | hn
+    · exact (finite_singularHomology_zero_iff_of_totallyDisconnectedSpace k M).2 ‹_›
+    · have := subsingleton_singularHomology_of_totallyDisconnectedSpace k M hn
+      infer_instance
+  · rw [← bettiNumber_def]
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [h₀, bettiNumber_zero_of_totallyDisconnectedSpace]
+    · rw [hpos n hn, bettiNumber_eq_zero_of_totallyDisconnectedSpace k M hn, Nat.cast_zero]
+
+/-- **Perfect Morse functions in dimension zero.** On a manifold modelled on a zero-dimensional
+space, every function is a Morse function whose critical points are all the points, each of
+index `0`. The manifold is discrete, so its homology is free on its points in degree `0` and
+vanishes in positive degrees. Hence, for every division ring `k`, every function is perfect when
+the manifold is finite: with `r` points, the critical counts and the Betti numbers are both
+`r, 0, 0, …`. No function is perfect on an infinite such manifold, such as `ℕ`: there `H₀(M; k)`
+is infinite-dimensional. -/
+theorem isPerfectMorse_iff_finite_of_subsingleton [Subsingleton E] :
+    IsPerfectMorse I k f ↔ Finite M := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  refine ⟨fun h ↦ (finite_singularHomology_zero_iff_of_totallyDisconnectedSpace k M).1
+    (h.finite_singularHomology 0), fun _ ↦ isPerfectMorse_of_discreteTopology
+      isMorse_of_subsingleton ?_ fun _ ↦ criticalCount_eq_zero_of_subsingleton⟩
+  rw [criticalCount_zero_of_subsingleton, ENat.card_eq_coe_natCard]
+
+/-- **Every function on the empty manifold is a perfect Morse function.** It has no critical
+points and the empty space has no homology, so the critical counts and the Betti numbers all
+vanish. -/
+theorem isPerfectMorse_of_isEmpty [IsEmpty M] : IsPerfectMorse I k f := by
+  have : DiscreteTopology M := ⟨Subsingleton.elim _ _⟩
+  have hcount (j : ℕ) : criticalCount I f j = 0 := by
+    rw [criticalCount_def, Set.eq_empty_of_isEmpty {x ∈ _ | _}, encard_empty]
+  exact isPerfectMorse_of_discreteTopology (isMorse_iff.2 ⟨isEmptyElim, isEmptyElim⟩)
+    (by rw [hcount, Nat.card_of_isEmpty, Nat.cast_zero]) fun j _ ↦ hcount j
+
+end Discrete
 
 /-! ### Projective spaces -/
 

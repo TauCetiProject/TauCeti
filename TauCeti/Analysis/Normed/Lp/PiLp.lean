@@ -16,9 +16,9 @@ The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinate
 norms, including when the two families have different target spaces. This compares scalar
 evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
-of multiples of one vector, and the invariance of the norm under reindexing. For `p ≥ 1`, a
-linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has norm at most
-`‖s‖ * ∑ i, ‖v i‖`.
+of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under reindexing. For
+`p ≥ 1`, a linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has
+norm at most `‖s‖ * ∑ i, ‖v i‖`.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -35,7 +35,8 @@ in the slot `f i`, and the vectors so obtained are those whose coordinates outsi
 coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
-Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Over an index type with at most one element and for `p ≠ 0`, the `Lᵖ` norm is the norm of the
+coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
@@ -72,11 +73,8 @@ theorem norm_mono [∀ i, SeminormedAddGroup (E i)] [∀ i, Norm (F i)]
     (h : ∀ i, ‖x i‖ ≤ ‖y i‖) : ‖x‖ ≤ ‖y‖ := by
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [norm_eq_card, norm_eq_card]
-    apply Nat.cast_le.mpr
-    apply Finset.card_le_card
-    apply Set.Finite.toFinset_mono
-    intro i hi hzero
-    exact hi (le_antisymm (by simpa only [hzero] using h i) (norm_nonneg _))
+    exact Nat.cast_le.mpr <| Finset.card_le_card <| Set.Finite.toFinset_mono fun i hi hzero ↦
+      hi (le_antisymm (by simpa only [hzero] using h i) (norm_nonneg _))
   rcases eq_or_ne p ∞ with rfl | hp
   · rw [norm_eq_ciSup, norm_eq_ciSup]
     exact ciSup_mono (Set.finite_range _).bddAbove h
@@ -102,6 +100,23 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
     ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
   rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
+
+/-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
+@[simp]
+theorem norm_norm [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) :
+    ‖WithLp.toLp p (fun i ↦ ‖x i‖)‖ = ‖x‖ :=
+  le_antisymm (norm_mono fun i ↦ by simp) (norm_mono fun i ↦ by simp)
+
+/-- Over an index type with at most one element, a vector of `Lᵖ`, `p ≠ 0`, has the norm of each of
+its coordinates. For `p = 0` the norm instead counts the coordinates of nonzero norm. -/
+theorem norm_apply_eq_norm [∀ i, SeminormedAddGroup (E i)] [Subsingleton ι] (hp : p ≠ 0)
+    (x : PiLp p E) (i : ι) : ‖x i‖ = ‖x‖ := by
+  have : Unique ι := uniqueOfSubsingleton i
+  rcases eq_or_ne p ∞ with rfl | hp'
+  · rw [norm_eq_ciSup, ciSup_unique, Subsingleton.elim i default]
+  · have hp_pos := ENNReal.toReal_pos hp hp'
+    rw [← Real.rpow_left_inj (norm_nonneg _) (PiLp.norm_nonneg' x) hp_pos.ne',
+      norm_rpow_eq_sum hp_pos, Fintype.sum_subsingleton _ i]
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
 
@@ -143,12 +158,6 @@ variable {p E}
 
 end SingleLI
 
-/-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
-@[simp]
-theorem norm_norm (x : PiLp p E) :
-    ‖WithLp.toLp p (fun i ↦ ‖x i‖)‖ = ‖x‖ :=
-  le_antisymm (norm_mono fun i ↦ by simp) (norm_mono fun i ↦ by simp)
-
 /-- The sum of coordinate norms of a vector is at most `√(card ι)` times its `L²` norm. -/
 theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
     ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
@@ -157,7 +166,7 @@ theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
 
 /-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm, for every
 exponent. -/
-theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*} [Fintype κ]
+theorem norm_toLp_comp_equiv {E : Type*} [Norm E] {κ : Type*} [Fintype κ]
     (e : κ ≃ ι) (x : ι → E) : ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
   rcases p.trichotomy with rfl | rfl | hp
   · simp only [norm_eq_card, Set.toFinite_toFinset, Set.toFinset_card]
@@ -167,14 +176,20 @@ theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*}
   · simp only [norm_eq_sum hp]
     exact congrArg (· ^ _) (Fintype.sum_equiv e _ _ fun _ ↦ rfl)
 
-/-- Over an index type with at most one element, a vector of `Lᵖ`, `p ≥ 1`, has the norm of
-each of its coordinates. -/
-theorem norm_apply_eq_norm [Fact (1 ≤ p)] [Subsingleton ι] (x : PiLp p E) (i : ι) :
-    ‖x i‖ = ‖x‖ := by
-  classical
-  have hx : PiLp.single p i (x i) = x :=
-    PiLp.ext fun j ↦ by obtain rfl := Subsingleton.elim i j; simp
-  rw [← hx, norm_single, hx]
+/-- For `p ≠ 0`, a finite family of multiples of one vector has `Lᵖ` norm equal to the `Lᵖ` norm
+of the coefficients times the norm of the vector. -/
+theorem norm_toLp_smul_const {F 𝕜 : Type*} [SeminormedAddGroup F] [SeminormedAddGroup 𝕜]
+    [SMul 𝕜 F] [NormSMulClass 𝕜 F] (hp : p ≠ 0) (a : ι → 𝕜) (y : F) :
+    ‖WithLp.toLp p (fun i ↦ a i • y)‖ = ‖WithLp.toLp p a‖ * ‖y‖ := by
+  rcases eq_or_ne p ∞ with rfl | hp'
+  · simp only [norm_eq_ciSup, norm_smul]
+    exact (Real.iSup_mul_of_nonneg (norm_nonneg y) _).symm
+  · have hp_pos := ENNReal.toReal_pos hp hp'
+    rw [← Real.rpow_left_inj (PiLp.norm_nonneg' _)
+      (mul_nonneg (PiLp.norm_nonneg' _) (norm_nonneg y)) hp_pos.ne',
+      Real.mul_rpow (PiLp.norm_nonneg' _) (norm_nonneg y), norm_rpow_eq_sum hp_pos,
+      norm_rpow_eq_sum hp_pos, Finset.sum_mul]
+    simp only [norm_smul, Real.mul_rpow (norm_nonneg _) (norm_nonneg y)]
 
 section Constant
 
@@ -199,17 +214,6 @@ theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hg : ∀ v, ‖g v‖ ≤ C *
     rw [hx, mul_zero]
     simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ F))
       fun i ↦ by simpa [hv] using hg (x i)
-
-/-- A finite family of multiples of one vector has `Lᵖ` norm equal to the `Lᵖ` norm of the
-coefficients times the norm of the vector. -/
-theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] (a : ι → 𝕜) (y : F) :
-    ‖WithLp.toLp p (fun i ↦ a i • y)‖ = ‖WithLp.toLp p a‖ * ‖y‖ := by
-  calc
-    ‖WithLp.toLp p (fun i ↦ a i • y)‖ = ‖‖y‖ • WithLp.toLp p (fun i ↦ ‖a i‖)‖ :=
-      le_antisymm (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
-        (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
-    _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
-      rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
 
 /-- A linear combination `∑ i, s i • v i` whose coefficients are the coordinates of a vector `s`
 of `Lᵖ`, `p ≥ 1`, has norm at most `‖s‖ * ∑ i, ‖v i‖`. -/
@@ -373,9 +377,8 @@ theorem piLpExtendByZero_castLEEmb_apply (hk : k ≤ n) (w : PiLp p fun _ : Fin 
     (j : Fin n) :
     piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk) w j = if h : j.val < k then w ⟨j, h⟩ else 0 := by
   split_ifs with h
-  · have hj : Fin.castLEEmb hk ⟨j, h⟩ = j := Fin.ext rfl
-    conv_lhs => rw [← hj]
-    exact piLpExtendByZero_apply_apply _ w _
+  · simpa only [Fin.castLEEmb_apply, Fin.castLE_mk, Fin.eta] using
+      piLpExtendByZero_apply_apply (Fin.castLEEmb hk) w ⟨j, h⟩
   · exact piLpExtendByZero_apply_eq_zero (by simpa [Fin.range_castLE] using h) w
 
 /-- The vectors of `Lᵖ(Fin n, E)` obtained by extending a vector of `Lᵖ(Fin k, E)` by zero are
@@ -389,21 +392,16 @@ end LinearIsometry
 
 namespace LinearIsometry
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [NormedRing 𝕜]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [SeminormedRing 𝕜]
   {ι ι' : Type*} [Fintype ι] [Fintype ι']
 
 /-- A finite sum paired with a vector extended by zero along an embedding reduces to the sum over
 the original coordinates. -/
 theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ 𝕜) (h : ι' → 𝕜) :
-    ∑ b, h b * piLpExtendByZero p 𝕜 𝕜 f x b = ∑ a, h (f a) * x a := by
-  rw [← Finset.sum_extend_zero_of_injective (t := Finset.univ) (fun a ↦ h (f a) * x a)
-    f.injective fun _ => Finset.mem_univ _]
-  refine Finset.sum_congr rfl fun b _ => ?_
-  by_cases hb : b ∈ Set.range f
-  · obtain ⟨a, rfl⟩ := hb
-    simp [f.injective.extend_apply]
-  · simp [Function.extend_apply' _ _ _ (by simpa using hb),
-      piLpExtendByZero_apply_eq_zero hb]
+    ∑ b, h b * piLpExtendByZero p 𝕜 𝕜 f x b = ∑ a, h (f a) * x a :=
+  (Fintype.sum_of_injective f f.injective _ _
+    (fun b hb ↦ by rw [piLpExtendByZero_apply_eq_zero hb, mul_zero])
+    fun a ↦ by rw [piLpExtendByZero_apply_apply]).symm
 
 end LinearIsometry
 

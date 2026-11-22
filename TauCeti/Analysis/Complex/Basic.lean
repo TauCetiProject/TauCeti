@@ -32,6 +32,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 `Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
 (`Complex.re_conj_mul_le`).
 
+As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
+the counterpart of Mathlib's `Complex.conjLIE_symm`).
+
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
 `Complex.inv_re_nonneg`). Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
@@ -65,6 +68,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 If a real `x` is not a nonpositive integer, neither is `x + iy` for any real `y`
 (`TauCeti.ofReal_add_mul_I_ne_neg_natCast`): the real part of `x + iy` is `x`.
+
+A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 -/
 
 public section
@@ -279,6 +284,11 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- Complex conjugation, as a continuous real-linear equivalence, is its own inverse. -/
+@[simp]
+theorem conjCLE_symm : conjCLE.symm = conjCLE := by
+  rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
+
 /-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
   simpa [norm_mul] using abs_im_le_norm (conj u * e)
@@ -373,3 +383,8 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     exact h.false
 
 end Complex
+
+/-- A linear isometry from the plane maps `i` to a unit vector. -/
+theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
+  (ι.norm_map _).trans Complex.norm_I
