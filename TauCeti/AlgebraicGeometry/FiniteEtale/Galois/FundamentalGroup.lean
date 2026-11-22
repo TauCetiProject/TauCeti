@@ -192,9 +192,7 @@ theorem fiberCompInclIso_hom_app_smul_left (X : FiniteEtaleScheme (Spec (.of K))
         Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) ≫
           ((algSpec (.of K)).map (CommAlgCat.ofHom φ).op).left := by
     subst h
-    rw [show CommAlgCat.ofHom ((σ : Ω →ₐ[K] Ω).comp φ) =
-      CommAlgCat.ofHom φ ≫ CommAlgCat.ofHom (σ : Ω →ₐ[K] Ω) from rfl, op_comp, Functor.map_comp,
-      Over.comp_left]
+    rw [CommAlgCat.ofHom_comp, op_comp, Functor.map_comp, Over.comp_left]
     rfl
   have h₃ := key _ _ (fiberIsoFiniteEtaleFiber_hom_app_smul K Ω X σ y)
   have h₄ := h₁.symm.trans (h₃.trans (congrArg (_ ≫ ·) h₂))
