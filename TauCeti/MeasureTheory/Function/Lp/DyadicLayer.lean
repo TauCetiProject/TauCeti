@@ -356,7 +356,7 @@ private theorem tendsto_radialRetraction_sub_radialRetraction (v : E) {hi : ℕ 
   have hlower : Tendsto (fun N ↦ TauCeti.radialRetraction (lo N) v) atTop (𝓝 0) := by
     have h := hlo.radialRetraction (.inr le_rfl)
       (tendsto_const_nhds (x := v))
-    simpa [TauCeti.radialRetraction_def] using h
+    simpa using h
   simpa using hupper.sub hlower
 
 /-- **The dyadic layers of an `Lᵖ` function sum to it**, `1 ≤ p < ∞`. -/

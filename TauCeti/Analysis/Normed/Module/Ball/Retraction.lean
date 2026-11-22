@@ -61,6 +61,9 @@ constant never matters for cutting off, where one is free to shrink the radius i
   at distance zero from the centre.
 * `TauCeti.dist_centeredRadialRetraction`: for `0 ≤ r`, the distance from the centre is
   `min (dist x x₀) r`.
+* `TauCeti.dist_centeredRadialRetraction_eq_abs_min`,
+  `TauCeti.dist_centeredRadialRetraction_le_abs_min`: for any radius, the distance from the centre
+  is at most `|min (dist x x₀) r|`, with equality unless `dist x x₀ = 0` and `r < 0`.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
   `2`-Lipschitz.
 * `LipschitzOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
@@ -119,6 +122,17 @@ theorem centeredRadialRetraction_zero (r : ℝ) :
     centeredRadialRetraction (0 : E) r = radialRetraction r := by
   funext x
   simp [centeredRadialRetraction]
+
+/-- The radial retraction of radius zero sends every vector to zero. -/
+@[simp]
+theorem radialRetraction_zero (x : E) : radialRetraction 0 x = 0 := by
+  simp [radialRetraction_def]
+
+/-- The centred radial retraction of radius zero sends every point to the centre. -/
+@[simp]
+theorem centeredRadialRetraction_zero_radius (x₀ x : E) :
+    centeredRadialRetraction x₀ 0 x = x₀ := by
+  simp [centeredRadialRetraction_def]
 
 /-- The radial retraction sends every vector of norm zero to zero. -/
 @[simp]
@@ -208,11 +222,10 @@ nonnegative. In the remaining case, `‖x‖ = 0` with `r < 0`, the vector is se
 theorem norm_radialRetraction_eq_abs_min (h : ‖x‖ ≠ 0 ∨ 0 ≤ r) :
     ‖radialRetraction r x‖ = |min ‖x‖ r| := by
   by_cases hx : ‖x‖ = 0
-  · rw [radialRetraction_of_norm_eq_zero hx, norm_zero, hx,
-      min_eq_left (h.resolve_left (not_not.2 hx)), abs_zero]
+  · simp [hx, min_eq_left (h.resolve_left (not_not.2 hx))]
   have hmin : min ‖x‖ r = min 1 (r / ‖x‖) * ‖x‖ := by
-    rw [min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
-  rw [hmin, abs_mul, abs_norm, radialRetraction_def, norm_smul, Real.norm_eq_abs]
+    simp [min_mul_of_nonneg _ _ (norm_nonneg x), hx]
+  simp [hmin, radialRetraction_def, norm_smul, abs_mul]
 
 /-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
@@ -241,13 +254,28 @@ theorem norm_sub_radialRetraction (hr : 0 ≤ r) (x : E) :
       Real.norm_of_nonneg (sub_nonneg.2 ((div_le_one ((norm_nonneg x).lt_of_ne' hx)).2 h)),
       sub_mul, one_mul, div_mul_cancel₀ _ hx]
 
+/-- The centred radial retraction is at distance `|min (dist x x₀) r|` from its centre, provided
+`x` is at nonzero distance from the centre or the radius is nonnegative. In the remaining case,
+`dist x x₀ = 0` with `r < 0`, the point is sent to the centre. -/
+theorem dist_centeredRadialRetraction_eq_abs_min {x₀ : E} (h : dist x x₀ ≠ 0 ∨ 0 ≤ r) :
+    dist (centeredRadialRetraction x₀ r x) x₀ = |min (dist x x₀) r| := by
+  rw [dist_eq_norm] at h
+  simpa [centeredRadialRetraction_def, dist_eq_norm] using norm_radialRetraction_eq_abs_min h
+
 /-- For nonnegative radius, the centred radial retraction is at distance `min (dist x x₀) r`
 from its centre. -/
 @[simp]
 theorem dist_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) (x : E) :
     dist (centeredRadialRetraction x₀ r x) x₀ = min (dist x x₀) r := by
-  rw [centeredRadialRetraction, dist_eq_norm, add_sub_cancel_left, norm_radialRetraction hr,
-    dist_eq_norm]
+  rw [dist_centeredRadialRetraction_eq_abs_min (.inr hr), abs_of_nonneg (le_min dist_nonneg hr)]
+
+/-- For any radius, the centred radial retraction is at distance at most `|min (dist x x₀) r|`
+from its centre, with equality except at a point at distance zero from the centre with a negative
+radius (`TauCeti.dist_centeredRadialRetraction_eq_abs_min`). -/
+theorem dist_centeredRadialRetraction_le_abs_min (x₀ : E) (r : ℝ) (x : E) :
+    dist (centeredRadialRetraction x₀ r x) x₀ ≤ |min (dist x x₀) r| := by
+  simpa [centeredRadialRetraction_def, dist_eq_norm] using
+    norm_radialRetraction_le_abs_min r (x - x₀)
 
 /-- For nonnegative radius, the radial retraction takes values in the closed ball of radius `r`. -/
 theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
@@ -260,7 +288,7 @@ conjugated by the dilation by `r`. For `r = 0` both sides vanish. -/
 theorem radialRetraction_eq_smul_radialRetraction_one (hr : 0 ≤ r) (x : E) :
     radialRetraction r x = r • radialRetraction 1 (r⁻¹ • x) := by
   rcases hr.eq_or_lt with rfl | hr
-  · simp [radialRetraction_def]
+  · simp
   rw [radialRetraction_def, radialRetraction_def, norm_smul,
     Real.norm_of_nonneg (inv_nonneg.2 hr.le), smul_smul, smul_smul]
   congr 1
@@ -304,7 +332,7 @@ theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
   by_cases hx : ‖x‖ = 0
   · simp [hx]
   rcases hr.eq_or_lt with rfl | hr
-  · simp [radialRetraction]
+  · simp
   apply radialRetraction_of_norm_pos_of_norm_le
   · rw [norm_radialRetraction hr.le]
     exact lt_min (lt_of_le_of_ne (norm_nonneg x) (Ne.symm hx)) hr
@@ -366,7 +394,7 @@ theorem lipschitzWith_radialRetraction (hr : 0 ≤ r) :
         rw [smul_sub, sub_smul, sub_sub_sub_cancel_right]
     _ ≤ ‖s • (x - y)‖ + ‖(t - s) • y‖ := norm_sub_le _ _
     _ = s * ‖x - y‖ + (t - s) * ‖y‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg hs0, Real.norm_of_nonneg (sub_nonneg.2 hst)]
+        simp only [norm_smul, Real.norm_of_nonneg hs0, Real.norm_of_nonneg (sub_nonneg.2 hst)]
     _ ≤ ‖x - y‖ + (‖x‖ - ‖y‖) := by
         linear_combination mul_le_of_le_one_left (norm_nonneg (x - y)) hs1 + hnorm +
           mul_le_of_le_one_left (sub_nonneg.2 hyx) hs1
