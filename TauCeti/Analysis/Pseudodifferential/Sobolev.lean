@@ -1108,6 +1108,20 @@ theorem quantizeSobolev_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProduc
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi, hq]
   simp only [quantizeSchwartzValue_comp_comp, map_smul]
 
+/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
+`(e_j)` of `V` with dual basis `(c_j)`, the component `ℓ ∘ Op(a)` of the quantization of a symbol
+`a` with values in `V →L[ℂ] W` is the sum over `j` of the scalar quantizations of the entries
+`ℓ ∘ a ∘ e_j`, applied to the coordinates `c_j v`. -/
+theorem postcomp_comp_quantizeSobolev [FiniteDimensional ℂ V] (ha : a.HasCompactSpatialSupport)
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) (ℓ : W →L[ℂ] ℂ) (t : ℝ) :
+    BesselPotentialSpace.postcomp _ _ 2 ℓ ∘L a.quantizeSobolev ha t =
+      ∑ j, (a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t ∘L
+        BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap := by
+  ext1 v
+  simp only [_root_.sum_apply, ContinuousLinearMap.comp_apply,
+    quantizeSobolev_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum,
+    BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord]
+
 end Sobolev
 
 section Transport

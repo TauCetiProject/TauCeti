@@ -46,6 +46,13 @@ consequences that make properly supported operators act on all of `𝓓'(ℝⁿ)
   (`TauCeti.Symbol.dsupport_quantizeDistribution_subset`). In a local frame, an operator between
   vector bundles has a matrix-valued symbol, so this is the action of a properly supported operator
   on distributional sections in a chart.
+* **Constant maps of the fibres.** For `L : W →L[ℂ] W'` and `K : V' →L[ℂ] V`, the symbol
+  `L ∘ a ∘ K` has formal adjoint `φ ↦ K† ∘ Op(a)* (L† ∘ φ)`
+  (`TauCeti.Symbol.adjointTestFunctionCLM_map`) and quantizes to `L ∘ Op(a) ∘ K` on distributions
+  (`TauCeti.Symbol.quantizeDistribution_map`). Hence a matrix-valued operator is computed
+  componentwise: in a basis `(e_j)` of `V` with dual basis `(c_j)`, the component of `Op(a) T`
+  along a functional `ℓ` is `∑ⱼ Op(ℓ ∘ a ∘ e_j) (c_j ∘ T)`
+  (`TauCeti.Symbol.mapCLM_quantizeDistribution_eq_sum`).
 * **The transpose determines the action.** For a scalar symbol, on complex test functions, the
   transpose `Op(a)ᵗ φ = conj (Op(a)* (conj φ))` (`TauCeti.Symbol.scalarTransposeTestFunctionCLM`)
   satisfies
@@ -527,6 +534,37 @@ theorem integral_apply_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
   simp only [inner_conj_symm, TestFunction.rieszEquiv_symm_apply (V := W)] at hc
   simpa only [transposeTestFunctionCLM_apply, TestFunction.rieszEquiv_apply] using hc
 
+/-- **The formal adjoint under constant maps of the fibres.** If `Φ` acts on the coefficients by
+`T ↦ L ∘ T ∘ K`, so that `Op(a.map Φ) = L ∘ Op(a) ∘ K`, then
+`Op(a.map Φ)* φ = K† ∘ Op(a)* (L† ∘ φ)`. -/
+theorem adjointTestFunctionCLM_map {V' W' : Type*} [NormedAddCommGroup V']
+    [InnerProductSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W'] [InnerProductSpace ℂ W']
+    [CompleteSpace W'] (ha : a.HasNearDiagonalKernel R) {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')}
+    (L : W →L[ℂ] W') (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W')) :
+    adjointTestFunctionCLM (ha.map L K hΦ) φ =
+      TestFunction.postcompCLM ((ContinuousLinearMap.adjoint K).restrictScalars ℝ)
+        (adjointTestFunctionCLM ha
+          (TestFunction.postcompCLM ((ContinuousLinearMap.adjoint L).restrictScalars ℝ) φ)) := by
+  refine TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume) fun u ↦ ?_
+  -- `Op(a.map Φ) u = L ∘ Op(a) (K ∘ u)` on test functions.
+  have hq (x : CoordinateSpace n) : quantizeTestFunctionCLM (ha.map L K hΦ) u x =
+      L (quantizeTestFunctionCLM ha (TestFunction.postcompCLM (K.restrictScalars ℝ) u) x) := by
+    have hc : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
+      funext fun p ↦ by rw [coefficient_map, hΦ]
+    rw [quantizeTestFunctionCLM_apply, quantizeTestFunctionCLM_apply, hc,
+      quantizeSchwartzValue_comp_comp]
+    congr 2
+  rw [← integral_inner_quantizeTestFunctionCLM]
+  simp only [TestFunction.postcompCLM_apply, Function.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right]
+  have h := integral_inner_quantizeTestFunctionCLM ha
+    (TestFunction.postcompCLM (K.restrictScalars ℝ) u)
+    (TestFunction.postcompCLM ((ContinuousLinearMap.adjoint L).restrictScalars ℝ) φ)
+  simp only [TestFunction.postcompCLM_apply, Function.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right] at h
+  simp only [hq, h]
+
 end Adjoint
 
 /-! ### Distributions -/
@@ -644,6 +682,41 @@ theorem dsupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
     exact (φ.hasCompactSupport.isCompact.disjoint_cthickening_left
       (subset_compl_iff_disjoint_right.1 hφ)).mono_left hψ
   simpa using (h.disjoint_dsupport hU).subset_compl_left
+
+/-- **Constant maps of the fibres on distributions.** If `Φ` acts on the coefficients by
+`T ↦ L ∘ T ∘ K`, then `Op(a.map Φ) T = L ∘ Op(a) (K ∘ T)` for every distribution `T`, where `L`
+and `K` act on the values (`Distribution.mapCLM`). -/
+theorem quantizeDistribution_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℂ V']
+    [CompleteSpace V'] [FiniteDimensional ℂ V'] [NormedAddCommGroup W'] [InnerProductSpace ℂ W']
+    [CompleteSpace W'] [FiniteDimensional ℂ W'] (ha : a.HasNearDiagonalKernel R)
+    {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W') (K : V' →L[ℂ] V)
+    (hΦ : ∀ T, Φ T = L ∘L T ∘L K) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V')) :
+    quantizeDistribution (ha.map L K hΦ) T = Distribution.mapCLM (L.restrictScalars ℝ)
+      (quantizeDistribution ha (Distribution.mapCLM (K.restrictScalars ℝ) T)) := by
+  ext φ
+  refine ext_inner_left ℂ fun w ↦ ?_
+  rw [inner_quantizeDistribution_apply, Distribution.mapCLM_apply,
+    ContinuousLinearMap.coe_restrictScalars', ← ContinuousLinearMap.adjoint_inner_left,
+    inner_quantizeDistribution_apply, Distribution.innerPairing_mapCLM,
+    adjointTestFunctionCLM_map ha L K hΦ]
+  congr 3
+  ext x
+  simp
+
+/-- **Components of a matrix-valued operator on distributions.** For a functional `ℓ` on `W` and a
+basis `(e_j)` of `V` with dual basis `(c_j)`, the component `ℓ ∘ Op(a) T` is the sum over `j` of
+the scalar operators with symbols the entries `ℓ ∘ a ∘ e_j`, applied to the components `c_j ∘ T`.
+-/
+theorem mapCLM_quantizeDistribution_eq_sum (ha : a.HasNearDiagonalKernel R) {ι : Type*}
+    [Fintype ι] (b : Module.Basis ι ℂ V) (ℓ : W →L[ℂ] ℂ)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    Distribution.mapCLM (ℓ.restrictScalars ℝ) (quantizeDistribution ha T) =
+      ∑ j, quantizeDistribution (ha.map ℓ _ (entryMap_apply ℓ (b j)))
+        (Distribution.mapCLM ((b.coord j).toContinuousLinearMap.restrictScalars ℝ) T) := by
+  simp only [quantizeDistribution_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum]
+  congr 2
+  ext φ
+  simp [b.sum_repr]
 
 end Distribution
 

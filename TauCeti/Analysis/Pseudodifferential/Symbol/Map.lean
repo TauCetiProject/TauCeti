@@ -11,7 +11,8 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 # Images of symbols under maps of the coefficient spaces
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
+by isomorphisms of `V` and `W`, or the passage `ℓ ∘ a ∘ e` to a scalar entry
+(`TauCeti.Symbol.entryMap`), has the same order (`TauCeti.Symbol.map`), and commutes with
 spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
 `TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
 operator `T`, so do the values of its derivatives
@@ -70,6 +71,19 @@ theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W
     (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
       fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
   funext fun p ↦ by simp
+
+/-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
+determined by a vector `e ∈ V` and a functional `ℓ` on `W`. The image `a.map (entryMap ℓ e)` of a
+symbol is its scalar entry `ℓ ∘ a(x, ξ) ∘ e`, through which a matrix-valued quantization is
+computed componentwise. -/
+def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ →L[ℂ] ℂ) :=
+  ((ContinuousLinearMap.compL ℂ ℂ W ℂ ℓ).comp
+    ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
+    ).restrictScalars ℝ
+
+theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
+    entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
+  (rfl)
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
