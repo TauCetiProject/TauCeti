@@ -95,24 +95,6 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Com
 
 /-! ### The change of variables in absolutely convergent integrals -/
 
-/-- Substituting `ζ = N ζ'` for an invertible continuous linear map `N` multiplies an integral
-against an additive Haar measure by `|det N|`: the forward form of
-`ContinuousLinearEquiv.integral_image_affine` over the whole space. -/
-private theorem integral_eq_abs_det_smul_integral_comp_of_isUnit {E G : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] [NormedAddCommGroup G] [NormedSpace ℝ G] (μ : Measure E)
-    [μ.IsAddHaarMeasure] {N : E →L[ℝ] E} (hN : IsUnit N) (g : E → G) :
-    ∫ ζ, g ζ ∂μ = |N.det| • ∫ ζ, g (N ζ) ∂μ := by
-  obtain ⟨T, rfl⟩ := hN
-  set e := ContinuousLinearEquiv.unitsEquiv ℝ E T
-  have he : (e : E →ₗ[ℝ] E) = ((T : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
-    ext
-    simp [e]
-  have h := e.integral_image_affine 0 g univ μ
-  simp only [zero_add, image_univ_of_surjective e.surjective, Measure.restrict_univ,
-    integral_smul, he] at h
-  simpa only [e, ContinuousLinearEquiv.unitsEquiv_apply] using h
-
 section ChangeOfVariables
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -123,21 +105,50 @@ private theorem fourierChar_smul_fourierChar_smul (a b : ℝ) (w : W) :
     𝐞 a • 𝐞 b • w = 𝐞 (a + b) • w := by
   rw [smul_smul, ← AddChar.map_add_eq_mul]
 
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- **The frequency substitution at a fixed position.** Substituting `ζ = N ζ'` for an invertible
+continuous linear map `N` multiplies the frequency integral of `ζ ↦ e(⟪ζ, a⟫) A(ζ) w` by
+`|det N|`: the whole-space, translation-free case of `ContinuousLinearEquiv.integral_image_affine`
+for the equivalence of `N`. -/
+private theorem integral_fourierChar_smul_apply_eq_abs_det_smul {N : E →L[ℝ] E} (hN : IsUnit N)
+    (a : E) (A : E → V →L[ℂ] W) (w : V) :
+    ∫ ζ, 𝐞 ⟪ζ, a⟫ • A ζ w = |N.det| • ∫ ζ, 𝐞 ⟪N ζ, a⟫ • A (N ζ) w := by
+  obtain ⟨T, rfl⟩ := hN
+  set e := ContinuousLinearEquiv.unitsEquiv ℝ E T
+  have he : (e : E →ₗ[ℝ] E) = ((T : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
+    ext
+    simp [e]
+  have h := e.integral_image_affine 0 (fun ζ ↦ 𝐞 ⟪ζ, a⟫ • A ζ w) univ volume
+  simp only [zero_add, image_univ_of_surjective e.surjective, Measure.restrict_univ,
+    integral_smul, he] at h
+  simpa only [e, ContinuousLinearEquiv.unitsEquiv_apply] using h
+
+omit [CompleteSpace W] in
 /-- **Transport of an absolutely convergent quantization.** Let `κ` be a `C¹` homeomorphism of `E`
 and `A` a continuous compactly supported coefficient of the frequency. If `v ∘ κ = ψ • u` and
-`N(y)` is invertible with `⟪N(y) ζ, Φ(y) h⟫ = ⟪ζ, h⟫` for `y` in the support of `ψ`, where
+`⟪N(y) ζ, Φ(y) h⟫ = ⟪ζ, h⟫` for `y` in the support of `ψ`, which makes `N(y)` invertible, where
 `Φ(y) = hadamardFactor κ y x` satisfies `κ x - κ y = Φ(y) (x - y)`, then the absolutely
 convergent integral `∫ e(⟪ζ, κ x⟫) A(ζ) (𝓕 v ζ) dζ` is the corresponding integral for the
 amplitude `(y, ζ) ↦ ψ(y) |det Dκ(y)| |det N(y)| A(N(y) ζ)` at `x`. -/
 private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E}
     (hκ : ContDiff ℝ 1 κ) (x : E) {A : E → V →L[ℂ] W} (hA : Continuous A)
     (hAc : HasCompactSupport A) {ψ : E → ℝ} (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
-    {N : E → E →L[ℝ] E} (hN : Continuous N) (hNu : ∀ y ∈ tsupport ψ, IsUnit (N y))
+    {N : E → E →L[ℝ] E} (hN : Continuous N)
     (hNΦ : ∀ y ∈ tsupport ψ, ∀ ζ h, ⟪N y ζ, hadamardFactor κ y x h⟫ = ⟪ζ, h⟫)
     {u v : 𝓢(E, V)} (huv : ∀ y, v (κ y) = ψ y • u y) :
     ∫ ζ, 𝐞 ⟪ζ, κ x⟫ • A ζ (𝓕 v ζ) =
       ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (fun y ↦
         ((ψ y * |(fderiv ℝ κ y).det| * |(N y).det|) • A (N y ζ)) (u y)) ζ := by
+  -- Both sides are `W`-valued integrals, which vanish when `W` is not complete.
+  by_cases hW : CompleteSpace W
+  swap
+  · rw [integral_of_not_completeSpace hW, integral_of_not_completeSpace hW]
+  -- `N(y)` is injective, since `⟪N(y) ζ, Φ(y) ζ⟫ = ‖ζ‖ ^ 2`, hence invertible.
+  have hNu : ∀ y ∈ tsupport ψ, IsUnit (N y) := fun y hy ↦ by
+    have hinj : Function.Injective (N y) := (injective_iff_map_eq_zero (N y)).2 fun ζ hζ ↦ by
+      simpa [hζ] using (hNΦ y hy ζ ζ).symm
+    exact (N y).isUnit_iff_bijective.2
+      ⟨hinj, LinearMap.injective_iff_surjective (f := (N y : E →ₗ[ℝ] E)).1 hinj⟩
   set s : E → ℝ := fun y ↦ ψ y * |(fderiv ℝ κ y).det| * |(N y).det|
   have hs : Continuous s := (hψ.mul ((ContinuousLinearMap.continuous_det.comp
     (hκ.continuous_fderiv one_ne_zero)).abs)).mul (ContinuousLinearMap.continuous_det.comp hN).abs
@@ -197,11 +208,11 @@ private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E
     by_cases hy : ψ y = 0
     · simp [f, k, s, huv, hy]
     have hy' : y ∈ tsupport ψ := subset_tsupport _ hy
-    rw [integral_eq_abs_det_smul_integral_comp_of_isUnit volume (hNu y hy')
-      (fun ζ ↦ f ζ (κ y)), smul_smul, ← integral_smul]
+    simp only [f]
+    rw [integral_fourierChar_smul_apply_eq_abs_det_smul (hNu y hy'), smul_smul, ← integral_smul]
     refine integral_congr_ae (ae_of_all _ fun ζ ↦ ?_)
     have hΦ := ContDiff.sub_eq_hadamardFactor_apply κ hκ y x
-    simp only [f, k, s, huv, hΦ, hNΦ y hy', ContinuousLinearMap.map_smul_of_tower,
+    simp only [k, s, huv, hΦ, hNΦ y hy', ContinuousLinearMap.map_smul_of_tower,
       smul_apply, smul_comm _ (𝐞 _), smul_smul]
     ring_nf
   -- The right side is the iterated integral of `k`.
@@ -728,8 +739,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
       calc (1 : ℝ) = t⁻¹ * t := (inv_mul_cancel₀ ht.ne').symm
         _ ≤ t⁻¹ * (2 * π * ‖ζ‖) := by gcongr; linarith
     rw [integral_fourierChar_smul_apply_fourier_comp_eq (hκ.of_le (by simp)) x hA hAc
-      hψ.continuous hψc hMx (fun y hy ↦ hMu _ (hxS y hy))
-      (fun y hy ζ h ↦ by
+      hψ.continuous hψc hMx (fun y hy ζ h ↦ by
         have hu := hSΦ _ (hxS y hy)
         rw [hMS _ (hxS y hy)]
         simp only [hΦdef] at hu ⊢

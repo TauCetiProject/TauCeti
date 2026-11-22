@@ -92,15 +92,15 @@ theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   have hu : IsUnit c := TauCeti.NumberField.mixedEmbedding.isUnit_iff_norm_ne_zero.mpr hc
   let e : mixedSpace K ≃L[ℝ] mixedSpace K :=
     (hu.unit.mulLeftLinearEquiv ℝ (mixedSpace K)).toContinuousLinearEquiv
-  -- The equivalence `e` is multiplication by `c`, whose linear map is `Algebra.lmul ℝ _ c`.
-  have he : ⇑e = (c * ·) := funext fun x ↦ by
-    simp only [e, LinearEquiv.coe_toContinuousLinearEquiv', Units.mulLeftLinearEquiv_apply,
-      IsUnit.unit_spec]
+  -- The linear map of `e` is `Algebra.lmul ℝ _ c`, so `e` is multiplication by `c`.
   have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c := by
     rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv,
       IsUnit.unit_spec]
     exact LinearMap.ext fun x ↦ by
       rw [LinearMap.mulLeft_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+  have he : ⇑e = (c * ·) := funext fun x ↦ by
+    simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+      Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] using LinearMap.congr_fun hlin x
   have h := Measure.integral_comp_continuousLinearEquiv volume g e
   rwa [he, hlin, ← Algebra.norm_apply, abs_algebraNorm] at h
 

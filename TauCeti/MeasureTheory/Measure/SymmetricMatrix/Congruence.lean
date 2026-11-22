@@ -55,7 +55,7 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
   together with its lower-integral form. The Bochner-integral form
   (`Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence`) is the case of
-  `ContinuousLinearEquiv.integral_image_affine` for congruence on the cone.
+  `ContinuousLinearEquiv.integral_preimage_affine` for congruence on the cone.
 
 ## References
 
@@ -550,8 +550,8 @@ theorem lintegral_posDef_symmetricCongruence
   rw [← h, map_symmetricCongruence_restrict_posDef, lintegral_smul_measure, smul_eq_mul]
 
 /-- The congruence change of variables for Bochner integrals over the positive-definite cone: the
-case of `ContinuousLinearEquiv.integral_image_affine` for congruence by `C`, which maps the cone
-onto itself. -/
+case of `ContinuousLinearEquiv.integral_preimage_affine` for congruence by `C`, whose preimage of
+the cone is the cone. -/
 theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -560,15 +560,11 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
       (|Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1))⁻¹ •
         ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p := by
-  have hJ : |Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1) ≠ 0 :=
-    pow_ne_zero _ (abs_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C))
-  have h := (symmetricCongruence C).integral_image_affine 0 f
+  have h := (symmetricCongruence C).integral_preimage_affine 0 f
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p)
-  conv_lhs at h => rw [← preimage_symmetricCongruence_posDef C]
-  simp only [zero_add, Set.image_preimage_eq _ (symmetricCongruence C).surjective] at h
-  rw [det_symmetricCongruence, abs_pow, integral_smul] at h
-  rw [h, smul_smul, inv_mul_cancel₀ hJ, one_smul]
+  simp only [zero_add] at h
+  rwa [preimage_symmetricCongruence_posDef, det_symmetricCongruence, abs_pow] at h
 
 end Cone
 

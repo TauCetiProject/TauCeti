@@ -92,19 +92,27 @@ theorem setLIntegral_comp_add_smul (g : E → ℝ≥0∞) (c : E) {r : ℝ} (hr 
   rw [← he.lintegral_map, ← he.restrict_map, hmap, Measure.restrict_smul, lintegral_smul_measure,
     smul_eq_mul]
 
+/-- Multiplying the `i`-th coordinate of `ℝ^ι` by `cᵢ` is the linear map of the diagonal matrix
+of the `cᵢ`. -/
+private theorem mul_pi_eq_toLin'_diagonal {ι : Type*} [Fintype ι] [DecidableEq ι] (c : ι → ℝ) :
+    (fun (x : ι → ℝ) i ↦ c i * x i) = Matrix.toLin' (Matrix.diagonal c) := by
+  funext x i
+  simp [Matrix.mulVec_diagonal]
+
+/-- The determinant of multiplying the `i`-th coordinate of `ℝ^ι` by `cᵢ` is `∏ᵢ cᵢ`. -/
+private theorem det_toLin'_diagonal {ι : Type*} [Fintype ι] [DecidableEq ι] (c : ι → ℝ) :
+    LinearMap.det (Matrix.toLin' (Matrix.diagonal c)) = ∏ i, c i := by
+  rw [LinearMap.det_toLin', Matrix.det_diagonal]
+
 /-- **Rescaling the coordinates of `ℝ^ι`.** The image of an additive Haar measure under the
 map multiplying the `i`-th coordinate by `cᵢ ≠ 0` is the measure scaled by `|∏ᵢ cᵢ|⁻¹`. -/
 theorem map_mul_pi_addHaar_eq_smul {ι : Type*} [Fintype ι] (μ : Measure (ι → ℝ))
     [μ.IsAddHaarMeasure] {c : ι → ℝ} (hc : ∀ i, c i ≠ 0) :
     μ.map (fun x i ↦ c i * x i) = ENNReal.ofReal |∏ i, c i|⁻¹ • μ := by
   classical
-  have he : (fun (x : ι → ℝ) i ↦ c i * x i) = Matrix.toLin' (Matrix.diagonal c) := by
-    funext x i
-    simp [Matrix.mulVec_diagonal]
-  have hdet : LinearMap.det (Matrix.toLin' (Matrix.diagonal c)) = ∏ i, c i := by
-    rw [LinearMap.det_toLin', Matrix.det_diagonal]
-  rw [he, Measure.map_linearMap_addHaar_eq_smul_addHaar μ
-    (hdet ▸ Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i), hdet, abs_inv]
+  rw [mul_pi_eq_toLin'_diagonal, Measure.map_linearMap_addHaar_eq_smul_addHaar μ
+    (det_toLin'_diagonal c ▸ Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i), det_toLin'_diagonal,
+    abs_inv]
 
 end MeasureTheory.Measure
 
@@ -132,18 +140,16 @@ theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] 
     (F : (ι → ℝ) → G) :
     ∫ x, F (fun i ↦ c i * x i) ∂μ = |∏ i, c i|⁻¹ • ∫ y, F y ∂μ := by
   classical
-  have hdet : LinearMap.det (Matrix.toLin' (Matrix.diagonal c)) = ∏ i, c i := by
-    rw [LinearMap.det_toLin', Matrix.det_diagonal]
   -- The coordinatewise dilation is the automorphism given by the diagonal matrix of the `cᵢ`.
-  let e : (ι → ℝ) ≃L[ℝ] (ι → ℝ) := (LinearMap.equivOfDetNeZero _
-    (hdet ▸ Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i)).toContinuousLinearEquiv
+  let e : (ι → ℝ) ≃L[ℝ] (ι → ℝ) :=
+    (LinearMap.equivOfDetNeZero _ (Measure.det_toLin'_diagonal c ▸
+      Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i)).toContinuousLinearEquiv
   have hlin : (e : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) = Matrix.toLin' (Matrix.diagonal c) := by
     rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]
   have he : ⇑e = fun x i ↦ c i * x i := by
-    funext x i
-    simp only [e, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.ofIsUnitDet_apply,
-      Matrix.toLin'_apply, Matrix.mulVec_diagonal]
+    rw [Measure.mul_pi_eq_toLin'_diagonal, ← hlin, LinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_toLinearEquiv]
   have h := Measure.integral_comp_continuousLinearEquiv μ F e
-  rwa [he, hlin, hdet] at h
+  rwa [he, hlin, Measure.det_toLin'_diagonal] at h
 
 end TauCeti
