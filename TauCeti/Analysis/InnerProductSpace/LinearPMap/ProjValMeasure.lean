@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Reducing
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 
 /-!
@@ -46,6 +47,14 @@ diagonal measure `μ_v` of `U`. So if `P_A(B)` vanishes off `[β, ∞)`, then
 particular `P_A` vanishes on `(-∞, c)` exactly when `c ‖x‖² ≤ re ⟪A x, x⟫` on `dom A`: a nonzero
 `P_A((-∞, c - ε])` would contain a nonzero vector `w - U w` of the domain violating this bound.
 
+*Spectral restrictions.* Since the spectral projection `P_A(B)` intertwines `A` with itself, its
+range, the spectral subspace of `B`, reduces `A`, and the part of `A` in it is self-adjoint. If
+`P_A` vanishes on `B ∩ (c - δ, c + δ)`, every domain vector `x` of the spectral subspace splits as
+`x₁ + x₂` with spectral support in `(-∞, c - δ]` and `[c + δ, ∞)`; the form bounds give
+`δ ‖xᵢ‖ ≤ ‖c xᵢ - A xᵢ‖`, and the two pieces are orthogonal, so `δ ‖x‖ ≤ ‖c x - A x‖`. Hence `c` is
+a resolvent point of the part of `A` in the spectral subspace, with resolvent of norm at most
+`δ⁻¹`.
+
 ## Main declarations
 
 * `LinearPMap.spectralPVM A hA`: the spectral measure of a self-adjoint partial linear map, a
@@ -71,6 +80,16 @@ particular `P_A` vanishes on `(-∞, c)` exactly when `c ‖x‖² ≤ re ⟪A x
 * `IsSelfAdjoint.spectralPVM_proj_Iio_eq_zero_iff`,
   `IsSelfAdjoint.spectralPVM_proj_Ioi_eq_zero_iff`: the spectral measure vanishes on a half-line
   exactly when the corresponding form bound holds.
+* `IsSelfAdjoint.isReducing_range_spectralPVM_proj`,
+  `IsSelfAdjoint.isSelfAdjoint_restrict_range_spectralPVM_proj`: spectral subspaces reduce `A`, and
+  the part of `A` in a spectral subspace is self-adjoint.
+* `IsSelfAdjoint.mul_norm_le_norm_smul_sub_of_mem_range_spectralPVM_proj`: if `P_A` vanishes on
+  `B ∩ (c - δ, c + δ)`, then `δ ‖x‖ ≤ ‖c x - A x‖` on the domain vectors of the spectral subspace
+  of `B`.
+* `IsSelfAdjoint.mem_resolventSet_restrict_range_spectralPVM_proj`,
+  `IsSelfAdjoint.norm_resolvent_restrict_range_spectralPVM_proj_le`: under the same gap, with
+  `δ > 0`, `c` is a resolvent point of the part of `A` in that spectral subspace, and the resolvent
+  there has norm at most `δ⁻¹`.
 
 ## References
 
@@ -489,5 +508,134 @@ theorem _root_.IsSelfAdjoint.spectralPVM_proj_Ioi_eq_zero_iff (hA : IsSelfAdjoin
     ((A.spectralPVM hA).proj_iUnion_eq_zero _ _ hε)
   obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.mpr (Set.mem_Ioi.mp hs))
   exact Set.mem_iUnion.mpr ⟨n, Set.mem_Ici.mpr (by linarith)⟩
+
+/-! ### Spectral restrictions -/
+
+/-- **Spectral subspaces reduce the operator.** The range of every spectral projection of a
+self-adjoint partial linear map `A` reduces `A`. -/
+theorem _root_.IsSelfAdjoint.isReducing_range_spectralPVM_proj (hA : IsSelfAdjoint A)
+    (B : Set ℝ) (hB : MeasurableSet B) : A.IsReducing ((A.spectralPVM hA).proj B hB).range := by
+  rw [isReducing_iff_intertwines_starProjection, ProjValMeasure.starProjection_range_proj]
+  exact hA.intertwines_spectralPVM_proj B hB
+
+/-- **Self-adjoint spectral restriction.** The part of a self-adjoint partial linear map `A` in
+the range of a spectral projection of `A` is self-adjoint. -/
+theorem _root_.IsSelfAdjoint.isSelfAdjoint_restrict_range_spectralPVM_proj (hA : IsSelfAdjoint A)
+    (B : Set ℝ) (hB : MeasurableSet B) :
+    IsSelfAdjoint
+      (A.restrict (hA.isReducing_range_spectralPVM_proj B hB).isInvariant.apply_mem) :=
+  (hA.isReducing_range_spectralPVM_proj B hB).isSelfAdjoint_restrict hA
+
+/-- On the range of a spectral projection `P(C)` with `C` inside one of the half-lines
+`(-∞, c - δ]` or `[c + δ, ∞)`, the form bounds give `δ ‖x‖² ≤ |re ⟪c x - A x, x⟫|`, hence
+`δ ‖x‖ ≤ ‖c x - A x‖` by the Cauchy–Schwarz inequality. -/
+private theorem mul_norm_le_norm_smul_sub_of_subset_Iic_or_Ici (hA : IsSelfAdjoint A)
+    {C : Set ℝ} (hC : MeasurableSet C) {c δ : ℝ}
+    (hCδ : C ⊆ Set.Iic (c - δ) ∨ C ⊆ Set.Ici (c + δ)) {x : A.domain}
+    (hx : (x : H) ∈ ((A.spectralPVM hA).proj C hC).range) :
+    δ * ‖(x : H)‖ ≤ ‖(c : ℂ) • (x : H) - A x‖ := by
+  have hre : re ⟪(c : ℂ) • (x : H) - A x, x⟫_ℂ = c * ‖(x : H)‖ ^ 2 - re ⟪A x, x⟫_ℂ := by
+    rw [inner_sub_left, inner_smul_left, conj_ofReal, sub_re, re_ofReal_mul,
+      inner_self_eq_norm_sq_to_K]
+    norm_cast
+  have hq : δ * ‖(x : H)‖ ^ 2 ≤ ‖(c : ℂ) • (x : H) - A x‖ * ‖(x : H)‖ := by
+    refine le_trans ?_ ((abs_re_le_norm _).trans (norm_inner_le_norm (𝕜 := ℂ) _ _))
+    rcases hCδ with h | h
+    · have := hA.re_inner_le_mul_norm_sq_of_mem_range_spectralPVM_proj hC h hx
+      exact le_abs.mpr (Or.inl (by linarith))
+    · have := hA.mul_norm_sq_le_re_inner_of_mem_range_spectralPVM_proj hC h hx
+      exact le_abs.mpr (Or.inr (by linarith))
+  rcases (norm_nonneg (x : H)).eq_or_lt with h0 | hpos
+  · rw [← h0, mul_zero]
+    exact norm_nonneg _
+  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+
+/-- **Lower bound on a spectral subspace across a gap.** If the spectral measure of a
+self-adjoint partial linear map `A` vanishes on `B ∩ (c - δ, c + δ)`, then
+`δ ‖x‖ ≤ ‖c x - A x‖` for every `x ∈ dom A` in the range of the spectral projection `P(B)`. -/
+theorem _root_.IsSelfAdjoint.mul_norm_le_norm_smul_sub_of_mem_range_spectralPVM_proj
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {c δ : ℝ}
+    (hgap : (A.spectralPVM hA).proj (B ∩ Set.Ioo (c - δ) (c + δ))
+      (hB.inter measurableSet_Ioo) = 0)
+    {x : A.domain} (hx : (x : H) ∈ ((A.spectralPVM hA).proj B hB).range) :
+    δ * ‖(x : H)‖ ≤ ‖(c : ℂ) • (x : H) - A x‖ := by
+  rcases le_or_gt δ 0 with hδ | hδ
+  · exact (mul_nonpos_of_nonpos_of_nonneg hδ (norm_nonneg _)).trans (norm_nonneg _)
+  set P := A.spectralPVM hA
+  have h₁ : MeasurableSet (B ∩ Set.Iic (c - δ)) := hB.inter measurableSet_Iic
+  have h₂ : MeasurableSet (B ∩ Set.Ici (c + δ)) := hB.inter measurableSet_Ici
+  have hd : Disjoint (B ∩ Set.Iic (c - δ)) (B ∩ Set.Ici (c + δ)) :=
+    Set.disjoint_left.mpr fun s hs₁ hs₂ => by grind
+  -- Up to the null part `B ∩ (c - δ, c + δ)`, `B` is the union of its parts `B₁` below `c - δ`
+  -- and `B₂` above `c + δ`; the squared norms of the two components add up.
+  have hsplit : P.proj B hB = P.proj _ (h₁.union h₂) := by
+    rw [← add_zero (P.proj _ (h₁.union h₂)), ← hgap,
+      ← P.proj_union _ _ (Set.disjoint_left.mpr fun s hs hs' => by grind)]
+    exact P.proj_congr (Set.ext fun s => by grind) _ _
+  have hpyth (ξ : H) : ‖P.proj _ (h₁.union h₂) ξ‖ ^ 2 =
+      ‖P.proj _ h₁ ξ‖ ^ 2 + ‖P.proj _ h₂ ξ‖ ^ 2 := by
+    rw [P.norm_sq_proj_apply, P.norm_sq_proj_apply, P.norm_sq_proj_apply, measure_union hd h₂,
+      ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+  -- Each component `P(Bᵢ) x` lies in the domain, where `c - A` maps it to `P(Bᵢ) (c x - A x)`
+  -- with norm at least `δ ‖P(Bᵢ) x‖`.
+  have hpart {C : Set ℝ} (hC : MeasurableSet C)
+      (hCδ : C ⊆ Set.Iic (c - δ) ∨ C ⊆ Set.Ici (c + δ)) :
+      (δ * ‖P.proj C hC x‖) ^ 2 ≤ ‖P.proj C hC ((c : ℂ) • (x : H) - A x)‖ ^ 2 := by
+    have hI := hA.intertwines_spectralPVM_proj C hC
+    have h := mul_norm_le_norm_smul_sub_of_subset_Iic_or_Ici hA hC hCδ
+      (x := ⟨_, hI.mem_domain x⟩) ⟨x, rfl⟩
+    rw [← hI.apply_eq x, ← ContinuousLinearMap.map_smul, ← ContinuousLinearMap.map_sub] at h
+    exact pow_le_pow_left₀ (by positivity) h 2
+  have hx' : ‖(x : H)‖ ^ 2 = ‖P.proj _ h₁ x‖ ^ 2 + ‖P.proj _ h₂ x‖ ^ 2 := by
+    obtain ⟨z, hz⟩ := hx
+    rw [← hpyth, ← hsplit, ← hz, ContinuousLinearMap.coe_coe, P.proj_apply_proj]
+  have hy := pow_le_pow_left₀ (norm_nonneg _) (P.norm_proj_apply_le _ (h₁.union h₂)
+    ((c : ℂ) • (x : H) - A x)) 2
+  rw [hpyth] at hy
+  refine le_of_sq_le_sq ?_ (norm_nonneg _)
+  have hb₁ := hpart h₁ (Or.inl Set.inter_subset_right)
+  have hb₂ := hpart h₂ (Or.inr Set.inter_subset_right)
+  rw [mul_pow] at hb₁ hb₂ ⊢
+  rw [hx']
+  linarith
+
+/-- The lower bound `δ ‖x‖ ≤ ‖c x - A x‖` on the domain of the part of `A` in the range of
+`P(B)`, read off from `IsSelfAdjoint.mul_norm_le_norm_smul_sub_of_mem_range_spectralPVM_proj`. -/
+private theorem mul_norm_le_norm_smul_sub_restrict_range_spectralPVM_proj
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {c δ : ℝ}
+    (hgap : (A.spectralPVM hA).proj (B ∩ Set.Ioo (c - δ) (c + δ))
+      (hB.inter measurableSet_Ioo) = 0)
+    (x : (A.restrict (hA.isReducing_range_spectralPVM_proj B hB).isInvariant.apply_mem).domain) :
+    δ * ‖(x : ((A.spectralPVM hA).proj B hB).range)‖ ≤
+      ‖(c : ℂ) • (x : ((A.spectralPVM hA).proj B hB).range) -
+        A.restrict (hA.isReducing_range_spectralPVM_proj B hB).isInvariant.apply_mem x‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_sub, Submodule.coe_smul,
+    coe_restrict_apply]
+  exact hA.mul_norm_le_norm_smul_sub_of_mem_range_spectralPVM_proj hB hgap
+    (x := ⟨_, (mem_restrict_domain _).1 x.property⟩) x.val.property
+
+/-- **Gap resolvent for a spectral restriction.** If the spectral measure of a self-adjoint
+partial linear map `A` vanishes on `B ∩ (c - δ, c + δ)` with `δ > 0`, then the real point `c` is a
+resolvent point of the part of `A` in the range of the spectral projection `P(B)`. -/
+theorem _root_.IsSelfAdjoint.mem_resolventSet_restrict_range_spectralPVM_proj
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {c δ : ℝ} (hδ : 0 < δ)
+    (hgap : (A.spectralPVM hA).proj (B ∩ Set.Ioo (c - δ) (c + δ))
+      (hB.inter measurableSet_Ioo) = 0) :
+    (c : ℂ) ∈
+      (A.restrict (hA.isReducing_range_spectralPVM_proj B hB).isInvariant.apply_mem).resolventSet :=
+  (hA.isSelfAdjoint_restrict_range_spectralPVM_proj B hB).mem_resolventSet_of_norm_le hδ
+    (mul_norm_le_norm_smul_sub_restrict_range_spectralPVM_proj hA hB hgap)
+
+/-- **Gap resolvent bound for a spectral restriction.** If the spectral measure of a self-adjoint
+partial linear map `A` vanishes on `B ∩ (c - δ, c + δ)` with `δ > 0`, then the resolvent at `c` of
+the part of `A` in the range of the spectral projection `P(B)` has norm at most `δ⁻¹`. -/
+theorem _root_.IsSelfAdjoint.norm_resolvent_restrict_range_spectralPVM_proj_le
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {c δ : ℝ} (hδ : 0 < δ)
+    (hgap : (A.spectralPVM hA).proj (B ∩ Set.Ioo (c - δ) (c + δ))
+      (hB.inter measurableSet_Ioo) = 0) :
+    ‖(A.restrict (hA.isReducing_range_spectralPVM_proj B hB).isInvariant.apply_mem).resolvent
+      (c : ℂ)‖ ≤ δ⁻¹ :=
+  (hA.isSelfAdjoint_restrict_range_spectralPVM_proj B hB).norm_resolvent_le_of_norm_le hδ
+    (mul_norm_le_norm_smul_sub_restrict_range_spectralPVM_proj hA hB hgap)
 
 end LinearPMap
