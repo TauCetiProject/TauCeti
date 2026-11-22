@@ -271,10 +271,9 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
   refine ⟨fun heq ↦ ?_, fun h ↦ h.thetaSeries_dual_eq_sum τ⟩
   by_cases hL : DiscreteTopology L
   · have := hL
-    rw [← thetaSeries_sup_dual_eq_sum,
-      thetaSeries_eq_iff_eq_of_le_of_re_eq_zero (L := L ⊔ dual L) le_sup_right hτ, eq_comm,
-      sup_eq_right, ← isIntegral_iff_le_dual] at heq
-    exact heq
+    by_contra hni
+    exact ((re_thetaSeries_dual_lt_sum_iff_not_isIntegral hτ).mpr hni).ne
+      (by simpa [Complex.re_sum] using congrArg Complex.re heq)
   · exfalso
     have hspan : Submodule.span ℝ (L : Set E) = ⊤ := by
       by_contra hne

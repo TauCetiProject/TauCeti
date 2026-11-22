@@ -60,9 +60,9 @@ equal as functions if and only if `M = L`.
   `ZLattice.thetaSeries_eq_iff_eq_of_le_of_re_eq_zero`: for a subgroup `M ≤ L` of a discrete `L`,
   on the imaginary axis `θ_{γ+M} ≤ θ_{γ+L}` and `Θ_M ≤ Θ_L` on real parts, with equality if and
   only if `M = L`.
-* `ZLattice.thetaCoset_eq_iff_of_le`, `ZLattice.thetaCoset_ne_of_lt`,
-  `ZLattice.thetaSeries_eq_iff_of_le`, `ZLattice.thetaSeries_ne_of_lt`: for `M ≤ L` with `L`
-  discrete, `θ_{γ+M} = θ_{γ+L}` and `Θ_M = Θ_L` as functions on `ℍ` if and only if `M = L`.
+* `ZLattice.thetaCoset_eq_iff_of_le`, `ZLattice.thetaSeries_eq_iff_of_le`,
+  `ZLattice.thetaSeries_ne_of_lt`: for `M ≤ L` with `L` discrete, `θ_{γ+M} = θ_{γ+L}` and
+  `Θ_M = Θ_L` as functions on `ℍ` if and only if `M = L`.
 
 ## References
 
@@ -424,10 +424,6 @@ theorem thetaCoset_eq_iff_of_le (hML : M ≤ L) (γ : E) :
   ⟨fun h => (thetaCoset_eq_iff_eq_of_le_of_re_eq_zero hML γ UpperHalfPlane.I_re).mp
     (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
 
-/-- For a proper subgroup `M < L`, `θ_{γ+M} ≠ θ_{γ+L}`. -/
-theorem thetaCoset_ne_of_lt (hML : M < L) (γ : E) : thetaCoset M γ ≠ thetaCoset L γ :=
-  mt (thetaCoset_eq_iff_of_le hML.le γ).mp hML.ne
-
 /-- For `M ≤ L`, the theta series `Θ_M` and `Θ_L` are equal as functions on `ℍ` if and only if
 `M = L`. -/
 theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
@@ -435,8 +431,8 @@ theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
   simpa using thetaCoset_eq_iff_of_le hML 0
 
 /-- For a proper subgroup `M < L`, `Θ_M ≠ Θ_L`. -/
-theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L := by
-  simpa using thetaCoset_ne_of_lt hML 0
+theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L :=
+  mt (thetaSeries_eq_iff_of_le hML.le).mp hML.ne
 
 end SublatticeFunction
 
