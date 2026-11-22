@@ -646,20 +646,6 @@ theorem norm_stinespringOp_sq_eq_norm_map_one : ‖φ.stinespringOp‖ ^ 2 = ‖
 theorem isometry_stinespringOp_iff : Isometry φ.stinespringOp ↔ φ 1 = 1 := by
   rw [ContinuousLinearMap.isometry_iff_adjoint_comp_self, φ.stinespringOp_adjoint_comp_self]
 
-/-- The **subunital Kadison–Schwarz inequality** for a completely positive map from a unital
-C⋆-algebra into `H →L[ℂ] H`: `star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a)`. -/
-theorem star_map_mul_map_le_norm_map_one_smul (a : D) :
-    star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) :=
-  φ.norm_toContinuousLinearMap ▸ φ.star_map_mul_map_le_opNorm_smul a
-
-/-- The **Kadison–Schwarz inequality** for a unital completely positive map into `H →L[ℂ] H`. -/
-theorem star_map_mul_map_le_of_map_one (h1 : φ 1 = 1) (a : D) :
-    star (φ a) * φ a ≤ φ (star a * a) := by
-  by_cases hH : Subsingleton H
-  · exact le_of_eq (Subsingleton.elim _ _)
-  · rw [not_subsingleton_iff_nontrivial] at hH
-    simpa [h1] using φ.star_map_mul_map_le_norm_map_one_smul a
-
 /-- **Stinespring's dilation theorem** (Stinespring 1955, Theorem 1; Blackadar II.6.9.7). -/
 theorem stinespring :
     ∃ (K : Type (max u v)) (_ : NormedAddCommGroup K) (_ : InnerProductSpace ℂ K)
