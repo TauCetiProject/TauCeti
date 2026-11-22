@@ -98,12 +98,13 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
       rw [smul_smul, abs_inv, mul_inv_cancel₀ (abs_ne_zero.mpr hdet), one_smul]
     _ = _ := congrArg (|LinearMap.det (L : V →ₗ[ℝ] V)| • ·) h
 
+-- Credit: the statement and name follow the sketch in Tau Ceti PR #37628,
+-- https://github.com/TauCetiProject/TauCeti/pull/37628.
 /-- **Linear change of variables.** Precomposing an integrand with a continuous linear
 automorphism `A` of a finite-dimensional real normed space divides its integral against an
 additive Haar measure `μ` by `|det A|`: `∫ x, f (A x) ∂μ = |det A|⁻¹ • ∫ x, f x ∂μ`. No
 integrability or measurability of `f` is needed. This is the whole-space, translation-free case of
-`ContinuousLinearEquiv.integral_image_affine`. The statement and name follow the sketch in
-[Tau Ceti PR #37628](https://github.com/TauCetiProject/TauCeti/pull/37628). -/
+`ContinuousLinearEquiv.integral_image_affine`. -/
 theorem _root_.MeasureTheory.Measure.integral_comp_continuousLinearEquiv [NormedSpace ℝ E]
     (μ : Measure V) [μ.IsAddHaarMeasure] (f : V → E) (A : V ≃L[ℝ] V) :
     ∫ x, f (A x) ∂μ = |LinearMap.det (A : V →ₗ[ℝ] V)|⁻¹ • ∫ x, f x ∂μ := by
