@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentSpace
+public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.Space
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -34,7 +34,7 @@ The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜)
 definitionally the model space `E`, but their module instances are over different fields: the
 second is only a `𝕜`-module. The derivative comparisons are stated with
 `ContinuousLinearMap.restrictScalarsTangent` from
-`TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentSpace`, which turns a
+`TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.Space`, which turns a
 `𝕜'`-linear map between tangent spaces for `I` and `I'` into the same map, `𝕜`-linear between the
 tangent spaces for their scalar restrictions. Like `ContinuousLinearMap.restrictScalars`, the
 derivative comparisons need only the scalar compatibility condition `LinearMap.CompatibleSMul`,
@@ -43,7 +43,7 @@ which scalar towers provide; in charts they use
 charts needs this scalar compatibility condition as well, and of the manifold structures only the
 `C¹` structure `IsManifold I 1 M` for the model over `𝕜'`. The tangent coordinate changes of the
 two models are compared in
-`TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentCoordChange`.
+`TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange`.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
@@ -54,6 +54,9 @@ vector-valued derivatives over the two fields.
 
 ## Main results
 
+* `TauCeti.hasMFDerivWithinAt_restrictScalars_iff`, `TauCeti.hasMFDerivAt_restrictScalars_iff`:
+  the scalar restriction of a `𝕜'`-linear map is a derivative for the scalar restrictions of
+  boundaryless models over `𝕜'` exactly when the map is a derivative for the models over `𝕜'`.
 * `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: the scalar restriction of a
   derivative for boundaryless models over `𝕜'` is a derivative for their scalar restrictions.
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
@@ -115,18 +118,38 @@ commute with `𝕜'`-linear maps; scalar towers provide this. The derivative of 
 `o`-condition over either field. -/
 variable [LinearMap.CompatibleSMul E E' 𝕜 𝕜']
 
+/-- For boundaryless models over `𝕜'`, the scalar restriction `f'.restrictScalarsTangent 𝕜` of a
+`𝕜'`-linear map `f'` is a derivative of `f` within a set at a point for the scalar restrictions to
+`𝕜` if and only if `f'` is a derivative of `f` within that set at that point for the models over
+`𝕜'`: in charts, both say that `f'` satisfies the same `o`-condition. -/
+theorem TauCeti.hasMFDerivWithinAt_restrictScalars_iff
+    {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)} :
+    HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x
+        (f'.restrictScalarsTangent 𝕜) ↔ HasMFDerivWithinAt I I' f s x f' := by
+  rw [HasMFDerivWithinAt,
+    ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp]
+  simp only [writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
+    ModelWithCorners.coe_restrictScalars]
+  exact and_congr_right' (TauCeti.hasFDerivAtFilter_restrictScalars_iff 𝕜)
+
+/-- For boundaryless models over `𝕜'`, the scalar restriction `f'.restrictScalarsTangent 𝕜` of a
+`𝕜'`-linear map `f'` is a derivative of `f` at a point for the scalar restrictions to `𝕜` if and
+only if `f'` is a derivative of `f` at that point for the models over `𝕜'`. -/
+theorem TauCeti.hasMFDerivAt_restrictScalars_iff
+    {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)} :
+    HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x (f'.restrictScalarsTangent 𝕜) ↔
+      HasMFDerivAt I I' f x f' := by
+  simpa only [hasMFDerivWithinAt_univ] using
+    TauCeti.hasMFDerivWithinAt_restrictScalars_iff 𝕜 (s := univ)
+
 /-- If `f'` is a derivative of `f` within a set at a point for boundaryless models over `𝕜'`, then
 its scalar restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` within that set at that
 point for their scalar restrictions to `𝕜`. -/
 theorem HasMFDerivWithinAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
     (h : HasMFDerivWithinAt I I' f s x f') :
     HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x
-      (f'.restrictScalarsTangent 𝕜) := by
-  rw [HasMFDerivWithinAt,
-    ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp]
-  simp only [writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
-    ModelWithCorners.coe_restrictScalars]
-  exact ⟨h.1, (TauCeti.hasFDerivAtFilter_restrictScalars_iff 𝕜).2 h.2⟩
+      (f'.restrictScalarsTangent 𝕜) :=
+  (TauCeti.hasMFDerivWithinAt_restrictScalars_iff 𝕜).2 h
 
 /-- If `f'` is a derivative of `f` at a point for boundaryless models over `𝕜'`, then its scalar
 restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` at that point for their scalar
@@ -134,7 +157,7 @@ restrictions to `𝕜`. -/
 theorem HasMFDerivAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
     (h : HasMFDerivAt I I' f x f') :
     HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x (f'.restrictScalarsTangent 𝕜) :=
-  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜)
+  (TauCeti.hasMFDerivAt_restrictScalars_iff 𝕜).2 h
 
 /-- A map which is differentiable within a set at a point for boundaryless models over `𝕜'` is
 differentiable within that set at that point for their scalar restrictions to `𝕜`. -/
@@ -169,12 +192,8 @@ theorem HasMFDerivWithinAt.of_restrictScalars
     {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
     (h : HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x
       (f'.restrictScalarsTangent 𝕜)) :
-    HasMFDerivWithinAt I I' f s x f' := by
-  have hf := h.2
-  rw [ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp] at hf
-  simp only [writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
-    ModelWithCorners.coe_restrictScalars] at hf
-  exact ⟨h.1, (TauCeti.hasFDerivAtFilter_restrictScalars_iff 𝕜).1 hf⟩
+    HasMFDerivWithinAt I I' f s x f' :=
+  (TauCeti.hasMFDerivWithinAt_restrictScalars_iff 𝕜).1 h
 
 /-- If the scalar restriction `f'.restrictScalarsTangent 𝕜` of a `𝕜'`-linear map `f'` is a
 derivative of `f` at a point for the scalar restrictions to `𝕜` of boundaryless models over `𝕜'`,
@@ -184,7 +203,7 @@ theorem HasMFDerivAt.of_restrictScalars {f' : TangentSpace I x →L[𝕜'] Tange
     (h : HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x
       (f'.restrictScalarsTangent 𝕜)) :
     HasMFDerivAt I I' f x f' :=
-  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.of_restrictScalars 𝕜)
+  (TauCeti.hasMFDerivAt_restrictScalars_iff 𝕜).1 h
 
 /-- At a point where `f` is differentiable within a set for boundaryless models over `𝕜'`, and
 where the set has unique derivatives for their scalar restrictions to `𝕜`, the derivative of `f`
@@ -324,8 +343,12 @@ variable [LinearMap.CompatibleSMul E E 𝕜 𝕜'] [IsManifold 𝓘(𝕜', E) 1 
 complex manifold, regarded as a real manifold, the real derivative of the inverse of a chart
 commutes with multiplication by `i`. This is `ModelWithCorners.mfderivWithin_extChartAt_symm_smul`
 for the self models, whose tangent spaces are `E`. -/
-theorem mfderivWithin_extChartAt_symm_smul [SMulCommClass 𝕜 𝕜' E] {z : E}
+theorem mfderivWithin_extChartAt_symm_smul {z : E}
     (hz : z ∈ (extChartAt 𝓘(𝕜, E) x).target) (c : 𝕜') (w : E) :
+    -- `𝕜'` acts on `E →L[𝕜] E`: by `LinearMap.CompatibleSMul`, each `v ↦ d • v` is `𝕜`-linear.
+    haveI : SMulCommClass 𝕜 𝕜' E := ⟨fun a d v ↦ by
+      simpa only [LinearMap.smul_apply, LinearMap.id_apply] using
+        (LinearMap.CompatibleSMul.map_smul (d • LinearMap.id (R := 𝕜') (M := E)) a v).symm⟩
     mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z
         ((c • ContinuousLinearMap.id 𝕜 E) w) =
       (c • ContinuousLinearMap.id 𝕜 E)

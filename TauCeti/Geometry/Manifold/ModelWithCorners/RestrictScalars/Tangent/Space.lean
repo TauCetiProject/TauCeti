@@ -45,7 +45,9 @@ spaces with the map's scalar restriction.
 * `ContinuousLinearMap.coe_restrictScalarsTangent`: as a function, the scalar restriction of a map
   between tangent spaces is the map.
 * `ContinuousLinearMap.restrictScalarsTangent_inj`: restricting the scalars of maps between tangent
-  spaces is injective.
+  spaces is injective; `ContinuousLinearMap.restrictScalarsTangent_eq_zero_iff` and
+  `ContinuousLinearMap.restrictScalarsTangent_eq_id_iff` cancel it in equations with the zero map
+  and the identity.
 * `ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp`: read in the model
   spaces, it is `ContinuousLinearMap.restrictScalars`.
 * `ContinuousLinearMap.restrictScalarsTangent_comp`, `_id`, `_zero`, `_add`, `_neg`, `_sub`: it
@@ -173,6 +175,15 @@ theorem ContinuousLinearMap.restrictScalarsTangent_id [LinearMap.CompatibleSMul 
     rw [restrictScalarsTangent_apply, id_apply (R₁ := 𝕜)]
     exact id_apply (R₁ := 𝕜') (M₁ := TangentSpace I x) v
 
+/-- The scalar restriction of an endomorphism of a tangent space is the identity if and only if the
+endomorphism is the identity. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_eq_id_iff [LinearMap.CompatibleSMul E E 𝕜 𝕜']
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I x) :
+    f'.restrictScalarsTangent 𝕜 = ContinuousLinearMap.id 𝕜 (TangentSpace (I.restrictScalars 𝕜) x) ↔
+      f' = ContinuousLinearMap.id 𝕜' (TangentSpace I x) :=
+  (restrictScalarsTangent_injective 𝕜).eq_iff' (restrictScalarsTangent_id 𝕜)
+
 /-- Restricting the scalars of the zero map between tangent spaces gives the zero map. -/
 @[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_zero {y : N} :
@@ -180,6 +191,14 @@ theorem ContinuousLinearMap.restrictScalarsTangent_zero {y : N} :
   ContinuousLinearMap.ext fun v ↦ by
     rw [restrictScalarsTangent_apply, _root_.zero_apply]
     exact _root_.zero_apply (F := TangentSpace I x →L[𝕜'] TangentSpace I' y) v
+
+/-- The scalar restriction of a map between tangent spaces is zero if and only if the map is
+zero. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_eq_zero_iff {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    f'.restrictScalarsTangent 𝕜 = 0 ↔ f' = 0 :=
+  (restrictScalarsTangent_injective 𝕜).eq_iff' (restrictScalarsTangent_zero 𝕜)
 
 /-- Restricting the scalars of maps between tangent spaces preserves addition. -/
 @[simp]

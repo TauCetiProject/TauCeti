@@ -335,6 +335,15 @@ theorem _root_.ContMDiffAt.ofComplexManifold_mem_genEigenspace_manifoldShapeOper
 
 /-! ### Symmetric focal points and Morse indices along normal lines -/
 
+omit [FiniteDimensional ℂ E] in
+/-- If the complex derivative of a map into a complex normed space is injective at a point, so is
+its real derivative there. -/
+private theorem injective_mvfderiv_real_of_complex (h : Injective (mvfderiv 𝓘(ℂ, E) i x)) :
+    Injective (mvfderiv 𝓘(ℝ, E) i x) := by
+  rw [TauCeti.injective_mvfderiv_iff] at h ⊢
+  have hR := TauCeti.injective_mfderiv_restrictScalars ℝ h
+  rwa [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at hR
+
 /-- **Symmetric focal multiplicities on a complex manifold.** For a `C²` holomorphic immersion
 `i : M → F` and a normal vector `ν ∈ normalSubspace 𝓘(ℝ, E) i x`, the opposite points `i x - ν` and
 `i x + ν` have equal focal multiplicity at `x`. -/
@@ -348,9 +357,7 @@ theorem _root_.ContMDiffAt.finrank_ker_criticalHessian_norm_sq_sub_sub_comp
         (criticalHessian 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x + ν)‖ ^ 2) x :
           TangentSpace 𝓘(ℝ, E) x →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ)) := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
-  have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) := by
-    have h := ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
-    rwa [modelWithCornersSelf_restrictScalars] at h
+  have hR := injective_mvfderiv_real_of_complex h
   rw [ker_criticalHessian_norm_sq_sub_comp hiR hR (by simpa [sub_sub_cancel] using hν),
     ker_criticalHessian_norm_sq_sub_comp hiR hR
       (by simpa [sub_add_cancel_left] using Submodule.neg_mem _ hν),
@@ -366,9 +373,7 @@ theorem _root_.ContMDiffAt.isManifoldNondegenerateCriticalPoint_norm_sq_sub_sub_
     IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x - ν)‖ ^ 2) x ↔
       IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x + ν)‖ ^ 2) x := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
-  have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) := by
-    have h := ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
-    rwa [modelWithCornersSelf_restrictScalars] at h
+  have hR := injective_mvfderiv_real_of_complex h
   rw [isManifoldNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR,
     isManifoldNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR]
   simp only [sub_sub_cancel, sub_add_cancel_left, Submodule.neg_mem_iff, sub_sub_cancel_left,
@@ -385,9 +390,7 @@ theorem _root_.ContMDiffAt.manifoldMorseIndex_norm_sq_sub_sub_comp
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x - ν)‖ ^ 2) x =
       manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x + ν)‖ ^ 2) x := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
-  have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) := by
-    have h := ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
-    rwa [modelWithCornersSelf_restrictScalars] at h
+  have hR := injective_mvfderiv_real_of_complex h
   have ha₁ : i x - (i x - ν) ∈ normalSubspace 𝓘(ℝ, E) i x := by rwa [sub_sub_cancel]
   have ha₂ : i x - (i x + ν) ∈ normalSubspace 𝓘(ℝ, E) i x := by
     simpa [sub_add_cancel_left] using Submodule.neg_mem _ hν

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
-import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentCoordChange
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!

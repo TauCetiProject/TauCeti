@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
-import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentCoordChange
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -81,23 +81,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 namespace SmoothAlmostComplexStructure
 
+/-- The real tangent coordinate changes of a complex manifold commute with multiplication by `i`:
+they are complex linear (`ModelWithCorners.tangentCoordChange_smul`). -/
+private theorem tangentCoordChange_I_smul {x y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (v : E) :
+    tangentCoordChange 𝓘(ℝ, E) x y z (Complex.I • v) =
+      Complex.I • tangentCoordChange 𝓘(ℝ, E) x y z v := by
+  simpa only [modelWithCornersSelf_restrictScalars] using
+    𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I v
+
 variable (E M) in
 /-- The almost complex structure of a complex manifold `M` modelled on `𝓘(ℂ, E)`, as a smooth
 almost complex structure of the underlying real manifold modelled on `𝓘(ℝ, E)`: on every tangent
 space, which is `E`, it is multiplication by `i` (`ofComplexManifold_apply`). -/
 def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M :=
   -- The real tangent coordinate changes are complex linear.
-  ofTangentCoordChangeISMul 𝓘(ℝ, E) M fun h v ↦ by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I v
+  ofTangentCoordChangeISMul 𝓘(ℝ, E) M tangentCoordChange_I_smul
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
-  ofTangentCoordChangeISMul_apply (fun h v ↦ by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I v) x v
+  ofTangentCoordChangeISMul_apply tangentCoordChange_I_smul x v
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space, as an endomorphism. -/
@@ -113,9 +118,7 @@ theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt
     inTangentCoordinates 𝓘(ℝ, E) 𝓘(ℝ, E) id id
         (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E :=
-  inTangentCoordinates_ofTangentCoordChangeISMul (fun h v ↦ by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I v) hx
+  inTangentCoordinates_ofTangentCoordChangeISMul tangentCoordChange_I_smul hx
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/
@@ -275,9 +278,7 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
   exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
-    (ofComplexManifold_apply (E := E) y (V y))).trans (by
-      simpa only [modelWithCornersSelf_restrictScalars] using
-        𝓘(ℂ, E).tangentCoordChange_smul ℝ h Complex.I (V y))
+    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_I_smul h (V y))
 
 variable [FiniteDimensional ℂ E]
 
