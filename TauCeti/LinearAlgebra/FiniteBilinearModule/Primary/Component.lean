@@ -37,7 +37,8 @@ of the `p`-primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
-* `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
+* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
   isometry of `p`-primary components.
 * `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
   of an orthogonal product is the orthogonal product of the `p`-primary components.
@@ -163,6 +164,33 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
     exact A.pairing_eq_zero_of_mem_primaryComponent (hprime i hi) (hprime j hj)
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
+
+/-! ## Primary components under isometries -/
+
+variable {A} in
+/-- An isometry carries `p`-primary components onto `p`-primary components, so it restricts to an
+isometry between them. -/
+def Isometry.restrictPrimaryComponent {B : FiniteBilinearModule} (f : Isometry A B) (p : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A p))
+      (B.restrict (AddCommGroup.primaryComponent B p)) where
+  toAddEquiv :=
+    -- `f` maps the `p`-primary component of `A` onto that of `B`.
+    have h : (AddCommGroup.primaryComponent A p).map f.toAddEquiv.toAddMonoidHom =
+        AddCommGroup.primaryComponent B p := AddSubgroup.ext fun y ↦ by
+      rw [AddSubgroup.mem_map_equiv]
+      simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+    (f.toAddEquiv.addSubgroupMap _).trans (AddEquiv.addSubgroupCongr h)
+  map_pairing' x y := f.map_pairing x.val y.val
+
+variable {A} in
+/-- The restriction of an isometry to primary components acts as the isometry. -/
+@[simp]
+theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteBilinearModule}
+    (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) := by
+  rw [restrictHom_apply, restrictHom_apply]
+  -- The underlying element of the restriction is `f x` by construction of `addSubgroupMap`.
+  rfl
 
 end FiniteBilinearModule
 

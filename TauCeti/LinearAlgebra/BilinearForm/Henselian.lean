@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
@@ -35,6 +36,13 @@ Henselian local domain with finite residue field and two invertible is classifie
 classes of its Jordan constituents, that is, by the rank and the determinant square class of each
 of them.
 
+For a form with an orthogonal basis whose self-pairings are `u i * π ^ k i`, with units `u i`,
+the basis vectors with a given exponent `k i = m` span a constituent which is `π ^ m` times the
+diagonal unimodular form of the units `u i`. Two such forms are therefore isometric when, for
+every exponent, they have equally many basis vectors with that exponent and the products of the
+corresponding units lie in one square class. At an odd prime every nondegenerate form over `ℤ_p`
+has such a basis, so this reads the local isometry class off diagonal Jordan data.
+
 ## Main results
 
 * `LinearMap.BilinForm.IsSymm.equivalent_iff_isSquare_det_mul_det`: unimodular forms are
@@ -45,6 +53,9 @@ of them.
   isometric Jordan constituents at every index.
 * `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_forall_equivalent_restrict`: forms are
   isometric exactly when their Jordan constituents are.
+* `LinearMap.BilinForm.iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod`: forms with
+  orthogonal bases of self-pairings `u i * π ^ k i` are isometric when, for every exponent, the
+  numbers of basis vectors and the square classes of the products of their units agree.
 
 ## References
 
@@ -159,5 +170,106 @@ theorem IsJordanSplitting.equivalent_iff_forall_equivalent_restrict [Module.Free
     equivalent_of_isInternal hS.isInternal hS'.isInternal hS.apply_eq_zero hS'.apply_eq_zero⟩
 
 end JordanSplitting
+
+section OrthogonalBasis
+
+open Finset
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- The basis vectors of `b` in the fiber of `k` over `m`, as a basis of their span. -/
+private noncomputable def fiberBasis (b : Basis ι R M) (k : ι → ℕ) (m : ℕ) :
+    Basis {i // k i = m} R (Submodule.span R (b '' {i | k i = m})) :=
+  (Basis.span (b.linearIndependent.comp _ Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ (by rw [Set.range_comp, Subtype.range_coe_subtype]))
+
+omit [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)] [Fintype ι] in
+private theorem coe_fiberBasis (b : Basis ι R M) (k : ι → ℕ) (m : ℕ) (i : {i // k i = m}) :
+    (fiberBasis b k m i : M) = b i := by
+  simp [fiberBasis, Basis.span_apply]
+
+variable {B : BilinForm R M} {b : Basis ι R M} {π : R} {u : ι → Rˣ} {k : ι → ℕ}
+
+omit [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)] in
+/-- In an orthogonal basis with self-pairings `u i * π ^ k i`, the span of the basis vectors with
+`k i = m` carries `π ^ m` times the diagonal form of the units `u i`. -/
+private theorem restrict_span_image_fiber_eq_smul [DecidableEq ι] (hb : B.iIsOrtho b)
+    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i) (m : ℕ) :
+    B.restrict (Submodule.span R (b '' {i | k i = m})) =
+      π ^ m • Matrix.toBilin (fiberBasis b k m) (Matrix.diagonal fun i ↦ (u i : R)) := by
+  refine ext_basis (fiberBasis b k m) fun i j ↦ ?_
+  have hD := congrFun₂ (toMatrix_toBilin (fiberBasis b k m)
+    (Matrix.diagonal fun i : {i // k i = m} ↦ (u i : R))) i j
+  rw [toMatrix_apply] at hD
+  rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, hD, restrict_apply,
+    LinearMap.domRestrict_apply, coe_fiberBasis, coe_fiberBasis]
+  obtain rfl | hij := eq_or_ne i j
+  · rw [hbu, Matrix.diagonal_apply_eq, i.property, mul_comm]
+  · rw [Matrix.diagonal_apply_ne _ hij, mul_zero]
+    exact hb fun h ↦ hij (Subtype.ext h)
+
+omit [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)] [Fintype ι] in
+/-- The spans of the vectors of an orthogonal basis in distinct fibers of `k` are orthogonal. -/
+private theorem apply_eq_zero_of_mem_span_image_fiber (hb : B.iIsOrtho b) {m m' : ℕ}
+    (hm : m ≠ m') {x y : M} (hx : x ∈ Submodule.span R (b '' {i | k i = m}))
+    (hy : y ∈ Submodule.span R (b '' {i | k i = m'})) : B x y = 0 := by
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, hi, rfl⟩ := hx
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨j, hj, rfl⟩ := hy
+      exact hb fun hij ↦ hm (hi.symm.trans (hij ▸ hj))
+    | zero => simp
+    | add y z _ _ hy hz => simp [hy, hz]
+    | smul a y _ hy => simp [hy]
+  | zero => simp
+  | add x z _ _ hx hz => simp [hx, hz]
+  | smul a x _ hx => simp [hx]
+
+/-- **Orthogonal bases over a Henselian local ring at odd residue characteristic.** Let `R` be a
+Henselian local ring with finite residue field in which `2` is invertible, and let `b` and `c` be
+orthogonal bases for bilinear forms `B` and `B'` with self-pairings `B (b i) (b i) = u i * π ^ k i`
+and `B' (c j) (c j) = v j * π ^ l j`, for units `u i` and `v j`. If for every exponent `m` the two
+bases have equally many vectors with exponent `m`, and the products of the units `u i` and `v j`
+over these vectors lie in the same square class, then `B` and `B'` are isometric. -/
+theorem iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod (h2 : IsUnit (2 : R))
+    {B' : BilinForm R N} {c : Basis κ R N} {v : κ → Rˣ} {l : κ → ℕ} (hb : B.iIsOrtho b)
+    (hc : B'.iIsOrtho c) (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i)
+    (hcv : ∀ j, B' (c j) (c j) = v j * π ^ l j) (hcard : ∀ m, #{i | k i = m} = #{j | l j = m})
+    (hsq : ∀ m, IsSquare ((∏ i with k i = m, u i) * ∏ j with l j = m, v j)) :
+    B.Equivalent B' := by
+  classical
+  refine equivalent_of_isInternal (b.isInternal_span_image_fiber k)
+    (c.isInternal_span_image_fiber l) (fun m m' hm _ hx _ hy ↦
+      apply_eq_zero_of_mem_span_image_fiber hb hm hx hy) (fun m m' hm _ hx _ hy ↦
+      apply_eq_zero_of_mem_span_image_fiber hc hm hx hy) fun m ↦ ?_
+  rw [restrict_span_image_fiber_eq_smul hb hbu, restrict_span_image_fiber_eq_smul hc hcv]
+  -- The constituents are `π ^ m` times diagonal unimodular forms with determinants the products
+  -- of the units, which the rank and determinant classification compares.
+  set C := Matrix.toBilin (fiberBasis b k m) (Matrix.diagonal fun i ↦ (u i : R))
+  set C' := Matrix.toBilin (fiberBasis c l m) (Matrix.diagonal fun j ↦ (v j : R))
+  let e := Fintype.equivFinOfCardEq (Fintype.card_subtype (k · = m))
+  let e' := Fintype.equivFinOfCardEq ((Fintype.card_subtype (l · = m)).trans (hcard m).symm)
+  have hdet : (C.toMatrix ((fiberBasis b k m).reindex e)).det = ∏ i with k i = m, (u i : R) := by
+    rw [det_toMatrix_reindex, toMatrix_toBilin, Matrix.det_diagonal]
+    exact (Finset.prod_subtype _ (fun _ ↦ Finset.mem_filter_univ _) fun i ↦ (u i : R)).symm
+  have hdet' : (C'.toMatrix ((fiberBasis c l m).reindex e')).det = ∏ j with l j = m, (v j : R) := by
+    rw [det_toMatrix_reindex, toMatrix_toBilin, Matrix.det_diagonal]
+    exact (Finset.prod_subtype _ (fun _ ↦ Finset.mem_filter_univ _) fun j ↦ (v j : R)).symm
+  obtain ⟨f⟩ : C.Equivalent C' := by
+    have hC : C.IsSymm := (Matrix.isSymm_toBilin_iff_isSymm _).mpr (Matrix.isSymm_diagonal _)
+    have hC' : C'.IsSymm := (Matrix.isSymm_toBilin_iff_isSymm _).mpr (Matrix.isSymm_diagonal _)
+    refine (hC.equivalent_iff_isSquare_det_mul_det hC' h2 ((fiberBasis b k m).reindex e)
+      ((fiberBasis c l m).reindex e') ?_ ?_).mpr ?_
+    · rw [hdet, ← Units.coe_prod]
+      exact Units.isUnit _
+    · rw [hdet', ← Units.coe_prod]
+      exact Units.isUnit _
+    · rw [hdet, hdet']
+      simpa using (hsq m).map (Units.coeHom R)
+  exact ⟨⟨f.toLinearEquiv, fun x y ↦ by simp⟩⟩
+
+end OrthogonalBasis
 
 end LinearMap.BilinForm
