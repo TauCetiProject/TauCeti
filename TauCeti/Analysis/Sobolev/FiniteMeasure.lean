@@ -337,21 +337,22 @@ theorem W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top [Nontrivia
   have hn : (0 : ℝ) < (finrank ℝ E : ℝ)⁻¹ := by
     have : 0 < finrank ℝ E := finrank_pos
     positivity
-  set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
-    mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
-    ((1 - 0) / ((finrank ℝ E : ℝ)⁻¹ - 0)) ^ (1 - (0 : ℝ))) *
-    mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - 0)
-  have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by rw [sub_zero]; positivity) hOmega)
+  -- The explicit bound with `q = p`, so `δ = 0`; its constant `C` does not depend on `u`.
+  obtain ⟨C, hC, hbound⟩ : ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ u ∈ w1p0Submodule mu Omega p,
+      eLpNorm (W1p.value u) p (mu.restrict Omega) ≤ C * ‖W1p.gradient u‖ₑ := by
+    refine ⟨?C, ?hC, fun u hu => ?hb⟩
+    case hb =>
+      have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega
+        (q := p.toNNReal) (by rw [ENNReal.coe_toNNReal hp]) (δ := 0)
+        (by rw [ENNReal.coe_toNNReal_eq_toReal, sub_self]) hn hu
+      rwa [ENNReal.coe_toNNReal hp] at h
+    case hC =>
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+        (ENNReal.rpow_ne_top_of_nonneg (by rw [sub_zero]; positivity) hOmega)
   refine ⟨(C.toReal + 1).toNNReal, fun u hu ↦ ?_⟩
-  -- Apply the explicit bound with `q = p`, so `δ = 0`.
-  have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega
-    (q := p.toNNReal) (by rw [ENNReal.coe_toNNReal hp]) (δ := 0)
-    (by rw [ENNReal.coe_toNNReal_eq_toReal, sub_self]) hn hu
-  rw [ENNReal.coe_toNNReal hp] at h
   have hv : ‖W1p.value u‖ ≤ C.toReal * ‖W1p.gradient u‖ := by
     rw [Lp.norm_def, ← toReal_eNorm (W1p.gradient u), ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hC eNorm_ne_top) h
+    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hC eNorm_ne_top) (hbound u hu)
   rw [Real.coe_toNNReal _ (by positivity)]
   linarith [W1p.norm_le_norm_value_add_norm_gradient u]
 

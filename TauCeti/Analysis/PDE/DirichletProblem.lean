@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
+public import TauCeti.Analysis.Sobolev.Wkp.Exponent
+import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
 # The Dirichlet problem: existence and uniqueness of a weak solution
@@ -135,6 +138,13 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
   existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f`, `c ≥ 0`, on a domain of finite measure
   with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.forall_energyFormH1_sub_eq_divergence`: the difference of the
+  weak solutions in `H¹₀(Ω)` for divergence data `G₁, G₂` is the weak solution for `G₁ - G₂`.
+* `TauCeti.PDE.energyFormIntegral_jetField_ofExponentLEL_eq_divergence`: such a weak solution,
+  read in `W^{1,p}_0(Ω)` for `p ≤ 2`, satisfies the equation against `W^{1,q}_0(Ω)` for `q ≥ 2`.
+* `TauCeti.PDE.exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le`: an
+  estimate `‖∇u‖_{Lᵖ} ≤ D ‖G‖_{Lᵖ}` for square integrable divergence data `G`, `p ≤ 2`, gives
+  solutions in `W^{1,p}_0(Ω)` with the same estimate for all data `F ∈ Lᵖ(Ω; ℝⁿ)`.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -916,6 +926,132 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_m
     (by rwa [finrank_euclideanSpace]) hf
   simpa only [hℓ] using
     h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top ha hc hc_bound hc_nonneg hOmega ℓ
+
+/-! ### Solutions for `Lᵖ` divergence data -/
+
+/-- The difference of two weak solutions in `H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢGⁱ` with data
+`G₁, G₂ ∈ L²(Ω; ℝⁿ)` is the weak solution with datum `G₁ - G₂`. -/
+theorem UniformlyEllipticOn.forall_energyFormH1_sub_eq_divergence [DecidableEq ι] {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    {G₁ G₂ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hG₁ : MemLp G₁ 2 (mu.restrict Omega))
+    (hG₂ : MemLp G₂ 2 (mu.restrict Omega)) {u₁ u₂ : W1p0 mu Omega 2}
+    (hu₁ : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u₁ : W1p mu Omega 2) (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪G₁ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    (hu₂ : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u₂ : W1p mu Omega 2) (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪G₂ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    (v : W1p0 mu Omega 2) :
+    energyFormH1 a 0 0 ((u₁ - u₂ : W1p0 mu Omega 2) : W1p mu Omega 2) (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪(G₁ - G₂) x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
+    simpa using memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
+      h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _ hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  rw [Submodule.coe_sub, energyFormH1_sub_left (b := 0) (c := 0) hcoeff, hu₁ v, hu₂ v,
+    neg_sub_neg, ← integral_sub (hG₂.integrable_inner_of_holderConjugate (Lp.memLp _))
+      (hG₁.integrable_inner_of_holderConjugate (Lp.memLp _)), ← integral_neg]
+  refine integral_congr_ae (ae_of_all _ fun x => ?_)
+  simp only [Pi.sub_apply, inner_sub_left, neg_sub]
+
+/-- A weak solution in `H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢGⁱ`, read in `W^{1,p}_0(Ω)` for `p ≤ 2`,
+satisfies the equation against every `v ∈ W^{1,q}_0(Ω)` with `q ≥ 2`. -/
+theorem energyFormIntegral_jetField_ofExponentLEL_eq_divergence
+    [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    (hp2 : p ≤ 2) (h2q : 2 ≤ q) {u : W1p0 mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪G x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    (v : W1p0 mu Omega q) :
+    energyFormIntegral (mu.restrict Omega) a 0 0
+        (jetField (W1p.ofExponentLEL hp2 (u : W1p mu Omega 2))) (jetField (v : W1p mu Omega q)) =
+      -∫ x in Omega, ⟪G x, W1p.gradient (v : W1p mu Omega q) x⟫_ℝ ∂mu := by
+  have huv := hu ⟨_, W1p.ofExponentLE_mem_w1p0Submodule h2q v.property⟩
+  have hjv : jetField (W1p.ofExponentLE h2q (v : W1p mu Omega q)) =
+      jetField (v : W1p mu Omega q) := funext fun x => by
+    simp only [jetField_apply, W1p.coeFn_value_ofExponentLE, W1p.coeFn_gradient_ofExponentLE]
+  have hju : jetField (W1p.ofExponentLEL hp2 (u : W1p mu Omega 2)) =
+      jetField (u : W1p mu Omega 2) := funext fun x => by
+    simp only [jetField_apply, W1p.ofExponentLEL_apply, W1p.coeFn_value_ofExponentLE,
+      W1p.coeFn_gradient_ofExponentLE]
+  rw [energyFormH1_def, ← energyFormIntegral_def, W1p.coeFn_gradient_ofExponentLE] at huv
+  rw [hju, ← hjv]
+  exact huv
+
+open Filter Topology in
+/-- **Extension of an `Lᵖ` estimate from square integrable data.** Let `p ≤ 2 ≤ q` be Hölder
+conjugate exponents and let `Ω` have finite measure. If every weak solution in `H¹₀(Ω)` of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢGⁱ` with `G ∈ L²(Ω; ℝⁿ)` satisfies `‖∇u‖_{Lᵖ} ≤ D ‖G‖_{Lᵖ}`, then for every
+`F ∈ Lᵖ(Ω; ℝⁿ)` there is `u ∈ W^{1,p}_0(Ω)` with `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every
+`v ∈ W^{1,q}_0(Ω)` and `‖∇u‖_{Lᵖ} ≤ D ‖F‖_{Lᵖ}`: the limit of the solutions for simple data
+`Gₙ → F`. -/
+theorem exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
+    [DecidableEq ι] [Nonempty ι] {lam Lam : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    [p.HolderConjugate q] (hp2 : p ≤ 2) (h2q : 2 ≤ q)
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hOmega : mu Omega ≠ ∞) {D : ℝ≥0∞}
+    (hD : D ≠ ∞)
+    (hest : ∀ {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p0 mu Omega 2},
+      MemLp G 2 (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        -∫ x in Omega, ⟪G x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
+      eLpNorm (W1p.gradient (u : W1p mu Omega 2)) p (mu.restrict Omega) ≤
+        D * eLpNorm G p (mu.restrict Omega))
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F p (mu.restrict Omega)) :
+    ∃ u : W1p0 mu Omega p,
+      (∀ v : W1p0 mu Omega q, energyFormIntegral (mu.restrict Omega) a 0 0
+          (jetField (u : W1p mu Omega p)) (jetField (v : W1p mu Omega q)) =
+        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega q) x⟫_ℝ ∂mu) ∧
+      eLpNorm (W1p.gradient (u : W1p mu Omega p)) p (mu.restrict Omega) ≤
+        D * eLpNorm F p (mu.restrict Omega) := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set _)) := isFiniteMeasure_restrict.2 hOmega
+  have hp_top : p ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp2
+  -- Solve for simple, hence square integrable, data `Gₙ → F`; read the solutions in `W^{1,p}`.
+  choose G hGF hGp using fun n : ℕ => hF.exists_simpleFunc_eLpNorm_sub_lt hp_top
+    (ε := (n : ℝ≥0∞)⁻¹) (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top n))
+  have hG2 : ∀ n, MemLp (G n) 2 (mu.restrict Omega) := fun n => (G n).memLp_of_isFiniteMeasure ..
+  have hGF' : ∀ {n N : ℕ}, N ≤ n → eLpNorm (F - ⇑(G n)) p (mu.restrict Omega) ≤ (N : ℝ≥0∞)⁻¹ :=
+    fun hn => (hGF _).le.trans (ENNReal.inv_le_inv.2 (Nat.cast_le.2 hn))
+  have hinv : Tendsto (fun N : ℕ => (N : ℝ≥0∞)⁻¹) atTop (𝓝 0) := ENNReal.tendsto_inv_nat_nhds_zero
+  choose U hU using fun n => h.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top ha hOmega
+    (hG2 n)
+  set W : ℕ → W1p mu Omega p := fun n => W1p.ofExponentLEL hp2 (U n : W1p mu Omega 2)
+  have hWgrad : ∀ u : W1p mu Omega 2, eLpNorm (W1p.gradient (W1p.ofExponentLEL hp2 u)) p
+      (mu.restrict Omega) = eLpNorm (W1p.gradient u) p (mu.restrict Omega) := fun u => by
+    rw [W1p.ofExponentLEL_apply, W1p.coeFn_gradient_ofExponentLE]
+  -- The gradients of the `Wₙ` are Cauchy in `Lᵖ(Ω)`, so the `Wₙ` converge in `W^{1,p}_0(Ω)`.
+  have hcau : CauchySeq fun n => W1p.gradient (W n) := by
+    have h0 := ENNReal.Tendsto.const_mul (hinv.add hinv) (Or.inr hD)
+    rw [add_zero, mul_zero] at h0
+    refine EMetric.cauchySeq_iff_le_tendsto_0.2 ⟨_, fun n m N hn hm => ?_, h0⟩
+    rw [eDist_eq_eNorm_sub, ← W1p.gradient_sub, ← map_sub, ← Submodule.coe_sub, Lp.eNorm_def,
+      hWgrad]
+    refine (hest ((hG2 n).sub (hG2 m)) (h.forall_energyFormH1_sub_eq_divergence ha (hG2 n) (hG2 m)
+      (hU n) (hU m))).trans ?_
+    rw [← sub_sub_sub_cancel_left _ _ F]
+    gcongr
+    exact (eLpNorm_sub_le Fact.out).trans (add_le_add (hGF' hm) (hGF' hn))
+  obtain ⟨w, hwmem, hw⟩ := W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient hp_top hOmega
+    (fun n => by simpa only [W, W1p.ofExponentLEL_apply] using
+      W1p.ofExponentLE_mem_w1p0Submodule hp2 (U n).property) hcau
+  refine ⟨⟨w, hwmem⟩, fun v => ?_, ?_⟩
+  · -- The equation holds for each `Wₙ` with datum `Gₙ`; pass to the limit on both sides.
+    refine tendsto_nhds_unique ?_ (TauCeti.tendsto_integral_inner_of_tendsto_eLpNorm_sub hF hGp
+      (Lp.memLp _) (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hinv
+        (fun _ => zero_le) fun _ => hGF' le_rfl)).neg
+    simpa only [W, Function.comp_def,
+      energyFormIntegral_jetField_ofExponentLEL_eq_divergence hp2 h2q (hU _) v] using
+      ((h.continuous_energyFormIntegral_jetField_left ha (v : W1p mu Omega q)).tendsto w).comp hw
+  · -- Pass the bound `‖∇Wₙ‖ ≤ D ‖Gₙ‖ ≤ D (‖F‖ + 1 / n)` to the limit.
+    have hgrad := (((W1p.gradientL (p := p)).continuous.tendsto w).comp hw).eNorm
+    simp only [Function.comp_def, W1p.gradientL_apply, Lp.eNorm_def] at hgrad
+    have h0 := ENNReal.Tendsto.const_mul (hinv.const_add (eLpNorm F p (mu.restrict Omega)))
+      (Or.inr hD)
+    refine le_of_tendsto_of_tendsto' hgrad (by rwa [add_zero] at h0) fun n => ?_
+    rw [hWgrad]
+    refine (hest (hG2 n) (hU n)).trans ?_
+    rw [← sub_sub_cancel F (G n)]
+    gcongr
+    exact (eLpNorm_sub_le Fact.out).trans (add_le_add le_rfl (hGF' le_rfl))
 
 /-! ### The Laplacian model -/
 
