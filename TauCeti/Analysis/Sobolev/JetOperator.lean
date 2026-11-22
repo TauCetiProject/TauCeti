@@ -20,6 +20,8 @@ pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` es
 operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
 along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
+A coefficient field followed by an essentially bounded field read along a quasi-measure-preserving
+change of coordinates is again essentially bounded (`TauCeti.memLp_top_comp_comp`).
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
@@ -126,6 +128,23 @@ theorem continuousOn_jetOperator {μ : Measure (ℝ × ℝ)} {X : Type*} [Topolo
     filter_upwards [self_mem_nhdsWithin] with y hy using norm_jetOperator_sub_le (hM y hy) (hM x hx)
   exact tendsto_iff_norm_sub_tendsto_zero.mpr
     (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hle hlim)
+
+/-- Composing an essentially bounded coefficient field `N`, followed by an essentially bounded
+field `M` read along a quasi-measure-preserving map `φ`, gives an essentially bounded coefficient
+field, bounded by the product of the `L^∞` norms of `M` and `N`. -/
+theorem memLp_top_comp_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    {μ ν : Measure (ℝ × ℝ)} {φ : ℝ × ℝ → ℝ × ℝ} (hφ : QuasiMeasurePreserving φ μ ν)
+    {M : ℝ × ℝ → U →L[ℝ] W} {N : ℝ × ℝ → V × V × V →L[ℝ] U}
+    (hM : MemLp M ∞ ν) (hN : MemLp N ∞ μ) :
+    MemLp (fun z ↦ (M (φ z)).comp (N z)) ∞ μ := by
+  refine memLp_top_of_bound
+    ((ContinuousLinearMap.compL ℝ (V × V × V) U W).aestronglyMeasurable_comp₂
+      (hM.aestronglyMeasurable.comp_quasiMeasurePreserving hφ) hN.aestronglyMeasurable)
+    (lpNorm M ∞ ν * lpNorm N ∞ μ) ?_
+  filter_upwards [hφ.ae (ae_le_lpNorm_exponent_top hM), ae_le_lpNorm_exponent_top hN]
+    with z h₁ h₂
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul h₁ h₂ (norm_nonneg _) ((norm_nonneg _).trans h₁))
 
 /-- The coefficient field `(a, b, c) ↦ b + A c + C a` on jets `(a, b, c)` of the operator
 `∂s + A ∂t + C`, where `b` and `c` are the slots of the partial derivatives `∂s` and `∂t`. -/

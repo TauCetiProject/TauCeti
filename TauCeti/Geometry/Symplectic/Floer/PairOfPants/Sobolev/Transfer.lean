@@ -9,11 +9,8 @@ public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Conformal
-import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Algebra.Ring.Periodic
 import Mathlib.MeasureTheory.Function.Jacobian
-import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Transfer between the cylinder and the pair of pants along an end chart
@@ -88,27 +85,16 @@ namespace TauCeti.Floer
 
 /-! ### The change of variables along an end chart -/
 
-/-- The band coordinates are measurable. -/
-theorem measurable_endBandCoord (q : Puncture) : Measurable (endBandCoord q) := by
-  rw [funext (endBandCoord_apply q)]
-  exact (measurable_positiveEndCoord q).fst.prodMk
-    (measurable_fract.comp (measurable_positiveEndCoord q).snd)
-
 /-- Lebesgue measure on `S` is Lebesgue measure on the plane with the center of an end removed:
 the two sets differ by at most one point. -/
 theorem volume_restrict_thricePuncturedSphereReal_eq (q : Puncture) :
     volume.restrict thricePuncturedSphereReal =
       volume.restrict {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ q.endCenter} := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  refine Measure.restrict_congr_set (ae_eq_set.2 ⟨?_, ?_⟩)
-  · refine measure_mono_null (fun z hz ↦ hz.2 (ne_endCenter hz.1 q)) measure_empty
-  · refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
-      (fun z hz ↦ ?_) ((Set.toFinite _).measure_zero volume)
-    obtain ⟨-, hz⟩ := hz
-    rw [mem_thricePuncturedSphereReal_iff, not_and_or, not_not, not_not] at hz
-    rcases hz with h | h
-    · exact Or.inl (by rw [← h, ContinuousLinearEquiv.apply_symm_apply])
-    · exact Or.inr (mem_singleton_iff.2 (by rw [← h, ContinuousLinearEquiv.apply_symm_apply]))
+  refine (Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal).trans
+    (Measure.restrict_eq_self_of_ae_mem ?_).symm
+  filter_upwards [Measure.ae_ne volume (Complex.equivRealProdCLM q.endCenter)] with z hz h
+  exact hz (by rw [← h, ContinuousLinearEquiv.apply_symm_apply])
 
 /-- **Change of variables along an end chart.** The integral of a function over `S` is the
 integral over the strip `ℝ × [0, 1]` of the function read in the positive end chart `φ'_q`, times
@@ -190,9 +176,8 @@ theorem eLpNorm_smul_comp_positiveEndChart (q : Puncture) {g : ℝ × ℝ → W}
     setLIntegral_thricePuncturedSphereReal_eq_lintegral_positiveEndChart q]
   congr 1
   refine lintegral_congr fun ζ ↦ ?_
-  have hr := (positiveEndChartScale_pos q ζ).le
-  rw [ENNReal.toReal_ofNat, eNorm_smul, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
-    Real.eNorm_eq_ofReal hr, ENNReal.ofReal_rpow_of_nonneg hr zero_le_two, Real.rpow_two]
+  simp [eNorm_smul, mul_pow, Real.eNorm_eq_ofReal (positiveEndChartScale_pos q ζ).le,
+    ENNReal.ofReal_pow (positiveEndChartScale_pos q ζ).le]
 
 /-- Reading a function on the strip in the band coordinates of an end and dividing by the
 conformal scale preserves its `L²` norm. -/
@@ -213,12 +198,9 @@ theorem eLpNorm_inv_smul_comp_endBandCoord (q : Puncture) {h : ℝ × ℝ → W}
   rw [StripSobolev.stripMeasure_eq_restrict_band]
   refine setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Ico) fun ζ hζ ↦ ?_
   have hpos := positiveEndChartScale_pos q ζ
-  have hinv := (inv_pos.2 hpos).le
-  rw [endBandCoord_positiveEndChart q hζ.2, ENNReal.toReal_ofNat, eNorm_smul,
-    ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, Real.eNorm_eq_ofReal hinv,
-    ENNReal.ofReal_rpow_of_nonneg hinv zero_le_two, Real.rpow_two,
-    ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), inv_pow, mul_inv_cancel₀ (by positivity),
-    ENNReal.ofReal_one, one_mul]
+  simp [endBandCoord_positiveEndChart q hζ.2, eNorm_smul, mul_pow, ← mul_assoc,
+    Real.eNorm_eq_ofReal (inv_pos.2 hpos).le, ← ENNReal.ofReal_pow, ← ENNReal.ofReal_mul,
+    hpos.le, hpos.ne']
 
 /-- Reading an `L²` function on `S` in the positive end chart and multiplying by the conformal scale
 gives an `L²` function on the strip. -/
@@ -495,7 +477,7 @@ theorem continuousAt_sqrt_cylindricalWeight_mul {q : Puncture} {β : ℝ × ℝ 
   · have hzβ : z ∉ tsupport β := fun h ↦ hzS (hβS z h hz)
     refine (continuousAt_const (y := (0 : ℝ))).congr ?_
     filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hzβ] with y hy
-    simp [show β y = 0 from hy]
+    simp [hy]
 
 /-- The jet coefficient of the transfer along an end chart is continuous, for a `C¹` cutoff
 vanishing near the points of the plane outside `S` other than the center of the end. -/
@@ -592,7 +574,7 @@ theorem endTransferSection_mem_testSection (q : Puncture) {β : ℝ × ℝ → �
       refine hz ?_
       by_cases hzc : Complex.equivRealProdCLM.symm z = q.endCenter
       · exact endTransferSection_of_eq q β ξ hzc
-      · rw [endTransferSection_of_ne q β ξ hzc, show β z = 0 from not_not.1 h, zero_smul]
+      · rw [endTransferSection_of_ne q β ξ hzc, Function.notMem_support.1 h, zero_smul]
   refine ConformalSobolev.mem_testSection_iff.2 ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_,
     hK.of_isClosed_subset (isClosed_tsupport _) hsuppK,
     fun z hz ↦ hβS z (hsuppβ hz) (hKc z (hsuppK hz))⟩
@@ -715,19 +697,7 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
     jetOperator (volume.restrict thricePuncturedSphereReal) M (endTransfer q β f) =
       endChartLp q (jetOperator StripSobolev.stripMeasure
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
-  have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
-      StripSobolev.stripMeasure := by
-    have hCM := ae_le_lpNorm_exponent_top hM
-    have hCN := ae_le_lpNorm_exponent_top hN
-    refine memLp_top_of_bound
-      ((ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).aestronglyMeasurable_comp₂
-      (hM.aestronglyMeasurable.comp_quasiMeasurePreserving
-        (quasiMeasurePreserving_positiveEndChart q)) hN.aestronglyMeasurable)
-      (lpNorm M ∞ (volume.restrict thricePuncturedSphereReal) *
-        lpNorm (endTransferCoeff (V := V) q β) ∞ StripSobolev.stripMeasure) ?_
-    filter_upwards [(quasiMeasurePreserving_positiveEndChart q).ae hCM, hCN] with ζ h₁ h₂
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul h₁ h₂ (norm_nonneg _) ((norm_nonneg _).trans h₁))
+  have hMφ := memLp_top_comp_comp (quasiMeasurePreserving_positiveEndChart q) hM hN
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
     coeFn_endChartLp q (jetOperator StripSobolev.stripMeasure

@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Algebra.Order.Floor.Ring
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -1143,6 +1144,12 @@ theorem endBandCoord_apply (q : Puncture) (z : ℝ × ℝ) :
 theorem endBandCoord_mem (q : Puncture) (z : ℝ × ℝ) :
     endBandCoord q z ∈ (univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 :=
   ⟨mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩
+
+/-- The band coordinates are measurable. -/
+theorem measurable_endBandCoord (q : Puncture) : Measurable (endBandCoord q) := by
+  rw [funext (endBandCoord_apply q)]
+  exact (measurable_positiveEndCoord q).fst.prodMk
+    (measurable_fract.comp (measurable_positiveEndCoord q).snd)
 
 /-- A map of period one in the angular coordinate takes the same value at the positive end
 coordinates and at the band coordinates of a point. -/
