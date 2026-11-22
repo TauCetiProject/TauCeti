@@ -146,7 +146,7 @@ theorem spectralAngularFDeriv_apply (a v : FinStrictUpper n → 𝕜) (ij : FinS
     rw [spectralAngularFDeriv_def]
     exact (read.hasFDerivAt.comp a hF).fderiv
   rw [he, ContinuousLinearMap.comp_apply]
-  rfl
+  simp only [read, LinearMap.coe_toContinuousLinearMap', LinearMap.pi_apply, entryLinearMap_apply]
 
 /-- At zero angle, the angular differential is the identity. -/
 @[simp] theorem spectralAngularFDeriv_zero :
@@ -156,8 +156,7 @@ theorem spectralAngularFDeriv_apply (a v : FinStrictUpper n → 𝕜) (ij : FinS
       fun b ↦ (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜) :=
     funext fun b ↦ by simp [relativeFrame]
   rw [spectralAngularFDeriv_apply, h, hasFDerivAt_expStrictUpper_zero.fderiv,
-    skewAdjointOfStrictUpper_apply_of_lt _ ij.property]
-  rfl
+    skewAdjointOfStrictUpper_apply_of_lt _ ij.property, ContinuousLinearMap.id_apply]
 
 end Differentiation
 

@@ -124,8 +124,8 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
       spectralAngularFDeriv x.2 v ij = L v ij.val.1 ij.val.2 :=
     spectralAngularFDeriv_apply x.2 v ij
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_fderiv ?_
-  · rw [Unitary.conjStarAlgAut_apply]
-    rfl
+  · simp only [Unitary.conjStarAlgAut_apply, Function.comp_apply, F,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', Submodule.subtypeL_apply]
   · apply ContinuousLinearMap.ext
     intro v
     have hs (i j : Fin n) : star (L v.2 j i) = -(L v.2 i j) := by
@@ -151,8 +151,8 @@ theorem contDiff_spectralCoordinates {k : WithTop ℕ∞} :
       selfAdjointCoordinatesLinearMap ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
         D x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
     funext x
-    rw [spectralCoordinates, Unitary.conjStarAlgAut_apply]
-    rfl
+    rw [spectralCoordinates, Unitary.conjStarAlgAut_apply, ContinuousLinearMap.comp_apply,
+      Submodule.subtypeL_apply]
   rw [hparam]
   have h := (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := k)).comp
     (contDiff_snd : ContDiff ℝ k (Prod.snd : SelfAdjointCoordinates n 𝕜 → _))
@@ -255,11 +255,12 @@ theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoord
   let B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
     ⟨Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) D,
       (selfAdjoint.isHermitian_coe D).isSelfAdjoint.conjugate (expStrictUpper x.2)⟩
-  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := (rfl)
+  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := by
+    rw [spectralCoordinates]
   have hC : selfAdjointCoordinates ((UnitaryGroup.selfAdjointConj U) B) =
       selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U B.val) := by
-    rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply]
-    rfl
+    rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+      Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
   rw [spectralMatrix, hB, unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap, ← hC,
     ContinuousLinearEquiv.symm_apply_apply, UnitaryGroup.coe_selfAdjointConj_apply,
     ← coe_selfAdjointDiagonal]
@@ -278,7 +279,7 @@ theorem eigenvalues₀_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfA
     eigenvalues₀_conjStarAlgAut_diagonal (U * expStrictUpper x.2) hd hB,
     Subsingleton.elim (Fintype.orderIsoFinOfCardEq (Fin n) rfl)
       (Fin.castOrderIso (Fintype.card_fin n))]
-  rfl
+  simp only [Function.comp_def, Fin.castOrderIso_apply]
 
 /-- Every simple self-adjoint matrix is the center of a local spectral chart. -/
 theorem exists_spectralMatrix_openPartialHomeomorph
