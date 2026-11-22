@@ -68,6 +68,8 @@ finite union of trivializing open sets, hence over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso`: `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass`: it sends the fibre class
   over `b` to the class of `b`.
+* `TauCeti.thomPairSignFiberClass_neg`: reversing the orientation of the model fibre negates the
+  fibre classes.
 
 ## References
 
@@ -112,6 +114,12 @@ theorem thomPairSignLocalSystem_def :
       (LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
         ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι) :=
   (rfl)
+
+/-- The fibres of the pulled-back orientation system are fibres of `o(E)`, so they are projective.
+-/
+instance projective_thomPairSignLocalSystem_obj (v : FundamentalGroupoid (thomPair F E).fst) :
+    Projective ((thomPairSignLocalSystem F E R hι).obj v) :=
+  LocalCoefficientSystem.projective_pullback_obj_obj (X := TopCat.of (TotalSpace F E)) _ _ v
 
 variable (F E R) in
 /-- The pulled-back orientation system restricted to the part of the total space over `W`. -/
@@ -320,8 +328,7 @@ private theorem fiberClassAux_eq (e e' : Trivialization F (π F E)) [e.IsLinear 
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
     rw [fiberClassAux, fiberClassAux, h', hinv]
   · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, h]
-      exact (neg_neg ω).symm
+      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =
@@ -754,6 +761,19 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     singularHomology₀Section_naturality]
   simp only [TopCat.isoOfHomeo_hom, TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
     Homeomorph.Set.univ_apply]
+
+/-- Reversing the orientation `ω` of the model fibre negates the fibre classes: it reverses the
+orientation of `E_b` by which the coefficients are trivialized, and leaves the class of the fibre
+pair unchanged. -/
+@[simp]
+theorem thomPairSignFiberClass_neg (b : B) :
+    thomPairSignFiberClass F E R hι (-ω) b = -thomPairSignFiberClass F E R hι ω b := by
+  rw [thomPairSignFiberClass, thomPairSignFiberClass, ← map_neg]
+  congr 1
+  rw [fiberClass, fiberClass, fiberClassAux, fiberClassAux,
+    Trivialization.mapOrientation_symm_neg, fiberSignIso_neg_inv,
+    TopPair.twistedHomologyCoefficientMap_neg]
+  simp only [ModuleCat.hom_neg, LinearMap.neg_apply, map_neg]
 
 end FiberClass
 
