@@ -209,9 +209,7 @@ theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × �
     (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
   refine ((hjm.integrable_norm_pow two_ne_zero).const_mul 3).mono' ?_
     (Eventually.of_forall fun z ↦ ?_)
-  · have h := (hξ.continuous_fderiv one_ne_zero).clm_apply (continuous_const (y := (1, 0)))
-    have h' := (hξ.continuous_fderiv one_ne_zero).clm_apply (continuous_const (y := (0, 1)))
-    exact (((h.norm.pow 2).add (h'.norm.pow 2)).add (hξ.continuous.norm.pow 2)).aestronglyMeasurable
+  · exact (continuous_energy hξ).aestronglyMeasurable
   · have h₁ := norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) z
     have h₂ := norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) z
     have h₃ := norm_le_norm_jet (ξ : ℝ × ℝ → V) z
@@ -244,8 +242,8 @@ private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM :
   set R₀ := max R 0
   have hR₀ : ∀ s t, R₀ ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
     hR s t ((le_max_left R 0).trans hs)
-  have hvan : ∀ s t, s ∉ Ioo (-R₀) R₀ → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
-    hR₀ s t (by rwa [mem_Ioo, ← abs_lt, not_lt] at hs)
+  have hvan : ∀ s t, s ∉ Ioo (-R₀) R₀ → (ξ : ℝ × ℝ → V) (s, t) = 0 :=
+    eq_zero_of_notMem_Ioo_neg hR₀
   set x := ‖jetOperator M (jetLp S ξ)‖
   set y := ‖restrictValue T (jetLp S ξ)‖
   -- The squared norms of the two terms of the estimate as integrals.
@@ -260,12 +258,8 @@ private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM :
   have hy : y ^ 2 = ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 :=
     sq_norm_restrictValue_jetLp T ξ
   have hmain := hest ξ ξ.property (neg_le_self (le_max_right R 0)) hvan
-  have hF : ∀ z, jet (ξ : ℝ × ℝ → V) z = 0 → ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
-      ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 = 0 := fun z hz ↦ by
-    simp only [jet_apply, Prod.mk_eq_zero] at hz
-    obtain ⟨h₀, h₁, h₂⟩ := hz
-    simp [h₀, h₁, h₂]
-  rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ hF, ← hx, ← hy] at hmain
+  rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ fun _ ↦ energy_eq_zero_of_jet_eq_zero,
+    ← hx, ← hy] at hmain
   -- Conclude by taking square roots.
   have hsq : ‖jetLp S ξ‖ ^ 2 ≤ (√(max C 0) * (x + y)) ^ 2 := by
     rw [mul_pow, Real.sq_sqrt (le_max_right _ _)]

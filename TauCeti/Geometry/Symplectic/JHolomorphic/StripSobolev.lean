@@ -236,6 +236,8 @@ theorem isClosed_range_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (hC x).trans ?_).isClosed_range (cauchyRiemann J L₀ L₁).uniformContinuous
   exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal C) (norm_nonneg _)
 
+end InnerProductSpace
+
 /-! ### Compactly supported zeroth-order perturbations -/
 
 omit [FiniteDimensional ℝ V] in
@@ -262,6 +264,14 @@ noncomputable def cauchyRiemannAddJetCoeff (A : ℝ × ℝ → V →L[ℝ] V) (z
 theorem cauchyRiemannAddJetCoeff_apply (A : ℝ × ℝ → V →L[ℝ] V) (z : ℝ × ℝ) (v : V × V × V) :
     cauchyRiemannAddJetCoeff J A z v = v.2.1 + J v.2.2 + A z v.1 :=
   (rfl)
+
+/-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient field gives `∂s ξ + J ∂t ξ + A ξ`. -/
+theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × ℝ → V →L[ℝ] V)
+    (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    cauchyRiemannAddJetCoeff J A z (jet ξ z) =
+      fderiv ℝ ξ z stdComplexLineReal + J (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
+  rw [cauchyRiemannAddJetCoeff, add_apply, cauchyRiemannJetCoeff_jet,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', jet_apply]
 
 /-- A continuous zeroth-order term gives a continuous coefficient field. -/
 theorem continuous_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) :
@@ -311,7 +321,7 @@ private theorem setIntegral_cauchyRiemann_le {A : ℝ × ℝ → V →L[ℝ] V} 
     intro z hz
     have hsplit : fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1)) =
         cauchyRiemannAddJetCoeff J A z (jet ξ z) - A z (ξ z) := by
-      rw [cauchyRiemannAddJetCoeff_apply, jet_apply]
+      rw [cauchyRiemannAddJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq]
       abel
     have hAξ : ‖A z (ξ z)‖ ^ 2 ≤ B ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z := by
       by_cases hzK : z ∈ K
@@ -333,6 +343,11 @@ private theorem setIntegral_cauchyRiemann_le {A : ℝ × ℝ → V →L[ℝ] V} 
   simp only [Pi.add_apply]
   rw [integral_add (hiF.const_mul 2) hiK, integral_const_mul, integral_const_mul,
     setIntegral_indicator hK, inter_eq_right.2 (prod_mono (subset_univ _) subset_rfl)]
+
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
 /-- **The semi-Fredholm estimate for `∂s + J ∂t + A` on the strip.** Let `J` be compatible with
 `ω` in the inner product of `V`, let `L₀`, `L₁` be isotropic subspaces with `L₀ ∩ L₁ = 0`, for
@@ -356,14 +371,10 @@ theorem exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff
     (F := fun z ↦ ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2) hvan
     fun z hz ↦ by simp [hz]] at hD
   -- The energy over `[a, b] × [0, 1]` is at most the energy over the strip.
-  have hd := hξ.continuous_fderiv one_ne_zero
   have hQ := setIntegral_mono_set (μ := volume) (s := Icc a b ×ˢ Icc (0 : ℝ) 1)
     (t := univ ×ˢ Icc (0 : ℝ) 1)
     (f := fun z ↦ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2)
-    (integrable_of_jet_eq_zero hR
-      ((((hd.clm_apply continuous_const).norm.pow 2).add
-        ((hd.clm_apply continuous_const).norm.pow 2)).add (hξ.continuous.norm.pow 2))
-      fun z hz ↦ by simp_all [jet_apply])
+    (integrable_of_jet_eq_zero hR (continuous_energy hξ) fun _ ↦ energy_eq_zero_of_jet_eq_zero)
     (Eventually.of_forall fun z ↦ by positivity)
     (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
   have hFnn : 0 ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2 :=

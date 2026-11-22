@@ -147,7 +147,7 @@ theorem jet_eq_zero_of_notMem_Icc {a b : ℝ} (hvan : ∀ s t, s ∉ Ioo a b →
 
 omit [NormedSpace ℝ V] in
 /-- A section vanishing for `|s| ≥ R` vanishes for `s ∉ (-R, R)`. -/
-private theorem eq_zero_of_notMem_Ioo_neg {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) (s t : ℝ)
+theorem eq_zero_of_notMem_Ioo_neg {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) (s t : ℝ)
     (hs : s ∉ Ioo (-R) R) : ξ (s, t) = 0 :=
   hR s t (by rwa [mem_Ioo, ← abs_lt, not_lt] at hs)
 
@@ -359,6 +359,21 @@ theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
   calc ‖jet ξ z‖ ^ 2 ≤ (√(‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 +
         ‖ξ z‖ ^ 2)) ^ 2 := by gcongr
     _ = _ := Real.sq_sqrt (by positivity)
+
+/-- The pointwise `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map is
+continuous. -/
+theorem continuous_energy (hξ : ContDiff ℝ 1 ξ) :
+    Continuous fun z ↦ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2 := by
+  have hd := hξ.continuous_fderiv one_ne_zero
+  exact (((hd.clm_apply continuous_const).norm.pow 2).add
+    ((hd.clm_apply continuous_const).norm.pow 2)).add (hξ.continuous.norm.pow 2)
+
+/-- The pointwise `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` vanishes where the jet
+does. -/
+theorem energy_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (hz : jet ξ z = 0) :
+    ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2 = 0 := by
+  simp only [jet_apply, Prod.mk_eq_zero] at hz
+  simp [hz]
 
 /-! ### The `L²` jets of a space of sections and their closure -/
 
