@@ -250,6 +250,8 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
     have hAAv : A' (A' v) = -(c ^ 2) • v := by
       simpa [hsq] using LinearMap.congr_fun hAA v
     obtain ⟨q, p, hqp, hAq, hAp, -⟩ := exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul hAAv hc
+    -- `ω' q p` is `ω q p`, and the coercion to `V` of `A' q = -c • p` is `A q = -c • p`, both
+    -- definitionally (the restrictions and the scalar action on `L` evaluate as on `V`).
     exact ⟨q, q.property, p, p.property, c, fun h ↦ by simp [h] at hc, hqp,
       fun _ ↦ ⟨by rw [hsq, neg_neg], congrArg Subtype.val hAq, congrArg Subtype.val hAp⟩,
       fun h ↦ absurd h hneg.not_gt⟩
@@ -258,6 +260,7 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
     have ha : √ν ≠ 0 := (Real.sqrt_pos.2 hpos).ne'
     obtain ⟨q, p, hqp, hAq, hAp⟩ :=
       exists_apply_eq_one_apply_eq_smul_apply_eq_neg_smul hA' ha (by rw [hsq, hAA])
+    -- As in the elliptic case, `hqp`, `hAq` and `hAp` hold on `V` definitionally.
     exact ⟨q, q.property, p, p.property, √ν, ha, hqp, fun h ↦ absurd h hpos.not_gt,
       fun _ ↦ ⟨hsq, congrArg Subtype.val hAq, congrArg Subtype.val hAp⟩⟩
 
