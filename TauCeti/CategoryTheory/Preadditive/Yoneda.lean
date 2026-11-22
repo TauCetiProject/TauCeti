@@ -66,6 +66,8 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
+* `CategoryTheory.preadditiveYoneda_map_comp_eq_zero_iff`: `(-, u) ≫ π` vanishes exactly when
+  `π` kills `u`.
 * `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
   an additive functor.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
@@ -121,6 +123,17 @@ theorem preadditiveYoneda_obj_hom_ext {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}
     α = β :=
   ((Functor.whiskeringRight Cᵒᵖ _ _).obj (forget AddCommGrpCat)).map_injective
     (yonedaEquiv.injective h)
+
+/-- A morphism `(-, u) ≫ π` out of a representable functor vanishes exactly when `π` kills `u`. -/
+theorem preadditiveYoneda_map_comp_eq_zero_iff {V Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (u : V ⟶ Y) (π : preadditiveYoneda.obj Y ⟶ F) :
+    preadditiveYoneda.map u ≫ π = 0 ↔ π.app (op V) u = 0 := by
+  -- Evaluated at the identity of `V`, the composite `(-, u) ≫ π` is `π u`.
+  have key : (preadditiveYoneda.map u ≫ π).app (op V) (𝟙 V) = π.app (op V) u :=
+    congrArg (π.app (op V)) (Category.id_comp u)
+  refine ⟨fun h ↦ by rw [← key, h]; rfl, fun h ↦ preadditiveYoneda_obj_hom_ext ?_⟩
+  rw [key, h]
+  rfl
 
 /-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
 instance preadditiveYoneda_additive :

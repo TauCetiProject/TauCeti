@@ -159,6 +159,12 @@ theorem id_mem_projectivelyTrivialIdeal_iff (X : C) :
     rw [mem_projectiveStableIdeal_iff, ObjectProperty.factorsThrough_iff]
     exact ⟨X, hX, 𝟙 X, 𝟙 X, by simp⟩
 
+/-- A morphism out of a relative projective is projectively trivial. -/
+theorem mem_projectivelyTrivialIdeal_of_isProjective {P Z : C} (hP : E.isProjective P)
+    (c : P ⟶ Z) : c ∈ E.projectivelyTrivialIdeal.hom P Z := by
+  simpa using E.projectivelyTrivialIdeal.comp_mem_right c
+    ((id_mem_projectivelyTrivialIdeal_iff P).2 hP)
+
 /-- **An object `X` is relatively projective exactly when `Ext¹_E(X, -)` vanishes.** -/
 theorem isProjective_iff_forall_ext1_eq_zero (X : C) :
     E.isProjective X ↔ ∀ (W : C) (ξ : E.Ext1 X W), ξ = 0 := by

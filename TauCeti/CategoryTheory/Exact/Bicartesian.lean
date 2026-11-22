@@ -224,21 +224,27 @@ theorem bicartesianSq_of_isPullback_of_isDeflation (E : ExactStructure C)
 
 /-! ### The bicartesian characterization -/
 
+/-- **A deflation plus any morphism is a deflation.** If `c : P ⟶ Z` is a deflation, then so is
+`[c, g] : P ⊞ Y ⟶ Z` for every `g : Y ⟶ Z`: it is the deflation `c ⊞ 𝟙` followed by the split
+deflation `[𝟙, g]`. -/
+theorem isDeflation_biprod_desc (E : ExactStructure C) {P Y Z : C} {c : P ⟶ Z}
+    (hc : E.IsDeflation c) (g : Y ⟶ Z) : E.IsDeflation (biprod.desc c g) := by
+  have h : biprod.map c (𝟙 Y) ≫ biprod.desc (𝟙 Z) g = biprod.desc c g := by
+    apply biprod.hom_ext' <;> simp
+  -- Rewriting cannot key through the unexposed `IsDeflation` abbreviation.
+  change E.deflations _
+  rw [← h]
+  exact E.isDeflation_comp _ _ (E.isDeflation_biprod_id hc Y)
+    (E.isDeflation_of_split_isDeflation (split_isDeflation_biprod_desc_id_left g))
+
 /-- The biproduct short complex `W ⟶ X ⊞ Y ⟶ Z`, with maps `(f,g)` and `(h,-i)`, of a pullback
 square of a deflation `h` is a conflation. -/
 theorem conflation_shortComplex'_of_isPullback_of_isDeflation (E : ExactStructure C)
     {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
     (hh : E.IsDeflation h) (hsq : IsPullback f g h i) :
     E.Conflation hsq.toCommSq.shortComplex' := by
-  have hfac : biprod.map h (𝟙 Y) ≫ biprod.desc (𝟙 Z) (-i) = biprod.desc h (-i) := by
-    apply biprod.hom_ext' <;> simp
-  have hg : E.IsDeflation (biprod.desc h (-i)) := by
-    -- Rewriting cannot key through the unexposed `IsDeflation` abbreviation.
-    change E.deflations (biprod.desc h (-i))
-    rw [← hfac]
-    exact E.isDeflation_comp _ _ (E.isDeflation_biprod_id hh Y)
-      (E.isDeflation_of_split_isDeflation (split_isDeflation_biprod_desc_id_left (-i)))
-  exact E.conflation_of_isLimit_of_isDeflation hsq.isLimitKernelFork hg
+  exact E.conflation_of_isLimit_of_isDeflation hsq.isLimitKernelFork
+    (E.isDeflation_biprod_desc hh (-i))
 
 /-- For a commutative square whose top map `f` is an inflation, the biproduct short complex
 `W ⟶ X ⊞ Y ⟶ Z` is a conflation exactly when the square is a pushout. -/
