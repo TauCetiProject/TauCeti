@@ -203,6 +203,7 @@ theorem radialExtension_refl :
     rfl
 
 /-- The radial extension of a composite diffeotopy is the composite of the radial extensions. -/
+@[simp]
 theorem radialExtension_trans (Ψ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1)) :
     (Φ.trans Ψ).radialExtension hk = (Φ.radialExtension hk).trans (Ψ.radialExtension hk) :=
   _root_.Diffeomorph.ext fun x ↦ by
@@ -237,6 +238,7 @@ theorem radialExtension_coe_sphere (u : sphere (0 : E) 1) :
   simpa using Φ.radialExtension_smul_coe_of_ge hk (by norm_num : (3 / 4 : ℝ) ≤ 1) u
 
 /-- The radial extension maps each closed ball about the origin onto itself. -/
+@[simp]
 theorem image_radialExtension_closedBall (r : ℝ) :
     Φ.radialExtension hk '' closedBall 0 r = closedBall 0 r := by
   rw [_root_.Diffeomorph.image_eq_preimage_symm]
