@@ -154,7 +154,8 @@ noncomputable def piPointsContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
   toMulEquiv := AlgHom.piValueMulEquiv
   continuous_toFun := continuous_pi fun i ↦
-    AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)
+    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr fun x ↦
+      WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by simp
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
     (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun f ↦
       funext fun i ↦ (AlgHom.piValueMulEquiv_symm_apply f h i).symm
@@ -165,15 +166,16 @@ variable {k H R}
 @[simp]
 theorem piPointsContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
     piPointsContinuousMulEquiv k H R x i = AlgHom.mapValue (Pi.evalAlgHom k R i) x :=
-  (rfl)
+  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by simp [piPointsContinuousMulEquiv]
 
 /-- Evaluating `(piPointsContinuousMulEquiv k H R).symm f` on `h : H` at `i` gives
 `(f i).ofConv h`. -/
 @[simp]
 theorem piPointsContinuousMulEquiv_symm_apply_ofConv
     (f : ∀ i, WithConv (H →ₐ[k] R i)) (h : H) (i : ι) :
-    ((piPointsContinuousMulEquiv k H R).symm f).ofConv h i = (f i).ofConv h :=
-  AlgHom.piValueMulEquiv_symm_apply f h i
+    ((piPointsContinuousMulEquiv k H R).symm f).ofConv h i = (f i).ofConv h := by
+  have hs : (piPointsContinuousMulEquiv k H R).symm f = AlgHom.piValueMulEquiv.symm f := rfl
+  rw [hs, AlgHom.piValueMulEquiv_symm_apply]
 
 end BialgebraPi
 

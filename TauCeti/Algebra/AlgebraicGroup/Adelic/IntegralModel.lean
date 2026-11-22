@@ -194,7 +194,7 @@ theorem mem_subringPoints_iff_of_adjoin_eq_top (M : IntegralModel R K H S)
      fun ⟨x, hx⟩ ↦ ⟨toConv x, WithConv.ofConv_injective (by simp [hx])⟩⟩
   simp only [hmem, AlgHom.range_comp_left_eq_of_adjoin_eq_top (subringInclusion B hB)
     B.subtype_injective ha, Set.mem_ofPred_eq, pointsMulEquiv_symm_apply_ofConv]
-  exact forall_congr' fun _ ↦ ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.2, fun hx ↦ ⟨⟨_, hx⟩, rfl⟩⟩
+  exact forall_congr' fun _ ↦ ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨_, hx⟩, rfl⟩⟩
 
 /-- Canonical topological group isomorphism identifying `A`-valued `(S.integer K)`-points of
 `M.coordinate` with `A`-valued `K`-points of `H` for a commutative topological `K`-algebra `A`. -/
@@ -265,13 +265,13 @@ theorem isCompact_subringPoints (M : IntegralModel R K H S) {A : Type w} [CommRi
     IsCompact (M.subringPoints B hB : Set (WithConv (H →ₐ[K] A))) := by
   let := subringAlgebra B hB
   exact isCompact_range ((M.pointsContinuousMulEquiv A).continuous.comp
-    (AlgHom.continuous_mapValue (ψ := subringInclusion B hB) continuous_subtype_val))
+    (AlgHom.continuous_mapValue (ψ := subringInclusion B hB) continuous_subtypeVal))
 
 /-- For `v ∉ S`, `M.localPoints v hv` is the subgroup `𝒢(𝒪_v) ≤ G(K_v)` of `v`-integral points. -/
 noncomputable def localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R)
     (hv : v ∉ S) : Subgroup (LocalPoints K H v) :=
   M.subringPoints (v.adicCompletionIntegers K).toSubring fun x ↦
-    (v.algebraMap_mem_adicCompletionIntegers_iff (x : K)).mpr (x.2 v hv)
+    (v.algebraMap_mem_adicCompletionIntegers_iff (x : K)).mpr (x.property v hv)
 
 /-- `g ∈ M.localPoints v hv` iff `g` evaluates every integral coordinate into `𝒪_v`. -/
 @[simp]
@@ -306,7 +306,7 @@ theorem isCompact_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum
       Set.range ((↑) : v.adicCompletionIntegers K → v.adicCompletion K) := by
     ext x; simp [ValuationSubring.mem_toSubring]
   let _ : CompactSpace (v.adicCompletionIntegers K).toSubring :=
-    isCompact_iff_compactSpace.mp (hset ▸ isCompact_range continuous_subtype_val)
+    isCompact_iff_compactSpace.mp (hset ▸ isCompact_range continuous_subtypeVal)
   exact M.isCompact_subringPoints (v.adicCompletionIntegers K).toSubring _
 
 open scoped Classical in
@@ -367,7 +367,7 @@ theorem compactOpenSubgroups_subgroup (M : IntegralModel R K H (∅ : Set (Heigh
 `K`-rational points. -/
 noncomputable def globalPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
     (hST : S ⊆ T) : Subgroup (WithConv (H →ₐ[K] K)) :=
-  M.subringPoints (T.integer K).toSubring fun x ↦ Set.integer_mono K hST x.2
+  M.subringPoints (T.integer K).toSubring fun x ↦ Set.integer_mono K hST x.property
 
 /-- `g ∈ M.globalPoints T hST` iff its values on `M.embed` lie in `T.integer K`. -/
 @[simp]
@@ -435,7 +435,7 @@ theorem subringPoints_enlarge (M : IntegralModel R K H S) (hSS' : S ⊆ S')
     {A : Type w} [CommRing A] [Algebra K A] (B : Subring A)
     (hB' : ∀ y : S'.integer K, algebraMap K A (y : K) ∈ B) :
     (M.enlarge hSS').subringPoints B hB' =
-      M.subringPoints B (fun x ↦ hB' ⟨x.1, Set.integer_mono K hSS' x.2⟩) := by
+      M.subringPoints B (fun x ↦ hB' ⟨x.val, Set.integer_mono K hSS' x.property⟩) := by
   let := integerInclusionAlgebra K hSS'
   ext g; simp only [mem_subringPoints_iff]
   refine ⟨fun h m ↦ ?_, fun h t ↦ ?_⟩
@@ -479,7 +479,7 @@ theorem eventually_localPoints_ofConv_mem {S : Set (HeightOneSpectrum R)}
       ∀ g ∈ M.localPoints v hv, g.ofConv (M.baseChangeEquiv t) ∈ v.adicCompletionIntegers K by
     simpa only [M.baseChangeEquiv.apply_symm_apply] using this (M.baseChangeEquiv.symm h)
   intro t; refine TensorProduct.inductionOn t (fun c m ↦ ?_) (fun _ _ hx hy ↦ ?_)
-  · filter_upwards [(algebraMap K (FiniteAdeleRing R K) c).2] with v hc hv g hg
+  · filter_upwards [(algebraMap K (FiniteAdeleRing R K) c).property] with v hc hv g hg
     rw [M.baseChangeEquiv_tmul, map_smul, Algebra.smul_def]
     exact mul_mem hc ((M.mem_localPoints_iff hv).mp hg m)
   · filter_upwards [hx, hy] with v hvx hvy hv g hg

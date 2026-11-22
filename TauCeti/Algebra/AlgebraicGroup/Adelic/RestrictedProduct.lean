@@ -49,7 +49,8 @@ arising from `(FiniteAdeleRing.sIntegralAdeles R K T)`-valued points of `M.coord
 noncomputable def sIntegralAdelicPoints (M : IntegralModel R K H S)
     (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) : Subgroup (FiniteAdelicPoints R K H) :=
   M.subringPoints (FiniteAdeleRing.sIntegralAdeles R K T).toSubring fun x ↦
-    (FiniteAdeleRing.algebraMap_mem_sIntegralAdeles_iff T (x : K)).mpr (Set.integer_mono K hST x.2)
+    (FiniteAdeleRing.algebraMap_mem_sIntegralAdeles_iff T (x : K)).mpr
+      (Set.integer_mono K hST x.property)
 
 /-- `x ∈ M.sIntegralAdelicPoints T hST` iff `x` maps `M.embed` into
 `FiniteAdeleRing.sIntegralAdeles`. -/
@@ -135,7 +136,7 @@ theorem exists_finite_mem_sIntegralAdelicPoints (M : IntegralModel R K H S) (hS 
 /-- When `S` is finite, `⨆_{T ⊇ S finite} M.sIntegralAdelicPoints T = ⊤`. -/
 theorem iSup_sIntegralAdelicPoints_eq_top (M : IntegralModel R K H S) (hS : S.Finite) :
     (⨆ T : {T : Set (HeightOneSpectrum R) // S ⊆ T ∧ T.Finite},
-      M.sIntegralAdelicPoints T.1 T.2.1) = ⊤ :=
+      M.sIntegralAdelicPoints T.val T.property.left) = ⊤ :=
   eq_top_iff.mpr fun x _ ↦ let ⟨T, hST, hT, hx⟩ := M.exists_finite_mem_sIntegralAdelicPoints hS x
     Subgroup.mem_iSup_of_mem ⟨T, hST, hT⟩ hx
 
@@ -164,9 +165,9 @@ private theorem continuous_toRestrictedProductMonoidHom (M : IntegralModel R K H
     (continuous_restrictedProduct_iff_of_forall_mem (T := Tᶜ)
       (le_principal_iff.mpr hT.compl_mem_cofinite) fun u v hv ↦ by
         rw [SetLike.mem_coe, M.level_of_notMem (fun hvS ↦ hv (hST hvS))]
-        exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST).mp u.2 v hv).mpr <|
+        exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST).mp u.property v hv).mpr <|
       continuous_pi fun v ↦
-        (FiniteAdelicPoints.continuous_localProjection v).comp continuous_subtype_val
+        (FiniteAdelicPoints.continuous_localProjection v).comp continuous_subtypeVal
   exact (continuousOn_iff_continuous_domRestrict.mpr hrestr).continuousAt
     ((M.isOpen_sIntegralAdelicPoints T hST).mem_nhds hx₀)
 
