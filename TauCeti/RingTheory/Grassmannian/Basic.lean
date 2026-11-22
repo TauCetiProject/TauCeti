@@ -355,7 +355,7 @@ theorem map_grassmannianCongr_baseChange (e : M ≃ₗ[R] M') (f : A →ₐ[R] B
   ext : 1
   simp only [LinearEquiv.toSubmodule_grassmannianCongr_apply, map_toSubmodule_eq_span,
     Submodule.map_span, Submodule.map_coe, ← Set.image_comp]
-  refine congrArg _ (Set.image_congr' fun x ↦ ?_)
+  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
   | tmul a m => simp
