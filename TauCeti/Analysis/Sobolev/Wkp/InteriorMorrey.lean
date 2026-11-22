@@ -244,6 +244,23 @@ theorem Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact
 
 /-! ### Differentiability for `p` above the dimension -/
 
+/-- The precise representative of the weak derivative `∂ᵥu` of `u ∈ W^{2,p}(Ω)` is a weak
+derivative of the precise representative of `u` in the direction `v`. -/
+private theorem Wkp.hasWeakLineDerivOn_preciseRepresentative_lineDerivL (v : E)
+    (u : Wkp mu Omega p 2) :
+    HasWeakLineDerivOn mu Omega (preciseRepresentative mu (Wkp.value 2 u))
+      (preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL v 1 u))) v :=
+  ((Wkp.hasWeakLineDerivOn_lineDerivL v 1 u).congr_ae
+    (Wkp.ae_eq_preciseRepresentative 2 u)).congr_ae_deriv (Wkp.ae_eq_preciseRepresentative 1 _)
+
+/-- For `p > n`, the precise representative of the weak derivative `∂ᵥu` of `u ∈ W^{2,p}(Ω)` is
+continuous on `Ω`. -/
+private theorem Wkp.continuousOn_preciseRepresentative_lineDerivL
+    (hp : (finrank ℝ E : ℝ≥0∞) < p) (v : E) (u : Wkp mu Omega p 2) :
+    ContinuousOn (preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL v 1 u))) Omega := by
+  simpa only [Wkp.value_one] using
+    W1p.continuousOn_preciseRepresentative hp (Wkp.lineDerivL v 1 u)
+
 /-- For `p > n`, the precise representative `u*` of `u ∈ W^{2,p}(Ω)` is `C¹` on `Ω`, and its
 derivative is assembled from the precise representatives of the weak derivatives `∂ᵢu` along an
 orthonormal basis. -/
@@ -254,15 +271,11 @@ private theorem Wkp.contDiffOn_preciseRepresentative_and_fderiv_eq {ι : Type*} 
         ∑ i, preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL (b i) 1 u)) x •
           innerSL ℝ (b i) := by
   set G : ι → E → ℝ := fun i => preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL (b i) 1 u))
-  have hGc : ∀ i, ContinuousOn (G i) Omega := fun i => by
-    simpa only [G, Wkp.value_one] using
-      W1p.continuousOn_preciseRepresentative hp (Wkp.lineDerivL (b i) 1 u)
+  have hGc : ∀ i, ContinuousOn (G i) Omega := fun i =>
+    Wkp.continuousOn_preciseRepresentative_lineDerivL hp (b i) u
   -- The precise representatives of the `∂ᵢu` are weak derivatives of that of `u`.
   have hdG : ∀ i, HasWeakLineDerivOn mu Omega (preciseRepresentative mu (Wkp.value 2 u)) (G i)
-      (b i) := fun i =>
-    ((Wkp.hasWeakLineDerivOn_lineDerivL (b i) 1 u).congr_ae
-      (Wkp.ae_eq_preciseRepresentative 2 u)).congr_ae_deriv
-      (Wkp.ae_eq_preciseRepresentative 1 _)
+      (b i) := fun i => Wkp.hasWeakLineDerivOn_preciseRepresentative_lineDerivL (b i) u
   have hcont : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) Omega :=
     Wkp.continuousOn_preciseRepresentative
       (hp.trans_le (le_mul_of_one_le_left' one_le_two)) u
@@ -293,18 +306,11 @@ theorem Wkp.fderiv_preciseRepresentative_apply (hp : (finrank ℝ E : ℝ≥0∞
   -- Both sides are continuous weak derivatives of `ū` in the direction `v`.
   have h₁ : HasWeakLineDerivOn mu Omega ū (fun y => fderiv ℝ ū y v) v :=
     (hū.hasWeakFDerivOn_fderiv (μ := mu)).hasWeakLineDerivOn v
-  have h₂ : HasWeakLineDerivOn mu Omega ū
-      (preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL v 1 u))) v :=
-    ((Wkp.hasWeakLineDerivOn_lineDerivL v 1 u).congr_ae
-      (Wkp.ae_eq_preciseRepresentative 2 u)).congr_ae_deriv
-      (Wkp.ae_eq_preciseRepresentative 1 _)
   have hc₁ : ContinuousOn (fun y => fderiv ℝ ū y v) Omega :=
     ((hū.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply continuousOn_const)
-  have hc₂ :
-      ContinuousOn (preciseRepresentative mu (Wkp.value 1 (Wkp.lineDerivL v 1 u))) Omega := by
-    simpa only [Wkp.value_one] using
-      W1p.continuousOn_preciseRepresentative hp (Wkp.lineDerivL v 1 u)
-  exact Measure.eqOn_open_of_ae_eq (h₁.ae_eq h₂) Omega.isOpen hc₁ hc₂ hx
+  exact Measure.eqOn_open_of_ae_eq
+    (h₁.ae_eq (Wkp.hasWeakLineDerivOn_preciseRepresentative_lineDerivL v u)) Omega.isOpen hc₁
+    (Wkp.continuousOn_preciseRepresentative_lineDerivL hp v u) hx
 
 /-- **Hölder continuity of the derivative of `W^{2,p}` functions for `p` above the dimension.** If
 `n < p ≤ ∞`, where `n` is the dimension, the derivative of the precise representative of any
