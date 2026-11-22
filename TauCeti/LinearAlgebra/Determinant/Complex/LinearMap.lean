@@ -200,6 +200,13 @@ theorem IsComplexPositiveDetLine.ne_zero [FiniteDimensional ℂ (N ⧸ range f)]
   rintro rfl
   exact IsComplexPositiveTMulDual.ne_zero hz f.detLineRestrictScalarsEquiv.map_zero
 
+/-- A complex positive element of the determinant line of an onto complex-linear map is nonzero:
+the cokernel vanishes. -/
+theorem IsComplexPositiveDetLine.ne_zero_of_surjective (hf : Function.Surjective f)
+    (hz : f.IsComplexPositiveDetLine z) : z ≠ 0 :=
+  have : Subsingleton (N ⧸ range f) := Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf)
+  hz.ne_zero
+
 /-- Two complex positive elements of the determinant line of a complex-linear map differ by a
 positive factor. -/
 theorem IsComplexPositiveDetLine.exists_pos_smul_eq [FiniteDimensional ℂ (N ⧸ range f)]

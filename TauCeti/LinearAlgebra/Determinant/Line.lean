@@ -98,6 +98,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
   `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
   functorial.
+* `LinearMap.detLineEquivOfBijective_detLineCongrOfEq`: for equal bijective maps, that
+  identification commutes with the identifications of the determinant lines with the scalars.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -602,6 +604,15 @@ theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
     (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
   subst h
   simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
+
+/-- The identification of the determinant lines of equal bijective maps commutes with their
+identifications with the scalars. -/
+@[simp]
+theorem detLineEquivOfBijective_detLineCongrOfEq [Nontrivial R] {g : M →ₗ[R] N} (h : f = g)
+    (hg : Function.Bijective g) (z : f.detLine) :
+    detLineEquivOfBijective hg (detLineCongrOfEq h z) = detLineEquivOfBijective (h ▸ hg) z := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
 
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
