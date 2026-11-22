@@ -39,9 +39,14 @@ Complex conjugation of the `L²` function is a real-linear isometric involution
 real elements are its fixed points (`BesselPotentialSpace.mem_realSubmodule_iff_conjCLM_eq`). The
 real part `(F + conj F) / 2` is therefore a bounded real-linear projection
 `BesselPotentialSpace.realPartCLM` of `H^s(E)` onto the real subspace
-(`BesselPotentialSpace.realPartCLM_coe`). Composing with it turns a smooth map into `H^s(E)` that
-takes real values into a smooth map into the real subspace, with the same order of smoothness,
-analytic included.
+(`BesselPotentialSpace.realPartCLM_coe`), whose `L²` function is the real part of that of `F`
+(`BesselPotentialSpace.coeFn_inclusionLp_realPartCLM`). Composing with it turns a smooth map into
+`H^s(E)` that takes real values into a smooth map into the real subspace, with the same order of
+smoothness, analytic included.
+
+The inclusions `H^s(E) ⊆ H^r(E)`, `r ≤ s`, preserve real elements
+(`BesselPotentialSpace.inclusion_mem_realSubmodule`). For equal orders `s = t` written differently
+they identify the two real subspaces (`BesselPotentialSpace.realSubmoduleCongr`).
 -/
 
 public section
@@ -290,5 +295,62 @@ theorem realPartCLM_coe (F : realSubmodule E h) : realPartCLM E h (F : H^{s}(E))
   ext1
   rw [coe_realPartCLM, conjCLM_coe]
   module
+
+/-- The `L²` function of the real part of `F ∈ H^s(E)` is the real part of the `L²` function of
+`F`. -/
+theorem coeFn_inclusionLp_realPartCLM (F : H^{s}(E)) :
+    ⇑(inclusionLp h (realPartCLM E h F : H^{s}(E))) =ᵐ[volume]
+      fun z ↦ ((inclusionLp h F z).re : ℂ) := by
+  rw [coe_realPartCLM]
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (2⁻¹ : ℂ)
+    (coeFn_inclusionLp_add_ae_eq h (u := F) (v := conjCLM E h F) (F := ⇑(inclusionLp h F))
+      (F' := fun z ↦ conj (inclusionLp h F z)) (Filter.Eventually.of_forall fun _ ↦ rfl)
+      (coeFn_inclusionLp_conjCLM F))] with z hz
+  rw [hz, Complex.re_eq_add_conj]
+  ring
+
+/-! ### Inclusions between orders -/
+
+/-- The inclusion `H^s(E) ⊆ H^r(E)`, `0 ≤ r ≤ s`, maps real elements to real elements. -/
+theorem inclusion_mem_realSubmodule {r : ℝ} (hrs : r ≤ s) (hr : 0 ≤ r) (F : realSubmodule E h) :
+    inclusion hrs (F : H^{s}(E)) ∈ realSubmodule E hr := by
+  rw [mem_realSubmodule_iff, inclusionLp_inclusion]
+  exact (mem_realSubmodule_iff h).1 F.property
+
+variable (E) in
+/-- **The real elements of `H^s(E)` for equal orders.** For `s = t`, the inclusions identify the
+real elements of `H^s(E)` and of `H^t(E)`, as real Hilbert spaces. This transports real
+elements between two expressions of the same order. -/
+def realSubmoduleCongr {t : ℝ} (hst : s = t) (h : 0 ≤ s) (ht : 0 ≤ t) :
+    realSubmodule E h ≃L[ℝ] realSubmodule E ht :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((((inclusion hst.ge).restrictScalars ℝ).comp (realSubmodule E h).subtypeL).codRestrict _
+      (inclusion_mem_realSubmodule hst.ge ht))
+    ((((inclusion hst.le).restrictScalars ℝ).comp (realSubmodule E ht).subtypeL).codRestrict _
+      (inclusion_mem_realSubmodule hst.le h))
+    (ContinuousLinearMap.ext fun _ ↦ Subtype.ext <| inclusion_inclusion hst.le hst.ge _ |>.trans
+      (inclusion_self _))
+    (ContinuousLinearMap.ext fun _ ↦ Subtype.ext <| inclusion_inclusion hst.ge hst.le _ |>.trans
+      (inclusion_self _))
+
+@[simp]
+theorem coe_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t) (F : realSubmodule E h) :
+    (realSubmoduleCongr E hst h ht F : H^{t}(E)) = inclusion hst.ge (F : H^{s}(E)) :=
+  (rfl)
+
+/-- `realSubmoduleCongr` does not change the `L²` function. -/
+theorem inclusionLp_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t)
+    (F : realSubmodule E h) :
+    inclusionLp ht (realSubmoduleCongr E hst h ht F : H^{t}(E)) = inclusionLp h (F : H^{s}(E)) :=
+  inclusionLp_inclusion hst.ge ht _
+
+/-- `realSubmoduleCongr` does not change the continuous representative. -/
+@[simp]
+theorem continuousRep_realSubmoduleCongr (hs : finrank ℝ E < 2 * s) {t : ℝ} (hst : s = t)
+    (ht : 0 ≤ t) (F : realSubmodule E h) :
+    continuousRep (realSubmoduleCongr E hst h ht F) = continuousRep F :=
+  continuousRep_eq_of_ae_eq (hst ▸ hs) (continuous_continuousRep hs F) <| by
+    rw [inclusionLp_realSubmoduleCongr]
+    exact coeFn_inclusionLp_ae_eq_continuousRep hs F
 
 end BesselPotentialSpace
