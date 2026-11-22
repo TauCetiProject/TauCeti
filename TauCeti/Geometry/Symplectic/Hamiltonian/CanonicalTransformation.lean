@@ -26,7 +26,10 @@ at `φ x`:
   (`TauCeti.SmoothTwoForm.IsSymplecticMap.mfderiv_hamiltonianVectorField_comp`);
 * `{h ∘ φ, h' ∘ φ}(x) = {h, h'}(φ x)`
   (`TauCeti.SmoothTwoForm.IsSymplecticMap.poissonBracket_comp`);
-* `φ` carries integral curves of `X_{h ∘ φ}` to integral curves of `X_h`
+* `φ` carries integral curves of `X_{h ∘ φ}` to integral curves of `X_h`, on any set of times
+  (`TauCeti.SmoothTwoForm.IsSymplecticMap.isMIntegralCurveOn_comp_hamiltonianVectorField`), near
+  a time (`TauCeti.SmoothTwoForm.IsSymplecticMap.isMIntegralCurveAt_comp_hamiltonianVectorField`)
+  and for all times
   (`TauCeti.SmoothTwoForm.IsSymplecticMap.isMIntegralCurve_comp_hamiltonianVectorField`).
 
 For the equation `ι_X σ = dh` itself (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField`), which is
@@ -54,9 +57,10 @@ inclusions of open submanifolds.
   Hamiltonian vector fields.
 * `TauCeti.SmoothTwoForm.IsSymplecticMap.poissonBracket_comp` and
   `TauCeti.SmoothTwoForm.IsSymplectomorphism.poissonBracket_comp`: naturality of Poisson brackets.
-* `TauCeti.SmoothTwoForm.IsSymplecticMap.isMIntegralCurve_comp_hamiltonianVectorField` and
-  `TauCeti.SmoothTwoForm.IsSymplectomorphism.isMIntegralCurve_comp_hamiltonianVectorField`:
-  transport of Hamiltonian integral curves.
+* `TauCeti.SmoothTwoForm.IsSymplecticMap.isMIntegralCurveOn_comp_hamiltonianVectorField` and
+  `TauCeti.SmoothTwoForm.IsSymplectomorphism.isMIntegralCurveOn_comp_hamiltonianVectorField`,
+  with their `IsMIntegralCurveAt` and `IsMIntegralCurve` versions: transport of Hamiltonian
+  integral curves.
 * `TauCeti.SmoothTwoForm.IsSymplecticMap.isHamiltonianVectorField_mpullback` and
   `TauCeti.SmoothTwoForm.IsSymplectomorphism.isHamiltonianVectorField_mpullback_iff`: pullback of
   Hamiltonian vector fields.
@@ -75,7 +79,7 @@ public section
 
 noncomputable section
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -134,6 +138,34 @@ theorem poissonBracket_comp (h : σ.IsSymplecticMap σ' φ) {x : M}
   rw [poissonBracket_def, poissonBracket_def, ← h.apply x,
     h.mfderiv_hamiltonianVectorField_comp hφ hx hg, h.mfderiv_hamiltonianVectorField_comp hφ hx hk]
 
+/-- **Hamiltonian integral curves on a set of times through a symplectic map.** Let `φ` be a
+symplectic map and `γ` an integral curve of the Hamiltonian vector field of `g ∘ φ` on a set `s`
+of times. If for the times in `s` the map `φ` is differentiable at `γ t` with invertible
+differential and `g` is differentiable at `φ (γ t)`, then `φ ∘ γ` is an integral curve of the
+Hamiltonian vector field of `g` on `s`. -/
+theorem isMIntegralCurveOn_comp_hamiltonianVectorField (h : σ.IsSymplecticMap σ' φ)
+    {g : M' → ℝ} {γ : ℝ → M} {s : Set ℝ} (hφ : ∀ t ∈ s, MDifferentiableAt I I' φ (γ t))
+    (hx : ∀ t ∈ s, (mfderiv I I' φ (γ t)).IsInvertible)
+    (hg : ∀ t ∈ s, MDifferentiableAt I' 𝓘(ℝ) g (φ (γ t)))
+    (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField (g ∘ φ)) s) :
+    IsMIntegralCurveOn (φ ∘ γ) (σ'.hamiltonianVectorField g) s :=
+  hγ.map_of_mfderiv_eq hφ
+    fun t ht ↦ h.mfderiv_hamiltonianVectorField_comp (hφ t ht) (hx t ht) (hg t ht)
+
+/-- **Local Hamiltonian integral curves through a symplectic map.** Let `φ` be a symplectic map
+and `γ` a local integral curve at `t₀` of the Hamiltonian vector field of `g ∘ φ`. If for times
+near `t₀` the map `φ` is differentiable at `γ t` with invertible differential and `g` is
+differentiable at `φ (γ t)`, then `φ ∘ γ` is a local integral curve at `t₀` of the Hamiltonian
+vector field of `g`. -/
+theorem isMIntegralCurveAt_comp_hamiltonianVectorField (h : σ.IsSymplecticMap σ' φ)
+    {g : M' → ℝ} {γ : ℝ → M} {t₀ : ℝ} (hφ : ∀ᶠ t in 𝓝 t₀, MDifferentiableAt I I' φ (γ t))
+    (hx : ∀ᶠ t in 𝓝 t₀, (mfderiv I I' φ (γ t)).IsInvertible)
+    (hg : ∀ᶠ t in 𝓝 t₀, MDifferentiableAt I' 𝓘(ℝ) g (φ (γ t)))
+    (hγ : IsMIntegralCurveAt γ (σ.hamiltonianVectorField (g ∘ φ)) t₀) :
+    IsMIntegralCurveAt (φ ∘ γ) (σ'.hamiltonianVectorField g) t₀ :=
+  hγ.map_of_mfderiv_eq hφ <| (hφ.and (hx.and hg)).mono fun _ ht ↦
+    h.mfderiv_hamiltonianVectorField_comp ht.1 ht.2.1 ht.2.2
+
 /-- **Hamiltonian integral curves through a symplectic map.** Let `φ` be a symplectic map and `γ`
 an integral curve of the Hamiltonian vector field of `g ∘ φ`. If along `γ` the map `φ` is
 differentiable with invertible differentials and `g` is differentiable at the image points, then
@@ -145,8 +177,8 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField (h : σ.IsSymplecticMap σ'
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
     IsMIntegralCurve (φ ∘ γ) (σ'.hamiltonianVectorField g) := by
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
-  exact hγ.map_of_mfderiv_eq (fun t _ ↦ hφ t)
-    fun t _ ↦ h.mfderiv_hamiltonianVectorField_comp (hφ t) (hx t) (hg t)
+  exact h.isMIntegralCurveOn_comp_hamiltonianVectorField (fun t _ ↦ hφ t) (fun t _ ↦ hx t)
+    (fun t _ ↦ hg t) hγ
 
 /-- **Hamiltonian vector fields pull back along symplectic maps.** Let `φ` be a differentiable
 symplectic map whose differentials are all invertible, and `V` a Hamiltonian vector field of `g`
@@ -196,6 +228,27 @@ theorem poissonBracket_comp (h : σ.IsSymplectomorphism σ' φ) (hn : n ≠ 0) (
   rw [poissonBracket_def, poissonBracket_def, ← h.isSymplecticMap.apply x,
     h.mfderiv_hamiltonianVectorField_comp hn, h.mfderiv_hamiltonianVectorField_comp hn]
 
+/-- **Hamiltonian integral curves on a set of times through a symplectomorphism.** A
+symplectomorphism of nonzero order carries integral curves on a set `s` of times of the
+Hamiltonian vector field of `g ∘ φ` to integral curves on `s` of the Hamiltonian vector field of
+`g`, for every function `g`. -/
+theorem isMIntegralCurveOn_comp_hamiltonianVectorField (h : σ.IsSymplectomorphism σ' φ)
+    (hn : n ≠ 0) {g : M' → ℝ} {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField (g ∘ φ)) s) :
+    IsMIntegralCurveOn (φ ∘ γ) (σ'.hamiltonianVectorField g) s :=
+  hγ.map_of_mfderiv_eq (fun t _ ↦ φ.mdifferentiable hn (γ t))
+    fun t _ ↦ h.mfderiv_hamiltonianVectorField_comp hn g (γ t)
+
+/-- **Local Hamiltonian integral curves through a symplectomorphism.** A symplectomorphism of
+nonzero order carries local integral curves at `t₀` of the Hamiltonian vector field of `g ∘ φ` to
+local integral curves at `t₀` of the Hamiltonian vector field of `g`, for every function `g`. -/
+theorem isMIntegralCurveAt_comp_hamiltonianVectorField (h : σ.IsSymplectomorphism σ' φ)
+    (hn : n ≠ 0) {g : M' → ℝ} {γ : ℝ → M} {t₀ : ℝ}
+    (hγ : IsMIntegralCurveAt γ (σ.hamiltonianVectorField (g ∘ φ)) t₀) :
+    IsMIntegralCurveAt (φ ∘ γ) (σ'.hamiltonianVectorField g) t₀ :=
+  hγ.map_of_mfderiv_eq (.of_forall fun t ↦ φ.mdifferentiable hn (γ t))
+    (.of_forall fun t ↦ h.mfderiv_hamiltonianVectorField_comp hn g (γ t))
+
 /-- **Hamiltonian integral curves through a symplectomorphism.** A symplectomorphism of nonzero
 order carries integral curves of the Hamiltonian vector field of `g ∘ φ` to integral curves of the
 Hamiltonian vector field of `g`, for every function `g`. -/
@@ -204,8 +257,7 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField (h : σ.IsSymplectomorphism
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
     IsMIntegralCurve (φ ∘ γ) (σ'.hamiltonianVectorField g) := by
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
-  exact hγ.map_of_mfderiv_eq (fun t _ ↦ φ.mdifferentiable hn (γ t))
-    fun t _ ↦ h.mfderiv_hamiltonianVectorField_comp hn g (γ t)
+  exact h.isMIntegralCurveOn_comp_hamiltonianVectorField hn hγ
 
 /-- **Hamiltonian vector fields through a symplectomorphism.** For a symplectomorphism `φ` of
 nonzero order, the pullback along `φ` of a vector field `V` is a Hamiltonian vector field of

@@ -110,11 +110,13 @@ theorem isSymplecticMap_iff_mpullback_eq (hφ : ContMDiff I I' ∞ φ) :
 
 /-- Every smooth map is a symplectic map from the pullback form. For the inclusion of an open
 submanifold, this says that the inclusion is a symplectic map from the restricted form. -/
+@[simp]
 theorem isSymplecticMap_mpullback (σ' : SmoothTwoForm I' M') (hφ : ContMDiff I I' ∞ φ) :
     IsSymplecticMap (SmoothForm.mpullback φ hφ σ') σ' φ :=
   (isSymplecticMap_iff_mpullback_eq hφ).2 rfl
 
 /-- The identity is a symplectic map. -/
+@[simp]
 theorem isSymplecticMap_id (σ : SmoothTwoForm I M) : σ.IsSymplecticMap σ id := fun x v w ↦ by
   rw [mfderiv_id]
   rfl
@@ -172,6 +174,7 @@ theorem isSymplectomorphism_iff_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} :
   isSymplecticMap_iff_mpullback_eq φ.contMDiff
 
 /-- The identity is a symplectomorphism. -/
+@[simp]
 theorem isSymplectomorphism_refl (σ : SmoothTwoForm I M) :
     σ.IsSymplectomorphism σ (Diffeomorph.refl I M n) := by
   rw [isSymplectomorphism_iff, Diffeomorph.coe_refl]
