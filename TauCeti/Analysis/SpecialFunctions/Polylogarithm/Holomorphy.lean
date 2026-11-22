@@ -36,9 +36,10 @@ polylogarithms. In weight one the domain `{z | 1 - z ∈ Complex.slitPlane}` is 
 * `TauCeti.Polylog.hasDerivAt_polylog_one` and `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`:
   complex derivatives of weight one and weights `k + 2` on `{z | 1 - z ∈ Complex.slitPlane}`.
 * `TauCeti.Polylog.differentiableAt_polylog`, `TauCeti.Polylog.differentiableOn_polylog`,
-  `TauCeti.Polylog.analyticAt_polylog`, and `TauCeti.Polylog.analyticOnNhd_polylog`:
+  `TauCeti.Polylog.analyticAt_polylog`, `TauCeti.Polylog.analyticOnNhd_polylog`, and
+  `TauCeti.Polylog.analyticOnNhd_polylog_ball`:
   complex differentiability and analyticity of `polylog n` on `{z | 1 - z ∈ Complex.slitPlane}`
-  for all `n : ℤ`.
+  and on the open unit disc `Metric.ball 0 1` for all `n : ℤ`.
 * `TauCeti.Polylog.mul_deriv_polylog`, `TauCeti.Polylog.deriv_polylog`, and
   `TauCeti.Polylog.hasDerivAt_polylog` (along with their shifted forms
   `TauCeti.Polylog.mul_deriv_polylog_add_one`, `TauCeti.Polylog.deriv_polylog_add_one`, and
@@ -162,6 +163,13 @@ is complex analytic on the principal domain `{z | 1 - z ∈ Complex.slitPlane}`.
 theorem analyticOnNhd_polylog (n : ℤ) :
     AnalyticOnNhd ℂ (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
   fun _ hz ↦ analyticAt_polylog n hz
+
+/-- **Holomorphy of integer-weight polylogarithms on the open unit disc.** For every integer
+weight `n : ℤ`, `polylog n` is complex analytic on `Metric.ball 0 1`. -/
+theorem analyticOnNhd_polylog_ball (n : ℤ) :
+    AnalyticOnNhd ℂ (polylog n) (ball 0 1) :=
+  fun z hz ↦ analyticAt_polylog n
+    (sub_eq_add_neg (1 : ℂ) z ▸ Complex.mem_slitPlane_of_norm_lt_one (by simpa using hz))
 
 /-- **Euler differential recursion for polylogarithms.** For every integer weight `n : ℤ` and every
 `z` in the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, including `z = 0`,

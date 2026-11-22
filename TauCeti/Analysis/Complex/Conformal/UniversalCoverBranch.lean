@@ -22,9 +22,10 @@ in `U ⊆ ℂ` from `z₀ ∈ U` depends only on its homotopy class in `U`, asse
 `H.universalCoverBranch : TauCeti.UniversalCover z₀ → E` for any complex normed space `E`.
 
 * `ContinuesInside.eventuallyEq_of_homotopic`, `ContinuesInside.universalCoverBranch`: homotopy
-  invariance in `U` and the universal-cover branch, with intro/elim, basepoint, congruence, `trans`,
-  algebra (`add`, `neg`, `sub`, `mul`, `pow`), `eval_apply`, `analyticOnNhd_univ_comp`, global
-  comparison, and loop monodromy (`universalCoverBranch_inv_smul_of_loop`).
+  invariance in `U` and the universal-cover branch, with intro/elim/uniqueness, basepoint,
+  congruence, `trans`, algebra (`add`, `neg`, `sub`, `mul`, `pow`), `eval_apply`,
+  `analyticOnNhd_univ_comp`, global comparison, and loop monodromy
+  (`universalCoverBranch_inv_smul_of_loop`).
 * `ContinuesInside.eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong`,
   `ContinuesInside.continuous_universalCoverBranch`,
   `ContinuesInside.analyticOnNhd_universalCoverBranch_comp`,
@@ -117,6 +118,19 @@ theorem exists_isAnalyticContinuationAlong_universalCoverBranch {U : Set ℂ} {z
   obtain ⟨f, hf, hf0⟩ := continuesAlong_iff_exists.1 (H.continuesAlong_path γ)
   have hf0' : f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ := by simpa [γ.source] using hf0
   exact ⟨f, hf, hf0', H.universalCoverBranch_eq_of_isAnalyticContinuationAlong hf hf0'⟩
+
+/-- **Uniqueness rule for `universalCoverBranch`.** Any function `B : UniversalCover z₀ → E`
+agreeing with the terminal value of a continuation of `f₀` along each representative path from
+`z₀` equals `H.universalCoverBranch`. -/
+theorem eq_universalCoverBranch_of_isAnalyticContinuationAlong {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
+    (H : ContinuesInside f₀ U (z₀ : ℂ)) {B : UniversalCover z₀ → E}
+    (hB : ∀ (z : U) (γ : Path z₀ z), ∃ f : I → ℂ → E,
+      IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ ∧
+      (f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) ∧ B ⟨z, Path.Homotopic.Quotient.mk γ⟩ = f 1 (z : ℂ)) :
+    B = H.universalCoverBranch := by
+  funext ⟨z, q⟩; induction q with | mk γ =>
+    obtain ⟨f, hf, hf0, hval⟩ := hB z γ
+    exact hval.trans (H.universalCoverBranch_eq_of_isAnalyticContinuationAlong hf hf0).symm
 
 /-- At the constant-path class over `z₀`, `universalCoverBranch` equals `f₀ z₀`. -/
 @[simp] theorem universalCoverBranch_mk_refl {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}

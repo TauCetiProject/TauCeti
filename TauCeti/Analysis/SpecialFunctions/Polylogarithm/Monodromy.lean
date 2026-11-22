@@ -36,11 +36,12 @@ counterclockwise continuation shifts are assigned to `periph0⁻¹` and `periph1
 * `TauCeti.Polylog.IsPolylogTowerGerm`: germ-level `γ0`/`γ1` monodromy and universal-cover
   equivariance at `1 / 2` normalized by `F (1 / 2) 0 = Complex.log (1 / 2)`.
 * `TauCeti.Polylog.continuesInside_polylogTower`, `TauCeti.Polylog.polylogBranch`,
+  `TauCeti.Polylog.eq_polylogBranch_of_isAnalyticContinuationAlong`,
   `TauCeti.Polylog.polylogBranch_trans`, `TauCeti.Polylog.eqOn_polylogBranch_comp_polylogTower`,
   `TauCeti.Polylog.polylogBranch_eq_polylog_of_one_sub_mem_slitPlane`,
   `TauCeti.Polylog.polylogBranch_smul`, `TauCeti.Polylog.exists_polylogBranch_monodromy`: all-height
-  continuation, universal-cover branch, concatenation, principal-section agreement, principal-domain
-  comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
+  continuation, universal-cover branch, uniqueness, concatenation, principal-section agreement,
+  principal-domain comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
 
 ## References
 
@@ -546,11 +547,6 @@ theorem isPolylogTowerGerm_polylogTower_basePt (N : ℕ) :
   isPolylogTowerGerm_polylogTower N (coe_basePt.symm ▸ half_mem_slitPlane)
     (fun _ => coe_basePt.symm ▸ sub_half_mem_slitPlane)
 
-private theorem analyticOnNhd_polylog_succ_ball (N : ℕ) :
-    AnalyticOnNhd ℂ (fun z (i : Fin N) => polylog (i.succ : ℕ) z) (ball 0 1) :=
-  fun _ hz => AnalyticAt.pi fun i => analyticAt_polylog (i.succ : ℕ)
-    (sub_eq_add_neg (1 : ℂ) _ ▸ Complex.mem_slitPlane_of_norm_lt_one (by simpa using hz))
-
 /-- **Principal-tower `γ0`-monodromy.** Continuing `polylogTower N` along `γ0` shifts the
 terminal germ by `polylogMonodromy N periph0⁻¹`. -/
 theorem eventuallyEq_periph0_inv_comp_polylogTower_of_γ0 (N : ℕ) {f : I → ℂ → Fin (N + 1) → ℂ}
@@ -559,7 +555,8 @@ theorem eventuallyEq_periph0_inv_comp_polylogTower_of_γ0 (N : ℕ) {f : I → �
     f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph0⁻¹ ∘ polylogTower N :=
   (isPolylogTowerGerm_polylogTower N half_mem_slitPlane
     (fun _ => sub_half_mem_slitPlane)).eventuallyEq_periph0_inv_comp_of_γ0
-      (polylogTower_zero N (1 / 2)) (analyticOnNhd_polylog_succ_ball N)
+      (polylogTower_zero N (1 / 2))
+      (fun _ hz => AnalyticAt.pi fun i => analyticOnNhd_polylog_ball (i.succ : ℕ) _ hz)
       (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) hf hf0
 
 /-- **Principal-tower `γ1`-monodromy.** Continuing `polylogTower N` along `γ1` shifts the
@@ -609,6 +606,22 @@ theorem exists_isAnalyticContinuationAlong_polylogBranch (N : ℕ) {z : ThricePu
       polylogBranch N ⟨z, Path.Homotopic.Quotient.mk γ⟩ = f 1 (z : ℂ) := by
   simpa [coe_basePt, polylogBranch_def] using
     (continuesInside_polylogTower N).exists_isAnalyticContinuationAlong_universalCoverBranch γ
+
+/-- **Uniqueness rule for `polylogBranch N`.** Any function
+`B : UniversalCover basePt → Fin (N + 1) → ℂ` agreeing with the terminal value of a continuation
+of `polylogTower N` along each representative path from `basePt` equals `polylogBranch N`. -/
+theorem eq_polylogBranch_of_isAnalyticContinuationAlong (N : ℕ)
+    {B : UniversalCover basePt → Fin (N + 1) → ℂ}
+    (hB : ∀ (z : ThricePuncturedSphere) (γ : Path basePt z),
+      ∃ f : I → ℂ → Fin (N + 1) → ℂ,
+        IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ ∧
+        (f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) ∧
+        B ⟨z, Path.Homotopic.Quotient.mk γ⟩ = f 1 (z : ℂ)) :
+    B = polylogBranch N :=
+  (continuesInside_polylogTower N).eq_universalCoverBranch_of_isAnalyticContinuationAlong
+    fun z γ => by
+      obtain ⟨f, hf, hf0, hval⟩ := hB z γ
+      exact ⟨f, hf, coe_basePt.symm ▸ hf0, hval⟩
 
 /-- **Pointwise exponential law for coordinate `0` of `polylogBranch N`.** -/
 @[simp] theorem exp_polylogBranch_zero (N : ℕ) (p : UniversalCover basePt) :
@@ -691,7 +704,8 @@ theorem polylogBranch_smul (N : ℕ) (g : FundamentalGroup ThricePuncturedSphere
     (p : UniversalCover basePt) :
     polylogBranch N (g • p) = polylogMonodromy N g (polylogBranch N p) :=
   (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_smul_of_analyticOnNhd_ball
-    (polylogTower_zero N (1 / 2)) (analyticOnNhd_polylog_succ_ball N)
+    (polylogTower_zero N (1 / 2))
+    (fun _ hz => AnalyticAt.pi fun i => analyticOnNhd_polylog_ball (i.succ : ℕ) _ hz)
     (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) g p
 
 /-- **Coherent universal-cover branch and polynomial monodromy of `polylogTower N`.** -/
