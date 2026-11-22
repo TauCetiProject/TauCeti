@@ -25,8 +25,11 @@ each row makes the number of discarded entries per row eventually bounded unifor
 vanishes. When the common upper law is centered, the mean subtracted in recentering
 also contributes a vanishing operator norm. Hence the corners and their centered truncations with
 the same diagonal differ by a vanishing operator norm, whatever the diagonal. When the diagonal
-entries share a law with finite second moment, the diagonal can also be removed. For `a < 1/2`
-the retained normalized entries are polynomially small, as needed for growing trace moments.
+entries share a law with finite second moment, the diagonal can also be removed. The retained
+normalized entries of the zero-diagonal truncations are bounded by
+`TauCeti.norm_wignerMatrix_centeredTruncation_zero_apply_le` in
+`TauCeti.Probability.RandomMatrix.Wigner.Truncation.Basic`. For the corner of size `n + 1` at
+cutoff `(n+1)^a` that bound is `2 (n+1)^(a - 1/2)`, polynomially small for `a < 1/2`.
 
 ## References
 

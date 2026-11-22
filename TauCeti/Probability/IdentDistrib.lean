@@ -32,6 +32,12 @@ their indices, and controls the prefix maxima of variables with finite absolute 
   equal to that constant at every index simultaneously.
 * `ProbabilityTheory.IdentDistrib.integral_indicator_setOf_norm_le_eq` — identically distributed
   variables have equal integrals after cutting off the values of norm greater than `R`.
+* `TauCeti.Probability.ae_eventually_le_natCast_of_identDistrib` — real variables with a common
+  integrable law are almost surely eventually at most their index.
+* `TauCeti.Probability.ae_eventually_forall_lt_norm_le_mul_of_identDistrib` — for variables with a
+  common law of finite `p`-th absolute moment, if the prefix length is eventually at most the
+  `p`-th power of a divergent scale, the maximal norm over the prefix divided by that scale tends
+  to zero almost surely.
 -/
 
 public section

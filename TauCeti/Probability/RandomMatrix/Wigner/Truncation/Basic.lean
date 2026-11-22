@@ -11,16 +11,41 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 /-!
 # Bounded centered approximation of Wigner off-diagonal entries
 
-Replacing the upper entries by their centered truncations gives bounded entries without changing
-their independence or identical distribution. On a probability space, the truncations of almost
-everywhere strongly measurable upper entries have zero mean. The expected normalized squared
-Frobenius error is at most the discarded second absolute moment when the upper entries of the
-corner have a common centered, square-integrable law on a probability space.
+Replacing the upper entries by their centered truncations at a cutoff `R` gives bounded entries,
+and preserves the joint independence of the upper and diagonal coordinates. The general facts that
+identically distributed variables and their centered truncations have the same joint law, and that
+on a probability space the centered truncation of an almost everywhere strongly measurable
+variable has zero mean, are `ProbabilityTheory.IdentDistrib.prodMk_centeredTruncation` and
+`MeasureTheory.AEStronglyMeasurable.integral_centeredTruncation` in
+`TauCeti.Probability.Moments.CenteredTruncation`.
+
+On a probability space, every normalized entry of the zero-diagonal truncated corner of size `n`
+has norm at most `2R/√n`. When the upper entries of the corner are square-integrable with second
+moments at most `M ≥ 0`, each absolute entry moment of order `k + 2` is at most
+`(2R/√n)^k * (M/n)`, and a common square-integrable upper law gives the same bound with `M` its
+second moment. These entry bounds are the input that moment-method estimates of growing traces
+of the truncated corners need.
+
+The expected normalized squared Frobenius error is at most the discarded second absolute moment
+when the upper entries of the corner have a common centered, square-integrable law on a probability
+space. Through the Lipschitz perturbation bound, this controls the spectral statistics of the
+truncated corners in `TauCeti.Probability.RandomMatrix.Wigner.Truncation.SpectralMeasure`.
 
 The diagonal is kept unchanged: it needs no moment assumption and may depend on the upper
 entries. Independence is needed only to assert independence of the approximating coordinates,
 and is not used in the error estimates. This is the bounded-approximation reduction used when
 extending the moment method to finite-second-moment entry laws.
+
+## Main results
+
+* `ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation` — truncating and centering the
+  upper coordinates preserves their joint independence with the diagonal coordinates.
+* `TauCeti.norm_wignerMatrix_centeredTruncation_zero_apply_le` — the entry bound `2R/√n`.
+* `TauCeti.integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le` and
+  `TauCeti.integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le_of_identDistrib` —
+  the bounds on absolute entry moments of order `k + 2`.
+* `TauCeti.Probability.inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le` — the
+  normalized mean-square Frobenius error bound.
 
 ## References
 
