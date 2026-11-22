@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.Algebra.Module.Projective.Nilpotent
+import TauCeti.RingTheory.Flat.Ideal
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Perfect.Projective.Basic
 

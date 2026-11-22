@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 import Mathlib.LinearAlgebra.Isomorphisms
-import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Module.LinearMap.EndQuotient
 import TauCeti.RingTheory.Ideal.Operations
@@ -35,8 +33,6 @@ and composing `r₀` with its inverse retracts `F` onto `K`. Hence `M` is a dire
 
 * `Module.Projective.of_quotient_smul_top`: a module whose reduction modulo a nilpotent element
   `ϖ` is projective and whose `ϖ`-torsion lies in `ann(ϖ) • M` is projective.
-* `Module.Flat.mem_annihilator_smul_top_of_smul_eq_zero`: over a ring of characteristic `m`, the
-  torsion condition holds for `ϖ = k` whenever `M` is flat over `ℤ ⧸ m`.
 
 ## References
 
@@ -166,30 +162,3 @@ theorem of_quotient_smul_top (hϖ : IsNilpotent ϖ)
     (Finsupp.linearCombination_id_surjective A M) hϖ hM
 
 end Module.Projective
-
-namespace Module.Flat
-
-variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-
-/-- Over a ring `A` of characteristic `m`, a module flat over `ℤ ⧸ m` satisfies the torsion
-condition of `Module.Projective.of_quotient_smul_top` for every integer `k`: an element killed by
-`k` lies in `ann(k) • M`. -/
-theorem mem_annihilator_smul_top_of_smul_eq_zero {m : ℕ} [CharP A m] [Module (ZMod m) M]
-    [Flat (ZMod m) M] (k : ℕ) (x : M) (hx : (k : A) • x = 0) :
-    x ∈ (Ideal.span {(k : A)}).annihilator • (⊤ : Submodule A M) := by
-  let φ : ZMod m →+* A := ZMod.castHom (dvd_refl m) A
-  -- The two actions of `ℤ ⧸ m` on `M` agree.
-  have hφ (z : ZMod m) (y : M) : z • y = φ z • y := by
-    rw [← ZMod.intCast_zmod_cast z, map_intCast, Int.cast_smul_eq_zsmul, Int.cast_smul_eq_zsmul]
-  obtain ⟨l, a, y, hxy, hrel⟩ := isTrivialRelation_of_sum_smul_eq_zero (ι := Unit)
-    (f := fun _ ↦ (k : ZMod m)) (x := fun _ ↦ x) (by simpa [hφ] using hx)
-  have hx' : x = ∑ j, a () j • y j := hxy ()
-  rw [hx']
-  refine Submodule.sum_mem _ fun j _ ↦ ?_
-  rw [hφ]
-  refine Submodule.smul_mem_smul ((Submodule.mem_annihilator_span_singleton _ _).mpr ?_)
-    Submodule.mem_top
-  have hj : (k : ZMod m) * a () j = 0 := by simpa using hrel j
-  rw [smul_eq_mul, mul_comm, ← map_natCast φ, ← map_mul, hj, map_zero]
-
-end Module.Flat
