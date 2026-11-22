@@ -353,9 +353,10 @@ theorem bsdQuotient_div_bsdQuotient (ψ : Isogeny E₁.toAffine E₂.toAffine)
           (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
   have h := ψ.bsdQuotient_mul_card_selmerGroup_dual τ
   have hr₁ : Nat.card (ofIsogeny ψ).shaMap.range = 1 := by
-    rw [(ofIsogeny ψ).card_range_shaMap τ, h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+    rw [((ofIsogeny ψ).shaMap_eq_zero_iff τ).2 h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
   have hr₂ : Nat.card (ofIsogeny ψ.dual).shaMap.range = 1 := by
-    rw [(ofIsogeny ψ.dual).card_range_shaMap τ, h₂, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+    rw [((ofIsogeny ψ.dual).shaMap_eq_zero_iff τ).2 h₂, AddMonoidHom.range_zero,
+      AddSubgroup.card_bot]
   rw [hr₁, hr₂, Nat.cast_one, mul_one, mul_one, kummerRatioProduct_eq_div] at h
   have := ψ.dual.finite_selmerGroup_place τ
   have := (ofIsogeny ψ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ)

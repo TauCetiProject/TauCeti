@@ -149,20 +149,9 @@ embeddings over the places of `K` is canonically isomorphic to `(ofIsogeny φ).s
 def shafarevichTateGroupKerEquivKerShaMap
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
-    φ.shafarevichTateGroupKer τ ≃+ (ofIsogeny φ).shaMap.ker where
-  toFun c :=
-    ⟨⟨(c : W₁.shafarevichTateGroup τ), (W₁.sha_eq_shafarevichTateGroup τ).ge c.val.property⟩,
-      by
-        rw [AddMonoidHom.mem_ker, ← Subtype.val_inj, Hom.coe_shaMap, ZeroMemClass.coe_zero,
-          Hom.pointH1Map_def]
-        exact (φ.mem_shafarevichTateGroupKer_iff τ).1 c.property⟩
-  invFun c := ⟨⟨(c : W₁.sha), (W₁.sha_eq_shafarevichTateGroup τ).le c.val.property⟩,
-    (φ.mem_shafarevichTateGroupKer_iff τ).2 <| by
-      simpa only [← Subtype.val_inj, Hom.coe_shaMap, ZeroMemClass.coe_zero,
-        Hom.pointH1Map_def] using AddMonoidHom.mem_ker.1 c.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
+    φ.shafarevichTateGroupKer τ ≃+ (ofIsogeny φ).shaMap.ker :=
+  (AddEquiv.addSubgroupCongr (φ.shafarevichTateGroupKer_eq_ker_shafarevichTateMap τ)).trans
+    ((ofIsogeny φ).kerShaMapEquivKerShafarevichTateMap τ).symm
 
 /-- Applying `shafarevichTateGroupKerEquivKerShaMap` preserves the underlying cohomology class. -/
 @[simp]
@@ -172,8 +161,8 @@ theorem coe_shafarevichTateGroupKerEquivKerShaMap
     (c : φ.shafarevichTateGroupKer τ) :
     ((φ.shafarevichTateGroupKerEquivKerShaMap τ c : W₁.sha) :
         H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) =
-      (c : W₁.shafarevichTateGroup τ) :=
-  (rfl)
+      (c : W₁.shafarevichTateGroup τ) := by
+  simp [shafarevichTateGroupKerEquivKerShaMap]
 
 /-- Applying the inverse of `shafarevichTateGroupKerEquivKerShaMap` preserves the underlying
 cohomology class. -/
@@ -184,8 +173,8 @@ theorem coe_shafarevichTateGroupKerEquivKerShaMap_symm
     (c : (ofIsogeny φ).shaMap.ker) :
     (((φ.shafarevichTateGroupKerEquivKerShaMap τ).symm c : W₁.shafarevichTateGroup τ) :
         H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) =
-      (c : W₁.sha) :=
-  (rfl)
+      (c : W₁.sha) := by
+  simp [shafarevichTateGroupKerEquivKerShaMap]
 
 /-- Over a number field `K`, the order of `φ.shafarevichTateGroupKer τ` equals the order of
 `(ofIsogeny φ).shaMap.ker` for any family `τ` of embeddings over the places of `K`. -/
