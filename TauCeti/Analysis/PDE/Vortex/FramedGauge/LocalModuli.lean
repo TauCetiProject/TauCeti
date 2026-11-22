@@ -167,12 +167,12 @@ theorem realSobolevGaugeFixedOperator_surjective (hk : 2 ≤ k)
     (contDiff_continuousRepField (n := 0) (by simpa using hk₁) _).continuous
   have hFL := memLp_of_mem_sobolevFields hFk
   -- The weak right inverse `Q` of `L_x` gains one derivative.
-  obtain ⟨Q, hQ, -, hQk⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one
+  obtain ⟨Q, hQ⟩ :=
+    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one
       x.continuous hmem hsol
   set q := Q (hFL.toLp F)
   have hq : (q : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields ((k : ℝ) + 1) :=
-    hQk k _ (mem_sobolevFields_of_ae_eq hFk hFL.coeFn_toLp.symm)
+    (hQ _).2 k (mem_sobolevFields_of_ae_eq hFk hFL.coeFn_toLp.symm)
   -- `x_m + q` has a continuous representative `y` in `A_m^(k+1)`.
   have hmemq : referenceField f m + ⇑q ∈ framedFieldSpace f m ((k : ℝ) + 1) := by
     rwa [mem_framedFieldSpace, add_sub_cancel_left]
@@ -191,7 +191,8 @@ theorem realSobolevGaugeFixedOperator_surjective (hk : 2 ≤ k)
         integral_congr_ae (hy.mono fun z hz ↦ by
           dsimp only
           rw [Pi.sub_apply, ← hz, Pi.add_apply, add_sub_cancel_left])
-    _ = ∫ z, ⟪hFL.toLp F z, η z⟫ := hQ _ η (hη.of_le (by norm_cast)) hηc
+    _ = ∫ z, ⟪hFL.toLp F z, η z⟫ :=
+        (hQ _).1.isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by norm_cast)) hηc
     _ = ∫ z, ⟪F z, η z⟫ := integral_congr_ae (hFL.coeFn_toLp.mono fun z hz ↦ by
           dsimp only
           rw [hz])
