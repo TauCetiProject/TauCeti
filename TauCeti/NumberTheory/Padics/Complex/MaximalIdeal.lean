@@ -44,6 +44,6 @@ theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
     have : (p : ℂ_[p]) = 0 := congrArg Subtype.val hx0
     exact (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) this
   exact (ValuationRing.isIdempotentElem_maximalIdeal_iff hne).mp
-    (Valuation.isIdempotentElem_maximalIdeal_of_isAlgClosed (PadicComplex.valued p).v)
+    (ValuationRing.isIdempotentElem_maximalIdeal_of_isAlgClosed ℂ_[p])
 
 end TauCeti.PadicComplexInt
