@@ -36,7 +36,7 @@ form an open subset of `[a, b]`, because an injective self-adjoint Fredholm oper
 operators form an open set. So the crossings form a closed discrete subset of `[a, b]`, which is
 finite. The sum is assembled by induction on the crossings from the last one. Over an interval
 without crossings the path is invertible and has no spectral flow
-(`TauCeti.spectralFlow_eq_zero_of_forall_zero_notMem_spectrum`). Across a crossing, the spectral
+(`TauCeti.spectralFlow_eq_zero_of_forall_ker_eq_bot`). Across a crossing, the spectral
 flow over a short enough interval is the signature of its crossing form
 (`TauCeti.eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm`), and concatenation
 (`TauCeti.spectralFlow_add_adjacent_intervals`) adds the pieces.
@@ -51,6 +51,8 @@ crossings, `ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_cr
 
 ## Main results
 
+* `TauCeti.spectralFlow_eq_zero_of_forall_ker_eq_bot`: a path without crossings has no spectral
+  flow.
 * `TauCeti.finite_setOf_ker_ne_bot`: a path with regular crossings has finitely many crossings.
 * `TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the regular-crossing formula.
 
@@ -86,6 +88,15 @@ omit [CompleteSpace H] in
 private theorem mem_Ioo_of_ker_ne_bot (ha : (A a).ker = ⊥) (hb : (A b).ker = ⊥) {t : ℝ}
     (ht : t ∈ Icc a b) (hnt : (A t).ker ≠ ⊥) : t ∈ Ioo a b :=
   ⟨lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)⟩
+
+/-- A continuous path of self-adjoint Fredholm operators on a real Hilbert space that is injective,
+hence invertible, at every time of `[a, b]` has no spectral flow over `[a, b]`. -/
+theorem spectralFlow_eq_zero_of_forall_ker_eq_bot (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
+    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm)
+    (hker : ∀ t ∈ Icc a b, (A t).ker = ⊥) : spectralFlow A a b = 0 :=
+  spectralFlow_eq_zero_of_forall_zero_notMem_spectrum hab hA hsa fun t ht ↦
+    (hF t ht).zero_notMem_spectrum_of_injective_of_isSelfAdjoint (hsa t ht)
+      (LinearMap.ker_eq_bot.1 (hker t ht))
 
 /-- **A path with regular crossings has finitely many crossings.** Let `A` be a continuous path of
 self-adjoint Fredholm operators on a real Hilbert space over `[a, b]`, injective at both endpoints.
@@ -132,9 +143,8 @@ private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
   | empty =>
     intro b hab hA hsa hF hker _
     rw [Finset.sum_empty]
-    exact spectralFlow_eq_zero_of_forall_zero_notMem_spectrum hab hA hsa fun t ht ↦
-      (hF t ht).zero_notMem_spectrum_of_injective_of_isSelfAdjoint (hsa t ht)
-        (LinearMap.ker_eq_bot.1 (hker t ht (Finset.notMem_empty t)))
+    exact spectralFlow_eq_zero_of_forall_ker_eq_bot hab hA hsa hF fun t ht ↦
+      hker t ht (Finset.notMem_empty t)
   | insert s S hlt ih =>
     intro b _ hA hsa hF hker hS
     obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
@@ -152,10 +162,8 @@ private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
     -- On `[t₂, b]` there is no crossing, so there is no spectral flow there.
     have hright : spectralFlow A t₂ b = 0 := by
       have hsub : Icc t₂ b ⊆ Icc a b := Icc_subset_Icc (has.trans hst₂).le le_rfl
-      refine spectralFlow_eq_zero_of_forall_zero_notMem_spectrum ht₂b.le (hA.mono hsub)
-        (fun t ht ↦ hsa t (hsub ht)) fun t ht ↦
-          (hF t (hsub ht)).zero_notMem_spectrum_of_injective_of_isSelfAdjoint (hsa t (hsub ht))
-            (LinearMap.ker_eq_bot.1 (hker t (hsub ht) ?_))
+      refine spectralFlow_eq_zero_of_forall_ker_eq_bot ht₂b.le (hA.mono hsub)
+        (fun t ht ↦ hsa t (hsub ht)) (fun t ht ↦ hF t (hsub ht)) fun t ht ↦ hker t (hsub ht) ?_
       rw [Finset.mem_insert, not_or]
       exact ⟨(hst₂.trans_le ht.1).ne', fun htS ↦ (hlt t htS).not_gt (hst₂.trans_le ht.1)⟩
     -- On `[a, t₁]` the crossings are those of `S`, and the induction hypothesis applies.
