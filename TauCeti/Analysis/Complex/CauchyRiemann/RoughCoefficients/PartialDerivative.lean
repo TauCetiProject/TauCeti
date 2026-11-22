@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Sobolev.Mollification.TestField
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
+import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
 # Partial derivatives of weak solutions with Sobolev coefficients
@@ -30,9 +32,12 @@ the equation above. Nothing beyond `W^{1,q}_loc` is assumed of `ξ`, and nothing
 of `J`, so neither `∂_e ∂_t ξ` nor `∂_e ∂_t J` need exist. This is what lets interior regularity
 climb in the order of differentiation (McDuff–Salamon, Proposition B.4.9, Steps 2 and 3): for
 `e = 1` and `e = i` the two equations are the components of the differentiated system for
-`Ξ = (∂_s ξ, ∂_t ξ)`, whose zeroth-order coefficient is `TauCeti.differentiatedCRCoefficient`, so
-the order-zero regularity of weak solutions applies to `Ξ`. The almost-everywhere form of the system
-for `ξ ∈ W^{2,q}_loc` is `TauCeti.ae_differentiated_cauchyRiemann`.
+`Ξ = (∂_s ξ, ∂_t ξ)`, whose zeroth-order coefficient is `TauCeti.differentiatedCRCoefficient`.
+This file proves the two component equations separately and does not combine them into one weak
+system for `Ξ` on `V × V`. Once they are so combined, with `J` acting diagonally, the order-zero
+regularity of weak solutions (`TauCeti.IsWeakCRSolution.memWkpLoc_one`) applies to `Ξ`. The
+almost-everywhere form of the system for `ξ ∈ W^{2,q}_loc` is
+`TauCeti.ae_differentiated_cauchyRiemann`.
 
 The identity behind it is a Green's formula for `∂_e ξ`
 (`TauCeti.IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_partial`): for every test
@@ -63,6 +68,7 @@ public section
 
 open MeasureTheory TopologicalSpace Complex Set Metric Filter
 open scoped InnerProductSpace ContDiff Distributions ENNReal Topology LineDeriv
+open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply adjoint_inner_left)
 
 namespace TauCeti
 
@@ -72,81 +78,52 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-! ### The field `Jᵀ φ` -/
 
-/-- The bilinear map `(A, w) ↦ Aᵀ w`. -/
-private noncomputable def adjointBilin : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V :=
-  ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ)
-
-private theorem inner_adjointBilin (A : V →L[ℝ] V) (w x : V) :
-    ⟪adjointBilin A w, x⟫_ℝ = ⟪w, A x⟫_ℝ := by
-  rw [adjointBilin, ContinuousLinearMap.adjointRealCLM_apply,
-    ContinuousLinearMap.adjoint_inner_left]
-
-/-- The bilinear map `(D, w) ↦ (c ↦ (D c)ᵀ w)`. -/
-private noncomputable def adjointDerivBilin : (ℂ →L[ℝ] V →L[ℝ] V) →L[ℝ] V →L[ℝ] ℂ →L[ℝ] V :=
-  (ContinuousLinearMap.compL ℝ ℂ (V →L[ℝ] V) V).flip.bilinearComp
-    (ContinuousLinearMap.id ℝ _) adjointBilin.flip
-
-/-- The weak derivative `D(Jᵀ φ) = (DJ)ᵀ φ + Jᵀ Dφ` of the field `Jᵀ φ`. -/
+/-- The weak derivative `D(Jᵀ φ) = (DJ)ᵀ φ + Jᵀ Dφ` of the field `Jᵀ φ`, in the form produced by
+the bilinear weak Leibniz rule `TauCeti.HasWeakFDerivOn.bilin_of_memLp` for `(A, w) ↦ Aᵀ w`. -/
 private noncomputable def adjointFieldDeriv (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
     (φ : ℂ → V) (z : ℂ) : ℂ →L[ℝ] V :=
-  adjointDerivBilin (DJ z) (φ z) + (adjointBilin (J z)).comp (fderiv ℝ φ z)
-
-private theorem adjointFieldDeriv_def (φ : ℂ → V) (z : ℂ) :
-    adjointFieldDeriv J DJ φ z =
-      adjointDerivBilin (DJ z) (φ z) + (adjointBilin (J z)).comp (fderiv ℝ φ z) := (rfl)
-
-private theorem adjointFieldDeriv_apply (φ : ℂ → V) (z c : ℂ) :
-    adjointFieldDeriv J DJ φ z c = adjointBilin (DJ z c) (φ z) +
-      adjointBilin (J z) (fderiv ℝ φ z c) := by
-  simp [adjointFieldDeriv, adjointDerivBilin]
+  (adjointRealCLM (𝕜 := ℝ)).precompL ℂ (DJ z) (φ z) +
+    (adjointRealCLM (𝕜 := ℝ)).precompR ℂ (J z) (fderiv ℝ φ z)
 
 private theorem inner_adjointFieldDeriv_apply (φ : ℂ → V) (z c : ℂ) (x : V) :
     ⟪adjointFieldDeriv J DJ φ z c, x⟫_ℝ = ⟪φ z, DJ z c x⟫_ℝ + ⟪fderiv ℝ φ z c, J z x⟫_ℝ := by
-  rw [adjointFieldDeriv_apply, inner_add_left, inner_adjointBilin, inner_adjointBilin]
+  simp [adjointFieldDeriv, inner_add_left, adjointRealCLM_apply, adjoint_inner_left]
 
 /-- The field `Jᵀ φ` for a test function `φ` and a coefficient `J ∈ W^{1,p}_loc(Ω)` is a compactly
 supported Sobolev field in the sense of `TauCeti.HasWeakFDerivOn.setIntegral_inner_apply_comm`. -/
 private theorem adjointField_props (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp : p ≠ ⊤) (hq : q ≠ ⊤) (φ : 𝓓(Ω, V)) :
-    HasWeakFDerivOn volume Ω (fun z => adjointBilin (J z) ((φ : ℂ → V) z))
+    HasWeakFDerivOn volume Ω (fun z => adjointRealCLM (J z) ((φ : ℂ → V) z))
         (adjointFieldDeriv J DJ φ) ∧
-      HasCompactSupport (fun z => adjointBilin (J z) ((φ : ℂ → V) z)) ∧
-      tsupport (fun z => adjointBilin (J z) ((φ : ℂ → V) z)) ⊆ Ω ∧
+      HasCompactSupport (fun z => adjointRealCLM (J z) ((φ : ℂ → V) z)) ∧
+      tsupport (fun z => adjointRealCLM (J z) ((φ : ℂ → V) z)) ⊆ Ω ∧
       MemLp (adjointFieldDeriv J DJ φ) p (volume.restrict Ω) := by
   have : Fact (1 ≤ p) := ⟨ENNReal.inv_le_one.1 (le_self_add.trans hpq)⟩
   have : Fact (1 ≤ q) := ⟨ENNReal.inv_le_one.1 (le_add_self.trans hpq)⟩
   have hφc : Continuous (φ : ℂ → V) := φ.continuous
   have hφd : Continuous (fderiv ℝ (φ : ℂ → V)) := φ.contDiff.continuous_fderiv (by simp)
   have h0 (z : ℂ) (hz : z ∉ tsupport (φ : ℂ → V)) :
-      adjointBilin (J z) ((φ : ℂ → V) z) = 0 ∧ adjointFieldDeriv J DJ φ z = 0 := by
-    refine ⟨by simp [image_eq_zero_of_notMem_tsupport hz], ContinuousLinearMap.ext fun c => ?_⟩
-    simp [adjointFieldDeriv_apply, image_eq_zero_of_notMem_tsupport hz,
-      fderiv_of_notMem_tsupport ℝ hz]
-  have hs : Function.support (fun z => adjointBilin (J z) ((φ : ℂ → V) z)) ⊆ tsupport φ :=
+      adjointRealCLM (J z) ((φ : ℂ → V) z) = 0 ∧ adjointFieldDeriv J DJ φ z = 0 := by
+    simp [adjointFieldDeriv, image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz]
+  have hs : Function.support (fun z => adjointRealCLM (J z) ((φ : ℂ → V) z)) ⊆ tsupport φ :=
     fun z hz => by_contra fun h' => hz (h0 z h').1
-  have hA : MemLpLoc p Ω (fun z => adjointBilin (J z)) := hc.memLpLoc_coeff.clm_comp adjointBilin
-  have hD1 : MemLpLoc p Ω (fun z => adjointDerivBilin (DJ z) ((φ : ℂ → V) z)) :=
-    (hc.memLpLoc_deriv.clm_comp adjointDerivBilin).clm_apply_continuousOn hφc.continuousOn
-  have hD2 : MemLpLoc p Ω (fun z => (adjointBilin (J z)).comp (fderiv ℝ (φ : ℂ → V) z)) :=
-    hA.clm_comp_continuousOn hφd.continuousOn
-  have hDΨ : MemLpLoc p Ω (adjointFieldDeriv J DJ φ) :=
-    (hD1.add hD2).congr_mono (fun z _ => by simp only [Pi.add_apply, adjointFieldDeriv_def])
-      subset_rfl
-  -- the weak Leibniz rule for `Jᵀ φ`, direction by direction
+  have hD1 : MemLpLoc p Ω
+      (fun z => (adjointRealCLM (𝕜 := ℝ)).precompL ℂ (DJ z) ((φ : ℂ → V) z)) :=
+    (hc.memLpLoc_deriv.clm_comp _).clm_apply_continuousOn hφc.continuousOn
+  have hD2 : MemLpLoc p Ω
+      (fun z => (adjointRealCLM (𝕜 := ℝ)).precompR ℂ (J z) (fderiv ℝ (φ : ℂ → V) z)) :=
+    (hc.memLpLoc_coeff.clm_comp _).clm_apply_continuousOn hφd.continuousOn
+  have hDΨ : MemLpLoc p Ω (adjointFieldDeriv J DJ φ) := hD1.add hD2
+  -- the weak Leibniz rule for `Jᵀ φ`
   have hφw : HasWeakFDerivOn volume Ω (φ : ℂ → V) (fderiv ℝ (φ : ℂ → V)) :=
     (φ.contDiff.contDiffOn.of_le (by simp) : ContDiffOn ℝ 1 (φ : ℂ → V) Ω).hasWeakFDerivOn_fderiv
-  have hw : HasWeakFDerivOn volume Ω (fun z => adjointBilin (J z) ((φ : ℂ → V) z))
-      (adjointFieldDeriv J DJ φ) := by
-    refine hasWeakFDerivOn_iff.2 fun c => ?_
-    refine ((hc.hasWeakFDerivOn.hasWeakLineDerivOn c).bilin_of_memLp adjointBilin hp hp hq hq
-      hpq hpq hpq (hφw.hasWeakLineDerivOn c)
+  have hw : HasWeakFDerivOn volume Ω (fun z => adjointRealCLM (J z) ((φ : ℂ → V) z))
+      (adjointFieldDeriv J DJ φ) :=
+    hc.hasWeakFDerivOn.bilin_of_memLp adjointRealCLM hp hp hq hq hpq hpq hpq hφw
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_coeff K hKΩ hK)
-      (fun K hK hKΩ => memLpLoc_iff.1 (hc.memLpLoc_deriv_apply c) K hKΩ hK)
+      (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_deriv K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 (hφc.continuousOn.memLpLoc (U := Ω)) K hKΩ hK)
-      (fun K hK hKΩ => memLpLoc_iff.1
-        ((hφd.clm_apply continuous_const).continuousOn.memLpLoc (U := Ω)) K hKΩ hK)).congr_ae_deriv
-      (.of_forall fun z => ?_)
-    simp only [adjointFieldDeriv_apply]
+      (fun K hK hKΩ => memLpLoc_iff.1 (hφd.continuousOn.memLpLoc (U := Ω)) K hKΩ hK)
   exact ⟨hw, φ.hasCompactSupport.mono' hs,
     (closure_minimal hs (isClosed_tsupport _)).trans φ.tsupport_subset,
     (MemLpLoc.memLp_of_forall_notMem_eq_zero hDΨ φ.hasCompactSupport φ.tsupport_subset
@@ -170,7 +147,8 @@ private theorem integral_inner_coeff_partial_comm (hc : IsSobolevCRCoefficients 
   have hDJ (c d : ℂ) : LocallyIntegrableOn (fun z => DJ z c (Dξ z d)) Ω :=
     (hc.memLpLoc_deriv_apply c).locallyIntegrableOn_clm_apply (hD d) hpq hloc
   obtain ⟨hΨ, hΨc, hΨΩ, hDΨ⟩ := adjointField_props hc hpq hp hq φ
-  have h := hξ.setIntegral_inner_apply_comm hDξq hΨ hΨc hΨΩ hDΨ hpq I e
+  have h := hξ.setIntegral_inner_apply_comm (fun K hK hKΩ => memLpLoc_iff.1 hDξq K hKΩ hK) hΨ
+    hΨc hΨΩ hDΨ hpq I e
   -- Off `Ω` the integrands vanish, so the integrals over `Ω` are integrals over the plane.
   have h0 (c d : ℂ) (z : ℂ) (hz : z ∉ (Ω : Set ℂ)) :
       ⟪adjointFieldDeriv J DJ φ z c, Dξ z d⟫_ℝ = 0 := by

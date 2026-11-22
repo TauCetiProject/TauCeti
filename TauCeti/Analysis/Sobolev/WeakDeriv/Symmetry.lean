@@ -18,11 +18,15 @@ agree as soon as one of them exists. No regularity beyond the existence of the t
 derivatives is assumed.
 
 The proof moves both derivatives onto the test function and uses that directional derivatives of
-test functions commute (`TestFunction.lineDerivOp_comm`).
+test functions commute (`TestFunction.lineDerivOp_comm`). The same argument shows, with no second
+weak derivative assumed, that the first weak derivatives of `u` pair symmetrically with the
+derivatives of a vector-valued test function.
 
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
+* `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_apply_comm`: for a weak derivative `Du` and a
+  test function `φ`, `∫ ⟪∂_v φ, Du w⟫ = ∫ ⟪∂_w φ, Du v⟫`.
 -/
 
 public section
@@ -30,7 +34,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions
+open scoped Distributions InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -55,5 +59,22 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
     _ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x w • u₁ x ∂μ := by
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
+/-- **Mixed weak derivatives commute against test functions.** If `u` has a weak derivative `Du`
+on `Ω`, then for every test function `φ` and all directions `v` and `w`,
+`∫ ⟪∂_v φ, Du w⟫ = ∫ ⟪∂_w φ, Du v⟫`: both sides are `-∫ ⟪∂_w ∂_v φ, u⟫`. No second weak
+derivative of `u` is assumed to exist. -/
+theorem HasWeakFDerivOn.integral_inner_fderiv_apply_comm [OpensMeasurableSpace E]
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    {u : E → V} {Du : E → E →L[ℝ] V} (hu : HasWeakFDerivOn μ Ω u Du) (φ : 𝓓(Ω, V)) (v w : E) :
+    ∫ x, ⟪fderiv ℝ (φ : E → V) x v, Du x w⟫_ℝ ∂μ =
+      ∫ x, ⟪fderiv ℝ (φ : E → V) x w, Du x v⟫_ℝ ∂μ := by
+  have h1 := (hu.hasWeakLineDerivOn w).integral_inner_lineDeriv_eq_neg (∂_{v} φ)
+  have h2 := (hu.hasWeakLineDerivOn v).integral_inner_lineDeriv_eq_neg (∂_{w} φ)
+  have h3 : (fun x => ⟪lineDeriv ℝ ((∂_{v} φ : 𝓓(Ω, V)) : E → V) x w, u x⟫_ℝ) =
+      fun x => ⟪lineDeriv ℝ ((∂_{w} φ : 𝓓(Ω, V)) : E → V) x v, u x⟫_ℝ :=
+    funext fun x => by rw [TestFunction.lineDeriv_lineDerivOp_comm]
+  rw [h3, h2] at h1
+  simpa only [TestFunction.lineDerivOp_apply_eq_fderiv, neg_inj] using h1.symm
 
 end TauCeti
