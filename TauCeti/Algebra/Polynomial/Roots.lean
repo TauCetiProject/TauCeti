@@ -164,12 +164,19 @@ theorem cappedRootMultiplicity_zero (a : R) (N : ℕ) :
     (0 : R[X]).cappedRootMultiplicity a N = N := by
   simp [cappedRootMultiplicity]
 
+/-- The capped root multiplicity with cap `0` is `0`. -/
+@[simp]
+theorem cappedRootMultiplicity_zero_right (p : R[X]) (a : R) :
+    p.cappedRootMultiplicity a 0 = 0 := by
+  simpa using Nat.le_zero.mp (p.cappedRootMultiplicity_le a 0)
+
 /-- For nonzero `p`, `p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a)`. -/
 theorem cappedRootMultiplicity_of_ne_zero {p : R[X]} (hp : p ≠ 0) (a : R) (N : ℕ) :
     p.cappedRootMultiplicity a N = min N (p.rootMultiplicity a) := by
   simp [cappedRootMultiplicity, hp]
 
 /-- The capped root multiplicity of a nonzero constant polynomial is `0`. -/
+@[simp]
 theorem cappedRootMultiplicity_C {c : R} (hc : c ≠ 0) (a : R) (N : ℕ) :
     (C c).cappedRootMultiplicity a N = 0 := by
   simp [cappedRootMultiplicity_of_ne_zero (C_ne_zero.mpr hc), rootMultiplicity_C]
@@ -186,10 +193,11 @@ theorem cappedRootMultiplicity_of_isUnit {u : R[X]} (hu : IsUnit u) (a : R) (N :
   obtain ⟨c, hc, rfl⟩ := Polynomial.isUnit_iff.mp hu
   exact cappedRootMultiplicity_C hc.ne_zero a N
 
-/-- `cappedRootMultiplicity` is subadditive under polynomial multiplication. -/
-theorem cappedRootMultiplicity_mul_le (p q : R[X]) (a : R) (N : ℕ) :
-    (p * q).cappedRootMultiplicity a N ≤
-      p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N := by
+/-- Over an integral domain, `cappedRootMultiplicity` of a product is the capped sum of the
+factors' capped root multiplicities. -/
+theorem cappedRootMultiplicity_mul (p q : R[X]) (a : R) (N : ℕ) :
+    (p * q).cappedRootMultiplicity a N =
+      min N (p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N) := by
   by_cases hp : p = 0
   · simp [hp]
   by_cases hq : q = 0
@@ -198,6 +206,13 @@ theorem cappedRootMultiplicity_mul_le (p q : R[X]) (a : R) (N : ℕ) :
   rw [cappedRootMultiplicity_of_ne_zero hpq, cappedRootMultiplicity_of_ne_zero hp,
     cappedRootMultiplicity_of_ne_zero hq, rootMultiplicity_mul hpq]
   omega
+
+/-- `cappedRootMultiplicity` is subadditive under polynomial multiplication. -/
+theorem cappedRootMultiplicity_mul_le (p q : R[X]) (a : R) (N : ℕ) :
+    (p * q).cappedRootMultiplicity a N ≤
+      p.cappedRootMultiplicity a N + q.cappedRootMultiplicity a N := by
+  rw [cappedRootMultiplicity_mul]
+  exact min_le_right _ _
 
 end
 

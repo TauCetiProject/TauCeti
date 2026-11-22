@@ -214,6 +214,34 @@ private theorem cappedFiberMult_mul_le {R : Type*} [CommRing R] [IsDomain R] (α
   rw [cappedFiberMult, Polynomial.map_mul]
   exact cappedRootMultiplicity_mul_le _ _ α N
 
+/-- The bivariate multiplicity bound for an outer-constant polynomial `C q` (`q ≠ 0`). -/
+private theorem sum_cappedFiberMult_C_le {K ι : Type*} [Field K] [Fintype ι]
+    {α β : ι → K} (hβ : Function.Injective β) (N : ℕ) {q : K[X]} (hq : q ≠ 0) :
+    ∑ i : ι, cappedFiberMult (α i) (β i) N (C q) ≤
+      N * ((C q : K[X][X]).natDegree + (Bivariate.swap (C q : K[X][X])).natDegree) +
+        2 * (C q : K[X][X]).natDegree * (Bivariate.swap (C q : K[X][X])).natDegree := by
+  classical
+  have hswap : (Bivariate.swap (C q : K[X][X])).natDegree = q.natDegree := by
+    rw [Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
+  let Z := Finset.univ.filter fun i : ι ↦ q.eval (β i) = 0
+  have hterm (i : ι) : cappedFiberMult (α i) (β i) N (C q) = if i ∈ Z then N else 0 := by
+    by_cases h0 : q.eval (β i) = 0
+    · simp [cappedFiberMult, Z, h0]
+    · simp [cappedFiberMult, Z, h0, cappedRootMultiplicity_C]
+  have hZ : Z.card ≤ q.natDegree := by
+    calc Z.card = ∑ i ∈ Z, 1 := by simp
+      _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
+          Nat.succ_le_of_lt ((rootMultiplicity_pos hq).mpr (Finset.mem_filter.mp hi).2)
+      _ ≤ q.natDegree := q.sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn
+  calc ∑ i : ι, cappedFiberMult (α i) (β i) N (C q)
+      = ∑ i : ι, if i ∈ Z then N else 0 := Finset.sum_congr rfl fun i _ ↦ hterm i
+    _ = N * Z.card := by rw [Fintype.sum_ite_mem]; simp [mul_comm]
+    _ ≤ N * q.natDegree := Nat.mul_le_mul_left N hZ
+    _ = N * ((C q : K[X][X]).natDegree + (Bivariate.swap (C q : K[X][X])).natDegree) +
+          2 * (C q : K[X][X]).natDegree * (Bivariate.swap (C q : K[X][X])).natDegree := by
+        rw [natDegree_C, hswap]
+        ring
+
 /-- The bivariate multiplicity bound on a single irreducible factor `Q : K[X][X]`. -/
 private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [CharZero K]
     [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
@@ -227,27 +255,7 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
   classical
   rcases Nat.eq_zero_or_pos Q.natDegree with hdeg0 | hdeg
   · obtain ⟨q, rfl⟩ := natDegree_eq_zero.mp hdeg0
-    have hq0 : q ≠ 0 := fun h ↦ hQ.ne_zero (by simp [h])
-    have hswap : (Bivariate.swap (C q : K[X][X])).natDegree = q.natDegree := by
-      rw [Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
-    let Z := Finset.univ.filter fun i : ι ↦ q.eval (β i) = 0
-    have hterm (i : ι) : cappedFiberMult (α i) (β i) N (C q) = if i ∈ Z then N else 0 := by
-      by_cases h0 : q.eval (β i) = 0
-      · simp [cappedFiberMult, Z, h0]
-      · simp [cappedFiberMult, Z, h0, cappedRootMultiplicity_C]
-    have hZ : Z.card ≤ q.natDegree := by
-      calc Z.card = ∑ i ∈ Z, 1 := by simp
-        _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
-            Nat.succ_le_of_lt ((rootMultiplicity_pos hq0).mpr (Finset.mem_filter.mp hi).2)
-        _ ≤ q.natDegree := q.sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn
-    calc ∑ i : ι, cappedFiberMult (α i) (β i) N (C q)
-        = ∑ i : ι, if i ∈ Z then N else 0 := Finset.sum_congr rfl fun i _ ↦ hterm i
-      _ = N * Z.card := by rw [Fintype.sum_ite_mem]; simp [mul_comm]
-      _ ≤ N * q.natDegree := Nat.mul_le_mul_left N hZ
-      _ = N * ((C q : K[X][X]).natDegree + (Bivariate.swap (C q : K[X][X])).natDegree) +
-            2 * (C q : K[X][X]).natDegree * (Bivariate.swap (C q : K[X][X])).natDegree := by
-          rw [natDegree_C, hswap]
-          ring
+    exact sum_cappedFiberMult_C_le hβ N (fun h ↦ hQ.ne_zero (by simp [h]))
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
     have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
     have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 := by

@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Algebra.Order.Group.Abs
 public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
+public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Find
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 import Mathlib.Tactic.Linarith
@@ -61,6 +63,8 @@ field.
   2 * ∑ s ∈ range S, min k s` in any ordered ring.
 * `Finset.le_two_mul_sum_range_min_div`: double-sum lower bound on
   `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s` in any strictly ordered field.
+* `Fintype.sum_fin_prod_rev`, `Fintype.le_two_mul_sum_fin_prod_min_div`: reversed-index
+  `Fin R × Fin S` form of double sums and of the truncated-sum lower bound.
 -/
 
 public section
@@ -265,5 +269,27 @@ theorem exists_equiv_of_forall_sum_min_eq {e : ι → ℕ} {e' : κ → ℕ} (he
       omega
   exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
     fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
+
+/-- Reindexing a sum over `Fin R × Fin S` with reversed second coordinate `S - 1 - j` as a double
+sum over `Finset.range R` and `Finset.range S`. -/
+theorem sum_fin_prod_rev {M : Type*} [AddCommMonoid M] (R S : ℕ) (f : ℕ → ℕ → M) :
+    ∑ i : Fin R × Fin S, f i.1.val (S - 1 - i.2.val) =
+      ∑ r ∈ Finset.range R, ∑ s ∈ Finset.range S, f r s := by
+  rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := R)]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ f r.val (S - 1 - s.val)),
+    ← Fin.sum_univ_eq_sum_range (n := S)]
+  exact Finset.sum_congr rfl fun s _ ↦ by
+    congr 1
+    simp only [Fin.revPerm_apply, Fin.val_rev]
+    omega
+
+/-- Reversed-index `Fin R × Fin S` form of `Finset.le_two_mul_sum_range_min_div`. -/
+theorem le_two_mul_sum_fin_prod_min_div {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (p R S : ℕ) :
+    (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2 ≤
+      2 * ∑ i : Fin R × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : K) := by
+  rw [sum_fin_prod_rev R S (fun r s ↦ ((min (r / p) s : ℕ) : K))]
+  exact Finset.le_two_mul_sum_range_min_div p R S
 
 end Fintype

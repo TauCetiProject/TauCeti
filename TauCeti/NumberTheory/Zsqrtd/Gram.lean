@@ -25,7 +25,8 @@ and its squared Euclidean norm equals `∑ k, (‖embPos d (v k)‖ ^ 2 + ‖emb
 
 ## Main results
 
-* `Zsqrtd.famCoords`, `Zsqrtd.famWeight`: integer coordinate extraction and real weights.
+* `Zsqrtd.famCoords`, `Zsqrtd.famWeight`: bundled `ℤ`-linear coordinate equivalence and real
+  weights.
 * `Zsqrtd.famWeight_pos`: positivity of `Zsqrtd.famWeight` when `d ≠ 0`.
 * `Zsqrtd.famToLp`: bundled `ℤ`-linear Euclidean realization
   `(κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2)`.
@@ -45,10 +46,16 @@ open scoped InnerProductSpace
 
 namespace Zsqrtd
 
-/-- Bundled `ℤ`-linear coordinate extraction `(κ → ℤ√d) →ₗ[ℤ] (κ × Fin 2 → ℤ)`, sending `v` to
-`(k, 0) ↦ (v k).re` and `(k, 1) ↦ (v k).im`. -/
-def famCoords (d : ℤ) (κ : Type*) : (κ → ℤ√d) →ₗ[ℤ] (κ × Fin 2 → ℤ) where
+/-- Bundled `ℤ`-linear coordinate equivalence `(κ → ℤ√d) ≃ₗ[ℤ] (κ × Fin 2 → ℤ)`, sending `v` to
+`(k, 0) ↦ (v k).re` and `(k, 1) ↦ (v k).im`, with inverse `f ↦ fun k ↦ ⟨f (k, 0), f (k, 1)⟩`. -/
+def famCoords (d : ℤ) (κ : Type*) : (κ → ℤ√d) ≃ₗ[ℤ] (κ × Fin 2 → ℤ) where
   toFun v p := if p.2 = 0 then (v p.1).re else (v p.1).im
+  invFun f k := ⟨f (k, 0), f (k, 1)⟩
+  left_inv v := by
+    ext k <;> rfl
+  right_inv f := by
+    ext ⟨k, i⟩
+    fin_cases i <;> rfl
   map_add' v w := by
     ext p
     by_cases h : p.2 = 0 <;> simp [h]
@@ -66,6 +73,12 @@ theorem famCoords_zero (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
 @[simp]
 theorem famCoords_one (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
     famCoords d κ v (k, 1) = (v k).im := by
+  simp [famCoords]
+
+/-- Reconstruction of a `ℤ√d`-tuple from its coordinates under `(Zsqrtd.famCoords d κ).symm`. -/
+@[simp]
+theorem famCoords_symm_apply (d : ℤ) {κ : Type*} (f : κ × Fin 2 → ℤ) (k : κ) :
+    (famCoords d κ).symm f k = ⟨f (k, 0), f (k, 1)⟩ := by
   simp [famCoords]
 
 /-- Real coordinate weights for `Zsqrtd.famToLp`: `2` on real-part coordinates `(k, 0)` and
@@ -102,11 +115,11 @@ theorem famWeight_one (d : ℤ) {κ : Type*} (k : κ) :
 recovers the weighted Euclidean pairing `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
 noncomputable def famToLp (d : ℤ) (κ : Type*) :
     (κ → ℤ√d) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2) :=
-  (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ)
+  (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ).toLinearMap
 
 /-- Relation between `Zsqrtd.famToLp` and `TauCeti.weightedToLp`. -/
 theorem famToLp_eq_weightedToLp (d : ℤ) (κ : Type*) :
-    famToLp d κ = (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ) := by
+    famToLp d κ = (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ).toLinearMap := by
   rfl
 
 /-- Applying `Zsqrtd.famToLp` evaluates `TauCeti.weightedToLp` on `Zsqrtd.famCoords`. -/
@@ -117,10 +130,7 @@ theorem famToLp_apply (d : ℤ) {κ : Type*} (v : κ → ℤ√d) :
 /-- `Zsqrtd.famToLp d κ` is injective whenever `d ≠ 0`. -/
 theorem famToLp_injective {d : ℤ} (hd : d ≠ 0) (κ : Type*) :
     Function.Injective (famToLp d κ) :=
-  (TauCeti.weightedToLp_injective (famWeight_pos hd κ)).comp fun v w h ↦ by
-    ext k
-    · exact congrArg (fun f ↦ f (k, 0)) h
-    · exact congrArg (fun f ↦ f (k, 1)) h
+  (TauCeti.weightedToLp_injective (famWeight_pos hd κ)).comp (famCoords d κ).injective
 
 /-- Real-part coordinate evaluation of `Zsqrtd.famToLp`. -/
 @[simp]

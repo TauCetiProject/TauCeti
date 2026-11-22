@@ -286,13 +286,18 @@ theorem resultant_taylor_of_natDegree_le (f g : R[X]) (r : R) {m n : ℕ}
       resultant p q (f.natDegree + k) (g.natDegree + l) =
         (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then q.leadingCoeff else 0) ^ k *
           p.leadingCoeff ^ l * resultant p q f.natDegree g.natDegree := by
-    have hcoeff_q : q.coeff (g.natDegree + l) = if l = 0 then q.leadingCoeff else 0 := by
+    have hcoeff_q : q.coeff (q.natDegree + l) = if l = 0 then q.leadingCoeff else 0 := by
       rcases Nat.eq_zero_or_pos l with rfl | hl
-      · simp [← hq, coeff_natDegree]
-      · simp [hl.ne', coeff_eq_zero_of_natDegree_lt (by omega : q.natDegree < g.natDegree + l)]
-    rw [← hp, resultant_add_left_deg _ _ _ _ _ le_rfl, ← hq,
-      resultant_add_right_deg _ _ _ _ _ le_rfl, coeff_natDegree, hp, hq, hcoeff_q]
-    ring
+      · simp [coeff_natDegree]
+      · simp [hl.ne', coeff_eq_zero_of_natDegree_lt (by omega : q.natDegree < q.natDegree + l)]
+    have hpad0 : resultant p q (p.natDegree + k) (q.natDegree + l) =
+        (-1) ^ ((q.natDegree + l) * k) * (if l = 0 then q.leadingCoeff else 0) ^ k *
+          p.leadingCoeff ^ l * resultant p q p.natDegree q.natDegree := by
+      rw [resultant_add_left_deg p q p.natDegree (q.natDegree + l) k le_rfl,
+        resultant_add_right_deg p q p.natDegree q.natDegree l le_rfl,
+        coeff_natDegree, hcoeff_q]
+      ring
+    simpa only [hp, hq] using hpad0
   calc resultant (taylor r f) (taylor r g) (f.natDegree + k) (g.natDegree + l)
       = (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then (taylor r g).leadingCoeff else 0) ^ k *
           (taylor r f).leadingCoeff ^ l *
@@ -300,10 +305,10 @@ theorem resultant_taylor_of_natDegree_le (f g : R[X]) (r : R) {m n : ℕ}
         hpad (taylor r f) (taylor r g) (natDegree_taylor f r) (natDegree_taylor g r)
     _ = (-1) ^ ((g.natDegree + l) * k) * (if l = 0 then g.leadingCoeff else 0) ^ k *
           f.leadingCoeff ^ l * resultant f g f.natDegree g.natDegree := by
-        rw [leadingCoeff_taylor, leadingCoeff_taylor,
-          show resultant (taylor r f) (taylor r g) f.natDegree g.natDegree =
-            resultant f g f.natDegree g.natDegree from by
-            simpa only [natDegree_taylor] using resultant_taylor f g r]
+        have hres : resultant (taylor r f) (taylor r g) f.natDegree g.natDegree =
+            resultant f g f.natDegree g.natDegree := by
+          simpa only [natDegree_taylor] using resultant_taylor f g r
+        simp only [leadingCoeff_taylor, hres]
     _ = resultant f g (f.natDegree + k) (g.natDegree + l) := (hpad f g rfl rfl).symm
 
 /-- Translating the indeterminate preserves the formal derivative resultant

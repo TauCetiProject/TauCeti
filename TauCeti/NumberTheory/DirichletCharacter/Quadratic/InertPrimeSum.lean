@@ -28,7 +28,7 @@ and `N = q ^ (2 * (C / 3)) = X ^ (2 / 3)`. Green's Gram determinant construction
 (`TauCeti.exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one`) supplies a positive natural
 number `D` satisfying both the Hadamard upper bound
 `log D ≤ (1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * R ^ 2 * S * log X + O(R ^ 2 * S)` and the
-simultaneous `p`-adic divisibilities `p ^ (2 * ∑_{r, s} min (r / p) (S - 1 - s)) ∣ D` at every odd
+simultaneous `p`-adic divisibilities `p ^ (2 * ∑_{r, s} min (r / p) (S - 1 - s)) ∣ D` at every
 prime `p` with `jacobiSym d p = -1`. Comparing `∑_p 2 * (∑_{r, s} h) * log p ≤ log D` and dividing
 by `R ^ 2 * S` yields the explicit bound for all `C ≥ 6` divisible by `3`, and specializes at
 `C ≥ 15` (`56 / 75 < 3 / 4`) to `TauCeti.inert_prime_sum_le`.
@@ -257,17 +257,6 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
           field_simp
   linarith
 
-private theorem sum_fin_prod_min_rev (p X S : ℕ) :
-    (∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) =
-      ∑ r ∈ Finset.range X, ∑ s ∈ Finset.range S, ((min (r / p) s : ℕ) : ℝ) := by
-  rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := X)]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  rw [← Equiv.sum_comp Fin.revPerm
-      (fun s : Fin S ↦ ((min (r.val / p) (S - 1 - s.val) : ℕ) : ℝ)),
-    ← Fin.sum_univ_eq_sum_range (n := S)]
-  exact Finset.sum_congr rfl fun s _ ↦ by
-    congr 2; simp only [Fin.revPerm_apply, Fin.val_rev]; omega
-
 private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime) (hSX : S ≤ X) :
     (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
         2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
@@ -281,8 +270,7 @@ private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime)
   have hexp :
       (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
         2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
-    rw [sum_fin_prod_min_rev]
-    linarith [Finset.le_two_mul_sum_range_min_div (K := ℝ) p X S, hXS_div, h2div]
+    linarith [Fintype.le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
   calc (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
         2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2)
       = ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
@@ -319,8 +307,7 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
         (fun p hp ↦ (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2)
         (fun p hp ↦ by
           obtain ⟨hpX, _, hjac⟩ := Finset.mem_filter.mp hp
-          have hp_pr := (Nat.mem_primesLE.mp hpX).2
-          exact hD_dvd p hp_pr (hp_pr.odd_of_ne_two (by omega)) hjac)
+          exact hD_dvd p (Nat.mem_primesLE.mp hpX).2 hjac)
   have hSX : S ≤ X := Nat.div_le_self X C
   have hlhs_ge :
       (X : ℝ) ^ 2 * S * (∑ p ∈ P, Real.log p / p) -

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.QuadraticAlgebra.Int
 public import Mathlib.Algebra.QuadraticAlgebra.NormDeterminant
+public import Mathlib.Analysis.RCLike.Sqrt
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 
@@ -35,6 +36,7 @@ quadratic involution `star`, which is then not complex conjugation.
 ## Main definitions and results
 
 * `QuadraticAlgebra.sqrtRadicand r`: the complex square root of `r` used for `σ₊`.
+* `QuadraticAlgebra.sqrtRadicand_eq_sqrt r`: comparison `sqrtRadicand r = Complex.sqrt (r : ℂ)`.
 * `QuadraticAlgebra.sqrtEmbedding r`, `QuadraticAlgebra.negSqrtEmbedding r`: the algebra maps
   `σ₊ : ω ↦ s` and `σ₋ : ω ↦ -s`, which coincide at `r = 0`.
 * `QuadraticAlgebra.norm_embedding_le`: `‖σ z‖ ≤ |u| + |v| √|r|` for every `ℚ`-algebra map `σ`.
@@ -108,6 +110,21 @@ variable (r) in
 /-- For `r ≤ 0` the chosen square root is purely imaginary. -/
 @[simp] theorem conj_sqrtRadicand (hr : r ≤ 0) : conj (sqrtRadicand r) = -sqrtRadicand r := by
   simp [sqrtRadicand_of_nonpos hr]
+
+/-- `QuadraticAlgebra.sqrtRadicand r` agrees with the principal complex square root
+`Complex.sqrt (r : ℂ)` for every rational `r`. -/
+theorem sqrtRadicand_eq_sqrt (r : ℚ) : sqrtRadicand r = Complex.sqrt (r : ℂ) := by
+  open scoped ComplexOrder in
+  rcases le_total 0 r with hr | hr
+  · have hc : (0 : ℂ) ≤ (r : ℂ) := by
+      rw [← Complex.ofReal_ratCast]
+      exact Complex.zero_le_real.mpr (by exact_mod_cast hr)
+    rw [sqrtRadicand_of_nonneg hr, Complex.sqrt_of_nonneg hc, Complex.ratCast_re]
+  · have hc : (0 : ℂ) ≤ -(r : ℂ) := by
+      rw [← Complex.ofReal_ratCast, ← Complex.ofReal_neg]
+      exact Complex.zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hr)
+    rw [← neg_neg (r : ℂ), Complex.sqrt_neg_of_nonneg hc, Complex.sqrt_of_nonneg hc,
+      sqrtRadicand_of_nonpos hr, Complex.neg_re, Complex.ratCast_re, mul_comm]
 
 variable (r)
 

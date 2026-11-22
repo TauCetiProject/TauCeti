@@ -11,13 +11,13 @@ import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.NumberTheory.Zsqrtd.Basic
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.InnerProductSpace.Gram.Integral
-import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.Zsqrtd.Gram
 import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
@@ -38,7 +38,7 @@ matrix `G`:
    `Polynomial.eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube`.
 2. **Archimedean upper bound.** Hadamard's inequality (`Matrix.log_det_le_of_map_eq_gram`) bounds
    `log G.det` in terms of `N, R, S` and `|d|`.
-3. **`p`-adic divisibility.** At every odd prime `p` with `jacobiSym d p = -1`, Frobenius in
+3. **`p`-adic divisibility.** At every prime `p` with `jacobiSym d p = -1`, Frobenius in
    `ℤ√d / (p)` flips `√d`, so the unitriangular change of family
    `z ^ r * z' ^ s ↦ z ^ (r - p * h) * (z ^ p - z') ^ h * z' ^ s` with
    `h = min (r / p) (S - 1 - s)` preserves `G.det` (`Matrix.det_gram_sum_smul_of_det_eq_one`)
@@ -48,7 +48,7 @@ matrix `G`:
 
 * `TauCeti.exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one`: existence of a positive
   natural number `D` (namely `G.det`) satisfying both the Hadamard upper bound and the simultaneous
-  `p`-adic divisibilities at all odd primes `p` with `jacobiSym d p = -1`.
+  `p`-adic divisibilities at all primes `p` with `jacobiSym d p = -1`.
 
 ## References
 
@@ -375,11 +375,9 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
         (R : ℝ) * S * (R + S) * Real.log (2 * N * Real.sqrt d.natAbs) := by
   have hlin := linearIndependent_baseVec hd hd1 hdeg
   have hfin_sq (n : ℕ) : ∑ r : Fin n, (2 * (r.val : ℝ)) ≤ (n : ℝ) ^ 2 := by
-    have : (∑ r : Fin n, 2 * (r.val : ℝ)) = 2 * ((∑ r ∈ Finset.range n, r : ℕ) : ℝ) := by
-      rw [← Fin.sum_univ_eq_sum_range (fun r : ℕ ↦ r) n]
-      push_cast; rw [Finset.mul_sum]
-    rw [this, Finset.sum_range_id, sq]
-    exact_mod_cast (Nat.mul_div_le (n * (n - 1)) 2).trans (Nat.mul_le_mul_left n (Nat.sub_le n 1))
+    rw [Fin.sum_univ_eq_sum_range (fun r : ℕ ↦ 2 * (r : ℝ)), ← Finset.mul_sum,
+      mul_comm, Finset.sum_range_natCast_mul_two]
+    nlinarith
   have hsum_idx : ∑ i : Fin R × Fin S, 2 * ((i.1.val : ℝ) + i.2.val) ≤ (R : ℝ) * S * (R + S) := by
     rw [Fintype.sum_prod_type]
     have hsplit : (∑ r : Fin R, ∑ s : Fin S, 2 * ((r.val : ℝ) + s.val)) =
@@ -555,17 +553,6 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
     exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S)
   exact_mod_cast hR_eq
 
-private theorem pow_dvd_factorial_mul_coeff_mul_X_pow {R : Type*} [CommRing R]
-    {p : ℕ} (hp : 0 < p) (m j : ℕ) (B : R[X]) :
-    (p : R) ^ m ∣ (j.factorial : R) * (B * X ^ (p * m)).coeff j := by
-  rcases lt_or_ge j (p * m) with hlt | hge
-  · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
-  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp hge
-    have hcast : (j.factorial : R) = (p : R) ^ m * (q_fac : R) := by
-      rw [hq_fac, Nat.cast_mul, Nat.cast_pow]
-    rw [hcast, mul_assoc]
-    exact dvd_mul_right _ _
-
 /-- Every jet evaluation of `shiftPoly d p i` at an inert prime `p` is divisible by `p ^ h`. -/
 private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
     (hjac : jacobiSym d p = -1) (N R S : ℕ) (i : Fin R × Fin S)
@@ -636,7 +623,7 @@ end InertPrimeSum
 and parameters `N, R, S : ℕ` satisfying `N * ((R - 1) + (S - 1)) + 2 * (R - 1) * (S - 1) < N ^ 3`,
 there exists a positive natural number `D` satisfying both the Hadamard upper bound
 `log D ≤ R * S * (log (2 * N ^ 3) + 2 * N * log R) + R * S * (R + S) * log (2 * N * √|d|)`
-and, at every odd prime `p` with `jacobiSym d p = -1`, the `p`-adic divisibility
+and, at every prime `p` with `jacobiSym d p = -1`, the `p`-adic divisibility
 `p ^ (2 * ∑ i : Fin R × Fin S, min (i.1 / p) (S - 1 - i.2)) ∣ D`. -/
 theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd : Squarefree d)
     (hd1 : d ≠ 1) {N R S : ℕ}
@@ -645,13 +632,13 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
       Real.log (D : ℝ) ≤
         (R : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log R) +
           (R : ℝ) * S * (R + S) * Real.log (2 * N * Real.sqrt d.natAbs) ∧
-      ∀ p : ℕ, p.Prime → Odd p → jacobiSym d p = -1 →
+      ∀ p : ℕ, p.Prime → jacobiSym d p = -1 →
         p ^ (2 * ∑ i : Fin R × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) ∣ D := by
   open InertPrimeSum in
   rcases Nat.eq_zero_or_pos R with rfl | hR
-  · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ _ ↦ by simp⟩
+  · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ ↦ by simp⟩
   rcases Nat.eq_zero_or_pos S with rfl | _hS
-  · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ _ ↦ by simp⟩
+  · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ ↦ by simp⟩
   have hN : 0 < N := by
     rcases Nat.eq_zero_or_pos N with rfl | hN
     · simp at hdeg
@@ -661,7 +648,7 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
   set D := (Zsqrtd.intGram d (baseFam d N R S)).det.toNat
   have hD_cast : (D : ℤ) = (Zsqrtd.intGram d (baseFam d N R S)).det :=
     Int.toNat_of_nonneg (by omega)
-  refine ⟨D, by omega, ?_, fun p hp _hodd hjac ↦ ?_⟩
+  refine ⟨D, by omega, ?_, fun p hp hjac ↦ ?_⟩
   · have hD_real : (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
       exact_mod_cast hD_cast
     rw [hD_real]

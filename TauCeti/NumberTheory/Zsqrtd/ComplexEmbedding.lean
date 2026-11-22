@@ -88,25 +88,6 @@ theorem embPos_injective {d : ℤ} (hd : ¬ IsSquare d) : Function.Injective (em
 theorem embNeg_injective {d : ℤ} (hd : ¬ IsSquare d) : Function.Injective (embNeg d) :=
   Zsqrtd.lift_injective _ fun n hn ↦ hd ⟨n, hn⟩
 
-private theorem sqrt_intCast_eq_sqrtRadicand (d : ℤ) :
-    Complex.sqrt (d : ℂ) = QuadraticAlgebra.sqrtRadicand (d : ℚ) := by
-  open scoped ComplexOrder in
-  rcases le_total 0 d with hd | hd
-  · have hq : (0 : ℚ) ≤ d := by exact_mod_cast hd
-    have hc : (0 : ℂ) ≤ (d : ℂ) := by
-      rw [show (d : ℂ) = ((d : ℝ) : ℂ) by norm_cast]
-      exact Complex.zero_le_real.mpr (by exact_mod_cast hd)
-    rw [Complex.sqrt_of_nonneg hc, QuadraticAlgebra.sqrtRadicand_of_nonneg hq]
-    simp
-  · have hq : (d : ℚ) ≤ 0 := by exact_mod_cast hd
-    have hc : (0 : ℂ) ≤ -(d : ℂ) := by
-      rw [show -(d : ℂ) = (((-d : ℤ) : ℝ) : ℂ) by push_cast; ring]
-      exact Complex.zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hd)
-    have hneg : -(-(d : ℂ)) = (d : ℂ) := neg_neg _
-    rw [← hneg, Complex.sqrt_neg_of_nonneg hc, Complex.sqrt_of_nonneg hc,
-      QuadraticAlgebra.sqrtRadicand_of_nonpos hq]
-    simp [mul_comm]
-
 /-- `Zsqrtd.embPos d` agrees with `QuadraticAlgebra.sqrtEmbedding (d : ℚ)` via
 `Zsqrtd.equivQuadraticAlgebra d` and scalar extension to `ℚ`. -/
 theorem embPos_eq_sqrtEmbedding (d : ℤ) (u : ℤ√d) :
@@ -114,9 +95,19 @@ theorem embPos_eq_sqrtEmbedding (d : ℤ) (u : ℤ√d) :
       QuadraticAlgebra.sqrtEmbedding (d : ℚ)
         (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
           (equivQuadraticAlgebra d u)) := by
+  let z : QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ) :=
+    algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
+      (equivQuadraticAlgebra d u)
+  have hre_bridge : (z : QuadraticAlgebra ℚ d 0).re = z.re := rfl
+  have him_bridge : (z : QuadraticAlgebra ℚ d 0).im = z.im := rfl
+  have hre : (z : QuadraticAlgebra ℚ d 0).re = (u.re : ℚ) := by
+    rw [hre_bridge, QuadraticAlgebra.Int.re_algebraMap (a := d) (b := 0), re_equivQuadraticAlgebra]
+  have him : (z : QuadraticAlgebra ℚ d 0).im = (u.im : ℚ) := by
+    rw [him_bridge, QuadraticAlgebra.Int.im_algebraMap (a := d) (b := 0), im_equivQuadraticAlgebra]
+  have hsqrt : QuadraticAlgebra.sqrtRadicand (d : ℚ) = Complex.sqrt (d : ℂ) := by
+    simpa only [Rat.cast_intCast] using QuadraticAlgebra.sqrtRadicand_eq_sqrt (d : ℚ)
   rw [embPos_apply, QuadraticAlgebra.sqrtEmbedding_apply]
-  erw [QuadraticAlgebra.Int.re_algebraMap, QuadraticAlgebra.Int.im_algebraMap]
-  simp [sqrt_intCast_eq_sqrtRadicand]
+  simp only [z, hre, him, hsqrt, Rat.cast_intCast]
 
 /-- `Zsqrtd.embNeg d` agrees with `QuadraticAlgebra.negSqrtEmbedding (d : ℚ)` via
 `Zsqrtd.equivQuadraticAlgebra d` and scalar extension to `ℚ`. -/
@@ -125,9 +116,19 @@ theorem embNeg_eq_negSqrtEmbedding (d : ℤ) (u : ℤ√d) :
       QuadraticAlgebra.negSqrtEmbedding (d : ℚ)
         (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
           (equivQuadraticAlgebra d u)) := by
+  let z : QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ) :=
+    algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
+      (equivQuadraticAlgebra d u)
+  have hre_bridge : (z : QuadraticAlgebra ℚ d 0).re = z.re := rfl
+  have him_bridge : (z : QuadraticAlgebra ℚ d 0).im = z.im := rfl
+  have hre : (z : QuadraticAlgebra ℚ d 0).re = (u.re : ℚ) := by
+    rw [hre_bridge, QuadraticAlgebra.Int.re_algebraMap (a := d) (b := 0), re_equivQuadraticAlgebra]
+  have him : (z : QuadraticAlgebra ℚ d 0).im = (u.im : ℚ) := by
+    rw [him_bridge, QuadraticAlgebra.Int.im_algebraMap (a := d) (b := 0), im_equivQuadraticAlgebra]
+  have hsqrt : QuadraticAlgebra.sqrtRadicand (d : ℚ) = Complex.sqrt (d : ℂ) := by
+    simpa only [Rat.cast_intCast] using QuadraticAlgebra.sqrtRadicand_eq_sqrt (d : ℚ)
   rw [embNeg_apply, QuadraticAlgebra.negSqrtEmbedding_apply]
-  erw [QuadraticAlgebra.Int.re_algebraMap, QuadraticAlgebra.Int.im_algebraMap]
-  simp [sqrt_intCast_eq_sqrtRadicand, sub_eq_add_neg]
+  simp only [z, hre, him, hsqrt, Rat.cast_intCast, sub_eq_add_neg, mul_neg]
 
 /-- Coordinate norm bound for `Zsqrtd.embPos`, transported from
 `QuadraticAlgebra.norm_embedding_algebraMap_le`. -/
