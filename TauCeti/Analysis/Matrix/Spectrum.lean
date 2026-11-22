@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -33,7 +34,9 @@ possibly of different sizes, then the eigenvalues of `A` are those of `B` togeth
 zeros. Mathlib's `Matrix.charpoly_mul_comm_of_le` gives this relation for the two Gram matrices
 `Aᴴ * A` and `A * Aᴴ` of a rectangular matrix, which therefore have the same nonzero eigenvalues.
 This is how the spectra of sample covariance matrices `X * Xᴴ` and of their companions `Xᴴ * X`
-are compared.
+are compared. Since unitary conjugation preserves the characteristic polynomial, a decreasing real
+diagonal is recovered from the ordered eigenvalues of any of its unitary conjugates; this is the
+ordered diagonal coordinate in the spectral change of variables.
 
 Eigen-coordinates also bound the pseudo-inverse of `B` along eigenvectors of a matrix below it in
 the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with eigenvalue `a`,
@@ -67,6 +70,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   zeros;
 * `Matrix.filter_map_eigenvalues_conjTranspose_mul_self` — `Aᴴ * A` and `A * Aᴴ` have the same
   nonzero eigenvalues, counted with multiplicity;
+* `Matrix.eigenvalues₀_conjStarAlgAut_diagonal` — the ordered eigenvalues of a unitary conjugate
+  of a decreasing real diagonal are its diagonal entries;
 * `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
@@ -83,6 +88,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
 
 * R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
   Theorem 1.3.22 (`AB` and `BA` have the same nonzero eigenvalues).
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
+  University Press (2010), §4.1 (ordered diagonal coordinate of the spectral change of variables).
 -/
 
 public section
@@ -377,6 +384,33 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
       (isHermitian_mul_conjTranspose_self A) (isHermitian_conjTranspose_mul_self A)
       (charpoly_mul_comm_of_le A Aᴴ hle)]
     simp +contextual [Multiset.mem_replicate]
+
+end Matrix
+
+namespace Matrix
+
+variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+
+/-- The decreasing ordering of a real Hermitian diagonal is the ordered eigenvalue vector
+of every unitary conjugate of that diagonal. -/
+theorem eigenvalues₀_conjStarAlgAut_diagonal (U : unitaryGroup (Fin n) 𝕜) {d : Fin n → ℝ}
+    (hd : Antitone d) (hA : (Unitary.conjStarAlgAut ℝ _ U
+      (diagonal fun i ↦ (d i : 𝕜))).IsHermitian) :
+    hA.eigenvalues₀ = d ∘ Fin.cast (Fintype.card_fin n) := by
+  let D := diagonal fun i : Fin n ↦ (d i : 𝕜)
+  have hC : (Unitary.conjStarAlgAut ℝ _ U D).charpoly = D.charpoly := by
+    rw [Unitary.conjStarAlgAut_apply, ← inv_eq_left_inv (Unitary.coe_star_mul_self U)]
+    exact charpoly_units_conj (Unitary.toUnits U) D
+  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, hC,
+    roots_charpoly_diagonal, Multiset.map_map]
+  have hmap : (Finset.univ.val.map (RCLike.re ∘ fun i ↦ (d i : 𝕜))) =
+      (List.ofFn d : Multiset ℝ) := by
+    simp [Fin.univ_val_map]
+  rw [hmap, List.ofFn_congr (Fintype.card_fin n).symm d, Multiset.coe_sort]
+  exact List.mergeSort_of_pairwise (by
+    simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
+    have hm : Monotone (Fin.cast (Fintype.card_fin n)) := fun _ _ h ↦ h
+    exact (hd.comp_monotone hm).sortedGE_ofFn)
 
 end Matrix
 

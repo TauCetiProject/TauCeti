@@ -8,13 +8,9 @@ module
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.LinearAlgebra.Matrix.Defs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
-public import Mathlib.Analysis.InnerProductSpace.Subspace
-public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UniformSpace.Matrix
-import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
 # Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
@@ -311,18 +307,27 @@ theorem abs_det_unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
   -- Conjugating the real linear isometry by a coordinate equivalence preserves its determinant.
   have he : (e.symm.trans (T.toLinearEquiv.trans e)).toLinearMap =
       e.toLinearMap ∘ₗ T.toLinearEquiv.toLinearMap ∘ₗ e.symm.toLinearMap := rfl
-  rw [he, LinearMap.det_conj, ← LinearMap.normDet_eq_abs_det]
-  exact T.toLinearIsometry.normDet_eq_one
+  rw [he, LinearMap.det_conj]
+  -- In an orthonormal basis the isometry has an orthogonal matrix, whose determinant is a unit.
+  let b := stdOrthonormalBasis ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))
+  rw [← LinearMap.det_toMatrix b.toBasis, ← Real.norm_eq_abs]
+  exact CStarRing.norm_of_mem_unitary (det_of_mem_unitary (T.toMatrix_mem_unitaryGroup b b))
+
+/-- The unitary coordinate change reads the coordinates of the unitary conjugate of the
+self-adjoint matrix with the given coordinates. -/
+theorem unitaryConjCoordinates_apply (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
+    unitaryConjCoordinates U x =
+      selfAdjointCoordinatesLinearMap
+        (Unitary.conjStarAlgAut ℝ _ U (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜)) :=
+  (rfl)
 
 /-- Conjugating the coordinates of a self-adjoint matrix gives the coordinates of its
 unitary conjugate. -/
-theorem unitaryConjCoordinates_read (U : unitaryGroup (Fin n) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+theorem unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap
+    (U : unitaryGroup (Fin n) 𝕜) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
     unitaryConjCoordinates U (selfAdjointCoordinatesLinearMap A.val) =
       selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
-  rw [← selfAdjointCoordinates_apply A, unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
-    selfAdjointCoordinates_apply]
-  exact congrArg selfAdjointCoordinatesLinearMap (UnitaryGroup.coe_selfAdjointConj_apply U A)
+  rw [← selfAdjointCoordinates_apply A, unitaryConjCoordinates_apply,
+    ContinuousLinearEquiv.symm_apply_apply]
 
 end TauCeti

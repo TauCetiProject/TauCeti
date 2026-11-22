@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues.Diagonalization
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralCoordinates
 public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
 public import Mathlib.MeasureTheory.Function.Jacobian
-import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Local spectral change of variables
 
 Every self-adjoint matrix with simple spectrum has an open neighborhood parametrized by
-a real diagonal and transverse unitary angles. The matrix volume in such a chart is
-the product of the Vandermonde factor in the diagonal, with exponent `1` for real
-symmetric matrices and `2` for complex Hermitian matrices, and the angular Jacobian.
+a real diagonal and transverse unitary angles, the fixed-frame chart
+`TauCeti.spectralMatrix`. The matrix volume in such a chart is the product of the Vandermonde
+factor in the diagonal, with exponent `1` for real symmetric matrices and `2` for complex
+Hermitian matrices, and the angular Jacobian.
 
 This is the local change of variables used in Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2 and §4.1.
@@ -35,64 +34,6 @@ namespace TauCeti
 open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
-
-/-- Conjugate the real diagonal of the first component by the fixed frame and the
-transverse unitary exponential of the second component. -/
-def spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
-    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-  selfAdjointCoordinates.symm (unitaryConjCoordinates U (spectralCoordinates x))
-
-/-- Ambient matrix formula for spectral coordinates in a fixed unitary frame. -/
-theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
-    (spectralMatrix U x : Matrix (Fin n) (Fin n) 𝕜) =
-      Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2) (diagonal fun i ↦ (x.1 i : 𝕜)) := by
-  let D := diagonal fun i : Fin n ↦ (x.1 i : 𝕜)
-  have hD : IsSelfAdjoint D :=
-    (isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)).isSelfAdjoint
-  let B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) D, hD.conjugate (expStrictUpper x.2)⟩
-  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := by
-    rw [spectralCoordinates_apply]
-    rfl
-  have hC : selfAdjointCoordinates ((UnitaryGroup.selfAdjointConj U) B) =
-      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U B.val) := by
-    rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply]
-    rfl
-  rw [spectralMatrix, hB, unitaryConjCoordinates_read, ← hC,
-    ContinuousLinearEquiv.symm_apply_apply, UnitaryGroup.coe_selfAdjointConj_apply]
-  exact (Unitary.conjStarAlgAut_mul_apply U (expStrictUpper x.2) D).symm
-
-/-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/
-theorem eigenvalues₀_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜)
-    (hd : Antitone x.1) :
-    (selfAdjoint.isHermitian_coe (spectralMatrix U x)).eigenvalues₀ =
-      x.1 ∘ Fin.cast (Fintype.card_fin n) := by
-  let hA := selfAdjoint.isHermitian_coe (spectralMatrix U x)
-  have hB : (Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2)
-      (diagonal fun i ↦ (x.1 i : 𝕜))).IsHermitian := coe_spectralMatrix U x ▸ hA
-  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, coe_spectralMatrix,
-    hB.sort_roots_charpoly_eq_eigenvalues₀,
-    eigenvalues₀_conjStarAlgAut_diagonal (U * expStrictUpper x.2) hd hB]
-
-/-- Every simple self-adjoint matrix is the center of a local spectral chart. -/
-theorem exists_spectralMatrix_openPartialHomeomorph
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))
-    (hs : Function.Injective (selfAdjoint.isHermitian_coe A).eigenvalues) :
-    ∃ (U : unitaryGroup (Fin n) 𝕜) (d : Fin n → ℝ)
-      (e : OpenPartialHomeomorph (SelfAdjointCoordinates n 𝕜)
-        (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))),
-      (e : _ → _) = spectralMatrix U ∧ (d, 0) ∈ e.source ∧ e (d, 0) = A := by
-  let hA := selfAdjoint.isHermitian_coe A
-  obtain ⟨e, he, hsource⟩ := exists_spectralCoordinates_openPartialHomeomorph hA.eigenvalues hs
-    hA.eigenvectorUnitary
-  let e' := e.transHomeomorph selfAdjointCoordinates.symm.toHomeomorph
-  have he' : (e' : _ → _) = spectralMatrix hA.eigenvectorUnitary := by
-    funext x
-    exact congrArg selfAdjointCoordinates.symm (congrFun he x)
-  refine ⟨hA.eigenvectorUnitary, hA.eigenvalues, e', he', hsource, ?_⟩
-  apply Subtype.ext
-  rw [he', coe_spectralMatrix, expStrictUpper_zero, mul_one]
-  exact hA.spectral_theorem.symm
 
 section Measure
 
@@ -137,17 +78,25 @@ theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
   let F := unitaryConjCoordinates U ∘ spectralCoordinates
   have hF : F = e ∘ spectralMatrix U := by
     funext x
-    exact (selfAdjointCoordinates.apply_symm_apply (F x)).symm
+    exact (selfAdjointCoordinates_spectralMatrix U x).symm
   have hp : e ⁻¹' (F '' s) = spectralMatrix U '' s := by
     rw [hF, Set.image_comp, e.injective.preimage_image]
   have hinj : Set.InjOn spectralCoordinates s := fun x hx y hy hxy ↦ h hx hy
-    (congrArg (selfAdjointCoordinates.symm ∘ unitaryConjCoordinates U) hxy)
+    (selfAdjointCoordinates.injective (by rw [selfAdjointCoordinates_spectralMatrix,
+      selfAdjointCoordinates_spectralMatrix, hxy]))
   have hchange := lintegral_image_spectralCoordinates μ U hs hinj (g ∘ e.symm)
   have hrestrict : μ.restrict (F '' s) = (volume.restrict (spectralMatrix U '' s)).map e := by
     rw [← hp]
     exact e.restrict_map volume (F '' s)
+  have hsymm (x : SelfAdjointCoordinates n 𝕜) :
+      e.symm (unitaryConjCoordinates U (spectralCoordinates x)) = spectralMatrix U x := by
+    have hx : unitaryConjCoordinates U (spectralCoordinates x) = e (spectralMatrix U x) :=
+      congrFun hF x
+    rw [hx, e.symm_apply_apply]
   rw [hrestrict, lintegral_map_equiv (g ∘ e.symm) e] at hchange
-  simpa [Function.comp_def, e, μ, c, spectralMatrix] using hchange
+  simp only [Function.comp_apply, e.symm_apply_apply, hsymm] at hchange
+  -- The remaining difference is the local abbreviation `μ` for the source measure.
+  exact hchange
 
 end Measure
 
