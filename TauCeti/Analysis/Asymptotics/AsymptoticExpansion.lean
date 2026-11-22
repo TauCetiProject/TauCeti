@@ -331,7 +331,8 @@ theorem HasAsymptoticExpansion.unique {a b : ℕ → E} {f : α → E} (hφ : Is
   have h := (ha.sub_smul_isLittleO hφ N).sub (hb.sub_smul_isLittleO hφ N)
   have h' : (fun x => φ N x • (b N - a N)) =o[l] φ N := h.congr_left fun x => by
     simp only [hsum, smul_sub]; abel
-  exact (sub_eq_zero.mp ((isLittleO_smul_const_self_iff (hne N)).mp h')).symm
+  exact (sub_eq_zero.mp ((isLittleO_smul_const_self_iff
+    ((hne N).mono fun _ ↦ norm_ne_zero_iff.mpr) (norm_smul · _)).mp h')).symm
 
 /-- The powers of a function tending to `0` along `l` form an asymptotic scale. -/
 theorem isAsymptoticScale_pow {w : α → 𝕜} (hw : Tendsto w l (𝓝 0)) :

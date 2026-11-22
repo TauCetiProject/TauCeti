@@ -83,8 +83,9 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
-* `Asymptotics.isLittleO_smul_const_self_iff`: if `ψ` is frequently nonzero and scalar
-  multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖`, then `ψ • c = o(ψ)` if and only if `c = 0`.
+* `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is frequently nonzero and scalar
+  multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if
+  `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
@@ -281,25 +282,26 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrde
         (fun x hx ↦ hg0 x hx.1) 1).trans
           (isBigO_of_le _ fun x ↦ (Real.norm_of_nonneg (norm_nonneg _)).le)
 
-/-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `ψ` is frequently nonzero
-along `l` and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` (`NormSMulClass`), then
-`ψ • c = o(ψ)` along `l` if and only if `c = 0`. -/
+/-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `‖ψ‖` is frequently
+nonzero along `l` and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c` for every
+scalar `r`, then `ψ • c = o(ψ)` along `l` if and only if `c = 0`. The norm identity holds for
+every action with `NormSMulClass`, by `norm_smul`. -/
 @[simp]
-theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [NormedAddGroup 𝕜] [NormedAddGroup E]
-    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E}
-    (hψ : ∃ᶠ x in l, ψ x ≠ 0) : (fun x => ψ x • c) =o[l] ψ ↔ c = 0 := by
-  refine ⟨fun h ↦ ?_, fun hc ↦ isLittleO_iff.mpr fun ε hε ↦ .of_forall fun x ↦ ?_⟩
-  · by_contra hc
+theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [SeminormedAddGroup 𝕜] [NormedAddGroup E]
+    [SMul 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ‖ψ x‖ ≠ 0)
+    (hc : ∀ r : 𝕜, ‖r • c‖ = ‖r‖ * ‖c‖) : (fun x => ψ x • c) =o[l] ψ ↔ c = 0 := by
+  refine ⟨fun h ↦ ?_, fun hc₀ ↦ isLittleO_iff.mpr fun ε hε ↦ .of_forall fun x ↦ ?_⟩
+  · by_contra hc₀
     -- `‖ψ x • c‖ = ‖c‖ * ‖ψ x‖`, so `‖c‖ * ‖ψ‖ = o(ψ)`; cancelling the nonzero constant `‖c‖`
-    -- gives `‖ψ‖ = o(‖ψ‖)`, impossible for a frequently nonzero `ψ`
+    -- gives `‖ψ‖ = o(‖ψ‖)`, impossible as `‖ψ‖` is frequently nonzero
     have h₁ : (fun x ↦ ‖c‖ * ‖ψ x‖) =o[l] ψ :=
       (isBigOWith_of_le (g := fun x ↦ ψ x • c) l fun x ↦ by
-        rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)), norm_smul,
+        rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)), hc,
           mul_comm]).trans_isLittleO h one_pos
     exact isLittleO_irrefl' (hψ.mono fun x hx ↦ by simpa using hx)
-      (((isLittleO_const_mul_left_iff (norm_ne_zero_iff.mpr hc)).mp h₁).trans_isBigO
+      (((isLittleO_const_mul_left_iff (norm_ne_zero_iff.mpr hc₀)).mp h₁).trans_isBigO
         (isBigO_of_le l fun x ↦ Real.le_norm_self _))
-  · rw [norm_smul, hc, norm_zero, mul_zero]
+  · rw [hc, hc₀, norm_zero, mul_zero]
     positivity
 
 /-- **A scalar function times a constant vector is big-O of the scalar function:**
