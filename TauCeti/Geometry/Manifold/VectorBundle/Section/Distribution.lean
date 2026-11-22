@@ -188,6 +188,12 @@ theorem neg_apply (s : BundleTest I F V) (x : M) : (-s) x = -s x :=
 theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
   rfl
 
+theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
+    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x := by
+  induction u using Finset.cons_induction with
+  | empty => rw [Finset.sum_empty, Finset.sum_empty, zero_apply]
+  | cons i u hi ih => rw [Finset.sum_cons, Finset.sum_cons, add_apply, ih]
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
