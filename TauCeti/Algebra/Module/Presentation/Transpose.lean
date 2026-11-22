@@ -385,17 +385,14 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
     have hdual : (LinearMap.ker (mk σ (LinearMap.mulLeft R a))).map
         (ContragredientDual.toDualLinearEquiv σ R).toLinearMap =
         LinearMap.range (LinearMap.mulLeft R a).dualMap := by
-      rw [ker_mk, ← LinearMap.range_comp]
-      ext φ
-      simp only [LinearMap.mem_range, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        ContragredientDual.toDualLinearEquiv_apply]
-      constructor
-      · rintro ⟨ψ, hψ⟩
-        refine ⟨ψ.toDual, ?_⟩
-        simpa [ContragredientDual.toDual_map, LinearMap.dualMap_apply'] using hψ
-      · rintro ⟨ψ, hψ⟩
-        refine ⟨ContragredientDual.ofDual ψ, ?_⟩
-        simpa [ContragredientDual.toDual_map, LinearMap.dualMap_apply'] using hψ
+      have hcomp :
+          (ContragredientDual.toDualLinearEquiv σ R).toLinearMap.comp
+              (ContragredientDual.map σ (LinearMap.mulLeft R a)) =
+            (LinearMap.mulLeft R a).dualMap.comp
+              (ContragredientDual.toDualLinearEquiv σ R).toLinearMap := by
+        ext ψ
+        simp [LinearMap.dualMap_apply']
+      rw [ker_mk, ← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
     have hspan : (LinearMap.range (LinearMap.mulLeft R a).dualMap).map
         ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm).toLinearMap =
         Ideal.span {σ.symm a} := by
@@ -527,18 +524,14 @@ theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Mat
   let q : (Fin t → S) →ₗ[S] PresentationTranspose σ (Matrix.toLin' A) :=
     mk σ (Matrix.toLin' A) ∘ₗ d₁.equivFun.symm.toLinearMap
   have hq : Function.Surjective q := (mk_surjective σ _).comp d₁.equivFun.symm.surjective
-  have hrel : Matrix.toLin' (Aᵀ.map σ.symm) =
-      d₁.equivFun.toLinearMap ∘ₗ ContragredientDual.map σ (Matrix.toLin' A) ∘ₗ
-        d₀.equivFun.symm.toLinearMap := by
-    have hcomm := LinearMap.toLin'_toMatrix_comp_equivFun d₀ d₁
-      (ContragredientDual.map σ (Matrix.toLin' A))
-    rw [ContragredientDual.toMatrix_map_toLin'] at hcomm
-    simpa only [LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.comp_id] using
-      congrArg (· ∘ₗ d₀.equivFun.symm.toLinearMap) hcomm
+  have hcomm := LinearMap.toLin'_toMatrix_comp_equivFun d₀ d₁
+    (ContragredientDual.map σ (Matrix.toLin' A))
+  rw [ContragredientDual.toMatrix_map_toLin'] at hcomm
   have hker : LinearMap.ker q = LinearMap.range (Aᵀ.map σ.symm).mulVecLin := by
-    rw [← Matrix.toLin'_apply', hrel, LinearMap.range_comp,
-      LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
-      LinearMap.ker_comp, ker_mk, Submodule.map_equiv_eq_comap_symm]
+    have hrange := congrArg LinearMap.range hcomm
+    rw [LinearEquiv.range_comp, LinearMap.range_comp] at hrange
+    rw [← Matrix.toLin'_apply', hrange, LinearMap.ker_comp, ker_mk,
+      Submodule.map_equiv_eq_comap_symm]
   rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hq 0, Module.finrank_fin_fun, Nat.sub_zero, hker]
 
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
@@ -547,34 +540,10 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     (A : Matrix (Fin m) (Fin t) R) :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' A)) 0 =
       Ideal.map σ.symm ((LinearMap.range A.mulVecLin).minorsIdeal t) := by
-  rw [fittingIdeal_toLin'_eq_minorsIdeal, ← Matrix.minorsIdeal_range_transpose_mulVecLin A]
-  have := RingHomInvPair.of_ringEquiv σ.symm
-  have := RingHomInvPair.of_ringEquiv_symm σ.symm
-  let piEquiv (n : ℕ) : (Fin n → R) ≃ₛₗ[(σ.symm : R →+* S)] (Fin n → S) :=
-    { toFun v i := σ.symm (v i)
-      invFun v i := σ (v i)
-      map_add' _ _ := funext fun _ ↦ map_add σ.symm _ _
-      map_smul' _ _ := funext fun _ ↦ map_mul σ.symm _ _
-      left_inv _ := funext fun _ ↦ σ.apply_symm_apply _
-      right_inv _ := funext fun _ ↦ σ.symm_apply_apply _ }
-  let Pσ := piEquiv t
-  let Qσ := piEquiv m
-  have hmap : (LinearMap.range Aᵀ.mulVecLin).map (Pσ : (Fin t → R) →ₛₗ[(σ.symm : R →+* S)] _) =
-      LinearMap.range (Aᵀ.map σ.symm).mulVecLin := by
-    ext v
-    simp only [Submodule.mem_map, LinearMap.mem_range]
-    constructor
-    · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-      refine ⟨Qσ w, funext fun i ↦ ?_⟩
-      exact ((σ.symm : R →+* S).map_mulVec Aᵀ w i).symm
-    · rintro ⟨w, rfl⟩
-      refine ⟨Aᵀ.mulVecLin (Qσ.symm w), ⟨Qσ.symm w, rfl⟩, funext fun i ↦ ?_⟩
-      have h : Pσ (Aᵀ.mulVecLin (Qσ.symm w)) i =
-          ((Aᵀ.map σ.symm).mulVecLin (Qσ (Qσ.symm w))) i :=
-        (σ.symm : R →+* S).map_mulVec Aᵀ (Qσ.symm w) i
-      simpa only [LinearEquiv.coe_coe, Qσ.apply_symm_apply] using h
-  rw [← hmap, Submodule.minorsIdeal_map_semilinearEquiv]
-  rfl
+  rw [fittingIdeal_toLin'_eq_minorsIdeal, ← Matrix.minorsIdeal_range_transpose_mulVecLin A,
+    Matrix.minorsIdeal_range_eq_span_det_submatrix,
+    Matrix.minorsIdeal_range_eq_span_det_submatrix, Ideal.map_span, ← Set.range_comp]
+  simp only [Function.comp_def, ← RingEquiv.coe_toRingHom, RingHom.map_det_submatrix]
 
 /-- **Free form of the excess-generators Fitting-ideal identity**: if `P₁ →f P₀ →π M → 0` is an
 exact sequence of `R`-modules with `P₁` and `P₀` finite free of ranks `t` and `t + s`, then
@@ -593,16 +562,13 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
   let A : Matrix (Fin (t + s)) (Fin t) R := LinearMap.toMatrix b₁ b₀ f
   have hcomm : b₀.equivFun.toLinearMap ∘ₗ f = Matrix.toLin' A ∘ₗ b₁.equivFun.toLinearMap :=
     (LinearMap.toLin'_toMatrix_comp_equivFun b₁ b₀ f).symm
-  have hrel : Matrix.toLin' A =
-      b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap := by
-    simpa only [LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.comp_id] using
-      congrArg (· ∘ₗ b₁.equivFun.symm.toLinearMap) hcomm.symm
   let π' : (Fin (t + s) → R) →ₗ[R] M := π ∘ₗ b₀.equivFun.symm.toLinearMap
   have hπ' : Function.Surjective π' := hπ.comp b₀.equivFun.symm.surjective
   have hker : LinearMap.ker π' = LinearMap.range A.mulVecLin := by
-    rw [← Matrix.toLin'_apply', hrel, LinearMap.range_comp,
-      LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
-      LinearMap.ker_comp, ← hf, Submodule.map_equiv_eq_comap_symm]
+    have hrange := congrArg LinearMap.range hcomm.symm
+    rw [LinearEquiv.range_comp, LinearMap.range_comp] at hrange
+    rw [← Matrix.toLin'_apply', hrange, LinearMap.ker_comp, ← hf,
+      Submodule.map_equiv_eq_comap_symm]
   rw [TauCeti.fittingIdeal_congr (congr σ b₁.equivFun b₀.equivFun hcomm) 0,
     fittingIdeal_toLin'_eq_map_minorsIdeal, TauCeti.fittingIdeal_eq_minorsIdeal_ker hπ' s,
     Module.finrank_fin_fun, Nat.add_sub_cancel, hker]

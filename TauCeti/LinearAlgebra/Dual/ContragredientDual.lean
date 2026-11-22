@@ -218,10 +218,10 @@ theorem toDualLinearEquiv_symm_apply (φ : Module.Dual R M) :
   (rfl)
 
 /-- Precomposition with `f : M →ₗ[R] N` as an `S`-linear map between contragredient duals. -/
-def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M where
-  toFun φ := ofDual (φ.toDual.comp f)
-  map_add' φ ψ := ext fun x ↦ by simp
-  map_smul' s φ := ext fun x ↦ by simp
+def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M :=
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  ((toDualLinearEquiv σ N).arrowCongr (toDualLinearEquiv σ M)).symm f.dualMap
 
 @[simp]
 theorem map_apply (f : M →ₗ[R] N) (φ : ContragredientDual σ N) (x : M) :
@@ -261,9 +261,9 @@ protected theorem map_add (f g : M →ₗ[R] N) : map σ (f + g) = map σ f + ma
 duals in the contravariant direction. -/
 def congr (σ : S ≃+* R) (e : M ≃ₗ[R] N) :
     ContragredientDual σ N ≃ₗ[S] ContragredientDual σ M :=
-  LinearEquiv.ofLinearMap (map σ e.toLinearMap) (map σ e.symm.toLinearMap)
-    (by rw [← map_comp, e.symm_comp, map_id])
-    (by rw [← map_comp, e.comp_symm, map_id])
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  (toDualLinearEquiv σ N).trans (e.dualMap.trans (toDualLinearEquiv σ M).symm)
 
 @[simp]
 theorem congr_apply (e : M ≃ₗ[R] N) (φ : ContragredientDual σ N) (x : M) :

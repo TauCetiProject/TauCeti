@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
+import all TauCeti.Algebra.Module.AuslanderReiten.Transpose
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
@@ -63,43 +64,30 @@ section CommRing
 variable {R P₀ P₁ : Type*} [CommRing R] [AddCommMonoid P₀] [Module R P₀]
   [AddCommMonoid P₁] [Module R P₁]
 
+private lemma restrictScalars_range_lcomp {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    (LinearMap.range (p.lcomp Sᵐᵒᵖ S)).restrictScalars S = LinearMap.range p.dualMap := by
+  ext φ
+  simp [LinearMap.lcomp_apply', LinearMap.dualMap_apply']
+
 private def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
     [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
     (p : Q₁ →ₗ[S] Q₀) :
     AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
-  let σ := (RingEquiv.toOpposite S).symm
-  have := RingHomInvPair.of_ringEquiv σ
-  have := RingHomInvPair.of_ringEquiv_symm σ
-  let eDual : Module.Dual S Q₁ ≃ₛₗ[(σ : Sᵐᵒᵖ →+* S)] Module.Dual S Q₁ :=
-    { toFun := id
-      invFun := id
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl
-      map_smul' r φ := LinearMap.ext fun x ↦ mul_comm (φ x) r.unop }
-  have he : (LinearMap.range (p.lcomp Sᵐᵒᵖ S)).map eDual.toLinearMap =
-      LinearMap.range p.dualMap := by
-    ext φ
-    simp [eDual, LinearMap.lcomp_apply', LinearMap.dualMap_apply']
-  let eQuot := quotientEquiv p (LinearMap.range p.dualMap) eDual he
-  { toFun := eQuot
-    invFun := eQuot.symm
-    left_inv := eQuot.left_inv
-    right_inv := eQuot.right_inv
-    map_add' := map_add eQuot
-    map_smul' s y := by
-      rw [← op_smul_eq_smul p s y, eQuot.map_smulₛₗ]
-      simp [σ] }
+  (Submodule.Quotient.restrictScalarsEquiv S
+    (LinearMap.range (p.lcomp Sᵐᵒᵖ S))).symm.trans
+    (Submodule.quotEquivOfEq _ (LinearMap.range p.dualMap) (restrictScalars_range_lcomp p))
 
 @[simp]
 private theorem cokernelDualMapEquiv_mk {S Q₀ Q₁ : Type*} [CommRing S]
     [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
     (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
     cokernelDualMapEquiv p (mk p φ) = Submodule.Quotient.mk φ := by
-  have := RingHomInvPair.of_ringEquiv (RingEquiv.toOpposite S).symm
-  have := RingHomInvPair.of_ringEquiv_symm (RingEquiv.toOpposite S).symm
-  exact quotientEquiv_mk p _ _
-    (by ext ψ; simp [LinearMap.lcomp_apply', LinearMap.dualMap_apply']) φ
+  change (Submodule.quotEquivOfEq _ (LinearMap.range p.dualMap) (restrictScalars_range_lcomp p))
+    ((Submodule.Quotient.restrictScalarsEquiv S (LinearMap.range (p.lcomp Sᵐᵒᵖ S))).symm
+      (Submodule.Quotient.mk φ)) = _
+  rw [Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk]
 
 @[simp]
 private theorem cokernelDualMapEquiv_symm_mk {S Q₀ Q₁ : Type*} [CommRing S]

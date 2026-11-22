@@ -196,19 +196,6 @@ theorem induction_on {motive : AuslanderReitenTranspose p₁ → Prop}
     motive x :=
   Submodule.Quotient.induction_on _ x h
 
-section CommRing
-
-variable {R Q₀ Q₁ : Type*} [CommRing R] [AddCommMonoid Q₀] [Module R Q₀]
-  [AddCommMonoid Q₁] [Module R Q₁]
-
-/-- Over a commutative ring `R`, `MulOpposite.op r` acts on the transpose as `r`. -/
-@[simp]
-theorem op_smul_eq_smul (p : Q₁ →ₗ[R] Q₀) (r : R) (y : AuslanderReitenTranspose p) :
-    MulOpposite.op r • y = r • y := by
-  simpa only [Algebra.algebraMap_self_apply] using op_algebraMap_smul (k := R) p r y
-
-end CommRing
-
 section QuotientEquiv
 
 variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
