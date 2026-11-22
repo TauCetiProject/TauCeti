@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Padics.Distribution.Amice.Comultiplication
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Transform
 public import TauCeti.NumberTheory.Padics.Distribution.Convolution
 public import TauCeti.NumberTheory.Padics.Measure.Moments
+import TauCeti.Data.Finset.NatAntidiagonal
 
 /-!
 # The Amice transform as a `K`-algebra homomorphism and equivalence
@@ -91,13 +92,11 @@ theorem convolveFunRight_mahlerTerm (ν : LocallyAnalyticDistribution p K) (n : 
     simp only [convolveFunRightStage_apply, comulCurried_amiceTerm_of_lt K hlt,
       ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply, map_sum]
     refine Finset.sum_congr rfl fun ij hij ↦ ?_
-    have hj : ij.2 / p ^ n = 0 :=
-      Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.snd_le hij).trans_lt hlt)
+    obtain ⟨-, hj⟩ := Finset.Nat.div_eq_zero_of_mem_antidiagonal hlt hij
     simp [hj]
   rw [hstage, map_sum]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hi : ij.1 / p ^ n = 0 :=
-    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.fst_le hij).trans_lt hlt)
+  obtain ⟨hi, -⟩ := Finset.Nat.div_eq_zero_of_mem_antidiagonal hlt hij
   simp [hi, ← mahlerTerm_smul]
 
 /-- The Amice transform of the point mass `dirac x` is the binomial series `(1 + X) ^ x`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
 public import TauCeti.NumberTheory.Padics.Distribution.Comul
+import TauCeti.Data.Finset.NatAntidiagonal
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -109,10 +110,7 @@ theorem comulCurried_amiceTerm_of_lt {n : ℕ} (hn : n < p ^ h) (e : E) :
       ∑ ij ∈ Finset.antidiagonal n, amiceTerm p h ij.1 (amiceTerm p h ij.2 e) := by
   rw [comulCurried_amiceTerm]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hi : ij.1 / p ^ h = 0 :=
-    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.fst_le hij).trans_lt hn)
-  have hj : ij.2 / p ^ h = 0 :=
-    Nat.div_eq_of_lt ((Finset.HasAntidiagonal.antidiagonal.snd_le hij).trans_lt hn)
+  obtain ⟨hi, hj⟩ := Finset.Nat.div_eq_zero_of_mem_antidiagonal hn hij
   simp [Nat.div_eq_of_lt hn, hi, hj]
 
 end Curried
