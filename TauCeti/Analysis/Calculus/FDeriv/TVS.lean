@@ -20,16 +20,15 @@ Mathlib defines `HasFDerivAtFilter` and `HasFDerivAt` on arbitrary topological v
   normed spaces on the domain and intermediate spaces (`E` and `F`, while `G` is already a TVS),
 * `ContinuousAffineMap.hasFDerivAtFilter` / `ContinuousAffineMap.hasFDerivAt` in
   `Mathlib.Analysis.Calculus.FDeriv.Affine` assume normed spaces on both domain and codomain, and
-* `hasFDerivAtFilter_pi'` / `hasFDerivAt_pi'` in `Mathlib.Analysis.Calculus.FDeriv.Prod` assume
-  normed spaces on `E` and each coordinate space `F i` (and a finite index type for the full
-  product equivalence).
+* `hasFDerivAtFilter_pi'` / `hasFDerivAt_pi'` in `Mathlib.Analysis.Calculus.FDeriv.Prod` allow
+  arbitrary index types `ι`, but assume normed spaces on `E` and each coordinate space `F i`.
 
 This module provides the topological-vector-space versions directly via `Asymptotics.IsLittleOTVS`,
 adapting the proofs from those Mathlib modules to drop the norm hypotheses—specifically, for
-products, `HasFDerivAtFilter.proj` and `HasFDerivAt.proj` give the TVS forward projection
-implication (for arbitrary, possibly infinite index types) rather than the full finite-product
-equivalence. Where Mathlib already exposes a normed-space theorem under the unsuffixed name, we
-use the `_tvs` suffix to avoid name collisions.
+products, `HasFDerivAtFilter.proj` and `HasFDerivAt.proj` give the forward projection implication
+for arbitrary (possibly infinite) index types without normed-space hypotheses, rather than the full
+product equivalence. Where Mathlib already exposes a normed-space theorem under the unsuffixed
+name, we use the `_tvs` suffix to avoid name collisions.
 
 ## Main results
 

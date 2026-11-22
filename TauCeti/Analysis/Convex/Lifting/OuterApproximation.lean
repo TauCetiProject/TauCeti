@@ -516,27 +516,30 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have hnotmono : ¬ Monotone Dh0 := fun hm => by
     have h0 := (monotone_iff_map_single_nonneg Dh0).1 hm 0
     norm_num [Dh0] at h0
+  have hcomp (i : Fin 1) (x : ℝ) : componentRow g (a i) Dg0 x = ![x, -2 * x - 1] := by
+    ext j; fin_cases j <;> simp [componentRow_apply, g, a, Dg0]; ring
+  have houter (i : Fin 1) (y : Fin 2 → ℝ) : outerRow g h (a i) Dh0 y = -2 * y 0 + y 1 - 1 := by
+    norm_num [outerRow_apply, g, h, a, Dh0]
+    dsimp only [Matrix.vecHead, Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]; ring
   have hnotSub : ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 ⊆
       directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by
     have hmem : ((-2 : ℝ), ![0, 3]) ∈
         sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 :=
-      mem_sharedOA.2 ⟨mem_univ _, mem_univ _, fun _ => ⟨fun j => by
-          fin_cases j <;> norm_num [componentRow_apply, g, a, Dg0],
-        by norm_num [outerRow_apply, g, h, a, Dh0]⟩⟩
+      mem_sharedOA.2 ⟨mem_univ _, mem_univ _, fun i => by
+        rw [hcomp i, houter i]
+        exact ⟨fun j => by fin_cases j <;> norm_num, by norm_num⟩⟩
     have hdir := (mem_directOA.1 (hsub ⟨((-2 : ℝ), ![0, 3]), hmem, rfl⟩)).2 0
-    norm_num [directRow_apply, g, h, a, Dg0, Dh0] at hdir
+    rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir; norm_num at hdir
   have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
-      componentRow g (a i) Dg0 x j = g x j := fun _ x j hj => by
-    rw [mem_singleton_iff.1 hj]
-    simp [componentRow_apply, g, a, Dg0]
+      componentRow g (a i) Dg0 x j = g x j := fun i x j hj => by
+    rw [mem_singleton_iff.1 hj, hcomp i]; rfl
   have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
     rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
     simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)
   have hhc : ConvexOn ℝ Set.univ h := by
-    let p0 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 0
-    let p1 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 1
-    simpa [h, p0, p1, Pi.add_def, Function.comp_def] using
-      ((even_two.convexOn_pow (𝕜 := ℝ)).comp_linearMap p0).add (p1.convexOn convex_univ)
+    simpa [h, Pi.add_def, Function.comp_def] using
+      ((even_two.convexOn_pow (𝕜 := ℝ)).comp_linearMap (LinearMap.proj (R := ℝ) 0)).add
+        ((LinearMap.proj (R := ℝ) 1).convexOn convex_univ)
   have hD : ∀ _ : Fin 1, ∀ v : Fin 2 → ℝ,
       0 ≤ v → (∀ j ∈ ({0} : Set (Fin 2)), v j = 0) → 0 ≤ Dh0 v :=
     fun _ => (forall_map_nonneg_iff_map_single_nonneg {0} Dh0).2 fun j hj => by

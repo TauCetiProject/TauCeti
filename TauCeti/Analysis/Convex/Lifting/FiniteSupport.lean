@@ -16,7 +16,6 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.Data.Finset.Order
-import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.BigOperators.Sum.Sup
 
 /-!
@@ -24,8 +23,8 @@ import TauCeti.Algebra.Order.BigOperators.Sum.Sup
 
 Given a finite index set `ι` of separable components and families of componentwise lower bounds,
 there are two canonical lifted inequality systems with free height variables (specializing to
-polyhedral systems when the rows are affine, `D` is polyhedral, and the anchor and support index
-sets are finite):
+polyhedral systems when the rows are real-valued and affine, the height variables take values in
+`ℝ`, `D` is polyhedral, and the anchor and support index sets are finite):
 
 * `TauCeti.sharedRows`: a single height vector `y : ι → β` simultaneously dominates every active
   support row `row j i x ≤ y j` (`i ∈ H j`) subject to the sum budget `∑ j, y j ≤ b`.
@@ -34,7 +33,7 @@ sets are finite):
 
 When every support set `H j` is nonempty and addition preserves order (`IsOrderedAddMonoid`),
 projecting `sharedRows` eliminates the free heights exactly: over a semilattice sup this yields the
-sum of componentwise maxima (`TauCeti.exists_mem_sharedRows_iff_sum_sup'_le`), while over a linear
+sum of componentwise suprema (`TauCeti.exists_mem_sharedRows_iff_sum_sup'_le`), while over a linear
 order it yields the system of all mixed-choice row sums
 (`TauCeti.exists_mem_sharedRows_iff_forall_choice`).
 If some component has empty support `H j₀ = ∅` and heights range over a directed preordered
@@ -124,9 +123,9 @@ section Elimination
 
 variable {X ι I κ β : Type*} [Fintype ι]
 
-/-- **Shared-row projection (sum of componentwise maxima).** When every support set `H j` is
+/-- **Shared-row projection (sum of componentwise suprema).** When every support set `H j` is
 nonempty, `x` lifts to a point of `sharedRows` if and only if `x ∈ D` and the sum of the
-componentwise maxima over `H j` is at most `b`. -/
+componentwise suprema over `H j` is at most `b`. -/
 theorem exists_mem_sharedRows_iff_sum_sup'_le [AddCommMonoid β] [SemilatticeSup β]
     [IsOrderedAddMonoid β] {D : Set X} {row : ι → I → X → β} {H : ι → Finset I}
     (hne : ∀ j, (H j).Nonempty) {b : β} {x : X} :
@@ -265,15 +264,8 @@ theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
     exact ⟨hxD, fun choice => (sum_le_sum fun j _ => (hrow (choice j)).1 j).trans hsum⟩
   · rintro ⟨hxD, hall⟩
     let r : ι → κ → ℝ := fun j i => componentRow g (a i) (Dg i) x j
-    let i₀ : κ := Classical.arbitrary κ
-    have hbdd : ∀ j, BddAbove (range (r j)) := fun j => by
-      refine ⟨b - ∑ k ∈ univ \ {j}, r k i₀, ?_⟩
-      rintro _ ⟨i, rfl⟩
-      have hch : ∑ k, r k (Function.update (fun _ => i₀) j i k) ≤ b :=
-        hall (Function.update (fun _ => i₀) j i)
-      simp_rw [Function.apply_update r] at hch
-      rw [Finset.sum_update_of_mem (Finset.mem_univ j)] at hch
-      linarith
+    have hbdd : ∀ j, BddAbove (range (r j)) :=
+      bddAbove_range_of_forall_choice_sum_le r hall
     let y : ι → ℝ := fun j => ⨆ i : κ, r j i
     refine ⟨(x, y), mem_sharedOA.2 ⟨hxD, Set.mem_univ _, fun i =>
       ⟨fun j => le_ciSup (hbdd j) i, ?_⟩⟩, rfl⟩
@@ -308,7 +300,8 @@ theorem exists_strict_sharedOA_ssubset_directOA :
   let Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ) :=
     fun i => (2 * a i 0) • ContinuousLinearMap.id ℝ _
   let Dh : Fin 2 → (Fin 2 → ℝ) →L[ℝ] ℝ := fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j
-  have ha : ∀ i, a i ∈ D := fun i _ _ => by by_cases hi : i = 0 <;> simp [a, hi]
+  have ha : ∀ i, a i ∈ D := fun i =>
+    Set.mem_pi.mpr fun _ _ => by by_cases hi : i = 0 <;> simp [a, hi]
   have hg : ∀ i, HasFDerivAt g (Dg i) (a i) := fun i => hasFDerivAt_pi'.2 fun j => by
     have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (2 * a i j) (a i j) := by
       simpa using hasDerivAt_pow 2 (a i j)
@@ -334,23 +327,22 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     simp [componentRow_apply, g, a, Dg]; ring
   have hstrict1 : ¬ Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) ⊆
       {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
-    have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2 ⟨fun j _ => by
-        fin_cases j <;> norm_num, Set.mem_univ _, fun i => ⟨fun j => by
-          rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-            [rw [hrow0]; rw [hrow1]] <;> fin_cases j <;> norm_num,
-        by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
+    have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2
+        ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, Set.mem_univ _, fun i =>
+          ⟨fun j => by
+            rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
+              [rw [hrow0]; rw [hrow1]] <;> fin_cases j <;> norm_num,
+          by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
     norm_num [h, g, Fin.sum_univ_two] at horig
   have hstrict2 : ¬ directOA D g h a Dg Dh (1 / 2) ⊆
       Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) := fun hsub => by
     have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
-      mem_directOA.2 ⟨fun j _ => by fin_cases j <;> norm_num, fun i => by
+      mem_directOA.2 ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, fun i => by
         simp only [h, Dh]; rw [directRow_sum, Fin.sum_univ_two]
         rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
           [rw [hrow0, hrow0]; rw [hrow1, hrow1]] <;> norm_num⟩
     have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
-    rw [Fin.sum_univ_two] at hsh
-    change componentRow g (a 0) (Dg 0) ![1, -1] 0 +
-      componentRow g (a 1) (Dg 1) ![1, -1] 1 ≤ 1 / 2 at hsh
+    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at hsh
     rw [hrow0, hrow1] at hsh; norm_num at hsh
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,

@@ -29,6 +29,9 @@ bounded above.
 
 * `TauCeti.sum_sup'_le_iff_forall_choice`: `∑ j, (H j).sup' (hne j) (f j) ≤ b` holds if and only
   if `∑ j, f j (choice j) ≤ b` for every choice function `choice` with `choice j ∈ H j`.
+* `TauCeti.bddAbove_range_of_forall_choice_sum_le`: uniform bounds on all mixed-choice sums
+  imply componentwise upper bounds in any preordered additive commutative group with
+  order-preserving addition.
 * `TauCeti.sum_ciSup_le_iff_forall_choice`: the bounded conditional-supremum variant.
 * `TauCeti.sum_sup'_eq_sup'_piFinset`: the sum of componentwise maxima equals the maximum of the
   sums over `Fintype.piFinset H`.
@@ -53,6 +56,25 @@ theorem sum_sup'_le_iff_forall_choice {ι I β : Type*} [Fintype ι]
     fun j => exists_mem_eq_sup' (hne j) (f j)
   choose choice hmem heq using hex
   simpa only [heq] using h choice hmem
+
+/-- If every mixed-choice sum `∑ j, f j (choice j)` is bounded above by `b` in a preordered
+additive commutative group with order-preserving addition, then each component family `f j` is
+bounded above. -/
+theorem bddAbove_range_of_forall_choice_sum_le {ι κ β : Type*} [Fintype ι]
+    [AddCommGroup β] [Preorder β] [IsOrderedAddMonoid β]
+    (f : ι → κ → β) {b : β} (hall : ∀ choice : ι → κ, ∑ j, f j (choice j) ≤ b) (j : ι) :
+    BddAbove (Set.range (f j)) := by
+  classical
+  rcases isEmpty_or_nonempty κ with _ | hκ
+  · simp [Set.range_eq_empty]
+  · let i₀ : κ := Classical.arbitrary κ
+    refine ⟨b - ∑ k ∈ univ \ {j}, f k i₀, ?_⟩
+    rintro _ ⟨i, rfl⟩
+    have hch : ∑ k, f k (Function.update (fun _ => i₀) j i k) ≤ b :=
+      hall (Function.update (fun _ => i₀) j i)
+    simp_rw [Function.apply_update f] at hch
+    rw [Finset.sum_update_of_mem (Finset.mem_univ j), add_comm] at hch
+    exact le_sub_iff_add_le'.2 hch
 
 /-- Bounding a finite sum of componentwise conditional suprema is equivalent to bounding every
 mixed-choice sum. Each component family must be bounded above, and the common index type must be
