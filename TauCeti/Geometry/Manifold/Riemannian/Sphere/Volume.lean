@@ -11,9 +11,12 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
 import TauCeti.AlgebraicTopology.Sphere.Zero
+import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The Riemannian volume of the round sphere
@@ -89,14 +92,16 @@ theorem riemannianJacobian_stereographic'_symm (v : sphere (0 : E) 1)
     riemannianJacobian (I := 𝓡 n) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
         (stereographic' n v).symm y =
       (4 / (‖y‖ ^ 2 + 4)) ^ n := by
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have hgram : Matrix.gram ℝ (fun i ↦ mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y (b i)) =
-      ((4 / (‖y‖ ^ 2 + 4)) ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ) := by
-    ext i j
-    rw [Matrix.gram_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul,
-      inner_mfderiv_stereographic'_symm, orthonormal_iff_ite.mp b.orthonormal]
-  rw [riemannianJacobian_eq_sqrt_det_gram, OrthonormalBasis.coe_toBasis, hgram, Matrix.det_smul,
-    Matrix.det_one, mul_one, Fintype.card_fin, pow_right_comm, Real.sqrt_sq (by positivity)]
+  rw [riemannianJacobian_eq_normDet (EuclideanSpace.basisFun (Fin n) ℝ)]
+  let J : EuclideanSpace ℝ (Fin n) →ₗ[ℝ]
+      TangentSpace (𝓡 n) ((stereographic' n v).symm y) :=
+    (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y).toLinearMap
+  change J.normDet = _
+  rw [J.normDet_eq_pow_finrank_of_norm_eq (c := 4 / (‖y‖ ^ 2 + 4)) fun u ↦ ?_,
+    finrank_euclideanSpace_fin]
+  have hinner := inner_mfderiv_stereographic'_symm v y u u
+  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, ← mul_pow] at hinner
+  exact (sq_eq_sq₀ (norm_nonneg _) (by positivity)).mp hinner
 
 /-- **Ambient Jacobian of inverse stereographic projection.** Composed with the inclusion of the
 unit sphere into `E`, `(stereographic' n v).symm` has norm determinant `(4 / (‖y‖² + 4)) ^ n` at
@@ -177,6 +182,11 @@ theorem map_stereographic'_symm_withDensity_eq_riemannianVolume (hn : 0 < n)
   rw [map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume v,
     Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (by simp))]
 
+omit [LindelofSpace (sphere (0 : E) 1)] in
+private theorem measurableEmbedding_stereographic'_symm (v : sphere (0 : E) 1) :
+    MeasurableEmbedding (stereographic' n v).symm :=
+  ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
+
 /-- **Lebesgue integration on the round sphere in stereographic coordinates.** For `n > 0`, the
 lower Lebesgue integral of any nonnegative function `f` against the Riemannian volume of `Sⁿ` is
 its stereographic integral weighted by `(4 / (‖y‖² + 4)) ^ n`. No measurability of `f` is
@@ -186,18 +196,13 @@ theorem lintegral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫⁻ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫⁻ y : EuclideanSpace ℝ (Fin n),
         ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) * f ((stereographic' n v).symm y) := by
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-  have himg : (stereographic' n v).symm '' univ = ({v}ᶜ : Set (sphere (0 : E) 1)) := by
-    simpa using (stereographic' n v).symm.image_source_eq_target
-  have hcov := b.toBasis.setLIntegral_riemannianVolume_image_of_injOn (I := 𝓡 n) rfl
-    MeasurableSet.univ
-    (isSmoothEmbedding_stereographic'_symm (k := 1) v).isEmbedding.injective.injOn
-    (fun y _ ↦ mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl)
-      (by simp)) f
-  rwa [himg, Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (by simp)), Measure.restrict_univ,
-    b.addHaar_eq_volume, funext (riemannianJacobian_stereographic'_symm v)] at hcov
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+    (measurableEmbedding_stereographic'_symm v).lintegral_map,
+    lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin n) ↦
+        ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n))
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  rfl
 
 /-- **Integrability on the round sphere in stereographic coordinates.** In every dimension `n ≥ 0`,
 a normed-space-valued function `f` on `Sⁿ` is integrable for the Riemannian volume if and only if
@@ -212,20 +217,13 @@ theorem integrable_riemannianVolume_sphere_iff_stereographic'
   rcases n.eq_zero_or_pos with rfl | hn
   · have : Finite (sphere (0 : E) 1) := finite_sphere_of_finrank_eq_one Fact.out (0 : E) 1
     exact ⟨fun _ ↦ Integrable.of_finite, fun _ ↦ Integrable.of_finite⟩
-  · let b := EuclideanSpace.basisFun (Fin n) ℝ
-    have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-      Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-    have himg : (stereographic' n v).symm '' univ = ({v}ᶜ : Set (sphere (0 : E) 1)) := by
-      simpa using (stereographic' n v).symm.image_source_eq_target
-    have hcov := b.toBasis.integrableOn_riemannianVolume_image_iff_of_injOn (I := 𝓡 n) rfl
-      MeasurableSet.univ
-      (isSmoothEmbedding_stereographic'_symm (k := 1) v).isEmbedding.injective.injOn
-      (fun y _ ↦ mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl)
-        (by simp)) f
-    rwa [himg, IntegrableOn, Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (by simp)),
-      integrableOn_univ, b.addHaar_eq_volume,
-      funext fun y ↦ congrArg (· • f ((stereographic' n v).symm y))
-        (riemannianJacobian_stereographic'_symm v y)] at hcov
+  · rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+      (measurableEmbedding_stereographic'_symm v).integrable_map_iff,
+      TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+        (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin n) ↦
+          (4 / (‖y‖ ^ 2 + 4)) ^ n).aemeasurable
+        (ae_of_all _ fun _ ↦ by positivity)]
+    rfl
 
 /-- **Bochner integration on the round sphere in stereographic coordinates.** For `n > 0`, the
 integral of any function `f` against the Riemannian volume of `Sⁿ` is its stereographic integral
@@ -237,19 +235,12 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫ y : EuclideanSpace ℝ (Fin n),
         ((4 / (‖y‖ ^ 2 + 4)) ^ n) • f ((stereographic' n v).symm y) := by
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-  have himg : (stereographic' n v).symm '' univ = ({v}ᶜ : Set (sphere (0 : E) 1)) := by
-    simpa using (stereographic' n v).symm.image_source_eq_target
-  have hcov := b.toBasis.setIntegral_riemannianVolume_image_of_injOn (I := 𝓡 n) rfl
-    MeasurableSet.univ
-    (isSmoothEmbedding_stereographic'_symm (k := 1) v).isEmbedding.injective.injOn
-    (fun y _ ↦ mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl)
-      (by simp)) f
-  rwa [himg, Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (by simp)), Measure.restrict_univ,
-    b.addHaar_eq_volume, funext fun y ↦ congrArg (· • f ((stereographic' n v).symm y))
-      (riemannianJacobian_stereographic'_symm v y)] at hcov
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+    (measurableEmbedding_stereographic'_symm v).integral_map,
+    TauCeti.MeasureTheory.integral_withDensity_ofReal
+      (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin n) ↦
+        (4 / (‖y‖ ^ 2 + 4)) ^ n).aemeasurable
+      (ae_of_all _ fun _ ↦ by positivity)]
 
 end Stereographic
 
@@ -306,17 +297,13 @@ theorem riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure
     [LindelofSpace (sphere (0 : E) 1)] :
     riemannianVolume (𝓡 n) (sphere (0 : E) 1) = (μHE[n] : Measure E).comap (↑) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  have := HasUniqueDiv.of_isTorsionFree ℝ E
   obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-  have hvneg : v ≠ -v := ne_neg_of_mem_unit_sphere ℝ v
-  have hcov : (⋃ b : Bool, ({if b then v else -v}ᶜ : Set (sphere (0 : E) 1))) = univ := by
-    ext x
-    simp only [mem_iUnion, mem_compl_iff, mem_singleton_iff, mem_univ, iff_true, Bool.exists_bool,
-      ite_true]
-    by_contra! h
-    exact hvneg (h.2.symm.trans h.1)
+  have hcov : (⋃ b : Bool, bif b then ({v}ᶜ : Set (sphere (0 : E) 1)) else {-v}ᶜ) = univ := by
+    rw [← Set.union_eq_iUnion]
+    exact compl_singleton_union_compl_singleton_neg one_ne_zero v
   refine Measure.ext_of_iUnion_eq_univ hcov fun b ↦ ?_
-  exact restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure
-    (if b then v else -v)
+  cases b <;> exact restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure _
 
 /-- Pushing the Riemannian volume of the unit sphere forward along the inclusion `Sⁿ → E` gives
 normalized `n`-dimensional Hausdorff measure restricted to the sphere. -/
