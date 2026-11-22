@@ -23,8 +23,8 @@ in `ZerothHomotopy`.
 
 Finite partial unions are path connected when each member is path connected and each new
 member meets the preceding union. The partial unions use Mathlib's `partialSups`, indexed by any
-locally finite linear order with a bottom element and a successor function, such as `ℕ` or
-`Fin (n + 1)`.
+partial order with finite lower intervals `Iic i` and a successor function, such as `ℕ` or
+`Fin (n + 1)`. The index need not be linear: below each index it may branch like a rooted tree.
 
 If a set is covered by two path-connected subsets but is not itself path connected, then each of
 the two subsets is a path component of it.
@@ -61,25 +61,32 @@ theorem isPathConnected_inter_of_pairwise (hUp : ∀ i, IsPathConnected (U i))
   · simpa using hUp i
   · rwa [(hUC hij).antisymm (subset_inter (hCU i) (hCU j))]
 
-/-- Finite partial unions are path connected if each member is path connected and each
-new member meets the preceding union. Only the members of index at most `n` are constrained. -/
-theorem isPathConnected_partialSups {ι : Type*} [LinearOrder ι] [LocallyFiniteOrder ι]
-    [OrderBot ι] [SuccOrder ι] (U : ι → Set X) (n : ι) (hU : ∀ i ≤ n, IsPathConnected (U i))
+/-- Finite partial unions are path connected if each member is path connected and the union up to
+each index meets the member at its successor. Only the members of index at most `n` are
+constrained. The index need not be linear: the indices below `n` may branch like a tree rooted at
+`n`. -/
+theorem isPathConnected_partialSups {ι : Type*} [PartialOrder ι] [LocallyFiniteOrderBot ι]
+    [SuccOrder ι] (U : ι → Set X) (n : ι) (hU : ∀ i ≤ n, IsPathConnected (U i))
     (hOverlap : ∀ i < n, (partialSups U i ∩ U (Order.succ i)).Nonempty) :
     IsPathConnected (partialSups U n) := by
-  induction n using Succ.rec_bot with
-  | hbot =>
-    rw [partialSups_bot]
-    exact hU ⊥ le_rfl
-  | hsucc n ih =>
-    -- At a maximal index the successor is the index itself, so there is nothing to add.
-    by_cases hn : IsMax n
-    · rw [hn.succ_eq] at hU hOverlap ⊢
-      exact ih hU hOverlap
-    have hlt : n < Order.succ n := Order.lt_succ_of_not_isMax hn
-    rw [partialSups_succ]
-    exact (ih (fun i hi ↦ hU i (hi.trans hlt.le)) fun i hi ↦ hOverlap i (hi.trans hlt)).union
-      (hU _ le_rfl) (hOverlap n hlt)
+  induction n using WellFoundedLT.induction with
+  | ind n ih =>
+  obtain ⟨x, hx⟩ := (hU n le_rfl).nonempty
+  refine ⟨x, le_partialSups U n hx, fun {y} hy ↦ ?_⟩
+  simp only [partialSups_eq_biSup, iSup_eq_iUnion, mem_iUnion] at hy
+  obtain ⟨j, hjn, hy⟩ := hy
+  rcases hjn.eq_or_lt with rfl | hjn
+  · exact ((hU j le_rfl).joinedIn x hx y hy).mono (le_partialSups U j)
+  -- A largest index `i` in `[j, n)` has successor `n`, so `y` joins `x` inside
+  -- `partialSups U i ∪ U n`.
+  obtain ⟨i, ⟨hji, hin⟩, hmax⟩ :=
+    ((finite_Iio n).subset Ico_subset_Iio_self).exists_maximal (nonempty_Ico.2 hjn)
+  have hsucc : Order.succ i = n := (Order.succ_le_of_lt hin).eq_of_not_lt fun h ↦
+    hin.not_isMax <| Order.max_of_succ_le <| hmax ⟨hji.trans (Order.le_succ i), h⟩ (Order.le_succ i)
+  have hi := (ih i hin (fun k hk ↦ hU k (hk.trans hin.le)) fun k hk ↦ hOverlap k (hk.trans hin))
+    |>.union (hU n le_rfl) (hsucc ▸ hOverlap i hin)
+  exact (hi.joinedIn x (.inr hx) y (.inl (le_partialSups_of_le U hji hy))).mono
+    (union_subset ((partialSups U).monotone hin.le) (le_partialSups U n))
 
 /-- If a set `A` is covered by two path-connected subsets `B` and `C` but is not itself path
 connected, then `B` is a path component of `A`. -/
