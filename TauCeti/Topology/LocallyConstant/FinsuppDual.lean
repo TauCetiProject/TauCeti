@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import TauCeti.Topology.LocallyConstant.Algebra
+public import TauCeti.Topology.LocallyConstant.IsApply
 
 /-!
 # Locally constant families of finitely supported functions as linear maps
