@@ -21,7 +21,10 @@ pairs of functions agreeing almost everywhere (`TauCeti.CompatibleCouple.mem_leb
 and its sum is `L^{p₀} + L^{p₁}`, in which two decompositions agree exactly when their sums agree
 almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`), and a
 decomposition is a function `g ∈ Lᵖ` exactly when its sum agrees with `g` almost everywhere
-(`TauCeti.CompatibleCouple.lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff`). At the
+(`TauCeti.CompatibleCouple.lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff`). Maps
+`L^{p₀} → L^{q₀}` and `L^{p₁} → L^{q₁}` that agree on functions agreeing almost everywhere agree on
+the intersection, so form a map of Lebesgue couples
+(`TauCeti.CompatibleCouple.lebesgue_fstToSum_eq_sndToSum`). At the
 exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
 so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
 (`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
@@ -105,6 +108,21 @@ theorem lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff {p : ℝ≥0∞
   simp only [← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
     sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜
+
+/-- Maps of Lebesgue spaces `T₀ : L^{p₀} → L^{q₀}` and `T₁ : L^{p₁} → L^{q₁}` that agree almost
+everywhere on functions agreeing almost everywhere form a map of the Lebesgue couples: they agree on
+the intersection `L^{p₀} ∩ L^{p₁}`, as maps into the sum `L^{q₀} + L^{q₁}`. -/
+theorem lebesgue_fstToSum_eq_sndToSum {F β : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {mβ : MeasurableSpace β} {ν : Measure β} {q₀ q₁ : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)]
+    (T₀ : Lp E p₀ μ →L[𝕜] Lp F q₀ ν) (T₁ : Lp E p₁ μ →L[𝕜] Lp F q₁ ν)
+    (h : ∀ (f₀ : Lp E p₀ μ) (f₁ : Lp E p₁ μ), ⇑f₀ =ᵐ[μ] ⇑f₁ → ⇑(T₀ f₀) =ᵐ[ν] ⇑(T₁ f₁))
+    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
+    (lebesgue 𝕜 F ν q₀ q₁).fstToSum (T₀ ((lebesgue 𝕜 E μ p₀ p₁).interFst x)) =
+      (lebesgue 𝕜 F ν q₀ q₁).sndToSum (T₁ ((lebesgue 𝕜 E μ p₀ p₁).interSnd x)) := by
+  refine sumSpace_ext _ ?_
+  rw [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
+    L1AddLinfty.ofLp_eq_ofLp_iff, interFst_apply, interSnd_apply]
+  exact h _ _ (mem_lebesgue_inter_iff.1 x.property)
 
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
 the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/

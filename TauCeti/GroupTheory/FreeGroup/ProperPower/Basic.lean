@@ -8,14 +8,16 @@ module
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.GroupTheory.ProperPower
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Commutator
 
 /-!
 # Proper powers in free groups
 
 Free generators and commutators of distinct generators are not proper powers; in particular, a
-free generator is not a square. For the commutator this is detected by the integer Heisenberg
-group, in which the commutator has central coordinate one. The same holds for the commutator
-`a⁻¹ b⁻¹ a b` in the convention of surface groups, a conjugate of `⁅a, b⁆ = a b a⁻¹ b⁻¹`.
+free generator is not a square. For the commutator this is the case of distinct, hence
+non-commuting, generators in Schützenberger's theorem (`IsFreeGroup.not_isProperPower_commutator`).
+The same holds for the commutator `a⁻¹ b⁻¹ a b` in the convention of surface groups, a conjugate of
+`⁅a, b⁆ = a b a⁻¹ b⁻¹`.
 -/
 
 public section
@@ -55,17 +57,9 @@ theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : o
 
 /-- The commutator of two distinct free generators is not a proper power. -/
 theorem not_isProperPower_commutator {a b : α} (hab : a ≠ b) :
-    ¬ Group.IsProperPower ⁅of a, of b⁆ := by
-  classical
-  let f : FreeGroup α →* TauCeti.HeisenbergGroup ℤ :=
-    FreeGroup.lift (fun c =>
-      if c = a then ⟨1, 0, 0⟩ else if c = b then ⟨0, 1, 0⟩ else 1)
-  have ha : f (of a) = ⟨1, 0, 0⟩ := by simp [f]
-  have hb : f (of b) = ⟨0, 1, 0⟩ := by simp [f, hab.symm]
-  intro h
-  apply TauCeti.HeisenbergGroup.not_isProperPower_mk_zero_zero_one
-  simpa [ha, hb, TauCeti.HeisenbergGroup.commutatorElement_eq] using
-    Group.IsProperPower.map f h
+    ¬ Group.IsProperPower ⁅of a, of b⁆ :=
+  IsFreeGroup.not_isProperPower_commutator fun h =>
+    hab (eq_of_commute_of_of (commutatorElement_eq_one_iff_commute.1 h))
 
 /-- The commutator `a⁻¹ b⁻¹ a b` of two distinct free generators, in the convention
 `[x, y] = x⁻¹ y⁻¹ x y` of surface groups, is not a proper power. -/

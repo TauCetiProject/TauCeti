@@ -247,9 +247,9 @@ theorem homogeneousPartPolynomial_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- The polynomial-linear homogeneous part has the selected degree. -/
 @[simp]
 theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
+    LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
       G.piece H.piece r := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [G.homogeneousPartPolynomial_apply_of_mem H hX hY f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
@@ -257,12 +257,12 @@ theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- Taking the component at the degree of a homogeneous polynomial-linear map recovers the map. -/
 @[simp]
 theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     G.homogeneousPartPolynomial H hX hY f r = f := by
   apply _root_.LinearMap.restrictScalars_injective k
   rw [G.homogeneousPartPolynomial_restrictScalars H hX hY f r]
   apply G.homogeneousPart_eq_self H (f.restrictScalars k) r
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
 
@@ -270,7 +270,7 @@ theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
 @[simp]
 theorem homogeneousPartPolynomial_eq_self_iff (f : M →ₗ[k[X]] N) (r : ℤ) :
     G.homogeneousPartPolynomial H hX hY f r = f ↔
-      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+      LinearMap.IsHomogeneous f G.piece H.piece r := by
   constructor
   · intro hf
     rw [← hf]
