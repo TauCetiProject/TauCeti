@@ -62,7 +62,7 @@ this kind, so these conditions characterize them
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Theorem 7.4 (the relative Moser theorem) and Theorem 8.4 (the Lagrangian
-  neighbourhood theorem, whose prescribed-derivative refinement is proved here).
+  neighbourhood theorem, whose proof rests on the neighbourhood-germ statement proved here).
 -/
 
 public section
