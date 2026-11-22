@@ -42,6 +42,8 @@ the input to the ray class number formula.
 * `TauCeti.GlobalNumberFields.unitsResidueSignHom`: the residues and signs of the integer units.
 * `TauCeti.GlobalNumberFields.residueSignRayClass`: the principal ray class of a residue unit and
   sign pattern.
+* `TauCeti.GlobalNumberFields.residueRayClass`: the principal ray class of a residue unit with
+  trivial signs at the infinite places.
 
 ## Main results
 
@@ -57,6 +59,8 @@ the input to the ray class number formula.
   surjective.
 * `TauCeti.GlobalNumberFields.classMap_residueSignRayClass`: reducing residue units and
   restricting signs commutes with transition of ray class groups.
+* `TauCeti.GlobalNumberFields.unitsResidueSignHom_fst`: the finite component of
+  `unitsResidueSignHom` is reduction modulo `𝔪.finitePart`.
 * `TauCeti.GlobalNumberFields.ker_unitsResidueSignHom`,
   `TauCeti.GlobalNumberFields.ker_residueSignRayClass` and
   `TauCeti.GlobalNumberFields.range_residueSignRayClass`: the three nontrivial exactness statements
@@ -281,6 +285,16 @@ noncomputable def unitsResidueSignHom (𝔪 : Modulus K) :
 @[simp] theorem unitsResidueSignHom_apply (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
     unitsResidueSignHom 𝔪 u = residueSignHom 𝔪 (unitsToPrimeToSubgroup 𝔪 u) := (rfl)
 
+/-- The finite component of `unitsResidueSignHom` is the canonical reduction of `(𝓞 K)ˣ` modulo
+`𝔪.finitePart`. -/
+theorem unitsResidueSignHom_fst (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
+    (unitsResidueSignHom 𝔪 u).1 = Units.map (Ideal.Quotient.mk 𝔪.finitePart) u := by
+  rw [unitsResidueSignHom_apply, residueSignHom_fst]
+  refine Units.ext ?_
+  rw [coe_residueHom, Units.coe_map, MonoidHom.coe_ofClass,
+    residue_eq _ (a := (u : 𝓞 K)) (b := 1) (by simp)
+      (by simp [coe_unitsToPrimeToSubgroup])]
+
 /-- **Exactness at the integer units**: a unit has trivial residue and trivial signs exactly when
 it is congruent to one modulo `𝔪`. -/
 theorem ker_unitsResidueSignHom (𝔪 : Modulus K) :
@@ -317,6 +331,17 @@ noncomputable def residueSignRayClass (𝔪 : Modulus K) :
 theorem residueSignRayClass_comp_residueSignHom (𝔪 : Modulus K) :
     (residueSignRayClass 𝔪).comp (residueSignHom 𝔪) = principalRayClass 𝔪 :=
   MonoidHom.ext (residueSignRayClass_residueSignHom 𝔪)
+
+/-- The principal ray class attached to a residue unit modulo `𝔪.finitePart` with trivial signs at
+the infinite places of `𝔪`. -/
+noncomputable def residueRayClass (𝔪 : Modulus K) :
+    (𝓞 K ⧸ 𝔪.finitePart)ˣ →* RayClassGroup 𝔪 :=
+  (residueSignRayClass 𝔪).comp (MonoidHom.inl _ _)
+
+/-- `residueRayClass 𝔪 u` evaluates `residueSignRayClass 𝔪` at `(u, 1)`. -/
+theorem residueRayClass_apply (𝔪 : Modulus K) (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
+    residueRayClass 𝔪 u = residueSignRayClass 𝔪 (u, 1) :=
+  (rfl)
 
 /-- The residue-and-sign ray class map is natural in the modulus. Its finite component is
 `finiteUnitsMap`, and its infinite component restricts the prescribed signs. -/

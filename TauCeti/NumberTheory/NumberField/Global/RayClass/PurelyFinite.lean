@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.ClassNumber
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 
 /-!
 # Moduli without archimedean conditions and their residue-unit quotients
@@ -44,16 +44,6 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### Integer units modulo the finite part -/
-
-/-- The finite component of `unitsResidueSignHom` is the canonical reduction of `(𝓞 K)ˣ` modulo
-`𝔪.finitePart`. -/
-theorem unitsResidueSignHom_fst (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
-    (unitsResidueSignHom 𝔪 u).1 = Units.map (Ideal.Quotient.mk 𝔪.finitePart) u := by
-  rw [unitsResidueSignHom_apply, residueSignHom_fst]
-  refine Units.ext ?_
-  rw [coe_residueHom, Units.coe_map, MonoidHom.coe_ofClass,
-    residue_eq _ (a := (u : 𝓞 K)) (b := 1) (by simp)
-      (by simp [coe_unitsToPrimeToSubgroup])]
 
 /-- When `𝔪` has empty infinite part, the sign component of any element of
 `𝔪.infinitePart → ℤˣ` is trivial. -/
@@ -96,17 +86,6 @@ theorem mem_unitsCongruenceSubgroup_spanNat_iff {n : ℕ} [NeZero n] {u : (𝓞 
 
 /-! ### The purely finite residue-unit map to the ray class group -/
 
-/-- The principal ray class attached to a residue unit modulo `𝔪.finitePart` with trivial signs at
-the infinite places of `𝔪`. -/
-noncomputable def residueRayClass (𝔪 : Modulus K) :
-    (𝓞 K ⧸ 𝔪.finitePart)ˣ →* RayClassGroup 𝔪 :=
-  (residueSignRayClass 𝔪).comp (MonoidHom.inl _ _)
-
-/-- `residueRayClass 𝔪 u` evaluates `residueSignRayClass 𝔪` at `(u, 1)`. -/
-theorem residueRayClass_apply (𝔪 : Modulus K) (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
-    residueRayClass 𝔪 u = residueSignRayClass 𝔪 (u, 1) :=
-  (rfl)
-
 /-- When `𝔪.infinitePart = ∅`, the kernel of `residueRayClass 𝔪` is the image of `(𝓞 K)ˣ` in
 `(𝓞 K ⧸ 𝔪.finitePart)ˣ`. -/
 theorem ker_residueRayClass_of_infinitePart_eq_empty {𝔪 : Modulus K} (h : 𝔪.infinitePart = ∅) :
@@ -126,8 +105,9 @@ theorem range_residueRayClass_of_infinitePart_eq_empty {𝔪 : Modulus K} (h : �
   rw [← range_residueSignRayClass]
   ext c
   rw [MonoidHom.mem_range, MonoidHom.mem_range]
-  refine ⟨fun ⟨u, hu⟩ ↦ ⟨(u, 1), hu⟩, fun ⟨a, ha⟩ ↦ ⟨a.1, ?_⟩⟩
-  rw [residueRayClass_apply, ← eq_one_of_infinitePart_eq_empty h a.2, Prod.mk.eta, ha]
+  refine ⟨fun ⟨u, hu⟩ ↦ ⟨(u, 1), ?_⟩, fun ⟨a, ha⟩ ↦ ⟨a.1, ?_⟩⟩
+  · rwa [← residueRayClass_apply]
+  · rw [residueRayClass_apply, ← eq_one_of_infinitePart_eq_empty h a.2, Prod.mk.eta, ha]
 
 /-- **The kernel of `RayClassGroup 𝔪 → ClassGroup (𝓞 K)` when `𝔪.infinitePart = ∅`** is canonically
 isomorphic to the quotient of `(𝓞 K ⧸ 𝔪.finitePart)ˣ` by the image of the global integer units. -/
@@ -149,13 +129,5 @@ theorem coe_residueUnitsQuotientEquivKerRayClassToClassGroup_mk {𝔪 : Modulus 
     (residueUnitsQuotientEquivKerRayClassToClassGroup h u : RayClassGroup 𝔪) =
       residueRayClass 𝔪 u := by
   simp [residueUnitsQuotientEquivKerRayClassToClassGroup]
-
-/-- When `𝔪.infinitePart = ∅`, the order of `(rayClassToClassGroup 𝔪).ker` times the index of the
-congruent global units equals `#(𝓞 K ⧸ 𝔪.finitePart)ˣ`. -/
-theorem card_ker_rayClassToClassGroup_mul_index_of_infinitePart_eq_empty {𝔪 : Modulus K}
-    (h : 𝔪.infinitePart = ∅) :
-    Nat.card (rayClassToClassGroup 𝔪).ker * (unitsCongruenceSubgroup 𝔪).index =
-      Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ := by
-  simpa [h] using card_ker_rayClassToClassGroup_mul_index 𝔪
 
 end TauCeti.GlobalNumberFields

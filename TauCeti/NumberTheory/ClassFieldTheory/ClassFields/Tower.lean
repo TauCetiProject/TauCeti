@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.PurelyFinite
+import TauCeti.NumberTheory.NumberField.Global.RayClass.ClassNumber
 
 /-!
 # Relative Galois groups, degrees, and norms in ray class field towers

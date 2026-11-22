@@ -1,0 +1,87 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.NumberField.Norm
+
+/-!
+# Divisibility and units for rational integers in rings of integers
+
+For a number field `K`, the norm of a rational integer `m` is `m ^ [K : ℚ]`, so divisibility,
+unit status, and coprimality between rational integers or natural numbers are the same in `𝓞 K`
+as in `ℤ` or `ℕ`. In particular `𝓞 K / n 𝓞 K` has characteristic `n`.
+
+## Main results
+
+* `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
+* `NumberField.RingOfIntegers.natCast_dvd_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℕ`.
+* `NumberField.RingOfIntegers.isUnit_intCast`, `NumberField.RingOfIntegers.isUnit_natCast`,
+  `NumberField.RingOfIntegers.isUnit_natCast_iff`: `IsUnit (m : 𝓞 K) ↔ IsUnit m` for `m : ℤ` or
+  `m : ℕ` (and `↔ m = 1` for `m : ℕ`).
+* `NumberField.RingOfIntegers.isCoprime_intCast`, `NumberField.RingOfIntegers.isCoprime_natCast`:
+  coprimality between integers or natural numbers is the same in `𝓞 K` as in `ℤ` or `ℕ`.
+* `NumberField.RingOfIntegers.charP_quotient_span_natCast`: `𝓞 K / n 𝓞 K` has characteristic `n`.
+
+## References
+
+* J. S. Milne, *Algebraic Number Theory*, Chapter 2, p. 31.
+-/
+
+public section
+
+namespace NumberField.RingOfIntegers
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Divisibility between rational integers is the same in `𝓞 K` as in `ℤ`. -/
+@[simp, norm_cast]
+theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
+  refine ⟨fun h ↦ ?_, Int.cast_dvd_cast _ _⟩
+  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff Module.finrank_pos.ne'] using
+    map_dvd (Algebra.norm ℤ) (show algebraMap ℤ (𝓞 K) m ∣ algebraMap ℤ (𝓞 K) n by simpa using h)
+
+/-- Divisibility between natural numbers is the same in `𝓞 K` as in `ℕ`. -/
+@[simp, norm_cast]
+theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
+  simpa using (intCast_dvd_intCast (K := K) (m := m) (n := n)).trans Int.natCast_dvd_natCast
+
+/-- A rational integer is a unit in `𝓞 K` if and only if it is a unit in `ℤ`. -/
+@[simp, norm_cast]
+theorem isUnit_intCast {m : ℤ} : IsUnit (m : 𝓞 K) ↔ IsUnit m := by
+  rw [isUnit_iff_dvd_one, ← Int.cast_one (R := 𝓞 K), intCast_dvd_intCast, ← isUnit_iff_dvd_one]
+
+/-- A natural number is a unit in `𝓞 K` if and only if it is a unit in `ℕ`. -/
+@[norm_cast]
+theorem isUnit_natCast {n : ℕ} : IsUnit (n : 𝓞 K) ↔ IsUnit n := by
+  rw [← Int.cast_natCast, isUnit_intCast, Int.ofNat_isUnit]
+
+/-- A natural number is a unit in `𝓞 K` if and only if it is `1`. -/
+@[simp]
+theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : 𝓞 K) ↔ n = 1 :=
+  isUnit_natCast.trans Nat.isUnit_iff
+
+/-- Coprimality between rational integers is the same in `𝓞 K` as in `ℤ`. -/
+@[simp, norm_cast]
+theorem isCoprime_intCast {m n : ℤ} : IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ IsCoprime m n := by
+  refine ⟨fun h ↦ Int.isCoprime_iff_gcd_eq_one.mpr ?_, IsCoprime.intCast⟩
+  have hu : IsUnit ((m.gcd n : ℤ) : 𝓞 K) :=
+    h.isUnit_of_dvd' (intCast_dvd_intCast.mpr (Int.gcd_dvd_left m n))
+      (intCast_dvd_intCast.mpr (Int.gcd_dvd_right m n))
+  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (isUnit_iff_dvd_one.mp (isUnit_intCast.mp hu)))
+
+/-- Coprimality between natural numbers is the same in `𝓞 K` as in `ℕ`. -/
+@[simp, norm_cast]
+theorem isCoprime_natCast {m n : ℕ} : IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ m.Coprime n := by
+  rw [← Int.cast_natCast m, ← Int.cast_natCast n, isCoprime_intCast, Nat.isCoprime_iff_coprime]
+
+variable (K) in
+/-- The residue ring `𝓞 K / n 𝓞 K` has characteristic `n`. -/
+instance charP_quotient_span_natCast (n : ℕ) : CharP (𝓞 K ⧸ Ideal.span {(n : 𝓞 K)}) n :=
+  ⟨fun m ↦ by
+    rw [← map_natCast (Ideal.Quotient.mk _), Ideal.Quotient.eq_zero_iff_mem,
+      Ideal.mem_span_singleton, natCast_dvd_natCast]⟩
+
+end NumberField.RingOfIntegers

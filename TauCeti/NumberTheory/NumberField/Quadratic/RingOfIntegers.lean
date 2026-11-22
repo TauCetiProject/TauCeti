@@ -8,11 +8,11 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
-public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
-public import Mathlib.Data.ZMod.Defs
+public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.NumberTheory.SumTwoSquares
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
@@ -43,12 +43,7 @@ Reducing the norm form modulo a prime `p ∣ d` shows that an algebraic integer 
 some prime `p ≡ 3 (mod 4)` divides `d`.
 
 Finally, any integral generator `g` of `𝓞 K` over `ℤ` not lying in `ℚ` presents `𝓞 K` as an
-integral quadratic algebra (`TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`). In particular,
-setting `periodCoeffB D = 0`, `periodCoeffC D = -D / 4` for `D ≡ 0 (mod 4)` and
-`periodCoeffB D = -3`, `periodCoeffC D = (9 - D) / 4` for `D ≡ 1 (mod 4)`, `𝓞 K` admits a
-`ℤ`-algebra isomorphism onto the period algebra
-`QuadraticAlgebra ℤ (-periodCoeffC D) (-periodCoeffB D)`
-(`TauCeti.NumberField.exists_ringOfIntegers_periodAlgEquiv`).
+integral quadratic algebra (`TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`).
 
 ## Main results
 
@@ -72,8 +67,6 @@ setting `periodCoeffB D = 0`, `periodCoeffC D = -D / 4` for `D ≡ 0 (mod 4)` an
 * `TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`: presentation
   `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b` from any non-rational generator of `𝓞 K` (with
   `ringOfIntegersAlgEquivOfAdjoin_symm_apply` and `ringOfIntegersAlgEquivOfAdjoin_apply_gen`).
-* `TauCeti.NumberField.exists_ringOfIntegers_periodAlgEquiv`: `𝓞 K` admits a `ℤ`-algebra
-  isomorphism onto `QuadraticAlgebra ℤ (-periodCoeffC (discr K)) (-periodCoeffB (discr K))`.
 -/
 
 public section
@@ -545,58 +538,7 @@ theorem norm_ne_neg_one_of_mod_four_eq_three_of_dvd (hmin : minpoly ℤ θ = X ^
   exact ZMod.exists_sq_eq_neg_one_iff.mp (isSquare_neg_one_of_norm_eq_neg_one hmin hgen hsf hqd hz)
     hq3
 
-/-! ### Period-algebra presentations of `𝓞 K` -/
-
-/-- Linear coefficient `B` of the monic quadratic `X² + B X + C` satisfied by the period
-generator `τ_D = √D / 2` (`D ≡ 0 (mod 4)`) or `τ_D = (3 + √D) / 2` (`D ≡ 1 (mod 4)`). -/
-def periodCoeffB (D : ℤ) : ℤ := if D % 4 = 0 then 0 else -3
-
-/-- Constant coefficient `C` of the monic quadratic `X² + B X + C` satisfied by `τ_D`. -/
-def periodCoeffC (D : ℤ) : ℤ := if D % 4 = 0 then -D / 4 else (9 - D) / 4
-
-/-- Unfolding lemma for `periodCoeffB`. -/
-theorem periodCoeffB_def (D : ℤ) : periodCoeffB D = if D % 4 = 0 then 0 else -3 := (rfl)
-
-/-- Unfolding lemma for `periodCoeffC`. -/
-theorem periodCoeffC_def (D : ℤ) : periodCoeffC D = if D % 4 = 0 then -D / 4 else (9 - D) / 4 :=
-  (rfl)
-
-/-- For `D ≡ 0, 1 (mod 4)`, the quadratic algebra `QuadraticAlgebra ℤ (-periodCoeffC D)
-(-periodCoeffB D)` has discriminant `D`. -/
-theorem discr_neg_periodCoeff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
-    QuadraticAlgebra.discr (-periodCoeffC D) (-periodCoeffB D) = D := by
-  rw [QuadraticAlgebra.discr_def, periodCoeffB_def, periodCoeffC_def]
-  rcases hD with h0 | h1 <;> split_ifs <;> norm_num <;> omega
-
-/-- Value of `-periodCoeffC (-4)` (the Gaussian discriminant). -/
-@[simp]
-theorem neg_periodCoeffC_neg_four : -periodCoeffC (-4) = -1 := by decide
-
-/-- Value of `-periodCoeffB (-4)` (the Gaussian discriminant). -/
-@[simp]
-theorem neg_periodCoeffB_neg_four : -periodCoeffB (-4) = 0 := by decide
-
-/-- Value of `-periodCoeffC (-3)` (the Eisenstein discriminant). -/
-@[simp]
-theorem neg_periodCoeffC_neg_three : -periodCoeffC (-3) = -3 := by decide
-
-/-- Value of `-periodCoeffB (-3)` (the Eisenstein discriminant). -/
-@[simp]
-theorem neg_periodCoeffB_neg_three : -periodCoeffB (-3) = 3 := by decide
-
-/-- For every integer `D`, `-periodCoeffB D` vanishes in `ZMod 3` (since
-`periodCoeffB D ∈ {0, -3}`). -/
-theorem intCast_neg_periodCoeffB_zmod_three_eq_zero (D : ℤ) :
-    ((-periodCoeffB D : ℤ) : ZMod 3) = 0 := by
-  rw [ZMod.intCast_zmod_eq_zero_iff_dvd, periodCoeffB_def]
-  split_ifs <;> decide
-
-/-- For `D ≡ 0, 1 (mod 4)` divisible by `3`, `-periodCoeffC D` vanishes in `ZMod 3`. -/
-theorem intCast_neg_periodCoeffC_zmod_three_eq_zero_of_three_dvd {D : ℤ}
-    (hD : D % 4 = 0 ∨ D % 4 = 1) (h3 : (3 : ℤ) ∣ D) :
-    ((-periodCoeffC D : ℤ) : ZMod 3) = 0 := by
-  rw [ZMod.intCast_zmod_eq_zero_iff_dvd, periodCoeffC_def]
-  rcases hD with h0 | h1 <;> split_ifs <;> omega
+/-! ### Quadratic-algebra presentations of `𝓞 K` -/
 
 private theorem bijective_lift_of_adjoin {g : 𝓞 K} {a b : ℤ}
     (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
@@ -641,43 +583,5 @@ theorem ringOfIntegersAlgEquivOfAdjoin_apply_gen {g : 𝓞 K} {a b : ℤ}
     (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
     ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem g = QuadraticAlgebra.omega :=
   (ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem).symm.injective (by simp)
-
-/-- **Period-algebra presentation of `𝓞 K`**: for any quadratic number field `K` of discriminant
-`D = discr K`, `𝓞 K` admits a `ℤ`-algebra isomorphism onto the period algebra
-`QuadraticAlgebra ℤ (-periodCoeffC D) (-periodCoeffB D)`. -/
-theorem exists_ringOfIntegers_periodAlgEquiv (hK : finrank ℚ K = 2) :
-    Nonempty (𝓞 K ≃ₐ[ℤ]
-      QuadraticAlgebra ℤ (-periodCoeffC (discr K)) (-periodCoeffB (discr K))) := by
-  obtain ⟨θ, d, hmin, hgen, hsf⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
-  by_cases hd4 : d % 4 = 1
-  · set ω₀ := halfGen hmin hd4
-    have hdisc : discr K = d := discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
-    have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inr (hdisc.symm ▸ hd4)
-    have hω_sq : ω₀ * ω₀ = ((d - 1) / 4) • (1 : 𝓞 K) + (1 : ℤ) • ω₀ := by
-      have haeval := minpoly.aeval ℤ ω₀
-      rw [minpoly_halfGen hmin hd4, show (1 - d) / 4 = -((d - 1) / 4) by omega] at haeval
-      simp only [map_add, map_sub, map_pow, map_neg, map_intCast, aeval_X, zsmul_eq_mul,
-        eq_intCast, Int.cast_one, one_mul] at haeval ⊢
-      linear_combination haeval
-    have hω_notMem : (ω₀ : K) ∉ (algebraMap ℚ K).range := fun ⟨q, hq⟩ ↦
-      gen_notMem_range hmin ⟨2 * q - 1, by
-        rw [coe_halfGen] at hq; rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩
-    let e₁ := ringOfIntegersAlgEquivOfAdjoin hω_sq
-      (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4) hω_notMem
-    obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := (d - 1) / 4) (b := 1)
-      (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
-        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; omega
-    exact ⟨e₁.trans e₂⟩
-  · have hdisc : discr K = 4 * d := discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
-    have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inl (by rw [hdisc]; omega)
-    have hθ_sq : θ * θ = d • (1 : 𝓞 K) + (0 : ℤ) • θ := by
-      apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-      simpa [sq, zsmul_eq_mul, RingOfIntegers.coe_eq_algebraMap] using coe_gen_sq hmin
-    let e₁ := ringOfIntegersAlgEquivOfAdjoin hθ_sq
-      (adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen hsf hd4) (gen_notMem_range hmin)
-    obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := d) (b := 0)
-      (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
-        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; ring
-    exact ⟨e₁.trans e₂⟩
 
 end TauCeti.NumberField
