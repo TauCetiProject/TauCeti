@@ -54,12 +54,6 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
 
-private theorem ae_le_of_ae_measure_Iic_eq {M : Ω → Measure ℝ≥0}
-    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞))
-    (s t : ℝ≥0) (hst : s ≤ t) :
-    ∀ᵐ ω ∂P, N s ω ≤ N t ω :=
-  (ae_monotone_of_ae_measure_Iic_eq hcount).mono fun _ h ↦ h hst
-
 /-! ### Simplicity from microscopic multiple-jump bounds -/
 
 /-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply that any random measure `M`
@@ -74,7 +68,7 @@ theorem ae_forall_pos_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     (hsmall : (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω - N 0 ω}) =o[𝓝[>] 0]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
     ∀ᵐ ω ∂P, ∀ t > (0 : ℝ≥0), M ω {t} ≤ 1 := by
-  have hjump := ae_count_le_add_one_of_small_time (ae_monotone_of_ae_measure_Iic_eq hcount)
+  have hjump := ae_count_le_add_one_of_small_time (ae_monotone_of_ae_forall_measure_Iic_eq hcount)
     hstat hsmall
   filter_upwards [hcount, hjump] with ω hω hj t ht
   obtain ⟨s, hst, hle⟩ := hj t ht
@@ -96,8 +90,8 @@ theorem ae_forall_pos_countPathMeasure_singleton_le_one_of_small_time [IsFiniteM
     (hsmall : (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω - N 0 ω}) =o[𝓝[>] 0]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
     ∀ᵐ ω ∂P, ∀ t > (0 : ℝ≥0), countPathMeasure (N · ω) {t} ≤ 1 :=
-  ae_forall_pos_measure_singleton_le_one_of_small_time (ae_countPathMeasure_Iic_eq hreg) hstat
-    hsmall
+  ae_forall_pos_measure_singleton_le_one_of_small_time (ae_forall_countPathMeasure_Iic_eq hreg)
+    hstat hsmall
 
 /-- If in addition `N 0 ≤ 1` almost surely, stationary increment laws and
 `P(N h - N 0 ≥ 2) = o(h)` make any random measure `M` represented almost surely by cumulative
@@ -114,8 +108,7 @@ theorem ae_forall_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
   filter_upwards [hcount, h0,
     ae_forall_pos_measure_singleton_le_one_of_small_time hcount hstat hsmall] with ω hω h0ω hpos t
   rcases eq_or_lt_of_le (zero_le : (0 : ℝ≥0) ≤ t) with rfl | ht
-  · have hIic : Iic (0 : ℝ≥0) = {0} := by ext; simp
-    rw [← hIic, hω 0]
+  · rw [← NNReal.bot_eq_zero, ← Set.Iic_bot, NNReal.bot_eq_zero, hω 0]
     exact_mod_cast h0ω
   · exact hpos t ht
 
@@ -131,7 +124,7 @@ theorem ae_forall_countPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasu
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
     ∀ᵐ ω ∂P, ∀ t, countPathMeasure (N · ω) {t} ≤ 1 :=
   ae_forall_measure_singleton_le_one_of_small_time
-    (ae_countPathMeasure_Iic_eq hreg) h0 hstat hsmall
+    (ae_forall_countPathMeasure_Iic_eq hreg) h0 hstat hsmall
 
 /-! ### Microscopic characterizations of homogeneous temporal Poisson point processes -/
 
@@ -152,7 +145,8 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_small_time
   rw [isPoissonRandomMeasure_smul_nnvolume_iff_count_increments hM hcount]
   exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
     hind.hasLaw_sub_poissonMeasure_iff_stationary_small_time h0
-      (ae_le_of_ae_measure_Iic_eq hcount) r
+      (fun s t hst ↦ ae_le_of_ae_measure_Iic_eq (hcount.mono fun _ h ↦ h s)
+        (hcount.mono fun _ h ↦ h t) hst) r
 
 /-- **Microscopic characterization of `countPathMeasure` (quotient form).** For a natural-valued
 process measurable at nonnegative rational times whose paths are monotone and right-continuous on
@@ -169,7 +163,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_stationary_sma
       Tendsto (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} / h) (𝓝[>] 0) (𝓝 (r : ℝ)) ∧
       Tendsto (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω} / h) (𝓝[>] 0) (𝓝 0) :=
   isPoissonRandomMeasure_smul_nnvolume_iff_stationary_small_time
-    (measurable_countPathMeasure_of_nnrat hN) (ae_countPathMeasure_Iic_eq hreg)
+    (measurable_countPathMeasure_of_nnrat hN) (ae_forall_countPathMeasure_Iic_eq hreg)
 
 /-- **Microscopic characterization of homogeneous temporal Poisson point processes (`o(h)`
 form).** For a measurable random measure `M` on `ℝ≥0` represented almost surely by cumulative
@@ -189,7 +183,8 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
   rw [isPoissonRandomMeasure_smul_nnvolume_iff_count_increments hM hcount]
   exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
     hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0
-      (ae_le_of_ae_measure_Iic_eq hcount) r
+      (fun s t hst ↦ ae_le_of_ae_measure_Iic_eq (hcount.mono fun _ h ↦ h s)
+        (hcount.mono fun _ h ↦ h t) hst) r
 
 /-- **Microscopic characterization of `countPathMeasure` (`o(h)` form).** For a natural-valued
 process measurable at nonnegative rational times whose paths are monotone and right-continuous on
@@ -206,6 +201,6 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_stationary_isL
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) :=
   isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
-    (measurable_countPathMeasure_of_nnrat hN) (ae_countPathMeasure_Iic_eq hreg)
+    (measurable_countPathMeasure_of_nnrat hN) (ae_forall_countPathMeasure_Iic_eq hreg)
 
 end TauCeti.Probability

@@ -52,7 +52,7 @@ namespace IsPoissonRandomMeasure
 /-- Each natural-valued cumulative count of a Poisson random measure is measurable. -/
 theorem measurable_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
     Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) :=
-  ((Measure.measurable_coe measurableSet_Ioc).comp h.measurable).ennreal_toNNReal.nat_floor
+  ((measurable_pi_apply t).comp (measurable_natFloor_measure_Ioc 0)).comp h.measurable
 
 /-- The natural-valued count on any right-closed temporal interval has Poisson law with
 parameter equal to the intensity of that interval. This includes empty intervals. -/
@@ -91,11 +91,7 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     with ω hint hfin hz t
   let := hfin
   have hinterval : M ω (Iic t) = M ω (Ioc 0 t) := by
-    have hu := measure_union (μ := M ω) (s₁ := Iic 0) (s₂ := Ioc 0 t)
-      (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
-    have hbot : Iic (0 : ℝ≥0) = {0} := by ext x; simp
-    rw [Iic_union_Ioc_eq_Iic (zero_le (a := t)), hbot, hz, zero_add] at hu
-    exact hu
+    rw [← Set.Icc_bot, NNReal.bot_eq_zero, (measure_congr (Ioc_ae_eq_Icc' hz)).symm]
   rw [hinterval, hint.natCast_natFloor_Ioc]
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]

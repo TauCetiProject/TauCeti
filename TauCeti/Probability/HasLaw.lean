@@ -64,6 +64,9 @@ measurable equivalences let these characterizations pass to other representation
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `MeasurableEmbedding.hasLaw_comp_iff` — postcomposing with a measurable embedding `f` has law
   `μ.map f` if and only if the original random variable has law `μ`;
+* `TauCeti.Probability.hasLaw_sub_natCast_iff` — subtracting casts of almost surely ordered
+  natural-valued random variables has law `μ.map Nat.cast` if and only if their natural
+  difference has law `μ`;
 * `ProbabilityTheory.HasLaw.cond_of_restrict`,
   `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
   `ProbabilityTheory.HasLaw.of_restrict_of_ae_mem` — normalizing a scalar-multiple restricted law
@@ -129,6 +132,22 @@ theorem _root_.MeasurableEmbedding.hasLaw_comp_iff {Ω α β : Type*}
   refine ⟨hx, hf.map_injective ?_⟩
   rw [AEMeasurable.map_map_of_aemeasurable hf.measurable.aemeasurable hx]
   exact h.map_eq
+
+/-- When `X ≤ Y` almost surely for natural-valued random variables, subtracting their casts into a
+characteristic-zero group with one has law `μ.map Nat.cast` if and only if `Y - X` has law `μ`.
+-/
+theorem hasLaw_sub_natCast_iff {Ω R : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace R] [MeasurableSingletonClass R] [AddGroupWithOne R] [CharZero R]
+    {P : Measure Ω} {X Y : Ω → ℕ} {μ : Measure ℕ}
+    (hle : ∀ᵐ ω ∂P, X ω ≤ Y ω) :
+    HasLaw ((fun ω ↦ (Y ω : R)) - fun ω ↦ (X ω : R)) (μ.map (Nat.cast : ℕ → R)) P ↔
+      HasLaw (fun ω ↦ Y ω - X ω) μ P := by
+  have hcast : ((fun ω ↦ (Y ω : R)) - fun ω ↦ (X ω : R)) =ᵐ[P]
+      (Nat.cast : ℕ → R) ∘ fun ω ↦ Y ω - X ω := by
+    filter_upwards [hle] with ω hω
+    simp [Nat.cast_sub hω]
+  refine ⟨fun h ↦ MeasurableEmbedding.natCast.hasLaw_comp_iff.mp (h.congr hcast.symm),
+    fun h ↦ (MeasurableEmbedding.natCast.hasLaw_comp_iff.mpr h).congr hcast⟩
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}

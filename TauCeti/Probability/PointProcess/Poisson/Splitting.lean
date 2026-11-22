@@ -10,6 +10,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Count
 public import TauCeti.Probability.PointProcess.Poisson.Independence
 public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
 # Splitting marked temporal Poisson measures
@@ -53,11 +54,10 @@ theorem iIndepFun_nat_count_prod {E ι : Type*} [MeasurableSpace E]
     ProbabilityTheory.iIndepFun
       (fun i ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ A i)).toNNReal⌋₊) P := by
   let f (μ : Measure ℝ≥0) (t : ℝ≥0) := ⌊(μ (Ioc 0 t)).toNNReal⌋₊
-  have hf : Measurable f := Measurable.of_eval fun t ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
   simpa only [f, Function.comp_def, Measure.map_fst_restrict_prod_apply _ _ _
     measurableSet_Ioc, inter_univ] using
-    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp (fun _ ↦ f) (fun _ ↦ hf)
+    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp
+      (fun _ ↦ f) (fun _ ↦ measurable_natFloor_measure_Ioc 0)
 
 /-- Two disjoint measurable mark sets give independent complete temporal count paths,
 without product-intensity or local-finiteness assumptions. -/

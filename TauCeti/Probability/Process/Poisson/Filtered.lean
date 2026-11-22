@@ -265,17 +265,11 @@ private theorem natCast_sub_ae_eq {s t : ℝ≥0} (hle : ∀ᵐ ω ∂P, N s ω 
       fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ) :=
   (Filter.EventuallyLE.natCast_sub hle).symm.mono fun _ hω ↦ by simpa only [Pi.sub_apply] using hω
 
-private theorem hasLaw_sub_natCast_iff {s t : ℝ≥0} {c : ℝ≥0}
+private theorem hasLaw_sub_poissonMeasure_natCast_iff {s t : ℝ≥0} {c : ℝ≥0}
     (hle : ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
     HasLaw ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) Po(ℝ, c) P ↔
-      HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure c) P := by
-  have hcomp : HasLaw (fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ)) Po(ℝ, c) P ↔
-      HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure c) P := by
-    simpa only [Function.comp_def] using
-      (MeasurableEmbedding.natCast.hasLaw_comp_iff (X := fun ω ↦ N t ω - N s ω)
-        (μ := poissonMeasure c) (P := P))
-  exact ⟨fun h ↦ hcomp.1 (h.congr (natCast_sub_ae_eq hle).symm),
-    fun h ↦ (hcomp.2 h).congr (natCast_sub_ae_eq hle)⟩
+      HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure c) P :=
+  hasLaw_sub_natCast_iff hle
 
 /-- The real cast of a natural-valued process `N` is a rate-`r` Poisson process relative to `ℱ`
 if and only if `N` is adapted to `ℱ`, starts at zero almost surely, and has `ℱ`-independent
@@ -303,14 +297,14 @@ theorem isFilteredPoissonProcess_natCast_iff
       exact Nat.cast_le.1 (sub_nonneg.1 hω)
     exact ⟨fun t ↦ MeasurableEmbedding.natCast.measurable_comp_iff.mp (h.adapted t),
       h.eval_zero_ae_eq_zero.mono fun _ hω ↦ Nat.cast_eq_zero.1 hω,
-      fun s t hst ↦ (hasLaw_sub_natCast_iff (hle hst)).1 (h.hasLaw_sub hst),
+      fun s t hst ↦ (hasLaw_sub_poissonMeasure_natCast_iff (hle hst)).1 (h.hasLaw_sub hst),
       fun s t hst ↦ (hind_iff (hle hst)).1 (h.indep_sub hst)⟩
   · rintro ⟨hadapt, h0, hlaw, hind⟩
     have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω :=
       ae_le_of_hasLaw_sub_poissonMeasure h0 hlaw hst
     exact ⟨fun t ↦ (Measurable.of_discrete.comp (hadapt t)).stronglyMeasurable,
       h0.mono fun _ hω ↦ by simp [hω],
-      fun s t hst ↦ (hasLaw_sub_natCast_iff (hle hst)).2 (hlaw s t hst),
+      fun s t hst ↦ (hasLaw_sub_poissonMeasure_natCast_iff (hle hst)).2 (hlaw s t hst),
       fun s t hst ↦ (hind_iff (hle hst)).2 (hind hst)⟩
 
 /-- For a coordinatewise measurable natural-valued process `N`, its real cast is a rate-`r`
@@ -340,10 +334,12 @@ theorem isFilteredPoissonProcess_natural_natCast_iff {r : ℝ≥0}
       intro n t ht
       have hcast := (hind n t ht).comp (fun _ ↦ (Nat.cast : ℕ → ℝ))
         (fun _ ↦ Measurable.of_discrete)
-      exact hcast.congr fun i ↦ Filter.EventuallyLE.natCast_sub (hle (ht i.castSucc_le_succ))
+      exact hcast.congr fun i ↦ by
+        simpa only [Function.comp_def, Pi.sub_def] using
+          (natCast_sub_ae_eq (hle (ht i.castSucc_le_succ))).symm
     exact hind_real.isFilteredPoissonProcess_natural hmeas
       (h0.mono fun _ hω ↦ by simp [hω]) fun s t hst ↦
-        (hasLaw_sub_natCast_iff (hle hst)).2 (hlaw s t hst)
+        (hasLaw_sub_poissonMeasure_natCast_iff (hle hst)).2 (hlaw s t hst)
 
 end NatCast
 

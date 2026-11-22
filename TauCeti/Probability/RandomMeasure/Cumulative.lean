@@ -180,9 +180,9 @@ theorem measurable_natFloor_measure_Iic :
 /-- Mapping a measure on `ℝ≥0` to its floored counts on `(a, t]` is measurable into `ℝ≥0 → ℕ`
 with the product σ-algebra, without finiteness or integrality assumptions. -/
 theorem measurable_natFloor_measure_Ioc (a : ℝ≥0) :
-    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊ :=
-  measurable_pi_iff.2 fun _ ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
+    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊ := by
+  simpa only [Function.comp_def, Measure.restrict_Ioi_apply_Iic] using
+    measurable_natFloor_measure_Iic.comp (Measure.measurable_restrict measurableSet_Ioi)
 
 /-- If a finite family of random measures on `ℝ≥0` has almost surely integer-valued restrictions
 on `(0, n]` for every `n : ℕ` and sums almost surely to `M₀` with almost surely finite mass on
@@ -240,9 +240,18 @@ theorem ae_forall_natFloor_toNNReal_Ioc_add_eq {Q : Measure Ω} {M₁ M₂ M₀ 
     (by simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
   simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
 
+/-- Two natural-valued random variables that agree almost surely with the cumulative masses of a
+random measure at ordered times `s ≤ t` are ordered almost surely. -/
+theorem ae_le_of_ae_measure_Iic_eq {P : Measure Ω} {X Y : Ω → ℕ} {s t : ℝ≥0}
+    (hs : ∀ᵐ ω ∂P, M ω (Iic s) = (X ω : ℝ≥0∞))
+    (ht : ∀ᵐ ω ∂P, M ω (Iic t) = (Y ω : ℝ≥0∞)) (hst : s ≤ t) :
+    ∀ᵐ ω ∂P, X ω ≤ Y ω := by
+  filter_upwards [hs, ht] with ω hωs hωt
+  exact_mod_cast (hωs.symm.trans_le ((measure_mono (Iic_subset_Iic.mpr hst)).trans_eq hωt))
+
 /-- A natural-valued process that agrees almost surely with the cumulative masses of a random
 measure simultaneously at all times is almost surely monotone. -/
-theorem ae_monotone_of_ae_measure_Iic_eq {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
+theorem ae_monotone_of_ae_forall_measure_Iic_eq {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
     (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
     ∀ᵐ ω ∂P, Monotone (N · ω) := by
   filter_upwards [hcount] with ω hω s t hst

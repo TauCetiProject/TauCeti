@@ -83,7 +83,7 @@ theorem isPoissonRandomMeasure_of_count_increments
       (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
     (hlaw s t hst).congr (heq.mono fun ω hω ↦ by simp [hω])
   have hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N' t ω) :=
-    ae_monotone_of_ae_measure_Iic_eq hcount'
+    ae_monotone_of_ae_forall_measure_Iic_eq hcount'
   have hfinite : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) ≠ ∞ := by
     filter_upwards [hcount'] with ω hω t
     rw [hω t]
@@ -170,7 +170,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_iff_count_increments
         (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
   isPoissonRandomMeasure_iff_count_increments hΛ
     (measurable_countPathMeasure_of_nnrat hN)
-    (ae_countPathMeasure_Iic_eq hreg)
+    (ae_forall_countPathMeasure_Iic_eq hreg)
 
 /-- Homogeneous specialization: for a count process measurable at nonnegative rational times whose
 paths are monotone and right-continuous on one event of full measure, `countPathMeasure (N · ω)` is
@@ -187,7 +187,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_count_incremen
         (poissonMeasure (r * (t - s))) P :=
   isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
     (measurable_countPathMeasure_of_nnrat hN)
-    (ae_countPathMeasure_Iic_eq hreg)
+    (ae_forall_countPathMeasure_Iic_eq hreg)
 
 /-- For a measurable random measure `M` on `ℝ≥0` represented almost surely by a coordinatewise
 measurable natural-valued cumulative count process `N`, `M` is a rate-`r` homogeneous Poisson
@@ -221,7 +221,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_isFilteredPois
         r (fun t ω ↦ (N t ω : ℝ)) P :=
   isPoissonRandomMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
     (measurable_countPathMeasure_of_nnrat fun q ↦ hN q) hN
-    (ae_countPathMeasure_Iic_eq hreg)
+    (ae_forall_countPathMeasure_Iic_eq hreg)
 
 /-- **Zero-rate temporal Poisson characterization.** A measurable random measure with a
 natural-valued cumulative count process on a probability space has zero Poisson intensity if and
