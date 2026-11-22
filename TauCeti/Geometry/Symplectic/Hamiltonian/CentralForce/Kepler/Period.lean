@@ -81,6 +81,11 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {m κ a : ℝ}
 
+/-- A function on `ℝ` with zero derivative everywhere is constant. -/
+private theorem eq_of_forall_hasDerivAt_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : ℝ → E} (h : ∀ t, HasDerivAt f 0 t) (t s : ℝ) : f t = f s :=
+  is_const_of_deriv_eq_zero (fun t ↦ (h t).differentiableAt) (fun t ↦ (h t).deriv) t s
+
 /-! ### Newton's equations of the Kepler problem -/
 
 section Newton
@@ -173,7 +178,7 @@ private theorem exists_anomaly_kepler (hm : 0 < m) (ha : 0 < a) (hc0 : 0 < c)
     refine ((hz t).mul ((((hψ t).ofReal_comp).neg.mul_const Complex.I).cexp)).congr_deriv ?_
     ring
   have hconst (t : ℝ) : z t * Complex.exp (-(ψ t : ℂ) * Complex.I) = ‖z 0‖ := by
-    rw [is_const_of_deriv_eq_zero (fun t ↦ (hw t).differentiableAt) (fun t ↦ (hw t).deriv) t 0]
+    rw [eq_of_forall_hasDerivAt_zero hw t 0]
     calc z 0 * Complex.exp (-(ψ 0 : ℂ) * Complex.I)
         = ‖z 0‖ * Complex.exp ((z 0).arg * Complex.I) * Complex.exp (-(ψ 0 : ℂ) * Complex.I) := by
           rw [Complex.norm_mul_exp_arg_mul_I]
@@ -258,7 +263,7 @@ private theorem keplerEquation_kepler (hm : 0 < m) (ha : 0 < a) (h0 : ∀ t, q t
     rw [hr] at hr0 ⊢
     field_simp
     ring
-  have := is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t 0
+  have := eq_of_forall_hasDerivAt_zero hd t 0
   simp only [mul_zero, sub_zero] at this
   linarith
 
@@ -274,7 +279,8 @@ private theorem sq_div_eq_kepler (hm : 0 < m) (hκ : 0 < κ) (ha : 0 < a) (hc0 :
   have hr0 : ‖q 0‖ ≠ 0 := norm_ne_zero_iff.2 h0
   -- `ρ² = (a - r)² + (a ⟪q, p⟫ / c)²`.
   have hρ : ρ ^ 2 = (a - ‖q 0‖) ^ 2 + (a * ⟪q 0, p 0⟫_ℝ / c) ^ 2 := by
-    rw [hr, hs, mul_pow, mul_pow, ← mul_add, cos_sq_add_sin_sq, mul_one]
+    rw [hr, hs]
+    linear_combination (-ρ ^ 2) * cos_sq_add_sin_sq (ψ 0)
   rw [div_pow, hρ, hp2]
   field_simp
   linear_combination (-(a * ⟪q 0, p 0⟫_ℝ ^ 2)) * hc
@@ -289,12 +295,10 @@ private theorem exists_eq_smul_add_smul_kepler (hm : 0 < m) (ha : 0 < a) (hc0 : 
     (hr : ∀ t, ‖q t‖ = a - ρ * cos (ψ t)) (hs : ∀ t, ⟪q t, p t⟫_ℝ = c * ρ * sin (ψ t) / a) :
     ∃ P Q : V, ∀ t, q t = (cos (ψ t) - ρ / a) • P + sin (ψ t) • Q ∧
       p t = (c / (a ^ 2 * (1 - ρ / a * cos (ψ t)))) • (cos (ψ t) • Q - sin (ψ t) • P) := by
-  have hP (t : ℝ) := is_const_of_deriv_eq_zero
-    (fun t ↦ (hasDerivAt_frame_fst_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs t).differentiableAt)
-    (fun t ↦ (hasDerivAt_frame_fst_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs t).deriv) t 0
-  have hQ (t : ℝ) := is_const_of_deriv_eq_zero
-    (fun t ↦ (hasDerivAt_frame_snd_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs t).differentiableAt)
-    (fun t ↦ (hasDerivAt_frame_snd_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs t).deriv) t 0
+  have hP (t : ℝ) := eq_of_forall_hasDerivAt_zero
+    (hasDerivAt_frame_fst_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs) t 0
+  have hQ (t : ℝ) := eq_of_forall_hasDerivAt_zero
+    (hasDerivAt_frame_snd_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs) t 0
   refine ⟨(a * ‖q 0‖⁻¹ * cos (ψ 0)) • q 0 - (a ^ 2 / c * sin (ψ 0)) • p 0,
     (a * ‖q 0‖⁻¹ * sin (ψ 0)) • q 0 + (a ^ 2 / c * (cos (ψ 0) - ρ / a)) • p 0,
     fun t ↦ ⟨?_, ?_⟩⟩
@@ -396,14 +400,12 @@ private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ) (ha : 0 < a)
   have hU (t : ℝ) := hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq t))
   have hγ' (t : ℝ) := stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (m := m)
     (hU t) (hq t) ▸ hγ t
-  -- The energy is constant, since `dH(X_H) = 0`.
-  have hd (t : ℝ) : HasDerivAt (fun s ↦ centralForceHamiltonian m (fun r ↦ -κ / r) (γ s)) 0 t := by
-    have hH := hasFDerivAt_centralForceHamiltonian (m := m) (hU t) (hq t)
-    have h := hH.comp_hasDerivAt t (hγ t)
-    rwa [← hH.fderiv, SymplecticForm.fderiv_apply_hamiltonianVectorField] at h
+  -- The energy is conserved.
   have hEt (t : ℝ) : centralForceHamiltonian m (fun r ↦ -κ / r) (γ t) = -κ / (2 * a) :=
-    (is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t 0).trans
-      hE
+    ((stdSymplecticForm (V := V)).apply_eq_of_hasDerivWithinAt_hamiltonianVectorField
+      isPreconnected_univ (fun t _ ↦ (hγ t).hasDerivWithinAt)
+      (fun t _ ↦ (hasFDerivAt_centralForceHamiltonian (m := m) (hU t) (hq t)).differentiableAt)
+      (mem_univ 0) (mem_univ t)).trans hE
   refine ⟨fun t ↦ (hγ' t).fst, fun t ↦ (hγ' t).snd, fun t ↦ ?_, ?_⟩
   · have := hEt t
     rw [← Prod.mk.eta (p := γ t), centralForceHamiltonian_apply] at this
@@ -481,11 +483,11 @@ theorem periodic_of_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 0 < κ) (ha : 0
   set T := 2 * π * √(m / κ) * a ^ (3 / 2 : ℝ)
   -- The mean motion `n` advances by `2π` over the period: `n T = 2π`.
   have hnT : n * T = 2 * π := by
+    have h32 : a ^ (3 / 2 : ℝ) = a * √a := by
+      rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add ha, rpow_one, sqrt_eq_rpow]
     have hT : √(κ / (m * a ^ 3)) * (√(m / κ) * a ^ (3 / 2 : ℝ)) = 1 := by
-      rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add ha, rpow_one, ← sqrt_eq_rpow]
-      refine (pow_left_inj₀ (by positivity) zero_le_one two_ne_zero).1 ?_
-      rw [one_pow, mul_pow, mul_pow, mul_pow, sq_sqrt (by positivity), sq_sqrt (by positivity),
-        sq_sqrt ha.le]
+      rw [h32, ← mul_assoc, mul_left_comm, ← sqrt_mul (by positivity), ← sqrt_mul (by positivity),
+        show κ / (m * a ^ 3) * (m / κ) * a = (a⁻¹) ^ 2 by field_simp, sqrt_sq (by positivity)]
       field_simp
     linear_combination (2 * π) * hT
   -- `x ↦ x - e sin x` is strictly increasing, since `e < 1`.
