@@ -49,6 +49,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   bound with one constant `K` for all balls, `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.mul_two_sub_lt_two_mul_of_lt_two_mul`: for `r > 1`, the condition `r > n/2` implies
+  the condition `n (2 - r) < 2 r`, that is `r > 2n/(n+2)`, of the next two results.
 * `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, an `Lʳ(Ω)` function
   times a `W^{1,2}_0(Ω)` function is integrable.
 * `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
@@ -326,6 +328,12 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
 end W1p0
 
 section DualPairing
+
+/-- **`r > n/2` implies `r > 2n/(n+2)`.** For `n ≥ 0` and `r > 1`, the condition `n < 2 r`
+gives `n (2 - r) < 2 r`, the range of exponents in which `Lʳ(Ω)` acts on `W^{1,2}_0(Ω)`. -/
+theorem mul_two_sub_lt_two_mul_of_lt_two_mul {n r : ℝ} (hn : 0 ≤ n) (hr : 1 < r)
+    (hnr : n < 2 * r) : n * (2 - r) < 2 * r := by
+  nlinarith [mul_nonneg hn (sub_nonneg.2 hr.le)]
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
