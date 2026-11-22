@@ -12,14 +12,15 @@ import Mathlib.RingTheory.Polynomial.Basic
 /-!
 # Primality of linear differences and injective renamings in `MvPolynomial`
 
-This file complements `MvPolynomial.prime_X` and `MvPolynomial.prime_rename_iff` with three basic
-primality facts for multivariate polynomials:
+This file complements `MvPolynomial.prime_X` and `MvPolynomial.prime_rename_iff` with basic
+primality facts and a shear automorphism for multivariate polynomials:
 
 * `MvPolynomial.prime_rename_iff_of_injective`: renaming variables along any injective map
   preserves and reflects primality.
+* `MvPolynomial.shearXEquiv`: the `R`-algebra automorphism shearing `X j` to `X j + X i`.
 * `MvPolynomial.prime_X_sub_X`: for distinct variables `i ≠ j` over a cancellative nontrivial
-  commutative ring, the linear difference `X j - X i` is prime (carried to `X j` by a shear
-  automorphism).
+  commutative ring, the linear difference `X j - X i` is prime (carried to `X j` by
+  `shearXEquiv`).
 * `MvPolynomial.not_associated_X_sub_X`: over any nontrivial commutative ring, linear differences
   `X j - X i` and `X j' - X i'` on distinct unordered pairs `{i, j} ≠ {i', j'}` are not associated.
 -/
@@ -42,11 +43,10 @@ theorem prime_rename_iff_of_injective {f : τ → σ} (hf : Function.Injective f
   rw [hcomp, prime_rename_iff (Set.range f)]
   exact MulEquiv.prime_iff (renameEquiv R e).toMulEquiv
 
-/-- Over a nontrivial cancellative commutative ring, the difference `X j - X i` of two distinct
-variables is prime in `MvPolynomial σ R`. -/
-theorem prime_X_sub_X [IsCancelMulZero R] [Nontrivial R] {i j : σ} (hij : i ≠ j) :
-    Prime (X j - X i : MvPolynomial σ R) := by
-  classical
+/-- The `R`-algebra automorphism of `MvPolynomial σ R` shearing `X j` by `X i` (`X j ↦ X j + X i`
+and fixing `X k` for `k ≠ j`). -/
+noncomputable def shearXEquiv (R : Type*) [CommRing R] [DecidableEq σ] {i j : σ} (hij : i ≠ j) :
+    MvPolynomial σ R ≃ₐ[R] MvPolynomial σ R :=
   let f : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
     aeval (Function.update (X : σ → MvPolynomial σ R) j (X j + X i))
   let g : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
@@ -61,10 +61,41 @@ theorem prime_X_sub_X [IsCancelMulZero R] [Nontrivial R] {i j : σ} (hij : i ≠
     rcases eq_or_ne k j with rfl | hkj
     · simp [f, g, Function.update_of_ne hij]
     · simp [f, g, Function.update_of_ne hkj]
-  let e : MvPolynomial σ R ≃ₐ[R] MvPolynomial σ R := AlgEquiv.ofAlgHom f g hfg hgf
+  AlgEquiv.ofAlgHom f g hfg hgf
+
+/-- `shearXEquiv R hij` maps the sheared variable `X j` to `X j + X i`. -/
+@[simp]
+theorem shearXEquiv_X_self (R : Type*) [CommRing R] [DecidableEq σ] {i j : σ} (hij : i ≠ j) :
+    shearXEquiv R hij (X j) = X j + X i := by
+  simp [shearXEquiv]
+
+/-- `shearXEquiv R hij` fixes every variable `X k` with `k ≠ j`. -/
+@[simp]
+theorem shearXEquiv_X_of_ne (R : Type*) [CommRing R] [DecidableEq σ] {i j k : σ} (hij : i ≠ j)
+    (hkj : k ≠ j) : shearXEquiv R hij (X k) = X k := by
+  simp [shearXEquiv, Function.update_of_ne hkj]
+
+/-- The inverse of `shearXEquiv R hij` maps `X j` to `X j - X i`. -/
+@[simp]
+theorem shearXEquiv_symm_X_self (R : Type*) [CommRing R] [DecidableEq σ] {i j : σ} (hij : i ≠ j) :
+    (shearXEquiv R hij).symm (X j) = X j - X i := by
+  simp [shearXEquiv]
+
+/-- The inverse of `shearXEquiv R hij` fixes every variable `X k` with `k ≠ j`. -/
+@[simp]
+theorem shearXEquiv_symm_X_of_ne (R : Type*) [CommRing R] [DecidableEq σ] {i j k : σ} (hij : i ≠ j)
+    (hkj : k ≠ j) : (shearXEquiv R hij).symm (X k) = X k := by
+  simp [shearXEquiv, Function.update_of_ne hkj]
+
+/-- Over a nontrivial cancellative commutative ring, the difference `X j - X i` of two distinct
+variables is prime in `MvPolynomial σ R`. -/
+theorem prime_X_sub_X [IsCancelMulZero R] [Nontrivial R] {i j : σ} (hij : i ≠ j) :
+    Prime (X j - X i : MvPolynomial σ R) := by
+  classical
+  let e := shearXEquiv R hij
   rw [← MulEquiv.prime_iff e.toMulEquiv]
   have he : e.toMulEquiv (X j - X i) = X j := by
-    simp [e, f, Function.update_of_ne hij]
+    simp [e, hij]
   rw [he]
   exact prime_X
 

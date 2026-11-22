@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.DirectSum.Laurent
 public import TauCeti.Algebra.Polynomial.Laurent.Units.Connected
-public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Homogeneous generators on a connected spectrum
@@ -19,10 +18,7 @@ grading, using Mathlib's `SetLike.GradedSMul`.
 
 The Laurent polynomial recording the homogeneous components of `1` is a unit, without any
 connectedness hypothesis. On a connected spectrum, a coefficient of that unit is itself a
-unit, hence is the required homogeneous generator. Combined with the shift classification,
-every compatible grading of the free module of rank one is graded-isomorphic to a shift
-`𝒜(d)` whose class in `TauCeti.ShiftClassGroup 𝒜` is uniquely determined. The zero ring is
-included.
+unit, hence is the required homogeneous generator. The zero ring is included.
 -/
 
 public section
@@ -78,30 +74,5 @@ theorem exists_isUnit_mem_of_connected : ∃ c : ℤ, ∃ u : A, IsUnit u ∧ u 
   simpa using hc
 
 end Ring
-
-section GradedRing
-
-variable {A σ τ : Type*} [CommRing A]
-    [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ A] [AddSubmonoidClass τ A]
-    (𝒜 : ℤ → σ) (ℳ : ℤ → τ) [GradedRing 𝒜] [Decomposition ℳ]
-    [SetLike.GradedSMul 𝒜 ℳ] [PreconnectedSpace (PrimeSpectrum A)]
-
-/-- Over a `ℤ`-graded ring with preconnected prime spectrum, every compatible grading `ℳ` of
-the free module of rank one is graded-isomorphic to a shift `𝒜(d)`, and the class of `d` in
-`ShiftClassGroup 𝒜` is uniquely determined. -/
-theorem existsUnique_shiftClass_of_connected :
-    ∃! q : ShiftClassGroup 𝒜, ∃ d : ℤ, (d : ShiftClassGroup 𝒜) = q ∧
-      ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
-  obtain ⟨c, u, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
-  obtain ⟨φ, hφ⟩ := exists_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem
-  refine ⟨((-c : ℤ) : ShiftClassGroup 𝒜),
-    ⟨-c, rfl, φ, fun n x ↦ by simpa [sub_eq_add_neg] using hφ n x⟩, ?_⟩
-  rintro q ⟨d, rfl, ψ, hψ⟩
-  refine (ShiftClassGroup.mk_eq_mk_iff 𝒜).mpr ⟨ψ.trans φ.symm, fun n x ↦ ?_⟩
-  have h1 := hφ n (φ.symm (ψ x))
-  rw [LinearEquiv.apply_symm_apply, sub_eq_add_neg] at h1
-  exact h1.symm.trans (hψ n x)
-
-end GradedRing
 
 end TauCeti.GradedAlgebra

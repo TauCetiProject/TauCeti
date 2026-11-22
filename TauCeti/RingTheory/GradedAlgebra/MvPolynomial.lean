@@ -122,16 +122,17 @@ class group `ZMod |e|`. -/
 noncomputable def shiftClassGroupAwayPrimeEquiv (w : σ → ℤ) {f : MvPolynomial σ R} {e : ℤ}
     (hf : f ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime f) :
     ShiftClassGroup (awayGrading (weightedHomogeneousSubmodule R w) hf) ≃+ ZMod e.natAbs :=
-  (QuotientAddGroup.quotientAddEquivOfEq (homogeneousUnitDegrees_away_prime w hf hprime)).trans
-    (Int.quotientZMultiplesEquivZMod e)
+  let : GradedAlgebra (weightedHomogeneousSubmodule R w) := weightedGradedAlgebra R w
+  shiftClassGroupAwayGradingPrimeEquiv _ (homogeneousUnitDegrees_weighted w) hf hprime
 
 /-- The identification of the shift class group of `Localization.Away f` with `ZMod |e|` sends the
 class of a shift `d` to `d mod |e|`. -/
 @[simp]
 theorem shiftClassGroupAwayPrimeEquiv_mk (w : σ → ℤ) {f : MvPolynomial σ R} {e : ℤ}
     (hf : f ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime f) (d : ℤ) :
-    shiftClassGroupAwayPrimeEquiv w hf hprime d = d :=
-  (rfl)
+    shiftClassGroupAwayPrimeEquiv w hf hprime d = d := by
+  let : GradedAlgebra (weightedHomogeneousSubmodule R w) := weightedGradedAlgebra R w
+  exact shiftClassGroupAwayGradingPrimeEquiv_mk _ (homogeneousUnitDegrees_weighted w) hf hprime d
 
 end ShiftClassGroup
 

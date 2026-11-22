@@ -9,9 +9,7 @@ public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import Mathlib.Algebra.MvPolynomial.Division
-import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
-import TauCeti.Algebra.Prime.Finset
 import TauCeti.RingTheory.MvPolynomial.Prime
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
@@ -254,131 +252,6 @@ private theorem exists_perm_map_pair {m : ℕ} {p q : Fin m × Fin m} (hp : p.1 
     hp.ne' (τ₁.injective (h.trans (Equiv.swap_apply_left p.1 q.1).symm))
   simp [τ, τ₁, Equiv.swap_apply_of_ne_of_ne hne.symm hq.ne]
 
-/-- Any symmetric divisor `vietaAlgHom R m f` of `(alternant ...)^2` over a domain is associated to
-`alternant ^ c` for some `c ≤ 2`. -/
-private theorem exists_associated_alternant_pow_of_dvd_discr {R : Type*} [CommRing R] [IsDomain R]
-    {m : ℕ} (hm : 2 ≤ m) {f : MvPolynomial (Fin m) R}
-    (hdvd : vietaAlgHom R m f ∣ vietaAlgHom R m (Polynomial.freeMonic R m).discr) :
-    ∃ c ≤ 2, Associated (vietaAlgHom R m f) ((alternant (Fin m) R (fun j ↦ (j : ℕ))) ^ c) := by
-  let pairs : Finset (Fin m × Fin m) := univ.filter fun p ↦ p.1 < p.2
-  have halt : alternant (Fin m) R (fun j ↦ (j : ℕ)) = ∏ p ∈ pairs, (X p.2 - X p.1) :=
-    alternant_fin_val_eq_prod_pairs R m
-  rw [vietaAlgHom_discr_freeMonic, halt, ← Finset.prod_pow] at hdvd
-  have hprime : ∀ p ∈ pairs, Prime (X p.2 - X p.1 : MvPolynomial (Fin m) R) := fun p hp ↦
-    prime_X_sub_X (ne_of_lt (mem_filter.mp hp).2)
-  obtain ⟨k, hk, hassoc⟩ := (dvd_finsetProd_prime_pow_iff hprime (fun _ ↦ 2)).mp hdvd
-  -- By `S_m`-invariance of `vietaAlgHom R m f`, all ordered pairs carry the same exponent `k p`.
-  have hk_le : ∀ p ∈ pairs, ∀ q ∈ pairs, k p ≤ k q := fun p hp q hq ↦ by
-    obtain ⟨τ, hτ1, hτ2⟩ := exists_perm_map_pair (mem_filter.mp hp).2 (mem_filter.mp hq).2
-    have hpow_dvd : (X q.2 - X q.1 : MvPolynomial (Fin m) R) ^ k p ∣
-        ∏ r ∈ pairs, (X r.2 - X r.1) ^ k r := by
-      have h1 : (X p.2 - X p.1 : MvPolynomial (Fin m) R) ^ k p ∣ vietaAlgHom R m f :=
-        (Finset.dvd_prod_of_mem (fun r ↦ (X r.2 - X r.1) ^ k r) hp).trans hassoc.symm.dvd
-      have h2 := map_dvd (rename (R := R) τ) h1
-      rw [rename_vietaAlgHom, map_pow, map_sub, rename_X, rename_X, hτ1, hτ2] at h2
-      exact h2.trans hassoc.dvd
-    have hndvd : ∀ r ∈ pairs, r ≠ q →
-        ¬ (X q.2 - X q.1 : MvPolynomial (Fin m) R) ∣ (X r.2 - X r.1) :=
-      fun r hr hrq hdiv ↦ by
-        have hr_lt : r.1 < r.2 := (mem_filter.mp hr).2
-        have hq_lt : q.1 < q.2 := (mem_filter.mp hq).2
-        have hna : ¬ Associated (X q.2 - X q.1 : MvPolynomial (Fin m) R) (X r.2 - X r.1) :=
-          not_associated_X_sub_X
-            (not_and_or.mp fun h ↦ hrq (Prod.ext h.1 h.2))
-            (not_and_or.mp fun h ↦ lt_asymm hq_lt (h.2 ▸ h.1 ▸ hr_lt))
-            hr_lt.ne
-        exact hna ((hprime q hq).associated_of_dvd (hprime r hr) hdiv)
-    exact ((hprime q hq).pow_dvd_finsetProd_pow_iff
-      (p := fun r : Fin m × Fin m ↦ (X r.2 - X r.1 : MvPolynomial (Fin m) R))
-      hq hndvd k).mp hpow_dvd
-  let p₀ : Fin m × Fin m := (⟨0, by omega⟩, ⟨1, by omega⟩)
-  have hp₀ : p₀ ∈ pairs := by simp [pairs, p₀]
-  refine ⟨k p₀, hk p₀ hp₀, ?_⟩
-  rw [halt, ← Finset.prod_pow]
-  have hprod : ∏ p ∈ pairs, (X p.2 - X p.1 : MvPolynomial (Fin m) R) ^ k p =
-      ∏ p ∈ pairs, (X p.2 - X p.1) ^ k p₀ :=
-    Finset.prod_congr rfl fun p hp ↦ by
-      rw [le_antisymm (hk_le p hp p₀ hp₀) (hk_le p₀ hp₀ p hp)]
-  rwa [← hprod]
-
-/-- Over a domain in which `2 ≠ 0`, a symmetric polynomial `vietaAlgHom R m f` cannot equal a
-nonzero scalar multiple of the Vandermonde alternant for `m ≥ 2`. -/
-private theorem not_vietaAlgHom_eq_alternant_mul_C {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) {m : ℕ} (hm : 2 ≤ m) {f : MvPolynomial (Fin m) R} {r : R} (hr : r ≠ 0)
-    (hu : alternant (Fin m) R (fun j ↦ (j : ℕ)) * C r = vietaAlgHom R m f) : False := by
-  let i₀ : Fin m := ⟨0, by omega⟩
-  let i₁ : Fin m := ⟨1, by omega⟩
-  have hi01 : i₀ ≠ i₁ := by simp [i₀, i₁]
-  have halt_ne : alternant (Fin m) R (fun j ↦ (j : ℕ)) ≠ 0 :=
-    alternant_ne_zero_of_injective Fin.val_injective
-  have hswap := congrArg (rename (R := R) (Equiv.swap i₀ i₁)) hu
-  rw [rename_vietaAlgHom, map_mul, rename_alternant, Equiv.Perm.sign_swap hi01, rename_C,
-    Units.smul_def, Units.val_neg, Units.val_one, neg_one_zsmul, neg_mul, ← hu] at hswap
-  have hzero : C (2 * r) * alternant (Fin m) R (fun j ↦ (j : ℕ)) = 0 := by
-    have hsum : alternant (Fin m) R (fun j ↦ (j : ℕ)) * C r +
-        alternant (Fin m) R (fun j ↦ (j : ℕ)) * C r = 0 := by
-      linear_combination -hswap
-    have hrew : C (2 * r) * alternant (Fin m) R (fun j ↦ (j : ℕ)) =
-        alternant (Fin m) R (fun j ↦ (j : ℕ)) * C r +
-          alternant (Fin m) R (fun j ↦ (j : ℕ)) * C r := by
-      rw [map_mul, map_ofNat]
-      ring
-    rw [hrew, hsum]
-  rcases mul_eq_zero.mp hzero with hcr | halt0
-  · exact mul_ne_zero h2 hr (C_eq_zero.mp hcr)
-  · exact halt_ne halt0
-
-/-- **Irreducibility of the generic discriminant.** Over any integral domain in which `2 ≠ 0`,
-the discriminant of `Polynomial.freeMonic R m` is irreducible for every `m ≥ 2`. -/
-theorem irreducible_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R] (h2 : (2 : R) ≠ 0)
-    {m : ℕ} (hm : 2 ≤ m) : Irreducible (Polynomial.freeMonic R m).discr := by
-  let i₀ : Fin m := ⟨0, by omega⟩
-  let i₁ : Fin m := ⟨1, by omega⟩
-  have halt_ne : alternant (Fin m) R (fun j ↦ (j : ℕ)) ≠ 0 :=
-    alternant_ne_zero_of_injective Fin.val_injective
-  have hdiscr_ne : (Polynomial.freeMonic R m).discr ≠ 0 := fun h ↦ by
-    have h0 := congrArg (vietaAlgHom R m) h
-    rw [map_zero, vietaAlgHom_discr_freeMonic] at h0
-    exact pow_ne_zero 2 halt_ne h0
-  refine ⟨?_, fun f g hfg ↦ ?_⟩
-  · -- `discr` is not a unit because its Vieta image vanishes at `0`.
-    intro hu
-    have hu' : IsUnit (vietaAlgHom R m (Polynomial.freeMonic R m).discr) := hu.map (vietaAlgHom R m)
-    rw [vietaAlgHom_discr_freeMonic] at hu'
-    have hi01_lt : i₀ < i₁ := by simp [i₀, i₁]
-    have heval0 : eval (0 : Fin m → R) (alternant (Fin m) R (fun j ↦ (j : ℕ))) = 0 := by
-      rw [alternant_fin_val_eq_vandermonde, map_prod]
-      refine Finset.prod_eq_zero (mem_univ i₀) ?_
-      rw [map_prod]
-      refine Finset.prod_eq_zero (mem_Ioi.mpr hi01_lt) ?_
-      simp
-    have h0 : eval (0 : Fin m → R) ((alternant (Fin m) R (fun j ↦ (j : ℕ))) ^ 2) = 0 := by
-      rw [map_pow, heval0, zero_pow two_ne_zero]
-    exact (hu'.map (eval (0 : Fin m → R))).ne_zero h0
-  · have hdiv : vietaAlgHom R m f ∣ vietaAlgHom R m (Polynomial.freeMonic R m).discr :=
-      ⟨vietaAlgHom R m g, by rw [← map_mul, hfg]⟩
-    obtain ⟨c, hc, hassoc⟩ := exists_associated_alternant_pow_of_dvd_discr hm hdiv
-    obtain ⟨u, hu⟩ := hassoc.symm
-    obtain ⟨r, hr, hru⟩ := (isUnit_iff_eq_C_of_isReduced (P := (u : MvPolynomial (Fin m) R))).mp
-      u.isUnit
-    rw [hru] at hu
-    have hc_cases : c = 0 ∨ c = 1 ∨ c = 2 := by omega
-    rcases hc_cases with rfl | rfl | rfl
-    · left
-      rw [pow_zero, one_mul] at hu
-      have hf : f = C r := vietaAlgHom_injective R m (by rw [← hu, algHom_C, algebraMap_eq])
-      exact hf ▸ hr.map C
-    · exact (not_vietaAlgHom_eq_alternant_mul_C h2 hm hr.ne_zero (by simpa using hu)).elim
-    · right
-      have hCr : vietaAlgHom R m (C r) = C r := by rw [algHom_C, algebraMap_eq]
-      rw [← vietaAlgHom_discr_freeMonic, ← hCr, ← map_mul] at hu
-      have hf : f = (Polynomial.freeMonic R m).discr * C r := vietaAlgHom_injective R m hu.symm
-      have hmul : (Polynomial.freeMonic R m).discr * (C r * g) =
-          (Polynomial.freeMonic R m).discr * 1 := by
-        rw [← mul_assoc, ← hf, ← hfg, mul_one]
-      have hcg : C r * g = 1 := mul_left_cancel₀ hdiscr_ne hmul
-      exact isUnit_iff_exists_inv.mpr ⟨C r, by rw [mul_comm, hcg]⟩
-
 private theorem X_dvd_of_aeval_update_zero {σ R : Type*} [CommRing R] [DecidableEq σ] {j : σ}
     {p : MvPolynomial σ R}
     (h : aeval (Function.update (X : σ → MvPolynomial σ R) j 0) p = 0) : X j ∣ p := by
@@ -414,33 +287,18 @@ private theorem X_sub_X_dvd_of_aeval_update {σ R : Type*} [CommRing R] [Decidab
     {i j : σ} (hij : i ≠ j) {p : MvPolynomial σ R}
     (h : aeval (Function.update (X : σ → MvPolynomial σ R) j (X i)) p = 0) :
     X j - X i ∣ p := by
-  let f : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
-    aeval (Function.update (X : σ → MvPolynomial σ R) j (X j + X i))
-  let g : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
-    aeval (Function.update (X : σ → MvPolynomial σ R) j (X j - X i))
-  have hfg : f.comp g = AlgHom.id R _ := by
-    ext k
-    rcases eq_or_ne k j with rfl | hkj
-    · simp [f, g, Function.update_of_ne hij]
-    · simp [f, g, Function.update_of_ne hkj]
-  have hgf : g.comp f = AlgHom.id R _ := by
-    ext k
-    rcases eq_or_ne k j with rfl | hkj
-    · simp [f, g, Function.update_of_ne hij]
-    · simp [f, g, Function.update_of_ne hkj]
-  let e : MvPolynomial σ R ≃ₐ[R] MvPolynomial σ R := AlgEquiv.ofAlgHom f g hfg hgf
+  let e := shearXEquiv R hij
   have hcomp : (aeval (Function.update (X : σ → MvPolynomial σ R) j 0)).comp e.toAlgHom =
       aeval (Function.update (X : σ → MvPolynomial σ R) j (X i)) := by
     ext k
     rcases eq_or_ne k j with rfl | hkj
-    · simp [e, f, Function.update_of_ne hij]
-    · simp [e, f, Function.update_of_ne hkj]
+    · simp [e, hij]
+    · simp [e, hkj]
   have he0 : aeval (Function.update (X : σ → MvPolynomial σ R) j 0) (e p) = 0 := by
     simpa [AlgHom.comp_apply] using (AlgHom.congr_fun hcomp p).trans h
   have hdvd : X j ∣ e p := X_dvd_of_aeval_update_zero he0
   have hdvd' := map_dvd e.symm.toRingHom hdvd
-  have hsymm : e.symm (X j) = X j - X i := by simp [e, g]
-  simpa [hsymm] using hdvd'
+  simpa [e] using hdvd'
 
 private theorem prod_X_sub_X_dvd_of_forall_dvd {R : Type*} [CommRing R] [IsDomain R] {m : ℕ}
     (s : Finset (Fin m × Fin m)) (hs : ∀ p ∈ s, p.1 < p.2) {h : MvPolynomial (Fin m) R}
@@ -541,30 +399,55 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd_vieta {R : Type*} [CommRing R
 the discriminant of `Polynomial.freeMonic R m` is prime for every `m ≥ 2`. -/
 theorem prime_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R] (h2 : (2 : R) ≠ 0)
     {m : ℕ} (hm : 2 ≤ m) : Prime (Polynomial.freeMonic R m).discr := by
-  have hirr := irreducible_discr_freeMonic h2 hm
-  refine ⟨hirr.ne_zero, hirr.not_isUnit, fun f g hfg ↦ ?_⟩
   let i₀ : Fin m := ⟨0, by omega⟩
   let i₁ : Fin m := ⟨1, by omega⟩
-  have hp₀ : Prime (X i₁ - X i₀ : MvPolynomial (Fin m) R) := prime_X_sub_X (by simp [i₀, i₁])
-  have hp₀_dvd_alt : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
-      alternant (Fin m) R (fun j ↦ (j : ℕ)) := by
-    rw [alternant_fin_val_eq_vandermonde]
-    have hi01 : i₀ < i₁ := by simp [i₀, i₁]
-    have h1 : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
-        ∏ j ∈ Finset.Ioi i₀, (X j - X i₀) :=
-      Finset.dvd_prod_of_mem (fun j ↦ (X j - X i₀ : MvPolynomial (Fin m) R))
-        (Finset.mem_Ioi.mpr hi01)
-    exact h1.trans (Finset.dvd_prod_of_mem
-      (fun i : Fin m ↦ ∏ j ∈ Finset.Ioi i, (X j - X i : MvPolynomial (Fin m) R))
-      (Finset.mem_univ i₀))
-  have hp₀_dvd : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
-      vietaAlgHom R m f * vietaAlgHom R m g := by
-    have h1 := map_dvd (vietaAlgHom R m).toRingHom hfg
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, vietaAlgHom_discr_freeMonic, map_mul] at h1
-    exact ((hp₀_dvd_alt.trans (dvd_pow_self _ two_ne_zero))).trans h1
-  rcases hp₀.dvd_or_dvd hp₀_dvd with hf | hg
-  · exact Or.inl (discr_freeMonic_dvd_of_X_sub_X_dvd_vieta h2 hm hf)
-  · exact Or.inr (discr_freeMonic_dvd_of_X_sub_X_dvd_vieta h2 hm hg)
+  have halt_ne : alternant (Fin m) R (fun j ↦ (j : ℕ)) ≠ 0 :=
+    alternant_ne_zero_of_injective Fin.val_injective
+  have hdiscr_ne : (Polynomial.freeMonic R m).discr ≠ 0 := fun h ↦ by
+    have h0 := congrArg (vietaAlgHom R m) h
+    rw [map_zero, vietaAlgHom_discr_freeMonic] at h0
+    exact pow_ne_zero 2 halt_ne h0
+  refine ⟨hdiscr_ne, ?_, fun f g hfg ↦ ?_⟩
+  · -- `discr` is not a unit because its Vieta image vanishes at `0`.
+    intro hu
+    have hu' : IsUnit (vietaAlgHom R m (Polynomial.freeMonic R m).discr) := hu.map (vietaAlgHom R m)
+    rw [vietaAlgHom_discr_freeMonic] at hu'
+    have hi01_lt : i₀ < i₁ := by simp [i₀, i₁]
+    have heval0 : eval (0 : Fin m → R) (alternant (Fin m) R (fun j ↦ (j : ℕ))) = 0 := by
+      rw [alternant_fin_val_eq_vandermonde, map_prod]
+      refine Finset.prod_eq_zero (mem_univ i₀) ?_
+      rw [map_prod]
+      refine Finset.prod_eq_zero (mem_Ioi.mpr hi01_lt) ?_
+      simp
+    have h0 : eval (0 : Fin m → R) ((alternant (Fin m) R (fun j ↦ (j : ℕ))) ^ 2) = 0 := by
+      rw [map_pow, heval0, zero_pow two_ne_zero]
+    exact (hu'.map (eval (0 : Fin m → R))).ne_zero h0
+  · have hp₀ : Prime (X i₁ - X i₀ : MvPolynomial (Fin m) R) := prime_X_sub_X (by simp [i₀, i₁])
+    have hp₀_dvd_alt : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
+        alternant (Fin m) R (fun j ↦ (j : ℕ)) := by
+      rw [alternant_fin_val_eq_vandermonde]
+      have hi01 : i₀ < i₁ := by simp [i₀, i₁]
+      have h1 : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
+          ∏ j ∈ Finset.Ioi i₀, (X j - X i₀) :=
+        Finset.dvd_prod_of_mem (fun j ↦ (X j - X i₀ : MvPolynomial (Fin m) R))
+          (Finset.mem_Ioi.mpr hi01)
+      exact h1.trans (Finset.dvd_prod_of_mem
+        (fun i : Fin m ↦ ∏ j ∈ Finset.Ioi i, (X j - X i : MvPolynomial (Fin m) R))
+        (Finset.mem_univ i₀))
+    have hp₀_dvd : (X i₁ - X i₀ : MvPolynomial (Fin m) R) ∣
+        vietaAlgHom R m f * vietaAlgHom R m g := by
+      have h1 := map_dvd (vietaAlgHom R m).toRingHom hfg
+      rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, vietaAlgHom_discr_freeMonic, map_mul] at h1
+      exact ((hp₀_dvd_alt.trans (dvd_pow_self _ two_ne_zero))).trans h1
+    rcases hp₀.dvd_or_dvd hp₀_dvd with hf | hg
+    · exact Or.inl (discr_freeMonic_dvd_of_X_sub_X_dvd_vieta h2 hm hf)
+    · exact Or.inr (discr_freeMonic_dvd_of_X_sub_X_dvd_vieta h2 hm hg)
+
+/-- **Irreducibility of the generic discriminant.** Over any integral domain in which `2 ≠ 0`,
+the discriminant of `Polynomial.freeMonic R m` is irreducible for every `m ≥ 2`. -/
+theorem irreducible_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R] (h2 : (2 : R) ≠ 0)
+    {m : ℕ} (hm : 2 ≤ m) : Irreducible (Polynomial.freeMonic R m).discr :=
+  (prime_discr_freeMonic h2 hm).irreducible
 
 end FreeMonic
 
