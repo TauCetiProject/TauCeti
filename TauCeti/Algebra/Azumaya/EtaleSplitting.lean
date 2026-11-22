@@ -56,6 +56,6 @@ theorem IsAzumaya.etale_matrix_splitting_of_finite_cover {A R ι : Type*} [CommR
   classical
   have := Fintype.ofFinite ι
   refine ⟨inferInstance, .of_comap_surjective fun p ↦ ?_,
-    ⟨TauCeti.Algebra.TensorProduct.piLeftMatrixEquiv fun i ↦ (hsplit i).some⟩⟩
+    ⟨Algebra.TensorProduct.piLeftMatrixEquiv fun i ↦ (hsplit i).some⟩⟩
   obtain ⟨i, q, hq⟩ := hcover p
   exact ⟨PrimeSpectrum.comap (Pi.evalRingHom B i) q, PrimeSpectrum.ext hq⟩

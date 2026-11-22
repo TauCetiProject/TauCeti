@@ -23,7 +23,8 @@ product decomposition (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
 For a finite family the left distribution is `piLeft`. Matrix splittings
 `A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)` of the factors assemble into one splitting
-`(∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i)` over the product (`piLeftMatrixEquiv`).
+`(∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i)` over the product
+(`Algebra.TensorProduct.piLeftMatrixEquiv`).
 This is how a split algebra over finitely many affine charts becomes split over one faithfully
 flat algebra, as in `IsAzumaya.etale_matrix_splitting_of_finite_cover`.
 
@@ -33,7 +34,7 @@ flat algebra, as in `IsAzumaya.etale_matrix_splitting_of_finite_cover`.
 * `TauCeti.Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
   `Algebra.TensorProduct.piScalarRight` on `Pi.single i x`.
 * `TauCeti.Algebra.TensorProduct.piLeft`: `(∀ i, A i) ⊗[R] B ≃ₐ[R] ∀ i, A i ⊗[R] B` for finite `ι`.
-* `TauCeti.Algebra.TensorProduct.piLeftMatrixEquiv`: matrix splittings of the factors give a
+* `Algebra.TensorProduct.piLeftMatrixEquiv`: matrix splittings of the factors give a
   matrix splitting over the product.
 -/
 
@@ -121,9 +122,9 @@ variable {R : Type*} {ι : Type*} {A : ι → Type*} {B : Type*} [CommSemiring R
 Given `A i`-algebra isomorphisms `A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)`, this is the
 `(∀ i, A i)`-algebra isomorphism `(∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i)`
 whose entry `(j, k)` in coordinate `i` is that of `e i` (`piLeftMatrixEquiv_apply`). -/
-def piLeftMatrixEquiv (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)) :
+def _root_.Algebra.TensorProduct.piLeftMatrixEquiv (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)) :
     (∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i) :=
-  AlgEquiv.ofRingEquiv (f := ((piLeft R A B).toRingEquiv.trans
+  AlgEquiv.ofRingEquiv (f := ((TauCeti.Algebra.TensorProduct.piLeft R A B).toRingEquiv.trans
       (RingEquiv.piCongrRight fun i ↦ (e i).toRingEquiv)).trans Matrix.piRingEquiv.symm)
     fun a ↦ by
       ext j k i
@@ -135,10 +136,11 @@ def piLeftMatrixEquiv (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)) :
 
 /-- Entry `(j, k)` of `piLeftMatrixEquiv e x` in coordinate `i` is entry `(j, k)` of the image
 under `e i` of the `i`-th component of `x`. -/
-theorem piLeftMatrixEquiv_apply (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i))
-    (x : (∀ i, A i) ⊗[R] B) (j k : n) (i : ι) :
-    piLeftMatrixEquiv e x j k i = e i (piLeft R A B x i) j k := by
-  simp [piLeftMatrixEquiv]
+theorem _root_.Algebra.TensorProduct.piLeftMatrixEquiv_apply
+    (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)) (x : (∀ i, A i) ⊗[R] B) (j k : n) (i : ι) :
+    Algebra.TensorProduct.piLeftMatrixEquiv e x j k i =
+      e i (TauCeti.Algebra.TensorProduct.piLeft R A B x i) j k := by
+  simp [Algebra.TensorProduct.piLeftMatrixEquiv]
 
 end piLeftMatrixEquiv
 
