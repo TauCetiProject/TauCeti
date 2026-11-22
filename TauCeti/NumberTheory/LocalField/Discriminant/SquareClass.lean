@@ -7,15 +7,15 @@ module
 
 public import TauCeti.FieldTheory.SquareClassGroup.Discriminant
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
-import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 
 /-!
 # The discriminant of an integral basis of an extension of local fields
 
 Let `L/K` be a finite separable extension of nonarchimedean local fields and `b` an
 `𝒪[K]`-basis of `𝒪[L]`. Its discriminant `Algebra.discr 𝒪[K] b` generates the local discriminant
-ideal `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, and its image in `K` is the discriminant of the `K`-basis of `L`
-obtained from `b` by localization, so its square class is `TauCeti.discriminantClass K L`.
+ideal `𝔩(L/K) = 𝓂[K] ^ δ(L/K)` (`TauCeti.span_discr_eq_discriminantIdeal`), and its image in `K`
+is the discriminant of the `K`-basis of `L` obtained from `b` by localization, so its square class
+is `TauCeti.discriminantClass K L`.
 
 Conversely these two invariants determine the discriminant of an integral basis up to the square of
 a unit of `𝒪[K]`: an element `x` of `𝒪[K]` is `u ^ 2 * Algebra.discr 𝒪[K] b` for a unit `u` exactly
@@ -25,8 +25,6 @@ because a unit of `𝒪[K]` that is a square in `K` is the square of a unit of `
 
 ## Main results
 
-* `TauCeti.addVal_discr_eq_discriminantExponent`: `v_K(discr b) = δ(L/K)`.
-* `TauCeti.span_discr_eq_discriminantIdeal`: `(discr b) = 𝔩(L/K)`.
 * `TauCeti.exists_eq_sq_mul_discr_iff`: `x = u ^ 2 * discr b` for a unit `u` of `𝒪[K]` exactly
   when `(x) = 𝔩(L/K)` and `x` has square class `TauCeti.discriminantClass K L`.
 
@@ -48,27 +46,7 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Algebra.IsSeparable K L]
-  {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- **The discriminant of an integral basis has valuation `δ(L/K)`.** For an `𝒪[K]`-basis `b` of
-`𝒪[L]`, the additive valuation of `Algebra.discr 𝒪[K] b` is the discriminant exponent. -/
-theorem addVal_discr_eq_discriminantExponent (b : Basis ι 𝒪[K] 𝒪[L]) :
-    IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.discr 𝒪[K] b) = discriminantExponent K L := by
-  rw [← Ring.ord_eq_addVal, ord_discr_eq_multiplicity_mul_finrank K L b,
-    discriminantExponent_eq_inertiaDegree_mul_differentExponent, differentExponent_def,
-    inertiaDegree_def, mul_comm]
-  norm_cast
-
-/-- **The discriminant of an integral basis generates the discriminant ideal**: for an
-`𝒪[K]`-basis `b` of `𝒪[L]`, `(Algebra.discr 𝒪[K] b) = 𝔩(L/K)`. -/
-theorem span_discr_eq_discriminantIdeal (b : Basis ι 𝒪[K] 𝒪[L]) :
-    Ideal.span {Algebra.discr 𝒪[K] b} = discriminantIdeal K L := by
-  ext y
-  rw [Ideal.mem_span_singleton, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
-    addVal_discr_eq_discriminantExponent, discriminantIdeal_eq_maximalIdeal_pow,
-    IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-
-variable [FiniteDimensional K L]
+  [FiniteDimensional K L] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The discriminant ideal and the discriminant square class determine the discriminant of an
 integral basis up to the square of an integral unit.** For an `𝒪[K]`-basis `b` of `𝒪[L]`, an
