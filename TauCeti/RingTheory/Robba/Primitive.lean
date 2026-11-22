@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.Primitive
 public import TauCeti.RingTheory.Robba.Basic
 
 import TauCeti.Analysis.Normed.Field.NatCast
@@ -34,6 +35,11 @@ satisfies `|f'|_ρ ≤ ρ⁻¹ |f|_ρ`.
 The obstruction is the reason the logarithm enters `p`-adic integration: on an annulus `dt / t`
 has no analytic primitive.
 
+The algebraic part adapts the formal primitive `TauCeti.laurentSeriesPrimitive`
+(`TauCeti/RingTheory/LaurentSeries/Primitive.lean`) from formal Laurent series, whose support is
+bounded below, to coefficient families with unbounded negative support;
+`TauCeti.laurentPrimitive_coeff` identifies the two on formal Laurent series.
+
 ## Main definitions
 
 * `TauCeti.laurentDerivative`: the termwise derivative of a coefficient family.
@@ -46,6 +52,8 @@ has no analytic primitive.
   zero derivative are the constants.
 * `TauCeti.laurentDerivative_laurentPrimitive`, `TauCeti.laurentPrimitive_laurentDerivative`:
   differentiation and integration are inverse up to the residue and the constant term.
+* `TauCeti.laurentDerivative_coeff`, `TauCeti.laurentPrimitive_coeff`: on formal Laurent series
+  the termwise operations are `LaurentSeries.derivative` and `TauCeti.laurentSeriesPrimitive`.
 * `TauCeti.LaurentConvergesAt.laurentDerivative`, `TauCeti.laurentGaussNorm_laurentDerivative_le`:
   over an ultrametric group the derivative converges wherever the series does, with
   `|f'|_ρ ≤ ρ⁻¹ |f|_ρ`.
@@ -216,6 +224,14 @@ theorem laurentPrimitive_single (n : ℤ) (c : V) :
   · have h' : m - 1 ≠ n := by omega
     simp [h, h']
 
+/-- The termwise primitive of the coefficients of a formal Laurent series over a `ℚ`-module is the
+coefficient family of its formal primitive `TauCeti.laurentSeriesPrimitive`. -/
+theorem laurentPrimitive_coeff (R : Type*) {W : Type*} [Semiring R] [AddCommGroup W] [Module ℚ W]
+    [Module R W] (f : LaurentSeries W) :
+    laurentPrimitive ℚ f.coeff = (laurentSeriesPrimitive R f).coeff := by
+  ext n
+  simp
+
 variable [CharZero K]
 
 /-- Differentiating the primitive removes exactly the residue term. -/
@@ -304,6 +320,14 @@ theorem laurentConvergesAt_laurentPrimitive_of_eventually {ρ : ℝ} (hρ : 0 < 
   have h₂ := @hP (ρ + ε / 2) (by rw [Real.dist_eq, abs_lt]; constructor <;> linarith)
   exact h₁.1.laurentPrimitive h₁.2 (by linarith) (by linarith) h₂.1
 
+/-- On an open set `I` of positive radii, the termwise primitive converges on every circle on
+which the series converges. -/
+theorem laurentConvergesAt_laurentPrimitive_of_isOpen {I : Set ℝ} (hI : IsOpen I)
+    (hpos : I ⊆ Set.Ioi 0) (ha : ∀ ρ ∈ I, LaurentConvergesAt ρ a) :
+    ∀ ρ ∈ I, LaurentConvergesAt ρ (laurentPrimitive K a) := fun _ hρ ↦
+  laurentConvergesAt_laurentPrimitive_of_eventually (hpos hρ)
+    (eventually_of_mem (hI.mem_nhds hρ) ha)
+
 variable [CharZero K]
 
 /-- **Exactness of differentials on an annulus.** Let `I` be an open set of positive radii, such
@@ -315,10 +339,8 @@ theorem exists_laurentDerivative_eq_iff {I : Set ℝ} (hI : IsOpen I) (hpos : I 
     (∃ g : ℤ → V, (∀ ρ ∈ I, LaurentConvergesAt ρ g) ∧ laurentDerivative K g = a) ↔
       a (-1) = 0 := by
   refine ⟨fun ⟨g, _, hg⟩ ↦ hg ▸ laurentDerivative_apply_neg_one g, fun h ↦ ?_⟩
-  refine ⟨laurentPrimitive K a, fun ρ hρ ↦ ?_,
+  exact ⟨laurentPrimitive K a, laurentConvergesAt_laurentPrimitive_of_isOpen hI hpos ha,
     laurentDerivative_laurentPrimitive_of_apply_neg_one_eq_zero h⟩
-  exact laurentConvergesAt_laurentPrimitive_of_eventually (hpos hρ)
-    (eventually_of_mem (hI.mem_nhds hρ) ha)
 
 /-- **Uniqueness of primitives on an annulus.** On an open set `I` of positive radii, a convergent
 Laurent series with zero residue has exactly one primitive converging on the circles of radius in
@@ -329,8 +351,8 @@ theorem existsUnique_laurentDerivative_eq {I : Set ℝ} (hI : IsOpen I) (hpos : 
   refine ⟨laurentPrimitive K a + Pi.single 0 c, ⟨fun ρ hρ ↦ ?_,
     (eq_laurentPrimitive_add_single_iff h c).1 rfl⟩, fun g hg ↦
       (eq_laurentPrimitive_add_single_iff h c).2 hg.2⟩
-  exact (laurentConvergesAt_laurentPrimitive_of_eventually (hpos hρ)
-    (eventually_of_mem (hI.mem_nhds hρ) ha)).add (laurentConvergesAt_single ρ 0 c)
+  exact (laurentConvergesAt_laurentPrimitive_of_isOpen hI hpos ha ρ hρ).add
+    (laurentConvergesAt_single ρ 0 c)
 
 end Convergence
 

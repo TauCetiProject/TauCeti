@@ -140,9 +140,8 @@ theorem tendsto_norm_inv_intCast_mul_zpow_atTop {q : ℝ} (hq₀ : 0 ≤ q) (hq�
     (tendsto_atTop_atTop.2 fun m ↦ ⟨m, fun n hn ↦ by omega⟩ : Tendsto Int.toNat atTop atTop)).congr'
       ?_
   filter_upwards [eventually_ge_atTop 0] with n hn
-  have hn' : ((n.toNat : ℕ) : ℤ) = n := Int.toNat_of_nonneg hn
-  simp only [Function.comp_apply]
-  rw [← zpow_natCast, hn', ← Int.cast_natCast, hn']
+  obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hn
+  simp
 
 /-- In a normed field, `‖(n : K)⁻¹‖ * q ^ n → 0` as the integer `n` tends to `-∞`, for every
 `q > 1`. -/
