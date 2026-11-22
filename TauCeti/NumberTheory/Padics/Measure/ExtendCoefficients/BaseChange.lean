@@ -33,7 +33,7 @@ This file proves that these constructions are compatible without assuming contin
 * in any finite `R`-basis `b` of `O`, the extension of every `ν ∈ D(X, O)` decomposes via the
   coordinate retractions `AbstractMeasure.mapScalars (b.coord i) ν`
   (`AbstractMeasure.extendCoefficients_eq_sum_basis`);
-* when `K` is a normed field and `j` has image in the unit ball, on a profinite topological monoid
+* on a profinite topological monoid
   `G`, extended character integration
   `ContinuousMonoidHom.extendedCharacterRingHom` decomposes correspondingly in any finite `R`-basis
   `b` of `O` (`ContinuousMonoidHom.extendedCharacterRingHom_eq_sum_basis`).
@@ -43,10 +43,12 @@ Combined with `@[simp]` lemmas `AbstractMeasure.baseChangeLinearEquiv_tmul`,
 `AbstractMeasure.amiceTransform_extendScalars`, and
 `AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`, `simp` automatically simplifies
 coefficient extensions, character evaluations, and Amice transforms on base-changed pure tensors.
-The character and Amice coefficient-extension APIs require a complete ultrametric normed field
-target and a unit-ball bound `∀ a, ‖j a‖ ≤ 1`. For Amice transforms, the coefficient rings carry
-continuous `ℤ_[p]`-algebra actions and `j` is a `ℤ_[p]`-algebra map; the `algebraMap O K` version
-additionally uses the compatible scalar tower `ℤ_[p] → O → K`.
+Character integration allows a complete ultrametric normed commutative ring target and any
+uniform bound `∀ a, ‖j a‖ ≤ B`. The Amice simplification applies to measures on `X = ℤ_[p]`
+with `O` finite over `ℤ_[p]` and `K` a complete ultrametric normed field. Both coefficient
+rings carry continuous `ℤ_[p]`-algebra actions and `j` is a `ℤ_[p]`-algebra map with image in
+the closed unit ball. The `algebraMap O K` version uses the compatible scalar tower
+`ℤ_[p] → O → K`. The base-change equivalence on pure tensors also uses freeness of `O`.
 
 ## References
 
@@ -125,14 +127,14 @@ variable {G R O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [CompactSpace R]
   [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
   [Algebra R O] [ContinuousSMul R O] [Module.Free R O] [Module.Finite R O]
-  [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+  [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
 
 omit [Module.Free R O] [Module.Finite R O] in
 /-- In any finite `R`-basis `b` of `O`, extended character integration of an arbitrary `O`-valued
 measure `ν ∈ D(G, O)` decomposes as a `K`-linear combination of the extended character integrals
 of its `R`-valued coordinate retractions `mapScalars (b.coord i) ν`. -/
 theorem extendedCharacterRingHom_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
-    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(G, O)) :
+    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (ν : D(G, O)) :
     letI : Module.Finite R O := Module.Finite.of_basis b
     χ.extendedCharacterRingHom j hj ν =
       ∑ i : ι, j (b i) *
@@ -153,26 +155,27 @@ section Examples
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [NormedCommRing O] [Algebra ℤ_[p] O]
   [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-  {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+  {K : Type*} [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
 
 /-! Sanity checks on Dirac tensors, character evaluations, and Amice transforms. -/
 
-example (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O) (x : ℤ_[p]) :
+example (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : ℤ_[p]) :
     extendCoefficients j hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a • dirac K x := by
   simp
 
 example {G : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
     [TotallyDisconnectedSpace G] [Monoid G] [ContinuousMul G]
-    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O) (x : G) :
+    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : G) :
     χ.extendedCharacterRingHom j hj (baseChangeAlgEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a * χ x := by
   simp
 
-example [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K] (j : O →ₐ[ℤ_[p]] K) (hj : ∀ a, ‖j a‖ ≤ 1)
+example {L : Type*} [NormedField L] [CompleteSpace L] [IsUltrametricDist L]
+    [Algebra ℤ_[p] L] [ContinuousSMul ℤ_[p] L] (j : O →ₐ[ℤ_[p]] L) (hj : ∀ a, ‖j a‖ ≤ 1)
     (a : O) (μ : D(ℤ_[p], ℤ_[p])) :
-    (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
-      j a • PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform := by
+    (extendCoefficients (j : O →+* L) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
+      j a • PowerSeries.map (algebraMap ℤ_[p] L) μ.amiceTransform := by
   ext n
   simp
 

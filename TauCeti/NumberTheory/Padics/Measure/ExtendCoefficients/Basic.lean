@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
-public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.DiscreteQuotient
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
+public import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Analysis.Normed.Operator.Extend
@@ -274,12 +274,12 @@ variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
 /-- The extension of `μ` as a continuous linear functional on `C(X, K)`. -/
 private def extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ B) : C(X, K) →L[K] K :=
   (locallyConstantIntegral j μ).extendOfBound (LocallyConstant.toContinuousMapLinearMap K)
-    LocallyConstant.toContinuousMap_injective B (norm_locallyConstantIntegral_le j μ hj)
+    B (norm_locallyConstantIntegral_le j μ hj)
 
 private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (φ : LocallyConstant X K) :
     extendCoefficientsCLM j μ hj (LocallyConstant.toContinuousMapLinearMap K φ) =
       locallyConstantIntegral j μ φ :=
-  LinearMap.extendOfBound_apply _ _ _ _ _ LocallyConstant.denseRange_toContinuousMap φ
+  LinearMap.extendOfBound_apply _ _ _ _ LocallyConstant.denseRange_toContinuousMap φ
 
 private theorem extendCoefficientsCLM_apply_comp (hj : ∀ a, ‖j a‖ ≤ B) {A : Type*}
     [TopologicalSpace A] [DiscreteTopology A] [Fintype A] (q : C(X, A)) (g : A → K) :
@@ -307,9 +307,9 @@ private theorem finiteProjection_extendCoefficientsCLM (hj : ∀ a, ‖j a‖ �
     cylinderSum_ite, Finsupp.mapRange_apply]
 
 /-- **Extension of coefficients along a bounded homomorphism.** If `j : O →+* K` is uniformly
-bounded and `K` is a complete ultrametric normed ring, then `extendCoefficients j hj μ` is the
-`K`-valued measure on the profinite space `X` whose coefficient on each fibre of a continuous map
-to a finite discrete space is the image under `j` of the coefficient of `μ`
+bounded and `K` is a complete ultrametric normed commutative ring, then `extendCoefficients j hj μ`
+is the `K`-valued measure on the profinite space `X` whose coefficient on each fibre of a
+continuous map to a finite discrete space is the image under `j` of the coefficient of `μ`
 (`finiteProjection_extendCoefficients`). When `j` is continuous it is the unique `K`-valued measure
 with `ι_j(μ)(j ∘ f) = j(μ(f))` for all `f ∈ C(X, O)` (`extendCoefficients_apply_comp`,
 `eq_extendCoefficients_of_apply_comp`). -/
@@ -364,7 +364,7 @@ theorem norm_extendCoefficients_apply_le (μ : D(X, O)) (j : O →+* K)
     (hj : ∀ a, ‖j a‖ ≤ B) (f : C(X, K)) :
     ‖extendCoefficients j hj μ f‖ ≤ B * ‖f‖ := by
   rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients]
-  exact LinearMap.norm_extendOfBound_apply_le _ _ _ _ _ LocallyConstant.denseRange_toContinuousMap f
+  exact LinearMap.norm_extendOfBound_apply_le _ _ _ _ LocallyConstant.denseRange_toContinuousMap f
 
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
 without assuming that the coefficient homomorphism is continuous. -/
@@ -473,10 +473,8 @@ theorem _root_.RingHom.isClosed_range_extendCoefficients_weak (hje : Topology.Is
       mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje (ν := ν)
   rw [hrange]
   let : TopologicalSpace D(X, K) := WeakTopology
-  have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
-    continuous_induced_dom
   exact isClosed_iInter fun f ↦ hjr.preimage
-    ((continuous_apply ((⟨j, hje.continuous⟩ : C(O, K)).comp f)).comp heval)
+    (continuous_apply_weak ((⟨j, hje.continuous⟩ : C(O, K)).comp f))
 
 /-- Extension of coefficients is surjective when `j` is a surjective topological embedding. -/
 theorem _root_.RingHom.extendCoefficients_surjective (hje : Topology.IsEmbedding j)
