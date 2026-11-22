@@ -27,15 +27,17 @@ This file defines them on the embedded pseudoholomorphic images of
 * `TauCeti.IntersectionForm X`, the `ℤ`-bilinear forms on `H₂(X; ℤ)` for the `ℤ`-module structure
   `AddCommGroup.toIntModule`, as in the abstract counts and cycles over an additive group which
   this file specializes.
-* `TauCeti.exceptionalImages J B κ`, the set `Exc_J`: the embedded `J`-holomorphic images `S`
-  whose class is exceptional, `[S] · [S] = κ · [S] = -1`. An embedded curve of genus `g` satisfies
-  the adjunction formula `[S] · [S] + κ · [S] = 2 g - 2`, and under it these images are exactly the
-  embedded spheres of square `-1`
-  (`TauCeti.EmbeddedPseudoholomorphicCurve.range_mem_exceptionalImages_iff`). For a generic `J`,
-  every embedded image of negative square is one of them
-  (`TauCeti.mem_exceptionalImages_of_apply_self_neg`).
-* `TauCeti.IsGoodClass J B κ A`, the predicate `good_J(A)`: `A · [S] ≥ -1` for every
-  `S ∈ exceptionalImages J B κ`.
+* `TauCeti.exceptionalImages J B`, the set `Exc_J`: the images `S` of embedded `J`-holomorphic
+  spheres, that is of embedded pseudoholomorphic curves whose parametrizing surface is
+  homeomorphic to the `2`-sphere, with `[S] · [S] = -1`. Whether the image of a curve `C` is
+  exceptional is read off `C` itself
+  (`TauCeti.EmbeddedPseudoholomorphicCurve.range_mem_exceptionalImages_iff`). An embedded sphere
+  of negative square satisfying the numerical bounds of a regular simple curve is exceptional
+  (`TauCeti.mem_exceptionalImages_of_apply_self_neg`). The adjunction formula for a sphere,
+  `[S] · [S] + κ · [S] = -2`, then gives `κ · [S] = -1`
+  (`TauCeti.apply_canonical_eq_neg_one_of_mem_exceptionalImages`).
+* `TauCeti.IsGoodClass J B A`, the predicate `good_J(A)`: `A · [S] ≥ -1` for every
+  `S ∈ exceptionalImages J B`.
 
 Three consequences follow from the intersection algebra of the configuration counts and of
 canonical cycles.
@@ -48,8 +50,8 @@ canonical cycles.
 * **Canonical cycles contain every exceptional image.** Let `D = ∑ m_i C_i` be a canonical cycle
   of images (`TauCeti.IsCanonicalCycle`), such as the cycle Taubes assembles from the
   Seiberg–Witten solutions of a class `e` and of its conjugate `κ - e`, and suppose its
-  components meet every exceptional image other than themselves nonnegatively. Since
-  `κ · [S] = -1 < 0`, every exceptional image is a component of `D`
+  components meet every exceptional image other than themselves nonnegatively. Since adjunction
+  gives `κ · [S] = -1 < 0`, every exceptional image is a component of `D`
   (`TauCeti.IsCanonicalCycle.exists_eq_of_mem_exceptionalImages`), occurring with multiplicity
   one (`TauCeti.IsCanonicalCycle.mult_eq_one_of_mem_exceptionalImages`). Hence `Exc_J` is finite
   (`TauCeti.IsCanonicalCycle.finite_exceptionalImages`), and every subcycle of `D`, in particular
@@ -67,7 +69,7 @@ positivity of intersections are inputs here; the geometric theorems supplying th
 
 * `TauCeti.IntersectionForm`: the type of intersection forms on `H₂(X; ℤ)`.
 * `TauCeti.IntersectionForm.IsSymm`: symmetry of an intersection form.
-* `TauCeti.exceptionalImages`: the embedded images in exceptional classes.
+* `TauCeti.exceptionalImages`: the embedded spheres of square `-1`.
 * `TauCeti.IsGoodClass`: the classes at least `-1` on every exceptional image.
 
 ## References
@@ -106,22 +108,20 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 section Defs
 
 variable (J : SmoothAlmostComplexStructure I X) (B : IntersectionForm X)
-  (κ : secondHomology X)
 
 /-- The **exceptional images** `Exc_J` of an almost complex structure `J`, for the intersection
-form `B` and canonical class `κ`: the embedded `J`-holomorphic images `S` whose class is
-exceptional, `[S] · [S] = -1` and `κ · [S] = -1`. Given the adjunction formula for embedded
-curves, these are exactly the embedded `J`-holomorphic spheres of square `-1`
-(`TauCeti.EmbeddedPseudoholomorphicCurve.range_mem_exceptionalImages_iff`). -/
+form `B`: the embedded `J`-holomorphic spheres of square `-1`. These are the images `S` of the
+embedded pseudoholomorphic curves whose parametrizing surface is homeomorphic to the `2`-sphere,
+with `[S] · [S] = -1`. -/
 def exceptionalImages : Set (Set X) :=
-  {S | IsEmbeddedPseudoholomorphicImage J S ∧
-    B (embeddedCurveClass J S) (embeddedCurveClass J S) = -1 ∧
-      B κ (embeddedCurveClass J S) = -1}
+  {S | (∃ C : EmbeddedPseudoholomorphicCurve J, range C.toFun = S ∧
+      Nonempty (C.carrier ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) ∧
+    B (embeddedCurveClass J S) (embeddedCurveClass J S) = -1}
 
 /-- A class `A ∈ H₂(X; ℤ)` is **good** for `J` when it is at least `-1` on every exceptional
-image: `A · [S] ≥ -1` for every `S ∈ exceptionalImages J B κ`. -/
+image: `A · [S] ≥ -1` for every `S ∈ exceptionalImages J B`. -/
 def IsGoodClass (A : secondHomology X) : Prop :=
-  ∀ S ∈ exceptionalImages J B κ, -1 ≤ B A (embeddedCurveClass J S)
+  ∀ S ∈ exceptionalImages J B, -1 ≤ B A (embeddedCurveClass J S)
 
 end Defs
 
@@ -130,62 +130,69 @@ variable {J : SmoothAlmostComplexStructure I X} {B : IntersectionForm X}
 
 @[simp]
 theorem mem_exceptionalImages :
-    S ∈ exceptionalImages J B κ ↔ IsEmbeddedPseudoholomorphicImage J S ∧
-      B (embeddedCurveClass J S) (embeddedCurveClass J S) = -1 ∧
-        B κ (embeddedCurveClass J S) = -1 :=
+    S ∈ exceptionalImages J B ↔ (∃ C : EmbeddedPseudoholomorphicCurve J, range C.toFun = S ∧
+      Nonempty (C.carrier ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) ∧
+        B (embeddedCurveClass J S) (embeddedCurveClass J S) = -1 :=
   Iff.rfl
 
 /-- An exceptional image is an embedded pseudoholomorphic image. -/
 theorem isEmbeddedPseudoholomorphicImage_of_mem_exceptionalImages
-    (hS : S ∈ exceptionalImages J B κ) : IsEmbeddedPseudoholomorphicImage J S :=
-  hS.1
+    (hS : S ∈ exceptionalImages J B) : IsEmbeddedPseudoholomorphicImage J S :=
+  let ⟨C, hC, _⟩ := hS.1
+  isEmbeddedPseudoholomorphicImage_iff.2 ⟨C, hC⟩
 
 /-- An exceptional image has square `-1`. -/
-theorem apply_self_eq_neg_one_of_mem_exceptionalImages (hS : S ∈ exceptionalImages J B κ) :
+theorem apply_self_eq_neg_one_of_mem_exceptionalImages (hS : S ∈ exceptionalImages J B) :
     B (embeddedCurveClass J S) (embeddedCurveClass J S) = -1 :=
-  hS.2.1
+  hS.2
 
-/-- An exceptional image pairs with the canonical class to `-1`. -/
-theorem apply_canonical_eq_neg_one_of_mem_exceptionalImages (hS : S ∈ exceptionalImages J B κ) :
-    B κ (embeddedCurveClass J S) = -1 :=
-  hS.2.2
+/-- An exceptional image satisfying the adjunction formula for a sphere,
+`[S] · [S] + κ · [S] = -2`, pairs with the canonical class `κ` to `-1`. -/
+theorem apply_canonical_eq_neg_one_of_mem_exceptionalImages (hS : S ∈ exceptionalImages J B)
+    (hadj : B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) =
+      -2) :
+    B κ (embeddedCurveClass J S) = -1 := by
+  rw [apply_self_eq_neg_one_of_mem_exceptionalImages hS] at hadj
+  omega
 
 theorem isGoodClass_iff :
-    IsGoodClass J B κ A ↔ ∀ S ∈ exceptionalImages J B κ, -1 ≤ B A (embeddedCurveClass J S) :=
+    IsGoodClass J B A ↔ ∀ S ∈ exceptionalImages J B, -1 ≤ B A (embeddedCurveClass J S) :=
   Iff.rfl
 
 /-- A class is bad exactly when it pairs below `-1` with some exceptional image. -/
 theorem not_isGoodClass_iff :
-    ¬IsGoodClass J B κ A ↔ ∃ S ∈ exceptionalImages J B κ, B A (embeddedCurveClass J S) < -1 := by
+    ¬IsGoodClass J B A ↔ ∃ S ∈ exceptionalImages J B, B A (embeddedCurveClass J S) < -1 := by
   simp only [isGoodClass_iff, not_forall, not_le, exists_prop]
 
 /-- The class of the empty configuration is good. -/
 @[simp]
-theorem isGoodClass_zero : IsGoodClass J B κ 0 := fun _ _ ↦ by simp
+theorem isGoodClass_zero : IsGoodClass J B 0 := fun _ _ ↦ by simp
 
-/-! ### Exceptional images as spheres -/
+/-! ### Exceptional images of curves -/
 
-/-- **Exceptional images are the embedded spheres of square `-1`.** If an embedded
-pseudoholomorphic curve `C` of genus `g` satisfies the adjunction formula
-`[C] · [C] + κ · [C] = 2 g - 2`, its image is exceptional exactly when `g = 0` and
-`[C] · [C] = -1`. -/
+/-- **The image of a curve is exceptional when the curve is a sphere of square `-1`.** Since all
+parametrizations of an embedded image are biholomorphic, the image of an embedded
+pseudoholomorphic curve `C` is exceptional exactly when the parametrizing surface of `C` is
+homeomorphic to the `2`-sphere and `[C] · [C] = -1`. -/
 theorem EmbeddedPseudoholomorphicCurve.range_mem_exceptionalImages_iff [T2Space X]
-    (C : EmbeddedPseudoholomorphicCurve J) {g : ℕ}
-    (hadj : B C.homologyClass C.homologyClass + B κ C.homologyClass = 2 * g - 2) :
-    range C.toFun ∈ exceptionalImages J B κ ↔ g = 0 ∧ B C.homologyClass C.homologyClass = -1 := by
-  simp only [mem_exceptionalImages, embeddedCurveClass_range,
-    C.isEmbeddedPseudoholomorphicImage, true_and]
-  omega
+    (C : EmbeddedPseudoholomorphicCurve J) :
+    range C.toFun ∈ exceptionalImages J B ↔
+      Nonempty (C.carrier ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) ∧
+        B C.homologyClass C.homologyClass = -1 := by
+  rw [mem_exceptionalImages, embeddedCurveClass_range]
+  refine and_congr_left' ⟨fun ⟨C', h, ⟨e⟩⟩ ↦ ⟨(C.reparam C' h.symm).toHomeomorph.trans e⟩,
+    fun he ↦ ⟨C, rfl, he⟩⟩
 
-/-- **Embedded images of negative square are exceptional.** An embedded image whose class
-satisfies adjunction and the index bound of a regular almost complex structure, and has negative
-square, is exceptional. -/
-theorem mem_exceptionalImages_of_apply_self_neg (hS : IsEmbeddedPseudoholomorphicImage J S)
+/-- **Embedded spheres of negative square are exceptional.** An embedded `J`-holomorphic sphere
+whose class has negative square and satisfies the numerical bounds of a regular simple curve
+(`TauCeti.IsRegularSimpleCurve`) is exceptional. -/
+theorem mem_exceptionalImages_of_apply_self_neg
+    (hS : ∃ C : EmbeddedPseudoholomorphicCurve J, range C.toFun = S ∧
+      Nonempty (C.carrier ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1))
     {g δ : ℕ} (hreg : IsRegularSimpleCurve B κ (embeddedCurveClass J S) g δ)
     (hneg : B (embeddedCurveClass J S) (embeddedCurveClass J S) < 0) :
-    S ∈ exceptionalImages J B κ :=
-  ⟨hS, hreg.apply_self_eq_neg_one_of_apply_self_neg hneg,
-    hreg.apply_canonical_eq_neg_one_of_apply_self_neg hneg⟩
+    S ∈ exceptionalImages J B :=
+  ⟨hS, hreg.apply_self_eq_neg_one_of_apply_self_neg hneg⟩
 
 /-! ### Vanishing of the count in a bad class -/
 
@@ -199,10 +206,10 @@ exceptional image other than themselves nonnegatively, as positivity of intersec
 that an exceptional image is counted with multiplicity one only, `w S k = 0` for `k ≥ 2`. If `A`
 is not good, the weighted count of configurations in class `A` vanishes. -/
 theorem configurationCount_eq_zero_of_not_isGoodClass
-    (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ c ∈ s, c ≠ S →
+    (hpos : ∀ S ∈ exceptionalImages J B, ∀ c ∈ s, c ≠ S →
       0 ≤ B (embeddedCurveClass J c) (embeddedCurveClass J S))
-    (hw : ∀ S ∈ exceptionalImages J B κ, ∀ k, 2 ≤ k → w S k = 0)
-    (hA : ¬IsGoodClass J B κ A) :
+    (hw : ∀ S ∈ exceptionalImages J B, ∀ k, 2 ≤ k → w S k = 0)
+    (hA : ¬IsGoodClass J B A) :
     configurationCount r (embeddedCurveClass J) w s A = 0 := by
   obtain ⟨S, hS, hlt⟩ := not_isGoodClass_iff.1 hA
   exact configurationCount_eq_zero_of_apply_lt_neg_one (hpos S hS)
@@ -211,10 +218,10 @@ theorem configurationCount_eq_zero_of_not_isGoodClass
 /-- **The count through points vanishes in a bad class**, under the hypotheses of
 `TauCeti.configurationCount_eq_zero_of_not_isGoodClass`. -/
 theorem pointConfigurationCount_eq_zero_of_not_isGoodClass {P : Type*} {pts : Set X → Finset P}
-    (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ c ∈ s, c ≠ S →
+    (hpos : ∀ S ∈ exceptionalImages J B, ∀ c ∈ s, c ≠ S →
       0 ≤ B (embeddedCurveClass J c) (embeddedCurveClass J S))
-    (hw : ∀ S ∈ exceptionalImages J B κ, ∀ k, 2 ≤ k → w S k = 0)
-    (hA : ¬IsGoodClass J B κ A) :
+    (hw : ∀ S ∈ exceptionalImages J B, ∀ k, 2 ≤ k → w S k = 0)
+    (hA : ¬IsGoodClass J B A) :
     pointConfigurationCount r (embeddedCurveClass J) pts w s A = 0 := by
   obtain ⟨S, hS, hlt⟩ := not_isGoodClass_iff.1 hA
   exact pointConfigurationCount_eq_zero_of_apply_lt_neg_one (hpos S hS)
@@ -238,8 +245,8 @@ theorem isGoodCycle_of_mem_pointConfigurations_of_isGoodClass {P : Type*} [Finty
     (hind : ∀ c ∈ s, 2 * ((pts c).card : ℤ) ≤
       B (embeddedCurveClass J c) (embeddedCurveClass J c) - B κ (embeddedCurveClass J c))
     (hexc : ∀ c ∈ s, B (embeddedCurveClass J c) (embeddedCurveClass J c) < 0 →
-      c ∈ exceptionalImages J B κ)
-    (hA : IsGoodClass J B κ A) (hl : l ∈ pointConfigurations r (embeddedCurveClass J) pts s A)
+      c ∈ exceptionalImages J B)
+    (hA : IsGoodClass J B A) (hl : l ∈ pointConfigurations r (embeddedCurveClass J) pts s A)
     (hdim : B A A - B κ A = 2 * Fintype.card P) :
     IsGoodCycle B κ A (fun c : l.support ↦ embeddedCurveClass J c) (fun c ↦ l c) 0
       (fun c ↦ pts c) :=
@@ -254,16 +261,18 @@ variable {ι : Type*} [Fintype ι] {C : ι → Set X} {m : ι → ℕ}
 
 /-- **Every exceptional image is a component of a canonical cycle.** Let `∑ m i • [C i]` be a
 canonical cycle of images whose components other than the exceptional image `S` meet it
-nonnegatively. Since `S` pairs negatively with the canonical class, it is one of the
-components. -/
+nonnegatively. If `S` satisfies the adjunction formula for a sphere, it pairs negatively with the
+canonical class, so it is one of the components. -/
 theorem IsCanonicalCycle.exists_eq_of_mem_exceptionalImages
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m)
     (hpos : ∀ i, C i ≠ S → 0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S))
-    (hS : S ∈ exceptionalImages J B κ) : ∃ i, C i = S := by
+    (hS : S ∈ exceptionalImages J B)
+    (hadj : B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) =
+      -2) : ∃ i, C i = S := by
   by_contra hne
   push Not at hne
   have hκ : B κ (embeddedCurveClass J S) < 0 := by
-    rw [apply_canonical_eq_neg_one_of_mem_exceptionalImages hS]
+    rw [apply_canonical_eq_neg_one_of_mem_exceptionalImages hS hadj]
     norm_num
   -- The canonical cycle has a component of the same class as `S`, which is not `S` itself.
   obtain ⟨i, hi⟩ := h.exists_eq_of_apply_canonical_neg hκ fun i ↦ .inr (hpos i (hne i))
@@ -275,34 +284,40 @@ theorem IsCanonicalCycle.exists_eq_of_mem_exceptionalImages
 /-- An exceptional image occurs with multiplicity one in a canonical cycle. -/
 theorem IsCanonicalCycle.mult_eq_one_of_mem_exceptionalImages (hB : B.IsSymm)
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m) {i : ι}
-    (hi : C i ∈ exceptionalImages J B κ) : m i = 1 :=
+    (hi : C i ∈ exceptionalImages J B) : m i = 1 :=
   h.mult_eq_one_of_apply_self_neg hB <| by
     rw [Function.comp_apply, apply_self_eq_neg_one_of_mem_exceptionalImages hi]
     norm_num
 
 /-- **Finiteness of the exceptional images.** If the images of a canonical cycle meet every
-exceptional image other than themselves nonnegatively, there are finitely many exceptional
-images. -/
+exceptional image other than themselves nonnegatively, and every exceptional image satisfies the
+adjunction formula for a sphere, there are finitely many exceptional images. -/
 theorem IsCanonicalCycle.finite_exceptionalImages
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m)
-    (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ i, C i ≠ S →
-      0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S)) :
-    (exceptionalImages J B κ).Finite :=
-  (finite_range C).subset fun _ hS ↦ h.exists_eq_of_mem_exceptionalImages (hpos _ hS) hS
+    (hpos : ∀ S ∈ exceptionalImages J B, ∀ i, C i ≠ S →
+      0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S))
+    (hadj : ∀ S ∈ exceptionalImages J B,
+      B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) = -2) :
+    (exceptionalImages J B).Finite :=
+  (finite_range C).subset fun _ hS ↦
+    h.exists_eq_of_mem_exceptionalImages (hpos _ hS) hS (hadj _ hS)
 
 /-- **Subcycles of a canonical cycle are good.** If the images of a canonical cycle
-`∑ m i • [C i]` meet every exceptional image other than themselves nonnegatively, then every
-subcycle `∑ a i • [C i]` with `a ≤ m` is a good class: it pairs with each exceptional image to
-at least `-1`. -/
+`∑ m i • [C i]` meet every exceptional image other than themselves nonnegatively, and every
+exceptional image satisfies the adjunction formula for a sphere, then every subcycle
+`∑ a i • [C i]` with `a ≤ m` is a good class: it pairs with each exceptional image to at least
+`-1`. -/
 theorem IsCanonicalCycle.isGoodClass_sum (hB : B.IsSymm)
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m)
-    (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ i, C i ≠ S →
+    (hpos : ∀ S ∈ exceptionalImages J B, ∀ i, C i ≠ S →
       0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S))
+    (hadj : ∀ S ∈ exceptionalImages J B,
+      B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) = -2)
     {a : ι → ℕ} (ha : ∀ i, a i ≤ m i) :
-    IsGoodClass J B κ (∑ i, a i • embeddedCurveClass J (C i)) := by
+    IsGoodClass J B (∑ i, a i • embeddedCurveClass J (C i)) := by
   intro S hS
   have hκ : B κ (embeddedCurveClass J S) < 0 := by
-    rw [apply_canonical_eq_neg_one_of_mem_exceptionalImages hS]
+    rw [apply_canonical_eq_neg_one_of_mem_exceptionalImages hS (hadj S hS)]
     norm_num
   rcases h.apply_sum_eq_zero_or_eq_neg_one hB ha hκ
     (fun i ↦ (eq_or_ne (C i) S).imp (congrArg (embeddedCurveClass J)) (hpos S hS i)) with
