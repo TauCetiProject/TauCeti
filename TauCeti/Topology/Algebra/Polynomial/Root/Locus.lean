@@ -37,10 +37,10 @@ theorem isClosed_setOf_exists_aeval_monicOfCoeff_eq_zero
   have heval : Continuous fun p : (Fin n → R) × S ↦
       aeval (p.2 : A) (monicOfCoeff p.1) := by
     simp only [← eval_map_algebraMap, map_monicOfCoeff, eval_monicOfCoeff]
-    exact ((continuous_subtype_val.comp continuous_snd).pow n).add
+    exact ((continuous_subtypeVal.comp continuous_snd).pow n).add
       (continuous_finsetSum _ fun i _ ↦
         (hφ.comp ((continuous_apply i).comp continuous_fst)).mul
-          ((continuous_subtype_val.comp continuous_snd).pow (i : ℕ)))
+          ((continuous_subtypeVal.comp continuous_snd).pow (i : ℕ)))
   convert isClosedMap_fst_of_compactSpace _
     ((isClosed_singleton (x := (0 : A))).preimage heval) using 1
   ext a

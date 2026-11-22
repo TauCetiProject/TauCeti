@@ -185,15 +185,15 @@ theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpe
   obtain ⟨H, hUH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict μ U
   have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
-    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+    MeasurableEmbedding.subtypeVal H.isOpen.measurableSet
   let ν : Measure H := μ.comap ((↑) : H → G)
   let U₀ : Set H := ((↑) : H → G) ⁻¹' U
   have hU_img : ((↑) : H → G) '' U₀ = U :=
     image_preimage_eq_iff.2 (hUH.trans Subtype.range_coe.symm.subset)
   obtain ⟨W₀, hUW₀, hW₀o, hW₀b, hW₀ae⟩ :=
-    exists_isOpen_baire_superset_ae_eq_of_sigmaCompact (hU.preimage continuous_subtype_val) ν
+    exists_isOpen_baire_superset_ae_eq_of_sigmaCompact (hU.preimage continuous_subtypeVal) ν
   refine ⟨((↑) : H → G) '' W₀, hU_img ▸ image_mono hUW₀,
-    H.isOpen.isOpenMap_subtype_val W₀ hW₀o,
+    H.isOpen.isOpenMap_subtypeVal W₀ hW₀o,
     measurableSet_baire_image_openSubgroup_coe H hW₀b, ?_⟩
   rw [← measure_symmDiff_eq_zero_iff, ← hU_img, ← image_symmDiff Subtype.coe_injective,
     ← hcoe.comap_apply, measure_symmDiff_eq_zero_iff]
@@ -237,10 +237,10 @@ theorem NullMeasurableSet.exists_baire_symmDiff_subset_null {s : Set G}
   obtain ⟨H, hsH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict μ s
   have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
-    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+    MeasurableEmbedding.subtypeVal H.isOpen.measurableSet
   let ν : Measure H := μ.comap ((↑) : H → G)
   have hqmp : QuasiMeasurePreserving ((↑) : H → G) ν μ :=
-    (measurePreserving_subtype_coe (μa := μ)
+    (measurePreserving_subtypeVal (μa := μ)
       H.isOpen.measurableSet).quasiMeasurePreserving.mono_right
       Measure.restrict_le_self.absolutelyContinuous
   let s₀ : Set H := ((↑) : H → G) ⁻¹' s
@@ -248,7 +248,7 @@ theorem NullMeasurableSet.exists_baire_symmDiff_subset_null {s : Set G}
     image_preimage_eq_iff.2 (hsH.trans Subtype.range_coe.symm.subset)
   obtain ⟨B₀, N₀, hB₀sc, hB₀b, hN₀g, hN₀b, hN₀0, hsymm₀⟩ :=
     exists_baire_symmDiff_subset_null_of_sigmaCompact (hs.preimage hqmp)
-  refine ⟨((↑) : H → G) '' B₀, ((↑) : H → G) '' N₀, hB₀sc.image continuous_subtype_val,
+  refine ⟨((↑) : H → G) '' B₀, ((↑) : H → G) '' N₀, hB₀sc.image continuous_subtypeVal,
     measurableSet_baire_image_openSubgroup_coe H hB₀b,
     H.isOpen.isOpenEmbedding_subtypeVal.isGδ_image hN₀g,
     measurableSet_baire_image_openSubgroup_coe H hN₀b,
