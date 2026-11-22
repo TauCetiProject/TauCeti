@@ -179,8 +179,7 @@ theorem interiorChartedSpace_eq [I.Boundaryless] :
 /-- Preferred extended charts are unchanged on the copied carrier. -/
 theorem interiorExtChartAt_eq (x : BoundarylessModel I M) :
     extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) :=
-  extChartAt_eq_of_chartAt_toPartialEquiv I
-    (fun _ ↦ interiorChart_toPartialEquiv I _ _) x
+  extChartAt_eq_of_chartAt_toPartialEquiv I x (interiorChart_toPartialEquiv I _ _)
 
 /-- The interior atlas preserves every manifold regularity of the original atlas. -/
 instance instIsManifoldInteriorChartedSpace {n : ℕ∞ω} [IsManifold I n M] :
@@ -190,7 +189,7 @@ instance instIsManifoldInteriorChartedSpace {n : ℕ∞ω} [IsManifold I n M] :
   rw [interior_atlas_eq] at hC
   obtain ⟨c, hc, hC⟩ := hC
   rw [hC]
-  exact ⟨c, hc, interiorChart_toPartialEquiv I c hc⟩
+  exact ⟨c, IsManifold.subset_maximalAtlas hc, interiorChart_toPartialEquiv I c hc⟩
 
 /-- The identity diffeomorphism to the vector-space atlas, at any regularity. -/
 def interiorDiffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n :=

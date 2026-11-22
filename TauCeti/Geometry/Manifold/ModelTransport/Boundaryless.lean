@@ -207,23 +207,23 @@ section ComparedAtlases
 
 variable {M} [ChartedSpace H M] [ChartedSpace E (BoundarylessModel I M)]
 
-/-- A chosen vector-space atlas of extended original charts preserves manifold regularity. -/
-theorem isManifold_of_atlas_extend {n : ℕ∞ω} [IsManifold I n M]
-    (h : ∀ C ∈ atlas E (BoundarylessModel I M),
-      ∃ c : OpenPartialHomeomorph M H, c ∈ atlas H M ∧ C.toPartialEquiv = c.extend I) :
+/-- A chosen vector-space atlas on the copy is `C^n` when each of its charts extends a chart of
+the maximal `C^n` atlas of `M`. No manifold regularity of the original atlas is assumed. -/
+theorem isManifold_of_atlas_extend {n : ℕ∞ω}
+    (h : ∀ C ∈ atlas E (BoundarylessModel I M), ∃ c ∈ IsManifold.maximalAtlas I n M,
+      C.toPartialEquiv = c.extend I) :
     IsManifold 𝓘(𝕜, E) n (BoundarylessModel I M) where
   compatible := by
     intro C D hC hD
     obtain ⟨c, hc, hC⟩ := h C hC
     obtain ⟨d, hd, hD⟩ := h D hD
     exact (C.symm_trans_mem_contDiffGroupoid_iff_of_extend (I := I) (M := M) D c d hC hD n).2
-      ((contDiffGroupoid n I).compatible (M := M) hc hd)
+      (IsManifold.compatible_of_mem_maximalAtlas (M := M) hc hd)
 
-/-- Extending a preferred chart already equal to the original extended chart changes nothing. -/
-theorem extChartAt_eq_of_chartAt_toPartialEquiv
-    (h : ∀ x : BoundarylessModel I M,
-      (chartAt E x).toPartialEquiv = (chartAt H ((homeomorph I M).symm x)).extend I)
-    (x : BoundarylessModel I M) :
+/-- Extending a preferred chart of the copy that is already the original extended chart at the
+same point changes nothing. -/
+theorem extChartAt_eq_of_chartAt_toPartialEquiv (x : BoundarylessModel I M)
+    (h : (chartAt E x).toPartialEquiv = (chartAt H ((homeomorph I M).symm x)).extend I) :
     extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by
   rw [extChartAt, OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv,
     PartialEquiv.trans_refl, h]
@@ -433,7 +433,7 @@ theorem chartAt_symm_apply (z : BoundarylessModel I M) (v : E) :
 /-- The extended preferred chart is unchanged by the model transport. -/
 theorem extChartAt_eq (x : BoundarylessModel I M) :
     extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) :=
-  extChartAt_eq_of_chartAt_toPartialEquiv I (fun _ ↦ chart_toPartialEquiv I _) x
+  extChartAt_eq_of_chartAt_toPartialEquiv I x (chart_toPartialEquiv I _)
 
 /-- Membership in the maximal atlas is preserved by extending a chart to the vector space. -/
 @[simp]
@@ -456,7 +456,7 @@ instance {n : ℕ∞ω} [IsManifold I n M] : IsManifold 𝓘(𝕜, E) n (Boundar
   apply isManifold_of_atlas_extend I (M := M)
   rintro C ⟨c, hc, hC⟩
   rw [← hC]
-  exact ⟨c, hc, chart_toPartialEquiv I c⟩
+  exact ⟨c, IsManifold.subset_maximalAtlas hc, chart_toPartialEquiv I c⟩
 
 /-- The identity, as a diffeomorphism from the original model to the self-modelled copy. -/
 def diffeomorph (n : ℕ∞ω) : Diffeomorph I 𝓘(𝕜, E) M (BoundarylessModel I M) n :=
@@ -506,8 +506,7 @@ theorem mdifferentiableAt_source_iff (f : M → N) (x : BoundarylessModel I M) :
     MDifferentiableAt 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x ↔
       MDifferentiableAt I J f ((homeomorph I M).symm x) := by
   rw [mdifferentiableAt_iff, mdifferentiableAt_iff]
-  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
-    ModelWithCorners.range_eq_univ]
+  simp only [writtenInExtChartAt, extChartAt_eq, ModelWithCorners.range_eq_univ]
   exact and_congr ((homeomorph I M).symm.comp_continuousAt_iff' f x) Iff.rfl
 
 -- The coordinate derivative is unchanged: both the written map and evaluation point agree
@@ -518,8 +517,7 @@ private theorem fderivWithin_writtenInExtChartAt_source (f : M → N)
         (range 𝓘(𝕜, E)) (extChartAt 𝓘(𝕜, E) x x) =
       fderivWithin 𝕜 (writtenInExtChartAt I J ((homeomorph I M).symm x) f)
         (range I) (extChartAt I ((homeomorph I M).symm x) ((homeomorph I M).symm x)) := by
-  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
-    ModelWithCorners.range_eq_univ]
+  simp only [writtenInExtChartAt, extChartAt_eq, ModelWithCorners.range_eq_univ]
   rfl
 
 /-- The source-side derivative comparison, with the tangent spaces identified explicitly
