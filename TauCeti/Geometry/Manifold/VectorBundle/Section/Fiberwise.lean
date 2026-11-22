@@ -60,7 +60,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (ϕ : ∀ x, V x → W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W)))
+    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W)))
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [VectorBundle 𝕜 G W]
@@ -83,23 +83,24 @@ theorem continuous_map_frameTopology (hcover : ∀ x : M, ∃ i, x ∈ U i) :
   apply (continuous_frameTopology_iff_frameCoordinates e' U' hU').mpr
   intro j
   -- Continuity is local on the target frame domain; cover it by the source frame domains.
-  let D (i : ι) : Opens (U' j) := Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ (U i)
+  let D (i : ι) : Opens (U' j) := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ (U i)
   apply ContMDiffMap.continuous_of_forall_continuous_restrict D fun x ↦ hcover x
   intro i
   have hval : ContMDiff I I n (fun y : D i ↦ ((y : U' j) : M)) :=
-    (contMDiff_subtype_val (U := U' j)).comp (contMDiff_subtype_val (U := D i))
+    (contMDiff_subtypeVal (U := U' j)).comp (contMDiff_subtypeVal (U := D i))
   let incl : C^n⟮I, D i; I, U i⟯ :=
-    ⟨fun x ↦ ⟨((x : U' j) : M), x.2⟩, (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp hval⟩
+    ⟨fun x ↦ ⟨((x : U' j) : M), x.property⟩,
+      (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp hval⟩
   -- On the overlap, target coefficients are a fixed smooth map of the point and the source
   -- coefficients.
   let σ : D i × F → TotalSpace F V := fun p ↦ ⟨((p.1 : U' j) : M), (e i).symm _ p.2⟩
   have hσ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F)) n σ := by
     convert (e i).contMDiffOn_symm.comp_contMDiff (hval.prodMap contMDiff_id)
-      (fun p ↦ (e i).mem_target.mpr (hU i p.1.2)) using 1
-    exact funext fun p ↦ (e i).mk_symm (hU i p.1.2) p.2
+      (fun p ↦ (e i).mem_target.mpr (hU i p.1.property)) using 1
+    exact funext fun p ↦ (e i).mk_symm (hU i p.1.property) p.2
   let g : C^n⟮I.prod 𝓘(𝕜, F), D i × F; 𝓘(𝕜, G), G⟯ :=
     ⟨fun p ↦ ((e' j) ⟨((p.1 : U' j) : M), ϕ _ ((e i).symm _ p.2)⟩).2, fun p ↦
-      (((e' j).contMDiffAt_iff ((e' j).mem_source.mpr (hU' j (p.1 : U' j).2))).mp
+      (((e' j).contMDiffAt_iff ((e' j).mem_source.mpr (hU' j (p.1 : U' j).property))).mp
         ((hϕ.comp hσ) p)).2⟩
   have hc : Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       g.comp (ContMDiffMap.id.prodMk (((e i).frameCoordinates (hU i) s).comp incl))) :=
@@ -109,13 +110,13 @@ theorem continuous_map_frameTopology (hcover : ∀ x : M, ∃ i, x ∈ U i) :
           ((continuous_frameCoordinates e U hU i).prodMk continuous_const))))
   -- The bundled maps evaluate by their defining formulas.
   have hg (p : D i × F) : g p = ((e' j) ⟨((p.1 : U' j) : M), ϕ _ ((e i).symm _ p.2)⟩).2 := rfl
-  have hincl (x : D i) : incl x = ⟨((x : U' j) : M), x.2⟩ := rfl
+  have hincl (x : D i) : incl x = ⟨((x : U' j) : M), x.property⟩ := rfl
   have hid (x : D i) : (ContMDiffMap.id : C^n⟮I, D i; I, D i⟯) x = x := rfl
   refine hc.congr fun s ↦ ?_
   ext x
   simp only [ContMDiffMap.restrict_apply, ContMDiffMap.comp_apply, ContMDiffMap.prodMk_apply,
     Bundle.Trivialization.frameCoordinates_apply, map_apply, hg, hincl, hid]
-  have hx : ((x : U' j) : M) ∈ (e i).baseSet := hU i x.2
+  have hx : ((x : U' j) : M) ∈ (e i).baseSet := hU i x.property
   rw [(e i).symm_apply_apply_mk hx]
 
 end ContMDiffSection

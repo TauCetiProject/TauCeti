@@ -47,7 +47,7 @@ section Map
 
 variable (ϕ : ∀ x, V x → W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W)))
+    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W)))
 
 /-- Postcomposition of sections with a smooth family of fibre maps over the identity. The fibre
 maps need not be linear. -/
@@ -80,7 +80,7 @@ theorem map_comp {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M 
     [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z]
     (ψ : ∀ x, W x → Z x)
     (hψ : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
-      (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.2⟩ : TotalSpace J Z))) :
+      (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.snd⟩ : TotalSpace J Z))) :
     ContMDiffSection.map (fun x ↦ ψ x ∘ ϕ x) (hψ.comp hϕ) =
       ContMDiffSection.map ψ hψ ∘ ContMDiffSection.map ϕ hϕ := by
   funext s

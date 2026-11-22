@@ -84,7 +84,7 @@ private theorem eventually_forall_mem_source_and_dist_iteratedFDerivWithin_lt
         (iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
           (extChartAt I x).target w) < δ := by
   have hU := Metric.tendstoUniformlyOn_iff.mp (tendstoUniformlyOn_iteratedFDerivWithin_extChartAt
-    (hK.image continuous_subtype_val) (image_subset_iff.mpr fun w _ ↦ w.2)
+    (hK.image continuous_subtypeVal) (image_subset_iff.mpr fun w _ ↦ w.property)
     (by rintro _ ⟨w, hw, rfl⟩; exact hK₀ w hw) hm) δ hδ
   have hT := (isOpen_chartJetSet (J := J) x y 0 (by simp) hK isOpen_univ).mem_nhds
     (mem_chartJetSet.mpr fun w hw ↦ ⟨hK₀ w hw, mem_univ _⟩)
@@ -107,10 +107,10 @@ theorem continuous_prodMk_manifoldWeakWhitney :
   -- On `K`, the coordinate derivative of `(f₀, g₀)` stays in a compact subset of the open set of
   -- the test, so a uniform neighbourhood of it stays in that open set.
   have hS : IsCompact (D '' K) :=
-    hK.image_of_continuousOn fun w hw ↦ ((((f₀.prodMk g₀).contDiffWithinAt_extChartAt w.2
+    hK.image_of_continuousOn fun w hw ↦ ((((f₀.prodMk g₀).contDiffWithinAt_extChartAt w.property
       ((mem_chartJetSet.mp h₀) w hw).1).continuousWithinAt_iteratedFDerivWithin
-        (uniqueDiffOn_extChartAt_target x) hm w.2).comp
-          continuous_subtype_val.continuousWithinAt fun v _ ↦ v.2)
+        (uniqueDiffOn_extChartAt_target x) hm w.property).comp
+          continuous_subtypeVal.continuousWithinAt fun v _ ↦ v.property)
   have hSV : D '' K ⊆ V := by
     rintro _ ⟨w, hw, rfl⟩
     exact ((mem_chartJetSet.mp h₀) w hw).2
@@ -126,8 +126,8 @@ theorem continuous_prodMk_manifoldWeakWhitney :
         And.intro (hf w hw).1 (hg w hw).1,
       hδV (Metric.mem_thickening_iff.mpr ⟨_, mem_image_of_mem D hw, ?_⟩)⟩
   dsimp only [D]
-  rw [iteratedFDerivWithin_extChartAt_prodMk f g w.2 (hf w hw).1 (hg w hw).1 hm,
-    iteratedFDerivWithin_extChartAt_prodMk f₀ g₀ w.2 (hsrc w hw).1 (hsrc w hw).2 hm]
+  rw [iteratedFDerivWithin_extChartAt_prodMk f g w.property (hf w hw).1 (hg w hw).1 hm,
+    iteratedFDerivWithin_extChartAt_prodMk f₀ g₀ w.property (hsrc w hw).1 (hsrc w hw).2 hm]
   rw [dist_eq_norm, ← ContinuousMultilinearMap.sub_prod_sub, ContinuousMultilinearMap.opNorm_prod,
     max_lt_iff, ← dist_eq_norm, ← dist_eq_norm]
   exact ⟨(hf w hw).2, (hg w hw).2⟩
