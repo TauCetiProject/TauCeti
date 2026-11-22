@@ -511,9 +511,10 @@ private theorem isCoveringMap_proj (hP : IsLocalTiling P N)
     (hu : HasUniformTilingCharts P N) : IsCoveringMap (proj hP) := by
   have := t2Space_glued hP
   obtain ⟨ε, hε, hunif⟩ := hu
-  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP)) hε
-    fun e ↦ ?_
+  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP))
+    (dist_mem_uniformity hε) fun e ↦ ?_
   obtain ⟨a, y, rfl⟩ := exists_glue_eq hP e
+  simp only [Metric.ball_eq_ball']
   obtain ⟨W, M, hc, -, h, hh, hball⟩ := hunif y y.property
   set g := a * h⁻¹
   have hgy : g⁻¹ • a • (y : X) = h • (y : X) := by
