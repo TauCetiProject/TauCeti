@@ -84,7 +84,7 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
   obtain hF | hF := (p ⁻¹' {x}).eq_empty_or_nonempty
   · have : IsEmpty (p ⁻¹' {x}) := isEmpty_coe_sort.2 hF
     exact .of_preimage_eq_empty _ hVx <| eq_empty_of_forall_notMem fun e' he' ↦
-      (hmem e' he').elim fun _ he ↦ notMem_empty _ (hF.subset he.1)
+      (hmem e' (mem_preimage.1 he')).elim fun _ he ↦ notMem_empty _ (hF.subset he.1)
   have : DiscreteTopology (p ⁻¹' {x}) := (hinj.isDiscrete_preimage_singleton x).to_subtype
   have : Nonempty (X → E) := ⟨fun _ ↦ hF.some⟩
   have : Nonempty (p ⁻¹' {x}) := hF.to_subtype
@@ -108,8 +108,10 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
     rw [← hsx e e.property, ← hsx e' e'.property]
     exact hrigid e e' (hfib e e.property) (hfib e' e'.property) (interior_subset hy) hzy.symm hxV
   · -- the sheets exhaust the preimage of `interior V`
-    exact fun e' he' ↦ (hmem e' (interior_subset he')).elim fun e he ↦
-      mem_iUnion.2 ⟨⟨e, he.1⟩, p e', he', he.2⟩
+    intro e' he'
+    have hpI : p e' ∈ interior V := mem_preimage.1 he'
+    exact (hmem e' (interior_subset hpI)).elim fun e he ↦
+      mem_iUnion.2 ⟨⟨e, he.1⟩, p e', hpI, he.2⟩
 
 /-- A continuous separated, locally injective map to a locally connected space is a covering
 map if every base point has a neighbourhood admitting continuous sections through every point
@@ -146,10 +148,7 @@ theorem _root_.IsCoveringMap.of_forall_exists_section {X : Type*} [UniformSpace 
       LeftInvOn p s (U.ball (p e))) : IsCoveringMap p := by
   choose s hsc hsn hps using h
   -- `e` lies in the image of its section, so the section passes through `e`
-  have hse (e : E) : s e (p e) = e := by
-    obtain ⟨y, hy, hye⟩ := mem_of_mem_nhds (hsn e)
-    have hpy : p e = y := by rw [← hye]; exact hps e hy
-    rw [hpy, hye]
+  have hse (e : E) : s e (p e) = e := (hps e).rightInvOn_image (mem_of_mem_nhds (hsn e))
   have hinj : IsLocallyInjective p := isLocallyInjective_iff_nhds.2 fun e ↦
     ⟨s e '' U.ball (p e), hsn e, (hps e).rightInvOn_image.injOn⟩
   obtain ⟨V, hV, hVs, hVU⟩ := comp_symm_mem_uniformity_sets hU
