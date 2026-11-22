@@ -88,7 +88,7 @@ noncomputable def reesMap (f : L →ₗ⁅R⁆ M) : reesAlgebra R L →ₐ[R[X]]
       (reesAlgebra R M) fun p ↦
         mem_coeffSubalgebra_iff.mpr fun n ↦ by
           rw [AlgHom.comp_apply, Subalgebra.coe_val, Polynomial.coe_mapAlgHom, Polynomial.coeff_map]
-          exact map_mem_pbwFiltration R f (mem_coeffSubalgebra_iff.mp p.2 n)
+          exact map_mem_pbwFiltration R f (mem_coeffSubalgebra_iff.mp p.property n)
   AlgHom.ofLinearMap
     { toAddHom := φ.toAddHom
       map_smul' := fun q p ↦ Subtype.ext <| by

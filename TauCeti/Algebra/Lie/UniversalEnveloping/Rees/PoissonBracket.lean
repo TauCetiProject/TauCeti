@@ -115,7 +115,7 @@ theorem commutator_coeff_mem_pbwFiltrationPrevious (a b : reesAlgebra R L) (n : 
   refine Submodule.sum_mem _ fun x hx ↦ ?_
   rw [← Finset.mem_antidiagonal.mp hx]
   exact mul_sub_mul_mem_pbwFiltrationPrevious R L
-    (mem_coeffSubalgebra_iff.mp a.2 x.1) (mem_coeffSubalgebra_iff.mp b.2 x.2)
+    (mem_coeffSubalgebra_iff.mp a.property x.1) (mem_coeffSubalgebra_iff.mp b.property x.2)
 
 private noncomputable def reesDividedCommutatorAux (a b : reesAlgebra R L) : reesAlgebra R L :=
   ⟨((a * b - b * a : reesAlgebra R L) : U[X]).divX, mem_coeffSubalgebra_iff.mpr fun n ↦ by
@@ -354,10 +354,13 @@ noncomputable def reesZeroFiberBracket :
 theorem reesZeroFiberBracket_reesSpecializationZero (a b : reesAlgebra R L) :
     reesZeroFiberBracket R L (reesSpecializationZero R L a) (reesSpecializationZero R L b) =
       reesSpecializationZero R L (reesDividedCommutator R L a b) := by
+  have ha := LinearMap.quotKerEquivOfSurjective_symm_apply
+    (f := (reesSpecializationZero R L).toLinearMap) (reesSpecializationZero_surjective R L) a
+  have hb := LinearMap.quotKerEquivOfSurjective_symm_apply
+    (f := (reesSpecializationZero R L).toLinearMap) (reesSpecializationZero_surjective R L) b
   rw [reesZeroFiberBracket, LinearMap.compl₁₂_apply, LinearEquiv.coe_toLinearMap,
     ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) a,
-    ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) b,
-    LinearMap.quotKerEquivOfSurjective_symm_apply, LinearMap.quotKerEquivOfSurjective_symm_apply,
+    ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) b, ha, hb,
     LinearMap.liftQ₂_mk, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply]
 
 /-- **Divided-commutator characterization of `reesZeroFiberBracket`.** Whenever
