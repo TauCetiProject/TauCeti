@@ -7,9 +7,11 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -89,6 +91,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
+* `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -440,5 +443,10 @@ theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
   rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 hm), Padic.valuation_natCast,
     zpow_le_zpow_iff_right₀ hp, neg_le_neg_iff, multiplicity_dvd_iff_le hm]
   omega
+
+/-- A `p`-adic number integral over `ℤ` is a `p`-adic integer: its norm is at most one. -/
+theorem norm_le_one_of_isIntegral {x : ℚ_[p]} (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 := by
+  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hx.tower_top (A := ℤ_[p]))
+  exact PadicInt.norm_le_one y
 
 end Padic
