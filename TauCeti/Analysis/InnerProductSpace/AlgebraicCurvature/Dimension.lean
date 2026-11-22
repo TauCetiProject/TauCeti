@@ -13,11 +13,10 @@ import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
-import TauCeti.LinearAlgebra.Alternating.LinearDependent
-import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
+import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
 # Polarization and dimension of algebraic curvature tensors
@@ -77,7 +76,7 @@ theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor
   -- Doubling is injective on the values, which form a real vector space.
   have := HasUniqueDiv.of_isTorsionFree ℝ (V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
   have h2 : IsSMulRegular (V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (2 : ℕ) := .nat_of_hasUniqueDiv two_ne_zero
-  have hAlt : (toLinearMap₄ r).IsAlt := .of_neg (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ) h2 fun a b ↦
+  have hAlt : (toLinearMap₄ r).IsAlt := .of_neg_eq_flip (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ) h2 fun a b ↦
     LinearMap.ext₂ fun c d ↦ by simp only [LinearMap.neg_apply, toLinearMap₄_apply, ← h₁]
   simpa using congr($(hAlt.eq_zero_of_not_linearIndependent
     (fun _ ↦ smul_left_injective ℝ (M := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)) huv) z w)

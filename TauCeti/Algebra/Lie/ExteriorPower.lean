@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.LinearAlgebra.Alternating.LinearDependent
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.Trace.Basic
 
@@ -202,9 +203,7 @@ theorem lieMap_finrank_apply [Module.Free K V]
     have hterm (i : Fin (Module.finrank K V)) : ιMulti K _ (Function.update b i (f (b i))) =
         b.repr (f (b i)) i • ιMulti K _ b := by
       conv_lhs => rw [← b.sum_repr (f (b i))]
-      rw [AlternatingMap.map_update_sum, Fintype.sum_eq_single i fun j hj ↦ by
-        rw [AlternatingMap.map_update_smul, AlternatingMap.map_update_self _ _ hj.symm, smul_zero]]
-      rw [AlternatingMap.map_update_smul, Function.update_eq_self]
+      exact (ιMulti K _).map_update_sum_smul b (Finset.mem_univ i) _
     rw [lieMap_apply_ιMulti, Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.sum_smul,
       LinearMap.trace_eq_matrix_trace K b, Matrix.trace]
     simp [LinearMap.toMatrix_apply]

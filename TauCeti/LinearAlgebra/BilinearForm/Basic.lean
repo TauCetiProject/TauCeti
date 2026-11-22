@@ -76,8 +76,6 @@ maps valued in an arbitrary module.
   pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
   `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
   endomorphism of `R × R`.
-* `LinearMap.IsAlt.of_neg`: a skew-symmetric sesquilinear map is alternating when doubling is
-  injective on its values.
 -/
 
 public section
@@ -114,16 +112,6 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommMonoid M] [
     ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
       LinearMap.det B • ω v w := by
   rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
-
-/-- A skew-symmetric sesquilinear map is alternating when doubling is injective on its values.
-This is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of the reverse
-direction of `LinearMap.isAlt_iff_eq_neg_flip`. -/
-theorem of_neg {R R₁ M N : Type*} [CommSemiring R] [CommSemiring R₁] [AddCommMonoid M]
-    [Module R₁ M] [AddCommGroup N] [Module R N] {I₁ I₂ : R₁ →+* R}
-    {ω : M →ₛₗ[I₁] M →ₛₗ[I₂] N} (h2 : IsSMulRegular N (2 : ℕ))
-    (h : ∀ x y, -ω x y = ω y x) : ω.IsAlt := fun x ↦ by
-  apply h2
-  simpa only [two_nsmul, smul_zero, h x x] using neg_add_cancel (ω x x)
 
 end LinearMap.IsAlt
 

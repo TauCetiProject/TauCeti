@@ -8,8 +8,10 @@ module
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.GroupWithZero.Action.Regular
-import TauCeti.LinearAlgebra.Alternating.LinearDependent
-import TauCeti.LinearAlgebra.BilinearForm.Basic
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
 # Polarization of curvature-type tensors
@@ -140,7 +142,7 @@ theorem eq_of_apply_self_eq_of_linearIndependent (T₁ : M →ₗ[R] M →ₗ[R]
   have hdep (T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N) (h₁ : ∀ x y z w, T x y z w = -T y x z w)
       {x y : M} (hxy : ¬LinearIndependent R ![x, y]) : T x y y x = 0 := by
     let ω := (T.compr₂ (applyₗ y)).compr₂ (applyₗ x)
-    have hω : ω.IsAlt := .of_neg (h6'.of_mul (a := 3) (b := 2)) fun a b ↦ by
+    have hω : ω.IsAlt := .of_neg_eq_flip (h6'.of_mul (a := 3) (b := 2)) fun a b ↦ by
       simpa only [ω, compr₂_apply, applyₗ_apply_apply] using (h₁ b a y x).symm
     simpa only [ω, compr₂_apply, applyₗ_apply_apply] using
       hω.eq_zero_of_not_linearIndependent hN hxy
