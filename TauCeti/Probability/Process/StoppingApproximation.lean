@@ -34,6 +34,8 @@ Stopped-value convergence is asserted only at finite times: the native value at 
 is a fallback, not a terminal path limit.
 
 No rounded value lies strictly between consecutive grid points (`le_dyadicCeilTime_of_div_lt`).
+Projecting the dyadic grid onto `[s, b]` (`dyadicProjIcc`) inherits monotonicity, endpoint bounds,
+and the same no-interior-point property (`dyadicProjIcc_le_dyadicCeilTime`).
 
 ## References
 
@@ -235,6 +237,66 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (σ := fun n ω => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
+
+/-- The dyadic grid of mesh `2⁻ᵏ` projected onto `[s, b]`. -/
+def dyadicProjIcc (s b : ℝ≥0) (hsb : s ≤ b) (k j : ℕ) : ℝ≥0 :=
+  Set.projIcc s b hsb ((j : ℝ≥0) / 2 ^ k)
+
+/-- The projected dyadic grid is monotone in the grid index. -/
+theorem monotone_dyadicProjIcc {s b : ℝ≥0} (hsb : s ≤ b) (k : ℕ) :
+    Monotone (dyadicProjIcc s b hsb k) :=
+  fun _ _ hij ↦ Set.monotone_projIcc hsb
+    (div_le_div_of_nonneg_right (Nat.cast_le.mpr hij) (by positivity))
+
+/-- The projected dyadic grid starts at the left endpoint `s`. -/
+@[simp]
+theorem dyadicProjIcc_zero {s b : ℝ≥0} (hsb : s ≤ b) (k : ℕ) :
+    dyadicProjIcc s b hsb k 0 = s :=
+  congrArg Subtype.val (Set.projIcc_of_le_left hsb (by simp))
+
+/-- Every point of the projected dyadic grid lies at or above `s`. -/
+theorem le_dyadicProjIcc {s b : ℝ≥0} (hsb : s ≤ b) (k j : ℕ) :
+    s ≤ dyadicProjIcc s b hsb k j :=
+  (Set.projIcc s b hsb _).property.1
+
+/-- Every point of the projected dyadic grid lies at or below `b`. -/
+theorem dyadicProjIcc_le {s b : ℝ≥0} (hsb : s ≤ b) (k j : ℕ) :
+    dyadicProjIcc s b hsb k j ≤ b :=
+  (Set.projIcc s b hsb _).property.2
+
+/-- The projected dyadic grid reaches the right endpoint `b` by index `⌊b * 2 ^ k⌋₊ + 1`. -/
+@[simp]
+theorem dyadicProjIcc_end {s b : ℝ≥0} (hsb : s ≤ b) (k : ℕ) :
+    dyadicProjIcc s b hsb k (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1) = b :=
+  congrArg Subtype.val <| Set.projIcc_of_right_le hsb <| le_of_lt <|
+    (lt_div_iff₀ (by positivity)).mpr <| by
+      simpa only [Nat.cast_add, Nat.cast_one] using Nat.lt_floor_add_one (b * (2 : ℝ≥0) ^ k)
+
+/-- No upward dyadic rounding `dyadicCeilTime k u` lies strictly inside a consecutive step
+`(p j, p (j + 1))` of the projected dyadic grid. -/
+theorem dyadicProjIcc_le_dyadicCeilTime {s b : ℝ≥0} (hsb : s ≤ b) {k j : ℕ} {u : WithTop ℝ≥0}
+    (h : (dyadicProjIcc s b hsb k j : WithTop ℝ≥0) < dyadicCeilTime k u) :
+    (dyadicProjIcc s b hsb k (j + 1) : WithTop ℝ≥0) ≤ dyadicCeilTime k u := by
+  by_cases hbu : (b : WithTop ℝ≥0) ≤ dyadicCeilTime k u
+  · exact (WithTop.coe_le_coe.mpr (dyadicProjIcc_le hsb k (j + 1))).trans hbu
+  · have hjb : (j : ℝ≥0) / (2 : ℝ≥0) ^ k < b := by
+      by_contra! hbj
+      have hpeq : dyadicProjIcc s b hsb k j = b :=
+        congrArg Subtype.val (Set.projIcc_of_right_le hsb hbj)
+      exact hbu (hpeq ▸ h.le)
+    have hj_le : (j : ℝ≥0) / (2 : ℝ≥0) ^ k ≤ dyadicProjIcc s b hsb k j := by
+      rw [dyadicProjIcc, Set.coe_projIcc, min_eq_right hjb.le]
+      exact le_max_right _ _
+    have hdiv : (((j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ k : WithTop ℝ≥0) ≤ dyadicCeilTime k u :=
+      le_dyadicCeilTime_of_div_lt k j (lt_of_le_of_lt (WithTop.coe_le_coe.mpr hj_le) h)
+    have hs_lt : (s : WithTop ℝ≥0) < dyadicCeilTime k u :=
+      lt_of_le_of_lt (WithTop.coe_le_coe.mpr (le_dyadicProjIcc hsb k j)) h
+    have hnext : dyadicProjIcc s b hsb k (j + 1) ≤ max s (((j + 1 : ℕ) : ℝ≥0) / 2 ^ k) := by
+      rw [dyadicProjIcc, Set.coe_projIcc]
+      exact max_le_max_left s (min_le_right _ _)
+    exact (WithTop.coe_le_coe.mpr hnext).trans (by
+      rw [WithTop.coe_max]
+      exact max_le hs_lt.le hdiv)
 
 end TauCeti
 

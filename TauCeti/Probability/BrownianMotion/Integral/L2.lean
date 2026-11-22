@@ -480,8 +480,9 @@ theorem eLpNorm_l2Integral_sub (hW : IsFilteredPreBrownianReal ℱ W P) (t : ℝ
     (hm₁ : MemLp f₁ 2 (ℱ.predictableMeasure P t)) (hm₂ : MemLp f₂ 2 (ℱ.predictableMeasure P t)) :
     eLpNorm ((hW.l2Integral t (hm₁.toLp f₁) : Ω → ℝ) - (hW.l2Integral t (hm₂.toLp f₂) : Ω → ℝ))
       2 P = eLpNorm (f₁ - f₂) 2 ((timeMeasure t).prod P) := by
-  rw [← Lp.edist_def, eDist_eq_eNorm_sub, ← map_sub, LinearIsometry.eNorm_map,
-    ← eDist_eq_eNorm_sub, Lp.edist_def, eLpNorm_congr_ae (hm₁.coeFn_toLp.sub hm₂.coeFn_toLp),
-    ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod (hf₁.sub hf₂)]
+  refine (eLpNorm_congr_ae (Lp.coeFn_sub (hW.l2Integral t (hm₁.toLp f₁))
+    (hW.l2Integral t (hm₂.toLp f₂))).symm).trans ?_
+  rw [← map_sub, ← MemLp.toLp_sub]
+  exact hW.eLpNorm_l2Integral t (hf₁.sub hf₂) (hm₁.sub hm₂)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
