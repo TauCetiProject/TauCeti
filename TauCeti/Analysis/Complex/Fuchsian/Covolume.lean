@@ -34,6 +34,8 @@ form a countable set.
 * `Subgroup.countable_compl_freeLocus`: the points of `ℍ` with nontrivial stabilizer in a
   countable `Γ` form a countable set.
 * `Subgroup.freeLocus_nonempty`: some point of `ℍ` has trivial stabilizer in a countable `Γ`.
+* `Subgroup.nullSingletonClass_map_restrict_quotientMk`: the invariant measure on a subset of `ℍ`,
+  pushed forward to the orbit space of a countable `Γ`, vanishes on points.
 * `Subgroup.exists_isFundamentalDomain`: a discrete `Γ` has a measurable fundamental domain
   whose translates are pairwise disjoint.
 * `Subgroup.card_mul_volume_ball_le_covolume`: balls in `ℍ` with pairwise disjoint
@@ -97,6 +99,24 @@ theorem freeLocus_nonempty [Countable Γ] : (freeLocus Γ ℍ : Set ℍ).Nonempt
   have hnull := volume_compl_freeLocus Γ
   rw [not_nonempty_iff_eq_empty.mp h, compl_empty] at hnull
   exact (isOpen_univ.measure_pos volume univ_nonempty).ne' hnull
+
+/-- **Points of a Fuchsian quotient are null.** For a countable subgroup of `PSL(2, ℝ)`, pushing
+the invariant measure restricted to any subset of `ℍ`, such as a fundamental domain, forward to the
+orbit space gives a measure vanishing on every point: the preimage of a point is an orbit, a
+countable set. In particular the hyperbolic quotient measure has no mass at elliptic points. -/
+instance nullSingletonClass_map_restrict_quotientMk [Countable Γ] (s : Set ℍ) :
+    NullSingletonClass ((volume.restrict s).map (Quotient.mk (orbitRel Γ ℍ))) where
+  measure_singleton q := by
+    induction q using Quotient.inductionOn with
+    | h z =>
+      have hpre : Quotient.mk (orbitRel Γ ℍ) ⁻¹' {Quotient.mk _ z} = orbit Γ z := by
+        ext w
+        simp only [mem_preimage, mem_singleton_iff, Quotient.eq, orbitRel_apply]
+      have hc : (orbit Γ z).Countable := countable_range _
+      rw [Measure.map_apply measurable_quotient_mk''
+        (measurableSet_quotient.mpr (hpre ▸ hc.measurableSet)), hpre]
+      exact nonpos_iff_eq_zero.mp
+        ((Measure.restrict_apply_le _ _).trans (hc.measure_zero volume).le)
 
 /-- **A Fuchsian group has a measurable fundamental domain.** For a discrete subgroup
 `Γ ≤ PSL(2, ℝ)` there is a measurable fundamental domain for its action on `ℍ` whose translates

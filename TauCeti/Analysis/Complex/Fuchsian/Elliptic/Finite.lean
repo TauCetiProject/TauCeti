@@ -86,6 +86,18 @@ theorem quotientMk_mem_ellipticOrbits_iff (z : ℍ) :
   · intro hz
     exact ⟨z, hz, rfl⟩
 
+omit [DiscreteTopology Γ] in
+/-- The orbits that are not elliptic are the orbits of the free locus: removing the elliptic
+orbits from the coarse quotient leaves the image of the points with trivial stabilizer. -/
+theorem compl_ellipticOrbits :
+    Γ.ellipticOrbitsᶜ = Quotient.mk (orbitRel Γ ℍ) '' (freeLocus Γ ℍ : Set ℍ) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h z =>
+    rw [mem_compl_iff, quotientMk_mem_ellipticOrbits_iff, not_not]
+    exact ⟨fun hz ↦ ⟨z, hz, rfl⟩, fun ⟨w, hw, heq⟩ ↦
+      (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ heq).mp hw⟩
+
 /-- The elliptic points of the compactification are precisely the coarse orbits with
 nontrivial stabilizer. -/
 private noncomputable def ellipticCompactified : Set Γ.CompactifiedQuotient :=
