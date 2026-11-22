@@ -382,6 +382,13 @@ theorem snd_snd_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
       p.coeff (Finsupp.single 0 1 + Finsupp.single 1 1) := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
 
+/-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` is surjective onto `R[ε][ε]`. -/
+theorem aeval_inl_eps_eps_surjective :
+    Function.Surjective
+      (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] : MvPolynomial (Fin 2) R →ₐ[R] R[ε][ε]) :=
+  fun z ↦ ⟨C z.fst.fst + C z.fst.snd * X 0 + C z.snd.fst * X 1 + C z.snd.snd * X 0 * X 1, by
+    ext <;> simp [algebraMap_eq_inl']⟩
+
 end DualNumber
 
 end MvPolynomial
@@ -437,13 +444,6 @@ section MvPolynomialQuotient
 
 variable (R : Type*) [CommRing R]
 
-private theorem mk_X_mul_self_eq_zero (i : Fin 2) :
-    let I : Ideal (MvPolynomial (Fin 2) R) :=
-      Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}
-    Ideal.Quotient.mkₐ R I (MvPolynomial.X i) * Ideal.Quotient.mkₐ R I (MvPolynomial.X i) = 0 := by
-  simp only [← sq, ← map_pow, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
-  fin_cases i <;> exact Ideal.subset_span (by simp)
-
 /-- The bivariate polynomial presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]` of the iterated
 dual numbers, sending the residue class of `X 0` to `inl ε` and the residue class of `X 1` to
 `ε`. -/
@@ -451,28 +451,8 @@ noncomputable def iteratedDualNumberMvPolynomialQuotientAlgEquiv :
     (MvPolynomial (Fin 2) R ⧸
         Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}) ≃ₐ[R]
       R[ε][ε] :=
-  let I : Ideal (MvPolynomial (Fin 2) R) :=
-    Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}
-  have hI : ∀ p ∈ I, MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p = 0 := fun _ hp ↦
-    RingHom.mem_ker.mp ((ker_aeval_inl_eps_eps (R := R)).symm ▸ hp)
-  -- `Ideal.Quotient.liftₐ` uses `Ring` quotient instances rather than the `CommRing` shortcut,
-  -- so we rewrite via `liftₐ_comp` before `simp` unfolds `liftₐ_apply`.
-  have hlift (p : MvPolynomial (Fin 2) R) :
-      Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI
-        (Ideal.Quotient.mkₐ R I p) = MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p := by
-    simpa only [AlgHom.comp_apply] using congr($(Ideal.Quotient.liftₐ_comp I _ hI) p)
-  AlgEquiv.ofAlgHom
-    (Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI)
-    (iteratedDualNumberLift ⟨(Ideal.Quotient.mkₐ R I (MvPolynomial.X 0),
-        Ideal.Quotient.mkₐ R I (MvPolynomial.X 1)),
-      mk_X_mul_self_eq_zero R 0, mk_X_mul_self_eq_zero R 1, Commute.all _ _⟩)
-    (iteratedDualNumber_algHom_ext
-      (by simp [-Ideal.Quotient.liftₐ_apply, -Ideal.Quotient.mkₐ_eq_mk, hlift])
-      (by simp [-Ideal.Quotient.liftₐ_apply, -Ideal.Quotient.mkₐ_eq_mk, hlift]))
-    (Ideal.Quotient.algHom_ext _ (by
-      rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
-      refine MvPolynomial.algHom_ext fun i ↦ ?_
-      fin_cases i <;> simp [I]))
+  (Ideal.quotientEquivAlgOfEq R (ker_aeval_inl_eps_eps (R := R)).symm).trans
+    (Ideal.quotientKerAlgEquivOfSurjective MvPolynomial.aeval_inl_eps_eps_surjective)
 
 variable {R}
 
@@ -484,9 +464,8 @@ theorem _root_.MvPolynomial.iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk
     iteratedDualNumberMvPolynomialQuotientAlgEquiv R
         (Ideal.Quotient.mk (Ideal.span {MvPolynomial.X 0 ^ 2, MvPolynomial.X 1 ^ 2}) p) =
       MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p := by
-  simp only [iteratedDualNumberMvPolynomialQuotientAlgEquiv, AlgEquiv.ofAlgHom_apply,
-    Ideal.Quotient.liftₐ_apply]
-  exact Ideal.Quotient.lift_mk _ _ _
+  simp only [iteratedDualNumberMvPolynomialQuotientAlgEquiv, AlgEquiv.trans_apply,
+    Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk]
 
 /-- `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv` sends the residue class of `X 0` to
 `inl ε`. -/

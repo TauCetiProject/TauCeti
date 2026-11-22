@@ -223,6 +223,19 @@ theorem map_infinitesimalSubstAlgEquiv_apply {T : Type*} [CommRing T] (φ : S �
       infinitesimalSubstAlgEquiv (φ e) (by rw [← map_pow, he, map_zero]) (map φ a) (map φ f) := by
   simp [smul_eq_C_mul, derivative_map]
 
+/-- For a ring homomorphism `φ : R →+* S` and a square-zero `e : S`, the parameter `c ∈ R⟦X⟧`
+of `1 + e (map φ c) D` is uniquely determined by the resulting automorphism of `S⟦X⟧` whenever
+`r ↦ e * φ r` is injective. -/
+theorem infinitesimalSubstAlgEquiv_map_injective {R : Type*} [CommRing R] (φ : R →+* S)
+    (he : e ^ 2 = 0) (hφ : Function.Injective fun r : R ↦ e * φ r) :
+    Function.Injective fun c : R⟦X⟧ ↦ infinitesimalSubstAlgEquiv e he (map φ c) := by
+  intro c₁ c₂ h
+  have hX : e • map φ c₁ = e • map φ c₂ := by
+    have := congrArg (fun F : S⟦X⟧ ≃ₐ[S] S⟦X⟧ ↦ F X) h
+    simpa only [infinitesimalSubstAlgEquiv_X, add_right_inj] using this
+  ext n
+  exact hφ <| by simpa only [coeff_smul, coeff_map, smul_eq_mul] using congrArg (coeff n) hX
+
 end SquareZero
 
 namespace FormalCoordinate
@@ -480,25 +493,18 @@ private theorem snd_snd_coeff_inl_eps_mul_eps_smul_map (g : R⟦X⟧) (n : ℕ) 
   rw [map_smul, coeff_map, smul_eq_mul, ← Algebra.commutes, ← Algebra.smul_def,
     snd_snd_smul_inl_eps_mul_eps]
 
-/-- Over `R[ε][ε]`, the `inl ε * ε` coordinate of `(1 + (inl ε * ε) c D) X` is `c`. -/
-private theorem snd_snd_coeff_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_X (c : R⟦X⟧) (n : ℕ) :
-    (coeff n
-      (infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
-        (map (algebraMap R R[ε][ε]) c) X)).snd.snd = coeff n c := by
-  rw [infinitesimalSubstAlgEquiv_X, map_add, TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_add,
-    snd_snd_coeff_inl_eps_mul_eps_smul_map, coeff_X]
-  split_ifs <;> simp
-
 /-- Over `R[ε][ε]`, the parameter `c ∈ R⟦X⟧` of `1 + (inl ε * ε) c D` is uniquely determined by
 the resulting automorphism of `R[ε][ε]⟦X⟧`. -/
 theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective :
     Function.Injective fun c : R⟦X⟧ ↦
       infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
         (map (algebraMap R R[ε][ε]) c) := by
-  intro c₁ c₂ h
-  ext n
-  simpa only [snd_snd_coeff_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_X] using
-    congrArg (fun F : R[ε][ε]⟦X⟧ ↦ (coeff n F).snd.snd) (AlgEquiv.congr_fun h X)
+  have h := @infinitesimalSubstAlgEquiv_map_injective R[ε][ε] _
+    ((inl (ε : R[ε]) : R[ε][ε]) * ε) R _ (algebraMap R R[ε][ε]) inl_eps_mul_eps_pow_two
+    fun _ _ h ↦ smul_inl_eps_mul_eps_injective <| by
+      dsimp only at h
+      rwa [← Algebra.commutes, ← Algebra.smul_def, ← Algebra.commutes, ← Algebra.smul_def] at h
+  exact h
 
 /-- Over the iterated dual numbers `R[ε][ε]`, the group commutator of `σ₁ = 1 + (inl ε) a D` and
 `σ₂ = 1 + ε b D` in the automorphism group of `R[ε][ε]⟦X⟧` is `1 + (inl ε * ε) (a b' - b a') D`. -/

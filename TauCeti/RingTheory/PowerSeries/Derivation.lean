@@ -12,6 +12,7 @@ import Mathlib.Algebra.Polynomial.Derivation
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.Derivation.Ideal
+import TauCeti.RingTheory.Derivation.Lie
 
 /-!
 # Derivations of formal power series
@@ -110,8 +111,10 @@ theorem mkDerivation_one : mkDerivation R (1 : R⟦X⟧) = d⁄dX := by
 `(a * d⁄dX b - b * d⁄dX a) • d⁄dX`. -/
 @[simp]
 theorem lie_mkDerivation (a b : R⟦X⟧) :
-    ⁅mkDerivation R a, mkDerivation R b⁆ = mkDerivation R (a * d⁄dX b - b * d⁄dX a) :=
-  derivation_ext <| by simp [Derivation.commutator_apply, mul_comm]
+    ⁅mkDerivation R a, mkDerivation R b⁆ = mkDerivation R (a * d⁄dX b - b * d⁄dX a) := by
+  have h (x : R⟦X⟧) : mkDerivation R x = x • d⁄dX := by
+    rw [← mkDerivation_one, ← (mkDerivation R (M := R⟦X⟧)).map_smul x 1, smul_eq_mul, mul_one]
+  rw [h, h, h, Derivation.lie_smul_self]
 
 variable (R M) in
 /-- For an `X`-adically Hausdorff `R⟦X⟧`-module `M`, `PowerSeries.mkDerivation` is an
