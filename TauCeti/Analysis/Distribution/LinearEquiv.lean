@@ -42,6 +42,8 @@ transforms under them.
 * `Distribution.compCLMOfContinuousLinearEquiv_delta`: `e^* δ_y = |det e|⁻¹ δ_{e⁻¹ y}`.
 * `Distribution.compCLMOfContinuousLinearEquiv_trans`,
   `Distribution.compCLMOfContinuousLinearEquiv_symm_apply_apply`: functoriality.
+* `Distribution.mapCLM_compCLMOfContinuousLinearEquiv`: the pullback commutes with continuous
+  linear maps of the values.
 * `Distribution.complexPairing_compCLMOfContinuousLinearEquiv`: the complex-linear extension of
   `e^* T` to complex test functions is computed by the same formula.
 * `Distribution.transportCLM e h`: for a continuous linear equivalence `e : E' ≃L[ℝ] E` between
@@ -116,6 +118,16 @@ theorem compCLMOfContinuousLinearEquiv_symm_apply_apply (e : E ≃L[ℝ] E) (hVO
   simp only [compCLMOfContinuousLinearEquiv_apply,
     ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, smul_smul, hdet,
     one_smul]
+
+/-- The pullback `e^* T` commutes with applying a continuous linear map to the values. -/
+@[simp]
+theorem mapCLM_compCLMOfContinuousLinearEquiv {F' : Type*} [AddCommGroup F'] [Module ℝ F']
+    [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F')
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (compCLMOfContinuousLinearEquiv e hVO T) =
+      compCLMOfContinuousLinearEquiv e hVO (mapCLM A T) := by
+  ext φ
+  simp
 
 end General
 

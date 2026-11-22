@@ -31,7 +31,8 @@ orientations of these lines for the linearized operators: as the operator varies
 cokernel jump, but the determinant lines fit together into a line bundle, a construction not
 carried out here. This file sets up the pointwise object:
 
-* an isomorphism `f.detLine ≃ R` when `f` is bijective (`LinearMap.detLineEquivOfBijective`);
+* an isomorphism `f.detLine ≃ R` when `f` is bijective (`LinearMap.detLineEquivOfBijective`), and
+  `f.detLine ≃ det (ker f)` when `f` is surjective (`LinearMap.detLineEquivOfSurjective`);
 * the isomorphism `f.detLine ≃ g.detLine` induced by isomorphisms of kernels and of cokernels
   (`LinearMap.detLineCongrKerCoker`);
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
@@ -61,6 +62,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineEquivOfBijective_symm_one_eq_ιMulti_tmul`: the element `1` of the
   determinant line of a bijective map is the empty exterior product of the kernel tensored with
   the trivialization of the determinant line of the cokernel.
+* `LinearMap.detLineEquivOfSurjective`: the determinant line of a surjective map is that of its
+  kernel.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
@@ -80,6 +83,9 @@ the linear algebra itself is standard.
   its determinant.
 * `LinearEquiv.detLineCongr_neg_apply`: negation acts on the determinant line by
   `(-1) ^ finrank R V`.
+* `LinearEquiv.detLineCongr_symm_dualMap_apply_eq_det_symm_smul`,
+  `LinearEquiv.lTensor_detLineCongr_symm_dualMap_apply`: an automorphism `e` acts on the dual of
+  the determinant line, and on the dual factor of `X ⊗ (det W)^*`, by `det e⁻¹`.
 * `LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and
   `e'` of `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
@@ -208,6 +214,25 @@ theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
     LinearEquiv.det_eq_pow_of_forall_eq_smul _ (-1) fun x ↦ by simp, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one]
 
+/-- The dual of the action of the inverse of an automorphism `e` of a free module on its
+determinant line is multiplication by `det e⁻¹`. -/
+theorem detLineCongr_symm_dualMap_apply_eq_det_symm_smul [Module.Free R W] (e : W ≃ₗ[R] W)
+    (φ : Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap φ = LinearMap.det (e.symm : W →ₗ[R] W) • φ := by
+  refine LinearMap.ext fun y ↦ ?_
+  rw [dualMap_apply, detLineCongr_symm, detLineCongr_apply_eq_det_smul, _root_.map_smul,
+    LinearMap.smul_apply]
+
+/-- An automorphism `e` of a free module `W` acts on `X ⊗ (det W)^*` through the dual factor by
+multiplication by `det e⁻¹`. -/
+theorem lTensor_detLineCongr_symm_dualMap_apply [Module.Free R W] {X : Type*} [AddCommGroup X]
+    [Module R X] (e : W ≃ₗ[R] W) (z : X ⊗[R] Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap.lTensor X z = LinearMap.det (e.symm : W →ₗ[R] W) • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    rw [lTensor_tmul, detLineCongr_symm_dualMap_apply_eq_det_symm_smul, TensorProduct.tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
 /-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
 `det e * (det e')⁻¹`. -/
 theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
@@ -216,14 +241,9 @@ theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Mod
       (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    -- The dual factor is precomposed with the inverse of multiplication by `det e'`.
-    have hφ : e'.detLineCongr.symm.dualMap φ = ((LinearEquiv.det e')⁻¹ : Rˣ) • φ := by
-      refine LinearMap.ext fun y ↦ ?_
-      have hy : e'.detLineCongr.symm y = ((LinearEquiv.det e')⁻¹ : Rˣ) • y := by
-        rw [LinearEquiv.symm_apply_eq, detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
-          ← Units.smul_def, smul_inv_smul]
-      rw [dualMap_apply, hy, LinearMap.smul_apply, Units.smul_def, Units.smul_def, _root_.map_smul]
-    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul,
+      detLineCongr_symm_dualMap_apply_eq_det_symm_smul, ← LinearEquiv.coe_det,
+      ← LinearEquiv.coe_det, LinearEquiv.det_symm, map_inv]
     simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
   | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
@@ -290,17 +310,45 @@ theorem finrank_quotient_range_eq_zero_of_surjective [Nontrivial R] (hf : Functi
     Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf)
   finrank_zero_of_subsingleton
 
-/-- The determinant line of a bijective linear map is `R`. Kernel and cokernel are zero, so their
-determinant lines are spanned by empty exterior products; the isomorphism sends `1 ⊗ φ` to the
-value of `φ` on the empty exterior product of the cokernel
-(`LinearMap.detLineEquivOfBijective_tmul_ιMulti`). -/
-def detLineEquivOfBijective [Nontrivial R] (hf : Function.Bijective f) : f.detLine ≃ₗ[R] R :=
-  (TensorProduct.congr
-      (TauCeti.detLineEquivOfFinrankEqZero (finrank_ker_eq_zero_of_injective hf.1))
+/-- The determinant line of a surjective linear map is the determinant line of its kernel. The
+cokernel is zero, so the dual of its determinant line is `R`, through evaluation at the empty
+exterior product; the isomorphism sends `x ⊗ φ` to `φ (∧ ∅) • x`
+(`LinearMap.detLineEquivOfSurjective_tmul_ιMulti`). -/
+def detLineEquivOfSurjective [Nontrivial R] (hf : Function.Surjective f) :
+    f.detLine ≃ₗ[R] TauCeti.detLine R (ker f) :=
+  (TensorProduct.congr (LinearEquiv.refl R _)
       ((TauCeti.detLineEquivOfFinrankEqZero
-          (finrank_quotient_range_eq_zero_of_surjective hf.2)).symm.dualMap.trans
+          (finrank_quotient_range_eq_zero_of_surjective hf)).symm.dualMap.trans
         (ringLmapEquivSelf R R R))).trans
-    (TensorProduct.lid R R)
+    (TensorProduct.rid R _)
+
+/-- The cokernel of a surjective map is zero, so every family `w` indexed by `Fin 0` gives the
+empty exterior product, at which the functional `φ` is evaluated. -/
+theorem detLineEquivOfSurjective_tmul_ιMulti [Nontrivial R] (hf : Function.Surjective f)
+    (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f)))
+    (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) :
+    detLineEquivOfSurjective hf (x ⊗ₜ φ) = φ (exteriorPower.ιMulti R _ w) • x := by
+  simp only [detLineEquivOfSurjective, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+    LinearEquiv.refl_apply, TensorProduct.rid_tmul, ringLmapEquivSelf_apply,
+    LinearEquiv.dualMap_apply]
+  congr 2
+  rw [LinearEquiv.symm_apply_eq, TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
+
+/-- The inverse sends `x` to `x ⊗ φ`, for any functional `φ` taking the value `1` on the empty
+exterior product of the cokernel. -/
+theorem detLineEquivOfSurjective_symm_apply [Nontrivial R] (hf : Function.Surjective f)
+    (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f)))
+    (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) (hφ : φ (exteriorPower.ιMulti R _ w) = 1) :
+    (detLineEquivOfSurjective hf).symm x = x ⊗ₜ φ := by
+  rw [LinearEquiv.symm_apply_eq, detLineEquivOfSurjective_tmul_ιMulti hf x φ w, hφ, one_smul]
+
+/-- The determinant line of a bijective linear map is `R`: it is the determinant line of the kernel
+(`LinearMap.detLineEquivOfSurjective`), which is zero, so its determinant line is spanned by the
+empty exterior product. The isomorphism sends `1 ⊗ φ` to the value of `φ` on the empty exterior
+product of the cokernel (`LinearMap.detLineEquivOfBijective_tmul_ιMulti`). -/
+def detLineEquivOfBijective [Nontrivial R] (hf : Function.Bijective f) : f.detLine ≃ₗ[R] R :=
+  (detLineEquivOfSurjective hf.2).trans
+    (TauCeti.detLineEquivOfFinrankEqZero (finrank_ker_eq_zero_of_injective hf.1))
 
 /-- The cokernel of a bijective map is zero, so every family `w` indexed by `Fin 0` gives the empty
 exterior product, at which the functional `φ` is evaluated. -/
@@ -310,11 +358,9 @@ theorem detLineEquivOfBijective_tmul_ιMulti [Nontrivial R] (hf : Function.Bijec
     (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) :
     detLineEquivOfBijective hf (exteriorPower.ιMulti R _ v ⊗ₜ φ) =
       φ (exteriorPower.ιMulti R _ w) := by
-  simp only [detLineEquivOfBijective, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    TauCeti.detLineEquivOfFinrankEqZero_ιMulti, TensorProduct.lid_tmul, one_smul,
-    ringLmapEquivSelf_apply, LinearEquiv.dualMap_apply]
-  congr 1
-  rw [LinearEquiv.symm_apply_eq, TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
+  rw [detLineEquivOfBijective, LinearEquiv.trans_apply,
+    detLineEquivOfSurjective_tmul_ιMulti hf.2 _ _ w, map_smul,
+    TauCeti.detLineEquivOfFinrankEqZero_ιMulti, smul_eq_mul, mul_one]
 
 /-- The inverse sends `1` to `v ⊗ φ`, for the empty exterior product `v` of the kernel and any
 functional `φ` taking the value `1` on the empty exterior product of the cokernel. -/

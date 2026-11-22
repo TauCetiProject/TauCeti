@@ -65,6 +65,8 @@ form, over `s < t`, is the restriction to the half plane.
 * `TauCeti.hasSum_setIntegral_timeShell`: the decomposition of a double integral over the
   shells `ρ = 2ʲ`.
 * `TauCeti.setIntegral_timeShell_inner_eq_conj`: the shell pairings are conjugate symmetric.
+* `TauCeti.enorm_inner_integral_le_tsum`: the pairing of two time integrals is at most the sum of
+  the absolute values of its shell pieces.
 * `TauCeti.setLIntegral_timeShell_enorm_inner_adjoint_le`: the bound at equal exponents.
 * `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le`,
   `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le'`: the bounds with an energy factor.
@@ -193,6 +195,24 @@ theorem setIntegral_timeShell_inner_eq_conj {𝕜 V : Type*} [RCLike 𝕜] [Norm
   conv_rhs => rw [← Measure.measurePreserving_swap.setIntegral_preimage_emb
     MeasurableEquiv.prodComm.measurableEmbedding _ (timeShell ρ), hswap]
   simp only [Prod.fst_swap, Prod.snd_swap, inner_conj_symm]
+
+/-- The pairing of two time integrals is at most the sum over the dyadic time shells of the
+absolute values of its pieces. -/
+theorem enorm_inner_integral_le_tsum {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [CompleteSpace V] [NormedSpace ℝ V] {f g : ℝ → V} (hf : Integrable f)
+    (hg : Integrable g) :
+    ‖⟪∫ s, f s, ∫ t, g t⟫_𝕜‖ₑ ≤
+      ∑' j : ℤ, ‖∫ z in timeShell ((2 : ℝ) ^ j), ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
+  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪f z.1, g z.2⟫_𝕜) (volume.prod volume) :=
+    hf.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
+      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hg
+  have heq : ⟪∫ s, f s, ∫ t, g t⟫_𝕜 = ∫ z, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) := by
+    rw [integral_prod _ hφ]
+    simp_rw [integral_inner hg]
+    rw [← inner_conj_symm, ← integral_inner hf, ← integral_conj]
+    simp_rw [inner_conj_symm]
+  rw [heq, ← (hasSum_setIntegral_timeShell hφ).tsum_eq]
+  exact eNorm_tsum_le_tsum_eNorm
 
 variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
