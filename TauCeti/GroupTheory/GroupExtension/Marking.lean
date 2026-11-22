@@ -1,0 +1,508 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.Conj
+public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.PresentedGroup
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.Algebra.Quandle
+public import TauCeti.GroupTheory.GroupExtension.UniversalCentralExtension
+import TauCeti.Algebra.Group.Conj
+
+/-!
+# Marked central extensions and the universal marked extension
+
+Let `c` be a subset of a group `G`, usually stable under conjugation. A *`c`-marking* of a
+homomorphism `p : E →* G` chooses, for each `x ∈ c`, a lift `s x ∈ E` of `x`, equivariantly for
+conjugation: if `e ∈ E` lies over `g` and `y = g x g⁻¹`, then `s y = e (s x) e⁻¹`. A *`c`-marked
+central extension* of `G` is a central extension `p` (`MonoidHom.IsCentralExtension`) together
+with a `c`-marking, and a morphism of marked central extensions is a homomorphism over `G` that
+carries one marking to the other; it need not identify the kernels. Equivalently, a marking is a
+conjugation-invariant subset of `E` that `p` maps bijectively onto `c`.
+
+The *universal marked extension* `U(G, c)` is the group presented by generators `[x]`, `x ∈ c`,
+and the relations `[x][y][x]⁻¹ = [x y x⁻¹]`. No relation `[x] ^ (orderOf x) = 1` is imposed, and
+indeed every generator has infinite order. The projection `[x] ↦ x` is a central extension when
+`c` generates `G`, `x ↦ [x]` is a marking of it, and it is initial among `c`-marked extensions:
+for every marking `s` of any `p : E →* G` there is exactly one homomorphism `U(G, c) →* E` over
+`G` sending each `[x]` to `s x`. Neither centrality nor generation is needed for this universal
+property.
+
+For a conjugation-invariant `c`, `U(G, c)` is the enveloping group (Mathlib `Rack.EnvelGroup`) of
+the conjugation quandle on `c` (`Quandle.conjOn`), and `TauCeti.ReducedSchur.equivEnvelGroup`
+identifies the two. The presentation is the primary definition here: it is defined for every
+subset `c`, without an invariance hypothesis, and it comes with the `PresentedGroup` API for
+homomorphisms out of it and for generation by the `[x]`.
+
+Let `D = c / G` be the set of conjugacy classes meeting `c`. The *class degree*
+`U(G, c) →* ℤ^D` sends `[x]` to the basis vector of the class of `x`; composed with the map
+`ℤ^D → G^{ab}` that sends the basis vector of a class to the image of any of its elements, it is
+the abelianised projection.
+
+`U(G, c)` carries the lifting invariant of a `c`-valued branch tuple, the ordered product of the
+marked generators of its entries, which Wood uses to classify braid orbits of generating tuples
+with large class multiplicities; the degree records the class multiplicities of the tuple.
+
+## Main definitions
+
+* `MonoidHom.Marking p c`: the `c`-markings of a homomorphism `p : E →* G`.
+* `MonoidHom.Marking.ofBijOn`, `MonoidHom.Marking.equivSet`: markings as conjugation-invariant
+  subsets mapped bijectively onto `c`.
+* `TauCeti.ReducedSchur.universalMarked c`: the universal marked extension `U(G, c)`, a
+  `PresentedGroup` on the relations `TauCeti.ReducedSchur.universalRelations c`.
+* `TauCeti.ReducedSchur.lift`: a map on the generators satisfying the conjugation relations
+  extends to `U(G, c)`.
+* `TauCeti.ReducedSchur.projection c`: the projection `U(G, c) →* G`.
+* `TauCeti.ReducedSchur.equivEnvelGroup`: `U(G, c)` is the enveloping group of the conjugation
+  quandle on `c`.
+* `TauCeti.ReducedSchur.marking`: the marking `x ↦ [x]` of the projection.
+* `MonoidHom.Marking.lift`: the homomorphism `U(G, c) →* E` determined by a marking.
+* `TauCeti.ReducedSchur.classSet c`, `TauCeti.ReducedSchur.degree c`: the classes `D` meeting `c`
+  and the class degree `U(G, c) →* ℤ^D`.
+* `TauCeti.ReducedSchur.degreeToAbelianization c`: the map `ℤ^D → G^{ab}`.
+
+## Main results
+
+* `MonoidHom.Marking.existsUnique_comp_eq_and_forall_apply_of`: `U(G, c)` is initial among
+  `c`-marked extensions.
+* `TauCeti.ReducedSchur.of_eq_mul_of_mul_inv`: conjugating a generator by any `w ∈ U(G, c)`
+  gives the generator of the conjugate by the projection of `w`.
+* `TauCeti.ReducedSchur.isCentralExtension_projection`: the projection is a central extension when
+  `c` is conjugation-invariant and generates `G`.
+* `TauCeti.ReducedSchur.not_isOfFinOrder_of`: the generators have infinite order.
+* `TauCeti.ReducedSchur.degreeToAbelianization_degree`: the degree followed by `ℤ^D → G^{ab}` is
+  the abelianised projection, and `TauCeti.ReducedSchur.degreeToAbelianization_surjective` when
+  `c` generates `G`.
+
+## References
+
+* M. M. Wood, *An algebraic lifting invariant of Ellenberg, Venkatesh, and Westerland*, Res.
+  Math. Sci. 8 (2021), §2.
+* M. D. Fried, H. Völklein, *The inverse Galois problem and rational points on moduli spaces*,
+  Math. Ann. 290 (1991), Appendix.
+-/
+
+public section
+
+open Subgroup
+
+namespace MonoidHom
+
+variable {E G H : Type*} [Group E] [Group G] [Group H]
+
+/-- A **`c`-marking** of a homomorphism `p : E →* G`: a lift `s x ∈ E` of each `x ∈ c` such that
+`s (g x g⁻¹) = e (s x) e⁻¹` whenever `e ∈ E` lies over `g`. A `c`-marked central extension is a
+central extension `p` (`MonoidHom.IsCentralExtension`) together with a `c`-marking of `p`. -/
+structure Marking (p : E →* G) (c : Set G) where
+  /-- The marked lift of an element of `c`. -/
+  toFun : c → E
+  /-- The marked lift of `x` lies over `x`. -/
+  map_toFun' (x : c) : p (toFun x) = x
+  /-- The marking is equivariant for conjugation. -/
+  toFun_conj' (e : E) (x y : c) (h : (y : G) = p e * x * (p e)⁻¹) :
+    toFun y = e * toFun x * e⁻¹
+
+namespace Marking
+
+variable {p : E →* G} {c : Set G}
+
+instance : FunLike (p.Marking c) c E where
+  coe := toFun
+  coe_injective s t h := by
+    cases s
+    cases t
+    congr
+
+@[simp]
+theorem toFun_eq_coe (s : p.Marking c) : s.toFun = s :=
+  rfl
+
+@[ext]
+theorem ext {s t : p.Marking c} (h : ∀ x, s x = t x) : s = t :=
+  DFunLike.ext _ _ h
+
+/-- The marked lift of `x` lies over `x`. -/
+@[simp]
+theorem map_apply (s : p.Marking c) (x : c) : p (s x) = x :=
+  s.map_toFun' x
+
+/-- If `e` lies over `g`, the marked lift of `g x g⁻¹` is `e` conjugate of the marked lift of
+`x`. -/
+theorem apply_eq_mul_apply_mul_inv (s : p.Marking c) (e : E) {x y : c}
+    (h : (y : G) = p e * x * (p e)⁻¹) : s y = e * s x * e⁻¹ :=
+  s.toFun_conj' e x y h
+
+/-- Distinct elements of `c` have distinct marked lifts. -/
+theorem injective (s : p.Marking c) : Function.Injective s := fun x y h ↦
+  Subtype.ext (by simpa using congr_arg p h)
+
+/-- The marked lifts form a subset of `E` that `p` maps bijectively onto `c`. -/
+theorem bijOn_range (s : p.Marking c) : Set.BijOn p (Set.range s) c := by
+  refine ⟨?_, ?_, fun x hx ↦ ⟨s ⟨x, hx⟩, Set.mem_range_self _, s.map_apply _⟩⟩
+  · rintro _ ⟨x, rfl⟩
+    simp
+  · rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ h
+    rw [Subtype.ext (by simpa using h : (x : G) = y)]
+
+/-- When `c` is conjugation-invariant, the set of marked lifts is conjugation-invariant. -/
+theorem mul_apply_mul_inv_mem_range (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (s : p.Marking c)
+    (e : E) (x : c) : e * s x * e⁻¹ ∈ Set.range s :=
+  ⟨⟨p e * x * (p e)⁻¹, hc _ _ x.property⟩, s.apply_eq_mul_apply_mul_inv e rfl⟩
+
+/-- Two homomorphisms out of `E` agree if they agree on the marked lifts, provided these
+generate `E`. -/
+theorem hom_ext (s : p.Marking c) (hs : closure (Set.range s) = ⊤) {f f' : E →* H}
+    (h : ∀ x, f (s x) = f' (s x)) : f = f' :=
+  eq_of_eqOn_dense hs (by rintro _ ⟨x, rfl⟩; exact h x)
+
+section OfBijOn
+
+variable {S : Set E} (hS : ∀ e, ∀ y ∈ S, e * y * e⁻¹ ∈ S) (h : Set.BijOn p S c)
+
+/-- The marking given by a conjugation-invariant subset `S` of `E` that `p` maps bijectively onto
+`c`: the marked lift of `x` is the element of `S` over `x`. -/
+noncomputable def ofBijOn : p.Marking c where
+  toFun x := (h.surjOn x.property).choose
+  map_toFun' x := (h.surjOn x.property).choose_spec.2
+  toFun_conj' e x y hy := by
+    have hx := (h.surjOn x.property).choose_spec
+    have hy' := (h.surjOn y.property).choose_spec
+    exact h.injOn hy'.1 (hS e _ hx.1) (by rw [hy'.2, hy]; simp [hx.2])
+
+theorem ofBijOn_mem (x : c) : ofBijOn hS h x ∈ S :=
+  (h.surjOn x.property).choose_spec.1
+
+/-- The marking given by `S` is the element of `S` over `x`. -/
+theorem ofBijOn_eq_iff {x : c} {e : E} (he : e ∈ S) : ofBijOn hS h x = e ↔ p e = x :=
+  ⟨fun hx ↦ hx ▸ (ofBijOn hS h).map_apply x, fun hx ↦
+    h.injOn (ofBijOn_mem hS h x) he (by rw [map_apply, hx])⟩
+
+@[simp]
+theorem range_ofBijOn : Set.range (ofBijOn hS h) = S := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 (ofBijOn_mem hS h)) fun e he ↦ ?_
+  exact ⟨⟨p e, h.mapsTo he⟩, (ofBijOn_eq_iff hS h he).2 rfl⟩
+
+end OfBijOn
+
+/-- For a conjugation-invariant `c`, the `c`-markings of `p` are the conjugation-invariant
+subsets of `E` that `p` maps bijectively onto `c`. -/
+noncomputable def equivSet (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) :
+    p.Marking c ≃ {S : Set E // (∀ e, ∀ y ∈ S, e * y * e⁻¹ ∈ S) ∧ Set.BijOn p S c} where
+  toFun s := ⟨Set.range s, by
+    rintro e _ ⟨x, rfl⟩
+    exact s.mul_apply_mul_inv_mem_range hc e x, s.bijOn_range⟩
+  invFun S := ofBijOn S.property.1 S.property.2
+  left_inv s := ext fun x ↦ (ofBijOn_eq_iff _ s.bijOn_range (Set.mem_range_self x)).2 (by simp)
+  right_inv S := Subtype.ext (range_ofBijOn S.property.1 S.property.2)
+
+@[simp]
+theorem coe_equivSet_apply (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (s : p.Marking c) :
+    (equivSet hc s : Set E) = Set.range s :=
+  (rfl)
+
+@[simp]
+theorem equivSet_symm_apply (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c)
+    (S : {S : Set E // (∀ e, ∀ y ∈ S, e * y * e⁻¹ ∈ S) ∧ Set.BijOn p S c}) :
+    (equivSet hc).symm S = ofBijOn S.property.1 S.property.2 :=
+  (rfl)
+
+/-- The inclusion of `c` is a `c`-marking of the identity of `G`. -/
+def inclusion (c : Set G) : (MonoidHom.id G).Marking c where
+  toFun := Subtype.val
+  map_toFun' _ := rfl
+  toFun_conj' _ _ _ h := h
+
+@[simp]
+theorem inclusion_apply (c : Set G) (x : c) : inclusion c x = x :=
+  (rfl)
+
+end Marking
+
+end MonoidHom
+
+namespace TauCeti
+
+namespace ReducedSchur
+
+variable {G H : Type*} [Group G] [Group H]
+
+/-- The relations `[x][y][x]⁻¹ = [z]`, for `x, y, z ∈ c` with `z = x y x⁻¹`, of the universal
+marked extension. -/
+def universalRelations (c : Set G) : Set (FreeGroup c) :=
+  {w | ∃ x y z : c, (z : G) = x * y * (x : G)⁻¹ ∧
+    w = FreeGroup.of x * FreeGroup.of y * (FreeGroup.of x)⁻¹ * (FreeGroup.of z)⁻¹}
+
+/-- The **universal marked extension** `U(G, c)`: the group on generators `[x]`, `x ∈ c`, subject
+only to the conjugation relations `[x][y][x]⁻¹ = [x y x⁻¹]`. -/
+abbrev universalMarked (c : Set G) : Type _ :=
+  PresentedGroup (universalRelations c)
+
+variable {c : Set G}
+
+/-- The conjugation relations hold between the generators of `U(G, c)`. -/
+theorem of_eq_of_mul_of_mul_inv {x y z : c} (h : (z : G) = x * y * (x : G)⁻¹) :
+    (PresentedGroup.of z : universalMarked c) =
+      PresentedGroup.of x * PresentedGroup.of y * (PresentedGroup.of x)⁻¹ := by
+  have := PresentedGroup.one_of_mem (rels := universalRelations c) ⟨x, y, z, h, rfl⟩
+  simp only [map_mul, map_inv] at this
+  exact (mul_inv_eq_one.1 this).symm
+
+/-- A map on the generators of `U(G, c)` satisfying the conjugation relations extends to a
+homomorphism. -/
+def lift (f : c → H)
+    (hf : ∀ x y z : c, (z : G) = x * y * (x : G)⁻¹ → f z = f x * f y * (f x)⁻¹) :
+    universalMarked c →* H :=
+  PresentedGroup.toGroup (f := f) <| by
+    rintro _ ⟨x, y, z, h, rfl⟩
+    simp [hf x y z h]
+
+@[simp]
+theorem lift_of (f : c → H)
+    (hf : ∀ x y z : c, (z : G) = x * y * (x : G)⁻¹ → f z = f x * f y * (f x)⁻¹) (x : c) :
+    lift f hf (PresentedGroup.of x) = f x :=
+  PresentedGroup.toGroup.of _
+
+variable (c) in
+/-- The projection `U(G, c) →* G`, `[x] ↦ x`. -/
+def projection : universalMarked c →* G :=
+  lift Subtype.val fun _ _ _ h ↦ h
+
+@[simp]
+theorem projection_of (x : c) : projection c (PresentedGroup.of x) = x :=
+  lift_of _ _ x
+
+/-- The projection of `U(G, c)` is surjective when `c` generates `G`. -/
+theorem projection_surjective (hgen : closure c = ⊤) : Function.Surjective (projection c) := by
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← hgen, closure_le]
+  exact fun x hx ↦ ⟨PresentedGroup.of ⟨x, hx⟩, projection_of _⟩
+
+/-- **Conjugation of a generator.** For a conjugation-invariant `c` and any `w ∈ U(G, c)`,
+`w [x] w⁻¹ = [π(w) x π(w)⁻¹]`, where `π` is the projection. -/
+theorem of_eq_mul_of_mul_inv (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (w : universalMarked c)
+    {x y : c} (h : (y : G) = projection c w * x * (projection c w)⁻¹) :
+    (PresentedGroup.of y : universalMarked c) = w * PresentedGroup.of x * w⁻¹ := by
+  have hw : w ∈ closure (Set.range PresentedGroup.of) := by
+    rw [PresentedGroup.closure_range_of]
+    exact mem_top w
+  induction hw using closure_induction generalizing x y with
+  | mem _ ha =>
+    obtain ⟨a, rfl⟩ := ha
+    exact of_eq_of_mul_of_mul_inv (by simpa using h)
+  | one =>
+    simp only [map_one, one_mul, inv_one, mul_one] at h ⊢
+    rw [Subtype.ext h]
+  | mul a b _ _ iha ihb =>
+    rw [iha (x := ⟨projection c b * x * (projection c b)⁻¹, hc _ _ x.property⟩)
+      (by simp [h, mul_assoc]), ihb rfl]
+    group
+  | inv a _ iha =>
+    rw [iha (x := y) (y := x) (by simp [h, mul_assoc]), inv_inv]
+    group
+
+/-- When `c` is conjugation-invariant, `x ↦ [x]` is a `c`-marking of the projection of
+`U(G, c)`. -/
+def marking (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) : (projection c).Marking c where
+  toFun := PresentedGroup.of
+  map_toFun' := projection_of
+  toFun_conj' w _ _ h := of_eq_mul_of_mul_inv hc w h
+
+@[simp]
+theorem marking_apply (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (x : c) :
+    marking hc x = PresentedGroup.of x :=
+  (rfl)
+
+/-- For a conjugation-invariant `c`, the kernel of the projection of `U(G, c)` is central. -/
+theorem ker_projection_le_center (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) :
+    (projection c).ker ≤ center (universalMarked c) := by
+  intro w hw
+  have hgen : closure (Set.range PresentedGroup.of) ≤ centralizer {w} := by
+    refine (closure_le _).2 ?_
+    rintro _ ⟨x, rfl⟩
+    rw [SetLike.mem_coe, mem_centralizer_singleton_iff]
+    exact eq_mul_inv_iff_mul_eq.1
+      (of_eq_mul_of_mul_inv hc w (x := x) (y := x) (by simp [(MonoidHom.mem_ker).1 hw]))
+  rw [PresentedGroup.closure_range_of] at hgen
+  exact mem_center_iff.2 fun u ↦ (mem_centralizer_singleton_iff.1 (hgen (mem_top u))).eq
+
+/-- **The universal marked extension is a central extension** when `c` is conjugation-invariant
+and generates `G`. -/
+theorem isCentralExtension_projection (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c)
+    (hgen : closure c = ⊤) : (projection c).IsCentralExtension :=
+  ⟨projection_surjective hgen, ker_projection_le_center hc⟩
+
+/-! ### Comparison with the enveloping group of the conjugation quandle -/
+
+/-- For a conjugation-invariant `c`, `U(G, c)` is Mathlib's enveloping group `Rack.EnvelGroup` of
+the conjugation quandle on `c`, the generator `[x]` corresponding to the image of `x`. -/
+noncomputable def equivEnvelGroup (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) :
+    universalMarked c ≃* @Rack.EnvelGroup c (Quandle.conjOn c hc).toRack :=
+  letI := Quandle.conjOn c hc
+  let F : ShelfHom c (Quandle.Conj (universalMarked c)) :=
+    ⟨PresentedGroup.of, fun {x y} ↦ of_eq_of_mul_of_mul_inv (Quandle.coe_conjOn_act x y)⟩
+  let φ : universalMarked c →* Rack.EnvelGroup c := lift (Rack.toEnvelGroup c) fun x y z h ↦ by
+    rw [show z = Shelf.act x y from Subtype.ext h]
+    exact (Rack.toEnvelGroup c).map_act
+  have hφ (x : c) : φ (PresentedGroup.of x) = Rack.toEnvelGroup c x := lift_of _ _ x
+  -- `Quandle.Conj.map g` and `F` act on elements as `g` and `PresentedGroup.of`.
+  have hF (x : c) : Rack.toEnvelGroup.map F (Rack.toEnvelGroup c x) = PresentedGroup.of x :=
+    congr($(Rack.toEnvelGroup.univ c _ F).toFun x)
+  MonoidHom.toMulEquiv φ (Rack.toEnvelGroup.map F)
+    (PresentedGroup.ext fun x ↦ by simp [hφ, hF])
+    ((Rack.toEnvelGroup.univ_uniq c _ _ _ (ShelfHom.ext <| funext fun x ↦
+      ((congrArg φ (hF x)).trans (hφ x)).symm)).trans
+      (Rack.toEnvelGroup.univ_uniq c _ _ _ (ShelfHom.ext rfl)).symm)
+
+@[simp]
+theorem equivEnvelGroup_of (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (x : c) :
+    equivEnvelGroup hc (PresentedGroup.of x) =
+      @Rack.toEnvelGroup c (Quandle.conjOn c hc).toRack x := by
+  simp [equivEnvelGroup]
+
+end ReducedSchur
+
+end TauCeti
+
+namespace MonoidHom.Marking
+
+open TauCeti.ReducedSchur
+
+variable {E G : Type*} [Group E] [Group G] {p : E →* G} {c : Set G}
+
+/-- The homomorphism `U(G, c) →* E` sending `[x]` to the marked lift of `x`. -/
+def lift (s : p.Marking c) : universalMarked c →* E :=
+  TauCeti.ReducedSchur.lift s fun x _ _ h ↦ s.apply_eq_mul_apply_mul_inv (s x) (by simpa using h)
+
+@[simp]
+theorem lift_of (s : p.Marking c) (x : c) : s.lift (PresentedGroup.of x) = s x :=
+  TauCeti.ReducedSchur.lift_of _ _ x
+
+/-- The homomorphism determined by a marking lies over `G`. -/
+@[simp]
+theorem comp_lift (s : p.Marking c) : p.comp s.lift = projection c := by
+  ext x
+  simp
+
+/-- A homomorphism out of `U(G, c)` is the one determined by `s` exactly when it sends each
+generator `[x]` to the marked lift of `x`. -/
+theorem eq_lift_iff (s : p.Marking c) {f : universalMarked c →* E} :
+    f = s.lift ↔ ∀ x, f (PresentedGroup.of x) = s x :=
+  ⟨by rintro rfl; simp, fun h ↦ PresentedGroup.ext fun x ↦ by simp [h]⟩
+
+/-- **`U(G, c)` is initial among `c`-marked extensions**: for every `c`-marking `s` of a
+homomorphism `p : E →* G` there is exactly one homomorphism `U(G, c) →* E` over `G` sending each
+generator `[x]` to `s x`. -/
+theorem existsUnique_comp_eq_and_forall_apply_of (s : p.Marking c) :
+    ∃! f : universalMarked c →* E, p.comp f = projection c ∧
+      ∀ x, f (PresentedGroup.of x) = s x :=
+  ⟨s.lift, ⟨s.comp_lift, s.lift_of⟩, fun _ hf ↦ s.eq_lift_iff.2 hf.2⟩
+
+@[simp]
+theorem lift_marking (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) :
+    (marking hc).lift = MonoidHom.id (universalMarked c) := by
+  ext x
+  simp
+
+@[simp]
+theorem lift_inclusion : (inclusion c).lift = projection c := by
+  ext x
+  simp
+
+end MonoidHom.Marking
+
+namespace TauCeti
+
+namespace ReducedSchur
+
+variable {G : Type*} [Group G]
+
+/-! ### The class degree -/
+
+/-- The conjugacy classes meeting `c`, the index set `D = c / G` of the class degree. -/
+def classSet (c : Set G) : Set (ConjClasses G) :=
+  ConjClasses.mk '' c
+
+variable {c : Set G}
+
+/-- The class of an element of `c`, as an element of `D = c / G`. -/
+def toClassSet (x : c) : classSet c :=
+  ⟨ConjClasses.mk x, x, x.property, rfl⟩
+
+@[simp]
+theorem coe_toClassSet (x : c) : (toClassSet x : ConjClasses G) = ConjClasses.mk (x : G) :=
+  (rfl)
+
+theorem toClassSet_surjective : Function.Surjective (toClassSet (c := c)) := by
+  rintro ⟨_, x, hx, rfl⟩
+  exact ⟨⟨x, hx⟩, rfl⟩
+
+theorem toClassSet_eq_toClassSet_iff {x y : c} : toClassSet x = toClassSet y ↔ IsConj (x : G) y :=
+  Subtype.ext_iff.trans ConjClasses.mk_eq_mk_iff_isConj
+
+variable (c) in
+/-- The **class degree** `U(G, c) →* ℤ^D`, sending each generator `[x]` to the basis vector of the
+class of `x`. The free abelian group `ℤ^D` is written multiplicatively. -/
+noncomputable def degree : universalMarked c →* Multiplicative (classSet c →₀ ℤ) :=
+  lift (fun x ↦ .ofAdd (Finsupp.single (toClassSet x) 1)) fun x y z h ↦ by
+    rw [toClassSet_eq_toClassSet_iff.2 (isConj_iff.2 ⟨(x : G), h.symm⟩).symm,
+      mul_inv_cancel_comm]
+
+@[simp]
+theorem degree_of (x : c) :
+    degree c (PresentedGroup.of x) = .ofAdd (Finsupp.single (toClassSet x) 1) :=
+  lift_of _ _ x
+
+/-- The generators of `U(G, c)` have infinite order: no relation `[x] ^ (orderOf x) = 1` holds. -/
+theorem not_isOfFinOrder_of (x : c) : ¬IsOfFinOrder (PresentedGroup.of x : universalMarked c) := by
+  rw [← orderOf_eq_zero_iff, orderOf_eq_zero_iff']
+  intro n hn h
+  have := congr(Multiplicative.toAdd (degree c $h) (toClassSet x))
+  simp at this
+  omega
+
+variable (c) in
+/-- The map `ℤ^D → G^{ab}` sending the basis vector of a class to the image of any of its
+elements in the abelianization. -/
+noncomputable def degreeToAbelianization :
+    (classSet c →₀ ℤ) →ₗ[ℤ] Additive (Group.Abelianization G) :=
+  Finsupp.linearCombination ℤ fun d ↦
+    .ofMul (ConjClasses.mkEquiv.symm (ConjClasses.map Group.Abelianization.of d.val))
+
+@[simp]
+theorem degreeToAbelianization_single (x : c) (n : ℤ) :
+    degreeToAbelianization c (Finsupp.single (toClassSet x) n) =
+      n • .ofMul (Group.Abelianization.of (x : G)) := by
+  rw [degreeToAbelianization, Finsupp.linearCombination_single, coe_toClassSet,
+    ConjClasses.map_mk]
+  -- The forward map of `ConjClasses.mkEquiv` is `ConjClasses.mk` by definition.
+  exact congr_arg (n • Additive.ofMul ·) (ConjClasses.mkEquiv.symm_apply_apply _)
+
+/-- **The degree followed by `ℤ^D → G^{ab}` is the abelianised projection.** -/
+theorem degreeToAbelianization_degree (u : universalMarked c) :
+    degreeToAbelianization c (degree c u).toAdd =
+      .ofMul (Group.Abelianization.of (projection c u)) := by
+  have hu : u ∈ closure (Set.range PresentedGroup.of) := by
+    rw [PresentedGroup.closure_range_of]
+    exact mem_top u
+  induction hu using closure_induction with
+  | mem _ ha =>
+    obtain ⟨x, rfl⟩ := ha
+    simp
+  | one => simp
+  | mul a b _ _ iha ihb => simp [iha, ihb]
+  | inv a _ iha => simp [iha]
+
+/-- When `c` generates `G`, every element of `G^{ab}` is the image of a degree vector. -/
+theorem degreeToAbelianization_surjective (hgen : closure c = ⊤) :
+    Function.Surjective (degreeToAbelianization c) := by
+  intro a
+  obtain ⟨g, hg⟩ := Group.Abelianization.surjective_of G a.toMul
+  obtain ⟨u, rfl⟩ := projection_surjective hgen g
+  exact ⟨(degree c u).toAdd, by rw [degreeToAbelianization_degree, hg, ofMul_toMul]⟩
+
+end ReducedSchur
+
+end TauCeti
