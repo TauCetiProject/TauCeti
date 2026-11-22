@@ -93,7 +93,7 @@ theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
   rw [ProbabilityTheory.cond,
     Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
   ext x
-  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+  simp only [Measure.mem_support_iff_measure_singleton_pos, isOpen_discrete, Set.mem_inter_iff,
     Measure.restrict_apply (measurableSet_singleton x)]
   by_cases hx : x ∈ s <;> simp [hx]
 

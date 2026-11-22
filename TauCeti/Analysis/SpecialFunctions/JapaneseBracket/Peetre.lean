@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Peetre's inequality for the Japanese bracket
@@ -37,6 +39,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s ⟨y⟩ ^ |s|`.
 * `TauCeti.one_add_norm_sq_rpow_le_mul_sub`: the equivalent form
   `⟨x⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_mem_segment`: along a segment, `⟨ξ⟩ ≤ √2 (1 + ‖w‖) ⟨ξ - η⟩`
+  for `w` between `ξ` and `η`.
 * `TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_left`,
   `TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_right`: the two-weight forms
   `⟨x⟩ ^ r ⟨y⟩ ^ (-s) ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨x⟩ ^ (r - s)` and
@@ -62,6 +66,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
 * `TauCeti.one_add_norm_sq_rpow_le_mul_one_add_norm_pow`: `⟨x⟩ ^ a ≤ ⟨x⟩ ^ b (1 + ‖x‖) ^ N` for
   `a ≤ b + N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
+* `TauCeti.one_add_norm_sq_rpow_le_one`: `⟨x⟩ ^ s ≤ 1` for `s ≤ 0`.
 * `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
   `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
@@ -140,6 +145,22 @@ theorem one_add_norm_sq_rpow_le_mul_sub [SeminormedAddCommGroup E] (s : ℝ) (x 
   have h := one_add_norm_add_sq_rpow_le_mul s y (x - y)
   rw [add_sub_cancel] at h
   linarith
+
+omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality along a segment**: for `w` on the segment from `ξ` to `η`,
+`⟨ξ⟩ ≤ √2 (1 + ‖w‖) ⟨ξ - η⟩`. -/
+theorem one_add_norm_sq_rpow_le_of_mem_segment [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {ξ η w : E} (hw : w ∈ segment ℝ ξ η) :
+    (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) ≤ √2 * (1 + ‖w‖) * (1 + ‖ξ - η‖ ^ 2) ^ (1 / 2 : ℝ) := by
+  have hP := one_add_norm_add_sq_rpow_le_mul 1 w (ξ - w)
+  rw [add_sub_cancel, abs_one, ← Real.sqrt_eq_rpow 2] at hP
+  have hw' : (1 + ‖w‖ ^ 2) ^ (1 / 2 : ℝ) ≤ 1 + ‖w‖ := by
+    rw [← Real.sqrt_eq_rpow, Real.sqrt_le_left (by positivity)]
+    nlinarith [norm_nonneg w]
+  have hseg : ‖ξ - w‖ ≤ ‖ξ - η‖ := by
+    simpa only [norm_sub_rev w ξ, norm_sub_rev η ξ] using norm_sub_le_of_mem_segment hw
+  refine hP.trans ?_
+  gcongr
 
 omit [SeminormedAddGroup E] in
 /-- **Peetre's inequality** for a pair of weights, with the decay in `x`:
@@ -350,6 +371,10 @@ theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :
     (1 + ‖x‖ ^ 2) ^ ((s + t) / 2) = (1 + ‖x‖ ^ 2) ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (t / 2) := by
   rw [← Real.rpow_add (by positivity)]
   ring_nf
+
+/-- A nonpositive power of the Japanese bracket is at most `1`: `⟨x⟩ ^ s ≤ 1` for `s ≤ 0`. -/
+theorem one_add_norm_sq_rpow_le_one (x : E) {s : ℝ} (hs : s ≤ 0) : (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ 1 :=
+  Real.rpow_le_one_of_one_le_of_nonpos (by simp) (by linarith)
 
 /-- Opposite powers of the Japanese bracket cancel: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`. -/
 theorem one_add_norm_sq_rpow_neg_mul_rpow (x : E) (s : ℝ) :
