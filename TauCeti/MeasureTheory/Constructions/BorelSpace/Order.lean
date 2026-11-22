@@ -56,20 +56,21 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 /-- Two measures finite on initial intervals are equal if they agree on all initial intervals.
-Unlike `Measure.ext_of_Iic`, this does not require finite total mass. The proof follows Mathlib's
-`Measure.ext_of_Ico'`: the intervals `Iic a` with `a` in a countable dense set form a countable
-cover of `α` by sets of finite mass, so `Measure.ext_of_generateFrom_of_cover_subset` applies. -/
+Unlike `Measure.ext_of_Iic`, this does not require finite total mass. -/
 theorem ext_of_Iic' {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
     (μ ν : Measure α) (hμ : ∀ a, μ (Iic a) ≠ ∞)
     (h : ∀ a, μ (Iic a) = ν (Iic a)) : μ = ν := by
+  -- This follows Mathlib's `Measure.ext_of_Ico'`: the intervals `Iic a` with `a` in a countable
+  -- dense set `s` form a countable cover of `α` by sets of finite mass, so
+  -- `Measure.ext_of_generateFrom_of_cover_subset` applies.
   obtain ⟨s, hs, hd, -, htop⟩ := exists_countable_dense_bot_top α
-  -- The intervals `Iic a` with `a` in the countable dense set `s` cover `α`, since `s` is
-  -- cofinal.
+  -- `IsCofinal s` unfolds to `∀ x, ∃ y ∈ s, x ≤ y`, which `Dense.exists_ge'` provides.
+  have hcof : IsCofinal s := fun x => hd.exists_ge' htop x
   exact ext_of_generateFrom_of_cover_subset (T := Iic '' s)
     (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic
     (image_subset_range _ _) (hs.image _)
-    ((sUnion_image _ _).trans (isCofinal_iff_iUnion_Iic_eq_univ.1 (hd.exists_ge' htop)))
+    ((sUnion_image _ _).trans (isCofinal_iff_iUnion_Iic_eq_univ.1 hcof))
     (forall_mem_image.2 fun a _ => hμ a) (forall_mem_range.2 h)
 
 end MeasureTheory.Measure
