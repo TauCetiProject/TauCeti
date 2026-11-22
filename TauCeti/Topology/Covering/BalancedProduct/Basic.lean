@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Topology.Covering.Quotient
 import Mathlib.Tactic.Group
 
@@ -43,6 +44,7 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 * The centre of `G` acts on `E ×_G A` through the labels (`TauCeti.BalancedProduct.center_smul_mk`).
   Along a path of labels whose steps are carried to central translates by `l`, the classes of the
   endpoints differ by a power of `l` (`TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul`).
+* `TauCeti.BalancedProduct.orbitProj`: the projection `⟦e, a⟧ ↦ ⟦a⟧` onto the orbit space of `A`.
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -222,16 +224,9 @@ inverse of the product of the `g i`, is `l ^ n` times the class of the starting 
 theorem mk_inv_prod_ofFn_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G)
     (a : Fin (n + 1) → A) (h : ∀ i, g i • a i.succ = (l : G) • a i.castSucc) (e : E) :
     mk G ((List.ofFn g).prod⁻¹ • e) (a (Fin.last n)) = l ^ n • mk G e (a 0) := by
-  induction n generalizing e with
-  | zero =>
-    rw [List.ofFn_zero, List.prod_nil, inv_one, one_smul, pow_zero, one_smul]
-    rfl
-  | succ n ih =>
-    have ih' := ih (fun i ↦ g i.succ) (fun i ↦ a i.succ)
-      (fun i ↦ by rw [Fin.succ_castSucc]; exact h i.succ) ((g 0)⁻¹ • e)
-    rw [Fin.succ_last] at ih'
-    rw [List.ofFn_succ, List.prod_cons, mul_inv_rev, mul_smul, ih', mk_smul_left, inv_inv]
-    rw [h 0, Fin.castSucc_zero, ← center_smul_mk, ← mul_smul, pow_succ]
+  rw [mk_smul_left, inv_inv,
+    prod_ofFn_smul_eq_pow_smul (fun i ↦ Subgroup.mem_center_iff.mp l.property (g i)) h,
+    ← Subgroup.coe_pow, ← center_smul_mk]
 
 /-- The form of `TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul` in which `e` is first translated by
 `l ^ (n - 1)`: along a path of `n` steps, the class of the endpoint is then `l` times the class of
@@ -280,6 +275,23 @@ theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
     (hf : ∀ (g : G) a, f (g • a) = g • f a) (z : BalancedProduct G E A) :
     proj B hq (mapRight f hf z) = proj A hq z :=
   Quotient.inductionOn z fun _ => rfl
+
+/-! ### The projection onto the orbit space of the labels -/
+
+/-- The projection `⟦e, a⟧ ↦ ⟦a⟧` of the balanced product onto the orbit space of `A`. -/
+def orbitProj : BalancedProduct G E A → MulAction.orbitRel.Quotient G A :=
+  Quotient.map Prod.snd fun _ _ ⟨g, hg⟩ => ⟨g, congrArg Prod.snd hg⟩
+
+@[simp]
+theorem orbitProj_mk (e : E) (a : A) :
+    orbitProj (mk G e a) = Quotient.mk (MulAction.orbitRel G A) a :=
+  (rfl)
+
+theorem orbitProj_surjective [Nonempty E] :
+    Function.Surjective (orbitProj : BalancedProduct G E A → _) := by
+  intro x
+  induction x using Quotient.inductionOn with
+  | h a => exact ⟨mk G (Classical.arbitrary E) a, rfl⟩
 
 section Covering
 

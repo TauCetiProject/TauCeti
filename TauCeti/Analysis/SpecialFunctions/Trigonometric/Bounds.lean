@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `π * x` is positive for `0 < x < 1`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
 Schwarz–Christoffel turns. The sine is nonpositive on `[π, 2π]` and negative on `(π, 2π)`. For
 real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
@@ -142,6 +143,10 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
     sin (π * x) ≠ 0 := by
   rw [Ne, sin_eq_zero_iff_of_lt_of_lt (by nlinarith [hx.1, pi_pos]) (by nlinarith [hx.2, pi_pos])]
   exact mul_ne_zero pi_ne_zero hx0
+
+/-- For `0 < x < 1`, the sine of `π * x` is positive. -/
+theorem sin_pi_mul_pos_of_pos_of_lt_one {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < sin (π * x) :=
+  sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
 
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=

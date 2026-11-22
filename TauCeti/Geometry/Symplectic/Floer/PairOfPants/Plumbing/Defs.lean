@@ -85,6 +85,25 @@ theorem plumbedPerturbation_add (Ha₁ Ha₂ Hb₁ Hb₂ : Puncture → ℝ → 
   simp only [plumbedPerturbation_def, pairOfPantsPerturbation_add, Pi.add_apply]
   split_ifs <;> simp [ContinuousLinearMap.add_comp]
 
+/-- Normalizing the Hamiltonians of the two pairs of pants by functions `ca r`, `cb r` of time adds
+the plumbed perturbation of the target-independent Hamiltonians `ca r`, `cb r`. -/
+theorem plumbedPerturbation_add_const (Ha Hb : Puncture → ℝ → M → ℝ) (ca cb : Puncture → ℝ → ℝ)
+    (q : Puncture) (L : ℝ) (w : ℂ) (x : M) :
+    plumbedPerturbation (fun r t y ↦ Ha r t y + ca r t) (fun r t y ↦ Hb r t y + cb r t) q L w x =
+      plumbedPerturbation Ha Hb q L w x +
+        plumbedPerturbation (fun r t (_ : M) ↦ ca r t) (fun r t (_ : M) ↦ cb r t) q L w x :=
+  congrFun (congrFun (plumbedPerturbation_add Ha (fun r t (_ : M) ↦ ca r t) Hb
+    (fun r t (_ : M) ↦ cb r t) q L) w) x
+
+/-- The plumbed perturbation of target-independent Hamiltonians does not depend on the target
+point. -/
+theorem plumbedPerturbation_const_target (ca cb : Puncture → ℝ → ℝ) (q : Puncture) (L : ℝ)
+    (w : ℂ) (x y : M) :
+    plumbedPerturbation (fun r t (_ : M) ↦ ca r t) (fun r t (_ : M) ↦ cb r t) q L w x =
+      plumbedPerturbation (fun r t (_ : M) ↦ ca r t) (fun r t (_ : M) ↦ cb r t) q L w y := by
+  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_const_target ca _ x y,
+    pairOfPantsPerturbation_const_target cb _ x y]
+
 /-- The plumbed perturbation is homogeneous in the Hamiltonians of the two pairs of pants. -/
 theorem plumbedPerturbation_smul (c : ℝ) (Ha Hb : Puncture → ℝ → M → ℝ) (q : Puncture) (L : ℝ) :
     plumbedPerturbation (c • Ha) (c • Hb) q L = c • plumbedPerturbation Ha Hb q L := by

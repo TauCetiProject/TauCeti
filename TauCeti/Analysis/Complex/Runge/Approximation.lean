@@ -55,8 +55,9 @@ connected complement.
   `IsOpen.exists_subset_interior_and_isRungeCompactPair`: holomorphic hulls of compact subsets and
   stages of `TauCeti.filledExhaustion` form Runge compact pairs with `Ω`, which absorb every compact
   subset of `Ω` into their interior.
-* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: vector-valued uniform Runge
-  approximation without requiring `Ω` to be open.
+* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt` and
+  `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`: vector-valued uniform Runge
+  approximation without requiring `Ω` to be open, and its specialization to a Runge compact pair.
 * `TauCeti.isRungeCompactPair_iff_approximation`: the full domain-relative Runge equivalence.
 * `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq`: Runge
   approximation matching prescribed finite jets at finitely many points of `Ω`.
@@ -128,6 +129,15 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {K Ω U : Set ℂ} {F : T
     fun z hz h0 ↦ (hqΩ i z h0).1 hz).smul_const (f (ζ i))
 
 /-! ### Domain-relative Runge theorem and holomorphic hulls -/
+
+/-- Forward Runge approximation for a `IsRungeCompactPair`: every function with values in a complex
+normed space that is holomorphic on an open neighbourhood `U` of `K` can be approximated uniformly
+on `K` by functions holomorphic on `Ω`. -/
+theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] {Ω K U : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
+    (hKU : K ⊆ U) {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : ℂ → W, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε :=
+  hRunge.isFilledIn.exists_differentiableOn_norm_sub_lt hRunge.isCompact hRunge.subset hU hKU hf hε
 
 /-- **Runge's approximation theorem** (domain-relative form): for compact `K ⊆ Ω` with `Ω ⊆ ℂ`
 open, `IsRungeCompactPair Ω K` holds if and only if every function holomorphic on an open

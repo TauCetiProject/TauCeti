@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
@@ -91,13 +92,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   have hstar : star (Rat.castHom R ∘ x) = Rat.castHom R ∘ x :=
     funext fun i ↦ by simp only [Pi.star_apply, Function.comp_apply, Rat.coe_castHom, star_ratCast]
   rw [← graphCartanMatrix_map G (Rat.castHom R), hstar] at hpos
-  have hcast : Rat.castHom R (x ⬝ᵥ G.graphCartanMatrix ℚ *ᵥ x) =
-      Rat.castHom R ∘ x ⬝ᵥ (G.graphCartanMatrix ℚ).map (Rat.castHom R) *ᵥ (Rat.castHom R ∘ x) := by
-    rw [RingHom.map_dotProduct]
-    congr 1
-    funext i
-    exact RingHom.map_mulVec _ _ _ i
-  rw [← hcast, Rat.coe_castHom, Rat.cast_pos] at hpos
+  rw [← RingHom.map_dotProduct_mulVec, Rat.coe_castHom, Rat.cast_pos] at hpos
   rwa [star_trivial]
 
 omit [Finite V] in
