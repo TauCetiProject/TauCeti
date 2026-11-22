@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Span
 import TauCeti.Algebra.Category.GradedModuleCat.Retract.PID
-import TauCeti.Algebra.Module.GradedModule.Idempotent.Basic
+import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Range
 
 /-!
 # Homogeneous splittings and bases of degree-zero idempotents over a PID
@@ -19,7 +19,7 @@ principal ideal domain `k`, and view the finite function module `I → A` (`[Fin
 shifted free graded `A`-module with `j`th summand in shift `s j : ℤ`.
 
 By translating a degree-zero idempotent `p : (I → A) →ₗ[A] (I → A)` into a graded retract of
-`GradedModuleCat.free 𝒜 s` via `TauCeti.retractRangeOfPiIdempotent` and applying
+`GradedModuleCat.free 𝒜 s` via `TauCeti.GradedModuleCat.retractRangeOfPiIdempotent` and applying
 `TauCeti.GradedModuleCat.exists_iso_free_of_retract` and
 `TauCeti.GradedModuleCat.exists_homogeneous_basis_of_retract`, this file proves:
 
@@ -69,7 +69,7 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
   cases nonempty_fintype I
   let eF : GradedModuleCat.free 𝒜 s ≃ₗ[A] (I → A) :=
     DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
-  let rR := retractRangeOfPiIdempotent s p hp hhom
+  let rR := GradedModuleCat.retractRangeOfPiIdempotent s p hp hhom
   obtain ⟨n, d, ⟨Φ⟩⟩ := GradedModuleCat.exists_iso_free_of_retract hneg hzero rR
   let eD : GradedModuleCat.free 𝒜 (d ∘ ULift.down) ≃ₗ[A] (Fin n → A) :=
     (DirectSum.linearEquivFunOnFintype A (ULift.{uI} (Fin n)) (fun _ ↦ A)).trans
@@ -127,7 +127,7 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
   cases nonempty_fintype I
   obtain ⟨n, b, d, hb⟩ :=
     GradedModuleCat.exists_homogeneous_basis_of_retract hneg hzero
-      (retractRangeOfPiIdempotent s p hp hhom)
+      (GradedModuleCat.retractRangeOfPiIdempotent s p hp hhom)
   let equivRange := GradedModuleCat.rangeEquivRangeObj s p hhom
   refine ⟨n, b.map equivRange.symm, d, fun i ↦ ?_⟩
   have hval : (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm

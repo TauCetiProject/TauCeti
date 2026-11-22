@@ -45,11 +45,9 @@ theorem mem_positive_smul_top_iff {M N : GradedModuleCat.{v} 𝒜} (r : Retract 
 
 /-- Vanishing of a homogeneous piece passes to graded retracts. -/
 theorem piece_eq_bot {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {p : ℤ}
-    (hp : N.grading.piece p = ⊥) : M.grading.piece p = ⊥ := by
-  refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
-  have hix : r.i.hom x = 0 := by simpa [hp] using map_mem r.i hx
-  have hri : r.r.hom (r.i.hom x) = x :=
-    LinearMap.congr_fun (congrArg Hom.hom r.retract) x
-  simpa [hix] using hri.symm
+    (hp : N.grading.piece p = ⊥) : M.grading.piece p = ⊥ :=
+  GradedModuleCat.piece_eq_bot_of_surjective r.r
+    (Function.RightInverse.surjective fun x ↦
+      LinearMap.congr_fun (congrArg Hom.hom r.retract) x) p hp
 
 end CategoryTheory.Retract

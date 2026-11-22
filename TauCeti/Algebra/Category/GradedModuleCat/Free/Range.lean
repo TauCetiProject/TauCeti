@@ -25,6 +25,9 @@ degree-zero endomorphisms on `I → A`:
 * `TauCeti.GradedModuleCat.multiset_map_eq_of_homogeneous_basis_range`: over a nontrivial
   commutative base ring `k`, any two finite homogeneous `A`-bases of `LinearMap.range p` have
   the same multiset of shifts.
+* `TauCeti.GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range`: any rank-one
+  homogeneous projection `p v = v i₀ • w` (`w i₀ = 1`, `∀ j, w j ∈ 𝒜 (s i₀ - s j)`) has unique
+  basis degree multiset `{s i₀}`.
 
 ## References
 
@@ -83,5 +86,48 @@ theorem multiset_map_eq_of_homogeneous_basis_range
     exact congrArg (Multiset.map d)
       (congrArg Finset.val (Finset.map_univ_equiv (Equiv.ulift (α := Fin _))))
   rwa [huniv d₁, huniv d₂] at hU
+
+/-- Over a connected nonnegatively graded `k`-algebra (`Nontrivial k`), any finite homogeneous basis
+of the range of a rank-one homogeneous projection `p v = v i₀ • w` (`w i₀ = 1`,
+`∀ j, w j ∈ 𝒜 (s i₀ - s j)`) has degree multiset `{s i₀}`. -/
+theorem multiset_map_eq_singleton_of_homogeneous_basis_range
+    [Nontrivial k] [FaithfulSMul k A]
+    (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
+    {I : Type uI} [Finite I] (s : I → ℤ)
+    {p : (I → A) →ₗ[A] (I → A)} (i₀ : I) {w : I → A}
+    (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) (hw : ∀ j, w j ∈ 𝒜 (s i₀ - s j))
+    {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p))
+    (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) :
+    Multiset.map d Finset.univ.val = {s i₀} := by
+  let ι : (Fin 1 → A) →ₗ[A] (I → A) :=
+    (LinearMap.toSpanSingleton A (I → A) w).comp (LinearMap.proj 0)
+  have hp_eq : p = (LinearMap.toSpanSingleton A (I → A) w).comp (LinearMap.proj i₀) :=
+    LinearMap.ext fun v ↦ hp v
+  have hleft : Function.LeftInverse (fun (v : I → A) (_ : Fin 1) ↦ v i₀) ι := fun u ↦
+    funext fun t ↦ by
+      rw [Fin.eq_zero t]
+      simp [ι, hw₀]
+  have hrange : LinearMap.range ι = LinearMap.range p := by
+    rw [hp_eq]
+    exact (LinearMap.range_comp_of_range_eq_top (LinearMap.toSpanSingleton A (I → A) w)
+      (LinearMap.range_eq_top.mpr (LinearMap.proj_surjective 0))).trans
+      (LinearMap.range_comp_of_range_eq_top (LinearMap.toSpanSingleton A (I → A) w)
+        (LinearMap.range_eq_top.mpr (LinearMap.proj_surjective i₀))).symm
+  let e₁ : (Fin 1 → A) ≃ₗ[A] LinearMap.range p :=
+    (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ hrange)
+  let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Pi.basisFun A (Fin 1)).map e₁
+  have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
+    rw [Fin.eq_zero i]
+    have hval : (b₀ 0).val = w := by
+      dsimp only [b₀]
+      rw [Module.Basis.map_apply, Pi.basisFun_apply]
+      change ι (Pi.single 0 1) = w
+      simp [ι]
+    rw [hval]
+    exact hw j
+  have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p
+    (homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀
+  simpa using h
 
 end TauCeti.GradedModuleCat

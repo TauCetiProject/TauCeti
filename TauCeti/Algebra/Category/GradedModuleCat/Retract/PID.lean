@@ -183,21 +183,10 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
     exact absurd (hu ▸ (ev u.down).fst.property) hq
   let q' : S := ⟨q, hq⟩
   let eqv : J ≃ Σ p : S, Fin (nq p) := Equiv.ulift.trans ev
-  let ι : Fin (nq q') → {u : J // d' u = q} := fun t ↦
-    ⟨eqv.symm ⟨q', t⟩,
-      congrArg (fun idx : Σ p : S, Fin (nq p) ↦ idx.fst.val) (ev.apply_symm_apply ⟨q', t⟩)⟩
-  have hι_bij : Function.Bijective ι := by
-    refine ⟨fun t₁ t₂ h ↦ ?_, fun ⟨u, hu⟩ ↦ ?_⟩
-    · have h' := eqv.symm.injective (congrArg Subtype.val h)
-      simpa using h'
-    · rcases hp : eqv u with ⟨p₀, t₀⟩
-      have hp' : p₀ = q' := Subtype.ext (by
-        have h1 : (eqv u).fst.val = q := hu
-        rwa [hp] at h1)
-      subst hp'
-      refine ⟨t₀, Subtype.ext (eqv.injective ?_)⟩
-      rw [Equiv.apply_symm_apply, hp]
-  let e_q : {u : J // d' u = q} ≃ Fin (nq q') := (Equiv.ofBijective ι hι_bij).symm
+  let e_q : {u : J // d' u = q} ≃ Fin (nq q') :=
+    (Equiv.subtypeEquiv eqv fun _ ↦
+      ⟨fun h ↦ Subtype.ext h, fun h ↦ congrArg Subtype.val h⟩).trans
+      (Equiv.sigmaSubtype q')
   let L : ({u : J // d' u = q} → k) →ₗ[k] (Fin (nq q') → k) :=
     (bq q').equivFun.toLinearMap.comp
       (((pieceQuotientHom Φ q).restrictScalars k).comp

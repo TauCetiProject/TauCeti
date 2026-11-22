@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.GradedAlgebra.Basic
+import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Augmentation of connected nonnegatively `ℤ`-graded algebras
@@ -48,17 +49,19 @@ variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 /-- The `R`-algebra equivalence `R ≃ₐ[R] 𝒜 0` for a connected graded `R`-algebra. -/
 def gradeZeroAlgEquiv [FaithfulSMul R A]
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) : R ≃ₐ[R] 𝒜 0 :=
-  AlgEquiv.ofBijective (Algebra.ofId R (𝒜 0)) ⟨fun c₁ c₂ h ↦
-    FaithfulSMul.algebraMap_injective R A (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨c, hc⟩ := hzero x.val x.property
-      exact ⟨c, Subtype.ext hc⟩⟩
+  let hbot : (⊥ : Subalgebra R A) = SetLike.GradeZero.subalgebra 𝒜 :=
+    Subalgebra.ext fun x ↦
+      ⟨fun hx ↦ let ⟨c, hc⟩ := Algebra.mem_bot.mp hx; hc ▸ SetLike.algebraMap_mem_graded 𝒜 c,
+       fun hx ↦ Algebra.mem_bot.mpr (hzero x hx)⟩
+  (Algebra.botEquivOfInjective (FaithfulSMul.algebraMap_injective R A)).symm.trans
+    (Subalgebra.equivOfEq (⊥ : Subalgebra R A) (SetLike.GradeZero.subalgebra 𝒜) hbot)
 
 /-- Applying `gradeZeroAlgEquiv` embeds scalars via `algebraMap R A`. -/
 @[simp]
 theorem coe_gradeZeroAlgEquiv_apply [FaithfulSMul R A]
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) (c : R) :
-    (gradeZeroAlgEquiv hzero c : A) = algebraMap R A c :=
-  congrArg Subtype.val (AlgEquiv.ofBijective_apply (Algebra.ofId R (𝒜 0)) _ c)
+    (gradeZeroAlgEquiv hzero c : A) = algebraMap R A c := by
+  simpa using congrArg Subtype.val ((gradeZeroAlgEquiv hzero).commutes c)
 
 /-- `(gradeZeroAlgEquiv hzero).symm` sends the embedded scalar `algebraMap R A c` back to `c`. -/
 @[simp]
