@@ -543,16 +543,6 @@ theorem IsNondegenerateFixedPt.isInvertible_id_sub_fderiv [CompleteSpace 𝕜]
   ((mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
     |>.isNondegenerateFixedPt_iff_isInvertible_id_sub h.isFixedPt).1 h
 
-/-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
-`f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
-theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
-    {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) : (1 - fderiv 𝕜 f x).det ≠ 0 := by
-  have hD := (mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
-  -- Unfold the determinant to injectivity of the underlying function, and write `1` as `id`.
-  rw [Ne, ContinuousLinearMap.det, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
-    LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe, ContinuousLinearMap.one_def]
-  exact (hD.isNondegenerateFixedPt_iff_injective_id_sub h.isFixedPt).1 h
-
 /-- **The fixed-point derivative of an iterate.** If `f` is differentiable at a fixed point `x`,
 the fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of `f`. -/
 theorem fixedPointDerivative_iterate (x : {x // f x = x}) (hf : MDifferentiableAt I I f x.val)
@@ -658,6 +648,16 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   simp only [LinearMap.sub_apply, LinearMap.id_apply, fixedPointDerivative_apply]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.property, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
+
+/-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
+`f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
+theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
+    {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) : (1 - fderiv 𝕜 f x).det ≠ 0 := by
+  have hdet := (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, h.isFixedPt⟩
+    h.mdifferentiableAt).1 h
+  rw [det_id_sub_fixedPointDerivative_modelSpace] at hdet
+  -- `ContinuousLinearMap.det` is the determinant of the underlying linear map, and `1` is `id`.
+  simpa [ContinuousLinearMap.det, Module.End.one_eq_id] using hdet
 
 /-- On a compact manifold over a complete field (whose model space is then finite-dimensional when
 the manifold is nonempty), a continuous map that is differentiable at its fixed points, with

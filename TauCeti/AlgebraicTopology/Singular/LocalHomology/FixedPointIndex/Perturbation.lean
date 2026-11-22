@@ -88,8 +88,7 @@ theorem fixedPointIndex_eq_of_norm_sub_lt {f g : C(U, E)} {K : Set U} (hK : IsCo
   -- add up to only `‖g z - f z‖`.
   simp only [mem_ofPred_eq, Homotopy.affine_apply] at hz
   have hle := (show Wbtw ℝ (f z) (z : E) (g z) from ⟨t, t.property, hz⟩).dist_add_dist
-  rw [dist_comm (z : E), dist_comm (f z) (g z), dist_eq_norm, dist_eq_norm, dist_eq_norm] at hle
-  exact (hfg z hzK).ne' hle
+  exact (hfg z hzK).ne' (by simpa only [dist_eq_norm, norm_sub_rev] using hle)
 
 /-- **Stability of the fixed-point index.** Let `f : U → E` have a compact fixed set. There are
 an open set `V ⊆ U` containing every fixed point of `f`, with compact closure contained in `U`,
