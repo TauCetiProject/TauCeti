@@ -254,7 +254,8 @@ theorem measure_second_spectralMoment_sub_mean_ge [IsProbabilityMeasure P]
       ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
   have h := measure_weighted_coordinate_sum_sub_mean_ge (s := Finset.univ)
     (fun i ↦ (n + 1 : ℝ)⁻¹ ^ 2 * wignerCoordinateWeight (n + 1) i)
-    (fun i _ ↦ hmem i) (hindep.set_pairwise _) hε
+    (fun i _ ↦ hmem i)
+    (fun i _ j _ hij ↦ (hindep hij).covariance_eq_zero (hmem i) (hmem j)) hε
   have hbound := ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
     (wignerCoordinate_variance_bound n hvar) (sq_nonneg ε))
   simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]

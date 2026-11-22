@@ -319,7 +319,7 @@ theorem tendsto_cdf_renewalCountNat_sub_div
           ((renewalCountNat T t ω : ℝ) - (t : ℝ) / μ) / (σ * √((t : ℝ) / μ ^ 3))) x)
       atTop (𝓝 (cdf (gaussianReal 0 1) x)) := by
   intro μ σ
-  have hμ : 0 < μ := integral_pos_of_variance_ne_zero
+  have hμ : 0 < μ := integral_pos_of_nonneg_ae_of_variance_ne_zero
     (hid 0).aemeasurable_fst.coe_nnreal_real.aestronglyMeasurable
     (.of_forall fun ω ↦ (T 0 ω).coe_nonneg) hvar
   have hσ : 0 < σ := Real.sqrt_pos.2 ((variance_nonneg _ _).lt_of_ne' hvar)
