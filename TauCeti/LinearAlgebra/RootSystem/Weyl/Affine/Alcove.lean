@@ -22,11 +22,12 @@ file proves that the affine Weyl group `W_aff` (`RootPairing.affineWeylGroup`) m
 into the closed fundamental alcove, and so permutes the alcoves transitively: every alcove is
 `f⁻¹(A)` for some `f ∈ W_aff`. Over any linearly ordered ring, it proves a local wall-reflection
 descent without the archimedean hypothesis and shows that an element of `W_aff` sending a point of
-the open fundamental alcove back into it is the identity (so when `A` is nonempty, `W_aff` acts
-freely on `W_aff`-translates of `A`, and over an archimedean ring on the alcove of any point lying
-on no affine root hyperplane, making `f` unique). Over an archimedean linearly ordered field, the
-open fundamental alcove is nonempty, and combining transitivity with freeness at `A` shows that
-the affine simple reflections generate `W_aff`
+the open fundamental alcove back into it is the identity (so when `A` is nonempty, the stabilizer
+of `A` in `W_aff` is trivial and `W_aff` acts freely on the `W_aff`-translates of `A`; over an
+archimedean ring, the alcove of any point lying on no affine root hyperplane is the pullback
+`f⁻¹(A)` of the fundamental alcove by a unique `f ∈ W_aff`). Over an archimedean linearly ordered
+field, the open fundamental alcove is nonempty, and combining transitivity with freeness at `A`
+shows that the affine simple reflections generate `W_aff`
 (`RootPairing.Base.closure_range_affineSimpleReflection`).
 
 The transitivity proof is the classical descent of Bourbaki and Humphreys, made purely
@@ -97,8 +98,8 @@ chambers.
   each of them, is the preimage of the fundamental alcove under an element of the affine Weyl group.
 * `RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`: an element of `W_aff`
   carrying a point of the open fundamental alcove back into the open fundamental alcove is the
-  identity (so when `A` is nonempty, `W_aff` acts freely on translates of the fundamental alcove,
-  and over an archimedean ring on the alcove of any point lying on no affine root hyperplane).
+  identity (so when `A` is nonempty, `W_aff` acts freely on the `W_aff`-translates of `A`, which
+  over an archimedean ring are all the alcoves).
 * `RootPairing.eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`,
   `RootPairing.eq_one_of_mem_affineWeylGroup_of_mapsTo`, and
   `RootPairing.affinePointStabilizer_eq_bot_of_mem_fundamentalAlcove`: two elements carrying the
@@ -106,8 +107,8 @@ chambers.
   is trivial, and the point stabilizer in `W_aff` of any point of the open fundamental alcove is
   trivial.
 * `RootPairing.existsUnique_mem_affineWeylGroup_preimage_fundamentalAlcove_eq`: **over an
-  archimedean ring, the affine Weyl group acts simply transitively on the alcove of any point lying
-  on no affine root hyperplane.**
+  archimedean ring, the alcove of any point lying on no affine root hyperplane is the pullback
+  `f ⁻¹' A` of the fundamental alcove by a unique element `f ∈ W_aff`.**
 * `RootPairing.Base.closure_range_affineSimpleReflection`: **Coxeter generation of `W_aff`**: over
   an archimedean linearly ordered field, the affine simple reflections generate `W_aff`.
 
@@ -402,7 +403,8 @@ private lemma sepSet_finite [Finite ι] [Archimedean R] (x : N) : (sepSet b x).F
   choose n hn using fun j ↦ exists_int_lt (P.root' j x)
   refine (Set.finite_iUnion fun j ↦
     (Set.finite_singleton j).prod (Set.finite_Icc (n j) 0)).subset ?_
-  rintro ⟨j, k⟩ ⟨hpos, hk⟩
+  rintro ⟨j, k⟩ hjk
+  obtain ⟨hpos, hk⟩ := (mem_sepSet b).mp hjk
   refine Set.mem_iUnion.mpr ⟨j, Set.mem_prod.mpr ⟨rfl, ?_, ?_⟩⟩
   · exact (Int.cast_lt.mp ((hn j).trans hk)).le
   · rcases hpos with h | h
@@ -431,28 +433,29 @@ private lemma sepSet_affineCoreflection_mapsTo {j₀ : ι} {c : ℤ}
     ∀ p ∈ sepSet b (P.affineCoreflection j₀ c x), wallPerm P j₀ c p ∈ sepSet b x \ {w} := by
   set y := P.affineCoreflection j₀ c x
   have hy : P.root' j₀ y = 2 * c - P.root' j₀ x := root'_affineCoreflection_self P j₀ c x
+  obtain ⟨hwx_pos, hwx_lt⟩ := (mem_sepSet b).mp hwx
   -- Neither affine root of the wall separates `y` from the alcove: one of them is not positive,
   -- and the reflection carries `x` to the alcove's side of the wall.
   have hwall₁ : (j₀, c) ∉ sepSet b y := by
-    rintro ⟨hpos, hlt⟩
+    intro h
+    obtain ⟨hpos, hlt⟩ := (mem_sepSet b).mp h
     rcases hw with rfl | rfl
-    · have := hwx.2
-      simp only at hlt this
+    · simp only at hlt hwx_lt
       linarith
-    · exact not_isAffinePos_and b j₀ c ⟨hpos, hwx.1⟩
+    · exact not_isAffinePos_and b j₀ c ⟨hpos, hwx_pos⟩
   have hwall₂ : (P.reflectionPerm j₀ j₀, -c) ∉ sepSet b y := by
-    rintro ⟨hpos, hlt⟩
+    intro h
+    obtain ⟨hpos, hlt⟩ := (mem_sepSet b).mp h
     rcases hw with rfl | rfl
-    · exact not_isAffinePos_and b j₀ c ⟨hwx.1, hpos⟩
-    · have := hwx.2
-      simp only [root'_reflectionPerm_self, LinearMap.neg_apply, Int.cast_neg] at hlt this
+    · exact not_isAffinePos_and b j₀ c ⟨hwx_pos, hpos⟩
+    · simp only [root'_reflectionPerm_self, LinearMap.neg_apply, Int.cast_neg] at hlt hwx_lt
       linarith
   rintro ⟨j, k⟩ hp
   have hp₁ : (j, k) ≠ (j₀, c) := fun h ↦ hwall₁ (h ▸ hp)
   have hp₂ : (j, k) ≠ (P.reflectionPerm j₀ j₀, -c) := fun h ↦ hwall₂ (h ▸ hp)
-  refine ⟨⟨(hpres _ hp₁ hp₂).mpr hp.1, ?_⟩, fun h ↦ ?_⟩
-  · have := hp.2
-    simp only [y, root'_affineCoreflection_intCast] at this
+  obtain ⟨hp_pos, hp_lt⟩ := (mem_sepSet b).mp hp
+  refine ⟨(mem_sepSet b).mpr ⟨(hpres _ hp₁ hp₂).mpr hp_pos, ?_⟩, fun h ↦ ?_⟩
+  · simp only [y, root'_affineCoreflection_intCast] at hp_lt
     simp only [wallPerm, Int.cast_sub]
     linarith
   · rcases hw with rfl | rfl
@@ -526,11 +529,11 @@ private lemma exists_wall_sepSet_of_notMem_closedFundamentalAlcove {x : N}
   rcases hx with ⟨i, hi, hix⟩ | hθx
   · refine ⟨some ⟨i, hi⟩, i, 0, by simp, fun y hy ↦ by simpa using hy,
       fun p ↦ isAffinePos_wallPerm_simple b hi, (i, 0), .inl rfl,
-      ⟨.inr ⟨rfl, b.isPos_of_mem_support hi⟩, by simpa using hix⟩⟩
+      (mem_sepSet b).mpr ⟨.inr ⟨rfl, b.isPos_of_mem_support hi⟩, by simpa using hix⟩⟩
   · refine ⟨none, b.highestRoot, 1, by simp, fun y hy ↦ by simp [hy],
       fun p ↦ isAffinePos_wallPerm_highestRoot b,
       (P.reflectionPerm b.highestRoot b.highestRoot, -1), .inr rfl,
-      ⟨.inl (by omega), by simpa [root'_reflectionPerm_self] using hθx⟩⟩
+      (mem_sepSet b).mpr ⟨.inl (by omega), by simpa [root'_reflectionPerm_self] using hθx⟩⟩
 
 end Separation
 

@@ -86,21 +86,26 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.Base.exists_affineSimpleRoot_eq_of_height_eq_one`: an affine root `α + n` of height
   `ht(α) + n (ht(θ) + 1) = 1` is an affine simple root.
 * `RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes` and
-  `RootPairing.Base.exists_mem_coweightLattice_affineSimpleRoot_eq`: at a special node `k` the
-  closed fundamental alcove has a vertex in the coweight lattice, the origin for `k = 0` and the
-  fundamental coweight `ϖⱼ` for `k = j`.
+  `RootPairing.Base.exists_mem_coweightLattice_affineSimpleRoot_eq`: for a root system
+  (`P.IsRootSystem`), at a special node `k` the closed fundamental alcove has a vertex in the
+  coweight lattice, the origin for `k = 0` and the fundamental coweight `ϖⱼ` for `k = j`.
 * `RootPairing.exists_mem_fundamentalAlcove_root'_eq_height_div` and
   `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove is
   nonempty, containing the point where every root `α` takes the value `ht(α) / (ht(θ) + 1)`.
 * `RootPairing.Base.exists_forall_affineSimpleRoot_eq`: over a field any tuple `a` satisfying
   `∑ k, mₖ aₖ = 1` is realized by `b.affineSimpleRoot · x` at some point `x : N`.
-* `RootPairing.Base.iUnion_openAlcoveFace`, `RootPairing.Base.pairwise_disjoint_openAlcoveFace`,
-  `RootPairing.Base.openAlcoveFace_nonempty_iff`, `RootPairing.Base.closedAlcoveFace_nonempty_iff`,
-  `RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
+* `RootPairing.Base.iUnion_openAlcoveFace` and `RootPairing.Base.pairwise_disjoint_openAlcoveFace`:
+  over an ordered commutative ring, the open faces partition `Ā` into pairwise disjoint sets.
+* `RootPairing.Base.openAlcoveFace_nonempty_iff` and
+  `RootPairing.Base.closedAlcoveFace_nonempty_iff`: over a linearly ordered field (for a finite,
+  reduced, irreducible, crystallographic pairing), an open or closed face indexed by `J` is
+  nonempty if and only if `J ≠ univ`.
+* `RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
   `RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`, and
-  `RootPairing.Base.closedAlcoveFace_compl_singleton_some`: the partition of `Ā` into pairwise
-  disjoint open faces, nonemptiness for proper node sets `J ≠ univ`, and the vertex faces opposite
-  the affine wall `θ = 1` and every simple wall `αⱼ = 0`.
+  `RootPairing.Base.closedAlcoveFace_compl_singleton_some`: for a root system (`P.IsRootSystem`),
+  the vertex faces opposite the affine wall `θ = 1` (over an ordered ring) and every simple wall
+  `αⱼ = 0` (over an ordered ring at a special node, and over a linearly ordered field for a
+  reduced irreducible crystallographic root system at any simple node) are singletons.
 
 ## References
 
@@ -148,10 +153,12 @@ lemma fundamentalAlcove_subset_openDominantChamber :
   (mem_openDominantChamber P.flip b.flip x).mpr fun i hi ↦ by simpa using hx.1 i (by simpa using hi)
 
 /-- The **closed fundamental alcove** of a base `b`: the points of the coweight space at which every
-simple root is nonnegative and the highest root `θ = b.highestRoot` is at most `1`. For a real root
-system it is the closure of `RootPairing.fundamentalAlcove`. For a finite, reduced, irreducible,
-crystallographic root pairing over an archimedean linearly ordered ring, the affine Weyl group
-carries every point into it
+simple root is nonnegative and the highest root `θ = b.highestRoot` is at most `1`. When `N` is a
+finite-dimensional Hausdorff real topological vector space (`[IsTopologicalAddGroup N]
+[ContinuousSMul ℝ N] [T2Space N] [FiniteDimensional ℝ N]`) and `ι` is finite and nonempty, it is
+the closure of `RootPairing.fundamentalAlcove` (`RootPairing.closure_fundamentalAlcove`). For a
+finite, reduced, irreducible, crystallographic root pairing over an archimedean linearly ordered
+ring, the affine Weyl group carries every point into it
 (`RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`). -/
 def closedFundamentalAlcove : Set N :=
   {x | (∀ i ∈ b.support, 0 ≤ P.root' i x) ∧ P.root' b.highestRoot x ≤ 1}
