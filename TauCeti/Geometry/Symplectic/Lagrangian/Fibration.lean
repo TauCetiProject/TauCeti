@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
@@ -30,6 +31,9 @@ With the conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`, t
 back from the base generate the vertical motions:
 
 * for a Lagrangian fibration `dim M = 2 dim B` (`IsLagrangianFibration.two_mul_finrank`);
+* so a differentiable section of a Lagrangian fibration, an immersion of the base, is a
+  Lagrangian map as soon as it is isotropic
+  (`IsLagrangianFibration.isLagrangianMap_iff_isIsotropicMap`);
 * the Hamiltonian vector field of a pulled-back function `g ∘ π` is vertical, tangent to the fibres
   (`IsLagrangianFibration.hamiltonianVectorField_comp_mem_ker_mfderiv`), because `d(g ∘ π)`
   vanishes on `ker dπ`, so `X_(g ∘ π)` lies in the symplectic complement of `ker dπ`, which is
@@ -127,6 +131,25 @@ theorem two_mul_finrank [FiniteDimensional ℝ E] [Nonempty M] :
 theorem two_mul_card_fin_finrank [FiniteDimensional ℝ E] [Nonempty M] :
     2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
   rw [Fintype.card_fin, h.two_mul_finrank]
+
+/-- **A section of a Lagrangian fibration is Lagrangian as soon as it is isotropic.** A
+differentiable section `s` of the projection `π` of a Lagrangian fibration is an immersion of the
+base, which has half the dimension of `M`, so its tangent images are Lagrangian as soon as they
+are isotropic. -/
+theorem isLagrangianMap_iff_isIsotropicMap [FiniteDimensional ℝ E] {s : B → M}
+    (hs : ∀ b, π (s b) = b) (hsm : MDifferentiable J I s) :
+    hσ.IsLagrangianMap J s ↔ hσ.IsIsotropicMap J s := by
+  refine ⟨fun hL ↦ hL.isIsotropicMap, fun hiso ↦ isLagrangianMap_iff_forall.2 fun b ↦
+    (isIsotropicMap_iff_forall.1 hiso b).isLagrangian_of_finrank ?_⟩
+  have : Nonempty M := ⟨s b⟩
+  -- `dπ ∘ ds = id`, so `ds` is injective and its range has dimension `dim B`.
+  have hcomp : (mfderiv I J π (s b)).comp (mfderiv J I s b) = ContinuousLinearMap.id ℝ _ := by
+    rw [← mfderiv_comp b (h.mdifferentiableAt (s b)) (hsm b), show π ∘ s = id from funext hs,
+      mfderiv_id]
+  have hinj : Injective (mfderiv J I s b) :=
+    LeftInverse.injective (g := mfderiv I J π (s b)) fun v ↦ DFunLike.congr_fun hcomp v
+  rw [LinearMap.finrank_range_of_inj hinj, finrank_tangentSpace, finrank_tangentSpace,
+    h.two_mul_finrank]
 
 /-- **Hamiltonian vector fields of pulled-back functions are vertical.** If `g` is differentiable
 at `π x`, the Hamiltonian vector of `g ∘ π` at `x` is tangent to the fibre: it lies in `ker dπ_x`.
