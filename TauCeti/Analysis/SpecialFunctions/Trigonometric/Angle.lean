@@ -24,15 +24,15 @@ It also records how the representative `Real.Angle.toReal ∈ (-π, π]` behaves
 angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_sign_eq_neg_sign`,
 and on sums of two angles that add up to a third angle plus `π`.
 
-For a natural number `m ≠ 0`, if the cosine of `2 n π / m` is one then `m ∣ n`; this bounds the
-order of the rank-two rotations in the geometric representation of a Coxeter group.
+For integers `m ≠ 0` and `n`, the cosine of `2 n π / m` is one exactly when `m ∣ n`; this bounds
+the order of the rank-two rotations in the geometric representation of a Coxeter group.
 
 ## Main results
 
 * `Real.exists_int_eq_add_of_cos_sin_eq`: reals whose `cos` and `sin` at `2π` times them agree
   differ by an integer.
-* `TauCeti.dvd_of_cos_two_mul_pi_div_eq_one`: if `cos (2 n (π / m)) = 1` for a nonzero natural `m`,
-  then `m ∣ n`.
+* `Real.cos_two_mul_pi_div_eq_one_iff_dvd`: for integers `m ≠ 0` and `n`,
+  `cos (2 n (π / m)) = 1` exactly when `m ∣ n`.
 * `TauCeti.coprime_of_mul_eq_mul_pi` and `TauCeti.eq_pi_div_of_cos_two_mul_eq_one`: a positive
   angle `θ` whose `2h`-th multiple is a multiple of `2π` minimally, with no `2nθ + qπ` in `(0, θ)`,
   equals `π / h`.
@@ -49,13 +49,11 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
   representatives of `θ₁` and `θ₂` is that of `θ` plus or minus `π`; the sign is `+` exactly when
   this sum is positive (`Real.Angle.toReal_add_toReal_eq_add_pi_iff`) and `-` exactly when it is
   nonpositive (`Real.Angle.toReal_add_toReal_eq_sub_pi_iff`).
-* `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, π)` with `|θ| = α`, then
+* `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, 2π)` with `|θ| = α`, then
   `β = 2α`.
 -/
 
 public section
-
-namespace TauCeti
 
 /-- **Equal angles are exactly equal normalisations.** Two reals agree in `Real.Angle` — that is,
 differ by an integer multiple of `2π` — exactly when their representatives in `[0, 2π)` agree,
@@ -63,7 +61,7 @@ since the normalisation discards precisely such a multiple.
 
 The forward direction is Mathlib's `Real.Angle.coe_toIcoMod` applied on both sides; the reverse
 shifts one argument by the multiple and uses `toIcoMod_add_zsmul`. -/
-theorem _root_.Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq {x y : ℝ} :
+theorem Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq {x y : ℝ} :
     toIcoMod Real.two_pi_pos 0 x = toIcoMod Real.two_pi_pos 0 y ↔
       (x : Real.Angle) = (y : Real.Angle) := by
   refine ⟨fun h => ?_, fun h => ?_⟩
@@ -74,7 +72,7 @@ theorem _root_.Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq {x y : ℝ} :
 
 /-- The representative of a difference of two angles of the same sign is the difference of the
 representatives, provided the subtracted angle is not `π`. -/
-theorem _root_.Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ ≠ ↑Real.pi)
+theorem Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ ≠ ↑Real.pi)
     (hs : θ.sign = ψ.sign) : (θ - ψ).toReal = θ.toReal - ψ.toReal := by
   have hψ' : -ψ ≠ ↑Real.pi := fun h ↦ hψ (by rw [← neg_neg ψ, h, Real.Angle.neg_coe_pi])
   rw [sub_eq_add_neg, Real.Angle.toReal_add_of_sign_eq_neg_sign (.inr hψ')
@@ -83,7 +81,7 @@ theorem _root_.Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ �
 
 /-- For two angles of the same nonzero sign, their difference has positive sign exactly when their
 representatives are in increasing order. -/
-theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
+theorem Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
     (hs : θ.sign = ψ.sign) (h0 : θ.sign ≠ 0) : (ψ - θ).sign = 1 ↔ θ.toReal < ψ.toReal := by
   rw [← Real.Angle.sign_toReal (Real.Angle.sub_ne_pi_of_sign_eq_of_sign_ne_zero ψ θ hs.symm h0),
     Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, sign_eq_one_iff,
@@ -91,7 +89,7 @@ theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.An
 
 /-- If two angles add up to a third one plus `π`, the sum of their representatives is the
 representative of the third angle plus `π` exactly when this sum is positive. -/
-theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_iff {θ₁ θ₂ θ : Real.Angle}
+theorem Real.Angle.toReal_add_toReal_eq_add_pi_iff {θ₁ θ₂ θ : Real.Angle}
     (h : θ₁ + θ₂ = θ + Real.pi) :
     θ₁.toReal + θ₂.toReal = θ.toReal + Real.pi ↔ 0 < θ₁.toReal + θ₂.toReal := by
   refine ⟨fun he ↦ by linarith [θ.neg_pi_lt_toReal], fun hpos ↦ ?_⟩
@@ -102,7 +100,7 @@ theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_iff {θ₁ θ₂ θ : Real
 
 /-- If two angles add up to a third one plus `π`, the sum of their representatives is the
 representative of the third angle minus `π` exactly when this sum is nonpositive. -/
-theorem _root_.Real.Angle.toReal_add_toReal_eq_sub_pi_iff {θ₁ θ₂ θ : Real.Angle}
+theorem Real.Angle.toReal_add_toReal_eq_sub_pi_iff {θ₁ θ₂ θ : Real.Angle}
     (h : θ₁ + θ₂ = θ + Real.pi) :
     θ₁.toReal + θ₂.toReal = θ.toReal - Real.pi ↔ θ₁.toReal + θ₂.toReal ≤ 0 := by
   refine ⟨fun he ↦ by linarith [θ.toReal_le_pi], fun hnonpos ↦ ?_⟩
@@ -115,7 +113,7 @@ theorem _root_.Real.Angle.toReal_add_toReal_eq_sub_pi_iff {θ₁ θ₂ θ : Real
 
 /-- If two angles add up to a third one plus `π`, the sum of their representatives is the
 representative of the third angle plus `π` or minus `π`. -/
-theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi {θ₁ θ₂ θ : Real.Angle}
+theorem Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi {θ₁ θ₂ θ : Real.Angle}
     (h : θ₁ + θ₂ = θ + Real.pi) :
     θ₁.toReal + θ₂.toReal = θ.toReal + Real.pi ∨ θ₁.toReal + θ₂.toReal = θ.toReal - Real.pi :=
   (lt_or_ge 0 (θ₁.toReal + θ₂.toReal)).imp (Real.Angle.toReal_add_toReal_eq_add_pi_iff h).2
@@ -123,29 +121,26 @@ theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi {θ₁ θ₂ 
 
 /-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer: this is
 Mathlib's `Real.Angle.cos_sin_inj` read through `Real.Angle.angle_eq_iff_two_pi_dvd_sub`. -/
-theorem _root_.Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
+theorem Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
     (hc : Real.cos (2 * Real.pi * a) = Real.cos (2 * Real.pi * b))
     (hs : Real.sin (2 * Real.pi * a) = Real.sin (2 * Real.pi * b)) : ∃ n : ℤ, a = b + n := by
   obtain ⟨n, hn⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hc hs)
-  refine ⟨n, ?_⟩
-  have hpi : (2 * Real.pi) ≠ 0 := by positivity
-  exact mul_left_cancel₀ hpi (by linarith)
+  exact ⟨n, mul_left_cancel₀ Real.two_pi_pos.ne' (by linarith)⟩
 
-/-- If the cosine of `2 * n * (π / m)` is one, with `m` a nonzero natural number, then `m` divides
-`n`, so a rotation through the angle `2 π / m` whose `n`-th power is the identity forces `m ∣ n`. -/
-theorem dvd_of_cos_two_mul_pi_div_eq_one {m n : ℕ} (hm : m ≠ 0)
-    (h : Real.cos (2 * (n : ℝ) * (Real.pi / m)) = 1) : m ∣ n := by
-  obtain ⟨j, hj⟩ := (Real.cos_eq_one_iff _).1 h
-  have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hm
-  have hmul : (j : ℝ) * (2 * Real.pi) * (m : ℝ) = 2 * (n : ℝ) * Real.pi := by
-    rw [hj]
-    field_simp
-  have hcancel : (j : ℝ) * (m : ℝ) = (n : ℝ) :=
-    mul_right_cancel₀ (by positivity : (2 : ℝ) * Real.pi ≠ 0) (by linear_combination hmul)
-  have hint : (m : ℤ) ∣ (n : ℤ) := ⟨j, by
-    have : (n : ℤ) = j * (m : ℤ) := by exact_mod_cast hcancel.symm
-    linarith⟩
-  exact Int.ofNat_dvd.1 (by simpa using hint)
+/-- The cosine of `2 * n * (π / m)` is one, for an integer `m ≠ 0`, exactly when `m` divides `n`.
+So a rotation through the angle `2 π / m` has `n`-th power the identity exactly when `m ∣ n`. -/
+theorem Real.cos_two_mul_pi_div_eq_one_iff_dvd {m n : ℤ} (hm : m ≠ 0) :
+    Real.cos (2 * (n : ℝ) * (Real.pi / m)) = 1 ↔ m ∣ n := by
+  have hm0 : (m : ℝ) ≠ 0 := Int.cast_ne_zero.2 hm
+  -- `2 * n * (π / m)` is `n / m` turns of `2π`
+  have hturn : 2 * (n : ℝ) * (Real.pi / m) = n / m * (2 * Real.pi) := by field_simp
+  rw [hturn, Real.cos_eq_one_iff]
+  refine ⟨fun ⟨j, hj⟩ ↦ ⟨j, ?_⟩, fun ⟨j, hj⟩ ↦ ⟨j, by subst hj; push_cast; field_simp⟩⟩
+  have hjn : (j : ℝ) = n / m := mul_right_cancel₀ Real.two_pi_pos.ne' hj
+  have hnj : (n : ℝ) = m * j := by rw [hjn]; field_simp
+  exact_mod_cast hnj
+
+namespace TauCeti
 
 /-- If `h > 0` satisfies `h * θ = m * π` while `cos (2 h' θ) ≠ 1` for all `0 < h' < h`, then
 `|m|` and `h` are coprime. -/
@@ -245,31 +240,24 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
     simpa using Int.natAbs_dvd_natAbs.mpr (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ k₂ - k₁)
   have := Nat.eq_zero_of_dvd_of_lt hdvd (by omega); exact Fin.ext (by omega)
 
-/-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α`,
-then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/
-theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β : ℝ}
-    (hθ : |θ.toReal| = α) (hβ : θ + α = β) (hβ₀ : 0 < β) (hβπ : β < Real.pi) :
+end TauCeti
+
+/-- If the oriented angles `θ` and `α` add up to `β ∈ (0, 2π)`, where `|θ| = α`,
+then `β = 2α`: the other possibility `θ = -α` would force `β` to be a multiple of `2π`. -/
+theorem Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β : ℝ}
+    (hθ : |θ.toReal| = α) (hβ : θ + α = β) (hβ₀ : 0 < β) (hβ2π : β < 2 * Real.pi) :
     β = 2 * α := by
+  have : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
   have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
   have hαπ : α ≤ Real.pi := hθ ▸ θ.abs_toReal_le_pi
-  have hβrep : (β : Real.Angle).toReal = β :=
-    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, hβπ.le⟩
   have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by
     rw [Real.Angle.coe_add, θ.coe_toReal, hβ]
-  rcases (abs_eq hα₀).1 hθ with hpos | hneg
-  · rw [hpos] at hsum
-    by_cases hα : α = 0
-    · have h := congrArg Real.Angle.toReal hsum
-      rw [hα, zero_add, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
-      linarith
-    · have hαpos : 0 < α := lt_of_le_of_ne hα₀ (Ne.symm hα)
-      let : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
-      have h := (AddCircle.coe_eq_coe_iff_of_mem_Ioc (p := 2 * Real.pi) (a := 0)
-        (x := α + α) (y := β) ⟨by linarith, by linarith⟩ ⟨hβ₀, by linarith⟩).1 hsum
-      linarith
-  · have hzero : θ.toReal + α = 0 := by linarith
-    have h := congrArg Real.Angle.toReal hsum
-    rw [hzero, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
-    linarith
-
-end TauCeti
+  -- `β ∈ (0, 2π)` is not a multiple of `2π`, so `θ.toReal + α` is not zero
+  have h0 : θ.toReal + α ≠ 0 := fun h ↦ hβ₀.ne <|
+    (AddCircle.coe_eq_coe_iff_of_mem_Ico (p := 2 * Real.pi) (a := 0) (x := 0) (y := β)
+      ⟨le_rfl, by linarith⟩ ⟨hβ₀.le, by linarith⟩).1 (by rwa [h] at hsum)
+  -- hence `θ.toReal = α`, and `2α ∈ (0, 2π]` and `β ∈ (0, 2π)` represent the same angle
+  have hθα : θ.toReal = α := ((abs_eq hα₀).1 hθ).resolve_right fun h ↦ h0 (by linarith)
+  rw [hθα] at hsum h0
+  linarith [(AddCircle.coe_eq_coe_iff_of_mem_Ioc (p := 2 * Real.pi) (a := 0) (x := α + α)
+    (y := β) ⟨lt_of_le_of_ne (by linarith) h0.symm, by linarith⟩ ⟨hβ₀, by linarith⟩).1 hsum]
