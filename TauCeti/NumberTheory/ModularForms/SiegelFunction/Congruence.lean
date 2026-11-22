@@ -198,16 +198,14 @@ theorem siegelFunction_zmod_pow_twelve_mul_smul {N k : ℕ} [NeZero N] (hk : N �
           ℝ) / N) τ ^ (12 * k) := by
   set a : Fin 2 → ℤ := fun i ↦ (v i).val
   have ha : (fun i ↦ ((v i).val : ℝ) / N) = fun i ↦ (a i : ℝ) / N := by ext i; simp [a]
+  have hvec := Matrix.SpecialLinearGroup.vecMulEquiv_map_comp (Int.castRingHom (ZMod N)) γ a
+  have hca : (Int.castRingHom (ZMod N)) ∘ a = v := by ext i; simp [a]
+  rw [hca] at hvec
   rw [ha, siegelFunction_div_pow_twelve_mul_smul_eq_zmod hk a γ τ]
-  have hvec : (fun j ↦ (((a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) j : ℤ) : ZMod N)) =
-      (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv v := by
-    ext j
-    simpa [a, Matrix.SpecialLinearGroup.vecMulEquiv_apply, Function.comp_def, eq_intCast,
-      Int.cast_natCast, ZMod.natCast_zmod_val] using
-      ((Int.castRingHom (ZMod N)).map_vecMul (γ : Matrix (Fin 2) (Fin 2) ℤ) a j)
   congr 3
-  funext j
-  exact congrArg (fun x : ZMod N ↦ ((x.val : ℝ) / N)) (congrFun hvec j)
+  ext j
+  simpa [Function.comp_apply] using
+    congrArg (fun x : ZMod N ↦ (x.val : ℝ) / N) (congrFun hvec j).symm
 
 /-- For `[NeZero N]` and `τ` in the upper half-plane, `g_{a/N}(τ) = 0` if and only if
 `a ≡ 0 (mod N)`. -/

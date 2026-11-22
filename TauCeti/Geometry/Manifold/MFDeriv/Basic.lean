@@ -29,6 +29,8 @@ manifold-derivative API.
   differentiability hypothesis.
 * `TauCeti.finiteDimensional_of_injective_mfderiv`: a map into a finite-dimensional manifold
   whose differential is injective at some point has a finite-dimensional source model.
+* `MDifferentiableWithinAt.zpow`, `MDifferentiableAt.zpow`, `MDifferentiableOn.zpow`,
+  `MDifferentiable.zpow`: manifold differentiability of integer powers at nonvanishing points.
 -/
 
 public section
@@ -135,5 +137,40 @@ theorem finiteDimensional_of_injective_mfderiv {f : M → N}
   have : FiniteDimensional 𝕜 (TangentSpace I x) :=
     Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
   exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
+
+section zpow
+
+variable {F' : Type*} [NormedDivisionRing F'] [NormedAlgebra 𝕜 F'] {p : M → F'} {s : Set M}
+
+/-- An integer power of a function differentiable within a set at a nonvanishing point is
+differentiable within that set there. -/
+theorem _root_.MDifferentiableWithinAt.zpow (hp : MDifferentiableWithinAt I 𝓘(𝕜, F') p s x)
+    (hp_ne : p x ≠ 0) (n : ℤ) :
+    MDifferentiableWithinAt I 𝓘(𝕜, F') (p ^ n) s x := by
+  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
+  · simpa only [zpow_natCast] using hp.pow k
+  · simpa only [zpow_neg, zpow_natCast] using (hp.pow k).inv (pow_ne_zero k hp_ne)
+
+/-- An integer power of a function differentiable at a nonvanishing point is differentiable
+there. -/
+theorem _root_.MDifferentiableAt.zpow (hp : MDifferentiableAt I 𝓘(𝕜, F') p x)
+    (hp_ne : p x ≠ 0) (n : ℤ) :
+    MDifferentiableAt I 𝓘(𝕜, F') (p ^ n) x :=
+  mdifferentiableWithinAt_univ.mp (hp.mdifferentiableWithinAt.zpow hp_ne n)
+
+/-- An integer power of a function differentiable on a set where it is nonvanishing is
+differentiable on that set. -/
+theorem _root_.MDifferentiableOn.zpow (hp : MDifferentiableOn I 𝓘(𝕜, F') p s)
+    (hp_ne : ∀ y ∈ s, p y ≠ 0) (n : ℤ) :
+    MDifferentiableOn I 𝓘(𝕜, F') (p ^ n) s :=
+  fun y hy ↦ (hp y hy).zpow (hp_ne y hy) n
+
+/-- An integer power of a globally nonvanishing differentiable function is differentiable. -/
+theorem _root_.MDifferentiable.zpow (hp : MDifferentiable I 𝓘(𝕜, F') p)
+    (hp_ne : ∀ y, p y ≠ 0) (n : ℤ) :
+    MDifferentiable I 𝓘(𝕜, F') (p ^ n) :=
+  fun y ↦ (hp y).zpow (hp_ne y) n
+
+end zpow
 
 end TauCeti

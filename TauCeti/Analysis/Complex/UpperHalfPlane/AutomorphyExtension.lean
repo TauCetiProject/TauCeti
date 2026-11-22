@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # The automorphic extension of a local section
@@ -184,11 +184,9 @@ theorem mdifferentiableOn_automorphyExtension (hU : IsOpen U)
       fun σ ↦ denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ (-k) * f (g • σ) := by
     filter_upwards [hnhds] with σ hσ
     exact automorphyExtension_eq hf hg hσ
-  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun σ : ℍ ↦ f (g • σ)) τ := by
-    refine MDifferentiableAt.comp (g := f) (f := fun σ : ℍ ↦ g • σ) τ
-      ((hfd _ hgτ).mdifferentiableAt (hU.mem_nhds hgτ)) ?_
-    have h := mdifferentiable_smul (g := Matrix.SpecialLinearGroup.mapGL ℝ g) (by simp) τ
-    simpa only [Matrix.SpecialLinearGroup.mapGL_smul] using h
+  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun σ : ℍ ↦ f (g • σ)) τ :=
+    ((hfd _ hgτ).mdifferentiableAt (hU.mem_nhds hgτ)).comp τ
+      (TauCeti.UpperHalfPlane.mdifferentiable_sl_smul g τ)
   exact (((mdifferentiable_denom_zpow _ _ τ).mul hcomp).congr_of_eventuallyEq
     heq).mdifferentiableWithinAt
 

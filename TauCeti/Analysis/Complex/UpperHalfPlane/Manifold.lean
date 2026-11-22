@@ -56,9 +56,10 @@ roots `aᵢ` are holomorphic.
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
 * `TauCeti.UpperHalfPlane.contMDiff_J_smul`,
   `TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`,
-  `TauCeti.UpperHalfPlane.instContMDiffConstSMulPGLReal`, and
-  `TauCeti.UpperHalfPlane.instContMDiffConstSMulSL2Real` — `J`, `GL(2, ℝ)`, `PGL(2, ℝ)`, and
-  `SL(2, R)` act on `ℍ` by real-analytic maps (`𝓘(ℝ, ℂ)`).
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulPGLReal`,
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulSL2Real`, and
+  `TauCeti.UpperHalfPlane.mdifferentiable_sl_smul` — `J`, `GL(2, ℝ)`, `PGL(2, ℝ)`, and
+  `SL(2, R)` act on `ℍ` by real-analytic maps (`𝓘(ℝ, ℂ)`), and `SL(2, R)` acts holomorphically.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
   `TauCeti.UpperHalfPlane.exists_isOpen_zeros_inter` — a subset's zeros isolate in an
   open neighbourhood.
@@ -283,6 +284,15 @@ instance instContMDiffConstSMulPGLReal {n : ℕ∞ω} :
 instance instContMDiffConstSMulSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
     ContMDiffConstSMul 𝓘(ℝ, ℂ) n SL(2, R) ℍ :=
   MulAction.contMDiffConstSMul_compHom (I := 𝓘(ℝ, ℂ)) (f := Matrix.SpecialLinearGroup.mapGL ℝ)
+
+/-- Every element of `SL(2, R)` (for an `ℝ`-algebra `R`, such as `ℤ` or `ℝ`) acts holomorphically
+on `ℍ`. -/
+theorem mdifferentiable_sl_smul {R : Type*} [CommRing R] [Algebra R ℝ] (g : SL(2, R)) :
+    MDiff (fun τ : ℍ ↦ g • τ) := by
+  have h : (fun τ : ℍ ↦ g • τ) = fun τ : ℍ ↦ Matrix.SpecialLinearGroup.mapGL ℝ g • τ :=
+    funext fun τ ↦ MulAction.compHom_smul_def (Matrix.SpecialLinearGroup.mapGL ℝ) g τ
+  rw [h]
+  exact UpperHalfPlane.mdifferentiable_smul (g := Matrix.SpecialLinearGroup.mapGL ℝ g) (by simp)
 
 end TauCeti.UpperHalfPlane
 

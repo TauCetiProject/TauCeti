@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
-public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Meromorphic
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Analysis.Complex.TaylorSeries
@@ -54,6 +53,7 @@ expansion here of the function read in the scaling coordinate of the cusp.
   exponent making the twisted cusp function analytic, and
   `TauCeti.UpperHalfPlane.laurentQExpansion_of_analyticAt` at analytic points.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_add`, `TauCeti.UpperHalfPlane.laurentQExpansion_mul`,
+  `TauCeti.UpperHalfPlane.laurentQExpansion_prod`,
   `TauCeti.UpperHalfPlane.laurentQExpansion_inv`, `TauCeti.UpperHalfPlane.laurentQExpansion_zpow`
   and their companions: the field operations.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_qParam_zpow` and
@@ -372,6 +372,19 @@ theorem laurentQExpansion_pow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℕ
   | zero => simp
   | succ n ih =>
     rw [pow_succ, laurentQExpansion_mul (meromorphicAt_cuspFunction_pow hf n) hf, ih, pow_succ]
+
+/-- The Laurent `q`-expansion commutes with finite products. -/
+theorem laurentQExpansion_prod {ι : Type*} (s : Finset ι) {f : ι → ℍ → ℂ}
+    (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
+    laurentQExpansion h (∏ i ∈ s, f i) = ∏ i ∈ s, laurentQExpansion h (f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | @insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.prod_insert ha,
+      laurentQExpansion_mul (hf a (Finset.mem_insert_self a s))
+        (meromorphicAt_cuspFunction_prod s fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)),
+      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
 
 /-- The Laurent `q`-expansion commutes with inverses. This includes the case where the cusp
 function vanishes near `q = 0`, where both sides are `0`. -/

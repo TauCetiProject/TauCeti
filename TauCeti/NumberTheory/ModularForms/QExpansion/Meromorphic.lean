@@ -34,6 +34,10 @@ series.
   (`0 < n`) to `f`.
 * `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_nat_mul`: cusp meromorphy descends from
   period `d * h` (`d ≠ 0`) to period `h`.
+* `TauCeti.UpperHalfPlane.cuspFunction_prod_eventuallyEq`,
+  `meromorphicOrderAt_cuspFunction_pow`, `meromorphicOrderAt_cuspFunction_zpow`,
+  `meromorphicOrderAt_cuspFunction_prod`: cusp-order formulas for powers, integer powers, and
+  finite products.
 -/
 
 public noncomputable section
@@ -124,5 +128,36 @@ theorem meromorphicAt_cuspFunction_of_nat_mul (hh : 0 < h) (hf : MDiff f)
       (by simpa only [Complex.ofReal_mul, Complex.ofReal_natCast] using
         hper.qParam_pow_mul_comp_ofComplex.nat_mul d)
       (hg_eq ▸ analyticAt_cuspFunction_qParam_pow_mul hmer hdk)).isBigO_one ℝ)
+
+/-- Off `q = 0`, the cusp function of a finite product is the product of the cusp functions. -/
+theorem cuspFunction_prod_eventuallyEq {ι : Type*} (s : Finset ι) (f : ι → ℍ → ℂ) :
+    cuspFunction h (∏ i ∈ s, f i) =ᶠ[𝓝[≠] 0] fun q ↦ ∏ i ∈ s, cuspFunction h (f i) q :=
+  eventually_nhdsWithin_of_forall fun q hq ↦ by
+    simp [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
+
+/-- The order at `0` of the cusp function of `f ^ n` is `n` times that of `f`. -/
+theorem meromorphicOrderAt_cuspFunction_pow
+    (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℕ) :
+    meromorphicOrderAt (cuspFunction h (f ^ n)) 0 =
+      n * meromorphicOrderAt (cuspFunction h f) 0 := by
+  rw [Pi.pow_def, meromorphicOrderAt_congr (cuspFunction_map_eventuallyEq (· ^ n) f),
+    fun_meromorphicOrderAt_pow hf]
+
+/-- The order at `0` of the cusp function of `f ^ n` (`n : ℤ`) is `n` times that of `f`. -/
+theorem meromorphicOrderAt_cuspFunction_zpow
+    (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℤ) :
+    meromorphicOrderAt (cuspFunction h (f ^ n)) 0 =
+      n * meromorphicOrderAt (cuspFunction h f) 0 := by
+  rw [Pi.pow_def, meromorphicOrderAt_congr (cuspFunction_map_eventuallyEq (· ^ n) f),
+    fun_meromorphicOrderAt_zpow hf]
+
+/-- The order at `0` of the cusp function of a finite product is the sum of the cusp orders of
+its factors. -/
+theorem meromorphicOrderAt_cuspFunction_prod {ι : Type*} (s : Finset ι)
+    {f : ι → ℍ → ℂ} (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
+    meromorphicOrderAt (cuspFunction h (∏ i ∈ s, f i)) 0 =
+      ∑ i ∈ s, meromorphicOrderAt (cuspFunction h (f i)) 0 := by
+  rw [meromorphicOrderAt_congr (cuspFunction_prod_eventuallyEq s f),
+    meromorphicOrderAt_fun_prod hf]
 
 end TauCeti.UpperHalfPlane

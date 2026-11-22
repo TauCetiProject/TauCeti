@@ -57,9 +57,10 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
-* `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv` and
-  `Matrix.SpecialLinearGroup.vecMulEquiv`: right multiplication of row vectors by `g` is inverted
-  by `g⁻¹` and defines an equivalence on `n → R`.
+* `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`,
+  `Matrix.SpecialLinearGroup.vecMulEquiv`, and `Matrix.SpecialLinearGroup.vecMulEquiv_map_comp`:
+  right multiplication of row vectors by `g` is inverted by `g⁻¹`, defines an equivalence on
+  `n → R`, and intertwines `map f g` with ring homomorphisms `f`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
   leaves sums over all row vectors unchanged.
 * `Matrix.SpecialLinearGroup.vecMul_map_mul` and
@@ -230,6 +231,14 @@ theorem vecMulEquiv_mul {R : Type*} [CommRing R] {n : Type*} [Fintype n] [Decida
     (g * h).vecMulEquiv = g.vecMulEquiv.trans h.vecMulEquiv := by
   ext a i
   simp [Matrix.vecMul_vecMul]
+
+/-- Mapping a row vector along a ring homomorphism `f : R →+* S` intertwines right multiplication
+by `g ∈ SL(n, R)` with `(map f g).vecMulEquiv`. -/
+theorem vecMulEquiv_map_comp {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n R) (a : n → R) :
+    (map f g).vecMulEquiv (f ∘ a) = f ∘ (a ᵥ* (g : Matrix n n R)) := by
+  ext j
+  simp [vecMulEquiv_apply, Function.comp_def, f.map_vecMul]
 
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
 a sum over all row vectors when `R` is finite. -/

@@ -5,7 +5,6 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.ZMod.QuotientRing
