@@ -8,10 +8,11 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
-# Correcting a partial diffeomorphism to pull back a two-form, keeping its derivative
+# Symplectic neighbourhood germs with a prescribed ambient derivative
 
 Let `θ` and `σ` be closed two-forms on manifolds `M` and `N`, with `M` boundaryless, let
 `f : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
@@ -30,11 +31,20 @@ diffeomorphism `Θ` of the source of `Ψ` which fixes `f(Q)`, has the identity a
 it, and pulls `Ψ^* σ` back to `θ` near `f(Q)`. The correction is `φ = Ψ ∘ Θ`, and the chain rule
 gives `dφ = dΨ ∘ dΘ = dΨ` along `f(Q)`.
 
-This is the last step in the construction of a symplectomorphism of neighbourhoods of two compact
-submanifolds with a prescribed symplectic bundle isomorphism `A` between the ambient tangent
-bundles along them: once `A` is realized as the differential along the submanifold of some
-diffeomorphism of neighbourhoods, this theorem corrects that diffeomorphism to one pulling the
-second form back to the first, without changing its differential along the submanifold.
+Together with the realization of a bundle isomorphism along `f(Q)` as the differential of a
+partial diffeomorphism (`TauCeti.SmoothEmbedding.exists_partialDiffeomorph_mfderiv_eq`), this gives
+symplectic neighbourhood germs with a prescribed ambient derivative
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq`). Let `i : Q → M` be a compact
+embedded submanifold along which `θ` is nondegenerate, let `g : Q → N` be a smooth map inducing
+the topology of `Q`, and let `A q : T_{i q} M → T_{g q} N` be linear isomorphisms, smooth in
+tangent coordinates, with `A q ∘ d i_q = d g_q` and `σ(A q v, A q w) = θ(v, w)`. Then there is a
+diffeomorphism `φ` between open neighbourhoods of `i(Q)` and `g(Q)` pulling `σ` back to `θ`, with
+`φ (i q) = g q` and `d φ_{i q} = A q`. For a diffeomorphism `f : Q → Q'` and a second compact
+embedded submanifold `j : Q' → N`, the case `g = j ∘ f` realizes a symplectic bundle isomorphism
+`A : i^* TM → j^* TN` over `f`. No constant-rank hypothesis on the pullback of `θ` to `Q` is
+needed. Conversely, the restriction and the differentials along `i(Q)` of any such `φ` are data of
+this kind, so these conditions characterize them
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_iff`).
 
 ## Main results
 
@@ -42,11 +52,17 @@ second form back to the first, without changing its differential along the subma
   diffeomorphism whose differential carries `σ` to `θ` along a compact embedded submanifold
   `f(Q)` agrees to first order along `f(Q)` with a diffeomorphism of neighbourhoods pulling `σ`
   back to `θ`.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq`: a symplectic bundle isomorphism
+  along a compact embedded submanifold is the differential of a diffeomorphism of neighbourhoods
+  pulling one form back to the other.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_iff`: the data realized by such
+  diffeomorphisms are characterized.
 
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Theorem 7.4 (the relative Moser theorem).
+  Springer, 2001, Theorem 7.4 (the relative Moser theorem) and Theorem 8.4 (the Lagrangian
+  neighbourhood theorem, whose prescribed-derivative refinement is proved here).
 -/
 
 public section
@@ -178,5 +194,123 @@ theorem exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq (f : SmoothEmbedding J
     simp only [Manifold.mfderiv_inclusion_apply]
     -- The base point `ι z` of `U` is `z` in `M`, by `hιval`.
     exact congrArg (fun x : M ↦ θ.val x v) (congrFun hιval z)
+
+section PrescribedDerivative
+
+variable [FiniteDimensional ℝ F] [K.Boundaryless] [T2Space N] [SecondCountableTopology N]
+
+/-- **Symplectic neighbourhood germs with a prescribed ambient derivative.** Let `θ` and `σ` be
+closed two-forms on finite-dimensional boundaryless manifolds `M` and `N`, Hausdorff and second
+countable, let `i : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and
+let `g : Q → N` be a smooth map inducing the topology of `Q`. Let `A q : T_{i q} M → T_{g q} N` be
+linear isomorphisms, smooth in tangent coordinates, which extend the differential of `g` along `i`,
+`A q ∘ d i_q = d g_q`, and carry `σ` to `θ`. Then there are open neighbourhoods `U₀` of `i(Q)` and
+`U₁` of `g(Q)` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ`, with `φ (i q) = g q`
+and `d φ_{i q} = A q` for every `q`.
+
+For a diffeomorphism `f : Q → Q'` onto a second compact embedded submanifold `j : Q' → N`, the
+case `g = j ∘ f` is a symplectomorphism of neighbourhoods with `φ ∘ i = j ∘ f` realizing a
+symplectic bundle isomorphism `A : i^* TM → j^* TN` over `f`. -/
+theorem exists_diffeomorph_opens_mfderiv_eq (i : SmoothEmbedding J I ∞ Q M) {g : Q → N}
+    (hg : ContMDiff J K ∞ g) (hgi : Topology.IsInducing g)
+    {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) (hnd : ∀ q, (θ.bilinFormAt (i q)).Nondegenerate)
+    {σ : SmoothTwoForm K N} (hσ : σ.IsClosed)
+    {A : ∀ q, TangentSpace I (i q) →L[ℝ] TangentSpace K (g q)}
+    (hA : ∀ q, ContMDiffAt J 𝓘(ℝ, E →L[ℝ] F) ∞ (inTangentCoordinates I K i g A q) q)
+    (hAinv : ∀ q, (A q).IsInvertible)
+    (hAi : ∀ q, (A q).comp (mfderiv J I i q) = mfderiv J K g q)
+    (hAσ : ∀ q (v w : TangentSpace I (i q)),
+      SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w) :
+    ∃ (U₀ : Opens M) (U₁ : Opens N) (φ : U₀ ≃ₘ⟮I, K⟯ U₁),
+      (∀ q, ∃ h : i q ∈ U₀, (φ ⟨i q, h⟩ : N) = g q ∧ ∀ v, mfderiv I K φ ⟨i q, h⟩ v = A q v) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : U₁ → N) contMDiff_subtypeVal σ) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal θ := by
+  rcases isEmpty_or_nonempty Q with hQ | hQ
+  · -- For empty `Q`, the empty open sets will do.
+    have : IsEmpty (⊥ : Opens M) := ⟨fun x ↦ Set.notMem_empty (x : M) <| by
+      simpa only [← SetLike.mem_coe, Opens.coe_bot] using x.property⟩
+    have : IsEmpty (⊥ : Opens N) := ⟨fun y ↦ Set.notMem_empty (y : N) <| by
+      simpa only [← SetLike.mem_coe, Opens.coe_bot] using y.property⟩
+    let φ : (⊥ : Opens M) ≃ₘ⟮I, K⟯ (⊥ : Opens N) :=
+      { toEquiv := Equiv.equivOfIsEmpty _ _
+        contMDiff_toFun := fun x ↦ isEmptyElim x
+        contMDiff_invFun := fun y ↦ isEmptyElim y }
+    exact ⟨⊥, ⊥, φ, fun q ↦ isEmptyElim q, Subtype.ext (funext fun x ↦ isEmptyElim x)⟩
+  -- Realize `A` as the differential of a partial diffeomorphism `Ψ`, then correct `Ψ` by the
+  -- relative Moser theorem without changing its differential along `i(Q)`.
+  obtain ⟨Ψ, hsrc, -, -, hval, hd⟩ := i.exists_partialDiffeomorph_mfderiv_eq hg hgi hA hAinv hAi
+    isOpen_univ (subset_univ _) isOpen_univ (subset_univ _)
+  obtain rfl : g = Ψ ∘ i := funext fun q ↦ (hval q).symm
+  obtain rfl : A = fun q ↦ mfderiv I K Ψ (i q) := funext fun q ↦ (hd q).symm
+  exact exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq i hθ hnd hσ Ψ
+    (fun q ↦ hsrc (mem_range_self q)) hAσ
+
+/-- **Symplectic neighbourhood germs with a prescribed ambient derivative, characterized.** Along a
+compact embedded submanifold `i : Q → M` with `θ` nondegenerate along it, a map `g : Q → N` and
+linear maps `A q : T_{i q} M → T_{g q} N` are the restriction and the differentials along `i(Q)`
+of a diffeomorphism of open neighbourhoods pulling `σ` back to `θ` exactly when `g` is smooth and
+induces the topology of `Q`, `A` is smooth in tangent coordinates, each `A q` is invertible,
+`A q ∘ d i_q = d g_q`, and each `A q` carries `σ` to `θ`. -/
+theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M) {g : Q → N}
+    {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) (hnd : ∀ q, (θ.bilinFormAt (i q)).Nondegenerate)
+    {σ : SmoothTwoForm K N} (hσ : σ.IsClosed)
+    {A : ∀ q, TangentSpace I (i q) →L[ℝ] TangentSpace K (g q)} :
+    (∃ (U₀ : Opens M) (U₁ : Opens N) (φ : U₀ ≃ₘ⟮I, K⟯ U₁),
+      (∀ q, ∃ h : i q ∈ U₀, (φ ⟨i q, h⟩ : N) = g q ∧ ∀ v, mfderiv I K φ ⟨i q, h⟩ v = A q v) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : U₁ → N) contMDiff_subtypeVal σ) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal θ) ↔
+      ContMDiff J K ∞ g ∧ Topology.IsInducing g ∧
+        (∀ q, ContMDiffAt J 𝓘(ℝ, E →L[ℝ] F) ∞ (inTangentCoordinates I K i g A q) q) ∧
+        (∀ q, (A q).IsInvertible) ∧ (∀ q, (A q).comp (mfderiv J I i q) = mfderiv J K g q) ∧
+        ∀ q (v w : TangentSpace I (i q)),
+          SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by
+  refine ⟨fun ⟨U₀, U₁, φ, hφ, hpull⟩ ↦ ?_, fun ⟨hg, hgi, hA, hAinv, hAi, hAσ⟩ ↦
+    exists_diffeomorph_opens_mfderiv_eq i hg hgi hθ hnd hσ hA hAinv hAi hAσ⟩
+  -- `φ` carries `σ` to `θ` on every tangent space of `U₀`, in particular along `i(Q)`.
+  have hφσ (z : U₀) (v w : TangentSpace I z) :
+      SmoothBundleForm.eval₂ σ (φ z : N) (mfderiv I K φ z v) (mfderiv I K φ z w) =
+        SmoothBundleForm.eval₂ θ (z : M) v w := by
+    simpa only [SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val_apply] using
+      congrArg (fun α : SmoothTwoForm I U₀ ↦ SmoothBundleForm.eval₂ α z v w) hpull
+  have hAσ (q : Q) (v w : TangentSpace I (i q)) :
+      SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by
+    obtain ⟨h, hφq, hdφ⟩ := hφ q
+    have hz := hφσ ⟨i q, h⟩ v w
+    rwa [hdφ v, hdφ w, hφq] at hz
+  rcases isEmpty_or_nonempty Q with hQ | hQ
+  · exact ⟨fun q ↦ isEmptyElim q, (Topology.IsEmbedding.of_subsingleton g).isInducing,
+      fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, fun q ↦ isEmptyElim q, hAσ⟩
+  -- Read `φ` as a partial diffeomorphism `Ψ` from `M` to `N`, whose restriction and differentials
+  -- along `i(Q)` are `g` and `A`.
+  obtain ⟨q₀⟩ := id hQ
+  have hU₀ : Nonempty U₀ := ⟨⟨i q₀, (hφ q₀).1⟩⟩
+  have hU₁ : Nonempty U₁ := ⟨φ ⟨i q₀, (hφ q₀).1⟩⟩
+  let Ψ := φ.toPartialDiffeomorph.liftOpens hU₀ hU₁
+  have hΨ : Ψ ∘ Subtype.val = Subtype.val ∘ φ := funext fun x ↦ by
+    simp [Ψ, PartialDiffeomorph.liftOpens_apply_coe]
+  have hsrc : range i ⊆ Ψ.source := by
+    rintro _ ⟨q, rfl⟩
+    rw [PartialDiffeomorph.liftOpens_source]
+    exact ⟨⟨i q, (hφ q).1⟩, by simp, rfl⟩
+  have hval (q : Q) : Ψ (i q) = g q := by
+    obtain ⟨h, hφq, -⟩ := hφ q
+    rw [← hφq]
+    exact congrFun hΨ ⟨i q, h⟩
+  have hd (q : Q) : mfderiv I K Ψ (i q) = A q := by
+    obtain ⟨h, -, hdφ⟩ := hφ q
+    ext v
+    -- `v` is ascribed to the tangent space of `U₀` at `⟨i q, h⟩`, which is only definitionally the
+    -- tangent space of `M` at `i q`, so that the rewrites below find their patterns.
+    have h1 := Manifold.mfderiv_comp_subtype_val_apply (J := I) (I := K) (f := (Ψ : M → N))
+      (x := (⟨i q, h⟩ : U₀)) (show TangentSpace I (⟨i q, h⟩ : U₀) from v)
+    rw [hΨ, Manifold.mfderiv_subtype_val_comp_apply, hdφ] at h1
+    exact h1.symm
+  obtain ⟨hg, hgi, hA, hAinv, hAi⟩ :=
+    (i.exists_partialDiffeomorph_mfderiv_eq_iff (g := g) (A := A)).1 ⟨Ψ, hsrc, hval, hd⟩
+  exact ⟨hg, hgi, hA, hAinv, hAi, hAσ⟩
+
+end PrescribedDerivative
 
 end TauCeti.SmoothTwoForm
