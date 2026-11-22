@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Clutching
-import Mathlib.Topology.Compactification.OnePoint.Sphere
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 
 /-!
 # The standard sphere generates the second homology of the Riemann sphere
 
 The standard sphere `TauCeti.riemannSphereSquare` of the Riemann sphere `OnePoint ℂ` maps the open
-square bijectively onto `ℂ` and its boundary to `∞`. Read on the round sphere `S² ⊂ ℝ³` through the
-stereographic homeomorphism `onePointEquivSphereOfFinrankEq`, it therefore covers the complement
-of a point exactly once, so its Hurewicz class generates `H₂(S²; ℤ)`
-(`GenLoop.isIso_hurewicz_of_bijOn_toSphere`). By naturality of the Hurewicz class, the integral
-Hurewicz class of the standard sphere is an isomorphism `ℤ ≅ H₂(OnePoint ℂ; ℤ)`
-(`TauCeti.isIso_hurewicz_riemannSphereSquare`): its class generates `H₂(OnePoint ℂ; ℤ)`
+square bijectively onto `ℂ` and its boundary to `∞`. So it covers everything but the base point
+and identifies only boundary points, and its integral Hurewicz class is an isomorphism
+`ℤ ≅ H₂(OnePoint ℂ; ℤ)` (`GenLoop.isIso_hurewicz_of_forall_ne`,
+`TauCeti.isIso_hurewicz_riemannSphereSquare`): its class generates `H₂(OnePoint ℂ; ℤ)`
 (`TauCeti.zmultiples_hurewiczIntHom_riemannSphereSquare`).
 
 The standard sphere is the sphere on which the clutching number of the tangent bundle, the first
@@ -41,7 +39,7 @@ values on it.
 
 public section
 
-open CategoryTheory AlgebraicTopology HomotopyGroup Metric OnePoint Set
+open CategoryTheory AlgebraicTopology HomotopyGroup OnePoint Set
 open scoped Topology Topology.Homotopy
 
 namespace TauCeti
@@ -50,38 +48,19 @@ namespace TauCeti
 Hurewicz class of `TauCeti.riemannSphereSquare` is an isomorphism `ℤ ≅ H₂(OnePoint ℂ; ℤ)`. -/
 theorem isIso_hurewicz_riemannSphereSquare :
     IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) riemannSphereSquare) := by
-  let e : OnePoint ℂ ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
-    onePointEquivSphereOfFinrankEq (by simp)
-  let p := GenLoop.map (e : C(OnePoint ℂ, sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) rfl
-    riemannSphereSquare
-  -- The image of the standard sphere covers the complement of `e ∞` once.
-  have hbij : BijOn (GenLoop.toSphere p) (GenLoop.toSphere p ⁻¹' {e ∞}ᶜ) {e ∞}ᶜ := by
-    have hp (y) : GenLoop.toSphere p (cubeToSphere 2 y) = e (riemannSphereSquare y) := by
-      simp [p]
-    -- A point of the square whose image is not `∞` lies in the open square.
-    have hint {y} (hy : e (riemannSphereSquare y) ≠ e ∞) : y ∉ Cube.boundary (Fin 2) :=
-      fun hb ↦ hy (by rw [riemannSphereSquare_apply_of_mem hb])
-    refine ⟨fun _ h ↦ h, fun s hs s' hs' h ↦ ?_, fun t ht ↦ ?_⟩
-    · obtain ⟨y, rfl⟩ := cubeToSphere_surjective _ s
-      obtain ⟨z, rfl⟩ := cubeToSphere_surjective _ s'
-      simp only [mem_preimage, mem_compl_singleton_iff, hp] at hs hs' h
-      rw [bijOn_riemannSphereSquare.injOn (hint hs) (hint hs') (e.injective h)]
-    · obtain ⟨w, hw⟩ := (OnePoint.ne_infty_iff_exists (x := e.symm t)).1 fun h ↦
-        ht (by rw [mem_singleton_iff, ← h, e.apply_symm_apply])
-      obtain ⟨y, -, hyw⟩ := bijOn_riemannSphereSquare.surjOn ⟨w, rfl⟩
-      have hyt : GenLoop.toSphere p (cubeToSphere 2 y) = t := by
-        rw [hp, hyw, hw, e.apply_symm_apply]
-      exact ⟨cubeToSphere 2 y, by rw [mem_preimage, hyt]; exact ht, hyt⟩
-  have hp := GenLoop.isIso_hurewicz_of_bijOn_toSphere (n := 0) finrank_euclideanSpace_fin p
-    isOpen_compl_singleton ⟨e (0 : ℂ), fun h ↦ coe_ne_infty _ (e.injective h)⟩ hbij
-  rw [GenLoop.hurewicz_map] at hp
-  -- The homeomorphism `e` induces an isomorphism on homology.
-  have : IsIso (TopCat.ofHom (e : C(OnePoint ℂ, sphere (0 : EuclideanSpace ℝ (Fin 3)) 1))) :=
-    (TopCat.isoOfHomeo (X := TopCat.of (OnePoint ℂ))
-      (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) e).isIso_hom
-  exact IsIso.of_isIso_comp_right _
-    (((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).map
-      (TopCat.ofHom (e : C(OnePoint ℂ, sphere (0 : EuclideanSpace ℝ (Fin 3)) 1))))
+  -- A point of the open square is sent into `ℂ`, away from the image `∞` of the boundary.
+  have hint {y} (hy : y ∉ Cube.boundary (Fin 2)) : riemannSphereSquare y ≠ ∞ := by
+    obtain ⟨w, hw⟩ := bijOn_riemannSphereSquare.mapsTo hy
+    exact hw ▸ coe_ne_infty w
+  refine GenLoop.isIso_hurewicz_of_forall_ne _ (fun q hq ↦ ?_) fun y z h ↦ ?_
+  · obtain ⟨w, rfl⟩ := OnePoint.ne_infty_iff_exists.1 hq
+    obtain ⟨y, -, hy⟩ := bijOn_riemannSphereSquare.surjOn ⟨w, rfl⟩
+    exact ⟨y, hy⟩
+  by_cases hy : y ∈ Cube.boundary (Fin 2) <;> by_cases hz : z ∈ Cube.boundary (Fin 2)
+  · exact Or.inr ⟨hy, hz⟩
+  · exact absurd (h.symm.trans (riemannSphereSquare_apply_of_mem hy)) (hint hz)
+  · exact absurd (h.trans (riemannSphereSquare_apply_of_mem hz)) (hint hy)
+  · exact Or.inl (bijOn_riemannSphereSquare.injOn hy hz h)
 
 /-- **The second homology of the Riemann sphere is generated by the standard sphere**: every class
 of `H₂(OnePoint ℂ; ℤ)` is an integer multiple of the integral Hurewicz class of

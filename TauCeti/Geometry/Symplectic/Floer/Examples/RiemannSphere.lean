@@ -180,15 +180,6 @@ theorem homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul
   push_cast at h1
   linear_combination -(c₁_FS A : ℝ) / 2 * h1
 
-/-- The monotonicity of the Riemann sphere on spherical classes, the form taken by the hypotheses
-of `TauCeti.Floer.PeriodGroup` and of the Laurent model `TauCeti.Floer.NovikovRing.toLaurentSeries`:
-the Fubini–Study area of every spherical class is half its first Chern number. -/
-theorem homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul
-    (s : sphericalClasses (OnePoint ℂ) 1) :
-    AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype s =
-      2⁻¹ * AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype s :=
-  homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s
-
 end OnePoint
 
 namespace TauCeti.Floer
@@ -201,22 +192,23 @@ namespace SphericalPeriodGroup
 Fubini–Study form and its first Chern number. -/
 theorem area_eq_inv_two_mul_chern_fubiniStudyForm (γ : SphericalPeriodGroup ω_FS c₁_FS) :
     PeriodGroup.area _ _ γ = 2⁻¹ * PeriodGroup.chern _ _ γ :=
-  PeriodGroup.area_eq_mul_chern
-    OnePoint.homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul γ
+  PeriodGroup.area_eq_mul_chern (ω := AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype)
+    (c := AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype)
+    (fun s ↦ OnePoint.homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s) γ
 
 /-- **On the period group of the Riemann sphere, the first Chern number is injective**, for the
 Fubini–Study form: a class of the period group is determined by its first Chern number. -/
 theorem chern_injective_fubiniStudyForm :
     Function.Injective (PeriodGroup.chern _ _ : SphericalPeriodGroup ω_FS c₁_FS →+ ℤ) :=
   PeriodGroup.chern_injective_of_area_eq_mul_chern
-    OnePoint.homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul
+    fun s ↦ OnePoint.homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s
 
 /-- **On the period group of the Riemann sphere, area is injective**, for the Fubini–Study form: a
 class of the period group is determined by its area. -/
 theorem area_injective_fubiniStudyForm :
     Function.Injective (PeriodGroup.area _ _ : SphericalPeriodGroup ω_FS c₁_FS →+ ℝ) :=
   PeriodGroup.area_injective_of_area_eq_mul_chern
-    OnePoint.homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul (by norm_num)
+    (fun s ↦ OnePoint.homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s) (by norm_num)
 
 /-- **The class of the standard sphere** in the period group of the Riemann sphere with the
 Fubini–Study area and the first Chern number of `ω_FS`. It has area `1` and Chern number `2`, and
@@ -299,7 +291,7 @@ theorem ker_chern_le_ker_area_riemannSphere :
     (AddMonoidHom.comp c₁_FS (sphericalClasses (OnePoint ℂ) 1).subtype).ker ≤
       (AddMonoidHom.comp ω_FS (sphericalClasses (OnePoint ℂ) 1).subtype).ker :=
   ker_le_ker_of_area_eq_mul_chern
-    homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul
+    fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s
 
 /-- On the Riemann sphere the first Chern number does not vanish on spherical classes. -/
 theorem chern_ne_zero_riemannSphere :
@@ -332,8 +324,9 @@ monomial `e^(-k ℓ)` to `X^k`: the Laurent variable `X` is `e^(-ℓ)`, of raw d
 valuation `1`. -/
 theorem NovikovRing.toLaurentSeries_single_neg_zsmul_riemannSphereGenerator {R : Type*}
     [Semiring R] (k : ℤ) (r : R) :
-    NovikovRing.toLaurentSeries
-        homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul
+    NovikovRing.toLaurentSeries (ω := AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype)
+        (c := AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype)
+        (fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s)
         chern_ne_zero_riemannSphere (by norm_num) (single (-(k • riemannSphereGenerator)) r) =
       HahnSeries.single k r :=
   NovikovRing.toLaurentSeries_single_neg_zsmul _ _ _ zmultiples_riemannSphereGenerator (by simp) k r
@@ -354,8 +347,9 @@ out of the Novikov ring indexed by `H₂(OnePoint ℂ; ℤ)` sends the monomial 
 of the standard sphere to the Laurent monomial `X^k`. -/
 theorem NovikovRing.toLaurentSeries_coefficientComparison_riemannSphere_single {R : Type*}
     [Semiring R] (k : ℤ) (r : R) :
-    NovikovRing.toLaurentSeries
-        homologySphereIntegralHom_comp_subtype_fubiniStudyForm_eq_inv_two_mul
+    NovikovRing.toLaurentSeries (ω := AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype)
+        (c := AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype)
+        (fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s)
         chern_ne_zero_riemannSphere (by norm_num)
         (coefficientComparison
           (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
