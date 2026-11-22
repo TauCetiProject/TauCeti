@@ -96,7 +96,7 @@ variable {ν : Module.Dual ℝ (GroupLieAlgebra I G)} {B : LinearMap.BilinForm �
   {ι : Type*} {t : Submodule ℝ (GroupLieAlgebra I G)} {α : ι → Dual ℝ t}
   {F : ι → Submodule ℝ (GroupLieAlgebra I G)} {J : (i : ι) → Module.End ℝ (F i)} {X : t}
 
-/-- **The height of a regular torus element is a Morse function.** In a root-plane decomposition of
+/-- **The height of a regular element of `t` is a Morse function.** In a root-plane decomposition of
 `𝔤` for a separating invariant form `B`, if no root vanishes at `X ∈ t`, the height `f_X` is a
 Morse function on every coadjoint orbit. -/
 theorem isMorse_orbitMap_coadjointRepresentation_apply [Finite ι]
@@ -115,8 +115,9 @@ namespace Module.Dual
 variable (ν : Module.Dual ℝ (GroupLieAlgebra I G))
 
 /-- **Coadjoint orbits of compact Lie groups carry Morse heights.** For a compact Lie group `G` and
-`ν ∈ 𝔤*`, some height `f_X = ⟨μ, X⟩` is a Morse function on the coadjoint orbit `G ⧸ G_ν`: the
-height of any regular element of a maximal abelian subspace of `𝔤`. -/
+`ν ∈ 𝔤*`, some height `f_X = ⟨μ, X⟩` is a Morse function on the coadjoint orbit `G ⧸ G_ν`. For
+the height of a regular element of a root-plane decomposition, see
+`TauCeti.IsRootPlaneDecomposition.isMorse_orbitMap_coadjointRepresentation_apply`. -/
 theorem exists_isMorse_orbitMap_coadjointRepresentation_apply [CompactSpace G] :
     ∃ X : GroupLieAlgebra I G,
       IsMorse 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
@@ -137,17 +138,6 @@ theorem exists_isMorse_orbitMap_coadjointRepresentation_apply [CompactSpace G] :
   exact ⟨X, hD.isMorse_orbitMap_coadjointRepresentation_apply hB hsep hX⟩
 
 /-! ### Perfection and Betti numbers -/
-
-/-- `G` acts on its coadjoint orbit by symplectomorphisms, read on tangent vectors. -/
-private theorem eval₂_coadjointOrbitForm_mfderiv_smul (a : G)
-    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)
-    (u v : TangentSpace
-      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) x) :
-    ν.coadjointOrbitForm.eval₂ (a • x) (mfderiv _ _ (a • ·) x u) (mfderiv _ _ (a • ·) x v) =
-      ν.coadjointOrbitForm.eval₂ x u v := by
-  have h := congrArg (fun τ ↦ SmoothBundleForm.eval₂ τ x u v)
-    (ν.mpullback_smul_coadjointOrbitForm a (ContMDiffSMul.contMDiff_const_smul (I := I) a))
-  simpa only [SmoothForm.eval₂_mpullback] using h
 
 variable [CompactSpace G] {X : GroupLieAlgebra I G}
 
@@ -180,11 +170,12 @@ theorem isPerfectMorse_orbitMap_coadjointRepresentation_apply
     IsPerfectMorse
       𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) k
       fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
     isClosed_stabilizer_coadjointRepresentation I ν
-  exact hX.isPerfectMorse_of_even fun _ ↦
-    ν.even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply
+  exact ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap.isPerfectMorse
+    ν.isSymplectic_coadjointOrbitForm.isNondegenerate ν.eval₂_coadjointOrbitForm_mfderiv_smul k hX
 
 /-- **Betti numbers of a coadjoint orbit count critical points.** For a Morse height `f_X` on a
 coadjoint orbit `O` of a compact Lie group, the Betti number `bⱼ(O; k)` is the number of critical
@@ -198,16 +189,8 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard
           (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) |
         manifoldMorseIndex
           𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-          (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) x = j}.ncard := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
-  have hc := (ν.isPerfectMorse_orbitMap_coadjointRepresentation_apply k hX).criticalCount_eq j
-  rw [criticalCount_def,
-    ← (hX.finite_criticalPoints.subset (Set.sep_subset _ _)).cast_ncard_eq] at hc
-  rw [bettiNumber_def]
-  exact_mod_cast hc.symm
+          (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) x = j}.ncard :=
+  (ν.isPerfectMorse_orbitMap_coadjointRepresentation_apply k hX).bettiNumber_eq_ncard j
 
 /-- **Odd Betti numbers of coadjoint orbits vanish.** For a coadjoint orbit `O` of a compact Lie
 group, `bⱼ(O; k) = 0` for every odd `j` and every division ring `k`. -/
@@ -233,18 +216,11 @@ theorem sum_bettiNumber_quotient_stabilizer_coadjointRepresentation
         bettiNumber k (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) j =
       (criticalPoints
         𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X)).ncard := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) :=
-    isClosed_stabilizer_coadjointRepresentation I ν
-  have hs := (ν.isPerfectMorse_orbitMap_coadjointRepresentation_apply k hX
-    ).sum_bettiNumber_eq_totalCriticalCount
-  rw [totalCriticalCount_def, ← hX.finite_criticalPoints.cast_ncard_eq] at hs
-  exact_mod_cast hs
+        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X)).ncard :=
+  (ν.isPerfectMorse_orbitMap_coadjointRepresentation_apply k hX).sum_bettiNumber_eq_ncard
 
-/-- **Coadjoint orbits of compact connected Lie groups are simply connected.** No height has a
-critical point of index one, as its indices are even, so a Morse height attaches no one-cell. -/
+/-- **Coadjoint orbits of compact connected Lie groups are simply connected.** For a compact
+connected Lie group `G` and `ν ∈ 𝔤*`, the coadjoint orbit `G ⧸ G_ν` is simply connected. -/
 theorem simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation [ConnectedSpace G] :
     SimplyConnectedSpace (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
@@ -253,6 +229,8 @@ theorem simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation [Connec
     isClosed_stabilizer_coadjointRepresentation I ν
   have : ConnectedSpace (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
     QuotientGroup.mk_surjective.connectedSpace continuous_quot_mk
+  -- A Morse height has no critical point of index one, as its indices are even, so it attaches
+  -- no one-cell.
   obtain ⟨X, hX⟩ := ν.exists_isMorse_orbitMap_coadjointRepresentation_apply
   exact hX.simplyConnectedSpace_of_manifoldMorseIndex_ne_one hX.contMDiff.continuous.isProperMap
     (isCompact_range hX.contMDiff.continuous).bddBelow fun _ hp h1 ↦

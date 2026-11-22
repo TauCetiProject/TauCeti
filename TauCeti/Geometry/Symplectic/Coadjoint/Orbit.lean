@@ -59,6 +59,7 @@ injective immersion into `𝔤*`. The orbit has dimension `dim 𝔤 - dim 𝔤_�
   `ω_ν` is the unique two-form pulling back to `σ_ν`.
 * `Module.Dual.isSymplectic_coadjointOrbitForm`: `ω_ν` is symplectic.
 * `Module.Dual.mpullback_smul_coadjointOrbitForm`: `G` acts by symplectomorphisms.
+* `Module.Dual.eval₂_coadjointOrbitForm_mfderiv_smul`: the same, on tangent vectors.
 * `Module.Dual.isEquivariantMomentMap_coadjointOrbitForm`: the orbit map is an equivariant moment
   map.
 * `Module.Dual.eval₂_coadjointOrbitForm_mfderiv_mulInvariantVectorField`:
@@ -221,6 +222,18 @@ theorem mpullback_smul_coadjointOrbitForm (g : G)
   rw [eq_coadjointOrbitForm_iff ν hπ, SmoothForm.mpullback_mpullback_of_comp_eq hπ hg
     contMDiff_mul_left hπ (funext fun h ↦ MulAction.Quotient.smul_coe _ g h),
     mpullback_quotientMk_coadjointOrbitForm, mpullback_mul_left_leftInvariantKirillovForm]
+
+/-- **`G` acts on its coadjoint orbit by symplectomorphisms**, read on tangent vectors: the KKS
+form pairs `d(g •) u` and `d(g •) v` at `g • x` as it pairs `u` and `v` at `x`. -/
+theorem eval₂_coadjointOrbitForm_mfderiv_smul (g : G)
+    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)
+    (u v : TangentSpace
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) x) :
+    ν.coadjointOrbitForm.eval₂ (g • x) (mfderiv _ _ (g • ·) x u) (mfderiv _ _ (g • ·) x v) =
+      ν.coadjointOrbitForm.eval₂ x u v := by
+  have h := congrArg (fun τ ↦ SmoothBundleForm.eval₂ τ x u v)
+    (ν.mpullback_smul_coadjointOrbitForm g (ContMDiffSMul.contMDiff_const_smul (I := I) g))
+  simpa only [SmoothForm.eval₂_mpullback] using h
 
 /-! ### The orbit map as a moment map -/
 
