@@ -199,8 +199,6 @@ private theorem d_eq_zero_of_d_eq (j : ℕ)
       (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
         contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f (j + 1) c') :
     𝒮[W].d (j + 1) j c' = 0 := by
-  have := mono_smoothSingularSubcomplexMap (I := I) (J := I) contMDiff_subtypeVal
-    (Subtype.val_injective (p := (· ∈ W)))
   apply (ModuleCat.mono_iff_injective ((SSet.chainComplexMap (smoothSingularSubcomplexMap
     (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f j)).mp inferInstance
   have h := ConcreteCategory.congr_hom ((SSet.chainComplexMap (smoothSingularSubcomplexMap
