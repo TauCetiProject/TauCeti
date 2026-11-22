@@ -46,6 +46,8 @@ in its function field is computed on affine opens.
   than the generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, every point other than the generic point is closed.
+* `TauCeti.AlgebraicGeometry.Scheme.surjective_of_isClosedImmersion`: on such a scheme, a closed
+  immersion from an irreducible scheme with more than one point is surjective.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
   Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
   point is closed, since all its points are closed. For instance, the zero locus of a function on
@@ -129,6 +131,23 @@ theorem isClosed_singleton_of_ne_genericPoint (hX : topologicalKrullDim X ≤ 1)
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
     ((coheight_eq_one_iff_ne_genericPoint hX).mpr hz)
+
+/-- On an irreducible scheme of dimension at most one, a closed immersion from an irreducible
+scheme with more than one point is surjective. The image of its generic point cannot be a closed
+point of `X`, since its preimage would then be a closed point generizing every point; so it is the
+generic point of `X`, and the closed image contains it. -/
+theorem surjective_of_isClosedImmersion (hX : topologicalKrullDim X ≤ 1) {C : Scheme.{u}}
+    [IrreducibleSpace C] [Nontrivial C] (i : C ⟶ X) [IsClosedImmersion i] : Surjective i := by
+  have hgen : i (genericPoint C) = genericPoint X := by
+    by_contra hne
+    have hcl := (isClosed_singleton_of_ne_genericPoint hX hne).preimage i.continuous
+    rw [← Set.image_singleton, i.isClosedEmbedding.injective.preimage_image] at hcl
+    have h (c : C) : c = genericPoint C := by
+      simpa [hcl.closure_eq] using specializes_iff_mem_closure.mp (genericPoint_specializes c)
+    obtain ⟨a, b, hab⟩ := exists_pair_ne C
+    exact hab ((h a).trans (h b).symm)
+  exact ⟨fun x ↦ (genericPoint_specializes x).mem_closed i.isClosedEmbedding.isClosed_range
+    ⟨_, hgen⟩⟩
 
 /-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
 not contain the generic point is closed: all of its points have codimension one, so they are
