@@ -63,8 +63,7 @@ including the empty diagram.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_empty`: the empty diagram has `χ_q Kh = 1`.
 * `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar`,
   `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`, and
-  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero` (with specializations
-  `khovanovEulerChar_int_ne_zero` and `khovanovEulerChar_rat_ne_zero`): `χ_q Kh(D; R)` evaluates
+  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero`: `χ_q Kh(D; R)` evaluates
   to `2 ^ c` at `q = 1`, is nonzero, and has a nonzero coefficient in some parity-compatible quantum
   degree.
 
@@ -255,21 +254,5 @@ theorem exists_coeff_khovanovEulerChar_ne_zero :
   exact ⟨j, by_contra fun hmod ↦ hj (D.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne hD R hmod), hj⟩
 
 end Ring
-
-section IntAndRat
-
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-
-/-- The integral graded Euler characteristic `χ_q Kh(D; ℤ)` of any planar oriented PD-code is
-nonzero. -/
-theorem khovanovEulerChar_int_ne_zero : D.khovanovEulerChar hD ℤ ≠ 0 :=
-  D.khovanovEulerChar_ne_zero hD ℤ
-
-/-- The rational graded Euler characteristic `χ_q Kh(D; ℚ)` of any planar oriented PD-code is
-nonzero. -/
-theorem khovanovEulerChar_rat_ne_zero : D.khovanovEulerChar hD ℚ ≠ 0 :=
-  D.khovanovEulerChar_ne_zero hD ℚ
-
-end IntAndRat
 
 end TauCeti.OrientedPDCode
