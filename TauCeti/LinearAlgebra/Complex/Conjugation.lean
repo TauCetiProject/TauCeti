@@ -183,6 +183,13 @@ theorem coe_realPoints (K : V →ₛₗ[starRingEnd ℂ] V) :
 
 variable {K : V →ₛₗ[starRingEnd ℂ] V}
 
+/-- `K` fixes each of its real points.  As a simp lemma it removes `K` from a real point, so
+`simp` reaches the same normal form whether it first rewrites by `TauCeti.realPointsEquiv_tmulConj`
+or by `TauCeti.tmulConj_tmul`. -/
+@[simp]
+theorem map_coe_realPoints (w : realPoints K) : K w = w :=
+  mem_realPoints.mp w.property
+
 private theorem add_conj_mem_realPoints (hK : Function.Involutive K) (v : V) :
     v + K v ∈ realPoints K := by
   rw [mem_realPoints, map_add, hK v, add_comm]
@@ -366,10 +373,10 @@ theorem realPointsEquiv_symm_apply (hK : Function.Involutive K) (v : V) :
   rw [LinearEquiv.symm_apply_eq, map_add, realPointsEquiv_tmul, realPointsEquiv_tmul, one_smul]
   exact (conjRealPart_add_I_smul_conjImaginaryPart v).symm
 
-/-- **The real points of a conjugation halve the dimension**: their `Module.finrank` over `ℝ` is
-the `Module.finrank` of `V` over `ℂ`, because `V` is their complexification and base change does
-not change `Module.finrank`.  No finiteness is assumed: in the infinite-dimensional case both sides
-are the junk value `0`. -/
+/-- **The real points of a conjugation have real `Module.finrank` equal to the complex
+`Module.finrank` of `V`**, because `V` is their complexification and base change does not change
+`Module.finrank`.  No finiteness is assumed: in the infinite-dimensional case both sides are the
+junk value `0`. -/
 theorem finrank_realPoints (hK : Function.Involutive K) :
     finrank ℝ (realPoints K) = finrank ℂ V := by
   rw [← (realPointsEquiv hK).finrank_eq, Module.finrank_baseChange]
@@ -586,10 +593,12 @@ theorem tmulConj_baseChange (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
 end Complexification
 
 /-- Real descent intertwines tensor conjugation with the original conjugation: the canonical
-real-descent equivalence identifies `TauCeti.tmulConj` on `ℂ ⊗[ℝ] realPoints K` with `K`.  It
-follows from `Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints`, since the equivalence
-sends the real points `1 ⊗ₜ w` of the tensor conjugation to the real points `w` of `K`. -/
-@[simp]
+real-descent equivalence identifies `TauCeti.tmulConj` on `ℂ ⊗[ℝ] realPoints K` with `K`.  `simp`
+uses it to turn tensor conjugation under `TauCeti.realPointsEquiv` into an application of `K`.  It
+is a pre-simp lemma (`simp↓`), so it fires before `simp` rewrites the argument `x`; otherwise
+`TauCeti.tmulConj_baseChange` would first move the conjugation inside a base change `x`, and this
+lemma would no longer match. -/
+@[simp↓]
 theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
     (x : ℂ ⊗[ℝ] realPoints K) :
     realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by

@@ -665,7 +665,7 @@ def compactDualRealPointsCLE : (E →L_c[ℝ] ℝ) ≃L[ℝ]
         (complexificationCompactDualEquiv E).symm A.val := by
       apply (complexificationCompactDualEquiv E).injective
       rw [complexificationCompactDualEquiv_tmulConj, ContinuousLinearEquiv.apply_symm_apply]
-      exact TauCeti.mem_realPoints.mp A.property
+      exact TauCeti.map_coe_realPoints A
     obtain ⟨f, hf⟩ := (tmulConj_eq_self_iff (E →L_c[ℝ] ℝ) _).mp hc
     simp [compactDualComplexExtension, hf]
   map_add' f g := Subtype.ext (map_add (compactDualComplexExtension E) f g)
