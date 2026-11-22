@@ -110,7 +110,7 @@ variable (𝕜 I p μ) in
 with compact support, hence `p`-integrable for a measure that is finite on compact sets. -/
 def ofCompactlySupported :
     ContMDiffSection.compactlySupported I F n E →+ LpSection 𝕜 F E p μ where
-  toFun s := mk (s : ∀ x, E x) s.val.contMDiff.continuous.aestronglyMeasurableSection
+  toFun s := mk (s : ∀ x, E x) (.of_continuous s.val.contMDiff.continuous)
     (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.property)
   map_zero' := by
     rw [← mk_zero]
@@ -129,7 +129,7 @@ theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F 
 /-- The class of a compactly supported `C^n` section is the class `mk` of the section. -/
 theorem ofCompactlySupported_apply (s : ContMDiffSection.compactlySupported I F n E) :
     ofCompactlySupported 𝕜 I p μ s = mk (s : ∀ x, E x)
-      s.val.contMDiff.continuous.aestronglyMeasurableSection
+      (.of_continuous s.val.contMDiff.continuous)
       (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.property) :=
   (rfl)
 
@@ -194,7 +194,7 @@ private theorem aestronglyMeasurable_norm_piecewise_sub {s : ∀ x, E x}
     (hA : MeasurableSet A) (t : Cₛ^∞⟮I; F, E⟯) :
     AEStronglyMeasurable (fun x ↦ ‖A.piecewise s 0 x - t x‖) μ :=
   ((hs.piecewise hA (.zero 𝕜 F E μ)).sub
-    t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm
+    (.of_continuous t.contMDiff.continuous)).aestronglyMeasurable_norm
 
 /-- **Approximation in a chart.** Let `A` be a measurable subset of a compact set `L` inside the
 base set of an atlas chart `e`. The restriction to `A` of a measurable section `s` with
@@ -330,7 +330,7 @@ theorem denseRange_ofCompactlySupported (hp : p ≠ ⊤) :
     calc _ ≤ eLpNorm ((fun x ↦ ‖((fun y ↦ ‖f y‖) - h) x‖) +
             fun x ↦ ‖(tsupport h).piecewise f 0 x - t x‖) p μ :=
           eLpNorm_mono_real ((f.aestronglyMeasurableSection.sub
-            t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm)
+            (.of_continuous t.contMDiff.continuous)).aestronglyMeasurable_norm)
             fun x ↦ (norm_norm _).trans_le (hbound x)
       _ ≤ eLpNorm ((fun y ↦ ‖f y‖) - h) p μ +
             eLpNorm (fun x ↦ ‖(tsupport h).piecewise f 0 x - t x‖) p μ := by

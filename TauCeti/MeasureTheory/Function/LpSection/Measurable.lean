@@ -250,13 +250,6 @@ theorem aestronglyMeasurableSection_restrict_symm {U : Set B} (hU : MeasurableSe
   filter_upwards [ae_restrict_mem hU] with x hx
   rw [e.apply_mk_symm (hUe hx)]
 
-/-- A continuous section is a.e.-strongly measurable: its coordinates in each atlas chart are
-continuous on the base set of the chart. -/
-theorem _root_.Continuous.aestronglyMeasurableSection
-    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) : AEStronglyMeasurableSection 𝕜 F μ s :=
-  .of_coord fun e _ ↦ (e.continuousOn.comp hs.continuousOn fun _ hx ↦ e.mem_source.2 hx).snd
-    |>.aestronglyMeasurable e.open_baseSet.measurableSet
-
 /-- Measurability of a section can be tested on a countable family of atlas charts whose base sets
 cover the base. -/
 theorem aestronglyMeasurableSection_iff_of_iUnion_baseSet_eq_univ {ι : Type*} [Countable ι]
