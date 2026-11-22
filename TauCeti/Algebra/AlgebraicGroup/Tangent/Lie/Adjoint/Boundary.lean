@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Regular
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
-import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Centralizers along the boundary of an adjoint orbit
@@ -97,18 +96,8 @@ theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary [IsReduced H]
     (Module.isUnimodular_mk_one x) (Module.isUnimodular_mk_one y) hy
   have hx := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal x
   have hy := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal y
-  have := Bialgebra.nontrivial (A := H ⧸ (centralizerHopfIdeal H x).toIdeal) k
-  have := finiteRingKrullDim_of_finiteType k (H ⧸ (centralizerHopfIdeal H x).toIdeal)
-  have htop := ringKrullDim_ne_top (R := H ⧸ (centralizerHopfIdeal H x).toIdeal)
-  lift ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) to ℕ∞
-    using ringKrullDim_ne_bot with d
-  lift d to ℕ using by simpa using htop
-  simp only [ENat.WithBot.coe_eq_natCast] at hx ⊢
-  by_contra h
-  apply horbit.not_ge
-  apply (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp
-  rw [hx, ← hy]
-  exact add_le_add le_rfl (not_lt.mp h)
+  exact lt_of_not_ge fun h ↦
+    horbit.not_ge (Comodule.le_of_add_ringKrullDim_quotient_eq_of_le hx hy h)
 
 /-- A minimal-centralizer regular element in the closure of an adjoint orbit already belongs
 to that orbit. In particular no adjoint orbit has a regular element in its boundary. -/

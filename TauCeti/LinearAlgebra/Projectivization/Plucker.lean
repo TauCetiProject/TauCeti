@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.ExteriorPower.Decomposable
 
 /-!
 # The Plücker point of a subspace
@@ -61,34 +63,14 @@ theorem mk_plucker_eq_mk_plucker_iff {x y : Fin p → ι → K} (hx : LinearInde
         Projectivization.mk K (plucker y) ((plucker_ne_zero_iff _).2 hy) ↔
       Submodule.span K (range x) = Submodule.span K (range y) := by
   rw [Projectivization.mk_eq_mk_iff]
-  constructor
-  · rintro ⟨a, ha⟩
-    -- The exterior products are proportional, hence so are their products with any vector.
-    have hι : ιMulti K p x = a • ιMulti K p y := by
-      apply ((Pi.basisFun K ι).exteriorPower p).repr.injective
-      ext s
-      rw [← plucker_eq_repr_ιMulti, ← ha, Units.smul_def, Units.smul_def, map_smul,
-        Finsupp.smul_apply, Pi.smul_apply, ← plucker_eq_repr_ιMulti]
-    ext v
-    rw [exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hx,
-      exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hy, hι, Units.smul_def,
-      Submodule.coe_smul, mul_smul_comm, smul_eq_zero_iff_right a.ne_zero]
-  · intro h
-    -- Write `x` in the basis `y` of the common span.
-    have hxy (i : Fin p) : x i ∈ Submodule.span K (range y) := h ▸ Submodule.subset_span ⟨i, rfl⟩
-    set A : Matrix (Fin p) (Fin p) K := .of fun i k ↦ (Basis.span hy).repr ⟨x i, hxy i⟩ k
-    have hx' : x = fun i ↦ ∑ k, A i k • y k := by
-      ext1 i
-      have := congrArg Subtype.val ((Basis.span hy).sum_repr ⟨x i, hxy i⟩)
-      simpa [A, Basis.coe_span_apply] using this.symm
-    have hdet : plucker x = A.det • plucker y := by
-      ext s
-      conv_lhs => rw [hx']
-      simp [plucker_sum_smul]
-    have hA : A.det ≠ 0 := by
-      rintro h0
-      exact (plucker_ne_zero_iff _).2 hx (by simp [hdet, h0])
-    exact ⟨Units.mk0 _ hA, by simp [hdet]⟩
+  have hι_iff (a : Kˣ) : a • plucker y = plucker x ↔ ιMulti K p x = a • ιMulti K p y := by
+    rw [eq_comm, funext_iff, ← ((Pi.basisFun K ι).exteriorPower p).repr.injective.eq_iff,
+      Finsupp.ext_iff]
+    refine forall_congr' fun s ↦ ?_
+    simp [plucker_eq_repr_ιMulti, Units.smul_def]
+  simp_rw [hι_iff]
+  exact ⟨fun ⟨a, ha⟩ ↦ (exteriorPower.span_range_eq_of_ιMulti_eq_smul hy a.ne_zero ha).2,
+    exteriorPower.exists_units_smul_ιMulti_of_span_eq hx hy⟩
 
 end TauCeti
 

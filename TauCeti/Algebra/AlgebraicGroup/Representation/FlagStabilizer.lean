@@ -175,12 +175,7 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
         ← exteriorPower.exteriorFlagVector_zero]
     rw [← hmap, Submodule.stabilizerHopfIdeal_map_transport,
       Submodule.stabilizerHopfIdeal_span_ιMulti hv]
-    let f0 : Fin 1 → HopfIdeal k H := fun r ↦
-      (Submodule.span k
-        (Set.range (v ∘ Fin.castLE (Nat.le_of_lt_succ r.isLt)))).stabilizerHopfIdeal H
-    rw [show (Submodule.span k (Set.range v)).stabilizerHopfIdeal H = f0 0 from rfl]
-    exact le_antisymm (Finset.le_sup (f := f0) (Finset.mem_univ 0))
-      (Finset.sup_le fun r _ ↦ by rw [Fin.eq_zero r])
+    simp [Set.range_eq_empty]
   | succ r ih =>
     let _ : Comodule k H (exteriorPower.FlagSpace k M r) := exteriorFlag k H M r
     let _ : Comodule k H (⋀[k]^(r + 1) M) := exteriorPower k H M (r + 1)
@@ -200,27 +195,10 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
         ← exteriorPower.exteriorFlagVector_succ]
     rw [← hmap, Submodule.stabilizerHopfIdeal_map_transport,
       Submodule.stabilizerHopfIdeal_span_singleton_tmul hx hy, ih hv',
-      Submodule.stabilizerHopfIdeal_span_ιMulti hv]
-    let g : Fin (r + 2) → HopfIdeal k H := fun j ↦
-      (Submodule.span k
-        (Set.range (v ∘ Fin.castLE (Nat.le_of_lt_succ j.isLt)))).stabilizerHopfIdeal H
-    have hcast (j : Fin (r + 1)) :
-        (Submodule.span k (Set.range
-          ((v ∘ Fin.castSucc) ∘ Fin.castLE (Nat.le_of_lt_succ j.isLt)))).stabilizerHopfIdeal
-          H = g j.castSucc := rfl
-    have hlast : (Submodule.span k (Set.range v)).stabilizerHopfIdeal H = g (Fin.last (r + 1)) :=
-      congrArg (fun u ↦ (Submodule.span k (Set.range u)).stabilizerHopfIdeal H)
-        (rfl : v = v ∘ Fin.castLE (Nat.le_of_lt_succ (Fin.last (r + 1)).isLt))
-    refine le_antisymm
-      (sup_le
-        (Finset.sup_le fun j _ ↦ hcast j ▸ Finset.le_sup (f := g) (Finset.mem_univ j.castSucc))
-        (hlast ▸ Finset.le_sup (f := g) (Finset.mem_univ (Fin.last (r + 1)))))
-      (Finset.sup_le fun idx _ ↦ idx.lastCases (hlast ▸ le_sup_right) fun j ↦ by
-        let f' : Fin (r + 1) → HopfIdeal k H := fun j ↦
-          (Submodule.span k (Set.range
-            ((v ∘ Fin.castSucc) ∘ Fin.castLE (Nat.le_of_lt_succ j.isLt)))).stabilizerHopfIdeal H
-        exact le_sup_of_le_left
-          ((hcast j).symm.trans_le (Finset.le_sup (f := f') (Finset.mem_univ j))))
+      Submodule.stabilizerHopfIdeal_span_ιMulti hv, sup_comm]
+    conv_rhs =>
+      rw [Fin.univ_castSuccEmb, Finset.cons_eq_insert, Finset.sup_insert, Finset.sup_map]
+    rfl
 
 /-- For a basis `b : Module.Basis (Fin d) k M`, the line stabilizer of `exteriorFlagVector k d b` is
 the supremum of the stabilizers of all steps `b.flag r` of the basis flag. -/
@@ -231,12 +209,8 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector {d : ℕ} (b : Module.Basis 
   have : Module.Finite k M := Module.Finite.of_basis b
   rw [stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent b.linearIndependent]
   refine Finset.sup_congr rfl fun r _ ↦ ?_
-  have hset : Set.range (b ∘ Fin.castLE (Nat.le_of_lt_succ r.isLt)) =
-      b '' {i : Fin d | i.castSucc < r} := Set.ext fun x ↦ by
-    simp only [Set.mem_range, Function.comp_apply, Set.mem_image, Set.mem_ofPred_eq]
-    exact ⟨fun ⟨i, hi⟩ ↦ ⟨Fin.castLE (Nat.le_of_lt_succ r.isLt) i, i.isLt, hi⟩,
-      fun ⟨i, hi, hix⟩ ↦ ⟨⟨i.val, hi⟩, hix⟩⟩
-  rw [Module.Basis.flag, hset]
+  rw [Module.Basis.flag, Set.range_comp, Fin.range_castLE]
+  rfl
 
 /-- The line stabilizer of `exteriorFlagVector k d b` lies below `J` if and only if the corestricted
 coefficient matrix of `b` over `H ⧸ J.toIdeal` is upper triangular. -/
@@ -295,20 +269,21 @@ theorem isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector
   let ρ : WithConv (H →ₐ[k] k) →* Matrix.GeneralLinearGroup (Fin d) k :=
     eMat.toMonoidHom.comp (Representation.asGroupHom (basePointsRepresentation (R := k) (H := H) M))
   let f := ρ.comp ιD
+  let _ : Comodule k (H ⧸ D.toIdeal) M :=
+    Corestrict (CommHopfAlgCat.mkQuotient Hcat D).hom.toCoalgHom
+  have htri : (coefficientMatrix (C := H ⧸ D.toIdeal) b).IsUpperTriangular :=
+    (stabilizerHopfIdeal_span_exteriorFlagVector_le_iff b D).mp le_rfl
   have hf_mem (g : WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) :
       f g ∈ upperTriangularGroup (Fin d) k := by
-    have hstab := (Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff
-      (k ∙ exteriorPower.exteriorFlagVector k d b) (ιD g)).mp ⟨g, rfl⟩
-    let α : M ≃ₗ[k] M := LinearMap.GeneralLinearGroup.generalLinearEquiv k M
-      (Representation.asGroupHom (basePointsRepresentation (R := k) (H := H) M) (ιD g))
-    have hα : exteriorPower.exteriorFlagMap d α.toLinearMap
-        (exteriorPower.exteriorFlagVector k d b) ∈ k ∙ exteriorPower.exteriorFlagVector k d b := by
-      have hmem : basePointsRepresentation (exteriorPower.FlagSpace k M d) (ιD g)
-          (exteriorPower.exteriorFlagVector k d b) ∈ k ∙ exteriorPower.exteriorFlagVector k d b :=
-        hstab ▸ Submodule.mem_map_of_mem (Submodule.mem_span_singleton_self _)
-      rwa [basePointsRepresentation_exteriorFlag] at hmem
-    exact UpperTriangularGroup.mem_iff.mpr
-      (exteriorPower.isUpperTriangular_toMatrix_of_exteriorFlagMap_mem_span b α hα)
+    refine UpperTriangularGroup.mem_iff.mpr fun i j hij ↦ ?_
+    have hval := congrArg (fun x ↦ g.ofConv x) (htri hij)
+    rw [coefficientMatrix_apply, apply_matrixCoefficient, map_zero,
+      basePointsRepresentation_corestrict] at hval
+    have hιD : ιD g = toConv (g.ofConv.comp
+        ((CommHopfAlgCat.mkQuotient Hcat D).hom : H →ₐ[k] _)) :=
+      CommHopfAlgCat.quotientPointsHom_apply Hcat D (CommAlgCat.of k k) g
+    simpa [f, ρ, eMat, hιD, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply,
+      Representation.asGroupHom_apply] using hval
   have hker_mem (g : f.ker) :
       ιD g.val ∈ CommHopfAlgCat.quotientPointsSubgroup Hcat J (CommAlgCat.of k k) := by
     have hid : basePointsRepresentation (R := k) (H := H) M (ιD g.val) = LinearMap.id :=

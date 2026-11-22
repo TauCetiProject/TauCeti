@@ -20,7 +20,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerD
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Translation
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
-import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -56,8 +55,6 @@ quotient `G / B`.
   field is the scheme-theoretic line stabilizer of a unimodular vector whose projective orbit has
   closed image, closed immersion into projective space, proper structural morphism over `Spec k`,
   and represents `CommHopfAlgCat.fppfHomogeneousQuotient G.obj B`.
-* `IsBorelOverAlgClosed.exists_isProper_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`:
-  existence of a proper projective orbit scheme representing `G / B`.
 
 ## References
 
@@ -78,35 +75,23 @@ section FlagZeroLocus
 variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M]
 
-/-- The closed subset of `ℙ(FlagSpace k M d)` cut out by the homogeneous quadratic forms in
-`exteriorPower.exteriorFlagForms k M d`. -/
-private def exteriorFlagZeroLocus (k M : Type u) [Field k] [AddCommGroup M] [Module k M]
-    (d : ℕ) :
-    Set (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
-      (Module.Dual k (exteriorPower.FlagSpace k M d)))) :=
-  {x | ∀ s ∈ exteriorPower.exteriorFlagForms k M d, s ∈ x.asHomogeneousIdeal}
-
-private theorem isClosed_exteriorFlagZeroLocus (d : ℕ) :
-    IsClosed (exteriorFlagZeroLocus k M d) := by
-  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k
-    (Module.Dual k (exteriorPower.FlagSpace k M d))
-  have hZ : exteriorFlagZeroLocus k M d =
-      ⋂ s ∈ exteriorPower.exteriorFlagForms k M d, ((Proj.basicOpen 𝒜 s).carrier)ᶜ :=
-    Set.ext fun x ↦ by simp [exteriorFlagZeroLocus, 𝒜, Proj.mem_basicOpen]
-  exact hZ ▸ isClosed_biInter fun s _ ↦ (Proj.basicOpen 𝒜 s).isOpen.isClosed_compl
-
 private theorem mapsTo_projectivePointTranslation_exteriorFlagZeroLocus (d : ℕ)
     (g : WithConv (H →ₐ[k] k)) :
     letI : Comodule k H (exteriorPower.FlagSpace k M d) := Comodule.exteriorFlag k H M d
     Set.MapsTo
       (Comodule.projectivePointTranslation (M := exteriorPower.FlagSpace k M d) g).hom
-      (exteriorFlagZeroLocus k M d) (exteriorFlagZeroLocus k M d) := by
+      (ProjectiveSpectrum.zeroLocus _ (exteriorPower.exteriorFlagForms k M d) :
+        Set (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
+          (Module.Dual k (exteriorPower.FlagSpace k M d)))))
+      (ProjectiveSpectrum.zeroLocus _ (exteriorPower.exteriorFlagForms k M d)) := by
   let _ : Comodule k H (exteriorPower.FlagSpace k M d) := Comodule.exteriorFlag k H M d
   intro x hx s hs
-  rw [← not_not (a := s ∈ _), ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
-    Comodule.projectivePointTranslation_hom, Proj.map_preimage_basicOpen, Proj.mem_basicOpen,
-    not_not, SymmetricAlgebra.gradedMap_apply]
-  refine hx _ ?_
+  by_contra hmem
+  have hb : (Comodule.projectivePointTranslation (M := exteriorPower.FlagSpace k M d) g).hom x ∈
+      Proj.basicOpen _ s := (Proj.mem_basicOpen _ s _).mpr hmem
+  rw [← Scheme.Hom.mem_preimage, Comodule.projectivePointTranslation_hom,
+    Proj.map_preimage_basicOpen, Proj.mem_basicOpen, SymmetricAlgebra.gradedMap_apply] at hb
+  refine hb (hx ?_)
   rw [Comodule.basePointsRepresentation_exteriorFlag]
   exact exteriorPower.map_dualMap_mem_exteriorFlagForms
     (fun _ hw ↦ exteriorPower.exteriorFlagMap_mem_exteriorFlagCone _ hw) hs
@@ -115,10 +100,12 @@ private theorem projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff [Module.
     (d : ℕ) (w : exteriorPower.FlagSpace k M d) (hw : Module.IsUnimodular k w) :
     (letI : Comodule k H (exteriorPower.FlagSpace k M d) := Comodule.exteriorFlag k H M d
      Comodule.projectiveOrbitMap (H := H) w hw
-       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ exteriorFlagZeroLocus k M d) ↔
+       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
+         ProjectiveSpectrum.zeroLocus _ (exteriorPower.exteriorFlagForms k M d)) ↔
       w ∈ exteriorPower.exteriorFlagCone k M d := by
   let _ : Comodule k H (exteriorPower.FlagSpace k M d) := Comodule.exteriorFlag k H M d
   have : FiniteDimensional k M := inferInstance
+  refine (ProjectiveSpectrum.mem_zeroLocus _ _ _).trans ?_
   rw [exteriorPower.mem_exteriorFlagCone_iff]
   refine forall₂_congr fun s hs ↦ ?_
   have h := Comodule.mem_projectiveOrbitMap_kernelPoint_iff (H := H) w hw 1
@@ -133,34 +120,6 @@ section BorelQuotient
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
 variable {G : FiniteTypeCommHopfAlgCat.{u, u} k}
-
-private theorem isSolvable_points_of_isBorelOverAlgClosed {B : HopfIdeal k G}
-    (hB : IsBorelOverAlgClosed k G B) :
-    Group.IsSolvable (WithConv ((G ⧸ B.toIdeal) →ₐ[k] k)) := by
-  have hcand := ((isBorelOverAlgClosed_iff k G B).mp hB).2.prop
-  let _ : Group.IsSolvable
-      (WithConv (FiniteTypeCommHopfAlgCat.quotient G B →ₐ[k] AlgebraicClosure k)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hcand.geometricallySolvable
-  exact Group.isSolvable_of_isSolvable_injective
-    (AlgHom.mapValue_injective (φ := Algebra.ofId k (AlgebraicClosure k))
-      (FaithfulSMul.algebraMap_injective k (AlgebraicClosure k)))
-
-omit [IsAlgClosed k] in
-private theorem le_of_add_ringKrullDim_eq_of_ringKrullDim_le
-    {o₁ o₂ : WithBot ℕ∞} {D B : HopfIdeal k G}
-    (ho₁ : o₁ + ringKrullDim (G ⧸ B.toIdeal) = ringKrullDim G)
-    (ho₂ : o₂ + ringKrullDim (G ⧸ D.toIdeal) = ringKrullDim G)
-    (hDB : ringKrullDim (G ⧸ D.toIdeal) ≤ ringKrullDim (G ⧸ B.toIdeal)) :
-    o₁ ≤ o₂ := by
-  have := Bialgebra.nontrivial (A := G ⧸ D.toIdeal) k
-  have := finiteRingKrullDim_of_finiteType k (G ⧸ D.toIdeal)
-  have htop := ringKrullDim_ne_top (R := G ⧸ D.toIdeal)
-  lift ringKrullDim (G ⧸ D.toIdeal) to ℕ∞ using ringKrullDim_ne_bot with d
-  lift d to ℕ using by simpa using htop
-  simp only [ENat.WithBot.coe_eq_natCast] at ho₂ hDB
-  refine (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp ?_
-  rw [ho₂, ← ho₁]
-  exact add_le_add le_rfl hDB
 
 omit [IsAlgClosed k] in
 private theorem exists_line_stabilizerHopfIdeal_eq (B : HopfIdeal k G) :
@@ -198,7 +157,8 @@ private theorem exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed
   let _ : ConnectedSpace (PrimeSpectrum (G ⧸ B.toIdeal)) :=
     hcand.geometricallyConnected.connectedSpace
   let _ : Group.IsSolvable (WithConv ((G ⧸ B.toIdeal) →ₐ[k] k)) :=
-    isSolvable_points_of_isBorelOverAlgClosed hB
+    isSolvable_points_of_geometricallySolvablePointsCommHopfAlgProperty Q.obj
+      hcand.geometricallySolvable
   let _ : Comodule k (G ⧸ B.toIdeal) M :=
     Comodule.Corestrict (CommHopfAlgCat.mkQuotient G.obj B).hom.toCoalgHom
   obtain ⟨LQ, hLQ⟩ := (L.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict B).mp hB_eq.le
@@ -229,19 +189,21 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
   let _ : Comodule k G (exteriorPower.FlagSpace k M (1 + n)) :=
     Comodule.exteriorFlag k G M (1 + n)
   let _ : Group.IsSolvable (WithConv ((G ⧸ B.toIdeal) →ₐ[k] k)) :=
-    isSolvable_points_of_isBorelOverAlgClosed hB
+    isSolvable_points_of_geometricallySolvablePointsCommHopfAlgProperty
+      (FiniteTypeCommHopfAlgCat.quotient G B).obj
+      ((isBorelOverAlgClosed_iff k G B).mp hB).2.prop.geometricallySolvable
   set w := exteriorPower.exteriorFlagVector k (1 + n) b
   have hstab_w : (k ∙ w).stabilizerHopfIdeal G = B :=
     Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq b B h0 htri
   have hwZ : Set.range (Comodule.projectiveOrbitMap (H := G) w hw) ⊆
-      exteriorFlagZeroLocus k M (1 + n) := by
+      ProjectiveSpectrum.zeroLocus _ (exteriorPower.exteriorFlagForms k M (1 + n)) := by
     rw [Comodule.range_projectiveOrbitMap_subset_iff_of_isClosed w hw
-      (isClosed_exteriorFlagZeroLocus (1 + n))
-      (mapsTo_projectivePointTranslation_exteriorFlagZeroLocus (1 + n)),
-      projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff (1 + n) w hw]
-    exact exteriorPower.exteriorFlagVector_mem_exteriorFlagCone b
+      (ProjectiveSpectrum.isClosed_zeroLocus _ _)
+      (mapsTo_projectivePointTranslation_exteriorFlagZeroLocus (1 + n))]
+    exact (projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff (1 + n) w hw).mpr
+      (exteriorPower.exteriorFlagVector_mem_exteriorFlagCone b)
   refine Comodule.isClosed_range_projectiveOrbitMap_of_forall_mem w hw
-    (isClosed_exteriorFlagZeroLocus (1 + n)) hwZ fun w' hw' hw'Z ↦ ?_
+    (ProjectiveSpectrum.isClosed_zeroLocus _ _) hwZ fun w' hw' hw'Z ↦ ?_
   have hw'_cone : w' ∈ exteriorPower.exteriorFlagCone k M (1 + n) :=
     (projectiveOrbitMap_counit_mem_exteriorFlagZeroLocus_iff (1 + n) w' hw').mp hw'Z
   have hw'_ne : w' ≠ 0 := by
@@ -261,7 +223,8 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
     fun a ↦ hstab_w ▸ Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff w hw a
   have ho_w' := Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq _ hw' D
     (Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff _ hw')
-  exact le_of_add_ringKrullDim_eq_of_ringKrullDim_le ho_w ho_w' (hB.ringKrullDim_quotient_le D)
+  exact Comodule.le_of_add_ringKrullDim_quotient_eq_of_le ho_w ho_w'
+    (hB.ringKrullDim_quotient_le D)
 
 private theorem exists_stabilizerHopfIdeal_eq_and_isClosed_range_projectiveOrbitMap
     {B : HopfIdeal k G} (hB : IsBorelOverAlgClosed k G B) :
@@ -306,25 +269,9 @@ theorem IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal
       rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, ← hstab_w,
         Submodule.stabilizerHopfIdeal_le_ker_iff]) g h
   exact ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, hstab_w, hclosed,
-    IsClosedImmersion.of_isPreimmersion _
-      (by simpa only [Comodule.range_projectiveOrbitι] using hclosed),
+    (Comodule.isClosedImmersion_projectiveOrbitι_iff_isClosed w hw).2 hclosed,
     Comodule.isProper_projectiveOrbitToSpec_of_isClosed W w hw hclosed,
     ⟨Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints B w hw hcoset⟩⟩
-
-/-- Every Borel homogeneous quotient `G / B` of a reduced affine group `G` of finite type over an
-algebraically closed field is represented by a projective orbit scheme that is closed in projective
-space and proper over `Spec k`. -/
-theorem IsBorelOverAlgClosed.exists_isProper_fppfHomogeneousQuotient_iso_projectiveOrbitPoints
-    {B : HopfIdeal k G} (hB : IsBorelOverAlgClosed k G B) :
-    ∃ (W : Type u) (_ : AddCommGroup W) (_ : Module k W) (_ : Comodule k G W)
-      (_ : Module.Finite k W) (w : W) (hw : Module.IsUnimodular k w),
-      IsClosedImmersion (Comodule.projectiveOrbitι (H := G) w hw) ∧
-        IsProper (Comodule.projectiveOrbitToSpec (H := G) w hw) ∧
-        Nonempty (CommHopfAlgCat.fppfHomogeneousQuotient G.obj B ≅
-          Comodule.projectiveOrbitPointsSheaf (H := G.obj) w hw) := by
-  obtain ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, -, -, hclosedImm, hproper, hiso⟩ :=
-    hB.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal_eq
-  exact ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, hclosedImm, hproper, hiso⟩
 
 end BorelQuotient
 

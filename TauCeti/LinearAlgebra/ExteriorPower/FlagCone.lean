@@ -320,41 +320,29 @@ section QuadraticCriterion
 variable {k : Type u} {M : Type v} [Field k] [AddCommGroup M] [Module k M]
 
 private noncomputable def quadFormOfTensor (V : Type*) [AddCommGroup V] [Module k V] :
-    Module.Dual k V ⊗[k] Module.Dual k V →ₗ[k] _root_.SymmetricAlgebra k (Module.Dual k V) :=
-  TensorProduct.lift (LinearMap.mk₂ k
-    (fun α β ↦ _root_.SymmetricAlgebra.ι k _ α * _root_.SymmetricAlgebra.ι k _ β)
-    (fun _ _ _ ↦ by simp [add_mul]) (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp [mul_add]) (fun _ _ _ ↦ by simp))
-
-private theorem quadFormOfTensor_mem_homogeneousSubmodule {V : Type*} [AddCommGroup V]
-    [Module k V] (t : Module.Dual k V ⊗[k] Module.Dual k V) :
-    quadFormOfTensor V t ∈
-      TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) 2 := by
-  induction t with
-  | tmul α β =>
-    exact SetLike.mul_mem_graded
-      (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule k _ α)
-      (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule k _ β)
-  | add x y hx hy => exact (map_add (quadFormOfTensor V) x y).symm ▸ Submodule.add_mem _ hx hy
+    Module.Dual k V ⊗[k] Module.Dual k V →ₗ[k]
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) 2 :=
+  TensorProduct.lift (DirectSum.gMulLHom k fun n ↦
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) n) ∘ₗ
+    TensorProduct.map
+      (TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv k (Module.Dual k V)).symm.toLinearMap
+      (TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv k (Module.Dual k V)).symm.toLinearMap
 
 private noncomputable def bilinearToQuadForm {V : Type*} [AddCommGroup V] [Module k V]
     [FiniteDimensional k V] (B : V →ₗ[k] V →ₗ[k] k) :
-    _root_.SymmetricAlgebra k (Module.Dual k V) :=
+    TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) 2 :=
   quadFormOfTensor V ((TensorProduct.dualDistribEquiv k V V).symm (TensorProduct.lift B))
-
-private theorem bilinearToQuadForm_mem_homogeneousSubmodule {V : Type*} [AddCommGroup V]
-    [Module k V] [FiniteDimensional k V] (B : V →ₗ[k] V →ₗ[k] k) :
-    bilinearToQuadForm B ∈
-      TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) 2 :=
-  quadFormOfTensor_mem_homogeneousSubmodule _
 
 private theorem lift_eval_bilinearToQuadForm {V : Type*} [AddCommGroup V] [Module k V]
     [FiniteDimensional k V] (B : V →ₗ[k] V →ₗ[k] k) (v : V) :
-    _root_.SymmetricAlgebra.lift (Module.Dual.eval k V v) (bilinearToQuadForm B) = B v v := by
+    _root_.SymmetricAlgebra.lift (Module.Dual.eval k V v) (bilinearToQuadForm B : _) = B v v := by
   have hcomp : (_root_.SymmetricAlgebra.lift (Module.Dual.eval k V v)).toLinearMap ∘ₗ
-      quadFormOfTensor (k := k) V =
+      (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k V) 2).subtype ∘ₗ
+        quadFormOfTensor (k := k) V =
       Module.Dual.eval k (V ⊗[k] V) (v ⊗ₜ[k] v) ∘ₗ TensorProduct.dualDistrib k V V :=
-    TensorProduct.ext' fun _ _ ↦ by simp [quadFormOfTensor]
+    TensorProduct.ext' fun _ _ ↦ by
+      simp [quadFormOfTensor, DirectSum.gMulLHom_apply_apply, SetLike.coe_gMul,
+        TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleOneEquiv_symm_apply]
   simpa [bilinearToQuadForm, ← TensorProduct.toLinearMap_dualDistribEquiv] using
     LinearMap.congr_fun hcomp ((TensorProduct.dualDistribEquiv k V V).symm (TensorProduct.lift B))
 
@@ -393,13 +381,12 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
       _root_.SymmetricAlgebra.lift (Module.Dual.eval k (FlagSpace k M (r + 1))
         ((flagSpaceSuccEquiv k M r).symm (w_r ⊗ₜ[k] θ))) s = 0) :
     θ ∈ Set.range (_root_.exteriorPower.ιMulti k (r + 1)) := by
-  obtain ⟨φ', hφ'⟩ := Module.Projective.exists_dual_ne_zero k hw_r
-  let φ₀ : Module.Dual k (FlagSpace k M r) := (φ' w_r)⁻¹ • φ'
+  obtain ⟨φ₀, hφ₀⟩ := Module.Projective.exists_dual_eq_one k hw_r
   let p₂ : FlagSpace k M (r + 1) →ₗ[k] ⋀[k]^(r + 1) M :=
     (TensorProduct.lid k (⋀[k]^(r + 1) M)).toLinearMap ∘ₗ
       TensorProduct.map φ₀ LinearMap.id ∘ₗ (flagSpaceSuccEquiv k M r).toLinearMap
   have hp₂ : p₂ ((flagSpaceSuccEquiv k M r).symm (w_r ⊗ₜ[k] θ)) = θ := by
-    simp [p₂, φ₀, inv_mul_cancel₀ hφ']
+    simp [p₂, hφ₀]
   refine (_root_.exteriorPower.mem_range_ιMulti_iff_forall_ι_contract_mul_eq_zero θ).mpr
     fun η ↦ (Module.forall_dual_apply_eq_zero_iff k _).mp fun ξ ↦ ?_
   let B : ⋀[k]^(r + 1) M →ₗ[k] ⋀[k]^(r + 1) M →ₗ[k] k :=
@@ -408,20 +395,18 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
         (_root_.exteriorPower.contract k M r η θ₁) * (θ₂ : ExteriorAlgebra k M)))
       (fun _ _ _ ↦ by simp [add_mul]) (fun _ _ _ ↦ by simp)
       (fun _ _ _ ↦ by simp [mul_add]) (fun _ _ _ ↦ by simp)
-  let s := _root_.SymmetricAlgebra.map k p₂.dualMap (bilinearToQuadForm B)
+  let s := _root_.SymmetricAlgebra.map k p₂.dualMap (bilinearToQuadForm B : _)
   have hs : s ∈ exteriorFlagForms k M (r + 1) :=
-    ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
-        (bilinearToQuadForm_mem_homogeneousSubmodule B), by
+    ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _ (bilinearToQuadForm B).property, by
       rintro _ ⟨c, v, rfl⟩
       rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap, lift_eval_bilinearToQuadForm]
       have hpv : p₂ (c • exteriorFlagVector k (r + 1) v) =
           (c * φ₀ (exteriorFlagVector k r (v ∘ Fin.castSucc))) •
             _root_.exteriorPower.ιMulti k (r + 1) v := by
         simp [p₂, mul_smul]
-      rw [hpv, map_smul, LinearMap.smul_apply, map_smul, LinearMap.smul_apply]
-      simp only [B, LinearMap.mk₂_apply]
-      rw [_root_.exteriorPower.ιMulti_apply_coe,
-        _root_.exteriorPower.ι_contract_mul_ιMulti_eq_zero, map_zero, smul_zero, smul_zero]⟩
+      simp only [hpv, map_smul, LinearMap.smul_apply, B, LinearMap.mk₂_apply,
+        _root_.exteriorPower.ιMulti_apply_coe, _root_.exteriorPower.ι_contract_mul_ιMulti_eq_zero,
+        map_zero, smul_zero]⟩
   have hval := hw s hs
   rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₂, lift_eval_bilinearToQuadForm] at hval
 
@@ -474,8 +459,7 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
     let y_m : FlagSpace k M m := exteriorFlagVector k m (u ∘ Fin.castSucc)
     have hy_m : y_m ≠ 0 :=
       exteriorFlagVector_ne_zero_iff.mpr (hu.comp _ (Fin.castSucc_injective m))
-    obtain ⟨φ', hφ'⟩ := Module.Projective.exists_dual_ne_zero k hy_m
-    let φ_m : Module.Dual k (FlagSpace k M m) := (φ' y_m)⁻¹ • φ'
+    obtain ⟨φ_m, hφ_m⟩ := Module.Projective.exists_dual_eq_one k hy_m
     let L := incidenceDual η φ_m ξ
     let s := _root_.SymmetricAlgebra.ι k _ L * _root_.SymmetricAlgebra.ι k _ L
     have hs : s ∈ exteriorFlagForms k M (m + 2) :=
@@ -491,7 +475,7 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
           _root_.exteriorPower.ιMulti k (m + 2) v₀)) = 0 :=
       mul_self_eq_zero.mp (by simpa [s] using hw s hs)
     rw [LinearMap.flip_apply]
-    simpa [L, incidenceDual, y_m, φ_m, hc₀, hφ'] using hLw
+    simpa [L, incidenceDual, y_m, hφ_m, hc₀] using hLw
 
 private theorem mem_exteriorFlagCone_succ_of_span_le {r : ℕ} {c₀ : k} {u : Fin r → M}
     {v₀ : Fin (r + 1) → M} (hu : LinearIndependent k u) (hv₀ : LinearIndependent k v₀)
@@ -543,8 +527,7 @@ theorem mem_exteriorFlagCone_iff {d : ℕ} (w : FlagSpace k M d) :
     obtain ⟨w_r, θ, rfl⟩ := exists_tmul_of_forall_exteriorFlagForms hw
     have hw_r0 : w_r ≠ 0 := fun h ↦ hw0 (by simp [h])
     have hθ0 : θ ≠ 0 := fun h ↦ hw0 (by simp [h])
-    obtain ⟨ψ', hψ'⟩ := Module.Projective.exists_dual_ne_zero k hθ0
-    let ψ₀ : Module.Dual k (⋀[k]^(r + 1) M) := (ψ' θ)⁻¹ • ψ'
+    obtain ⟨ψ₀, hψ₀⟩ := Module.Projective.exists_dual_eq_one k hθ0
     let p₁ : FlagSpace k M (r + 1) →ₗ[k] FlagSpace k M r :=
       (TensorProduct.rid k (FlagSpace k M r)).toLinearMap ∘ₗ
         TensorProduct.map LinearMap.id ψ₀ ∘ₗ (flagSpaceSuccEquiv k M r).toLinearMap
@@ -555,7 +538,7 @@ theorem mem_exteriorFlagCone_iff {d : ℕ} (w : FlagSpace k M d) :
     have hw_r_cone : w_r ∈ exteriorFlagCone k M r := ih w_r fun s₀ hs₀ ↦ by
       have hval := hw _ (map_dualMap_mem_exteriorFlagForms hp₁_cone hs₀)
       have hp₁w : p₁ ((flagSpaceSuccEquiv k M r).symm (w_r ⊗ₜ[k] θ)) = w_r := by
-        simp [p₁, ψ₀, inv_mul_cancel₀ hψ']
+        simp [p₁, hψ₀]
       rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₁w] at hval
     obtain ⟨c₀, u, rfl⟩ := hw_r_cone
     have hc₀ : c₀ ≠ 0 := fun h ↦ hw_r0 (by simp [h])
@@ -642,16 +625,12 @@ theorem exists_basis_of_mem_exteriorFlagCone_of_finrank_eq [FiniteDimensional k 
     ∃ (c : kˣ) (b : Module.Basis (Fin d) k M), w = c • exteriorFlagVector k d b := by
   obtain ⟨c, v, rfl⟩ := hw
   have hc : c ≠ 0 := fun h ↦ hw0 (by simp [h])
-  rcases Nat.eq_zero_or_pos d with rfl | hd_pos
-  · have : Subsingleton M := Module.finrank_zero_iff.mp hd
-    let b : Module.Basis (Fin 0) k M := Module.Basis.empty M
-    exact ⟨Units.mk0 c hc, b, by simp [Units.smul_def, Subsingleton.elim v b]⟩
-  · have : Nonempty (Fin d) := ⟨⟨0, hd_pos⟩⟩
-    have hv : LinearIndependent k v :=
-      exteriorFlagVector_ne_zero_iff.mp fun h ↦ hw0 (by simp [h])
-    let b : Module.Basis (Fin d) k M :=
-      basisOfLinearIndependentOfCardEqFinrank hv ((Fintype.card_fin d).trans hd.symm)
-    exact ⟨Units.mk0 c hc, b, by simp [b, Units.smul_def]⟩
+  have hv : LinearIndependent k v :=
+    exteriorFlagVector_ne_zero_iff.mp fun h ↦ hw0 (by simp [h])
+  let b : Module.Basis (Fin d) k M :=
+    basisOfLinearIndependentOfCardEqFinrank' v hv ((Fintype.card_fin d).trans hd.symm)
+  exact ⟨Units.mk0 c hc, b, by
+    simp [b, Units.smul_def, coe_basisOfLinearIndependentOfCardEqFinrank']⟩
 
 end CompleteFlag
 

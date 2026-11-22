@@ -12,6 +12,7 @@ import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 import TauCeti.AlgebraicGeometry.Fibers.Dimension
 import TauCeti.AlgebraicGeometry.Morphisms.Generalizing.Dimension
+import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -72,6 +73,25 @@ open CategoryTheory AlgebraicGeometry Order WithConv
 namespace TauCeti.Comodule
 
 universe u
+
+/-- If `o₁ + dim (H ⧸ B) = dim H`, `o₂ + dim (H ⧸ D) = dim H`, and `dim (H ⧸ D) ≤ dim (H ⧸ B)`,
+then `o₁ ≤ o₂`. -/
+theorem le_of_add_ringKrullDim_quotient_eq_of_le
+    {k H : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+    {o₁ o₂ : WithBot ℕ∞} {D B : HopfIdeal k H}
+    (ho₁ : o₁ + ringKrullDim (H ⧸ B.toIdeal) = ringKrullDim H)
+    (ho₂ : o₂ + ringKrullDim (H ⧸ D.toIdeal) = ringKrullDim H)
+    (hDB : ringKrullDim (H ⧸ D.toIdeal) ≤ ringKrullDim (H ⧸ B.toIdeal)) :
+    o₁ ≤ o₂ := by
+  have := Bialgebra.nontrivial (A := H ⧸ D.toIdeal) k
+  have := finiteRingKrullDim_of_finiteType k (H ⧸ D.toIdeal)
+  have htop := ringKrullDim_ne_top (R := H ⧸ D.toIdeal)
+  lift ringKrullDim (H ⧸ D.toIdeal) to ℕ∞ using ringKrullDim_ne_bot with d
+  lift d to ℕ using by simpa using htop
+  simp only [ENat.WithBot.coe_eq_natCast] at ho₂ hDB
+  refine (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp ?_
+  rw [ho₂, ← ho₁]
+  exact add_le_add le_rfl hDB
 
 variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
