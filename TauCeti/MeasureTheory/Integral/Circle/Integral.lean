@@ -105,6 +105,12 @@ section Pullback
 
 open MeasureTheory Real Set
 
+private theorem circleMap_abs_deriv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {c : ℂ} {R : ℝ} {g d k : ℝ → ℝ} {b : ℝ → ℂ} (ψ : ℂ → E)
+    (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap c R (g t) = b t) :
+    (fun t ↦ |d t| • ψ (circleMap c R (g t))) = fun t ↦ (2 * π) • (k t • ψ (b t)) :=
+  funext fun t ↦ by rw [habs, hb, mul_smul]
+
 /-- Pulling an integrable function on a circle arc `circleMap c R '' s` back along an injective
 differentiable angle parametrization `g` with `range g = s` and `|g' t| = 2 * π * k t`. -/
 theorem TauCeti.integrableOn_circleMap_iff_of_hasDerivAt {E : Type*} [NormedAddCommGroup E]
@@ -112,11 +118,9 @@ theorem TauCeti.integrableOn_circleMap_iff_of_hasDerivAt {E : Type*} [NormedAddC
     (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
     (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap c R (g t) = b t) :
     IntegrableOn (fun φ ↦ ψ (circleMap c R φ)) s ↔ Integrable (fun t ↦ k t • ψ (b t)) := by
-  have hfun : (fun t ↦ |d t| • ψ (circleMap c R (g t))) =
-      fun t ↦ (2 * π) • (k t • ψ (b t)) :=
-    funext fun t ↦ by rw [habs, hb, mul_smul]
   rw [← hrange, ← image_univ, integrableOn_image_iff_integrableOn_abs_deriv_smul .univ
-    (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, integrableOn_univ, hfun]
+    (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, integrableOn_univ,
+    circleMap_abs_deriv_smul_eq ψ habs hb]
   exact integrable_smul_iff two_pi_pos.ne' _
 
 /-- Change of variables for a circle-arc integral along an injective differentiable angle
@@ -126,11 +130,8 @@ theorem TauCeti.setIntegral_circleMap_eq_of_hasDerivAt {E : Type*} [NormedAddCom
     (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
     (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap c R (g t) = b t) :
     (∫ φ in s, ψ (circleMap c R φ)) = (2 * π) • ∫ t, k t • ψ (b t) := by
-  have hfun : (fun t ↦ |d t| • ψ (circleMap c R (g t))) =
-      fun t ↦ (2 * π) • (k t • ψ (b t)) :=
-    funext fun t ↦ by rw [habs, hb, mul_smul]
   rw [← hrange, ← image_univ, integral_image_eq_integral_abs_deriv_smul .univ
     (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, setIntegral_univ, ← integral_smul]
-  exact integral_congr_ae (.of_forall (congr_fun hfun))
+  exact integral_congr_ae (.of_forall (congr_fun (circleMap_abs_deriv_smul_eq ψ habs hb)))
 
 end Pullback

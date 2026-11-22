@@ -58,30 +58,6 @@ variable {X₀ X₁ V : Type*}
   [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
   {C : CompatibleCouple ℂ X₀ X₁ V} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
 
-private def smulBoundary {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y]
-    {c : ℂ → ℂ} (hcc : ContinuousOn c (verticalClosedStrip 0 1))
-    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
-    (γ : ℝ → ℂ) (hγ_cont : Continuous γ) (hγ_mem : ∀ t, γ t ∈ verticalClosedStrip 0 1) :
-    C₀(ℝ, Y) → C₀(ℝ, Y) :=
-  ZeroAtInftyContinuousMap.compLeftFamily
-    (fun t : ℝ => c (γ t) • ContinuousLinearMap.id ℂ Y)
-    (fun x => by
-      have hcont : Continuous fun t : ℝ => c (γ t) := hcc.comp_continuous hγ_cont hγ_mem
-      simpa only [smul_apply, ContinuousLinearMap.id_apply] using
-        hcont.fun_smul (continuous_const (y := x)))
-    ⟨K, fun t x => by
-      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
-      exact mul_le_mul_of_nonneg_right (hK (γ t) (hγ_mem t)) (norm_nonneg x)⟩
-
-@[simp]
-private theorem smulBoundary_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y]
-    {c : ℂ → ℂ} (hcc : ContinuousOn c (verticalClosedStrip 0 1))
-    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
-    {γ : ℝ → ℂ} {hγ_cont : Continuous γ} {hγ_mem : ∀ t, γ t ∈ verticalClosedStrip 0 1}
-    (f : C₀(ℝ, Y)) (t : ℝ) :
-    smulBoundary hcc hK γ hγ_cont hγ_mem f t = c (γ t) • f t := by
-  simp [smulBoundary]
-
 /-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
 continuous up to its boundary, and bounded on the closed strip, gives an admissible function with
 boundary traces `(t ↦ c (t * I) • g₀ t, t ↦ c (1 + t * I) • g₁ t)`. -/
@@ -92,15 +68,15 @@ theorem exists_smul_of_diffContOnCl (hF : C.IsStripFunction F g) {c : ℂ → �
       (∀ t, g'.1 t = c (t * I) • g.1 t) ∧ ∀ t, g'.2 t = c (1 + t * I) • g.2 t := by
   have hcc : ContinuousOn c (verticalClosedStrip 0 1) :=
     hc.continuousOn_verticalClosedStrip zero_lt_one
-  let g'₀ := smulBoundary hcc hK (fun t : ℝ => t * I) (by fun_prop)
-    (fun _ => by simp [mem_verticalClosedStrip_iff]) g.1
-  let g'₁ := smulBoundary hcc hK (fun t : ℝ => 1 + t * I) (by fun_prop)
-    (fun _ => by simp [mem_verticalClosedStrip_iff]) g.2
+  let g'₀ := ZeroAtInftyContinuousMap.smulLeft ℂ (c ∘ fun t : ℝ => t * I)
+    (hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff])
+    ⟨K, fun t => hK _ (by simp [mem_verticalClosedStrip_iff])⟩ g.1
+  let g'₁ := ZeroAtInftyContinuousMap.smulLeft ℂ (c ∘ fun t : ℝ => 1 + t * I)
+    (hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff])
+    ⟨K, fun t => hK _ (by simp [mem_verticalClosedStrip_iff])⟩ g.2
   exact ⟨(g'₀, g'₁),
-    hF.smul hc hK (fun _ => by simp only [g'₀, smulBoundary_apply])
-      (fun _ => by simp only [g'₁, smulBoundary_apply]),
-    fun _ => by simp only [g'₀, smulBoundary_apply],
-    fun _ => by simp only [g'₁, smulBoundary_apply]⟩
+    hF.smul hc hK (fun _ => by simp [g'₀]) (fun _ => by simp [g'₁]),
+    fun _ => by simp [g'₀], fun _ => by simp [g'₁]⟩
 
 end CompatibleCouple.IsStripFunction
 

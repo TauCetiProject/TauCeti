@@ -60,21 +60,6 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
 
-/-- Real normalization identity for a finite interpolated exponent
-`1 / s = (1 - θ) / s₀ + θ / s₁`: `s * ((1 - θ) / s₀) + s * (θ / s₁) = 1`. -/
-theorem toReal_mul_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
-    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
-    s.toReal * ((1 - θ) * (s₀⁻¹).toReal) + s.toReal * (θ * (s₁⁻¹).toReal) = 1 := by
-  have hs' := inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
-  have hs0 : s ≠ 0 := ENNReal.inv_ne_top.1 (hs' ▸ ENNReal.ofReal_ne_top)
-  have hinv := congrArg ENNReal.toReal hs'
-  have hθ1 : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2
-  rw [ENNReal.toReal_inv, ENNReal.toReal_ofReal
-    (add_nonneg (mul_nonneg hθ1 ENNReal.toReal_nonneg)
-      (mul_nonneg hθ.1 ENNReal.toReal_nonneg))] at hinv
-  rw [← mul_add, ← hinv, mul_inv_cancel₀ (ENNReal.toReal_pos hs0 hs_top).ne']
-
 /-- An interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` satisfies the same relation between
 the real exponents `s.toReal`, `s₀.toReal` and `s₁.toReal`, with `∞` read as `0`. -/
 theorem inv_toReal_eq_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
@@ -85,6 +70,17 @@ theorem inv_toReal_eq_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
   have h2 : 0 ≤ θ := hθ.1
   rwa [ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_inv, ENNReal.toReal_inv,
     ENNReal.toReal_inv] at h
+
+/-- Real normalization identity for a finite interpolated exponent
+`1 / s = (1 - θ) / s₀ + θ / s₁`: `s * ((1 - θ) / s₀) + s * (θ / s₁) = 1`. -/
+theorem toReal_mul_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    s.toReal * ((1 - θ) * (s₀⁻¹).toReal) + s.toReal * (θ * (s₁⁻¹).toReal) = 1 := by
+  have hs0 : s ≠ 0 :=
+    ENNReal.inv_ne_top.1 (inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs ▸ ENNReal.ofReal_ne_top)
+  rw [← mul_add, ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ← inv_toReal_eq_of_inv_eq hs₀ hs₁ hθ hs, mul_inv_cancel₀ (ENNReal.toReal_pos hs0 hs_top).ne']
 
 /-- For a finite interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁`, there is a slope `k` with
 `1 / s₀ = (1 - θ k) / s` and `1 / s₁ = (1 + (1 - θ) k) / s`, both factors nonnegative. These are

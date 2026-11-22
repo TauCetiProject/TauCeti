@@ -128,7 +128,7 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_right [InnerProductSpaceable X₁]
     rw [eCod.norm_map, ← eDom.symm.norm_map pair]
     refine (norm_map_le _ _ _ ⟨hθ.1.le, hθ.2.le⟩ zero_le_one (Real.rpow_nonneg zero_le_two _)
       (fun x ↦ (PiLp.norm_clarksonPairCLM_one_top_le ℂ x).trans_eq (one_mul _).symm)
-      (fun x ↦ (PiLp.norm_clarksonPairCLM_two_two_le ℂ x).trans_eq
+      (fun x ↦ (PiLp.norm_clarksonPairCLM_two_two ℂ x).le.trans_eq
         (by rw [Real.sqrt_eq_rpow])) w).trans_eq ?_
     rw [Real.one_rpow, one_mul, ← Real.rpow_mul zero_le_two, one_div_mul_eq_div]
   have hcoord (i : Fin 2) : eCod Tw i = if i = 0 then u + v else u - v :=
@@ -157,10 +157,9 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_left [InnerProductSpaceable X₀]
     ‖u + v‖ ^ (2 / (1 - θ)) + ‖u - v‖ ^ (2 / (1 - θ)) ≤
       2 * (‖u‖ ^ (2 / (1 + θ)) + ‖v‖ ^ (2 / (1 + θ))) ^ ((1 + θ) / (1 - θ)) := by
   have hsub : 2 - (1 - θ) = 1 + θ := by ring
-  have h := norm_add_rpow_add_norm_sub_rpow_le_right
-    (sub_mem_Ioo_zero_iff_right.2 hθ) (swap C θ u) (swap C θ v)
-  rwa [← map_add, ← map_sub, (swap C θ).norm_map, (swap C θ).norm_map, (swap C θ).norm_map,
-    (swap C θ).norm_map, hsub] at h
+  simpa only [← map_add, ← map_sub, LinearIsometryEquiv.norm_map, hsub] using
+    norm_add_rpow_add_norm_sub_rpow_le_right (sub_mem_Ioo_zero_iff_right.2 hθ)
+      (swap C θ u) (swap C θ v)
 
 /-- **Clarkson's inequality on `[X₀, X₁]_{2/q}` for `2 < q` (right Hilbertian endpoint).** -/
 theorem norm_add_rpow_add_norm_sub_rpow_le_two_pow_right [InnerProductSpaceable X₁]
@@ -188,8 +187,8 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_two_pow_left [InnerProductSpaceable X
     ‖u + v‖ ^ q + ‖u - v‖ ^ q ≤ 2 ^ (q - 1) * (‖u‖ ^ q + ‖v‖ ^ q) := by
   have hθ : 1 - (1 - 2 / q) = 2 / q := by ring
   let e := swapOfSubEq C hθ
-  have h := norm_add_rpow_add_norm_sub_rpow_le_two_pow_right hq (e u) (e v)
-  rwa [← map_add, ← map_sub, e.norm_map, e.norm_map, e.norm_map, e.norm_map] at h
+  simpa only [← map_add, ← map_sub, LinearIsometryEquiv.norm_map] using
+    norm_add_rpow_add_norm_sub_rpow_le_two_pow_right hq (e u) (e v)
 
 /-- **Clarkson's inequality on `[X₀, X₁]_{2 - 2/p}` for `1 < p < 2` (right endpoint).** -/
 theorem norm_add_rpow_add_norm_sub_rpow_le_two_mul_right [InnerProductSpaceable X₁]
@@ -225,8 +224,8 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_two_mul_left [InnerProductSpaceable X
     ‖u + v‖ ^ p + ‖u - v‖ ^ p ≤ 2 * (‖u‖ ^ p + ‖v‖ ^ p) := by
   have hθ : 1 - (2 / p - 1) = 2 - 2 / p := by ring
   let e := swapOfSubEq C hθ
-  have h := norm_add_rpow_add_norm_sub_rpow_le_two_mul_right hp₁ hp₂ (e u) (e v)
-  rwa [← map_add, ← map_sub, e.norm_map, e.norm_map, e.norm_map, e.norm_map] at h
+  simpa only [← map_add, ← map_sub, LinearIsometryEquiv.norm_map] using
+    norm_add_rpow_add_norm_sub_rpow_le_two_mul_right hp₁ hp₂ (e u) (e v)
 
 end Couple
 

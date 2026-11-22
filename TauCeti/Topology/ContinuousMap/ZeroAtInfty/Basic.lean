@@ -33,6 +33,8 @@ equivalences:
   linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
 * `ZeroAtInftyContinuousMap.compLeft`: its constant case, the postcomposition with one continuous
   linear map `u : E →L[R] F` with a uniform bound `‖u e‖ ≤ C * ‖e‖`;
+* `ZeroAtInftyContinuousMap.smulLeft`: the scalar specialization of `compLeftFamily`, pointwise
+  scalar multiplication by a bounded continuous scalar function;
 * `ZeroAtInftyContinuousMap.congrLeft` and `ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv`: a
   homeomorphism `α ≃ₜ β` induces a linear isometry equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)` and a
   norm-preserving star-algebra equivalence `C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ)`;
@@ -199,6 +201,32 @@ theorem norm_compLeftFamily_apply_le (u : α → E →L[R] F) (hu : ∀ e, Conti
     have h0 : ‖f‖ = 0 := le_antisymm ((norm_le le_rfl).2 fun x ↦ (hf x).le) (norm_nonneg _)
     rw [h0, mul_zero]
     exact (norm_le le_rfl).2 fun x ↦ by simpa [hf x] using (hCu x (f x))
+
+variable (R) in
+/-- **Pointwise scalar multiplication by a bounded continuous function.** A continuous scalar
+function `c : α → S` with a uniform bound `‖c x‖ ≤ C` acts pointwise on `C₀(α, E)` by
+`f ↦ (x ↦ c x • f x)`, giving a continuous `R`-linear map `C₀(α, E) →L[R] C₀(α, E)`. This is
+the scalar specialization of `compLeftFamily`. -/
+def smulLeft {S : Type*} [SeminormedAddGroup S] [DistribSMul S E]
+    [IsBoundedSMul S E] [SMulCommClass R S E]
+    (c : α → S) (hc : Continuous c) (hC : ∃ C, ∀ x, ‖c x‖ ≤ C) :
+    C₀(α, E) →L[R] C₀(α, E) :=
+  letI := IsBoundedSMul.continuousSMul (α := S) (β := E)
+  compLeftFamily (fun x => c x • ContinuousLinearMap.id R E)
+    (fun e => by
+      simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
+      exact hc.smul continuous_const)
+    (hC.imp fun C hC x e => by
+      rw [_root_.smul_apply, ContinuousLinearMap.id_apply]
+      exact (norm_smul_le (c x) e).trans (mul_le_mul_of_nonneg_right (hC x) (norm_nonneg e)))
+
+/-- `smulLeft R c hc hC` multiplies pointwise by `c`. -/
+@[simp]
+theorem smulLeft_apply {S : Type*} [SeminormedAddGroup S] [DistribSMul S E]
+    [IsBoundedSMul S E] [SMulCommClass R S E]
+    (c : α → S) (hc : Continuous c) (hC : ∃ C, ∀ x, ‖c x‖ ≤ C)
+    (f : C₀(α, E)) (x : α) :
+    smulLeft R c hc hC f x = c x • f x := (rfl)
 
 /-- **Pointwise action of a bounded coefficient map.** A continuous linear map
 `u : E →L[R] F` with a uniform bound `‖u x‖ ≤ C * ‖x‖` acts on `C₀(α, E)` by postcomposition,

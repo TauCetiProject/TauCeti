@@ -405,11 +405,11 @@ theorem norm_clarksonPairCLM_one_top_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
   · simpa using norm_sub_le (x 0) (x 1)
 
 /-- When `X` satisfies `InnerProductSpaceable`, `PiLp.clarksonPairCLM` from `ℓ²_2(X)` to
-`ℓ²_2(X)` has norm at most `√2`. -/
-theorem norm_clarksonPairCLM_two_two_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+`ℓ²_2(X)` scales norms by `√2`. -/
+theorem norm_clarksonPairCLM_two_two (𝕜 : Type*) {X : Type*} [Ring 𝕜]
     [NormedAddCommGroup X] [Module 𝕜 X] [InnerProductSpaceable X]
     (x : PiLp 2 (fun _ : Fin 2 ↦ X)) :
-    ‖clarksonPairCLM 2 2 𝕜 X x‖ ≤ Real.sqrt 2 * ‖x‖ := by
+    ‖clarksonPairCLM 2 2 𝕜 X x‖ = Real.sqrt 2 * ‖x‖ := by
   have hpar : ‖x 0 + x 1‖ ^ (2 : ℝ) + ‖x 0 - x 1‖ ^ (2 : ℝ) =
       2 * (‖x 0‖ ^ (2 : ℝ) + ‖x 1‖ ^ (2 : ℝ)) := by
     simp only [Real.rpow_two, sq]
@@ -417,7 +417,7 @@ theorem norm_clarksonPairCLM_two_two_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
   rw [norm_eq_sum (p := 2) (by simp), norm_eq_sum (p := 2) (by simp)]
   simp only [ENNReal.toReal_ofNat, Fin.sum_univ_two, clarksonPairCLM_apply, Fin.isValue,
     ↓reduceIte, one_ne_zero, hpar, Real.sqrt_eq_rpow]
-  exact (Real.mul_rpow zero_le_two (by positivity)).le
+  exact Real.mul_rpow zero_le_two (by positivity)
 
 end ClarksonPair
 

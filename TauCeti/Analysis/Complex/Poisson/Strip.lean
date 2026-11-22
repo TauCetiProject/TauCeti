@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Poisson.Integral
 public import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import Mathlib.Algebra.Order.Interval.Set.Group
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -29,7 +30,8 @@ measures `stripPoissonMeasure₀ θ` and `stripPoissonMeasure₁ θ`, and
 
 ## Main declarations
 
-* `TauCeti.stripToUnitDisc`, `TauCeti.bijOn_stripToUnitDisc`,
+* `TauCeti.stripToUnitDisc`, `TauCeti.unitDiscToStrip`, `TauCeti.injOn_stripToUnitDisc`,
+  `TauCeti.surjOn_stripToUnitDisc`, `TauCeti.bijOn_stripToUnitDisc`,
   `TauCeti.range_stripToUnitDisc_mul_I`, `TauCeti.range_stripToUnitDisc_one_add_mul_I`.
 * `TauCeti.stripPoissonKernel₀`, `TauCeti.stripPoissonKernel₁`,
   `TauCeti.stripPoissonMeasure₀`, `TauCeti.stripPoissonMeasure₁`,
@@ -119,23 +121,34 @@ private theorem normSq_exp_sub_neg_sub_normSq (θ : ℝ) (z : ℂ) :
     simp only [RCLike.star_def, normSq_apply, sub_re, sub_im, conj_re, conj_im]; ring
   rw [← star_exp_I_mul_pi, hdiff, im_exp_I_mul_pi_mul, im_exp_I_mul_pi_mul]; simp
 
+private theorem normSq_sub_mul_one_sub_norm_sq {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
+    (hz : 0 ≤ (exp (I * π * z)).im) :
+    normSq (exp (I * π * z) - exp (-I * π * θ)) * (1 - ‖stripToUnitDisc θ z‖ ^ 2) =
+      4 * (exp (I * π * z)).im * Real.sin (π * θ) := by
+  have hden : normSq (exp (I * π * z) - exp (-I * π * θ)) ≠ 0 :=
+    (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hz)).ne'
+  rw [← normSq_eq_norm_sq, stripToUnitDisc, map_div₀, mul_sub, mul_one, mul_div_cancel₀ _ hden]
+  exact normSq_exp_sub_neg_sub_normSq θ z
+
 /-- On the open strip `0 < re z < 1`, `stripToUnitDisc θ` takes values in the open unit disc. -/
 theorem stripToUnitDisc_mem_ball {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
     (hz : z ∈ verticalStrip 0 1) : stripToUnitDisc θ z ∈ ball 0 1 := by
   have ⟨h0, h1⟩ := mem_verticalStrip_iff.1 hz
   have hwim : 0 < (exp (I * π * z)).im := im_exp_I_mul_pi_mul z ▸ mul_pos (Real.exp_pos _)
     (Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos h0) (by nlinarith [pi_pos]))
-  rw [mem_ball_zero_iff, ← sq_lt_one_iff₀ (norm_nonneg _), ← normSq_eq_norm_sq, stripToUnitDisc,
-    map_div₀, div_lt_one (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hwim.le))]
-  nlinarith [normSq_exp_sub_neg_sub_normSq θ z, sin_pi_mul_pos hθ]
+  have hpos : 0 < 1 - ‖stripToUnitDisc θ z‖ ^ 2 := by
+    nlinarith [normSq_sub_mul_one_sub_norm_sq hθ hwim.le, sin_pi_mul_pos hθ,
+      normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hwim.le)]
+  exact mem_ball_zero_iff.2 ((sq_lt_one_iff₀ (norm_nonneg _)).1 (by linarith))
 
 /-- On the closed strip `0 ≤ re z ≤ 1`, `stripToUnitDisc θ` has norm at most `1`. -/
 theorem norm_stripToUnitDisc_le_one {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) : ‖stripToUnitDisc θ z‖ ≤ 1 := by
   have hwim := im_exp_nonneg_of_mem hz
-  rw [← sq_le_one_iff₀ (norm_nonneg _), ← normSq_eq_norm_sq, stripToUnitDisc, map_div₀,
-    div_le_one (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hwim))]
-  nlinarith [normSq_exp_sub_neg_sub_normSq θ z, sin_pi_mul_pos hθ]
+  have hnonneg : 0 ≤ 1 - ‖stripToUnitDisc θ z‖ ^ 2 := by
+    nlinarith [normSq_sub_mul_one_sub_norm_sq hθ hwim, sin_pi_mul_pos hθ,
+      normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hwim)]
+  exact (sq_le_one_iff₀ (norm_nonneg _)).1 (by linarith)
 
 private theorem exp_I_mul_pi_mul_I (t : ℝ) : exp (I * π * (t * I)) = Real.exp (-π * t) := by
   have harg : I * ↑π * (↑t * I) = ((-π * t : ℝ) : ℂ) := by
@@ -165,10 +178,11 @@ theorem stripToUnitDisc_one_add_mul_I_mem_sphere {θ : ℝ} (hθ : θ ∈ Ioo 0 
     stripToUnitDisc θ (1 + t * I) ∈ sphere 0 1 := by
   have him : (exp (I * π * (1 + t * I))).im = 0 := by
     rw [exp_I_mul_pi_one_add_mul_I, neg_im, ofReal_im, neg_zero]
-  have hsq := normSq_exp_sub_neg_sub_normSq θ (1 + t * I)
-  rw [mem_sphere_zero_iff_norm, Complex.norm_def, Real.sqrt_eq_one, stripToUnitDisc, map_div₀,
-    div_eq_one_iff_eq (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ him.ge)).ne']
-  rw [him, mul_zero, zero_mul] at hsq; linarith
+  have hsq := normSq_sub_mul_one_sub_norm_sq hθ him.ge
+  rw [him, mul_zero, zero_mul, mul_eq_zero] at hsq
+  have h1 : ‖stripToUnitDisc θ (1 + t * I)‖ ^ 2 = 1 := by
+    linarith [hsq.resolve_left (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ him.ge)).ne']
+  rw [mem_sphere_zero_iff_norm, ← Real.sqrt_sq (norm_nonneg _), h1, Real.sqrt_one]
 
 /-- The left boundary line `re z = 0` maps into the unit circle. -/
 theorem stripToUnitDisc_mul_I_mem_sphere {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
@@ -370,20 +384,25 @@ theorem range_stripToUnitDisc_mul_I {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     funext fun t ↦ (circleMap_leftBoundaryAngle hθ t).symm
   rw [h, Set.range_comp, range_leftBoundaryAngle hθ]
 
+private theorem boundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} (ψ : ℂ → E)
+    (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
+    (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap 0 1 (g t) = b t) :
+    (IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) s ↔ Integrable (fun t ↦ k t • ψ (b t))) ∧
+      (∫ φ in s, ψ (circleMap 0 1 φ)) = (2 * π) • ∫ t, k t • ψ (b t) :=
+  ⟨integrableOn_circleMap_iff_of_hasDerivAt hrange hinj hd habs hb,
+    setIntegral_circleMap_eq_of_hasDerivAt hrange hinj hd habs hb⟩
+
 private theorem rightBoundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (ψ : ℂ → E) :
     (IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) (Ioo 0 (2 * π * θ)) ↔
       Integrable (fun t ↦ stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)))) ∧
       (∫ φ in Ioo 0 (2 * π * θ), ψ (circleMap 0 1 φ)) =
         (2 * π) • ∫ t, stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)) :=
-  ⟨integrableOn_circleMap_iff_of_hasDerivAt (range_rightBoundaryAngle hθ)
-      (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
-      (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
-      (circleMap_rightBoundaryAngle hθ),
-    setIntegral_circleMap_eq_of_hasDerivAt (range_rightBoundaryAngle hθ)
-      (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
-      (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
-      (circleMap_rightBoundaryAngle hθ)⟩
+  boundary_pullback ψ (range_rightBoundaryAngle hθ)
+    (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
+    (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
+    (circleMap_rightBoundaryAngle hθ)
 
 private theorem leftBoundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (ψ : ℂ → E) :
@@ -391,14 +410,10 @@ private theorem leftBoundary_pullback {E : Type*} [NormedAddCommGroup E] [Normed
       Integrable (fun t ↦ stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I)))) ∧
       (∫ φ in Ioo (2 * π * θ) (2 * π), ψ (circleMap 0 1 φ)) =
         (2 * π) • ∫ t, stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I)) :=
-  ⟨integrableOn_circleMap_iff_of_hasDerivAt (range_leftBoundaryAngle hθ)
-      (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
-      (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
-      (circleMap_leftBoundaryAngle hθ),
-    setIntegral_circleMap_eq_of_hasDerivAt (range_leftBoundaryAngle hθ)
-      (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
-      (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
-      (circleMap_leftBoundaryAngle hθ)⟩
+  boundary_pullback ψ (range_leftBoundaryAngle hθ)
+    (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
+    (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
+    (circleMap_leftBoundaryAngle hθ)
 
 /-- The right-boundary strip Poisson kernel is integrable on `ℝ`. -/
 theorem integrable_stripPoissonKernel₁ {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
@@ -616,60 +631,114 @@ private theorem stripToUnitDisc_cayley_symm {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {u
   rw [hnum, hdiff, div_div_div_cancel_right₀ h1u,
     mul_div_cancel_right₀ u (exp_I_pi_sub_exp_neg_I_pi_ne_zero hθ)]
 
+private theorem unitDiscToExpStrip_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
+    (hz : z ∈ verticalClosedStrip 0 1) :
+    unitDiscToExpStrip θ (stripToUnitDisc θ z) = exp (I * π * z) :=
+  (stripToUnitDisc_cayley hθ (sub_exp_neg_I_pi_ne_zero hθ (im_exp_nonneg_of_mem hz))).2
+
+/-- The inverse conformal map `w ↦ log ((exp (i π θ) - w exp (-i π θ)) / (1 - w)) / (i π)`
+sending `ball 0 1` onto `verticalStrip 0 1` for `0 < θ < 1`. -/
+def unitDiscToStrip (θ : ℝ) (w : ℂ) : ℂ :=
+  Complex.log ((exp (I * π * θ) - w * exp (-I * π * θ)) / (1 - w)) / (I * π)
+
+/-- Explicit formula for `unitDiscToStrip`. -/
+theorem unitDiscToStrip_def (θ : ℝ) (w : ℂ) : unitDiscToStrip θ w =
+    Complex.log ((exp (I * π * θ) - w * exp (-I * π * θ)) / (1 - w)) / (I * π) := (rfl)
+
+private theorem im_unitDiscToExpStrip_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ}
+    (hw : w ∈ ball 0 1) : 0 < (unitDiscToExpStrip θ w).im := by
+  have hu_lt : ‖w‖ < 1 := mem_ball_zero_iff.1 hw
+  have h1u : 1 - w ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hu_lt
+  have hnormSq : normSq w < 1 := by
+    rw [normSq_eq_norm_sq, sq_lt_one_iff₀ (norm_nonneg _)]; exact hu_lt
+  rw [im_unitDiscToExpStrip]
+  exact div_pos (mul_pos (sub_pos.2 hnormSq) (sin_pi_mul_pos hθ)) (normSq_pos.2 h1u)
+
+/-- For `0 < θ < 1`, `unitDiscToStrip θ` is complex-differentiable at every point of `ball 0 1`. -/
+theorem differentiableAt_unitDiscToStrip {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ}
+    (hw : w ∈ ball 0 1) : DifferentiableAt ℂ (unitDiscToStrip θ) w := by
+  have hw1 : (1 - w : ℂ) ≠ 0 := sub_ne_zero.2 fun h ↦ by
+    have := mem_ball_zero_iff.1 hw; simp [← h] at this
+  have hlog : DifferentiableAt ℂ Complex.log (unitDiscToExpStrip θ w) :=
+    Complex.differentiableAt_log
+      (Complex.mem_slitPlane_iff.2 (Or.inr (im_unitDiscToExpStrip_pos hθ hw).ne'))
+  have hnum : DifferentiableAt ℂ (fun u ↦ (exp (I * π * θ) - u * exp (-I * π * θ)) / (1 - u)) w :=
+    ((differentiableAt_const _).sub (differentiableAt_id.mul_const _)).div
+      ((differentiableAt_const _).sub differentiableAt_id) hw1
+  exact (hlog.comp w hnum).div_const (I * π)
+
+/-- `unitDiscToStrip θ` is complex-differentiable on the open unit disc `ball 0 1`. -/
+theorem differentiableOn_unitDiscToStrip {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    DifferentiableOn ℂ (unitDiscToStrip θ) (ball 0 1) :=
+  fun _ hw ↦ (differentiableAt_unitDiscToStrip hθ hw).differentiableWithinAt
+
+/-- For `0 < θ < 1`, `unitDiscToStrip θ` maps `ball 0 1` into `verticalStrip 0 1`. -/
+theorem unitDiscToStrip_mem_verticalStrip {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ}
+    (hw : w ∈ ball 0 1) : unitDiscToStrip θ w ∈ verticalStrip 0 1 := by
+  have hw_im := im_unitDiscToExpStrip_pos hθ hw
+  have harg_pos : 0 < (unitDiscToExpStrip θ w).arg :=
+    lt_of_le_of_ne (Complex.arg_nonneg_iff.2 hw_im.le) fun h ↦
+      hw_im.ne' (Complex.arg_eq_zero_iff.1 h.symm).2
+  have harg_lt : (unitDiscToExpStrip θ w).arg < π :=
+    Complex.arg_lt_pi_iff.2 (Or.inr hw_im.ne')
+  have hz_re : (unitDiscToStrip θ w).re = (unitDiscToExpStrip θ w).arg / π := by
+    rw [unitDiscToStrip_def, div_eq_mul_inv, mul_inv, Complex.inv_I, ← ofReal_inv]
+    simp [unitDiscToExpStrip, Complex.log_im, div_eq_mul_inv]
+  exact mem_verticalStrip_iff.2 (hz_re ▸ ⟨div_pos harg_pos pi_pos, (div_lt_one pi_pos).2 harg_lt⟩)
+
+/-- `unitDiscToStrip θ` is a right inverse of `stripToUnitDisc θ` on `ball 0 1`. -/
+@[simp]
+theorem stripToUnitDisc_unitDiscToStrip {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ}
+    (hw : w ∈ ball 0 1) : stripToUnitDisc θ (unitDiscToStrip θ w) = w := by
+  have hw1 : w ≠ 1 := fun h ↦ by have := mem_ball_zero_iff.1 hw; simp [h] at this
+  have hw_ne : unitDiscToExpStrip θ w ≠ 0 := fun h ↦ by
+    have := im_unitDiscToExpStrip_pos hθ hw; simp [h] at this
+  have hexp : exp (I * π * unitDiscToStrip θ w) = unitDiscToExpStrip θ w := by
+    change exp (I * π * (Complex.log (unitDiscToExpStrip θ w) / (I * π))) = unitDiscToExpStrip θ w
+    rw [mul_div_cancel₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne')),
+      Complex.exp_log hw_ne]
+  rw [stripToUnitDisc, hexp]
+  exact (stripToUnitDisc_cayley_symm hθ hw1).2
+
+private theorem im_I_pi_mul_mem_Ioo {z : ℂ} (hz : z ∈ verticalStrip 0 1) :
+    -π < (I * π * z).im ∧ (I * π * z).im ≤ π := by
+  have hz' := mem_verticalStrip_iff.1 hz
+  have him : (I * π * z).im = π * z.re := by simp [mul_assoc]
+  exact ⟨by nlinarith [pi_pos, hz'.1], by nlinarith [pi_pos, hz'.2]⟩
+
+/-- `unitDiscToStrip θ` is a left inverse of `stripToUnitDisc θ` on `verticalStrip 0 1`. -/
+@[simp]
+theorem unitDiscToStrip_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
+    (hz : z ∈ verticalStrip 0 1) : unitDiscToStrip θ (stripToUnitDisc θ z) = z := by
+  have him := im_I_pi_mul_mem_Ioo hz
+  change Complex.log (unitDiscToExpStrip θ (stripToUnitDisc θ z)) / (I * π) = z
+  rw [unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz),
+    Complex.log_exp him.1 him.2,
+    mul_div_cancel_left₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne'))]
+
+/-- For `0 < θ < 1`, `stripToUnitDisc θ` is injective on `verticalStrip 0 1`. -/
+theorem injOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    InjOn (stripToUnitDisc θ) (verticalStrip 0 1) := by
+  intro z₁ hz₁ z₂ hz₂ h
+  have him₁ := im_I_pi_mul_mem_Ioo hz₁
+  have him₂ := im_I_pi_mul_mem_Ioo hz₂
+  have hexp : exp (I * π * z₁) = exp (I * π * z₂) := by
+    rw [← unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz₁),
+      ← unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz₂), h]
+  exact mul_left_cancel₀ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne'))
+    (Complex.exp_inj_of_neg_pi_lt_of_le_pi him₁.1 him₁.2 him₂.1 him₂.2 hexp)
+
+/-- For `0 < θ < 1`, `stripToUnitDisc θ` maps `verticalStrip 0 1` onto `ball 0 1`. -/
+theorem surjOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    SurjOn (stripToUnitDisc θ) (verticalStrip 0 1) (ball 0 1) :=
+  fun u hu ↦ ⟨unitDiscToStrip θ u, unitDiscToStrip_mem_verticalStrip hθ hu,
+    stripToUnitDisc_unitDiscToStrip hθ hu⟩
+
 /-- For `0 < θ < 1`, `stripToUnitDisc θ` maps `verticalStrip 0 1` bijectively onto `ball 0 1`. -/
 theorem bijOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
-    BijOn (stripToUnitDisc θ) (verticalStrip 0 1) (ball 0 1) := by
-  refine ⟨fun _ hz ↦ stripToUnitDisc_mem_ball hθ hz, fun z₁ hz₁ z₂ hz₂ h ↦ ?_, fun u hu ↦ ?_⟩
-  · have hw₁ : exp (I * π * z₁) - exp (-I * π * θ) ≠ 0 :=
-      sub_exp_neg_I_pi_ne_zero hθ
-        (im_exp_nonneg_of_mem (verticalStrip_subset_verticalClosedStrip 0 1 hz₁))
-    have hw₂ : exp (I * π * z₂) - exp (-I * π * θ) ≠ 0 :=
-      sub_exp_neg_I_pi_ne_zero hθ
-        (im_exp_nonneg_of_mem (verticalStrip_subset_verticalClosedStrip 0 1 hz₂))
-    have hexp : exp (I * π * z₁) = exp (I * π * z₂) := by
-      rw [← (stripToUnitDisc_cayley hθ hw₁).2, ← (stripToUnitDisc_cayley hθ hw₂).2]
-      exact congrArg (unitDiscToExpStrip θ) h
-    obtain ⟨n, hn⟩ := Complex.exp_eq_exp_iff_exists_int.1 hexp
-    have him : π * z₁.re = π * z₂.re + (n : ℝ) * (2 * π) := by
-      simpa [mul_assoc] using congrArg Complex.im hn
-    have hz₁' := mem_verticalStrip_iff.1 hz₁
-    have hz₂' := mem_verticalStrip_iff.1 hz₂
-    have hre : z₁.re = z₂.re + 2 * (n : ℝ) := mul_left_cancel₀ pi_pos.ne' (by linarith)
-    have hn_lt : (n : ℤ) < 1 := by
-      exact_mod_cast (by linarith [hz₁'.1, hz₁'.2, hz₂'.1, hz₂'.2] : (n : ℝ) < 1)
-    have hn_gt : (-1 : ℤ) < n := by
-      exact_mod_cast (by linarith [hz₁'.1, hz₁'.2, hz₂'.1, hz₂'.2] : (-1 : ℝ) < n)
-    have hn0 : n = 0 := by omega
-    subst hn0
-    simp only [Int.cast_zero, zero_mul, add_zero] at hn
-    exact mul_left_cancel₀ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne')) hn
-  · have hu_lt : ‖u‖ < 1 := mem_ball_zero_iff.1 hu
-    have hu1 : u ≠ 1 := fun h ↦ by simp [h] at hu_lt
-    have h1u : 1 - u ≠ 0 := sub_ne_zero.2 hu1.symm
-    have hnormSq : normSq u < 1 := by
-      rw [normSq_eq_norm_sq, sq_lt_one_iff₀ (norm_nonneg _)]
-      exact hu_lt
-    set w := unitDiscToExpStrip θ u
-    have hw_im : 0 < w.im := by
-      dsimp only [w]
-      rw [im_unitDiscToExpStrip]
-      exact div_pos (mul_pos (sub_pos.2 hnormSq) (sin_pi_mul_pos hθ)) (normSq_pos.2 h1u)
-    have hw_ne : w ≠ 0 := fun h ↦ by simp [h] at hw_im
-    have harg_pos : 0 < w.arg :=
-      lt_of_le_of_ne (Complex.arg_nonneg_iff.2 hw_im.le) fun h ↦
-        hw_im.ne' (Complex.arg_eq_zero_iff.1 h.symm).2
-    have harg_lt : w.arg < π := Complex.arg_lt_pi_iff.2 (Or.inr hw_im.ne')
-    refine ⟨Complex.log w / (I * π), mem_verticalStrip_iff.2 ?_, ?_⟩
-    · have hz_re : (Complex.log w / (I * π)).re = w.arg / π := by
-        rw [div_eq_mul_inv, mul_inv, Complex.inv_I, ← ofReal_inv]
-        simp [Complex.log_im, div_eq_mul_inv]
-      rw [hz_re]
-      exact ⟨div_pos harg_pos pi_pos, (div_lt_one pi_pos).2 harg_lt⟩
-    · have hexp_z : exp (I * π * (Complex.log w / (I * π))) = w := by
-        rw [mul_div_cancel₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne')),
-          Complex.exp_log hw_ne]
-      rw [stripToUnitDisc, hexp_z]
-      exact (stripToUnitDisc_cayley_symm hθ hu1).2
+    BijOn (stripToUnitDisc θ) (verticalStrip 0 1) (ball 0 1) :=
+  ⟨fun _ hz ↦ stripToUnitDisc_mem_ball hθ hz, injOn_stripToUnitDisc hθ,
+    surjOn_stripToUnitDisc hθ⟩
 
 private theorem cayley_ofReal {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (r : ℝ) :
     ((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ)) ≠ 1 ∧
