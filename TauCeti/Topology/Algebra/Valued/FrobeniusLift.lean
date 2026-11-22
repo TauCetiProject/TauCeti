@@ -61,6 +61,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] (σ : K �
   (hσq : ∀ a : K, ‖a‖ ≤ 1 → ‖σ a - a ^ q‖ < 1)
 include hσq
 
+variable {σ} in
 /-- A `q`-Frobenius lift `σ` on a field with infinite residue field forces `q` to vanish in the
 residue field: the `q`-th power map, the reduction of `σ`, is additive. -/
 theorem Valued.integer.natCast_eq_zero_of_norm_apply_sub_pow_lt_one [Infinite 𝓀[K]] (hq : 1 < q) :

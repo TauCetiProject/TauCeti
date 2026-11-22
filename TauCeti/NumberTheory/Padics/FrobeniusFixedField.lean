@@ -27,8 +27,8 @@ Frobenius structures over `K` are `σ`-semilinear, so their constants live in th
 `K^σ = {x | σ x = x}`. Being fixed by a continuous endomorphism, `ℚ_[p]` lies in `K^σ`, which is
 therefore an intermediate field `RingHom.padicFixedField σ p hσ` of `K / ℚ_[p]`. This file proves
 that `K^σ` is a complete discretely valued field whose residue field has at most `q` elements,
-hence a finite extension of `ℚ_[p]` (Tsuzuki, Lemma A.1(1)). Completeness of `K` is used only for
-the completeness of `K^σ`.
+hence a finite extension of `ℚ_[p]` (Tsuzuki, Lemma A.1(1)). For these results, completeness of
+`K` is used only for the completeness of `K^σ`.
 
 When `K` is complete with algebraically closed residue field and `σ` preserves norms, the residue
 field of `K^σ` has exactly `q` elements: every root of `X ^ q - X` in the residue field of `K` lifts
@@ -148,12 +148,13 @@ theorem natCard_residueField_padicFixedField [CompleteSpace K] [IsDiscreteValuat
   have hroot (ξ : 𝓀[K]) (hξ : ξ ^ q = ξ) : ∃ η, f η = ξ := by
     obtain ⟨b, hb, rfl⟩ := σ.exists_apply_eq_self_and_residue_eq hσq hσn hq hξ
     let b' : 𝒪[σ.padicFixedField p hσ] :=
-      ⟨⟨b, hb⟩, Valued.integer.mem_iff.2 (Valued.integer.mem_iff.1 b.property)⟩
+      ⟨⟨b, hb⟩, Valued.integer.mem_iff.2 ((AddSubgroupClass.coe_norm _ _).trans_le
+        (Valued.integer.mem_iff.1 b.property))⟩
     refine ⟨IsLocalRing.residue _ b', ?_⟩
     rw [IsLocalRing.ResidueField.map_residue]
     exact congrArg _ (Subtype.ext (ι.coe_integerRestrict_apply hι b'))
   -- Since `q = 0` in the algebraically closed field `𝓀[K]`, `X ^ q - X` has `q` distinct roots.
-  have hq₀ := Valued.integer.natCast_eq_zero_of_norm_apply_sub_pow_lt_one σ hσq hq
+  have hq₀ := Valued.integer.natCast_eq_zero_of_norm_apply_sub_pow_lt_one hσq hq
   have := ringChar.charP 𝓀[K]
   have hsep := galois_poly_separable (K := 𝓀[K]) _ q (ringChar.dvd hq₀)
   have hcard : Nat.card ((X ^ q - X : 𝓀[K][X]).rootSet 𝓀[K]) = q := by
