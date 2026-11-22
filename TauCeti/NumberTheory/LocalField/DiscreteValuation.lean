@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.Valuation.Discrete.Extension
 public import TauCeti.RingTheory.Valuation.ValuativeRel.ValueGroup
+import TauCeti.Algebra.GroupWithZero.Range
 
 /-!
 # Discrete valuations of nonarchimedean local fields
@@ -119,8 +120,7 @@ end SingleField
 private theorem valueGroup_eq_range_unitsMap {A B : Type*} [GroupWithZero A] [GroupWithZero B]
     (f : A →*₀ B) : f.valueGroup = (Units.map f.toMonoidHom).range := by
   ext γ
-  rw [← SetLike.mem_coe, ← MonoidWithZeroHom.valueMonoid_eq_valueGroup', SetLike.mem_coe,
-    MonoidWithZeroHom.mem_valueMonoid_iff, MonoidHom.mem_range]
+  rw [MonoidWithZeroHom.mem_valueGroup_iff, MonoidHom.mem_range]
   refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun ⟨a, ha⟩ ↦ ⟨a, congrArg Units.val ha⟩⟩
   have ha0 : a ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using ha.symm)
   exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩

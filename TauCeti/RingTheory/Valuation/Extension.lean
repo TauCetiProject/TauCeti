@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.RingTheory.Valuation.Extension
+import TauCeti.Algebra.GroupWithZero.Range
 import TauCeti.RingTheory.Valuation.LinearIndependent
 
 /-!
@@ -53,13 +54,17 @@ section MonoidWithZero
 
 variable {R S K L M Γ : Type*} [LinearOrderedCommMonoidWithZero Γ]
 
+private theorem mem_valueMonoid_iff_exists [Ring R] (w : Valuation R Γ) {γ : Γˣ} :
+    γ ∈ w.valueMonoid ↔ ∃ r : R, w r = γ := by
+  simp only [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range, coe_toMonoidWithZeroHom]
+
 /-- Restricting a valuation along a ring homomorphism shrinks its value monoid. -/
 theorem valueMonoid_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
     (w.comap f).valueMonoid ≤ w.valueMonoid := by
   intro γ hγ
-  rw [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hγ ⊢
+  rw [mem_valueMonoid_iff_exists] at hγ ⊢
   obtain ⟨r, hr⟩ := hγ
-  exact ⟨f r, by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr⟩
+  exact ⟨f r, by simpa only [comap_apply] using hr⟩
 
 /-- Restricting a valuation along a ring homomorphism shrinks its value group. -/
 theorem valueGroup_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
@@ -70,10 +75,10 @@ theorem valueGroup_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* 
 theorem valueGroup_comap_eq_of_surjective [Ring R] [Ring S] (w : Valuation S Γ) {f : R →+* S}
     (hf : Function.Surjective f) : (w.comap f).valueGroup = w.valueGroup := by
   refine le_antisymm (w.valueGroup_comap_le f) (Subgroup.closure_mono fun γ hγ ↦ ?_)
-  rw [SetLike.mem_coe, mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hγ ⊢
+  rw [SetLike.mem_coe, mem_valueMonoid_iff_exists] at hγ ⊢
   obtain ⟨s, hs⟩ := hγ
   obtain ⟨r, rfl⟩ := hf s
-  exact ⟨r, by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs⟩
+  exact ⟨r, by simpa only [comap_apply] using hs⟩
 
 /-- The **value-group ramification index** `[Γ_w : Γ_{w|_K}]` of a valuation `w` on a `K`-algebra
 `L`: the relative index of the restricted value group in `w.valueGroup` (`0` when infinite). -/
@@ -271,11 +276,7 @@ private theorem exists_linearIndependent_quotient_valueGroup :
   classical
   set H := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup
   have hex (q : w.valueGroup ⧸ H) : ∃ y : L, w y = ((q.out : Γˣ) : Γ) := by
-    have hmem : (q.out : Γˣ) ∈ w.valueMonoid :=
-      (valueMonoid_eq_valueGroup (f := (w : L →*₀ Γ))).symm ▸ q.out.property
-    rw [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hmem
-    obtain ⟨y, hy⟩ := hmem
-    exact ⟨y, by rwa [coe_toMonoidWithZeroHom] at hy⟩
+    simpa only [coe_toMonoidWithZeroHom] using mem_valueGroup_iff.mp q.out.property
   exact ⟨fun q ↦ (hex q).choose, w.linearIndependent_of_quotient_valueGroup
     (fun q ↦ (hex q).choose_spec) fun q₁ q₂ hq ↦ by simpa using hq⟩
 

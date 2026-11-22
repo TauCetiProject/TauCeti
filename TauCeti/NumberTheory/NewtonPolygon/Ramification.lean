@@ -161,10 +161,9 @@ theorem ramificationIdx_eq_finrank_of_forall_mem_newtonSlopes_eq [FiniteDimensio
     (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w]
     {f : K[X]} (hf : f ≠ 0) {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v.realAddVal, m = q)
     {α : L} (hα : α ≠ 0) (hroot : aeval α f = 0) (hdeg : Module.finrank K L ≤ q.den) :
-    w.ramificationIdx K = Module.finrank K L := by
-  have := Valuation.IsRankOneDiscrete.of_finite v w
-  exact Nat.le_antisymm w.ramificationIdx_le_finrank
-    (hdeg.trans (Nat.le_of_dvd (Valuation.HasExtension.ramificationIdx_pos v w)
+    w.ramificationIdx K = Module.finrank K L :=
+  Nat.le_antisymm w.ramificationIdx_le_finrank
+    (hdeg.trans (Nat.le_of_dvd w.ramificationIdx_pos
       (den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w hf hq hα hroot)))
 
 end Polynomial

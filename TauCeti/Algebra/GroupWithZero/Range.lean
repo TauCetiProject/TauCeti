@@ -20,11 +20,28 @@ Together with `MonoidWithZeroHom.valueGroup.mk_eq_div`, `simp` evaluates the emb
 
 * `MonoidWithZeroHom.ValueGroup₀.embedding_coe`: the embedding sends `x : valueGroup f`, viewed
   in `ValueGroup₀ f`, to `((x : Bˣ) : B)`.
+* `MonoidWithZeroHom.mem_valueGroup_iff`: for a homomorphism between groups with zero,
+  membership in `f.valueGroup` is equivalent to being attained by `f`.
 -/
 
 public section
 
-namespace MonoidWithZeroHom.ValueGroup₀
+namespace MonoidWithZeroHom
+
+section GroupWithZero
+
+variable {A B : Type*} [GroupWithZero A] [GroupWithZero B]
+
+/-- For a homomorphism `f : A →*₀ B` between groups with zero, an element `γ : Bˣ` lies in
+`f.valueGroup` if and only if `(γ : B)` is attained by `f`. -/
+theorem mem_valueGroup_iff {f : A →*₀ B} {γ : Bˣ} :
+    γ ∈ f.valueGroup ↔ ∃ a : A, f a = γ := by
+  have h := Set.ext_iff.mp (valueGroup_eq_range f) (γ : B)
+  simpa [Units.val_inj, Units.ne_zero] using h
+
+end GroupWithZero
+
+namespace ValueGroup₀
 
 variable {A B : Type*} [MonoidWithZero A] [GroupWithZero B] {f : A →*₀ B}
 
@@ -34,4 +51,6 @@ value group, viewed in `ValueGroup₀ f`, to its underlying element `((x : Bˣ) 
 theorem embedding_coe (x : valueGroup f) : embedding (x : ValueGroup₀ f) = ((x : Bˣ) : B) := by
   simp [embedding_apply]
 
-end MonoidWithZeroHom.ValueGroup₀
+end ValueGroup₀
+
+end MonoidWithZeroHom

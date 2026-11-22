@@ -430,20 +430,37 @@ theorem den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast {α : L} {q : ℚ}
   exact (Rat.den_dvd_iff_exists_eq_intCast_div he).2
     ⟨ord w.intValuation α, by exact_mod_cast hval⟩
 
+private theorem withTop_nsmul_right_injective {n : ℕ} (hn : 0 < n) :
+    Function.Injective (n • · : WithTop ℝ → WithTop ℝ) := by
+  intro x y hab
+  dsimp only at hab
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  have htop : k.succ • (⊤ : WithTop ℝ) = ⊤ := by
+    rw [Nat.succ_eq_add_one, succ_nsmul, WithTop.add_top]
+  cases x with
+  | top =>
+    cases y with
+    | top => rfl
+    | coe b =>
+      rw [htop, ← WithTop.coe_nsmul] at hab
+      exact (WithTop.top_ne_coe hab).elim
+  | coe a =>
+    cases y with
+    | top =>
+      rw [htop, ← WithTop.coe_nsmul] at hab
+      exact (WithTop.coe_ne_top hab).elim
+    | coe b =>
+      rw [← WithTop.coe_nsmul, ← WithTop.coe_nsmul, WithTop.coe_inj] at hab
+      exact congrArg ((↑) : ℝ → WithTop ℝ) (nsmul_right_injective hn.ne' hab)
+
 /-- **Restriction property of `extRealAddVal`.** When `w` extends `v`, `w.extRealAddVal K`
 restricts on `K` to `v.realAddVal`. -/
 theorem extRealAddVal_algebraMap (v : Valuation K ΓK) [v.IsRankOneDiscrete]
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] (x : K) :
     w.extRealAddVal K (algebraMap K L x) = v.realAddVal x := by
   have he := HasExtension.ramificationIdx_pos v w
-  rw [extRealAddVal_eq_map_realAddVal, realAddVal_algebraMap v w x]
-  cases v.realAddVal x with
-  | top =>
-    obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero he.ne'
-    simp [hk, succ_nsmul]
-  | coe t =>
-    rw [← WithTop.coe_nsmul, WithTop.map_coe, nsmul_eq_mul,
-      mul_div_cancel_left₀ t (Nat.cast_ne_zero.mpr he.ne')]
+  exact withTop_nsmul_right_injective he
+    ((w.ramificationIdx_nsmul_extRealAddVal_of_pos he _).trans (realAddVal_algebraMap v w x))
 
 end Ring
 

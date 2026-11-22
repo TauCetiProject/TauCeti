@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+import TauCeti.Algebra.GroupWithZero.Range
 
 /-!
 # Normalizing a `ℤᵐ⁰`-valued valuation of a division ring
@@ -210,11 +211,8 @@ theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := 
 theorem valueGroup_eq_zpowers_ordIndex :
     v.valueGroup =
       Subgroup.zpowers ((Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) ^ (ordIndex v : ℤ)) := by
-  refine le_antisymm ((Subgroup.closure_le _).mpr ?_) ?_
-  · intro γ hγ
-    rw [SetLike.mem_coe, MonoidWithZeroHom.mem_valueMonoid_iff, Set.mem_preimage,
-      Set.mem_range] at hγ
-    obtain ⟨x, hx⟩ := hγ
+  refine le_antisymm (fun γ hγ ↦ ?_) ?_
+  · obtain ⟨x, hx⟩ := MonoidWithZeroHom.mem_valueGroup_iff.mp hγ
     rw [_root_.Valuation.coe_toMonoidWithZeroHom] at hx
     have hvx : v x ≠ 0 := hx.trans_ne (Units.ne_zero γ)
     obtain ⟨k, hk⟩ := ordIndex_dvd_ord v x
