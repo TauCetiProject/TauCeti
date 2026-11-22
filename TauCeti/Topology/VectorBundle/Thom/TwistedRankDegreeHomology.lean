@@ -124,6 +124,12 @@ theorem thomPairSignLocalSystem_def :
         ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι) :=
   (rfl)
 
+/-- The fibres of the pulled-back orientation system are fibres of `o(E)`, so they are projective.
+-/
+instance projective_thomPairSignLocalSystem_obj (v : FundamentalGroupoid (thomPair F E).fst) :
+    Projective ((thomPairSignLocalSystem F E R hι).obj v) :=
+  LocalCoefficientSystem.projective_pullback_obj_obj (X := TopCat.of (TotalSpace F E)) _ _ v
+
 variable (F E R) in
 /-- The pulled-back orientation system `π^*o(E)` restricted to the part `E|_W` of the total space
 over `W`. -/
@@ -344,8 +350,7 @@ theorem thomPairOverSignFiberClassOf_eq (e e' : Trivialization F (π F E)) [e.Is
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
     rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h', hinv]
   · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, h]
-      exact (neg_neg ω).symm
+      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =
