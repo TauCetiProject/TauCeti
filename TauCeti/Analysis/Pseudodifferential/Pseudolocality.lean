@@ -94,14 +94,11 @@ theorem memSobolev_smulLeftCLM_quantizeSobolev_of_memSobolev_smulLeftCLM {a : Sy
   have hψ : HasCompactSupport ψ :=
     hχ.of_forall_mem_support_eq_one fun x hx ↦ hχψ.self_of_nhdsSet x (subset_tsupport ψ hx)
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := W) hψ
-  set F := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
-  -- `ψ Op(a) = Op(ψ # a)`, and `ψ # a = ψ a` vanishes outside the support of `ψ`.
-  have hK : ∀ x ∉ tsupport ψ, ∀ ξ, (F.sharp a ha).coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
-    rw [coefficient_sharp_of_coefficient_eq_smul (a := const (ContinuousLinearMap.id ℂ W)) ha
-      (t := ψ x) (fun ξ ↦ by simp [F]) ξ, image_eq_zero_of_notMem_tsupport hx, zero_smul]
-  have h := memSobolev_toDistr_quantizeSobolev_of_memSobolev_smulLeftCLM (hF.sharp ha) hK hχ hχψ hv
-  rwa [toDistr_quantizeSobolev_sharp hF ha, toDistr_quantizeSobolev_ofSpatial_smul_id,
-    zero_add] at h
+  -- `ψ Op(a) = Op(ψ # a)`, and `ψ # a` vanishes outside the support of `ψ`.
+  have h := memSobolev_toDistr_quantizeSobolev_of_memSobolev_smulLeftCLM (hF.sharp ha)
+    (fun _ hx ↦ coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport ha hx) hχ hχψ hv
+  rw [BesselPotentialSpace.toDistr_smulLeftCLM]
+  rwa [← smulLeftCLM_toDistr_quantizeSobolev ha hF, zero_add] at h
 
 /-- **Pseudodifferential operators do not enlarge the singular support.** Let `a` have compact
 spatial support, and let the compactly supported Schwartz function `χ` equal `1` on a neighbourhood

@@ -105,6 +105,13 @@ theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → 
   funext x t
   simp only [timeExtension_def, Pi.smul_apply]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- Clamped time extension commutes with postcomposition. -/
+@[simp]
+theorem timeExtension_comp {G : Type*} (hab : a ≤ b) (L : F → G) (f : slab (E := E) a b → F)
+    (x : E) : timeExtension hab (L ∘ f) x = L ∘ timeExtension hab f x :=
+  (rfl)
+
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- The clamped time extension of a continuous slab map is jointly continuous. -/
 theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
@@ -351,6 +358,25 @@ theorem norm_apply_slabMk_sub_le (f : ParabolicC2HolderSpace α E F hab) (x : E)
       simpa only [projIcc_of_mem hab.le hτ] using f.hasTimeDerivWithinAt x ⟨τ, hτ⟩)
     (fun τ _ ↦ HolderSpace.norm_apply_le _ _) s.property t.property
   rwa [timeExtension_of_mem, timeExtension_of_mem, Real.norm_eq_abs] at h
+
+/-- For each fixed `t`, the spatial gradient `x ↦ D_xu(x, t)` is Lipschitz, with the supremum of
+the Hessian as constant: `‖D_xu(y, t) - D_xu(z, t)‖ ≤ ‖D_x²u‖_∞ ‖y - z‖`. -/
+theorem lipschitzWith_spatialFDerivL_slabMk (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    LipschitzWith ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊
+      fun y ↦ spatialFDerivL f (slabMk y t) :=
+  lipschitzWith_of_nnNorm_fderiv_le (fun y ↦ (f.hasSpatialSecondFDerivAt t y).differentiableAt)
+    fun y ↦ by
+      rw [f.fderiv_spatialFDeriv_eq, ← HolderSpace.toBoundedContinuousFunction_apply]
+      exact BoundedContinuousFunction.nnNorm_coe_le_nnNorm _ _
+
+/-- For each fixed `t`, the map `x ↦ u(x, t)` is Lipschitz, with the supremum of the spatial
+gradient as constant: `‖u(y, t) - u(z, t)‖ ≤ ‖D_xu‖_∞ ‖y - z‖`. -/
+theorem lipschitzWith_apply_slabMk (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    LipschitzWith ‖spatialFDerivL f‖₊ fun y ↦ f (slabMk y t) :=
+  lipschitzWith_of_nnNorm_fderiv_le (fun y ↦ (f.hasSpatialFDerivAt t y).differentiableAt)
+    fun y ↦ by
+      rw [f.fderiv_eq]
+      exact BoundedContinuousFunction.nnNorm_coe_le_nnNorm _ _
 
 /-! ### Locality of the derivative fields -/
 
