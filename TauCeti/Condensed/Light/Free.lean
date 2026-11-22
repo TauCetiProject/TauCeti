@@ -60,3 +60,24 @@ lemma freeModuleHomEquiv_symm_postcomp {S : LightProfinite.{u}} {N : LightCondMo
   rw [AddEquiv.symm_apply_eq, freeModuleHomEquiv_postcomp, AddEquiv.apply_symm_apply]
 
 end LightProfinite
+
+namespace LightCondMod
+
+variable {R : Type u} [Ring R]
+
+/-- A morphism of light condensed modules is an isomorphism exactly when postcomposition with it
+is bijective on maps out of the free module on every light profinite set. -/
+lemma isIso_iff_bijective_comp_free {M N : LightCondMod.{u} R} (f : M ⟶ N) :
+    IsIso f ↔ ∀ S : LightProfinite.{u},
+      Function.Bijective fun g : (free R).obj S.toCondensed ⟶ M ↦ g ≫ f := by
+  rw [← ObjectProperty.isIso_hom_iff, NatTrans.isIso_iff_isIso_app,
+    Opposite.op_surjective.forall]
+  refine forall_congr' fun S ↦ ?_
+  have h : (fun g : (free R).obj S.toCondensed ⟶ M ↦ g ≫ f) =
+      S.freeModuleHomEquiv.toEquiv.symm ∘ f.hom.app (Opposite.op S) ∘
+        S.freeModuleHomEquiv.toEquiv := by
+    ext g : 1
+    simp
+  rw [h, Equiv.comp_bijective, Equiv.bijective_comp, ConcreteCategory.isIso_iff_bijective]
+
+end LightCondMod

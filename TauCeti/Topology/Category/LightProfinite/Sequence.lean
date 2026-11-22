@@ -19,7 +19,7 @@ public section
 
 universe u
 
-open CategoryTheory OnePoint Filter
+open CategoryTheory OnePoint Filter Topology
 
 namespace TauCeti
 
@@ -80,6 +80,13 @@ lemma liftedSequence_cases {P : liftedSequence.{u} → Prop}
   | infty => exact hinfty
   | coe n => exact hpoint n
 
+/-- The finite points of the lifted sequence converge to its limit point. -/
+lemma tendsto_sequencePoint_atTop :
+    Tendsto sequencePoint.{u} atTop (𝓝 sequenceInfty.{u}) := by
+  have h := OnePoint.tendsto_coe_infty (X := ℕ)
+  rw [coclosedCompact_eq_cocompact, cocompact_eq_cofinite, Nat.cofinite_eq_atTop] at h
+  exact (liftedSequenceEquiv.symm.continuous.tendsto _).comp h
+
 /-- The lifted sequence is also the one-point compactification of the lifted natural numbers. -/
 noncomputable def liftedSequenceHomeomorph : liftedSequence.{u} ≃ₜ OnePoint (ULift.{u} ℕ) :=
   liftedSequenceEquiv.trans
@@ -109,6 +116,20 @@ lemma natShift_apply_sequencePoint (n : ℕ) :
 @[simp↓]
 lemma natShift_apply_infty :
     natShift sequenceInfty.{u} = sequenceInfty := by rfl
+
+/-- Iterating successor `n` times moves the finite point `m` to `m + n`. -/
+@[simp]
+lemma iterate_natShift_apply_sequencePoint (n m : ℕ) :
+    (⇑natShift.{u})^[n] (sequencePoint m) = sequencePoint (m + n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', ih, natShift_apply_sequencePoint, add_assoc]
+
+/-- Iterated successor fixes the limit point. -/
+@[simp]
+lemma iterate_natShift_apply_infty (n : ℕ) :
+    (⇑natShift.{u})^[n] sequenceInfty = sequenceInfty :=
+  Function.iterate_fixed natShift_apply_infty n
 
 /-- The inclusion of the point at infinity in the lifted sequence. -/
 noncomputable def inftyPoint : LightProfinite.of PUnit.{u + 1} ⟶ liftedSequence.{u} :=
