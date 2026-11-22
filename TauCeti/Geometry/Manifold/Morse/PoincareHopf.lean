@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChartDerivative
+public import TauCeti.Geometry.Manifold.VectorField.ZeroIndex
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -27,8 +28,11 @@ treated here, not arbitrary vector fields with nondegenerate zeros.
 
 ## Main results
 
-* `TauCeti.IsMorse.det_vectorFieldChartDerivative_mgradient_ne_zero`: every zero of the gradient
-  of a Morse function is nondegenerate.
+* `TauCeti.IsMorse.det_vectorFieldChartDerivative_mgradient_ne_zero`,
+  `TauCeti.IsMorse.zeroDet_mgradient_ne_zero`: every zero of the gradient of a Morse function is
+  nondegenerate.
+* `TauCeti.IsMorse.zeroSign_mgradient`: the index `TauCeti.zeroSign` of such a zero is `(-1)` to
+  the Morse index.
 * `TauCeti.IsMorse.finsum_sign_det_vectorFieldChartDerivative_mgradient`: the sum of the indices
   of the zeros of the gradient of a Morse function is the Euler characteristic.
 
@@ -79,6 +83,25 @@ theorem IsMorse.det_vectorFieldChartDerivative_mgradient_ne_zero (hf : IsMorse I
     hf.mdifferentiableAt_mgradient_and_isManifoldNondegenerateCriticalPoint hx
   exact (det_vectorFieldChartDerivative_mgradient_ne_zero_iff hgrad h.contMDiffAt
     (Manifold.mgradient_eq_zero_iff.mp hx)).mpr h
+
+/-- For a `C¹` metric, every zero of the gradient of a Morse function has `zeroDet ≠ 0`. -/
+theorem IsMorse.zeroDet_mgradient_ne_zero (hf : IsMorse I f) {x : M}
+    (hx : Manifold.mgradient I f x = 0) : zeroDet I (Manifold.mgradient I f) x ≠ 0 := by
+  rw [zeroDet_eq_det_vectorFieldChartDerivative]
+  exact hf.det_vectorFieldChartDerivative_mgradient_ne_zero hx
+
+/-- **The index of a zero of the gradient of a Morse function.** For a `C¹` metric, the index
+`zeroSign` of the gradient of a Morse function at a zero is `(-1)` to the Morse index there. -/
+theorem IsMorse.zeroSign_mgradient (hf : IsMorse I f) {x : M}
+    (hx : Manifold.mgradient I f x = 0) :
+    zeroSign I (Manifold.mgradient I f) x = (-1) ^ manifoldMorseIndex I f x := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
+    (F := E) (V := fun x : M ↦ TangentSpace I x)
+  obtain ⟨hgrad, h⟩ :=
+    hf.mdifferentiableAt_mgradient_and_isManifoldNondegenerateCriticalPoint hx
+  rw [zeroSign_eq_sign (hf.zeroDet_mgradient_ne_zero hx),
+    zeroDet_eq_det_vectorFieldChartDerivative,
+    sign_det_vectorFieldChartDerivative_mgradient hgrad h, SignType.coe_pow, SignType.coe_neg_one]
 
 end Local
 
