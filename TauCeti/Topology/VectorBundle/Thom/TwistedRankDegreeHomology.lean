@@ -766,6 +766,7 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     Homeomorph.Set.univ_apply]
 
 /-- Reversing the orientation `ω` of the model fibre negates the fibre classes. -/
+@[simp]
 theorem thomPairSignFiberClass_neg (b : B) :
     thomPairSignFiberClass F E R hι (-ω) b = -thomPairSignFiberClass F E R hι ω b := by
   have h : ((trivializationAt F E b).mapOrientation ι

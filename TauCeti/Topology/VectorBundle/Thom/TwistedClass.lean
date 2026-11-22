@@ -45,11 +45,13 @@ morphisms out of `Hᵣ(E, E₀; π^*o(E))` (`TauCeti.thomPairTwistedHomology_hom
 all of them (`TauCeti.eq_twistedThomClass_iff`). Reversing `ω` negates it
 (`TauCeti.twistedThomClass_neg`).
 
-The twisted Thom class is the input of the Thom isomorphism with orientation-twisted coefficients:
-capping with it (`TopPair.twistedCap`) and pairing the two copies of `o(E)`
-(`TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso`) sends `Hₙ₊ᵣ(E, E₀; R)` to the
-homology `Hₙ(B; o(E))` of the base twisted by the orientation system, which is the relative homology
-across the level of a Morse–Bott critical submanifold whose negative normal bundle is `E`.
+The twisted Thom class is the input to the homology Thom map with orientation-twisted
+coefficients, `x ↦ π_*(x ⌢ U_E)`: capping with it (`TopPair.twistedCap`) and pairing the two
+copies of `o(E)` (`TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso`) would give a
+map `Hₙ₊ᵣ(E, E₀; R) ⟶ Hₙ(B; o(E))`. Neither this map nor its bijectivity (the twisted Thom
+isomorphism) is formalized here; its bijectivity would identify the relative homology across the
+level of a Morse–Bott critical submanifold whose negative normal bundle is `E` with the twisted
+homology `Hₙ(B; o(E))` of the base.
 
 ## Main definitions and results
 
@@ -146,10 +148,10 @@ theorem eq_twistedThomClass_iff
       rw [h b, twistedKronecker_twistedThomClass_thomPairSignFiberClass]⟩
 
 /-- Reversing the orientation `ω` of the model fibre negates the twisted Thom class. -/
+@[simp]
 theorem twistedThomClass_neg :
     twistedThomClass F E R hι (-ω) = -twistedThomClass F E R hι ω :=
   ((eq_twistedThomClass_iff hι (-ω)).2 fun b ↦ by
-    simp [thomPairSignFiberClass_neg hι,
-      twistedKronecker_twistedThomClass_thomPairSignFiberClass hι]).symm
+    simp [twistedKronecker_twistedThomClass_thomPairSignFiberClass hι]).symm
 
 end TauCeti
