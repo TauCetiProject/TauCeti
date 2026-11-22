@@ -93,55 +93,33 @@ theorem summable_norm_weierstrassFactor_one_sub_one (z : ℂ) :
       (summable_div_pow_inv a ha) z
 
 omit ha in
-private theorem tprod_weierstrassFactor_one_eq_subtype (w : ℂ) :
-    (∏' i, weierstrassFactor 1 (a i * w)) =
-      ∏' i : {i // a i ≠ 0}, weierstrassFactor 1 (w / (a i)⁻¹) := by
-  rw [← tprod_subtype_eq_of_mulSupport_subset (s := {i | a i ≠ 0}) fun i hi ↦ ?_]
-  · exact tprod_congr fun i ↦ weierstrassFactor_one_mul_eq_div_inv a i w
-  · by_contra hai
-    simp only [Set.mem_ofPred_eq, not_not] at hai
-    exact hi (by simp [hai])
-
-omit ha in
-private def invRootEquiv (z : ℂ) :
-    {i : {i // a i ≠ 0} // (a i)⁻¹ = z} ≃ {i : ι // a i * z = 1} where
-  toFun | ⟨⟨i, hi⟩, hiz⟩ => ⟨i, by rw [← hiz, mul_inv_cancel₀ hi]⟩
-  invFun | ⟨i, hiz⟩ => ⟨⟨i, fun h ↦ by simp [h] at hiz⟩, (eq_inv_of_mul_eq_one_right hiz).symm⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+private theorem inv_ne_zero_and_inv_eq_iff (i : ι) (z : ℂ) :
+    (a i)⁻¹ ≠ 0 ∧ (a i)⁻¹ = z ↔ a i * z = 1 :=
+  ⟨fun ⟨hai, hiz⟩ ↦ by rw [← hiz, mul_inv_cancel₀ (inv_eq_zero.not.mp hai)],
+    fun hiz ↦ ⟨inv_ne_zero (left_ne_zero_of_mul (by rw [hiz]; exact one_ne_zero)),
+      (eq_inv_of_mul_eq_one_right hiz).symm⟩⟩
 
 /-- The genus-one product vanishes exactly at a zero of one of its factors. -/
 theorem tprod_weierstrassFactor_one_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z)) = 0 ↔ ∃ i, a i * z = 1 := by
-  rw [tprod_weierstrassFactor_one_eq_subtype a z,
-    tprod_weierstrassFactor_div_eq_zero_iff (a := fun i : {i // a i ≠ 0} ↦ (a i)⁻¹)
-      (p := fun _ ↦ 1) (fun i ↦ inv_ne_zero i.property)
-      (fun R hR ↦ (summable_div_pow_inv a ha R hR).subtype _),
-    ← nonempty_subtype, (invRootEquiv a z).nonempty_congr, nonempty_subtype]
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+    tprod_weierstrassFactor_div_eq_zero_iff (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (summable_div_pow_inv a ha) z
 
 /-- Only finitely many factors can vanish at a fixed point. -/
 theorem finite_weierstrassFactor_one_roots (z : ℂ) :
     {i | a i * z = 1}.Finite := by
-  have hf := finite_setOf_eq_of_summable_div_pow (a := fun i : {i // a i ≠ 0} ↦ (a i)⁻¹)
-    (p := fun _ ↦ 1) (fun i ↦ inv_ne_zero i.property)
-    (fun R hR ↦ (summable_div_pow_inv a ha R hR).subtype _) z
-  have : Finite {i : ι // a i * z = 1} := (invRootEquiv a z).finite_iff.mp hf.to_subtype
-  exact Set.toFinite _
+  simpa only [inv_ne_zero_and_inv_eq_iff] using
+    finite_setOf_ne_zero_and_eq_of_summable_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (summable_div_pow_inv a ha) z
 
 /-- The order of the product counts all factors vanishing at that point. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_one (z : ℂ) :
     analyticOrderAt (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w)) z =
       ({i | a i * z = 1}.ncard : ℕ∞) := by
-  have heq : (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w)) =
-      fun w ↦ ∏' i : {i // a i ≠ 0}, weierstrassFactor 1 (w / (a i)⁻¹) :=
-    funext (tprod_weierstrassFactor_one_eq_subtype a)
-  rw [heq, analyticOrderAt_tprod_weierstrassFactor_div
-    (a := fun i : {i // a i ≠ 0} ↦ (a i)⁻¹) (p := fun _ ↦ 1)
-    (fun i ↦ inv_ne_zero i.property)
-    (fun R hR ↦ (summable_div_pow_inv a ha R hR).subtype _) z,
-    ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
-  congr 1
-  exact Nat.card_congr (invRootEquiv a z)
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+    analyticOrderAt_tprod_weierstrassFactor_div (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (summable_div_pow_inv a ha) z
 
 /-- The product order is the cardinality of any finite set containing exactly its vanishing
 factors. -/
@@ -164,17 +142,22 @@ private theorem summable_sigma_sq :
     Summable fun q : Σ i, Fin (m i) ↦ ‖a q.1‖ ^ 2 :=
   (TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm
 
+private theorem summable_mul_div_pow_inv :
+    ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖(a i)⁻¹‖) ^ (1 + 1) := by
+  intro R _
+  have heq (i : ι) : (m i : ℝ) * (R / ‖(a i)⁻¹‖) ^ (1 + 1) = R ^ 2 * ((m i : ℝ) * ‖a i‖ ^ 2) := by
+    rw [norm_inv, div_inv_eq_mul, mul_pow]
+    ring
+  simpa only [heq] using hm.mul_left (R ^ 2)
+
 /-- The product with natural multiplicities is the product over the repeated index
 `Σ i, Fin (m i)`, in which the slope `a i` occurs `m i` times. -/
 theorem tprod_weierstrassFactor_one_pow_eq_tprod_sigma (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z) ^ m i) =
       ∏' q : Σ i, Fin (m i), weierstrassFactor 1 (a q.1 * z) := by
-  have hp : Multipliable fun q : Σ i, Fin (m i) ↦ weierstrassFactor 1 (a q.1 * z) :=
-    ((hasProdUniformlyOn_weierstrassFactor_one (fun q : Σ i, Fin (m i) ↦ a q.1)
-      (summable_sigma_sq a m hm) Bornology.isBounded_singleton).hasProd
-        (Set.mem_singleton z)).multipliable
-  rw [hp.tprod_sigma' fun _ ↦ Multipliable.of_finite]
-  simp [tprod_fintype]
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a] using
+    tprod_weierstrassFactor_div_pow_eq_sigma (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1) (m := m)
+      (summable_mul_div_pow_inv a m hm) z
 
 /-- A product with natural multiplicities is entire under weighted square summability. -/
 @[fun_prop]
@@ -202,14 +185,11 @@ root. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_one_pow_of_injective {z : ℂ} {i : ι}
     (ha : Function.Injective a) (hi : a i * z = 1) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) z = m i := by
-  have hz0 : z ≠ 0 := right_ne_zero_of_mul (by rw [hi]; exact one_ne_zero)
-  have hset : {q : Σ j, Fin (m j) | a q.1 * z = 1} = Set.range (Sigma.mk i) := by
-    rw [Set.range_sigmaMk]
-    ext q
-    exact ⟨fun h ↦ ha (mul_right_cancel₀ hz0 (h.trans hi.symm)), fun (h : q.1 = i) ↦ by
-      simp [h, hi]⟩
-  rw [analyticOrderAt_tprod_weierstrassFactor_one_pow a m hm z, hset,
-    Set.ncard_range_of_injective sigma_mk_injective, Nat.card_fin]
+  have hai : (a i)⁻¹ ≠ 0 := inv_ne_zero (left_ne_zero_of_mul (by rw [hi]; exact one_ne_zero))
+  rw [eq_inv_of_mul_eq_one_right hi]
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a] using
+    analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective i (fun _ ↦ hai)
+      (summable_mul_div_pow_inv a m hm) (inv_injective.comp ha)
 
 /-- Products with natural multiplicities converge uniformly on every bounded set. -/
 theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornology.IsBounded K) :
@@ -240,12 +220,8 @@ theorem hasProdLocallyUniformlyOn_sigma_weierstrassFactor_one :
 theorem tprod_weierstrassFactor_one_pow_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z) ^ m i) = 0 ↔
       ∃ i, m i ≠ 0 ∧ a i * z = 1 := by
-  rw [tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm,
-    tprod_weierstrassFactor_one_eq_zero_iff _ (summable_sigma_sq a m hm)]
-  constructor
-  · rintro ⟨⟨i, k⟩, hi⟩
-    exact ⟨i, Nat.ne_zero_of_lt k.isLt, hi⟩
-  · rintro ⟨i, hmi, hi⟩
-    exact ⟨⟨i, ⟨0, Nat.pos_of_ne_zero hmi⟩⟩, hi⟩
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+    tprod_weierstrassFactor_div_pow_eq_zero_iff (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1) (m := m)
+      (summable_mul_div_pow_inv a m hm) z
 
 end Complex

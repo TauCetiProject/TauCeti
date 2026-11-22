@@ -87,21 +87,11 @@ private theorem weierstrassSigma_eq :
     L.weierstrassSigma = fun z ↦ z * ∏' l : L.lattice, weierstrassFactor 2 (z / l) :=
   funext L.weierstrassSigma_def
 
-/-- The majorant `c ‖l‖⁻³` of the factors of `σ` is summable over the lattice. -/
-private theorem summable_mul_norm_rpow_neg_three (c : ℝ) :
-    Summable fun l : L.lattice ↦ c * ‖(l : ℂ)‖ ^ (-3 : ℝ) :=
-  (ZLattice.summable_norm_rpow L.lattice (-3) (by norm_num)).mul_left c
-
 /-- The genus-two canonical-product summability hypothesis for the lattice `Λ`. -/
 private theorem summable_div_pow_three (R : ℝ) (_hR : 0 < R) :
     Summable fun l : L.lattice ↦ (R / ‖(l : ℂ)‖) ^ (2 + 1) := by
-  have heq (l : L.lattice) : (R / ‖(l : ℂ)‖) ^ (2 + 1) = R ^ 3 * ‖(l : ℂ)‖ ^ (-3 : ℝ) := by
-    rcases eq_or_ne l 0 with rfl | hl
-    · simp
-    have hl' : 0 < ‖(l : ℂ)‖ := norm_pos_iff.mpr (by simpa using hl)
-    rw [div_pow, Real.rpow_neg hl'.le, div_eq_mul_inv]
-    norm_cast
-  simpa only [heq] using L.summable_mul_norm_rpow_neg_three (R ^ 3)
+  simpa only [div_eq_mul_inv, mul_pow, Nat.reduceAdd, Submodule.norm_coe] using
+    (ZLattice.summable_norm_pow_inv L.lattice 3 (by simp)).mul_left (R ^ 3)
 
 /-- The canonical product of `σ` converges uniformly on every compact set. -/
 theorem hasProdUniformlyOn_weierstrassFactor_two_div {K : Set ℂ} (hK : IsCompact K) :
@@ -134,29 +124,18 @@ private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattic
     simp [hl] at h
   exact hz ((div_eq_one_iff_eq hl).mp h ▸ l.property)
 
-private theorem tprod_weierstrassFactor_two_div_eq_subtype (z : ℂ) :
-    (∏' l : L.lattice, weierstrassFactor 2 (z / l)) =
-      ∏' l : {l : L.lattice // l ≠ 0}, weierstrassFactor 2 (z / l) := by
-  refine (tprod_subtype_eq_of_mulSupport_subset (s := {l : L.lattice | l ≠ 0}) fun l hl ↦ ?_).symm
-  by_contra hl0
-  simp only [Set.mem_ofPred_eq, not_not] at hl0
-  exact hl (by simp [hl0])
-
 /-- **The zeros of `σ` are the lattice points.** -/
 theorem weierstrassSigma_eq_zero_iff {z : ℂ} : L.weierstrassSigma z = 0 ↔ z ∈ L.lattice := by
-  rw [weierstrassSigma_def, mul_eq_zero, L.tprod_weierstrassFactor_two_div_eq_subtype z,
-    Complex.tprod_weierstrassFactor_div_eq_zero_iff
-      (a := fun l : {l : L.lattice // l ≠ 0} ↦ (l : ℂ)) (p := fun _ ↦ 2)
-      (fun l ↦ Subtype.coe_ne_coe.mpr l.property)
-      (fun R hR ↦ (L.summable_div_pow_three R hR).subtype _)]
+  rw [weierstrassSigma_def, mul_eq_zero,
+    Complex.tprod_weierstrassFactor_div_eq_zero_iff L.summable_div_pow_three]
   constructor
-  · rintro (rfl | ⟨l, rfl⟩)
+  · rintro (rfl | ⟨l, -, rfl⟩)
     · exact zero_mem _
-    · exact l.val.property
+    · exact l.property
   · intro hz
     rcases eq_or_ne z 0 with rfl | hz0
     · exact Or.inl rfl
-    · exact Or.inr ⟨⟨⟨z, hz⟩, fun h ↦ hz0 (by simpa using h)⟩, rfl⟩
+    · exact Or.inr ⟨⟨z, hz⟩, by simpa using hz0, rfl⟩
 
 /-- `σ` does not vanish off the lattice. -/
 theorem weierstrassSigma_ne_zero {z : ℂ} (hz : z ∉ L.lattice) : L.weierstrassSigma z ≠ 0 :=

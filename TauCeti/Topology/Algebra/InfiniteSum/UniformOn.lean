@@ -11,6 +11,7 @@ import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.Topology.Algebra.InfiniteSum.Group
 import TauCeti.Order.Filter.AtTopBot.Finset
 import TauCeti.Topology.Algebra.InfiniteSum.Sigma
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Empty-domain, finite-support, Cauchy-vanishing, and regrouping lemmas for `HasProdUniformlyOn`
@@ -192,11 +193,8 @@ theorem HasProdLocallyUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι �
     HasProdLocallyUniformlyOn (fun i x ↦ ∏ c, f ⟨i, c⟩ x) g s := by
   classical
   rw [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn] at h ⊢
-  intro u hu x hx
-  obtain ⟨t, ht, htu⟩ := h u hu x hx
-  refine ⟨t, ht, ?_⟩
-  filter_upwards [TauCeti.tendsto_finset_sigma_univ_atTop.eventually htu] with S hS y hy
-  simpa only [Finset.prod_sigma] using hS y hy
+  simpa only [Function.comp_def, Finset.prod_sigma] using
+    h.comp_tendsto TauCeti.tendsto_finset_sigma_univ_atTop
 
 /-- Reindexing a family by an equivalence preserves uniform convergence of its infinite product to
 the same limit function. -/
@@ -218,11 +216,7 @@ private theorem hasProdLocallyUniformlyOn_comp_equiv {ι κ β α : Type*} [Comm
     simpa only [Finset.map_eq_image, Equiv.coe_toEmbedding] using
       Filter.tendsto_finset_image_atTop_atTop e.apply_symm_apply
   rw [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn] at h ⊢
-  intro u hu x hx
-  obtain ⟨t, ht, htu⟩ := h u hu x hx
-  refine ⟨t, ht, ?_⟩
-  filter_upwards [hmap.eventually htu] with S hS y hy
-  simpa only [Function.comp_apply, Finset.prod_map, Equiv.coe_toEmbedding] using hS y hy
+  simpa only [Function.comp_def, Finset.prod_map, Equiv.coe_toEmbedding] using h.comp_tendsto hmap
 
 /-- Reindexing a family by an equivalence preserves locally uniform convergence of its infinite
 product to the same limit function. -/
