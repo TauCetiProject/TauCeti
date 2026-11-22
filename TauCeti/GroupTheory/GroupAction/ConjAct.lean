@@ -48,6 +48,8 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
   element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
+* `TauCeti.MulAction.orbit_smul_of_conjAct_smul_eq`: the orbit of `g • x` under `g H g⁻¹` is the
+  translate by `g` of the orbit of `x` under `H`.
 * `TauCeti.MulAction.stabilizer_smul_eq_conjNormal_smul`: for a normal subgroup `N`, the
   stabilizer of `g • a` in `N` is the conjugate by `g` of the stabilizer of `a` in `N`.
 * `Subgroup.stabilizer_conjNormal_injective`: in a faithful action, the conjugation map
@@ -187,6 +189,16 @@ theorem orbitRel_smul_smul_iff_of_conjAct_smul_eq {G X : Type*} [Group G] [MulAc
   · rw [mul_smul, mul_smul, hkx, inv_smul_smul]
   · simpa [mul_assoc] using hk
   · rw [mul_smul, mul_smul, inv_smul_smul, hkx]
+
+/-- **Orbits of conjugate subgroups are translates**: if `H'` is the conjugate `g H g⁻¹` of `H`,
+then the `H'`-orbit of `g • x` is the translate by `g` of the `H`-orbit of `x`. -/
+theorem orbit_smul_of_conjAct_smul_eq {G X : Type*} [Group G] [MulAction G X]
+    {H H' : Subgroup G} {g : G} (h : ConjAct.toConjAct g • H = H') (x : X) :
+    _root_.MulAction.orbit H' (g • x) = g • _root_.MulAction.orbit H x := by
+  ext y
+  rw [Set.mem_smul_set_iff_inv_smul_mem, ← _root_.MulAction.orbitRel_apply,
+    ← _root_.MulAction.orbitRel_apply, ← orbitRel_smul_smul_iff_of_conjAct_smul_eq h,
+    smul_inv_smul]
 
 open _root_.MulAction in
 /-- For a normal subgroup `N`, the stabilizer of `g • a` in `N` is the conjugate by `g` of the
