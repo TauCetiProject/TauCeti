@@ -70,7 +70,8 @@ At a point `x` whose stabilizer `H = G_x` under a smooth action of a Lie group `
 preserves `σ`, this applies to the tangent representation `h ↦ dh_x` of `H`, which is
 semisimple by compactness. The algebras `𝔥` and `𝔨` are invariant under the adjoint action of `H`,
 so they have `H`-invariant complements `𝔪` and `𝔮`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_subrepresentation_complements`), and for any such
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_subrepresentation_complements`, from the algebraic
+`TauCeti.SymplecticForm.exists_subrepresentation_isCompl_lieAnnihilator`), and for any such
 complements the linear normal form at `x` can be chosen `H`-equivariant
 (`exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_symplecticSlice`, in the
 namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). This identifies the tangent representation
@@ -82,6 +83,8 @@ of `H` at `x` with that of the local model `G ×_H (𝔪* × V)` at `[1, 0, 0]`.
   linear normal form for a linear map `ρ` satisfying the moment identity.
 * `SymplecticForm.exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction`:
   its equivariant version for a semisimple representation.
+* `SymplecticForm.exists_subrepresentation_isCompl_lieAnnihilator`: invariant complements `𝔪`, `𝔮`
+  for a semisimple representation on `𝔤`.
 * `IsNondegenerate.exists_isSymplectomorphism_cotangent_prod_kirillov_prod_symplecticSlice`:
   the linear normal form of `(T_x M, σ_x)` at a point where the cocycle of `μ` vanishes.
 * `IsNondegenerate.exists_subrepresentation_complements`: invariant complements `𝔪`, `𝔮` for a
@@ -280,6 +283,28 @@ private theorem apply_mem_lieAnnihilator (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = 
   intro ζ
   rw [← π𝔤.self_inv_apply k ζ, hρπ, hρπ]
   exact (hπT.apply k _ _).trans (hξ _)
+
+/-- **Invariant complements for the linear normal form.** If `ρ : 𝔤 → T` satisfies the moment
+identity `ω(ρ ξ, ρ ζ) = ν ⁅ξ, ζ⁆` and intertwines a semisimple representation `π𝔤` of `K` with a
+representation `πT` preserving `ω`, then `ker ρ` and the coadjoint stabilizer `𝔤_ν` are invariant,
+so there are `π𝔤`-invariant complements `𝔪` of `ker ρ` in `𝔤_ν` and `𝔮` of `𝔤_ν` in `𝔤`. -/
+theorem exists_subrepresentation_isCompl_lieAnnihilator [π𝔤.IsSemisimpleRepresentation]
+    (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆) :
+    ∃ 𝔪 𝔮 : Subrepresentation π𝔤, Disjoint (LinearMap.ker ρ) 𝔪.toSubmodule ∧
+      LinearMap.ker ρ ⊔ 𝔪.toSubmodule = (lieAnnihilator ℝ 𝔤 ν).toSubmodule ∧
+      IsCompl (lieAnnihilator ℝ 𝔤 ν).toSubmodule 𝔮.toSubmodule := by
+  let N : Subrepresentation π𝔤 := ⟨LinearMap.ker ρ, fun k ξ hξ ↦ by
+    rw [LinearMap.mem_ker] at hξ ⊢
+    rw [hρπ, hξ, map_zero]⟩
+  let A : Subrepresentation π𝔤 :=
+    ⟨(lieAnnihilator ℝ 𝔤 ν).toSubmodule, fun k _ hξ ↦ apply_mem_lieAnnihilator hπT hρπ hρ k hξ⟩
+  have hNA : N ≤ A := Subrepresentation.toSubmodule_le_toSubmodule.1 (ker_le_lieAnnihilator hρ)
+  obtain ⟨𝔪, h𝔪, h𝔪'⟩ := IsModularLattice.exists_disjoint_and_sup_eq hNA
+  obtain ⟨𝔮, h𝔮⟩ := exists_isCompl A
+  have h0 := congrArg Subrepresentation.toSubmodule (disjoint_iff.1 h𝔪)
+  rw [Subrepresentation.toSubmodule_inf, Subrepresentation.toSubmodule_bot] at h0
+  exact ⟨𝔪, 𝔮, disjoint_iff.2 h0, congrArg Subrepresentation.toSubmodule h𝔪',
+    Subrepresentation.isCompl_toSubmodule.2 h𝔮⟩
 
 /-- The model representation on `(𝔪 × 𝔪*) × (𝔮 × V)` preserves the model form. -/
 private theorem isInvariantForm_model (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆)
@@ -593,26 +618,10 @@ theorem exists_subrepresentation_complements :
         (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x)).toSubmodule ∧
       IsCompl (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x)).toSubmodule 𝔮.toSubmodule := by
   have := Lie.isSemisimpleRepresentation_adjointRepresentation_comp_subtype (I := I) hx
-  have hρ := symplecticFormAt_eval_eval hσ hc
-  let A : Subrepresentation ((Lie.adjointRepresentation ℝ I G).comp (stabilizer G x).subtype) :=
-    ⟨((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule, fun k ξ hξ ↦ by
-      rw [InfinitesimalAction.isotropy_toSubmodule, LinearMap.mem_ker] at hξ ⊢
-      rw [eval_adjointRepresentation, hξ, map_zero]⟩
-  let B : Subrepresentation ((Lie.adjointRepresentation ℝ I G).comp (stabilizer G x).subtype) :=
-    ⟨(lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x)).toSubmodule, fun k _ hξ ↦
-      SymplecticForm.apply_mem_lieAnnihilator
-        (isInvariantForm_tangentRepresentation (I := I) hσ hσG)
-        eval_adjointRepresentation hρ k hξ⟩
-  have hAB : A ≤ B := by
-    rw [← Subrepresentation.toSubmodule_le_toSubmodule]
-    exact (InfinitesimalAction.isotropy_toSubmodule _ x).trans_le
-      (SymplecticForm.ker_le_lieAnnihilator hρ)
-  obtain ⟨𝔪, h𝔪, h𝔪'⟩ := IsModularLattice.exists_disjoint_and_sup_eq hAB
-  obtain ⟨𝔮, h𝔮⟩ := exists_isCompl B
-  have h0 := congrArg Subrepresentation.toSubmodule (disjoint_iff.1 h𝔪)
-  rw [Subrepresentation.toSubmodule_inf, Subrepresentation.toSubmodule_bot] at h0
-  exact ⟨𝔪, 𝔮, disjoint_iff.2 h0, congrArg Subrepresentation.toSubmodule h𝔪',
-    Subrepresentation.isCompl_toSubmodule.2 h𝔮⟩
+  rw [InfinitesimalAction.isotropy_toSubmodule]
+  exact SymplecticForm.exists_subrepresentation_isCompl_lieAnnihilator
+    (isInvariantForm_tangentRepresentation (I := I) hσ hσG) eval_adjointRepresentation
+    (symplecticFormAt_eval_eval hσ hc)
 
 /-- **The equivariant linear normal form at a point with compact stabilizer.** Let the stabilizer
 `H = G_x` of `x` be compact and preserve a nondegenerate two-form `σ`, and let the cocycle of `μ`

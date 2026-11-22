@@ -25,7 +25,9 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 * `h1_complete_movedNorm_fin_three`: `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`;
 * `h1Norm_complete_movedNorm_fin_three`: in the normalized convention the value is
   `card V / (card V - 2)`;
-* `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`.
+* `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`;
+* `h1Sym_complete`: the infimum `h1Sym (complete V)` of the constants over all permutation degrees
+  `n ≥ 2` is also `card V / 3`, since degree `3` attains the star bound.
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.
@@ -168,6 +170,15 @@ theorem h1Norm_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     linarith
   rw [h1Norm_complete hV, h1_complete_movedNorm_fin_three hV]
   field_simp
+
+/-- The same-degree permutation coboundary constant `h1Sym (complete V)`, the infimum over all
+degrees `n ≥ 2` of `h1 (complete V) (movedNorm (Fin n))`, equals `Fintype.card V / 3` whenever
+`3 ≤ Fintype.card V`: every degree is bounded below by the star bound, and degree `3` attains
+it. -/
+theorem h1Sym_complete (hV : 3 ≤ Fintype.card V) :
+    h1Sym (complete V) = (Fintype.card V : ℝ) / 3 :=
+  le_antisymm ((h1Sym_le_h1_movedNorm _ (by norm_num)).trans_eq
+    (h1_complete_movedNorm_fin_three hV)) (card_div_three_le_h1Sym hV)
 
 /-- On the complete complex with four vertices the `Sym(3)` coboundary constant is `4/3`. -/
 theorem h1_complete_fin_four : h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3 := by
