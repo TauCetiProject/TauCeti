@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
-public import Mathlib.RingTheory.Valuation.ValuationSubring
+public import Mathlib.RingTheory.Valuation.ValuationRing
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Valuation.NontrivialComap
 import TauCeti.RingTheory.Valuation.ValuativeRel.Discrete
@@ -21,9 +21,9 @@ where `𝒪ᵥ[K] := Valuation.integer (valuation K)` and `𝓂ᵥ[K] := IsLocal
 and let `R` be a ring carrying a discrete archimedean valuative relation
 (`[ValuativeRel.IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, in particular whenever
 `ValuativeRel.IsRankLeOne R` holds). Every ring homomorphism `f : K →+* R` sends `𝒪ᵥ[K]` into the
-valuation subring of `R`: for any `m ∈ 𝓂ᵥ[K]`, Hensel's lemma
-(`TauCeti.HenselianRing.exists_le_pow_eq_one_add`) extracts `k`-th roots of `1 + m` in `𝒪ᵥ[K]`
-for arbitrarily large `k : ℕ`, so divisibility rigidity in `R`
+subring of elements of valuation at most 1, `(valuation R).integer`: for any `m ∈ 𝓂ᵥ[K]`, Hensel's
+lemma (`TauCeti.HenselianRing.exists_le_pow_eq_one_add`) extracts `k`-th roots of `1 + m` in
+`𝒪ᵥ[K]` for arbitrarily large `k : ℕ`, so divisibility rigidity in `R`
 (`ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq`) forces `valuation R (f (1 + m)) = 1`
 and hence `valuation R (f m) ≤ 1` by ultrametricity. Multiplying any `x ∈ 𝒪ᵥ[K]` by a nonzero
 element `m ∈ 𝓂ᵥ[K]` gives `x ^ n * m ∈ 𝓂ᵥ[K]` for every `n : ℕ`, so the archimedean property of
@@ -38,9 +38,13 @@ nonarchimedean local fields `K` and `R`, `IsNonarchimedeanLocalField` and
 
 ## Main results
 
-* `RingHom.valuation_map_le_one_of_valuation_le_one`: for a nontrivial Henselian valued field `K`
-  and a discrete archimedean valued ring `R`, `f : K →+* R` sends elements of valuation at most `1`
-  in `K` to elements of valuation at most `1` in `R`.
+* `RingHom.valuation_map_le_one_of_valuation_lt_one`: for a Henselian valued field `K` and a
+  discrete archimedean valued ring `R`, `f : K →+* R` sends elements of valuation strictly less than
+  `1` in `K` to elements of valuation at most `1` in `R`.
+* `RingHom.valuation_map_le_one_of_valuation_le_one`: when `K` is also nontrivial, `f : K →+* R`
+  sends elements of valuation at most `1` in `K` to elements of valuation at most `1` in `R`.
+* `RingHom.valuation_map_eq_one_of_valuation_eq_one`: under the same hypotheses, `f : K →+* R`
+  sends elements of valuation `1` in `K` to elements of valuation `1` in `R`.
 * `RingHom.isEquiv_comap_valuation_iff_isNontrivial`: when `ValueGroupWithZero K` is also
   archimedean, `(valuation R).comap f` is equivalent to `valuation K` if and only if it is
   nontrivial.
@@ -79,7 +83,7 @@ namespace RingHom
 
 /-- Every homomorphism from a Henselian valued field `K` into a discrete archimedean valued ring
 `R` sends elements of valuation strictly less than `1` to elements of valuation at most `1`. -/
-private theorem valuation_map_le_one_of_valuation_lt_one (f : K →+* R) {m : K}
+theorem valuation_map_le_one_of_valuation_lt_one (f : K →+* R) {m : K}
     (hm : valuation K m < 1) :
     valuation R (f m) ≤ 1 := by
   have h1m : valuation K (1 + m) = 1 := (valuation K).map_one_add_of_lt hm
@@ -91,17 +95,17 @@ private theorem valuation_map_le_one_of_valuation_lt_one (f : K →+* R) {m : K}
   have hf1m : valuation R (f (1 + m)) = 1 :=
     valuation_eq_one_of_forall_exists_le_pow_eq hf1m0 fun n ↦ by
       obtain ⟨k, hkn, a, ha⟩ := TauCeti.HenselianRing.exists_le_pow_eq_one_add hm' n
-      refine ⟨k, hkn, f (a : K), ?_⟩
-      rw [← map_pow, ← SubmonoidClass.coe_pow, ha]
-      rfl
+      have ha' := congrArg ((↑) : 𝒪ᵥ[K] → K) ha
+      simp only [Subring.coe_pow, Subring.coe_add, Subring.coe_one] at ha'
+      exact ⟨k, hkn, f (a : K), by rw [← map_pow, ha']⟩
   by_contra! hgt
   have hlt : valuation R (1 : R) < valuation R (f m) := by rwa [map_one]
   have hadd : valuation R (1 + f m) = 1 := by simpa only [map_add, map_one] using hf1m
   exact hgt.ne' ((valuation R).map_add_eq_of_lt_right hlt ▸ hadd)
 
-/-- **Integers of a nontrivial Henselian valued field map into the valuation subring of `R`** under
-any homomorphism into a discrete archimedean valued ring:
-`valuation K x ≤ 1 → valuation R (f x) ≤ 1`. -/
+/-- **Integers of a nontrivial Henselian valued field map into the subring of elements of valuation
+at most 1, `(valuation R).integer`,** under any homomorphism into a discrete archimedean valued
+ring: `valuation K x ≤ 1 → valuation R (f x) ≤ 1`. -/
 theorem valuation_map_le_one_of_valuation_le_one [IsNontrivial K] (f : K →+* R) {x : K}
     (hx : valuation K x ≤ 1) :
     valuation R (f x) ≤ 1 := by
@@ -115,7 +119,7 @@ theorem valuation_map_le_one_of_valuation_le_one [IsNontrivial K] (f : K →+* R
     rw [map_mul, map_pow]
     exact (mul_le_of_le_one_left zero_le (pow_le_one₀ zero_le hx)).trans_lt hγ1
   have hle := f.valuation_map_le_one_of_valuation_lt_one hlt
-  rw [map_mul, map_pow, map_mul, map_pow] at hle
+  simp only [map_mul, map_pow] at hle
   have hgt' : 1 < valuation R (f x) ^ (n + 1) * valuation R (f m) :=
     calc (1 : ValueGroupWithZero R)
         = (valuation R (f m))⁻¹ * valuation R (f m) := (inv_mul_cancel₀ hfm0).symm
@@ -123,6 +127,23 @@ theorem valuation_map_le_one_of_valuation_le_one [IsNontrivial K] (f : K →+* R
           mul_lt_mul_of_pos_right (hn.trans_lt (pow_lt_pow_right₀ hgt n.lt_succ_self))
             (pos_iff_ne_zero.2 hfm0)
   exact hgt'.not_ge hle
+
+/-- **Elements of valuation `1` keep valuation `1`** under any homomorphism from a nontrivial
+Henselian valued field into a discrete archimedean valued ring:
+`valuation K x = 1 → valuation R (f x) = 1`. -/
+theorem valuation_map_eq_one_of_valuation_eq_one [IsNontrivial K] (f : K →+* R) {x : K}
+    (hx : valuation K x = 1) :
+    valuation R (f x) = 1 := by
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    simp at hx
+  have hx_inv : valuation K x⁻¹ ≤ 1 := by
+    rw [map_inv₀, hx, inv_one]
+  have h1 := f.valuation_map_le_one_of_valuation_le_one hx.le
+  have h2 := f.valuation_map_le_one_of_valuation_le_one hx_inv
+  have hmul : valuation R (f x) * valuation R (f x⁻¹) = 1 := by
+    rw [← map_mul, ← map_mul, mul_inv_cancel₀ hx0, map_one, map_one]
+  exact le_antisymm h1 (hmul ▸ mul_le_of_le_one_right zero_le h2)
 
 /-- **Dichotomy for discrete archimedean valuations pulled back to a nontrivial archimedean
 Henselian valued field.** The pullback of `valuation R` along `f : K →+* R` is equivalent to
@@ -132,7 +153,8 @@ theorem isEquiv_comap_valuation_iff_isNontrivial [IsNontrivial K]
     ((valuation R).comap f).IsEquiv (valuation K) ↔ ((valuation R).comap f).IsNontrivial := by
   refine ⟨fun heq ↦ heq.isNontrivial_iff.2 inferInstance, fun hnt ↦ ?_⟩
   refine Valuation.isEquiv_iff_val_le_one.2 fun {x} ↦
-    ⟨fun hx ↦ ?_, f.valuation_map_le_one_of_valuation_le_one⟩
+    ⟨fun hx ↦ ?_, fun hx ↦ by
+      simpa only [Valuation.comap_apply] using f.valuation_map_le_one_of_valuation_le_one hx⟩
   rw [Valuation.comap_apply] at hx
   by_contra! hvx
   have hx0 : x ≠ 0 := by rintro rfl; simp at hvx
@@ -143,7 +165,8 @@ theorem isEquiv_comap_valuation_iff_isNontrivial [IsNontrivial K]
     exact hn
   have hle := f.valuation_map_le_one_of_valuation_le_one hdiv
   have hy_eq : y = y / x ^ n * x ^ n := (div_mul_cancel₀ y (pow_ne_zero n hx0)).symm
-  rw [Valuation.comap_apply, hy_eq, map_mul, map_pow, map_mul, map_pow] at hy
+  rw [Valuation.comap_apply, hy_eq] at hy
+  simp only [map_mul, map_pow] at hy
   exact hy.not_ge (mul_le_one' hle (pow_le_one' hx n))
 
 end RingHom
@@ -164,4 +187,8 @@ theorem ValuativeExtension.of_isIntegral (K R : Type*) [Field K] [ValuativeRel K
   have hnt : ((valuation R).comap (algebraMap K R)).IsNontrivial :=
     (valuation R).isNontrivial_comap_algebraMap
   have heq := (algebraMap K R).isEquiv_comap_valuation_iff_isNontrivial.2 hnt
-  exact ⟨fun {a b} ↦ (valuation R).vle_iff_le.trans ((heq a b).trans (valuation K).vle_iff_le.symm)⟩
+  refine ⟨fun {a b} ↦ ?_⟩
+  have hab : valuation R (algebraMap K R a) ≤ valuation R (algebraMap K R b) ↔
+      valuation K a ≤ valuation K b := by
+    simpa only [Valuation.comap_apply] using heq a b
+  exact (valuation R).vle_iff_le.trans (hab.trans (valuation K).vle_iff_le.symm)
