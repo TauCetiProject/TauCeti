@@ -82,16 +82,24 @@ namespace Splinter
 
 variable {R : Type u} [CommRing R]
 
+/-- A finite injective `R`-algebra `S` is split if an isomorphic copy `T` is split whenever it is
+finite and injective. -/
+private theorem splitAlgebra_of_algEquiv {S T : Type*} [CommRing S] [CommRing T] [Algebra R S]
+    [Algebra R T] [Module.Finite R S] (e : T ≃ₐ[R] S)
+    (hinj : Function.Injective (algebraMap R S))
+    (hT : ∀ [Module.Finite R T], Function.Injective (algebraMap R T) → SplitAlgebra R T) :
+    SplitAlgebra R S := by
+  have : Module.Finite R T := .equiv e.symm.toLinearEquiv
+  refine (SplitAlgebra.iff_of_equiv e).1 (hT ?_)
+  rw [← e.symm.toAlgHom.comp_algebraMap]
+  exact e.symm.injective.comp hinj
+
 /-- Over a splinter `R`, every finite `R`-algebra `S` with injective structure map is split,
 whatever the universe of `S`. -/
 theorem splitAlgebra (h : Splinter R) {S : Type v} [CommRing S] [Algebra R S]
     [Module.Finite R S] (hinj : Function.Injective (algebraMap R S)) : SplitAlgebra R S := by
   have : Small.{u} S := Module.Finite.small R S
-  let e : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
-  have : Module.Finite R (Shrink.{u} S) := Module.Finite.equiv e.symm.toLinearEquiv
-  refine (SplitAlgebra.iff_of_equiv e).1 (h.splitAlgebra_of_injective _ ?_)
-  rw [← e.symm.toAlgHom.comp_algebraMap]
-  exact e.symm.injective.comp hinj
+  exact splitAlgebra_of_algEquiv (Shrink.algEquiv R S) hinj (h.splitAlgebra_of_injective _)
 
 /-- A ring is a splinter exactly when it is noetherian and reduced and every finite injective
 algebra in a given universe containing that of `R` is split. -/
@@ -101,11 +109,7 @@ theorem iff_forall_splitAlgebra :
         Function.Injective (algebraMap R S) → SplitAlgebra R S := by
   refine ⟨fun h ↦ ⟨h.isNoetherianRing, h.isReduced, fun S _ _ _ hinj ↦ h.splitAlgebra hinj⟩,
     fun ⟨hN, hR, hS⟩ ↦ ⟨hN, hR, fun S _ _ _ hinj ↦ ?_⟩⟩
-  let e : ULift.{v} S ≃ₐ[R] S := ULift.algEquiv
-  have : Module.Finite R (ULift.{v} S) := Module.Finite.equiv e.symm.toLinearEquiv
-  refine (SplitAlgebra.iff_of_equiv e).1 (hS _ ?_)
-  rw [← e.symm.toAlgHom.comp_algebraMap]
-  exact e.symm.injective.comp hinj
+  exact splitAlgebra_of_algEquiv (ULift.algEquiv : ULift.{v} S ≃ₐ[R] S) hinj (hS _)
 
 /-- Being a splinter transfers along a ring isomorphism, possibly between different
 universes. -/
@@ -140,9 +144,10 @@ theorem comap_map_eq_self (h : Splinter R) {S : Type v} [CommRing S] [Algebra R 
   -- coefficients of an expression in generators of `I`, and `S'` is split over `R`.
   refine le_antisymm (fun x hx ↦ ?_) Ideal.le_comap_map
   have := h.isNoetherianRing
-  obtain ⟨n, g, hg⟩ := Submodule.fg_iff_exists_fin_generating_family.1 (IsNoetherian.noetherian I)
+  obtain ⟨n, g, hg⟩ : ∃ (n : ℕ) (g : Fin n → R), Ideal.span (Set.range g) = I :=
+    Submodule.fg_iff_exists_fin_generating_family.1 (IsNoetherian.noetherian I)
   rw [← hg] at hx ⊢
-  rw [Ideal.mem_comap, ← Ideal.span, Ideal.map_span, ← Set.range_comp,
+  rw [Ideal.mem_comap, Ideal.map_span, ← Set.range_comp,
     Ideal.mem_span_range_iff_exists_fun] at hx
   obtain ⟨c, hc⟩ := hx
   let S' : Subalgebra R S := Algebra.adjoin R (Set.range c)
@@ -151,8 +156,7 @@ theorem comap_map_eq_self (h : Splinter R) {S : Type v} [CommRing S] [Algebra R 
       fun s _ ↦ Algebra.IsIntegral.isIntegral s
   have hinj' : Function.Injective (algebraMap R S') := fun a b hab ↦
     hinj (by simpa using congrArg Subtype.val hab)
-  rw [← Ideal.span,
-    ← (h.splitAlgebra hinj').comap_map_eq_self (Ideal.span (Set.range g)), Ideal.mem_comap]
+  rw [← (h.splitAlgebra hinj').comap_map_eq_self (Ideal.span (Set.range g)), Ideal.mem_comap]
   have hx : algebraMap R S' x =
       ∑ i, ⟨c i, Algebra.subset_adjoin ⟨i, rfl⟩⟩ * algebraMap R S' (g i) :=
     Subtype.ext (by simpa using hc.symm)
@@ -185,16 +189,16 @@ injective algebra `S` has a prime `q` lying over `0`, and `S ⧸ q` is a finite 
 over the principal ideal domain, hence free, hence split. -/
 theorem of_isPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R] : Splinter R := by
   refine ⟨inferInstance, inferInstance, fun S _ _ _ hinj ↦ ?_⟩
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hinj
   obtain ⟨q, -, hq, hqR⟩ := Ideal.exists_ideal_over_prime_of_isIntegral (⊥ : Ideal R)
-    (⊥ : Ideal S) (by simp [Ideal.under, ← RingHom.ker_eq_comap_bot,
-      (RingHom.injective_iff_ker_eq_bot _).1 hinj])
+    (⊥ : Ideal S) (Ideal.under_bot R S).le
   refine SplitAlgebra.of_algHom (Ideal.Quotient.mkₐ R q) ?_
   have hinj' : Function.Injective (algebraMap R (S ⧸ q)) := by
     rw [injective_iff_map_eq_zero]
     intro a ha
-    rw [IsScalarTower.algebraMap_apply R S (S ⧸ q), Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem, ← Ideal.mem_comap, ← Ideal.under_def, hqR] at ha
-    exact (Submodule.mem_bot R).1 ha
+    have : a ∈ q.under R :=
+      (Ideal.mem_under R q).2 ((Ideal.Quotient.eq_zero_iff_mem (a := algebraMap R S a)).1 ha)
+    simpa [hqR] using this
   have : Module.IsTorsionFree R (S ⧸ q) := Module.isTorsionFree_iff_algebraMap_injective.2 hinj'
   have : Nontrivial (S ⧸ q) := Ideal.Quotient.nontrivial_iff.2 hq.ne_top
   exact splitAlgebra_of_free
