@@ -164,7 +164,7 @@ private theorem finsum_corr₁ (hn : 0 < n) :
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₁
     (fun p ↦ !![(p.1 : ℤ), t - p.1 - p.2; p.1, t - p.1])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 0 0).toNat, (M 1 1 - M 0 1).toNat))
@@ -186,7 +186,7 @@ private theorem finsum_corr₁ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   simp only [corr₁, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one,
     h1.le, true_and, ite_true]
   ring_nf
@@ -199,7 +199,7 @@ private theorem finsum_corr₂ (hn : 0 < n) :
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₂
     (fun p ↦ !![t + p.1, -(p.1 : ℤ); t + p.1 + p.2, -(p.1 : ℤ)])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((-M 1 1).toNat, (M 1 0 - M 0 0).toNat))
@@ -219,7 +219,7 @@ private theorem finsum_corr₂ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   have : -(p.1 : ℤ) ≤ -1 := by omega
   simp only [corr₂, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, this,
     and_self, ite_true]
@@ -233,7 +233,7 @@ private theorem finsum_corr₃ (hn : 0 < n) :
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₃
     (fun p ↦ !![t, -(p.2 : ℤ); p.1, 0])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
@@ -252,7 +252,7 @@ private theorem finsum_corr₃ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨-, h2, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨-, h2, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   have : -(p.2 : ℤ) < 0 := by omega
   simp only [corr₃, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, this,
     and_self, ite_true, neg_neg, sub_zero]
@@ -265,7 +265,7 @@ private theorem finsum_corr₄ (hn : 0 < n) :
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₄
     (fun p ↦ !![0, -(p.2 : ℤ); p.1, t])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
@@ -283,7 +283,7 @@ private theorem finsum_corr₄ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   simp only [corr₄, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, h1,
     and_self, ite_true, neg_neg, zero_sub]
 
@@ -315,7 +315,7 @@ private theorem sum_pairTerm (n t : ℤ) :
     rfl
   have hsum : ∑ p ∈ n.toNat.divisorsAntidiagonal, (pairTerm p.1 p.2 t + pairTerm p.2 p.1 t) = 0 :=
     Finset.sum_eq_zero fun p hp ↦ by
-      obtain ⟨h1, h2, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨h1, h2, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       exact pairTerm_add_pairTerm _ _ t h1 h2
   rw [Finset.sum_add_distrib, ← hswap] at hsum
   omega
