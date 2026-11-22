@@ -279,8 +279,9 @@ private theorem exists_measurable_centeredTruncation_eq_comp
     Set.mem_ofPred_eq, id_eq]
 
 /-- Applying centered truncation separately to two independent variables preserves
-independence. The cutoffs may differ. -/
-theorem IndepFun.centeredTruncation {V : Ω → E} (h : IndepFun X V P) (R S : ℝ≥0) :
+independence. The cutoffs and target spaces may differ. -/
+theorem IndepFun.centeredTruncation {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {V : Ω → F} (h : IndepFun X V P) (R S : ℝ≥0) :
     IndepFun (centeredTruncation X P R) (centeredTruncation V P S) P := by
   obtain ⟨f, hf, he⟩ := exists_measurable_centeredTruncation_eq_comp X P R
   obtain ⟨g, hg, he'⟩ := exists_measurable_centeredTruncation_eq_comp V P S
@@ -288,8 +289,10 @@ theorem IndepFun.centeredTruncation {V : Ω → E} (h : IndepFun X V P) (R S : �
   exact h.comp hf hg
 
 /-- Applying centered truncation separately to independent coordinates preserves independence.
-The cutoffs and coordinate laws may differ. -/
-theorem iIndepFun.centeredTruncation {ι : Type*} {X : ι → Ω → E}
+The cutoffs, coordinate laws and target spaces may differ. -/
+theorem iIndepFun.centeredTruncation {ι : Type*} {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)] [∀ i, MeasurableSpace (E i)]
+    [∀ i, BorelSpace (E i)] {X : ∀ i, Ω → E i}
     (h : iIndepFun X P) (R : ι → ℝ≥0) :
     iIndepFun (fun i ↦ centeredTruncation (X i) P (R i)) P := by
   choose g hg he using fun i ↦ exists_measurable_centeredTruncation_eq_comp (X i) P (R i)

@@ -46,6 +46,11 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
   real bound on the `L¹` norm of the integrand.
 
+## Finite averages
+
+* `MeasureTheory.integrable_expect` and `MeasureTheory.integral_expect`: a finite average of
+  integrable functions is integrable, and its integral is the average of the integrals.
+
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
@@ -356,6 +361,28 @@ theorem _root_.MeasureTheory.Integrable.integral_norm_add_le {Ω E : Type*} [Mea
     _ ≤ ∫ x, ‖f x‖ + ‖g x‖ ∂μ :=
       integral_mono (hnorm (hf.add hg)) ((hnorm hf).add (hnorm hg)) (fun x ↦ norm_add_le _ _)
     _ = _ := integral_add (hnorm hf) (hnorm hg)
+
+section Expect
+
+open scoped BigOperators
+
+variable {ι Ω E : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [Module ℚ≥0 E] {s : Finset ι} {f : ι → Ω → E}
+
+/-- A finite average of integrable functions is integrable. -/
+theorem _root_.MeasureTheory.integrable_expect (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    Integrable (fun x ↦ 𝔼 i ∈ s, f i x) μ := by
+  simp only [Finset.expect, ← NNRat.cast_smul_eq_nnqsmul ℝ]
+  exact (integrable_finsetSum s hf).smul (((s.card : ℚ≥0)⁻¹ : ℚ≥0) : ℝ)
+
+/-- The integral of a finite average of integrable functions is the average of their
+integrals. -/
+theorem _root_.MeasureTheory.integral_expect (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    ∫ x, 𝔼 i ∈ s, f i x ∂μ = 𝔼 i ∈ s, ∫ x, f i x ∂μ := by
+  simp only [Finset.expect, ← NNRat.cast_smul_eq_nnqsmul ℝ, integral_smul,
+    integral_finsetSum s hf]
+
+end Expect
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/

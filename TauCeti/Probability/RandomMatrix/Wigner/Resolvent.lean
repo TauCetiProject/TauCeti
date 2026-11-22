@@ -122,9 +122,8 @@ private theorem norm_wignerTransform_sub_le {n : ℕ} {z : ℂ} (hz : 0 < z.im)
       resolventTransform (semicircleReal 0 v) z‖ ≤
       (t + 3 * (v : ℝ) / ((n + 1) * z.im)) / z.im ^ 2 := by
   intro A hA
-  have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le hz v
-  simp only [wignerMatrix_apply_self, Complex.ofReal_zero, mul_zero, norm_zero,
-    Finset.expect_const_zero, add_zero] at h
+  have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le_of_diag_eq_zero
+    (diag_wignerMatrix_zero ξ ω) hz v
   have hmean : (𝔼 i, ‖A.minorQuadraticError i z v‖) ≤ t :=
     Finset.expect_le Finset.univ_nonempty (fun i _ ↦ ht i)
   have h' := h.trans (mul_le_mul_of_nonneg_left (add_le_add hmean le_rfl) (sq_nonneg _))

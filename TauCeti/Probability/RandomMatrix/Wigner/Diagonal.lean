@@ -9,14 +9,24 @@ public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.Probability.Moments.Variance
+import TauCeti.Probability.RandomMatrix.Diagonal
 
 /-!
-# Diagonal perturbations of Wigner resolvent transforms
+# Diagonal perturbations of Wigner matrices
 
 Setting the diagonal to zero changes the empirical spectral transform by at most
 the normalized Euclidean size of the diagonal times the inverse squared imaginary
 part of the parameter. The mean bound uses the normalized sum of diagonal second
 moments and applies to triangular arrays.
+
+An identically distributed, pairwise independent real diagonal does not change the almost-sure
+weak spectral limits, without any diagonal moment assumption. This separates the arbitrary
+diagonal law from the finite-second-moment off-diagonal hypotheses in the semicircle law.
+
+## References
+
+* Z. D. Bai, *Methodologies in spectral analysis of large dimensional random matrices, a review*,
+  Statistica Sinica 9 (1999), proof of Theorem 2.1.
 -/
 
 public section
@@ -96,5 +106,35 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le
   simp_rw [Real.sq_sqrt (hS _)]
   unfold S
   rw [integral_const_mul, integral_finsetSum _ (fun i _ ↦ hi i)]
+
+section AlmostSure
+
+open Filter ProbabilityTheory
+open scoped Topology
+
+variable [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
+
+variable (ξ η) in
+/-- A Wigner family with an identically distributed, pairwise independent real diagonal has
+the same weak spectral limits as its zero-diagonal version, almost surely, without any
+diagonal moment assumption. The upper entries may be arbitrary and may depend on the diagonal. -/
+theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_iff
+    (hindep : Pairwise fun i j ↦ IndepFun (η i) (η j) P)
+    (hid : ∀ i, IdentDistrib (η i) (η 0) P P) :
+    ∀ᵐ ω ∂P, ∀ μ : ProbabilityMeasure ℝ,
+      Tendsto (fun n ↦ (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))) atTop (𝓝 μ) ↔
+      Tendsto (fun n ↦ (wignerMatrix ξ η (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ η ω (n + 1))) atTop (𝓝 μ) := by
+  have h := ae_tendsto_spectralMeasure_add_diagonal_div_iff
+    (fun n ω ↦ wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω)
+    (fun n ω ↦ wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))
+    η hindep hid (fun n ↦ Real.sqrt n)
+    (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+  filter_upwards [h] with ω hω
+  simpa only [wignerMatrix_eq_add_diagonal ξ η, RCLike.ofReal_eq_complex_ofReal] using
+    fun μ ↦ (hω μ).symm
+
+end AlmostSure
 
 end TauCeti.Probability

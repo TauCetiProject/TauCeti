@@ -105,6 +105,28 @@ theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
     (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
   (rfl)
 
+/-- The upper positions of a finite matrix of size `n` are the upper positions of the infinite
+array whose column label is below `n`. -/
+def wignerCornerUpperEquiv (n : ℕ) : StrictUpperFin n ≃ {ij : StrictUpper // ij.val.2 < n} where
+  toFun u := ⟨wignerUpperIndex u, u.val.2.isLt⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.property.trans ij.property⟩, ⟨ij.val.val.2, ij.property⟩),
+    ij.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Forgetting the corner bound of a finite upper position gives its infinite-array position. -/
+@[simp]
+theorem coe_wignerCornerUpperEquiv_apply {n : ℕ} (u : StrictUpperFin n) :
+    (wignerCornerUpperEquiv n u : StrictUpper) = wignerUpperIndex u :=
+  (rfl)
+
+/-- The finite position of an upper corner position has the same infinite-array position. -/
+@[simp]
+theorem wignerUpperIndex_wignerCornerUpperEquiv_symm_apply {n : ℕ}
+    (ij : {ij : StrictUpper // ij.val.2 < n}) :
+    wignerUpperIndex ((wignerCornerUpperEquiv n).symm ij) = ij.val :=
+  (rfl)
+
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
 abbrev WignerCoordinateIndex (n : ℕ) := StrictUpperFin n ⊕ Fin n
 
@@ -258,6 +280,12 @@ theorem wignerMatrix_apply_of_gt {i j : Fin n} (h : j.val < i.val) :
 theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
+
+/-- With zero diagonal coordinates, the Wigner matrix has zero diagonal. -/
+@[simp]
+theorem diag_wignerMatrix_zero : (wignerMatrix ξ (fun _ _ ↦ 0) n ω).diag = 0 := by
+  ext i
+  simp
 
 /-- A Wigner matrix is its zero-diagonal version plus the original real diagonal divided by
 the square root of the dimension. -/
@@ -495,10 +523,6 @@ theorem indepFun_submatrix_castSucc_wignerMatrix (hξ : ∀ ij, AEMeasurable (ξ
       (submatrix_castLE_wignerMatrix (ξ := ξ) (η := η) ω (Nat.le_succ n))
   · rfl
 
-private def wignerCornerUpperIndex {n : ℕ} (u : StrictUpperFin n) :
-    {ij : StrictUpper // ij.val.2 < n} :=
-  ⟨wignerUpperIndex u, u.val.2.isLt⟩
-
 private noncomputable def wignerUpperSubsetCoordinates {n : ℕ}
     (s : Finset (StrictUpperFin n)) (x : s → ℂ) :
     (k : WignerCoordinateIndex n) → WignerCoordinateType k
@@ -546,11 +570,7 @@ theorem indepFun_submatrix_wignerMatrix_zero_column {n : ℕ}
   classical
   let T : Finset (StrictUpperFin n) := Finset.univ.filter (fun u ↦ u.val.1 = i ∨ u.val.2 = i)
   let U : Finset (StrictUpperFin n) := Finset.univ \ T
-  have hinj : Function.Injective (wignerCornerUpperIndex (n := n)) := by
-    intro u v huv
-    have h := congrArg (fun x : {ij : StrictUpper // ij.val.2 < n} ↦ x.val.val) huv
-    exact Subtype.ext (Prod.ext (Fin.ext (congrArg Prod.fst h)) (Fin.ext (congrArg Prod.snd h)))
-  have hi := hind.precomp hinj
+  have hi := hind.precomp (wignerCornerUpperEquiv n).injective
   let M (s : Finset (StrictUpperFin n)) :=
     wignerMatrixOfCoordinates ∘ wignerUpperSubsetCoordinates s
   have hM (s : Finset (StrictUpperFin n)) : Measurable (M s) :=

@@ -100,17 +100,15 @@ private theorem memLp_two_weighted_star_mul {t : Set ι}
     (hLp ⟨i, hi⟩) (hLp ⟨j, hj⟩)).const_mul a
 
 omit [Fintype ι] in
-/-- For centered, independent, square-integrable coordinates, the second moment of a sum over
-distinct unordered off-diagonal pairs is the sum of the coefficient squares times the respective
-products of coordinate second moments. -/
-theorem integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs {t : Set ι}
-    (hX : iIndepFun (fun i : t ↦ X i) P)
+private theorem memLp_two_and_integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs
+    {t : Set ι} (hX : iIndepFun (fun i : t ↦ X i) P)
     (hLp : ∀ i : t, MemLp (X i) 2 P) (hc : ∀ i : t, ∫ ω, X i ω ∂P = 0)
     (A : Matrix ι ι 𝕜) (s : Finset (ι × ι)) (ht : ∀ p ∈ s, p.1 ∈ t ∧ p.2 ∈ t)
     (hd : ∀ p ∈ s, p.1 ≠ p.2) (hs : ∀ p ∈ s, p.swap ∉ s) :
-    (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) =
-      ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2 *
-        ((∫ ω, ‖X p.1 ω‖ ^ 2 ∂P) * (∫ ω, ‖X p.2 ω‖ ^ 2 ∂P)) := by
+    MemLp (fun ω ↦ ∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)) 2 P ∧
+      (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) =
+        ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2 *
+          ((∫ ω, ‖X p.1 ω‖ ^ 2 ∂P) * (∫ ω, ‖X p.2 ω‖ ^ 2 ∂P)) := by
   let Y (p : ι × ι) (ω : Ω) := A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
   let left (p : ι × ι) (hp : p ∈ s) : t := ⟨p.1, (ht p hp).1⟩
   let right (p : ι × ι) (hp : p ∈ s) : t := ⟨p.2, (ht p hp).2⟩
@@ -118,6 +116,7 @@ theorem integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs {t : Set �
     hX.indepFun (fun h ↦ hd p hp (congrArg Subtype.val h))
   have hY p (hp : p ∈ s) : MemLp (Y p) 2 P :=
     memLp_two_weighted_star_mul hX hLp (ht p hp).1 (ht p hp).2 (hd p hp) _
+  refine ⟨memLp_finsetSum _ hY, ?_⟩
   calc
     (∫ ω, ‖∑ p ∈ s, Y p ω‖ ^ 2 ∂P) = ∑ p ∈ s, ∫ ω, ‖Y p ω‖ ^ 2 ∂P := by
       apply TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
@@ -141,6 +140,21 @@ theorem integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs {t : Set �
       simp only [Y, norm_mul, norm_star, mul_pow, integral_const_mul, hmoment]
 
 omit [Fintype ι] in
+/-- For centered, independent, square-integrable coordinates, the second moment of a sum over
+distinct unordered off-diagonal pairs is the sum of the squared absolute values of the
+coefficients times the respective products of coordinate second moments. -/
+theorem integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs {t : Set ι}
+    (hX : iIndepFun (fun i : t ↦ X i) P)
+    (hLp : ∀ i : t, MemLp (X i) 2 P) (hc : ∀ i : t, ∫ ω, X i ω ∂P = 0)
+    (A : Matrix ι ι 𝕜) (s : Finset (ι × ι)) (ht : ∀ p ∈ s, p.1 ∈ t ∧ p.2 ∈ t)
+    (hd : ∀ p ∈ s, p.1 ≠ p.2) (hs : ∀ p ∈ s, p.swap ∉ s) :
+    (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) =
+      ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2 *
+        ((∫ ω, ‖X p.1 ω‖ ^ 2 ∂P) * (∫ ω, ‖X p.2 ω‖ ^ 2 ∂P)) :=
+  (hX.memLp_two_and_integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs
+    hLp hc A s ht hd hs).2
+
+omit [Fintype ι] in
 /-- A sum of quadratic monomials on distinct unordered off-diagonal pairs in centered, independent,
 square-integrable coordinates is square integrable. Its mean norm is bounded by the common
 second-moment cap times the Euclidean norm of the coefficients. -/
@@ -157,17 +171,15 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_unordered_pa
   have hv₀ : 0 ≤ v := (integral_nonneg fun ω ↦ sq_nonneg ‖X p.1 ω‖).trans
     (hv ⟨p.1, (ht p hp).1⟩)
   have : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  let Y (p : ι × ι) (ω : Ω) := A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
-  have hY p (hp : p ∈ s) : MemLp (Y p) 2 P :=
-    memLp_two_weighted_star_mul hX hLp (ht p hp).1 (ht p hp).2 (hd p hp) _
-  have hsum : MemLp (fun ω ↦ ∑ p ∈ s, Y p ω) 2 P := memLp_finsetSum _ hY
+  obtain ⟨hsum, hmoment⟩ :=
+    hX.memLp_two_and_integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs
+      hLp hc A s ht hd hs
   refine ⟨hsum, ?_⟩
   calc
-    _ ≤ Real.sqrt (∫ ω, ‖∑ p ∈ s, Y p ω‖ ^ 2 ∂P) := integral_le_sqrt_integral_sq hsum.norm
+    _ ≤ Real.sqrt (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) :=
+      integral_le_sqrt_integral_sq hsum.norm
     _ ≤ Real.sqrt (v ^ 2 * ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2) := by
-      dsimp only [Y]
-      rw [hX.integral_norm_sum_mul_star_mul_sq_of_distinct_unordered_pairs hLp hc A s ht hd hs,
-        mul_sum]
+      rw [hmoment, mul_sum]
       apply Real.sqrt_le_sqrt
       refine sum_le_sum fun p hp ↦ ?_
       rw [mul_comm (v ^ 2), sq v]
@@ -217,7 +229,8 @@ theorem integrable_and_integral_norm_sum_offDiag_mul_star_mul_le
   have ht' : ∀ p ∈ t, p.swap ∉ t := fun p hp hswap ↦ (ht_lt p hp).not_gt (ht_lt p.swap hswap)
   have hu' : ∀ p ∈ u, p.swap ∉ u := fun p hp hswap ↦ (hu_lt p hp).not_gt (hu_lt p.swap hswap)
   have hsplit (ω : Ω) : (∑ p ∈ s, Y p ω) = (∑ p ∈ t, Y p ω) + ∑ p ∈ u, Y p ω := by
-    simp only [s, t, u, TauCeti.sum_offDiag_eq_sum_lt_add_swap, sum_add_distrib, sum_map,
+    simp only [s, t, u, TauCeti.sum_offDiag_eq_sum_lt_add_swap, univ_product_univ,
+      sum_add_distrib, sum_map,
       Equiv.coe_toEmbedding, Equiv.prodComm_apply]
   obtain ⟨hti, htb⟩ := hbound t (fun p hp ↦ (ht_lt p hp).ne) ht'
   obtain ⟨hui, hub⟩ := hbound u (fun p hp ↦ (hu_lt p hp).ne') hu'
@@ -246,10 +259,10 @@ theorem integrable_and_integral_norm_star_dotProduct_mulVec_sub_sum_diag_le
     (memLp_two_iff_integrable_sq_norm (hLp i).aestronglyMeasurable).mp (hLp i)
   have hi : Pairwise fun i j ↦ IndepFun (fun ω ↦ ‖X i ω‖ ^ 2) (fun ω ↦ ‖X j ω‖ ^ 2) P :=
     fun _ _ hij ↦ (hX.indepFun hij).norm_sq
-  have hD := hi.integral_norm_sum_mul_sub_integral_le hW (fun i ↦ A i i)
-    (fun i ↦ A.norm_apply_le_l2_opNorm i i)
-    (fun i ↦ by simpa only [Real.norm_of_nonneg (sq_nonneg _)] using hv i) r
-  simp only [Real.norm_of_nonneg (sq_nonneg _)] at hD
+  have hD := (hi.set_pairwise (univ : Finset ι)).integral_norm_sum_mul_sub_integral_le
+    (fun i _ ↦ hW i) (fun i ↦ A i i) (fun i _ ↦ A.norm_apply_le_l2_opNorm i i)
+    (fun i _ ↦ by simpa only [Real.norm_of_nonneg (sq_nonneg _)] using hv i) r
+  simp only [Real.norm_of_nonneg (sq_nonneg _), card_univ] at hD
   have hDi : Integrable (fun ω ↦ ∑ i, A i i * ((‖X i ω‖ ^ 2 - m i : ℝ) : 𝕜)) P :=
     integrable_finsetSum _ fun i _ ↦
       ((RCLike.ofRealCLM (K := 𝕜)).integrable_comp ((hW i).sub (integrable_const _))).const_mul _

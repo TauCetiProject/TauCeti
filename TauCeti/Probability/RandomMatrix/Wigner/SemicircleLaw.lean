@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
 import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
 import TauCeti.Probability.RandomMatrix.Centering
-import TauCeti.Probability.RandomMatrix.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.L2Space

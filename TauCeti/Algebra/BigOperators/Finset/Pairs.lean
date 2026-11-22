@@ -41,8 +41,8 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
-* `TauCeti.sum_offDiag_eq_sum_lt_add_swap`: the same fold for a sum indexed by off-diagonal
-  pairs, with arbitrary values on the diagonal.
+* `TauCeti.sum_offDiag_eq_sum_lt_add_swap`: the same fold for a sum over the off-diagonal pairs
+  of a finite set, with arbitrary values on the diagonal.
 * `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
   kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
@@ -321,25 +321,21 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
 
-/-- In a finite linear order, sum over the off-diagonal pairs by adding each increasing pair
-to its transpose. -/
-theorem sum_offDiag_eq_sum_lt_add_swap {ι M : Type*} [Fintype ι] [LinearOrder ι]
-    [AddCommMonoid M] (f : ι × ι → M) :
-    (∑ p ∈ (univ : Finset ι).offDiag, f p) =
-      ∑ p ∈ {p : ι × ι | p.1 < p.2}, (f p + f p.swap) := by
-  let F (p : ι × ι) := if p.1 = p.2 then 0 else f p
-  calc
-    _ = ∑ p ∈ (univ : Finset ι).offDiag, F p :=
-      sum_congr rfl fun p hp ↦ (ite_eq_right (mem_offDiag.mp hp).2.2).symm
-    _ = ∑ p : ι × ι, F p := by
-      rw [← univ_product_univ, ← diag_union_offDiag, sum_union (disjoint_diag_offDiag _), sum_diag]
-      simp [F]
-    _ = ∑ p ∈ {p : ι × ι | p.1 < p.2}, (F p + F p.swap) :=
-      sum_univ_prod_eq_sum_lt_add_swap F (fun _ ↦ ite_eq_left rfl)
-    _ = _ := by
-      refine sum_congr rfl fun p hp ↦ ?_
-      have hp' := (mem_filter.mp hp).2
-      simp only [F, Prod.fst_swap, Prod.snd_swap, ite_eq_right hp'.ne, ite_eq_right hp'.ne']
+/-- In a linear order, sum over the off-diagonal pairs of a finite set by adding each increasing
+pair to its transpose. -/
+theorem sum_offDiag_eq_sum_lt_add_swap {ι M : Type*} [LinearOrder ι] [AddCommMonoid M]
+    (s : Finset ι) (f : ι × ι → M) :
+    (∑ p ∈ s.offDiag, f p) = ∑ p ∈ s ×ˢ s with p.1 < p.2, (f p + f p.swap) := by
+  have hsplit : s.offDiag = {p ∈ s ×ˢ s | p.1 < p.2} ∪ {p ∈ s ×ˢ s | p.2 < p.1} := by
+    ext p
+    simp only [mem_offDiag, mem_union, mem_filter, mem_product, ← and_or_left, ne_iff_lt_or_gt]
+    tauto
+  have hdisj : Disjoint {p ∈ s ×ˢ s | p.1 < p.2} {p ∈ s ×ˢ s | p.2 < p.1} :=
+    disjoint_filter.mpr fun _ _ h h' ↦ h.not_gt h'
+  rw [hsplit, sum_union hdisj, sum_add_distrib]
+  congr 1
+  exact sum_nbij' Prod.swap Prod.swap (by simp +contextual) (by simp +contextual) (by simp)
+    (by simp) (by simp)
 
 /-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
 theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]

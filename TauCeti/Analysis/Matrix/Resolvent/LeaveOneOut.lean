@@ -56,6 +56,31 @@ which is zero when its determinant is not a unit. -/
 theorem minorResolvent_def (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
     A.minorResolvent i z = (A.submatrix (↑) (↑) - z • 1)⁻¹ := by rw [minorResolvent]
 
+/-- If the shifted principal submatrix has unit determinant, it times its minor resolvent is
+the identity. -/
+theorem submatrix_sub_smul_one_mul_minorResolvent (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 := by
+  rw [minorResolvent_def]
+  exact mul_nonsing_inv _ h
+
+/-- If the shifted principal submatrix has unit determinant, its minor resolvent times it is
+the identity. -/
+theorem minorResolvent_mul_submatrix_sub_smul_one (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 := by
+  rw [minorResolvent_def]
+  exact nonsing_inv_mul _ h
+
+/-- The totalized minor resolvent is zero if the shifted principal submatrix has nonunit
+determinant. -/
+@[simp]
+theorem minorResolvent_eq_zero_of_not_isUnit_det (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : ¬IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    A.minorResolvent i z = 0 := by
+  rw [minorResolvent_def]
+  exact nonsing_inv_apply_not_isUnit _ h
+
 end
 
 end Matrix
@@ -71,18 +96,16 @@ include hA
 is the identity. -/
 @[simp]
 theorem submatrix_sub_smul_one_mul_minorResolvent {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
-    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 := by
-  rw [minorResolvent_def]
-  exact mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp
+    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 :=
+  Matrix.submatrix_sub_smul_one_mul_minorResolvent A i ((isUnit_iff_isUnit_det _).mp
     ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
 
 /-- At a nonreal parameter, the Hermitian minor resolvent times the shifted principal submatrix
 is the identity. -/
 @[simp]
 theorem minorResolvent_mul_submatrix_sub_smul_one {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
-    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 := by
-  rw [minorResolvent_def]
-  exact nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp
+    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 :=
+  Matrix.minorResolvent_mul_submatrix_sub_smul_one A i ((isUnit_iff_isUnit_det _).mp
     ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
 
 /-- The Euclidean operator norm of a Hermitian principal-minor resolvent is at most

@@ -14,7 +14,7 @@ public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 The spectral resolvent transform's deviation from the semicircle transform is bounded by
 the mean absolute errors of the principal-minor quadratic forms, the normalized minor-trace
 correction, and the mean absolute diagonal entry, with a factor depending on the imaginary
-part of the spectral parameter.
+part of the spectral parameter. The diagonal term vanishes for matrices with zero diagonal.
 -/
 
 public section
@@ -65,5 +65,18 @@ theorem norm_resolventTransform_spectralMeasure_sub_semicircleReal_le
   calc
     _ = z.im⁻¹ ^ 2 * (𝔼 i, E i) := by rw [Fintype.expect_eq_sum_div_card]; ring
     _ = _ := by simp only [E, Finset.expect_add_distrib, Fintype.expect_const, c]
+
+/-- For a Hermitian matrix with zero diagonal, the difference from the semicircle transform is
+controlled by the mean absolute leave-one-out error and the principal-minor trace correction. -/
+theorem norm_resolventTransform_spectralMeasure_sub_semicircleReal_le_of_diag_eq_zero
+    {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] {A : Matrix ι ι ℂ}
+    (hA : A.IsHermitian) (hdiag : A.diag = 0) {z : ℂ} (hz : 0 < z.im) (v : ℝ≥0) :
+    ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
+      resolventTransform (TauCeti.Probability.semicircleReal 0 v) z‖ ≤
+      z.im⁻¹ ^ 2 * ((𝔼 i, ‖A.minorQuadraticError i z v‖) +
+        3 * (v : ℝ) / ((Fintype.card ι : ℝ) * z.im)) := by
+  have h (i : ι) : A i i = 0 := congrFun hdiag i
+  simpa only [h, norm_zero, Finset.expect_const_zero, add_zero] using
+    hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le hz v
 
 end Matrix.IsHermitian
