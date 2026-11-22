@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
@@ -21,6 +22,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -59,6 +61,9 @@ constants are parameters, not hidden existential data.
   conormal component of a smooth gradient.
 * `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
+* `TauCeti.PDE.holderOnWith_matrixBilinearForm_of_forall` and
+  `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_of_contDiffOn`: Hölder entries give Hölder
+  bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.lipschitzOnWith_inv_matrixBilinearForm_self` and
@@ -78,12 +83,19 @@ constants are parameters, not hidden existential data.
   bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
+* `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`: the operator norm of the attached
+  bilinear form is the operator norm of the matrix on Euclidean space.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
   the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
+* `TauCeti.PDE.ellipticCLMSet`: the operators on Euclidean space which are elliptic with
+  given constants; `TauCeti.PDE.convex_ellipticCLMSet` and `TauCeti.PDE.isClosed_ellipticCLMSet`:
+  they form a closed convex set, with membership `TauCeti.PDE.mem_ellipticCLMSet_iff`, which
+  `TauCeti.PDE.toEuclideanCLM_mem_ellipticCLMSet_iff` and
+  `TauCeti.PDE.uniformlyEllipticOn_of_forall_toEuclideanCLM_mem` relate to uniform ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
@@ -368,6 +380,19 @@ lemma norm_toEuclideanCLM_apply_le [DecidableEq n] (A : Matrix n n ℝ) (ξ : Eu
     positivity
   · nlinarith
 
+/-- The operator norm of the bilinear form of a matrix is the operator norm of the matrix acting on
+Euclidean space. -/
+lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix n n ℝ) :
+    ‖matrixBilinearForm A‖ = ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A‖ := by
+  refine le_antisymm ((matrixBilinearForm A).opNorm_le_bound₂
+    (ContinuousLinearMap.opNorm_nonneg _) fun η ξ => ?_)
+    ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).opNorm_le_bound
+      (ContinuousLinearMap.opNorm_nonneg _) (norm_toEuclideanCLM_apply_le A))
+  rw [matrixBilinearForm_apply, ← inner_toEuclideanCLM, Real.norm_eq_abs, mul_assoc,
+    mul_left_comm]
+  exact (abs_real_inner_le_norm _ _).trans
+    (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
+
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
@@ -388,6 +413,14 @@ lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
         ≤ |η ⬝ᵥ (A *ᵥ ξ)| + |η ⬝ᵥ (B *ᵥ ξ)| := abs_add_le _ _
     _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
     _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
+
+/-- Subtracting two pointwise bilinear upper bounds adds the constants. -/
+lemma abs_dotProduct_sub_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((A - B) *ᵥ ξ)| ≤ (Lam + Mu) * ‖η‖ * ‖ξ‖ := by
+  rw [Matrix.sub_mulVec, dotProduct_sub]
+  linarith [abs_sub (η ⬝ᵥ (A *ᵥ ξ)) (η ⬝ᵥ (B *ᵥ ξ)), hA η ξ, hB η ξ]
 
 /-- The symmetric part of a pointwise bounded coefficient matrix satisfies the same bilinear
 upper bound. -/
@@ -469,6 +502,18 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
+
+/-- The difference of two matrix bilinear forms with the same first argument `g` splits as
+`gᵀ M (g + h) - gᵀ N h = gᵀ M g + gᵀ (M - N) h`. With `M` and `N` a coefficient frozen at two
+functions, this is the identity behind comparison and monotonicity estimates for quasilinear
+operators. -/
+lemma matrixBilinearForm_add_sub_matrixBilinearForm (M N : Matrix n n ℝ)
+    (g h : EuclideanSpace ℝ n) :
+    matrixBilinearForm M g (g + h) - matrixBilinearForm N g h =
+      M.toQuadraticForm' g + g ⬝ᵥ ((M - N) *ᵥ h) := by
+  rw [map_add, matrixBilinearForm_self]
+  simp only [matrixBilinearForm_apply, Matrix.sub_mulVec, dotProduct_sub]
+  ring
 
 /-- Every matrix quadratic form is bounded above by the operator norm of the matrix bilinear form
 times `‖ξ‖²`. -/
@@ -620,6 +665,69 @@ lemma uniformlyEllipticOn_iff :
             lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) ∧
             ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (a x *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ :=
   Iff.rfl
+
+section EllipticOperators
+
+open scoped InnerProductSpace
+
+/-- The operators on `EuclideanSpace ℝ n` which are elliptic with constant `λ` and bounded by
+`Λ`: `λ ‖ξ‖² ≤ ⟪ξ, M ξ⟫` and `|⟪η, M ξ⟫| ≤ Λ ‖η‖ ‖ξ‖` for all `η`, `ξ`. -/
+def ellipticCLMSet (lam Lam : ℝ) :
+    Set (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n) :=
+  {M | (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖}
+
+omit [DecidableEq n] in
+/-- An operator is elliptic with constant `λ` and bounded by `Λ` exactly when
+`λ ‖ξ‖² ≤ ⟪ξ, M ξ⟫` and `|⟪η, M ξ⟫| ≤ Λ ‖η‖ ‖ξ‖` for all `η`, `ξ`. -/
+theorem mem_ellipticCLMSet_iff {lam Lam : ℝ} {M : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n} :
+    M ∈ ellipticCLMSet lam Lam ↔
+      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖ :=
+  Iff.rfl
+
+omit [DecidableEq n] in
+/-- The elliptic operators with constants `λ, Λ` form a convex set. -/
+theorem convex_ellipticCLMSet (lam Lam : ℝ) :
+    Convex ℝ (ellipticCLMSet (n := n) lam Lam) := by
+  -- It is an intersection of half-spaces cut out by the linear maps `M ↦ ⟪η, M ξ⟫`.
+  have hL (η ξ : EuclideanSpace ℝ n) :
+      IsLinearMap ℝ fun M : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n => ⟪η, M ξ⟫_ℝ :=
+    ((innerₛₗ ℝ η).comp (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ n) ξ).toLinearMap).isLinear
+  simp only [ellipticCLMSet, abs_le, Set.ofPred_and, Set.ofPred_forall]
+  exact (convex_iInter fun ξ => convex_halfSpace_ge (hL ξ ξ) _).inter
+    (convex_iInter₂ fun η ξ => (convex_halfSpace_ge (hL η ξ) _).inter
+      (convex_halfSpace_le (hL η ξ) _))
+
+omit [DecidableEq n] in
+/-- The elliptic operators with constants `λ, Λ` form a closed set. -/
+theorem isClosed_ellipticCLMSet (lam Lam : ℝ) :
+    IsClosed (ellipticCLMSet (n := n) lam Lam) := by
+  have hc : ∀ η ξ : EuclideanSpace ℝ n, Continuous fun M :
+      EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n => ⟪η, M ξ⟫_ℝ := fun η ξ =>
+    continuous_const.inner (continuous_id.clm_apply continuous_const)
+  simp only [ellipticCLMSet, Set.ofPred_and, Set.ofPred_forall]
+  exact IsClosed.inter (isClosed_iInter fun ξ => isClosed_le continuous_const (hc ξ ξ))
+    (isClosed_iInter fun η => isClosed_iInter fun ξ =>
+      isClosed_le (continuous_abs.comp (hc η ξ)) continuous_const)
+
+/-- The operator of a matrix is elliptic with constant `λ` and bounded by `Λ` exactly when the
+matrix satisfies the pointwise conditions of `TauCeti.PDE.UniformlyEllipticOn`. -/
+@[simp]
+theorem toEuclideanCLM_mem_ellipticCLMSet_iff {lam Lam : ℝ} (A : Matrix n n ℝ) :
+    toEuclideanCLM (𝕜 := ℝ) A ∈ ellipticCLMSet lam Lam ↔
+      (∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) ∧
+        ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  simp only [mem_ellipticCLMSet_iff, inner_toEuclideanCLM, toQuadraticForm'_apply]
+
+/-- A coefficient field whose operators are elliptic with constants `0 < λ ≤ Λ` at every point of
+`s` is uniformly elliptic on `s`. -/
+theorem uniformlyEllipticOn_of_forall_toEuclideanCLM_mem {s : Set X} {a : X → Matrix n n ℝ}
+    {lam Lam : ℝ} (hlam : 0 < lam) (hle : lam ≤ Lam)
+    (h : ∀ x ∈ s, toEuclideanCLM (𝕜 := ℝ) (a x) ∈ ellipticCLMSet lam Lam) :
+    UniformlyEllipticOn s a lam Lam :=
+  uniformlyEllipticOn_iff.2
+    ⟨hlam, hle, fun x hx => (toEuclideanCLM_mem_ellipticCLMSet_iff _).1 (h x hx)⟩
+
+end EllipticOperators
 
 namespace UniformlyEllipticOn
 
@@ -1097,6 +1205,35 @@ theorem locallyLipschitzOn_matrixBilinearForm_of_contDiffOn {a : EuclideanSpace 
   refine Finset.sum_le_sum fun j _ => ?_
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (hKt i j).dist_le_mul y (hy i j) z (hz i j)
+
+/-- **Hölder entries give a Hölder bilinear form.** If every entry of a coefficient field `a` is
+`α`-Hölder on `s` with constant `L i j`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is `α`-Hölder on `s` in the
+operator norm, with constant `∑ᵢⱼ L i j`. -/
+theorem holderOnWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace X]
+    {a : X → Matrix n n ℝ} {s : Set X} {α : ℝ≥0} {L : n → n → ℝ≥0}
+    (ha : ∀ i j, HolderOnWith (L i j) α (fun x => a x i j) s) :
+    HolderOnWith (∑ i, ∑ j, L i j) α (fun x => matrixBilinearForm (a x)) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [dist_eq_norm, ← matrixBilinearForm_sub]
+  refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [Matrix.sub_apply, ← Real.dist_eq]
+  exact (ha i j).dist_le hx hy
+
+/-- **`C¹` coefficient fields have Hölder bilinear forms on compact sets.** If the entries of `a`
+are continuously differentiable on an open set `s`, then on every compact `S ⊆ s` the map
+`x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is `α`-Hölder in the operator norm for every `α ≤ 1`. -/
+theorem exists_holderOnWith_matrixBilinearForm_of_contDiffOn
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} {s : Set (EuclideanSpace ℝ n)} (hs : IsOpen s)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) s) {S : Set (EuclideanSpace ℝ n)}
+    (hS : IsCompact S) (hSs : S ⊆ s) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ K : ℝ≥0, HolderOnWith K α (fun x => matrixBilinearForm (a x)) S :=
+  (locallyLipschitzOn_matrixBilinearForm_of_contDiffOn hs ha).exists_holderOnWith_of_isCompact
+    hα hS hSs
 
 /-- The coefficients `x ↦ ⟪p, a(x) q⟫` of a coefficient field that is `K`-Lipschitz on `s` as a
 bilinear form are `K ‖p‖ ‖q‖`-Lipschitz on `s`. -/

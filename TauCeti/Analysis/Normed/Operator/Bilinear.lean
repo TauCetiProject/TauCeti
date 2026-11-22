@@ -12,7 +12,10 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Pulling back continuous bilinear maps, and their quadratic maps
+# Continuous bilinear maps
+
+A family of continuous bilinear maps gives a continuous bilinear map into the product
+(`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -60,6 +63,19 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
+def piBilin {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) : V →L[𝕜] W →L[𝕜] ∀ i, G i :=
+  (ContinuousLinearMap.piEquivL 𝕜 W G).toContinuousLinearMap.comp (ContinuousLinearMap.pi B)
+
+@[simp]
+theorem piBilin_apply {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) (x : V) (y : W) (i : ι) :
+    piBilin B x y i = B i x y :=
+  (rfl)
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/

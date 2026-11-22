@@ -190,7 +190,7 @@ theorem evalCusp_mapGL_smul (hw : Even w) (g : SL(2, ℤ)) (α : OnePoint ℚ)
     rw [map_mul, map_one, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply] at h2
     exact h2
   simp only [smul_smul, ← map_mul, evalCusp_mapGL_smul_infty hw, binaryFormSLRep_apply,
-    coe_binaryFormRep_apply, eval_linearSubst, Matrix.SpecialLinearGroup.coe_mul, hcol,
+    eval_binaryFormRep_apply, Matrix.SpecialLinearGroup.coe_mul, hcol,
     Matrix.mulVec_mulVec, hinv, Matrix.one_mulVec]
 
 /-! ### The functional on modular symbols -/

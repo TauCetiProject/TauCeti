@@ -28,9 +28,12 @@ indexed by.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
 * `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
-  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
+  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`;
+  `TopologicalSpace.Opens.exists_mem_and_isCompact_closure` is the case of a point.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
+* `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
+  empty space.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
@@ -92,11 +95,26 @@ theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpa
   obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
   exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
 
+/-- In a locally compact regular space, every point `x` of an open set `U` lies in an open set
+whose closure is compact and contained in `U`. This is the case `K = {x}` of
+`TopologicalSpace.Opens.exists_between_and_isCompact_closure`. -/
+theorem exists_mem_and_isCompact_closure [LocallyCompactSpace X] [RegularSpace X] {x : X}
+    {U : Opens X} (hx : x ∈ U) :
+    ∃ V : Opens X, x ∈ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
+  obtain ⟨V, hxV, hVU, hVc⟩ :=
+    exists_between_and_isCompact_closure isCompact_singleton (Set.singleton_subset_iff.2 hx)
+  exact ⟨V, hxV rfl, hVU, hVc⟩
+
 /-- An open set lies below the supremum of a family of open sets exactly when their underlying
 sets cover it. -/
 theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
     U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
   rw [← SetLike.coe_subset_coe, coe_iSup]
+
+/-- An empty family of open sets covers only the empty space. -/
+theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
+    (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
+  ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
