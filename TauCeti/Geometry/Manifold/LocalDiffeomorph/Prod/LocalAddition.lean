@@ -22,17 +22,16 @@ as `u = A u₀ ξ` with `ξ` small. Local additions adapted to a submanifold, fo
 stays on the submanifold exactly along tangent vectors, give the charts on spaces of maps with
 boundary values on that submanifold.
 
-This file proves the local-addition property from the two pointwise conditions, by the inverse
-function theorem, and provides the normalization that produces the second condition.
+This file proves the local-addition property by the inverse function theorem. Only the second
+condition, on the derivative at `0`, is needed for `(q, v) ↦ (q, A q v)` to be a local
+diffeomorphism. The normalization producing that condition is in
+`TauCeti.Analysis.Calculus.FDeriv.NormalizeAtZero`.
 
-* `TauCeti.hasFDerivAt_comp_inverse_fderiv_zero` and
-  `TauCeti.exists_isOpen_contDiffOn_comp_inverse_fderiv_zero`: precomposing each `B q` with the
-  inverse of its derivative `J q` at `0` gives maps with derivative the identity at `0`, and the
-  normalized family `(q, v) ↦ B q ((J q)⁻¹ v)` loses one derivative.
-* `TauCeti.isLocalDiffeomorphAt_prodMk_of_eventually_apply_zero`: if `A q 0 = q` near `q₀` and
-  the derivative of `A q₀` at `0` is the identity, then `(q, v) ↦ (q, A q v)` is a local
-  diffeomorphism at `(q₀, 0)` when `A` is jointly `C^n`, `1 ≤ n`, since its derivative there is
-  the shear `(a, b) ↦ (a, b + a)` (`DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`).
+* `TauCeti.isLocalDiffeomorphAt_prodMk_of_hasFDerivAt_id`: if the derivative of `A q₀` at `0` is
+  the identity, then `(q, v) ↦ (q, A q v)` is a local diffeomorphism at `(q₀, 0)` when `A` is
+  jointly `C^n`, `1 ≤ n`, since its derivative there is the invertible shear
+  `(a, b) ↦ (a, b + L a)`, with `L` the derivative of `q ↦ A q 0` at `q₀`
+  (`DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`).
 * `IsCompact.exists_injOn_prodMk_isLocalDiffeomorphOn`: over a neighbourhood of a compact set of
   base points the local diffeomorphisms combine. There are an open `U` containing the compact set
   and `ε > 0` such that `(q, v) ↦ (q, A q v)` is injective and a local diffeomorphism on
@@ -59,93 +58,36 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Field
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F X : Type*}
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-
-/-- Precomposing a map `g` with the inverse of its derivative at `0`, when that derivative is
-invertible, gives a map with derivative the identity at `0`. -/
-theorem hasFDerivAt_comp_inverse_fderiv_zero {g : E → F} (hinv : (fderiv 𝕜 g 0).IsInvertible) :
-    HasFDerivAt (fun v ↦ g ((fderiv 𝕜 g 0).inverse v)) (ContinuousLinearMap.id 𝕜 F) 0 := by
-  by_cases hg : DifferentiableAt 𝕜 g 0
-  · have hg' : HasFDerivAt g (fderiv 𝕜 g 0) ((fderiv 𝕜 g 0).inverse 0) := by
-      rw [map_zero]
-      exact hg.hasFDerivAt
-    have h := hg'.comp (0 : F) (fderiv 𝕜 g 0).inverse.hasFDerivAt
-    rwa [hinv.self_comp_inverse] at h
-  -- Otherwise the derivative is `0`, which is invertible only when `F` is trivial.
-  · obtain ⟨e, he⟩ := hinv
-    rw [fderiv_zero_of_not_differentiableAt hg] at he
-    have : Subsingleton F := ⟨fun y y' ↦ by
-      rw [← e.apply_symm_apply y, ← e.apply_symm_apply y', ← ContinuousLinearEquiv.coe_coe, he]
-      simp⟩
-    exact (hasFDerivAt_of_subsingleton _ _).congr_fderiv (Subsingleton.elim _ _)
-
-/-- **Normalizing a family by its derivatives at zero.** Let `B` be jointly `C^(n + 1)` on an
-open set `s`, and write `J q` for the derivative of `B q` at `0`. Then the normalized family
-`(q, v) ↦ B q ((J q)⁻¹ v)` is jointly `C^n` on an open set `s'` containing every `(q, 0)` with
-`(q, 0) ∈ s` and `J q` invertible, and `J q` is invertible for every `(q, v) ∈ s'`. -/
-theorem exists_isOpen_contDiffOn_comp_inverse_fderiv_zero [CompleteSpace E] {n : WithTop ℕ∞}
-    {B : X → E → F} {s : Set (X × E)} (hB : ContDiffOn 𝕜 (n + 1) (uncurry B) s)
-    (hs : IsOpen s) :
-    ∃ s' : Set (X × F), IsOpen s' ∧
-      (∀ q, (q, 0) ∈ s → (fderiv 𝕜 (B q) 0).IsInvertible → (q, 0) ∈ s') ∧
-      (∀ p ∈ s', (fderiv 𝕜 (B p.1) 0).IsInvertible) ∧
-      ContDiffOn 𝕜 n (fun p : X × F ↦ B p.1 ((fderiv 𝕜 (B p.1) 0).inverse p.2)) s' := by
-  set J : X → E →L[𝕜] F := fun q ↦ fderiv 𝕜 (B q) 0
-  set S : Set X := {q | (q, 0) ∈ s}
-  have hS : IsOpen S := hs.preimage (continuous_id.prodMk continuous_const)
-  have hJ : ∀ q ∈ S, ContDiffAt 𝕜 n J q := fun q hq ↦
-    (hB.contDiffAt (hs.mem_nhds hq)).fderiv contDiffAt_const le_rfl
-  set S' : Set X := S ∩ J ⁻¹' {L | L.IsInvertible}
-  have hS' : IsOpen S' := ContinuousOn.isOpen_inter_preimage
-    (fun q hq ↦ (hJ q hq).continuousAt.continuousWithinAt) hS
-    ContinuousLinearMap.isOpen_setOfPred_isInvertible
-  -- The fibre change `(q, v) ↦ (q, (J q)⁻¹ v)` is `C^n` over `S'`.
-  have hσ : ∀ p : X × F, p.1 ∈ S' →
-      ContDiffAt 𝕜 n (fun p : X × F ↦ (p.1, (J p.1).inverse p.2)) p := fun p hp ↦
-    contDiffAt_fst.prodMk
-      ((((hJ p.1 hp.1).clm_inverse hp.2).comp p contDiffAt_fst).clm_apply contDiffAt_snd)
-  refine ⟨(S' ×ˢ univ) ∩ (fun p : X × F ↦ (p.1, (J p.1).inverse p.2)) ⁻¹' s,
-    ContinuousOn.isOpen_inter_preimage (fun p hp ↦ (hσ p hp.1).continuousAt.continuousWithinAt)
-      (hS'.prod isOpen_univ) hs, fun q hq hJq ↦ ⟨⟨⟨hq, hJq⟩, mem_univ _⟩, by simpa using hq⟩,
-    fun p hp ↦ hp.1.1.2, fun p hp ↦ ?_⟩
-  exact ((hB.contDiffAt (hs.mem_nhds hp.2)).of_le le_self_add).comp p (hσ p hp.1.1)
-    |>.contDiffWithinAt
-
-end Field
-
 section RCLike
 
 variable {𝕂 : Type*} [RCLike 𝕂] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
   [CompleteSpace E] {A : E → E → E} {q₀ : E} {n : WithTop ℕ∞}
 
 /-- **Local additions are local diffeomorphisms.** If `A` is jointly `C^n` on an open set `s`
-containing `(q₀, 0)`, with `1 ≤ n`, `A q 0 = q` near `q₀` and `A q₀` has derivative the identity
-at `0`, then `(q, v) ↦ (q, A q v)` is a `C^n` local diffeomorphism at `(q₀, 0)`. -/
-theorem isLocalDiffeomorphAt_prodMk_of_eventually_apply_zero {s : Set (E × E)}
+containing `(q₀, 0)`, with `1 ≤ n`, and `A q₀` has derivative the identity at `0`, then
+`(q, v) ↦ (q, A q v)` is a `C^n` local diffeomorphism at `(q₀, 0)`. -/
+theorem isLocalDiffeomorphAt_prodMk_of_hasFDerivAt_id {s : Set (E × E)}
     (hA : ContDiffOn 𝕂 n (uncurry A) s) (hs : IsOpen s) (hq₀ : (q₀, 0) ∈ s) (hn : 1 ≤ n)
-    (h0 : ∀ᶠ q in 𝓝 q₀, A q 0 = q) (hv : HasFDerivAt (A q₀) (ContinuousLinearMap.id 𝕂 E) 0) :
+    (hv : HasFDerivAt (A q₀) (ContinuousLinearMap.id 𝕂 E) 0) :
     IsLocalDiffeomorphAt 𝓘(𝕂, E × E) 𝓘(𝕂, E × E) n (fun p : E × E ↦ (p.1, A p.1 p.2))
       (q₀, 0) := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have h0' : HasFDerivAt (fun q ↦ uncurry A (q, 0)) (ContinuousLinearMap.id 𝕂 E) q₀ :=
-    (hasFDerivAt_id q₀).congr_of_eventuallyEq h0
+  have hd : DifferentiableAt 𝕂 (uncurry A) (q₀, 0) :=
+    (hA.differentiableOn hn0).differentiableAt (hs.mem_nhds hq₀)
+  -- The horizontal slice `q ↦ A q 0` is differentiable at `q₀`; its derivative is the shear part.
+  have h0 : DifferentiableAt 𝕂 (fun q ↦ A q 0) q₀ :=
+    hd.comp (g := uncurry A) (f := fun q ↦ (q, (0 : E))) q₀ (by fun_prop)
   exact isLocalDiffeomorphAt_of_fderiv_eq (e := (ContinuousLinearEquiv.refl 𝕂 E).skewProd
-      (.refl 𝕂 E) (.id 𝕂 E)) (contDiffOn_fst.prodMk hA) hs hq₀ hn
-    (((hA.differentiableOn hn0).differentiableAt (hs.mem_nhds hq₀)).hasFDerivAt_fst_prodMk_of_slices
-      h0' hv).fderiv.symm
+      (.refl 𝕂 E) (fderiv 𝕂 (fun q ↦ A q 0) q₀)) (contDiffOn_fst.prodMk hA) hs hq₀ hn
+    (hd.hasFDerivAt_fst_prodMk_of_slices h0.hasFDerivAt hv).fderiv.symm
 
 /-- **Local additions over a compact set.** Let `A` be jointly `C^n` on an open set `s`, with
-`1 ≤ n`, and let `K` be a compact set with `(q, 0) ∈ s`, `A q 0 = q` near `K` and the derivative
-of `A q` at `0` the identity for `q ∈ K`. Then there are an open set `U ⊇ K` and `ε > 0` such that
+`1 ≤ n`, and let `K` be a compact set with `(q, 0) ∈ s` and the derivative of `A q` at `0` the
+identity for `q ∈ K`. Then there are an open set `U ⊇ K` and `ε > 0` such that
 `(q, v) ↦ (q, A q v)` is injective and a `C^n` local diffeomorphism on `U ×ˢ ball 0 ε ⊆ s`. -/
 theorem _root_.IsCompact.exists_injOn_prodMk_isLocalDiffeomorphOn {K : Set E} (hK : IsCompact K)
     {s : Set (E × E)} (hA : ContDiffOn 𝕂 n (uncurry A) s) (hs : IsOpen s) (hn : 1 ≤ n)
-    (hKs : ∀ q ∈ K, (q, 0) ∈ s) (h0 : ∀ᶠ q in 𝓝ˢ K, A q 0 = q)
-    (hv : ∀ q ∈ K, HasFDerivAt (A q) (ContinuousLinearMap.id 𝕂 E) 0) :
+    (hKs : ∀ q ∈ K, (q, 0) ∈ s) (hv : ∀ q ∈ K, HasFDerivAt (A q) (ContinuousLinearMap.id 𝕂 E) 0) :
     ∃ U : Set E, IsOpen U ∧ K ⊆ U ∧ ∃ ε > 0, U ×ˢ ball (0 : E) ε ⊆ s ∧
       InjOn (fun p : E × E ↦ (p.1, A p.1 p.2)) (U ×ˢ ball 0 ε) ∧
       IsLocalDiffeomorphOn 𝓘(𝕂, E × E) 𝓘(𝕂, E × E) n (fun p : E × E ↦ (p.1, A p.1 p.2))
@@ -159,8 +101,7 @@ theorem _root_.IsCompact.exists_injOn_prodMk_isLocalDiffeomorphOn {K : Set E} (h
     (hK.prod isCompact_singleton) fun p hp ↦ by
     obtain ⟨q, v⟩ := p
     obtain ⟨hq, rfl⟩ := hp
-    exact isLocalDiffeomorphAt_prodMk_of_eventually_apply_zero hA hs (hKs q hq) hn
-      (h0.filter_mono (nhds_le_nhdsSet hq)) (hv q hq)
+    exact isLocalDiffeomorphAt_prodMk_of_hasFDerivAt_id hA hs (hKs q hq) hn (hv q hq)
   -- By the tube lemma, `O ∩ s` contains a product neighbourhood `U ×ˢ ball 0 ε` of `K ×ˢ {0}`.
   obtain ⟨U, W, hU, hW, hKU, h0W, hUW⟩ := generalized_tube_lemma hK isCompact_singleton
     (hO.inter hs) fun p hp ↦ ⟨hKO hp, by
@@ -173,13 +114,13 @@ theorem _root_.IsCompact.exists_injOn_prodMk_isLocalDiffeomorphOn {K : Set E} (h
     hinj.mono (hUε.trans inter_subset_left), fun p ↦ hloc ⟨p, (hUε p.property).1⟩⟩
 
 /-- **Local additions that are the addition far away.** Let `A` be jointly `C^n` on
-`univ ×ˢ ball 0 ε`, with `1 ≤ n` and `0 < ε`, with `A q 0 = q` and the derivative of `A q` at `0`
-the identity for every `q`, and with `A q v = q + v` for `q` outside a compact set. Then for some
+`univ ×ˢ ball 0 ε`, with `1 ≤ n` and `0 < ε`, with the derivative of `A q` at `0` the identity
+for every `q`, and with `A q v = q + v` for `q` outside a compact set. Then for some
 `0 < ε' ≤ ε` the map `(q, v) ↦ (q, A q v)` is injective and a `C^n` local diffeomorphism on
 `univ ×ˢ ball 0 ε'`. -/
 theorem exists_injOn_prodMk_isLocalDiffeomorphOn_of_eventually_eq_add {ε : ℝ}
     (hA : ContDiffOn 𝕂 n (uncurry A) (univ ×ˢ ball 0 ε)) (hε : 0 < ε) (hn : 1 ≤ n)
-    (h0 : ∀ q, A q 0 = q) (hv : ∀ q, HasFDerivAt (A q) (ContinuousLinearMap.id 𝕂 E) 0)
+    (hv : ∀ q, HasFDerivAt (A q) (ContinuousLinearMap.id 𝕂 E) 0)
     (hadd : ∀ᶠ q in cocompact E, A q = (q + ·)) :
     ∃ ε' > 0, ε' ≤ ε ∧ InjOn (fun p : E × E ↦ (p.1, A p.1 p.2)) (univ ×ˢ ball 0 ε') ∧
       IsLocalDiffeomorphOn 𝓘(𝕂, E × E) 𝓘(𝕂, E × E) n (fun p : E × E ↦ (p.1, A p.1 p.2))
@@ -189,7 +130,7 @@ theorem exists_injOn_prodMk_isLocalDiffeomorphOn_of_eventually_eq_add {ε : ℝ}
   -- Over a neighbourhood `U` of `L` the compact case applies.
   obtain ⟨U, -, hLU, ε', hε', -, hinj, hloc⟩ := hL.exists_injOn_prodMk_isLocalDiffeomorphOn hA
     (isOpen_univ.prod isOpen_ball) hn (fun q _ ↦ ⟨mem_univ q, mem_ball_self hε⟩)
-    (Eventually.of_forall h0) fun q _ ↦ hv q
+    fun q _ ↦ hv q
   -- Off `L`, the map `(q, v) ↦ (q, A q v)` is the shear `(q, v) ↦ (q, v + q)`.
   set σ : (E × E) ≃L[𝕂] (E × E) := .skewProd (.refl 𝕂 E) (.refl 𝕂 E) (.id 𝕂 E)
   have hσ : ∀ p : E × E, p.1 ∉ L → (fun p : E × E ↦ (p.1, A p.1 p.2)) =ᶠ[𝓝 p] σ := fun p hp ↦ by
@@ -276,7 +217,7 @@ theorem _root_.IsCompact.exists_localAddition_eventuallyEq {K : Set E} (hK : IsC
   have hadd : ∀ᶠ q in cocompact E, A' q = (q + ·) := by
     filter_upwards [hχc.isCompact.compl_mem_cocompact] with q hq using hA'0 q hq
   obtain ⟨ε', hε', hε'ε, hinj, hloc⟩ :=
-    exists_injOn_prodMk_isLocalDiffeomorphOn_of_eventually_eq_add hA'C hε hn hA'zero hA'v hadd
+    exists_injOn_prodMk_isLocalDiffeomorphOn_of_eventually_eq_add hA'C hε hn hA'v hadd
   refine ⟨A', ε', hε', hA'C.mono (prod_mono_right (ball_subset_ball hε'ε)), hA'zero, hA'v, ?_,
     hadd, hinj, hloc⟩
   filter_upwards [isOpen_interior.mem_nhdsSet.2 hχ1] with q hq

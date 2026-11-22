@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.InverseFunctionTheorem.LocalAddition
+public import TauCeti.Analysis.Calculus.FDeriv.NormalizeAtZero
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.LocalAddition
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
@@ -53,6 +54,8 @@ spaces of maps.
 * `TauCeti.eventually_adaptedLocalAddition_mem_image_iff`: on a tubular neighbourhood on which
   normal addition `(y, ν) ↦ f y + ν` is injective at the points of a neighbourhood `W` of `x`,
   `B(f x, v)` lies in `f '' W`, for small `v`, exactly when `v` is tangent at `f x`.
+* `TauCeti.hasFDerivAt_normalizedAdaptedLocalAddition_zero`: where `J_q` is invertible,
+  `v ↦ A(q, v)` has derivative the identity at `0`.
 * `TauCeti.normalizedAdaptedLocalAddition_of_retract`: at a point `f x` of the submanifold,
   `J_{f x}` is the identity and `A(f x, ·) = B(f x, ·)`, so `A` is adapted to the submanifold in
   the same sense (`TauCeti.eventually_normalizedAdaptedLocalAddition_mem_image_iff`).
@@ -60,11 +63,12 @@ spaces of maps.
   `r` is `C^n` on an open set `T` containing its image, `B` is jointly `C^n` on an open set
   containing `T ×ˢ {0}`.
 * `TauCeti.exists_localAddition_eventuallyEq_normalizedAdaptedLocalAddition`: for a compact
-  submanifold, there is a local addition on `V`, equal to `A` near the submanifold, for which
-  `(q, v) ↦ (q, A(q, v))` is a diffeomorphism from `univ ×ˢ ball 0 ε` onto an open neighbourhood
-  of the diagonal. This combines the normalization, `J_q` being invertible near the submanifold,
-  with the local-addition theorems of
-  `TauCeti.Analysis.Calculus.InverseFunctionTheorem.LocalAddition`.
+  submanifold, there is a local addition `A'` on `V`, equal to `A` near the submanifold and to
+  `q + v` outside a compact set, for which `(q, v) ↦ (q, A'(q, v))` is a diffeomorphism from
+  `univ ×ˢ ball 0 ε` onto an open neighbourhood of the diagonal. This combines the normalization
+  of `TauCeti.Analysis.Calculus.FDeriv.NormalizeAtZero`, `J_q` being invertible near the
+  submanifold, with the local-addition theorems of
+  `TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.LocalAddition`.
 
 Here the retraction is only required near the points considered: a smooth local retraction with
 normal displacement exists near every point of an immersion
@@ -164,6 +168,13 @@ theorem normalizedAdaptedLocalAddition_zero {q : V} (hrq : r (f (r q)) = r q)
     (hq : q - f (r q) ∈ normalSubspace I f (r q)) :
     normalizedAdaptedLocalAddition I f r q 0 = q := by
   rw [normalizedAdaptedLocalAddition_apply, map_zero, adaptedLocalAddition_zero hrq hq]
+
+/-- Where the derivative `J_q` of `v ↦ B(q, v)` at `0` is invertible, the normalized adapted local
+addition `v ↦ A(q, v)` has derivative the identity at `0`. -/
+theorem hasFDerivAt_normalizedAdaptedLocalAddition_zero {q : V}
+    (h : (fderiv ℝ (adaptedLocalAddition I f r q) 0).IsInvertible) :
+    HasFDerivAt (normalizedAdaptedLocalAddition I f r q) (ContinuousLinearMap.id ℝ V) 0 :=
+  hasFDerivAt_comp_inverse_fderiv_zero h
 
 section Smooth
 
@@ -373,7 +384,7 @@ theorem exists_localAddition_eventuallyEq_normalizedAdaptedLocalAddition [Compac
     exact ⟨hfT (mem_range_self x), hs's _ (hTs _ (hfT (mem_range_self x))) (hJf x)⟩
   exact (isCompact_range hf.continuous).exists_localAddition_eventuallyEq hA hs' hn hn'
     (mem_of_superset hT' fun q hq ↦ ⟨hq.2, normalizedAdaptedLocalAddition_zero (hrf _)
-      (hnormal q hq.1), hasFDerivAt_comp_inverse_fderiv_zero (hs'J _ hq.2)⟩)
+      (hnormal q hq.1), hasFDerivAt_normalizedAdaptedLocalAddition_zero (hs'J _ hq.2)⟩)
 
 end Smooth
 
