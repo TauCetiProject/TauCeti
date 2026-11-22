@@ -10,6 +10,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.Combinatorics.Hive.Basic
+import TauCeti.Combinatorics.Hive.Concave
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Group.Constructions
 import Mathlib.Data.Fin.Rev
@@ -31,20 +32,23 @@ import Mathlib.Topology.MetricSpace.ProperSpace
 Fixing the clockwise edge-difference boundary `B : Fin 3 → Fin n → R` of a normalized hive cuts out
 a bounded slice of the hive cone. Summing unit-rhombus inequalities across any `(y, z)`-aligned
 parallelogram inside `Δₙ` gives `f(y₀, z₀) + f(y₁, z₁) ≤ f(y₁, z₀) + f(y₀, z₁)`
-(`TauCeti.Hive.IsRhombusConcave.parallelogram_le`). Evaluating on two boundary-anchored
-parallelograms traps every entry `h p` between explicit linear combinations `entryLowerBound` and
-`entryUpperBound` of the boundary differences, yielding four consequences:
+(`TauCeti.Hive.IsRhombusConcave.parallelogram_le`, in `TauCeti.Combinatorics.Hive.Concave`).
+Evaluating on two boundary-anchored parallelograms traps every entry `h p` between explicit linear
+combinations `entryLowerBound` and `entryUpperBound` of the boundary differences, yielding four
+consequences:
 
 1. **Zero-boundary uniqueness** (`TauCeti.Hive.boundary_eq_zero_iff`): the only normalized hive
    with zero boundary over any partially ordered abelian group is `0`.
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
    `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`, `TauCeti.Hive.exists_boundary_eq_iff_mulVec`):
    `eqMatrix R n` and `rhombusMatrix R n` are defined over any ring `R` by base change from `ℤ`
-   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any
-   partially ordered ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`, in
-   particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are characterized as the solutions of
-   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists
-   exactly when this system is feasible.
+   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`) and are
+   preserved by ring homomorphisms (`TauCeti.Hive.map_eqMatrix`, `TauCeti.Hive.map_rhombusMatrix`,
+   `TauCeti.Hive.eqRHS_map`), and over any partially ordered ring `R` with order-compatible
+   addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are
+   characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
+   `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists exactly when this system is
+   feasible.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -70,12 +74,11 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 
 ## Main results
 
-* `TauCeti.Hive.IsRhombusConcave.parallelogram_le`, `TauCeti.Hive.entryLowerBound_le`,
-  `TauCeti.Hive.le_entryUpperBound`, `TauCeti.Hive.boundary_eq_zero_iff`.
+* `TauCeti.Hive.entryLowerBound_le`, `TauCeti.Hive.le_entryUpperBound`,
+  `TauCeti.Hive.boundary_eq_zero_iff`.
 * `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
   `TauCeti.Hive.isProperMap_boundary_properCone`.
-* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.shiftProductBoundaryEquiv`,
-  `TauCeti.Hive.hiveCount_productBoundary_shift`, `TauCeti.Hive.dominates_add_of_productBoundary`,
+* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.dominates_add_of_productBoundary`,
   `TauCeti.Hive.detShift_le_of_productBoundary`,
   `TauCeti.Hive.finite_support_hiveCount_productBoundary`.
 * `TauCeti.Hive.hiveCount_two_std_dual_trivial`, `TauCeti.Hive.hiveCount_two_std_dual_adjoint`,
@@ -99,84 +102,11 @@ open scoped BigOperators Matrix
 
 namespace TauCeti.Hive
 
-/-! ### Parallelogram inequality in the `(y, z)` chart -/
+/-! ### Explicit two-sided entry bounds and zero-boundary uniqueness -/
 
-section Parallelogram
+section EntryBounds
 
 variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
-
-private theorem strip_parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    (y₀ k z : ℕ) (h : (y₀ + k) + (z + 1) ≤ n) :
-    f (Vertex.ofYZ n y₀ z (by omega)) + f (Vertex.ofYZ n (y₀ + k) (z + 1) h) ≤
-      f (Vertex.ofYZ n (y₀ + k) z (by omega)) + f (Vertex.ofYZ n y₀ (z + 1) (by omega)) := by
-  induction k with
-  | zero =>
-    rw [show Vertex.ofYZ n (y₀ + 0) (z + 1) h = Vertex.ofYZ n y₀ (z + 1) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨Nat.add_zero y₀, rfl⟩,
-      show Vertex.ofYZ n (y₀ + 0) z _ = Vertex.ofYZ n y₀ z (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨Nat.add_zero y₀, rfl⟩]
-  | succ m ih =>
-    have hprev := ih (by omega)
-    have hcell := (isRhombusConcave_def f).mp hf
-      (isRhombus_ofYZ_step (n := n) (y := y₀ + m) (z := z) (by omega))
-    rw [show Vertex.ofYZ n (y₀ + (m + 1)) z _ = Vertex.ofYZ n (y₀ + m + 1) z (by omega) from
-      Vertex.ofYZ_eq_iff.mpr ⟨by omega, rfl⟩,
-      show Vertex.ofYZ n (y₀ + (m + 1)) (z + 1) h = Vertex.ofYZ n (y₀ + m + 1) (z + 1) (by omega)
-        from Vertex.ofYZ_eq_iff.mpr ⟨by omega, rfl⟩]
-    refine le_of_add_le_add_right (a := f (Vertex.ofYZ n (y₀ + m) z (by omega)) +
-        f (Vertex.ofYZ n (y₀ + m) (z + 1) (by omega))) ?_
-    calc _ = (f (Vertex.ofYZ n y₀ z (by omega)) + f (Vertex.ofYZ n (y₀ + m) (z + 1) (by omega))) +
-          (f (Vertex.ofYZ n (y₀ + m) z (by omega)) +
-            f (Vertex.ofYZ n (y₀ + m + 1) (z + 1) (by omega))) := by abel
-      _ ≤ _ := add_le_add hprev hcell
-      _ = _ := by abel
-
-private theorem rect_parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    (y₀ y₁ z₀ l : ℕ) (hy : y₀ ≤ y₁) (h : y₁ + (z₀ + l) ≤ n) :
-    f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ (z₀ + l) h) ≤
-      f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ (z₀ + l) (by omega)) := by
-  induction l with
-  | zero =>
-    rw [show Vertex.ofYZ n y₁ (z₀ + 0) h = Vertex.ofYZ n y₁ z₀ (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_zero z₀⟩,
-      show Vertex.ofYZ n y₀ (z₀ + 0) _ = Vertex.ofYZ n y₀ z₀ (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_zero z₀⟩, add_comm (f (Vertex.ofYZ n y₁ z₀ _))]
-  | succ m ih =>
-    have hprev := ih (by omega)
-    have hy01 : y₀ + (y₁ - y₀) = y₁ := Nat.add_sub_of_le hy
-    have hstrip := strip_parallelogram_le hf y₀ (y₁ - y₀) (z₀ + m) (by omega)
-    rw [show Vertex.ofYZ n (y₀ + (y₁ - y₀)) (z₀ + m + 1) _ = Vertex.ofYZ n y₁ (z₀ + (m + 1)) h from
-      Vertex.ofYZ_eq_iff.mpr ⟨hy01, by omega⟩,
-      show Vertex.ofYZ n (y₀ + (y₁ - y₀)) (z₀ + m) _ = Vertex.ofYZ n y₁ (z₀ + m) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨hy01, rfl⟩,
-      show Vertex.ofYZ n y₀ (z₀ + m + 1) _ = Vertex.ofYZ n y₀ (z₀ + (m + 1)) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, by omega⟩] at hstrip
-    refine le_of_add_le_add_right (a := f (Vertex.ofYZ n y₀ (z₀ + m) (by omega)) +
-        f (Vertex.ofYZ n y₁ (z₀ + m) (by omega))) ?_
-    calc _ = (f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ (z₀ + m) (by omega))) +
-          (f (Vertex.ofYZ n y₀ (z₀ + m) (by omega)) +
-            f (Vertex.ofYZ n y₁ (z₀ + (m + 1)) h)) := by abel
-      _ ≤ _ := add_le_add hprev hstrip
-      _ = _ := by abel
-
-/-- **Parallelogram inequality** for rhombus-concave functions on `[y₀, y₁] × [z₀, z₁]`. -/
-theorem IsRhombusConcave.parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁) (hsum : y₁ + z₁ ≤ n) :
-    f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ z₁ hsum) ≤
-      f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ z₁ (by omega)) := by
-  have h := rect_parallelogram_le hf y₀ y₁ z₀ (z₁ - z₀) hy (by omega)
-  rwa [Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_sub_of_le hz⟩,
-    show Vertex.ofYZ n y₀ (z₀ + (z₁ - z₀)) _ = Vertex.ofYZ n y₀ z₁ (by omega) from
-      Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_sub_of_le hz⟩] at h
-
-/-- Parallelogram inequality specialized to a normalized `Hive`. -/
-theorem parallelogram_le (h : Hive n R) {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁)
-    (hsum : y₁ + z₁ ≤ n) :
-    h (Vertex.ofYZ n y₀ z₀ (by omega)) + h (Vertex.ofYZ n y₁ z₁ hsum) ≤
-      h (Vertex.ofYZ n y₁ z₀ (by omega)) + h (Vertex.ofYZ n y₀ z₁ (by omega)) :=
-  h.isRhombusConcave.parallelogram_le hy hz hsum
-
-/-! ### Explicit two-sided entry bounds and zero-boundary uniqueness -/
 
 /-- Explicit linear lower bound on `h p` from the parallelogram `[p.y, n - p.z] × [0, p.z]`. -/
 def entryLowerBound {n : ℕ} {R : Type*} [AddCommGroup R] (B : Fin 3 → Fin n → R)
@@ -231,7 +161,7 @@ theorem le_entryUpperBound (h : Hive n R) (p : Vertex n) : h p ≤ entryUpperBou
   · simpa [hb] using le_entryUpperBound h p
   · simpa [hb] using entryLowerBound_le h p
 
-end Parallelogram
+end EntryBounds
 
 /-! ### Equality and inequality matrix presentations over rings -/
 
@@ -256,6 +186,17 @@ def eqRHS {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) : EqConstra
 
 @[simp] theorem eqRHS_inr {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (s : Fin 3)
     (i : Fin n) : eqRHS B (Sum.inr (s, i)) = B s i := (rfl)
+
+/-- Maps preserving `0` commute with `eqRHS`. -/
+@[simp] theorem eqRHS_map {R S F : Type*} [Zero R] [Zero S] [FunLike F R S] [ZeroHomClass F R S]
+    {n : ℕ} (f : F) (B : Fin 3 → Fin n → R) : eqRHS (fun s i => f (B s i)) = f ∘ eqRHS B := by
+  ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp
+
+/-- Pairing `z` with `eqRHS B` pairs the boundary components of `z` with those of `B`. -/
+theorem dotProduct_eqRHS {R : Type*} [NonUnitalNonAssocSemiring R] {n : ℕ}
+    (z : EqConstraintIndex n → R) (B : Fin 3 → Fin n → R) :
+    z ⬝ᵥ eqRHS B = ∑ s, (fun i => z (.inr (s, i))) ⬝ᵥ B s := by
+  simp [dotProduct, Fintype.sum_sum_type, Fintype.sum_prod_type]
 
 /-- Inequality constraint matrix over `R` encoding `f b + f d - (f a + f c) ≤ 0` on `Rhombus n`. -/
 def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n) R :=
@@ -286,6 +227,14 @@ theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialO
   exact ⟨fun hf a b c d hr => by simpa using hf ⟨(a, b, c, d), hr⟩,
     fun hf r => by simpa using hf r.property⟩
 
+/-- Pairing `y` with `rhombusMatrix R n *ᵥ f` is minus the `y`-weighted sum of the rhombus slacks
+of `f`. -/
+theorem dotProduct_rhombusMatrix_mulVec {n : ℕ} {R : Type*} [Ring R] (y : Rhombus n → R)
+    (f : Vertex n → R) :
+    y ⬝ᵥ (rhombusMatrix R n *ᵥ f) =
+      -∑ r : Rhombus n, y r * rhombusSlack f r.val.1 r.val.2.1 r.val.2.2.1 r.val.2.2.2 := by
+  simp [dotProduct, rhombusMatrix_mulVec_apply]
+
 /-- Over any ring `R`, `eqMatrix R n` is the base change of `eqMatrix ℤ n`. -/
 @[simp] theorem map_intCast_eqMatrix (R : Type*) [Ring R] (n : ℕ) :
     (eqMatrix ℤ n).map (Int.cast : ℤ → R) = eqMatrix R n := by
@@ -295,6 +244,22 @@ theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialO
 @[simp] theorem map_intCast_rhombusMatrix (R : Type*) [Ring R] (n : ℕ) :
     (rhombusMatrix ℤ n).map (Int.cast : ℤ → R) = rhombusMatrix R n := by
   ext r q; simp [rhombusMatrix, Pi.single_apply]
+
+/-- Ring homomorphisms carry `eqMatrix` over one ring to `eqMatrix` over the other. -/
+@[simp] theorem map_eqMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (eqMatrix R n).map f = eqMatrix S n := by
+  rw [← map_intCast_eqMatrix R n, Matrix.map_map, ← map_intCast_eqMatrix S n]
+  congr 1
+  ext k
+  simp
+
+/-- Ring homomorphisms carry `rhombusMatrix` over one ring to `rhombusMatrix` over the other. -/
+@[simp] theorem map_rhombusMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (rhombusMatrix R n).map f = rhombusMatrix S n := by
+  rw [← map_intCast_rhombusMatrix R n, Matrix.map_map, ← map_intCast_rhombusMatrix S n]
+  congr 1
+  ext k
+  simp
 
 /-- Matrix characterization of fixed-boundary normalized hives over any partially ordered ring with
 order-compatible addition. -/
@@ -307,14 +272,24 @@ theorem mem_fixedBoundary_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrde
     fun ⟨heq, hconc⟩ => ⟨by simpa using congrFun heq (Sum.inl ()), hconc,
       by ext s i; simpa using congrFun heq (Sum.inr (s, i))⟩⟩
 
+/-- A hive solves the equations of the fixed-boundary system for its own boundary. -/
+theorem eqMatrix_mulVec_coe {n : ℕ} {R : Type*} [Ring R] [PartialOrder R] [IsOrderedAddMonoid R]
+    (h : Hive n R) : eqMatrix R n *ᵥ (h : Vertex n → R) = eqRHS h.boundary :=
+  ((mem_fixedBoundary_iff_mulVec h.boundary h).mp
+    ⟨h.apply_cornerA, h.isRhombusConcave, boundaryLinear_coe ℤ h⟩).1
+
+/-- A hive solves the rhombus inequalities of the fixed-boundary system. -/
+theorem rhombusMatrix_mulVec_coe_nonpos {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] (h : Hive n R) : rhombusMatrix R n *ᵥ (h : Vertex n → R) ≤ 0 :=
+  rhombusMatrix_mulVec_nonpos_iff.mpr h.isRhombusConcave
+
 /-- A hive with boundary `B` exists exactly when the matrix system of
 `TauCeti.Hive.mem_fixedBoundary_iff_mulVec` is feasible. -/
 theorem exists_boundary_eq_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
     [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) :
     (∃ h : Hive n R, h.boundary = B) ↔
       ∃ f, rhombusMatrix R n *ᵥ f ≤ 0 ∧ eqMatrix R n *ᵥ f = eqRHS B := by
-  refine ⟨fun ⟨h, hB⟩ => ⟨h, ((mem_fixedBoundary_iff_mulVec B h).mp
-    ⟨h.apply_cornerA, h.isRhombusConcave, (boundaryLinear_coe ℤ h).trans hB⟩).symm⟩,
+  refine ⟨fun ⟨h, hB⟩ => ⟨h, h.rhombusMatrix_mulVec_coe_nonpos, hB ▸ h.eqMatrix_mulVec_coe⟩,
     fun ⟨f, hR, hE⟩ => ?_⟩
   obtain ⟨hA, hconc, hB⟩ := (mem_fixedBoundary_iff_mulVec B f).mpr ⟨hE, hR⟩
   exact ⟨⟨f, hA, fun hr => (isRhombusConcave_def f).mp hconc hr⟩, (boundary_def _).trans hB⟩
@@ -622,34 +597,6 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
 
-/-- **Determinant-shift equivalence on product-boundary hive fibres**: adding the normalized affine
-hive `affine n a (a + b)` bijects `FixedIntegerHive (productBoundary lam μ γ)` with
-`FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))`. -/
-def shiftProductBoundaryEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
-    FixedIntegerHive (productBoundary lam μ γ) ≃
-      FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) where
-  toFun h := ⟨h.val + affine n a (a + b), by ext s i; fin_cases s <;> simp [h.property]⟩
-  invFun h :=
-    ⟨h.val + affine n (-a) (-(a + b)), by ext s i; fin_cases s <;> simp [h.property]; omega⟩
-  left_inv h := by ext p; simp [mul_add]; abel
-  right_inv h := by ext p; simp [mul_add]; abel
-
-/-- Underlying hive of the forward map `shiftProductBoundaryEquiv`. -/
-@[simp] theorem shiftProductBoundaryEquiv_apply_val {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    (shiftProductBoundaryEquiv lam μ γ a b h).val = h.val + affine n a (a + b) := (rfl)
-
-/-- Underlying hive of the inverse map `shiftProductBoundaryEquiv.symm`. -/
-@[simp] theorem shiftProductBoundaryEquiv_symm_apply_val {n : ℕ} (lam μ γ : DominantWeight n)
-    (a b : ℤ) (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
-    ((shiftProductBoundaryEquiv lam μ γ a b).symm h).val = h.val + affine n (-a) (-(a + b)) := (rfl)
-
-/-- Shifting a product boundary by determinant twists `(a, b, a + b)` preserves `hiveCount`. -/
-@[simp] theorem hiveCount_productBoundary_shift {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
-    hiveCount (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) =
-      hiveCount (productBoundary lam μ γ) :=
-  (Fintype.card_congr (shiftProductBoundaryEquiv lam μ γ a b)).symm
-
 /-- Edge step of a fixed-boundary integer hive along side `A → B` (`i = 0`) in chart coordinates. -/
 theorem step_ofChart_zero_left {n : ℕ} {B : Fin 3 → Fin n → ℤ} (h : FixedIntegerHive B)
     {j : ℕ} (hj : j < n) :
@@ -871,18 +818,28 @@ multiplicity `1`, reduced by a determinant shift to `c^{(1, 1)}_{(1, 0), (1, 0)}
 theorem hiveCount_two_std_dual_trivial :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 := by
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
-  convert hiveCount_two_std_std_det using 2
-  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+  have hpos : 0 < hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) :=
+    hiveCount_pos_iff.mpr ⟨⟨detTwo + affine 2 0 (-1), by
+      ext s i; fin_cases s <;> fin_cases i <;>
+        simp [boundary_detTwo, DominantWeight.dual_apply]⟩⟩
+  have hle := hiveCount_le_one_two
+    (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩)
+  omega
 
 /-- Rank-`2` signed check: `V_{(1, 0)} ⊗ V_{(0, -1)}` contains the adjoint summand `V_{(1, -1)}`
 with multiplicity `1`, reduced by a determinant shift to `c^{(2, 0)}_{(1, 0), (1, 0)} = 1`. -/
 theorem hiveCount_two_std_dual_adjoint :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) = 1 := by
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
-  convert hiveCount_two_std_std_sym using 2
-  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+  have hpos : 0 < hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) :=
+    hiveCount_pos_iff.mpr ⟨⟨exampleTwo + affine 2 0 (-1), by
+      ext s i; fin_cases s <;> fin_cases i <;>
+        simp [boundary_exampleTwo, DominantWeight.dual_apply]⟩⟩
+  have hle := hiveCount_le_one_two
+    (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩)
+  omega
 
 /-- Rank-`2` signed exclusion check: `γ = (2, -2)` violates `λ₂ + μ₂ ≤ γ₂` (`-1 ≤ -2`). -/
 theorem hiveCount_two_std_dual_excluded :

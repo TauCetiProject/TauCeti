@@ -62,7 +62,7 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
       simp [h0] at hγ
     obtain ⟨⟨h, hb⟩⟩ := hiveCount_pos_iff.mp hpos
     have hγp : γ.IsPolynomial := isPolynomial_of_productBoundary hb hlam hμ
-    let T := lrTableauOfHive hlam hμ ⟨h, hb⟩
+    let T := fixedIntegerHiveEquivLRTableauShape hlam hμ hγp ⟨h, hb⟩
     refine Finset.mem_coe.mpr (Finset.mem_map.mpr ⟨⟨γ.shape.toPartition T.card_eq, by simp⟩,
       Finset.mem_univ _, ?_⟩)
     rw [he, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγp]
@@ -70,6 +70,6 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
   refine Finset.sum_congr rfl fun ν _ => ?_
   have hpoly : (e ν).IsPolynomial := isPolynomial_weightOfShape n _
   have hshape : (e ν).shape = YoungDiagram.ofPartition ν.val := shape_weightOfShape ν.property
-  rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hpoly, hshape]
+  rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ hpoly, hshape]
 
 end TauCeti.Hive
