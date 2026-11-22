@@ -17,6 +17,12 @@ Two schemes glued along a common open have the expected intersections of charts.
 Cartesian morphisms of gluing data induce Cartesian chart squares. A quasi-compact
 overlap preserves quasi-separatedness, and a two-open cover gives a pushout presentation.
 
+Schemes over the two charts of a cartesian square of open immersions `W₁ ← W₁₂ → W₂` over `S`
+glue to a scheme over `S` once their restrictions to `W₁₂` are identified: if `X₁ ⟶ W₁` and
+`X₂ ⟶ W₂` both restrict to `X₁₂ ⟶ W₁₂`, the pushout of `X₁ ← X₁₂ → X₂` maps to `S`, and its
+inverse images of `W₁` and `W₂` are `X₁` and `X₂`. When `W₁` and `W₂` cover `S`, a property local
+on the target holds for the glued morphism if and only if it holds for both pieces.
+
 Reference: The Stacks Project, Section 26.14, Gluing schemes (Tag 01JA).
 -/
 
@@ -178,6 +184,44 @@ lemma isPullback_pushout_map_inr_of_isPullback (square : IsPullback c f' f a) :
   IsOpenImmersion.isPullback _ _ _ _ (pushout.inr_desc _ _ _)
     (preimage_opensRange_pushout_inr_of_isPullback f g f' g' a b c hf hg square)
 
+omit hf hg in
+/-- Cartesian chart and overlap squares give a cartesian square for the glued morphism. -/
+lemma Hom.isPullback_pushout_map_desc_of_isPullback
+    {S T : Scheme.{u}} (p : X ⟶ T) (q : Y ⟶ T) (h : f ≫ p = g ≫ q)
+    (s : pushout f' g' ⟶ S) (r : S ⟶ T)
+    (hU : IsPullback c f' f a) (hV : IsPullback c g' g b)
+    (hX : IsPullback a (pushout.inl f' g' ≫ s) p r)
+    (hY : IsPullback b (pushout.inr f' g' ≫ s) q r) :
+    IsPullback (pushout.map f' g' f g a b c hU.w.symm hV.w.symm) s
+      (pushout.desc p q h) r := by
+  let m := pushout.map f' g' f g a b c hU.w.symm hV.w.symm
+  have hx := isPullback_pushout_map_inl_of_isPullback f g f' g' a b c hU.w hV.w hV
+  have hy := isPullback_pushout_map_inr_of_isPullback f g f' g' a b c hU.w hV.w hU
+  apply Scheme.isPullback_of_openCover _ _ _ _ (Scheme.pushoutOpenCover f g)
+  rintro (_ | _)
+  · -- The first member of the native pushout cover is its left chart.
+    change IsPullback (pullback.snd m (pushout.inl f g))
+      (pullback.fst m (pushout.inl f g) ≫ s)
+      (pushout.inl f g ≫ pushout.desc p q h) r
+    rw [pushout.inl_desc]
+    refine hX.of_iso hx.flip.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ?_ ?_ (by simp) (by simp)
+    · simpa only [Iso.refl_hom, Category.comp_id] using
+        (IsPullback.isoPullback_hom_snd hx.flip).symm
+    · simpa only [Iso.refl_hom, Category.comp_id, Category.assoc] using
+        congrArg (· ≫ s) (IsPullback.isoPullback_hom_fst hx.flip).symm
+  · -- The second member of the native pushout cover is its right chart.
+    change IsPullback (pullback.snd m (pushout.inr f g))
+      (pullback.fst m (pushout.inr f g) ≫ s)
+      (pushout.inr f g ≫ pushout.desc p q h) r
+    rw [pushout.inr_desc]
+    refine hY.of_iso hy.flip.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ?_ ?_ (by simp) (by simp)
+    · simpa only [Iso.refl_hom, Category.comp_id] using
+        (IsPullback.isoPullback_hom_snd hy.flip).symm
+    · simpa only [Iso.refl_hom, Category.comp_id, Category.assoc] using
+        congrArg (· ≫ s) (IsPullback.isoPullback_hom_fst hy.flip).symm
+
 end PointsAndMap
 
 section QuasiSeparated
@@ -338,6 +382,67 @@ lemma isIso_pushout_desc (hcover : α.opensRange ⊔ β.opensRange = ⊤) :
     (range_pushout_desc f g α β h.w).trans hcover'
 
 end CartesianDesc
+
+section GluingOverCharts
+
+variable {S W₁ W₂ W₁₂ X₁ X₂ X₁₂ : Scheme.{u}} {i₁ : W₁₂ ⟶ W₁} {i₂ : W₁₂ ⟶ W₂}
+  {j₁ : W₁ ⟶ S} {j₂ : W₂ ⟶ S} [IsOpenImmersion i₁] [IsOpenImmersion i₂] [IsOpenImmersion j₁]
+  [IsOpenImmersion j₂] {f₁ : X₁ ⟶ W₁} {f₂ : X₂ ⟶ W₂} {f₁₂ : X₁₂ ⟶ W₁₂} {k₁ : X₁₂ ⟶ X₁}
+  {k₂ : X₁₂ ⟶ X₂} [IsOpenImmersion k₁] [IsOpenImmersion k₂]
+
+omit [IsOpenImmersion j₂] in
+/-- Let `W₁ ← W₁₂ → W₂` be a cartesian square of open immersions over `S`, and glue `X₁` over
+`W₁` and `X₂` over `W₂` along a common restriction `X₁₂` over `W₁₂`, the square over `i₂` being
+cartesian. The inverse image of `W₁` in the glued scheme is `X₁`. -/
+lemma isPullback_pushout_desc_comp_inl (h : IsPullback i₁ i₂ j₁ j₂)
+    (h₁ : CommSq k₁ f₁₂ f₁ i₁) (h₂ : IsPullback k₂ f₁₂ f₂ i₂)
+    (w : k₁ ≫ f₁ ≫ j₁ = k₂ ≫ f₂ ≫ j₂) :
+    IsPullback f₁ (pushout.inl k₁ k₂) j₁ (pushout.desc (f₁ ≫ j₁) (f₂ ≫ j₂) w) := by
+  have hmap : pushout.map k₁ k₂ i₁ i₂ f₁ f₂ f₁₂ h₁.w h₂.w ≫ pushout.desc j₁ j₂ h.w =
+      pushout.desc (f₁ ≫ j₁) (f₂ ≫ j₂) w := by
+    ext <;> simp
+  simpa [hmap] using (isPullback_pushout_map_inl_of_isPullback i₁ i₂ k₁ k₂ f₁ f₂ f₁₂
+    h₁.w.symm h₂.w.symm h₂.flip).paste_horiz (isPullback_pushout_desc_inl i₁ i₂ j₁ j₂ h)
+
+omit [IsOpenImmersion j₁] in
+/-- Let `W₁ ← W₁₂ → W₂` be a cartesian square of open immersions over `S`, and glue `X₁` over
+`W₁` and `X₂` over `W₂` along a common restriction `X₁₂` over `W₁₂`, the square over `i₁` being
+cartesian. The inverse image of `W₂` in the glued scheme is `X₂`. -/
+lemma isPullback_pushout_desc_comp_inr (h : IsPullback i₁ i₂ j₁ j₂)
+    (h₁ : IsPullback k₁ f₁₂ f₁ i₁) (h₂ : CommSq k₂ f₁₂ f₂ i₂)
+    (w : k₁ ≫ f₁ ≫ j₁ = k₂ ≫ f₂ ≫ j₂) :
+    IsPullback f₂ (pushout.inr k₁ k₂) j₂ (pushout.desc (f₁ ≫ j₁) (f₂ ≫ j₂) w) := by
+  have hmap : pushout.map k₁ k₂ i₁ i₂ f₁ f₂ f₁₂ h₁.w h₂.w ≫ pushout.desc j₁ j₂ h.w =
+      pushout.desc (f₁ ≫ j₁) (f₂ ≫ j₂) w := by
+    ext <;> simp
+  simpa [hmap] using (isPullback_pushout_map_inr_of_isPullback i₁ i₂ k₁ k₂ f₁ f₂ f₁₂
+    h₁.w.symm h₂.w.symm h₁.flip).paste_horiz (isPullback_pushout_desc_inr i₁ i₂ j₁ j₂ h)
+
+/-- Let `W₁ ← W₁₂ → W₂` be a cartesian square of open immersions covering `S`, and glue `X₁` over
+`W₁` and `X₂` over `W₂` along a common restriction `X₁₂` over `W₁₂`. A property local on the
+target holds for the glued morphism to `S` if and only if it holds for `X₁ ⟶ W₁` and
+`X₂ ⟶ W₂`. -/
+lemma _root_.AlgebraicGeometry.IsZariskiLocalAtTarget.pushout_desc_comp_iff
+    {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtTarget P] (h : IsPullback i₁ i₂ j₁ j₂)
+    (h₁ : IsPullback k₁ f₁₂ f₁ i₁) (h₂ : IsPullback k₂ f₁₂ f₂ i₂)
+    (w : k₁ ≫ f₁ ≫ j₁ = k₂ ≫ f₂ ≫ j₂) (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤) :
+    P (pushout.desc (f₁ ≫ j₁) (f₂ ≫ j₂) w) ↔ P f₁ ∧ P f₂ := by
+  have chart₁ := (isPullback_pushout_desc_comp_inl h h₁.toCommSq h₂ w).flip
+  have chart₂ := (isPullback_pushout_desc_comp_inr h h₁ h₂.toCommSq w).flip
+  refine ⟨fun hg ↦ ⟨IsZariskiLocalAtTarget.of_isPullback chart₁ hg,
+    IsZariskiLocalAtTarget.of_isPullback chart₂ hg⟩, fun ⟨hf₁, hf₂⟩ ↦ ?_⟩
+  refine IsZariskiLocalAtTarget.of_iSup_eq_top (P := P)
+    (fun b ↦ cond b j₁.opensRange j₂.opensRange) (by rwa [iSup_bool_eq]) fun b ↦ ?_
+  -- Over each chart, the glued morphism is the given one up to the isomorphism `isoPullback`.
+  cases b
+  · refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange _ j₂)).mpr ?_
+    rw [← chart₂.isoPullback_hom_snd] at hf₂
+    exact (P.cancel_left_of_respectsIso _ _).mp hf₂
+  · refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange _ j₁)).mpr ?_
+    rw [← chart₁.isoPullback_hom_snd] at hf₁
+    exact (P.cancel_left_of_respectsIso _ _).mp hf₁
+
+end GluingOverCharts
 
 section TwoOpens
 

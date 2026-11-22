@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.MappingTorus.Basic
 public import Mathlib.Topology.Covering.Quotient
-public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
 # The infinite cyclic cover of a mapping torus
@@ -22,8 +21,9 @@ the `ℤ`-action is used here.)
 
 The deck transformation generating the action is `TauCeti.MappingTorus.deck φ`,
 `(x, t) ↦ (φ x, t + 1)`.  It lies over the monodromy `φ` under the projection `F × ℝ → F`, which
-is a homotopy equivalence (`TauCeti.MappingTorus.cylinderHomotopyEquiv`).  This is the starting
-point of Milnor's derivation of the Wang sequence from the infinite cyclic cover.
+is a homotopy equivalence, inverse to the zero section
+(`ContinuousMap.HomotopyEquiv.prodZeroSection`).  This is the starting point of Milnor's
+derivation of the Wang sequence from the infinite cyclic cover.
 
 ## References
 
@@ -95,28 +95,5 @@ lemma deck_eq_vadd (p : F × ℝ) :
 /-- The deck transformation covers the identity of the mapping torus. -/
 lemma coverMap_deck (p : F × ℝ) : coverMap φ (deck φ p) = coverMap φ p := by
   simp
-
-variable (F) in
-/-- The projection of the cylinder `F × ℝ` onto `F` is a homotopy equivalence, whose homotopy
-inverse is the inclusion at height zero: the cylinder deformation retracts onto `F × {0}` by
-scaling the height. -/
-def cylinderHomotopyEquiv : F × ℝ ≃ₕ F where
-  toFun := .fst
-  invFun := ⟨fun x ↦ (x, 0), by fun_prop⟩
-  left_inv := ⟨
-    { toFun p := (p.2.1, (p.1 : ℝ) * p.2.2)
-      continuous_toFun := by fun_prop
-      map_zero_left := by simp
-      map_one_left := by simp }⟩
-  right_inv := ⟨.refl _⟩
-
-@[simp]
-lemma cylinderHomotopyEquiv_apply (p : F × ℝ) : cylinderHomotopyEquiv F p = p.1 :=
-  (rfl)
-
-@[simp]
-lemma cylinderHomotopyEquiv_invFun_apply (x : F) :
-    (cylinderHomotopyEquiv F).invFun x = (x, 0) :=
-  (rfl)
 
 end TauCeti.MappingTorus

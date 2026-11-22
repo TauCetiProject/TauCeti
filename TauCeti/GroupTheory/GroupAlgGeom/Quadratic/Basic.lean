@@ -918,6 +918,22 @@ theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
 theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
 
+/-- An orientable standard quadratic equation without the constant `d` is of type (1),
+`∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem exists_eq_orientable_of_isOrientable (ho : S.IsOrientable) (hc : S.constant = 1) :
+    ∃ n hn x y inj, S = orientable n hn x y inj := by
+  cases S with
+  | orientable n hn x y inj => exact ⟨n, hn, x, y, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
+/-- A non-orientable standard quadratic equation without the constant `d` is of type (3),
+`∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
+theorem exists_eq_nonorientable_of_not_isOrientable (ho : ¬S.IsOrientable)
+    (hc : S.constant = 1) : ∃ n hn x inj, S = nonorientable n hn x inj := by
+  cases S with
+  | nonorientable n hn x inj => exact ⟨n, hn, x, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
 /-- The Euler characteristic of a standard quadratic equation is `2 - κ(S)`. -/
 theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kappa := by
   cases S <;> simp <;> lia
@@ -1304,6 +1320,21 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
   h.not_isCommutative (by simp) (isCommutative_of_mem_V_genusTwo inj hv)
 
 end Commutators
+
+/-! ### The value at the trivial point -/
+
+/- The priority `high` makes this formula fire before the evaluation formulas at a general point,
+`eval_toWord_orientable` and its analogues in `Quadratic.Surface`, which would rewrite the value at
+the trivial point into a surface word. -/
+
+/-- The value of a standard quadratic equation `r₁ ⋯ r_k d = 1` at the trivial point is the product
+`(∏ⱼ₌₁ᵐ cⱼ) d` of its coefficients, mapped to `H`, where `c₁, …, c_m` are the coefficients of its
+conjugate atoms `zⱼ⁻¹ cⱼ zⱼ`. It is `1` for the types (1) and (3), which have no coefficients. -/
+@[simp high]
+theorem eval_one_toWord (ι : G →* H) (S : Standard G X) :
+    eval ι 1 S.toWord = ι (S.coeffs.tail.prod * S.constant) := by
+  cases S <;>
+    simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def, map_commutatorElement]
 
 end Standard
 
