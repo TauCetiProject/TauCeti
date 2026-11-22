@@ -75,6 +75,8 @@ norm to a Euclidean one.
   preconnected subset of the image is preconnected.
 * `TauCeti.exists_isConvexChart_inter_preimage_ball`: a map that is open onto a convex set near a
   point, with preconnected fibres there, has a convexity chart around that point.
+* `TauCeti.isConvexChart_source_inter_preimage`: a map reading as an open linear map in a chart
+  has the preimages of open convex sets as convexity charts.
 * `IsProperMap.convex_range_of_isConvexChart`: a proper locally convex map from a connected
   Hausdorff space has convex image.
 * `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are preconnected,
@@ -222,6 +224,43 @@ theorem exists_isConvexChart_inter_preimage_ball {f : X → E} (hf : Continuous 
     ext y
     simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
     exact ⟨fun ⟨⟨hyU, _⟩, hyv⟩ ↦ ⟨hyU, hyv⟩, fun ⟨hyU, hyv⟩ ↦ ⟨⟨hyU, hyv ▸ hv.1⟩, hyv⟩⟩
+
+/-- **Convexity charts of a linear map read in a chart.** Let `e` be a partial homeomorphism from
+`X` to a real normed space `F`, and let `f` read in `e` as an open linear map `g : F → E`, that is,
+`f = g ∘ e` on the source of `e`. Then the preimage under `e` of every open convex subset `B` of the
+target of `e` is a convexity chart of `f`: its image is `g '' B`, and its fibres are the images
+under `e⁻¹` of the convex slices of `B` by the fibres of `g`. Open linear maps between
+finite-dimensional spaces are the surjective ones (`LinearMap.isOpenMap_of_finiteDimensional`),
+and a map in submersion normal form reads in this way. -/
+theorem isConvexChart_source_inter_preimage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {e : OpenPartialHomeomorph X F} {g : F →ₗ[ℝ] E} (hg : IsOpenMap g) {f : X → E}
+    (hf : EqOn f (g ∘ e) e.source) {B : Set F} (hBo : IsOpen B) (hBc : Convex ℝ B)
+    (hBt : B ⊆ e.target) : IsConvexChart f (e.source ∩ e ⁻¹' B) := by
+  have himage : ∀ W ⊆ e.source ∩ e ⁻¹' B, f '' W = g '' (e '' W) := fun W hW ↦ by
+    rw [(hf.mono (hW.trans inter_subset_left)).image_eq, image_comp]
+  have hB : e '' (e.source ∩ e ⁻¹' B) = B := by
+    refine Subset.antisymm (image_subset_iff.2 fun z hz ↦ hz.2) fun w hw ↦ ?_
+    exact ⟨e.symm w, ⟨e.map_target (hBt hw), by rwa [mem_preimage, e.right_inv (hBt hw)]⟩,
+      e.right_inv (hBt hw)⟩
+  refine ⟨e.isOpen_inter_preimage hBo, ?_, fun W hW hWo x hx ↦ ?_, fun v ↦ ?_⟩
+  · rw [himage _ subset_rfl, hB]
+    exact hBc.linear_image g
+  · refine mem_nhdsWithin_of_mem_nhds (IsOpen.mem_nhds ?_ (mem_image_of_mem f hx))
+    rw [himage W hW]
+    exact hg _ (e.isOpen_image_of_subset_source hWo (hW.trans inter_subset_left))
+  · -- The fibre is the image under `e⁻¹` of the convex slice `B ∩ g⁻¹ {v}`.
+    have hfib : e.source ∩ e ⁻¹' B ∩ f ⁻¹' {v} = e.symm '' (B ∩ g ⁻¹' {v}) := by
+      ext z
+      refine ⟨fun ⟨⟨hz, hzB⟩, hzv⟩ ↦ ⟨e z, ⟨hzB, ?_⟩, e.left_inv hz⟩, ?_⟩
+      · rw [mem_preimage, mem_singleton_iff, ← hzv, hf hz, comp_apply]
+      · rintro ⟨w, ⟨hwB, hwv⟩, rfl⟩
+        have hw := hBt hwB
+        refine ⟨⟨e.map_target hw, by rwa [mem_preimage, e.right_inv hw]⟩, ?_⟩
+        rw [mem_preimage, hf (e.map_target hw), comp_apply, e.right_inv hw]
+        exact hwv
+    rw [hfib]
+    exact ((hBc.inter ((convex_singleton v).linear_preimage g)).isPreconnected).image _
+      (e.continuousOn_symm.mono (inter_subset_left.trans hBt))
 
 /-! ### Chains of linked points -/
 
