@@ -37,14 +37,20 @@ is why the base is assumed boundaryless.
   (`TauCeti.JetBundle.contMDiffOn_coordChange`).
 * `TauCeti.jetBundleCore` and `TauCeti.JetBundle`: the vector bundle core and the jet bundle
   itself, a `C^n` vector bundle when `V` and `M` are `C^(n+r)`
-  (`TauCeti.JetBundle.contMDiffVectorBundle`), smooth when they are.
+  (`TauCeti.JetBundle.contMDiffVectorBundle`), smooth or analytic when they are.
 * `TauCeti.JetBundle.jet`: the `r`-jet `jʳs(x)` of a section. For a section that is `C^r` at the
   base point it is the tuple of iterated derivatives of the local representative at `x`
   (`TauCeti.JetBundle.toJets_jet`), and in every chart it is the tuple of iterated derivatives of
   the local representative in that chart (`TauCeti.JetBundle.toJets_trivializationAt_jet`). The
   jet of a `C^(n+r)` section is a `C^n` section of `JᵣV` (`TauCeti.JetBundle.contMDiff_jet`), and
   every `r`-jet is the jet of a section, `C^n` at the base point for any `n`
-  (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`).
+  (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`). For the trivial bundle over a model space it is
+  the tuple of iterated derivatives of the section (`TauCeti.JetBundle.toJets_jet_trivial`).
+* `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which reads in every
+  chart as the truncation of symmetric jets (`TauCeti.JetBundle.coordChange_truncate`) and sends
+  `jʳs(x)` to `jʳ's(x)` (`TauCeti.JetBundle.truncate_jet`).
+* `TauCeti.JetBundle.value`: the projection `JᵣV → V`, which sends `jʳs(x)` to `s x`
+  (`TauCeti.JetBundle.value_jet`).
 
 ## References
 
@@ -281,6 +287,14 @@ instance [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I] :
   have : ContMDiffVectorBundle (∞ + r) F V I := by rw [h]; infer_instance
   exact JetBundle.contMDiffVectorBundle I F V r
 
+/-- The bundle of `r`-jets of an analytic vector bundle over an analytic manifold is analytic. -/
+instance [IsManifold I ω M] [ContMDiffVectorBundle ω F V I] :
+    ContMDiffVectorBundle ω (SymmetricJet 𝕜 E F r) (JetBundle I F V r) I := by
+  have h : (ω : ℕ∞ω) + r = ω := by simp
+  have : IsManifold I (ω + r) M := by rw [h]; infer_instance
+  have : ContMDiffVectorBundle (ω + r) F V I := by rw [h]; infer_instance
+  exact JetBundle.contMDiffVectorBundle I F V r
+
 namespace JetBundle
 
 variable {I F V r}
@@ -297,6 +311,13 @@ at `x` of the local representative of `s` in the chart and trivialization at `x`
 def jet (s : ∀ x, V x) (x : M) : JetBundle I F V r x :=
   symmetrizeJets 𝕜 E F r fun k : Fin (r + 1) ↦
     iteratedFDeriv 𝕜 k.val (FirstJetBundle.localRep I F s x) (extChartAt I x x)
+
+/-- The components of the `r`-jet of a section are the symmetrized iterated derivatives of its
+local representative in the chart and trivialization at the base point. -/
+theorem toJets_jet_apply (s : ∀ x, V x) (x : M) (k : Fin (r + 1)) :
+    toJets 𝕜 E F r (jet I F r s x) k = ContinuousMultilinearMap.symmetrize 𝕜 (Fin k.val) E F
+      (iteratedFDeriv 𝕜 k.val (FirstJetBundle.localRep I F s x) (extChartAt I x x)) :=
+  toJets_symmetrizeJets_apply _ k
 
 /-- The `r`-jet of a section that is `C^r` at `x` is the tuple of iterated derivatives at `x` of
 its local representative in the chart and trivialization at `x`. -/
@@ -428,6 +449,116 @@ theorem contMDiff_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBu
       fun x ↦ TotalSpace.mk' (SymmetricJet 𝕜 E F r) x (jet I F r s x) := by
   rw [← contMDiffOn_univ] at hs ⊢
   exact contMDiffOn_jet isOpen_univ hs
+
+section Truncate
+
+variable [IsManifold I r M] [ContMDiffVectorBundle r F V I]
+
+/-- The **value** of an `r`-jet, the fibre of the projection `JᵣV → V`: its component of order
+zero, read back through the trivialization at the base point. -/
+def value (x : M) : JetBundle I F V r x →L[𝕜] V x :=
+  (trivializationAt F V x).symmL 𝕜 x ∘L ContinuousMultilinearMap.apply 𝕜 _ F 0 ∘L
+    ContinuousLinearMap.proj (R := 𝕜) (φ := fun k : Fin (r + 1) ↦ E [×k.val]→L[𝕜] F) 0 ∘L
+    toJets 𝕜 E F r
+
+/-- The value of an `r`-jet is its component of order zero read back through the
+trivialization. -/
+theorem value_apply (x : M) (j : JetBundle I F V r x) :
+    value x j = (trivializationAt F V x).symm x (toJets 𝕜 E F r j 0 0) := by
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ (mem_baseSet_trivializationAt F V x)]
+  -- Both sides are now `value` unfolded: the composite of `symmL`, evaluation at `0`, projection to
+  -- order `0` and the inclusion. The `comp_apply` simp lemmas do not fire here because the fibre
+  -- `JetBundle I F V r x` is only a type synonym of `SymmetricJet 𝕜 E F r`, so close by `rfl`.
+  rfl
+
+/-- The value of the `r`-jet of a section is the value of the section. -/
+@[simp]
+theorem value_jet (s : ∀ x, V x) (x : M) : value x (jet I F r s x) = s x := by
+  -- The component of order `0` is a map of `(0 : Fin (r + 1)).val` arguments; state its value for
+  -- any number `k = 0` of arguments.
+  have hval : ∀ (k : ℕ) (_ : k = 0) (w : Fin k → E),
+      iteratedFDeriv 𝕜 k (FirstJetBundle.localRep I F s x) (extChartAt I x x) w =
+        FirstJetBundle.localRep I F s x (extChartAt I x x) := by
+    rintro _ rfl w
+    exact iteratedFDeriv_zero_apply w
+  have h0 : toJets 𝕜 E F r (jet I F r s x) 0 0 =
+      FirstJetBundle.localRep I F s x (extChartAt I x x) := by
+    rw [toJets_jet_apply, ContinuousMultilinearMap.symmetrize_eq_self fun v σ ↦
+        congrArg _ (funext fun i ↦ absurd i.isLt (by simp))]
+    exact hval _ (by simp) 0
+  rw [value_apply, h0, FirstJetBundle.localRep_extChartAt I F s
+      ((mem_baseSet_iff F V).1 (FirstJetBundle.mem_baseSet_self F V x)).2,
+    Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F V x)]
+
+variable {r' : ℕ} [IsManifold I r' M] [ContMDiffVectorBundle r' F V I]
+
+/-- The **truncation** `JᵣV → Jᵣ'V` of `r`-jets to order `r' ≤ r`, forgetting the derivatives of
+order greater than `r'`. -/
+def truncate (hr : r' ≤ r) (x : M) : JetBundle I F V r x →L[𝕜] JetBundle I F V r' x :=
+  SymmetricJet.truncate 𝕜 E F hr
+
+/-- The tuple of a truncated jet is the truncation `TauCeti.jetTruncate` of its tuple. -/
+@[simp]
+theorem toJets_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
+    toJets 𝕜 E F r' (truncate hr x j) = jetTruncate hr (toJets 𝕜 E F r j) :=
+  SymmetricJet.toJets_truncate hr j
+
+/-- Truncating to the same order is the identity. -/
+@[simp]
+theorem truncate_rfl (x : M) :
+    truncate (I := I) (F := F) (V := V) (le_refl r) x =
+      ContinuousLinearMap.id 𝕜 (JetBundle I F V r x) :=
+  SymmetricJet.truncate_rfl
+
+/-- Truncations compose. -/
+@[simp]
+theorem truncate_comp_truncate {r'' : ℕ} [IsManifold I r'' M] [ContMDiffVectorBundle r'' F V I]
+    (hr' : r'' ≤ r') (hr : r' ≤ r) (x : M) :
+    truncate (I := I) (F := F) (V := V) hr' x ∘L truncate hr x = truncate (hr'.trans hr) x :=
+  SymmetricJet.truncate_comp_truncate hr' hr
+
+/-- The truncation of the `r`-jet of a section is its `r'`-jet. -/
+@[simp]
+theorem truncate_jet (hr : r' ≤ r) (s : ∀ x, V x) (x : M) :
+    truncate hr x (jet I F r s x) = jet I F r' s x :=
+  -- Truncating the derivatives up to order `r` leaves the derivatives up to order `r'`. The term
+  -- relies on `truncate` and `jet` unfolding by definition to `SymmetricJet.truncate` and
+  -- `symmetrizeJets` (the fibre `JetBundle` is `SymmetricJet` only by definition, so rewriting
+  -- with the `SymmetricJet` lemma fails to match), and on the derivative order
+  -- `(Fin.castLE _ k).val` produced by `jetTruncate_apply` reducing to `k.val`.
+  (SymmetricJet.truncate_symmetrizeJets hr _).trans (congrArg _ (funext (jetTruncate_apply hr _)))
+
+/-- **The truncation is intrinsic**: in the chart and trivialization at `i`, it reads as the
+truncation of symmetric jets. -/
+theorem coordChange_truncate (hr : r' ≤ r) {y i : M}
+    (hi : y ∈ FirstJetBundle.baseSet (H := H) F V i) (j : JetBundle I F V r y) :
+    coordChange I F V r' y i y (truncate hr y j) =
+      SymmetricJet.truncate 𝕜 E F hr (coordChange I F V r y i y j) := by
+  have hy := FirstJetBundle.mem_baseSet_self (H := H) F V y
+  exact (SymmetricJet.truncate_symmetricJetCoordChange hr
+    (contDiffAt_ext_coord_change_of_mem_baseSet I hy hi)
+    (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hy).1 hi) _).symm
+
+/-- Truncation keeps the value of a jet. -/
+@[simp]
+theorem value_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
+    value x (truncate hr x j) = value x j := by
+  rw [value_apply, value_apply, toJets_truncate, jetTruncate_zero_apply]
+
+end Truncate
+
+section Trivial
+
+/-- For the trivial bundle over a model space, the `r`-jet of a section which is `C^r` at `x` is
+the tuple of its iterated derivatives at `x`. -/
+theorem toJets_jet_trivial {s : E → F} {x : E} (hs : ContDiffAt 𝕜 r s x) :
+    toJets 𝕜 E F r (jet 𝓘(𝕜, E) F r (s : ∀ y, Bundle.Trivial E F y) x) =
+      fun k : Fin (r + 1) ↦ iteratedFDeriv 𝕜 k.val s x := by
+  rw [jet, FirstJetBundle.localRep_trivial, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    id]
+  exact toJets_symmetrizeJets_iteratedFDeriv hs (by simp)
+
+end Trivial
 
 end JetBundle
 

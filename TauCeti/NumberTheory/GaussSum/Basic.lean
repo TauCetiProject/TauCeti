@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Algebra.CharP.Quotient
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
 # Gauss sums over finite fields

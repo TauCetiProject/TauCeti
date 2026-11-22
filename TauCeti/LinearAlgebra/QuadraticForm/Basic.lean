@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -20,6 +21,8 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.map_sum_of_pairwise_isOrtho`: a quadratic map is additive across a finite sum of
   pairwise `Q`-orthogonal vectors.
 * `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
+* `QuadraticMap.isSymm_polarBilin`: the polar bilinear form of a scalar-valued quadratic map is
+  symmetric.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
 -/
@@ -75,6 +78,11 @@ theorem map_sum_of_pairwise_isOrtho {R M P ι : Type*} [CommRing R] [AddCommGrou
 theorem isRefl_polarBilin {R M P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     [AddCommGroup P] [Module R P] (Q : QuadraticMap R M P) : Q.polarBilin.IsRefl :=
   fun x y ↦ (polar_comm Q y x).trans
+
+/-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
+theorem isSymm_polarBilin {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    (Q : QuadraticForm R M) : LinearMap.BilinForm.IsSymm Q.polarBilin :=
+  ⟨fun x y ↦ polar_comm Q x y⟩
 
 end QuadraticMap
 
