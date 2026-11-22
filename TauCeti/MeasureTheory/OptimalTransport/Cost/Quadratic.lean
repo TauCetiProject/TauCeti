@@ -42,8 +42,8 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`, and
   `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
   cost of a plan is a second-moment term minus its correlation, the optimal quadratic cost is
-  finite whenever a coupling exists (in particular for probability measures via the product
-  coupling), and the correlation is at most the second-moment term;
+  finite whenever a coupling exists (in particular for equal-mass finite measures via the normalised
+  product coupling), and the correlation is at most the second-moment term;
   `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair of random
   variables.
 
@@ -96,7 +96,7 @@ end TauCeti
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [MeasurableSpace F]
+variable {F : Type*} [SeminormedAddCommGroup F] [MeasurableSpace F]
 
 omit [MeasurableSpace F] in
 /-- The half-squared-displacement cost `‖x - y‖ ^ 2 / 2`, as an extended nonnegative cost, is
@@ -238,11 +238,12 @@ theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top (hσ : IsCoupling σ
   ne_top_of_le_ne_top (hσ.lintegral_norm_sub_sq_div_two hμ hν ▸ ENNReal.ofReal_ne_top)
     (transportCost_le_lintegral hσ _)
 
-/-- **Probability measures with finite second moments have finite quadratic transport cost.** -/
-theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+/-- **Equal-mass finite measures with finite second moments have finite quadratic transport cost.**
+-/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp [IsFiniteMeasure μ]
+    (hμν : μ Set.univ = ν Set.univ) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
     transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
-  (isCoupling_prod μ ν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
+  (isCoupling_inv_smul_prod hμν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
 
 end TauCeti
 

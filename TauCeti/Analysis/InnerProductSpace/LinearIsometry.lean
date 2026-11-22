@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Span
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
@@ -62,10 +61,6 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
-* `TauCeti.orthogonalProjectionOnto_add_inner_smul`,
-  `TauCeti.orthogonalProjectionOnto_coe_add_smul`, `TauCeti.setOf_inner_eq_eq_range`, and
-  `TauCeti.vadd_setOf_inner_eq`: orthogonal decomposition along a unit vector and parametric
-  graphs and translations over `(𝕜 ∙ e)ᗮ`.
 * `TauCeti.exists_linearIsometryEquiv_of_unit` and `TauCeti.exists_unit_of_linearIsometryEquiv`:
   orthonormal splittings `E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ` from a unit vector and vice versa.
 * `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
@@ -352,14 +347,6 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
 
-/-- Orthogonal decomposition of a vector into its projection onto `(𝕜 ∙ e)ᗮ` and its component
-along a unit vector `e`. -/
-theorem orthogonalProjectionOnto_add_inner_smul {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
-    [InnerProductSpace 𝕜 F] {e : F} (he : ‖e‖ = 1) (x : F) :
-    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x : F) + inner 𝕜 e x • e = x := by
-  simpa only [Submodule.starProjection_unit_singleton 𝕜 he, Submodule.starProjection_apply,
-    add_comm] using (𝕜 ∙ e).starProjection_add_starProjection_orthogonal x
-
 /-- The inverse of `orthogonalLineIsometry` extracts the orthogonal projection onto `(ℝ ∙ e)ᗮ`
 and the inner product with `e`. -/
 @[simp]
@@ -369,41 +356,6 @@ theorem orthogonalLineIsometry_symm_apply (e : E) (he : ‖e‖ = 1) (x : E) :
   (orthogonalLineIsometry e he).injective <| by
     rw [LinearIsometryEquiv.apply_symm_apply, orthogonalLineIsometry_apply,
       orthogonalProjectionOnto_add_inner_smul he]
-
-/-- Projecting `(y : F) + t • e` onto `(𝕜 ∙ e)ᗮ` recovers the transverse coordinate `y`. -/
-@[simp]
-theorem orthogonalProjectionOnto_coe_add_smul {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
-    [InnerProductSpace 𝕜 F] (e : F) (y : (𝕜 ∙ e)ᗮ) (t : 𝕜) :
-    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((y : F) + t • e) = y := by
-  rw [map_add, map_smul, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
-    smul_zero, add_zero]
-  exact Subtype.ext ((Submodule.coe_orthogonalProjectionOnto_apply _ _).trans
-    ((Submodule.starProjection_eq_self_iff (K := (𝕜 ∙ e)ᗮ)).2 y.property))
-
-/-- A graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` for a unit vector `e` is the parametric
-range `y ↦ y + φ y • e`. -/
-theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
-    [InnerProductSpace 𝕜 F] {e : F} (he : ‖e‖ = 1) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
-    {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
-      Set.range fun y : (𝕜 ∙ e)ᗮ => (y : F) + φ y • e := by
-  ext x; simp only [Set.mem_ofPred_eq, Set.mem_range]
-  refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
-  rintro ⟨y, rfl⟩
-  simp [inner_add_right, inner_smul_right,
-    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property, he]
-
-open scoped Pointwise in
-/-- Translating a graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` by `v` translates the base
-coordinate by `P v` and adds `⟪e, v⟫_𝕜` to the height. -/
-theorem vadd_setOf_inner_eq {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
-    [InnerProductSpace 𝕜 F] (e v : F) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
-    v +ᵥ {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
-      {x : F | inner 𝕜 e x =
-        φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x - (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto v) +
-          inner 𝕜 e v} := by
-  ext x
-  simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub, Set.mem_ofPred_eq,
-    map_sub, inner_sub_right, sub_eq_iff_eq_add]
 
 /-- A unit vector `e` in a finite-dimensional real inner product space `E` induces an orthonormal
 splitting `Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (finrank ℝ E - 1)) × ℝ)` whose second

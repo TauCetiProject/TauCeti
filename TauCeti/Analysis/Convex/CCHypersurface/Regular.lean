@@ -22,7 +22,7 @@ A measure `μ` on a real inner product space `E` is **`c - c`-regular** (`TauCet
 avoiding Mathlib's topological `Measure.Regular`) if it vanishes on every `c - c` hypersurface
 (`TauCeti.IsCCHypersurface`). In finite dimensions, `IsCCRegular μ` is equivalent to `μ`-a.e.
 differentiability of every convex `E → ℝ` and is the sharp source regularity hypothesis for
-Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`,
+Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`,
 `TauCeti/MeasureTheory/OptimalTransport/Brenier/RegularSource.lean`).
 
 ## Main declarations
@@ -39,6 +39,7 @@ Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier.lean`,
   `TauCeti.isCCRegular_of_dimH_le`, `TauCeti.isCCRegular_of_isAddHaarMeasure`,
   `TauCeti.isCCRegular_of_absolutelyContinuous`,
   `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`,
+  `TauCeti.isCCRegular_of_forall_convex_ae_differentiableAt`,
   `TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal` — sufficient conditions,
   Zajíček characterization, and almost-everywhere differentiability on effective domains.
 
@@ -211,13 +212,13 @@ theorem isCCRegular_map_linearIsometryEquiv_iff {F : Type*} [NormedAddCommGroup 
 
 end Basic
 
-section SufficientConditions
+section Separable
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [TopologicalSpace.SeparableSpace E] [MeasurableSpace E]
 
 /-- **Measures null on Lipschitz hypersurfaces are `c - c`-regular.** Every `c - c` hypersurface in
-a finite-dimensional inner product space is covered by countably many Lipschitz hypersurfaces
+a separable real inner product space is covered by countably many Lipschitz hypersurfaces
 (`TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface`), so vanishing on all
 Lipschitz hypersurfaces implies `IsCCRegular`. -/
 theorem isCCRegular_of_forall_isLipschitzHypersurface {μ : Measure E}
@@ -226,7 +227,7 @@ theorem isCCRegular_of_forall_isLipschitzHypersurface {μ : Measure E}
   measure_mono_null hsub (measure_iUnion_null fun n => h (ht n))
 
 /-- **Measures vanishing on Lipschitz graphs are `c - c`-regular.** If a measure `μ` on a
-finite-dimensional real inner product space assigns mass zero to every globally Lipschitz graph
+separable real inner product space assigns mass zero to every globally Lipschitz graph
 `range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over the orthogonal complement of a unit
 vector, then `μ` is `c - c`-regular. -/
 theorem isCCRegular_of_null_lipschitz_graphs {μ : Measure E}
@@ -235,6 +236,13 @@ theorem isCCRegular_of_null_lipschitz_graphs {μ : Measure E}
   isCCRegular_of_forall_isLipschitzHypersurface fun _ hs => by
     obtain ⟨v, hv, K, g, hg, rfl⟩ := isLipschitzHypersurface_iff_exists_eq_range.1 hs
     exact h v hv K g hg
+
+end Separable
+
+section SufficientConditions
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E]
 
 /-- **Measures vanishing on sets of Hausdorff codimension at least `1` are `c - c`-regular.** If
 `μ` vanishes on every measurable set `A` with `dimH A + 1 ≤ finrank ℝ E`, then `μ` is
@@ -268,6 +276,18 @@ theorem isCCRegular_iff_forall_convexOn_ae_differentiableAt {μ : Measure E} :
     let ⟨u, hu, hsub⟩ := (exists_convexOn_subset_not_differentiableAt_iff (A := s)).2
       ⟨{s}, countable_singleton s, by simpa, by simp⟩
     measure_mono_null hsub (ae_iff.1 (h u hu))⟩
+
+/-- **Extended-real convex differentiability implies `c - c`-regularity.** If every extended-real
+convex function on a finite-dimensional real inner product space (never `⊥`) has differentiable real
+representative `μ`-almost everywhere on its effective domain, then `μ` is `c - c`-regular. -/
+theorem isCCRegular_of_forall_convex_ae_differentiableAt {μ : Measure E}
+    (h : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
+      ∀ᵐ x ∂μ, u x ≠ ⊤ → DifferentiableAt ℝ (fun x' => (u x').toReal) x) :
+    IsCCRegular μ :=
+  isCCRegular_iff_forall_convexOn_ae_differentiableAt.2 fun v hv => by
+    simpa [EReal.toReal_coe] using
+      h (fun x => (v x : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hv)
+        (fun _ => EReal.coe_ne_bot _)
 
 /-- **Almost-everywhere differentiability of extended-real convex functions against a
 `c - c`-regular measure.** By Zajíček's covering theorems, for any extended-real `u : E → EReal`

@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoe
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.Data.EReal.Operations
-import TauCeti.MeasureTheory.OptimalTransport.Brenier
+import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.DisplacementConvexity
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space

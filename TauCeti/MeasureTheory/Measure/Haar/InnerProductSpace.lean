@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -37,6 +40,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   volume one.
 * `TauCeti.volume_ball_eq_of_finrank_eq`: in finite-dimensional real inner product spaces of the
   same dimension, open balls of the same radius have equal volume.
+* `TauCeti.addHaar_setOf_inner_eq_eq_zero`: every Borel measurable graph over `(ℝ ∙ e)ᗮ` has
+  additive-Haar measure zero.
 * `Module.Basis.ofReal_sqrt_det_gram_mul_addHaar_preimage_ball`: the Gram density times the
   measure of a linear preimage of a ball is its Euclidean volume.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
@@ -254,3 +259,33 @@ theorem volume_preserving_symm_measurableEquiv_toLp :
   simp [Pi.orthonormalBasis, MeasurableEquiv.coe_piCurry]
 
 end PiLp
+
+namespace TauCeti
+
+section OrthogonalGraph
+
+open Filter Set
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- Every Borel measurable graph `{x | ⟪x, e⟫ = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)}` over
+the orthogonal complement of a unit vector `e` has additive-Haar measure zero. -/
+theorem addHaar_setOf_inner_eq_eq_zero (μ : Measure F) [Measure.IsAddHaarMeasure μ]
+    {e : F} (he : ‖e‖ = 1) (h : ↥(ℝ ∙ e)ᗮ → ℝ)
+    (hmeas : MeasurableSet {x : F | inner ℝ x e = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)}) :
+    μ {x : F | inner ℝ x e = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} = 0 := by
+  refine Measure.addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero μ volume volume
+    (orthogonalLineEquiv e he).symm hmeas
+    (Eventually.of_forall fun y => measure_mono_null (t := {h y}) ?_ (by simp))
+  rintro r ⟨x, hx, hφx⟩
+  have hx_eq : x = (y : F) + r • e := by
+    simpa [orthogonalLineEquiv_apply] using
+      (ContinuousLinearEquiv.symm_apply_eq (orthogonalLineEquiv e he)).1 hφx
+  rw [mem_ofPred_eq, hx_eq, orthogonalProjectionOnto_coe_add_smul,
+    real_inner_comm e _, inner_add_smul e he] at hx
+  exact mem_singleton_iff.2 hx
+
+end OrthogonalGraph
+
+end TauCeti

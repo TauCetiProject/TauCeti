@@ -30,6 +30,8 @@ the collapse of orthogonal graphs and hyperplanes to singletons in dimension one
 
 * `TauCeti.sqrt_mul_abs_apply_sub_apply_le`: `√(1 - ‖v‖²) |L e| - L v ≤ ‖L‖` for a covector `L`,
   a unit vector `e` and `v ⊥ e` with `‖v‖ ≤ 1`.
+* `TauCeti.setOf_inner_eq_eq_range` and `TauCeti.vadd_setOf_inner_eq`: parametric graphs and
+  translations over `(𝕜 ∙ e)ᗮ`.
 * `TauCeti.lipschitzWith_coe_add_smul`: `w ↦ (w : E) + g w • v` is `(1 + K)`-Lipschitz when
   `‖v‖ = 1` and `g : (ℝ ∙ v)ᗮ → ℝ` is `K`-Lipschitz.
 * `TauCeti.isClosed_range_add_smul_of_continuous` and
@@ -94,6 +96,31 @@ theorem isClosed_range_add_smul_of_lipschitzWith {v : E} (hv : ‖v‖ = 1) {K :
     {g : (ℝ ∙ v)ᗮ → ℝ} (hg : LipschitzWith K g) :
     IsClosed (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) :=
   isClosed_range_add_smul_of_continuous hv hg.continuous
+
+/-- A graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` for a unit vector `e` is the parametric
+range `y ↦ y + φ y • e`. -/
+theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {e : F} (he : ‖e‖ = 1) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
+    {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      Set.range fun y : (𝕜 ∙ e)ᗮ => (y : F) + φ y • e := by
+  ext x; simp only [Set.mem_ofPred_eq, Set.mem_range]
+  refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
+  rintro ⟨y, rfl⟩
+  simp [inner_add_right, inner_smul_right,
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property, he]
+
+open scoped Pointwise in
+/-- Translating a graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` by `v` translates the base
+coordinate by `P v` and adds `⟪e, v⟫_𝕜` to the height. -/
+theorem vadd_setOf_inner_eq {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (e v : F) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
+    v +ᵥ {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      {x : F | inner 𝕜 e x =
+        φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x - (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto v) +
+          inner 𝕜 e v} := by
+  ext x
+  simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub, Set.mem_ofPred_eq,
+    map_sub, inner_sub_right, sub_eq_iff_eq_add]
 
 /-- The image of a graph `{x | ⟪x, e⟫ = w (P x)}` over `(ℝ ∙ e)ᗮ` under a continuous linear
 equivalence `L : E ≃L[ℝ] F` is again a graph over `(ℝ ∙ e')ᗮ` (for `e' = ‖L e‖⁻¹ • L e`) of a

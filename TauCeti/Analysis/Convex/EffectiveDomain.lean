@@ -69,9 +69,10 @@ theorem eq_bot_of_mem_interior_of_eq_bot {V : Type*} [AddCommGroup V] [Module �
     [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V] {f : V → EReal}
     (hf : Convex ℝ {p : V × ℝ | f p.1 ≤ p.2}) {x z₀ : V}
     (hx : x ∈ interior {z | f z ≠ ⊤}) (hz₀ : f z₀ = ⊥) : f x = ⊥ := by
+  have hcont : Continuous fun t : ℝ => x + t • (x - z₀) := by fun_prop
   obtain ⟨δ, hδ, hδB⟩ := Metric.mem_nhds_iff.1 <|
-    ((show Continuous fun t : ℝ => x + t • (x - z₀) by fun_prop).continuousAt (x := (0 : ℝ)))
-      |>.preimage_mem_nhds (isOpen_interior.mem_nhds (by simpa using hx))
+    (hcont.continuousAt (x := (0 : ℝ))).preimage_mem_nhds
+      (isOpen_interior.mem_nhds (by simpa using hx))
   set t := δ / 2; have ht : 0 < t := half_pos hδ
   have hw : x + t • (x - z₀) ∈ interior {z | f z ≠ ⊤} :=
     hδB (by rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht]; exact half_lt_self hδ)

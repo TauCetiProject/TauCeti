@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier
+public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.Probability.Distributions.Uniform.Ball.Support
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
@@ -106,11 +106,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_not_continuousOn (h
   have hν2 : MemLp id 2 ν := ((memLp_id_uniformBallMeasure a r 2).add_measure
     (memLp_id_uniformBallMeasure b r' 2)).smul_measure (ENNReal.inv_ne_top.2 two_ne_zero)
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      (uniformBallMeasure c R) ν ≠ ∞ := by
-    refine ne_top_of_le_ne_top ?_ (transportCost_le_lintegral (isCoupling_prod _ _) _)
-    rw [(isCoupling_prod _ _).lintegral_norm_sub_sq_div_two (memLp_id_uniformBallMeasure c R 2)
-      hν2]
-    exact ENNReal.ofReal_ne_top
+      (uniformBallMeasure c R) ν ≠ ∞ :=
+    transportCost_norm_sub_sq_div_two_ne_top_of_memLp (by simp) (memLp_id_uniformBallMeasure c R 2)
+      hν2
   obtain ⟨u, hconv, hlsc, hbot, -, hopt, -⟩ := exists_isKantorovichOptimalTransportMap_gradient
     (isCCRegular_of_absolutelyContinuous (uniformBallMeasure_absolutelyContinuous hR.ne')) hfin
   exact ⟨u, hconv, hlsc, hbot, hopt, fun S hS =>

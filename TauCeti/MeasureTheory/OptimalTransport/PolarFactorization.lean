@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier
+public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 
 /-!
 # Brenier's polar factorization

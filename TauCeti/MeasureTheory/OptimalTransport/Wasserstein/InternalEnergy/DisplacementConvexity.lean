@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
-import TauCeti.MeasureTheory.OptimalTransport.Brenier
+import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 
 /-!
 # McCann's displacement convexity of internal energies

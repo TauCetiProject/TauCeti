@@ -13,7 +13,6 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.Order.OrderClosed
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Algebra.Order.Field
@@ -35,9 +34,10 @@ On a set with compact closure, a convex function `v` continuous on the closure c
 shifted to `(1 + ε) v + b` so that it passes from above to below an arbitrary function `u`
 (`TauCeti.exists_convexOn_lt_frontier_of_lt`).
 
-For a sequence of Lipschitz convex functions `ψ m` vanishing at `0` with Lipschitz constants
-`K m`, rescaling by `2 ^ (-(m + 1)) / (K m + 1)` yields a summable weighted series whose sum is
-convex on `univ` (`TauCeti.summable_and_convexOn_tsum_weighted`).
+For a family of Lipschitz convex functions `ψ i` vanishing at `0` with Lipschitz constants `K i`
+and nonnegative weights `w i` satisfying `Summable (fun i => w i * K i)`, the weighted series
+`∑' i, w i * ψ i x` converges everywhere and is convex on `univ`
+(`TauCeti.summable_and_convexOn_tsum_weighted`).
 -/
 
 public section
@@ -109,36 +109,29 @@ theorem exists_convexOn_lt_frontier_of_lt (hΩ : IsCompact (closure Ω))
 
 end FrontierShift
 
-/-- **Weighted series of Lipschitz convex functions.** Given `K m`-Lipschitz convex functions
-`ψ m : E → ℝ` vanishing at `0` on a real seminormed space, the weights
-`w m = (1 / 2) ^ (m + 1) / (K m + 1)` make `∑' m, w m * ψ m x` summable everywhere and define a
-globally convex function. -/
-theorem summable_and_convexOn_tsum_weighted {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {K : ℕ → ℝ≥0} {ψ : ℕ → E → ℝ}
-    (hconv : ∀ m, ConvexOn ℝ univ (ψ m)) (hψ0 : ∀ m, ψ m 0 = 0)
-    (hlip : ∀ m, LipschitzWith (K m) (ψ m)) :
-    let w : ℕ → ℝ := fun m => (1 / 2 : ℝ) ^ (m + 1) / ((K m : ℝ) + 1)
-    (∀ x, Summable (fun m => w m * ψ m x)) ∧ ConvexOn ℝ univ (fun x => ∑' m, w m * ψ m x) := by
-  intro w
-  have hw_pos (m : ℕ) : 0 < w m := by positivity
-  have hsum (x : E) : Summable (fun m => w m * ψ m x) :=
-    Summable.of_norm_bounded (g := fun m => (1 / 2 : ℝ) ^ (m + 1) * ‖x‖)
-      (((summable_geometric_two.mul_left (1 / 2 : ℝ)).congr fun m => by ring).mul_right ‖x‖)
-      fun m => by
-        rw [Real.norm_eq_abs, abs_mul, abs_of_pos (hw_pos m)]
-        have hd : |ψ m x| ≤ (K m : ℝ) * ‖x‖ := by
-          simpa [hψ0 m, Real.dist_eq, dist_zero_right] using (hlip m).dist_le_mul x 0
-        have hK1 : (K m : ℝ) + 1 ≠ 0 := by positivity
-        exact (mul_le_mul_of_nonneg_left (hd.trans (mul_le_mul_of_nonneg_right
-          (le_add_of_nonneg_right zero_le_one) (norm_nonneg x))) (hw_pos m).le).trans_eq
-          (by dsimp [w]; field_simp [hK1])
-  refine ⟨hsum, convex_univ, fun x _ y _ a b ha hb hab => (Summable.tsum_le_tsum (fun m => ?_)
+/-- **Weighted series of Lipschitz convex functions.** Given a family of `K i`-Lipschitz convex
+functions `ψ i : E → ℝ` vanishing at `0` on a real seminormed space and nonnegative weights
+`w : ι → ℝ` such that `∑' i, w i * K i` converges, `∑' i, w i * ψ i x` is summable at every
+`x : E` and defines a globally convex function. -/
+theorem summable_and_convexOn_tsum_weighted {ι E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {K : ι → ℝ≥0} {ψ : ι → E → ℝ} {w : ι → ℝ}
+    (hw : ∀ i, 0 ≤ w i) (hKw : Summable (fun i => w i * (K i : ℝ)))
+    (hconv : ∀ i, ConvexOn ℝ univ (ψ i)) (hψ0 : ∀ i, ψ i 0 = 0)
+    (hlip : ∀ i, LipschitzWith (K i) (ψ i)) :
+    (∀ x, Summable (fun i => w i * ψ i x)) ∧ ConvexOn ℝ univ (fun x => ∑' i, w i * ψ i x) := by
+  have hsum (x : E) : Summable (fun i => w i * ψ i x) :=
+    Summable.of_norm_bounded (hKw.mul_right ‖x‖) fun i => by
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw i), mul_assoc]
+      have hd : |ψ i x| ≤ (K i : ℝ) * ‖x‖ := by
+        simpa [hψ0 i, Real.dist_eq, dist_zero_right] using (hlip i).dist_le_mul x 0
+      exact mul_le_mul_of_nonneg_left hd (hw i)
+  refine ⟨hsum, convex_univ, fun x _ y _ a b ha hb hab => (Summable.tsum_le_tsum (fun i => ?_)
     (hsum (a • x + b • y)) (((hsum x).mul_left a).add ((hsum y).mul_left b))).trans_eq
     (by simp only [smul_eq_mul, Summable.tsum_add ((hsum x).mul_left a) ((hsum y).mul_left b),
       tsum_mul_left])⟩
-  have hc := (hconv m).2 (mem_univ x) (mem_univ y) ha hb hab
+  have hc := (hconv i).2 (mem_univ x) (mem_univ y) ha hb hab
   simp only [smul_eq_mul] at hc
-  linarith [mul_le_mul_of_nonneg_left hc (hw_pos m).le]
+  linarith [mul_le_mul_of_nonneg_left hc (hw i)]
 
 end TauCeti
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Convex.Continuous

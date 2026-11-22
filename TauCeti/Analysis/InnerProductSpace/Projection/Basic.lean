@@ -79,9 +79,12 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`, and `Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one`:
-  in a one-dimensional space `(𝕜 ∙ v)ᗮ = ⊥`.
+  in a one-dimensional space `(𝕜 ∙ v)ᗮ = ⊥` for a nonzero vector `v`.
 * `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
   complemented by its orthogonal complement.
+* `TauCeti.orthogonalProjectionOnto_add_inner_smul`,
+  `TauCeti.orthogonalProjectionOnto_coe_add_smul`: orthogonal decomposition along a unit vector
+  `e` and projection recovery of `(y : E) + t • e` onto `(𝕜 ∙ e)ᗮ`.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
@@ -593,6 +596,22 @@ theorem exists_mem_orthogonal_inner_ne_zero_of_not_le {S P : Submodule 𝕜 E}
   push Not at hsP
   obtain ⟨w, hw, hne⟩ := hsP
   exact ⟨w, hw, s, hs, hne⟩
+
+/-- Orthogonal decomposition of a vector into its projection onto `(𝕜 ∙ e)ᗮ` and its component
+along a unit vector `e`. -/
+theorem orthogonalProjectionOnto_add_inner_smul {e : E} (he : ‖e‖ = 1) (x : E) :
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x : E) + inner 𝕜 e x • e = x := by
+  simpa only [Submodule.starProjection_unit_singleton 𝕜 he, Submodule.starProjection_apply,
+    add_comm] using (𝕜 ∙ e).starProjection_add_starProjection_orthogonal x
+
+/-- Projecting `(y : E) + t • e` onto `(𝕜 ∙ e)ᗮ` recovers the transverse coordinate `y`. -/
+@[simp]
+theorem orthogonalProjectionOnto_coe_add_smul (e : E) (y : (𝕜 ∙ e)ᗮ) (t : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((y : E) + t • e) = y := by
+  rw [map_add, map_smul, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+    smul_zero, add_zero]
+  exact Subtype.ext ((Submodule.coe_orthogonalProjectionOnto_apply _ _).trans
+    ((Submodule.starProjection_eq_self_iff (K := (𝕜 ∙ e)ᗮ)).2 y.property))
 
 section ProjectedBasis
 

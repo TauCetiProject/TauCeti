@@ -8,29 +8,31 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
 public import TauCeti.Analysis.Convex.Subdifferential
+import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Gauge
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Pairing
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.MeasurableSubgradient
-import TauCeti.Analysis.Convex.SubgradientImage
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Countable coverings and Zajíček's theorem for `c - c` hypersurfaces
 
-In finite dimension, every `c - c` hypersurface is covered by countably many Lipschitz
-hypersurfaces (`TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface`), and
-Zajíček's theorem characterizes subsets of convex nondifferentiability loci as sets covered by
-countably many `c - c` hypersurfaces (`TauCeti.exists_convexOn_subset_not_differentiableAt_iff`).
-Along the way we establish countable `c - c` coverings of multivalued subdifferential loci, convex
-nondifferentiability loci of extended-real convex functions, and frontiers of convex sets.
+In any separable real inner product space, every `c - c` hypersurface is covered by countably many
+Lipschitz hypersurfaces (`TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface`),
+and in finite dimensions Zajíček's theorem characterizes subsets of convex nondifferentiability loci
+as sets covered by countably many `c - c` hypersurfaces
+(`TauCeti.exists_convexOn_subset_not_differentiableAt_iff`). Along the way we establish countable
+`c - c` coverings of multivalued subdifferential loci, convex nondifferentiability loci of
+extended-real convex functions, and frontiers of convex sets.
 
 ## Main declarations
 
 * `TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface` — countable Lipschitz
-  covering of any `c - c` hypersurface.
+  covering of any `c - c` hypersurface in a separable space.
 * `TauCeti.exists_isCCHypersurface_of_subdifferential_separation`,
   `TauCeti.exists_countable_isCCHypersurface_cover_not_subsingleton_subdifferential`,
   `TauCeti.exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal`,
@@ -59,59 +61,43 @@ namespace TauCeti
 
 section LipschitzCover
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [TopologicalSpace.SeparableSpace E]
 
-/-- Every `c - c` hypersurface in a finite-dimensional real inner product space is covered by
-countably many Lipschitz hypersurfaces. -/
+/-- Every `c - c` hypersurface in a separable real inner product space is covered by countably many
+Lipschitz hypersurfaces. -/
 theorem IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface {s : Set E}
     (hs : IsCCHypersurface s) :
     ∃ t : ℕ → Set E, (∀ n, IsLipschitzHypersurface (t n)) ∧ s ⊆ ⋃ n, t n := by
-  obtain ⟨e, he, f, g, -, -, hf, hg, rfl⟩ := isCCHypersurface_def.1 hs
+  obtain ⟨e, he, f, g, hfc, hgc, hf, hg, rfl⟩ := isCCHypersurface_def.1 hs
   let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  choose Kf f' _ hLf hff' using fun n : ℕ =>
-    hf.exists_convexOn_lipschitzWith_eqOn isOpen_univ (isCompact_closedBall 0 n) (subset_univ _)
-  choose Kg g' _ hLg hgg' using fun n : ℕ =>
-    hg.exists_convexOn_lipschitzWith_eqOn isOpen_univ (isCompact_closedBall 0 n) (subset_univ _)
-  refine ⟨fun n => {x | inner ℝ x e = (f' n - g' n) (P x)},
+  have hloc_f := (hf.locallyLipschitzOn_iff_continuousOn isOpen_univ).2 hfc.continuousOn
+  have hloc_g := (hg.locallyLipschitzOn_iff_continuousOn isOpen_univ).2 hgc.continuousOn
+  choose Kf Uf hUf hLf using fun y => hloc_f (mem_univ y)
+  choose Kg Ug hUg hLg using fun y => hloc_g (mem_univ y)
+  have hU_nhds (y : ↥(ℝ ∙ e)ᗮ) : Uf y ∩ Ug y ∈ nhds y := by
+    rw [← nhdsWithin_univ]
+    exact Filter.inter_mem (hUf y) (hUg y)
+  choose h hhLip hhEq using fun y =>
+    (((hLf y).mono inter_subset_left).sub ((hLg y).mono inter_subset_right)).extend_real
+  obtain ⟨C, hC_count, hC_cov⟩ := TopologicalSpace.countable_cover_nhds hU_nhds
+  have hC_ne : C.Nonempty := by
+    by_contra hC0
+    rw [not_nonempty_iff_eq_empty.1 hC0, biUnion_empty] at hC_cov
+    exact absurd hC_cov empty_ne_univ
+  obtain ⟨y, rfl⟩ := hC_count.exists_eq_range hC_ne
+  refine ⟨fun n => {x | inner ℝ x e = h (y n) (P x)},
     fun n => isLipschitzHypersurface_def.2
-      ⟨e, he, Kf n + Kg n, f' n - g' n, (hLf n).sub (hLg n), rfl⟩,
+      ⟨e, he, Kf (y n) + Kg (y n), h (y n), hhLip (y n), rfl⟩,
     fun x hx => ?_⟩
-  obtain ⟨n, hn⟩ := exists_nat_ge ‖P x‖
-  have hmem : P x ∈ closedBall (0 : ↥(ℝ ∙ e)ᗮ) n := mem_closedBall_zero_iff.2 hn
-  exact mem_iUnion.2 ⟨n, by simpa [← hff' n hmem, ← hgg' n hmem] using hx⟩
+  obtain ⟨_, ⟨n, rfl⟩, hn⟩ := mem_iUnion₂.1 (hC_cov.symm ▸ mem_univ (P x))
+  exact mem_iUnion.2 ⟨n, by simpa [← hhEq (y n) hn] using hx⟩
 
 end LipschitzCover
 
 section SubdifferentialSeparation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-private theorem exists_convexOn_eq_toReal_sub_mul_inner {u : E → EReal} {e : E} (he : ‖e‖ = 1)
-    {M : ℝ} (c : ℝ) {S : Set E} (hS : S.Nonempty) (α : S → E)
-    (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
-    ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, Continuous F ∧ ConvexOn ℝ univ F ∧
-      ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
-  obtain ⟨x₀, hx₀S⟩ := hS
-  have : Nonempty S := ⟨⟨x₀, hx₀S⟩⟩
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hα ⟨x₀, hx₀S⟩).2.1
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
-    (x := fun x : S => P x) (p := fun x : S => P (α x))
-    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := ⟨M, hM⟩)
-    (fun x => (norm_orthogonalProjectionOnto_apply_le _ _).trans (hα x).2.1) fun x₁ x₂ => by
-      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
-        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
-          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
-      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
-          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
-        have hαeq := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he (α x₁)
-        rw [real_inner_comm, (hα x₁).2.2] at hαeq
-        nth_rw 1 [← hαeq]
-        rw [inner_add_right, real_inner_smul_right,
-          ← inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
-      simp only [inner_sub_left] at hdec hsubg ⊢
-      linarith
-  exact ⟨F, hlip.continuous, hconv, hF⟩
 
 /-- **Single-slice subdifferential separation lies in a `c - c` hypersurface.** In any real inner
 product space `E`, for any `u : E → EReal`, unit vector `e`, `a < b`, and `M : ℝ`, the set of
@@ -124,17 +110,17 @@ theorem exists_isCCHypersurface_of_subdifferential_separation {u : E → EReal} 
           ‖p‖ ≤ M ∧ ‖q‖ ≤ M ∧ inner ℝ p e ≤ a ∧ b ≤ inner ℝ q e} ⊆ s := by
   set S := {x : E | ∃ p ∈ subdifferential (innerₗ E) u x, ∃ q ∈ subdifferential (innerₗ E) u x,
       ‖p‖ ≤ M ∧ ‖q‖ ≤ M ∧ inner ℝ p e ≤ a ∧ b ≤ inner ℝ q e}
-  rcases S.eq_empty_or_nonempty with hS0 | hSne
-  · exact ⟨{x | inner ℝ x e = 0}, isCCHypersurface_setOf_inner_eq he 0, hS0 ▸ empty_subset _⟩
   choose α hα using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.property
     exists_mem_subdifferential_inner_eq hp hq hpM hqM hpa (hab.le.trans hbq)
   choose β hβ using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.property
     exists_mem_subdifferential_inner_eq hp hq hpM hqM (hpa.trans hab.le) hbq
-  obtain ⟨Fa, hFa_cont, hFa_conv, hFa⟩ := exists_convexOn_eq_toReal_sub_mul_inner he a hSne α hα
-  obtain ⟨Fb, hFb_cont, hFb_conv, hFb⟩ := exists_convexOn_eq_toReal_sub_mul_inner he b hSne β hβ
+  obtain ⟨Fa, hFa_conv, hFa_lip, hFa⟩ :=
+    exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner he a α hα
+  obtain ⟨Fb, hFb_conv, hFb_lip, hFb⟩ :=
+    exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner he b β hβ
   have hba : 0 < b - a := sub_pos.2 hab
   refine ⟨_, isCCHypersurface_def.2 ⟨e, he, (b - a)⁻¹ • Fa, (b - a)⁻¹ • Fb,
-    hFa_cont.const_smul _, hFb_cont.const_smul _,
+    hFa_lip.continuous.const_smul _, hFb_lip.continuous.const_smul _,
     hFa_conv.smul (inv_nonneg.2 hba.le), hFb_conv.smul (inv_nonneg.2 hba.le), rfl⟩, fun x hx => ?_⟩
   simp only [mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, hFa ⟨x, hx⟩, hFb ⟨x, hx⟩]
   field_simp [hba.ne']
@@ -374,7 +360,17 @@ private theorem exists_convexOn_subset_not_differentiableAt_of_seq (s : ℕ → 
     (hs m.unpair.1).exists_convexOn_lipschitzWith_add_sub_two_mul_eq (m.unpair.2 : ℝ)
   let w : ℕ → ℝ := fun m => (1 / 2 : ℝ) ^ (m + 1) / ((K m : ℝ) + 1)
   have hw_pos (m : ℕ) : 0 < w m := by positivity
-  obtain ⟨hsum, hu_conv⟩ := summable_and_convexOn_tsum_weighted hconv hψ0 hlip
+  have hKw : Summable fun m => w m * (K m : ℝ) :=
+    Summable.of_nonneg_of_le (fun m => mul_nonneg (hw_pos m).le (K m).coe_nonneg)
+      (fun m => by
+        have hK1 : (K m : ℝ) + 1 ≠ 0 := by positivity
+        calc w m * (K m : ℝ)
+            ≤ w m * ((K m : ℝ) + 1) :=
+              mul_le_mul_of_nonneg_left (le_add_of_nonneg_right zero_le_one) (hw_pos m).le
+          _ = (1 / 2 : ℝ) ^ (m + 1) := by dsimp [w]; field_simp [hK1])
+      ((summable_geometric_two.mul_left (1 / 2 : ℝ)).congr fun m => by ring)
+  obtain ⟨hsum, hu_conv⟩ :=
+    summable_and_convexOn_tsum_weighted (fun m => (hw_pos m).le) hKw hconv hψ0 hlip
   refine ⟨fun x => ∑' m, w m * ψ m x, hu_conv, fun x hx => ?_⟩
   obtain ⟨n, hxn⟩ := mem_iUnion.1 hx
   obtain ⟨R, hR⟩ := exists_nat_ge ‖x‖
@@ -394,10 +390,11 @@ private theorem exists_convexOn_subset_not_differentiableAt_of_seq (s : ℕ → 
     congr 1
     ext m
     ring
-  rw [htsum_eq]
-  nth_rw 1 [← hcorner m₀ x hm₀ t ht.1.le]
+  have hm₀_eq : w m₀ * t = w m₀ * (ψ m₀ (x + t • e m₀) + ψ m₀ (x - t • e m₀) - 2 * ψ m₀ x) := by
+    rw [hcorner m₀ x hm₀ t ht.1.le]
   have hs_diff : Summable fun m => w m * (ψ m (x + t • e m₀) + ψ m (x - t • e m₀) - 2 * ψ m x) :=
     ((hs₁.add hs₂).sub hs₃).congr fun m => by dsimp only [w]; ring
+  rw [htsum_eq, hm₀_eq]
   refine Summable.le_tsum hs_diff m₀ fun m _ => mul_nonneg (hw_pos m).le ?_
   have hmid := (hconv m).2 (mem_univ (x + t • e m₀)) (mem_univ (x - t • e m₀))
     (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)

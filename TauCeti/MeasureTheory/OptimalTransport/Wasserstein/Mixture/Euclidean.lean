@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier
+public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 
 /-!
 # Strict convexity of `W₂ ^ 2` on a Euclidean space
 
 On a finite-dimensional real inner product space `E`, strict convexity of the quadratic transport
 cost for a finite `c - c`-regular source (`TauCeti.IsCCRegular.transportCost_smul_add_smul_lt`)
-transfers directly to `ν ↦ W₂(μ, ν) ^ 2` via
+transfers directly to `ν ↦ W₂(μ, ν) ^ 2` on targets at finite `W₂` distance from `μ` via
 `W₂(μ, ν) ^ 2 = 2 * transportCost (‖x - y‖ ^ 2 / 2) μ ν`. In particular, via the sufficient
 conditions in `TauCeti.Analysis.Convex.CCHypersurface.Regular`, `ν ↦ W₂(μ, ν) ^ 2` is strictly
-convex whenever `μ` is finite and gives zero mass to globally Lipschitz graphs over hyperplanes,
-vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E` or small sets
-(`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier §3.1), or is absolutely continuous with respect to an
-additive Haar measure.
+convex on targets at finite `W₂` distance from `μ` whenever `μ` is finite and gives zero mass to
+globally Lipschitz graphs over hyperplanes, vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E`
+or small sets (`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier §3.1), or is absolutely continuous with
+respect to an additive Haar measure.
 
 ## Main statements
 
 * `TauCeti.wassersteinEDist_two_smul_add_smul_sq_lt` — strict convexity of `ν ↦ W₂(μ, ν) ^ 2`
-  for a finite `c - c`-regular `μ` (covering null Lipschitz graphs, small Hausdorff dimension, and
-  laws absolutely continuous with respect to an additive Haar measure).
+  on targets at finite `W₂` distance from a finite `c - c`-regular `μ` (covering null Lipschitz
+  graphs, small Hausdorff dimension, and laws absolutely continuous with respect to an additive Haar
+  measure).
 
 ## References
 
@@ -56,23 +57,13 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt {μ ν₀ ν₁ : Measure E} [I
     (h₀ : wassersteinEDist 2 μ ν₀ ≠ ∞) (h₁ : wassersteinEDist 2 μ ν₁ ≠ ∞) (hne : ν₀ ≠ ν₁) :
     wassersteinEDist 2 μ (a • ν₀ + b • ν₁) ^ 2
       < a * wassersteinEDist 2 μ ν₀ ^ 2 + b * wassersteinEDist 2 μ ν₁ ^ 2 := by
-  have hsq (ν : Measure E) : wassersteinEDist 2 μ ν ^ 2 =
-      2 * transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν := by
-    have h := wassersteinEDist_rpow_eq_transportCost (p := 2) (μ := μ) (ν := ν)
-      measurable_edist two_ne_zero ENNReal.ofNat_ne_top
-    rw [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at h
-    rw [h, ← transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top]
-    congr 1
-    funext z
-    exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
-  have hfin (ν : Measure E) (hν : wassersteinEDist 2 μ ν ≠ ∞) :
-      transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-    intro htop
-    have := hsq ν
-    rw [htop, ENNReal.mul_top two_ne_zero] at this
-    exact ENNReal.pow_ne_top hν this
-  rw [hsq, hsq, hsq, mul_left_comm a 2, mul_left_comm b 2, ← mul_add]
+  have hfin₀ := transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top h₀
+  have hfin₁ := transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top h₁
+  rw [wassersteinEDist_two_sq_eq_two_mul_transportCost,
+    wassersteinEDist_two_sq_eq_two_mul_transportCost,
+    wassersteinEDist_two_sq_eq_two_mul_transportCost,
+    mul_left_comm a 2, mul_left_comm b 2, ← mul_add]
   exact ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top
-    (hμ.transportCost_smul_add_smul_lt hab ha hb (hfin ν₀ h₀) (hfin ν₁ h₁) hne)
+    (hμ.transportCost_smul_add_smul_lt hab ha hb hfin₀ hfin₁ hne)
 
 end TauCeti

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Topology.MetricSpace.Thickening
 
@@ -55,6 +56,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
   function has norm at most `K`;
 * `TauCeti.exists_convexOn_lipschitzWith_apply_eq` — a consistent bounded-slope family of
   supporting hyperplanes interpolates to a globally convex Lipschitz function;
+* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner` — specialization to bounded
+  subgradients of `u : E → EReal` with fixed component along a unit vector `e`;
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
   compact subsets of `D`;
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
@@ -206,6 +209,51 @@ theorem isClosed_setOf_mem_subdifferential {f : E → EReal} (hbot : ∀ x, f x 
   exact ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
 
 end Seminormed
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Global convex Lipschitz interpolation on a hyperplane slice.** Given a set `S : Set E`
+and a selection `α : S → E` of subgradients of `u : E → EReal` bounded in norm by `M` with
+constant component `c` along a unit vector `e`, there exists a globally convex,
+`M.toNNReal`-Lipschitz function `F : ↥(ℝ ∙ e)ᗮ → ℝ` whose value at the orthogonal projection
+of each `x ∈ S` is `(u x).toReal - c * ⟪x, e⟫`. -/
+theorem exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner {u : E → EReal} {e : E}
+    (he : ‖e‖ = 1) {M : ℝ} (c : ℝ) {S : Set E} (α : S → E)
+    (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
+    ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith M.toNNReal F ∧
+      ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
+  rcases S.eq_empty_or_nonempty with rfl | hSne
+  · exact ⟨0, convexOn_const 0 convex_univ,
+      (LipschitzWith.const (0 : ℝ)).weaken (zero_le : 0 ≤ M.toNNReal), fun x => x.property.elim⟩
+  have : Nonempty S := hSne.to_subtype
+  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
+  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
+    (x := fun x : S => P x) (p := fun x : S => P (α x))
+    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := M.toNNReal)
+    (fun x => (Submodule.norm_orthogonalProjectionOnto_apply_le _ _).trans
+      ((hα x).2.1.trans (le_max_left _ _)))
+    fun x₁ x₂ => by
+      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
+        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
+          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
+      have hαeq : (P (α x₁) : E) + c • e = α x₁ := by
+        have h := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he (α x₁)
+        rwa [real_inner_comm, (hα x₁).2.2] at h
+      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
+          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e :=
+        calc inner ℝ ((x₂ : E) - x₁) (α x₁)
+            = inner ℝ ((x₂ : E) - x₁) ((P (α x₁) : E) + c • e) := by rw [hαeq]
+          _ = inner ℝ ((x₂ : E) - x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
+                rw [inner_add_right, real_inner_smul_right]
+          _ = inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
+                rw [← Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
+      simp only [inner_sub_left] at hdec hsubg ⊢
+      linarith
+  exact ⟨F, hconv, hlip, hF⟩
+
+end Normed
 
 section FiniteDimensional
 
@@ -392,13 +440,14 @@ theorem _root_.ConvexOn.differentiableAt_iff_subsingleton_setOf_forall_add_inner
     DifferentiableAt ℝ u x ↔ {p : E | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y}.Subsingleton := by
   classical
   let f : E → EReal := fun z => if z ∈ Ω then (u z : EReal) else ⊤
-  rw [← Filter.EventuallyEq.differentiableAt_iff
-      (Filter.eventually_of_mem (hΩ.mem_nhds hx) fun z hz => by simp [f, hz] :
-        (fun z => (f z).toReal) =ᶠ[nhds x] u),
-    show {p | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y} = subdifferential (innerₗ E) f x from
-      Set.ext fun _ => by
-        simpa only [f, innerₗ_apply_apply, mem_ofPred_eq] using
-          (mem_subdifferential_ite_iff (innerₗ E) hx).symm]
+  have hev : (fun z => (f z).toReal) =ᶠ[nhds x] u :=
+    Filter.eventually_of_mem (hΩ.mem_nhds hx) fun z hz => by simp [f, hz]
+  have hsub_eq :
+      {p | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y} = subdifferential (innerₗ E) f x := by
+    ext p
+    simpa only [f, innerₗ_apply_apply, mem_ofPred_eq] using
+      (mem_subdifferential_ite_iff (innerₗ E) hx).symm
+  rw [← hev.differentiableAt_iff, hsub_eq]
   exact differentiableAt_toReal_iff_subsingleton_subdifferential
     (convexOn_iff_convex_epigraph_ite.1 hu) (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
 

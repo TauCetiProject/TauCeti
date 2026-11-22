@@ -40,8 +40,8 @@ specialization `TauCeti.existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le`
 ## Main statements
 
 * `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two` — existence and uniqueness of
-  population quadratic Wasserstein barycenters in `P₂(E)` when `P` gives positive mass to
-  `c - c`-regular laws;
+  population quadratic Wasserstein barycenters in `P₂(E)` when `P` has finite second moment and
+  gives positive mass to `c - c`-regular laws;
 * `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac` — existence and
   uniqueness of finite quadratic barycenters in `P₂(E)` when one positively weighted input law is
   `c - c`-regular;
@@ -75,7 +75,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 namespace WassersteinSpace
 
 /-- **Existence and uniqueness of population quadratic Wasserstein barycenters** (Le Gouic–Loubes)
-when `P` gives positive mass to `c - c`-regular laws. -/
+when `P` is a probability law on `P₂(E)` with finite second moment that gives positive mass to
+`c - c`-regular laws. -/
 theorem existsUnique_isFrechetBarycenter_two
     (P : Measure (WassersteinSpace 2 E)) [IsProbabilityMeasure P] (hP2 : HasFiniteMoment 2 P)
     (hP : P {m : WassersteinSpace 2 E |
