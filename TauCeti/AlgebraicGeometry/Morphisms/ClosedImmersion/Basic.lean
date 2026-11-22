@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
-import Mathlib.CategoryTheory.MorphismProperty.Limits
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -17,7 +15,6 @@ Mathlib's `IsClosedImmersion.lift` factors a scheme morphism through a closed im
 when the defining ideal vanishes on the source. The factor remains over the same base.
 This file packages that lift in `Over S`, for use with structure maps of group schemes.
 Sections over a base with at most one point are also closed immersions.
-Products of closed immersions in `Over S` remain closed immersions.
 
 A closed immersion also preserves the height of every point for the specialization order
 (`AlgebraicGeometry.Scheme.Hom.height_apply_eq_height`): the closure of a point of the source is
@@ -85,39 +82,6 @@ theorem height_apply_eq_height {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f
   exact ⟨a', by simpa only [lt_iff_le_not_ge, hle] using hb, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace AlgebraicGeometry
-
-open CategoryTheory.Limits
-
-/-- The product of two closed immersions over a common base is a closed immersion. -/
-theorem isClosedImmersion_over_prod_map {S : Scheme.{u}} {X Y X' Y' : Over S}
-    (f : X ⟶ X') (g : Y ⟶ Y') [IsClosedImmersion f.left] [IsClosedImmersion g.left] :
-    IsClosedImmersion (prod.map f g).left := by
-  let m := pullback.map X.hom Y.hom X'.hom Y'.hom f.left g.left (𝟙 S)
-    (by simp [Over.w]) (by simp [Over.w])
-  have : MorphismProperty.IsStableUnderComposition
-      (@IsClosedImmersion : MorphismProperty Scheme.{u}) :=
-    ⟨fun f g _ _ ↦ IsClosedImmersion.comp f g⟩
-  have hm : IsClosedImmersion m :=
-    MorphismProperty.pullbackMap (P := (@IsClosedImmersion : MorphismProperty Scheme.{u}))
-      (inferInstance : IsClosedImmersion f.left) (inferInstance : IsClosedImmersion g.left)
-      f.w.symm g.w.symm
-  have he : (prod.map f g).left ≫ (Over.prodLeftIsoPullback X' Y').hom =
-      (Over.prodLeftIsoPullback X Y).hom ≫ m := by
-    apply pullback.hom_ext
-    · simp only [Category.assoc, Over.prodLeftIsoPullback_hom_fst, m,
-        pullback.map, pullback.lift_fst, Over.prodLeftIsoPullback_hom_fst_assoc]
-      exact congrArg (fun k ↦ k.left) (prod.map_fst f g)
-    · simp only [Category.assoc, Over.prodLeftIsoPullback_hom_snd, m,
-        pullback.map, pullback.lift_snd, Over.prodLeftIsoPullback_hom_snd_assoc]
-      exact congrArg (fun k ↦ k.left) (prod.map_snd f g)
-  have : IsClosedImmersion ((prod.map f g).left ≫ (Over.prodLeftIsoPullback X' Y').hom) := by
-    rw [he]
-    infer_instance
-  exact IsClosedImmersion.of_comp_isClosedImmersion _ (Over.prodLeftIsoPullback X' Y').hom
-
-end AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Opens
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 
 /-!
@@ -14,7 +15,9 @@ Let `P` be a property of morphisms stable under base change. If the base change
 `pullback.snd f k` of `f` along `k` has `P`, then so does every further base change of `f` along a
 morphism factoring through `k`: this file records the forms of this used when reducing a property
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
-where `f` itself has `P`.
+where `f` itself has `P`. On underlying objects, the product `prod.map f g` of two morphisms of
+`Over S` is a base change of `f.left` followed by a base change of `g.left`, so it has `P` whenever
+`f.left` and `g.left` do and `P` is moreover stable under composition.
 
 ## Main results
 
@@ -27,6 +30,8 @@ where `f` itself has `P`.
   `P (pullback.snd (pullback.snd f v) a)` whenever `a ≫ v` factors through `k`.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp_left`: if `P` is moreover stable under
   composition, `P e` and `P (pullback.snd f k)` imply `P (pullback.snd (e ≫ f) k)`.
+* `CategoryTheory.MorphismProperty.prod_map_left`: if `P` is moreover stable under composition,
+  `P f.left` and `P g.left` imply `P (prod.map f g).left` for morphisms `f` and `g` of `Over S`.
 -/
 
 public section
@@ -80,5 +85,30 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
     P (pullback.snd (e ≫ f) k) := by
   simpa using P.comp_mem _ _ (P.of_isPullback
     ((IsPullback.of_hasPullback (e ≫ f) k).of_bot' (.of_hasPullback f k)) he) h
+
+/-- For a property stable under base change and composition, a product of morphisms in `Over S`
+has the property on underlying morphisms when both factors do. Indeed
+`prod.map f g = prod.map f (𝟙 Y) ≫ prod.map (𝟙 X') g`, and the two factors are the base changes
+of `f.left` and `g.left` along the product projections of `X' ⨯ Y` and `X' ⨯ Y'`. -/
+theorem prod_map_left [P.IsStableUnderComposition] {S : C} [HasBinaryProducts (Over S)]
+    {X Y X' Y' : Over S} (f : X ⟶ X') (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) :
+    P (prod.map f g).left := by
+  -- A binary product in `Over S` is a pullback over `S` of the underlying objects.
+  have hpb (A B : Over S) :
+      IsPullback (prod.fst : A ⨯ B ⟶ A).left (prod.snd : A ⨯ B ⟶ B).left A.hom B.hom :=
+    Over.isPullback_of_binaryFan_isLimit (BinaryFan.mk _ _) (prodIsProd A B)
+  -- `prod.map f (𝟙 Y)` is the base change of `f.left` along the first projection of `X' ⨯ Y`.
+  have h₁ : P (prod.map f (𝟙 Y)).left := by
+    refine P.of_isPullback (IsPullback.of_bot (h₁₁ := (prod.fst : X ⨯ Y ⟶ X).left) ?_ ?_
+      (hpb X' Y)) hf
+    · simpa [← Over.comp_left] using hpb X Y
+    · simp [← Over.comp_left]
+  -- `prod.map (𝟙 X') g` is the base change of `g.left` along the second projection of `X' ⨯ Y'`.
+  have h₂ : P (prod.map (𝟙 X') g).left := by
+    refine P.of_isPullback (IsPullback.of_bot (h₁₁ := (prod.snd : X' ⨯ Y ⟶ Y).left) ?_ ?_
+      (hpb X' Y').flip) hg
+    · simpa [← Over.comp_left] using (hpb X' Y).flip
+    · simp [← Over.comp_left]
+  simpa [← Over.comp_left] using P.comp_mem _ _ h₁ h₂
 
 end CategoryTheory.MorphismProperty
