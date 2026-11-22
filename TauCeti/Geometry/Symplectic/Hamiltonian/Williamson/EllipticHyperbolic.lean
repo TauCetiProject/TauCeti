@@ -123,50 +123,17 @@ private theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = �
     v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0 :=
   (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
 
-/-- `A` preserves the vectors killed by a power of `p(A)`. -/
-private theorem mapsTo_maxGenEigenspace_aeval (p : ℝ[X]) :
-    ∀ v ∈ (aeval A p).maxGenEigenspace 0, A v ∈ (aeval A p).maxGenEigenspace 0 := fun _ hv ↦
-  Module.End.mapsTo_maxGenEigenspace_of_comm
-    (Algebra.commute_of_mem_adjoin_singleton_of_commute (aeval_mem_adjoin_singleton ℝ A)
-      (Commute.refl A)).symm 0 hv
-
-/-- The restriction of `A ∈ sp(V, ω)` to a symplectic subspace `L` that it preserves lies in the
-symplectic Lie algebra of the restricted form. -/
-private theorem restrict_mem_skewAdjointLieSubalgebra
-    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {L : Submodule ℝ V} (hL : ω.IsSymplectic L)
-    (hAL : ∀ v ∈ L, A v ∈ L) :
-    A.restrict hAL ∈
-      skewAdjointLieSubalgebra (ω.restrict L hL.nondegenerate_restrict).toBilinForm :=
-  -- Both the restricted form and the restricted endomorphism evaluate on `L` as on `V`
-  -- (`SymplecticForm.restrict_apply`, `LinearMap.restrict_apply`), definitionally.
-  (LinearMap.mem_skewAdjointSubmodule _).2 fun u w ↦
-    (LinearMap.mem_skewAdjointSubmodule A).1 hA u w
+/-- For `A ∈ sp(V, ω)`, the vectors killed by powers of `A² - μ` for the distinct `μ ∈ s`, indexed
+by `Fin s.card`, are pairwise `ω`-orthogonal. -/
+private theorem pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (s : Finset ℝ) :
+    Pairwise fun k l : Fin s.card ↦
+      ∀ v ∈ (aeval A (X ^ 2 - C (s.equivFin.symm k : ℝ))).maxGenEigenspace 0,
+        ∀ w ∈ (aeval A (X ^ 2 - C (s.equivFin.symm l : ℝ))).maxGenEigenspace 0, ω v w = 0 :=
+  fun _ _ hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
+    (fun h ↦ hkl (s.equivFin.symm.injective (Subtype.ext h))) hv hw
 
 variable [FiniteDimensional ℝ V]
-
-/-- Pairs `(xₖ, yₖ)` with `ω(xₖ, yₖ) = 1`, taken from pairwise `ω`-orthogonal subspaces `Gₖ`, form a
-Darboux basis `(x₁, y₁, …, xₙ, yₙ)` when there are `dim V / 2` of them. -/
-private theorem exists_isDarbouxBasis_of_forall_mem {n : ℕ} (hn : finrank ℝ V = n * 2)
-    {G : Fin n → Submodule ℝ V} (hG : Pairwise fun k l ↦ ∀ v ∈ G k, ∀ w ∈ G l, ω v w = 0)
-    {x y : Fin n → V} (hx : ∀ k, x k ∈ G k) (hy : ∀ k, y k ∈ G k)
-    (hxy : ∀ k, ω (x k) (y k) = 1) :
-    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧ (∀ k, b (k, 0) = x k) ∧
-      ∀ k, b (k, 1) = y k := by
-  obtain ⟨b, hb, hbf⟩ := exists_isDarbouxBasis_coe_eq (ω := ω) hn
-    (v := fun i ↦ ![x i.1, y i.1] i.2)
-    (fun k l ↦ by
-      rcases eq_or_ne k l with rfl | hkl
-      · exact ω.self_eq_zero _
-      · exact hG hkl _ (hx k) _ (hx l))
-    (fun k l ↦ by
-      rcases eq_or_ne k l with rfl | hkl
-      · exact ω.self_eq_zero _
-      · exact hG hkl _ (hy k) _ (hy l))
-    (fun k l ↦ by
-      rcases eq_or_ne k l with rfl | hkl
-      · simpa using hxy k
-      · simpa [hkl] using hG hkl _ (hx k) _ (hy l))
-  exact ⟨b, hb, fun k ↦ by simp [hbf], fun k ↦ by simp [hbf]⟩
 
 /-- **The generalized eigenspaces of `A²` are planes.** If `A ∈ sp(V, ω)` and `A²` has
 `dim V / 2` distinct eigenvalues `μ ∈ s`, then for each of them the vectors killed by a power of
@@ -191,9 +158,8 @@ private theorem finrank_maxGenEigenspace_sq_sub
   choose y hyG hxy using hy
   -- These vectors, indexed by `Fin s.card`, form a Darboux basis.
   set e : Fin s.card ≃ s := s.equivFin.symm
-  have horth : Pairwise fun k l ↦ ∀ v ∈ G (e k), ∀ w ∈ G (e l), ω v w = 0 := fun k l hkl _ hv _ hw ↦
-    apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
-      (fun h ↦ hkl (e.injective (Subtype.ext h))) hv hw
+  have horth : Pairwise fun k l ↦ ∀ v ∈ G (e k), ∀ w ∈ G (e l), ω v w = 0 :=
+    pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA s
   obtain ⟨b, hb, hbx, hby⟩ := exists_isDarbouxBasis_of_forall_mem hs.symm horth
     (fun k ↦ hxG (e k)) (fun k ↦ hyG (e k)) fun k ↦ hxy (e k)
   -- A vector of `G μ` has no coordinates outside the plane `k₀` of `μ`.
@@ -227,20 +193,22 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {s : Finset ℝ}
     (hs : s.card * 2 = finrank ℝ V) (hAs : ∀ μ ∈ s, (A ^ 2).HasEigenvalue μ) {μ : ℝ}
     (hμ : μ ∈ s) :
-    A.restrict (mapsTo_maxGenEigenspace_aeval (X ^ 2 - C μ)) *
-        A.restrict (mapsTo_maxGenEigenspace_aeval (X ^ 2 - C μ)) = μ • 1 := by
+    A.restrict (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0) *
+        A.restrict (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0) =
+      μ • 1 := by
   set L := (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0
   have hL := isSymplectic_maxGenEigenspace_sq_sub hA μ
   obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict L hL.nondegenerate_restrict)
     (finrank_maxGenEigenspace_sq_sub hA hs hAs hμ)
-    ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hL (mapsTo_maxGenEigenspace_aeval _)⟩
+    ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict
+      (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) _ 0)⟩
   -- An eigenvector of `A²` for `μ` lies in `L`, so `κ = μ`.
   obtain ⟨x, hx⟩ := (hAs μ hμ).exists_hasEigenvector
   have hxμ : A (A x) = μ • x := by simpa [sq] using hx.apply_eq_smul
   have hxL : x ∈ L := mem_maxGenEigenspace_sq_sub hxμ
-  have h := congrArg Subtype.val (LinearMap.congr_fun hκ ⟨x, hxL⟩)
-  simp only [mul_apply_eq_comp, LinearMap.restrict_apply, LinearMap.smul_apply,
-    one_apply_eq_self, Submodule.coe_smul, hxμ] at h
+  -- The restriction of `A` evaluates on `L` as `A` does, definitionally.
+  have h : A (A x) = κ • x := congrArg Subtype.val (LinearMap.congr_fun hκ ⟨x, hxL⟩)
+  rw [hxμ] at h
   obtain rfl : κ = μ := (smul_left_injective ℝ hx.2 h).symm
   exact hκ
 
@@ -261,9 +229,10 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
   set L := (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0
   have hL := isSymplectic_maxGenEigenspace_sq_sub hA ν
   set ω' := ω.restrict L hL.nondegenerate_restrict
-  set A' := A.restrict (mapsTo_maxGenEigenspace_aeval (A := A) (X ^ 2 - C ν))
+  set A' := A.restrict
+    (End.mapsTo_maxGenEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C ν) 0)
   have hA' : A' ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
-    restrict_mem_skewAdjointLieSubalgebra hA hL _
+    restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict _
   have hAA : A' * A' = ν • 1 := apply_apply_eq_of_mem_maxGenEigenspace_sq_sub hA hs hAs hν
   have hfin : finrank ℝ L = 2 := finrank_maxGenEigenspace_sq_sub hA hs hAs hν
   have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [hfin]; norm_num)
@@ -278,7 +247,7 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
       · exact ⟨-√(-ν), by rw [neg_sq, hsqrt2], by nlinarith⟩
       · exact ⟨√(-ν), hsqrt2, by positivity⟩
     have hAAv : A' (A' v) = -(c ^ 2) • v := by
-      rw [hsq, neg_neg, ← mul_apply_eq_comp, hAA, LinearMap.smul_apply, one_apply_eq_self]
+      simpa [hsq] using LinearMap.congr_fun hAA v
     obtain ⟨q, p, hqp, hAq, hAp, -⟩ := exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul hAAv hc
     exact ⟨q, q.property, p, p.property, c, fun h ↦ by simp [h] at hc, hqp,
       fun _ ↦ ⟨by rw [hsq, neg_neg], congrArg Subtype.val hAq, congrArg Subtype.val hAp⟩,
@@ -314,9 +283,8 @@ theorem exists_isDarbouxBasis_eq_sum_smul_ellipticHyperbolic {P : QuadraticForm 
     exists_pair_mem_maxGenEigenspace_sq_sub hA hs hP ν.property fun h ↦ hs0 (h ▸ ν.property)
   set e : Fin s.card ≃ s := s.equivFin.symm
   obtain ⟨b, hb, hbq, hbp⟩ := exists_isDarbouxBasis_of_forall_mem hs.symm
-    (fun k l hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
-      (fun h ↦ hkl (e.injective (Subtype.ext h))) hv hw)
-    (fun k ↦ hqG (e k)) (fun k ↦ hpG (e k)) fun k ↦ hqp (e k)
+    (pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA s) (fun k ↦ hqG (e k))
+    (fun k ↦ hpG (e k)) fun k ↦ hqp (e k)
   -- The elliptic planes are those of the negative eigenvalues.
   set t : Finset (Fin s.card) := Finset.univ.filter fun k ↦ (e k : ℝ) < 0
   have hmemt (k : Fin s.card) : k ∈ t ↔ (e k : ℝ) < 0 := by simp [t]
@@ -391,16 +359,15 @@ theorem exists_mem_span_card_mul_two_eq_finrank_iff (h : ω.IsNondegenerateQuadr
   let c : Fin n → ℝ := fun k ↦ k + 1
   let μ : Fin n → ℝ := fun k ↦ if k ∈ t then -c k ^ 2 else c k ^ 2
   have hc (k : Fin n) : 0 < c k := by positivity
+  have hc2 : StrictMono fun k ↦ c k ^ 2 := fun k l hkl ↦ by
+    dsimp only [c]; gcongr; exact_mod_cast hkl
   have hμ : Function.Injective μ := by
     intro k l hkl
     have hk := sq_pos_of_pos (hc k)
     have hl := sq_pos_of_pos (hc l)
-    have hsq : c k ^ 2 = c l ^ 2 := by
-      by_cases hkt : k ∈ t <;> by_cases hlt : l ∈ t <;>
-        simp only [μ, hkt, hlt, ↓reduceIte] at hkl <;> linarith
-    exact Fin.ext (by
-      have := (pow_left_inj₀ (hc k).le (hc l).le two_ne_zero).1 hsq
-      exact_mod_cast add_right_cancel this)
+    refine hc2.injective (?_ : c k ^ 2 = c l ^ 2)
+    by_cases hkt : k ∈ t <;> by_cases hlt : l ∈ t <;>
+      simp only [μ, hkt, hlt, ↓reduceIte] at hkl <;> linarith
   have hAA (k : Fin n) :
       ω.hamiltonianEnd (∑ k, c k • ellipticHyperbolic b t k)
         (ω.hamiltonianEnd (∑ k, c k • ellipticHyperbolic b t k) (b (k, 0))) = μ k • b (k, 0) := by
@@ -416,8 +383,7 @@ theorem exists_mem_span_card_mul_two_eq_finrank_iff (h : ω.IsNondegenerateQuadr
   · rw [hspan]
     exact Submodule.sum_mem _ fun k _ ↦
       Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
-  · rw [Finset.card_image_of_injective _ hμ, Finset.card_univ, Fintype.card_fin,
-      finrank_eq_card_basis b, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]
+  · simp [Finset.card_image_of_injective _ hμ, finrank_eq_card_basis b]
   · simp only [Finset.mem_image, Finset.mem_univ, true_and, not_exists]
     intro k hk
     by_cases hkt : k ∈ t <;> simp only [μ, hkt, ↓reduceIte] at hk <;>
