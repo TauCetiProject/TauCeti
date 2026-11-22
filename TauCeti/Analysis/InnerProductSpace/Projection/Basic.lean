@@ -40,7 +40,13 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
 `Uᗮ` never decreases the norm of `v`. Perturbing a subspace increases the distance from any vector
 to the subspace by at most the operator-norm change in orthogonal projection times the vector's
 norm. Over `ℝ`, Pythagoras splits the squared distance from a
-point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
+point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`. For the
+projection `P` onto a real line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`, so lying strictly on the
+same side of the orthogonal hyperplane is transitive, and `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫`.
+
+The orthogonal complement `Kᗮ` has the dimension of the quotient `E ⧸ K`. A linear isometry
+equivalence `e` carries the projection onto `K` to the projection onto its image:
+`⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at most that of
@@ -105,6 +111,13 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
+* `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
+  `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫` for the projection `P` onto a real line.
+* `Submodule.inner_starProjection_sq_of_finrank_eq_one`: `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫` for the
+  projection `P` onto a real line.
+* `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
+* `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
+  isometry equivalence `e`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -468,6 +481,22 @@ theorem closure_image_starProjection_of_dense {S : Set E} (hS : Dense S) :
     rw [← hrange]
     exact U.starProjection.continuous.range_subset_closure_image_dense hS
 
+/-- The orthogonal complement of `K` has the dimension of the quotient by `K`; in particular the
+normal space of a hyperplane is a line. -/
+theorem finrank_orthogonal_eq_finrank_quotient (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    Module.finrank 𝕜 Kᗮ = Module.finrank 𝕜 (E ⧸ K) :=
+  (K.quotientEquivOfIsCompl Kᗮ K.isCompl_orthogonal).finrank_eq.symm
+
+/-- A linear isometry equivalence `e` transports orthogonal projections: projecting `e x` onto
+the image of `K` and pairing with `e y` gives the inner product of the projection of `x` onto `K`
+with `y`. -/
+theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] (e : E ≃ₗᵢ[𝕜] E') (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    (x y : E) :
+    ⟪(K.map (e.toLinearEquiv : E →ₗ[𝕜] E')).starProjection (e x), e y⟫_𝕜 =
+      ⟪K.starProjection x, y⟫_𝕜 := by
+  rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -486,6 +515,29 @@ theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R
     R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
     norm_sub_sq_real, real_inner_comm]
   ring
+
+/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
+spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
+same side of the orthogonal hyperplane is a transitive relation. -/
+theorem inner_starProjection_mul_inner_starProjection_of_finrank_eq_one (L : Submodule ℝ F)
+    [L.HasOrthogonalProjection] (hL : Module.finrank ℝ L = 1) (x y z : F) :
+    ⟪L.starProjection x, y⟫_ℝ * ⟪L.starProjection y, z⟫_ℝ =
+      ⟪L.starProjection y, y⟫_ℝ * ⟪L.starProjection x, z⟫_ℝ := by
+  obtain ⟨n, hnL, hn⟩ := L.exists_mem_ne_zero_of_ne_bot (by rintro rfl; simp at hL)
+  obtain rfl := eq_span_singleton_of_mem_of_finrank_eq_one hL hnL hn
+  simp only [starProjection_singleton, real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq]
+  ring
+
+/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫`. In particular
+`⟪P x, y⟫` vanishes exactly when `x` or `y` is orthogonal to the line. -/
+theorem inner_starProjection_sq_of_finrank_eq_one (L : Submodule ℝ F) [L.HasOrthogonalProjection]
+    (hL : Module.finrank ℝ L = 1) (x y : F) :
+    ⟪L.starProjection x, y⟫_ℝ ^ 2 = ⟪L.starProjection x, x⟫_ℝ * ⟪L.starProjection y, y⟫_ℝ := by
+  have h := L.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one hL x y x
+  have hyx : ⟪L.starProjection y, x⟫_ℝ = ⟪L.starProjection x, y⟫_ℝ := by
+    rw [inner_starProjection_left_eq_right, real_inner_comm]
+  rw [hyx] at h
+  rw [sq, h, mul_comm]
 
 end Real
 
