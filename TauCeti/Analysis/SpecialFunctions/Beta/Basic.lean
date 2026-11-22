@@ -701,6 +701,39 @@ theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
   positivity
 
+/-- **The Mellin transform of `x / (1 + t x)` in `t`.** For `0 < s < 1` and `x ≥ 0`,
+`∫ t in Ioi 0, t ^ (-s) * (x / (1 + t x)) = π / sin (π s) * x ^ s`. For `x > 0` this is
+`TauCeti.integral_rpow_div_add` at the exponent `1 - s` and the point `x⁻¹`, since
+`x / (1 + t x) = 1 / (t + x⁻¹)`; unlike that form, the integrand is continuous in `x` up to `x = 0`,
+where both sides vanish. -/
+theorem integral_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1) (hx : 0 ≤ x) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-s) * (x / (1 + t * x)) =
+      Real.pi / Real.sin (Real.pi * s) * x ^ s := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [Real.zero_rpow hs.ne']
+  calc
+    _ = ∫ t in Ioi (0 : ℝ), t ^ ((1 - s) - 1) / (t + x⁻¹) := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+      rw [sub_sub_cancel_left]
+      field_simp
+      ring
+    _ = _ := by
+      rw [integral_rpow_div_add (1 - s) x⁻¹ (by linarith) (by linarith) (inv_pos.2 hx),
+        sub_sub_cancel_left, Real.inv_rpow hx.le, Real.rpow_neg hx.le, inv_inv,
+        show Real.pi * (1 - s) = Real.pi - Real.pi * s by ring, Real.sin_pi_sub, mul_comm]
+
+/-- Integrability of `t ↦ t ^ (-s) * (x / (1 + t x))` on `(0, ∞)`, for `0 < s < 1` and
+`x ≥ 0`. -/
+theorem integrableOn_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1)
+    (hx : 0 ≤ x) : IntegrableOn (fun t : ℝ ↦ t ^ (-s) * (x / (1 + t * x))) (Ioi 0) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  refine (integrableOn_rpow_div_add (1 - s) x⁻¹ (by linarith) (by linarith)
+    (inv_pos.2 hx)).congr_fun (fun t (ht : 0 < t) ↦ ?_) measurableSet_Ioi
+  rw [sub_sub_cancel_left]
+  field_simp
+  ring
+
 /-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
 `∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial
 second beta integral at `r = 2`, evaluated by Euler's reflection formula. -/

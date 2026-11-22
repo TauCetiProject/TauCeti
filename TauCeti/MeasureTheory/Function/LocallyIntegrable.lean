@@ -38,14 +38,6 @@ integrable on every interval `(a, b]`.
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
 
-A function locally integrable on a set `s`, vanishing almost everywhere on `s` off a
-null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
-is the step that turns a local hypothesis plus compact support into a global one. The set `K` is
-asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
-measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
-compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
-`K` need not even be closed, but that is the lesser obstacle.) The set `s` needs no measurability.
-
 Pointwise suprema and infima of locally integrable functions are locally integrable in a
 normed lattice with solid norm, and finite sums of functions locally integrable on a set are
 locally integrable on it.
@@ -69,7 +61,8 @@ Likewise, a function locally integrable on `s` times a continuous function whose
 lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
 linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
 keeps it locally integrable on `s`, as does applying a locally integrable field of operators to a
-continuous function.
+continuous function. On the whole space, applying a continuous field of operators to a locally
+integrable function keeps it locally integrable.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
@@ -109,8 +102,6 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
-* `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
-  extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a continuous function with compact support in `s`, is
   integrable.
@@ -151,9 +142,7 @@ by the Radon–Nikodym derivative `dν/dρ` (`locallyIntegrable_toReal_rnDeriv_s
 ## Attribution
 
 The characterization uses Mathlib's `exists_open_between_and_isCompact_closure`
-to find relatively compact open neighborhoods of individual points. Extension by zero rests on
-Mathlib's `LocallyIntegrableOn.integrableOn_compact_subset`, which gives integrability on the
-compact support.
+to find relatively compact open neighborhoods of individual points.
 Compact localization adapts Mathlib's `LocallyIntegrable.integrableOn_nhds_isCompact` to
 an open domain and uses `compact_open_separated_add_right` for the translation neighborhood.
 Dilation rests on Mathlib's `map_addHaar_smul`, which computes the image of a Haar measure.
@@ -410,34 +399,6 @@ theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) 
 end OrderIntervals
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
-
-section ExtendByZero
-
-variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [PseudoMetrizableSpace ε]
-  {f : X → ε} {s K : Set X}
-
-/-- A function locally integrable on a set `s` and vanishing almost everywhere on
-`s` off a null-measurable compact `K ⊆ s` is, after extension by zero, integrable on the whole
-space.
-
-`K` carries its own null-measurability hypothesis rather than inheriting one from compactness:
-no assumption here relates the topology on `X` to its measurable space, so a compact -- or even
-closed -- set need not be measurable at all. -/
-theorem integrable_indicator_of_isCompact (hloc : LocallyIntegrableOn f s μ)
-    (hK : IsCompact K)
-    (hKmeas : NullMeasurableSet K μ) (hKs : K ⊆ s)
-    (hf : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
-    Integrable (s.indicator f) μ := by
-  have hae : s.indicator f =ᵐ[μ] K.indicator f := by
-    filter_upwards [ae_imp_of_ae_restrict hf] with x hx
-    by_cases hxs : x ∈ s
-    · by_cases hxK : x ∈ K
-      · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem hxK]
-      · rw [Set.indicator_of_mem hxs, Set.indicator_of_notMem hxK, hx hxs hxK]
-    · rw [Set.indicator_of_notMem hxs, Set.indicator_of_notMem fun hxK => hxs (hKs hxK)]
-  exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator₀ hKmeas).congr hae.symm
-
-end ExtendByZero
 
 section RelativeExtension
 
@@ -778,6 +739,22 @@ theorem clm_apply_continuousOn {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
     ((hf.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrable
+
+variable {X 𝕜 F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [LocallyCompactSpace X] [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {μ : Measure X}
+
+/-- Applying a continuous field of continuous linear maps to a locally integrable function gives a
+locally integrable function. This is the operator-valued counterpart of Mathlib's
+`MeasureTheory.LocallyIntegrable.continuous_smul`. -/
+theorem continuous_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hA : Continuous A)
+    (hf : LocallyIntegrable f μ) : LocallyIntegrable (fun x ↦ A x (f x)) μ :=
+  locallyIntegrableOn_univ.1 ((hf.locallyIntegrableOn univ).continuousOn_clm_apply
+    isOpen_univ.isLocallyClosed hA.continuousOn)
+
+end MeasureTheory.LocallyIntegrable
 
 namespace MeasureTheory.LocallyIntegrableOn
 

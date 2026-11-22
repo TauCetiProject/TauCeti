@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
@@ -44,6 +46,10 @@ such a sum is contained in that of `T`
   cone serve all components.
 * `Distribution.isOpen_diff_vectorWaveFrontSet`, `Distribution.smul_mem_vectorWaveFrontSet_iff`:
   it is closed in `Ω × (E \ {0})` for finite-dimensional `F`, and conic.
+* `Distribution.sum_mapCLM_toSpanSingleton_coord`: `T` is the sum of its frame components times the
+  basis vectors.
+* `Distribution.fst_image_vectorWaveFrontSet`: for finite-dimensional `F`, its projection to the
+  positions is the singular support.
 * `Distribution.vectorWaveFrontSet_mapCLM_subset`, `Distribution.vectorWaveFrontSet_mapCLM_equiv`:
   a complex-linear map of the values does not enlarge it, and an isomorphism preserves it.
 * `Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`: a sum `∑ᵢ Aᵢ (gᵢ T)` of
@@ -300,6 +306,15 @@ theorem mapCLM_eq_sum_basis [Fintype ι] (b : Module.Basis ι ℂ F) (ℓ : F �
       rw [map_sum]
       simp [mul_comm]
 
+omit [FiniteDimensional ℝ E] in
+/-- **Expansion in a frame.** For a basis `b` of `F`, `T` is the sum `∑ᵢ bᵢ (bᵢ* ∘ T)` of its frame
+components times the basis vectors. -/
+theorem sum_mapCLM_toSpanSingleton_coord [Fintype ι] (b : Module.Basis ι ℂ F) (T : 𝓓'(Ω, F)) :
+    ∑ i, mapCLM ((ContinuousLinearMap.toSpanSingleton ℂ (b i)).restrictScalars ℝ)
+      (mapCLM ((b.coord i).toContinuousLinearMap.restrictScalars ℝ) T) = T := by
+  ext φ
+  simp
+
 /-- **Independence of the frame.** For every basis `b` of `F`, the wave front set of `T` is the
 union of the wave front sets of the frame components `bᵢ* ∘ T`. -/
 theorem vectorWaveFrontSet_eq_iUnion_basis (b : Module.Basis ι ℂ F) (T : 𝓓'(Ω, F)) :
@@ -361,6 +376,20 @@ theorem isOpen_diff_vectorWaveFrontSet (T : 𝓓'(Ω, F)) :
     ⟨⟨hx, hφ⟩, hξΓ, hξ⟩] with q hq
   exact ⟨⟨hq.1.1, hq.2.2⟩, (notMem_vectorWaveFrontSet_iff hq.1.1 hq.2.2).2
     ⟨φ, hq.1.2, Γ, hΓ, hq.2.1, hcone, hdecay⟩⟩
+
+/-- **The projection of the wave front set is the singular support** (Hörmander I,
+Proposition 8.1.3), for distributions with values in a finite-dimensional space: `T` is a smooth
+function near `x` exactly when every frame component is. -/
+theorem fst_image_vectorWaveFrontSet [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, F)) :
+    Prod.fst '' T.vectorWaveFrontSet = T.singularSupport := by
+  have := FiniteDimensional.completeSpace ℂ F
+  let b := Module.finBasis ℂ F
+  rw [vectorWaveFrontSet_eq_iUnion_basis b, image_iUnion]
+  simp_rw [fst_image_waveFrontSet]
+  refine (iUnion_subset fun i ↦ singularSupport_mapCLM_subset _ T).antisymm ?_
+  conv_lhs => rw [← sum_mapCLM_toSpanSingleton_coord b T]
+  exact (singularSupport_sum_subset _ _).trans (iUnion₂_subset fun i _ ↦
+    (singularSupport_mapCLM_subset _ _).trans (subset_iUnion_of_subset i subset_rfl))
 
 end Frame
 
