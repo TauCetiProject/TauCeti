@@ -391,10 +391,9 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
         one_mem_strictPeriods_SL).differentiableAt
       discriminant_qExpansion_coeff_zero
 
-/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** Composing the injective
-evaluation `ModularForm.evalE₄E₆` (`ModularForm.evalE₄E₆_injective`) with the injective
-graded `q`-expansion homomorphism `ModularForm.qExpansionAlgHom` (`qExpansionAlgHom_injective`)
-shows that `qExpansion 1 E₄` and `qExpansion 1 E₆` are algebraically independent over `ℂ`. -/
+/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** The level-one
+`q`-expansions `qExpansion 1 E₄` and `qExpansion 1 E₆` satisfy no nonzero polynomial relation
+over `ℂ`. -/
 theorem algebraicIndependent_qExpansion_E₄_E₆ :
     AlgebraicIndependent ℂ ![qExpansion 1 E₄, qExpansion 1 E₆] := by
   rw [algebraicIndependent_iff_injective_aeval]
