@@ -21,6 +21,12 @@ classes, and neither completeness, a base field, nor a multiplicative or nonarch
 assumed. The norm is part of the data: `ℤ` with its usual norm and with its trivial norm have the
 same discrete topology but different spectra.
 
+This is the spectrum `M(A)` of Berkovich's book, called `Spectrum` in the
+TropicalAndBerkovichArithmetic roadmap. It is not the spectrum of continuous nonarchimedean
+seminorms normalized to take the value `1/2` at a topologically nilpotent unit `ϖ`, which
+DiamondsAndVStacks §D5.13 also suggests calling `BerkovichSpectrum R ϖ`; that normalized spectrum
+needs a different Lean name, such as `NormalizedBerkovichSpectrum`.
+
 A point `x` is coerced to a function `A → ℝ` and is an instance of `MulRingSeminormClass`, so
 `map_one`, `map_mul`, `map_zero`, `map_neg_eq_map`, `map_add_le_add` and `apply_nonneg` apply to
 it directly.
@@ -284,8 +290,8 @@ private noncomputable def completionEquiv :
   toFun := comap Completion.coeRingHom Completion.isBounded_coeRingHom
   invFun := extendCompletion
   left_inv y := ext <| Completion.ext' (BerkovichSpectrum.continuous _) y.continuous
-    fun a => by simp [Completion.coeRingHom]
-  right_inv x := ext fun a => by simp [Completion.coeRingHom]
+    fun a => by simp
+  right_inv x := ext fun a => by simp
 
 private theorem coe_completionEquiv :
     ⇑(completionEquiv : BerkovichSpectrum (Completion A) ≃ BerkovichSpectrum A) =
@@ -306,12 +312,17 @@ noncomputable def completionHomeomorph :
 @[simp]
 theorem completionHomeomorph_apply (x : BerkovichSpectrum (Completion A)) (a : A) :
     completionHomeomorph x a = x a := by
-  simp [completionHomeomorph, coe_completionEquiv, Completion.coeRingHom]
+  simp [completionHomeomorph, coe_completionEquiv]
 
+/-- The inverse of `completionHomeomorph` extends a point by continuity. -/
 @[simp]
+theorem completionHomeomorph_symm_apply (x : BerkovichSpectrum A) :
+    completionHomeomorph.symm x = x.extendCompletion :=
+  (rfl)
+
 theorem completionHomeomorph_symm_apply_coe (x : BerkovichSpectrum A) (a : A) :
     completionHomeomorph.symm x a = x a := by
-  simp [completionHomeomorph, completionEquiv]
+  simp
 
 end SeminormedRing
 

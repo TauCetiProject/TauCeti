@@ -82,4 +82,4 @@ noncomputable instance UniformSpace.Completion.instNonUnitalNormedRing {R : Type
 preserves norms. -/
 theorem UniformSpace.Completion.isBounded_coeRingHom {R : Type*} [SeminormedRing R] :
     (Completion.coeRingHom : R →+* Completion R).IsBounded :=
-  ⟨1, one_pos, fun a => by simp [Completion.coeRingHom]⟩
+  ⟨1, one_pos, fun a => by simp⟩

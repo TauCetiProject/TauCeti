@@ -64,24 +64,19 @@ noncomputable def completion (p : MulRingSeminorm R) (hp : UniformContinuous p) 
   add_le' a b := by
     induction a, b using Completion.induction_on₂ with
     | hp =>
-      exact isClosed_le (Completion.continuous_extension.comp (continuous_fst.add continuous_snd))
-        ((Completion.continuous_extension.comp continuous_fst).add
-          (Completion.continuous_extension.comp continuous_snd))
+      exact isClosed_le (by fun_prop) (by fun_prop)
     | ih a b =>
       simpa only [← Completion.coe_add, Completion.extension_coe hp] using map_add_le_add p a b
   neg' a := by
     induction a using Completion.induction_on with
     | hp =>
-      exact isClosed_eq (Completion.continuous_extension.comp continuous_neg)
-        Completion.continuous_extension
+      exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih a => simp only [← Completion.coe_neg, Completion.extension_coe hp, map_neg_eq_map]
   map_one' := by rw [← Completion.coe_one, Completion.extension_coe hp, map_one]
   map_mul' a b := by
     induction a, b using Completion.induction_on₂ with
     | hp =>
-      exact isClosed_eq (Completion.continuous_extension.comp (continuous_fst.mul continuous_snd))
-        ((Completion.continuous_extension.comp continuous_fst).mul
-          (Completion.continuous_extension.comp continuous_snd))
+      exact isClosed_eq (by fun_prop) (by fun_prop)
     | ih a b => simp only [← Completion.coe_mul, Completion.extension_coe hp, map_mul]
 
 theorem coe_completion (p : MulRingSeminorm R) (hp : UniformContinuous p) :
