@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linea
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 public import TauCeti.Topology.VectorBundle.MayerVietoris.RankDegree
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
-import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport
+import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.Homotopy.Covering
 import TauCeti.Topology.VectorBundle.Thom.Class
 
