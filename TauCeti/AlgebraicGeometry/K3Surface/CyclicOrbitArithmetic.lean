@@ -92,6 +92,14 @@ def mathieuFunction (n : ℕ) : ℚ :=
 theorem mathieuFunction_def (n : ℕ) :
     mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactors, (1 + (p : ℚ)⁻¹)) := (rfl)
 
+/-- `ε n` with the prime factors of `n` written as `n.primeFactorsList.toFinset`, the evaluation
+step for concrete values of `ε`. On a numeral `n`, the `Nat.primeFactorsList_ofNat` simproc factors
+`n.primeFactorsList`, so `norm_num [mathieuFunction_eq_primeFactorsList]` computes `ε n`. There is
+no such simproc for `n.primeFactors`, so `mathieuFunction_def` alone does not suffice. -/
+theorem mathieuFunction_eq_primeFactorsList (n : ℕ) :
+    mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactorsList.toFinset, (1 + (p : ℚ)⁻¹)) := by
+  rw [Nat.toFinset_factors, mathieuFunction_def]
+
 @[simp]
 theorem mathieuFunction_zero : mathieuFunction 0 = 0 := by
   simp [mathieuFunction_def]
@@ -433,14 +441,6 @@ private theorem IsK3CyclicOrbitData.not_dvd_of_not_dvd_sub {n : ℕ} {a : ℕ �
   have hd := h.cyclicFixedPointCount_eq hn ((Nat.dvd_mul_right d q).trans hdq) hd1 hk
   have hdq' := h.cyclicFixedPointCount_eq hn hdq (one_lt_mul_of_lt_of_le hd1 hq.one_le) hl
   exact hkl (hd ▸ hdq' ▸ prime_dvd_cyclicFixedPointCount_sub a hq hdq)
-
-/-- `ε n` with the prime factors of `n` written as `n.primeFactorsList.toFinset`, the evaluation
-step for concrete values of `ε`. On a numeral `n`, the `Nat.primeFactorsList_ofNat` simproc factors
-`n.primeFactorsList`, so `norm_num [mathieuFunction_eq_primeFactorsList]` computes `ε n`. There is
-no such simproc for `n.primeFactors`, so `mathieuFunction_def` alone does not suffice. -/
-private theorem mathieuFunction_eq_primeFactorsList (n : ℕ) :
-    mathieuFunction n = 24 / (n * ∏ p ∈ n.primeFactorsList.toFinset, (1 + (p : ℚ)⁻¹)) := by
-  rw [Nat.toFinset_factors, mathieuFunction_def]
 
 /-- A divisor `d > 1` of `n` has integral `ε d`, so `d` does not divide `n` when `ε d = k / l` with
 `l` not dividing `k`. -/

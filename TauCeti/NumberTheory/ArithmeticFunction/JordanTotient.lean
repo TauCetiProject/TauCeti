@@ -112,12 +112,14 @@ theorem jordanTotient_eq_prod {R : Type*} [Field R] [CharZero R] (k : ℕ) {n : 
   field_simp
 
 /-- At a prime `p`, `J_k p = p ^ k - 1`. -/
+@[simp]
 theorem jordanTotient_apply_prime (k : ℕ) {p : ℕ} (hp : p.Prime) :
     jordanTotient k p = (p : ℤ) ^ k - 1 := by
   rw [jordanTotient_apply, Nat.Prime.sum_divisors hp]
   simp [moebius_apply_prime hp, Nat.div_self hp.pos, sub_eq_neg_add]
 
 /-- Jordan's totient function of order one is Euler's totient function. -/
+@[simp]
 theorem jordanTotient_one_apply (n : ℕ) : jordanTotient 1 n = n.totient := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
