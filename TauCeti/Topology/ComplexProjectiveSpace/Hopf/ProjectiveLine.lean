@@ -126,12 +126,12 @@ private theorem chord_one_right (s : I) : chord s 1 = 1 := by
 
 /-- The chord lies in the closed unit disc, as a convex combination of `1` and `e^{2πit}`. -/
 private theorem norm_chord_le (s t : I) : ‖chord s t‖ ≤ 1 := by
-  have h₁ : 0 ≤ 1 - (s : ℝ) := sub_nonneg.2 s.2.2
+  have h₁ : 0 ≤ 1 - (s : ℝ) := sub_nonneg.2 (le_one s)
   calc ‖chord s t‖
       ≤ ‖((1 - (s : ℝ) : ℝ) : ℂ)‖ + ‖((s : ℝ) : ℂ) * (Circle.exp (2 * π * t) : ℂ)‖ :=
         norm_add_le _ _
     _ = (1 - s) + s := by
-        simp [-Complex.ofReal_sub, -Circle.coe_exp, abs_of_nonneg h₁, abs_of_nonneg s.2.1]
+        simp [-Complex.ofReal_sub, -Circle.coe_exp, abs_of_nonneg h₁, abs_of_nonneg (nonneg s)]
     _ = 1 := by ring
 
 /-! ### The Hopf lift of the projective line -/
