@@ -22,21 +22,22 @@ critical points lie on `i`. Bott's theorem identifies the relative homology acro
 the homology of `S` shifted by the index and twisted by the orientation local system `o(ν⁻)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`):
 `Hⱼ({f ≤ b}, {f ≤ a}; ℤ) ≅ H_{j - r}(S; o(ν⁻))`. This file proves this identification in the
-degrees `j ≤ r`, with no orientation of `ν⁻`:
+degrees `j < r`, and also in the degree `j = r` when the index `r` is positive, with no
+orientation of `ν⁻`:
 
 * below the index the relative homology vanishes, with any coefficients
   (`isZero_singularHomology_sublevelPair_of_lt`);
-* in the degree of the index, `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`
-  (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`).
+* in the degree of a positive index, `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`
+  (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, stated for index `r + 1`).
 
 The relative homology across the level is that of the Thom pair `(ν⁻, ν⁻₀)`
 (`nonempty_singularHomology_sublevelPair_iso_thomPair`), whose homology vanishes below the rank
 (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`) and is `H₀(S; o(ν⁻))` in the rank
 degree (`TauCeti.thomPairSingularHomologyIsoTwistedHomology`).
 
-For a connected critical submanifold the group `H₀(S; o(ν⁻))` is `ℤ` when `ν⁻` is orientable and
-`ℤ/2` when it is not, so the integral homology across the level in the degree of the index detects
-the orientability of the negative normal bundle:
+For a connected critical submanifold of positive index the group `H₀(S; o(ν⁻))` is `ℤ` when `ν⁻`
+is orientable and `ℤ/2` when it is not, so the integral homology across the level in the degree of
+the index detects the orientability of the negative normal bundle:
 
 * `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ ℤ` exactly when `ν⁻` is orientable
   (`nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv`);
