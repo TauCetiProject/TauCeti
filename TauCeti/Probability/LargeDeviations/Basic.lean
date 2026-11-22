@@ -29,12 +29,12 @@ with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so a speed `ε i = 
 
 ## Main results
 
-* `TauCeti.Probability.monotone_coe_mul_log`: at a nonnegative speed `e`, the rate
-  `x ↦ e * log x` is monotone, so the rate `e * log (μ A)` is monotone in the set `A`.
 * `TauCeti.Probability.IsGoodRateFunction.exists_eq_biInf`: a good rate function attains its
   infimum over a closed set whenever that infimum is finite.
 * `TauCeti.Probability.HasLDP.eventually_pos`: the speed of a large deviation principle is
   eventually positive.
+* `TauCeti.Probability.HasLDP.congr`: a large deviation principle depends only on the measures
+  eventually along the filter.
 
 The contraction principle is in `TauCeti.Probability.LargeDeviations.Contraction`, the
 Dirac-mass example in `TauCeti.Probability.LargeDeviations.Dirac`, weak principles and
@@ -57,11 +57,6 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {ι X : Type*}
-
-/-- At a nonnegative speed `e`, the rate `x ↦ e * log x` is monotone. -/
-theorem monotone_coe_mul_log (e : ℝ≥0) :
-    Monotone fun x : ℝ≥0∞ => ((e : ℝ) : EReal) * ENNReal.log x :=
-  fun _ _ h => mul_le_mul_of_nonneg_left (ENNReal.log_monotone h) (by exact_mod_cast e.coe_nonneg)
 
 /-- A rate function is *good* if it is lower semicontinuous and has compact sublevel sets at every
 finite level. -/
@@ -111,5 +106,16 @@ theorem HasLDP.eventually_pos [TopologicalSpace X] [MeasurableSpace X] {l : Filt
   filter_upwards [eventually_lt_of_limsup_lt (hbot.trans_lt EReal.bot_lt_zero)] with i hi
   refine pos_iff_ne_zero.2 fun h0 => ?_
   simp [h0] at hi
+
+/-- A large deviation principle depends only on the measures eventually along `l`: it passes to
+every family `ν` with `μ i = ν i` eventually. -/
+theorem HasLDP.congr [TopologicalSpace X] [MeasurableSpace X] {l : Filter ι} {ε : ι → ℝ≥0}
+    {μ ν : ι → Measure X} {I : X → ℝ≥0∞} (h : HasLDP l ε μ I) (hμν : μ =ᶠ[l] ν) :
+    HasLDP l ε ν I := by
+  have hlog (A : Set X) : (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i A)) =ᶠ[l]
+      fun i => ((ε i : ℝ) : EReal) * ENNReal.log (ν i A) :=
+    hμν.mono fun i hi => by simp only [hi]
+  exact ⟨h.lowerSemicontinuous, fun G hG => (h.lower_bound G hG).trans_eq (liminf_congr (hlog G)),
+    fun F hF => (limsup_congr (hlog F)).symm.trans_le (h.upper_bound F hF)⟩
 
 end TauCeti.Probability

@@ -25,6 +25,7 @@ to `erfc`.
   (DLMF 7.8.1).
 * `TauCeti.Real.millsRatio_bounds`: `1/(x + √(x² + 2)) < M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`
   (DLMF 7.8.2).
+* `TauCeti.Real.erfc_le_exp_neg_sq`: `erfc x ≤ e^{−x²}` for `x ≥ 0`, a consequence of 7.8.2.
 * `TauCeti.Real.millsRatio_bounds_inv_affine`: `√π/(2√π x + 2) ≤ M(x) < 1/(x + 1)` for `x ≥ 0`
   (DLMF 7.8.3).
 * `TauCeti.Real.millsRatio_lt_two_div`: `M(x) < 2/(3x + √(x² + 4))` for `x > −√2/2`
@@ -245,6 +246,19 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
       Real.sqrt π / 2 * Real.exp (x ^ 2) * erfc x ≤ 1 / (x + Real.sqrt (x ^ 2 + 4 / π)) := by
   rw [← millsRatio_def]
   exact ⟨one_div_add_sqrt_two_lt_millsRatio hx, millsRatio_le_one_div_add_sqrt hx⟩
+
+/-- For `x ≥ 0`, `erfc x ≤ e^{-x²}`. This follows from the upper bound of DLMF 7.8.2, since
+`x + √(x² + 4/π) ≥ 2/√π`; at `x = 0` both sides are `1`. -/
+theorem erfc_le_exp_neg_sq {x : ℝ} (hx : 0 ≤ x) : erfc x ≤ Real.exp (-x ^ 2) := by
+  have hden : 2 / Real.sqrt π ≤ x + Real.sqrt (x ^ 2 + 4 / π) := by
+    have h4 : Real.sqrt (4 / π) = 2 / Real.sqrt π := by
+      rw [Real.sqrt_div' _ Real.pi_pos.le, show (4 : ℝ) = 2 ^ 2 by norm_num,
+        Real.sqrt_sq zero_le_two]
+    rw [← h4]
+    linarith [Real.sqrt_le_sqrt (le_add_of_nonneg_left (sq_nonneg x) : 4 / π ≤ x ^ 2 + 4 / π)]
+  have h := (millsRatio_bounds hx).2.trans (one_div_le_one_div_of_le (by positivity) hden)
+  rw [one_div_div, mul_assoc, mul_le_iff_le_one_right (by positivity)] at h
+  rwa [Real.exp_neg, inv_eq_one_div, le_div_iff₀' (Real.exp_pos _)]
 
 /-- The lower bound of DLMF 7.8.3: `√π/(2√π x + 2) ≤ M(x)` for `x ≥ 0`. -/
 private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :

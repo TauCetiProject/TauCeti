@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.LargeDeviations.Basic
 import Mathlib.Data.EReal.Inv
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog
 import TauCeti.Data.EReal.Operations
 import TauCeti.Probability.LargeDeviations.LargestTerm
 
@@ -104,7 +105,7 @@ theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε �
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K))) l :=
         limsup_le_limsup (.of_forall fun i =>
-          monotone_coe_mul_log (ε i) (measure_mono subset_closure))
+          ENNReal.coe_mul_log_monotone (ε i) (measure_mono subset_closure))
     _ ≤ -((⨅ x ∈ closure K, I x : ℝ≥0∞) : EReal) := h.upper_bound _ isClosed_closure
     _ ≤ -((⨅ x ∈ K, I x : ℝ≥0∞) : EReal) :=
         EReal.neg_le_neg_iff.2 (EReal.coe_ennreal_le_coe_ennreal_iff.2 hinf)
@@ -128,7 +129,7 @@ theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto
   -- Split `F` into its compact part `F ∩ K` and the exponentially small remainder `Kᶜ`.
   have hsplit (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i F) ≤
       ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K) + μ i Kᶜ) :=
-    monotone_coe_mul_log (ε i) <| (measure_le_inter_add_sdiff (μ i) F K).trans
+    ENNReal.coe_mul_log_monotone (ε i) <| (measure_le_inter_add_sdiff (μ i) F K).trans
       (add_le_add le_rfl (measure_mono (Set.sdiff_subset_compl F K)))
   have hFK : -((⨅ x ∈ F ∩ K, I x : ℝ≥0∞) : EReal) ≤ -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.2 <| EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
@@ -155,7 +156,7 @@ theorem isGoodRateFunction [R1Space X] [l.NeBot] (ht : IsExponentiallyTight l ε
   -- The lower bound on the open set `(closure K)ᶜ` forces `I > α` off the compact `closure K`.
   have hKL' : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K)ᶜ)) l ≤
       -((α.toReal + 1 : ℝ) : EReal) :=
-    (limsup_le_limsup (.of_forall fun i => monotone_coe_mul_log (ε i)
+    (limsup_le_limsup (.of_forall fun i => ENNReal.coe_mul_log_monotone (ε i)
       (measure_mono (Set.compl_subset_compl.2 subset_closure)))).trans hKL
   have hrate : ((α.toReal + 1 : ℝ) : EReal) ≤ ((⨅ x ∈ (closure K)ᶜ, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.1 <|
@@ -211,7 +212,7 @@ theorem hasWeakLDP_of_forall_nhds
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hUx
   have hcover (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i K) ≤
       ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x)) :=
-    monotone_coe_mul_log (ε i) ((measure_mono hKt).trans (measure_biUnion_finset_le t U))
+    ENNReal.coe_mul_log_monotone (ε i) ((measure_mono hKt).trans (measure_biUnion_finset_le t U))
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x))) l :=
         limsup_le_limsup (.of_forall hcover)

@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Probability.LargeDeviations.Basic
 import Mathlib.Data.EReal.Inv
 import Mathlib.Topology.Separation.Regular
+import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog
 
 /-!
 # The rate function of a large deviation principle
@@ -81,7 +82,8 @@ private theorem HasLDP.le_of_hasLDP [RegularSpace X] [l.NeBot] (hI : HasLDP l ε
           hI.lower_bound _ isOpen_interior
       _ ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i C)) l :=
           (liminf_le_liminf (.of_forall fun i =>
-            monotone_coe_mul_log (ε i) (measure_mono interior_subset))).trans liminf_le_limsup
+            ENNReal.coe_mul_log_monotone (ε i) (measure_mono interior_subset))).trans
+              liminf_le_limsup
       _ ≤ _ := hJ.upper_bound _ hCc
   exact (le_iInf₂ fun y hy => (hCJ hy).le).trans
     (EReal.coe_ennreal_le_coe_ennreal_iff.1 (EReal.neg_le_neg_iff.1 hrate))

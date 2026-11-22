@@ -51,11 +51,12 @@ theorem ofReal_mul_le_gaussianReal_Icc (m x : ℝ) (w : ℝ≥0) (δ : ℝ) :
   rw [gaussianPDF_def, gaussianPDFReal_def]
   refine ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_)
     (by positivity))
+  rw [← Real.closedBall_eq_Icc] at hy
   have hy' : |y - m| ≤ |x - m| + δ := by
     calc |y - m| ≤ |y - x| + |x - m| := abs_sub_le y x m
       _ ≤ δ + |x - m| := by
         gcongr
-        exact abs_le.2 ⟨by linarith [hy.1], by linarith [hy.2]⟩
+        exact Real.dist_eq y x ▸ Metric.mem_closedBall.1 hy
       _ = |x - m| + δ := add_comm _ _
   have hsq : (y - m) ^ 2 ≤ (|x - m| + δ) ^ 2 := by
     rw [← sq_abs (y - m)]
