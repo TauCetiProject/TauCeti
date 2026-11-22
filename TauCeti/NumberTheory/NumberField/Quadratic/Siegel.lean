@@ -127,23 +127,22 @@ theorem exists_le_classNumber_of_le_abs_discr (B : ℕ) :
     have h1 := hC₀ K hK (by omega)
     linarith
 
-private theorem neg_radicand_le_of_classNumber_le {B : ℕ} {C : ℝ}
+private theorem neg_le_ceil_of_classNumber_le {B : ℕ} {C : ℝ}
     (hC : ∀ (K : Type) [Field K] [NumberField K] [IsTotallyComplex K],
       finrank ℚ K = 2 → classNumber K ≤ B → |(discr K : ℝ)| ≤ C)
-    {d : ℤ} (hneg : d < 0) (hsf : Squarefree d) [Fact (¬ IsSquare d)]
-    (hB : classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B) :
-    ((-d : ℤ) : ℝ) ≤ C := by
-  have : IsTotallyComplex (QuadraticAlgebra ℚ (d : ℚ) 0) :=
-    (QuadraticAlgebra.isTotallyComplex_iff (a := (d : ℚ))).mpr (Int.cast_lt_zero.mpr hneg)
-  have hdiscr_eq : (-d : ℤ) ≤ |discr (QuadraticAlgebra ℚ (d : ℚ) 0)| := by
-    by_cases hd4 : d % 4 = 1
-    · rw [QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4, abs_of_neg hneg]
-    · rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one hsf hd4, abs_of_neg (by omega)]
-      omega
-  have hcast : ((-d : ℤ) : ℝ) ≤ |(discr (QuadraticAlgebra ℚ (d : ℚ) 0) : ℝ)| := by
+    {a : ℤ} (hneg : a < 0) [Fact (¬ IsSquare a)]
+    (hdiscr : (-a : ℤ) ≤ |discr (QuadraticAlgebra ℚ (a : ℚ) 0)|)
+    (hB : classNumber (QuadraticAlgebra ℚ (a : ℚ) 0) ≤ B) :
+    -a ≤ (⌈max C 0⌉₊ : ℤ) := by
+  have : IsTotallyComplex (QuadraticAlgebra ℚ (a : ℚ) 0) :=
+    (QuadraticAlgebra.isTotallyComplex_iff (a := (a : ℚ))).mpr (Int.cast_lt_zero.mpr hneg)
+  have hcast : ((-a : ℤ) : ℝ) ≤ |(discr (QuadraticAlgebra ℚ (a : ℚ) 0) : ℝ)| := by
     rw [← Int.cast_abs]
-    exact_mod_cast hdiscr_eq
-  exact hcast.trans (hC (QuadraticAlgebra ℚ (d : ℚ) 0) (QuadraticAlgebra.finrank_eq_two _ _) hB)
+    exact_mod_cast hdiscr
+  have hle : ((-a : ℤ) : ℝ) ≤ ((⌈max C 0⌉₊ : ℤ) : ℝ) :=
+    hcast.trans <| (hC _ (QuadraticAlgebra.finrank_eq_two _ _) hB).trans <|
+      (le_max_left C 0).trans (by simpa using Nat.le_ceil (max C 0))
+  exact_mod_cast hle
 
 /-- **Finiteness of imaginary quadratic fields of bounded class number up to isomorphism.** For
 every `B : ℕ` there exists a finite set `S` consisting precisely of the negative squarefree
@@ -169,10 +168,12 @@ theorem exists_finset_neg_squarefree_algEquiv_of_classNumber_le (B : ℕ) :
     · obtain ⟨hIcc, hsf, hB⟩ := Finset.mem_filter.mp hd
       exact ⟨by linarith [(Finset.mem_Icc.mp hIcc).2], hsf, hB⟩
     · have : Fact (¬ IsSquare d) := hns
-      have hM : -d ≤ M := by
-        have : ((-d : ℤ) : ℝ) ≤ (M : ℝ) := (neg_radicand_le_of_classNumber_le hC hneg hsf hB).trans
-          ((le_max_left C 0).trans (by simpa [M] using Nat.le_ceil (max C 0)))
-        exact_mod_cast this
+      have hdiscr : (-d : ℤ) ≤ |discr (QuadraticAlgebra ℚ (d : ℚ) 0)| := by
+        by_cases hd4 : d % 4 = 1
+        · rw [QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4, abs_of_neg hneg]
+        · rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one hsf hd4, abs_of_neg (by omega)]
+          omega
+      have hM : -d ≤ M := neg_le_ceil_of_classNumber_le hC hneg hdiscr hB
       exact Finset.mem_filter.mpr
         ⟨Finset.mem_Icc.mpr ⟨by omega, by omega⟩, hsf, hns, hB⟩
   refine ⟨S, hS_iff, fun K _ _ _ hK hB ↦ ?_⟩
@@ -210,19 +211,11 @@ theorem finite_neg_isFundamentalDiscr_of_classNumber_le (B : ℕ) :
     {D : ℤ | D < 0 ∧ Int.IsFundamentalDiscr D ∧
       ∃ (_ : Fact (¬ IsSquare D)), classNumber (QuadraticAlgebra ℚ (D : ℚ) 0) ≤ B}.Finite := by
   obtain ⟨C, hC⟩ := imaginary_discr_bounded_of_classNumber_le.{0} B
-  set M : ℤ := (⌈max C 0⌉₊ : ℤ)
-  refine (Set.finite_Icc (-M) 0).subset fun D ⟨hneg, hD, hns, hB⟩ ↦ ?_
+  refine (Set.finite_Icc (-(⌈max C 0⌉₊ : ℤ)) 0).subset fun D ⟨hneg, hD, hns, hB⟩ ↦ ?_
   have : Fact (¬ IsSquare D) := hns
-  have : IsTotallyComplex (QuadraticAlgebra ℚ (D : ℚ) 0) :=
-    (QuadraticAlgebra.isTotallyComplex_iff (a := (D : ℚ))).mpr (Int.cast_lt_zero.mpr hneg)
-  have hdiscr : discr (QuadraticAlgebra ℚ (D : ℚ) 0) = D :=
-    QuadraticAlgebra.discr_eq_iff_isFundamentalDiscr.mpr hD
-  have hle : ((-D : ℤ) : ℝ) ≤ (M : ℝ) := by
-    have h1 : ((-D : ℤ) : ℝ) = |(discr (QuadraticAlgebra ℚ (D : ℚ) 0) : ℝ)| := by
-      rw [hdiscr, ← Int.cast_abs, abs_of_neg hneg]
-    exact (h1.trans_le (hC _ (QuadraticAlgebra.finrank_eq_two _ _) hB)).trans
-      ((le_max_left C 0).trans (by simpa [M] using Nat.le_ceil (max C 0)))
-  have hDM : -D ≤ M := by exact_mod_cast hle
+  have hdiscr : (-D : ℤ) ≤ |discr (QuadraticAlgebra ℚ (D : ℚ) 0)| := by
+    rw [QuadraticAlgebra.discr_eq_iff_isFundamentalDiscr.mpr hD, abs_of_neg hneg]
+  have hDM := neg_le_ceil_of_classNumber_le hC hneg hdiscr hB
   exact ⟨by omega, hneg.le⟩
 
 /-- **Finite fibers of the imaginary quadratic class number on fundamental discriminants.** For
