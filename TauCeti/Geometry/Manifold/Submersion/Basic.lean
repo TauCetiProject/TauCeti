@@ -68,7 +68,6 @@ constant on the fibres factors through a unique `C^m` map
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_section`,
-  `Manifold.IsSubmersionOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersion.exists_contMDiffOn_section`, and
   `Manifold.IsSubmersion.exists_contMDiffOn_section_of_surjective`: local sections of a submersion.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`,
@@ -428,13 +427,6 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
-
-/-- **Local sections of a submersion with complement through every source point.** -/
-theorem IsSubmersionOfComplement.exists_contMDiffOn_section [I.Boundaryless]
-    (h : IsSubmersionOfComplement F I J n f) (x : M) :
-    ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
-      ∀ y ∈ U, f (s y) = y :=
-  (h.isSubmersionAt x).exists_contMDiffOn_section
 
 /-- **Local sections of a submersion.** If `f` is a `C^n` submersion and the model of `M` has no
 boundary, then through every `x : M` there is a `C^n` local section `s` of `f` over an open

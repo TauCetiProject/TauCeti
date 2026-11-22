@@ -129,12 +129,10 @@ theorem comp {𝕜 E₁ H₁ X₁ E₂ H₂ X₂ E₃ H₃ X₃ : Type*} [RCLike
     (hg : Manifold.IsSmoothEmbedding I₂ I₃ n g) (hf : Manifold.IsSmoothEmbedding I₁ I₂ n f)
     (hn : 1 ≤ n) : Manifold.IsSmoothEmbedding I₁ I₃ n (g ∘ f) := by
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  refine ⟨(hg.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x ↦ ?_,
+  exact ⟨(hg.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x ↦
+    ((hg.isImmersion.isDiffImmersionAt hn0 (f x)).comp
+      (hf.isImmersion.isDiffImmersionAt hn0 x)).mfderiv_injective,
     hg.isEmbedding.comp hf.isEmbedding⟩
-  rw [mfderiv_comp x ((hg.contMDiff (f x)).mdifferentiableAt hn0)
-    ((hf.contMDiff x).mdifferentiableAt hn0)]
-  exact ((hg.isImmersion.isImmersionAt (f x)).mfderiv_injective hn0).comp
-    ((hf.isImmersion.isImmersionAt x).mfderiv_injective hn0)
 
 end Manifold.IsSmoothEmbedding
 

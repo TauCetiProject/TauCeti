@@ -75,12 +75,12 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
     (c₁.contMDiffOn_extendTrans hf.codChart_mem_maximalAtlas contDiff_id).comp
       ((ψ.contMDiffOn_extendTrans_symm hψ contDiff_id).mono inter_subset_left)
       fun _ hz ↦ hz.2
-  have hτF : ContMDiffOn 𝓘(𝕜, E' × F₁) 𝓘(𝕜, E' × F₁) n τF τF.source :=
-    (hτ.comp contDiff_fst.contMDiff.contMDiffOn fun _ (hp : _ ∈ τ.source ×ˢ univ) ↦ hp.1)
-      |>.prodMk_space contDiff_snd.contMDiff.contMDiffOn
-  have hτFs : ContMDiffOn 𝓘(𝕜, E' × F₁) 𝓘(𝕜, E' × F₁) n τF.symm τF.target :=
-    (hτs.comp contDiff_fst.contMDiff.contMDiffOn fun _ (hp : _ ∈ τ.target ×ˢ univ) ↦ hp.1)
-      |>.prodMk_space contDiff_snd.contMDiff.contMDiffOn
+  have hτF : ContMDiffOn 𝓘(𝕜, E' × F₁) 𝓘(𝕜, E' × F₁) n τF τF.source := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact hτ.prodMap (contMDiffOn_id (I := 𝓘(𝕜, F₁)) (M := F₁))
+  have hτFs : ContMDiffOn 𝓘(𝕜, E' × F₁) 𝓘(𝕜, E' × F₁) n τF.symm τF.target := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact hτs.prodMap (contMDiffOn_id (I := 𝓘(𝕜, F₁)) (M := F₁))
   have hΘ : ContMDiffOn I 𝓘(𝕜, E) n Θ Θ.source :=
     hf.equiv.symm.contDiff.contMDiff.comp_contMDiffOn <|
       hτF.comp (hΦ₁.mono inter_subset_left) fun _ hz ↦ hz.2

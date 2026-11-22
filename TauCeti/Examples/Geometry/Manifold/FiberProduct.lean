@@ -249,82 +249,51 @@ example :
     obtain ⟨u, -, hu_eq⟩ := hxpt_mem 0
     exact hxpt_ne 0 (hu_eq.symm.trans (congrArg Subtype.val
       (e.injective (hsubV.elim (e u) (e ⟨x₀, hx₀⟩)))))
-  · let φ := Homeomorph.funUnique (Fin 1) ℝ
-    let z₀ : ℝ := y₀ 0
-    let A₁ : Set V := {v : V | v.val 0 ∈ Ioo (z₀ - r) z₀}
-    let A₂ : Set V := {v : V | v.val 0 ∈ Ioo z₀ (z₀ + r)}
-    have hI₁ : φ.symm '' Ioo (z₀ - r) z₀ ⊆ V := fun y ⟨t, ht, hy⟩ ↦ hballV <| by
-      rw [← hy, Metric.mem_ball, dist_pi_lt_iff hr]
-      intro i
-      fin_cases i
-      simpa [φ, Real.dist_eq, abs_lt] using ⟨by linarith [ht.1], by linarith [ht.2]⟩
-    have hI₂ : φ.symm '' Ioo z₀ (z₀ + r) ⊆ V := fun y ⟨t, ht, hy⟩ ↦ hballV <| by
-      rw [← hy, Metric.mem_ball, dist_pi_lt_iff hr]
-      intro i
-      fin_cases i
-      simpa [φ, Real.dist_eq, abs_lt] using ⟨by linarith [ht.1], by linarith [ht.2]⟩
-    have himg₁ : Subtype.val '' A₁ = φ.symm '' Ioo (z₀ - r) z₀ := by
-      ext y
-      refine ⟨?_, ?_⟩
-      · rintro ⟨⟨v, hv⟩, hvt, rfl⟩
-        refine ⟨v 0, hvt, ?_⟩
-        ext i; fin_cases i; rfl
-      · rintro ⟨t, ht, rfl⟩
-        exact ⟨⟨φ.symm t, hI₁ ⟨t, ht, rfl⟩⟩, ht, rfl⟩
-    have himg₂ : Subtype.val '' A₂ = φ.symm '' Ioo z₀ (z₀ + r) := by
-      ext y
-      refine ⟨?_, ?_⟩
-      · rintro ⟨⟨v, hv⟩, hvt, rfl⟩
-        refine ⟨v 0, hvt, ?_⟩
-        ext i; fin_cases i; rfl
-      · rintro ⟨t, ht, rfl⟩
-        exact ⟨⟨φ.symm t, hI₂ ⟨t, ht, rfl⟩⟩, ht, rfl⟩
-    have hA₁ : IsPreconnected A₁ := by
-      rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg₁]
-      exact isPreconnected_Ioo.image _ φ.symm.continuous.continuousOn
-    have hA₂ : IsPreconnected A₂ := by
-      rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg₂]
-      exact isPreconnected_Ioo.image _ φ.symm.continuous.continuousOn
-    let C₁ : Set X := Subtype.val '' (e.symm '' A₁)
-    let C₂ : Set X := Subtype.val '' (e.symm '' A₂)
-    have hC₁_pre : IsPreconnected C₁ :=
-      (hA₁.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
-    have hC₂_pre : IsPreconnected C₂ :=
-      (hA₂.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
-    have hC₁_sub : C₁ ⊆ S₀ := by
-      rintro x ⟨u, ⟨v, hvA₁, rfl⟩, rfl⟩
-      refine ⟨e.symm v, ⟨?_, ?_⟩, rfl⟩
-      · simp only [B, mem_preimage, e.apply_symm_apply]
-        rw [Metric.mem_ball, dist_pi_lt_iff hr]
-        intro i; fin_cases i
-        simpa [z₀, Real.dist_eq, abs_lt] using ⟨by linarith [hvA₁.1], by linarith [hvA₁.2]⟩
-      · intro h
-        have hv0 := congrArg (fun u : U ↦ (e u).val 0) h
-        simp only [e.apply_symm_apply] at hv0
-        exact hvA₁.2.ne hv0
-    have hC₂_sub : C₂ ⊆ S₀ := by
-      rintro x ⟨u, ⟨v, hvA₂, rfl⟩, rfl⟩
-      refine ⟨e.symm v, ⟨?_, ?_⟩, rfl⟩
-      · simp only [B, mem_preimage, e.apply_symm_apply]
-        rw [Metric.mem_ball, dist_pi_lt_iff hr]
-        intro i; fin_cases i
-        simpa [z₀, Real.dist_eq, abs_lt] using ⟨by linarith [hvA₂.1], by linarith [hvA₂.2]⟩
-      · intro h
-        have hv0 := congrArg (fun u : U ↦ (e u).val 0) h
-        simp only [e.apply_symm_apply] at hv0
-        exact hvA₂.1.ne' hv0
-    have hS₀_cover : S₀ ⊆ C₁ ∪ C₂ := by
+  · let φ := IsometryEquiv.funUnique (Fin 1) ℝ
+    let z₀ : ℝ := φ y₀
+    have hball : φ.symm '' Metric.ball z₀ r = Metric.ball y₀ r := by
+      simp [z₀]
+    let C : Set ℝ → Set X := fun I ↦ Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (φ.symm '' I)))
+    have hpiece : ∀ I : Set ℝ, I ⊆ Metric.ball z₀ r → z₀ ∉ I → IsPreconnected I →
+        ∃ i : Fin 4, C I ⊆ Q i := by
+      intro I hI hz₀ hIconn
+      have hIV : φ.symm '' I ⊆ V := (image_mono hI).trans (hball.symm ▸ hballV)
+      have himg : Subtype.val '' (Subtype.val ⁻¹' (φ.symm '' I) : Set V) = φ.symm '' I :=
+        (Subtype.image_preimage_val V (φ.symm '' I)).trans (inter_eq_right.mpr hIV)
+      have hA : IsPreconnected (Subtype.val ⁻¹' (φ.symm '' I) : Set V) := by
+        rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg]
+        exact hIconn.image _ φ.symm.continuous.continuousOn
+      have hC_pre : IsPreconnected (C I) :=
+        (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
+      have hC_sub : C I ⊆ S₀ := by
+        rintro x ⟨u, ⟨v, hv, rfl⟩, rfl⟩
+        have hvB : v.val ∈ Metric.ball y₀ r := hball ▸ image_mono hI hv
+        refine ⟨e.symm v, ⟨by simpa [B] using hvB, fun h ↦ hz₀ ?_⟩, rfl⟩
+        have hvy : v.val = y₀ := by
+          simpa [y₀] using congrArg (fun u : U ↦ (e u).val) h
+        obtain ⟨t, ht, htv⟩ := hv
+        simpa [z₀, ← hvy, ← htv] using ht
+      exact hpre_sub hC_pre (hC_sub.trans hS₀_sub)
+    let J₁ : Set ℝ := Ioo (z₀ - r) z₀
+    let J₂ : Set ℝ := Ioo z₀ (z₀ + r)
+    obtain ⟨i₁, hi₁⟩ := hpiece J₁
+      (Real.ball_eq_Ioo z₀ r ▸ Ioo_subset_Ioo_right (by linarith)) (fun h ↦ lt_irrefl _ h.2)
+      isPreconnected_Ioo
+    obtain ⟨i₂, hi₂⟩ := hpiece J₂
+      (Real.ball_eq_Ioo z₀ r ▸ Ioo_subset_Ioo_left (by linarith)) (fun h ↦ lt_irrefl _ h.1)
+      isPreconnected_Ioo
+    have hS₀_cover : S₀ ⊆ C J₁ ∪ C J₂ := by
       rintro x ⟨u, ⟨huB, hune⟩, rfl⟩
-      have hdist : dist ((e u).val 0) z₀ < r :=
-        (dist_pi_lt_iff hr).mp (Metric.mem_ball.mp huB) 0
-      have hne : (e u).val 0 ≠ z₀ := fun h ↦ hune <| e.injective <| Subtype.ext <| by
-        ext i; fin_cases i; exact h
-      rw [Real.dist_eq, abs_lt] at hdist
+      have hmem : φ (e u).val ∈ Ioo (z₀ - r) (z₀ + r) := by
+        rw [← Real.ball_eq_Ioo, ← φ.image_ball y₀ r]
+        exact ⟨(e u).val, huB, rfl⟩
+      have hne : φ (e u).val ≠ z₀ := fun h ↦
+        hune (e.injective (Subtype.ext (φ.injective h)))
       rcases lt_or_gt_of_ne hne with hlt | hgt
-      · exact Or.inl ⟨u, ⟨e u, ⟨by linarith [hdist.1], hlt⟩, e.symm_apply_apply u⟩, rfl⟩
-      · exact Or.inr ⟨u, ⟨e u, ⟨hgt, by linarith [hdist.2]⟩, e.symm_apply_apply u⟩, rfl⟩
-    obtain ⟨i₁, hi₁⟩ := hpre_sub hC₁_pre (hC₁_sub.trans hS₀_sub)
-    obtain ⟨i₂, hi₂⟩ := hpre_sub hC₂_pre (hC₂_sub.trans hS₀_sub)
+      · exact Or.inl ⟨u, ⟨e u, ⟨φ (e u).val, ⟨hmem.1, hlt⟩, φ.symm_apply_apply _⟩,
+          e.symm_apply_apply u⟩, rfl⟩
+      · exact Or.inr ⟨u, ⟨e u, ⟨φ (e u).val, ⟨hgt, hmem.2⟩, φ.symm_apply_apply _⟩,
+          e.symm_apply_apply u⟩, rfl⟩
     obtain ⟨k, hk₁, hk₂⟩ : ∃ k : Fin 4, k ≠ i₁ ∧ k ≠ i₂ := by
       fin_cases i₁ <;> fin_cases i₂ <;> decide
     rcases hS₀_cover (hxpt_S₀ k) with hkC | hkC

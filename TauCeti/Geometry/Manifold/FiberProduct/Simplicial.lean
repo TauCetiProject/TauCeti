@@ -238,22 +238,6 @@ def mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
     IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1) :=
   reindex θ.toOrderHom
 
-/-- The underlying tuple of `mapSimplex θ y` is `y.1 ∘ θ.toOrderHom`. -/
-@[simp]
-theorem coe_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
-    (mapSimplex θ y : Fin (a + 1) → Y) = y.val ∘ θ.toOrderHom := (rfl)
-
-/-- Evaluating `mapSimplex θ y` at `i` evaluates `y` at `θ.toOrderHom i`. -/
-theorem eval_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1))
-    (i : Fin (a + 1)) : eval i (mapSimplex θ y) = eval (θ.toOrderHom i) y :=
-  eval_reindex θ.toOrderHom y i
-
-/-- `mapSimplex θ` preserves `baseProj`. -/
-@[simp]
-theorem baseProj_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
-    baseProj (mapSimplex θ y) = baseProj y :=
-  baseProj_reindex θ.toOrderHom y
-
 /-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
 @[simp]
 theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
@@ -263,8 +247,7 @@ theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
 /-- `mapSimplex` is contravariantly functorial on `SimplexCategory`. -/
 theorem mapSimplex_comp {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌) :
     mapSimplex (π := π) (θ₁ ≫ θ₂) = mapSimplex θ₁ ∘ mapSimplex θ₂ := by
-  ext y i
-  simp [mapSimplex]
+  simp only [mapSimplex, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, reindex_comp]
 
 /-- `mapSimplex` sends `SimplexCategory.δ i` to `face i`. -/
 @[simp]
@@ -656,23 +639,6 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   exact ⟨isImmersion_degeneracy hn hπ i, IteratedFiberProduct.isEmbedding_degeneracy i⟩
-
-section
-
-open CategoryTheory
-open scoped Simplicial
-
-/-- Every simplicial Čech nerve map `mapSimplex θ` is `C^{m'}` for `m' ≤ n`. -/
-theorem contMDiff_mapSimplex {a b : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (θ : ⦋a⦌ ⟶ ⦋b⦌) :
-    letI := iteratedFiberProductChartedSpace hn hπ b
-    letI := iteratedFiberProductChartedSpace hn hπ a
-    ContMDiff
-      𝓘(ℝ, Fin ((b + 1) * finrank ℝ EY - b * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((a + 1) * finrank ℝ EY - a * finrank ℝ EM) → ℝ) m'
-      (IteratedFiberProduct.mapSimplex (π := π) θ) :=
-  contMDiff_reindex hn hπ hm' θ.toOrderHom
-
-end
 
 /-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
 embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
