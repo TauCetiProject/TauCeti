@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
 public import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.Analysis.CStarAlgebra.Basic
+public import TauCeti.Analysis.Normed.Group.Star
 public import TauCeti.Topology.ApproximateUnit
 import TauCeti.Analysis.Normed.Operator.Dense
 

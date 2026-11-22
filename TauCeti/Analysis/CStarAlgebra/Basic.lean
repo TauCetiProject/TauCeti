@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import TauCeti.Analysis.Normed.Group.Star
 
 /-!
-# Normed star subgroups, the unit of a C⋆-ring, and compact unitary groups
+# The unit of a C⋆-ring and compact unitary groups
 
 In a C⋆-ring every unitary element has norm at most one (`CStarRing.norm_coe_unitary`), and the
 unitary elements form a closed set. So when the closed balls of the ring are compact, as for a
@@ -18,12 +19,8 @@ finite-dimensional C⋆-algebra such as the operators on a finite-dimensional in
 its unitary group is compact. In particular the orthogonal and unitary groups of a
 finite-dimensional real or complex inner product space are compact.
 
-Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
-`NormedStarGroup` structure.
-
 ## Main results
 
-* `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `CStarRing.norm_one_le`: `‖1‖ ≤ 1` in any unital C⋆-ring, including the trivial one, where
   Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
 * `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
@@ -31,13 +28,6 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
 -/
 
 public section
-
-/-- Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the
-`NormedStarGroup` structure. -/
-instance StarMemClass.instNormedStarGroup {S E : Type*} [SeminormedAddCommGroup E]
-    [StarAddMonoid E] [NormedStarGroup E] [SetLike S E] [AddSubgroupClass S E] [StarMemClass S E]
-    (s : S) : NormedStarGroup s where
-  norm_star_le x := NormedStarGroup.norm_star_le (x : E)
 
 namespace CStarRing
 
