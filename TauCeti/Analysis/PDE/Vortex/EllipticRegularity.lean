@@ -367,6 +367,32 @@ private theorem memSobolev_add_one_of_temperedVacuumAdjoint (s : ℝ) (Y : Fin 4
     MemSobolev (s + 1) 2 (Y i) :=
   memSobolev_temperedVacuumAdjoint_iff.1 (by simpa using hY) i
 
+/-- The elliptic bootstrap with a zeroth-order term, for either operator: if every weak solution
+`y ∈ L²` of `P* y = F` with `F ∈ H^j`, `j ≤ k`, lies in `H^(j+1)`, then so does a weak solution of
+`P* y = f + A y` with `f ∈ H^k` and `A` smooth with bounded derivatives through order `k`. -/
+private theorem mem_sobolevFields_natCast_add_one_of_integral_inner_eq_add (k : ℕ)
+    {P : (ℂ → EuclideanSpace ℝ (Fin 4)) → ℂ → EuclideanSpace ℝ (Fin 4)}
+    {y f : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hP : ∀ j ≤ k, ∀ F ∈ sobolevFields j, (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η →
+      HasCompactSupport η → ∫ z, ⟪y z, P η z⟫ = ∫ z, ⟪F z, η z⟫) → y ∈ sobolevFields (j + 1))
+    {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
+    (hAbound : ∀ i j, ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ M)
+    (hy : MemLp y 2 volume) (hf : f ∈ sobolevFields k)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, P η z⟫ =
+        ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫) :
+    y ∈ sobolevFields (k + 1) := by
+  -- One step: `y ∈ H^j` puts the right side `f + A y` in `H^j`, hence `y ∈ H^(j+1)`.
+  have hstep (j : ℕ) (hj : j ≤ k) (hyj : y ∈ sobolevFields j) : y ∈ sobolevFields (j + 1) :=
+    hP j hj _ (add_mem (sobolevFields_mono (by exact_mod_cast hj) hf)
+      (mulVec_mem_sobolevFields_natCast j hA (fun i' j' ↦ (hAbound i' j').imp
+        fun _ hM ↦ ⟨hM.1, fun n hn ↦ hM.2 n (hn.trans hj)⟩) hyj)) hweak
+  have hall (j : ℕ) (hj : j ≤ k) : y ∈ sobolevFields (j + 1) := by
+    induction j with
+    | zero => simpa using hstep 0 hj (by simpa using hy)
+    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
+  exact hall k le_rfl
+
 /-! ### Weak solutions of `L_x y = f` -/
 
 /-- **Elliptic regularity at the vacuum.** Let `y` be a square-integrable field which is a weak
@@ -450,20 +476,10 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ =
         ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫) :
-    y ∈ sobolevFields (k + 1) := by
-  -- One step: `y ∈ H^j` puts the right side `f + A y` in `H^j`, hence `y ∈ H^(j+1)`.
-  have hstep (j : ℕ) (hj : j ≤ k) (hyj : y ∈ sobolevFields j) : y ∈ sobolevFields (j + 1) :=
+    y ∈ sobolevFields (k + 1) :=
+  mem_sobolevFields_natCast_add_one_of_integral_inner_eq_add k (fun j hj _ hF hw ↦
     mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq j hx
-      (fun i n hn ↦ hbound i n (hn.trans hj)) hy
-      (add_mem (sobolevFields_mono (by exact_mod_cast hj) hf)
-        (mulVec_mem_sobolevFields_natCast j hA (fun i' j' ↦ (hAbound i' j').imp
-          fun _ hM ↦ ⟨hM.1, fun n hn ↦ hM.2 n (hn.trans hj)⟩) hyj))
-      hweak
-  have hall (j : ℕ) (hj : j ≤ k) : y ∈ sobolevFields (j + 1) := by
-    induction j with
-    | zero => simpa using hstep 0 hj (by simpa using hy)
-    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
-  exact hall k le_rfl
+      (fun i n hn ↦ hbound i n (hn.trans hj)) hy hF hw) hA hAbound hy hf hweak
 
 /-! ### Weak solutions of `L_x* η = g` -/
 
@@ -528,20 +544,10 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_e
     (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
       ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ =
         ∫ z, ⟪g z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * η z j), v z⟫) :
-    η ∈ sobolevFields (k + 1) := by
-  -- One step: `η ∈ H^j` puts the right side `g + A η` in `H^j`, hence `η ∈ H^(j+1)`.
-  have hstep (j : ℕ) (hj : j ≤ k) (hηj : η ∈ sobolevFields j) : η ∈ sobolevFields (j + 1) :=
+    η ∈ sobolevFields (k + 1) :=
+  mem_sobolevFields_natCast_add_one_of_integral_inner_eq_add k (fun j hj _ hF hw ↦
     mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq j hx
-      (fun i n hn ↦ hbound i n (hn.trans hj)) hη
-      (add_mem (sobolevFields_mono (by exact_mod_cast hj) hg)
-        (mulVec_mem_sobolevFields_natCast j hA (fun i' j' ↦ (hAbound i' j').imp
-          fun _ hM ↦ ⟨hM.1, fun n hn ↦ hM.2 n (hn.trans hj)⟩) hηj))
-      hweak
-  have hall (j : ℕ) (hj : j ≤ k) : η ∈ sobolevFields (j + 1) := by
-    induction j with
-    | zero => simpa using hstep 0 hj (by simpa using hη)
-    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
-  exact hall k le_rfl
+      (fun i n hn ↦ hbound i n (hn.trans hj)) hη hF hw) hA hAbound hη hg hweak
 
 /-! ### Fields of `A_m^s` and plane vortices -/
 

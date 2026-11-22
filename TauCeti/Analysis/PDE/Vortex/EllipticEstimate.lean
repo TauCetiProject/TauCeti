@@ -567,8 +567,7 @@ theorem exists_norm_exp_mul_smul_adjoint_apply_le_mul_norm (k : ℕ)
       ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ M := by
     obtain ⟨M, hM, hMb⟩ := exists_norm_iteratedFDeriv_expWeightCoeff_le c j i k
     refine ⟨M, hM, fun n hn z ↦ ?_⟩
-    rw [show (fun z ↦ -expWeightCoeff c j i z) = -expWeightCoeff c j i from rfl,
-      iteratedFDeriv_neg_apply, norm_neg]
+    rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
     exact hMb n hn z
   obtain ⟨K₀, hK₀⟩ := exists_eLpNorm_exp_mul_smul_adjoint_apply_le (μ := volume)
     (hx.of_le (by exact_mod_cast le_top)) hsol hlim hc

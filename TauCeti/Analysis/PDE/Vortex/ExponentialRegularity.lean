@@ -107,6 +107,50 @@ variable {x y f : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### The weak Leibniz rule -/
 
+/-- The weak Leibniz rule for either operator. Let `T` be the test operator, satisfying the
+Leibniz rule `T (w v) = w T v + σ'(dw) v` and sending smooth compactly supported fields to
+continuous compactly supported ones, and let `σ` be minus the transpose of `σ'`. If `y ∈ L²` is a
+weak solution of `T* y = f` with `f ∈ L²`, then `w y` is a weak solution of
+`T* (w y) = w f + σ(dw) y`. -/
+private theorem integral_inner_fun_smul_eq
+    {T : (ℂ → EuclideanSpace ℝ (Fin 4)) → ℂ → EuclideanSpace ℝ (Fin 4)}
+    {σ σ' : (ℂ →L[ℝ] ℝ) → EuclideanSpace ℝ (Fin 4) → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ}
+    (hw : ContDiff ℝ ∞ w)
+    (hTw : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → ∀ z,
+      T (fun t ↦ w t • v t) z = w z • T v z + σ' (fderiv ℝ w z) (v z))
+    (hT : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
+      Continuous (T v) ∧ HasCompactSupport (T v))
+    (hσ : ∀ d a b, ⟪σ d a, b⟫ = -⟪a, σ' d b⟫) (hy : MemLp y 2 volume) (hf : MemLp f 2 volume)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, T η z⟫ = ∫ z, ⟪f z, η z⟫)
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪w z • y z, T η z⟫ = ∫ z, ⟪w z • f z + σ (fderiv ℝ w z) (y z), η z⟫ := by
+  have hwη : ContDiff ℝ ∞ (fun z ↦ w z • η z) := hw.smul hη
+  have hwηc : HasCompactSupport (fun z ↦ w z • η z) := HasCompactSupport.smul_left (f := w) hηc
+  -- The commutator `S = σ'(dw) η` of the test operator is continuous with compact support.
+  set S : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ T (fun t ↦ w t • η t) z - w z • T η z
+  have hS (z : ℂ) : S z = σ' (fderiv ℝ w z) (η z) := by
+    simp only [S, hTw η hη z, add_sub_cancel_left]
+  have hSL : MemLp S 2 volume :=
+    ((hT _ hwη hwηc).1.sub (hw.continuous.smul (hT η hη hηc).1)).memLp_of_hasCompactSupport
+      ((hT _ hwη hwηc).2.sub (HasCompactSupport.smul_left (f := w) (hT η hη hηc).2))
+  have hwηL : MemLp (fun z ↦ w z • η z) 2 volume :=
+    hwη.continuous.memLp_of_hasCompactSupport hwηc
+  have hTL : MemLp (T fun t ↦ w t • η t) 2 volume :=
+    (hT _ hwη hwηc).1.memLp_of_hasCompactSupport (hT _ hwη hwηc).2
+  -- Pointwise, both sides differ from the test against `w η` by the pairing of `y` with `S`.
+  have hl (z : ℂ) : ⟪w z • y z, T η z⟫ = ⟪y z, T (fun t ↦ w t • η t) z⟫ - ⟪y z, S z⟫ := by
+    simp only [S, inner_sub_right, real_inner_smul_left, real_inner_smul_right]
+    ring
+  have hr (z : ℂ) : ⟪w z • f z + σ (fderiv ℝ w z) (y z), η z⟫ =
+      ⟪f z, w z • η z⟫ - ⟪y z, S z⟫ := by
+    rw [inner_add_left, hσ, ← hS, real_inner_smul_left, real_inner_smul_right]
+    ring
+  rw [integral_congr_ae (.of_forall hl), integral_congr_ae (.of_forall hr),
+    integral_sub (hy.integrable_inner (𝕜 := ℝ) hTL) (hy.integrable_inner (𝕜 := ℝ) hSL),
+    integral_sub (hf.integrable_inner (𝕜 := ℝ) hwηL) (hy.integrable_inner (𝕜 := ℝ) hSL),
+    hweak _ hwη hwηc]
+
 /-- **The weak Leibniz rule for the gauge-fixed operator.** Let `x` be continuous and let `y` be a
 square-integrable weak solution of `L_x y = f` with `f ∈ L²`, tested against smooth compactly
 supported fields. For a smooth real weight `w`, the field `w y` is a weak solution of
@@ -118,39 +162,13 @@ theorem integral_inner_fun_smul_gaugeFixedAdjoint_eq (hx : Continuous x) {w : �
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫)
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η) :
     ∫ z, ⟪w z • y z, gaugeFixedAdjoint x η z⟫ =
-      ∫ z, ⟪w z • f z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z), η z⟫ := by
+      ∫ z, ⟪w z • f z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z), η z⟫ :=
   have h1 : (1 : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  have hwη : ContDiff ℝ ∞ (fun z ↦ w z • η z) := hw.smul hη
-  have hwηc : HasCompactSupport (fun z ↦ w z • η z) := HasCompactSupport.smul_left (f := w) hηc
-  -- The commutator `S = σ*(dw) η` of the adjoint is continuous with compact support.
-  set S : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦
-    gaugeFixedAdjoint x (fun t ↦ w t • η t) z - w z • gaugeFixedAdjoint x η z
-  have hS (z : ℂ) : S z = gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z) := by
-    simp only [S, gaugeFixedAdjoint_fun_smul x (hw.differentiable (by simp) z)
-      (hη.differentiable (by simp) z), add_sub_cancel_left]
-  have hSL : MemLp S 2 volume :=
-    ((continuous_gaugeFixedAdjoint hx (hwη.of_le h1)).sub (hw.continuous.smul
-      (continuous_gaugeFixedAdjoint hx (hη.of_le h1)))).memLp_of_hasCompactSupport
-      ((hasCompactSupport_gaugeFixedAdjoint hwηc).sub
-        (HasCompactSupport.smul_left (f := w) (hasCompactSupport_gaugeFixedAdjoint hηc)))
-  have hwηL : MemLp (fun z ↦ w z • η z) 2 volume :=
-    hwη.continuous.memLp_of_hasCompactSupport hwηc
-  have hAL : MemLp (gaugeFixedAdjoint x fun t ↦ w t • η t) 2 volume :=
-    memLp_gaugeFixedAdjoint hx (hwη.of_le h1) hwηc
-  -- Pointwise, both sides differ from the test against `w η` by the pairing of `y` with `S`.
-  have hl (z : ℂ) : ⟪w z • y z, gaugeFixedAdjoint x η z⟫ =
-      ⟪y z, gaugeFixedAdjoint x (fun t ↦ w t • η t) z⟫ - ⟪y z, S z⟫ := by
-    simp only [S, inner_sub_right, real_inner_smul_left, real_inner_smul_right]
-    ring
-  have hr (z : ℂ) : ⟪w z • f z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z), η z⟫ =
-      ⟪f z, w z • η z⟫ - ⟪y z, S z⟫ := by
-    rw [inner_add_left, inner_gaugeFixedOperatorSymbol, ← hS, real_inner_smul_left,
-      real_inner_smul_right]
-    ring
-  rw [integral_congr_ae (.of_forall hl), integral_congr_ae (.of_forall hr),
-    integral_sub (hy.integrable_inner (𝕜 := ℝ) hAL) (hy.integrable_inner (𝕜 := ℝ) hSL),
-    integral_sub (hf.integrable_inner (𝕜 := ℝ) hwηL) (hy.integrable_inner (𝕜 := ℝ) hSL),
-    hweak _ hwη hwηc]
+  integral_inner_fun_smul_eq hw (fun v hv z ↦ gaugeFixedAdjoint_fun_smul x
+      (hw.differentiable (by simp) z) (hv.differentiable (by simp) z))
+    (fun v hv hvc ↦ ⟨continuous_gaugeFixedAdjoint hx (hv.of_le h1),
+      hasCompactSupport_gaugeFixedAdjoint hvc⟩)
+    inner_gaugeFixedOperatorSymbol hy hf hweak hη hηc
 
 /-! ### The commutator with the exponential weight -/
 
@@ -227,42 +245,16 @@ theorem integral_inner_fun_smul_gaugeFixedOperator_eq (hx : Continuous x) {w : �
       ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ = ∫ z, ⟪g z, v z⟫)
     {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : ContDiff ℝ ∞ v) (hvc : HasCompactSupport v) :
     ∫ z, ⟪w z • η z, gaugeFixedOperator x v z⟫ =
-      ∫ z, ⟪w z • g z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z), v z⟫ := by
+      ∫ z, ⟪w z • g z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z), v z⟫ :=
   have h1 : (1 : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  have hwv : ContDiff ℝ ∞ (fun z ↦ w z • v z) := hw.smul hv
-  have hwvc : HasCompactSupport (fun z ↦ w z • v z) := HasCompactSupport.smul_left (f := w) hvc
-  -- The commutator `S = σ(dw) v` of `L_x` is continuous with compact support.
-  set S : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦
-    gaugeFixedOperator x (fun t ↦ w t • v t) z - w z • gaugeFixedOperator x v z
-  have hS (z : ℂ) : S z = gaugeFixedOperatorSymbol (fderiv ℝ w z) (v z) := by
-    simp only [S, gaugeFixedOperator_fun_smul x (hw.differentiable (by simp) z)
-      (hv.differentiable (by simp) z), add_sub_cancel_left]
-  have hSL : MemLp S 2 volume :=
-    ((continuous_gaugeFixedOperator hx (hwv.of_le h1)).sub (hw.continuous.smul
-      (continuous_gaugeFixedOperator hx (hv.of_le h1)))).memLp_of_hasCompactSupport
-      ((hasCompactSupport_gaugeFixedOperator hwvc).sub
-        (HasCompactSupport.smul_left (f := w) (hasCompactSupport_gaugeFixedOperator hvc)))
-  have hwvL : MemLp (fun z ↦ w z • v z) 2 volume :=
-    hwv.continuous.memLp_of_hasCompactSupport hwvc
-  have hLL : MemLp (gaugeFixedOperator x fun t ↦ w t • v t) 2 volume :=
-    (continuous_gaugeFixedOperator hx (hwv.of_le h1)).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedOperator hwvc)
-  -- Pointwise, both sides differ from the test against `w v` by the pairing of `η` with `S`.
-  have hl (z : ℂ) : ⟪w z • η z, gaugeFixedOperator x v z⟫ =
-      ⟪η z, gaugeFixedOperator x (fun t ↦ w t • v t) z⟫ - ⟪η z, S z⟫ := by
-    simp only [S, inner_sub_right, real_inner_smul_left, real_inner_smul_right]
-    ring
-  have hr (z : ℂ) : ⟪w z • g z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z), v z⟫ =
-      ⟪g z, w z • v z⟫ - ⟪η z, S z⟫ := by
-    rw [inner_add_left, hS, real_inner_comm (gaugeFixedOperatorSymbol _ _) (η z),
-      inner_gaugeFixedOperatorSymbol,
-      real_inner_comm (v z) (gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z)),
-      real_inner_smul_left, real_inner_smul_right]
-    ring
-  rw [integral_congr_ae (.of_forall hl), integral_congr_ae (.of_forall hr),
-    integral_sub (hη.integrable_inner (𝕜 := ℝ) hLL) (hη.integrable_inner (𝕜 := ℝ) hSL),
-    integral_sub (hg.integrable_inner (𝕜 := ℝ) hwvL) (hη.integrable_inner (𝕜 := ℝ) hSL),
-    hweak _ hwv hwvc]
+  integral_inner_fun_smul_eq hw (fun u hu z ↦ gaugeFixedOperator_fun_smul x
+      (hw.differentiable (by simp) z) (hu.differentiable (by simp) z))
+    (fun u hu huc ↦ ⟨continuous_gaugeFixedOperator hx (hu.of_le h1),
+      hasCompactSupport_gaugeFixedOperator huc⟩)
+    (fun d a b ↦ by
+      rw [real_inner_comm (gaugeFixedOperatorSymbol d b), inner_gaugeFixedOperatorSymbol, neg_neg,
+        real_inner_comm])
+    hη hg hweak hv hvc
 
 /-- The commutator of `L_x*` with the weight `w = exp(c ρ)`: `σ*(dw) v` is the multiplication of
 `w v` by minus the transpose of the matrix `expWeightCoeff c`. -/
