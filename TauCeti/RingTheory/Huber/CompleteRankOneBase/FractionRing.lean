@@ -180,7 +180,7 @@ include ϖ in
 `WithVal (ValuationRing.valuation O K)`. -/
 theorem hasBasis_nhds_zero_withVal :
     (𝓝 (0 : WithVal (ValuationRing.valuation O K))).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ (awayNhd ϖ (WithVal (ValuationRing.valuation O K)) n : Set _) := by
+      fun n ↦ (localizedSubgroup ϖ ⊤ (WithVal (ValuationRing.valuation O K)) n : Set _) := by
   set v := ValuationRing.valuation O K
   let _ : (Valued.v (R := WithVal v)).RankOne := Classical.choice (nonempty_rankOne_withVal ϖ K)
   open scoped Valued in
@@ -196,12 +196,13 @@ theorem hasBasis_nhds_zero_withVal :
     rw [Valued.toNormedField.norm_lt_one_iff]
     refine lt_of_le_of_ne (hv.map_le_one ϖ) fun h1 ↦ not_isUnit (O := O) (ϖ := ϖ) ?_
     exact hv.isUnit_of_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) h1
-  -- Under the rank-one norm inducing the valuation topology, `awayNhd ϖ _ n` is precisely the
+  -- In the rank-one norm inducing the valuation topology, the subgroup `ϖⁿ O` is the
   -- closed ball of radius `‖ϖ‖ ^ n`.
-  have hball (n : ℕ) : (awayNhd ϖ (WithVal v) n : Set (WithVal v)) =
+  have hball (n : ℕ) : (localizedSubgroup ϖ ⊤ (WithVal v) n : Set (WithVal v)) =
       {x : WithVal v | ‖x‖ ≤ ‖algebraMap O (WithVal v) ϖ‖ ^ n} := by
     ext x
-    simp only [SetLike.mem_coe, mem_awayNhd, Set.mem_ofPred_eq]
+    simp only [SetLike.mem_coe, mem_localizedSubgroup_iff, Submodule.mem_top, true_and,
+      Set.mem_ofPred_eq]
     constructor
     · rintro ⟨a, rfl⟩
       rw [map_mul, map_pow, norm_mul, norm_pow]
@@ -271,7 +272,7 @@ theorem continuous_equivIntegerWithVal : Continuous (equivIntegerWithVal O K) :=
     (hasBasis_nhds_zero_withVal ϖ K)).mpr fun n _ ↦ ⟨n, trivial, fun a ha ↦ ?_⟩
   rw [Ideal.span_singleton_pow, SetLike.mem_coe, Ideal.mem_span_singleton] at ha
   obtain ⟨b, rfl⟩ := ha
-  exact mem_awayNhd.mpr ⟨b, rfl⟩
+  exact (mem_localizedSubgroup_iff _ _ _ _ _).mpr ⟨b, Submodule.mem_top, rfl⟩
 
 include ϖ in
 /-- The inverse of `equivIntegerWithVal` is continuous from the valuation topology on
@@ -282,7 +283,7 @@ theorem continuous_equivIntegerWithVal_symm : Continuous (equivIntegerWithVal O 
   rw [ContinuousAt, map_zero, nhds_subtype_eq_comap]
   refine (((hasBasis_nhds_zero_withVal ϖ K).comap Subtype.val).tendsto_iff
     (isAdic (O := O) (ϖ := ϖ)).hasBasis_nhds_zero).mpr fun n _ ↦ ⟨n, trivial, fun x hx ↦ ?_⟩
-  obtain ⟨b, hb⟩ := mem_awayNhd.mp hx
+  obtain ⟨b, _, hb⟩ := (mem_localizedSubgroup_iff _ _ _ _ _).mp hx
   have hval : algebraMap O (WithVal (ValuationRing.valuation O K))
       ((equivIntegerWithVal O K).symm x) = (x : WithVal (ValuationRing.valuation O K)) := by
     rw [← coe_equivIntegerWithVal, RingEquiv.apply_symm_apply]

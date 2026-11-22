@@ -36,8 +36,8 @@ the localisation of `𝕎 R⁺ ⧸ J` at the classes of the Teichmüller represe
 `a ∈ R⁺` which are units of `R`. Every such `a` divides a power of any pseudouniformiser `ϖ ∈ R⁺`,
 so this is a localisation of `𝕎 R⁺ ⧸ J` away from the class of `[ϖ]`, for every pseudouniformiser
 `ϖ ∈ R⁺` (`TauCeti.Perfectoid.untilt.isLocalizationAway`). For a Tate ring `R` the untilt carries
-the `[ϖ]`-adic topology `TauCeti.Huber.awayTopology` for one such `ϖ`; the neighbourhoods of zero
-then have basis `[ϖ]ⁿ A⁺` for every pseudouniformiser `ϖ ∈ R⁺`
+the `[ϖ]`-adic topology `TauCeti.localizedTopology _ ⊤ _` for one such `ϖ`; the neighbourhoods
+of zero then have basis `[ϖ]ⁿ A⁺` for every pseudouniformiser `ϖ ∈ R⁺`
 (`TauCeti.Perfectoid.untilt.hasBasis_nhds_zero`), so the topology does not depend on the choice.
 It makes the untilt a Tate ring in which `A⁺` is open and bounded and the class of `[ϖ]` is a
 pseudouniformiser.
@@ -202,41 +202,42 @@ variable {p} [IsTateRing R] {P : Pair R} {J : Ideal (WittVector p P.plus)}
 
 /-- For a unit `s` and a topologically nilpotent `t` of `R` in `R⁺`, every neighbourhood
 `[s]ᵐ A⁺` contains some `[t]ᵏ A⁺`. -/
-private theorem exists_awayNhd_subset {s t : P.plus} (hs : IsUnit (s : R))
+private theorem exists_localizedSubgroup_subset {s t : P.plus} (hs : IsUnit (s : R))
     (ht : IsTopologicallyNilpotent (t : R)) (m : ℕ) :
-    ∃ k, (awayNhd (Ideal.Quotient.mk J (teichmuller p t)) (untilt p P J) k : Set (untilt p P J)) ⊆
-      awayNhd (Ideal.Quotient.mk J (teichmuller p s)) (untilt p P J) m := by
+    ∃ k, localizedSubgroup (Ideal.Quotient.mk J (teichmuller p t)) ⊤ (untilt p P J) k ≤
+      localizedSubgroup (Ideal.Quotient.mk J (teichmuller p s)) ⊤ (untilt p P J) m := by
   obtain ⟨k, c, hc⟩ := P.plus.exists_dvd_pow_of_isTopologicallyNilpotent
     P.isRingOfIntegralElements.isOpen (a := s ^ m) (by simpa using hs.pow m) ht
   refine ⟨k, fun x hx ↦ ?_⟩
-  obtain ⟨a, rfl⟩ := mem_awayNhd.mp hx
-  refine mem_awayNhd.mpr ⟨Ideal.Quotient.mk J (teichmuller p c) * a, ?_⟩
+  obtain ⟨a, _, rfl⟩ := (mem_localizedSubgroup_iff _ _ _ _ _).mp hx
+  refine (mem_localizedSubgroup_iff _ _ _ _ _).mpr
+    ⟨Ideal.Quotient.mk J (teichmuller p c) * a, Submodule.mem_top, ?_⟩
   rw [← mul_assoc, ← map_pow, ← map_pow, ← map_mul, ← map_mul, ← hc, map_pow, map_pow]
 
 variable (p P J) in
-/-- **The topology of the untilt**: the `[ϖ]`-adic topology `TauCeti.Huber.awayTopology` on
-`(𝕎 R⁺ ⧸ J)[1/[ϖ]]`, for a pseudouniformiser `ϖ ∈ R⁺` chosen by
+/-- **The topology of the untilt**: the `[ϖ]`-adic topology `TauCeti.localizedTopology _ ⊤ _`
+on `(𝕎 R⁺ ⧸ J)[1/[ϖ]]`, for a pseudouniformiser `ϖ ∈ R⁺` chosen by
 `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`. It does not depend on
 the choice (`TauCeti.Perfectoid.untilt.hasBasis_nhds_zero`). -/
 noncomputable instance instTopologicalSpace : TopologicalSpace (untilt p P J) :=
-  @awayTopology _ _
+  @localizedTopology _ _
     (Ideal.Quotient.mk J (teichmuller p
       P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose))
-    (untilt p P J) _ _
+    ⊤ (untilt p P J) _ _
     (isLocalizationAway (ϖ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose)
       P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec)
 
--- Here and in the instances below, the arguments of the `awayTopology` lemmas are given
--- explicitly: unification has to unfold `instTopologicalSpace` to `awayTopology`, which it does
--- not do while the pseudouniformiser is still a metavariable.
+-- Here and in the instances below, the arguments of the `localizedTopology` lemmas are given
+-- explicitly: unification does not unfold `instTopologicalSpace` to `localizedTopology`
+-- while the pseudouniformiser is still a metavariable.
 /-- The defining basis of the neighbourhoods of zero of the untilt, for the chosen
 pseudouniformiser. -/
 private theorem hasBasis_nhds_zero_choose :
     (𝓝 (0 : untilt p P J)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
-      (awayNhd (Ideal.Quotient.mk J (teichmuller p
+      (localizedSubgroup (Ideal.Quotient.mk J (teichmuller p
         P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose))
-        (untilt p P J) n : Set (untilt p P J)) :=
-  @hasBasis_nhds_zero_awayTopology _ _ _ (untilt p P J) _ _
+        ⊤ (untilt p P J) n : Set (untilt p P J)) :=
+  @hasBasis_nhds_zero_localizedTopology _ _ _ ⊤ (untilt p P J) _ _
     (isLocalizationAway (ϖ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose)
       P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec)
 
@@ -245,25 +246,25 @@ pseudouniformiser `ϖ ∈ R⁺` of `R`. In particular the topology of the untilt
 the choice of a pseudouniformiser. -/
 theorem hasBasis_nhds_zero {ϖ : P.plus} (hϖ : IsPseudoUniformizer (ϖ : R)) :
     (𝓝 (0 : untilt p P J)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
-      (awayNhd (Ideal.Quotient.mk J (teichmuller p ϖ)) (untilt p P J) n : Set (untilt p P J)) :=
+      (localizedSubgroup (Ideal.Quotient.mk J (teichmuller p ϖ)) ⊤ (untilt p P J) n : Set _) :=
   have hϖ₀ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec
   hasBasis_nhds_zero_choose.to_hasBasis
-    (fun m _ ↦ (exists_awayNhd_subset hϖ₀.isUnit hϖ.isTopologicallyNilpotent m).imp
+    (fun m _ ↦ (exists_localizedSubgroup_subset hϖ₀.isUnit hϖ.isTopologicallyNilpotent m).imp
       fun _ h ↦ ⟨trivial, h⟩)
-    fun m _ ↦ (exists_awayNhd_subset hϖ.isUnit hϖ₀.isTopologicallyNilpotent m).imp
+    fun m _ ↦ (exists_localizedSubgroup_subset hϖ.isUnit hϖ₀.isTopologicallyNilpotent m).imp
       fun _ h ↦ ⟨trivial, h⟩
 
 variable (p P J)
 
 /-- The untilt is a topological ring. -/
 instance instIsTopologicalRing : IsTopologicalRing (untilt p P J) :=
-  @isTopologicalRing_awayTopology _ _ _ (untilt p P J) _ _
+  @localizedTopology_isTopologicalRing _ _ _ ⊤ (untilt p P J) _ _
     (isLocalizationAway (ϖ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose)
       P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec)
 
 /-- The untilt is a nonarchimedean ring. -/
 instance instNonarchimedeanRing : NonarchimedeanRing (untilt p P J) :=
-  @nonarchimedeanRing_awayTopology _ _ _ (untilt p P J) _ _
+  @nonarchimedeanRing_localizedTopology _ _ _ ⊤ (untilt p P J) _ _
     (isLocalizationAway (ϖ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose)
       P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec)
 
@@ -696,8 +697,9 @@ theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.s
     ((Ideal.span_singleton_pow _ _).le (hN ⟨_, hb⟩ ⟨_, hk⟩ ⟨c * ϖ ^ k, Subtype.ext (by
       push_cast
       linear_combination (ϖ : R) ^ k * hyx)⟩))
-  refine mem_awayNhd.mpr ⟨d, ((isPseudoUniformizer_sharp (J := Ideal.span {ξ}) hϖ).isUnit.pow
-    k).mul_right_cancel ?_⟩
+  refine (mem_localizedSubgroup_iff _ _ _ _ _).mpr
+    ⟨d, Submodule.mem_top,
+      ((isPseudoUniformizer_sharp (J := Ideal.span {ξ}) hϖ).isUnit.pow k).mul_right_cancel ?_⟩
   have key (z : R) (hz : z * ϖ ^ k ∈ P.plus) :
       sharp p P (Ideal.span {ξ}) z * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
         algebraMap _ (untilt p P (Ideal.span {ξ}))

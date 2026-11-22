@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.Henselian.Approximation.LocalizationTopology
 The coefficient ring `ℤ[1/3]` contains an open copy of `ℤ` but is not discrete.
 Its first basic subgroup does not contain `1`, even though `3` is a unit in the
 localized ring. This distinguishes additive images from extended ideals.
-We also test the discrete zero-ideal and indiscrete unit-parameter boundaries.
+We also test discreteness for `I = ⊥` and indiscreteness for `t = 1`, `I = ⊤`.
 -/
 
 public section
@@ -26,7 +26,7 @@ namespace TauCeti.HenselianApproximation.LocalizationChecks
 /-- *localized_zero_ideal*: the zero ideal gives the discrete topology. -/
 example : localizedTopology (3 : ℤ) ⊥ (Localization.Away (3 : ℤ)) = ⊥ := by simp
 
-/-- *localized_unit_total_ideal*: unit parameter and total ideal give the indiscrete topology. -/
+/-- *localized_unit_total_ideal*: parameter `1` and total ideal give the indiscrete topology. -/
 example :
     letI := IsLocalization.away_of_isUnit_of_bijective ℤ (isUnit_one : IsUnit (1 : ℤ))
       Function.bijective_id

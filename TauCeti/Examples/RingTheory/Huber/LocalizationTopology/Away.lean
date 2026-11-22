@@ -41,7 +41,7 @@ theorem isLocalizationAway : IsLocalization.Away (p : Aplus) ℚ_[p] :=
 /-- The neighbourhoods of zero of `ℚ_p` have basis `pⁿ A⁺`. -/
 theorem hasBasis_nhds_zero :
     (𝓝 (0 : ℚ_[p])).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ (awayNhd (p : Aplus) ℚ_[p] n : Set ℚ_[p]) := by
+      fun n ↦ (localizedSubgroup (p : Aplus) ⊤ ℚ_[p] n : Set ℚ_[p]) := by
   have hp : IsPseudoUniformizer (p : ℚ_[p]) := Padic.isPseudoUniformizer_p
   have hmem : (p : ℚ_[p]) ∈ Aplus := natCast_mem Aplus p
   refine (hp.hasBasis_nhds_zero
@@ -49,18 +49,19 @@ theorem hasBasis_nhds_zero :
     (fun _ ↦ Iff.rfl) fun n _ ↦ ?_
   ext x
   simp only [PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition, SetLike.mem_coe,
-    mem_awayNhd, Set.mem_smul_set, smul_eq_mul, Subtype.exists, map_mul, map_pow, map_natCast]
+    mem_localizedSubgroup_iff, Submodule.mem_top, true_and, Set.mem_smul_set, smul_eq_mul,
+    Subtype.exists, map_mul, map_pow, map_natCast]
   exact ⟨fun ⟨y, hy, e⟩ ↦ ⟨y, hy, e⟩, fun ⟨a, b, e⟩ ↦ ⟨a, b, e⟩⟩
 
 /-- **Compatibility**: the `p`-adic topology on `A⁺[1/p]` is the topology of `ℚ_p`. -/
 example :
     have := isLocalizationAway p h
-    awayTopology (p : Aplus) ℚ_[p] = (inferInstance : TopologicalSpace ℚ_[p]) := by
+    localizedTopology (p : Aplus) ⊤ ℚ_[p] = (inferInstance : TopologicalSpace ℚ_[p]) := by
   have := isLocalizationAway p h
   exact IsTopologicalAddGroup.ext
-    (@IsTopologicalRing.isTopologicalAddGroup _ _ (awayTopology (p : Aplus) ℚ_[p])
-      isTopologicalRing_awayTopology) inferInstance
-    (hasBasis_nhds_zero_awayTopology.eq_of_same_basis (hasBasis_nhds_zero p h))
+    (@IsTopologicalRing.isTopologicalAddGroup _ _ (localizedTopology (p : Aplus) ⊤ ℚ_[p])
+      (localizedTopology_isTopologicalRing _ _ _)) inferInstance
+    ((hasBasis_nhds_zero_localizedTopology _ _ _).eq_of_same_basis (hasBasis_nhds_zero p h))
 
 /-- The general results recover that `ℚ_p` is a Tate ring with pseudouniformiser `p`. -/
 example : IsTateRing ℚ_[p] ∧ IsPseudoUniformizer (p : ℚ_[p]) := by
@@ -89,24 +90,26 @@ theorem algebraMap_injective : Function.Injective (algebraMap ℤ (Localization.
 
 /-- **Computation**: `4 ∈ 2² ℤ` in `ℤ[1/2]`. -/
 example :
-    algebraMap ℤ (Localization.Away (2 : ℤ)) 4 ∈ awayNhd (2 : ℤ) (Localization.Away (2 : ℤ)) 2 :=
-  mem_awayNhd.mpr ⟨1, by norm_num⟩
+    algebraMap ℤ (Localization.Away (2 : ℤ)) 4 ∈
+      localizedSubgroup (2 : ℤ) ⊤ (Localization.Away (2 : ℤ)) 2 :=
+  (mem_localizedSubgroup_iff _ _ _ _ _).mpr ⟨1, Submodule.mem_top, by norm_num⟩
 
 /-- **Computation**: `2 ∉ 2² ℤ` in `ℤ[1/2]`. -/
 example :
-    algebraMap ℤ (Localization.Away (2 : ℤ)) 2 ∉ awayNhd (2 : ℤ) (Localization.Away (2 : ℤ)) 2 := by
+    algebraMap ℤ (Localization.Away (2 : ℤ)) 2 ∉
+      localizedSubgroup (2 : ℤ) ⊤ (Localization.Away (2 : ℤ)) 2 := by
   rintro hmem
-  obtain ⟨a, ha⟩ := mem_awayNhd.mp hmem
+  obtain ⟨a, _, ha⟩ := (mem_localizedSubgroup_iff _ _ _ _ _).mp hmem
   have := algebraMap_injective ha
   omega
 
-/-- **Non-example**: `1/2` is not in the image `π⁰ ℤ` of `ℤ` in `ℤ[1/2]`, so `awayNhd` is not the
-whole localisation. -/
+/-- **Non-example**: `1/2` is not in the image `π⁰ ℤ` of `ℤ` in `ℤ[1/2]`, so the zeroth basic
+subgroup is not the whole localisation. -/
 example :
-    IsLocalization.Away.invSelf (2 : ℤ) ∉ awayNhd (2 : ℤ) (Localization.Away (2 : ℤ)) 0 := by
-  rintro hmem
-  obtain ⟨a, ha⟩ := mem_awayNhd.mp hmem
-  rw [pow_zero, one_mul] at ha
+    IsLocalization.Away.invSelf (2 : ℤ) ∉
+      localizedSubgroup (2 : ℤ) ⊤ (Localization.Away (2 : ℤ)) 0 := by
+  rw [← SetLike.mem_coe, coe_localizedSubgroup_zero_top]
+  rintro ⟨a, ha⟩
   have h1 : algebraMap ℤ (Localization.Away (2 : ℤ)) (2 * a) =
       algebraMap ℤ (Localization.Away (2 : ℤ)) 1 := by
     rw [map_mul, ha, IsLocalization.Away.mul_invSelf, map_one]
@@ -120,21 +123,8 @@ section Degenerate
 variable {R : Type*} [CommRing R]
 
 /-- **Degenerate case**: for `π = 1` every neighbourhood `πⁿ A₀` is all of `A₀`. -/
-example (n : ℕ) : awayNhd (1 : R) R n = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦ mem_awayNhd.mpr ⟨x, by simp⟩
-
-/-- `R` is its own localisation away from `1`. -/
-theorem isLocalizationAway_one : IsLocalization.Away (1 : R) R :=
-  IsLocalization.self (Submonoid.powers_le.mpr ((IsUnit.mem_submonoid_iff 1).mpr isUnit_one))
-
-/-- For `π = 1` the topology is indiscrete: the only neighbourhood of zero is the whole ring. -/
-example :
-    have := isLocalizationAway_one (R := R)
-    @nhds R (awayTopology (1 : R) R) 0 = ⊤ := by
-  have := isLocalizationAway_one (R := R)
-  refine eq_top_iff.mpr fun s hs ↦ Filter.mem_top.mpr ?_
-  obtain ⟨n, -, hn⟩ := hasBasis_nhds_zero_awayTopology.mem_iff.mp hs
-  exact Set.eq_univ_of_forall fun x ↦ hn (mem_awayNhd.mpr ⟨x, by simp⟩)
+example (n : ℕ) : localizedSubgroup (1 : R) ⊤ R n = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦ (mem_localizedSubgroup_iff _ _ _ _ _).mpr ⟨x, by simp, by simp⟩
 
 end Degenerate
 

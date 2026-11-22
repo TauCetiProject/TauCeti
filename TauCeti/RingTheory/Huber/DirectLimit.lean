@@ -20,8 +20,8 @@ images, and `ϖ'` the image of a pseudouniformiser `ϖ` of some stage. This file
 ring and the colimit of plus rings a ring of integral elements.
 
 * `L` is the localisation `L₀[1/ϖ']` (`TauCeti.Huber.DirectLimit.isLocalization_away`), so it
-  carries the `ϖ'`-adic topology `TauCeti.Huber.awayTopology`, whose neighbourhoods of zero have
-  basis `ϖ'ⁿ L₀`. For it `L` is a Tate ring (`TauCeti.Huber.isTateRing_of_hasBasis`) and
+  carries the `ϖ'`-adic topology `TauCeti.localizedTopology ϖ' ⊤ L`, with neighbourhood basis
+  `ϖ'ⁿ L₀` at zero. For it `L` is a Tate ring (`TauCeti.Huber.isTateRing_of_hasBasis`) and
   `(L₀, ϖ' L₀)` is a pair of definition (`TauCeti.Huber.PairOfDefinition.ofIsPseudoUniformizer`).
 * For every group topology on `L` with this basis the maps `φᵢ` are continuous
   (`TauCeti.Huber.DirectLimit.continuous_of_hasBasis`), and the union `L⁺` of the images of plus
@@ -103,7 +103,8 @@ open Topology
 
 Let `A₀ᵢ ⊆ Aᵢ` be open subrings, `L₀ ⊆ L` a subring containing their images and `ϖ` a
 pseudouniformiser of a stage `A_{i₀}`, with image `ϖ' ∈ L₀`. The topology on `L` is any group
-topology whose neighbourhoods of zero have basis `ϖ'ⁿ L₀`, such as `TauCeti.Huber.awayTopology`. -/
+topology whose neighbourhoods of zero have basis `ϖ'ⁿ L₀`, such as
+`TauCeti.localizedTopology ϖ' ⊤ L`. -/
 
 section Tate
 
@@ -130,7 +131,7 @@ include hφt ht hA₀ hφA₀ hϖ hϖ' in
 /-- **The colimit is `L₀[1/ϖ']`.** If every element of `L` comes from a stage, then `L` is the
 localisation of any subring `L₀` containing the images of the `A₀ᵢ` away from the image `ϖ'` of
 the pseudouniformiser `ϖ`. In particular `L` carries the `ϖ'`-adic topology
-`TauCeti.Huber.awayTopology ϖ' L`. -/
+`TauCeti.localizedTopology ϖ' ⊤ L`. -/
 theorem isLocalization_away (hcover : ∀ x : L, ∃ i a, φ i a = x) :
     IsLocalization.Away ϖ' L := by
   refine .mk ϖ' ?_ (fun x ↦ ?_) fun a b hab ↦ ⟨0, by simp [Subtype.ext hab]⟩
@@ -141,7 +142,7 @@ theorem isLocalization_away (hcover : ∀ x : L, ∃ i a, φ i a = x) :
     simp only [Algebra.algebraMap_ofSubsemiring_apply, mul_comm]
 
 variable
-  (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd ϖ' L n : Set L))
+  (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (localizedSubgroup ϖ' ⊤ L n : Set L))
 
 include hφt ht hA₀ hφA₀ hϖ hϖ' h in
 /-- **The maps into the colimit are continuous** for any group topology on `L` whose
@@ -157,7 +158,7 @@ theorem continuous_of_hasBasis [IsTopologicalAddGroup L] (i : ι) : Continuous (
   have hcont : Continuous fun a ↦ (↑u⁻¹ : A j) * t i j hij a := (ht i j hij).const_mul _
   filter_upwards [hcont.continuousAt.preimage_mem_nhds (by
     simpa using (hA₀ j).mem_nhds (A₀ j).zero_mem)] with a ha
-  refine mem_awayNhd.mpr ⟨⟨_, hφA₀ j _ ha⟩, ?_⟩
+  refine (mem_localizedSubgroup_iff _ _ _ _ _).mpr ⟨⟨_, hφA₀ j _ ha⟩, Submodule.mem_top, ?_⟩
   have hu' : (ϖ' : L) ^ n = φ j u := by rw [hu, map_pow, hφt, hϖ']
   rw [Algebra.algebraMap_ofSubsemiring_apply, Subring.coe_mul, SubmonoidClass.coe_pow, hu',
     ← map_mul, Units.mul_inv_cancel_left, hφt]

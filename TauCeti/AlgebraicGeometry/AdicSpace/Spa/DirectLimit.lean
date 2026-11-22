@@ -260,7 +260,7 @@ variable [IsDirectedOrder ι] [∀ i, IsTopologicalRing (A i)] [IsTopologicalRin
   (A₀ : ∀ i, Subring (A i)) (hA₀ : ∀ i, IsOpen (A₀ i : Set (A i))) {L₀ : Subring L}
   (hφA₀ : ∀ i, ∀ a ∈ A₀ i, φ i a ∈ L₀) (hL₀ : ∀ x ∈ L₀, ∃ i, ∃ a ∈ A₀ i, φ i a = x)
   {i₀ : ι} {ϖ : A i₀} (hϖ : IsPseudoUniformizer ϖ) {ϖ' : L₀} (hϖ' : (ϖ' : L) = φ i₀ ϖ)
-  (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd ϖ' L n : Set L))
+  (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (localizedSubgroup ϖ' ⊤ L n : Set L))
   (Aplus : ∀ i, Subring (A i)) (hAplus : ∀ i, ∀ a ∈ Aplus i, IsPowerBounded a)
   (hA₀plus : ∀ i, A₀ i ≤ Aplus i) (htplus : ∀ i j (h : i ≤ j), ∀ a ∈ Aplus i, t i j h a ∈ Aplus j)
   (Lplus : Subring L) (hφplus : ∀ i, ∀ a ∈ Aplus i, φ i a ∈ Lplus)
