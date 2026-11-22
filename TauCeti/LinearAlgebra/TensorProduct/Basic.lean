@@ -51,6 +51,8 @@ pure tensors over a finite spanning family of the right factor.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
   structure map `R → A` tensored with `M`.
+* `TensorProduct.injective_mk_one_iff`: `m ↦ 1 ⊗ m` is injective iff the structure map `R → A`
+  stays injective after tensoring with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
 
@@ -430,5 +432,13 @@ theorem mk_one_eq_rTensor_comp_lid_symm (A : Type*) [Semiring A] [Algebra R A] :
     mk R A M 1 = (Algebra.linearMap R A).rTensor M ∘ₗ (TensorProduct.lid R M).symm.toLinearMap := by
   ext
   simp
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is injective iff `(Algebra.linearMap R A).rTensor M`
+is. -/
+theorem injective_mk_one_iff (A : Type*) [Semiring A] [Algebra R A] :
+    Function.Injective (mk R A M 1) ↔ Function.Injective ((Algebra.linearMap R A).rTensor M) := by
+  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    EquivLike.injective_comp]
 
 end TensorProduct

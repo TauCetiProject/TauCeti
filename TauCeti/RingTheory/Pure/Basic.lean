@@ -111,8 +111,8 @@ private theorem lTensor_injective_of_finite {f : M →ₗ[R] N}
     ext x
     simp [L']
   have hy : L'.mkQ.rTensor M y = 0 := H _ <| by
-    rw [lTensor_rTensor_comm, ← hz, map_zero, ← rTensor_comp_apply, ← rTensor_comp_apply,
-      comp_assoc, hzero, rTensor_zero, LinearMap.zero_apply]
+    rw [lTensor_rTensor_comm, ← hz]
+    simp [← rTensor_comp_apply, hzero]
   rw [← L'.liftQ_mkQ π hL', rTensor_comp_apply, hy, map_zero]
 
 /-- If `f.lTensor Q` is injective for every finitely presented module `Q` in the universe of `R`,

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import TauCeti.Algebra.Algebra.Tower
 public import TauCeti.RingTheory.Pure.Basic
 
 /-!
@@ -78,8 +79,7 @@ variable [Algebra R S]
 in any universe. -/
 theorem IsPure.injective_tensorProduct_mk (h : (algebraMap R S).IsPure) (P : Type*)
     [AddCommGroup P] [Module R P] : Function.Injective (TensorProduct.mk R S P 1) := by
-  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
-    EquivLike.injective_comp]
+  rw [injective_mk_one_iff]
   exact (isPure_algebraMap_iff.mp h).rTensor_injective P
 
 /-- `R → S` is pure if and only if `P → S ⊗[R] P`, `p ↦ 1 ⊗ p`, is injective for every
@@ -90,10 +90,7 @@ theorem isPure_algebraMap_iff_forall_injective :
   refine ⟨fun h P _ _ ↦ h.injective_tensorProduct_mk P, fun H ↦ ?_⟩
   rw [isPure_algebraMap_iff, LinearMap.isPure_iff]
   intro P _ _
-  have := H P
-  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
-    EquivLike.injective_comp] at this
-  exact (LinearMap.lTensor_inj_iff_rTensor_inj P _).mpr this
+  exact (LinearMap.lTensor_inj_iff_rTensor_inj P _).mpr ((injective_mk_one_iff P S).mp (H P))
 
 /-- If `R → S` is pure, then `R' → R' ⊗[R] S` is injective for every commutative `R`-algebra `R'`,
 in any universe. -/
@@ -136,14 +133,6 @@ theorem IsPure.algebraMap_tensorProduct (h : (algebraMap R S).IsPure) (R' : Type
 
 end Algebra
 
-/-- In a tower `R → S → T`, the structure map `R → T` is the composite of `R → S` and `S → T`, as
-`R`-linear maps. -/
-private theorem linearMap_eq_restrictScalars_comp (T : Type*) [CommRing T] [Algebra R S]
-    [Algebra S T] [Algebra R T] [IsScalarTower R S T] :
-    Algebra.linearMap R T = (Algebra.linearMap S T).restrictScalars R ∘ₗ Algebra.linearMap R S := by
-  ext
-  simp
-
 namespace IsPure
 
 /-- A pure ring homomorphism is injective. -/
@@ -162,14 +151,14 @@ theorem id : (RingHom.id R).IsPure := by
 theorem comp {f : R →+* S} {g : S →+* T} (hf : f.IsPure) (hg : g.IsPure) : (g.comp f).IsPure := by
   algebraize [f, g, g.comp f]
   rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff,
-    linearMap_eq_restrictScalars_comp (S := S)]
+    IsScalarTower.linearMap_eq_restrictScalars_comp R S T]
   exact (LinearMap.IsPure.restrictScalars hg).comp hf
 
 /-- If `g ∘ f` is pure, then `f` is pure. -/
 theorem of_comp {f : R →+* S} {g : S →+* T} (h : (g.comp f).IsPure) : f.IsPure := by
   algebraize [f, g, g.comp f]
   rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff,
-    linearMap_eq_restrictScalars_comp (S := S)] at h
+    IsScalarTower.linearMap_eq_restrictScalars_comp R S T] at h
   exact h.of_comp
 
 /-- A bijective ring homomorphism is pure. -/
