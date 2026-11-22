@@ -463,7 +463,7 @@ end Subadditive
 section Copy
 
 variable {G} {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
-  [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
+  [Semiring R] [PartialOrder R] [IsStrictOrderedRing R]
 
 omit [DecidableEq V] in
 /-- **The proper-extension obstruction.** Let `f` be a copy, not necessarily induced, of a nonempty
@@ -484,10 +484,8 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha fun x ↦ by rw [smul_eq_mul]; exact hle x
   -- The neighbours of `v` map to neighbours of `f v`.
   have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
-    intro x hx
-    obtain ⟨u, hu, rfl⟩ := mem_map.1 hx
-    rw [mem_neighborFinset] at hu ⊢
-    exact f.toHom.map_adj hu
+    rw [← coe_subset, coe_map, coe_neighborFinset, coe_neighborFinset]
+    exact f.toHom.image_neighborSet_subset v
   have hle₁ (v : V) : ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y := by
     have h := sum_le_sum_of_subset_of_nonneg (hsub v) fun y _ _ ↦ ha0 y
     rwa [sum_map] at h
@@ -501,8 +499,8 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     simp_rw [mul_sum]
     rw [swap]
     refine sum_congr rfl fun u _ ↦ ?_
-    rw [← sum_mul, hδ u]
-    ring
+    -- The numeral `2` is central, so it moves past `δ u` without commutativity of `R`.
+    rw [← sum_mul, hδ u, (Commute.ofNat_left 2 (δ u)).eq, mul_assoc]
   -- So no neighbour of `f v` is missed: it would make the paired inequalities strict.
   have hnbr (v : V) : H.neighborFinset (f v) ⊆ (G.neighborFinset v).map f.toEmbedding := by
     intro y hy
