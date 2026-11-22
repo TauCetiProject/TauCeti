@@ -67,6 +67,9 @@ noncomputable def spectralSequenceFirstPageXIso (p q : ℤ) :
       (H.shift p).obj ((singleFunctor C 0).obj ((homologyFunctor C q).obj X)) :=
   ((TStructure.t.spectralObject X).mapHomologicalFunctor H).spectralSequenceFirstPageXIso
       coreE₂Cohomological (⟨p, q⟩ : ℤ × ℤ) q (q + 1 : ℤ) rfl rfl (p + q) rfl ≪≫
+    eqToIso (by
+      rw [TStructure.t.mapHomologicalFunctor_spectralObject_H_obj_mk₁,
+        Triangulated.TStructure.eTruncGE_obj_coe, Triangulated.TStructure.eTruncLT_obj_coe]) ≪≫
     (H.shift (p + q)).mapIso (truncGETruncLTIsoSingleFunctor X q) ≪≫
     (H.shift (p + q)).mapIso (((singleFunctors C).shiftIso (-q) q 0 (by lia)).app _).symm ≪≫
     (H.shiftIso (-q) (p + q) p (by lia)).app _
@@ -83,13 +86,14 @@ lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom {X X' : De
         (spectralSequenceFirstPageXIso H X' p q).hom =
       (spectralSequenceFirstPageXIso H X p q).hom ≫
         (H.shift p).map ((singleFunctor C 0).map ((homologyFunctor C q).map f)) := by
-  simp only [spectralSequenceFirstPageXIso, Iso.trans_hom, Functor.mapIso_hom, Iso.app_hom,
-    Iso.symm_hom, Category.assoc]
+  simp only [spectralSequenceFirstPageXIso, Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom,
+    Iso.app_hom, Iso.symm_hom, Category.assoc]
   rw [Abelian.SpectralObject.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc
     (X := (TStructure.t.spectralObject X).mapHomologicalFunctor H)
     (Y := (TStructure.t.spectralObject X').mapHomologicalFunctor H),
     TStructure.t.mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁]
   dsimp only [Triangulated.TStructure.eTruncGE_obj_coe, Triangulated.TStructure.eTruncLT_obj_coe]
+  simp only [eqToHom_refl, Category.id_comp]
   rw [← H.shiftIso_hom_naturality]
   simp only [← Functor.map_comp_assoc, truncGETruncLTIsoSingleFunctor_hom_naturality_assoc]
   simp

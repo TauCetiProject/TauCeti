@@ -25,7 +25,8 @@ heart with the objects of `C`.
 * An object `Y` that is both `≥ q` and `≤ q` is isomorphic to its cohomology `Hᵠ(Y)` placed in
   degree `q` (`DerivedCategory.isoSingleFunctorHomology`), by an isomorphism which induces the
   canonical one on `Hᵠ` (`DerivedCategory.homologyFunctor_map_isoSingleFunctorHomology_hom`).
-  This determines it, and it is natural in `Y`
+  This determines it, since morphisms from an object `≤ q` to an object placed in degree `q` are
+  determined on `Hᵠ` (`DerivedCategory.hom_ext_of_isLE`), and it is natural in `Y`
   (`DerivedCategory.isoSingleFunctorHomology_hom_naturality`).
 * Combining the two, `Hᵠ(τ_{≥q} τ_{<q+1} X) ≅ Hᵠ(X)` (`DerivedCategory.homologyTruncGETruncLTIso`),
   and the truncation `τ_{≥q} τ_{<q+1} X` is `Hᵠ(X)` placed in degree `q`
@@ -109,7 +110,7 @@ variable (Y q) [Y.IsGE q] [Y.IsLE q]
 /-- An object `Y` of the derived category which is both `≥ q` and `≤ q` is isomorphic to its
 cohomology `Hᵠ(Y)` placed in degree `q`. The isomorphism induces the inverse of the canonical
 isomorphism `Hᵠ(Hᵠ(Y)[-q]) ≅ Hᵠ(Y)` on `Hᵠ` (`homologyFunctor_map_isoSingleFunctorHomology_hom`),
-which determines it (`hom_ext_of_isGE_of_isLE`). -/
+which determines it (`hom_ext_of_isLE`). -/
 noncomputable def isoSingleFunctorHomology :
     Y ≅ (singleFunctor C q).obj ((homologyFunctor C q).obj Y) :=
   isoSingleFunctorHomologyOfIso (Y.exists_iso_singleFunctor_obj_of_isGE_of_isLE q).choose_spec.some
@@ -125,8 +126,8 @@ lemma homologyFunctor_map_isoSingleFunctorHomology_hom :
 variable {Y q}
 
 /-- Two morphisms from an object `Y` which is `≥ q` and `≤ q` to an object placed in degree `q`
-agree when they agree on `Hᵠ`. -/
-lemma hom_ext_of_isGE_of_isLE {B : C} {f g : Y ⟶ (singleFunctor C q).obj B}
+agree when they agree on `Hᵠ`; see `hom_ext_of_isLE` for objects that are only `≤ q`. -/
+private lemma hom_ext_of_isGE_of_isLE {B : C} {f g : Y ⟶ (singleFunctor C q).obj B}
     (h : (homologyFunctor C q).map f = (homologyFunctor C q).map g) : f = g := by
   rw [← cancel_epi (isoSingleFunctorHomology Y q).inv]
   obtain ⟨f', hf'⟩ := (singleFunctor C q).map_surjective ((isoSingleFunctorHomology Y q).inv ≫ f)
@@ -162,6 +163,18 @@ lemma isoSingleFunctorHomology_hom_naturality {Y' : DerivedCategory C} [Y'.IsGE 
     homologyFunctor_map_isoSingleFunctorHomology_hom, Category.comp_id]
 
 end Heart
+
+/-- Two morphisms from an object `Y` which is `≤ q` to an object placed in degree `q` agree when
+they agree on `Hᵠ`: both factor through `Y ⟶ τ_{≥q} Y`, which induces an isomorphism on `Hᵠ`, and
+`τ_{≥q} Y` is both `≥ q` and `≤ q`. -/
+lemma hom_ext_of_isLE {Y : DerivedCategory C} {q : ℤ} [Y.IsLE q] {B : C}
+    {f g : Y ⟶ (singleFunctor C q).obj B}
+    (h : (homologyFunctor C q).map f = (homologyFunctor C q).map g) : f = g := by
+  have := isIso_homologyFunctor_map_truncGEπ_app Y (le_refl q)
+  have hfg : t.descTruncGE f q = t.descTruncGE g q := hom_ext_of_isGE_of_isLE (by
+    rw [← cancel_epi ((homologyFunctor C q).map ((t.truncGEπ q).app Y)), ← Functor.map_comp,
+      ← Functor.map_comp, t.π_descTruncGE, t.π_descTruncGE, h])
+  rw [← t.π_descTruncGE f q, ← t.π_descTruncGE g q, hfg]
 
 /-- The cohomology `Hᵠ(τ_{≥q} τ_{<q+1} X)` is `Hᵠ(X)`, through the maps
 `τ_{≥q} τ_{<q+1} X ⟵ τ_{<q+1} X ⟶ X`
