@@ -160,10 +160,10 @@ theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Se
   rw [Set.iUnion_prod', ← Set.iUnion_inter_iUnion, hD, hcover,
     ← Set.inter_assoc, Set.inter_self]
 
-/-- Injective rational affine post-composition preserves the finite branch property. -/
+/-- Rational affine post-composition preserves finite branches when injective on the image. -/
 theorem postcomp {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f)
     (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear)
-    (hinj : Function.Injective φ) : IsFiniteBranchOn h h'' D (fun x => φ (f x)) := by
+    (hinj : Set.InjOn φ (Set.range f)) : IsFiniteBranchOn h h'' D (fun x => φ (f x)) := by
   obtain ⟨κ, _, S, g, hD, hS⟩ := hf
   refine ⟨κ, ‹_›, S, fun k => φ.comp (g k), hD, fun k =>
     ⟨(hS k).1, ?_, ?_, ?_⟩⟩
@@ -172,7 +172,9 @@ theorem postcomp {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f)
   · intro x hx y hy he
     apply (hS k).2.2.1 hx hy
     apply hinj
-    simpa only [AffineMap.comp_apply] using he
+    · exact ⟨⟨x, hD ▸ Set.mem_iUnion.mpr ⟨k, hx⟩⟩, (hS k).2.2.2 _ hx⟩
+    · exact ⟨⟨y, hD ▸ Set.mem_iUnion.mpr ⟨k, hy⟩⟩, (hS k).2.2.2 _ hy⟩
+    · simpa only [AffineMap.comp_apply] using he
   · intro x hx
     simp only [AffineMap.comp_apply, (hS k).2.2.2 x hx]
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Set
-public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Order.SetNotation
 import Mathlib.Data.Set.Finite.Lattice
 
