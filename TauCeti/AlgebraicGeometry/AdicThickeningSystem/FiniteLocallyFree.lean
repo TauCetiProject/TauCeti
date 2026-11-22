@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
@@ -66,8 +62,9 @@ locally of finite presentation, the pushforward `p_* 𝒪_V` is already finite l
   locally of finite presentation over `X`.
 * `TauCeti.AlgebraicGeometry.overPullback_map_injective_of_faithful_completionFunctor` and
   `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_fullyFaithful_completionFunctor`:
-  injectivity (for finite, flat, locally finitely presented, formally unramified target) and
-  bijectivity (for finite étale target) of restriction along the zeroth level
+  injectivity (for finite, flat, locally finitely presented source and finite, flat, locally
+  finitely presented, formally unramified target) and bijectivity (for finite, flat, locally
+  finitely presented source and finite étale target) of restriction along the zeroth level
   `toScheme X I 0 : V(I ^ 1) ⟶ X`.
 
 ## References
@@ -695,11 +692,10 @@ theorem overPullback_map_bijective_of_fullyFaithful_completionFunctor
   obtain ⟨g, hg, hga⟩ := Scheme.formalCompletion.exists_hom_of_isFinite_of_flat (I := I) p q rfl rfl
     a (AdicThickeningSystem.liftOfEtale_comp _ _ a₀ ha₀)
   refine ⟨Over.homMk g hg, Over.OverMorphism.ext ?_⟩
-  rw [← cancel_epi (Scheme.formalCompletion.levelIsoPullback p rfl 0).hom,
-    ← Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl (Over.homMk g hg) 0,
-    ← cancel_mono (Scheme.formalCompletion.levelIsoPullback q rfl 0).inv,
-    Category.assoc, Iso.hom_inv_id, Category.comp_id]
-  exact (congrArg (·.app 0) hga).trans (AdicThickeningSystem.liftOfEtale_app_zero _ _ a₀ ha₀)
+  simp only [Scheme.formalCompletion.overPullback_map_left_eq_levelIsoPullback rfl rfl
+      (Over.homMk g hg) 0,
+    Over.homMk_left, congrArg (·.app 0) hga, a, AdicThickeningSystem.liftOfEtale_app_zero,
+    a₀, Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
 
 end OverPullback
 

@@ -70,8 +70,9 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `J.comap f = I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
   `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
-* `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback_hom_map`: naturality of
-  `levelIsoPullback` on `Over` morphisms.
+* `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback_hom_map` and
+  `AlgebraicGeometry.Scheme.formalCompletion.overPullback_map_left_eq_levelIsoPullback`:
+  naturality of `levelIsoPullback` on `Over` morphisms.
 * `AlgebraicGeometry.Scheme.formalCompletion.isOpenImmersion_map_app`,
   `AlgebraicGeometry.Scheme.formalCompletion.opensRange_map_app`: for an open immersion `f`, the
   levels of `formalCompletion.map f` are open immersions onto the inverse images of the image
@@ -384,7 +385,7 @@ noncomputable def levelIsoPullback (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) 
     (X.formalCompletion I).X n ≅
       ((Over.pullback (toScheme Y J n)).obj (Over.mk f)).left :=
   (isPullback_map_app f hf n).isoIsPullback _ _
-    (Over.isPullback_pullback_obj_mk (toScheme Y J n) f)
+    (by simpa only [Over.mk_hom] using Over.isPullback_pullback_obj (toScheme Y J n) (Over.mk f))
 
 @[reassoc (attr := simp)]
 theorem levelIsoPullback_hom_fst (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
@@ -423,7 +424,9 @@ theorem levelIsoPullback_hom_map {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I
           exact le_of_eq (congrArg K.comap (by simpa only [Over.mk_hom] using Over.w g)))).app n ≫
       (levelIsoPullback q hq n).hom =
       (levelIsoPullback p hp n).hom ≫ ((Over.pullback (toScheme Z K n)).map g).left := by
-  refine (Over.isPullback_pullback_obj_mk (toScheme Z K n) q).hom_ext ?_ ?_
+  have hpb := Over.isPullback_pullback_obj (toScheme Z K n) (Over.mk q)
+  simp only [Over.mk_hom] at hpb
+  refine hpb.hom_ext ?_ ?_
   · have hfst :
         ((Over.pullback (toScheme Z K n)).map g).left ≫ Limits.pullback.fst q (toScheme Z K n) =
           Limits.pullback.fst p (toScheme Z K n) ≫ g.left := by
@@ -434,6 +437,19 @@ theorem levelIsoPullback_hom_map {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I
     simp only [Over.pullback_obj_hom, Over.mk_hom, levelIsoPullback_hom_snd]
     exact congrArg (·.app n) (map_comp_eq (I := I) (J := J) (K := K)
       (by simpa only [Over.mk_hom] using Over.w g) _ hq.le hp.le)
+
+/-- Conjugated naturality of `levelIsoPullback`: base change of `g : Over.mk p ⟶ Over.mk q` along
+`toScheme Z K n` is `(map g.left _).app n` conjugated by `levelIsoPullback`. -/
+theorem overPullback_map_left_eq_levelIsoPullback {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I)
+    (hq : K.comap q = J) (g : Over.mk p ⟶ Over.mk q) (n : ℕ) :
+    ((Over.pullback (toScheme Z K n)).map g).left =
+      (levelIsoPullback p hp n).inv ≫
+        (map (I := I) (J := J) g.left
+          (by
+            rw [← hp, ← hq, ← comap_comp]
+            exact le_of_eq (congrArg K.comap (by simpa only [Over.mk_hom] using Over.w g)))).app n ≫
+        (levelIsoPullback q hq n).hom := by
+  rw [Iso.eq_inv_comp, levelIsoPullback_hom_map]
 
 end formalCompletion
 

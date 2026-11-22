@@ -72,8 +72,10 @@ private lemma faithful_pullback_toScheme_zero (X : Scheme.{u}) (I : X.IdealSheaf
     have ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff _).mp B.property
     have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale A.obj.hom)
     have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale B.obj.hom)
-    exact ObjectProperty.hom_ext _ (overPullback_map_injective_of_faithful_completionFunctor
-      I A.obj.hom B.obj.hom (congrArg (·.hom) h))
+    have h' := congrArg (·.hom) h
+    rw [pullback_map_hom, pullback_map_hom] at h'
+    exact ObjectProperty.hom_ext _
+      (overPullback_map_injective_of_faithful_completionFunctor I A.obj.hom B.obj.hom h')
 
 private lemma full_pullback_toScheme_zero (X : Scheme.{u}) (I : X.IdealSheafData)
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
@@ -87,7 +89,9 @@ private lemma full_pullback_toScheme_zero (X : Scheme.{u}) (I : X.IdealSheafData
     have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale A.obj.hom)
     obtain ⟨f, hf⟩ := (overPullback_map_bijective_of_fullyFaithful_completionFunctor
       I A.obj.hom B.obj.hom).2 g.hom
-    exact ⟨ObjectProperty.homMk f, ObjectProperty.hom_ext _ hf⟩
+    refine ⟨ObjectProperty.homMk f, ObjectProperty.hom_ext _ ?_⟩
+    rw [pullback_map_hom, ObjectProperty.homMk_hom]
+    exact hf
 
 /-- If the completion functor on finite locally free `𝒪_X`-modules is faithful, then restricting
 finite étale schemes over `X` to the closed subscheme `V(I)` is faithful. -/

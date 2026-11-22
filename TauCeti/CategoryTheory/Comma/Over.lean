@@ -34,8 +34,7 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   an isomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
-* `CategoryTheory.Over.isPullback_pullback_obj`,
-  `CategoryTheory.Over.isPullback_pullback_obj_mk`, and
+* `CategoryTheory.Over.isPullback_pullback_obj` and
   `CategoryTheory.Over.pullback_map_left_fst`: the pullback square defining
   `(Over.pullback f).obj A` and the first-projection equation for `(Over.pullback f).map k`.
 * `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
@@ -74,12 +73,6 @@ theorem isPullback_pullback_obj {C : Type u} [Category.{v} C] {X Y : C} (f : X �
     [HasPullbacksAlong f] (A : Over Y) :
     IsPullback (pullback.fst A.hom f) ((pullback f).obj A).hom A.hom f := by
   simpa only [pullback_obj_hom] using IsPullback.of_hasPullback A.hom f
-
-/-- The pullback square defining `(Over.pullback f).obj (Over.mk g)`. -/
-theorem isPullback_pullback_obj_mk {C : Type u} [Category.{v} C] {X Y Z : C} (f : X ⟶ Y)
-    [HasPullbacksAlong f] (g : Z ⟶ Y) :
-    IsPullback (pullback.fst g f) ((pullback f).obj (mk g)).hom g f := by
-  simpa only [mk_hom] using isPullback_pullback_obj f (mk g)
 
 /-- The first projection of `(Over.pullback f).map k` commutes with `k.left`. -/
 @[reassoc]
