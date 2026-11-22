@@ -224,17 +224,16 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
     natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
   -- Step 1: separability of `monicOfCoeff a` ensures `f'` has a nonzero coefficient, so the
   -- derivative valuation infimum `⨅ i, T i` is finite.
+  have hf' : f.derivative ≠ 0 := by
+    have hsep' := (separable_iff_derivative_ne_zero
+      (irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha)).mp hsep
+    rwa [← hf, derivative_map,
+      Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective 𝒪[K] K)] at hsep'
   have hex : ∃ i : Fin n, f.coeff (i + 1) * (i + 1) ≠ 0 := by
-    by_contra! hall
-    refine ((separable_iff_derivative_ne_zero
-      (irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha)).mp hsep) ?_
-    have hf0 : f.derivative = 0 := by
-      ext m
-      rw [coeff_zero, coeff_derivative]
-      rcases lt_or_ge m n with hm | hm
-      · exact congrArg Subtype.val (hall ⟨m, hm⟩)
-      · rw [coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
-    rw [← hf, derivative_map, hf0, Polynomial.map_zero]
+    refine ⟨⟨f.derivative.natDegree, hdeg ▸ natDegree_derivative_lt (hdeg ▸ hn.ne')⟩, ?_⟩
+    change f.coeff (f.derivative.natDegree + 1) * ((f.derivative.natDegree : 𝒪[K]) + 1) ≠ 0
+    rw [← coeff_derivative, coeff_natDegree]
+    exact leadingCoeff_ne_zero.mpr hf'
   let T : Fin n → ℕ∞ := fun i ↦
     n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)
   have hne_top : (⨅ i : Fin n, T i) ≠ ⊤ := by

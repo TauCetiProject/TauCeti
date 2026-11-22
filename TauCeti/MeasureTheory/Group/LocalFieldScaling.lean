@@ -165,11 +165,6 @@ theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type
 
 section ResidueCard
 
-/-- The residue factor `1 - q⁻¹` is finite, where `q = Nat.card 𝓀[K]`. -/
-theorem one_sub_one_div_natCard_residueField_ne_top :
-    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ ∞ :=
-  ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
-
 variable [Finite 𝓀[K]]
 
 /-- The residue factor `1 - q⁻¹` is nonzero when the residue field is finite. -/
@@ -190,7 +185,7 @@ theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top {n : ℕ} :
     1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ ∞ := by
   have hq : (1 : ℝ≥0∞) ≤ Nat.card 𝓀[K] := by exact_mod_cast Nat.card_pos
   refine ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top ?_)
-    one_sub_one_div_natCard_residueField_ne_top
+    (ENNReal.sub_ne_top ENNReal.one_ne_top)
   rw [one_div]
   exact ENNReal.inv_le_one.2 (one_le_pow₀ hq)
 

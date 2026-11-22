@@ -218,7 +218,7 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure {n j : 
       (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
       (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))]
   refine (ENNReal.eq_div_iff (one_sub_one_div_natCard_residueField_ne_zero (K := K))
-    (one_sub_one_div_natCard_residueField_ne_top (K := K))).mpr ?_
+    (ENNReal.sub_ne_top ENNReal.one_ne_top)).mpr ?_
   calc (1 - 1 / q) * ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞)
       = q ^ (n + j) * (1 / q ^ (n + j)) *
           ((1 - 1 / q) *
@@ -260,7 +260,7 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
     dsimp [rhs]; ring
   rw [hmul, ENNReal.mul_div_cancel_right
     (one_sub_one_div_natCard_residueField_ne_zero (K := K))
-    (one_sub_one_div_natCard_residueField_ne_top (K := K)),
+    (ENNReal.sub_ne_top ENNReal.one_ne_top),
     mul_assoc, hq, mul_one] at hncard
   exact hncard
 
@@ -462,10 +462,11 @@ theorem ncard_totallyRamifiedOfDegree_eq_sum {n : ℕ} (hnK : (n : K) ≠ 0) :
     exact_mod_cast htot.symm
   · intro j hj
     rw [Finset.mem_range, not_lt] at hj
-    have hadm : ¬ IsOreAdmissible K n j := fun h ↦
-      (Nat.lt_of_le_of_lt (h.le_mul_natCastValuation hnK) hj).false
-    rw [setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
-      Set.ncard_empty, Nat.cast_zero]
+    have hemp : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.mpr fun E ⟨hE, hEj⟩ ↦
+        (Nat.lt_of_le_of_lt
+          (hEj ▸ IntermediateField.wildExponent_le_mul_natCastValuation hE hnK) hj).false
+    rw [hemp, Set.ncard_empty, Nat.cast_zero]
 
 /-- Away from `(n : K) = 0`, `((totallyRamifiedOfDegree K n).ncard : ℚ)` is the finite sum of
 `krasnerCount K n j` for `0 ≤ j ≤ n * v_K(n)`. -/

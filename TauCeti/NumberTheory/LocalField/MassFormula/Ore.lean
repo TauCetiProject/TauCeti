@@ -448,15 +448,12 @@ theorem IsOreAdmissible.derivative_map_ne_zero_of_isEisensteinAt {n j : ℕ}
         exact ENat.natCast_ne_top _ hc.symm
       · exact ENat.natCast_ne_top _ (top_le_iff.mp (by rwa [h0, addVal_zero] at hvb))
   obtain ⟨k, hk, hfk, hk0⟩ := hexists
+  rw [derivative_map, Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective 𝒪[K] K)]
   intro hzero
-  rw [derivative_map] at hzero
-  have hm := congrArg (fun p : K[X] ↦ p.coeff (k - 1)) hzero
-  simp only [coeff_map, coeff_zero] at hm
-  have hm0 : f.derivative.coeff (k - 1) = 0 :=
-    FaithfulSMul.algebraMap_injective 𝒪[K] K (hm.trans (map_zero _).symm)
+  have hm0 := congrArg (fun p : 𝒪[K][X] ↦ p.coeff (k - 1)) hzero
   have hsub : k - 1 + 1 = k := by omega
   have hcast : (((k - 1 : ℕ) : 𝒪[K]) + 1) = (k : 𝒪[K]) := by rw [← Nat.cast_add_one, hsub]
-  rw [coeff_derivative, hsub, hcast] at hm0
+  rw [coeff_derivative, coeff_zero, hsub, hcast] at hm0
   exact mul_ne_zero hfk hk0 hm0
 
 /-- Any Eisenstein polynomial `f : 𝒪[K][X]` mapping to `monicOfCoeff a` whose coefficients
@@ -531,23 +528,6 @@ not divide `n`, the unique Ore-admissible wild exponent is `0`. -/
 theorem isOreAdmissible_iff_eq_zero_of_not_dvd {n j : ℕ} (hn : 0 < n)
     (hp : ¬ ringChar 𝓀[K] ∣ n) : IsOreAdmissible K n j ↔ j = 0 :=
   isOreAdmissible_iff_eq_zero_of_isUnit hn (IsLocalRing.isUnit_natCast_iff_not_dvd.mpr hp)
-
-/-- **Upper bound on Ore-admissible wild exponents**: if `(n : K) ≠ 0`, every `j` satisfying
-`IsOreAdmissible K n j` obeys `j ≤ n * natCastValuation K n hnK`. -/
-theorem IsOreAdmissible.le_mul_natCastValuation {n j : ℕ} (h : IsOreAdmissible K n j)
-    (hnK : (n : K) ≠ 0) : j ≤ n * natCastValuation K n hnK := by
-  have hmod := Nat.div_add_mod j n
-  have hlt := Nat.mod_lt j h.pos
-  rcases h.2 with ⟨h0, heq⟩ | ⟨-, -, hle⟩
-  · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK] at heq
-    have hdiv : j / n = natCastValuation K n hnK := by exact_mod_cast heq
-    rw [hdiv, h0, add_zero] at hmod
-    exact hmod.symm.le
-  · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK] at hle
-    have hdiv : j / n + 1 ≤ natCastValuation K n hnK := by exact_mod_cast hle
-    have hmul := Nat.mul_le_mul_left n hdiv
-    rw [Nat.mul_add_one] at hmul
-    omega
 
 /-- **The equal-characteristic wild case of Ore's conditions**: when `(n : K) = 0`, `(n, j)` is
 Ore-admissible if and only if `0 < n` and `(j % n : K) ≠ 0` (equivalently, `ringChar K ∤ j`). -/

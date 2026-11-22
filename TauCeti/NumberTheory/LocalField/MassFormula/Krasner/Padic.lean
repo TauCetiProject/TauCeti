@@ -24,6 +24,11 @@ and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildE
 (`TauCeti.encard_totallyRamifiedOfDegree_two_padicTwo`) and giving `#σ_{ℚ_[3]}(3) = 21` and
 `#σ_{ℚ_[2]}(4) = 92`.
 
+## Main definitions
+
+* `TauCeti.krasnerCountPadic p n j`: executable `ℕ` closed form for the number of totally ramified
+  degree-`n` extensions of `ℚ_[p]` with wild exponent `j`.
+
 ## Main results
 
 * `TauCeti.isOreAdmissible_padic_iff`: Ore's inequality characterizing admissible wild exponents
@@ -31,11 +36,12 @@ and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildE
 * `TauCeti.sum_oreCoefficientDepth_padic_of_mod_eq_zero`,
   `TauCeti.sum_oreCoefficientDepth_padic_of_mod_pos`: closed-form identities for the sum of Ore
   coefficient depths over `ℚ_[p]`.
-* `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic`: closed-form `ℕ` count of
-  totally ramified degree-`n` extensions of `ℚ_[p]` of wild exponent `j` (Pauli–Roblot, Theorem
-  6.1).
-* `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count `#σ_{ℚ_[p]}(n)` as a finite sum over
-  `0 ≤ j ≤ n * padicValNat p n`.
+* `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic`,
+  `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic`: closed-form `ℕ`
+  count of totally ramified degree-`n` extensions of `ℚ_[p]` of wild exponent `j` (Pauli–Roblot,
+  Theorem 6.1).
+* `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count `#σ_{ℚ_[p]}(n)` as a finite sum of
+  `krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`.
 * `TauCeti.ncard_totallyRamifiedOfDegree_three_padicThree`,
   `TauCeti.ncard_totallyRamifiedOfDegree_four_padicTwo`: `#σ_{ℚ_[3]}(3) = 21` and
   `#σ_{ℚ_[2]}(4) = 92`.
@@ -49,11 +55,25 @@ and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildE
 -/
 
 public section
-noncomputable section
 
 open ValuativeRel IsDiscreteValuationRing
 
 namespace TauCeti
+
+/-- **Krasner's count over `ℚ_[p]`** (Pauli–Roblot, Theorem 6.1): executable `ℕ` formula for the
+number of totally ramified degree-`n` extensions of `ℚ_[p]` with wild exponent `j`, returning `0`
+unless `0 < n` and `j` satisfies Ore's inequality (`TauCeti.isOreAdmissible_padic_iff`). -/
+def krasnerCountPadic (p n j : ℕ) : ℕ :=
+  if 0 < n ∧
+      (if j % n = 0 then padicValNat p n * n
+        else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
+      j ≤ padicValNat p n * n then
+    if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
+    else n * (p - 1) *
+      p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
+  else 0
+
+noncomputable section
 
 /-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): a wild exponent `j` is
 Ore-admissible for degree `n` over `ℚ_[p]` if and only if `0 < n` and
@@ -236,33 +256,35 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic (p : ℕ) [Fact 
       rw [(by omega : n + j = E + (2 + S)), pow_add]; ring
     exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
 
-/-- **Total number of totally ramified degree-`n` extensions of `ℚ_[p]`** as a finite sum over
-Ore-admissible wild exponents `0 ≤ j ≤ n * v_p(n)`. -/
+/-- Over `ℚ_[p]`, `{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j`
+for all `n` and `j`. -/
+theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (p : ℕ)
+    [Fact p.Prime] (n j : ℕ) :
+    {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
+      krasnerCountPadic p n j := by
+  by_cases hadm : IsOreAdmissible ℚ_[p] n j
+  · rw [ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic p hadm, krasnerCountPadic,
+      ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
+  · rw [setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
+      Set.ncard_empty, krasnerCountPadic,
+      ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr h)]
+
+/-- **Total number of totally ramified degree-`n` extensions of `ℚ_[p]`** as a finite sum of
+`krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`. -/
 theorem ncard_totallyRamifiedOfDegree_padic (p : ℕ) [Fact p.Prime] {n : ℕ} (hn : 0 < n) :
     (totallyRamifiedOfDegree ℚ_[p] n).ncard =
-      ∑ j ∈ Finset.range (n * padicValNat p n + 1),
-        if (if j % n = 0 then padicValNat p n * n
-            else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
-            j ≤ padicValNat p n * n then
-          if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
-          else n * (p - 1) *
-            p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
-        else 0 := by
+      ∑ j ∈ Finset.range (n * padicValNat p n + 1), krasnerCountPadic p n j := by
   rw [ncard_totallyRamifiedOfDegree_eq_sum (Nat.cast_ne_zero.mpr hn.ne'),
     _root_.Padic.natCastValuation_eq_padicValNat]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  by_cases hadm : IsOreAdmissible ℚ_[p] n j
-  · rw [ite_eq_left (((isOreAdmissible_padic_iff p).mp hadm).2),
-      ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic p hadm]
-  · rw [ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr ⟨hn, h⟩),
-      setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm, Set.ncard_empty]
+  exact Finset.sum_congr rfl fun j _ ↦
+    ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic p n j
 
 /-- `ℚ_[3]` has `21` totally ramified cubic extensions inside `SeparableClosure ℚ_[3]` (`6` of wild
 exponent `1`, `6` of wild exponent `2`, and `9` of wild exponent `3`). -/
 theorem ncard_totallyRamifiedOfDegree_three_padicThree :
     (totallyRamifiedOfDegree ℚ_[3] 3).ncard = 21 := by
   rw [ncard_totallyRamifiedOfDegree_padic 3 (by decide)]
-  simp only [Nat.padicValNat_def, Nat.multiplicity_self (by decide : 1 < 3),
+  simp only [krasnerCountPadic, Nat.padicValNat_def, Nat.multiplicity_self (by decide : 1 < 3),
     Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 1),
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 2)]
@@ -277,10 +299,12 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
     rw [Finset.sum_Icc_succ_top (by decide : 1 ≤ 2), Finset.Icc_self]
     norm_num
   rw [ncard_totallyRamifiedOfDegree_padic 2 (by decide)]
-  simp only [Nat.padicValNat_def, hm4, Finset.sum_range_succ, Finset.sum_range_zero,
-    multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),
+  simp only [krasnerCountPadic, Nat.padicValNat_def, hm4, Finset.sum_range_succ,
+    Finset.sum_range_zero, multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),
     Nat.multiplicity_self (by decide : 1 < 2),
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 3), hIcc2]
   norm_num
+
+end
 
 end TauCeti
