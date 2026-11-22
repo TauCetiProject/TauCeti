@@ -130,7 +130,7 @@ variable {I X}
 instance isLocalHom_stalk_algHom {x : X} {y : Y}
     (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
       (holomorphicStructureSheaf I X).presheaf.stalk x) : IsLocalHom ψ :=
-  ψ.isLocalHom_of_algHom (evalAlgHom I X x)
+  ψ.isLocalHom_of_augmentation (evalAlgHom I X x)
 
 /-- Every `ℂ`-algebra homomorphism between holomorphic stalks commutes with base-point
 evaluation. -/

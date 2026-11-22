@@ -37,11 +37,11 @@ coordinate division instead.)
 
 ## Main results
 
-* `OpenPartialHomeomorph.iInf_pow_ker_eval_eq_bot`: at the center `x` of any chart
-  `e ∈ maximalAtlas I ω X` for a boundaryless model `I`, the intersection of all powers of
+* `OpenPartialHomeomorph.iInf_pow_ker_eval_eq_bot`: at any point `x ∈ e.source` of an analytic
+  chart `e ∈ maximalAtlas I ω X` for a boundaryless model `I`, the intersection of all powers of
   `RingHom.ker (eval I X x)` is `⊥`.
-* `OpenPartialHomeomorph.isHausdorff_maximalIdeal_stalk`: the stalk at `x` is `IsHausdorff` with
-  respect to its maximal ideal.
+* `OpenPartialHomeomorph.isHausdorff_maximalIdeal_stalk`: at any point `x ∈ e.source` of an
+  analytic chart `e`, the stalk at `x` is `IsHausdorff` with respect to its maximal ideal.
 * `TauCeti.holomorphicStructureSheaf.instIsHausdorffMaximalIdealStalkOfOmega`: `IsHausdorff`
   instance on stalks of any boundaryless complex analytic manifold
   `[I.Boundaryless] [IsManifold I ω X]`, with no finite-dimensionality assumption on `E`.
@@ -128,8 +128,8 @@ private theorem natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval {x : X} (hx 
       exact (le_min (ha α (hα _ le_rfl)) (hb β (hβ _ le_rfl))).trans le_analyticOrderAt_add
 
 include he in
-/-- At the center of a complex analytic chart for a boundaryless model, the powers of the
-evaluation kernel have trivial intersection. -/
+/-- At any point of the source of a complex analytic chart for a boundaryless model, the powers of
+the evaluation kernel have trivial intersection. -/
 theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
     (⨅ n : ℕ, RingHom.ker (eval I X x) ^ n) = ⊥ := by
   refine eq_bot_iff.2 fun s hs ↦ Ideal.mem_bot.2 ?_
@@ -153,8 +153,8 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
   simpa only [Function.comp_apply, e.extend_left_inv hys, Pi.zero_apply] using hy0
 
 include he in
-/-- At the center of a complex analytic chart for a boundaryless model, the holomorphic stalk is
-Hausdorff with respect to its maximal ideal. -/
+/-- At any point of the source of a complex analytic chart for a boundaryless model, the
+holomorphic stalk is Hausdorff with respect to its maximal ideal. -/
 theorem isHausdorff_maximalIdeal_stalk {x : X} (hx : x ∈ e.source) :
     IsHausdorff
       (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x))

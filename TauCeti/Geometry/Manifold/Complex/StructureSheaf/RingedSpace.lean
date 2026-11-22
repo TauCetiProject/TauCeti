@@ -39,21 +39,21 @@ maps:
   by pointwise precomposition with `φ.base` (`c_app_apply_of_c_app_top_algebraMap`); consequently
   two `ℂ`-linear morphisms with the same base map are equal
   (`toPresheafedSpace_hom_ext_of_c_app_top_algebraMap`,
-  `locallyRingedSpace_hom_ext_of_c_app_top_algebraMap`). Whenever `φ.base` is complex analytic
-  (globally or near `x`), `φ` agrees with `locallyRingedSpaceMap`
-  (`locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap`,
-  `locallyRingedSpaceMap_base_of_c_app_top_algebraMap`) and its `ℂ`-algebra stalk map agrees with
-  `stalkPullbackAlgHom` (`stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom`). The
-  `ℂ`-linearity hypothesis is essential: composing section pullback with complex conjugation along
-  an antiholomorphic map gives a `LocallyRingedSpace` morphism that fixes only real constants.
-* When `Y` is modelled directly on `𝓘(ℂ, E')` for finite-dimensional `E'` (and `X` is an arbitrary
-  complex charted space), pulling back centered linear coordinate sections expresses `φ.base` in
-  every holomorphic chart `e ∈ maximalAtlas 𝓘(ℂ, E') ω Y`, basis `b`, and translation vector
-  `z : E'` as `w ↦ e.symm (z + ∑ i, tᵢ w • b i)`
-  (`OpenPartialHomeomorph.base_eq_symm_sum_of_c_app_top_algebraMap`). More generally, for any
-  finite-dimensional boundaryless complex manifold `(Y, J)`, pulling back extended-chart coordinates
-  shows independently of charts that `φ.base` is complex analytic
-  (`contMDiff_base_of_c_app_top_algebraMap`).
+  `locallyRingedSpace_hom_ext_of_c_app_top_algebraMap`). Whenever `φ.base` is globally complex
+  analytic, `φ` agrees with `locallyRingedSpaceMap`
+  (`locallyRingedSpaceMap_toHom_eq_of_c_app_top_algebraMap`,
+  `locallyRingedSpaceMap_eq_of_c_app_top_algebraMap`), and whenever `φ.base` is complex analytic
+  near `x`, its `ℂ`-algebra stalk map at `x` agrees with `stalkPullbackAlgHom`
+  (`stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom`). The `ℂ`-linearity hypothesis is
+  essential: composing section pullback with complex conjugation along an antiholomorphic map gives
+  a `LocallyRingedSpace` morphism that fixes only real constants.
+* For any complex charted space `Y` modelled over a finite-dimensional space `E'` via `(J, H')`
+  (and any complex charted space `X`), pulling back extended-chart linear coordinate sections
+  expresses `φ.base` in every holomorphic chart `e ∈ maximalAtlas J ω Y`, basis `b`, and
+  translation vector `z : E'` as `w ↦ (e.extend J).symm (z + ∑ i, tᵢ w • b i)`
+  (`OpenPartialHomeomorph.base_eq_symm_sum_of_c_app_top_algebraMap`). When `J` is boundaryless and
+  `Y` is a complex manifold, applying this to `chartAt H' y₀` at `z := 0` shows independently of
+  charts that `φ.base` is complex analytic (`contMDiff_base_of_c_app_top_algebraMap`).
 * `holomorphicMapLocalRingedEquivalence` packages this into a bijection between bundled analytic
   maps `C^ω⟮I, X; J, Y⟯` and `ℂ`-linear morphisms `LocallyRingedSpaceCLinearHom I X J Y`,
   compatible with identity, composition, open restriction, and the stalk-level germ equivalence
@@ -67,6 +67,8 @@ instance for open subsets adapt Heather Macbeth's smooth construction in
 
 * H. Grauert and R. Remmert, *Coherent Analytic Sheaves*, Grundlehren der mathematischen
   Wissenschaften 265, Springer, 1984, Chapter 1, §1.
+* R. C. Gunning and H. Rossi, *Analytic Functions of Several Complex Variables*, Chapter V, §A
+  (for the characterization of holomorphic maps as `ℂ`-linear morphisms of locally ringed spaces).
 * O. Forster, *Lectures on Riemann Surfaces*, §§1 and 6.
 -/
 
@@ -296,16 +298,6 @@ def restrictLocallyRingedSpaceIso (U : Opens X) :
   (LocallyRingedSpace.IsOpenImmersion.isoRestrict
     (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal)).symm
 
-/-- The forward direction of `restrictLocallyRingedSpaceIso` is the identity on points. -/
-@[simp]
-theorem restrictLocallyRingedSpaceIso_hom_base (U : Opens X) :
-    (restrictLocallyRingedSpaceIso I X U).hom.base = 𝟙 (TopCat.of U) := (rfl)
-
-/-- The inverse direction of `restrictLocallyRingedSpaceIso` is the identity on points. -/
-@[simp]
-theorem restrictLocallyRingedSpaceIso_inv_base (U : Opens X) :
-    (restrictLocallyRingedSpaceIso I X U).inv.base = 𝟙 (TopCat.of U) := (rfl)
-
 /-- Composing `(restrictLocallyRingedSpaceIso I X U).hom` with the open-inclusion morphism gives
 `(locallyRingedSpace I X).ofRestrict`. -/
 @[reassoc (attr := simp)]
@@ -323,6 +315,25 @@ theorem restrictLocallyRingedSpaceIso_inv_comp_ofRestrict (U : Opens X) :
       (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) =
       locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal :=
   LocallyRingedSpace.IsOpenImmersion.isoRestrict_hom_ofRestrict _
+
+/-- The forward direction of `restrictLocallyRingedSpaceIso` is the identity on points. -/
+@[simp]
+theorem restrictLocallyRingedSpaceIso_hom_base (U : Opens X) :
+    (restrictLocallyRingedSpaceIso I X U).hom.base = 𝟙 (TopCat.of U) := by
+  have h := congrArg (fun k : (locallyRingedSpace I X).restrict
+      (Opens.isOpenEmbedding (X := TopCat.of X) U) ⟶ locallyRingedSpace I X ↦ k.base)
+    (restrictLocallyRingedSpaceIso_hom_comp_locallyRingedSpaceMap (I := I) (X := X) U)
+  exact TopCat.hom_ext <| ContinuousMap.ext fun x ↦
+    Subtype.val_injective (ConcreteCategory.congr_hom h x)
+
+/-- The inverse direction of `restrictLocallyRingedSpaceIso` is the identity on points. -/
+@[simp]
+theorem restrictLocallyRingedSpaceIso_inv_base (U : Opens X) :
+    (restrictLocallyRingedSpaceIso I X U).inv.base = 𝟙 (TopCat.of U) := by
+  have h := congrArg (fun k : locallyRingedSpace I U ⟶ locallyRingedSpace I X ↦ k.base)
+    (restrictLocallyRingedSpaceIso_inv_comp_ofRestrict (I := I) (X := X) U)
+  ext x
+  exact Subtype.val_injective (ConcreteCategory.congr_hom h x)
 
 end LocallyRingedSpace
 
@@ -608,7 +619,7 @@ theorem c_app_apply_of_c_app_top_algebraMap (U : Opens Y)
 
 /-- If the base map of a `ℂ`-linear presheafed-space morphism `φ` is complex analytic, then `φ`
 equals `(locallyRingedSpaceMap φ.base hf).toHom` on both points and sections. -/
-theorem locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap
+theorem locallyRingedSpaceMap_toHom_eq_of_c_app_top_algebraMap
     (hf : ContMDiff I J ω φ.base) :
     (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hf).toHom = φ :=
   toPresheafedSpace_hom_ext rfl fun U g x ↦
@@ -671,14 +682,14 @@ theorem locallyRingedSpace_hom_ext_of_c_app_top_algebraMap
 /-- If the base map of a `ℂ`-linear morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y`
 is complex analytic, then `φ` equals `locallyRingedSpaceMap φ.base hf` on both points and
 sections. -/
-theorem locallyRingedSpaceMap_base_of_c_app_top_algebraMap
+theorem locallyRingedSpaceMap_eq_of_c_app_top_algebraMap
     (φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y)
     (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
     (hf : ContMDiff I J ω φ.base) :
     locallyRingedSpaceMap (X := X) (Y := Y) φ.base hf = φ :=
   LocallyRingedSpace.Hom.ext'
-    (locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap φ.toHom hφ hf)
+    (locallyRingedSpaceMap_toHom_eq_of_c_app_top_algebraMap φ.toHom hφ hf)
 
 variable (I X) in
 /-- The identity morphism on `(locallyRingedSpace I X).toPresheafedSpace` preserves complex scalar
@@ -880,6 +891,71 @@ end LocallyRingedSpaceCLinearHom
 
 end CLinearity
 
+end TauCeti.holomorphicStructureSheaf
+
+namespace OpenPartialHomeomorph
+
+open TauCeti TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℂ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+  (e : OpenPartialHomeomorph Y H') (he : e ∈ maximalAtlas J ω Y)
+
+private theorem extend_base_sub_eq_sum_of_c_app_top_algebraMap
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ E')
+    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
+      (locallyRingedSpace J Y).toPresheafedSpace)
+    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
+    (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
+    ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
+        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
+          (ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦
+              b.coord i (e.extend J y.val - z))
+            fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
+              (n := ω)).contMDiff.contMDiffAt.comp y
+              (((e.contMDiffAt_extend he y.property).comp y
+                contMDiff_subtypeVal.contMDiffAt).sub contMDiffAt_const)))
+        w • b i =
+      e.extend J (φ.base w.val) - z := by
+  refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e.extend J (φ.base w.val) - z))
+  exact congrArg (· • b i)
+    ((c_app_apply_of_c_app_top_algebraMap φ hφ ⟨e.source, e.open_source⟩ _ w).trans
+      (ofContMDiff_apply _ _ ⟨φ.base w.val, w.property⟩))
+
+include he in
+/-- **Chart-independent local coordinate recovery.** In *any* holomorphic chart `e` for a model
+`(J, H')`, *any* basis `b` of `E'`, and *any* translation vector `z : E'`, the base map `φ.base` of
+a `ℂ`-linear morphism is given on `φ.base ⁻¹' e.source` by
+`w ↦ (e.extend J).symm (z + ∑ i, tᵢ w • b i)` where `tᵢ` is the pulled-back extended-chart
+linear coordinate section centered at `z`. -/
+theorem base_eq_symm_sum_of_c_app_top_algebraMap
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ E')
+    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
+      (locallyRingedSpace J Y).toPresheafedSpace)
+    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
+    (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
+    φ.base w.val = (e.extend J).symm (z +
+      ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
+        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
+          (ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦
+              b.coord i (e.extend J y.val - z))
+            fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
+              (n := ω)).contMDiff.contMDiffAt.comp y
+              (((e.contMDiffAt_extend he y.property).comp y
+                contMDiff_subtypeVal.contMDiffAt).sub contMDiffAt_const)))
+        w • b i) := by
+  rw [extend_base_sub_eq_sum_of_c_app_top_algebraMap e he b φ hφ z w, add_sub_cancel,
+    (e.extend J).left_inv (by rw [e.extend_source]; exact w.property)]
+
+end OpenPartialHomeomorph
+
+namespace TauCeti.holomorphicStructureSheaf
+
 section Equivalence
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
@@ -905,35 +981,34 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
   have : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   intro x₀
   let y₀ : Y := φ.base x₀
-  let U : Opens Y := ⟨(chartAt H' y₀).source, (chartAt H' y₀).open_source⟩
+  let e : OpenPartialHomeomorph Y H' := chartAt H' y₀
+  have he : e ∈ maximalAtlas J ω Y := IsManifold.chart_mem_maximalAtlas y₀
+  let U : Opens Y := ⟨e.source, e.open_source⟩
   have hy₀ : y₀ ∈ U := mem_chart_source H' y₀
   let V : Opens X := (Opens.map φ.base).obj U
   have hx₀ : x₀ ∈ V := hy₀
   rw [← contMDiffAt_subtype_iff (U := V) (x := ⟨x₀, hx₀⟩)]
   let b := Module.finBasis ℂ E'
-  let s : Fin (Module.finrank ℂ E') → (holomorphicStructureSheaf J Y).obj.obj (op U) := fun i ↦
-    ofContMDiff (fun z : U ↦ b.coord i (extChartAt J y₀ z.val)) fun z ↦
-      ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff (n := ω)).contMDiff.contMDiffAt.comp z
-        ((contMDiffAt_extChartAt' z.property).comp z contMDiff_subtypeVal.contMDiffAt)
   let t : Fin (Module.finrank ℂ E') → (holomorphicStructureSheaf I X).obj.obj (op V) := fun i ↦
-    (φ.c.app (op U)).hom (s i)
+    (φ.c.app (op U)).hom
+      (ofContMDiff (fun y : U ↦ b.coord i (e.extend J y.val - 0))
+        fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
+          (n := ω)).contMDiff.contMDiffAt.comp y
+          (((e.contMDiffAt_extend he y.property).comp y contMDiff_subtypeVal.contMDiffAt).sub
+            contMDiffAt_const))
   let G : V → E' := fun w ↦ ∑ i, t i w • b i
   have hG_cm : ContMDiff I 𝓘(ℂ, E') ω G := fun w ↦ ContMDiffAt.sum fun i _ ↦
     ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
       (n := ω)).contMDiff.contMDiffAt.comp w (contMDiff (t i) w)
-  have hG_eq (w : V) : G w = extChartAt J y₀ (φ.base w.val) := by
-    have htw (i : Fin (Module.finrank ℂ E')) :
-        t i w = b.coord i (extChartAt J y₀ (φ.base w.val)) :=
-      (c_app_apply_of_c_app_top_algebraMap φ hφ U (s i) w).trans (ofContMDiff_apply _ _ _)
-    simp_rw [G, htw]; exact b.sum_repr (extChartAt J y₀ (φ.base w.val))
   have hx₀_tgt : G ⟨x₀, hx₀⟩ ∈ (extChartAt J y₀).target := by
-    rw [hG_eq]; exact (extChartAt J y₀).map_source (by rw [extChartAt_source]; exact hy₀)
+    rw [show G ⟨x₀, hx₀⟩ = extChartAt J y₀ y₀ from
+      (e.extend_base_sub_eq_sum_of_c_app_top_algebraMap he b φ hφ 0 ⟨x₀, hx₀⟩).trans (sub_zero _)]
+    exact mem_extChartAt_target y₀
   refine (((contMDiffOn_extChartAt_symm (n := ω) y₀).contMDiffAt
     (extChartAt_target_mem_nhds' hx₀_tgt)).comp (⟨x₀, hx₀⟩ : V)
       (hG_cm ⟨x₀, hx₀⟩)).congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)
-  have hw_src : φ.base w.val ∈ (extChartAt J y₀).source := by
-    rw [extChartAt_source]; exact w.property
-  rw [Function.comp_apply, hG_eq w, (extChartAt J y₀).left_inv hw_src]
+  exact (e.base_eq_symm_sum_of_c_app_top_algebraMap he b φ hφ 0 w).trans
+    (congrArg (extChartAt J y₀).symm (zero_add (G w)))
 
 /-- When `𝒪_{X, x}` is maximal-ideal separated (`IsHausdorff`), the inverse
 `(analyticMapGermEquivStalkAlgHom x (φ.base x)).symm` applied to
@@ -962,7 +1037,7 @@ theorem existsUnique_contMDiffMap_locallyRingedSpaceMap_eq_iff
         algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c :=
   ⟨fun ⟨f, h, _⟩ U c ↦ h ▸ locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff U c, fun hφ ↦
     ⟨⟨φ.base, contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)⟩,
-      locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ (hφ ⊤)
+      locallyRingedSpaceMap_eq_of_c_app_top_algebraMap φ (hφ ⊤)
         (contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)), by
       rintro _ rfl; exact ContMDiffMap.ext fun _ ↦ rfl⟩⟩
 
@@ -980,7 +1055,7 @@ def holomorphicMapLocalRingedEquivalence :
   invFun φ := ⟨φ.val.base, contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤)⟩
   left_inv _ := ContMDiffMap.ext fun _ ↦ rfl
   right_inv φ := Subtype.ext <|
-    locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ.val (φ.property ⊤)
+    locallyRingedSpaceMap_eq_of_c_app_top_algebraMap φ.val (φ.property ⊤)
       (contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤))
 
 /-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `f` to
@@ -1116,41 +1191,3 @@ end SymmAndComp
 end Equivalence
 
 end TauCeti.holomorphicStructureSheaf
-
-namespace OpenPartialHomeomorph
-
-open TauCeti TauCeti.holomorphicStructureSheaf
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
-  {I : ModelWithCorners ℂ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
-  {Y : Type} [TopologicalSpace Y] [ChartedSpace E' Y]
-  (e : OpenPartialHomeomorph Y E') (he : e ∈ maximalAtlas 𝓘(ℂ, E') ω Y)
-
-include he in
-/-- **Chart-independent local coordinate recovery.** In *any* holomorphic chart `e`, *any* basis `b`
-of `E'`, and *any* translation vector `z : E'`, the base map `φ.base` of a `ℂ`-linear morphism is
-given on `φ.base ⁻¹' e.source` by `w ↦ e.symm (z + ∑ i, tᵢ w • b i)` where `tᵢ` is the pulled-back
-linear coordinate section centered at `z`. -/
-theorem base_eq_symm_sum_of_c_app_top_algebraMap {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ E')
-    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
-      (locallyRingedSpace 𝓘(ℂ, E') Y).toPresheafedSpace)
-    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
-    (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
-    φ.base w.val = e.symm (z +
-      ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
-        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-          (e.holomorphicLinearCoordinateSection he
-            (LinearMap.toContinuousLinearMap (b.coord i)) z)) w • b i) := by
-  have hsum : ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
-      ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-        (e.holomorphicLinearCoordinateSection he
-          (LinearMap.toContinuousLinearMap (b.coord i)) z)) w • b i = e (φ.base w.val) - z := by
-    refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e (φ.base w.val) - z))
-    rw [c_app_apply_of_c_app_top_algebraMap φ hφ ⟨e.source, e.open_source⟩ _ w]
-    exact congrArg (· • b i) (e.holomorphicLinearCoordinateSection_apply he
-      (LinearMap.toContinuousLinearMap (b.coord i)) z ⟨φ.base w.val, w.property⟩)
-  rw [hsum, add_sub_cancel, e.left_inv w.property]
-
-end OpenPartialHomeomorph

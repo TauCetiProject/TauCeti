@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
@@ -16,11 +17,11 @@ import TauCeti.RingTheory.LocalRing.AlgHom
 
 Constant holomorphic sections give each stalk `(holomorphicStructureSheaf I X).presheaf.stalk x` a
 canonical `ℂ`-algebra structure (`instAlgebraStalk` in `StructureSheaf.Basic`), for which
-evaluation at `x`, comparison with filter germs, and pullback along analytic maps are `ℂ`-algebra
-homomorphisms (`evalAlgHom`, `stalkPrecompAlgHom` in `StructureSheaf.Basic`; `toFilterGermAlgHom`
-in `StructureSheaf.Germ`; `stalkPullbackAlgHom` and `stalkPullbackAt` in
-`StructureSheaf.StalkPullback`). Because each stalk is a local ring admitting the `ℂ`-algebra
-augmentation `evalAlgHom I X x`, every `ℂ`-algebra homomorphism
+evaluation at `x`, comparison with filter germs, and pullback along analytic maps or map germs are
+`ℂ`-algebra homomorphisms (`evalAlgHom`, `stalkPrecompAlgHom` in `StructureSheaf.Basic`;
+`toFilterGermAlgHom` in `StructureSheaf.Germ`; `stalkPullbackAlgHom`, `stalkPullbackAt`, and
+`stalkPullbackGerm` in `StructureSheaf.StalkPullback`). Because each stalk is a local ring
+admitting the `ℂ`-algebra augmentation `evalAlgHom I X x`, every `ℂ`-algebra homomorphism
 `ψ : 𝒪_{Y, y} →ₐ[ℂ] 𝒪_{X, x}` between holomorphic stalks automatically reflects units
 (`isLocalHom_stalk_algHom`) and commutes with evaluation (`evalAlgHom_comp`, `eval_algHom_apply`),
 all established in `StructureSheaf.LocalRing` with no manifold regularity assumption on either
@@ -31,7 +32,8 @@ When the target `Y` is a finite-dimensional boundaryless complex manifold and th
 `X` is a boundaryless complex analytic manifold in any dimension
 (`instIsHausdorffMaximalIdealStalkOfOmega`) or any finite-dimensional boundaryless complex manifold
 (`instIsHausdorffMaximalIdealStalk`) — every `ℂ`-algebra homomorphism `ψ : 𝒪_{Y, y} →ₐ[ℂ] 𝒪_{X, x}`
-is induced by pullback along a locally analytic map `(X, x) → (Y, y)` unique up to `=ᶠ[𝓝 x]`:
+is induced by pullback along an analytic map germ `AnalyticMapGerm I J x y` (defined in
+`TauCeti.Geometry.Manifold.ContMDiff.Germ`) unique up to `=ᶠ[𝓝 x]`:
 
 * When `Y` is modelled on `𝓘(ℂ, E')` with a holomorphic chart `e ∈ maximalAtlas 𝓘(ℂ, E') ω Y` at
   `y`, `OpenPartialHomeomorph.exists_stalkPullbackAt_eq` proves the existence of a map `f : X → Y`
@@ -52,157 +54,6 @@ public noncomputable section
 
 open CategoryTheory Filter IsManifold Opposite TopologicalSpace Topology
 open scoped ContDiff Manifold
-
-namespace TauCeti.holomorphicStructureSheaf
-
-section Algebra
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
-  {I : ModelWithCorners ℂ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
-  {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
-
-/-! ### Analytic map germs -/
-
-/-- The type of germs along `𝓝 x` of maps `X → Y` that are analytic near `x` and send `x` to `y`. -/
-abbrev AnalyticMapGerm (I : ModelWithCorners ℂ E H) (J : ModelWithCorners ℂ E' H')
-    (x : X) (y : Y) : Type :=
-  {F : Germ (𝓝 x) Y //
-    ∃ f : X → Y, (f : Germ (𝓝 x) Y) = F ∧ f x = y ∧ ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w}
-
-/-- Construct an `AnalyticMapGerm` from a map `f : X → Y` analytic near `x` with `f x = y`. -/
-def AnalyticMapGerm.mk {x : X} {y : Y} (f : X → Y)
-    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) : AnalyticMapGerm I J x y :=
-  ⟨(f : Germ (𝓝 x) Y), ⟨f, rfl, hfx, hf⟩⟩
-
-/-- The underlying `Germ (𝓝 x) Y` of `AnalyticMapGerm.mk f hf hfx` is `(f : Germ (𝓝 x) Y)`. -/
-@[simp]
-theorem AnalyticMapGerm.val_mk {x : X} {y : Y} (f : X → Y)
-    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
-    (AnalyticMapGerm.mk f hf hfx).val = (f : Germ (𝓝 x) Y) := (rfl)
-
-/-- Two `AnalyticMapGerm.mk` germs are equal if and only if their representatives agree near `x`. -/
-@[simp]
-theorem AnalyticMapGerm.mk_eq_mk {x : X} {y : Y} {f₁ f₂ : X → Y}
-    (hf₁ : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f₁ w) (hfx₁ : f₁ x = y)
-    (hf₂ : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f₂ w) (hfx₂ : f₂ x = y) :
-    AnalyticMapGerm.mk f₁ hf₁ hfx₁ = AnalyticMapGerm.mk f₂ hf₂ hfx₂ ↔ f₁ =ᶠ[𝓝 x] f₂ := by
-  rw [Subtype.ext_iff, AnalyticMapGerm.val_mk, AnalyticMapGerm.val_mk, Germ.coe_eq]
-
-/-- Every `AnalyticMapGerm` is represented by `AnalyticMapGerm.mk` of a locally analytic map. -/
-theorem AnalyticMapGerm.exists_mk {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    ∃ (f : X → Y) (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y),
-      AnalyticMapGerm.mk f hf hfx = F :=
-  let ⟨f, hF, hfx, hf⟩ := F.property; ⟨f, hf, hfx, Subtype.ext hF⟩
-
-/-- Every analytic map germ `(X, x) → (Y, y)` tends to `𝓝 y` along `𝓝 x`. -/
-theorem AnalyticMapGerm.tendsto {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    F.val.Tendsto (𝓝 y) := by
-  obtain ⟨f, hF, hfx, hf⟩ := F.property
-  exact hF ▸ Germ.coe_tendsto.2 (hfx ▸ hf.self_of_nhds.continuousAt.tendsto)
-
-/-- The identity analytic map germ at `x`. -/
-def AnalyticMapGerm.id (I : ModelWithCorners ℂ E H) (x : X) : AnalyticMapGerm I I x x :=
-  AnalyticMapGerm.mk _root_.id (Eventually.of_forall fun _ ↦ contMDiffAt_id) rfl
-
-/-- The underlying `Germ (𝓝 x) X` of `AnalyticMapGerm.id I x` is the germ of `id`. -/
-@[simp]
-theorem AnalyticMapGerm.val_id (I : ModelWithCorners ℂ E H) (x : X) :
-    (AnalyticMapGerm.id I x).val = ((_root_.id : X → X) : Germ (𝓝 x) X) := (rfl)
-
-/-- Pullback of holomorphic stalks along an analytic map germ `F : AnalyticMapGerm I J x y`. -/
-def stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
-      (holomorphicStructureSheaf I X).presheaf.stalk x :=
-  stalkPullbackAt F.property.choose_spec.2.2 F.property.choose_spec.2.1
-
-/-- Pullback along `AnalyticMapGerm.mk f hf hfx` agrees with `stalkPullbackAt hf hfx`. -/
-@[simp]
-theorem stalkPullbackGerm_mk {x : X} {y : Y} (f : X → Y)
-    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
-    stalkPullbackGerm (AnalyticMapGerm.mk f hf hfx) = stalkPullbackAt hf hfx := by
-  let F := AnalyticMapGerm.mk f hf hfx
-  exact stalkPullbackAt_congr F.property.choose_spec.2.2 F.property.choose_spec.2.1 hf hfx
-    (Germ.coe_eq.1 F.property.choose_spec.1)
-
-/-- The function germ of `stalkPullbackGerm F s` is composition of the function germ of `s` with
-`F.val` via `Germ.compTendsto'`. -/
-@[simp]
-theorem toFilterGerm_stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y)
-    (s : (holomorphicStructureSheaf J Y).presheaf.stalk y) :
-    toFilterGerm I X x (𝓝 x) le_rfl (stalkPullbackGerm F s) =
-      (toFilterGerm J Y y (𝓝 y) le_rfl s).compTendsto' F.val F.tendsto := by
-  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
-  rw [stalkPullbackGerm_mk, toFilterGerm_stalkPullbackAt]
-  exact Germ.inductionOn (toFilterGerm J Y y (𝓝 y) le_rfl s) fun _ ↦ rfl
-
-/-- Pullback along `AnalyticMapGerm.id` is the identity `ℂ`-algebra homomorphism. -/
-@[simp]
-theorem stalkPullbackGerm_id (x : X) :
-    stalkPullbackGerm (AnalyticMapGerm.id I x) =
-      AlgHom.id ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  simp [AnalyticMapGerm.id]
-
-variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
-  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
-  {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
-
-/-- Composition of analytic map germs `(X, x) → (Y, y)` and `(Y, y) → (Z, z)`. -/
-def AnalyticMapGerm.comp {x : X} {y : Y} {z : Z}
-    (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) : AnalyticMapGerm I K x z :=
-  ⟨G.val.compTendsto' F.val F.tendsto, by
-    obtain ⟨g, hG, hgy, hg⟩ := G.property; obtain ⟨f, hF, hfx, hf⟩ := F.property
-    exact ⟨g ∘ f, by simp [← hG, ← hF], (congrArg g hfx).trans hgy,
-      eventually_contMDiffAt_comp hg hf hfx⟩⟩
-
-/-- The underlying filter germ of `G.comp F` is `G.val.compTendsto' F.val F.tendsto`. -/
-@[simp]
-theorem AnalyticMapGerm.val_comp {x : X} {y : Y} {z : Z}
-    (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
-    (G.comp F).val = G.val.compTendsto' F.val F.tendsto := (rfl)
-
-/-- Composing `AnalyticMapGerm.mk` representatives produces `AnalyticMapGerm.mk (g ∘ f) _ _`. -/
-@[simp]
-theorem AnalyticMapGerm.comp_mk {x : X} {y : Y} {z : Z}
-    (g : Y → Z) (hg : ∀ᶠ v in 𝓝 y, ContMDiffAt J K ω g v) (hgy : g y = z)
-    (f : X → Y) (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
-    (AnalyticMapGerm.mk g hg hgy).comp (AnalyticMapGerm.mk f hf hfx) =
-      AnalyticMapGerm.mk (g ∘ f) (eventually_contMDiffAt_comp hg hf hfx)
-        ((congrArg g hfx).trans hgy) :=
-  Subtype.ext rfl
-
-/-- Left composition with `AnalyticMapGerm.id` is the identity. -/
-@[simp]
-theorem AnalyticMapGerm.id_comp {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    (AnalyticMapGerm.id J y).comp F = F := by obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
-
-/-- Right composition with `AnalyticMapGerm.id` is the identity. -/
-@[simp]
-theorem AnalyticMapGerm.comp_id {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    F.comp (AnalyticMapGerm.id I x) = F := by obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
-
-/-- Composition of analytic map germs is associative. -/
-theorem AnalyticMapGerm.comp_assoc {E''' : Type*} [NormedAddCommGroup E'''] [NormedSpace ℂ E''']
-    {H''' : Type*} [TopologicalSpace H'''] {L : ModelWithCorners ℂ E''' H'''}
-    {W : Type} [TopologicalSpace W] [ChartedSpace H''' W] {x : X} {y : Y} {z : Z} {w : W}
-    (H : AnalyticMapGerm K L z w) (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
-    (H.comp G).comp F = H.comp (G.comp F) := by
-  obtain ⟨h, hh, hhz, rfl⟩ := H.exists_mk; obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk
-  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
-
--- Pre-order so pullback composition splits before `AnalyticMapGerm.comp_mk` merges `mk` germs.
-/-- Stalk pullback is contravariantly functorial under composition of analytic map germs. -/
-@[simp↓]
-theorem stalkPullbackGerm_comp {x : X} {y : Y} {z : Z}
-    (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
-    stalkPullbackGerm (G.comp F) = (stalkPullbackGerm F).comp (stalkPullbackGerm G) := by
-  obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk; obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
-  rw [AnalyticMapGerm.comp_mk (J := J), stalkPullbackGerm_mk, stalkPullbackGerm_mk,
-    stalkPullbackGerm_mk, stalkPullbackAt_comp (J := J)]
-
-end Algebra
-
-end TauCeti.holomorphicStructureSheaf
 
 namespace OpenPartialHomeomorph
 

@@ -8,26 +8,29 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+public import TauCeti.Geometry.Manifold.ContMDiff.Germ
 public import TauCeti.Order.Filter.Germ
 
 /-!
 # Pullback of holomorphic stalks by local analytic maps
 
 `stalkPullback` pulls back holomorphic germs along a map between complex manifolds analytic
-near the chosen point, with `ℂ`-algebra homomorphism upgrade `stalkPullbackAlgHom` and
+near the chosen point, with `ℂ`-algebra homomorphism upgrade `stalkPullbackAlgHom`,
 base-point-explicit form `stalkPullbackAt` (whose domain stalk at `y` is decoupled from `f x` via
 an explicit equality `f x = y`, enabling congruence `stalkPullbackAt_congr` across locally equal
-maps). Unlike the sheaf morphism `stalkPrecomp`, this requires no globally holomorphic extension of
-the map. Equality, evaluation, `ℂ`-linearity, and composition are characterized through the
-injective comparison with function germs. The two pullbacks agree when both apply.
+maps), and germ-level pullback `stalkPullbackGerm` along `AnalyticMapGerm`. Unlike `stalkPrecomp`
+(the pullback on stalks induced by the sheaf morphism `homOfContMDiff`), this requires no globally
+holomorphic extension of the map. Equality, evaluation, `ℂ`-linearity, and composition are
+characterized through the injective comparison with function germs. The two pullbacks agree when
+both apply.
 Pullback along a map with a local analytic inverse, such as a chart, is an equivalence
 (`stalkPullbackEquiv`), with evaluation and function-germ laws in both directions.
 It is in particular bijective (`stalkPullback_bijective`), as is pullback along a continuous
 linear equivalence (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`). For a boundaryless
 model, `OpenPartialHomeomorph.holomorphicStalkEquivModelSpace` identifies a manifold stalk with a
 stalk on a continuously linearly equivalent model space using any analytic chart;
-`stalkEquivModelSpace` specializes this ring equivalence to the preferred chart, which identifies a
-finite-dimensional manifold with a stalk of a model space in `Type`
+`stalkEquivModelSpace` specializes this ring equivalence to the preferred chart, which identifies
+the stalk at `x` of a finite-dimensional manifold with a stalk of a model space in `Type`
 (`exists_ringEquiv_stalk_modelSpace`). Together with isolated-point evaluation in dimension zero,
 this gives an induction principle on the complex dimension (`stalk_induction`) for
 isomorphism-invariant ring properties of holomorphic stalks on finite-dimensional boundaryless
@@ -295,6 +298,51 @@ theorem stalkPullbackAt_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω�
   exact stalkPullbackAt_comp (J := J)
     (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt) hgfx
     (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt) rfl
+
+/-! ### Pullback along analytic map germs -/
+
+/-- Pullback of holomorphic stalks along an analytic map germ `F : AnalyticMapGerm I J x y`. -/
+def stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
+    (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  stalkPullbackAt F.property.choose_spec.2.2 F.property.choose_spec.2.1
+
+/-- Pullback along `AnalyticMapGerm.mk f hf hfx` agrees with `stalkPullbackAt hf hfx`. -/
+@[simp]
+theorem stalkPullbackGerm_mk {x : X} {y : Y} (f : X → Y)
+    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
+    stalkPullbackGerm (AnalyticMapGerm.mk f hf hfx) = stalkPullbackAt hf hfx := by
+  let F := AnalyticMapGerm.mk f hf hfx
+  exact stalkPullbackAt_congr F.property.choose_spec.2.2 F.property.choose_spec.2.1 hf hfx
+    (Germ.coe_eq.1 F.property.choose_spec.1)
+
+/-- The function germ of `stalkPullbackGerm F s` is composition of the function germ of `s` with
+`F.val` via `Germ.compTendsto'`. -/
+@[simp]
+theorem toFilterGerm_stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk y) :
+    toFilterGerm I X x (𝓝 x) le_rfl (stalkPullbackGerm F s) =
+      (toFilterGerm J Y y (𝓝 y) le_rfl s).compTendsto' F.val F.tendsto := by
+  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
+  rw [stalkPullbackGerm_mk, toFilterGerm_stalkPullbackAt]
+  exact (Germ.compTendsto'_coe _ _).symm
+
+/-- Pullback along `AnalyticMapGerm.id` is the identity `ℂ`-algebra homomorphism. -/
+@[simp]
+theorem stalkPullbackGerm_id (x : X) :
+    stalkPullbackGerm (AnalyticMapGerm.id I x) =
+      AlgHom.id ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  simp [AnalyticMapGerm.id]
+
+-- Pre-order so pullback composition splits before `AnalyticMapGerm.comp_mk` merges `mk` germs.
+/-- Stalk pullback is contravariantly functorial under composition of analytic map germs. -/
+@[simp↓]
+theorem stalkPullbackGerm_comp {x : X} {y : Y} {z : Z}
+    (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
+    stalkPullbackGerm (G.comp F) = (stalkPullbackGerm F).comp (stalkPullbackGerm G) := by
+  obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk; obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
+  rw [AnalyticMapGerm.comp_mk (J := J), stalkPullbackGerm_mk, stalkPullbackGerm_mk,
+    stalkPullbackGerm_mk, stalkPullbackAt_comp (J := J)]
 
 /-- Pullback along a map with a local analytic inverse near the base point, such as a chart or a
 biholomorphism, is bijective. -/

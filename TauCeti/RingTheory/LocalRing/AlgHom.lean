@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 /-!
 # Algebra homomorphisms of local algebras
@@ -15,41 +13,49 @@ import TauCeti.RingTheory.AdicCompletion.AlgHom
 Over any commutative semiring `k`, every `k`-algebra augmentation `R →ₐ[k] k` of a local
 `k`-algebra `R` (not assumed commutative) reflects units (`AlgHom.isLocalHom_to_ring`), so whenever
 a `k`-algebra `S` admits a `k`-algebra augmentation `S →ₐ[k] k`, every `k`-algebra homomorphism
-`R →ₐ[k] S` out of `R` automatically reflects units (`AlgHom.isLocalHom_of_algHom`). When `k` is a
-field, `R` admits at most one `k`-algebra homomorphism `R →ₐ[k] k`
+`R →ₐ[k] S` out of `R` automatically reflects units (`AlgHom.isLocalHom_of_augmentation`). When
+`k` is a field, `R` admits at most one `k`-algebra homomorphism `R →ₐ[k] k`
 (`AlgHom.subsingleton_of_isLocalRing`), and every `k`-algebra homomorphism `R →ₐ[k] S` commutes with
 any augmentations on `R` and `S` (`AlgHom.comp_eq_of_isLocalRing`).
 
-In the commutative case, over a commutative ring `k` (for instance whenever `R` admits a
-`k`-algebra augmentation `R →ₐ[k] k`, via `AlgHom.surjective_algebraMap_residueField`), for local
-`k`-algebras `R` and `S` with `S` separated for its maximal ideal and
-`algebraMap k (ResidueField R)` surjective, a `k`-algebra homomorphism `ψ : R →ₐ[k] S` agreeing on a
-generating set of `maximalIdeal R` with a local `k`-algebra homomorphism `φ : R →ₐ[k] S` equals `φ`
-(`AlgHom.ext_of_span_eq_maximalIdeal`), deduced from the general adic uniqueness result
-`AlgHom.ext_of_isHausdorff` in `TauCeti.RingTheory.AdicCompletion.AlgHom`, even when `R` is not
-finitely generated as a `k`-algebra (as for rings of analytic germs or formal power series).
+In the commutative case over a commutative ring `k`, `TauCeti.residue_algebraMap` identifies the
+residue of a scalar `algebraMap k R c` with its image in `IsLocalRing.ResidueField R`, and
+whenever `R` admits a `k`-algebra augmentation `R →ₐ[k] k`, `algebraMap k (ResidueField R)` is
+surjective (`AlgHom.surjective_algebraMap_residueField`).
 
 ## Main results
 
 * `AlgHom.isLocalHom_to_ring`: any `k`-algebra augmentation `R →ₐ[k] k` of a local `k`-algebra over
   a commutative semiring `k` reflects units.
-* `AlgHom.isLocalHom_of_algHom`: any `φ : R →ₐ[k] S` from a local `k`-algebra into a `k`-algebra
-  admitting `S →ₐ[k] k` reflects units.
+* `AlgHom.isLocalHom_of_augmentation`: any `φ : R →ₐ[k] S` from a local `k`-algebra into a
+  `k`-algebra admitting `S →ₐ[k] k` reflects units.
 * `AlgHom.subsingleton_of_isLocalRing`: `R →ₐ[k] k` is a subsingleton for a local `k`-algebra `R`
   over a field `k`.
+* `TauCeti.residue_algebraMap`: the residue of `algebraMap k R c` equals
+  `algebraMap k (IsLocalRing.ResidueField R) c`.
 * `AlgHom.surjective_algebraMap_residueField`: if a commutative local `k`-algebra `R` over a
   commutative ring `k` admits `R →ₐ[k] k`, then `algebraMap k (ResidueField R)` is surjective.
-* `AlgHom.ext_of_span_eq_maximalIdeal`: uniqueness of `k`-algebra homomorphisms of local rings into
-  maximal-ideal-separated targets from agreement on generators of the maximal ideal.
 
 ## References
 
-* N. Bourbaki, *Commutative Algebra*, Chapter III, §2.
 * H. Grauert and R. Remmert, *Coherent Analytic Sheaves*, Grundlehren der mathematischen
   Wissenschaften 265, Springer, 1984, Chapter 1, §1.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The residue of a scalar `algebraMap k R c` in a commutative local `k`-algebra `R` equals the
+image of `c` in `IsLocalRing.ResidueField R`. -/
+theorem residue_algebraMap {k R : Type*} [CommRing k] [CommRing R] [IsLocalRing R]
+    [Algebra k R] (c : k) :
+    IsLocalRing.residue R (algebraMap k R c) =
+      algebraMap k (IsLocalRing.ResidueField R) c := by
+  rw [IsScalarTower.algebraMap_apply k R (IsLocalRing.ResidueField R),
+    IsLocalRing.ResidueField.algebraMap_eq]
+
+end TauCeti
 
 namespace AlgHom
 
@@ -107,8 +113,9 @@ theorem comp_apply_of_isLocalRing {k R S : Type*} [Field k] [Ring R] [IsLocalRin
 /-- Over any commutative semiring `k`, any `k`-algebra homomorphism `R →ₐ[k] S` out of a local
 `k`-algebra `R` into a `k`-algebra `S` admitting a `k`-algebra augmentation `S →ₐ[k] k` reflects
 units. -/
-theorem isLocalHom_of_algHom {k R S : Type*} [CommSemiring k] [Ring R] [IsLocalRing R] [Semiring S]
-    [Algebra k R] [Algebra k S] (φ : R →ₐ[k] S) (εS : S →ₐ[k] k) : IsLocalHom φ := by
+theorem isLocalHom_of_augmentation {k R S : Type*} [CommSemiring k] [Ring R] [IsLocalRing R]
+    [Semiring S] [Algebra k R] [Algebra k S] (φ : R →ₐ[k] S) (εS : S →ₐ[k] k) :
+    IsLocalHom φ := by
   have : IsLocalHom (εS.toRingHom.comp φ.toRingHom) := ⟨IsLocalHom.map_nonunit (f := εS.comp φ)⟩
   exact ⟨(isLocalHom_of_comp φ.toRingHom εS.toRingHom).map_nonunit⟩
 
@@ -121,36 +128,11 @@ theorem surjective_algebraMap_residueField {k R : Type*} [CommRing k] [CommRing 
   intro a
   obtain ⟨r, rfl⟩ := IsLocalRing.residue_surjective a
   refine ⟨ε r, ?_⟩
-  rw [IsScalarTower.algebraMap_apply k R (IsLocalRing.ResidueField R),
-    IsLocalRing.ResidueField.algebraMap_eq, ← sub_eq_zero, ← map_sub,
-    IsLocalRing.residue_eq_zero_iff, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
-  intro hu
-  exact not_isUnit_zero (by simpa [ε.commutes] using hu.map ε : IsUnit (0 : k))
+  rw [← TauCeti.residue_algebraMap, ← sub_eq_zero, ← map_sub]
+  by_contra hne
+  have hu := ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 hne).map ε
+  simp [ε.commutes] at hu
 
 end Augmentation
-
-section AdicUniqueness
-
-/-- **Uniqueness of `k`-algebra homomorphisms of local rings from maximal-ideal generators.** Let
-`R` and `S` be commutative local `k`-algebras such that `algebraMap k (ResidueField R)` is
-surjective and `S` is separated (`IsHausdorff`) with respect to its maximal ideal. If `G` generates
-`maximalIdeal R` and `φ, ψ : R →ₐ[k] S` agree on `G` with `φ` local (no locality assumption on `ψ`
-is needed), then `φ = ψ`. -/
-theorem ext_of_span_eq_maximalIdeal {k R S : Type*} [CommRing k] [CommRing R] [IsLocalRing R]
-    [CommRing S] [IsLocalRing S] [Algebra k R] [Algebra k S]
-    [IsHausdorff (IsLocalRing.maximalIdeal S) S] {φ ψ : R →ₐ[k] S} [IsLocalHom φ]
-    (hres : Function.Surjective (algebraMap k (IsLocalRing.ResidueField R)))
-    {G : Set R} (hG_span : Ideal.span G = IsLocalRing.maximalIdeal R)
-    (hG : Set.EqOn φ ψ G) :
-    φ = ψ := by
-  have : IsLocalHom φ.toRingHom := ⟨IsLocalHom.map_nonunit (f := φ)⟩
-  refine ext_of_isHausdorff (IsLocalRing.maximalIdeal S) (fun r ↦ ?_) (fun g hg ↦ ?_) hG
-  · obtain ⟨c, hc⟩ := hres (IsLocalRing.residue R r)
-    refine ⟨c, hG_span.symm ▸ (IsLocalRing.residue_eq_zero_iff _).1 ?_⟩
-    rw [map_sub, ← hc, IsScalarTower.algebraMap_apply k R (IsLocalRing.ResidueField R),
-      IsLocalRing.ResidueField.algebraMap_eq, sub_self]
-  · exact map_nonunit φ.toRingHom g (hG_span ▸ Ideal.subset_span hg)
-
-end AdicUniqueness
 
 end AlgHom
