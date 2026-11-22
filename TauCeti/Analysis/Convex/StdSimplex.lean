@@ -117,10 +117,11 @@ theorem norm_toLp_weights_le_one {ι : Type*} [Fintype ι] {p : ENNReal} [Fact (
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/
 theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedCancelAddMonoid R] {ι : Type*} {x : ι → R}
+    [AddLeftStrictMono R] {ι : Type*} {x : ι → R}
     (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
     (hxj : 0 < x j) : x i < 1 := by
   classical
+  have := addLeftMono_of_addLeftStrictMono R
   obtain ⟨s, rfl⟩ := hx
   -- The total weight is the sum over any finite set containing the support, here one that also
   -- contains `i` and `j`.
@@ -180,7 +181,7 @@ theorem mem_stdSimplexBoundary [Semiring R] [PartialOrder R] {x : ι → R} :
 /-- The relative boundary lies in the standard simplex. -/
 theorem stdSimplexBoundary_subset [Semiring R] [PartialOrder R] :
     stdSimplexBoundary R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
-  fun _ hx => hx.1
+  fun _ hx => (mem_stdSimplexBoundary.mp hx).1
 
 /-- A point of the standard simplex lies on its relative boundary or in its open part. -/
 theorem mem_stdSimplexBoundary_or_forall_pos [Semiring R] [PartialOrder R] {x : ι → R}
@@ -188,20 +189,32 @@ theorem mem_stdSimplexBoundary_or_forall_pos [Semiring R] [PartialOrder R] {x : 
     x ∈ stdSimplexBoundary R ι ∨ ∀ i, 0 < x i := by
   refine or_iff_not_imp_left.2 fun h i => ?_
   obtain ⟨s, rfl⟩ := hx
-  exact (s.weights_nonneg i).lt_of_ne' fun h0 => h ⟨mem_range_self s, i, h0⟩
+  exact (s.weights_nonneg i).lt_of_ne' fun h0 =>
+    h (mem_stdSimplexBoundary.mpr ⟨mem_range_self s, i, h0⟩)
 
 variable [Finite ι]
 
-/-- The relative boundary of the standard simplex over a topological ordered ring with compact
-closed intervals, such as `ℝ`, is compact. -/
-theorem isCompact_stdSimplexBoundary [Ring R] [PartialOrder R] [IsStrictOrderedRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] [CompactIccSpace R] [OrderClosedTopology R] :
+/-- The relative boundary of the standard simplex over an ordered semiring with continuous
+addition, closed points and compact closed intervals, such as `ℝ`, is compact. -/
+theorem isCompact_stdSimplexBoundary [Semiring R] [PartialOrder R] [IsOrderedAddMonoid R]
+    [TopologicalSpace R] [ContinuousAdd R] [CompactIccSpace R] [T1Space R] :
     IsCompact (stdSimplexBoundary R ι) := by
-  have hZ : IsClosed {y : ι → R | ∃ i, y i = 0} := by
-    simpa only [ofPred_exists] using
-      isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
-  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights R ι).continuous).inter_right
-    hZ
+  have := Fintype.ofFinite ι
+  -- The boundary is the intersection of the unit cube with a closed set.
+  have hC : IsClosed
+      ((fun y : ι → R => ∑ i, y i) ⁻¹' {1} ∩ ⋃ i, (fun y : ι → R => y i) ⁻¹' {0}) :=
+    (isClosed_singleton.preimage (continuous_finsetSum _ fun i _ => continuous_apply i)).inter
+      (isClosed_iUnion_of_finite fun i => isClosed_singleton.preimage (continuous_apply i))
+  convert (isCompact_univ_pi fun _ => isCompact_Icc (a := (0 : R)) (b := 1)).inter_right hC
+    using 1
+  ext y
+  simp only [mem_stdSimplexBoundary, StdSimplex.mem_range_toFun_comp_weights_iff, mem_inter_iff,
+    mem_univ_pi, Set.mem_Icc, Set.mem_preimage, mem_singleton_iff, mem_iUnion]
+  constructor
+  · rintro ⟨⟨h0, h1⟩, hz⟩
+    exact ⟨fun i => ⟨h0 i, h1 ▸ single_le_sum (fun j _ => h0 j) (mem_univ i)⟩, h1, hz⟩
+  · rintro ⟨hI, h1, hz⟩
+    exact ⟨⟨fun i => (hI i).1, h1⟩, hz⟩
 
 end Boundary
 
@@ -398,53 +411,52 @@ omit [Fintype ι] in
 /-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the
 facet opposite a vertex `i`, the points with vanishing `i`-th coordinate, with that vertex. Along
 the segment from a point of the facet to the vertex, the `i`-th coordinate is the parameter. -/
-theorem convexJoin_facet_stdSimplex_single [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-    [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
+theorem convexJoin_facet_stdSimplex_single [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
+    [Nontrivial ι] [DecidableEq ι] (i : ι) :
     convexJoin R {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
       range fun s : StdSimplex R ι => ⇑s.weights := by
-  have := Fintype.ofFinite ι
-  have hS : (range fun s : StdSimplex R ι => ⇑s.weights) =
-      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
-    Set.ext fun _ => StdSimplex.mem_range_toFun_comp_weights_iff
-  have hconv := StdSimplex.convex_range_toFun_comp_weights R ι
-  rw [hS] at hconv
-  rw [hS]
-  have hb : (Pi.single i 1 : ι → R) ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
-    ⟨Pi.single_nonneg.2 zero_le_one, by simp⟩
-  refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
-    (singleton_subset_iff.mpr hb) hconv) fun z hz => ?_
-  have hle : z i ≤ 1 := by
-    rw [← hz.2]
-    exact single_le_sum (fun j _ => hz.1 j) (Finset.mem_univ i)
-  rcases hle.lt_or_eq with ht | ht
-  · -- Write `z` as the point at parameter `z i` on a segment from the facet.
-    have hpos : 0 < 1 - z i := sub_pos.mpr ht
-    refine mem_convexJoin.mpr ⟨(1 - z i)⁻¹ • (z - z i • Pi.single i 1), ⟨⟨fun j => ?_, ?_⟩, ?_⟩,
-      _, rfl, 1 - z i, z i, hpos.le, hz.1 i, by ring, ?_⟩
-    · rcases eq_or_ne j i with rfl | hj
-      · simp
-      · simpa [hj] using mul_nonneg (inv_nonneg.mpr hpos.le) (hz.1 j)
-    · simp [← mul_sum, sum_sub_distrib, hz.2, inv_mul_cancel₀ hpos.ne']
-    · simp
-    · ext j
+  have hb : (Pi.single i 1 : ι → R) ∈ range fun s : StdSimplex R ι => ⇑s.weights :=
+    ⟨StdSimplex.single i, Finsupp.single_eq_pi_single i 1⟩
+  refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1) (singleton_subset_iff.mpr hb)
+    (StdSimplex.convex_range_toFun_comp_weights R ι)) ?_
+  rintro _ ⟨w, rfl⟩
+  dsimp only
+  have hnonneg (j : ι) : 0 ≤ w.weights.erase i j := by
+    rw [Finsupp.erase_apply]
+    split_ifs
+    exacts [le_rfl, w.weights_nonneg j]
+  -- The weight `m` away from `i` and the weight at `i` add up to one.
+  obtain ⟨m, hm⟩ : ∃ m, ((w.weights.erase i).sum fun _ r => r) = m := ⟨_, rfl⟩
+  have hmi : m + w.weights i = 1 := by
+    rw [← hm, ← w.total]
+    conv_rhs => rw [← Finsupp.erase_add_single i w.weights]
+    rw [Finsupp.sum_add_index' (fun _ => rfl) fun _ _ _ => rfl, Finsupp.sum_single_index rfl]
+  rcases (hm ▸ Finsupp.sum_nonneg' hnonneg : 0 ≤ m).eq_or_lt with hm0 | hmpos
+  · -- With no weight away from `i`, `w` is the vertex.
+    have hwi : ⇑w.weights = Pi.single i 1 := funext fun j => by
+      have hi : w.weights i = 1 := by rw [← hmi, ← hm0, zero_add]
       rcases eq_or_ne j i with rfl | hj
-      · simp
-      · simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Pi.single_eq_of_ne hj]
-        field_simp
-        ring
-  · -- At parameter one every other coordinate vanishes, so `z` is the vertex.
-    have hzero : ∀ j ∈ univ.erase i, z j = 0 := by
-      refine (sum_eq_zero_iff_of_nonneg fun j _ => hz.1 j).mp ?_
-      linarith [add_sum_erase univ z (Finset.mem_univ i), hz.2]
-    have hzi : z = Pi.single i 1 := funext fun j => by
-      rcases eq_or_ne j i with rfl | hj
-      · simp [ht]
-      · simp [hj, hzero j (mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)]
+      · simp [hi]
+      · rw [Pi.single_eq_of_ne hj]
+        exact ((w.weights_nonneg j).eq_of_not_lt fun h =>
+          (StdSimplex.apply_lt_one_of_mem_range_weights ⟨w, rfl⟩ hj h).ne hi).symm
     obtain ⟨j, hj⟩ := exists_ne i
+    rw [hwi]
     have hj' : (Pi.single j 1 : ι → R) ∈
-        {y ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | y i = 0} :=
-      ⟨⟨Pi.single_nonneg.2 zero_le_one, by simp⟩, by simp [hj.symm]⟩
-    rw [hzi]
+        {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} :=
+      ⟨⟨StdSimplex.single j, Finsupp.single_eq_pi_single j 1⟩, by simp [hj.symm]⟩
     exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)
+  · -- Otherwise `w` lies at parameter `w i` on the segment to the vertex from the facet point
+    -- given by the renormalised weights away from `i`.
+    obtain ⟨v, hv⟩ : ∃ v : StdSimplex R ι, v.weights = m⁻¹ • w.weights.erase i :=
+      ⟨⟨_, fun j => by simpa using mul_nonneg (inv_nonneg.mpr hmpos.le) (hnonneg j), by
+        rw [Finsupp.sum_smul_index fun _ => rfl, ← Finsupp.mul_sum, hm,
+          inv_mul_cancel₀ hmpos.ne']⟩, rfl⟩
+    refine mem_convexJoin.mpr ⟨⇑v.weights, ⟨⟨v, rfl⟩, by simp [hv]⟩, _, rfl, m, w.weights i,
+      hmpos.le, w.weights_nonneg i, hmi, ?_⟩
+    ext j
+    rcases eq_or_ne j i with rfl | hj
+    · simp [hv]
+    · simp [hv, Finsupp.erase_ne hj, Pi.single_eq_of_ne hj, hmpos.ne']
 
 end TauCeti
