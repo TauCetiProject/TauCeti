@@ -375,24 +375,24 @@ theorem coe_ne_comp_neg (T' : ConvexTable j ℓ) : ⇑T' ≠ T ∘ Neg.neg := by
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
-/-- The radius of a circle of positive perimeter `2πR` is positive. -/
-private theorem pos_of_fact {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
+/-- The radius `R` of a circle of positive perimeter `2πR` is positive. -/
+theorem radius_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
   pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 /-- The counterclockwise **circle** `s ↦ R exp(i s / R)` of radius `R > 0` and perimeter `2πR`, a
 table of class `C^∞`. It is the circle billiard table `TauCeti.StrictConvexBilliardTable.circle`. -/
 def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi * R) where
-  toFun := StrictConvexBilliardTable.circle (pos_of_fact (R := R))
+  toFun := StrictConvexBilliardTable.circle (radius_pos (R := R))
   one_le := le_top
   contDiff' := by
-    rw [show ⇑(StrictConvexBilliardTable.circle (pos_of_fact (R := R))) =
+    rw [show ⇑(StrictConvexBilliardTable.circle (radius_pos (R := R))) =
       fun s => circleMap 0 R (s / R) from funext StrictConvexBilliardTable.circle_apply]
     exact (contDiff_circleMap 0 R).comp (contDiff_id.div_const R)
   periodic' := by
-    simpa using (StrictConvexBilliardTable.circle (pos_of_fact (R := R))).periodic
-  norm_deriv' := (StrictConvexBilliardTable.circle (pos_of_fact (R := R))).norm_deriv
+    simpa using (StrictConvexBilliardTable.circle (radius_pos (R := R))).periodic
+  norm_deriv' := (StrictConvexBilliardTable.circle (radius_pos (R := R))).norm_deriv
   left_of_tangent' s t h := by
-    have hR : 0 < R := pos_of_fact
+    have hR : 0 < R := radius_pos
     -- The height of `χ t` above the tangent line at `χ s` is `R (1 - cos ((t - s) / R))`.
     have hd := StrictConvexBilliardTable.areaForm_deriv_circle_sub (hR := hR) s t s
     rw [Complex.areaForm, sub_self, zero_div, Real.cos_zero] at hd
@@ -419,7 +419,7 @@ theorem deriv_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
 @[simp]
 theorem curvature_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
     (circle R).curvature s = R⁻¹ := by
-  have hR : R ≠ 0 := pos_of_fact.ne'
+  have hR : R ≠ 0 := radius_pos.ne'
   -- The unit tangent `i exp(i t / R)` is the point `R exp(i t / R)` multiplied by `i / R`, so it
   -- turns according to `τ' = (i / R) τ`.
   have hd : deriv (circle R) = fun t => I / R * circle R t := funext fun t => by
@@ -456,8 +456,9 @@ theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.perio
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
 @[simp]
-theorem toStrictConvexBilliardTable_circle {R : ℝ} [Fact (0 < 2 * Real.pi * R)] (hR : 0 < R) :
-    (circle R).toStrictConvexBilliardTable = StrictConvexBilliardTable.circle hR := by
+theorem toStrictConvexBilliardTable_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] :
+    (circle R).toStrictConvexBilliardTable =
+      StrictConvexBilliardTable.circle (radius_pos (R := R)) := by
   -- Both tables have the parametrization `s ↦ circleMap 0 R (s / R)` and the period `2πR`.
   have key : ∀ χ χ' : StrictConvexBilliardTable Complex.orientation,
       χ.toFun = χ'.toFun → χ.period = χ'.period → χ = χ' := by
