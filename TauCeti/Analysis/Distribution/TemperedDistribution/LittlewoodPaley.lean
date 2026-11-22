@@ -1006,7 +1006,8 @@ theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L 
           rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ 2 * L * (max C₀ 0 * ‖f‖) := by
           gcongr
-          exact_mod_cast Nat.card_Ico_add_one_sub_add_le j L
+          exact_mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L
+            (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
 
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every

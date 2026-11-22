@@ -1047,7 +1047,8 @@ theorem exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le (L k : ℕ) :
     · have := (Finset.mem_Ico.1 hm).1
       omega
   have hcard : ((Finset.Ico (j + 1 - L) (j + L)).card : ℝ) ≤ 2 * L :=
-    mod_cast Nat.card_Ico_add_one_sub_add_le j L
+    mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L
+      (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
   rw [funext (φ.enlargedLittlewoodPaley_apply L j), iteratedFDeriv_fun_sum_apply fun m _ ↦
     (φ.contDiff_inhomogeneousLittlewoodPaley m).contDiffAt]
   refine (norm_sum_le _ _).trans ((Finset.sum_le_sum hterm).trans ?_)
