@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
+public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.Tactic.Module
 
 /-!
@@ -37,9 +39,12 @@ for a real seminormed space `X`, and the complexification of bounded operators, 
 * `LinearMap.complexify`: the complex-linear extension `T_ℂ` of a real-linear map `T`, the unique
   one (`LinearMap.eq_complexify_iff`); it has finite rank exactly when `T` does
   (`LinearMap.hasFiniteRange_complexify_iff`); it commutes with conjugation
-  (`TauCeti.Complexification.conj_complexify`).
+  (`LinearMap.conj_complexify`).
 * `TauCeti.tensorEquivComplexification`: the algebraic isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] W_ℂ`, which
-  turns base change into complexification (`TauCeti.tensorEquivComplexification_baseChange`).
+  turns base change into complexification (`LinearMap.tensorEquivComplexification_baseChange`),
+  so the real embedding is a base change (`TauCeti.Complexification.isBaseChange`).
+* `TauCeti.Complexification.linearMapEquiv`: the complexification of the real Hom space is the
+  complex Hom space between complexifications.
 * `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
   complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
   complex dimension the real dimension of the original space.
@@ -152,32 +157,6 @@ theorem ext_ofReal {S E : Type*} [Semiring S] {σ : ℂ →+* S} [AddCommMonoid 
   rw [← re_add_I_smul_im z]
   simp only [map_add, map_smulₛₗ, h]
 
-variable (X)
-
-/-- The real part, as a real-linear map. -/
-def reLm : Complexification X →ₗ[ℝ] X where
-  toFun := re
-  map_add' := add_re
-  map_smul' := real_smul_re
-
-/-- The imaginary part, as a real-linear map. -/
-def imLm : Complexification X →ₗ[ℝ] X where
-  toFun := im
-  map_add' := add_im
-  map_smul' := real_smul_im
-
-/-- The real embedding, as a real-linear map. -/
-def ofRealLm : X →ₗ[ℝ] Complexification X where
-  toFun := ofReal
-  map_add' _ _ := by ext <;> simp
-  map_smul' _ _ := by ext <;> simp
-
-variable {X}
-
-@[simp] theorem reLm_apply (z : Complexification X) : reLm X z = z.re := (rfl)
-@[simp] theorem imLm_apply (z : Complexification X) : imLm X z = z.im := (rfl)
-@[simp] theorem ofRealLm_apply (x : X) : ofRealLm X x = ofReal x := (rfl)
-
 variable (X) in
 /-- The complexification is real-linearly equivalent to `X × X` via `z ↦ (re z, im z)`. -/
 def equivProdLm : Complexification X ≃ₗ[ℝ] X × X where
@@ -193,6 +172,24 @@ theorem equivProdLm_apply (z : Complexification X) : equivProdLm X z = (z.re, z.
 
 @[simp]
 theorem equivProdLm_symm_apply (p : X × X) : (equivProdLm X).symm p = ⟨p.1, p.2⟩ := (rfl)
+
+variable (X)
+
+/-- The real part, as a real-linear map: the first coordinate of `equivProdLm`. -/
+def reLm : Complexification X →ₗ[ℝ] X := LinearMap.fst ℝ X X ∘ₗ (equivProdLm X).toLinearMap
+
+/-- The imaginary part, as a real-linear map: the second coordinate of `equivProdLm`. -/
+def imLm : Complexification X →ₗ[ℝ] X := LinearMap.snd ℝ X X ∘ₗ (equivProdLm X).toLinearMap
+
+/-- The real embedding, as a real-linear map: the first inclusion through `equivProdLm`. -/
+def ofRealLm : X →ₗ[ℝ] Complexification X :=
+  (equivProdLm X).symm.toLinearMap ∘ₗ LinearMap.inl ℝ X X
+
+variable {X}
+
+@[simp] theorem reLm_apply (z : Complexification X) : reLm X z = z.re := (rfl)
+@[simp] theorem imLm_apply (z : Complexification X) : imLm X z = z.im := (rfl)
+@[simp] theorem ofRealLm_apply (x : X) : ofRealLm X x = ofReal x := (rfl)
 
 /-- The complexification of a finite-dimensional real vector space is finite-dimensional over
 `ℝ`. -/
@@ -221,79 +218,6 @@ end
 end Complexification
 
 end TauCeti
-
-namespace LinearMap
-
-open TauCeti TauCeti.Complexification
-
-variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
-
-/-- The complexification `T_ℂ (x + i y) = T x + i T y` of a real-linear map, a complex-linear
-map. -/
-def complexify (T : X →ₗ[ℝ] Y) : Complexification X →ₗ[ℂ] Complexification Y where
-  toFun z := ⟨T z.re, T z.im⟩
-  map_add' _ _ := by ext <;> simp
-  map_smul' _ _ := by ext <;> simp
-
-@[simp]
-theorem complexify_apply_re (T : X →ₗ[ℝ] Y) (z : Complexification X) :
-    (T.complexify z).re = T z.re := (rfl)
-
-@[simp]
-theorem complexify_apply_im (T : X →ₗ[ℝ] Y) (z : Complexification X) :
-    (T.complexify z).im = T z.im := (rfl)
-
-@[simp]
-theorem complexify_ofReal (T : X →ₗ[ℝ] Y) (x : X) :
-    T.complexify (ofReal x) = ofReal (T x) := by
-  ext <;> simp
-
-/-- Complexification preserves identity maps. -/
-@[simp]
-theorem complexify_id : (LinearMap.id : X →ₗ[ℝ] X).complexify = LinearMap.id := by
-  ext z <;> simp
-
-/-- Complexification preserves composition. -/
-@[simp]
-theorem complexify_comp {Z : Type*} [AddCommGroup Z] [Module ℝ Z] (T : Y →ₗ[ℝ] Z)
-    (S : X →ₗ[ℝ] Y) : (T ∘ₗ S).complexify = T.complexify ∘ₗ S.complexify := by
-  ext z <;> simp
-
-/-- Complexification preserves and reflects finite rank. -/
-@[simp]
-theorem hasFiniteRange_complexify_iff (T : X →ₗ[ℝ] Y) :
-    T.complexify.HasFiniteRange ↔ T.HasFiniteRange := by
-  -- Since `ℂ` is finite over `ℝ`, it suffices to compare real ranges.
-  rw [hasFiniteRange_iff_range, ← Submodule.FG.restrictScalars_iff (R := ℝ),
-    ← range_restrictScalars, ← hasFiniteRange_iff_range]
-  let J := (lsmul ℂ (Complexification Y) Complex.I).restrictScalars ℝ
-  -- `T = re ∘ T_ℂ ∘ ofReal` and `T_ℂ = ofReal ∘ T ∘ re + I • ofReal ∘ T ∘ im` over `ℝ`.
-  have hT : T = reLm Y ∘ₗ T.complexify.restrictScalars ℝ ∘ₗ ofRealLm X := by
-    ext x
-    simp
-  have hreal : T.complexify.restrictScalars ℝ =
-      ofRealLm Y ∘ₗ T ∘ₗ reLm X + J ∘ₗ ofRealLm Y ∘ₗ T ∘ₗ imLm X := by
-    ext z <;> simp [J]
-  refine ⟨fun h ↦ hT ▸ (h.comp_right _).comp_left _, fun h ↦ hreal ▸ ?_⟩
-  exact ((h.comp_left (ofRealLm Y)).comp_right (reLm X)).add
-    (((h.comp_left (ofRealLm Y)).comp_left J).comp_right (imLm X))
-
-/-- The complexification is the unique complex-linear extension of `T`. -/
-theorem eq_complexify_iff (T : X →ₗ[ℝ] Y) (S : Complexification X →ₗ[ℂ] Complexification Y) :
-    S = T.complexify ↔ ∀ x, S (ofReal x) = ofReal (T x) :=
-  ⟨fun h x ↦ h ▸ complexify_ofReal T x, fun h ↦ ext_ofReal fun x ↦ by simp [h]⟩
-
-end LinearMap
-
-namespace TauCeti.Complexification
-
-variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
-
-/-- Complexification of a real-linear map commutes with complex conjugation. -/
-theorem conj_complexify (T : X →ₗ[ℝ] Y) (z : Complexification X) :
-    conj Y (T.complexify z) = T.complexify (conj X z) := by ext <;> simp
-
-end TauCeti.Complexification
 
 namespace TauCeti
 
@@ -324,12 +248,11 @@ theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :
     tensorEquivComplexification W (tmulConj W u) =
       Complexification.conj W (tensorEquivComplexification W u) := by ext <;> simp
 
-/-- `tensorEquivComplexification` intertwines `LinearMap.baseChange ℂ` with
-`LinearMap.complexify`. -/
-theorem tensorEquivComplexification_baseChange {Y : Type*} [AddCommGroup Y] [Module ℝ Y]
-    (T : W →ₗ[ℝ] Y) (u : ℂ ⊗[ℝ] W) :
-    tensorEquivComplexification Y (T.baseChange ℂ u) =
-      T.complexify (tensorEquivComplexification W u) := by ext <;> simp
+variable (W) in
+/-- The real embedding `W → W_ℂ` is a base change of `W` to `ℂ`, so real-linear maps from `W` to
+any complex module extend uniquely to complex-linear maps out of `W_ℂ` (`IsBaseChange.lift`). -/
+theorem Complexification.isBaseChange : IsBaseChange ℂ (Complexification.ofRealLm W) :=
+  .of_equiv (tensorEquivComplexification W) fun w ↦ by simp
 
 /-- The complexification of a finite-dimensional real vector space is finite-dimensional over
 `ℂ`. -/
@@ -343,3 +266,134 @@ instance Complexification.instFiniteComplex [Module.Finite ℝ W] :
   (tensorEquivComplexification W).finrank_eq.symm.trans Module.finrank_baseChange
 
 end TauCeti
+
+namespace LinearMap
+
+open TauCeti TauCeti.Complexification
+
+variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
+
+/-- The complexification `T_ℂ (x + i y) = T x + i T y` of a real-linear map, a complex-linear
+map: the base change `T.baseChange ℂ`, transported along `TauCeti.tensorEquivComplexification`. -/
+def complexify (T : X →ₗ[ℝ] Y) : Complexification X →ₗ[ℂ] Complexification Y :=
+  (tensorEquivComplexification Y).toLinearMap ∘ₗ T.baseChange ℂ ∘ₗ
+    (tensorEquivComplexification X).symm.toLinearMap
+
+/-- `TauCeti.tensorEquivComplexification` intertwines `LinearMap.baseChange ℂ` with
+`LinearMap.complexify`. -/
+theorem tensorEquivComplexification_baseChange (T : X →ₗ[ℝ] Y) (u : ℂ ⊗[ℝ] X) :
+    tensorEquivComplexification Y (T.baseChange ℂ u) =
+      T.complexify (tensorEquivComplexification X u) := by
+  simp [complexify]
+
+@[simp]
+theorem complexify_apply_re (T : X →ₗ[ℝ] Y) (z : Complexification X) :
+    (T.complexify z).re = T z.re := by
+  simp [complexify]
+
+@[simp]
+theorem complexify_apply_im (T : X →ₗ[ℝ] Y) (z : Complexification X) :
+    (T.complexify z).im = T z.im := by
+  simp [complexify]
+
+@[simp]
+theorem complexify_ofReal (T : X →ₗ[ℝ] Y) (x : X) :
+    T.complexify (ofReal x) = ofReal (T x) := by
+  ext <;> simp
+
+/-- Complexification sends the zero map to the zero map. -/
+@[simp]
+theorem complexify_zero : (0 : X →ₗ[ℝ] Y).complexify = 0 := by
+  ext z <;> simp
+
+/-- Complexification is additive. -/
+@[simp]
+theorem complexify_add (S T : X →ₗ[ℝ] Y) : (S + T).complexify = S.complexify + T.complexify := by
+  ext z <;> simp
+
+/-- Complexification preserves identity maps. -/
+@[simp]
+theorem complexify_id : (LinearMap.id : X →ₗ[ℝ] X).complexify = LinearMap.id := by
+  rw [complexify, baseChange_id, id_comp, LinearEquiv.comp_symm]
+
+/-- Complexification preserves composition. -/
+@[simp]
+theorem complexify_comp {Z : Type*} [AddCommGroup Z] [Module ℝ Z] (T : Y →ₗ[ℝ] Z)
+    (S : X →ₗ[ℝ] Y) : (T ∘ₗ S).complexify = T.complexify ∘ₗ S.complexify := by
+  rw [complexify, complexify, complexify, baseChange_comp]
+  exact LinearMap.ext fun z ↦ by simp
+
+/-- Complexification preserves and reflects finite rank. -/
+@[simp]
+theorem hasFiniteRange_complexify_iff (T : X →ₗ[ℝ] Y) :
+    T.complexify.HasFiniteRange ↔ T.HasFiniteRange := by
+  -- Since `ℂ` is finite over `ℝ`, it suffices to compare real ranges.
+  rw [hasFiniteRange_iff_range, ← Submodule.FG.restrictScalars_iff (R := ℝ),
+    ← range_restrictScalars, ← hasFiniteRange_iff_range]
+  -- `T = re ∘ T_ℂ ∘ ofReal`, and over `ℝ`, `T_ℂ` is `T × T` conjugated by `X_ℂ ≃ X × X`.
+  have hT : T = reLm Y ∘ₗ T.complexify.restrictScalars ℝ ∘ₗ ofRealLm X := by
+    ext x
+    simp
+  have hreal : T.complexify.restrictScalars ℝ =
+      (equivProdLm Y).symm.toLinearMap ∘ₗ T.prodMap T ∘ₗ (equivProdLm X).toLinearMap := by
+    ext z <;> simp
+  refine ⟨fun h ↦ hT ▸ (h.comp_right _).comp_left _, fun h ↦ hreal ▸ ?_⟩
+  have hprod : (T.prodMap T).HasFiniteRange := by
+    rw [hasFiniteRange_iff_range, range_prodMap]
+    exact Submodule.FG.prod h h
+  exact (hprod.comp_right _).comp_left _
+
+/-- The complexification is the unique complex-linear extension of `T`. -/
+theorem eq_complexify_iff (T : X →ₗ[ℝ] Y) (S : Complexification X →ₗ[ℂ] Complexification Y) :
+    S = T.complexify ↔ ∀ x, S (ofReal x) = ofReal (T x) :=
+  ⟨fun h x ↦ h ▸ complexify_ofReal T x, fun h ↦ ext_ofReal fun x ↦ by simp [h]⟩
+
+/-- Complexification of a real-linear map commutes with complex conjugation. -/
+theorem conj_complexify (T : X →ₗ[ℝ] Y) (z : Complexification X) :
+    conj Y (T.complexify z) = T.complexify (conj X z) := by
+  obtain ⟨u, rfl⟩ := (tensorEquivComplexification X).surjective z
+  rw [← tensorEquivComplexification_baseChange, ← tensorEquivComplexification_tmulConj,
+    tmulConj_baseChange, tensorEquivComplexification_baseChange,
+    tensorEquivComplexification_tmulConj]
+
+end LinearMap
+
+namespace TauCeti.Complexification
+
+variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
+
+variable (X Y) in
+/-- Complexification of the real Hom space agrees with the complex Hom space between
+complexifications: `u` goes to `u.re_ℂ + i u.im_ℂ`, and `T` to the real and imaginary parts of its
+restriction to real vectors. -/
+def linearMapEquiv :
+    Complexification (X →ₗ[ℝ] Y) ≃ₗ[ℂ] (Complexification X →ₗ[ℂ] Complexification Y) where
+  toFun u := u.re.complexify + Complex.I • u.im.complexify
+  invFun T := ⟨reLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X,
+    imLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X⟩
+  map_add' _ _ := by ext <;> simp <;> abel
+  map_smul' _ _ := by ext <;> simp [smul_add] <;> module
+  left_inv _ := by ext <;> simp
+  right_inv _ := ext_ofReal fun _ ↦ by ext <;> simp
+
+@[simp] theorem linearMapEquiv_apply_re (u : Complexification (X →ₗ[ℝ] Y))
+    (v : Complexification X) : (linearMapEquiv X Y u v).re = u.re v.re - u.im v.im := by
+  simp [linearMapEquiv, sub_eq_add_neg]
+@[simp] theorem linearMapEquiv_apply_im (u : Complexification (X →ₗ[ℝ] Y))
+    (v : Complexification X) : (linearMapEquiv X Y u v).im = u.im v.re + u.re v.im := by
+  simp [linearMapEquiv, add_comm]
+
+/-- Real-linear maps extend by their complexification. -/
+@[simp] theorem linearMapEquiv_ofReal (T : X →ₗ[ℝ] Y) :
+    linearMapEquiv X Y (ofReal T) = T.complexify := by
+  ext <;> simp
+
+/-- Real part of the inverse: restriction to real vectors followed by the real part. -/
+@[simp] theorem linearMapEquiv_symm_apply_re (T : Complexification X →ₗ[ℂ] Complexification Y)
+    (x : X) : ((linearMapEquiv X Y).symm T).re x = (T (ofReal x)).re := (rfl)
+
+/-- Imaginary part of the inverse: restriction to real vectors followed by the imaginary part. -/
+@[simp] theorem linearMapEquiv_symm_apply_im (T : Complexification X →ₗ[ℂ] Complexification Y)
+    (x : X) : ((linearMapEquiv X Y).symm T).im x = (T (ofReal x)).im := (rfl)
+
+end TauCeti.Complexification
