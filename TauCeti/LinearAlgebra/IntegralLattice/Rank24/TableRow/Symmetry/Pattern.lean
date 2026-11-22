@@ -35,7 +35,7 @@ row's lattice (`coupledPatternIsometryHom_injective`).
   triviality on literal patterns.
 * `TauCeti.RootfulNiemeierType.exists_coupledPatternIsometryHom_a5FourthD4_eq_pow`,
   `TauCeti.RootfulNiemeierType.det_coupledPatternIsometryHom_a5FourthD4`: every pattern symmetry
-  of `A₅⁴ D₄` acts as a power of `a5FourthD4TrialityRotation` and has determinant `1`.
+  of `A₅⁴ D₄` acts as a power of `a5FourthD4TrialityIsometry` and has determinant `1`.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom_injective`: every pattern symmetry group
   embeds faithfully into `Isometry r.lattice r.lattice`.
 
@@ -73,9 +73,10 @@ private theorem permCongr_cyclic_a5FourthD4
     (σ : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length)) :
     (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr σ =
       (σ : Equiv.Perm (Fin a5FourthD4.components.length)) := by
-  ext i
-  rw [Equiv.permCongr_apply, finCongr_apply, Fin.val_cast, finCongr_symm, finCongr_apply]
-  exact congrArg (fun j : Fin 5 ↦ (σ j).val) (Fin.ext (Fin.val_cast _ _))
+  have h (σ' : Equiv.Perm (Fin 5)) :
+      (finCongr (rfl : 5 = 5)).permCongr σ' = σ' := by
+    rw [finCongr_refl, Equiv.permCongr_def, Equiv.refl_symm, Equiv.refl_trans, Equiv.trans_refl]
+  exact h σ
 
 /-- **Every table pattern of every rootful Niemeier row acts on the lattice of its row**: by pure
 component permutation (`patternIsometryHom`) on the 22 rows other than `A₅⁴ D₄`, and by the
@@ -135,13 +136,13 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
 `a5FourthD4BlockRotation ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
-`a5FourthD4TrialityRotation ^ k`. -/
+`a5FourthD4TrialityIsometry ^ k`. -/
 theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
     ∃ k < 3,
       (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.val =
           a5FourthD4BlockRotation ^ k ∧
-        coupledPatternIsometryHom hp g = a5FourthD4TrialityRotation ^ k := by
+        coupledPatternIsometryHom hp g = a5FourthD4TrialityIsometry ^ k := by
   cases classifyA5FourthD4GluePattern hp with
   | inl h =>
     rcases h with ⟨word, rfl⟩
@@ -162,7 +163,7 @@ theorem det_coupledPatternIsometryHom_a5FourthD4 {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
     Isometry.det a5FourthD4.lattice (coupledPatternIsometryHom hp g) = 1 := by
   obtain ⟨k, -, -, hg⟩ := exists_coupledPatternIsometryHom_a5FourthD4_eq_pow hp g
-  rw [hg, map_pow, det_a5FourthD4TrialityRotation, one_pow]
+  rw [hg, map_pow, det_a5FourthD4TrialityIsometry, one_pow]
 
 /-- **Every pattern symmetry group across all 23 rootful Niemeier rows embeds faithfully into the
 isometry group of its row's lattice.** -/

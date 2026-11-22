@@ -458,33 +458,12 @@ theorem encodeGlueWord_a5FourthD4TrialityGlueIsometry (w : a5FourthD4.glueModule
   set v := piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
     a5FourthD4BlockRotation.symm componentType_a5FourthD4BlockRotation_symm
     (hs := a5FourthD4.isSimplyLaced_componentType) w
-  have hv_enc :
-      [(((a5FourthD4.componentType ⟨0, by decide⟩).glueLabelEquiv _).symm
-          (v ⟨0, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨1, by decide⟩).glueLabelEquiv _).symm
-          (v ⟨1, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨2, by decide⟩).glueLabelEquiv _).symm
-          (v ⟨2, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨3, by decide⟩).glueLabelEquiv _).symm
-          (v ⟨3, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨4, by decide⟩).glueLabelEquiv _).symm
-          (v ⟨4, by decide⟩)).val] =
-      [(((a5FourthD4.componentType ⟨0, by decide⟩).glueLabelEquiv _).symm
-          (w ⟨0, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨3, by decide⟩).glueLabelEquiv _).symm
-          (w ⟨3, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨1, by decide⟩).glueLabelEquiv _).symm
-          (w ⟨1, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨2, by decide⟩).glueLabelEquiv _).symm
-          (w ⟨2, by decide⟩)).val,
-        (((a5FourthD4.componentType ⟨4, by decide⟩).glueLabelEquiv _).symm
-          (w ⟨4, by decide⟩)).val] :=
-    (ofFn_a5FourthD4 _).symm.trans <| (encodeGlueWord_def _ _ v).symm.trans <|
-      (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn _ _ _ _ _ w).trans
-        (ofFn_comp_a5FourthD4BlockRotation_symm fun i ↦
-          (((a5FourthD4.componentType i).glueLabelEquiv _).symm (w i)).val)
-  simp only [List.cons.injEq, and_true] at hv_enc
-  rcases hv_enc with ⟨h0, h1, h2, h3, h4⟩
+  have hv (k : Fin a5FourthD4.components.length) :
+      (((a5FourthD4.componentType k).glueLabelEquiv _).symm (v k)).val =
+        (encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w).getD
+          (a5FourthD4BlockRotation.symm k) 0 := by
+    rw [← getD_encodeGlueWord, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD,
+      List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
   have htri4 :
       (((a5FourthD4.componentType ⟨4, by decide⟩).glueLabelEquiv _).symm
           (componentTrialityLabel ⟨4, by decide⟩ (v ⟨4, by decide⟩))).val =
@@ -492,15 +471,15 @@ theorem encodeGlueWord_a5FourthD4TrialityGlueIsometry (w : a5FourthD4.glueModule
           (((a5FourthD4.componentType ⟨4, by decide⟩).glueLabelEquiv _).symm
             (v ⟨4, by decide⟩)).val 0 :=
     val_glueLabelEquiv_symm_componentTrialityLabel_d4Index _
-  rw [encodeGlueWord_def, ofFn_a5FourthD4, QuadraticMap.IsometryEquiv.pi_apply,
-    QuadraticMap.IsometryEquiv.pi_apply, QuadraticMap.IsometryEquiv.pi_apply,
-    QuadraticMap.IsometryEquiv.pi_apply, QuadraticMap.IsometryEquiv.pi_apply,
+  rw [encodeGlueWord_def, ofFn_a5FourthD4, a5FourthD4TrialityDigits_def]
+  simp only [QuadraticMap.IsometryEquiv.pi_apply,
     componentTrialityLabel_of_ne (i := ⟨0, by decide⟩) (by decide),
     componentTrialityLabel_of_ne (i := ⟨1, by decide⟩) (by decide),
     componentTrialityLabel_of_ne (i := ⟨2, by decide⟩) (by decide),
-    componentTrialityLabel_of_ne (i := ⟨3, by decide⟩) (by decide),
-    htri4, h0, h1, h2, h3, h4, encodeGlueWord_def, ofFn_a5FourthD4, a5FourthD4TrialityDigits_def]
-  simp only [List.getD_cons_zero, List.getD_cons_succ]
+    componentTrialityLabel_of_ne (i := ⟨3, by decide⟩) (by decide), htri4, hv,
+    a5FourthD4BlockRotation_symm_apply_mk_zero, a5FourthD4BlockRotation_symm_apply_mk_one,
+    a5FourthD4BlockRotation_symm_apply_mk_two, a5FourthD4BlockRotation_symm_apply_mk_three,
+    a5FourthD4BlockRotation_symm_apply_mk_four]
 
 /-- **The rotation combined with triality permutes the digit words of `A₅⁴ D₄`**: it carries the
 rotations of `[2(024)0]` among themselves and `[33001] ↦ [30302] ↦ [30033] ↦ [33001]`. -/
