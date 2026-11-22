@@ -292,6 +292,16 @@ theorem extendByZero_f {U W : Opens M} (h : U ≤ W) (k : ℕ) :
         ModuleCat.ofHom (compactlySupportedForms.extendByZero h k) := by
   simp [extendByZero]
 
+/-- The cochain map of extension by zero, on a form read through the canonical identification of
+the degree-`k` object, is extension by zero of that form. -/
+theorem extendByZero_f_inv_apply {U W : Opens M} (h : U ≤ W) (k : ℕ)
+    (φ : compactlySupportedForms I U k) :
+    (extendByZero (I := I) h).f k ((compactlySupportedDeRhamComplexXIso I k).inv φ) =
+      (compactlySupportedDeRhamComplexXIso I k).inv
+        (compactlySupportedForms.extendByZero h k φ) := by
+  rw [(Iso.eq_comp_inv _).mpr (extendByZero_f h k)]
+  simp
+
 /-- Extension by zero from an open subset to itself is the identity cochain map. -/
 @[simp]
 theorem extendByZero_self (U : Opens M) : extendByZero (I := I) (le_refl U) = 𝟙 _ := by
@@ -410,6 +420,34 @@ open Topology
 
 variable {U W : Opens M} (h : U ≤ W)
 
+/-- **The exterior derivative of a cut-off primitive.** Let `θ` be a smooth form on an open
+subset `U ≤ W` with `dθ = η` on `U`, for a smooth form `η` on `W`, and let `ρ` be a function on `W`
+vanishing near every point of `W` outside `U`. At a point near which `ρ` is identically one, the
+exterior derivative of the cut-off primitive `ρ θ`, extended by zero to `W`, is `η`. -/
+theorem mextDeriv_extendByZero_smul_apply_of_eventuallyEq_one {ρ : W → ℝ}
+    (hρU : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, ρ y = 0) {k : ℕ} {η : SmoothForm I W ℝ (k + 1)}
+    {θ : SmoothForm I U ℝ k}
+    (hθ : mextDerivₗ I k θ = SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) η)
+    {x : W} (hx : ρ =ᶠ[𝓝 x] 1) :
+    mextDeriv (RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y) x =
+      η.val x := by
+  -- Near `x` the function `ρ` is identically one, so `x` lies in `U`.
+  have hxU : (x : M) ∈ U := by
+    by_contra hxU
+    obtain ⟨y, hy₀, hy₁⟩ := ((hρU x hxU).and hx).exists
+    exact zero_ne_one (hy₀.symm.trans hy₁)
+  obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
+  -- On `U` near `x` the cut-off primitive is `θ`, so its exterior derivative is `dθ = η` at `x`.
+  have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y) y = θ.val y := by
+    filter_upwards [(continuous_inclusion h).continuousAt.eventually hx] with y hy
+    rw [hy, Pi.one_apply, one_smul]
+  have hdθ : mextDeriv θ.val x = η.val (Opens.inclusion h x) := by
+    rw [← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply]
+  rw [← mpullback_inclusion_apply h
+      (mextDeriv (RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y)),
+    mpullback_inclusion_mextDeriv,
+    RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ, hdθ]
+
 /-- Let `ρ` be a smooth function on `W` that vanishes near every point of `W` outside `U` and
 such that `1 - ρ` has compact support. If a smooth form `η` on `W` is exact on `U`, then `dη` is
 the exterior derivative of a compactly supported form on `W`. -/
@@ -430,25 +468,12 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForm
   · refine hρc.of_isClosed_subset (_root_.isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
       (isClosed_tsupport _)
     by_contra hxρ
-    -- Near `x` the function `ρ` is identically one, so `x` lies in `U`.
-    have hρ1 : ∀ᶠ y in 𝓝 x, ρ y = 1 :=
+    -- Near `x` the function `ρ` is identically one, so there `dμ = η`.
+    have hρ1 : ρ =ᶠ[𝓝 x] 1 :=
       (notMem_tsupport_iff_eventuallyEq.mp hxρ).mono fun y hy ↦ (sub_eq_zero.mp hy).symm
-    have hxU : (x : M) ∈ U := by
-      by_contra hxU
-      obtain ⟨y, hy₀, hy₁⟩ := ((hρU x hxU).and hρ1).exists
-      exact zero_ne_one (hy₀.symm.trans hy₁)
-    obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
-    -- On `U` near `x` the cut-off primitive is `θ`, so `dμ` agrees with `dθ = η` at `x`.
-    have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y) y = θ.val y := by
-      filter_upwards [(continuous_inclusion h).continuousAt.eventually hρ1] with y hy
-      rw [hy, one_smul]
-    have hdμ : mextDeriv μ.val (Opens.inclusion h x) = mextDeriv θ.val x := by
-      rw [← mpullback_inclusion_apply h (mextDeriv μ.val), mpullback_inclusion_mextDeriv,
-        RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ]
-    have hdθ : mextDeriv θ.val x = η.val (Opens.inclusion h x) := by
-      rw [← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply]
     apply hx
-    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply, hdμ, hdθ, sub_self]
+    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply,
+      mextDeriv_extendByZero_smul_apply_of_eventuallyEq_one h hρU hθ hρ1, sub_self]
     -- The two zeros are the zero of the fibre and the value of the zero form at `x`.
     rfl
   · rw [map_sub, ← LinearMap.comp_apply (mextDerivₗ I (k + 1)), mextDerivₗ_comp_mextDerivₗ,

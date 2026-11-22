@@ -31,6 +31,10 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
 ## Main results
 
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj`: identifying the degrees of
+  the two factors of a homogeneous summand along equalities of indices.
+* `HomologicalComplex.ιTensorObj_comp_XIsoOfEq_hom`: identifying the total degree of a homogeneous
+  summand along an equality of indices.
 * `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
   of morphisms vanishes when either factor does.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
@@ -92,6 +96,27 @@ lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁
     [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
     tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 :=
   mapBifunctorMap_zero_right (curriedTensor C) c f₁ K₂ L₂
+
+/-- Identifying the degrees of the two factors along equalities of indices does not change the
+inclusion of a summand into a tensor product of complexes. -/
+@[reassoc (attr := simp)]
+lemma XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K L : HomologicalComplex C c)
+    [K.HasTensor L] {p p' q q' : I} (hp : p = p') (hq : q = q') (j : I) (h : p + q = j)
+    (h' : p' + q' = j) :
+    ((K.XIsoOfEq hp).hom ⊗ₘ (L.XIsoOfEq hq).hom) ≫ ιTensorObj K L p' q' j h' =
+      ιTensorObj K L p q j h := by
+  subst hp hq
+  simp
+
+/-- Identifying the degree of a summand of a tensor product along an equality of indices does not
+change the inclusion of the summand. -/
+@[reassoc (attr := simp)]
+lemma ιTensorObj_comp_XIsoOfEq_hom (K L : HomologicalComplex C c) [K.HasTensor L] {p q j j' : I}
+    (h : p + q = j) (hj : j = j') :
+    ιTensorObj K L p q j h ≫ ((tensorObj K L).XIsoOfEq hj).hom =
+      ιTensorObj K L p q j' (h.trans hj) := by
+  subst hj
+  simp
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]

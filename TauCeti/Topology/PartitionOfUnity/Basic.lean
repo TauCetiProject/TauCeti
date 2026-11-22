@@ -10,10 +10,12 @@ import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
-# Finite localization by partitions of unity
+# Pointwise sums and finite localization by partitions of unity
 
-Provides `PartitionOfUnity.exists_finset_eq_sum_smul`: a partition of unity covering the compact
-topological support of `f : X → V` localizes `f` into finitely many terms.
+Provides `PartitionOfUnity.IsSubordinate.mem_of_mem_finsupport`,
+`PartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq`, and
+`PartitionOfUnity.exists_finset_eq_sum_smul`: pointwise finite-support sum rules and finite
+localization of compactly supported functions by a partition of unity.
 -/
 
 public section
@@ -21,6 +23,25 @@ public section
 open Set
 
 namespace PartitionOfUnity
+
+section
+
+variable {ι X : Type*} [TopologicalSpace X] {s : Set X} {ρ : PartitionOfUnity ι X s} {x : X}
+
+/-- If `ρ` is subordinate to `U` and `ρ i` does not vanish at `x`, then `x ∈ U i`. -/
+theorem IsSubordinate.mem_of_mem_finsupport {U : ι → Set X} (hρ : ρ.IsSubordinate U) {i : ι}
+    (hi : i ∈ ρ.finsupport x) : x ∈ U i :=
+  hρ i (subset_tsupport _ ((ρ.mem_finsupport x).1 hi))
+
+/-- At a point `x ∈ s`, a weighted sum `∑ i ∈ ρ.finsupport x, ρ i x • w i` whose summands with
+`ρ i x ≠ 0` all equal `v` is `v`. -/
+theorem sum_finsupport_smul_eq_of_forall_eq {A : Type*} [AddCommMonoid A] [Module ℝ A]
+    (hx : x ∈ s) {w : ι → A} {v : A} (hw : ∀ i ∈ ρ.finsupport x, w i = v) :
+    ∑ i ∈ ρ.finsupport x, ρ i x • w i = v := by
+  rw [Finset.sum_congr rfl fun i hi ↦ congrArg (ρ i x • ·) (hw i hi), ← Finset.sum_smul,
+    ρ.sum_finsupport hx, one_smul]
+
+end
 
 /-- A partition of unity covering the compact topological support of `f : X → V` localizes `f` into
 finitely many terms, with all remaining terms vanishing identically. -/

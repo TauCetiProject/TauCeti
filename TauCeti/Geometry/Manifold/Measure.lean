@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 import Mathlib.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.LocallyNull
 
 /-!
 # Null sets on manifolds
@@ -18,7 +19,9 @@ measurable structure on the manifold itself.  The definition is independent of t
 measure on the model and has the usual subset and countable-union closure properties. On a
 manifold with a finite-dimensional model a null set has empty interior, so its complement is
 dense; this is how Sard's theorem produces regular values. If the model is moreover nontrivial,
-every countable set is null.
+every countable set is null. With a finite-dimensional model, nullity is local
+(`TauCeti.isNullSet_iff_forall_exists_nhds`): it can be checked on a neighbourhood of each point,
+with no countability assumption on the manifold.
 
 Nullity of an image `f '' s` under a map between manifolds can be checked on coordinate
 expressions (`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`): when the source is
@@ -111,6 +114,28 @@ theorem IsNullSet.biUnion {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE
   have := ht.to_subtype
   rw [biUnion_eq_iUnion]
   exact IsNullSet.iUnion fun i ↦ hs i i.property
+
+/-- **Nullity is local.** On a manifold with a finite-dimensional model, a set is null exactly
+when each of its points has a neighbourhood meeting it in a null set. No countability assumption
+on the manifold is needed, since each chart source is second countable. -/
+theorem isNullSet_iff_forall_exists_nhds {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {s : Set M} :
+    IsNullSet I s ↔ ∀ x ∈ s, ∃ U ∈ 𝓝 x, IsNullSet I (s ∩ U) := by
+  refine ⟨fun hs x _ ↦ ⟨univ, Filter.univ_mem, by rwa [inter_univ]⟩, fun h ↦ ?_⟩
+  choose! U hU hsU using h
+  have := I.secondCountableTopology
+  refine (isNullSet_iff I s).2 fun x₀ μ _ ↦ ?_
+  have := (chartAt H x₀).secondCountableTopology_source
+  -- The part of `s` in the chart source is Lindelöf, so its image is null once it is locally so.
+  have hL : IsLindelof ((chartAt H x₀).source ∩ s) := by
+    simpa only [Subtype.image_preimage_coe] using
+      (HereditarilyLindelofSpace.isLindelof ((↑) ⁻¹' s : Set (chartAt H x₀).source)).image
+        continuous_subtypeVal
+  rw [extChartAt_source, inter_comm]
+  refine measure_image_null_of_locally_null hL fun x hx ↦ ⟨(chartAt H x₀).source ∩ s ∩ U x,
+    inter_mem_nhdsWithin _ (hU x hx.2), ?_⟩
+  refine measure_mono_null (image_mono fun y hy ↦ ?_) ((hsU x hx.2).chartwise x₀ μ)
+  exact ⟨⟨hy.1.2, hy.2⟩, by rw [extChartAt_source]; exact hy.1.1⟩
 
 /-- A countable subset of a manifold with a nontrivial finite-dimensional model is null. -/
 theorem _root_.Set.Countable.isNullSet {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]

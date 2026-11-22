@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -48,6 +49,8 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `t ≠ 0` and `|σ| ≤ |t|`.
 * `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all `s`
   with `Re s ∈ [a, b]`.
+* `TauCeti.exists_abs_log_norm_Gamma_add_vertical_sub_le`: the same for `Γ(s + μ)` with a fixed
+  shift `μ`, measured against `log |Im s|` and `|Im s|` up to a bounded error.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_sub`: the uniform `O(1 / |t|)` form in `(σ, t)` along
   `𝓟 (Icc a b) ×ˢ cocompact ℝ`.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_strip_sub`: the same as a function of `s : ℂ`, along
@@ -198,6 +201,65 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
     rw [← sq_abs]
     exact pow_le_pow_left₀ (abs_nonneg _) hσM 2
   linarith
+
+/-- Stirling's formula on vertical strips for a shifted argument, measured against `log |t|`:
+for every compact interval `[a, b]` and every shift `μ`, there are `C` and `X` such that
+`|log ‖Γ(s + μ)‖ - ((σ + Re μ - 1/2) log |t| - π |t| / 2)| ≤ C` for `s = σ + i t` with
+`σ ∈ [a, b]` and `X ≤ |t|`. The constant `log (2π) / 2` and the effect of the shift on
+`log |t|` and `|t|` are absorbed into `C`; this is the form in which the estimate adds up over
+the shifted factors of an archimedean gamma factor. -/
+theorem exists_abs_log_norm_Gamma_add_vertical_sub_le (a b : ℝ) (μ : ℂ) :
+    ∃ C X : ℝ, ∀ s : ℂ, s.re ∈ Icc a b → X ≤ |s.im| →
+      |Real.log ‖Complex.Gamma (s + μ)‖ -
+          ((s.re + μ.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2)| ≤ C := by
+  obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le (a + μ.re) (b + μ.re)
+  set M := max |a| |b|
+  refine ⟨|C| + (M + |μ.re| + 1 / 2) + π * |μ.im| / 2 + |Real.log (2 * π) / 2|,
+    2 * (max T 1 + |μ.im|), fun s hs ht ↦ ?_⟩
+  set τ := s.im with hτ_def
+  set v := τ + μ.im with hv_def
+  have hT1 : 1 ≤ max T 1 := le_max_right _ _
+  have hvτ : |v - τ| ≤ |μ.im| := by simp [v]
+  have hvabs := abs_abs_sub_abs_le_abs_sub v τ
+  have hv : max T 1 ≤ |v| := by linarith [abs_le.1 (hvabs.trans hvτ)]
+  have hv0 : 0 < |v| := by linarith
+  have hτ0 : 0 < |τ| := by linarith [abs_nonneg μ.im]
+  -- Stirling at `s + μ`, whose imaginary part is `v`.
+  have hE := h (s + μ) (by simpa [add_re] using ⟨hs.1, hs.2⟩)
+    (by simpa [add_im, v] using (le_max_left T 1).trans hv)
+  simp only [add_re, add_im] at hE
+  rw [← hτ_def, ← hv_def] at hE
+  have hCv : C / |v| ≤ |C| :=
+    (div_le_div_of_nonneg_right (le_abs_self C) hv0.le).trans
+      (div_le_self (abs_nonneg C) (hT1.trans hv))
+  -- The comparison `|log |v| - log |τ|| ≤ 1`, since `|τ| / 2 ≤ |v| ≤ 2 |τ|`.
+  have hlog : |Real.log (|v|) - Real.log (|τ|)| ≤ 1 :=
+    (Real.abs_log_sub_log_le_log hv0 hτ0 (c := 2) (by linarith [abs_le.1 hvabs])
+      (by linarith [abs_le.1 hvabs])).trans (Real.log_two_lt_d9.le.trans (by norm_num))
+  have hcoef : |s.re + μ.re - 1 / 2| ≤ M + |μ.re| + 1 / 2 := by
+    have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
+      (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
+    exact abs_le.2 ⟨by linarith [abs_le.1 hσμ], by linarith [abs_le.1 hσμ]⟩
+  have hprod :
+      |(s.re + μ.re - 1 / 2) * (Real.log (|v|) - Real.log (|τ|))| ≤ M + |μ.re| + 1 / 2 := by
+    rw [abs_mul]
+    nlinarith [abs_nonneg (s.re + μ.re - 1 / 2), abs_nonneg (Real.log (|v|) - Real.log (|τ|))]
+  have hdist : |π * (|v| - |τ|) / 2| ≤ π * |μ.im| / 2 := by
+    rw [abs_div, abs_mul, abs_of_pos pi_pos, abs_two]
+    exact div_le_div_of_nonneg_right
+      (mul_le_mul_of_nonneg_left (hvabs.trans hvτ) pi_pos.le) two_pos.le
+  have key : Real.log ‖Complex.Gamma (s + μ)‖ -
+        ((s.re + μ.re - 1 / 2) * Real.log |τ| - π * |τ| / 2) =
+      (Real.log ‖Complex.Gamma (s + μ)‖ -
+          ((s.re + μ.re - 1 / 2) * Real.log |v| - π * |v| / 2 + Real.log (2 * π) / 2)) +
+        (s.re + μ.re - 1 / 2) * (Real.log |v| - Real.log |τ|) - π * (|v| - |τ|) / 2 +
+        Real.log (2 * π) / 2 := by ring
+  rw [key]
+  have e1 := abs_le.1 (hE.trans hCv)
+  have e2 := abs_le.1 hprod
+  have e3 := abs_le.1 hdist
+  exact abs_le.2 ⟨by linarith [neg_abs_le (Real.log (2 * π) / 2)],
+    by linarith [le_abs_self (Real.log (2 * π) / 2)]⟩
 
 /-- **Stirling's formula on vertical strips** ([DLMF 5.11.9](https://dlmf.nist.gov/5.11.E9)):
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` uniformly for

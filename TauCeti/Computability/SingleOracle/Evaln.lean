@@ -586,16 +586,27 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
-/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
-that oracle to a string of length `k` preserves failure as well as output and use. -/
-theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
-    evaln (fun z => ((List.range k).map O)[z]?) k c n =
-      evaln (fun z => some (O z)) k c n := by
+/-- A run with fuel `k` depends only on the first `k` optional answers. Truncating the answers
+to a list of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map_option (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => (((List.range k).map σ)[z]?).bind id) k c n = evaln σ k c n := by
   apply Option.ext
   intro d
   constructor <;> intro hd <;>
     refine evaln_eq_some_of_eqOn hd fun z hz => ?_
   all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
+/-- A run with fuel `k` sees only the first `k` answers of a total oracle. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  have h : (fun z : ℕ => ((List.range k).map O)[z]?) =
+      fun z => (((List.range k).map (some ∘ O))[z]?).bind id := by
+    funext z
+    rw [List.getElem?_map, List.getElem?_map, Option.bind_map]
+    exact Option.map_eq_bind
+  rw [h]
+  exact evaln_range_map_option (some ∘ O) k c n
 
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against

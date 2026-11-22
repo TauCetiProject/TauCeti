@@ -7,10 +7,17 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
+import TauCeti.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
+import TauCeti.Analysis.Pseudodifferential.FourierSchur
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
@@ -36,13 +43,26 @@ distribution `T` on an open set of `ℝⁿ` is microlocally `H^s` at `(x, ξ)`, 
 `Op(a) (φ T)` is `H^{s - m}` in an open cone around `ξ`
 (`Distribution.IsMicrolocallySobolevAt.exists_nhds_cone_forall_memLp_quantizeSobolev`).
 
+Removing the cutoff gives the order shift of the `H^s` wave front set itself: for a scalar symbol
+`a` and `u ∈ H^t(ℝⁿ, ℂ)`, viewed as a distribution on an open set `Ω ⊆ ℝⁿ`,
+
+`WF_{s - m}(Op(a) u) ⊆ WF_s(u)`
+
+(`Symbol.HasCompactSpatialSupport.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset`),
+and hence `singsupp_{s - m}(Op(a) u) ⊆ singsupp_s(u)`. Near a point `x` at which `u` is microlocally
+`H^s` in the direction `ξ`, split `u = φ u + (1 - φ) u` with a cutoff `φ` equal to `1` near `x`.
+The first part is the cut-off case. For the second, `ψ Op(a) ((1 - φ) u)` is the quantization of
+a smoothing symbol applied to `u` whenever `φ = 1` near the support of `ψ`, by the locality of the
+composition symbol (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), so `Op(a) ((1 - φ) u)` is smooth
+near `x`.
+
 ## The argument
 
 On Schwartz functions, `𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) 𝓕 u ζ dζ`, where `â(η, ξ)` is the
 Fourier transform of the position slice `x ↦ a(x, ξ)`
 (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`). The weighted kernel
 `⟨ξ⟩ ^ (t - m) ⟨ζ⟩ ^ (-t) â(ξ - ζ, 2πζ)` is bounded by an integrable function of `ξ - ζ`
-(`TauCeti.Symbol.rpow_mul_norm_fourier_apply_le`), so by Schur's test it defines a bounded
+(`TauCeti.rpow_mul_norm_fourier_apply_le`), so by Schur's test it defines a bounded
 operator on `L²` (`TauCeti.integralOperatorLp`). Both this operator and `Op(a)` are continuous on
 `H^t`, and they agree on the dense subspace of Schwartz functions, so the convolution formula holds
 almost everywhere for every `u ∈ H^t`
@@ -65,6 +85,12 @@ gives the square integrability on `Γ'`
   regularity of `u` gives conic `H^{s - m}` regularity of `Op(a) u` on smaller cones.
 * `Distribution.IsMicrolocallySobolevAt.exists_nhds_cone_forall_memLp_quantizeSobolev`: the order
   shift for cut-off distributions microlocally `H^s` at a point.
+* `TauCeti.Symbol.HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantizeSobolev`:
+  if `u ∈ H^t` is microlocally `H^s` at `(x, ξ)`, then `Op(a) u` is microlocally `H^{s - m}` there.
+* `Symbol.HasCompactSpatialSupport.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset`:
+  `WF_{s - m}(Op(a) u) ⊆ WF_s(u)`.
+* `Symbol.HasCompactSpatialSupport.sobolevSingularSupport_toDistribution_quantizeSobolev_subset`:
+  `singsupp_{s - m}(Op(a) u) ⊆ singsupp_s(u)`.
 
 ## References
 
@@ -137,7 +163,7 @@ private theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourier_apply_le
   have hpt : (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) *
       ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) v‖ ≤
         B₀ * d ^ (-((N : ℝ) - |s - m|)) * ((1 + ‖ζ‖ ^ 2) ^ (s / 2) * ‖v‖) :=
-    rpow_mul_norm_fourier_apply_le hC₀ hdecay ξ ζ v
+    rpow_mul_norm_fourier_apply_le hdecay ξ ζ v
   have hd : 1 ≤ d := le_add_of_nonneg_right (norm_nonneg _)
   -- The decay exponent `N - |s - m|` exceeds `r` by `|s - t|`.
   have hsplit :
@@ -428,17 +454,109 @@ theorem IsMicrolocallySobolevAt.exists_nhds_cone_forall_memLp_quantizeSobolev {s
           (volume.restrict Γ) := by
   obtain ⟨U, hU, Γ, hΓo, hξΓ, hcone, hL⟩ := h.exists_nhds_cone
   obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓΓ'⟩ := hΓo.exists_cone_closedBall_subset hcone hξΓ
-  refine ⟨U, hU, Γ', hΓ'o, hξ', hcone', fun φ hφU t hφ m a ha ↦
-    ha.memLp_smul_fourier_toLp_quantizeSobolev hΓo.measurableSet hΓ'o.measurableSet hc hΓΓ' ?_⟩
   -- The `L²` representative of `φ T ∈ H^t` is `⟨ζ⟩ ^ t` times the localized Fourier transform.
-  have hG := memSobolev_cutoffTempered_iff.1 hφ
-  have hfou : 𝓕 hφ.toBesselPotentialSpace.toLp = hG.toLp _ :=
-    BesselPotentialSpace.fourier_toLp_eq_of_smulLeftCLM_fourier_eq (by
-      rw [MemSobolev.toBesselPotentialSpace_toDistr]
-      exact smulLeftCLM_fourier_cutoffTempered_eq hG)
-  refine (hL φ hφU).ae_eq ?_
-  filter_upwards [ae_restrict_of_ae (hfou ▸ hG.coeFn_toLp)] with ζ hζ
-  rw [hζ, ← Complex.coe_smul, ← Complex.coe_smul, smul_smul, ← Complex.ofReal_mul,
-    ← one_add_norm_sq_rpow_add, sub_add_cancel]
+  exact ⟨U, hU, Γ', hΓ'o, hξ', hcone', fun φ hφU t hφ m a ha ↦
+    ha.memLp_smul_fourier_toLp_quantizeSobolev hΓo.measurableSet hΓ'o.measurableSet hc hΓΓ'
+      ((hL φ hφU).ae_eq (ae_restrict_of_ae (one_add_norm_sq_rpow_smul_localFourier_ae_eq hφ s)))⟩
 
 end Distribution
+
+namespace TauCeti
+
+namespace Symbol
+
+open Distribution TopologicalSpace Set Filter
+open scoped Distributions Topology ContDiff
+
+variable {n : ℕ} {m : ℝ} {Ω : Opens (CoordinateSpace n)} {a : Symbol n ℂ ℂ m}
+
+/-! ### The order shift of the `H^s` wave front set -/
+
+/-- **Pseudodifferential operators lose their order microlocally.** Let `a` be a scalar symbol of
+order `m` with compact spatial support and `u ∈ H^t`. If `u`, as a distribution on an open set
+`Ω ⊆ ℝⁿ`, is microlocally `H^s` at `(x, ξ)`, then `Op(a) u` is microlocally `H^{s - m}` at
+`(x, ξ)`. No `H^s` regularity of `u` away from `x`, or in other directions, is needed;
+`u ∈ H^t` for some `t` suffices. -/
+theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantizeSobolev
+    (ha : a.HasCompactSpatialSupport) {s t : ℝ} {u : H^{t}(CoordinateSpace n, ℂ)}
+    {x ξ : CoordinateSpace n}
+    (hu : (toDistribution Ω u.toDistr).IsMicrolocallySobolevAt s x ξ) :
+    (toDistribution Ω (a.quantizeSobolev ha t u).toDistr).IsMicrolocallySobolevAt (s - m) x ξ := by
+  have hx : x ∈ Ω := by
+    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 hu
+    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  obtain ⟨U, hU, Γ, hΓo, hξΓ, hcone, hL⟩ := hu.exists_nhds_cone_forall_memLp_quantizeSobolev
+  -- Cutoffs `ψ` with `ψ x = 1`, and `φ` equal to `1` near `tsupport ψ`, both supported in `U`.
+  have hW : interior U ∩ Ω ∈ 𝓝 x := inter_mem (interior_mem_nhds.2 hU) (Ω.isOpen.mem_nhds hx)
+  obtain ⟨ψ, hψW, hψx⟩ :=
+    TestFunction.exists_tsupport_subset_apply_eq (n := ⊤) hW inter_subset_right (1 : ℂ)
+  obtain ⟨φ, hφ1, hφW⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    ψ.hasCompactSupport (isOpen_interior.inter Ω.isOpen) hψW inter_subset_right
+  -- `ψ Op(a) = Op(c)` for the symbol `c = ψ # a`, which vanishes outside `tsupport ψ`.
+  set ψ' := TestFunction.toSchwartzMapCLM ℂ ψ
+  have hψ' : (ψ' : CoordinateSpace n → ℂ) = ψ := TestFunction.coe_toSchwartzMapCLM ψ
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) (hψ' ▸ ψ.hasCompactSupport)
+  set c := (ofSpatial (fun y ↦ ψ' y • ContinuousLinearMap.id ℂ ℂ)
+    ((ψ'.smooth ⊤).smul contDiff_const)).sharp a ha
+  have hc := hF.sharp ha
+  have hψc (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) :
+      TemperedDistribution.smulLeftCLM ℂ (ψ : CoordinateSpace n → ℂ)
+        (a.quantizeSobolev ha t v).toDistr = (c.quantizeSobolev hc t v).toDistr :=
+    hψ' ▸ smulLeftCLM_toDistr_quantizeSobolev ha hF t v
+  set v := BesselPotentialSpace.smulLeftCLM t (TestFunction.toSchwartzMapCLM ℂ φ) u
+  -- `Op(a) (φ u)` is microlocally `H^{s - m}` at `(x, ξ)`: `ψ Op(a) (φ u) = Op(c) (φ u)`, and
+  -- `Op(c)` loses `m` orders in the cone `Γ` on the input `φ u`.
+  have hA : (toDistribution Ω (a.quantizeSobolev ha t v).toDistr).IsMicrolocallySobolevAt
+      (s - m) x ξ := by
+    have hTφ : (toDistribution Ω u.toDistr).cutoffTempered φ = v.toDistr := by simp [v]
+    have hφS := hTφ ▸ v.memSobolev_toDistr
+    have hφv : hφS.toBesselPotentialSpace = v := hφS.toBesselPotentialSpace_eq_of_toDistr_eq hTφ
+    have hLc := hφv ▸ hL φ (hφW.trans (inter_subset_left.trans interior_subset)) hφS c hc
+    have hAS : MemSobolev (t - (0 + m)) 2 (TemperedDistribution.smulLeftCLM ℂ
+        (ψ : CoordinateSpace n → ℂ) (a.quantizeSobolev ha t v).toDistr) :=
+      hψc t v ▸ BesselPotentialSpace.memSobolev_toDistr _
+    have hAc : hAS.toBesselPotentialSpace = c.quantizeSobolev hc t v :=
+      hAS.toBesselPotentialSpace_eq_of_toDistr_eq (hψc t v)
+    refine TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff.2
+      ⟨ψ, by simp [hψx], Γ, hΓo, hξΓ, hcone, _, hAS, ?_⟩
+    rwa [hAc, show s - m - (t - (0 + m)) = s - t by ring]
+  -- `Op(a) ((1 - φ) u)` is `H^{s - m}` near `x`, since `ψ Op(a) ((1 - φ) u)` is smooth.
+  have hB : (toDistribution Ω ((a.quantizeSobolev ha t u).toDistr -
+      (a.quantizeSobolev ha t v).toDistr)).IsMicrolocallySobolevAt (s - m) x ξ := by
+    refine (TemperedDistribution.isLocallySobolevAt_toDistribution_iff.2
+      ⟨ψ, by simp [hψx], ?_⟩).isMicrolocallySobolevAt ξ
+    rw [map_sub, hψc, hψc]
+    exact memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM hc
+      (fun y hy ↦ coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport ha (hψ' ▸ hy))
+      (by simpa using φ.hasCompactSupport) (hφ1.mono fun y hy ↦ by simpa using hy) t
+      (s - m) u
+  convert hA.add hB using 1
+  rw [← map_add, add_sub_cancel]
+
+/-- **The order shift of the `H^s` wave front set.** A scalar pseudodifferential operator of order
+`m` with compact spatial support shifts the `H^s` wave front set by at most `m` orders: for
+`u ∈ H^t` and every real `s`, as distributions on an open set `Ω ⊆ ℝⁿ`,
+
+`WF_{s - m}(Op(a) u) ⊆ WF_s(u)`. -/
+theorem HasCompactSpatialSupport.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) {t : ℝ} (u : H^{t}(CoordinateSpace n, ℂ)) :
+    (toDistribution Ω (a.quantizeSobolev ha t u).toDistr).sobolevWaveFrontSet (s - m) ⊆
+      (toDistribution Ω u.toDistr).sobolevWaveFrontSet s := by
+  rintro ⟨y, η⟩ hp
+  rw [mem_sobolevWaveFrontSet_iff] at hp ⊢
+  exact ⟨hp.1, hp.2.1, fun h ↦ hp.2.2 (ha.isMicrolocallySobolevAt_toDistribution_quantizeSobolev h)⟩
+
+/-- **The order shift of the `H^s` singular support.** For a scalar symbol `a` of order `m` with
+compact spatial support and `u ∈ H^t`, the operator `Op(a)` maps distributions that are `H^s`
+near a point to distributions that are `H^{s - m}` near it:
+`singsupp_{s - m}(Op(a) u) ⊆ singsupp_s(u)` on every open set `Ω ⊆ ℝⁿ`. -/
+theorem HasCompactSpatialSupport.sobolevSingularSupport_toDistribution_quantizeSobolev_subset
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) {t : ℝ} (u : H^{t}(CoordinateSpace n, ℂ)) :
+    (toDistribution Ω (a.quantizeSobolev ha t u).toDistr).sobolevSingularSupport (s - m) ⊆
+      (toDistribution Ω u.toDistr).sobolevSingularSupport s := by
+  rw [← fst_image_sobolevWaveFrontSet, ← fst_image_sobolevWaveFrontSet]
+  exact image_mono (ha.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset s u)
+
+end Symbol
+
+end TauCeti
