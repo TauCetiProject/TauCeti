@@ -151,8 +151,8 @@ theorem hasProd_polynomialHom_zeros (hf : f.IsEntire) (h0 : constantCoeff f = 1)
   rw [encard_sigma_zeros_eq hf hf0 y]
   by_cases hy0 : y = 0
   · subst hy0
-    simp only [↓reduceIte, taylor_zero]
-    exact (not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr (h0.symm ▸ one_ne_zero))).symm
+    simp only [↓reduceIte]
+    exact (order_taylor_zero_eq_zero (by simp [h0])).symm
   · simp [hy0]
 
 /-- **Weierstrass factorisation of a nonzero entire series, indexed form.** Let `f` be a nonzero
@@ -172,8 +172,7 @@ theorem eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq {ι : Type*} (hf : f.IsEntir
   have hord (x : K) : (_root_.PowerSeries.taylor x g₁).order = {i : ι | a i = x}.encard := by
     by_cases hx0 : x = 0
     · subst hx0
-      rw [taylor_zero,
-        not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr (hg₁_const.symm ▸ one_ne_zero)),
+      rw [order_taylor_zero_eq_zero (by simp [hg₁_const]),
         eq_comm, Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
       exact fun i hi ↦ ha0 i hi
     · rw [hord_nz x hx0, ha x hx0]

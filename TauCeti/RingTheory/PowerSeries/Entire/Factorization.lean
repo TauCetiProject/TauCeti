@@ -251,23 +251,14 @@ theorem exists_eq_C_mul_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire)
       (_root_.PowerSeries.taylor x f₁).order = (_root_.PowerSeries.taylor x g₁).order := by
     by_cases hx0 : x = 0
     · subst hx0
-      have hfz : (_root_.PowerSeries.taylor 0 f₁).order = 0 := by
-        rw [_root_.PowerSeries.taylor_zero]
-        exact not_not.mp (_root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.not.mpr
-          (by simp [hf₁_const]))
-      have hgz : (_root_.PowerSeries.taylor 0 g₁).order = 0 := by
-        rw [_root_.PowerSeries.taylor_zero]
-        exact not_not.mp (_root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.not.mpr
-          (by simp [hg₁_const]))
-      exact hfz.trans hgz.symm
+      exact (_root_.PowerSeries.order_taylor_zero_eq_zero (by simp [hf₁_const])).trans
+        (_root_.PowerSeries.order_taylor_zero_eq_zero (by simp [hg₁_const])).symm
     · rw [hf₁_ord x hx0, hg₁_ord x hx0, h x]
   have heq : f₁ = g₁ := hf₁.eq_of_order_taylor_eq hg₁ hf₁_const hg₁_const hord1
   have hord0 : f.order.toNat = g.order.toNat := by
     simpa [_root_.PowerSeries.taylor_zero] using congrArg ENat.toNat (h 0)
-  have hcf0 : coeff f.order.toNat f ≠ 0 :=
-    (_root_.PowerSeries.order_eq_nat.mp (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm).1
-  have hcg0 : coeff g.order.toNat g ≠ 0 :=
-    (_root_.PowerSeries.order_eq_nat.mp (ENat.natCast_toNat (order_eq_top.not.mpr hg0)).symm).1
+  have hcf0 : coeff f.order.toNat f ≠ 0 := _root_.PowerSeries.coeff_order hf0
+  have hcg0 : coeff g.order.toNat g ≠ 0 := _root_.PowerSeries.coeff_order hg0
   refine ⟨coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹,
     mul_ne_zero hcf0 (inv_ne_zero hcg0), ?_⟩
   have hcg : C (coeff g.order.toNat g) * C (coeff g.order.toNat g)⁻¹ = (1 : PowerSeries K) := by

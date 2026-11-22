@@ -36,6 +36,7 @@ to `(Δⁿ f)(a)`. This is shared by the Taylor theories of entire series
 * `order_taylor_ne_zero_iff`: the translate at `a` has positive order exactly when `f(a) = 0`.
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
+* `order_taylor_zero_eq_zero`: a nonzero constant coefficient gives Taylor order `0` at `0`.
 * `taylor_one`: the translate of `1` is `1`.
 * `order_taylor_X_pow_of_pow_ne_zero`, `order_taylor_X_pow_of_ne_zero` and `order_taylor_X_pow`:
   over a nontrivial ring the Taylor order of `X ^ n` at `0` is `n`, and away from `0` it is `0`
@@ -91,6 +92,12 @@ theorem taylor_coe (a : R) (p : Polynomial R) :
 theorem taylor_zero (f : R⟦X⟧) : taylor 0 f = f := by
   ext n
   simp [evalAt_at_zero, ← coeff_zero_eq_constantCoeff_apply]
+
+/-- A power series with nonzero constant coefficient has Taylor order `0` at the origin. -/
+theorem order_taylor_zero_eq_zero {f : R⟦X⟧} (hf : constantCoeff f ≠ 0) :
+    (taylor 0 f).order = 0 := by
+  rw [taylor_zero]
+  exact not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr hf)
 
 /-- The translate of the zero series is zero. -/
 @[simp]

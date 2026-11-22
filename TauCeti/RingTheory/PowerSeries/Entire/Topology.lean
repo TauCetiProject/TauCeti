@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.GaussFamily
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Basic
-import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra
 
 /-!
 # The Gauss topology on entire series
@@ -40,10 +40,12 @@ constant multiple of the Gauss norm at the radius `2 ‖b‖ + 1`
 (`PowerSeries.norm_evalAt_le_mul_gaussNorm`).
 
 Because `PowerSeries.IsEntire.subring R` is a complete nonarchimedean ring whose restrictions to
-each closed disc are ultrametric normed rings, convergent infinite products are preserved by
-restriction, evaluation, constant coefficients, and strict Gauss-norm perturbation bounds near `1`,
-and any family tending to `1` along the cofinite filter is unconditionally multipliable in
-`PowerSeries.IsEntire.subring R` even when its factors are not units.
+each closed disc are ultrametric normed rings, restriction, evaluation, and constant coefficients
+preserve convergent infinite products, the Gauss norm of the difference between a partial product
+and its limit tends to zero, strict Gauss-norm perturbation bounds near `1` pass to `HasProd`
+limits at every nonnegative radius, and any family tending to `1` along the cofinite filter is
+unconditionally multipliable in `PowerSeries.IsEntire.subring R` even when its factors are not
+units.
 
 ## Main definitions
 
@@ -87,14 +89,16 @@ and any family tending to `1` along the cofinite filter is unconditionally multi
 * `TauCeti.PowerSeries.IsEntire.continuous_evalAtHom`: evaluation is continuous.
 * `TauCeti.PowerSeries.IsEntire.hasProd_iff`,
   `TauCeti.PowerSeries.IsEntire.multipliable_iff`,
-  `TauCeti.PowerSeries.IsEntire.restrict_tprod` and
+  `TauCeti.PowerSeries.IsEntire.restrict_tprod`,
+  `TauCeti.PowerSeries.IsEntire.evalAt_tprod` and
   `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod`: unconditional infinite products of entire
   series.
 * `TauCeti.PowerSeries.IsEntire.evalAt_hasProd`, `HasProd.constantCoeff`,
   `HasProd.tendsto_gaussNorm_sub_prod`, and
-  `TauCeti.PowerSeries.IsEntire.gaussNorm_sub_one_lt_of_hasProd`: preservation of convergent
-  infinite products of entire series under evaluation, constant coefficients, nonnegative-radius
-  Gauss norms, and strict Gauss-norm bounds near `1`.
+  `TauCeti.PowerSeries.IsEntire.gaussNorm_sub_one_lt_of_hasProd`: evaluation and constant
+  coefficients preserve `HasProd`, the Gauss norm of the difference between a partial product and
+  its limit tends to zero, and strict Gauss-norm bounds near `1` pass to `HasProd` limits at any
+  nonnegative radius.
 * `TauCeti.PowerSeries.IsEntire.summable_prod_of_tendsto_cofinite_zero`,
   `TauCeti.PowerSeries.IsEntire.multipliable_one_add_of_tendsto_cofinite_zero` and
   `TauCeti.PowerSeries.IsEntire.multipliable_of_tendsto_cofinite_one`: unconditional convergence
@@ -172,8 +176,8 @@ theorem coe_restrict (r : Set.Ioi (0 : ℝ)) (f : IsEntire.subring R) :
 /-- The norm of the restriction of an entire series to a positive radius `r` is its Gauss norm at
 `r`. -/
 theorem norm_restrict (r : Set.Ioi (0 : ℝ)) [Fact (0 < (r : ℝ))] (f : IsEntire.subring R) :
-    ‖restrict r f‖ = (f : R⟦X⟧).gaussNorm norm (r : ℝ) := by
-  rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
+    ‖restrict r f‖ = (f : R⟦X⟧).gaussNorm norm (r : ℝ) :=
+  GaussFamily.norm_restrict _ r f
 
 /-- Restriction of an entire series to the closed discs of all positive radii at once. -/
 noncomputable def restrictFamily :
@@ -607,54 +611,47 @@ theorem evalAt_hasProd {ι A : Type*} [NormedCommRing A] [Algebra R A] [IsBounde
   simpa only [Function.comp_def, IsEntire.evalAtHom_apply] using
     hf.map (IsEntire.evalAtHom R b) (continuous_evalAtHom b)
 
+/-- Evaluation at a point of a complete normed commutative algebra commutes with convergent
+infinite products of entire series. -/
+theorem evalAt_tprod {ι A : Type*} [NormedCommRing A] [Algebra R A] [IsBoundedSMul R A]
+    [CompleteSpace A] {f : ι → IsEntire.subring R} (hf : Multipliable f) (b : A) :
+    ((∏' i, f i : IsEntire.subring R) : R⟦X⟧).evalAt b = ∏' i, (f i : R⟦X⟧).evalAt b :=
+  (evalAt_hasProd hf.hasProd b).tprod_eq.symm
+
 /-- Taking constant coefficients commutes with `HasProd` in the ring of entire series. -/
 theorem _root_.HasProd.constantCoeff {ι : Type*} {f : ι → IsEntire.subring R}
     {g : IsEntire.subring R} (hf : HasProd f g) :
     HasProd (fun i ↦ _root_.PowerSeries.constantCoeff (f i : R⟦X⟧))
-      (_root_.PowerSeries.constantCoeff (g : R⟦X⟧)) := by
-  have hcont :
-      Continuous (_root_.PowerSeries.constantCoeff.comp (IsEntire.subring R).subtype) := by
-    simpa only [RingHom.coe_comp, Function.comp_def, Subring.coe_subtype,
-      coeff_zero_eq_constantCoeff] using (uniformContinuous_coeff (R := R) 0).continuous
-  exact hf.map (_root_.PowerSeries.constantCoeff.comp (IsEntire.subring R).subtype) hcont
+      (_root_.PowerSeries.constantCoeff (g : R⟦X⟧)) :=
+  have : Nonempty (Set.Ioi (0 : ℝ)) := ⟨⟨1, one_pos⟩⟩
+  GaussFamily.hasProd_constantCoeff isUniformInducing_restrictFamily hf
 
 /-- A `HasProd` limit in the ring of entire series converges in the Gauss norm of every nonnegative
 radius. -/
 theorem _root_.HasProd.tendsto_gaussNorm_sub_prod {ι : Type*} {f : ι → IsEntire.subring R}
     {g : IsEntire.subring R} (hf : HasProd f g) {s : ℝ} (hs : 0 ≤ s) :
     Tendsto (fun t : Finset ι ↦ ((g : R⟦X⟧) - ∏ i ∈ t, (f i : R⟦X⟧)).gaussNorm norm s)
-      atTop (𝓝 0) := by
-  have hs1 : 0 < s + 1 := by linarith
-  have : Fact (0 < s + 1) := ⟨hs1⟩
-  let r : Set.Ioi (0 : ℝ) := ⟨s + 1, hs1⟩
-  have h0 : Tendsto (fun t : Finset ι ↦ g - ∏ i ∈ t, f i) atTop (𝓝 0) := by
-    simpa only [sub_self, SummationFilter.unconditional_filter] using
-      (tendsto_const_nhds (x := g)).sub hf
-  have hlim : Tendsto (fun t : Finset ι ↦ ‖restrict r (g - ∏ i ∈ t, f i)‖) atTop (𝓝 0) := by
-    simpa only [map_zero, norm_zero] using (tendsto_iff.mp h0 r).norm
-  have hsub (t : Finset ι) :
-      (g : R⟦X⟧) - ∏ i ∈ t, (f i : R⟦X⟧) = ((g - ∏ i ∈ t, f i : IsEntire.subring R) : R⟦X⟧) := by
-    simp [AddSubgroupClass.coe_sub]
-  simp_rw [hsub]
-  refine squeeze_zero (fun _ ↦ PowerSeries.gaussNorm_nonneg norm s _ norm_nonneg) (fun t ↦ ?_) hlim
-  rw [norm_restrict]
-  exact TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le norm_nonneg hs (by linarith)
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-      ((IsEntire.mem_subring.mp (g - ∏ i ∈ t, f i).property).isRestricted r))
+      atTop (𝓝 0) :=
+  GaussFamily.tendsto_gaussNorm_sub_prod isUniformInducing_restrictFamily hf hs
+    (i := ⟨s + 1, Set.mem_Ioi.mpr (by linarith)⟩) (by dsimp; linarith)
 
 /-- If every factor of a convergent infinite product of entire series lies strictly within `ε ≤ 1`
-of `1` in the Gauss norm at `r > 0`, then so does the infinite product. -/
+of `1` in the Gauss norm at `r ≥ 0`, then so does the infinite product. -/
 theorem gaussNorm_sub_one_lt_of_hasProd {ι : Type*} {f : ι → IsEntire.subring R}
-    {g : IsEntire.subring R} (hf : HasProd f g) {r ε : ℝ} (hr : 0 < r) (hε0 : 0 < ε)
+    {g : IsEntire.subring R} (hf : HasProd f g) {r ε : ℝ} (hr : 0 ≤ r) (hε0 : 0 < ε)
     (hε : ε ≤ 1) (h : ∀ i, ((f i : R⟦X⟧) - 1).gaussNorm norm r < ε) :
     ((g : R⟦X⟧) - 1).gaussNorm norm r < ε := by
-  have : Fact (0 < r) := ⟨hr⟩
-  have hlt := (hasProd_iff.mp hf ⟨r, hr⟩).norm_sub_one_lt hε0 hε fun i ↦ by
-    rw [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
-      OneMemClass.coe_one]
-    exact h i
-  rwa [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
-    OneMemClass.coe_one] at hlt
+  rcases hr.eq_or_lt with rfl | hr0
+  · simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using
+      hf.constantCoeff.norm_sub_one_lt hε0 hε fun i ↦ by
+        simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using h i
+  · have : Fact (0 < r) := ⟨hr0⟩
+    have hlt := (hasProd_iff.mp hf ⟨r, hr0⟩).norm_sub_one_lt hε0 hε fun i ↦ by
+      rw [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
+        OneMemClass.coe_one]
+      exact h i
+    rwa [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
+      OneMemClass.coe_one] at hlt
 
 variable [CompleteSpace R]
 

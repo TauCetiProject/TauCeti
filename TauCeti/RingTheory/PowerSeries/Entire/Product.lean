@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Entire.Factorization
 import Mathlib.Order.Northcott
 import Mathlib.RingTheory.Polynomial.GaussNorm
-import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra
 import TauCeti.Data.Set.Card
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
@@ -71,12 +71,12 @@ enumeration-independent unconditional infinite product in `PowerSeries.IsEntire.
   `TauCeti.PowerSeries.IsEntire.evalAt_tprod_polynomialHom_one_sub_C_inv_mul_X_eq_zero_iff`:
   Taylor-order multiplicities, closed-disc zero multisets, and zeros of the canonical product in
   every complete normed field extension.
-* `PowerSeries.IsEntire.exists_isEntire_order_taylor_eq`,
-  `PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq` and
-  `PowerSeries.IsEntire.existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq`: existence of a
-  nonzero entire series for any multiplicity function `m` whose support meets every closed disc in
-  a finite set; existence with constant coefficient `1` when additionally `m 0 = 0`; and uniqueness
-  with constant coefficient `1` when `K` is also algebraically closed.
+* `TauCeti.PowerSeries.IsEntire.exists_isEntire_order_taylor_eq`,
+  `TauCeti.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq` and
+  `TauCeti.PowerSeries.IsEntire.existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq`:
+  existence of a nonzero entire series for any multiplicity function `m` whose support meets every
+  closed disc in a finite set; existence with constant coefficient `1` when additionally
+  `m 0 = 0`; and uniqueness with constant coefficient `1` when `K` is also algebraically closed.
 * `PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X`,
   `PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_sub_C_inv_mul_X` and
   `PowerSeries.IsEntire.hasProd_evalAt_one_sub_inv_smul`: over an algebraically closed complete
@@ -245,12 +245,10 @@ theorem gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt {ι : Type*} {c
         _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm r < B := by
   by_cases hm : Multipliable fun i ↦
       _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
-  · rcases hr.eq_or_lt with rfl | hr0
-    · simpa using hB0
-    · refine gaussNorm_sub_one_lt_of_hasProd hm.hasProd hr0 hB0 hB1 fun i ↦ ?_
-      rw [coe_polynomialHom_one_sub_C_mul_X,
-        TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (c i) hr]
-      exact hlt i
+  · refine gaussNorm_sub_one_lt_of_hasProd hm.hasProd hr hB0 hB1 fun i ↦ ?_
+    rw [coe_polynomialHom_one_sub_C_mul_X,
+      TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (c i) hr]
+    exact hlt i
   · rw [tprod_eq_one_of_not_multipliable hm, OneMemClass.coe_one, sub_self,
       _root_.PowerSeries.gaussNorm_zero norm r norm_zero]
     exact hB0
@@ -486,9 +484,8 @@ theorem _root_.PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X
     have h1 : (1 : ℕ∞) ≤ (_root_.PowerSeries.taylor 0 f).order := by
       rw [← hα 0]
       exact Set.one_le_encard_iff_nonempty.mpr ⟨i, hi⟩
-    rw [_root_.PowerSeries.taylor_zero, Order.one_le_iff_ne_zero,
-      _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero, h0] at h1
-    exact one_ne_zero h1
+    rw [_root_.PowerSeries.order_taylor_zero_eq_zero (by simp [h0])] at h1
+    exact absurd h1 (by decide)
   have hgrow : Tendsto (fun i ↦ ‖α i‖) cofinite atTop :=
     hf.tendsto_norm_cofinite_atTop_of_encard_le_order_taylor (L := K) hf0 fun i ↦ by
       rw [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq, hα (α i)]
@@ -560,7 +557,7 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
 `m : K → ℕ` with `m 0 = 0` whose support meets every closed disc in a finite set, there exists an
 entire series over `K` with constant coefficient `1` whose Taylor order at each `x : K` is
 `m x`. -/
-theorem _root_.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq
+theorem exists_isEntire_constantCoeff_eq_one_order_taylor_eq
     [CompleteSpace K] {m : K → ℕ} (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite)
     (hm0 : m 0 = 0) :
     ∃ f : K⟦X⟧, f.IsEntire ∧ _root_.PowerSeries.constantCoeff f = 1 ∧
@@ -590,7 +587,7 @@ theorem _root_.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_t
 /-- **Existence of an entire series with prescribed zero divisor.** Given `m : K → ℕ` whose support
 meets every closed disc in a finite set, there exists a nonzero entire series over `K` whose Taylor
 order at every `x : K` is `m x`. -/
-theorem _root_.PowerSeries.IsEntire.exists_isEntire_order_taylor_eq [CompleteSpace K] {m : K → ℕ}
+theorem exists_isEntire_order_taylor_eq [CompleteSpace K] {m : K → ℕ}
     (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite) :
     ∃ f : K⟦X⟧, f.IsEntire ∧ f ≠ 0 ∧ ∀ x : K, (_root_.PowerSeries.taylor x f).order = m x := by
   classical
@@ -601,8 +598,7 @@ theorem _root_.PowerSeries.IsEntire.exists_isEntire_order_taylor_eq [CompleteSpa
       · simp [m', hx0] at hne
       · simpa [m', hx0] using hne⟩
   obtain ⟨g, hg, hg0, hord⟩ :=
-    _root_.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm'
-      (by simp [m'])
+    exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm' (by simp [m'])
   refine ⟨_root_.PowerSeries.X ^ m 0 * g, (_root_.PowerSeries.isEntire_X.pow _).mul hg,
     mul_ne_zero (pow_ne_zero _ _root_.PowerSeries.X_ne_zero) ?_, fun x ↦ ?_⟩
   · rintro rfl
@@ -615,13 +611,13 @@ theorem _root_.PowerSeries.IsEntire.exists_isEntire_order_taylor_eq [CompleteSpa
 ultrametric normed field, there is a unique entire series with constant coefficient `1` and a given
 multiplicity function `m : K → ℕ` with `m 0 = 0` whose support meets every closed disc in a finite
 set. -/
-theorem _root_.PowerSeries.IsEntire.existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq
+theorem existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq
     [CompleteSpace K] [IsAlgClosed K] {m : K → ℕ}
     (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite) (hm0 : m 0 = 0) :
     ∃! f : K⟦X⟧, f.IsEntire ∧ _root_.PowerSeries.constantCoeff f = 1 ∧
       ∀ x : K, (_root_.PowerSeries.taylor x f).order = m x := by
   obtain ⟨f, hf, hf0, hord⟩ :=
-    _root_.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm hm0
+    exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm hm0
   refine ⟨f, ⟨hf, hf0, hord⟩, fun g ⟨hg, hg0, hord'⟩ ↦
     hg.eq_of_order_taylor_eq hf hg0 hf0 fun x ↦ (hord' x).trans (hord x).symm⟩
 

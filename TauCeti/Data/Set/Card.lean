@@ -223,8 +223,8 @@ end Set
 @[simp]
 theorem TauCeti.encard_sigma_fst_fiber_eq {α : Type*} (Y : α → Type*) (x : α) :
     {p : Σ y : α, Y y | p.1 = x}.encard = ENat.card (Y x) := by
-  rw [show {p : Σ y : α, Y y | p.1 = x} = Sigma.fst ⁻¹' {x} from rfl,
-    ← Set.range_sigmaMk, sigma_mk_injective.encard_range]
+  rw [← Set.preimage_singleton Sigma.fst x, ← Set.range_sigmaMk,
+    sigma_mk_injective.encard_range]
 
 /-- The fibre of `Function.Pullback.fst` over `a` has the same `Set.ncard` as the fibre of `q`
 over `f a`. Both sides are zero for infinite fibres. -/

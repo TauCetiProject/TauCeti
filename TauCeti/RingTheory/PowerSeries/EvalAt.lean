@@ -213,8 +213,8 @@ omit [IsTopologicalAddGroup A] [T2Space A] in
 @[simp]
 theorem evalAt_one_sub_C_mul_X (c : R) (b : A) :
     (1 - C c * X : R⟦X⟧).evalAt b = 1 - c • b := by
-  rw [← Polynomial.coe_one, ← Polynomial.coe_C, ← Polynomial.coe_X, ← Polynomial.coe_mul,
-    ← Polynomial.coe_sub, evalAt_coe]
+  rw [← (by simp : ((1 - Polynomial.C c * Polynomial.X : Polynomial R) : R⟦X⟧) = 1 - C c * X),
+    evalAt_coe]
   simp [Algebra.smul_def]
 
 /-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`

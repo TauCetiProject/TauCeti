@@ -320,8 +320,8 @@ theorem IsEntire.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one (hf : f.IsE
   rw [map_zero, sub_zero] at hfg₀
   simp only [evalAt_at_zero, Algebra.algebraMap_self_apply, isUnit_iff_ne_zero] at hg₀0
   have hcoeff : coeff f.order.toNat f = constantCoeff g₀ := by
-    nth_rw 2 [hfg₀]
-    simp [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply]
+    simpa [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply] using
+      congrArg (coeff f.order.toNat) hfg₀
   refine ⟨C (constantCoeff g₀)⁻¹ * g₀, (isEntire_C _).mul hg₀, by simp [hg₀0], ?_, fun x hx0 ↦ ?_⟩
   · rw [hcoeff]
     calc f = X ^ f.order.toNat * g₀ := hfg₀
