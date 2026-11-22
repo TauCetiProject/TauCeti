@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Idempotents
 
 import Mathlib.Algebra.Order.Ring.Idempotent
 import Mathlib.Order.Disjointed
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Orthogonal refinement of a finite family of idempotents
@@ -112,9 +113,8 @@ theorem notMem_iff_of_one_sub_prod_ite_mem {ι : Type*} [Fintype ι] {e : ι →
   set F := ∏ y, (if σ y then e y else 1 - e y)
   cases hσx : σ x
   · -- In `R ⧸ p`, `e x` is idempotent, `F = 1`, and `1 - e x` absorbs `F`, so `e x = 0`.
-    have hidem : IsIdempotentElem (Ideal.Quotient.mk p (e x)) := by
-      rw [IsIdempotentElem, ← map_mul]
-      exact Ideal.Quotient.eq.mpr hx
+    have hidem : IsIdempotentElem (Ideal.Quotient.mk p (e x)) :=
+      Ideal.Quotient.isIdempotentElem_mk_iff.mpr hx
     have hF' : ∏ y, (if σ y then Ideal.Quotient.mk p (e y) else 1 - Ideal.Quotient.mk p (e y)) =
         1 := by
       have h := Ideal.Quotient.eq_zero_iff_mem.mpr hF
