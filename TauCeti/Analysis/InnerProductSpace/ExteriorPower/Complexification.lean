@@ -41,13 +41,10 @@ finite orthonormal basis `b` of `V`:
 * `ExteriorAlgebra.isSymm_sesqComplexification_sesqExteriorAlgebra_innerₗ` and
   `ExteriorAlgebra.sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos`: Hermitian symmetry
   and strict positive definiteness of the complexified Euclidean exterior Gram metric.
-* `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one`,
-  `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv`,
-  `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_subtype_baseChange`, and
-  `toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_eq_zero_of_mem_baseChange_of_ne`:
-  comparison of the complexified orthonormal wedge-basis form with
-  `LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))` and orthogonality of distinct
-  degrees.
+* `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one` and
+  `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv`:
+  identification of the complexified orthonormal wedge-basis form with the complexified
+  Euclidean exterior Gram metric.
 
 ## References
 
@@ -129,37 +126,3 @@ theorem sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos
     (isSymm_sesqExteriorAlgebra_innerₗ (V := V)) posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ hx
 
 end ExteriorAlgebra
-
-namespace OrthonormalBasis
-
-variable {V I : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [Fintype I] [LinearOrder I] (b : OrthonormalBasis I ℝ V)
-
-/-- **Complexified wedge-basis form in degree `k`**: under `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`,
-the Hermitian form making `(b.toBasis.baseChange ℂ).ExteriorAlgebra` orthonormal restricts in
-homogeneous degree `k` to `LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))`. -/
-theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_subtype_baseChange
-    (k : ℕ) (x y : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.toBasis.baseChange ℂ).ExteriorAlgebra
-        (b.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
-        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((⋀[ℝ]^k V).subtype.baseChange ℂ x))
-        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((⋀[ℝ]^k V).subtype.baseChange ℂ y)) =
-      LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V)) x y := by
-  rw [b.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv,
-    exteriorPower.sesqComplexification_sesqExteriorAlgebra_innerₗ_subtype_baseChange]
-
-omit [FiniteDimensional ℝ V] in
-/-- **Distinct complexified degrees are orthogonal** for the Hermitian wedge-basis form pulled back
-along `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`. -/
-theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
-    {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
-    (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.toBasis.baseChange ℂ).ExteriorAlgebra
-        (b.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
-        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
-        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) = 0 := by
-  rw [b.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv]
-  exact LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
-    (innerₗ V) hpq hx hy
-
-end OrthonormalBasis

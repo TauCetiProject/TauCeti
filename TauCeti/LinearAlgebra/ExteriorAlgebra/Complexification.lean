@@ -34,10 +34,7 @@ Let `B : LinearMap.BilinForm ℝ V` be a real bilinear form on `V`, with sesquil
 * on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`, the complexified Gram form restricts in homogeneous degree `n`
   along `(⋀[ℝ]^n V).subtype.baseChange ℂ` to
   `LinearMap.BilinForm.sesqComplexification (B.sesqExteriorPower n)`, and makes distinct
-  complexified exterior powers `(⋀[ℝ]^p V).baseChange ℂ` and `(⋀[ℝ]^q V).baseChange ℂ` orthogonal;
-* when `V` has a finite ordered basis `b`, the Hermitian form making
-  `(b.baseChange ℂ).ExteriorAlgebra` orthonormal is
-  `(LinearMap.BilinForm.sesqComplexification (Matrix.toLinearMap₂ b b 1)).sesqExteriorAlgebra`.
+  complexified exterior powers `(⋀[ℝ]^p V).baseChange ℂ` and `(⋀[ℝ]^q V).baseChange ℂ` orthogonal.
 
 No finiteness, flatness, or basis assumption is needed for the comparison theorems.
 
@@ -53,9 +50,6 @@ No finiteness, flatness, or basis assumption is needed for the comparison theore
 * `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange` and
   `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne`:
   degree-`n` restriction and degree orthogonality on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`.
-* `ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one` and
-  `ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv`: basis
-  coordinate comparisons on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)`.
 
 ## References
 
@@ -217,35 +211,3 @@ theorem sesqComplexification_sesqExteriorAlgebra_baseChangeEquiv_symm (B : Bilin
     AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
 
 end LinearMap.BilinForm
-
-namespace ExteriorAlgebra
-
-variable {V I : Type*} [AddCommGroup V] [Module ℝ V] [Fintype I] [LinearOrder I]
-  (b : Module.Basis I ℝ V)
-
-/-- For a finite ordered basis `b` of a real module `V`, the Hermitian form on
-`ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` making `(b.baseChange ℂ).ExteriorAlgebra` orthonormal is the
-exterior Gram form of `LinearMap.BilinForm.sesqComplexification (toLinearMap₂ b b 1)`. -/
-theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ).ExteriorAlgebra
-        (b.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ) =
-      (LinearMap.BilinForm.sesqComplexification
-        (toLinearMap₂ b b (1 : Matrix I I ℝ))).sesqExteriorAlgebra := by
-  rw [toLinearMapₛₗ₂_exteriorAlgebra_one,
-    ← LinearMap.BilinForm.sesqComplexification_toLinearMap₂_one]
-
-/-- Pulling the Hermitian wedge-basis form of `b.baseChange ℂ` back along
-`ExteriorAlgebra.baseChangeEquiv ℝ V ℂ` gives the sesquilinear complexification of the real
-exterior Gram form `(toLinearMap₂ b b 1).sesqExteriorAlgebra`. -/
-theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv
-    (x y : ℂ ⊗[ℝ] _root_.ExteriorAlgebra ℝ V) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ).ExteriorAlgebra
-        (b.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
-        (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
-        (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) =
-      LinearMap.BilinForm.sesqComplexification
-        (toLinearMap₂ b b (1 : Matrix I I ℝ)).sesqExteriorAlgebra x y := by
-  rw [toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one,
-    LinearMap.BilinForm.sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv]
-
-end ExteriorAlgebra

@@ -625,9 +625,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The real Euclidean exterior Gram form `(innerₗ V).sesqExteriorAlgebra` is symmetric. -/
 theorem isSymm_sesqExteriorAlgebra_innerₗ :
-    LinearMap.BilinForm.IsSymm (innerₗ V).sesqExteriorAlgebra := by
-  have hsymm : (innerₗ V).IsSymm := LinearMap.isSymm_def.mpr fun x y ↦ real_inner_comm y x
-  exact LinearMap.BilinForm.isSymm_iff.mpr (hsymm.sesqExteriorAlgebra fun _ ↦ rfl)
+    LinearMap.BilinForm.IsSymm (innerₗ V).sesqExteriorAlgebra :=
+  LinearMap.BilinForm.isSymm_iff.mpr (isSymm_inner.sesqExteriorAlgebra fun _ ↦ rfl)
 
 /-- The real Euclidean exterior Gram form `(innerₗ V).sesqExteriorAlgebra` is positive definite
 (without any finite-dimensionality assumption on `V`). -/

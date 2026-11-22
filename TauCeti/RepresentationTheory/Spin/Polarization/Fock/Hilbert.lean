@@ -177,7 +177,7 @@ theorem inner_fock_eq_sesqExteriorAlgebra (s t : S) :
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   have hg : LinearMap.BilinForm.IsSymm (innerₗ V) :=
-    LinearMap.BilinForm.isSymm_iff.mpr ⟨fun u v ↦ real_inner_comm v u⟩
+    LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner
   have hQg : ∀ v, Q v = -(innerₗ V) v v := fun v ↦ by
     rw [hQ, innerₗ_apply_apply, real_inner_self_eq_norm_sq]
   rw [J.inner_fock hQJ hQnd hQ (J.fockMetricBasis hQJ hQnd hQ)
@@ -188,8 +188,10 @@ theorem inner_fock_eq_sesqExteriorAlgebra (s t : S) :
 /-- The vacuum of the normalized Fock module has inner product one with itself. -/
 private theorem inner_fock_one_one : letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    inner ℂ (1 : S) 1 = 1 :=
-  ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one (J.fockMetricBasis hQJ hQnd hQ)
+    inner ℂ (1 : S) 1 = 1 := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  rw [J.inner_fock_eq_sesqExteriorAlgebra hQJ hQnd hQ, LinearMap.sesqExteriorAlgebra_one_one]
 
 /-- The vacuum of the normalized Fock module is a unit vector in the native norm. -/
 @[simp]
@@ -240,12 +242,8 @@ theorem inner_fock_ι_ι (x y : W) :
       LinearMap.BilinForm.sesqComplexification (innerₗ V) (x : ℂ ⊗[ℝ] V) y := by
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
-  rw [J.inner_fock hQJ hQnd hQ (J.fockMetricBasis hQJ hQnd hQ)
-      (J.fockMetricBasis_polar hQJ hQnd hQ), ExteriorAlgebra.toLinearMapₛₗ₂_ι_ι]
-  exact J.toLinearMapₛₗ₂_apply_eq_sesqComplexification hQJ hQnd
-    (J.fockMetricBasis hQJ hQnd hQ) (J.fockMetricBasis_polar hQJ hQnd hQ)
-    (g := innerₗ V) ⟨isSymm_inner.eq⟩
-    (fun v ↦ by rw [hQ, innerₗ_apply_apply, real_inner_self_eq_norm_sq]) x y
+  rw [J.inner_fock_eq_sesqExteriorAlgebra hQJ hQnd hQ, LinearMap.sesqExteriorAlgebra_ι_ι,
+    LinearMap.domRestrict₁₂_apply]
 
 /-- The squared norm of a decomposable `p`-vector in the native Fock metric, cast to `ℂ`, is its
 Gram determinant under `LinearMap.BilinForm.sesqComplexification (innerₗ V)`. -/

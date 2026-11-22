@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+import Mathlib.Algebra.Algebra.RestrictScalars
 
 /-!
 # Sesquilinear Gram forms on exterior powers
@@ -64,30 +65,6 @@ open exteriorPower Matrix
 
 namespace LinearMap
 
-section Twist
-
-/-- Private scalar-restriction type synonym equipping an `R`-module `N` with `r • x = σ r • x`,
-used to descend a `σ`-semilinear alternating family via
-`exteriorPower.alternatingMapLinearEquiv`. -/
-private def Twist {R : Type*} [Semiring R] (_ : R →+* R) (N : Type*) : Type _ := N
-
-private instance {R N : Type*} [Semiring R] [AddCommGroup N] (σ : R →+* R) :
-    AddCommGroup (Twist σ N) :=
-  inferInstanceAs (AddCommGroup N)
-
-private instance {R N : Type*} [CommSemiring R] [AddCommGroup N] [Module R N] (σ : R →+* R) :
-    Module R (Twist σ N) :=
-  Module.compHom N σ
-
-/-- The identity map viewed as a `σ`-semilinear map out of `Twist σ N`. -/
-private def fromTwist {R N : Type*} [CommSemiring R] [AddCommGroup N] [Module R N] (σ : R →+* R) :
-    Twist σ N →ₛₗ[σ] N where
-  toFun x := x
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-end Twist
-
 variable {R M M' : Type*} [CommRing R] {σ : R →+* R}
   [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
 
@@ -96,17 +73,27 @@ variable {R M M' : Type*} [CommRing R] {σ : R →+* R}
 the Gram matrix `(B (v i) (w j))` (`LinearMap.sesqExteriorPower_ιMulti_ιMulti`). -/
 noncomputable def sesqExteriorPower (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) :
     ⋀[R]^n M →ₛₗ[σ] ⋀[R]^n M →ₗ[R] R :=
-  let alt : AlternatingMap R M (Twist σ (Module.Dual R (⋀[R]^n M))) (Fin n) :=
-    { toFun v := alternatingMapToDual R M n (B ∘ v)
+  letI : Algebra R R := σ.toAlgebra
+  let N := Module.Dual R (⋀[R]^n M)
+  let alt : AlternatingMap R M (RestrictScalars R R N) (Fin n) :=
+    { toFun v := (RestrictScalars.addEquiv R R N).symm (alternatingMapToDual R M n (B ∘ v))
       map_update_add' v i x y := by
         simp only [Function.comp_update, map_add]
-        exact (alternatingMapToDual R M n).map_update_add (B ∘ v) i (B x) (B y)
+        exact congrArg (RestrictScalars.addEquiv R R N).symm
+          ((alternatingMapToDual R M n).map_update_add (B ∘ v) i (B x) (B y))
       map_update_smul' v i c x := by
         simp only [Function.comp_update, map_smulₛₗ, RingHom.id_apply]
-        exact (alternatingMapToDual R M n).map_update_smul (B ∘ v) i (σ c) (B x)
-      map_eq_zero_of_eq' v i j hv hij :=
-        (alternatingMapToDual R M n).map_eq_zero_of_eq (B ∘ v) (by simp [hv]) hij }
-  (fromTwist σ).comp (alternatingMapLinearEquiv alt)
+        simp [RestrictScalars.smul_def, RingHom.algebraMap_toAlgebra]
+      map_eq_zero_of_eq' v i j hv hij := by
+        simp [(alternatingMapToDual R M n).map_eq_zero_of_eq (B ∘ v) (by simp [hv]) hij] }
+  let toDual : RestrictScalars R R N →ₛₗ[σ] N :=
+    { toFun := RestrictScalars.addEquiv R R N
+      map_add' := map_add _
+      map_smul' c x := RestrictScalars.addEquiv_map_smul R R N c x }
+  let f : ⋀[R]^n M →ₗ[R] RestrictScalars R R N :=
+    @alternatingMapLinearEquiv R _ n M (RestrictScalars R R N) _ _ _
+      (RestrictScalars.module R R N) alt
+  toDual.comp f
 
 /-- **Gram-determinant formula on pure wedges**: `B.sesqExteriorPower n` pairs two pure wedges by
 `det (B (v i) (w j))`. -/
@@ -114,8 +101,12 @@ noncomputable def sesqExteriorPower (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ
 theorem sesqExteriorPower_ιMulti_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) (v w : Fin n → M) :
     B.sesqExteriorPower n (ιMulti R n v) (ιMulti R n w) =
       (Matrix.of fun i j ↦ B (v i) (w j)).det := by
+  let N := Module.Dual R (⋀[R]^n M)
   have h : B.sesqExteriorPower n (ιMulti R n v) = alternatingMapToDual R M n (B ∘ v) :=
-    congrArg (fromTwist σ) (alternatingMapLinearEquiv_apply_ιMulti _ v)
+    (congrArg (RestrictScalars.addEquiv R R N)
+      (@alternatingMapLinearEquiv_apply_ιMulti R _ n M (RestrictScalars R R N) _ _ _
+        (@RestrictScalars.module R R N _ _ _ σ.toAlgebra _) _ v)).trans
+      ((RestrictScalars.addEquiv R R N).apply_symm_apply _)
   rw [h, alternatingMapToDual_apply_ιMulti, ← Matrix.det_transpose]
   rfl
 
