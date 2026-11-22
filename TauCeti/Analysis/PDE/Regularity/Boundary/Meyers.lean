@@ -72,8 +72,9 @@ has the same ellipticity constants. Testing the two equations with each other gi
 The solutions for `Lᵖ` data are obtained by density. Simple fields `Gₖ → F` in `Lᵖ(Ω)` are square
 integrable, since `Ω` has finite measure, and their solutions `uₖ ∈ H¹₀(Ω) ⊆ W^{1,p}_0(Ω)` satisfy
 `‖∇(uₖ - uₗ)‖_p ≤ C' ‖Gₖ - Gₗ‖_p` by the estimate below `2`. By the Poincaré inequality on
-`W^{1,p}_0(Ω)` (`TauCeti.W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient`) they converge
-in `W^{1,p}_0(Ω)`, and the equation passes to the limit since `a ∇v ∈ L^q` for `v ∈ W^{1,q}_0(Ω)`.
+`W^{1,p}_0(Ω)` (`TauCeti.W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top`) they
+converge in `W^{1,p}_0(Ω)` (`TauCeti.W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient`),
+and the equation passes to the limit since `aᵀ ∇v ∈ L^q` for `v ∈ W^{1,q}_0(Ω)`.
 This density argument holds for any such estimate on square integrable data and is
 `TauCeti.PDE.exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le`.
 
@@ -339,9 +340,6 @@ theorem exists_forall_energyFormIntegral_eq_divergence_and_eLpNorm_gradient_conj
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Real.conjExponent, div_le_iff₀ (by linarith)]
     linarith
-  have h2q : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 + ε) := by
-    rw [← ENNReal.ofReal_ofNat 2]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
   -- The constant of Meyers' estimate below `2` is finite.
   have hD : (C * (1 + (mu Omega / mu (ball 0 r₀)) ^ (ε / 2))) ^ (2 + ε)⁻¹ /
       ENNReal.ofReal lam ≠ ∞ :=
@@ -350,7 +348,7 @@ theorem exists_forall_energyFormIntegral_eq_divergence_and_eLpNorm_gradient_conj
         ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.div_ne_top hfin
           (measure_ball_pos mu 0 hr₀).ne')⟩))) (ENNReal.ofReal_pos.2 h.pos).ne'
   obtain ⟨u, hu, hle⟩ := exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
-    hp2 h2q h ha hfin hD
+    (q := ENNReal.ofReal (2 + ε)) hp2 h ha hfin hD
     (fun _ hu => (hC h hK ha hu hdens hr₀ hfin).trans_eq (ENNReal.mul_div_right_comm ..)) hF
   exact ⟨u, hu, hle.trans_eq (ENNReal.mul_div_right_comm ..).symm⟩
 

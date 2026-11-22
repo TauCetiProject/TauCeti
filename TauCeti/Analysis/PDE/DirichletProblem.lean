@@ -938,10 +938,10 @@ theorem UniformlyEllipticOn.forall_energyFormH1_sub_eq_divergence [DecidableEq �
     (hu₁ : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u₁ : W1p mu Omega 2) (v : W1p mu Omega 2) =
       -∫ x in Omega, ⟪G₁ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
     (hu₂ : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u₂ : W1p mu Omega 2) (v : W1p mu Omega 2) =
-      -∫ x in Omega, ⟪G₂ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
-    (v : W1p0 mu Omega 2) :
-    energyFormH1 a 0 0 ((u₁ - u₂ : W1p0 mu Omega 2) : W1p mu Omega 2) (v : W1p mu Omega 2) =
-      -∫ x in Omega, ⟪(G₁ - G₂) x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+      -∫ x in Omega, ⟪G₂ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+    ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 0 ((u₁ - u₂ : W1p0 mu Omega 2) : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        -∫ x in Omega, ⟪(G₁ - G₂) x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := fun v => by
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
     simpa using memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
       h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
@@ -977,15 +977,15 @@ theorem energyFormIntegral_jetField_ofExponentLEL_eq_divergence
   exact huv
 
 open Filter Topology in
-/-- **Extension of an `Lᵖ` estimate from square integrable data.** Let `p ≤ 2 ≤ q` be Hölder
-conjugate exponents and let `Ω` have finite measure. If every weak solution in `H¹₀(Ω)` of
-`-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢGⁱ` with `G ∈ L²(Ω; ℝⁿ)` satisfies `‖∇u‖_{Lᵖ} ≤ D ‖G‖_{Lᵖ}`, then for every
-`F ∈ Lᵖ(Ω; ℝⁿ)` there is `u ∈ W^{1,p}_0(Ω)` with `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every
+/-- **Extension of an `Lᵖ` estimate from square integrable data.** Let `p ≤ 2` and `q` be Hölder
+conjugate exponents, so that `q ≥ 2`, and let `Ω` have finite measure. If every weak solution in
+`H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢGⁱ` with `G ∈ L²(Ω; ℝⁿ)` satisfies `‖∇u‖_{Lᵖ} ≤ D ‖G‖_{Lᵖ}`,
+then for every `F ∈ Lᵖ(Ω; ℝⁿ)` there is `u ∈ W^{1,p}_0(Ω)` with `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every
 `v ∈ W^{1,q}_0(Ω)` and `‖∇u‖_{Lᵖ} ≤ D ‖F‖_{Lᵖ}`: the limit of the solutions for simple data
 `Gₙ → F`. -/
 theorem exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
     [DecidableEq ι] [Nonempty ι] {lam Lam : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    [p.HolderConjugate q] (hp2 : p ≤ 2) (h2q : 2 ≤ q)
+    [p.HolderConjugate q] (hp2 : p ≤ 2)
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hOmega : mu Omega ≠ ∞) {D : ℝ≥0∞}
     (hD : D ≠ ∞)
@@ -1004,6 +1004,8 @@ theorem exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
         D * eLpNorm F p (mu.restrict Omega) := by
   have : IsFiniteMeasure (mu.restrict (Omega : Set _)) := isFiniteMeasure_restrict.2 hOmega
   have hp_top : p ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp2
+  have h2q : 2 ≤ q := ENNReal.inv_le_inv.1 <| ENNReal.HolderConjugate.one_sub_inv p q ▸
+    ENNReal.one_sub_inv_two ▸ tsub_le_tsub_left (ENNReal.inv_le_inv.2 hp2) 1
   -- Solve for simple, hence square integrable, data `Gₙ → F`; read the solutions in `W^{1,p}`.
   choose G hGF hGp using fun n : ℕ => hF.exists_simpleFunc_eLpNorm_sub_lt hp_top
     (ε := (n : ℝ≥0∞)⁻¹) (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top n))
@@ -1019,9 +1021,8 @@ theorem exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
     rw [W1p.ofExponentLEL_apply, W1p.coeFn_gradient_ofExponentLE]
   -- The gradients of the `Wₙ` are Cauchy in `Lᵖ(Ω)`, so the `Wₙ` converge in `W^{1,p}_0(Ω)`.
   have hcau : CauchySeq fun n => W1p.gradient (W n) := by
-    have h0 := ENNReal.Tendsto.const_mul (hinv.add hinv) (Or.inr hD)
-    rw [add_zero, mul_zero] at h0
-    refine EMetric.cauchySeq_iff_le_tendsto_0.2 ⟨_, fun n m N hn hm => ?_, h0⟩
+    refine EMetric.cauchySeq_iff_le_tendsto_0.2 ⟨_, fun n m N hn hm => ?_, by
+      simpa only [add_zero, mul_zero] using ENNReal.Tendsto.const_mul (hinv.add hinv) (Or.inr hD)⟩
     rw [eDist_eq_eNorm_sub, ← W1p.gradient_sub, ← map_sub, ← Submodule.coe_sub, Lp.eNorm_def,
       hWgrad]
     refine (hest ((hG2 n).sub (hG2 m)) (h.forall_energyFormH1_sub_eq_divergence ha (hG2 n) (hG2 m)

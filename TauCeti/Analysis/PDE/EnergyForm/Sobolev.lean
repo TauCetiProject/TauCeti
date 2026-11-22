@@ -992,7 +992,7 @@ open scoped ENNReal in
 /-- **Continuity of the energy form across Hölder conjugate exponents.** For a measurable
 uniformly elliptic `a` and `v ∈ W^{1,q}(Ω)`, the energy form `u ↦ a(u, v)` with no drift and no
 mass is continuous on `W^{1,p}(Ω)` for Hölder conjugate `p` and `q`: it is integration of `∇u`
-against the field `a ∇v ∈ L^q(Ω)`. -/
+against the field `aᵀ ∇v ∈ L^q(Ω)`. -/
 theorem continuous_energyFormIntegral_jetField_left {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     [q.HolderConjugate p] (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (v : W1p mu Omega q) :
