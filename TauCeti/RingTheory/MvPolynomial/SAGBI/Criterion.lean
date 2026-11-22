@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # The SAGBI criterion for monic families
@@ -36,11 +37,12 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
   lies in the toric ideal.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
-* `MonomialOrder.linearCombination_sub_weightedHomogeneousComponent_add_sum_lt`: subtracting
-  the weight-`δ` component of `P` and adding combinations `∑ j, g j * Q j`, where every exponent
-  `x` in the support of `g j` satisfies `A x + e j = δ` and every exponent `y` in the support of
-  `Q j` satisfies `A y ≺ e j`, ensures that each product exponent has weight `A x + A y ≺ δ` and
-  strictly lowers the weight bound below `δ`.
+* `MonomialOrder.linearCombination_sub_weightedHomogeneousComponent_add_sum_lt`: if every
+  exponent `w` in `P.support` satisfies `A w ≼ δ`, subtracting the weight-`δ` component of `P`
+  and adding combinations `∑ j, g j * Q j`, where every exponent `x` in the support of `g j`
+  satisfies `A x + e j = δ` and every exponent `y` in the support of `Q j` satisfies `A y ≺ e j`,
+  ensures that each product exponent has weight `A x + A y ≺ δ` and strictly lowers the weight
+  bound below `δ`.
 * `MonomialOrder.exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent`: if all
   exponents `w` of `P` have `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then the
   weight-`δ` component of `P` is a combination `∑ j, g j * (Y^(u j) - Y^(v j))` with every
@@ -180,8 +182,8 @@ theorem linearCombination_sub_weightedHomogeneousComponent_add_sum_lt
     Finsupp.linearCombination ℕ a w ≺[m] δ := by
   classical
   have hsyn (u : ι →₀ ℕ) :
-      Finsupp.weight (m.toSyn ∘ a) u = m.toSyn (Finsupp.linearCombination ℕ a u) := by
-    simp [Finsupp.weight_apply, Finsupp.linearCombination_apply, map_finsuppSum]
+      Finsupp.weight (m.toSyn ∘ a) u = m.toSyn (Finsupp.linearCombination ℕ a u) :=
+    Finsupp.weight_comp_eq_apply_linearCombination m.toSyn.toAddMonoidHom a u
   have hwhc : weightedHomogeneousComponent a δ P =
       weightedHomogeneousComponent (m.toSyn ∘ a) (m.toSyn δ) P := by
     ext u
