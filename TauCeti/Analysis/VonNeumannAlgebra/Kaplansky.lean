@@ -65,7 +65,8 @@ closed, hence strong and strong-star closed. For the inclusion `⊇`:
   self-adjoint contraction in the double commutant of the matrix amplification `M₂(S)`
   (`StarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff`). Approximate it strong-star by
   self-adjoint contractions of `M₂(S)`; their `(0, 1)` entries are contractions in `S` converging
-  strong-star, hence strongly, to `x`.
+  strong-star, hence strongly, to `x`, because taking a matrix entry is strong-star continuous
+  (`TauCeti.ContinuousLinearMapStrongStar.continuous_piLpEntry`).
 
 ## References
 
@@ -76,6 +77,27 @@ Kadison–Ringrose, *Fundamentals of the Theory of Operator Algebras I*, Theorem
 public section
 
 open Filter Topology TauCeti
+
+namespace TauCeti.ContinuousLinearMapStrongStar
+
+variable {𝕜 H ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+  [CompleteSpace H] [Fintype ι] [DecidableEq ι]
+
+/-- Taking the `(i, j)` matrix entry of an operator on the Hilbert sum `PiLp 2 (fun _ : ι => H)`
+is continuous for the strong-star topologies. -/
+theorem continuous_piLpEntry (i j : ι) :
+    Continuous fun Y : ContinuousLinearMapStrongStar 𝕜 (PiLp 2 (fun _ : ι => H))
+      (PiLp 2 (fun _ : ι => H)) => ofCLM (Y.toCLM.piLpEntry i j) := by
+  refine continuous_of_continuous_apply (fun v => ?_) fun v => ?_
+  · simpa only [ContinuousLinearMap.piLpEntry_apply, PiLp.proj_apply, Function.comp_def] using
+      (PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) i).continuous.comp
+        (continuous_toCLM_apply (PiLp.single 2 (β := fun _ : ι => H) j v))
+  · -- The adjoint of the `(i, j)` entry is the `(j, i)` entry of the adjoint.
+    refine ((PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) j).continuous.comp
+      (continuous_adjoint_apply (PiLp.single 2 (β := fun _ : ι => H) i v))).congr fun Y => ?_
+    simp [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star]
+
+end TauCeti.ContinuousLinearMapStrongStar
 
 namespace StarSubalgebra
 
@@ -261,24 +283,10 @@ theorem closure_strongStar_unitBall_eq_unitBall_double_centralizer
       (S.piLpMatrix (Fin 2)) ▸ ⟨offDiag x, ⟨hX, isSelfAdjoint_offDiag x, norm_offDiag_le hx₁⟩, rfl⟩
   -- Taking the `(0, 1)` entry is strong-star continuous, and sends these approximants to
   -- contractions of `S` and `[[0, x], [x⋆, 0]]` to `x`.
-  have hentry : Continuous fun Y : ContinuousLinearMapStrongStar ℂ (PiLp 2 (fun _ : Fin 2 => H))
-      (PiLp 2 (fun _ : Fin 2 => H)) =>
-        ContinuousLinearMapStrongStar.ofCLM (Y.toCLM.piLpEntry 0 1) := by
-    refine ContinuousLinearMapStrongStar.continuous_of_continuous_apply (fun v => ?_) fun v => ?_
-    · simpa only [ContinuousLinearMap.piLpEntry_apply, PiLp.proj_apply, Function.comp_def] using
-        (PiLp.proj 2 (𝕜 := ℂ) (fun _ : Fin 2 => H) 0).continuous.comp
-          (ContinuousLinearMapStrongStar.continuous_toCLM_apply
-            (PiLp.single 2 (β := fun _ : Fin 2 => H) 1 v))
-    · -- The adjoint of the `(0, 1)` entry is the `(1, 0)` entry of the adjoint.
-      refine ((PiLp.proj 2 (𝕜 := ℂ) (fun _ : Fin 2 => H) 1).continuous.comp
-        (ContinuousLinearMapStrongStar.continuous_adjoint_apply
-          (PiLp.single 2 (β := fun _ : Fin 2 => H) 0 v))).congr fun Y => ?_
-      simp [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star]
   have hx01 : (offDiag x).piLpEntry 0 1 = x := by simp [offDiag]
   rw [← hx01]
-  refine map_mem_closure (f := fun Y : ContinuousLinearMapStrongStar ℂ (PiLp 2 (fun _ : Fin 2 => H))
-    (PiLp 2 (fun _ : Fin 2 => H)) => ContinuousLinearMapStrongStar.ofCLM (Y.toCLM.piLpEntry 0 1))
-    hentry hXS ?_
+  refine (map_mem_closure (ContinuousLinearMapStrongStar.continuous_piLpEntry (0 : Fin 2) 1)
+    hXS ?_ :)
   rintro _ ⟨Y, ⟨hY, _, hY₁⟩, rfl⟩
   exact ⟨_, ⟨mem_piLpMatrix.mp hY 0 1, (Y.norm_piLpEntry_le 0 1).trans hY₁⟩, rfl⟩
 
@@ -369,9 +377,7 @@ theorem double_commutant_iff_isCompact_image_ofCLM_inter_closedBall
   refine subset_antisymm (fun x hx => ?_) Set.subset_centralizer_centralizer
   obtain rfl | hx₀ := eq_or_ne x 0
   · exact zero_mem S
-  have hxS := hball (Set.smul_mem_centralizer ((‖x‖⁻¹ : ℝ) : ℂ) hx) (by
-    rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hx₀)])
-  simpa [smul_smul, norm_ne_zero_iff.mpr hx₀] using S.smul_mem hxS ((‖x‖ : ℝ) : ℂ)
+  have hxS := hball (Set.smul_mem_centralizer ((‖x‖ : ℂ)⁻¹) hx) (norm_smul_inv_norm hx₀).le
+  simpa [smul_smul, norm_ne_zero_iff.mpr hx₀] using S.smul_mem hxS (‖x‖ : ℂ)
 
 end StarSubalgebra
