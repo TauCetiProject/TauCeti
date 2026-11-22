@@ -45,9 +45,9 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   `2π` is orthogonal to every integer-exponent exponential under the standard Gaussian law.
 * `TauCeti.Probability.integral_cos_gaussianReal` computes the cosine transform of a real Gaussian
   law.
-* `TauCeti.Probability.gaussian_exp_integral`, `gaussian_x_exp_integral` and
-  `gaussian_x_exp_integrable` give the exponential and first tilted moments of the standard
-  Gaussian law.
+* `TauCeti.Probability.integral_mul_exp_mul_gaussianReal` and
+  `integrable_mul_exp_mul_gaussianReal` give the first exponentially tilted moment of a real
+  Gaussian law and its integrability.
 
 ## References
 
@@ -108,38 +108,26 @@ open scoped RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
 
-/-- The exponential moment of the standard Gaussian. -/
-theorem gaussian_exp_integral (a : ℝ) :
-    ∫ x : ℝ, Real.exp (a * x) ∂ProbabilityTheory.gaussianReal 0 1 = Real.exp (a ^ 2 / 2) := by
-  have h := congrFun (ProbabilityTheory.mgf_fun_id_gaussianReal (μ := 0) (v := 1)) a
-  simpa [ProbabilityTheory.mgf] using h
+/-- The first exponentially tilted moment of a real Gaussian law:
+`∫ x exp (t x) ∂N(μ, v) = (μ + v t) exp (μ t + v t² / 2)`, the derivative of its
+moment-generating function. -/
+theorem integral_mul_exp_mul_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
+    ∫ x, x * Real.exp (t * x) ∂gaussianReal μ v =
+      (μ + v * t) * Real.exp (μ * t + v * t ^ 2 / 2) := by
+  have ht : t ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal μ v)) := by simp
+  -- The tilted moment is the derivative at `t` of the moment-generating function.
+  rw [← deriv_mgf ht, mgf_fun_id_gaussianReal]
+  have hd : HasDerivAt (fun s : ℝ => μ * s + v * s ^ 2 / 2) (μ + v * t) t := by
+    convert ((hasDerivAt_id' t).const_mul μ).add
+      (((hasDerivAt_pow 2 t).const_mul (v : ℝ)).div_const 2) using 1
+    ring
+  rw [hd.exp.deriv, mul_comm]
 
-/-- A Gaussian exponential normalized by its cumulant-generating function has mean one. -/
-theorem integral_exp_mul_sub_gaussianReal (μ b : ℝ) (v : ℝ≥0) :
-    ∫ y, Real.exp (b * y - (μ * b + (v : ℝ) * b ^ 2 / 2)) ∂gaussianReal μ v = 1 := by
-  simp_rw [Real.exp_sub, integral_div]
-  have h : (∫ y, Real.exp (b * y) ∂gaussianReal μ v) =
-      Real.exp (μ * b + (v : ℝ) * b ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) b
-  rw [h, div_self (ne_of_gt (Real.exp_pos _))]
-
-/-- The first exponentially tilted moment of the standard Gaussian. -/
-theorem gaussian_x_exp_integral (a : ℝ) :
-    ∫ x : ℝ, x * Real.exp (a * x) ∂ProbabilityTheory.gaussianReal 0 1 =
-      a * Real.exp (a ^ 2 / 2) := by
-  have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by simp
-  -- The tilted moment is the derivative at `a` of the moment-generating function.
-  rw [← deriv_mgf ha, mgf_fun_id_gaussianReal]
-  have hd : HasDerivAt (fun t : ℝ => Real.exp (0 * t + (1 : ℝ≥0) * t ^ 2 / 2))
-      (a * Real.exp (a ^ 2 / 2)) a := by
-    convert ((hasDerivAt_id a).pow 2 |>.div_const 2).exp using 1 <;> simp; ring
-  exact hd.deriv
-
-/-- The first exponentially tilted moment of the standard Gaussian is integrable. -/
-theorem gaussian_x_exp_integrable (a : ℝ) :
-    Integrable (fun x : ℝ => x * Real.exp (a * x)) (gaussianReal 0 1) := by
+/-- The first exponentially tilted moment of a real Gaussian law is integrable. -/
+theorem integrable_mul_exp_mul_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
+    Integrable (fun x : ℝ => x * Real.exp (t * x)) (gaussianReal μ v) := by
   simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet
-    (X := fun x : ℝ => x) (μ := gaussianReal 0 1) (by simp) 1
+    (X := fun x : ℝ => x) (μ := gaussianReal μ v) (by simp) 1
 
 /-- The sine at frequency `2π` is orthogonal under the standard Gaussian law to every
 exponential with an integer exponent. -/
