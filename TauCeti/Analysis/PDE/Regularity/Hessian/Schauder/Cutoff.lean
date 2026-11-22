@@ -272,21 +272,26 @@ theorem holderOnWith_coordinates_of_convex_of_norm_le {u : E → ℝ} {s : Set E
       hV.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j
 
 /-- The comparison of constants closing the cutoff argument of the Schauder estimates: if
-`X ≤ A N`, then `2 κ ((Z K + N B) / λ + Q X) ≤ 2 κ (Z / λ + B / λ + Q A) (K + N)`. -/
-theorem cutoff_constant_le {κ lam Z B Q A K N X : ℝ} (hκ : 0 ≤ κ) (hlam : 0 < lam)
-    (hZ : 0 ≤ Z) (hB : 0 ≤ B) (hQ : 0 ≤ Q) (hA : 0 ≤ A) (hK : 0 ≤ K) (hN : 0 ≤ N)
-    (hX : X ≤ A * N) :
-    2 * κ * ((Z * K + N * B) / lam + Q * X) ≤ 2 * κ * (Z / lam + B / lam + Q * A) * (K + N) := by
-  have hZl : 0 ≤ Z / lam := by positivity
-  have hBl : 0 ≤ B / lam := by positivity
-  have hQA : 0 ≤ Q * A := mul_nonneg hQ hA
-  calc 2 * κ * ((Z * K + N * B) / lam + Q * X)
-      ≤ 2 * κ * (Z / lam * K + B / lam * N + Q * A * N) := by
-        rw [add_div, mul_div_right_comm, mul_comm N B, mul_div_right_comm, mul_assoc Q A]
-        gcongr
-    _ ≤ 2 * κ * (Z / lam + B / lam + Q * A) * (K + N) := by
-        rw [mul_assoc (2 * κ)]
-        gcongr
-        nlinarith
+`0 ≤ X ≤ A N`, then `2 κ ((Z K + N B) / λ + Q X) ≤ 2 κ (Z / λ + B / λ + Q A) (K + N)` after
+truncation to `ℝ≥0`. -/
+theorem cutoff_constant_le {κ lam Q A X : ℝ} {Z B K N : ℝ≥0} (hlam : 0 < lam) (hQ : 0 ≤ Q)
+    (hA : 0 ≤ A) (hX₀ : 0 ≤ X) (hX : X ≤ A * N) :
+    (2 * κ * (((Z * K + N * B : ℝ≥0) : ℝ) / lam + Q * X)).toNNReal ≤
+      (2 * κ * (Z / lam + B / lam + Q * A)).toNNReal * (K + N) := by
+  rcases lt_or_ge κ 0 with hκ | hκ
+  · rw [Real.toNNReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg (by linarith) (by positivity))]
+    exact zero_le
+  rw [Real.toNNReal_le_iff_le_coe, NNReal.coe_mul, Real.coe_toNNReal _ (by positivity),
+    mul_assoc (2 * κ) _ ((K + N : ℝ≥0) : ℝ)]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  have hQX : Q * X ≤ Q * A * N := by
+    rw [mul_assoc]
+    exact mul_le_mul_of_nonneg_left hX hQ
+  have hZN : 0 ≤ (Z : ℝ) / lam * N := by positivity
+  have hBK : 0 ≤ (B : ℝ) / lam * K := by positivity
+  have hQAK : 0 ≤ Q * A * K := by positivity
+  push_cast
+  calc ((Z : ℝ) * K + N * B) / lam + Q * X = Z / lam * K + B / lam * N + Q * X := by ring
+    _ ≤ (Z / lam + B / lam + Q * A) * (K + N) := by nlinarith
 
 end TauCeti.PDE

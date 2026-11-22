@@ -52,7 +52,10 @@ in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported 
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
 bounds it, its first two derivatives and their Hölder constants uniformly over all translates
-(`ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport`).
+(`ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport`). In particular,
+for radii `ρ < R` the translates of one cutoff give cutoffs between `closedBall x₀ ρ` and
+`ball x₀ R` about every centre `x₀` with such a common constant
+(`TauCeti.exists_forall_contDiff_cutoff_holderWith_and_norm_le`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
 is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
@@ -375,6 +378,29 @@ theorem _root_.ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCom
     fun x y => by simpa only [edist_sub_right] using (h₂.mono hle₂) (x - x₀) (y - x₀)⟩, fun x =>
     ⟨(b₀ _).trans (by exact_mod_cast hle₀), (b₁ _).trans (by exact_mod_cast hle₁),
       (b₂ _).trans (by exact_mod_cast hle₂)⟩⟩
+
+/-- For radii `ρ < R` and an exponent `α ≤ 1` there are smooth cutoffs `ζ x₀`, one about every
+centre `x₀`, each equal to one on a neighbourhood of `closedBall x₀ ρ` and supported in
+`ball x₀ R`, with one constant `Z` which bounds all of them and their first two derivatives,
+together with their `α`-Hölder constants. They are the translates of one cutoff about the origin. -/
+theorem exists_forall_contDiff_cutoff_holderWith_and_norm_le [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ρ R : ℝ} (hρR : ρ < R) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ (ζ : E → E → ℝ) (Z : ℝ≥0), ∀ x₀ : E, ContDiff ℝ ∞ (ζ x₀) ∧
+      Metric.closedBall x₀ ρ ⊆ interior (ζ x₀ ⁻¹' {1}) ∧ tsupport (ζ x₀) ⊆ Metric.ball x₀ R ∧
+      (HolderWith Z α (ζ x₀) ∧ HolderWith Z α (fderiv ℝ (ζ x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ (ζ x₀)))) ∧
+      ∀ x, ‖ζ x₀ x‖ ≤ Z ∧ ‖fderiv ℝ (ζ x₀) x‖ ≤ Z ∧ ‖fderiv ℝ (fderiv ℝ (ζ x₀)) x‖ ≤ Z := by
+  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ := (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff
+    Metric.isOpen_ball (Metric.closedBall_subset_ball hρR)
+  obtain ⟨Z, hZ⟩ :=
+    (hζ₀.of_le (by norm_cast)).exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+      hζ₀c hα
+  refine ⟨fun x₀ x => ζ₀ (x - x₀), Z, fun x₀ => ⟨hζ₀.comp (contDiff_id.sub contDiff_const),
+    fun x hx => ?_, fun x hx => ?_, hZ x₀⟩⟩
+  · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
+      (hζ₀1 (by simpa [dist_eq_norm] using hx))
+  · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
+      (continuous_id.sub continuous_const) hx)
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. In infinite dimension compact sets have empty interior (Riesz), so every term of

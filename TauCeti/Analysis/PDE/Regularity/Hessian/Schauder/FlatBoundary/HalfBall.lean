@@ -9,9 +9,11 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.Vari
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
+import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -141,9 +143,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
   let q : E → E := TauCeti.centeredRadialRetraction x₀ R
   let a' : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := fun x => a (q x)
   have hq : MapsTo q Hc (closedBall x₀ R ∩ Hc) :=
-    TauCeti.mapsTo_centeredRadialRetraction_of_convex hR
-      (convex_halfSpace_ge ⟨fun x y => inner_add_left x y ν, fun c x => real_inner_smul_left x ν c⟩
-        c₀) hx₀
+    TauCeti.mapsTo_centeredRadialRetraction_of_convex hR (TauCeti.convex_setOf_le_inner ν c₀) hx₀
   have hx₀B : x₀ ∈ closedBall x₀ R ∩ Hc := ⟨mem_closedBall_self hR, hx₀⟩
   -- The retracted coefficients are Hölder on the open half-space, with constant `2ᵅ L`.
   have ha'_holder (i j : Fin (n + 1)) :
@@ -162,18 +162,10 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
   -- On the open half-space the operator is unchanged, since the Hessian vanishes off the ball.
   have hf' : HolderOnWith K α (fun x => ∑ i, ∑ j, a' x i j •
       fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1)) Ho := by
-    refine hf.congr fun x hx => ?_
-    by_cases hx' : x ∈ Function.support (iteratedFDeriv ℝ 2 u)
-    · simp only [a', q, TauCeti.centeredRadialRetraction_of_mem_closedBall (hsupp ⟨hx', hx⟩)]
-    · have hzero : iteratedFDeriv ℝ 2 u x = 0 := by simpa [Function.mem_support] using hx'
-      have hentry (i j : Fin (n + 1)) : fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
-        have hzero' := congrArg (fun H : E [×2]→L[ℝ] ℝ =>
-          H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) hzero
-        simpa only [iteratedFDeriv_two_apply, zero_apply,
-          Matrix.cons_val_zero, Matrix.cons_val_one] using hzero'
-      simp [hentry]
+        (EuclideanSpace.single j 1)) Ho :=
+    hf.congr (TauCeti.eqOn_sum_sum_smul_fderiv_fderiv_apply
+      (v := fun i => EuclideanSpace.single i 1) hsupp fun x hx => by
+        simp only [a', q, TauCeti.centeredRadialRetraction_of_mem_closedBall hx]).symm
   let ε : ℝ≥0 := (L * R ^ (α : ℝ)).toNNReal
   have hε : (ε : ℝ) = L * R ^ (α : ℝ) :=
     Real.coe_toNNReal _ (mul_nonneg L.coe_nonneg (Real.rpow_nonneg hR _))
@@ -184,36 +176,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
   exact hS (A := a x₀) (a := a') hlam hEll hEll' hν hr hsmall'
     (fun x hx i j => by simpa only [hε] using ha'_close x hx i j) ha'_holder hU hHU hu hu0 hJ hH2
     hf'
-
-/-- A function `w` which is `C²` on an open set `W` containing the open half-space `H`, whose
-Hessian is bounded by `B ≥ 0` on `H` and vanishes outside `closedBall x₀ R`, has Hessian in `L²(H)`,
-with norm at most `|closedBall 0 R|^{1/2} B`. -/
-private theorem memLp_and_toReal_eLpNorm_le_of_support_subset_closedBall {w : E → ℝ} {W : Set E}
-    {x₀ ν : E} {c₀ R B : ℝ} (hW : IsOpen W) (hw : ContDiffOn ℝ 2 w W)
-    (hHW : {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ W)
-    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R) (hB0 : 0 ≤ B)
-    (hB : ∀ x ∈ {x | c₀ < ⟪x, ν⟫_ℝ}, ‖iteratedFDeriv ℝ 2 w x‖ ≤ B) :
-    MemLp (iteratedFDeriv ℝ 2 w) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) ∧
-      (eLpNorm (iteratedFDeriv ℝ 2 w) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ})).toReal ≤
-        (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * B := by
-  have hHo : MeasurableSet {x : E | c₀ < ⟪x, ν⟫_ℝ} :=
-    (isOpen_lt continuous_const (continuous_id.inner continuous_const)).measurableSet
-  have haesm : AEStronglyMeasurable (iteratedFDeriv ℝ 2 w)
-      (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) :=
-    ((ContinuousOn.continuousOn_iteratedFDeriv hw hW (by norm_num)).mono
-      hHW).aestronglyMeasurable hHo
-  have hle : eLpNorm (iteratedFDeriv ℝ 2 w) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) ≤
-      volume (closedBall (0 : E) R) ^ (2⁻¹ : ℝ) * ENNReal.ofReal B := by
-    refine (eLpNorm_le_of_ae_bound_of_support_subset haesm hsupp
-      (ae_restrict_of_forall_mem hHo hB)).trans ?_
-    rw [ENNReal.toReal_ofNat]
-    refine mul_le_mul_left (ENNReal.rpow_le_rpow ?_ (by norm_num)) _
-    exact (Measure.restrict_apply_le _ _).trans_eq (Measure.addHaar_closedBall_center _ _ _)
-  have hfin : volume (closedBall (0 : E) R) ^ (2⁻¹ : ℝ) * ENNReal.ofReal B ≠ ⊤ :=
-    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by norm_num)
-      measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top
-  refine ⟨hle.trans_lt hfin.lt_top, (ENNReal.toReal_mono hfin hle).trans_eq ?_⟩
-  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB0]
 
 /-- The cutoff product `w = ζ u` of a cutoff `ζ` supported in the ball `B_R` and a function `u`
 which is `C²` on an open set `U ⊇ B_R ∩ closure H`, vanishes on `B_R ∩ ∂H`, and has bounds `N` on
@@ -275,8 +237,7 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {x₀ ν : E} {c
     · simp [image_eq_zero_of_notMem_tsupport fun h => hxB (hζs h)]
   -- The bounds and Hölder constants of `u` and its first two derivatives on `B_R ∩ closure H`.
   set s : Set E := ball x₀ R ∩ Hc
-  have hsc : Convex ℝ s := (convex_ball x₀ R).inter (convex_halfSpace_ge
-    ⟨fun x y => inner_add_left x y ν, fun c x => real_inner_smul_left x ν c⟩ c₀)
+  have hsc : Convex ℝ s := (convex_ball x₀ R).inter (TauCeti.convex_setOf_le_inner ν c₀)
   obtain ⟨hHu, hdu, hdu', hd2u, hVe⟩ := holderOnWith_coordinates_of_convex_of_norm_le hα1 hsc
     inter_subset_left (fun x hx => hu.contDiffAt (hU.mem_nhds (hBU hx))) hN1 hN2 hV
   -- The Hessian entries of `w` on the closed half-space.
@@ -287,18 +248,18 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {x₀ ν : E} {c
     .of_apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) fun i j => by
       simpa [iteratedFDeriv_two_apply] using (hWH i j).1
   -- The `L²(H)` norm of the Hessian of `w`.
-  have hbound (x : E) (hx : x ∈ Ho) :
-      ‖iteratedFDeriv ℝ 2 (ζ * u) x‖ ≤ ((n : ℝ) + 1) ^ 2 * (4 * Z) * N := by
-    have h := (iteratedFDeriv ℝ 2 (ζ * u) x).opNorm_le_card_sq_mul_of_norm_apply_le
-      (EuclideanSpace.basisFun _ ℝ) (B := 4 * Z * N) fun i j => by
-        simpa [iteratedFDeriv_two_apply] using (hWH i j).2 x (hoc hx)
-    simpa [mul_assoc] using h
   have hsupp : Function.support (iteratedFDeriv ℝ 2 (ζ * u)) ⊆ closedBall x₀ R :=
     (support_iteratedFDeriv_subset 2).trans
       (tsupport_mul_subset_left.trans (hζs.trans ball_subset_closedBall))
-  obtain ⟨hmem, hL2⟩ := memLp_and_toReal_eLpNorm_le_of_support_subset_closedBall hWo hw
-    (hoc.trans hHW) hsupp (by positivity) hbound
-  refine ⟨⟨hWo, hHW, hw⟩, hw0, ⟨_, hJ⟩, hmem, hL2.trans_eq (by ring), hsupp, ?_⟩
+  obtain ⟨hmem, hL2⟩ :=
+    Measure.memLp_and_toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall (p := 2)
+      volume (EuclideanSpace.basisFun _ ℝ)
+      (isOpen_lt continuous_const (continuous_id.inner continuous_const)).measurableSet
+      ((ContinuousOn.continuousOn_iteratedFDeriv hw hWo (by norm_num)).mono (hoc.trans hHW)) hsupp
+      (B := 4 * Z * N) (by positivity) fun x hx i j => by simpa using (hWH i j).2 x (hoc hx)
+  refine ⟨⟨hWo, hHW, hw⟩, hw0, ⟨_, hJ⟩, hmem,
+    hL2.trans_eq (by simp only [Fintype.card_fin, ENNReal.toReal_ofNat]; push_cast; ring), hsupp,
+    ?_⟩
   -- The operator applied to `w`, on the open half-space.
   have hso : ball x₀ R ∩ Ho ⊆ s := inter_subset_inter_right _ hoc
   refine (holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul hU hζ hZ0 hZ1 hZ2 hB
@@ -360,14 +321,9 @@ theorem
   · exact ⟨0, fun {a x₀ ν c₀} _ _ _ _ _ _ {U u N K V} _ _ _ _ _ _ _ _ _ => by
       rw [closedBall_eq_empty.2 (hρR.trans_le hR), empty_inter]
       exact holderOnWith_empty _ _ _⟩
-  -- A cutoff `ζ₀`, equal to one near `closedBall 0 ρ` and supported in `B(0, R)`, and its
-  -- constant `Z`, which serves for its translates about every centre.
-  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ :=
-    (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff isOpen_ball
-      (closedBall_subset_ball hρR)
-  obtain ⟨Z, hZ⟩ :=
-    (hζ₀.of_le (by norm_cast)).exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
-      hζ₀c hα1.le
+  -- Cutoffs `ζ x₀`, equal to one near `closedBall x₀ ρ` and supported in `B_R`, with one
+  -- constant `Z` for every centre.
+  obtain ⟨ζ, Z, hζ⟩ := exists_forall_contDiff_cutoff_holderWith_and_norm_le («E» := E) hρR hα1.le
   -- The constants of the estimate, which do not depend on `u`, `a`, `x₀` or the half-space.
   set δ : ℝ≥0 := (2 * R).toNNReal ^ ((1 : ℝ) - α)
   set κ : ℝ := C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
@@ -377,21 +333,13 @@ theorem
   set A₃ : ℝ := (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * (4 * Z))
   refine ⟨(2 * κ * (Z / lam + B₂ / lam + Q * A₃)).toNNReal,
     fun {a x₀ ν c₀} hν hx₀ hEll hEll' hL hM {U u N K V} hU hBU hu hu0 hN0 hN1 hN2 hV hK => ?_⟩
-  -- The cutoff `ζ` about `x₀`, the translate of `ζ₀`, and the cutoff product `w = ζ u`.
-  set ζ : E → ℝ := fun x => ζ₀ (x - x₀)
-  obtain ⟨⟨hZ0, hZ1, hZ2⟩, hB⟩ := hZ x₀
-  have hζ2 : ContDiff ℝ 2 ζ := (hζ₀.of_le (by norm_cast)).comp (contDiff_id.sub contDiff_const)
-  have hζ1 : closedBall x₀ ρ ⊆ interior (ζ ⁻¹' {1}) := fun x hx =>
-    preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
-      (hζ₀1 (by simpa [dist_eq_norm] using hx))
-  have hζs : tsupport ζ ⊆ ball x₀ R := fun x hx => by
-    simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
-      (continuous_id.sub continuous_const) hx)
+  -- The cutoff product `w = ζ x₀ u`.
+  obtain ⟨hζ2, hζ1, hζs, ⟨hZ0, hZ1, hZ2⟩, hB⟩ := hζ x₀
   have hoB : ball x₀ R ∩ {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ closedBall x₀ R ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ} :=
     inter_subset_inter ball_subset_closedBall fun _ hx => mem_ofPred.2 (mem_ofPred.1 hx).le
   obtain ⟨⟨hWo, hHW, hw⟩, hw0, hJ, hmem, hL2, hsupp, hLw⟩ := cutoff_mul_data_of_halfSpace
-    hα1.le hζ2 hζs hZ0 hZ1 hZ2 hB hU hBU hu hu0 hN0 hN1 hN2 hV (fun i j => (hL i j).mono hoB) hM
-    hK (δ := δ) (B₂ := B₂) rfl rfl
+    hα1.le (hζ2.of_le (by norm_cast)) hζs hZ0 hZ1 hZ2 hB hU hBU hu hu0 hN0 hN1 hN2 hV
+    (fun i j => (hL i j).mono hoB) hM hK (δ := δ) (B₂ := B₂) rfl rfl
   -- The estimate up to the boundary for a Hessian supported in a ball, at the radius `R`.
   have hsmall' : 2 * κ * ((n : ℝ) + 1) ^ 2 *
       (L * R ^ (α : ℝ) + (L * 2 ^ (α : ℝ)) * R ^ (α : ℝ)) ≤ lam := by
@@ -399,30 +347,9 @@ theorem
     ring
   have key := hCS hν hx₀ hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR
     hsmall' hL hWo hHW hw hw0 hJ hmem (fun x hx => hsupp hx.1) hLw
-  -- Comparison of the constants.
-  have hlamLam : lam ≤ Lam := by
-    have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
-    simpa using h
-  have hκ : 0 ≤ κ := mul_nonneg hC₀.le
-    (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _)
-  have hbound : 2 * κ * (((Z * K + N * B₂ : ℝ≥0) : ℝ) / lam +
-      Q * (eLpNorm (iteratedFDeriv ℝ 2 (ζ * u)) 2
-        (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ})).toReal) ≤
-      ((2 * κ * (Z / lam + B₂ / lam + Q * A₃)).toNNReal * (K + N) : ℝ≥0) := by
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-    push_cast
-    exact cutoff_constant_le hκ hlam Z.coe_nonneg B₂.coe_nonneg (by positivity) (by positivity)
-      K.coe_nonneg N.coe_nonneg hL2
-  -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
-  have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
-      iteratedFDeriv ℝ 2 (ζ * u) x = iteratedFDeriv ℝ 2 u x :=
-    Filter.EventuallyEq.iteratedFDeriv_mul_eq (by
-      filter_upwards [mem_interior_iff_mem_nhds.1 (hζ1 hx)] with y hy
-      simpa using hy)
-  intro x hx y hy
-  rw [← hwu x hx.1, ← hwu y hy.1]
-  refine (key x hx.2 y hy.2).trans ?_
-  gcongr
-  exact Real.toNNReal_le_iff_le_coe.2 hbound
+  -- `ζ x₀` is one near `closedBall x₀ ρ`, so `D²(ζ x₀ u) = D²u` there.
+  exact TauCeti.holderOnWith_iteratedFDeriv_inter_of_mul_of_subset_interior
+    (key.mono_const (cutoff_constant_le hlam (by positivity) (by positivity)
+      ENNReal.toReal_nonneg hL2)) hζ1
 
 end TauCeti.PDE

@@ -100,6 +100,8 @@ Morse-theoretic definitions that use them.
   derivative of a `C²` map with an antisymmetric matrix gives zero.
 * `TauCeti.sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg`: the double divergence
   `∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ` of a `C²` antisymmetric matrix field vanishes.
+* `TauCeti.eqOn_sum_sum_smul_fderiv_fderiv_apply`: the operator `∑ᵢⱼ aᵢⱼ D²g(vᵢ, vⱼ)` only sees
+  the coefficients where the second derivative of `g` is nonzero.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
@@ -452,6 +454,22 @@ theorem sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg [CharZero 𝕜]
     simp [h.resolve_left two_ne_zero]
   · rw [hneg i j, neg_apply, neg_apply, ((hK i j).isSymmSndFDerivAt hn).eq (v i) (v j),
       add_neg_cancel]
+
+/-- The operator `∑ᵢⱼ aᵢⱼ D²g(vᵢ, vⱼ)` only sees the coefficients where the second derivative of
+`g` is nonzero: if the points of `t` at which `D²g` is nonzero lie in `s`, and the coefficient
+fields `a'` and `a` agree on `s`, then the two operators agree on `t`. -/
+theorem eqOn_sum_sum_smul_fderiv_fderiv_apply {ι : Type*} [Fintype ι] {g : E → F}
+    {a a' : E → Matrix ι ι 𝕜} {v : ι → E} {s t : Set E}
+    (hst : Function.support (iteratedFDeriv 𝕜 2 g) ∩ t ⊆ s) (ha : Set.EqOn a' a s) :
+    Set.EqOn (fun x ↦ ∑ i, ∑ j, a' x i j • fderiv 𝕜 (fderiv 𝕜 g) x (v i) (v j))
+      (fun x ↦ ∑ i, ∑ j, a x i j • fderiv 𝕜 (fderiv 𝕜 g) x (v i) (v j)) t := by
+  intro x hx
+  by_cases hx' : x ∈ Function.support (iteratedFDeriv 𝕜 2 g)
+  · simp only [ha (hst ⟨hx', hx⟩)]
+  · have hzero (i j : ι) : fderiv 𝕜 (fderiv 𝕜 g) x (v i) (v j) = 0 := by
+      simpa [iteratedFDeriv_two_apply] using
+        congrArg (fun H ↦ H ![v i, v j]) (Function.notMem_support.1 hx')
+    simp [hzero]
 
 /-- **The third derivative is symmetric in its last two directions.** For a map that is
 `C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`), differentiating the symmetry of the

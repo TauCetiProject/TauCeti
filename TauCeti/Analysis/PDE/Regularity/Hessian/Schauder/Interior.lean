@@ -123,10 +123,12 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     holderOnWith_univ.1 ((holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ hZ0 hZ1
       hZ2 hB htU hζs' hu hN0 hdu' hd2u hHu hdu (fun i j => (hL i j).mono hsR)
       (fun x hx => hM x (hsR hx)) hK).mono_const (le_of_eq (by ring))), hsupp, ?_⟩
-  exact (Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall (p := 2) volume
-    (EuclideanSpace.basisFun _ ℝ) (hw.continuous_iteratedFDeriv le_rfl) hsupp
-    (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x (mem_univ x)).trans_eq
-    (by simp only [Fintype.card_fin, ENNReal.toReal_ofNat]; push_cast; ring)
+  have hL2 := (Measure.memLp_and_toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
+    (p := 2) volume (EuclideanSpace.basisFun _ ℝ) MeasurableSet.univ
+    (hw.continuous_iteratedFDeriv le_rfl).continuousOn hsupp (B := 4 * Z * N) (by positivity)
+    fun x hx i j => by simpa using (hWH i j).2 x hx).2
+  rw [Measure.restrict_univ] at hL2
+  exact hL2.trans_eq (by simp only [Fintype.card_fin, ENNReal.toReal_ofNat]; push_cast; ring)
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
 depending only on dimension and `α`, with the following property. Let `0 < λ`, `Λ`, `L`, `M` and
@@ -171,14 +173,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   · exact ⟨0, fun {a x₀} _ _ _ _ {u N K V} _ _ _ _ _ _ => by
       rw [closedBall_eq_empty.2 (hρR.trans_le hR)]
       exact holderOnWith_empty _ _ _⟩
-  -- A cutoff `ζ₀`, equal to one near `closedBall 0 ρ` and supported in `B(0, R)`, and its
-  -- constant `Z`. Its translates serve as cutoffs about every centre, with the same constant.
-  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ :=
-    (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff isOpen_ball
-      (closedBall_subset_ball hρR)
-  obtain ⟨Z, hZ⟩ :=
-    (hζ₀.of_le (by norm_cast)).exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
-      hζ₀c hα1.le
+  -- Cutoffs `ζ x₀`, equal to one near `closedBall x₀ ρ` and supported in `B_R`, with one
+  -- constant `Z` for every centre.
+  obtain ⟨ζ, Z, hζ⟩ := exists_forall_contDiff_cutoff_holderWith_and_norm_le («E» := E) hρR hα1.le
   -- The constants of the estimate, which do not depend on `u`, `a` or `x₀`.
   set δ : ℝ≥0 := (2 * R).toNNReal ^ ((1 : ℝ) - α)
   set κ : ℝ := C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
@@ -188,51 +185,20 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   set A₃ : ℝ := (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * (4 * Z))
   refine ⟨(2 * κ * (Z / lam + B₂ / lam + Q * A₃)).toNNReal,
     fun {a x₀} hEll hEll' hL hM {u N K V} hu hN0 hN1 hN2 hV hK => ?_⟩
-  -- The cutoff `ζ` about `x₀`, the translate of `ζ₀`.
-  set ζ : E → ℝ := fun x => ζ₀ (x - x₀)
-  obtain ⟨⟨hZ0, hZ1, hZ2⟩, hB⟩ := hZ x₀
-  have hζ2 : ContDiff ℝ 2 ζ := (hζ₀.of_le (by norm_cast)).comp (contDiff_id.sub contDiff_const)
-  have hζ1 : closedBall x₀ ρ ⊆ interior (ζ ⁻¹' {1}) := fun x hx =>
-    preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
-      (hζ₀1 (by simpa [dist_eq_norm] using hx))
-  have hζs : tsupport ζ ⊆ ball x₀ R := fun x hx => by
-    simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
-      (continuous_id.sub continuous_const) hx)
-  -- The cutoff product `w = ζ u`, with bounds on `u` and the `L²` norm of `D²w`.
-  set w : E → ℝ := ζ * u
-  obtain ⟨hw, hmem, hLw, hsupp, hL2⟩ := cutoff_mul_data hα1.le hζ2 hζs hZ0 hZ1 hZ2 hB hu hN0 hN1
-    hN2 hV hL hM hK (δ := δ) (B₂ := B₂) rfl rfl
+  -- The cutoff product `w = ζ x₀ u`, with bounds on `u` and the `L²` norm of `D²w`.
+  obtain ⟨hζ2, hζ1, hζs, ⟨hZ0, hZ1, hZ2⟩, hB⟩ := hζ x₀
+  obtain ⟨hw, hmem, hLw, hsupp, hL2⟩ := cutoff_mul_data hα1.le (hζ2.of_le (by norm_cast)) hζs hZ0
+    hZ1 hZ2 hB hu hN0 hN1 hN2 hV hL hM hK (δ := δ) (B₂ := B₂) rfl rfl
   have hsmall' : 2 * κ * ((n : ℝ) + 1) ^ 2 *
       (L * R ^ (α : ℝ) + (L * 2 ^ (α : ℝ)) * R ^ (α : ℝ)) ≤ lam := by
     convert hsmall using 2
     ring
   have key := hCS hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR hsmall' hL hw
     hmem hsupp hLw
-  -- Comparison of the constants.
-  have hlamLam : lam ≤ Lam := by
-    have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
-    simpa using h
-  have hκ : 0 ≤ κ := mul_nonneg hC₀.le
-    (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _)
-  have hQ : 0 ≤ Q := by positivity
-  have hA₃ : 0 ≤ A₃ := by positivity
-  have hbound : 2 * κ * (((Z * K + N * B₂ : ℝ≥0) : ℝ) / lam +
-      Q * (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal) ≤
-      ((2 * κ * (Z / lam + B₂ / lam + Q * A₃)).toNNReal * (K + N) : ℝ≥0) := by
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-    push_cast
-    exact cutoff_constant_le hκ hlam Z.coe_nonneg B₂.coe_nonneg hQ hA₃ K.coe_nonneg N.coe_nonneg
-      hL2
-  -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
-  have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
-      iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x :=
-    Filter.EventuallyEq.iteratedFDeriv_mul_eq (by
-      filter_upwards [mem_interior_iff_mem_nhds.1 (hζ1 hx)] with y hy
-      simpa using hy)
-  intro x hx y hy
-  rw [← hwu x hx, ← hwu y hy]
-  refine (key x y).trans ?_
-  gcongr
-  exact Real.toNNReal_le_iff_le_coe.2 hbound
+  -- `ζ x₀` is one near `closedBall x₀ ρ`, so `D²(ζ x₀ u) = D²u` there.
+  have h := TauCeti.holderOnWith_iteratedFDeriv_inter_of_mul_of_subset_interior
+    ((holderOnWith_univ.2 key).mono_const (cutoff_constant_le hlam (by positivity) (by positivity)
+      ENNReal.toReal_nonneg hL2)) hζ1
+  rwa [inter_univ] at h
 
 end TauCeti.PDE
