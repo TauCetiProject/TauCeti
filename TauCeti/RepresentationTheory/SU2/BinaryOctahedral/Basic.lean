@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.SU2.BinaryTetrahedral
 import Mathlib.GroupTheory.IndexNormal
 import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # The binary octahedral subgroup of SU(2)
@@ -572,32 +573,63 @@ In unit-quaternion coordinates, `q² = (2 re q) • q - 1`, and `(2 re q)²` tak
 theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : SU2}
     (hg : g ∈ binaryOctahedralSubgroup) : g ^ 8 = 1 ∨ g ^ 6 = 1 := by
   obtain ⟨q, hgq, hr⟩ := exists_toComplexMatrix_of_mem_binaryOctahedralSubgroup hg
-  have hnorm : normSq q = 1 :=
-    normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hgq ▸ g.property)
-  have hq2 : q ^ 2 = (2 * q.re) • q - 1 := Quaternion.sq_eq_two_mul_re_smul_sub_one hnorm
-  have hpow (n : ℕ) (hqn : q ^ n = 1) : g ^ n = 1 := by
-    apply Subtype.ext
-    rw [SubmonoidClass.coe_pow, hgq, ← map_pow, hqn, map_one, OneMemClass.coe_one]
+  set M : Matrix (Fin 2) (Fin 2) ℂ := (g : Matrix (Fin 2) (Fin 2) ℂ)
+  set t : ℂ := ((2 * q.re : ℝ) : ℂ)
+  have hdet : M.det = 1 := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
+  have htr : M.trace = t := by rw [hgq, Quaternion.trace_toComplexMatrix]
+  have hrec (n : ℕ) : M ^ (n + 2) = t • M ^ (n + 1) - M ^ n := by
+    rw [Matrix.pow_add_two_fin_two, htr, hdet, one_smul]
+  have hpow (n : ℕ) (hMn : M ^ n = 1) : g ^ n = 1 :=
+    Subtype.ext (by rw [SubmonoidClass.coe_pow, OneMemClass.coe_one]; exact hMn)
   rcases hr with hr | hr | hr | hr
   · refine Or.inl (hpow 8 ?_)
-    have hre : q.re = 0 := by
-      have h2re := sq_eq_zero_iff.mp hr
-      linarith
-    have hqsq : q ^ 2 = -1 := by
-      rw [Quaternion.sq_eq_neg_normSq.mpr hre, hnorm, Quaternion.coe_one]
-    calc q ^ 8 = (q ^ 2) ^ 4 := by rw [← pow_mul]
-      _ = (-1 : ℍ[ℝ]) ^ 4 := by rw [hqsq]
+    have ht : t = 0 := by
+      dsimp [t]
+      rw [sq_eq_zero_iff.mp hr, Complex.ofReal_zero]
+    have hM2 : M ^ 2 = -1 := by simpa [ht] using hrec 0
+    calc M ^ 8 = (M ^ 2) ^ 4 := by rw [← pow_mul]
+      _ = (-1 : Matrix (Fin 2) (Fin 2) ℂ) ^ 4 := by rw [hM2]
       _ = 1 := by norm_num
-  · exact Or.inr (hpow 6 (Quaternion.pow_six_eq_one_of_sq_eq hq2 hr))
-  · exact Or.inl (hpow 8 (Quaternion.pow_eight_eq_one_of_sq_eq hq2 hr))
+  · refine Or.inr (hpow 6 ?_)
+    have ht2 : t ^ 2 = 1 := by dsimp [t]; exact_mod_cast hr
+    have hM2 : M ^ 2 = t • M - 1 := by simpa using hrec 0
+    have hM3 : M ^ 3 = -(t • 1) := by
+      have h1 := hrec 1
+      rw [hM2, pow_one, smul_sub, smul_smul, ← sq, ht2, one_smul, sub_sub_cancel_left] at h1
+      exact h1
+    calc M ^ 6 = (M ^ 3) ^ 2 := by rw [← pow_mul]
+      _ = (-(t • (1 : Matrix (Fin 2) (Fin 2) ℂ))) ^ 2 := by rw [hM3]
+      _ = t ^ 2 • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
+          rw [neg_sq, sq, smul_mul_smul_comm, mul_one, ← sq]
+      _ = 1 := by rw [ht2, one_smul]
   · refine Or.inl (hpow 8 ?_)
+    have ht2 : t ^ 2 = 2 := by dsimp [t]; exact_mod_cast hr
+    have hM2 : M ^ 2 = t • M - 1 := by simpa using hrec 0
+    have hM3 : M ^ 3 = M - t • 1 := by
+      have h1 := hrec 1
+      rw [hM2, pow_one, smul_sub, smul_smul, ← sq, ht2, two_smul] at h1
+      rw [h1]
+      abel
+    have hM4 : M ^ 4 = -1 := by
+      have h2 := hrec 2
+      rw [hM3, hM2, smul_sub, smul_smul, ← sq, ht2, two_smul] at h2
+      rw [h2]
+      abel
+    calc M ^ 8 = (M ^ 4) ^ 2 := by rw [← pow_mul]
+      _ = (-1 : Matrix (Fin 2) (Fin 2) ℂ) ^ 2 := by rw [hM4]
+      _ = 1 := neg_one_sq
+  · refine Or.inl (hpow 8 ?_)
+    have hnorm : normSq q = 1 :=
+      normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hgq ▸ g.property)
     rw [normSq_def'] at hnorm
     have him : q.imI = 0 ∧ q.imJ = 0 ∧ q.imK = 0 := ⟨by nlinarith, by nlinarith, by nlinarith⟩
     have hqre : q = q.re := by ext <;> simp [him.1, him.2.1, him.2.2]
     have hqsq : q ^ 2 = 1 := by
       rw [Quaternion.sq_eq_normSq.mpr hqre, normSq_def', hnorm, Quaternion.coe_one]
-    calc q ^ 8 = (q ^ 2) ^ 4 := by rw [← pow_mul]
-      _ = 1 := by rw [hqsq, one_pow]
+    have hM2 : M ^ 2 = 1 := by
+      rw [show M = toComplexMatrix q from hgq, ← map_pow, hqsq, map_one]
+    calc M ^ 8 = (M ^ 2) ^ 4 := by rw [← pow_mul]
+      _ = 1 := by rw [hM2, one_pow]
 
 /-- **The binary octahedral subgroup is not cyclic**: it has order `48`, while every element has
 order dividing `8` or `6`. -/

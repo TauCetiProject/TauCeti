@@ -610,8 +610,9 @@ private theorem mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup
 private def cubeRotationToIntSpecialOrthogonalGroup :
     cubeRotationGroup →* Matrix.specialOrthogonalGroup (Fin 3) ℤ :=
   (SpecialLinearGroup.coeMonoidHom.comp cubeRotationGroup.subtype).codRestrict
-    (Matrix.specialOrthogonalGroup (Fin 3) ℤ) fun A =>
-      mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup A.property
+    (Matrix.specialOrthogonalGroup (Fin 3) ℤ) fun A => by
+      rw [MonoidHom.comp_apply, Subgroup.coe_subtype, SpecialLinearGroup.coeMonoidHom_apply]
+      exact mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup A.property
 
 /-- **The homomorphism from the rotation group of the cube into `SO(3, R)`**, sending each integer
 signed permutation matrix to its image in `Matrix.specialOrthogonalGroup (Fin 3) R`. It is
@@ -627,9 +628,10 @@ def cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] :
 theorem coe_cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] (A : cubeRotationGroup) :
     (cubeRotationToSpecialOrthogonalGroup R A : Matrix (Fin 3) (Fin 3) R) =
       (Int.castRingHom R).mapMatrix (A.val : Matrix (Fin 3) (Fin 3) ℤ) := by
-  rw [cubeRotationToSpecialOrthogonalGroup, MonoidHom.comp_apply,
-    Matrix.SpecialOrthogonalGroup.coe_map]
-  rfl
+  simp only [cubeRotationToSpecialOrthogonalGroup, MonoidHom.comp_apply,
+    Matrix.SpecialOrthogonalGroup.coe_map, cubeRotationToIntSpecialOrthogonalGroup,
+    MonoidHom.codRestrict_apply, Subgroup.coe_subtype, SpecialLinearGroup.coeMonoidHom_apply,
+    RingHom.mapMatrix_apply]
 
 /-- **The homomorphism `cubeRotationGroup →* SO(3, R)` is injective whenever `2 ≠ 0` in `R`**:
 signed permutation matrices have entries in `{-1, 0, 1}`, and those three integers remain distinct
