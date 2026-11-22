@@ -313,8 +313,8 @@ theorem itoIntegral_mul_isometry
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (T : ℝ≥0) :
     ∫ ω, I T ω * J T ω ∂P = ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P :=
   hW.integral_mul_of_ae_eq_l2Integral hH hK
-    (hW.itoIntegral_ae_eq_l2Integral hH hI)
-    (hW.itoIntegral_ae_eq_l2Integral hK hJ) T
+    (hW.itoIntegral_ae_eq_l2Integral hH hI T)
+    (hW.itoIntegral_ae_eq_l2Integral hK hJ T)
 
 end IsFilteredPreBrownianReal
 
@@ -341,6 +341,6 @@ theorem IsItoIntegral.ae_eq_wienerIntegral {f : ℝ≥0 → ℝ}
   obtain ⟨_, hω⟩ := hI.locallyBrownianIntegrable.ae_memLp.exists
   have hH : BrownianIntegrable ℱ P (fun t _ ↦ f t) :=
     ⟨hI.isStronglyPredictable, fun t ↦ (hω t).comp_fst P⟩
-  exact hW.ae_eq_wienerIntegral_of_ae_eq_l2Integral hf hH (hW.itoIntegral_ae_eq_l2Integral hH hI)
+  exact hW.ae_eq_wienerIntegral_of_ae_eq_l2Integral hf hH (hW.itoIntegral_ae_eq_l2Integral hH hI T)
 
 end TauCeti.Probability

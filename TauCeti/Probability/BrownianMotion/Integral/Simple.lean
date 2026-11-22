@@ -18,9 +18,7 @@ The predictable L² integral agrees with finite-grid gains for random left-endpo
 holdings. Unlike the defining rectangle formula, the holdings need not take finitely many
 values or be bounded. Both results only require square integrability of the actual
 predictable time-product integrand, so they also cover empty intervals and intervals beyond
-the horizon without moment assumptions on their unused heights. Finite-grid elementary holdings
-with square-integrable left-measurable heights belong to the expected-energy domain
-(`TauCeti.BrownianIntegrable.simpleHolding`).
+the horizon without moment assumptions on their unused heights.
 
 These identities connect completion in predictable L² with elementary stochastic integrals,
 and translate ambient time-product `L²` errors against simple holdings into sample-space `L²`
@@ -184,17 +182,6 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   · simp [min_eq_left ht, max_eq_right (le_min hle ht)]
   · have hTj : T ≤ τ j := (not_le.mp ht).le
     simp [min_eq_right hTj, min_eq_right (hTj.trans hle), max_eq_left hTj]
-
-/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
-`BrownianIntegrable`. -/
-theorem _root_.TauCeti.BrownianIntegrable.simpleHolding [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
-    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
-  ⟨Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
-    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using
-      (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
-        (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
 
 /-- For a `BrownianIntegrable` process and any square-integrable elementary holding on a
 nondecreasing grid, the sample-space `L²` distance between `Finance.simpleGains` and `l2Integral`

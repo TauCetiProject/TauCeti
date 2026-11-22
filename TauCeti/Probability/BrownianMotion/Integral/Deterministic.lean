@@ -108,14 +108,14 @@ theorem l2Integral_toPredictableLp_fst (hW : IsFilteredPreBrownianReal ℱ W P)
   rw [← hcomp]
   exact hW.l2Integral_compMeasurePreserving_fst T (hf.toLp f)
 
-/-- Any modification of the predictable `L²` integral process of a deterministic integrand
-agrees almost surely at each time `T` with its Wiener integral. -/
+/-- Any process agreeing almost surely at time `T` with the predictable `L²` integral of a
+deterministic integrand agrees almost surely at `T` with its Wiener integral. -/
 theorem ae_eq_wienerIntegral_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     {f : ℝ≥0 → ℝ} {T : ℝ≥0} (hf : MemLp f 2 (timeMeasure T))
     (hH : BrownianIntegrable ℱ P (fun t _ ↦ f t)) {I : ℝ≥0 → Ω → ℝ}
-    (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
+    (hI : I T =ᵐ[P] hW.l2Integral T (hH.toPredictableLp T)) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
     I T =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) :=
-  (hI T).trans (by rw [hW.l2Integral_toPredictableLp_fst hf hH])
+  hI.trans (by rw [hW.l2Integral_toPredictableLp_fst hf hH])
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

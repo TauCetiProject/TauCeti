@@ -44,6 +44,20 @@ theorem timeMeasure_apply (T : ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s)
   rw [timeMeasure_def, Measure.restrict_apply hs,
     (NNReal.isClosedEmbedding_coe.measurableEmbedding).comap_apply]
 
+/-- Coercion to `ℝ` pushes `timeMeasure T` forward to real Lebesgue measure restricted to
+`(0, T]`. -/
+theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
+    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
+  refine ⟨NNReal.continuous_coe.measurable, Measure.ext fun s hs ↦ ?_⟩
+  rw [Measure.map_apply NNReal.continuous_coe.measurable hs,
+    timeMeasure_apply T (hs.preimage NNReal.continuous_coe.measurable),
+    Measure.restrict_apply hs]
+  congr 1
+  ext x
+  simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_preimage, Set.mem_Ioc]
+  exact ⟨fun ⟨a, ⟨ha, h0a, haT⟩, hax⟩ ↦ hax ▸ ⟨ha, h0a, haT⟩,
+    fun ⟨hx, h0x, hxT⟩ ↦ ⟨⟨x, h0x.le⟩, ⟨hx, h0x, hxT⟩, rfl⟩⟩
+
 /-- A time interval has its Lebesgue length, truncated at the horizon. -/
 @[simp]
 theorem timeMeasure_Ioc (T s t : ℝ≥0) :

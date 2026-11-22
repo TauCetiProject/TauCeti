@@ -85,7 +85,7 @@ private theorem stoppedProcess_dyadicCeilTime_ae_eq_l2Integral
     dsimp only [g]; rw [hrect]; simp [Set.indicator, h1, h2]
   filter_upwards [Lp.coeFn_finsetSum (range N) (fun j ↦ hW.l2Integral T (g j)),
     ae_ball_iff (Finset.countable_toSet (range N)) |>.mpr fun j _ ↦ hterm_ae j,
-    hW.ae_eval_zero_of_ae_eq_l2Integral hH hI] with ω hsum hj hI0
+    hW.ae_eval_zero_of_ae_eq_l2Integral hH (hI 0)] with ω hsum hj hI0
   rw [hsum, Finset.sum_apply,
     ← TauCeti.sum_indicator_dyadicCeilTime_eq_stoppedProcess I k T τ ω hI0]
   exact sum_congr rfl fun j hjmem ↦ (hj j hjmem).symm
@@ -104,7 +104,7 @@ theorem stoppedProcess_ae_eq_l2Integral
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   have hlhs_lim := (hW.martingale_of_ae_eq_l2Integral hH hI_adapt
     hI).tendsto_eLpNorm_stoppedProcess_dyadicCeilTime hI_rc hτ T one_le_two ENNReal.ofNat_ne_top
-    (hW.memLp_of_ae_eq_l2Integral hH hI T)
+    (hW.memLp_of_ae_eq_l2Integral hH (hI T))
   have hrhs_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ hW.l2Integral T ((hH.ite_le (hτ.dyadicCeilTime k)).toPredictableLp T) ω -
         hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T) ω) 2 P) atTop (𝓝 0) := by

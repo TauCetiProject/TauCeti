@@ -218,7 +218,7 @@ theorem martingale_sq_sub_integral_of_ae_eq_l2Integral (hW : IsFilteredPreBrowni
     fun t ↦ ?_
   have hG_lim : Tendsto (fun m ↦ eLpNorm
       (fun ω ↦ Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 - I t ω ^ 2) 1 P) atTop (𝓝 0) :=
-    TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hW.memLp_of_ae_eq_l2Integral hH hI t).eLpNorm_ne_top
+    TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hW.memLp_of_ae_eq_l2Integral hH (hI t)).eLpNorm_ne_top
       (hW.tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
         (fun _ ↦ hH) (fun _ ↦ hI t) (fun m ↦ (hτ m).monotoneOn) ha ha₂ (herr t))
   have hA_lim : Tendsto (fun m ↦ eLpNorm

@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
@@ -223,18 +222,8 @@ theorem exists_isItoIntegral_of_isStronglyProgressive
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   obtain ⟨G, hG_pred, hGH_real⟩ := hH.exists_isStronglyPredictable_ae_prod P
   have hGH (T : ℝ≥0) : Function.uncurry G =ᵐ[(timeMeasure T).prod P] Function.uncurry H := by
-    have hmp :
-        MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
-      refine ⟨NNReal.continuous_coe.measurable, Measure.ext fun s hs ↦ ?_⟩
-      rw [Measure.map_apply NNReal.continuous_coe.measurable hs,
-        timeMeasure_apply T (hs.preimage NNReal.continuous_coe.measurable),
-        Measure.restrict_apply hs]
-      congr 1
-      ext x
-      simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_preimage, Set.mem_Ioc]
-      exact ⟨fun ⟨a, ⟨ha, h0a, haT⟩, hax⟩ ↦ hax ▸ ⟨ha, h0a, haT⟩,
-        fun ⟨hx, h0x, hxT⟩ ↦ ⟨⟨x, h0x.le⟩, ⟨hx, h0x, hxT⟩, rfl⟩⟩
-    have hcomp := (hmp.prod (MeasurePreserving.id P)).quasiMeasurePreserving.ae_eq_comp (hGH_real T)
+    have hcomp := ((measurePreserving_coe_timeMeasure T).prod
+      (MeasurePreserving.id P)).quasiMeasurePreserving.ae_eq_comp (hGH_real T)
     simpa only [Function.comp_def, Prod.map, id_eq, Real.toNNReal_coe,
       Function.uncurry_def] using hcomp
   have hG_loc : LocallyBrownianIntegrable ℱ P G := by
@@ -253,30 +242,27 @@ theorem exists_isItoIntegral_of_isStronglyProgressive
   exact isItoIntegral_indist_of_ae_eq hW hI_ito hI' fun T ↦ (hGH T).trans (hG'H T).symm
 
 /-- **Local-martingale property of the Brownian Itô integral.** Any strongly progressive process
-satisfying `IsItoIntegral` for a `LocallyBrownianIntegrable` integrand is a native local
-martingale on the original raw filtration. -/
+satisfying `IsItoIntegral` is a native local martingale on the original raw filtration. -/
 theorem itoIntegral_localMartingale
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI_prog : IsStronglyProgressive ℱ I) (hI : IsItoIntegral ℱ P W H I) :
     Locally (fun U ↦ Martingale U ℱ P) ℱ I P := by
-  obtain ⟨J, _, hJ_loc, hJ_ito⟩ := hW.exists_isItoIntegral hcont hH
+  obtain ⟨J, _, hJ_loc, hJ_ito⟩ := hW.exists_isItoIntegral hcont hI.locallyBrownianIntegrable
   exact hI_prog.locally_martingale_of_indist hJ_loc (isItoIntegral_unique hW hJ_ito hI)
 
-/-- **Optional stopping of the Brownian Itô integral.** Stopping an Itô integral of a
-`LocallyBrownianIntegrable` integrand `H` at any raw stopping time `σ` yields an Itô integral of
-`H` cut off to `⟦0, σ⟧`. -/
+/-- **Optional stopping of the Brownian Itô integral.** Stopping an Itô integral at any raw
+stopping time `σ` yields an Itô integral of `H` cut off to `⟦0, σ⟧`. -/
 theorem itoIntegral_stoppedProcess
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     {σ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) :
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
       (stoppedProcess I σ) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hH : LocallyBrownianIntegrable ℱ P H := hI.locallyBrownianIntegrable
   obtain ⟨X, U, _, hX_cont, _, hX_ito, hUp, hUcont, hUae, hX_stop⟩ :=
     hW.exists_patched_energyLocalizer_process hcont hH
   let τ (k : ℕ) := TauCeti.nnvolume.energyLocalizer H ((k : ℝ≥0) + 1)
@@ -306,20 +292,19 @@ theorem itoIntegral_stoppedProcess
     rw [ite_eq_left hle, hcut]
   exact hXσ_ito.congr ((isItoIntegral_unique hW hX_ito hI).stoppedProcess σ)
 
-/-- **Difference law on `(σ, τ]` for the Brownian Itô integral.** Restricting a
-`LocallyBrownianIntegrable` integrand to the half-open stochastic interval `(σ, τ]` corresponds to
+/-- **Difference law on `(σ, τ]` for the Brownian Itô integral.** Restricting an integrand
+to the half-open stochastic interval `(σ, τ]` corresponds to
 `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ`. -/
 theorem itoIntegral_ite_Ioc
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) :
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω) := by
-  convert (hW.itoIntegral_stoppedProcess hcont hH hI hτ).sub
-    (hW.itoIntegral_stoppedProcess hcont hH hI (hσ.min hτ)) using 1
+  convert (hW.itoIntegral_stoppedProcess hcont hI hτ).sub
+    (hW.itoIntegral_stoppedProcess hcont hI (hσ.min hτ)) using 1
   ext t ω
   by_cases h1 : (t : WithTop ℝ≥0) ≤ σ ω <;> by_cases h2 : (t : WithTop ℝ≥0) ≤ τ ω
   · have hlt : ¬ (σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω) := fun h ↦ not_le_of_gt h.1 h1
@@ -336,59 +321,55 @@ theorem itoIntegral_ite_Ioc
     rw [ite_eq_right hlt, ite_eq_right h2, ite_eq_right hm, sub_zero]
 
 /-- **Ordered difference law on `(σ, τ]` for the Brownian Itô integral.** When `σ ≤ τ`,
-restricting a `LocallyBrownianIntegrable` integrand to `(σ, τ]` corresponds to
-`stoppedProcess I τ - stoppedProcess I σ`. -/
+restricting an integrand to `(σ, τ]` corresponds to `stoppedProcess I τ - stoppedProcess I σ`. -/
 theorem itoIntegral_ite_Ioc_of_le
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
     (hστ : σ ≤ τ) :
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω) := by
-  simpa only [inf_of_le_left hστ] using hW.itoIntegral_ite_Ioc hcont hH hI hσ hτ
+  simpa only [inf_of_le_left hστ] using hW.itoIntegral_ite_Ioc hcont hI hσ hτ
 
 /-- Indistinguishability form of `itoIntegral_ite_Ioc`. -/
 theorem itoIntegral_ite_Ioc_indist
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
     (hJ : IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
     J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω :=
-  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc hcont hH hI hσ hτ)
+  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc hcont hI hσ hτ)
 
 /-- Indistinguishability form of `itoIntegral_ite_Ioc_of_le`. -/
 theorem itoIntegral_ite_Ioc_indist_of_le
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
     (hστ : σ ≤ τ)
     (hJ : IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
     J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω :=
-  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc_of_le hcont hH hI hσ hτ hστ)
+  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc_of_le hcont hI hσ hτ hστ)
 
 /-- **Deterministic-time measurable multiplier law for the Brownian Itô integral.** Multiplying
-a `LocallyBrownianIntegrable` integrand after a deterministic time `s` by an `ℱ s`-measurable
-random variable `ξ` scales the post-`s` increment `I t - I (min s t)` by `ξ`. No boundedness or
-moment assumption on `ξ` is required. -/
+an integrand after a deterministic time `s` by an `ℱ s`-measurable random variable `ξ` scales the
+post-`s` increment `I t - I (min s t)` by `ξ`. No boundedness or moment assumption on `ξ` is
+required. -/
 theorem itoIntegral_ite_lt_mul
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if s < t then ξ ω * H t ω else 0)
       (fun t ω ↦ ξ ω * (I t ω - I (min s t) ω)) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hH : LocallyBrownianIntegrable ℱ P H := hI.locallyBrownianIntegrable
   obtain ⟨X, U, _, hX_cont, _, hX_ito, _, hUcont, hUae, hX_stop⟩ :=
     hW.exists_patched_energyLocalizer_process hcont hH
   let τ₁ (m : ℕ) := TauCeti.nnvolume.energyLocalizer H ((m : ℝ≥0) + 1)
@@ -534,20 +515,18 @@ theorem itoIntegral_ite_lt_mul
 theorem itoIntegral_ite_lt_mul_indist
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I)
     (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ)
     (hJ : IsItoIntegral ℱ P W (fun t : ℝ≥0 ↦ fun ω ↦ if s < t then ξ ω * H t ω else 0) J) :
     J ≡ᵐ[P] fun t ω ↦ ξ ω * (I t ω - I (min s t) ω) :=
-  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_lt_mul hcont hH hI s hξ)
+  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_lt_mul hcont hI s hξ)
 
-/-- **Local congruence of the Brownian Itô integral.** If two `LocallyBrownianIntegrable`
-integrands agree product-almost-everywhere on `⟦0, σ⟧` over every finite horizon for a raw stopping
-time `σ`, their Itô integrals agree up to indistinguishability when stopped at `σ`. -/
+/-- **Local congruence of the Brownian Itô integral.** If two integrands agree
+product-almost-everywhere on `⟦0, σ⟧` over every finite horizon for a raw stopping time `σ`,
+their Itô integrals agree up to indistinguishability when stopped at `σ`. -/
 theorem itoIntegral_local_congr
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H) (hK : LocallyBrownianIntegrable ℱ P K)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J)
     {σ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ)
     (hHK : ∀ t : ℝ≥0,
@@ -556,32 +535,31 @@ theorem itoIntegral_local_congr
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then K s ω else 0)) :
     stoppedProcess I σ ≡ᵐ[P] stoppedProcess J σ := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hIσ := (hW.itoIntegral_stoppedProcess hcont hH hI hσ).congr_integrand
-    (hK.isStronglyPredictable.ite_le hσ) hHK
-  exact isItoIntegral_unique hW hIσ (hW.itoIntegral_stoppedProcess hcont hK hJ hσ)
+  have hIσ := (hW.itoIntegral_stoppedProcess hcont hI hσ).congr_integrand
+    (hJ.isStronglyPredictable.ite_le hσ) hHK
+  exact isItoIntegral_unique hW hIσ (hW.itoIntegral_stoppedProcess hcont hJ hσ)
 
 /-- **Closed-level energy-stage identification for any Brownian Itô integral.** Stopping an Itô
-integral of a `LocallyBrownianIntegrable` integrand at `TauCeti.nnvolume.energyLocalizer H C`
-identifies at each time `t` almost everywhere with the completed `L²` integral of its stopped
-finite-energy cutoff. -/
+integral at `TauCeti.nnvolume.energyLocalizer H C` identifies at each time `t` almost everywhere
+with the completed `L²` integral of its stopped finite-energy cutoff. -/
 theorem stoppedProcess_energyLocalizer_ae_eq_l2Integral
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I) (C t : ℝ≥0) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
     stoppedProcess I (TauCeti.nnvolume.energyLocalizer H C) t =ᵐ[P]
-      hW.l2Integral t ((hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer
+      hW.l2Integral t ((hI.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer
         (P := P) C).toPredictableLp t) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hH : LocallyBrownianIntegrable ℱ P H := hI.locallyBrownianIntegrable
   let τ := TauCeti.nnvolume.energyLocalizer H C
   have hτ : IsStoppingTime ℱ τ :=
-    hH.isStronglyPredictable.isStoppingTime_energyLocalizer TauCeti.nnvolume C
-  let hHcut := hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) C
+    hI.isStronglyPredictable.isStoppingTime_energyLocalizer TauCeti.nnvolume C
+  let hHcut := hI.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer (P := P) C
   have hstop : IsItoIntegral ℱ P W
       (fun s ω ↦ if (s : WithTop ℝ≥0) ≤ τ ω then TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0)
       (stoppedProcess I τ) := by
-    refine (hW.itoIntegral_stoppedProcess hcont hH hI hτ).congr_integrand
+    refine (hW.itoIntegral_stoppedProcess hcont hI hτ).congr_integrand
       hHcut.isStronglyPredictable fun u ↦ ?_
     filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure u) (ν := P)).ae
         (ae_mem_Ioc_timeMeasure u),
