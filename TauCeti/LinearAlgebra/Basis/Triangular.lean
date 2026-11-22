@@ -19,21 +19,22 @@ submodules in the sense of `Module.Basis.flag`. Combined with
 `Module.Basis.mem_flag_iff_repr_eq_zero`, a vector in the span of `e 0, …, e (j - 1)` has
 vanishing `b`-coordinates from the `j`-th on.
 
-For a linearly ordered index type, a family `v` is triangular with respect to a basis `b` with
-diagonal coefficients `c` when each `v i - c i • b i` is a combination of the `b j` with `j < i`.
-Its matrix in `b` is then upper triangular, so its determinant in `b` is the product of the `c i`.
+For a finite index type with a map `f` into a preorder, a family `v` is triangular with respect to
+a basis `b` with diagonal coefficients `c` when each `v i - c i • b i` is a combination of the
+`b j` with `f j < f i`. Its matrix in `b` is then upper triangular for a linear order refining
+`f j < f i`, so its determinant in `b` is the product of the `c i`. Taking `f = id` gives the
+same for a preordered index type and the `b j` with `j < i`.
 
 ## Main results
 
 * `Module.Basis.flag_eq_of_triangular`: a basis triangular with respect to `e` has the same flag
   as `e`.
-* `Module.Basis.det_eq_prod_of_sub_smul_mem_span`: the determinant of a triangular family is the
-  product of its diagonal coefficients.
-* `Module.Basis.det_pos_of_sub_smul_mem_span`: over an ordered ring, a triangular family with
-  positive diagonal coefficients has positive determinant.
-* `Module.Basis.det_pos_of_sub_smul_mem_span_image_apply_lt`: the same for a family triangular
-  with respect to the relation `f r < f p` for a map `f` into a preorder, such as the projection
-  `Prod.fst` from a product index type.
+* `Module.Basis.det_eq_prod_of_sub_smul_mem_span_image_apply_lt`: the determinant of a family
+  triangular along a map `f` into a preorder is the product of its diagonal coefficients.
+* `Module.Basis.det_pos_of_sub_smul_mem_span_image_apply_lt`: over an ordered ring, such a family
+  with positive diagonal coefficients has positive determinant.
+* `Module.Basis.det_eq_prod_of_sub_smul_mem_span`, `Module.Basis.det_pos_of_sub_smul_mem_span`:
+  the same for a family triangular with respect to a preorder on the index type itself.
 -/
 
 public section
@@ -88,64 +89,70 @@ theorem flag_eq_of_triangular (b : Basis (Fin n) K E) {e : Basis (Fin n) K E}
 
 section Det
 
-variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
-  [LinearOrder ι]
+variable {ι α R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [DecidableEq ι]
+
+/-- The determinant of a family `v` that is triangular with respect to a basis `b` along a map
+`f` into a preorder, in the sense that each `v i - c i • b i` is a combination of the `b j` with
+`f j < f i`, is the product of the diagonal coefficients `c i`. For instance, `f = Prod.fst`
+compares only the first coordinates of a family indexed by a product. -/
+theorem det_eq_prod_of_sub_smul_mem_span_image_apply_lt [Preorder α] (b : Basis ι R M)
+    (f : ι → α) {v : ι → M} {c : ι → R}
+    (hv : ∀ i, v i - c i • b i ∈ span R (b '' {j | f j < f i})) : b.det v = ∏ i, c i := by
+  classical
+  -- The coordinates of `v i` at the indices `j` with `¬f j < f i` are those of `c i • b i`.
+  have hrepr (i j : ι) (hij : ¬f j < f i) : b.repr (v i) j = c i * Finsupp.single i 1 j := by
+    have h0 : b.repr (v i - c i • b i) j = 0 := by
+      by_contra h
+      exact hij (b.mem_span_image.1 (hv i) (Finsupp.mem_support_iff.2 h))
+    rwa [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, repr_self, smul_eq_mul,
+      sub_eq_zero] at h0
+  -- The number of indices below `i` along `f` grows strictly along `f j < f i`.
+  let h (i : ι) : ℕ := #{j | f j < f i}
+  have hh {i j : ι} (hji : f j < f i) : h j < h i := card_lt_card <|
+    ssubset_iff_of_subset (monotone_filter_right _ fun _ _ hk ↦ hk.trans hji) |>.2
+      ⟨j, by simpa using hji, by simp⟩
+  -- Refine the order by `h` to a linear order on `ι`, breaking ties along `Fin`; the matrix of
+  -- `v` in `b` is upper triangular for it.
+  let g (i : ι) : Lex (ℕ × Fin (Fintype.card ι)) := toLex (h i, Fintype.equivFin ι i)
+  let : LinearOrder ι := LinearOrder.lift' g
+    fun i j hij ↦ (Fintype.equivFin ι).injective (Prod.ext_iff.1 (toLex.injective hij)).2
+  -- `<` on `ι` is by definition `<` on the images under `g`.
+  have hlt {i j : ι} : i < j ↔ g i < g j := Iff.rfl
+  -- The determinant does not depend on the `DecidableEq ι` instance.
+  obtain rfl : ‹DecidableEq ι› = LinearOrder.toDecidableEq := Subsingleton.elim _ _
+  rw [det_apply, Matrix.det_of_isUpperTriangular]
+  · simp [toMatrix_apply, hrepr _ _ (lt_irrefl _)]
+  · intro i j (hji : j < i)
+    have hfij : ¬f i < f j := fun hij ↦ (hlt.1 hji).not_ge <|
+      (Prod.Lex.toLex_le_toLex.2 (.inl (hh hij)))
+    rw [toMatrix_apply, hrepr _ _ hfij, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+
+/-- Over an ordered ring, a family `v` that is triangular with respect to a basis `b` along a map
+`f` into a preorder with positive diagonal coefficients `c i`, in the sense of
+`Module.Basis.det_eq_prod_of_sub_smul_mem_span_image_apply_lt`, has positive determinant in `b`. -/
+theorem det_pos_of_sub_smul_mem_span_image_apply_lt [PartialOrder R] [IsStrictOrderedRing R]
+    [Preorder α] (b : Basis ι R M) (f : ι → α) {v : ι → M} {c : ι → R} (hc : ∀ i, 0 < c i)
+    (hv : ∀ i, v i - c i • b i ∈ span R (b '' {j | f j < f i})) : 0 < b.det v := by
+  rw [b.det_eq_prod_of_sub_smul_mem_span_image_apply_lt f hv]
+  exact prod_pos fun i _ ↦ hc i
 
 /-- The determinant of a family `v` that is triangular with respect to a basis `b`, in the sense
 that each `v i - c i • b i` is a combination of the `b j` with `j < i`, is the product of the
 diagonal coefficients `c i`. -/
-theorem det_eq_prod_of_sub_smul_mem_span (b : Basis ι R M) {v : ι → M} {c : ι → R}
-    (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : b.det v = ∏ i, c i := by
-  -- The coordinates of `v i` at the indices `j ≥ i` are those of `c i • b i`.
-  have hrepr (i j : ι) (hij : i ≤ j) : b.repr (v i) j = c i * Finsupp.single i 1 j := by
-    have h0 : b.repr (v i - c i • b i) j = 0 := by
-      by_contra h
-      exact not_lt.2 hij (b.mem_span_image.1 (hv i) (Finsupp.mem_support_iff.2 h))
-    rwa [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, repr_self, smul_eq_mul,
-      sub_eq_zero] at h0
-  rw [det_apply, Matrix.det_of_isUpperTriangular]
-  · simp [toMatrix_apply, hrepr _ _ le_rfl]
-  · intro i j (hji : j < i)
-    rw [toMatrix_apply, hrepr _ _ hji.le, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+theorem det_eq_prod_of_sub_smul_mem_span [Preorder ι] (b : Basis ι R M) {v : ι → M} {c : ι → R}
+    (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : b.det v = ∏ i, c i :=
+  b.det_eq_prod_of_sub_smul_mem_span_image_apply_lt id fun i ↦ by
+    simpa only [id_eq, Set.Iio_def] using hv i
 
 /-- Over an ordered ring, a family `v` that is triangular with respect to a basis `b` with positive
 diagonal coefficients `c i`, in the sense of `Module.Basis.det_eq_prod_of_sub_smul_mem_span`, has
 positive determinant in `b`. -/
-theorem det_pos_of_sub_smul_mem_span [PartialOrder R] [IsStrictOrderedRing R] (b : Basis ι R M)
-    {v : ι → M} {c : ι → R} (hc : ∀ i, 0 < c i)
-    (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : 0 < b.det v := by
-  rw [b.det_eq_prod_of_sub_smul_mem_span hv]
-  exact prod_pos fun i _ ↦ hc i
+theorem det_pos_of_sub_smul_mem_span [PartialOrder R] [IsStrictOrderedRing R] [Preorder ι]
+    (b : Basis ι R M) {v : ι → M} {c : ι → R} (hc : ∀ i, 0 < c i)
+    (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : 0 < b.det v :=
+  b.det_pos_of_sub_smul_mem_span_image_apply_lt id hc fun i ↦ by
+    simpa only [id_eq, Set.Iio_def] using hv i
 
 end Det
-
-section Comp
-
-variable {ι η R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype η] [DecidableEq η]
-  [Preorder ι] [PartialOrder R] [IsStrictOrderedRing R]
-
-/-- Over an ordered ring, a family `v` that is triangular with respect to a basis `b` with positive
-diagonal coefficients `c p`, in the sense that each `v p - c p • b p` is a combination of the `b r`
-with `f r < f p` for a map `f` into a preorder, has positive determinant in `b`. This is
-`Module.Basis.det_pos_of_sub_smul_mem_span` for an order on the index type refining the one pulled
-back along `f`; for instance, `f = Prod.fst` compares only the first coordinates of a family
-indexed by a product. -/
-theorem det_pos_of_sub_smul_mem_span_image_apply_lt (b : Basis η R M) (f : η → ι) {v : η → M}
-    {c : η → R} (hc : ∀ p, 0 < c p)
-    (hv : ∀ p, v p - c p • b p ∈ span R (b '' {r | f r < f p})) : 0 < b.det v := by
-  classical
-  -- The number of indices below `p` along `f` grows strictly along `f r < f p`.
-  let h (p : η) : ℕ := #{r | f r < f p}
-  have hh {r p : η} (hr : f r < f p) : h r < h p := card_lt_card <|
-    ssubset_iff_of_subset (monotone_filter_right _ fun _ _ hs ↦ hs.trans hr) |>.2
-      ⟨r, by simpa using hr, by simp⟩
-  -- Refine the order by `h` to a linear order on `η`, breaking ties along `Fin`.
-  let : LinearOrder η := LinearOrder.lift' (fun p ↦ toLex (h p, Fintype.equivFin η p))
-    fun p q hpq ↦ (Fintype.equivFin η).injective (Prod.ext_iff.1 (toLex.injective hpq)).2
-  -- `convert` identifies the `DecidableEq η` instance of the statement with that of the order.
-  convert b.det_pos_of_sub_smul_mem_span hc fun p ↦
-    span_mono (Set.image_mono fun r hr ↦ Prod.Lex.toLex_lt_toLex.2 (.inl (hh hr))) (hv p)
-
-end Comp
 
 end Module.Basis
