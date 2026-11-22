@@ -43,7 +43,7 @@ lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_appl
 * `Matrix.mulVecCLM`: `Matrix.mulVec` as a continuous linear map `(ι → R) →L[R] (κ → R)`, with
   continuity in families over a normed field (`Matrix.continuous_mulVecCLM`,
   `Matrix.continuousOn_mulVecCLM`).
-* `dotProductCLM`: the covector `v ↦ c ⬝ᵥ v` as a continuous linear functional on `ι → R`.
+* `TauCeti.dotProductCLM`: the covector `v ↦ c ⬝ᵥ v` as a continuous linear functional on `ι → R`.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
 -/
@@ -228,6 +228,8 @@ end MulVecCLM
 
 end Matrix
 
+namespace TauCeti
+
 section DotProductCLM
 
 variable {ι R : Type*} [Fintype ι] [CommSemiring R] [TopologicalSpace R] [ContinuousAdd R]
@@ -244,4 +246,11 @@ def dotProductCLM (c : ι → R) : (ι → R) →L[R] R where
 theorem dotProductCLM_apply (c v : ι → R) : dotProductCLM c v = c ⬝ᵥ v :=
   dotProductBilin_apply_apply R R c v
 
+/-- Coercing `dotProductCLM c` to a linear map gives `dotProductBilin R R c`. -/
+@[simp]
+theorem toLinearMap_dotProductCLM (c : ι → R) :
+    (dotProductCLM c : (ι → R) →ₗ[R] R) = dotProductBilin R R c := (rfl)
+
 end DotProductCLM
+
+end TauCeti
