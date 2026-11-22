@@ -60,6 +60,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
   element of `H^{s,p}` defined by such a function depends linearly on it.
+* `TemperedDistribution.besselPotential_fourierMultiplierCLM`: Fourier multipliers of temperate
+  growth commute with the Bessel potentials.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -147,6 +149,16 @@ theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
     besselPotential E F s = ContinuousLinearMap.id ℂ _ := by
   rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
     funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
+
+/-- Fourier multipliers whose symbols have temperate growth commute with the Bessel potentials. -/
+theorem besselPotential_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (s : ℝ)
+    (f : 𝓢'(E, F)) :
+    besselPotential E F s (fourierMultiplierCLM F g f) =
+      fourierMultiplierCLM F g (besselPotential E F s f) := by
+  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  simp only [besselPotential]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hw,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply hw hg, mul_comm]
 
 variable [CompleteSpace F]
 
