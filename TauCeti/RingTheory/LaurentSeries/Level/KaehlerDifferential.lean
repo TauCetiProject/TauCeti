@@ -64,7 +64,6 @@ zero (`Level.ContinuousKaehlerDifferential.map_eq_zero_iff`).
   `Tr_{L/F} (g ω) = Tr_{L/F} (g) ω` for `ω` a one-form on `F`.
 * `Level.ContinuousKaehlerDifferential.trace_map`: the trace of a pulled
   back one-form is `d` times the form.
-* `Level.ContinuousKaehlerDifferential.trace_D`: `Tr_{L/F} (d_u x) = d (Tr_{L/F} x)`.
 * `Level.ContinuousKaehlerDifferential.residue_trace`:
   `Res_F (Tr_{L/F} ω) = Res_L ω`.
 
@@ -400,25 +399,6 @@ theorem equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) 
   rw [trace_smul_map, map_smul, TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
     smul_eq_mul]
   simp
-
-/-- The trace of `d_u x` is the base differential `d(Tr_{L/F} x)`. -/
-@[simp]
-theorem trace_D (x : Level K d) :
-    trace K d (D K d x) =
-      TauCeti.ContinuousKaehlerDifferential.D K (Algebra.trace K⸨X⸩ (Level K d) x) := by
-  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
-  rw [equivLaurentSeries_trace, equivLevel_D,
-    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D]
-  ext j
-  have hd : ((d : ℕ) : K) ≠ 0 := NeZero.ne _
-  have h1 : (d : ℤ) * j - -((d : ℤ) - 1) = (d : ℤ) * (j + 1) - 1 := by ring
-  have hd1 : derivative K (single (d : ℤ) (1 : K)) = single ((d : ℤ) - 1) ((d : ℕ) : K) := by
-    simp [derivative_apply]
-  rw [← map_div₀, coeff_trace, RingEquiv.apply_symm_apply, hd1, div_eq_mul_inv,
-    HahnSeries.inv_single, coeff_mul_single, h1, coeff_derivative_sub_one, coeff_derivative,
-    coeff_trace]
-  simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_natCast, nsmul_eq_mul]
-  field_simp [hd]
 
 /-- **The trace preserves residues.** When `d` is nonzero in `K`, for every one-form `ω = g du`
 on the level `L = K⸨u⸩`, the residue of `Tr_{L/F} ω` at `t` is the residue of `ω` at `u`:

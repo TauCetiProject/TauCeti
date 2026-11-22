@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Kaehler.MapSemilinear
 public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Basic
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
+import TauCeti.RingTheory.Derivation.Basic
+
 /-!
 # Continuous one-forms of étale extensions of Laurent series
 
@@ -58,7 +60,7 @@ induced by `D_L`. This file shows:
 * `Extension.ContinuousKaehlerDifferential.mapAlgHom` and `mapAlgEquiv`: semilinear functoriality
   along `F`-algebra homomorphisms and isomorphisms, and `relativeTensorEquiv` in towers.
 * `Extension.ContinuousKaehlerDifferential.lift` and `continuousLift`: the factorization of a
-  derivation that is continuous on `F` (or on `L` in the `F`-module topology) through `d`.
+  derivation that is continuous on `F` (or on `L` when `F → L` is continuous) through `d`.
 
 ## Main results
 
@@ -75,8 +77,8 @@ induced by `D_L`. This file shows:
 * `Extension.ContinuousKaehlerDifferential.tensorEquiv_tmul`: the equivalence sends `x ⊗ ω` to
   `x` times the pullback of `ω`.
 * `Extension.ContinuousKaehlerDifferential.existsUnique_compDer_eq` and
-  `existsUnique_compDer_eq_of_continuous`: a derivation continuous on `F` (or on `L` in the
-  `F`-module topology) factors uniquely through `d`.
+  `existsUnique_compDer_eq_of_continuous`: a derivation continuous on `F` (or on `L` when `F → L`
+  is continuous) factors uniquely through `d`.
 * `Extension.ContinuousKaehlerDifferential.exists_compDer_eq_iff` and
   `exists_compDer_eq_iff_continuous`: a derivation factors through `d` if and only if it is
   continuous on `F` (or on `L` in the `F`-module topology).
@@ -513,13 +515,6 @@ theorem continuous_compAlgebraMap_compDer (ℓ : ContinuousKaehlerDifferential K
   rw [h]
   exact TauCeti.ContinuousKaehlerDifferential.continuous_compDer _
 
-omit [Algebra K⸨X⸩ L] [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L] in
-private theorem compDer_apply {E N : Type*} [AddCommMonoid E] [Module L E] [Module K E]
-    [IsScalarTower K L E] [AddCommMonoid N] [Module L N] [Module K N] [IsScalarTower K L N]
-    (ℓ : E →ₗ[L] N) (δ : Derivation K L E) (x : L) :
-    (ℓ.compDer δ) x = ℓ (δ x) :=
-  (rfl)
-
 section Hausdorff
 
 variable [T2Space M]
@@ -531,7 +526,8 @@ theorem apply_eq_derivation_smul (δ : Derivation K L M) (hδ : Continuous (δ.c
   have : IsScalarTower K K⸨X⸩ M := IsScalarTower.to₁₂₄ K K⸨X⸩ L M
   have h : δ = (LinearMap.toSpanSingleton L M (δ (algebraMap K⸨X⸩ L (single 1 1)))).compDer
       (derivation K L) := Derivation.eq_of_formallyUnramified (S := K⸨X⸩) fun f ↦ by
-    rw [compDer_apply, derivation_algebraMap, LinearMap.toSpanSingleton_apply, algebraMap_smul]
+    rw [LinearMap.compDer_apply, derivation_algebraMap, LinearMap.toSpanSingleton_apply,
+      algebraMap_smul]
     exact (δ.compAlgebraMap K⸨X⸩).apply_eq_laurentSeriesDerivation_smul hδ f
   exact congr($h x)
 
@@ -772,6 +768,57 @@ multiplication on `L` is continuous. -/
 theorem continuous_map [ContinuousSMul K⸨X⸩ L] : Continuous (map K L) :=
   TauCeti.ContinuousKaehlerDifferential.continuous_of_linearMap (map K L)
 
+section ContinuousAlgebraMap
+
+variable {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
+  [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
+
+/-- When `algebraMap K⸨X⸩ L` is continuous, every continuous `K`-derivation `δ : L → M` into
+a Hausdorff `L`-module with continuous `L`-scalar multiplication factors uniquely through `d`. -/
+theorem existsUnique_compDer_eq_of_continuous (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) :
+    ∃! ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ := by
+  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
+  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
+  have : ContinuousSMul K⸨X⸩ M := ⟨(hL.comp continuous_fst).smul continuous_snd⟩
+  exact existsUnique_compDer_eq δ (hδ.comp hL)
+
+/-- **Topological universal property of `Ω¹_cont(L/K)` as a continuous linear map.** When
+`algebraMap K⸨X⸩ L` is continuous, every continuous `K`-derivation `δ : L → M` into a Hausdorff
+`L`-module with continuous addition and `L`-scalar multiplication factors through `d` by a
+continuous `L`-linear map. -/
+noncomputable def continuousLift [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) :
+    ContinuousKaehlerDifferential K L →L[L] M :=
+  let ℓ := (existsUnique_compDer_eq_of_continuous hL δ hδ).choose
+  { ℓ with cont := IsModuleTopology.continuous_of_linearMap ℓ }
+
+/-- The continuous factorization `continuousLift hL δ hδ` recovers `δ` upon precomposition with
+`d`. -/
+theorem compDer_continuousLift [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) :
+    (continuousLift hL δ hδ).toLinearMap.compDer (D K L) = δ :=
+  (existsUnique_compDer_eq_of_continuous hL δ hδ).choose_spec.1
+
+/-- Evaluating `continuousLift hL δ hδ` on `d x` recovers `δ x`. -/
+@[simp]
+theorem continuousLift_D [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) (x : L) :
+    continuousLift hL δ hδ (D K L x) = δ x :=
+  DFunLike.congr_fun (compDer_continuousLift hL δ hδ) x
+
+/-- The continuous factorization `continuousLift hL δ hδ` is unique among continuous `L`-linear
+maps factoring `δ` through `d`. -/
+theorem continuousLift_unique [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ)
+    (ℓ : ContinuousKaehlerDifferential K L →L[L] M)
+    (h : ℓ.toLinearMap.compDer (D K L) = δ) :
+    ℓ = continuousLift hL δ hδ :=
+  ContinuousLinearMap.coe_injective <|
+    (existsUnique_compDer_eq_of_continuous hL δ hδ).choose_spec.2 ℓ.toLinearMap h
+
+end ContinuousAlgebraMap
+
 section ModuleTopology
 
 variable [IsModuleTopology K⸨X⸩ L]
@@ -784,7 +831,7 @@ theorem continuous_compDer {M : Type*} [AddCommMonoid M] [Module L M] [Module K 
     (ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M) :
     Continuous (ℓ.compDer (D K L)) :=
   ((continuous_derivation K L).smul continuous_const).congr fun x ↦ by
-    rw [compDer_apply, ← derivation_smul_D_algebraMap_single_one x, map_smul]
+    rw [LinearMap.compDer_apply, ← derivation_smul_D_algebraMap_single_one x, map_smul]
     rfl
 
 variable (K L) in
@@ -809,60 +856,6 @@ theorem _root_.Derivation.continuous_iff_continuous_compAlgebraMap_laurentSeries
   rw [← compDer_lift δ h]
   exact continuous_compDer (lift δ h)
 
-/-- When `L` carries the `K⸨X⸩`-module topology, every continuous `K`-derivation `δ : L → M` into
-a Hausdorff `L`-module with continuous `L`-scalar multiplication factors uniquely through `d`. -/
-theorem existsUnique_compDer_eq_of_continuous {M : Type*} [AddCommGroup M] [Module L M]
-    [Module K M] [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
-    (δ : Derivation K L M) (hδ : Continuous δ) :
-    ∃! ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ := by
-  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
-  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
-  have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  exact existsUnique_compDer_eq δ (hδ.comp (continuous_algebraMap K⸨X⸩ L))
-
-/-- **Topological universal property of `Ω¹_cont(L/K)` as a continuous linear map.** When `L`
-carries the `K⸨X⸩`-module topology, every continuous `K`-derivation `δ : L → M` into a Hausdorff
-`L`-module with continuous addition and `L`-scalar multiplication factors through `d` by a
-continuous `L`-linear map. -/
-noncomputable def continuousLift {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul L M]
-    (δ : Derivation K L M) (hδ : Continuous δ) :
-    ContinuousKaehlerDifferential K L →L[L] M :=
-  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
-  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
-  have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  let ℓ := lift δ (hδ.comp (continuous_algebraMap K⸨X⸩ L))
-  { ℓ with cont := IsModuleTopology.continuous_of_linearMap ℓ }
-
-/-- Evaluating `continuousLift δ hδ` on `d x` recovers `δ x`. -/
-@[simp]
-theorem continuousLift_D {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul L M]
-    (δ : Derivation K L M) (hδ : Continuous δ) (x : L) :
-    continuousLift δ hδ (D K L x) = δ x :=
-  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
-  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
-  have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  lift_D δ (hδ.comp (continuous_algebraMap K⸨X⸩ L)) x
-
-/-- The continuous factorization `continuousLift δ hδ` recovers `δ` upon precomposition with `d`. -/
-theorem compDer_continuousLift {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul L M]
-    (δ : Derivation K L M) (hδ : Continuous δ) :
-    (continuousLift δ hδ).toLinearMap.compDer (D K L) = δ :=
-  Derivation.ext (continuousLift_D δ hδ)
-
-/-- The continuous factorization `continuousLift δ hδ` is unique among continuous `L`-linear maps
-factoring `δ` through `d`. -/
-theorem continuousLift_unique {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul L M]
-    (δ : Derivation K L M) (hδ : Continuous δ) (ℓ : ContinuousKaehlerDifferential K L →L[L] M)
-    (h : ℓ.toLinearMap.compDer (D K L) = δ) :
-    ℓ = continuousLift δ hδ :=
-  ContinuousLinearMap.coe_injective <| hom_ext <| by
-    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, continuousLift_D, ← h]
-    exact (compDer_apply (ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M) (D K L) _).symm
-
 /-- **Topological universal property of `Ω¹_cont(L/K)`.** When `L` carries the `K⸨X⸩`-module
 topology, a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous `L`-scalar
 multiplication factors through `d` if and only if `δ` is continuous on `L`. -/
@@ -871,7 +864,7 @@ theorem exists_compDer_eq_iff_continuous {M : Type*} [AddCommGroup M] [Module L 
     (δ : Derivation K L M) :
     (∃ ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ) ↔ Continuous δ :=
   ⟨fun ⟨ℓ, h⟩ ↦ h ▸ continuous_compDer ℓ,
-    fun hδ ↦ (existsUnique_compDer_eq_of_continuous δ hδ).exists⟩
+    fun hδ ↦ (existsUnique_compDer_eq_of_continuous (continuous_algebraMap K⸨X⸩ L) δ hδ).exists⟩
 
 /-- For a finite formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology, the `L`-module
 topology on `Ω¹_cont(L/K)` is also its `K⸨X⸩`-module topology. -/

@@ -54,9 +54,10 @@ traces, and computing `Extension.ContinuousKaehlerDifferential.residue K L ω` a
 * `Extension.ContinuousKaehlerDifferential.equivLevelContinuousKaehlerDifferential_D`:
   `equivLevelContinuousKaehlerDifferential K d` sends `D K (Level K d) x` to
   `Level.ContinuousKaehlerDifferential.D K d x`.
-* `Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential` and
+* `Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential`,
+  `Level.ContinuousKaehlerDifferential.trace_D`, and
   `residue_eq_coeff_equivLevelContinuousKaehlerDifferential`: compatibility of
-  `equivLevelContinuousKaehlerDifferential K d` with traces and `u⁻¹`-residues.
+  `equivLevelContinuousKaehlerDifferential K d` with traces, differentials, and `u⁻¹`-residues.
 * `Extension.ContinuousKaehlerDifferential.residue_eq_levelResidue` and
   `Extension.ContinuousKaehlerDifferential.residue_eq_residueOfFinrankEq`: agreement of the
   intrinsic differential residue on `Ω¹_cont(L/K)` with `Level.residue` and
@@ -211,6 +212,16 @@ theorem trace_equivLevelContinuousKaehlerDifferential
   induction η using TensorProduct.inductionOn with
   | tmul g ω => simp
   | add x y hx hy => simp [hx, hy]
+
+/-- The trace of `d_u x` is the base differential `d(Tr_{L/F} x)`. -/
+@[simp]
+theorem _root_.TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.trace_D
+    (x : Level K d) :
+    Level.ContinuousKaehlerDifferential.trace K d
+        (Level.ContinuousKaehlerDifferential.D K d x) =
+      TauCeti.ContinuousKaehlerDifferential.D K (Algebra.trace K⸨X⸩ (Level K d) x) := by
+  rw [← equivLevelContinuousKaehlerDifferential_D,
+    trace_equivLevelContinuousKaehlerDifferential, ContinuousKaehlerDifferential.trace_D]
 
 /-- **`Res_F(Tr_{L/F} ω) = Res_L(ω)` on a finite separable ramified level.** For `L = Level K d`
 with `d` nonzero in `K`, the trace-defined residue `residue K (Level K d) ω` equals the coefficient
@@ -431,9 +442,9 @@ theorem laurentDifferentialEquiv_symm_laurentDifferentialTensorEquiv
 theorem laurentDifferentialEquiv_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     e.laurentDifferentialEquiv (x • ω) = e x • e.laurentDifferentialEquiv ω := by
-  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
-  rw [← LinearEquiv.map_smul, laurentDifferentialEquiv_tensorEquiv,
-    laurentDifferentialEquiv_tensorEquiv, laurentDifferentialTensorEquiv_smul]
+  rw [laurentDifferentialEquiv_apply, laurentDifferentialEquiv_apply,
+    Extension.ContinuousKaehlerDifferential.mapSemilinear_smul, AlgEquiv.coe_toAlgHom,
+    ContinuousLinearEquiv.map_smul]
 
 @[simp]
 theorem laurentDifferentialEquiv_symm_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : Level K d)
@@ -466,9 +477,9 @@ theorem trace_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     Level.ContinuousKaehlerDifferential.trace K d (e.laurentDifferentialEquiv ω) =
       Extension.ContinuousKaehlerDifferential.trace K L ω := by
-  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
-  rw [laurentDifferentialEquiv_tensorEquiv, trace_laurentDifferentialTensorEquiv,
-    Extension.ContinuousKaehlerDifferential.trace_tensorEquiv]
+  rw [laurentDifferentialEquiv_apply,
+    Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential,
+    Extension.ContinuousKaehlerDifferential.trace_mapSemilinear_algEquiv]
 
 @[simp]
 theorem trace_laurentDifferentialEquiv_symm (e : L ≃ₐ[K⸨X⸩] Level K d)
