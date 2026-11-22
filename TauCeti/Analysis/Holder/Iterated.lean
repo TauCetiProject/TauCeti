@@ -59,6 +59,8 @@ conditions are closed under uniform convergence, which gives completeness.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
   derivative fields as continuous linear maps; the second has operator norm at most one.
 * `TauCeti.CkHolderSpace.holderWith`: for `α ≤ 1`, an element is itself globally `α`-Hölder.
+* `TauCeti.CkHolderSpace.fderivL`: the derivative `C^{k+1,α} → C^{k,α}` with values in `E →L[ℝ] F`,
+  of operator norm at most one.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.supportedCkHolderSubmodule`: the elements vanishing off a set `s`; it is closed
   (`TauCeti.isClosed_supportedCkHolderSubmodule`), hence complete for a complete codomain, and
@@ -742,6 +744,76 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpace k α
   exact isClosed_isJetGraph.completeSpace_coe
 
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpace
+
+/-! ### The derivative -/
+
+section FDeriv
+
+/-- The `(k + 1)`-st derivative of `f` is the `k`-th derivative of `Df` with its last variable
+joined to the others. -/
+private theorem iteratedFDeriv_succ_eq_comp (f : E → F) :
+    _root_.iteratedFDeriv ℝ (k + 1) f = (continuousMultilinearCurryRightEquiv' ℝ k E F).symm ∘
+      _root_.iteratedFDeriv ℝ k (fderiv ℝ f) :=
+  funext fun _ ↦ iteratedFDeriv_succ_eq_comp_right
+
+/-- The derivative of `f ∈ C^{k+1,α}` as an element of `C^{k,α}`; `fderivL` is its bundled
+form. -/
+private def fderivAux (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E (E →L[ℝ] F) :=
+  ofContDiff (fderiv ℝ f) f.contDiff_fderiv
+    (fun _ hi ↦ ⟨‖f‖, fun x ↦ by
+      rw [norm_iteratedFDeriv_fderiv]
+      exact f.norm_iteratedFDeriv_apply_le (by omega) x⟩)
+    ((continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.holderWith_comp_iff.mp
+      (by simpa only [← iteratedFDeriv_succ_eq_comp] using
+        f.memHolder_iteratedFDeriv.holderWith)).memHolder
+
+private theorem coe_fderivAux (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivAux f) = fderiv ℝ f :=
+  coe_ofContDiff _ _ _ _
+
+private theorem norm_fderivAux_le (f : CkHolderSpace (k + 1) α E F) : ‖fderivAux f‖ ≤ ‖f‖ := by
+  have hfield (i : Fin (k + 1)) : ‖(fderivAux f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i.succ‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
+      rw [← iteratedFDeriv_eq, coe_fderivAux, norm_iteratedFDeriv_fderiv, ← Fin.val_succ,
+        iteratedFDeriv_eq f i.succ]
+      exact (f.iteratedFDeriv i.succ).norm_coe_le_norm x
+  have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (fderivAux f)) =
+      nnHolderNorm α (_root_.iteratedFDeriv ℝ (k + 1) f) := by
+    rw [coe_fderivAux, iteratedFDeriv_succ_eq_comp, nnHolderNorm, nnHolderNorm,
+      (continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.eHolderNorm_comp]
+  rw [norm_eq, norm_eq f, htop, Fin.sum_univ_succ (f := fun i ↦ ‖f.iteratedFDeriv i‖)]
+  linarith [Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hfield i,
+    norm_nonneg (f.iteratedFDeriv 0)]
+
+variable (k α E F) in
+/-- **The derivative** `f ↦ Df` from `C^{k+1,α}` to `C^{k,α}` with values in `E →L[ℝ] F`, a
+continuous linear map of norm at most one: the derivative fields of `Df` are those of `f` of
+positive order. -/
+def fderivL : CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E (E →L[ℝ] F) :=
+  LinearMap.mkContinuous
+    { toFun := fderivAux
+      map_add' f g := ext fun x ↦ by
+        simp only [coe_fderivAux, coe_add, Pi.add_apply]
+        exact fderiv_add (f.contDiff.differentiable (by simp) x)
+          (g.contDiff.differentiable (by simp) x)
+      map_smul' c f := ext fun x ↦ by
+        simp only [coe_fderivAux, coe_smul, Pi.smul_apply, RingHom.id_apply]
+        exact fderiv_const_smul (f.contDiff.differentiable (by simp) x) c }
+    1 fun f ↦ by simpa using norm_fderivAux_le f
+
+/-- The values of `fderivL f` are the Fréchet derivatives of `f`. -/
+@[simp]
+theorem fderivL_apply (f : CkHolderSpace (k + 1) α E F) (x : E) :
+    fderivL k α E F f x = fderiv ℝ f x :=
+  congrFun (coe_fderivAux f) x
+
+theorem coe_fderivL (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivL k α E F f) = fderiv ℝ f :=
+  coe_fderivAux f
+
+/-- The derivative has operator norm at most one. -/
+theorem norm_fderivL_le_one : ‖fderivL k α E F‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+end FDeriv
 
 end CkHolderSpace
 

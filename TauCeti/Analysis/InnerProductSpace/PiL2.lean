@@ -37,6 +37,8 @@ Borel measurable structure on the scalar field.
 
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
+* `EuclideanSpace.sum_smul_proj`: a continuous linear functional is the sum of its values on the
+  basis vectors times the coordinate functionals.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
@@ -93,6 +95,13 @@ theorem dotProduct_ofLp_self {ι : Type*} [Fintype ι] (x : EuclideanSpace ℝ �
     WithLp.ofLp x ⬝ᵥ WithLp.ofLp x = ‖x‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
   simp
+
+/-- A continuous linear functional on `EuclideanSpace 𝕜 ι` is the sum of its values on the basis
+vectors times the coordinate functionals. -/
+theorem sum_smul_proj {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (φ : EuclideanSpace 𝕜 ι →L[𝕜] 𝕜) : ∑ l, φ (single l 1) • proj l = φ := by
+  refine ContinuousLinearMap.coe_injective ((basisFun ι 𝕜).toBasis.ext fun i ↦ ?_)
+  simp [basisFun_apply, PiLp.single_apply]
 
 /-- The positive orthant in finite real Euclidean space is measurable. -/
 theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
