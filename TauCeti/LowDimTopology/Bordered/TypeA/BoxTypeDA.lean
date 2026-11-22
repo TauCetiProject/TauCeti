@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.TypeDA
+public import TauCeti.LowDimTopology.Bordered.TypeDA.Basic
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Crossing
 import TauCeti.Data.Fin.Tuple.Basic

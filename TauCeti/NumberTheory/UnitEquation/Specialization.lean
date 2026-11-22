@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.UnitEquation.Nondegenerate
 public import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.GroupTheory.Subgroup.AdditiveRank
 
 /-!
 # Specializing finite families of unit-equation solutions
@@ -124,9 +125,7 @@ theorem exists_lift_rank_le_and_encard_le_isNondegenerateSolution (k : Type*) [F
   let χ : (ι → Aˣ) →* (ι → Lˣ) := MonoidHom.compLeft (Units.map (f : A →* L)) ι
   refine ⟨f ∘ aA, (Γ.comap ψ).map χ, ?_, ?_⟩
   · -- `Γ.comap ψ` embeds into `Γ` and surjects onto its image under `χ`.
-    have h₁ := (ψ.subgroupComap Γ).toAdditive.toIntLinearMap.rank_le_of_injective
-      (Additive.ofMul.injective.comp ((ψ.subgroupComap_injective Γ hψ).comp
-        Additive.toMul.injective))
+    have h₁ := (ψ.subgroupComap Γ).rank_additive_le_of_injective (ψ.subgroupComap_injective Γ hψ)
     have h₂ := (χ.subgroupMap (Γ.comap ψ)).toAdditive.toIntLinearMap.lift_rank_le_of_surjective
       (Additive.ofMul.surjective.comp ((χ.subgroupMap_surjective _).comp
         Additive.toMul.surjective))

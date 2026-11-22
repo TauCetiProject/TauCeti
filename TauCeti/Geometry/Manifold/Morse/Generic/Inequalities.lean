@@ -28,7 +28,9 @@ bands (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). The values `c` are reg
 for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a division ring:
 
 * `Hₙ(M_b, M_a; V)` is finite-dimensional
-  (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`);
+  (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`), for instance whenever
+  `a < c < b` and `c` is the only possible critical value of `f` in `[a, b]`
+  (`TauCeti.finite_singularHomology_sublevelPair_of_criticalValue`);
 * `Hₙ(M_b, M_a)` vanishes above the dimension of `M`, for any coefficients
   (`TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`), since the Morse index of every
   critical point of `g` is at most that dimension.
@@ -59,7 +61,8 @@ inequalities.
 
 * `TauCeti.exists_isMorse_isRegularValue_sublevel_eq`: a Morse function close to a proper `f`,
   with the same sublevels as `f` at finitely many regular values of `f`.
-* `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff` and
+* `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`,
+  `TauCeti.finite_singularHomology_sublevelPair_of_criticalValue` and
   `TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`: finiteness of the relative
   homology of regular sublevels, and its vanishing above the dimension.
 * `TauCeti.finite_singularHomology_of_compactSpace`: finiteness of the homology of a compact
@@ -209,6 +212,23 @@ theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [D
   Module.Finite.equiv (singularHomologyIsoSublevelPair (f := fun _ : M ↦ (0 : ℝ))
     (neg_one_lt_zero.trans zero_lt_one).le (fun _ ↦ neg_one_lt_zero) (fun _ ↦ zero_le_one) V
     n).symm.toLinearEquiv
+
+/-- **Finiteness of the homology of a band with one critical value.** Let `f` be a smooth proper
+function on a boundaryless manifold and `a < c < b` such that `c` is the only possible critical
+value of `f` in `[a, b]`. Then `a` and `b` are regular values, so the relative singular homology
+`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finite-dimensional module `V` is
+finite-dimensional. -/
+theorem finite_singularHomology_sublevelPair_of_criticalValue {k : Type u} [DivisionRing k]
+    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (n : ℕ) :
+    Module.Finite k ((sublevelPair f (hac.trans hcb).le).singularHomology V n : ModuleCat k) := by
+  have hreg {t : ℝ} (ht : t ∈ ({a, b} : Set ℝ)) : IsRegularValue I 𝓘(ℝ) f t :=
+    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxt⟩ ↦ by
+      have := hcrit x hx (by rcases ht with rfl | rfl <;> simp [hxt, (hac.trans hcb).le])
+      rcases ht with rfl | rfl <;> linarith
+  exact finite_singularHomology_sublevelPair_of_contMDiff V hf hp (hac.trans hcb).le
+    (hreg (by simp)) (hreg (by simp)) n
 
 /-- **Vanishing of the homology of regular sublevels above the dimension.** Let `f` be a smooth
 proper function on a boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative

@@ -76,12 +76,6 @@ private theorem squarePlaneEquiv_cubeHomeomorphClosedBall (y : Fin 2 → I) :
     squarePlaneEquiv (cubeHomeomorphClosedBall (Fin 2) y) = 2 * squareCenterOffset y := by
   apply Complex.ext <;> simp [squarePlaneEquiv, Complex.equivRealProdCLM_symm_apply] <;> ring
 
-/-- Off the boundary of the square, the sup radius is less than `1`. -/
-private theorem one_sub_cubeRadius_sq_pos {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
-    0 < 1 - cubeRadius y ^ 2 := by
-  have h := (cubeRadius_le_one y).lt_of_ne (mt (cubeRadius_eq_one_iff y).1 hy)
-  nlinarith [cubeRadius_nonneg y]
-
 /-- The scale `(1 - r²)^(-1/2)` of the standard sphere at a point of the square of sup radius
 `r`. -/
 private def sphereScale (y : Fin 2 → I) : ℝ :=
