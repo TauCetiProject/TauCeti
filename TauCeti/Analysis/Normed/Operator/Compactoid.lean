@@ -218,6 +218,7 @@ totally bounded, so its closure is compact. -/
 theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
     [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
   (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr
-    hu.hasCompactoidImage.totallyBounded
+    (hu.hasCompactoidImage.totallyBounded (isCompact_closedBall 0 1) fun _ ↦
+      (continuous_id.smul continuous_const).continuousOn)
 
 end Complete
