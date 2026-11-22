@@ -21,7 +21,7 @@ public section
 open Filter
 open scoped Topology
 
-namespace TauCeti
+namespace HasStrictFDerivAt
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -29,7 +29,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A limit of normalized differences of zeros belongs to the kernel of the linearized
 equation. Strict differentiability controls secants even when their length is much smaller
 than their distance to the limiting zero. -/
-theorem HasStrictFDerivAt.map_normalized_secant_eq_zero
+theorem map_normalized_secant_eq_zero
     {P : E → F} {L : E →L[ℝ] F} {x : E} (hP : HasStrictFDerivAt P L x)
     {a b : ℕ → E} {c : ℕ → ℝ} {v : ℕ → E} {w : E}
     (ha : Tendsto a atTop (𝓝 x)) (hb : Tendsto b atTop (𝓝 x))
@@ -57,4 +57,4 @@ theorem HasStrictFDerivAt.map_normalized_secant_eq_zero
   have hw : -L w = 0 := tendsto_nhds_unique hlimv hlim'
   exact neg_eq_zero.mp hw
 
-end TauCeti
+end HasStrictFDerivAt
