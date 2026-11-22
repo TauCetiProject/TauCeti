@@ -43,9 +43,9 @@ partial diffeomorphism of the model space, which the chart at `i p` carries back
 The main theorem only needs `p` and `i p` to be interior points; the boundaryless form is
 `TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq`.
 
-Restricted to its source and target, the partial diffeomorphism is a symplectomorphism of open
-subsets of `M`: a diffeomorphism `φ : U₀ → U₁` of open sets around `i p` pulling the restriction of
-`σ₁` to `U₁` back to the restriction of `σ₀` to `U₀`, and fixing `i q` for `q` near `p`
+Restricted to its source and target, the partial diffeomorphism is a diffeomorphism
+`φ : U₀ → U₁` of open subsets of `M` around `i p`, pulling the restriction of `σ₁` to `U₁` back to
+the restriction of `σ₀` to `U₀`, and fixing `i q` for `q` near `p`
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_mpullback_eq`). For `Q` a point it relates any
 two closed two-forms nondegenerate at that point, as in Darboux's theorem; for an embedded
 submanifold `Q` it relates two symplectic forms with equal pullbacks to `Q` near each point of `Q`,
@@ -231,12 +231,12 @@ theorem exists_diffeomorph_opens_of_mpullback_eq_of_isInteriorPoint {σ₀ σ₁
 
 open TopologicalSpace in
 /-- **The point-germ relative Darboux theorem between open sets** (for `Q` a point, the Darboux
-theorem: Cannas da Silva, Theorem 8.1). Let `i : Q → M` be a smooth map between boundaryless
-manifolds with injective differential at `p`, for instance an embedded submanifold, and let `σ₀`,
-`σ₁` be closed two-forms on `M`, nondegenerate at `i p`, whose pullbacks along `i` agree near `p`.
-These pullbacks may have any rank. Then there are open subsets `U₀ ∋ i p` and `U₁` of `M` and a
-diffeomorphism `φ : U₀ → U₁` which fixes `i q` for every `q` near `p` and pulls the restriction of
-`σ₁` to `U₁` back to the restriction of `σ₀` to `U₀`. -/
+theorem: Cannas da Silva, Theorem 8.1). Let `i : Q → M` be a map between boundaryless manifolds,
+smooth near `p` with injective differential at `p`, for instance an embedded submanifold, and let
+`σ₀`, `σ₁` be closed two-forms on `M`, nondegenerate at `i p`, whose pullbacks along `i` agree
+near `p`. These pullbacks may have any rank. Then there are open subsets `U₀ ∋ i p` and `U₁` of `M`
+and a diffeomorphism `φ : U₀ → U₁` which fixes `i q` for every `q` near `p` and pulls the
+restriction of `σ₁` to `U₁` back to the restriction of `σ₀` to `U₀`. -/
 theorem exists_diffeomorph_opens_of_mpullback_eq [BoundarylessManifold I M]
     [BoundarylessManifold J Q] {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed)
     (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q} (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
