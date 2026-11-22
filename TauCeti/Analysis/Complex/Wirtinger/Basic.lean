@@ -451,12 +451,8 @@ into the conjugate of its complex-linear Wirtinger derivative:
 `\bar∂(conj ∘ g)(x) v = conj (∂g(x) v)`. -/
 theorem conjWirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
     conjWirtingerDeriv (fun y ↦ conj (g y)) x v = conj (wirtingerDeriv g x v) := by
-  have hcomp : (fun y ↦ conj (g y)) = (Complex.conjCLE : ℂ ≃L[ℝ] ℂ) ∘ g :=
-    funext fun y ↦ (Complex.conjCLE_apply (g y)).symm
-  rw [conjWirtingerDeriv_apply, wirtingerDeriv_apply, hcomp, Complex.conjCLE.comp_fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
-    smul_eq_mul, map_mul, map_sub, conj_I, map_inv₀, map_ofNat]
-  ring
+  have h := congrArg conj (wirtingerDeriv_conj_comp_apply (fun y ↦ conj (g y)) x v)
+  simpa only [starRingEnd_self_apply] using h.symm
 
 /-- If `g : V → ℂ` is complex differentiable at `x`, then the complex-linear Wirtinger derivative
 `∂(conj ∘ g)` vanishes at `x`. -/

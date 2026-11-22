@@ -20,9 +20,11 @@ For a contour cycle `C` lying in an open set `U` (`C.IsIn U`) and null-homologou
 (`ContDiffOn ℝ 1 F U`), applying `TauCeti.Contour.Cycle.green_winding` to the real coordinate
 pairs `(Re F, -Im F)` and `(Im F, Re F)` yields the scalar complex Green formula
 `C.integral F = (2 * I) * ∫ z in U, (C.windingWeight z : ℂ) * conjWirtingerDeriv F z 1`.
-Pairing with continuous `ℂ`-linear functionals (`SeparatingDual`) extends this to maps `F : ℂ → E`
-into any complex normed space `E`:
-`C.integral F = (2 * I : ℂ) • ∫ z in U, C.windingWeight z • conjWirtingerDeriv F z 1`.
+For maps `F : ℂ → E` into a complex Banach space `E` (`CompleteSpace E`), pairing with
+continuous `ℂ`-linear functionals (`SeparatingDual`) extends this to
+`C.integral F = (2 * I : ℂ) • ∫ z in U, C.windingWeight z • conjWirtingerDeriv F z 1`; when `E`
+is incomplete, the same identity holds trivially because both Bochner integrals vanish by
+convention (`MeasureTheory.integral_of_not_completeSpace`).
 
 Applying the scalar `dz` formula to `conj ∘ F` and conjugating yields the dual `F dbar z`
 circulation formula on contour cycles (under the same `U`, `C.IsIn U`, `C.IsNullHomologous U`, and
@@ -42,7 +44,6 @@ A private Stokes cross-check also verifies agreement with
 * `TauCeti.Contour.Cycle.integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv`,
   `TauCeti.Contour.Cycle.integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv`
 * `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`,
-  `TauCeti.circulation_dzBar_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv`,
   `TauCeti.integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv`
 
 ## References
@@ -224,9 +225,11 @@ theorem integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv (C :
   apply Complex.ext <;> simp [hre, him]
 
 /-- **Complex Green formula on a contour cycle (vector-valued).** For `F : ℂ → E` real `C¹` on an
-open set `U` with values in any complex normed space `E`, and any cycle `C` in `U` that is
-null-homologous in `U`,
-`C.integral F = (2 * I) • ∫ z in U, C.windingWeight z • conjWirtingerDeriv F z 1`. -/
+open set `U` and a cycle `C` in `U` that is null-homologous in `U`,
+`C.integral F = (2 * I) • ∫ z in U, C.windingWeight z • conjWirtingerDeriv F z 1`. When `E` is a
+complex Banach space (`CompleteSpace E`), this extends the scalar identity by Hahn–Banach
+duality (`SeparatingDual`); when `E` is incomplete, both Bochner integrals vanish by convention
+(`MeasureTheory.integral_of_not_completeSpace`). -/
 theorem integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (C : Cycle) {U : Set ℂ} {F : ℂ → E}
     (hU : IsOpen U) (htrace : C.IsIn U) (hnull : C.IsNullHomologous U)
@@ -304,17 +307,6 @@ theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerD
 
 end Contour.Cycle
 
-private theorem intervalIntegral_circulationFun_circleCurve (c : ℂ) (R : ℝ) (P Q : ℂ → ℝ) :
-    (∫ t in (Contour.circleCurve c R).a..(Contour.circleCurve c R).b,
-        Green.circulationFun P Q (Contour.circleCurve c R) t) =
-      ∫ θ in 0..2 * π, Green.circulationFun P Q (circleMap c R) θ := by
-  set γf : ℝ → ℂ := ⇑(Contour.circleCurve c R)
-  rw [Contour.circleCurve_a, Contour.circleCurve_b]
-  have heq : EqOn γf (circleMap c R) (uIoo 0 (2 * π)) :=
-    fun _ ht ↦ Contour.circleCurve_apply (uIoo_subset_uIcc_self ht)
-  exact intervalIntegral.integral_congr_uIoo fun θ hθ ↦ by
-    simp only [Green.circulationFun, heq hθ, heq.deriv isOpen_Ioo hθ]
-
 private theorem isIn_and_isNullHomologous_circleCycle {c : ℂ} {R : ℝ} {U : Set ℂ} (hR : 0 ≤ R)
     (hball : closedBall c R ⊆ U) :
     (Contour.circleCycle c R).IsIn U ∧ (Contour.circleCycle c R).IsNullHomologous U := by
@@ -337,27 +329,6 @@ private theorem setIntegral_windingWeight_circleCycle_eq_ball {c : ℂ} {R : ℝ
   rw [hfun, setIntegral_indicator measurableSet_ball,
     inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
 
-/-- **Circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F = u + i v` real `C¹` on an open
-set `U` containing `closedBall c R`, the real/imaginary circulation combination
-`∮_{|z - c| = R} F dbar z` along `circleMap c R` equals
-`(-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1`. -/
-theorem circulation_dzBar_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv
-    {c : ℂ} {R : ℝ} {U : Set ℂ} {F : ℂ → ℂ} (hR : 0 ≤ R) (hU : IsOpen U)
-    (hball : closedBall c R ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
-    ((∫ θ in 0..2 * π,
-        Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) (circleMap c R) θ : ℝ) : ℂ) +
-      I * ((∫ θ in 0..2 * π,
-        Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) (circleMap c R) θ : ℝ) : ℂ) =
-      (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by
-  obtain ⟨htr, hnull⟩ := isIn_and_isNullHomologous_circleCycle hR hball
-  have hmain := (Contour.circleCycle c R)
-    |>.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
-      hU htr hnull hF
-  rw [setIntegral_windingWeight_circleCycle_eq_ball hR hball] at hmain
-  simpa only [Contour.circleCycle_def, FreeAddCommGroup.support_of, Finset.sum_singleton,
-    FreeAddCommGroup.coeff_of_self, Int.cast_one, one_mul,
-    intervalIntegral_circulationFun_circleCurve] using hmain
-
 /-- **Complex circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F` real `C¹` on an open
 neighborhood `U` of `closedBall c R`,
 `∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =
@@ -372,19 +343,9 @@ theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wir
     |>.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
       hU htr hnull hF
   rw [setIntegral_windingWeight_circleCycle_eq_ball hR hball,
-    Contour.Cycle.integral_circleCycle, circleIntegral] at hmain
-  have hFc : Continuous fun θ : ℝ ↦ deriv (circleMap c R) θ * conj (F (circleMap c R θ)) := by
-    have hderiv : Continuous (deriv (circleMap c R)) :=
-      (funext (deriv_circleMap c R)).symm ▸ (continuous_circleMap 0 R).mul continuous_const
-    exact hderiv.mul (Complex.continuous_conj.comp (hF.continuousOn.comp_continuous
-      (continuous_circleMap c R) fun θ ↦
-        hball (sphere_subset_closedBall (circleMap_mem_sphere c hR θ))))
-  have hconj : conj (∫ θ in 0..2 * π, deriv (circleMap c R) θ * conj (F (circleMap c R θ))) =
-      ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) := by
-    have hcomm := (Complex.conjCLE : ℂ →L[ℝ] ℂ).intervalIntegral_comp_comm
-      (μ := volume) (hFc.intervalIntegrable 0 (2 * π))
-    simpa [Complex.conjCLE_apply, mul_comm] using hcomm.symm
-  simpa only [smul_eq_mul, hconj] using hmain
+    Contour.Cycle.integral_circleCycle, circleIntegral,
+    ← intervalIntegral.intervalIntegral_conj] at hmain
+  simpa only [map_mul, starRingEnd_self_apply, mul_comm, smul_eq_mul] using hmain
 
 section MonomialMomentHelpers
 

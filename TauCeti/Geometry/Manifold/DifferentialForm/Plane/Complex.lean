@@ -128,10 +128,13 @@ theorem wedgeWith_complexDzBar_complexDz_apply_one_I (z : ℂ) :
     (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDzBar complexDz).val z
         ![(NormedSpace.fromTangentSpace z).symm 1,
           (NormedSpace.fromTangentSpace z).symm I] = 2 * I := by
-  rw [wedgeWith_apply_one_one]
-  simp only [ContinuousLinearMap.mul_apply', complexDzBar_apply, complexDz_apply,
-    Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply, conj_I, map_one]
-  ring
+  rw [wedgeWith_comm (ContinuousLinearMap.mul ℝ ℂ) mul_comm]
+  change (-1 : ℝ) ^ (1 * 1) •
+      (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).val z
+        ![(NormedSpace.fromTangentSpace z).symm 1,
+          (NormedSpace.fromTangentSpace z).symm I] = 2 * I
+  rw [wedgeWith_complexDz_complexDzBar_apply_one_I]
+  norm_num
 
 end SmoothForm
 

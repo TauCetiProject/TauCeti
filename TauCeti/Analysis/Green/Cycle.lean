@@ -42,9 +42,8 @@ everywhere, to the winding weight of the cycle. -/
 private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
     (fun z ↦ ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
       windingWeight (γ ∘ AffineMap.lineMap γ.a γ.b) 0 1 z) =ᵐ[volume] C.windingWeight := by
-  have hnot : ∀ᵐ z ∂volume, z ∉ Contour.Cycle.trace C := by
-    rw [ae_iff]
-    simpa only [not_not, ofPred_mem_eq] using Contour.Cycle.addHaar_trace_eq_zero C volume
+  have hnot : ∀ᵐ z ∂volume, z ∉ Contour.Cycle.trace C :=
+    compl_mem_ae_iff.mpr (Contour.Cycle.addHaar_trace_eq_zero C volume)
   filter_upwards [hnot] with z hz
   rw [Contour.Cycle.windingWeight_eq_of_notMem C hz,
     Contour.Cycle.windingNumber_eq_sum_support, Complex.re_sum]
@@ -117,14 +116,13 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
 /-- The trace-zero real winding weight of any contour cycle is integrable on `ℂ`. -/
 theorem _root_.TauCeti.Contour.Cycle.integrable_windingWeight (C : Contour.Cycle) :
     Integrable C.windingWeight := by
-  have hgreen := (C.green_winding (U := univ) (P := Function.const ℂ 0) (Q := Complex.reCLM)
-    isOpen_univ (Contour.Cycle.isIn_iff.mpr (subset_univ _))
-    contDiffOn_const Complex.reCLM.contDiff.contDiffOn C.isNullHomologous_univ).2.1
-  rw [integrableOn_univ] at hgreen
-  refine hgreen.congr (ae_of_all _ fun z ↦ ?_)
-  dsimp only
-  rw [curl, Complex.reCLM.hasFDerivAt.fderiv, fderiv_const]
-  simp
+  classical
+  refine (integrable_sum_windingWeight (s := FreeAddCommGroup.support C)
+    (γ := fun γ ↦ γ ∘ AffineMap.lineMap γ.a γ.b) (a := fun _ ↦ 0) (b := fun _ ↦ 1)
+    (w := fun γ ↦ FreeAddCommGroup.coeff γ C)
+    (fun γ _ ↦ absolutelyContinuousOnInterval_comp_lineMap_iff.2
+      γ.isPiecewiseC1On.absolutelyContinuousOnInterval)
+    (fun γ _ ↦ by simp [γ.source_eq_target])).congr (sum_windingWeight_comp_lineMap_ae C)
 
 /-- For any contour cycle `C` and any map `g : ℂ → E` continuous on `tsupport C.windingWeight`,
 `z ↦ C.windingWeight z • g z` is integrable on `ℂ`. -/

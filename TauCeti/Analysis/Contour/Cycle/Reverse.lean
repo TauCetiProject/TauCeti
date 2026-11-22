@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
+import TauCeti.Analysis.Contour.Cycle.Winding
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
 
 /-!
@@ -111,11 +112,10 @@ theorem windingNumber_of_symm (γ : PiecewiseC1ClosedCurve) {z : ℂ}
     (hz : z ∉ γ '' uIcc γ.a γ.b) :
     windingNumber z (FreeAddCommGroup.of γ.symm) =
       -windingNumber z (FreeAddCommGroup.of γ) := by
-  have hoff : ∀ t ∈ uIcc γ.a γ.b, γ t ≠ z := fun t ht htz ↦ hz ⟨t, ht, htz⟩
-  simp only [windingNumber_of, PiecewiseC1ClosedCurve.coe_symm, PiecewiseC1ClosedCurve.symm_a,
-    PiecewiseC1ClosedCurve.symm_b]
-  exact TauCeti.Contour.windingNumber_symm <| cauchyPVExistsAt_of_avoidance γ.continuousOn hoff
-    (intervalIntegrable_inv_sub_mul_deriv γ.continuousOn hoff γ.intervalIntegrable_deriv)
+  have hz' : z ∉ trace (FreeAddCommGroup.of γ) := by rwa [trace_of]
+  have hzsymm : z ∉ trace (FreeAddCommGroup.of γ.symm) := by rwa [trace_of_symm]
+  rw [windingNumber_eq_integral_of_not_mem_trace _ hzsymm,
+    windingNumber_eq_integral_of_not_mem_trace _ hz', integral_of_symm, mul_neg]
 
 /-- Vanishing of the cycle winding number of a generator is preserved under orientation reversal,
 even at points on the trace. -/

@@ -258,12 +258,9 @@ theorem norm_setIntegral_sdiff_closedBall_sub_integral_sub_inv_smul_le {E : Type
   rw [hsplit, norm_neg]
   calc
     ‖∫ z in Δ ∩ closedBall ξ ε, (z - ξ)⁻¹ • g z‖
-        ≤ ∫ z in Δ ∩ closedBall ξ ε, ‖(z - ξ)⁻¹ • g z‖ := norm_integral_le_integral_norm _
-    _ ≤ ∫ z in Δ ∩ closedBall ξ ε, ‖z - ξ‖⁻¹ * M :=
-          integral_mono_ae (hint.mono_set inter_subset_left).norm
-            ((hinv.mono_set inter_subset_right).mul_const M)
+        ≤ ∫ z in Δ ∩ closedBall ξ ε, ‖z - ξ‖⁻¹ * M :=
+          norm_integral_le_of_norm_le ((hinv.mono_set inter_subset_right).mul_const M)
             (hM.mono fun z hz ↦ by
-              dsimp only
               rw [norm_smul, norm_inv]
               exact mul_le_mul_of_nonneg_left hz (inv_nonneg.mpr (norm_nonneg _)))
     _ ≤ ∫ z in closedBall ξ ε, ‖z - ξ‖⁻¹ * M :=
