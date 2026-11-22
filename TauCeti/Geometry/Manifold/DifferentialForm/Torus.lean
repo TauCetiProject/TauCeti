@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
+import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -485,11 +486,7 @@ theorem mpullback_piAddCases_torusVolumeForm (p : Fin (m + k) → ℝ) [∀ i, F
           (torusVolumeForm fun j : Fin k ↦ p (Fin.natAdd m j))) := by
   classical
   -- The product of the coordinate bases of `(Fin m → ℝ) × (Fin k → ℝ)`, the first block first.
-  let a : Fin m → (Fin m → ℝ) × (Fin k → ℝ) := fun i ↦ (Pi.basisFun ℝ (Fin m) i, 0)
-  let c : Fin k → (Fin m → ℝ) × (Fin k → ℝ) := fun j ↦ (0, Pi.basisFun ℝ (Fin k) j)
   let b := ((Pi.basisFun ℝ (Fin m)).prod (Pi.basisFun ℝ (Fin k))).reindex finSumFinEquiv
-  have hb : ⇑b = Fin.append a c := funext fun i ↦ by
-    induction i using Fin.addCases <;> simp [b, a, c, Module.Basis.prod_apply]
   refine Subtype.ext (funext fun q ↦ ?_)
   -- The differential of the concatenation sends `b` to the coordinate basis of `Fin (m + k) → ℝ`,
   -- so the left side takes the value `1` on `b`.
@@ -508,7 +505,9 @@ theorem mpullback_piAddCases_torusVolumeForm (p : Fin (m + k) → ℝ) [∀ i, F
       (SmoothForm.mpullback Prod.fst contMDiff_fst
         (torusVolumeForm fun i : Fin m ↦ p (Fin.castAdd k i)))
       (SmoothForm.mpullback Prod.snd contMDiff_snd
-        (torusVolumeForm fun j : Fin k ↦ p (Fin.natAdd m j)))).val q (Fin.append a c) = 1 :=
+        (torusVolumeForm fun j : Fin k ↦ p (Fin.natAdd m j)))).val q
+      (Fin.append (fun i ↦ (Pi.basisFun ℝ (Fin m) i, 0))
+        fun j ↦ (0, Pi.basisFun ℝ (Fin k) j)) = 1 :=
     (SmoothForm.wedge_mpullback_fst_snd_apply_append _ _ q (Pi.basisFun ℝ (Fin m))
       (Pi.basisFun ℝ (Fin k))).trans
       (by rw [torusVolumeForm_apply_basisFun, torusVolumeForm_apply_basisFun, one_mul])
@@ -516,7 +515,9 @@ theorem mpullback_piAddCases_torusVolumeForm (p : Fin (m + k) → ℝ) [∀ i, F
   -- the basis `b`, so they are equal.
   refine sub_eq_zero.1 ((ContinuousAlternatingMap.map_basis_eq_zero_iff _ b).1 ?_)
   exact (ContinuousAlternatingMap.sub_apply _ _ _).trans
-    ((congrArg₂ (· - ·) hL (hb ▸ hR)).trans (sub_self 1))
+    ((congrArg₂ (· - ·) hL
+      (Module.Basis.coe_prod_reindex_finSumFinEquiv (Pi.basisFun ℝ (Fin m))
+        (Pi.basisFun ℝ (Fin k)) ▸ hR)).trans (sub_self 1))
 
 /-- **The one-factor torus, time form.** For an index type with a single element, evaluation at
 it, from the torus to its circle, pulls the time form of the circle back to the coordinate time
@@ -591,6 +592,8 @@ theorem mpullback_piSnoc_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
   rw [torusVolumeForm_fin_one]
   simp only [SmoothForm.mpullback_id, LinearMap.id_apply, torusTimeForm_def,
     SmoothForm.mpullback_mpullback, h₁]
+  -- The periods agree definitionally: `Fin.castAdd 1 i` is `i.castSucc`, and `Fin.natAdd m 0` is
+  -- `Fin.last m`.
   rfl
 
 /-- **The empty torus is a point.** For no factors the volume form is the constant function `1`,
