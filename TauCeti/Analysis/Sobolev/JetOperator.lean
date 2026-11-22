@@ -24,9 +24,7 @@ have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.first
 whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and at least `‖A‖`
 and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
 `TauCeti.norm_le_norm_firstOrderJetCoeff_right`), and which depends
-continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`), with
-`‖A - A'‖ + ‖C - C'‖` bounding the distance between two such fields
-(`TauCeti.norm_firstOrderJetCoeff_sub_le`).
+continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
 of the plane (with Lebesgue measure restricted to the domain) both realize first-order operators
@@ -126,22 +124,6 @@ theorem norm_firstOrderJetCoeff_le (A C : V →L[ℝ] V) :
       (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
   · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
       (norm_fst_le ℝ V (V × V)))
-
-/-- Two operators `∂s + A ∂t + C` and `∂s + A' ∂t + C'` have coefficient fields on jets at
-distance at most `‖A - A'‖ + ‖C - C'‖`. -/
-theorem norm_firstOrderJetCoeff_sub_le (A C A' C' : V →L[ℝ] V) :
-    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A' C'‖ ≤ ‖A - A'‖ + ‖C - C'‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ by
-    have h : (firstOrderJetCoeff A C - firstOrderJetCoeff A' C') v =
-        (A - A') v.2.2 + (C - C') v.1 := by
-      simp only [sub_apply, firstOrderJetCoeff_apply]
-      abel
-    rw [h, add_mul]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · exact ((A - A').le_opNorm _).trans (mul_le_mul_of_nonneg_left
-        ((norm_snd_le v.2).trans (norm_snd_le v)) (norm_nonneg _))
-    · exact ((C - C').le_opNorm _).trans (mul_le_mul_of_nonneg_left (norm_fst_le v)
-        (norm_nonneg _))
 
 /-- The leading coefficient `A` of `∂s + A ∂t + C` is a component of its coefficient field on
 jets: `A v` is the value of the field on `(0, 0, v)`. -/

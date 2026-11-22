@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
-import TauCeti.Geometry.Symplectic.Floer.Linearization.Cylindrical
 import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # The linearized Floer operator along a pre-glued map
@@ -60,40 +60,113 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V}
   {u v : ℝ × ℝ → V}
 
+/-- The zeroth-order coefficient of the linearized Floer operator for the cylindrical datum
+`K = H_t dt`, as a function of the time `t`, the value `y` and the slice velocity `η`. -/
+private noncomputable def cylCoeff (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (t : ℝ) (y η : V) : V →L[ℝ] V :=
+  (fderiv ℝ (J t) y).flip (η - ω.hamiltonianVectorField (H t) y) -
+    (J t y).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) y)
+
+/-- The zeroth-order coefficient of the linearized operator along `w` at `z`, for the datum
+`K = H_t dt`, depends only on the time `z.2`, the value `w z` and the slice velocity `∂t w z`. -/
+private theorem floerLinearizationCoeff_eq_cylCoeff (ω : SymplecticForm V)
+    (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ) (w : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w z =
+      cylCoeff ω J H z.2 (w z) (fderiv ℝ w z stdComplexLineImag) := by
+  ext y
+  simp [floerLinearizationCoeff_apply, cylCoeff]
+
+/-- **The coefficients near an orbit.** For a continuous loop `x` and a compact set `T` of times,
+the coefficients `J_t(y)` and `C(t, y, η)` of the linearized operator are uniformly close to their
+values at the jet `(x t, X_{H_t}(x t))` of `x`, at every jet `(y, η)` close enough to it. -/
+private theorem exists_pos_forall_cylCoeff_sub_lt_of_mem (ω : SymplecticForm V)
+    (hJ : ContDiff ℝ 1 (uncurry J)) (hH : ContDiff ℝ 2 (uncurry H)) {T : Set ℝ}
+    (hT : IsCompact T) (hx : ContinuousOn x T) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ t ∈ T, ∀ y η, ‖y - x t‖ < δ → ‖η - ω.hamiltonianVectorField (H t) (x t)‖ < δ →
+      ‖J t y - J t (x t)‖ < ε ∧
+        ‖cylCoeff ω J H t y η -
+          cylCoeff ω J H t (x t) (ω.hamiltonianVectorField (H t) (x t))‖ < ε := by
+  -- The coefficient fields `X_H`, `dJ` and `J dX_H` are continuous in `(t, y)`.
+  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
+  have hdJ := (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦ J p.1 y) (g := Prod.snd) (n := 0)
+    (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
+  have hJS := hJ.continuous.clm_comp (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦
+    ω.hamiltonianVectorField (H p.1) y) (g := Prod.snd) (n := 0)
+    (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
+  -- `dJ` is bounded along the orbit, by `M`, and hence by `M' = |M| + 1` near it.
+  obtain ⟨M, hM⟩ := (hT.image_of_continuousOn
+    ((continuousOn_id' _).prodMk hx)).exists_bound_of_continuousOn hdJ.continuousOn
+  set M' := |M| + 1
+  have hM'0 : 0 < M' := by positivity
+  set ε' := ε / (4 * M')
+  obtain ⟨δ₁, hδ₁, h₁⟩ := hT.exists_pos_forall_dist_lt hx (fun _ _ ↦ hJ.continuous.continuousAt) hε
+  obtain ⟨δ₂, hδ₂, h₂⟩ := hT.exists_pos_forall_dist_lt hx (fun _ _ ↦ hJS.continuousAt)
+    (half_pos hε)
+  obtain ⟨δ₃, hδ₃, h₃⟩ := hT.exists_pos_forall_dist_lt hx (fun _ _ ↦ hX.continuous.continuousAt)
+    (by positivity : 0 < ε')
+  obtain ⟨δ₄, hδ₄, h₄⟩ := hT.exists_pos_forall_dist_lt hx (fun _ _ ↦ hdJ.continuousAt) one_pos
+  simp only [dist_eq_norm] at h₁ h₂ h₃ h₄
+  refine ⟨min (min δ₁ δ₂) (min (min δ₃ δ₄) ε'), by positivity, fun t ht y η hy hη ↦ ?_⟩
+  simp only [lt_min_iff] at hy hη
+  obtain ⟨e₂, e₃, e₄, hMt⟩ := And.intro (h₂ t ht y hy.1.2) <| And.intro (h₃ t ht y hy.2.1.1) <|
+    And.intro (h₄ t ht y hy.2.1.2) (hM _ (mem_image_of_mem _ ht))
+  simp only [uncurry_apply_pair] at e₂ e₃ e₄ hMt
+  refine ⟨h₁ t ht y hy.1.1, ?_⟩
+  -- The term `dJ(y) (η - X(y))` is at most `M' ‖η - X(y)‖ ≤ ε / 2`, and the term `J(y) dX(y)` is
+  -- within `ε / 2` of its value along `x`.
+  have hdJy : ‖fderiv ℝ (J t) y‖ ≤ M' := by
+    linarith [norm_le_insert' (fderiv ℝ (J t) y) (fderiv ℝ (J t) (x t)), le_abs_self M]
+  have hd : ‖η - ω.hamiltonianVectorField (H t) y‖ ≤ 2 * ε' := by
+    linarith [norm_sub_le_norm_sub_add_norm_sub η (ω.hamiltonianVectorField (H t) (x t))
+      (ω.hamiltonianVectorField (H t) y), norm_sub_rev (ω.hamiltonianVectorField (H t) (x t))
+      (ω.hamiltonianVectorField (H t) y)]
+  have hF : ‖(fderiv ℝ (J t) y).flip (η - ω.hamiltonianVectorField (H t) y)‖ ≤ ε / 2 := by
+    calc _ ≤ ‖(fderiv ℝ (J t) y).flip‖ * ‖η - ω.hamiltonianVectorField (H t) y‖ := le_opNorm _ _
+      _ ≤ M' * (2 * ε') := by
+          rw [opNorm_flip]
+          exact mul_le_mul hdJy hd (norm_nonneg _) hM'0.le
+      _ = ε / 2 := by simp only [ε']; field_simp; ring
+  have hc : cylCoeff ω J H t y η - cylCoeff ω J H t (x t) (ω.hamiltonianVectorField (H t) (x t)) =
+      (fderiv ℝ (J t) y).flip (η - ω.hamiltonianVectorField (H t) y) -
+        ((J t y).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) y) -
+          (J t (x t)).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))) := by
+    simp only [cylCoeff, sub_self, map_zero]
+    abel
+  rw [hc]
+  exact (norm_sub_le _ _).trans_lt (by linarith)
+
 /-- **Closeness of the coefficients near a periodic orbit.** For `J` and `H` of period one in `t`
 and a continuous loop `x` of period one, the coefficients `J_t(y)` and `C(t, y, η)` of the
 linearized operator are uniformly close at any two jets `(y, η)`, `(y', η')` close enough to the jet
 `(x t, X_{H_t}(x t))` of `x`, at every time `t`. -/
-private theorem exists_pos_forall_cylindricalLinearizationCoeff_sub_lt (ω : SymplecticForm V)
+private theorem exists_pos_forall_cylCoeff_sub_lt (ω : SymplecticForm V)
     (hJ : ContDiff ℝ 1 (uncurry J)) (hH : ContDiff ℝ 2 (uncurry H)) (hJp : Periodic J 1)
     (hHp : Periodic H 1) (hx : Continuous x) (hxp : Periodic x 1) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ t y y' η η', ‖y - x t‖ < δ → ‖y' - x t‖ < δ →
       ‖η - ω.hamiltonianVectorField (H t) (x t)‖ < δ →
       ‖η' - ω.hamiltonianVectorField (H t) (x t)‖ < δ →
-      ‖J t y - J t y'‖ < ε ∧
-        ‖ω.cylindricalLinearizationCoeff J H t y η - ω.cylindricalLinearizationCoeff J H t y' η'‖ <
-          ε := by
-  obtain ⟨δ, hδ, h⟩ := exists_pos_forall_norm_sub_lt_and_norm_cylindricalLinearizationCoeff_sub_lt
-    ω hJ hH (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hx.continuousOn (half_pos hε)
+      ‖J t y - J t y'‖ < ε ∧ ‖cylCoeff ω J H t y η - cylCoeff ω J H t y' η'‖ < ε := by
+  obtain ⟨δ, hδ, h⟩ := exists_pos_forall_cylCoeff_sub_lt_of_mem ω hJ hH
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+    hx.continuousOn (half_pos hε)
   refine ⟨δ, hδ, fun t y y' η η' hy hy' hη hη' ↦ ?_⟩
   -- Reduce to a time `t' ∈ [0, 1)`, where `J`, `H` and `x` take the same values.
   obtain ⟨t', ht', he⟩ := (show Periodic (fun t ↦ (J t, H t, x t)) 1 from fun t ↦ by
     simp only [hJp t, hHp t, hxp t]).exists_mem_Ico₀ one_pos t
   simp only [Prod.mk.injEq] at he
   obtain ⟨hJt, hHt, hxt⟩ := he
-  have hc (y η : V) :
-      ω.cylindricalLinearizationCoeff J H t y η = ω.cylindricalLinearizationCoeff J H t' y η := by
-    simp only [cylindricalLinearizationCoeff_def, hJt, hHt]
+  have hc (y η : V) : cylCoeff ω J H t y η = cylCoeff ω J H t' y η := by
+    simp only [cylCoeff, hJt, hHt]
   rw [hJt, hc, hc]
   simp only [hxt, hHt] at hy hy' hη hη'
   obtain ⟨e₁, e₂⟩ := h t' (Ico_subset_Icc_self ht') y η hy hη
   obtain ⟨e₁', e₂'⟩ := h t' (Ico_subset_Icc_self ht') y' η' hy' hη'
   refine ⟨(norm_sub_le_norm_sub_add_norm_sub _ (J t' (x t')) _).trans_lt ?_,
-    (norm_sub_le_norm_sub_add_norm_sub _ (ω.cylindricalLinearizationCoeff J H t' (x t')
-      (ω.hamiltonianVectorField (H t') (x t'))) _).trans_lt ?_⟩
+    (norm_sub_le_norm_sub_add_norm_sub _
+      (cylCoeff ω J H t' (x t') (ω.hamiltonianVectorField (H t') (x t'))) _).trans_lt ?_⟩
   · rw [norm_sub_rev (J t' (x t'))]
     linarith
-  · rw [norm_sub_rev (ω.cylindricalLinearizationCoeff J H t' (x t') _)]
+  · rw [norm_sub_rev (cylCoeff ω J H t' (x t') _)]
     linarith
 
 omit [FiniteDimensional ℝ V] in
@@ -169,8 +242,7 @@ theorem eventually_norm_floerLinearizationCoeff_preglue_sub_le (ω : SymplecticF
             (fun p ↦ v (p - (R, 0))) z‖ ≤ ε) := by
   set X : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  obtain ⟨δ, hδ, hjet⟩ :=
-    exists_pos_forall_cylindricalLinearizationCoeff_sub_lt ω hJ hH hJp hHp hxc hxp hε
+  obtain ⟨δ, hδ, hjet⟩ := exists_pos_forall_cylCoeff_sub_lt ω hJ hH hJp hHp hxc hxp hε
   obtain ⟨B, hB⟩ := exists_abs_deriv_pregluingCutoff_le
   set B' := max B 0
   have hB' (s : ℝ) : |deriv pregluingCutoff s| ≤ B' := (hB s).trans (le_max_left _ _)
@@ -200,14 +272,14 @@ theorem eventually_norm_floerLinearizationCoeff_preglue_sub_le (ω : SymplecticF
     exact norm_preglue_sub_lt_and_norm_fderiv_preglue_sub_lt hB' hB'0 (hx z.2) (hud' z.2)
       (hvd' z.2) (hu' z.2) (hdu' z.2) (hv' z.2) (hdv' z.2)
   refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · simp only [floerLinearizationCoeff_eq_cylindricalLinearizationCoeff]
+  · simp only [floerLinearizationCoeff_eq_cylCoeff]
     by_cases hz₁ : z.1 < -1
     · -- Off the neck, `w_R` is the translate of `u`.
       rw [preglue_of_le_neg_one hz₁.le, fderiv_preglue_of_lt_neg_one hz₁, fderiv_comp_add_right]
       simp [hε.le]
     · obtain ⟨⟨hw, hdw⟩, ⟨hu, hdu⟩, -⟩ := hneck z (by linarith) hz
       exact (hjet z.2 _ _ _ _ hw hu hdw hdu).imp le_of_lt le_of_lt
-  · simp only [floerLinearizationCoeff_eq_cylindricalLinearizationCoeff]
+  · simp only [floerLinearizationCoeff_eq_cylCoeff]
     by_cases hz₁ : 1 < z.1
     · -- Off the neck, `w_R` is the translate of `v`.
       rw [preglue_of_one_le hz₁.le, fderiv_preglue_of_one_lt hz₁, fderiv_comp_sub]
