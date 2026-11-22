@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
@@ -12,6 +13,9 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # Iterated derivatives of holomorphic functions of one complex variable
@@ -20,8 +24,11 @@ This file records that every iterated derivative of a complex differentiable fun
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
 Mathlib's `Differentiable.deriv`. For an entire `f : ℂ → ℂ`, the iterated derivatives of the real
 function `x ↦ Re f(x)` on the real line are the real parts of the complex ones
-(`Differentiable.iteratedDeriv_re_comp_ofReal`). It also computes the norms of the real iterated
-derivatives of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
+(`Differentiable.iteratedDeriv_re_comp_ofReal`). If the `(e + 1)`-th derivative of an entire
+function `h` vanishes, so does the `e`-th derivative of `dslope h ζ`
+(`Differentiable.iteratedDeriv_dslope_eq_zero`): dividing a polynomial by a linear factor lowers its
+degree. It also computes the norms of the real iterated derivatives
+of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
@@ -53,6 +60,29 @@ theorem Differentiable.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} (hf : Diff
   | succ k ih =>
     rw [iteratedDeriv_succ, ih, iteratedDeriv_succ]
     exact funext fun x => ((hf.iteratedDeriv k x).hasDerivAt.real_of_complex).deriv
+
+/-- **Dividing out a root lowers the degree.** If the `(e + 1)`-th derivative of an entire
+function `h : ℂ → E` vanishes, that is, if `h` is a polynomial of degree at most `e`, then the
+`e`-th derivative of `dslope h ζ` vanishes: `dslope h ζ` is a polynomial of degree less than `e`.
+-/
+theorem Differentiable.iteratedDeriv_dslope_eq_zero {h : ℂ → E} (hh : Differentiable ℂ h)
+    {e : ℕ} (he : _root_.iteratedDeriv (e + 1) h = 0) (ζ : ℂ) :
+    _root_.iteratedDeriv e (dslope h ζ) = 0 := by
+  have hD : Differentiable ℂ (dslope h ζ) := fun z ↦ ((hh.analyticAt z).dslope ζ).differentiableAt
+  -- The Taylor coefficients of `dslope h ζ` at `ζ` of order at least `e` are those of `h` of order
+  -- at least `e + 1`, which vanish.
+  have hcoeff (k : ℕ) : _root_.iteratedDeriv (k + e) (dslope h ζ) ζ = 0 := by
+    have hshift := TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul 1 (k + e)
+      ((hD.contDiff (n := ⊤)).contDiffAt.of_le le_top) (a := ζ)
+    have hfun : (fun z ↦ (z - ζ) ^ 1 • dslope h ζ z) = fun z ↦ -h ζ + h z := by
+      ext z
+      rw [pow_one, sub_smul_dslope, neg_add_eq_sub]
+    rw [hfun, iteratedDeriv_const_add (by omega), show 1 + (k + e) = k + (e + 1) by omega,
+      ← TauCeti.iteratedDeriv_iteratedDeriv, he] at hshift
+    simpa [Nat.factorial_ne_zero] using hshift.symm
+  ext z
+  rw [← Complex.taylorSeries_eq_of_entire (hD.iteratedDeriv e) ζ z]
+  simp [TauCeti.iteratedDeriv_iteratedDeriv, hcoeff]
 
 /-- On an open set `U`, the `k`-th iterated derivative over a field `𝕜` below `ℂ` of a map
 holomorphic on `U` is the restriction of scalars of its complex `k`-th iterated derivative, which
