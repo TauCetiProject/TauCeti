@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import Mathlib.Data.Fin.Tuple.Take
 
 /-!
@@ -30,6 +31,11 @@ decidable subset of a finite function type.
   carry the same vertex to another neighbour of that vertex gives a walk.
 * `SimpleGraph.IsWalkFrom.le_add_of_adj_le_succ`: if each step increases a `ℕ`-valued function by
   at most `1`, then `i` steps increase it by at most `i`.
+* `SimpleGraph.card_isWalkFrom_eq_adjMatrix_pow_apply`: the walks from `v₀` to `v` with `n` steps
+  are counted by the entry of the `n`-th power of the adjacency matrix.
+* `SimpleGraph.IsWalkFrom.exists_isWalkFrom_pathGraph_of_val_eq_add_one`: on the path graph, if a
+  walk from `0` with `m + 1` steps ends at `v + 1`, then some walk from `0` with `m` steps ends
+  at `v`.
 -/
 
 public section
@@ -134,5 +140,51 @@ theorem IsWalkFrom.le_add_of_adj_le_succ {m : ℕ} {s : Fin (m + 1) → V} (hs :
     simp only [Fin.val_castSucc] at ih
     simp only [Fin.val_succ]
     omega
+
+/-- **Counting walks by powers of the adjacency matrix.** The number of walks in `G` from `v₀`
+with `n` steps that end at `v` is the entry at `v₀` and `v` of the `n`-th power of the adjacency
+matrix. -/
+theorem card_isWalkFrom_eq_adjMatrix_pow_apply [Fintype V] [DecidableEq V] [DecidableRel G.Adj]
+    (n : ℕ) (v : V) :
+    Fintype.card {s : Fin (n + 1) → V // IsWalkFrom G v₀ s ∧ s (Fin.last n) = v} =
+      (G.adjMatrix ℕ ^ n) v₀ v := by
+  rw [Fintype.card_subtype, Finset.card_filter]
+  induction n generalizing v with
+  | zero =>
+    rw [Fintype.sum_eq_single (fun _ ↦ v₀) fun s hs ↦ ite_eq_right_iff.2 fun h ↦
+      (hs (funext fun i ↦ by rw [Fin.fin_one_eq_zero i, ((isWalkFrom_zero s).1 h.1)])).elim]
+    simp [Matrix.one_apply]
+  | succ n ih =>
+    rw [pow_succ, Matrix.mul_apply, ← (Fin.snocEquiv fun _ ↦ V).sum_comp, Fintype.sum_prod_type]
+    simp only [Fin.snocEquiv_apply, isWalkFrom_snoc, Fin.snoc_last]
+    rw [Fintype.sum_eq_single v fun y hy ↦ Finset.sum_eq_zero fun q _ ↦ by simp [hy]]
+    simp_rw [← ih, Finset.sum_mul, ite_mul, one_mul, zero_mul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    by_cases hq : G.IsWalkFrom v₀ q <;> simp [hq, adjMatrix_apply]
+
+/-- On the path graph, if a walk from `0` with `m + 1` steps ends at `v + 1`, then some walk from
+`0` with `m` steps ends at `v`. -/
+theorem IsWalkFrom.exists_isWalkFrom_pathGraph_of_val_eq_add_one {k : ℕ} :
+    ∀ {m : ℕ} {s : Fin (m + 2) → Fin (k + 1)}, (pathGraph (k + 1)).IsWalkFrom 0 s →
+      ∀ {v : Fin (k + 1)}, (s (Fin.last (m + 1))).val = v.val + 1 →
+        ∃ p : Fin (m + 1) → Fin (k + 1), (pathGraph (k + 1)).IsWalkFrom 0 p ∧ p (Fin.last m) = v
+  | 0, s, hs, v, hv => by
+    have h := hs.adj (a := 0) (b := Fin.last (0 + 1)) (by simp)
+    rw [hs.apply_zero, pathGraph_adj] at h
+    refine ⟨fun _ ↦ 0, (isWalkFrom_zero _).2 rfl, Fin.ext ?_⟩
+    simp only [Fin.val_zero] at h ⊢
+    omega
+  | m + 1, s, hs, v, hv => by
+    have h := hs.adj (a := (Fin.last (m + 1)).castSucc) (b := Fin.last (m + 1 + 1))
+      (by simp)
+    rw [pathGraph_adj] at h
+    by_cases hu : (s (Fin.last (m + 1)).castSucc).val = v.val
+    · exact ⟨Fin.init s, hs.init, Fin.ext hu⟩
+    · obtain ⟨p, hp, hpv⟩ := hs.init.exists_isWalkFrom_pathGraph_of_val_eq_add_one
+        (v := ⟨v.val + 1, by omega⟩) (by simp only [Fin.init]; omega)
+      refine ⟨Fin.snoc p v, (isWalkFrom_snoc _ _).2 ⟨hp, ?_⟩, Fin.snoc_last _ _⟩
+      rw [hpv, pathGraph_adj]
+      exact Or.inr rfl
 
 end SimpleGraph
