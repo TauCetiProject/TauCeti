@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Algebra.Group.Action.End
 
 import Mathlib.Algebra.Group.Subgroup.Finite
+import Mathlib.GroupTheory.Index
 import Mathlib.GroupTheory.Perm.Sign
 
 /-!
@@ -40,6 +41,8 @@ primitivity of the product action requires additional hypotheses and is not asse
 * `TauCeti.WreathProduct.imprimitiveToPerm`: the imprimitive permutation representation on
   `ι × Λ`.
 * `TauCeti.WreathProduct.productToPerm`: the product permutation representation on `ι → Λ`.
+* `TauCeti.WreathProduct.baseProd`: for a commutative base group, the homomorphism to the base
+  group taking the product of the base coordinates.
 * `TauCeti.WreathProduct.flatten`: the embedding `(D ≀ Sym(κ)) ≀ Sym(ι) →* D ≀ Sym(ι × κ)` of an
   iterated wreath product, injective for nonempty `κ` (`TauCeti.WreathProduct.flatten_injective`).
 
@@ -309,6 +312,42 @@ theorem congr_trans {μ : Type*} (e : ι ≃ κ) (e' : κ ≃ μ) :
   ext w <;> simp
 
 end Relabel
+
+section BaseProd
+
+variable (C : Type*) [CommGroup C] (κ : Type*) [Fintype κ]
+
+/-- For a commutative base group `C`, the product of the base coordinates is a homomorphism
+`C ≀ Sym(κ) →* C`, since the top permutation only reorders the factors. For `C = ℤˣ` it sends a
+signed permutation to the product of its signs. -/
+def baseProd : WreathProduct C κ →* C where
+  toFun w := ∏ i, w.left i
+  map_one' := by simp
+  map_mul' a b := by
+    simp only [PermutationWreathProduct.mul_left, Finset.prod_mul_distrib, Equiv.Perm.smul_def]
+    rw [Equiv.prod_comp a.right⁻¹ b.left]
+
+variable {C κ}
+
+/-- The base product of a wreath-product element is the product of its base coordinates. -/
+@[simp]
+theorem baseProd_apply (w : WreathProduct C κ) : baseProd C κ w = ∏ i, w.left i :=
+  (rfl)
+
+/-- Over a nonempty index type the base product is surjective: an element supported on one
+coordinate maps to its value there. -/
+theorem baseProd_surjective [Nonempty κ] : Function.Surjective (baseProd C κ) := by
+  classical
+  obtain ⟨i⟩ := ‹Nonempty κ›
+  exact fun c ↦ ⟨SemidirectProduct.inl (Pi.mulSingle i c), by simp⟩
+
+/-- Over a nonempty index type the kernel of the base product has index `Nat.card C`. -/
+theorem card_ker_baseProd_mul_card [Nonempty κ] :
+    Nat.card (baseProd C κ).ker * Nat.card C = Nat.card (WreathProduct C κ) := by
+  rw [← (baseProd C κ).ker.card_mul_index, Subgroup.index_ker,
+    MonoidHom.range_eq_top.mpr baseProd_surjective, Subgroup.card_top]
+
+end BaseProd
 
 section Generation
 
