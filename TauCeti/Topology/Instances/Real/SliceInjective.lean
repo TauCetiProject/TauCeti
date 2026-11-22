@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.Baire.Lemmas
 import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # Points with unique values on the horizontal slices of a map on `ℝ × ℝ`
@@ -169,13 +170,6 @@ private theorem exists_countable_closedBall_cover_injOn {G : Set (ℝ × ℝ)} (
     (f := fun p ↦ closedBall p (r p)) fun p hp ↦
       mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds p (hr p hp))
   exact ⟨T, hTc, r, hGT, fun p hp ↦ hrG p (hTG hp), fun p hp ↦ hrinj p (hTG hp)⟩
-
-omit [TopologicalSpace X] [T2Space X] in
-/-- A horizontal line in `ℝ × ℝ` has empty interior. -/
-private theorem interior_preimage_snd_singleton (t : ℝ) :
-    interior (Prod.snd ⁻¹' {t} : Set (ℝ × ℝ)) = ∅ := by
-  rw [← isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd, interior_singleton,
-    preimage_empty]
 
 /-- **The Baire step.** Let `u : ℝ × ℝ → X` be continuous, let `G` be a set with countable
 complement, covered by the closed balls of a countable family indexed by `T`, and suppose that
