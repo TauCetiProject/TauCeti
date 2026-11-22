@@ -126,9 +126,8 @@ theorem inv_p_pow_mem_invPowLattice (a : ℕ) : ((p : ℚ_[p]) ^ a)⁻¹ ∈ inv
 @[simp]
 theorem invPowLattice_le_invPowLattice_iff {a b : ℕ} :
     invPowLattice p a ≤ invPowLattice p b ↔ a ≤ b := by
-  rw [invPowLattice_def, span_singleton_le_iff_mem, mem_invPowLattice_iff, norm_inv, norm_pow,
-    Padic.norm_p, inv_pow, inv_inv]
-  exact pow_le_pow_iff_right₀ (by exact_mod_cast hp.out.one_lt)
+  rw [invPowLattice_def, span_singleton_le_iff_mem, mem_invPowLattice_iff]
+  simpa using pow_le_pow_iff_right₀ (by exact_mod_cast hp.out.one_lt : 1 < (p : ℝ))
 
 theorem invPowLattice_strictMono : StrictMono (invPowLattice p) :=
   strictMono_of_le_iff_le fun _ _ ↦ invPowLattice_le_invPowLattice_iff.symm
@@ -144,6 +143,22 @@ theorem invPowLattice_inj {a b : ℕ} : invPowLattice p a = invPowLattice p b �
 @[simp]
 theorem invPowLattice_zero : invPowLattice p 0 = 1 := by
   rw [invPowLattice_def, pow_zero, inv_one, one_eq_span]
+
+@[simp]
+theorem invPowLattice_eq_one_iff {a : ℕ} : invPowLattice p a = 1 ↔ a = 0 := by
+  rw [← invPowLattice_zero, invPowLattice_inj]
+
+theorem one_le_invPowLattice (a : ℕ) : 1 ≤ invPowLattice p a :=
+  invPowLattice_zero (p := p) ▸ invPowLattice_mono a.zero_le
+
+/-- The simp-normal form of `TauCeti.one_le_invPowLattice`, by `Submodule.one_le`. -/
+@[simp]
+theorem one_mem_invPowLattice (a : ℕ) : (1 : ℚ_[p]) ∈ invPowLattice p a :=
+  one_le.mp (one_le_invPowLattice a)
+
+@[simp]
+theorem invPowLattice_le_one_iff {a : ℕ} : invPowLattice p a ≤ 1 ↔ a = 0 := by
+  rw [← invPowLattice_zero, invPowLattice_le_invPowLattice_iff, Nat.le_zero]
 
 theorem invPowLattice_mul_invPowLattice (a b : ℕ) :
     invPowLattice p a * invPowLattice p b = invPowLattice p (a + b) := by
@@ -163,11 +178,12 @@ theorem invPowLattice_div_mul_invPowLattice_div_le (r s : ℕ) :
 /-- Multiplication by `p ^ c` carries `p ^ (-(a + c)) ℤ_p` into `p ^ (-a) ℤ_p`. -/
 theorem pow_smul_mem_invPowLattice {a c : ℕ} {x : ℚ_[p]} (hx : x ∈ invPowLattice p (a + c)) :
     (p : ℤ_[p]) ^ c • x ∈ invPowLattice p a := by
-  rw [mem_invPowLattice_iff] at hx ⊢
-  rw [Algebra.smul_def, PadicInt.algebraMap_apply, norm_mul, ← PadicInt.norm_def,
-    PadicInt.norm_p_pow, zpow_neg, zpow_natCast,
-    inv_mul_le_iff₀ (pow_pos (by exact_mod_cast hp.out.pos) _), ← pow_add, add_comm c]
-  exact hx
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
+  obtain ⟨d, rfl⟩ := mem_span_singleton.mp hx
+  refine mem_span_singleton.mpr ⟨d, ?_⟩
+  simp only [Algebra.smul_def, PadicInt.algebraMap_apply, PadicInt.coe_pow, PadicInt.coe_natCast]
+  field_simp
+  ring
 
 /-- For `a ≤ b`, the inclusion `p ^ (-a) ℤ_p ⊆ p ^ (-b) ℤ_p` has cokernel killed by
 `p ^ (b - a)`. By `QuotSMulTop.mem_annihilator_ker_map` and `QuotSMulTop.mem_annihilator_range_map`
@@ -224,21 +240,20 @@ theorem injective_quotSMulTop_map_inclusion_iff {a b n : ℕ} (hab : a ≤ b) (h
       IsUnit.of_mul_eq_one c (mul_left_cancel₀ (pow_ne_zero n (by exact_mod_cast hp0)) hcoeff).symm
     exact PadicInt.not_isUnit_iff_dvd.mpr (dvd_refl _) hunit
   · rintro rfl
-    have h1 := QuotSMulTop.mem_annihilator_ker_map ((p : ℤ_[p]) ^ n) (inclusion_injective _)
-      (pow_sub_mem_annihilator_range_inclusion (p := p) (le_refl a))
-    rw [Nat.sub_self, pow_zero] at h1
-    refine LinearMap.ker_eq_bot.mp (eq_bot_iff.mpr fun y hy ↦ ?_)
-    simpa using Module.mem_annihilator.mp h1 ⟨y, hy⟩
+    -- The inclusion of a lattice in itself is the identity, hence so is its reduction.
+    rw [show inclusion (invPowLattice_mono hab) = LinearMap.id from LinearMap.ext fun _ ↦ rfl,
+      QuotSMulTop.map_id]
+    exact Function.injective_id
 
 /-! ### The modified Tate lattice -/
 
 /-- The modified generator `(p ^ a a!)⁻¹` has norm `p ^ (a + v_p(a!))`. -/
 theorem norm_modifiedTateGenerator (r : ℕ) :
     ‖modifiedTateGenerator p r‖ = (p : ℝ) ^ (r / (p - 1) + multiplicity p (r / (p - 1))!) := by
-  have hp0 : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
-  rw [modifiedTateGenerator, norm_inv, norm_mul, Padic.norm_p_pow,
-    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), Nat.padicValNat_def, ← zpow_add₀ hp0,
-    ← neg_add, zpow_neg, inv_inv, ← Nat.cast_add, zpow_natCast]
+  rw [modifiedTateGenerator]
+  generalize r / (p - 1) = a
+  simp [Padic.norm_natCast_eq_zpow a.factorial_ne_zero, Nat.padicValNat_def, zpow_neg]
+  ring
 
 /-- The modified Tate lattice of weight `r` is `p ^ (-(a + v_p(a!))) ℤ_p`, where
 `a = ⌊r / (p - 1)⌋`. -/
@@ -246,8 +261,9 @@ theorem modifiedTateLattice_eq_invPowLattice (r : ℕ) :
     modifiedTateLattice p r =
       invPowLattice p (r / (p - 1) + multiplicity p (r / (p - 1))!) := by
   rw [modifiedTateLattice_def, invPowLattice_def,
-    PadicInt.span_singleton_eq_span_singleton_iff_norm_eq, norm_modifiedTateGenerator, norm_inv,
-    norm_pow, Padic.norm_p, inv_pow, inv_inv]
+    PadicInt.span_singleton_eq_span_singleton_iff_norm_eq, norm_modifiedTateGenerator]
+  generalize r / (p - 1) + _ = n
+  simp
 
 /-- The modified Tate lattice of weight `r` is the closed ball of radius `p ^ (a + v_p(a!))`. -/
 theorem mem_modifiedTateLattice_iff {r : ℕ} {x : ℚ_[p]} :
@@ -258,8 +274,8 @@ theorem mem_modifiedTateLattice_iff {r : ℕ} {x : ℚ_[p]} :
 /-- The modified Tate lattice is `ℤ_p` exactly in the weights `r < p - 1`, where `a = 0`. -/
 @[simp]
 theorem modifiedTateLattice_eq_one_iff {r : ℕ} : modifiedTateLattice p r = 1 ↔ r < p - 1 := by
-  rw [modifiedTateLattice_eq_invPowLattice, ← invPowLattice_zero, invPowLattice_inj,
-    Nat.add_eq_zero_iff, Nat.div_eq_zero_iff]
+  rw [modifiedTateLattice_eq_invPowLattice, invPowLattice_eq_one_iff, Nat.add_eq_zero_iff,
+    Nat.div_eq_zero_iff]
   have : p - 1 ≠ 0 := by have := hp.out.two_le; omega
   constructor
   · rintro ⟨h | h, -⟩
@@ -269,8 +285,20 @@ theorem modifiedTateLattice_eq_one_iff {r : ℕ} : modifiedTateLattice p r = 1 �
     have h0 : r / (p - 1) = 0 := Nat.div_eq_of_lt h
     exact ⟨Or.inr h, by rw [h0, Nat.factorial_zero, multiplicity_one_right]⟩
 
+@[simp]
 theorem modifiedTateLattice_zero : modifiedTateLattice p 0 = 1 :=
   modifiedTateLattice_eq_one_iff.mpr (by have := hp.out.two_le; omega)
+
+/-- The ordinary Tate lattice `ℤ_p(r)`, spanned by `1`, is contained in the modified Tate
+lattice. -/
+theorem one_le_modifiedTateLattice (r : ℕ) : 1 ≤ modifiedTateLattice p r := by
+  rw [modifiedTateLattice_eq_invPowLattice]
+  exact one_le_invPowLattice _
+
+/-- The simp-normal form of `TauCeti.one_le_modifiedTateLattice`, by `Submodule.one_le`. -/
+@[simp]
+theorem one_mem_modifiedTateLattice (r : ℕ) : (1 : ℚ_[p]) ∈ modifiedTateLattice p r :=
+  one_le.mp (one_le_modifiedTateLattice r)
 
 /-- Colmez–Nizioł's lattice `p ^ (-a) ℤ_p` is contained in the modified Tate lattice. -/
 theorem invPowLattice_le_modifiedTateLattice (r : ℕ) :
