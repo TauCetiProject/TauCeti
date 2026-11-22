@@ -31,7 +31,7 @@ map `(t, x) ↦ eᵗ α_x` into the cotangent bundle
   positive multiples of `α`, and the images of `κ_α` and `κ_(-α)` are disjoint and together form
   `ξ⁰ ∖ 0` (`TauCeti.SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff`);
 * for a contact form `α` on a boundaryless manifold, `κ_α` is a local diffeomorphism
-  (`TauCeti.SmoothForm.IsContactForm.isLocalDiffeomorph_symplectizationToAnnihilator`). So `κ_α`
+  (`TauCeti.SmoothForm.isLocalDiffeomorph_symplectizationToAnnihilator`). So `κ_α`
   is a diffeomorphism from `ℝ × M` onto an open half of `ξ⁰ ∖ 0` carrying `d(eᵗ α)` to `dθ`;
 * changing the contact form to `β = f α` changes the trivialization by the lift
   `(t, x) ↦ (t - log f(x), x)` of the identity when `f > 0`
@@ -76,9 +76,12 @@ private theorem exp_smul_degreeOneEquiv_mem_annihilatorSpace (hα : α.kerDistri
   simp [hv]
 
 /-- The **contact-form trivialization** `κ_α : ℝ × M → ξ⁰`, `(t, x) ↦ eᵗ α_x`, of the annihilator
-line of the hyperplane field `ξ = ker α`. For a contact form `α` it is a diffeomorphism of the
-symplectization `ℝ × M` onto one half of `ξ⁰ ∖ 0`, pulling the tautological one-form back to
-`eᵗ α` (`TauCeti.SmoothForm.mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm`). -/
+line of the hyperplane field `ξ = ker α`. It pulls the tautological one-form back to `eᵗ α`
+(`TauCeti.SmoothForm.mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm`). For a
+contact form `α` on a boundaryless manifold it is an injective local diffeomorphism
+(`TauCeti.SmoothForm.isLocalDiffeomorph_symplectizationToAnnihilator`), so
+`IsLocalDiffeomorph.diffeomorphOfInjective` makes it a diffeomorphism of the symplectization
+`ℝ × M` onto one half of `ξ⁰ ∖ 0`. -/
 def symplectizationToAnnihilator (α : SmoothForm I M ℝ 1) (hα : α.kerDistribution = ξ)
     (p : ℝ × M) : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x :=
   TotalSpace.mk' (Fin 1 → ℝ) p.2 ⟨_, exp_smul_degreeOneEquiv_mem_annihilatorSpace hα p⟩
@@ -98,8 +101,11 @@ theorem symplectizationToAnnihilator_snd_apply (p : ℝ × M)
     ((α.symplectizationToAnnihilator hα p).snd :
         TangentSpace I (α.symplectizationToAnnihilator hα p).proj →L[ℝ] ℝ) v =
       Real.exp p.1 * α.val p.2 ![v] := by
-  simp only [symplectizationToAnnihilator]
-  exact congrArg (Real.exp p.1 * ·) (degreeOneEquiv_apply_apply_vec α p.2 v)
+  -- The base point `(κ_α p).proj` is `p.2` by definition, so `v` is a tangent vector at `p.2`.
+  have key (w : TangentSpace I p.2) :
+      (Real.exp p.1 • degreeOneEquiv α p.2) w = Real.exp p.1 * α.val p.2 ![w] := by
+    rw [_root_.smul_apply, degreeOneEquiv_apply_apply_vec, smul_eq_mul]
+  exact key v
 
 /-- Followed by the inclusion `ξ⁰ → T*M`, the trivialization `κ_α` is the map `(t, x) ↦ eᵗ α_x`
 into the cotangent bundle. -/
@@ -271,10 +277,9 @@ theorem mpullback_symplectizationToAnnihilator_mextDerivₗ_annihilatorLiouville
   haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   by rw [← mextDerivₗ_mpullback, mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm]
 
-/-- For a contact form `α` with kernel `ξ`, the trivialization `κ_α` is an immersion: its
-composite with the inclusion `ξ⁰ → T*M` is the immersion `(t, x) ↦ eᵗ α_x`. -/
-theorem IsContactForm.injective_mfderiv_symplectizationToAnnihilator (hαc : α.IsContactForm)
-    (p : ℝ × M) :
+/-- For a one-form `α` whose kernel is a contact structure `ξ`, the differential of the
+trivialization `κ_α` is injective at every point. -/
+theorem injective_mfderiv_symplectizationToAnnihilator (p : ℝ × M) :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     Injective (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ))
       (α.symplectizationToAnnihilator hα) p) :=
@@ -283,19 +288,21 @@ theorem IsContactForm.injective_mfderiv_symplectizationToAnnihilator (hαc : α.
   have hκ := (contMDiff_symplectizationToAnnihilator hα hξ p).mdifferentiableAt (by simp)
   have hj := (hξ.isContMDiffDistribution.contMDiff_annihilatorInclusion (n := ∞)
     hξ.finrank_sub_one_add_one (α.symplectizationToAnnihilator hα p)).mdifferentiableAt (by simp)
+  have hαc : α.IsContactForm :=
+    isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)
   have h := hαc.injective_mfderiv_symplectizationToCotangent p
   rw [← annihilatorInclusion_comp_symplectizationToAnnihilator hα, mfderiv_comp p hj hκ,
     ContinuousLinearMap.coe_comp] at h
   exact h.of_comp
 
 /-- **The trivialization is a local diffeomorphism.** On a boundaryless manifold, the
-trivialization `κ_α` of the annihilator line by a contact form `α` with kernel `ξ` is a local
-diffeomorphism. Since it is injective (`TauCeti.SmoothForm.symplectizationToAnnihilator_injective`),
+trivialization `κ_α` of the annihilator line by a one-form `α` whose kernel is a contact
+structure `ξ` is a local diffeomorphism. Since it is injective
+(`TauCeti.SmoothForm.symplectizationToAnnihilator_injective`),
 `IsLocalDiffeomorph.diffeomorphOfInjective` makes it a diffeomorphism from `ℝ × M` onto its open
 image, the half of `ξ⁰ ∖ 0` described by
 `TauCeti.SmoothForm.mem_range_symplectizationToAnnihilator_iff`. -/
-theorem IsContactForm.isLocalDiffeomorph_symplectizationToAnnihilator [BoundarylessManifold I M]
-    (hαc : α.IsContactForm) :
+theorem isLocalDiffeomorph_symplectizationToAnnihilator [BoundarylessManifold I M] :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
@@ -308,7 +315,7 @@ theorem IsContactForm.isLocalDiffeomorph_symplectizationToAnnihilator [Boundaryl
   fun p ↦ isLocalDiffeomorphAt_of_injective_mfderiv
     (contMDiff_symplectizationToAnnihilator hα hξ).contMDiffOn isOpen_univ (mem_univ p)
     BoundarylessManifold.isInteriorPoint (by simp)
-    (hαc.injective_mfderiv_symplectizationToAnnihilator hα hξ p)
+    (injective_mfderiv_symplectizationToAnnihilator hα hξ p)
     (by simp [Module.finrank_prod, add_comm])
 
 end Smooth
