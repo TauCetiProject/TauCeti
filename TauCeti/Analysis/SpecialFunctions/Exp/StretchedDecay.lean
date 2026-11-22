@@ -75,7 +75,7 @@ theorem exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO {F : Type*} [Seminorme
     continuous_exp.comp_continuousOn <| continuousOn_const.mul <|
       continuousOn_id.rpow_const fun u hu ↦ ha.imp (fun ha0 ↦ (ha0.trans_le hu).ne') id
   obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
-    hg fun u _ ↦ (exp_pos _).ne')
+    hg fun u _ ↦ norm_ne_zero_iff.mpr (exp_pos _).ne')
   refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
   have hCu := hC u hu
   rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)] at hCu

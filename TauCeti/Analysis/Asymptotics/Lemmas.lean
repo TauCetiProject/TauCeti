@@ -54,10 +54,11 @@ soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic
 an explicit inequality valid at every point, which a summation argument can apply at infinitely
 many points at once. The interval bounds hold when the dominated function is bounded on the
 intervals `[a, b]` and the dominating one is bounded away from zero. They also hold when closed
-intervals are compact and both functions are continuous on the half-line, with a nonvanishing
-dominating function: this covers exponentially decaying majorants such as `exp (-p x)`. For the
-slowly decaying majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact
-intervals alone suffices, covering step functions such as summatory functions.
+intervals are compact and both functions are continuous on the half-line, where the norm of the
+dominating function does not vanish: this covers exponentially decaying majorants such as
+`exp (-p x)`. For the slowly decaying majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local
+boundedness of `f` on compact intervals alone suffices, covering step functions such as summatory
+functions.
 
 If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a radius `q > 0`, then at
 a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
@@ -92,7 +93,7 @@ evaluations of elliptic integrals.
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below on `[a, ∞)` by a positive
   constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
-  intervals are compact, `f` and `g` are continuous on `[a, ∞)` and `g` does not vanish there.
+  intervals are compact, `f` and `g` are continuous on `[a, ∞)` and `‖g‖` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -199,21 +200,51 @@ theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
 
 /-- **An eventual big-O bound holds on a whole half-line once it holds on its intervals.** If
 `f = O(g)` at `atTop` and `f = O(g)` uniformly on every interval `[a, b]`, then `f = O(g)`
-uniformly on `[a, ∞)`. -/
+uniformly on `[a, ∞)`. The norms need not be nonnegative. -/
 theorem IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc {ι E F : Type*} [LinearOrder ι]
-    [Norm E] [SeminormedAddGroup F] {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g)
+    [Norm E] [Norm F] {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g)
     (hI : ∀ b, f =O[𝓟 (Set.Icc a b)] g) :
     f =O[𝓟 (Set.Ici a)] g := by
   -- `eventually_atTop` needs a nonempty order
   have : Nonempty ι := ⟨a⟩
-  -- the bound at `atTop` holds on some tail `[b, ∞)`; glue it to the bound on `[a, b]`
+  -- the bound at `atTop` holds with a constant `c` on some tail `[b, ∞)`, and the bound on
+  -- `[a, b]` with a constant `c'`
   obtain ⟨c, hc⟩ := h.bound
   obtain ⟨b, hb⟩ := eventually_atTop.mp hc
   obtain ⟨c', hc'⟩ := isBigO_principal.mp (hI b)
-  refine isBigO_principal.mpr ⟨max c c', fun x hx ↦ ?_⟩
-  rcases le_total b x with hbx | hxb
-  · exact (hb x hbx).trans (by gcongr; exact le_max_left _ _)
-  · exact (hc' x ⟨hx, hxb⟩).trans (by gcongr; exact le_max_right _ _)
+  have h₀ (x : ι) (hx : a ≤ x) : ‖f x‖ ≤ c * ‖g x‖ ∨ ‖f x‖ ≤ c' * ‖g x‖ :=
+    (le_total b x).imp (hb x) fun hxb ↦ hc' x ⟨hx, hxb⟩
+  -- the norms may be negative, so the constraint `‖f x‖ ≤ C * ‖g x‖` is a lower bound on `C`
+  -- where `‖g x‖ > 0` and an upper bound where `‖g x‖ < 0`. Take for `C` the supremum of the
+  -- set `L` of the lower bounds `‖f x‖ / ‖g x‖` and of `min c c'`, which `max c c'` bounds.
+  set L := insert (min c c') ((fun x ↦ ‖f x‖ / ‖g x‖) '' {x | a ≤ x ∧ 0 < ‖g x‖})
+  have hL : BddAbove L := by
+    refine ⟨max c c', ?_⟩
+    rintro _ (rfl | ⟨y, ⟨hy, hgy⟩, rfl⟩)
+    · exact min_le_max
+    · dsimp only
+      rw [div_le_iff₀ hgy]
+      rcases h₀ y hy with h | h
+      · exact h.trans (by gcongr; exact le_max_left _ _)
+      · exact h.trans (by gcongr; exact le_max_right _ _)
+  refine isBigO_principal.mpr ⟨sSup L, fun x (hx : a ≤ x) ↦ ?_⟩
+  rcases lt_or_ge 0 ‖g x‖ with hgx | hgx
+  · rw [← div_le_iff₀ hgx]
+    exact le_csSup hL (.inr ⟨x, ⟨hx, hgx⟩, rfl⟩)
+  -- where `‖g x‖ ≤ 0`, every `s ∈ L` satisfies the constraint at `x`: `min c c'` by the choice
+  -- of `c` and `c'`, and a lower bound from `y` as `x` and `y` share the constant on `[a, max x y]`
+  have hs : ∀ s ∈ L, ‖f x‖ ≤ s * ‖g x‖ := by
+    rintro _ (rfl | ⟨y, ⟨hy, hgy⟩, rfl⟩)
+    · rcases h₀ x hx with h | h
+      · exact h.trans (mul_le_mul_of_nonpos_right (min_le_left _ _) hgx)
+      · exact h.trans (mul_le_mul_of_nonpos_right (min_le_right _ _) hgx)
+    · obtain ⟨d, hd⟩ := isBigO_principal.mp (hI (max x y))
+      exact (hd x ⟨hx, le_max_left _ _⟩).trans <| mul_le_mul_of_nonpos_right
+        ((div_le_iff₀ hgy).mpr (hd y ⟨hy, le_max_right _ _⟩)) hgx
+  rcases hgx.lt_or_eq with hgx | hgx
+  · rw [← le_div_iff_of_neg hgx]
+    exact csSup_le (Set.insert_nonempty _ _) fun s hs' ↦ (le_div_iff_of_neg hgx).mpr (hs s hs')
+  · simpa [hgx] using hs _ (Set.mem_insert _ _)
 
 /-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
 bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on
@@ -222,40 +253,33 @@ theorem IsBigO.isBigO_principal_Ici {ι E F : Type*} [LinearOrder ι] [Norm E] [
     {f : ι → E} {g : ι → F} {a : ι} {c : ℝ} (h : f =O[atTop] g) (hc : 0 < c)
     (hg : ∀ x, a ≤ x → c ≤ ‖g x‖) (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
     f =O[𝓟 (Set.Ici a)] g := by
-  -- `‖g‖ ≥ c > 0` on `[a, ∞)`, so there the real function `‖g‖` has the same norm as `g`
-  have hn : ∀ x, a ≤ x → ‖‖g x‖‖ = ‖g x‖ := fun x hx ↦ Real.norm_of_nonneg (hc.le.trans (hg x hx))
-  obtain ⟨c₀, hc₀⟩ := h.bound
-  have h' : f =O[atTop] fun x ↦ ‖g x‖ := .of_bound c₀ <| by
-    filter_upwards [hc₀, eventually_ge_atTop a] with x hx hax
-    rwa [hn x hax]
   -- on `[a, b]`, `f` is bounded and `‖g‖ ≥ c`
-  obtain ⟨C, hC⟩ := isBigO_principal.mp <|
-      h'.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ by
-    obtain ⟨B, hB⟩ := hf b
-    refine isBigO_principal.mpr ⟨max B 0 / c, fun x hx ↦ ?_⟩
-    rw [hn x hx.1]
-    calc ‖f x‖ ≤ max B 0 := (hB x hx).trans (le_max_left _ _)
-      _ ≤ max B 0 / c * ‖g x‖ := by
-        rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-        exact mul_le_mul_of_nonneg_left (hg x hx.1) (le_max_right _ _)
-  exact isBigO_principal.mpr ⟨C, fun x hx ↦ (hC x hx).trans_eq (by rw [hn x hx])⟩
+  refine h.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ ?_
+  obtain ⟨B, hB⟩ := hf b
+  refine isBigO_principal.mpr ⟨max B 0 / c, fun x hx ↦ ?_⟩
+  calc ‖f x‖ ≤ max B 0 := (hB x hx).trans (le_max_left _ _)
+    _ ≤ max B 0 / c * ‖g x‖ := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+      exact mul_le_mul_of_nonneg_left (hg x hx.1) (le_max_right _ _)
 
 /-- **An eventual big-O bound holds on a whole half-line, continuous version.** In a linear
 order whose closed intervals are compact, if `f = O(g)` at `atTop`, both functions are continuous
-on `[a, ∞)` and `g` does not vanish there, then `f = O(g)` uniformly on `[a, ∞)`. Unlike
+on `[a, ∞)` and `‖g‖` does not vanish there, then `f = O(g)` uniformly on `[a, ∞)`. Unlike
 `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero, as for an exponentially decaying
 majorant. -/
 theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrder ι]
-    [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [NormedAddGroup F]
+    [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [SeminormedAddGroup F]
     {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g) (hf : ContinuousOn f (Set.Ici a))
-    (hg : ContinuousOn g (Set.Ici a)) (hg0 : ∀ x ∈ Set.Ici a, g x ≠ 0) :
+    (hg : ContinuousOn g (Set.Ici a)) (hg0 : ∀ x ∈ Set.Ici a, ‖g x‖ ≠ 0) :
     f =O[𝓟 (Set.Ici a)] g := by
-  -- on the compact `[a, b]`, `f = O(1)` and `1 = O(g)`
+  -- on the compact `[a, b]`, `f = O(1)`, `1 = O(‖g‖)` as `‖g‖` is continuous and nonzero, and
+  -- `‖g‖ = O(g)`
   refine h.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ ?_
   exact ((hf.mono Set.Icc_subset_Ici_self).isBigO_principal isCompact_Icc
     (norm_ne_zero_iff.mpr one_ne_zero) (c := (1 : ℝ))).trans <|
-      (hg.mono Set.Icc_subset_Ici_self).isBigO_rev_principal isCompact_Icc
-        (fun x hx ↦ hg0 x hx.1) 1
+      ((hg.norm.mono Set.Icc_subset_Ici_self).isBigO_rev_principal isCompact_Icc
+        (fun x hx ↦ hg0 x hx.1) 1).trans
+          (isBigO_of_le _ fun x ↦ (Real.norm_of_nonneg (norm_nonneg _)).le)
 
 /-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `ψ` is frequently nonzero
 along `l` and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` (`NormSMulClass`), then
