@@ -245,6 +245,58 @@ theorem contMDiff_quotientGroup_lift [N.Normal] [Monoid M] (f : G →* M) (hN : 
 
 end Subgroup
 
+/-! ### Quotients of a normed space by a discrete subgroup -/
+
+namespace AddSubgroup
+
+open Filter
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (N : AddSubgroup E) [DiscreteTopology N]
+
+/-- **The differential of the projection onto a quotient of a normed space is the identity.** For
+a discrete subgroup `N` of a normed space `E`, read in the charts of `E ⧸ N`, the projection is
+locally a translation by an element of `N`, so its differential is the identity of `E`. -/
+theorem hasMFDerivAt_quotientMk (x : E) :
+    HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E) (QuotientAddGroup.mk : E → E ⧸ N) x
+      (ContinuousLinearMap.id 𝕜 E) := by
+  have hf := N.isLocalHomeomorph_quotientMk
+  set z : E := QuotientAddGroup.mk_surjective.hasRightInverse.choose (x : E ⧸ N)
+  have hz : (z : E ⧸ N) = x := QuotientAddGroup.mk_surjective.hasRightInverse.choose_spec _
+  set L := hf.localInverseAt z
+  have hc : ⇑(chartAt E (x : E ⧸ N)) = L := by
+    -- the chart at `[x]` is the local inverse of the projection at the chosen representative `z`,
+    -- followed by the identity chart of `E`
+    change ⇑((hf.localInverseAt z).trans (chartAt E z)) = _
+    simp [L]
+  -- near `x`, the chart composed with the projection is the translation by `z - x`
+  have hloc : (chartAt E (x : E ⧸ N)) ∘ QuotientAddGroup.mk =ᶠ[𝓝 x] fun y ↦ y + (z - x) := by
+    have ht : Tendsto (fun y : E ↦ y + (z - x)) (𝓝 x) (𝓝 z) :=
+      ((continuous_id.add continuous_const).tendsto' x z (by simp) : _)
+    filter_upwards [ht (L.open_target.mem_nhds hf.self_mem_localInverseAt_target)] with y hy
+    have hmk : ((y + (z - x) : E) : E ⧸ N) = y := by
+      rw [QuotientAddGroup.eq_iff_sub_mem, add_sub_cancel_left]
+      exact QuotientAddGroup.eq_iff_sub_mem.1 hz
+    rw [Function.comp_apply, hc, ← hmk]
+    have h := L.right_inv hy
+    rwa [hf.localInverseAt_symm] at h
+  refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
+    Set.range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
+  convert ((hasFDerivAt_id x).add_const (z - x)).congr_of_eventuallyEq hloc using 1
+  ext
+  rfl
+
+/-- The manifold derivative of the projection onto a quotient of a normed space by a discrete
+subgroup is the identity. -/
+@[simp]
+theorem mfderiv_quotientMk (x : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (QuotientAddGroup.mk : E → E ⧸ N) x = ContinuousLinearMap.id 𝕜 E :=
+  (N.hasMFDerivAt_quotientMk x).mfderiv
+
+end AddSubgroup
+
 end
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
