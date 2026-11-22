@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.Probability.Kernel.Proper
 public import Mathlib.Probability.Notation
+public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import TauCeti.Probability.Kernel.Invariance
 public import TauCeti.Probability.Gibbs.Subshift
@@ -44,13 +45,17 @@ resampling `Δ`. A measure `μ` is Gibbs for `γ` when `μ.bind γ_Λ = μ` for 
 
 ## References
 
-The definitions follow Sheffield, *Random surfaces*, Astérisque 304 (2005), Section 1.1.2.
+The definitions follow Sheffield, *Random surfaces*, Astérisque 304 (2005), Section 1.1.2. The
+kernel formulation of a specification, with its consistency stated as a composition of kernels,
+and the kernel-invariance form of the Gibbs property are those of the GibbsMeasure project of
+Y. Dillies and M. Cipollina (https://github.com/YaelDillies/gibbs-measure,
+`GibbsMeasure/Specification.lean`, Apache 2.0), adapted to subshifts.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory Set
-open scoped ENNReal
+open scoped ENNReal Pointwise
 
 namespace TauCeti
 
@@ -170,31 +175,35 @@ theorem isGibbs_iff_forall_ae_eq_condExp [IsFiniteMeasure μ] :
     rw [← hall]
     exact hcond
 
+section Equivariant
+
+variable [DecidableEq I]
+
 /-- A specification is equivariant when `γ_{gΛ}(gC | g • ω) = γ_Λ(C | ω)`: the push-forward of
 `γ_Λ(· | ω)` by `g` is `γ_{gΛ}(· | g • ω)`, where `gΛ` is the image of `Λ` under `g`. -/
 def IsEquivariant : Prop :=
   ∀ (g : Γ) (Λ : Finset I) (ω : X),
-    (γ.kernel Λ ω).map (g • ·) = γ.kernel (Λ.map (MulAction.toPerm g).toEmbedding) (g • ω)
+    (γ.kernel Λ ω).map (g • ·) = γ.kernel (g • Λ) (g • ω)
 
 /-- Unfolding `Specification.IsEquivariant`. -/
 theorem isEquivariant_iff :
     γ.IsEquivariant ↔ ∀ (g : Γ) (Λ : Finset I) (ω : X),
-      (γ.kernel Λ ω).map (g • ·) = γ.kernel (Λ.map (MulAction.toPerm g).toEmbedding) (g • ω) :=
+      (γ.kernel Λ ω).map (g • ·) = γ.kernel (g • Λ) (g • ω) :=
   Iff.rfl
 
 /-- For an equivariant specification, the image of a Gibbs measure under the action of any
 `g : Γ` is Gibbs. -/
 theorem IsGibbs.map_smul {γ : Specification X} (hγ : γ.IsEquivariant) (hμ : γ.IsGibbs μ)
     (g : Γ) : γ.IsGibbs (μ.map (g • ·)) := fun Λ => by
-  set Λ' := Λ.map (MulAction.toPerm g⁻¹).toEmbedding
-  have hΛ : Λ'.map (MulAction.toPerm g).toEmbedding = Λ := by
-    ext i
-    simp [Λ']
+  set Λ' := g⁻¹ • Λ
+  have hΛ : g • Λ' = Λ := smul_inv_smul g Λ
   have hg : Measurable (g • · : X → X) := measurable_const_smul g
   have hκ : (fun ω => γ.kernel Λ (g • ω)) = fun ω => (γ.kernel Λ' ω).map (g • ·) :=
     funext fun ω => by rw [hγ g Λ' ω, hΛ]
   rw [Measure.bind_map hg.aemeasurable (γ.measurable_kernel Λ).aemeasurable, hκ,
     ← Measure.map_bind (γ.measurable_kernel Λ').aemeasurable hg.aemeasurable, hμ Λ']
+
+end Equivariant
 
 /-- The invariant Gibbs measures `𝒢_inv(γ)`: the `Γ`-invariant probability measures that are
 Gibbs for `γ`. -/
