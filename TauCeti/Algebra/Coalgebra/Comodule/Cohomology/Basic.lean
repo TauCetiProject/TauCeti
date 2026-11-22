@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.Bialgebra.Basic
@@ -43,6 +44,7 @@ needs the acyclicity of cofree comodules, is not part of this file.
 * `TauCeti.Comodule.Cohomology.d`: the differential `∑ᵢ (-1)ⁱ δᵢ`.
 * `TauCeti.Comodule.Cohomology.cochainComplex`: the Hochschild cochain complex.
 * `TauCeti.Comodule.Cohomology.cochainComplexMap`: the cochain map induced by a comodule morphism.
+* `TauCeti.Comodule.Cohomology.cocyclesMk`: a cochain with zero differential, as a cocycle.
 * `TauCeti.Comodule.Cohomology.cohomologyZeroIso`: the degree-zero cohomology is `Mᴴ`.
 
 ## Main results
@@ -397,6 +399,46 @@ theorem coe_cohomologyZeroIso_hom_homologyπ (x : (cochainComplex R H M).cycles 
   -- unfolding (`cochainComplex_X`), so `exact` closes the goal with `hx` up to that
   -- identification.
   exact hx
+
+section Cocycles
+
+variable {R H M}
+
+/-- An `n`-cochain whose differential vanishes, as an `n`-cocycle of the Hochschild complex. -/
+noncomputable def cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    (cochainComplex R H M).cycles n :=
+  (cochainComplex R H M).cyclesMk x (n + 1) (by simp) (by
+    rw [cochainComplex_d_succ]
+    exact hx)
+
+/-- `cocyclesMk` is Mathlib's cycle constructor `HomologicalComplex.cyclesMk` for the Hochschild
+complex. -/
+theorem cocyclesMk_eq_cyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    cocyclesMk x hx = (cochainComplex R H M).cyclesMk x (n + 1) (by simp) (by
+      rw [cochainComplex_d_succ]
+      exact hx) :=
+  (rfl)
+
+/-- The cocycle `cocyclesMk x hx` is the cochain `x`. -/
+@[simp]
+theorem iCycles_cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    ((cochainComplex R H M).iCycles n).hom (cocyclesMk x hx) = x :=
+  (cochainComplex R H M).i_cyclesMk x (n + 1) (by simp) _
+
+/-- In degree zero, the class of an invariant vector, as a cocycle, is its preimage under
+`cohomologyZeroIso`. -/
+theorem homologyπ_cocyclesMk_zero (m : fixedSubcomodule R H M) :
+    ((cochainComplex R H M).homologyπ 0).hom
+        (cocyclesMk (n := 0) (m : M) (by rw [← LinearMap.mem_ker, ker_d_zero]; exact m.property)) =
+      (cohomologyZeroIso R H M).inv.hom m := by
+  have h : (cohomologyZeroIso R H M).hom.hom (((cochainComplex R H M).homologyπ 0).hom
+      (cocyclesMk (n := 0) (m : M)
+        (by rw [← LinearMap.mem_ker, ker_d_zero]; exact m.property))) = m :=
+    Subtype.ext ((coe_cohomologyZeroIso_hom_homologyπ R H M _).trans (iCycles_cocyclesMk _ _))
+  conv_rhs => rw [← h]
+  exact ((cohomologyZeroIso R H M).hom_inv_id_apply _).symm
+
+end Cocycles
 
 /-! ### Functoriality in the coefficients -/
 
