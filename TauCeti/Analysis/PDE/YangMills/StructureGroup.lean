@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.TangentSpace
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
@@ -260,27 +261,34 @@ abbrev tangentSpace (g : S.group) : Submodule ℝ (Matrix n n ℂ) :=
 theorem tangentSpace_eq_mulRight (g : S.group) :
     S.tangentSpace g =
       S.group.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n ℂ)) :=
-  S.group.matrixTangentSpace_eq_mulRight g
+  S.group.matrixTangentSpace_eq_map_mulRight g
 
 /-- Membership in `S.tangentSpace g` via left multiplication by `g`. -/
 theorem mem_tangentSpace_iff_mulLeft (g : S.group) (V : Matrix n n ℂ) :
-    V ∈ S.tangentSpace g ↔ ∃ X ∈ S.group.matrixLieAlgebra, (g : Matrix n n ℂ) * X = V :=
-  S.group.mem_matrixTangentSpace_iff_mulLeft g V
+    V ∈ S.tangentSpace g ↔ ∃ X ∈ S.group.matrixLieAlgebra, (g : Matrix n n ℂ) * X = V := by
+  constructor
+  · intro hV
+    exact ⟨star (g : Matrix n n ℂ) * V, ClosedSubgroup.mem_matrixTangentSpace_iff.mp hV,
+      by simp [← mul_assoc]⟩
+  · rintro ⟨X, hX, rfl⟩
+    exact ClosedSubgroup.mul_mem_matrixTangentSpace g hX
 
 /-- Membership in `S.tangentSpace g` via right multiplication by `g`. -/
 theorem mem_tangentSpace_iff_mulRight (g : S.group) (V : Matrix n n ℂ) :
-    V ∈ S.tangentSpace g ↔ ∃ X ∈ S.group.matrixLieAlgebra, X * (g : Matrix n n ℂ) = V :=
-  S.group.mem_matrixTangentSpace_iff_mulRight g V
+    V ∈ S.tangentSpace g ↔ ∃ X ∈ S.group.matrixLieAlgebra, X * (g : Matrix n n ℂ) = V := by
+  rw [S.tangentSpace_eq_mulRight g]
+  simp
 
 /-- A matrix `V` lies in `S.tangentSpace g` iff `gᴴ * V` lies in `S.group.matrixLieAlgebra`. -/
 theorem mem_tangentSpace_iff_conjTranspose_mul (g : S.group) (V : Matrix n n ℂ) :
-    V ∈ S.tangentSpace g ↔ (g : Matrix n n ℂ)ᴴ * V ∈ S.group.matrixLieAlgebra :=
-  S.group.mem_matrixTangentSpace_iff_conjTranspose_mul g V
+    V ∈ S.tangentSpace g ↔ (g : Matrix n n ℂ)ᴴ * V ∈ S.group.matrixLieAlgebra := by
+  simp [tangentSpace, Matrix.star_eq_conjTranspose]
 
 /-- A matrix `V` lies in `S.tangentSpace g` iff `V * gᴴ` lies in `S.group.matrixLieAlgebra`. -/
 theorem mem_tangentSpace_iff_mul_conjTranspose (g : S.group) (V : Matrix n n ℂ) :
-    V ∈ S.tangentSpace g ↔ V * (g : Matrix n n ℂ)ᴴ ∈ S.group.matrixLieAlgebra :=
-  S.group.mem_matrixTangentSpace_iff_mul_conjTranspose g V
+    V ∈ S.tangentSpace g ↔ V * (g : Matrix n n ℂ)ᴴ ∈ S.group.matrixLieAlgebra := by
+  simpa [tangentSpace, Matrix.star_eq_conjTranspose] using
+    ClosedSubgroup.mem_matrixTangentSpace_iff_mul_star (g := g) (V := V)
 
 /-- The tangent space of `S` at the identity is `S.group.matrixLieAlgebra`. -/
 theorem tangentSpace_one : S.tangentSpace 1 = S.group.matrixLieAlgebra.toSubmodule :=

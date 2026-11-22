@@ -19,6 +19,7 @@ import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
+import TauCeti.Geometry.Lie.Subgroup.LimitCriterion
 import TauCeti.Geometry.Lie.Subgroup.SpecialUnitary
 import TauCeti.LinearAlgebra.Matrix.Block
 
@@ -56,6 +57,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 ## Main results
 
+* `ClosedSubgroup.mem_matrixLieAlgebra_of_tendsto`: the limit criterion, a limit `X` of matrices
+  `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
   skew-Hermitian matrices.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
@@ -74,8 +77,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 public section
 
-open NormedSpace
-open scoped Manifold Matrix
+open Filter NormedSpace
+open scoped Manifold Matrix Topology
 
 noncomputable section
 
@@ -184,6 +187,23 @@ private theorem forall_exp_mem_lie (G : ClosedSubgroup (Matrix.unitaryGroup n �
   rw [forall_exp_mem_iff] at hX hY ⊢
   simpa only [LieEquiv.map_lie] using LieSubalgebra.lie_mem _ hX hY
 
+/-- The limit criterion for the Lie algebra of the closed subgroup of units determined by `G`,
+read in matrix coordinates. -/
+private theorem forall_exp_mem_of_tendsto (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    {X : Matrix n n 𝕜} {t : ℕ → ℝ} {Xn : ℕ → Matrix n n 𝕜} (ht_pos : ∀ᶠ k in atTop, 0 < t k)
+    (ht : Tendsto t atTop (𝓝 0)) (hXn : Tendsto Xn atTop (𝓝 X))
+    (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
+    ∀ s : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (s • X) := by
+  rw [forall_exp_mem_iff]
+  refine mem_lieSubalgebraOfSubgroup_of_seq (isClosed_toGL G) ht_pos ht
+    (Xn := fun k ↦ (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm (Xn k)) ?_ ?_
+  · exact ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm.toLinearMap
+      |>.continuous_of_finiteDimensional.tendsto X).comp hXn
+  · filter_upwards [hmem] with k ⟨g, hg, hgk⟩
+    rw [← map_smul, lieExp_eq_expUnit]
+    refine ⟨g, hg, Units.ext ?_⟩
+    simp [hgk]
+
 /-- A real linear functional on matrices, along conjugation by the exponential line of `X`, has
 derivative at `0` its value on the commutator. -/
 private theorem hasDerivAt_linearMap_exp_mul_mul_exp_neg (ℓ : Matrix n n 𝕜 →ₗ[ℝ] ℝ)
@@ -205,21 +225,6 @@ private theorem forall_exp_mem_specialUnitary_iff (X : Matrix n n 𝕜) :
   rw [toGL_specialUnitary]
   exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff X
 
-private theorem map_mulLeft_eq_map_mulRight_of_forall_exp_mem
-    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
-    {L : Submodule ℝ (Matrix n n 𝕜)}
-    (hL : ∀ X, X ∈ L ↔ ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X)) (g : G) :
-    L.map (LinearMap.mulLeft ℝ (g : Matrix n n 𝕜)) =
-      L.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
-  have hsub : L = (unitsLieSubalgebra (toGL G)).toSubmodule := by
-    ext X
-    rw [hL, forall_exp_mem_iff, LieSubalgebra.mem_toSubmodule, mem_unitsLieSubalgebra_iff]
-  have hg : Unitary.toUnits (g : Matrix.unitaryGroup n 𝕜) ∈ toGL G :=
-    toUnits_mem_toGL_iff.2 g.property
-  have h := map_mulLeft_unitsLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer hg)
-  rw [Unitary.val_toUnits_apply] at h
-  rw [hsub, h]
-
 end Transport
 
 /-- The Lie algebra of a closed subgroup `G` of the unitary group `U(n)`, as a real Lie subalgebra
@@ -239,6 +244,15 @@ variable {G H : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
 theorem mem_matrixLieAlgebra_iff {X : Matrix n n 𝕜} :
     X ∈ G.matrixLieAlgebra ↔ ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X) :=
   Iff.rfl
+
+/-- **The limit criterion for the Lie algebra.** If positive scales `tₖ → 0` and matrices
+`Xₖ → X` have `exp (tₖ • Xₖ) ∈ G` for all large `k`, then `X` lies in the Lie algebra of `G`. -/
+theorem mem_matrixLieAlgebra_of_tendsto {X : Matrix n n 𝕜} {t : ℕ → ℝ} {Xn : ℕ → Matrix n n 𝕜}
+    (ht_pos : ∀ᶠ k in atTop, 0 < t k) (ht : Tendsto t atTop (𝓝 0))
+    (hXn : Tendsto Xn atTop (𝓝 X))
+    (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
+    X ∈ G.matrixLieAlgebra :=
+  forall_exp_mem_of_tendsto G ht_pos ht hXn hmem
 
 /-- The Lie algebra of a closed subgroup of `U(n)` consists of skew-Hermitian matrices. -/
 theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}
@@ -649,69 +663,6 @@ theorem matrixLieAlgebraReindexEquiv_symm_matrixAdjointRepresentation (e : n ≃
 
 end Reindex
 
-section TangentSpace
-
-/-- The tangent space `g · 𝔤` of a closed subgroup `G ≤ U(n)` at `g ∈ G`, viewed as a real
-subspace of `Matrix n n 𝕜`. -/
-def matrixTangentSpace (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (g : G) :
-    Submodule ℝ (Matrix n n 𝕜) :=
-  G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulLeft ℝ (g : Matrix n n 𝕜))
-
-/-- At every `g ∈ G`, the left and right translates of `G.matrixLieAlgebra` coincide:
-`g · 𝔤 = 𝔤 · g`. -/
-theorem matrixTangentSpace_eq_mulRight (g : G) :
-    G.matrixTangentSpace g =
-      G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) :=
-  map_mulLeft_eq_map_mulRight_of_forall_exp_mem G (fun _ ↦ mem_matrixLieAlgebra_iff) g
-
-/-- Membership in `G.matrixTangentSpace g` via left multiplication by `g`. -/
-theorem mem_matrixTangentSpace_iff_mulLeft (g : G) (V : Matrix n n 𝕜) :
-    V ∈ G.matrixTangentSpace g ↔ ∃ X ∈ G.matrixLieAlgebra, (g : Matrix n n 𝕜) * X = V := by
-  simp [matrixTangentSpace]
-
-/-- Membership in `G.matrixTangentSpace g` via right multiplication by `g`. -/
-theorem mem_matrixTangentSpace_iff_mulRight (g : G) (V : Matrix n n 𝕜) :
-    V ∈ G.matrixTangentSpace g ↔ ∃ X ∈ G.matrixLieAlgebra, X * (g : Matrix n n 𝕜) = V := by
-  rw [G.matrixTangentSpace_eq_mulRight g]
-  simp
-
-/-- A matrix `V` lies in the tangent space at `g` iff `gᴴ * V` lies in `G.matrixLieAlgebra`. -/
-theorem mem_matrixTangentSpace_iff_conjTranspose_mul (g : G) (V : Matrix n n 𝕜) :
-    V ∈ G.matrixTangentSpace g ↔ (g : Matrix n n 𝕜)ᴴ * V ∈ G.matrixLieAlgebra := by
-  rw [mem_matrixTangentSpace_iff_mulLeft]
-  have h1 : (g : Matrix n n 𝕜)ᴴ * (g : Matrix n n 𝕜) = 1 := by
-    simpa only [Matrix.star_eq_conjTranspose] using Matrix.mem_unitaryGroup_iff'.1 g.val.property
-  have h2 : (g : Matrix n n 𝕜) * (g : Matrix n n 𝕜)ᴴ = 1 := by
-    simpa only [Matrix.star_eq_conjTranspose] using Matrix.mem_unitaryGroup_iff.1 g.val.property
-  constructor
-  · rintro ⟨X, hX, rfl⟩
-    simpa only [← mul_assoc, h1, one_mul] using hX
-  · intro hV
-    exact ⟨(g : Matrix n n 𝕜)ᴴ * V, hV, by rw [← mul_assoc, h2, one_mul]⟩
-
-/-- A matrix `V` lies in the tangent space at `g` iff `V * gᴴ` lies in `G.matrixLieAlgebra`. -/
-theorem mem_matrixTangentSpace_iff_mul_conjTranspose (g : G) (V : Matrix n n 𝕜) :
-    V ∈ G.matrixTangentSpace g ↔ V * (g : Matrix n n 𝕜)ᴴ ∈ G.matrixLieAlgebra := by
-  rw [mem_matrixTangentSpace_iff_mulRight]
-  have h1 : (g : Matrix n n 𝕜)ᴴ * (g : Matrix n n 𝕜) = 1 := by
-    simpa only [Matrix.star_eq_conjTranspose] using Matrix.mem_unitaryGroup_iff'.1 g.val.property
-  have h2 : (g : Matrix n n 𝕜) * (g : Matrix n n 𝕜)ᴴ = 1 := by
-    simpa only [Matrix.star_eq_conjTranspose] using Matrix.mem_unitaryGroup_iff.1 g.val.property
-  constructor
-  · rintro ⟨X, hX, rfl⟩
-    simpa only [mul_assoc, h2, mul_one] using hX
-  · intro hV
-    exact ⟨V * (g : Matrix n n 𝕜)ᴴ, hV, by rw [mul_assoc, h1, mul_one]⟩
-
-/-- The tangent space of `G` at the identity is `G.matrixLieAlgebra`. -/
-@[simp]
-theorem matrixTangentSpace_one (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
-    G.matrixTangentSpace 1 = G.matrixLieAlgebra.toSubmodule := by
-  ext V
-  simp [mem_matrixTangentSpace_iff_mulLeft]
-
-end TangentSpace
-
 section EmbeddedLieSubgroup
 
 open TauCeti TauCeti.Lie
@@ -754,29 +705,6 @@ def equivToGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) : G ≃* toGL G 
 theorem coe_equivToGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (g : G) :
     ((G.equivToGL g : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜) = (g : Matrix n n 𝕜) :=
   (rfl)
-
-/-- At any `g ∈ G`, the range of the differential of the matrix inclusion `G → Matrix n n 𝕜`
-is the left translate `g · 𝔤 = G.matrixTangentSpace g`. -/
-theorem range_mvfderiv_matrixInclusion (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (g : G) :
-    let E := (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G)).toSubmodule
-    let _ : ChartedSpace E (toGL G) := (embeddedLieSubgroupData G).chartedSpace
-    (mvfderiv 𝓘(ℝ, E) (fun k : toGL G ↦ ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜))
-      (G.equivToGL g)).range = G.matrixTangentSpace g := by
-  have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal (G.equivToGL g)
-  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
-
-/-- At any `g ∈ G`, the range of the differential of the matrix inclusion `G → Matrix n n 𝕜`
-is also the right translate `𝔤 · g`. -/
-theorem range_mvfderiv_matrixInclusion_eq_mulRight (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
-    (g : G) :
-    let E := (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G)).toSubmodule
-    let _ : ChartedSpace E (toGL G) := (embeddedLieSubgroupData G).chartedSpace
-    (mvfderiv 𝓘(ℝ, E) (fun k : toGL G ↦ ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜))
-      (G.equivToGL g)).range =
-      G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
-  have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
-    (G.equivToGL g)
-  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra] using h
 
 end EmbeddedLieSubgroup
 
