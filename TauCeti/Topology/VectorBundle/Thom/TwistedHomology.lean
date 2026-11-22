@@ -467,11 +467,11 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology (K : Type w) [Com
 
 variable (F E) in
 /-- **The dimensions of the homology of the Thom pair with orientation-twisted coefficients.** Let
-`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a field in
-which `2` is invertible. Then `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no
-orientation of `E` and over any base: these are the dimensions on the two sides of the twisted Thom
-isomorphism `thomPairSingularHomologyEquivTwistedHomology`. -/
-theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology (K : Type w) [Field K]
+`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a
+commutative ring in which `2` is invertible. Then `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` for
+`m = r + p`, with no orientation of `E` and over any base: these are the dimensions on the two sides
+of the twisted Thom isomorphism `thomPairSingularHomologyEquivTwistedHomology`. -/
+theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology (K : Type w) [CommRing K]
     [Invertible (2 : K)] {p m : ℕ} (h : finrank ℝ F + p = m) :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) =
       finrank K (LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) :=
