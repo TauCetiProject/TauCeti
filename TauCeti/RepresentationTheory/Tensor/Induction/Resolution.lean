@@ -308,9 +308,9 @@ theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
       smoothTensorInducedGradedResolutionPiece U hU s A n := by
   let B := (ofSmoothDiscrete R U).obj ((smoothGradedResolutionFunctor (R := R)).obj A)
   have hB (u : U) :
-      TauCeti.LinearMap.IsHomogeneous (B.ρ u) A.obj.gradedResolutionPiece
+      LinearMap.IsHomogeneous (B.ρ u) A.obj.gradedResolutionPiece
         A.obj.gradedResolutionPiece 0 :=
-    TauCeti.LinearMap.isHomogeneous_def.2 fun p y hy ↦
+    LinearMap.isHomogeneous_def.2 fun p y hy ↦
       (congrArg₂ (· ∈ A.obj.gradedResolutionPiece ·)
         ((ofSmoothDiscrete_obj_ρ_apply R U _ u y).trans
           (smoothGradedResolutionFunctor_obj_obj_ρ_apply A u y)) (add_zero p)).mpr

@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.PrincipalIdealDomain
 public import Mathlib.RingTheory.Ideal.Span
-import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Injective modules over principal ideal rings
@@ -23,21 +24,24 @@ its quotient by any submodule. In particular, `ℚ_p / ℤ_p` is injective over 
 `ℚ_p / ℤ_p`-valued character of a torsion submodule extends to the whole module, without a splitting
 or finite-generation assumption. This is the extension property used in torsion duality.
 
-Every quotient `R ⧸ (a)` of a principal ideal domain `R` by a nonzero element `a` is also
-self-injective: pulling an ideal of `R ⧸ (a)` back to `R` expresses it as `(d) ⧸ (a)` for a divisor
-`d` of `a`, and annihilation by `a / d` forces the image of the generator under any linear map into
-`R ⧸ (a)` to be divisible by `d`.
+A principal ideal domain modulo a nonzero ideal is self-injective. This covers `ℤ/nℤ` and the
+coefficient rings `O/πⁿ` for a discrete valuation ring `O`, ramified or of equal characteristic,
+with uniformizer `π` and `n ≥ 1`. These rings need not be fields, and a finite module over them
+need not be projective (for instance `ℤ/2` over `ℤ/4`), but `Hom(-, O/πⁿ)` is still exact on
+`O/πⁿ`-modules; this is what makes duality with such finite coefficients work.
 
 ## Main results
 
 * `Module.Baer.of_surjective_smul`: scalar divisibility implies Baer's criterion.
 * `Submodule.injective_quotient_of_divisionRing`: quotients of a faithful division algebra are
   injective over a principal ideal ring.
-* `Module.Baer.quotient_self_of_ne_bot`, `Module.Baer.quotient_span_singleton_self`,
-  `Module.Injective.quotient_self_of_ne_bot`, and
-  `Module.Injective.quotient_span_singleton_self`: for any nonzero ideal `I ≠ ⊥` (and in particular
-  `Ideal.span {a}` with `a ≠ 0`) in a principal ideal domain `R`, the quotient ring `R ⧸ I`
-  satisfies Baer's criterion over itself and is self-injective.
+* `Module.Baer.quotient_self`, `Module.Injective.quotient_self`: a principal ideal domain modulo a
+  nonzero ideal is self-injective.
+
+## References
+
+* [SGA 4, Exposé XVIII], 3.2.6, for self-injectivity of the coefficient rings `O/πⁿ` and its use in
+  étale duality.
 -/
 
 public section
@@ -80,59 +84,53 @@ instance Submodule.injective_quotient_of_divisionRing {R K : Type*} [CommRing R]
   rw [← map_smul]
   simp [Algebra.smul_def, hR]
 
-/-- **Quotients of a principal ideal domain by a nonzero ideal satisfy Baer's criterion over
-themselves.** Generalizes `Module.Baer.zmod_self` from `ℤ ⧸ nℤ` to any principal ideal domain,
-covering Artinian valuation quotients `O ⧸ 𝔪 ^ n`. -/
-theorem Module.Baer.quotient_self_of_ne_bot {R : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] {I : Ideal R} (hI : I ≠ ⊥) :
-    Module.Baer (R ⧸ I) (R ⧸ I) := by
-  obtain ⟨a, rfl⟩ : ∃ a : R, I = Ideal.span {a} := ⟨_, (Ideal.span_singleton_generator I).symm⟩
-  have ha : a ≠ 0 := mt Ideal.span_singleton_eq_bot.mpr hI
-  let π := Ideal.Quotient.mk (Ideal.span {a})
+/- Adapted from Jujian Zhang's Module.Baer.of_divisible in
+Mathlib/Algebra/Category/Grp/Injective.lean, with divisibility from the factorization `a = c * e`
+in a principal ideal domain in place of integer division. -/
+/-- **A principal ideal domain modulo a nonzero ideal is self-injective**, in the form of Baer's
+criterion. For a discrete valuation ring `O` with uniformizer `π` this applies to `O/πⁿ` with
+`n ≥ 1`. The hypothesis `I ≠ ⊥` cannot be dropped in general: `ℤ` is not injective over
+itself. -/
+theorem Module.Baer.quotient_self {R : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
+    {I : Ideal R} (hI : I ≠ ⊥) : Module.Baer (R ⧸ I) (R ⧸ I) := by
   intro J g
-  obtain ⟨d, hd_eq⟩ : ∃ d : R, J.comap π = Ideal.span {d} :=
-    ⟨_, (Ideal.span_singleton_generator (J.comap π)).symm⟩
-  obtain rfl : J = Ideal.span {π d} := by
-    rw [← Ideal.map_comap_of_surjective π Ideal.Quotient.mk_surjective J, hd_eq, Ideal.map_span,
-      Set.image_singleton]
-  have ha_mem : a ∈ Ideal.span {d} := by
-    rw [← hd_eq, Ideal.mem_comap,
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a)]
-    exact zero_mem _
-  obtain ⟨c, hac⟩ := Ideal.mem_span_singleton.mp ha_mem
-  have hc : c ≠ 0 := right_ne_zero_of_mul (hac ▸ ha)
-  have hd : π d ∈ Ideal.span {π d} := Ideal.mem_span_singleton_self (π d)
-  obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective (g ⟨π d, hd⟩)
-  have hcz : π (c * z) = 0 := by
-    have hcd : π c • (⟨π d, hd⟩ : Ideal.span {π d}) = 0 := Subtype.ext <| by
-      simp only [SetLike.val_smul, smul_eq_mul, ZeroMemClass.coe_zero, ← map_mul, mul_comm c d,
-        ← hac]
-      exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a)
-    rw [map_mul, ← smul_eq_mul, hz, ← map_smul, hcd, map_zero]
-  obtain ⟨k, hkz⟩ := Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hcz)
-  obtain ⟨y, rfl⟩ : d ∣ z := ⟨k, mul_left_cancel₀ hc <| by rw [hkz, hac]; ring⟩
-  refine ⟨LinearMap.toSpanSingleton _ _ (π y), fun x hx ↦ ?_⟩
-  obtain ⟨s, rfl⟩ := Ideal.mem_span_singleton'.mp hx
-  have hs : (⟨s * π d, hx⟩ : Ideal.span {π d}) = s • ⟨π d, hd⟩ := Subtype.ext (by simp)
-  rw [hs, map_smul, LinearMap.toSpanSingleton_apply, ← hz, map_mul, smul_eq_mul, smul_eq_mul,
-    mul_assoc]
+  obtain ⟨a, rfl⟩ : ∃ a, I = Ideal.span {a} := ⟨_, (Ideal.span_singleton_generator I).symm⟩
+  -- the preimage of `J` contains `a`, so it is generated by a divisor `c` of `a = c * e`
+  obtain ⟨c, hc⟩ : ∃ c, J.comap (Ideal.Quotient.mk _) = Ideal.span {c} :=
+    ⟨_, (Ideal.span_singleton_generator _).symm⟩
+  have hcJ : Ideal.Quotient.mk _ c ∈ J := by
+    rw [← Ideal.mem_comap, hc]
+    exact Ideal.mem_span_singleton_self c
+  obtain ⟨e, rfl⟩ : c ∣ a := by
+    rw [← Ideal.mem_span_singleton, ← hc, Ideal.mem_comap,
+      Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self a)]
+    exact J.zero_mem
+  have he : e ≠ 0 := by
+    rintro rfl
+    simp at hI
+  -- the image `x` of the generator is killed by `e`, hence is divisible by `c`
+  obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective (g ⟨_, hcJ⟩)
+  obtain ⟨y, rfl⟩ : c ∣ x := by
+    have hec : Ideal.Quotient.mk (Ideal.span {c * e}) e • (⟨_, hcJ⟩ : J) = 0 :=
+      Subtype.ext <| by
+        simpa [← map_mul, mul_comm e c] using
+          Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self (c * e))
+    have : Ideal.Quotient.mk (Ideal.span {c * e}) (e * x) = 0 := by
+      rw [map_mul (Ideal.Quotient.mk _) e x, hx, ← smul_eq_mul (Ideal.Quotient.mk _ e),
+        ← map_smul, hec, map_zero]
+    obtain ⟨z, hz⟩ := Ideal.mem_span_singleton.1 (Ideal.Quotient.eq_zero_iff_mem.1 this)
+    exact ⟨z, mul_left_cancel₀ he (by rw [hz]; ring)⟩
+  -- so multiplication by the image of `y` extends `g`
+  refine ⟨LinearMap.toSpanSingleton _ _ (Ideal.Quotient.mk _ y), fun s hs ↦ ?_⟩
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective s
+  obtain ⟨t, rfl⟩ := Ideal.mem_span_singleton.1 (hc ▸ Ideal.mem_comap.2 hs)
+  have : (⟨_, hs⟩ : J) = Ideal.Quotient.mk (Ideal.span {c * e}) t • ⟨_, hcJ⟩ :=
+    Subtype.ext (by simp [mul_comm])
+  rw [this, map_smul, ← hx]
+  simp [mul_comm, mul_left_comm]
 
-/-- **Quotients of a principal ideal domain by a nonzero principal ideal `Ideal.span {a}` satisfy
-Baer's criterion over themselves.** -/
-theorem Module.Baer.quotient_span_singleton_self {R : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] {a : R} (ha : a ≠ 0) :
-    Module.Baer (R ⧸ Ideal.span {a}) (R ⧸ Ideal.span {a}) :=
-  Module.Baer.quotient_self_of_ne_bot (mt Ideal.span_singleton_eq_bot.mp ha)
-
-/-- **A quotient of a principal ideal domain by a nonzero ideal is self-injective.** -/
-theorem Module.Injective.quotient_self_of_ne_bot {R : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] {I : Ideal R} (hI : I ≠ ⊥) :
-    Module.Injective (R ⧸ I) (R ⧸ I) :=
-  (Module.Baer.quotient_self_of_ne_bot hI).injective
-
-/-- **A quotient of a principal ideal domain by a nonzero principal ideal `Ideal.span {a}` is
-self-injective.** -/
-theorem Module.Injective.quotient_span_singleton_self {R : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] {a : R} (ha : a ≠ 0) :
-    Module.Injective (R ⧸ Ideal.span {a}) (R ⧸ Ideal.span {a}) :=
-  (Module.Baer.quotient_span_singleton_self ha).injective
+/-- **A principal ideal domain modulo a nonzero ideal is self-injective.** For a discrete valuation
+ring `O` with uniformizer `π` this applies to `O/πⁿ` with `n ≥ 1`. -/
+theorem Module.Injective.quotient_self {R : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] {I : Ideal R} (hI : I ≠ ⊥) : Module.Injective (R ⧸ I) (R ⧸ I) :=
+  (Module.Baer.quotient_self hI).injective

@@ -34,6 +34,9 @@ space contains such a family, which gives coordinates on the space.
   through `x`.
 * `Module.Dual.smulRight_smul_eq_smul_id`: if `f x = 1` and `r` annihilates `ker f`, then
   `r • id` factors through `f` as `y ↦ (r • f) y • x`.
+* `Module.Dual.linearIndependent_iff_apply_basis`: a family of forms is linearly independent
+  exactly when the family of its coefficient vectors with respect to a basis is.
+* `Module.Dual.eval_eq_applyₗ`: evaluation into the double dual is `LinearMap.applyₗ`.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -124,7 +127,31 @@ end CommRing
 
 section CommSemiring
 
+section Basis
+
+variable {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A family of forms is linearly independent exactly when the family of their coefficient
+vectors, the values on a basis, is. -/
+theorem linearIndependent_iff_apply_basis (b : Basis ι R M) {L : κ → Dual R M} :
+    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (b j)) := by
+  let e : Dual R M ≃ₗ[R] (ι → R) := (b.constr R).symm
+  have he : (fun i j ↦ L i (b j)) = e ∘ L := by
+    ext
+    simp [e]
+  rw [he]
+  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
+
+end Basis
+
+section Proj
+
 variable (R ι : Type*) [CommSemiring R]
+
+/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
+theorem eval_eq_applyₗ (M : Type*) [AddCommMonoid M] [Module R M] :
+    Dual.eval R M = LinearMap.applyₗ :=
+  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 
 /-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
 theorem linearIndependent_proj :
@@ -141,6 +168,8 @@ theorem span_range_proj_eq_top [Finite ι] :
     ext i x
     simp
   exact h ▸ (Pi.basisFun R ι).dualBasis.span_eq
+
+end Proj
 
 end CommSemiring
 

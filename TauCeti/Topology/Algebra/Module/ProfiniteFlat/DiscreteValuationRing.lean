@@ -128,8 +128,9 @@ private theorem exists_lift_span_pow_succ [IsPrincipalIdealRing O] {ϖ : O} (hϖ
       LinearMap.mem_ker.mp (hV_ker ((Submodule.Quotient.mk_eq_zero V).mp hμ0))]
   let ψ₀ : LinearMap.range μ →ₗ[O ⧸ J₂] (O ⧸ J₂) :=
     (μ.rangeRestrict.liftOfSurjective μ.surjective_rangeRestrict) ⟨βbar, hker_μ⟩
-  obtain ⟨ψ, hψ⟩ := (Module.Baer.quotient_span_singleton_self
-    (pow_ne_zero (n + 2) hϖ)).extension_property _ (LinearMap.range μ).injective_subtype ψ₀
+  obtain ⟨ψ, hψ⟩ := (Module.Baer.quotient_self
+    (mt Ideal.span_singleton_eq_bot.mp (pow_ne_zero (n + 2) hϖ))).extension_property _
+    (LinearMap.range μ).injective_subtype ψ₀
   let φ' : M →ₗ[O] (O ⧸ J₂) := (ψ.restrictScalars O).comp V.mkQ
   refine ⟨φ', AddSubgroup.isOpen_mono (H₁ := V.toAddSubgroup)
     (H₂ := (LinearMap.ker φ').toAddSubgroup)
