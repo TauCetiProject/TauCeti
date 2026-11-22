@@ -212,7 +212,7 @@ private theorem morphismDifferential_boxCompHomotopy_of_assoc (hdB : IsUngradedD
   have hB := hdB.isUngradedDGRightModule
   ext p q
   -- The generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`, as a row vector of `B ⊠ P` over `N`.
-  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x) with he
+  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)
   -- The maps induced by `F` and `F * G` send `e` to the rows of `P ⊠ F` and `P ⊠ (F * G)` at `p`.
   have hmapF : TypeDStructure.typeABoxMap N N' (P.boxModule hB) F e =
       fun z y' => P.boxMorphism N N' F p (y', z) :=
@@ -231,10 +231,9 @@ private theorem morphismDifferential_boxCompHomotopy_of_assoc (hdB : IsUngradedD
   have hKe : TypeDStructure.typeABoxCompHomotopy N N' N'' (P.boxModule hB) F G e =
       fun z y' => P.boxCompHomotopy N N' N'' F G p (y', z) := by
     funext z y'
-    rw [hK]
-    simp only [he]
-    rw [Finset.sum_eq_single p (fun r _ hr => by rw [Prod.mk.eta, Pi.single_eq_of_ne hr, zero_mul])
-      (by simp), Prod.mk.eta, Pi.single_eq_same, one_mul]
+    rw [TypeDStructure.typeABoxCompHomotopy_apply_eq_typeABoxMap N _ F hG hG',
+      congrFun (congrFun (P.typeABoxMap_boxModule_single N _ hdB _ hcone p) _) _,
+      P.boxCompHomotopy_eq_boxMorphism N F hG hG']
   -- The box tensor differential sends `e` to the row of `P ⊠ N` at `p`.
   have hrow : N.typeABoxDifferential (P.boxModule hB) e = fun x y => P.boxCoeff N p (y, x) :=
     P.typeABoxDifferential_boxModule_single N hdB hN p
