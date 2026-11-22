@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Gluing.Compactification
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.RadialRescaleGraph
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Traces of transverse discs on the faces of the split hyperbolic box
@@ -303,14 +304,6 @@ theorem exists_homeomorph_closure_biUnion_splitGluingPairs_of_hasStrictFDerivAt
     refine ⟨hS, fun hne hpass ↦ mem_splitGluingPairs_splitQuadraticFlow_splitEntryTime hε hr₀₁
       hz₀ hne (by rwa [splitQuadraticFlow_splitEntryTime hε hz₀]) hzg hpass.symm hz'k⟩
 
-/-- A map stays invertible after adding the zero map to the trivial parameter space `Unit` as
-first component; this reads a single disc as a family with a trivial parameter. -/
-private theorem isInvertible_zero_unit_prod {G E : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : G →L[ℝ] E} (hf : f.IsInvertible) :
-    ((0 : G →L[ℝ] Unit).prod f).IsInvertible := by
-  obtain ⟨L, rfl⟩ := hf
-  exact ⟨L.trans (ContinuousLinearEquiv.uniqueProd ℝ E Unit).symm, by ext; simp⟩
-
 /-- **Gluing through transverse discs.** Let `ψ` be a disc through the broken entrance point
 `(x₀, 0)` transverse to the stable set, and `χ` a disc through the broken exit point `(0, y₀)`
 transverse to the unstable set, as in the trivial-parameter case of
@@ -360,14 +353,13 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   obtain ⟨r₀, ρ, hr₀, hρ, g, k, hg₀, hk₀, ⟨e, hcoord, -, he₀⟩, hcl, -, hpairs, hev⟩ :=
     exists_homeomorph_closure_biUnion_splitGluingPairs_of_hasStrictFDerivAt
       (P := Unit) (Q := Unit) (c := fun _ ↦ 0) (d := fun _ ↦ 0) hψ (hasStrictFDerivAt_const _ _)
-      (isInvertible_zero_unit_prod hψ') hψ₀ rfl hx₀ hχ (hasStrictFDerivAt_const _ _)
-      (isInvertible_zero_unit_prod hχ') hχ₀ rfl hy₀ hε hU hV (fun _ _ _ _ _ ↦ rfl)
-      fun _ _ _ _ _ ↦ rfl
+      (ContinuousLinearMap.isInvertible_zero_prod_iff.2 hψ') hψ₀ rfl hx₀ hχ
+      (hasStrictFDerivAt_const _ _) (ContinuousLinearMap.isInvertible_zero_prod_iff.2 hχ') hχ₀ rfl
+      hy₀ hε hU hV (fun _ _ _ _ _ ↦ rfl) fun _ _ _ _ _ ↦ rfl
   have hbr : ((WithLp.toLp 2 (g ((0 : Unit × Unit).1, 0), 0),
       WithLp.toLp 2 (0, k ((0 : Unit × Unit).2, 0))) : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ)) =
       (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀)) := by
-    rw [← hg₀, ← hk₀]
-    rfl
+    simp only [Prod.fst_zero, Prod.snd_zero, Prod.mk_zero_zero, hg₀, hk₀]
   have hS : closedBall (0 : Unit × Unit) ρ = {0} :=
     subsingleton_of_subsingleton.eq_singleton_of_mem (mem_closedBall_self hρ.le)
   have hset : (⋃ p ∈ closedBall (0 : Unit × Unit) ρ,

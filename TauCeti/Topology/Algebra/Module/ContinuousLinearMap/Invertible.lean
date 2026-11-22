@@ -49,6 +49,8 @@ coordinate is block lower triangular, and it is invertible exactly when its diag
 bundles over the same base, read in bundle charts. Two invertible maps on `M₁ × M₂` which agree
 on `M₁` have mutually inverse diagonal blocks `M₂ → M₂`
 (`ContinuousLinearMap.IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr`).
+Pairing a map with the zero map into a one-point module does not change its invertibility
+(`ContinuousLinearMap.isInvertible_zero_prod_iff`).
 For a continuous linear map `B : M → N`, the map `(u, l) ↦ (B u + l, u)` from `M × N` to `N × M`
 is invertible
 (`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
@@ -320,6 +322,18 @@ theorem isInvertible_prodMap_iff {f : M₁ →L[R] M₂} {g : M₃ →L[R] M₄}
       simpa using congrArg Prod.snd (h.inverse_apply_self (0, v))
   · rintro ⟨⟨e, rfl⟩, ⟨e', rfl⟩⟩
     exact ⟨e.prodCongr e', ContinuousLinearEquiv.coe_prodCongr e e'⟩
+
+/-- Pairing a continuous linear map with the zero map into a one-point module does not change its
+invertibility. This reads a single map as a family over a trivial parameter space. -/
+@[simp]
+theorem isInvertible_zero_prod_iff [Unique M₂] {f : M₁ →L[R] M₃} :
+    ((0 : M₁ →L[R] M₂).prod f).IsInvertible ↔ f.IsInvertible := by
+  have h : (0 : M₁ →L[R] M₂).prod f =
+      ((ContinuousLinearEquiv.uniqueProd R M₃ M₂).symm : M₃ →L[R] M₂ × M₃) ∘L f := by
+    ext x
+    · exact Subsingleton.elim _ _
+    · simp
+  rw [h, isInvertible_equiv_comp]
 
 end ProdMap
 
