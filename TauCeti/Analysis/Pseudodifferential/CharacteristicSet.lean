@@ -63,7 +63,7 @@ enlarge wave front sets, and `Op(e) v` lies in every `H^s`, so its wave front se
   if `a` is elliptic on `U × Γ` at large frequencies, then `WF(v) ∩ (U × Γ) ⊆ WF(Op(a) v)`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`:
   **microlocal elliptic regularity**, `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`.
-* `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_diff_characteristicSet_eq`:
+* `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq`:
   `WF(Op(a) v) \ Char(a) = WF(v) \ Char(a)`.
 * `TauCeti.Symbol.singularSupport_toDistribution_subset_singularSupport_quantizeSobolev_union`:
   the singular support of `v` lies in that of `Op(a) v` together with the positions of `Char(a)`.
@@ -224,7 +224,7 @@ theorem waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicS
 /-- Off the characteristic set of a scalar symbol `a` with compact spatial support, `Op(a)` neither
 creates nor removes singularities: `WF(Op(a) v) \ Char(a) = WF(v) \ Char(a)` for every
 `v ∈ H^t`. -/
-theorem waveFrontSet_toDistribution_quantizeSobolev_diff_characteristicSet_eq
+theorem waveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq
     {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
     (v : H^{t}(CoordinateSpace n, ℂ)) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet \ a.characteristicSet =
