@@ -38,12 +38,12 @@ divisor `c` involves the first derivatives of `w_c`, so this is the input for sm
 vortex fields over compact windows of the divisor space.
 
 **The coefficients.** Write `W_{n,i,j}(c) = φ_c ^ n conj z ^ i z ^ j`, the function
-`Polynomial.weightTerm P_c n (X ^ i) (X ^ j)`. When `i + j + 2 ≤ 2 m n` it is square integrable,
-and it depends smoothly on `c` in `L²(ℂ)`: near `c₀`, `φ_c = φ_{c₀} ψ_c` for a family `ψ` of
-bounded continuous functions that is smooth at `c₀`
-(`TauCeti.Vortex.exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul`), so
-`W_{n,i,j}(c) = ψ_c ^ n W_{n,i,j}(c₀)`. Differentiating in `z` along `v`, with
-`P_c = ∑ a_k X ^ k` and `P_c' = ∑ b_l X ^ l`,
+`Polynomial.conjMulDivOneAddNormSqPow P_c n (X ^ i) (X ^ j)`. When `i + j + 2 ≤ 2 m n` it is square
+integrable, and it depends smoothly on `c` in `L²(ℂ)`: near `c₀`, `φ_c = φ_{c₀} ψ_c` for a family
+`ψ` of bounded continuous functions that is smooth at `c₀`, so
+`W_{n,i,j}(c) = ψ_c ^ n W_{n,i,j}(c₀)`
+(`TauCeti.Vortex.contDiff_of_coeFn_eq_backgroundDefect_pow_mul`). Differentiating in `z` along
+`v`, with `P_c = ∑ a_k X ^ k` and `P_c' = ∑ b_l X ^ l`,
 
 `∂_v W_{n,i,j} = -n v ∑ conj a_k b_l W_{n+1,i+k,j+l} - n conj v ∑ a_k conj b_l W_{n+1,i+l,j+k}`
 `              + i conj v W_{n,i-1,j} + j v W_{n,i,j-1}`,
@@ -94,23 +94,23 @@ variable {m : ℕ}
 
 /-- The defect monomial `φ_c ^ n conj z ^ i z ^ j`, with `φ_c = (1 + ‖P_c‖²)⁻¹`. -/
 private def defectMonomial (c : Fin m → ℂ) (n i j : ℕ) : ℂ → ℂ :=
-  _root_.Polynomial.weightTerm (monicOfCoeff c) n (.X ^ i) (.X ^ j)
+  _root_.Polynomial.conjMulDivOneAddNormSqPow (monicOfCoeff c) n (.X ^ i) (.X ^ j)
 
 private theorem defectMonomial_apply (c : Fin m → ℂ) (n i j : ℕ) (z : ℂ) :
     defectMonomial c n i j z =
       backgroundDefect (monicOfCoeff c) z ^ n * (conj z ^ i * z ^ j) := by
-  rw [defectMonomial, _root_.Polynomial.weightTerm_apply, backgroundDefect_apply,
+  rw [defectMonomial, _root_.Polynomial.conjMulDivOneAddNormSqPow_apply, backgroundDefect_apply,
     Complex.ofReal_pow]
   simp only [_root_.Polynomial.eval_pow, _root_.Polynomial.eval_X, map_pow]
 
 private theorem contDiff_defectMonomial (c : Fin m → ℂ) (n i j : ℕ) :
     ContDiff ℝ ∞ (defectMonomial c n i j) :=
-  _root_.Polynomial.contDiff_weightTerm _ _ _ _
+  _root_.Polynomial.contDiff_conjMulDivOneAddNormSqPow _ _ _ _
 
 /-- `φ_c ^ n conj z ^ i z ^ j` is square integrable when `i + j + 2 ≤ 2 m n`. -/
 private theorem memLp_defectMonomial {n i j : ℕ} (h : i + j + 2 ≤ 2 * m * n) (c : Fin m → ℂ) :
     MemLp (defectMonomial c n i j) 2 :=
-  _root_.Polynomial.memLp_weightTerm (by
+  _root_.Polynomial.memLp_conjMulDivOneAddNormSqPow (by
     rwa [_root_.Polynomial.natDegree_X_pow, _root_.Polynomial.natDegree_X_pow,
       natDegree_monicOfCoeff])
 
@@ -171,22 +171,10 @@ private theorem IsSmoothFamily.contDiff {k : ℕ} {f : (Fin m → ℂ) → ℂ �
 private theorem isSmoothFamily_zero_defectMonomial {n i j : ℕ} (h : i + j + 2 ≤ 2 * m * n) :
     IsSmoothFamily 0 fun c : Fin m → ℂ ↦ defectMonomial c n i j := by
   set g : (Fin m → ℂ) → Lp ℂ 2 (volume : Measure ℂ) := fun c ↦ (memLp_defectMonomial h c).toLp
-  have hg : ContDiff ℝ ∞ g := by
-    refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
-    obtain ⟨ψ, hψ, hdef⟩ := exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul c₀
-    -- Near `c₀`, `W_{n,i,j}(c) = ψ_c ^ n W_{n,i,j}(c₀)`.
-    refine (((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip (g c₀)).restrictScalars ℝ).contDiff
-      |>.contDiffAt).comp c₀ (hψ.pow n)).congr_of_eventuallyEq ?_
-    filter_upwards [hdef] with c hc
-    refine Lp.ext ?_
-    filter_upwards [MemLp.coeFn_toLp (memLp_defectMonomial h c),
-      coeFn_mulLpL volume 2 (ψ c ^ n) (g c₀), MemLp.coeFn_toLp (memLp_defectMonomial h c₀)]
-      with z h₁ h₂ h₃
-    simp only [g, Function.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearMap.flip_apply]
-    rw [h₁, h₂, h₃, defectMonomial_apply, defectMonomial_apply, hc, mul_apply, pow_apply,
-      smul_eq_mul, mul_pow]
-    ring
+  have hg : ContDiff ℝ ∞ g :=
+    contDiff_of_coeFn_eq_backgroundDefect_pow_mul n (fun z ↦ conj z ^ i * z ^ j) fun c ↦
+      (MemLp.coeFn_toLp (memLp_defectMonomial h c)).trans
+        (.of_forall fun z ↦ defectMonomial_apply c n i j z)
   -- `L²` is `H⁰(ℂ)`.
   set J : Lp ℂ 2 (volume : Measure ℂ) →L[ℂ] H^{((0 : ℕ) : ℝ)}(ℂ) :=
     (inclusion (by simp)).comp (toLpₗᵢ ℂ ℂ 0 2).symm.toContinuousLinearEquiv.toContinuousLinearMap
@@ -207,12 +195,12 @@ private theorem hasDerivAt_defectMonomial (c : Fin m → ℂ) (n i j : ℕ) (z v
           defectMonomial c (n + 1) i j z +
         (i : ℂ) * conj v * defectMonomial c n (i - 1) j z +
         (j : ℂ) * v * defectMonomial c n i (j - 1) z) 0 := by
-  refine (_root_.Polynomial.hasDerivAt_weightTerm (monicOfCoeff c) n (.X ^ i) (.X ^ j) z v
-    ).congr_deriv ?_
-  simp only [defectMonomial, _root_.Polynomial.weightTerm_apply, _root_.Polynomial.eval_mul,
-    _root_.Polynomial.eval_C, _root_.Polynomial.eval_pow, _root_.Polynomial.eval_X,
-    _root_.Polynomial.eval_neg, _root_.Polynomial.eval_natCast, _root_.Polynomial.derivative_X_pow,
-    map_mul, map_neg, map_natCast, map_pow]
+  refine (_root_.Polynomial.hasDerivAt_conjMulDivOneAddNormSqPow (monicOfCoeff c) n (.X ^ i)
+    (.X ^ j) z v).congr_deriv ?_
+  simp only [defectMonomial, _root_.Polynomial.conjMulDivOneAddNormSqPow_apply,
+    _root_.Polynomial.eval_mul, _root_.Polynomial.eval_C, _root_.Polynomial.eval_pow,
+    _root_.Polynomial.eval_X, _root_.Polynomial.eval_neg, _root_.Polynomial.eval_natCast,
+    _root_.Polynomial.derivative_X_pow, map_mul, map_neg, map_natCast, map_pow]
   ring
 
 /-- **The derivatives of the defect monomials.** With `P_c = ∑ a_k X ^ k` and `P_c' = ∑ b_l X ^ l`,

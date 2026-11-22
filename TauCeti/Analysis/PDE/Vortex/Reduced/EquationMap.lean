@@ -130,8 +130,8 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
 * `TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`,
   `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: solutions of the reduced equation are zeros
   of `N`.
-* `TauCeti.Vortex.exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul`: near `c₀`,
-  `φ_c = φ_{c₀} ψ_c` for a family `ψ` of bounded continuous functions that is smooth at `c₀`.
+* `TauCeti.Vortex.contDiff_of_coeFn_eq_backgroundDefect_pow_mul`: a family of `L²` functions
+  `φ_c ^ n a`, with `a` fixed, is smooth in `c`.
 * `TauCeti.Vortex.contDiff_reducedEquationMapOfCoeff`: `Φ` is smooth on `ℂ^m × H²(ℂ)`.
 * `TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
   `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`: its partial derivative in `u` is
@@ -636,16 +636,6 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
     hinv, hdef, fun c z ↦ ?_⟩
   exact normSqWeight_apply P₀ hP₀ hn (natDegree_derivative_monicOfCoeff_lt c) z
 
-/-- **The defect near `c₀` is a bounded multiple of the defect at `c₀`.** For every `c₀` there is a
-family `ψ` of bounded continuous functions, smooth at `c₀`, with `φ_c = φ_{c₀} ψ_c` for all `c`
-near `c₀`. -/
-theorem exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul (c₀ : Fin m → ℂ) :
-    ∃ ψ : (Fin m → ℂ) → ℂ →ᵇ ℂ, ContDiffAt ℝ ∞ ψ c₀ ∧
-      ∀ᶠ c in 𝓝 c₀, backgroundDefect (monicOfCoeff c) =
-        backgroundDefect (monicOfCoeff c₀) * ψ c := by
-  obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
-  exact ⟨_, hinv, hdef⟩
-
 /-- **The defect depends smoothly on the coefficients**, as a bounded continuous function. -/
 theorem contDiff_backgroundDefect_monicOfCoeff :
     ContDiff ℝ ∞ fun c : Fin m → ℂ ↦ backgroundDefect (monicOfCoeff c) := by
@@ -653,22 +643,32 @@ theorem contDiff_backgroundDefect_monicOfCoeff :
   obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
   exact (contDiffAt_const.mul hinv).congr_of_eventuallyEq hdef
 
-/-- **The defect depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
-theorem contDiff_backgroundDefectLp (hm : 0 < m) :
-    ContDiff ℝ ∞ (backgroundDefectLp (m := m) hm) := by
+/-- **Powers of the defect times a fixed function depend smoothly on the coefficients in
+`L²(ℂ)`.** If the `L²` function of `f c` is `φ_c ^ n a` for a fixed function `a`, then `c ↦ f c`
+is smooth. Near `c₀`, `φ_c ^ n a = ψ_c ^ n φ_{c₀} ^ n a` with `ψ_c = ρ_c⁻¹` bounded continuous and
+smooth at `c₀`. -/
+theorem contDiff_of_coeFn_eq_backgroundDefect_pow_mul
+    {f : (Fin m → ℂ) → Lp ℂ 2 (volume : Measure ℂ)} (n : ℕ) (a : ℂ → ℂ)
+    (hf : ∀ c, f c =ᵐ[volume] fun z ↦ backgroundDefect (monicOfCoeff c) z ^ n * a z) :
+    ContDiff ℝ ∞ f := by
   refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
   obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
-  have hmul : ContDiffAt ℝ ∞
-      (fun c ↦ mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀)) c₀ :=
-    ((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip
-      (backgroundDefectLp hm c₀)).restrictScalars ℝ).contDiff.contDiffAt).comp c₀ hinv
-  refine hmul.congr_of_eventuallyEq ?_
+  refine (((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip (f c₀)).restrictScalars ℝ).contDiff
+    |>.contDiffAt).comp c₀ (hinv.pow n)).congr_of_eventuallyEq ?_
   filter_upwards [hdef] with c hc
   refine Lp.ext ?_
-  filter_upwards [coeFn_backgroundDefectLp hm c,
-    coeFn_mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀),
-    coeFn_backgroundDefectLp hm c₀] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃, hc, mul_apply, smul_eq_mul, mul_comm]
+  filter_upwards [hf c, coeFn_mulLpL volume 2 (Ring.inverse (ρ c) ^ n) (f c₀), hf c₀]
+    with z h₁ h₂ h₃
+  simp only [Function.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.flip_apply]
+  rw [h₁, h₂, h₃, hc, mul_apply, pow_apply, smul_eq_mul, mul_pow]
+  ring
+
+/-- **The defect depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
+theorem contDiff_backgroundDefectLp (hm : 0 < m) :
+    ContDiff ℝ ∞ (backgroundDefectLp (m := m) hm) :=
+  contDiff_of_coeFn_eq_backgroundDefect_pow_mul 1 1 fun c ↦
+    (coeFn_backgroundDefectLp hm c).trans (.of_forall fun z ↦ by simp)
 
 /-- **The source depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
 theorem contDiff_backgroundSourceLp (hm : 0 < m) :
