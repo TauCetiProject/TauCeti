@@ -19,6 +19,10 @@ topology. Derivatives are taken within the extended source chart target, includi
 and corner points; values outside the target chart never enter a test.
 
 For maps between normed spaces, this agrees with the global weak Whitney topology.
+Since each test only sees derivatives at points of a compact set, maps which eventually agree
+with `f` near every compact set converge to `f`
+(`ContMDiffMap.tendsto_manifoldWeakWhitney_of_eventually_eventuallyEq_nhdsSet`), however far they
+move points outside it.
 Evaluation is continuous, so the map space is Hausdorff when the target is Hausdorff.
 The topology is not a global function-space instance; use `open scoped
 TauCeti.ManifoldWeakWhitney` to select it, which also supplies the Hausdorff instance.
@@ -118,6 +122,31 @@ theorem tendsto_manifoldWeakWhitney_iff {P : Type*} {l : Filter P}
     exact h _ ⟨x, y, m, hm, K, hK, V, hV, rfl⟩ hf
   · rintro h _ ⟨x, y, m, hm, K, hK, V, hV, rfl⟩ hf
     exact h x y m hm K hK V hV hf
+
+/-- **Maps agreeing with `f` near every compact set converge to `f`.** If, for every compact set
+`C` of the source, the maps `g p` eventually agree with `f` on a neighbourhood of `C`, then they
+converge to `f` in the weak Whitney topology. For instance, maps which equal `f` outside compact
+sets eventually disjoint from each compact set converge to `f`. -/
+theorem tendsto_manifoldWeakWhitney_of_eventually_eventuallyEq_nhdsSet {P : Type*}
+    {l : Filter P} {g : P → C^n⟮I, M; J, N⟯} {f : C^n⟮I, M; J, N⟯}
+    (h : ∀ C : Set M, IsCompact C → ∀ᶠ p in l, (g p : M → N) =ᶠ[𝓝ˢ C] f) :
+    Tendsto g l (𝓝 f) := by
+  refine tendsto_manifoldWeakWhitney_iff.mpr fun x y m _ K hK V _ hf ↦ ?_
+  -- The points of `M` tested by the chart test form a compact set.
+  have hC : IsCompact ((extChartAt I x).symm '' (Subtype.val '' K)) :=
+    (hK.image continuous_subtypeVal).image_of_continuousOn
+      ((continuousOn_extChartAt_symm x).mono (image_subset_iff.2 fun z _ ↦ z.property))
+  filter_upwards [h _ hC] with p hp
+  intro z hz
+  have hgerm : (g p : M → N) =ᶠ[𝓝 ((extChartAt I x).symm z)] f :=
+    eventually_nhdsSet_iff_forall.1 hp _ ⟨z, ⟨z, hz, rfl⟩, rfl⟩
+  -- Near `z` within the chart target, the two coordinate expressions agree.
+  have hchart : extChartAt J y ∘ g p ∘ (extChartAt I x).symm
+      =ᶠ[𝓝[(extChartAt I x).target] (z : E)] extChartAt J y ∘ f ∘ (extChartAt I x).symm :=
+    ((continuousOn_extChartAt_symm x (z : E) z.property).tendsto.eventually hgerm).mono
+      fun w hw ↦ by simp only [Function.comp_apply, hw]
+  rw [hgerm.eq_of_nhds, hchart.iteratedFDerivWithin_eq (hchart.eq_of_nhdsWithin z.property) m]
+  exact hf z hz
 
 /-- Evaluation at a fixed source point is continuous for the manifold weak Whitney topology. -/
 theorem continuous_eval_const_manifoldWeakWhitney (x : M) :

@@ -158,7 +158,7 @@ theorem kahlerTwoForm_apply_eq_norm_ιMulti_iff [FiniteDimensional ℝ E] {v w :
   simpa only [AlmostComplexStructure.ofComplexModule_apply] using
     AlmostComplexStructure.inner_apply_eq_norm_ιMulti_iff
       (J := AlmostComplexStructure.ofComplexModule E)
-      AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply h
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule h
 
 end DegreeTwoEquality
 
@@ -177,7 +177,7 @@ theorem alternatingFormEquiv_ofComplexModule_kahlerForm :
   have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
   rw [hv, alternatingFormEquiv_apply,
     AlmostComplexStructure.inner_kahlerForm_ιMulti
-      AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply,
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
     AlmostComplexStructure.ofComplexModule_apply, kahlerTwoForm_apply_eq_inner]
 
 /-- In any complex orthonormal basis `b` of `E`, the Kähler bivector is

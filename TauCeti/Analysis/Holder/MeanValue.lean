@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -22,6 +24,9 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
 Conversely, a Hölder bound with exponent `r > 1` forces the derivative to vanish: the increment
 `f y - f x` is `O(‖y - x‖ʳ)`, which is `o(‖y - x‖)`. So on a preconnected open set the only such
 functions are the constants, which is why Hölder exponents are taken in `(0, 1]`.
+
+A Hölder bound on the derivative along a line gives a first-order Taylor estimate along that line:
+the remainder `φ (x + h • e) - φ x - h • φ' x` is `O(|h| ^ (1 + r))`.
 
 ## Main declarations
 
@@ -39,6 +44,8 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
   derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with constant
   `N₂ (2R)^(1 - α)`.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
+* `HolderWith.norm_sub_sub_smul_le_of_hasLineDerivAt`: the first-order Taylor estimate along a line
+  for a function whose line derivative is Hölder.
 -/
 
 public section
@@ -92,6 +99,37 @@ theorem HolderOnWith.eq_of_one_lt {E F : Type*} [NormedAddCommGroup E] [NormedSp
     (fun _ hz ↦ (hf.hasFDerivAt_zero_of_one_lt hr (hs.mem_nhds hz)).differentiableAt
       |>.differentiableWithinAt)
     (fun _ hz ↦ (hf.hasFDerivAt_zero_of_one_lt hr (hs.mem_nhds hz)).fderiv) hx hy
+
+/-- **A first-order Taylor estimate along a line.** If `φ` has line derivative `φ' y` along `e` at
+every point `y` and `φ'` is `r`-Hölder with constant `C`, then the remainder of the first-order
+expansion of `φ` along `e` satisfies `‖φ (x + h • e) - φ x - h • φ' x‖ ≤ C ‖h • e‖ ^ r |h|`. -/
+theorem HolderWith.norm_sub_sub_smul_le_of_hasLineDerivAt {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {φ φ' : E → F} {e : E}
+    {C r : ℝ≥0} (hφ' : HolderWith C r φ') (hφ : ∀ y, HasLineDerivAt ℝ φ (φ' y) y e) (x : E)
+    (h : ℝ) : ‖φ (x + h • e) - φ x - h • φ' x‖ ≤ C * ‖h • e‖ ^ (r : ℝ) * |h| := by
+  -- `σ ↦ φ (x + σ • e) - σ • φ' x` has derivative `φ' (x + s • e) - φ' x` at `s`.
+  have hψ (s : ℝ) :
+      HasDerivAt (fun σ : ℝ ↦ φ (x + σ • e) - σ • φ' x) (φ' (x + s • e) - φ' x) s := by
+    have h₁ : HasDerivAt (fun σ : ℝ ↦ φ ((x + s • e) + (σ - s) • e)) (φ' (x + s • e)) s :=
+      HasDerivAt.comp_sub_const s s (by rw [sub_self]; exact hφ (x + s • e))
+    have h₂ : (fun σ : ℝ ↦ φ ((x + s • e) + (σ - s) • e)) = fun σ ↦ φ (x + σ • e) := by
+      funext σ
+      rw [sub_smul, add_add_sub_cancel]
+    rw [h₂] at h₁
+    have h₃ := h₁.sub ((hasDerivAt_id s).smul_const (φ' x))
+    simp only [id, one_smul] at h₃
+    exact h₃
+  have hbound : ∀ s ∈ Set.uIcc 0 h, ‖φ' (x + s • e) - φ' x‖ ≤ C * ‖h • e‖ ^ (r : ℝ) := by
+    intro s hs
+    have hs' : |s| ≤ |h| := by simpa using Set.abs_sub_left_of_mem_uIcc hs
+    rw [← dist_eq_norm]
+    refine (hφ'.dist_le _ _).trans ?_
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, norm_smul, Real.norm_eq_abs,
+      Real.norm_eq_abs]
+    gcongr
+  have := (convex_uIcc (0 : ℝ) h).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun s _ ↦ (hψ s).hasDerivWithinAt) hbound Set.left_mem_uIcc Set.right_mem_uIcc
+  simpa [sub_right_comm, Real.norm_eq_abs] using this
 
 namespace TauCeti
 

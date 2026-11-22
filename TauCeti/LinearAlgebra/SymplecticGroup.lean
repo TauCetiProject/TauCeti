@@ -411,10 +411,10 @@ theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal
     rw [hE, Matrix.neg_apply, Matrix.add_apply]
     exact I.neg_mem (I.add_mem (hXJ_mem i j)
       (by simpa using mul_mul_apply_mem hXt_mem (J l R) 1 i j))
-  have hX_mul_E : X * E = 0 := mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
-  have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
+  have hX_mul_E : X * E = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hX_mem hE_mem
+  have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hE_mem hXt_mem
   have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
-    mul_eq_zero_of_sq_eq_bot hI hXJ_mem hXt_mem
+    mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hXJ_mem hXt_mem
   rw [SymplecticGroup.mem_iff]
   calc
     (1 + X) * M * J l R * ((1 + X) * M).transpose =

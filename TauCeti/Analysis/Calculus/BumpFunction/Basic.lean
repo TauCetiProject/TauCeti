@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Basic.Complex.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Support
+import Mathlib.Analysis.Normed.Group.Bounded
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -25,6 +29,8 @@ radius `R φ.rOut`.
   support lies in the ball of radius `r` around `c`.
 * `TauCeti.exists_contDiff_eventuallyEq_id_forall_mem_ball`: a smooth map into the ball of radius
   `r` about `0` which is the identity near `0`.
+* `ContDiff.exists_contDiff_bdd_deriv_eventuallyEq`: a `C¹` function on `ℝ` agrees near `[-M, M]`
+  with a `C¹` function of bounded derivative.
 * `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
   the rescaled bump `φ (R⁻¹ ·)`, `R > 0`, vanishes off the ball of radius `R φ.rOut`.
 -/
@@ -32,7 +38,7 @@ radius `R φ.rOut`.
 public section
 
 open Metric Filter
-open scoped ContDiff Topology
+open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -62,6 +68,28 @@ theorem exists_contDiff_eventuallyEq_id_forall_mem_ball {E : Type*} [NormedAddCo
       exact (mul_le_of_le_one_left (norm_nonneg x) b.le_one).trans_lt hx
     · rw [b.zero_of_le_dist (by simpa using hx), zero_smul]
       exact mem_ball_self hr
+
+/-- A `C¹` function `Φ : ℝ → G` agrees near every point of `[-M, M]` with a `C¹` function whose
+derivative is bounded, namely its product with a bump function equal to one on a neighbourhood of
+`[-M, M]`. The product agrees with `Φ` at `0`. -/
+theorem _root_.ContDiff.exists_contDiff_bdd_deriv_eventuallyEq {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {Φ : ℝ → G} (hΦ : ContDiff ℝ 1 Φ) (M : ℝ) :
+    ∃ F : ℝ → G, ∃ K : ℝ≥0, ContDiff ℝ 1 F ∧ (∀ t, ‖deriv F t‖₊ ≤ K) ∧
+      (∀ t, |t| ≤ M → F =ᶠ[𝓝 t] Φ) ∧ F 0 = Φ 0 := by
+  set R := |M| + 1
+  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
+  have hF : ContDiff ℝ 1 fun t => ψ t • Φ t := ψ.contDiff.smul hΦ
+  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
+    (ψ.hasCompactSupport.smul_right (f' := Φ)).deriv
+  refine ⟨fun t => ψ t • Φ t, K.toNNReal, hF, fun t => ?_, fun t ht => ?_, ?_⟩
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact (hK t).trans (Real.le_coe_toNNReal K)
+  · have ht' : t ∈ ball (0 : ℝ) R := by
+      rw [mem_ball, Real.dist_eq, sub_zero]
+      linarith [le_abs_self M]
+    filter_upwards [isOpen_ball.mem_nhds ht'] with s hs
+    rw [ψ.one_of_mem_closedBall (ball_subset_closedBall hs), one_smul]
+  · simp only [ψ.one_of_mem_closedBall (mem_closedBall_self ψ.rIn_pos.le), one_smul]
 
 end TauCeti
 

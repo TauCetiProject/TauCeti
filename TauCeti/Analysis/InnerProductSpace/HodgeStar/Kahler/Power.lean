@@ -421,7 +421,7 @@ theorem sqrt_alternatingFormInner_kahlerPowerForm (r : ℕ) :
       √((finrank ℂ E).choose r) := by
   have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
   rw [kahlerPowerForm, AlmostComplexStructure.sqrt_alternatingFormInner_kahlerPowerForm
-      AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply r,
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule r,
     finrank_real_eq_two_mul_finrank_complex, Nat.mul_div_right _ (by decide : 0 < 2)]
 
 end HermitianPower

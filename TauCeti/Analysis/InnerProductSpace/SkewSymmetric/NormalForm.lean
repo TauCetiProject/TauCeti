@@ -48,6 +48,9 @@ powers lives in `TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm`.
   of skew-symmetric maps.
 * `TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`: the same for a linear family,
   with linear weights.
+* `TauCeti.isInternal_planeDecomposition`, `TauCeti.pairwise_isOrtho_planeDecomposition`: the
+  planes `span(q_k, p_k)` of an orthonormal family `(q_k, p_k)`, together with the orthogonal
+  complement of their span, form an orthogonal internal direct sum.
 * `LinearMap.exists_orthonormalBasis_skew_normalForm`: the real block-diagonal normal form of a
   skew-adjoint endomorphism in even dimension `2 * r`.
 
@@ -262,6 +265,66 @@ theorem exists_orthonormal_apply_eq_smul_of_skew_of_linearMap {V : Type*} [AddCo
   refine ⟨r, q, p, α, hon, hact, fun k h ↦ ?_, hker⟩
   obtain ⟨X, hX⟩ := hne k
   exact hX (LinearMap.congr_fun h X)
+
+section Decomposition
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {r : ℕ} {q p : Fin r → E}
+
+/-- The summands of the real normal form: at `none`, the orthogonal complement of the span of all
+the `q k` and `p k`; at `some k`, the plane `span(q k, p k)`. For an orthonormal family
+`Sum.elim q p` they form an orthogonal internal direct sum (`TauCeti.isInternal_planeDecomposition`,
+`TauCeti.pairwise_isOrtho_planeDecomposition`). -/
+noncomputable def planeDecomposition (q p : Fin r → E) (o : Option (Fin r)) :
+    Submodule ℝ E :=
+  o.elim (Submodule.span ℝ (Set.range (Sum.elim q p)))ᗮ fun k ↦ Submodule.span ℝ {q k, p k}
+
+@[simp]
+theorem planeDecomposition_none (q p : Fin r → E) :
+    planeDecomposition q p none = (Submodule.span ℝ (Set.range (Sum.elim q p)))ᗮ :=
+  (rfl)
+
+@[simp]
+theorem planeDecomposition_some (q p : Fin r → E) (k : Fin r) :
+    planeDecomposition q p (some k) = Submodule.span ℝ {q k, p k} :=
+  (rfl)
+
+private theorem span_pair_le_span_range (k : Fin r) :
+    Submodule.span ℝ {q k, p k} ≤ Submodule.span ℝ (Set.range (Sum.elim q p)) :=
+  Submodule.span_mono <| Set.insert_subset ⟨.inl k, rfl⟩ <|
+    Set.singleton_subset_iff.2 ⟨.inr k, rfl⟩
+
+/-- For an orthonormal family `Sum.elim q p`, the planes `span(q k, p k)` and the orthogonal
+complement of their span are pairwise orthogonal. -/
+theorem pairwise_isOrtho_planeDecomposition (hon : Orthonormal ℝ (Sum.elim q p)) :
+    Pairwise ((· ⟂ ·) on (planeDecomposition q p)) := by
+  rintro (_ | k) (_ | l) hkl
+  · exact absurd rfl hkl
+  · exact (Submodule.isOrtho_orthogonal_left _).mono_right (span_pair_le_span_range l)
+  · exact (Submodule.isOrtho_orthogonal_right _).mono_left (span_pair_le_span_range k)
+  · have hkl : k ≠ l := fun h ↦ hkl (congrArg some h)
+    refine Submodule.isOrtho_span.2 ?_
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    rintro u (rfl | rfl) v (rfl | rfl)
+    · exact hon.2 (i := .inl k) (j := .inl l) (by simpa using hkl)
+    · exact hon.2 (i := .inl k) (j := .inr l) (by simp)
+    · exact hon.2 (i := .inr k) (j := .inl l) (by simp)
+    · exact hon.2 (i := .inr k) (j := .inr l) (by simpa using hkl)
+
+/-- For an orthonormal family `Sum.elim q p` in a real inner product space, the space is the
+internal direct sum of the planes `span(q k, p k)` and the orthogonal complement of their span. -/
+theorem isInternal_planeDecomposition (hon : Orthonormal ℝ (Sum.elim q p)) :
+    DirectSum.IsInternal (planeDecomposition q p) := by
+  refine (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).2
+    ⟨(orthogonalFamily_iff_pairwise.2 (pairwise_isOrtho_planeDecomposition hon)).independent, ?_⟩
+  -- The span of the finite family is finite-dimensional, so it has an orthogonal projection.
+  have := FiniteDimensional.span_of_finite ℝ (Set.finite_range (Sum.elim q p))
+  rw [eq_top_iff, ← Submodule.sup_orthogonal_of_hasOrthogonalProjection
+    (K := Submodule.span ℝ (Set.range (Sum.elim q p)))]
+  refine sup_le (Submodule.span_le.2 ?_) (le_iSup (planeDecomposition q p) none)
+  rintro _ ⟨k | k, rfl⟩ <;>
+    exact le_iSup (planeDecomposition q p) (some k) (Submodule.subset_span (by simp))
+
+end Decomposition
 
 end TauCeti
 
