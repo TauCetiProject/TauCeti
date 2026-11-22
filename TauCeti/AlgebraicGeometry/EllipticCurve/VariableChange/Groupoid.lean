@@ -17,6 +17,11 @@ constructs their identity section and inversion isomorphism, and proves that bot
 are smooth of relative dimension four and surjective, using the arbitrary-coefficient-ring
 results of `TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Smooth.lean`.
 
+At the level of rings, the right unit `η_R` is flat (`flat_rightUnit`). Hence, if the classifying
+map `ℤ[a₁, ⋯, a₆] →+* R` of a Weierstrass curve `W` is flat, so is the classifying map of the
+universal change of variables of `W` over `R[u, u⁻¹, r, s, t]`, which is the base change of `η_R`
+along it (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`).
+
 These are properties of the affine groupoid; identifying its quotient with a moduli stack
 requires the separate moduli and descent comparisons.
 
@@ -106,6 +111,13 @@ theorem inversion_hom_target : inversion.hom ≫ target = source := by
 theorem identity_inversion_hom : identity ≫ inversion.hom = identity := by
   simp [identity_def, inversion_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
 
+/-- **The right unit is flat.** It is the faithfully flat left unit followed by the conjugation,
+which is an isomorphism (`conjugation_comp_algebraMap`). -/
+theorem flat_rightUnit : rightUnit.Flat := by
+  rw [← conjugation_comp_algebraMap]
+  exact (RingHom.flat_algebraMap_iff.mpr inferInstance).comp
+    (RingHom.Flat.of_bijective (Function.Involutive.bijective conjugation_conjugation))
+
 /-- The source projection is smooth of relative dimension four. -/
 instance smoothOfRelativeDimension_source : SmoothOfRelativeDimension 4 source := by
   rw [source_def]
@@ -134,3 +146,20 @@ instance surjective_target : Surjective target := by
   exact Surjective.of_comp identity target
 
 end TauCeti.WeierstrassHopfAlgebroid
+
+namespace WeierstrassCurve
+
+open TauCeti.WeierstrassChange TauCeti.WeierstrassHopfAlgebroid
+
+/-- **Flatness over the atlas passes to the pulled-back atlas.** If the classifying map
+`ℤ[a₁, ⋯, a₆] →+* R` of a Weierstrass curve `W` is flat, then so is the classifying map of the
+target `C • W` of the universal change of variables `C` over `R[u, u⁻¹, r, s, t]`, the base change
+of the flat right unit along `W.specialize` (`map_specialize_comp_rightUnit`). It is stated for
+coefficient rings in `Type`, the universe of `ℤ[a₁, ⋯, a₆]`, as is `ChangeRing.flat_map`. -/
+theorem flat_specialize_universalChange_smul_baseChange {R : Type} [CommRing R]
+    (W : WeierstrassCurve R) (h : W.specialize.Flat) :
+    (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat := by
+  rw [← map_specialize_comp_rightUnit]
+  exact flat_rightUnit.comp (ChangeRing.flat_map h)
+
+end WeierstrassCurve

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Continuity
-public import Mathlib.Topology.CompactOpen
+public import Mathlib.Analysis.Normed.Group.Bounded
+public import TauCeti.Topology.ContinuousMap.CompactConvergence.Basic
 
 /-!
 # Local boundedness of families on compact sets
@@ -16,18 +16,19 @@ bound uniform in the index. The definition only needs a topological domain and a
 target. Local boundedness is preserved by restricting the domain or reindexing the family, and
 implies a uniform bound at each point.
 
-For seminormed group targets, relative compactness of the continuous restrictions implies local
-boundedness. This uses the compact-open topology and works on an arbitrary topological domain:
-restriction to a compact subset makes joint evaluation continuous, and compactness bounds the norm
-of all evaluations there at once.
+For seminormed group targets, total boundedness of the continuous restrictions, for the
+uniformity of compact convergence (whose topology is the compact-open topology), implies local
+boundedness; in particular relative compactness does. This works on an arbitrary topological
+domain: on each compact subset, the values of a totally bounded family form a totally bounded,
+hence bounded, set (`TotallyBounded.biUnion_image`).
 
 ## Main results
 
 * `TauCeti.IsLocallyBoundedOn`: uniform boundedness on each compact subset.
 * `TauCeti.IsLocallyBoundedOn.mono` and `TauCeti.IsLocallyBoundedOn.comp`: stability under domain
   restriction and reindexing.
-* `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`: relative compactness of continuous
-  restrictions gives local boundedness.
+* `TauCeti.isLocallyBoundedOn_of_totallyBounded_range`: total boundedness, in particular
+  relative compactness, of continuous restrictions gives local boundedness.
 -/
 
 public section
@@ -88,27 +89,22 @@ section GeneralDomain
 variable [SeminormedAddGroup E] {X : Type*} [TopologicalSpace X] {Ω : Set X}
   {F : ι → X → E} {f : ι → C(Ω, E)}
 
-/-- A family of maps into a seminormed group whose continuous restrictions to `Ω` are relatively
-compact in `C(↥Ω, E)` is locally bounded on `Ω`.
+/-- A family of maps into a seminormed group whose continuous restrictions to `Ω` form a totally
+bounded set in `C(↥Ω, E)`, for the uniformity of compact convergence, is locally bounded on `Ω`.
 
-The domain is an arbitrary topological space; local compactness is not required. -/
-theorem isLocallyBoundedOn_of_isCompact_closure_range
-    (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) (hcpt : IsCompact (closure (Set.range f))) :
+In particular this applies to a relatively compact family of restrictions. The domain is an
+arbitrary topological space; local compactness is not required. -/
+theorem isLocallyBoundedOn_of_totallyBounded_range
+    (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) (htb : TotallyBounded (Set.range f)) :
     IsLocallyBoundedOn F Ω := by
   refine isLocallyBoundedOn_def.mpr fun K hKΩ hK => ?_
   have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by rwa [Subtype.range_coe])
-  let S : Set Ω := Subtype.val ⁻¹' K
-  have : CompactSpace S := isCompact_iff_compactSpace.mp hK'
-  -- Restriction to the compact domain S makes joint evaluation continuous.
-  have hcont : Continuous fun p : C(Ω, E) × S => ‖(p.1.restrict S) p.2‖ :=
-    (continuous_eval.comp ((ContinuousMap.continuous_restrict S).prodMap continuous_id)).norm
-  obtain ⟨C, hC⟩ := ((hcpt.prod isCompact_univ).image hcont).bddAbove
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
+    (htb.biUnion_image hK').isBounded
   refine ⟨C, fun i z hz => ?_⟩
-  have hmem : (f i, (⟨⟨z, hKΩ hz⟩, hz⟩ : S)) ∈
-      closure (Set.range f) ×ˢ (univ : Set S) :=
-    ⟨subset_closure ⟨i, rfl⟩, mem_univ _⟩
-  simpa [ContinuousMap.restrict_apply, hf i] using hC (mem_image_of_mem _ hmem)
+  have hz' : (⟨z, hKΩ hz⟩ : Ω) ∈ Subtype.val ⁻¹' K := mem_preimage.2 hz
+  simpa [hf i] using hC _ (mem_biUnion (mem_range_self i) (mem_image_of_mem (f i) hz'))
 
 end GeneralDomain
 

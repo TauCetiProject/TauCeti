@@ -20,7 +20,8 @@ containing the graph of the restriction of a partial map to a core contains its
 whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. For a closed partial map
 this characterises cores: a submodule of its domain is a core exactly when the closure of
 the graph of the restriction contains the whole graph,
-`LinearPMap.IsClosed.hasCore_iff_graph_subset_closure`.
+`LinearPMap.IsClosed.hasCore_iff_graph_subset_closure`. A closed partial map is also
+its own closure, `LinearPMap.IsClosed.closure_eq`.
 
 ## Provenance
 
@@ -54,6 +55,13 @@ theorem IsClosed.mem_domain_of_tendsto
 
 variable [ContinuousAdd E] [ContinuousAdd F]
 variable [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
+
+/-- A closed partial linear map is its own closure: its graph is already topologically closed. -/
+theorem IsClosed.closure_eq {A : E →ₗ.[R] F} (hA : A.IsClosed) : A.closure = A := by
+  refine eq_of_eq_graph ?_
+  rw [← hA.isClosable.graph_closure_eq_closure_graph]
+  rw [IsClosed] at hA
+  exact hA.submodule_topologicalClosure_eq
 
 /-- A closed set containing the graph of the restriction of `A` to a core `S` contains the whole
 graph of `A`, since that graph is the closure of the graph of the restriction. -/

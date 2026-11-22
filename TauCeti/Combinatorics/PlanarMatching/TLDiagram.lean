@@ -393,6 +393,9 @@ theorem id_matching_val (n : ℕ) : (id n).matching.val.val = Fin.revPerm :=
 @[simp]
 theorem circles_id (n : ℕ) : (id n).circles = 0 := (rfl)
 
+/-- The circle-free diagram of the fully nested matching is the identity diagram. -/
+theorem mk_nested_zero (n : ℕ) : (⟨PlanarMatching.nested n, 0⟩ : TLDiagram n n) = id n := (rfl)
+
 /-- The identity diagram is symmetric under vertical reflection. -/
 @[simp]
 theorem verticalReflect_id (n : ℕ) : verticalReflect n n (id n) = id n := by
