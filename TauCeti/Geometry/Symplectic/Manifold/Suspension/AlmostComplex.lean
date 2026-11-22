@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Cover
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Block almost complex structures on a symplectic suspension
@@ -69,6 +70,11 @@ structure is compatible with `Ω`.
   `σ`-compatible structures descends to an `Ω`-compatible structure.
 * `TauCeti.SmoothMappingTorus.contMDiff_suspensionAlmostComplexStructure_family`: vertical
   families depending smoothly on a parameter descend to structures depending smoothly on it.
+* `TauCeti.SmoothMappingTorus.mfderiv_iterate_symm_apply_eq_apply_mfderiv`: the seam identity
+  iterates along orbits, `dφ⁻ʲ ∘ K_((s, t), y) = K_((s, t + j), φ⁻ʲ y) ∘ dφ⁻ʲ`.
+* `TauCeti.SmoothMappingTorus.apply_apply_add_eq_apply_apply_of_hasMFDerivAt_iterate`: at a
+  periodic point `x` of period `d`, the linearized return map `P = dφ^d_x` satisfies
+  `P ∘ K_((s, t + d), x) = K_((s, t), x) ∘ P`.
 
 ## References
 
@@ -350,5 +356,68 @@ theorem contMDiff_suspensionAlmostComplexStructure_family {EΛ HΛ Λ : Type*}
       (exists_deck_of_deckStep φ (hK.comp (contMDiff_const.prodMk contMDiff_id)) (hs l) (ht l))
       (eqvGen_deckStep_of_suspensionCover_eq φ h) v v' hv)
     (SmoothAlmostComplexStructure.contMDiff_prodFamily_family _ hK)
+
+/-! ### The seam identity along orbits -/
+
+section Orbit
+
+variable {φ}
+
+omit [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] [FiniteDimensional ℝ E]
+
+include ht
+
+/-- **The seam identity along an orbit.** If a vertical family `K` satisfies the seam identity
+`dφ⁻¹ ∘ K_((s, t), y) = K_((s, t + 1), φ⁻¹ y) ∘ dφ⁻¹`, then for every `j : ℕ` the differential of
+`φ⁻ʲ` intertwines `K_((s, t), y)` with `K_((s, t + j), φ⁻ʲ y)`. -/
+theorem mfderiv_iterate_symm_apply_eq_apply_mfderiv (j : ℕ) (s t : ℝ) (y : M)
+    (v : TangentSpace I y) :
+    mfderiv I I (⇑φ.symm)^[j] y (K ((s, t), y) v) =
+      K ((s, t + j), (⇑φ.symm)^[j] y) (mfderiv I I (⇑φ.symm)^[j] y v) := by
+  -- The point and the time sit inside the argument of `K`, on which the type of `K p` depends,
+  -- so they are normalized with `rw` (which abstracts the motive) rather than `simp`.
+  induction j generalizing t y v with
+  | zero =>
+    rw [Nat.cast_zero, add_zero, iterate_zero, id_eq, mfderiv_id, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.id_apply]
+  | succ j ih =>
+    have hg : MDifferentiableAt I I (⇑φ.symm)^[j] (φ.symm y) :=
+      (φ.symm.contMDiff.iterate j).mdifferentiableAt (by simp)
+    have hh : MDifferentiableAt I I φ.symm y := φ.symm.contMDiff.mdifferentiableAt (by simp)
+    have h := ht ((s, t), y) v
+    rw [Prod.mk_add_mk, add_zero] at h
+    rw [show t + ((j + 1 : ℕ) : ℝ) = t + 1 + j by push_cast; ring, iterate_succ_apply,
+      iterate_succ, mfderiv_comp y hg hh, ContinuousLinearMap.comp_apply, h, ih,
+      ContinuousLinearMap.comp_apply]
+
+/-- **The seam identity of the return map.** Let `K` be a vertical family satisfying the seam
+identity, let `x` be a periodic point of `φ` of period `d`, and let `P` be the differential of
+`φ^d` at `x`, the linearized return map of the orbit of `x`. Then
+`P ∘ K_((s, t + d), x) = K_((s, t), x) ∘ P`. -/
+theorem apply_apply_add_eq_apply_apply_of_hasMFDerivAt_iterate {d : ℕ} {x : M}
+    (hx : IsPeriodicPt φ d x) {P : E →L[ℝ] E} (hP : HasMFDerivAt I I (⇑φ)^[d] x P) (s t : ℝ)
+    (v : E) :
+    P (K ((s, t + d), x) v) = K ((s, t), x) (P v) := by
+  have hl : LeftInverse (⇑φ.symm)^[d] (⇑φ)^[d] := LeftInverse.iterate φ.symm_apply_apply d
+  have hxs : (⇑φ.symm)^[d] x = x := by simpa [hx.eq] using hl x
+  have hf : MDifferentiableAt I I (⇑φ)^[d] x := hP.mdifferentiableAt
+  have hg (y : M) : MDifferentiableAt I I (⇑φ.symm)^[d] y :=
+    (φ.symm.contMDiff.iterate d).mdifferentiableAt (by simp)
+  -- `P` and the differential of `φ⁻ᵈ` at `x` are mutually inverse, by the chain rule.
+  have hPQ (w : E) : P (mfderiv I I (⇑φ.symm)^[d] x w) = w := by
+    have hr : LeftInverse (⇑φ)^[d] (⇑φ.symm)^[d] := LeftInverse.iterate φ.apply_symm_apply d
+    have h := mfderiv_apply_mfderiv_of_eventuallyEq_comp
+      (Filter.Eventually.of_forall (funext_iff.1 hr.comp_eq_id)) (by rw [hxs]; exact hf) (hg x) w
+    rwa [hxs, hP.mfderiv, mfderiv_id] at h
+  have hQP (w : E) : mfderiv I I (⇑φ.symm)^[d] x (P w) = w := by
+    have h := mfderiv_apply_mfderiv_of_eventuallyEq_comp
+      (Filter.Eventually.of_forall (funext_iff.1 hl.comp_eq_id)) (hg _) hf w
+    rwa [hx.eq, hP.mfderiv, mfderiv_id] at h
+  have h := mfderiv_iterate_symm_apply_eq_apply_mfderiv ht d s t x (P v)
+  rw [hQP, hxs] at h
+  rw [← h]
+  exact hPQ _
+
+end Orbit
 
 end TauCeti.SmoothMappingTorus
