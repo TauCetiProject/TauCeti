@@ -147,12 +147,11 @@ along `residue S`. -/
 @[simp]
 theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (u : unitFiltration S 0) :
     unitFiltrationGradedZeroEquivResidueFieldUnits S (QuotientGroup.mk u) =
-      Units.map (residue S).toMonoidHom (u : Sˣ) := by
-  change Ideal.unitsQuotientPrincipalUnitGroupEquiv (maximalIdeal_le_jacobson (⊥ : Ideal S))
-      (QuotientGroup.congr _ _ _ _ (QuotientGroup.mk u)) = _
-  rw [QuotientGroup.congr_mk]
-  exact Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk
-    (maximalIdeal_le_jacobson (⊥ : Ideal S)) (u : Sˣ)
+      Units.map (residue S).toMonoidHom (u : Sˣ) :=
+  (MulEquiv.trans_apply ..).trans <|
+    (congrArg _ (QuotientGroup.congr_mk ..)).trans <|
+      Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk
+        (maximalIdeal_le_jacobson (⊥ : Ideal S)) (u : Sˣ)
 
 /-- The underlying residue-field value of `unitFiltrationGradedZeroEquivResidueFieldUnits` on the
 class of `u` is `residue S u`. -/

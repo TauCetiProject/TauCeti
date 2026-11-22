@@ -93,15 +93,12 @@ private theorem exists_separableBaseRing.{u, v} (G : Type v) [Group G] (L : Type
     ∃ (A : Type u) (_ : CommRing A) (_ : IsLocalRing A) (_ : Algebra A 𝒪[L])
       (_ : IsLocalHom (algebraMap A 𝒪[L])) (_ : SMulCommClass G A 𝒪[L]),
       Algebra.IsSeparable (ResidueField A) 𝓀[L] := by
-  let A : Subring 𝒪[L] :=
+  let A : Subring 𝒪[L] := FixedPoints.subring 𝒪[L] G
+  let E : Subring 𝒪[L] :=
     (RingHom.pi (MulSemiringAction.toRingHom G 𝒪[L])).eqLocus (RingHom.pi fun _ ↦ RingHom.id 𝒪[L])
-  have : IsLocalHom (algebraMap A 𝒪[L]) := inferInstanceAs (IsLocalHom A.subtype)
-  have : IsLocalRing A := RingHom.isLocalRing_eqLocus _ _
-  have : SMulCommClass G A 𝒪[L] :=
-    ⟨fun σ a b ↦ by
-      change σ • ((a : 𝒪[L]) * b) = (a : 𝒪[L]) * (σ • b)
-      have ha : σ • (a : 𝒪[L]) = (a : 𝒪[L]) := congr_fun a.property σ
-      rw [smul_mul', ha]⟩
+  have hAE : A = E := Subring.ext fun _ ↦ funext_iff.symm
+  have : IsLocalHom (algebraMap A 𝒪[L]) := hAE ▸ inferInstanceAs (IsLocalHom E.subtype)
+  have : IsLocalRing A := hAE ▸ RingHom.isLocalRing_eqLocus _ _
   have : Finite (ResidueField A) :=
     Finite.of_injective _ (algebraMap (ResidueField A) 𝓀[L]).injective
   have : PerfectField (ResidueField A) := PerfectField.ofFinite
@@ -167,11 +164,9 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
     ((uniformizerRatio i hϖ σ : Lˣ) : L) = (σ : G) • (ϖ : L) / (ϖ : L) := by
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   apply mul_left_cancel₀ hϖ0
-  rw [mul_div_cancel₀ _ hϖ0, uniformizerRatio, coe_unitFiltrationEquivInteger_symm]
-  change (ϖ : L) * (((TauCeti.IsDiscreteValuationRing.uniformizerRatio i hϖ σ : 𝒪[L]ˣ) : 𝒪[L]) : L)
-    = (σ : G) • (ϖ : L)
-  rw [← MulMemClass.coe_mul, TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio,
-    coe_smul_integer]
+  rw [mul_div_cancel₀ _ hϖ0, uniformizerRatio, coe_unitFiltrationEquivInteger_symm,
+    Units.coe_map, MonoidHom.coe_ofClass, Subring.coe_subtype, ← Subring.coe_mul,
+    TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio, coe_smul_integer]
 
 /-- For `σ` in the `i`-th ramification group and `ϖ` a uniformizer, the ratio `σ ϖ / ϖ` lies in
 the `i`-th step `U(L,i)` of the unit filtration. -/

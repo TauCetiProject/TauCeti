@@ -47,8 +47,6 @@ nonarchimedean local fields are in
   uniformizer.
 * `TauCeti.Place.tameCharacter_eq_one_iff`: `σ` lies in the kernel exactly when `σ t ≡ t` modulo
   `𝔪_P²`.
-* `TauCeti.Place.mem_ramificationGroup_one_iff`: for a separable residue extension, an element of
-  `G_0(P)` lies in `G_1(P)` exactly when it fixes a uniformizer modulo `𝔪_P²`.
 * `TauCeti.Place.ker_tameCharacter`: for a separable residue extension, the kernel of the tame
   character is `G_1(P)`.
 * `TauCeti.Place.tameCharacterGraded_injective`: for a separable residue extension, the induced
@@ -100,30 +98,12 @@ private noncomputable def ramificationGroupZeroEquiv :
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 :=
   MulEquiv.subgroupCongr ((ramificationGroup_def F P 0).trans (by norm_num))
 
-omit [Algebra k F] [IsScalarTower k F F'] in
-private theorem ramificationGroupZeroEquiv_apply (g : ramificationGroup F P 0) :
-    (ramificationGroupZeroEquiv F P g : P.integers.decompositionSubgroup F) = g :=
-  rfl
-
 private noncomputable def ramificationGroupGradedZeroEquiv :
     (ramificationGroup F P 0 ⧸ (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) ≃*
       IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers 0 :=
-  QuotientGroup.congr
-    ((ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0))
-    ((IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
-        (0 + 1)).subgroupOf
-      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0))
-    (ramificationGroupZeroEquiv F P)
-    (by
-      ext g
-      simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, zero_add]
-      constructor
-      · rintro ⟨x, hx, rfl⟩
-        rwa [← Nat.cast_one, ← ramificationGroup_def]
-      · intro hg
-        refine ⟨⟨(g : P.integers.decompositionSubgroup F),
-          by rw [ramificationGroup_def, Nat.cast_zero]; exact g.property⟩, ?_, Subtype.ext rfl⟩
-        rwa [ramificationGroup_def, Nat.cast_one])
+  QuotientGroup.equivQuotientSubgroupOfOfEq
+    ((ramificationGroup_def F P 1).trans (by norm_num))
+    ((ramificationGroup_def F P 0).trans (by norm_num))
 
 /-- **The tame character** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`, the
 homomorphism from the inertia group `G_0(P)` to the units of the residue field sending `σ` to the
@@ -146,8 +126,8 @@ theorem coe_tameCharacter_of_eq (ht : P.ord t = 1) (g : ramificationGroup F P 0)
   rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
   refine TauCeti.IsDiscreteValuationRing.coe_tameCharacter_of_mul_eq
     (irreducible_of_ord_eq_one P ht) (ramificationGroupZeroEquiv F P g) (Subtype.ext ?_)
-  change (y : F') * t = ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t
-  rw [hy, inv_mul_cancel_right₀ ht0]
+  rw [Submonoid.coe_mul, ValuationSubring.coe_decompositionSubgroup_smul,
+    ramificationGroupZeroEquiv, MulEquiv.subgroupCongr_apply, hy, inv_mul_cancel_right₀ ht0]
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The kernel of the tame character** (Stichtenoth, Proposition 3.8.5): `σ` has trivial tame
@@ -158,7 +138,8 @@ theorem tameCharacter_eq_one_iff (ht : P.ord t = 1) (g : ramificationGroup F P 0
   rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     TauCeti.IsDiscreteValuationRing.tameCharacter_eq_one_iff,
     P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
-    ramificationGroupZeroEquiv_apply, ValuationSubring.coe_decompositionSubgroup_smul]
+    ramificationGroupZeroEquiv, MulEquiv.subgroupCongr_apply,
+    ValuationSubring.coe_decompositionSubgroup_smul]
   norm_num
 
 omit [Algebra k F] [IsScalarTower k F F'] in
@@ -195,7 +176,10 @@ theorem tameCharacterGraded_mk (ht : P.ord t = 1) (g : ramificationGroup F P 0) 
     tameCharacterGraded F P ht (QuotientGroup.mk g) = tameCharacter F P ht g := by
   rw [tameCharacterGraded, tameCharacter, MonoidHom.comp_apply, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, ramificationGroupGradedZeroEquiv,
-    QuotientGroup.congr_mk, TauCeti.IsDiscreteValuationRing.tameCharacterGraded_mk]
+    QuotientGroup.equivQuotientSubgroupOfOfEq, MonoidHom.toMulEquiv_apply,
+    QuotientGroup.quotientMapSubgroupOfOfLe_mk,
+    TauCeti.IsDiscreteValuationRing.tameCharacterGraded_mk]
+  congr 1
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character does not depend on the choice of uniformizer. -/
@@ -212,22 +196,6 @@ section Separable
 
 variable (F) [Algebra.IsIntegral F F'] (P : Place k F') {t : F'}
 
-/-- **Membership in the first ramification group is decided at a uniformizer**, when the residue
-extension is separable (Stichtenoth, Proposition 3.8.5): an element of `G_0(P)` lies in `G_1(P)`
-exactly when it fixes `t` modulo `𝔪_P²`. -/
-theorem mem_ramificationGroup_one_iff
-    [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] (ht : P.ord t = 1)
-    {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P 0) :
-    g ∈ ramificationGroup F P 1 ↔ (g : F' ≃ₐ[F] F') t - t ∈ P.filtration 2 := by
-  have hg0 : g ∈ IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 :=
-    by rwa [ramificationGroup_def, Nat.cast_zero] at hg
-  rw [ramificationGroup_def, Nat.cast_one, ← Nat.cast_one,
-    TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
-      (P.restrict k F).integers (irreducible_of_ord_eq_one P ht) hg0,
-    P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
-    ValuationSubring.coe_decompositionSubgroup_smul]
-  norm_num
-
 /-- **The kernel of the tame character is the first ramification group**, when the residue
 extension is separable (Stichtenoth, Proposition 3.8.5): so `G_0(P) / G_1(P)` embeds in the
 multiplicative group of the residue field. -/
@@ -240,8 +208,8 @@ theorem ker_tameCharacter [Algebra.IsSeparable (P.restrict k F).ResidueField P.R
     ← MonoidHom.mem_ker,
     TauCeti.IsDiscreteValuationRing.ker_tameCharacter (P.restrict k F).integers
       (irreducible_of_ord_eq_one P ht),
-    Subgroup.mem_subgroupOf, ramificationGroupZeroEquiv_apply, Subgroup.mem_subgroupOf,
-    ramificationGroup_def F P 1, Nat.cast_one]
+    Subgroup.mem_subgroupOf, ramificationGroupZeroEquiv, MulEquiv.subgroupCongr_apply,
+    Subgroup.mem_subgroupOf, ramificationGroup_def F P 1, Nat.cast_one]
 
 /-- The induced tame character is injective when the residue extension is separable. -/
 theorem tameCharacterGraded_injective

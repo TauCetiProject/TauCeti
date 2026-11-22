@@ -533,13 +533,11 @@ theorem mem_ramificationGroup_one_of_pow_sub_one_mem_maximalIdeal
     [CharP (ResidueField B) p]
     (h : ((uniformizerRatio 0 hϖ ⟨σ, hσ⟩ : Bˣ) : B) ^ p ^ k - 1 ∈ maximalIdeal B) :
     σ ∈ ramificationGroup G B 1 := by
-  have hp : p.Prime := Fact.out
   set u : Bˣ := (uniformizerRatio 0 hϖ ⟨σ, hσ⟩ : Bˣ)
   have hu1 : u ∈ unitFiltration B 1 := by
-    rw [mem_unitFiltration_one_iff_residue_eq_one, ← sub_eq_zero,
-      ← pow_eq_zero_iff (pow_ne_zero k hp.ne_zero), sub_pow_char_pow, one_pow,
-      ← map_pow, ← map_one (residue B), ← map_sub, residue_eq_zero_iff]
-    exact h
+    rw [← residue_eq_zero_iff, map_sub, map_pow, map_one, sub_eq_zero,
+      ← mul_one (p ^ k), ExpChar.pow_prime_pow_mul_eq_one_iff p k 1, pow_one] at h
+    exact mem_unitFiltration_one_iff_residue_eq_one.mpr h
   have h2 : σ • ϖ - ϖ ∈ maximalIdeal B ^ 2 := by
     rw [mem_unitFiltration_iff_mul_irreducible_mem hϖ, sub_mul, one_mul,
       mul_comm _ ϖ, mul_coe_uniformizerRatio 0 hϖ ⟨σ, hσ⟩] at hu1
@@ -622,22 +620,22 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField B) p] [Faithfu
     [Finite (ramificationGroup G B 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G B i) := by
   obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G B
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = ((j + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  suffices ∀ d j : ℕ, N ≤ j + 1 + d → IsPGroup p (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN _ (by omega)]
+  suffices ∀ n ≤ max N i, 0 < n → IsPGroup p (ramificationGroup G B n) from
+    this i (le_max_right N i) hi
+  intro n hn
+  induction n, hn using Int.leInductionDown with
+  | base =>
+    intro _
+    rw [hN _ (le_max_left N i)]
     exact IsPGroup.of_bot
-  | succ d ih =>
-    intro j hj
-    have hsucc := ih (j + 1) (by omega)
-    push_cast at hsucc
+  | pred n _ ih =>
+    intro hn1
+    have hsucc := ih (by omega)
+    obtain ⟨j, hj⟩ : ∃ j : ℕ, n - 1 = ((j + 1 : ℕ) : ℤ) := ⟨(n - 2).toNat, by omega⟩
+    rw [hj]
     refine IsPGroup.of_subgroup_of_quotient ?_
       (isPGroup_ramificationGroupGraded_natCast_succ G A B p j)
-    push_cast
+    rw [show ((j + 1 : ℕ) : ℤ) + 1 = n by omega]
     exact hsucc.comap_subtype
 
 /-- **Wild inertia is the Sylow `p`-subgroup of inertia**: in prime residue characteristic `p`,
@@ -753,18 +751,16 @@ theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField B)] [Faithf
     [Finite (ramificationGroup G B 0)] {i : ℤ} (hi : 0 < i) :
     ramificationGroup G B i = ⊥ := by
   obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G B
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = ((j + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  suffices ∀ d j : ℕ, N ≤ j + 1 + d → ramificationGroup G B ((j + 1 : ℕ) : ℤ) = ⊥ from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    exact hN _ (by omega)
-  | succ d ih =>
-    intro j hj
-    have hsucc : ramificationGroup G B ((j + 1 : ℕ) + 1) = ⊥ := by
-      exact_mod_cast ih (j + 1) (by omega)
+  suffices ∀ n ≤ max N i, 0 < n → ramificationGroup G B n = ⊥ from
+    this i (le_max_right N i) hi
+  intro n hn
+  induction n, hn using Int.leInductionDown with
+  | base => exact fun _ ↦ hN _ (le_max_left N i)
+  | pred n _ ih =>
+    intro hn1
+    have hsucc : ramificationGroup G B n = ⊥ := ih (by omega)
+    obtain ⟨j, hj⟩ : ∃ j : ℕ, n - 1 = ((j + 1 : ℕ) : ℤ) := ⟨(n - 2).toNat, by omega⟩
+    rw [hj]
     have : Finite (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
       Finite.of_injective
         (Subgroup.inclusion (ramificationGroup_antitone G B (Int.natCast_nonneg (j + 1))))
@@ -777,7 +773,8 @@ theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField B)] [Faithf
     have hmk :
         (QuotientGroup.mk ⟨σ, hσ⟩ : RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) = 1 :=
       Subsingleton.elim _ _
-    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, hsucc, Subgroup.mem_bot] at hmk
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf,
+      show ((j + 1 : ℕ) : ℤ) + 1 = n by omega, hsucc, Subgroup.mem_bot] at hmk
     exact hmk
 
 /-- **In residue characteristic zero, the wild inertia group `G_1` is trivial**, whenever the
