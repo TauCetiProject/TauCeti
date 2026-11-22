@@ -188,11 +188,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
     mpullback (Subtype.val : W → M) contMDiff_subtypeVal
   have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
       IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).val y := by
-    rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-      isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
-        ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
-        (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
-    exact hcN y y.property s hs
+    rw [← map_sub, ← map_smul, ← map_add]
+    exact (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hcN y y.property s hs)
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
       hcW fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans

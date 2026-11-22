@@ -352,9 +352,8 @@ theorem SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily (α₀ α₁ : Smoot
     simp only [SmoothForm.mpullback_prodMk_lineMapFamily, Submodule.coe_add, Submodule.coe_smul,
       Pi.add_apply, Pi.smul_apply]
     exact ((hc.differentiable (by simp) t).hasDerivAt.smul_const _).const_add _
-  have h' := (SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
+  exact (SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
     (SmoothForm.lineMapFamily α₀ α₁ hc) t x).unique h
-  exact h'
 
 section Pullback
 

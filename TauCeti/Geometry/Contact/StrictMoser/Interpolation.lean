@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.StrictMoser
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Contact.Interpolation
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
@@ -14,7 +15,6 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.Flow.Transport
 import TauCeti.Geometry.Manifold.Metrizable
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -85,7 +85,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
-  [BoundarylessManifold J S] [TopologicalSpace.PseudoMetrizableSpace S]
+  [BoundarylessManifold J S]
   {α₀ α₁ : SmoothForm I M ℝ 1} {ι : S → M}
 
 /-! ### Strict relative Moser stability along a segment of contact forms -/
@@ -96,8 +96,7 @@ Reeb vector field transverse to a closed embedded hypersurface `ι : S → M`, a
 `α₀` at the points of a set `K` contained in the hypersurface. Then there is a smooth partial
 diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`, which fixes every
 point of `K` and pulls `α₁` back to `α₀` on its source. Neither `K` nor `M` need be compact. -/
-theorem exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt
-    [TopologicalSpace.PseudoMetrizableSpace M] [SigmaCompactSpace M]
+theorem exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt [SigmaCompactSpace M]
     (hι : ContMDiff J I ∞ ι) (himm : ∀ s, Function.Injective (mfderiv J I ι s))
     (hind : Topology.IsInducing ι) (hclosed : _root_.IsClosed (range ι))
     (hdim : finrank ℝ E' + 1 = finrank ℝ E)
@@ -106,6 +105,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt
     {K : Set M} (hKι : K ⊆ range ι) (hval : ∀ x ∈ K, α₁.val x = α₀.val x) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, TauCeti.mpullback I I φ α₁.val x = α₀.val x := by
+  have := Manifold.metrizableSpace I M
+  have := hind.pseudoMetrizableSpace
   -- The segment, reparametrized by the smooth step function, is a smooth family `α_t` of contact
   -- forms whose Reeb fields are transverse to the hypersurface.
   set α := lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤))
@@ -127,16 +128,13 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt
     obtain ⟨s, rfl⟩ := hKι hx
     refine strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero (hcα u) hdim (himm s)
       (isTransverseAlong_iff.1 (htrα u) s) (.of_forall fun s' ↦ h0 u s') (hR (u, ι s) (hιU u s)) ?_
-    rw [mpullback_prodMk_timeDeriv_lineMapFamily, Submodule.coe_smul, Pi.smul_apply,
-      Submodule.coe_sub, Pi.sub_apply, hval _ hx, sub_self, smul_zero]
+    rw [mpullback_prodMk_timeDeriv_lineMapFamily]
+    simp [hval _ hx]
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ := exists_partialDiffeomorph_mpullback_eq hcα hh hK hU
     (s := 0) (t := 1) (fun x hx u _ ↦ by obtain ⟨s, rfl⟩ := hKι hx; exact hιU u s) hR
   refine ⟨φ, hsrc, htgt, hfix, fun x hx ↦ ?_⟩
   -- The slices of the family at times `1` and `0` are `α₁` and `α₀`.
-  have h1 := hφ x hx
-  rw [mpullback_prodMk_lineMapFamily, mpullback_prodMk_lineMapFamily, Real.smoothTransition.one,
-    Real.smoothTransition.zero, one_smul, zero_smul, add_zero, add_sub_cancel] at h1
-  exact h1
+  simpa [α] using hφ x hx
 
 /-! ### Forms agreeing to first order along a transverse slice -/
 
@@ -147,42 +145,15 @@ private theorem reebVectorField_add_smul_sub_eq {x : M} (hval : α₁.val x = α
     (hd : mextDeriv α₁.val x = mextDeriv α₀.val x) (u : ℝ) :
     (α₀ + u • (α₁ - α₀)).reebVectorField x = α₀.reebVectorField x := by
   refine reebVectorField_congr ?_ ?_
-  · rw [Submodule.coe_add, Submodule.coe_smul, Submodule.coe_sub, Pi.add_apply, Pi.smul_apply,
-      Pi.sub_apply, hval, sub_self, smul_zero, add_zero]
-  · rw [← mextDerivₗ_apply, ← mextDerivₗ_apply, map_add, map_smul, map_sub, Submodule.coe_add,
-      Submodule.coe_smul, Submodule.coe_sub, Pi.add_apply, Pi.smul_apply, Pi.sub_apply,
-      mextDerivₗ_apply, mextDerivₗ_apply, hd, sub_self, smul_zero, add_zero]
+  · simp [hval]
+  · rw [← mextDerivₗ_apply, ← mextDerivₗ_apply, map_add, map_smul, map_sub]
+    simp [hd]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [IsManifold J ∞ S]
-  [BoundarylessManifold J S] [TopologicalSpace.PseudoMetrizableSpace S] in
-/-- The part of the hypersurface `ι` over an open subset `U` of `M`, as a map from the open subset
-`ι⁻¹(U)` of `S` into `U`, is again a smooth immersion and an inducing map, with the same
-differential, whose image is the trace of the image of `ι` in `U`. -/
-private theorem exists_restrict_preimage (hι : ContMDiff J I ∞ ι)
-    (hind : Topology.IsInducing ι) (U : TopologicalSpace.Opens M) :
-    ∃ ι' : (⟨ι ⁻¹' U, U.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → U,
-      ContMDiff J I ∞ ι' ∧ (∀ s, (ι' s : M) = ι s) ∧
-      (∀ s (v : TangentSpace J s), mfderiv J I ι' s v = mfderiv J I ι s v) ∧
-      Topology.IsInducing ι' ∧ ∀ y : U, y ∈ range ι' ↔ (y : M) ∈ range ι := by
-  set ι' : (⟨ι ⁻¹' U, U.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → U :=
-    fun s ↦ ⟨ι s, s.property⟩
-  -- Composed with the inclusion of `U`, `ι'` is `ι` composed with the inclusion of `ι⁻¹(U)`.
-  have hcomp : Subtype.val ∘ ι' = ι ∘ Subtype.val := rfl
-  refine ⟨ι', (ContMDiff.subtypeVal_comp_iff U ι').1 (hcomp ▸ hι.comp contMDiff_subtypeVal),
-    fun _ ↦ rfl, fun s v ↦ ?_, ?_, fun y ↦ ⟨?_, ?_⟩⟩
-  · rw [← Manifold.mfderiv_subtype_val_comp_apply, hcomp, Manifold.mfderiv_comp_subtype_val_apply]
-  · exact Topology.IsInducing.subtypeVal.of_comp_iff.1 (hcomp ▸ hind.comp .subtypeVal)
-  · rintro ⟨s, rfl⟩
-    exact ⟨s, rfl⟩
-  · rintro ⟨s, hs⟩
-    exact ⟨⟨s, show ι s ∈ U from hs ▸ y.property⟩, Subtype.ext hs⟩
-
-omit [TopologicalSpace.PseudoMetrizableSpace S] in
 /-- Let every interpolation `α₀ + u (α₁ - α₀)`, `u ∈ [0, 1]`, be contact on an open set `N`, and
 let `c` be the smooth step function. The pairs `(t, s)`, with `ι s ∈ N`, at which the Reeb field of
 `α₀ + c(t) (α₁ - α₀)` is transverse to the hypersurface `ι` form an open set. -/
 private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ ι)
-    (himm : ∀ s, Function.Injective (mfderiv J I ι s)) (hind : Topology.IsInducing ι)
+    (himm : ∀ s, Function.Injective (mfderiv J I ι s))
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) {N : Set M} (hN : IsOpen N)
     (hcN : ∀ x ∈ N, ∀ u ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + u • (α₁ - α₀)).val x) :
     ∃ O : Set (ℝ × (⟨ι ⁻¹' N, hN.preimage hι.continuous⟩ : TopologicalSpace.Opens S)),
@@ -209,7 +180,12 @@ private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ 
     rw [hslice, isContactForm_iff_forall_isContactFormAt]
     exact fun y ↦ (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hcN y y.property _
       ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
-  obtain ⟨ι₀, hι₀, hι₀ι, hdι₀, -, -⟩ := exists_restrict_preimage hι hind W
+  -- The part of the hypersurface lying in `W`, as a map `ι₀ : ι⁻¹(W) → W`.
+  set ι₀ : (⟨ι ⁻¹' W, W.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → W :=
+    (W : Set M).restrictPreimage ι
+  have hι₀ : ContMDiff J I ∞ ι₀ := hι.restrictPreimage W
+  have hdι₀ (s) (v : TangentSpace J s) : mfderiv J I ι₀ s v = mfderiv J I ι s v :=
+    Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := ι₀) (A := ι) rfl v
   have himm₀ (s) : Function.Injective (mfderiv J I ι₀ s) := fun v v' hv ↦
     himm s (by rw [← hdι₀, ← hdι₀]; exact hv)
   -- The pairs `(t, s)` at which the vertical Reeb field of `β` is transverse to `id × ι₀` form an
@@ -228,11 +204,10 @@ private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ 
     reebVectorField_mpullback_subtype_val]
   constructor
   · rintro ⟨w, hw⟩
-    exact ⟨w.2, (hdι₀ s w.2).symm.trans ((congrArg Prod.snd hw).trans (by rw [hι₀ι]; rfl))⟩
+    exact ⟨w.2, (hdι₀ s w.2).symm.trans (congrArg Prod.snd hw)⟩
   · rintro ⟨w, hw⟩
-    exact ⟨((0 : ℝ), w), Prod.ext rfl ((hdι₀ s w).trans (hw.trans (by rw [hι₀ι]; rfl)))⟩
+    exact ⟨((0 : ℝ), w), Prod.ext rfl ((hdι₀ s w).trans hw)⟩
 
-omit [TopologicalSpace.PseudoMetrizableSpace S] in
 /-- **Transversality persists near a transverse slice.** Let every interpolation
 `α₀ + u (α₁ - α₀)`, `u ∈ [0, 1]`, be contact on an open set `N`, and let `K ⊆ N` be a set on the
 hypersurface along which `α₁` agrees to first order with `α₀`, whose Reeb field is transverse to
@@ -247,7 +222,7 @@ private theorem exists_isOpen_forall_notMem_range_mfderiv (hι : ContMDiff J I �
     (htr : ∀ s, ι s ∈ K → α₀.reebVectorField (ι s) ∉ (mfderiv J I ι s).range) :
     ∃ V : Set M, IsOpen V ∧ K ⊆ V ∧ ∀ s, ι s ∈ N → ι s ∈ V → ∀ u ∈ Icc (0 : ℝ) 1,
       (α₀ + u • (α₁ - α₀)).reebVectorField (ι s) ∉ (mfderiv J I ι s).range := by
-  obtain ⟨O, hOo, hOmem⟩ := exists_isOpen_iff_notMem_range_mfderiv hι himm hind hdim hN hcN
+  obtain ⟨O, hOo, hOmem⟩ := exists_isOpen_iff_notMem_range_mfderiv hι himm hdim hN hcN
   -- Since `[0, 1]` is compact, the points `s` with `[0, 1] × {s} ⊆ O` form an open set `S₁`, which
   -- is the trace on the hypersurface of an open set `V` of `M`.
   set S₁ := {s | ∀ t ∈ Icc (0 : ℝ) 1, (t, s) ∈ O}
@@ -308,24 +283,25 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
     mpullback (Subtype.val : W → M) contMDiff_subtypeVal
   have hres (u : ℝ) : res α₀ + u • (res α₁ - res α₀) = res (α₀ + u • (α₁ - α₀)) := by
     rw [map_add, map_smul, map_sub]
-  obtain ⟨ι₂, hι₂, hι₂ι, hdι₂, hind₂, hrange₂⟩ := exists_restrict_preimage hι hind W
-  have : TopologicalSpace.PseudoMetrizableSpace
-      (⟨ι ⁻¹' W, W.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) :=
-    Topology.IsInducing.subtypeVal.pseudoMetrizableSpace
+  -- The part of the hypersurface lying in `W`, as a map `ι₂ : ι⁻¹(W) → W`.
+  set ι₂ : (⟨ι ⁻¹' W, W.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → W :=
+    (W : Set M).restrictPreimage ι
+  have hι₂ : ContMDiff J I ∞ ι₂ := hι.restrictPreimage W
+  have hdι₂ (s) (v : TangentSpace J s) : mfderiv J I ι₂ s v = mfderiv J I ι s v :=
+    Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := ι₂) (A := ι) rfl v
   have htrW (u : ℝ) (hu : u ∈ Icc (0 : ℝ) 1) :
       IsTransverseAlong J (res α₀ + u • (res α₁ - res α₀)).reebVectorField ι₂ := by
-    refine isTransverseAlong_iff.2 fun s ⟨w, hw⟩ ↦ htrV s (hι₂ι s ▸ (ι₂ s).property.1)
-      (hι₂ι s ▸ (ι₂ s).property.2) u hu ⟨w, ?_⟩
+    refine isTransverseAlong_iff.2 fun s ⟨w, hw⟩ ↦ htrV s s.property.1 s.property.2 u hu ⟨w, ?_⟩
     rw [hres, reebVectorField_mpullback_subtype_val, ContinuousLinearMap.coe_coe, hdι₂] at hw
-    rw [ContinuousLinearMap.coe_coe, hw, hι₂ι]
+    rw [ContinuousLinearMap.coe_coe, hw]
+    rfl
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt hι₂
-      (fun s v v' hv ↦ himm s (by rw [← hdι₂, ← hdι₂]; exact hv)) hind₂
-      (by rw [show range ι₂ = Subtype.val ⁻¹' range ι from ext hrange₂]
-          exact hclosed.preimage continuous_subtypeVal)
+      (fun s v v' hv ↦ himm s (by rw [← hdι₂, ← hdι₂]; exact hv)) (hind.restrictPreimage W)
+      (range_restrictPreimage (W : Set M) ι ▸ hclosed.preimage continuous_subtypeVal)
       hdim (fun y u hu ↦ hres u ▸ (isContactFormAt_mpullback_subtype_val_iff _ y).2
         (hcN y y.property.1 u hu)) htrW (K := Subtype.val ⁻¹' K)
-      (fun y hy ↦ (hrange₂ y).2 (hKι hy))
+      (fun y hy ↦ (range_restrictPreimage (W : Set M) ι).symm ▸ hKι hy)
       fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
