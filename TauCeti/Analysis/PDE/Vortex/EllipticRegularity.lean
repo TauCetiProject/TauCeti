@@ -68,6 +68,8 @@ multiplication by the transposed matrix.
   every smooth compactly supported test field `v`. With `g = 0` they show that the weak `L²`
   cokernel of `L_x` lies in `H¹` at an essentially bounded measurable field, and in `H^(k+1)` at a
   smooth field whose coordinates have bounded derivatives through order `k`.
+* `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add`: the same for
+  weak solutions of `L_x* η = g + A η`, such as the commutator of `L_x*` with a weight.
 * `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedOperator_eq`: at a
   continuous field of `A_m^s`, `s > 1`, weak `L²` solutions of `L_x* η = g` with `g ∈ L²`, in
   particular the weak `L²` cokernel of `L_x`, lie in `H¹`.
@@ -510,6 +512,36 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_e
     (fun i j ↦ ⟨j, i, fun _ ↦ rfl⟩)
     (inner_gaugeFixedOperator_eq_add_inner_toEuclideanLin_transpose · vacuumField) hx hbound hη hg
     hweak
+
+/-- **The elliptic bootstrap for the adjoint with a zeroth-order term.** Let `x` be a smooth field
+whose coordinates have bounded derivatives through order `k`, and let `A` be a `4 × 4` matrix of
+smooth real functions with bounded derivatives through order `k`. A square-integrable weak
+solution `η` of `L_x* η = g + A η` with `g ∈ H^k`, in the sense that
+`∫ ⟪η, L_x v⟫ = ∫ ⟪g + A η, v⟫` for every smooth compactly supported test field `v`, lies in
+`H^(k+1)`. -/
+theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add (k : ℕ)
+    {x η g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
+    (hAbound : ∀ i j, ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ M)
+    (hη : MemLp η 2 volume) (hg : g ∈ sobolevFields k)
+    (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
+      ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ =
+        ∫ z, ⟪g z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * η z j), v z⟫) :
+    η ∈ sobolevFields (k + 1) := by
+  -- One step: `η ∈ H^j` puts the right side `g + A η` in `H^j`, hence `η ∈ H^(j+1)`.
+  have hstep (j : ℕ) (hj : j ≤ k) (hηj : η ∈ sobolevFields j) : η ∈ sobolevFields (j + 1) :=
+    mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq j hx
+      (fun i n hn ↦ hbound i n (hn.trans hj)) hη
+      (add_mem (sobolevFields_mono (by exact_mod_cast hj) hg)
+        (mulVec_mem_sobolevFields_natCast j hA (fun i' j' ↦ (hAbound i' j').imp
+          fun _ hM ↦ ⟨hM.1, fun n hn ↦ hM.2 n (hn.trans hj)⟩) hηj))
+      hweak
+  have hall (j : ℕ) (hj : j ≤ k) : η ∈ sobolevFields (j + 1) := by
+    induction j with
+    | zero => simpa using hstep 0 hj (by simpa using hη)
+    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
+  exact hall k le_rfl
 
 /-! ### Fields of `A_m^s` and plane vortices -/
 
