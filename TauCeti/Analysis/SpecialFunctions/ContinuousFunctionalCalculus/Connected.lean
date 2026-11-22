@@ -5,27 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Topology.Algebra.Star.Unitary
-import Mathlib.Algebra.Order.Star.Real
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Topology.Algebra.IsOpenUnits
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.StrictPositivityPath
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Polar paths and path-connectedness of groups of units via the continuous functional calculus
 
-In an algebra `A` with a real continuous functional calculus and compatible star order, the set
-`{p : A | IsStrictlyPositive p}` of strictly positive elements is convex
-(`TauCeti.convex_setOf_isStrictlyPositive`) and contains `1`: for any strictly positive `p` and
-`t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains strictly positive
-(`IsStrictlyPositive.one_sub_smul_add_smul`).
-
-When `A` is a complete normed `ℝ`-algebra, `Units.val : Aˣ → A` is an open embedding onto
-`{a : A | IsUnit a}`, so this straight line lifts to an explicit path
-`IsStrictlyPositive.linePathToOne` from `1` to `p.isUnit.unit` in `Aˣ`. Combining the right polar
-decomposition `a = a.polarUnitary * √(a⋆ a)` (`Units.polarUnitary_mul_sqrt_star_mul`) with any path
-`γ` from `1` to `a.polarUnitary` in `unitary A` yields the explicit polar-linear path
+In a complete normed `ℝ`-algebra `A` with a real continuous functional calculus and compatible star
+order, `IsStrictlyPositive.linePathToOne` provides an explicit straight-line path from `1` to
+`p.isUnit.unit` in `Aˣ` for any strictly positive `p`. Combining the right polar decomposition
+`a = a.polarUnitary * √(a⋆ a)` (`Units.polarUnitary_mul_sqrt_star_mul`) with any path `γ` from `1`
+to `a.polarUnitary` in `unitary A` yields the explicit polar-linear path
 
 `t ↦ (γ t : A) * ((1 - t) • 1 + t • √(a⋆ a))`
 
@@ -40,10 +33,6 @@ so `Aˣ` is path-connected if and only if `unitary A` is (`Units.pathConnectedSp
 
 ## Main declarations
 
-* `TauCeti.isPathConnected_setOf_isStrictlyPositive`: `{p : A | IsStrictlyPositive p}` is
-  path-connected.
-* `IsStrictlyPositive.linePathToOne`: the straight-line path `t ↦ (1 - t) • 1 + t • p` from `1` to
-  `hp.isUnit.unit` in `Aˣ`.
 * `Units.polarPathToOne`: the polar-linear path from `1` to `a : Aˣ` induced by a path from `1` to
   `a.polarUnitary` in `unitary A`.
 * `Units.pathConnectedSpace_of_unitary`, `Units.isPathConnected_isUnit_of_unitary`:
@@ -66,54 +55,11 @@ noncomputable section
 open Set
 open scoped unitInterval
 
-section Convex
-
-variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
-  [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
-  [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
-
-/-- The set of strictly positive elements in `A` is path-connected. -/
-theorem TauCeti.isPathConnected_setOf_isStrictlyPositive [ContinuousSMul ℝ A] :
-    IsPathConnected {p : A | IsStrictlyPositive p} :=
-  TauCeti.convex_setOf_isStrictlyPositive.isPathConnected ⟨1, isStrictlyPositive_one⟩
-
-end Convex
-
 section PolarPath
 
 variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
   [PartialOrder A] [StarOrderedRing A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A]
-
-/-- The straight-line path `t ↦ (1 - t) • 1 + t • p` in `Aˣ` from `1` to `hp.isUnit.unit` for a
-strictly positive element `p : A`. -/
-def IsStrictlyPositive.linePathToOne {p : A} (hp : IsStrictlyPositive p) :
-    Path (1 : Aˣ) hp.isUnit.unit where
-  toFun t := (hp.one_sub_smul_add_smul t.property).isUnit.unit
-  continuous_toFun := by
-    rw [(Units.isOpenEmbedding_val (R := A)).isEmbedding.continuous_iff]
-    have hEq :
-        ((Units.val : Aˣ → A) ∘ fun t : I ↦ (hp.one_sub_smul_add_smul t.property).isUnit.unit) =
-        fun t : I ↦ (1 - (t : ℝ)) • (1 : A) + (t : ℝ) • p := by
-      ext t
-      exact IsUnit.unit_spec _
-    rw [hEq]
-    fun_prop
-  source' := Units.ext <| by simp
-  target' := Units.ext <| by simp
-
-/-- Coercing `hp.linePathToOne t` to `A` gives the affine combination `(1 - t) • 1 + t • p`. -/
-@[simp]
-theorem IsStrictlyPositive.val_linePathToOne_apply {p : A} (hp : IsStrictlyPositive p) (t : I) :
-    (hp.linePathToOne t : A) = (1 - (t : ℝ)) • (1 : A) + (t : ℝ) • p :=
-  IsUnit.unit_spec _
-
-/-- Every point along `hp.linePathToOne` is strictly positive in `A`. -/
-theorem IsStrictlyPositive.isStrictlyPositive_linePathToOne_apply {p : A}
-    (hp : IsStrictlyPositive p) (t : I) :
-    IsStrictlyPositive (hp.linePathToOne t : A) := by
-  rw [hp.val_linePathToOne_apply]
-  exact hp.one_sub_smul_add_smul t.property
 
 section ContinuousStar
 

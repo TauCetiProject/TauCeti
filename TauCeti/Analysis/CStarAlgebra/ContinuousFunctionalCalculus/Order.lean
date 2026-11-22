@@ -7,16 +7,15 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.Convex.Basic
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 
 /-!
 # Order properties of star-ordered algebras with a continuous functional calculus
 
 In a star-ordered algebra `A` carrying a continuous functional calculus over a star-ordered
-scalar semiring `R`, any unital `⋆`-homomorphism `C(spectrum R 0, R) →⋆ₐ[R] A` forces
-`star (algebraMap R A r) = algebraMap R A (star r)`, hence `StarModule R A`
-(`TauCeti.starModule_of_cfc`). Consequently `A` is an ordered `R`-module
-(`TauCeti.isOrderedModule_of_cfc`) without needing a separate `StarModule R A` assumption.
+scalar semiring `R`, `TauCeti.starModule_of_cfc` gives `StarModule R A`, so `A` is an ordered
+`R`-module (`TauCeti.isOrderedModule_of_cfc`) without needing a separate `StarModule R A`
+assumption.
 
 Over `ℝ`, the square-root congruence argument also generalizes Mathlib's C⋆-algebra theorems
 `IsStrictlyPositive.add_nonneg` and `IsStrictlyPositive.nonneg_add` to arbitrary star-ordered
@@ -28,8 +27,6 @@ algebras with a real continuous functional calculus (`IsStrictlyPositive.add_non
 
 ## Main declarations
 
-* `TauCeti.starModule_of_cfc`: a star-ordered algebra with a continuous functional calculus over a
-  star-ordered scalar semiring `R` is a `StarModule R A`.
 * `TauCeti.isOrderedModule_of_cfc`: a star-ordered algebra with a continuous functional calculus
   over a star-ordered scalar semiring `R` is an ordered `R`-module.
 * `IsStrictlyPositive.add_nonneg_of_cfc`, `IsStrictlyPositive.nonneg_add_of_cfc`: adding a
@@ -43,30 +40,6 @@ algebras with a real continuous functional calculus (`IsStrictlyPositive.add_non
 public section
 
 namespace TauCeti
-
-section StarModule
-
-variable {R A : Type*} [CommSemiring R] [StarRing R]
-  [MetricSpace R] [IsTopologicalSemiring R] [ContinuousStar R]
-  [Ring A] [StarRing A] [TopologicalSpace A] [Algebra R A]
-
-/-- In an algebra carrying a continuous functional calculus over a scalar semiring `R`, the scalar
-action satisfies `StarModule R A`. -/
-theorem starModule_of_cfc {p : A → Prop} [ContinuousFunctionalCalculus R A p] :
-    StarModule R A := by
-  obtain ⟨φ, -⟩ :=
-    ContinuousFunctionalCalculus.exists_cfc_of_predicate (R := R) (0 : A) (cfc_predicate_zero R)
-  have hstar (r : R) : star (algebraMap R A r) = algebraMap R A (star r) := by
-    have h := map_star φ (algebraMap R C(spectrum R (0 : A), R) r)
-    have hc : star (algebraMap R C(spectrum R (0 : A), R) r) =
-        algebraMap R C(spectrum R (0 : A), R) (star r) := by
-      ext x
-      rfl
-    simpa only [AlgHomClass.commutes, hc] using h.symm
-  exact ⟨fun r a ↦ by
-    rw [Algebra.smul_def, star_mul, hstar, ← Algebra.commutes, ← Algebra.smul_def]⟩
-
-end StarModule
 
 section OrderedModule
 

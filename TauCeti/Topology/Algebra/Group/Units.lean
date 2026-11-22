@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
-# Separation, neighbourhoods, σ-compactness and preconnected sets in a group of units
+# Separation, neighbourhoods, σ-compactness and connectedness in a group of units
 
 The units `Mˣ` of a topological monoid `M` carry the topology induced by `u ↦ (u, u⁻¹)`.  This
 file records consequences of that definition.
@@ -24,6 +25,8 @@ file records consequences of that definition.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
+* Whenever `Units.val : Mˣ → M` is a topological embedding onto `{m : M | IsUnit m}`, the set of
+  units is path-connected if and only if the topological group `Mˣ` is.
 
 ## Main results
 
@@ -33,6 +36,8 @@ file records consequences of that definition.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
+* `Topology.IsEmbedding.isPathConnected_isUnit_iff`: when `Units.val : Mˣ → M` is an embedding,
+  `{m : M | IsUnit m}` is path-connected if and only if `Mˣ` is.
 -/
 
 public section
@@ -93,3 +98,19 @@ theorem IsPreconnected.preimage_units_val {G₀ : Type*} [GroupWithZero G₀] [T
     IsPreconnected ((Units.val : G₀ˣ → G₀) ⁻¹' s) := by
   rwa [← Units.isEmbedding_val₀.isInducing.isPreconnected_image, Set.image_preimage_eq_of_subset
     fun x hx ↦ ⟨Units.mk0 x (ne_of_mem_of_not_mem hx h0), rfl⟩]
+
+namespace Topology
+
+/-- In a topological monoid `M` whose unit inclusion `Units.val : Mˣ → M` is an embedding (for
+example, a normed ring with summable geometric series or a topological monoid with open units), the
+set `{m : M | IsUnit m}` of invertible elements is path-connected if and only if the topological
+group `Mˣ` is path-connected. -/
+theorem IsEmbedding.isPathConnected_isUnit_iff {M : Type*} [Monoid M] [TopologicalSpace M]
+    (h : IsEmbedding (Units.val : Mˣ → M)) :
+    IsPathConnected {m : M | IsUnit m} ↔ PathConnectedSpace Mˣ := by
+  have hrange : (Units.val : Mˣ → M) '' Set.univ = {m : M | IsUnit m} := by
+    ext m
+    exact ⟨fun ⟨u, _, hu⟩ ↦ hu ▸ u.isUnit, fun hm ↦ ⟨hm.unit, Set.mem_univ _, hm.unit_spec⟩⟩
+  rw [← hrange, ← h.isInducing.isPathConnected_iff, pathConnectedSpace_iff_univ]
+
+end Topology
