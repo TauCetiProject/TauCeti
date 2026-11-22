@@ -190,9 +190,11 @@ theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
 
 theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
     (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x := by
-  induction u using Finset.cons_induction with
-  | empty => rw [Finset.sum_empty, Finset.sum_empty, zero_apply]
-  | cons i u hi ih => rw [Finset.sum_cons, Finset.sum_cons, add_apply, ih]
+  simpa only [AddMonoidHom.coe_comp, Function.comp_apply, coeAddHom_apply,
+    AddMonoidHom.coe_ofClass, Submodule.coe_subtype, Finset.sum_apply] using
+    congrFun (map_sum ((coeAddHom I F ∞ V).comp (((compactlySupported I F ∞ V).subtype :
+      compactlySupported I F ∞ V →+ _).comp ((ofCompactlySupported I F V).symm :
+        BundleTest I F V →+ _))) s u) x
 
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 

@@ -8,27 +8,30 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.SquareChartPartition
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
 
 /-!
 # Sobolev spaces of distributions on bundle tests
 
-Let `V → M` be a smooth real vector bundle with model fibre `F`. A distribution on `M` with values
-in `V`, or more generally a real functional `T` on the bundle tests `TauCeti.BundleTest I F V`, is
-read through a fixed finite family of charts and frames. This file builds the Sobolev spaces `H^s`,
-`s ∈ ℝ`, of such functionals from the Euclidean Bessel-potential spaces `H^s(E, ℂ)` of Mathlib.
+Let `V → M` be a smooth real vector bundle with model fibre `F`. A real functional `T` on the
+bundle tests `TauCeti.BundleTest I F V` is read through a fixed finite family of charts and frames.
+This file builds the Sobolev spaces `H^s`, `s ∈ ℝ`, of such functionals from the Euclidean
+Bessel-potential spaces `H^s(E, ℂ)` of Mathlib. The distributional sections
+`TauCeti.BundleDistribution I M F W` of a bundle `W` are the case where `V` is the `W`-dual density
+bundle `fun x ↦ W x →L[ℝ] TauCeti.DensityBundle I M x`, so for them the charts, frames and cutoffs
+are taken on that bundle.
 
-A **square chart partition** (`TauCeti.SquareChartPartition`) consists of finitely many charts
-`cᵢ` with smooth inverses, frames `tᵢ` over their sources, and smooth cutoffs `χᵢ` with compact
-supports inside the chart sources such that `∑ᵢ χᵢ² = 1`. On a compact boundaryless manifold one
-always exists (`TauCeti.exists_squareChartPartition`). Write `(bⱼ)` for the standard basis
-`Module.finBasis ℝ F` of the model fibre.
+The functionals are read through a square chart partition (`TauCeti.SquareChartPartition`):
+finitely many charts `cᵢ` with smooth inverses, frames `tᵢ` over their sources, and smooth cutoffs
+`χᵢ` with compact supports inside the chart sources such that `∑ᵢ χᵢ² = 1`, which exists on every
+compact boundaryless manifold (`TauCeti.exists_squareChartPartition`). Write `(bⱼ)` for the standard
+basis `Module.finBasis ℝ F` of the model fibre.
 
 * The **localization** `χᵢ Tᵢⱼ` of `T` (`TauCeti.SquareChartPartition.localization`) is the
   tempered distribution on the model space `E` obtained from the component `φ ↦ T (φ • bⱼ)` of `T`
@@ -63,8 +66,6 @@ equations of the subspace are closed.
 
 ## Main declarations
 
-* `TauCeti.SquareChartPartition`: finite charts, frames and a square partition of unity.
-* `TauCeti.exists_squareChartPartition`: existence on compact boundaryless manifolds.
 * `TauCeti.SquareChartPartition.localization`, `TauCeti.SquareChartPartition.reconstruction` and
   `TauCeti.SquareChartPartition.reconstruction_localization`.
 * `TauCeti.SquareChartPartition.MemSobolev`: `H^s` regularity with respect to the partition.
@@ -104,145 +105,16 @@ variable {ι : Type*} [Fintype ι]
   {V : M → Type*} [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V]
 
-variable (ι I F V) in
-/-- A **square chart partition** of a vector bundle `V → M`: finitely many charts `cᵢ` of `M` with
-smooth inverses, bundle frames `tᵢ` over their sources, and smooth cutoffs `χᵢ` with compact closed
-supports inside the chart sources whose squares sum to one, `∑ᵢ χᵢ² = 1`. These are the data with
-which distributions on `M` are localized into the Euclidean Sobolev spaces of the charts. -/
-structure SquareChartPartition where
-  /-- The bundle frame over the `i`-th chart. -/
-  trivialization : ι → Trivialization F (π F V)
-  /-- The frames belong to the atlas of the bundle. -/
-  [memTrivializationAtlas : ∀ i, MemTrivializationAtlas (trivialization i)]
-  /-- The `i`-th chart. -/
-  chart : ι → OpenPartialHomeomorph M E
-  /-- The charts are smooth on their sources. -/
-  contMDiffOn_chart : ∀ i, ContMDiffOn I 𝓘(ℝ, E) ∞ (chart i) (chart i).source
-  /-- The charts have smooth inverses on their targets. -/
-  contMDiffOn_chart_symm : ∀ i, ContMDiffOn 𝓘(ℝ, E) I ∞ (chart i).symm (chart i).target
-  /-- Each chart source lies in the base set of its frame. -/
-  source_subset : ∀ i, (chart i).source ⊆ (trivialization i).baseSet
-  /-- The cutoffs. -/
-  cutoff : ι → C^∞⟮I, M; ℝ⟯
-  /-- The cutoffs have compact closed supports. -/
-  isCompact_tsupport_cutoff : ∀ i, IsCompact (tsupport (cutoff i))
-  /-- The closed support of the `i`-th cutoff lies in the `i`-th chart source. -/
-  tsupport_cutoff_subset : ∀ i, tsupport (cutoff i) ⊆ (chart i).source
-  /-- The squares of the cutoffs sum to one. -/
-  sum_sq_cutoff : ∀ x, ∑ i, cutoff i x ^ 2 = 1
-
 namespace SquareChartPartition
 
-attribute [instance] memTrivializationAtlas
+attribute [local instance] ContMDiffSection.ChartTestData.memTrivializationAtlas
 
 variable (A : SquareChartPartition ι I F V)
-
-/-! ### The cutoffs read in the charts -/
-
-/-- The image of the closed support of the `i`-th cutoff in the `i`-th chart, a compact subset of
-the chart target. -/
-def chartSupport (i : ι) : Compacts E :=
-  ⟨A.chart i '' tsupport (A.cutoff i), (A.isCompact_tsupport_cutoff i).image_of_continuousOn
-    ((A.chart i).continuousOn.mono (A.tsupport_cutoff_subset i))⟩
-
-theorem chartSupport_subset_target (i : ι) : (A.chartSupport i : Set E) ⊆ (A.chart i).target :=
-  image_subset_iff.2 fun _ hx ↦ (A.chart i).map_source (A.tsupport_cutoff_subset i hx)
-
-theorem mapsTo_chartSupport (i : ι) :
-    MapsTo (A.chart i) (tsupport (A.cutoff i)) (A.chartSupport i) :=
-  mapsTo_image _ _
-
-/-- Outside the chart image of its support, the `i`-th cutoff read in the chart vanishes. -/
-private theorem cutoff_symm_eq_zero {i : ι} {y : E} (hy : y ∈ (A.chart i).target)
-    (hyL : y ∉ (A.chartSupport i : Set E)) : A.cutoff i ((A.chart i).symm y) = 0 :=
-  image_eq_zero_of_notMem_tsupport fun h ↦ hyL ⟨_, h, (A.chart i).right_inv hy⟩
-
-open scoped Classical in
-/-- The values of the `i`-th cutoff read in the `i`-th chart, extended by zero. -/
-private def chartCutoffFun (i : ι) (y : E) : ℂ :=
-  if y ∈ (A.chart i).target then (A.cutoff i ((A.chart i).symm y) : ℂ) else 0
-
-private theorem chartCutoffFun_eq_zero {i : ι} {y : E} (hy : y ∉ (A.chartSupport i : Set E)) :
-    A.chartCutoffFun i y = 0 := by
-  unfold chartCutoffFun
-  split_ifs with h
-  · rw [A.cutoff_symm_eq_zero h hy, ofReal_zero]
-  · rfl
-
-private theorem contDiff_chartCutoffFun (i : ι) : ContDiff ℝ ∞ (A.chartCutoffFun i) := by
-  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-  by_cases hy : y ∈ (A.chart i).target
-  · have h : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, ℂ) ∞ (fun y ↦ (A.cutoff i ((A.chart i).symm y) : ℂ)) y :=
-      ofRealCLM.contDiff.contMDiff.contMDiffAt.comp y ((A.cutoff i).contMDiff.contMDiffAt.comp y
-        ((A.contMDiffOn_chart_symm i).contMDiffAt ((A.chart i).open_target.mem_nhds hy)))
-    refine (contMDiffAt_iff_contDiffAt.1 h).congr_of_eventuallyEq ?_
-    filter_upwards [(A.chart i).open_target.mem_nhds hy] with z hz
-    simp [chartCutoffFun, hz]
-  · refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-    filter_upwards [(A.chartSupport i).isCompact.isClosed.isOpen_compl.mem_nhds
-      fun h ↦ hy (A.chartSupport_subset_target i h)] with z hz
-    exact A.chartCutoffFun_eq_zero hz
-
-private theorem tsupport_chartCutoffFun_subset (i : ι) :
-    tsupport (A.chartCutoffFun i) ⊆ A.chartSupport i :=
-  closure_minimal (fun _ hy ↦ by_contra fun h ↦ hy (A.chartCutoffFun_eq_zero h))
-    (A.chartSupport i).isCompact.isClosed
-
-/-- The `i`-th cutoff read in the `i`-th chart: the complex test function `y ↦ χᵢ (cᵢ⁻¹ y)` on the
-chart target. -/
-def chartCutoff (i : ι) : 𝓓(⟨(A.chart i).target, (A.chart i).open_target⟩, ℂ) :=
-  ⟨A.chartCutoffFun i, A.contDiff_chartCutoffFun i,
-    HasCompactSupport.intro (A.chartSupport i).isCompact fun _ hy ↦ A.chartCutoffFun_eq_zero hy,
-    (A.tsupport_chartCutoffFun_subset i).trans (A.chartSupport_subset_target i)⟩
-
-theorem chartCutoff_apply_of_mem {i : ι} {y : E} (hy : y ∈ (A.chart i).target) :
-    A.chartCutoff i y = A.cutoff i ((A.chart i).symm y) := by
-  rw [chartCutoff, TestFunction.coe_mk]
-  simp [chartCutoffFun, hy]
-
-theorem chartCutoff_apply_of_notMem {i : ι} {y : E} (hy : y ∉ (A.chart i).target) :
-    A.chartCutoff i y = 0 := by
-  rw [chartCutoff, TestFunction.coe_mk]
-  simp [chartCutoffFun, hy]
 
 private theorem tsupport_cutoff_mul_subset (i : ι) :
     tsupport ⇑(A.cutoff i * A.cutoff i) ⊆ tsupport (A.cutoff i) := by
   rw [ContMDiffMap.coe_mul]
   exact tsupport_mul_subset_left
-
-/-! ### Existence on compact manifolds -/
-
-/-- **Square chart partitions exist on compact manifolds.** On a compact boundaryless manifold
-with finite-dimensional model, every smooth vector bundle has a square chart partition, indexed by
-a finite set of points of the base. -/
-theorem _root_.TauCeti.exists_squareChartPartition [FiniteDimensional ℝ E] [I.Boundaryless]
-    [CompactSpace M] [T2Space M] [IsManifold I ∞ M] :
-    ∃ t : Finset M, Nonempty (SquareChartPartition t I F V) := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  choose c hc hcs hct hx using fun x : M ↦
-    exists_chart_source_subset_baseSet (I := I) (F := F) (V := V) (n := ∞) x
-  -- Shrink each chart source to an open neighbourhood with compact closure inside it.
-  choose W hWo hxW hWs hWc using fun x : M ↦ exists_open_between_and_isCompact_closure
-    isCompact_singleton (c x).open_source (singleton_subset_iff.2 (hx x))
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover W hWo
-    fun y _ ↦ mem_iUnion.2 ⟨y, hxW y rfl⟩
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
-    (fun x : t ↦ W x) (fun x ↦ hWo x) fun y _ ↦ by simpa using ht (mem_univ y)
-  exact ⟨t, ⟨{
-    trivialization := fun x ↦ trivializationAt F V x
-    chart := fun x ↦ c x
-    contMDiffOn_chart := fun x ↦ hc x
-    contMDiffOn_chart_symm := fun x ↦ hcs x
-    source_subset := fun x ↦ hct x
-    cutoff := ρ.sqrtNormalized
-    isCompact_tsupport_cutoff := fun x ↦ (hWc x).of_isClosed_subset (isClosed_tsupport _)
-      ((hρ.tsupport_sqrtNormalized_subset x).trans subset_closure)
-    tsupport_cutoff_subset := fun x ↦
-      (hρ.tsupport_sqrtNormalized_subset x).trans (subset_closure.trans (hWs x))
-    sum_sq_cutoff := fun y ↦ by
-      rw [← finsum_eq_sum_of_fintype]
-      exact ρ.sum_sq_sqrtNormalized_eq_one (mem_univ y) }⟩⟩
 
 /-! ### Localization and reconstruction -/
 
@@ -254,16 +126,17 @@ variable [FiniteDimensional ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 cutoff, as a continuous linear map into the test functions supported in `A.chartSupport i`. -/
 private def localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯) (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) :
     BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) where
-  toLinearMap := (A.trivialization i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i)
-      (A.source_subset i) ψ (A.chartSupport i) (A.chartSupport_subset_target i)
+  toLinearMap := (A.chartData i).trivialization.chartLocalization (A.chartData i).chart
+      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
+      (A.chartSupport_subset_target i)
       ((A.mapsTo_chartSupport i).mono_left hψ) ∘ₗ
     (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
   cont := by
     let e := fun x : M ↦ trivializationAt F V x
     let U := fun x : M ↦ (⟨_, (trivializationAt F V x).open_baseSet⟩ : Opens M)
     let := frameTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
-    exact ((A.trivialization i).continuous_chartLocalization (A.chart i)
-      (A.contMDiffOn_chart_symm i) (A.source_subset i) ψ (A.chartSupport i)
+    exact ((A.chartData i).trivialization.continuous_chartLocalization (A.chartData i).chart
+      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
       (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ) e U
       (fun _ ↦ subset_rfl) fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
       (continuous_val_compactlySupportedTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl)
@@ -271,17 +144,18 @@ private def localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯) (hψ : tsupport
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) {y : E}
-    (hy : y ∈ (A.chart i).target) :
-    A.localizationCLM i ψ hψ s y = ψ ((A.chart i).symm y) •
-      (A.trivialization i ⟨(A.chart i).symm y, s ((A.chart i).symm y)⟩).2 :=
-  (A.trivialization i).chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
+    (hy : y ∈ (A.chartData i).chart.target) :
+    A.localizationCLM i ψ hψ s y = ψ ((A.chartData i).chart.symm y) •
+      ((A.chartData i).trivialization
+        ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 :=
+  (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_notMem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) {y : E}
-    (hy : y ∉ (A.chart i).target) :
+    (hy : y ∉ (A.chartData i).chart.target) :
     A.localizationCLM i ψ hψ s y = 0 :=
-  (A.trivialization i).chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
+  (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
 
 /-- The `j`-th coordinate functional of the standard basis of the model fibre, with complex
 values. -/
@@ -303,14 +177,14 @@ def testLocalization (i : ι) (j : Fin (Module.finrank ℝ F)) :
     A.localizationCLM i (A.cutoff i) subset_rfl
 
 theorem testLocalization_apply_of_mem (i : ι) (j : Fin (Module.finrank ℝ F))
-    (s : BundleTest I F V) {y : E} (hy : y ∈ (A.chart i).target) :
-    A.testLocalization i j s y = (A.cutoff i ((A.chart i).symm y) *
-      (Module.finBasis ℝ F).repr
-        (A.trivialization i ⟨(A.chart i).symm y, s ((A.chart i).symm y)⟩).2 j : ℝ) := by
+    (s : BundleTest I F V) {y : E} (hy : y ∈ (A.chartData i).chart.target) :
+    A.testLocalization i j s y = (A.cutoff i ((A.chartData i).chart.symm y) *
+      (Module.finBasis ℝ F).repr ((A.chartData i).trivialization
+        ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 j : ℝ) := by
   simp [testLocalization, A.localizationCLM_apply_of_mem _ _ _ _ hy]
 
 theorem testLocalization_apply_of_notMem (i : ι) (j : Fin (Module.finrank ℝ F))
-    (s : BundleTest I F V) {y : E} (hy : y ∉ (A.chart i).target) :
+    (s : BundleTest I F V) {y : E} (hy : y ∉ (A.chartData i).chart.target) :
     A.testLocalization i j s y = 0 := by
   simp [testLocalization, A.localizationCLM_apply_of_notMem _ _ _ _ hy]
 
@@ -357,14 +231,15 @@ omit [FiniteDimensional ℝ F] in
 /-- Extending the localization by `ψ` back through the chart and the frame gives `ψ • s`. -/
 private theorem chartTestCLM_localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) (x : M) :
-    (A.trivialization i).chartTestCLM (A.chart i) (A.contMDiffOn_chart i) (A.source_subset i)
+    (A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
+      (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i) (A.localizationCLM i ψ hψ s)) x =
       ψ x • s x := by
   rw [Bundle.Trivialization.coe_chartTestCLM]
-  refine (congr($((A.trivialization i).chartTestSection_chartLocalization (A.chart i)
-    (A.contMDiffOn_chart_symm i) (A.source_subset i) ψ (A.chartSupport i)
-    (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
-    (A.contMDiffOn_chart i) (hψ.trans (A.tsupport_cutoff_subset i))
+  refine (congr($((A.chartData i).trivialization.chartTestSection_chartLocalization
+    (A.chartData i).chart (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ
+    (A.chartSupport i) (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
+    (A.chartData i).contMDiffOn_chart (hψ.trans (A.tsupport_cutoff_subset i))
     ((BundleTest.ofCompactlySupported I F V).symm s).val) x)).trans ?_
   simp
 
@@ -374,8 +249,9 @@ tempered distribution `χᵢ Tᵢⱼ` on the model space, where `Tᵢⱼ` is the
 (`Bundle.Trivialization.chartComponent`), cut off by `χᵢ` read in the chart. -/
 def localization (i : ι) (j : Fin (Module.finrank ℝ F)) :
     (BundleTest I F V →L_c[ℝ] ℝ) →ₗ[ℝ] 𝓢'(E, ℂ) where
-  toFun T := ((A.trivialization i).chartComponent (A.chart i) (A.contMDiffOn_chart i)
-    (A.source_subset i) T (Module.finBasis ℝ F j)).cutoffTempered (A.chartCutoff i)
+  toFun T := ((A.chartData i).trivialization.chartComponent (A.chartData i).chart
+    (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset T
+      (Module.finBasis ℝ F j)).cutoffTempered (A.chartCutoff i)
   map_add' T S := by
     ext ψ
     simp only [Distribution.cutoffTempered_def, Distribution.complexPairing_apply,
@@ -385,13 +261,13 @@ def localization (i : ι) (j : Fin (Module.finrank ℝ F)) :
     ext ψ
     simp only [Distribution.cutoffTempered_def, Distribution.complexPairing_apply,
       Bundle.Trivialization.chartComponent_apply, _root_.smul_apply, RingHom.id_apply]
-    simp
+    simp only [smul_eq_mul, ofReal_mul, smul_add, real_smul]
     ring
 
 theorem localization_apply (i : ι) (j : Fin (Module.finrank ℝ F)) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    A.localization i j T = ((A.trivialization i).chartComponent (A.chart i)
-      (A.contMDiffOn_chart i) (A.source_subset i) T (Module.finBasis ℝ F j)).cutoffTempered
-        (A.chartCutoff i) :=
+    A.localization i j T = ((A.chartData i).trivialization.chartComponent (A.chartData i).chart
+      (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset T
+        (Module.finBasis ℝ F j)).cutoffTempered (A.chartCutoff i) :=
   (rfl)
 
 /-- The localization of `T`, paired with the localization of `s`, is `T` evaluated on the `j`-th
@@ -399,7 +275,8 @@ frame component of `χᵢ² s`. -/
 private theorem localization_apply_testLocalization (T : BundleTest I F V →L_c[ℝ] ℝ) (i : ι)
     (j : Fin (Module.finrank ℝ F)) (s : BundleTest I F V) :
     A.localization i j T (A.testLocalization i j s) =
-      (T ((A.trivialization i).chartTestCLM (A.chart i) (A.contMDiffOn_chart i) (A.source_subset i)
+      (T ((A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
+        (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
         (TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (Module.finBasis ℝ F j))
           (TestFunction.postcompCLM
             (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j))
@@ -413,7 +290,7 @@ private theorem localization_apply_testLocalization (T : BundleTest I F V →L_c
     Distribution.complexPairing_postcompCLM_ofRealCLM,
     Bundle.Trivialization.chartComponent_apply]
   intro y
-  by_cases hy : y ∈ (A.chart i).target
+  by_cases hy : y ∈ (A.chartData i).chart.target
   · simp [A.testLocalization_apply_of_mem _ _ _ hy, A.chartCutoff_apply_of_mem hy,
       A.localizationCLM_apply_of_mem _ _ _ _ hy, ContMDiffMap.coe_mul]
     ring
@@ -430,10 +307,12 @@ theorem reconstruction_localization (T : BundleTest I F V →L_c[ℝ] ℝ) :
   have hj (i : ι) : ∑ j, TestFunction.postcompCLM
       (ContinuousLinearMap.toSpanSingleton ℝ (Module.finBasis ℝ F j))
       (TestFunction.postcompCLM (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j))
-        (TestFunction.ofSupportedIn (Ω := ⟨(A.chart i).target, (A.chart i).open_target⟩)
+        (TestFunction.ofSupportedIn
+          (Ω := ⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩)
           (A.chartSupport_subset_target i)
           (A.localizationCLM i _ (A.tsupport_cutoff_mul_subset i) s))) =
-      TestFunction.ofSupportedIn (Ω := ⟨(A.chart i).target, (A.chart i).open_target⟩)
+      TestFunction.ofSupportedIn
+        (Ω := ⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩)
         (A.chartSupport_subset_target i)
         (A.localizationCLM i _ (A.tsupport_cutoff_mul_subset i) s) := by
     ext y
@@ -441,8 +320,9 @@ theorem reconstruction_localization (T : BundleTest I F V →L_c[ℝ] ℝ) :
       Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
       LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
     exact (Module.finBasis ℝ F).sum_repr _
-  have hi : ∑ i, (A.trivialization i).chartTestCLM (A.chart i) (A.contMDiffOn_chart i)
-      (A.source_subset i) (TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
+  have hi : ∑ i, (A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
+      (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
+      (TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
         (A.localizationCLM i _ (A.tsupport_cutoff_mul_subset i) s)) = s := by
     ext x
     have h : ∑ i, (A.cutoff i * A.cutoff i) x = 1 := by
@@ -474,10 +354,10 @@ open scoped BesselPotentialSpace
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- A real functional `T` on bundle tests, for instance a distributional section of the bundle,
-is **`H^s` with respect to the square chart partition `A`** when each of its localizations
-`χᵢ Tᵢⱼ` (`TauCeti.SquareChartPartition.localization`) lies in the Bessel-potential space
-`H^s(E, ℂ)`. -/
+/-- A real functional `T` on bundle tests of `V`, for instance a distributional section of a bundle
+whose dual density bundle is `V`, is **`H^s` with respect to the square chart partition `A`** when
+each of its localizations `χᵢ Tᵢⱼ` (`TauCeti.SquareChartPartition.localization`) lies in the
+Bessel-potential space `H^s(E, ℂ)`. -/
 def MemSobolev (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) : Prop :=
   ∀ i j, (A.localization i j T).MemSobolev s 2
 
@@ -495,14 +375,15 @@ theorem MemSobolev.mono {s r : ℝ} (h : r ≤ s) {T : BundleTest I F V →L_c[�
     (hT : A.MemSobolev s T) : A.MemSobolev r T :=
   fun i j ↦ (hT i j).mono h
 
-/-- **Finite order.** Every real functional on bundle tests, for instance every distributional
-section of the bundle, is `H^s` with respect to `A` for some `s`: its finitely many localizations
-are compactly supported distributions, each of which lies in some `H^s(E, ℂ)`. -/
+/-- **Finite order.** Every real functional on bundle tests of `V`, for instance every
+distributional section of a bundle whose dual density bundle is `V`, is `H^s` with respect to `A`
+for some `s`: its finitely many localizations are compactly supported distributions, each of which
+lies in some `H^s(E, ℂ)`. -/
 theorem exists_memSobolev (T : BundleTest I F V →L_c[ℝ] ℝ) : ∃ s, A.MemSobolev s T := by
   choose r hr using fun k : ι × Fin (Module.finrank ℝ F) ↦
-    Distribution.exists_memSobolev_cutoffTempered ((A.trivialization k.1).chartComponent
-      (A.chart k.1) (A.contMDiffOn_chart k.1) (A.source_subset k.1) T (Module.finBasis ℝ F k.2))
-      (A.chartCutoff k.1)
+    Distribution.exists_memSobolev_cutoffTempered ((A.chartData k.1).trivialization.chartComponent
+      (A.chartData k.1).chart (A.chartData k.1).contMDiffOn_chart (A.chartData k.1).source_subset T
+      (Module.finBasis ℝ F k.2)) (A.chartCutoff k.1)
   refine ⟨-∑ k, |r k|, fun i j ↦ ?_⟩
   rw [localization_apply]
   refine (hr (i, j)).mono ?_
@@ -529,9 +410,10 @@ theorem mem_memSobolevSubmodule {T : BundleTest I F V →L_c[ℝ] ℝ} :
     T ∈ A.memSobolevSubmodule s ↔ A.MemSobolev s T :=
   Iff.rfl
 
-/-- The **Sobolev space `H^s` of a vector bundle** with respect to the square chart partition `A`,
-realized as the tuples `(uᵢⱼ)` in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)` that are localizations of a
-functional on bundle tests: those reproduced by localizing their reconstruction. It is a closed
+/-- The **Sobolev space `H^s` of functionals on bundle tests of `V`** with respect to the square
+chart partition `A`, for instance of distributional sections of a bundle whose dual density bundle
+is `V`, realized as the tuples `(uᵢⱼ)` in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)` that are localizations
+of a functional on bundle tests: those reproduced by localizing their reconstruction. It is a closed
 subspace (`TauCeti.SquareChartPartition.isClosed_sobolevSpace`), hence complete, and its norm is
 the pinned norm `‖u‖² = ∑ᵢⱼ ‖uᵢⱼ‖²_{H^s}` of the Hilbert sum. The functional represented by `u`
 is `TauCeti.SquareChartPartition.toDistribution`. -/
@@ -546,11 +428,9 @@ def sobolevSpace :
     simp only [PiLp.zero_apply, BesselPotentialSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
-    -- The tempered distributions of the components of `a • u` are, by definition of the scalar
-    -- action on `PiLp` and on `H^s`, those of `u` multiplied by `a`.
-    change A.localization k.1 k.2 (A.reconstruction (a • fun l ↦ (u l).toDistr)) =
-      a • (u k).toDistr
-    rw [map_smul, map_smul, hu k]
+    simp only [PiLp.smul_apply, ← Complex.coe_smul, BesselPotentialSpace.toDistr_smul]
+    simp only [Complex.coe_smul]
+    rw [← Pi.smul_def, map_smul, map_smul, hu k]
 
 theorem mem_sobolevSpace {u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)} :
     u ∈ A.sobolevSpace s ↔
@@ -588,11 +468,17 @@ instance : CompleteSpace (A.sobolevSpace s) :=
 def toDistribution : A.sobolevSpace s →ₗ[ℝ] (BundleTest I F V →L_c[ℝ] ℝ) where
   toFun u := A.reconstruction fun l ↦ (u.val l).toDistr
   map_add' u u' := by
-    rw [← map_add]
-    congr 1
+    simp only [Submodule.coe_add, PiLp.add_apply, BesselPotentialSpace.toDistr_add]
+    rw [← Pi.add_def, map_add]
   map_smul' a u := by
-    rw [RingHom.id_apply, ← map_smul]
-    congr 1
+    simp only [Submodule.coe_smul, PiLp.smul_apply, ← Complex.coe_smul,
+      BesselPotentialSpace.toDistr_smul, RingHom.id_apply]
+    simp only [Complex.coe_smul]
+    rw [← Pi.smul_def, map_smul]
+
+theorem toDistribution_apply (u : A.sobolevSpace s) :
+    A.toDistribution s u = A.reconstruction fun l ↦ (u.val l).toDistr :=
+  (rfl)
 
 /-- The localizations of the functional represented by `u` are the components of `u`. -/
 @[simp]
@@ -625,8 +511,13 @@ theorem ofMemSobolev_apply {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemSob
 @[simp]
 theorem toDistribution_ofMemSobolev {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemSobolev s T) :
     A.toDistribution s (A.ofMemSobolev s hT) = T := by
-  simp only [toDistribution, ofMemSobolev, LinearMap.coe_mk, AddHom.coe_mk,
+  simp only [toDistribution_apply, ofMemSobolev_apply,
     TemperedDistribution.MemSobolev.toBesselPotentialSpace_toDistr, reconstruction_localization]
+
+@[simp]
+theorem ofMemSobolev_toDistribution (u : A.sobolevSpace s) :
+    A.ofMemSobolev s (A.memSobolev_toDistribution s u) = u :=
+  A.toDistribution_injective s (A.toDistribution_ofMemSobolev s _)
 
 /-- The functionals represented by the Sobolev space are exactly those which are `H^s` with
 respect to `A`. -/
@@ -644,6 +535,12 @@ def sobolevSpaceEquiv : A.sobolevSpace s ≃ₗ[ℝ] A.memSobolevSubmodule s :=
 theorem coe_sobolevSpaceEquiv_apply (u : A.sobolevSpace s) :
     (A.sobolevSpaceEquiv s u : BundleTest I F V →L_c[ℝ] ℝ) = A.toDistribution s u :=
   (rfl)
+
+@[simp]
+theorem sobolevSpaceEquiv_symm_apply (T : A.memSobolevSubmodule s) :
+    (A.sobolevSpaceEquiv s).symm T =
+      A.ofMemSobolev s ((A.mem_memSobolevSubmodule s).1 T.property) :=
+  (A.sobolevSpaceEquiv s).symm_apply_eq.2 <| Subtype.ext (A.toDistribution_ofMemSobolev s _).symm
 
 /-- **The pinned norm.** The squared `H^s` norm of a functional which is `H^s` with respect to `A`
 is the sum of the squared `H^s(E, ℂ)` norms of its localizations `χᵢ Tᵢⱼ`. -/
