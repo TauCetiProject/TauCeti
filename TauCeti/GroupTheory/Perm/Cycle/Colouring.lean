@@ -7,6 +7,7 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.GroupTheory.Perm.Basic
+public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Data.Set.Card
 
 /-!
@@ -14,7 +15,9 @@ import Mathlib.Data.Set.Card
 
 A colouring fixed by a permutation `π` is the same as a colouring of the cycles of `π`
 (`TauCeti.invariantColouringEquiv`). Passing from the cycle labels to the colouring of the
-points does not change the set of colours used, and hence the number of colours used.
+points does not change the set of colours used, and hence the number of colours used. Counting
+the colourings of the cycles, a permutation of a finite type fixes `#σ ^ c` colourings with `#σ`
+colours, where `c` is its number of cycles, fixed points included.
 
 ## Main results
 
@@ -22,6 +25,8 @@ points does not change the set of colours used, and hence the number of colours 
   set of colours.
 * `Equiv.Perm.card_image_invariantColouringEquiv`: on a finite type, the colouring uses as many
   colours as its cycle labels.
+* `Equiv.Perm.card_invariantColouring`: there are `#σ ^ c` colourings fixed by `π`, where `c` is
+  the number of parts of the full cycle type of `π`.
 -/
 
 public section
@@ -47,5 +52,12 @@ See `Equiv.Perm.range_invariantColouringEquiv` for equality of the colour sets. 
     (Finset.univ.image (invariantColouringEquiv π g).val).card = Nat.card (Set.range g) := by
   rw [← π.range_invariantColouringEquiv, ← Set.image_univ, ← Finset.coe_univ,
     ← Finset.coe_image, Nat.card_coe_set_eq, Set.ncard_coe_finset]
+
+/-- **The number of colourings fixed by a permutation**: a colouring with values in `σ` is fixed by
+`π` exactly when it is constant on the cycles of `π`, so there are `Nat.card σ ^ c` of them, where
+`c = Multiset.card π.fullCycleType` is the number of cycles of `π`, fixed points included. -/
+theorem card_invariantColouring [Fintype α] [DecidableEq α] (π : Perm α) :
+    Nat.card {f : α → σ // f ∘ π = f} = Nat.card σ ^ Multiset.card π.fullCycleType := by
+  rw [← Nat.card_congr (invariantColouringEquiv π), Nat.card_fun, card_fullCycleType]
 
 end Equiv.Perm
