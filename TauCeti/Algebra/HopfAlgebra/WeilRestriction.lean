@@ -763,36 +763,6 @@ theorem pointsMulEquivOfBaseChange_mapDomain_mapBialgHom {A B H₁ H₂ T S : Ty
     (BialgHom.mapValue_mapDomain φ (e.baseChangeRight he : B ⊗[A] T →ₐ[B] S))
     (pointsMulEquiv A B H₂ T x)).symm
 
-/-- In a tower `A → B → C`, when `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁`
-and `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂`, their swapped right-base-change equivalences form a commutative
-triangle with `Algebra.TensorProduct.cancelBaseChange`. -/
-private theorem baseChangeRight_comp_lTensor {A B C T S₁ S₂ : Type*}
-    [CommSemiring A] [CommSemiring B] [CommSemiring C] [CommSemiring T] [CommSemiring S₁]
-    [Semiring S₂] [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
-    [Algebra A T] [Algebra B S₁] [Algebra T S₁] [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
-    (e₁₂ : T ⊗[A] B ≃ₐ[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
-    (e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
-    (e₁₃ : T ⊗[A] C ≃ₐ[T] S₂) (he₁₃ : ∀ c : C, e₁₃ (1 ⊗ₜ[A] c) = algebraMap C S₂ c)
-    (htower : ∀ (t : T) (c : C), e₁₃ (t ⊗ₜ[A] c) = e₂₃ (e₁₂ (t ⊗ₜ[A] 1) ⊗ₜ[B] c)) :
-    (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂).comp
-        (Algebra.TensorProduct.lTensor (S := C) C
-          (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)) =
-      (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂).comp
-        (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
-  refine AlgHom.ext fun z ↦ ?_
-  induction z using TensorProduct.inductionOn with
-  | tmul c u =>
-    induction u using TensorProduct.inductionOn with
-    | tmul b t =>
-      have hb : e₁₂ (t ⊗ₜ[A] b) = b • e₁₂ (t ⊗ₜ[A] 1) := by
-        calc
-          e₁₂ (t ⊗ₜ[A] b) = e₁₂ ((1 ⊗ₜ[A] b) * (t ⊗ₜ[A] 1)) := by simp
-          _ = algebraMap B S₁ b * e₁₂ (t ⊗ₜ[A] 1) := by rw [map_mul, he₁₂]
-          _ = b • e₁₂ (t ⊗ₜ[A] 1) := (Algebra.smul_def b _).symm
-      simp [hb, htower]
-    | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
-  | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
-
 /-- **Tower compatibility of `pointsMulEquivOfBaseChange`.** In a tower `A → B → C` of finite
 projective algebras, if `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁` and
 `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂` via `e₁₃ (t ⊗ c) = e₂₃ (e₁₂ (t ⊗ 1) ⊗ c)`, then restricting along
@@ -840,7 +810,7 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
           (AlgHom.comp_assoc _ _ _).symm
     _ = (ψ₁₃.comp (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom).comp
           (pointsMulEquiv B C H (B ⊗[A] T) w).ofConv := by
-          rw [baseChangeRight_comp_lTensor e₁₂ he₁₂ e₂₃ he₂₃ e₁₃ he₁₃ htower]
+          rw [AlgEquiv.baseChangeRight_comp_lTensor e₁₂ he₁₂ e₂₃ he₂₃ e₁₃ he₁₃ htower]
     _ = ψ₁₃.comp ((Algebra.TensorProduct.cancelBaseChange A B C C T).mapValueMulEquiv
           (pointsMulEquiv B C H (B ⊗[A] T) w)).ofConv := by
           simp [AlgHom.comp_assoc]

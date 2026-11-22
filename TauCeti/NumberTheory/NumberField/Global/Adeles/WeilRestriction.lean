@@ -111,30 +111,6 @@ private theorem infiniteSemilocalContinuousEquiv_one_tmul (v : InfinitePlace F) 
   ext w
   simp
 
-private theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 F))
-    (a : FiniteAdeleRing (𝓞 F) F) (b : E)
-    (w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal}) :
-    FiniteAdeleRing.proj E w.val (finiteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b)) =
-      TauCeti.semilocalContinuousEquiv E v (FiniteAdeleRing.proj F v a ⊗ₜ[F] b) w := by
-  have hf : ⇑(finiteAdeleBaseChangeEquiv F E) = ⇑(finiteAdeleBaseChangeHom F E) := by
-    rw [← ContinuousAlgEquiv.coe_toAlgEquiv, finiteAdeleBaseChangeEquiv_toAlgEquiv,
-      ← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom]
-  have hs : ⇑(TauCeti.semilocalContinuousEquiv E v) =
-      ⇑(v.adicCompletionSemilocalHom F (𝓞 E) E) := by
-    rw [← ContinuousAlgEquiv.coe_toAlgEquiv, TauCeti.semilocalContinuousEquiv_toAlgEquiv,
-      v.coe_adicCompletionSemilocalEquiv]
-  rw [FiniteAdeleRing.proj_apply, hf, hs, finiteAdeleBaseChangeHom_apply F E _ v w,
-    TensorProduct.map_tmul, LinearMap.id_apply, AlgHom.toLinearMap_apply, ContinuousAlgHom.coe_coe]
-
-private theorem infiniteAdeleBaseChangeEquiv_eval_tmul (v : InfinitePlace F)
-    (a : InfiniteAdeleRing F) (b : E) (w : {w : InfinitePlace E // w.LiesOver v}) :
-    infiniteAdeleBaseChangeEquiv F E (a ⊗ₜ[F] b) w.val =
-      infiniteSemilocalContinuousEquiv E v (a v ⊗ₜ[F] b) w := by
-  obtain ⟨w, hw⟩ := w
-  obtain rfl : w.comap (algebraMap F E) = v := InfinitePlace.LiesOver.comap_eq w v
-  rw [infiniteAdeleBaseChangeEquiv_tmul_apply, infiniteSemilocalContinuousEquiv_tmul,
-    AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
-
 end Lemmas
 
 section Adelic
@@ -233,6 +209,42 @@ theorem infiniteAdelicPointsContinuousMulEquiv_apply
         (Algebra.TensorProduct.comm F E (InfiniteAdeleRing F)
           ((pointsMulEquiv F E H (InfiniteAdeleRing F) x).ofConv h)) := by
   simp [infiniteAdelicPointsContinuousMulEquiv, ← ContinuousAlgEquiv.coe_toAlgEquiv]
+
+/-- Applying `pointsMulEquiv` to the inverse of `adelicPointsContinuousMulEquiv` post-composes
+with the inverse of `adeleBaseChangeAlgEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_adelicPointsContinuousMulEquiv_symm
+    (y : WithConv (H →ₐ[E] AdeleRing (𝓞 E) E)) :
+    pointsMulEquiv F E H (AdeleRing (𝓞 F) F)
+        ((adelicPointsContinuousMulEquiv F E H).symm y) =
+      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).baseChangeRight fun b ↦ by
+        rw [← AlgEquiv.coe_toAlgHom, adeleBaseChangeAlgEquiv_toAlgHom, adeleBaseChangeHom_tmul,
+          map_one, one_mul]).symm.toAlgHom y := by
+  simp [adelicPointsContinuousMulEquiv]
+
+/-- Applying `pointsMulEquiv` to the inverse of `finiteAdelicPointsContinuousMulEquiv`
+post-composes with the inverse of `finiteAdeleBaseChangeAlgEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_finiteAdelicPointsContinuousMulEquiv_symm
+    (y : WithConv (H →ₐ[E] FiniteAdeleRing (𝓞 E) E)) :
+    pointsMulEquiv F E H (FiniteAdeleRing (𝓞 F) F)
+        ((finiteAdelicPointsContinuousMulEquiv F E H).symm y) =
+      AlgHom.mapValue ((finiteAdeleBaseChangeAlgEquiv F E).baseChangeRight fun b ↦ by
+        rw [← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom,
+          finiteAdeleBaseChangeHom_tmul, map_one, one_mul]).symm.toAlgHom y := by
+  simp [finiteAdelicPointsContinuousMulEquiv]
+
+/-- Applying `pointsMulEquiv` to the inverse of `infiniteAdelicPointsContinuousMulEquiv`
+post-composes with the inverse of `infiniteAdeleBaseChangeAlgEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_infiniteAdelicPointsContinuousMulEquiv_symm
+    (y : WithConv (H →ₐ[E] InfiniteAdeleRing E)) :
+    pointsMulEquiv F E H (InfiniteAdeleRing F)
+        ((infiniteAdelicPointsContinuousMulEquiv F E H).symm y) =
+      AlgHom.mapValue ((infiniteAdeleBaseChangeAlgEquiv F E).baseChangeRight fun b ↦ by
+        rw [← AlgEquiv.coe_toAlgHom, infiniteAdeleBaseChangeAlgEquiv_toAlgHom,
+          infiniteAdeleBaseChangeHom_tmul, map_one, one_mul]).symm.toAlgHom y := by
+  simp [infiniteAdelicPointsContinuousMulEquiv]
 
 /-- **Rational diagonal compatibility on full adeles.** `adelicPointsContinuousMulEquiv` carries
 the diagonal image of an `F`-point of `Res_{E/F} G` to the diagonal image of the corresponding
@@ -462,6 +474,33 @@ theorem infiniteCompletionPointsContinuousMulEquiv_apply (v : InfinitePlace F)
           ((pointsMulEquiv F E H v.Completion x).ofConv h)) w := by
   simp [infiniteCompletionPointsContinuousMulEquiv, ← ContinuousAlgEquiv.coe_toAlgEquiv]
 
+/-- Applying `pointsMulEquiv` to the inverse of `adicCompletionPointsContinuousMulEquiv`
+assembles the local family with `AlgHom.pi` and post-composes with the inverse of
+`v.adicCompletionSemilocalEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_adicCompletionPointsContinuousMulEquiv_symm (v : HeightOneSpectrum (𝓞 F))
+    (y : ∀ w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal},
+      WithConv (H →ₐ[E] w.val.adicCompletion E)) :
+    pointsMulEquiv F E H (v.adicCompletion F)
+        ((adicCompletionPointsContinuousMulEquiv F E H v).symm y) =
+      AlgHom.mapValue ((v.adicCompletionSemilocalEquiv F (𝓞 E) E).baseChangeRight
+          fun b ↦ by ext w; simp).symm.toAlgHom
+        (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
+  simp [adicCompletionPointsContinuousMulEquiv]
+
+/-- Applying `pointsMulEquiv` to the inverse of `infiniteCompletionPointsContinuousMulEquiv`
+assembles the local family with `AlgHom.pi` and post-composes with the inverse of
+`infiniteSemilocalEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_infiniteCompletionPointsContinuousMulEquiv_symm (v : InfinitePlace F)
+    (y : ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.val.Completion)) :
+    pointsMulEquiv F E H v.Completion
+        ((infiniteCompletionPointsContinuousMulEquiv F E H v).symm y) =
+      AlgHom.mapValue ((infiniteSemilocalEquiv E v).baseChangeRight
+          fun b ↦ by ext w; simp).symm.toAlgHom
+        (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
+  simp [infiniteCompletionPointsContinuousMulEquiv]
+
 /-- **Compatibility with projection to a finite place.** Projecting a finite-adelic point of
 `Res_{E/F} G` to `F_v` and decomposing via `adicCompletionPointsContinuousMulEquiv` reads off the
 projections to `E_w` (`w ∣ v`) of the corresponding `𝔸_E^f`-point of `G`. -/
@@ -586,6 +625,35 @@ theorem val_multiplicativeGroupAdelicPointsContinuousMulEquiv_apply
         (Algebra.TensorProduct.comm F E (AdeleRing (𝓞 F) F)
           (multiplicativeGroupPoints F E (AdeleRing (𝓞 F) F) x : E ⊗[F] AdeleRing (𝓞 F) F)) := by
   simp [multiplicativeGroupAdelicPointsContinuousMulEquiv]
+
+/-- Applying `pointsMulEquiv` to the inverse of `multiplicativeGroupAdelicPointsContinuousMulEquiv`
+converts the idele to the corresponding `𝔾ₘ`-point and post-composes with the inverse of
+`adeleBaseChangeAlgEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem pointsMulEquiv_multiplicativeGroupAdelicPointsContinuousMulEquiv_symm
+    (u : IdeleGroup (𝓞 E) E) :
+    pointsMulEquiv F E E[T;T⁻¹] (AdeleRing (𝓞 F) F)
+        ((multiplicativeGroupAdelicPointsContinuousMulEquiv F E).symm u) =
+      AlgHom.mapValue ((adeleBaseChangeAlgEquiv F E).baseChangeRight fun b ↦ by
+        rw [← AlgEquiv.coe_toAlgHom, adeleBaseChangeAlgEquiv_toAlgHom, adeleBaseChangeHom_tmul,
+          map_one, one_mul]).symm.toAlgHom (toConv (TauCeti.laurentEval (R := E) u)) := by
+  simp [multiplicativeGroupAdelicPointsContinuousMulEquiv]
+
+/-- Applying `multiplicativeGroupPoints` to the inverse of
+`multiplicativeGroupAdelicPointsContinuousMulEquiv` transports the idele along the inverse of
+`adeleBaseChangeAlgEquiv` and the tensor-factor swap. -/
+@[simp]
+theorem multiplicativeGroupPoints_multiplicativeGroupAdelicPointsContinuousMulEquiv_symm
+    (u : IdeleGroup (𝓞 E) E) :
+    multiplicativeGroupPoints F E (AdeleRing (𝓞 F) F)
+        ((multiplicativeGroupAdelicPointsContinuousMulEquiv F E).symm u) =
+      Units.map ((adeleBaseChangeAlgEquiv F E).baseChangeRight fun b ↦ by
+        rw [← AlgEquiv.coe_toAlgHom, adeleBaseChangeAlgEquiv_toAlgHom, adeleBaseChangeHom_tmul,
+          map_one, one_mul]).symm.toRingHom.toMonoidHom u := by
+  ext
+  rw [multiplicativeGroupPoints_apply, ← pointsMulEquiv_apply,
+    pointsMulEquiv_multiplicativeGroupAdelicPointsContinuousMulEquiv_symm]
+  simp
 
 end MultiplicativeGroup
 

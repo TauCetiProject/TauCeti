@@ -47,6 +47,8 @@ groups, as for the infinite-adele comparison in
   the semilocal map after evaluation at `v`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_injective`,
   `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_surjective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_proj`: projecting
+  `finiteAdeleBaseChangeEquiv` to a place `w ∣ v` recovers `TauCeti.semilocalContinuousEquiv`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base
   change from `K` to `M` factors through base change from `K` to `L`.
 
@@ -329,5 +331,34 @@ theorem finiteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [
       finiteAdeleBaseChangeEquiv L M (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
   simp only [finiteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
   rw [← finiteAdeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
+
+/-- Projecting `finiteAdeleBaseChangeEquiv K L s` to a place `w ∣ v` of `L` agrees with
+applying the semilocal comparison at `v` to the `v`-component tensor of `s`. -/
+theorem finiteAdeleBaseChangeEquiv_proj (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L s) =
+      TauCeti.semilocalContinuousEquiv L v
+        (Algebra.TensorProduct.rTensor L
+          (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K) s) w := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, finiteAdeleBaseChangeEquiv_toAlgEquiv,
+    ← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom,
+    ← ContinuousAlgEquiv.coe_toAlgEquiv, TauCeti.semilocalContinuousEquiv_toAlgEquiv,
+    v.coe_adicCompletionSemilocalEquiv, FiniteAdeleRing.proj_apply,
+    finiteAdeleBaseChangeHom_apply K L s v w, Algebra.TensorProduct.rTensor]
+  rfl
+
+/-- Pure-tensor form of `finiteAdeleBaseChangeEquiv_proj`. -/
+theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (a : FiniteAdeleRing (𝓞 K) K) (x : L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ[K] x)) =
+      TauCeti.semilocalContinuousEquiv L v (FiniteAdeleRing.proj K v a ⊗ₜ[K] x) w := by
+  simpa only [Algebra.TensorProduct.rTensor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    ContinuousAlgHom.coe_coe] using finiteAdeleBaseChangeEquiv_proj K L v (a ⊗ₜ[K] x) w
 
 end TauCeti.GlobalNumberFields

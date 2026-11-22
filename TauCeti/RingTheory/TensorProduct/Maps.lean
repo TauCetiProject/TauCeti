@@ -89,6 +89,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `y : D →ₐ[C] C ⊗[A] T` by a ring homomorphism `φ` semilinear over an automorphism `σ` of `C`.
 * `AlgEquiv.baseChangeRight e he`: swaps the tensor factors of `e : T ⊗[A] B ≃ₐ[T] S` sending
   `1 ⊗ b` to `algebraMap B S b`, producing a `B`-algebra equivalence `B ⊗[A] T ≃ₐ[B] S`.
+* `AlgEquiv.baseChangeRight_comp_lTensor`: compatibility of `AlgEquiv.baseChangeRight` with
+  towers `A → B → C` via `Algebra.TensorProduct.cancelBaseChange`.
 -/
 
 public section
@@ -545,6 +547,35 @@ theorem baseChangeRight_apply (e : T ⊗[A] B ≃ₐ[T] S)
 theorem baseChangeRight_symm_apply (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (s : S) :
     (e.baseChangeRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) := (rfl)
+
+/-- In a tower `A → B → C`, when `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁`
+and `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂`, their swapped right-base-change equivalences form a commutative
+triangle with `Algebra.TensorProduct.cancelBaseChange`. -/
+theorem baseChangeRight_comp_lTensor {C S₁ S₂ : Type*} [CommSemiring C] [CommSemiring S₁]
+    [Semiring S₂] [Algebra A C] [Algebra B C] [IsScalarTower A B C]
+    [Algebra B S₁] [Algebra T S₁] [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
+    (e₁₂ : T ⊗[A] B ≃ₐ[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
+    (e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
+    (e₁₃ : T ⊗[A] C ≃ₐ[T] S₂) (he₁₃ : ∀ c : C, e₁₃ (1 ⊗ₜ[A] c) = algebraMap C S₂ c)
+    (htower : ∀ (t : T) (c : C), e₁₃ (t ⊗ₜ[A] c) = e₂₃ (e₁₂ (t ⊗ₜ[A] 1) ⊗ₜ[B] c)) :
+    (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂).comp
+        (Algebra.TensorProduct.lTensor (S := C) C
+          (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)) =
+      (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂).comp
+        (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
+  refine AlgHom.ext fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | tmul c u =>
+    induction u using TensorProduct.inductionOn with
+    | tmul b t =>
+      have hb : e₁₂ (t ⊗ₜ[A] b) = b • e₁₂ (t ⊗ₜ[A] 1) := by
+        calc
+          e₁₂ (t ⊗ₜ[A] b) = e₁₂ ((1 ⊗ₜ[A] b) * (t ⊗ₜ[A] 1)) := by simp
+          _ = algebraMap B S₁ b * e₁₂ (t ⊗ₜ[A] 1) := by rw [map_mul, he₁₂]
+          _ = b • e₁₂ (t ⊗ₜ[A] 1) := (Algebra.smul_def b _).symm
+      simp [hb, htower]
+    | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
+  | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
 
 end AlgEquiv
 
