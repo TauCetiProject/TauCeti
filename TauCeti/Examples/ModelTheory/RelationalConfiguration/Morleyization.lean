@@ -55,24 +55,16 @@ example (c : RelationalConfiguration L ℕ) :
       (BoundedFormulaInf.realize_top.2 trivial)
   refine ⟨hall, fun h => ?_, ?_⟩
   · -- in the flipped code the new bit is false at vertex `0`, where `hall` makes it true
-    have h1 := congrArg (fun e : RelationalConfiguration (morleyize L {⟨1, ⊤⟩}) ℕ =>
-      e.eval (atom (morleyRel (⊤ : L.BoundedFormulaω Empty 1) (Set.mem_singleton _)) ![0])) h
-    simp only [@eval_ofStructure (morleyize L {⟨1, ⊤⟩}) ℕ S] at h1
-    have h2 := hall 0
-    rw [← h1] at h2
-    have h3 := decide_eq_true_iff.1 h2
-    exact (h3 : ∀ i : Fin 1, ![(0 : ℕ)] i ≠ 0) 0 rfl
-  · -- both reducts decode to the structure of `c`
+    have hflip : (@ofStructure (morleyize L {⟨1, ⊤⟩}) ℕ S).eval
+        (atom (morleyRel (⊤ : L.BoundedFormulaω Empty 1) (Set.mem_singleton _)) ![0]) = false := by
+      rw [@eval_ofStructure (morleyize L {⟨1, ⊤⟩}) ℕ S, decide_eq_false_iff_not]
+      simp [S, Structure.RelMap]
+    rw [h, hall 0] at hflip
+    exact Bool.noConfusion hflip
+  · -- both reducts read the atoms of `c`
     rw [reductConfiguration_morleyCode]
-    apply equivStructure.injective
-    rw [equivStructure_apply, equivStructure_apply, LHom.toStructure_reductConfiguration,
-      toStructure_ofStructure]
-    apply Structure.ext
-    · funext n f
-      exact isEmptyElim f
-    · funext n R xs
-      apply propext
-      -- the reduct reads `R` as the symbol `Sum.inl R` of `S`, which copies the atoms of `c`
-      change @Structure.RelMap _ _ S _ ((lhomMorleyize {⟨1, ⊤⟩}).onRelation R) xs ↔ _
-      rw [lhomMorleyize_onRelation, toStructure_relMap]
-      rfl
+    refine ext fun a => ?_
+    induction a using Atom.induction_atom with
+    | h R x =>
+      simp [LHom.eval_reductConfiguration, LHom.onAtom_atom, lhomMorleyize_onRelation,
+        @eval_ofStructure (morleyize L {⟨1, ⊤⟩}) ℕ S, S, Structure.RelMap]
