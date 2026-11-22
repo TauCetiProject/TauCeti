@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced
-public import TauCeti.LinearAlgebra.RootSystem.Positive
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
+public import Mathlib.LinearAlgebra.RootSystem.BaseChange
+public import Mathlib.LinearAlgebra.RootSystem.Reduced
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
-# Restriction of scalars and the root-span root system
+# Restriction of scalars for root pairings and morphisms
 
 Given a balanced root pairing `P` over a field `L` whose pairings take values in a subfield `K`
 (`P.IsValuedIn K`), Mathlib's `RootPairing.restrictScalars' K` restricts `P` to a *root system* over
@@ -25,10 +24,9 @@ central in applications:
 * `K = ℚ` (or `ℝ` inside `ℂ`) for crystallographic pairings (`RootPairing.restrictScalars`), which
   simultaneously passes to the root span and descends the scalar field.
 
-This file transports the morphisms, automorphisms, Weyl group, bases, Cartan matrices, root
-heights, and positive/negative root sets of `P` to `P.restrictScalars' K`, and connects
-`P.restrictScalars' L` back to the ambient weight space via the root-span projection
-`P.rootSpanProj` from `TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced`.
+This file develops the elementary scalar-restriction API—reflections, functionals, Coxeter weights,
+`IsValuedIn`, and `IsReduced`—together with functorial restriction of morphisms, equivalences, and
+automorphisms of balanced root pairings to `P.restrictScalars' K`.
 
 ## Main definitions
 
@@ -36,23 +34,15 @@ heights, and positive/negative root sets of `P` to `P.restrictScalars' K`, and c
   restriction of morphisms and equivalences of balanced root pairings to `restrictScalars' K`.
 * `RootPairing.Equiv.restrictScalars'Hom` (and `RootPairing.Equiv.restrictScalarsHom`): the group
   homomorphism `P.Aut →* (P.restrictScalars' K).Aut` restricting automorphisms to the `K`-spans.
-* `RootPairing.weylGroupRestrictScalars'Equiv`: the canonical group isomorphism
-  `P.weylGroup ≃* (P.restrictScalars' K).weylGroup`.
-* `RootPairing.Base.restrictScalars'` (and `RootPairing.Base.restrictScalars`): a base `b` of `P`
-  restricted to a base of `P.restrictScalars' K` with the same support, with support equivalence
-  `RootPairing.Base.supportRestrictScalars'Equiv`.
 
 ## Main results
 
 * `RootPairing.isValuedIn_restrictScalars'` and `RootPairing.isReduced_restrictScalars'`:
   `P.restrictScalars' K` inherits `IsValuedIn T` (in particular `IsCrystallographic`) and
   `IsReduced` from `P`.
-* `RootPairing.Base.cartanMatrixIn_restrictScalars'_apply`,
-  `RootPairing.Base.height_restrictScalars'`, `RootPairing.Base.isPos_restrictScalars'_iff`, and
-  `RootPairing.posRoots_restrictScalars'`: the Cartan matrix, root heights, and positive roots of
-  `b.restrictScalars' K` agree with those of `b`.
-* `RootPairing.restrictScalars'_self_smul_rootSpanProj`: compatibility of `P.restrictScalars' L`
-  with the ambient projection `P.rootSpanProj`.
+* `RootPairing.coe_restrictScalars'_reflection_apply` and
+  `RootPairing.Equiv.reflection_restrictScalars'`: reflections of `P` restrict to those of
+  `P.restrictScalars' K`.
 
 ## References
 
@@ -62,7 +52,7 @@ heights, and positive/negative root sets of `P` to `P.restrictScalars' K`, and c
 
 public section
 
-open Function Set Submodule TauCeti
+open Function Set Submodule
 
 namespace RootPairing
 
@@ -152,21 +142,6 @@ instance isReduced_restrictScalars' [P.IsReduced] : (P.restrictScalars' K).IsRed
     exact (IsReduced.eq_or_eq_neg (P := P) i j hL).imp Subtype.ext Subtype.ext
 
 end Basic
-
-section Self
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
-  (P : RootPairing ι L M N) [P.IsBalanced]
-
-/-- Projecting onto the root span intertwines each ambient reflection with the corresponding
-reflection of `P.restrictScalars' L`. -/
-@[simp]
-theorem rootSpanProj_reflection (i : ι) (x : M) :
-    P.rootSpanProj (P.reflection i x) = (P.restrictScalars' L).reflection i (P.rootSpanProj x) := by
-  ext
-  rw [coe_rootSpanProj_reflection, coe_restrictScalars'_reflection_apply]
-
-end Self
 
 section HomEquiv
 
@@ -354,48 +329,6 @@ theorem Equiv.reflection_restrictScalars' (i : ι) :
   · simp [← Equiv.weightEquiv_apply]
   · simp [← Equiv.coweightEquiv_apply]
 
-/-- Restriction of automorphisms maps `P.weylGroup` onto `(P.restrictScalars' K).weylGroup`. -/
-@[simp]
-theorem map_weylGroup_restrictScalars'Hom :
-    P.weylGroup.map (Equiv.restrictScalars'Hom P K) = (P.restrictScalars' K).weylGroup := by
-  have h : (Equiv.restrictScalars'Hom P K ∘ Equiv.reflection P) =
-      Equiv.reflection (P.restrictScalars' K) :=
-    funext fun i ↦ Equiv.reflection_restrictScalars' P K i
-  rw [weylGroup, MonoidHom.map_closure, ← range_comp, h, weylGroup]
-
-/-- **The Weyl group of `P` is canonically isomorphic to that of `P.restrictScalars' K`.** -/
-noncomputable def weylGroupRestrictScalars'Equiv :
-    P.weylGroup ≃* (P.restrictScalars' K).weylGroup :=
-  P.weylGroupEquivOfReflectionPermEq (P.restrictScalars' K) rfl
-    P.weylGroupToPerm_injective_of_isBalanced (weylGroupToPerm_injective (P.restrictScalars' K))
-
-/-- `RootPairing.weylGroupRestrictScalars'Equiv` commutes with the root-index permutation
-representations. -/
-theorem weylGroupToPerm_weylGroupRestrictScalars'Equiv (w : P.weylGroup) :
-    (P.restrictScalars' K).weylGroupToPerm (P.weylGroupRestrictScalars'Equiv K w) =
-      P.weylGroupToPerm w :=
-  weylGroupToPerm_weylGroupEquivOfReflectionPermEq _ _ _ _ _ w
-
-/-- `RootPairing.weylGroupRestrictScalars'Equiv` sends each indexed reflection to the reflection
-with the same root index. -/
-@[simp]
-theorem weylGroupRestrictScalars'Equiv_ofIdx (i : ι) :
-    P.weylGroupRestrictScalars'Equiv K (weylGroup.ofIdx P i) =
-      weylGroup.ofIdx (P.restrictScalars' K) i :=
-  weylGroupEquivOfReflectionPermEq_ofIdx _ _ _ _ _ i
-
-/-- Coercing `RootPairing.weylGroupRestrictScalars'Equiv` to `(P.restrictScalars' K).Aut` agrees
-with `RootPairing.Equiv.restrictScalars'Hom`. -/
-@[simp]
-theorem coe_weylGroupRestrictScalars'Equiv (w : P.weylGroup) :
-    (P.weylGroupRestrictScalars'Equiv K w : (P.restrictScalars' K).Aut) =
-      Equiv.restrictScalars'Hom P K w := by
-  apply Equiv.indexHom_injective (P.restrictScalars' K)
-  rw [← MonoidHom.domRestrict_apply (Equiv.indexHom (P.restrictScalars' K)),
-    weylGroupToPerm_weylGroupRestrictScalars'Equiv, MonoidHom.domRestrict_apply,
-    Equiv.indexHom_apply, Equiv.indexHom_apply, Equiv.restrictScalars'Hom_apply,
-    Equiv.indexEquiv_restrictScalars']
-
 end Valued
 
 /-- Restriction of automorphisms for a crystallographic balanced root pairing. -/
@@ -404,180 +337,6 @@ noncomputable abbrev Equiv.restrictScalarsHom [P.IsCrystallographic] :
   have := IsValuedIn.trans P K ℤ
   Equiv.restrictScalars'Hom P K
 
-/-- Projecting onto the `L`-span of the roots intertwines the action of `P.Aut` on `M` with the
-action of `(P.restrictScalars' L).Aut` on `P.rootSpan L`. -/
-@[simp]
-theorem restrictScalars'_self_smul_rootSpanProj (g : P.Aut) (x : M) :
-    g.restrictScalars' L • P.rootSpanProj x = P.rootSpanProj (g • x) := by
-  ext
-  rw [coe_restrictScalars'_smul, coe_rootSpanProj_smul]
-
 end Aut
-
-section Base
-
-private lemma Base.restrictScalars'_root_mem_or_neg_mem {ι L M N : Type*} [Field L]
-    (K : Type*) [Field K] [Algebra K L] [AddCommGroup M] [AddCommGroup N]
-    [Module L M] [Module L N] {Q : RootPairing ι L M N} [Module K M] [Module K N]
-    [IsScalarTower K L M] [IsScalarTower K L N] [Q.IsBalanced] [Q.IsValuedIn K]
-    (b' : Q.Base) (i : ι) :
-    (Q.restrictScalars' K).root i ∈
-        AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support) ∨
-      -(Q.restrictScalars' K).root i ∈
-        AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support) := by
-  obtain ⟨f, -, h | h⟩ := b'.exists_root_eq_sum_nat_or_neg i
-  · refine Or.inl ?_
-    have hi : (Q.restrictScalars' K).root i =
-        ∑ j ∈ b'.support, f j • (Q.restrictScalars' K).root j := by
-      ext; simpa using h
-    rw [hi]
-    exact sum_mem fun j hj ↦
-      nsmul_mem (AddSubmonoid.subset_closure (mem_image_of_mem _ hj)) (f j)
-  · refine Or.inr ?_
-    have hi : -(Q.restrictScalars' K).root i =
-        ∑ j ∈ b'.support, f j • (Q.restrictScalars' K).root j := by
-      ext; simpa [neg_eq_iff_eq_neg] using h
-    rw [hi]
-    exact sum_mem fun j hj ↦
-      nsmul_mem (AddSubmonoid.subset_closure (mem_image_of_mem _ hj)) (f j)
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
-  {P : RootPairing ι L M N} (K : Type*) [Field K] [Algebra K L]
-  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-  [P.IsBalanced]
-
-section Valued
-
-variable [P.IsValuedIn K] (b : P.Base)
-
-/-- A base `b` of `P` restricts to a base of `P.restrictScalars' K` with the same support. -/
-noncomputable def Base.restrictScalars' : (P.restrictScalars' K).Base where
-  support := b.support
-  linearIndepOn_root :=
-    LinearIndependent.of_comp (span K (range P.root)).subtype
-      (b.linearIndepOn_root.restrict_scalars' K)
-  linearIndepOn_coroot :=
-    LinearIndependent.of_comp (span K (range P.coroot)).subtype
-      (b.linearIndepOn_coroot.restrict_scalars' K)
-  root_mem_or_neg_mem := Base.restrictScalars'_root_mem_or_neg_mem K b
-  coroot_mem_or_neg_mem := Base.restrictScalars'_root_mem_or_neg_mem K b.flip
-
-/-- `Base.restrictScalars'` preserves the simple-root support. -/
-@[simp]
-theorem Base.support_restrictScalars' : (b.restrictScalars' K).support = b.support :=
-  (rfl)
-
-/-- `Base.restrictScalars'` commutes with `Base.flip`. -/
-@[simp]
-theorem Base.flip_restrictScalars' :
-    (b.restrictScalars' K).flip = b.flip.restrictScalars' K :=
-  Base.ext rfl
-
-/-- `Base.restrictScalars'` commutes with transporting a base along an equivalence. -/
-@[simp]
-theorem Base.map_restrictScalars' {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [AddCommGroup N₂]
-    [Module L M₂] [Module L N₂] {Q : RootPairing ι₂ L M₂ N₂} [Module K M₂] [Module K N₂]
-    [IsScalarTower K L M₂] [IsScalarTower K L N₂] [Q.IsBalanced] [Q.IsValuedIn K]
-    (e : P.Equiv Q) :
-    (b.map e).restrictScalars' K = (b.restrictScalars' K).map (e.restrictScalars' K) := by
-  classical
-  apply Base.ext
-  rw [support_restrictScalars', support_map_eq, support_map_eq, support_restrictScalars',
-    Equiv.indexEquiv_restrictScalars']
-
-/-- The canonical identification between the support subtype of `b.restrictScalars' K` and that of
-`b` (`Base.support_restrictScalars'`). -/
-def Base.supportRestrictScalars'Equiv :
-    (b.restrictScalars' K).support ≃ b.support :=
-  _root_.Equiv.subtypeEquivRight fun _ ↦ by rw [Base.support_restrictScalars']
-
-/-- `Base.supportRestrictScalars'Equiv` preserves the underlying root index. -/
-@[simp]
-theorem Base.coe_supportRestrictScalars'Equiv (i : (b.restrictScalars' K).support) :
-    (b.supportRestrictScalars'Equiv K i : ι) = i :=
-  (rfl)
-
-/-- `(Base.supportRestrictScalars'Equiv).symm` preserves the underlying root index. -/
-@[simp]
-theorem Base.coe_supportRestrictScalars'Equiv_symm (i : b.support) :
-    ((b.supportRestrictScalars'Equiv K).symm i : ι) = i :=
-  (rfl)
-
-/-- The `T`-valued Cartan matrix of `b.restrictScalars' K` agrees with that of `b` along
-`Base.supportRestrictScalars'Equiv`. -/
-@[simp]
-theorem Base.cartanMatrixIn_restrictScalars'_apply (T : Type*) [CommRing T] [Algebra T K]
-    [Algebra T L] [IsScalarTower T K L] [P.IsValuedIn T]
-    (i j : (b.restrictScalars' K).support) :
-    (b.restrictScalars' K).cartanMatrixIn T i j =
-      b.cartanMatrixIn T (b.supportRestrictScalars'Equiv K i)
-        (b.supportRestrictScalars'Equiv K j) :=
-  P.restrictScalars'_pairingIn K T i j
-
--- Not `@[simp]`: `cartanMatrix` is an `abbrev` for `cartanMatrixIn ℤ`, which
--- `Base.cartanMatrixIn_restrictScalars'_apply` already simplifies (`simpNF`).
-/-- The Cartan matrix of `b.restrictScalars' K` agrees with that of `b` along
-`Base.supportRestrictScalars'Equiv`. -/
-theorem Base.cartanMatrix_restrictScalars'_apply [P.IsCrystallographic]
-    (i j : (b.restrictScalars' K).support) :
-    (b.restrictScalars' K).cartanMatrix i j =
-      b.cartanMatrix (b.supportRestrictScalars'Equiv K i)
-        (b.supportRestrictScalars'Equiv K j) :=
-  b.cartanMatrixIn_restrictScalars'_apply K ℤ i j
-
-/-- Root heights with respect to `b.restrictScalars' K` agree with those with respect to `b`. -/
-@[simp]
-theorem Base.height_restrictScalars' [CharZero K] [CharZero L] (i : ι) :
-    (b.restrictScalars' K).height i = b.height i := by
-  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
-  have hfK : (P.restrictScalars' K).root i =
-      ∑ j ∈ (b.restrictScalars' K).support, f j • (P.restrictScalars' K).root j := by
-    ext; simpa using hf
-  rw [(b.restrictScalars' K).height_eq_sum hfK, b.height_eq_sum hf, support_restrictScalars']
-
-/-- Positivity of a root index with respect to `b.restrictScalars' K` agrees with positivity with
-respect to `b`. -/
-@[simp]
-theorem Base.isPos_restrictScalars'_iff [CharZero K] [CharZero L] (i : ι) :
-    (b.restrictScalars' K).IsPos i ↔ b.IsPos i := by
-  simp only [Base.isPos_iff, Base.height_restrictScalars']
-
-/-- The set of positive roots of `b.restrictScalars' K` equals that of `b`. -/
-@[simp]
-theorem posRoots_restrictScalars' [CharZero K] [CharZero L] :
-    posRoots (P.restrictScalars' K) (b.restrictScalars' K) = posRoots P b := by
-  ext i
-  simp only [mem_posRoots, Base.isPos_restrictScalars'_iff]
-
-/-- The set of negative roots of `b.restrictScalars' K` equals that of `b`. -/
-@[simp]
-theorem negRoots_restrictScalars' [CharZero K] [CharZero L] :
-    negRoots (P.restrictScalars' K) (b.restrictScalars' K) = negRoots P b := by
-  ext i
-  simp only [mem_negRoots, Base.isPos_restrictScalars'_iff]
-
-/-- The finset of positive roots of `b.restrictScalars' K` equals that of `b`. -/
-@[simp]
-theorem posRootsFinset_restrictScalars' [Finite ι] [CharZero K] [CharZero L] :
-    posRootsFinset (P.restrictScalars' K) (b.restrictScalars' K) = posRootsFinset P b := by
-  ext i
-  simp only [mem_posRootsFinset, posRoots_restrictScalars']
-
-/-- The finset of negative roots of `b.restrictScalars' K` equals that of `b`. -/
-@[simp]
-theorem negRootsFinset_restrictScalars' [Finite ι] [CharZero K] [CharZero L] :
-    negRootsFinset (P.restrictScalars' K) (b.restrictScalars' K) = negRootsFinset P b := by
-  ext i
-  simp only [mem_negRootsFinset, negRoots_restrictScalars']
-
-end Valued
-
-/-- Restriction of a base for a crystallographic balanced root pairing. -/
-noncomputable abbrev Base.restrictScalars [P.IsCrystallographic] (b : P.Base) :
-    (P.restrictScalars K).Base :=
-  have := IsValuedIn.trans P K ℤ
-  b.restrictScalars' K
-
-end Base
 
 end RootPairing
