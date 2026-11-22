@@ -73,7 +73,7 @@ theorem frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso (k : Type w) [CommRin
       have : IsIso f := isIso_of_hom_simple hf
       exact h.false (asIso f).symm
   have : Subsingleton (𝟙_ C ⟶ tensorPow V 2) :=
-    (homTensorPowTwoLinearEquiv k V).subsingleton
+    (homTensorPowTwoLinearEquiv k V Vᘁ).subsingleton
   rw [frobeniusSchurIndicator_two, Subsingleton.elim (frobeniusSchurEnd k V 1) 0, map_zero]
 
 section IsAlgClosed
@@ -88,7 +88,7 @@ theorem frobeniusSchurIndicator_two_eq_one_or_eq_neg_one_of_nonempty_iso
     frobeniusSchurIndicator k V 2 = 1 ∨ frobeniusSchurIndicator k V 2 = -1 := by
   obtain ⟨e⟩ := h
   let L : (𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (V ⟶ V) :=
-    (homTensorPowTwoLinearEquiv k V).trans (Linear.homCongr k e.symm (Iso.refl V))
+    (homTensorPowTwoLinearEquiv k V Vᘁ).trans (Linear.homCongr k e.symm (Iso.refl V))
   let T : Module.End k (V ⟶ V) := L.conj (frobeniusSchurEnd k V 1)
   obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (T (𝟙 V))
   have hT : T = c • 1 := by
