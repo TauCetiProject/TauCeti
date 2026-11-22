@@ -432,7 +432,7 @@ theorem bonyProductPosCLM_one_left (hs : 0 < s) (v : BesovSpace F φ s p₂ q) :
 @[simp]
 theorem bonyProductPosCLM_one_right (hs : 0 < s) (u : BesovSpace ℂ φ s p₁ q) :
     bonyProductPosCLM p₁ hs u (1 : BesovSpace ℂ φ s ∞ q) = u :=
-  ext <| by simp [toDistr_bonyProductPosCLM]
+  ext <| by simp [toDistr_bonyProductPosCLM, Lp.lpSMul_comm _ (1 : Lp ℂ ∞ _)]
 
 /-- **Unitality of `smulL` on the left (`α < 0`, `0 < α + β`):**
 `T_1^N v = v - S_{N + 1} v`, `T_v^N 1 = 0`, and `R_N(1, v) = S_{N + 1} v` sum to `v` in

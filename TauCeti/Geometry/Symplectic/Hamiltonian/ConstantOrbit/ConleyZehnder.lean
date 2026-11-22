@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit
 public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Algebra.Lie.Symplectic.Basic
 import TauCeti.Analysis.Normed.Operator.Exponential
-import TauCeti.Geometry.Lie.Exponential.Matrix.Symplectic
+import TauCeti.Geometry.Lie.Subgroup.Symplectic
 
 /-!
 # The Conley–Zehnder index of the constant orbits of a small Hamiltonian
@@ -239,20 +239,10 @@ theorem exists_path_toMatrix_fderiv_timeDependentHamiltonianFlow (b : Module.Bas
           (fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX 0 t) p) := by
   obtain ⟨T, hT, hM⟩ :=
     ω.exists_isHermitian_toMatrix_fderiv_hamiltonianVectorField_eq b hb (hF.contDiffAt (x := p))
-  let +nondep : NormedAlgebra ℚ (Matrix (n ⊕ n) (n ⊕ n) ℝ) := .restrictScalars ℚ ℝ _
-  set K' := J n ℝ * (ε • T)
-  have hmem (t : ℝ) : expUnit (t • K') ∈ GLSymplectic n ℝ := by
-    rw [GLSymplectic.mem_iff_mem_symplecticGroup, expUnit_coe]
-    exact (forall_exp_smul_mem_symplecticGroup_iff_mem_sp K').2
-      (LieAlgebra.Symplectic.J_mul_mem_sp (hT.smul (IsSelfAdjoint.all ε)).isSymm) t
-  let γ : Path (1 : GLSymplectic n ℝ) ⟨expUnit K', by simpa using hmem 1⟩ :=
-    { toFun := fun t ↦ ⟨expUnit ((t : ℝ) • K'), hmem t⟩
-      continuous_toFun := (continuous_expUnit.comp
-        (continuous_subtypeVal.smul continuous_const)).subtype_mk _
-      source' := by ext : 2; simp
-      target' := by ext : 2; simp }
-  exact ⟨_, γ, fun t ↦ by
-    simp [γ, ω.toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp b hM hF hp ε hX t, K']⟩
+  exact ⟨_, GLSymplectic.expPath _
+    (LieAlgebra.Symplectic.J_mul_mem_sp (hT.smul (IsSelfAdjoint.all ε)).isSymm), fun t ↦ by
+      rw [GLSymplectic.coe_expPath_apply,
+        ω.toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp b hM hF hp ε hX]⟩
 
 /-! ### The Conley–Zehnder index -/
 
