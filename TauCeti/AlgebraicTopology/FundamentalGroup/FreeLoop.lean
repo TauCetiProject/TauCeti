@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Topology.Homotopy.Path
 
@@ -51,6 +52,8 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
   loop at any point of the path component of its base point.
 * `Path.joined_toCircle_iff_isConj`: two loops at `x` are joined in `C(S¹, X)` exactly when their
   classes are conjugate in `π₁(X, x)`.
+* `TauCeti.apply_fromPath_eq_of_joined_toCircle`: a family of characters of the fundamental groups
+  invariant under change of base point takes equal values on freely homotopic loops.
 * `TauCeti.freeLoopComponentOfConjClass`: the injective map `ConjClasses π₁(X, x) → π₀(C(S¹, X))`,
   whose range is the set of components of free loops based in the path component of `x`.
 * `TauCeti.conjClassesEquivFreeLoopComponents`: `ConjClasses π₁(X, x) ≃ π₀(C(S¹, X))` for
@@ -140,6 +143,36 @@ theorem joined_toCircle_trans_trans_symm_toBasedLoop (f : C(Circle, X)) (χ : Pa
 end ContinuousMap
 
 namespace TauCeti
+
+/-- **Characters invariant under change of base point are free homotopy invariants.** Let `χ` be
+a family of homomorphisms from the fundamental groups of `X` to a commutative monoid, unchanged by
+transport along paths. If two loops `ℓ₀` at `x` and `ℓ₁` at `y` are joined in the free loop space
+`C(S¹, X)`, then `χ x` and `χ y` agree on their classes: after transport along the track of the
+base point the loops are conjugate, and a homomorphism to a commutative monoid is constant on
+conjugacy classes. -/
+theorem apply_fromPath_eq_of_joined_toCircle {G : Type*} [CommMonoid G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G)
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {x y : X} {ℓ₀ : Path x x} {ℓ₁ : Path y y} (h : Joined ℓ₀.toCircle ℓ₁.toCircle) :
+    χ x (.fromPath (Path.Homotopic.Quotient.mk ℓ₀)) =
+      χ y (.fromPath (Path.Homotopic.Quotient.mk ℓ₁)) := by
+  -- the track of the base point joins `x` to `y`
+  obtain ⟨δ⟩ : Joined x y := by
+    simpa only [ContinuousMap.eval_apply, Path.toCircle_one] using
+      h.map (continuous_eval_const (1 : Circle))
+  -- `ℓ₀` is conjugate to the loop `δ · ℓ₁ · δ⁻¹` at `x`
+  have hconj := Path.joined_toCircle_iff_isConj.1
+    (h.trans (Path.joined_toCircle_trans_trans_symm δ ℓ₁).symm)
+  rw [isConj_iff_eq.1 ((χ x).map_isConj hconj), ← hχ δ.symm]
+  congr 1
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  have hq : Path.Homotopic.Quotient.mk ((δ.trans ℓ₁).trans δ.symm) =
+      (Path.Homotopic.Quotient.mk δ.symm).symm.trans
+        ((Path.Homotopic.Quotient.mk ℓ₁).trans (Path.Homotopic.Quotient.mk δ.symm)) := by
+    rw [← Path.Homotopic.Quotient.mk_symm, Path.symm_symm, Path.Homotopic.Quotient.mk_trans,
+      Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
+  exact congrArg FundamentalGroup.fromPath hq
 
 variable {x : X}
 

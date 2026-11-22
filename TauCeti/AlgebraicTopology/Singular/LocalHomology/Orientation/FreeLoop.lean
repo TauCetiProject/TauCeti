@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroup.FreeLoop
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Character
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
-import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 /-!
 # The orientation sign of a free loop
@@ -23,7 +22,8 @@ The sign is constant on the path components of the free loop space
 (`TauCeti.MooreFreeLoopSpace.orientationSign_eq_of_joined`): freely homotopic loops have conjugate
 classes after a change of base point along the track of the base point, and the orientation
 character is invariant under both, being a character with values in an abelian group and
-independent of the base point (`TauCeti.orientationCharacter_fundamentalGroupMulEquivOfPath`). The
+independent of the base point (`TauCeti.orientationCharacter_fundamentalGroupMulEquivOfPath`,
+`TauCeti.apply_fromPath_eq_of_joined_toCircle`). The
 statement for loops parametrized by the unit interval is
 `TauCeti.orientationCharacter_eq_of_joined_toCircle`.
 
@@ -75,24 +75,9 @@ of `ℓ₀` is the orientation character at `y` of `ℓ₁`. -/
 theorem orientationCharacter_eq_of_joined_toCircle {x y : M} {ℓ₀ : Path x x} {ℓ₁ : Path y y}
     (h : Joined ℓ₀.toCircle ℓ₁.toCircle) :
     orientationCharacter hd x (.fromPath (Path.Homotopic.Quotient.mk ℓ₀)) =
-      orientationCharacter hd y (.fromPath (Path.Homotopic.Quotient.mk ℓ₁)) := by
-  -- the track of the base point joins `x` to `y`
-  obtain ⟨χ⟩ : Joined x y := by
-    simpa only [ContinuousMap.eval_apply, Path.toCircle_one] using
-      h.map (continuous_eval_const (1 : Circle))
-  -- `ℓ₀` is conjugate to the loop `χ · ℓ₁ · χ⁻¹` at `x`
-  have hconj := Path.joined_toCircle_iff_isConj.1
-    (h.trans (Path.joined_toCircle_trans_trans_symm χ ℓ₁).symm)
-  rw [isConj_iff_eq.1 ((orientationCharacter hd x).map_isConj hconj),
-    ← orientationCharacter_fundamentalGroupMulEquivOfPath hd χ.symm]
-  congr 1
-  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
-  have hq : Path.Homotopic.Quotient.mk ((χ.trans ℓ₁).trans χ.symm) =
-      (Path.Homotopic.Quotient.mk χ.symm).symm.trans
-        ((Path.Homotopic.Quotient.mk ℓ₁).trans (Path.Homotopic.Quotient.mk χ.symm)) := by
-    rw [← Path.Homotopic.Quotient.mk_symm, Path.symm_symm, Path.Homotopic.Quotient.mk_trans,
-      Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
-  exact congrArg FundamentalGroup.fromPath hq
+      orientationCharacter hd y (.fromPath (Path.Homotopic.Quotient.mk ℓ₁)) :=
+  apply_fromPath_eq_of_joined_toCircle (orientationCharacter hd)
+    (orientationCharacter_fundamentalGroupMulEquivOfPath hd) h
 
 namespace MooreFreeLoopSpace
 

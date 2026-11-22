@@ -211,23 +211,10 @@ space `C(S¹, X)`. Joined free loops are, after transport of the basepoint along
 basepoint, conjugate loops, and the character is invariant under both operations. -/
 theorem freeLoopSignCharacter_eq_of_joined {f g : C(Circle, X)} (h : Joined f g) :
     hp.freeLoopSignCharacter hfin f = hp.freeLoopSignCharacter hfin g := by
-  -- The track `δ` of the basepoint, and the loop `δ · g · δ⁻¹` at `f 1`, joined to `f`.
-  let δ : Path (f 1) (g 1) := h.somePath.map ((continuous_eval_const (1 : Circle)))
-  have hj : Joined f.toBasedLoop.toCircle ((δ.trans g.toBasedLoop).trans δ.symm).toCircle := by
-    rw [ContinuousMap.toBasedLoop_toCircle]
-    exact h.trans (g.joined_toCircle_trans_trans_symm_toBasedLoop δ).symm
-  have hconj :=
-    (hp.signCharacter (hfin (f 1))).map_isConj (Path.joined_toCircle_iff_isConj.1 hj)
-  rw [isConj_iff_eq] at hconj
-  rw [freeLoopSignCharacter_def, freeLoopSignCharacter_def, hconj,
-    ← signCharacter_fundamentalGroupMulEquivOfPath_symm hp (hfin _) (hfin _) δ,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
-  have hq : Path.Homotopic.Quotient.mk ((δ.trans g.toBasedLoop).trans δ.symm) =
-      (Path.Homotopic.Quotient.mk δ).trans
-        ((Path.Homotopic.Quotient.mk g.toBasedLoop).trans (Path.Homotopic.Quotient.mk δ).symm) := by
-    rw [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_trans,
-      Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.trans_assoc]
-  exact congrArg (fun q ↦ hp.signCharacter (hfin (f 1)) (FundamentalGroup.fromPath q)) hq
+  rw [← f.toBasedLoop_toCircle, ← g.toBasedLoop_toCircle] at h
+  rw [freeLoopSignCharacter_def, freeLoopSignCharacter_def]
+  exact TauCeti.apply_fromPath_eq_of_joined_toCircle (fun x ↦ hp.signCharacter (hfin x))
+    (signCharacter_fundamentalGroupMulEquivOfPath hp (hfin _) (hfin _)) h
 
 /-- The sign character of a constant loop is `1`. -/
 @[simp]

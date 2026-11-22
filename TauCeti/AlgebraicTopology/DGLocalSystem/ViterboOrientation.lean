@@ -26,8 +26,7 @@ constructs the orientation part
 
 as a rank-one local system on the free loop space based at a free loop `γ`
 (`TauCeti.RankOneLocalSystem.viterboOrientationTwist`). The exponent `w` is constant on the path
-components of `𝓛M` (`TauCeti.MooreFreeLoopSpace.orientationExponent_eq_of_joined`), so the formula
-defines one local system on each component, read at any base point there.
+components of `𝓛M` (`TauCeti.MooreFreeLoopSpace.orientationExponent_eq_of_joined`).
 
 Since `o_M` is its own inverse, the orientation part is `ev₀^* o_M` on the component of a loop
 preserving the local orientations

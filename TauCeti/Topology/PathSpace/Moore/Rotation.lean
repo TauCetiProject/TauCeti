@@ -21,7 +21,9 @@ every time `s ≥ L` are `γ` itself.
 
 So, as `s` runs from `0` to `L`, the rotations of `γ` form a loop of free loops based at `γ`, the
 **rotation loop** `TauCeti.MooreFreeLoopSpace.rotationLoop γ` of duration `L`: the loop of loops
-whose adjoint is `(s, t) ↦ γ(s + t)`, which rotates `γ` once around itself. Its base points trace
+whose adjoint is `(s, t) ↦ γ(s + t mod L)` for `s, t ≤ L`, which rotates `γ` once around itself
+(`TauCeti.MooreFreeLoopSpace.rotate_apply_of_le`,
+`TauCeti.MooreFreeLoopSpace.rotate_apply_length_sub_add`). Its base points trace
 `γ`: evaluating the rotation loop at the base point gives back `γ`, read as a based loop at its
 base point (`TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`). Local systems on the free
 loop space are tested against this loop: a local system pulled back along evaluation at the base
