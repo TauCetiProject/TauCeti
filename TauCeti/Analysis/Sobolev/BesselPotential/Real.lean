@@ -44,6 +44,10 @@ real part `(F + conj F) / 2` is therefore a bounded real-linear projection
 `H^s(E)` that takes real values into a smooth map into the real subspace, with the same order of
 smoothness, analytic included.
 
+The real action on `H^s(E)` is restricted from the complex one
+(`BesselPotentialSpace.isScalarTower_real_complex`), so `ℂ`-bilinear maps of `H^s(E)` restrict
+to real ones.
+
 The inclusions `H^s(E) ⊆ H^r(E)`, `r ≤ s`, preserve real elements
 (`BesselPotentialSpace.inclusion_mem_realSubmodule`). For equal orders `s = t` written differently
 they identify the two real subspaces (`BesselPotentialSpace.realSubmoduleCongr`).
@@ -308,6 +312,15 @@ theorem coeFn_inclusionLp_realPartCLM (F : H^{s}(E)) :
       (coeFn_inclusionLp_conjCLM F))] with z hz
   rw [hz, Complex.re_eq_add_conj]
   ring
+
+/-! ### The real and complex scalar actions -/
+
+/-- The scalar tower `ℝ → ℂ → H^s(E)`. Instance search does not find it: the real action on
+`H^s(E)` comes from its complex normed space structure, and agrees with the action restricted
+from `ℂ` only up to definitional unfolding. With it, `ℂ`-linear and `ℂ`-bilinear maps of `H^s(E)`
+restrict to real ones (`ContinuousLinearMap.bilinearRestrictScalars`). -/
+instance isScalarTower_real_complex : IsScalarTower ℝ ℂ H^{s}(E) :=
+  ⟨fun r c v ↦ by rw [Complex.real_smul, mul_smul, Complex.coe_smul]; rfl⟩
 
 /-! ### Inclusions between orders -/
 
