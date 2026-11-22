@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.Algebra.Module.Torsion.Field
 
 /-!
 # Faithful actions on invariant subsets
@@ -23,6 +24,9 @@ The stabilizer of a point `a` in a faithful group action acts faithfully on the 
 An additive action commuting with scalar multiplication is determined on the span of an
 invariant subset. Consequently, restricting a faithful action to a spanning invariant subset
 remains faithful. The acting type needs no monoid structure.
+
+The units of a division ring act freely on the nonzero vectors of a module, Mathlib's
+`Units.nonZeroSubMul`: `a • v = b • v` with `v ≠ 0` forces `a = b`.
 -/
 
 public section
@@ -55,3 +59,15 @@ theorem faithfulSMul_of_span_eq_top (p : SubMulAction G M)
     exact LinearMap.congr_fun heq x
 
 end SubMulAction
+
+namespace Units
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- The units of a division ring act freely on the nonzero vectors of a module. -/
+instance isCancelSMul_nonZero : IsCancelSMul Kˣ {v : V // v ≠ 0} where
+  left_cancel' a v w h := by simpa using h
+  right_cancel' a b v h := Units.ext <| smul_left_injective K v.property <| by
+    simpa [Units.smul_def] using congrArg Subtype.val h
+
+end Units
