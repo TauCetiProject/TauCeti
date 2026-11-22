@@ -37,20 +37,6 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
-private theorem leadingCovarianceMoment_summand_eq (p n k c : ℕ)
-    (hp : p ≠ 0) (hc : c ≤ k) :
-    (p : ℝ)⁻¹ * (n : ℝ)⁻¹ ^ k *
-        ((p.descFactorial (k + 1 - c) : ℝ) * n.descFactorial c) =
-      ((p - 1).descFactorial (k - c) : ℝ) / (n : ℝ) ^ (k - c) *
-        ((n.descFactorial c : ℝ) / (n : ℝ) ^ c) := by
-  have hr : k + 1 - c = (k - c) + 1 := by omega
-  have hpn : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hp
-  have hfactor : p.descFactorial ((k - c) + 1) = p * (p - 1).descFactorial (k - c) := by
-    rw [← Nat.descFactorial_mul_descFactorial (Nat.le_add_left 1 (k - c)), Nat.descFactorial_one,
-      Nat.add_sub_cancel, Nat.mul_comm]
-  rw [hr, hfactor, Nat.cast_mul, inv_pow, div_mul_div_comm, ← pow_add, Nat.sub_add_cancel hc]
-  field_simp
-
 /-- The leading covariance moment tends to the Marchenko–Pastur moment of the same degree
 when the column count tends to infinity, the row count is eventually positive and the ratio
 of rows to columns tends to `y`. -/
@@ -70,14 +56,16 @@ theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p n : ι �
     refine tendsto_const_nhds.congr' ?_
     exact hnpos.mono fun _ hi ↦ (div_self (Nat.cast_ne_zero.mpr hi)).symm
   have hnR : Tendsto (fun i ↦ (n i : ℝ)) l atTop := tendsto_natCast_atTop_atTop.comp hn
-  have hr := hnR.natCast_descFactorial_sub_div_pow hy 1 (k - #π.val.parts)
+  have hr := hnR.natCast_descFactorial_add_one_div_mul_pow hp hy (k - #π.val.parts)
   have hs := hnR.natCast_descFactorial_sub_div_pow hself 0 #π.val.parts
   simp only [Nat.sub_zero] at hs
   have ht := hr.mul hs
   rw [one_pow, mul_one] at ht
-  refine ht.congr' ?_
-  filter_upwards [hp] with i hpi
-  exact (leadingCovarianceMoment_summand_eq (p i) (n i) k #π.val.parts hpi hc).symm
+  refine ht.congr fun i ↦ ?_
+  rw [show k + 1 - #π.val.parts = k - #π.val.parts + 1 by omega,
+    ← pow_sub_mul_pow (n i : ℝ)⁻¹ hc]
+  simp only [div_eq_mul_inv, mul_inv, inv_pow]
+  ring
 
 section Limit
 

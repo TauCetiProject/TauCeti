@@ -15,6 +15,9 @@ import Mathlib.Data.Nat.Factorial.BigOperators
 A fixed shift of a natural count and each of the fixed offsets in its falling factorial have
 vanishing effect after scaling by a denominator tending to infinity. This also applies when
 the ratio tends to zero and the numerator itself may stay bounded.
+
+Dividing the order-`k + 1` falling factorial of an eventually positive count by the count
+removes its first factor, leaving the order-`k` falling factorial of the count minus one.
 -/
 
 public section
@@ -48,3 +51,17 @@ theorem Filter.Tendsto.natCast_descFactorial_sub_div_pow {ι 𝕜 : Type*} {l : 
   rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range,
     Nat.descFactorial_eq_prod_range, Nat.cast_prod]
   simp only [Nat.sub_sub]
+
+/-- If `p i / d i → y`, `d i → ∞` and `p i` is eventually positive, the order-`k + 1` falling
+factorial of `p i`, divided by `p i * (d i)^k`, tends to `y^k`. The first factor `p i` cancels,
+so this holds even when `p i` stays bounded and `y = 0`. -/
+theorem Filter.Tendsto.natCast_descFactorial_add_one_div_mul_pow {ι 𝕜 : Type*} {l : Filter ι}
+    [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜]
+    {p : ι → ℕ} {d : ι → 𝕜} {y : 𝕜} (hd : Tendsto d l atTop) (hp : ∀ᶠ i in l, p i ≠ 0)
+    (hy : Tendsto (fun i ↦ (p i : 𝕜) / d i) l (𝓝 y)) (k : ℕ) :
+    Tendsto (fun i ↦ ((p i).descFactorial (k + 1) : 𝕜) / (p i * d i ^ k)) l (𝓝 (y ^ k)) := by
+  refine (hd.natCast_descFactorial_sub_div_pow hy 1 k).congr' ?_
+  filter_upwards [hp] with i hi
+  have h := Nat.succ_descFactorial_succ (p i - 1) k
+  rw [Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hi)] at h
+  rw [h, Nat.cast_mul, mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr hi)]
