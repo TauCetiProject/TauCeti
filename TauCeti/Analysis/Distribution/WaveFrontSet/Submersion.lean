@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 
 /-!
 # The wave front set of a pullback along a submersion
@@ -85,20 +86,6 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finite
 section Linear
 
 variable {A : E →L[ℝ] E'} (hA : Function.Surjective A)
-
-/-- `sᵀ` is a left inverse of `Aᵀ`, where `s` is the linear section `linearSection` of `A`. -/
-private theorem adjoint_linearSection_adjoint_apply (η : E') :
-    ((A.linearSection hA)†) ((A†) η) = η := by
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    ContinuousLinearMap.comp_linearSection,
-    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-
-/-- A frequency `ζ` pairs with `x` as `sᵀ ζ` with `A x` plus `ζ` with the `ker A`-coordinate of
-`x`, where `s` is the linear section `linearSection` of `A`. -/
-private theorem inner_eq_inner_linearCoord (x ζ : E) :
-    ⟪x, ζ⟫ = ⟪A x, ((A.linearSection hA)†) ζ⟫ + ⟪((A.linearCoord hA x).2 : E), ζ⟫ := by
-  conv_lhs => rw [← A.linearSection_add_linearCoord_snd hA x]
-  rw [inner_add_left, ContinuousLinearMap.adjoint_inner_right]
 
 /-- A cutoff `φ x' = φ₁ (A x') ρ (P x')` adapted to the coordinates `x' ↦ (A x', P x')`, equal to
 `1` at `x`, with `φ₁` supported in a given neighbourhood of `A x` and `φ` in a given neighbourhood
@@ -186,7 +173,7 @@ private theorem localFourier_compCLMOfSubmersion_eq (T : 𝓓'(Ω', ℂ)) (φ₁
           g (A.linearCoord hA x).1) *
         (ρ (A.linearCoord hA x).2 * TauCeti.fourierAtom ζ ((A.linearCoord hA x).2 : E)) := by
     simp only [ContinuousLinearMap.linearCoord_apply_fst, hφ, TauCeti.fourierAtom_eq_fourierChar,
-      inner_eq_inner_linearCoord hA x ζ, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul, η]
+      A.inner_eq_inner_linearCoord hA x ζ, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul, η]
     ring
   simp only [FunLike.coe_smul, Pi.smul_apply, bilinLeftCLM_apply,
     ContinuousLinearMap.mul_apply', smul_eq_mul, hprod]
@@ -206,7 +193,7 @@ private theorem isMicrolocallySmoothAt_compCLMOfSubmersion_adjoint (T : 𝓓'(Ω
   obtain ⟨φ₁, ρ, φ, hφ₁W, -, -, hφx, hφ⟩ := exists_coord_cutoff hA hAΩ hx hW univ_mem
   set s := A.linearSection hA
   -- The frequencies `ζ` with `sᵀ ζ ∈ Γ` and `‖ζ‖ < M ‖sᵀ ζ‖` form an open cone around `Aᵀ η`.
-  have hsA : (s†) ((A†) η) = η := adjoint_linearSection_adjoint_apply hA η
+  have hsA : (s†) ((A†) η) = η := A.adjoint_linearSection_adjoint_apply hA η
   set M := ‖(A†) η‖ / ‖η‖ + 1
   refine isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], {ζ | (s†) ζ ∈ Γ ∧ ‖ζ‖ < M * ‖(s†) ζ‖},
     (hΓo.preimage (s†).continuous).inter (isOpen_lt continuous_norm (by fun_prop)), ⟨by
@@ -255,7 +242,7 @@ private theorem IsMicrolocallySmoothAt.of_compCLMOfSubmersion_adjoint (T : 𝓓'
   obtain ⟨U, hU, Γ, hΓo, hηΓ, hΓc, hdecay⟩ := h.exists_nhds_cone
   obtain ⟨φ₁, ρ, φ, -, hφ₁x, hφU, -, hφ⟩ := exists_coord_cutoff hA hAΩ hx univ_mem hU
   set s := A.linearSection hA
-  have hsA (η' : E') : (s†) ((A†) η') = η' := adjoint_linearSection_adjoint_apply hA η'
+  have hsA (η' : E') : (s†) ((A†) η') = η' := A.adjoint_linearSection_adjoint_apply hA η'
   refine isMicrolocallySmoothAt_iff.2 ⟨φ₁, by simp [hφ₁x], (A†) ⁻¹' Γ,
     hΓo.preimage (A†).continuous, hηΓ, fun t ht η' hη' ↦ by simpa using hΓc t ht _ hη',
     fun N ↦ ?_⟩

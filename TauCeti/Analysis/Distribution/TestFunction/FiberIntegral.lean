@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -65,88 +66,6 @@ noncomputable section
 
 open Set Filter TopologicalSpace MeasureTheory
 open scoped Topology Distributions ContDiff
-
-namespace ContinuousLinearMap
-
-variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-
-/-! ### Linear coordinates adapted to a surjective linear map -/
-
-variable (A : E →L[ℝ] E') (hA : Function.Surjective A)
-
-/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
-`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
-def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
-  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
-
-/-- The first component of `linearCoord` is `A`. -/
-@[simp]
-theorem linearCoord_apply_fst (x : E) : (A.linearCoord hA x).1 = A x := by
-  simp [linearCoord]
-
-/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
-def linearSection : E' →L[ℝ] E :=
-  ((A.linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
-    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
-
-/-- `linearSection` is a pointwise right inverse of `A`. -/
-@[simp]
-theorem apply_linearSection (y : E') : A (A.linearSection hA y) = y := by
-  rw [← A.linearCoord_apply_fst hA]
-  simp [linearSection]
-
-/-- `linearSection` is a right inverse of `A`. -/
-theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.id ℝ E' := by
-  ext y
-  exact A.apply_linearSection hA y
-
-/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
-second component of `linearCoord`. -/
-theorem linearSection_add_linearCoord_snd (x : E) :
-    A.linearSection hA (A x) + ((A.linearCoord hA x).2 : E) = x := by
-  symm
-  conv_lhs => rw [← (A.linearCoord hA).symm_apply_apply x]
-  rw [← A.linearCoord_apply_fst hA x, ← Prod.fst_add_snd (A.linearCoord hA x)]
-  simp only [map_add, linearSection, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
-    Function.comp_apply, ContinuousLinearMap.inl_apply, Prod.fst_add, Prod.snd_add, add_zero,
-    zero_add]
-  congr 1
-  exact A.implicitCoordEquiv_symm_apply_zero_mk _ _ _
-
-section Measure
-
-variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
-  (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
-
-/-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
-`linearCoord`. -/
-def linearScale : NNReal :=
-  Measure.addHaarScalarFactor (μ.map (A.linearCoord hA)) (ν.prod Measure.addHaar)
-
-/-- The constant `linearScale` is positive. -/
-theorem linearScale_pos : 0 < A.linearScale hA μ ν :=
-  Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
-
-/-- The image of `μ` under `linearCoord` is `linearScale` times the product of `ν` and a Haar
-measure on `ker A`. -/
-theorem map_linearCoord :
-    μ.map (A.linearCoord hA) = A.linearScale hA μ ν • ν.prod Measure.addHaar :=
-  Measure.isAddLeftInvariant_eq_smul _ _
-
-/-- **Fubini in the linear coordinates.** Integrating a product `u (A x) v (P x)` against `μ`
-gives `linearScale` times the product of the integrals. -/
-theorem integral_mul_linearCoord {𝕜 : Type*} [RCLike 𝕜] (u : E' → 𝕜)
-    (v : (A : E →ₗ[ℝ] E').ker → 𝕜) :
-    ∫ x, u (A.linearCoord hA x).1 * v (A.linearCoord hA x).2 ∂μ =
-      (A.linearScale hA μ ν : ℝ) • ((∫ y, u y ∂ν) * ∫ k, v k ∂Measure.addHaar) := by
-  rw [← integral_prod_mul, ← NNReal.smul_def, ← integral_smul_nnreal_measure,
-    ← map_linearCoord, ← (A.linearCoord hA).coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe,
-    integral_map_equiv]
-
-end Measure
-
-end ContinuousLinearMap
 
 namespace TestFunction
 
