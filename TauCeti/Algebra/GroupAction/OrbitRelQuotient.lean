@@ -980,8 +980,11 @@ end MulAction.orbitRel.Quotient
 
 namespace MulAction.orbitRel.Quotient
 
-variable {M G X : Type*} [Monoid M] [Group G] [MulAction M X] [MulAction G X]
-  [SMulCommClass M G X]
+variable {M G X : Type*} [Group G] [MulAction G X]
+
+section SMul
+
+variable [SMul M X] [SMulCommClass M G X]
 
 /-- An action of `M` commuting with the action of `G` maps `G`-orbits to `G`-orbits, so `M` acts
 on the space of `G`-orbits by acting on representatives. -/
@@ -997,10 +1000,13 @@ theorem smul_mk (m : M) (x : X) :
     m • (Quotient.mk'' x : orbitRel.Quotient G X) = Quotient.mk'' (m • x) :=
   rfl
 
+end SMul
+
 /-- An action of `M` commuting with the action of `G` descends to the space of `G`-orbits. -/
 @[to_additive /-- An additive action of `M` commuting with the additive action of `G` descends to
 the space of `G`-orbits. -/]
-instance instMulActionOfSMulCommClass : MulAction M (orbitRel.Quotient G X) where
+instance instMulActionOfSMulCommClass [Monoid M] [MulAction M X] [SMulCommClass M G X] :
+    MulAction M (orbitRel.Quotient G X) where
   one_smul q := by
     induction q using Quotient.inductionOn' with
     | h x => rw [smul_mk, one_smul]

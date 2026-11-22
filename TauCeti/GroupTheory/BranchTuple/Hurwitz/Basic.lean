@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.BranchTuple.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
@@ -369,9 +370,8 @@ theorem classMultiset_hurwitzAction (b : BraidGroup r) (t : BranchTuple r G) :
 theorem forall_hurwitzAction_apply_mem_carrier_iff {c : ConjClasses G} (b : BraidGroup r)
     (t : BranchTuple r G) :
     (∀ k, hurwitzAction b t k ∈ c.carrier) ↔ ∀ k, t k ∈ c.carrier := by
-  have h (k : Fin r) : hurwitzAction b t k ∈ c.carrier ↔ t ((permHom r b)⁻¹ k) ∈ c.carrier := by
-    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mem_carrier_iff_mk_eq,
-      ConjClasses.mk_eq_mk_iff_isConj.mpr (isConj_hurwitzAction_apply b t k)]
+  have h (k : Fin r) : hurwitzAction b t k ∈ c.carrier ↔ t ((permHom r b)⁻¹ k) ∈ c.carrier :=
+    (ConjClasses.mem_carrier_iff_of_isConj (isConj_hurwitzAction_apply b t k)).symm
   simp only [h]
   exact ⟨fun H k ↦ by simpa using H (permHom r b k), fun H k ↦ H _⟩
 
