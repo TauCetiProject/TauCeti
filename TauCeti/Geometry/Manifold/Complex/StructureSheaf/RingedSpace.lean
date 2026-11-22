@@ -966,11 +966,14 @@ theorem existsUnique_contMDiffMap_locallyRingedSpaceMap_eq_iff
         (contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)), by
       rintro _ rfl; exact ContMDiffMap.ext fun _ ↦ rfl⟩⟩
 
+-- Exposed so `(holomorphicMapLocalRingedEquivalence ... f).val.base` and `(.symm φ : X → Y)`
+-- reduce definitionally in dependent stalk types.
 variable (I X J Y) in
 /-- **Equivalence between holomorphic maps and `ℂ`-linear morphisms of locally ringed spaces.**
 For any complex charted space `(X, I)` and any finite-dimensional boundaryless complex manifold
 `(Y, J)`, bundled complex-analytic maps `C^ω⟮I, X; J, Y⟯` correspond bijectively via
 `locallyRingedSpaceMap` to `ℂ`-linear morphisms `LocallyRingedSpaceCLinearHom I X J Y`. -/
+@[expose]
 def holomorphicMapLocalRingedEquivalence :
     C^ω⟮I, X; J, Y⟯ ≃ LocallyRingedSpaceCLinearHom I X J Y where
   toFun f := LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff
@@ -992,6 +995,14 @@ theorem holomorphicMapLocalRingedEquivalence_apply (f : C^ω⟮I, X; J, Y⟯) :
 theorem holomorphicMapLocalRingedEquivalence_apply_val (f : C^ω⟮I, X; J, Y⟯) :
     (holomorphicMapLocalRingedEquivalence I X J Y f).val =
       locallyRingedSpaceMap f f.contMDiff := (rfl)
+
+/-- The `ℂ`-algebra stalk map of `holomorphicMapLocalRingedEquivalence I X J Y f` at `x` is
+`stalkPullbackAlgHom`. -/
+@[simp]
+theorem stalkAlgHom_holomorphicMapLocalRingedEquivalence (f : C^ω⟮I, X; J, Y⟯) (x : X) :
+    (holomorphicMapLocalRingedEquivalence I X J Y f).stalkAlgHom x =
+      stalkPullbackAlgHom (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt) :=
+  LocallyRingedSpaceCLinearHom.stalkAlgHom_ofContMDiff f f.contMDiff x
 
 /-- `holomorphicMapLocalRingedEquivalence` sends `ContMDiffMap.id` to
 `LocallyRingedSpaceCLinearHom.id`. -/
@@ -1027,6 +1038,22 @@ theorem holomorphicMapLocalRingedEquivalence_symm_apply_coe :
 theorem holomorphicMapLocalRingedEquivalence_symm_apply (x : X) :
     (holomorphicMapLocalRingedEquivalence I X J Y).symm φ x = φ.val.base x := (rfl)
 
+/-- When `𝒪_{X, x}` is maximal-ideal separated (`IsHausdorff`), the inverse germ equivalence
+`(analyticMapGermEquivStalkAlgHom x (φ.val.base x)).symm` applied to `φ.stalkAlgHom x` recovers
+the germ at `x` of `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ`. -/
+theorem analyticMapGermEquivStalkAlgHom_symm_stalkAlgHom (x : X)
+    [IsHausdorff (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x))
+      ((holomorphicStructureSheaf I X).presheaf.stalk x)] :
+    (analyticMapGermEquivStalkAlgHom (I := I) (J := J) x (φ.val.base x)).symm
+        (φ.stalkAlgHom x) =
+      AnalyticMapGerm.mk (X := X) (Y := Y)
+        ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ)
+        (Eventually.of_forall fun _ ↦
+          ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ).contMDiff.contMDiffAt)
+        rfl :=
+  analyticMapGermEquivStalkAlgHom_symm_stalkAlgHomOfCAppTopAlgebraMap
+    φ.val.toHom (φ.property ⊤) x
+
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] [FiniteDimensional ℂ E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} [K.Boundaryless]
   {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z] [IsManifold K 1 Z]
@@ -1059,6 +1086,17 @@ theorem holomorphicMapLocalRingedEquivalence_restrict (f : C^ω⟮I, X; J, Y⟯)
       (holomorphicMapLocalRingedEquivalence I X J Y f).comp
         (LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal) :=
   Subtype.ext (locallyRingedSpaceMap_comp contMDiff_subtypeVal f.contMDiff)
+
+/-- Restricting a `ℂ`-linear morphism `φ : LocallyRingedSpaceCLinearHom I X J Y` to an open
+subset `U : Opens X` corresponds under `(holomorphicMapLocalRingedEquivalence _ _ _ _).symm` to
+restricting `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` to `U`. No manifold,
+boundaryless, or finite-dimensionality hypotheses on `X` are required. -/
+theorem holomorphicMapLocalRingedEquivalence_symm_restrict (U : Opens X) :
+    (holomorphicMapLocalRingedEquivalence I U J Y).symm
+        (φ.comp (LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal)) =
+      ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ).comp
+        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^ω⟮I, U; I, X⟯) :=
+  ContMDiffMap.ext fun _ ↦ rfl
 
 /-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
 on underlying locally ringed-space morphisms to precomposing with the open immersion

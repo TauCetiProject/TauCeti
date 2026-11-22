@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import TauCeti.RingTheory.AdicCompletion.MvPowerSeries
 import TauCeti.Data.Finsupp.Interval
+import TauCeti.RingTheory.LocalRing.AlgHom
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
@@ -204,15 +205,6 @@ theorem span_range_holomorphicLinearCoordinateGerm_basisFun :
     (OpenPartialHomeomorph.refl (ι → ℂ)) (StructureGroupoid.id_mem_maximalAtlas _)
     (Pi.basisFun ℂ ι) (Set.mem_univ x)]
 
-private theorem mk_maximalIdeal_comp_algebraMap_surjective :
-    Function.Surjective ((Ideal.Quotient.mk (IsLocalRing.maximalIdeal
-      ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x))).comp
-      (algebraMap ℂ _)) := by
-  intro y
-  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-  refine ⟨eval 𝓘(ℂ, ι → ℂ) (ι → ℂ) x s, Ideal.Quotient.eq.2 ?_⟩
-  rw [maximalIdeal_stalk, RingHom.mem_ker, map_sub, eval_algebraMap, sub_self]
-
 /-- **Taylor series and powers of the maximal ideal.** A holomorphic germ at `x` lies in the
 `n`-th power of the maximal ideal exactly when its Taylor series lies in the `n`-th power of the
 maximal ideal of `ℂ⟦z_i⟧`, that is, has order at least `n`. -/
@@ -224,7 +216,10 @@ theorem comap_taylorSeries_maximalIdeal_pow (n : ℕ) :
   exact comap_pow_span_range_X (taylorSeries_comp_algebraMap x)
     (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
     (span_range_holomorphicLinearCoordinateGerm_basisFun x)
-    (mk_maximalIdeal_comp_algebraMap_surjective x) n
+    (fun y ↦ by
+      obtain ⟨c, hc⟩ := (evalAlgHom 𝓘(ℂ, ι → ℂ) (ι → ℂ) x).surjective_algebraMap_residueField y
+      simpa [IsScalarTower.algebraMap_apply ℂ _ (IsLocalRing.ResidueField _),
+        IsLocalRing.ResidueField.algebraMap_eq] using ⟨c, hc⟩) n
 
 variable {x} in
 /-- A holomorphic germ at `x` lies in the `n`-th power of the maximal ideal exactly when the Taylor
@@ -254,7 +249,10 @@ def adicCompletionEquiv :
   adicCompletionEquivMvPowerSeries (taylorSeries_comp_algebraMap x)
     (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
     (span_range_holomorphicLinearCoordinateGerm_basisFun x)
-    (mk_maximalIdeal_comp_algebraMap_surjective x)
+    (fun y ↦ by
+      obtain ⟨c, hc⟩ := (evalAlgHom 𝓘(ℂ, ι → ℂ) (ι → ℂ) x).surjective_algebraMap_residueField y
+      simpa [IsScalarTower.algebraMap_apply ℂ _ (IsLocalRing.ResidueField _),
+        IsLocalRing.ResidueField.algebraMap_eq] using ⟨c, hc⟩)
 
 /-- The completion isomorphism `adicCompletionEquiv` extends the Taylor series. -/
 @[simp]
@@ -277,7 +275,10 @@ theorem mk_adicCompletionEquiv (n : ℕ)
   have h := mk_adicCompletionEquivMvPowerSeries (taylorSeries_comp_algebraMap x)
     (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
     (span_range_holomorphicLinearCoordinateGerm_basisFun x)
-    (mk_maximalIdeal_comp_algebraMap_surjective x) n y
+    (fun y ↦ by
+      obtain ⟨c, hc⟩ := (evalAlgHom 𝓘(ℂ, ι → ℂ) (ι → ℂ) x).surjective_algebraMap_residueField y
+      simpa [IsScalarTower.algebraMap_apply ℂ _ (IsLocalRing.ResidueField _),
+        IsLocalRing.ResidueField.algebraMap_eq] using ⟨c, hc⟩) n y
   rw [← hs, Ideal.quotientMap_mk, Ideal.Quotient.eq] at h ⊢
   rwa [maximalIdeal_eq_span_range_X]
 

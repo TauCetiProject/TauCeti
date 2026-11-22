@@ -329,6 +329,17 @@ theorem stalkPullbackAt_eq_iff_eventuallyEq {x : X} {y : Y} {f₁ f₂ : X → Y
   filter_upwards [hevV, hmem₁, hmem₂] with w hw hw₁ hw₂
   exact (extChartAt J y).injOn hw₁ hw₂ (L.injective hw)
 
+/-- Pullback of holomorphic stalks along an analytic map germ `(X, x) → (Y, y)` into a
+finite-dimensional boundaryless complex manifold is injective. No manifold or separatedness
+assumption on `X` is required. -/
+theorem stalkPullbackGerm_injective {x : X} {y : Y} :
+    Function.Injective (stalkPullbackGerm (I := I) (J := J) (x := x) (y := y)) := by
+  intro F₁ F₂ h
+  obtain ⟨f₁, hf₁, hfx₁, rfl⟩ := F₁.exists_mk
+  obtain ⟨f₂, hf₂, hfx₂, rfl⟩ := F₂.exists_mk
+  rw [stalkPullbackGerm_mk, stalkPullbackGerm_mk, stalkPullbackAt_eq_iff_eventuallyEq] at h
+  exact (AnalyticMapGerm.mk_eq_mk hf₁ hfx₁ hf₂ hfx₂).2 h
+
 /-- **Every `ℂ`-algebra homomorphism of holomorphic stalks comes from a locally analytic map.** If
 `Y` is a finite-dimensional boundaryless complex manifold and the stalk `𝒪_{X, x}` is separated
 (`IsHausdorff`) with respect to its maximal ideal, then every `ℂ`-algebra homomorphism
@@ -389,11 +400,7 @@ def analyticMapGermEquivStalkAlgHom (x : X) (y : Y)
       ((holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
         (holomorphicStructureSheaf I X).presheaf.stalk x) :=
   Equiv.ofBijective stalkPullbackGerm
-    ⟨fun F₁ F₂ h ↦ Subtype.ext <| by
-        rw [← F₁.property.choose_spec.1, ← F₂.property.choose_spec.1, Germ.coe_eq]
-        exact (stalkPullbackAt_eq_iff_eventuallyEq
-          F₁.property.choose_spec.2.2 F₁.property.choose_spec.2.1
-          F₂.property.choose_spec.2.2 F₂.property.choose_spec.2.1).1 h,
+    ⟨stalkPullbackGerm_injective,
       fun ψ ↦ by
         obtain ⟨f, hf, hfx, rfl⟩ := exists_stalkPullbackAt_eq x y ψ
         exact ⟨AnalyticMapGerm.mk f hf hfx, stalkPullbackGerm_mk f hf hfx⟩⟩
