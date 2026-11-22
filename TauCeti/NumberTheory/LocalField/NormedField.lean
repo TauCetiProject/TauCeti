@@ -33,6 +33,8 @@ as `letI := normalizedNormedField K`; the theorems below are stated in that form
 * `TauCeti.normalizedNormedField_topology_eq`: the norm topology is the given topology of `K`.
 * `TauCeti.normalizedNormedField_isUltrametricDist`: the norm is ultrametric.
 * `TauCeti.normalizedNormedField_completeSpace`: `K` is complete for the norm.
+* `TauCeti.continuous_normalizedAbsoluteValue`: the normalized absolute value is continuous for
+  the given topology of `K`.
 
 ## References
 
@@ -122,6 +124,14 @@ theorem normalizedNormedField_completeSpace :
     rw [normalizedNormedField_topology_eq]
     infer_instance
   infer_instance
+
+/-- The normalized absolute value is continuous for the given topology of a nonarchimedean local
+field: it is the norm of `normalizedNormedField K`, whose topology is the given one. -/
+theorem continuous_normalizedAbsoluteValue :
+    Continuous fun x : K ↦ (normalizedAbsoluteValue K x : ℝ) := by
+  let _ := normalizedNormedField K
+  have h : @Continuous K ℝ (normalizedNormedFieldTopology K) _ fun x ↦ ‖x‖ := continuous_norm
+  rwa [normalizedNormedField_topology_eq] at h
 
 variable (K) in
 /-- The normalized absolute value of a nonarchimedean local field `K`, as a nontrivially normed

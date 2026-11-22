@@ -68,6 +68,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff` and
   `TauCeti.normalizedAbsoluteValue_lt_normalizedAbsoluteValue_iff`: the normalized absolute value
   orders the elements of `K` as `ValuativeRel.valuation` does.
+* `TauCeti.normalizedAbsoluteValue_lt_iff_le_inv_mul`: the values of the normalized absolute value
+  are discrete, so `|x|_K < |a|_K` exactly when `|x|_K ≤ q⁻¹ |a|_K`.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -546,6 +548,20 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     rw [← hone]
     exact (valueGroupWithZeroIsoInt K).injective.eq_iff
   · exact (one_lt_residueFieldCard (K := K)).ne'
+
+/-- The normalized absolute value takes its values in the powers of `q`, so it is less than
+`|a|_K ≠ 0` exactly when it is at most `q⁻¹ |a|_K`, where `q` is the cardinality of the residue
+field. -/
+theorem normalizedAbsoluteValue_lt_iff_le_inv_mul {x a : K} (ha : a ≠ 0) :
+    normalizedAbsoluteValue K x < normalizedAbsoluteValue K a ↔
+      normalizedAbsoluteValue K x ≤ (Nat.card 𝓀[K] : ℚ≥0)⁻¹ * normalizedAbsoluteValue K a := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [pos_iff_ne_zero, ha]
+  rw [normalizedAbsoluteValue_apply_ne_zero x hx, normalizedAbsoluteValue_apply_ne_zero a ha,
+    ← zpow_neg_one, ← zpow_add₀ (zero_lt_one.trans one_lt_residueFieldCard).ne',
+    zpow_lt_zpow_iff_right₀ one_lt_residueFieldCard,
+    zpow_le_zpow_iff_right₀ one_lt_residueFieldCard]
+  omega
 
 /-- An element belongs to the ring of integers exactly when its normalized absolute value is at
 most one. -/
