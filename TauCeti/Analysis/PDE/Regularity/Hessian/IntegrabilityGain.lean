@@ -15,7 +15,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -346,7 +346,7 @@ private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
       (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
         continuous_const)
   exact hΦ.comp_aestronglyMeasurable
-    (ha.comp_quasiMeasurePreserving (e.quasiMeasurePreserving volume))
+    (ha.comp_quasiMeasurePreserving (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar _ _))
 
 /-- Transporting back along `e`: if `v' ∈ W^{2,r}(E)` has value `u ∘ e`, then some `v ∈ W^{2,r}(E)`
 has value `u`. -/
@@ -359,7 +359,10 @@ private theorem exists_value_ae_eq_of_value_ae_eq_comp {r : ℝ≥0∞} [Fact (1
       (by simp) v'
   rw [Measure.ae_restrict_coe_opens_top] at hv
   refine ⟨v, ?_⟩
-  filter_upwards [hv, (e.symm.quasiMeasurePreserving volume).ae hv'] with y h₁ h₂
+  filter_upwards [hv,
+    (e.symm.toContinuousAddEquiv.quasiMeasurePreserving_addHaar volume volume).ae hv']
+    with y h₁ h₂
+  rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at h₂
   rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **Integrability gain for strong solutions with coefficients close to a frozen elliptic
@@ -391,7 +394,8 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
   refine ⟨δ, hδ, fun A lam hlam hA a ha haA u f hf hur htr ↦ ?_⟩
   obtain ⟨e, hee, -, he⟩ := A.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add hlam
     (fun ξ ↦ by rw [RCLike.re_to_real]; exact hA ξ) (ν := 0)
-  have hqe := e.quasiMeasurePreserving volume
+  have hqe := e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar volume volume
+  rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at hqe
   have hMN : (e : E →L[ℝ] E) ∘L (e.symm : E →L[ℝ] E) = ContinuousLinearMap.id ℝ E := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(E)` has weak Hessian `e† D²u(e ·) e`.
