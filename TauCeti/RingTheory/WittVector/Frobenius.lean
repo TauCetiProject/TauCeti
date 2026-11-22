@@ -10,7 +10,10 @@ public import Mathlib.RingTheory.WittVector.Teichmuller
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
-# Witt-vector Frobenius on Teichmüller representatives and the `(p, [ϖ])`-adic topology
+# Witt-vector Frobenius: naturality, Teichmüller representatives and the `(p, [ϖ])`-adic topology
+
+The Witt-vector Frobenius `φ` of `𝕎 R` commutes with `WittVector.map f` for every ring homomorphism
+`f`, since the coordinates of `φ x` are given by universal integer polynomials in those of `x`.
 
 Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` raises every
 Witt coordinate to its `p`-th power, so its fixed points are the Witt vectors whose coordinates are
@@ -23,6 +26,8 @@ Frobenius act on its adic spectrum.
 
 ## Main results
 
+* `WittVector.map_frobenius` : `φ` is natural, `W(f) (φ x) = φ (W(f) x)` for every ring
+  homomorphism `f`.
 * `WittVector.frobenius_teichmuller` : `φ [r] = [r] ^ p` in characteristic `p`.
 * `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
   by the `p`-power map, in characteristic `p`.
@@ -38,6 +43,23 @@ Frobenius act on its adic spectrum.
 public section
 
 namespace WittVector
+
+section Map
+
+variable {p : ℕ} [Fact p.Prime] {R S : Type*} [CommRing R] [CommRing S]
+
+/-- The Witt-vector Frobenius is natural: `W(f) (φ x) = φ (W(f) x)` for every ring homomorphism
+`f : R →+* S`. -/
+theorem map_frobenius (f : R →+* S) (x : WittVector p R) :
+    map f (frobenius x) = frobenius (map f x) := by
+  ext n
+  -- the `n`-th coordinate of `φ x` is the integer polynomial `frobeniusPoly p n` evaluated at the
+  -- coordinates of `x`, and `f` commutes with evaluating integer polynomials
+  simp only [map_coeff, coeff_frobenius, MvPolynomial.aeval_def, MvPolynomial.eval₂_comp_left]
+  congr 1
+  exact RingHom.ext_int _ _
+
+end Map
 
 variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [CharP R p]
 
