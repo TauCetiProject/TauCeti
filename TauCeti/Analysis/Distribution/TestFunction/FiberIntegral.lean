@@ -84,6 +84,7 @@ def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
   A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
 
 /-- The first component of `linearCoord` is `A`. -/
+@[simp]
 theorem linearCoord_apply_fst (x : E) : (linearCoord hA x).1 = A x := by
   simp [linearCoord]
 
@@ -92,10 +93,16 @@ def linearSection : E' →L[ℝ] E :=
   ((linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
     (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
 
+/-- `linearSection` is a pointwise right inverse of `A`. -/
+@[simp]
+theorem apply_linearSection (y : E') : A (linearSection hA y) = y := by
+  rw [← linearCoord_apply_fst hA]
+  simp [linearSection]
+
 /-- `linearSection` is a right inverse of `A`. -/
 theorem comp_linearSection : A.comp (linearSection hA) = ContinuousLinearMap.id ℝ E' := by
   ext y
-  simpa [linearSection] using (linearCoord_apply_fst hA ((linearCoord hA).symm (y, 0))).symm
+  exact apply_linearSection hA y
 
 /-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
 second component of `linearCoord`. -/
@@ -202,7 +209,7 @@ private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' �
         rw [map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
     _ = ∫ x, ψ x • g (A x) ∂μ := by
         rw [← L.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, integral_map_equiv]
-        simp [hψ', L, linearCoord_apply_fst]
+        simp [hψ', L]
 
 end Linear
 
