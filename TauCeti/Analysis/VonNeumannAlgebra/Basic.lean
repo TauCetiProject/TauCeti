@@ -90,15 +90,12 @@ theorem coe_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [Deci
   ext T
   exact M.toStarSubalgebra.mem_piLpMatrix
 
-/-- Placing an element of `M` in a single `(i, j)` block gives an element of `M.piLpMatrix ι`. -/
+/-- Placing an element in a single `(i, j)` block belongs to `M.piLpMatrix ι` if and only if
+the element belongs to `M`. -/
 theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (i j : ι) {s : H →L[ℂ] H} (hs : s ∈ M) :
-    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι := by
-  rw [mem_piLpMatrix_iff]
-  intro k l
-  rw [ContinuousLinearMap.piLpEntry_singleEntryCLM]
-  split_ifs
-  exacts [hs, M.zero_mem]
+    [DecidableEq ι] {i j : ι} {s : H →L[ℂ] H} :
+    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M :=
+  M.toStarSubalgebra.singleEntryCLM_mem_piLpMatrix
 
 /-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]

@@ -42,6 +42,10 @@ into it.
   it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
   set contained in the closure of its range are dense in that set.
+* `TauCeti.mem_closure_iff_mem_closure_image_of_isInducing_domRestrict`: closure membership along
+  a continuous map that is inducing on a closed subset containing the set.
+* `TauCeti.closure_eq_of_isInducing_domRestrict`: transferring a closure computation along an
+  injective continuous map that is inducing on a closed subset containing the set.
 -/
 
 public section
@@ -103,5 +107,37 @@ theorem subset_closure_range_domRestrict_preimage {α : Type*} {c : α → X} {s
     s ⊆ closure (range ((c ⁻¹' s).domRestrict c)) := by
   rw [range_domRestrict, image_preimage_eq_inter_range]
   exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+/-- If `f` is continuous, `f '' s` is closed with `f ⁻¹' (f '' s) ⊆ s`, and `s.domRestrict f` is
+inducing, then closure membership for any `t ⊆ s` can be tested in the target space. -/
+theorem mem_closure_iff_mem_closure_image_of_isInducing_domRestrict {Y : Type*}
+    [TopologicalSpace Y] {f : X → Y} (hf : Continuous f) {s t : Set X} (hfs : IsClosed (f '' s))
+    (hpre : f ⁻¹' (f '' s) ⊆ s) (hind : IsInducing (s.domRestrict f)) (ht : t ⊆ s) {x : X} :
+    x ∈ closure t ↔ f x ∈ closure (f '' t) := by
+  refine ⟨fun hx ↦ mem_closure_image hf.continuousAt hx, fun hx ↦ ?_⟩
+  have hxs : x ∈ s := hpre <| by
+    rw [mem_preimage, ← hfs.closure_eq]
+    exact closure_mono (image_mono ht) hx
+  have himg : s.domRestrict f '' ((↑) ⁻¹' t : Set s) = f '' t := by
+    ext y
+    simp only [mem_image, mem_preimage, Subtype.exists, domRestrict_apply]
+    exact ⟨fun ⟨a, _, hat, hfa⟩ ↦ ⟨a, hat, hfa⟩, fun ⟨a, hat, hfa⟩ ↦ ⟨a, ht hat, hat, hfa⟩⟩
+  have hx' : (⟨x, hxs⟩ : s) ∈ closure ((↑) ⁻¹' t : Set s) := by
+    rw [hind.closure_eq_preimage_closure_image, mem_preimage, domRestrict_apply, himg]
+    exact hx
+  exact closure_mono (image_preimage_subset _ _)
+    (mem_closure_image continuous_subtypeVal.continuousAt hx')
+
+/-- If `f` is continuous and injective, `f '' s` is closed, and `s.domRestrict f` is inducing,
+then any closure identity `closure (f '' t) = f '' u` with `t ⊆ s` pulls back to
+`closure t = u`. -/
+theorem closure_eq_of_isInducing_domRestrict {Y : Type*} [TopologicalSpace Y] {f : X → Y}
+    (hf : Continuous f) (hf_inj : Function.Injective f) {s t u : Set X} (hfs : IsClosed (f '' s))
+    (hind : IsInducing (s.domRestrict f)) (ht : t ⊆ s) (hfu : closure (f '' t) = f '' u) :
+    closure t = u := by
+  ext x
+  rw [mem_closure_iff_mem_closure_image_of_isInducing_domRestrict hf hfs
+      (hf_inj.preimage_image s).subset hind ht,
+    hfu, hf_inj.mem_set_image]
 
 end TauCeti

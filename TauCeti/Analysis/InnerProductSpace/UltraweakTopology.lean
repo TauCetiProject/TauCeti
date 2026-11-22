@@ -12,10 +12,12 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Analysis.LocallyConvex.WeakDual
+import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
 import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
 import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
+import TauCeti.Topology.Closure
 
 /-!
 # The ultraweak operator topology
@@ -419,6 +421,15 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
     (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
 
+private theorem isClosed_image_toWOT_norm_le (C : ℝ) :
+    IsClosed ((fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
+        ContinuousLinearMapWOT.ofCLM A.toCLM) '' {A | ‖A.toCLM‖ ≤ C}) := by
+  convert (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall (0 : E →L[𝕜] F) C).isClosed
+    using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
+  exact ⟨fun ⟨A, hA, hAT⟩ ↦ ⟨A.toCLM, hA, hAT⟩, fun ⟨B, hB, hBT⟩ ↦ ⟨ofCLM B, hB, hBT⟩⟩
+
 /-- **Bounded-set closure agreement with the weak operator topology.** For any norm-bounded set
 `t` of operators into a complete inner product space, an operator lies in the ultraweak closure of
 `t` if and only if it lies in the weak operator closure of `t`. -/
@@ -426,24 +437,15 @@ theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : �
     (ht : ∀ T ∈ t, ‖T‖ ≤ C) {x : E →L[𝕜] F} :
     ofCLM x ∈ closure (ofCLM '' t) ↔
       ContinuousLinearMapWOT.ofCLM x ∈ closure (ContinuousLinearMapWOT.ofCLM '' t) := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · simpa only [Set.image_image, Function.comp_def] using
-      mem_closure_image continuous_toWOT.continuousAt hx
-  · let l : Filter (E →WOT[𝕜] F) :=
-      𝓝[ContinuousLinearMapWOT.ofCLM '' t] (ContinuousLinearMapWOT.ofCLM x)
-    have : l.NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
-    have hmem : ∀ᶠ T in l, ContinuousLinearMapWOT.toCLM T ∈ t := by
-      refine eventually_mem_nhdsWithin.mono ?_
-      rintro T ⟨S, hS, rfl⟩
-      exact hS
-    have hlim : Tendsto (fun T : E →WOT[𝕜] F ↦ ofCLM (ContinuousLinearMapWOT.toCLM T)) l
-        (𝓝 (ofCLM x)) :=
-      (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
-        (hmem.mono fun T hT ↦ ht _ hT)).2
-        ((tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).congr fun T ↦
-          (ContinuousLinearMapWOT.equiv.left_inv T).symm)
-    exact mem_closure_of_tendsto hlim
-      (hmem.mono fun T hT ↦ ⟨ContinuousLinearMapWOT.toCLM T, hT, rfl⟩)
+  let q := fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ContinuousLinearMapWOT.ofCLM A.toCLM
+  have hq_inj : Function.Injective q :=
+    fun _ _ h ↦ toCLM_injective (ContinuousLinearMapWOT.ofCLM_injective h)
+  simpa only [q, Set.image_image] using
+    mem_closure_iff_mem_closure_image_of_isInducing_domRestrict continuous_toWOT
+      (isClosed_image_toWOT_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+      (hq_inj.preimage_image _).subset
+      (isInducing_restrict_toWOT fun _ hA ↦ hA)
+      (t := ofCLM '' t) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT) (x := ofCLM x)
 
 /-- **Bounded-set closure transfer from the weak operator topology.** If a norm-bounded set `t`
 of operators into a complete inner product space has weak operator closure `u`, then its ultraweak
@@ -451,11 +453,15 @@ closure is also `u`. -/
 theorem closure_image_ofCLM_of_closure_image_WOT {t u : Set (E →L[𝕜] F)} {C : ℝ}
     (ht : ∀ T ∈ t, ‖T‖ ≤ C)
     (hwot : closure (ContinuousLinearMapWOT.ofCLM '' t) = ContinuousLinearMapWOT.ofCLM '' u) :
-    closure (ofCLM '' t) = ofCLM '' u := by
-  ext A
-  obtain ⟨x, rfl⟩ := ofCLM_surjective A
-  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hwot,
-    ContinuousLinearMapWOT.ofCLM_injective.mem_set_image, ofCLM_injective.mem_set_image]
+    closure (ofCLM '' t) = ofCLM '' u :=
+  closure_eq_of_isInducing_domRestrict
+    (f := fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ContinuousLinearMapWOT.ofCLM A.toCLM)
+    continuous_toWOT
+    (fun _ _ h ↦ toCLM_injective (ContinuousLinearMapWOT.ofCLM_injective h))
+    (isClosed_image_toWOT_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+    (isInducing_restrict_toWOT fun _ hA ↦ hA)
+    (t := ofCLM '' t) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT)
+    (by simpa only [Set.image_image] using hwot)
 
 end Comparison
 

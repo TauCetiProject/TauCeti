@@ -22,10 +22,13 @@ finite-dimensional real or complex inner product space are compact.
 
 Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
 `NormedStarGroup` structure. For any star-closed subobject `s` closed under addition and scalar
-multiplication by a division semiring with `2 ≠ 0`, taking self-adjoint parts commutes with
-topological closure (`StarMemClass.closure_inter_selfAdjoint`); in a normed space over `ℝ` or `ℂ`,
-intersecting the self-adjoint part with a closed norm ball centred at `0` commutes with norm
-closure (`StarMemClass.closure_inter_selfAdjoint_inter_closedBall_zero`).
+multiplication by a division semiring with `2 ≠ 0` inside a Hausdorff topological module with
+continuous addition, continuous fixed-scalar multiplication, and continuous star, taking
+self-adjoint parts commutes with topological closure (`StarMemClass.closure_inter_selfAdjoint`);
+for a star-stable submodule (a star-closed additive submonoid closed under scalar multiplication) in
+a normed star module over `ℝ` or `ℂ` with continuous star, intersecting the self-adjoint part with
+a closed norm ball centred at `0` commutes with norm closure
+(`StarMemClass.closure_inter_selfAdjoint_inter_closedBall_zero`).
 
 ## Main results
 
@@ -79,7 +82,9 @@ end CStarRing
 namespace StarMemClass
 
 /-- Taking self-adjoint parts commutes with taking the closure of a star-closed subobject closed
-under addition and scalar multiplication by a division semiring with `2 ≠ 0`. -/
+under addition and scalar multiplication by a division semiring with `2 ≠ 0`, in a Hausdorff
+topological module with continuous addition, continuous fixed-scalar multiplication, and continuous
+star. -/
 theorem closure_inter_selfAdjoint (𝕜 : Type*) {A S : Type*} [DivisionSemiring 𝕜]
     [NeZero (2 : 𝕜)] [TopologicalSpace A] [T2Space A] [AddCommGroup A] [StarAddMonoid A]
     [Module 𝕜 A] [ContinuousAdd A] [ContinuousConstSMul 𝕜 A] [ContinuousStar A]
@@ -98,8 +103,9 @@ theorem closure_inter_selfAdjoint (𝕜 : Type*) {A S : Type*} [DivisionSemiring
     rw [hxsa.star_eq, ← two_smul 𝕜 x, smul_smul, inv_mul_cancel₀ (NeZero.ne (2 : 𝕜)), one_smul]
   rwa [hx2] at hre
 
-/-- Intersecting the self-adjoint part of a star-closed normed-space subobject over `ℝ` or `ℂ` with
-a closed norm ball centred at `0` commutes with taking the norm closure. -/
+/-- Intersecting the self-adjoint part of a star-stable submodule (a star-closed additive submonoid
+closed under scalar multiplication) with a closed norm ball centred at `0` commutes with taking the
+norm closure, in a normed star module over `ℝ` or `ℂ` with continuous star. -/
 theorem closure_inter_selfAdjoint_inter_closedBall_zero (𝕜 : Type*) {A S : Type*} [RCLike 𝕜]
     [NormedAddCommGroup A] [StarAddMonoid A] [NormedSpace 𝕜 A] [StarModule 𝕜 A]
     [ContinuousStar A] [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S 𝕜 A]

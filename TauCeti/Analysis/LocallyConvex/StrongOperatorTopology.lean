@@ -197,19 +197,18 @@ operator topology). Neither space needs completeness. -/
 theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] F) (r : ℝ) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
       Metric.closedBall f₀ r) := by
-  rcases lt_or_ge r 0 with hr | hr
-  · simp [Metric.closedBall_eq_empty.2 hr]
-  · have heq : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' Metric.closedBall f₀ r =
-        ⋂ x : E, {g : E →SLₚₜ[σ] F | ‖g x - f₀ x‖ ≤ r * ‖x‖} := by
-      ext g
-      obtain ⟨g', rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective g
-      rw [ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
-        Metric.mem_closedBall, dist_eq_norm, Set.mem_iInter]
-      simp only [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
-      exact ⟨fun h x => (g' - f₀).le_of_opNorm_le h x, (g' - f₀).opNorm_le_bound hr⟩
-    rw [heq]
-    refine isClosed_iInter fun x => isClosed_le ?_ continuous_const
-    exact ((continuous_eval_const x).sub continuous_const).norm
+  refine isClosed_iff_forall_filter.mpr fun T l hl hmem hlim => ?_
+  have : l.NeBot := hl
+  have hmem' : ∀ᶠ S in l, ‖PointwiseConvergenceCLM.toCLM S - f₀‖ ≤ r := by
+    filter_upwards [le_principal_iff.mp hmem] with S ⟨S', hS', hS⟩
+    rw [← hS, PointwiseConvergenceCLM.toCLM_toPointwiseConvergenceCLM]
+    simpa [Metric.mem_closedBall, dist_eq_norm] using hS'
+  refine ⟨PointwiseConvergenceCLM.toCLM T, ?_,
+    PointwiseConvergenceCLM.toPointwiseConvergenceCLM_toCLM T⟩
+  rw [Metric.mem_closedBall, dist_eq_norm]
+  exact ContinuousLinearMap.opNorm_le_of_tendsto_pointwise
+    (T := fun S : E →SLₚₜ[σ] F => PointwiseConvergenceCLM.toCLM S - f₀) hmem' fun x => by
+      simpa using ((tendsto_iff_forall_tendsto.mp hlim) x).sub_const (f₀ x)
 
 end ClosedBall
 

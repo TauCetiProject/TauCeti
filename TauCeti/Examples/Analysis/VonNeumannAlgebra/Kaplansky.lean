@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Schmidt
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
@@ -77,37 +78,36 @@ section FiniteRankPlusScalars
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 variable (H) in
+/-- The nonunital star subalgebra of finite-rank bounded operators on `H`. -/
+def finiteRankOperators : NonUnitalStarSubalgebra ℂ (H →L[ℂ] H) where
+  carrier := {F | (F : H →ₗ[ℂ] H).HasFiniteRange}
+  add_mem' hF₁ hF₂ := hF₁.add hF₂
+  zero_mem' := LinearMap.HasFiniteRange.zero
+  mul_mem' hF₁ _ := hF₁.comp_right _
+  smul_mem' c _ hF := hF.smul c
+  star_mem' hF := hF.star
+
+variable (H) in
 /-- The unital star subalgebra of bounded operators of the form `algebraMap ℂ _ c + F` with `F` of
 finite rank. -/
-def finiteRankPlusScalars : StarSubalgebra ℂ (H →L[ℂ] H) where
-  carrier := {T | ∃ (c : ℂ) (F : H →L[ℂ] H),
-    (F : H →ₗ[ℂ] H).HasFiniteRange ∧ T = algebraMap ℂ (H →L[ℂ] H) c + F}
-  algebraMap_mem' c := ⟨c, 0, LinearMap.HasFiniteRange.zero, by simp⟩
-  add_mem' := by
-    rintro _ _ ⟨c₁, F₁, hF₁, rfl⟩ ⟨c₂, F₂, hF₂, rfl⟩
-    refine ⟨c₁ + c₂, F₁ + F₂, hF₁.add hF₂, ?_⟩
-    rw [map_add]
-    abel
-  mul_mem' := by
-    rintro _ _ ⟨c₁, F₁, hF₁, rfl⟩ ⟨c₂, F₂, hF₂, rfl⟩
-    refine ⟨c₁ * c₂, c₁ • F₂ + F₁ * algebraMap ℂ (H →L[ℂ] H) c₂ + F₁ * F₂, ?_, ?_⟩
-    · exact ((hF₂.smul c₁).add (hF₁.comp_right _)).add (hF₁.comp_right _)
-    · simp only [map_mul, Algebra.smul_def, add_mul, mul_add]
-      abel
-  star_mem' := by
-    rintro _ ⟨c, F, hF, rfl⟩
-    exact ⟨star c, star F, hF.star, by simp [Algebra.algebraMap_eq_smul_one]⟩
+def finiteRankPlusScalars : StarSubalgebra ℂ (H →L[ℂ] H) :=
+  (NonUnitalStarSubalgebra.unitization (finiteRankOperators H)).range
 
 @[simp]
 theorem mem_finiteRankPlusScalars {T : H →L[ℂ] H} :
     T ∈ finiteRankPlusScalars H ↔ ∃ (c : ℂ) (F : H →L[ℂ] H),
-      (F : H →ₗ[ℂ] H).HasFiniteRange ∧ T = algebraMap ℂ (H →L[ℂ] H) c + F :=
-  Iff.rfl
+      (F : H →ₗ[ℂ] H).HasFiniteRange ∧ T = algebraMap ℂ (H →L[ℂ] H) c + F := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨x.fst, x.snd, x.snd.property, NonUnitalStarSubalgebra.unitization_apply _ x⟩
+  · rintro ⟨c, F, hF, rfl⟩
+    refine ⟨Unitization.inl c + Unitization.inr (⟨F, hF⟩ : finiteRankOperators H), ?_⟩
+    simp [NonUnitalStarSubalgebra.unitization_apply]
 
 /-- Every finite-rank operator belongs to `finiteRankPlusScalars H`. -/
 theorem mem_finiteRankPlusScalars_of_hasFiniteRange {F : H →L[ℂ] H}
     (hF : (F : H →ₗ[ℂ] H).HasFiniteRange) : F ∈ finiteRankPlusScalars H :=
-  ⟨0, F, hF, by simp⟩
+  mem_finiteRankPlusScalars.2 ⟨0, F, hF, by simp⟩
 
 /-- The commutant of `finiteRankPlusScalars H` consists strictly of scalar multiples of `1`. -/
 theorem centralizer_coe_finiteRankPlusScalars :
@@ -291,7 +291,7 @@ theorem max_norm_le_norm_evenProjection_sub_algebraMap_add_compact (c : ℂ)
 theorem half_le_norm_evenProjection_sub {a : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)}
     (ha : a ∈ finiteRankPlusScalars ℓ^2(ℕ, ℂ)) :
     (1 / 2 : ℝ) ≤ ‖evenProjection - a‖ := by
-  obtain ⟨c, F, hF, rfl⟩ := ha
+  obtain ⟨c, F, hF, rfl⟩ := mem_finiteRankPlusScalars.1 ha
   have hmax := max_norm_le_norm_evenProjection_sub_algebraMap_add_compact c hF.isCompactOperator
   have h1 : (1 : ℝ) ≤ ‖1 - c‖ + ‖c‖ := by simpa using norm_add_le (1 - c) c
   linarith [le_max_left ‖1 - c‖ ‖c‖, le_max_right ‖1 - c‖ ‖c‖]

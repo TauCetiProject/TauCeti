@@ -69,6 +69,16 @@ theorem mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)}
     T ∈ S.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ S :=
   Iff.rfl
 
+/-- Placing an element of `S` in a single `(i, j)` block belongs to `S.piLpMatrix ι`, and
+conversely. -/
+theorem singleEntryCLM_mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {i j : ι}
+    {s : H →L[𝕜] H} :
+    PiLp.singleEntryCLM i j s ∈ S.piLpMatrix ι ↔ s ∈ S := by
+  refine ⟨fun h => by simpa using h i j, fun hs k l => ?_⟩
+  rw [piLpEntry_singleEntryCLM]
+  split_ifs
+  exacts [hs, zero_mem S]
+
 /-- The diagonal amplification of an element of `S` lies in the matrix amplification of `S`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {s : H →L[𝕜] H}
     (hs : s ∈ S) : PiLp.diagStarAlgHom 𝕜 H ι s ∈ S.piLpMatrix ι := fun i j => by
@@ -90,11 +100,8 @@ theorem mem_centralizer_piLpMatrix_iff (S : StarSubalgebra 𝕜 (H →L[𝕜] H)
     have hE (a b k l : ι) :
         (if k = a then R.piLpEntry b l else 0) = if l = b then R.piLpEntry k a else 0 := by
       have h := congrArg (fun T => piLpEntry T k l)
-        (hR (ofPiLpEntries fun k l => if k = a ∧ l = b then 1 else 0) fun k l => by
-          rw [piLpEntry_ofPiLpEntries]
-          split_ifs
-          exacts [one_mem S, zero_mem S])
-      simpa [piLpEntry_mul, ite_and, Finset.sum_ite_eq'] using h
+        (hR (PiLp.singleEntryCLM a b 1) (singleEntryCLM_mem_piLpMatrix.2 (one_mem S)))
+      simpa using h
     refine ⟨fun i j hij => ?_, fun i j => ?_, fun i s hs => ?_⟩
     · simpa [hij.symm] using hE i i i j
     · simpa using (hE i j i j).symm
