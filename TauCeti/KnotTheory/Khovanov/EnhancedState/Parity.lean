@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Khovanov.EnhancedState
-public import TauCeti.KnotTheory.PDCode.Planar
+public import TauCeti.KnotTheory.Khovanov.EnhancedState.Basic
 import TauCeti.KnotTheory.PDCode.ResolvedCircle.Planar
 import TauCeti.KnotTheory.PDCode.ResolvedCircle.Seifert
 

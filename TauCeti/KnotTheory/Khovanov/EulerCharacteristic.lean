@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.LinearAlgebra.Dimension.Localization
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Unlink
-public import Mathlib.LinearAlgebra.Dimension.Localization
+import Mathlib.Algebra.EuclideanDomain.Int
+import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.KnotTheory.Khovanov.EnhancedState.Evaluation
 
 /-!
 # Khovanov homology and its graded Euler characteristic
@@ -34,7 +38,9 @@ enhanced state sum (`TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSu
 nonempty diagram this is Khovanov's theorem that the graded Euler characteristic is `(q + q⁻¹)`
 times the Jones polynomial at `t ^ (1/2) = -q`
 (`TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`). The empty diagram has
-graded Euler characteristic `1`.
+graded Euler characteristic `1`. At `q = 1`, `χ_q Kh(D; R)` evaluates to `2 ^ c`, hence is nonzero
+and has a nonzero coefficient in some quantum degree `j ≡ c (mod 2)` for every planar diagram,
+including the empty diagram.
 
 ## Main definitions
 
@@ -57,6 +63,12 @@ graded Euler characteristic `1`.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`: for a nonempty diagram,
   `χ_q Kh(D; R) = (q + q⁻¹) J(D)|_{t ^ (1/2) = -q}`.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_empty`: the empty diagram has `χ_q Kh = 1`.
+* `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar`,
+  `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`, and
+  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero` (with specializations
+  `khovanovEulerChar_int_ne_zero` and `khovanovEulerChar_rat_ne_zero`): `χ_q Kh(D; R)` evaluates
+  to `2 ^ c` at `q = 1`, is nonzero, and has a nonzero coefficient in some parity-compatible quantum
+  degree.
 
 ## References
 
@@ -74,6 +86,8 @@ open CategoryTheory CategoryTheory.Limits HomologicalComplex LaurentPolynomial
 namespace TauCeti.OrientedPDCode
 
 universe u
+
+section Ring
 
 variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
@@ -216,5 +230,48 @@ theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.com
     D.khovanovEulerChar hD R =
       (T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial := by
   rw [khovanovEulerChar_eq_enhancedStateSum, enhancedStateSum_eq_mul_eval₂_jonesPolynomial D h]
+
+/-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`**, for every
+planar oriented diagram over any Noetherian commutative ring `R` satisfying rank-nullity. -/
+theorem eval₂_one_khovanovEulerChar :
+    eval₂ (RingHom.id ℤ) 1 (D.khovanovEulerChar hD R) = (2 : ℤ) ^ D.componentCount := by
+  rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.eval₂_one_enhancedStateSum_eq_two_pow hD]
+
+/-- **The graded Euler characteristic of Khovanov homology is nonzero** for every planar oriented
+diagram (including the empty diagram) over any Noetherian commutative ring `R` satisfying
+rank-nullity. -/
+theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
+  intro hzero
+  have heval := D.eval₂_one_khovanovEulerChar hD R
+  rw [hzero, map_zero] at heval
+  exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
+
+/-- For every planar oriented PD-code `D`, some quantum degree `j ≡ D.componentCount (mod 2)` has a
+nonzero coefficient in `D.khovanovEulerChar hD R`. -/
+theorem exists_coeff_khovanovEulerChar_ne_zero :
+    ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧ (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
+  have ⟨j, hj⟩ : ∃ j : ℤ, (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
+    by_contra! hall
+    exact D.khovanovEulerChar_ne_zero hD R
+      (AddMonoidAlgebra.coeff_injective <| Finsupp.ext hall)
+  exact ⟨j, by_contra fun hmod ↦ hj (D.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne hD R hmod), hj⟩
+
+end Ring
+
+section IntAndRat
+
+variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
+
+/-- The integral graded Euler characteristic `χ_q Kh(D; ℤ)` of any planar oriented PD-code is
+nonzero. -/
+theorem khovanovEulerChar_int_ne_zero : D.khovanovEulerChar hD ℤ ≠ 0 :=
+  D.khovanovEulerChar_ne_zero hD ℤ
+
+/-- The rational graded Euler characteristic `χ_q Kh(D; ℚ)` of any planar oriented PD-code is
+nonzero. -/
+theorem khovanovEulerChar_rat_ne_zero : D.khovanovEulerChar hD ℚ ≠ 0 :=
+  D.khovanovEulerChar_ne_zero hD ℚ
+
+end IntAndRat
 
 end TauCeti.OrientedPDCode

@@ -9,7 +9,7 @@ public import TauCeti.KnotTheory.Khovanov.EnhancedState.Parity
 import TauCeti.KnotTheory.PDCode.VertexResolution
 
 /-!
-# Planar evaluations of the enhanced state sum
+# Planar evaluations of the enhanced state sum and the Jones polynomial
 
 For every planar oriented PD-code `D` with `c` link components, the enhanced-state parity identity
 `TauCeti.OrientedPDCode.stateQuantumShift_add_stateLoopCount_mod_two` shows that each state `s`
@@ -17,7 +17,8 @@ with `k(s)` resolution circles contributes `(-1) ^ (n + c) (-2) ^ k(s)` to the n
 enhanced-state Euler sum `E(D) = TauCeti.OrientedPDCode.enhancedStateEulerSum D`. Together with the
 unoriented state sum `∑ₛ (-2) ^ k(s) = (-1) ^ (n + c) 2 ^ c`
 (`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`), this yields `E(D) = 2 ^ c`, the `q = 1`
-evaluation of `D.enhancedStateSum`, and the sum of its Laurent coefficients.
+evaluation of `D.enhancedStateSum`, the sum of its Laurent coefficients, and the Jones
+specialization `J(D)|_{t ^ (1/2) = -1} = 2 ^ (c - 1)` for nonempty planar codes.
 
 ## Main results
 
@@ -27,12 +28,17 @@ evaluation of `D.enhancedStateSum`, and the sum of its Laurent coefficients.
   at `q = 1` yields `2 ^ c`.
 * `TauCeti.OrientedPDCode.sum_coeff_enhancedStateSum_eq_two_pow`: the sum of all Laurent
   coefficients of `D.enhancedStateSum` is `2 ^ c`.
+* `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial`: for a nonempty planar code, evaluating
+  the Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
 
 ## References
 
 * M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), 359–426.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*, Algebr. Geom. Topol. 2
   (2002), 337–370.
+* V. F. R. Jones, *A polynomial invariant for knots via von Neumann algebras*, Bull. Amer. Math.
+  Soc. 12 (1985), 103–111, Theorems 14–15 (p. 107).
+* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 3.
 -/
 
 public section
@@ -84,5 +90,28 @@ theorem sum_coeff_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toP
   rw [← laurentEval_one_eq_sum, laurentEval_eq_eval₂,
     RingHom.ext_int (algebraMap ℤ ℤ) (RingHom.id ℤ),
     D.eval₂_one_enhancedStateSum_eq_two_pow hD]
+
+/-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
+`2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
+theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
+    (hpos : 0 < D.toPDCode.componentCount) :
+    eval₂ (RingHom.id ℤ) (-1 : ℤˣ) D.jonesPolynomial = (2 : ℤ) ^ (D.componentCount - 1) := by
+  have hsum := congrArg (eval₂ (RingHom.id ℤ) (1 : ℤˣ))
+    (D.enhancedStateSum_eq_mul_eval₂_jonesPolynomial hpos)
+  rw [D.eval₂_one_enhancedStateSum_eq_two_pow hD, map_mul, map_add, eval₂_T, eval₂_T,
+    LaurentPolynomial.hom_eval₂] at hsum
+  have hhom : (eval₂ (RingHom.id ℤ) (1 : ℤˣ)).comp (Int.castRingHom ℤ[T;T⁻¹]) =
+      RingHom.id ℤ := Subsingleton.elim _ _
+  have hunit : Units.map (eval₂ (RingHom.id ℤ) (1 : ℤˣ) : ℤ[T;T⁻¹] →* ℤ) (-genericUnit ℤ) =
+      (-1 : ℤˣ) := by
+    ext
+    simp
+  rw [hhom, hunit] at hsum
+  obtain ⟨k, hk⟩ : ∃ k, D.toPDCode.componentCount = k + 1 := ⟨D.toPDCode.componentCount - 1, by
+    omega⟩
+  rw [hk, pow_succ'] at hsum
+  rw [hk, Nat.add_sub_cancel]
+  norm_num at hsum
+  omega
 
 end TauCeti.OrientedPDCode
