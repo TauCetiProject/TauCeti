@@ -18,10 +18,13 @@ Sobolev space `W^{1,2}` of the strip with boundary values in `L₀` and `L₁`
 (`TauCeti.StripSobolev.H1`), with values in `L²`, as the first-order operator
 `TauCeti.jetOperator` of a constant coefficient. For disjoint isotropic `L₀` and
 `L₁`, for instance a transverse pair of Lagrangian subspaces, the energy estimate
-`TauCeti.exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul` on test sections
-(`TauCeti.StripSobolev.exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp`) passes to the closure:
-it is the case `A = 0` of the semi-Fredholm estimate below together with a global `L²` bound, so
-the operator is bounded below, hence injective with closed range. This is the linearized operator
+`TauCeti.exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul` bounds the `W^{1,2}` norm of
+the jet of a test section by its Cauchy--Riemann image
+(`TauCeti.StripSobolev.exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp`). On `H1`, the operator is
+bounded below: this is the case `A = 0` of the semi-Fredholm estimate below together with the
+global `L²` bound from the energy estimate, via
+`TauCeti.StripSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`. Hence it is
+injective with closed range. This is the linearized operator
 of the constant Floer strip at a transverse intersection point of two Lagrangian submanifolds, in
 a unitary trivialization. Its surjectivity is not proved here.
 
@@ -49,7 +52,10 @@ range (`TauCeti.StripSobolev.isClosed_range_jetOperator_cauchyRiemannAddJetCoeff
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix B,
-  on the energy identity and linear Lagrangian boundary integration by parts.
+  on the energy identity, linear Lagrangian boundary integration by parts and the semi-Fredholm
+  estimate (energy estimate plus a compact error term).
+* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
+  Math. Ser. 7 (1999), Lecture 2, on the semi-Fredholm estimate for the perturbed strip operator.
 -/
 
 public section
@@ -312,13 +318,14 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Sub
 instance a transverse pair of Lagrangian subspaces, and let `A` be a continuous zeroth-order term
 vanishing for `|s| > T`. Then the operator `∂s + J ∂t + A` satisfies the semi-Fredholm estimate
 on the test sections with boundary values in `L₀` and `L₁`, with error term on
-`[-T, T] × [0, 1]`: the energy estimate for `∂s + J ∂t` controls everything, up to `A ξ`, which
-lives on that compact piece. -/
+`[-T, T] × [0, 1]`. This follows McDuff--Salamon, Appendix B, and Salamon, Lecture 2. -/
 theorem exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁)
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     ∃ C, HasSemiFredholmEstimate L₀ L₁ (cauchyRiemannAddJetCoeff J A) C T := by
+  -- The energy estimate for `∂s + J ∂t` controls everything up to `A ξ`, which lives on
+  -- `[-T, T] × [0, 1]`.
   obtain ⟨C, hC, hest⟩ := exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann hg hL₀ hL₁ hL
   obtain ⟨B, -, hB⟩ := exists_forall_mem_strip_norm_le hA hAT
   refine ⟨2 * C * (1 + B ^ 2), hasSemiFredholmEstimate_iff.2 fun ξ hξ2 h₀ h₁ a b _ hvan ↦ ?_⟩
