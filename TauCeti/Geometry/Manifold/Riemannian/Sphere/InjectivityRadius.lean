@@ -104,7 +104,8 @@ theorem isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 :
   isLocalDiffeomorphAt_of_injective_mfderiv (s := expDomain (𝓡 n) (sphere (0 : E) 1) p)
     (contMDiffOn_riemannianExp p) (isOpen_expDomain p) (by simp)
     BoundarylessManifold.isInteriorPoint (by simp)
-    (injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi hv) rfl
+    (injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi hv)
+    (tangentSpaceCastModel (𝓡 n) p).toLinearEquiv.finrank_eq
 
 /-- `riemannianExp` at `p : Sⁿ` is injective on the open tangent ball of radius `π`. -/
 theorem injOn_riemannianExp_sphere_ball_pi (p : sphere (0 : E) 1) :
@@ -208,13 +209,9 @@ theorem injectivityRadiusAt_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ} (
           (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
         Bundle.instIsContMDiffRiemannianBundle _;
       injectivityRadiusAt (𝓡 n) (sphere (0 : E) 1) p) = ENNReal.ofReal (r * Real.pi) := by
-  let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    ⟨(sphereRoundMetricOfRadius (E := E) (n := n) r hr).toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
-      (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    Bundle.instIsContMDiffRiemannianBundle (sphereRoundMetricOfRadius r hr)
-  rw [← WithMetric.injectivityRadiusAt_toWithMetric (sphereRoundMetricOfRadius r hr)
-      (fun _ _ _ ↦ rfl) p, injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius hn hr p]
+  rw [Bundle.ContMDiffRiemannianMetric.injectivityRadiusAt_eq_withMetric
+      (sphereRoundMetricOfRadius r hr) p,
+    injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius hn hr p]
 
 /-- **Global injectivity radius of the round `n`-sphere of radius `r > 0` (`letI` form,
 `1 ≤ n`).** -/
@@ -225,12 +222,8 @@ theorem injectivityRadius_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ} (hr
           (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
         Bundle.instIsContMDiffRiemannianBundle _;
       injectivityRadius (𝓡 n) (sphere (0 : E) 1)) = ENNReal.ofReal (r * Real.pi) := by
-  let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
-      (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
-    Bundle.instIsContMDiffRiemannianBundle (sphereRoundMetricOfRadius r hr)
-  rw [← WithMetric.injectivityRadius_eq (sphereRoundMetricOfRadius r hr) fun _ _ _ ↦ rfl,
+  rw [Bundle.ContMDiffRiemannianMetric.injectivityRadius_eq_withMetric
+      (sphereRoundMetricOfRadius r hr),
     injectivityRadius_withMetric_sphereRoundMetricOfRadius hn hr]
 
 /-! ### Antipodal conjugate multiplicity and non-uniqueness of minimizing geodesics -/
@@ -241,11 +234,14 @@ theorem conjugateMultiplicity_sphere_of_norm_eq_pi {p : sphere (0 : E) 1}
     {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ = Real.pi) :
     conjugateMultiplicity (isGeodesicCurveOn_riemannianExp_smul_sphere_univ p v)
       isPreconnected_univ (mem_univ (0 : ℝ)) (1 : ℝ) = n - 1 := by
+  have hvel : ‖curveVelocityWithin (𝓡 n)
+      (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) univ 0‖ = Real.pi := by
+    rw [curveVelocityWithin_univ, curveVelocity_riemannianExp_smul_zero]
+    rw [zero_smul, riemannianExp_zero, hv]
   have hS : curvatureSine ((1 : ℝ) * ‖curveVelocityWithin (𝓡 n)
       (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) univ 0‖ ^ 2) 1 = 0 := by
-    rw [curveVelocityWithin_univ, curveVelocity_riemannianExp_smul_zero, zero_smul,
-      riemannianExp_zero, hv, one_mul, curvatureSine_of_pos (sq_pos_of_pos Real.pi_pos),
-      Real.sqrt_sq Real.pi_pos.le, mul_one, Real.sin_pi, zero_div]
+    rw [hvel, one_mul, curvatureSine_of_pos (sq_pos_of_pos Real.pi_pos)]
+    simp [Real.sqrt_sq Real.pi_pos.le]
   simpa only [finrank_euclideanSpace_fin] using
     conjugateMultiplicity_eq_finrank_sub_one_of_curvatureSine_eq_zero
       (hγ := isGeodesicCurveOn_riemannianExp_smul_sphere_univ p v) isPreconnected_univ (by simp)

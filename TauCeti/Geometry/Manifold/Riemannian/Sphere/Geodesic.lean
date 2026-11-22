@@ -252,9 +252,9 @@ theorem isGeodesicCurveOn_riemannianExp_smul_sphere_univ (p : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) p) :
     IsGeodesicCurveOn (𝓡 n)
       (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) univ :=
-  (funext (riemannianExp_smul p v)).symm ▸ (geodesicInterval_sphere (n := n) p v ▸
-    (isGeodesicCurveOnFrom_maximalGeodesic (I := 𝓡 n) (M := sphere (0 : E) 1)
-      p v).isGeodesicCurveOn)
+  (geodesicInterval_sphere (n := n) p v ▸
+    isGeodesicCurveOnFrom_riemannianExp_smul (I := 𝓡 n) (M := sphere (0 : E) 1)
+      p v).isGeodesicCurveOn
 
 /-- Along any radial geodesic `t ↦ exp_p (t • v)` on `Sⁿ`, the Riemannian length on `[0, 1]` is
 `‖v‖ₑ` (for every `v`, including `‖v‖ ≥ π`). -/
@@ -270,13 +270,14 @@ theorem inner_coe_riemannianExp_sphere (p : sphere (0 : E) 1) (v : TangentSpace 
     ⟪(p : E), (riemannianExp (𝓡 n) (sphere (0 : E) 1) p v : E)⟫_ℝ = Real.cos ‖v‖ := by
   rw [coe_riemannianExp_sphere, inner_add_right, real_inner_smul_right, real_inner_smul_right,
     real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.1 p.property,
-    inner_coe_mvfderiv_subtypeVal_sphere, one_pow, mul_one, mul_zero, add_zero]
+    inner_coe_mvfderiv_subtypeVal_sphere]
+  simp
 
 /-- Every tangent vector of norm `π` at `p : Sⁿ` exponentiates to the antipodal point `-p`. -/
 theorem riemannianExp_sphere_eq_neg_of_norm_eq_pi {p : sphere (0 : E) 1}
     {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ = Real.pi) :
     riemannianExp (𝓡 n) (sphere (0 : E) 1) p v = -p := by
-  rw [Subtype.ext_iff, coe_riemannianExp_sphere, hv, Real.cos_pi, Real.sin_pi, zero_div,
-    zero_smul, add_zero, neg_one_smul]; rfl
+  rw [Subtype.ext_iff, coe_riemannianExp_sphere, coe_neg_sphere, hv]
+  simp only [Real.cos_pi, Real.sin_pi, zero_div, zero_smul, add_zero, neg_one_smul]
 
 end TauCeti

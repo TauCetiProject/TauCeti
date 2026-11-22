@@ -22,11 +22,8 @@ radial distance identities, and existence and uniqueness of minimizing geodesics
 
 ## Main results
 
-* `TauCeti.Manifold.isNormalDomain_ball_iff_exists_partialDiffeomorph_eball`,
-  `TauCeti.Manifold.isNormalDomain_ball_iff_exists_partialDiffeomorph_ball`,
-  `TauCeti.Manifold.injectivityRadiusAt_eq_sSup_eball`,
-  `TauCeti.Manifold.injectivityRadiusAt_eq_sSup_ball`: partial-diffeomorphism and supremum
-  characterizations onto metric balls.
+* `TauCeti.Manifold.injectivityRadiusAt_eq_sSup_eball`,
+  `TauCeti.Manifold.injectivityRadiusAt_eq_sSup_ball`: supremum characterizations onto metric balls.
 * `TauCeti.Manifold.edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt`,
   `TauCeti.Manifold.dist_riemannianExp_eq_norm_of_enorm_lt_injectivityRadiusAt`,
   `TauCeti.Manifold.image_riemannianExp_eball_injectivityRadiusAt`: radial distances and
@@ -35,8 +32,8 @@ radial distance identities, and existence and uniqueness of minimizing geodesics
   `TauCeti.Manifold.exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt`,
   `TauCeti.Manifold.exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadius`,
   `TauCeti.Manifold.exists_isGeodesicSegment_and_unique_of_ofReal_dist_lt_injectivityRadiusAt`,
-  `exists_isGeodesicCurveOn_Icc_and_unique_of_riemannianEDist_lt_injectivityRadius`:
-  existence and uniqueness of minimizing geodesics below `inj(p)` and `inj(M)`.
+  `TauCeti.Manifold.exists_isGeodesicCurveOn_Icc_and_unique_of_riemannianEDist_lt_injectivityRadius`
+  : existence and uniqueness of minimizing geodesics below `inj(p)` and `inj(M)`.
 
 ## References
 
@@ -66,27 +63,7 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M]
 
-/-! ### Metric-ball partial-diffeomorphism characterization -/
-
-/-- **Metric-ball characterization of normal tangent balls.** For `r > 0`, the open tangent ball
-`B(0, r) ⊆ T_p M` is a normal domain if and only if `exp_p` restricts to a smooth partial
-diffeomorphism from `B(0, r)` onto the open metric ball `Metric.eball p (ENNReal.ofReal r)`. -/
-theorem isNormalDomain_ball_iff_exists_partialDiffeomorph_eball {p : M} {r : ℝ} (hr : 0 < r) :
-    IsNormalDomain I M p (Metric.ball 0 r) ↔
-      ∃ e : PartialDiffeomorph 𝓘(ℝ, TangentSpace I p) I (TangentSpace I p) M ∞,
-        e.source = Metric.ball 0 r ∧ e.target = Metric.eball p (ENNReal.ofReal r) ∧
-          EqOn e (riemannianExp I M p) (Metric.ball 0 r) := by
-  refine ⟨fun h ↦ ⟨h.toPartialDiffeomorph, h.toPartialDiffeomorph_source,
-    by rw [h.toPartialDiffeomorph_target, h.image_riemannianExp_ball subset_rfl],
-    fun _ _ ↦ congrFun h.coe_toPartialDiffeomorph _⟩, fun ⟨e, hsrc, _, heq⟩ ↦ ?_⟩
-  have hinj : InjOn (riemannianExp I M p) (Metric.ball 0 r) :=
-    (hsrc ▸ e.toOpenPartialHomeomorph.injOn).congr heq
-  refine ⟨Metric.isOpen_ball, Metric.mem_ball_self hr,
-    (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ ?_,
-    hinj, fun ⟨v, hv⟩ ↦
-      isLocalDiffeomorphAt_of_eqOn (Φ := e) (hsrc.symm ▸ hv) (hsrc.symm ▸ heq.symm)⟩
-  exact by_contra fun hv' ↦ hv' ((hinj hv (Metric.mem_ball_self hr)
-    (by rw [riemannianExp_of_notMem_expDomain hv', riemannianExp_zero])) ▸ zero_mem_expDomain p)
+/-! ### Metric-ball supremum characterization -/
 
 /-- **Metric-ball supremum formula for `injectivityRadiusAt`.** The injectivity radius at `p` is the
 supremum over `r ≥ 0` of the radii for which `exp_p` restricts to a smooth partial diffeomorphism
@@ -196,10 +173,8 @@ theorem exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt 
         EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
   obtain ⟨v, ⟨hv, rfl⟩, -⟩ := existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt hq
   exact ⟨v, (edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv).symm, rfl,
-    (funext (riemannianExp_smul p v)).symm ▸
-      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono
-        (uniqueDiffOn_Icc zero_lt_one) (ordConnected_geodesicInterval.out zero_mem_geodesicInterval
-          (mem_expDomain_iff.1 (mem_expDomain_of_enorm_lt_injectivityRadiusAt hv))),
+    isGeodesicCurveOn_riemannianExp_smul_Icc zero_lt_one zero_mem_geodesicInterval
+      (mem_expDomain_iff.1 (mem_expDomain_of_enorm_lt_injectivityRadiusAt hv)),
     pathELength_riemannianExp_smul_eq_edist_of_enorm_lt_injectivityRadiusAt hv, fun _ ↦
       eqOn_riemannianExp_smul_of_isGeodesicCurveOn_of_enorm_lt_injectivityRadiusAt hv⟩
 
@@ -228,14 +203,6 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M]
-
-/-- Ordinary-metric counterpart of `isNormalDomain_ball_iff_exists_partialDiffeomorph_eball`. -/
-theorem isNormalDomain_ball_iff_exists_partialDiffeomorph_ball {p : M} {r : ℝ} (hr : 0 < r) :
-    IsNormalDomain I M p (Metric.ball 0 r) ↔
-      ∃ e : PartialDiffeomorph 𝓘(ℝ, TangentSpace I p) I (TangentSpace I p) M ∞,
-        e.source = Metric.ball 0 r ∧ e.target = Metric.ball p r ∧
-          EqOn e (riemannianExp I M p) (Metric.ball 0 r) := by
-  rw [isNormalDomain_ball_iff_exists_partialDiffeomorph_eball hr, Metric.eball_ofReal]
 
 /-- Ordinary-metric counterpart of `injectivityRadiusAt_eq_sSup_eball`: `inj(p)` is the supremum
 over `r ≥ 0` of the radii for which `exp_p` restricts to a smooth partial diffeomorphism from the
@@ -307,27 +274,41 @@ variable
 
 /-! ### Intrinsic `riemannianEDist` versions without `[IsRiemannianManifold I M]` -/
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- Transfers a `riemannianEDist` statement to the `EMetricSpace.ofRiemannianMetric` instance. -/
+private theorem with_ofRiemannianMetric {P : (M → M → ℝ≥0∞) → Prop}
+    (h : ∀ [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)],
+      @P (@edist M (EMetricSpace.ofRiemannianMetric I M).toEDist)) :
+    P (riemannianEDist I) := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
+  let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
+  have h1 := h
+  rwa [show (edist : M → M → ℝ≥0∞) = riemannianEDist I from
+    funext₂ (IsRiemannianManifold.out (I := I))] at h1
+
 /-- **Intrinsic radial distance below `inj(p)`.** Requires no `IsRiemannianManifold` instance on
 `M`. -/
 theorem riemannianEDist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt {p : M}
     {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
-    riemannianEDist I p (riemannianExp I M p v) = ‖v‖ₑ := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
-  let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  rw [← IsRiemannianManifold.out (I := I)]
-  exact edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv
+    riemannianEDist I p (riemannianExp I M p v) = ‖v‖ₑ :=
+  with_ofRiemannianMetric (P := fun d ↦ d p (riemannianExp I M p v) = ‖v‖ₑ) <| by
+    intro _
+    let : EMetricSpace M := .ofRiemannianMetric I M
+    exact edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv
 
 /-- Every point `q` with `riemannianEDist I p q < injectivityRadiusAt I M p` has a unique preimage
 under `exp_p` of extended norm strictly less than `inj(p)`. -/
 theorem existsUnique_riemannianExp_eq_of_riemannianEDist_lt_injectivityRadiusAt {p q : M}
     (hq : riemannianEDist I p q < injectivityRadiusAt I M p) :
-    ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
-  let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  rw [← IsRiemannianManifold.out (I := I)] at hq
-  exact existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt hq
+    ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q :=
+  with_ofRiemannianMetric
+    (P := fun d ↦ d p q < injectivityRadiusAt I M p →
+      ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q)
+    (by
+      intro _
+      let : EMetricSpace M := .ofRiemannianMetric I M
+      exact existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt) hq
 
 /-- **Unique minimizing geodesic below `inj(p)` (`riemannianEDist` form).** Applicable even when `M`
 carries a non-intrinsic ambient metric (such as the chordal metric on an embedded sphere). -/
@@ -338,12 +319,19 @@ theorem exists_isGeodesicCurveOn_Icc_and_unique_of_riemannianEDist_lt_injectivit
       pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 = riemannianEDist I p q ∧
       ∀ γ : ℝ → M, IsGeodesicCurveOn I γ (Icc 0 1) → γ 0 = p → γ 1 = q →
         pathELength I γ 0 1 ≤ riemannianEDist I p q →
-        EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
-  let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  simp_rw [← IsRiemannianManifold.out (I := I)] at hq ⊢
-  exact exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt hq
+        EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) :=
+  with_ofRiemannianMetric
+    (P := fun d ↦ d p q < injectivityRadiusAt I M p →
+      ∃ v : TangentSpace I p, ‖v‖ₑ = d p q ∧ riemannianExp I M p v = q ∧
+        IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) ∧
+        pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 = d p q ∧
+        ∀ γ : ℝ → M, IsGeodesicCurveOn I γ (Icc 0 1) → γ 0 = p → γ 1 = q →
+          pathELength I γ 0 1 ≤ d p q →
+          EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1))
+    (by
+      intro _
+      let : EMetricSpace M := .ofRiemannianMetric I M
+      exact exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt) hq
 
 /-- **Unique minimizing geodesic below `inj(M)` (`riemannianEDist` form).** -/
 theorem exists_isGeodesicCurveOn_Icc_and_unique_of_riemannianEDist_lt_injectivityRadius {p q : M}

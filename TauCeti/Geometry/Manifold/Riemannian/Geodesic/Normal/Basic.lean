@@ -39,6 +39,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.exists_partialDiffeomorph_riemannianExp_comp`: the
   exponential map precomposed with a linear isomorphism carrying an open set into a normal domain
   is a partial diffeomorphism with that open set as source.
+* `TauCeti.Manifold.IsNormalDomain.image_of_diffeomorph`: transport of a normal domain along a
+  base diffeomorphism and tangent linear equivalence intertwining `exp`.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
 * `TauCeti.Manifold.exists_pos_maximalGeodesic_eq_iff_of_not_sameRay`: radial geodesics in
   directions on no common ray meet for small nonnegative parameters only at zero parameters.
@@ -173,6 +175,44 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
   ordConnected_geodesicInterval.out
     (zero_mem_geodesicInterval_of_mem (mem_expDomain_iff.1 (h.subset_expDomain hv)))
     (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
+
+/-- Transport of a normal domain along a base diffeomorphism `Φ : M ≃ₘ^∞⟮I, J⟯ N` and a
+continuous linear equivalence `L : TangentSpace I p ≃L[ℝ] TangentSpace J (Φ p)` that map `U` into
+the target exponential domain and intertwine the exponential maps on `U`. -/
+theorem image_of_diffeomorph
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+    [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+    (h : IsNormalDomain I M p U) (Φ : M ≃ₘ^∞⟮I, J⟯ N)
+    (L : TangentSpace I p ≃L[ℝ] TangentSpace J (Φ p))
+    (hdom : MapsTo L U (expDomain J N (Φ p)))
+    (hexp : ∀ v ∈ U, riemannianExp J N (Φ p) (L v) = Φ (riemannianExp I M p v)) :
+    IsNormalDomain J N (Φ p) (L '' U) := by
+  refine ⟨L.toHomeomorph.isOpenMap U h.isOpen, ⟨0, h.zero_mem, map_zero L⟩,
+    map_zero L ▸ h.starConvex.linear_image L.toLinearMap, hdom.image_subset, ?_, ?_⟩
+  · rintro _ ⟨v₁, hv₁, rfl⟩ _ ⟨v₂, hv₂, rfl⟩ heq
+    rw [hexp v₁ hv₁, hexp v₂ hv₂] at heq
+    exact congrArg L (h.injOn hv₁ hv₂ (Φ.injective heq))
+  · rintro ⟨_, v, hv, rfl⟩
+    have h1 : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace J (Φ p)) 𝓘(ℝ, TangentSpace I p) ∞ L.symm
+        (L v) := by
+      simpa only [ContinuousLinearEquiv.coe_toDiffeomorph] using
+        L.symm.toDiffeomorph.isLocalDiffeomorph (L v)
+    have hloc : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+        (L.symm (L v)) := by
+      rw [L.symm_apply_apply]
+      exact h.isLocalDiffeomorphOn ⟨v, hv⟩
+    have hopen : IsOpen (L '' U) := by
+      simpa only [ContinuousLinearEquiv.coe_toHomeomorph] using
+        L.toHomeomorph.isOpenMap U h.isOpen
+    obtain ⟨Ψ, hΨ, hΨsub, heqΨ⟩ :=
+      ((h1.comp (hg := hloc)).comp (hg := Φ.isLocalDiffeomorph _)).exists_partialDiffeomorph_eqOn
+        hopen ⟨v, hv, rfl⟩
+    refine isLocalDiffeomorphAt_of_eqOn hΨ fun w hw ↦ ?_
+    obtain ⟨u, hu, rfl⟩ := hΨsub hw
+    simpa only [Function.comp_apply, L.symm_apply_apply, ← heqΨ hw] using hexp u hu
 
 variable [I.Boundaryless] [T2Space M]
 

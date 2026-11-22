@@ -115,6 +115,12 @@ def riemannianIsometryOfInnerEq : RiemannianIsometry I I (WithMetric g₁) (With
     (riemannianIsometryOfInner_symm_apply g₂ h _).trans
       (congrArg (toWithMetric g₂) (congrFun (coe_riemannianIsometry g₁) x))
 
+/-- Evaluating the inverse of `riemannianIsometryOfInnerEq` at `x` returns
+`toWithMetric g₁ x.ofWithMetric`. -/
+@[simp] theorem riemannianIsometryOfInnerEq_symm_apply (x : WithMetric g₂) :
+    (riemannianIsometryOfInnerEq g₁ g₂ h).symm x = toWithMetric g₁ x.ofWithMetric :=
+  (EquivLike.injective (riemannianIsometryOfInnerEq g₁ g₂ h)).eq_iff.1 <| by simp
+
 end InnerEq
 
 end TauCeti.WithMetric
