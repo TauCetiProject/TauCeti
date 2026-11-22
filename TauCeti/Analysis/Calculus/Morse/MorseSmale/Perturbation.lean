@@ -410,8 +410,7 @@ theorem mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMe
 
 /-- **Unstable sets of low rest points are unchanged.** If the family is supported where `f > c`
 and `f p < c`, then for all sufficiently small `s` the unstable set of `p` for the perturbed flow
-is that for the flow of `f`: on the supports the perturbation stays above `f p`, so the backward
-orbits of points of either unstable set avoid them. -/
+is that for the flow of `f`. -/
 theorem exists_pos_forall_unstableSet_perturb_eq (hfs : ContDiff ℝ 1 f)
     (hh : ∀ i, ContDiff ℝ 1 (h i)) (hc : ∀ i, HasCompactSupport (h i))
     (hf : LipschitzWith K (∇ f)) {c : ℝ} (hsupp : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c) {p : E}

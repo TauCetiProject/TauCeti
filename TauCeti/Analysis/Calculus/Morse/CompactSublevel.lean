@@ -193,8 +193,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
 
 /-- **Broken limits lower the value.** Let `f` be a globally Morse function whose sublevel at `p`
 is compact. If a point of the unstable set of a nondegenerate critical point `a ≠ p` is a limit of
-points of the unstable set of `p`, then `f a < f p`: the limiting trajectories break at a critical
-point `b` with `f a < f b ≤ f p`. -/
+points of the unstable set of `p`, then `f a < f p`. -/
 theorem value_lt_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hM : HasNondegenerateCriticalPointsOn f univ) {p a y : E}

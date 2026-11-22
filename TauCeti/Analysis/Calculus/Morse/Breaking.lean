@@ -211,8 +211,11 @@ theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
   rw [hzx, dist_self] at hzr
   exact (ne_of_gt hr) hzr.symm
 
-/-- Find the preceding critical point after a break in a backward limit. This is the time-reversed
-counterpart of `exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
+/-- If the closure of `Wᵘ(p)` meets `Wᵘ(x)` for `x ≠ p`, and every backward orbit in that
+closure converges to a nondegenerate critical point, then there is a nonconstant connecting orbit
+from another nondegenerate critical point `a` to `x`, with a point in the closure of `Wᵘ(p)`. This
+is the time-reversed counterpart of
+`exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
 theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {p y : E} (hpx : p ≠ x)
