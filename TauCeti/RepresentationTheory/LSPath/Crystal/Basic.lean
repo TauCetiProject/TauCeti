@@ -443,6 +443,22 @@ theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
   | zero => simp
   | succ n ih => simp [NormalCrystal.fIter_succ, lowerIter_succ, ih]
 
+@[simp]
+theorem unattach_normalCrystalOn_eWord (w : List b.support) (π : S) :
+    ((normalCrystalOn hf hF hS).eWord w π).unattach =
+      raiseWord F (fun i ↦ f (P.root i)) w π.val := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih => simp [NormalCrystal.eWord_cons, raiseWord_cons, ih]
+
+@[simp]
+theorem unattach_normalCrystalOn_fWord (w : List b.support) (π : S) :
+    ((normalCrystalOn hf hF hS).fWord w π).unattach =
+      lowerWord F (fun i ↦ f (P.root i)) w π.val := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih => simp [NormalCrystal.fWord_cons, lowerWord_cons, ih]
+
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
 theorem normalCrystalOn_graph_adj_iff {π π' : S} :

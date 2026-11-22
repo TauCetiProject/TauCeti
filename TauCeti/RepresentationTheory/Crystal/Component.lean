@@ -93,18 +93,6 @@ theorem graph_adj_of_e_eq_some (h : c.e i x = some y) : c.graph.Adj x y :=
 theorem graph_adj_of_f_eq_some (h : c.f i x = some y) : c.graph.Adj x y :=
   c.graph_adj_iff.2 ⟨i, Or.inr (c.f_eq_some_iff.1 h)⟩
 
-/-- Elements connected by a defined raising word are reachable in the crystal graph. -/
-theorem reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
-    c.graph.Reachable x y := by
-  rw [SimpleGraph.reachable_iff_reflTransGen]
-  exact TauCeti.reflTransGen_of_nil_of_cons_eq_some c.eWord_nil c.eWord_cons
-    (fun h' ↦ c.graph_adj_of_e_eq_some h') h
-
-/-- Elements connected by a defined lowering word are reachable in the crystal graph. -/
-theorem reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
-    c.graph.Reachable x y :=
-  (c.reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
-
 /-- Lowering operators also define the crystal graph. -/
 theorem graph_adj_iff_f : c.graph.Adj x y ↔ ∃ i, c.f i x = some y ∨ c.f i y = some x := by
   simp only [graph_adj_iff, c.f_eq_some_iff, or_comm]
@@ -114,16 +102,34 @@ theorem dual_graph : c.dual.graph = c.graph := by
   ext x y
   rw [graph_adj_iff, dual_e, ← graph_adj_iff_f]
 
+/-- Elements connected by a word of raising operators lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
+    c.graph.Reachable x y := by
+  induction w generalizing x with
+  | nil =>
+    simp only [eWord_nil, Option.some.injEq] at h
+    exact h ▸ SimpleGraph.Reachable.refl _
+  | cons i w ih =>
+    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eWord_cons i w x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
+
 /-- Elements connected by an iterated raising operator lie in the same connected component of the
 crystal graph. -/
 theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
     c.graph.Reachable x y :=
-  c.reachable_of_eWord_eq_some (w := List.replicate n i) (by simpa [eWord_replicate] using h)
+  c.reachable_of_eWord_eq_some (w := List.replicate n i) (by rwa [eWord_replicate])
 
 /-- Elements connected by an iterated lowering operator lie in the same connected component of the
 crystal graph. -/
 theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
-  c.reachable_of_fWord_eq_some (w := List.replicate n i) (by simpa [fWord_replicate] using h)
+  (c.reachable_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
+/-- Elements connected by a word of lowering operators lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
+    c.graph.Reachable x y :=
+  (c.reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
 
 end Graph
 
