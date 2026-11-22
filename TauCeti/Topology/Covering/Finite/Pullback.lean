@@ -31,10 +31,8 @@ theorem IsFiniteCover.pullback_fst (hp : IsFiniteCover p) (hf : Continuous f) :
   surjective := by
     intro x
     obtain ⟨z, hz⟩ := hp.surjective (f x)
-    exact ⟨⟨(x, z), hz.symm⟩, rfl⟩
-  finite_fiber := by
-    intro x
-    let : Finite (p ⁻¹' {f x}) := hp.finite_fiber (f x)
-    exact Finite.of_equiv _ (Pullback.fstPreimageEquiv x).symm
+    exact ⟨(Pullback.fstPreimageEquiv x).symm ⟨z, hz⟩,
+      Pullback.fst_fstPreimageEquiv_symm_apply x ⟨z, hz⟩⟩
+  finite_fiber := fun x ↦ Pullback.finite_preimage_fst_singleton x (hp.finite_fiber (f x))
 
 end TauCeti

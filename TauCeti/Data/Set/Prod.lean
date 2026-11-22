@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Prod
+public import Mathlib.Basic.Finite.Defs
 
 /-!
 # Graphs and fibre products of functions
@@ -48,6 +49,12 @@ def Function.Pullback.fstPreimageEquiv (x : X) :
   invFun z := ⟨⟨(x, z.val), z.property.symm⟩, rfl⟩
   left_inv y := Subtype.ext (Pullback.ext y.property.symm rfl)
   right_inv _ := rfl
+
+/-- The fibre of the first pullback projection over `x` is finite if the original fibre over
+`f x` is finite. -/
+theorem Function.Pullback.finite_preimage_fst_singleton (x : X) (h : Finite (g ⁻¹' {f x})) :
+    Finite ((Pullback.fst : f.Pullback g → X) ⁻¹' {x}) :=
+  (Pullback.fstPreimageEquiv x).finite_iff.mpr h
 
 @[simp]
 theorem Function.Pullback.fstPreimageEquiv_apply_coe (x : X)

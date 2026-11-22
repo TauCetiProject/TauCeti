@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Covering
 import TauCeti.Topology.CWComplex.Comparison
-import TauCeti.Topology.Covering.Pullback
+public import TauCeti.Topology.Covering.Pullback
+public import TauCeti.Topology.Covering.Degree
 
 /-!
 # Multiplicativity of the Euler characteristic for finite covers
@@ -34,6 +35,10 @@ cover pulls back along a homotopy equivalence with a finite CW complex to a `d`-
 that complex, and the total space of the pullback is homotopy equivalent to `E`
 (`IsCoveringMap.pullbackHomotopyEquiv`). Hence `χ(E) = d · χ(B)` for every `d`-sheeted cover of a
 space of finite CW type.
+
+If `X` has finite CW type and a continuous map `f : X → B` takes values in the connected
+component of `b`, where the fibre of `p` is finite, then the pullback has Euler characteristic
+`Nat.card (p ⁻¹' {b}) * eulerChar X` (`IsCoveringMap.eulerChar_pullback`).
 
 ## Main results
 
@@ -147,12 +152,35 @@ theorem eulerChar_eq_mul_of_isCoveringMap [FiniteCWType B] {d : ℕ}
   have hq := hp.pullback_fst e.symm.toFun.continuous
   have hqfin (z : Z) :
       Finite ↥((Function.Pullback.fst : Function.Pullback e.symm p → Z) ⁻¹' {z}) :=
-    .of_equiv _ (Function.Pullback.fstPreimageEquiv z).symm
+    Function.Pullback.finite_preimage_fst_singleton z (hfin _)
   have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦
     (Nat.card_congr (Function.Pullback.fstPreimageEquiv z)).trans (hd _)
   have := hq.finiteCWType hqfin
   rw [← (hp.pullbackHomotopyEquiv e.symm).eulerChar_eq, h, e.eulerChar_eq]
 
 end FiniteCWType
+
+/-- If `X` has finite CW type and `f` takes values in the connected component of `y`, where
+the covering `p` has a finite fibre, the Euler characteristic of the pullback is
+`Nat.card (p ⁻¹' {y})` times `eulerChar X`. -/
+theorem _root_.IsCoveringMap.eulerChar_pullback {X Z : Type u} {Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [FiniteCWType X]
+    {f : X → Y} {p : Z → Y} (hp : IsCoveringMap p) (y : Y)
+    (hfin : Finite (p ⁻¹' {y})) (hf : Continuous f)
+    (hcomp : ∀ x, f x ∈ connectedComponent y) :
+    letI : FiniteCWType (f.Pullback p) := (hp.pullback_fst hf).finiteCWType
+      (fun x ↦ Function.Pullback.finite_preimage_fst_singleton x
+        (hp.finite_fiber_of_mem_connectedComponent (hcomp x) hfin))
+    eulerChar (f.Pullback p) = Nat.card (p ⁻¹' {y}) * eulerChar X := by
+  have hq := hp.pullback_fst hf
+  have hqfin (x : X) : Finite ((Function.Pullback.fst : f.Pullback p → X) ⁻¹' {x}) :=
+    Function.Pullback.finite_preimage_fst_singleton x
+      (hp.finite_fiber_of_mem_connectedComponent (hcomp x) hfin)
+  have := hq.finiteCWType hqfin
+  refine eulerChar_eq_mul_of_isCoveringMap hq hqfin fun x ↦ ?_
+  rw [Nat.card_congr (Function.Pullback.fstPreimageEquiv x)]
+  simpa only [IsCoveringMap.degree_apply] using
+    hp.degree.apply_eq_of_isPreconnected isPreconnected_connectedComponent
+      (hcomp x) mem_connectedComponent
 
 end TauCeti

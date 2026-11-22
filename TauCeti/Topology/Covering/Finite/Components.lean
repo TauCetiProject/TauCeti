@@ -9,11 +9,11 @@ public import Mathlib.Topology.Connected.CardComponents
 public import TauCeti.Topology.Covering.Proper
 
 /-!
-# Components of finite covers of connected spaces
+# Components of finite covers
 
-A covering map with finite fibres over a preconnected space has finitely many connected
-components in its total space. Thus a finite cover splits into only finitely many connected
-covering spaces, even without compactness assumptions.
+A covering map with finite fibres over a space with finitely many connected components has
+finitely many connected components in its total space. Thus a finite cover splits into only
+finitely many connected covering spaces, even without compactness assumptions.
 -/
 
 public section
@@ -22,19 +22,13 @@ namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- A covering map with finite fibres over a preconnected space has finitely many connected
-components in its total space. -/
-theorem _root_.IsCoveringMap.finite_connectedComponents [PreconnectedSpace Y]
+/-- A covering map with finite fibres over a space with finitely many connected components has
+finitely many connected components in its total space. -/
+theorem _root_.IsCoveringMap.finite_connectedComponents [Finite (ConnectedComponents Y)]
     {p : X → Y} (hp : IsCoveringMap p) (hfin : ∀ y, Finite (p ⁻¹' {y})) :
     Finite (ConnectedComponents X) := by
-  classical
-  rcases isEmpty_or_nonempty Y with h | h
-  · let : IsEmpty X := ⟨fun x ↦ isEmptyElim (p x)⟩
-    exact Finite.of_surjective _ ConnectedComponents.surjective_coe
-  · let : ConnectedSpace Y := ⟨h⟩
-    exact hp.isOpenMap
-      |>.finite_connectedComponents_of_finite_preimage_singleton_of_connectedSpace
-        (hp.isProperMap hfin).isClosedMap
-        (Set.finite_coe_iff.mp (hfin (Classical.choice h)))
+  exact hp.isOpenMap.finite_connectedComponents_of_finite_preimage_singleton
+    (hp.isProperMap hfin).isClosedMap hp.continuous
+    (fun y ↦ Set.finite_coe_iff.mp (hfin y))
 
 end TauCeti
