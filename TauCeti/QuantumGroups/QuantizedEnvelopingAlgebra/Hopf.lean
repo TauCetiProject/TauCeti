@@ -408,11 +408,17 @@ theorem isGroupLikeElem_k (y : Y) :
   let := bialgebra D q hserre
   exact ⟨by simp [bialgebra_counit], by simp [bialgebra_comul]⟩
 
+/-- Every simple toral element `Kᵢ = simpleK D q i` is group-like in the explicit bialgebra
+`bialgebra D q hserre` built from the supplied Serre-factorial nonvanishing proof `hserre`,
+without requiring generic `q`. -/
 theorem isGroupLikeElem_simpleK (i : ι) :
     letI := bialgebra D q hserre
     IsGroupLikeElem K (simpleK D q i) := by
   rw [simpleK_def]; exact isGroupLikeElem_k D q hserre (D.simpleTorus i)
 
+/-- Every inverse simple toral element `Kᵢ⁻¹ = simpleKInv D q i` is group-like in the explicit
+bialgebra `bialgebra D q hserre` built from the supplied Serre-factorial nonvanishing proof
+`hserre`, without requiring generic `q`. -/
 theorem isGroupLikeElem_simpleKInv (i : ι) :
     letI := bialgebra D q hserre
     IsGroupLikeElem K (simpleKInv D q i) := by
@@ -685,7 +691,10 @@ theorem antipode_quantumDividedPower_f (i : ι) (n : ℕ) :
         (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n * simpleK D q i ^ n) := by
   rw [antipode_eq, antipodeLinearEquiv_quantumDividedPower_f]
 
-/-- On every Cartan datum, `S²` equals the diagonal rescaling `Eᵢ ↦ qᵢ⁻² • Eᵢ`, `Fᵢ ↦ qᵢ² • Fᵢ`. -/
+/-- Under the canonical generic `instHopfAlgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+on every Cartan datum `S²` equals the diagonal rescaling `Eᵢ ↦ qᵢ⁻² • Eᵢ`, `Fᵢ ↦ qᵢ² • Fᵢ`.
+For arbitrary `q : K` without genericity, see `antipodeSqEquiv` and
+`antipodeLinearEquiv_antipodeLinearEquiv` in `Antipode.lean`. -/
 theorem antipode_antipode_eq_rescale (x : QuantizedEnvelopingAlgebra D q) :
     HopfAlgebra.antipode K (HopfAlgebra.antipode K x) =
       rescale D q (fun i ↦ (Units.mk0 (q ^ D.symmetrizer i)
@@ -697,7 +706,9 @@ theorem antipode_antipode_eq_rescale (x : QuantizedEnvelopingAlgebra D q) :
     apply hom_ext <;> intro a <;> simp [inv_pow]
   exact AlgHom.congr_fun h x
 
-/-- When `⟨αᵢ, y⟩ = 2 dᵢ` for all `i`, `S²` is conjugation by `K_(-y)`. -/
+/-- Under the canonical generic `instHopfAlgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+when `⟨αᵢ, y⟩ = 2 dᵢ` for all `i`, `S²` is conjugation by `K_(-y)`. For arbitrary `q : K` without
+genericity, see `antipodeLinearEquiv_antipodeLinearEquiv_of_pairing_root` in `Antipode.lean`. -/
 theorem antipode_antipode_of_pairing_root {y : Y}
     (hρ : ∀ i : ι, D.pairing (D.root i) y = 2 * D.symmetrizer i)
     (x : QuantizedEnvelopingAlgebra D q) :
