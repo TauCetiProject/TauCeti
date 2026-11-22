@@ -21,8 +21,9 @@ of a locally compact group. A bounded continuous function `F : X →ᵇ (E →L[
 that action as `BoundedContinuousFunction.mulLp F μ p hp`, a bounded operator of norm at most
 `‖F‖`. When `p = 2` and `E = E' = H` is a Hilbert space, `F ↦ F.mulLp μ 2 _` is a unital
 ⋆-homomorphism `BoundedContinuousFunction.mulL2StarAlgHom` from `X →ᵇ (H →L[𝕜] H)` to the bounded
-operators on `L²(X, H)`. These operators carry the coefficient representation of the regular
-covariant representation of a C⋆-dynamical system on `L²(G, H)`.
+operators on `L²(X, H)`. A symbol with unitary values gives a unitary operator
+(`BoundedContinuousFunction.mulLp_mem_unitary`). These operators carry the coefficient
+representation of the regular covariant representation of a C⋆-dynamical system on `L²(G, H)`.
 
 The symbol is not regarded as an element of `L∞`: on a locally compact group that is not
 σ-compact, a Haar measure is not σ-finite, and a continuous operator-valued function need not be
@@ -178,6 +179,18 @@ def mulL2StarAlgHom : (X →ᵇ (H →L[𝕜] H)) →⋆ₐ[𝕜] (Lp H 2 μ →
 theorem mulL2StarAlgHom_apply (F : X →ᵇ (H →L[𝕜] H)) :
     mulL2StarAlgHom μ F = F.mulLp μ 2 ENNReal.ofNat_ne_top :=
   (rfl)
+
+/-- Multiplication by a bounded continuous function with unitary values is a unitary operator on
+`L²(X, H)`, so `Unitary.linearIsometryEquiv` makes it a linear isometry equivalence. -/
+theorem mulLp_mem_unitary {F : X →ᵇ (H →L[𝕜] H)} (hF : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
+    F.mulLp μ 2 ENNReal.ofNat_ne_top ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) := by
+  -- Instance search does not find `StarMul` for the `Mul` of `X →ᵇ (H →L[𝕜] H)`, though it is
+  -- the one of `instStarRing` up to instance reducibility.
+  let : StarMul (X →ᵇ (H →L[𝕜] H)) := @StarRing.toStarMul _ _ instStarRing
+  rw [← mulL2StarAlgHom_apply]
+  exact Unitary.map_mem _ <| Unitary.mem_iff.2
+    ⟨ext fun x ↦ by simpa using Unitary.star_mul_self_of_mem (hF x),
+      ext fun x ↦ by simpa using Unitary.mul_star_self_of_mem (hF x)⟩
 
 end Hilbert
 
