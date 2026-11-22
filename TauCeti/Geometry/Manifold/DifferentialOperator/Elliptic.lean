@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.DiracType
 import Mathlib.Topology.VectorBundle.FiniteDimensional
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # Elliptic differential operators between vector bundles
@@ -118,19 +119,6 @@ theorem isSectionEllipticAt_iff : IsSectionEllipticAt P x ↔
 theorem isSectionElliptic_iff : IsSectionElliptic P ↔ ∀ x, IsSectionEllipticAt P x :=
   Iff.rfl
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- In positive dimension, every cotangent space contains a nonzero covector. -/
-private theorem exists_cotangent_ne_zero [Nontrivial E] (x : M) :
-    ∃ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 :=
-  -- `TangentSpace I x` is `E` by definition.
-  exists_ne (0 : E →L[ℝ] ℝ)
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- In dimension zero, every covector vanishes. -/
-private theorem cotangent_eq_zero [Subsingleton E] (ξ : TangentSpace I x →L[ℝ] ℝ) : ξ = 0 :=
-  -- `TangentSpace I x` is `E` by definition.
-  Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
-
 /-- The principal symbol of an operator elliptic at `x` is bijective at every nonzero covector. -/
 theorem IsSectionEllipticAt.sectionPrincipalSymbol_bijective (hP : IsSectionEllipticAt P x)
     (hx : I.IsInteriorPoint x) {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
@@ -150,14 +138,14 @@ theorem sectionPrincipalSymbol_bijective_of_injective [FiniteDimensional ℝ F']
 /-- **Dimension zero.** Over a manifold modelled on the zero space, every cotangent vector vanishes,
 so every operator is elliptic, whatever the ranks of the two bundles. -/
 theorem isSectionEllipticAt_of_subsingleton [Subsingleton E] : IsSectionEllipticAt P x :=
-  fun _ ξ hξ ↦ absurd (cotangent_eq_zero ξ) hξ
+  fun _ ξ hξ ↦ absurd (Subsingleton.elim ξ 0) hξ
 
 /-- **Ellipticity forces equal ranks.** Over a manifold of positive dimension, if `P` is elliptic
 at an interior point, then `V` and `W` have the same rank: the principal symbol at a nonzero
 covector is a linear isomorphism `V_x ≃ W_x`. -/
 theorem IsSectionEllipticAt.finrank_eq [Nontrivial E] (hP : IsSectionEllipticAt P x)
     (hx : I.IsInteriorPoint x) : Module.finrank ℝ F = Module.finrank ℝ F' := by
-  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
   rw [← VectorBundle.finrank_eq ℝ F V x, ← VectorBundle.finrank_eq ℝ F' W x]
   exact (LinearEquiv.ofBijective _ (hP.sectionPrincipalSymbol_bijective hx hξ)).finrank_eq
 
@@ -187,7 +175,7 @@ theorem IsSectionEllipticAt.notMem_differentialOperators [Nontrivial E] [Nontriv
     (hP : IsSectionEllipticAt P x) (hx : I.IsInteriorPoint x) :
     (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∉
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m := fun hm ↦ by
-  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
   exact hP.sectionPrincipalSymbol_ne_zero hx hξ
     (sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators hx P hm ξ)
 
@@ -196,7 +184,7 @@ at any interior point. -/
 theorem not_isSectionEllipticAt_zero [Nontrivial E] [Nontrivial F] (hx : I.IsInteriorPoint x) :
     ¬IsSectionEllipticAt (0 : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
       x := fun h ↦ by
-  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
   exact h.sectionPrincipalSymbol_ne_zero hx hξ (sectionPrincipalSymbol_zero hx ξ)
 
 /-! ### Operations preserving ellipticity -/
@@ -366,7 +354,7 @@ theorem IsFormalAdjoint.isSectionEllipticAt
     exact inner_self_eq_zero.1 hi
   -- It is then bijective, the bundles having the same rank: the dimension is positive, since
   -- there is a nonzero covector.
-  have : Nontrivial E := not_subsingleton_iff_nontrivial.1 fun _ ↦ hξ (cotangent_eq_zero ξ)
+  have : Nontrivial E := not_subsingleton_iff_nontrivial.1 fun _ ↦ hξ (Subsingleton.elim ξ 0)
   exact sectionPrincipalSymbol_bijective_of_injective (hP.finrank_eq hx).symm hx hinj
 
 /-- **Formal adjoints of elliptic operators.** If `Q` is a formal adjoint of `P`, then `Q` is
