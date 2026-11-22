@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
@@ -254,6 +255,12 @@ private theorem setIntegral_fullSimplex_comp_of_mem_iff {g : ℝ × ℝ → ℝ 
   rw [hpre] at h
   simpa only [Function.comp_apply, euclideanPlaneEquivProd_apply] using h
 
+-- Mathlib states no formula for `MeasurableEquiv.shearAddRight`; it holds by unfolding the
+-- underlying `Equiv.prodShear (Equiv.refl _) Equiv.addLeft`.
+private theorem coe_shearAddRight :
+    ⇑(MeasurableEquiv.shearAddRight ℝ) = fun z : ℝ × ℝ ↦ (z.1, z.1 + z.2) :=
+  rfl
+
 omit [CompleteSpace F] in
 /-- The shear `y ↦ (y₀ + y₁, y₁)` carries `Δ²` onto the lower half of the unit square, preserving
 volume. -/
@@ -265,7 +272,7 @@ theorem setIntegral_fullSimplex_comp_shear_fst (f : ℝ × ℝ → F) :
       convert (MeasurableEquiv.prodComm.trans
         ((MeasurableEquiv.shearAddRight ℝ).trans MeasurableEquiv.prodComm)).measurableEmbedding
         using 1
-      ext z <;> simp [MeasurableEquiv.shearAddRight, MeasurableEquiv.prodComm, add_comm])
+      ext z <;> simp [coe_shearAddRight, MeasurableEquiv.coe_prodComm, add_comm])
     (fun y ↦ by
       simp only [mem_squareLowerHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
         Fin.sum_univ_two]
@@ -279,7 +286,7 @@ volume. -/
 theorem setIntegral_fullSimplex_comp_shear_snd (f : ℝ × ℝ → F) :
     ∫ y in fullSimplex 2, f (y 0, y 0 + y 1) = ∫ z in squareUpperHalf, f z :=
   setIntegral_fullSimplex_comp_of_mem_iff (measurePreserving_prod_add volume volume)
-    (MeasurableEquiv.shearAddRight ℝ).measurableEmbedding (fun y ↦ by
+    (coe_shearAddRight ▸ (MeasurableEquiv.shearAddRight ℝ).measurableEmbedding) (fun y ↦ by
       simp only [mem_squareUpperHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
         Fin.sum_univ_two]
       constructor
