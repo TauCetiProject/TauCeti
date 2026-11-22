@@ -51,6 +51,8 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.W1p.ofExponentLE_mem_w1p0Submodule`: on a domain of finite measure, lowering the
+  exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
   instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
   `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
@@ -186,6 +188,35 @@ theorem w1p0Submodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (hs : IsClos
     (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1p0Submodule]
   exact closure_minimal (by rintro _ ⟨phi, rfl⟩; exact h phi) hs
+
+section ExponentLE
+
+variable {q : ENNReal} [Fact (1 ≤ q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- Lowering the exponent of a test function of `W^{1,q}(Ω)` gives the same test function in
+`W^{1,p}(Ω)`. -/
+@[simp]
+theorem W1p.ofExponentLE_ofTestFunctionₗ (hpq : p ≤ q) (phi : 𝓓(Omega, ℝ)) :
+    W1p.ofExponentLE hpq (W1p.ofTestFunctionₗ mu Omega q phi) =
+      W1p.ofTestFunctionₗ mu Omega p phi := by
+  refine W1p.ext_value (Lp.ext ?_)
+  rw [W1p.coeFn_value_ofExponentLE]
+  exact (W1p.value_ofTestFunctionₗ_ae phi).trans (W1p.value_ofTestFunctionₗ_ae phi).symm
+
+/-- `W^{1,q}_0(Ω) ⊆ W^{1,p}_0(Ω)` for `p ≤ q`: lowering the exponent keeps the homogeneous boundary
+condition. -/
+theorem W1p.ofExponentLE_mem_w1p0Submodule (hpq : p ≤ q) {u : W1p mu Omega q}
+    (hu : u ∈ w1p0Submodule mu Omega q) :
+    W1p.ofExponentLE hpq u ∈ w1p0Submodule mu Omega p := by
+  have hclosed : IsClosed
+      (W1p.ofExponentLEL hpq ⁻¹' (w1p0Submodule mu Omega p : Set (W1p mu Omega p))) :=
+    (w1p0Submodule mu Omega p).isClosed.preimage (W1p.ofExponentLEL hpq).continuous
+  have h := w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) hu
+  · rwa [Set.mem_preimage, W1p.ofExponentLEL_apply] at h
+  · rw [Set.mem_preimage, W1p.ofExponentLEL_apply, W1p.ofExponentLE_ofTestFunctionₗ]
+    exact W1p.ofTestFunctionₗ_mem_w1p0Submodule phi
+
+end ExponentLE
 
 /-- **The Sobolev space `W^{1,p}_0(Ω)`**, the closure of `C_c^∞(Ω)` in `W^{1,p}(Ω)`. -/
 abbrev W1p0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ENNReal)

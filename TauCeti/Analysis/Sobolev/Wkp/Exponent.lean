@@ -39,8 +39,6 @@ is unchanged up to almost everywhere equality.
   `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with lower-order and order-truncation
   projections and with restriction.
 * `TauCeti.Wkp.ofExponentLEL_injective`: the inclusion is injective.
-* `TauCeti.W1p.ofExponentLE_mem_w1p0Submodule`: at first order the inclusion maps `W^{1,q}_0(Ω)`
-  into `W^{1,p}_0(Ω)`.
 * `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`: the bound
   `μ(Ω) ^ (1/p - 1/q)` on the operator norm.
 * `TauCeti.Wkp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms are logarithmically
@@ -66,30 +64,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega U : Opens E} {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
   [IsFiniteMeasure (mu.restrict (Omega : Set E))]
-
-open scoped Distributions in
-/-- Lowering the exponent of a test function of `W^{1,q}(Ω)` gives the same test function in
-`W^{1,p}(Ω)`. -/
-@[simp]
-theorem W1p.ofExponentLE_ofTestFunctionₗ (hpq : p ≤ q) (phi : 𝓓(Omega, ℝ)) :
-    W1p.ofExponentLE hpq (W1p.ofTestFunctionₗ mu Omega q phi) =
-      W1p.ofTestFunctionₗ mu Omega p phi := by
-  refine W1p.ext_value (Lp.ext ?_)
-  rw [W1p.coeFn_value_ofExponentLE]
-  exact (W1p.value_ofTestFunctionₗ_ae phi).trans (W1p.value_ofTestFunctionₗ_ae phi).symm
-
-/-- `W^{1,q}_0(Ω) ⊆ W^{1,p}_0(Ω)` for `p ≤ q`: lowering the exponent keeps the homogeneous boundary
-condition. -/
-theorem W1p.ofExponentLE_mem_w1p0Submodule (hpq : p ≤ q) {u : W1p mu Omega q}
-    (hu : u ∈ w1p0Submodule mu Omega q) :
-    W1p.ofExponentLE hpq u ∈ w1p0Submodule mu Omega p := by
-  have hclosed : IsClosed
-      (W1p.ofExponentLEL hpq ⁻¹' (w1p0Submodule mu Omega p : Set (W1p mu Omega p))) :=
-    (w1p0Submodule mu Omega p).isClosed.preimage (W1p.ofExponentLEL hpq).continuous
-  have h := w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) hu
-  · rwa [Set.mem_preimage, W1p.ofExponentLEL_apply] at h
-  · rw [Set.mem_preimage, W1p.ofExponentLEL_apply, W1p.ofExponentLE_ofTestFunctionₗ]
-    exact W1p.ofTestFunctionₗ_mem_w1p0Submodule phi
 
 namespace Wkp
 
