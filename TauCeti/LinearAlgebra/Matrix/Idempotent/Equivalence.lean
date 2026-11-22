@@ -60,26 +60,20 @@ open LinearMap MulOpposite
 
 namespace Matrix
 
-section Semiring
+section MulAddCommMonoid
 
-variable {l m m' n n' R : Type*} [Semiring R]
+variable {m n R : Type*} [Mul R] [AddCommMonoid R]
 
+/-- Equivalence of idempotents is symmetric. -/
 theorem idempotentEquivalent_comm [Fintype m] [Fintype n] {e : Matrix m m R} {f : Matrix n n R} :
     IdempotentEquivalent e f ↔ IdempotentEquivalent f e :=
   ⟨IdempotentEquivalent.symm, IdempotentEquivalent.symm⟩
 
-/-- Simultaneous row-and-column reindexing preserves equivalence of idempotents. -/
-theorem IdempotentEquivalent.reindex [Fintype m] [Fintype m'] [Fintype n] [Fintype n']
-    {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) (σ : m ≃ m')
-    (τ : n ≃ n') : IdempotentEquivalent (e.reindex σ σ) (f.reindex τ τ) :=
-  (idempotentEquivalent_submatrix h.isIdempotentElem_left σ.symm).symm.trans
-    (h.trans (idempotentEquivalent_submatrix h.isIdempotentElem_right τ.symm))
+end MulAddCommMonoid
 
-/-- Reindexing an idempotent matrix along an index bijection yields an equivalent idempotent. -/
-theorem _root_.IsIdempotentElem.idempotentEquivalent_reindex [Fintype m] [Fintype m']
-    {e : Matrix m m R} (he : IsIdempotentElem e) (σ : m ≃ m') :
-    IdempotentEquivalent (e.reindex σ σ) e :=
-  (idempotentEquivalent_submatrix he σ.symm).symm
+section NonUnitalNonAssocSemiring
+
+variable {m n R : Type*} [NonUnitalNonAssocSemiring R]
 
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/
 theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
@@ -101,20 +95,39 @@ theorem zero_idempotentEquivalent_iff [Fintype m] [Fintype n] {f : Matrix n n R}
     IdempotentEquivalent (0 : Matrix m m R) f ↔ f = 0 := by
   rw [idempotentEquivalent_comm, idempotentEquivalent_zero_iff]
 
+end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {m m' n n' R : Type*} [NonUnitalSemiring R]
+
+/-- Simultaneous row-and-column reindexing preserves equivalence of idempotents. -/
+theorem IdempotentEquivalent.reindex [Fintype m] [Fintype m'] [Fintype n] [Fintype n']
+    {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) (σ : m ≃ m')
+    (τ : n ≃ n') : IdempotentEquivalent (e.reindex σ σ) (f.reindex τ τ) :=
+  (idempotentEquivalent_submatrix h.isIdempotentElem_left σ.symm).symm.trans
+    (h.trans (idempotentEquivalent_submatrix h.isIdempotentElem_right τ.symm))
+
+/-- Reindexing an idempotent matrix along an index bijection yields an equivalent idempotent. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_reindex [Fintype m] [Fintype m']
+    {e : Matrix m m R} (he : IsIdempotentElem e) (σ : m ≃ m') :
+    IdempotentEquivalent (e.reindex σ σ) e :=
+  (idempotentEquivalent_submatrix he σ.symm).symm
+
 /-- Padding an idempotent matrix by a lower-right zero block preserves its equivalence class. -/
 theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right (n : Type*)
     [Fintype m] [Fintype n] {e : Matrix m m R} (he : IsIdempotentElem e) :
     IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix n n R)) e := by
-  let x : Matrix (m ⊕ n) m R := of fun i j ↦ match i with | Sum.inl i => e i j | Sum.inr _ => 0
-  let y : Matrix m (m ⊕ n) R := of fun i j ↦ match j with | Sum.inl j => e i j | Sum.inr _ => 0
-  have he' (i j : m) : ∑ k, e i k * e k j = e i j := congrFun (congrFun he.eq i) j
-  refine idempotentEquivalent_iff.mpr ⟨x, y, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · ext (i | i) (j | j) <;> simp [x, y, Matrix.mul_apply, he']
-  · ext i j; simp [x, y, Matrix.mul_apply, Fintype.sum_sum_type, he']
-  · ext (i | i) j <;> simp [x, Matrix.mul_apply, Fintype.sum_sum_type, he']
-  · ext (i | i) j <;> simp [x, Matrix.mul_apply, he']
-  · ext i (j | j) <;> simp [y, Matrix.mul_apply, he']
-  · ext i (j | j) <;> simp [y, Matrix.mul_apply, Fintype.sum_sum_type, he']
+  have h := (IdempotentEquivalent.refl he).fromBlocks (idempotentEquivalent_zero_zero n (Fin 0))
+  have hEq : (fromBlocks e 0 0 (0 : Matrix (Fin 0) (Fin 0) R)).reindex
+      (Equiv.sumEmpty m (Fin 0)) (Equiv.sumEmpty m (Fin 0)) = e := by
+    ext i j
+    rfl
+  have hre : IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix (Fin 0) (Fin 0) R)) e := by
+    have h1 := ((he.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.zero).idempotentEquivalent_reindex
+      (Equiv.sumEmpty m (Fin 0))).symm
+    rwa [hEq] at h1
+  exact h.trans hre
 
 /-- Padding an idempotent matrix by an upper-left zero block preserves its equivalence class. -/
 theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : Type*)
@@ -133,6 +146,12 @@ theorem idempotentEquivalent_self_iff [Fintype m] {e : Matrix m m R} :
     IdempotentEquivalent e e ↔ IsIdempotentElem e :=
   ⟨IdempotentEquivalent.isIdempotentElem_left, IdempotentEquivalent.refl⟩
 
+end NonUnitalSemiring
+
+section NonAssocSemiring
+
+variable {m n R : Type*} [NonAssocSemiring R]
+
 /-- Any two diagonal matrix units `Eᵢᵢ ∈ Matrix m m R` and `Eⱼⱼ ∈ Matrix n n R` are equivalent
 idempotents, witnessed by `Eᵢⱼ` and `Eⱼᵢ`. -/
 theorem idempotentEquivalent_single_one [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
@@ -150,8 +169,8 @@ theorem idempotentEquivalent_single_one_one [Fintype m] [DecidableEq m] (i : m) 
     rfl
   exact h1 ▸ idempotentEquivalent_single_one i (0 : Fin 1)
 
-/-- Over a nontrivial semiring, a diagonal matrix unit `Eᵢᵢ` is not equivalent to a zero
-matrix. -/
+/-- Over a nontrivial nonassociative semiring, a diagonal matrix unit `Eᵢᵢ` is not equivalent to a
+zero matrix. -/
 theorem not_idempotentEquivalent_single_one_zero [Nontrivial R] [Fintype m] [Fintype n]
     [DecidableEq m] (i : m) :
     ¬ IdempotentEquivalent (single i i (1 : R)) (0 : Matrix n n R) := by
@@ -159,6 +178,12 @@ theorem not_idempotentEquivalent_single_one_zero [Nontrivial R] [Fintype m] [Fin
   intro h
   have hii := congrFun (congrFun h i) i
   simp at hii
+
+end NonAssocSemiring
+
+section Semiring
+
+variable {l m m' n n' R : Type*} [Semiring R]
 
 /-- Over a semiring with invariant basis number, two identity matrices are equivalent idempotents
 if and only if they have the same size. -/

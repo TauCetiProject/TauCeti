@@ -83,6 +83,19 @@ public section
 
 open LinearMap Matrix
 
+section NonUnitalNonAssocSemiring
+
+variable {A B : Type*} [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
+  {ι : Type*} [Fintype ι] {F : Type*} [FunLike F A B] [NonUnitalRingHomClass F A B]
+
+/-- The entrywise image of an idempotent matrix under a (possibly nonunital) ring homomorphism is
+idempotent. -/
+theorem IsIdempotentElem.matrix_map {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) (f : F) : IsIdempotentElem (e.map f) := by
+  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
+
+end NonUnitalNonAssocSemiring
+
 section Idempotent
 
 variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -92,11 +105,6 @@ theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentEle
     IsIdempotentElem e.vecMulLinear := by
   ext v : 1
   simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
-
-/-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
-theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
-  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
 
 /-- The range of right multiplication by an idempotent matrix is a direct summand of the row
 vectors, hence a projective module. -/
@@ -141,7 +149,9 @@ namespace Matrix
 
 section IdempotentEquivalent
 
-variable {μ : Type*} [Fintype μ]
+section MulAddCommMonoid
+
+variable {A : Type*} [Mul A] [AddCommMonoid A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Square matrices `e` and `f`, possibly of different sizes, are *equivalent idempotents* when
 `e = x * y` and `f = y * x` for rectangular matrices `x` and `y` with `e * x = x = x * f` and
@@ -156,6 +166,90 @@ theorem idempotentEquivalent_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
     IdempotentEquivalent e f ↔ ∃ (x : Matrix ι κ A) (y : Matrix κ ι A), x * y = e ∧ y * x = f ∧
       e * x = x ∧ x * f = x ∧ f * y = y ∧ y * e = y :=
   Iff.rfl
+
+namespace IdempotentEquivalent
+
+variable {e : Matrix ι ι A} {f : Matrix κ κ A}
+
+/-- An idempotent is equivalent to itself, through `x = y = e`. -/
+protected theorem refl (he : IsIdempotentElem e) : IdempotentEquivalent e e :=
+  ⟨e, e, he.eq, he.eq, he.eq, he.eq, he.eq, he.eq⟩
+
+/-- Equivalence of idempotents is symmetric, by exchanging `x` and `y`. -/
+protected theorem symm (h : IdempotentEquivalent e f) : IdempotentEquivalent f e := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  exact ⟨y, x, hyx, hxy, hfy, hye, hex, hxf⟩
+
+/-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
+the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
+-/
+theorem transpose_map_op (h : IdempotentEquivalent e f) :
+    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨yᵀ.map MulOpposite.op, xᵀ.map MulOpposite.op, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    rw [← transpose_mul_map_op] <;> simp only [*]
+
+/-- **Opposite rings.** Equivalent idempotents over `Aᵐᵒᵖ` stay equivalent after transposing and
+passing back to `A`. -/
+theorem transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐᵒᵖ}
+    (h : IdempotentEquivalent e f) :
+    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨yᵀ.map MulOpposite.unop, xᵀ.map MulOpposite.unop, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    rw [← transpose_mul_map_unop] <;> simp only [*]
+
+end IdempotentEquivalent
+
+/-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
+theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.op) := by
+  rw [IsIdempotentElem, ← transpose_mul_map_op, he.eq]
+
+/-- The transpose of an idempotent matrix over the opposite ring, with entries in the ring, is
+idempotent. -/
+theorem _root_.IsIdempotentElem.matrix_transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ}
+    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.unop) := by
+  rw [IsIdempotentElem, ← transpose_mul_map_unop, he.eq]
+
+/-- Two square matrices are equivalent idempotents exactly when their transposes, with entries
+in the opposite ring, are. -/
+theorem idempotentEquivalent_transpose_map_op_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
+    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) ↔
+      IdempotentEquivalent e f :=
+  ⟨fun h ↦ by
+    simpa only [transpose_map_op_transpose_map_unop] using h.transpose_map_unop,
+    IdempotentEquivalent.transpose_map_op⟩
+
+end MulAddCommMonoid
+
+section NonUnitalNonAssocSemiring
+
+variable {A : Type*} [NonUnitalNonAssocSemiring A] {ι κ ι' κ' : Type*}
+  [Fintype ι] [Fintype κ] [Fintype ι'] [Fintype κ']
+
+/-- **Block sums.** Block-diagonal sums of equivalent idempotents are equivalent. -/
+theorem IdempotentEquivalent.fromBlocks {e : Matrix ι ι A} {f : Matrix κ κ A}
+    {e' : Matrix ι' ι' A} {f' : Matrix κ' κ' A} (h : IdempotentEquivalent e f)
+    (h' : IdempotentEquivalent e' f') :
+    IdempotentEquivalent (Matrix.fromBlocks e 0 0 e') (Matrix.fromBlocks f 0 0 f') := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  obtain ⟨x', y', hxy', hyx', hex', hxf', hfy', hye'⟩ := h'
+  refine ⟨Matrix.fromBlocks x 0 0 x', Matrix.fromBlocks y 0 0 y', ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp [fromBlocks_multiply, *]
+
+/-- **Ring homomorphisms.** Applying a (possibly nonunital) ring homomorphism to the entries
+preserves equivalence of idempotents. -/
+theorem IdempotentEquivalent.map {B : Type*} [NonUnitalNonAssocSemiring B] {F : Type*}
+    [FunLike F A B] [NonUnitalRingHomClass F A B] {e : Matrix ι ι A} {f : Matrix κ κ A}
+    (h : IdempotentEquivalent e f) (φ : F) : IdempotentEquivalent (e.map φ) (f.map φ) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
+
+end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {A : Type*} [NonUnitalSemiring A] {ι κ μ : Type*} [Fintype ι] [Fintype κ] [Fintype μ]
 
 namespace IdempotentEquivalent
 
@@ -174,15 +268,6 @@ theorem isIdempotentElem_right (h : IdempotentEquivalent e f) : IsIdempotentElem
   rw [IsIdempotentElem]
   nth_rw 1 [← hyx]
   rw [Matrix.mul_assoc, hxf, hyx]
-
-/-- An idempotent is equivalent to itself, through `x = y = e`. -/
-protected theorem refl (he : IsIdempotentElem e) : IdempotentEquivalent e e :=
-  ⟨e, e, he.eq, he.eq, he.eq, he.eq, he.eq, he.eq⟩
-
-/-- Equivalence of idempotents is symmetric, by exchanging `x` and `y`. -/
-protected theorem symm (h : IdempotentEquivalent e f) : IdempotentEquivalent f e := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  exact ⟨y, x, hyx, hxy, hfy, hye, hex, hxf⟩
 
 /-- Equivalence of idempotents is transitive, through the products `x * x'` and `y' * y`. -/
 protected theorem trans (h : IdempotentEquivalent e f) (h' : IdempotentEquivalent f g) :
@@ -227,6 +312,12 @@ theorem idempotentEquivalent_submatrix {e : Matrix ι ι A} (he : IsIdempotentEl
   · rw [submatrix_mul_equiv, he.eq, submatrix_id_id]
   · rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, he.eq]
 
+end NonUnitalSemiring
+
+section Semiring
+
+variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
+
 /-- **Conjugation.** An idempotent matrix is equivalent to each of its conjugates. -/
 theorem idempotentEquivalent_conj [DecidableEq ι] {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (u : (Matrix ι ι A)ˣ) : IdempotentEquivalent e (u * e * u⁻¹ : Matrix ι ι A) := by
@@ -239,25 +330,6 @@ theorem idempotentEquivalent_conj [DecidableEq ι] {e : Matrix ι ι A} (he : Is
       he.eq]
   · rw [← Matrix.mul_assoc, Matrix.mul_assoc (u : Matrix ι ι A), he.eq]
 
-variable {ι' κ' : Type*} [Fintype ι'] [Fintype κ']
-
-/-- **Block sums.** Block-diagonal sums of equivalent idempotents are equivalent. -/
-theorem IdempotentEquivalent.fromBlocks {e : Matrix ι ι A} {f : Matrix κ κ A}
-    {e' : Matrix ι' ι' A} {f' : Matrix κ' κ' A} (h : IdempotentEquivalent e f)
-    (h' : IdempotentEquivalent e' f') :
-    IdempotentEquivalent (Matrix.fromBlocks e 0 0 e') (Matrix.fromBlocks f 0 0 f') := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  obtain ⟨x', y', hxy', hyx', hex', hxf', hfy', hye'⟩ := h'
-  refine ⟨Matrix.fromBlocks x 0 0 x', Matrix.fromBlocks y 0 0 y', ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp [fromBlocks_multiply, *]
-
-/-- **Ring homomorphisms.** Applying a ring homomorphism to the entries preserves equivalence of
-idempotents. -/
-theorem IdempotentEquivalent.map {B : Type*} [Semiring B] {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (h : IdempotentEquivalent e f) (φ : A →+* B) : IdempotentEquivalent (e.map φ) (f.map φ) := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
-
 /-- **Complements.** For an idempotent `f`, the block sum of `f` and its complement `1 - f` is
 equivalent to the identity matrix: the images of `f` and `1 - f` together make up all vectors. -/
 theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableEq κ]
@@ -268,45 +340,11 @@ theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableE
   · rw [fromRows_mul_fromCols, hf.eq, hf.mul_one_sub_self, hf.one_sub_mul_self, hf.one_sub.eq]
   · rw [fromCols_mul_fromRows, hf.eq, hf.one_sub.eq, add_sub_cancel]
 
-/-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
-the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
--/
-theorem IdempotentEquivalent.transpose_map_op {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (h : IdempotentEquivalent e f) :
-    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  refine ⟨yᵀ.map MulOpposite.op, xᵀ.map MulOpposite.op, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    rw [← transpose_mul_map_op] <;> simp only [*]
-
-/-- **Opposite rings.** Equivalent idempotents over `Aᵐᵒᵖ` stay equivalent after transposing and
-passing back to `A`. -/
-theorem IdempotentEquivalent.transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐᵒᵖ}
-    (h : IdempotentEquivalent e f) :
-    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) :=
-  -- Over `Aᵐᵒᵖ`, `op` followed by `Aᵐᵒᵖᵐᵒᵖ ≃+* A` is `unop`.
-  h.transpose_map_op.map (RingEquiv.opOp A).symm.toRingHom
-
-/-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
-theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.op) :=
-  (IdempotentEquivalent.refl he).transpose_map_op.isIdempotentElem_left
-
-/-- The transpose of an idempotent matrix over the opposite ring, with entries in the ring, is
-idempotent. -/
-theorem _root_.IsIdempotentElem.matrix_transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ}
-    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.unop) :=
-  (IdempotentEquivalent.refl he).transpose_map_unop.isIdempotentElem_left
-
-/-- Two square matrices are equivalent idempotents exactly when their transposes, with entries
-in the opposite ring, are. -/
-theorem idempotentEquivalent_transpose_map_op_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
-    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) ↔
-      IdempotentEquivalent e f :=
-  ⟨fun h ↦ by
-    simpa only [transpose_map_op_transpose_map_unop] using h.transpose_map_unop,
-    IdempotentEquivalent.transpose_map_op⟩
+end Semiring
 
 end IdempotentEquivalent
+
+variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The matrix whose rows are the images of the rows of an idempotent matrix `e` under an
 isomorphism of ranges. -/

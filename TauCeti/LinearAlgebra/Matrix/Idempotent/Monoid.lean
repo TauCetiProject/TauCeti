@@ -21,8 +21,8 @@ Building on `TauCeti.IdempotentMonoid` in
   diagonal matrix units `Eᵢᵢ`;
 * `nsmul_mk_one` (`n • [1₁] = [1ₙ]`) and separation of identity classes `[1ₘ] = [1ₙ] ↔ |m| = |n|`
   under `InvariantBasisNumber`;
-* functoriality along ring homomorphisms (`TauCeti.IdempotentMonoid.map`) and ring equivalences
-  (`TauCeti.IdempotentMonoid.congr`);
+* functoriality along nonunital ring homomorphisms (`TauCeti.IdempotentMonoid.map`) and ring
+  equivalences (`TauCeti.IdempotentMonoid.congr`);
 * over a division ring `D`, the rank isomorphism `TauCeti.IdempotentMonoid.finrankAddEquiv :
   IdempotentMonoid D ≃+ ℕ` and the induced isomorphism
   `TauCeti.IdempotentMonoid.grothendieckAddGroupEquivInt :
@@ -39,7 +39,7 @@ public section
 
 open LinearMap Matrix MulOpposite
 
-universe u
+universe u v w
 
 section MatrixLemmas
 
@@ -62,11 +62,11 @@ end MatrixLemmas
 
 namespace TauCeti
 
-section Semiring
+section NonUnitalSemiring
 
 namespace IdempotentMonoid
 
-variable {R : Type u} [Semiring R]
+variable {R : Type u} [NonUnitalSemiring R]
 
 /-- Equal matrices give equal classes in `IdempotentMonoid R` regardless of the idempotence
 proof. -/
@@ -131,6 +131,98 @@ theorem mk_fromBlocks_zero_left {ι κ : Type*} [Fintype ι] [Fintype κ] (e : M
       (IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ he) = mk e he :=
   mk_eq_mk (he.idempotentEquivalent_fromBlocks_zero_left ι)
 
+section Map
+
+variable {S : Type v} {T : Type w} [NonUnitalSemiring S] [NonUnitalSemiring T]
+
+private noncomputable def mapFun (φ : R →ₙ+* S) :
+    IdempotentMonoid R → IdempotentMonoid S :=
+  lift (fun e he ↦ mk (e.map φ) (he.matrix_map φ))
+    fun _ _ _ _ h ↦ mk_eq_mk (h.map φ)
+
+private theorem mapFun_mk {ι : Type*} [Fintype ι] (φ : R →ₙ+* S) (e : Matrix ι ι R)
+    (he : IsIdempotentElem e) :
+    mapFun φ (mk e he) = mk (e.map φ) (he.matrix_map φ) := by
+  let σ := Fintype.equivFin ι
+  rw [← mk_reindex e he σ, mapFun]
+  exact (lift_mk (hF := fun _ _ _ _ h ↦ mk_eq_mk (h.map φ)) _ _).trans
+    (mk_eq_mk ((he.idempotentEquivalent_reindex σ).map φ))
+
+/-- **Functoriality of `IdempotentMonoid`.** Any nonunital ring homomorphism `φ : R →ₙ+* S`
+induces an additive monoid homomorphism `IdempotentMonoid R →+ IdempotentMonoid S` by applying
+`φ` entrywise. -/
+noncomputable def map (φ : R →ₙ+* S) : IdempotentMonoid R →+ IdempotentMonoid S where
+  toFun := mapFun φ
+  map_zero' := by
+    rw [← mk_zero (ι := Fin 0), mapFun_mk]
+    exact (mk_eq_zero_iff (IsIdempotentElem.zero.matrix_map φ)).mpr
+      (by ext i; exact Fin.elim0 i)
+  map_add' a b := by
+    induction a using ind with | mk m e he =>
+    induction b using ind with | mk n f hf =>
+    rw [mk_add_mk, mapFun_mk, mapFun_mk, mapFun_mk, mk_add_mk]
+    refine mk_congr_matrix _ _ ?_
+    ext (_ | _) (_ | _) <;> simp
+
+@[simp]
+theorem map_mk {ι : Type*} [Fintype ι] (φ : R →ₙ+* S) (e : Matrix ι ι R)
+    (he : IsIdempotentElem e) :
+    map φ (mk e he) = mk (e.map φ) (he.matrix_map φ) :=
+  mapFun_mk φ e he
+
+@[simp]
+theorem map_id : map (NonUnitalRingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
+  ext n e he
+  rw [map_mk, AddMonoidHom.id_apply]
+  exact mk_congr_matrix _ _ (by ext; simp)
+
+theorem map_comp (φ : R →ₙ+* S) (ψ : S →ₙ+* T) :
+    (map ψ).comp (map φ) = map (ψ.comp φ) := by
+  ext n e he
+  rw [AddMonoidHom.comp_apply, map_mk, map_mk, map_mk]
+  exact mk_congr_matrix _ _ (by ext; rfl)
+
+/-- A ring equivalence induces an additive isomorphism on `IdempotentMonoid`. -/
+noncomputable def congr (e : R ≃+* S) : IdempotentMonoid R ≃+ IdempotentMonoid S where
+  toFun := map e.toNonUnitalRingHom
+  invFun := map e.symm.toNonUnitalRingHom
+  map_add' := map_add (map e.toNonUnitalRingHom)
+  left_inv x := by
+    have hcomp := (map_comp e.toNonUnitalRingHom e.symm.toNonUnitalRingHom).trans
+      (congrArg map (NonUnitalRingHom.ext (fun a ↦ e.symm_apply_apply a) :
+        _ = NonUnitalRingHom.id R))
+    exact DFunLike.congr_fun (hcomp.trans map_id) x
+  right_inv y := by
+    have hcomp := (map_comp e.symm.toNonUnitalRingHom e.toNonUnitalRingHom).trans
+      (congrArg map (NonUnitalRingHom.ext (fun a ↦ e.apply_symm_apply a) :
+        _ = NonUnitalRingHom.id S))
+    exact DFunLike.congr_fun (hcomp.trans map_id) y
+
+@[simp]
+theorem congr_mk {ι : Type*} [Fintype ι] (φ : R ≃+* S) (e : Matrix ι ι R)
+    (he : IsIdempotentElem e) :
+    congr φ (mk e he) = mk (e.map φ.toNonUnitalRingHom) (he.matrix_map φ.toNonUnitalRingHom) :=
+  map_mk φ.toNonUnitalRingHom e he
+
+@[simp]
+theorem congr_symm_mk {ι : Type*} [Fintype ι] (φ : R ≃+* S) (e : Matrix ι ι S)
+    (he : IsIdempotentElem e) :
+    (congr φ).symm (mk e he) =
+      mk (e.map φ.symm.toNonUnitalRingHom) (he.matrix_map φ.symm.toNonUnitalRingHom) :=
+  map_mk φ.symm.toNonUnitalRingHom e he
+
+end Map
+
+end IdempotentMonoid
+
+end NonUnitalSemiring
+
+section Semiring
+
+namespace IdempotentMonoid
+
+variable {R : Type u} [Semiring R]
+
 /-- Conjugating an idempotent matrix by an invertible matrix preserves its class in
 `IdempotentMonoid R`. -/
 @[simp]
@@ -174,79 +266,6 @@ theorem mk_one_eq_mk_one_iff [InvariantBasisNumber R] {ι κ : Type*} [Fintype �
     mk (1 : Matrix ι ι R) IsIdempotentElem.one =
       mk (1 : Matrix κ κ R) IsIdempotentElem.one ↔ Fintype.card ι = Fintype.card κ :=
   (mk_eq_mk_iff _ _).trans idempotentEquivalent_one_iff
-
-section Map
-
-variable {S T : Type u} [Semiring S] [Semiring T]
-
-private noncomputable def mapFun (φ : R →+* S) :
-    IdempotentMonoid R → IdempotentMonoid S :=
-  lift (fun e he ↦ mk (e.map φ) (he.matrix_map φ))
-    fun _ _ _ _ h ↦ mk_eq_mk (h.map φ)
-
-private theorem mapFun_mk {ι : Type*} [Fintype ι] (φ : R →+* S) (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    mapFun φ (mk e he) = mk (e.map φ) (he.matrix_map φ) := by
-  let σ := Fintype.equivFin ι
-  rw [← mk_reindex e he σ, mapFun]
-  exact (lift_mk (hF := fun _ _ _ _ h ↦ mk_eq_mk (h.map φ)) _ _).trans
-    (mk_eq_mk ((he.idempotentEquivalent_reindex σ).map φ))
-
-/-- **Functoriality of `IdempotentMonoid`.** Any ring homomorphism `φ : R →+* S` induces an
-additive monoid homomorphism `IdempotentMonoid R →+ IdempotentMonoid S` by applying `φ`
-entrywise. -/
-noncomputable def map (φ : R →+* S) : IdempotentMonoid R →+ IdempotentMonoid S where
-  toFun := mapFun φ
-  map_zero' := by
-    rw [← mk_zero (ι := Fin 0), mapFun_mk]
-    exact (mk_eq_zero_iff (IsIdempotentElem.zero.matrix_map φ)).mpr
-      (by ext i; exact Fin.elim0 i)
-  map_add' a b := by
-    induction a using ind with | mk m e he =>
-    induction b using ind with | mk n f hf =>
-    rw [mk_add_mk, mapFun_mk, mapFun_mk, mapFun_mk, mk_add_mk]
-    refine mk_congr_matrix _ _ ?_
-    ext (_ | _) (_ | _) <;> simp
-
-@[simp]
-theorem map_mk {ι : Type*} [Fintype ι] (φ : R →+* S) (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    map φ (mk e he) = mk (e.map φ) (he.matrix_map φ) :=
-  mapFun_mk φ e he
-
-@[simp]
-theorem map_id : map (RingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
-  ext n e he
-  rw [map_mk, AddMonoidHom.id_apply]
-  exact mk_congr_matrix _ _ (by ext; simp)
-
-theorem map_comp (φ : R →+* S) (ψ : S →+* T) :
-    (map ψ).comp (map φ) = map (ψ.comp φ) := by
-  ext n e he
-  rw [AddMonoidHom.comp_apply, map_mk, map_mk, map_mk]
-  exact mk_congr_matrix _ _ (by ext; rfl)
-
-/-- A ring equivalence induces an additive isomorphism on `IdempotentMonoid`. -/
-noncomputable def congr (e : R ≃+* S) : IdempotentMonoid R ≃+ IdempotentMonoid S where
-  toFun := map e.toRingHom
-  invFun := map e.symm.toRingHom
-  map_add' := map_add (map e.toRingHom)
-  left_inv x := by
-    have hcomp := (map_comp e.toRingHom e.symm.toRingHom).trans
-      (congrArg map (RingHom.ext (fun a ↦ e.symm_apply_apply a) : _ = RingHom.id R))
-    exact DFunLike.congr_fun (hcomp.trans map_id) x
-  right_inv y := by
-    have hcomp := (map_comp e.symm.toRingHom e.toRingHom).trans
-      (congrArg map (RingHom.ext (fun a ↦ e.apply_symm_apply a) : _ = RingHom.id S))
-    exact DFunLike.congr_fun (hcomp.trans map_id) y
-
-@[simp]
-theorem congr_mk {ι : Type*} [Fintype ι] (φ : R ≃+* S) (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    congr φ (mk e he) = mk (e.map φ.toRingHom) (he.matrix_map φ.toRingHom) :=
-  map_mk φ.toRingHom e he
-
-end Map
 
 end IdempotentMonoid
 

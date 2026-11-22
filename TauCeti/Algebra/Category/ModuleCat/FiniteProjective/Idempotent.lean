@@ -14,18 +14,18 @@ import TauCeti.Data.Matrix.Mul
 /-!
 # Projective `K₀` comparison: `ObjectCode`, scalar extension, and positive cone
 
-Building on `TauCeti.IdempotentMonoid.kZeroEquiv` in
-`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent`, this file establishes the
-monoid-level comparison with `TauCeti.ObjectCode`, naturality under scalar extension, the stable
-equivalence criterion in `K₀`, and the algebraic positive cone:
+Building on `TauCeti.IdempotentMonoid.kZeroEquiv` and
+`TauCeti.IdempotentMonoid.objectCodeAddEquiv` in
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent`, this file establishes
+the factorization of `toKZero` through `SplitK0.ofCode` and `objectCodeAddEquiv`, naturality under
+scalar extension, the stable equivalence criterion in `K₀`, and the algebraic positive cone:
 
 * `TauCeti.BalancedExtension.rangeMulVecBilinEquiv`: base change `(e R^ι) ⊗_R S ≃ f(e) S^ι` of
   the column range of an idempotent matrix along `f : R →+* S`;
-* `TauCeti.IdempotentMonoid.objectCodeAddEquiv`: the monoid isomorphism
-  `IdempotentMonoid R ≃+ ObjectCode (FiniteProjectiveRight R)` before group completion;
 * `TauCeti.IdempotentMonoid.toKZero`: the right-module class map `IdempotentMonoid R →+ KZero R`
-  (`kZeroEquiv` restricted along `GrothendieckAddGroup.of`), and its naturality under scalar
-  extension (`TauCeti.IdempotentMonoid.map_toKZero` and
+  (`kZeroEquiv` restricted along `GrothendieckAddGroup.of`), its factorization
+  `TauCeti.IdempotentMonoid.ofCode_comp_objectCodeAddEquiv` through `SplitK0.ofCode`, and its
+  naturality under scalar extension (`TauCeti.IdempotentMonoid.map_toKZero` and
   `TauCeti.IdempotentMonoid.map_comp_kZeroEquiv`);
 * `TauCeti.IdempotentMonoid.toKZero_mk_eq_toKZero_mk_iff`: two idempotents have the same class in
   `K₀(R)` if and only if they become equivalent after adding a common identity block `1ₖ`;
@@ -99,139 +99,11 @@ end BalancedExtension
 
 section FiniteProjective
 
-/-- The column range `e R^ι` of an idempotent matrix `e`, packaged as an object of
-`FiniteProjectiveRight R` via reindexing to `Fin (Fintype.card ι)`. -/
-noncomputable def FiniteProjectiveModules.ofIdempotent {R : Type u} [Ring R] {ι : Type*}
-    [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) : FiniteProjectiveRight R :=
-  let σ := Fintype.equivFin ι
-  ⟨ModuleCat.of Rᵐᵒᵖ (range ((e.reindex σ σ).mulVecBilin R Rᵐᵒᵖ)),
-    finiteProjectiveModules_iff.mpr ⟨inferInstance,
-      (he.idempotentEquivalent_reindex σ).isIdempotentElem_left.projective_range_mulVecBilin⟩⟩
-
-/-- Canonical `Rᵐᵒᵖ`-linear equivalence between the underlying module of
-`FiniteProjectiveModules.ofIdempotent e he` and the original column range `e R^ι`. -/
-noncomputable def FiniteProjectiveModules.ofIdempotentLinearEquiv {R : Type u} [Ring R]
-    {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
-    (ofIdempotent e he).obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) :=
-  (e.rangeMulVecBilinReindexEquiv (Fintype.equivFin ι) (Fintype.equivFin ι)).symm
-
 namespace IdempotentMonoid
 
 section ObjectCode
 
 variable (R : Type u) [Ring R]
-
-private theorem objectCode_ofIdempotent_congr {ι κ : Type*} [Fintype ι] [Fintype κ]
-    {e : Matrix ι ι R} {f : Matrix κ κ R} (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (h : IdempotentEquivalent e f) :
-    objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he) =
-      objectCode.{u} (FiniteProjectiveModules.ofIdempotent f hf) := by
-  obtain ⟨ψ⟩ := (nonempty_linearEquiv_range_mulVecBilin_iff he hf).mpr h
-  exact objectCode_congr.{u} (ObjectProperty.isoMk (finiteProjectiveModules Rᵐᵒᵖ)
-    (X := FiniteProjectiveModules.ofIdempotent e he)
-    (Y := FiniteProjectiveModules.ofIdempotent f hf)
-    ((FiniteProjectiveModules.ofIdempotentLinearEquiv e he).trans
-      (ψ.trans (FiniteProjectiveModules.ofIdempotentLinearEquiv f hf).symm)).toModuleIso)
-
-private noncomputable def objectCodeFun :
-    IdempotentMonoid R → ObjectCode.{u} (FiniteProjectiveRight R) :=
-  lift (fun e he ↦ objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he))
-    fun _ _ he hg h ↦ objectCode_ofIdempotent_congr R he hg h
-
-variable {R} in
-private theorem objectCodeFun_mk_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
-    (he : IsIdempotentElem e) {P : FiniteProjectiveRight R}
-    (θ : P.obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) :
-    objectCodeFun R (mk e he) = objectCode.{u} P := by
-  let σ := Fintype.equivFin ι
-  let hre := (he.idempotentEquivalent_reindex σ).isIdempotentElem_left
-  let ψ := (FiniteProjectiveModules.ofIdempotentLinearEquiv (e.reindex σ σ) hre).trans
-    (e.rangeMulVecBilinReindexEquiv σ σ).symm
-  rw [← mk_reindex e he σ, objectCodeFun]
-  exact (lift_mk (hF := fun _ _ he hg h ↦ objectCode_ofIdempotent_congr R he hg h) _ _).trans <|
-    objectCode_congr.{u} (ObjectProperty.isoMk (finiteProjectiveModules Rᵐᵒᵖ)
-      (X := FiniteProjectiveModules.ofIdempotent (e.reindex σ σ) hre)
-      (Y := P) (ψ.trans θ.symm).toModuleIso)
-
-variable {R} in
-private theorem objectCodeFun_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    objectCodeFun R (mk e he) = objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
-  objectCodeFun_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
-    (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
-
-private noncomputable def objectCodeHom :
-    IdempotentMonoid R →+ ObjectCode.{u} (FiniteProjectiveRight R) where
-  toFun := objectCodeFun R
-  map_zero' := by
-    let Z := FiniteProjectiveModules.ofIdempotent (0 : Matrix (Fin 0) (Fin 0) R)
-      IsIdempotentElem.zero
-    have hsub : Subsingleton ((finiteProjectiveModules Rᵐᵒᵖ).ι.obj Z) :=
-      (FiniteProjectiveModules.ofIdempotentLinearEquiv
-        (0 : Matrix (Fin 0) (Fin 0) R) IsIdempotentElem.zero).toEquiv.subsingleton
-    have hzero : IsZero Z :=
-      IsZero.of_full_of_faithful_of_isZero (finiteProjectiveModules Rᵐᵒᵖ).ι Z
-        (ModuleCat.isZero_of_subsingleton _)
-    exact (objectCodeFun_mk (0 : Matrix (Fin 0) (Fin 0) R) IsIdempotentElem.zero).trans
-      ((objectCode_congr.{u} (hzero.iso (isZero_zero _))).trans objectCode_zero.{u})
-  map_add' a b := by
-    induction a using ind with | mk m e he =>
-    induction b using ind with | mk n f hf =>
-    rw [mk_add_mk, objectCodeFun_mk e he, objectCodeFun_mk f hf, ← objectCode_biprod.{u}]
-    exact objectCodeFun_mk_linearEquiv (he.fromBlocks_zero₁₂_zero₂₁ hf)
-      (((FiniteProjectiveModules.biprodLinearEquiv _ _).trans
-        ((FiniteProjectiveModules.ofIdempotentLinearEquiv e he).prodCongr
-          (FiniteProjectiveModules.ofIdempotentLinearEquiv f hf))).trans
-        (rangeMulVecBilinFromBlocksEquiv e f).symm)
-
-private theorem objectCodeHom_apply (x : IdempotentMonoid R) :
-    objectCodeHom R x = objectCodeFun R x :=
-  (rfl)
-
-private theorem objectCodeHom_bijective : Function.Bijective (objectCodeHom R) :=
-  ⟨fun a b hab ↦ by
-    induction a using ind with | mk m e he =>
-    induction b using ind with | mk n f hf =>
-    rw [objectCodeHom_apply R, objectCodeHom_apply R, objectCodeFun_mk e he,
-      objectCodeFun_mk f hf, objectCode_eq_objectCode_iff.{u}] at hab
-    obtain ⟨iso⟩ := hab
-    exact (mk_eq_mk_iff he hf).mpr
-      ((nonempty_linearEquiv_range_mulVecBilin_iff he hf).mp
-        ⟨(FiniteProjectiveModules.ofIdempotentLinearEquiv e he).symm.trans
-          (((finiteProjectiveModules Rᵐᵒᵖ).ι.mapIso iso).toLinearEquiv.trans
-            (FiniteProjectiveModules.ofIdempotentLinearEquiv f hf))⟩),
-  fun c ↦ by
-    obtain ⟨P, rfl⟩ := objectCode_surjective.{u} c
-    have : Module.Finite Rᵐᵒᵖ P.obj := (finiteProjectiveModules_iff.mp P.property).1
-    have : Module.Projective Rᵐᵒᵖ P.obj := (finiteProjectiveModules_iff.mp P.property).2
-    obtain ⟨n, e, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_mulVecBilin R P.obj
-    exact ⟨mk e he, (objectCodeHom_apply R (mk e he)).trans (objectCodeFun_mk_linearEquiv he θ)⟩⟩
-
-/-- **Idempotent presentation of the monoid of projective modules.** Sending the equivalence class
-of `e` to the isomorphism class of its column range `e Rⁿ` is an isomorphism of additive
-commutative monoids between `IdempotentMonoid R` and the isomorphism classes of finitely
-generated projective right `R`-modules under binary biproducts. -/
-noncomputable def objectCodeAddEquiv :
-    IdempotentMonoid R ≃+ ObjectCode.{u} (FiniteProjectiveRight R) :=
-  AddEquiv.ofBijective (objectCodeHom R) (objectCodeHom_bijective R)
-
-variable {R} in
-/-- Evaluating `objectCodeAddEquiv` on `[e]` yields the code of any finitely generated projective
-right `R`-module linearly isomorphic to `e R^ι`. -/
-theorem objectCodeAddEquiv_mk_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
-    (he : IsIdempotentElem e) {P : FiniteProjectiveRight R}
-    (θ : P.obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) :
-    objectCodeAddEquiv R (mk e he) = objectCode.{u} P := by
-  rw [objectCodeAddEquiv, AddEquiv.ofBijective_apply, objectCodeHom_apply R]
-  exact objectCodeFun_mk_linearEquiv he θ
-
-variable {R} in
-@[simp]
-theorem objectCodeAddEquiv_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R)
-    (he : IsIdempotentElem e) :
-    objectCodeAddEquiv R (mk e he) = objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
-  objectCodeAddEquiv_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
-    (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
 /-- The canonical additive monoid homomorphism from `IdempotentMonoid R` to `KZero R`, sending
 `[e]` to the class `[e R^ι]` of its column range (`TauCeti.IdempotentMonoid.kZeroEquiv` restricted
@@ -267,6 +139,13 @@ theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempo
   toKZero_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
     (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
+/-- `TauCeti.IdempotentMonoid.toKZero R` factors through the monoid isomorphism
+`TauCeti.IdempotentMonoid.objectCodeAddEquiv R` and `TauCeti.SplitK0.ofCode`. -/
+theorem ofCode_comp_objectCodeAddEquiv :
+    SplitK0.ofCode.{u}.comp (objectCodeAddEquiv R).toAddMonoidHom = toKZero R := by
+  ext n e he
+  simp
+
 /-- The class of the `m × m` identity matrix in `K₀(R)` is `m` times the class of the rank-one
 free right `R`-module. -/
 theorem toKZero_mk_one (m : ℕ) :
@@ -285,7 +164,7 @@ variable {R S : Type u} [Ring R] [Ring S]
 @[simp]
 theorem map_toKZero (f : R →+* S) (x : IdempotentMonoid R) :
     SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars (toKZero R x) =
-      toKZero S (IdempotentMonoid.map f x) := by
+      toKZero S (IdempotentMonoid.map f.toNonUnitalRingHom x) := by
   induction x using ind with | mk n e he =>
   rw [toKZero_mk, SplitK0.map_of,
     SplitK0.of_extendScalars_obj
@@ -294,23 +173,25 @@ theorem map_toKZero (f : R →+* S) (x : IdempotentMonoid R) :
         (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)).trans
         ((BalancedExtension.rangeMulVecBilinEquiv f he).trans
           (FiniteProjectiveModules.ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)).symm)),
-    IdempotentMonoid.map_mk, toKZero_mk]
+    IdempotentMonoid.map_mk]
+  exact (toKZero_mk (e.map f.toNonUnitalRingHom) (he.matrix_map f.toNonUnitalRingHom)).symm
 
 theorem toKZero_comp_map (f : R →+* S) :
-    (toKZero S).comp (IdempotentMonoid.map f) =
+    (toKZero S).comp (IdempotentMonoid.map f.toNonUnitalRingHom) =
       (SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars).comp
         (toKZero R) :=
   AddMonoidHom.ext fun x ↦ (map_toKZero f x).symm
 
 /-- **Naturality of `kZeroEquiv` under scalar extension.** Along `f : R →+* S`, the
-group-completion homomorphism induced by `IdempotentMonoid.map f` corresponds under `kZeroEquiv`
-to `SplitK0.map` of scalar extension. -/
+group-completion homomorphism induced by `IdempotentMonoid.map f.toNonUnitalRingHom` corresponds
+under `kZeroEquiv` to `SplitK0.map` of scalar extension. -/
 theorem map_comp_kZeroEquiv (f : R →+* S) :
     (SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars).comp
         (kZeroEquiv R).toAddMonoidHom =
       (kZeroEquiv S).toAddMonoidHom.comp
         (_root_.Algebra.GrothendieckAddGroup.lift
-          (_root_.Algebra.GrothendieckAddGroup.of.comp (IdempotentMonoid.map f))) := by
+          (_root_.Algebra.GrothendieckAddGroup.of.comp
+            (IdempotentMonoid.map f.toNonUnitalRingHom))) := by
   refine _root_.Algebra.GrothendieckAddGroup.lift.symm.injective ?_
   rw [_root_.Algebra.GrothendieckAddGroup.lift_symm_apply, AddMonoidHom.comp_assoc, ← toKZero,
     ← toKZero_comp_map, _root_.Algebra.GrothendieckAddGroup.lift_symm_apply,
@@ -350,15 +231,16 @@ theorem toKZero_mk_eq_toKZero_mk_iff {ι κ : Type*} [Fintype ι] [Fintype κ]
 `R`-modules. -/
 theorem mem_mrange_toKZero_iff {x : KZero R} :
     x ∈ AddMonoidHom.mrange (toKZero R) ↔ ∃ P : FiniteProjectiveRight R, x = SplitK0.of.{u} P := by
+  rw [← ofCode_comp_objectCodeAddEquiv R]
   constructor
   · rintro ⟨a, rfl⟩
-    induction a using ind with | mk n e he =>
-    exact ⟨FiniteProjectiveModules.ofIdempotent e he, toKZero_mk e he⟩
+    obtain ⟨P, hP⟩ := objectCode_surjective.{u} (objectCodeAddEquiv R a)
+    exact ⟨P, by rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hP,
+      SplitK0.ofCode_objectCode]⟩
   · rintro ⟨P, rfl⟩
-    have : Module.Finite Rᵐᵒᵖ P.obj := (finiteProjectiveModules_iff.mp P.property).1
-    have : Module.Projective Rᵐᵒᵖ P.obj := (finiteProjectiveModules_iff.mp P.property).2
-    obtain ⟨n, e, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_mulVecBilin R P.obj
-    exact ⟨mk e he, toKZero_mk_linearEquiv he θ⟩
+    obtain ⟨a, ha⟩ := (objectCodeAddEquiv R).surjective (objectCode.{u} P)
+    exact ⟨a, by rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ha,
+      SplitK0.ofCode_objectCode]⟩
 
 /-- Subtracting `[1ₘ]` from `[e]` in `K₀(R)` gives the relative class
 `FiniteProjectiveModules.classOf Rᵐᵒᵖ P m = [P] - m[R]` of any finitely generated projective right
