@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Solutions of a scalar linear equation
@@ -37,6 +38,11 @@ Two holomorphic functions on a preconnected open set `U ⊆ ℂ` that satisfy th
 `y' = p y` on a dense subset of `U`, the second without zeros on `U`, are proportional on `U`
 (`TauCeti.exists_eq_const_mul_of_hasDerivAt_mul`): their quotient is holomorphic with derivative
 vanishing on a dense subset, hence everywhere by continuity. The first may vanish.
+
+For a complex coefficient `k` with a known primitive `A` on a preconnected set of times `s`, a
+solution of `f' = k • f` within `s` is `f b = exp (A b - A a) • f a` for all `a, b ∈ s`
+(`IsPreconnected.eq_exp_sub_smul_of_hasDerivWithinAt`). With `A t = t i`, this says that a
+solution of `f' = i f` is rotated by the angle `b - a`.
 -/
 
 public section
@@ -187,3 +193,22 @@ theorem exists_eq_const_mul_of_hasDerivAt_mul {U S : Set ℂ} (hU : IsOpen U)
   exact ⟨C, fun z hz ↦ by rw [← hC z hz, div_mul_cancel₀ _ (hv₀ z hz)]⟩
 
 end TauCeti
+
+namespace IsPreconnected
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- **Integrating factor with a given primitive.** On a preconnected set of times `s`, let `A` be a
+primitive of the complex coefficient `k` within `s`. A solution of `f' = k • f` within `s` then
+satisfies `f b = exp (A b - A a) • f a` for all `a, b ∈ s`. -/
+theorem eq_exp_sub_smul_of_hasDerivWithinAt {s : Set ℝ} (hs : IsPreconnected s) {A k : ℝ → ℂ}
+    {f : ℝ → V} (hA : ∀ t ∈ s, HasDerivWithinAt A (k t) s t)
+    (hf : ∀ t ∈ s, HasDerivWithinAt f (k t • f t) s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    f b = exp (A b - A a) • f a := by
+  -- `t ↦ exp (-A t) • f t` has zero derivative within `s`, so it is constant there.
+  have h := hs.eq_of_hasDerivWithinAt_zero (f := fun t ↦ exp (-A t) • f t)
+    (fun t ht ↦ ((hA t ht).neg.cexp.smul (hf t ht)).congr_deriv (by module)) hb ha
+  rw [sub_eq_add_neg, exp_add, mul_smul, ← h, smul_smul, ← exp_add, add_neg_cancel, exp_zero,
+    one_smul]
+
+end IsPreconnected

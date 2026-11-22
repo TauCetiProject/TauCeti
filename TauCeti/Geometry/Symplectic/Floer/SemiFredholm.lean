@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on a cylinder
@@ -162,8 +163,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
   -- part.
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   have hJc : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
-    continuous_iff_continuousAt.2 fun z ↦ ContinuousAt.comp (f := fun z ↦ (z, u z))
-      (hJ z).continuousAt (continuousAt_id.prodMk hu.continuous.continuousAt)
+    continuous_comp_prodMk_of_continuousAt (fun z ↦ (hJ z).continuousAt) hu.continuous
   have hAc : Continuous (ω.floerLinearizationCoeff J' Ks Kt u) :=
     continuousOn_univ.1 (ω.continuousOn_floerLinearizationCoeff (fun z _ ↦ hJ z)
       (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) fun z _ ↦ hu.contDiffAt)

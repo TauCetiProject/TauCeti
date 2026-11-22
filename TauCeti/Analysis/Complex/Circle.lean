@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
@@ -15,10 +16,12 @@ public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -64,11 +67,14 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
-* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
-  is differentiable.
+* `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
+  differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
+* `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
+  differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
+  `e^{iθ} (dr + i r dθ)`.
 -/
 
 public section
@@ -255,6 +261,13 @@ theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.differentiableAt.comp z hu
 
+/-- The pointwise inverse of a `Cⁿ` circle-valued map, as a map into `ℂ`, is `Cⁿ`. -/
+theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} (hu : ContDiff ℝ n fun w ↦ (u w : ℂ)) :
+    ContDiff ℝ n fun w ↦ ((u⁻¹ w : Circle) : ℂ) := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.comp hu
+
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
 def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
@@ -405,5 +418,32 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) (I * Circle.exp t) t := by
   simp only [Circle.coe_exp]
   simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {θ r : E → ℝ}
+  {θ' r' : E →L[ℝ] ℝ} {x : E}
+
+/-- **The differential of a map in polar form.** If the angle `θ` and the radius `r` are
+differentiable at `x`, then `f = e^{iθ} r` is differentiable at `x`, with differential
+`df_x v = dr_x v • e^{iθ(x)} + dθ_x v • (r(x) i e^{iθ(x)})`. -/
+theorem hasFDerivAt_circleExp_mul_ofReal (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x) :
+    HasFDerivAt (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ))
+      (r'.smulRight (Circle.exp (θ x) : ℂ) +
+        θ'.smulRight ((r x : ℂ) * I * Circle.exp (θ x))) x := by
+  refine ((((ofRealCLM.hasFDerivAt.comp x hθ).mul_const' I).cexp.mul
+      (ofRealCLM.hasFDerivAt.comp x hr)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun y ↦ by simp [Circle.coe_exp])).congr_fderiv ?_
+  ext v
+  simp [Circle.coe_exp]
+  ring
+
+/-- The value of the differential of a map `e^{iθ} r` in polar form:
+`df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`. -/
+theorem fderiv_circleExp_mul_ofReal_apply (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) x v =
+      (Circle.exp (θ x) : ℂ) * ((r' v : ℂ) + (r x * θ' v : ℝ) * I) := by
+  rw [(hasFDerivAt_circleExp_mul_ofReal hθ hr).fderiv]
+  simp
+  ring
 
 end TauCeti
