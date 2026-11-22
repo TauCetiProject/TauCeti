@@ -90,6 +90,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
+* `PadicInt.addVal_eq_valuation`: on nonzero elements, the additive valuation of the discrete
+  valuation ring `ℤ_[p]` is `PadicInt.valuation`.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)` (`PadicInt.continuous_quotientSpanToZMod`,
@@ -503,6 +505,12 @@ theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) 
 theorem dvd_pow_valuation {x : ℤ_[p]} (hx : x ≠ 0) : x ∣ (p : ℤ_[p]) ^ x.valuation := by
   nth_rewrite 1 [unitCoeff_spec hx]
   exact Units.mul_left_dvd.mpr dvd_rfl
+
+/-- On nonzero elements, the additive valuation of the discrete valuation ring `ℤ_[p]` is the
+natural-number valuation `PadicInt.valuation`. (At `0` the former is `⊤` and the latter `0`.) -/
+theorem addVal_eq_valuation {x : ℤ_[p]} (hx : x ≠ 0) :
+    IsDiscreteValuationRing.addVal ℤ_[p] x = x.valuation :=
+  IsDiscreteValuationRing.addVal_def x (unitCoeff hx) irreducible_p _ (unitCoeff_spec hx)
 
 /-- **Reduction modulo `p` of `ℤ_[p] ⧸ (q)`**, for `p ∣ q`: the ring homomorphism induced by
 `toZMod`, whose kernel `(p)` contains `(q)`. -/
