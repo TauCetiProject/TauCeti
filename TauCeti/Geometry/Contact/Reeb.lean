@@ -51,8 +51,6 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.interior_mextDeriv_reebVectorField`: the second Reeb
   equation `ι_(R_α) dα = 0` as an identity of one-forms.
 * `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
-* `TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one`: uniqueness at a contact point in
-  arbitrary dimension once a candidate Reeb vector is exhibited.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
 * `TauCeti.SmoothForm.IsContactForm.kerSectionEquivKerDistribution`: projection along `R_α(x)` from
@@ -96,13 +94,6 @@ vector field of `α`. -/
 theorem characteristicVectorField_mextDerivₗ (α : SmoothForm I M ℝ 1) :
     α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField :=
   (rfl)
-
-/-- Unfolding equation for `SmoothForm.reebVectorField`. -/
-theorem reebVectorField_def (α : SmoothForm I M ℝ 1) (x : M) :
-    α.reebVectorField x =
-      Module.Dual.reebVector (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-        ((mextDerivₗ I 1 α).bilinFormAt x) := by
-  rw [reebVectorField, characteristicVectorField_def]
 
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 
@@ -271,22 +262,6 @@ omit [FiniteDimensional ℝ E] in
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by
   rw [← neg_one_smul ℝ α, hα.reebVectorField_smul (by norm_num), inv_neg, inv_one, neg_one_smul]
-
-omit [FiniteDimensional ℝ E] in
-/-- **Uniqueness of a Reeb vector at a contact point in arbitrary dimension.** If `α` is a contact
-form at `x` and `v` is a tangent vector at `x` with `α(v) = 1` and `dα(v, w) = 0` for all
-`w ∈ ker α_x`, then `α.reebVectorField x = v`. No finite-dimensionality or global contactness is
-needed once such a vector is exhibited. -/
-theorem _root_.TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one {x : M}
-    (hc : IsContactFormAt α.val x) {v : TangentSpace I x} (hv : α.val x ![v] = 1)
-    (hvw : ∀ w : TangentSpace I x, α.val x ![w] = 0 → mextDeriv α.val x ![v, w] = 0) :
-    α.reebVectorField x = v := by
-  rw [reebVectorField_def]
-  exact (isContactFormAt_iff_isContact.1 hc).reebVector_eq_of_apply_eq_one
-    (by simpa [degreeOneEquiv_coe_apply] using hv)
-    fun w hw ↦ by
-      rw [← mextDeriv_eq_bilinFormAt]
-      exact hvw w (by simpa [degreeOneEquiv_coe_apply] using hw)
 
 end SmoothForm
 

@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -52,13 +51,6 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   injective.
 * `IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff`: a pullback along a local diffeomorphism
   vanishes at a point exactly when the form vanishes at its image.
-* `PartialDiffeomorph.mpullback_mpullback_symm`, `PartialDiffeomorph.mpullback_symm_mpullback`:
-  pullback along a `C^n` partial diffeomorphism (`n ≠ 0`) and its inverse cancel on its source and
-  target.
-* `PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val`,
-  `PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val_eq_iff`: pullback
-  of restricted forms along `toDiffeomorphSourceTarget` corresponds to pointwise pullback on the
-  source.
 * `IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff`,
   `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`: a form is `C^m` exactly when its pullback
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
@@ -115,66 +107,6 @@ theorem IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff (hf : IsLocalDiffeomorp
     (hn : n ≠ 0) {ω : RoughForm I' M' F k} : mpullback I I' f ω x = 0 ↔ ω (f x) = 0 := by
   simpa only [mpullback_zero, Pi.zero_apply] using
     mpullback_apply_eq_mpullback_apply_iff (ω := ω) (η := 0) (hf.isInvertible_mfderiv hn).surjective
-
-namespace PartialDiffeomorph
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-
-/-- Pulling a rough form back along the inverse of a `C^n` partial diffeomorphism (`n ≠ 0`) and
-then along the partial diffeomorphism itself recovers the form at every point of its source. -/
-@[simp]
-theorem mpullback_mpullback_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
-    (ω : RoughForm I M V k) {x : M} (hx : x ∈ φ.source) :
-    mpullback I I' φ (mpullback I' I φ.toPartialEquiv.symm ω) x = ω x := by
-  have hid : φ.symm ∘ φ =ᶠ[𝓝 x] id :=
-    eventually_of_mem (φ.open_source.mem_nhds hx) fun _ hx' ↦ φ.left_inv hx'
-  rw [← PartialDiffeomorph.symm_toPartialEquiv,
-    ← mpullback_comp_at (φ.mdifferentiableAt hn hx)
-      (φ.symm.mdifferentiableAt hn (φ.map_source hx)),
-    hid.mpullback_eq, mpullback_id]
-
-/-- Pulling a rough form back along a `C^n` partial diffeomorphism (`n ≠ 0`) and then along its
-inverse recovers the form at every point of its target. -/
-@[simp]
-theorem mpullback_symm_mpullback (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
-    (ω : RoughForm I' M' V k) {y : M'} (hy : y ∈ φ.target) :
-    mpullback I' I φ.toPartialEquiv.symm (mpullback I I' φ ω) y = ω y := by
-  simpa only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_symm] using
-    φ.symm.mpullback_mpullback_symm hn ω hy
-
-/-- Pulling the restriction of a rough form to `φ.target` back along
-`φ.toDiffeomorphSourceTarget` equals restricting the pullback `φ^* β` to `φ.source`. -/
-theorem mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val
-    (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0) (β : RoughForm I' M' V k) :
-    mpullback I I' φ.toDiffeomorphSourceTarget (mpullback I' I' Subtype.val β) =
-      mpullback I I Subtype.val (mpullback I I' φ β) := by
-  funext x
-  have hcomp :
-      (Subtype.val : (⟨φ.target, φ.open_target⟩ : TopologicalSpace.Opens M') → M') ∘
-        φ.toDiffeomorphSourceTarget =
-      φ ∘ (Subtype.val : (⟨φ.source, φ.open_source⟩ : TopologicalSpace.Opens M) → M) :=
-    funext fun y ↦ φ.toDiffeomorphSourceTarget_apply_coe y
-  rw [← mpullback_comp_at (φ.toDiffeomorphSourceTarget.contMDiff.mdifferentiable hn x)
-      ((contMDiff_subtypeVal (n := n)).mdifferentiable hn _),
-    hcomp, mpullback_comp_at ((contMDiff_subtypeVal (n := n)).mdifferentiable hn x)
-      (φ.mdifferentiableAt hn x.property)]
-
-/-- `φ.toDiffeomorphSourceTarget` pulls the restriction of `β` to `φ.target` back to the
-restriction of `α` to `φ.source` if and only if `φ` pulls `β` back to `α` at every point of
-`φ.source`. -/
-theorem mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val_eq_iff
-    (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
-    (α : RoughForm I M V k) (β : RoughForm I' M' V k) :
-    mpullback I I' φ.toDiffeomorphSourceTarget (mpullback I' I' Subtype.val β) =
-      mpullback I I Subtype.val α ↔
-      ∀ x ∈ φ.source, mpullback I I' φ β x = α x := by
-  rw [φ.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val hn β, funext_iff, Subtype.forall]
-  refine forall₂_congr fun x hx ↦ ?_
-  exact mpullback_apply_eq_mpullback_apply_iff
-    ((isLocalDiffeomorph_subtype_val (I := I) (n := n)
-      (U := ⟨φ.source, φ.open_source⟩) ⟨x, hx⟩).isInvertible_mfderiv hn).surjective
-
-end PartialDiffeomorph
 
 section Descent
 

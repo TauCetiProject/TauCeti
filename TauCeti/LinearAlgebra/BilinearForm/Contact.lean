@@ -85,9 +85,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   exactly when `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
-* `Module.Dual.reebVector`, `Module.Dual.IsContact.reebVector_eq_of_apply_eq_one`,
-  `Module.Dual.IsContact.eq_reebVector_iff`: the Reeb vector, its dimension-free uniqueness once
-  exhibited, and its finite-dimensional characterization.
+* `Module.Dual.reebVector`, `Module.Dual.IsContact.eq_reebVector_iff`: the Reeb vector and its
+  characterization.
 * `Module.Dual.IsContact.ker_eq_span_reebVector`,
   `Module.Dual.IsContact.isCompl_ker_span_reebVector`: the Reeb line is the kernel of `B` and is
   complementary to `ker a`.
@@ -493,14 +492,6 @@ theorem reebVector_spec_of_exists (hex : ∃ r, a r = 1 ∧ ∀ w, a w = 0 → B
   rw [reebVector, dite_eq_left_of_eq_true (eq_true hex)]
   exact hex.choose_spec
 
-/-- **Uniqueness of the Reeb vector in arbitrary dimension.** If `a` is a contact covector for `B`
-and `r` satisfies `a r = 1` and `B r w = 0` for all `w ∈ ker a`, then `a.reebVector B = r`. No
-finite-dimensionality is needed once such a vector is exhibited. -/
-theorem IsContact.reebVector_eq_of_apply_eq_one (h : a.IsContact B) {r : V} (hr : a r = 1)
-    (hrB : ∀ w, a w = 0 → B r w = 0) : a.reebVector B = r := by
-  obtain ⟨h1, h2⟩ := reebVector_spec_of_exists ⟨r, hr, hrB⟩
-  exact h.eq_of_apply_eq_one h1 h2 hr hrB
-
 open Classical in
 /-- If no vector takes the value `1` under `a` while being `B`-orthogonal to `ker a`, the Reeb
 vector is the junk value `0`. -/
@@ -522,7 +513,8 @@ theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
         mul_inv_cancel₀ hc]
     have h2' : ∀ w, (c • a) w = 0 → B (c⁻¹ • a.reebVector B) w = 0 := fun w hw ↦ by
       rw [map_smul, LinearMap.smul_apply, h2 w ((hker w).1 hw), smul_zero]
-    exact ((isContact_smul_iff hc).2 h).reebVector_eq_of_apply_eq_one h1' h2'
+    obtain ⟨h1'', h2''⟩ := reebVector_spec_of_exists (a := c • a) (B := B) ⟨_, h1', h2'⟩
+    exact ((isContact_smul_iff hc).2 h).eq_of_apply_eq_one h1'' h2'' h1' h2'
   · have hex' : ¬∃ r, (c • a) r = 1 ∧ ∀ w, (c • a) w = 0 → B r w = 0 := by
       rintro ⟨r, hr1, hr2⟩
       have har : a r = c⁻¹ := by
@@ -531,29 +523,6 @@ theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
       exact hex ⟨c • r, by rw [map_smul, har, smul_eq_mul, mul_inv_cancel₀ hc],
         fun w hw ↦ by rw [map_smul, LinearMap.smul_apply, hr2 w ((hker w).2 hw), smul_zero]⟩
     rw [reebVector_eq_zero_of_not_exists hex', reebVector_eq_zero_of_not_exists hex, smul_zero]
-
-/-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
-then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of
-`a'` for `B'`. This holds in every dimension: without a Reeb vector, both sides are the junk
-value `0`. -/
-theorem IsContact.reebVector_comp_linearEquiv_compl₁₂ {V' : Type*} [AddCommGroup V']
-    [Module K V'] {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} (h : a'.IsContact B')
-    (e : V ≃ₗ[K] V') :
-    reebVector (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) =
-      e.symm (a'.reebVector B') := by
-  by_cases hex : ∃ r, a' r = 1 ∧ ∀ w', a' w' = 0 → B' r w' = 0
-  · obtain ⟨h1, h2⟩ := reebVector_spec_of_exists hex
-    have h1' : (a' ∘ₗ (e : V →ₗ[K] V')) (e.symm (a'.reebVector B')) = 1 := by simp [h1]
-    have h2' : ∀ w, (a' ∘ₗ (e : V →ₗ[K] V')) w = 0 →
-        (B'.compl₁₂ (e : V →ₗ[K] V') e) (e.symm (a'.reebVector B')) w = 0 := fun w hw ↦ by
-      simpa using h2 (e w) (by simpa using hw)
-    exact ((isContact_comp_linearEquiv_compl₁₂_iff e).2 h).reebVector_eq_of_apply_eq_one h1' h2'
-  · have hex' : ¬∃ r, (a' ∘ₗ (e : V →ₗ[K] V')) r = 1 ∧
-        ∀ w, (a' ∘ₗ (e : V →ₗ[K] V')) w = 0 → (B'.compl₁₂ (e : V →ₗ[K] V') e) r w = 0 := by
-      rintro ⟨r, hr1, hr2⟩
-      refine hex ⟨e r, by simpa using hr1, fun w' hw' ↦ ?_⟩
-      simpa using hr2 (e.symm w') (by simpa using hw')
-    rw [reebVector_eq_zero_of_not_exists hex', reebVector_eq_zero_of_not_exists hex, map_zero]
 
 variable [FiniteDimensional K V]
 
@@ -618,6 +587,20 @@ theorem IsContact.isCompl_ker_span_reebVector (h : a.IsContact B) :
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hvr
   rw [LinearMap.mem_ker, map_smul, h.apply_reebVector, smul_eq_mul, mul_one] at hv
   rw [hv, zero_smul]
+
+/-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
+then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of
+`a'` for `B'`. -/
+theorem IsContact.reebVector_comp_linearEquiv_compl₁₂ {V' : Type*} [AddCommGroup V']
+    [Module K V'] {a' : Module.Dual K V'} {B' : LinearMap.BilinForm K V'} (h : a'.IsContact B')
+    (e : V ≃ₗ[K] V') :
+    reebVector (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) =
+      e.symm (a'.reebVector B') := by
+  have : FiniteDimensional K V' := e.finiteDimensional
+  refine (((isContact_comp_linearEquiv_compl₁₂_iff e).2 h).eq_reebVector_iff.2
+    ⟨?_, fun w hw ↦ ?_⟩).symm
+  · simp [h.apply_reebVector]
+  · simpa using h.apply_reebVector_of_apply_eq_zero (by simpa using hw)
 
 /-- **Rescaling law for the Reeb vector**, pointwise. Let `a` be contact for `B`, let `c` be a
 scalar, and let `B'` be a bilinear form with `B' v w = c B v w - l w a v` for `w ∈ ker a`. This is

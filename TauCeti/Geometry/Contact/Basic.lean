@@ -51,8 +51,7 @@ space this is the linear condition `Module.Dual.IsContact` for the covector `α(
 form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`). In finite dimension, since
 linear contactness is open (`TauCeti.isOpen_setOf_isContact_continuousAlternatingMap`), a `C¹`
 one-form that is contact at `x` remains contact on a neighbourhood of `x`
-(`TauCeti.IsContactFormAt.eventually`, `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`,
-`TauCeti.IsContactFormAt.eventually_modelSpace`).
+(`TauCeti.IsContactFormAt.eventually`, `TauCeti.IsContactFormAt.eventually_modelSpace`).
 
 ## Main declarations
 
@@ -73,9 +72,8 @@ one-form that is contact at `x` remains contact on a neighbourhood of `x`
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
   `TauCeti.isContactFormAt_congr`, `TauCeti.SmoothForm.isContactFormAt_iff_isContact`, and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
-* `TauCeti.IsContactFormAt.eventually`, `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`,
-  `TauCeti.IsContactFormAt.eventually_modelSpace`: openness of the pointwise contact condition in
-  finite dimension.
+* `TauCeti.IsContactFormAt.eventually`, `TauCeti.IsContactFormAt.eventually_modelSpace`: openness
+  of the pointwise contact condition in finite dimension.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
 * `TauCeti.isContactFormAt_modelSpace_iff_isContact`: on a normed space, the pointwise contact
@@ -442,12 +440,6 @@ theorem IsContactFormAt.eventually [FiniteDimensional ℝ E] [IsManifold I 2 M]
       ((isOpen_setOf_isContact_continuousAlternatingMap (E := E)).mem_nhds
         ((hiff hxU hxT).1 hc))] with y hyU hyT hy
   exact (hiff hyU hyT).2 hy
-
-/-- **Openness of the contact condition for smooth forms.** On a finite-dimensional `C²` manifold,
-the set of points where a smooth one-form `α` is a contact form is open. -/
-theorem SmoothForm.isOpen_setOf_isContactFormAt [FiniteDimensional ℝ E] [IsManifold I 2 M]
-    (α : SmoothForm I M ℝ 1) : IsOpen {x : M | IsContactFormAt α.val x} :=
-  isOpen_iff_mem_nhds.2 fun _ hx ↦ hx.eventually ((α.contMDiff _).of_le (by simp))
 
 /-- **The contact condition at a point is congruent.** Two one-forms with the same value at `x`
 whose exterior derivatives at `x` agree on the common hyperplane `ker α_x` are contact at `x`

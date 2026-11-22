@@ -38,16 +38,6 @@ factor `g`: there are `n` with `dim E = 2 n + 1` and a smooth partial diffeomorp
 
 `α_std (chart x) (d chart_x v) = α x v`.
 
-For a globally smooth one-form `α`, this pointwise pullback identity on `chart.source` is
-equivalent to `chart.toDiffeomorphSourceTarget` being a strict contactomorphism between the
-restrictions of `α` and `α_std` to the open source and target (see
-`PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_iff` in
-`TauCeti/Geometry/Contact/Contactomorphism.lean`). Moreover, any `C^n` (`2 ≤ n`) partial
-diffeomorphism into `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` on its source straightens the
-Reeb vector field of `α` to the coordinate field `∂_z = (0, 0, 1)` on that source (see
-`TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq` in
-`TauCeti/Geometry/Contact/Contactomorphism.lean`).
-
 The proof follows the geometric Reeb-slice construction rather than the contact Moser deformation
 of `TauCeti/Geometry/Contact/Darboux/Basic.lean`:
 
@@ -245,28 +235,15 @@ private theorem exists_reebSliceChart_opens {W₀ : Opens E} (p₀ : W₀)
   have hD : IsOpen D := isOpen_setOf_mem_flowDomain
     (hα₀.contMDiff_reebVectorField.of_le (by simp)) continuous_snd
     (hι_K.continuous.comp continuous_fst)
-  let Φ := hloc.localInverse.symm
-  let Φ' := Φ.restrOpen D hD
-  let Ψ := Φ'.symm
-  have hΦ'_src : Φ'.source = Φ.source ∩ D := Φ.restrOpen_source hD
-  have hs₀_src : (s₀, (0 : ℝ)) ∈ Φ'.source := hΦ'_src ▸ ⟨hloc.localInverse_mem_target, h0_dom⟩
-  have hΦ'_zero : Φ' (s₀, 0) = p₀ := by
-    rw [PartialDiffeomorph.coe_restrOpen, hloc.localInverse_symm_apply hloc.localInverse_mem_target]
-    dsimp only [F]
-    rw [flowOf_zero, hι_s₀]
-  refine ⟨K, S_K, s₀, β, Ψ, hdimK, hnd₀, hΦ'_zero ▸ Φ'.map_source hs₀_src,
-    hΦ'_zero ▸ Φ'.left_inv hs₀_src, fun p hp v ↦ ?_⟩
-  have hΨp : Ψ p ∈ Φ'.source := Ψ.map_source hp
-  have hev_F : F =ᶠ[𝓝 (Ψ p)] Φ' := eventually_of_mem (Φ'.open_source.mem_nhds hΨp) fun q hq ↦ by
-    rw [PartialDiffeomorph.coe_restrOpen]
-    exact (hloc.localInverse_symm_apply (hΦ'_src ▸ hq).left).symm
-  have hpull_symm : mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, E) Φ' α₀.val (Ψ p) =
-      (-β).contactization.val (Ψ p) := by
-    rw [hev_F.symm.mpullback_eq]
+  have hfω : ∀ᶠ q in 𝓝 (s₀, (0 : ℝ)),
+      mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, E) F α₀.val q = (-β).contactization.val q := by
+    filter_upwards [hD.mem_nhds h0_dom] with q hq
     exact mpullback_flowOf_comp_apply_eq_contactization hα₀.contMDiff_reebVectorField hι_K
-      hα₀.apply_reebVectorField hα₀.interior_mextDeriv_reebVectorField (hΦ'_src ▸ hΨp).right
-  rw [← hpull_symm, ← mpullback_apply_one, PartialDiffeomorph.symm_toPartialEquiv,
-    Φ'.mpullback_symm_mpullback (by simp) α₀.val hp]
+      hα₀.apply_reebVectorField hα₀.interior_mextDeriv_reebVectorField hq
+  obtain ⟨Ψ, hsrc, hΨ, hpull⟩ := hloc.exists_partialDiffeomorph_mpullback_eq (by simp) hfω
+  have hF0 : F (s₀, 0) = p₀ := by dsimp [F]; rw [flowOf_zero, hι_s₀]
+  refine ⟨K, S_K, s₀, β, Ψ, hdimK, hnd₀, hF0 ▸ hsrc, hF0 ▸ hΨ, fun p hp v ↦ ?_⟩
+  rw [← mpullback_apply_one, hpull p hp]
 
 /-- Construct standard Euclidean symplectic Darboux coordinates `ψ : S_K → ℝⁿ × ℝⁿ` around a point
 `s₀` of an open subset `S_K : Opens K` where `dβ` is nondegenerate. -/
