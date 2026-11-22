@@ -22,6 +22,10 @@ step (`seqTransHom_mem`).
 
 * `TauCeti.seqTransHom`: composite connecting `⋆`-homomorphism `A m →⋆ₙₐ[R] A n` for `m ≤ n`.
 * `TauCeti.directedSystem_seqTransHom`: `DirectedSystem` instance on `A` given by `seqTransHom α`.
+* `TauCeti.seqTransStarAlgHom`: unital composite connecting `⋆`-homomorphism
+  `A m →⋆ₐ[R] A n` for `m ≤ n`.
+* `TauCeti.directedSystem_seqTransStarAlgHom`: `DirectedSystem` instance on `A` given by
+  `seqTransStarAlgHom α`.
 * `TauCeti.comp_seqTransHom_of_comp_eq`: propagation of step-compatible cocones along
   `seqTransHom`.
 * `TauCeti.seqTransHom_mem`: propagation of step-invariant subsets `F n ⊆ A n` along `seqTransHom`.
@@ -30,6 +34,8 @@ step (`seqTransHom_mem`).
 public section
 
 namespace TauCeti
+
+section NonUnital
 
 variable {R : Type*} [Monoid R] {A : ℕ → Type*}
   [∀ n, NonUnitalNonAssocSemiring (A n)] [∀ n, DistribMulAction R (A n)] [∀ n, Star (A n)]
@@ -95,6 +101,16 @@ theorem step_comp_seqTransHom_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) 
     α n (seqTransHom α h a) = seqTransHom α (Nat.le_succ_of_le h) a :=
   DFunLike.congr_fun (step_comp_seqTransHom α h) a
 
+@[simp]
+theorem step_comp_step (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) (n : ℕ) :
+    (α (n + 1)).comp (α n) = seqTransHom α (Nat.le_add_right n 2) := by
+  rw [← seqTransHom_le_succ α n, step_comp_seqTransHom]
+
+@[simp]
+theorem step_comp_step_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) (n : ℕ) (a : A n) :
+    α (n + 1) (α n a) = seqTransHom α (Nat.le_add_right n 2) a :=
+  DFunLike.congr_fun (step_comp_step α n) a
+
 /-- Iterating step `⋆`-homomorphisms `α n : A n →⋆ₙₐ[R] A (n + 1)` forms a `DirectedSystem`. -/
 instance directedSystem_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) :
     DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransHom α h)) where
@@ -130,5 +146,110 @@ theorem seqTransHom_mem {α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)} {F : ∀ n, 
   | succ k hmk ih =>
     rw [seqTransHom_succ α hmk]
     exact hF k _ ih
+
+end NonUnital
+
+section Unital
+
+variable {R : Type*} [CommSemiring R] {A : ℕ → Type*}
+  [∀ n, Semiring (A n)] [∀ n, Algebra R (A n)] [∀ n, Star (A n)]
+
+/-- The composite connecting unital `⋆`-homomorphism `A m →⋆ₐ[R] A n` for `m ≤ n` obtained by
+iterating a sequential system `α : ∀ k, A k →⋆ₐ[R] A (k + 1)`. -/
+def seqTransStarAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n) :
+    A m →⋆ₐ[R] A n :=
+  Nat.leRecOn (motive := fun k ↦ A m →⋆ₐ[R] A k) h (fun {k} f ↦ (α k).comp f) (.id R (A m))
+
+@[simp]
+theorem seqTransStarAlgHom_self (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {n : ℕ} (h : n ≤ n) :
+    seqTransStarAlgHom α h = .id R (A n) := by
+  cases Subsingleton.elim h n.le_refl
+  exact Nat.leRecOn_self (motive := fun k ↦ A n →⋆ₐ[R] A k)
+    (next := fun {k} f ↦ (α k).comp f) (StarAlgHom.id R (A n))
+
+theorem seqTransStarAlgHom_succ (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n)
+    (h' : m ≤ n + 1) : seqTransStarAlgHom α h' = (α n).comp (seqTransStarAlgHom α h) := by
+  cases Subsingleton.elim h' (Nat.le_add_right_of_le h)
+  exact Nat.leRecOn_succ (motive := fun k ↦ A m →⋆ₐ[R] A k) h
+    (next := fun {k} f ↦ (α k).comp f) (StarAlgHom.id R (A m))
+
+@[simp]
+theorem toNonUnitalStarAlgHom_seqTransStarAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 1))
+    {m n : ℕ} (h : m ≤ n) :
+    (seqTransStarAlgHom α h).toNonUnitalStarAlgHom =
+      seqTransHom (fun k ↦ (α k).toNonUnitalStarAlgHom) h := by
+  induction n, h using Nat.le_induction with
+  | base =>
+    rw [seqTransStarAlgHom_self, seqTransHom_self]
+    rfl
+  | succ k hmk ih =>
+    rw [seqTransStarAlgHom_succ α hmk, seqTransHom_succ _ hmk]
+    ext a
+    simp [← ih]
+
+@[simp]
+theorem seqTransStarAlgHom_le_succ (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) (n : ℕ) :
+    seqTransStarAlgHom α (Nat.le_succ n) = α n := by
+  rw [seqTransStarAlgHom_succ α le_rfl (Nat.le_succ n), seqTransStarAlgHom_self,
+    StarAlgHom.comp_id]
+
+@[simp]
+theorem seqTransStarAlgHom_comp (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {i j k : ℕ} (hij : i ≤ j)
+    (hjk : j ≤ k) :
+    (seqTransStarAlgHom α hjk).comp (seqTransStarAlgHom α hij) =
+      seqTransStarAlgHom α (hij.trans hjk) := by
+  induction k, hjk using Nat.le_induction with
+  | base => rw [seqTransStarAlgHom_self, StarAlgHom.id_comp]
+  | succ k hjk ih =>
+    rw [seqTransStarAlgHom_succ α hjk, seqTransStarAlgHom_succ α (hij.trans hjk),
+      StarAlgHom.comp_assoc, ih]
+
+@[simp]
+theorem seqTransStarAlgHom_comp_apply (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {i j k : ℕ} (hij : i ≤ j)
+    (hjk : j ≤ k) (a : A i) :
+    seqTransStarAlgHom α hjk (seqTransStarAlgHom α hij a) =
+      seqTransStarAlgHom α (hij.trans hjk) a :=
+  DFunLike.congr_fun (seqTransStarAlgHom_comp α hij hjk) a
+
+@[simp]
+theorem seqTransStarAlgHom_comp_step (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ} (h : m + 1 ≤ n) :
+    (seqTransStarAlgHom α h).comp (α m) = seqTransStarAlgHom α (Nat.le_of_succ_le h) := by
+  rw [← seqTransStarAlgHom_comp α (Nat.le_succ m) h, seqTransStarAlgHom_le_succ]
+
+@[simp]
+theorem seqTransStarAlgHom_comp_step_apply (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ}
+    (h : m + 1 ≤ n) (a : A m) :
+    seqTransStarAlgHom α h (α m a) = seqTransStarAlgHom α (Nat.le_of_succ_le h) a :=
+  DFunLike.congr_fun (seqTransStarAlgHom_comp_step α h) a
+
+@[simp]
+theorem step_comp_seqTransStarAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n) :
+    (α n).comp (seqTransStarAlgHom α h) = seqTransStarAlgHom α (Nat.le_succ_of_le h) :=
+  (seqTransStarAlgHom_succ α h (Nat.le_succ_of_le h)).symm
+
+@[simp]
+theorem step_comp_seqTransStarAlgHom_apply (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n)
+    (a : A m) :
+    α n (seqTransStarAlgHom α h a) = seqTransStarAlgHom α (Nat.le_succ_of_le h) a :=
+  DFunLike.congr_fun (step_comp_seqTransStarAlgHom α h) a
+
+@[simp]
+theorem step_comp_step_starAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) (n : ℕ) :
+    (α (n + 1)).comp (α n) = seqTransStarAlgHom α (Nat.le_add_right n 2) := by
+  rw [← seqTransStarAlgHom_le_succ α n, step_comp_seqTransStarAlgHom]
+
+@[simp]
+theorem step_comp_step_starAlgHom_apply (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) (n : ℕ) (a : A n) :
+    α (n + 1) (α n a) = seqTransStarAlgHom α (Nat.le_add_right n 2) a :=
+  DFunLike.congr_fun (step_comp_step_starAlgHom α n) a
+
+/-- Iterating unital step `⋆`-homomorphisms `α n : A n →⋆ₐ[R] A (n + 1)` forms a
+`DirectedSystem`. -/
+instance directedSystem_seqTransStarAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 1)) :
+    DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransStarAlgHom α h)) where
+  map_self _ a := by simp
+  map_map _ _ _ hij hjk a := seqTransStarAlgHom_comp_apply α hij hjk a
+
+end Unital
 
 end TauCeti

@@ -344,7 +344,7 @@ theorem elliott_intertwining_of_isSeqColimitCocone
     refine ((hinter.isApproximateCocone_forward hιB).approximatelyUnitarilyEquivalent_hom_comp
       hιA (fun m ↦ ?_) n).trans (hconj n)
     exact ((hconj (m + 1)).precomp (α m)).trans ((hstep₀ m).trans (hconj m).symm)
-  refine ⟨θ, hθ, fun n ↦ (ApproximatelyUnitarilyEquivalent.symm_comp_iff θ).mpr ?_⟩
+  refine ⟨θ, hθ, fun n ↦ θ.approximatelyUnitarilyEquivalent_symm_comp_iff.mpr ?_⟩
   rw [← NonUnitalStarAlgHom.comp_assoc, ← hιB.comp_eq n]
   exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp (ιB (n + 1)))
 

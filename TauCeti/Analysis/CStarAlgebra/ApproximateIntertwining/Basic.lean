@@ -37,8 +37,9 @@ stagewise density (`exists_approx_of_denseSeed_subset`).
   `comp_hom_eq_of_norm_sub_le`) and tail estimate `IsApproximateCocone.norm_hom_sub_le`.
 * `TauCeti.IsApproximateIntertwining` and `TauCeti.IsApproximateIntertwining.equiv`: two-sided
   approximate intertwining inducing `C ≃⋆ₐ[ℂ] D`, with one-sided cocones
-  `isApproximateCocone_forward` and `isApproximateCocone_backward`, uniqueness `equiv_unique`,
-  and forward/backward tail estimates `norm_equiv_sub_le` and `norm_equiv_symm_sub_le`.
+  `isApproximateCocone_forward` and `isApproximateCocone_backward`, uniqueness `equiv_unique` and
+  `equiv_symm_unique`, and forward/backward tail estimates `norm_equiv_sub_le` and
+  `norm_equiv_symm_sub_le`.
 
 ## References
 
@@ -485,6 +486,20 @@ theorem equiv_unique (h : IsApproximateIntertwining α β φ ψ F G δ ε)
   have heq : θ.toNonUnitalStarAlgHom = (h.equiv hιA hιB).toNonUnitalStarAlgHom := by
     rw [h.toNonUnitalStarAlgHom_equiv]
     exact (h.isApproximateCocone_forward hιB).hom_unique hιA hθ
+  ext x
+  exact DFunLike.congr_fun heq x
+
+/-- Uniqueness of the inverse `⋆`-isomorphism induced by an approximate intertwining. -/
+theorem equiv_symm_unique (h : IsApproximateIntertwining α β φ ψ F G δ ε)
+    (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB)
+    {η : D ≃⋆ₐ[ℂ] C}
+    (hη : ∀ n b, Tendsto
+      (fun k ↦ ιA (n + k) (ψ (n + k) (seqTransHom β (Nat.le_add_right n k) b)))
+      atTop (𝓝 (η (ιB n b)))) :
+    η = (h.equiv hιA hιB).symm := by
+  have heq : η.toNonUnitalStarAlgHom = (h.equiv hιA hιB).symm.toNonUnitalStarAlgHom := by
+    rw [h.toNonUnitalStarAlgHom_equiv_symm]
+    exact (h.isApproximateCocone_backward hιA).hom_unique hιB hη
   ext x
   exact DFunLike.congr_fun heq x
 

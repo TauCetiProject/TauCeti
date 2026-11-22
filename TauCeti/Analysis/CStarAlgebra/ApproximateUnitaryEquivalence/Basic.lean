@@ -231,14 +231,6 @@ private theorem symm_comp_of_comp {D E : Type*} [CStarAlgebra D] [CStarAlgebra E
     simp
   simpa only [hcomp] using h'
 
-/-- Postcomposing by `θ.symm` moves a `⋆`-isomorphism `θ : D ≃⋆ₐ[ℂ] E` between unital C⋆-algebras
-across approximate unitary equivalence. -/
-theorem symm_comp_iff {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
-    (θ : D ≃⋆ₐ[ℂ] E) {ξ : A →⋆ₙₐ[ℂ] D} {η : A →⋆ₙₐ[ℂ] E} :
-    ApproximatelyUnitarilyEquivalent (θ.symm.toNonUnitalStarAlgHom.comp η) ξ ↔
-      ApproximatelyUnitarilyEquivalent (θ.toNonUnitalStarAlgHom.comp ξ) η :=
-  ⟨symm_comp_of_comp θ.symm, symm_comp_of_comp θ⟩
-
 /-- If a `⋆`-isomorphism `θ : D ≃⋆ₐ[ℂ] E` between unital C⋆-algebras is approximately unitarily
 equivalent to `φ` and `φ ∘ ψ` is approximately unitarily equivalent to `id`, then `θ.symm` is
 approximately unitarily equivalent to `ψ`. -/
@@ -248,8 +240,22 @@ theorem symm_of_comp_id {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
     (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (.id ℂ E)) :
     ApproximatelyUnitarilyEquivalent θ.symm.toNonUnitalStarAlgHom ψ := by
   simpa only [NonUnitalStarAlgHom.comp_id] using
-    (symm_comp_iff θ).mpr ((hθ.precomp ψ).trans hφψ)
+    symm_comp_of_comp θ ((hθ.precomp ψ).trans hφψ)
 
 end ApproximatelyUnitarilyEquivalent
 
 end TauCeti
+
+namespace StarAlgEquiv
+
+/-- Postcomposing by `θ.symm` moves a `⋆`-isomorphism `θ : D ≃⋆ₐ[ℂ] E` between unital C⋆-algebras
+across approximate unitary equivalence. -/
+theorem approximatelyUnitarilyEquivalent_symm_comp_iff {A D E : Type*}
+    [NonUnitalCStarAlgebra A] [CStarAlgebra D] [CStarAlgebra E]
+    (θ : D ≃⋆ₐ[ℂ] E) {ξ : A →⋆ₙₐ[ℂ] D} {η : A →⋆ₙₐ[ℂ] E} :
+    TauCeti.ApproximatelyUnitarilyEquivalent (θ.symm.toNonUnitalStarAlgHom.comp η) ξ ↔
+      TauCeti.ApproximatelyUnitarilyEquivalent (θ.toNonUnitalStarAlgHom.comp ξ) η :=
+  ⟨TauCeti.ApproximatelyUnitarilyEquivalent.symm_comp_of_comp θ.symm,
+    TauCeti.ApproximatelyUnitarilyEquivalent.symm_comp_of_comp θ⟩
+
+end StarAlgEquiv
