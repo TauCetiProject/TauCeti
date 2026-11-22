@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 

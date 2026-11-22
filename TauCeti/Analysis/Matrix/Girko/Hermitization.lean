@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
-public import TauCeti.Analysis.Matrix.SingularValues
+public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 
@@ -64,9 +64,13 @@ theorem empiricalLogPotential_eq_log_norm_det
         (A.charpoly.roots.map fun w : ℂ => Real.log ‖z - w‖).sum := by
     rw [hnorm, Real.log_multiset_prod]
     · simp only [Multiset.map_map, Function.comp_def]
-    intro x hx hx0
-    subst x
-    exact (norm_ne_zero_iff.mpr hdet) (hnorm.trans (Multiset.prod_eq_zero hx))
+    intro x hx
+    obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.mp hx
+    have hne := Matrix.eval_ne_zero_of_det_aeval_ne_zero A (Polynomial.X - Polynomial.C z)
+      (by rw [hshift]; exact hdet) hw
+    have hwz : w - z ≠ 0 := by
+      simpa only [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C] using hne
+    exact norm_ne_zero_iff.mpr (sub_ne_zero.mpr (Ne.symm (sub_ne_zero.mp hwz)))
   rw [hlog]
 
 /-- Girko's finite-dimensional hermitization identity away from the eigenvalues: the logarithmic
