@@ -16,6 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 -- the proof of `exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`, but no statement
 -- mentions any of them.
 import Mathlib.Algebra.Order.Star.Real
+import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
@@ -74,7 +75,13 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   say the same of the defect `M * J * Mᵀ - J` of a square matrix `M`.
 * `Matrix.transpose_transpose_mul_J_sub_J_mul`: the matrix `Ψᵀ * J - J * Ψ` is symmetric, and
   `Matrix.transpose_J_mul_mul_J_sub_J_mul_J_mul` evaluates it on `J * S` for symmetric `S` as
-  `2 • S`.
+  `2 • S`. For symplectic `Ψ` it factors as `(Ψ + 1)ᵀ * -(J * (Ψ - 1))`
+  (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`), so away from the eigenvalue
+  `-1` its kernel is the space of fixed vectors of `Ψ`
+  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
+  that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+* `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
+  `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
@@ -307,6 +314,42 @@ theorem transpose_transpose_mul_J_sub_J_mul (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) 
     Matrix.mul_neg]
   abel
 
+/-- For a symplectic matrix `Ψ`, the symmetric matrix `Ψᵀ * J - J * Ψ` factors as
+`(Ψ + 1)ᵀ * -(J * (Ψ - 1))`, the numerator of the Cayley transform of `Ψ`. -/
+theorem transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) :
+    Ψᵀ * J l R - J l R * Ψ = (Ψ + 1)ᵀ * -(J l R * (Ψ - 1)) := by
+  rw [transpose_add, transpose_one]
+  simp only [Matrix.add_mul, Matrix.mul_neg, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
+    ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
+  abel
+
+/-- **The kernel of `Ψᵀ * J - J * Ψ`.** For a symplectic matrix `Ψ` without the eigenvalue `-1`,
+the kernel of the symmetric matrix `Ψᵀ * J - J * Ψ` is the space of fixed vectors of `Ψ`. -/
+theorem ker_mulVecLin_transpose_mul_J_sub_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) (h : IsUnit (Ψ + 1).det) :
+    LinearMap.ker (Ψᵀ * J l R - J l R * Ψ).mulVecLin = LinearMap.ker (Ψ - 1).mulVecLin := by
+  have hinj : Function.Injective ((Ψ + 1)ᵀ * J l R).mulVec := by
+    refine mulVec_injective_of_det_mem_nonZeroDivisors (IsUnit.mem_nonZeroDivisors ?_)
+    rw [det_mul, det_transpose]
+    exact h.mul (isUnit_det_J l R)
+  ext v
+  simp only [LinearMap.mem_ker, mulVecLin_apply, Matrix.mul_neg, ← Matrix.mul_assoc, neg_mulVec,
+    neg_eq_zero, transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ]
+  rw [← mulVec_mulVec]
+  exact ⟨fun hv ↦ hinj (hv.trans (mulVec_zero _).symm), fun hv ↦ by rw [hv, mulVec_zero]⟩
+
+/-- On every vector, the quadratic form of `Bᵀ * J - J * B` is twice the quadratic form of
+`-(J * B)`. -/
+theorem dotProduct_transpose_mul_J_sub_J_mul_mulVec (B : Matrix (l ⊕ l) (l ⊕ l) R)
+    (v : l ⊕ l → R) :
+    v ⬝ᵥ (Bᵀ * J l R - J l R * B) *ᵥ v = 2 * (v ⬝ᵥ (-(J l R * B)) *ᵥ v) := by
+  have h : v ⬝ᵥ (Bᵀ * J l R) *ᵥ v = -(v ⬝ᵥ (J l R * B) *ᵥ v) := by
+    rw [← dotProduct_transpose_mulVec, transpose_mul, transpose_transpose, J_transpose,
+      Matrix.neg_mul, neg_mulVec, dotProduct_neg]
+  rw [sub_mulVec, dotProduct_sub, h, neg_mulVec, dotProduct_neg]
+  ring
+
 /-- For a symmetric `S` and `K = J * S`, the matrix `Kᵀ * J - J * K` is `2 • S`. This is the
 linearization at `Ψ = 1` of `Ψᵀ * J - J * Ψ` along `Ψ = 1 + K`. -/
 theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) :
@@ -314,6 +357,16 @@ theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [transpose_mul, J_transpose, hS.eq, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
     J_squared]
   simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
+
+/-- If `S` is symmetric and `G'ᵀ * J * G + Gᵀ * J * G' = 0`, as for the derivative `G'` of a path
+`G` of symplectic matrices, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric. This is the matrix of
+the equation `Ψ' = J * S * Ψ` after a change of frame by `G`. -/
+theorem IsSymm.transpose_mul_mul_add_transpose_mul_J_mul {S G G' : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hS : S.IsSymm) (h : G'ᵀ * J l R * G + Gᵀ * J l R * G' = 0) :
+    (Gᵀ * S * G + Gᵀ * J l R * G').IsSymm := by
+  simp only [IsSymm, transpose_add, transpose_mul, transpose_transpose, hS.eq, J_transpose,
+    Matrix.neg_mul, Matrix.mul_neg, Matrix.mul_assoc, add_right_inj, neg_eq_iff_eq_neg]
+  simpa only [Matrix.mul_assoc] using eq_neg_of_add_eq_zero_left h
 
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
 theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
@@ -370,10 +423,10 @@ theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal
     rw [hE, Matrix.neg_apply, Matrix.add_apply]
     exact I.neg_mem (I.add_mem (hXJ_mem i j)
       (by simpa using mul_mul_apply_mem hXt_mem (J l R) 1 i j))
-  have hX_mul_E : X * E = 0 := mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
-  have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
+  have hX_mul_E : X * E = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hX_mem hE_mem
+  have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hE_mem hXt_mem
   have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
-    mul_eq_zero_of_sq_eq_bot hI hXJ_mem hXt_mem
+    mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hXJ_mem hXt_mem
   rw [SymplecticGroup.mem_iff]
   calc
     (1 + X) * M * J l R * ((1 + X) * M).transpose =

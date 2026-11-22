@@ -52,6 +52,8 @@ without active sections, can be brought to a standard form.
   sections and variable bases.
 * `TauCeti.GenEq.sectionPartitionEquiv`: section partitions are the assignments of kinds to closed
   sections; in particular there are finitely many of them.
+* `TauCeti.GenEq.SectionPartition.withKind`: a section partition with a set of closed sections
+  redeclared of a given kind.
 * `TauCeti.GenEq.SectionPartition.IsStandardForm`: the standard form of Definition 12, decidable.
 
 ## Main results
@@ -346,6 +348,33 @@ theorem card_sectionPartition : Fintype.card Ω.SectionPartition = 4 ^ #Ω.close
   rw [Fintype.card_congr Ω.sectionPartitionEquiv, Fintype.card_fun, Fintype.card_coe,
     SectionKind.card]
 
+namespace SectionPartition
+
+variable {Ω}
+
+/-- The section partition `P` with the closed sections of a set `D` redeclared of kind `κ`. -/
+def withKind (P : Ω.SectionPartition) (D : Finset Ω.closedSections) (κ : SectionKind) :
+    Ω.SectionPartition :=
+  Ω.sectionPartitionEquiv.symm fun s ↦ if s ∈ D then κ else P.sectionKind s
+
+/-- A redeclared closed section has the new kind; the other closed sections keep theirs. -/
+@[simp]
+theorem sectionKind_withKind (P : Ω.SectionPartition) (D : Finset Ω.closedSections)
+    (κ : SectionKind) (s : Ω.closedSections) :
+    (P.withKind D κ).sectionKind s = if s ∈ D then κ else P.sectionKind s :=
+  Ω.sectionKind_sectionPartitionEquiv_symm_apply _ s
+
+/-- An item of a redeclared closed section has the new kind; the other items keep theirs. -/
+@[simp]
+theorem itemKind_withKind (P : Ω.SectionPartition) (D : Finset Ω.closedSections) (κ : SectionKind)
+    (k : Fin Ω.numItems) :
+    (P.withKind D κ).itemKind k =
+      if (⟨Ω.closedSectionOfItem k, Ω.closedSectionOfItem_mem_closedSections k⟩ :
+        Ω.closedSections) ∈ D then κ else P.itemKind k := by
+  simp [withKind]
+
+end SectionPartition
+
 /-! ### Standard form -/
 
 namespace SectionPartition
@@ -456,6 +485,15 @@ example : standardExample.sectionPartitionEquiv standardPartition
     ⟨(4, 6), by rw [mem_closedSections, isClosedSection_iff]; decide⟩ = parametric := by
   rw [sectionPartitionEquiv_apply]
   decide
+
+/-- Redeclaring the parametric section `[4, 6]` active makes its item `h₅` active. -/
+example : (standardPartition.withKind
+    {⟨(4, 6), by rw [mem_closedSections, isClosedSection_iff]; decide⟩} active).itemKind 5 =
+      active := by
+  have h : standardExample.closedSectionOfItem 5 = (4, 6) :=
+    (closedSectionOfItem_eq_iff _).2 ⟨by rw [mem_closedSections, isClosedSection_iff]; decide,
+      by rw [mem_sectionItems]; decide⟩
+  rw [SectionPartition.itemKind_withKind, ite_eq_left (Finset.mem_singleton.2 (Subtype.ext h))]
 
 /-- With the parametric section `[0, 2]` before the active section `[4, 6]`, the equation is not in
 standard form. -/

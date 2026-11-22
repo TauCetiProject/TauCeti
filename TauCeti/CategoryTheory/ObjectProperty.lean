@@ -35,6 +35,8 @@ standard functors between full subcategories.
   conclusion.
 * `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
   `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
+* `CategoryTheory.ObjectProperty.mono_homMk`: `homMk` of a monomorphism of the ambient category is
+  a monomorphism of the full subcategory.
 * `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
   subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essSurj_lift_iff`: a lift through a full subcategory is
@@ -141,6 +143,12 @@ theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
     {X Y Z : P.FullSubcategory} (f : X.obj ⟶ Y.obj) (g : Y.obj ⟶ Z.obj) :
     homMk (f ≫ g) = homMk f ≫ homMk g :=
   rfl
+
+/-- A morphism of a full subcategory is a monomorphism as soon as it is one in the ambient
+category. -/
+instance mono_homMk {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
+    {X Y : P.FullSubcategory} (f : X.obj ⟶ Y.obj) [Mono f] : Mono (homMk f) :=
+  P.ι.mono_of_mono_map ‹_›
 
 /-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
 up to the identifications of the underlying objects. Stated for any `G` equal to the lift, so that
