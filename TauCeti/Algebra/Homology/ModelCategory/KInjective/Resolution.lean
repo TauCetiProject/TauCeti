@@ -33,6 +33,10 @@ modules over a sheaf of rings on a small site, which form a Grothendieck abelian
   family of monomorphic quasi-isomorphisms to which the small object argument applies, with the
   same right lifting property as all monomorphic quasi-isomorphisms.
 * `CochainComplex.monoQuasiIsoMapFactorizationDataRlp`: the functorial factorization.
+* `CochainComplex.injectiveReplacement` and `CochainComplex.ιInjectiveReplacement`: the resulting
+  functorial K-injective replacement, with its natural monomorphic quasi-isomorphism. A morphism is
+  a quasi-isomorphism exactly when its replacement is
+  (`CochainComplex.quasiIso_injectiveReplacement_map_iff`).
 * `TauCeti.hasKInjectiveResolutions_of_isGrothendieckAbelian`: Grothendieck abelian categories
   have K-injective resolutions.
 
@@ -132,6 +136,55 @@ instance (K : CochainComplex C ℤ) (n : ℤ) :
 instance (K : CochainComplex C ℤ) :
     IsKInjective (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).Z :=
   (injective_X_and_isKInjective_monoQuasiIsoMapFactorizationDataRlp_zero K).2
+
+/-- The morphism from a complex to zero, as a functor to the arrow category. -/
+private noncomputable def arrowToZero : CochainComplex C ℤ ⥤ Arrow (CochainComplex C ℤ) where
+  obj K := Arrow.mk (0 : K ⟶ 0)
+  map f := Arrow.homMk f (𝟙 0)
+
+variable (C) in
+/-- The **functorial K-injective replacement** of unbounded complexes in a Grothendieck abelian
+category: the middle object of the functorial factorization of the morphism from a complex to zero.
+It is a K-injective complex of injective objects, receiving a monomorphic quasi-isomorphism
+`CochainComplex.ιInjectiveReplacement C` from the complex. -/
+noncomputable def injectiveReplacement : CochainComplex C ℤ ⥤ CochainComplex C ℤ :=
+  arrowToZero ⋙ (functorialFactorizationData
+    (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ))
+    (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp).Z
+
+variable (C) in
+/-- The natural monomorphic quasi-isomorphism from a complex to its K-injective replacement. -/
+noncomputable def ιInjectiveReplacement : 𝟭 (CochainComplex C ℤ) ⟶ injectiveReplacement C where
+  app K := (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).i
+  naturality _ _ f := (functorialFactorizationData _ _).i.naturality (arrowToZero.map f)
+
+/-- The replacement of a complex is the middle object of the factorization of the morphism from
+it to zero. -/
+private lemma injectiveReplacement_obj (K : CochainComplex C ℤ) :
+    (injectiveReplacement C).obj K = (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).Z :=
+  rfl
+
+instance (K : CochainComplex C ℤ) : ((injectiveReplacement C).obj K).IsKInjective := by
+  rw [injectiveReplacement_obj]
+  infer_instance
+
+instance (K : CochainComplex C ℤ) (n : ℤ) : Injective (((injectiveReplacement C).obj K).X n) := by
+  rw [injectiveReplacement_obj]
+  infer_instance
+
+instance (K : CochainComplex C ℤ) : Mono ((ιInjectiveReplacement C).app K) :=
+  inferInstanceAs (Mono (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).i)
+
+instance (K : CochainComplex C ℤ) : QuasiIso ((ιInjectiveReplacement C).app K) :=
+  inferInstanceAs (QuasiIso (monoQuasiIsoMapFactorizationDataRlp (0 : K ⟶ 0)).i)
+
+/-- The replacement of a morphism of complexes is a quasi-isomorphism exactly when the morphism
+is. -/
+theorem quasiIso_injectiveReplacement_map_iff {K L : CochainComplex C ℤ} (f : K ⟶ L) :
+    QuasiIso ((injectiveReplacement C).map f) ↔ QuasiIso f := by
+  rw [← quasiIso_iff_comp_left ((ιInjectiveReplacement C).app K),
+    ← (ιInjectiveReplacement C).naturality f, Functor.id_map,
+    quasiIso_iff_comp_right f ((ιInjectiveReplacement C).app L)]
 
 end CochainComplex
 
