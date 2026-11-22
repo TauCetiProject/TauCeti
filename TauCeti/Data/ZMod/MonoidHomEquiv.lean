@@ -36,9 +36,9 @@ The groups `ℤ/Nℤ` and `(ℤ/Nℤ)²` are written multiplicatively, as `Multi
   multiples.
 * `TauCeti.zmodMonoidHomEquiv_symm_eq_zmodMulLift`: the inverse of `zmodMonoidHomEquiv N G` is
   `zmodMulLift`.
-* `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: for
-  `[NeZero N]`, the homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends
-  `(a, b)` to `g ^ a.val * h ^ b.val`.
+* `TauCeti.zmodMonoidHomEquiv_symm_apply`, `TauCeti.zmodProdMonoidHomEquiv_symm_apply`, and
+  `TauCeti.zmodProdMonoidHomEquiv_symm_apply_ofAdd_intCast`: inverse evaluation rules for
+  `zmodMonoidHomEquiv` and `zmodProdMonoidHomEquiv` (including arbitrary `N` on integer casts).
 * `TauCeti.injective_zmod_three_prod_iff`: a homomorphism `(ℤ/3ℤ)² →* G` is injective exactly when
   `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel.
 -/
@@ -189,6 +189,15 @@ theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G] [NeZero N]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
     (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
   simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+
+/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` of elements killed by `N` sends integer
+coordinates `(a, b)` to `g ^ a * h ^ b` (valid for all `N : ℕ`, including `N = 0`). -/
+@[simp high]
+theorem zmodProdMonoidHomEquiv_symm_apply_ofAdd_intCast {G : Type*} [CommGroup G]
+    (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ℤ) :
+    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd ((a : ZMod N), (b : ZMod N))) =
+      g.1.val ^ a * g.2.val ^ b := by
+  simp [zmodProdMonoidHomEquiv, zmodLift]
 
 /-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when
 `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel: every nonzero element of

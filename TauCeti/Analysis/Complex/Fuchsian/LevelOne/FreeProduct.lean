@@ -210,6 +210,24 @@ theorem psl2zEquivCoprodI_symm_of_one_ofAdd_one :
       (R : PSL(2, ℤ)) :=
   psl2zEquivCoprodI.symm_apply_eq.mpr psl2zEquivCoprodI_coe_R.symm
 
+/-- The inverse of `psl2zEquivCoprodI` maps `ofAdd (k : ZMod (psl2zCoprodOrder 0))` at `0 : Fin 2`
+to `S ^ k`. -/
+@[simp]
+theorem psl2zEquivCoprodI_symm_of_zero_ofAdd_intCast (k : ℤ) :
+    psl2zEquivCoprodI.symm
+        (Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 0)))) =
+      (S : PSL(2, ℤ)) ^ k := by
+  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, psl2zEquivCoprodI_symm_of_zero_ofAdd_one]
+
+/-- The inverse of `psl2zEquivCoprodI` maps `ofAdd (k : ZMod (psl2zCoprodOrder 1))` at `1 : Fin 2`
+to `R ^ k`. -/
+@[simp]
+theorem psl2zEquivCoprodI_symm_of_one_ofAdd_intCast (k : ℤ) :
+    psl2zEquivCoprodI.symm
+        (Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 1)))) =
+      (R : PSL(2, ℤ)) ^ k := by
+  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, psl2zEquivCoprodI_symm_of_one_ofAdd_one]
+
 /-! ### Conjugacy classes and orders of torsion elements in `PSL(2, ℤ)` -/
 
 /-- `S` and `R` are not conjugate in `PSL(2, ℤ)`. -/
@@ -290,20 +308,25 @@ theorem isOfFinOrder_iff {g : PSL(2, ℤ)} :
     · exact h.symm.isOfFinOrder isOfFinOrder_coe_R
     · exact h.symm.isOfFinOrder isOfFinOrder_coe_R_sq
 
-/-- **Classification of torsion elements in `PSL(2, ℤ)`** (with `U = S * T⁻¹`): an element of
-`PSL(2, ℤ)` has finite order if and only if it is `1` or conjugate to `S`, `U`, or `U²`. -/
-theorem isOfFinOrder_iff_coe_U {g : PSL(2, ℤ)} :
-    IsOfFinOrder g ↔
-      g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (U : PSL(2, ℤ)) ∨
-        IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [isOfFinOrder_iff]
-  refine or_congr_right (or_congr_right ⟨?_, ?_⟩)
+/-- Conjugacy to `R` or `R²` in `PSL(2, ℤ)` is equivalent to conjugacy to `U` or `U²`. -/
+theorem isConj_coe_R_or_sq_iff_coe_U {g : PSL(2, ℤ)} :
+    (IsConj g (R : PSL(2, ℤ)) ∨ IsConj g ((R : PSL(2, ℤ)) ^ 2)) ↔
+      (IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2)) := by
+  constructor
   · rintro (hR | hR2)
     · exact Or.inr (hR.trans isConj_coe_U_sq_coe_R.symm)
     · exact Or.inl (hR2.trans isConj_coe_U_coe_R_sq.symm)
   · rintro (hU | hU2)
     · exact Or.inr (hU.trans isConj_coe_U_coe_R_sq)
     · exact Or.inl (hU2.trans isConj_coe_U_sq_coe_R)
+
+/-- **Classification of torsion elements in `PSL(2, ℤ)`** (with `U = S * T⁻¹`): an element of
+`PSL(2, ℤ)` has finite order if and only if it is `1` or conjugate to `S`, `U`, or `U²`. -/
+theorem isOfFinOrder_iff_coe_U {g : PSL(2, ℤ)} :
+    IsOfFinOrder g ↔
+      g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (U : PSL(2, ℤ)) ∨
+        IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
+  rw [isOfFinOrder_iff, isConj_coe_R_or_sq_iff_coe_U]
 
 /-- Every element of finite order in `PSL(2, ℤ)` has order `1`, `2`, or `3`. -/
 theorem orderOf_eq_one_or_two_or_three_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
@@ -346,14 +369,7 @@ theorem orderOf_eq_three_iff {g : PSL(2, ℤ)} :
 /-- Elements of order `3` in `PSL(2, ℤ)` form the two conjugacy classes of `U` and `U²`. -/
 theorem orderOf_eq_three_iff_coe_U {g : PSL(2, ℤ)} :
     orderOf g = 3 ↔ IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [orderOf_eq_three_iff]
-  constructor
-  · rintro (hR | hR2)
-    · exact Or.inr (hR.trans isConj_coe_U_sq_coe_R.symm)
-    · exact Or.inl (hR2.trans isConj_coe_U_coe_R_sq.symm)
-  · rintro (hU | hU2)
-    · exact Or.inr (hU.trans isConj_coe_U_coe_R_sq)
-    · exact Or.inl (hU2.trans isConj_coe_U_sq_coe_R)
+  rw [orderOf_eq_three_iff, isConj_coe_R_or_sq_iff_coe_U]
 
 /-! ### Subgroup index divisibility for torsion-free subgroups -/
 
@@ -373,10 +389,9 @@ theorem _root_.Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one (Γ : Subgro
 /-- If `Γ ≤ PSL(2, ℤ)` is torsion-free, then `6 ∣ Γ.index`. -/
 theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree (Γ : Subgroup PSL(2, ℤ))
     [IsMulTorsionFree Γ] :
-    6 ∣ Γ.index := by
-  refine Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one fun g hg hg_fin ↦ ?_
-  exact congrArg Subtype.val
-    (Submonoid.isOfFinOrder_coe.mp hg_fin : IsOfFinOrder (⟨g, hg⟩ : Γ)).eq_one'
+    6 ∣ Γ.index :=
+  Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one
+    fun _ hg hg_fin ↦ Γ.eq_one_of_isOfFinOrder_mem hg hg_fin
 
 /-! ### Abelianization of `PSL(2, ℤ)` -/
 

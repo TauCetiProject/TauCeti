@@ -41,9 +41,10 @@ with itself gives all of its positive powers as reduced words, so its product ha
 * `Monoid.CoprodI.Word.length_toList_of_smul_le_of_fstIdx_eq`: left-multiplying by `of m` does not
   increase word length when the first letter lies in the same factor.
 * `Monoid.CoprodI.NeWord.length_toList_inv`: inverting a nonempty reduced word preserves its length.
-* `Monoid.CoprodI.NeWord.powSucc_prod`, `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`:
-  product of `u.powSucc` and infinite order of a nonempty reduced word with distinct endpoint
-  indices.
+* `Monoid.CoprodI.NeWord.powSucc_zero`, `Monoid.CoprodI.NeWord.powSucc_succ`,
+  `Monoid.CoprodI.NeWord.powSucc_prod`, `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`:
+  defining equations and product of `u.powSucc`, and infinite order of a nonempty reduced word
+  with distinct endpoint indices.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
@@ -155,13 +156,25 @@ def powSucc {i j : ι} (u : NeWord M i j) (hji : j ≠ i) : ℕ → NeWord M i j
   | 0 => u
   | n + 1 => u.append hji (u.powSucc hji n)
 
+/-- The base case of `u.powSucc hji`: at `0` it is `u`. -/
+@[simp]
+theorem powSucc_zero {i j : ι} (u : NeWord M i j) (hji : j ≠ i) :
+    u.powSucc hji 0 = u :=
+  (rfl)
+
+/-- The successor case of `u.powSucc hji`: at `n + 1` it concatenates `u` with `u.powSucc hji n`. -/
+@[simp]
+theorem powSucc_succ {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
+    u.powSucc hji (n + 1) = u.append hji (u.powSucc hji n) :=
+  (rfl)
+
 /-- The product of the iterated concatenation `u.powSucc hji n` is `u.prod ^ (n + 1)`. -/
 @[simp]
 theorem powSucc_prod {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
     (u.powSucc hji n).prod = u.prod ^ (n + 1) := by
   induction n with
-  | zero => simp [powSucc]
-  | succ n ih => rw [powSucc, append_prod, ih, ← pow_succ']
+  | zero => simp
+  | succ n ih => rw [powSucc_succ, append_prod, ih, ← pow_succ']
 
 /-- A nonempty reduced word whose first and last letters lie in distinct factors represents an
 element of infinite order in `CoprodI M`. -/
