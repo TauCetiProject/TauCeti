@@ -12,11 +12,11 @@ import TauCeti.Probability.Distributions.Wishart.CharFun
 import TauCeti.Probability.Distributions.Wishart.Marginal
 
 /-!
-# Random-variable operations for Wishart laws
+# Random-variable operations for nonsingular Wishart laws
 
-This file gives the native random-variable forms of the two fundamental operations on
-Gaussian-Gram and nonsingular Wishart laws. Congruence transports the scale by the same
-congruence, and the sum of independent matrices with a common scale adds their degrees.
+This file gives the native random-variable forms of two fundamental operations on nonsingular
+Wishart laws. Congruence transports the scale by the same congruence, and the sum of independent
+matrices with a common scale adds their degrees.
 
 The rectangular congruence theorems retain the hypotheses of their measure-level forms. A
 rectangular projection can turn an invalid scale into a valid one, and a rank-deficient image of
@@ -39,19 +39,6 @@ open scoped Matrix MatrixOrder
 namespace ProbabilityTheory.IndepFun
 
 open TauCeti.Probability
-
-/-- The sum of independent Gaussian-Gram Wishart matrices with a common scale has the sum of
-their natural degrees. This includes zero degrees and invalid covariance matrices, whose laws are
-Dirac masses at zero. -/
-theorem hasLaw_add_wishartGramMeasure {p : ℕ} {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω}
-    {X Y : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    {ν₁ ν₂ : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hXY : IndepFun X Y P)
-    (hX : HasLaw X (wishartGramMeasure ν₁ S) P)
-    (hY : HasLaw Y (wishartGramMeasure ν₂ S) P) :
-    HasLaw (X + Y) (wishartGramMeasure (ν₁ + ν₂) S) P := by
-  rw [← wishartGramMeasure_conv_wishartGramMeasure ν₁ ν₂ S]
-  exact hXY.hasLaw_add hX hY
 
 /-- The sum of independent nonsingular Wishart matrices with a common scale has the sum of their
 real degrees. The output degree condition is needed in dimension zero, where two valid degrees
@@ -79,21 +66,6 @@ end ProbabilityTheory.IndepFun
 namespace ProbabilityTheory.HasLaw
 
 open TauCeti.Probability
-
-/-- Congruence by a rectangular matrix sends a Gaussian-Gram Wishart random matrix to the law
-whose scale is transformed by the same congruence. The matrix need not have full row rank. -/
-theorem symmetricCongruenceLinearMap_wishartGramMeasure {p q : ℕ} {Ω : Type*}
-    [MeasurableSpace Ω] {P : Measure Ω}
-    {W : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
-    {ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
-    (hW : HasLaw W (wishartGramMeasure ν S) P) (M : Matrix (Fin q) (Fin p) ℝ)
-    (hS : S.PosSemidef) :
-    HasLaw (fun ω ↦ Matrix.symmetricCongruenceLinearMap M (W ω))
-      (wishartGramMeasure ν (M * S * Mᵀ)) P := by
-  have hmap : Measurable (Matrix.symmetricCongruenceLinearMap M) :=
-    (LinearMap.continuous_of_finiteDimensional _).measurable
-  have hlaw := (hasLaw_map hmap.aemeasurable).comp hW
-  rwa [map_symmetricCongruenceLinearMap_wishartGramMeasure ν M hS] at hlaw
 
 /-- Invertible congruence sends a nonsingular Wishart random matrix to the law whose scale is
 transformed by the same congruence. This also covers every invalid parameter, where both laws are
