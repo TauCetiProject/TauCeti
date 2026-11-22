@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 
@@ -24,7 +24,7 @@ both O'Neill tensors `oneillA` and `oneillT` vanish identically, and horizontal 
   `TauCeti.starProjection_ker_fst_prodVectorField`: horizontal and vertical projections of a
   product vector field `(Y₁, Y₂)` along `Prod.fst` isolate `(Y₁, 0)` and `(0, Y₂)`.
 * `TauCeti.oneillA_fst` and `TauCeti.oneillT_fst`: O'Neill's fundamental tensors vanish identically
-  for `Prod.fst : M × N → M`.
+  for `Prod.fst : M × N → M`, and so does the squared norm `TauCeti.oneillANormSq_fst`.
 * `TauCeti.riemannCurvatureTensor_horizontalLift_fst` and
   `TauCeti.sectionalCurvature_horizontalLift_fst`: horizontal lifts along `Prod.fst` preserve
   Riemannian and sectional curvature regardless of the geometry of `N`.
@@ -150,6 +150,13 @@ theorem oneillT_fst (p : M × N) :
     Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField h0M hY₂,
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.zero]
   simp only [zero_apply, Prod.mk_zero_zero, map_zero]
+
+/-- The squared norm `|A|²` of O'Neill's horizontal tensor vanishes for the Riemannian product
+projection `Prod.fst : M × N → M`. -/
+@[simp]
+theorem oneillANormSq_fst (p : M × N) :
+    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillANormSq p = 0 :=
+  (isRiemannianSubmersion_fst (I := I) (J := J)).oneillANormSq_eq_zero_iff p |>.2 (oneillA_fst p)
 
 section Curvature
 

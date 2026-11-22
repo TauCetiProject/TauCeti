@@ -97,6 +97,11 @@ def horizontalLift (x : M) : TangentSpace J (f x) →ₗᵢ[ℝ] TangentSpace I 
 theorem horizontalLift_apply (x : M) (v : TangentSpace J (f x)) :
     h.horizontalLift x v = (mfderiv I J f x).adjoint v := (rfl)
 
+/-- The horizontal lift of a base vector `u` pairs with `w` as `u` pairs with `df_x w`. -/
+theorem inner_horizontalLift_left (x : M) (u : TangentSpace J (f x)) (w : TangentSpace I x) :
+    ⟪h.horizontalLift x u, w⟫_ℝ = ⟪u, mfderiv I J f x w⟫_ℝ := by
+  rw [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_left]
+
 /-- Taking the differential of a horizontal lift recovers the original vector. -/
 @[simp]
 theorem mfderiv_horizontalLift (x : M) (v : TangentSpace J (f x)) :
