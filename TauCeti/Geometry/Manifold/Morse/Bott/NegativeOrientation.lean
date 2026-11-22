@@ -24,7 +24,7 @@ twisted by the orientation local system `o(ν⁻_g)`
 The subspaces `ν⁻_g` depend on `g`, but this file shows that the twisting coefficients do not. For
 a second `C^k` fibre metric `g'`, projecting along the positive normal spaces of `g` is a
 fibrewise linear isomorphism `ν⁻_{g'} ≃ ν⁻_g` which is continuous on total spaces
-(`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace`), and isomorphic
+(`IsNondegenerateCriticalSubmanifold.continuous_negativeNormalSpaceEquiv`), and isomorphic
 bundles have isomorphic orientation local systems
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). So
 `o(ν⁻_g) ≅ o(ν⁻_{g'})` (`negativeNormalSpaceSignLocalSystemIso`, in the namespace
@@ -46,10 +46,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `continuous_negativeNormalSpaceEquiv`: projecting the negative normal spaces of `g'` along the
-  positive normal spaces of `g` is continuous on total spaces.
 * `negativeNormalSpaceSignLocalSystemIso_eq`: the isomorphism of orientation local systems is the
-  one induced by this projection.
+  one induced by projecting along the positive normal spaces of `g`.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff`: the negative normal bundles of two
   fibre metrics are orientable together.
 
@@ -79,43 +77,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   {k : ℕ∞ω} [IsManifold I (k + 2) M] [IsManifold J (k + 1) S]
-
-/-- Projecting the negative normal spaces of `g'` along the positive normal spaces of `g` is
-continuous on the total spaces of the negative normal bundles. -/
-theorem continuous_negativeNormalSpaceEquiv
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
-    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
-    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
-    (g g' : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-      letI := i.normalSpaceFiberBundle hn hdim
-      letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
-    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
-    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
-    Continuous fun v : TotalSpace (Fin r → ℝ)
-        (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) ↦
-      TotalSpace.mk' (Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
-        v.proj ((h.negativeNormalSpaceEquiv hn g'.toRiemannianMetric g.toRiemannianMetric
-          v.proj).toContinuousLinearEquiv v.snd) := by
-  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
-  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr).fiberBundle
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
-  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g' hr).fiberBundle
-  obtain ⟨Φ, hΦ⟩ := h.exists_bundleDiffeomorph_negativeNormalSpace hn hk hf hdim g' g hr
-  refine Φ.continuous.congr fun v ↦ (hΦ v).trans ?_
-  rw [LinearEquiv.coe_toContinuousLinearEquiv']
 
 variable (R : Type u) [Ring R]
 
