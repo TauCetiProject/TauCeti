@@ -28,10 +28,11 @@ The similitude group records the multiplier `λ` as data, rather than as a prope
 two projections are the homomorphisms `LinearMap.similitudeToLinearEquiv` and
 `LinearMap.similitudeMultiplier`, and an element is determined by both together
 (`LinearMap.similitudeGroup_ext`). The action alone determines the multiplier once `B` is
-nonzero and `S` acts on `N` without torsion
+nonzero and `S` is a cancellative ring acting on `N` without torsion
 (`LinearMap.similitudeToLinearEquiv_injective`), but not for the zero form, for instance on the
-zero module: then every unit is a multiplier (`LinearMap.similitudeMultiplier_surjective`). This is
-why the rank-zero unitary similitude group `GU(0)` is `Sˣ` rather than trivial.
+zero module: then every unit is a multiplier
+(`LinearMap.similitudeMultiplier_surjective_of_eq_zero`). This is why the rank-zero unitary
+similitude group `GU(0)` is `Sˣ` rather than trivial.
 
 ## Main definitions
 
@@ -47,13 +48,14 @@ why the rank-zero unitary similitude group `GU(0)` is `Sˣ` rather than trivial.
   multiplier `1`.
 * `LinearMap.isometryGroup_neg`, `LinearMap.similitudeGroup_neg`: the forms `B` and `-B` have the
   same isometries and the same similitudes.
-* `LinearMap.similitudeToLinearEquiv_injective`: for a nonzero form, a similitude is determined by
-  its action.
-* `LinearMap.similitudeMultiplier_surjective`: for the zero form every unit is a multiplier.
+* `LinearMap.similitudeToLinearEquiv_injective`: for a nonzero form, with multipliers in a
+  cancellative ring acting on `N` without torsion, a similitude is determined by its action.
+* `LinearMap.similitudeMultiplier_surjective_of_eq_zero`: for the zero form every unit is a
+  multiplier.
 
-The isometry group of a bilinear form `B : LinearMap.BilinForm R M` is also available as
-`LinearMap.BilinForm.isometryGroup B`, with an API specific to bilinear forms; the two agree by
-`LinearMap.BilinForm.isometryGroup_eq_linearMap_isometryGroup`.
+For a bilinear form `B : LinearMap.BilinForm R M`, the module
+`TauCeti.LinearAlgebra.BilinearForm.Isometry` develops an API for `B.isometryGroup` specific to
+bilinear forms.
 
 ## References
 
@@ -89,7 +91,7 @@ theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ B.isometryGroup ↔ ∀ x y, B (e x) (e y) = B x y := Iff.rfl
 
 /-- An element of the isometry group preserves the form. -/
-theorem isometryGroup_apply (e : B.isometryGroup) (x y : M) :
+theorem isometryGroup_map_app (e : B.isometryGroup) (x y : M) :
     B ((e : M ≃ₗ[R] M) x) ((e : M ≃ₗ[R] M) y) = B x y :=
   e.property x y
 
@@ -133,7 +135,7 @@ theorem similitudeMultiplier_apply (g : B.similitudeGroup S) :
     B.similitudeMultiplier S g = (g : (M ≃ₗ[R] M) × Sˣ).2 := (rfl)
 
 /-- A similitude scales the form by its multiplier. -/
-theorem similitudeGroup_apply (g : B.similitudeGroup S) (x y : M) :
+theorem similitudeGroup_map_app (g : B.similitudeGroup S) (x y : M) :
     B ((g : (M ≃ₗ[R] M) × Sˣ).1 x) ((g : (M ≃ₗ[R] M) × Sˣ).1 y) =
       (g : (M ≃ₗ[R] M) × Sˣ).2 • B x y :=
   g.property x y
@@ -165,7 +167,7 @@ theorem range_isometryToSimilitude :
   refine ⟨?_, fun hg ↦ ⟨⟨(g : (M ≃ₗ[R] M) × Sˣ).1, fun x y ↦ ?_⟩, Subtype.ext ?_⟩⟩
   · rintro ⟨e, rfl⟩
     rfl
-  · simpa [hg] using B.similitudeGroup_apply S g x y
+  · simpa [hg] using B.similitudeGroup_map_app S g x y
   · simp [← hg]
 
 /-- Every pair of an automorphism and a unit is a similitude of the zero form. -/
@@ -175,7 +177,7 @@ theorem similitudeGroup_zero : (0 : M →ₛₗ[I₁] M →ₛₗ[I₂] N).simil
 
 /-- For the zero form every unit is a multiplier. This applies to the zero module, where the
 similitude group therefore does not reduce to the trivial group. -/
-theorem similitudeMultiplier_surjective (hB : B = 0) :
+theorem similitudeMultiplier_surjective_of_eq_zero (hB : B = 0) :
     Function.Surjective (B.similitudeMultiplier S) := by
   subst hB
   exact fun c ↦ ⟨⟨(1, c), by simp⟩, rfl⟩
@@ -210,7 +212,11 @@ theorem similitudeToLinearEquiv_injective (S : Type*) [Ring S] [IsCancelMulZero 
     exact hB (ext₂ h)
   refine fun g h hgh ↦ B.similitudeGroup_ext S hgh (Units.ext (smul_left_injective S hxy ?_))
   simp only [similitudeToLinearEquiv_apply] at hgh
-  simp only [similitudeMultiplier_apply, ← Units.smul_def, ← similitudeGroup_apply, hgh]
+  calc ((B.similitudeMultiplier S g : Sˣ) : S) • B x y
+      = B ((g : (M ≃ₗ[R] M) × Sˣ).1 x) ((g : (M ≃ₗ[R] M) × Sˣ).1 y) :=
+        (B.similitudeGroup_map_app S g x y).symm
+    _ = B ((h : (M ≃ₗ[R] M) × Sˣ).1 x) ((h : (M ≃ₗ[R] M) × Sˣ).1 y) := by rw [hgh]
+    _ = ((B.similitudeMultiplier S h : Sˣ) : S) • B x y := B.similitudeGroup_map_app S h x y
 
 end AddCommGroup
 
