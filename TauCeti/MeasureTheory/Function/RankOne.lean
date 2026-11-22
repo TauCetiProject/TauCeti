@@ -35,6 +35,13 @@ measurability is not silently converted into strong measurability without separa
 The solution-dependent complex-linear replacement follows Step 2 of the proof of
 McDuff–Salamon's Theorem 2.3.5; this module supplies its strong measurability and `Lᵖ` bounds.
 
+On a finite-dimensional space without a chosen inner product, an auxiliary Euclidean structure
+gives the same reduction for a pair of vector fields: if `y` vanishes wherever `x` does, a
+strongly measurable family of linear maps carries `x` to `y`, with norm at most a constant times
+`‖y‖ / ‖x‖` (`MeasureTheory.AEStronglyMeasurable.exists_clm_apply_eq`). A pointwise bound
+`‖y‖ ≤ M ‖x‖`, as for the difference of two solutions of a nonlinear equation, thus makes the
+coefficient bounded.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -92,6 +99,54 @@ theorem MemLp.rankOneDivNormSq_apply (hC : MemLp C p μ) (hx : AEStronglyMeasura
     (Filter.Eventually.of_forall fun t => (C t).norm_rankOneDivNormSq_map_le (x t))
 
 end MeasureTheory
+
+namespace MeasureTheory.AEStronglyMeasurable
+
+variable {𝕜 E F X : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [MeasurableSpace X]
+  {μ : Measure X} {x : X → E} {y : X → F}
+
+/-- **A measurable coefficient carrying one vector field to another.** On a finite-dimensional
+space `E`, with no inner product assumed, if `y` vanishes wherever `x` does, then there is a
+strongly measurable family of linear maps `C t : E → F` with `C t (x t) = y t` and
+`‖C t‖ ≤ c ‖y t‖ / ‖x t‖`, for a constant `c` depending only on the norm of `E`. So a pointwise
+bound `‖y‖ ≤ M ‖x‖` makes `C` bounded by `c M`. The coefficient is the normalized rank-one
+operator for an auxiliary Euclidean structure on `E`. -/
+theorem exists_clm_apply_eq (hy : AEStronglyMeasurable y μ) (hx : AEStronglyMeasurable x μ)
+    (h0 : ∀ t, x t = 0 → y t = 0) :
+    ∃ c : ℝ, 0 ≤ c ∧ ∃ C : X → E →L[𝕜] F, AEStronglyMeasurable C μ ∧
+      (∀ t, C t (x t) = y t) ∧ ∀ t, ‖C t‖ ≤ c * (‖y t‖ / ‖x t‖) := by
+  -- Transport to a Euclidean model `T : E ≃ ℝⁿ`, where the rank-one operator is available.
+  let T : E ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  let Tl : E →L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)) := T
+  let Ti : EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)) →L[𝕜] E := T.symm
+  refine ⟨‖Tl‖ * ‖Ti‖, by positivity,
+    fun t ↦ (TauCeti.rankOneDivNormSq 𝕜 (y t) (T (x t))).comp Tl, ?_, fun t ↦ ?_, fun t ↦ ?_⟩
+  · exact ((ContinuousLinearMap.compL 𝕜 E _ F).flip Tl).continuous.comp_aestronglyMeasurable
+      (hy.rankOneDivNormSq (T.continuous.comp_aestronglyMeasurable hx))
+  · by_cases hxt : x t = 0
+    · simp [hxt, h0 t hxt]
+    · exact TauCeti.rankOneDivNormSq_apply_self _ (by simpa using hxt)
+  · by_cases hxt : x t = 0
+    · simp [hxt]
+    -- `‖x‖ ≤ ‖T⁻¹‖ ‖T x‖` converts the bound `‖y‖ / ‖T x‖` into one in terms of `‖x‖`.
+    have hTx : 0 < ‖T (x t)‖ := norm_pos_iff.2 (by simpa using hxt)
+    have hxle : ‖x t‖ ≤ ‖Ti‖ * ‖T (x t)‖ := by
+      simpa [Ti] using Ti.le_opNorm (T (x t))
+    have h1 : ‖y t‖ / ‖T (x t)‖ ≤ ‖Ti‖ * (‖y t‖ / ‖x t‖) := by
+      rw [mul_div_assoc', div_le_div_iff₀ hTx (norm_pos_iff.2 hxt)]
+      calc ‖y t‖ * ‖x t‖ ≤ ‖y t‖ * (‖Ti‖ * ‖T (x t)‖) := by gcongr
+        _ = ‖Ti‖ * ‖y t‖ * ‖T (x t)‖ := by ring
+    calc ‖(TauCeti.rankOneDivNormSq 𝕜 (y t) (T (x t))).comp Tl‖
+        ≤ ‖TauCeti.rankOneDivNormSq 𝕜 (y t) (T (x t))‖ * ‖Tl‖ :=
+          ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ ‖Ti‖ * (‖y t‖ / ‖x t‖) * ‖Tl‖ := by
+          rw [TauCeti.norm_rankOneDivNormSq]
+          gcongr
+      _ = ‖Tl‖ * ‖Ti‖ * (‖y t‖ / ‖x t‖) := by ring
+
+end MeasureTheory.AEStronglyMeasurable
 
 namespace TauCeti.MeasureTheory
 

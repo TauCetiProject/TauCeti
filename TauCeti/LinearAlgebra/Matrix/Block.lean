@@ -96,6 +96,13 @@ public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero
     X = fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   rw [← h₁₂, ← h₂₁, fromBlocks_toBlocks]
 
+/-- With fixed off-diagonal blocks, the assembled matrix determines both diagonal blocks. -/
+public theorem fromBlocks_injective_diag {m n p q α : Type*}
+    (B : Matrix m q α) (C : Matrix n p α) :
+    Function.Injective (fun a : Matrix m p α × Matrix n q α ↦ fromBlocks a.1 B C a.2) := by
+  rintro ⟨A₁, D₁⟩ ⟨A₂, D₂⟩ h
+  simpa only [fromBlocks_inj, and_true, true_and, Prod.mk.injEq] using h
+
 /-- The determinant of a block-diagonal matrix with blocks of possibly different sizes is the
 product of the determinants of the blocks. This is the dependent version of
 `Matrix.det_blockDiagonal`. -/

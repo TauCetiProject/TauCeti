@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
 public import Mathlib.Data.Set.Card
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # Mutation classes of block diagonal matrices
@@ -19,7 +20,8 @@ component classes are finite, and its cardinality is their product.
 
 The projection and realization use `TauCeti.matrixMutationWord_fromBlocks` and its
 `_inl` and `_inr` specializations in `ExchangeMatrix.Word`. For rectangular matrices,
-the uniform product bound on principal entries holds exactly when it holds in each block.
+a nonnegative uniform bound on absolute principal-entry products at distinct mutable indices
+holds exactly when it holds in each block.
 This reduces the product-bound part of two-finiteness to components; for skew-symmetrizable
 exchange matrices the sign condition is already ensured. These statements concern matrix
 mutation classes,
@@ -41,12 +43,6 @@ namespace Function.Embedding
 variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
   [DecidableEq K₁] [DecidableEq K₂]
   (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂) (B₁ : Matrix I₁ K₁ ℤ) (B₂ : Matrix I₂ K₂ ℤ)
-
-omit [DecidableEq I₁] [DecidableEq I₂] [DecidableEq K₁] [DecidableEq K₂] in
-private theorem blockConstructor_injective : Function.Injective
-    (fun p : Matrix I₁ K₁ ℤ × Matrix I₂ K₂ ℤ ↦ Matrix.fromBlocks p.1 0 0 p.2) := by
-  rintro ⟨a, b⟩ ⟨c, d⟩ h
-  simpa only [Matrix.fromBlocks_inj, and_true, true_and, Prod.mk.injEq] using h
 
 /-- The full mutation class of a block sum realizes every pair of component mutations. -/
 theorem range_matrixMutationWord_fromBlocks :
@@ -73,7 +69,7 @@ theorem finite_range_matrixMutationWord_fromBlocks_iff :
       (Set.range (matrixMutationWord row₁ B₁)).Finite ∧
         (Set.range (matrixMutationWord row₂ B₂)).Finite := by
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    Set.finite_image_iff blockConstructor_injective.injOn, Set.finite_prod]
+    Set.finite_image_iff (Matrix.fromBlocks_injective_diag 0 0).injOn, Set.finite_prod]
   simp only [(Set.range_nonempty (matrixMutationWord row₁ B₁)).ne_empty,
     (Set.range_nonempty (matrixMutationWord row₂ B₂)).ne_empty, or_false]
 
@@ -86,7 +82,7 @@ theorem encard_range_matrixMutationWord_fromBlocks :
       (Set.range (matrixMutationWord row₁ B₁)).encard *
         (Set.range (matrixMutationWord row₂ B₂)).encard := by
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    blockConstructor_injective.encard_image, Set.encard_prod]
+    (Matrix.fromBlocks_injective_diag 0 0).encard_image, Set.encard_prod]
 
 /-- Natural cardinality of a block mutation class is the product of its component
 cardinalities, with Mathlib's zero convention for infinite sets. -/
@@ -128,16 +124,7 @@ theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
         fromBlocks C₁ 0 0 C₂ ((row₁.sumMap row₂) j) i| ≤ bound) ↔
       (∀ i j, i ≠ j → |C₁ (row₁ i) j * C₁ (row₁ j) i| ≤ bound) ∧
         (∀ i j, i ≠ j → |C₂ (row₂ i) j * C₂ (row₂ j) i| ≤ bound) := by
-    simp only [Function.Embedding.coe_sumMap]
-    constructor
-    · intro h
-      exact ⟨fun i j hij ↦ by simpa using h (.inl i) (.inl j) (by simpa using hij),
-        fun i j hij ↦ by simpa using h (.inr i) (.inr j) (by simpa using hij)⟩
-    · rintro ⟨h₁, h₂⟩ (i | i) (j | j) hij
-      · simpa only [Sum.map_inl, fromBlocks_apply₁₁] using h₁ i j (by simpa using hij)
-      · simpa using hbound
-      · simpa using hbound
-      · simpa only [Sum.map_inr, fromBlocks_apply₂₂] using h₂ i j (by simpa using hij)
+    simp [Sum.forall, Function.Embedding.coe_sumMap, hbound]
   rw [← Set.forall_mem_range
     (f := matrixMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂))
     (p := fun C : Matrix (I₁ ⊕ I₂) (K₁ ⊕ K₂) ℤ ↦ ∀ i j, i ≠ j →
@@ -145,13 +132,6 @@ theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
     Set.forall_mem_image, Set.forall_prod_set]
   simp_rw [hp]
-  rw [← Set.forall_mem_range (f := matrixMutationWord row₁ B₁)
-    (p := fun C : Matrix I₁ K₁ ℤ ↦ ∀ i j, i ≠ j → |C (row₁ i) j * C (row₁ j) i| ≤ bound),
-    ← Set.forall_mem_range (f := matrixMutationWord row₂ B₂)
-    (p := fun C : Matrix I₂ K₂ ℤ ↦ ∀ i j, i ≠ j → |C (row₂ i) j * C (row₂ j) i| ≤ bound)]
-  obtain ⟨C₁, hC₁⟩ := Set.range_nonempty (matrixMutationWord row₁ B₁)
-  obtain ⟨C₂, hC₂⟩ := Set.range_nonempty (matrixMutationWord row₂ B₂)
-  exact ⟨fun h ↦ ⟨fun C hC ↦ (h C hC C₂ hC₂).1, fun C hC ↦ (h C₁ hC₁ C hC).2⟩,
-    fun ⟨h₁, h₂⟩ C hC D hD ↦ ⟨h₁ C hC, h₂ D hD⟩⟩
+  simp only [Set.forall_mem_range, forall_and, forall_const]
 
 end Matrix

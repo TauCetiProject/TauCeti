@@ -27,7 +27,8 @@ zero, whose value remains infinity. In particular, fixing the base determines th
 additive valuation uniquely (`AddValuation.eq_of_norm_eq_rpow`,
 `AddValuation.eq_ofNorm_of_norm_eq_rpow`); no choice of scale is installed as a global instance.
 Under norm recovery, the sphere `‖x‖ = b ^ σ` is the level set `v x = -σ`
-(`AddValuation.norm_eq_rpow_iff`). A norm recovered from an additive valuation with base at least
+(`AddValuation.norm_eq_rpow_iff`), and the open unit ball is the set of positive valuation
+(`AddValuation.norm_lt_one_iff`). A norm recovered from an additive valuation with base at least
 one is ultrametric (`AddValuation.isUltrametricDist`).
 
 ## Main definitions
@@ -98,6 +99,15 @@ theorem norm_eq_rpow_iff (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < 
   rw [hv x hx, Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne',
     ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), WithTop.coe_eq_coe,
     WithTop.untop₀_coe, neg_eq_iff_eq_neg]
+
+/-- Under norm recovery with base `b > 1`, the points of norm less than one are exactly those of
+positive valuation, zero included. -/
+theorem norm_lt_one_iff (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {x : K} : ‖x‖ < 1 ↔ 0 < v x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [hv x hx, ← Real.rpow_zero b, Real.rpow_lt_rpow_left_iff hb, neg_lt_zero,
+    ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), WithTop.coe_pos, WithTop.untop₀_coe]
 
 /-- A norm that is given by an additive valuation, `‖x‖ = b ^ (-v x)` for `x ≠ 0` with `1 ≤ b`, is
 ultrametric. -/

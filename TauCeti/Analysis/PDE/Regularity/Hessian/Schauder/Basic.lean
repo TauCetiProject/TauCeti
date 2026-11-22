@@ -116,7 +116,7 @@ private theorem eqOn_preciseRepresentative_gradient {U : Set E} {V : Opens E} {u
 
 /-- If the weak gradient of `d` agrees a.e. on `V` with `∇ (∂ₑu)` for a unit vector `e`, and
 `fderiv u` is differentiable on a set `U ⊇ V`, then `‖∇d‖_{L²} ≤ ‖D²u‖_{L²(V)}`. -/
-private theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U : Set E} {V : Opens E}
+theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U : Set E} {V : Opens E}
     {u : E → ℝ} {e : E} {d : W1p volume V 2} (he : ‖e‖ = 1)
     (hVU : (V : Set E) ⊆ U) (hdiff : ∀ x ∈ U, DifferentiableAt ℝ (fderiv ℝ u) x)
     (hgrad : W1p.gradient d =ᵐ[volume.restrict V] ∇ (fun y => fderiv ℝ u y e))
@@ -163,8 +163,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
         ∫ x in Omega, -Δ u x * W1p.value (w : W1p volume Omega 2) x :=
     energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul
       (hu.mono (subset_closure.trans hWU)) hv hΔ
-  have hK' : HolderOnWith K α (fun x => -Δ u x) (thickening R S) := fun x hx y hy => by
-    simpa only [edist_neg_neg] using hK x hx y hy
+  have hK' : HolderOnWith K α (fun x => -Δ u x) (thickening R S) := hK.neg
   have hVU : (V : Set E) ⊆ U := hVT ▸ subset_closure.trans hTU
   have hvV : W1p.value v =ᵐ[volume.restrict V] u :=
     ae_restrict_of_ae_restrict_of_subset (hVT ▸ subset_closure.trans hTW) hv
@@ -337,7 +336,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   -- Straighten `A` to the identity by a linear change of variables `e`, apply the estimate for
   -- the Laplacian to `v = u ∘ e`, compare the `L²` norms of `D²v` and `D²u`, and transfer the
   -- Hölder bound for `D²v` back to `D²u`.
-  obtain ⟨e, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have hlamLam : lam ≤ Lam := by
     simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _)
   have hLam : 0 < Lam := hlam.trans_le hlamLam
