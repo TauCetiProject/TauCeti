@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
@@ -31,9 +32,11 @@ of `t` where `ζ` does not vanish.
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_cutoff_holderWith_and_abs_le`: cutoffs about every centre, equal to one on
-  a smaller ball, with one constant bounding them, their first and second partial derivatives,
-  and the Hölder constants of these.
+* `TauCeti.PDE.exists_cutoff_holderWith_and_abs_le`: cutoffs about every centre, leaving the
+  Hessian unchanged on a smaller ball, with one constant bounding them, their first and second
+  partial derivatives, and the Hölder constants of these.
+* `TauCeti.PDE.abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_le`: bounds on `Du`
+  and `D²u` bound the partial derivatives of `u`.
 * `TauCeti.PDE.holderOnWith_and_holderOnWith_fderiv_apply_single`: the lower-order factors `u` and
   `∂ᵢu` are Hölder on a convex subset of a ball where `Du` and `D²u` are bounded.
 * `TauCeti.PDE.holderOnWith_fderiv_fderiv_cutoff_mul`: the Hessian entries of `ζ u` are Hölder
@@ -146,11 +149,10 @@ private theorem exists_holderWith_and_abs_le_of_hasCompactSupport {α : ℝ≥0}
     fun i j => ⟨(hC₂ i j).mono (h₂ i j), fun x => (hM₂ i j x).trans (by exact_mod_cast h₂ i j)⟩⟩
 
 /-- **Cutoffs about every centre with one set of bounds.** For `ρ < R` and `α ≤ 1` there is a
-constant `Z` such that about every centre `x₀` there is a `C²` cutoff `ζ`, supported in
-`ball x₀ R` and equal to one near `closedBall x₀ ρ`, so that `D²(ζ u) = D²u` on `closedBall x₀ ρ`
-for every `u`, and such that `ζ` and its first and second partial derivatives are bounded by `Z`
-and globally `α`-Hölder with constant `Z`. The cutoffs are the translates of one cutoff about the
-origin, which is why `Z` does not depend on `x₀`. -/
+constant `Z` such that about every centre `x₀` there is a `C²` function `ζ`, supported in
+`ball x₀ R`, with `D²(ζ u) = D²u` on `closedBall x₀ ρ` for every `u`, and such that `ζ` and its
+first and second partial derivatives are bounded by `Z` and globally `α`-Hölder with constant
+`Z`. -/
 theorem exists_cutoff_holderWith_and_abs_le {α : ℝ≥0} (hα : α ≤ 1) {ρ R : ℝ} (hρR : ρ < R) :
     ∃ Z : ℝ≥0, ∀ x₀ : E, ∃ ζ : E → ℝ, ContDiff ℝ 2 ζ ∧ tsupport ζ ⊆ ball x₀ R ∧
       (∀ (u : E → ℝ), ∀ x ∈ closedBall x₀ ρ,
@@ -166,6 +168,8 @@ theorem exists_cutoff_holderWith_and_abs_le {α : ℝ≥0} (hα : α ≤ 1) {ρ 
     (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff isOpen_ball
       (closedBall_subset_ball hρR)
   obtain ⟨Z, hZ0, hZ1, hZ2⟩ := exists_holderWith_and_abs_le_of_hasCompactSupport hα hζ₀ hζ₀c
+  -- The cutoffs are the translates of one cutoff `ζ₀` about the origin, equal to one near
+  -- `closedBall 0 ρ`, which is why `Z` does not depend on `x₀`.
   refine ⟨Z, fun x₀ => ⟨fun x => ζ₀ (x - x₀),
     (hζ₀.of_le (by norm_cast)).comp (contDiff_id.sub contDiff_const), fun x hx => ?_,
     fun u x hx => ?_, holderWith_translate_cutoff (fun i => EuclideanSpace.single i 1) x₀ hZ0 hZ1
@@ -200,6 +204,21 @@ theorem holderOnWith_and_holderOnWith_fderiv_apply_single {u : E → ℝ} {s U :
   simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
   exact h
 
+/-- Bounds `‖Du‖ ≤ N` and `‖D²u‖ ≤ N` on a set `s` bound the first and second partial derivatives
+of `u` along the coordinate directions by `N` on `s`. -/
+theorem abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_le {u : E → ℝ} {s : Set E}
+    {N : ℝ} (hN1 : ∀ x ∈ s, ‖fderiv ℝ u x‖ ≤ N) (hN2 : ∀ x ∈ s, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) :
+    (∀ i, ∀ x ∈ s, |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N) ∧
+      ∀ i j, ∀ x ∈ s,
+        |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N :=
+  ⟨fun i x hx => by
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx),
+  fun i j x hx => by
+    simpa [iteratedFDeriv_two_apply] using
+      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
+        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx)⟩
+
 /-- The second-order product rule for a cutoff product `ζ u` at a point of `t`, when `ζ` is `C²`
 and `u` is `C²` on an open set containing the points of `t` in the topological support of `ζ`. -/
 private theorem fderiv_fderiv_cutoff_mul_apply {t U : Set E} (hU : IsOpen U) {ζ u : E → ℝ}
@@ -219,7 +238,7 @@ private theorem fderiv_fderiv_cutoff_mul_apply {t U : Set E} (hU : IsOpen U) {ζ
 vanishes off `s`, and is Hölder and bounded on `t`, when the first and second derivatives of `ζ`
 are globally Hölder and bounded with constant `Z` and `ζ` is supported in `s`, while `u` and its
 first derivatives are bounded by `N` and Hölder with constant `H` on `s ∩ t`. -/
-theorem holderOnWith_cutoff_remainder {s t : Set E} {ζ u : E → ℝ} {α Z N H : ℝ≥0}
+private theorem holderOnWith_cutoff_remainder {s t : Set E} {ζ u : E → ℝ} {α Z N H : ℝ≥0}
     (hζs : tsupport ζ ⊆ s)
     (hZ1 : ∀ i, HolderWith Z α (fun x => fderiv ℝ ζ x (EuclideanSpace.single i 1)) ∧
       ∀ x, |fderiv ℝ ζ x (EuclideanSpace.single i 1)| ≤ Z)
@@ -294,14 +313,11 @@ theorem holderOnWith_fderiv_fderiv_cutoff_mul {s t U : Set E} (hU : IsOpen U) {�
     (fun x _ hx => image_eq_zero_of_notMem_tsupport fun h => hx (hζs h)) (hV i j) (hN2 i j)
   have hW (x : E) (hx : x ∈ t) := fderiv_fderiv_cutoff_mul_apply hU hζ hζU hu hx
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  refine ⟨fun x hx y hy => ?_, fun x hx => ?_⟩
-  · have h := (h1.add hT) x hx y hy
-    dsimp only at h ⊢
-    rwa [hW x hx, hW y hy]
-  · rw [hW x hx]
-    refine (abs_add_le _ _).trans ?_
-    calc _ ≤ (Z * N : ℝ) + 3 * Z * N := add_le_add (b1 x hx) (bT x hx)
-      _ = _ := by ring
+  refine ⟨(h1.add hT).congr fun x hx => (hW x hx).symm, fun x hx => ?_⟩
+  rw [hW x hx]
+  refine (abs_add_le _ _).trans ?_
+  calc _ ≤ (Z * N : ℝ) + 3 * Z * N := add_le_add (b1 x hx) (bT x hx)
+    _ = _ := by ring
 
 /-- For a cutoff product `ζ u` as in `holderOnWith_fderiv_fderiv_cutoff_mul`, the operator
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ(ζ u) = ζ ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` is Hölder on `t`, when the coefficients are
@@ -363,12 +379,9 @@ theorem holderOnWith_sum_smul_fderiv_fderiv_cutoff_mul {s t U : Set E} (hU : IsO
     simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     push_cast
     ring
-  have hsum := (h1.add (HolderOnWith.sum (s := Finset.univ) fun i _ =>
-    HolderOnWith.sum (s := Finset.univ) fun j _ => h2 i j)).mono_const hC.le
-  intro x hx y hy
-  have h := hsum x hx y hy
-  dsimp only at h ⊢
-  rwa [heq x hx, heq y hy]
+  exact ((h1.add (HolderOnWith.sum (s := Finset.univ) fun i _ =>
+    HolderOnWith.sum (s := Finset.univ) fun j _ => h2 i j)).mono_const hC.le).congr
+    fun x hx => (heq x hx).symm
 
 /-- The comparison of constants closing the localized Schauder estimates: if `X ≤ A N`, then
 `2 κ ((Z K + N B) / λ + Q X) ≤ 2 κ (Z / λ + B / λ + Q A) (K + N)`. -/

@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.Vari
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
+import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
@@ -73,27 +75,6 @@ namespace TauCeti.PDE
 variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
-
-/-- At a point where the Hessian of `u` vanishes unless the radial retraction `q` onto
-`closedBall x₀ R` fixes the point, the coefficients `a ∘ q` and `a` give the same value of
-`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`. -/
-private theorem sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {u : E → ℝ} {x₀ x : E} {R : ℝ}
-    (hx : x ∈ Function.support (iteratedFDeriv ℝ 2 u) → x ∈ closedBall x₀ R) :
-    ∑ i, ∑ j, a (TauCeti.centeredRadialRetraction x₀ R x) i j •
-        fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
-      ∑ i, ∑ j, a x i j •
-        fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-  by_cases hx' : x ∈ Function.support (iteratedFDeriv ℝ 2 u)
-  · simp only [TauCeti.centeredRadialRetraction_of_mem_closedBall (hx hx')]
-  · have hentry (i j : Fin (n + 1)) : fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
-      have hzero := congrArg (fun H : E [×2]→L[ℝ] ℝ =>
-        H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1])
-        (Function.notMem_support.1 hx')
-      simpa only [iteratedFDeriv_two_apply, zero_apply, Matrix.cons_val_zero,
-        Matrix.cons_val_one] using hzero
-    simp [hentry]
 
 /-- **Schauder estimate up to a flat boundary for a Hessian supported in a ball.** Let
 `0 < α < 1`. There is `C > 0`, depending only on dimension and `α`, with the following property.
@@ -170,12 +151,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
   -- On `H` the retracted coefficients give the same operator on `u`.
   have hf' : HolderOnWith K α (fun x => ∑ i, ∑ j, a' x i j •
       fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ho := by
-    have heq (x : E) (hx : x ∈ Ho) := sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq
-      (a := a) (u := u) fun hx' => hsupp ⟨hx', hx⟩
-    intro x hx y hy
-    have h := hf x hx y hy
-    dsimp only at h ⊢
-    rwa [heq x hx, heq y hy]
+    exact hf.congr fun x hx => (sum_smul_fderiv_fderiv_comp_centeredRadialRetraction_eq
+      (a := a) (u := u) fun hx' => hsupp ⟨hx', hx⟩).symm
   have hsmall' :
       2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
         ((ε : ℝ) + (L * 2 ^ (α : ℝ) : ℝ≥0) * r ^ (α : ℝ)) ≤ lam := by
@@ -222,15 +199,8 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {x₀ ν : E} {c
   obtain ⟨hHu, hHdu⟩ := holderOnWith_and_holderOnWith_fderiv_apply_single
     ((convex_ball x₀ R).inter (convex_setOf_le_inner ν c₀)) inter_subset_left hα1 hU hUsub hu
     hN1 hN2
-  have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
-      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
-    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
-      (hN1 x hx)
-  have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
-      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
-    simpa [iteratedFDeriv_two_apply] using
-      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
-        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx)
+  obtain ⟨hdu, hd2u⟩ :=
+    abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_le hN1 hN2
   have hζU : tsupport ζ ∩ Hc ⊆ U := fun x hx => hUsub ⟨hζs hx.1, hx.2⟩
   have hWH := holderOnWith_fderiv_fderiv_cutoff_mul hU hζ2 hζs hζU hZ0 hZ1 hZ2 hu hN0 hdu hd2u
     hHu hHdu fun i j => by
@@ -385,9 +355,7 @@ theorem
   have key := hCS hlam hEll hEll' hν hx₀ (L := L) (K := Z * K + N * B₂) hR.le hR hsmall' hL hU'
     hHU' hw hw0 hJ (inter_subset_left.trans hsupp) hH2 hLw
   -- Comparison of the constants.
-  have hlamLam : lam ≤ Lam := by
-    have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
-    simpa using h
+  have hlamLam : lam ≤ Lam := le_of_mul_norm_sq_le_toQuadraticForm'_le hEll hEll'
   have hκ : 0 ≤ κ := mul_nonneg hC₀.le
     (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _)
   have hQ : 0 ≤ Q := by positivity

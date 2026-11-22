@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
 
 /-!
@@ -107,15 +108,8 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
   obtain ⟨hHu, hHdu⟩ := holderOnWith_and_holderOnWith_fderiv_apply_single (convex_ball x₀ R)
     subset_rfl hα1 isOpen_ball subset_rfl hu hN1 hN2
-  have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
-      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
-    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
-      (hN1 x hx.1)
-  have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
-      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
-    simpa [iteratedFDeriv_two_apply] using
-      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
-        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx.1)
+  obtain ⟨hdu, hd2u⟩ := abs_fderiv_apply_single_le_and_abs_fderiv_fderiv_apply_single_le
+    (s := ball x₀ R ∩ univ) (fun x hx => hN1 x hx.1) fun x hx => hN2 x hx.1
   have hw : ContDiff ℝ 2 (ζ * u) :=
     hu.contDiff_smul_of_tsupport_subset isOpen_ball hζ2.contDiffOn hζs
   have hζU : tsupport ζ ∩ univ ⊆ ball x₀ R := inter_subset_left.trans hζs
@@ -208,9 +202,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   have key := hCS hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR hsmall' hL hw
     hmem hsupp hLw
   -- Comparison of the constants.
-  have hlamLam : lam ≤ Lam := by
-    have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
-    simpa using h
+  have hlamLam : lam ≤ Lam := le_of_mul_norm_sq_le_toQuadraticForm'_le hEll hEll'
   have hκ : 0 ≤ κ := mul_nonneg hC₀.le
     (Real.rpow_nonneg (div_nonneg (hlam.le.trans hlamLam) hlam.le) _)
   have hQ : 0 ≤ Q := by positivity
