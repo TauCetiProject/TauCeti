@@ -46,7 +46,7 @@ instance (X : Scheme.{u}) [IrreducibleSpace X] (x : genericPoints X) :
   have : Subsingleton (genericPoints X) := by
     rw [genericPoints_eq_singleton]
     infer_instance
-  let : Unique (genericPoints X) := { default := x, uniq := fun _ ↦ Subsingleton.elim _ _ }
+  let : Unique (genericPoints X) := uniqueOfSubsingleton x
   exact inferInstanceAs (IsIso (coproductUniqueIso
     (fun x : genericPoints X ↦ Spec (X.residueField x))).inv)
 
@@ -70,14 +70,18 @@ theorem fromGenericPointScheme_ι_apply (X : Scheme.{u})
       (Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x t) = x := by
   rw [← Hom.comp_apply, ι_fromGenericPointScheme, fromSpecResidueField_apply]
 
+private theorem fromGenericPointScheme_comp_sigmaMk (X : Scheme.{u}) :
+    ⇑X.fromGenericPointScheme ∘ sigmaMk _ =
+      Subtype.val ∘ (Sigma.fst : (Σ x : genericPoints X, Spec (X.residueField x)) → _) := by
+  funext ⟨x, t⟩
+  simp
+
 /-- The image of the scheme of generic points is precisely the set of component-generic points. -/
 @[simp]
 theorem range_fromGenericPointScheme (X : Scheme.{u}) :
     range X.fromGenericPointScheme = genericPoints X := by
   rw [← (sigmaMk _).surjective.range_comp (⇑X.fromGenericPointScheme),
-    range_sigma_eq_iUnion_range]
-  simp_rw [Function.comp_apply, sigmaMk_mk, ← Hom.comp_apply, ι_fromGenericPointScheme,
-    range_fromSpecResidueField, iUnion_singleton_eq_range, Subtype.range_val]
+    fromGenericPointScheme_comp_sigmaMk, Sigma.fst_surjective.range_comp, Subtype.range_val]
 
 /-- The structural morphism from the scheme of generic points is a monomorphism. -/
 instance (X : Scheme.{u}) : Mono X.fromGenericPointScheme := by
@@ -85,11 +89,7 @@ instance (X : Scheme.{u}) : Mono X.fromGenericPointScheme := by
     IsZariskiLocalAtSource.sigmaDesc (P := @SurjectiveOnStalks) fun _ ↦ inferInstance
   apply SurjectiveOnStalks.mono_of_injective
   apply Function.Injective.of_comp_right (g := sigmaMk _) _ (sigmaMk _).surjective
-  have hcomp : ⇑X.fromGenericPointScheme ∘ sigmaMk _ =
-      Subtype.val ∘ (Sigma.fst : (Σ x : genericPoints X, Spec (X.residueField x)) → _) := by
-    funext ⟨x, t⟩
-    simp
-  rw [hcomp]
+  rw [fromGenericPointScheme_comp_sigmaMk]
   exact Subtype.val_injective.comp Sigma.fst_injective
 
 /-- The scheme of generic points has dense image in the original scheme. -/
