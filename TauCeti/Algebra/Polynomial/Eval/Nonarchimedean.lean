@@ -12,10 +12,10 @@ public import TauCeti.Algebra.Order.Ring.IsPowMul
 /-!
 # Evaluation of polynomials under nonarchimedean functions
 
-For a nonarchimedean function `f` on a ring that is invariant under negation, such as a valuation
-or a nonarchimedean absolute value or ring seminorm, the leading term of a polynomial `p` dominates
-its value at `t` as soon as it dominates each lower term:
-`f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`
+For a nonarchimedean function `f` on a ring, with values in a linearly ordered type, that is
+invariant under negation, such as a valuation or a nonarchimedean absolute value or ring seminorm,
+the leading term of a polynomial `p` dominates its value at `t` as soon as it dominates each lower
+term: `f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`
 (`IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`).
 
 Let `f` be a nonnegative, submultiplicative, power-multiplicative and nonarchimedean function on a
@@ -38,7 +38,8 @@ public section
 open Polynomial
 
 /-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
-for a nonarchimedean function `f` on a ring that is invariant under negation, if
+for a nonarchimedean function `f` on a ring, with values in a linearly ordered type, that is
+invariant under negation, if
 `f (p.coeff i * t ^ i) < f (leadingCoeff p * t ^ natDegree p)` for every `i < natDegree p`, then
 `f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`. -/
 theorem IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow {R Γ : Type*} [Ring R]

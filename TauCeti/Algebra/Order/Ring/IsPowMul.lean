@@ -27,7 +27,9 @@ public section
 variable {R Γ : Type*} [Monoid R] [HasDistribNeg R] [MonoidWithZero Γ] [LinearOrder Γ]
   [MulPosStrictMono Γ] {f : R → Γ}
 
-/-- A nonnegative, submultiplicative, power-multiplicative function satisfies `f (-a) ≤ f a`. -/
+/-- A nonnegative, submultiplicative, power-multiplicative function `f`, on a monoid with a
+distributive negation, with values in a linearly ordered monoid with zero in which multiplication
+on the right by a positive element is strictly monotone, satisfies `f (-a) ≤ f a`. -/
 theorem IsPowMul.map_neg_le (hf_pm : IsPowMul f) (hf_nn : ∀ a, 0 ≤ f a)
     (hf_mul : ∀ a b, f (a * b) ≤ f a * f b) (a : R) : f (-a) ≤ f a := by
   -- Either `f` vanishes, or `f 1 ≤ 1` and `f (-1) ≤ 1`, as `f 1 = f 1 ^ 2 = f (-1) ^ 2`.
