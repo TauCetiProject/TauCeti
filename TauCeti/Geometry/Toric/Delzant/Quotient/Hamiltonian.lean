@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Symplectic
 
 /-!
@@ -36,11 +37,12 @@ this action is a Hamiltonian torus action with moment map `β_ℝ^* μ_Δ`, wher
   (`TauCeti.Toric.hamiltonianVectorField_delzantMomentMap`). Since `π^* ω_Δ = i^* ω` and
   `μ(z) = β_ℝ^* μ_Δ [z]` on `Z`
   (`TauCeti.Toric.DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap`), this gives
-  `ω_Δ(ξ_M, dπ w) = d⟨μ_Δ, β_ℝ ξ⟩(dπ w)` for every tangent vector `w` of `Z`, and these `dπ w`
+  `ω_Δ(ξ_M, dπ w) = d⟨μ_Δ, β_ℝ ξ⟩(dπ w)` for every tangent vector `w` of `Z`
+  (`TauCeti.SmoothTwoForm.eval₂_mfderiv_eq_mvfderiv_of_mpullback_eq`), and these `dπ w`
   exhaust the tangent spaces of `M_Δ`
   (`TauCeti.Toric.IsDelzant.isMomentMap_delzantQuotientSymplecticForm`).
-* **Invariance.** `μ_Δ` is invariant under the residual torus
-  (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_vadd`).
+* **Invariance.** `μ_Δ` is invariant under the torus, which acts through the residual torus
+  (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_vadd'`).
 
 The torus `T` is taken in its multiplicative copy, the convention of Lie group actions. Its action
 on `M_Δ` factors through the residual torus `T / N_Δ`, which for a Delzant polytope is the torus
@@ -49,8 +51,8 @@ image of `μ_Δ` is `Δ` (`TauCeti.Toric.DelzantQuotient.range_reducedMomentMap`
 
 ## Main results
 
-* `TauCeti.Toric.IsDelzant.contMDiffVAdd_delzantQuotient`: the torus acts smoothly on `M_Δ`.
-* `TauCeti.Toric.IsDelzant.mpullback_vadd_delzantQuotientSymplecticForm`: it preserves `ω_Δ`.
+* `TauCeti.Toric.IsDelzant.mpullback_vadd_delzantQuotientSymplecticForm`: the torus preserves
+  `ω_Δ`.
 * `TauCeti.Toric.IsDelzant.isMomentMap_delzantQuotientSymplecticForm`: `β_ℝ^* μ_Δ` is a moment
   map of its fundamental vector fields.
 * `TauCeti.Toric.IsDelzant.hamiltonianTorusData_delzantQuotientSymplecticForm`: the action of `T`
@@ -78,63 +80,12 @@ local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {i : N →+ V} {u : ι → N} {c : ι → ℝ}
-
-/-! ### The torus action on the Delzant quotient -/
-
-namespace DelzantQuotient
-
-/-- The torus `(ℝ / 2πℤ)^ι` acts on the Delzant quotient through the residual torus
-`(ℝ / 2πℤ)^ι / N_Δ`. -/
-instance : AddAction (ι → AddCircle (2 * π)) (DelzantQuotient i u c) :=
-  AddAction.compHom _ (QuotientAddGroup.mk' (facetTorusHom i u (2 * π)).ker)
-
-/-- An angle acts on the Delzant quotient as its class in the residual torus does. -/
-theorem coe_vadd (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
-    (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker) +ᵥ q = θ +ᵥ q :=
-  (rfl)
-
-/-- The torus acts on classes through representatives. -/
-@[simp]
-theorem vadd_mk (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
-    θ +ᵥ mk x = mk (θ +ᵥ x) :=
-  coe_vadd_mk θ x
-
-end DelzantQuotient
-
-variable [FiniteDimensional ℝ V]
+  [FiniteDimensional ℝ V] {i : N →+ V} {u : ι → N} {c : ι → ℝ}
 
 namespace IsDelzant
 
 variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
 include hΔ hi
-
-/-! ### Smoothness of the torus action -/
-
-/-- **The torus acts smoothly on the Delzant quotient**, for the atlas
-`TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`: the projection from the level is a
-surjective submersion intertwining the actions on the level and on the quotient. -/
-theorem contMDiffVAdd_delzantQuotient :
-    letI := hΔ.delzantQuotientChartedSpace hi
-    ContMDiffVAdd (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
-      (ι → AddCircle (2 * π)) (DelzantQuotient i u c) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantLevel hi ∞
-  have := hΔ.isManifold_delzantQuotient hi
-  have := hΔ.contMDiffVAdd_delzantLevel hi
-  have hπ := hΔ.isSubmersion_delzantQuotientMk hi
-  refine ⟨((Manifold.IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
-    (Function.surjective_id.prodMap DelzantQuotient.mk_surjective) le_rfl).1 ?_⟩
-  -- On representatives, the action on the quotient is the action on the level.
-  have h : (fun p : (ι → AddCircle (2 * π)) × DelzantQuotient i u c ↦ p.1 +ᵥ p.2) ∘
-      Prod.map id DelzantQuotient.mk = DelzantQuotient.mk ∘ fun p ↦ p.1 +ᵥ p.2 :=
-    funext fun p ↦ DelzantQuotient.vadd_mk p.1 p.2
-  rw [h]
-  exact hπ.contMDiff.comp (contMDiff_vadd (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-    (G := ι → AddCircle (2 * π)) (M := delzantLevel i u c))
 
 /-! ### The torus acts by symplectomorphisms -/
 
@@ -225,76 +176,6 @@ theorem fundamentalVectorField_delzantQuotientMk (z : delzantLevel i u c) (ξ : 
     (fun g ↦ ?_) ξ).symm
   rw [← toAdd_vadd, ← toAdd_vadd, DelzantQuotient.vadd_mk]
 
-/-- **The symplectic form of the Delzant quotient on images of the projection.** On tangent
-vectors `dπ a` and `dπ w` coming from the level, `ω_Δ` is the standard symplectic form of `ℂ^ι`
-evaluated on the images of `a` and `w` in `ℂ^ι`. -/
-theorem eval₂_delzantQuotientSymplecticForm_mfderiv_mk (z : delzantLevel i u c)
-    (a w : letI := hΔ.delzantLevelChartedSpace hi
-      TangentSpace 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) z) :
-    letI := hΔ.delzantLevelChartedSpace hi
-    letI := hΔ.delzantQuotientChartedSpace hi
-    haveI := hΔ.isManifold_delzantQuotient hi
-    SmoothBundleForm.eval₂ (hΔ.delzantQuotientSymplecticForm hi) (DelzantQuotient.mk z)
-        (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-          𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-            (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) DelzantQuotient.mk z a)
-        (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-          𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-            (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) DelzantQuotient.mk z w) =
-      stdSymplecticForm (mvfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-          ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) z a)
-        (mvfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-          ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) z w) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantLevel hi ∞
-  have := hΔ.isManifold_delzantQuotient hi
-  rw [← SmoothForm.eval₂_mpullback _ (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff,
-    hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi, SmoothForm.eval₂_mpullback,
-    SymplecticForm.eval₂_constSmooth_mfderiv_eq]
-
-/-- On tangent vectors `dπ w` coming from the level, the derivative of the component
-`⟨μ_Δ, β_ℝ ξ⟩` of the moment map is the derivative of the component `⟨μ, ξ⟩` of the moment map of
-the torus on `ℂ^ι`, evaluated on the image of `w` in `ℂ^ι`. -/
-private theorem mvfderiv_reducedMomentMap_mfderiv_mk
-    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j))) (ξ : ι → ℝ)
-    (z : delzantLevel i u c)
-    (w : letI := hΔ.delzantLevelChartedSpace hi
-      TangentSpace 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) z) :
-    letI := hΔ.delzantLevelChartedSpace hi
-    letI := hΔ.delzantQuotientChartedSpace hi
-    mvfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-        (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
-      (fun q ↦ DelzantQuotient.reducedMomentMap hβ q
-        (Fintype.linearCombination ℝ (fun j ↦ i (u j)) ξ)) (DelzantQuotient.mk z)
-      (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-        𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-          (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) DelzantQuotient.mk z w) =
-      fderiv ℝ (fun y ↦ delzantMomentMap c y ξ) (z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-        (mvfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-          ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) z w) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  -- On representatives, `⟨μ_Δ, β_ℝ ξ⟩` is `⟨μ, ξ⟩`, since `μ(z) = β_ℝ^* μ_Δ [z]`.
-  have hf : (fun q ↦ DelzantQuotient.reducedMomentMap hβ q
-      (Fintype.linearCombination ℝ (fun j ↦ i (u j)) ξ)) ∘ DelzantQuotient.mk =
-      (fun y ↦ delzantMomentMap c y ξ) ∘
-        ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
-    funext fun x ↦ by
-      rw [Function.comp_apply, Function.comp_apply,
-        DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap hβ x]
-      rfl
-  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply,
-    ← mfderiv_comp_apply_of_eq z
-      (((hΔ.contMDiff_reducedMomentMap hi hβ).clm_apply contMDiff_const).mdifferentiableAt
-        (by simp)) ((hΔ.isSubmersion_delzantQuotientMk hi).contMDiff.mdifferentiableAt (by simp))
-      rfl, hf,
-    mfderiv_comp_apply_of_eq z (((contDiff_delzantMomentMap c (n := ∞)).clm_apply
-      contDiff_const).contMDiff.mdifferentiableAt (by simp))
-      ((hΔ.contMDiff_coe_delzantLevel hi (m := ∞)).mdifferentiableAt (by simp)) rfl,
-    mfderiv_eq_fderiv]
-  rfl
-
 /-- The moment map equation `ω_Δ(ξ_M, ·) = d⟨μ_Δ, β_ℝ ξ⟩` on the Delzant quotient. -/
 private theorem eval₂_delzantQuotientSymplecticForm_fundamentalVectorField
     (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j))) (ξ : ι → ℝ)
@@ -316,15 +197,33 @@ private theorem eval₂_delzantQuotientSymplecticForm_fundamentalVectorField
   intro v
   obtain ⟨z, rfl⟩ := DelzantQuotient.mk_surjective q
   obtain ⟨w, rfl⟩ := (hΔ.isSubmersion_delzantQuotientMk hi).surjective_mfderiv (x := z) (by simp) v
+  have := hΔ.isManifold_delzantLevel hi ∞
+  have := hΔ.isManifold_delzantQuotient hi
   -- In `ℂ^ι`, the generator of `ξ` is the Hamiltonian vector field of `⟨μ, ξ⟩`.
-  have hH := stdSymplecticForm.apply_hamiltonianVectorField (fun y ↦ delzantMomentMap c y ξ) z
-    (mvfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
-      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) z w)
-  rw [hamiltonianVectorField_delzantMomentMap] at hH
-  rw [hΔ.fundamentalVectorField_delzantQuotientMk hi z ξ,
-    hΔ.eval₂_delzantQuotientSymplecticForm_mfderiv_mk hi,
-    hΔ.mvfderiv_coe_fundamentalVectorField_delzantLevel hi z ξ, hH,
-    hΔ.mvfderiv_reducedMomentMap_mfderiv_mk hi hβ]
+  have hX : stdSymplecticForm.constSmooth.IsHamiltonianVectorField
+      (fun y ↦ delzantMomentMap c y ξ) (weightGenerator (-ξ)) := by
+    have h := (SymplecticForm.isNondegenerate_constSmooth stdSymplecticForm
+      ).isHamiltonianVectorField_hamiltonianVectorField fun y ↦ delzantMomentMap c y ξ
+    rwa [SymplecticForm.hamiltonianVectorField_constSmooth,
+      funext (hamiltonianVectorField_delzantMomentMap (c := c) ξ)] at h
+  -- On representatives, `⟨μ_Δ, β_ℝ ξ⟩` is `⟨μ, ξ⟩`, since `μ(z) = β_ℝ^* μ_Δ [z]`.
+  have hfF : (fun y ↦ delzantMomentMap c y ξ) ∘
+      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
+      (fun q ↦ DelzantQuotient.reducedMomentMap hβ q
+        (Fintype.linearCombination ℝ (fun j ↦ i (u j)) ξ)) ∘ DelzantQuotient.mk :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, Function.comp_apply,
+        DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap hβ x,
+        ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap']
+  rw [hΔ.fundamentalVectorField_delzantQuotientMk hi z ξ]
+  exact SmoothTwoForm.eval₂_mfderiv_eq_mvfderiv_of_mpullback_eq (hΔ.contMDiff_coe_delzantLevel hi)
+    (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff
+    (hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi) hX hfF
+    (((contDiff_delzantMomentMap c (n := ∞)).clm_apply contDiff_const).contMDiff.mdifferentiableAt
+      (by simp))
+    (((hΔ.contMDiff_reducedMomentMap hi hβ).clm_apply contMDiff_const).mdifferentiableAt (by simp))
+    ((mvfderiv_apply_eq_mfderiv_apply (F := EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) _ _
+      _).symm.trans (hΔ.mvfderiv_coe_fundamentalVectorField_delzantLevel hi z ξ)) w
 
 /-- **The moment map of the torus action on the Delzant quotient.** For the action of the torus
 `(ℝ / 2πℤ)^ι` on `(M_Δ, ω_Δ)`, the reduced moment map composed with `β_ℝ : ℝ^ι → V`,
@@ -368,7 +267,7 @@ theorem hamiltonianTorusData_delzantQuotientSymplecticForm
   refine SmoothTwoForm.hamiltonianTorusData_iff.2
     ⟨fun g ↦ hΔ.mpullback_vadd_delzantQuotientSymplecticForm hi g.toAdd,
       hΔ.isMomentMap_delzantQuotientSymplecticForm hi hβ, fun g q ↦ ?_⟩
-  rw [← toAdd_vadd, ← DelzantQuotient.coe_vadd, DelzantQuotient.reducedMomentMap_vadd]
+  rw [← toAdd_vadd, DelzantQuotient.reducedMomentMap_vadd']
 
 end IsDelzant
 

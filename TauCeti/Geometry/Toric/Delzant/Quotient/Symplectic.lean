@@ -221,10 +221,9 @@ theorem mpullback_smul_mpullback_coe_delzantLevel (k : kernelTorus i u) :
         (SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
           (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth) =
       SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-        (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth :=
-  -- `k • z` is `(k : Multiplicative (ι → AddCircle (2 * π))).toAdd +ᵥ z` by definition of the
-  -- actions of a subgroup and of a multiplicative type tag.
-  hΔ.mpullback_vadd_mpullback_coe_delzantLevel hi (k : Multiplicative (ι → AddCircle (2 * π))).toAdd
+        (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth := by
+  simp only [kernelTorus_smul_eq_vadd]
+  exact hΔ.mpullback_vadd_mpullback_coe_delzantLevel hi _
 
 /-- **The restricted form is basic** for the projection onto the Delzant quotient: it is invariant
 under the kernel torus, whose orbits are the fibres of the projection, and the vertical tangent
