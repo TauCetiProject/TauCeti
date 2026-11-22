@@ -55,9 +55,8 @@ The proof reduces to split algebras in three steps.
   equalizers (`AlgHom.tensorEqualizerEquiv`), and finite étaleness descends along faithfully flat
   maps.
 * In general the ranks are locally constant, and the choice products of the idempotents cutting
-  out their fibres decompose the base into components where both ranks are constant. Finite
-  étaleness is local for such a decomposition
-  (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
+  out their fibres decompose the base into components of constant ranks. Finite étaleness is
+  local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
   `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
 
 The main results take `R`, `A` and `B` in one universe, as
