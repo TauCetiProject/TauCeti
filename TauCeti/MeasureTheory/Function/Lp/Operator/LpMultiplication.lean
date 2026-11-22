@@ -27,7 +27,9 @@ Multiplication by the indicator of a measurable set `s` is the operator
 `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
 scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`,
 `indicatorMultiplication_eq_iff`), it is the identity for `univ`, zero for `∅` and composes by
-intersection (`indicatorMultiplication_comp_indicatorMultiplication`), it is a contraction
+intersection (`indicatorMultiplication_comp_indicatorMultiplication`), cut-offs to a set and its
+complement add up to the identity (`indicatorMultiplication_add_compl`), it restricts constant
+indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a contraction
 (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
 (`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
 (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
@@ -230,6 +232,45 @@ theorem indicatorMultiplication_comp_indicatorMultiplication {t : Set α} (hs : 
     indicatorMultiplication_ae (𝕜 := 𝕜) (hs.inter ht) f] with x hx hst
   rw [hst, ← Set.indicator_indicator]
   by_cases hxs : x ∈ s <;> simp [hxs, hx]
+
+/-- The cut-offs of an `Lᵖ` class to a measurable set and to its complement add up to the class. -/
+theorem indicatorMultiplication_add_compl (hs : MeasurableSet s) (f : Lp E p μ) :
+    indicatorMultiplication 𝕜 p hs f + indicatorMultiplication 𝕜 p hs.compl f = f := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (indicatorMultiplication 𝕜 p hs f)
+      (indicatorMultiplication 𝕜 p hs.compl f),
+    indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
+    indicatorMultiplication_ae (𝕜 := 𝕜) hs.compl f] with x hx h₁ h₂
+  rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
+
+/-- Multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` intersects the sets. -/
+theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p (hs.inter ht)
+        ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne v := by
+  rw [indicatorMultiplication_eq_iff]
+  filter_upwards [indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := v),
+    indicatorConstLp_coeFn (p := p) (hs := hs.inter ht)
+      (hμs := ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne) (c := v)]
+    with x htx hstx
+  rw [hstx]
+  by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt, htx]
+
+/-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` restricts
+it to `s`. -/
+theorem indicatorMultiplication_indicatorConstLp_of_subset {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p hs ((measure_mono hst).trans_lt hμt.lt_top).ne v := by
+  rw [indicatorMultiplication_indicatorConstLp]
+  simp [Set.inter_eq_left.mpr hst]
+
+/-- Multiplying an `Lᵖ` constant indicator of `s` by the indicator of `s` fixes it. -/
+@[simp] theorem indicatorMultiplication_indicatorConstLp_self (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p hs hμs v) = indicatorConstLp p hs hμs v :=
+  indicatorMultiplication_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
 
 /-- Applying `indicatorMultiplication` does not increase the `Lᵖ` norm. -/
 theorem norm_indicatorMultiplication_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :

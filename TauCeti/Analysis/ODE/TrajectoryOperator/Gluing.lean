@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 public import TauCeti.Analysis.Sobolev.GraphStep.Translation
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
+import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 
 /-!
 # Gluing trajectory operators along a long neck
@@ -324,7 +324,7 @@ private def splicedPiece {β : ℝ → ℝ} (hβ : ContDiffOn ℝ ∞ β ((⊤ :
       ).toContinuousLinearEquiv.toContinuousLinearMap.comp
     (Q.comp (((volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c) :
       Lp F p _ ≃ₗᵢ[ℝ] Lp F p _).toContinuousLinearEquiv.toContinuousLinearMap.comp
-        (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS)))))
+        (Lp.indicatorMultiplication ℝ p hS))))
 
 private theorem splicedPiece_apply {β : ℝ → ℝ} (hβ : ContDiffOn ℝ ∞ β ((⊤ : Opens ℝ) : Set ℝ))
     (h₀ : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖β x‖ ≤ C)
@@ -335,7 +335,7 @@ private theorem splicedPiece_apply {β : ℝ → ℝ} (hβ : ContDiffOn ℝ ∞ 
     (f : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
     splicedPiece hβ h₀ h₁ c S hS Q f = smulLeftCLM β hβ h₀ h₁ (fun _ _ ↦ rfl) (translateLIE c
       (Q ((volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
-        (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f)))) :=
+        (Lp.indicatorMultiplication ℝ p hS f)))) :=
   rfl
 
 private theorem norm_splicedPiece_apply_le {β : ℝ → ℝ}
@@ -352,13 +352,13 @@ private theorem norm_splicedPiece_apply_le {β : ℝ → ℝ}
   refine (norm_smulLeftCLM_apply_le hβ h₀ h₁ hC₀ hC₁ _).trans (mul_le_mul_of_nonneg_left ?_ hC)
   rw [LinearIsometryEquiv.norm_map]
   calc _ ≤ ‖Q‖ * ‖(volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
-          (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f)‖ :=
+          (Lp.indicatorMultiplication ℝ p hS f)‖ :=
         Q.le_opNorm _
-    _ = ‖Q‖ * ‖Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f‖ := by
+    _ = ‖Q‖ * ‖Lp.indicatorMultiplication ℝ p hS f‖ := by
         rw [LinearIsometryEquiv.norm_map]
     _ ≤ ‖Q‖ * ‖f‖ := by
         gcongr
-        exact Lp.norm_multiplicationOperator_linftyIndicator_apply_le hS f
+        exact Lp.norm_indicatorMultiplication_apply_le hS f
 
 /-- The spliced approximate right inverse of the operator glued along a neck of length `2 R`. -/
 private def splicedInverse (R : ℝ)
@@ -435,25 +435,25 @@ private theorem norm_trajectoryOperator_piece_sub_le {β : ℝ → ℝ}
     (hQ : (trajectoryOperator BL).comp Q = ContinuousLinearMap.id ℝ _)
     (f : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
     ‖trajectoryOperator AL (splicedPiece hβ h₀ h₁ c S hS Q f) -
-        Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f‖ ≤
+        Lp.indicatorMultiplication ℝ p hS f‖ ≤
       δ * ‖Q‖ * ‖f‖ := by
   rw [splicedPiece_apply]
   have hDw : trajectoryOperator BL
         (Q ((volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
-          (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f))) =
+          (Lp.indicatorMultiplication ℝ p hS f))) =
       (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
-        (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f) :=
+        (Lp.indicatorMultiplication ℝ p hS f) :=
     (ContinuousLinearMap.ext_iff.1 hQ _).trans (ContinuousLinearMap.id_apply _)
   have hg : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
       β s • trajectoryOperator BL
         (Q ((volume.restrict ((⊤ : Opens ℝ) : Set ℝ)).translateLp p (-c)
-          (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f)))
-        (s + c) = Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f s := by
+          (Lp.indicatorMultiplication ℝ p hS f)))
+        (s + c) = Lp.indicatorMultiplication ℝ p hS f s := by
     have hq := (measurePreserving_add_right (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
       c).quasiMeasurePreserving
     filter_upwards [hq.tendsto_ae.eventually
-        (Measure.coeFn_translateLp (-c) (Lp.multiplicationOperator (linftyIndicator _ ℝ S hS) f)),
-      Lp.multiplicationOperator_linftyIndicator_ae hS f] with s hs hcut
+        (Measure.coeFn_translateLp (-c) (Lp.indicatorMultiplication ℝ p hS f)),
+      Lp.indicatorMultiplication_ae (𝕜 := ℝ) hS f] with s hs hcut
     rw [hDw, hs, Function.comp_apply, add_neg_cancel_right, hcut]
     by_cases hsS : s ∈ S
     · rw [hβS s hsS, one_smul]
@@ -464,7 +464,7 @@ private theorem norm_trajectoryOperator_piece_sub_le {β : ℝ → ℝ}
   refine mul_le_mul_of_nonneg_left ((Q.le_opNorm _).trans ?_) hδ
   rw [LinearIsometryEquiv.norm_map]
   exact mul_le_mul_of_nonneg_left
-    (Lp.norm_multiplicationOperator_linftyIndicator_apply_le hS f) (norm_nonneg Q)
+    (Lp.norm_indicatorMultiplication_apply_le hS f) (norm_nonneg Q)
 
 /-- **The spliced right inverse is approximate.** For a neck long enough that the coefficients are
 within `ε` of their common limit beyond `R / 2`, the spliced inverse `Q_R` satisfies
@@ -495,13 +495,13 @@ private theorem norm_trajectoryOperator_splicedInverse_sub_le {A : F →L[ℝ] F
     (exists_norm_neckCutoff_le _) (exists_norm_fderiv_neckCutoff_le _) (-R)
     measurableSet_Iio.compl (neckCutoff_right_eq_one hR) hA₂L hδ0
     (ae_neck_bound_right hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL) Q₂ hQ₂ f
-  have hsplit := Lp.multiplicationOperator_linftyIndicator_add_compl (s := Iio (0 : ℝ))
-    measurableSet_Iio f
+  have hsplit := Lp.indicatorMultiplication_add_compl (𝕜 := ℝ)
+    (measurableSet_Iio (a := (0 : ℝ))) f
   rw [trajectoryOperator_splicedInverse_apply]
   -- Split `f` as `𝟙_{(-∞, 0)} f + 𝟙_{[0, ∞)} f` and estimate the two pieces.
   refine (norm_sub_le_norm_sub_add_norm_sub _
-    (Lp.multiplicationOperator (linftyIndicator _ ℝ (Iio 0) measurableSet_Iio) f +
-      Lp.multiplicationOperator (linftyIndicator _ ℝ (Iio 0)ᶜ measurableSet_Iio.compl) f)
+    (Lp.indicatorMultiplication ℝ p (measurableSet_Iio (a := (0 : ℝ))) f +
+      Lp.indicatorMultiplication ℝ p (measurableSet_Iio (a := (0 : ℝ))).compl f)
     f).trans ?_
   rw [sub_eq_zero.2 hsplit, norm_zero, add_zero, add_sub_add_comm]
   refine (norm_add_le _ _).trans ((add_le_add e₁ e₂).trans (le_of_eq ?_))

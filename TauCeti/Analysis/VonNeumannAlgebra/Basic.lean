@@ -46,15 +46,11 @@ instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
   simpa only [coe_toStarSubalgebra] using M.isClosed
 
 /-- Equal concrete von Neumann algebras on `H` are canonically star-isomorphic. -/
-def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N where
-  toFun x := ⟨x.val, h ▸ x.property⟩
-  invFun y := ⟨y.val, h.symm ▸ y.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_star' _ := rfl
+noncomputable def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N :=
+  StarAlgEquiv.ofAlgEquiv
+    (Subalgebra.equivOfEq M.toStarSubalgebra.toSubalgebra N.toStarSubalgebra.toSubalgebra
+      congr(($h).toStarSubalgebra.toSubalgebra))
+    fun _ ↦ rfl
 
 @[simp]
 theorem coe_equivOfEq_apply {M N : VonNeumannAlgebra H} (h : M = N) (x : M) :

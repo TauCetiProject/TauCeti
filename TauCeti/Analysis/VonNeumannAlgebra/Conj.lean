@@ -201,15 +201,13 @@ theorem conj_iInf {ι : Sort*} (M : ι → VonNeumannAlgebra H) (U : H ≃ₗᵢ
 /-- The star algebra equivalence `M ≃⋆ₐ[ℂ] M.conj U` induced by spatial conjugation along a
 unitary equivalence `U : H ≃ₗᵢ[ℂ] K`. -/
 noncomputable def conjStarAlgEquiv (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
-    M ≃⋆ₐ[ℂ] M.conj U where
-  toFun x := ⟨U.conjStarAlgEquiv x.val, conjStarAlgEquiv_mem_conj_iff.mpr x.property⟩
-  invFun y := ⟨U.symm.conjStarAlgEquiv y.val, mem_conj_iff_symm.mp y.property⟩
-  left_inv x := Subtype.ext <| by simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
-  right_inv y := Subtype.ext <| by simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
-  map_mul' _ _ := Subtype.ext (map_mul U.conjStarAlgEquiv _ _)
-  map_add' _ _ := Subtype.ext (map_add U.conjStarAlgEquiv _ _)
-  map_smul' _ _ := Subtype.ext (map_smul U.conjStarAlgEquiv _ _)
-  map_star' _ := Subtype.ext (map_star U.conjStarAlgEquiv _)
+    M ≃⋆ₐ[ℂ] M.conj U :=
+  StarAlgEquiv.ofAlgEquiv
+    ((U.conjStarAlgEquiv.toAlgEquiv.subalgebraMap M.toStarSubalgebra.toSubalgebra).trans
+      (Subalgebra.equivOfEq _ (M.conj U).toStarSubalgebra.toSubalgebra <| by
+        ext x
+        simp [Subalgebra.mem_map]))
+    fun x ↦ Subtype.ext (map_star U.conjStarAlgEquiv (x : H →L[ℂ] H))
 
 @[simp]
 theorem coe_conjStarAlgEquiv_apply (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) (x : M) :
