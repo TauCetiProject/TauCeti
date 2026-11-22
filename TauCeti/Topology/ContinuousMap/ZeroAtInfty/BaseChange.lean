@@ -173,20 +173,6 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
 
-/-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
-extension. -/
-@[simp]
-theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
-    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq =>
-    rw [Polynomial.map_add, map_add, map_add, mapCoeffs_add, hp, hq]
-  | monomial n a =>
-    rw [Polynomial.map_monomial, Polynomial.aeval_monomial, Polynomial.aeval_monomial,
-      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
-      smul_mul_assoc, one_mul, mapCoeffs_smul, mapCoeffs_pow]
-
 /-- Coefficient extension on endomorphisms of a model space, bundled as a ring homomorphism. -/
 noncomputable def mapCoeffsRingHom (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     (C₀(J, R) →L[R] C₀(J, R)) →+* (C₀(J, S) →L[S] C₀(J, S)) where
@@ -202,6 +188,15 @@ theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖
     (u : C₀(J, R) →L[R] C₀(J, R)) :
     mapCoeffsRingHom f hf u = u.mapCoeffs f hf :=
   (rfl)
+
+/-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
+extension. -/
+@[simp]
+theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf :=
+  (Polynomial.map_aeval_eq_aeval_map (ψ := mapCoeffsRingHom f hf) (φ := f)
+    (by ext1 r; simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 section Topology
 

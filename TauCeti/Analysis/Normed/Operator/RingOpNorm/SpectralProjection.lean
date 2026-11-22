@@ -249,6 +249,11 @@ theorem inverse_units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ
       one_smul, hE.spectral_mul_inverse]
   · rw [Units.smul_def, mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
 
+/-- Increasing the nilpotence bound does not change the complementary inverse. -/
+theorem inverse_of_le (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :
+    (hE.of_le hn).inverse = hE.inverse :=
+  ((hE.of_le hn).eq_inverse hE.spectral_mul_inverse hE.mul_inverse_eq_zero).symm
+
 /-- The complementary inverse preserves the kernel of the spectral projection. -/
 theorem mapsTo_ker_inverse (hE : IsSpectralProjection u C h E) :
     Set.MapsTo hE.inverse E.ker E.ker := by

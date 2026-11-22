@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 /-!
 # Fredholm series of row-compact operators on modules with property (Pr)
@@ -53,6 +54,8 @@ finite projective module may vary over `Spec R`.
   space it is the principal-minor series of the matrix.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_comp_comm`: cyclicity
   `det (1 - T (u ∘ v)) = det (1 - T (v ∘ u))`.
+* `ContinuousLinearMap.IsPrCompact.charPowerSeries_restrict_of_retract`: Fredholm series of the
+  restriction to a split invariant submodule.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_conj`: invariance under conjugation.
 * `ContinuousLinearMap.IsPrCompact.isEntire_charPowerSeries`: the series is entire.
 * `ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev`: comparison with the finite
@@ -192,6 +195,18 @@ theorem IsPrCompact.charPowerSeries_comp_comm {u : M →L[R] N} (hu : u.IsPrComp
   have h₂ : iM.comp ((v.comp u).comp rM) = (iM.comp (v.comp rN)).comp (iN.comp (u.comp rM)) :=
     ext fun x ↦ by simp [hN']
   rw [h₁, h₂, h.charPowerSeries_matrixCoeff_comp_comm]
+
+omit [NormOneClass R] in
+/-- **Fredholm series on a split invariant submodule.** Restricting a `(Pr)`-compact endomorphism
+`u` to a `u`-invariant submodule `S` that admits a continuous linear retraction
+`r ∘ S.subtypeL = id` gives the same Fredholm series as `u ∘ S.subtypeL ∘ r`. -/
+theorem IsPrCompact.charPowerSeries_restrict_of_retract {u : M →L[R] M} (hu : u.IsPrCompact)
+    {S : Submodule R M} (hs : ∀ x ∈ S, u x ∈ S) {r : M →L[R] S}
+    (hri : r.comp S.subtypeL = .id R S) :
+    (u.restrict hs).charPowerSeries = (u.comp (S.subtypeL.comp r)).charPowerSeries := by
+  have hS : TauCeti.HasPr R S := hu.hasPr_source.of_retract _ _ hri
+  rw [← comp_comp_subtypeL_eq_restrict hs hri,
+    ← (hu.comp_clm S.subtypeL hS).charPowerSeries_comp_comm r, comp_assoc]
 
 omit [NormOneClass R] in
 /-- **Invariance under conjugation.** The Fredholm series of a row-compact endomorphism `u` of a

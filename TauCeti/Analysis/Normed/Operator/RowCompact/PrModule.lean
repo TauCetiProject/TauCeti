@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 /-!
 # Row-compact maps between modules with property (Pr)
@@ -56,7 +57,9 @@ row-compact idempotent `i ∘ e ∘ r` of the model space
 * `ContinuousLinearMap.isPrCompact_iff_isRowCompact`: on model spaces the notion is row
   compactness.
 * `ContinuousLinearMap.IsPrCompact.comp_clm`, `ContinuousLinearMap.IsPrCompact.clm_comp`,
-  `ContinuousLinearMap.isPrCompact_of_tendsto`: the closed operator ideal property.
+  `ContinuousLinearMap.IsPrCompact.restrict_of_retract`,
+  `ContinuousLinearMap.isPrCompact_of_tendsto`: the closed operator ideal property and restriction
+  to split invariant submodules.
 * `ContinuousLinearMap.IsPrCompact.aeval`: polynomials with zero constant coefficient preserve
   row compactness.
 * `ContinuousLinearMap.IsPrCompact.tendsto_ringOpNorm_comp_indicatorCLM_comp_sub`: a row-compact
@@ -297,6 +300,16 @@ theorem IsPrCompact.clm_comp {u : M →L[R] N} (hu : u.IsPrCompact) (w : N →L[
   have h := hu.isRowCompact_comp (iP.comp w) rM
   rw [comp_assoc] at h
   exact isPrCompact_of_isRowCompact_comp hM hP h
+
+/-- Restricting a `(Pr)`-compact endomorphism `u` to a `u`-invariant submodule `S` that admits a
+continuous linear retraction `r ∘ S.subtypeL = id` yields a `(Pr)`-compact endomorphism of `S`. -/
+theorem IsPrCompact.restrict_of_retract {u : M →L[R] M} (hu : u.IsPrCompact)
+    {S : Submodule R M} (hs : ∀ x ∈ S, u x ∈ S) {r : M →L[R] S}
+    (hri : r.comp S.subtypeL = .id R S) :
+    (u.restrict hs).IsPrCompact := by
+  have hS : TauCeti.HasPr R S := hu.hasPr_source.of_retract _ _ hri
+  rw [← comp_comp_subtypeL_eq_restrict hs hri]
+  exact (hu.comp_clm S.subtypeL hS).clm_comp r hS
 
 /-- A polynomial with zero constant coefficient preserves row compactness on modules with
 property (Pr), over ultrametric Tate scalars. -/

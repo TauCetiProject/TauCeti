@@ -294,12 +294,9 @@ theorem aeval_completedBaseChange [IsTopologicalAddGroup M₁] [ContinuousConstS
     [IsTopologicalAddGroup N₁] [ContinuousConstSMul S N₁]
     (u : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁) (P : R[X]) :
     Polynomial.aeval (u.completedBaseChange α α) (Polynomial.map (algebraMap R S) P) =
-      (Polynomial.aeval u P).completedBaseChange α α := by
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq => rw [Polynomial.map_add, map_add, map_add, completedBaseChange_add, hp, hq]
-  | monomial n a =>
-    simp only [Polynomial.map_monomial, Polynomial.aeval_monomial, ← Algebra.smul_def,
-      completedBaseChange_smul, completedBaseChange_pow]
+      (Polynomial.aeval u P).completedBaseChange α α :=
+  (Polynomial.map_aeval_eq_aeval_map (ψ := completedBaseChangeRingHom α) (φ := algebraMap R S)
+    (by ext1 r; simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 /-- **Compatibility with changing module realisations and equivalent norms.** Post-composing
 `α₁`, `α₂` with equivalences `e₁`, `e₂` conjugates `completedBaseChange` by `e₁` and `e₂`. -/
