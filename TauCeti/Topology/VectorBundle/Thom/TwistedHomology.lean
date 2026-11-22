@@ -510,6 +510,7 @@ image of `α ∈ Hᵐ(E, E₀; K, N)` in `Hᵖ(B; o(E) ⊗ K, N)` on a twisted c
 class of `Hₘ(E, E₀; K)` that `thomPairSingularHomologyEquivTwistedHomology` sends to it. This
 characterizes `thomPairSingularCohomologyEquivTwistedCohomology`, since the twisted Kronecker map
 is injective for injective values. -/
+@[simp]
 theorem twistedKronecker_thomPairSingularCohomologyEquivTwistedCohomology
     (α : (thomPair F E).singularCohomology (ModuleCat.of K K) K N m) :
     (signLocalSystem F E K hι).twistedKronecker K p
