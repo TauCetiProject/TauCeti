@@ -338,8 +338,6 @@ theorem hasseJetQuotientEquiv_apply (x : R[X] ⧸ Ideal.span {∏ i, (X - C (a i
     hasseJetQuotientEquiv ha m x i =
       TauCeti.taylorJetQuotientEquiv (a i) (m i) (hermiteQuotientEquiv ha m x i) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [hasseJetQuotientEquiv_mk, hermiteQuotientEquiv_mk, ← Ideal.Quotient.mk_eq_mk,
-    TauCeti.taylorJetQuotientEquiv_mk]
   ext k
   simp
 
