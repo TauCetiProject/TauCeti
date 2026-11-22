@@ -59,6 +59,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
+* `TauCeti.one_add_norm_sq_rpow_le_mul_one_add_norm_pow`: `⟨x⟩ ^ a ≤ ⟨x⟩ ^ b (1 + ‖x‖) ^ N` for
+  `a ≤ b + N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
 * `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
@@ -318,6 +320,19 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow_of_le (x : E) {s : ℝ} {N : �
     (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N :=
   (Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)).trans
     (one_add_norm_sq_rpow_le_one_add_norm_pow x N)
+
+/-- Raising the order of the Japanese bracket by at most a natural number `N` costs at most the
+factor `(1 + ‖x‖) ^ N`: `(1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) (1 + ‖x‖) ^ N` for
+`a ≤ b + N`. -/
+theorem one_add_norm_sq_rpow_le_mul_one_add_norm_pow (x : E) {a b : ℝ} {N : ℕ}
+    (h : a ≤ b + N) : (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N :=
+  calc (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ ((b + N) / 2) :=
+        Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)
+    _ = (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) := by
+        rw [add_div, Real.rpow_add (by positivity)]
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_one_add_norm_pow x N
 
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,
 `(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r`. -/
