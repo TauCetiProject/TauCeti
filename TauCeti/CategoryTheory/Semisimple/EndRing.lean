@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import Mathlib.CategoryTheory.Linear.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
+import TauCeti.CategoryTheory.Linear.Endomorphism
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Semiperfect
 import TauCeti.RingTheory.Semisimple.Regular
 
@@ -19,8 +20,8 @@ object is semisimple, then `C` is abelian, with the given addition of morphisms
 (`TauCeti.abelianOfIsSemisimpleRingEnd`), and every object is a finite biproduct of simple objects
 (`TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`), so `C` is a finite semisimple
 category (`TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`). Conversely, in an
-abelian category linear over a division ring in which monomorphisms split, for instance a finite
-semisimple one, an object with finite-dimensional endomorphisms has a semisimple endomorphism ring
+abelian category in which monomorphisms split, for instance a finite semisimple one, an object with
+Artinian endomorphism ring has a semisimple endomorphism ring
 (`TauCeti.isSemisimpleRing_end_of_splitMonoCategory`).
 
 This is Jannsen's criterion: it is how one shows that a category of motives modulo numerical
@@ -48,8 +49,8 @@ endomorphism rings, are simple.
 * `TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`: every object of such a category is a
   finite biproduct of simple objects.
 * `TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`: Jannsen's criterion.
-* `TauCeti.isFiniteSemisimpleCategory_iff_isSemisimpleRing_end`: an abelian category linear over a
-  division ring with finite-dimensional endomorphism spaces is finite semisimple if and only if its
+* `TauCeti.isFiniteSemisimpleCategory_iff_isSemisimpleRing_end`: an abelian category linear over an
+  Artinian ring with finitely generated endomorphism modules is finite semisimple if and only if its
   endomorphism rings are semisimple.
 
 ## References
@@ -162,7 +163,7 @@ theorem exists_biproduct_simples_of_isSemisimpleRing_end [HasFiniteBiproducts C]
   have := hP i
   exact simple_of_idempotent_eq_zero_or_id indecomposable_of_isLocalRing_end.1
     (fun p hp ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
-      (a := End.of p) (End.ext hp)).imp (congrArg End.asHom) (congrArg End.asHom))
+      (a := End.of p) (End.ext (by simpa using hp))).imp (congrArg End.asHom) (congrArg End.asHom))
     fun _ f _ ↦ exists_comp_comp_eq_self_of_isSemisimpleRing_end f
 
 variable (C) in
@@ -220,26 +221,25 @@ theorem IsFiniteSemisimpleCategory.of_isSemisimpleRing_end [∀ X : C, IsSemisim
   have := Abelian.hasFiniteBiproducts (C := C)
   ⟨exists_biproduct_simples_of_isSemisimpleRing_end⟩
 
-/-- **Endomorphism rings in an abelian category where monomorphisms split are semisimple**, for
-objects with finite-dimensional endomorphisms over a division ring. This applies in particular to
-a finite semisimple category (`TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`). -/
-theorem isSemisimpleRing_end_of_splitMonoCategory [SplitMonoCategory C] (K : Type*)
-    [DivisionRing K] [Linear K C] (X : C) [FiniteDimensional K (X ⟶ X)] :
-    IsSemisimpleRing (End X) := by
-  have : Module.Finite K (End X) := Module.Finite.equiv (End.linearEquiv (R := K)).symm
-  have : IsScalarTower K (End X) (End X) := ⟨fun k a b ↦ End.ext (by simp)⟩
-  have : IsArtinianRing (End X) := IsArtinianRing.of_finite K (End X)
+/-- **Artinian endomorphism rings in an abelian category where monomorphisms split are
+semisimple.** This applies in particular to a finite semisimple category
+(`TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`). -/
+theorem isSemisimpleRing_end_of_splitMonoCategory [SplitMonoCategory C] (X : C)
+    [IsArtinianRing (End X)] : IsSemisimpleRing (End X) := by
   refine IsArtinianRing.isSemisimpleRing_of_forall_exists_mul_mul_eq_self fun a ↦ ?_
   obtain ⟨g, hg⟩ := exists_comp_comp_eq_self_of_splitMonoCategory a.asHom
   exact ⟨End.of g, End.ext (by simpa using hg)⟩
 
-/-- **An abelian category with finite-dimensional endomorphism spaces over a division ring is
-finite semisimple if and only if its endomorphism rings are semisimple.** -/
-theorem isFiniteSemisimpleCategory_iff_isSemisimpleRing_end (K : Type*) [DivisionRing K]
-    [Linear K C] [∀ X : C, FiniteDimensional K (X ⟶ X)] :
-    IsFiniteSemisimpleCategory C ↔ ∀ X : C, IsSemisimpleRing (End X) :=
-  ⟨fun _ X ↦ isSemisimpleRing_end_of_splitMonoCategory K X,
-    fun _ ↦ IsFiniteSemisimpleCategory.of_isSemisimpleRing_end⟩
+/-- **An abelian category linear over an Artinian ring, with finitely generated endomorphism
+modules, is finite semisimple if and only if its endomorphism rings are semisimple.** This covers
+finite-dimensional endomorphism spaces over a division ring. -/
+theorem isFiniteSemisimpleCategory_iff_isSemisimpleRing_end (K : Type*) [Ring K] [IsArtinianRing K]
+    [Linear K C] [∀ X : C, Module.Finite K (X ⟶ X)] :
+    IsFiniteSemisimpleCategory C ↔ ∀ X : C, IsSemisimpleRing (End X) := by
+  refine ⟨fun _ X ↦ ?_, fun _ ↦ IsFiniteSemisimpleCategory.of_isSemisimpleRing_end⟩
+  have : Module.Finite K (End X) := Module.Finite.equiv (End.linearEquiv (R := K)).symm
+  have : IsArtinianRing (End X) := IsArtinianRing.of_finite K (End X)
+  exact isSemisimpleRing_end_of_splitMonoCategory X
 
 end Abelian
 

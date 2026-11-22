@@ -21,8 +21,8 @@ compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).a
 When that structure map is surjective, every endomorphism is a scalar multiple of the identity
 (`CategoryTheory.End.exists_smul_id_eq_of_surjective`).
 
-The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
-scalar tower.
+The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` and the multiplication of `End X`
+respect the ground scalar tower.
 
 When a scalar multiple `r • 𝟙` of the identity is invertible, its inverse commutes with every
 morphism (`CategoryTheory.Linear.comp_inv_smul_id`), and an `R`-linear functor keeps it
@@ -102,6 +102,11 @@ theorem exists_smul_id_eq_of_surjective {R : Type w} [CommSemiring R] [Linear R 
 instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) :
     IsScalarTower R (End X)ᵐᵒᵖ (X ⟶ Y) where
   smul_assoc r d f := by simp [End.smul_left]
+
+/-- Ground-semiring scalars pull out of the left factor of a product in `End X`. -/
+instance isScalarTower {R : Type w} [Semiring R] [Linear R C] :
+    IsScalarTower R (End X) (End X) where
+  smul_assoc r a b := by ext; simp
 
 end Preadditive
 
