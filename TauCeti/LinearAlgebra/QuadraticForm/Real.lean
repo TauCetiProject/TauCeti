@@ -190,7 +190,8 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
 
 /-- For an anisotropic real form, the product of the inverse values of two vectors is a real
-square: all values of the form have the same sign, since it is positive or negative definite. -/
+square: the form is positive or negative definite, so its values are either all nonnegative or all
+nonpositive, and the product of their inverses is nonnegative, including when a vector is zero. -/
 theorem _root_.QuadraticMap.Anisotropic.isSquare_inv_mul_inv {Q : _root_.QuadraticForm ℝ M}
     (hQ : Q.Anisotropic) (v w : M) : IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
   rw [Real.isSquare_iff]

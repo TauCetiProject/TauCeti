@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Subrepresentation
+public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.RepresentationTheory.Spin.Representation
 -- Private: `CliffordAlgebra.contractLeft_mem_evenOdd` is used only inside a proof, and
@@ -65,6 +65,8 @@ belong to the complex theory and are not proved here.
   subrepresentations of `spinRep`, for a polarization without a line summand.
 * `TauCeti.spinPlusAction` and `TauCeti.spinMinusAction`: the actions of the even Clifford
   subalgebra on the two summands, and `TauCeti.evenSpinActionProd` their product.
+* `TauCeti.spinPlusSubrepEquiv` and `TauCeti.spinMinusSubrepEquiv`: the two actions composed with
+  `CliffordAlgebra.spinGroupToEven` are equivalent to the two subrepresentations.
 
 ## Main results
 
@@ -456,5 +458,37 @@ theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
   apply Subtype.ext
   simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
     ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
+
+/-- **The even half-spin action restricted to the Spin group is the even half-spin
+subrepresentation**: the even-subalgebra action `TauCeti.spinPlusAction` composed with
+`CliffordAlgebra.spinGroupToEven` is equivalent to `TauCeti.spinPlusSubrep`, both acting on the
+same subspace `S⁺` of the exterior algebra. Restricting it along `φ : H →* spinGroup Q`
+(`Representation.Equiv.res`) transports invariant subspaces and intertwiners between the two. -/
+noncomputable def spinPlusSubrepEquiv (hline : P.line = ⊥) :
+    Representation.Equiv ((spinPlusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
+      (spinPlusSubrep P hline).toRepresentation :=
+  .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm) fun g ↦
+    LinearMap.ext fun s ↦ by
+      -- the subrepresentation statement, solved for the transported output
+      have hs := (LinearEquiv.symm_apply_eq _).1
+        (spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g s)
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toMonoidHom_comp_apply] using
+        hs.symm
+
+/-- **The odd half-spin action restricted to the Spin group is the odd half-spin
+subrepresentation**: the even-subalgebra action `TauCeti.spinMinusAction` composed with
+`CliffordAlgebra.spinGroupToEven` is equivalent to `TauCeti.spinMinusSubrep`, both acting on the
+same subspace `S⁻` of the exterior algebra. -/
+noncomputable def spinMinusSubrepEquiv (hline : P.line = ⊥) :
+    Representation.Equiv ((spinMinusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
+      (spinMinusSubrep P hline).toRepresentation :=
+  .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm) fun g ↦
+    LinearMap.ext fun s ↦ by
+      -- the subrepresentation statement, at the transported input
+      have hs := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g
+        (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm s)
+      rw [LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_eq] at hs
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toMonoidHom_comp_apply] using
+        hs.symm
 
 end TauCeti

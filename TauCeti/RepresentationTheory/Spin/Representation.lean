@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorAlgebra.End
@@ -36,8 +37,7 @@ one-dimensional, the odd block is zero and the even action is again onto.
 * `CliffordAlgebra.spinGroupToEven` is the inclusion of the Spin group into the even Clifford
   subalgebra
   and `TauCeti.evenSpinAction` is the Fock action restricted to that subalgebra, through which the
-  Spin representation factors by `TauCeti.evenSpinAction_apply` and
-  `CliffordAlgebra.coe_spinGroupToEven_apply`.
+  Spin representation factors by `TauCeti.spinRep_eq_evenSpinAction_comp`.
 * `TauCeti.spinAction_surjective` identifies the Fock action as onto the full endomorphism algebra
   when the first isotropic summand is finite free.
 * `TauCeti.exists_spinAction_eq_algebraMap_of_mem_center`: under the same hypothesis, the Fock
@@ -94,6 +94,12 @@ noncomputable def evenSpinAction (Q : QuadraticForm K V) (P : SpinPolarizationDa
 theorem evenSpinAction_apply (Q : QuadraticForm K V) (P : SpinPolarizationData Q)
     (x : CliffordAlgebra.even Q) : evenSpinAction Q P x = spinAction Q P x :=
   (rfl)
+
+/-- **The Spin representation factors through the even Clifford action** along the inclusion
+`CliffordAlgebra.spinGroupToEven` of the Spin group into the even subalgebra. -/
+theorem spinRep_eq_evenSpinAction_comp (Q : QuadraticForm K V) (P : SpinPolarizationData Q) :
+    spinRep Q P = (evenSpinAction Q P).toMonoidHom.comp (CliffordAlgebra.spinGroupToEven Q) :=
+  MonoidHom.ext fun g ↦ by simp
 
 /-- When the first isotropic summand is finite free, the Fock action of a Clifford algebra on its
 exterior model is onto the full endomorphism algebra. -/

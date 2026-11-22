@@ -582,7 +582,8 @@ theorem _root_.TauCeti.span_ofBaseChangeAux_image_evenOdd (i : ZMod 2) :
     _ = _ := by
       rw [← hcomap]
       exact Submodule.map_comap_eq_of_surjective
-        (fun y ↦ ⟨toBaseChange A Q y, ofBaseChange_toBaseChange A Q y⟩) _
+        (Function.RightInverse.surjective (f := ofBaseChange A Q)
+          (ofBaseChange_toBaseChange A Q)) _
 
 end TensorCarrier
 

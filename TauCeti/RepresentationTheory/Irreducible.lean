@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
-public import Mathlib.RepresentationTheory.Submodule
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
 -- Private: the range of a representation's monoid-algebra action is used only inside proofs.
@@ -40,12 +39,13 @@ to its image in `ρ` under the inclusion of `σ.toSubmodule`.  In practice the a
 that gets proved -- one exhibits an invariant subspace of the ambient representation and shows it
 has no proper nonzero invariant subspace -- and the irreducibility form is the one that gets used.
 
-At the other extreme, a representation whose algebra map exhausts `End k V` is irreducible, because
-a vector space is a simple module over its own endomorphism ring, so a nonzero vector can be carried
-to any other.  This is the criterion a matrix block of a semisimple group algebra is recognised as
-irreducible by.  It applies equally to a monoid acting through an algebra that it spans, such as a
-compact real form of a group acting through a complex algebra: invariant subspaces and
-intertwiners of a spanning set of an algebra are those of the whole algebra.
+At the other extreme, a representation on a nonzero space `V` whose algebra map exhausts
+`End k V` is irreducible, because a nonzero vector space is a simple module over its own
+endomorphism ring, so a nonzero vector can be carried to any other.  This is the criterion a matrix
+block of a semisimple group algebra is recognised as irreducible by.  It applies equally to a
+monoid acting on a nonzero space through an algebra that it spans, such as a compact real form of a
+group acting through a complex algebra: invariant subspaces and intertwiners of a spanning set of
+an algebra are those of the whole algebra.
 
 ## Main results
 
@@ -61,12 +61,11 @@ intertwiners of a spanning set of an algebra are those of the whole algebra.
 * `Representation.Equiv.isIrreducible`: the same for Mathlib's bundled `Representation.Equiv`.
 * `Representation.isIrreducible_toRepresentation_of_isAtom`: an atom of the lattice of
   subrepresentations carries an irreducible representation.
-* `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation whose
-  algebra map exhausts the endomorphisms is irreducible.
-* `AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`: a monoid acting through a
-  spanning image in an algebra has the same invariant subspaces as the algebra.
-* `AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top`: so a monoid acting through a spanning
-  image in an algebra whose action exhausts the endomorphisms acts irreducibly.
+* `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation on a nonzero space
+  whose algebra map exhausts the endomorphisms is irreducible.
+* `AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top`: so a monoid acting on a nonzero space
+  through a spanning image in an algebra whose action exhausts the endomorphisms acts
+  irreducibly.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
 * `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one`: the
@@ -186,8 +185,9 @@ theorem isIrreducible_toRepresentation_of_isAtom {ρ : Representation k G V}
     σ.asModuleEquivAsSubmodule.isSimpleModule_iff, Subrepresentation.isSimpleModule_asSubmodule_iff]
   exact h
 
-/-- **A representation whose algebra map exhausts the endomorphisms is irreducible.** Every nonzero
-vector then generates, because a vector space is a simple module over its endomorphism ring. -/
+/-- **A representation on a nonzero space whose algebra map exhausts the endomorphisms is
+irreducible.** Every nonzero vector then generates, because a nonzero vector space is a simple
+module over its endomorphism ring. -/
 theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representation k G V)
     (h : Function.Surjective ρ.asAlgebraHom) : ρ.IsIrreducible := by
   rw [Representation.irreducible_iff_isSimpleModule_asModule,
@@ -200,22 +200,6 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
   refine ⟨r, ρ.asModuleEquiv.injective ?_⟩
   rw [LinearMap.toSpanSingleton_apply, Representation.asModuleEquiv_map_smul, hT]
 
-/-- **Invariance under a spanning monoid is invariance under the whole algebra.** If the image of
-`φ : H →* B` spans the `R`-algebra `B`, a submodule is invariant under the restriction along `φ`
-of an algebra action `F` exactly when it is invariant under every `F b`. -/
-theorem _root_.AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top {R B H M : Type*}
-    [CommSemiring R] [Semiring B] [Algebra R B] [Monoid H] [AddCommMonoid M] [Module R M]
-    (F : B →ₐ[R] Module.End R M) (φ : H →* B) (hφ : Submodule.span R (Set.range φ) = ⊤)
-    (p : Submodule R M) :
-    p ∈ Representation.invtSubmodule (F.toMonoidHom.comp φ) ↔
-      ∀ b, p ∈ Module.End.invtSubmodule (F b) := by
-  rw [mem_invtSubmodule]
-  refine ⟨fun hp b ↦ ?_, fun hp g ↦ hp (φ g)⟩
-  -- The elements of `B` whose action preserves `p` form a submodule containing the image of `φ`.
-  have hle : Submodule.span R (Set.range φ) ≤ (p.compatibleMaps p).comap F.toLinearMap :=
-    Submodule.span_le.2 <| Set.range_subset_iff.2 fun g ↦ hp g
-  exact (hφ ▸ hle) Submodule.mem_top
-
 /-- **A monoid acting through a spanning image in an algebra of all endomorphisms acts
 irreducibly.** If `V` is nonzero, the image of `φ : G →* A` spans the `k`-algebra `A` and
 `F : A →ₐ[k] End k V` is surjective, then the representation `g ↦ F (φ g)` is irreducible. This
@@ -227,15 +211,13 @@ theorem _root_.AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top [Nontrivial 
     Representation.IsIrreducible (F.toMonoidHom.comp φ) := by
   refine isIrreducible_of_asAlgebraHom_surjective _ ?_
   rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, toSubmodule_range_asAlgebraHom]
-  calc
-    Submodule.span k (Set.range (F.toMonoidHom.comp φ))
-        = (Submodule.span k (Set.range φ)).map F.toLinearMap := by
-      rw [MonoidHom.coe_comp, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_eq_coe,
-        MonoidHom.coe_ofClass, RingHom.coe_coe, ← AlgHom.coe_toLinearMap, Set.range_comp,
-        Submodule.span_image]
-    _ = ⊤ := by
-      rw [hφ, Submodule.map_top, LinearMap.range_eq_top]
-      exact hF
+  -- The restricted action takes the values `F (φ g)`, the image under `F` of the range of `φ`.
+  have hrange : Set.range (F.toMonoidHom.comp φ) = F.toLinearMap '' Set.range φ := by
+    rw [← Set.range_comp]
+    exact congrArg Set.range (funext (F.toMonoidHom_comp_apply φ))
+  rw [hrange, Submodule.span_image, hφ, Submodule.map_top, LinearMap.range_eq_top,
+    AlgHom.coe_toLinearMap]
+  exact hF
 
 /-- **A semisimple representation whose intertwiners are the scalars is irreducible.** If every
 subrepresentation has an invariant complement and the equivariant endomorphisms of `ρ` form a line,
