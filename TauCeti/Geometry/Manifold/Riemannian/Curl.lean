@@ -149,11 +149,13 @@ theorem coe_curl_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ 
       f x • (curl o α).val x + formHodgeStarCLM o (k := 2) (l := 1) rfl x
         ((mextDeriv (RoughForm.ofFunction I f) x).wedge (α.val x)) := by
   funext x
-  -- The degree transport `0 + 1 + 1 = 1 + 1` is a cast along a definitional equality of
-  -- numerals, so `cast_eq` removes it.
-  rw [coe_curl_apply, mextDerivₗ_funSMulₗ, LinearEquiv.cast_apply, cast_eq, Submodule.coe_add,
-    Pi.add_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction, coe_funSMulₗ, map_add,
-    map_smul, add_comm, coe_curl_apply]
+  rw [coe_curl_apply, mextDerivₗ_funSMulₗ]
+  simp only [Submodule.coe_add, Pi.add_apply, coe_funSMulₗ, map_add, map_smul, coe_curl_apply]
+  rw [add_comm]
+  congr 2
+  ext v
+  simp only [extDerivWedgeₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply', Fin.cast_refl,
+    CompTriple.comp_eq, ContinuousAlternatingMap.wedge_def]
 
 /-- **The curl has order one**: its double commutators with multiplication operators vanish,
 `[[curl, f], g] = 0`. -/

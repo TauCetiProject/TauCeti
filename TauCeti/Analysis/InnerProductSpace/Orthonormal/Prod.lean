@@ -11,7 +11,10 @@ public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
-# Orthogonality and orientation of product orthonormal bases
+# Orthonormal frames and bases of products
+
+A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of the `L²` product
+`WithLp 2 (V × W)` is orthonormal exactly when `v` and `w` are.
 
 Let `V ⊕ W` be the `L²` product `WithLp 2 (V × W)` of two inner product spaces, with a quadratic
 form `Q` satisfying `Q (v, w) = Q₁ v + Q₂ w`. If orthonormal bases `b₁` of `V` and `b₂` of `W`
@@ -23,6 +26,7 @@ transported along `(WithLp.linearEquiv 2 ℝ (V × W)).symm`.
 
 ## Main results
 
+* `TauCeti.orthonormal_append_toLp_iff`: orthonormality of a product frame.
 * `OrthonormalBasis.isOrthoᵢ_associated_prod`: the product of orthogonal orthonormal bases is
   orthogonal for `Q`.
 * `OrthonormalBasis.orientation_reindex_prod`: the ordered `L²` product of two real orthonormal
@@ -85,3 +89,23 @@ theorem orientation_reindex_prod (b₁ : OrthonormalBasis (Fin n) ℝ V)
 end Orientation
 
 end OrthonormalBasis
+
+namespace TauCeti
+
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {k l : ℕ}
+
+/-- A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of `V ⊕ W` is orthonormal
+exactly when `v` and `w` are. -/
+theorem orthonormal_append_toLp_iff {v : Fin k → V} {w : Fin l → W} :
+    Orthonormal 𝕜 (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : W)))
+      (fun j ↦ WithLp.toLp 2 ((0 : V), w j))) ↔ Orthonormal 𝕜 v ∧ Orthonormal 𝕜 w := by
+  classical
+  have hne (i : Fin k) (j : Fin l) : Fin.castAdd l i ≠ Fin.natAdd k j := by
+    rw [Ne, Fin.ext_iff]
+    simp only [Fin.val_castAdd, Fin.val_natAdd]
+    omega
+  simp [orthonormal_iff_ite, Fin.forall_fin_add, forall_and, hne, (hne _ _).symm,
+    (Fin.castAdd_injective _ _).eq_iff, (Fin.natAdd_injective _ _).eq_iff]
+
+end TauCeti

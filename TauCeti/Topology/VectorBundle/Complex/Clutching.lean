@@ -200,17 +200,8 @@ theorem continuousOn_clutchingFunction
 theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
-    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet := by
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- Near `y₀`, read both frames in a trivialization around `f y₀`.
-  let e₀ := trivializationAt F E (f y₀)
-  have hU : f ⁻¹' e₀.baseSet ∈ 𝓝 y₀ :=
-    (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
-      (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (f y₀)))
-  refine (((continuousOn_clutchingFunction hψ e₀).inv.mul
-    (continuousOn_clutchingFunction hφ e₀)).continuousAt hU).congr
-      (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
-  simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
+    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet :=
+  (continuous_trans_symm_of_continuous_frame hψ hφ).normalizedDet
 
 end ClutchingFunction
 
