@@ -55,7 +55,9 @@ The first two axioms only use that `X` is Hausdorff. Local compactness is needed
 a point without compact neighbourhoods has an empty diagram of compact neighbourhoods.
 
 The converse construction, from K-presheaves to presheaves through limits over the compact subsets
-of an open set, and the equivalence between sheaves and K-sheaves are not treated here.
+of an open set, is `TopCat.KPresheaf.toPresheaf` in `TauCeti.Topology.Sheaves.KSheaf.ToPresheaf`,
+and the equivalence between sheaves and K-sheaves is `TopCat.sheafEquivKSheaf` in
+`TauCeti.Topology.Sheaves.KSheaf.Equivalence`.
 
 ## References
 
@@ -204,6 +206,17 @@ theorem kGerm_apply_eq_kGerm_apply_iff {K : Compacts X} {U V : Opens X} (hU : (K
     exact ⟨W.val, W.property, homOfLE iU.unop.le, homOfLE iV.unop.le, h⟩
   · rintro ⟨W, hW, iU, iV, h⟩
     exact ⟨op ⟨W, hW⟩, (homOfLE iU.le).op, (homOfLE iV.le).op, h⟩
+
+/-- Two sections of a presheaf of types with the same germ along `K` agree on every open subset of
+`K` on which both are defined. -/
+theorem map_eq_map_of_kGerm_apply_eq {K : Compacts X} {U V W : Opens X} {hU : (K : Set X) ⊆ U}
+    {hV : (K : Set X) ⊆ V} {s : P.obj (op U)} {t : P.obj (op V)}
+    (h : P.kGerm K U hU s = P.kGerm K V hV t) (hW : (W : Set X) ⊆ K) (iU : W ⟶ U) (iV : W ⟶ V) :
+    P.map iU.op s = P.map iV.op t := by
+  obtain ⟨O, hO, iU', iV', hst⟩ := (P.kGerm_apply_eq_kGerm_apply_iff hU hV s t).1 h
+  rw [Subsingleton.elim iU (homOfLE (hW.trans hO) ≫ iU'),
+    Subsingleton.elim iV (homOfLE (hW.trans hO) ≫ iV'), op_comp, op_comp, P.map_comp, P.map_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hst]
 
 /-- On a locally compact Hausdorff space, the value on a compact set `K` of the K-presheaf of a
 presheaf of types is the colimit of its values on the compact neighbourhoods of `K`. -/
@@ -396,10 +409,7 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
       reflectsLimitsOfShape_of_reflectsIsomorphisms
     exact IsPullback.of_map (forget C) (by rw [← Functor.map_comp, ← Functor.map_comp]; congr 1)
       (h.isPullback sq)
-  · have : Nonempty K.compactNhds := by
-      obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
-    have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
+  · have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
 

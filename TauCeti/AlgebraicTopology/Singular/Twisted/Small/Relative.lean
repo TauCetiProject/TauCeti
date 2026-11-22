@@ -227,6 +227,21 @@ def subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
         (TopCat.ofHom (ContinuousMap.inclusion hA)) (TopCat.ofHom (ContinuousMap.inclusion hC)) rfl)
       ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L)
 
+/-- The map of relative twisted chains induced by an inclusion of pairs of subsets is the change of
+coefficients identifying the two restrictions of `L` to `A₁`, followed by the map of the inclusion
+of pairs. -/
+lemma subsetPairTwistedChainComplexMap_def (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
+    subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
+      (TopPair.ofInclusion hC₁).twistedChainComplexCoefficientMap
+          ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion hA)).hom
+            (TopCat.ofHom (ContinuousMap.subtypeVal A₂)).hom).hom.app L) ≫
+        TopPair.twistedChainComplexMap
+          (TopPair.ofHom (X := TopPair.ofInclusion hC₁) (Y := TopPair.ofInclusion hC₂)
+            (TopCat.ofHom (ContinuousMap.inclusion hA)) (TopCat.ofHom (ContinuousMap.inclusion hC))
+            rfl)
+          ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) :=
+  (rfl)
+
 /-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
 the map `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap` of absolute twisted
 chains. -/
@@ -278,6 +293,33 @@ lemma subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap (hA
     subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap,
     subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
     smallTwistedChainComplexInclusion_comp]
+
+/-- Equal pairs of subsets have isomorphic relative twisted chains: the maps induced by the two
+inclusions are inverse to each other. This compares pairs of subsets which are equal but are
+written differently, such as `f ⁻¹' (U ∩ V)` and `f ⁻¹' U ∩ f ⁻¹' V`. -/
+def subsetPairTwistedChainComplexIsoOfEq (hA : A₁ = A₂) (hC : C₁ = C₂) :
+    (TopPair.ofInclusion hC₁).twistedChainComplex
+        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) ≅
+      (TopPair.ofInclusion hC₂).twistedChainComplex
+        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) where
+  hom := subsetPairTwistedChainComplexMap L hC₁ hC₂ hA.le hC.le
+  inv := subsetPairTwistedChainComplexMap L hC₂ hC₁ hA.ge hC.ge
+  hom_inv_id := (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap L hC₁ hC₂
+    hC₁ _ _ _ _).trans (subsetPairTwistedChainComplexMap_self L hC₁)
+  inv_hom_id := (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap L hC₂ hC₁
+    hC₂ _ _ _ _).trans (subsetPairTwistedChainComplexMap_self L hC₂)
+
+@[simp]
+lemma subsetPairTwistedChainComplexIsoOfEq_hom (hA : A₁ = A₂) (hC : C₁ = C₂) :
+    (subsetPairTwistedChainComplexIsoOfEq L hC₁ hC₂ hA hC).hom =
+      subsetPairTwistedChainComplexMap L hC₁ hC₂ hA.le hC.le :=
+  (rfl)
+
+@[simp]
+lemma subsetPairTwistedChainComplexIsoOfEq_inv (hA : A₁ = A₂) (hC : C₁ = C₂) :
+    (subsetPairTwistedChainComplexIsoOfEq L hC₁ hC₂ hA hC).inv =
+      subsetPairTwistedChainComplexMap L hC₂ hC₁ hA.ge hC.ge :=
+  (rfl)
 
 end SubsetPair
 

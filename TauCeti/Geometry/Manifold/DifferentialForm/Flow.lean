@@ -160,19 +160,21 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   simp
 
 omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 M] in
-/-- **Moving the base point of pulled-back forms.** Let the maps `ψᵤ` factor near time `t` and
-near `x` as `χᵤ ∘ g` through a map `g` differentiable at `x`, with each `χᵤ` differentiable at
-`g x`. If the
-pullbacks `(χᵤ^* α)_{g x}` have velocity `β (g x)` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have
-velocity `(g^* β)ₓ` there. -/
-theorem hasDerivAt_mpullback_of_eq_comp {ψ χ : ℝ → M → M} {g : M → M} {β : RoughForm I M F k}
-    {x : M} {t : ℝ} (hψ : ∀ᶠ u in 𝓝 t, ψ u =ᶠ[𝓝 x] χ u ∘ g) (hg : MDifferentiableAt I I g x)
-    (hχ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (χ u) (g x))
-    (h : HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (χ u) α (g x)) (β (g x)) t) :
-    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x)
-      (mpullback I I g β x) t := by
+/-- **Moving the base point of pulled-back forms.** Let the maps `ψᵤ : M → N` factor near time `t`
+and near `x` as `χᵤ ∘ g` through a map `g : M → N` differentiable at `x`, with each `χᵤ : N → N`
+differentiable at `g x`. If the pullbacks `(χᵤ^* α)_{g x}` of a form `α` on `N` have velocity
+`β (g x)` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have velocity `(g^* β)ₓ` there. -/
+theorem hasDerivAt_mpullback_of_eq_comp {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {α β : RoughForm I' N F k} {ψ : ℝ → M → N} {χ : ℝ → N → N} {g : M → N}
+    {x : M} {t : ℝ} (hψ : ∀ᶠ u in 𝓝 t, ψ u =ᶠ[𝓝 x] χ u ∘ g) (hg : MDifferentiableAt I I' g x)
+    (hχ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I' I' (χ u) (g x))
+    (h : HasDerivAt (F := E' [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I' I' (χ u) α (g x))
+      (β (g x)) t) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I' (ψ u) α x)
+      (mpullback I I' g β x) t := by
   -- Pulling back along `g` composes with its derivative, a continuous linear operator.
-  set L : E →L[ℝ] E := mfderiv I I g x
+  set L : E →L[ℝ] E' := mfderiv I I' g x
   have hL := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t h
   refine (hL.congr_of_eventuallyEq ?_).congr_deriv ?_
   · filter_upwards [hψ, hχ] with u hu hχu

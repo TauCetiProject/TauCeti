@@ -28,7 +28,8 @@ can transport real manifold models and orientations without changing their chart
 blocks: it is the continuous real-linear equivalence `z ↦ (Re z, Im z)` of `EuclideanSpace ℂ ι`
 with the doubled real space `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, whose inverse
 `(x, y) ↦ x + i y` carries the sum of the real inner products of the two factors to
-`Re ⟪·, ·⟫_ℂ` (`TauCeti.real_inner_complexEuclideanEquivRealProd_symm`).
+`Re ⟪·, ·⟫_ℂ` (`TauCeti.real_inner_complexEuclideanEquivRealProd_symm`), and in particular
+`‖x‖² + ‖y‖²` to `‖x + i y‖²` (`TauCeti.norm_complexEuclideanEquivRealProd_symm_sq`).
 -/
 
 public section
@@ -221,6 +222,12 @@ theorem real_inner_complexEuclideanEquivRealProd_symm
   simp only [PiLp.inner_apply, complexEuclideanEquivRealProd_symm_apply, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [Complex.inner, Complex.mul_re]
+
+/-- The identification `(x, y) ↦ x + i y` carries `‖x‖² + ‖y‖²` to `‖x + i y‖²`. -/
+theorem norm_complexEuclideanEquivRealProd_symm_sq (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ‖(complexEuclideanEquivRealProd ι).symm p‖ ^ 2 = ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, real_inner_complexEuclideanEquivRealProd_symm,
+    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq]
 
 end RealProd
 
