@@ -149,7 +149,7 @@ modulo `I`. -/
 noncomputable def formalPointsMap (I : Ideal A) (φ : G →* Q) :
     formalPoints R Q I →* formalPoints R G I :=
   ((pointsMap φ).comp (formalPoints R Q I).subtype).codRestrict (formalPoints R G I)
-    fun f ↦ pointsMap_mem_formalPoints φ f.2
+    fun f ↦ pointsMap_mem_formalPoints φ f.property
 
 /-- The pullback of a formal point along `φ` is precomposition with the map of group algebras
 induced by `φ`. -/
@@ -168,7 +168,7 @@ theorem formalPointsMap_id (I : Ideal A) :
 the composite of the pullbacks, in the opposite order. -/
 theorem formalPointsMap_comp {P : Type*} [CommGroup P] (I : Ideal A) (φ : G →* Q) (ψ : Q →* P) :
     formalPointsMap R I (ψ.comp φ) = (formalPointsMap R I φ).comp (formalPointsMap R I ψ) :=
-  MonoidHom.ext fun f ↦ Subtype.ext congr($(pointsMap_comp φ ψ) f.1)
+  MonoidHom.ext fun f ↦ Subtype.ext congr($(pointsMap_comp φ ψ) f.val)
 
 variable (R G) in
 /-- **The points of the formal diagonalizable group.** The points of `D(G)` reducing to the
@@ -176,12 +176,12 @@ identity modulo `I` are the characters of `G` with values in the principal unit 
 For a local `𝒪`-algebra `A` and `I = 𝔪_A` this is `D̂(G)(A) ≃ Hom(G, 1 + 𝔪_A)`. -/
 noncomputable def formalPointsMulEquiv (I : Ideal A) :
     formalPoints R G I ≃* (G →* I.principalUnitGroup) where
-  toFun f := (pointsMulEquiv f.1).codRestrict I.principalUnitGroup
-    (mem_formalPoints_iff_charOfPoint.mp f.2)
+  toFun f := (pointsMulEquiv f.val).codRestrict I.principalUnitGroup
+    (mem_formalPoints_iff_charOfPoint.mp f.property)
   invFun χ := ⟨pointsMulEquiv.symm (I.principalUnitGroup.subtype.comp χ),
     mem_formalPoints_iff_charOfPoint.mpr fun g ↦ by
       rw [← pointsMulEquiv_apply, MulEquiv.apply_symm_apply, MonoidHom.comp_apply]
-      exact (χ g).2⟩
+      exact (χ g).property⟩
   left_inv f := Subtype.ext ((MulEquiv.symm_apply_eq _).mpr (MonoidHom.ext fun _ ↦ rfl))
   right_inv χ := by
     ext g
@@ -194,7 +194,7 @@ noncomputable def formalPointsMulEquiv (I : Ideal A) :
 group-like `single g 1`. -/
 @[simp]
 theorem coe_formalPointsMulEquiv_apply (I : Ideal A) (f : formalPoints R G I) (g : G) :
-    ((formalPointsMulEquiv R G I f g : Aˣ) : A) = f.1.ofConv (MonoidAlgebra.single g 1) :=
+    ((formalPointsMulEquiv R G I f g : Aˣ) : A) = f.val.ofConv (MonoidAlgebra.single g 1) :=
   (rfl)
 
 /-- The formal point attached to a character `χ : G →* 1 + I` is the point of `D(G)` extending
@@ -212,7 +212,7 @@ theorem formalPointsMulEquiv_formalPointsMap (I : Ideal A) (φ : G →* Q)
     formalPointsMulEquiv R G I (formalPointsMap R I φ f) =
       (formalPointsMulEquiv R Q I f).comp φ := by
   ext g
-  exact congr((($(pointsMulEquiv_pointsMap φ f.1) g : Aˣ) : A))
+  exact congr((($(pointsMulEquiv_pointsMap φ f.val) g : Aˣ) : A))
 
 variable (R) in
 /-- **The formal points of `D(ℤ)`.** The points of `D(Multiplicative ℤ)` reducing to the identity
@@ -227,7 +227,7 @@ of the generator `1`. -/
 @[simp]
 theorem coe_formalPointsIntMulEquiv_apply (I : Ideal A) (f : formalPoints R (Multiplicative ℤ) I) :
     ((formalPointsIntMulEquiv R I f : Aˣ) : A) =
-      f.1.ofConv (MonoidAlgebra.single (Multiplicative.ofAdd 1) 1) := by
+      f.val.ofConv (MonoidAlgebra.single (Multiplicative.ofAdd 1) 1) := by
   simp [formalPointsIntMulEquiv]
 
 /-- The formal point of `D(ℤ)` attached to a principal unit `u` sends the group-like element of
@@ -235,7 +235,7 @@ theorem coe_formalPointsIntMulEquiv_apply (I : Ideal A) (f : formalPoints R (Mul
 @[simp]
 theorem formalPointsIntMulEquiv_symm_apply_single (I : Ideal A) (u : I.principalUnitGroup)
     (k : ℤ) :
-    ((formalPointsIntMulEquiv R I).symm u).1.ofConv
+    ((formalPointsIntMulEquiv R I).symm u).val.ofConv
         (MonoidAlgebra.single (Multiplicative.ofAdd k) 1) = ((u : Aˣ) ^ k : Aˣ) := by
   simp [formalPointsIntMulEquiv]
 
@@ -256,7 +256,7 @@ noncomputable def formalPointsMulEquivOfKerLe (I : Ideal A) {n m : ℕ} (hn : (n
   MulEquiv.ofBijective (formalPointsMap R I π) <| by
     have hbij := MonoidHom.bijective_comp_of_ker_le_range_powMonoidHom π hπ hker
       fun u : I.principalUnitGroup ↦ Subtype.ext (by
-        simpa using Ideal.pow_pow_eq_one_of_mem_principalUnitGroup hn hI u.2)
+        simpa using Ideal.pow_pow_eq_one_of_mem_principalUnitGroup hn hI u.property)
     have heq : ⇑(formalPointsMulEquiv R G I) ∘ formalPointsMap R I π =
         (fun χ : Q →* I.principalUnitGroup ↦ χ.comp π) ∘ ⇑(formalPointsMulEquiv R Q I) :=
       funext (formalPointsMulEquiv_formalPointsMap I π)
