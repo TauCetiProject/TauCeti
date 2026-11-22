@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Classification
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.SquareRoot
+public import TauCeti.FieldTheory.Galois.SquareRoot.Character
 
 import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.FieldTheory.Galois.SquareRoot
 
 /-!
 # Quadratic twists by a character of the absolute Galois group
