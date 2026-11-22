@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
 
 /-!
 # A Morse–Smale function on the plane
@@ -415,7 +416,7 @@ theorem isMorseSmale_cosAddHalfSq :
       exact (tendsto_nhds_unique tendsto_const_nhds hyu).symm
     subst hpy
     have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hp
-    exact hnd.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self_eq_top
+    exact hnd.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self
       contDiff_cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
   · -- `q` is a minimum: its stable set has full-dimensional tangent spaces.
     have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
