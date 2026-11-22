@@ -526,7 +526,7 @@ private theorem exists_columnMass_le_pow {κ θ C₂ : ℝ} (hκ : 0 < κ) (hθ 
                 (hψ t' ht' ht'θ)) t ht htθ
   calc columnMass D z t ≤ ∑ _k : Fin (n + 1), C₃ * V * (t / R) ^ (n + 1) :=
         Finset.sum_le_sum fun k _ => hk k
-    _ = _ := by simp; ring
+    _ = _ := by rw [Fin.sum_const, nsmul_eq_mul, Nat.cast_succ]; ring
 
 /-- **Decay of the mean oscillation of the Hessian at a centre.** Let `0 < γ < 1` with `γ ≤ α`.
 There are `θ ∈ (0, 1]` and `C`, depending only on `n`, `α`, `γ`, `λ`, `Λ` and `M`, such that the
@@ -715,7 +715,7 @@ private theorem setAverage_closedBall_norm_iteratedGradient_sub_le_mul_rpow
         Finset.sum_le_sum fun k _ =>
           W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow (D k) hball ht hR hQ
             ((setIntegral_norm_gradient_sub_setAverage_sq_le_columnOsc k t).trans hψ)
-    _ = _ := by simp; ring
+    _ = _ := by rw [Fin.sum_const, nsmul_eq_mul, Nat.cast_succ]; ring
 
 /-- If `‖D²u‖_{L²(Ω)} ≤ R^{(n+1)/2+a} Q` and `ball z R ⊆ Ω`, then for `0 < θ ≤ 1` the norm of the
 average of the weak Hessian over `closedBall z (θ R)` is at most `(n + 1) R^a Q / √(ω θ^{n+1})`,
