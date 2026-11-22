@@ -16,11 +16,14 @@ import Mathlib.Algebra.Ring.GeomSum
 
 Let `g` be an element of a monoid `G` and `c` a scalar of a ring `R`. A nonzero element `x` of the
 monoid algebra `R[G]` with `x (g - c) = 0` is an eigenvector of right multiplication by `g` with
-eigenvalue `c`, the scalar `c` also acting on the right. When `g` has finite order, right
-multiplication by `g ^ orderOf g = 1` is the identity, so when `R` has no zero divisors the
-eigenvalue is a root of unity of order dividing `orderOf g`. The equality `c ^ orderOf g = 1` also
-holds when `g` has infinite order, but is then vacuous because `orderOf g = 0`. In characteristic
-zero the only natural number that is such a root of unity is `1`. At the other extreme, when `G` is
+eigenvalue `c`, the scalar `c` also acting on the right. Over any ring, right multiplication by
+`g ^ orderOf g` acts on `x` as right multiplication by the scalar `c ^ orderOf g`. When `g` has
+finite order, `g ^ orderOf g = 1`, so the scalar `c ^ orderOf g` fixes `x`, and when `R` has no
+zero divisors the eigenvalue is a root of unity of order dividing `orderOf g`. The equality
+`c ^ orderOf g = 1` also holds when `g` has infinite order, but is then vacuous because
+`orderOf g = 0`. A natural-number eigenvalue `a` of an element of finite order is `1` as soon as the
+additive group of `R` is torsion-free: the coefficients of `x` are then fixed by multiplication by
+`a ^ orderOf g`, and no hypothesis on zero divisors is needed. At the other extreme, when `G` is
 a cancellative monoid, an element of infinite order has no nonzero eigenvector of eigenvalue `1`:
 the support of such an eigenvector would be stable under right translation by `g`, hence infinite.
 Over a ring, it follows that for such `G` and `g` the element `g - 1` is not a zero divisor of
@@ -28,9 +31,11 @@ Over a ring, it follows that for such `G` and `g` the element `g - 1` is not a z
 
 ## Main statements
 
-* `TauCeti.pow_orderOf_eq_one_of_mul_single_sub_eq_zero`: the eigenvalue `c`
+* `TauCeti.mul_single_one_pow_orderOf_eq_self_of_mul_single_sub_eq_zero`: over any ring, the
+  scalar `c ^ orderOf g` fixes an eigenvector of eigenvalue `c`.
+* `TauCeti.pow_orderOf_eq_one_of_mul_single_sub_eq_zero`: without zero divisors, the eigenvalue `c`
   satisfies `c ^ orderOf g = 1`.
-* `TauCeti.nat_eq_one_of_mul_single_sub_eq_zero`: in characteristic zero, a
+* `TauCeti.nat_eq_one_of_mul_single_sub_eq_zero`: over an additively torsion-free ring, a
   natural-number eigenvalue of an element of finite order is `1`.
 * `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder`: in a cancellative monoid, if `g`
   has infinite order, then `x * g = x` forces `x = 0`; its additive form is
@@ -46,32 +51,44 @@ namespace TauCeti
 
 open _root_.MonoidAlgebra
 
-variable {R : Type*} [Ring R] [NoZeroDivisors R] {G : Type*} [Monoid G]
+variable {R : Type*} [Ring R] {G : Type*} [Monoid G]
 
-/-- If a nonzero element `x` of `R[G]` satisfies `x (g - c) = 0`, then `c ^ orderOf g = 1`. -/
-theorem pow_orderOf_eq_one_of_mul_single_sub_eq_zero {x : MonoidAlgebra R G} (hx : x ≠ 0)
-    {g : G} {c : R} (h : x * (single g (1 : R) - single 1 c) = 0) : c ^ orderOf g = 1 := by
-  -- `g` commutes with the scalar `c`, so `g - c` divides `g ^ n - c ^ n`. For `n = orderOf g`
-  -- this says that right multiplication by the scalar `c ^ orderOf g` fixes `x`.
+/-- If an element `x` of `R[G]` satisfies `x (g - c) = 0`, then right multiplication by the scalar
+`c ^ orderOf g` fixes `x`. -/
+theorem mul_single_one_pow_orderOf_eq_self_of_mul_single_sub_eq_zero {x : MonoidAlgebra R G}
+    {g : G} {c : R} (h : x * (single g (1 : R) - single 1 c) = 0) :
+    x * single 1 (c ^ orderOf g) = x := by
+  -- `g` commutes with the scalar `c`, so `g - c` divides `g ^ n - c ^ n`.
   have hcomm : Commute (single g (1 : R)) (single 1 c) :=
     single_commute_single (.one_right g) (.one_left c)
   have hfix : x * (single g (1 : R) ^ orderOf g - single 1 c ^ orderOf g) = 0 := by
     rw [← hcomm.mul_geom_sum₂, ← mul_assoc, h, zero_mul]
   simp only [single_pow, one_pow, pow_orderOf_eq_one, ← one_def, mul_one_sub, sub_eq_zero] at hfix
+  exact hfix.symm
+
+/-- If a nonzero element `x` of `R[G]` satisfies `x (g - c) = 0`, then `c ^ orderOf g = 1`. -/
+theorem pow_orderOf_eq_one_of_mul_single_sub_eq_zero [NoZeroDivisors R] {x : MonoidAlgebra R G}
+    (hx : x ≠ 0) {g : G} {c : R} (h : x * (single g (1 : R) - single 1 c) = 0) :
+    c ^ orderOf g = 1 := by
   obtain ⟨i, hi⟩ : ∃ i, x.coeff i ≠ 0 := by
     simpa [Finsupp.ext_iff] using coeff_eq_zero.not.mpr hx
-  have hi' : x.coeff i * 1 = x.coeff i * c ^ orderOf g := by
-    rw [mul_one, ← coeff_mul_single_one, ← hfix]
-  exact (mul_left_cancel₀ hi hi').symm
+  have hi' : x.coeff i * c ^ orderOf g = x.coeff i * 1 := by
+    rw [mul_one, ← coeff_mul_single_one,
+      mul_single_one_pow_orderOf_eq_self_of_mul_single_sub_eq_zero h]
+  exact mul_left_cancel₀ hi hi'
 
-/-- In characteristic zero, if a nonzero element `x` of `R[G]` satisfies `x (g - a) = 0` for an
-element `g` of finite order and a natural number `a`, then `a = 1`. -/
-theorem nat_eq_one_of_mul_single_sub_eq_zero [CharZero R] {x : MonoidAlgebra R G} (hx : x ≠ 0)
-    {g : G} (hg : IsOfFinOrder g) {a : ℕ} (h : x * (single g (1 : R) - single 1 (a : R)) = 0) :
-    a = 1 := by
-  have ha : a ^ orderOf g = 1 := by
-    exact_mod_cast pow_orderOf_eq_one_of_mul_single_sub_eq_zero hx h
-  exact (Nat.pow_eq_one.mp ha).resolve_right hg.orderOf_pos.ne'
+/-- If the additive group of `R` is torsion-free and a nonzero element `x` of `R[G]` satisfies
+`x (g - a) = 0` for an element `g` of finite order and a natural number `a`, then `a = 1`. -/
+theorem nat_eq_one_of_mul_single_sub_eq_zero [IsAddTorsionFree R] {x : MonoidAlgebra R G}
+    (hx : x ≠ 0) {g : G} (hg : IsOfFinOrder g) {a : ℕ}
+    (h : x * (single g (1 : R) - single 1 (a : R)) = 0) : a = 1 := by
+  obtain ⟨i, hi⟩ : ∃ i, x.coeff i ≠ 0 := by
+    simpa [Finsupp.ext_iff] using coeff_eq_zero.not.mpr hx
+  have ha : a ^ orderOf g • x.coeff i = 1 • x.coeff i := by
+    rw [one_smul, nsmul_eq_mul', Nat.cast_pow, ← coeff_mul_single_one,
+      mul_single_one_pow_orderOf_eq_self_of_mul_single_sub_eq_zero h]
+  exact (Nat.pow_eq_one.mp ((IsAddTorsionFree.nsmul_left_inj hi).mp ha)).resolve_right
+    hg.orderOf_pos.ne'
 
 section CancelMonoid
 
