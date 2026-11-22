@@ -21,13 +21,9 @@ cover.
 -/
 
 public section
-
 open CategoryTheory Limits TopologicalSpace
-
 namespace AlgebraicGeometry.LocallyRingedSpace
-
 universe u w
-
 variable {X Y : LocallyRingedSpace.{u}} {ι : Type w} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
   (f : ∀ i, X.restrict (U i).isOpenEmbedding ⟶ Y)
   (hf : ∀ i j, X.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫ f i =
@@ -41,27 +37,12 @@ private theorem presheafedSpace_pullback_compat (i j : ι) :
     pullback.fst (X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding)
         (X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding) ≫ fPsh U f i =
       pullback.snd _ _ ≫ fPsh U f j := by
-  let ι₁ := X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding
-  let ι₂ := X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding
-  let ι₁₂ := X.toPresheafedSpace.ofRestrict (U i ⊓ U j).isOpenEmbedding
-  let g := pullback.fst ι₁ ι₂ ≫ ι₁
-  have hsub : Set.range g.base ⊆ Set.range ι₁₂.base := by
-    rintro _ ⟨p, rfl⟩
-    refine ⟨⟨g.base p, ((pullback.fst ι₁ ι₂).base p).2, ?_⟩, rfl⟩
-    rw [congrArg (fun k ↦ k.base p) (pullback.condition : g = pullback.snd ι₁ ι₂ ≫ ι₂)]
-    exact ((pullback.snd ι₁ ι₂).base p).2
-  let l := PresheafedSpace.IsOpenImmersion.lift ι₁₂ g hsub
-  have hl₁ : l ≫ X.toPresheafedSpace.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) =
-      pullback.fst ι₁ ι₂ := by
-    rw [← cancel_mono ι₁, Category.assoc, PresheafedSpace.restrictHomOfLE_ofRestrict,
-      PresheafedSpace.IsOpenImmersion.lift_fac]
-  have hl₂ : l ≫ X.toPresheafedSpace.restrictHomOfLE (inf_le_right : U i ⊓ U j ≤ U j) =
-      pullback.snd ι₁ ι₂ := by
-    rw [← cancel_mono ι₂, Category.assoc, PresheafedSpace.restrictHomOfLE_ofRestrict,
-      PresheafedSpace.IsOpenImmersion.lift_fac]; exact pullback.condition
+  rw [← X.toPresheafedSpace.pullbackRestrictIso_hom_restrictHomOfLE_left (U i) (U j),
+    ← X.toPresheafedSpace.pullbackRestrictIso_hom_restrictHomOfLE_right (U i) (U j),
+    Category.assoc, Category.assoc]
   have h := congrArg Hom.toHom (hf i j)
   rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
-  rw [← hl₁, ← hl₂, Category.assoc, Category.assoc]; exact congrArg (l ≫ ·) h
+  exact congrArg (_ ≫ ·) h
 
 private noncomputable def gluePsh : X.toPresheafedSpace ⟶ Y.toPresheafedSpace :=
   PresheafedSpace.glueMorphisms X.IsSheaf U hU (fPsh U f) (presheafedSpace_pullback_compat U f hf)
@@ -108,5 +89,4 @@ theorem existsUnique_glueMorphisms :
     ∃! g : X ⟶ Y, ∀ i, X.ofRestrict (U i).isOpenEmbedding ≫ g = f i :=
   ⟨glueMorphisms U hU f hf, ofRestrict_glueMorphisms U hU f hf, fun _ hg ↦
     hom_ext_of_ofRestrict U hU fun i ↦ (hg i).trans (ofRestrict_glueMorphisms U hU f hf i).symm⟩
-
 end AlgebraicGeometry.LocallyRingedSpace

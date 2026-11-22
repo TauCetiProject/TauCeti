@@ -249,12 +249,9 @@ noncomputable def mapIso (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuou
   hom_inv_id := by rw [← map_comp e.toRingHom h₁ e.symm.toRingHom h₂]; simp
   inv_hom_id := by rw [← map_comp e.symm.toRingHom h₂ e.toRingHom h₁]; simp
 
-@[simp]
-theorem mapIso_hom (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
+@[simp] theorem mapIso_hom (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
     (mapIso e h₁ h₂).hom = map e.toRingHom h₁ := (rfl)
-
-@[simp]
-theorem mapIso_inv (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
+@[simp] theorem mapIso_inv (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
     (mapIso e h₁ h₂).inv = map e.symm.toRingHom h₂ := (rfl)
 
 end MapIso

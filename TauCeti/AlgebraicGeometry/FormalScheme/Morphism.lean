@@ -21,17 +21,10 @@ maps an ideal of definition of `A` into the kernel of residue evaluation at ever
 -/
 
 public section
-
 open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
-
 universe u w
-
 namespace TauCeti.FormalScheme
-
-section OpenCoverGluing
-
 section RestrictHom
-
 variable (X : FormalScheme.{u})
 
 /-- For opens `V ≤ W` of a formal scheme `X`, the inclusion `X.restrict V ⟶ X.restrict W`. -/
@@ -53,7 +46,6 @@ theorem forgetToLocallyRingedSpace_map_restrictHomOfLE {V W : Opens X} (h : V �
 @[reassoc (attr := simp)] theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
     X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) :=
   InducedCategory.hom_ext (X.toLocallyRingedSpace.restrictHomOfLE_comp h k)
-
 end RestrictHom
 
 section Glue
@@ -89,24 +81,19 @@ noncomputable def glueMorphisms : X ⟶ Y :=
 theorem existsUnique_glueMorphisms : ∃! g : X ⟶ Y, ∀ i, X.ofRestrict (U i) ≫ g = f i :=
   ⟨glueMorphisms U hU f hf, ofRestrict_glueMorphisms U hU f hf, fun _ hg ↦
     hom_ext_of_ofRestrict U hU fun i ↦ (hg i).trans (ofRestrict_glueMorphisms U hU f hf i).symm⟩
-
 end Glue
-end OpenCoverGluing
 
 section SectionsHomAndContinuity
-
 /-- Restricting a global section along `X.ofRestrict U` at `op ⊤` applies `Γ(X, ⊤) → Γ(X, U)`
 followed by `restrictTopSectionsIso`. -/
 theorem ofRestrict_c_app_top_apply (X : FormalScheme.{u}) (U : Opens X)
-    (s : X.presheaf.obj (op ⊤)) :
-    (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s =
+    (s : X.presheaf.obj (op ⊤)) : (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s =
       (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
         (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op s) := by
   rw [forgetToLocallyRingedSpace_map_ofRestrict]
   exact ConcreteCategory.congr_hom (X.toLocallyRingedSpace.ofRestrict_c_app_top U) s
 
 section SectionsHom
-
 variable {X Y : FormalScheme.{u}} {A B : Type u} [CommRing A] [TopologicalSpace A]
   [IsTopologicalRing A] [IsAdicRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
   [IsAdicRing B]
@@ -121,15 +108,13 @@ noncomputable def ofSpfMap (φ : A →+* B) (hφ : Continuous φ) : ofSpf B ⟶ 
   InducedCategory.hom_ext Spf.map_id
 @[reassoc] theorem ofSpfMap_comp {C : Type u} [CommRing C] [TopologicalSpace C]
     [IsTopologicalRing C] [IsAdicRing C] (φ : B →+* C) (hφ : Continuous φ) (ψ : A →+* B)
-    (hψ : Continuous ψ) :
-    ofSpfMap (φ.comp ψ) (hφ.comp hψ) = ofSpfMap φ hφ ≫ ofSpfMap ψ hψ :=
+    (hψ : Continuous ψ) : ofSpfMap (φ.comp ψ) (hφ.comp hψ) = ofSpfMap φ hφ ≫ ofSpfMap ψ hψ :=
   InducedCategory.hom_ext (Spf.map_comp φ hφ ψ hψ)
 
 /-- Ring homomorphism `A →+* Γ(X, ⊤)` induced on global sections by `f : X ⟶ ofSpf A`. -/
 noncomputable def sectionsHom (f : X ⟶ ofSpf A) : A →+* X.presheaf.obj (op ⊤) :=
-  ((Spf.topSectionsIso A).inv ≫
-    ((forgetToLocallyRingedSpace.map f).c.app (op ⊤) :
-      (Spf A).presheaf.obj (op ⊤) ⟶ X.presheaf.obj (op ⊤))).hom
+  ((Spf.topSectionsIso A).inv ≫ ((forgetToLocallyRingedSpace.map f).c.app (op ⊤) :
+    (Spf A).presheaf.obj (op ⊤) ⟶ X.presheaf.obj (op ⊤))).hom
 
 theorem sectionsHom_apply (f : X ⟶ ofSpf A) (a : A) : sectionsHom f a =
     (forgetToLocallyRingedSpace.map f).c.app (op ⊤) ((Spf.topSectionsIso A).inv a) := (rfl)
@@ -137,10 +122,9 @@ theorem sectionsHom_apply (f : X ⟶ ofSpf A) (a : A) : sectionsHom f a =
 /-- Functoriality of `sectionsHom` under precomposition with `g : X ⟶ Y`. -/
 theorem sectionsHom_comp (g : X ⟶ Y) (f : Y ⟶ ofSpf A) :
     sectionsHom (g ≫ f) = ((forgetToLocallyRingedSpace.map g).c.app (op ⊤) :
-        Y.presheaf.obj (op ⊤) ⟶ X.presheaf.obj (op ⊤)).hom.comp (sectionsHom f) :=
-  RingHom.ext fun a ↦ ConcreteCategory.congr_hom
-    (LocallyRingedSpace.Γ.map_comp (forgetToLocallyRingedSpace.map f).op
-      (forgetToLocallyRingedSpace.map g).op) ((Spf.topSectionsIso A).inv a)
+        _ ⟶ X.presheaf.obj (op ⊤)).hom.comp (sectionsHom f) :=
+  RingHom.ext fun _ ↦ ConcreteCategory.congr_hom (LocallyRingedSpace.Γ.map_comp
+    (forgetToLocallyRingedSpace.map f).op (forgetToLocallyRingedSpace.map g).op) _
 
 @[simp] theorem sectionsHom_comp_apply (g : X ⟶ Y) (f : Y ⟶ ofSpf A) (a : A) :
     sectionsHom (g ≫ f) a = (forgetToLocallyRingedSpace.map g).c.app (op ⊤) (sectionsHom f a) :=
@@ -149,18 +133,20 @@ theorem sectionsHom_comp (g : X ⟶ Y) (f : Y ⟶ ofSpf A) :
     (Spf.topSectionsIso B).hom (sectionsHom g a) =
       Spf.sectionsHom (forgetToLocallyRingedSpace.map g) a :=
   (Spf.sectionsHom_apply (forgetToLocallyRingedSpace.map g) a).symm
-@[simp] theorem topSectionsIso_hom_sectionsHom_ofSpfMap (φ : A →+* B) (hφ : Continuous φ) (a : A) :
-    (Spf.topSectionsIso B).hom (sectionsHom (ofSpfMap φ hφ) a) = φ a := by
-  rw [topSectionsIso_hom_sectionsHom_ofSpf, forgetToLocallyRingedSpace_map_ofSpfMap,
-    Spf.sectionsHom_map]
+theorem topSectionsIso_hom_sectionsHom_ofSpfMap (φ : A →+* B) (hφ : Continuous φ) (a : A) :
+    (Spf.topSectionsIso B).hom (sectionsHom (ofSpfMap φ hφ) a) = φ a :=
+  (topSectionsIso_hom_sectionsHom_ofSpf _ a).trans <|
+    (congr($(Spf.sectionsHom_map φ hφ) a) : _)
+@[simp] theorem sectionsHom_ofSpfMap_apply (φ : A →+* B) (hφ : Continuous φ) (a : A) :
+    sectionsHom (ofSpfMap φ hφ) a = (Spf.topSectionsIso B).inv (φ a) :=
+  (ConcreteCategory.congr_hom (Spf.topSectionsIso B).hom_inv_id _).symm.trans <|
+    congrArg _ (topSectionsIso_hom_sectionsHom_ofSpfMap φ hφ a)
 
 /-- Precomposing `f : X ⟶ ofSpf A` with `X.ofRestrict U` restricts `sectionsHom f` to `U`. -/
 theorem sectionsHom_ofRestrict_comp_apply (f : X ⟶ ofSpf A) (U : Opens X) (a : A) :
-    sectionsHom (X.ofRestrict U ≫ f) a =
-      (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
-        (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (sectionsHom f a)) := by
-  rw [sectionsHom_comp_apply, ofRestrict_c_app_top_apply]
-
+    sectionsHom (X.ofRestrict U ≫ f) a = (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
+      (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (sectionsHom f a)) :=
+  (sectionsHom_comp_apply _ f a).trans (ofRestrict_c_app_top_apply X U _)
 end SectionsHom
 
 @[simp] theorem sectionsHom_id (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
@@ -178,9 +164,9 @@ def ContinuousOnAffines (φ : A →+* X.presheaf.obj (op ⊤)) : Prop :=
 
 /-- Defining characterization of `ContinuousOnAffines`. -/
 theorem continuousOnAffines_iff (φ : A →+* X.presheaf.obj (op ⊤)) :
-    ContinuousOnAffines X A φ ↔ ∀ (U : Opens X) (hU : X.IsAffineOpen U),
-      @Continuous _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU)
-        ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) := Iff.rfl
+    ContinuousOnAffines X A φ ↔ ∀ (U : Opens X) (hU : X.IsAffineOpen U), @Continuous _ _
+      ‹TopologicalSpace A› (X.sectionsTopology U hU)
+      ((X.presheaf.map (homOfLE le_top).op).hom.comp φ) := Iff.rfl
 
 /-- `ContinuousOnAffines X A φ` is equivalent to continuity into `X.openSectionsTopology ⊤`. -/
 theorem continuousOnAffines_iff_continuous (φ : A →+* X.presheaf.obj (op ⊤)) :
@@ -188,18 +174,15 @@ theorem continuousOnAffines_iff_continuous (φ : A →+* X.presheaf.obj (op ⊤)
       @Continuous _ _ ‹TopologicalSpace A› (X.openSectionsTopology ⊤) φ := by
   rw [continuous_iff_openSectionsTopology]
   exact ⟨fun h U hU _ ↦ h U hU, fun h U hU ↦ h U hU le_top⟩
-
 end SectionsHomAndContinuity
 
 section HomSpfCorrespondence
 variable {X : FormalScheme.{u}} {A : Type u} [CommRing A] [TopologicalSpace A]
-
 /-- Eliminator extracting continuity on an affine formal open `U` from `ContinuousOnAffines`. -/
 theorem ContinuousOnAffines.continuous_comp {φ : A →+* X.presheaf.obj (op ⊤)}
-    (hφ : ContinuousOnAffines X A φ) (U : Opens X) (hU : X.IsAffineOpen U) :
-    @Continuous _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU)
-      ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) := hφ U hU
-
+    (hφ : ContinuousOnAffines X A φ) (U : Opens X) (hU : X.IsAffineOpen U) : @Continuous _ _
+      ‹TopologicalSpace A› (X.sectionsTopology U hU)
+      ((X.presheaf.map (homOfLE le_top).op).hom.comp φ) := hφ U hU
 variable [IsTopologicalRing A] [IsAdicRing A]
 
 /-- For every morphism `f : X ⟶ ofSpf A`, `sectionsHom f` is continuous on affine formal opens of
@@ -221,21 +204,18 @@ theorem continuousOnAffines_iff_residue {I : Ideal A} (hI : IsAdic I)
       ∀ a ∈ I, ∀ x : X, X.toLocallyRingedSpace.Γevaluation x (φ a) = 0 := by
   obtain ⟨hKAfg, hKA, -⟩ := IsAdicRing.ideal_spec A
   have hchart (U : Opens X) (hU : X.IsAffineOpen U) :
-      @Continuous _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU)
-          ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) ↔
-        ∀ a ∈ I, ∀ x : U, X.toLocallyRingedSpace.Γevaluation x.1 (φ a) = 0 := by
+      @Continuous _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU) ((X.presheaf.map
+        (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) ↔ ∀ a ∈ I, ∀ x : U,
+          X.toLocallyRingedSpace.Γevaluation x.1 (φ a) = 0 := by
     obtain ⟨-, hJU, -⟩ := IsAdicRing.ideal_spec hU.Sections
-    refine (hI.continuous_iff_forall_isTopologicallyNilpotent
-      (f := ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ : A →+* hU.Sections))
-      hJU hKA hKAfg).trans ?_
-    refine forall₂_congr fun a _ ↦
-      (isTopologicallyNilpotent_iff_forall_evaluation_eq_zero X U hU _).trans <|
-        forall_congr' fun x ↦ iff_of_eq <| congrArg (· = 0) <|
-          congrArg (X.toLocallyRingedSpace.residue x.1)
-            (TopCat.Presheaf.germ_res_apply X.presheaf (homOfLE (le_top : U ≤ ⊤)) x.1 x.2 (φ a))
-  refine ⟨fun h a ha x ↦ ?_, fun h U hU ↦ (hchart U hU).mpr fun a ha x ↦ h a ha x.1⟩
-  obtain ⟨U, hU, hx⟩ := X.exists_isAffineOpen_mem x
-  exact (hchart U hU).mp (h U hU) a ha ⟨x, hx⟩
+    refine (hI.continuous_iff_forall_isTopologicallyNilpotent (f := ((X.presheaf.map
+      (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ : A →+* hU.Sections)) hJU hKA hKAfg).trans <|
+      forall₂_congr fun a _ ↦ (isTopologicallyNilpotent_iff_forall_evaluation_eq_zero X U hU _
+        ).trans <| forall_congr' fun x ↦ iff_of_eq <| congrArg
+          (X.toLocallyRingedSpace.residue x.1 · = 0)
+          (TopCat.Presheaf.germ_res_apply X.presheaf (homOfLE le_top) x.1 x.2 (φ a))
+  exact ⟨fun h a ha x ↦ let ⟨U, hU, hx⟩ := X.exists_isAffineOpen_mem x
+    (hchart U hU).mp (h U hU) a ha ⟨x, hx⟩, fun h U hU ↦ (hchart U hU).mpr fun a ha x ↦ h a ha x.1⟩
 
 section Construction
 variable (φ : A →+* X.presheaf.obj (op ⊤)) (hφ : ContinuousOnAffines X A φ)
@@ -244,27 +224,20 @@ private noncomputable def chartHom (U : Opens X) (hU : X.IsAffineOpen U) : X.res
   hU.isoSpf.hom ≫ ofSpfMap (B := hU.Sections)
     ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) (hφ.continuous_comp U hU)
 
-private theorem sectionsHom_ofSpfMap_apply {B : Type u} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] [IsAdicRing B] (ψ : A →+* B) (hψ : Continuous ψ) (a : A) :
-    sectionsHom (ofSpfMap ψ hψ) a = (Spf.topSectionsIso B).inv (ψ a) := by
-  rw [← topSectionsIso_hom_sectionsHom_ofSpfMap ψ hψ a]
-  exact (ConcreteCategory.congr_hom (Spf.topSectionsIso B).hom_inv_id _).symm
-
 private theorem sectionsHom_chartHom (U : Opens X) (hU : X.IsAffineOpen U) (a : A) :
-    sectionsHom (chartHom φ hφ U hU) a =
-      (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
-        (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) := by
+    sectionsHom (chartHom φ hφ U hU) a = (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
+      (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) := by
   dsimp only [chartHom]; rw [sectionsHom_comp_apply]
   -- Unfold `hU.Sections` to `X.presheaf.obj (op U)`.
   erw [sectionsHom_ofSpfMap_apply (B := hU.Sections)]
   exact ConcreteCategory.congr_hom (topSectionsIso_inv_isoSpf_hom_c_app_top hU) _
 
 private theorem hom_ofSpf_ext_of_isAffineOpen {U : Opens X} (hU : X.IsAffineOpen U)
-    {g₁ g₂ : X.restrict U ⟶ ofSpf A} (h : sectionsHom g₁ = sectionsHom g₂) : g₁ = g₂ := by
-  refine (cancel_epi hU.isoSpf.inv).mp (fullyFaithfulForgetToLocallyRingedSpace.map_injective ?_)
-  refine Spf.sectionsHom_injective (B := hU.Sections) (RingHom.ext fun a ↦ ?_)
-  rw [← topSectionsIso_hom_sectionsHom_ofSpf, ← topSectionsIso_hom_sectionsHom_ofSpf,
-    sectionsHom_comp_apply, sectionsHom_comp_apply, h]
+    {g₁ g₂ : X.restrict U ⟶ ofSpf A} (h : sectionsHom g₁ = sectionsHom g₂) : g₁ = g₂ :=
+  (cancel_epi hU.isoSpf.inv).mp <| fullyFaithfulForgetToLocallyRingedSpace.map_injective <|
+    Spf.sectionsHom_injective (B := hU.Sections) <| RingHom.ext fun a ↦ by
+      rw [← topSectionsIso_hom_sectionsHom_ofSpf, ← topSectionsIso_hom_sectionsHom_ofSpf,
+        sectionsHom_comp_apply, sectionsHom_comp_apply, h]
 
 private theorem restrictHomOfLE_chartHom {W U : Opens X} (hW : X.IsAffineOpen W)
     (hU : X.IsAffineOpen U) (hWU : W ≤ U) :
@@ -275,20 +248,19 @@ private theorem restrictHomOfLE_chartHom {W U : Opens X} (hW : X.IsAffineOpen W)
   -- Unfold `ConcreteCategory.comp_apply` across `restrictTopSectionsIso`.
   erw [ConcreteCategory.congr_hom
     (X.toLocallyRingedSpace.restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top hWU)]
-  exact congrArg (X.toLocallyRingedSpace.restrictTopSectionsIso W).hom (ConcreteCategory.congr_hom
+  exact congrArg _ (ConcreteCategory.congr_hom
     (X.presheaf.map_comp (homOfLE (le_top : U ≤ ⊤)).op (homOfLE hWU).op).symm (φ a))
 
 private theorem chartHom_overlap (U V : {U : Opens X // X.IsAffineOpen U}) :
     X.restrictHomOfLE (inf_le_left : U.1 ⊓ V.1 ≤ U.1) ≫ chartHom φ hφ U.1 U.2 =
       X.restrictHomOfLE inf_le_right ≫ chartHom φ hφ V.1 V.2 := by
-  let S := {W : Opens X // X.IsAffineOpen W ∧ W ≤ U.1 ⊓ V.1}
-  let Wsub (w : S) : Opens (X.restrict (U.1 ⊓ V.1)) :=
+  let Wsub (w : {W : Opens X // X.IsAffineOpen W ∧ W ≤ U.1 ⊓ V.1}) :
+      Opens (X.restrict (U.1 ⊓ V.1)) :=
     ⟨{x | x.1 ∈ w.1}, w.1.isOpen.preimage continuous_subtype_val⟩
-  have hcov : (⨆ w : S, Wsub w) = ⊤ := eq_top_iff.mpr fun x _ ↦ by
-    obtain ⟨W, hW, hxW, hWUV⟩ := X.exists_isAffineOpen_mem_le x.2
-    exact Opens.mem_iSup.mpr ⟨⟨W, hW, hWUV⟩, hxW⟩
-  refine hom_ext_of_ofRestrict Wsub hcov fun w ↦ ?_
-  let jW := ((X.restrict (U.1 ⊓ V.1)).toLocallyRingedSpace).ofRestrict (Wsub w).isOpenEmbedding
+  refine hom_ext_of_ofRestrict Wsub (eq_top_iff.mpr fun x _ ↦
+    let ⟨W, hW, hxW, hWUV⟩ := X.exists_isAffineOpen_mem_le x.2
+    Opens.mem_iSup.mpr ⟨⟨W, hW, hWUV⟩, hxW⟩) fun w ↦ ?_
+  let jW := (X.restrict (U.1 ⊓ V.1)).toLocallyRingedSpace.ofRestrict (Wsub w).isOpenEmbedding
   let rW := X.toLocallyRingedSpace.restrictHomOfLE w.2.2
   have hsub : Set.range jW.base ⊆ Set.range rW.base := fun _ ⟨x, hx⟩ ↦
     ⟨⟨x.1.1, x.2⟩, by rw [LocallyRingedSpace.restrictHomOfLE_base]; exact hx ▸ Subtype.ext rfl⟩
@@ -309,20 +281,17 @@ noncomputable def homOfContinuousOnAffines : X ⟶ ofSpf A :=
     (fun U ↦ chartHom φ hφ U.1 U.2) (chartHom_overlap φ hφ)
 
 @[simp] theorem ofRestrict_homOfContinuousOnAffines (U : Opens X) (hU : X.IsAffineOpen U) :
-    X.ofRestrict U ≫ homOfContinuousOnAffines φ hφ = hU.isoSpf.hom ≫
-      ofSpfMap (B := hU.Sections)
-        ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) (hφ.continuous_comp U hU) :=
-  ofRestrict_glueMorphisms (fun V : {V : Opens X // X.IsAffineOpen V} ↦ V.1)
-    (iSup_affineOpens_eq_top X) (fun V ↦ chartHom φ hφ V.1 V.2) (chartHom_overlap φ hφ) ⟨U, hU⟩
+    X.ofRestrict U ≫ homOfContinuousOnAffines φ hφ = hU.isoSpf.hom ≫ ofSpfMap (B := hU.Sections)
+      ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) (hφ.continuous_comp U hU) :=
+  ofRestrict_glueMorphisms _ (iSup_affineOpens_eq_top X) _ (chartHom_overlap φ hφ) ⟨U, hU⟩
 
 @[simp] theorem homOfContinuousOnAffines_sectionsHom (f : X ⟶ ofSpf A) :
-    homOfContinuousOnAffines (sectionsHom f) (continuousOnAffines_sectionsHom f) = f := by
-  refine hom_ext_of_ofRestrict (fun U : {U : Opens X // X.IsAffineOpen U} ↦ U.1)
-    (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  rw [ofRestrict_homOfContinuousOnAffines _ _ U.1 U.2]
-  exact hom_ofSpf_ext_of_isAffineOpen U.2 (RingHom.ext fun a ↦
-    (sectionsHom_chartHom (sectionsHom f) (continuousOnAffines_sectionsHom f) U.1 U.2 a).trans
-      (sectionsHom_ofRestrict_comp_apply f U.1 a).symm)
+    homOfContinuousOnAffines (sectionsHom f) (continuousOnAffines_sectionsHom f) = f :=
+  hom_ext_of_ofRestrict (fun U : {U : Opens X // X.IsAffineOpen U} ↦ U.1)
+    (iSup_affineOpens_eq_top X) fun U ↦ (ofRestrict_homOfContinuousOnAffines _ _ U.1 U.2).trans <|
+      hom_ofSpf_ext_of_isAffineOpen U.2 (RingHom.ext fun a ↦
+        (sectionsHom_chartHom (sectionsHom f) (continuousOnAffines_sectionsHom f) U.1 U.2 a).trans
+          (sectionsHom_ofRestrict_comp_apply f U.1 a).symm)
 
 @[simp] theorem sectionsHom_homOfContinuousOnAffines :
     sectionsHom (homOfContinuousOnAffines φ hφ) = φ := by
@@ -332,7 +301,6 @@ noncomputable def homOfContinuousOnAffines : X ⟶ ofSpf A :=
     (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom).injective ?_⟩
   rw [← sectionsHom_ofRestrict_comp_apply, ofRestrict_homOfContinuousOnAffines φ hφ U hU]
   exact sectionsHom_chartHom φ hφ U hU a
-
 end Construction
 
 /-- **Universal property of `ofSpf A`** (EGA I, Ch. I, 10.4.6; Stacks Tag 0AHY): morphisms
@@ -354,7 +322,5 @@ noncomputable def homSpfEquiv (X : FormalScheme.{u}) (A : Type u) [CommRing A] [
 /-- Two morphisms `X ⟶ ofSpf A` with the same induced global-section homomorphism are equal. -/
 theorem sectionsHom_injective : Function.Injective (sectionsHom (X := X) (A := A)) := fun _ _ h ↦
   (homSpfEquiv X A).injective (Subtype.ext h)
-
 end HomSpfCorrespondence
-
 end TauCeti.FormalScheme
