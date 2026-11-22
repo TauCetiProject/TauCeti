@@ -23,6 +23,14 @@ monomorphism, the latter sequence is short exact, and the map in cohomology indu
 morphism of the triangle is the connecting map of that short exact sequence
 (`CochainComplex.mappingCone.shiftMap_mappingConeCompTriangle_mor₃`). This extends Mathlib's
 `mappingCone.homologySequenceδ_triangleh`, which is the case `a = 0`.
+
+The file also records a form of Mathlib's `mappingCone.quasiIso_descShortComplex` for maps out of
+the mapping cone that are only known to factor through the cokernel: for a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0`, a map `mappingCone (X₁ ⟶ X₂) ⟶ W` vanishing on `X₁` and given on `X₂` by
+`X₂ ⟶ X₃ ⟶ W` for a quasi-isomorphism `X₃ ⟶ W` is a quasi-isomorphism
+(`CochainComplex.mappingCone.quasiIso_desc_of_shortExact`). This is how a three-term sequence
+which is short exact only up to a quasi-isomorphism, such as a Mayer–Vietoris sequence of singular
+chains, is shown to have acyclic total complex.
 -/
 
 public section
@@ -87,5 +95,28 @@ lemma shiftMap_mappingConeCompTriangle_mor₃ (n₀ n₁ : ℤ) (h : 1 + n₀ = 
   exact (Category.assoc (A ≫ D) _ _).trans <|
     (congrArg (fun t => (A ≫ D) ≫ t) e₁).trans <|
     (Category.assoc A D _).trans (congrArg (fun t => A ≫ t) hnat')
+
+end CochainComplex.mappingCone
+
+namespace CochainComplex.mappingCone
+
+open HomComplex
+
+variable {C : Type*} [Category* C] [Abelian C] {S : ShortComplex (CochainComplex C ℤ)}
+
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes and a
+quasi-isomorphism `h : X₃ ⟶ W`, the map `mappingCone (X₁ ⟶ X₂) ⟶ W` which vanishes on `X₁` and is
+`X₂ ⟶ X₃ ⟶ W` on `X₂` is a quasi-isomorphism: it is `descShortComplex S ≫ h`. -/
+lemma quasiIso_desc_of_shortExact (hS : S.ShortExact) {W : CochainComplex C ℤ} (h : S.X₃ ⟶ W)
+    [QuasiIso h] {ψ : S.X₂ ⟶ W} (hψ : S.g ≫ h = ψ)
+    (eq : δ (-1) 0 (0 : Cochain S.X₁ W (-1)) = Cochain.ofHom (S.f ≫ ψ)) :
+    QuasiIso (desc S.f 0 ψ eq) := by
+  have := quasiIso_descShortComplex hS
+  have hd : desc S.f 0 ψ eq = descShortComplex S ≫ h := by
+    subst hψ
+    ext n
+    apply ext_from _ (n + 1) n rfl <;> simp [descShortComplex]
+  rw [hd]
+  infer_instance
 
 end CochainComplex.mappingCone
