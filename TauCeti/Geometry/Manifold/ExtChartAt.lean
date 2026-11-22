@@ -79,6 +79,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.measurableSet_image_extChartAt_iff`: for Borel measurable spaces on the manifold and
   the model space, a subset of a chart source is measurable exactly when its image in the model
   space is.
+* `ContinuousOn.extend_comp_extend_symm`: the coordinate expression of a map continuous on a set
+  is continuous on its domain, for extended charts over any models.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
@@ -107,6 +109,10 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `Topology.IsInducing.exists_isOpen_extChartAt_zero_mem`: along an inducing map out of a
   manifold, an open set cutting the source of the chart at `x₀` down to points whose chart image
   stays in a given neighbourhood of the chart point.
+* `TauCeti.exists_ball_inter_range_subset_extChartAt`: a small ball about the chart point,
+  intersected with the model range, lies in the chart target and over a given neighbourhood;
+  `TauCeti.convex_uniqueDiffOn_ball_inter_range_extChartAt`: such a set is convex, has unique
+  derivatives and contains the chart point.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point;
@@ -124,6 +130,11 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
   `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
   `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
+* `OpenPartialHomeomorph.extend_modelWithCornersSelf`,
+  `OpenPartialHomeomorph.isOpen_extend_target_inter_preimage`,
+  `OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage`, and
+  `OpenPartialHomeomorph.continuousOn_extend_comp_symm`: topological properties of extended
+  charts and coordinate expressions.
 -/
 
 public section
@@ -577,6 +588,20 @@ theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpac
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
     I.isClosed_range.measurableSet
+
+omit [ChartedSpace H M] in
+/-- The coordinate expression `ψ.extend I ∘ u ∘ (φ.extend J).symm` of a map continuous on `s` is
+continuous on its domain, the part of the extended target of `φ` over `s` where `u` maps into the
+source of `ψ`. The two models may be over different fields. -/
+theorem _root_.ContinuousOn.extend_comp_extend_symm {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜' E'] {H' : Type*} [TopologicalSpace H']
+    {J : ModelWithCorners 𝕜' E' H'} {X : Type*} [TopologicalSpace X] {u : X → M} {s : Set X}
+    (hu : ContinuousOn u s) (φ : OpenPartialHomeomorph X H') (ψ : OpenPartialHomeomorph M H) :
+    ContinuousOn (ψ.extend I ∘ u ∘ (φ.extend J).symm)
+      ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
+  refine ψ.continuousOn_extend.comp (hu.comp (φ.continuousOn_extend_symm.mono
+    Set.inter_subset_left) fun _ hz ↦ hz.2.1) fun _ hz ↦ ?_
+  simpa using hz.2.2
 
 /-- On a manifold with locally compact model, each extended chart target is locally compact: it is
 the intersection of an open subset with the closed range of the model. -/
@@ -1066,6 +1091,34 @@ theorem extChartAt_source_zeroDim {𝕜 E H M : Type*} [NontriviallyNormedField 
   · rintro rfl
     exact mem_extChartAt_source y
 
+section BallInterRange
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A small ball about the chart point of `x`, intersected with the model range, lies in the chart
+target and over any prescribed neighbourhood of `x`. -/
+theorem exists_ball_inter_range_subset_extChartAt {x : M} {S : Set M} (hS : S ∈ 𝓝 x) :
+    ∃ ε > 0, Metric.ball (extChartAt I x x) ε ∩ Set.range I ⊆
+      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' S := by
+  rw [← Metric.mem_nhdsWithin_iff]
+  refine Filter.inter_mem (extChartAt_target_mem_nhdsWithin x) ?_
+  rw [← map_extChartAt_symm_nhdsWithin_range (I := I) x] at hS
+  exact hS
+
+/-- A ball of positive radius about the chart point of `x`, intersected with the model range, is
+convex, has unique derivatives and contains the chart point. -/
+theorem convex_uniqueDiffOn_ball_inter_range_extChartAt (x : M) {ε : ℝ} (hε : 0 < ε) :
+    Convex ℝ (Metric.ball (extChartAt I x x) ε ∩ Set.range I) ∧
+      UniqueDiffOn ℝ (Metric.ball (extChartAt I x x) ε ∩ Set.range I) ∧
+      extChartAt I x x ∈ Metric.ball (extChartAt I x x) ε ∩ Set.range I := by
+  refine ⟨(convex_ball _ _).inter I.convex_range, ?_, Metric.mem_ball_self hε,
+    extChartAt_target_subset_range x (mem_extChartAt_target x)⟩
+  rw [Set.inter_comm]
+  exact I.uniqueDiffOn.inter Metric.isOpen_ball
+
+end BallInterRange
+
 /-- Every charted manifold modelled on a zero-dimensional vector space has the discrete topology. -/
 protected theorem _root_.ModelWithCorners.discreteTopology {𝕜 E H : Type*}
     [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Subsingleton E]
@@ -1074,7 +1127,6 @@ protected theorem _root_.ModelWithCorners.discreteTopology {𝕜 E H : Type*}
     DiscreteTopology M :=
   discreteTopology_iff_isOpen_singleton.mpr fun x ↦
     extChartAt_source_zeroDim (I := I) x ▸ isOpen_extChartAt_source (I := I) x
-
 
 /-- A neighbourhood of the chart point within the model range on which flat arguments in a
 chart apply: it lies in the chart target, is convex with unique derivatives, and its interior
@@ -1089,17 +1141,13 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
   obtain ⟨ε, hε, hsub⟩ : ∃ ε > 0, Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I ⊆
       (extChartAt I x₀).target :=
     Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin x₀)
-  have hx : extChartAt I x₀ x₀ ∈ Set.range I :=
-    extChartAt_target_subset_range x₀ (mem_extChartAt_target x₀)
-  refine ⟨Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I, hsub, ?_,
-    (convex_ball _ _).inter I.convex_range, ?_, ⟨Metric.mem_ball_self hε, hx⟩, ?_⟩
-  · rw [Set.inter_comm]
-    exact I.uniqueDiffOn.inter Metric.isOpen_ball
+  obtain ⟨hconv, hu, hx⟩ := convex_uniqueDiffOn_ball_inter_range_extChartAt (I := I) x₀ hε
+  refine ⟨Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I, hsub, hu, hconv, ?_, hx, ?_⟩
   · rw [Set.inter_comm]
     exact inter_mem_nhdsWithin _ (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε))
   · rw [interior_inter, Metric.isOpen_ball.interior_eq]
     exact Metric.isOpen_ball.inter_closure
-      ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
+      ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx.2⟩
 
 /-- Every point of a chart target has a convex neighbourhood within the target. The target is
 relatively open in the convex range of the model, so a small ball intersected with `range I`
@@ -1201,6 +1249,11 @@ theorem tendsto_extChartAt_restrict (U : Opens M) (x : M) (y : U) {z : E}
   change U.carrier.Mem ((extChartAt I x).symm w)
   exact hwU
 
+/-- Every inherited chart on an open subset of a normed space reads off ambient coordinates. -/
+theorem extChartAt_opens_apply (U : Opens E) (p q : U) :
+    extChartAt 𝓘(𝕜, E) p q = q.val := by
+  simp [extChartAt, Opens.chartAt_eq]
+
 /-- Every inherited source chart of an open subset of a normed space has that open subset as
 its extended target. -/
 theorem extChartAt_opens_target (U : Opens E) (x : U) :
@@ -1226,6 +1279,45 @@ end TopologicalSpace.Opens
 open scoped ContDiff
 
 namespace OpenPartialHomeomorph
+
+section Extend
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+
+/-- Criterion for `z ∈ interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)` via `𝓝`. -/
+theorem mem_interior_extend_target_inter_preimage (φ : OpenPartialHomeomorph M H) {U : Set M}
+    {z : E} (hzt : (φ.extend I).target ∈ 𝓝 z) (hU : U ∈ 𝓝 ((φ.extend I).symm z)) :
+    z ∈ interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
+  mem_interior_iff_mem_nhds.2
+    (Filter.inter_mem hzt
+      (((φ.continuousOn_extend_symm (I := I)).continuousAt hzt).preimage_mem_nhds hU))
+
+/-- Extending `φ : OpenPartialHomeomorph M E` by `𝓘(𝕜, E)` gives `φ.toPartialEquiv`. -/
+theorem extend_modelWithCornersSelf (φ : OpenPartialHomeomorph M E) :
+    φ.extend 𝓘(𝕜, E) = φ.toPartialEquiv := by
+  rw [OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl]
+
+/-- Openness of `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` for boundaryless `I` and
+open `U`. -/
+theorem isOpen_extend_target_inter_preimage [I.Boundaryless] (φ : OpenPartialHomeomorph M H)
+    {U : Set M} (hU : IsOpen U) :
+    IsOpen ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
+  (φ.continuousOn_extend_symm (I := I)).isOpen_inter_preimage (φ.isOpen_extend_target (I := I)) hU
+
+/-- Continuity of `ψ.extend I' ∘ u ∘ (φ.extend I).symm` on subsets of the chart overlap domain. -/
+theorem continuousOn_extend_comp_symm {𝕜' E' H' N : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAddCommGroup E'] [NormedSpace 𝕜' E'] [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜' E' H'} [TopologicalSpace N]
+    (φ : OpenPartialHomeomorph M H) (ψ : OpenPartialHomeomorph N H') {u : M → N} {s : Set M}
+    (hc : ContinuousOn u s)
+    {W : Set E} (hW : W ⊆ (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :
+    ContinuousOn (ψ.extend I' ∘ u ∘ (φ.extend I).symm) W :=
+  ((ψ.continuousOn_extend (I := I')).mono ψ.extend_source.ge).comp
+    (hc.comp ((φ.continuousOn_extend_symm (I := I)).mono (hW.trans Set.inter_subset_left))
+      fun _ hw ↦ (hW hw).2.1) fun _ hw ↦ (hW hw).2.2
+
+end Extend
 
 section ExtendTrans
 

@@ -5,26 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Set.Subsingleton
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Logic.Pairwise
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
 
 /-!
-# Monotonicity on sets: point updates and two-sided minima
+# Monotonicity on sets: point updates, grids and two-sided minima
+
+No function is both strictly monotone and strictly antitone on a set with two points
+(`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`).
 
 Redefining a function at a single point `a` keeps it strictly monotone on a set `s` as long as
 the new value lies strictly between the values at the points of `s` on either side of `a`
 (`StrictMonoOn.update`). For instance, a crossing time may be moved along a parameter interval
 containing no other crossing time without changing the order of the crossings.
 
-Conversely, a function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
+The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone through its last
+point `f n` follow one another: of two distinct ones, one ends before the other starts
+(`MonotoneOn.pairwise_succ_le_or_succ_le`).
+
+A function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
 on `s ∩ [a, ∞)` attains its global minimum on `s` at `a` (`TauCeti.le_of_antitoneOn_monotoneOn`),
 strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAntiOn_strictMonoOn`).
 
 ## Main results
 
+* `Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`: no function is both strictly monotone and
+  strictly antitone on a set with two points.
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
+* `MonotoneOn.pairwise_succ_le_or_succ_le`: distinct consecutive intervals of a monotone grid
+  overlap at most at an endpoint.
 * `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
   `s ∩ Ici a` with `a ∈ s`, then `f a ≤ f x` for all `x ∈ s`.
 * `TauCeti.lt_of_strictAntiOn_strictMonoOn`: if `f` is strictly antitone on `s ∩ Iic a` and
@@ -34,6 +48,16 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
 public section
 
 open Function Set
+
+/-- A function is not both strictly monotone and strictly antitone on a set with two points. -/
+theorem Set.Nontrivial.not_strictMonoOn_and_strictAntiOn {α β : Type*} [LinearOrder α]
+    [Preorder β] {f : α → β} {s : Set α} (hs : s.Nontrivial) :
+    ¬(StrictMonoOn f s ∧ StrictAntiOn f s) := by
+  rintro ⟨hm, ha⟩
+  obtain ⟨x, hx, y, hy, hxy⟩ := hs
+  rcases hxy.lt_or_gt with h | h
+  · exact lt_asymm (hm hx hy h) (ha hx hy h)
+  · exact lt_asymm (hm hy hx h) (ha hy hx h)
 
 /-- Updating a function at `a` keeps it strictly monotone on `s`, provided it is strictly
 monotone on `s` away from `a` and the new value `b` lies above the values at points of `s` before
@@ -53,6 +77,18 @@ theorem StrictMonoOn.update {α β : Type*} [Preorder α] [Preorder β] [Decidab
     exact hlt x hx hxy
   rw [update_of_ne hxa, update_of_ne hya]
   exact hf ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
+
+/-- Distinct consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid monotone through its last
+point `f n` overlap at most at an endpoint: one of them ends before the other starts. -/
+theorem MonotoneOn.pairwise_succ_le_or_succ_le {α : Type*} [Preorder α] {f : ℕ → α} {n : ℕ}
+    (hf : MonotoneOn f (Iic n)) :
+    (Iio n).Pairwise fun i j ↦ f (i + 1) ≤ f j ∨ f (j + 1) ≤ f i := by
+  intro i hi j hj hij
+  rcases Nat.lt_or_gt_of_ne hij with h | h
+  · exact Or.inl (hf (mem_Iic.mpr (Nat.succ_le_of_lt hi)) (mem_Iic.mpr (le_of_lt hj))
+      (Nat.succ_le_of_lt h))
+  · exact Or.inr (hf (mem_Iic.mpr (Nat.succ_le_of_lt hj)) (mem_Iic.mpr (le_of_lt hi))
+      (Nat.succ_le_of_lt h))
 
 namespace TauCeti
 
