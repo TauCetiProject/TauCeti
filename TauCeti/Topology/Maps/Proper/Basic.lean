@@ -32,9 +32,10 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
   product map with nonempty sources are proper.
 * `isProperMap_prodMap_iff`: for nonempty sources, `Prod.map f g` is proper exactly when `f` and
   `g` are.
-* `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
-  codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for a square of
-  embeddings rather than for subtypes.
+* `IsProperMap.of_isEmbedding_of_range_eq` and
+  `IsProperMap.of_isEmbedding_of_preimage_subset_range`: the pullback of a proper map along an
+  embedding of its codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for
+  a square of embeddings rather than for subtypes.
 * `IsProperMap.exists_tendsto_of_tendsto_apply_prodMk`: ultrafilter convergence for a proper map
   `h : T × Y → W` evaluated at a variable first coordinate `φ z` that is continuous away from a
   set `A` where `t ↦ h (t, y)` is independent of `t`.
@@ -146,6 +147,17 @@ theorem IsProperMap.of_isEmbedding_of_range_eq {X' Y' : Type*} [TopologicalSpace
     exact (congrFun hcomm x').symm
   · rw [hi.nhds_eq_comap, ← map_le_iff_le_comap]
     exact hle
+
+/-- **The pullback of a proper map along an embedding is proper** (one-sided range inclusion).
+If `f ∘ i = j ∘ f'`, where `i` and `j` are embeddings and `f ⁻¹' Set.range j ⊆ Set.range i`, then
+`f'` is proper. -/
+theorem IsProperMap.of_isEmbedding_of_preimage_subset_range {X' Y' : Type*} [TopologicalSpace X']
+    [TopologicalSpace Y'] {f' : X' → Y'} {i : X' → X} {j : Y' → Y} (hf : IsProperMap f)
+    (hi : IsEmbedding i) (hj : IsEmbedding j) (hcomm : f ∘ i = j ∘ f')
+    (hrange : f ⁻¹' Set.range j ⊆ Set.range i) : IsProperMap f' :=
+  hf.of_isEmbedding_of_range_eq hi hj hcomm
+    (Set.Subset.antisymm (fun _ ⟨x', hx'⟩ ↦ ⟨f' x', by rw [← hx']; exact (congrFun hcomm x').symm⟩)
+      hrange)
 
 /-- **Ultrafilter convergence for a proper map evaluated at a variable first coordinate.** If
 `h : T × Y → W` is proper with `T` Hausdorff, `t ↦ h (t, y)` is independent of `t` for `y ∈ A`,

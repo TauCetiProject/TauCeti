@@ -249,12 +249,6 @@ theorem quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv
     ((innerPair.obj T).acyclic_twistedChainComplex_of_homotopyEquiv
       ((outerPair.obj T).subspaceSystem L) e he)
 
-/-- Homology isomorphism induced by `quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv`. -/
-theorem isIso_twistedHomologyTotalToOuter_of_homotopyEquiv
-    (e : ContinuousMap.HomotopyEquiv T.thd T.snd) (he : e.toFun = T.innerMap.hom) (k : ℕ) :
-    IsIso (T.twistedHomologyTotalToOuter L k) :=
-  have := T.quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv L e he; inferInstance
-
 section DR
 
 variable (r : C(T.snd, T.thd)) (hr : Function.LeftInverse r T.innerMap.hom)
@@ -268,12 +262,6 @@ theorem quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction :
     (.ofDeformationRetraction T.innerMap.hom r hr hH)
     (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun T.innerMap.hom r hr hH)
 
-/-- Homology isomorphism for `quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction`. -/
-theorem isIso_twistedHomologyTotalToOuter_of_deformationRetraction (k : ℕ) :
-    IsIso (T.twistedHomologyTotalToOuter L k) :=
-  have := T.quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction L r hr hH
-  inferInstance
-
 end DR
 
 end General
@@ -282,25 +270,6 @@ section Subsets
 
 variable {X : TopCat.{v}} {A B : Set X} (hBA : B ⊆ A)
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-section DeformationRetraction
-
-variable (r : C(A, B)) (hr : ∀ b, r (ContinuousMap.inclusion hBA b) = b)
-  (hH : ((ContinuousMap.inclusion hBA).comp r).Homotopic (ContinuousMap.id A))
-include r hr hH
-
-/-- Under a deformation retraction of `A` onto `B`, `C(X, B; L) ⟶ C(X, A; L)` is a quasi-iso. -/
-theorem quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction :
-    QuasiIso ((ofSubset hBA).twistedChainComplexTotalToOuter L) :=
-  (ofSubset hBA).quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction L r hr hH
-
-/-- Homology isomorphism for `ofSubset` under a deformation retraction of `A` onto `B`. -/
-theorem isIso_twistedHomologyTotalToOuter_ofSubset_of_deformationRetraction (k : ℕ) :
-    IsIso ((ofSubset hBA).twistedHomologyTotalToOuter L k) :=
-  have := quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction hBA L r hr hH
-  inferInstance
-
-end DeformationRetraction
 
 section WeakDeformationRetraction
 
@@ -316,12 +285,6 @@ theorem quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_weakDeformationRetr
     (.ofWeakDeformationRetraction hBA H hH hHA h₀ h₁ hHB)
     (ContinuousMap.ext fun b ↦ Subtype.ext
       (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply hBA H hH hHA h₀ h₁ hHB b))
-
-/-- Homology isomorphism for `ofSubset` under a weak deformation retraction of `A` onto `B`. -/
-theorem isIso_twistedHomologyTotalToOuter_ofSubset_of_weakDeformationRetraction (k : ℕ) :
-    IsIso ((ofSubset hBA).twistedHomologyTotalToOuter L k) :=
-  have := quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_weakDeformationRetraction
-    hBA L H hH hHA h₀ h₁ hHB; inferInstance
 
 end WeakDeformationRetraction
 

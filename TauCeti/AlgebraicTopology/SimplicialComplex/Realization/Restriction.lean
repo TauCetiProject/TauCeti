@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Compact
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+import Mathlib.Data.Fintype.Powerset
 
 /-!
 # Vertex restrictions and compact factorization
@@ -125,7 +126,7 @@ theorem mem_range_restrictInclusion_realizationMap (x : Realization K) :
 ambient complex has infinitely many faces. -/
 theorem isCompact_setOf_support_subset (hs : s.Finite) :
     IsCompact {x : Realization K | (x.val.support : Set ι) ⊆ s} := by
-  let : Finite s := hs.to_subtype
+  let : Fintype s := hs.fintype
   convert isCompact_range (K.restrictInclusion s).realizationMap.continuous using 1
   ext x
   exact (mem_range_restrictInclusion_realizationMap K s x).symm

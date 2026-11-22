@@ -63,7 +63,8 @@ Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a m
 degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
 (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
-(`HomologicalComplex.quasiIso_of_acyclic`).
+(`HomologicalComplex.quasiIso_of_acyclic`), and homology maps preserve commutative squares of
+complexes (`HomologicalComplex.homologyMap_commSq`).
 -/
 
 public section
@@ -471,6 +472,15 @@ lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
   simp
 
 end HomologyTransport
+
+/-- `HomologicalComplex.homologyMap` preserves commutative squares of complexes. -/
+@[reassoc]
+lemma homologyMap_commSq {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {ι : Type*} {c : ComplexShape ι} {C₁ C₂ C₃ C₄ : HomologicalComplex C c}
+    {f : C₁ ⟶ C₂} {g : C₁ ⟶ C₃} {h : C₂ ⟶ C₄} {i : C₃ ⟶ C₄} (hsq : CommSq f g h i) (j : ι)
+    [C₁.HasHomology j] [C₂.HasHomology j] [C₃.HasHomology j] [C₄.HasHomology j] :
+    homologyMap f j ≫ homologyMap h j = homologyMap g j ≫ homologyMap i j := by
+  rw [← homologyMap_comp, ← homologyMap_comp, hsq.w]
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
 

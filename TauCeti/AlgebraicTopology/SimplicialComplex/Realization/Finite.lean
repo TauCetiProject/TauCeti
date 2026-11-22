@@ -18,7 +18,9 @@ For a complex with finitely many faces, the weak topology of its realization agr
 its barycentric-coordinate topology. In particular, the realization is compact and its
 coordinate map into `ι → ℝ` is a closed embedding, so the realization is homeomorphic to its
 coordinate image. This permits finite polyhedra, including finite local models of triangulated
-manifolds, to be treated as ordinary coordinate subspaces.
+manifolds, to be treated as ordinary coordinate subspaces. In addition, complements `|K| \ |P|` of
+precomplex polyhedra in finite-face complexes are `σ`-compact
+(`AbstractSimplicialComplex.sigmaCompactSpace_compl_setOf_support_mem`).
 
 ## References
 
@@ -92,27 +94,13 @@ theorem secondCountableTopology_realization_of_finite_faces (hfin : K.faces.Fini
       exact (Finsupp.notMem_support_iff.mp hx).trans (Finsupp.notMem_support_iff.mp hy).symm
   exact (hcont.isClosedEmbedding hinj).isEmbedding.secondCountableTopology
 
-/-- For a complex with finitely many faces, the complement `|K| \ |P|` of any precomplex
-polyhedron is locally compact. -/
-theorem locallyCompactSpace_compl_setOf_support_mem
-    (P : PreAbstractSimplicialComplex ι) (hfin : K.faces.Finite) :
-    LocallyCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
-  have := K.compactSpace_realization_of_finite_faces hfin
-  inferInstance
-
 /-- For a complex with finitely many faces, `|K| \ |P|` is `σ`-compact. -/
 theorem sigmaCompactSpace_compl_setOf_support_mem
     (P : PreAbstractSimplicialComplex ι) (hfin : K.faces.Finite) :
     SigmaCompactSpace ({y : Realization K | y.val.support ∈ P}ᶜ : Set (Realization K)) :=
-  have := K.locallyCompactSpace_compl_setOf_support_mem P hfin
+  have := K.compactSpace_realization_of_finite_faces hfin
   have := K.secondCountableTopology_realization_of_finite_faces hfin
   inferInstance
-
-/-- The weak realization of a complex on a finite vertex type is compact. -/
-instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex ι) :
-    CompactSpace (Realization K) := by
-  let := Fintype.ofFinite ι
-  exact K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
 
 /-- The weak realization of a complex with finitely many faces is compact. -/
 instance instCompactSpaceRealizationOfFiniteFace (K : AbstractSimplicialComplex ι)

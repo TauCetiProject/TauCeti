@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Data.Fintype.Powerset
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -105,6 +106,7 @@ theorem compactSpace_realization_iff_finite (K : AbstractSimplicialComplex ι) :
       simpa only [support_vertex, Finset.singleton_subset_iff] using this
     exact Set.finite_univ_iff.mp (V.finite_toSet.subset fun v _ ↦ hvertices v)
   · intro h
+    let := Fintype.ofFinite ι
     infer_instance
 
 end AbstractSimplicialComplex

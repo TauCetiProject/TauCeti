@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Acyclic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restriction
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.Data.Set.Function
 
 /-!
@@ -56,18 +57,6 @@ open CategoryTheory Limits Opposite Topology
 
 namespace TauCeti.LocalCoefficientSystem
 
-section
-universe u' v'
-private lemma homologyMap_commSq {R : Type u'} [Ring R]
-    {C₁ C₂ C₃ C₄ : ChainComplex (ModuleCat.{v'} R) ℕ}
-    {f : C₁ ⟶ C₂} {g : C₁ ⟶ C₃} {h : C₂ ⟶ C₄} {i : C₃ ⟶ C₄}
-    (hsq : CommSq f g h i) (j : ℕ) :
-    HomologicalComplex.homologyMap f j ≫ HomologicalComplex.homologyMap h j =
-      HomologicalComplex.homologyMap g j ≫ HomologicalComplex.homologyMap i j := by
-  simpa only [HomologicalComplex.homologyFunctor_map] using
-    ((HomologicalComplex.homologyFunctor _ _ j).map_commSq hsq).w
-end
-
 universe u v w
 
 variable {R : Type u} [Ring R]
@@ -89,6 +78,8 @@ private def relativeOpenRestrictionCone :
       (Subtype.coe_image_subset Aᶜ (K n)))).twistedChainComplexTotalToOuter L)
     fun n ↦ by
       simp only [Functor.const_obj_map]
+      -- `openRestrictionTower.obj` and `TopTriple.totalPair/outerPair` match `TopPair.ofSubset`
+      -- only definitionally across the triple-quotient composition.
       erw [Category.id_comp, complChainComplexTower_map_succ,
         TopTriple.twistedChainComplexTotalToOuter_ofSubset_comp]; rfl
 
@@ -126,8 +117,10 @@ quotient `C(X, A; L) ⟶ C(X, X \ Kₙ; L)`. -/
         (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K :=
   (openRestrictionTower (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K).limComplex_hom_ext
     fun n ↦ by
+      -- `openRestrictionTower.obj` and `TopTriple.totalPair/outerPair` match `TopPair.ofSubset`
+      -- only definitionally across the tower projection.
       erw [Category.assoc, relativeToOpenRestrictionLim_comp_π,
-        TopTriple.twistedChainComplexπ_comp_totalToOuter_ofSubset, Category.assoc,
+        TopTriple.twistedChainComplexπ_comp_totalToOuter, Category.assoc,
         locallyFiniteChainComplexToComplLim_comp_π,
         TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative]; rfl
 
@@ -166,10 +159,12 @@ private lemma comp_relativeToOpenRestrictionLim_eq
     fun n ↦ (TopPair.ofSubset A₁).twistedChainComplex_hom_ext L₁ ?_
   simp only [Category.assoc, relativeToOpenRestrictionLim_comp_π,
     ComplexTower.limComplexMap_comp_π]
+  -- `openRestrictionTower.obj` and `TopTriple.totalPair/outerPair` match `TopPair.ofSubset`
+  -- only definitionally across `p` and `q.app (op n)`.
   erw [← Category.assoc _ p, hp, Category.assoc,
-    TopTriple.twistedChainComplexπ_comp_totalToOuter_ofSubset,
+    TopTriple.twistedChainComplexπ_comp_totalToOuter,
     relativeToOpenRestrictionLim_comp_π_assoc, ← Category.assoc _ _ (q.app (op n)),
-    TopTriple.twistedChainComplexπ_comp_totalToOuter_ofSubset, hq n]; rfl
+    TopTriple.twistedChainComplexπ_comp_totalToOuter, hq n]; rfl
 
 /-- Enlarging the compact exhaustion `K` commutes with `relativeToOpenRestrictionLim`. -/
 @[reassoc (attr := simp)] lemma relativeToOpenRestrictionLim_comp_limComplexMap
@@ -247,12 +242,25 @@ theorem twistedHomologyToBorelMooreHomologyComplOfClosedStageImages_comp_toRelat
             ((pullback (X := TopCat.of (Aᶜ : Set X)) (ContinuousMap.subtypeVal Aᶜ)).obj L)
             (K.isCompact n).compl_range_ofSubset_compl_map) j ≫
           HomologicalComplex.homologyMap
-            ((openRestrictionExcisionTowerMap (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K
-              hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective).app (op n)) j =
+            (eqToHom (by rw [TopPair.ofSubsetMap_fst]; rfl) ≫
+              TopPair.twistedChainComplexMap (TopPair.ofSubsetMap
+                (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+                ((Set.surjOn_image (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+                  (K n)).mapsTo_compl hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective))
+                L) j =
       (TopTriple.ofSubset (Set.subset_compl_comm.2
         (Subtype.coe_image_subset Aᶜ (K n)))).twistedHomologyTotalToOuter L j := by
-  erw [← HomologicalComplex.homologyMap_comp,
-    ← locallyFiniteChainComplexOpenRestrictionExcision_comp_π,
+  -- `TopTriple.totalPair/outerPair` on `ofSubset` and `openRestrictionTower.obj` match
+  -- `TopPair.ofSubset` only definitionally across the homology composition, and
+  -- `complChainComplexTowerPairMap_app` unfolds the `openRestrictionExcisionTowerMap` stage.
+  erw [← complChainComplexTowerPairMap_app (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L
+      K.subset_succ (fun m ↦ Set.image_mono (K.subset_succ m))
+      (fun m ↦ (Set.surjOn_image (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+        (K m)).mapsTo_compl hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective) n,
+    ← HomologicalComplex.homologyMap_comp,
+    ← locallyFiniteChainComplexOpenRestrictionExcision_comp_π
+      (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K
+      hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective n,
     HomologicalComplex.homologyMap_comp, ← Category.assoc,
     twistedHomologyToBorelMooreHomologyComplOfClosedStageImages_comp_homologyMap_excision hA,
     ← HomologicalComplex.homologyMap_comp, relativeToOpenRestrictionLim_comp_π]; rfl
@@ -370,10 +378,59 @@ theorem twistedHomologyToBorelMooreHomologyComplOfExhaustion_eq
       (ComplexTower.limComplexMap (openRestrictionTowerCoefficientMap
         (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) K η)) :=
     ⟨twistedChainComplexCoefficientMap_comp_relativeToOpenRestrictionLim A K η⟩
-  rw [Category.assoc, homologyMap_commSq hsq1 j, ← Category.assoc,
+  rw [Category.assoc, HomologicalComplex.homologyMap_commSq hsq1 j, ← Category.assoc,
     twistedHomologyToBorelMooreHomologyComplOfExhaustion_comp_homologyMap_openRestrictionExcision
       hA,
-    ← homologyMap_commSq hsq2 j]
+    ← HomologicalComplex.homologyMap_commSq hsq2 j]
+
+/-- Inverse-pullback orientation of closed-subset enlargement compatibility when `K_B` maps into
+`K_A`. -/
+private lemma
+  twistedHomologyToBorelMooreHomologyComplOfExhaustion_comp_openRestriction_comp_pullbackCompIso_inv
+    {B : Set X} (hB : IsClosed B) (hAB : A ⊆ B)
+    (K_A : CompactExhaustion (Aᶜ : Set X)) (K_B : CompactExhaustion (Bᶜ : Set X))
+    (hBA : ∀ n, ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB) '' K_B n ⊆ K_A n)
+    (j : ℕ) :
+    twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K_A j ≫
+        borelMooreHomologyOpenRestrictionOfExhaustion
+          (TopCat.ofHom (ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB)))
+          (IsOpenEmbedding.of_comp (ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB))
+            hA.isOpen_compl.isOpenEmbedding_subtypeVal hB.isOpen_compl.isOpenEmbedding_subtypeVal)
+          ((pullback (X := TopCat.of (Aᶜ : Set X))
+            (ContinuousMap.subtypeVal Aᶜ)).obj L) K_B j ≫
+        borelMooreHomologyCoefficientMap
+          ((pullbackCompIso (X := TopCat.of (Bᶜ : Set X)) (Y := TopCat.of (Aᶜ : Set X))
+            (ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB))
+            (ContinuousMap.subtypeVal Aᶜ)).inv.app L) j =
+      (TopTriple.ofSubset hAB).twistedHomologyTotalToOuter L j ≫
+        twistedHomologyToBorelMooreHomologyComplOfExhaustion hB L K_B j := by
+  let iA : TopCat.of (Aᶜ : Set X) ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)
+  let ι : TopCat.of (Bᶜ : Set X) ⟶ TopCat.of (Aᶜ : Set X) :=
+    TopCat.ofHom (ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB))
+  have hiA := hA.isOpen_compl.isOpenEmbedding_subtypeVal
+  have hι : IsOpenEmbedding ι.hom :=
+    IsOpenEmbedding.of_comp ι.hom hiA hB.isOpen_compl.isOpenEmbedding_subtypeVal
+  have hXA (n : ℕ) : (ι ≫ iA) '' K_B n ⊆ iA '' K_A n := by
+    rw [TopCat.coe_comp, Set.image_comp]; exact Set.image_mono (hBA n)
+  let q := complChainComplexTowerMap L (fun n ↦ Set.image_mono (K_B.subset_succ n))
+    (fun n ↦ Set.image_mono (K_A.subset_succ n)) hXA
+  -- Match the triple-quotient cone with `q` on the relative-limit complexes.
+  have hsqRel : CommSq ((TopTriple.ofSubset hAB).twistedChainComplexTotalToOuter L)
+      (relativeToOpenRestrictionLim A L K_A) (relativeToOpenRestrictionLim B L K_B)
+      (ComplexTower.limComplexMap q) :=
+    ⟨comp_relativeToOpenRestrictionLim_eq (𝟙 _) _ _
+      (((TopTriple.ofSubset hAB).twistedChainComplexπ_comp_totalToOuter L).trans
+        (Category.id_comp _).symm)
+      fun n ↦ (twistedChainComplexπ_comp_complChainComplexTowerMap_app L _ _ hXA n).trans
+        (Category.id_comp _).symm⟩
+  -- Cancel the `B`-excision isomorphism via the nested open-restriction excision compatibility.
+  refine eq_comp_twistedHomologyToBorelMooreHomologyComplOfExhaustion hB L K_B ?_
+  have := isIso_homologyMap_locallyFiniteChainComplexOpenRestrictionExcision iA L K_A hiA j
+  -- `ι ≫ iA` equals `ContinuousMap.subtypeVal Bᶜ` only definitionally across the excision map.
+  erw [Category.assoc, Category.assoc,
+    borelMooreHomologyOpenRestrictionOfExhaustion_comp_coefficientMap_comp_excision_of_subset
+      ι iA hι hiA L K_B K_A hBA j,
+    IsIso.inv_hom_id_assoc, HomologicalComplex.homologyMap_commSq hsqRel j]; rfl
 
 /-- **Compatibility with closed-subset enlargement:** for closed `A ⊆ B`, the comparison morphism
 intertwines the triple quotient with open restriction along `Bᶜ ↪ Aᶜ`. -/
@@ -394,46 +451,23 @@ theorem twistedHomologyTotalToOuter_comp_twistedHomologyToBorelMooreHomologyComp
             hA.isOpen_compl.isOpenEmbedding_subtypeVal hB.isOpen_compl.isOpenEmbedding_subtypeVal)
           ((pullback (X := TopCat.of (Aᶜ : Set X))
             (ContinuousMap.subtypeVal Aᶜ)).obj L) K_B j := by
-  let iA : TopCat.of (Aᶜ : Set X) ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)
+  -- Enlarge `K` to `K'` containing the image of `K_B`, then invert the `pullbackCompIso` factor.
   let ι : TopCat.of (Bᶜ : Set X) ⟶ TopCat.of (Aᶜ : Set X) :=
     TopCat.ofHom (ContinuousMap.inclusion (Set.compl_subset_compl.2 hAB))
-  have hiA := hA.isOpen_compl.isOpenEmbedding_subtypeVal
   have hι : IsOpenEmbedding ι.hom :=
-    IsOpenEmbedding.of_comp ι.hom hiA hB.isOpen_compl.isOpenEmbedding_subtypeVal
+    IsOpenEmbedding.of_comp ι.hom hA.isOpen_compl.isOpenEmbedding_subtypeVal
+      hB.isOpen_compl.isOpenEmbedding_subtypeVal
   let K' := K.supImage ι.hom.continuous hι.isOpenMap K_B
   rw [twistedHomologyToBorelMooreHomologyComplOfExhaustion_eq hA L K K' j]
-  have hBA := K.image_subset_supImage ι.hom.continuous hι.isOpenMap K_B
-  have hXA (n : ℕ) : (ι ≫ iA) '' K_B n ⊆ iA '' K' n := by
-    rw [TopCat.coe_comp, Set.image_comp]; exact Set.image_mono (hBA n)
-  let q := complChainComplexTowerMap L (fun n ↦ Set.image_mono (K_B.subset_succ n))
-    (fun n ↦ Set.image_mono (K'.subset_succ n)) hXA
-  have hsqRel : CommSq ((TopTriple.ofSubset hAB).twistedChainComplexTotalToOuter L)
-      (relativeToOpenRestrictionLim A L K') (relativeToOpenRestrictionLim B L K_B)
-      (ComplexTower.limComplexMap q) :=
-    ⟨comp_relativeToOpenRestrictionLim_eq (𝟙 _) _ _
-      (((TopTriple.ofSubset hAB).twistedChainComplexπ_comp_totalToOuter L).trans
-        (Category.id_comp _).symm)
-      fun n ↦ (twistedChainComplexπ_comp_complChainComplexTowerMap_app L _ _ hXA n).trans
-        (Category.id_comp _).symm⟩
-  have hmain : twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K' j ≫
-        borelMooreHomologyOpenRestrictionOfExhaustion ι hι ((pullback iA.hom).obj L) K_B j ≫
-          borelMooreHomologyCoefficientMap ((pullbackCompIso ι.hom iA.hom).inv.app L) j =
-      (TopTriple.ofSubset hAB).twistedHomologyTotalToOuter L j ≫
-        twistedHomologyToBorelMooreHomologyComplOfExhaustion hB L K_B j := by
-    refine eq_comp_twistedHomologyToBorelMooreHomologyComplOfExhaustion hB L K_B ?_
-    have := isIso_homologyMap_locallyFiniteChainComplexOpenRestrictionExcision
-      (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K'
-      hA.isOpen_compl.isOpenEmbedding_subtypeVal j
-    erw [Category.assoc, Category.assoc,
-      borelMooreHomologyOpenRestrictionOfExhaustion_comp_coefficientMap_comp_excision_of_subset
-        ι iA hι hiA L K_B K' hBA j,
-      IsIso.inv_hom_id_assoc, homologyMap_commSq hsqRel j]; rfl
-  have h := congrArg (· ≫ borelMooreHomologyCoefficientMap
-    ((pullbackCompIso ι.hom iA.hom).hom.app L) j) hmain
-  dsimp only at h
-  simp only [Category.assoc, ← borelMooreHomologyCoefficientMap_comp,
-    Iso.inv_hom_id_app, borelMooreHomologyCoefficientMap_id] at h
-  exact h.symm
+  -- `TopTriple.outerPair.obj (TopTriple.ofSubset hAB)` matches `TopPair.ofSubset B` definitionally.
+  erw [← Category.assoc]
+  refine eq_comp_borelMooreHomologyCoefficientMap_pullbackCompIso_hom ι
+    (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L ?_
+  -- `TopTriple.totalPair.obj (TopTriple.ofSubset hAB)` matches `TopPair.ofSubset A` definitionally.
+  erw [Category.assoc]
+  exact
+  twistedHomologyToBorelMooreHomologyComplOfExhaustion_comp_openRestriction_comp_pullbackCompIso_inv
+    hA L hB hAB K' K_B (K.image_subset_supImage ι.hom.continuous hι.isOpenMap K_B) j
 
 /-- **Naturality under maps of pairs with proper restriction to complements.** -/
 @[reassoc] theorem twistedHomologyMap_comp_twistedHomologyToBorelMooreHomologyComplOfExhaustion
@@ -460,8 +494,9 @@ theorem twistedHomologyTotalToOuter_comp_twistedHomologyToBorelMooreHomologyComp
   let iA : TopCat.of (Aᶜ : Set X) ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)
   let iA' : TopCat.of (A'ᶜ : Set X') ⟶ X' := TopCat.ofHom (ContinuousMap.subtypeVal A'ᶜ)
   let f : X' ⟶ X := TopPair.Hom.fst φ; let K'' := K'.supPreimage hfCompl K
-  erw [twistedHomologyToBorelMooreHomologyComplOfExhaustion_eq
-    hA' ((pullback f.hom).obj L) K' K'' j]
+  dsimp only [f]
+  rw [twistedHomologyToBorelMooreHomologyComplOfExhaustion_eq
+    hA' ((pullback (TopPair.Hom.fst φ).hom).obj L) K' K'' j]
   have hcart : f ⁻¹' Set.range iA ⊆ Set.range iA' := by
     rintro x ⟨y, hy⟩
     have hxA' : x ∉ A' := fun hx' ↦ y.property <| by
@@ -485,12 +520,13 @@ theorem twistedHomologyTotalToOuter_comp_twistedHomologyToBorelMooreHomologyComp
   have := isIso_homologyMap_locallyFiniteChainComplexOpenRestrictionExcision
     (TopCat.ofHom (ContinuousMap.subtypeVal A'ᶜ)) ((pullback f.hom).obj L) K''
     hA'.isOpen_compl.isOpenEmbedding_subtypeVal j
+  -- `iA`, `iA'`, `f` are local abbreviations for the subtype inclusions and `TopPair.Hom.fst φ`.
   erw [Category.assoc, Category.assoc,
     homologyMap_locallyFiniteChainComplexOpenRestrictionExcision_naturality_square
       iA hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective
       iA' hA'.isOpen_compl.isOpenEmbedding_subtypeVal.injective f fCompl hfCompl hw L K K''
       hf_maps j,
-    IsIso.inv_hom_id_assoc, homologyMap_commSq hsqRel j]; rfl
+    IsIso.inv_hom_id_assoc, HomologicalComplex.homologyMap_commSq hsqRel j]; rfl
 
 /-- **Compatibility with open restriction** on absolute twisted homology of `X`. -/
 @[reassoc (attr := simp)]
@@ -554,8 +590,12 @@ theorem twistedHomologyToBorelMooreHomologyCompl_comp_toRelative_comp_excision (
             ((pullback (X := TopCat.of (Aᶜ : Set X)) (ContinuousMap.subtypeVal Aᶜ)).obj L)
             (K.isCompact n).compl_range_ofSubset_compl_map) j ≫
           HomologicalComplex.homologyMap
-            ((openRestrictionExcisionTowerMap (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L K
-              hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective).app (op n)) j =
+            (eqToHom (by rw [TopPair.ofSubsetMap_fst]; rfl) ≫
+              TopPair.twistedChainComplexMap (TopPair.ofSubsetMap
+                (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+                ((Set.surjOn_image (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+                  (K n)).mapsTo_compl hA.isOpen_compl.isOpenEmbedding_subtypeVal.injective))
+                L) j =
       (TopTriple.ofSubset (Set.subset_compl_comm.2
         (Subtype.coe_image_subset Aᶜ (K n)))).twistedHomologyTotalToOuter L j := by
   rw [←
@@ -739,6 +779,8 @@ private lemma totalToOuter_comp_eq_of_eq {A : Set X}
   rw [← hw]
   have hmaps : f = TopPair.twistedChainComplexMap (TopPair.excisionMap Aᶜ B) L := by
     refine TopPair.twistedChainComplex_hom_ext _ _ ?_
+    -- `TopPair.interPair Aᶜ B` agrees with `TopPair.ofSubset (Subtype.val ⁻¹' B)` only
+    -- definitionally.
     erw [hf, TopPair.twistedChainComplexπ_comp_twistedChainComplexMap]; rfl
   rw [hmaps]; rfl
 
@@ -757,6 +799,8 @@ theorem twistedHomologyTotalToOuter_borelMooreHomologyComplEquiv (j n : ℕ)
           (IsCompact.compl_range_ofSubset_compl_map (CompactExhaustion.isCompact
             (CompactExhaustion.subtype Aᶜ K hK (fun n ↦ Set.subset_compl_comm.1 (hKA n)) hsub
               fun x hx ↦ Set.mem_iUnion.2 (hcover x hx)) n))) j).hom x) := by
+  -- Evaluate the stage-`n` comparison identity on `y := borelMooreHomologyComplEquiv ... x`,
+  -- rewrite `f y = x` via `IsIso.inv_hom_id`, and transport `Kₙ = Subtype.val '' K'_n` by excision.
   have := isIso_comparison_of_closedExhaustion L hK hKc hKA hsub hcover hzero j
   let f := twistedHomologyToBorelMooreHomologyComplOfClosedStageImages
     (isClosed_of_closedExhaustion hKA hsub hcover) L
@@ -770,20 +814,20 @@ theorem twistedHomologyTotalToOuter_borelMooreHomologyComplEquiv (j n : ℕ)
       (subtypeExhaustionOfClosed hK hKA hsub hcover)
       (fun m ↦ (image_subtypeVal_subtypeExhaustionOfClosed hK hKA hsub hcover m).symm ▸ hKc m)
       j n)
-  have hrel' :
-      (HomologicalComplex.homologyMap
-        ((openRestrictionExcisionTowerMap (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L
-          (subtypeExhaustionOfClosed hK hKA hsub hcover)
-          (isClosed_of_closedExhaustion hKA hsub
-            hcover).isOpen_compl.isOpenEmbedding_subtypeVal.injective).app (op n)) j).hom
-        ((HomologicalComplex.homologyMap (TopPair.locallyFiniteChainComplexToRelative
-          (TopPair.ofSubset (X := TopCat.of ↥Aᶜ) (Subtype.val ⁻¹' K n)ᶜ) _
-          (IsCompact.compl_range_ofSubset_compl_map (CompactExhaustion.isCompact
-            (CompactExhaustion.subtype Aᶜ K hK (fun n ↦ Set.subset_compl_comm.1 (hKA n)) hsub
-              fun x hx ↦ Set.mem_iUnion.2 (hcover x hx)) n))) j).hom x) =
-      ((TopTriple.ofSubset (Set.subset_compl_comm.2
-        (Subtype.coe_image_subset Aᶜ _))).twistedHomologyTotalToOuter L j).hom y := by
-    erw [← hfy]; exact hrel
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hrel
+  -- `openRestrictionTower.obj (op n)` matches `(TopPair.ofSubset _).twistedChainComplex _` only
+  -- definitionally, so `erw` is needed for the second `ModuleCat.hom_comp`.
+  erw [ModuleCat.hom_comp, LinearMap.comp_apply] at hrel
+  dsimp only [f] at hfy
+  rw [hfy] at hrel
+  -- Fold `complChainComplexTowerPairMap_app` so `hrel` matches `openRestrictionExcisionTowerMap`.
+  erw [← complChainComplexTowerPairMap_app (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ)) L
+    (subtypeExhaustionOfClosed hK hKA hsub hcover).subset_succ
+    (fun m ↦ Set.image_mono ((subtypeExhaustionOfClosed hK hKA hsub hcover).subset_succ m))
+    (fun m ↦ (Set.surjOn_image (TopCat.ofHom (ContinuousMap.subtypeVal Aᶜ))
+      (subtypeExhaustionOfClosed hK hKA hsub hcover m)).mapsTo_compl
+      (isClosed_of_closedExhaustion hKA hsub
+        hcover).isOpen_compl.isOpenEmbedding_subtypeVal.injective) n] at hrel
   exact totalToOuter_comp_eq_of_eq L j
     (Set.subset_compl_comm.2 (Subtype.coe_image_subset Aᶜ _)) (hKA n)
     (congrArg compl (image_subtypeVal_subtypeExhaustionOfClosed hK hKA hsub hcover n))
@@ -791,7 +835,7 @@ theorem twistedHomologyTotalToOuter_borelMooreHomologyComplEquiv (j n : ℕ)
       (subtypeExhaustionOfClosed hK hKA hsub hcover)
       (isClosed_of_closedExhaustion hKA hsub
         hcover).isOpen_compl.isOpenEmbedding_subtypeVal.injective).app (op n))
-    (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app _ L _ _ _ n) y _ hrel'
+    (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app _ L _ _ _ n) y _ hrel
 
 end ClosedExhaustion
 
@@ -825,7 +869,7 @@ theorem quasiIso_relativeToOpenRestrictionLim_complOfCofinalNhdsSet :
     (quasiIso_totalToOuter_complOfCofinalNhdsSet hA hU_open hAU hU_cofinal L hU_qi)
 
 /-- **Compact-pair comparison is an isomorphism** under cofinal quasi-isomorphic neighbourhoods. -/
-theorem isIso_twistedHomologyToBorelMooreHomologyComplOfExhaustion_of_cofinal_nhds_set
+theorem isIso_twistedHomologyToBorelMooreHomologyComplOfExhaustion_of_cofinalNhdsSet
     (K : CompactExhaustion (Aᶜ : Set X)) (j : ℕ) :
     IsIso (twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j) := by
   let K₀ := CompactExhaustion.complOfCofinalNhdsSet hA hU_open hAU hU_cofinal
@@ -840,7 +884,7 @@ def twistedHomologyIsoBorelMooreHomologyCompl (j : ℕ) :
       borelMooreHomology ((pullback (X := TopCat.of (Aᶜ : Set X))
         (ContinuousMap.subtypeVal Aᶜ)).obj L) j :=
   let K₀ := CompactExhaustion.complOfCofinalNhdsSet hA hU_open hAU hU_cofinal
-  have := isIso_twistedHomologyToBorelMooreHomologyComplOfExhaustion_of_cofinal_nhds_set
+  have := isIso_twistedHomologyToBorelMooreHomologyComplOfExhaustion_of_cofinalNhdsSet
     hA hU_open hAU hU_cofinal L hU_qi K₀ j
   asIso (twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K₀ j)
 
@@ -875,8 +919,8 @@ def twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction (j : ℕ) :
         (ContinuousMap.subtypeVal Aᶜ)).obj L) j :=
   twistedHomologyIsoBorelMooreHomologyCompl hA hU_open hAU hU_cofinal L
     (fun n ↦ let ⟨r, hr, hH⟩ := hU_ret n
-      TopTriple.quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction
-        (hAU n) L r hr hH) j
+      (TopTriple.ofSubset (hAU n)).quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction
+        L r hr hH) j
 
 /-- The forward map of `twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction` is
 `twistedHomologyToBorelMooreHomologyCompl`. -/

@@ -353,16 +353,6 @@ theorem isIso_twistedHomologyTotalToOuter_of_isZero (k : ℕ)
     | succ m => exact (T.twistedHomology_exact_outer L (m + 1) m).epi_f ((hk' m rfl).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
-/-- For nested subsets `B ⊆ A` of `X`, the projection `C(X;L) ⟶ C(X,B;L)` composed with the
-triple quotient `C(X,B;L) ⟶ C(X,A;L)` is the projection `C(X;L) ⟶ C(X,A;L)`. -/
-@[simp, reassoc]
-lemma twistedChainComplexπ_comp_totalToOuter_ofSubset {X : TopCat.{v}} {A B : Set X}
-    (hBA : B ⊆ A) (L : LocalCoefficientSystem.{u, v, max v w} R X) :
-    (TopPair.ofSubset B).twistedChainComplexπ L ≫
-        (ofSubset hBA).twistedChainComplexTotalToOuter L =
-      (TopPair.ofSubset A).twistedChainComplexπ L :=
-  (ofSubset hBA).twistedChainComplexπ_comp_totalToOuter L
-
 /-- For nested subsets `C ⊆ B ⊆ A` of `X`, the quotients `C(X,C;L) ⟶ C(X,B;L) ⟶ C(X,A;L)` compose
 to the quotient `C(X,C;L) ⟶ C(X,A;L)`. -/
 @[simp, reassoc]
