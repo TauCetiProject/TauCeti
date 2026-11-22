@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.InnerProductSpace.Continuous
 
 /-!
@@ -40,6 +41,8 @@ integration-by-parts arguments:
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
+* `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
+  `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
 -/
 
 public section
@@ -205,6 +208,22 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+/-- The heterogeneous product of the `Lp` classes of `f` and `g` is the class of the pointwise
+product `f • g`. -/
+theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → E} (hf : MemLp f p μ)
+    (hg : MemLp g q μ) : (hf.toLp f • hg.toLp g : Lp E r μ) = (hf.smul hg).toLp (f • g) :=
+  MemLp.toLp_congr _ _ <| by
+    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x h₁ h₂
+    rw [Pi.smul_apply', h₁, h₂, Pi.smul_apply']
+
+omit [p.HolderTriple q r] in
+/-- The constant one of `L^∞` acts trivially on every `L^q` function. -/
+@[simp]
+protected theorem one_smul (g : Lp E q μ) : ((1 : Lp 𝕜 ∞ μ) • g : Lp E q μ) = g := by
+  conv_lhs => rw [one_def, ← Lp.toLp_coeFn g (Lp.memLp g), MemLp.toLp_smul_toLp]
+  conv_rhs => rw [← Lp.toLp_coeFn g (Lp.memLp g)]
+  exact MemLp.toLp_congr _ _ (.of_forall fun x ↦ by simp)
 
 end MeasureTheory.Lp
 

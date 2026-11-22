@@ -87,7 +87,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
-  reparametrizations.
+  reparametrizations. `MDifferentiableAt.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero` is the
+  velocity of a family `f : F → M → N` along a curve of parameters at a fixed point.
 * `Filter.EventuallyEq.curveVelocity_eq`: the velocity of a curve depends only on its germ.
 * `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
@@ -318,6 +319,29 @@ theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
   simpa only [curveVelocityWithin_univ, curveVelocity_eq_deriv, hg.deriv] using
     curveVelocityWithin_map hf uniqueDiffWithinAt_univ
       hg.differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
+
+/-- **The velocity of a family along a curve of parameters.** If `g` is a curve through a normed
+space of parameters with velocity `w`, and the uncurried family `(q, y) ↦ f q y` is differentiable
+at `(g t, y)`, then the velocity of `s ↦ f (g s) y` is the differential of the uncurried family
+applied to `(w, 0)`. -/
+theorem curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {f : F → M → N} {g : 𝕜 → F} {w : F} {y : M}
+    (hf : MDifferentiableAt (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y))
+    (hg : HasDerivAt g w t) :
+    curveVelocity I' (fun s ↦ f (g s) y) t =
+      mfderiv (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y) (w, 0) := by
+  have hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (𝓘(𝕜, F).prod I) (fun s ↦ (g s, y)) t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((w, (0 : E)) : TangentSpace (𝓘(𝕜, F).prod I) (g t, y))) :=
+    -- Both derivatives are determined by their value at `1`, which agree up to `1 • 0 = 0`.
+    ((hasMFDerivAt_iff_hasFDerivAt.2 hg.hasFDerivAt).prodMk (hasMFDerivAt_const y t)).congr_mfderiv
+      (ContinuousLinearMap.ext_ring (Prod.ext rfl (smul_zero _).symm))
+  have h := curveVelocityWithin_map (s := Set.univ) hf uniqueDiffWithinAt_univ
+    hc.mdifferentiableAt.mdifferentiableWithinAt
+  rw [curveVelocityWithin_eq_of_hasMFDerivWithinAt hc.hasMFDerivWithinAt
+    uniqueDiffWithinAt_univ, curveVelocityWithin_univ] at h
+  exact h
 
 end MDifferentiableAt
 
