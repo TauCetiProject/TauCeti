@@ -375,7 +375,7 @@ theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 
 /-- The pointwise `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map is
 continuous. -/
-theorem continuous_energyDensity (hξ : ContDiff ℝ 1 ξ) :
+theorem continuous_norm_partialDeriv_sq_add_norm_sq (hξ : ContDiff ℝ 1 ξ) :
     Continuous fun z ↦ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2 := by
   have hd := hξ.continuous_fderiv one_ne_zero
   exact (((hd.clm_apply continuous_const).norm.pow 2).add
@@ -383,7 +383,7 @@ theorem continuous_energyDensity (hξ : ContDiff ℝ 1 ξ) :
 
 /-- The pointwise `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` vanishes where the jet
 does. -/
-theorem energyDensity_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (hz : jet ξ z = 0) :
+theorem norm_partialDeriv_sq_add_norm_sq_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (hz : jet ξ z = 0) :
     ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2 = 0 := by
   simp only [jet_apply, Prod.mk_eq_zero] at hz
   simp [hz]

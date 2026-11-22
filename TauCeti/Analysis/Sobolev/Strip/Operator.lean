@@ -182,7 +182,7 @@ theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × �
     (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
   refine ((hjm.integrable_norm_pow two_ne_zero).const_mul 3).mono' ?_
     (Eventually.of_forall fun z ↦ ?_)
-  · exact (continuous_energyDensity hξ).aestronglyMeasurable
+  · exact (continuous_norm_partialDeriv_sq_add_norm_sq hξ).aestronglyMeasurable
   · have h₁ := norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) z
     have h₂ := norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) z
     have h₃ := norm_le_norm_jet (ξ : ℝ × ℝ → V) z
@@ -233,7 +233,7 @@ private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM :
     sq_norm_restrictValue_jetLp T ξ
   have hmain := hest ξ ξ.property (neg_le_self (le_max_right R 0)) hvan
   rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀
-    fun _ ↦ energyDensity_eq_zero_of_jet_eq_zero, ← hx, ← hy] at hmain
+    fun _ ↦ norm_partialDeriv_sq_add_norm_sq_eq_zero_of_jet_eq_zero, ← hx, ← hy] at hmain
   -- Conclude by taking square roots.
   have hsq : ‖jetLp S ξ‖ ^ 2 ≤ (√(max C 0) * (x + y)) ^ 2 := by
     rw [mul_pow, Real.sq_sqrt (le_max_right _ _)]
