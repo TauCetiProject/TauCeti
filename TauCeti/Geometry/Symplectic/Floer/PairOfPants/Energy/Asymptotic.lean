@@ -62,6 +62,9 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.neg_sum_le_integral_add_sum_of_isComplexLinearMap`: the lower bound on the
   topological energy of a Floer solution.
+* `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le`: the
+  energy of a Floer solution over any part of the pair of pants is at most its topological energy
+  plus `B₀ + B₁ + B_∞`, the energy bound of compactness.
 * `SmoothTwoForm.IsNondegenerate.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`: the lower bound
   with the one-sided constant `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` for functions of time `h_q ≤ H_q` on
@@ -281,6 +284,53 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
     fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
+  linarith [h.2]
+
+/-- **The energy of a Floer pair of pants over any part of the domain, for a manifold target.**
+Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`, the energy of
+the solution over any part `Ω` of `S` is at most its topological energy plus `B₀ + B₁ + B_∞`:
+
+`∫_Ω ρ(u) ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt + ∑ q, B_q`.
+
+The energy density is nonnegative, since the structures are tamed, so the energy over `Ω` is at
+most the energy over `S`, which the energy identity bounds. This is the energy bound with which
+Gromov–Floer compactness applies to the solutions on every part of the domain. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap)
+    {Ω : Set (ℝ × ℝ)} (hΩ : Ω ⊆ thricePuncturedSphereReal) :
+    ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) + ∑ q, B q := by
+  have h := abs_le.1
+    (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
+  refine (setIntegral_mono_set hE (ae_restrict_of_forall_mem
+    isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
+      floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) (Eventually.of_forall hΩ)).trans ?_
   linarith [h.2]
 
 /-- **The one-sided lower bound on the topological energy of a pair-of-pants solution, for a

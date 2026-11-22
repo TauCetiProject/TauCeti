@@ -70,9 +70,10 @@ namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). It is the manifold-target co
 namespace `TauCeti.SymplecticForm`. When `Rₖ → ∞` the limits of the `vₖ` are the Floer cylinders
 that break off at the end `q`.
 
-Here the image of `Ω`, or of the translated window, is assumed to stay in one chart. Localizing the
-images of small discs into charts on a closed manifold, the bubbles at the points of `Z` and the
-assembly of the levels at the ends into a broken configuration are not treated here.
+Here the image of `Ω`, or of the translated window, is assumed to stay in one chart. On a closed
+manifold this assumption is removed in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Closed`. The bubbles at the points of
+`Z` and the assembly of the levels at the ends into a broken configuration are not treated here.
 
 ## References
 
@@ -277,23 +278,21 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
   -- The energy over `Ω` is at most the energy over `S`, hence at most `A + B₀ + B₁ + B_∞`.
   have hle (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity Ks Kt (u k) z ≤ A + ∑ q, B q := by
-    have habs := abs_le.1 (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num)) (hx k) (hE k)
-      (hA k))
-    refine (setIntegral_mono_set (hE k) (ae_restrict_of_forall_mem
-      isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦ ?_)
-      (Eventually.of_forall hΩS)).trans ?_
-    · exact floerEnergyDensity_nonneg hω (hJt z hz _) (hfl k z hz)
-    · linarith [habs.2, htop k]
+    linarith [htop k, hω.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le hH
+      (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num)) (hx k) (hE k) (hA k)
+      (J := fun z ↦ J z (u k z)) (fun z hz ↦ hJt z hz _) (hfl k) hΩS]
   exact hconv hΩ hΩD (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huC
     (fun k ↦ (hE k).mono_set hΩS) hle
 
-/-- A translated end `v(z) = u(φ'_q(z + (R, 0)))` of a Floer pair of pants, on an open window `Ω`
-whose translate lies in a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end and whose image
-lies in a set `C` where the end structures are tamed, is a `C³` solution of the cylindrical Floer
-equation of the positive end on `Ω`, with integrable energy density and energy over `Ω` at most the
-energy `E` of `u`. -/
-private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add
+/-- **Translated ends of Floer pairs of pants solve the Floer equation of the end.** Let `K` be
+equal to `H_q(t) dt` beyond `T₀` on the end `q`, and the structures `J` equal to `J_q(t)` there. A
+translated end `v(z) = u(φ'_q(z + (R, 0)))`, `R ≥ 0`, of a Floer pair of pants `u` of energy at
+most `E`, on an open window `Ω` inside a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
+chart, whose image lies in a set `C` where the end structures are tamed, is a `C³` solution of the
+cylindrical Floer equation `(dv - X_{H'_q} dt)^{0,1} = 0` of the positive end on `Ω`, with
+integrable energy density and energy over `Ω` at most `E`. This is how compactness theorems for a
+fixed cylindrical equation apply to the windows that move off along an end. -/
+theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add
     (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -301,9 +300,9 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x) {C : Set M}
-    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jq t x)) {Ω : Set (ℝ × ℝ)}
-    (hΩ : IsOpen Ω) {u : ℝ × ℝ → M} {R E t₀ : ℝ}
-    (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1))
+    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jq t x)) {Ω D : Set (ℝ × ℝ)}
+    (hΩ : IsOpen Ω) {u : ℝ × ℝ → M} {R E t₀ : ℝ} (hΩD : Ω ⊆ D)
+    (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) (hR : 0 ≤ R)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u thricePuncturedSphereReal)
     (hfl : ∀ z ∈ thricePuncturedSphereReal,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
@@ -324,6 +323,13 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
       ∫ z in Ω, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z ≤ E := by
   set v : ℝ × ℝ → M := fun z ↦ u (positiveEndChart q (z + (R, 0)))
+  -- The translated window lies in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
+  -- chart.
+  have hΩT (z : ℝ × ℝ) (hz : z ∈ Ω) : z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
+    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
+    refine ⟨?_, by simpa using h₂⟩
+    simp only [Prod.fst_add, mem_Ioi]
+    linarith [hR, mem_Ioi.1 h₁]
   have hHd (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
     (hHq.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable (by norm_num)
   have hT (z : ℝ × ℝ) (hz : z ∈ Ω) : T₀ ≤ z.1 + R := by
@@ -445,17 +451,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
     hφ (fun _ _ x hx ↦ hJJ' _ x hx) hWc contDiffOn_const hKt
     (hJ'.comp hσ.contDiffOn fun _ hp ↦ hp.1) hD hC hCφ hDCW fun _ _ x hx ↦ hJt _ x hx
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
-  -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
-  -- chart.
-  have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
-      hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
+      hJ hJt hΩ hΩD hDT (hR k) (hu k) (hfl k) hE0 (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 
