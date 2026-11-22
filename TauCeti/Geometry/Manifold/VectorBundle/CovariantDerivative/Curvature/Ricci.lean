@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
