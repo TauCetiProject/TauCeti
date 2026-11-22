@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
+import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -25,7 +27,10 @@ its entries are `C¹` on `Ω` with locally `α`-Hölder derivatives, and `f ∈ 
 on every open `V` whose closure is compact and contained in `Ω`, each weak derivative `∂ₑu` lies in
 `H¹(V)`, and the precise representative of its gradient is `α`-Hölder on every compact subset of
 `V`. So the second weak derivatives of a weak solution of an equation with `C^{1,α}` coefficients
-and `C^α` data have locally `α`-Hölder representatives: this is interior `C^{2,α}` regularity. No
+and `C^α` data have locally `α`-Hölder representatives: this is interior `C^{2,α}` regularity. In
+classical form, `u` agrees almost everywhere with a function that is `C²` on `Ω` and whose second
+derivative is `α`-Hölder on every compact subset of `Ω`
+(`exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`). No
 boundary condition on `u` and no regularity of `∂Ω` are used. For `a = 1` this
 is the qualitative content of
 `TauCeti.PDE.exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient`, which also
@@ -61,6 +66,11 @@ of the solution. This is the linear step of the regularity bootstrap for quasili
 
 * `exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_contDiffOn`:
   interior `C^{2,α}` regularity for divergence-form equations with `C^{1,α}` coefficients.
+* `exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`: the same
+  in classical form, a `C²` representative with locally `α`-Hölder second derivative. The
+  continuous representatives of the second weak derivatives give `C¹` representatives of the first
+  derivatives (`TauCeti.HasWeakFDerivOn.exists_contDiffOn_one_ae_eq`), which assemble into a `C¹`
+  derivative of `u`.
 
 ## References
 
@@ -274,6 +284,152 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradien
   exact ⟨_, h (hell.mono_set (hKV.trans (subset_closure.trans hVΩ))) (hKa.mono hth) (hG.mono hth)
     le_rfl (fun φ => energyFormH1_eq_setIntegral_inner_of_eq_neg_sub hV hVΩ ha hf (hdeq φ)) hδ
     (hth.trans hKδ)⟩
+
+/-- On the ball `B(x, r / 2)`, where `closedBall x r ⊆ Ω`, each directional derivative `∂ₑu` of a
+weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `C^{1,α}` coefficients and `C^α` data has a `C¹`
+representative `gₑ` whose derivative is `⟪G, ·⟫` for an `α`-Hölder field `G`. -/
+private theorem exists_contDiffOn_hasWeakLineDerivOn_and_holderOnWith_of_contDiffOn {α : ℝ≥0}
+    (hα : 0 < α) (hα1 : α < 1) {Omega : Opens E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (hell : UniformlyEllipticOn (Omega : Set E) a lam Lam)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega)
+    (hda : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x r))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Omega))
+    (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x r))
+    {u : W1p volume Omega 2}
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x)
+    {x : E} {r : ℝ} (hr : 0 < r) (hrΩ : closedBall x r ⊆ Omega) (e : E) :
+    ∃ (ge : E → ℝ) (G : E → E) (C : ℝ≥0), ContDiffOn ℝ 1 ge (ball x (r / 2)) ∧
+      HolderOnWith C α G (ball x (r / 2)) ∧
+      HasWeakLineDerivOn volume ⟨ball x (r / 2), isOpen_ball⟩ (W1p.value u) ge e ∧
+      ∀ y ∈ ball x (r / 2), HasFDerivAt ge (innerSL ℝ (G y)) y := by
+  let V : Opens E := ⟨ball x r, isOpen_ball⟩
+  let W : Opens E := ⟨ball x (r / 2), isOpen_ball⟩
+  have hWV : W ≤ V := ball_subset_ball (half_le_self hr.le)
+  obtain ⟨d, hd, hG⟩ :=
+    exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_contDiffOn
+      hα hα1 hell ha hda hf hfH hu (V := V) ((isCompact_closedBall x r).of_isClosed_subset
+        isClosed_closure closure_ball_subset_closedBall)
+      (closure_ball_subset_closedBall.trans hrΩ) e
+  obtain ⟨C, hC⟩ := hG (closedBall x (r / 2)) (closedBall_subset_ball (half_lt_self hr))
+    (isCompact_closedBall _ _)
+  have hCW : HolderOnWith C α (preciseRepresentative volume (W1p.gradient d : E → E)) W :=
+    hC.mono ball_subset_closedBall
+  -- The precise representative of `∇d` is a continuous weak derivative of `d = ∂ₑu` on `W`.
+  have hdG : (W1p.gradient d : E → E) =ᵐ[volume.restrict W]
+      preciseRepresentative volume (W1p.gradient d : E → E) :=
+    ae_restrict_of_ae_restrict_of_subset hWV
+      (ae_eq_restrict_preciseRepresentative V.isOpen (W1p.locallyIntegrableOn_gradient d))
+  have hweak : HasWeakFDerivOn volume W (W1p.value d)
+      (fun y => innerSL ℝ (preciseRepresentative volume (W1p.gradient d : E → E) y)) :=
+    ((W1p.hasWeakFDerivOn d).mono hWV).congr_ae_deriv (hdG.fun_comp (innerSL ℝ))
+  obtain ⟨ge, hge, hdge, hgd⟩ := hweak.exists_contDiffOn_one_ae_eq
+    ((innerSL ℝ).continuous.comp_continuousOn (hCW.continuousOn hα))
+  exact ⟨ge, _, C, hge, hCW, (hd.mono hWV).congr_ae_deriv hdge, hgd⟩
+
+/-- Near each point of `Ω`, a continuous representative `g` of a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `C^{1,α}` coefficients and `C^α` data is `C²`, with `α`-Hölder second
+derivative. -/
+private theorem exists_ball_contDiffOn_two_and_holderOnWith_iteratedFDeriv_two {α : ℝ≥0}
+    (hα : 0 < α) (hα1 : α < 1) {Omega : Opens E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (hell : UniformlyEllipticOn (Omega : Set E) a lam Lam)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega)
+    (hda : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x r))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Omega))
+    (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x r))
+    {u : W1p volume Omega 2}
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x)
+    {g : E → ℝ} (hg : ContinuousOn g Omega) (hug : W1p.value u =ᵐ[volume.restrict Omega] g)
+    {x : E} (hx : x ∈ Omega) :
+    ∃ r > 0, ContDiffOn ℝ 2 g (ball x r) ∧
+      ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 2 g) (ball x r) := by
+  obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
+  let W : Opens E := ⟨ball x (r / 2), isOpen_ball⟩
+  have hWΩ : W ≤ Omega := (ball_subset_closedBall.trans
+    (closedBall_subset_closedBall (half_le_self hr.le))).trans hrΩ
+  let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  choose gi G C hgi hCG hdg hgd using fun i =>
+    exists_contDiffOn_hasWeakLineDerivOn_and_holderOnWith_of_contDiffOn hα hα1 hell ha hda hf
+      hfH hu hr hrΩ (b i)
+  -- The `C¹` fields `gᵢ` assemble into a `C¹` weak derivative of the continuous `g`, so `g` is
+  -- `C²`, with `∂ᵢg = gᵢ`.
+  obtain ⟨hD, huD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn (Ω := W) hgi
+    ((W1p.hasWeakFDerivOn u).locallyIntegrableOn.mono_set hWΩ) hdg
+  have hgD := huD.congr_ae (ae_restrict_of_ae_restrict_of_subset hWΩ hug)
+  have hg2 : ContDiffOn ℝ 2 g W := by exact_mod_cast hgD.contDiffOn_succ (hg.mono hWΩ) hD
+  have hfd : ∀ i, ∀ y ∈ W, fderiv ℝ g y (b i) = gi i y := fun i y hy => by
+    rw [hgD.fderiv_eq_of_continuousOn (hg.mono hWΩ) hD.continuousOn hy]
+    simp [b.inner_eq_ite]
+  -- The gradient of `∂ᵢg` is `Gᵢ`, which is `α`-Hölder.
+  refine ⟨r / 2, half_pos hr, hg2, _, b.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le
+    (D := ∑ i, (C i : ℝ)) (by positivity) (fun y hy => ?_) fun i y hy z hz => ?_⟩
+  · exact ((hg2.fderiv_of_isOpen W.isOpen (by norm_num)).differentiableOn one_ne_zero
+      |>.differentiableAt (W.isOpen.mem_nhds hy))
+  · have hgrad : ∀ w ∈ W, ∇ (fun z => fderiv ℝ g z (b i)) w = G i w := fun w hw => by
+      refine (HasGradientAt.gradient ?_)
+      rw [hasGradientAt_iff_hasFDerivAt]
+      refine ((hgd i w hw).congr_fderiv ?_).congr_of_eventuallyEq
+        (Filter.eventually_of_mem (W.isOpen.mem_nhds hw) fun z hz => hfd i z hz)
+      ext v
+      simp
+    rw [hgrad y hy, hgrad z hz]
+    exact ((hCG i).dist_le hy hz).trans (mul_le_mul_of_nonneg_right
+      (Finset.single_le_sum (f := fun i => (C i : ℝ)) (fun _ _ => NNReal.coe_nonneg _)
+        (Finset.mem_univ i)) (by positivity))
+
+/-- **Classical interior `C^{2,α}` regularity for divergence-form equations with `C^{1,α}`
+coefficients.** Let `0 < α < 1`, let `Ω ⊆ ℝ^{n+1}` be open, and let `u ∈ H¹(Ω)` be a weak
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, where `a` is uniformly elliptic on `Ω` with entries `C¹`
+on `Ω` and derivatives `α`-Hölder near each point of `Ω`, and `f ∈ L²(Ω)` is `α`-Hölder near each
+point of `Ω`. Then `u` agrees almost everywhere on `Ω` with a function `g` that is `C²` on `Ω`
+and whose second derivative is `α`-Hölder on every compact subset of `Ω`.
+
+This is the classical form of
+`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_contDiffOn`. No
+boundary condition is imposed on `u` and nothing is assumed about `∂Ω`. -/
+theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Omega : Opens E}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (hell : UniformlyEllipticOn (Omega : Set E) a lam Lam)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) Omega)
+    (hda : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x r))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Omega))
+    (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x r))
+    {u : W1p volume Omega 2}
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) :
+    ∃ g : E → ℝ, ContDiffOn ℝ 2 g Omega ∧ W1p.value u =ᵐ[volume.restrict Omega] g ∧
+      ∀ K ⊆ (Omega : Set E), IsCompact K →
+        ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 2 g) K := by
+  -- The gradient of `u` has a continuous representative, so `u` has a `C¹` representative `g`.
+  have hP : ContinuousOn (preciseRepresentative volume (W1p.gradient u : E → E)) Omega :=
+    fun x hx => by
+      obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
+      obtain ⟨C, hC⟩ := exists_holderOnWith_preciseRepresentative_gradient_of_contDiffOn hα hα1
+        hell ha hf hfH hu (isCompact_closedBall x r) hrΩ
+      exact ((hC.continuousOn hα).continuousAt (closedBall_mem_nhds x hr)).continuousWithinAt
+  have hweak : HasWeakFDerivOn volume Omega (W1p.value u)
+      (fun x => innerSL ℝ (preciseRepresentative volume (W1p.gradient u : E → E) x)) :=
+    (W1p.hasWeakFDerivOn u).congr_ae_deriv ((ae_eq_restrict_preciseRepresentative Omega.isOpen
+      (W1p.locallyIntegrableOn_gradient u)).fun_comp (innerSL ℝ))
+  obtain ⟨g, hg, hug, -⟩ :=
+    hweak.exists_contDiffOn_one_ae_eq ((innerSL ℝ).continuous.comp_continuousOn hP)
+  have hloc := fun x (hx : x ∈ Omega) =>
+    exists_ball_contDiffOn_two_and_holderOnWith_iteratedFDeriv_two hα hα1 hell ha hda hf hfH hu
+      hg.continuousOn hug hx
+  refine ⟨g, contDiffOn_of_locally_contDiffOn fun x hx => ?_, hug, fun K hKΩ hK => ?_⟩
+  · obtain ⟨r, hr, hg2, -⟩ := hloc x hx
+    exact ⟨ball x r, isOpen_ball, mem_ball_self hr, hg2.mono inter_subset_right⟩
+  · obtain ⟨δ, hδ, C, -, hC, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le fun x hx => by
+      obtain ⟨r, hr, -, C, hC⟩ := hloc x (hKΩ hx)
+      exact ⟨r, hr, C, hC⟩
+    exact ⟨C, hC.mono (self_subset_thickening hδ K)⟩
 
 end PDE
 
