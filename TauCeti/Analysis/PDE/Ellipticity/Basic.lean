@@ -55,7 +55,8 @@ constants are parameters, not hidden existential data.
   the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
-* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion of the first argument in the
+  standard orthonormal basis.
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
@@ -1185,6 +1186,16 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     {ψ : EuclideanSpace ℝ n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ n) :
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
+
+/-- **`Cᵏ` coefficient fields give `Cᵏ` bilinear forms.** If the entries of `a` are `Cᵏ`, then
+`x ↦ η(x)ᵀ a(x) ξ(x)` is `Cᵏ` for `Cᵏ` vector fields `η` and `ξ`. -/
+theorem contDiff_matrixBilinearForm_apply {k : WithTop ℕ∞}
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiff ℝ k fun x => a x i j)
+    {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n} (hη : ContDiff ℝ k η) (hξ : ContDiff ℝ k ξ) :
+    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) := by
+  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
+  exact ContDiff.sum fun i _ => (contDiff_euclidean.1 hη i).mul
+    (ContDiff.sum fun j _ => (ha i j).mul (contDiff_euclidean.1 hξ j))
 
 /-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
 continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz
