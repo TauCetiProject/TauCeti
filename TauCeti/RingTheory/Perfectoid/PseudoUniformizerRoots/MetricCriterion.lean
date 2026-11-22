@@ -49,7 +49,8 @@ private theorem exists_scaled_gauge_sub_pow_le [IsPerfectoidTateRing p R]
       _ = (1 / 2 : ℝ) ^ p := by rw [← inv_pow, one_div]
   have he : ϖ.gauge ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) ≤ (1 / 2 : ℝ) ^ p := by
     rw [← hradius]
-    exact (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
+    simpa only [AddSubgroupClass.coe_sub, Subring.coe_pow] using
+      (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
   refine ⟨(ϖ.zpow m (n + 1) : R) * (y : R), ?_⟩
   -- Undo the scaling using the next root, so its `p`-th power supplies the original scale.
   have hpow : (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
@@ -114,8 +115,10 @@ theorem isPerfectoidTateRing_of_exists_gauge_sub_pow_le_mul {c : ℝ}
     hy.trans (mul_le_mul_of_nonneg_right (le_max_left c (1 / 2)) (apply_nonneg _ _))
   have hx : ϖ.gauge (x : R) ≤ 1 := ϖ.gauge_le_one_iff.mpr x.property
   have hyle : ϖ.gauge y ≤ 1 := ϖ.gauge_le_one_of_relative_error hd1.le hx hy'
-  refine ⟨⟨y, ϖ.gauge_le_one_iff.mp hyle⟩, (ϖ.gauge_le_root_radius_iff _ n).mp ?_⟩
-  exact hy'.trans ((mul_le_of_le_one_right hd0.le hx).trans hn)
+  refine ⟨⟨y, ϖ.gauge_le_one_iff.mp hyle⟩, ?_⟩
+  apply (ϖ.gauge_le_root_radius_iff _ n).mp
+  simpa only [AddSubgroupClass.coe_sub, Subring.coe_pow] using
+    hy'.trans ((mul_le_of_le_one_right hd0.le hx).trans hn)
 
 /-- **The metric criterion for perfectoidness**: a uniform complete Hausdorff Tate ring
 with a pseudouniformiser with compatible roots is perfectoid exactly when every element
