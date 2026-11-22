@@ -11,6 +11,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Topology.Order.ProjIcc
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The energy space of a Gelfand triple
@@ -183,34 +184,17 @@ theorem hasWeakLineDerivOn (u : EvolutionSpace ι a b) :
 def mk (u : Lp V 2 (volume.restrict (Ioo a b)))
     (d : Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b)))
     (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
-      (fun t ↦ ι.gelfandDual (ι (u t))) d 1) : EvolutionSpace ι a b := by
-  -- Abstract the field while constructing the map so its normed instances are fixed before
-  -- specializing to the nested continuous-linear-map type `V*`.
-  let lift {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (d : Lp F 2 (volume.restrict (Ioo a b))) :=
-    (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp d
-  let D := lift (F := StrongDual ℝ V) d
-  refine WeakDerivStep.mk (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩)
-    (evolutionBaseL ι a b) u D ?_
-  rw [hasWeakFDerivOn_iff]
-  intro v
-  have hv := (h.smul_direction v).congr_ae (evolutionBaseL_apply_ae ι a b u).symm
-  simp only [smul_eq_mul, mul_one] at hv
-  refine hv.congr_ae_deriv ?_
-  have lift_ae {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (d : Lp F 2 (volume.restrict (Ioo a b))) :
-      lift d =ᵐ[volume.restrict (Ioo a b)] fun t ↦ ContinuousLinearMap.toSpanSingleton ℝ (d t) :=
-    (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
-      |>.coeFn_compLp d
-  filter_upwards [lift_ae d] with t ht
-  simp only [D, ht, ContinuousLinearMap.toSpanSingleton_apply, Pi.smul_apply]
+      (fun t ↦ ι.gelfandDual (ι (u t))) d 1) : EvolutionSpace ι a b :=
+  WeakDerivStep.mkLine (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩)
+    (evolutionBaseL ι a b) u d
+    (h.congr_ae (evolutionBaseL_apply_ae ι a b u).symm)
 
 @[simp]
 theorem value_mk (u : Lp V 2 (volume.restrict (Ioo a b)))
     (d : Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b))) (h) :
     value (mk (ι := ι) u d h) = u := by
   rw [value_eq_prev]
-  exact WeakDerivStep.prev_mk _ _ _ _
+  exact WeakDerivStep.prev_mkLine (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) _ _ _ _
 
 @[simp]
 theorem timeDeriv_mk (u : Lp V 2 (volume.restrict (Ioo a b)))
@@ -229,12 +213,8 @@ theorem mk_value_timeDeriv (u : EvolutionSpace ι a b) :
 private theorem norm_timeDeriv_eq (u : EvolutionSpace ι a b) :
     ‖timeDeriv u‖ = ‖WeakDerivStep.weakFDeriv (mu := volume)
       (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (evolutionBaseL ι a b) u‖ := by
-  rw [Lp.norm_def, Lp.norm_def]
-  congr 1
-  apply eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-  filter_upwards [timeDeriv_apply_ae u] with t ht
-  rw [ht, ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply]
-  exact LinearIsometryEquiv.norm_map _ _
+  rw [timeDeriv, timeDerivL, ContinuousLinearMap.comp_apply, WeakDerivStep.weakFDerivL_apply]
+  exact ContinuousLinearMap.norm_apply_one_compLpL_apply _
 
 /-- Convergence in the energy space is equivalent to convergence of the value and the
 dual-valued weak time derivative in their respective `L²` spaces. -/
@@ -265,6 +245,12 @@ theorem norm_value_le (u : EvolutionSpace ι a b) : ‖value u‖ ≤ ‖u‖ :=
 theorem norm_timeDeriv_le (u : EvolutionSpace ι a b) : ‖timeDeriv u‖ ≤ ‖u‖ := by
   rw [norm_timeDeriv_eq]
   exact WeakDerivStep.norm_weakFDeriv_le _ u
+
+/-- The graph norm is at most the sum of the `L²(a,b;V)` and `L²(a,b;V*)` norms. -/
+theorem norm_le_norm_value_add_norm_timeDeriv (u : EvolutionSpace ι a b) :
+    ‖u‖ ≤ ‖value u‖ + ‖timeDeriv u‖ := by
+  rw [value_eq_prev, norm_timeDeriv_eq]
+  exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv _ u
 
 /-- The energy space is complete in its graph norm. -/
 instance [CompleteSpace V] : CompleteSpace (EvolutionSpace ι a b) := inferInstance

@@ -46,36 +46,33 @@ open TauCeti
 
 section Maps
 
-variable {k A P₀ P₁ Q₀ Q₁ : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable {R A E P₀ P₁ Q₀ Q₁ : Type*} [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup E] [Module R E]
   [AddCommMonoid P₀] [Module A P₀] [AddCommMonoid P₁] [Module A P₁]
   [AddCommMonoid Q₀] [Module A Q₀] [AddCommMonoid Q₁] [Module A Q₁]
   {p : P₁ →ₗ[A] P₀} {q : Q₁ →ₗ[A] Q₀}
 
-/-- A presentation square induces a covariant map on `D Tr`, by scalar-dualizing its
+/-- A presentation square induces a covariant map on `D Tr`, by Matlis-dualizing its
 contravariant transpose map. -/
 def auslanderReitenTranslateMap (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁)
     (hf : f₀.comp p = q.comp f₁) :
-    AuslanderReitenTranslate k p →ₗ[A] AuslanderReitenTranslate k q :=
-  moduleDualMap (AuslanderReitenTranspose.map f₀ f₁ hf)
-    (LinearEquiv.refl k _) (fun a φ x ↦ by
-      simpa only [LinearEquiv.refl_apply] using AuslanderReitenTranslate.smul_apply a φ x)
-    (LinearEquiv.refl k _) (fun a φ x ↦ by
-      simpa only [LinearEquiv.refl_apply] using AuslanderReitenTranslate.smul_apply a φ x)
+    AuslanderReitenTranslate R E p →ₗ[A] AuslanderReitenTranslate R E q :=
+  MatlisDual.mapOp (AuslanderReitenTranspose.map f₀ f₁ hf)
 
 /-- The induced translate functional evaluates by the transpose map. -/
 @[simp]
 theorem auslanderReitenTranslateMap_apply (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁)
-    (hf : f₀.comp p = q.comp f₁) (φ : AuslanderReitenTranslate k p)
+    (hf : f₀.comp p = q.comp f₁) (φ : AuslanderReitenTranslate R E p)
     (x : AuslanderReitenTranspose q) :
-    auslanderReitenTranslateMap f₀ f₁ hf φ x = φ (AuslanderReitenTranspose.map f₀ f₁ hf x) := by
-  rw [auslanderReitenTranslateMap, moduleDualMap_apply]
-  rfl
+    MatlisDual.equivLinearMap R E _ (auslanderReitenTranslateMap f₀ f₁ hf φ) x =
+      MatlisDual.equivLinearMap R E _ φ (AuslanderReitenTranspose.map f₀ f₁ hf x) :=
+  MatlisDual.mapOp_apply _ φ x
 
 /-- The identity square induces the identity on the translate. -/
 @[simp]
 theorem auslanderReitenTranslateMap_id :
     auslanderReitenTranslateMap (id : P₀ →ₗ[A] P₀) (id : P₁ →ₗ[A] P₁) (by simp)
-      (k := k) (p := p) = id := by
+      (R := R) (E := E) (p := p) = id := by
   ext φ x
   simp
 
@@ -83,7 +80,7 @@ theorem auslanderReitenTranslateMap_id :
 @[simp]
 theorem auslanderReitenTranslateMap_zero (f₀ : P₀ →ₗ[A] Q₀)
     (hf : f₀.comp p = q.comp (0 : P₁ →ₗ[A] Q₁)) :
-    auslanderReitenTranslateMap f₀ (0 : P₁ →ₗ[A] Q₁) hf (k := k) = 0 := by
+    auslanderReitenTranslateMap f₀ (0 : P₁ →ₗ[A] Q₁) hf (R := R) (E := E) = 0 := by
   ext φ x
   simp
 
@@ -92,7 +89,7 @@ theorem auslanderReitenTranslateMap_zero (f₀ : P₀ →ₗ[A] Q₀)
 theorem auslanderReitenTranslateMap_add (f₀ g₀ : P₀ →ₗ[A] Q₀)
     (f₁ g₁ : P₁ →ₗ[A] Q₁) (hf : f₀.comp p = q.comp f₁) (hg : g₀.comp p = q.comp g₁) :
     auslanderReitenTranslateMap (f₀ + g₀) (f₁ + g₁)
-      (by simp [add_comp, comp_add, hf, hg]) (k := k) =
+      (by simp [add_comp, comp_add, hf, hg]) (R := R) (E := E) =
         auslanderReitenTranslateMap f₀ f₁ hf + auslanderReitenTranslateMap g₀ g₁ hg := by
   ext φ x
   rw [auslanderReitenTranslateMap_apply, AuslanderReitenTranspose.map_add f₀ g₀ f₁ g₁ hf hg]
@@ -105,13 +102,13 @@ theorem auslanderReitenTranslateMap_comp_map {R₀ R₁ : Type*}
     {r : R₁ →ₗ[A] R₀} (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁)
     (hf : f₀.comp p = q.comp f₁) (g₀ : Q₀ →ₗ[A] R₀) (g₁ : Q₁ →ₗ[A] R₁)
     (hg : g₀.comp q = r.comp g₁) :
-    (auslanderReitenTranslateMap g₀ g₁ hg (k := k)).comp
+    (auslanderReitenTranslateMap g₀ g₁ hg (R := R) (E := E)).comp
         (auslanderReitenTranslateMap f₀ f₁ hf) =
       auslanderReitenTranslateMap (g₀.comp f₀) (g₁.comp f₁)
         (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) := by
   ext φ x
   simpa only [auslanderReitenTranslateMap_apply, comp_apply] using
-    congrArg φ (LinearMap.congr_fun
+    congrArg (MatlisDual.equivLinearMap R E _ φ) (LinearMap.congr_fun
       (AuslanderReitenTranspose.map_comp_map f₀ f₁ hf g₀ g₁ hg) x)
 
 end Maps
@@ -141,18 +138,16 @@ theorem exists_auslanderReitenTranslateMap_sub_eq_comp [Module.Projective A P₀
     (hq : Function.Exact q ρ) (f₀ g₀ : P₀ →ₗ[A] Q₀) (f₁ g₁ : P₁ →ₗ[A] Q₁)
     (hf : f₀.comp p = q.comp f₁) (hg : g₀.comp p = q.comp g₁)
     (hfg : ρ.comp f₀ = ρ.comp g₀) :
-    ∃ h : NakayamaModule k A P₁ →ₗ[A] AuslanderReitenTranslate k q,
+    ∃ h : NakayamaModule k A P₁ →ₗ[A] AuslanderReitenTranslate k k q,
       auslanderReitenTranslateMap f₀ f₁ hf - auslanderReitenTranslateMap g₀ g₁ hg =
         h.comp (auslanderReitenTranslateToNakayama p) := by
   obtain ⟨h, hh⟩ := AuslanderReitenTranspose.exists_map_sub_eq_mk_comp hq
     f₀ g₀ f₁ g₁ hf hg hfg
-  refine ⟨moduleDualMap h (LinearEquiv.refl k _)
-    (fun a φ x ↦ by
-      simpa only [LinearEquiv.refl_apply] using AuslanderReitenTranslate.smul_apply a φ x)
+  refine ⟨moduleDualMap h (MatlisDual.equivLinearMap k k _) MatlisDual.smul_apply
     (NakayamaModule.equivDual k A P₁) (NakayamaModule.smul_apply k A P₁), ?_⟩
   ext φ x
   rw [comp_apply, moduleDualMap_apply]
-  simpa using congrArg φ (LinearMap.congr_fun hh x)
+  simpa using congrArg (MatlisDual.equivLinearMap k k _ φ) (LinearMap.congr_fun hh x)
 
 /-- A lift of a module map factoring through a projective induces a translate map factoring
 through the source Nakayama module. -/
@@ -164,18 +159,16 @@ theorem exists_auslanderReitenTranslateMap_eq_comp_of_factor [Module.Projective 
     (i : M →ₗ[A] C) (j : C →ₗ[A] N)
     (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁) (hf : f₀.comp p = q.comp f₁)
     (hfactor : ρ.comp f₀ = j.comp (i.comp π)) :
-    ∃ h : NakayamaModule k A P₁ →ₗ[A] AuslanderReitenTranslate k q,
+    ∃ h : NakayamaModule k A P₁ →ₗ[A] AuslanderReitenTranslate k k q,
       auslanderReitenTranslateMap f₀ f₁ hf =
         h.comp (auslanderReitenTranslateToNakayama p) := by
   obtain ⟨h, hh⟩ := AuslanderReitenTranspose.exists_map_eq_mk_comp_of_factor hp hq hρ
     i j f₀ f₁ hf hfactor
-  refine ⟨moduleDualMap h (LinearEquiv.refl k _)
-    (fun a φ x ↦ by
-      simpa only [LinearEquiv.refl_apply] using AuslanderReitenTranslate.smul_apply a φ x)
+  refine ⟨moduleDualMap h (MatlisDual.equivLinearMap k k _) MatlisDual.smul_apply
     (NakayamaModule.equivDual k A P₁) (NakayamaModule.smul_apply k A P₁), ?_⟩
   ext φ x
   rw [comp_apply, moduleDualMap_apply]
-  simpa using congrArg φ (LinearMap.congr_fun hh x)
+  simpa using congrArg (MatlisDual.equivLinearMap k k _ φ) (LinearMap.congr_fun hh x)
 
 end Nakayama
 

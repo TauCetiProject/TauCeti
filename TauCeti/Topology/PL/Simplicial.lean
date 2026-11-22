@@ -58,11 +58,11 @@ the traces of the simplices in that subset. -/
 theorem isPLOn_of_locallyFinite (K : SimplicialComplex ℝ E) {f : E → F} {s : Set E}
     (hsub : s ⊆ K.space)
     (hlf : ∀ x ∈ s, ∃ U ∈ 𝓝 x,
-      {σ : K.faces | (convexHull ℝ (σ.1 : Set E) ∩ U).Nonempty}.Finite)
+      {σ : K.faces | (convexHull ℝ (σ.val : Set E) ∩ U).Nonempty}.Finite)
     (A : K.faces → (E →ᴬ[ℝ] F))
-    (heq : ∀ σ, EqOn f (A σ) (s ∩ convexHull ℝ (σ.1 : Set E))) : IsPLOn f s := by
+    (heq : ∀ σ, EqOn f (A σ) (s ∩ convexHull ℝ (σ.val : Set E))) : IsPLOn f s := by
   refine TauCeti.isPLOn_of_locallyFinite hlf
-    (fun σ => (K.indep σ.2).isConvexPolyhedron_convexHull) ?_ heq
+    (fun σ => (K.indep σ.property).isConvexPolyhedron_convexHull) ?_ heq
   intro x hx
   obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.mp (hsub hx)
   exact mem_iUnion.mpr ⟨⟨σ, hσ⟩, hxσ⟩
@@ -99,7 +99,7 @@ theorem isPLOn_space_iff_exists_isSubdivision (hK : K.faces.Finite) :
     IsPLOn f K.space ↔ ∃ K' : SimplicialComplex ℝ E, K'.IsSubdivision K ∧ K'.faces.Finite ∧
       ∀ s ∈ K'.faces, ∃ A : E →ᴬ[ℝ] F, EqOn f A (convexHull ℝ (s : Set E)) := by
   refine ⟨fun hf => hf.exists_isSubdivision_eqOn hK, fun ⟨K', hK'K, hK'f, hA⟩ => ?_⟩
-  choose A hA using fun s : K'.faces => hA s.1 s.2
+  choose A hA using fun s : K'.faces => hA s.val s.property
   have : Finite K'.faces := hK'f.to_subtype
   exact K'.isPLOn_of_locallyFinite hK'K.space_eq.ge
     (fun _ _ => ⟨univ, univ_mem, Set.toFinite _⟩) A fun s => (hA s).mono inter_subset_right

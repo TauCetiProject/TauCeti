@@ -48,8 +48,12 @@ are only real-linear.
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
 * `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for every two-form `ω`.
+* `abs_re_inner_cliffordRestriction_apply_self_le`: `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²` for every
+  two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
+* `inner_quadraticTwoFormPolar_eq_re_inner`: `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2` for every
+  two-form `x`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
@@ -237,6 +241,24 @@ theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHal
   rw [hC, real_inner_smul_right, inner_add_right, hq] at h
   linarith
 
+include hQ in
+variable {ρ} in
+/-- The pairing of a positive spinor with the Clifford action of a two-form on it is bounded:
+`|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`. The pairing is `4 ⟪q(ψ), μ⟫`
+(`inner_quadraticTwoForm_eq_re_inner`) and `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`. -/
+theorem abs_re_inner_cliffordRestriction_apply_self_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (μ : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
+    |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  have hcs := abs_real_inner_le_norm (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) μ
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl μ ψ, Submodule.norm_coe,
+    norm_quadraticTwoForm o hQ hkl hρ h₂, abs_div, abs_of_pos (four_pos : (0 : ℝ) < 4)] at hcs
+  have key : 4 * (‖ψ‖ ^ 2 / (2 * √2) * ‖μ‖) = √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
+    field_simp
+    linear_combination -2 * ‖μ‖ * ‖ψ‖ ^ 2 * Real.mul_self_sqrt zero_le_two
+  linarith
+
 /-! ### Polarization and derivative -/
 
 /-- The real-bilinear map `(ψ, φ) ↦ L (B(ψ, φ))`. It is stated for an arbitrary complex inner
@@ -288,6 +310,32 @@ theorem quadraticTwoForm_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hkl (ψ + φ) = quadraticTwoForm o ρ hkl ψ +
       quadraticTwoForm o ρ hkl φ + quadraticTwoFormPolar o ρ hkl ψ φ := by
   simp [quadraticTwoForm_def, quadraticTwoFormPolar_apply, quadraticEnd_add]
+
+include hQ in
+variable {ρ} in
+/-- **The pairing of the polarization of `q` with a two-form**:
+`⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`. This polarizes
+`⟪q(ψ), x⟫ = Re⟪ψ, C(i x) ψ⟫ / 4` (`inner_quadraticTwoForm_eq_re_inner`), using that `C(i x)` is
+self-adjoint. -/
+theorem inner_quadraticTwoFormPolar_eq_re_inner
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (x : ⋀[ℝ]^2 V)
+    (ψ φ : positiveHalfSpinors o ρ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ =
+      (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re / 2 := by
+  have hpol : ⟪(quadraticTwoForm o ρ hkl (ψ + φ) : ⋀[ℝ]^2 V), x⟫ =
+      ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), x⟫ + ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), x⟫ +
+        ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ := by
+    rw [quadraticTwoForm_add, Submodule.coe_add, Submodule.coe_add, inner_add_left,
+      inner_add_left]
+  have hsymm := (isSelfAdjoint_cliffordRestriction o hρ x).isSymmetric φ ψ
+  simp only [ContinuousLinearMap.coe_coe] at hsymm
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl,
+    inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, map_add, inner_add_left, inner_add_right,
+    inner_add_right] at hpol
+  have hre : (⟪ψ, cliffordRestriction o ρ x φ⟫_ℂ).re = (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re := by
+    rw [← hsymm, ← inner_conj_symm, Complex.conj_re]
+  simp only [Complex.add_re] at hpol
+  linarith
 
 /-- `q'(ψ, c ψ) = 2 Re(c) q(ψ)`. In particular the derivative of `q` vanishes along the
 infinitesimal gauge directions `ξ ψ` with `ξ` imaginary. -/

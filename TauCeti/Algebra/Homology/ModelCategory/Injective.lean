@@ -30,6 +30,9 @@ recognized and used once a model structure or a factorization is available.
 * `CochainComplex.rlp_monomorphisms_inf_quasiIso_iff`: a morphism `p : X ⟶ Y` has the right
   lifting property with respect to every monomorphism which is a quasi-isomorphism if and only if
   it is degreewise an epimorphism with an injective kernel and its kernel is K-injective.
+* `CochainComplex.nonempty_homotopy_zero_of_hasLiftingProperty`: a morphism to a zero complex
+  with the right lifting property against the inclusion of `A` into the mapping cone of `𝟙 A`
+  makes every map out of `A` null-homotopic.
 * `CochainComplex.rlp_monomorphisms_inf_quasiIso_iff_of_isZero`: the morphism from a complex `I`
   to a zero complex has this lifting property if and only if `I` is a K-injective complex of
   injective objects. No boundedness is assumed.
@@ -64,7 +67,7 @@ to `K` is a coboundary, then `p` has the right lifting property with respect to 
 theorem hasLiftingProperty_of_forall_eq_δ {A B X Y K : CochainComplex C ℤ} (i : A ⟶ B)
     (p : X ⟶ Y) [Mono i] (hp : degreewiseEpiWithInjectiveKernel p) {ι : K ⟶ X} {hι : ι ≫ p = 0}
     (hK : IsLimit (KernelFork.ofι ι hι))
-    (h : ∀ z : Cocycle (cokernel i) K 1, ∃ α : Cochain (cokernel i) K 0, δ 0 1 α = z.1) :
+    (h : ∀ z : Cocycle (cokernel i) K 1, ∃ α : Cochain (cokernel i) K 0, δ 0 1 α = z.val) :
     HasLiftingProperty i p where
   sq_hasLift {t b} sq := by
     have sq' (n : ℤ) : CommSq (t.f n) (i.f n) (p.f n) (b.f n) :=
@@ -135,6 +138,19 @@ theorem rlp_monomorphisms_f {X Y : CochainComplex C ℤ} {p : X ⟶ Y}
     rw [sq'.fac_right, Equiv.apply_symm_apply] at this
     exact this.symm
 
+/-- If a morphism `p` from a cochain complex `I` to a zero complex has the right lifting property
+with respect to the inclusion of a complex `A` into the contractible mapping cone of its identity,
+then every morphism `A ⟶ I` is null-homotopic: it extends over the cone. -/
+theorem nonempty_homotopy_zero_of_hasLiftingProperty {A I Z : CochainComplex C ℤ} (f : A ⟶ I)
+    {p : I ⟶ Z} (hZ : IsZero Z)
+    [HasLiftingProperty (HomologicalComplex.homotopyCofiber.inr (𝟙 A)) p] :
+    Nonempty (Homotopy f 0) := by
+  have hc : ∀ j, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
+  have sq : CommSq f (HomologicalComplex.homotopyCofiber.inr (𝟙 A)) p 0 := ⟨hZ.eq_of_tgt _ _⟩
+  exact ⟨(Homotopy.ofEq (by simp)).trans
+    (((HomologicalComplex.homotopyCofiber.inrCompHomotopy (𝟙 A) hc).compRight sq.lift).trans
+      (Homotopy.ofEq (by simp)))⟩
+
 /-- If the morphism from a cochain complex `I` to a zero complex has the right lifting property
 with respect to every monomorphism which is a quasi-isomorphism, then `I` is K-injective. -/
 theorem isKInjective_of_rlp {I Z : CochainComplex C ℤ} {p : I ⟶ Z} (hZ : IsZero Z)
@@ -142,16 +158,11 @@ theorem isKInjective_of_rlp {I Z : CochainComplex C ℤ} {p : I ⟶ Z} (hZ : IsZ
     I.IsKInjective where
   nonempty_homotopy_zero {A} f hA := by
     have hc : ∀ j, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
-    -- the inclusion of `A` into the contractible mapping cone of its identity
-    let ι := HomologicalComplex.homotopyCofiber.inr (𝟙 A)
-    have : Mono ι := HomologicalComplex.mono_of_mono_f _ fun k ↦
-      mono_of_mono_fac (HomologicalComplex.homotopyCofiber.inrX_sndX (𝟙 A) k)
-    have := hp ι ⟨this, HomologicalComplex.quasiIso_of_acyclic ι hA
-      (HomologicalComplex.homotopyCofiber.acyclic_id A hc)⟩
-    have sq : CommSq f ι p 0 := ⟨hZ.eq_of_tgt _ _⟩
-    exact ⟨(Homotopy.ofEq (by simp [ι])).trans
-      (((HomologicalComplex.homotopyCofiber.inrCompHomotopy (𝟙 A) hc).compRight sq.lift).trans
-        (Homotopy.ofEq (by simp)))⟩
+    -- the inclusion of `A` into the mapping cone of its identity is a quasi-isomorphism
+    have := hp (HomologicalComplex.homotopyCofiber.inr (𝟙 A)) ⟨inferInstanceAs (Mono _),
+      HomologicalComplex.quasiIso_of_acyclic _ hA
+        (HomologicalComplex.homotopyCofiber.acyclic_id A hc)⟩
+    exact nonempty_homotopy_zero_of_hasLiftingProperty f (p := p) hZ
 
 /-- **Fibrations of the injective model structure.** A morphism of cochain complexes has the
 right lifting property with respect to every monomorphism which is a quasi-isomorphism if and

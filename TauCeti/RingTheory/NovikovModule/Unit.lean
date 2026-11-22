@@ -238,7 +238,7 @@ theorem cohomologyProduct_kernelProduct_unit_mk {i j : ℤ} (hij : i + j + ε = 
   have h := kernelProduct_sub_kernelMap_mem_coboundaries_right hn hfin hδ hδfin
     (fun p q h => potential_le_of_diagonal_ne_zero (s := fun _ => (1 : R)) h)
     (diagonal_mem fun _ => 1) hk hkfin hδ hδfin
-    hkd e hunit b.2
+    hkd e hunit b.property
   rw [kernelMap_eq_id, LinearMap.id_apply] at h
   rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
   exact h
@@ -280,7 +280,7 @@ theorem cohomologyProduct_kernelProduct_mk_unit {i j : ℤ} (hij : i + j + ε = 
   have h := kernelProduct_sub_kernelMap_mem_coboundaries_left hn hfin hδ hδfin
     (fun p q h => potential_le_of_diagonal_ne_zero (s := fun _ => (1 : R)) h)
     (diagonal_mem fun _ => 1) hk hkfin hδ hδfin
-    hkd e hunit a.2
+    hkd e hunit a.property
   rw [kernelMap_eq_id, LinearMap.id_apply] at h
   rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
   exact h

@@ -54,10 +54,10 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_symmetricPower
     {X : Scheme.{u}} (n : ℕ) (M : X.Modules) [M.IsQuasicoherent] :
     ((SheafOfModules.symmetricPower X.sheaf n).obj M).IsQuasicoherent := by
   refine (Scheme.Modules.isQuasicoherent_iff_forall_affineOpens _).2 fun U ↦ ?_
-  have : IsAffine U.1.toScheme := U.2
-  exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
-    ((Scheme.Modules.restrictSymmetricPowerIso U.1.ι n).app M)
-    (isQuasicoherent_symmetricPower_affine n (M.restrict U.1.ι))
+  have : IsAffine U.val.toScheme := U.property
+  exact (SheafOfModules.isQuasicoherent U.val.toScheme.ringCatSheaf).prop_of_iso
+    ((Scheme.Modules.restrictSymmetricPowerIso U.val.ι n).app M)
+    (isQuasicoherent_symmetricPower_affine n (M.restrict U.val.ι))
 
 namespace QuasicoherentSheaf
 

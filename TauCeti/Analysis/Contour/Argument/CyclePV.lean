@@ -95,7 +95,7 @@ theorem hasCauchyPV_logDeriv_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {
     HasCauchyPV γ a b (logDeriv f)
       (2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ)) := by
   have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
-    (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
+    ((hoff z hz.1 hz.2).1.logDeriv
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
   have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
     (hmero s hs hsU).deriv.div (hmero s hs hsU)
