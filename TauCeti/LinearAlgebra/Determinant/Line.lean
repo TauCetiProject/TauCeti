@@ -176,6 +176,15 @@ theorem coe_detLineCongr (e : V ≃ₗ[R] W) (x : detLine R V) :
   rw [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
   exact exteriorPower.coe_map _ x
 
+/-- An isomorphism `e` sends an element of a determinant line that is the exterior product of a
+family `v` to the exterior product of the image of `v`. Unlike `LinearEquiv.detLineCongr_ιMulti`,
+the element is given by its value in the exterior algebra, so `v` may have any length and no
+`Fin.cast` renumbering appears. -/
+theorem coe_detLineCongr_of_coe_eq_ιMulti (e : V ≃ₗ[R] W) {x : detLine R V} {n : ℕ}
+    {v : Fin n → V} (hx : (x : ExteriorAlgebra R V) = ExteriorAlgebra.ιMulti R n v) :
+    (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.ιMulti R n (e ∘ v) := by
+  rw [coe_detLineCongr, hx, ExteriorAlgebra.map_apply_ιMulti, LinearEquiv.coe_coe]
+
 @[simp]
 theorem detLineCongr_refl : detLineCongr (LinearEquiv.refl R V) = LinearEquiv.refl R _ := by
   ext x

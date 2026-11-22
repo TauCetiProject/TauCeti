@@ -208,14 +208,6 @@ section Bijective
 
 /-! ### Unit laws -/
 
-/-- An isomorphism `e` sends an element of a determinant line that is the exterior product of a
-family `v` to the exterior product of the image of `v`. -/
-private theorem coe_detLineCongr_of_coe_eq_ιMulti {B B' : Type*} [AddCommGroup B] [Module K B]
-    [AddCommGroup B'] [Module K B'] (e : B ≃ₗ[K] B') {x : TauCeti.detLine K B} {n : ℕ}
-    {v : Fin n → B} (hx : (x : ExteriorAlgebra K B) = ExteriorAlgebra.ιMulti K n v) :
-    (LinearEquiv.detLineCongr e x : ExteriorAlgebra K B') = ExteriorAlgebra.ιMulti K n (e ∘ v) := by
-  rw [LinearEquiv.coe_detLineCongr, hx, ExteriorAlgebra.map_apply_ιMulti, LinearEquiv.coe_coe]
-
 /-- The data with which `LinearMap.detLineCompEquiv_tmul` evaluates the composition law, for the
 basis of `ker f`: families `v`, `w`, `x` and `y` along the kernel–cokernel sequence, the exterior
 products `β`, `γ`, `δ` and `ε` they span, and functionals `ψ` and `χ` normalized at `δ` and at the
@@ -288,7 +280,7 @@ private theorem detLineCompEquiv_tmul_of_bijective_left (hf : Function.Bijective
     intro e he
     have hv : ⇑e ∘ v = f.kerCompToKer g ∘ v := funext fun i ↦ Subtype.ext (by simp [he])
     refine Subtype.ext ?_
-    rw [coe_detLineCongr_of_coe_eq_ιMulti e
+    rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti e
         (hβ.trans (TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left hker _ _)),
       hv, hγ, TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right h₃]
   -- On cokernels, the identity of `P` carries `ε` to the exterior product at which `χ` is
@@ -304,14 +296,16 @@ private theorem detLineCompEquiv_tmul_of_bijective_left (hf : Function.Bijective
     have hε' : LinearEquiv.detLineCongr e ε =
         exteriorPower.ιMulti K _ (Submodule.factor (range_comp_le_range f g) ∘ y) := by
       refine Subtype.ext ?_
-      rw [coe_detLineCongr_of_coe_eq_ιMulti e
+      rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti e
           (hε.trans (TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left h₄ _ _)),
         hy, exteriorPower.ιMulti_apply_coe]
     rw [← Module.Invertible.dual_apply_smul_eq_self hχ (φ ∘ₗ _), ← hε', LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
   rw [detLineCompEquiv_tmul f g (Module.finBasis K (ker f)) v w x y hβ hγ hδ hε φ hψ hχ,
     detLineCongr_tmul, hK, hC, hunit, TensorProduct.tmul_smul, TensorProduct.tmul_smul]
+  -- The premise of `hK`: the isomorphism of kernels in `LinearMap.detLineCongr_tmul` is `f`.
   · exact fun _ ↦ by simp
+  -- The premise of `hC`: the isomorphism of cokernels is induced by the identity of `P`.
   · exact fun _ ↦ by simp
 
 /-- **The composition law against a bijective first factor.** If `f` is bijective, its
@@ -362,7 +356,7 @@ private theorem detLineCompEquiv_tmul_of_bijective_right (hg : Function.Bijectiv
         Module.finBasis K (ker f) :=
       funext fun i ↦ Subtype.ext (by simp [he])
     refine Subtype.ext ?_
-    rw [coe_detLineCongr_of_coe_eq_ιMulti e
+    rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti e
         (hβ.trans (TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right h₂ _ _)),
       hu, exteriorPower.ιMulti_apply_coe]
   -- On cokernels, `g⁻¹` carries `ε` to `δ`, at which `ψ` is normalized, so that the transported
@@ -377,14 +371,17 @@ private theorem detLineCompEquiv_tmul_of_bijective_right (hg : Function.Bijectiv
       simp [← hn, LinearEquiv.symm_apply_eq, he]
     have hδ' : (LinearEquiv.detLineCongr e).symm δ = ε := by
       refine Subtype.ext ?_
-      rw [LinearEquiv.detLineCongr_symm, coe_detLineCongr_of_coe_eq_ιMulti e.symm
+      rw [LinearEquiv.detLineCongr_symm, LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti e.symm
           (hδ.trans (TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left h₃ _ _)),
         hx, hε, TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right hcoker]
     rw [← Module.Invertible.dual_apply_smul_eq_self hψ (φ ∘ₗ _), LinearMap.comp_apply,
       LinearEquiv.coe_coe, hδ']
   rw [detLineCompEquiv_tmul f g (Module.finBasis K (ker f)) v w x y hβ hγ hδ hε φ hψ hχ,
     detLineCongr_tmul, hK, hC, hunit, TensorProduct.tmul_smul, TensorProduct.smul_tmul']
+  -- The premise of `hK`: the isomorphism of kernels in `LinearMap.detLineCongr_tmul` is the
+  -- identity of `M`.
   · exact fun _ ↦ by simp
+  -- The premise of `hC`: the isomorphism of cokernels is induced by `g⁻¹`.
   · exact fun _ ↦ by simp
 
 /-- **The composition law against a bijective second factor.** If `g` is bijective, its
