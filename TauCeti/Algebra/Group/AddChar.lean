@@ -18,6 +18,8 @@ import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 ## Main results
 
 * `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
+* `AddChar.map_eq_one_of_add_eq_zero`: an additive character trivial at `x` is trivial at every
+  additive left inverse of `x`, even over a monoid.
 * `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
   `ZMod p`, takes values in the `p`-th roots of unity.
 * `AddChar.apply_mul_sum`: multiplying the sum of the values of a character by one value leaves
@@ -65,3 +67,12 @@ theorem AddChar.isIntegral_apply {A R : Type*} [AddGroup A] [Finite A] [CommRing
   IsIntegral.of_pow Nat.card_pos <| by
     rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero', AddChar.map_zero_eq_one]
     exact isIntegral_one
+
+/-- An additive character trivial at `x` is trivial at every `y` with `y + x = 0`. Over an
+additive group this says `ψ (-x) = 1`; the statement needs neither negation in the domain nor
+inverses in the codomain, so it also applies to characters of semirings with values in a
+monoid. -/
+theorem AddChar.map_eq_one_of_add_eq_zero {A M : Type*} [AddMonoid A] [Monoid M]
+    (ψ : AddChar A M) {x y : A} (hx : ψ x = 1) (hxy : y + x = 0) : ψ y = 1 :=
+  calc ψ y = ψ y * ψ x := by rw [hx, mul_one]
+    _ = 1 := by rw [← AddChar.map_add_eq_mul, hxy, AddChar.map_zero_eq_one]

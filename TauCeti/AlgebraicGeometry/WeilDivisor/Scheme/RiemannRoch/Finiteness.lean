@@ -10,6 +10,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 
+public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Curves.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
@@ -37,6 +38,9 @@ both apply to every such curve.
   codimension-one local rings are discrete valuation rings.
 * `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_trivial_of_smooth`:
   the same finiteness holds for a smooth proper connected curve over `k`.
+* `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_trivial_of_geometricallyConnected`:
+  the instance form for a smooth proper geometrically connected curve over `k`, which makes its
+  genus available with no further hypothesis.
 
 ## References
 
@@ -104,6 +108,16 @@ instance finiteDimensional_cohomology_one_trivial_of_isCurveOver
     FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
   finiteDimensional_cohomology_one_trivial_of_isProper k
     (Scheme.IsCurveOver.topologicalKrullDim_eq_one k)
+
+/-- The first structure-sheaf cohomology of a smooth proper geometrically connected curve is
+finite-dimensional, so that its genus `X.genus k` is defined. -/
+instance finiteDimensional_cohomology_one_trivial_of_geometricallyConnected
+    {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+    [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
+    [GeometricallyConnected (X ↘ Spec (.of k))] :
+    FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
+  have := GeometricallyConnected.connectedSpace_of_subsingleton (X ↘ Spec (.of k))
+  finiteDimensional_cohomology_one_trivial_of_smooth k X
 
 end AlgebraicGeometry
 

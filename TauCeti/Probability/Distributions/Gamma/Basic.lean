@@ -73,6 +73,8 @@ exactly the half-line on which the shifted rate is still positive.
   parameters;
 * `TauCeti.Probability.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to
   `r / c`;
+* `ProbabilityTheory.HasLaw.const_mul_gammaMeasure` — the corresponding transport theorem for a
+  gamma random variable;
 * `TauCeti.Probability.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against
   Lebesgue
   measure on `Ioi 0`;
@@ -518,3 +520,17 @@ theorem gammaMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
           ENNReal.ofReal_one, one_mul]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+/-- Multiplying a gamma random variable by a positive constant divides its rate by that
+constant. -/
+theorem const_mul_gammaMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {a r c : ℝ} (hX : HasLaw X (gammaMeasure a r) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (gammaMeasure a (r / c)) P := by
+  rw [← gammaMeasure_map_const_mul hc]
+  exact (hasLaw_map (measurable_const_mul c).aemeasurable).fun_comp hX
+
+end ProbabilityTheory.HasLaw
