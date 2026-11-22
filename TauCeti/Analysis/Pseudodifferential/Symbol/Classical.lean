@@ -60,7 +60,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.ofEqHomogeneous`: a symbol that agrees with a homogeneous symbol `h` at
   all large frequencies is classical, with principal symbol `h` and no further terms; in
   particular so is a coefficient that is smooth everywhere and homogeneous away from `ξ = 0`, such
-  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`);
+  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`) or a
+  smooth function of the position (`TauCeti.ClassicalSymbol.ofSpatial`);
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -398,6 +399,16 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
   simpa using ((hσ.tendsto.comp tendsto_snd).add
     (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
 
+/-- The principal symbol vanishes at every position where the full symbol vanishes. -/
+theorem coefficient_principal_eq_zero_of_forall {x : CoordinateSpace n}
+    (h : ∀ η, a.toSymbol.coefficient (x, η) = 0) (ξ : CoordinateSpace n) :
+    a.principal.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.principal.zero_covector x
+  refine tendsto_nhds_unique ((a.tendsto_rpow_neg_smul_coefficient_smul hξ).comp
+    (tendsto_id.prodMk tendsto_const_nhds)) ?_
+  simp [Function.comp_def, h]
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _
@@ -545,6 +556,31 @@ theorem principal_ofContDiffHomogeneous :
 theorem term_ofContDiffHomogeneous_succ (j : ℕ) :
     (ofContDiffHomogeneous f hf hhom).term (j + 1) = 0 := by
   rw [ofContDiffHomogeneous, term_ofEqHomogeneous_succ]
+
+/-- A smooth function `f` of the position, the symbol of multiplication by `f`, is a classical
+symbol of order `0`: its full symbol is `TauCeti.Symbol.ofSpatial f`
+(`TauCeti.ClassicalSymbol.toSymbol_ofSpatial`), its principal symbol is `f(x)` at every nonzero
+frequency (`TauCeti.ClassicalSymbol.coefficient_principal_ofSpatial`), and its other homogeneous
+terms vanish. -/
+def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    ClassicalSymbol n V W 0 :=
+  ofContDiffHomogeneous (fun p ↦ f p.1) (hf.comp contDiff_fst) fun _ _ _ _ _ ↦ by simp
+
+variable (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+
+@[simp]
+theorem toSymbol_ofSpatial : (ofSpatial f hf).toSymbol = Symbol.ofSpatial f hf := by
+  ext1
+  rw [ofSpatial, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
+  exact funext fun p ↦ (Symbol.coefficient_ofSpatial f hf p).symm
+
+theorem coefficient_principal_ofSpatial {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (ofSpatial f hf).principal.coefficient (x, ξ) = f x := by
+  rw [ofSpatial, principal_ofContDiffHomogeneous, coefficient_mk'_of_ne_zero _ _ _ hξ]
+
+@[simp]
+theorem term_ofSpatial_succ (j : ℕ) : (ofSpatial f hf).term (j + 1) = 0 :=
+  term_ofContDiffHomogeneous_succ _ _ _ j
 
 end EqHomogeneous
 

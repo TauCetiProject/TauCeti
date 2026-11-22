@@ -98,7 +98,7 @@ private theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
   | nil => rw [List.map_nil, wordProd_nil, geckWeylWordProd_nil]
   | cons i l ih =>
     rw [List.map_cons, wordProd_cons, ih, geckWeylWordProd_cons,
-      coe_simpleSupportEquivSimplyConnectedBase]
+      coe_simpleSupportEquivSimplyConnectedBase_apply]
 
 /-- **Strong-exchange shortening of Weyl words in `D.points A`.** If `l` spells a Weyl element
 sending a positive root `γ` to a negative root, multiplying the lifted word on the right by

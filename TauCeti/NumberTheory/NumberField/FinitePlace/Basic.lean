@@ -50,7 +50,8 @@ the `e * f`-th power of that of `v`.
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
 
 `NumberField.FinitePlace.finprod_comp_mk` reindexes a product over the finite places by the
-height one primes of the ring of integers.
+height one primes of the ring of integers, and `NumberField.FinitePlace.mk_injective` records that
+distinct primes give distinct places, so that a finite product over primes is one over places.
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
@@ -66,7 +67,9 @@ those places: `v d * R v ≤ 1`. When a finite place `u` lies outside that finit
 `NumberField.FinitePlace.exists_apply_eq_one_forall_apply_le` and
 `NumberField.FinitePlace.exists_apply_eq_one_forall_mul_apply_le` choose `d` to have `u d = 1` as
 well. These follow Ralf Stephan's `DiophantineApproximation/FinitePlaceValues.lean` in
-`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0). Globally,
+`NumberField.FinitePlace.exists_ne_zero_smul_apply_le_one` scales any finite tuple over `K` by a
+nonzero scalar so that its coordinates are at most `1` at every finite place simultaneously.
 -/
 
 public section
@@ -184,6 +187,10 @@ theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.val.IsEquiv v.val := 
     mk_maximalIdeal, mk_maximalIdeal]
   exact h.lt_one_iff
 
+/-- Distinct height one primes of the ring of integers give distinct finite places. -/
+theorem mk_injective : Function.Injective (mk : HeightOneSpectrum (𝓞 K) → FinitePlace K) :=
+  equivHeightOneSpectrum.symm.injective
+
 /-- A product over the finite places of a number field, reindexed by the height one primes of its
 ring of integers. -/
 theorem finprod_comp_mk {M : Type*} [CommMonoid M] (f : FinitePlace K → M) :
@@ -288,6 +295,18 @@ theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset 
   obtain ⟨d, hdu, hd⟩ := u.exists_apply_eq_one_forall_apply_le hu (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
   exact ⟨d, hdu, fun v hv ↦ TauCeti.mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
+
+/-- Every finite tuple over a number field has a nonzero scalar multiple whose coordinates have
+absolute value at most `1` at every finite place. -/
+theorem exists_ne_zero_smul_apply_le_one {ι : Type*} [Finite ι] (x : ι → K) :
+    ∃ d : K, d ≠ 0 ∧ ∀ (v : FinitePlace K) (i : ι), v ((d • x) i) ≤ 1 := by
+  obtain ⟨⟨b, hb⟩, hbx⟩ :=
+    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors (𝓞 K)) x
+  choose y hy using hbx
+  refine ⟨(b : K), by simpa using nonZeroDivisors.ne_zero hb, fun v i ↦ ?_⟩
+  have hbi : (b : K) * x i = (y i : K) := by simpa [Algebra.smul_def] using (hy i).symm
+  rw [Pi.smul_apply, smul_eq_mul, hbi]
+  exact v.apply_le_one (y i)
 
 end NumberField.FinitePlace
 

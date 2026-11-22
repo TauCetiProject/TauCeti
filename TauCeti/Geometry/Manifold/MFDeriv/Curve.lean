@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -45,7 +47,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `(g ∘ γ)' (t) = d g (γ t) (γ' t)` for a function `g` from the manifold to a normed space,
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
 * `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
-  boundaryless manifold is realized by a curve of the given regularity at the given parameter.
+  manifold interior point is realized by a curve of the given regularity at the given parameter.
+* `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
+  subset of a real normed space is the within derivative of its coordinate curve.
 * `TauCeti.Manifold.curveVelocityWithin` and `TauCeti.Manifold.curveVelocity`: the velocity of a
   curve within a parameter set and its unrestricted case, computed by
   `TauCeti.Manifold.curveVelocityWithin_apply` and `TauCeti.Manifold.curveVelocity_apply` and
@@ -83,7 +87,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
-  reparametrizations.
+  reparametrizations. `MDifferentiableAt.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero` is the
+  velocity of a family `f : F → M → N` along a curve of parameters at a fixed point.
 * `Filter.EventuallyEq.curveVelocity_eq`: the velocity of a curve depends only on its germ.
 * `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
@@ -116,6 +121,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
   `TauCeti.Manifold.derivWithin_extChartAt_comp_curve` its form for the named velocity.
+* `TauCeti.Manifold.curveVelocity_chartInverse_eq`: a model-space curve through the chart centre
+  retains its velocity when carried back through the inverse chart.
 * `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: for a `C²` curve, the
   second within-derivative of its reading in the chart at `γ t` is a genuine derivative of the
   first one.
@@ -218,6 +225,13 @@ vector. -/
 theorem curveVelocity_apply : curveVelocity I γ t = mfderiv 𝓘(𝕜, 𝕜) I γ t (1 : 𝕜) := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_apply, mfderivWithin_univ]
 
+/-- The derivative of a curve sends a scalar `c` to `c` times the velocity. -/
+theorem mfderiv_apply_eq_smul_curveVelocity (c : 𝕜) :
+    mfderiv 𝓘(𝕜, 𝕜) I γ t c = c • curveVelocity I γ t := by
+  rw [curveVelocity_apply]
+  -- On the tangent space `𝕜`, the scalar action is multiplication, so `c • 1 = c`.
+  exact (congrArg _ (mul_one c).symm).trans ((mfderiv 𝓘(𝕜, 𝕜) I γ t).map_smul c (1 : 𝕜))
+
 /-- The velocity of the image of a curve under a differentiable map is the differential of the
 map applied to the velocity of the curve. The derivative within the parameter set is uniquely
 determined at `t`. -/
@@ -305,6 +319,29 @@ theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
   simpa only [curveVelocityWithin_univ, curveVelocity_eq_deriv, hg.deriv] using
     curveVelocityWithin_map hf uniqueDiffWithinAt_univ
       hg.differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
+
+/-- **The velocity of a family along a curve of parameters.** If `g` is a curve through a normed
+space of parameters with velocity `w`, and the uncurried family `(q, y) ↦ f q y` is differentiable
+at `(g t, y)`, then the velocity of `s ↦ f (g s) y` is the differential of the uncurried family
+applied to `(w, 0)`. -/
+theorem curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {f : F → M → N} {g : 𝕜 → F} {w : F} {y : M}
+    (hf : MDifferentiableAt (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y))
+    (hg : HasDerivAt g w t) :
+    curveVelocity I' (fun s ↦ f (g s) y) t =
+      mfderiv (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y) (w, 0) := by
+  have hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (𝓘(𝕜, F).prod I) (fun s ↦ (g s, y)) t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((w, (0 : E)) : TangentSpace (𝓘(𝕜, F).prod I) (g t, y))) :=
+    -- Both derivatives are determined by their value at `1`, which agree up to `1 • 0 = 0`.
+    ((hasMFDerivAt_iff_hasFDerivAt.2 hg.hasFDerivAt).prodMk (hasMFDerivAt_const y t)).congr_mfderiv
+      (ContinuousLinearMap.ext_ring (Prod.ext rfl (smul_zero _).symm))
+  have h := curveVelocityWithin_map (s := Set.univ) hf uniqueDiffWithinAt_univ
+    hc.mdifferentiableAt.mdifferentiableWithinAt
+  rw [curveVelocityWithin_eq_of_hasMFDerivWithinAt hc.hasMFDerivWithinAt
+    uniqueDiffWithinAt_univ, curveVelocityWithin_univ] at h
+  exact h
 
 end MDifferentiableAt
 
@@ -882,6 +919,26 @@ theorem hasDerivAt_extChartAt_comp_curve
     HasDerivAt (extChartAt I (γ t) ∘ γ) w t :=
   hasDerivWithinAt_univ.mp (hasDerivWithinAt_extChartAt_comp_curve hγ.hasMFDerivWithinAt)
 
+/-- A model-space curve through the centre of an extended chart has the same velocity after
+composition with the inverse chart, provided the chart target is a neighbourhood of the centre. -/
+theorem curveVelocity_chartInverse_eq
+    (x : M) {γ : 𝕜 → E} {v : E}
+    (htarget : (extChartAt I x).target ∈ nhds (extChartAt I x x))
+    (hγt : γ t = extChartAt I x x) (hγ : HasDerivAt γ v t) :
+    curveVelocity I ((extChartAt I x).symm ∘ γ) t = v := by
+  have hc : MDifferentiableAt 𝓘(𝕜, E) I (extChartAt I x).symm (γ t) := by
+    rw [hγt]
+    exact ((contMDiffWithinAt_extChartAt_symm_target_self x).contMDiffAt htarget).mdifferentiableAt
+      one_ne_zero
+  have hdiff := hc.comp t hγ.differentiableAt.mdifferentiableAt
+  have hbase : ((extChartAt I x).symm ∘ γ) t = x := by simp [Function.comp_def, hγt]
+  have heq : (extChartAt I x) ∘ ((extChartAt I x).symm ∘ γ) =ᶠ[nhds t] γ := by
+    filter_upwards [hγ.continuousAt.preimage_mem_nhds (hγt.symm ▸ htarget)] with s hs
+    exact (extChartAt I x).right_inv hs
+  have hvel := hasDerivAt_extChartAt_comp_curve (hasMFDerivAt_curveVelocity hdiff)
+  rw [hbase] at hvel
+  exact hvel.unique (hγ.congr_of_eventuallyEq heq)
+
 /-- The derivative within `s` of a differentiable curve read in the chart centred at the current
 point is its velocity within `s`. -/
 theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
@@ -1079,16 +1136,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I n M] [I.Boundaryless]
+  {n : ℕ∞ω} [IsManifold I n M]
 
-/-- Every tangent vector to a boundaryless manifold is the velocity of a curve which is
-`C^n` near the prescribed parameter. No completeness or metric is required. -/
+/-- Every tangent vector at an interior point is the velocity of a curve which is `C^n`
+near the prescribed parameter. No completeness or metric is required. -/
 theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
-    (v : TangentSpace I p) (t : 𝕜) :
+    (hp : I.IsInteriorPoint p) (v : TangentSpace I p) (t : 𝕜) :
     ∃ γ : 𝕜 → M, γ t = p ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t ∧
       curveVelocity I γ t = v := by
   have : IsManifold I 1 M := IsManifold.of_le hn
   let c := extChartAt I p
+  have htarget : c.target ∈ 𝓝 (c p) :=
+    mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp hp)
   -- Use the model-space instances for the chart line, rather than the fibre instances.
   let v' : E := v
   let l : 𝕜 → E := fun r ↦ c p + (r - t) • v'
@@ -1097,14 +1156,14 @@ theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
   have hlt : l t = c p := by simp [l]
   have hc : ContMDiffAt 𝓘(𝕜, E) I n c.symm (c p) :=
     (contMDiffWithinAt_extChartAt_symm_target_self p).contMDiffAt
-      (extChartAt_target_mem_nhds p)
+      htarget
   have hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n (c.symm ∘ l) t :=
     (hlt ▸ hc).comp t hl.contMDiff.contMDiffAt
   have hγt : (c.symm ∘ l) t = p := by simp [Function.comp_apply, hlt, c]
   refine ⟨c.symm ∘ l, hγt, hγ, ?_⟩
   have heq : c ∘ (c.symm ∘ l) =ᶠ[𝓝 t] l := by
     filter_upwards [hl.continuous.continuousAt.preimage_mem_nhds
-      (hlt ▸ extChartAt_target_mem_nhds p)] with r hr
+      (hlt ▸ htarget)] with r hr
     exact c.right_inv hr
   have hderiv : HasDerivAt l v' t := by
     simpa only [l, Pi.add_apply, id_eq, zero_add, one_smul] using
@@ -1177,5 +1236,24 @@ theorem hasMFDerivAt_extChartAt_symm_add_smul {c d : E} {t : ℝ}
     hseg.hasDerivWithinAt
 
 end ExtChartAtSymm
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {U : TopologicalSpace.Opens E}
+
+/-- The native velocity of a curve in an open subset, read in ambient tangent coordinates,
+is the ordinary within derivative of its coordinate curve. -/
+theorem fromTangentSpace_curveVelocityWithin {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ) 𝓘(ℝ, E) γ s t) (hs : UniqueDiffWithinAt ℝ s t) :
+    NormedSpace.fromTangentSpace (γ t).val
+      (tangentSpaceOpenEquiv (I := 𝓘(ℝ, E)) (γ t) (curveVelocityWithin 𝓘(ℝ, E) γ s t)) =
+        derivWithin (fun r ↦ (γ r).val) s t := by
+  have h := curveVelocityWithin_map (f := (Subtype.val : U → E))
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hs hγ
+  rw [curveVelocityWithin_eq_derivWithin, mfderiv_subtype_val] at h
+  exact congrArg (NormedSpace.fromTangentSpace (γ t).val) h.symm
 
 end TauCeti.Manifold

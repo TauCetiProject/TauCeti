@@ -420,7 +420,7 @@ private theorem δ_cup_of_leftInverse_of_add_one (N : Rep k G) {p q n : ℤ} (hq
   rw [← ih, cup_dimensionShiftDownIso_hom S.X₃ N hq h rfl x y, map_zsmul_unit, Int.negOnePow_succ,
     Units.neg_smul] at e
   replace e := congrArg (p.negOnePow • ·) e
-  simp only [negOnePow_smul_negOnePow_smul, smul_neg] at e
+  simp only [Int.negOnePow_smul_negOnePow_smul, smul_neg] at e
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom] at e
   rw [tensorDimensionShiftDownIso_hom]
   exact neg_inj.1 (key.symm.trans e)
