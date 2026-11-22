@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Tactic.Ring
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.ContDiff.Comp
@@ -23,12 +25,17 @@ bound for every exponent at most one. Thus local `C^{k,α}` data need a separate
 hypothesis only at their top derivative. Currying preserves these bounds exactly. On an open set
 that need not be convex, a `C^1` map is locally Lipschitz, hence Hölder on every compact subset,
 so one more derivative makes the top derivative Hölder there.
+
+`ContDiffOn.exists_ball_bounds_and_holderOnWith_iteratedFDeriv` gives common bounds and Hölder
+constants for every derivative field of local `C^{n,α}` data on a positive ball, without an extra
+derivative or finite-dimensional parameter assumption. Constant maps have zero Hölder constant at
+every derivative order (`TauCeti.holderWith_iteratedFDeriv_const`).
 -/
 
 public section
 
-open Set
-open scoped NNReal
+open Set Metric Filter
+open scoped NNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
@@ -95,5 +102,46 @@ theorem _root_.ContDiffOn.exists_holderOnWith_iteratedFDeriv {𝕂 E' F' : Type*
   ContDiffOn.exists_holderOnWith_of_isOpen (fun _ hx ↦
     ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDeriv_right (add_comm _ _).le).contDiffWithinAt)
     hs hα hK hKs
+
+/-- Every derivative field of a constant map is Hölder with constant zero, at every order
+and exponent. -/
+theorem holderWith_iteratedFDeriv_const {𝕜 : Type u𝕜} {E' : Type uE} {F' : Type uF}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    (n : ℕ) (α : ℝ≥0) (v : F') :
+    HolderWith 0 α (iteratedFDeriv 𝕜 n (fun _ : E' ↦ v)) := by
+  cases n with
+  | zero =>
+    simp only [iteratedFDeriv_zero_eq_comp, Function.comp_def]
+    exact HolderWith.const
+  | succ n =>
+    rw [iteratedFDeriv_succ_const]
+    exact HolderWith.zero
+
+/-- Local `C^{n,α}` data have common bounded and Hölder derivative fields through order `n`
+on a positive ball. No compactness of the parameter space or extra derivative is required. -/
+theorem _root_.ContDiffOn.exists_ball_bounds_and_holderOnWith_iteratedFDeriv
+    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {f : P → V} {s : Set P} {a : P}
+    {n : ℕ} {α C : ℝ≥0} (hf : ContDiffOn ℝ n f s) (hs : s ∈ 𝓝 a)
+    (hα : α ≤ 1) (hH : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
+    ∃ r > 0, ball a r ⊆ s ∧ ∃ M H : ℝ≥0,
+      (∀ j ≤ n, ∀ x ∈ ball a r, ‖iteratedFDeriv ℝ j f x‖ ≤ M) ∧
+      ∀ j ≤ n, HolderOnWith H α (iteratedFDeriv ℝ j f) (ball a r) := by
+  obtain ⟨r, hr, A, hA⟩ := (hf.contDiffAt hs).exists_ball_bound_iteratedFDeriv
+  obtain ⟨ρ, hρ, hρs⟩ := Metric.eventually_nhds_iff_ball.mp
+    (Filter.Eventually.and (ball_mem_nhds a hr) hs)
+  have hrs : ball a ρ ⊆ s := fun x hx ↦ (hρs x hx).2
+  have hbound : ∀ j ≤ n, ∀ x ∈ ball a ρ, ‖iteratedFDeriv ℝ j f x‖ ≤ A.toNNReal := by
+    intro j hj x hx
+    exact (hA j hj x (hρs x hx).1).trans (Real.le_coe_toNNReal A)
+  refine ⟨ρ, hρ, hrs, A.toNNReal, max C (3 * A.toNNReal), hbound, fun j hj ↦ ?_⟩
+  rcases hj.lt_or_eq with hj | rfl
+  · have h := (hf.mono hrs).holderOnWith_iteratedFDeriv_of_lt isOpen_ball (convex_ball a ρ)
+      hj hα (hbound j hj.le) (hbound (j + 1) hj)
+    apply h.mono_const
+    calc A.toNNReal + 2 * A.toNNReal = 3 * A.toNNReal := by ring
+         _ ≤ max C (3 * A.toNNReal) := le_max_right _ _
+  · exact (hH.mono hrs).mono_const (le_max_left _ _)
 
 end TauCeti
