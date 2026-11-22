@@ -241,6 +241,14 @@ theorem grassmannian_zero : grassmannian 𝕜 E 0 = {0} := by
     ContinuousLinearMap.coe_inj]
   exact ⟨And.right, fun h ↦ ⟨h ▸ IsStarProjection.zero _, h⟩⟩
 
+/-- The orthogonal projection onto a finite-dimensional subspace `U` lies in `G(E, k)` exactly
+when `U` has dimension `k`. -/
+@[simp]
+theorem starProjection_mem_grassmannian_iff {U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U] :
+    U.starProjection ∈ grassmannian 𝕜 E k ↔ finrank 𝕜 U = k := by
+  rw [mem_grassmannian, Submodule.range_starProjection, ← Module.finrank_eq_rank, Nat.cast_inj]
+  exact and_iff_right isStarProjection_starProjection
+
 end CompleteSpace
 
 section FiniteDimensional
@@ -251,14 +259,6 @@ variable [CompleteSpace E] [FiniteDimensional 𝕜 E] {P : E →L[𝕜] E}
 theorem mem_grassmannian_iff_finrank :
     P ∈ grassmannian 𝕜 E k ↔ IsStarProjection P ∧ finrank 𝕜 P.range = k := by
   rw [mem_grassmannian, ← Module.finrank_eq_rank, Nat.cast_inj]
-
-/-- The orthogonal projection onto a subspace `U` lies in `G(E, k)` exactly when `U` has
-dimension `k`. -/
-@[simp]
-theorem starProjection_mem_grassmannian_iff {U : Submodule 𝕜 E} :
-    U.starProjection ∈ grassmannian 𝕜 E k ↔ finrank 𝕜 U = k := by
-  rw [mem_grassmannian_iff_finrank, Submodule.range_starProjection]
-  exact and_iff_right isStarProjection_starProjection
 
 /-- The points of `G(E, k)` are exactly the orthogonal projections onto the `k`-dimensional
 subspaces of `E`. -/
