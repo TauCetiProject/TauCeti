@@ -27,7 +27,7 @@ algebra this is how polynomial functions on the weights are tested on the domina
 weights alone, whose values on the simple coroots are the natural numbers.
 
 The function is polynomial in the usual sense along every affine line of linear forms, over any
-commutative ring and without freeness: for `p : S(M)` and linear forms `f`, `g`, the values
+commutative semiring and without freeness: for `p : S(M)` and linear forms `f`, `g`, the values
 `SymmetricAlgebra.lift (f + t • g) p` are the values at `t` of one polynomial in `R[X]`, namely the
 image of `p` under the evaluation at the `R[X]`-valued linear form `f + X • g`. Over a domain, this
 is how an identity between two such functions known at infinitely many points of a line is
@@ -103,7 +103,7 @@ instance isMaximal_ker_lift {K M : Type*} [Field K] [AddCommMonoid M] [Module K 
     (f : M →ₗ[K] K) : (RingHom.ker (SymmetricAlgebra.lift f)).IsMaximal :=
   RingHom.ker_isMaximal_of_surjective _ fun c ↦ ⟨algebraMap K _ c, by simp⟩
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- **An element of the symmetric algebra is a polynomial function along every affine line** of
 linear forms: for `p : S(M)` and linear forms `f`, `g` there is a polynomial `q` with
@@ -116,18 +116,14 @@ theorem exists_polynomial_eval_eq_lift_add_smul (p : SymmetricAlgebra R M) (f g 
   have hcomp : (Polynomial.aeval t).comp (SymmetricAlgebra.lift φ) =
       SymmetricAlgebra.lift (f + t • g) := by
     ext x
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.coe_ofClass, AlgHom.coe_comp,
-      SymmetricAlgebra.lift_ι_apply]
-    simp only [φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, map_add,
-      Polynomial.aeval_monomial, Algebra.algebraMap_self, RingHom.id_apply, smul_eq_mul]
-    ring
+    simp [φ, mul_comm]
   rw [← Polynomial.coe_aeval_eq_eval, ← hcomp, AlgHom.comp_apply]
 
 end SymmetricAlgebra
 
 namespace TauCeti.SymmetricAlgebra
 
-variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommMonoid M] [Module R M]
 
 /-- **An element of the symmetric algebra vanishing on a box of linear forms is zero.** Let `b` be
 a basis of `M` over an integral domain and let `s i` be an infinite set of scalars for each basis
