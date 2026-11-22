@@ -25,6 +25,8 @@ This file records the eigenvalue structure of `A` on which Williamson's normal f
   polynomials `X² - a²`, `X² + b²` and `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` give the
   hyperbolic, elliptic and focus-focus summands. For coprime even polynomials the two summands
   are `ω`-orthogonal (`LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_maxGenEigenspace_aeval`).
+* For an odd real polynomial `p`, `p(-X) = -p`, the endomorphism `p(A)` lies in `sp(V, ω)` again
+  (`TauCeti.SymplecticForm.aeval_mem_skewAdjointLieSubalgebra`).
 * For a nonzero real `μ`, the generalized `μ`-eigenspace of `A` is isotropic
   (`TauCeti.SymplecticForm.isIsotropic_genEigenspace`), while `ω` pairs the maximal generalized
   `μ`- and `-μ`-eigenspaces nondegenerately
@@ -73,6 +75,14 @@ theorem isSymplectic_maxGenEigenspace_aeval (hA : A ∈ skewAdjointLieSubalgebra
     hA'.nondegenerate_domRestrict₁₂_maxGenEigenspace_aeval_of_comp_neg_X_eq ω.nondegenerate hp
 
 end FiniteDimensional
+
+/-- For an element `A` of `sp(V, ω)` and an odd polynomial `p`, `p(-X) = -p`, the endomorphism
+`p(A)` lies in `sp(V, ω)` again. -/
+theorem aeval_mem_skewAdjointLieSubalgebra (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm)
+    {p : ℝ[X]} (hp : p.comp (-X) = -p) : aeval A p ∈ skewAdjointLieSubalgebra ω.toBilinForm := by
+  have h := ((LinearMap.mem_skewAdjointSubmodule A).1 hA).isAdjointPair_aeval p
+  rw [hp, map_neg] at h
+  exact (LinearMap.mem_skewAdjointSubmodule _).2 h
 
 /-- For an element `A` of `sp(V, ω)` and a nonzero real `μ`, every generalized `μ`-eigenspace of
 `A` is isotropic. -/
