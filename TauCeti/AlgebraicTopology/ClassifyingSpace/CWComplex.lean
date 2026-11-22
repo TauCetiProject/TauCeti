@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.OrderedMap
 public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
-import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # The CW structures on Milnor's countable join and classifying space
@@ -74,8 +73,6 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
   `TauCeti.closedCell_classifyingSpaceCellEquiv_symm_mk` and
   `TauCeti.cellFrontier_classifyingSpaceCellEquiv_symm_mk`: the open cells, closed cells and cell
   frontiers of the classifying space are the images of those of the countable join.
-* `TauCeti.isCellular_classifyingSpaceProj`: the universal covering projection `EG → BG` is
-  cellular.
 
 ## References
 
@@ -443,18 +440,6 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
       classifyingSpaceProj G '' {x : universalGSpace G | x.val.support ⊂ c.val.val} := by
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
-
-variable (G) in
-/-- **The universal covering projection `EG → BG` is cellular.** For the CW structures on Milnor's
-countable join and classifying space, the projection `classifyingSpaceProj G` carries every
-skeleton of `universalGSpace G` into the corresponding skeleton of `classifyingSpace G`. -/
-theorem isCellular_classifyingSpaceProj :
-    IsCellular (univ : Set (universalGSpace G)) (univ : Set (classifyingSpace G))
-      (TopCat.ofHom ((⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩ :
-        C(universalGSpace G, classifyingSpace G)).restrictPreimage univ)) := by
-  rw [TopCat.ofHom_restrictPreimage_univ_eq]
-  exact (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
-    exists_smul_openCell_eq fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
 
 end ClassifyingSpace
 
