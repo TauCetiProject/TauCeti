@@ -13,8 +13,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Analysis.Sobolev.Leibniz
-import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!

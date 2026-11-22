@@ -80,7 +80,7 @@ private abbrev datum (g : CkHolderSpace k α E F) (r m : ℕ) : E → E [×m]→
 
 private theorem contDiff_iterate (g : CkHolderSpace k α E F) {r : ℕ} (h : 2 * r ≤ k) :
     ContDiff ℝ (k - 2 * r : ℕ) (Δ^[r] (g : E → F)) :=
-  g.contDiff.iterate_laplacian h
+  g.contDiff.iterate_laplacian (by exact_mod_cast (by omega : k - 2 * r + 2 * r ≤ k))
 
 private theorem continuous_datum (g : CkHolderSpace k α E F) {r m : ℕ} (h : 2 * r + m ≤ k) :
     Continuous (datum g r m) :=
