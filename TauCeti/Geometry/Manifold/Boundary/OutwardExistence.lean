@@ -41,34 +41,19 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
       (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M))
       (-EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) (x : M)) y) := by
   let v₀ : TangentSpace (𝓡∂ (n + 1)) (x : M) := -EuclideanSpace.single 0 1
-  let g : (z : M) → TangentSpace (𝓡∂ (n + 1)) z :=
-    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
-      (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M)) v₀
-  have hxy : y ∈ (extChartAt (𝓡∂ (n + 1)) (x : M)).source := by
-    simpa only [extChartAt_source] using hy
-  rw [isOutwardPointing_iff_tangentCoordChange (x := y) (α := (x : M)) hby
-    hxy
-    (g y)]
-  have hext : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) = v₀ := by
-    have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
-      rw [tangentCoordChange_self (x := (x : M))
-        (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
-    have hcoord : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 = v₀ := by
-      have hcoord' : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-          (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 =
-          (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-            (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 := by
-        simp only [g, FiberBundle.extend]
-        rw [Trivialization.apply_mk_symm _ (by
-          rwa [TangentBundle.trivializationAt_baseSet])]
-      exact hcoord'.trans hvalue
-    exact (TangentBundle.trivializationAt_snd_eq_tangentCoordChange
-      (x := (x : M)) (y := y) (g y)).symm.trans hcoord
-  rw [hext]
-  simp [v₀]
+  change IsOutwardPointing y (FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
+    (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M)) v₀ y)
+  have hy_base : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (x : M)).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  have hfst : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 =
+      -EuclideanSpace.single 0 1 := by
+    rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+      tangentCoordChange_self (mem_extChartAt_source (x : M))]
+  dsimp only [FiberBundle.extend]
+  rw [hfst, ← Trivialization.symmL_apply (R := ℝ) _ hy_base]
+  exact isOutwardPointing_trivializationAt_symmL_neg_single_zero (y := ⟨y, hby⟩) hy_base
 
 /-- Every smooth finite-dimensional Hausdorff sigma-compact half-space manifold has a smooth field
 pointing outward along its boundary. -/

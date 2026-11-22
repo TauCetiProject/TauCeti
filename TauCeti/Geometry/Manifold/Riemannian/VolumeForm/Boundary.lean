@@ -48,7 +48,8 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
+local instance instIsManifoldBoundaryVolumeForm :
+    IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
   isManifold_boundary M
 
 private abbrev bdryI (n : ℕ) := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
@@ -68,20 +69,17 @@ private theorem exists_orthonormalBasis_cons_outwardUnitNormal
   set N := outwardUnitNormal x
   let b : OrthonormalBasis (Fin n) ℝ (TangentSpace (bdryI n) x) :=
     (stdOrthonormalBasis ℝ _).reindex (finCongr (by rw [TauCeti.finrank_tangentSpace]; simp))
-  have hf_orth : Orthonormal ℝ (Fin.cons N fun i ↦ dι (b i)) := by
-    rw [orthonormal_iff_ite]; intro i j
-    refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
-    · simp [N, norm_outwardUnitNormal]
-    · simp [N, dι, inner_outwardUnitNormal_mfderiv_subtypeVal, (Fin.succ_ne_zero j).symm]
-    · simp [N, dι, inner_mfderiv_subtypeVal_outwardUnitNormal]
-    · simp only [Fin.cons_succ, Fin.succ_inj]; rw [← inner_tangentSpace_boundary]
-      exact orthonormal_iff_ite.1 b.orthonormal i j
+  have hf_orth : Orthonormal ℝ (Matrix.vecCons N fun i ↦ dι (b i)) :=
+    orthonormal_vecCons_iff.2 ⟨norm_outwardUnitNormal x,
+      fun i ↦ inner_outwardUnitNormal_mfderiv_subtypeVal x _, orthonormal_iff_ite.2 fun i j ↦ by
+        rw [← inner_tangentSpace_boundary]; exact orthonormal_iff_ite.1 b.orthonormal i j⟩
   let b' : OrthonormalBasis (Fin (n + 1)) ℝ (TangentSpace (𝓡∂ (n + 1)) (x : M)) :=
-    (basisOfLinearIndependentOfCardEqFinrank hf_orth.linearIndependent
+    (basisOfOrthonormalOfCardEqFinrank hf_orth
       (by rw [TauCeti.finrank_tangentSpace]; simp)).toOrthonormalBasis
-      (by rwa [coe_basisOfLinearIndependentOfCardEqFinrank])
+      (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact hf_orth)
   have hb'_coe : ⇑b'.toBasis = Fin.cons N fun i ↦ dι (b i) := by
-    rw [Module.Basis.toBasis_toOrthonormalBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
+    rw [Module.Basis.toBasis_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
+    rfl
   have hN_neg : (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) N < 0 := by
     have h := (isOutwardPointing_outwardUnitNormal x).coordinate_deriv_neg
     rwa [mfderiv_extChartAt_self] at h

@@ -39,6 +39,8 @@ symbol `∑ₖ Γᵏₖⱼ`, which appears when the trace of `∇X` is expanded 
   Levi-Civita connection.
 * `TauCeti.divergence_eq_sum_christoffelSymbol`: `div X = ∑ₖ (∂ₖ Xᵏ + ∑ⱼ Xʲ Γᵏₖⱼ)`.
 * `TauCeti.chartVolumeDensity_mul_divergence`: the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)`.
+* `TauCeti.stdChartVolumeDensity_mul_divergence`: the same formula in the standard Euclidean basis
+  chart frame.
 
 ## References
 
@@ -144,5 +146,117 @@ theorem chartVolumeDensity_mul_divergence (α : M) {y : M}
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
   ring
+
+section StdChart
+
+variable {m : ℕ} {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+
+private theorem chartLocalFrame_eq_sum_stdLocalFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).baseSet)
+    (j : Fin m) :
+    chartLocalFrame (I := I) α ((finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))).symm j)
+        y =
+      ∑ i : Fin m,
+        (EuclideanSpace.basisFun (Fin m) ℝ).toBasis.repr
+          ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+            (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))) j) i •
+          (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrame
+            (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i y := by
+  set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
+  rw [chartLocalFrame_eq_symmL, (Module.Basis.reindex_apply finB finσ j).symm]
+  conv_lhs => rw [← stdB.sum_repr (finB.reindex finσ j)]
+  rw [map_sum]
+  simp_rw [map_smul, symmL_basis_eq_localFrame _ hy]
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+private theorem stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum
+    (α : M) {y : M}
+    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).baseSet)
+    (X : (x : M) → TangentSpace I x) (i : Fin m) :
+    (fun z ↦ stdChartVolumeDensity (I := I) α z *
+        (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrameCoeff I
+          (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i z (X z)) =ᶠ[nhds y]
+      fun z ↦ ∑ j : Fin m,
+        (|((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+          ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+            (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
+          (EuclideanSpace.basisFun (Fin m) ℝ).toBasis.repr
+            ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+              (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))) j) i) •
+          (chartVolumeDensity (I := I) α z *
+            (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrameCoeff I
+              (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m)))
+              ((finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))).symm j) z (X z)) := by
+  set e := trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α
+  set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
+  set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  filter_upwards [e.open_baseSet.mem_nhds hy] with z hz
+  rw [e.localFrameCoeff_apply_of_mem_baseSet stdB hz]
+  have hw : (e.basisAt stdB hz).repr (X z) i = ∑ j : Fin m,
+      stdB.repr (finB.reindex finσ j) i * (e.basisAt finB hz).repr (X z) (finσ.symm j) := by
+    rw [← Finsupp.lapply_apply (R := ℝ) i]
+    conv_lhs => rw [← (e.basisAt (finB.reindex finσ) hz).sum_repr (X z)]
+    rw [map_sum, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by
+      simp [Trivialization.basisAt, e.apply_mk_symm hz, mul_comm]
+  rw [hw, stdChartVolumeDensity_def, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by
+    rw [← e.localFrameCoeff_apply_of_mem_baseSet (I := I) finB hz X (finσ.symm j), smul_eq_mul]
+    ring
+
+/-- Chart divergence formula `ρ_std div X = ∑ᵢ ∂ᵢ (ρ_std Xⁱ)` in the standard Euclidean basis
+frame. -/
+theorem stdChartVolumeDensity_mul_divergence
+    [IsContMDiffRiemannianBundle I 1 (EuclideanSpace ℝ (Fin m)) (fun x : M ↦ TangentSpace I x)]
+    (α : M) {y : M}
+    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).baseSet)
+    {X : (x : M) → TangentSpace I x} (hX : MDiffAt (T% X) y) :
+    stdChartVolumeDensity (I := I) α y * divergence I X y =
+      ∑ i : Fin m, mvfderiv I (fun z ↦ stdChartVolumeDensity (I := I) α z *
+        (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrameCoeff I
+          (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i z (X z)) y
+        ((trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrame
+          (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i y) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  let _ : ContMDiffVectorBundle 1 (EuclideanSpace ℝ (Fin m)) (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  set e := trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α
+  set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
+  set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  let D : ℝ := |stdB.det (finB.reindex finσ)|⁻¹
+  let A (i j : Fin m) : ℝ := stdB.repr (finB.reindex finσ j) i
+  let g (k) (z : M) : ℝ := chartVolumeDensity (I := I) α z * e.localFrameCoeff I finB k z (X z)
+  have hρ := ((contMDiffOn_chartVolumeDensity (n := 1) α).contMDiffAt
+    (e.open_baseSet.mem_nhds hy)).mdifferentiableAt one_ne_zero
+  have hfk (k) : MDiffAt (g k) y := hρ.mul (mdifferentiableAt_localFrameCoeff finB hy hX k)
+  calc stdChartVolumeDensity (I := I) α y * divergence I X y
+      = D * ∑ j : Fin m,
+          mvfderiv I (g (finσ.symm j)) y (chartLocalFrame (I := I) α (finσ.symm j) y) := by
+          rw [stdChartVolumeDensity_def, mul_assoc, chartVolumeDensity_mul_divergence α hy hX]
+          congr 1
+          exact (Equiv.sum_comp finσ.symm fun k ↦
+            mvfderiv I (g k) y (chartLocalFrame (I := I) α k y)).symm
+    _ = ∑ i : Fin m, ∑ j : Fin m, (D * A i j) *
+          mvfderiv I (g (finσ.symm j)) y (e.localFrame stdB i y) := by
+          rw [Finset.mul_sum, Finset.sum_comm]
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [chartLocalFrame_eq_sum_stdLocalFrame α hy j, map_sum, Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, smul_eq_mul]; ring
+    _ = _ := by
+          refine Finset.sum_congr rfl fun i _ ↦ Eq.symm ?_
+          rw [(stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum α hy X i).mvfderiv_eq,
+            TauCeti.mvfderiv_fun_sum (f := fun j z ↦ (D * A i j) • g (finσ.symm j) z)
+              (fun j _ ↦ (hfk (finσ.symm j)).const_smul _), sum_apply]
+          exact Finset.sum_congr rfl fun j _ ↦ by
+            rw [TauCeti.mvfderiv_const_smul (hfk (finσ.symm j)), smul_apply, smul_eq_mul]
+
+end StdChart
 
 end TauCeti

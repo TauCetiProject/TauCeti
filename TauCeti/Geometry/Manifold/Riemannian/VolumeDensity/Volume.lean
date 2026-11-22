@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
 public import TauCeti.MeasureTheory.Measure.Glue
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -41,8 +42,9 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.riemannianVolume_apply_of_subset`: the volume of a subset of a chart source is its
   chart volume.
 * `TauCeti.setLIntegral_riemannianVolume_of_subset`,
-  `TauCeti.setIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source in
-  coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
+  `TauCeti.setIntegral_riemannianVolume_of_subset`,
+  `TauCeti.setIntegral_riemannianVolume_std_of_subset`: integration over a subset of a chart source
+  in coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
@@ -265,6 +267,45 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
     _ ≤ ∫⁻ x, ENNReal.ofReal (f x) ∂riemannianVolume I M := setLIntegral_le_lintegral _ _
 
 end Coordinates
+
+/-- **Integration in coordinates** against the Riemannian volume using Lebesgue measure on
+`EuclideanSpace ℝ (Fin m)` and `TauCeti.stdChartVolumeDensity`. -/
+theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin m)) (fun x : M ↦ TangentSpace I x)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {α : M} {s : Set M} (hs : s ⊆ (chartAt H α).source) (hs' : MeasurableSet s) (φ : M → F) :
+    ∫ x in s, φ x ∂riemannianVolume I M = ∫ z in (extChartAt I α) '' s,
+      stdChartVolumeDensity (I := I) α ((extChartAt I α).symm z) •
+        φ ((extChartAt I α).symm z) ∂volume := by
+  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  let finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
+  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  have hhaar : finB.addHaar =
+      ENNReal.ofReal |stdB.det (finB.reindex finσ)|⁻¹ • (volume : Measure _) := by
+    rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB]
+    simp only [stdB, OrthonormalBasis.addHaar_eq_volume, abs_inv]
+  have hcongr (ms₁ ms₂ : MeasurableSpace (EuclideanSpace ℝ (Fin m)))
+      (hb₁ : @BorelSpace (EuclideanSpace ℝ (Fin m)) _ ms₁)
+      (hb₂ : @BorelSpace (EuclideanSpace ℝ (Fin m)) _ ms₂) :
+      ∫ z in (extChartAt I α) '' s,
+          chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z)
+          ∂(@Module.Basis.addHaar _ _ _ _ _ ms₁ hb₁ finB) =
+        ∫ z in (extChartAt I α) '' s,
+          chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z)
+          ∂(@Module.Basis.addHaar _ _ _ _ _ ms₂ hb₂ finB) := by
+    obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm
+    rfl
+  rw [setIntegral_riemannianVolume_of_subset hs hs' φ,
+    hcongr (@extChartAtMeasurableSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance
+      (@extChartAtBorelSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance,
+    hhaar, Measure.restrict_smul, integral_smul_measure,
+    ENNReal.toReal_ofReal (inv_nonneg.2 (abs_nonneg _)), ← integral_smul]
+  simp_rw [smul_smul, stdChartVolumeDensity_def]
+  dsimp only [stdB, finB, finσ]
 
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In
 particular, the Riemannian volume of a compact manifold is a finite measure. -/

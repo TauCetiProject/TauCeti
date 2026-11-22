@@ -20,6 +20,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Integral.ContinuousMap
@@ -204,7 +205,7 @@ private theorem contMDiffOn_comp_coordEquiv_extChartAt [IsManifold I ∞ M] (p :
 private theorem gradient_comp_coordEquiv_apply [I.Boundaryless] [IsManifold I ∞ M] (p : M)
     {u : M → ℝ} {y : EuclideanSpace ℝ (Fin (finrank ℝ E))}
     (hy : (coordEquiv E).symm y ∈ (extChartAt I p).target)
-    (hu : MDifferentiableAt I 𝓘(ℝ) u (chartInvMap (I := I) p y))
+    (_hu : MDifferentiableAt I 𝓘(ℝ) u (chartInvMap (I := I) p y))
     (k : Fin (finrank ℝ E)) :
     ∇ (fun z ↦ u (chartInvMap (I := I) p z)) y k =
       mvfderiv I u (chartInvMap (I := I) p y)
@@ -222,8 +223,9 @@ private theorem gradient_comp_coordEquiv_apply [I.Boundaryless] [IsManifold I �
     rfl
   rw [hcoord, gradient, InnerProductSpace.toDual_symm_apply,
     ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, coordEquiv_symm_single, ← hz_eq,
-    ← mvfderiv_chartLocalFrame (I := I) p hx_src hu k]
+    ContinuousLinearEquiv.coe_coe, coordEquiv_symm_single, ← hz_eq, chartLocalFrame_def,
+    TauCeti.Manifold.mvfderiv_localFrame_trivializationAt_eq_fderivWithin (Module.finBasis ℝ E) p
+      hx_src u k, I.range_eq_univ, fderivWithin_univ]
 
 /-- Pointwise identity between the Riemannian gradient inner product and the inverse chart Gram
 bilinear form in coordinates. -/

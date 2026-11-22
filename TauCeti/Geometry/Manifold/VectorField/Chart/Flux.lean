@@ -92,6 +92,18 @@ theorem chartFlux_eventuallyEq_zero (b : Module.Basis ι 𝕜 E) (ρ : M → �
   Filter.eventually_of_mem (hKc.isClosed.isOpen_compl.mem_nhds hz) fun _ h ↦
     chartFlux_eq_zero b ρ i h
 
+/-- When the chart image of `tsupport X` is closed, it contains `tsupport` of each chart flux. -/
+theorem tsupport_chartFlux_subset (b : Module.Basis ι 𝕜 E) (ρ : M → 𝕜)
+    (hclosed : IsClosed (extChartAt I α '' tsupport (α := E) X)) (i : ι) :
+    tsupport (chartFlux b ρ α X i) ⊆ extChartAt I α '' tsupport (α := E) X :=
+  closure_minimal (fun _ h ↦ by_contra fun hz ↦ h (chartFlux_eq_zero b ρ i hz)) hclosed
+
+/-- When the chart image of `tsupport X` is compact, each chart flux has compact support. -/
+theorem hasCompactSupport_chartFlux (b : Module.Basis ι 𝕜 E) (ρ : M → 𝕜)
+    (hKc : IsCompact (extChartAt I α '' tsupport (α := E) X)) (i : ι) :
+    HasCompactSupport (chartFlux b ρ α X i) :=
+  hKc.of_isClosed_subset isClosed_closure (tsupport_chartFlux_subset b ρ hKc.isClosed i)
+
 /-- On the chart source at `α`, the product of a `C^k` scalar density `ρ` and a local-frame
 coefficient of a `C^k` vector field `X` is `C^k`. -/
 theorem contMDiffOn_mul_localFrameCoeff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k : ℕ∞ω}

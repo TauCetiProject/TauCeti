@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -29,10 +28,6 @@ carries the normalized Haar measure of the first to that of the second.
   `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
-* `Module.Basis.addHaar_eq_smul_of_basis` — change of basis rescales `b.addHaar` by `|det|⁻¹`.
-* `Module.Basis.integral_addHaar_congr_measurableSpace` and
-  `Module.Basis.setIntegral_addHaar_congr_measurableSpace` — Bochner (set) integrals against
-  `b.addHaar` are independent of the choice of `BorelSpace` measurable-space instance.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
 
@@ -113,29 +108,6 @@ theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
         Measure.map_linearMap_addHaar_eq_smul_addHaar b.addHaar e.isUnit_det'.ne_zero
 
 end ChangeBasis
-
-section MeasurableSpace
-
-variable {E ι F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The Bochner integral against `b.addHaar` does not depend on the choice of `BorelSpace`
-measurable-space instance on `E`. -/
-theorem integral_addHaar_congr_measurableSpace (b : Basis ι ℝ E) (ms₁ ms₂ : MeasurableSpace E)
-    (hb₁ : @BorelSpace E _ ms₁) (hb₂ : @BorelSpace E _ ms₂) (g : E → F) :
-    ∫ z, g z ∂(@Basis.addHaar _ _ _ _ _ ms₁ hb₁ b) =
-      ∫ z, g z ∂(@Basis.addHaar _ _ _ _ _ ms₂ hb₂ b) := by
-  obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm; rfl
-
-/-- The Bochner set integral against `b.addHaar` does not depend on the choice of `BorelSpace`
-measurable-space instance on `E`. -/
-theorem setIntegral_addHaar_congr_measurableSpace (b : Basis ι ℝ E) (ms₁ ms₂ : MeasurableSpace E)
-    (hb₁ : @BorelSpace E _ ms₁) (hb₂ : @BorelSpace E _ ms₂) (s : Set E) (g : E → F) :
-    ∫ z in s, g z ∂(@Basis.addHaar _ _ _ _ _ ms₁ hb₁ b) =
-      ∫ z in s, g z ∂(@Basis.addHaar _ _ _ _ _ ms₂ hb₂ b) := by
-  obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm; rfl
-
-end MeasurableSpace
 
 section Equiv
 

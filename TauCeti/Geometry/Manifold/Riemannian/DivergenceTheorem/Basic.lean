@@ -7,15 +7,16 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.Integral
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
+import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 
 /-!
 # The divergence theorem on a manifold without boundary
 
-On a smooth manifold without boundary with a `C¹` Riemannian metric, the divergence of a
+On a `C²` manifold without boundary with a `C¹` Riemannian metric, the divergence of a
 compactly supported `C¹` vector field has integral zero against the Riemannian volume:
 
 `∫ div X dV = 0`.
@@ -53,9 +54,9 @@ The proof is chart by chart. In the chart at `α`, with chart frame `e₁, …, 
 and frame coefficients `Xᵏ`, the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)`
 (`TauCeti.chartVolumeDensity_mul_divergence`) turns the integral of the divergence of a field
 supported in the chart into a sum of integrals of partial derivatives of compactly supported `C¹`
-functions on the model space, each of which vanishes. A smooth partition of unity subordinate to
-the chart sources reduces a general compactly supported field to finitely many such fields; this
-is where the manifold is assumed smooth, while the metric need only be `C¹`.
+functions on the model space, each of which vanishes. A finite partition of unity built from
+`IsCompact.exists_smoothBumpCovering_isSubordinate` reduces a general compactly supported field to
+finitely many such fields on any `C²` Hausdorff Lindelöf manifold with a `C¹` metric.
 
 ## References
 
@@ -73,6 +74,138 @@ open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
+
+section Helpers
+
+universe u
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+
+private lemma contMDiff_smoothBumpFunction [IsManifold I 1 M] [T2Space M] {x : M}
+    (φ : SmoothBumpFunction I x) : ContMDiff I 𝓘(ℝ) 1 φ := by
+  refine contMDiff_of_tsupport fun y hy ↦ ?_
+  have hsrc : y ∈ (chartAt H x).source := φ.tsupport_subset_chartAt_source hy
+  refine ContMDiffAt.congr_of_eventuallyEq ?_ <| φ.eqOn_source.eventuallyEq_of_mem <|
+    (chartAt H x).open_source.mem_nhds hsrc
+  exact (φ.contDiffAt.contMDiffAt.of_le (by simp : (1 : ℕ∞ω) ≤ ∞)).comp _
+    (contMDiffAt_extChartAt' hsrc)
+
+/-- Decompose a compactly supported `C¹` vector field `X` into a finite sum of compactly
+supported `C¹` vector fields `Y i`, each supported in `U (c i)`, for any family of neighbourhoods
+`U x ∈ 𝓝 x` covering `tsupport X`. -/
+theorem exists_subordinate_vectorField_sum [IsManifold I 2 M] [T2Space M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {X : (x : M) → TangentSpace I x} (hX : ContMDiff I I.tangent 1 (T% X))
+    (hc : HasCompactSupport (β := E) X) {U : M → Set M}
+    (hU : ∀ x ∈ tsupport (α := E) X, U x ∈ 𝓝 x) :
+    ∃ (ι : Type u) (_ : Fintype ι) (c : ι → M) (Y : ι → (x : M) → TangentSpace I x),
+      (∀ i, ContMDiff I I.tangent 1 (T% (Y i))) ∧
+      (∀ i, HasCompactSupport (β := E) (Y i)) ∧
+      (∀ i, tsupport (α := E) (Y i) ⊆ U (c i)) ∧
+      (∀ x, X x = ∑ i, Y i x) ∧
+      (∀ x, divergence I X x = ∑ i, divergence I (Y i) x) := by
+  classical
+  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
+  obtain ⟨ι, _, bc, hbc⟩ := hc.exists_smoothBumpCovering_isSubordinate I hU
+  let bc' : BumpCovering ι M (tsupport (α := E) X) :=
+    { toFun i := ⟨bc i, (contMDiff_smoothBumpFunction (bc i)).continuous⟩
+      locallyFinite' := bc.locallyFinite
+      nonneg' i _ := (bc i).nonneg
+      le_one' i _ := (bc i).le_one
+      eventuallyEq_one' := bc.eventuallyEq_one' }
+  let ρ := bc'.toPartitionOfUnity
+  have hρ_diff (i : ι) : ContMDiff I 𝓘(ℝ) 1 (ρ i) := by
+    have hfun : (ρ i : M → ℝ) = fun x ↦
+        bc i x * ∏ j ∈ Finset.univ with WellOrderingRel j i, (1 - bc j x) :=
+      funext fun x ↦ bc'.toPartitionOfUnity_eq_mul_prod i x Finset.univ
+        fun _ _ _ ↦ Finset.mem_univ _
+    rw [hfun]
+    exact (contMDiff_smoothBumpFunction (bc i)).mul <|
+      contMDiff_finsetProd fun j _ ↦ contMDiff_const.sub (contMDiff_smoothBumpFunction (bc j))
+  let Y : ι → (x : M) → TangentSpace I x := fun i x ↦ ρ i x • X x
+  have hY (i : ι) : ContMDiff I I.tangent 1 (T% (Y i)) := (hρ_diff i).smul_section hX
+  have hsum (x : M) : X x = ∑ i, Y i x := by
+    by_cases hx : x ∈ tsupport (α := E) X
+    · have h1 : ∑ i, ρ i x = 1 := by
+        rw [← finsum_eq_sum_of_fintype]
+        exact ρ.sum_eq_one hx
+      rw [← Finset.sum_smul, h1, one_smul]
+    · have hx0 : X x = 0 := image_eq_zero_of_notMem_tsupport (α := E) hx
+      simp [Y, hx0]
+  refine ⟨ι, inferInstance, bc.c, Y, hY,
+    fun i ↦ hc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _),
+    fun i ↦ (tsupport_smul_subset_left _ _).trans <|
+      (closure_mono (bc'.support_toPartitionOfUnity_subset i)).trans (hbc i),
+    hsum, fun x ↦ ?_⟩
+  rw [← divergence_finsetSum I Finset.univ Y x fun i _ ↦ (hY i x).mdifferentiableAt one_ne_zero]
+  exact congrArg (divergence I · x) (funext hsum)
+
+variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- The divergence of a compactly supported `C¹` vector field is integrable against the Riemannian
+volume. -/
+theorem integrable_divergence {X : (x : M) → TangentSpace I x}
+    (hX : ContMDiff I I.tangent 1 (T% X)) (hc : HasCompactSupport (β := E) X) :
+    Integrable (divergence I X) (riemannianVolume I M) :=
+  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
+    (by simpa using hX)).continuous.integrable_of_hasCompactSupport (hc.divergence I)
+
+/-- Integration-by-parts decomposition for the divergence of `f • X`, assuming `f • X` has
+compact support and `f * div X` is integrable. -/
+theorem integral_mul_divergence_eq_integral_divergence_smul_sub {f : M → ℝ}
+    {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hX : ContMDiff I I.tangent 1 (T% X))
+    (hfXc : HasCompactSupport (β := E) (fun x ↦ f x • X x))
+    (hint : Integrable (fun x ↦ f x * divergence I X x) (riemannianVolume I M)) :
+    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
+      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
+        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
+  have hfX : ContMDiff I I.tangent 1 (T% (fun x ↦ f x • X x)) := hf.smul_section hX
+  have hpt (x : M) : divergence I (fun x ↦ f x • X x) x =
+      f x * divergence I X x + mvfderiv I f x (X x) :=
+    divergence_smul_function I f X x ((hf x).mdifferentiableAt one_ne_zero)
+      ((hX x).mdifferentiableAt one_ne_zero)
+  have hint' : Integrable (fun x ↦ mvfderiv I f x (X x)) (riemannianVolume I M) :=
+    ((integrable_divergence hfX hfXc).sub hint).congr
+      (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
+  have hdiv : ∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M =
+      (∫ x, f x * divergence I X x ∂riemannianVolume I M) +
+        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
+    rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint']
+  linarith
+
+/-- Integration-by-parts decomposition for `f * div X` when `f` has compact support. -/
+theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_left
+    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hfc : HasCompactSupport f) (hX : ContMDiff I I.tangent 1 (T% X)) :
+    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
+      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
+        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
+  integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
+    (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
+    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
+      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right)
+
+/-- Integration-by-parts decomposition for `f * div X` when `X` has compact support. -/
+theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_right
+    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hX : ContMDiff I I.tangent 1 (T% X)) (hXc : HasCompactSupport (β := E) X) :
+    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
+      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
+        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
+  integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
+    (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
+    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
+      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
+      (hXc.divergence I).mul_left)
+
+end Helpers
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -96,18 +229,14 @@ private theorem sum_fderiv_finChartFlux (hX : ContMDiff I I.tangent 1 (T% X)) {z
       chartVolumeDensity (I := I) α ((extChartAt I α).symm z) *
         divergence I X ((extChartAt I α).symm z) := by
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  have hρ : ContMDiffOn I 𝓘(ℝ) 1 (chartVolumeDensity (I := I) α) (chartAt H α).source := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using
-      contMDiffOn_chartVolumeDensity (I := I) (n := 1) α
   have hy : (extChartAt I α).symm z ∈ (chartAt H α).source := by
     rw [← extChartAt_source (I := I)]
     exact (extChartAt I α).map_target hz
   rw [chartVolumeDensity_mul_divergence α (by simpa using hy)
     ((hX _).mdifferentiableAt one_ne_zero)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [mvfderiv_chartLocalFrame α hy
-    ((contMDiffOn_mul_localFrameCoeff (Module.finBasis ℝ E) hρ hX.contMDiffOn k).contMDiffAt
-      ((chartAt H α).open_source.mem_nhds hy) |>.mdifferentiableAt one_ne_zero),
+  rw [chartLocalFrame_def, mvfderiv_localFrame_trivializationAt_eq_fderivWithin
+      (Module.finBasis ℝ E) α hy _ k, I.range_eq_univ, fderivWithin_univ,
     (extChartAt I α).right_inv hz]
   have h : finChartFlux α X k =ᶠ[𝓝 z] _ :=
     Filter.eventually_of_mem ((isOpen_extChartAt_target α).mem_nhds hz) fun z' hz' ↦
@@ -118,15 +247,6 @@ variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
-
-omit [I.Boundaryless] in
-/-- The divergence of a compactly supported `C¹` vector field is integrable against the Riemannian
-volume. -/
-theorem integrable_divergence (hX : ContMDiff I I.tangent 1 (T% X))
-    (hc : HasCompactSupport (β := E) X) :
-    Integrable (divergence I X) (riemannianVolume I M) :=
-  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-    (by simpa using hX)).continuous.integrable_of_hasCompactSupport (hc.divergence I)
 
 /-- The divergence theorem for a compactly supported field whose support lies in one chart. -/
 private theorem integral_divergence_eq_zero_of_tsupport_subset
@@ -143,8 +263,8 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
   have hflux (k : Fin (Module.finrank ℝ E)) : ContDiff ℝ 1 (finChartFlux α X k) :=
     contDiffOn_univ.1 <| I.range_eq_univ ▸
       contDiffOn_chartFlux (Module.finBasis ℝ E) hρ hX.contMDiffOn hKc himage k
-  have hfluxc (k : Fin (Module.finrank ℝ E)) : HasCompactSupport (finChartFlux α X k) :=
-    HasCompactSupport.intro hKc fun _ hz ↦ chartFlux_eq_zero _ _ k hz
+  have hfluxc := hasCompactSupport_chartFlux (Module.finBasis ℝ E)
+    (chartVolumeDensity (I := I) α) hKc
   have hint (k : Fin (Module.finrank ℝ E)) :
       Integrable (fun z ↦ fderiv ℝ (finChartFlux α X k) z (Module.finBasis ℝ E k))
         (Module.finBasis ℝ E).addHaar :=
@@ -170,7 +290,7 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
 
 end Chart
 
-variable [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
+variable [IsManifold I 2 M] [T2Space M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   [MeasurableSpace M] [BorelSpace M]
@@ -182,63 +302,23 @@ supported `C¹` vector field has integral zero against the Riemannian volume. -/
 theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
     (hc : HasCompactSupport (β := E) X) :
     ∫ x, divergence I X x ∂riemannianVolume I M = 0 := by
-  classical
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate_chartAt_source I M
-  -- Only finitely many members of the partition meet the support of `X`.
-  have hfin := ρ.toPartitionOfUnity.locallyFinite_tsupport.finite_nonempty_inter_compact hc
-  set s := hfin.toFinset
-  have hmem (i x : M) (hρx : ρ i x ≠ 0) (hXx : X x ≠ 0) : i ∈ s :=
-    hfin.mem_toFinset.mpr ⟨x, subset_tsupport (ρ i) hρx, subset_tsupport (α := E) X hXx⟩
-  have hsum (x : M) : X x = ∑ i ∈ s, ρ i x • X x := by
-    by_cases hx : X x = 0
-    · simp [hx]
-    · have hs : ρ.finsupport x ⊆ s := fun i hi ↦
-        hmem i x (by simpa only [SmoothPartitionOfUnity.mem_finsupport, Function.mem_support]
-          using hi) hx
-      rw [← Finset.sum_smul, ρ.sum_finsupport' x (mem_univ x) hs, one_smul]
-  have hY (i : M) : ContMDiff I I.tangent 1 (T% (fun x ↦ ρ i x • X x)) :=
-    ((ρ i).contMDiff.of_le (by simp)).smul_section hX
-  have hK (i : M) : IsCompact (tsupport (α := E) (fun x ↦ ρ i x • X x)) :=
-    hc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _)
-  have hdiv (x : M) :
-      divergence I X x = ∑ i ∈ s, divergence I (fun x ↦ ρ i x • X x) x := by
-    rw [← divergence_finsetSum I s _ x fun i _ ↦ (hY i x).mdifferentiableAt one_ne_zero]
-    exact congrArg (divergence I · x) (funext hsum)
+  obtain ⟨ι, _, c, Y, hY, hK, hsub, _, hdiv⟩ :=
+    exists_subordinate_vectorField_sum hX hc fun x _ ↦ chart_source_mem_nhds H x
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i)]
-  exact Finset.sum_eq_zero fun i _ ↦ integral_divergence_eq_zero_of_tsupport_subset (hY i)
-    (hK i) ((tsupport_smul_subset_left _ _).trans (hρ i))
-
-/-- Integration by parts for the divergence, assuming that `f X` has compact support and that
-`f div X` is integrable. -/
-private theorem integral_mul_divergence_of_integrable {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
-    (hX : ContMDiff I I.tangent 1 (T% X))
-    (hfXc : HasCompactSupport (β := E) (fun x ↦ f x • X x))
-    (hint : Integrable (fun x ↦ f x * divergence I X x) (riemannianVolume I M)) :
-    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
-  have hfX : ContMDiff I I.tangent 1 (T% (fun x ↦ f x • X x)) := hf.smul_section hX
-  have hpt (x : M) : divergence I (fun x ↦ f x • X x) x =
-      f x * divergence I X x + mvfderiv I f x (X x) :=
-    divergence_smul_function I f X x ((hf x).mdifferentiableAt one_ne_zero)
-      ((hX x).mdifferentiableAt one_ne_zero)
-  have hint' : Integrable (fun x ↦ mvfderiv I f x (X x)) (riemannianVolume I M) :=
-    ((integrable_divergence hfX hfXc).sub hint).congr
-      (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
-  have h := integral_divergence_eq_zero hfX hfXc
-  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint'] at h
-  exact eq_neg_of_add_eq_zero_left h
+  exact Finset.sum_eq_zero fun i _ ↦
+    integral_divergence_eq_zero_of_tsupport_subset (hY i) (hK i) (hsub i)
 
 /-- **Integration by parts for the divergence**: for a compactly supported `C¹` function `f` and a
 `C¹` vector field `X` on a manifold without boundary, `∫ f div X dV = -∫ df(X) dV`. -/
 theorem integral_mul_divergence {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
     (hfc : HasCompactSupport f) (hX : ContMDiff I I.tangent 1 (T% X)) :
     ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
-  integral_mul_divergence_of_integrable hf hX
-    (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right)
+      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
+  rw [integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_left hf hfc hX,
+    integral_divergence_eq_zero (X := fun x ↦ f x • X x) (hf.smul_section hX)
+      (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _)),
+    zero_sub]
 
 /-- **Integration by parts for the divergence**, for a compactly supported field: for a `C¹`
 function `f` and a compactly supported `C¹` vector field `X` on a manifold without boundary,
@@ -247,12 +327,11 @@ theorem integral_mul_divergence_of_hasCompactSupport_right {f : M → ℝ}
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hX : ContMDiff I I.tangent 1 (T% X))
     (hXc : HasCompactSupport (β := E) X) :
     ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
-  integral_mul_divergence_of_integrable hf hX
-    (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
-      (hXc.divergence I).mul_left)
+      -∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
+  rw [integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_right hf hX hXc,
+    integral_divergence_eq_zero (X := fun x ↦ f x • X x) (hf.smul_section hX)
+      (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _)),
+    zero_sub]
 
 /-- **Integration by parts along a vector field**: for `C¹` functions `f` and `g`, one of which
 has compact support, and a `C¹` vector field `X` on a manifold without boundary,

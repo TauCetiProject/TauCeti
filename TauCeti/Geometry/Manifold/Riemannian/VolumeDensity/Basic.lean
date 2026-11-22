@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -136,5 +137,78 @@ theorem mvfderiv_chartVolumeDensity
   field_simp
 
 end Derivative
+
+section StdChart
+
+variable {m : ℕ} {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+private theorem stdBasisDet_ne_zero (m : ℕ) :
+    |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+      ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+        (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))| ≠ 0 :=
+  abs_ne_zero.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
+
+/-- The Riemannian volume density in the chart frame induced by `EuclideanSpace.basisFun`. -/
+def stdChartVolumeDensity (α x : M) : ℝ :=
+  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
+    chartVolumeDensity (I := I) α x
+
+/-- Defining relation expressing `TauCeti.stdChartVolumeDensity` as a rescaling of
+`TauCeti.chartVolumeDensity`. -/
+theorem stdChartVolumeDensity_def (α x : M) :
+    stdChartVolumeDensity (I := I) α x =
+      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
+        chartVolumeDensity (I := I) α x := (rfl)
+
+/-- On the trivialization base set, `stdChartVolumeDensity` equals the square root of the Gram
+determinant of the standard Euclidean basis chart frame. -/
+theorem stdChartVolumeDensity_eq_sqrt_det_gram (α : M) {y : M}
+    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).baseSet) :
+    stdChartVolumeDensity (I := I) α y =
+      √(Matrix.gram ℝ ((trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).basisAt
+        (EuclideanSpace.basisFun (Fin m) ℝ).toBasis hy)).det := by
+  set e := trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α
+  set bil := innerₗ (TangentSpace I y)
+  set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  set finB := (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex finσ
+  set B_std := e.basisAt stdB hy
+  set B_fin := e.basisAt finB hy
+  have hdet_pos : 0 < |stdB.det finB| := lt_of_le_of_ne (abs_nonneg _) (stdBasisDet_ne_zero m).symm
+  have hmat : B_std.toMatrix B_fin = stdB.toMatrix finB := by
+    ext i j
+    simp [Module.Basis.toMatrix_apply, B_std, B_fin, Trivialization.basisAt, e.apply_mk_symm hy]
+  have hgram_std : LinearMap.BilinForm.toMatrix B_std bil = Matrix.gram ℝ B_std := by
+    ext i j; simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply, bil]
+  have hgram_fin : (LinearMap.BilinForm.toMatrix B_fin bil).det =
+      (chartGramMatrix (I := I) α y).det := by
+    rw [← Matrix.det_submatrix_equiv_self finσ.symm (chartGramMatrix (I := I) α y)]; congr 1
+    rw [← gram_basisAt_finBasis_reindex finσ α hy]
+    ext i j; simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply, B_fin, finB, e, bil]
+  have hdet : (chartGramMatrix (I := I) α y).det =
+      |stdB.det finB| ^ 2 * (Matrix.gram ℝ B_std).det := by
+    rw [← hgram_fin, ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix B_std B_fin bil, hgram_std,
+      Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, hmat, ← Module.Basis.det_apply]
+    simp only [sq_abs]; ring
+  rw [stdChartVolumeDensity_def, chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _),
+    Real.sqrt_sq hdet_pos.le, inv_mul_cancel_left₀ hdet_pos.ne']
+
+/-- A `C^n` metric has a `C^n` standard-frame volume density on every chart source of a `C^(n+1)`
+manifold. -/
+theorem contMDiffOn_stdChartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n (EuclideanSpace ℝ (Fin m))
+      (fun x : M ↦ TangentSpace I x)] (α : M) :
+    ContMDiffOn I 𝓘(ℝ) n (stdChartVolumeDensity (I := I) α) (chartAt H α).source :=
+  contMDiffOn_const.mul (by simpa only [TangentBundle.trivializationAt_baseSet] using
+    contMDiffOn_chartVolumeDensity (I := I) (n := n) α)
+
+end StdChart
 
 end TauCeti
