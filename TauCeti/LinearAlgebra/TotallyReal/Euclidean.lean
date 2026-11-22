@@ -63,8 +63,9 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
   (`Matrix.continuous_lagrangianChartCLE`).
 * `Matrix.lagrangianChart_smul_one`: the chart subspace of a scalar matrix `s` is the rotation
   `e^{iα} ℝⁿ` of `ℝⁿ` by the angle `α = π / 2 - arctan s` of `s + i`.
-* `Matrix.lagrangianChart_mul_mul_transpose`: a real orthogonal matrix `O` maps the chart subspace
-  of `S` onto that of `O S Oᵀ`.
+* `Matrix.lagrangianChart_mul_mul_inv`: an invertible real matrix `P` maps the chart subspace of
+  `S` onto that of `P S P⁻¹`; for orthogonal `O` this is the chart of `O S Oᵀ`
+  (`Matrix.lagrangianChart_mul_mul_transpose`).
 * `Matrix.lagrangianChart_fromBlocks_zero`: the chart subspace of a block-diagonal matrix is the
   direct sum of the chart subspaces of its blocks.
 
@@ -594,9 +595,31 @@ theorem lagrangianChart_neg_one :
   rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
 
+/-- **A real change of coordinates conjugates the chart.** For an invertible real matrix `P`, the
+complex matrix of `P`, which preserves `ℝⁿ`, maps `{S y + i y | y ∈ ℝⁿ}` onto
+`{P S P⁻¹ y + i y | y ∈ ℝⁿ}`. -/
+theorem lagrangianChart_mul_mul_inv {P : Matrix n n ℝ} (hP : IsUnit P) (S : Matrix n n ℝ) :
+    (P * S * P⁻¹).lagrangianChart = S.lagrangianChart.map
+      (((toEuclideanCLM (𝕜 := ℂ) (P.map ((↑) : ℝ → ℂ)) :
+        EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+          EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+  have hP' : P⁻¹ * P = 1 := nonsing_inv_mul P ((isUnit_iff_isUnit_det P).1 hP)
+  -- `(P S P⁻¹ + i) P = P (S + i)`, and right multiplication by `P` does not change the image.
+  have hmap : (P * S * P⁻¹).map ((↑) : ℝ → ℂ) * P.map (↑) = P.map (↑) * S.map (↑) :=
+    calc (P * S * P⁻¹).map ((↑) : ℝ → ℂ) * P.map (↑) = (P * S * P⁻¹ * P).map (↑) :=
+          (Matrix.map_mul (f := Complex.ofRealHom)).symm
+      _ = (P * S).map (↑) := by rw [Matrix.mul_assoc (P * S), hP', Matrix.mul_one]
+      _ = P.map (↑) * S.map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
+  have hframe : (P * S * P⁻¹).lagrangianChartFrame * P.map ((↑) : ℝ → ℂ) =
+      P.map (↑) * S.lagrangianChartFrame := by
+    simp only [lagrangianChartFrame, Matrix.add_mul, Matrix.mul_add, smul_mul_assoc,
+      mul_smul_comm, Matrix.one_mul, Matrix.mul_one, hmap]
+  rw [lagrangianChart_def, ← realImage_mul_map_ofReal _ hP, hframe, realImage_mul,
+    lagrangianChart_def]
+
 /-- **A real orthogonal change of coordinates conjugates the chart.** For a real orthogonal
-matrix `O`, the complex matrix of `O`, which preserves `ℝⁿ`, maps `{S y + i y | y ∈ ℝⁿ}` onto
-`{O S Oᵀ y + i y | y ∈ ℝⁿ}`. -/
+matrix `O`, the complex matrix of `O` maps `{S y + i y | y ∈ ℝⁿ}` onto
+`{O S Oᵀ y + i y | y ∈ ℝⁿ}`: this is `Matrix.lagrangianChart_mul_mul_inv` with `O⁻¹ = Oᵀ`. -/
 theorem lagrangianChart_mul_mul_transpose {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
     (S : Matrix n n ℝ) :
     (O * S * Oᵀ).lagrangianChart = S.lagrangianChart.map
@@ -604,19 +627,8 @@ theorem lagrangianChart_mul_mul_transpose {O : Matrix n n ℝ} (hO : O ∈ ortho
         EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
           EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
   have hO' : Oᵀ * O = 1 := (mem_orthogonalGroup_iff' n ℝ).1 hO
-  -- `(O S Oᵀ + i) O = O (S + i)`, and right multiplication by `O` does not change the image.
-  have hmap : (O * S * Oᵀ).map ((↑) : ℝ → ℂ) * O.map (↑) = O.map (↑) * S.map (↑) :=
-    calc (O * S * Oᵀ).map ((↑) : ℝ → ℂ) * O.map (↑) = (O * S * Oᵀ * O).map (↑) :=
-          (Matrix.map_mul (f := Complex.ofRealHom)).symm
-      _ = (O * S).map (↑) := by rw [Matrix.mul_assoc (O * S), hO', Matrix.mul_one]
-      _ = O.map (↑) * S.map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
-  have hframe : (O * S * Oᵀ).lagrangianChartFrame * O.map ((↑) : ℝ → ℂ) =
-      O.map (↑) * S.lagrangianChartFrame := by
-    simp only [lagrangianChartFrame, Matrix.add_mul, Matrix.mul_add, smul_mul_assoc,
-      mul_smul_comm, Matrix.one_mul, Matrix.mul_one, hmap]
-  rw [lagrangianChart_def, ← realImage_mul_map_ofReal _
-    ((isUnit_iff_isUnit_det _).2 (isUnit_det_of_left_inverse hO')), hframe, realImage_mul,
-    lagrangianChart_def]
+  rw [← inv_eq_left_inv hO']
+  exact lagrangianChart_mul_mul_inv ((isUnit_iff_isUnit_det O).2 (isUnit_det_of_left_inverse hO')) S
 
 section Sum
 

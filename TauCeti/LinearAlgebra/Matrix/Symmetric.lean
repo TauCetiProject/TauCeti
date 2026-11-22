@@ -93,7 +93,7 @@ namespace Matrix
 open Finset
 
 /-- A congruence `P A Pᵀ` of a symmetric matrix `A` is symmetric. -/
-theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [CommSemiring R]
+theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [NonUnitalCommSemiring R]
     {A : Matrix n n R} (hA : A.IsSymm) (P : Matrix m n R) : (P * A * Pᵀ).IsSymm := by
   rw [IsSymm, transpose_mul, transpose_mul, transpose_transpose, hA.eq, Matrix.mul_assoc]
 
