@@ -20,7 +20,6 @@ import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -34,7 +33,7 @@ Starting from the Gamma-Laplace integral on `1 < s.re` and `0 < c.re`, splitting
 `t = 1` and subtracting the order-`M` Taylor polynomial of `hurwitzKernel c` at `t = 0` yields a
 stage-`M` meromorphic representation on `{-(M : ℝ) < s.re} × {0 < c.re}`. The apparent poles at
 `s = 1 - k` (`1 ≤ k ≤ M`) are cancelled by the simple zeros of `(Gamma s)⁻¹` via the entire
-divided difference `dslope (fun w ↦ (Gamma w)⁻¹) (-(k - 1 : ℂ)) s`.
+divided difference `dslope (fun w ↦ (Gamma w)⁻¹) (-(k - 1 : ℕ)) s`.
 
 Consecutive stages agree identically on overlapping half-planes, gluing into canonical functions
 `complexHurwitzZeta` (jointly holomorphic on `{p | p.1 ≠ 1 ∧ 0 < p.2.re}`) and
@@ -46,15 +45,17 @@ Consecutive stages agree identically on overlapping half-planes, gluing into can
 Analytic continuation off `s = 1` extends the `c ↦ c + 1` shift identity and the comparisons with
 `HurwitzZeta.hurwitzZeta` on `(0, 1]` and `riemannZeta` at `c = 1` and `c = 1 / 2` (with finite
 periodic and Dirichlet L-function decompositions in
-`TauCeti.NumberTheory.LSeries.HurwitzZeta.LFunction` and
+`TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
+`TauCeti.NumberTheory.LSeries.HurwitzZeta.LFunction`, and
 `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod`).
 
 ## Main definitions and results
 
 * `TauCeti.hurwitzHeadIntegral`, `TauCeti.hurwitzTailIntegral`, `TauCeti.hurwitzStageCore`:
   stage-`M` Taylor-subtracted head integral, exponential tail integral, and combined holomorphic
-  core, with joint analyticity (`analyticOnNhd_hurwitzHeadIntegral`,
-  `analyticOnNhd_hurwitzTailIntegral`, `analyticOnNhd_hurwitzStageCore`) and overlap identities
+  core, with integrand convergence (`integrableOn_hurwitzHeadIntegrand`,
+  `integrableOn_hurwitzTailIntegrand`), joint analyticity (`analyticOnNhd_hurwitzHeadIntegral`,
+  `analyticOnNhd_hurwitzTailIntegral`, `analyticOnNhd_hurwitzStageCore`), and overlap identities
   (`hurwitzHeadIntegral_eq_add_succ`, `hurwitzStageCore_succ_eq`, `hurwitzStageCore_eq_of_le`).
 * `TauCeti.complexHurwitzZeta`, `TauCeti.complexHurwitzZeta₁`: canonical continued Hurwitz zeta
   function and its `(s - 1)`-multiplied entire-in-`s` companion, with stage representations
@@ -72,18 +73,17 @@ periodic and Dirichlet L-function decompositions in
   `TauCeti.meromorphicTrailingCoeffAt_complexHurwitzZeta_one`, and
   `TauCeti.tendsto_sub_one_mul_complexHurwitzZeta`: simple pole of order `-1` and residue `1` at
   `s = 1`.
-* `TauCeti.integral_norm_cpow_mul_exp_neg_natCast_add_Ioi`,
-  `TauCeti.exists_summable_integral_norm_hurwitz_le`,
-  `TauCeti.exists_mem_nhds_summable_integral_norm_hurwitz_le`,
+* `TauCeti.integrableOn_hurwitzMellinIntegrand`,
   `TauCeti.complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi`, and
-  `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integral norm bounds,
+  `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integrand convergence,
   integral representation, and agreement with `complexHurwitzSeries` on `1 < s.re` and `0 < c.re`.
 * `TauCeti.complexHurwitzZeta_neg_nat` and `TauCeti.complexHurwitzZeta_zero_left`: Bernoulli
   polynomial values at nonpositive integers.
 * `TauCeti.complexHurwitzContinuation_exists`, `TauCeti.eq_complexHurwitzZeta_of_eqOn_re_gt`,
   `TauCeti.eq_complexHurwitzZeta₁_of_eq_sub_one_mul`, and
-  `TauCeti.eq_complexHurwitzZeta₁_of_eqOn_re_gt`: packaged existence and uniqueness of the
-  continuation on `0 < c.re`.
+  `TauCeti.eq_complexHurwitzZeta₁_of_eqOn_re_gt`: packaged existence (leaving `H (1, c)`
+  unconstrained) and uniqueness on `0 < c.re`, where `complexHurwitzZeta` is unique off `s = 1` and
+  `complexHurwitzZeta₁` is unique across the pole.
 * `TauCeti.complexHurwitzZeta_add_one_right`, `TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta`,
   `TauCeti.complexHurwitzZeta_one_right`, `TauCeti.complexHurwitzZeta_one_half_right`, and
   `HurwitzZeta.hurwitzZeta_apply_zero_of_mem_Ioc`: shift identity, `c = 1` and `c = 1 / 2`
@@ -117,6 +117,21 @@ theorem hurwitzHeadIntegral_def (M : ℕ) (s c : ℂ) :
     hurwitzHeadIntegral M s c =
       ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t := (rfl)
 
+private theorem exists_norm_hurwitzTaylorQuot_le_Icc {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
+    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, ‖hurwitzTaylorQuot M c t‖ ≤ B := by
+  let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
+  have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
+  have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
+    rintro ⟨_, _⟩ ⟨_, t, _, rfl⟩
+    simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t)
+  obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le hS_comp hS_sub M
+  exact ⟨B, hB0, fun c hc t ht => hB (c, t) ⟨hc, t, ht, rfl⟩⟩
+
+private theorem norm_hurwitzHeadIntegrand_eq (M : ℕ) (s c : ℂ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t‖ =
+      ‖hurwitzTaylorQuot M c t‖ * t ^ (s.re + M - 1) := by
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, sub_re, add_re, natCast_re, one_re, mul_comm]
+
 private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) :
     AEStronglyMeasurable
       (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
@@ -129,15 +144,17 @@ private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) 
         (by simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t))).continuousAt
       (continuous_const.prodMk continuous_ofReal).continuousAt)).continuousWithinAt
 
-private theorem integrableOn_hurwitzHeadIntegrand (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
+/-- For `-(M : ℝ) < s.re`, the stage-`M` head integrand
+`t ↦ t ^ (s + M - 1) * hurwitzTaylorQuot M c t` is integrable on `Ioc 0 1`. -/
+theorem integrableOn_hurwitzHeadIntegrand (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t) (Ioc 0 1) := by
-  obtain ⟨B, _, hB⟩ := exists_norm_hurwitzTaylorQuot_le (isCompact_singleton (x := c)) M
+  obtain ⟨B, _, hB⟩ := exists_norm_hurwitzTaylorQuot_le_Icc (isCompact_singleton (x := c)) M
   have hint : IntegrableOn (fun t : ℝ => B * t ^ (s.re + M - 1)) (Ioc 0 1) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B
   refine Integrable.mono' hint (aestronglyMeasurable_hurwitzHeadIntegrand M s c) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, add_re, natCast_re, one_re, mul_comm]
+  rw [norm_hurwitzHeadIntegrand_eq M s c ht.1]
   exact mul_le_mul_of_nonneg_right (hB c (mem_singleton c) t (Ioc_subset_Icc_self ht))
     (Real.rpow_nonneg ht.1.le _)
 
@@ -148,7 +165,7 @@ private theorem continuousOn_hurwitzHeadIntegral (M : ℕ) :
   rw [mem_ofPred_eq] at hp₀
   let δ := (p₀.1.re + (M : ℝ)) / 2
   have hδ : 0 < δ := by dsimp [δ]; linarith
-  obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le (isCompact_closedBall p₀.2 1) M
+  obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le_Icc (isCompact_closedBall p₀.2 1) M
   have hbint : Integrable (fun t : ℝ => B * t ^ (δ - 1)) (volume.restrict (Ioc 0 1)) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B
@@ -170,7 +187,7 @@ private theorem continuousOn_hurwitzHeadIntegral (M : ℕ) :
     ?_ hbint hcont_t)
   filter_upwards [hnhds] with p ⟨hp1, hp2⟩
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, add_re, natCast_re, one_re, mul_comm]
+  rw [norm_hurwitzHeadIntegrand_eq M p.1 p.2 ht.1]
   exact mul_le_mul (hB p.2 hp2 t (Ioc_subset_Icc_self ht))
     (Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2 (by dsimp at hp1; linarith))
     (Real.rpow_nonneg ht.1.le _) hB0
@@ -193,7 +210,7 @@ private theorem differentiableAt_hurwitzHeadIntegral_left (M : ℕ) {s₀ c₀ :
     IsBigO.of_bound 0 (by
       filter_upwards [eventually_gt_atTop (1 : ℝ)] with t ht
       simp [f, indicator_of_notMem (fun h : t ∈ Ioc 0 1 => ht.not_ge h.2)])
-  obtain ⟨B, _, hB⟩ := exists_norm_hurwitzTaylorQuot_le (isCompact_singleton (x := c₀)) M
+  obtain ⟨B, _, hB⟩ := exists_norm_hurwitzTaylorQuot_le_Icc (isCompact_singleton (x := c₀)) M
   have hf_bot : f =O[𝓝[>] 0] fun t : ℝ => t ^ (-(0 : ℝ)) := by
     refine IsBigO.of_bound B ?_
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
@@ -216,8 +233,7 @@ private theorem differentiableAt_hurwitzHeadIntegral_right (M : ℕ) {s₀ c₀ 
       (by simpa using dslope_exp_ofReal_ne_zero 0 (-t))
   have hg : Integrable (fun t : ℝ => (t : ℂ) ^ (s₀ + (M : ℂ) - 1))
       (volume.restrict (Ioc 0 1)) :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-      (intervalIntegral.intervalIntegrable_cpow' (by simp; linarith))
+    integrableOn_Ioc_zero_cpow (by simp; linarith) 1
   have han := analyticAt_integral_smul (isCompact_Icc.image continuous_ofReal)
     (continuous_ofReal.comp continuous_projIcc.subtypeVal)
     (fun t => ⟨_, (projIcc (0 : ℝ) 1 zero_le_one t).property, rfl⟩) hf hg
@@ -256,7 +272,9 @@ private theorem aestronglyMeasurable_hurwitzTailIntegrand (s c : ℂ) :
       (volume.restrict (Ioi 1)) :=
   Measurable.aestronglyMeasurable (by fun_prop)
 
-private theorem integrableOn_hurwitzTailIntegrand (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
+/-- For `0 < c.re`, the tail integrand `t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))`
+is integrable on `Ioi 1`. -/
+theorem integrableOn_hurwitzTailIntegrand (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi 1) :=
   integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc one_pos
@@ -390,8 +408,7 @@ theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s
       hurwitzBernoulliCoeff (M + 1) c / (s + M) + hurwitzHeadIntegral (M + 1) s c := by
   have hint1 : IntegrableOn
       (fun t : ℝ => hurwitzBernoulliCoeff (M + 1) c * (t : ℂ) ^ (s + M - 1)) (Ioc 0 1) :=
-    ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-      (intervalIntegral.intervalIntegrable_cpow' (by simp; linarith))).const_mul _
+    (integrableOn_Ioc_zero_cpow (by simp; linarith) 1).const_mul _
   have hint2 : IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) * hurwitzTaylorQuot (M + 1) c t)
       (Ioc 0 1) :=
@@ -507,14 +524,17 @@ theorem complexHurwitzZeta₁_eq_sub_one_mul {s : ℂ} (hs : s ≠ 1) (c : ℂ) 
 theorem complexHurwitzZeta₁_one_left (c : ℂ) : complexHurwitzZeta₁ 1 c = 1 := by
   simp [complexHurwitzZeta₁, Gamma_one]
 
+private theorem complexHurwitzZeta_sub_inv_Gamma_div (s c : ℂ) :
+    complexHurwitzZeta s c - (Gamma s)⁻¹ / (s - 1) = hurwitzCore s c := by
+  simp [complexHurwitzZeta]
+
 /-- Subtracting the defining polar term `(Gamma s)⁻¹ / (s - 1)` from `complexHurwitzZeta s c`
 yields a function jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
 theorem analyticOnNhd_complexHurwitzZeta_sub_inv_Gamma_div :
     AnalyticOnNhd ℂ
       (fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2 - (Gamma p.1)⁻¹ / (p.1 - 1))
       {p | 0 < p.2.re} := by
-  rw [show (fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2 - (Gamma p.1)⁻¹ / (p.1 - 1)) =
-      fun p : ℂ × ℂ => hurwitzCore p.1 p.2 by ext p; simp [complexHurwitzZeta]]
+  simp_rw [complexHurwitzZeta_sub_inv_Gamma_div]
   exact analyticOnNhd_hurwitzCore
 
 /-- `(s, c) ↦ complexHurwitzZeta₁ s c` is jointly analytic on
@@ -652,22 +672,30 @@ private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
   rw [hpow, mul_assoc, ← hdecomp, hurwitzKernel_of_ne_zero c ht_ne]
   ring
 
-private theorem integrableOn_cpow_sub_two_Ioc {s : ℂ} (hs : 1 < s.re) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 2)) (Ioc 0 1) :=
-  (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-    (intervalIntegral.intervalIntegrable_cpow' (by simp; linarith))
+/-- For `1 < s.re` and `0 < c.re`, the Mellin–Laplace integrand
+`t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))` is integrable on `Ioi 0`. -/
+theorem integrableOn_hurwitzMellinIntegrand {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi 0) := by
+  have hs0 : -((0 : ℕ) : ℝ) < s.re := by simp; linarith
+  have hint_Ioc : IntegrableOn
+      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioc 0 1) :=
+    ((integrableOn_hurwitzHeadIntegrand 0 (c := c) hs0).add
+      (integrableOn_Ioc_zero_cpow (r := s - 2) (by simp; linarith) 1)).congr_fun
+      (fun t ht => by simpa using eqOn_hurwitzStageZero_add_cpow s c ht) measurableSet_Ioc
+  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
+  exact hint_Ioc.union (integrableOn_hurwitzTailIntegrand s hc)
 
 private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     hurwitzHeadIntegral 0 s c + 1 / (s - 1) =
       ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))) := by
   have hs0 : -((0 : ℕ) : ℝ) < s.re := by simp; linarith
   have h1div : (1 : ℂ) / (s - 1) = ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s - 2) := by
-    rw [integral_Ioc_zero_cpow (by simp; linarith) zero_le_one,
-      show s - (2 : ℂ) + 1 = s - 1 by ring]
+    have hexp : s - (2 : ℂ) + 1 = s - 1 := by ring
+    rw [integral_Ioc_zero_cpow (by simp; linarith) zero_le_one, hexp]
     simp
   unfold hurwitzHeadIntegral
   rw [h1div, ← integral_add (integrableOn_hurwitzHeadIntegrand 0 hs0)
-    (integrableOn_cpow_sub_two_Ioc hs)]
+    (integrableOn_Ioc_zero_cpow (r := s - 2) (by simp; linarith) 1)]
   exact setIntegral_congr_fun measurableSet_Ioc fun t ht => by
     simpa using eqOn_hurwitzStageZero_add_cpow s c ht
 
@@ -682,9 +710,7 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
   have hs0 : -((0 : ℕ) : ℝ) < s.re := by simp; linarith
   have hint_Ioc : IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioc 0 1) :=
-    ((integrableOn_hurwitzHeadIntegrand 0 (c := c) hs0).add
-      (integrableOn_cpow_sub_two_Ioc hs)).congr_fun
-      (fun t ht => by simpa using eqOn_hurwitzStageZero_add_cpow s c ht) measurableSet_Ioc
+    (integrableOn_hurwitzMellinIntegrand hs hc).mono_set Ioc_subset_Ioi_self
   rw [complexHurwitzZeta, hurwitzCore_eq_stage hs0 c]
   unfold hurwitzStageCore hurwitzTailIntegral
   rw [Finset.Icc_eq_empty_of_lt one_pos, Finset.sum_empty, add_zero]
@@ -695,97 +721,8 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
     ← setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
       hint_Ioc (integrableOn_hurwitzTailIntegrand s hc), Ioc_union_Ioi_eq_Ioi zero_le_one]
 
-/-- Explicit evaluation of the `L¹((0, ∞))` norm of the `n`-th Mellin–Laplace summand
-`t ↦ t ^ (s - 1) * exp (-((n + c) * t))` for `0 < s.re` and `0 < c.re`. -/
-theorem integral_norm_cpow_mul_exp_neg_natCast_add_Ioi {s c : ℂ} (hs : 0 < s.re) (hc : 0 < c.re)
-    (n : ℕ) :
-    ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖ =
-      Real.Gamma s.re * ((n : ℝ) + c.re) ^ (-s.re) := by
-  have hpos : 0 < (n : ℝ) + c.re := by linarith [Nat.cast_nonneg (α := ℝ) n]
-  have hcongr : EqOn (fun t : ℝ => ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖)
-      (fun t : ℝ => t ^ (s.re - 1) * Real.exp (-(((n : ℝ) + c.re) * t))) (Ioi 0) :=
-    fun t ht => by
-      simpa only [add_re, natCast_re, neg_mul] using norm_cpow_mul_exp_neg_mul s ((n : ℂ) + c) ht
-  rw [setIntegral_congr_fun measurableSet_Ioi hcongr,
-    Real.integral_rpow_mul_exp_neg_mul_Ioi hs hpos, one_div, Real.inv_rpow hpos.le,
-    Real.rpow_neg hpos.le, mul_comm]
-
-/-- On any compact subset `K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`, the `L¹((0, ∞))`
-norms `∫ t in Ioi 0, ‖t ^ (p.1 - 1) * exp (-((n + p.2) * t))‖` admit a uniform summable
-majorant. -/
-theorem exists_summable_integral_norm_hurwitz_le {K : Set (ℂ × ℂ)} (hK : IsCompact K)
-    (hK_sub : K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}) :
-    ∃ a : ℕ → ℝ, Summable a ∧ ∀ p ∈ K, ∀ n : ℕ,
-      ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (p.1 - 1) * exp (-((n + p.2) * t))‖ ≤ a n := by
-  rcases K.eq_empty_or_nonempty with rfl | hKne
-  · exact ⟨fun _ => 0, summable_zero, fun _ hp => False.elim hp⟩
-  obtain ⟨p₀, hp₀, hp₀_min⟩ :=
-    hK.exists_isMinOn hKne (continuous_re.comp continuous_fst).continuousOn
-  obtain ⟨p₁, hp₁, hp₁_min⟩ :=
-    hK.exists_isMinOn hKne (continuous_re.comp continuous_snd).continuousOn
-  obtain ⟨B_re, hB_re⟩ :=
-    hK.exists_bound_of_continuousOn (continuous_re.comp continuous_fst).continuousOn
-  have hB_re' : ∀ p ∈ K, p.1.re ≤ max B_re 0 := fun p hp =>
-    ((le_abs_self _).trans (by simpa [Real.norm_eq_abs] using hB_re p hp)).trans (le_max_left _ _)
-  have hcont_G : ContinuousOn (fun p : ℂ × ℂ => Real.Gamma p.1.re) K := by
-    rw [show (fun p : ℂ × ℂ => Real.Gamma p.1.re) =
-        fun p : ℂ × ℂ => (Gamma (p.1.re : ℂ)).re by ext p; rw [Gamma_ofReal, ofReal_re]]
-    intro p hp
-    have hne : ∀ m : ℕ, (p.1.re : ℂ) ≠ -(m : ℂ) := fun m h => by
-      have hre := congrArg Complex.re h; simp only [ofReal_re, neg_re, natCast_re] at hre
-      linarith [(hK_sub hp).1, Nat.cast_nonneg (α := ℝ) m]
-    exact (continuous_re.continuousAt.comp ((continuousAt_Gamma _ hne).comp
-      (f := fun q : ℂ × ℂ => (q.1.re : ℂ)) (by fun_prop))).continuousWithinAt
-  obtain ⟨G, hG⟩ := hK.exists_bound_of_continuousOn hcont_G
-  have hG' : ∀ p ∈ K, Real.Gamma p.1.re ≤ max G 0 := fun p hp =>
-    ((le_abs_self _).trans (by simpa [Real.norm_eq_abs] using hG p hp)).trans (le_max_left _ _)
-  let a : ℕ → ℝ := fun n =>
-    max G 0 * if n = 0 then (max 1 p₁.2.re⁻¹) ^ max B_re 0 else (n : ℝ) ^ (-p₀.1.re)
-  refine ⟨a, ?_, fun p hp n => ?_⟩
-  · rw [← summable_nat_add_iff 1]
-    exact (((summable_nat_add_iff 1).mpr ((Real.summable_nat_rpow (p := -p₀.1.re)).mpr
-      (by linarith [(hK_sub hp₀).1]))).mul_left (max G 0)).congr fun n => by simp [a]
-  · rw [integral_norm_cpow_mul_exp_neg_natCast_add_Ioi (by linarith [(hK_sub hp).1])
-      (hK_sub hp).2 n]
-    refine mul_le_mul (hG' p hp) ?_ (Real.rpow_nonneg (by linarith [(hK_sub hp).2]) _)
-      (le_max_right _ _)
-    have hη_pos : 0 < p₁.2.re := (hK_sub hp₁).2
-    rcases n with _ | m
-    · simp only [Nat.cast_zero, zero_add, ↓reduceIte]
-      have h1 : p.2.re ^ (-p.1.re) ≤ p₁.2.re ^ (-p.1.re) :=
-        Real.rpow_le_rpow_of_nonpos hη_pos (hp₁_min hp) (by linarith [(hK_sub hp).1])
-      have h2 : p₁.2.re ^ (-p.1.re) = (p₁.2.re⁻¹) ^ p.1.re := by
-        rw [Real.rpow_neg hη_pos.le, Real.inv_rpow hη_pos.le]
-      exact h1.trans (h2.symm ▸ (Real.rpow_le_rpow (by positivity) (le_max_right _ _)
-        (by linarith [(hK_sub hp).1])).trans
-        (Real.rpow_le_rpow_of_exponent_le (le_max_left _ _) (hB_re' p hp)))
-    · simp only [Nat.succ_ne_zero, ↓reduceIte]
-      exact (Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith [(hK_sub hp).2])
-        (by linarith [(hK_sub hp).1])).trans
-        (Real.rpow_le_rpow_of_exponent_le (by norm_cast; omega) (neg_le_neg (hp₀_min hp)))
-
-/-- Locally around any `(s₀, c₀)` with `1 < s₀.re` and `0 < c₀.re`, the `L¹((0, ∞))`
-norms of the Mellin–Laplace summands admit a uniform summable majorant. -/
-theorem exists_mem_nhds_summable_integral_norm_hurwitz_le {s₀ c₀ : ℂ}
-    (hs₀ : 1 < s₀.re) (hc₀ : 0 < c₀.re) :
-    ∃ U ∈ 𝓝 (s₀, c₀), ∃ a : ℕ → ℝ, Summable a ∧ ∀ p ∈ U, ∀ n : ℕ,
-      ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (p.1 - 1) * exp (-((n + p.2) * t))‖ ≤ a n := by
-  let r : ℝ := min ((s₀.re - 1) / 2) (c₀.re / 2)
-  let B := closedBall (s₀, c₀) r
-  have hK_sub : B ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re} := fun p hp => by
-    have hdist : dist p (s₀, c₀) ≤ r := mem_closedBall.mp hp
-    have h1 : |p.1.re - s₀.re| ≤ r := (abs_re_le_norm (p.1 - s₀)).trans
-      (by rw [← dist_eq]; exact (le_max_left (dist p.1 s₀) (dist p.2 c₀)).trans hdist)
-    have h2 : |p.2.re - c₀.re| ≤ r := (abs_re_le_norm (p.2 - c₀)).trans
-      (by rw [← dist_eq]; exact (le_max_right (dist p.1 s₀) (dist p.2 c₀)).trans hdist)
-    exact ⟨by linarith [(abs_le.mp h1).1, min_le_left ((s₀.re - 1) / 2) (c₀.re / 2)],
-      by linarith [(abs_le.mp h2).1, min_le_right ((s₀.re - 1) / 2) (c₀.re / 2)]⟩
-  obtain ⟨a, ha_sum, ha_le⟩ :=
-    exists_summable_integral_norm_hurwitz_le (isCompact_closedBall (s₀, c₀) r) hK_sub
-  exact ⟨B, closedBall_mem_nhds _ (lt_min (by linarith) (by linarith)), a, ha_sum, ha_le⟩
-
-/-- On the absolute-convergence domain `1 < s.re` and `0 < c.re`, `complexHurwitzZeta s c` equals
-`complexHurwitzSeries s c`. -/
+/-- For `1 < s.re` and `0 < c.re`, the continuation `complexHurwitzZeta s c` agrees with the
+convergent series `complexHurwitzSeries s c`. -/
 theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
     complexHurwitzZeta s c = complexHurwitzSeries s c := by
   have hs_pos : 0 < s.re := by linarith
@@ -794,7 +731,7 @@ theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (
   have hF_int : ∀ n : ℕ, Integrable (F n) (volume.restrict (Ioi 0)) := fun n =>
     integrableOn_cpow_mul_exp_neg_mul_Ioi hs_pos
       (by simp only [add_re, natCast_re]; linarith [Nat.cast_nonneg (α := ℝ) n])
-  obtain ⟨a, ha_sum, ha_le⟩ := exists_summable_integral_norm_hurwitz_le
+  obtain ⟨a, ha_sum, ha_le⟩ := exists_summable_integral_norm_cpow_mul_exp_neg_natCast_add_le
     (isCompact_singleton (x := (s, c))) (by simpa using And.intro hs hc)
   have hF_sum : Summable (fun n : ℕ => ∫ t in Ioi (0 : ℝ), ‖F n t‖) :=
     ha_sum.of_nonneg_of_le (fun _ => integral_nonneg fun _ => norm_nonneg _)
@@ -809,7 +746,8 @@ theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (
     rw [div_eq_mul_inv, ← tsum_geometric_of_norm_lt_one hlt, ← tsum_mul_left,
       ← tsum_mul_left]
     refine tsum_congr fun n => ?_
-    simp only [F]; rw [← exp_natCast_mul, ← exp_add]; congr 2; ring
+    have hexp : -c * (t : ℂ) + (n : ℂ) * -(t : ℂ) = -(((n : ℂ) + c) * (t : ℂ)) := by ring
+    simp only [F]; rw [← exp_natCast_mul, ← exp_add, hexp]
   have hterm : ∀ n : ℕ, (∫ t in Ioi (0 : ℝ), F n t) = Gamma s * ((n : ℂ) + c) ^ (-s) :=
     fun n => integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs_pos
       (by simp only [add_re, natCast_re]; linarith [Nat.cast_nonneg (α := ℝ) n])

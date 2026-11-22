@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.DSlope
+import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.RingTheory.PowerSeries.Substitution
-import TauCeti.Analysis.Analytic.ExtractZeros
+import TauCeti.Analysis.Calculus.DSlope.Analytic
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 
 /-!

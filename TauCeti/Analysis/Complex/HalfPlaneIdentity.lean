@@ -16,7 +16,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 Functions holomorphic on an open preconnected set `U` meeting some right half-plane `Re s > b`
 (in particular on a right half-plane `Re s > a` or on a punctured complex plane `{w}ᶜ`) that agree
-on `Re s > b` agree throughout `U`. The codomain is any complete complex normed space.
+on `U ∩ {s | b < s.re}` agree throughout `U`. The codomain is any complete complex normed space.
 -/
 
 public section

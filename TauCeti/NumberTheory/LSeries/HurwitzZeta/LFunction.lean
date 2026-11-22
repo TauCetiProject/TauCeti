@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Continuation
-public import TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod
+public import TauCeti.NumberTheory.LSeries.ZMod.LFunction
 
 /-!
 # Finite complex-Hurwitz decomposition of continued periodic L-functions
@@ -17,8 +17,9 @@ Reindexing `ZMod N` over positive residue representatives `a ∈ Finset.Icc 1 N`
 of the continued complex Hurwitz zeta function `TauCeti.complexHurwitzZeta s ((a : ℂ) / N)` away
 from `s = 1`.
 
-See `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod` for the lightweight circle-Hurwitz, transport,
-and convergent `TauCeti.complexHurwitzSeries` decompositions.
+See `TauCeti.NumberTheory.LSeries.ZMod.LFunction` for the underlying circle-Hurwitz and transport
+lemmas, and `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod` for the convergent
+`TauCeti.complexHurwitzSeries` decomposition.
 
 ## Main results
 

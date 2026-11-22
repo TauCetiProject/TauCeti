@@ -10,16 +10,17 @@ public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
+public import TauCeti.NumberTheory.LSeries.RiemannZeta.BernoulliKernel
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Analytic.TaylorSeries
-import TauCeti.Analysis.Complex.PowerSeries.ParametricDSlope
+import TauCeti.Analysis.Calculus.DSlope.Analytic
+import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
-import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
+import TauCeti.Analysis.SpecialFunctions.Exp.TaylorSeries
 
 /-!
 # Exponential-Bernoulli kernel and uniform Taylor remainder for Hurwitz continuation
@@ -30,7 +31,9 @@ The Mellin-Laplace integrand for the complex Hurwitz zeta function involves the 
 `dslope Complex.exp 0 (-z)` vanishes only at nonzero integer multiples of `2 * π * I`,
 `(c, z) ↦ hurwitzKernel c z` is jointly analytic on the full nonvanishing locus
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` (and in particular on
-`Set.univ ×ˢ Metric.ball 0 (2 * π)` and `Set.univ ×ˢ (Complex.ofReal '' Set.univ)`).
+`Set.univ ×ˢ Metric.ball 0 (2 * π)` and `Set.univ ×ˢ (Complex.ofReal '' Set.univ)`). At `c = 1`
+and real `t`, `hurwitzKernel 1 (t : ℂ)` specializes to the real Bernoulli kernel
+`(bernoulliKernel t : ℂ)`.
 
 On the nonvanishing locus `{z : ℂ | dslope Complex.exp 0 (-z) ≠ 0}` (in particular near `z = 0`),
 multiplying by `exp z - 1` yields `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`.
@@ -41,23 +44,25 @@ Iterating divided differences at `z = 0` defines the order-`M` Taylor remainder 
 `hurwitzTaylorQuot M c z = (Function.swap dslope 0)^[M + 1] (hurwitzKernel c) z`, which is
 jointly analytic on `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` and satisfies the exact
 identity `hurwitzKernel c z - ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k =
-z ^ (M + 1) * hurwitzTaylorQuot M c z` for all `c, z : ℂ`. Compactness then gives Taylor
-remainder bounds `‖∂_c^d (F_c(t) - ∑_{k ≤ M} b_k(c) t^k)‖ ≤ C * t ^ (M + 1)` on `[0, 1]`,
-locally uniformly in `c`.
+z ^ (M + 1) * hurwitzTaylorQuot M c z` for all `c, z : ℂ`. Compactness then gives uniform
+Taylor remainder bounds `‖∂_c^d (F_c(z) - ∑_{k ≤ M} b_k(c) z^k)‖ ≤ C * ‖z‖ ^ (M + 1)` on any
+compact subset `S` of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
 
 ## Main definitions and results
 
 * `TauCeti.hurwitzKernel`: the removable generating kernel `exp (-c * z) / oneSubExpNegDivSelf ℂ z`.
+* `TauCeti.hurwitzKernel_one_ofReal`: identification
+  `hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ)` for every real `t`.
 * `TauCeti.hurwitzBernoulliCoeff`: the Taylor coefficient `(-1) ^ k * B_k(c) / k!`.
-* `TauCeti.iteratedDeriv_hurwitzKernel_zero`: identification of
+* `TauCeti.iteratedDeriv_right_hurwitzKernel_zero`: identification of
   `iteratedDeriv n (hurwitzKernel c) 0` with `(-1) ^ n * B_n(c)`.
 * `TauCeti.hurwitzTaylorQuot` and `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`:
   jointly analytic iterated-`dslope` remainder quotient and exact Taylor decomposition.
-* `TauCeti.exists_norm_iteratedDeriv_hurwitzTaylorQuot_le`,
+* `TauCeti.exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le`,
   `TauCeti.exists_norm_hurwitzTaylorQuot_le`,
-  `TauCeti.exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le`, and
+  `TauCeti.exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le`, and
   `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor quotient and remainder
-  estimates on `[0, 1]`.
+  estimates on compact subsets of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
 
 ## References
 
@@ -92,6 +97,25 @@ theorem hurwitzKernel_of_ne_zero (c : ℂ) {z : ℂ} (hz : z ≠ 0) :
   have hmul : z * oneSubExpNegDivSelf ℂ z = 1 - Complex.exp (-z) := by
     simp [Complex.exp_eq_exp_ℂ]
   rw [hurwitzKernel, ← hmul, mul_div_mul_left _ _ hz]
+
+/-- At `c = 1` and real `t`, `hurwitzKernel 1 (t : ℂ)` coincides with the real Bernoulli kernel
+`(bernoulliKernel t : ℂ)` (including at `t = 0`). -/
+theorem hurwitzKernel_one_ofReal (t : ℝ) :
+    hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
+  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), neg_one_mul,
+      bernoulliKernel_of_ne_zero ht, ofReal_div, ofReal_sub, ofReal_one, ofReal_exp]
+    have hexp : Complex.exp (-(t : ℂ)) * (Complex.exp (t : ℂ) - 1) =
+        1 - Complex.exp (-(t : ℂ)) := by
+      rw [mul_sub, mul_one, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
+    have hne1 : Complex.exp (t : ℂ) - 1 ≠ 0 := by
+      exact_mod_cast sub_ne_zero.mpr (by simpa using Real.exp_injective.ne ht)
+    have hne2 : 1 - Complex.exp (-(t : ℂ)) ≠ 0 := by
+      rw [← hexp]
+      exact mul_ne_zero (Complex.exp_ne_zero _) hne1
+    rw [div_eq_div_iff hne2 hne1]
+    linear_combination (t : ℂ) * hexp
 
 /-- Whenever `dslope Complex.exp 0 (-z) ≠ 0`,
 `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`. -/
@@ -163,7 +187,7 @@ example (c : ℂ) : hurwitzBernoulliCoeff 2 c = (c ^ 2 - c + 1 / 6) / 2 := by
   simp [hurwitzBernoulliCoeff_def, Polynomial.bernoulli_def, Finset.sum_range_succ]
   ring
 
-private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
+private theorem iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
     iteratedDeriv m (hurwitzKernel c) 0 =
       Polynomial.aeval (1 - c) (Polynomial.bernoulli m) := by
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
@@ -179,7 +203,8 @@ private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c :
   rw [taylorSeries_mul hf hexp1, taylorSeries_mul hid_an hexp2] at ht
   have hid : taylorSeries (fun z : ℂ => z) 0 = PowerSeries.X := by
     simpa only [sub_zero] using taylorSeries_sub_const (𝕜 := ℂ) (a := (0 : ℂ))
-  rw [hid, Complex.taylorSeries_exp_sub_one_zero, Complex.taylorSeries_exp_mul_zero (1 - c),
+  rw [hid, Complex.taylorSeries_exp_sub_one_at_zero,
+    Complex.taylorSeries_exp_const_mul_at_zero (1 - c),
     ← Polynomial.bernoulli_generating_function (A := ℂ) (1 - c)] at ht
   have hne : PowerSeries.exp ℂ - (1 : PowerSeries ℂ) ≠ 0 := fun h0 => by
     have := congrArg (PowerSeries.coeff 1) h0
@@ -196,16 +221,17 @@ private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c :
   field_simp
 
 /-- The `n`-th derivative of `hurwitzKernel c` at `0` is `(-1) ^ n * B_n(c)`. -/
-theorem iteratedDeriv_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
+@[simp]
+theorem iteratedDeriv_right_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
     iteratedDeriv n (hurwitzKernel c) 0 =
       (-1 : ℂ) ^ n * Polynomial.aeval c (Polynomial.bernoulli n) := by
-  rw [iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub]
+  rw [iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub]
   simpa [Polynomial.aeval_comp, Algebra.smul_def] using
     congrArg (Polynomial.aeval c) (Polynomial.bernoulli_comp_one_sub_X n)
 
-private theorem inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
+private theorem inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
     (k.factorial : ℂ)⁻¹ • iteratedDeriv k (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
-  rw [smul_eq_mul, iteratedDeriv_hurwitzKernel_zero, hurwitzBernoulliCoeff]
+  rw [smul_eq_mul, iteratedDeriv_right_hurwitzKernel_zero, hurwitzBernoulliCoeff]
   ring
 
 /-- The order-`M` Taylor remainder quotient of `hurwitzKernel c` at `z = 0`, defined as the
@@ -222,8 +248,9 @@ theorem hurwitzTaylorQuot_def (M : ℕ) (c z : ℂ) :
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
 theorem analyticOnNhd_hurwitzTaylorQuot (M : ℕ) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzTaylorQuot M p.1 p.2)
-      {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} :=
-  analyticOnNhd_hurwitzKernel.iterate_dslope_snd (fun _ _ => by simp) (M + 1)
+      {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
+  simpa only [hurwitzTaylorQuot_def] using
+    analyticOnNhd_hurwitzKernel.iterate_dslope_snd (fun _ _ => by simp) (M + 1)
 
 /-- Exact order-`M` Taylor decomposition of `hurwitzKernel c z`. -/
 theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ) :
@@ -232,7 +259,7 @@ theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ)
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   have h := hf.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope (M + 1) z
-  simp_rw [inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero] at h
+  simp_rw [inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero] at h
   simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul,
     mul_comm _ (hurwitzBernoulliCoeff _ c)] using h
 
@@ -244,7 +271,7 @@ theorem hurwitzTaylorQuot_zero_right (M : ℕ) (c : ℂ) :
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   rw [hurwitzTaylorQuot, hf.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv (M + 1),
-    inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero]
+    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
 
 /-- Step relation between consecutive Taylor remainder quotients. -/
 theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
@@ -253,12 +280,12 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
   have hf : AnalyticAt ℂ (hurwitzKernel c) 0 :=
     analyticOnNhd_hurwitzKernel_right c 0 (by simp)
   have h := hf.iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ (M + 1) z
-  rw [inv_factorial_smul_iteratedDeriv_hurwitzKernel_zero] at h
+  rw [inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero] at h
   simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul] using h
 
 /-- `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
-theorem analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot (M d : ℕ) :
+theorem analyticOnNhd_iteratedDeriv_left_hurwitzTaylorQuot (M d : ℕ) :
     AnalyticOnNhd ℂ
       (fun p : ℂ × ℂ => iteratedDeriv d (fun w => hurwitzTaylorQuot M w p.2) p.1)
       {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := fun p hp => by
@@ -271,54 +298,54 @@ theorem analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot (M d : ℕ) :
     (f := fun r : ℂ × ℂ => (r.2, r.1))
     (hswap.iteratedDeriv_snd d) (analyticAt_snd.prod analyticAt_fst)
 
-/-- Compact-uniform bound on `[0, 1]` for the `d`-th `c`-derivative of `hurwitzTaylorQuot M`. -/
-theorem exists_norm_iteratedDeriv_hurwitzTaylorQuot_le {K : Set ℂ} (hK : IsCompact K)
+/-- Compact-uniform bound on a compact subset `S` of the nonvanishing locus for the `d`-th
+`c`-derivative of `hurwitzTaylorQuot M`. -/
+theorem exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le {S : Set (ℂ × ℂ)}
+    (hS : IsCompact S) (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0})
     (M d : ℕ) :
-    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1,
-      ‖iteratedDeriv d (fun w => hurwitzTaylorQuot M w t) c‖ ≤ B := by
-  let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
-  have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
-  have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
-    rintro ⟨_, _⟩ ⟨_, t, _, rfl⟩
-    simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t)
-  obtain ⟨B, hB⟩ := hS_comp.exists_bound_of_continuousOn
-    ((analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot M d).continuousOn.mono hS_sub)
-  exact ⟨max B 0, le_max_right _ _, fun c hc t ht =>
-    (hB (c, t) ⟨hc, t, ht, rfl⟩).trans (le_max_left _ _)⟩
+    ∃ B ≥ 0, ∀ p ∈ S,
+      ‖iteratedDeriv d (fun w => hurwitzTaylorQuot M w p.2) p.1‖ ≤ B := by
+  obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn
+    ((analyticOnNhd_iteratedDeriv_left_hurwitzTaylorQuot M d).continuousOn.mono hS_sub)
+  exact ⟨max B 0, le_max_right _ _, fun p hp => (hB p hp).trans (le_max_left _ _)⟩
 
-/-- Compact-uniform bound on `[0, 1]` for `hurwitzTaylorQuot M c t`. -/
-theorem exists_norm_hurwitzTaylorQuot_le {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
-    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, ‖hurwitzTaylorQuot M c t‖ ≤ B := by
-  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_hurwitzTaylorQuot_le hK M 0
-  exact ⟨B, hB0, fun c hc t ht => by simpa using hB c hc t ht⟩
+/-- Compact-uniform bound on a compact subset `S` of the nonvanishing locus for
+`hurwitzTaylorQuot M p.1 p.2`. -/
+theorem exists_norm_hurwitzTaylorQuot_le {S : Set (ℂ × ℂ)} (hS : IsCompact S)
+    (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}) (M : ℕ) :
+    ∃ B ≥ 0, ∀ p ∈ S, ‖hurwitzTaylorQuot M p.1 p.2‖ ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le hS hS_sub M 0
+  exact ⟨B, hB0, fun p hp => by simpa using hB p hp⟩
 
-/-- Compact-uniform Taylor remainder estimate on `[0, 1]` after any fixed order `d` of
-differentiation in the parameter `c`. -/
-theorem exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le {K : Set ℂ} (hK : IsCompact K)
+/-- Compact-uniform Taylor remainder estimate on a compact subset `S` of the nonvanishing locus
+after any fixed order `d` of differentiation in the parameter `c`. -/
+theorem exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)}
+    (hS : IsCompact S) (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0})
     (M d : ℕ) :
-    ∃ C ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1,
+    ∃ C ≥ 0, ∀ p ∈ S,
       ‖iteratedDeriv d
-          (fun w => hurwitzKernel w t -
-            ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * (t : ℂ) ^ k) c‖ ≤
-        C * t ^ (M + 1) := by
-  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_hurwitzTaylorQuot_le hK M d
-  refine ⟨B, hB0, fun c hc t ht => ?_⟩
-  have hfun : (fun w => hurwitzKernel w t -
-        ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * (t : ℂ) ^ k) =
-      fun w => (t : ℂ) ^ (M + 1) * hurwitzTaylorQuot M w t :=
-    funext fun w => hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot M w t
-  rw [hfun, iteratedDeriv_const_mul_field]
-  simpa [abs_of_nonneg ht.1, mul_comm] using
-    mul_le_mul_of_nonneg_right (hB c hc t ht) (pow_nonneg ht.1 _)
+          (fun w => hurwitzKernel w p.2 -
+            ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * p.2 ^ k) p.1‖ ≤
+        C * ‖p.2‖ ^ (M + 1) := by
+  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le hS hS_sub M d
+  refine ⟨B, hB0, fun p hp => ?_⟩
+  have hfun : (fun w => hurwitzKernel w p.2 -
+        ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * p.2 ^ k) =
+      fun w => p.2 ^ (M + 1) * hurwitzTaylorQuot M w p.2 :=
+    funext fun w => hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot M w p.2
+  rw [hfun, iteratedDeriv_const_mul_field, norm_mul, norm_pow, mul_comm (‖p.2‖ ^ (M + 1))]
+  exact mul_le_mul_of_nonneg_right (hB p hp) (pow_nonneg (norm_nonneg _) _)
 
-/-- Compact-uniform Taylor remainder estimate on `[0, 1]` for `hurwitzKernel c t`. -/
-theorem exists_norm_hurwitzKernel_sub_sum_le {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
-    ∃ C ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1,
-      ‖hurwitzKernel c t -
-          ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * (t : ℂ) ^ k‖ ≤
-        C * t ^ (M + 1) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le hK M 0
-  exact ⟨C, hC0, fun c hc t ht => by simpa using hC c hc t ht⟩
+/-- Compact-uniform Taylor remainder estimate on a compact subset `S` of the nonvanishing locus
+for `hurwitzKernel p.1 p.2`. -/
+theorem exists_norm_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)} (hS : IsCompact S)
+    (hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}) (M : ℕ) :
+    ∃ C ≥ 0, ∀ p ∈ S,
+      ‖hurwitzKernel p.1 p.2 -
+          ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k p.1 * p.2 ^ k‖ ≤
+        C * ‖p.2‖ ^ (M + 1) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le hS hS_sub M 0
+  exact ⟨C, hC0, fun p hp => by simpa using hC p hp⟩
 
 end TauCeti
 
