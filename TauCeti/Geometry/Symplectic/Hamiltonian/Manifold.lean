@@ -541,6 +541,13 @@ theorem eval₂_hamiltonianVectorField_of_isInvertible (hx : (σ.flat x).IsInver
     SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
   rw [← flat_apply, flat_hamiltonianVectorField_of_isInvertible hx]
 
+/-- The simp normal form of `eval₂_hamiltonianVectorField_of_isInvertible`, with `eval₂` unfolded:
+`σ_x(X_f, v) = df_x(v)` at a point where the flat map is invertible. -/
+@[simp]
+theorem apply_hamiltonianVectorField_of_isInvertible (hx : (σ.flat x).IsInvertible) (f : M → ℝ)
+    (v : TangentSpace I x) : σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
+  rw [← SmoothBundleForm.eval₂_apply, eval₂_hamiltonianVectorField_of_isInvertible hx]
+
 /-- **The zeros of a Hamiltonian vector field are the critical points of the Hamiltonian**, at a
 point where the flat map is invertible: `X_f(x) = 0` exactly when `df_x = 0`. -/
 theorem hamiltonianVectorField_eq_zero_iff_of_isInvertible (hx : (σ.flat x).IsInvertible) :
@@ -632,8 +639,8 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 `σ_x(X_f, v) = df_x(v)`. -/
 @[simp]
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
-    σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
-  rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
+    σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v :=
+  apply_hamiltonianVectorField_of_isInvertible (h.isInvertible_flat x) f v
 
 /-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
 integrand of the first variation of the action functional. -/
