@@ -48,6 +48,7 @@ classes.
 
 * `Ideal.stickelbergerSmoothing A m b`: the smoothed Gauss sum `Ψ_b(A) ∈ 𝓞 K`.
 * `Ideal.stickelbergerSmoothing_eq_mul_prod_jacobiSum`: the Jacobi-sum expression of `Ψ_b(P)`.
+* `Ideal.stickelbergerSmoothing_add_self`: `Ψ_(b + m)(A) = Φ(A) · Ψ_b(A)`.
 * `Ideal.stickelbergerSmoothing_mul_gaussSum`: `Ψ_b(P) · g(χ_P ^ b, ψ) = g(χ_P, ψ) ^ b`.
 * `Ideal.stickelbergerSmoothing_pow_mul_apply`: `Ψ_b(A) ^ m · σ(Φ(A)) = Φ(A) ^ b` for an
   automorphism `σ` raising the `m`-th roots of unity to the power `b`.
@@ -69,6 +70,14 @@ public section
 open NumberField UniqueFactorizationMonoid
 
 namespace Ideal
+
+/-- If `m ∤ b`, then `m ≥ 2`. -/
+private theorem two_le_of_not_dvd {m b : ℕ} [NeZero m] (hb : ¬m ∣ b) : 2 ≤ m :=
+  (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+
+/-- If `b` is prime to `m ≥ 2`, then `m ∤ b`. -/
+private theorem not_dvd_of_coprime {m b : ℕ} (hm : 2 ≤ m) (hb : b.Coprime m) : ¬m ∣ b :=
+  fun h ↦ by have := (Nat.coprime_comm.mp hb).eq_one_of_dvd h; lia
 
 variable {K : Type*} [Field K] [NumberField K] {m : ℕ} [NeZero m] [HasEnoughRootsOfUnity (𝓞 K) m]
 
@@ -139,6 +148,47 @@ theorem stickelbergerSmoothing_bot (b : ℕ) : stickelbergerSmoothing (⊥ : Ide
   rw [stickelbergerSmoothing, ← zero_eq_bot, normalizedFactors_zero, Multiset.map_zero,
     Multiset.prod_zero]
 
+/-- `Ψ_0(A) = 1`. -/
+@[simp]
+theorem stickelbergerSmoothing_zero (A : Ideal (𝓞 K)) : stickelbergerSmoothing A m 0 = 1 := by
+  have : stickelbergerSmoothingAt m 0 = fun _ : Ideal (𝓞 K) ↦ (1 : 𝓞 K) := by
+    funext P
+    rw [stickelbergerSmoothingAt]
+    split_ifs <;> simp
+  rw [stickelbergerSmoothing, this, Multiset.map_const', Multiset.prod_replicate, one_pow]
+
+/-- `Ψ_1(A) = 1` for `m ≥ 2`. -/
+@[simp]
+theorem stickelbergerSmoothing_one (hm : 2 ≤ m) (A : Ideal (𝓞 K)) :
+    stickelbergerSmoothing A m 1 = 1 := by
+  have : stickelbergerSmoothingAt m 1 = fun _ : Ideal (𝓞 K) ↦ (1 : 𝓞 K) := by
+    funext P
+    rw [stickelbergerSmoothingAt]
+    split_ifs <;> simp [Nat.div_eq_of_lt (by lia : 1 < m), Nat.mod_eq_of_lt (by lia : 1 < m)]
+  rw [stickelbergerSmoothing, this, Multiset.map_const', Multiset.prod_replicate, one_pow]
+
+/-- **Shifting `b` by `m`.** `Ψ_(b + m)(A) = Φ(A) · Ψ_b(A)`; with `Ψ_0(A) = 1`, this gives
+`Ψ_(m k)(A) = Φ(A) ^ k`. -/
+theorem stickelbergerSmoothing_add_self (A : Ideal (𝓞 K)) (b : ℕ) :
+    stickelbergerSmoothing A m (b + m) = stickelbergerPhi A m * stickelbergerSmoothing A m b := by
+  induction A using induction_on_prime with
+  | h₁ => simp only [zero_eq_bot, stickelbergerSmoothing_bot, stickelbergerPhi_bot, one_mul]
+  | h₂ A hA =>
+    simp only [isUnit_iff.mp hA, stickelbergerSmoothing_top, stickelbergerPhi_top, one_mul]
+  | h₃ A P hA₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [stickelbergerSmoothing_mul hP.ne_zero hA₀, stickelbergerSmoothing_mul hP.ne_zero hA₀,
+      stickelbergerPhi_mul hP.ne_zero hA₀, ih]
+    by_cases hPm : (absNorm P).Coprime m
+    · let _ := Fintype.ofFinite (𝓞 K ⧸ P)
+      rw [stickelbergerSmoothing_eq_mul_prod_jacobiSum P hPm,
+        stickelbergerSmoothing_eq_mul_prod_jacobiSum P hPm, Nat.add_mod_right,
+        Nat.add_div_right _ (NeZero.pos m), pow_succ]
+      ring
+    · rw [stickelbergerSmoothing_of_not_coprime P hPm, stickelbergerSmoothing_of_not_coprime P hPm,
+        stickelbergerPhi_of_not_coprime P hPm]
+      ring
+
 /-- **`Ψ_b(P)` is a quotient of Gauss sums.** Let `m ∤ b`, and let `P` be a maximal ideal
 whose norm is prime to `m`. For every injective ring homomorphism `f` from `𝓞 K` to a domain `R`
 and every primitive additive character `ψ` of `𝓞 K ⧸ P` with values in `R`,
@@ -150,7 +200,7 @@ theorem stickelbergerSmoothing_mul_gaussSum (P : Ideal (𝓞 K)) [P.IsMaximal] [
     f (stickelbergerSmoothing P m b) *
         gaussSum (((powerResidueSymbol P m)⁻¹ ^ b).ringHomComp f) ψ =
       gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ ^ b := by
-  have hm : 2 ≤ m := (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+  have hm := two_le_of_not_dvd hb
   let _ := Ideal.Quotient.field P
   set χ := (powerResidueSymbol P m)⁻¹.ringHomComp f with hχdef
   have hχ : orderOf χ = m := by
@@ -170,7 +220,7 @@ theorem stickelbergerSmoothing_mul_gaussSum (P : Ideal (𝓞 K)) [P.IsMaximal] [
 /-- `Ψ_b(A)` is nonzero when `m ∤ b` and the norm of `A` is prime to `m`. -/
 theorem stickelbergerSmoothing_ne_zero {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime m) {b : ℕ}
     (hb : ¬m ∣ b) : stickelbergerSmoothing A m b ≠ 0 := by
-  have hm : 2 ≤ m := (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+  have hm := two_le_of_not_dvd hb
   induction A using induction_on_prime with
   | h₁ =>
     rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
@@ -186,9 +236,7 @@ theorem stickelbergerSmoothing_ne_zero {A : Ideal (𝓞 K)} (hA : (absNorm A).Co
     -- Read `Ψ_b(P)` in `ℂ`, where it divides the nonzero `g(χ_P, ψ) ^ b`.
     let _ := Ideal.Quotient.field P
     let _ := Fintype.ofFinite (𝓞 K ⧸ P)
-    let f := (Classical.arbitrary (K →+* ℂ)).comp (algebraMap (𝓞 K) K)
-    have hf : Function.Injective f :=
-      (Classical.arbitrary (K →+* ℂ)).injective.comp (FaithfulSMul.algebraMap_injective _ _)
+    obtain ⟨f, hf⟩ := RingOfIntegers.exists_injective_ringHom_complex K
     have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
     have hχ : (powerResidueSymbol P m)⁻¹.ringHomComp f ≠ 1 := by
       rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
@@ -204,13 +252,11 @@ private theorem stickelbergerSmoothing_pow_mul_apply_of_isMaximal (P : Ideal (�
     [P.IsMaximal] (hP : (absNorm P).Coprime m) {b : ℕ} (hb : ¬m ∣ b) (σ : 𝓞 K ≃+* 𝓞 K)
     (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ b) :
     stickelbergerSmoothing P m b ^ m * σ (stickelbergerPhi P m) = stickelbergerPhi P m ^ b := by
-  have hm : 2 ≤ m := (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+  have hm := two_le_of_not_dvd hb
   let _ := Ideal.Quotient.field P
   let _ := Fintype.ofFinite (𝓞 K ⧸ P)
   -- Read all three factors as Gauss sum expressions in `ℂ`.
-  let f := (Classical.arbitrary (K →+* ℂ)).comp (algebraMap (𝓞 K) K)
-  have hf : Function.Injective f :=
-    (Classical.arbitrary (K →+* ℂ)).injective.comp (FaithfulSMul.algebraMap_injective _ _)
+  obtain ⟨f, hf⟩ := RingOfIntegers.exists_injective_ringHom_complex K
   have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
   apply hf
   rw [map_mul, map_pow, map_pow, apply_stickelbergerPhi_eq_gaussSum_pow P hP hm σ hσ hf hψ,
@@ -224,7 +270,7 @@ cyclotomic field. If `m ∤ b` and the norm of the ideal `A` is prime to `m`, th
 theorem stickelbergerSmoothing_pow_mul_apply {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime m)
     {b : ℕ} (hb : ¬m ∣ b) (σ : 𝓞 K ≃+* 𝓞 K) (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ b) :
     stickelbergerSmoothing A m b ^ m * σ (stickelbergerPhi A m) = stickelbergerPhi A m ^ b := by
-  have hm : 2 ≤ m := (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
+  have hm := two_le_of_not_dvd hb
   induction A using induction_on_prime with
   | h₁ =>
     rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
@@ -255,7 +301,7 @@ theorem span_stickelbergerSmoothing (hm : 2 ≤ m) {b : ℕ} (hb : b.Coprime m) 
     (hA : (absNorm A).Coprime m) :
     span {stickelbergerSmoothing A m b} =
       ∏ σ : Gal(K/ℚ), (σ⁻¹ • A) ^ (b * (galEquivZMod m K σ : ZMod m).val / m) := by
-  have hbm : ¬m ∣ b := fun h ↦ by have := (Nat.coprime_comm.mp hb).eq_one_of_dvd h; lia
+  have hbm := not_dvd_of_coprime hm hb
   have hA0 : A ≠ ⊥ := by
     rintro rfl
     rw [absNorm_bot, Nat.coprime_zero_left] at hA
@@ -329,9 +375,7 @@ theorem isPrincipal_prod_inv_smul_pow_mul_div (hm : 2 ≤ m) {b : ℕ} (hb : b.C
       span_singleton_pow]
   -- Cancel the nonzero principal ideal `(Ψ_b(J))`.
   have hΨ : stickelbergerSmoothing (J : Ideal (𝓞 K)) m b ≠ 0 :=
-    stickelbergerSmoothing_ne_zero hJm fun h ↦ by
-      have := (Nat.coprime_comm.mp hb).eq_one_of_dvd h
-      lia
+    stickelbergerSmoothing_ne_zero hJm (not_dvd_of_coprime hm hb)
   obtain ⟨w, hw⟩ := mem_span_singleton'.mp (mul_le_right (h.symm ▸ mem_span_singleton_self _))
   refine ⟨w, mul_right_cancel₀ (span_singleton_eq_bot.not.mpr hΨ) ?_⟩
   rw [h, ← hw, span_singleton_mul_span_singleton]
