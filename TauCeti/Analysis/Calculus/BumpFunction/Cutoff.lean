@@ -40,7 +40,9 @@ cutoffs equal to one on their supports which are locally finite in the open set
 (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the gluing device for global
 approximation on a domain. Multiplying by a cutoff turns a
 function which is `C^k` on an open set containing its support into a `C^k` function on the whole
-space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G`
+space (`ContDiffOn.contDiff_smul_of_tsupport_subset`), so a function `C^k`, `k ≠ 0`, at a point
+agrees near it with a globally Lipschitz `C^k` function
+(`ContDiffAt.exists_contDiff_lipschitzWith_eventuallyEq`). In particular a function `C^k` on `U × G`
 agrees, at positions near a compact subset of `U`, with a function `C^k` on the whole product
 which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
@@ -296,6 +298,26 @@ theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace �
     ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_,
     fun T hT y η => congrArg (ψ y • ·) (hT y η)⟩
   filter_upwards [hψone x hx] with y hy η
+  rw [hy, one_smul]
+
+/-- A function which is `C^k`, `k ≠ 0`, at a point `x` of a finite-dimensional space agrees near
+`x` with a globally Lipschitz `C^k` function, its product with a smooth cutoff equal to one near
+`x`. This is how a field known only near a point is replaced by one with a global flow. -/
+theorem _root_.ContDiffAt.exists_contDiff_lipschitzWith_eventuallyEq [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+    {f : E → F} {x : E} (hf : ContDiffAt ℝ k f x) (hk : k ≠ 0) :
+    ∃ g : E → F, ContDiff ℝ k g ∧ (∃ K, LipschitzWith K g) ∧ g =ᶠ[𝓝 x] f := by
+  obtain ⟨u, hu, hfu⟩ := hf.contDiffOn le_rfl (by simp)
+  obtain ⟨s, hsu, hs, hxs⟩ := mem_nhds_iff.mp hu
+  obtain ⟨ψ, hψ, -, hψ1, hψc, hψs⟩ :=
+    (isCompact_singleton (x := x)).exists_contDiff_cutoff_eventuallyEq_one hs
+      (singleton_subset_iff.2 hxs)
+  have hg : ContDiff ℝ k (fun y ↦ ψ y • f y) :=
+    (hfu.mono hsu).contDiff_smul_of_tsupport_subset hs
+      (hψ.of_le (by exact_mod_cast le_top)).contDiffOn hψs
+  refine ⟨fun y ↦ ψ y • f y, hg,
+    hg.lipschitzWith_of_hasCompactSupport hψc.smul_right (by exact_mod_cast hk), ?_⟩
+  filter_upwards [hψ1 x rfl] with y hy
   rw [hy, one_smul]
 
 /-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
