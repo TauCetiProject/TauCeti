@@ -94,8 +94,7 @@ theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSe
   have happly : ‖p n (fun _ ↦ y)‖ = ‖cauchyPowerSeries g 0 (1 : ℝ≥0) n (fun _ ↦ 1)‖ := by
     have hval := congr_arg (fun q : FormalMultilinearSeries ℂ ℂ ℂ ↦ q n (fun _ ↦ 1)) heq
     rw [FormalMultilinearSeries.compContinuousLinearMap_toSpanSingleton_apply_one,
-      ContinuousLinearMap.compFormalMultilinearSeries_apply,
-      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, hℓv] at hval
+      ContinuousLinearMap.compFormalMultilinearSeries_apply', hℓv] at hval
     have hnorm := congr_arg norm hval
     simpa only [RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _)] using hnorm
   rw [happly, cauchyPowerSeries_apply]

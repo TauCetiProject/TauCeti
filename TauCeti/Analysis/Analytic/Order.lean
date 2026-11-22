@@ -329,6 +329,16 @@ theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : 𝕜 → 𝕜} {z : 𝕜}
 
 end TauCeti
 
+/-- If `g` has analytic order at least `T ≥ 1` at `z₀`, then `g` is `O((w - z₀) ^ T)` near `z₀`.
+Analyticity of `g` at `z₀` need not be assumed separately, since a non-analytic function has
+`analyticOrderAt g z₀ = 0`. -/
+theorem TauCeti.isBigO_sub_pow_of_le_analyticOrderAt {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g : 𝕜 → E} {z₀ : 𝕜} {T : ℕ}
+    (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
+    g =O[𝓝 z₀] fun w ↦ (w - z₀) ^ T := by
+  have hne : analyticOrderAt g z₀ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by positivity) h)
+  exact ((analyticOrderAt_ne_zero.1 hne).1.natCast_le_analyticOrderAt_iff_isBigO).1 h
+
 /-- A function with analytic order at least `T ≥ 1` at `z₀` satisfies
 `g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))` near `z₀`. No analyticity assumption is needed because a
 positive `analyticOrderAt` already forces `g` to be analytic and vanish at `z₀`. -/
@@ -337,10 +347,10 @@ theorem TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt {𝕜 : Type*}
     {z₀ : 𝕜} {T : ℕ} (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
     Asymptotics.IsLittleO (𝓝 z₀) (fun w ↦ g w - g z₀) (fun w ↦ ‖w - z₀‖ ^ (T - 1)) := by
   have hne : analyticOrderAt g z₀ ≠ 0 := ((Nat.cast_pos.2 hT).trans_le h).ne'
-  obtain ⟨hg, hg₀⟩ := analyticOrderAt_ne_zero.1 hne
+  have hg₀ : g z₀ = 0 := (analyticOrderAt_ne_zero.1 hne).2
   have hO : (fun w ↦ g w - g z₀) =O[𝓝 z₀] fun w ↦ ‖w - z₀‖ ^ T := by
     simpa only [hg₀, sub_zero, norm_pow] using
-      (hg.natCast_le_analyticOrderAt_iff_isBigO.1 h).norm_right
+      (TauCeti.isBigO_sub_pow_of_le_analyticOrderAt hT h).norm_right
   exact hO.trans_isLittleO (Asymptotics.isLittleO_pow_sub_pow_sub z₀ (Nat.sub_lt hT zero_lt_one))
 
 /-- Outside zero and at most one additional scalar, subtracting a function from
@@ -380,15 +390,5 @@ theorem TauCeti.exists_analyticOrderAt_monomial_sub_eq_min {𝕜 : Type*}
     have hsum := analyticOrderAt_add_of_ne hne
     rw [analyticOrderAt_neg, hmono c hc] at hsum
     simpa only [Pi.add_def, Pi.neg_def, sub_eq_add_neg] using hsum
-
-/-- If `g` has analytic order at least `T ≥ 1` at `z₀`, then `g` is `O((w - z₀) ^ T)` near `z₀`.
-Analyticity of `g` at `z₀` need not be assumed separately, since a non-analytic function has
-`analyticOrderAt g z₀ = 0`. -/
-theorem TauCeti.isBigO_sub_pow_of_le_analyticOrderAt {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g : 𝕜 → E} {z₀ : 𝕜} {T : ℕ}
-    (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
-    g =O[𝓝 z₀] fun w ↦ (w - z₀) ^ T := by
-  have hne : analyticOrderAt g z₀ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by positivity) h)
-  exact ((analyticOrderAt_ne_zero.1 hne).1.natCast_le_analyticOrderAt_iff_isBigO).1 h
 
 end
