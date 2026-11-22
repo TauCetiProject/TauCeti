@@ -26,6 +26,12 @@ element being powered, and the nilpotency results additionally need a `ℚ`-alge
 divide by the multiplicity a power releases. Over a ring the same `z` is the commutator
 `x * y - y * x`, which is the form the integer-eigenvector results take.
 
+For elements `a`, `b`, `c` of a non-unital ring, the double commutator of a square is
+`⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a`.
+When `a` is a first-order differential operator and `b`, `c` are multiplication operators, the
+outer terms vanish, so this computes the second-order symbol of `a²` from the first-order symbol
+of `a`.
+
 The last section computes the group commutator of two units of the form `1 + A` and `1 + B` with
 square-zero `A`, `B` and vanishing product `A * B * A`: it is
 `1 + ⁅A, B⁆ + B * A * B`. If `B * A * B` also vanishes, this reduces to `1 + ⁅A, B⁆`, for the
@@ -56,6 +62,7 @@ Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
   correction term, deduced from commutation with the first.
 * `Commute.of_commutator_eq_of_commutator_eq_smul`: commutation of the two successive
   correction terms when the second coefficient is a unit.
+* `TauCeti.lie_lie_mul_self`: the double commutator of a square.
 * `Units.val_inv_eq_one_sub`: a unit `1 + A` with `A * A = 0` has inverse `1 - A`.
 * `Units.val_commutatorElement_eq_one_add_lie_add`: the group commutator of two such units is
   `1 + ⁅A, B⁆ + B * A * B` when `A * B * A` vanishes.
@@ -293,6 +300,15 @@ theorem isNilpotent_of_commutator_eq_nsmul {n : ℕ} (hn : n ≠ 0)
 end CentralCommutator
 
 end Associative
+
+/-- **The double commutator of a square**: in any non-unital ring,
+`⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a`. In
+particular, if `⁅⁅a, b⁆, c⁆ = 0`, then `⁅⁅a * a, b⁆, c⁆` is the anticommutator of `⁅a, b⁆` and
+`⁅a, c⁆`. -/
+theorem lie_lie_mul_self {A : Type*} [NonUnitalRing A] (a b c : A) :
+    ⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a := by
+  simp only [Ring.lie_def]
+  noncomm_ring
 
 section SquareZeroUnits
 

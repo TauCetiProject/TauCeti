@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Pi
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
+import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Joint eigenvectors of commuting semisimple families
@@ -24,9 +25,10 @@ needs no division — a nonzero vector cancels over a commutative ring without z
 acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
 `χ g⁻¹`. Over a commutative domain acting torsion-freely, the joint eigenspaces of any family of
 endomorphisms are supremum-independent; over any field, every invariant submodule contained in the
-sum of the joint eigenspaces decomposes as the supremum of its intersections with them. Over an
-algebraically closed field, a pairwise-commuting family of semisimple endomorphisms spans a
-finite-dimensional space, and any finite-dimensional invariant submodule on which the restricted
+sum of the joint eigenspaces decomposes as the supremum of its intersections with them. This
+yields the simultaneous-diagonalization toolkit for a commuting family: the joint eigenspaces span
+in finite dimension when every member is diagonalizable (as a semisimple endomorphism is over an
+algebraically closed field), and any finite-dimensional invariant submodule on which the restricted
 operators pairwise commute and are semisimple decomposes likewise.
 
 When `G` is a *finite commutative group* there is a second, unconditional route to the same
@@ -54,20 +56,18 @@ components of `M_k(Γ₁(N))`.
   acting torsion-freely, the joint eigenspaces of any family of endomorphisms are
   supremum-independent, with no commutation, semisimplicity, finite-dimensionality, or
   algebraic-closedness hypothesis.
-* `iSup_iInf_eigenspace_eq_top_of_isSemisimple` (and `iSup_iInf_eigenspace_unitHom_eq_top`): over
-  an algebraically closed field and in finite dimension, the joint eigenspaces of a
-  pairwise-commuting family of semisimple endomorphisms span the whole space.
-* `iSup_inf_iInf_eigenspace_of_invariant` (and `iSup_inf_iInf_eigenspace_unitHom_of_invariant`):
-  over an algebraically closed field, a finite-dimensional invariant submodule on which the
-  restricted endomorphisms pairwise commute and are semisimple is the supremum of its
-  intersections with the joint eigenspaces.
-* `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`: over any field (with no commutation,
+* `iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top`,
+  `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
+  `iSup_inf_iInf_eigenspace_of_invariant`: in finite dimension, the joint eigenspaces of a
+  pairwise-commuting family exhaust the space when each member is diagonalizable (over any field)
+  or semisimple (over an algebraically closed field), and a finite-dimensional invariant submodule
+  on which the restricted endomorphisms pairwise commute and are semisimple decomposes likewise —
+  with the character-indexed forms (`…_unitHom…`) for group representations.
+* `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`,
+  `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field (with no commutation,
   semisimplicity, finite-dimensionality, or algebraic-closedness hypothesis), the intersection of
   an invariant submodule with the sum of the joint eigenspaces of any family of endomorphisms is
   the supremum of its intersections with them.
-* `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field, an invariant submodule contained
-  in the sum of the joint eigenspaces of any family of endomorphisms is the supremum of its
-  intersections with them.
 * `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
   summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
   a joint eigenspace, and every other joint eigenspace is zero.
@@ -416,24 +416,37 @@ end InvariantSubmodule
 
 /-! ### Simultaneous diagonalization
 
-The spanning statements for semisimple families, over an algebraically closed field.
+The spanning statements for diagonalizable families over any field, and for semisimple families
+over an algebraically closed field.
 -/
 
 section FieldScalars
 
-variable [Field K] [IsAlgClosed K] [Module K V]
+variable [Field K] [Module K V]
+
+/-- **Simultaneous diagonalization.** In finite dimension, the joint eigenspaces of a
+pairwise-commuting family of diagonalizable endomorphisms exhaust the space. -/
+lemma iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top [FiniteDimensional K V] {ι : Type*}
+    (f : ι → Module.End K V) (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
+    (hdiag : ∀ i, ⨆ μ : K, (f i).eigenspace μ = ⊤) :
+    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ := by
+  have heq (i : ι) (μ : K) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
+    (isSemisimple_of_iSup_eigenspace_eq_top (hdiag i)).isFinitelySemisimple
+      |>.maxGenEigenspace_eq_eigenspace μ
+  simpa only [heq] using
+    Module.End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute f
+      hcomm fun i ↦ by simpa only [heq] using hdiag i
+
+variable [IsAlgClosed K]
 
 /-- Over an algebraically closed field and in finite dimension, the joint eigenspaces of a
 pairwise-commuting family of semisimple endomorphisms exhaust the space. -/
 lemma iSup_iInf_eigenspace_eq_top_of_isSemisimple [FiniteDimensional K V] {ι : Type*}
     (f : ι → Module.End K V)
     (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hss : ∀ i, (f i).IsSemisimple) :
-    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ := by
-  have heq (i : ι) (μ : K) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
-    (hss i).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace μ
-  simpa only [heq] using
-    Module.End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute f
-      hcomm fun i ↦ by simpa only [heq] using (hss i).iSup_eigenspace_eq_top
+    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ :=
+  iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top f hcomm fun i ↦
+    (hss i).iSup_eigenspace_eq_top
 
 /-- A finite-dimensional submodule invariant under a pairwise-commuting family of
 endomorphisms whose **restrictions** to it are semisimple is the supremum of its
@@ -503,7 +516,9 @@ variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
   rw [fourierComponent]
-  exact Submodule.mem_iInf _ |>.1 (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
+  exact Module.End.mem_eigenspace_iff.2 <|
+    (Representation.mem_charEigenspace_iff ρ χ₀).1
+      (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
 
 end FourierProjector
 

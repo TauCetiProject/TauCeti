@@ -146,7 +146,7 @@ theorem setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 
   -- the completion `F̂`, where the mean-value property is available; `L` preserves norms.
   set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
   have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
   have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (u := L ∘ u) e hae hbe
     ((harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu).comp_CLM L)
     (by simpa only [Function.comp_apply, hL] using hint) hρ hρR
@@ -177,7 +177,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_
       2 ^ (3 * Fintype.card ι + 10) * (Fintype.card ι + 1) ^ 2 *
         √(Lam / lam) ^ (Fintype.card ι + 2) * (ρ / R) ^ (Fintype.card ι + 2) *
           ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
   have h := setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu) hint hρ hρR
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
@@ -202,7 +202,7 @@ theorem setIntegral_ball_norm_gradient_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (
     ∫ x in ball x₀ ρ, ‖∇ g x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖∇ g x‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hg hLg) hint hρ
     hρR
@@ -230,7 +230,7 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_sum_smul_fderiv_f
       2 ^ (3 * Fintype.card ι + 10) * (Fintype.card ι + 1) ^ 2 *
         √(Lam / lam) ^ (Fintype.card ι + 2) * (ρ / R) ^ (Fintype.card ι + 2) *
           ∫ x in ball x₀ R, ‖∇ g x - c‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have h := setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp e hae hbe
     (harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hg hLg) hint hρ
     hρR
