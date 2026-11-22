@@ -209,9 +209,8 @@ theorem cauchyJump_C_mul_left (c : R) (p q : R[X]) (a : R) :
   by_cases hp : p = 0
   · simp [hp]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hp),
-    rootMultiplicity_C, zero_add, mul_assoc, derivSignRight_eq_signRight, signRight_C_mul,
-    ← derivSignRight_eq_signRight]
-  split_ifs <;> simp
+    rootMultiplicity_C, zero_add, mul_assoc]
+  split_ifs <;> simp [signRight_C_mul]
 
 /-- Scaling the denominator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
@@ -228,9 +227,8 @@ theorem cauchyJump_C_mul_right (c : R) (p q : R[X]) (a : R) :
   by_cases hq : q = 0
   · simp [hq]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hq),
-    rootMultiplicity_C, zero_add, mul_left_comm, derivSignRight_eq_signRight, signRight_C_mul,
-    ← derivSignRight_eq_signRight]
-  split_ifs <;> simp
+    rootMultiplicity_C, zero_add, mul_left_comm]
+  split_ifs <;> simp [signRight_C_mul]
 
 /-- Scaling the numerator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
@@ -321,12 +319,7 @@ theorem cauchyJump_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (a : R) :
   by_cases hq : q = 0
   · simp [hq]
   have hs : signRight a (p * r * (q * r)) = signRight a (p * q) := by
-    rw [signRight_mul, signRight_mul, signRight_mul, signRight_mul]
-    have h0 : signRight a r ≠ 0 := signRight_eq_zero_iff.not.2 hr
-    generalize signRight a p = s
-    generalize signRight a q = t
-    generalize signRight a r = u at h0
-    cases s <;> cases t <;> cases u <;> simp_all
+    rw [mul_mul_mul_comm, signRight_mul, signRight_mul_self hr, mul_one]
   simp only [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hp hr),
     rootMultiplicity_mul (mul_ne_zero hq hr), Nat.add_sub_add_right, Nat.add_lt_add_iff_right,
     derivSignRight_eq_signRight, hs]

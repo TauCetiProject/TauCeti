@@ -200,7 +200,7 @@ theorem signVariationsRight_filter_ne_zero (cs : List R[X]) (a : R) :
     signVariationsRight (cs.filter fun p ↦ !decide (p = 0)) a = signVariationsRight cs a := by
   rw [signVariationsRight_def, signVariationsRight_def,
     ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
-  simp [Function.comp_def, derivSignRight_eq_signRight]
+  simp [Function.comp_def]
 
 /-- Deleting the zero entries does not change the left-hand variations. -/
 @[simp]
