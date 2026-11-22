@@ -35,8 +35,8 @@ diffeomorphism. The normalization producing that condition is in
 * `IsCompact.exists_injOn_prodMk_isLocalDiffeomorphOn`: over a neighbourhood of a compact set of
   base points the local diffeomorphisms combine. There are an open `U` containing the compact set
   and `ε > 0` such that `(q, v) ↦ (q, A q v)` is injective and a local diffeomorphism on
-  `U ×ˢ ball 0 ε`, so it is a diffeomorphism of `U ×ˢ ball 0 ε` onto an open neighbourhood of
-  the diagonal over `U`.
+  `U ×ˢ ball 0 ε`, so it is a diffeomorphism of `U ×ˢ ball 0 ε` onto an open subset of `E × E`.
+  When moreover `A q 0 = q` on `U`, this open subset contains the diagonal over `U`.
 * `TauCeti.exists_injOn_prodMk_isLocalDiffeomorphOn_of_eventually_eq_add`: the same on
   `univ ×ˢ ball 0 ε` for a local addition defined everywhere which is `q + v` outside a compact
   set of base points.
