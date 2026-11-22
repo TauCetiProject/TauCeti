@@ -50,7 +50,8 @@ endomorphism fields. The inverses are `Ring.inverse`.
   conjugation identity `cayleyParam j η * (1 + η)⁻¹ = (1 + η)⁻¹ * j`.
 * `TauCeti.one_add_mul_add_cayleyParam`, `TauCeti.one_add_cayleyCoord_mul_add`: the identities
   `(1 + η) * (j + cayleyParam j η) = 2 * j` and `(1 + cayleyCoord j J) * (j + J) = 2 * j`, which
-  make the two invertibility conditions correspond.
+  make the two invertibility conditions correspond; `TauCeti.add_mul_cayleyCoord`: the identity
+  `(J + j) * cayleyCoord j J = J - j` for `J * J = j * j`.
 * `TauCeti.cayleyCoord_mul_eq_neg_mul`: the Cayley coordinate of a square root of `-1` is
   `j`-antilinear.
 * `TauCeti.cayleyCoord_cayleyParam`, `TauCeti.cayleyParam_cayleyCoord`: the two maps are mutually
@@ -148,7 +149,7 @@ lemma one_add_mul_add_cayleyParam (hη' : η * j = -(j * η)) (hη : IsUnit (1 +
   noncomm_ring
 
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, `2 * j` is a unit. -/
-private lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
+lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     IsUnit (2 * j) :=
   h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one))
 
@@ -168,6 +169,16 @@ lemma one_add_cayleyCoord_mul_add (hJ : IsUnit (j + J)) :
   obtain ⟨u, hu⟩ := hJ
   rw [add_mul, cayleyCoord_def, ← hu, Ring.inverse_unit, Units.inv_mul_cancel_right, hu]
   noncomm_ring
+
+/-- For `J` with the same square as `j` and `j + J` invertible, `J + j` carries the Cayley
+coordinate of `J` to `J - j`: `(J + j) * cayleyCoord j J = J - j`. For square roots of `-1` this
+is the left-inverse form `-cayleyCoord j J = (J + j)⁻¹ * (j - J)` of the Cayley coordinate. -/
+lemma add_mul_cayleyCoord (hJj : J * J = j * j) (hJ : IsUnit (j + J)) :
+    (J + j) * cayleyCoord j J = J - j := by
+  have h : (J + j) * (j - J) = (J - j) * (j + J) := by
+    simp only [add_mul, mul_sub, sub_mul, mul_add, hJj]
+    abel
+  rw [cayleyCoord_def, ← mul_assoc, h, mul_assoc, Ring.mul_inverse_cancel _ hJ, mul_one]
 
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, and `j + J` invertible,
 `1 + cayleyCoord j J` is invertible. -/
@@ -240,12 +251,12 @@ variable (j) in
 roots `J` of `-1` with `j + J` invertible, with inverse `cayleyCoord j`. -/
 def cayleyEquiv (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     {η : A // η * j = -(j * η) ∧ IsUnit (1 + η)} ≃ {J : A // J * J = -1 ∧ IsUnit (j + J)} where
-  toFun η := ⟨cayleyParam j η, cayleyParam_mul_self hj η.2.2,
-    isUnit_add_cayleyParam h2 hj η.2.1 η.2.2⟩
-  invFun J := ⟨cayleyCoord j J, cayleyCoord_mul_eq_neg_mul hj J.2.1,
-    isUnit_one_add_cayleyCoord h2 hj J.2.2⟩
-  left_inv η := Subtype.ext (cayleyCoord_cayleyParam h2 hj η.2.1 η.2.2)
-  right_inv J := Subtype.ext (cayleyParam_cayleyCoord h2 hj J.2.1 J.2.2)
+  toFun η := ⟨cayleyParam j η, cayleyParam_mul_self hj η.property.2,
+    isUnit_add_cayleyParam h2 hj η.property.1 η.property.2⟩
+  invFun J := ⟨cayleyCoord j J, cayleyCoord_mul_eq_neg_mul hj J.property.1,
+    isUnit_one_add_cayleyCoord h2 hj J.property.2⟩
+  left_inv η := Subtype.ext (cayleyCoord_cayleyParam h2 hj η.property.1 η.property.2)
+  right_inv J := Subtype.ext (cayleyParam_cayleyCoord h2 hj J.property.1 J.property.2)
 
 /-- The underlying map of `cayleyEquiv` is `cayleyParam`. -/
 @[simp]

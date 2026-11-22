@@ -11,6 +11,8 @@ public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.Instances.Matrix
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -78,6 +80,9 @@ the sum of these.
   for a frozen elliptic matrix `A` with `‖a - A‖ ≤ ε` on `B`.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
   coefficient term weighted by the local deviation `‖a(x) - A‖²`.
+* `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
+  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
+  `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -99,7 +104,7 @@ public section
 noncomputable section
 
 open InnerProductSpace Matrix MeasureTheory Metric Set TopologicalSpace
-open scoped Distributions Gradient InnerProductSpace NNReal
+open scoped Distributions ENNReal Gradient InnerProductSpace NNReal
 
 namespace TauCeti
 
@@ -274,12 +279,8 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     refine (norm_toEuclideanCLM_apply_le _ _).trans_eq ?_
     rw [matrixBilinearForm_sub, norm_sub_rev (matrixBilinearForm A)]
   have hθm : AEStronglyMeasurable
-      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) := by
-    have h : Continuous fun M : Matrix ι ι ℝ => matrixBilinearForm (M - A) :=
-      continuous_matrixBilinearForm.comp (continuous_sub_right A)
-    simpa only [matrixBilinearForm_sub] using
-      (Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
-        h).comp_aestronglyMeasurable ha
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθb : ∀ᵐ x ∂mu.restrict B, ‖θ x ^ 2‖ ≤ ε ^ 2 := by
     filter_upwards [ae_restrict_mem hBm] with x hxB
     rw [Real.norm_of_nonneg (sq_nonneg _)]
@@ -298,6 +299,33 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     _ ≤ (‖hGc.toLp‖ + ‖hD.toLp‖) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
     _ ≤ 2 * (‖hGc.toLp‖ ^ 2 + ‖hD.toLp‖ ^ 2) := add_sq_le
     _ ≤ _ := by linarith
+
+omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
+/-- On a measurable set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
+`α`-Hölder, with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable
+on `B`. -/
+theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B : Set (EuclideanSpace ℝ ι)}
+    (hB : MeasurableSet B) {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : B ⊆ ball x₀ ρ)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0} (hα : 0 < α)
+    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+    AEStronglyMeasurable a (mu.restrict B) :=
+  (continuousOn_of_continuousOn_matrixBilinearForm
+    ((haK.continuousOn hα).mono hBρ)).aestronglyMeasurable hB
+
+omit [mu.IsAddHaarMeasure] in
+/-- On an open set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
+`α`-Hölder, with `α > 0`, and on which `a` is uniformly elliptic, the energy integrands of `a`
+are essentially bounded. -/
+theorem memLp_energyIntegrand_of_holderOnWith {B : Opens (EuclideanSpace ℝ ι)}
+    {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : (B : Set (EuclideanSpace ℝ ι)) ⊆ ball x₀ ρ)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam) {α Ka : ℝ≥0}
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B) :=
+  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg
+    (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBρ hα haK)
+    aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
+    (fun _ _ => by simp) (fun _ _ => by simp)
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with
@@ -346,16 +374,11 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
       ‖G x - G x₀‖ ≤ KG * r ^ (α : ℝ) := fun x hx => by
     rw [← dist_eq_norm]
     exact hGK.dist_le_mul_rpow_of_mem_ball (hBr hx)
-  -- A matrix is a function of its entries, and the entries of `a` are continuous on the ball.
-  have ha :
-      AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    ContinuousOn.aestronglyMeasurable (β := Fin (n + 1) → Fin (n + 1) → ℝ)
-      ((continuousOn_of_continuousOn_matrixBilinearForm (haK.continuousOn hα)).mono hBr) hBm
+  have ha : AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    aestronglyMeasurable_of_holderOnWith_matrixBilinearForm hBm hBr hα haK
   have hGc : MemLp (fun x => G x - G x₀) 2
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    MemLp.of_bound ((((hGK.continuousOn hα).mono hBr).aestronglyMeasurable hBm).sub
-      aestronglyMeasurable_const) (KG * r ^ (α : ℝ))
-      ((ae_restrict_iff' hBm).2 (ae_of_all _ hGbd))
+    MeasureTheory.memLp_sub_of_holderOnWith hBm hBr hα hGK
   -- The replacement frozen at `x₀`.
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
@@ -375,7 +398,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   -- `2 r ‖f‖ ‖∇v‖`.
   have hℓ : ∀ v : W1p0 volume B 2, |⟪hf.toLp, W1p.value (v : W1p volume B 2)⟫_ℝ| ≤
       2 * r * ‖hf.toLp‖ * ‖W1p.gradient (v : W1p volume B 2)‖ := fun v => by
-    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.2
+    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.property
     have hfv := abs_real_inner_le_norm hf.toLp (W1p.value (v : W1p volume B 2))
     have := mul_le_mul_of_nonneg_left hv (norm_nonneg hf.toLp)
     linarith

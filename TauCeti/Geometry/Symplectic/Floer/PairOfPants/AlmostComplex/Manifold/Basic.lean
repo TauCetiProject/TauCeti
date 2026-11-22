@@ -73,6 +73,27 @@ theorem contMDiffAt_toEndomorphism_comp_im_endCoord (q : Puncture) {n : ℕ∞ω
 
 end TauCeti.ThricePuncturedSphere.Puncture
 
+namespace TauCeti.SmoothAlmostComplexStructure
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M]
+
+/-- On the tangent fiber at `x`, the end families with the family `q` replaced by `L`, read as
+linear end families over a point, are the fiberwise end families with the family `q` replaced by
+the fiberwise `L`. -/
+theorem almostComplexStructureAt_update {ι T : Type*} [DecidableEq ι]
+    (K : ι → T → SmoothAlmostComplexStructure I M) (q : ι)
+    (L : T → SmoothAlmostComplexStructure I M) (x : M) :
+    (fun p t (_ : Unit) => (Function.update K q L p t).almostComplexStructureAt x) =
+      Function.update (fun p t (_ : Unit) => (K p t).almostComplexStructureAt x) q
+        (fun t _ => (L t).almostComplexStructureAt x) := by
+  funext p t u
+  rcases eq_or_ne p q with rfl | hp
+  · simp
+  · simp [Function.update_of_ne hp]
+
+end TauCeti.SmoothAlmostComplexStructure
+
 namespace TauCeti.SmoothTwoForm.Compatible
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -288,7 +309,7 @@ theorem contMDiff_pairOfPantsAlmostComplex
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (hS y₀) q
   simp only [pairOfPantsAlmostComplex]
   exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ (hb y₀)
-    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 (hf y₀) (hq q))
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q (hf y₀) contMDiffAt_const (hq q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end TauCeti.SmoothTwoForm.Compatible

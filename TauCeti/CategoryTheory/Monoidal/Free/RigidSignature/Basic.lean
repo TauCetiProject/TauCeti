@@ -686,25 +686,22 @@ theorem lift_mapRightDualIso (X : S.FreeRigid) :
   rw [lift_map_evaluation_right, lift_μ, lift_η] at h
   simpa using h
 
-/-- The canonical lift preserves chosen left duals strictly: the `leftDualIso` comparing the
-mapped pairing with the chosen left-dual pairing at every object `X` is the identity. -/
+/-- The canonical lift preserves chosen left duals strictly: its left-dual comparison
+isomorphism at every object `X` is the identity. -/
 @[simp]
 theorem lift_mapLeftDualIso (X : S.FreeRigid) :
-    @leftDualIso D _ _ _ _ ((lift fo fc).obj X)
-        (@Functor.mapExactPairing _ _ _ _ _ _ (lift fo fc) _
-          (LeftRigidCategory.leftDual X).leftDual X (LeftRigidCategory.leftDual X).exact)
-        (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact =
+    @Functor.mapLeftDualIso _ _ _ _ _ _ (lift fo fc) _ X
+        (LeftRigidCategory.leftDual X)
+        (LeftRigidCategory.leftDual ((lift fo fc).obj X)) =
       Iso.refl _ := by
   ext
   let : ExactPairing (LeftRigidCategory.leftDual ((lift fo fc).obj X)).leftDual
       ((lift fo fc).obj X) :=
     (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact
   refine ExactPairing.leftDualHom_ext (Y := (lift fo fc).obj X) ?_
-  have h := ExactPairing.leftDualIso_hom_whiskerLeft_evaluation
-    (@Functor.mapExactPairing _ _ _ _ _ _ (lift fo fc) _
-      (LeftRigidCategory.leftDual X).leftDual X (LeftRigidCategory.leftDual X).exact)
-    (LeftRigidCategory.leftDual ((lift fo fc).obj X)).exact
-  rw [Functor.mapExactPairing_evaluation, lift_map_evaluation_left, lift_μ, lift_η] at h
+  have h := @Functor.whiskerLeft_mapLeftDualIso_hom_evaluation _ _ _ _ _ _ (lift fo fc) _ X
+    (LeftRigidCategory.leftDual X) (LeftRigidCategory.leftDual ((lift fo fc).obj X))
+  rw [lift_map_evaluation_left, lift_μ, lift_η] at h
   simpa using h
 
 end Lift

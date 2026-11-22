@@ -94,7 +94,7 @@ variable (K Ω) in
 instance isAbelianGalois_maximalAbelianExtension :
     IsAbelianGalois K (maximalAbelianExtension K Ω) := by
   have : ∀ E : {E : IntermediateField K Ω // IsAbelianGalois K E},
-      IsAbelianGalois K (E : IntermediateField K Ω) := fun E ↦ E.2
+      IsAbelianGalois K (E : IntermediateField K Ω) := fun E ↦ E.property
   rw [maximalAbelianExtension_def]
   infer_instance
 

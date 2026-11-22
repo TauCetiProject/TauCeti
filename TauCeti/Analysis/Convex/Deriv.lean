@@ -10,12 +10,16 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Continuous
 
 /-!
-# Comparing right derivatives of convex functions
+# Derivatives and convexity on intervals
 
 For real convex functions on a set `I`, inequalities between slopes on adjacent intervals imply
 inequalities between their right derivatives at interior points. If the slopes interlace in
 both directions, the difference of the functions is constant on the interior of `I`. These
 results support uniqueness up to an additive constant when derivatives agree only on a dense set.
+
+A real function whose third derivative is positive on `(a, b)` and whose second derivative is
+continuous on `[a, b]` and nonnegative at `a` is strictly convex on `[a, b]`, since its second
+derivative increases from a nonnegative value.
 
 ## Main statements
 
@@ -23,6 +27,8 @@ results support uniqueness up to an additive constant when derivatives agree onl
   adjacent-slope inequalities.
 * `ConvexOn.sub_eq_sub_of_slope_le` proves constancy of the difference when the slopes
   interlace.
+* `TauCeti.strictConvexOn_Icc_of_deriv3_pos`: strict convexity on `[a, b]` from a positive third
+  derivative and a nonnegative second derivative at `a`.
 
 ## References
 
@@ -84,3 +90,21 @@ theorem sub_eq_sub_of_slope_le (hφ : ConvexOn ℝ I φ) (hψ : ConvexOn ℝ I �
   exact hasDerivWithinAt_Ioi_iff_Ici.1 hd
 
 end ConvexOn
+
+namespace TauCeti
+
+/-- A function whose second derivative is continuous on `[a, b]` and nonnegative at `a`, and whose
+third derivative is positive on `(a, b)`, is strictly convex on `[a, b]`. -/
+theorem strictConvexOn_Icc_of_deriv3_pos {g : ℝ → ℝ} {a b : ℝ} (hc : ContinuousOn g (Icc a b))
+    (h2 : 0 ≤ deriv^[2] g a) (hc2 : ContinuousOn (deriv^[2] g) (Icc a b))
+    (h3 : ∀ x ∈ Ioo a b, 0 < deriv^[3] g x) : StrictConvexOn ℝ (Icc a b) g := by
+  have hmono : StrictMonoOn (deriv^[2] g) (Icc a b) := by
+    refine strictMonoOn_of_deriv_pos (convex_Icc _ _) hc2 fun y hy => ?_
+    rw [interior_Icc] at hy
+    rw [← Function.iterate_succ_apply' deriv]
+    exact h3 y hy
+  refine strictConvexOn_of_deriv2_pos (convex_Icc _ _) hc fun y hy => ?_
+  rw [interior_Icc] at hy
+  exact h2.trans_lt (hmono (left_mem_Icc.2 (hy.1.trans hy.2).le) (Ioo_subset_Icc_self hy) hy.1)
+
+end TauCeti

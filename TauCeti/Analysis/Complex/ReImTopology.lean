@@ -12,10 +12,14 @@ public import Mathlib.Topology.Sets.Opens
 # Upper halves of open planar sets
 
 The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as an open set,
-`TopologicalSpace.Opens.upperHalf`. A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper
-half-plane has interior `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), which as an
-open set is the upper half of `Ω`
-(`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`). A local property holds on
+`TopologicalSpace.Opens.upperHalf`. A closed half-plane `{a ≤ im}` is closed
+(`Complex.isClosed_setOfPred_le_im`), so its trace on an open set is locally closed
+(`IsOpen.isLocallyClosed_inter_setOfPred_le_im`). A relatively open subset `Ω ∩ {0 ≤ im}` of
+the closed upper half-plane has interior `Ω ∩ {0 < im}`
+(`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
+(`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
+`Ω ∩ {0 ≤ im}` is a limit of interior points
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
 axis (`TauCeti.inter_setOf_im_nonneg_induction`).
 -/
@@ -49,6 +53,15 @@ theorem TopologicalSpace.Opens.coe_upperHalf_subset (W : Opens ℂ) :
     (W.upperHalf : Set ℂ) ⊆ (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} :=
   fun _ hz => ⟨(Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2.le⟩
 
+/-- A closed half-plane `{a ≤ im}` is closed. -/
+theorem Complex.isClosed_setOfPred_le_im (a : ℝ) : IsClosed {z : ℂ | a ≤ z.im} :=
+  isClosed_le continuous_const Complex.continuous_im
+
+/-- The trace `Ω ∩ {a ≤ im}` of a closed half-plane on an open set is locally closed. -/
+theorem IsOpen.isLocallyClosed_inter_setOfPred_le_im {Ω : Set ℂ} (hΩ : IsOpen Ω) (a : ℝ) :
+    IsLocallyClosed (Ω ∩ {z : ℂ | a ≤ z.im}) :=
+  hΩ.isLocallyClosed.inter (Complex.isClosed_setOfPred_le_im a).isLocallyClosed
+
 namespace TauCeti
 
 /-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
@@ -57,6 +70,14 @@ namespace TauCeti
 theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
     interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
   rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
+
+/-- For `Ω` open, every point of `Ω ∩ {0 ≤ im}`, including the points on the real axis, lies in
+the closure of its interior. -/
+theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    Ω ∩ {z : ℂ | 0 ≤ z.im} ⊆ closure (interior (Ω ∩ {z : ℂ | 0 ≤ z.im})) := by
+  intro x hx
+  rw [interior_inter_setOf_im_nonneg hΩ]
+  exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
 
 /-- **Induction on half-discs.** A property `P` of subsets of `ℂ` holds on `Ω ∩ {0 ≤ im}` if it
 can be checked on relative neighbourhoods of each point, and holds on the upper half

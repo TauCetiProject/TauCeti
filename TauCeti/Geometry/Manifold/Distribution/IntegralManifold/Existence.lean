@@ -76,12 +76,12 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
   let u : U := ⟨0, h0⟩
   let f : U → M := fun w ↦ Φ.symm (p w)
   have hf : ContMDiff 𝓘(ℝ, W) I n f :=
-    Φ.symm.contMDiffOn.comp_contMDiff (hp.comp contMDiff_subtype_val) fun w ↦ w.2
-  have hfx (w : U) : f w ∈ Φ.source := Φ.map_target w.2
+    Φ.symm.contMDiffOn.comp_contMDiff (hp.comp contMDiff_subtypeVal) fun w ↦ w.property
+  have hfx (w : U) : f w ∈ Φ.source := Φ.map_target w.property
   -- Differentiate the coordinate expression to identify the tangent image.
   have hcomp : (Φ ∘ f : U → E) = p ∘ (Subtype.val : U → W) := by
     funext w
-    exact Φ.right_inv w.2
+    exact Φ.right_inv w.property
   have hdp (w : W) : fderiv ℝ p w = W.subtypeL :=
     (W.subtypeL.hasFDerivAt.const_add (Φ x)).fderiv
   have hdpm (w : W) (v : TangentSpace 𝓘(ℝ, W) w) :
@@ -105,7 +105,7 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
       using Φ.left_inv hx
   · have hpEmb : Topology.IsEmbedding p :=
       (Homeomorph.addLeft (Φ x)).isEmbedding.comp Topology.IsEmbedding.subtypeVal
-    let q : U → Φ.target := fun w ↦ ⟨p w, w.2⟩
+    let q : U → Φ.target := fun w ↦ ⟨p w, w.property⟩
     have hq : Topology.IsEmbedding q :=
       (hpEmb.comp Topology.IsEmbedding.subtypeVal).codRestrict _ _
     -- The underlying partial homeomorphism has source Φ.target and map Φ.symm,
@@ -117,7 +117,7 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
     · rintro ⟨w, rfl⟩
       refine ⟨w, ?_⟩
       simpa only [f, p, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
-        PartialDiffeomorph.symm_toPartialEquiv] using (Φ.right_inv w.2).symm
+        PartialDiffeomorph.symm_toPartialEquiv] using (Φ.right_inv w.property).symm
     · rintro ⟨w, hw⟩
       have hw' : p w = Φ y := by
         simpa only [p, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph] using hw
