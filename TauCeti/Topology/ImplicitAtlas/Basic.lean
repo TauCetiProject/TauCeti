@@ -45,10 +45,15 @@ zero sets are invariant (`TauCeti.ImplicitAtlas.act_mem_kuranishiZeroSet`), the 
 are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`), the zero-set
 domains of the cocycle condition match
 (`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
-cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
-and the regular locus is empty where the expected dimension `d + m_I` is negative
+cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`)
+and are empty where the regular locus is
+(`TauCeti.ImplicitAtlas.footprint_eq_empty_of_regLocus_eq_empty`), the regular locus is empty
+where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over `X_I^reg`
+(`TauCeti.ImplicitAtlas.footprintMap_notMem_regLocus_of_act_eq`), so an ineffective point has no
+regular base (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_nontrivial`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
@@ -264,6 +269,11 @@ theorem mem_footprint {I : Finset A} {y : X} :
       x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
   simp [footprint]
 
+/-- The regular footprint `V_I` is empty when the regular locus `X_I^reg` is. -/
+theorem footprint_eq_empty_of_regLocus_eq_empty {I : Finset A} (h : 𝒜.regLocus I = ∅) :
+    𝒜.footprint I = ∅ := by
+  simp [footprint, h]
+
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in
 `X_∅ ≃ₜ X`. -/
@@ -301,6 +311,34 @@ theorem nonneg_of_mem_regLocus {I : Finset A} {x : T I} (hx : x ∈ 𝒜.regLocu
 theorem regLocus_eq_empty_of_neg {I : Finset A}
     (hI : d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) < 0) : 𝒜.regLocus I = ∅ :=
   eq_empty_of_forall_notMem fun _ hx ↦ (𝒜.nonneg_of_mem_regLocus hx).not_gt hI
+
+/-- A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over the regular
+locus of `X_I`: `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
+theorem footprintMap_notMem_regLocus_of_act_eq {I J : Finset A} (h : I ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi I J) {g : (α : J) → Γ α} (hg : g ≠ 1)
+    (hgI : Finset.restrict₂ (π := Γ) h g = 1) (hx : act J g x = x) :
+    𝒜.footprintMap h x ∉ 𝒜.regLocus I :=
+  fun hreg ↦ hg (𝒜.eq_one_of_act_eq h x hreg g hgI hx)
+
+/-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
+space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
+nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty,
+since `Γ_α` cannot act freely over `ψ_∅α⁻¹(X_∅^reg)`. -/
+theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
+    [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
+  -- A nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the
+  -- point of `X_∅`.
+  refine eq_empty_of_forall_notMem fun y hy ↦ ?_
+  obtain ⟨x⟩ := ‹Nonempty (T {α})›
+  have hx : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ {α} := mem_kuranishiZeroSet.2 fun ⟨β, hβ⟩ _ ↦ by
+    obtain rfl := Finset.mem_singleton.1 hβ
+    exact Subsingleton.elim _ _
+  obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ α)
+  refine 𝒜.footprintMap_notMem_regLocus_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
+    (g := Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+    (fun hg ↦ hγ (by simpa using congr_fun hg ⟨α, Finset.mem_singleton_self α⟩))
+    (funext fun β ↦ (Finset.notMem_empty _ β.property).elim) (Subsingleton.elim _ _)
+    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
 
 include 𝒜 in
 /-- A space carries no implicit atlas whose expected dimensions `d + m_I` are all negative,
