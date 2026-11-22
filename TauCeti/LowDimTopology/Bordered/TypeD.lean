@@ -435,6 +435,16 @@ theorem submatrix_idMorphism [DecidableEq X] :
   ext x y
   simp only [Matrix.submatrix_apply, idMorphism_apply, restrict_idem, Subtype.ext_iff]
 
+variable {N} in
+/-- **Restriction of morphisms.** The restriction of a morphism `F` from `N` to `N'` to the
+generators satisfying `p` and `p'` is a morphism from the restriction of `N` to that of `N'`. -/
+theorem submatrix_mem_morphisms {p' : X' → Prop} [DecidablePred p']
+    {hp' : ∀ x y, p' x → ¬p' y → N'.coeff x y = 0} {F : Matrix X X' A}
+    (hF : F ∈ morphisms N N') :
+    F.submatrix Subtype.val Subtype.val ∈ morphisms (N.restrict p hp) (N'.restrict p' hp') :=
+  mem_morphisms_iff.mpr fun x x' => by
+    simpa only [Matrix.submatrix_apply, restrict_idem] using mem_morphisms_iff.mp hF x x'
+
 /-- **Restriction commutes with the differential of morphisms.** Let `N` and `N'` be restricted to
 the generators satisfying `p` and `p'`, and let `F` be a matrix from `N` to `N'` with no
 coefficient from a generator satisfying `p` to one that does not satisfy `p'`. Then the

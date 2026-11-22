@@ -23,12 +23,12 @@ idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD`) is invariant under homoto
 
 * **Strict units.** A type `DA` bimodule compatible with right idempotents `idemA`
   (`TauCeti.TypeDAStructure.IsRightIdemCompatible`) is **strictly unital**
-  (`TauCeti.TypeDAStructure.IsStrictlyUnital`) when `δ¹₂(y, ι s) = ι (idem y) ⊗ y` if `s` is the
-  right idempotent `idemA y` of `y`, and `0` otherwise, and the operations `δ¹_{n+1}` with `n ≥ 2`
-  vanish as soon as one input is an idempotent `ι s`. This is the condition
-  `δ¹₂(y, 1) = 1 ⊗ y`, `δ¹_{n+1}(y, …, 1, …) = 0` for `n ≥ 2` of Lipshitz, Ozsváth and Thurston,
-  stated over the ring of idempotents. The identity bimodule `[I]` is strictly unital
-  (`TauCeti.TypeDAStructure.isStrictlyUnital_identity`).
+  (`TauCeti.TypeDAStructure.IsStrictlyUnital`, in `TauCeti.LowDimTopology.Bordered.TypeDA.Basic`)
+  when `δ¹₂(y, ι s) = ι (idem y) ⊗ y` if `s` is the right idempotent `idemA y` of `y`, and `0`
+  otherwise, and the operations `δ¹_{n+1}` with `n ≥ 2` vanish as soon as one input is an
+  idempotent `ι s`. This is the condition `δ¹₂(y, 1) = 1 ⊗ y`, `δ¹_{n+1}(y, …, 1, …) = 0` for
+  `n ≥ 2` of Lipshitz, Ozsváth and Thurston, stated over the ring of idempotents. The identity
+  bimodule `[I]` is strictly unital (`TauCeti.TypeDAStructure.isStrictlyUnital_identity`).
 * **`P ⊠ id = id`.** For a strictly unital bimodule, the only path contributing to `P ⊠ id` is the
   single step through the identity morphism `id x x = ι (idem x)`, so `P ⊠ id` is the diagonal
   matrix of the idempotents `ι (idem y)` on the generators `(y, x)` with `idemA y = idem x`, and
@@ -39,8 +39,10 @@ idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD`) is invariant under homoto
   linearity over the idempotents makes it act through `ι (idem x') * ι (idemA y') = 0`
   (`TauCeti.TypeDAStructure.boxMorphism_eq_zero_of_isRightIdemCompatible`). So `P ⊠ F` restricts to
   a morphism `P ⊠_I F` from `P ⊠_I N` to `P ⊠_I N'`
-  (`TauCeti.TypeDAStructure.boxTensorMorphism`), restriction commutes with the differential of
-  morphisms (`TauCeti.TypeDStructure.morphismDifferential_submatrix`), and so
+  (`TauCeti.TypeDAStructure.boxTensorMorphism`, `TauCeti.TypeDStructure.submatrix_mem_morphisms`),
+  products of such morphisms only pass through generators with matching idempotents
+  (`TauCeti.TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism`), restriction commutes with
+  the differential of morphisms (`TauCeti.TypeDStructure.morphismDifferential_submatrix`), and so
   `∂(P ⊠_I F) = P ⊠_I ∂F`. For a strictly unital bimodule, `P ⊠_I id` is the identity morphism of
   `P ⊠_I N` (`TauCeti.TypeDAStructure.IsStrictlyUnital.boxTensorMorphism_idMorphism`).
 * **Homotopy invariance.** Let `F` from `N` to `N'` and `G` from `N'` to `N` be homomorphisms with
@@ -48,27 +50,29 @@ idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD`) is invariant under homoto
   `∂(P ⊠ H) = P ⊠ (F * G) + P ⊠ id` cancels `P ⊠ (F * G)` in characteristic two, and restricting
   to the generators with matching idempotents gives
 
-  `(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G) + P ⊠ H)|_I`
+  `(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G)|_I + P ⊠_I H)`
 
   (`TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_coeff_eq_zero`,
-  `TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_lt`).
+  `TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_lt`), where the
+  restriction `P ⊠ (F, G)|_I` is a morphism of `P ⊠_I N`
+  (`TauCeti.TypeDAStructure.submatrix_boxCompHomotopy_mem_morphisms`), as `P ⊠_I H` is
+  (`TauCeti.TypeDAStructure.boxTensorMorphism_mem_morphisms`).
   Applied also with the roles of `N` and `N'` exchanged, a homotopy equivalence from `N` to `N'`
   induces a homotopy equivalence from `P ⊠_I N` to `P ⊠_I N'`.
 
 ## Main definitions
 
-* `TauCeti.TypeDAStructure.IsStrictlyUnital`: strict unitality of a type `DA` bimodule over the
-  idempotents.
 * `TauCeti.TypeDAStructure.boxTensorMorphism`: the morphism `P ⊠_I F` from `P ⊠_I N` to
   `P ⊠_I N'`.
 
 ## Main results
 
-* `TauCeti.TypeDAStructure.isStrictlyUnital_identity`: the identity bimodule is strictly unital.
 * `TauCeti.TypeDAStructure.IsStrictlyUnital.boxMorphism_idMorphism` and
   `TauCeti.TypeDAStructure.IsStrictlyUnital.boxTensorMorphism_idMorphism`: `P ⊠ id = id`.
 * `TauCeti.TypeDAStructure.boxMorphism_eq_zero_of_isRightIdemCompatible`: `P ⊠ F` does not lead to
   generators with mismatched idempotents.
+* `TauCeti.TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism`: `(P ⊠_I F) * (P ⊠_I G)` is the
+  restriction of `(P ⊠ F) * (P ⊠ G)`.
 * `TauCeti.TypeDAStructure.morphismDifferential_boxTensorMorphism_of_coeff_eq_zero` and
   `TauCeti.TypeDAStructure.morphismDifferential_boxTensorMorphism_of_lt`: `∂(P ⊠_I F) = P ⊠_I ∂F`.
 * `TauCeti.TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_coeff_eq_zero`
@@ -99,45 +103,9 @@ variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R
   {T : Type*} {ιA : T → A} {X X' : Type*} [Fintype X] [DecidableEq X] [Fintype X']
   [DecidableEq X'] (P : TypeDAStructure dA dB ιB Y)
 
-/-! ### Strict units -/
+/-! ### `P ⊠ id` for strictly unital bimodules -/
 
 section StrictUnit
-
-variable (ιA) in
-/-- A type `DA` bimodule `^B P_A` whose generator `y` lies on the right in the summand of the
-idempotent `ιA (idemA y)` of `A` is **strictly unital** when its operations with an idempotent
-input are those of a unit: `δ¹₂(y, ιA s) = ιB (idem y) ⊗ y` if `s = idemA y` and `0` otherwise,
-the right action of `ιA s` on `y`, and `δ¹_{n+1}(y, a₁, …, aₙ) = 0` for `n ≥ 2` as soon as some
-`aᵢ` is an idempotent `ιA s`. For orthogonal idempotents summing to `1` and a bimodule compatible
-with the right idempotents `idemA` (`TauCeti.TypeDAStructure.IsRightIdemCompatible`), the first
-condition is `δ¹₂(y, 1) = 1 ⊗ y`. -/
-structure IsStrictlyUnital [DecidableEq Y] [DecidableEq T] (idemA : Y → T) : Prop where
-  /-- `δ¹₂(y, ιA s)` is `ιB (idem y) ⊗ y` when `s` is the right idempotent of `y`, and `0`
-  otherwise. -/
-  coeff_one_apply (s : T) (y y' : Y) :
-    P.coeff 1 (fun _ => ιA s) y y' = if y = y' ∧ idemA y = s then ιB (P.idem y) else 0
-  /-- The operations `δ¹_{n+1}` with `n ≥ 2` vanish on tuples containing an idempotent. -/
-  coeff_eq_zero {n : ℕ} (hn : 2 ≤ n) (a : Fin n → A) (i : Fin n) (s : T) (hi : a i = ιA s) :
-    P.coeff n a = 0
-
-/-- **The identity bimodule is strictly unital** for orthogonal idempotents: its operation
-`δ¹₂(s, ι u) = ∑ t, ι s * ι u * ι t ⊗ t` is `ι s ⊗ s` when `u = s` and `0` otherwise, and it has no
-operations with more inputs. -/
-theorem isStrictlyUnital_identity [Fintype S] [DecidableEq S] [CharP R 2] {d : A →ₗ[R] A}
-    {ι : S → A} (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
-    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0) :
-    (identity ι hd hι hιι hsum).IsStrictlyUnital ι id where
-  coeff_one_apply u s t := by
-    rw [identity_coeff_one_apply, identity_idem, id]
-    by_cases hsu : s = u
-    · subst hsu
-      by_cases hst : s = t
-      · subst hst
-        rw [hιι, hιι, ite_eq_left ⟨rfl, rfl⟩]
-      · rw [hιι, hιo _ _ hst, ite_eq_right fun h => hst h.1]
-    · rw [hιo _ _ hsu, zero_mul, ite_eq_right fun h => hsu h.2]
-  coeff_eq_zero {n} hn a _ _ _ := by
-    rw [identity_coeff_eq_zero hd hι hιι hsum (show n ≠ 1 by omega), zero_apply]
 
 variable {P} [DecidableEq Y] [DecidableEq T] {idemA : Y → T}
 
@@ -268,9 +236,12 @@ theorem boxTensorMorphism_apply (F : Matrix X X' A) (p : {p : Y × X // idemA p.
 
 variable [DecidableEq T]
 
-/-- A product of morphisms `P ⊠ F` restricted to generators with matching idempotents only passes
-through such generators. -/
-private theorem boxTensorMorphism_mul_boxTensorMorphism (hP : P.IsRightIdemCompatible ιA idemA)
+/-- **Products of the morphisms `P ⊠_I F`.** If `P` is compatible with right idempotents `idemA`,
+the idempotents of `A` are orthogonal and `F` is a morphism from `N` to `N'`, then
+`(P ⊠_I F) * (P ⊠_I G)` is the restriction of `(P ⊠ F) * (P ⊠ G)` to the generators with matching
+idempotents: the product only passes through such generators, since `P ⊠ F` does not lead to the
+others (`TauCeti.TypeDAStructure.boxMorphism_eq_zero_of_isRightIdemCompatible`). -/
+theorem boxTensorMorphism_mul_boxTensorMorphism (hP : P.IsRightIdemCompatible ιA idemA)
     (hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0) {F : Matrix X X' A}
     (hF : F ∈ TypeDStructure.morphisms N N') (G : Matrix X' X'' A) :
     P.boxTensorMorphism idemA N N' F * P.boxTensorMorphism idemA N' N'' G =
@@ -291,10 +262,22 @@ theorem boxTensorMorphism_mem_morphisms (hP : P.IsRightIdemCompatible ιA idemA)
     (hN' : N'.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (F : Matrix X X' A) :
     P.boxTensorMorphism idemA N N' F ∈
       TypeDStructure.morphisms (P.boxTensorTypeD N hP hιA hdB hN)
-        (P.boxTensorTypeD N' hP hιA hdB hN') :=
-  TypeDStructure.mem_morphisms_iff.mpr fun p q => by
-    simp only [boxTensorTypeD_idem, boxTensorMorphism_apply]
-    exact ⟨P.idem_mul_boxMorphism N N' F p q, P.boxMorphism_mul_idem N N' F p q⟩
+        (P.boxTensorTypeD N' hP hιA hdB hN') := by
+  rw [boxTensorTypeD_eq_restrict, boxTensorTypeD_eq_restrict, boxTensorMorphism]
+  exact TypeDStructure.submatrix_mem_morphisms (P.boxMorphism_mem_morphisms N N' hdB hN hN' F)
+
+/-- **The restriction of `P ⊠ (F, G)` is a morphism** from `P ⊠_I N` to `P ⊠_I N''`. -/
+theorem submatrix_boxCompHomotopy_mem_morphisms (hP : P.IsRightIdemCompatible ιA idemA)
+    (hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0) (hdB : IsUngradedDGAlgebra dB)
+    (hN : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0)
+    (hN'' : N''.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (F : Matrix X X' A)
+    (G : Matrix X' X'' A) :
+    (P.boxCompHomotopy N N' N'' F G).submatrix Subtype.val Subtype.val ∈
+      TypeDStructure.morphisms (P.boxTensorTypeD N hP hιA hdB hN)
+        (P.boxTensorTypeD N'' hP hιA hdB hN'') := by
+  rw [boxTensorTypeD_eq_restrict, boxTensorTypeD_eq_restrict]
+  exact TypeDStructure.submatrix_mem_morphisms
+    (P.boxCompHomotopy_mem_morphisms N N' N'' hdB hN hN'' F G)
 
 /-- **`P ⊠_I id = id` for a strictly unital bimodule**: the morphism induced by the identity
 morphism of `N` is the identity morphism of `P ⊠_I N`. -/
@@ -384,14 +367,19 @@ private theorem boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_eq [De
         (P.boxTensorTypeD N hP hιA hdB hN).idMorphism =
       TypeDStructure.morphismDifferential (P.boxTensorTypeD N hP hιA hdB hN)
         (P.boxTensorTypeD N hP hιA hdB hN)
-        ((P.boxCompHomotopy N N' N F G + P.boxMorphism N N H).submatrix Subtype.val
-          Subtype.val) := by
+        ((P.boxCompHomotopy N N' N F G).submatrix Subtype.val Subtype.val +
+          P.boxTensorMorphism idemA N N H) := by
   -- The homotopy does not lead to generators with mismatched idempotents.
   have hvan (p : Y × X) (q : Y × X) (hq : ¬idemA q.1 = N.idem q.2) :
       (P.boxCompHomotopy N N' N F G + P.boxMorphism N N H) p q = 0 := by
     rw [Matrix.add_apply, boxCompHomotopy_eq_zero_of_isRightIdemCompatible hP hιA N hF hG hG' p hq,
       boxMorphism_eq_zero_of_isRightIdemCompatible hP hιA N hH p hq, add_zero]
-  rw [← hPu.boxTensorMorphism_idMorphism hP hιA hdB hN,
+  have hsub : (P.boxCompHomotopy N N' N F G).submatrix Subtype.val Subtype.val +
+      P.boxTensorMorphism idemA N N H =
+        (P.boxCompHomotopy N N' N F G + P.boxMorphism N N H).submatrix Subtype.val Subtype.val := by
+    ext p q
+    simp only [Matrix.add_apply, Matrix.submatrix_apply, boxTensorMorphism_apply]
+  rw [hsub, ← hPu.boxTensorMorphism_idMorphism hP hιA hdB hN,
     boxTensorMorphism_mul_boxTensorMorphism hP hιA hF, boxTensorTypeD_eq_restrict,
     TypeDStructure.morphismDifferential_submatrix _
       (F := P.boxCompHomotopy N N' N F G + P.boxMorphism N N H) (hF := fun p q _ hq => hvan p q hq),
@@ -408,9 +396,11 @@ right idempotents `idemA`, the idempotents of `A` orthogonal, and the operations
 vanish for `k ≥ K`. Let `F` from `N` to `N'` and `G` from `N'` to `N` be homomorphisms, and `H` a
 morphism with `∂H = F * G + id`. Then on the box tensor products over the idempotents
 
-`(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G) + P ⊠ H)|_I`,
+`(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G)|_I + P ⊠_I H)`,
 
-so `(P ⊠_I F) * (P ⊠_I G)` is homotopic to the identity of `P ⊠_I N`. Together with the same
+so `(P ⊠_I F) * (P ⊠_I G)` is homotopic to the identity of `P ⊠_I N`, the homotopy being a morphism
+(`TauCeti.TypeDAStructure.submatrix_boxCompHomotopy_mem_morphisms`,
+`TauCeti.TypeDAStructure.boxTensorMorphism_mem_morphisms`). Together with the same
 statement for `G * F`, a homotopy equivalence from `N` to `N'` induces one from `P ⊠_I N` to
 `P ⊠_I N'`. -/
 theorem boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_coeff_eq_zero [DecidableEq Y]
@@ -428,8 +418,8 @@ theorem boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_coeff_eq_zero 
         (P.boxTensorTypeD N hP hιA hdB hN).idMorphism =
       TypeDStructure.morphismDifferential (P.boxTensorTypeD N hP hιA hdB hN)
         (P.boxTensorTypeD N hP hιA hdB hN)
-        ((P.boxCompHomotopy N N' N F G + P.boxMorphism N N H).submatrix Subtype.val
-          Subtype.val) :=
+        ((P.boxCompHomotopy N N' N F G).submatrix Subtype.val Subtype.val +
+          P.boxTensorMorphism idemA N N H) :=
   boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_eq hPu hP hιA hdB hN hF hG hG' hH
     (P.morphismDifferential_boxCompHomotopy_of_coeff_eq_zero N N' N hdB hN hN hPK hF' hG hG')
     (P.morphismDifferential_boxMorphism_eq_add_of_coeff_eq_zero N N hdB hN hN hPK hH')
@@ -441,7 +431,7 @@ on the generators of `N` and of `N'` strictly increase along their nonzero coeff
 from `N` to `N'` and `G` from `N'` to `N` be homomorphisms, and `H` a morphism with
 `∂H = F * G + id`. Then on the box tensor products over the idempotents
 
-`(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G) + P ⊠ H)|_I`,
+`(P ⊠_I F) * (P ⊠_I G) + id = ∂ (P ⊠ (F, G)|_I + P ⊠_I H)`,
 
 whatever the operations of `P`; see
 `TypeDAStructure.boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_coeff_eq_zero`. -/
@@ -461,8 +451,8 @@ theorem boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_lt [DecidableE
         (P.boxTensorTypeD N hP hιA hdB hN).idMorphism =
       TypeDStructure.morphismDifferential (P.boxTensorTypeD N hP hιA hdB hN)
         (P.boxTensorTypeD N hP hιA hdB hN)
-        ((P.boxCompHomotopy N N' N F G + P.boxMorphism N N H).submatrix Subtype.val
-          Subtype.val) :=
+        ((P.boxCompHomotopy N N' N F G).submatrix Subtype.val Subtype.val +
+          P.boxTensorMorphism idemA N N H) :=
   boxTensorMorphism_mul_boxTensorMorphism_add_idMorphism_of_eq hPu hP hιA hdB hN hF hG hG' hH
     (P.morphismDifferential_boxCompHomotopy_of_lt N N' N hdB hN hN h hh h' hh' h hh hF' hG hG')
     (P.morphismDifferential_boxMorphism_eq_add_of_lt N N hdB hN hN h hh h hh hH')

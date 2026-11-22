@@ -32,7 +32,9 @@ the matrix form of `(μ₂ ⊗ 1) ∘ (1 ⊗ δ¹) ∘ δ¹ + (μ₁ ⊗ 1) ∘ 
 with no signs over a ring of characteristic two. Only the idempotents of `B` are recorded in the
 structure. The idempotents of `A` at the generators enter through the predicate
 `TauCeti.TypeDAStructure.IsRightIdemCompatible`, for the box tensor product over the idempotents
-below; strict unitality is not needed.
+below. That box tensor product does not need strict unitality
+(`TauCeti.TypeDAStructure.IsStrictlyUnital`: the operations with an idempotent input are those of a
+unit), which enters only with the morphisms it induces.
 
 * **The type `A` module `M ⊠ P`.** For a differential right `B`-module `(M, dM)`, the row vectors
   `Y → M`, standing for `∑ y, ψ y ⊗ y`, form an `A∞` right module over `A`
@@ -74,7 +76,8 @@ below; strict unitality is not needed.
   moreover orthogonal, the coefficients of `[I] ⊠ N` restricted to the generators `(idem x, x)` are
   those of `N`, and the other generators carry zero coefficients
   (`TauCeti.TypeDAStructure.boxCoeff_identity`). The identity bimodule is compatible with the
-  right idempotents `s ↦ s` (`TauCeti.TypeDAStructure.isRightIdemCompatible_identity`), and
+  right idempotents `s ↦ s` (`TauCeti.TypeDAStructure.isRightIdemCompatible_identity`), strictly
+  unital (`TauCeti.TypeDAStructure.isStrictlyUnital_identity`), and
   `[I] ⊠_I N` is `N`: its generators are the pairs `(idem x, x)`, with the idempotents and the
   coefficients of `N` (`TauCeti.TypeDAStructure.boxTensorTypeD_identity_idem`,
   `TauCeti.TypeDAStructure.boxTensorTypeD_identity_coeff`).
@@ -98,6 +101,8 @@ and the associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is
   matrix of `P ⊠ N`, and `P ⊠ N` as a type `D` structure.
 * `TauCeti.TypeDAStructure.IsRightIdemCompatible`: the operations of `P` are right linear over
   idempotents of `A` attached to its generators.
+* `TauCeti.TypeDAStructure.IsStrictlyUnital`: the operations of `P` with an idempotent input of `A`
+  are those of a unit.
 * `TauCeti.TypeDAStructure.boxTensorTypeD`: the box tensor product `P ⊠_I N` over the idempotents.
 * `TauCeti.TypeDAStructure.identity`: the identity bimodule `[I]`.
 
@@ -116,6 +121,7 @@ and the associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is
   lead from a generator with matching idempotents to one without.
 * `TauCeti.TypeDAStructure.boxCoeff_identity`: the coefficients of `[I] ⊠ N` are those of `N` on
   the generators `(idem x, x)` and zero on the others.
+* `TauCeti.TypeDAStructure.isStrictlyUnital_identity`: the identity bimodule is strictly unital.
 * `TauCeti.TypeDAStructure.boxTensorTypeD_identity_coeff` and
   `TauCeti.TypeDAStructure.boxTensorTypeD_identity_idem`: `[I] ⊠_I N` is `N`.
 
@@ -628,6 +634,22 @@ structure IsRightIdemCompatible (idemA : Y → T) : Prop where
     P.coeff (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ιA (idemA y'))) y y' =
       P.coeff (n + 1) a y y'
 
+/-- A type `DA` bimodule `^B P_A` whose generator `y` lies on the right in the summand of the
+idempotent `ιA (idemA y)` of `A` is **strictly unital** when its operations with an idempotent
+input are those of a unit: `δ¹₂(y, ιA s) = ιB (idem y) ⊗ y` if `s = idemA y` and `0` otherwise,
+the right action of `ιA s` on `y`, and `δ¹_{n+1}(y, a₁, …, aₙ) = 0` for `n ≥ 2` as soon as some
+`aᵢ` is an idempotent `ιA s`. For orthogonal idempotents summing to `1` and a bimodule compatible
+with the right idempotents `idemA` (`TauCeti.TypeDAStructure.IsRightIdemCompatible`), the first
+condition is `δ¹₂(y, 1) = 1 ⊗ y`. -/
+structure IsStrictlyUnital [DecidableEq Y] [DecidableEq T] (idemA : Y → T) : Prop where
+  /-- `δ¹₂(y, ιA s)` is `ιB (idem y) ⊗ y` when `s` is the right idempotent of `y`, and `0`
+  otherwise. -/
+  coeff_one_apply (s : T) (y y' : Y) :
+    P.coeff 1 (fun _ => ιA s) y y' = if y = y' ∧ idemA y = s then ιB (P.idem y) else 0
+  /-- The operations `δ¹_{n+1}` with `n ≥ 2` vanish on tuples containing an idempotent. -/
+  coeff_eq_zero {n : ℕ} (hn : 2 ≤ n) (a : Fin n → A) (i : Fin n) (s : T) (hi : a i = ιA s) :
+    P.coeff n a = 0
+
 variable {ιA} {X : Type*} [Fintype X] [DecidableEq X] (N : TypeDStructure dA ιA X) {idemA : Y → T}
 
 /-- **The generators of `P ⊠ N` over the idempotents are closed under `δ¹`.** If `P` is compatible
@@ -907,6 +929,24 @@ theorem isRightIdemCompatible_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s
       simp [identity_coeff_eq_zero hd hι hιι hsum (show n + 1 + 1 ≠ 1 by omega)]
 
 variable [DecidableEq S] {X : Type*} [Fintype X] [DecidableEq X]
+
+/-- **The identity bimodule is strictly unital** for orthogonal idempotents: its operation
+`δ¹₂(s, ι u) = ∑ t, ι s * ι u * ι t ⊗ t` is `ι s ⊗ s` when `u = s` and `0` otherwise, and it has no
+operations with more inputs. -/
+theorem isStrictlyUnital_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0) :
+    (identity ι hd hι hιι hsum).IsStrictlyUnital ι id where
+  coeff_one_apply u s t := by
+    rw [identity_coeff_one_apply, identity_idem, id]
+    by_cases hsu : s = u
+    · subst hsu
+      by_cases hst : s = t
+      · subst hst
+        rw [hιι, hιι, ite_eq_left ⟨rfl, rfl⟩]
+      · rw [hιι, hιo _ _ hst, ite_eq_right fun h => hst h.1]
+    · rw [hιo _ _ hsu, zero_mul, ite_eq_right fun h => hsu h.2]
+  coeff_eq_zero {n} hn a _ _ _ := by
+    rw [identity_coeff_eq_zero hd hι hιι hsum (show n ≠ 1 by omega), zero_apply]
 
 /-- **`[I] ⊠ N` is `N` over the idempotents.** If the idempotents are moreover orthogonal, the
 generators of the box tensor product over the idempotents of the identity bimodule with `N` are
