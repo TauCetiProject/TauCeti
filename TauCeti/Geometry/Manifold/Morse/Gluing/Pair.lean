@@ -57,8 +57,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmalePair`:
   a limit of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, whose `X₁`-orbits pass near the trajectory of
   `X₁`.
 * `exists_homeomorph_Ico_of_source`, `exists_homeomorph_Ico_of_target`: for `ind p = ind r + 1`,
-  a configuration breaking at the source or at the target is an endpoint of the compactified
-  one-dimensional intersection.
+  a configuration breaking at the source or at the target, with `y` off the critical point where
+  it breaks (`y ≠ a`, respectively `y ≠ b`), is an endpoint of the compactified one-dimensional
+  intersection.
 
 ## References
 
