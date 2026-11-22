@@ -52,6 +52,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   polygon is nonempty.
 * `Polynomial.card_newtonSlopes`: if only zero has infinite valuation, a polynomial of degree
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
+* `Polynomial.newtonSlopes_eq_replicate_of_forall_eq`: a polynomial of degree `d` with nonzero
+  constant coefficient and a single finite slope `m` has slope multiset `d` copies of `m`.
 * `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
   leading and trailing coefficients.
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
@@ -275,6 +277,16 @@ theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     FiniteSlopeData.ofIsConvexSeq_start, FiniteSlopeData.ofIsConvexSeq_length,
     Nat.add_sub_cancel' (natTrailingDegree_le_natDegree f), newtonPolygon_natDegree,
     newtonPolygon_natTrailingDegree]
+
+variable {f v} in
+/-- If only zero has infinite valuation, a polynomial of degree `d` with nonzero constant
+coefficient whose finite slopes all equal `m` has the slope `m` with multiplicity `d`. -/
+theorem newtonSlopes_eq_replicate_of_forall_eq (hv : ∀ x, v x = ⊤ → x = 0)
+    (hf : f.coeff 0 ≠ 0) {m : ℝ} (hm : ∀ s ∈ f.newtonSlopes v, s = m) :
+    f.newtonSlopes v = Multiset.replicate f.natDegree m := by
+  refine Multiset.eq_replicate.mpr ⟨?_, hm⟩
+  rw [card_newtonSlopes f v hv,
+    natTrailingDegree_eq_zero_of_constantCoeff_ne_zero (by simpa using hf), Nat.sub_zero]
 
 variable {f v} in
 /-- If the valuation takes integer values on nonzero elements and every finite slope of `f`
