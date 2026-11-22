@@ -203,11 +203,7 @@ variable {C : Type*} [CommSemiring C] [Algebra R C]
 lemma mem_mrange_mapValue_iff_mapValue_eq_mapValue {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
     {ψ₁ ψ₂ : B →ₐ[R] C} (hψ : {b | ψ₁ b = ψ₂ b} = Set.range φ) {f : WithConv (H →ₐ[R] B)} :
     f ∈ MonoidHom.mrange (mapValue (H := H) φ) ↔ mapValue ψ₁ f = mapValue ψ₂ f := by
-  rw [mem_mrange_mapValue_iff hφ, mapValue_apply, mapValue_apply,
-    WithConv.toConv_injective.eq_iff, AlgHom.ext_iff]
-  refine forall_congr' fun h ↦ ?_
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.mem_range, ← Set.mem_range, ← hψ,
-    Set.mem_ofPred_eq]
+  simp [mem_mrange_mapValue_iff hφ, AlgHom.ext_iff, ← SetLike.mem_coe, ← hψ]
 
 /-- When the image of an injective `φ : A →ₐ[R] B` is exactly the set of fixed points of an
 endomorphism `τ` of `B`, a point comes from a point valued in `A` exactly when it is fixed by
@@ -246,15 +242,11 @@ noncomputable def _root_.AlgEquiv.mapValueMulEquiv (e : A ≃ₐ[R] B) :
 
 @[simp]
 lemma _root_.AlgEquiv.mapValueMulEquiv_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    e.mapValueMulEquiv f = mapValue (e : A →ₐ[R] B) f := by
-  delta AlgEquiv.mapValueMulEquiv
-  rfl
+    e.mapValueMulEquiv f = mapValue (e : A →ₐ[R] B) f := (rfl)
 
 @[simp]
 lemma _root_.AlgEquiv.mapValueMulEquiv_symm_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] B)) :
-    e.mapValueMulEquiv.symm f = mapValue (e.symm : B →ₐ[R] A) f := by
-  delta AlgEquiv.mapValueMulEquiv
-  rfl
+    e.mapValueMulEquiv.symm f = mapValue (e.symm : B →ₐ[R] A) f := (rfl)
 
 end Bialgebra
 
@@ -276,15 +268,11 @@ noncomputable def piValueMulEquiv :
 
 @[simp]
 lemma piValueMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, B i)) (i : ι) (h : H) :
-    (piValueMulEquiv f i).ofConv h = f.ofConv h i := by
-  delta piValueMulEquiv
-  rfl
+    (piValueMulEquiv f i).ofConv h = f.ofConv h i := (rfl)
 
 @[simp]
 lemma piValueMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[R] B i)) (h : H) (i : ι) :
-    (piValueMulEquiv.symm g).ofConv h i = (g i).ofConv h := by
-  delta piValueMulEquiv
-  rfl
+    (piValueMulEquiv.symm g).ofConv h i = (g i).ofConv h := (rfl)
 
 end Pi
 
