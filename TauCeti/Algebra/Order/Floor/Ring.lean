@@ -37,6 +37,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.mem_Ico_ceil_iff`, `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in
   `Finset.Ico ⌈a⌉₊ ⌈b⌉₊` and `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as `(n : R) ∈ [a, b)` and `-(n : R) ∈ (a, b]`.
+* `TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo`: widening `(a, b]` by `ε > 0` preserves membership
+  of `-(n : R)` when `ε ≤ |a + n|` and `ε ≤ |b + n|`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
@@ -86,6 +88,24 @@ theorem mem_Ico_ceil_neg_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrder
     [FloorSemiring R] {a b : R} {n : ℕ} :
     n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioc a b := by
   rw [mem_Ico_ceil_iff, Set.mem_Ico, Set.mem_Ioc, neg_le, lt_neg, and_comm]
+
+/-- In a linearly ordered ring with a natural ceiling, widening `(a, b]` by `ε > 0` preserves the
+negative-natural lattice points `-(n : R)` whenever `ε ≤ |a + n|` and `ε ≤ |b + n|`:
+`n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if `-(n : R) ∈ (a - ε, b + ε)`. -/
+theorem mem_Ico_ceil_neg_iff_mem_Ioo {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorSemiring R] {a b ε : R} {n : ℕ} (hε : 0 < ε) (ha : ε ≤ |a + n|) (hb : ε ≤ |b + n|) :
+    n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioo (a - ε) (b + ε) := by
+  rw [mem_Ico_ceil_neg_iff, Set.mem_Ioc, Set.mem_Ioo]
+  refine ⟨fun ⟨h₁, h₂⟩ ↦ ⟨sub_lt_iff_lt_add.mpr (lt_add_of_lt_of_pos h₁ hε),
+      lt_add_of_le_of_pos h₂ hε⟩, fun ⟨h₁, h₂⟩ ↦ ⟨?_, ?_⟩⟩
+  · by_contra! h
+    rw [abs_of_nonneg (neg_le_iff_add_nonneg.mp h)] at ha
+    exact h₁.not_ge (le_sub_iff_add_le.mpr (neg_add_le_iff_le_add'.mpr ha))
+  · by_contra! h
+    rw [abs_of_neg (lt_neg_iff_add_neg.mp h)] at hb
+    refine hb.not_gt ?_
+    rw [neg_add, add_comm, ← sub_eq_add_neg]
+    exact sub_lt_iff_lt_add'.mpr h₂
 
 /-- In a linearly ordered field with a natural floor, any element `x` avoiding the nonpositive
 integers `-ℕ` stays at a positive uniform distance `ε > 0` from all `-n` (`n : ℕ`). -/

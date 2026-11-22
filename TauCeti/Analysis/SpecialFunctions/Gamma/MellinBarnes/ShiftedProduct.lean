@@ -58,6 +58,9 @@ integral, this yields the integral representation of generalized Airy functions.
 
 ## Main results
 
+* `Complex.exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp`: uniform exponential decay in
+  `|Im s|` of `c ^ (-s) * (Γ(s) * Γ(s + p))` on any vertical strip `Re s ∈ [a, b]` for
+  `c ∈ Complex.slitPlane`.
 * `Complex.integrable_cpow_neg_mul_Gamma_mul_Gamma_add`: vertical-line integrability of
   `y ↦ c^{-(σ + i y)} Γ(σ + i y) Γ(σ + i y + p)` for `c ∈ slitPlane` and pole-avoiding `σ`.
 * `Complex.residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat` and
@@ -127,66 +130,11 @@ private lemma differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add {c p s : ℂ} (h
     (differentiableAt_Gamma (s + p) hsp).comp s (differentiableAt_id.add_const p)
   exact h1.mul (h2.mul h3)
 
-/-- On any vertical strip `Re s ∈ [a, b]` and for any `0 < ε ≤ π`, the shifted Gamma product
-`Γ(s) Γ(s + p)` satisfies `‖Γ(s) Γ(s + p)‖ ≤ K * exp (-((π - ε) * |Im s|))` for `|Im s| ≥ Y`. -/
-private lemma exists_norm_Gamma_mul_Gamma_add_le_exp (p : ℂ) (a b : ℝ) {ε : ℝ}
-    (hε : 0 < ε) (hε' : ε ≤ π) :
-    ∃ K Y : ℝ, 0 ≤ K ∧ 0 ≤ Y ∧ ∀ s : ℂ, s.re ∈ Icc a b → Y ≤ |s.im| →
-      ‖Gamma s * Gamma (s + p)‖ ≤ K * Real.exp (-((π - ε) * |s.im|)) := by
-  set a' : ℝ := min a (a + p.re)
-  set b' : ℝ := max b (b + p.re)
-  obtain ⟨C, T, hS⟩ := TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le a' b'
-  set B : ℝ := max (b' - 1 / 2) 0 + 1
-  set δ : ℝ := ε / (2 * B)
-  have hB : 0 < B := by positivity
-  have hδ : 0 < δ := by positivity
-  set K₀ : ℝ := Real.exp (Real.log (2 * π) / 2 + max C 0 - B * Real.log δ)
-  have hΓ : ∀ z : ℂ, z.re ∈ Icc a' b' → max T 1 ≤ |z.im| →
-      ‖Gamma z‖ ≤ K₀ * Real.exp (-((π / 2 - ε / 2) * |z.im|)) := by
-    intro z hz hzim
-    have hz1 : 1 ≤ |z.im| := (le_max_right T 1).trans hzim
-    have hzpos : 0 < |z.im| := zero_lt_one.trans_le hz1
-    have hGz : Gamma z ≠ 0 := Gamma_ne_zero fun n h ↦ hzpos.ne' (by simp [h])
-    have hst := (abs_le.mp (hS z hz ((le_max_left T 1).trans hzim))).2
-    have hlog_le : Real.log |z.im| ≤ δ * |z.im| - Real.log δ := by
-      linarith [Real.log_le_sub_one_of_pos (mul_pos hδ hzpos), Real.log_mul hδ.ne' hzpos.ne']
-    have hpow : (z.re - 1 / 2) * Real.log |z.im| ≤ B * (δ * |z.im| - Real.log δ) :=
-      (mul_le_mul_of_nonneg_right (by linarith [hz.2, le_max_left (b' - 1 / 2) 0])
-        (Real.log_nonneg hz1)).trans (mul_le_mul_of_nonneg_left hlog_le hB.le)
-    have hC_le : C / |z.im| ≤ max C 0 :=
-      (div_le_div_of_nonneg_right (le_max_left C 0) hzpos.le).trans
-        (div_le_self (le_max_right C 0) hz1)
-    have hBδ : B * δ = ε / 2 := by simp only [δ]; field_simp
-    rw [← Real.exp_log (norm_pos_iff.mpr hGz)]
-    simp only [K₀, ← Real.exp_add]
-    exact Real.exp_le_exp.mpr (by nlinarith [hst, hpow, hC_le, hBδ])
-  set Y : ℝ := max (max T 1) (max T 1 + |p.im|)
-  refine ⟨K₀ * K₀ * Real.exp ((π / 2 - ε / 2) * |p.im|), Y, by positivity,
-    le_trans zero_le_one ((le_max_right T 1).trans (le_max_left _ _)), fun s hs hsim ↦ ?_⟩
-  have htri : |s.im| - |p.im| ≤ |(s + p).im| := by
-    simpa [sub_neg_eq_add, abs_neg] using abs_sub_abs_le_abs_sub s.im (-p.im)
-  have hG1 := hΓ s ⟨(min_le_left _ _).trans hs.1, hs.2.trans (le_max_left _ _)⟩
-    ((le_max_left _ _).trans hsim)
-  have hG2 := hΓ (s + p)
-    ⟨(min_le_right _ _).trans (by simpa using add_le_add_right hs.1 p.re),
-      le_trans (by simpa using add_le_add_right hs.2 p.re) (le_max_right _ _)⟩
-    (by linarith [(le_max_right (max T 1) _).trans hsim])
-  rw [norm_mul]
-  calc ‖Gamma s‖ * ‖Gamma (s + p)‖
-      ≤ (K₀ * Real.exp (-((π / 2 - ε / 2) * |s.im|))) *
-          (K₀ * Real.exp (-((π / 2 - ε / 2) * |(s + p).im|))) := by gcongr
-    _ = K₀ * K₀ * Real.exp (-((π / 2 - ε / 2) * (|s.im| + |(s + p).im|))) := by
-        rw [mul_mul_mul_comm]; congr 1; rw [← Real.exp_add]; congr 1; ring
-    _ ≤ K₀ * K₀ * Real.exp ((π / 2 - ε / 2) * |p.im| + -((π - ε) * |s.im|)) := by
-        gcongr; nlinarith [htri, hε']
-    _ = K₀ * K₀ * Real.exp ((π / 2 - ε / 2) * |p.im|) * Real.exp (-((π - ε) * |s.im|)) := by
-        rw [Real.exp_add]; ring
-
 /-- On any vertical strip `Re s ∈ [a, b]` and for `c ∈ slitPlane`, the integrand
 `c ^ (-s) * (Γ(s) * Γ(s + p))` decays exponentially in `|Im s|` at rate `(π - |arg c|) / 2`. -/
-private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp {c p : ℂ} (hc : c ∈ slitPlane)
+theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp {c p : ℂ} (hc : c ∈ slitPlane)
     (a b : ℝ) :
-    ∃ K Y : ℝ, 0 ≤ K ∧ 0 ≤ Y ∧ ∀ s : ℂ, s.re ∈ Icc a b → Y ≤ |s.im| →
+    ∃ K Y : ℝ, 0 < K ∧ 0 ≤ Y ∧ ∀ s : ℂ, s.re ∈ Icc a b → Y ≤ |s.im| →
       ‖c ^ (-s) * (Gamma s * Gamma (s + p))‖ ≤
         K * Real.exp (-((π - |c.arg|) / 2 * |s.im|)) := by
   have hc0 : c ≠ 0 := slitPlane_ne_zero hc
@@ -194,11 +142,11 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le_exp {c p : ℂ} (h
     abs_lt.mpr ⟨neg_pi_lt_arg c, lt_of_le_of_ne (arg_le_pi c) (mem_slitPlane_iff_arg.mp hc).1⟩
   set α : ℝ := (π - |c.arg|) / 2
   have hα : 0 < α := half_pos (sub_pos.mpr harg)
-  obtain ⟨KΓ, Y, hKΓ, hY, hΓ⟩ :=
-    exists_norm_Gamma_mul_Gamma_add_le_exp p a b hα (by simp only [α]; linarith [abs_nonneg c.arg])
+  obtain ⟨KΓ, Y, hKΓ, hY, hΓ⟩ := TauCeti.exists_norm_Gamma_mul_Gamma_add_le_exp p a b hα
   set M_c : ℝ := max (‖c‖ ^ (-a)) (‖c‖ ^ (-b))
-  have hM_c : 0 ≤ M_c := le_trans (Real.rpow_nonneg (norm_nonneg c) _) (le_max_left _ _)
-  refine ⟨M_c * KΓ, Y, mul_nonneg hM_c hKΓ, hY, fun s hs hsim ↦ ?_⟩
+  have hM_c : 0 < M_c :=
+    lt_of_lt_of_le (Real.rpow_pos_of_pos (norm_pos_iff.mpr hc0) _) (le_max_left _ _)
+  refine ⟨M_c * KΓ, Y, mul_pos hM_c hKΓ, hY, fun s hs hsim ↦ ?_⟩
   have hcpow : ‖c ^ (-s)‖ ≤ M_c * Real.exp (|c.arg| * |s.im|) := by
     refine (norm_cpow_le_mul_exp_arg c (-s)).trans ?_
     rw [neg_re, neg_im, abs_neg]
@@ -419,26 +367,20 @@ private lemma exists_open_strip_avoiding_poles {p : ℂ} {σ₁ σ₂ : ℝ}
   obtain ⟨ε₃, hε₃, h3⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₁p
   obtain ⟨ε₄, hε₄, h4⟩ := TauCeti.exists_pos_lt_abs_add_natCast hσ₂p
   set ε : ℝ := min (min ε₁ ε₂) (min ε₃ ε₄)
-  have hIco : ∀ {x₁ x₂ e₁ e₂ : ℝ} (k : ℕ), ε ≤ e₁ → ε ≤ e₂ →
-      (∀ n : ℕ, e₁ < |x₁ + n|) → (∀ n : ℕ, e₂ < |x₂ + n|) →
-      x₁ - ε < -(k : ℝ) → -(k : ℝ) < x₂ + ε → k ∈ Finset.Ico ⌈-x₂⌉₊ ⌈-x₁⌉₊ := by
-    intro x₁ x₂ e₁ e₂ k he₁ he₂ hx₁ hx₂ hl hu
-    refine TauCeti.mem_Ico_ceil_neg_iff.mpr ⟨?_, ?_⟩
-    · rcases lt_or_ge (x₁ + k) 0 with h | h
-      · linarith
-      · have := hx₁ k; rw [abs_of_nonneg h] at this; linarith
-    · rcases lt_or_ge (x₂ + k) 0 with h | h
-      · have := hx₂ k; rw [abs_of_neg h] at this; linarith
-      · linarith
-  refine ⟨ε, lt_min (lt_min hε₁ hε₂) (lt_min hε₃ hε₄), fun s hs1 hs2 hpole ↦ ?_⟩
+  have hε : 0 < ε := lt_min (lt_min hε₁ hε₂) (lt_min hε₃ hε₄)
+  refine ⟨ε, hε, fun s hs1 hs2 hpole ↦ ?_⟩
   rcases hpole with ⟨k, rfl⟩ | ⟨k, rfl⟩
-  · refine Finset.mem_union_left _ (Finset.mem_image.mpr ⟨k, hIco k
-      ((min_le_left _ _).trans (min_le_left _ _)) ((min_le_left _ _).trans (min_le_right _ _))
-      h1 h2 (by simpa using hs1) (by simpa using hs2), rfl⟩)
-  · refine Finset.mem_union_right _ (Finset.mem_image.mpr ⟨k, hIco k
-      ((min_le_right _ _).trans (min_le_left _ _)) ((min_le_right _ _).trans (min_le_right _ _))
-      h3 h4 (by simp only [sub_re, neg_re, natCast_re] at hs1; linarith)
-      (by simp only [sub_re, neg_re, natCast_re] at hs2; linarith), rfl⟩)
+  · refine Finset.mem_union_left _ (Finset.mem_image.mpr ⟨k,
+      (TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo hε
+        (((min_le_left _ _).trans (min_le_left _ _)).trans (h1 k).le)
+        (((min_le_left _ _).trans (min_le_right _ _)).trans (h2 k).le)).mpr
+        ⟨by simpa using hs1, by simpa using hs2⟩, rfl⟩)
+  · refine Finset.mem_union_right _ (Finset.mem_image.mpr ⟨k,
+      (TauCeti.mem_Ico_ceil_neg_iff_mem_Ioo hε
+        (((min_le_right _ _).trans (min_le_left _ _)).trans (h3 k).le)
+        (((min_le_right _ _).trans (min_le_right _ _)).trans (h4 k).le)).mpr
+        ⟨by simp only [sub_re, neg_re, natCast_re] at hs1; linarith,
+         by simp only [sub_re, neg_re, natCast_re] at hs2; linarith⟩, rfl⟩)
 
 /-- Horizontal rectangle caps `∫_{σ₁}^{σ₂} f(x ± i T) dx` tend to `0` as `T → ∞`. -/
 private lemma tendsto_horizontal_cpow_neg_mul_Gamma_mul_Gamma_add
