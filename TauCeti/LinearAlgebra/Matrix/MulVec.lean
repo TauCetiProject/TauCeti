@@ -20,7 +20,8 @@ square-zero matrix annihilates every vector in two steps. This is the form in wh
 of a root operator reaches the vector it acts on.
 
 Over an ordered semiring, multiplication by an entrywise nonnegative matrix is monotone and
-preserves nonnegativity, and a matrix whose row `i` is strictly positive sends a nonzero
+preserves nonnegativity, a dot product with a vector of entries at least `1` bounds each
+coordinate of a nonnegative vector, and a matrix whose row `i` is strictly positive sends a nonzero
 nonnegative vector to one whose coordinate `i` is strictly positive.
 
 When row `i` of a matrix vanishes off the diagonal, coordinate `i` of a product with a vector only
@@ -35,6 +36,9 @@ commutes with multiplication of the entries.
 For a matrix `Q` and a multiplicative map `σ`, the pairing `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by
 `σ c * c` along a line. When `σ` is also additive, such as a ring endomorphism, this pairing is
 the `σ`-sesquilinear form of `Q`.
+
+Casting the entries of an integer matrix and of an integer vector into a ring commutes with both
+matrix-vector and vector-matrix multiplication.
 
 A matrix invariant under row and column reindexing sends vectors invariant under the column
 permutation to vectors invariant under the row map.
@@ -55,6 +59,8 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
+* `Matrix.le_dotProduct_of_one_le`: a coordinate of a nonnegative vector is at most its dot
+  product with a vector whose entries are at least `1`.
 * `Matrix.mulVec_pos`: if row `i` of `A` is strictly positive, then `A` sends a nonzero
   nonnegative vector to one whose coordinate `i` is strictly positive.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
@@ -64,6 +70,8 @@ reproduce every product `A *ᵥ x`.
   `(σ ∘ v) ᵥ* Q ≠ 0`.
 * `Matrix.exists_eq_smul_of_vecMulVec_eq`: equality of `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂`
   with `u₂, w₂ ≠ 0` implies `u₁ = c • u₂` for some `c ≠ 0`.
+* `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
+  with matrix-vector and vector-matrix multiplication.
 -/
 
 public section
@@ -136,6 +144,27 @@ theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalSemiring R]
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
 
+section IntCast
+
+variable {R : Type*} [NonAssocRing R]
+
+/-- Casting an integer matrix and an integer vector entrywise commutes with matrix-vector
+multiplication. -/
+theorem map_intCast_mulVec (A : Matrix m n ℤ) (v : n → ℤ) :
+    A.map (Int.cast : ℤ → R) *ᵥ (fun j => (v j : R)) = fun i => ((A *ᵥ v) i : R) :=
+  -- `RingHom.map_mulVec` for `Int.castRingHom R`, whose coercion is `Int.cast`.
+  funext fun i => ((Int.castRingHom R).map_mulVec A v i).symm
+
+omit [Fintype n] in
+/-- Casting an integer vector and an integer matrix entrywise commutes with vector-matrix
+multiplication. -/
+theorem map_intCast_vecMul [Fintype m] (v : m → ℤ) (A : Matrix m n ℤ) :
+    (fun i => (v i : R)) ᵥ* A.map (Int.cast : ℤ → R) = fun j => ((v ᵥ* A) j : R) :=
+  -- `RingHom.map_vecMul` for `Int.castRingHom R`, whose coercion is `Int.cast`.
+  funext fun j => ((Int.castRingHom R).map_vecMul A v j).symm
+
+end IntCast
+
 section OrderedSemiring
 
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] {A : Matrix m n R}
@@ -148,6 +177,14 @@ theorem mulVec_mono (hA : ∀ i j, 0 ≤ A i j) (hxy : x ≤ y) : A *ᵥ x ≤ A
 /-- An entrywise nonnegative matrix sends nonnegative vectors to nonnegative vectors. -/
 theorem mulVec_nonneg (hA : ∀ i j, 0 ≤ A i j) (hx : 0 ≤ x) : 0 ≤ A *ᵥ x := fun i =>
   dotProduct_nonneg_of_nonneg (hA i) hx
+
+/-- A coordinate of a nonnegative vector `x` is at most its dot product with a vector `w` whose
+entries are at least `1`. -/
+theorem le_dotProduct_of_one_le {w : n → R} (hw : ∀ k, 1 ≤ w k) (hx : 0 ≤ x) (j : n) :
+    x j ≤ w ⬝ᵥ x :=
+  (le_mul_of_one_le_left (hx j) (hw j)).trans <|
+    Finset.single_le_sum (f := fun k => w k * x k)
+      (fun k _ => mul_nonneg (zero_le_one.trans (hw k)) (hx k)) (Finset.mem_univ j)
 
 end OrderedSemiring
 

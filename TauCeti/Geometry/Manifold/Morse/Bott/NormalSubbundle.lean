@@ -58,8 +58,9 @@ Although the subbundles depend on the metric, their isomorphism classes do not. 
 fibre metrics `g` and `g'`, projecting along the positive normal bundle relative to `g'` is a
 `C^k` diffeomorphism from the total space of the negative normal bundle relative to `g` onto that
 relative to `g'`, linear on each fibre
-(`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace`), and similarly
-for the positive normal bundles
+(`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace`; its continuity
+on total spaces is `IsNondegenerateCriticalSubmanifold.continuous_negativeNormalSpaceEquiv`), and
+similarly for the positive normal bundles
 (`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_positiveNormalSpace`). Read in a
 trivialization, the projection onto the negative normal spaces along the positive ones is the
 `C^k` family of projections above, so it is a `C^k` map of the total space of the normal bundle to
@@ -478,6 +479,43 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
   exact ⟨bundleDiffeomorph (fun s ↦ (h.negativeNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
+
+/-- Projecting the negative normal spaces of `g'` along the positive normal spaces of `g` is
+continuous on the total spaces of the negative normal bundles. -/
+theorem continuous_negativeNormalSpaceEquiv
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g g' : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+    Continuous fun v : TotalSpace (Fin r → ℝ)
+        (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) ↦
+      TotalSpace.mk' (Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+        v.proj ((h.negativeNormalSpaceEquiv hn g'.toRiemannianMetric g.toRiemannianMetric
+          v.proj).toContinuousLinearEquiv v.snd) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr).fiberBundle
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g' hr).fiberBundle
+  obtain ⟨Φ, hΦ⟩ := h.exists_bundleDiffeomorph_negativeNormalSpace hn hk hf hdim g' g hr
+  refine Φ.continuous.congr fun v ↦ (hΦ v).trans ?_
+  rw [LinearEquiv.coe_toContinuousLinearEquiv']
 
 /-- **The positive normal bundle does not depend on the metric, up to isomorphism.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it, `i` of class
