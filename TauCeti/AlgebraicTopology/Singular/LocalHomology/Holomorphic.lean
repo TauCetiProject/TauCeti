@@ -47,6 +47,18 @@ number, the local index of `(z, w) ↦ u₁ z - u₂ w` at `(z₀, w₀)`, and i
 for the standard complex structure of `ℂ²`, of the local intersection multiplicities of distinct
 branches of pseudoholomorphic curves in a four-manifold.
 
+The same positivity of real Jacobians shows that local indices do not change under changes of
+coordinates whose derivative at the point is complex linear and injective: on the target, for the
+difference `a - b` of two maps
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`), and on the
+source (`TauCeti.HomologicalOrientation.localIndex_comp_eq_of_hasStrictFDerivAt`). These are the
+specializations of the real statements
+`TauCeti.HomologicalOrientation.localIndex_eq_sign_det_mul_of_apply_eq_sub` and
+`TauCeti.HomologicalOrientation.localIndex_comp_eq_mul_sign_det`. The target changes include the
+unitary maps, and the `C¹` charts whose derivative at the intersection point carries the almost
+complex structure there to the standard one, in which local intersection numbers of
+pseudoholomorphic branches are computed.
+
 ## Proof
 
 A complex-linear map has real determinant `|det_ℂ|²` (`LinearMap.det_restrictScalars_eq_normSq`),
@@ -76,6 +88,10 @@ positive number of preimages.
 
 * `TauCeti.HomologicalOrientation.localIndex_eq_one_of_hasFDerivAt`: at a point with invertible
   complex derivative the local index is `1`.
+* `TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`,
+  `TauCeti.HomologicalOrientation.localIndex_comp_eq_of_hasStrictFDerivAt`: local indices are
+  invariant under changes of coordinates of the target and of the source with complex-linear
+  derivative.
 * `TauCeti.HomologicalOrientation.degree_eq_ncard_of_hasFDerivAt`: the degree of a proper map is the
   number of preimages of a value whose preimages have invertible complex derivatives.
 * `TauCeti.HomologicalOrientation.localIndex_eq_ncard_of_hasFDerivAt`: the local index counts the
@@ -129,6 +145,42 @@ theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x :
     LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
   rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
     SignType.coe_one]
+
+include hE in
+/-- **Local intersection indices are invariant under changes of coordinates of the target with
+complex-linear derivative.** Let `F p = a p - b p` for maps `a, b : M → E` continuous at `x` with
+`a x = b x`. If `Ψ : E → E` is strictly differentiable at `a x` with an injective complex-linear
+derivative, such as a holomorphic chart, a unitary map, or a `C¹` chart whose derivative at the
+point carries the complex structure to the standard one, then `G' p = Ψ (a p) - Ψ (b p)` has the
+same local index as `F` at `x`: the real Jacobian determinant `|det_ℂ|²` of the derivative is
+positive. -/
+theorem localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt {M G : Type} [TopologicalSpace M]
+    [T2Space M] [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    [ChartedSpace G M] (o₀ : HomologicalOrientation M G n) (hG : finrank ℝ G = n)
+    {F G' : C(M, E)} {a b : M → E} {Ψ : E → E} {L : E →L[ℂ] E} {x : M}
+    (hF : ∀ p, F p = a p - b p) (hG' : ∀ p, G' p = Ψ (a p) - Ψ (b p))
+    (ha : ContinuousAt a x) (hb : ContinuousAt b x) (hab : a x = b x)
+    (hΨ : HasStrictFDerivAt Ψ (L.restrictScalars ℝ) (a x)) (hL : Function.Injective L) :
+    o₀.localIndex o G' x = o₀.localIndex o F x := by
+  have hpos : 0 < (L.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hL
+  rw [o₀.localIndex_eq_sign_det_mul_of_apply_eq_sub o hG hE hF hG' ha hb hab hΨ hpos.ne',
+    sign_pos hpos, SignType.coe_one, one_mul]
+
+include hE in
+/-- **Local indices are invariant under changes of coordinates of the source with complex-linear
+derivative.** If `φ : E → E` is strictly differentiable at `x` with an injective complex-linear
+derivative, such as a holomorphic reparametrization, then the local index of `F ∘ φ` at `x` is
+that of `F` at `φ x`. -/
+theorem localIndex_comp_eq_of_hasStrictFDerivAt {N G : Type} [TopologicalSpace N] [T2Space N]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [ChartedSpace G N]
+    (o' : HomologicalOrientation N G n) (hG : finrank ℝ G = n) {F : C(E, N)} {φ : C(E, E)}
+    {φ' : E →L[ℂ] E} {x : E} (hφ : HasStrictFDerivAt φ (φ'.restrictScalars ℝ) x)
+    (hφ' : Function.Injective φ') : o.localIndex o' (F.comp φ) x = o.localIndex o' F (φ x) := by
+  have hpos : 0 < (φ'.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hφ'
+  rw [o.localIndex_comp_eq_mul_sign_det o' hE hG hφ hpos.ne', sign_pos hpos, SignType.coe_one,
+    mul_one]
 
 include hE in
 /-- **The degree of a holomorphic proper map counts preimages.** If every preimage of `y` under the
