@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Perm.List
 public import TauCeti.GroupTheory.Perm.MultipleTransitivity
 public import TauCeti.GroupTheory.Perm.Recognition
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+import TauCeti.Algebra.Group.Subgroup.Finite
 import TauCeti.GroupTheory.Coset.Table
 import Mathlib.Tactic.Group
 
@@ -429,46 +430,42 @@ theorem natCard_two_three_five : Nat.card (TriangleGroup 2 3 5) = 60 :=
 representation is an isomorphism onto its image. -/
 noncomputable def equivTetrahedral : TriangleGroup 2 3 3 ≃* alternatingGroup (Fin 4) :=
   have := finite_two_three_three
-  (MulEquiv.ofBijective tetrahedralRep.rangeRestrict
-    (tetrahedralRep.rangeRestrict_surjective.bijective_of_nat_card_le
-      (by rw [natCard_two_three_three, natCard_range_tetrahedralRep]))).trans
-    (MulEquiv.subgroupCongr range_tetrahedralRep)
+  tetrahedralRep.mulEquivOfRangeEq range_tetrahedralRep
+    (by rw [natCard_two_three_three, ← range_tetrahedralRep, natCard_range_tetrahedralRep])
 
 @[simp]
 theorem coe_equivTetrahedral_apply (g : TriangleGroup 2 3 3) :
-    (equivTetrahedral g : Perm (Fin 4)) = tetrahedralRep g := by
-  simp only [equivTetrahedral, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
-    MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
+    (equivTetrahedral g : Perm (Fin 4)) = tetrahedralRep g :=
+  have := finite_two_three_three
+  tetrahedralRep.coe_mulEquivOfRangeEq_apply _ _ g
 
 /-- The spherical signature `(2, 3, 4)` is the symmetric group `S₄`: the octahedral
 representation is an isomorphism. -/
 noncomputable def equivOctahedral : TriangleGroup 2 3 4 ≃* Perm (Fin 4) :=
   have := finite_two_three_four
-  ((MulEquiv.ofBijective octahedralRep.rangeRestrict
-    (octahedralRep.rangeRestrict_surjective.bijective_of_nat_card_le
-      (by rw [natCard_two_three_four, natCard_range_octahedralRep]))).trans
-    (MulEquiv.subgroupCongr range_octahedralRep)).trans Subgroup.topEquiv
+  (octahedralRep.mulEquivOfRangeEq range_octahedralRep
+    (by rw [natCard_two_three_four, ← range_octahedralRep, natCard_range_octahedralRep])).trans
+    Subgroup.topEquiv
 
 @[simp]
 theorem equivOctahedral_apply (g : TriangleGroup 2 3 4) :
     equivOctahedral g = octahedralRep g := by
+  have := finite_two_three_four
   simp only [equivOctahedral, MulEquiv.trans_apply, Subgroup.topEquiv_apply,
-    MulEquiv.subgroupCongr_apply, MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
+    MonoidHom.coe_mulEquivOfRangeEq_apply]
 
 /-- The spherical signature `(2, 3, 5)` is the alternating group `A₅`: the icosahedral
 representation is an isomorphism onto its image. -/
 noncomputable def equivIcosahedral : TriangleGroup 2 3 5 ≃* alternatingGroup (Fin 5) :=
   have := finite_two_three_five
-  (MulEquiv.ofBijective icosahedralRep.rangeRestrict
-    (icosahedralRep.rangeRestrict_surjective.bijective_of_nat_card_le
-      (by rw [natCard_two_three_five, natCard_range_icosahedralRep]))).trans
-    (MulEquiv.subgroupCongr range_icosahedralRep)
+  icosahedralRep.mulEquivOfRangeEq range_icosahedralRep
+    (by rw [natCard_two_three_five, ← range_icosahedralRep, natCard_range_icosahedralRep])
 
 @[simp]
 theorem coe_equivIcosahedral_apply (g : TriangleGroup 2 3 5) :
-    (equivIcosahedral g : Perm (Fin 5)) = icosahedralRep g := by
-  simp only [equivIcosahedral, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
-    MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
+    (equivIcosahedral g : Perm (Fin 5)) = icosahedralRep g :=
+  have := finite_two_three_five
+  icosahedralRep.coe_mulEquivOfRangeEq_apply _ _ g
 
 end TriangleGroup
 
