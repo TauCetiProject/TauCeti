@@ -62,8 +62,7 @@ restriction on `(K, σ)`.
   `w u(a) w ∈ B` if and only if `a = 1`.
 * `TauCeti.UnitaryRankOne.borelSubgroup_eq_sup`: `B = H ⊔ U` for involutive `σ`.
 * `TauCeti.UnitaryRankOne.borelSubgroup_le_normalizer_unipotentSubgroup`: `B` normalizes `U`.
-* `TauCeti.UnitaryRankOne.mul_weyl_mul_eq_iff_of_mem_unipotentSubgroup_of_mem_borelSubgroup` and
-  `TauCeti.UnitaryRankOne.existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup`:
+* `TauCeti.UnitaryRankOne.existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup`:
   every `g ∉ B` factors uniquely as `u * w * b` with `u ∈ U` and `b ∈ B`.
 * `TauCeti.UnitaryRankOne.mem_borelSubgroup_or_mem_doubleCoset`: `G = B ∪ B w B`.
 * `TauCeti.UnitaryRankOne.isIrreducible_titsSystem`: the rank-one Tits system on `G` is irreducible.
@@ -444,22 +443,6 @@ theorem disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup :
     weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hb
   simp [hb]
 
-/-- Two big-cell products `u * weyl * b` with `u ∈ unipotentSubgroup` and `b ∈ borelSubgroup` are
-equal if and only if both factors agree. -/
-theorem mul_weyl_mul_eq_iff_of_mem_unipotentSubgroup_of_mem_borelSubgroup
-    {u₁ u₂ b₁ b₂ : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
-    (hu₁ : u₁ ∈ unipotentSubgroup K σ) (hu₂ : u₂ ∈ unipotentSubgroup K σ)
-    (hb₁ : b₁ ∈ borelSubgroup K σ) (hb₂ : b₂ ∈ borelSubgroup K σ) :
-    u₁ * weyl K σ * b₁ = u₂ * weyl K σ * b₂ ↔ u₁ = u₂ ∧ b₁ = b₂ := by
-  constructor
-  · intro h
-    have hp := (unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
-      disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup
-      (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) h
-    exact ⟨congrArg (fun p ↦ p.1.val) hp, congrArg (fun p ↦ p.2.val) hp⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
-
 /-- **Sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup factors as
 `u * weyl * b` with `u` unipotent and `b` in the Borel subgroup. -/
 theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Function.Involutive σ)
@@ -483,21 +466,14 @@ theorem existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup
     (hσ : Function.Involutive σ)
     {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
     (hg : g ∉ borelSubgroup K σ) :
-    ∃! p :
-        (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ ×
-          (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ,
-      p.1 ∈ unipotentSubgroup K σ ∧ p.2 ∈ borelSubgroup K σ ∧
-        p.1 * weyl K σ * p.2 = g := by
-  obtain ⟨⟨u, b⟩, hub, huniq⟩ :=
-    ((unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
-      disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup).existsUnique_iff_exists.mpr <| by
-        obtain ⟨u, hu, b, hb, hub⟩ :=
-          exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup hσ hg
-        exact ⟨(⟨u, hu⟩, ⟨b, hb⟩), hub⟩
-  refine ⟨(u, b), ⟨u.property, b.property, hub⟩, ?_⟩
-  rintro ⟨u', b'⟩ ⟨hu', hb', hub'⟩
-  have heq := huniq (⟨u', hu'⟩, ⟨b', hb'⟩) hub'
-  exact Prod.ext (congrArg (fun p ↦ p.1.val) heq) (congrArg (fun p ↦ p.2.val) heq)
+    ∃! p : unipotentSubgroup K σ × borelSubgroup K σ,
+      (p.1 : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) *
+        weyl K σ * p.2 = g :=
+  ((unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
+    disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup).existsUnique_iff_exists.mpr <| by
+      obtain ⟨u, hu, b, hb, hub⟩ :=
+        exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup hσ hg
+      exact ⟨(⟨u, hu⟩, ⟨b, hb⟩), hub⟩
 
 /-- **The rank-one Bruhat decomposition** `G = B ∪ B w B` of the three-dimensional unitary group. -/
 theorem mem_borelSubgroup_or_mem_doubleCoset (hσ : Function.Involutive σ)

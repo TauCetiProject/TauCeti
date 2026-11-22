@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.B
 import Mathlib.GroupTheory.Subgroup.Centralizer
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.Field.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.PowAddSelf
@@ -48,8 +47,8 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
   commuting with the central root element `u(0, d)` forces `Z(G) ≤ B`.
 * **Commutator generation (`unipotentSubgroup_le_commutator` and `commutator_eq_top`).** Assuming
   some nonzero `a ∈ K` satisfies `a ^ 2 ≠ σ a` (which excludes `SU₃(2)` of order `216`, where
-  `σ a = a ^ 2` on `𝔽₄ˣ`), either some `y ∈ K` has `y + σ y ≠ 0` — so `K^σ`-linearity makes the
-  trace `t ↦ t + σ t` surjective onto `{s | σ s = s}`, root-group commutators produce every central
+  `σ a = a ^ 2` on `𝔽₄ˣ`), either some `y ∈ K` has `y + σ y ≠ 0` — so normalizing `y` by `y + σ y`
+  gives a trace-`1` element, root-group commutators produce every central
   root element `u(0, z₀)` with `z₀ + σ z₀ = 0`, and torus commutators `⁅torusHom(a), u(x₁, z₁)⁆`
   produce every first coordinate `x` — or else `y + σ y = 0` identically, forcing `2 = 0` and
   `σ = id`, in which case `U` lies on the central `z`-axis and `⁅torusHom(a), u(0, z₁)⁆ =
@@ -241,8 +240,8 @@ theorem normalClosure_unipotentSubgroup_eq_top (hσ : Function.Involutive σ)
 /-- The normal core of the Borel subgroup intersects the unipotent subgroup trivially. -/
 theorem normalCore_borelSubgroup_inf_unipotentSubgroup_eq_bot :
     (borelSubgroup K σ).normalCore ⊓ unipotentSubgroup K σ = ⊥ :=
-  disjoint_iff.mp <| (disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup.mono_right <|
-    (borelSubgroup K σ).normalCore_eq_iInf_map_conj ▸ iInf_le _ (weyl K σ)).symm
+  Subgroup.normalCore_inf_eq_bot_of_conj_mem (weyl K σ)
+    disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup
 
 /-- **The normal core of the Borel subgroup is the centre** of the rank-one special isometry group
 whenever `σ` is involutive and `∃ d ≠ 0, d + σ d = 0`. -/
@@ -271,18 +270,17 @@ theorem normalCore_borelSubgroup_eq_center (hσ : Function.Involutive σ)
 /-! ### Commutator generation, perfectness, and simplicity -/
 
 private theorem unipotentHom_unitaryMk_zero_mem_commutator (hσ : Function.Involutive σ)
-    (htr : ∀ s : K, σ s = s → ∃ t : K, t + σ t = s) {z₀ : K} (hz₀ : z₀ + σ z₀ = 0) :
+    (htr : ∃ t : K, t + σ t = 1) {z₀ : K} (hz₀ : z₀ + σ z₀ = 0) :
     unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) ∈
       commutator
         ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
   obtain ⟨b, c, hbc⟩ := HeisenbergGroup.unitarySubgroup.exists_commutatorElement_eq_of_mem_zAxis
-    hσ (htr 1 (map_one σ)) (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) (by simp)
+    hσ htr (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) (by simp)
   rw [← hbc, map_commutatorElement]
   exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 
 private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involutive σ)
-    (htr : ∀ s : K, σ s = s → ∃ t : K, t + σ t = s)
-    (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) (x : K) :
+    (htr : ∃ t : K, t + σ t = 1) (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) (x : K) :
     ∃ b : HeisenbergGroup.unitarySubgroup σ, (b : HeisenbergGroup K).x = x ∧
       unipotentHom K σ b ∈
         commutator
@@ -297,7 +295,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
     calc a ^ 2 = a ^ 2 * (σ a)⁻¹ * σ a := (inv_mul_cancel_right₀ hσa (a ^ 2)).symm
       _ = σ a := by rw [h1, one_mul]
   let x₁ : K := c⁻¹ * x
-  obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ (htr 1 (map_one σ)) x₁
+  obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ htr x₁
   let t : Kˣ := Units.mk0 a ha0
   have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t
     (u₁ : HeisenbergGroup K).x (u₁ : HeisenbergGroup K).z
@@ -324,8 +322,9 @@ private theorem unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero
       commutator
         ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
   obtain ⟨y, hy⟩ := htr0
-  have htr : ∀ s : K, σ s = s → ∃ t : K, t + σ t = s := fun _ hs ↦
-    exists_add_map_eq_of_add_map_ne_zero hσ hy hs
+  have htr : ∃ t : K, t + σ t = 1 := ⟨(y + σ y)⁻¹ * y, by
+    have hσy : σ (y + σ y) = y + σ y := by rw [map_add, hσ y, add_comm]
+    rw [map_mul, map_inv₀, hσy, ← mul_add, inv_mul_cancel₀ hy]⟩
   rw [unipotentSubgroup_def]
   rintro _ ⟨a₀, rfl⟩
   obtain ⟨b₁, hb₁_x, hb₁_mem⟩ :=

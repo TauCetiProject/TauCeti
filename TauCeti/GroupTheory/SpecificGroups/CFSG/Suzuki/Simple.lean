@@ -142,12 +142,13 @@ theorem isIrreducible_titsSystem (hm : m ≠ 0) : (titsSystem m hm).IsIrreducibl
 theorem normalCore_borelSubgroupOf : (borelSubgroupOf m).normalCore = ⊥ := by
   -- The Weyl element conjugates an element of `Z ∩ U` into `B`, so that element is trivial.
   have hZU : (borelSubgroupOf m).normalCore ⊓ unipotentSubgroupOf m = ⊥ :=
-    Subgroup.normalCore_inf_eq_bot_of_conj_mem (weylOf m) fun y hyU h ↦ by
-      obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
-      rw [Subgroup.mem_subgroupOf] at h
-      simp only [Subgroup.coe_mul, InvMemClass.coe_inv, weyl_inv, ← hy] at h
-      obtain ⟨rfl, rfl⟩ := (weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff m).mp h
-      exact Subtype.ext (by simp [← hy])
+    Subgroup.normalCore_inf_eq_bot_of_conj_mem (weylOf m) <|
+      Subgroup.disjoint_def.mpr fun {y} hyU h ↦ by
+        obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
+        rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, Subgroup.mem_subgroupOf] at h
+        simp only [Subgroup.coe_mul, InvMemClass.coe_inv, weyl_inv, ← hy] at h
+        obtain ⟨rfl, rfl⟩ := (weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff m).mp h
+        exact Subtype.ext (by simp [← hy])
   -- Hence `Z`, which is normal and normalizes `U`, centralizes the normal closure `G` of `U`.
   have hcenter := le_centralizer_normalClosure_of_le_normalizer_of_inf_eq_bot
     ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m)) hZU
