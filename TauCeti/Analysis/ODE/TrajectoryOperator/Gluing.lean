@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 public import TauCeti.Analysis.Sobolev.GraphStep.Translation
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
@@ -51,6 +52,7 @@ operator is the linear input of the Newton iteration that glues broken trajector
 ## Main declarations
 
 * `TauCeti.gluedCoeff`: the coefficient of two operators glued along a neck of length `2 R`.
+* `TauCeti.neckCutoff`: the smooth cutoffs `βᵢ` of slope `O(1 / R)` used for the splicing.
 * `TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`: the
   glued operator has right inverses bounded uniformly in the neck length.
 
@@ -84,6 +86,46 @@ theorem gluedCoeff_of_neg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ
 theorem gluedCoeff_of_nonneg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : 0 ≤ s) :
     gluedCoeff A₁ A₂ R s = A₂ (s - R) := by
   simp [gluedCoeff, not_lt.2 hs]
+
+/-- **The neck cutoff** `s ↦ ψ (1 + a s)`, for the smooth transition `ψ = Real.smoothTransition`.
+It equals `1` where `0 ≤ a s` (`TauCeti.neckCutoff_eq_one`) and `0` where `1 + a s ≤ 0`
+(`TauCeti.neckCutoff_eq_zero`), and its derivative is at most `|a|` times a bound for `ψ'`
+(`TauCeti.abs_deriv_neckCutoff_le`). For `a = -(2 / R)` it is `1` on `(-∞, 0]` and `0` on
+`[R / 2, ∞)`; for `a = 2 / R` it is `1` on `[0, ∞)` and `0` on `(-∞, -R / 2]`. These are the
+cutoffs that splice right inverses along a neck of length `2 R`, with slope `O(1 / R)`. -/
+def neckCutoff (a s : ℝ) : ℝ :=
+  Real.smoothTransition (1 + a * s)
+
+/-- The neck cutoff is smooth. -/
+theorem contDiff_neckCutoff (a : ℝ) {n : ℕ∞} : ContDiff ℝ n (neckCutoff a) := by
+  unfold neckCutoff
+  exact Real.smoothTransition.contDiff.comp (by fun_prop)
+
+/-- The neck cutoff takes values in `[-1, 1]`. -/
+theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_le_one _
+
+/-- The derivative of the neck cutoff, by the chain rule. -/
+theorem hasDerivAt_neckCutoff (a s : ℝ) :
+    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
+  unfold neckCutoff
+  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
+
+/-- The derivative of the neck cutoff is at most `|a| L`, for a bound `L` on the derivative of the
+smooth transition. -/
+theorem abs_deriv_neckCutoff_le {L : ℝ}
+    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
+    |deriv (neckCutoff a) s| ≤ |a| * L := by
+  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+
+/-- The neck cutoff is `1` where `0 ≤ a s`. -/
+theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
+theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
+  Real.smoothTransition.zero_of_nonpos h
 
 namespace WeakDerivStep
 
@@ -119,27 +161,9 @@ local instance gluingNormedAddCommGroupCLM [CompleteSpace F] :
 
 /-! ### Cutoffs -/
 
-/-- The cutoff `s ↦ ψ (1 + a s)` built from the smooth transition `ψ`. -/
-private def neckCutoff (a s : ℝ) : ℝ :=
-  Real.smoothTransition (1 + a * s)
-
 private theorem contDiffOn_neckCutoff (a : ℝ) :
     ContDiffOn ℝ ∞ (neckCutoff a) ((⊤ : Opens ℝ) : Set ℝ) :=
-  (Real.smoothTransition.contDiff.comp (by fun_prop)).contDiffOn
-
-private theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
-  Real.smoothTransition.abs_le_one _
-
-private theorem hasDerivAt_neckCutoff (a s : ℝ) :
-    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
-  unfold neckCutoff
-  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
-
-private theorem abs_deriv_neckCutoff_le {L : ℝ}
-    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
-    |deriv (neckCutoff a) s| ≤ |a| * L := by
-  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
-  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+  (contDiff_neckCutoff a).contDiffOn
 
 private theorem exists_norm_neckCutoff_le (a : ℝ) :
     ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖neckCutoff a x‖ ≤ C :=
@@ -152,9 +176,6 @@ private theorem exists_norm_fderiv_neckCutoff_le (a : ℝ) :
     rw [← norm_deriv_eq_norm_fderiv]
     exact abs_deriv_neckCutoff_le hL a x⟩
 
-private theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
-  Real.smoothTransition.one_of_one_le (by linarith)
-
 private theorem neckCutoff_left_eq_one {R : ℝ} (hR : 0 < R) :
     ∀ s ∈ Iio (0 : ℝ), neckCutoff (-(2 / R)) s = 1 := fun s hs ↦
   neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity))
@@ -163,9 +184,6 @@ private theorem neckCutoff_left_eq_one {R : ℝ} (hR : 0 < R) :
 private theorem neckCutoff_right_eq_one {R : ℝ} (hR : 0 < R) :
     ∀ s ∈ (Iio (0 : ℝ))ᶜ, neckCutoff (2 / R) s = 1 := fun s hs ↦
   neckCutoff_eq_one (mul_nonneg (by positivity) (not_lt.1 hs))
-
-private theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
-  Real.smoothTransition.zero_of_nonpos h
 
 /-! ### The error on the neck -/
 
@@ -522,19 +540,12 @@ private theorem exists_rightInverse_of_splicedInverse {R L : ℝ} (hR : 0 < R)
     ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun f ↦ by
       rw [sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
       exact happrox f
-  obtain ⟨Q, hQ, hQn⟩ := (trajectoryOperator AL).exists_rightInverse_of_norm_comp_sub_id_lt
-    (splicedInverse R Q₁ Q₂) (by linarith)
-  refine ⟨Q, hQ, hQn.trans ?_⟩
   have hQ₀ : ‖splicedInverse R Q₁ Q₂‖ ≤ (√2 + 1) * (‖Q₁‖ + ‖Q₂‖) :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity)
       (norm_splicedInverse_apply_le hR hL hRL Q₁ Q₂)
-  have hinv : (1 - ‖(trajectoryOperator AL).comp (splicedInverse R Q₁ Q₂) -
-      ContinuousLinearMap.id ℝ _‖)⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ (by linarith) (by norm_num)]
-    linarith
-  calc _ ≤ ((√2 + 1) * (‖Q₁‖ + ‖Q₂‖)) * 2 :=
-        mul_le_mul hQ₀ hinv (inv_nonneg.2 (by linarith)) (by positivity)
-    _ = 2 * ((√2 + 1) * (‖Q₁‖ + ‖Q₂‖)) := by ring
+  obtain ⟨Q, hQ, hQn⟩ :=
+    (trajectoryOperator AL).exists_rightInverse_of_norm_comp_sub_id_le_half _ hE
+  exact ⟨Q, hQ, hQn.trans (mul_le_mul_of_nonneg_left hQ₀ zero_le_two)⟩
 
 /-! ### The glued operator -/
 

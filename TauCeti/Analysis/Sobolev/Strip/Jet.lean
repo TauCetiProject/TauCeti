@@ -326,6 +326,15 @@ theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {
   simp only [jet_apply, cutoffCoeff_apply, h]
   simp [add_comm]
 
+/-- The coefficient of multiplication by `β(s)` has norm at most `|β(s)| + |β'(s)|`. -/
+theorem norm_cutoffCoeff_le (β : ℝ → ℝ) (z : ℝ × ℝ) :
+    ‖cutoffCoeff V β z‖ ≤ |β z.1| + |deriv β z.1| := by
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
+  · exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
+  · refine mul_le_of_le_one_right (abs_nonneg _) ?_
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    simp [Prod.norm_def]
+
 /-- For a `C¹` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
 `β(s)` is essentially bounded. -/
 theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
@@ -333,12 +342,8 @@ theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ}
   have hc : Continuous (cutoffCoeff V β) :=
     ((hβ.continuous.comp continuous_fst).smul continuous_const).add
       (((hβ.continuous_deriv le_rfl).comp continuous_fst).smul continuous_const)
-  refine memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦ ?_)
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
-  · exact (mul_le_of_le_one_right (abs_nonneg _) (ContinuousLinearMap.norm_id_le)).trans (hβB _)
-  · refine (mul_le_of_le_one_right (abs_nonneg _) ?_).trans (hβ'B _)
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
-    simp [Prod.norm_def]
+  exact memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦
+    (norm_cutoffCoeff_le β z).trans (add_le_add (hβB _) (hβ'B _)))
 
 end Cutoff
 
