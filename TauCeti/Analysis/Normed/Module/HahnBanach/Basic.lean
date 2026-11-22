@@ -101,6 +101,12 @@ end LinearIsometry
 
 namespace Seminorm
 
+/-- The norm of the seminormed additive commutative group induced by `p` agrees with evaluating `p`.
+-/
+theorem norm_toSeminormedAddCommGroup {𝕜 E : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [SMul 𝕜 E]
+    (p : Seminorm 𝕜 E) (x : E) :
+    @norm E p.toAddGroupSeminorm.toSeminormedAddCommGroup.toNorm x = p x := (rfl)
+
 /-- **Hahn–Banach norming functional for a seminorm.** For any `RCLike` seminorm `p` on a vector
 space `E` and any `a : E`, there exists a linear functional `g : Module.Dual 𝕜 E` such that
 `g a = p a` and `‖g y‖ ≤ p y` for all `y : E`. -/
@@ -108,9 +114,13 @@ theorem exists_dual_apply_eq_and_norm_le {𝕜 E : Type*} [RCLike 𝕜] [AddComm
     (p : Seminorm 𝕜 E) (a : E) :
     ∃ g : Module.Dual 𝕜 E, g a = (p a : 𝕜) ∧ ∀ y, ‖g y‖ ≤ p y := by
   let : SeminormedAddCommGroup E := p.toAddGroupSeminorm.toSeminormedAddCommGroup
-  let : NormedSpace 𝕜 E := ⟨fun c x => (map_smul_eq_mul p c x).le⟩
+  let : NormedSpace 𝕜 E := ⟨fun c x => by
+    rw [p.norm_toSeminormedAddCommGroup, p.norm_toSeminormedAddCommGroup]
+    exact (map_smul_eq_mul p c x).le⟩
   obtain ⟨g, hg_norm, hg_a⟩ := exists_dual_vector'' 𝕜 a
-  exact ⟨g.toLinearMap, hg_a, fun y =>
-    (g.le_opNorm y).trans (mul_le_of_le_one_left (apply_nonneg p y) hg_norm)⟩
+  refine ⟨g.toLinearMap, ?_, fun y => ?_⟩
+  · exact hg_a.trans (congrArg _ (p.norm_toSeminormedAddCommGroup a))
+  · rw [← p.norm_toSeminormedAddCommGroup y]
+    exact (g.le_opNorm y).trans (mul_le_of_le_one_left (norm_nonneg y) hg_norm)
 
 end Seminorm

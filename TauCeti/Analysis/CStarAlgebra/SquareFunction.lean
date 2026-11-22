@@ -68,6 +68,14 @@ theorem isSelfAdjoint_columnSquare (a : ι → A) : IsSelfAdjoint (columnSquare 
 theorem isSelfAdjoint_rowSquare (a : ι → A) : IsSelfAdjoint (rowSquare a) :=
   (rowSquare_nonneg a).isSelfAdjoint
 
+/-- The adjoint of `columnSquare a` is `columnSquare a`. -/
+@[simp] theorem star_columnSquare (a : ι → A) : star (columnSquare a) = columnSquare a :=
+  (isSelfAdjoint_columnSquare a).star_eq
+
+/-- The adjoint of `rowSquare a` is `rowSquare a`. -/
+@[simp] theorem star_rowSquare (a : ι → A) : star (rowSquare a) = rowSquare a :=
+  (isSelfAdjoint_rowSquare a).star_eq
+
 /-- Squaring `columnSquare a` recovers `∑ k, star (a k) * a k`. -/
 @[simp] theorem columnSquare_mul_self (a : ι → A) :
     columnSquare a * columnSquare a = ∑ k, star (a k) * a k :=

@@ -25,6 +25,7 @@ the family; in particular `n` copies of a vector `y` of a real normed space have
 
 ## Main declarations
 
+* `TauCeti.rademacherCoeff`: the first Rademacher Fourier coefficient linear map.
 * `TauCeti.rademacherSecondMoment`: the Rademacher second moment `R₂(y)`.
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
@@ -89,35 +90,81 @@ theorem sum_units_smul_sum_units_smul {M : Type*} [DecidableEq ι] [AddCommGroup
     (i : ι) : ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = Fintype.card (ι → ℤˣ) • x i := by
   simp_rw [Finset.smul_sum]; rw [Finset.sum_comm]; simp [sum_units_smul_units_smul]
 
-/-- Extracting the `i`-th Rademacher coefficient of a Rademacher sum `∑ j, ε j • x j` recovers
-`x i` in any module over a characteristic-zero division semiring. -/
-theorem inv_card_smul_sum_units_smul_sum_units_smul {𝕜 M : Type*} [DecidableEq ι]
-    [DivisionSemiring 𝕜] [CharZero 𝕜] [AddCommGroup M] [Module 𝕜 M] (x : ι → M) (i : ι) :
-    (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = x i := by
-  rw [sum_units_smul_sum_units_smul, ← Nat.cast_smul_eq_nsmul 𝕜,
+/-- The first Rademacher Fourier coefficient linear map sending `Φ : (ι → ℤˣ) → M` to the
+family `k ↦ |ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε`. -/
+def rademacherCoeff (𝕜 : Type*) {M : Type*} [DecidableEq ι] [DivisionSemiring 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] : ((ι → ℤˣ) → M) →ₗ[𝕜] (ι → M) where
+  toFun Φ k := (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε
+  map_add' Φ Ψ := by ext k; simp [smul_add, Finset.sum_add_distrib]
+  map_smul' c Φ := by
+    ext k
+    simp only [Pi.smul_apply, RingHom.id_apply]
+    have hcomm (ε : ι → ℤˣ) : ε k • (c • Φ ε) = c • (ε k • Φ ε) := by
+      rw [Units.smul_def, Units.smul_def, smul_comm]
+    rw [Finset.smul_sum]
+    simp_rw [hcomm, ← Finset.smul_sum]
+    rw [← smul_assoc, ← smul_assoc, smul_eq_mul, smul_eq_mul,
+      (Nat.cast_commute (Fintype.card (ι → ℤˣ)) c).inv_left₀.eq]
+
+/-- Evaluating the `k`-th Rademacher Fourier coefficient of `Φ`. -/
+theorem rademacherCoeff_apply (𝕜 : Type*) {M : Type*} [DecidableEq ι] [DivisionSemiring 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] (Φ : (ι → ℤˣ) → M) (k : ι) :
+    rademacherCoeff 𝕜 Φ k = (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε :=
+  (rfl)
+
+/-- Extracting the Rademacher coefficients of a Rademacher sum `ε ↦ ∑ j, ε j • x j` recovers
+`x` in any module over a characteristic-zero division semiring. -/
+@[simp]
+theorem rademacherCoeff_sum_units_smul {𝕜 M : Type*} [DecidableEq ι] [DivisionSemiring 𝕜]
+    [CharZero 𝕜] [AddCommGroup M] [Module 𝕜 M] (x : ι → M) :
+    rademacherCoeff 𝕜 (fun ε : ι → ℤˣ ↦ ∑ j, ε j • x j) = x := by
+  ext i
+  rw [rademacherCoeff_apply, sum_units_smul_sum_units_smul, ← Nat.cast_smul_eq_nsmul 𝕜,
     inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 
+/-- A `𝕜`-linear map commutes with taking Rademacher Fourier coefficients. -/
+theorem map_rademacherCoeff {𝕜 M N F : Type*} [DecidableEq ι] [DivisionSemiring 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N] [FunLike F M N]
+    [LinearMapClass F 𝕜 M N] (f : F) (Φ : (ι → ℤˣ) → M) (k : ι) :
+    f (rademacherCoeff 𝕜 Φ k) = rademacherCoeff 𝕜 (fun ε ↦ f (Φ ε)) k := by
+  simp [rademacherCoeff_apply, map_smul, map_sum, Units.smul_def]
+
+/-- Taking `star` commutes with taking Rademacher Fourier coefficients over a trivially starred
+division semiring. -/
+@[simp]
+theorem star_rademacherCoeff {𝕜 M : Type*} [DecidableEq ι] [DivisionSemiring 𝕜] [Star 𝕜]
+    [TrivialStar 𝕜] [AddCommGroup M] [Module 𝕜 M] [StarAddMonoid M] [StarModule 𝕜 M]
+    (Φ : (ι → ℤˣ) → M) (k : ι) :
+    star (rademacherCoeff 𝕜 Φ k) = rademacherCoeff 𝕜 (fun ε ↦ star (Φ ε)) k := by
+  simp [rademacherCoeff_apply, Units.smul_def]
+
+/-- Rademacher Fourier coefficients of a family of self-adjoint elements are self-adjoint. -/
+theorem isSelfAdjoint_rademacherCoeff {𝕜 M : Type*} [DecidableEq ι] [DivisionSemiring 𝕜] [Star 𝕜]
+    [TrivialStar 𝕜] [AddCommGroup M] [Module 𝕜 M] [StarAddMonoid M] [StarModule 𝕜 M]
+    {Φ : (ι → ℤˣ) → M} (hΦ : ∀ ε, IsSelfAdjoint (Φ ε)) (k : ι) :
+    IsSelfAdjoint (rademacherCoeff 𝕜 Φ k) := by
+  rw [IsSelfAdjoint, star_rademacherCoeff]
+  exact congrArg (rademacherCoeff 𝕜 · k) (funext fun ε ↦ (hΦ ε).star_eq)
+
 /-- Sign-cube coefficient transfer for a bilinear pairing: pairing the Rademacher Fourier
-coefficients `|ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε` with `b k` and summing over `k` equals averaging
+coefficients `rademacherCoeff 𝕜 Φ k` with `b k` and summing over `k` equals averaging
 `B (Φ ε) (∑ k, ε k • b k)` over the sign cube. -/
-theorem sum_bilinear_inv_card_smul_sum_units_smul {𝕜 M N P : Type*} [DecidableEq ι]
-    [Semifield 𝕜] [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
-    [AddCommGroup P] [Module 𝕜 P] (B : M →ₗ[𝕜] N →ₗ[𝕜] P)
-    (Φ : (ι → ℤˣ) → M) (b : ι → N) :
-    ∑ k, B ((Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) (b k) =
+theorem sum_bilinear_rademacherCoeff {𝕜 M N P : Type*} [DecidableEq ι] [Semifield 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N] [AddCommGroup P] [Module 𝕜 P]
+    (B : M →ₗ[𝕜] N →ₗ[𝕜] P) (Φ : (ι → ℤˣ) → M) (b : ι → N) :
+    ∑ k, B (rademacherCoeff 𝕜 Φ k) (b k) =
       (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, B (Φ ε) (∑ k, ε k • b k) := by
-  simp_rw [map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply, Units.smul_def,
-    map_zsmul, LinearMap.smul_apply, ← Finset.smul_sum]
+  simp_rw [rademacherCoeff_apply, map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply,
+    Units.smul_def, map_zsmul, LinearMap.smul_apply, ← Finset.smul_sum]
   rw [Finset.sum_comm]
 
 /-- Sign-cube coefficient transfer for an `ℝ`-bilinear pairing into an `RCLike` scalar field,
 expressed as an expectation `𝔼` over the sign cube. -/
-theorem sum_bilinear_inv_card_smul_sum_units_smul_eq_expect {𝕜 M N : Type*} [DecidableEq ι]
-    [RCLike 𝕜] [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
-    (B : M →ₗ[ℝ] N →ₗ[ℝ] 𝕜) (Φ : (ι → ℤˣ) → M) (b : ι → N) :
-    ∑ k, B ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) (b k) =
-      𝔼 ε : ι → ℤˣ, B (Φ ε) (∑ k, ε k • b k) := by
-  rw [sum_bilinear_inv_card_smul_sum_units_smul, Finset.expect_eq_sum_div_card, Finset.card_univ,
+theorem sum_bilinear_rademacherCoeff_eq_expect {𝕜 M N : Type*} [DecidableEq ι] [RCLike 𝕜]
+    [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N] (B : M →ₗ[ℝ] N →ₗ[ℝ] 𝕜)
+    (Φ : (ι → ℤˣ) → M) (b : ι → N) :
+    ∑ k, B (rademacherCoeff ℝ Φ k) (b k) = 𝔼 ε : ι → ℤˣ, B (Φ ε) (∑ k, ε k • b k) := by
+  rw [sum_bilinear_rademacherCoeff, Finset.expect_eq_sum_div_card, Finset.card_univ,
     RCLike.real_smul_eq_coe_mul, RCLike.ofReal_inv, RCLike.ofReal_natCast, div_eq_inv_mul]
 
 /-- A Rademacher sum of self-adjoint elements is self-adjoint. -/
