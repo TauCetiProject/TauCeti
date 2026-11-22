@@ -409,6 +409,15 @@ theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fin
     IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
   Equiv.piCongrLeft_apply_apply M e x i'
 
+/-- The inverse map of `QuadraticMap.IsometryEquiv.piCongrLeft` reads a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_symm_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (y : ∀ i, M i) (i' : ι') :
+    (IsometryEquiv.piCongrLeft Q e).symm y i' = y (e i') := by
+  conv_rhs => rw [← (IsometryEquiv.piCongrLeft Q e).apply_symm_apply y]
+  exact (IsometryEquiv.piCongrLeft_apply_apply Q e _ i').symm
+
 section PiCongr
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] {M : ι → Type*} {N : κ → Type*}

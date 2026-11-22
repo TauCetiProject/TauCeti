@@ -284,33 +284,35 @@ theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V)
     (discriminantQuadraticIsometry_apply (Isometry.refl L) hL x).trans
       (DFunLike.congr_fun (discriminantGroupEquiv_refl L) x)
 
-/-- Passing to the inverse lattice isometry passes to the inverse discriminant-quadratic
+/-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
 isometry. -/
 @[simp]
 theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
-    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven) :
-    e.symm.discriminantQuadraticIsometry (e.isEven_iff.mp hL) =
-      (e.discriminantQuadraticIsometry hL).symm := by
-  refine DFunLike.ext _ _ fun y ↦ EquivLike.injective (e.discriminantQuadraticIsometry hL) ?_
-  rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
-  exact (discriminantQuadraticIsometry_apply e hL _).trans <|
-    (congrArg _ (discriminantQuadraticIsometry_apply e.symm (e.isEven_iff.mp hL) y)).trans <|
-      (congrArg _ (DFunLike.congr_fun (discriminantGroupEquiv_symm e) y)).trans
-        (e.discriminantGroupEquiv.apply_symm_apply y)
+    [L.IsNondegenerate] [M.IsNondegenerate] (hM : M.IsEven) :
+    e.symm.discriminantQuadraticIsometry hM =
+      (e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm := by
+  refine DFunLike.ext _ _ fun (x : M.DiscriminantGroup) ↦ ?_
+  refine (e.symm.discriminantQuadraticIsometry_apply hM x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_symm]
+  exact ((e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm_apply_eq.mpr
+    ((e.discriminantQuadraticIsometry_apply _ (e.discriminantGroupEquiv.symm x)).trans
+      (e.discriminantGroupEquiv.apply_symm_apply x)).symm).symm
 
-/-- The discriminant-quadratic isometry induced by a composite is the composite of the induced
+/-- The discriminant quadratic isometry induced by a composite is the composite of the induced
 isometries. -/
 @[simp]
 theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N)
     [L.IsNondegenerate] [M.IsNondegenerate] [N.IsNondegenerate] (hL : L.IsEven) :
     (e.trans f).discriminantQuadraticIsometry hL =
       (e.discriminantQuadraticIsometry hL).trans
-        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) :=
-  DFunLike.ext _ _ fun x ↦
-    (discriminantQuadraticIsometry_apply (e.trans f) hL x).trans <|
-      (DFunLike.congr_fun (discriminantGroupEquiv_trans e f) x).trans <|
-        (congrArg _ (discriminantQuadraticIsometry_apply e hL x).symm).trans
-          (discriminantQuadraticIsometry_apply f (e.isEven_iff.mp hL) _).symm
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) := by
+  refine DFunLike.ext _ _ fun (x : L.DiscriminantGroup) ↦ ?_
+  refine ((e.trans f).discriminantQuadraticIsometry_apply hL x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans, LinearEquiv.trans_apply]
+  exact (congrArg f.discriminantGroupEquiv (e.discriminantQuadraticIsometry_apply hL x).symm).trans
+    ((f.discriminantQuadraticIsometry_apply (e.isEven_iff.mp hL) _).symm.trans
+      (FiniteQuadraticModule.Isometry.trans_apply (e.discriminantQuadraticIsometry hL)
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) x).symm)
 
 end Isometry
 

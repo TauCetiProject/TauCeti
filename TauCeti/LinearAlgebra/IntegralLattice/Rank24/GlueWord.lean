@@ -160,8 +160,8 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn {m : ℕ} {s : Fin m → Dynk
     rw [DynkinType.piGlueAlphabetCongr_apply]
     exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
-/-- Reading the `i`-th Conway--Sloane digit of `encodeGlueWord t ht w` with `List.getD` recovers
-the glue label of `w i`. -/
+/-- Reading entry `i` of an encoded glue word with default `0` recovers the Conway--Sloane label
+of coordinate `i`. -/
 theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
     (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
