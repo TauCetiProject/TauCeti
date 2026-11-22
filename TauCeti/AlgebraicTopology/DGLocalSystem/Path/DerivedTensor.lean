@@ -97,9 +97,7 @@ def pathFromChainAugmentationHom :
   toFun m := Bimodule.of _ (cubicalChainModuleAugmentation (MoorePathFrom B b) H R m)
   map_add' m m' := by rw [map_add, map_add]
   map_smul' a m := by
-    rw [pathFromChainAugmentation_smul, RingHom.id_apply, Algebra.TensorProduct.smul_moduleLeft,
-      Bimodule.smul_of, MulOpposite.unop_one, mul_one, GradedAlgHom.coe_toAlgHom,
-      DGAlgHom.coe_toGradedAlgHom]
+    simp [pathFromChainAugmentation_smul, Algebra.TensorProduct.smul_moduleLeft, Bimodule.smul_of]
 
 variable {B b H R}
 

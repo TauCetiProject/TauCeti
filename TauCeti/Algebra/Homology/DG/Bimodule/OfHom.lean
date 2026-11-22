@@ -94,8 +94,7 @@ theorem bimoduleDifferential_bimoduleOf (b : B) :
 theorem bimoduleDifferential_eq_zero (h : dB = 0) : f.bimoduleDifferential = 0 := by
   subst h
   ext b
-  rw [← (Bimodule.of f.toGradedAlgHom.toAlgHom).apply_symm_apply b, bimoduleDifferential_bimoduleOf,
-    LinearMap.zero_apply, map_zero, LinearMap.zero_apply]
+  simp [bimoduleDifferential]
 
 /-- Reading the differential on `{}_f B` gives the target differential. -/
 @[simp]
