@@ -265,7 +265,8 @@ private theorem memLp_two_algebraMap_pow_of_integrable_exp_mul_abs {b : ℝ} (hb
   have hpow : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) ν := fun k =>
     integrable_pow_of_integrable_exp_mul (ne_of_gt hb) hpos hneg k
   simpa only [Polynomial.eval_pow, Polynomial.eval_X, map_pow] using
-    memLp_two_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) hpow (Polynomial.X ^ n)
+    memLp_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) ENNReal.ofNat_ne_top hpow
+      (Polynomial.X ^ n)
 
 /-- A real-linear functional passes through a vanishing monomial moment.  The monomial `xⁿ` is
 real, so `L` commutes with multiplication by it, and `∫ xⁿ · L(g)` is `L` applied to the moment. -/

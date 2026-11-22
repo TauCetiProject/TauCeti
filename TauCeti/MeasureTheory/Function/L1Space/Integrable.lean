@@ -294,7 +294,8 @@ theorem integrable_fun_prod_of_memLp_card {X ι 𝕜 : Type*} [MeasurableSpace X
   exact integrable_fun_prod_of_memLp_card_of_nonempty hs hf
 
 /-- Against a finite measure, every power of an almost everywhere strongly measurable function
-into a normed ring that is almost everywhere bounded in norm by `R` is integrable. For `g = id`
+into a normed ring that is almost everywhere bounded in norm by `R` is integrable. For `g = id`,
+when the identity is almost everywhere strongly measurable (as on `ℝ` with its Borel σ-algebra),
 this says that a finite measure concentrated on a ball has finite moments of every order. -/
 theorem integrable_pow_of_ae_norm_le {Ω A : Type*} [MeasurableSpace Ω] [NormedRing A]
     {μ : Measure Ω} [IsFiniteMeasure μ] {g : Ω → A} (hg : AEStronglyMeasurable g μ) {R : ℝ}

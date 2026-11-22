@@ -22,8 +22,8 @@ ensemble, is turned into weak convergence of the corresponding laws.
 
 ## Main results
 
-* `TauCeti.tendsto_integral_eval_of_tendsto_integral_pow` — convergence of all moments gives
-  convergence of the integral of every real polynomial.
+* `TauCeti.tendsto_integral_eval_of_tendsto_integral_pow` — convergence of the moments in the
+  support of a real polynomial gives convergence of its integral.
 * `TauCeti.abs_integral_eval_sub_le` — a polynomial within `δ` of a bounded continuous function on
   `[-M, M]` has integral within `δ` of that of the function, against a probability measure
   concentrated on `[-M, M]`.
@@ -56,24 +56,27 @@ namespace TauCeti
 
 variable {ι : Type*} {l : Filter ι}
 
-/-- If every monomial is eventually integrable against `μᵢ`, then eventually all the monomials in
-the support of a given polynomial are. -/
-private theorem eventually_forall_mem_support_integrable {μs : ι → Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
-    ∀ᶠ i in l, ∀ k ∈ p.support, Integrable (fun x : ℝ => x ^ k) (μs i) :=
-  (eventually_all_finset p.support).2 fun n _ => hμs n
+/-- Every monomial is integrable against a finite measure on `ℝ` concentrated on `[-R, R]`. -/
+private theorem integrable_pow_of_ae_abs_le {μ : Measure ℝ} [IsFiniteMeasure μ] {R : ℝ}
+    (hae : ∀ᵐ x ∂μ, |x| ≤ R) (n : ℕ) : Integrable (fun x : ℝ => x ^ n) μ :=
+  integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id
+    (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx) n
 
-/-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
-polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
-eventually, against `μᵢ`. -/
+/-- If the moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ` for every `n` in the support of a real
+polynomial, then so does the integral of the polynomial. The moments must be genuine: each such
+monomial is assumed integrable against `μ` and, eventually, against `μᵢ`. -/
 theorem tendsto_integral_eval_of_tendsto_integral_pow {μs : ι → Measure ℝ} {μ : Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
-    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
-    (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
+    (p : ℝ[X]) (hμs : ∀ n ∈ p.support, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
+    (hμ : ∀ n ∈ p.support, Integrable (fun x : ℝ => x ^ n) μ)
+    (h : ∀ n ∈ p.support, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) :
     Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
-  rw [integral_eval_eq_sum_range fun n _ => hμ n]
-  refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [eventually_forall_mem_support_integrable hμs p] with i hi
+  rw [integral_eval_eq_sum_range hμ]
+  refine (tendsto_finsetSum (f := fun n i => p.coeff n * ∫ x, x ^ n ∂μs i) _
+    fun n _ => ?_).congr' ?_
+  · by_cases hn : n ∈ p.support
+    · exact (h n hn).const_mul _
+    · simpa [Polynomial.notMem_support_iff.1 hn] using tendsto_const_nhds
+  filter_upwards [(eventually_all_finset p.support).2 hμs] with i hi
   exact (integral_eval_eq_sum_range hi).symm
 
 /-- The pointwise domination behind the method of moments: if `|f| ≤ C` and `|p - f| < δ` on
@@ -140,8 +143,7 @@ private theorem exists_dominating_polynomial {μ : Measure ℝ} [IsProbabilityMe
   have hR : 0 ≤ R := let ⟨x, hx⟩ := hae.exists; (abs_nonneg x).trans hx
   have hM : 0 < M := hR.trans_lt hRM
   have hδ : 0 < δ := (abs_nonneg _).trans_lt (hp 0 ⟨neg_nonpos.2 hM.le, hM.le⟩)
-  have hμ := integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id
-    (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx)
+  have hμ := integrable_pow_of_ae_abs_le hae
   set C := ‖f‖
   have hfC (x : ℝ) : |f x| ≤ C := by simpa [Real.norm_eq_abs] using f.norm_coe_le_norm x
   set t := δ / ((C + δ) ^ 2 + 1)
@@ -174,8 +176,7 @@ theorem abs_integral_eval_sub_le {μ : Measure ℝ} [IsProbabilityMeasure μ]
     {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {M δ : ℝ} (hae : ∀ᵐ x ∂μ, |x| ≤ M)
     (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| ≤ δ) :
     |∫ x, p.eval x ∂μ - ∫ x, f x ∂μ| ≤ δ := by
-  have hμ := integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id
-    (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx)
+  have hμ := integrable_pow_of_ae_abs_le hae
   rw [← integral_sub (integrable_eval_of_forall_integrable_pow hμ p) (f.integrable _)]
   have hb : ∀ᵐ x ∂μ, ‖p.eval x - f x‖ ≤ δ := by
     filter_upwards [hae] with x hx
@@ -203,14 +204,14 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   -- `μ` is concentrated on `[-R, R]`, and `M = R + 1`.
   obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
   set M := R + 1
-  have hae : ∀ᵐ x ∂(μ : Measure ℝ), |x| ≤ R := by
-    filter_upwards [ae_iff.mpr hμK] with x hx
-    exact (Real.norm_eq_abs x).symm.trans_le (hR x hx)
-  have hμ := integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id
-    (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx)
-  have hpoly := tendsto_integral_eval_of_tendsto_integral_pow hμs hμ h
+  have hnorm : ∀ᵐ x ∂(μ : Measure ℝ), ‖x‖ ≤ R := (ae_iff.mpr hμK).mono hR
+  have hae : ∀ᵐ x ∂(μ : Measure ℝ), |x| ≤ R :=
+    hnorm.mono fun x hx => (Real.norm_eq_abs x).symm.trans_le hx
+  have hμ := integrable_pow_of_ae_norm_le (g := fun x : ℝ => x) aestronglyMeasurable_id hnorm
+  have hpoly (p : ℝ[X]) := tendsto_integral_eval_of_tendsto_integral_pow p (fun n _ => hμs n)
+    (fun n _ => hμ n) fun n _ => h n
   have hpolyμs (p : ℝ[X]) : ∀ᶠ i in l, Integrable (fun x => p.eval x) (μs i : Measure ℝ) := by
-    filter_upwards [eventually_forall_mem_support_integrable hμs p] with i hi
+    filter_upwards [(eventually_all_finset p.support).2 fun n _ => hμs n] with i hi
     exact integrable_eval_of_forall_mem_support hi
   rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
   intro f
