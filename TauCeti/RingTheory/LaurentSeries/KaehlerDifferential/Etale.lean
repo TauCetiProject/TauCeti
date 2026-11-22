@@ -841,7 +841,7 @@ variable (K L) in
 theorem continuous_D : Continuous (D K L) :=
   (continuous_compDer (LinearMap.id :
       ContinuousKaehlerDifferential K L →ₗ[L] ContinuousKaehlerDifferential K L)).congr
-    fun _ ↦ rfl
+    fun _ ↦ by rw [LinearMap.compDer_apply, LinearMap.id_apply]
 
 /-- For a formally étale `K⸨X⸩`-algebra `L` carrying the `K⸨X⸩`-module topology and a Hausdorff
 topological `L`-module `N`, a `K`-derivation `δ : L → N` is continuous on `L` if and only if its
