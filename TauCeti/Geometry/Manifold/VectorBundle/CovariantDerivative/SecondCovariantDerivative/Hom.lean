@@ -59,11 +59,7 @@ covariant derivative, regarded as a section of `Hom(TM, V)` with the induced con
 theorem secondCovariantDerivative_eq_hom_apply (hσ : CMDiff ∞ (T% σ))
     (x : M) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v = covT.hom cov (cov σ) x u v := by
-  have hD : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] V x) x (cov σ x)) :=
-    contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff
-      (by simpa using hσ.contMDiffOn))
+  have hD := cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     hom_apply covT cov (hD.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)]
@@ -80,8 +76,16 @@ theorem secondCovariantDerivative_covariantDerivative (hσ : CMDiff ∞ (T% σ))
     (covT.hom cov).secondCovariantDerivative covT (cov σ) x u w =
       covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u w :=
   secondCovariantDerivative_eq_hom_apply (covT.hom cov) covT
-    (contMDiffOn_univ.mp ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
-      (by simpa using hσ.contMDiffOn))) x u w
+    (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)) x u w
+
+/-- The second covariant derivative `∇²σ` of a smooth section, read as the covariant derivative of
+`∇σ`, is a smooth section of `Hom(TM, Hom(TM, V))`. -/
+theorem contMDiff_hom_covariantDerivative (hσ : CMDiff ∞ (T% σ)) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) x
+        (covT.hom cov (cov σ) x)) :=
+  contMDiff_hom covT cov (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ))
 
 end Third
 

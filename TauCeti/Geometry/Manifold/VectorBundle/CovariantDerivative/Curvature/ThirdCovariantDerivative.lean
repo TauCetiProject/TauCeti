@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
 # The Ricci identities for the third covariant derivative
@@ -60,24 +61,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffCovariantDerivative covT ∞]
   {σ : Π y : M, V y}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I] in
-/-- The covariant derivative `∇σ` of a smooth section is a smooth section of `Hom(TM, V)`. -/
-private theorem contMDiff_covariantDerivative_section (hσ : CMDiff ∞ (T% σ)) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun x : M ↦ TangentSpace I x →L[ℝ] V x) x
-        (cov σ x)) :=
-  contMDiffOn_univ.mp ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
-    (by simpa using hσ.contMDiffOn))
-
-/-- The second covariant derivative `∇²σ` of a smooth section, read as the covariant derivative of
-`∇σ`, is a smooth section of `Hom(TM, Hom(TM, V))`. -/
-theorem contMDiff_hom_covariantDerivative (hσ : CMDiff ∞ (T% σ)) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) x
-        (covT.hom cov (cov σ) x)) :=
-  contMDiff_hom covT cov (contMDiff_covariantDerivative_section cov hσ)
-
 variable [FiniteDimensional ℝ F]
 
 /-- **The Ricci identity in the first two slots of the third covariant derivative.** For a
@@ -90,7 +73,7 @@ theorem covariantDerivative_secondCovariantDerivative_sub_swap_left_of_isTorsion
         covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x w u z =
       cov.curvatureTensor x u w (cov σ x z) - cov σ x (covT.curvatureTensor x u w z) := by
   have h := (covT.hom cov).secondCovariantDerivative_sub_swap_of_isTorsionFree covT ht
-    (contMDiff_covariantDerivative_section cov hσ) x u w
+    (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)) x u w
   rw [secondCovariantDerivative_covariantDerivative cov hσ,
     secondCovariantDerivative_covariantDerivative cov hσ] at h
   simpa only [sub_apply, curvatureTensor_hom_apply] using
