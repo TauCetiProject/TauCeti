@@ -17,11 +17,11 @@ Precomposing a function with a continuous linear map `g` multiplies the norm of 
 iterated derivative by at most `‖g‖ ^ i`. This is the norm form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_right`; for a linear isometry equivalence the norm is
 preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`). Since the projections of a
-product have norm at most one, reading a function on one factor of a product does not increase the
-norms of its iterated derivatives (`TauCeti.norm_iteratedFDeriv_comp_fst_le`,
-`TauCeti.norm_iteratedFDeriv_comp_snd_le`). This needs no differentiability of the function: for
-a continuous linear map with a continuous linear right inverse, precomposition acts on the
-iterated derivatives by precomposition in every slot
+product have norm at most one and the inclusions of the factors are isometries, reading a function
+on one factor of a product preserves the norms of its iterated derivatives
+(`TauCeti.norm_iteratedFDeriv_comp_fst`, `TauCeti.norm_iteratedFDeriv_comp_snd`). This needs no
+differentiability of the function: for a continuous linear map with a continuous linear right
+inverse, precomposition acts on the iterated derivatives by precomposition in every slot
 (`ContinuousLinearMap.iteratedFDeriv_comp_right_of_rightInverse`).
 
 For a function of one variable, postcomposition with a continuous linear map commutes with the
@@ -53,7 +53,7 @@ theorem norm_iteratedFDeriv_comp_right_le (g : G →L[𝕜] E) {f : E → F} (hf
     ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ ≤ ‖iteratedFDeriv 𝕜 i f (g x)‖ * ‖g‖ ^ i := by
   rw [g.iteratedFDeriv_comp_right hf x hi]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
-    (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+    (by rw [Fin.prod_const])
 
 /-- **Iterated derivatives under precomposition with a split surjection.** If a continuous linear
 map `g` has a continuous linear right inverse `s`, the `i`-th derivative of `f ∘ g` at `x` is the
@@ -94,7 +94,7 @@ theorem norm_iteratedFDeriv_comp_right_le_of_rightInverse (g : G →L[𝕜] E) (
     ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ ≤ ‖iteratedFDeriv 𝕜 i f (g x)‖ * ‖g‖ ^ i := by
   rw [g.iteratedFDeriv_comp_right_of_rightInverse s hgs f x]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
-    (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+    (by rw [Fin.prod_const])
 
 /-- Postcomposition with a continuous linear map `g` commutes with the `i`-th iterated derivative
 of a function of one variable that is `C^i` at the point. -/
@@ -131,23 +131,43 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : WithTop ℕ∞}
 
-/-- Reading a function on the first factor of a product does not increase the norms of its
-iterated derivatives. -/
-theorem norm_iteratedFDeriv_comp_fst_le {f : E → F} (p : E × G) {i : ℕ} :
-    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.fst) p‖ ≤ ‖iteratedFDeriv 𝕜 i f p.1‖ :=
-  ((ContinuousLinearMap.fst 𝕜 E G).norm_iteratedFDeriv_comp_right_le_of_rightInverse
-    (ContinuousLinearMap.inl 𝕜 E G) (fun _ ↦ rfl) f p i).trans
-    (mul_le_of_le_one_right (norm_nonneg _)
-      (pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E G)))
+/-- Reading a function on the first factor of a product preserves the norms of its iterated
+derivatives. -/
+theorem norm_iteratedFDeriv_comp_fst {f : E → F} (p : E × G) {i : ℕ} :
+    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.fst) p‖ = ‖iteratedFDeriv 𝕜 i f p.1‖ := by
+  have h := (ContinuousLinearMap.fst 𝕜 E G).iteratedFDeriv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inl 𝕜 E G) (fun _ ↦ rfl) f p (i := i)
+  rw [ContinuousLinearMap.coe_fst'] at h
+  rw [h]
+  set M := iteratedFDeriv 𝕜 i f p.1
+  refine le_antisymm ((M.norm_compContinuousLinearMap_le _).trans ?_) ?_
+  · exact mul_le_of_le_one_right (norm_nonneg M) (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
+      fun _ _ ↦ ContinuousLinearMap.norm_fst_le 𝕜 E G)
+  · -- precomposing with the isometry `inl` in every slot recovers `M`
+    calc ‖M‖ = ‖(M.compContinuousLinearMap fun _ ↦ ContinuousLinearMap.fst 𝕜 E G)
+          |>.compContinuousLinearMap fun _ ↦ (LinearIsometry.inl 𝕜 E G).toContinuousLinearMap‖ :=
+          -- the two sides agree on every tuple since `fst ∘ inl = id`
+          congrArg _ (by ext; simp)
+      _ ≤ _ := ContinuousMultilinearMap.norm_compContinuous_linearIsometry_le _ _
 
-/-- Reading a function on the second factor of a product does not increase the norms of its
-iterated derivatives. -/
-theorem norm_iteratedFDeriv_comp_snd_le {f : G → F} (p : E × G) {i : ℕ} :
-    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.snd) p‖ ≤ ‖iteratedFDeriv 𝕜 i f p.2‖ :=
-  ((ContinuousLinearMap.snd 𝕜 E G).norm_iteratedFDeriv_comp_right_le_of_rightInverse
-    (ContinuousLinearMap.inr 𝕜 E G) (fun _ ↦ rfl) f p i).trans
-    (mul_le_of_le_one_right (norm_nonneg _)
-      (pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_snd_le 𝕜 E G)))
+/-- Reading a function on the second factor of a product preserves the norms of its iterated
+derivatives. -/
+theorem norm_iteratedFDeriv_comp_snd {f : G → F} (p : E × G) {i : ℕ} :
+    ‖iteratedFDeriv 𝕜 i (f ∘ Prod.snd) p‖ = ‖iteratedFDeriv 𝕜 i f p.2‖ := by
+  have h := (ContinuousLinearMap.snd 𝕜 E G).iteratedFDeriv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inr 𝕜 E G) (fun _ ↦ rfl) f p (i := i)
+  rw [ContinuousLinearMap.coe_snd'] at h
+  rw [h]
+  set M := iteratedFDeriv 𝕜 i f p.2
+  refine le_antisymm ((M.norm_compContinuousLinearMap_le _).trans ?_) ?_
+  · exact mul_le_of_le_one_right (norm_nonneg M) (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
+      fun _ _ ↦ ContinuousLinearMap.norm_snd_le 𝕜 E G)
+  · -- precomposing with the isometry `inr` in every slot recovers `M`
+    calc ‖M‖ = ‖(M.compContinuousLinearMap fun _ ↦ ContinuousLinearMap.snd 𝕜 E G)
+          |>.compContinuousLinearMap fun _ ↦ (LinearIsometry.inr 𝕜 E G).toContinuousLinearMap‖ :=
+          -- the two sides agree on every tuple since `snd ∘ inr = id`
+          congrArg _ (by ext; simp)
+      _ ≤ _ := ContinuousMultilinearMap.norm_compContinuous_linearIsometry_le _ _
 
 /-- The first projection of a product has iterated derivatives of every positive order of norm at
 most one. -/

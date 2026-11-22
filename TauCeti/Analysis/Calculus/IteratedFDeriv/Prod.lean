@@ -182,7 +182,7 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
   have hgf : ContDiff 𝕜 k (g ∘ Prod.fst : E × A → A) := hg.comp contDiff_fst
   have hle (i : ℕ) :
       ‖iteratedFDeriv 𝕜 i (g ∘ Prod.fst : E × A → A) z‖ ≤ ‖iteratedFDeriv 𝕜 i g z.1‖ :=
-    norm_iteratedFDeriv_comp_fst_le z
+    (norm_iteratedFDeriv_comp_fst z).le
   refine (norm_iteratedFDeriv_mul_le hsnd hgf z le_rfl).trans ?_
   rcases k with _ | m
   · simp
