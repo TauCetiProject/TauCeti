@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Order.Group.Synonym
 public import Mathlib.Order.Prod.Lex.Basic
 public import Mathlib.Order.SuccPred.Basic
 
@@ -18,7 +20,8 @@ is a successor order. Dually, when `β` has no minimal element, `α ×ₗ β` is
 `pred (a, b) = (a, pred b)`.
 
 For example `ℤ ×ₗ ℤ`, equipped with componentwise addition, is a non-Archimedean discretely ordered
-abelian group with least positive element `(0, 1)` and `(1, 0) > n • (0, 1)` for all `n : ℕ`.
+abelian group with least positive element `(0, 1)` and `(1, 0) > n • (0, 1)` for all `n : ℕ`
+(`TauCeti.Order.nsmul_succ_zero_lt_toLex_of_pos`).
 -/
 
 public section
@@ -86,3 +89,26 @@ theorem ofLex_pred (x : α ×ₗ β) : ofLex (pred x) = ((ofLex x).1, pred (ofLe
 end Pred
 
 end Prod.Lex
+
+namespace TauCeti.Order
+
+open _root_.Order
+
+/-- Any positive first coordinate in `α ×ₗ β` strictly exceeds every finite multiple of the least
+positive element `succ 0`. -/
+theorem nsmul_succ_zero_lt_toLex_of_pos {α β : Type*} [AddMonoid α] [Preorder α]
+    [AddMonoid β] [Preorder β] [SuccOrder β] [NoMaxOrder β] {a : α} (ha : 0 < a)
+    (b : β) (n : ℕ) :
+    n • succ (0 : α ×ₗ β) < toLex (a, b) := by
+  refine Prod.Lex.lt_iff.2 (.inl ?_)
+  let f : α ×ₗ β →+ α :=
+    { toFun := fun x => (ofLex x).1, map_zero' := rfl, map_add' := fun _ _ => rfl }
+  have h0 : f (succ (0 : α ×ₗ β)) = 0 := (by simp : (ofLex (succ (0 : α ×ₗ β))).1 = 0)
+  have hfst : (ofLex (n • succ (0 : α ×ₗ β))).1 = 0 := by
+    calc (ofLex (n • succ (0 : α ×ₗ β))).1
+        = f (n • succ (0 : α ×ₗ β)) := rfl
+      _ = n • f (succ (0 : α ×ₗ β)) := map_nsmul f n (succ 0)
+      _ = 0 := by rw [h0, nsmul_zero]
+  simpa [hfst] using ha
+
+end TauCeti.Order

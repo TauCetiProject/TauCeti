@@ -60,38 +60,29 @@ theorem succ_iterate_le_of_forall_ne [PartialOrder α] [SuccOrder α] {a b : α}
     rw [Function.iterate_succ_apply']
     exact succ_le_of_lt ((ih fun k hk => hne k (by omega)).lt_of_ne (hne n n.lt_succ_self))
 
-/-- For `b ≥ a`, `succ b` lies in the iterated successor range of `a` if and only if `b` does. -/
-theorem succ_mem_range_succ_iterate_iff [PartialOrder α] [SuccOrder α] {a b : α}
-    (hab : a ≤ b) :
-    succ b ∈ Set.range (fun n : ℕ => succ^[n] a) ↔
-      b ∈ Set.range (fun n : ℕ => succ^[n] a) := by
-  refine ⟨fun ⟨n, hn⟩ => ?_, ?_⟩
-  · dsimp only at hn
-    by_cases hmax : IsMax b
-    · rw [succ_eq_iff_isMax.2 hmax] at hn
-      exact ⟨n, hn⟩
-    · have hlt : b < succ^[n] a := hn ▸ lt_succ_of_not_isMax hmax
-      by_contra hmem
-      exact hlt.not_ge (succ_iterate_le_of_forall_ne hab fun k _ hk => hmem ⟨k, hk⟩)
-  · rintro ⟨n, rfl⟩
-    exact ⟨n + 1, Function.iterate_succ_apply' _ _ _⟩
+end Order
 
-/-- Every element between `a` and an iterate `succ^[n] a` lies in the iterated successor range
-of `a`. -/
-theorem mem_range_succ_iterate_of_le [PartialOrder α] [SuccOrder α] {a b : α} {n : ℕ}
-    (hab : a ≤ b) (hbn : b ≤ succ^[n] a) :
-    b ∈ Set.range (fun k : ℕ => succ^[k] a) := by
-  rcases eq_or_lt_of_le hbn with rfl | hlt
+namespace TauCeti.Order
+
+open _root_.Order
+
+/-- The iterated successor range of `a` is downward closed above `a`: if `a ≤ b ≤ c` and `c` lies
+in the iterated successor range of `a`, then so does `b`. -/
+theorem mem_range_succ_iterate_of_le_of_mem {α : Type*} [PartialOrder α] [SuccOrder α]
+    {a b c : α} (hab : a ≤ b) (hbc : b ≤ c) (hc : c ∈ Set.range (fun n : ℕ => succ^[n] a)) :
+    b ∈ Set.range (fun n : ℕ => succ^[n] a) := by
+  obtain ⟨n, rfl⟩ := hc
+  rcases eq_or_lt_of_le hbc with rfl | hlt
   · exact ⟨n, rfl⟩
   · by_contra hmem
     exact hlt.not_ge (succ_iterate_le_of_forall_ne hab fun k _ hk => hmem ⟨k, hk⟩)
 
-/-- The iterated successor range of `a` is downward closed above `a`: if `a ≤ b ≤ c` and `c` lies
-in the iterated successor range of `a`, then so does `b`. -/
-theorem mem_range_succ_iterate_of_le_of_mem [PartialOrder α] [SuccOrder α] {a b c : α}
-    (hab : a ≤ b) (hbc : b ≤ c) (hc : c ∈ Set.range (fun n : ℕ => succ^[n] a)) :
-    b ∈ Set.range (fun n : ℕ => succ^[n] a) :=
-  let ⟨_, hn⟩ := hc
-  mem_range_succ_iterate_of_le hab (hn ▸ hbc)
+/-- For `b ≥ a`, `succ b` lies in the iterated successor range of `a` if and only if `b` does. -/
+theorem succ_mem_range_succ_iterate_iff {α : Type*} [PartialOrder α] [SuccOrder α] {a b : α}
+    (hab : a ≤ b) :
+    succ b ∈ Set.range (fun n : ℕ => succ^[n] a) ↔
+      b ∈ Set.range (fun n : ℕ => succ^[n] a) :=
+  ⟨mem_range_succ_iterate_of_le_of_mem hab (le_succ b),
+    fun ⟨n, hn⟩ => ⟨n + 1, hn ▸ Function.iterate_succ_apply' _ _ _⟩⟩
 
-end Order
+end TauCeti.Order
