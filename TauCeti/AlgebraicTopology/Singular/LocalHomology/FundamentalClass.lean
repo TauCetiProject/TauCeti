@@ -231,22 +231,10 @@ theorem eq_localHomologyMap_fundamentalClassOn {S : Set M} (hS : IsCompact S) {T
         (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom (o x).val) :
     γ = localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨ι, hι.continuous⟩ h.subset n
       (o.fundamentalClassOn hn hS) := by
-  have := isIso_localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    ⟨ι, hι.continuous⟩ hι h hT hTι n
-  set a := localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    ⟨ι, hι.continuous⟩ h.subset n
-  -- The preimage of `γ` under the excision isomorphism `a` restricts to the local orientation at
-  -- every point of `S`.
-  suffices hδ : inv a γ = o.fundamentalClassOn hn hS by
-    rw [← hδ, ← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
-  refine o.eq_fundamentalClassOn hn hS fun x hx ↦
-    ConcreteCategory.injective_of_mono_of_preservesPullback
-      (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom ?_
-  have hxT : ι x ∈ T := h.symm.subset hx
-  rw [← ConcreteCategory.comp_apply,
-    ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hxT,
-    ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id,
-    ModuleCat.id_apply, hγ x hxT]
+  subst h
+  refine localHomology_ext_of_isOpenEmbedding _ hn hι hT hTι hS fun x hx ↦ ?_
+  rw [hγ x hx, localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι _ hx,
+    o.localHomologyRestriction_fundamentalClassOn hn hS hx]
 
 open Topology
 

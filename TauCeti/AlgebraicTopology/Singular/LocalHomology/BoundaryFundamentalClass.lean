@@ -34,9 +34,10 @@ The argument uses neither the orientation nor the integral coefficients, only th
 generates the local homology at the interior points. With coefficients in any module `R` over a
 ring `Λ`, a class of `Hₙ₊₁(X, ∂X; R)` whose local images at the points of `ι(M)` generate is sent
 to a fundamental class of `∂X` with coefficients in `R`
-(`TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`). With coefficients in a ring
-whose only unit is `1`, such as `ZMod 2`, this applies to the fundamental class relative to the
-boundary of an unoriented `X` (`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`);
+(`TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`). With coefficients in a
+Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, this applies to the fundamental class
+relative to the boundary of an unoriented `X`
+(`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`);
 when `∂X` is moreover a compact manifold, its image is the unique fundamental class of `∂X`
 (`TauCeti.IsFundamentalClass.eq_of_subsingleton_units`). This is the homological input of the
 fundamental chains of manifolds with corners over `ℤ/2` of Barraud and Cornea.
@@ -521,8 +522,8 @@ the connecting morphism `Hₙ₊₁(X, ∂X; R) ⟶ Hₙ(∂X; R)` sends `γ` to
 No manifold structure is used, on `M` or on `∂X`: the collar identifies the local homology of
 `∂X` at `z` with that of `X` at an interior point one dimension up. For integral coefficients this
 gives `TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`.
-With coefficients in a ring whose only unit is `1`, such as `ZMod 2`, it applies to the
-fundamental class relative to the boundary of
+With coefficients in a Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, it applies to
+the fundamental class relative to the boundary of
 `TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`, with no orientation. -/
 theorem isFundamentalClass_singularHomologyδ_of_forall_span_eq_top
     {γ : (localHomology R (range ι) (n + 1) : ModuleCat.{w} Λ)}

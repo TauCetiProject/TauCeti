@@ -328,10 +328,8 @@ theorem localHomology_ext_of_isOpenEmbedding {X : Type w} [TopologicalSpace X] [
       (localHomologyIsoOfIsOpenEmbedding N hι x n).hom
           (localHomologyRestriction N (singleton_subset_iff.2 hx) n (inv a δ)) =
         localHomologyRestriction N (singleton_subset_iff.2 (mem_preimage.1 hx)) n δ := by
-    rw [← ConcreteCategory.comp_apply,
-      ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι (subset_refl _) hx,
-      ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id,
-      ModuleCat.id_apply]
+    rw [← localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι (subset_refl _) hx,
+      ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id, ModuleCat.id_apply]
   have key : inv a α = inv a β := localHomology_ext_of_isCompact N hn hK fun x hx ↦
     ConcreteCategory.injective_of_mono_of_preservesPullback
       (localHomologyIsoOfIsOpenEmbedding N hι x n).hom (by rw [hloc _ _ hx, hloc _ _ hx, h x hx])

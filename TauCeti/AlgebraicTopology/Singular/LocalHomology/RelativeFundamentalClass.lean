@@ -41,9 +41,9 @@ Two families give the *fundamental class of `X` relative to its boundary*:
   class `o.fundamentalClassRel hn hι hιf hf` of `Hₙ(X, ∂X; ℤ)`. Its image in
   `Hₙ(X, X ∖ ι(K); ℤ) ≅ Hₙ(M, M ∖ K; ℤ)` is the fundamental class of `M` along `K` for every
   compact `K ⊆ M`, and reversing the orientation negates it;
-* with coefficients in a ring `K` whose only unit is `1`, such as `ZMod 2`, the local homology
-  `Hₙ(M, M ∖ {x}; K) ≅ K` has a single generator, and transport preserves it. So `Hₙ(X, ∂X; K)`
-  has exactly one class generating the local homology at every interior point
+* with coefficients in a Dedekind-finite ring `K` whose only unit is `1`, such as `ZMod 2`, the
+  local homology `Hₙ(M, M ∖ {x}; K) ≅ K` has a single generator, and transport preserves it. So
+  `Hₙ(X, ∂X; K)` has exactly one class generating the local homology at every interior point
   (`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`), with no orientation of `M`:
   the mod `2` fundamental class relative to the boundary.
 
@@ -74,9 +74,9 @@ the connecting morphism.
 * `TauCeti.existsUnique_localHomologyRestriction_range_eq_of_invariant`: a transport-invariant
   family of local classes of the interior, with coefficients in any module, is the family of
   interior local images of exactly one class of `Hₙ(X, ∂X)`.
-* `TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`: when `1` is the only unit of
-  the coefficients, exactly one class of `Hₙ(X, ∂X)` generates the local homology at every
-  interior point.
+* `TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`: when the coefficients form a
+  Dedekind-finite ring whose only unit is `1`, exactly one class of `Hₙ(X, ∂X)` generates the
+  local homology at every interior point.
 * `TauCeti.HomologicalOrientation.localHomologyRestriction_fundamentalClassRel`: the image of the
   integral relative fundamental class in the local homology at every interior point is the local
   orientation there.
@@ -187,9 +187,7 @@ private lemma exists_localHomologyRestriction_compl_collarPart_eq {c : N × Ico 
   obtain ⟨δ, hδ, -⟩ := existsUnique_localHomologyRestriction_eq_of_invariant R hn
     (isCompact_preimage_compl_collarPart hι hc hιf ht) α hα
   refine ⟨localHomologyMap R ⟨ι, hι.continuous⟩ (subset_refl _) n δ, fun x hx ↦ ?_⟩
-  rw [← ConcreteCategory.comp_apply,
-    localHomologyMap_comp_localHomologyRestriction_singleton _ hι _ hx,
-    ConcreteCategory.comp_apply, hδ x hx]
+  rw [localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι _ hx, hδ x hx]
 
 include hn hιf in
 /-- **Relative classes with prescribed interior local classes.** Let `ι : M → X` be an open
@@ -202,8 +200,8 @@ local homology `Hₙ(X, X ∖ ι(M); R)` along `ι(M)`.
 
 For integral coefficients and the local orientations of an orientation this is the fundamental
 class relative to the boundary, `TauCeti.HomologicalOrientation.fundamentalClassRel`; with
-coefficients in a ring whose only unit is `1` the generators of the local homology form such a
-family without any orientation
+coefficients in a Dedekind-finite ring whose only unit is `1` the generators of the local homology
+form such a family without any orientation
 (`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`). -/
 theorem existsUnique_localHomologyRestriction_range_eq_of_invariant (hf : IsCollared f)
     (α : ∀ x : M, (localHomology R {x} n : ModuleCat.{w} Λ))
