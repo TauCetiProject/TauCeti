@@ -35,7 +35,8 @@ Laurent polynomial is a class function on the multiplicative group.
 * `TauCeti.HopfAlgebra.classFunctions`: the subalgebra of regular class functions.
 * `TauCeti.HopfAlgebra.mem_classFunctions_iff`: the equalizer equation `c*(f) = 1 ⊗ f`.
 * `TauCeti.HopfAlgebra.mem_classFunctions_iff_forall`: invariance under conjugation of points
-  with values in every commutative algebra.
+  with values in every commutative algebra; `mem_classFunctions_iff_forall_commRing` restricts to
+  commutative rings when `H` is a ring.
 * `TauCeti.HopfAlgebra.classFunctionsMap`: the algebra map of class functions induced by a
   bialgebra map, with `classFunctionsMap_id` and `classFunctionsMap_comp`.
 * `TauCeti.HopfAlgebra.classFunctions_eq_top_iff_isCocomm`: all functions are class functions
@@ -134,6 +135,23 @@ theorem classFunctions_eq_top [_root_.Coalgebra.IsCocomm k H] : classFunctions k
   classFunctions_eq_top_iff_isCocomm.mpr inferInstance
 
 end Semiring
+
+section Ring
+
+variable {k : Type u} {H : Type v} [CommSemiring k] [CommRing H] [_root_.HopfAlgebra k H]
+
+/-- When `H` is a ring, class functions are detected by conjugation of points with values in
+commutative rings, rather than semirings: the universal tensor-factor points of `H ⊗[k] H`
+already take values in a ring. -/
+theorem mem_classFunctions_iff_forall_commRing {f : H} :
+    f ∈ classFunctions k H ↔ ∀ (A : Type v) [CommRing A] [Algebra k A]
+      (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f := by
+  refine ⟨fun hf A _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x, fun h ↦ ?_⟩
+  have hc := comp_conjugationAlgHom (R := k) (H := H) (AlgHom.id k (H ⊗[k] H))
+  simp only [AlgHom.id_comp] at hc
+  rw [mem_classFunctions_iff, hc, h, ofConv_toConv, Algebra.TensorProduct.includeRight_apply]
+
+end Ring
 
 section Map
 
