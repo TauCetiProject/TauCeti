@@ -22,7 +22,7 @@ nearby.
 A *partner* of `z` on its slice is a point `(s, z.2)` with `u(s, z.2) = u z`. For a compact set
 `D`, the points with a partner in `D` at distance at least `ε` form a closed set
 (`TauCeti.isClosed_setOf_exists_slicePartner`). If moreover `(s, t) ↦ (u(s, t), t)` is injective
-on `D`, a choice of such partners on an open set is continuous
+on `D`, a choice of partners in `D` on an open set is continuous
 (`TauCeti.continuousAt_of_forall_slicePartner`).
 
 This is the topological part of the openness and density of the regular points of Floer
@@ -115,26 +115,25 @@ theorem isClosed_setOf_exists_slicePartner (hu : Continuous u) {D : Set (ℝ × 
 
 /-- **Continuity of a unique slice partner.** Let `D` be compact with `(s, t) ↦ (u(s, t), t)`
 injective on `D`, and let `φ` pick for every `z` of an open set `U` a partner on its slice,
-`(φ z, z.2) ∈ D`, at distance at least `ε` from `z`, with `u(φ z, z.2) = u z`. Then `φ` is
-continuous on `U`. -/
+`(φ z, z.2) ∈ D` with `u(φ z, z.2) = u z`. Then `φ` is continuous on `U`. -/
 theorem continuousAt_of_forall_slicePartner (hu : Continuous u) {D U : Set (ℝ × ℝ)}
-    {ε : ℝ} {φ : ℝ × ℝ → ℝ} (hD : IsCompact D) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
-    (hU : IsOpen U) (hφ : ∀ z ∈ U, (φ z, z.2) ∈ D ∧ ε ≤ |φ z - z.1| ∧ u (φ z, z.2) = u z)
+    {φ : ℝ × ℝ → ℝ} (hD : IsCompact D) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
+    (hU : IsOpen U) (hφ : ∀ z ∈ U, (φ z, z.2) ∈ D ∧ u (φ z, z.2) = u z)
     {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ U) : ContinuousAt φ z₀ := by
   have hmem : ∀ᶠ z in 𝓝 z₀, φ z ∈ Prod.fst '' D :=
     eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ ⟨(φ z, z.2), (hφ z hz).1, rfl⟩
   refine (hD.image continuous_fst).tendsto_nhds_of_unique_mapClusterPt hmem fun s _ hs ↦ ?_
   -- A cluster value of `φ` at `z₀` is a partner of `z₀`, since the partner condition is closed.
-  have hs₀ : (s, z₀.2) ∈ D ∧ ε ≤ |s - z₀.1| ∧ u (s, z₀.2) = u z₀ := by
+  have hs₀ : (s, z₀.2) ∈ D ∧ u (s, z₀.2) = u z₀ := by
     by_contra hns
     obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1
-      ((isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds
-        (Set.mem_compl hns))
+      ((isClosed_setOf_slicePartner hu hD.isClosed 0).isOpen_compl.mem_nhds
+        (Set.mem_compl fun h ↦ hns ⟨h.1, h.2.2⟩))
     obtain ⟨z, hzB, hzA, hzU⟩ := ((mapClusterPt_iff_frequently.1 hs B hB).and_eventually
       (inter_mem hA (hU.mem_nhds hz₀))).exists
-    exact hAB (Set.mk_mem_prod hzA hzB) (hφ z hzU)
+    exact hAB (Set.mk_mem_prod hzA hzB) ⟨(hφ z hzU).1, abs_nonneg _, (hφ z hzU).2⟩
   -- The partner in `D` is unique.
   exact congrArg Prod.fst (hinj hs₀.1 (hφ z₀ hz₀).1
-    (Prod.ext (hs₀.2.2.trans (hφ z₀ hz₀).2.2.symm) rfl))
+    (Prod.ext (hs₀.2.trans (hφ z₀ hz₀).2.symm) rfl))
 
 end TauCeti

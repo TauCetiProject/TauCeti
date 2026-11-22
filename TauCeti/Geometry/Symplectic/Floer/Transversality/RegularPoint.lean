@@ -417,7 +417,8 @@ private theorem exists_ne_zero_periodic_of_forall_exists_slicePartner
     eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ (hφ z hz).2.2
   have hdiff (z : ℝ × ℝ) (hz : z ∈ U) : DifferentiableAt ℝ φ z :=
     differentiableAt_of_eventually_comp_eq
-      (continuousAt_of_forall_slicePartner hu.continuous hD hinj hU hφ hz)
+      (continuousAt_of_forall_slicePartner hu.continuous hD hinj hU
+        (fun z hz ↦ ⟨(hφ z hz).1, (hφ z hz).2.2⟩) hz)
       (hu.differentiable one_ne_zero z)
       hu.contDiffAt (hDs _ (hφ z hz).1) (heq z hz)
   have hfd (z : ℝ × ℝ) (hz : z ∈ U) : fderiv ℝ φ z = ContinuousLinearMap.fst ℝ ℝ ℝ :=
