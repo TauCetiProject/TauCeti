@@ -73,8 +73,7 @@ theorem HasWeakFDerivOn.exists_seq_testFunction_convolution_normed
           ((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (Ω : Set E).indicator Dψ) z := by
   obtain ⟨δ, hδ, hball⟩ := hψc.isCompact.exists_forall_closedBall_subset_of_isOpen Ω.isOpen hψΩ
   choose φ hφ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψp hDψ
-    hp hs hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
-      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
+    hp hs hball (ContDiffBump.shrinking hδ n) (ContDiffBump.rOut_shrinking_le hδ n)
   exact ⟨_, hψc.isCompact.cthickening, isClosed_cthickening.measurableSet,
     fun z hz => hball z hz (mem_closedBall_self hδ.le), self_subset_cthickening _,
     _, φ, ContDiffBump.tendsto_rOut_shrinking hδ, hφ, hφs, hderiv⟩

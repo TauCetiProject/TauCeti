@@ -20,6 +20,9 @@ on each vector unchanged.
 * `ContRepresentation.toRepresentation_apply`: evaluation agrees with the continuous action.
 * `ContRepresentation.comp_inv_self`: the action operator of `g` composed with that of `g⁻¹` is
   the identity.
+* `ContRepresentation.map_mul_inv_comp`: `ρ (h * g)⁻¹ ∘ ρ h = ρ g⁻¹`.
+* `ContRepresentation.comp_comp_inv_eq`: an intertwining relation `S ∘ ρ g = ρ' g ∘ T` gives
+  `ρ' g ∘ T ∘ ρ g⁻¹ = S`.
 * `ContRepresentation.apply_inr_apply_inl`: in a representation of a semidirect product
   `N ⋊[φ] K`, the operator of `k : K` intertwines the action of `n : N` with that of `φ k n`.
 
@@ -47,6 +50,31 @@ theorem comp_inv_self {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [Topol
     (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id R V := by
   rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
   rfl
+
+/-- The action of `(h * g)⁻¹` undoes that of `h` up to the action of `g⁻¹`. -/
+theorem map_mul_inv_apply {R G V : Type*} [Ring R] [Group G] [AddCommGroup V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V] (ρ : ContRepresentation R G V)
+    (h g : G) (v : V) :
+    ρ (h * g)⁻¹ (ρ h v) = ρ g⁻¹ v := by
+  rw [mul_inv_rev, map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
+  congr 1
+  simpa using ρ.apply_inv_apply (g := h⁻¹) (v := v)
+
+/-- `ρ (h * g)⁻¹ ∘ ρ h = ρ g⁻¹`. -/
+theorem map_mul_inv_comp {R G V : Type*} [Ring R] [Group G] [AddCommGroup V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V] (ρ : ContRepresentation R G V)
+    (h g : G) :
+    ρ (h * g)⁻¹ ∘L ρ h = ρ g⁻¹ :=
+  ContinuousLinearMap.ext fun v ↦ ρ.map_mul_inv_apply h g v
+
+/-- If `S ∘ ρ g = ρ' g ∘ T`, then `ρ' g ∘ T ∘ ρ g⁻¹ = S`. -/
+theorem comp_comp_inv_eq {R G V V' : Type*} [Ring R] [Group G] [AddCommGroup V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V] [AddCommGroup V']
+    [TopologicalSpace V'] [IsTopologicalAddGroup V'] [Module R V'] (ρ : ContRepresentation R G V)
+    (ρ' : ContRepresentation R G V') (g : G) {S T : V →L[R] V'} (h : S ∘L ρ g = ρ' g ∘L T) :
+    ρ' g ∘L T ∘L ρ g⁻¹ = S := by
+  rw [← ContinuousLinearMap.comp_assoc, ← h, ContinuousLinearMap.comp_assoc, ρ.comp_inv_self,
+    ContinuousLinearMap.comp_id]
 
 open SemidirectProduct in
 /-- In a representation of a semidirect product `N ⋊[φ] K`, the operator of `k : K` intertwines

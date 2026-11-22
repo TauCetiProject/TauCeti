@@ -46,6 +46,9 @@ cutoff `ψ` equal to `1` on that ball. This value does not depend on `b'`
   properly supported operators.
 * `TauCeti.Symbol.isAsymptoticSum_properSharp`: the **composition expansion**
   `a.properSharp ha b ∼ ∑ₖ sharpTerm a b k`, with remainders of order `m' + m - N`.
+* `TauCeti.Symbol.properSharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero`: the expansion is exact,
+  `a.properSharp ha b = ∑_{k < N} sharpTerm a b k`, when `a(x, ξ)` is a polynomial of degree less
+  than `N` in `ξ`, as for the symbol of a differential operator.
 
 Together with `TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`, which replaces every
 symbol by one of finite propagation up to a smoothing symbol, this gives the composition calculus
@@ -91,18 +94,16 @@ private def bump (r : ℝ) (x : CoordinateSpace n) : ContDiffBump x :=
 
 /-- The localization `ψ(y) b(y, ξ)` of `b` by the bump function `ψ = bump r x`. -/
 private def localize (r : ℝ) (x : CoordinateSpace n) (b : Symbol n V W m) : Symbol n V W m :=
-  inclusion (by simp) ((ofSpatial (fun y ↦ bump r x y • ContinuousLinearMap.id ℂ W)
-    ((bump r x).contDiff.smul contDiff_const)).comp b)
+  smulLeft (Complex.ofRealCLM.contDiff.comp (bump r x).contDiff) b
 
 private theorem hasCompactSpatialSupport_localize (r : ℝ) (x : CoordinateSpace n)
     (b : Symbol n V W m) : (localize r x b).HasCompactSpatialSupport :=
-  (((hasCompactSpatialSupport_ofSpatial_iff _).2
-    (bump r x).hasCompactSupport.smul_right).comp_right b).inclusion _
+  hasCompactSpatialSupport_smulLeft _ ((bump r x).hasCompactSupport.comp_left Complex.ofReal_zero) b
 
 private theorem coefficient_localize {r : ℝ} {x y : CoordinateSpace n} (hy : dist y x ≤ max r 1)
     (b : Symbol n V W m) (ξ : CoordinateSpace n) :
     (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) := by
-  simp [localize, coefficient_comp, coefficient_ofSpatial, (bump r x).one_of_mem_closedBall hy]
+  simp [localize, (bump r x).one_of_mem_closedBall hy]
 
 private theorem coefficient_localize_of_mem_ball {r : ℝ} {x y : CoordinateSpace n}
     (hy : y ∈ ball x r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :
@@ -117,6 +118,14 @@ private theorem coefficient_localize_add_one {r : ℝ} {x y z : CoordinateSpace 
     (localize (r + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
   coefficient_localize_of_mem_ball (ball_subset_ball' (add_le_add_right (mem_ball.1 hy).le r) hz)
     b ξ
+
+/-- The localization about `x` agrees with `b` near every point of the ball of radius `1` about
+`x`. -/
+private theorem eventually_coefficient_localize {r : ℝ} {x y : CoordinateSpace n}
+    (hy : y ∈ ball x 1) (b : Symbol n V W m) :
+    ∀ᶠ z in 𝓝 y, ∀ ξ, (localize r x b).coefficient (z, ξ) = b.coefficient (z, ξ) := by
+  filter_upwards [isOpen_ball.mem_nhds hy] with z hz ξ
+  exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
 
 end Auxiliary
 
@@ -255,13 +264,30 @@ theorem isAsymptoticSum_properSharp (b : Symbol n V W m) :
   rw [coefficient_sharpRemainder, Pi.sub_apply, Pi.sub_apply, Finset.sum_apply, Finset.sum_apply,
     coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦ coefficient_localize_add_one hy hz b ξ)]
   -- The terms of the expansion at `y` only involve the derivatives of `b` at `y`.
-  have hev : ∀ᶠ z in 𝓝 y, ∀ ξ, (localize (ε + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
-    by
-    filter_upwards [isOpen_ball.mem_nhds hy] with z hz ξ
-    exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  exact coefficient_sharpTerm_congr_of_eventually hev a k η
+  exact coefficient_sharpTerm_congr_of_eventually (eventually_coefficient_localize hy b) a k η
+
+/-- **Exact composition with a symbol polynomial in the frequency.** If the frequency derivatives
+of `a` of order `N` vanish, so that `a(x, ξ)` is a polynomial of degree less than `N` in `ξ`, as
+for the symbol of a differential operator of order less than `N`, then the composition expansion
+is exact after `N` terms: `a.properSharp ha b = ∑_{k < N} sharpTerm a b k`, for every symbol `b`,
+with no compact support condition on `b`. -/
+theorem properSharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero {N : ℕ}
+    (hpoly : ∀ β : List (Fin n), β.length = N → ∀ x ξ, mixedDeriv [] β a.coefficient x ξ = 0)
+    (b : Symbol n V W m) :
+    a.properSharp ha b =
+      ∑ k ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg k)) (a.sharpTerm b k) := by
+  ext1
+  funext ⟨x, ξ⟩
+  -- At `x`, the composition is `a # b'` for the localization `b'` of `b` to a ball about `x`,
+  -- whose expansion is exact; its terms at `x` only involve `b` near `x`.
+  have hb := hasCompactSpatialSupport_localize (ε + 1) x b
+  rw [coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦
+      coefficient_localize_add_one (mem_ball_self one_pos) hz b ξ),
+    sharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero hpoly hb]
+  simp only [coefficient_sum, coefficient_inclusion, Finset.sum_apply, coefficient_sharpTerm,
+    mixedDeriv_congr_of_eventually (eventually_coefficient_localize (mem_ball_self one_pos) b)]
 
 end Symbol
 
