@@ -101,14 +101,12 @@ theorem nsmul_succ_zero_lt_toLex_of_pos {α β : Type*} [AddMonoid α] [Preorder
     (b : β) (n : ℕ) :
     n • succ (0 : α ×ₗ β) < toLex (a, b) := by
   refine Prod.Lex.lt_iff.2 (.inl ?_)
-  let f : α ×ₗ β →+ α :=
-    { toFun := fun x => (ofLex x).1, map_zero' := rfl, map_add' := fun _ _ => rfl }
-  have h0 : f (succ (0 : α ×ₗ β)) = 0 := (by simp : (ofLex (succ (0 : α ×ₗ β))).1 = 0)
   have hfst : (ofLex (n • succ (0 : α ×ₗ β))).1 = 0 := by
-    calc (ofLex (n • succ (0 : α ×ₗ β))).1
-        = f (n • succ (0 : α ×ₗ β)) := rfl
-      _ = n • f (succ (0 : α ×ₗ β)) := map_nsmul f n (succ 0)
-      _ = 0 := by rw [h0, nsmul_zero]
+    induction n with
+    | zero => simp only [zero_nsmul, ofLex_zero, Prod.fst_zero]
+    | succ n ih =>
+      simp only [succ_nsmul, ofLex_add, Prod.fst_add, Prod.Lex.ofLex_succ, ofLex_zero,
+        Prod.fst_zero, ih, add_zero]
   simpa [hfst] using ha
 
 end TauCeti.Order
