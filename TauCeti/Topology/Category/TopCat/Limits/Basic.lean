@@ -185,7 +185,7 @@ theorem hom_eq_sigma_comp_sigmaIsoSigma_hom {Y : TopCat.{u}} (χ : ∐ X ⟶ Y) 
   refine congrArg TopCat.Hom.hom (Limits.Sigma.hom_ext χ ((TopCat.sigmaIsoSigma X).hom ≫
     TopCat.ofHom (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom)) fun i ↦ ?_)
   rw [TopCat.sigmaIsoSigma_hom_ι_assoc]
-  exact TopCat.ext fun _ ↦ rfl
+  exact TopCat.ext fun _ ↦ by simp
 
 end Sigma
 
