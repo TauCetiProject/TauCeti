@@ -152,6 +152,14 @@ end IsLocalization.Away
 
 namespace IsLocalization
 
+/-- An element of a localization `S` lies in `I.map (algebraMap R S)` if and only if it can be
+written as `IsLocalization.mk' S x s` with `x ∈ I` and `s : M`. -/
+theorem mem_map_algebraMap_iff_exists_mk' {R : Type*} [CommSemiring R] (M : Submonoid R)
+    (S : Type*) [CommSemiring S] [Algebra R S] [IsLocalization M S] {I : Ideal R} {z : S} :
+    z ∈ I.map (algebraMap R S) ↔ ∃ x ∈ I, ∃ s : M, IsLocalization.mk' S x s = z := by
+  rw [← Ideal.localized'_eq_map S M I, Submodule.mem_localized']
+  simp_rw [← IsLocalization.mk'_eq_mk']
+
 variable (A K : Type*) [CommSemiring A] [CommRing K] [Algebra A K] {M : Submonoid A}
   [IsLocalization M K]
 

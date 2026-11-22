@@ -31,8 +31,6 @@ import TauCeti.Data.Nat.Periodic.Basic
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
-* `TauCeti.pow_mul_eq_pow_mul_of_mul_eq`: in a commutative monoid, if `b * y = c * y`, then
-  `b ^ n * y = c ^ n * y` for all `n`.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 -/
@@ -82,14 +80,6 @@ theorem mul_pow_mul_eq_pow_succ_mul_pow {M : Type*} [CommMonoid M] (a b : M) (n 
     (a * b) ^ n * a = a ^ (n + 1) * b ^ n := by
   simp only [mul_pow, pow_succ]
   ac_rfl
-
-/-- If two elements of a commutative monoid act identically on `y` by left multiplication, then
-all of their natural powers act identically on `y` by left multiplication. -/
-theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
-    (hbc : b * y = c * y) (n : ℕ) : b ^ n * y = c ^ n * y := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ', mul_assoc, ih, mul_left_comm, hbc, ← mul_assoc, ← pow_succ]
 
 /-- Moving a power of `h` across an equation: `a = b * h ^ (n - m)` if and only if
 `a * h ^ m = b * h ^ n`. -/

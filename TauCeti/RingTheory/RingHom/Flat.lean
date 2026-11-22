@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
+import TauCeti.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Flat ring homomorphisms
@@ -66,13 +67,6 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq_zero {A B : Type*} [CommRing A] [Co
     (M := B) (f := f) (x := x) (by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using h)
   exact ⟨k, a, y, fun j ↦ by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hxy j, ha⟩
 
-private theorem sum_subtype_mul_eq_sum_mul {ι R : Type*} [CommSemiring R] (s : Finset ι)
-    (u : s → R) (v : ι → R) (w : ι → R)
-    (huv : ∀ (i : ι) (hi : i ∈ s), u ⟨i, hi⟩ = v i) :
-    ∑ i : s, w i.val * u i = ∑ i ∈ s, v i * w i := by
-  rw [← Finset.sum_coe_sort s fun i ↦ v i * w i]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [mul_comm, huv i.val i.property]
-
 /-- If `g : A →+* B` is flat and `∑ i ∈ s, b i * g (x i) = ∑ j ∈ t, b' j * g (x' j)` in `B`,
 then `b` and `b'` factor through a common finite family `c : Fin k → B` via coefficients in `A`
 satisfying the matching `A`-linear relations on `x` and `x'`. -/
@@ -91,8 +85,8 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
   have hrel : ∑ u : (s : Type _) ⊕ (t : Type _), g (f u) * v u = 0 := by
     rw [Fintype.sum_sum_type]
     simp only [f, v, Sum.elim_inl, Sum.elim_inr, map_neg, neg_mul, Finset.sum_neg_distrib]
-    rw [sum_subtype_mul_eq_sum_mul s (fun i ↦ b i.val) b (fun i ↦ g (x i)) fun _ _ ↦ rfl,
-      sum_subtype_mul_eq_sum_mul t (fun j ↦ b' j.val) b' (fun j ↦ g (x' j)) fun _ _ ↦ rfl,
+    rw [Finset.sum_coe_sort_eq_sum s (fun i ↦ b i * g (x i)) fun _ _ ↦ mul_comm _ _,
+      Finset.sum_coe_sort_eq_sum t (fun j ↦ b' j * g (x' j)) fun _ _ ↦ mul_comm _ _,
       hsum, add_neg_cancel]
   obtain ⟨k, a, c, hvc, hga⟩ := hg.exists_eq_sum_mul_of_sum_mul_eq_zero hrel
   let aL (i : ι) (l : Fin k) : A := if hi : i ∈ s then a (Sum.inl ⟨i, hi⟩) l else 0
@@ -103,10 +97,10 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
   · have hl := hga l
     rw [Fintype.sum_sum_type] at hl
     simp only [f, Sum.elim_inl, Sum.elim_inr, neg_mul, Finset.sum_neg_distrib] at hl
-    rwa [sum_subtype_mul_eq_sum_mul s (fun i ↦ a (Sum.inl i) l) (aL · l) x
-        (fun _ hi ↦ by simp [aL, hi]),
-      sum_subtype_mul_eq_sum_mul t (fun j ↦ a (Sum.inr j) l) (aR · l) x'
-        (fun _ hj ↦ by simp [aR, hj]),
+    rwa [Finset.sum_coe_sort_eq_sum s (fun i ↦ aL i l * x i)
+        (fun i hi ↦ by simp [aL, hi, mul_comm]),
+      Finset.sum_coe_sort_eq_sum t (fun j ↦ aR j l * x' j)
+        (fun j hj ↦ by simp [aR, hj, mul_comm]),
       ← sub_eq_add_neg, sub_eq_zero] at hl
 
 end RingHom

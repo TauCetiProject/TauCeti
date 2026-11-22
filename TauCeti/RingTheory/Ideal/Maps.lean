@@ -26,7 +26,8 @@ to ideals extended from a common commutative semiring, without assuming the alge
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
 homomorphism `f` for which `f r` is a unit. Elements of an extended ideal `I.map f` are
 characterized as finite linear combinations of images of elements of `I`
-(`Ideal.mem_map_iff_exists_fin_sum`).
+(`Ideal.mem_map_iff_exists_fin_sum`), and for principal ideals as left multiples of `f x`
+(`Ideal.mem_map_span_singleton`).
 -/
 
 public section
@@ -48,6 +49,13 @@ theorem mem_map_iff_exists_fin_sum {R S F : Type*} [Semiring R] [Semiring S]
     exact ⟨r, b, x, hx, Finset.sum_congr rfl fun i _ ↦ by simp [smul_eq_mul, hxg i]⟩
   · rintro ⟨r, b, x, hx, rfl⟩
     exact Submodule.sum_mem _ fun i _ ↦ mul_mem_left _ _ (mem_map_of_mem f (hx i))
+
+/-- An element lies in the extension `(span {x}).map f` of a principal ideal if and only if it is
+a left multiple of `f x`. -/
+theorem mem_map_span_singleton {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) {x : R} {y : S} :
+    y ∈ (span {x}).map f ↔ ∃ b : S, b * f x = y := by
+  rw [map_span, Set.image_singleton, mem_span_singleton']
 
 /-- Taking the radical before extending an ideal does not change the radical of its extension. -/
 @[simp]
