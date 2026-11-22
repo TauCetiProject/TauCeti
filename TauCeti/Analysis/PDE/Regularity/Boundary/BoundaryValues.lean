@@ -288,7 +288,7 @@ omit [DecidableEq ι] in
 /-- For `u, g ∈ H¹(Ω)` and a function `G` agreeing with `g` almost everywhere on `Ω`, the value of
 `u` agrees almost everywhere on `Ω` with the precise representative of the extension of `u - g` by
 zero plus `G`. -/
-private theorem value_ae_eq_preciseRepresentative_indicator_sub_add
+theorem value_ae_eq_preciseRepresentative_indicator_sub_add
     {Omega : Opens (EuclideanSpace ℝ ι)} (u g : W1p mu Omega 2) {G : EuclideanSpace ℝ ι → ℝ}
     (hgG : W1p.value g =ᵐ[mu.restrict Omega] G) :
     W1p.value u =ᵐ[mu.restrict Omega] preciseRepresentative mu
