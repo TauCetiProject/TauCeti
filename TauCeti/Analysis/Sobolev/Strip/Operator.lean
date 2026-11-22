@@ -332,15 +332,11 @@ theorem isClosed_range_jetOperator_comp_subtypeL [CompleteSpace V] [IsTestSpace 
 a continuous element `ξ` of `S` by `√C' ‖D ξ‖`. -/
 private theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ stripMeasure) {C' : ℝ} (T : ℝ) (ξ : S)
-    (hξ : Continuous (ξ : ℝ × ℝ → V))
+    (hξ : Continuous (ξ : ℝ × ℝ → V)) {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0)
     (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ‖restrictValue T (jetLp S ξ)‖ ≤ √(max C' 0) * ‖jetOperator M (jetLp S ξ)‖ := by
-  have hint : Integrable (fun z ↦ ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) stripMeasure :=
-    ((HasL2Jets.memLp_jet _ ξ.property).integrable_norm_pow two_ne_zero).mono'
-      (hξ.norm.pow 2).aestronglyMeasurable (Eventually.of_forall fun z ↦ by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_norm_jet _ z) 2)
+  have hint := integrable_norm_sq_of_continuous hξ hR
   have hD : ‖jetOperator M (jetLp S ξ)‖ ^ 2 =
       ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
     rw [← Lp.integral_norm_sq_eq_norm_sq]
@@ -382,7 +378,7 @@ theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL [IsTestSpace S]
     obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
     have hξ := IsTestSpace.contDiff _ ξ.property
     have h₁ := norm_jetLp_le hM hest ξ hξ hR
-    have h₂ := norm_restrictValue_jetLp_le hM T ξ hξ.continuous (hL2 ξ)
+    have h₂ := norm_restrictValue_jetLp_le hM T ξ hξ.continuous hR (hL2 ξ)
     simp only [P, mem_ofPred_eq]
     calc ‖jetLp S ξ‖
         ≤ √(max C 0) * (‖jetOperator M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖) := h₁

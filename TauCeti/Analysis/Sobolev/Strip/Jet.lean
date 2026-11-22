@@ -388,6 +388,14 @@ theorem energy_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (hz : jet ξ z = 0) :
   simp only [jet_apply, Prod.mk_eq_zero] at hz
   simp [hz]
 
+omit [NormedSpace ℝ V] in
+/-- The squared norm of a continuous section vanishing for `|s| ≥ R` is integrable on the
+strip. -/
+theorem integrable_norm_sq_of_continuous (hξ : Continuous ξ) {R : ℝ}
+    (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) : Integrable (fun z ↦ ‖ξ z‖ ^ 2) stripMeasure :=
+  (memLp_stripMeasure_of_continuous hξ (fun z hz ↦ hR z.1 z.2 hz.le) 2).integrable_norm_pow
+    two_ne_zero
+
 /-! ### The `L²` jets of a space of sections and their closure -/
 
 /-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with square integrable

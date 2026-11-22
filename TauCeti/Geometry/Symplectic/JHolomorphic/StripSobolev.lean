@@ -219,15 +219,13 @@ theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × 
     (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     cauchyRiemannAddJetCoeff J A z (jet ξ z) =
       fderiv ℝ ξ z stdComplexLineReal + J (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
-  rw [cauchyRiemannAddJetCoeff, add_apply, cauchyRiemannJetCoeff_jet,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', jet_apply]
+  simp [jet_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- Without zeroth-order term, the coefficient field is the constant coefficient of `∂s + J ∂t`. -/
 @[simp]
 theorem cauchyRiemannAddJetCoeff_zero (J : AlmostComplexStructure V) :
     cauchyRiemannAddJetCoeff J 0 = fun _ ↦ cauchyRiemannJetCoeff J :=
-  funext fun _ ↦ by
-    rw [cauchyRiemannAddJetCoeff, Pi.zero_apply, ContinuousLinearMap.zero_comp, add_zero]
+  funext fun _ ↦ by simp [cauchyRiemannAddJetCoeff]
 
 /-- A continuous zeroth-order term gives a continuous coefficient field. -/
 theorem continuous_cauchyRiemannAddJetCoeff {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) :
@@ -262,9 +260,7 @@ private theorem setIntegral_cauchyRiemann_le {A : ℝ × ℝ → V →L[ℝ] V} 
     integrable_of_jet_eq_zero hR
       (((continuous_cauchyRiemannAddJetCoeff hA).clm_apply (continuous_jet hξ)).norm.pow 2)
       fun z hz ↦ by simp [hz]
-  have hiG : IntegrableOn (fun z ↦ ‖ξ z‖ ^ 2) P :=
-    integrable_of_jet_eq_zero hR (hξ.continuous.norm.pow 2) fun z hz ↦ by
-      simp_all [jet_apply]
+  have hiG : IntegrableOn (fun z ↦ ‖ξ z‖ ^ 2) P := integrable_norm_sq_of_continuous hξ.continuous hR
   have hiD : IntegrableOn (fun z ↦ ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1))‖ ^ 2) P :=
     integrable_of_jet_eq_zero hR
       (((hd.clm_apply continuous_const).add ((LinearMap.toContinuousLinearMap
@@ -384,8 +380,8 @@ theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, 
     (memLp_top_const (cauchyRiemannJetCoeff J)) hC' (C' := C) fun ξ ↦ by
       obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
       have hξ := IsTestSpace.contDiff _ ξ.property
-      refine (integral_mono (integrable_of_jet_eq_zero hR (hξ.continuous.norm.pow 2)
-        fun z hz ↦ by simp_all [jet_apply]) (integrable_of_jet_eq_zero hR (continuous_energy hξ)
+      refine (integral_mono (integrable_norm_sq_of_continuous hξ.continuous hR)
+        (integrable_of_jet_eq_zero hR (continuous_energy hξ)
         fun _ ↦ energy_eq_zero_of_jet_eq_zero) fun z ↦
           le_add_of_nonneg_left (by positivity)).trans ?_
       simpa only [cauchyRiemannJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
