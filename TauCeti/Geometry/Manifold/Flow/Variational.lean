@@ -37,9 +37,9 @@ The proof reduces to the initial time: near `t₀` the flow from `s` is the flow
 flow from `s` to `t₀`, and the flow from `t₀` read in the chart is a family of maps of the model
 space which is the identity at time `t₀` and whose curves solve the equation of the chart field.
 The variational equation of such a family at its initial time is
-`TauCeti.hasDerivAt_fderiv_of_eventually_hasDerivAt`, which cuts the chart field off to a globally
-Lipschitz one and compares with its global flow. The chart field is jointly `C¹` because the
-manifold is `C²`, so that the tangent bundle is a `C¹` vector bundle.
+`ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt`, which cuts the chart field off to a
+globally Lipschitz one and compares with its global flow. The chart field is jointly `C¹` because
+the manifold is `C²`, so that the tangent bundle is a `C¹` vector bundle.
 
 ## Main results
 
@@ -85,7 +85,9 @@ private theorem hasDerivAt_fderiv_extChartAt_timeDependentFlowOf_extChartAt_symm
         (timeDependentFlowOf X t u ((extChartAt I z).symm q))) (extChartAt I z y))
       (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I z).symm (X t) (range I))
         (extChartAt I z y)) t := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
+  -- `contMDiffAt_uncurry_timeDependentFlowOf` asks for `IsManifold I ↑(1 : ℕ∞) M`, which the
+  -- Mathlib instance for the literal `1` does not match syntactically.
+  have : IsManifold I (1 : ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
   set e := extChartAt I z
   set ψ : ℝ → E → E := fun u q ↦ e (timeDependentFlowOf X t u (e.symm q))
   have hz₀ : e y ∈ e.target := e.map_source hy
@@ -120,7 +122,7 @@ private theorem hasDerivAt_fderiv_extChartAt_timeDependentFlowOf_extChartAt_symm
     rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange] at hV
     exact ((hasMFDerivAt_timeDependentFlowOf hX hp₁).hasDerivAt_extChartAt_comp hp₂).congr_deriv
       hV.symm
-  exact hasDerivAt_fderiv_of_eventually_hasDerivAt
+  exact ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt
     (Y := fun u q ↦ VectorField.mpullbackWithin 𝓘(ℝ, E) I e.symm (X u) (range I) q)
     (hX.contMDiffAt.contDiffAt_uncurry_mpullbackWithin_extChartAt_symm
       (n := 2) (by norm_num) hz₀) hψc hψ₀ hψ
@@ -139,7 +141,6 @@ theorem hasDerivAt_mfderiv_extChartAt_comp_timeDependentFlowOf
       ((fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I z).symm (X t) (range I))
           (extChartAt I z (timeDependentFlowOf X s t x))).comp
         (mfderiv I 𝓘(ℝ, E) (extChartAt I z ∘ timeDependentFlowOf X s t) x)) t := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
   set e := extChartAt I z
   set y := timeDependentFlowOf X s t x
   set ψ : ℝ → E → E := fun u q ↦ e (timeDependentFlowOf X t u (e.symm q))
@@ -178,6 +179,8 @@ theorem hasDerivAt_mfderiv_extChartAt_comp_timeDependentFlowOf
       simp only [comp_apply, ψ, e.left_inv hp₃, (timeDependentFlowOf_trans_of_mem hX hp₁ hp₂).2]
     rw [heq.mfderiv_eq, mfderiv_comp x hψu
       ((mdifferentiableAt_extChartAt (by simpa [e] using hz)).comp x hΦst), mfderiv_eq_fderiv]
+    -- `(e ∘ Φ_{s,t}) x` unfolds to `e y`, and the tangent spaces of the model space are `E`, so the
+    -- two sides agree definitionally.
     rfl
   have hfinal := (hasDerivAt_fderiv_extChartAt_timeDependentFlowOf_extChartAt_symm hX hz).clm_comp
     (hasDerivAt_const t L)
@@ -197,8 +200,9 @@ theorem hasDerivAt_mfderiv_extChartAt_timeDependentFlowOf_apply
           (extChartAt I z (timeDependentFlowOf X s t x))
         (mfderiv I 𝓘(ℝ, E) (extChartAt I z) (timeDependentFlowOf X s t x)
           (mfderiv I I (timeDependentFlowOf X s t) x w))) t := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
   -- The chain rule for the chart reading, wherever the flow is defined and lands in the chart.
+  -- `TangentSpace I x` is definitionally `E`; `w'` is `w` retyped as a vector of `E`, so that
+  -- evaluation at it is `ContinuousLinearMap.apply ℝ E w'`.
   set w' : E := w
   have hchain : (fun u ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z ∘ timeDependentFlowOf X s u) x w' : E))
       =ᶠ[𝓝 t] fun u ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z) (timeDependentFlowOf X s u x)
@@ -227,21 +231,6 @@ variable {v : (x : M) → TangentSpace I x}
   (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) {t : ℝ} {x z : M}
 include hv
 
-/-- Near a point `(t, x)` of the domain of the flow of `v`, its time maps are those of the
-time-dependent flow of the time-independent field `v` from time `0`. -/
-private theorem eventually_flowOf_eventuallyEq_timeDependentFlowOf (h : (t, x) ∈ flowDomain v) :
-    ∀ᶠ u in 𝓝 t, flowOf v u =ᶠ[𝓝 x] timeDependentFlowOf (fun _ ↦ v) 0 u := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  have hmem : ∀ᶠ p in 𝓝 t ×ˢ 𝓝 x, p ∈ flowDomain v := by
-    rw [← nhds_prod_eq]
-    exact (isOpen_flowDomain hv).mem_nhds h
-  obtain ⟨pa, hpa, pb, hpb, hP⟩ := eventually_prod_iff.1 hmem
-  filter_upwards [hpa] with u hu
-  filter_upwards [hpb] with p hp
-  have hup := timeDependentFlowOf_const_eq_flowOf hv (s := 0) (t := u) (x := p)
-    (by simpa using hP hu hp)
-  rw [hup.2, sub_zero]
-
 /-- **The variational equation of an autonomous flow, in a chart.** Let `v` be a `C¹` vector field
 on a `C²` boundaryless manifold modelled on a finite-dimensional space, `(t, x)` a point of the
 domain of its flow `φ = flowOf v`, and `e = extChartAt I z` an extended chart whose source
@@ -254,23 +243,20 @@ theorem hasDerivAt_mfderiv_extChartAt_comp_flowOf (h : (t, x) ∈ flowDomain v)
       ((fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I z).symm v (range I))
           (extChartAt I z (flowOf v t x))).comp
         (mfderiv I 𝓘(ℝ, E) (extChartAt I z ∘ flowOf v t) x)) t := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
-      (fun p : ℝ × M ↦ (⟨p.2, v p.2⟩ : TangentBundle I M)) :=
-    hv.comp contMDiff_snd
   let F : ℝ → E →L[ℝ] E := fun u ↦
     mfderiv I 𝓘(ℝ, E) (extChartAt I z ∘ timeDependentFlowOf (fun _ ↦ v) 0 u) x
   have hmf : (fun u ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z ∘ flowOf v u) x : E →L[ℝ] E))
       =ᶠ[𝓝 t] F := by
-    filter_upwards [eventually_flowOf_eventuallyEq_timeDependentFlowOf hv h] with u hu
+    filter_upwards [eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem hv h] with u hu
     -- The cast between the tangent spaces of the model space at the two equal points is the
     -- identity.
     rw [(hu.fun_comp (extChartAt I z)).mfderiv_eq]
     rfl
-  obtain ⟨h', heq⟩ := timeDependentFlowOf_const_eq_flowOf hv (s := 0) (t := t) (x := x)
+  obtain ⟨h', heq⟩ := timeDependentFlowOf_const_eq_flowOf_of_mem hv (s := 0) (t := t) (x := x)
     (by simpa using h)
   rw [sub_zero] at heq
-  have hmain := hasDerivAt_mfderiv_extChartAt_comp_timeDependentFlowOf hX h' (heq ▸ hz)
+  have hmain := hasDerivAt_mfderiv_extChartAt_comp_timeDependentFlowOf
+    (hv.comp contMDiff_snd) h' (heq ▸ hz)
   refine (hmain.congr_deriv ?_).congr_of_eventuallyEq hmf
   exact congrArg₂ (fun q (L : E →L[ℝ] E) ↦ (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I
     (extChartAt I z).symm v (range I)) q).comp L) (by rw [heq]) hmf.self_of_nhds.symm
@@ -286,11 +272,7 @@ theorem hasDerivAt_mfderiv_extChartAt_flowOf_apply (h : (t, x) ∈ flowDomain v)
       (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I z).symm v (range I))
           (extChartAt I z (flowOf v t x))
         (mfderiv I 𝓘(ℝ, E) (extChartAt I z) (flowOf v t x) (mfderiv I I (flowOf v t) x w))) t := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
-      (fun p : ℝ × M ↦ (⟨p.2, v p.2⟩ : TangentBundle I M)) :=
-    hv.comp contMDiff_snd
-  have hev := eventually_flowOf_eventuallyEq_timeDependentFlowOf hv h
+  have hev := eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem hv h
   have hJ : (fun u ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z) (flowOf v u x)
       (mfderiv I I (flowOf v u) x w) : E)) =ᶠ[𝓝 t]
       fun u ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z) (timeDependentFlowOf (fun _ ↦ v) 0 u x)
@@ -303,10 +285,11 @@ theorem hasDerivAt_mfderiv_extChartAt_flowOf_apply (h : (t, x) ∈ flowDomain v)
       rfl
     exact congrArg₂ (fun (q : M) (J : E) ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I z) q J : E))
       hu.self_of_nhds (congrArg (fun L : E →L[ℝ] E ↦ L w) hmf)
-  obtain ⟨h', heq⟩ := timeDependentFlowOf_const_eq_flowOf hv (s := 0) (t := t) (x := x)
+  obtain ⟨h', heq⟩ := timeDependentFlowOf_const_eq_flowOf_of_mem hv (s := 0) (t := t) (x := x)
     (by simpa using h)
   rw [sub_zero] at heq
-  have hmain := hasDerivAt_mfderiv_extChartAt_timeDependentFlowOf_apply hX h' (heq ▸ hz) w
+  have hmain := hasDerivAt_mfderiv_extChartAt_timeDependentFlowOf_apply
+    (hv.comp contMDiff_snd) h' (heq ▸ hz) w
   refine (hmain.congr_deriv ?_).congr_of_eventuallyEq hJ
   exact congrArg₂ (fun q (J : E) ↦ fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I
     (extChartAt I z).symm v (range I)) q J) (by rw [heq]) hJ.self_of_nhds.symm

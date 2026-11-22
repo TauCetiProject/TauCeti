@@ -55,7 +55,7 @@ compute the first-order dependence of the flow on parameters of the vector field
   `TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`: consequently `Dφ(s, t)(x)` exists and is
   the propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ξ' = Dv_r(φ(s, r) x) ξ`
   along the orbit of `x`, from time `s` to time `t`.
-* `TauCeti.hasDerivAt_fderiv_of_eventually_hasDerivAt`: the variational equation at the initial
+* `ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt`: the variational equation at the initial
   time holds for any family of maps of a finite-dimensional space whose curves solve the equation
   of a field which is `C¹` near the initial point, not only for a global flow. This is the form in
   which it applies to a maximal flow on a manifold read in a chart.
@@ -439,7 +439,8 @@ continuously on `(u, z)` at `(t₀, z₀)`, and whose curves `u ↦ ψ u z` solv
 equation `y' = Y u y` of a time-dependent field `Y` which is jointly `C¹` at `(t₀, z₀)`. Then
 `u ↦ Dψ_u(z₀)` has derivative `DY_{t₀}(z₀)` at `t₀`: only the spatial derivative of the field
 enters. A maximal flow on a manifold read in a chart is such a family. -/
-theorem hasDerivAt_fderiv_of_eventually_hasDerivAt {Y ψ : ℝ → E → E} {t₀ : ℝ} {z₀ : E}
+theorem _root_.ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt {Y ψ : ℝ → E → E} {t₀ : ℝ}
+    {z₀ : E}
     (hY : ContDiffAt ℝ 1 (fun p : ℝ × E ↦ Y p.1 p.2) (t₀, z₀))
     (hψc : ContinuousAt (fun p : ℝ × E ↦ ψ p.1 p.2) (t₀, z₀))
     (hψ₀ : ∀ᶠ z in 𝓝 z₀, ψ t₀ z = z)
@@ -447,6 +448,7 @@ theorem hasDerivAt_fderiv_of_eventually_hasDerivAt {Y ψ : ℝ → E → E} {t�
     HasDerivAt (fun u ↦ fderiv ℝ (ψ u) z₀) (fderiv ℝ (Y t₀) z₀) t₀ := by
   -- A globally Lipschitz `C¹` field `g` agreeing with `Y` near `(t₀, z₀)`.
   obtain ⟨U, hU, hYU⟩ := hY.contDiffOn le_rfl (by simp)
+  -- The cutoff lemma states its order as `n + 1`, so the order `1` is recast as `0 + 1`.
   obtain ⟨g, K, hg, hgK, hgY⟩ :=
     (show ContDiffOn ℝ ((0 : ℕ∞) + 1) (fun p : ℝ × E ↦ Y p.1 p.2) U by simpa using hYU)
       |>.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hU
