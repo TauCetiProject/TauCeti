@@ -81,7 +81,7 @@ lemma FiniteType.ofArrows_mem_finiteTypeHTopology_of_isOpenImmersion
 
 /-- The finite-type h-topology is the least topology containing jointly surjective families
 of open immersions and singleton proper surjections, over an arbitrary base. -/
-lemma _root_.CategoryTheory.GrothendieckTopology.finiteTypeHTopology_le_iff
+lemma finiteTypeHTopology_le_iff
     (S : Scheme.{u}) (J : GrothendieckTopology S.FiniteType) :
     S.finiteTypeHTopology ≤ J ↔
       (∀ ⦃X : S.FiniteType⦄ ⦃ι : Type (u + 1)⦄ ⦃Y : ι → S.FiniteType⦄ (f : ∀ i, Y i ⟶ X),
@@ -100,11 +100,12 @@ lemma _root_.CategoryTheory.GrothendieckTopology.finiteTypeHTopology_le_iff
       let := hs
       exact h _ (FiniteType.generate_singleton_mem_finiteTypeHTopology f)
   · rintro ⟨hZ, hP⟩
-    rw [finiteTypeHTopology, Precoverage.toGrothendieck_le_iff_le_toPrecoverage]
+    rw [finiteTypeHTopology_eq_toGrothendieck, Precoverage.toGrothendieck_le_iff_le_toPrecoverage]
     intro X R hR
     obtain ⟨ι, Y, f, rfl⟩ := R.exists_eq_ofArrows
     rw [mem_finiteTypeHPrecoverage_iff, Presieve.map_ofArrows] at hR
     simp only [MorphismProperty.Over.forget_comp_forget_map] at hR
+    -- The composite forgetful functor sends each object to its underlying scheme.
     change Presieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈
       hPrecoverage X.left at hR
     rw [ofArrows_mem_hPrecoverage_iff] at hR
@@ -132,27 +133,28 @@ private lemma exists_finiteType_zariski_refinement (S : Scheme.{u}) [QuasiSepara
   let 𝒜 := OpenCover.affineRefinement.{u, max u v} 𝒰
   let ρ := OpenCover.fromAffineRefinement.{u, v} 𝒰
   let Z (j : 𝒜.I₀) : S.FiniteType :=
-    MorphismProperty.Over.mk ⊤ (𝒜.f j ≫ X.hom) (by
-      let : IsAffine (𝒜.openCover.X j) := isAffine_affineOpenCover X.left 𝒜 j
-      exact ⟨inferInstance, inferInstance⟩)
-  let g (j : 𝒜.I₀) : Z j ⟶ X := MorphismProperty.Over.homMk (𝒜.f j) rfl
+    letI : IsAffine (𝒜.openCover.X j) := isAffine_affineOpenCover X.left 𝒜 j
+    FiniteType.mk (𝒜.f j ≫ X.hom)
+  let g (j : 𝒜.I₀) : Z j ⟶ X := FiniteType.homMk (𝒜.f j) rfl
   refine ⟨Presieve.ofArrows Z g, ?_, ?_⟩
   · rw [Precoverage.mem_comap_iff, Presieve.map_ofArrows, Presieve.map_ofArrows]
     simp only [Over.forget_map]
+    -- Forgetting both over-category structures recovers the affine refinement family.
     change Presieve.ofArrows 𝒜.openCover.X 𝒜.openCover.f ∈ hPrecoverage X.left
     rw [mem_hPrecoverage_iff]
     exact Or.inl 𝒜.openCover.mem₀
   · rw [Presieve.map_ofArrows]
     refine (Presieve.ofArrows_le_iff).mpr ?_
     intro j
-    let a : (FiniteType.forget S).obj (Z j) ⟶ Y (ρ.s₀ j).down :=
-      Over.homMk (ρ.h₀ j) (by
-        change ρ.h₀ j ≫ (Y (ρ.s₀ j).down).hom = 𝒜.f j ≫ X.hom
-        have hw : (f (ρ.s₀ j).down).left ≫ X.hom = (Y (ρ.s₀ j).down).hom :=
-          Over.w (f (ρ.s₀ j).down)
-        exact (congrArg (fun k ↦ ρ.h₀ j ≫ k) hw.symm).trans
-          ((Category.assoc _ _ _).symm.trans
-            (congrArg (fun k ↦ k ≫ X.hom) (ρ.w₀ j))))
+    have hρ : ρ.h₀ j ≫ (f (ρ.s₀ j).down).left = 𝒜.f j := ρ.w₀ j
+    have ha : ρ.h₀ j ≫ (Y (ρ.s₀ j).down).hom =
+        𝒜.f j ≫ ((FiniteType.forget S).obj X).hom := by
+      rw [← Over.w (f (ρ.s₀ j).down)]
+      calc
+        _ = (ρ.h₀ j ≫ (f (ρ.s₀ j).down).left) ≫ ((FiniteType.forget S).obj X).hom :=
+          (Category.assoc _ _ _).symm
+        _ = _ := congrArg (· ≫ ((FiniteType.forget S).obj X).hom) hρ
+    let a : (FiniteType.forget S).obj (Z j) ⟶ Y (ρ.s₀ j).down := Over.homMk (ρ.h₀ j) ha
     refine ⟨Y (ρ.s₀ j).down, a, f (ρ.s₀ j).down, ⟨(ρ.s₀ j).down⟩, ?_⟩
     ext
     exact ρ.w₀ j
@@ -167,12 +169,13 @@ private lemma exists_finiteType_proper_refinement (S : Scheme.{u}) {X : S.Finite
   let := hp.2
   let : LocallyOfFiniteType ((FiniteType.forget S).obj X).hom := X.prop.1
   let : QuasiCompact ((FiniteType.forget S).obj X).hom := X.prop.2
-  have hft : (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u})
-      Y.hom := by
+  have hft : LocallyOfFiniteType Y.hom ∧ QuasiCompact Y.hom := by
     rw [← Over.w f]
     exact ⟨inferInstance, inferInstance⟩
-  let Z : S.FiniteType := MorphismProperty.Over.mk ⊤ Y.hom hft
-  let g : Z ⟶ X := MorphismProperty.Over.homMk f.left (Over.w f)
+  let := hft.1
+  let := hft.2
+  let Z : S.FiniteType := FiniteType.mk Y.hom
+  let g : Z ⟶ X := FiniteType.homMk f.left (Over.w f)
   refine ⟨Presieve.singleton g, ?_, ?_⟩
   · rw [Precoverage.mem_comap_iff, Presieve.map_singleton, Presieve.map_singleton]
     exact f.left.singleton_mem_hPrecoverage
@@ -213,13 +216,12 @@ theorem mem_finiteTypeHTopology_iff (S : Scheme.{u}) [QuasiSeparatedSpace S]
     R ∈ finiteTypeHTopology S X ↔
       R.functorPushforward (FiniteType.forget S) ∈ hTopology.over S
         ((FiniteType.forget S).obj X) := by
-  let : (FiniteType.forget S).LocallyCoverDense (hTopology.over S) := by
-    rw [hTopology_eq_toGrothendieck, over_toGrothendieck_eq_toGrothendieck_comap_forget]
-    simpa only [Precoverage.toGrothendieck_toCoverage] using
-      Coverage.locallyCoverDense_of_refine_generators (hPrecoverage.over S).toCoverage
-        (FiniteType.forget S) (exists_finiteType_h_refinement S)
-  rw [finiteTypeHTopology_eq_restrictedTopology]
-  exact Functor.mem_restrictedTopology_iff
+  rw [finiteTypeHTopology_eq_toGrothendieck, finiteTypeHPrecoverage, Precoverage.comap_comp,
+    hTopology_eq_toGrothendieck, over_toGrothendieck_eq_toGrothendieck_comap_forget]
+  simpa only [Precoverage.toCoverage_toPrecoverage, Precoverage.toGrothendieck_toCoverage] using
+    Coverage.mem_toGrothendieck_comap_iff_of_refine_generators
+      (hPrecoverage.over S).toCoverage (FiniteType.forget S)
+      (exists_finiteType_h_refinement S)
 
 /-- Over a quasi-separated base, a family of finite-type schemes generates an h-cover
 exactly when its underlying family of scheme morphisms generates a big h-cover. -/
@@ -229,6 +231,7 @@ theorem ofArrows_mem_finiteTypeHTopology_iff {S : Scheme.{u}} [QuasiSeparatedSpa
       Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈ hTopology X.left := by
   rw [mem_finiteTypeHTopology_iff, Sieve.functorPushforward_ofArrows,
     GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
+  -- The two forgetful functors take the left objects and left components of the family.
   rfl
 
 end AlgebraicGeometry.Scheme

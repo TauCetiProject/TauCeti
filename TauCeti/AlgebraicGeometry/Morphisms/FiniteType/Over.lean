@@ -35,4 +35,15 @@ instance {S : Scheme.{u}} (X : S.FiniteType) : LocallyOfFiniteType X.hom := X.pr
 
 instance {S : Scheme.{u}} (X : S.FiniteType) : QuasiCompact X.hom := X.prop.2
 
+/-- Regard a locally finite-type, quasi-compact structure morphism as a finite-type scheme
+over its target. -/
+abbrev FiniteType.mk {S X : Scheme.{u}} (f : X ⟶ S) [LocallyOfFiniteType f]
+    [QuasiCompact f] : S.FiniteType :=
+  MorphismProperty.Over.mk ⊤ f ⟨inferInstance, inferInstance⟩
+
+/-- A commuting triangle over the base defines a morphism of finite-type schemes over it. -/
+abbrev FiniteType.homMk {S : Scheme.{u}} {X Y : S.FiniteType} (f : X.left ⟶ Y.left)
+    (w : f ≫ Y.hom = X.hom := by cat_disch) : X ⟶ Y :=
+  MorphismProperty.Over.homMk f w
+
 end AlgebraicGeometry.Scheme

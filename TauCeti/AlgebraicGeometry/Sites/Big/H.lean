@@ -114,7 +114,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.generate_singleton_mem_hTopology
 
 /-- The h-topology is the least topology containing Zariski covers and singleton proper
 surjections. -/
-lemma _root_.CategoryTheory.GrothendieckTopology.hTopology_le_iff
+lemma hTopology_le_iff
     (J : GrothendieckTopology Scheme.{u}) :
     hTopology ≤ J ↔ zariskiTopology ≤ J ∧
       ∀ ⦃X Y : Scheme.{u}⦄ (f : X ⟶ Y), IsProper f → Surjective f →
@@ -127,7 +127,7 @@ lemma _root_.CategoryTheory.GrothendieckTopology.hTopology_le_iff
     let := hs
     exact h _ f.generate_singleton_mem_hTopology
   · rintro ⟨hZ, hP⟩
-    rw [hTopology, Precoverage.toGrothendieck_le_iff_le_toPrecoverage]
+    rw [hTopology_eq_toGrothendieck, Precoverage.toGrothendieck_le_iff_le_toPrecoverage]
     intro X R hR
     rw [GrothendieckTopology.mem_toPrecoverage_iff]
     rw [mem_hPrecoverage_iff] at hR
@@ -139,7 +139,8 @@ lemma _root_.CategoryTheory.GrothendieckTopology.hTopology_le_iff
 /-- Every h-covering sieve is jointly surjective on scheme points. -/
 lemma hTopology_le_jointlySurjectiveTopology :
     hTopology.{u} ≤ jointlySurjectiveTopology := by
-  rw [hTopology, jointlySurjectiveTopology_eq_toGrothendieck_jointlySurjectivePretopology,
+  rw [hTopology_eq_toGrothendieck,
+    jointlySurjectiveTopology_eq_toGrothendieck_jointlySurjectivePretopology,
     jointlySurjectivePretopology, Precoverage.toGrothendieck_toPretopology_eq_toGrothendieck]
   apply Precoverage.toGrothendieck_mono
   exact sup_le inf_le_left inf_le_left
