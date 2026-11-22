@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
-import TauCeti.AlgebraicGeometry.Curves.Cohomology
+import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 import TauCeti.Topology.Connected.Basic
 
 /-!
