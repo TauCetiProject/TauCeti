@@ -128,13 +128,11 @@ theorem gnsUniversalRepresentation_injective :
     Function.Injective (gnsUniversalRepresentation A) := by
   rw [gnsUniversalRepresentation_def, NonUnitalStarAlgHom.injective_hilbertSum_iff]
   intro a ha
-  refine mul_star_self_eq_zero.1 <| eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero
-    fun φ hφ => ?_
+  refine eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero fun φ hφ => ?_
   let s : stateSpace A := ⟨φ, hφ⟩
-  have hact : (StateSpace.toPositiveLinearMap s).toGNS (a * star a) = 0 := by
-    simpa [PositiveLinearMap.toGNS_apply] using
-      DFunLike.congr_fun (ha s) ((StateSpace.toPositiveLinearMap s).toGNS (star a))
-  simpa using ((StateSpace.toPositiveLinearMap s).toGNS_eq_zero_iff (a * star a)).1 hact
+  simpa only [StateSpace.toPositiveLinearMap_apply] using
+    (StateSpace.toPositiveLinearMap s).apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero
+      (ha s)
 
 /-- Two elements have the same image under `gnsUniversalRepresentation A` if and only if they are
 equal. -/

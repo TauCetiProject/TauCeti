@@ -72,18 +72,25 @@ theorem multiplierExtension_gnsNonUnitalStarAlgHom_apply_coe (f : A →ₚ[ℂ] 
       (f.toPreGNS b : f.GNS) = (f.toPreGNS (m.fst b) : f.GNS) := by
   simpa only [toGNS_apply] using f.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS m b
 
+/-- If `a` lies in the kernel of the GNS representation of `f`, then `f (star a * a) = 0`. -/
+theorem apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
+    (ha : f.gnsNonUnitalStarAlgHom a = 0) : f (star a * a) = 0 := by
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  have hlim : Tendsto (fun e => f.toGNS (a * e)) (CStarAlgebra.approximateUnit A) (𝓝 (f.toGNS a)) :=
+    f.toGNS.continuous.tendsto a |>.comp (hl.tendsto_mul_left a)
+  have hzero : (fun e => f.toGNS (a * e)) = 0 := funext fun e => by
+    simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS e)
+  rw [hzero] at hlim
+  exact (f.toGNS_eq_zero_iff a).mp (tendsto_nhds_unique hlim tendsto_const_nhds)
+
 /-- A faithful positive functional has an injective GNS representation. No unit or
 normalization is needed. -/
 theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
     (hf : ∀ a, f (star a * a) = 0 → a = 0) :
-    Function.Injective f.gnsNonUnitalStarAlgHom := by
-  have hclass : Function.Injective f.toGNS :=
-    (injective_iff_map_eq_zero f.toGNS).mpr fun a ha => hf a ((f.toGNS_eq_zero_iff a).mp ha)
-  refine (injective_iff_map_eq_zero f.gnsNonUnitalStarAlgHom).mpr fun a ha => ?_
-  have hzero : f.toGNS (a * star a) = 0 := by
-    simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS (star a))
-  have hmul : a * star a = 0 := hclass (by simpa using hzero)
-  exact mul_star_self_eq_zero.mp hmul
+    Function.Injective f.gnsNonUnitalStarAlgHom :=
+  (injective_iff_map_eq_zero f.gnsNonUnitalStarAlgHom).mpr fun a ha =>
+    hf a (f.apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero ha)
 
 end PositiveLinearMap
 

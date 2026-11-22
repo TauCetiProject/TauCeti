@@ -204,14 +204,16 @@ theorem hilbertSum_apply (b : B) :
       lp.mapCLM 2 (fun i => π i b) (norm_nonneg b)
         (fun i => NonUnitalStarAlgHom.norm_apply_le (π i) b) := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.hilbertSum_apply (fun i => (π i).toNonUnitalStarAlgHom) b
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.hilbertSum_apply (fun i => (π i).toNonUnitalStarAlgHom) b
 
 /-- The unital direct-sum representation acts coordinatewise on `lp H 2`. -/
 @[simp]
 theorem hilbertSum_apply_apply (b : B) (x : lp H 2) (i : ι) :
     hilbertSum π b x i = π i b (x i) := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.hilbertSum_apply_apply _ b x i
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.hilbertSum_apply_apply (fun i => (π i).toNonUnitalStarAlgHom) b x i
 
 /-- Precomposing a unital Hilbert direct sum with a unital `⋆`-homomorphism is the Hilbert direct
 sum of the precomposed summands. -/
@@ -226,7 +228,8 @@ theorem hilbertSum_comp {B' : Type*} [CStarAlgebra B'] (f : B' →⋆ₐ[ℂ] B)
 theorem evalCLM_comp_hilbertSum_apply (b : B) (i : ι) :
     lp.evalCLM ℂ H 2 i ∘L hilbertSum π b = π i b ∘L lp.evalCLM ℂ H 2 i := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.evalCLM_comp_hilbertSum_apply _ b i
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.evalCLM_comp_hilbertSum_apply (fun i => (π i).toNonUnitalStarAlgHom) b i
 
 /-- On a coordinate vector `lp.single 2 i ξ`, `StarAlgHom.hilbertSum π b` acts in coordinate `i`
 by `π i b`. -/
@@ -234,26 +237,30 @@ by `π i b`. -/
 theorem hilbertSum_apply_single [DecidableEq ι] (b : B) (i : ι) (ξ : H i) :
     hilbertSum π b (lp.single 2 i ξ) = lp.single 2 i (π i b ξ) := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.hilbertSum_apply_single _ b i ξ
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.hilbertSum_apply_single (fun i => (π i).toNonUnitalStarAlgHom) b i ξ
 
 /-- The operator norm of `StarAlgHom.hilbertSum π b` is the supremum of `‖π i b‖`. -/
 theorem norm_hilbertSum_apply (b : B) : ‖hilbertSum π b‖ = ⨆ i, ‖π i b‖ := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.norm_hilbertSum_apply _ b
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.norm_hilbertSum_apply (fun i => (π i).toNonUnitalStarAlgHom) b
 
 /-- An element lies in the kernel of `StarAlgHom.hilbertSum π` if and only if it lies in the kernel
 of every summand `π i`. -/
 @[simp]
 theorem hilbertSum_apply_eq_zero_iff {b : B} : hilbertSum π b = 0 ↔ ∀ i, π i b = 0 := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.hilbertSum_apply_eq_zero_iff (fun i => (π i).toNonUnitalStarAlgHom)
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.hilbertSum_apply_eq_zero_iff (fun i => (π i).toNonUnitalStarAlgHom)
 
 /-- `StarAlgHom.hilbertSum π` is injective if and only if the kernels of the summands `π i` have
 trivial intersection. -/
 theorem injective_hilbertSum_iff :
     Function.Injective (hilbertSum π) ↔ ∀ b, (∀ i, π i b = 0) → b = 0 := by
   rw [← coe_toNonUnitalStarAlgHom (hilbertSum π), toNonUnitalStarAlgHom_hilbertSum]
-  exact NonUnitalStarAlgHom.injective_hilbertSum_iff (fun i => (π i).toNonUnitalStarAlgHom)
+  simpa only [coe_toNonUnitalStarAlgHom] using
+    NonUnitalStarAlgHom.injective_hilbertSum_iff (fun i => (π i).toNonUnitalStarAlgHom)
 
 /-- If one summand `π i` is injective, then `StarAlgHom.hilbertSum π` is injective. -/
 theorem injective_hilbertSum_of_injective (i : ι) (hi : Function.Injective (π i)) :

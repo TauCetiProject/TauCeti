@@ -96,6 +96,20 @@ theorem inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero
   rw [WeakDual.real_smul_eq_coe_smul, map_smul, norm_smul, RCLike.norm_ofReal,
     abs_of_nonneg (inv_nonneg.2 hnorm.le), inv_mul_cancel₀ hnorm.ne']
 
+/-- If `0 ≤ φ a` for every state `φ` of `A`, then `0 ≤ φ a` for every positive functional
+`φ : WeakDual ℂ A`. -/
+theorem map_nonneg_of_forall_mem_stateSpace {a : A} (h : ∀ φ ∈ stateSpace A, 0 ≤ φ a)
+    (hφ : ∀ x, 0 ≤ x → 0 ≤ φ x) : 0 ≤ φ a := by
+  by_cases hφ0 : φ = 0
+  · subst hφ0
+    simp [← toStrongDual_apply]
+  · have hpos : 0 < ‖toStrongDual φ‖ := by simp [hφ0]
+    have hnorm : 0 ≤ (‖toStrongDual φ‖⁻¹ • φ) a :=
+      h _ (inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero hφ hφ0)
+    have hmul : 0 ≤ ‖toStrongDual φ‖ • (‖toStrongDual φ‖⁻¹ • φ) a :=
+      smul_nonneg hpos.le hnorm
+    rwa [smul_apply, smul_smul, mul_inv_cancel₀ hpos.ne', one_smul] at hmul
+
 /-- A subsingleton C⋆-algebra has no states. -/
 @[simp]
 theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by

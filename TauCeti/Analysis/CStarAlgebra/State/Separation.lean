@@ -107,22 +107,14 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
   refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
   have ha_sa : IsSelfAdjoint a :=
     isSelfAdjoint_iff_forall_mem_stateSpace.2 fun φ hφ => (h φ hφ).isSelfAdjoint
-  -- Pass to `A⁺¹`: any state `ψ` of `A⁺¹` restricts to a multiple of a state of `A` (or to `0`),
-  -- so `0 ≤ ψ a` holds on all of `stateSpace A⁺¹`, making the real spectrum of `(a : A⁺¹)`
+  -- Pass to `A⁺¹`: any state `ψ` of `A⁺¹` restricts to a positive functional on `A`, so
+  -- `0 ≤ ψ a` holds on all of `stateSpace A⁺¹`, making the real spectrum of `(a : A⁺¹)`
   -- nonnegative.
   have hunit (ψ : WeakDual ℂ A⁺¹) (hψ : ψ ∈ stateSpace A⁺¹) : 0 ≤ ψ (a : A⁺¹) := by
-    set φ := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
-    by_cases hφ0 : φ = 0
-    · have hzero : ψ (a : A⁺¹) = 0 := by
-        calc ψ (a : A⁺¹)
-            = φ a := (pullbackFunctional_apply (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a).symm
-          _ = 0 := by rw [hφ0, ← toStrongDual_apply]; simp
-      simp [hzero]
-    · have hpos : 0 < ‖toStrongDual φ‖ := by simp [hφ0]
-      have hcφ := h _ (inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero
-        (fun _ => map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ) hφ0)
-      simpa [-Complex.real_smul, φ, smul_smul, mul_inv_cancel₀ hpos.ne'] using
-        smul_nonneg hpos.le hcφ
+    rw [← Unitization.inrNonUnitalStarAlgHom_apply ℂ A a,
+      ← pullbackFunctional_apply (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a]
+    exact map_nonneg_of_forall_mem_stateSpace h fun _ =>
+      map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ
   rw [← Unitization.inr_nonneg_iff ℂ]
   have ha_inr_sa : IsSelfAdjoint (a : A⁺¹) := ha_sa.inr ℂ
   rw [StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) (a : A⁺¹) ha_inr_sa]
