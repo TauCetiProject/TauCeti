@@ -19,8 +19,8 @@ import TauCeti.FieldTheory.Separable.BaseChange
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Localization
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.Localization.AtPrime
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.Integral
-import TauCeti.RingTheory.Localization.Tower
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!

@@ -25,9 +25,6 @@ inverting `a`.
   `B` at the image of `M`.
 * `IsLocalization.Away.bijective_awayMap_of_injective`: for `S` a localization away from `a`,
   the map `Localization.awayMap (algebraMap A B) a : A_a → B_a` is bijective.
-* `IsLocalization.isScalarTower_of_isScalarTower`: if a localization `Rₘ` of `C` acts on `S`
-  and `E`, `S` acts on `E`, and all these actions are compatible with those of `C`, then
-  `IsScalarTower Rₘ S E`.
 -/
 
 public section
@@ -73,27 +70,5 @@ theorem Away.bijective_awayMap_of_injective (a : A) [IsLocalization.Away a S]
   exact (Function.Bijective.of_comp_iff' e₂.bijective _).mp hbij
 
 end Intermediate
-
-/-- **Scalar towers through a localization.** Let `Rₘ` be a localization of `C` at `M`, acting on
-`S` and on `E`, and let `S` act on `E`. If the actions of `Rₘ` on `S` and `E` and of `S` on `E` are
-compatible with the actions of `C`, then `Rₘ → S → E` is a scalar tower. -/
-theorem isScalarTower_of_isScalarTower {C : Type*} [CommSemiring C] (M : Submonoid C)
-    (Rₘ S E : Type*) [CommSemiring Rₘ] [Algebra C Rₘ] [IsLocalization M Rₘ]
-    [SMul C S] [MulAction Rₘ S] [IsScalarTower C Rₘ S]
-    [SMul C E] [MulAction Rₘ E] [IsScalarTower C Rₘ E]
-    [SMul S E] [IsScalarTower C S E] :
-    IsScalarTower Rₘ S E := by
-  refine ⟨fun r s e ↦ ?_⟩
-  -- Write `r = c / m`; since `m` acts invertibly on `E`, compare both sides after acting by `m`.
-  obtain ⟨⟨c, m⟩, hr⟩ := surj M r
-  rw [← (map_units Rₘ m).smul_left_cancel]
-  calc algebraMap C Rₘ m • (r • s) • e
-      = ((algebraMap C Rₘ m * r) • s) • e := by
-        rw [IsScalarTower.algebraMap_smul, ← Algebra.smul_def, smul_assoc (m : C) r s,
-          smul_assoc (m : C) (r • s) e]
-    _ = c • s • e := by
-        rw [mul_comm, hr, IsScalarTower.algebraMap_smul, smul_assoc]
-    _ = algebraMap C Rₘ m • r • s • e := by
-        rw [smul_smul, mul_comm, hr, IsScalarTower.algebraMap_smul]
 
 end IsLocalization
