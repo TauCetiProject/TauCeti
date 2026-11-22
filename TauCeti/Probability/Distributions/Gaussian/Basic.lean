@@ -32,6 +32,8 @@ needs nothing beyond the definition of `gaussianReal`.
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
+* `TauCeti.Probability.log_gaussianPDFReal` — at positive variance the log-density is the
+  quadratic polynomial `-(log (2π) + log v) / 2 - (x - m)² / (2v)`.
 * `TauCeti.Probability.gaussianPDFReal_neg` and `TauCeti.Probability.gaussianPDFReal_zero_neg` —
   reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
@@ -87,6 +89,15 @@ theorem gaussianPDFReal_eq_gaussianPDFReal_zero_one (m : ℝ) (v : ℝ≥0) (x :
   simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, div_pow, Real.sq_sqrt hv'.le,
     Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
   field_simp
+
+/-- The logarithm of the density of `N(m, v)` at positive variance is the quadratic polynomial
+`-(log (2π) + log v) / 2 - (x - m) ^ 2 / (2 v)`. -/
+theorem log_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    log (gaussianPDFReal m v x) = -(log (2 * π) + log v) / 2 - (x - m) ^ 2 / (2 * v) := by
+  have hv' : (0 : ℝ) < v := by positivity
+  rw [gaussianPDFReal_def, log_mul (by positivity) (exp_pos _).ne', log_inv, log_exp,
+    log_sqrt (by positivity), log_mul (by positivity) hv'.ne']
+  ring
 
 /-- Negating the argument of `gaussianPDFReal` negates the mean parameter. -/
 theorem gaussianPDFReal_neg (m : ℝ) (v : ℝ≥0) (x : ℝ) :
