@@ -240,17 +240,16 @@ variable (E) in
 /-- An integer `a` of `K` scales the norm at `σ` by `|σ(a)|`: `‖a • x‖_σ = |σ(a)| ‖x‖_σ`. -/
 theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
     E.norm σ (a • x) = ‖σ (algebraMap (𝓞 K) K a)‖ * E.norm σ x := by
-  set c : ℂ := σ (algebraMap (𝓞 K) K a)
   -- In the fibre, `a` acts on `1 ⊗ x` as the complex number `σ(a)`.
-  have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) = c • ((1 : ComplexAlong σ) ⊗ₜ x) := by
-    rw [← smul_tmul, smul_tmul', Algebra.smul_def, Algebra.smul_def, mul_one, mul_one,
-      ComplexAlong.algebraMap_ringOfIntegers_eq]
-  have hr : (E.metric.core σ).inner (1 ⊗ₜ x) (c • (1 ⊗ₜ x)) =
-      c * (E.metric.core σ).inner (1 ⊗ₜ x) (1 ⊗ₜ x) :=
-    InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore) _ _
-  rw [norm, norm, inner, inner, h, (E.metric.core σ).smul_left, hr, ← mul_assoc, RCLike.conj_mul,
-    ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
-  simp [Real.sqrt_mul (sq_nonneg _)]
+  have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) =
+      σ (algebraMap (𝓞 K) K a) • ((1 : ComplexAlong σ) ⊗ₜ x) := by
+    simp [smul_tmul', Algebra.smul_def, ComplexAlong.algebraMap_ringOfIntegers_eq]
+  -- `‖x‖_σ` is the norm of `1 ⊗ x` in the inner product space given by the metric at `σ`.
+  let : NormedAddCommGroup (ComplexFiber σ E) := (E.metric.core σ).toNormedAddCommGroup
+  let : InnerProductSpace ℂ (ComplexFiber σ E) := .ofCore (E.metric.core σ).toCore
+  rw [norm_def, norm_def, inner_def, inner_def, h]
+  simpa only [norm_eq_sqrt_re_inner (𝕜 := ℂ)] using
+    _root_.norm_smul (σ (algebraMap (𝓞 K) K a)) ((1 : ComplexAlong σ) ⊗ₜ[𝓞 K] x)
 
 section Trivial
 
