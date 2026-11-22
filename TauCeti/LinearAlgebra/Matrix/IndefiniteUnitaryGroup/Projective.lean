@@ -1,0 +1,127 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
+public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
+
+/-!
+# The projective indefinite unitary group `PU(p, q)` and its conjugation representation
+
+The **projective indefinite unitary group** `PU(p, q)` is the quotient of the indefinite unitary
+group `U(p, q)` (`TauCeti.Matrix.indefiniteUnitaryGroup`) by its centre. Over a field of
+characteristic zero the centre is the group of unit scalars
+(`TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`), so `PU(p, q)` is
+`U(p, q) / U(1)`. For `p = Fin 1` and `q = Fin n` over `ℂ` this is the group `PU(1, n)` of
+holomorphic isometries of complex hyperbolic `n`-space.
+
+Conjugation `X ↦ g X g⁻¹` by a lift `g ∈ U(p, q)` defines the **conjugation representation**
+`Ad : PU(p, q) →* Aut(M_{p ⊕ q}(K))` on the matrix algebra; it does not depend on the lift since
+scalars act trivially, and it is injective: an element of `U(p, q)` whose conjugation is trivial is
+central in the general linear group, hence a scalar, hence central in `U(p, q)`. It is the
+representation through which neat subgroups of `PU(1, n)` are defined, by the eigenvalues of
+`Ad(γ)`. The topological statements about `Ad` over `ℝ` and `ℂ` (it is a closed embedding) are in
+`TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Projective`.
+
+## Main definitions
+
+* `TauCeti.Matrix.ProjectiveIndefiniteUnitaryGroup p q R`: the quotient `PU(p, q)` of `U(p, q)`
+  by its centre.
+* `TauCeti.Matrix.ProjectiveIndefiniteUnitaryGroup.innerAut`: the conjugation representation
+  `PU(p, q) →* (M_{p ⊕ q}(K) ≃ₐ[K] M_{p ⊕ q}(K))`.
+
+## Main results
+
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_center_iff_val_mem_center`: over a field of
+  characteristic zero, an element of `U(p, q)` is central in `U(p, q)` exactly when it is central
+  in the general linear group.
+* `TauCeti.Matrix.ProjectiveIndefiniteUnitaryGroup.innerAut_injective`: the conjugation
+  representation of `PU(p, q)` is faithful.
+
+## References
+
+* W. M. Goldman, *Complex Hyperbolic Geometry*, Oxford Mathematical Monographs, Oxford University
+  Press (1999), Chapter 3.
+* G. Baldi and E. Ullmo, *Special subvarieties of non-arithmetic ball quotients and Hodge theory*,
+  Ann. of Math. 197 (2023), Section 2, for `PU(1, n)` as the quotient of `U(1, n)` by the unit
+  scalars.
+-/
+
+public section
+
+open Matrix
+
+namespace TauCeti
+
+namespace Matrix
+
+variable (p q R : Type*) [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q] [CommRing R]
+  [StarRing R]
+
+/-- The **projective indefinite unitary group** `PU(p, q)`: the quotient of the indefinite unitary
+group `U(p, q)` by its centre, which over a field of characteristic zero is the group of unit
+scalars (`TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`). For `U(1, n)` over
+`ℂ` this is `PU(1, n)`, the holomorphic isometry group of complex hyperbolic `n`-space. -/
+abbrev ProjectiveIndefiniteUnitaryGroup :=
+  indefiniteUnitaryGroup p q R ⧸ Subgroup.center (indefiniteUnitaryGroup p q R)
+
+variable {p q} {K : Type*} [Field K] [StarRing K] [CharZero K]
+
+namespace indefiniteUnitaryGroup
+
+/-- **Central elements of `U(p, q)`.** Over a field of characteristic zero, an element of
+`U(p, q)` commutes with every element of `U(p, q)` exactly when it commutes with every invertible
+matrix: both say that it is a scalar matrix. -/
+theorem mem_center_iff_val_mem_center {g : indefiniteUnitaryGroup p q K} :
+    g ∈ Subgroup.center (indefiniteUnitaryGroup p q K) ↔
+      (g : GL (p ⊕ q) K) ∈ Subgroup.center (GL (p ⊕ q) K) := by
+  refine ⟨fun hg => ?_, fun hg => Subgroup.mem_center_iff.mpr fun h =>
+    Subtype.ext (Subgroup.mem_center_iff.mp hg h)⟩
+  rw [center_eq_range_scalarHom] at hg
+  obtain ⟨u, rfl⟩ := hg
+  exact GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr
+    ⟨u, (unitaryGroupOf.val_scalarHom u).symm⟩
+
+end indefiniteUnitaryGroup
+
+namespace ProjectiveIndefiniteUnitaryGroup
+
+/-- The **conjugation representation** `Ad` of `PU(p, q)` on the matrix algebra: the class of
+`g ∈ U(p, q)` acts by the algebra automorphism `X ↦ g X g⁻¹`
+(`Matrix.GeneralLinearGroup.innerAut`), which does not depend on the lift `g` because central
+elements of `U(p, q)` are scalars. It is injective (`innerAut_injective`). -/
+noncomputable def innerAut :
+    ProjectiveIndefiniteUnitaryGroup p q K →*
+      (Matrix (p ⊕ q) (p ⊕ q) K ≃ₐ[K] Matrix (p ⊕ q) (p ⊕ q) K) :=
+  QuotientGroup.lift _ (GeneralLinearGroup.innerAut.comp (indefiniteUnitaryGroup p q K).subtype)
+    fun _ hg => MonoidHom.mem_ker.mpr <| (GeneralLinearGroup.innerAut_eq_one_iff _).mpr
+      (indefiniteUnitaryGroup.mem_center_iff_val_mem_center.mp hg)
+
+/-- The conjugation representation of `PU(p, q)` on the class of `g ∈ U(p, q)` is conjugation by
+`g`. -/
+@[simp]
+theorem innerAut_mk (g : indefiniteUnitaryGroup p q K) :
+    innerAut (g : ProjectiveIndefiniteUnitaryGroup p q K) =
+      GeneralLinearGroup.innerAut (g : GL (p ⊕ q) K) := by
+  rw [innerAut, QuotientGroup.lift_mk, MonoidHom.comp_apply, Subgroup.coe_subtype]
+
+/-- **The conjugation representation of `PU(p, q)` is faithful**: an element of `U(p, q)` acting
+trivially by conjugation on the matrix algebra is central in the general linear group, hence
+central in `U(p, q)`, hence trivial in `PU(p, q)`. -/
+theorem innerAut_injective : Function.Injective (innerAut (p := p) (q := q) (K := K)) := by
+  rw [injective_iff_map_eq_one]
+  intro γ hγ
+  induction γ using QuotientGroup.induction_on with
+  | H g =>
+    rw [innerAut_mk, GeneralLinearGroup.innerAut_eq_one_iff] at hγ
+    exact (QuotientGroup.eq_one_iff g).mpr
+      (indefiniteUnitaryGroup.mem_center_iff_val_mem_center.mpr hγ)
+
+end ProjectiveIndefiniteUnitaryGroup
+
+end Matrix
+
+end TauCeti
