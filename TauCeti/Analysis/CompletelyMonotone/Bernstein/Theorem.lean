@@ -47,9 +47,9 @@ tight. The three remaining steps are:
    which represents the non-constant part `f - L`;
 3. add the atom `L • δ₀`, whose Laplace transform is the constant `L`, to represent `f` itself.
 
-Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
-`finite_measure_subseq_limit`. Every ingredient is a filter limit, so an ultrafilter below `atTop`
-suffices, and being `NeBot` it still gives uniqueness of limits.
+Step 1 uses `exists_ultrafilter_tendsto_integral_of_isTightMeasureSet` rather than its subsequence
+form `exists_subseq_tendsto_integral_of_isTightMeasureSet`. Every ingredient is a filter limit, so
+an ultrafilter below `atTop` suffices, and being `NeBot` it still gives uniqueness of limits.
 
 ## References
 
@@ -128,7 +128,7 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
   obtain ⟨L, C, hL, hL_nn, -, hmass⟩ := chafaiRescaled_prokhorov_mass_bound f hcm
   have hmass' : ∀ n, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞) := fun n => (hmass n).2
   obtain ⟨μ₀, U, hU, hμ₀fin, -, hweak⟩ :=
-    finite_measure_cluster_limit (chafaiRescaled f) C hmass'
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet (chafaiRescaled f) atTop C hmass'
       (isTightMeasureSet_range_chafaiRescaled hcm)
   -- The limit represents the non-constant part `f - L`.
   have key : ∀ t : ℝ, 0 ≤ t → f t - L = ∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀ :=

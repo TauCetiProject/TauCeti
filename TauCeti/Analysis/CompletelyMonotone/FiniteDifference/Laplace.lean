@@ -269,7 +269,7 @@ theorem exists_representsLaplace_of_isDifferenceCompletelyMonotone_of_continuous
       _ = (((f 0).toNNReal : ℝ≥0) : ℝ≥0∞) :=
         (ENNReal.ofNNReal_toNNReal (f 0)).symm
   obtain ⟨μ₀, U, hUle, hμ₀_fin, -, hweak⟩ :=
-    finite_measure_cluster_limit μ (f 0).toNNReal hmass
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet μ atTop (f 0).toNNReal hmass
       (isTightMeasureSet_range_of_laplaceTransform_between_shift hf hcont ha_pos ha hfin
         hlow hhigh)
   -- Stage 3: the squeeze identifies the Laplace transform of the cluster point as `f`.

@@ -286,7 +286,8 @@ theorem exists_isFiniteMeasure_eq_herglotzTransform_add
     exact le_rfl
   -- By Prokhorov compactness, the `μs n` converge weakly along an ultrafilter `U ≤ atTop`.
   obtain ⟨μ, U, hU, hμ, -, hlim⟩ :=
-    finite_measure_cluster_limit μs _ hmass IsTightMeasureSet.of_compactSpace
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet μs atTop _ hmass
+      IsTightMeasureSet.of_compactSpace
   refine ⟨μ, hμ, fun w hw ↦ ?_⟩
   let μf : ℕ → FiniteMeasure Circle := fun n ↦ ⟨μs n, hμs n⟩
   let μf₀ : FiniteMeasure Circle := ⟨μ, hμ⟩
