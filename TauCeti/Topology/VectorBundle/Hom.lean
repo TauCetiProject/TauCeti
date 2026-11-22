@@ -9,6 +9,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Coordinates
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -39,6 +40,11 @@ preferred-frame coordinate expression is locally constant around each frame cent
 (`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`). Read in the trivializations at a
 fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
 base set (`TauCeti.continuousOn_inCoordinates`).
+
+Real-linear Hom bundles, and more generally Hom bundles over a normed field extension, carry
+the larger scalar field on their values whenever the target bundle does.
+`Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra` registers this structure on the existing
+Hom atlas; the source bundle needs only the smaller field.
 
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
@@ -756,3 +762,40 @@ theorem Bundle.Trivialization.continuousLinearEquivAt_continuousLinearMap (e : T
   simp [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 d hx.2]
 
 end HomFrame
+
+section ScalarExtensionHom
+
+variable {𝕜 𝕜' B F G : Type*} [NontriviallyNormedField 𝕜]
+  [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G]
+  {V W : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, Module 𝕜' (W x)]
+  [∀ x, IsScalarTower 𝕜 𝕜' (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [∀ x, ContinuousConstSMul 𝕜' (W x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+  [VectorBundle 𝕜 G W] [VectorBundle 𝕜' G W]
+
+/-- Homomorphisms into a bundle admitting a scalar extension form a vector bundle over the
+larger field, acting on their values. The source bundle is only over the smaller field. -/
+noncomputable instance (priority := 50) Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra :
+    VectorBundle 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x) := by
+  apply VectorBundle.ofLinear 𝕜 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x)
+  intro e he
+  obtain ⟨e', ⟨e₁, e₂, he₁, he₂, rfl⟩, rfl⟩ := he.out
+  let := he₁
+  let := he₂
+  -- The native prebundle atlas consists of exactly these induced Hom trivializations.
+  change (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).IsLinear 𝕜'
+  refine ⟨fun b hb ↦ ⟨((e₁.continuousLinearMap (RingHom.id 𝕜) e₂).linear 𝕜 hb).map_add, ?_⟩⟩
+  intro c v
+  ext u
+  simp only [Bundle.Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply,
+    smul_apply]
+  simpa only [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e₂ hb.2] using
+    (e₂.linear 𝕜' hb.2).map_smul c (v (e₁.symmL 𝕜 b u))
+
+end ScalarExtensionHom

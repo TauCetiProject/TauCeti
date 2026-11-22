@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 import TauCeti.Data.Set.Prod
 import TauCeti.Logic.Function.Fiber
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
@@ -48,7 +49,9 @@ A set covered by finitely many finite sets `C i` is finite, with at most `∑ i,
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
 `(i, a, b)` with `a ∈ A i` and `b ∈ B i` are counted fibrewise by `∑ i, |A i| * |B i|`
 (`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
-of two counting matrices.
+of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` for coefficients
+`a i` equal to `|A i|` when `P i` holds and `0` otherwise, and `b i` likewise for `B i` and `Q i`
+(`Set.natCast_ncard_setOf_and_and_mem_and_mem`).
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -155,6 +158,27 @@ theorem ncard_setOf_and_and_mem_and_mem {ι α β : Type*} [Fintype ι] {P Q : �
     refine eq_empty_of_forall_notMem fun z hz ↦ hi ?_
     simp only [mem_preimage, Finite.mem_toFinset, mem_ofPred_eq] at hz
     exact ⟨hz.1.1, hz.1.2.1⟩
+
+/-- **Counting triples fibrewise, against coefficients.** Let `a i` be `|A i|` when `P i` holds and
+`0` otherwise, and `b i` be `|B i|` when `Q i` holds and `0` otherwise, both read in a semiring `R`.
+Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`, when
+finitely many, are counted in `R` by `∑ i, a i * b i`. This is the coefficient of a composite of two
+linear maps whose matrices count the elements of `A i` and of `B i`. -/
+theorem natCast_ncard_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι] [Semiring R]
+    {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β} {a b : ι → R}
+    (ha : ∀ i, P i → a i = (A i).ncard) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = (B i).ncard) (hb₀ : ∀ i, ¬Q i → b i = 0)
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    ({x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard : R) =
+      ∑ i, a i * b i := by
+  classical
+  rw [ncard_setOf_and_and_mem_and_mem hfin, Nat.cast_sum, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hP : P i
+  · by_cases hQ : Q i
+    · rw [ite_eq_left ⟨hP, hQ⟩, Nat.cast_mul, ha i hP, hb i hQ]
+    · rw [ite_eq_right fun h ↦ hQ h.2, hb₀ i hQ, mul_zero]
+  · rw [ite_eq_right fun h ↦ hP h.1, ha₀ i hP, zero_mul]
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/
