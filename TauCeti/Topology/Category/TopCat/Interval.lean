@@ -37,13 +37,14 @@ def midpoint : I.{u} :=
 two paths restricts to the first path. -/
 def firstHalf : I.{u} ⟶ I.{u} :=
   ofHom ⟨fun t ↦ homeomorph.symm ⟨homeomorph t / 2,
-    div_nonneg (homeomorph t).2.1 zero_le_two, by linarith [(homeomorph t).2.2]⟩, by fun_prop⟩
+    div_nonneg (homeomorph t).property.1 zero_le_two, by linarith [(homeomorph t).property.2]⟩,
+        by fun_prop⟩
 
 /-- The second half of the interval, as a self-map of `TopCat.I`, along which the concatenation
 of two paths restricts to the second path. -/
 def secondHalf : I.{u} ⟶ I.{u} :=
   ofHom ⟨fun t ↦ homeomorph.symm ⟨(homeomorph t + 1) / 2,
-    by linarith [(homeomorph t).2.1], by linarith [(homeomorph t).2.2]⟩, by fun_prop⟩
+    by linarith [(homeomorph t).property.1], by linarith [(homeomorph t).property.2]⟩, by fun_prop⟩
 
 @[simp]
 lemma coe_homeomorph_midpoint : (homeomorph midpoint.{u} : ℝ) = 1 / 2 :=

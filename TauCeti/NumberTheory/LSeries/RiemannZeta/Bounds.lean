@@ -1,0 +1,172 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.Analysis.MellinTransform.UpperTail
+import TauCeti.NumberTheory.LSeries.SumCoeff
+
+/-!
+# Right-half-plane integral representation and vertical bounds for `riemannZeta`
+
+On `Re s > 1`, Euler–Maclaurin / Abel summation expresses the Riemann zeta function as
+
+`ζ(s) = s / (s - 1) - s ∫₁^∞ {t} t^{-(s + 1)} dt`,
+
+where `{t} = t - ⌊t⌋₊ ∈ [0, 1)` is the fractional part of `t`. Subtracting `(s - 1)⁻¹` gives
+
+`riemannZeta₀ s = 1 - s ∫₁^∞ {t} t^{-(s + 1)} dt`.
+
+Because `{t}` is bounded by `1`, the right-hand side is holomorphic on the entire open right
+half-plane `Re s > 0`, so the identity principle extends both formulas from `Re s > 1` to
+`Re s > 0`. Bounding `|{t}| ≤ 1` in the integral immediately gives the explicit vertical-line growth
+bounds
+
+`‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`   and   `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s`
+
+for all `Re s > 0` (including at `s = 1`, where Mathlib's junk value `(γ - log(4π)) / 2` has norm
+strictly less than `2`).
+
+## Main results
+
+* `TauCeti.riemannZeta₀_eq_one_sub_mul_integral`: the fractional-part integral formula for
+  `riemannZeta₀` on `Re s > 0`.
+* `TauCeti.riemannZeta_eq_div_sub_mul_integral`: `ζ(s) = s / (s - 1) - s ∫₁^∞ {t} t^{-(s + 1)} dt`
+  for `Re s > 0` and `s ≠ 1`.
+* `TauCeti.norm_riemannZeta₀_le_one_add_norm_div_re`: `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s` on
+  `Re s > 0`.
+* `TauCeti.norm_riemannZeta_le_of_re_pos`: `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s` on
+  `Re s > 0`.
+
+## References
+
+* E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, §2.1, eq. (2.1.4).
+* H. Davenport, *Multiplicative Number Theory*, Ch. 12 and Ch. 21.
+-/
+
+public section
+
+open Complex Filter MeasureTheory Asymptotics
+open scoped Real Topology
+
+namespace TauCeti
+
+/-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
+`riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
+  have hLHS : AnalyticOnNhd ℂ riemannZeta₀ {z : ℂ | 0 < z.re} :=
+    differentiable_riemannZeta₀.differentiableOn.analyticOnNhd hopen
+  have hO_frac : (fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)) =O[atTop] fun t ↦ t ^ (0 : ℝ) :=
+    isBigO_iff.mpr ⟨1, (eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ by
+      simpa only [Real.rpow_zero, Real.norm_eq_abs, abs_one, mul_one, norm_real] using
+        Nat.abs_sub_floor_le ht⟩
+  have hRHS : AnalyticOnNhd ℂ
+      (fun z ↦ 1 - z * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)))
+      {z : ℂ | 0 < z.re} :=
+    ((differentiableOn_const 1).sub (differentiableOn_id.mul
+      (differentiableOn_integral_mul_cpow_of_isBigO hO_frac))).analyticOnNhd hopen
+  refine (hLHS.eqOn_of_preconnected_of_eventuallyEq hRHS
+    (convex_halfSpace_re_gt 0).isPreconnected (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) ?_) hs
+  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+    (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z (hz : 1 < z.re)
+  have hz1 : z ≠ 1 := fun h ↦ by simp [h] at hz
+  have hO1 : (fun n : ℕ ↦ ∑ _k ∈ Finset.Icc 1 n, (1 : ℂ)) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) :=
+    isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by simp⟩
+  have hζ : riemannZeta z =
+      z * ∫ t in Set.Ioi (1 : ℝ), (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1)) := by
+    rw [← LSeries_one_eq_riemannZeta hz, LSeries_eq_mul_integral _ zero_le_one hz
+      (LSeriesSummable_one_iff.mpr hz) hO1]
+    simp
+  have hint_t : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
+    integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
+  have hint_fl : IntegrableOn (fun t : ℝ ↦ (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := by
+    simpa using LSeries.integrableOn_sum_mul_cpow_of_isBigO (fun _ ↦ (1 : ℂ)) hO1 hz
+  have hsub_eq : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)) =
+      (∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z)) -
+        ∫ t in Set.Ioi (1 : ℝ), (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1)) := by
+    rw [← integral_sub hint_t hint_fl]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
+    have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (zero_lt_one.trans ht).ne'
+    have hpow : (t : ℂ) * (t : ℂ) ^ (-(z + 1)) = (t : ℂ) ^ (-z) :=
+      calc (t : ℂ) * (t : ℂ) ^ (-(z + 1))
+          = (t : ℂ) ^ (1 : ℂ) * (t : ℂ) ^ (-(z + 1)) := by rw [cpow_one]
+        _ = (t : ℂ) ^ (-z) := by rw [← cpow_add _ _ ht_ne]; ring_nf
+    push_cast
+    rw [sub_mul, hpow]
+  have hint_val : ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z) = 1 / (z - 1) := by
+    rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow,
+      ← neg_div_neg_eq (1 : ℂ)]
+    congr 1; ring
+  rw [riemannZeta₀, ite_eq_right hz1, hsub_eq, hint_val, mul_sub, ← hζ]
+  field_simp [sub_ne_zero.mpr hz1]
+  ring
+
+/-- **Fractional-part integral representation of `riemannZeta`.** For `Re s > 0` and `s ≠ 1`,
+`ζ(s) = s / (s - 1) - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
+theorem riemannZeta_eq_div_sub_mul_integral {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠ 1) :
+    riemannZeta s =
+      s / (s - 1) - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  rw [riemannZeta_eq_inv_sub_add hs1, riemannZeta₀_eq_one_sub_mul_integral hs]
+  field_simp [sub_ne_zero.mpr hs1]
+  ring
+
+/-- On the open right half-plane `Re s > 0`, `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`. -/
+theorem norm_riemannZeta₀_le_one_add_norm_div_re {s : ℂ} (hs : 0 < s.re) :
+    ‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / s.re := by
+  rw [riemannZeta₀_eq_one_sub_mul_integral hs]
+  have hint_bound : ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
+      1 / s.re :=
+    (norm_integral_mul_cpow_le_of_bound one_pos (fun t (ht : 1 < t) ↦ by
+      simpa only [norm_real, Real.norm_eq_abs] using
+        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs).trans_eq
+      (by rw [Real.one_rpow, one_mul])
+  calc ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
+      ≤ ‖(1 : ℂ)‖ + ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ :=
+        (norm_sub_le _ _).trans (by rw [norm_mul])
+    _ ≤ 1 + ‖s‖ * (1 / s.re) := by
+        rw [norm_one]
+        exact add_le_add_right (mul_le_mul_of_nonneg_left hint_bound (norm_nonneg s)) 1
+    _ = 1 + ‖s‖ / s.re := by ring
+
+/-- **Explicit vertical growth bound for `riemannZeta` on `Re s > 0`.** For every `s` with
+`Re s > 0` (including `s = 1`, where `(1 - 1)⁻¹ = 0`),
+`‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s`. -/
+theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
+    ‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · have hval : riemannZeta 1 = ((Real.eulerMascheroniConstant - Real.log (4 * π)) / 2 : ℝ) := by
+      rw [riemannZeta_one, ofReal_div, ofReal_sub, ofReal_log (by positivity : (0 : ℝ) ≤ 4 * π)]
+      norm_cast
+    have hlog_pos : 0 < Real.log (4 * π) :=
+      Real.log_pos (by linarith [Real.two_le_pi])
+    have hlog_lt : Real.log (4 * π) < 4 := by
+      rw [Real.log_lt_iff_lt_exp (by positivity)]
+      have h2e : (2 : ℝ) < Real.exp 1 := by
+        linarith [Real.add_one_lt_exp (one_ne_zero : (1 : ℝ) ≠ 0)]
+      have h16 : (16 : ℝ) < Real.exp 4 := by
+        calc (16 : ℝ) = 2 ^ 4 := by norm_num
+          _ < Real.exp 1 ^ 4 := pow_lt_pow_left₀ h2e (by norm_num) (by norm_num)
+          _ = Real.exp 4 := by rw [← Real.exp_natCast_mul]; norm_num
+      linarith [Real.pi_lt_four]
+    rw [hval, norm_real, Real.norm_eq_abs]
+    simp only [sub_self, norm_zero, inv_zero, zero_add, norm_one, one_re, div_one]
+    rw [abs_le]
+    have hγ₁ := Real.one_half_lt_eulerMascheroniConstant
+    have hγ₂ := Real.eulerMascheroniConstant_lt_two_thirds
+    constructor <;> linarith
+  · rw [riemannZeta_eq_inv_sub_add hs1]
+    calc ‖(s - 1)⁻¹ + riemannZeta₀ s‖
+        ≤ ‖(s - 1)⁻¹‖ + ‖riemannZeta₀ s‖ := norm_add_le _ _
+      _ ≤ ‖s - 1‖⁻¹ + (1 + ‖s‖ / s.re) := by
+          rw [norm_inv]
+          exact add_le_add_right (norm_riemannZeta₀_le_one_add_norm_div_re hs) _
+      _ = ‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re := by ring
+
+end TauCeti

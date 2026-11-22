@@ -86,7 +86,7 @@ theorem subsingleton_relHomotopyGroup_diagonal
       ⟨TopPair.ofSubset (X := TopCat.of (Y × Y)) (diagonal Y), b⟩) := by
   -- The diagonal is a retract of `Y × Y`, so its inclusion is injective on homotopy groups.
   let r : C(Y × Y, diagonal Y) := ⟨fun p ↦ ⟨(p.1, p.1), rfl⟩, by fun_prop⟩
-  have hr : r (b : Y × Y) = b := Subtype.ext (Prod.ext rfl b.2)
+  have hr : r (b : Y × Y) = b := Subtype.ext (Prod.ext rfl b.property)
   have hrι : r.comp (ContinuousMap.subtypeVal (diagonal Y)) = ContinuousMap.id _ := by
     ext ⟨p, hp⟩
     · simp [r]
@@ -175,7 +175,7 @@ theorem homotopicRel_skeletonLT_one_of_forall_homotopicRel
       exact (hfg (.const I x) hx hx).fst_eq_snd (Or.inl rfl)
     exact fun x hx ↦ h hx
   have hE (n : ℕ) (hn : n < 2) : IsEmpty (@cell X _ C E E.relCWComplex n) := by
-    refine ⟨fun i ↦ (E.relCWComplexCellEquiv n i).2 ?_⟩
+    refine ⟨fun i ↦ (E.relCWComplexCellEquiv n i).property ?_⟩
     simp only [E, skeletonLT_I, mem_ofPred_eq]
     exact_mod_cast hn
   -- The structure relative to `E` is not an instance: `C` already carries one relative to `D`.
@@ -224,7 +224,7 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   have h := homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
     (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) (f := f.comp e) (g := g.comp e)
     hf hg <| by

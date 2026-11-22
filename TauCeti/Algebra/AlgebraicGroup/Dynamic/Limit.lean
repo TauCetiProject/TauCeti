@@ -76,7 +76,7 @@ theorem parabolicLimitCoordinateMap_apply (l : H →ₐc[R] LaurentPolynomial R)
       limitToLeviNatTrans_app, leviFunctorIncl_app]
     exact coe_limitToLevi_apply A l _
   let g : parabolic A l := (parabolicPointsIso l).hom.app A q
-  have hg : g.1 = CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
+  have hg : g.val = CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
       (parabolicDefiningHopfIdeal l) A q :=
     coe_parabolicPointsIso_hom_app_apply l A q
   have hv : q.ofConv ((parabolicLimitCoordinateMap l).hom h) =
@@ -101,7 +101,7 @@ theorem mapPointsFunctor_parabolicLimitCoordinateMap_app
     (CommHopfAlgCat.Hom.mapPointsFunctor (parabolicLimitCoordinateMap l)).app A g =
       limit A l ((parabolicPointsIso l).hom.app A g) := by
   let p : parabolic A l := (parabolicPointsIso l).hom.app A g
-  have hp : p.1 = CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
+  have hp : p.val = CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
       (parabolicDefiningHopfIdeal l) A g :=
     coe_parabolicPointsIso_hom_app_apply l A g
   apply WithConv.ofConv_injective

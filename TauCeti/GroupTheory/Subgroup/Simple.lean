@@ -7,9 +7,10 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
-# Simplicity from normal generation by elements of prime order
+# Simple groups: normal generation and maximal subgroups
 
 A group is simple when it is nontrivial and each of its nontrivial elements generates it as a
 normal subgroup. In a torsion group, and in particular in a finite group, it suffices to check
@@ -24,6 +25,11 @@ representatives covering the classes of elements of prime order, and, for each r
 that its normal closure is the whole group. This is the shape of the simplicity certificates for
 groups given by presentations or by permutation and matrix generators.
 
+In the other direction, simplicity constrains the maximal subgroups. In any group a maximal
+subgroup is either normal or its own normalizer, and in a nonabelian simple group no maximal
+subgroup is normal, so each is its own normalizer. This is the starting point of the
+local analysis of a simple group through the normalizers of its subgroups.
+
 ## Main results
 
 * `IsSimpleGroup.normalClosure_singleton_eq_top`: in a simple group, every nontrivial element
@@ -36,6 +42,10 @@ groups given by presentations or by permutation and matrix generators.
 * `TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard`: a single normal
   generator `a` with `a ^ p = 1` suffices when the prime `p` divides the order of every nontrivial
   normal subgroup and `p ^ 2` does not divide the group order.
+* `IsCoatom.normalizer_eq_self_of_not_normal`: in any group, a maximal subgroup that is not normal
+  is its own normalizer.
+* `IsSimpleGroup.normalizer_eq_self_of_isCoatom`: in a nonabelian simple group, every maximal
+  subgroup is its own normalizer.
 
 A finite group is torsion by `isMulTorsion_of_finite`. The prime-order element of a nontrivial
 normal subgroup comes from `IsMulTorsion.exists_prime_orderOf_mem` in
@@ -88,6 +98,24 @@ theorem IsMulTorsion.isSimpleGroup_of_isConj_of_normalClosure_eq_top (hG : IsMul
   simpa [mul_assoc] using
     (normalClosure_normal (s := {c * x * c⁻¹})).conj_mem _ (subset_normalClosure rfl) c⁻¹
 
+/-- A maximal subgroup that is not normal is its own normalizer. -/
+theorem IsCoatom.normalizer_eq_self_of_not_normal {M : Subgroup G} (hM : IsCoatom M)
+    (hN : ¬ M.Normal) : normalizer (M : Set G) = M :=
+  (hM.le_iff.mp le_normalizer).resolve_left fun h ↦ hN (normalizer_eq_top_iff.mp h)
+
+/-- **Maximal subgroups of a nonabelian simple group are self-normalizing.** In a nonabelian
+simple group, every maximal subgroup `M` is its own normalizer; equivalently, no maximal subgroup
+is normal. -/
+theorem IsSimpleGroup.normalizer_eq_self_of_isCoatom [IsSimpleGroup G] (hG : ¬ IsMulCommutative G)
+    {M : Subgroup G} (hM : IsCoatom M) : normalizer (M : Set G) = M := by
+  refine hM.normalizer_eq_self_of_not_normal fun _ ↦ hG ?_
+  -- A normal maximal subgroup is `⊥`, and a group in which `⊥` is maximal is cyclic.
+  obtain rfl := (Normal.eq_bot_or_eq_top M).resolve_right hM.1
+  obtain ⟨g, hg⟩ := exists_ne (1 : G)
+  have : IsCyclic G := isCyclic_iff_exists_zpowers_eq_top.mpr
+    ⟨g, hM.2 _ (bot_lt_iff_ne_bot.mpr (zpowers_ne_bot.mpr hg))⟩
+  infer_instance
+
 namespace TauCeti
 
 /-- **Simplicity from one normal generator of prime order.** Let `G` be a nontrivial group and `p`
@@ -100,11 +128,7 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard [Nontr
     (a : G) (ha : a ^ p = 1) (hgen : normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
   refine ⟨fun N _ ↦ or_iff_not_imp_left.mpr fun hN ↦ ?_⟩
   -- The order of `N` is divisible by `p`, so its index is not, and `a` lies in `N`.
-  have hcop : (Nat.card (G ⧸ N)).Coprime p := by
-    rw [← index_eq_card, Nat.coprime_comm, hp.coprime_iff_not_dvd]
-    exact fun hi ↦ hcard (by rw [← N.card_mul_index, pow_two]; exact Nat.mul_dvd_mul (hdvd N hN) hi)
-  have hmem : a ∈ N := (QuotientGroup.eq_one_iff a).mp (hcop.pow_left_bijective.injective
-    (by simp only [← QuotientGroup.mk_pow, ha, QuotientGroup.mk_one, one_pow]))
-  exact top_unique (hgen ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr hmem))
+  exact top_unique (hgen ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr
+    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hp ha (hdvd N hN) hcard)))
 
 end TauCeti

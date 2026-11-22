@@ -38,7 +38,7 @@ def _root_.MonoidHom.cpowCharacter (f : G →* ℝ≥0ˣ) (hf : Continuous f) (s
   toFun x := Units.mk0 ((((f x : ℝ≥0) : ℝ) : ℂ) ^ s) <| by simp
   map_one' := Units.ext <| by simp
   map_mul' x y := Units.ext <| by
-    simpa using mul_cpow_ofReal_nonneg (f x : ℝ≥0).coe_nonneg (f y : ℝ≥0).coe_nonneg s
+    simpa using ofReal_mul_cpow (f x : ℝ≥0).coe_nonneg _ s
   continuous_toFun := Units.isEmbedding_val₀.continuous_iff.mpr <|
     (by fun_prop : Continuous fun x ↦ (((f x : ℝ≥0) : ℝ) : ℂ)).cpow continuous_const
       fun x ↦ ofReal_mem_slitPlane.2 <| NNReal.coe_pos.2 <| pos_iff_ne_zero.2 (f x).ne_zero

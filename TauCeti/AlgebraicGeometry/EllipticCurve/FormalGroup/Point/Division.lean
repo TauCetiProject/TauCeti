@@ -112,6 +112,6 @@ theorem exists_nsmul_eq_of_pole (V : WeierstrassCurve (u.adicCompletion F))
     exact hP
   obtain ⟨Q, hQ⟩ := (C.nsmul_kerReduction_bijective u hn).2 ⟨P, hP'⟩
   refine ⟨Q, ?_, congrArg Subtype.val hQ⟩
-  exact (Affine.Point.reduction_eq_zero_iff _ _).mp ((C.mem_kerReduction_iff u).mp Q.2)
+  exact (Affine.Point.reduction_eq_zero_iff _ _).mp ((C.mem_kerReduction_iff u).mp Q.property)
 
 end WeierstrassCurve

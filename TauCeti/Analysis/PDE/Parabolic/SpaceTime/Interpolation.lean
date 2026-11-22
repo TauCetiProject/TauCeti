@@ -106,8 +106,8 @@ private theorem dist_le_two_mul_of_norm_le [SeminormedAddCommGroup F] {w : E →
     (hC : ∀ y, ∀ t ∈ Icc a b, ‖w y t‖ ≤ C) (p q : slab (E := E) a b) :
     dist (w (p : ParabolicSpaceTime E).space (slabTime p))
       (w (q : ParabolicSpaceTime E).space (slabTime q)) ≤ ((2 * C : ℝ≥0) : ℝ) := by
-  have := add_le_add (hC (p : ParabolicSpaceTime E).space _ (slabTime p).2)
-    (hC (q : ParabolicSpaceTime E).space _ (slabTime q).2)
+  have := add_le_add (hC (p : ParabolicSpaceTime E).space _ (slabTime p).property)
+    (hC (q : ParabolicSpaceTime E).space _ (slabTime q).property)
   push_cast
   linarith [dist_le_norm_add_norm (w (p : ParabolicSpaceTime E).space (slabTime p))
     (w (q : ParabolicSpaceTime E).space (slabTime q))]
@@ -139,8 +139,8 @@ theorem spaceEHolderNorm_one_le_of_hasFDerivAt {w : E → ℝ → F} {w' : E →
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine spaceEHolderNorm_le_iff.2 fun t x y => ?_
   have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
-    (fun z _ => (hw t t.2 z).hasFDerivWithinAt)
-    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC z t t.2)
+    (fun z _ => (hw t t.property z).hasFDerivWithinAt)
+    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC z t t.property)
   simpa only [space_slabMk, slabTime_slabMk] using holderWith_one.2 hlip x y
 
 omit [NormedSpace ℝ E] in

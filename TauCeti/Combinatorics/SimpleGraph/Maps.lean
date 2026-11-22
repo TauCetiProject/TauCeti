@@ -34,7 +34,9 @@ its Boolean adjacency array.
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
   in the graph;
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
-* `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array.
+* `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
+* `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
+  corresponding range subtype vertex.
 -/
 
 public section
@@ -114,5 +116,16 @@ theorem adjArray_injective :
     Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
   ext i j
   simpa only [adjArray_apply, decide_eq_decide] using congrFun h (i, j)
+
+namespace Embedding
+
+/-- Evaluating `SimpleGraph.Embedding.isoInduceRange` at a vertex `v` gives the range subtype
+vertex `⟨f v, ⟨v, rfl⟩⟩`. -/
+@[simp]
+theorem isoInduceRange_apply {G : SimpleGraph V} {H : SimpleGraph W} (f : G ↪g H) (v : V) :
+    f.isoInduceRange v = ⟨f v, ⟨v, rfl⟩⟩ :=
+  Equiv.ofInjective_apply f f.injective v
+
+end Embedding
 
 end SimpleGraph

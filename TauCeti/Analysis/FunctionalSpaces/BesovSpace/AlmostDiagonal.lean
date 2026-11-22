@@ -15,7 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # Almost diagonal operators on Besov spaces
 
 Let `T` be a continuous linear map of tempered distributions which moves frequencies between the
-Littlewood–Paley blocks only a little: for a natural number `N`, the block `Δⱼ T Δₖ u` is an `Lᵖ`
+Littlewood–Paley blocks only a little: for a real number `N`, the block `Δⱼ T Δₖ u` is an `Lᵖ`
 function with
 
 `‖Δⱼ T Δₖ u‖_p ≤ K 2^{-N |j - k|} ‖Δₖ u‖_p`.
@@ -101,27 +101,29 @@ theorem exists_norm_littlewoodPaleyBlock_succ_le_of_iteratedLineDerivOp
         field_simp
 
 /-- **Off-diagonal decay between Littlewood–Paley blocks.** Let `T` be a map of tempered
-distributions and `M` a natural number, and let `1 ≤ p ≤ ∞`. Suppose that every block `Δⱼ T f`
-of an `Lᵖ` function `f` is an `Lᵖ` function of norm at most `K₀ ‖f‖_p`, that for `j > k` and `f`
-with spectrum in the ball of radius `2^k φ.rOut` it has norm at most `K₁ (2^k / 2^j)^M ‖f‖_p`,
-and that for `f` with spectrum in the annulus `R ≤ ‖ξ‖ ≤ (2 φ.rOut / φ.rIn) R` it has norm at
-most `K₂ (2^j / R)^M ‖f‖_p`. If the block `Δₖ u` of a tempered distribution is an `Lᵖ` function
-`f`, then every block `Δⱼ T f` is an `Lᵖ` function of norm at most
-`(K₁ + K₂ (2 / φ.rIn)^M + K₀) 2^{-M |j - k|} ‖f‖_p`. -/
-theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus (φ : ContDiffBump (0 : E))
+distributions and `M` a natural number, and let `1 ≤ p ≤ ∞`. Suppose that, whenever the block
+`Δₖ u` of a tempered distribution is an `Lᵖ` function `f`, the block `Δₖ T f` is an `Lᵖ` function
+of norm at most `K₀ ‖f‖_p`, for `j > k` the block `Δⱼ T f` is one of norm at most
+`K₁ (2^k / 2^j)^M ‖f‖_p`, and, for `k = k' + 1`, every block `Δⱼ T f` is one of norm at most
+`K₂ (2^j / (2^{k'} φ.rIn))^M ‖f‖_p`. Then every block `Δⱼ T f` of such an `f` is an `Lᵖ`
+function of norm at most `(K₁ + K₂ (2 / φ.rIn)^M + K₀) 2^{-M |j - k|} ‖f‖_p`. The hypotheses
+hold when they hold for all `f` with spectrum in the ball of radius `2^k φ.rOut`
+(`TauCeti.isVanishingOn_fourier_littlewoodPaleyBlock`), respectively in the annulus
+`2^{k'} φ.rIn ≤ ‖ξ‖ ≤ 2^{k'+1} φ.rOut` (`TauCeti.isVanishingOn_fourier_littlewoodPaleyBlock_succ`).
+-/
+theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le (φ : ContDiffBump (0 : E))
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (T : 𝓢'(E, F) → 𝓢'(E, F)) {M : ℕ} {K₀ K₁ K₂ : ℝ} (hK₀ : 0 ≤ K₀)
     (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂)
-    (h₀ : ∀ (j : ℕ) (f : Lp F p (volume : Measure E)), ∃ v : Lp F p (volume : Measure E),
-      littlewoodPaleyBlock F φ j (T f) = v ∧ ‖v‖ ≤ K₀ * ‖f‖)
-    (h₁ : ∀ {j k : ℕ}, k < j → ∀ f : Lp F p (volume : Measure E),
-      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (Metric.closedBall 0 (2 ^ k * φ.rOut))ᶜ →
-      ∃ v : Lp F p (volume : Measure E), littlewoodPaleyBlock F φ j (T f) = v ∧
-        ‖v‖ ≤ K₁ * ((2 : ℝ) ^ k / 2 ^ j) ^ M * ‖f‖)
-    (h₂ : ∀ (j : ℕ) {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
-      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F))
-        (Metric.ball 0 R ∪ (Metric.closedBall 0 (2 * φ.rOut / φ.rIn * R))ᶜ) →
-      ∃ v : Lp F p (volume : Measure E), littlewoodPaleyBlock F φ j (T f) = v ∧
-        ‖v‖ ≤ K₂ * ((2 : ℝ) ^ j / R) ^ M * ‖f‖)
+    (h₀ : ∀ (k : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ k u = f → ∃ v : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ k (T f) = v ∧ ‖v‖ ≤ K₀ * ‖f‖)
+    (h₁ : ∀ {j k : ℕ}, k < j → ∀ (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ k u = f → ∃ v : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (T f) = v ∧ ‖v‖ ≤ K₁ * ((2 : ℝ) ^ k / 2 ^ j) ^ M * ‖f‖)
+    (h₂ : ∀ (j k : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ (k + 1) u = f → ∃ v : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (T f) = v ∧
+          ‖v‖ ≤ K₂ * ((2 : ℝ) ^ j / (2 ^ k * φ.rIn)) ^ M * ‖f‖)
     (j k : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E))
     (hf : littlewoodPaleyBlock F φ k u = f) :
     ∃ v : Lp F p (volume : Measure E), littlewoodPaleyBlock F φ j (T f) = v ∧
@@ -133,22 +135,18 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus (φ : Cont
         (K₁ + K₂ * (2 / φ.rIn) ^ M + K₀) * (2 : ℝ) ^ (-(M * |(j : ℝ) - k|)) * ‖f‖ := by
     gcongr
   rcases lt_trichotomy k j with hkj | rfl | hjk
-  · -- High output frequency: the block `f` is band-limited to the ball of radius `2^k φ.rOut`.
-    obtain ⟨v, hv, hvn⟩ := h₁ hkj f (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ k u)
+  · -- High output frequency.
+    obtain ⟨v, hv, hvn⟩ := h₁ hkj u f hf
     refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK K₁ (by linarith))⟩
     rw [Real.pow_div_pow_pow_eq_rpow_of_le two_pos hkj.le]
-  · -- Equal frequencies: `T` and the block are bounded on `Lᵖ`.
-    obtain ⟨v, hv, hvn⟩ := h₀ k f
+  · -- Equal frequencies.
+    obtain ⟨v, hv, hvn⟩ := h₀ k u f hf
     refine ⟨v, hv, ?_⟩
     calc ‖v‖ ≤ K₀ * (2 : ℝ) ^ (-(M * |(k : ℝ) - k|)) * ‖f‖ := by simpa using hvn
       _ ≤ _ := hK _ (by linarith)
-  · -- High input frequency: the block `f` has spectrum in the `k`-th dyadic annulus.
+  · -- High input frequency.
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-    have hR : (0 : ℝ) < 2 ^ k * φ.rIn := by positivity
-    obtain ⟨v, hv, hvn⟩ := h₂ j hR f (by
-      rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
-      simpa only [Set.compl_sdiff, Set.union_comm] using
-        isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)
+    obtain ⟨v, hv, hvn⟩ := h₂ j k u f hf
     refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK (K₂ * (2 / φ.rIn) ^ M) (by linarith))⟩
     rw [abs_sub_comm, ← Real.pow_div_pow_pow_eq_rpow_of_le two_pos hjk.le, div_pow, div_pow,
       div_pow, mul_pow, pow_succ]
@@ -160,11 +158,11 @@ namespace BesovSpace
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
 /-- **Almost diagonal operators are bounded on Besov spaces.** Let `T` be a continuous linear map
-of tempered distributions, `N` a natural number with `|s| < N` and `u ∈ B^s_{p,q}`. If every block
+of tempered distributions, `N` a real number with `|s| < N` and `u ∈ B^s_{p,q}`. If every block
 `Δⱼ T Δₖ u` is an `Lᵖ` function of norm at most `K 2^{-N |j - k|} ‖Δₖ u‖_p`, then `T u` lies in
 `B^s_{p,q}`, with norm at most `K ∑_{d ∈ ℤ} r^{|d|} ‖u‖` for `r = 2^{|s| - N} < 1`. -/
 theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_le
-    (T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) {N : ℕ} (hN : |s| < N) {K : ℝ} (hK : 0 ≤ K)
+    (T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) {N : ℝ} (hN : |s| < N) {K : ℝ} (hK : 0 ≤ K)
     (u : BesovSpace F φ s p q)
     (hT : ∀ j k : ℕ, ∃ v : Lp F p (volume : Measure E),
       littlewoodPaleyBlock F φ j (T (u.block k : 𝓢'(E, F))) = v ∧
