@@ -22,6 +22,10 @@ real cutoff `x` when passing between inclusive and strict prime sums.
 This file also records a numerical enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the
 iterated logarithm at `2`, used to enclose the logarithmic integral at `2`.
 
+Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
+(`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
+decay of `log x`, as for the modulus `|α|²` of a section tending to one.
+
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
 `posLog x` by `sqrt (2 * |x|)` for every real `x`.
@@ -34,6 +38,7 @@ in Hadamard minimum-modulus estimates.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.le_log_log_two` and `Real.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
+* `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
@@ -85,6 +90,17 @@ theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
     nlinarith [exp_pos (-(22907 / 62500 : ℝ)), exp_pos (22907 / 62500 : ℝ)]
   have hle' : (0.6931471808 : ℝ) ≤ exp (-0.366512) := by norm_num at hle ⊢; exact hle
   exact log_two_lt_d9.le.trans hle'
+
+/-- Near `1` from below the logarithm is controlled by the distance to `1`: for `1 / 2 ≤ x ≤ 1`,
+`|log x| ≤ 2 (1 - x)`. -/
+theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1) :
+    |log x| ≤ 2 * (1 - x) := by
+  have hx₀ : 0 < x := by linarith
+  -- `-log x = log x⁻¹ ≤ x⁻¹ - 1 = (1 - x) / x ≤ 2 (1 - x)`.
+  have h := log_le_sub_one_of_pos (inv_pos.mpr hx₀)
+  rw [log_inv, inv_eq_one_div, div_sub_one hx₀.ne', le_div_iff₀ hx₀] at h
+  rw [abs_of_nonpos (log_nonpos hx₀.le hx₁)]
+  nlinarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/

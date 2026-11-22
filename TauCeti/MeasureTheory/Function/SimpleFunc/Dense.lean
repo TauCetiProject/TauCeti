@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Uniform approximation by simple functions
@@ -23,8 +22,9 @@ a finite-dimensional normed space, is a uniform limit of measurable finite-range
 values stay in any prescribed totally bounded set containing its range. This is the
 approximation behind integration of bounded measurable functions against projection-valued
 measures, where uniform rather than pointwise control is needed. It also shows that simple
-functions are dense in real `L∞` for any measure: an essentially bounded function has a bounded
-measurable representative.
+functions are dense in `L∞` with values in a proper normed group, such as a finite-dimensional
+normed space, for any measure: an essentially bounded function has a bounded measurable
+representative.
 
 ## Main statements
 
@@ -35,11 +35,16 @@ measurable representative.
   approximants `approxOn f hf s y₀ h₀ n` converge to `f` uniformly.
 * `MeasureTheory.SimpleFunc.toLpTop μ 𝕜`: the class in `L∞(μ)` of a simple function, as a linear
   map.
-* `MeasureTheory.SimpleFunc.denseRange_toLpTop` — simple functions are dense in real `L∞`.
+* `MeasureTheory.SimpleFunc.denseRange_toLpTop` — simple functions are dense in `L∞` with values
+  in a proper normed group.
 * `MeasureTheory.SimpleFunc.integrable_toLp` — the class in `Lᵖ`, `0 < p < ∞`, of a simple
   function is integrable.
 * `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
   exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
+* `MeasureTheory.Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top` — a simple function of `Lᵖ`,
+  `0 < p < ∞`, lies in every `Lʳ`.
+* `MeasureTheory.Lp.continuousLinearMap_ext_of_memLp` — two continuous semilinear maps out of
+  `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are equal.
 -/
 
 public section
@@ -88,13 +93,9 @@ theorem tendstoUniformly_approxOn {f : β → α} (hf : Measurable f) {s : Set �
   have : Nonempty s := ⟨⟨y₀, h₀⟩⟩
   -- the points used by `approxOn` are `y₀` followed by the dense sequence of `s`
   have hsub : closure s ⊆ closure (range fun k ↦ (Nat.casesOn k y₀ ((↑) ∘ denseSeq s) : α)) := by
-    refine closure_minimal (fun y hy ↦ closure_mono (s := range ((↑) ∘ denseSeq s)) ?_ ?_)
-      isClosed_closure
-    · rintro _ ⟨k, rfl⟩
-      exact ⟨k + 1, rfl⟩
-    · rw [range_comp]
-      exact image_closure_subset_closure_image continuous_subtypeVal
-        ⟨⟨y, hy⟩, (denseRange_denseSeq s).closure_range ▸ mem_univ _, rfl⟩
+    rw [Nat.range_casesOn, range_comp]
+    exact closure_minimal ((Subtype.dense_iff.1 (denseRange_denseSeq s)).trans
+      (closure_mono subset_union_right)) isClosed_closure
   rw [← tendstoUniformlyOn_univ]
   simpa only [approxOn, coe_comp, Function.id_comp] using
     ((tendstoUniformlyOn_nearestPt hs.closure hsub).comp f).mono fun x _ ↦ hfs x
@@ -107,8 +108,9 @@ variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
 namespace SimpleFunc
 
-variable (μ) (𝕜 : Type*) {E : Type*} [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E]
-  [IsBoundedSMul 𝕜 E] in
+variable {𝕜 E : Type*} [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+variable (μ 𝕜) in
 /-- The class in `L∞(μ)` of a simple function, as a linear map. This is Mathlib's
 `MeasureTheory.SimpleFunc.toLp` at exponent `∞`, where every simple function is essentially
 bounded whatever the measure. -/
@@ -118,51 +120,55 @@ noncomputable def toLpTop : SimpleFunc α E →ₗ[𝕜] Lp E ∞ μ where
   map_smul' _ _ := rfl
 
 /-- The class of a simple function in `L∞` is almost everywhere the function. -/
-theorem coeFn_toLpTop {𝕜 E : Type*} [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E]
-    [IsBoundedSMul 𝕜 E] (f : SimpleFunc α E) : toLpTop μ 𝕜 f =ᵐ[μ] f :=
+theorem coeFn_toLpTop (f : SimpleFunc α E) : toLpTop μ 𝕜 f =ᵐ[μ] f :=
   MemLp.coeFn_toLp (f.memLp_top μ)
 
-/-- Simple functions are dense in real `L∞`, for any measure: an essentially bounded function
-has a bounded measurable representative, which is a uniform limit of simple functions. -/
-theorem denseRange_toLpTop : DenseRange (toLpTop μ ℝ : SimpleFunc α ℝ →ₗ[ℝ] Lp ℝ ∞ μ) := by
+/-- Simple functions are dense in `L∞` with values in a proper normed group, such as a
+finite-dimensional normed space, for any measure: an essentially bounded function has a bounded
+measurable representative, which is a uniform limit of simple functions. -/
+theorem denseRange_toLpTop [ProperSpace E] :
+    DenseRange (toLpTop μ 𝕜 : SimpleFunc α E →ₗ[𝕜] Lp E ∞ μ) := by
+  borelize E
   intro φ
   set C := ‖φ‖
-  -- A measurable representative of `φ`, truncated to `[-C, C]` where it exceeds the bound.
+  -- A measurable representative of `φ`, replaced by `0` where it exceeds the bound `C`.
   have hφ := Lp.aestronglyMeasurable φ
-  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x))
-  have hf : Measurable f :=
-    measurable_const.max (measurable_const.min hφ.stronglyMeasurable_mk.measurable)
-  have hfC (x : α) : f x ∈ Metric.closedBall (0 : ℝ) C := by
-    rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs]
-    exact (TauCeti.abs_max_min_le C _).trans_eq (abs_norm φ)
-  have hφf : φ =ᵐ[μ] f := hφ.ae_eq_mk.trans (Lp.ae_eq_max_min_norm_top hφ.ae_eq_mk)
+  have hg : Measurable (hφ.mk φ) := hφ.stronglyMeasurable_mk.measurable
+  set f : α → E := fun x => if ‖hφ.mk φ x‖ ≤ C then hφ.mk φ x else 0
+  have hf : Measurable f := hg.ite (measurableSet_le hg.norm measurable_const) measurable_const
+  have hfC (x : α) : f x ∈ Metric.closedBall (0 : E) C := by
+    simp only [f, mem_closedBall_zero_iff]
+    split_ifs with h
+    exacts [h, norm_zero.le.trans (norm_nonneg φ)]
+  have hφf : φ =ᵐ[μ] f := by
+    filter_upwards [hφ.ae_eq_mk, Lp.ae_norm_le_norm_top φ] with x h hx
+    exact h.trans (ite_eq_left (h ▸ hx)).symm
   -- The simple approximants of `f` converge to it uniformly.
-  have h₀ : (0 : ℝ) ∈ Metric.closedBall 0 C := Metric.mem_closedBall_self (norm_nonneg φ)
-  have hunif := tendstoUniformly_approxOn hf h₀ (isCompact_closedBall (0 : ℝ) C).totallyBounded
+  have h₀ : (0 : E) ∈ Metric.closedBall 0 C := Metric.mem_closedBall_self (norm_nonneg φ)
+  have hunif := tendstoUniformly_approxOn hf h₀ (isCompact_closedBall (0 : E) C).totallyBounded
     fun x => subset_closure (hfC x)
-  refine mem_closure_of_tendsto (b := atTop) (f := fun n => toLpTop μ ℝ (approxOn f hf _ 0 h₀ n)) ?_
+  refine mem_closure_of_tendsto (b := atTop) (f := fun n => toLpTop μ 𝕜 (approxOn f hf _ 0 h₀ n)) ?_
     (Eventually.of_forall fun n => Set.mem_range_self _)
   refine Metric.tendsto_atTop.2 fun ε hε => ?_
   obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformly_iff.1 hunif (ε / 2) (by positivity))
   refine ⟨N, fun n hn => ?_⟩
   rw [dist_eq_norm]
   refine (Lp.norm_top_le_of_ae_bound (by positivity) ?_).trans_lt (half_lt_self hε)
-  filter_upwards [Lp.coeFn_sub (toLpTop μ ℝ (approxOn f hf _ 0 h₀ n)) φ,
-    coeFn_toLpTop (μ := μ) (𝕜 := ℝ) (approxOn f hf _ 0 h₀ n), hφf] with x hsub hx hφx
+  filter_upwards [Lp.coeFn_sub (toLpTop μ 𝕜 (approxOn f hf _ 0 h₀ n)) φ,
+    coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (approxOn f hf _ 0 h₀ n), hφf] with x hsub hx hφx
   rw [hsub, Pi.sub_apply, hx, hφx, ← dist_eq_norm, dist_comm]
   exact (hN n hn x).le
 
 /-- The class in `Lᵖ`, `0 < p < ∞`, of a simple function is integrable: a simple function in `Lᵖ`
 has support of finite measure. -/
-theorem integrable_toLp {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f : SimpleFunc α E}
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : MemLp f p μ) : Integrable (hf.toLp f) μ :=
+theorem integrable_toLp {p : ℝ≥0∞} {f : SimpleFunc α E} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hf : MemLp f p μ) : Integrable (hf.toLp f) μ :=
   ((memLp_iff_integrable hp0 hp).1 hf).congr hf.coeFn_toLp.symm
 
 /-- A simple function outside `Lᵖ` for one exponent `p` has infinite `L^q` norm for every
 `0 < q < ∞`. -/
-theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : ℝ≥0∞}
-    {f : SimpleFunc α E} (hq0 : q ≠ 0) (hq : q ≠ ∞) (hf : ¬MemLp f p μ) :
-    eLpNorm f q μ = ∞ := by
+theorem eLpNorm_eq_top_of_not_memLp {p q : ℝ≥0∞} {f : SimpleFunc α E} (hq0 : q ≠ 0)
+    (hq : q ≠ ∞) (hf : ¬MemLp f p μ) : eLpNorm f q μ = ∞ := by
   by_contra h
   refine hf ?_
   rcases eq_or_ne p 0 with rfl | hp0
@@ -173,5 +179,24 @@ theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : �
     ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h)))
 
 end SimpleFunc
+
+/-- A simple function of `Lᵖ`, `0 < p < ∞`, has support of finite measure, so it lies in every
+`Lʳ`. -/
+theorem Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top {E : Type*} [NormedAddCommGroup E]
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (r : ℝ≥0∞) (f : Lp.simpleFunc E p μ) :
+    MemLp (Lp.simpleFunc.toSimpleFunc f) r μ :=
+  SimpleFunc.memLp_of_finite_measure_preimage r <|
+    SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hp _ (Lp.simpleFunc.memLp f)
+
+/-- Two continuous semilinear maps out of `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are
+equal, because the simple functions of `Lᵖ` lie in `Lʳ` and are dense in `Lᵖ`. -/
+theorem Lp.continuousLinearMap_ext_of_memLp {𝕜 R E G : Type*} [NormedRing 𝕜] [Semiring R]
+    {σ : 𝕜 →+* R} [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [AddCommMonoid G]
+    [Module R G] [TopologicalSpace G] [T2Space G] {p r : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {S S' : Lp E p μ →SL[σ] G} (h : ∀ f : Lp E p μ, MemLp f r μ → S f = S' f) : S = S' :=
+  ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp).equalizer
+    S.continuous S'.continuous <| funext fun g => h g <|
+      (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp r
+        g).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun g)
 
 end MeasureTheory

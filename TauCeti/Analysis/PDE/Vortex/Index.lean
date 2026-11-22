@@ -36,9 +36,10 @@ index of the linearized vortex operator.
   `k`, the weak kernel has real dimension `2m`
   (`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`), the dimension of the divisor space
   `Sym^m ℂ`. Such a vortex is smooth, `|α| → 1` and `d_a α → 0` at infinity
-  (`TauCeti.Vortex.tendsto_covariantDerivative_cocompact`), so the realization is Fredholm
-  (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`), its
-  kernel has dimension `2m`
+  (`TauCeti.Vortex.tendsto_covariantDerivative_cocompact`), so the realization is onto
+  (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace`) and
+  Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`),
+  its kernel has dimension `2m`
   (`TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul`) and its index is `2m`
   (`TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`).
 
@@ -214,7 +215,7 @@ theorem sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace
     Function.Surjective (sobolevGaugeFixedOperator a) :=
   sobolevGaugeFixedOperator_surjective
     ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le (by simp)) hsol
-    (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hax
+    (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hax
 
 /-- **The realization at a plane vortex is Fredholm.** Let `x` be a continuous plane vortex lying
 in the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the realization
@@ -224,7 +225,7 @@ theorem isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace (hx 
     (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).IsFredholm := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
+  have hlim := tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem
   exact isFredholm_sobolevGaugeFixedOperator (hxs.of_le (by simp)) hsol hlim
     (tendsto_covariantDerivative_cocompact (contDiff_euclidean.1 hxs 0).continuous
       ((contDiff_euclidean.1 hxs 2).of_le (by simp)) ((contDiff_euclidean.1 hxs 3).of_le (by simp))

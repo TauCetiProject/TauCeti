@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
+Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`.
 The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, together with its
 real-exponent analogue `x / log x ^ k` wherever `log x > 0`, and that of `r ↦ log (c / r)`
 wherever `c ≠ 0` and `r ≠ 0`.
@@ -23,6 +24,7 @@ wherever `c ≠ 0` and `r ≠ 0`.
 * `TauCeti.differentiableAt_comp_log_iff`: differentiability of `v ∘ log` at `x ≠ 0` is
   differentiability of `v` at `log x`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
+* `TauCeti.norm_fderiv_le_norm_fderiv_log`: where `0 < f z ≤ 1`, `‖∇ f‖ ≤ ‖∇ log f‖`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
 * `Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
@@ -78,6 +80,14 @@ theorem mul_deriv_comp_log (hx : x ≠ 0) :
       deriv_zero_of_not_differentiableAt (mt (differentiableAt_comp_log_iff hx).1 hv), mul_zero]
 
 end
+
+/-- Where `0 < f z ≤ 1`, the gradient of `f` is at most the gradient of `log f`, since
+`∇ f = f ∇ log f`. -/
+theorem norm_fderiv_le_norm_fderiv_log {f : E → ℝ} {z : E} (hf : DifferentiableAt ℝ f z)
+    (h₀ : 0 < f z) (h₁ : f z ≤ 1) : ‖fderiv ℝ f z‖ ≤ ‖fderiv ℝ (fun w ↦ log (f w)) z‖ := by
+  rw [(hf.hasFDerivAt.log h₀.ne').fderiv, norm_smul, norm_inv, Real.norm_of_nonneg h₀.le,
+    le_inv_mul_iff₀ h₀]
+  exact mul_le_of_le_one_left (norm_nonneg _) h₁
 
 end TauCeti
 
