@@ -19,8 +19,10 @@ sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is su
 test; conversely, norm divergence of partial sums over `Ico N n` does not depend on the starting
 index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with infinitely many
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
-diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
+diverge in norm. In any seminormed ring, the shifted polynomial-geometric terms
+`(n + c) ^ k * r ^ n` tend to zero whenever `‖r‖ < 1`, which absorbs polynomial growth after
+shifting an index; in any normed ring with summable geometric series, the series
+`∑ (n + c) ^ k * r ^ n` is summable.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
@@ -184,6 +186,32 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- For any shift `c` and `r` with `‖r‖ < 1` in a seminormed ring, the shifted
+polynomial-geometric sequence `(n + c) ^ k * r ^ n` tends to `0`. This is useful for absorbing
+polynomial growth after shifting an index. -/
+theorem tendsto_add_pow_mul_pow_of_norm_lt_one {R : Type*} [SeminormedRing R] (c : R) (k : ℕ)
+    {r : R} (hr : ‖r‖ < 1) :
+    Filter.Tendsto (fun n : ℕ ↦ ((n : R) + c) ^ k * r ^ n) Filter.atTop (nhds 0) := by
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simpa using tendsto_pow_atTop_nhds_zero_of_norm_lt_one hr
+  -- for `n ≥ 1`, `‖(n + c) ^ k * r ^ n‖ ≤ (‖1‖ + ‖c‖) ^ k * (n ^ k * ‖r‖ ^ n)`, and Mathlib's
+  -- unshifted limit sends the right-hand side to `0`
+  have h := (tendsto_pow_const_mul_const_pow_of_abs_lt_one k
+    ((abs_norm r).trans_lt hr)).const_mul ((‖(1 : R)‖ + ‖c‖) ^ k)
+  rw [mul_zero] at h
+  refine squeeze_zero_norm' ?_ h
+  filter_upwards [Filter.eventually_ge_atTop 1, eventually_norm_pow_le r] with n hn hrn
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hnc : ‖(n : R) + c‖ ≤ (‖(1 : R)‖ + ‖c‖) * n :=
+    calc ‖(n : R) + c‖ ≤ n * ‖(1 : R)‖ + ‖c‖ := (norm_add_le _ _).trans (by
+          gcongr; exact Nat.norm_cast_le n)
+      _ ≤ (‖(1 : R)‖ + ‖c‖) * n := by nlinarith [norm_nonneg c]
+  calc ‖((n : R) + c) ^ k * r ^ n‖ ≤ ‖(n : R) + c‖ ^ k * ‖r‖ ^ n :=
+        (norm_mul_le _ _).trans <| mul_le_mul (norm_pow_le' _ hk) hrn (norm_nonneg _)
+          (by positivity)
+    _ ≤ ((‖(1 : R)‖ + ‖c‖) * n) ^ k * ‖r‖ ^ n := by gcongr
+    _ = (‖(1 : R)‖ + ‖c‖) ^ k * (n ^ k * ‖r‖ ^ n) := by rw [mul_pow]; ring
 
 /-- For any shift `c` and `r` with `‖r‖ < 1` in a normed ring with summable geometric series,
 the shifted polynomial-geometric series `∑' n, (n + c) ^ k * r ^ n` is summable. -/

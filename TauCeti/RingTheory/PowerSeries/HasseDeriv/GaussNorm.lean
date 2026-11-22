@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Hasse derivatives of restricted power series
@@ -112,8 +113,9 @@ theorem IsRestricted.hasseDeriv_of_abs_lt (hf : f.IsRestricted c') (h : |c| < |c
   have hq : 0 < q := (abs_nonneg c).trans_lt h
   have hupper : Tendsto
       (fun n : ℕ ↦ ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A)) atTop (𝓝 0) := by
-    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_abs_lt_one k k
-      ((abs_of_nonneg (by positivity)).trans_lt ((div_lt_one hq).mpr h))).mul_const (q⁻¹ ^ k * A)
+    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_norm_lt_one (k : ℝ) k
+      ((Real.norm_of_nonneg (by positivity)).trans_lt ((div_lt_one hq).mpr h))).mul_const
+        (q⁻¹ ^ k * A)
   -- the coefficients `aₙ₊ₖ` have weighted norms at most `q⁻¹ ^ k * A` at the radius `q`
   have hAk (m : ℕ) : ‖coeff (m + k) f‖ * q ^ m ≤ q⁻¹ ^ k * A :=
     calc ‖coeff (m + k) f‖ * q ^ m

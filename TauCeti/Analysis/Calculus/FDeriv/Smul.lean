@@ -124,19 +124,26 @@ theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → R} {f : E → F} {x : E}
     (hcx : c x = 0) (hfx : f x = 0) :
     HasStrictFDerivAt (fun y ↦ c y • f y) (0 : E →L[𝕜] F) x := by
   rw [hasStrictFDerivAt_iff_isLittleO]
+  -- fixing `y' = x` in the difference estimates gives the continuity of `c` and `f` at `x`
+  have hpair : Tendsto (fun y : E ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
+    tendsto_id.prodMk_nhds tendsto_const_nhds
   -- Split `c y • f y - c y' • f y'` into `c y • (f y - f y') + (c y - c y') • f y'`; in each
   -- term one factor tends to zero and the other is controlled by `y - y'`.
   have h₁ : (fun p : E × E ↦ c p.1 • (f p.1 - f p.2)) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hc₁ : Tendsto (fun p : E × E ↦ c p.1) (𝓝 (x, x)) (𝓝 0) := by
       have hcont : ContinuousAt c x :=
-        continuousAt_of_isBigO_dist <| by simpa only [dist_eq_norm_sub] using hc.norm_norm
+        continuousAt_of_isBigO_dist <| by
+          simpa only [dist_eq_norm_sub, Function.comp_apply] using
+            (hc.comp_tendsto hpair).norm_norm
       have h := hcont.tendsto.comp (continuous_fst.tendsto (x, x))
       rwa [hcx] at h
     simpa using ((isLittleO_one_iff 𝕜).2 hc₁).smul_isBigO hf
   have h₂ : (fun p : E × E ↦ (c p.1 - c p.2) • f p.2) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hf₂ : Tendsto (fun p : E × E ↦ f p.2) (𝓝 (x, x)) (𝓝 0) := by
       have hcont : ContinuousAt f x :=
-        continuousAt_of_isBigO_dist <| by simpa only [dist_eq_norm_sub] using hf.norm_norm
+        continuousAt_of_isBigO_dist <| by
+          simpa only [dist_eq_norm_sub, Function.comp_apply] using
+            (hf.comp_tendsto hpair).norm_norm
       have h := hcont.tendsto.comp (continuous_snd.tendsto (x, x))
       rwa [hfx] at h
     have h := hc.norm_right.smul_isLittleO ((isLittleO_one_iff ℝ).2 hf₂)
