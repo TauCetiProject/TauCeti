@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.L1Norm
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta.Operator
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Data.Nat.Choose.Bounds
 
@@ -102,14 +103,11 @@ theorem waldschmidtEntryPolynomial_apply (t : ℤ) (s : Fin (n + 1) → ℤ) (P 
 one. -/
 private theorem totalDegree_waldschmidtPoint_X_le (s : Fin (n + 1) → ℤ) (i : Fin (n + 1)) :
     (waldschmidtPoint (X : Fin (n + 1) → MvPolynomial (Fin (n + 1)) R) s i).totalDegree ≤ 1 := by
-  have hX (j : Fin (n + 1)) : (X j : MvPolynomial (Fin (n + 1)) R).totalDegree ≤ 1 := by
-    rw [X]
-    exact (totalDegree_monomial_le _ _).trans (by simp)
   have hz (z : ℤ) : (z : MvPolynomial (Fin (n + 1)) R).totalDegree = 0 := by
     rw [← map_intCast (C : R →+* MvPolynomial (Fin (n + 1)) R), totalDegree_C]
   have hCX (z : ℤ) (j : Fin (n + 1)) :
       ((z : MvPolynomial (Fin (n + 1)) R) * X j).totalDegree ≤ 1 :=
-    (totalDegree_mul _ _).trans (by rw [hz, zero_add]; exact hX j)
+    (totalDegree_mul _ _).trans (by rw [hz, zero_add]; exact totalDegree_X_le j)
   cases i using Fin.cases with
   | zero =>
     rw [waldschmidtPoint_apply_zero]

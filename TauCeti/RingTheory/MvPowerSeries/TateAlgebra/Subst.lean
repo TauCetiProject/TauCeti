@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Substituting polynomials into Tate algebras
@@ -154,11 +155,12 @@ theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomia
   have hdeg (d : σ →₀ ℕ) (e : τ →₀ ℕ) (he : (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0) :
       ρ' ^ e.degree ≤ ρ ^ d.degree := by
     have hle : e.degree ≤ A * d.degree := by
+      have h := MvPolynomial.totalDegree_aeval_le hA (MvPolynomial.monomial d (1 : R))
+      rw [MvPolynomial.aeval_monomial, map_one, one_mul] at h
       refine (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans
-        ((MvPolynomial.totalDegree_finsetProd _ _).trans ?_)
-      rw [Finsupp.degree_apply, Finset.mul_sum]
-      exact Finset.sum_le_sum fun s _ ↦ (MvPolynomial.totalDegree_pow _ _).trans
-        (by rw [mul_comm]; exact Nat.mul_le_mul_right _ (hA s))
+        (h.trans ?_)
+      rw [mul_comm]
+      exact Nat.mul_le_mul_right _ (MvPolynomial.totalDegree_monomial_le d 1)
     calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
       _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
       _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _
