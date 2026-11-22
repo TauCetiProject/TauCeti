@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
 public import Mathlib.Topology.Baire.CompleteMetrizable
 
+import TauCeti.RingTheory.Huber.Restricted.Comparison
+
 /-!
 # Topology of the rational points of a closed polydisc
 
@@ -96,20 +98,8 @@ theorem evalAtHom_eq_restrictedEval₂ {a : Fin k → R} (ha : ∀ i, IsPowerBou
     evalAtHom a ha f =
       MvPowerSeries.restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha₁
         (restrictedMvPowerSeriesGaussEquiv f) := by
-  have heq : (evalAtHom a ha).comp restrictedMvPowerSeriesGaussEquiv.symm.toRingHom =
-      MvPowerSeries.restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha₁ := by
-    refine MvPowerSeries.eq_restrictedEval₂ _ _ _ _ _
-      ((continuous_evalAtHom a ha).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm)
-      (fun r ↦ ?_) (fun i ↦ ?_)
-    · rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        ← restrictedMvPowerSeriesGaussEquiv_weightedC, RingEquiv.symm_apply_apply,
-        evalAtHom_weightedC, RingHom.id_apply]
-    · rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        ← restrictedMvPowerSeriesGaussEquiv_weightedX, RingEquiv.symm_apply_apply,
-        evalAtHom_weightedX]
-  have h := RingHom.congr_fun heq (restrictedMvPowerSeriesGaussEquiv f)
-  simpa only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    RingEquiv.symm_apply_apply] using h
+  rw [evalAtHom_def, weightedEvalHom_eq_restrictedEval₂OfBound continuousAt_id (C := 1)
+    (fun r ↦ by simp) ha₁, RingHom.restrictedEval₂OfBound_eq_restrictedEval₂ _ _ _ _ fun _ ↦ le_rfl]
 
 /-- **Evaluation on the closed unit polydisc is bounded by the unit Gauss norm.** -/
 theorem norm_evalAtHom_le {a : Fin k → R} (ha : ∀ i, IsPowerBounded (a i))
@@ -117,10 +107,10 @@ theorem norm_evalAtHom_le {a : Fin k → R} (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     ‖evalAtHom a ha f‖ ≤
       MvPowerSeries.gaussNorm norm (fun _ : Fin k ↦ (1 : ℝ)) (f : MvPowerSeries (Fin k) R) := by
-  rw [evalAtHom_eq_restrictedEval₂ ha ha₁ f]
-  have h := MvPowerSeries.norm_restrictedEval₂_le (RingHom.id R) a (fun _ ↦ le_rfl) ha₁
-    (restrictedMvPowerSeriesGaussEquiv f)
-  rwa [MvPowerSeries.norm_eq_gaussNorm, coe_restrictedMvPowerSeriesGaussEquiv] at h
+  rw [evalAtHom_def]
+  simpa only [one_mul, MvPowerSeries.norm_eq_gaussNorm, coe_restrictedMvPowerSeriesGaussEquiv] using
+    norm_weightedEvalHom_le continuousAt_id (C := 1) (fun r ↦ by simp) ha₁
+      ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id R) a).2 ha) f
 
 /-- **Evaluation of a restricted power series is Lipschitz on the closed unit polydisc**, with
 Lipschitz constant its unit Gauss norm. -/
@@ -304,17 +294,6 @@ theorem val_preimage_rationalSubset_closedBall_mem_spaRationalFamily {k : ℕ} {
   val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit _ _
     (hc.map (weightedC _ isWeightFamily_one_weight))
 
-/-- Every rational subset `R(T/s)` has open trace on `closedPolydisc k R`. -/
-theorem isOpen_val_preimage_rationalSubset_closedPolydisc {k : ℕ} {R : Type*}
-    [CommRing R] [TopologicalSpace R] [NonarchimedeanRing R]
-    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight))
-    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    IsOpen (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :
-      Set (closedPolydisc k R)) := by
-  rw [closedPolydisc_def]
-  exact isOpen_val_preimage_rationalSubset _ T s
-
 end RationalBall
 
 section Embedding
@@ -346,7 +325,10 @@ theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
       (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.val a.property) ⁻¹' U :=
     closedBall_eq_preimage_classicalPoint_rationalSubset x a₀ hc
-  have hU_open : IsOpen U := isOpen_val_preimage_rationalSubset_closedPolydisc _ _
+  have hU_open : IsOpen U := by
+    dsimp only [U]
+    rw [closedPolydisc_def]
+    exact isOpen_val_preimage_rationalSubset _ _ _
   have ha₀U : classicalPoint x a₀.val a₀.property ∈ U := by
     have : a₀ ∈ Metric.closedBall a₀ ‖c‖ := Metric.mem_closedBall_self (norm_nonneg c)
     rwa [hpre, Set.mem_preimage] at this

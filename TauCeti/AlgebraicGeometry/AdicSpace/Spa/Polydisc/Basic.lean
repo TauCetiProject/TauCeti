@@ -168,6 +168,14 @@ noncomputable def evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
   weightedEvalHom isWeightFamily_one_weight continuousAt_id
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha)
 
+/-- The unfolding equation for `evalAtHom`: evaluation at `a` is `weightedEvalHom` along the
+identity of `A`. `evalAtHom` is not `@[expose]`d, so this equation exposes its definition across
+the module boundary. -/
+theorem evalAtHom_def (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    evalAtHom a ha = weightedEvalHom isWeightFamily_one_weight continuousAt_id
+      ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha) :=
+  (rfl)
+
 /-- Evaluation at `a` is continuous. -/
 theorem continuous_evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     Continuous (evalAtHom a ha) :=
@@ -190,11 +198,10 @@ theorem evalAtHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
 theorem evalAtHom_weightedPolynomialHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     (p : MvPolynomial (Fin k) A) :
     evalAtHom a ha (weightedPolynomialHom _ isWeightFamily_one_weight p) =
-      MvPolynomial.eval a p := by
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
+      MvPolynomial.eval a p :=
+  DFunLike.congr_fun (MvPolynomial.ringHom_ext
+    (f := (evalAtHom a ha).comp (weightedPolynomialHom _ isWeightFamily_one_weight))
+    (g := MvPolynomial.eval a) (fun _ ↦ by simp) (fun _ ↦ by simp)) p
 
 /-- Evaluation at `a ∈ (A°)ᵏ` as an `A`-algebra map `A⟨T₁, …, Tₖ⟩ → A`. -/
 noncomputable def evalAtAlgHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :

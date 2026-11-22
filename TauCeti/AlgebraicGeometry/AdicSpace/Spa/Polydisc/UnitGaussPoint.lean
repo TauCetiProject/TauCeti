@@ -346,12 +346,9 @@ theorem subsingleton_closedPolydisc_zero {K : Type*} [NormedField K] [IsUltramet
   refine ⟨fun v w ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
   have hconst : ∀ h : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set K))
       isWeightFamily_one_weight,
-      h = weightedC _ isWeightFamily_one_weight
-        (MvPowerSeries.constantCoeff (h : MvPowerSeries (Fin 0) K)) := by
-    intro h
-    refine Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_
-    rw [Subsingleton.elim ν 0, coe_weightedC, MvPowerSeries.coeff_zero_C,
-      MvPowerSeries.coeff_zero_eq_constantCoeff_apply]
+      h = weightedC _ isWeightFamily_one_weight (weightedRestrictedSubringFinZeroEquiv _ h) :=
+    fun h ↦ ((weightedRestrictedSubringFinZeroEquiv _).symm_apply_apply h).symm.trans
+      (Subtype.ext (by simp))
   rw [hconst f, hconst g, closedPolydisc_vle_weightedC_iff, closedPolydisc_vle_weightedC_iff]
 
 /-- **In dimension `0`, the unit Gauss point coincides with every classical point**, without any
@@ -378,51 +375,38 @@ section ReductionAndClosure
 
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
 
-/-- Coefficientwise restriction of a series in `K°⟨T₁, …, Tₙ⟩` to a formal series over `K°`. -/
-private def weightedSubringToMvPowerSeries
-    (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-      (powerBoundedSubring K)) :
-    MvPowerSeries (Fin n) (powerBoundedSubring K) :=
-  fun ν ↦ ⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
-    by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-      mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩
-
-private theorem coe_coeff_weightedSubringToMvPowerSeries
-    (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-      (powerBoundedSubring K)) (ν : Fin n →₀ ℕ) :
-    ((MvPowerSeries.coeff ν (weightedSubringToMvPowerSeries f) : powerBoundedSubring K) : K) =
-      MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K) :=
-  rfl
-
-/-- The canonical ring map sending a series in `K°⟨T₁, …, Tₙ⟩` to a unit-weight restricted series
-with coefficients in `K°`. -/
-private noncomputable def weightedSubringToRestricted :
-    weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-        (powerBoundedSubring K) →+*
-      weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (powerBoundedSubring K)))
-        isWeightFamily_one_weight where
-  toFun f :=
-    ⟨weightedSubringToMvPowerSeries f,
-      mem_weightedRestrictedSubring.mpr <| isWeightedRestricted_one_weight_iff.mpr <|
-        tendsto_subtype_rng.mpr <|
-          isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.val.property)⟩
-  map_one' := Subtype.ext <| MvPowerSeries.ext fun ν ↦ Subtype.ext <| by
-    rw [coe_coeff_weightedSubringToMvPowerSeries, Subring.coe_one, Subring.coe_one,
-      Subring.coe_one, MvPowerSeries.coeff_one, MvPowerSeries.coeff_one]
-    split_ifs <;> rfl
-  map_mul' f g := Subtype.ext <| MvPowerSeries.ext fun ν ↦ Subtype.ext <| by
-    rw [coe_coeff_weightedSubringToMvPowerSeries, Subring.coe_mul, Subring.coe_mul,
-      MvPowerSeries.coeff_mul, Subring.coe_mul, MvPowerSeries.coeff_mul]
-    push_cast
-    rfl
-  map_zero' := Subtype.ext <| MvPowerSeries.ext fun ν ↦ Subtype.ext <| by
-    rw [coe_coeff_weightedSubringToMvPowerSeries, Subring.coe_zero, Subring.coe_zero,
-      Subring.coe_zero, map_zero, map_zero, ZeroMemClass.coe_zero]
-  map_add' f g := Subtype.ext <| MvPowerSeries.ext fun ν ↦ Subtype.ext <| by
-    rw [coe_coeff_weightedSubringToMvPowerSeries, Subring.coe_add, Subring.coe_add,
-      Subring.coe_add, map_add, map_add]
-    push_cast
-    rfl
+/-- The canonical ring isomorphism between unit-weight restricted series over `K°` and
+`K°⟨T₁, …, Tₙ⟩`, obtained by codomain-restricting `weightedMap` along `K° ↪ K` and inverting. -/
+private noncomputable def weightedRestrictedSubringEquivWeightedSubring :
+    weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (powerBoundedSubring K)))
+        isWeightFamily_one_weight ≃+*
+      weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+        (powerBoundedSubring K) := by
+  let hsub : Continuous (powerBoundedSubring K).subtype := continuous_subtypeVal
+  let ι : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (powerBoundedSubring K)))
+        isWeightFamily_one_weight →+*
+      weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+        (powerBoundedSubring K) :=
+    (weightedMap hsub isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ by simp)).codRestrict _ fun f ↦ by
+      rw [mem_weightedSubring, mem_weightedNhd]
+      intro ν
+      rw [weightMul_one_weight, coe_weightedMap, MvPowerSeries.coeff_map, Subring.coe_subtype,
+        Subring.mem_toAddSubgroup]
+      exact (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) (powerBoundedSubring K))).property
+  refine RingEquiv.ofBijective ι ⟨fun f g h ↦ Subtype.ext <| MvPowerSeries.ext fun ν ↦
+      Subtype.ext ?_, fun g ↦ ?_⟩
+  · have h' := congrArg (fun x ↦ MvPowerSeries.coeff ν (x.val : MvPowerSeries (Fin n) K)) h
+    simpa [ι, coe_weightedMap] using h'
+  · let f : MvPowerSeries (Fin n) (powerBoundedSubring K) := fun ν ↦
+      ⟨MvPowerSeries.coeff ν (g.val : MvPowerSeries (Fin n) K),
+        by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
+          mem_weightedNhd.mp (mem_weightedSubring.mp g.property) ν⟩
+    have hf : IsWeightedRestricted (fun _ : Fin n ↦ ({1} : Set (powerBoundedSubring K))) f :=
+      isWeightedRestricted_one_weight_iff.mpr <| tendsto_subtype_rng.mpr <|
+        isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp g.val.property)
+    exact ⟨⟨f, mem_weightedRestrictedSubring.mpr hf⟩,
+      Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun ν ↦ by simp [ι, f]; rfl⟩
 
 /-- **Coefficientwise reduction on `K°⟨T₁, …, Tₙ⟩`**, sending a unit-bounded restricted power
 series to the polynomial over the canonical residue field `K° ⧸ K°°` obtained by reducing each
@@ -438,7 +422,8 @@ noncomputable def polydiscReduction (n : ℕ) (K : Type*) [NormedField K] [IsUlt
       simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
         tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, Set.mem_preimage, mem_ball_zero_iff]
     rw [hopen]
-    exact Metric.isOpen_ball.preimage continuous_subtypeVal).comp weightedSubringToRestricted
+    exact Metric.isOpen_ball.preimage continuous_subtypeVal).comp
+    weightedRestrictedSubringEquivWeightedSubring.symm.toRingHom
 
 /-- Each coefficient of `polydiscReduction n K f` is the residue class of the corresponding
 coefficient of `f`. -/
@@ -451,8 +436,18 @@ theorem coeff_polydiscReduction
         ⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
           by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
             mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ := by
-  simp only [polydiscReduction, RingHom.comp_apply, Ideal.coeff_restrictedReduction]
-  rfl
+  simp only [polydiscReduction, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, Ideal.coeff_restrictedReduction]
+  refine congrArg (Ideal.Quotient.mk _) (Subtype.ext ?_)
+  have hsub : Continuous (powerBoundedSubring K).subtype := continuous_subtypeVal
+  have h : MvPowerSeries.coeff ν ((weightedMap hsub isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp)
+      (weightedRestrictedSubringEquivWeightedSubring.symm f) :
+        weightedRestrictedSubring _ _) : MvPowerSeries (Fin n) K) =
+      MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K) :=
+    congrArg (fun g ↦ MvPowerSeries.coeff ν (g.val : MvPowerSeries (Fin n) K))
+      (weightedRestrictedSubringEquivWeightedSubring.apply_symm_apply f)
+  rwa [coe_weightedMap, MvPowerSeries.coeff_map, Subring.coe_subtype] at h
 
 /-- A coefficient of `polydiscReduction n K f` vanishes if and only if the corresponding
 coefficient of `f` has norm strictly less than `1`. -/
@@ -485,27 +480,6 @@ theorem polydiscReduction_ne_zero_iff
   have hle : unitGaussValuation n K f.val ≤ 1 :=
     (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mpr f.property
   exact ⟨fun h ↦ le_antisymm hle h, fun h ↦ h.ge⟩
-
-/-- Truncating `f ∈ K°⟨T⟩` to the finite support of `polydiscReduction n K f` leaves a remainder
-with unit Gauss valuation strictly less than `1`. -/
-private theorem unitGaussValuation_sub_truncation_lt_one
-    (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-      (powerBoundedSubring K)) :
-    unitGaussValuation n K
-        (f.val - weightedPolynomialHom _ isWeightFamily_one_weight
-          (∑ ν ∈ (polydiscReduction n K f).support,
-            MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K)))) <
-      1 := by
-  classical
-  set s := (polydiscReduction n K f).support
-  refine (unitGaussValuation_lt_iff n K).mpr fun ν ↦ ?_
-  rw [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one, AddSubgroupClass.coe_sub, map_sub,
-    coe_weightedPolynomialHom, MvPolynomial.coeff_coe, MvPolynomial.coeff_sum]
-  simp only [MvPolynomial.coeff_monomial, Finset.sum_ite_eq']
-  split_ifs with hν
-  · simp
-  · rw [sub_zero]
-    exact (coeff_polydiscReduction_eq_zero_iff f ν).mp (MvPolynomial.notMem_support_iff.mp hν)
 
 open scoped Classical in
 /-- Scaling by the inverse of a coefficient attaining `unitGaussValuation n K g` normalizes any
@@ -561,47 +535,59 @@ theorem mk_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K) (ha : ∀ i, Is
         (fun i ↦ Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
           ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
         (polydiscReduction n K f) := by
-  classical
-  set s := (polydiscReduction n K f).support
-  let p : MvPolynomial (Fin n) K :=
-    ∑ ν ∈ s, MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K))
-  let P := weightedPolynomialHom (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight p
-  have hnorm_diff : ‖evalAtHom a ha f.val - evalAtHom a ha P‖ < 1 := by
-    rw [← map_sub]
-    refine (norm_evalAtHom_le ha (fun i ↦ isPowerBounded_iff_norm_le_one.mp (ha i))
-      (f.val - P)).trans_lt ?_
-    rw [← coe_unitGaussValuation]
-    exact_mod_cast unitGaussValuation_sub_truncation_lt_one f
-  have hP_pb : evalAtHom a ha P ∈ powerBoundedSubring K := by
-    rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one,
-      ← sub_add_cancel (evalAtHom a ha P) (evalAtHom a ha f.val)]
-    exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le
-      (by rw [norm_sub_rev]; exact hnorm_diff.le)
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp
-        (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))))
-  have hP_sub : (⟨evalAtHom a ha P, hP_pb⟩ : powerBoundedSubring K) =
-      ∑ ν ∈ s,
-        (⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
-          by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-            mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ : powerBoundedSubring K) *
-        ν.prod fun i e ↦
-          (⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩ : powerBoundedSubring K) ^ e := by
+  have : CompleteSpace (powerBoundedSubring K) :=
+    (coe_powerBoundedSubring_eq_closedBall K ▸ Metric.isClosed_closedBall).completeSpace_coe
+  let b : Fin n → powerBoundedSubring K := fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩
+  have huniv : TauCeti.Huber.IsBounded (Set.univ : Set (powerBoundedSubring K)) := by
+    rw [TauCeti.Huber.isBounded_iff]
+    intro U hU
+    rw [nhds_subtype, Filter.mem_comap] at hU
+    obtain ⟨U', hU', hUU'⟩ := hU
+    obtain ⟨V', hV', hV'U'⟩ := (TauCeti.Huber.isBounded_iff.mp
+      (IsUniform.isBounded_powerBoundedSubring (A := K))) U' hU'
+    refine ⟨Subtype.val ⁻¹' V', continuous_subtypeVal.continuousAt.preimage_mem_nhds
+      (by simpa using hV'), fun _ hx ↦ ?_⟩
+    obtain ⟨v, hv, w, _, rfl⟩ := hx
+    exact hUU' (hV'U' (Set.mul_mem_mul hv w.property))
+  have hb : IsWeightBounded (RingHom.id (powerBoundedSubring K))
+      (fun _ : Fin n ↦ ({1} : Set (powerBoundedSubring K))) b :=
+    (isWeightBounded_one_weight_iff _ _).mpr (huniv.subset (Set.subset_univ _))
+  have hopen : IsOpen (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) := by
+    have heq : (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) =
+        (Subtype.val : powerBoundedSubring K → K) ⁻¹' Metric.ball 0 1 := by
+      ext x
+      simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+        tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, Set.mem_preimage, mem_ball_zero_iff]
+    rw [heq]
+    exact Metric.isOpen_ball.preimage continuous_subtypeVal
+  have hsub : Continuous (powerBoundedSubring K).subtype := continuous_subtypeVal
+  have hext :
+      (powerBoundedSubring K).subtype.comp
+          (weightedEvalHom isWeightFamily_one_weight continuousAt_id hb) =
+        (evalAtHom a ha).comp (weightedMap hsub isWeightFamily_one_weight isWeightFamily_one_weight
+          (fun _ ↦ by simp)) := by
+    refine weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
+      (continuous_subtypeVal.comp (continuous_weightedEvalHom _ _ _))
+      ((continuous_evalAtHom a ha).comp (continuous_weightedMap _ _ _ _))
+      (fun c ↦ by simp) (fun i ↦ by simp [b])
+  have heval :
+      (⟨evalAtHom a ha f.val, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ :
+          powerBoundedSubring K) =
+        weightedEvalHom isWeightFamily_one_weight continuousAt_id hb
+          (weightedRestrictedSubringEquivWeightedSubring.symm f) := by
     refine Subtype.ext ?_
-    dsimp only [P, p]
-    rw [evalAtHom_weightedPolynomialHom, map_sum]
-    push_cast
-    refine Finset.sum_congr rfl fun ν _ ↦ ?_
-    simp [MvPolynomial.eval_monomial, Finsupp.prod]
-  have hmk_eq : Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
-      ⟨evalAtHom a ha f.val, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
-      Ideal.Quotient.mk (topologicallyNilpotentIdeal K) ⟨evalAtHom a ha P, hP_pb⟩ := by
-    rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, mem_topologicallyNilpotentIdeal,
-      IsTopologicallyNilpotent, tendsto_pow_atTop_nhds_zero_iff_norm_lt_one]
-    exact hnorm_diff
-  rw [hmk_eq, hP_sub, map_sum, MvPolynomial.eval_eq']
-  refine Finset.sum_congr rfl fun ν _ ↦ ?_
-  rw [map_mul, coeff_polydiscReduction, map_finsuppProd,
-    Finsupp.prod_fintype _ _ (fun _ ↦ by rw [pow_zero, map_one])]
+    have h := DFunLike.congr_fun hext (weightedRestrictedSubringEquivWeightedSubring.symm f)
+    have hval : weightedMap hsub isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ by simp) (weightedRestrictedSubringEquivWeightedSubring.symm f) = f.val :=
+      congrArg Subtype.val (weightedRestrictedSubringEquivWeightedSubring.apply_symm_apply f)
+    simpa [hval] using h.symm
+  rw [heval, mk_weightedEvalHom_eq_eval₂_restrictedReduction continuousAt_id hb hopen hopen le_rfl]
+  have hid : Ideal.quotientMap (I := topologicallyNilpotentIdeal K)
+      (topologicallyNilpotentIdeal K) (RingHom.id (powerBoundedSubring K)) le_rfl =
+      RingHom.id _ := RingHom.ext fun q ↦ by
+    obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective q
+    rfl
+  rw [hid, MvPolynomial.eval₂_id]
   rfl
 
 /-- A unit-bounded series `f ∈ K°⟨T₁, …, Tₙ⟩` evaluates to an element of norm `1` at `a ∈ (K°)ⁿ`
@@ -795,23 +781,14 @@ private theorem one_le_unitGaussValuation_weightedX_pow_sub [NeZero n] {q : ℕ}
         weightedX _ isWeightFamily_one_weight 0) := by
   set X₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
     weightedX _ isWeightFamily_one_weight 0
-  have hcoeff_pow : MvPowerSeries.coeff (Finsupp.single 0 1)
-      ((X₀ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight) : MvPowerSeries (Fin n) K) = 0 := by
-    have hpow : ((X₀ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight) : MvPowerSeries (Fin n) K) =
-        MvPowerSeries.monomial (Finsupp.single 0 q) 1 := by
-      rw [Subring.coe_pow, coe_weightedX, MvPowerSeries.X, MvPowerSeries.monomial_pow, one_pow,
-        Finsupp.smul_single, smul_eq_mul, mul_one]
-    rw [hpow, MvPowerSeries.coeff_monomial_ne]
-    intro heq
+  have hne : Finsupp.single (0 : Fin n) 1 ≠ Finsupp.single (0 : Fin n) q := fun heq ↦ by
     have h1 := DFunLike.congr_fun heq 0
     simp at h1
     omega
   have h := nnNorm_coeff_le_unitGaussValuation n K (X₀ ^ q - X₀) (Finsupp.single 0 1)
-  rw [AddSubgroupClass.coe_sub, map_sub, hcoeff_pow, zero_sub, nnNorm_neg, coe_weightedX,
-    MvPowerSeries.coeff_X] at h
-  simpa only [↓reduceIte, nnNorm_one] using h
+  rw [AddSubgroupClass.coe_sub, map_sub, Subring.coe_pow, coe_weightedX,
+    MvPowerSeries.coeff_X_pow, MvPowerSeries.coeff_X] at h
+  simpa only [hne, ↓reduceIte, zero_sub, nnNorm_neg, nnNorm_one] using h
 
 variable [CompleteSpace K]
 
@@ -835,18 +812,15 @@ theorem unitGaussPoint_notMem_closure_classicalPoint_of_finite
   have hg_ge : 1 ≤ unitGaussValuation n K g :=
     one_le_unitGaussValuation_weightedX_pow_sub Fintype.one_lt_card
   have hηU : unitGaussPoint n K ∈ U := by
-    rw [Set.mem_preimage, mem_rationalSubset_iff]
-    refine ⟨closedPolydisc_def n K ▸ (unitGaussPoint n K).property, ?_, ?_⟩
-    · intro t ht
-      rw [Finset.mem_singleton.mp ht, unitGaussPoint_vle_iff, map_one]
-      exact hg_ge
-    · rw [unitGaussPoint_vle_zero_iff]
-      intro h0
-      rw [h0, map_zero] at hg_ge
-      exact not_le_of_gt zero_lt_one hg_ge
+    rw [Set.mem_preimage, mem_rationalSubset_singleton_one_iff
+      (closedPolydisc_def n K ▸ (unitGaussPoint n K).property), unitGaussPoint_vle_iff, map_one]
+    exact hg_ge
+  have hU_open : IsOpen U := by
+    dsimp only [U]
+    rw [closedPolydisc_def]
+    exact isOpen_val_preimage_rationalSubset _ _ _
   intro hmem
-  obtain ⟨_, hpU, ⟨a, rfl⟩⟩ :=
-    mem_closure_iff.mp hmem U (isOpen_val_preimage_rationalSubset_closedPolydisc _ _) hηU
+  obtain ⟨_, hpU, ⟨a, rfl⟩⟩ := mem_closure_iff.mp hmem U hU_open hηU
   rw [Set.mem_preimage, classicalPoint_mem_rationalSubset_iff] at hpU
   have hle := hpU.left 1 (Finset.mem_singleton_self 1)
   rw [map_one, norm_one] at hle
