@@ -17,7 +17,7 @@ on the real line, the set of points with the same power with respect to both, is
 when the centres are distinct, and it contains every intersection point of the two circles. This
 file also records on which side of a second circle the points of such a circle lie, and that a
 real point of a circle centred at a real point `m` lies on the sphere of the same centre and
-radius in `ℝ` (`Complex.mem_sphere_of_normSq_sub_eq`).
+radius in `ℝ` (`Real.mem_sphere_of_normSq_sub_eq`).
 
 ## Main results
 
@@ -27,9 +27,9 @@ radius in `ℝ` (`Complex.mem_sphere_of_normSq_sub_eq`).
   right of the first, and the power of `a` with respect to the first is at most that with respect
   to the second, the points on or outside the first circle to the left of `a` lie strictly outside
   the second.
-* `Complex.lt_normSq_sub_of_normSq_sub_sub_eq`: the same, for `a` on the radical axis, with the
-  order of the centres witnessed by a point to the left of `a` whose power with respect to the
-  first circle is less than that with respect to the second.
+* `Complex.lt_normSq_sub_of_le_normSq_sub_of_sub_lt_sub`: the same, with the order of the centres
+  witnessed by a point to the left of `a` at which the power with respect to the second circle
+  minus that with respect to the first is larger than at `a`.
 * `Complex.le_normSq_sub_of_le_normSq_sub`: points on or outside one circle, between two of its
   points that lie on or outside a second circle, lie on or outside the second circle.
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
@@ -59,12 +59,6 @@ theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
     ofReal_im, sub_zero]
   ring
 
-/-- A real point `x` on the circle of centre `m` and radius `ρ ≥ 0` in `ℂ` lies on the sphere of
-centre `m` and radius `ρ` in `ℝ`, since the inclusion `ℝ → ℂ` is an isometry. -/
-theorem mem_sphere_of_normSq_sub_eq {x m ρ : ℝ} (hρ : 0 ≤ ρ) (h : normSq ((x : ℂ) - m) = ρ ^ 2) :
-    x ∈ Metric.sphere m ρ := by
-  rw [Metric.mem_sphere, ← isometry_ofReal.dist_eq, dist_eq_norm, norm_def, h, Real.sqrt_sq hρ]
-
 /-- **The radical line of two circles.** Consider two circles centred on the real axis, the level
 sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, with `m₁ < m₂`, and a point `a` whose power
 `|a - m₁|² - r₁` with respect to the first is at most its power with respect to the second. Then
@@ -79,20 +73,22 @@ theorem lt_normSq_sub_of_le_normSq_sub (z : ℂ) {a : ℂ} {m₁ r₁ m₂ r₂ 
   nlinarith [mul_pos (sub_pos.2 hm) (sub_pos.2 hza)]
 
 /-- **The radical line of two circles, with a witness.** Consider two circles centred on the real
-axis, the level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and a point `a` with the same power
-with respect to both, and let `w`, to the left of `a`, have smaller power with respect to the
-first than with respect to the second. Then every point `z` on or outside the first circle to the
-left of `a` is strictly outside the second. -/
-theorem lt_normSq_sub_of_normSq_sub_sub_eq (z : ℂ) {a w : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
-    (ha : normSq (a - m₁) - r₁ = normSq (a - m₂) - r₂)
-    (hw : normSq (w - m₁) - r₁ < normSq (w - m₂) - r₂)
+axis, the level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and a point `a` whose power with
+respect to the first is at most that with respect to the second. Let `w`, to the left of `a`, be a
+point at which the power with respect to the second circle minus the power with respect to the
+first is larger than at `a`; equivalently, the squared distance to `m₂` grows more than that to
+`m₁` from `a` to `w`. Then every point `z` on or outside the first circle to the left of `a` is
+strictly outside the second. -/
+theorem lt_normSq_sub_of_le_normSq_sub_of_sub_lt_sub (z : ℂ) {a w : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
+    (ha : normSq (a - m₁) - r₁ ≤ normSq (a - m₂) - r₂)
+    (hw : normSq (w - m₁) - normSq (a - m₁) < normSq (w - m₂) - normSq (a - m₂))
     (hz₁ : r₁ ≤ normSq (z - m₁)) (hwa : w.re < a.re) (hza : z.re < a.re) :
     r₂ < normSq (z - m₂) := by
-  -- the second centre lies to the right of the first: the second power minus the first is zero
-  -- at `a` and positive at `w`, to its left
+  -- the second centre lies to the right of the first: the second power minus the first grows by
+  -- `2 (m₂ - m₁) (Re a - Re w)` from `a` to `w`, to its left
   have hd := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m₁) (c₂ := m₂) a w
   have hm : m₁ < m₂ := by nlinarith
-  exact lt_normSq_sub_of_le_normSq_sub z ha.le hm hz₁ hza
+  exact lt_normSq_sub_of_le_normSq_sub z ha hm hz₁ hza
 
 /-- Let `w₁`, `w₂` lie on the circle `|· - m|² = r` and on or outside the circle
 `|· - m'|² = r'`, for real centres `m` and `m'`. Then every point `z` on or outside the first
@@ -134,3 +130,14 @@ theorem sqrt_sq_add_sq_le_norm_add_mul_I {a c t : ℝ} (ha : 0 ≤ a) (hac : a �
   nlinarith only [ha, hac, sq_abs c]
 
 end Complex
+
+namespace Real
+
+/-- A real point `x` on the circle of centre `m` and radius `ρ ≥ 0` in `ℂ` lies on the sphere of
+centre `m` and radius `ρ` in `ℝ`, since the inclusion `ℝ → ℂ` is an isometry. -/
+theorem mem_sphere_of_normSq_sub_eq (x : ℝ) {m ρ : ℝ} (hρ : 0 ≤ ρ)
+    (h : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) : x ∈ Metric.sphere m ρ := by
+  rw [Metric.mem_sphere, ← Complex.isometry_ofReal.dist_eq, dist_eq_norm, Complex.norm_def, h,
+    Real.sqrt_sq hρ]
+
+end Real
