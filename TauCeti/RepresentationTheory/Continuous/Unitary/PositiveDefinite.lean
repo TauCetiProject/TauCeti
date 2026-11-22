@@ -265,8 +265,9 @@ theorem continuous_gnsVector (hcont : ContinuousAt φ 1) : Continuous hφ.gnsVec
   simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
 
 include hφ in
-/-- A positive-definite function on a topological group that is continuous at the identity is
-continuous: it is the coefficient `g ↦ ⟪gnsVector 1, gnsVector g⟫` of the continuous GNS vectors. -/
+/-- A positive-definite function on a group with separately continuous multiplication that is
+continuous at the identity is continuous: it is the coefficient
+`g ↦ ⟪gnsVector 1, gnsVector g⟫` of the continuous GNS vectors. -/
 theorem continuous_of_continuousAt_one (hcont : ContinuousAt φ 1) : Continuous φ := by
   simpa using
     (continuous_const (y := hφ.gnsVector 1)).inner (𝕜 := 𝕜) (hφ.continuous_gnsVector hcont)
