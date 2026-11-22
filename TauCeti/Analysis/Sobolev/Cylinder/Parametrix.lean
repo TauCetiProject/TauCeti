@@ -144,7 +144,8 @@ theorem norm_cutoffL_apply_le {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : 
     ae_of_all _ fun z ↦ (norm_cutoffCoeff_le β z).trans (add_le_add (hβB _) (hβ'B _))
   have h := norm_jetOperator_apply_le (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B) hb
     (x : Lp (V × V × V) 2 stripMeasure)
-  rwa [← coe_cutoffL hβ hβB hβ'B] at h
+  rw [← Submodule.norm_coe, coe_cutoffL, ← Submodule.norm_coe x]
+  exact h
 
 end Cutoff
 

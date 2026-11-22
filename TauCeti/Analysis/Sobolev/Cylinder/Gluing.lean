@@ -117,7 +117,7 @@ private theorem norm_jetOperator_cutoffL_sub_le {G N : ℝ × ℝ → V × V × 
   set v := (x : Lp (V × V × V) 2 stripMeasure) z
   -- `𝟙_S η = β 𝟙_S η`, since `β = 1` on `S`.
   have hβη : S.indicator η z = β z.1 • N z v := by
-    rw [← h₄, ← h₅, h₄]
+    rw [← h₅, h₄]
     by_cases hz : z ∈ S
     · rw [hβS z hz, one_smul]
     · rw [indicator_of_notMem hz, smul_zero]
