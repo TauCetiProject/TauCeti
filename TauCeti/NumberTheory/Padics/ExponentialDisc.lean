@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.NumberTheory.Padics.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.UltrametricSubst
@@ -21,11 +22,12 @@ import Mathlib.Algebra.CharP.Algebra
 Let `L` be a normed field that is a normed algebra over `ℚ_[p]`, for instance `ℂ_[p]` or a
 finite extension of `ℚ_[p]`. Its norm is ultrametric, and Mathlib's exponential series converges
 on the open disc `‖x‖ < r₀` of radius `r₀ = p ^ (-1 / (p - 1))`, which is
-`TauCeti.amiceRadius p 0`. For complete `L`, on this disc the exponential turns sums into
-products and preserves norms, `‖exp x - 1‖ = ‖x‖`, and Mathlib's logarithm series inverts it on
-the disc of radius `r₀` about `1`. Hence the exponential maps the first disc bijectively onto the
-second: it maps into the second disc by `TauCeti.norm_exp_sub_one_of_norm_lt`, it is injective by
-`TauCeti.injOn_exp_ball` (via `TauCeti.log_exp_of_norm_lt`), and it is onto because
+`TauCeti.amiceRadius p 0` (see `TauCeti.NumberTheory.Padics.Exp.Basic`). For complete `L`, on this
+disc the exponential turns sums into products and preserves norms, `‖exp x - 1‖ = ‖x‖`
+(`TauCeti.PadicExp.norm_exp_sub_one`), and Mathlib's logarithm series inverts it on the disc of
+radius `r₀` about `1`. Hence the exponential maps the first disc bijectively onto the second: it
+maps into the second disc by `TauCeti.PadicExp.norm_exp_sub_one`, it is injective by
+`TauCeti.PadicExp.injOn_exp` (or via `TauCeti.log_exp_of_norm_lt`), and it is onto because
 `TauCeti.norm_log_of_norm_sub_one_lt` puts `log y` in the first disc and
 `TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
 
@@ -53,20 +55,12 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 ## Main results
 
 * `TauCeti.norm_pow_div_factorial_le`: `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`.
-* `TauCeti.ofReal_amiceRadius_zero_le_radius_expSeries`: the exponential series converges on
-  the disc of radius `r₀`.
-* `TauCeti.expSeries_div_hasSum_exp_of_norm_lt`: on that disc, `exp x = ∑ xⁿ / n!`.
-* `TauCeti.exp_add_of_norm_lt`, `TauCeti.exp_sum_of_norm_lt`: the functional equation.
-* `TauCeti.exp_nsmul_of_norm_lt`, `TauCeti.exp_zsmul_of_norm_lt`: `exp (n • x) = exp x ^ n`.
-* `TauCeti.norm_exp_sub_one_of_norm_lt`: `‖exp x - 1‖ = ‖x‖`.
-* `TauCeti.norm_exp_of_norm_lt`: `‖exp x‖ = 1`.
 * `TauCeti.norm_pow_div_natCast_le`: the corresponding bound for the logarithm series.
 * `TauCeti.hasSum_log_of_norm_sub_one_lt`: for `‖y - 1‖ < r₀`,
   `log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`.
 * `TauCeti.norm_log_of_norm_sub_one_lt`: `‖log y‖ = ‖y - 1‖`.
 * `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt`: the exponential and the
   logarithm are inverse.
-* `TauCeti.injOn_exp_ball`: the exponential is injective on the disc.
 
 ## References
 
@@ -81,29 +75,6 @@ open scoped Nat
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-/-- **The exponential series converges on the disc of radius `r₀ = p ^ (-1 / (p - 1))`** in
-every normed algebra over `ℚ_[p]`. -/
-theorem ofReal_amiceRadius_zero_le_radius_expSeries {L : Type*} [NormedRing L]
-    [NormedAlgebra ℚ_[p] L] :
-    ENNReal.ofReal (amiceRadius p 0) ≤ (expSeries ℚ_[p] L).radius := by
-  have hr := amiceRadius_pos (p := p) 0
-  rw [ENNReal.ofReal_eq_coe_nnreal hr.le]
-  refine FormalMultilinearSeries.le_radius_of_bound _
-    (max ‖expSeries ℚ_[p] L 0‖ (amiceRadius p 0)) fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  refine le_max_of_le_right ?_
-  rw [expSeries_eq_ofScalars, NNReal.coe_mk]
-  refine (mul_le_mul_of_nonneg_right (FormalMultilinearSeries.ofScalars_norm_le _ _ _
-    (Nat.pos_of_ne_zero hn)) (by positivity)).trans ?_
-  -- `‖n!⁻¹‖ r₀ⁿ ≤ r₀ⁿ / r₀ ^ (n - 1) = r₀`
-  have hf := amiceRadius_zero_pow_sub_one_le_norm_factorial (p := p) (L := ℚ_[p]) hn
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hf
-  rw [norm_inv, inv_mul_le_iff₀ ((pow_pos hr m).trans_le hf), _root_.pow_succ]
-  exact mul_le_mul_of_nonneg_right hf hr.le
-
 variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L]
 
 omit [NormedAlgebra ℚ_[p] L] in
@@ -130,58 +101,7 @@ theorem norm_pow_div_natCast_le (z : L) {n : ℕ} (hn : n ≠ 0) :
     ‖z ^ n / (n : L)‖ ≤ ‖z‖ * (‖z‖ / amiceRadius p 0) ^ (n - 1) :=
   norm_pow_div_le_of_le_norm z hn (amiceRadius_zero_pow_sub_one_le_norm_natCast hn)
 
-/-- A point of the disc `‖x‖ < r₀` lies in the ball of convergence of the exponential series. -/
-private theorem mem_eball_radius_expSeries {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    x ∈ Metric.eball (0 : L) (expSeries ℚ_[p] L).radius := by
-  refine lt_of_lt_of_le ?_ ofReal_amiceRadius_zero_le_radius_expSeries
-  rw [edist_zero_right, ← ofReal_norm]
-  exact (ENNReal.ofReal_lt_ofReal_iff (amiceRadius_pos 0)).mpr hx
-
 variable [CompleteSpace L]
-
-/-- **The exponential as a series on its disc.** For `‖x‖ < r₀`, `exp x = ∑ xⁿ / n!`. -/
-theorem expSeries_div_hasSum_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    HasSum (fun n ↦ x ^ n / (n ! : L)) (exp x) :=
-  expSeries_div_hasSum_exp_of_mem_ball ℚ_[p] x (mem_eball_radius_expSeries hx)
-
-/-- **The functional equation of the `p`-adic exponential.** For `‖x‖, ‖y‖ < r₀`,
-`exp (x + y) = exp x * exp y`. -/
-theorem exp_add_of_norm_lt {x y : L} (hx : ‖x‖ < amiceRadius p 0)
-    (hy : ‖y‖ < amiceRadius p 0) : exp (x + y) = exp x * exp y :=
-  exp_add_of_mem_ball (𝕂 := ℚ_[p]) (mem_eball_radius_expSeries hx) (mem_eball_radius_expSeries hy)
-
-/-- The functional equation for finite sums: if `‖f i‖ < r₀` for every `i ∈ s`, then
-`exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i)`. -/
-theorem exp_sum_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → L}
-    (hf : ∀ i ∈ s, ‖f i‖ < amiceRadius p 0) : exp (∑ i ∈ s, f i) = ∏ i ∈ s, exp (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [exp_zero]
-  | insert a s ha ih =>
-    have hs : ∀ i ∈ s, ‖f i‖ < amiceRadius p 0 := fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
-    have hsum : ‖∑ i ∈ s, f i‖ < amiceRadius p 0 := by
-      have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
-      rcases s.eq_empty_or_nonempty with rfl | hne
-      · simpa using amiceRadius_pos (p := p) 0
-      obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne f
-      exact hle.trans_lt (hs i hi)
-    rw [Finset.sum_insert ha, Finset.prod_insert ha,
-      exp_add_of_norm_lt (hf a (Finset.mem_insert_self a s)) hsum, ih hs]
-
-/-- For `‖x‖ < r₀` and every natural number `n`, `exp (n • x) = exp x ^ n`. -/
-theorem exp_nsmul_of_norm_lt (n : ℕ) {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    exp (n • x) = exp x ^ n := by
-  simpa using exp_sum_of_norm_lt (Finset.range n) (f := fun _ ↦ x) fun _ _ ↦ hx
-
-/-- For `‖x‖ < r₀` and every integer `n`, `exp (n • x) = exp x ^ n`. -/
-theorem exp_zsmul_of_norm_lt (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    exp (n • x) = exp x ^ n := by
-  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
-  obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg
-  · simpa using exp_nsmul_of_norm_lt n hx
-  · rw [neg_smul, natCast_zsmul, exp_neg_of_mem_ball ℚ_[p]
-      (mem_eball_radius_expSeries ((IsUltrametricDist.norm_nsmul_le x n).trans_lt hx)),
-      exp_nsmul_of_norm_lt n hx, zpow_neg, zpow_natCast]
 
 omit [CompleteSpace L] in
 /-- A convergent series `∑ tₙ` with `t₀ = 0` and `t₁ = z ≠ 0`, whose later terms satisfy
@@ -215,23 +135,9 @@ private theorem norm_eq_of_hasSum {t : ℕ → L} {s z : L} (hs : HasSum t s) (h
 /-- The coefficients of `exp - 1` give the series of `exp x - 1` on the disc. -/
 private theorem hasSum_exp_sub_one {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     HasSum (fun n ↦ if n = 0 then 0 else x ^ n / (n ! : L)) (exp x - 1) := by
-  convert (expSeries_div_hasSum_exp_of_norm_lt hx).sub (hasSum_ite_eq 0 (1 : L)) using 1
+  convert (TauCeti.PadicExp.hasSum_exp hx).sub (hasSum_ite_eq 0 (1 : L)) using 1
   funext n
   split_ifs with hn <;> simp [hn]
-
-/-- **The `p`-adic exponential preserves norms on its disc.** For `‖x‖ < r₀`,
-`‖exp x - 1‖ = ‖x‖`: every term `xⁿ / n!` of degree `n ≥ 2` is strictly smaller than `x`. -/
-theorem norm_exp_sub_one_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    ‖exp x - 1‖ = ‖x‖ :=
-  norm_eq_of_hasSum (hasSum_exp_sub_one hx) (by simp) (by simp) hx fun n ↦ by
-    simpa using norm_pow_div_factorial_le (p := p) x (n := n + 2) (by omega)
-
-/-- For `‖x‖ < r₀`, the exponential `exp x` has norm one. -/
-theorem norm_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : ‖exp x‖ = 1 := by
-  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
-  refine norm_eq_one_of_norm_one_sub_lt_one ?_
-  rw [norm_sub_rev, norm_exp_sub_one_of_norm_lt hx]
-  exact hx.trans (amiceRadius_lt_one 0)
 
 omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
 /-- The sign of a term of the logarithm series does not change its norm. -/
@@ -308,7 +214,7 @@ theorem log_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : log (exp x
   -- The formal series live over the `ℚ`-algebra structure of the characteristic-zero field `L`.
   have := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
-  have hy : ‖exp x - 1‖ < amiceRadius p 0 := by rwa [norm_exp_sub_one_of_norm_lt hx]
+  have hy : ‖exp x - 1‖ < amiceRadius p 0 := by rwa [TauCeti.PadicExp.norm_exp_sub_one hx]
   refine PowerSeries.eq_of_hasSum_of_subst_eq_X (f := PowerSeries.log L)
     (g := PowerSeries.exp L - 1) (by simp) (PowerSeries.subst_log_exp_sub_one L)
     norm_coeff_log_mul_le norm_coeff_exp_sub_one_mul_le hx (hasSum_coeff_exp_sub_one_mul_pow hx)
@@ -327,12 +233,5 @@ theorem exp_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 0) 
   exact sub_left_injective <| PowerSeries.eq_of_hasSum_of_subst_eq_X (by simp) hfg
     norm_coeff_exp_sub_one_mul_le norm_coeff_log_mul_le hy (hasSum_coeff_log_mul_pow hy)
     (hasSum_coeff_exp_sub_one_mul_pow hl)
-
-/-- **The `p`-adic exponential is injective on its disc** `‖x‖ < r₀`: the logarithm is a left
-inverse there. -/
-theorem injOn_exp_ball : Set.InjOn (exp : L → L) (Metric.ball 0 (amiceRadius p 0)) :=
-  fun x hx y hy hxy ↦ by
-    rw [mem_ball_zero_iff] at hx hy
-    rw [← log_exp_of_norm_lt hx, hxy, log_exp_of_norm_lt hy]
 
 end TauCeti

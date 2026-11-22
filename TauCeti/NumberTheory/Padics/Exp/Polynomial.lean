@@ -11,40 +11,39 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.PowerSeries.Derivative
-import Mathlib.Algebra.Algebra.Rat
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Group.Ultra
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.NumberTheory.Padics.Exp.Basic
-import TauCeti.NumberTheory.Padics.Factorial
+import TauCeti.RingTheory.PowerSeries.EvalAt
+import TauCeti.RingTheory.PowerSeries.Exp.Padic
+import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Exponential polynomials over `p`-adic fields
 
 In a normed field `L` over `ℚ_[p]` (retaining its rational algebra structure `[Algebra ℚ L]` used
 by `PowerSeries.exp`), an exponential polynomial `Q(X) exp(ψ X)` is represented formally as the
-power series `(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By Legendre's
-factorial bound (`TauCeti.norm_inv_factorial_mul_pow_le`), in any seminormed commutative
-`ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, whenever `0 ≤ r` and
-`‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has `r`-weighted coefficients
-bounded by `1` (`PowerSeries.norm_coeff_rescale_exp_mul_pow_le`). Over a normed field `L` over
-`ℚ_[p]`, multiplying `(Q : PowerSeries L)` by `exp(ψ X)` therefore preserves any `r`-weighted bound
-`∀ j, ‖Q.coeff j‖ * r ^ j ≤ M` (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
+power series `(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By the Gauss-norm
+estimate `PowerSeries.gaussNorm_rescale_exp` of `TauCeti.RingTheory.PowerSeries.Exp.Padic`,
+whenever `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has
+Gauss norm `1` at radius `r`. By submultiplicativity of the ultrametric Gauss norm
+(`TauCeti.PowerSeries.gaussNorm_mul_le`), multiplying `(Q : PowerSeries L)` by `exp(ψ X)` preserves
+any `r`-weighted bound `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`
+(`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
 
-When `L` is complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the Cauchy product of the finite polynomial
-sum `Q.eval x` with the convergent exponential series `NormedSpace.exp (ψ * x)` shows that the
-power series `(Q : PowerSeries L) * rescale ψ (exp L)` converges at `x` to
-`Q.eval x * NormedSpace.exp (ψ * x)` (`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its
-`m`-th formal derivative evaluates via `FormalMultilinearSeries.ofScalarsSum` to
+When `L` is complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, both `(Q : PowerSeries L)` and
+`rescale ψ (exp L)` are restricted at radius `‖x‖` (`PowerSeries.isRestricted_rescale_exp`), so
+`PowerSeries.IsRestricted.hasSum_evalAt` and `PowerSeries.IsRestricted.evalAt_mul` show that
+`(Q : PowerSeries L) * rescale ψ (exp L)` converges at `x` to `Q.eval x * NormedSpace.exp (ψ * x)`
+(`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its `m`-th formal derivative evaluates via
+`FormalMultilinearSeries.ofScalarsSum` to
 `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`
 (`PowerSeries.ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
 
 ## Main results
 
-* `PowerSeries.norm_coeff_rescale_exp_mul_pow_le`: in any seminormed commutative `ℚ_[p]`-algebra `A`
-  with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, if `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-(p - 1)⁻¹)`, then
-  `‖coeff k (rescale ψ (exp A))‖ * r ^ k ≤ 1`.
 * `PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`,
   `PowerSeries.norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le`: weighted coefficient
   bounds for `(Q : L⟦X⟧) * exp(ψ X)` and its `m`-th formal derivative.
@@ -71,27 +70,6 @@ open Polynomial
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-/-- In a seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, if
-`0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, then every `r`-weighted coefficient of `exp(ψ X)` has
-norm at most `1`. -/
-theorem norm_coeff_rescale_exp_mul_pow_le {A : Type*} [SeminormedCommRing A] [NormOneClass A]
-    [Algebra ℚ A] [NormedAlgebra ℚ_[p] A] {ψ : A} {r : ℝ} (hr : 0 ≤ r)
-    (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) (k : ℕ) :
-    ‖coeff k (rescale ψ (exp A))‖ * r ^ k ≤ 1 := by
-  rw [coeff_rescale, coeff_exp, ← RingHom.map_rat_algebraMap (algebraMap ℚ_[p] A)]
-  have hnorm : ‖algebraMap ℚ_[p] A (algebraMap ℚ ℚ_[p] (1 / (k.factorial : ℚ)))‖ =
-      ‖(k.factorial : ℚ_[p])⁻¹‖ := by
-    rw [norm_algebraMap']
-    simp
-  calc
-    ‖ψ ^ k * algebraMap ℚ_[p] A (algebraMap ℚ ℚ_[p] (1 / (k.factorial : ℚ)))‖ * r ^ k
-        ≤ (‖ψ‖ ^ k * ‖(k.factorial : ℚ_[p])⁻¹‖) * r ^ k := by
-          gcongr
-          exact (norm_mul_le _ _).trans <|
-            mul_le_mul (norm_pow_le _ _) hnorm.le (norm_nonneg _) (by positivity)
-    _ = ‖(k.factorial : ℚ_[p])⁻¹‖ * (‖ψ‖ * r) ^ k := by rw [mul_pow]; ring
-    _ ≤ 1 := TauCeti.norm_inv_factorial_mul_pow_le (mul_nonneg (norm_nonneg ψ) hr) hψ k
-
 -- Retain the caller's rational algebra structure, which occurs in `PowerSeries.exp`.
 variable {L : Type*} [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
 
@@ -103,22 +81,22 @@ theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le (Q : L[X]) {ψ : L}
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (k : ℕ) :
     ‖coeff k ((Q : PowerSeries L) * rescale ψ (exp L))‖ * r ^ k ≤ M := by
   have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
-  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hQ 0)
-  rcases hr.eq_or_lt with rfl | hr_pos
-  · rcases k with _ | k
-    · simpa [coeff_mul, coeff_rescale, coeff_exp] using hQ 0
-    · simpa [zero_pow (Nat.succ_ne_zero k)] using hM
-  · rw [coeff_mul, ← le_div_iff₀ (pow_pos hr_pos k)]
-    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
-      (div_nonneg hM (pow_nonneg hr k)) fun ij hij ↦ ?_
-    rw [le_div_iff₀ (pow_pos hr_pos k), ← Finset.mem_antidiagonal.mp hij, pow_add, norm_mul,
-      Polynomial.coeff_coe]
-    calc
-      ‖Q.coeff ij.1‖ * ‖coeff ij.2 (rescale ψ (exp L))‖ * (r ^ ij.1 * r ^ ij.2)
-          = (‖Q.coeff ij.1‖ * r ^ ij.1) * (‖coeff ij.2 (rescale ψ (exp L))‖ * r ^ ij.2) := by ring
-      _ ≤ M * 1 := mul_le_mul (hQ ij.1) (norm_coeff_rescale_exp_mul_pow_le hr hψ ij.2)
-            (mul_nonneg (norm_nonneg _) (pow_nonneg hr _)) hM
-      _ = M := mul_one M
+  have hQ_has : (Q : PowerSeries L).HasGaussNorm norm r :=
+    ⟨M, Set.forall_mem_range.mpr fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j⟩
+  have hQ_le : (Q : PowerSeries L).gaussNorm norm r ≤ M := by
+    rw [gaussNorm_eq]
+    exact ciSup_le fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j
+  have hψ' : ‖ψ‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by simpa using hψ
+  have hE_has : (rescale ψ (exp L)).HasGaussNorm norm r := hasGaussNorm_rescale_exp hr hψ'
+  have hE_eq : (rescale ψ (exp L)).gaussNorm norm r = 1 := gaussNorm_rescale_exp hr hψ'
+  calc
+    ‖coeff k ((Q : PowerSeries L) * rescale ψ (exp L))‖ * r ^ k
+        ≤ ((Q : PowerSeries L) * rescale ψ (exp L)).gaussNorm norm r :=
+          le_gaussNorm norm r _ (TauCeti.PowerSeries.hasGaussNorm_mul hr hQ_has hE_has) k
+    _ ≤ (Q : PowerSeries L).gaussNorm norm r * (rescale ψ (exp L)).gaussNorm norm r :=
+          TauCeti.PowerSeries.gaussNorm_mul_le hr hQ_has hE_has
+    _ = (Q : PowerSeries L).gaussNorm norm r := by rw [hE_eq, mul_one]
+    _ ≤ M := hQ_le
 
 /-- Weighted coefficient bound for the `m`-th formal derivative of a `p`-adic exponential
 polynomial `Q(X) exp(ψ X)`: if `0 < r`, `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, and
@@ -141,37 +119,20 @@ theorem hasSum_coeff_coe_mul_rescale_exp [CompleteSpace L] (Q : L[X]) {ψ x : L}
     (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     HasSum (fun k => coeff k ((Q : PowerSeries L) * rescale ψ (exp L)) * x ^ k)
       (Q.eval x * NormedSpace.exp (ψ * x)) := by
-  let f : ℕ → L := fun i ↦ Q.coeff i * x ^ i
-  let g : ℕ → L := fun j ↦ (ψ * x) ^ j / (j.factorial : L)
-  have hf_zero : ∀ i ∉ Finset.range (Q.natDegree + 1), f i = 0 := fun i hi ↦ by
-    rw [Finset.mem_range, not_lt] at hi
-    simp [f, Polynomial.coeff_eq_zero_of_natDegree_lt hi]
-  have hf_sum : HasSum f (Q.eval x) := by
-    rw [Polynomial.eval_eq_sum_range]
-    exact hasSum_sum_of_ne_finset_zero hf_zero
-  have hf_norm : Summable fun i ↦ ‖f i‖ :=
-    summable_of_ne_finset_zero (s := Finset.range (Q.natDegree + 1)) fun i hi ↦ by
-      simp [hf_zero i hi]
-  have hg_sum : HasSum g (NormedSpace.exp (ψ * x)) := TauCeti.PadicExp.hasSum_exp h
-  have hg_norm : Summable fun j ↦ ‖g j‖ := TauCeti.PadicExp.summable_norm_pow_div_factorial h
-  have hc_summable : Summable fun k ↦ ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2 :=
-    (summable_norm_sum_mul_antidiagonal_of_summable_norm hf_norm hg_norm).of_norm
-  have hc_tsum : (∑' k, ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2) =
-      Q.eval x * NormedSpace.exp (ψ * x) := by
-    rw [← tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hf_norm hg_norm,
-      hf_sum.tsum_eq, hg_sum.tsum_eq]
-  have hterm : (fun k ↦ coeff k ((Q : PowerSeries L) * rescale ψ (exp L)) * x ^ k) =
-      fun k ↦ ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2 := by
-    ext k
-    rw [coeff_mul, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun ij hij ↦ ?_
-    have hcast : (algebraMap ℚ L (1 / (ij.2.factorial : ℚ))) = (ij.2.factorial : L)⁻¹ := by simp
-    rw [Polynomial.coeff_coe, coeff_rescale, coeff_exp, ← Finset.mem_antidiagonal.mp hij,
-      pow_add, hcast]
-    simp only [f, g, mul_pow, div_eq_mul_inv]
-    ring
-  rw [hterm, ← hc_tsum]
-  exact hc_summable.hasSum
+  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
+  have hQ_res : (Q : PowerSeries L).IsRestricted ‖x‖ :=
+    TauCeti.PowerSeries.isRestricted_polynomial Q
+  have hE_res : (rescale ψ (exp L)).IsRestricted ‖x‖ :=
+    isRestricted_rescale_exp (norm_nonneg x) (by simpa [norm_mul] using h)
+  have hmul_res : ((Q : PowerSeries L) * rescale ψ (exp L)).IsRestricted ‖x‖ :=
+    (IsRestricted.subring ‖x‖).mul_mem hQ_res hE_res
+  have hE_eval : (rescale ψ (exp L)).evalAt x = NormedSpace.exp (ψ * x) := by
+    rw [evalAt_rescale, smul_eq_mul, evalAt_def,
+      ← (TauCeti.PadicExp.hasSum_exp (by simpa [TauCeti.amiceRadius_zero] using h)).tsum_eq]
+    refine tsum_congr fun n ↦ ?_
+    simp [coeff_exp, inv_mul_eq_div]
+  simpa only [smul_eq_mul, hQ_res.evalAt_mul hE_res le_rfl, evalAt_coe,
+    Polynomial.coe_aeval_eq_eval, hE_eval] using hmul_res.hasSum_evalAt (b := x) le_rfl
 
 /-- Inside `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the `m`-th formal derivative of `Q(X) exp(ψ X)`
 converges at `x` to `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`. -/

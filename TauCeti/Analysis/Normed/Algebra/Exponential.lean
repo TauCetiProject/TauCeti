@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.Data.Nat.Choose.Cast
 
 /-!
 # The normed-algebra exponential
@@ -17,7 +19,9 @@ For an algebra `A` over a field, with `A` a topological ring, the third partial 
 assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
 order at the origin; this file records that estimate in `Asymptotics.IsBigO` form. The exponential
-is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`).
+is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`) and,
+more generally, on commuting elements whose exponential series are absolutely summable
+(`NormedSpace.exp_add_of_commute_of_summable_norm`).
 The file also bounds the norm of the exponential by a scalar exponential, comparing the exponential
 series termwise with the series of `Real.exp`.
 
@@ -37,6 +41,10 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
 * `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
+* `NormedSpace.expSeries_term_add_of_commute`,
+  `NormedSpace.summable_norm_expSeries_add_of_commute`,
+  `NormedSpace.exp_add_of_commute_of_summable_norm`: antidiagonal Cauchy-product formula and
+  multiplicativity of `exp` for commuting elements with absolutely summable exponential series.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
@@ -60,7 +68,21 @@ namespace NormedSpace
 section Algebra
 
 variable (𝕂 : Type*) {A : Type*} [Field 𝕂] [Ring A] [Algebra 𝕂 A]
-  [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- Binomial antidiagonal identity for the terms of the exponential series of two commuting
+elements. -/
+theorem expSeries_term_add_of_commute [CharZero 𝕂] {u v : A} (huv : Commute u v) (n : ℕ) :
+    (n !⁻¹ : 𝕂) • (u + v) ^ n =
+      ∑ kl ∈ Finset.antidiagonal n,
+        ((kl.1 !⁻¹ : 𝕂) • u ^ kl.1) * ((kl.2 !⁻¹ : 𝕂) • v ^ kl.2) := by
+  rw [huv.add_pow' n, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun kl hkl ↦ ?_
+  rw [← Nat.cast_smul_eq_nsmul 𝕂, smul_smul, smul_mul_smul_comm,
+    ← Finset.mem_antidiagonal.mp hkl, Nat.cast_add_choose, Finset.mem_antidiagonal.mp hkl]
+  congr 1
+  field_simp [n.factorial_ne_zero]
+
+variable [TopologicalSpace A] [IsTopologicalRing A]
 
 /-- For an algebra `A` over a field, with `A` a topological ring, the third partial sum of the
 exponential series is the quadratic truncation `1 + x + 2⁻¹ • x ^ 2`. -/
@@ -85,6 +107,8 @@ theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : 
 theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
     exp (x : 𝕜) = (Real.exp x : 𝕜) := by
   simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)
+
+section Analytic
 
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
@@ -111,7 +135,34 @@ theorem hasSum_exp_sub_one (x : A) :
     HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • x ^ (n + 1)) (exp x - 1) := by
   simpa using (hasSum_nat_add_iff' 1).2 (exp_series_hasSum_exp' (𝕂 := 𝕂) x)
 
+end Analytic
+
 /-! ### Additivity and cancellation in a complete normed algebra -/
+
+section Summable
+
+variable (𝕂 : Type*) {A : Type*} [NormedField 𝕂] [CharZero 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
+
+/-- If the exponential series of two commuting elements are absolutely summable, then so is the
+exponential series of their sum. -/
+theorem summable_norm_expSeries_add_of_commute {x y : A} (hxy : Commute x y)
+    (hx : Summable fun n : ℕ ↦ ‖(n !⁻¹ : 𝕂) • x ^ n‖)
+    (hy : Summable fun n : ℕ ↦ ‖(n !⁻¹ : 𝕂) • y ^ n‖) :
+    Summable fun n : ℕ ↦ ‖(n !⁻¹ : 𝕂) • (x + y) ^ n‖ := by
+  simpa only [expSeries_term_add_of_commute 𝕂 hxy] using
+    summable_norm_sum_mul_antidiagonal_of_summable_norm hx hy
+
+/-- If two commuting elements have absolutely summable exponential series, then
+`exp (x + y) = exp x * exp y`. -/
+theorem exp_add_of_commute_of_summable_norm [CompleteSpace A] {x y : A} (hxy : Commute x y)
+    (hx : Summable fun n : ℕ ↦ ‖(n !⁻¹ : 𝕂) • x ^ n‖)
+    (hy : Summable fun n : ℕ ↦ ‖(n !⁻¹ : 𝕂) • y ^ n‖) :
+    exp (x + y) = exp x * exp y := by
+  rw [exp_eq_tsum 𝕂,
+    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hx hy]
+  exact tsum_congr (expSeries_term_add_of_commute 𝕂 hxy)
+
+end Summable
 
 section Normed
 

@@ -42,10 +42,11 @@ basic example.
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
 iterates preserve the degree of a polynomial and have trivial kernel. Over a commutative semiring,
 `Polynomial.expDerivFactor c m` packages the `m`-th power `(derivative + c • id) ^ m` as an
-`R`-linear endomorphism of `R[X]`; because differentiation commutes with scalar multiplication, it
-expands binomially in iterated derivatives (`Polynomial.expDerivFactor_eq_sum`), never increases
-`natDegree`, has degree-`natDegree` coefficient `c ^ m * P.leadingCoeff`, and preserves `natDegree`
-and has trivial kernel whenever `R` has no zero divisors and `c ≠ 0`.
+`R`-linear endomorphism of `R[X]` (agreeing with `(fun Q ↦ Q' + C c * Q)^[m]` via
+`Polynomial.expDerivFactor_apply_eq_iterate`); because differentiation commutes with scalar
+multiplication, it expands binomially in iterated derivatives (`Polynomial.expDerivFactor_eq_sum`),
+never increases `natDegree`, has degree-`natDegree` coefficient `c ^ m * P.leadingCoeff`, and has
+leading coefficient `c ^ m * P.leadingCoeff` whenever `R` has no zero divisors and `c ≠ 0`.
 
 Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
 
@@ -311,9 +312,10 @@ theorem expDerivFactor_add_apply (c : R) (m n : ℕ) (P : R[X]) :
 /-- Applying `expDerivFactor c m` agrees with iterating `Q ↦ Q' + C c * Q` `m` times. -/
 theorem expDerivFactor_apply_eq_iterate (c : R) (m : ℕ) (P : R[X]) :
     expDerivFactor c m P = (fun Q ↦ derivative Q + C c * Q)^[m] P := by
-  induction m generalizing P with
-  | zero => rfl
-  | succ m ih => rw [expDerivFactor_succ_apply', Function.iterate_succ_apply, ih]
+  rw [expDerivFactor_def, _root_.pow_apply_eq_iterate]
+  congr 2
+  ext Q
+  simp [smul_eq_C_mul]
 
 /-- At `c = 0`, `expDerivFactor 0 m` is the `m`-th iterated derivative. -/
 @[simp]
@@ -436,24 +438,13 @@ section NoZeroDivisors
 
 variable [NoZeroDivisors R] {c : R}
 
-/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` preserves `natDegree`
-whenever `c ≠ 0`. -/
-@[simp]
-theorem natDegree_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
-    (expDerivFactor c m P).natDegree = P.natDegree := by
-  rw [expDerivFactor_apply_eq_iterate, natDegree_iterate_derivative_add_C_mul hc]
-
-/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` has trivial kernel
-whenever `c ≠ 0`. -/
-@[simp]
-theorem expDerivFactor_eq_zero_iff (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
-    expDerivFactor c m P = 0 ↔ P = 0 := by
-  rw [expDerivFactor_apply_eq_iterate, iterate_derivative_add_C_mul_eq_zero_iff hc]
-
+/-- Over a commutative semiring without zero divisors, `expDerivFactor c m` scales the leading
+coefficient by `c ^ m` whenever `c ≠ 0`. -/
 @[simp]
 theorem leadingCoeff_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
     (expDerivFactor c m P).leadingCoeff = c ^ m * P.leadingCoeff := by
-  rw [leadingCoeff, natDegree_expDerivFactor hc, coeff_expDerivFactor_natDegree]
+  rw [leadingCoeff, expDerivFactor_apply_eq_iterate, natDegree_iterate_derivative_add_C_mul hc,
+    ← expDerivFactor_apply_eq_iterate, coeff_expDerivFactor_natDegree]
 
 end NoZeroDivisors
 
