@@ -463,18 +463,12 @@ theorem range_robbianoSweedlerStage_succ (n : ℕ) :
     Set.range (robbianoSweedlerStage k (n + 1)) =
       insert (lex.monicNormalize (X 0 * X 1 ^ (n + 3)))
         (Set.range (robbianoSweedlerStage k n)) := by
-  rw [(lex.monic_X.mul lex.monic_X.pow).monicNormalize_eq]
-  ext f
-  constructor
-  · rintro ⟨i, rfl⟩
-    rcases Fin.eq_castSucc_or_eq_last i with ⟨j, rfl⟩ | rfl
-    · right
-      exact ⟨j, by simp⟩
-    · left
-      simp
-  · rintro (rfl | ⟨j, rfl⟩)
-    · exact ⟨Fin.last (n + 3), by simp⟩
-    · exact ⟨j.castSucc, by simp⟩
+  have hinit : Fin.init (robbianoSweedlerStage k (n + 1)) = robbianoSweedlerStage k n :=
+    funext (robbianoSweedlerStage_succ_castSucc k n)
+  have hlast : robbianoSweedlerStage k (n + 1) (Fin.last (n + 3)) = X 0 * X 1 ^ (n + 3) := by
+    simp
+  rw [← Fin.snoc_init_self (robbianoSweedlerStage k (n + 1)), hinit, hlast, Fin.range_snoc,
+    (lex.monic_X.mul lex.monic_X.pow).monicNormalize_eq]
 
 /-- The leading-term subalgebras of `robbianoSweedlerStage k n` form an infinite strictly
 ascending chain of completion steps inside `lex.initialAlgebra (robbianoSweedlerSubalgebra k)`. -/

@@ -59,15 +59,19 @@ theorem fg_adjoin_iff_exists_finset_subset_adjoin_eq {s : Set A} :
   mp := by
     rintro ⟨T, hT⟩
     classical
-    choose u hus htu using fun t : T ↦
-      mem_adjoin_iff_exists_finset_subset.1 (hT ▸ Algebra.subset_adjoin t.property)
-    have hsub : ((T.attach.biUnion u : Finset A) : Set A) ⊆ s := by
-      intro x hx
-      obtain ⟨a, -, hxa⟩ := Finset.mem_biUnion.1 (Finset.mem_coe.1 hx)
-      exact hus a hxa
-    refine ⟨T.attach.biUnion u, hsub, le_antisymm (Algebra.adjoin_mono hsub) ?_⟩
-    rw [Algebra.adjoin_attach_biUnion, ← hT, Algebra.adjoin_le_iff]
-    exact fun x hx ↦ le_iSup (fun t : T ↦ Algebra.adjoin R (u t : Set A)) ⟨x, hx⟩ (htu ⟨x, hx⟩)
+    let K (t : {t : Finset A // (t : Set A) ⊆ s}) : Set A := Algebra.adjoin R (t.val : Set A)
+    have hdir : Directed (· ⊆ ·) K := fun t₁ t₂ ↦
+      ⟨⟨t₁.val ∪ t₂.val, (Finset.coe_union t₁.val t₂.val).symm ▸
+        Set.union_subset t₁.property t₂.property⟩,
+        Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_left),
+        Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_right)⟩
+    have : Nonempty {t : Finset A // (t : Set A) ⊆ s} := ⟨⟨∅, by simp⟩⟩
+    obtain ⟨t, ht⟩ := hdir.exists_mem_subset_of_finset_subset_biUnion (s := T) fun x hx ↦ by
+      obtain ⟨t, hts, hxt⟩ :=
+        mem_adjoin_iff_exists_finset_subset.1 (hT ▸ Algebra.subset_adjoin hx)
+      exact Set.mem_iUnion.2 ⟨⟨t, hts⟩, hxt⟩
+    exact ⟨t.val, t.property,
+      le_antisymm (Algebra.adjoin_mono t.property) (hT ▸ Algebra.adjoin_le ht)⟩
   mpr := by
     rintro ⟨t, -, ht⟩
     exact ⟨t, ht⟩

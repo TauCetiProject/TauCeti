@@ -29,9 +29,8 @@ exponents `m.leadingExponents A`.
   `MonomialOrder.fg_initialAlgebra_iff_fg_leadingExponents`: over a field, the initial algebra of
   `A` is finitely generated as a `k`-algebra if and only if `m.leadingExponents A` is finitely
   generated as an additive submonoid.
-* `MonomialOrder.exists_finset_isSAGBIBasis_iff` and
-  `MonomialOrder.exists_finset_monic_isSAGBIBasis_iff`: over a field, `A` admits a finite (or
-  finite monic) SAGBI basis if and only if `m.leadingExponents A` is finitely generated.
+* `MonomialOrder.exists_finset_monic_isSAGBIBasis_iff`: over a field, `A` admits a finite monic
+  SAGBI basis if and only if `m.leadingExponents A` is finitely generated.
 
 ## References
 
@@ -109,14 +108,6 @@ theorem IsSAGBIBasis.fg_leadingExponents (h : m.IsSAGBIBasis G A) (hG : G.Finite
     (m.leadingExponents A).FG :=
   fg_initialAlgebra_iff_fg_leadingExponents.1 (h.fg_initialAlgebra hG)
 
-/-- Over a field, `A` has a finite SAGBI basis if and only if its monoid of leading exponents is
-finitely generated. -/
-theorem exists_finset_isSAGBIBasis_iff :
-    (∃ B : Finset (MvPolynomial σ k), m.IsSAGBIBasis (B : Set (MvPolynomial σ k)) A) ↔
-      (m.leadingExponents A).FG :=
-  exists_finset_isSAGBIBasis_iff_fg_initialAlgebra.trans
-    fg_initialAlgebra_iff_fg_leadingExponents
-
 /-- Over a field, `A` has a finite monic SAGBI basis if and only if its monoid of leading exponents
 is finitely generated. All members of a monic basis are nonzero; for the base-field subalgebra `⊥`
 the empty basis `∅` is valid. -/
@@ -124,13 +115,14 @@ theorem exists_finset_monic_isSAGBIBasis_iff :
     (∃ B : Finset (MvPolynomial σ k), (∀ b ∈ B, m.Monic b) ∧
       m.IsSAGBIBasis (B : Set (MvPolynomial σ k)) A) ↔ (m.leadingExponents A).FG := by
   classical
-  rw [← exists_finset_isSAGBIBasis_iff]
-  refine ⟨fun ⟨B, _, hB⟩ ↦ ⟨B, hB⟩, fun ⟨B, hB⟩ ↦ ?_⟩
-  refine ⟨(B.erase 0).image m.monicNormalize, ?_, ?_⟩
+  rw [← exists_finite_isSAGBIBasis_iff_fg]
+  refine ⟨fun ⟨B, _, hB⟩ ↦ ⟨B, B.finite_toSet, hB⟩, fun ⟨B, hBfin, hB⟩ ↦ ?_⟩
+  refine ⟨(hBfin.toFinset.erase 0).image m.monicNormalize, ?_, ?_⟩
   · intro g hg
     obtain ⟨p, hp, rfl⟩ := Finset.mem_image.1 hg
     exact monic_monicNormalize (Finset.mem_erase.1 hp).1
-  · rw [Finset.coe_image, Finset.coe_erase, isSAGBIBasis_image_monicNormalize_iff]
+  · rw [Finset.coe_image, Finset.coe_erase, hBfin.coe_toFinset,
+      isSAGBIBasis_image_monicNormalize_iff]
     exact isSAGBIBasis_sdiff_singleton_zero.2 hB
 
 end Field
