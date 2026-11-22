@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Geometry.Symplectic.Floer.EndLinearization
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
 
 /-!
 # The linearized Floer operator on the cylinder is Fredholm
