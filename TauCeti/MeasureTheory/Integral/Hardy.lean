@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.ENNReal.Holder
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -29,16 +27,9 @@ Substituting `ψ(s) = s φ(s)` turns the inner integrals into Lebesgue integrals
 
 Both pairs follow uniformly across `1 ≤ q ≤ ∞` from Schur's test
 (`TauCeti.eLpNorm_lintegral_mul_le`) applied to `k(t, s) = 1_{0 < s ≤ t} (s / t) ^ θ` and its
-transpose on `multHaar`, whose row and column integrals against `dt / t` both equal `θ⁻¹`.
-For Hölder conjugate exponents `p` and `q` (so `q = p / (p - 1)` for `1 < p < ∞`, `q = 1` for
-`p = ∞`, and `q = ∞` for `p = 1`), Hardy's classical `Lᵖ(0, ∞)` inequality
-`‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ q ‖g‖_{Lᵖ(0, ∞)}` (`TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`)
-follows for `1 < p ≤ ∞` by setting `θ = q⁻¹` (i.e. `1 - 1 / p` for `1 < p < ∞`, and `1` for
-`p = ∞`, so `0 < θ ≤ 1`) in the weighted inequality, giving constant `p / (p - 1)` for `1 < p < ∞`
-and `1` for `p = ∞`; the `p = 1` endpoint (`q = ∞`) is proved separately as an extended-valued
-bound (`0 ≤ ∞ * 0` when `‖g‖₁ = 0`, and `≤ ∞` otherwise). For antitone functions on `(0, ∞)`
-there is an immediate pointwise lower bound giving the reverse inequality with constant `1`
-(`TauCeti.eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc`).
+transpose on `multHaar`, whose row and column integrals against `dt / t` both equal `θ⁻¹`. In real
+interpolation, the prefix inequality bounds the `K`-method norm of `(L¹, L^∞)` by `‖·‖_{p, q}`
+(`1 / p = 1 - θ`), while both inequalities together underlie Holmstedt's reiteration estimates.
 
 ## Main declarations
 
@@ -46,14 +37,9 @@ there is an immediate pointwise lower bound giving the reverse inequality with c
 * `TauCeti.eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le`: prefix Hardy inequality (`∫₀ᵗ φ(s) ds`).
 * `TauCeti.eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le`: tail Hardy inequality (`dt / t`).
 * `TauCeti.eLpNorm_rpow_mul_setLIntegral_Ici_le`: tail Hardy inequality (`∫_t^∞ φ(s) ds`).
-* `TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`: Hardy's classical inequality
-  `‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ q ‖g‖_{Lᵖ(0, ∞)}` for Hölder conjugate `p, q`.
-* `TauCeti.eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc`: reverse bound for functions
-  antitone on `(0, ∞)`.
 
 ## References
 
-* G. H. Hardy, *Note on a theorem of Hilbert*, Math. Z. **6** (1920), 314–317.
 * J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
   Springer, 1976, Lemma 5.3.1.
 * G. H. Hardy, J. E. Littlewood, and G. Pólya, *Inequalities*, 2nd ed., Cambridge University
@@ -207,89 +193,5 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ�
   dsimp only [Pi.mul_apply, id_eq]
   rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _), ← Real.rpow_add_one hs.ne',
     add_comm θ 1]
-
-/-! ### Classical Hardy inequality on `(0, ∞)` -/
-
-/-- **Hardy's classical integral inequality on `(0, ∞)`.** For Hölder conjugate exponents `p` and
-`q` (so `q = p / (p - 1)` for `1 < p < ∞`, `q = 1` for `p = ∞`, and `q = ∞` for `p = 1`) and any
-`g : ℝ → ℝ≥0∞`,
-`‖t ↦ t⁻¹ ∫₀ᵗ g(s) ds‖_{Lᵖ(0, ∞)} ≤ q * ‖g‖_{Lᵖ(0, ∞)}`. -/
-theorem eLpNorm_inv_mul_lintegral_Ioc_le {p q : ℝ≥0∞} [hpq : ENNReal.HolderConjugate p q]
-    (g : ℝ → ℝ≥0∞) :
-    eLpNorm (fun t : ℝ ↦ ENNReal.ofReal t⁻¹ * ∫⁻ s in Ioc 0 t, g s) p (volume.restrict (Ioi 0)) ≤
-      q * eLpNorm g p (volume.restrict (Ioi 0)) := by
-  have hqp : ENNReal.HolderConjugate q p := ENNReal.HolderConjugate.symm
-  rcases eq_or_ne p 1 with rfl | hp1
-  · rcases eq_or_ne (eLpNorm g 1 (volume.restrict (Ioi 0))) 0 with h0 | hne
-    · have hg0 : g =ᵐ[volume.restrict (Ioi 0)] 0 := (eLpNorm_eq_zero_iff one_ne_zero).1 h0
-      have hzero : (fun t : ℝ ↦ ENNReal.ofReal t⁻¹ * ∫⁻ s in Ioc 0 t, g s) =ᵐ[volume.restrict
-          (Ioi 0)] 0 := by
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
-        have hg' : ∀ᵐ s ∂volume.restrict (Ioc 0 t), g s = 0 :=
-          ae_restrict_of_ae_restrict_of_subset Ioc_subset_Ioi_self hg0
-        simp [lintegral_congr_ae hg']
-      rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
-      exact zero_le
-    · have hqtop : q = ∞ := hqp.eq_top_iff_eq_one.2 rfl
-      rw [hqtop, ENNReal.top_mul hne]
-      exact le_top
-  have hp0 : p ≠ 0 := hpq.ne_zero
-  have hq0 : q ≠ 0 := hqp.ne_zero
-  by_cases hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0))
-  swap
-  · rw [eLpNorm_of_not_aestronglyMeasurable hg_meas, ENNReal.mul_top hq0]
-    exact le_top
-  have hqtop : q ≠ ∞ := mt hqp.eq_top_iff_eq_one.1 hp1
-  have hθ : 0 < q.toReal⁻¹ := inv_pos.2 (ENNReal.toReal_pos hq0 hqtop)
-  have h1θ : 1 - q.toReal⁻¹ = p.toReal⁻¹ := by
-    have hsub := congrArg ENNReal.toReal (ENNReal.HolderConjugate.one_sub_inv q p)
-    rwa [ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 hqp.one_le) ENNReal.one_ne_top,
-      ENNReal.toReal_one, ENNReal.toReal_inv, ENNReal.toReal_inv] at hsub
-  have hq_eq : ENNReal.ofReal (q.toReal⁻¹)⁻¹ = q := by
-    rw [inv_inv, ENNReal.ofReal_toReal hqtop]
-  rw [eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0, eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0,
-    ← h1θ]
-  have hcongr : (fun t : ℝ ↦ ENNReal.ofReal (t ^ (1 - q.toReal⁻¹)) *
-        (ENNReal.ofReal t⁻¹ * ∫⁻ s in Ioc 0 t, g s)) =ᵐ[multHaar]
-      fun t ↦ ENNReal.ofReal (t ^ (-q.toReal⁻¹)) * ∫⁻ s in Ioc 0 t, g s := by
-    filter_upwards [ae_pos_multHaar] with t ht
-    rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), ← Real.rpow_neg_one t,
-      ← Real.rpow_add ht]
-    ring_nf
-  rw [eLpNorm_congr_ae hcongr]
-  simpa only [hq_eq] using
-    eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le hθ hpq.one_le hg_meas.aemeasurable
-
-/-! ### Reverse bound for antitone functions -/
-
-/-- For a function `g : ℝ → ℝ≥0∞` that is antitone on `(0, ∞)`, `t g(t) ≤ ∫₀ᵗ g(s) ds` for every
-`t > 0`, and hence `t ^ (1 - θ) g(t) ≤ t ^ (-θ) ∫₀ᵗ g(s) ds`. -/
-theorem rpow_one_sub_mul_le_rpow_neg_mul_lintegral_Ioc {g : ℝ → ℝ≥0∞} (hg : AntitoneOn g (Ioi 0))
-    (θ : ℝ) {t : ℝ} (ht : 0 < t) :
-    ENNReal.ofReal (t ^ (1 - θ)) * g t ≤ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s := by
-  calc ENNReal.ofReal (t ^ (1 - θ)) * g t
-      = ENNReal.ofReal (t ^ (-θ)) * (ENNReal.ofReal t * g t) := by
-          rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _),
-            ← Real.rpow_add_one ht.ne', neg_add_eq_sub]
-    _ ≤ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s :=
-          mul_le_mul_right (hg.ofReal_mul_le_setLIntegral_Ioc t) _
-
-/-- **Reverse weighted Hardy bound for antitone functions.** If `g : ℝ → ℝ≥0∞` is antitone on
-`(0, ∞)`, then for every `θ : ℝ` and every `q : ℝ≥0∞`,
-`‖t ↦ t ^ (1 - θ) g(t)‖_{L^q(dt / t)} ≤ ‖t ↦ t ^ (-θ) ∫₀ᵗ g(s) ds‖_{L^q(dt / t)}`. -/
-theorem eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc {g : ℝ → ℝ≥0∞}
-    (hg : AntitoneOn g (Ioi 0)) (θ : ℝ) (q : ℝ≥0∞) :
-    eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ (1 - θ)) * g t) q multHaar ≤
-      eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s) q multHaar := by
-  have hg_meas : AEMeasurable g multHaar :=
-    multHaar_def ▸ (aemeasurable_restrict_of_antitoneOn measurableSet_Ioi hg).mono_ac
-      (withDensity_absolutelyContinuous _ _)
-  have hlhs_meas : AEStronglyMeasurable
-      (fun t : ℝ ↦ ENNReal.ofReal (t ^ (1 - θ)) * g t) multHaar :=
-    ((by fun_prop : Measurable fun t : ℝ ↦ ENNReal.ofReal (t ^ (1 - θ))).aemeasurable.mul
-      hg_meas).aestronglyMeasurable
-  refine eLpNorm_mono_eNorm_ae hlhs_meas ?_
-  filter_upwards [ae_pos_multHaar] with t ht
-  simpa only [eNorm_eq_self] using rpow_one_sub_mul_le_rpow_neg_mul_lintegral_Ioc hg θ ht
 
 end TauCeti

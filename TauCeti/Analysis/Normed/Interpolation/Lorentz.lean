@@ -35,15 +35,6 @@ class `L^{p, q}(μ; E)` (`TauCeti.MemLorentz`), with equivalent norms:
   (`TauCeti.CompatibleCouple.lebesgueOneTopKMethodEquivLp`), and `t ↦ t ^ (θ - 1)` on `(0, ∞)`
   attains `‖v‖_{θ, ∞} = θ⁻¹ ‖f‖_{p, ∞}`
   (`TauCeti.CompatibleCouple.kMethodENorm_lebesgue_one_top_rpow_sub_one`).
-* **Extended `K`-method gauge on indicators and operator interpolation:** for `θ < 1` and when
-  `E` is also a real normed space (`[NormedSpace ℝ E]`),
-  `kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ A ^ (1 - θ)` for any sum-space element `u`
-  in `(L¹, L^∞)` represented almost everywhere by the indicator `c 1_A`
-  (`TauCeti.CompatibleCouple.kMethodENorm_l1Linfty_indicator`, transported to `lebesgue 𝕜 E μ 1 ∞`
-  via `TauCeti.CompatibleCouple.kMethodENorm_l1Linfty_sumSpaceEmbed`). Under the same real
-  normed-space assumption on the source `E`, functoriality yields operator interpolation in
-  Lorentz gauges (`TauCeti.CompatibleCouple.eLorentzNorm_map_le_of_lebesgue_one_top`, which
-  specializes on the diagonal `q = p` to `Lᵖ` via `TauCeti.eLorentzNorm_self`).
 
 ## References
 
@@ -179,14 +170,12 @@ theorem eLorentzNorm_le_kMethodENorm_l1Linfty (hθ : θ ∈ Ioo 0 1)
     (ae_pos_multHaar.mono fun t ht ↦ ?_)
   simp only [eNorm_eq_self]
   calc ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t
-      = ENNReal.ofReal (t ^ (1 - θ)) * μ.decreasingRearrangement (‖f ·‖ₑ) t := by
-        rw [toReal_inv_eq_one_sub hθ hp]
-    _ ≤ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s :=
-        rpow_one_sub_mul_le_rpow_neg_mul_lintegral_Ioc
-          ((μ.antitone_decreasingRearrangement _).antitoneOn (Ioi 0)) θ ht
+      = ENNReal.ofReal (t ^ (-θ)) * (ENNReal.ofReal t * μ.decreasingRearrangement (‖f ·‖ₑ) t) := by
+        rw [toReal_inv_eq_one_sub hθ hp, sub_eq_neg_add, Real.rpow_add_one ht.ne',
+          ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), mul_assoc]
     _ ≤ ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) :=
-        mul_le_mul_right
-          (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le) _
+        mul_le_mul_right ((μ.mul_decreasingRearrangement_le_setLIntegral_Ioc _ t).trans
+          (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le)) _
     _ = ‖t ^ (-θ) * (l1Linfty 𝕜 E μ).kFunctional t u‖ₑ := by
         rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _),
           Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le))]
@@ -414,34 +403,6 @@ theorem toSumₗ_lebesgueOneTopKMethodEquivLp_symm (hθ : θ ∈ Ioo 0 1)
   have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
   simp [lebesgueOneTopKMethodEquivLp, lpToLebesgueOneTopKMethod]
 
-/-- Mapping an element of `(L¹, L^∞)_{θ, p}` to `L^p` via `lebesgueOneTopKMethodEquivLp` and then
-embedding into `L¹ + L^∞` agrees with the canonical map from the `K`-method space into the sum. -/
-@[simp]
-theorem ofLp_lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (u : (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p) :
-    letI : Fact (1 ≤ p) :=
-      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.left.le)))⟩
-    (L1AddLinfty.ofLp (lebesgueOneTopKMethodEquivLp hθ hp u) : L1AddLinfty 𝕜 E μ) =
-      (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed (KMethodSpace.toSumₗ u) := by
-  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
-  refine L1AddLinfty.toAEEqFun_injective ?_
-  rw [L1AddLinfty.toAEEqFun_ofLp]
-  exact AEEqFun.ext (coeFn_lebesgueOneTopKMethodEquivLp hθ hp u)
-
-/-- The diagonal equivalence `lebesgueOneTopKMethodEquivLp` sends an endpoint intersection element
-embedded via `ofInter` to its canonical image in `L^p`. -/
-@[simp]
-theorem lebesgueOneTopKMethodEquivLp_ofInter (hθ : θ ∈ Ioo 0 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (x : (lebesgue 𝕜 E μ 1 ∞).inter) :
-    letI : Fact (1 ≤ p) :=
-      ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.left.le)))⟩
-    lebesgueOneTopKMethodEquivLp hθ hp (KMethodSpace.ofInter θ p hθ x) =
-      lebesgueInterToLp (Fact.out : 1 ≤ p) le_top x := by
-  have : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
-  exact L1AddLinfty.ofLp_injective (𝕜 := 𝕜) (by
-    rw [ofLp_lebesgueOneTopKMethodEquivLp, KMethodSpace.toSumₗ_ofInter, sumSpaceEmbed_fstToSum,
-      lebesgue_embed₀, interFst_apply, ofLp_lebesgueInterToLp])
-
 /-- The forward isomorphism `(L¹, L^∞)_{θ, p} → L^p(μ; E)` is norm-nonincreasing
 (`‖·‖_p ≤ ‖·‖_{θ, p}`). -/
 theorem norm_lebesgueOneTopKMethodEquivLp_le (hθ : θ ∈ Ioo 0 1)
@@ -597,158 +558,6 @@ theorem exists_kMethod_lebesgue_one_top_rpow_sub_one (hθ : θ ∈ Ioo 0 1)
   exact ⟨v, hv, hvf, hlor, kMethodENorm_lebesgue_one_top_rpow_sub_one hθ hvf⟩
 
 end Sharpness
-
-/-! ### Extended `K`-method gauge on indicator functions -/
-
-section Indicator
-
-variable [NormedSpace ℝ E]
-
-private theorem kFunctional_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : Set α} {c : E}
-    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c) {t : ℝ} (ht : 0 ≤ t) :
-    (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * (min (μ A) (ENNReal.ofReal t)).toReal := by
-  have h := congrArg ENNReal.toReal (ofReal_kFunctional_l1Linfty_indicator hu ht)
-  rw [ENNReal.toReal_ofReal (kFunctional_nonneg ht), ENNReal.toReal_mul, ← ofReal_norm,
-    ENNReal.toReal_ofReal (norm_nonneg c), min_comm] at h
-  exact h
-
-private theorem kMethodENorm_l1Linfty_indicator_of_measure_eq_top {u : L1AddLinfty 𝕜 E μ}
-    {A : Set α} {c : E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c)
-    {θ : ℝ} (hθ : θ < 1) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hc0 : ‖c‖ₑ ≠ 0) (hAtop : μ A = ∞) :
-    (l1Linfty 𝕜 E μ).kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ A ^ (1 - θ) := by
-  have h1θ : 0 < 1 - θ := sub_pos.2 hθ
-  have hc_pos : 0 < ‖c‖ := norm_pos_iff.2 (by simpa using hc0)
-  have hC0 : kMethodConst θ q * ‖c‖ₑ ≠ 0 :=
-    (ENNReal.mul_pos (kMethodConst_ne_zero θ hq0) hc0).ne'
-  have hbound : ∀ m : ℝ, 0 < m →
-      kMethodConst θ q * ‖c‖ₑ * ENNReal.ofReal (m ^ (1 - θ)) ≤
-        (l1Linfty 𝕜 E μ).kMethodENorm θ q u := fun m hm ↦ by
-    have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) multHaar :=
-      (continuousOn_const.mul ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).mul
-        (continuous_const.min continuous_id).continuousOn)).aestronglyMeasurable_multHaar
-    have hle : eLpNorm (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) q multHaar ≤
-        (l1Linfty 𝕜 E μ).kMethodENorm θ q u := by
-      rw [kMethodENorm_def]
-      refine eLpNorm_mono_ae_real hmeas (ae_pos_multHaar.mono fun t ht ↦ ?_)
-      have hK : (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * t := by
-        rw [kFunctional_l1Linfty_indicator hu ht.le, hAtop, min_top_left,
-          ENNReal.toReal_ofReal ht.le]
-      rw [Real.norm_of_nonneg (mul_nonneg hc_pos.le
-        (mul_nonneg (Real.rpow_nonneg ht.le _) (le_min hm.le ht.le))), hK]
-      calc ‖c‖ * (t ^ (-θ) * min m t)
-          = t ^ (-θ) * (‖c‖ * min m t) := by ring
-        _ ≤ t ^ (-θ) * (‖c‖ * t) :=
-            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (min_le_right _ _) hc_pos.le)
-              (Real.rpow_nonneg ht.le _)
-    refine le_trans ?_ hle
-    have hmul : (fun t : ℝ ↦ ‖c‖ * (t ^ (-θ) * min m t)) =
-        ‖c‖ • fun t : ℝ ↦ t ^ (-θ) * min m (t * 1) := by
-      ext t; simp [smul_eq_mul, mul_one]
-    rw [hmul, eLpNorm_const_smul, Real.eNorm_of_nonneg hc_pos.le, ofReal_norm,
-      eLpNorm_rpow_neg_mul_min θ q hm one_pos, Real.one_rpow, mul_one]
-    exact le_of_eq (by ring)
-  have htend : Tendsto (fun m : ℝ ↦ kMethodConst θ q * ‖c‖ₑ * ENNReal.ofReal (m ^ (1 - θ)))
-      atTop (𝓝 ∞) := by
-    simpa [ENNReal.mul_top hC0] using ENNReal.Tendsto.const_mul (a := kMethodConst θ q * ‖c‖ₑ)
-      (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop h1θ)) (Or.inl ENNReal.top_ne_zero)
-  have hnorm_top : (l1Linfty 𝕜 E μ).kMethodENorm θ q u = ∞ :=
-    eq_top_iff.2 (le_of_tendsto htend ((eventually_gt_atTop 0).mono hbound))
-  rw [hnorm_top, hAtop, ENNReal.top_rpow_of_pos h1θ, ENNReal.mul_top hC0]
-
-private theorem kMethodENorm_l1Linfty_indicator_of_measure_pos {u : L1AddLinfty 𝕜 E μ}
-    {A : Set α} {c : E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c)
-    (θ : ℝ) (q : ℝ≥0∞) (hA0 : μ A ≠ 0) (hAtop : μ A ≠ ∞) :
-    (l1Linfty 𝕜 E μ).kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ A ^ (1 - θ) := by
-  set m : ℝ := (μ A).toReal
-  have hm : 0 < m := ENNReal.toReal_pos hA0 hAtop
-  have heq : (fun t : ℝ ↦ t ^ (-θ) * (l1Linfty 𝕜 E μ).kFunctional t u) =ᵐ[multHaar]
-      ‖c‖ • fun t : ℝ ↦ t ^ (-θ) * min m (t * 1) := by
-    filter_upwards [ae_pos_multHaar] with t ht
-    have hK : (l1Linfty 𝕜 E μ).kFunctional t u = ‖c‖ * min m t := by
-      rw [kFunctional_l1Linfty_indicator hu ht.le, ← ENNReal.ofReal_toReal hAtop,
-        ← ENNReal.ofReal_min, ENNReal.toReal_ofReal (le_min hm.le ht.le)]
-    simp only [Pi.smul_apply, smul_eq_mul, hK, mul_one]
-    ring
-  rw [kMethodENorm_def, eLpNorm_congr_ae heq, eLpNorm_const_smul,
-    Real.eNorm_of_nonneg (norm_nonneg c), ofReal_norm,
-    eLpNorm_rpow_neg_mul_min θ q hm one_pos, Real.one_rpow, mul_one,
-    ← ENNReal.ofReal_rpow_of_pos hm, ENNReal.ofReal_toReal hAtop]
-  ring
-
-/-- Extended `K`-method gauge of a sum-space element `u` in `(L¹, L^∞)` represented almost
-everywhere by the indicator `c 1_A`: when `E` is also a real normed space (`[NormedSpace ℝ E]`),
-for `θ < 1` and every `q ∈ [0, ∞]`,
-`kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ(A) ^ (1 - θ)`. -/
-theorem kMethodENorm_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : Set α} {c : E}
-    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] A.indicator fun _ ↦ c)
-    {θ : ℝ} (hθ : θ < 1) (q : ℝ≥0∞) :
-    (l1Linfty 𝕜 E μ).kMethodENorm θ q u = kMethodConst θ q * ‖c‖ₑ * μ A ^ (1 - θ) := by
-  have h1θ : 0 < 1 - θ := sub_pos.2 hθ
-  rcases eq_or_ne q 0 with rfl | hq0
-  · have hmeas_min : AEStronglyMeasurable (fun s : ℝ ↦ s ^ (-θ) * min 1 s) multHaar :=
-      ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).mul
-        (continuous_const.min continuous_id).continuousOn).aestronglyMeasurable_multHaar
-    rw [kMethodENorm_def, kMethodConst_def,
-      eLpNorm_exponent_zero (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u),
-      eLpNorm_exponent_zero hmeas_min]
-    simp
-  have hzero_of : (l1Linfty 𝕜 E μ).kFunctional 1 u = 0 →
-      (l1Linfty 𝕜 E μ).kMethodENorm θ q u = 0 := fun hK0 ↦ by
-    obtain ⟨v, rfl⟩ := lebesgue_one_top_sumSpaceEmbed_surjective u
-    rw [kFunctional_l1Linfty_sumSpaceEmbed zero_le_one, kFunctional_eq_zero_iff one_pos] at hK0
-    rw [hK0, map_zero, kMethodENorm_zero]
-  rcases eq_or_ne ‖c‖ₑ 0 with hc0 | hc0
-  · rw [hzero_of (by rw [kFunctional_l1Linfty_indicator hu zero_le_one,
-        show ‖c‖ = 0 by simpa using hc0, zero_mul]), hc0, mul_zero, zero_mul]
-  rcases eq_or_ne (μ A) 0 with hA0 | hA0
-  · rw [hzero_of (by rw [kFunctional_l1Linfty_indicator hu zero_le_one, hA0, zero_min,
-        ENNReal.toReal_zero, mul_zero]), hA0, ENNReal.zero_rpow_of_pos h1θ, mul_zero]
-  rcases eq_or_ne (μ A) ∞ with hAtop | hAtop
-  · exact kMethodENorm_l1Linfty_indicator_of_measure_eq_top hu hθ hq0 hc0 hAtop
-  · exact kMethodENorm_l1Linfty_indicator_of_measure_pos hu θ q hA0 hAtop
-
-end Indicator
-
-/-! ### Operator interpolation in Lorentz gauges -/
-
-section Map
-
-variable {β F : Type*} {mβ : MeasurableSpace β} {ν : Measure β}
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ E]
-
-/-- **Operator interpolation in Lorentz gauges.** When the source `E` is also a real normed space
-(`[NormedSpace ℝ E]`), a `𝕜`-linear map `T` between the sum spaces of `(L¹(μ; E), L^∞(μ; E))` and
-`(L¹(ν; F), L^∞(ν; F))` restricting to maps with `L¹` bound `M₀ > 0` and `L^∞` bound `M₁ > 0`
-satisfies
-`‖T v‖_{L^{p, q}(ν)} ≤ θ⁻¹ M₀ ^ (1 - θ) M₁ ^ θ ‖v‖_{L^{p, q}(μ)}`
-for `0 < θ < 1`, `p⁻¹ = ENNReal.ofReal (1 - θ)`, and `1 ≤ q ≤ ∞`. -/
-theorem eLorentzNorm_map_le_of_lebesgue_one_top
-    (T : (lebesgue 𝕜 E μ 1 ∞).SumSpace →ₗ[𝕜] (lebesgue 𝕜 F ν 1 ∞).SumSpace)
-    {T₀ : Lp E 1 μ → Lp F 1 ν} {T₁ : Lp E ∞ μ → Lp F ∞ ν}
-    (hT₀ : ∀ x, T ((lebesgue 𝕜 E μ 1 ∞).fstToSum x) = (lebesgue 𝕜 F ν 1 ∞).fstToSum (T₀ x))
-    (hT₁ : ∀ x, T ((lebesgue 𝕜 E μ 1 ∞).sndToSum x) = (lebesgue 𝕜 F ν 1 ∞).sndToSum (T₁ x))
-    {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖)
-    {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E} {g : β → F}
-    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
-    (hTv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 F ν 1 ∞).sumSpaceEmbed (T v))) =ᵐ[ν] g)
-    {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {p q : ℝ≥0∞} (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (hq : 1 ≤ q) :
-    eLorentzNorm g p q ν ≤
-      ENNReal.ofReal (θ⁻¹ * M₀ ^ (1 - θ) * M₁ ^ θ) * eLorentzNorm f p q μ := by
-  calc eLorentzNorm g p q ν
-      ≤ (lebesgue 𝕜 F ν 1 ∞).kMethodENorm θ q (T v) :=
-          eLorentzNorm_le_kMethodENorm_lebesgue_one_top hθ hp hTv
-    _ ≤ ENNReal.ofReal (M₀ ^ (1 - θ) * M₁ ^ θ) * (lebesgue 𝕜 E μ 1 ∞).kMethodENorm θ q v :=
-          kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ v
-    _ ≤ ENNReal.ofReal (M₀ ^ (1 - θ) * M₁ ^ θ) * (ENNReal.ofReal θ⁻¹ * eLorentzNorm f p q μ) := by
-          gcongr
-          exact kMethodENorm_lebesgue_one_top_le_eLorentzNorm hθ hp hq hv
-    _ = ENNReal.ofReal (θ⁻¹ * M₀ ^ (1 - θ) * M₁ ^ θ) * eLorentzNorm f p q μ := by
-          rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
-          congr 2
-          ring
-
-end Map
 
 end CompatibleCouple
 

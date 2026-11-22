@@ -39,8 +39,7 @@ Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 `Lᵖ(dt / t)` seminorms (`TauCeti.eLpNorm_volume_Ioi_eq_eLpNorm_multHaar`), and a right-continuous
 function on `(0, ∞)` has `dt / t`-essential supremum equal to its pointwise supremum
 (`TauCeti.essSup_multHaar_eq_iSup_Ioi`). Half-line power integrals evaluate explicitly
-(`TauCeti.lintegral_Iic_multHaar_rpow`, `TauCeti.lintegral_Ici_multHaar_rpow_neg`,
-`TauCeti.lintegral_multHaar_rpow_eq_top`). In
+(`TauCeti.lintegral_Iic_multHaar_rpow`, `TauCeti.lintegral_Ici_multHaar_rpow_neg`). In
 particular the Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of
 `t^s f(t)` against `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's
 `MellinConvergent` is the integrability of `t^s f(t)` against `dt / t`
@@ -467,12 +466,6 @@ theorem lintegral_Ici_multHaar_rpow_neg {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t)
     inter_eq_self_of_subset_left (Ici_subset_Ioi.2 ht), ← Measure.restrict_congr_set Ioi_ae_eq_Ici,
     lintegral_ofReal_rpow_Ioi_of_lt (by linarith) ht, sub_add_cancel, neg_div_neg_eq,
     div_eq_mul_inv]
-
-/-- `∫_0^∞ s ^ θ ds / s = ∞` for `0 < θ`. -/
-theorem lintegral_multHaar_rpow_eq_top {θ : ℝ} (_hθ : 0 < θ) :
-    ∫⁻ s, ENNReal.ofReal (s ^ θ) ∂multHaar = ∞ := by
-  rw [← setLIntegral_univ, setLIntegral_multHaar_rpow MeasurableSet.univ, univ_inter,
-    lintegral_ofReal_rpow_Ioi]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
