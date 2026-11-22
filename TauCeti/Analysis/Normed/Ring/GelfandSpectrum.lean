@@ -77,6 +77,25 @@ normalized (`[NormMulClass A] [NormOneClass A]`), it defines the top point
 
 public section
 
+namespace RingHom
+
+/-- The identity ring homomorphism on a seminormed ring is bounded with constant `1`. -/
+@[simp]
+theorem isBounded_id {A : Type*} [SeminormedRing A] : (RingHom.id A).IsBounded :=
+  ⟨1, zero_lt_one, fun x ↦ by simp⟩
+
+/-- The composition of two bounded ring homomorphisms is bounded. -/
+theorem IsBounded.comp {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
+    {ψ : B →+* C} (hψ : ψ.IsBounded) {φ : A →+* B} (hφ : φ.IsBounded) :
+    (ψ.comp φ).IsBounded := by
+  obtain ⟨C₁, hC₁, h₁⟩ := hψ
+  obtain ⟨C₂, hC₂, h₂⟩ := hφ
+  exact ⟨C₁ * C₂, mul_pos hC₁ hC₂, fun x ↦
+    (h₁ (φ x)).trans
+      ((mul_le_mul_of_nonneg_left (h₂ x) hC₁.le).trans_eq (mul_assoc C₁ C₂ ‖x‖).symm)⟩
+
+end RingHom
+
 namespace TauCeti
 
 /-- The **Gel'fand spectrum** (or **Berkovich spectrum**) `M(A)` of a seminormed ring `A`: the
@@ -340,15 +359,15 @@ theorem continuous_comap (φ : A →+* B) (hφ : φ.IsBounded) :
 
 /-- Pullback along the identity ring homomorphism is the identity on `GelfandSpectrum A`. -/
 @[simp]
-theorem comap_id (h : (RingHom.id A).IsBounded) (α : GelfandSpectrum A) :
-    comap (RingHom.id A) h α = α :=
+theorem comap_id (α : GelfandSpectrum A) :
+    comap (RingHom.id A) RingHom.isBounded_id α = α :=
   ext fun _ ↦ by simp
 
 /-- Pullback of Gel'fand spectra is contravariant under composition of bounded ring homomorphisms:
 pulling back along `ψ.comp φ` first pulls back along `ψ`, then along `φ`. -/
 theorem comap_comp (ψ : B →+* C) (hψ : ψ.IsBounded) (φ : A →+* B) (hφ : φ.IsBounded)
-    (hψφ : (ψ.comp φ).IsBounded) (γ : GelfandSpectrum C) :
-    comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) hψφ γ :=
+    (γ : GelfandSpectrum C) :
+    comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) (hψ.comp hφ) γ :=
   ext fun _ ↦ by simp
 
 /-- If `φ : A →+* B` and `ψ : B →+* A` are bounded ring homomorphisms with `ψ ∘ φ = id` such that

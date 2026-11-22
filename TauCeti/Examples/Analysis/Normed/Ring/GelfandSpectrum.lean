@@ -273,12 +273,11 @@ theorem const_one_not_mulRingSeminorm (R : Type*) [NonAssocRing R] :
 `RingHom.id`, and composes contravariantly. -/
 theorem comap_checks {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
     (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* C) (hψ : ψ.IsBounded)
-    (hψφ : (ψ.comp φ).IsBounded) (hid : (RingHom.id A).IsBounded)
     (α : GelfandSpectrum A) (β : GelfandSpectrum B) (γ : GelfandSpectrum C) :
     comap φ hφ β 0 = 0 ∧
       comap φ hφ β 1 = 1 ∧
-      comap (RingHom.id A) hid α = α ∧
-      comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) hψφ γ :=
-  ⟨map_zero _, map_one _, comap_id hid α, comap_comp ψ hψ φ hφ hψφ γ⟩
+      comap (RingHom.id A) RingHom.isBounded_id α = α ∧
+      comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) (hψ.comp hφ) γ :=
+  ⟨map_zero _, map_one _, comap_id α, comap_comp ψ hψ φ hφ γ⟩
 
 end TauCeti.GelfandSpectrum.Examples
