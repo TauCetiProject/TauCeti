@@ -377,6 +377,28 @@ theorem add_inv_ne_zero_of_isSelfAdjoint {q : ℂˣ} (hq : IsSelfAdjoint (q : �
   have hreal : r ^ 2 + 1 = 0 := by exact_mod_cast hcomplex
   nlinarith
 
+section
+
+open scoped ComplexOrder
+
+/-- If a nonzero real (self-adjoint) complex number `s` satisfies `s ^ 2 ≤ 1`, then `(s ^ 2)⁻¹`
+does not lie in the image of `[0, 1)` in `ℂ`. -/
+theorem notMem_Ico_inv_sq_of_sq_le_one {s : ℂ} (hsa : IsSelfAdjoint s) (hs0 : s ≠ 0)
+    (hsq : s ^ 2 ≤ 1) : (s ^ 2)⁻¹ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
+  obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hsa
+  have hr0 : r ≠ 0 := fun h ↦ hs0 (by simpa [h] using hr)
+  have hr_sq_le : r ^ 2 ≤ 1 := by
+    have hsq' : ((r ^ 2 : ℝ) : ℂ) ≤ ((1 : ℝ) : ℂ) := by
+      simpa only [Complex.ofReal_pow, Complex.ofReal_one, ← hr] using hsq
+    simpa only [Complex.ofReal_re] using (Complex.le_def.mp hsq').1
+  rintro ⟨t, ht, hteq⟩
+  have ht' : t = (r ^ 2)⁻¹ := Complex.ofReal_injective (by
+    rw [hteq, hr]; norm_cast)
+  have h1 : (1 : ℝ) ≤ (r ^ 2)⁻¹ := (one_le_inv₀ (sq_pos_of_ne_zero hr0)).mpr hr_sq_le
+  linarith [ht.2]
+
+end
+
 /-- A point of the closed disc of centre `c` and radius `ρ` has real part in
 `[c.re - ρ, c.re + ρ]`. -/
 theorem re_mem_Icc_of_norm_sub_le (w : ℂ) {c : ℂ} {ρ : ℝ} (h : ‖w - c‖ ≤ ρ) :

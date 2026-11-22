@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Complement
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Star
 public import TauCeti.Algebra.TypeAHeckeAlgebra.UnitaryStar
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Star structure on the balanced projection algebra and Hecke star equivalences
@@ -206,6 +205,11 @@ theorem toAlgEquiv_complementStarAlgEquiv :
 theorem complementStarAlgEquiv_symm :
     (complementStarAlgEquiv (R := R) τ).symm = complementStarAlgEquiv τ :=
   StarAlgEquiv.toAlgEquiv_injective (complementEquiv_symm τ)
+
+@[simp]
+theorem complementStarAlgEquiv_complementStarAlgEquiv (x : BalancedProjectionAlgebra R τ) :
+    complementStarAlgEquiv (R := R) τ (complementStarAlgEquiv τ x) = x :=
+  complementEquiv_complementEquiv τ x
 
 @[simp]
 theorem complementStarAlgEquiv_e (i : ℕ) :

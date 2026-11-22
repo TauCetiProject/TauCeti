@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Subalgebra
 public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # The unit-circle involution on the infinite type-A Hecke algebra
@@ -236,6 +237,10 @@ def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
 theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
     indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
 
+@[simp]
+theorem toAlgHom_indexCharacterStarAlgHom :
+    (indexCharacterStarAlgHom (R := R) (q := q)).toAlgHom = indexCharacter R q := (rfl)
+
 /-- In the unit-circle fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
 def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
   { signCharacter R q with map_star' := signCharacter_star }
@@ -244,16 +249,18 @@ def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
 theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacterStarAlgHom x = signCharacter R q x := (rfl)
 
+@[simp]
+theorem toAlgHom_signCharacterStarAlgHom :
+    (signCharacterStarAlgHom (R := R) (q := q)).toAlgHom = signCharacter R q := (rfl)
+
 /-- In the unit-circle fiber, `star (T i + q⁻¹) = T i + q⁻¹`, so the eigenprojection
 `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star projection whenever `s = q + q⁻¹` is a unit. -/
 theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
     IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
   isIdempotentElem := isIdempotentElem_eigenprojection s hs i
   isSelfAdjoint := by
-    have hs_sa : IsSelfAdjoint (s : R) := hs ▸ Units.isSelfAdjoint_add_inv_of_mem_unitary hq.out
-    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := by
-      rw [← Ring.inverse_unit]
-      exact hs_sa.ringInverse
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) :=
+      IsSelfAdjoint.units_inv (hs ▸ Units.isSelfAdjoint_add_inv_of_mem_unitary hq.out)
     have hT : IsSelfAdjoint (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
       rw [IsSelfAdjoint, star_add, UnitCircle.star_T, val_inv_unitT, ← algebraMap_star_comm,
         Units.star_inv_eq_of_mem_unitary hq.out, map_sub]

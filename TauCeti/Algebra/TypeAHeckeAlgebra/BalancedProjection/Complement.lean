@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
-import TauCeti.Algebra.Ring.Idempotent.Basic
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -39,6 +39,27 @@ intertwines `TauCeti.InfiniteTypeAHeckeAlgebra.complementEquiv` under `heckeEqui
 -/
 
 public section
+
+namespace IsIdempotentElem
+
+variable {S A : Type*} [Ring S] [Ring A] [Module S A] {t : S} {p q : A}
+
+/-- Replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates their balanced defect. -/
+theorem one_sub_mul_mul_sub_smul_sub (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
+    ((1 - p) * (1 - q) * (1 - p) - t • (1 - p)) -
+        ((1 - q) * (1 - p) * (1 - q) - t • (1 - q)) =
+      -((p * q * p - t • p) - (q * p * q - t • q)) := by
+  simp only [sub_mul, mul_sub, one_mul, mul_one, mul_assoc, hp.eq, hq.eq, smul_sub]
+  abel
+
+/-- If idempotents `p` and `q` satisfy the balanced relation with parameter `t`, so do `1 - p` and
+`1 - q`. -/
+theorem one_sub_mul_mul_sub_smul_eq (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : p * q * p - t • p = q * p * q - t • q) :
+    (1 - p) * (1 - q) * (1 - p) - t • (1 - p) = (1 - q) * (1 - p) * (1 - q) - t • (1 - q) :=
+  sub_eq_zero.mp <| by rw [hp.one_sub_mul_mul_sub_smul_sub hq, sub_eq_zero.mpr h, neg_zero]
+
+end IsIdempotentElem
 
 namespace TauCeti.BalancedProjectionAlgebra
 
@@ -99,6 +120,11 @@ theorem coe_stageComplementEquiv (n : ℕ) (x : stage R τ n) :
 @[simp]
 theorem stageComplementEquiv_symm (n : ℕ) :
     (stageComplementEquiv (R := R) τ n).symm = stageComplementEquiv τ n := (rfl)
+
+@[simp]
+theorem stageComplementEquiv_stageComplementEquiv (n : ℕ) (x : stage R τ n) :
+    stageComplementEquiv (R := R) τ n (stageComplementEquiv τ n x) = x :=
+  Subtype.ext (complementEquiv_complementEquiv τ x)
 
 variable {τ}
 

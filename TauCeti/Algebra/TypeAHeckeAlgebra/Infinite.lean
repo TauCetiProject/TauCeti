@@ -823,6 +823,54 @@ theorem isIdempotentElem_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹
   rw [IsIdempotentElem, smul_mul_smul_comm, hmul, smul_smul, mul_assoc (↑s⁻¹ : R), s.inv_mul,
     mul_one]
 
+/-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
+`T i = q • P - q⁻¹ • (1 - P)`. -/
+theorem T_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    T q i = (q : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+      (↑q⁻¹ : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  set P := (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))
+  have h1 : (q : R) • P - (↑q⁻¹ : R) • (1 - P) = (s : R) • P - algebraMap R _ (↑q⁻¹ : R) := by
+    calc (q : R) • P - (↑q⁻¹ : R) • (1 - P)
+        = ((q : R) + ↑q⁻¹) • P - (↑q⁻¹ : R) • 1 := by rw [smul_sub, add_smul]; abel
+      _ = (s : R) • P - algebraMap R _ (↑q⁻¹ : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
+  rw [h1, show (s : R) • P = T q i + algebraMap R _ (↑q⁻¹ : R) by
+      rw [smul_smul, s.mul_inv, one_smul],
+    add_sub_cancel_right]
+
+/-- The inverse generator is `q⁻¹` on the eigenprojection `P` of `T i` and `-q` on the
+complement: `T i⁻¹ = q⁻¹ • P - q • (1 - P)`. -/
+theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹)
+    (i : ℕ) :
+    (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) =
+      (↑q⁻¹ : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+        (q : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  set P := (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))
+  have h1 : (↑q⁻¹ : R) • P - (q : R) • (1 - P) = (s : R) • P - algebraMap R _ (q : R) := by
+    calc (↑q⁻¹ : R) • P - (q : R) • (1 - P)
+        = ((q : R) + ↑q⁻¹) • P - (q : R) • 1 := by rw [smul_sub, add_smul]; abel
+      _ = (s : R) • P - algebraMap R _ (q : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
+  rw [h1, show (s : R) • P = T q i + algebraMap R _ (↑q⁻¹ : R) by
+      rw [smul_smul, s.mul_inv, one_smul],
+    val_inv_unitT, map_sub]
+  abel
+
+/-- Whenever `s = q + q⁻¹` is a unit, the normalized eigenprojections
+`s⁻¹ • (T i + q⁻¹)` generate `InfiniteTypeAHeckeAlgebra R q` as an `R`-algebra. -/
+theorem adjoin_range_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) :
+    Algebra.adjoin R
+        (Set.range fun i : ℕ ↦ (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) =
+      ⊤ := by
+  rw [eq_top_iff, ← adjoin_range_T (R := R) (q := q)]
+  refine Algebra.adjoin_le ?_
+  rintro _ ⟨i, rfl⟩
+  have hi : (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) ∈
+      Algebra.adjoin R
+        (Set.range fun j : ℕ ↦ (↑s⁻¹ : R) • (T q j + algebraMap R _ (↑q⁻¹ : R))) :=
+    Algebra.subset_adjoin ⟨i, rfl⟩
+  rw [T_eq_smul_eigenprojection_sub_smul s hs i]
+  exact sub_mem (SMulMemClass.smul_mem _ hi)
+    (SMulMemClass.smul_mem _ (sub_mem (one_mem _) hi))
+
 end InfiniteTypeAHeckeAlgebra
 
 end TauCeti

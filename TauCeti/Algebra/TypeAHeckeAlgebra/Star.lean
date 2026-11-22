@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # The real-parameter involution on type-A Hecke algebras
@@ -173,6 +174,10 @@ def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
 theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
     indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
 
+@[simp]
+theorem toAlgHom_indexCharacterStarAlgHom :
+    (indexCharacterStarAlgHom (R := R) (q := q)).toAlgHom = indexCharacter R q := (rfl)
+
 /-- In the real-parameter fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
 def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
   { signCharacter R q with map_star' := signCharacter_star }
@@ -181,19 +186,18 @@ def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
 theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacterStarAlgHom x = signCharacter R q x := (rfl)
 
+@[simp]
+theorem toAlgHom_signCharacterStarAlgHom :
+    (signCharacterStarAlgHom (R := R) (q := q)).toAlgHom = signCharacter R q := (rfl)
+
 /-- In the real-parameter fiber, the eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star
 projection. -/
 theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
     IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
   isIdempotentElem := isIdempotentElem_eigenprojection s hs i
   isSelfAdjoint := by
-    have hqinv : IsSelfAdjoint (↑q⁻¹ : R) := by
-      rw [← Ring.inverse_unit]
-      exact hq.out.ringInverse
-    have hs_sa : IsSelfAdjoint (s : R) := hs ▸ hq.out.add hqinv
-    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := by
-      rw [← Ring.inverse_unit]
-      exact hs_sa.ringInverse
+    have hqinv : IsSelfAdjoint (↑q⁻¹ : R) := IsSelfAdjoint.units_inv hq.out
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := IsSelfAdjoint.units_inv (hs ▸ hq.out.add hqinv)
     rw [IsSelfAdjoint, star_smul, hsinv.star_eq, star_add, star_T, ← algebraMap_star_comm,
       hqinv.star_eq]
 

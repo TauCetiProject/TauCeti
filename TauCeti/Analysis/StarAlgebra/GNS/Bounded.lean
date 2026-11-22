@@ -477,6 +477,13 @@ theorem mem_boundedSubalgebra {a : A} :
     a ∈ φ.boundedSubalgebra ↔ Continuous (φ.leftMul a) := by
   rfl
 
+/-- If `φ.boundedSubalgebra = ⊤`, left multiplication on `φ.GNS` is continuous for every element
+of `A`. -/
+theorem continuous_leftMul_of_boundedSubalgebra_eq_top (h : φ.boundedSubalgebra = ⊤) (a : A) :
+    Continuous (φ.leftMul a) := by
+  rw [← φ.mem_boundedSubalgebra, h]
+  exact StarSubalgebra.mem_top
+
 /-- The canonical `⋆`-representation of `φ.boundedSubalgebra` by bounded operators on the completed
 GNS Hilbert space `φ.HilbertGNS`. -/
 def boundedSubalgebraRepresentation :
@@ -506,7 +513,8 @@ theorem boundedSubalgebra_eq_top_of_adjoin_eq_top {s : Set A}
 
 theorem continuous_leftMul_of_adjoin_eq_top {s : Set A} (hs : StarAlgebra.adjoin ℂ s = ⊤)
     (hb : ∀ a ∈ s, Continuous (φ.leftMul a)) (a : A) : Continuous (φ.leftMul a) :=
-  φ.mem_boundedSubalgebra.mp <| (φ.boundedSubalgebra_eq_top_of_adjoin_eq_top hs hb).symm ▸ trivial
+  φ.continuous_leftMul_of_boundedSubalgebra_eq_top
+    (φ.boundedSubalgebra_eq_top_of_adjoin_eq_top hs hb) a
 
 /-- If every element of an algebra-generating set acts boundedly on `φ.GNS`, then every element of
 `A` acts boundedly. -/
@@ -521,8 +529,8 @@ theorem boundedSubalgebra_eq_top_of_algebra_adjoin_eq_top {s : Set A}
 `φ.GNS` is continuous for every element of `A`. -/
 theorem continuous_leftMul_of_algebra_adjoin_eq_top {s : Set A} (hs : Algebra.adjoin ℂ s = ⊤)
     (hb : ∀ a ∈ s, Continuous (φ.leftMul a)) (a : A) : Continuous (φ.leftMul a) :=
-  φ.mem_boundedSubalgebra.mp <|
-    (φ.boundedSubalgebra_eq_top_of_algebra_adjoin_eq_top hs hb).symm ▸ trivial
+  φ.continuous_leftMul_of_boundedSubalgebra_eq_top
+    (φ.boundedSubalgebra_eq_top_of_algebra_adjoin_eq_top hs hb) a
 
 /-- When every element of `A` acts continuously on `φ.GNS`, left multiplication extends to a global
 unital `⋆`-representation of `A` in the C⋆-algebra `φ.HilbertGNS →L[ℂ] φ.HilbertGNS`. -/

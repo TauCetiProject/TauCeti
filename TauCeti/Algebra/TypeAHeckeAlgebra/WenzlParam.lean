@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Algebra.Ring.Units
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.GeomSum
@@ -379,7 +379,7 @@ theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q +
   have hZ : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a ≠ 0 := right_ne_zero_of_mul_eq_one hc
   -- `1 + q ^ 2 = q * s` is nonzero since `s` is a unit.
   have hQ : 1 + (q : K) ^ 2 ≠ 0 := by
-    rw [show 1 + (q : K) ^ 2 = q * s by rw [hs, Units.val_inv_eq_inv_val]; field_simp; ring]
+    rw [← Units.val_mul_add_inv q, ← hs]
     exact mul_ne_zero hq s.ne_zero
   rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
   field_simp

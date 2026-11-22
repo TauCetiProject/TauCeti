@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Markov traces on the infinite type-A Hecke algebra
@@ -43,6 +44,8 @@ uniqueness they are the Ocneanu traces for these two values of `z`.
   a given parameter.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_shift`: block multiplicativity,
   `τ (x * shift a y) = τ x * τ y` for `x` in the stage of the first `a` strands.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`: the projection
+  parameter `η` of a Markov trace when appending the eigenprojection `s⁻¹ • (T n + q⁻¹)`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.isMarkovTrace_indexCharacter` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.isMarkovTrace_signCharacter`: the two characters are Markov
   traces.
@@ -155,6 +158,19 @@ theorem map_mul_shift (hτ : IsMarkovTrace z τ) {a : ℕ} {x : InfiniteTypeAHec
             ← (commute_shift_of_mem_stage hx e).eq, mul_assoc, map_mul (shift R q a)]
       _ = τ x * τ (d * T q n * e) := by
           rw [hed, hτ.map_mul_T_mul hd he, mul_left_comm]
+
+/-- **The projection parameter of a Markov trace.** If `z = q * η - q⁻¹ * (1 - η)`, a Markov trace
+with parameter `z` multiplies by `η` when the eigenprojection of the generator `T n` adding the
+new last strand is appended. -/
+theorem map_mul_eigenprojection (hτ : IsMarkovTrace z τ) (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹)
+    {η : R} (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
+    (hx : x ∈ stage R q (n + 1)) :
+    τ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * τ x := by
+  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
+  rw [hs] at hs'
+  rw [mul_smul_comm, map_smul, mul_add, map_add, hτ.map_mul_T hx, ← Algebra.commutes,
+    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
+  linear_combination η * τ x * hs'
 
 end IsMarkovTrace
 

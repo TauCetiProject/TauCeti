@@ -28,7 +28,8 @@ parameter `z = q * η - q⁻¹ * (1 - η)`, which implies uniqueness for each `�
 * `TauCeti.BalancedProjectionAlgebra.IsMarkovTrace.comp_complementEquiv`,
   `isMarkovTrace_comp_complementEquiv_iff`: complement symmetry of Markov traces.
 * `TauCeti.BalancedProjectionAlgebra.isMarkovTrace_comp_heckeEquiv_iff`,
-  `IsMarkovTrace.unique_of_hecke`: Hecke transport and uniqueness when `τ * (q + q⁻¹) ^ 2 = 1`.
+  `IsMarkovTrace.unique_of_hecke`, `InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_heckeEquiv_mul_e`:
+  Hecke transport and uniqueness when `τ * (q + q⁻¹) ^ 2 = 1`.
 
 ## References
 
@@ -39,7 +40,9 @@ parameter `z = q * η - q⁻¹ * (1 - η)`, which implies uniqueness for each `�
 
 public section
 
-namespace TauCeti.BalancedProjectionAlgebra
+namespace TauCeti
+
+namespace BalancedProjectionAlgebra
 
 open InfiniteTypeAHeckeAlgebra (T)
 
@@ -119,25 +122,19 @@ theorem isMarkovTrace_comp_heckeEquiv_iff {q : Rˣ} (hτ : τ * ((q : R) + ↑q�
       simpa using hμ.map_mul_e hmem
     have hT : x * T q n =
         ((q : R) + ↑q⁻¹) • (x * heckeEquiv q hτ (e τ n)) - (↑q⁻¹ : R) • x := by
-      calc x * T q n
-          = x * heckeEquiv q hτ ((heckeEquiv q hτ).symm (T q n)) := by
-            rw [AlgEquiv.apply_symm_apply]
-        _ = ((q : R) + ↑q⁻¹) • (x * heckeEquiv q hτ (e τ n)) - (↑q⁻¹ : R) • x := by
-            simp only [heckeEquiv_symm_T, Algebra.algebraMap_eq_smul_one, map_sub, map_smul,
-              map_one, mul_sub, mul_smul_comm, mul_one]
-    have hproj : μ (((q : R) + ↑q⁻¹) • (x * heckeEquiv q hτ (e τ n))) =
-        ((q : R) + ↑q⁻¹) * η * μ x := by
-      rw [map_smul, hmul, smul_eq_mul, mul_assoc]
-    have hscal : μ ((↑q⁻¹ : R) • x) = (↑q⁻¹ : R) * μ x := by simp
-    rw [hT, map_sub, hproj, hscal, hz]
+      rw [T_eq_smul_heckeEquiv_e_sub hτ n, mul_sub, mul_smul_comm, Algebra.algebraMap_eq_smul_one,
+        mul_smul_comm, mul_one]
+    rw [hT, map_sub, map_smul, map_smul, hmul, smul_eq_mul, smul_eq_mul, hz]
     ring
   · intro hμ
     refine ⟨by simpa using hμ.map_one, fun x y ↦ by
         simpa using hμ.map_mul_comm (heckeEquiv q hτ x) (heckeEquiv q hτ y),
-      fun hw ↦ ?_⟩
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply]
-    rw [hμ.map_heckeEquiv_mul_e hτ hw, hz]
-    linear_combination η * μ (heckeEquiv q hτ _) * hτ
+      fun {n w} hw ↦ ?_⟩
+    have hw' : heckeEquiv q hτ w ∈ InfiniteTypeAHeckeAlgebra.stage R q (n + 1) :=
+      (heckeEquiv_mem_stage_iff hτ).2 hw
+    simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, heckeEquiv_e,
+      ← val_inv_addInvUnit hτ] using
+      hμ.map_mul_eigenprojection (addInvUnit hτ) (val_addInvUnit hτ) hz hw'
 
 /-- When `τ * (q + q⁻¹) ^ 2 = 1`, there is at most one Markov trace on
 `BalancedProjectionAlgebra R τ` with a given projection parameter `η`. -/
@@ -151,4 +148,29 @@ theorem IsMarkovTrace.unique_of_hecke {q : Rˣ} (hτ : τ * ((q : R) + ↑q⁻¹
   have heq := InfiniteTypeAHeckeAlgebra.IsMarkovTrace.unique (toH hμ) (toH hμ')
   exact LinearMap.ext fun x ↦ by simpa using LinearMap.congr_fun heq (heckeEquiv q hτ x)
 
-end TauCeti.BalancedProjectionAlgebra
+end BalancedProjectionAlgebra
+
+namespace InfiniteTypeAHeckeAlgebra.IsMarkovTrace
+
+open BalancedProjectionAlgebra
+
+variable {R : Type*} [CommRing R] {τ : R} {q : Rˣ} {z : R}
+  {μ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+
+/-- **The projection parameter of a Hecke Markov trace.** Transported along the isomorphism with
+the balanced projection algebra, a Markov trace with parameter `z` multiplies by
+`η = (z + q⁻¹) / (q + q⁻¹)` when a new last projection is appended: for `w` in the stage of the
+first `n + 1` strands, `μ (w * e n) = η * μ w`. Here `(q + q⁻¹)⁻¹ = τ * (q + q⁻¹)`. -/
+theorem map_heckeEquiv_mul_e (hμ : IsMarkovTrace z μ) (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
+    {n : ℕ} {w : BalancedProjectionAlgebra R τ}
+    (hw : w ∈ BalancedProjectionAlgebra.stage R τ (n + 1)) :
+    μ (heckeEquiv q hτ (w * e τ n)) =
+      τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹) * μ (heckeEquiv q hτ w) := by
+  have hz : z = (q : R) * (τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) -
+      ↑q⁻¹ * (1 - τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) := by
+    linear_combination -(z + ↑q⁻¹) * hτ
+  exact ((isMarkovTrace_comp_heckeEquiv_iff hτ hz).mpr hμ).map_mul_e hw
+
+end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
+
+end TauCeti
