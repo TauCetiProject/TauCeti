@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 
 /-!
 # Consequences of Abel summation for partial sums

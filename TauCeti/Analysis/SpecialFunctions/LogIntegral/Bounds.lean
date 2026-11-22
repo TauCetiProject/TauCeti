@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Explicit bounds and asymptotic expansion for the logarithmic integral
@@ -24,9 +26,10 @@ of `γ` is available) and the resulting unconditional enclosure `0.96 < li 2 < 1
 * **Asymptotic expansion**: repeated integration by parts gives
   `li x - (x / log x) * ∑ k ∈ range n, k! / log x ^ k = O(x / log x ^ (n + 1))` as `x → ∞`,
   together with `li ~ Li ~ x / log x`.
-* **Numerical enclosures of `li 2 - γ` and `li 2`**: explicit bounds on the entire-part series
-  `∑_{n ≥ 1} (log 2)^n / (n * n!) ∈ [0.8344605, 0.8344615]` combined with
-  `log (log 2) ∈ [-0.366513, -0.366512]` yield `0.4679475 ≤ li 2 - γ ≤ 0.4679495` and
+* **Numerical enclosures of `li 2 - γ` and `li 2`**: combining the `y = log 2` series enclosure
+  `∑_{n ≥ 1} (log 2)^n / (n * n!) ∈ [0.8344605, 0.8344615]` (from
+  `TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference`) with
+  `log (log 2) ∈ [-0.366513, -0.366512]` yields `0.4679475 ≤ li 2 - γ ≤ 0.4679495` and
   `0.96 < li 2 < 1.14`.
 * **Bounds and unique zero of `Li x - x / log x`**: strict monotonicity on `(1, ∞)`, explicit
   two-sided bounds for `x ≥ 2`, localization of the unique zero in `(6.5797, 6.5798)`, sign bounds
@@ -35,10 +38,10 @@ of `γ` is available) and the resulting unconditional enclosure `0.96 < li 2 < 1
 
 ## Main declarations
 
-* `Real.logIntegral_eq_sum_add_integral`, `Real.isBigO_integral_inv_log_pow`,
-  `Real.isBigO_logIntegral_sub_mul_sum`, `Real.isBigO_li_sub_mul_sum`,
-  `Real.li_isEquivalent_logIntegral`, `Real.li_isEquivalent_div_log` — asymptotic expansion and
-  prime-number-theorem equivalences for `li`.
+* `Real.logIntegral_eq_sum_add_integral`, `Real.isBigO_logIntegral_sub_mul_sum`,
+  `Real.isBigO_li_sub_mul_sum`, `Real.li_isEquivalent_logIntegral`,
+  `Real.li_isEquivalent_div_log` — asymptotic expansion and prime-number-theorem equivalences for
+  `li`.
 * `Real.le_li_two_sub_eulerMascheroniConstant`, `Real.li_two_sub_eulerMascheroniConstant_le`,
   `Real.lt_li_two`, `Real.li_two_lt` — enclosures of `li 2 - γ` and `li 2`.
 * `Real.strictMonoOn_logIntegral_sub_div_log`, `Real.le_logIntegral_sub_div_log`,
@@ -85,43 +88,6 @@ theorem logIntegral_eq_sum_add_integral (n : ℕ) {x : ℝ} (hx : 1 < x) :
       rw [hterm x, hterm 2]
       ring
 
-/-- The remainder integral `∫ t in 2..x, (log t ^ n)⁻¹` is `O(x / log x ^ n)` for every
-`n : ℕ`. -/
-theorem isBigO_integral_inv_log_pow (n : ℕ) :
-    (fun x : ℝ ↦ ∫ t in (2 : ℝ)..x, (log t ^ n)⁻¹) =O[atTop]
-      fun x : ℝ ↦ x / log x ^ n := by
-  have ho : (fun x : ℝ ↦ log x ^ n) =o[atTop] fun x : ℝ ↦ √x := by
-    refine (isLittleO_log_rpow_rpow_atTop (r := (n : ℝ)) (s := 1 / 2)
-      (by norm_num)).congr' ?_ ?_
-    · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x _
-      exact rpow_natCast _ _
-    · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x _
-      exact (sqrt_eq_rpow x).symm
-  have hsqrt_le : ∀ᶠ x : ℝ in atTop, √x / log 2 ^ n ≤ x / log x ^ n := by
-    have hlim : Tendsto (fun x : ℝ ↦ log x ^ n / √x) atTop (𝓝 0) :=
-      ho.tendsto_div_nhds_zero
-    filter_upwards [eventually_gt_atTop (2 : ℝ),
-      hlim.eventually (Iio_mem_nhds (pow_pos (log_pos one_lt_two) n))]
-      with x hx hratio
-    have hlogx : 0 < log x := log_pos (by linarith)
-    have hsqx : 0 < √x := sqrt_pos.mpr (by linarith)
-    have hmul : log x ^ n ≤ log 2 ^ n * √x := (div_le_iff₀ hsqx).mp (le_of_lt hratio)
-    rw [div_le_div_iff₀ (pow_pos (log_pos one_lt_two) _) (pow_pos hlogx _)]
-    calc √x * log x ^ n
-        ≤ √x * (log 2 ^ n * √x) := mul_le_mul_of_nonneg_left hmul hsqx.le
-      _ = (√x * √x) * log 2 ^ n := by ring
-      _ = x * log 2 ^ n := by rw [mul_self_sqrt (by linarith)]
-  refine IsBigO.of_bound (1 + 2 ^ n) ?_
-  filter_upwards [eventually_ge_atTop (2 : ℝ), hsqrt_le] with x hx hsq
-  have hlogx : 0 < log x := log_pos (by linarith)
-  have hnn : 0 ≤ ∫ t in (2 : ℝ)..x, (log t ^ n)⁻¹ :=
-    integral_inv_log_pow_nonneg n one_lt_two hx
-  rw [norm_of_nonneg hnn, norm_of_nonneg (by positivity)]
-  calc ∫ t in (2 : ℝ)..x, (log t ^ n)⁻¹
-      ≤ √x / log 2 ^ n + 2 ^ n * x / log x ^ n := integral_inv_log_pow_le_sqrt_add n hx
-    _ ≤ x / log x ^ n + 2 ^ n * x / log x ^ n := by gcongr
-    _ = (1 + 2 ^ n) * (x / log x ^ n) := by ring
-
 /-- **Asymptotic expansion of `Li`**: for every `n : ℕ`,
 `Li x - (x / log x) * ∑ k ∈ range n, k! / log x ^ k = O(x / log x ^ (n + 1))`. -/
 theorem isBigO_logIntegral_sub_mul_sum (n : ℕ) :
@@ -163,26 +129,6 @@ theorem li_isEquivalent_div_log : li ~[atTop] fun x : ℝ ↦ x / log x :=
   li_isEquivalent_logIntegral.trans logIntegral_isEquivalent_div_log
 
 /-! ### Numerical enclosures of `li 2 - γ` and `li 2` -/
-
-/-- Lower bound `0.8344605 ≤ ∑_{n ≥ 1} (log 2)^n / (n * n!)`. -/
-theorem le_tsum_log_two_pow_div_mul_factorial :
-    (0.8344605 : ℝ) ≤
-      ∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
-  have hlog : (0.693147 : ℝ) ≤ log 2 := le_trans (by norm_num) log_two_gt_d9.le
-  refine le_trans ?_ (tsum_pow_div_mul_factorial_mono hlog)
-  refine le_trans ?_ (sum_range_le_tsum_pow_div_mul_factorial (y := (0.693147 : ℝ)) (by norm_num) 7)
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
-  norm_num
-
-/-- Upper bound `∑_{n ≥ 1} (log 2)^n / (n * n!) ≤ 0.8344615`. -/
-theorem tsum_log_two_pow_div_mul_factorial_le :
-    (∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) ≤ 0.8344615 := by
-  have hlog : log 2 ≤ 0.6931472 := le_trans log_two_lt_d9.le (by norm_num)
-  refine (tsum_pow_div_mul_factorial_mono hlog).trans ?_
-  refine (tsum_pow_div_mul_factorial_le_sum_range_add (y := (0.6931472 : ℝ))
-    (by norm_num) (N := 7) (by norm_num)).trans ?_
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
-  norm_num
 
 /-- Sharp lower bound `0.4679475 ≤ li 2 - γ`. -/
 theorem le_li_two_sub_eulerMascheroniConstant :

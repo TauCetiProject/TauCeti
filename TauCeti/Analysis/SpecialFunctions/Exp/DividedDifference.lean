@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.Calculus.Monotone
+import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -25,7 +26,8 @@ with Taylor series `∑' n, u ^ n / (n + 1)!`. Integrating termwise from `0` to 
 `∫ u in 0..y, (exp u - 1) / u` with the entire-part series
 `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)` of the exponential integral, which is therefore
 continuously differentiable and strictly increasing on all of `ℝ`, with explicit partial-sum lower
-bounds and geometric-tail upper bounds for `y ≥ 0`.
+bounds, geometric-tail upper bounds for `y ≥ 0`, and the numerical enclosure
+`[0.8344605, 0.8344615]` at `y = log 2`.
 -/
 
 public section
@@ -264,5 +266,25 @@ theorem tsum_pow_div_mul_factorial_le_sum_range_add {y : ℝ} (hy : 0 ≤ y) {N 
       ≤ ∑' k : ℕ, a N * r ^ k := ((summable_nat_add_iff N).mpr hsum).tsum_le_tsum hterm hgeom
     _ = a N / (1 - r) := by
         rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, div_eq_mul_inv]
+
+/-- Lower bound `0.8344605 ≤ ∑_{n ≥ 1} (log 2)^n / (n * n!)`. -/
+theorem le_tsum_log_two_pow_div_mul_factorial :
+    (0.8344605 : ℝ) ≤
+      ∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
+  have hlog : (0.693147 : ℝ) ≤ log 2 := le_trans (by norm_num) log_two_gt_d9.le
+  refine le_trans ?_ (tsum_pow_div_mul_factorial_mono hlog)
+  refine le_trans ?_ (sum_range_le_tsum_pow_div_mul_factorial (y := (0.693147 : ℝ)) (by norm_num) 7)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `∑_{n ≥ 1} (log 2)^n / (n * n!) ≤ 0.8344615`. -/
+theorem tsum_log_two_pow_div_mul_factorial_le :
+    (∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) ≤ 0.8344615 := by
+  have hlog : log 2 ≤ 0.6931472 := le_trans log_two_lt_d9.le (by norm_num)
+  refine (tsum_pow_div_mul_factorial_mono hlog).trans ?_
+  refine (tsum_pow_div_mul_factorial_le_sum_range_add (y := (0.6931472 : ℝ))
+    (by norm_num) (N := 7) (by norm_num)).trans ?_
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
 
 end Real

@@ -6,16 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
-import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Log.InvLog
+import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
+import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
-import TauCeti.NumberTheory.Harmonic.GammaDeriv
 
 /-!
 # Principal-value and regularized integral representations of `li`
@@ -36,27 +32,18 @@ and `li 2`:
   representation `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)` for all `x > 0`,
   `x ≠ 1`.
 * Folding around `t = 1` gives the symmetric integral
-  `li 2 = ∫ u in 0..1, ((log (1 + u))⁻¹ + (log (1 - u))⁻¹)` together with the boundary limits
-  and explicit bound `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3` on `(0, 1 / 2]`.
+  `li 2 = ∫ u in 0..1, ((log (1 + u))⁻¹ + (log (1 - u))⁻¹)`.
 
 ## Main declarations
 
-* `Real.intervalIntegrable_inv_log_of_lt_one` and `Real.li_eq_integral_inv_log` — ordinary
-  integral on `(0, 1)`.
+* `Real.li_eq_integral_inv_log` — ordinary integral on `(0, 1)`.
 * `Real.tendsto_li_one_add_sub_one_sub` and `Real.tendsto_integral_inv_log_principalValue` —
   Cauchy principal value on `(1, ∞)`.
 * `Real.hasDerivAt_li_exp`, `Real.integral_exp_div_eq_li_exp_sub`,
   `Real.integral_Iic_exp_div_eq_li_exp`, `Real.li_exp`, and
   `Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
-* `Real.intervalIntegrable_inv_log_sub_inv_sub_one`,
-  `Real.exists_abs_inv_log_sub_inv_sub_one_le`, and
-  `Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
-* `Real.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
-  `Real.continuousAt_inv_log_one_add_add_inv_log_one_sub_one`,
-  `Real.abs_inv_log_one_add_add_inv_log_one_sub_le`,
-  `Real.intervalIntegrable_inv_log_one_add_add_inv_log_one_sub`, and
-  `Real.li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub` — symmetric integral for `li 2`
-  and its explicit bound on `(0, 1 / 2]`.
+* `Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
+* `Real.li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub` — symmetric integral for `li 2`.
 
 ## References
 
@@ -73,17 +60,6 @@ open scoped Topology Nat
 namespace Real
 
 /-! ### Principal value and exponential-integral representations -/
-
-/-- `(log t)⁻¹` is interval integrable on any interval contained in `[0, 1)`. -/
-theorem intervalIntegrable_inv_log_of_lt_one {a b : ℝ} (ha0 : 0 ≤ a) (ha1 : a < 1)
-    (hb0 : 0 ≤ b) (hb1 : b < 1) :
-    IntervalIntegrable (fun t : ℝ ↦ (log t)⁻¹) volume a b := by
-  refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
-  have ht0 : 0 ≤ t := (le_min ha0 hb0).trans ht.1
-  have ht1 : t < 1 := ht.2.trans_lt (max_lt ha1 hb1)
-  rcases eq_or_lt_of_le ht0 with rfl | htpos
-  · exact continuousAt_inv_log_zero.continuousWithinAt
-  · exact ((continuousAt_log htpos.ne').inv₀ (log_neg htpos ht1).ne).continuousWithinAt
 
 /-- On `(0, 1)`, the unoffset logarithmic integral is the ordinary integral
 `li x = ∫ t in 0..x, (log t)⁻¹`. -/
@@ -183,16 +159,6 @@ theorem integral_exp_div_eq_li_exp_sub {a b : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b)
   have hu0 : u ≠ 0 := fun h ↦ h0 (h ▸ hu)
   fun_prop (disch := assumption)
 
-/-- `u ↦ exp u / u` is integrable on `(-∞, y]` whenever `y < 0`. -/
-theorem integrableOn_exp_div_Iic {y : ℝ} (hy : y < 0) :
-    IntegrableOn (fun u : ℝ ↦ exp u / u) (Iic y) := by
-  have hcomp := (MeasurePreserving.integrableOn_comp_preimage (Measure.measurePreserving_neg _)
-    (Homeomorph.neg ℝ).measurableEmbedding).mpr (integrableOn_exp_neg_div_Ioi (neg_pos.mpr hy))
-  have hIio : IntegrableOn (fun u : ℝ ↦ exp u / u) (Iio y) := by
-    simpa [Function.comp_def, div_neg] using hcomp.neg
-  rw [integrableOn_Iic_iff_integrableOn_Iio]
-  exact hIio
-
 /-- Exponential-integral form of `li` on `(0, 1)`: for `y < 0`,
 `∫ u in Iic y, exp u / u = li (exp y)`. -/
 theorem integral_Iic_exp_div_eq_li_exp {y : ℝ} (hy : y < 0) :
@@ -259,33 +225,6 @@ theorem tendsto_integral_exp_div_principalValue {y : ℝ} (hy : 0 < y) :
 
 /-! ### Absolutely convergent integral representations -/
 
-/-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is interval integrable on any interval in
-`[0, ∞)`. -/
-theorem intervalIntegrable_inv_log_sub_inv_sub_one {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    IntervalIntegrable (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) volume a b := by
-  have hg_int : IntervalIntegrable
-      (Function.update (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 1 (1 / 2)) volume a b :=
-    (continuousOn_update_inv_log_sub_inv_sub_one.mono
-      fun t (ht : t ∈ uIcc a b) ↦ (le_min ha hb).trans ht.1).intervalIntegrable
-  refine hg_int.congr_ae ?_
-  filter_upwards [ae_restrict_of_ae (volume.ae_ne (1 : ℝ))] with t ht1
-  exact Function.update_of_ne ht1 _ _
-
-/-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is bounded in absolute value on every
-compact interval `[a, b]` with `0 ≤ a`. -/
-theorem exists_abs_inv_log_sub_inv_sub_one_le {a b : ℝ} (ha : 0 ≤ a) :
-    ∃ C : ℝ, ∀ t ∈ Icc a b, |(log t)⁻¹ - (t - 1)⁻¹| ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (continuousOn_update_inv_log_sub_inv_sub_one.mono fun t (ht : t ∈ Icc a b) ↦ ha.trans ht.1)
-  refine ⟨max C 0, fun t ht ↦ ?_⟩
-  rcases eq_or_ne t 1 with rfl | ht1
-  · simp
-  · calc |(log t)⁻¹ - (t - 1)⁻¹|
-        = ‖Function.update (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) 1 (1 / 2) t‖ := by
-          rw [Function.update_of_ne ht1, norm_eq_abs]
-      _ ≤ C := hC t ht
-      _ ≤ max C 0 := le_max_left _ _
-
 /-- **Absolutely convergent integral representation of `li`**: for every `x > 0`, `x ≠ 1`,
 `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`. -/
 theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 1) :
@@ -331,127 +270,6 @@ theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 
     linarith [tendsto_nhds_unique h1 h2]
 
 /-! ### Symmetric integral representation for `li 2` -/
-
-/-- The symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` tends to `1` as `u → 0`,
-`u ≠ 0`. -/
-theorem tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero :
-    Tendsto (fun u : ℝ ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹) (𝓝[≠] 0) (𝓝 1) := by
-  have hp : Tendsto (fun u : ℝ ↦ (log (1 + u))⁻¹ - u⁻¹) (𝓝[≠] 0) (𝓝 (1 / 2)) := by
-    have h1 : Tendsto (fun u : ℝ ↦ 1 + u) (𝓝[≠] 0) (𝓝[≠] 1) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-        (by simpa using ((continuous_const_add (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds)
-        (by
-          filter_upwards [self_mem_nhdsWithin] with u (hu : u ≠ 0)
-          exact mem_compl_singleton_iff.mpr (by simpa using hu))
-    refine (tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.comp h1).congr fun u ↦ ?_
-    simp [Function.comp_apply]
-  have hm : Tendsto (fun u : ℝ ↦ (log (1 - u))⁻¹ + u⁻¹) (𝓝[≠] 0) (𝓝 (1 / 2)) := by
-    have h1 : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[≠] 0) (𝓝[≠] 1) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-        (by simpa using ((continuous_sub_left (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds)
-        (by
-          filter_upwards [self_mem_nhdsWithin] with u (hu : u ≠ 0)
-          exact mem_compl_singleton_iff.mpr (by simp [sub_eq_self, hu]))
-    refine (tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.comp h1).congr fun u ↦ ?_
-    simp only [Function.comp_apply, sub_sub_cancel_left, inv_neg, sub_neg_eq_add]
-  have hsum : Tendsto
-      (fun u : ℝ ↦ ((log (1 + u))⁻¹ - u⁻¹) + ((log (1 - u))⁻¹ + u⁻¹))
-      (𝓝[≠] 0) (𝓝 1) := by
-    simpa only [add_halves] using hp.add hm
-  exact hsum.congr fun u ↦ by ring
-
-/-- The symmetric integrand `u ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹` is continuous at `1`, where it
-takes the value `(log 2)⁻¹`. -/
-theorem continuousAt_inv_log_one_add_add_inv_log_one_sub_one :
-    ContinuousAt (fun u : ℝ ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹) 1 := by
-  have h1 : ContinuousAt (fun u : ℝ ↦ (log (1 + u))⁻¹) 1 :=
-    ((continuousAt_log (by norm_num)).comp (by fun_prop)).inv₀ (by
-      have h11 : (1 : ℝ) + 1 = 2 := by norm_num
-      dsimp only [Function.comp_apply]
-      rw [h11]
-      exact (log_pos one_lt_two).ne')
-  have h2 : ContinuousAt (fun u : ℝ ↦ (log (1 - u))⁻¹) 1 := by
-    have h0 : ContinuousAt (fun t : ℝ ↦ (log t)⁻¹) (1 - 1) := by
-      simpa [sub_self] using continuousAt_inv_log_zero
-    exact h0.comp (continuous_sub_left (1 : ℝ)).continuousAt
-  exact h1.add h2
-
-/-- Explicit bound on `(0, 1 / 2]` for the symmetric integrand of `li 2`:
-`|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3`. -/
-theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu : u ≤ 1 / 2) :
-    |(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3 := by
-  have h1u : 0 < 1 + u := by linarith
-  have h1mu : 0 < 1 - u := by linarith
-  have hlp : 0 < log (1 + u) := log_pos (by linarith)
-  have hlm : 0 < -log (1 - u) := neg_pos.mpr (log_neg h1mu (by linarith))
-  -- Rewrite as `-log (1 - u^2) / (log (1 + u) * (-log (1 - u)))`.
-  have hrew : (log (1 + u))⁻¹ + (log (1 - u))⁻¹ =
-      -log (1 - u ^ 2) / (log (1 + u) * (-log (1 - u))) := by
-    have hmul : log (1 + u) + log (1 - u) = log (1 - u ^ 2) := by
-      rw [← log_mul h1u.ne' h1mu.ne']; ring_nf
-    have hlm_ne : log (1 - u) ≠ 0 := (log_neg h1mu (by linarith)).ne
-    field_simp [hlp.ne', hlm_ne]
-    linarith [hmul]
-  have hnum_nonneg : 0 ≤ -log (1 - u ^ 2) :=
-    neg_nonneg.mpr (log_nonpos (by nlinarith) (by nlinarith))
-  rw [abs_of_nonneg (by rw [hrew]; positivity), hrew]
-  -- Lower bound `log (1 + u) ≥ (3 / 4) * u` by concavity of `log` on `[1, 3 / 2]`.
-  have hlp_ge : 3 / 4 * u ≤ log (1 + u) := by
-    have hlog32 : (3 / 8 : ℝ) ≤ log (3 / 2) := by
-      rw [le_log_iff_exp_le (by norm_num)]
-      have hb := exp_bound' (x := (3 / 8 : ℝ)) (by norm_num) (by norm_num) (n := 4) (by decide)
-      simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
-      norm_num at hb ⊢
-      linarith
-    have hconc : (1 - 2 * u) • log 1 + (2 * u) • log (3 / 2) ≤
-        log ((1 - 2 * u) • 1 + (2 * u) • (3 / 2)) :=
-      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
-        (by linarith) (by linarith) (by ring)
-    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
-    have hcomb : (1 - 2 * u) * 1 + 2 * u * (3 / 2) = 1 + u := by ring
-    rw [hcomb] at hconc
-    nlinarith
-  have hlm_ge : u ≤ -log (1 - u) := by linarith [log_le_sub_one_of_pos h1mu]
-  -- Upper bound `-log (1 - u^2) ≤ 4 * log (4 / 3) * u^2` by concavity of `log` on `[3 / 4, 1]`.
-  have hnum_le : -log (1 - u ^ 2) ≤ 4 * log (4 / 3) * u ^ 2 := by
-    have hconc : (1 - 4 * u ^ 2) • log 1 + (4 * u ^ 2) • log (3 / 4) ≤
-        log ((1 - 4 * u ^ 2) • 1 + (4 * u ^ 2) • (3 / 4)) :=
-      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
-        (by nlinarith) (by positivity) (by ring)
-    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
-    have hcomb : (1 - 4 * u ^ 2) * 1 + 4 * u ^ 2 * (3 / 4) = 1 - u ^ 2 := by ring
-    have hlog34 : log (3 / 4 : ℝ) = -log (4 / 3) := by rw [← log_inv]; norm_num
-    rw [hcomb, hlog34] at hconc
-    linarith
-  have hden_ge : 3 / 4 * u ^ 2 ≤ log (1 + u) * (-log (1 - u)) := by
-    calc 3 / 4 * u ^ 2 = (3 / 4 * u) * u := by ring
-      _ ≤ log (1 + u) * (-log (1 - u)) := mul_le_mul hlp_ge hlm_ge hu0.le hlp.le
-  calc -log (1 - u ^ 2) / (log (1 + u) * (-log (1 - u)))
-      ≤ (4 * log (4 / 3) * u ^ 2) / (3 / 4 * u ^ 2) :=
-        div_le_div₀ (by have : 0 ≤ log (4 / 3) := log_nonneg (by norm_num); positivity)
-          hnum_le (by positivity) hden_ge
-    _ = 16 * log (4 / 3) / 3 := by field_simp [hu0.ne']; ring
-
-private theorem intervalIntegrable_inv_log_one_add_sub_inv :
-    IntervalIntegrable (fun u : ℝ ↦ (log (1 + u))⁻¹ - u⁻¹) volume 0 1 := by
-  have h := intervalIntegrable_inv_log_sub_inv_sub_one (a := 1) (b := 2) zero_le_one (by norm_num)
-  have h21 : (2 : ℝ) - 1 = 1 := by norm_num
-  simpa [add_comm, add_sub_cancel_left, h21] using h.comp_add_left 1
-
-private theorem intervalIntegrable_inv_log_one_sub_add_inv :
-    IntervalIntegrable (fun u : ℝ ↦ (log (1 - u))⁻¹ + u⁻¹) volume 0 1 := by
-  have h := intervalIntegrable_inv_log_sub_inv_sub_one (a := 0) (b := 1) le_rfl zero_le_one
-  simpa [sub_zero, sub_self, sub_sub_cancel_left, inv_neg, sub_neg_eq_add] using
-    (h.comp_sub_left 1).symm
-
-/-- The symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` is interval integrable on
-`[0, 1]`. -/
-theorem intervalIntegrable_inv_log_one_add_add_inv_log_one_sub :
-    IntervalIntegrable (fun u : ℝ ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹) volume 0 1 := by
-  convert intervalIntegrable_inv_log_one_add_sub_inv.add
-    intervalIntegrable_inv_log_one_sub_add_inv using 1
-  ext u
-  ring
 
 /-- **Symmetric absolutely convergent integral for `li 2`**:
 `li 2 = ∫ u in 0..1, ((log (1 + u))⁻¹ + (log (1 - u))⁻¹)`. -/

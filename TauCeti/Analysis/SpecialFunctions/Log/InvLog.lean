@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.LHopital
+import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -15,16 +17,23 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 This file complements Mathlib's `Mathlib.Analysis.SpecialFunctions.Log.InvLog`, which records the
 discontinuities of `x ↦ (log x)⁻¹` at `±1`, with its behaviour at the origin, the continuous
-extension of `(log t)⁻¹ - (t - 1)⁻¹` across `t = 1`, and bounds on the iterated logarithm
-`log log (1 / x)` near the origin:
+extension of `(log t)⁻¹ - (t - 1)⁻¹` across `t = 1`, the symmetric folded profile
+`(log (1 + u))⁻¹ + (log (1 - u))⁻¹`, and bounds on the iterated logarithm `log log (1 / x)` near
+the origin:
 
 * `Real.continuousAt_inv_log_zero`: `(log x)⁻¹ → 0` as `x → 0`, so with Mathlib's conventions
   `log 0 = 0` and `0⁻¹ = 0` the function `x ↦ (log x)⁻¹` is continuous at the origin;
 * `Real.continuousAt_inv_log_sub_inv_sub_one_zero`,
   `Real.tendsto_inv_log_sub_inv_sub_one_nhdsNE_one`,
-  `Real.continuousOn_update_inv_log_sub_inv_sub_one`: `(log t)⁻¹ - (t - 1)⁻¹` is continuous at
-  `0` (with value `1`), tends to `1 / 2` as `t → 1`, `t ≠ 1`, and extends continuously across
-  `t = 1` on `[0, ∞)`;
+  `Real.continuousOn_update_inv_log_sub_inv_sub_one`,
+  `Real.exists_abs_inv_log_sub_inv_sub_one_le`: `(log t)⁻¹ - (t - 1)⁻¹` is continuous at
+  `0` (with value `1`), tends to `1 / 2` as `t → 1`, `t ≠ 1`, extends continuously across
+  `t = 1` on `[0, ∞)`, and is bounded in absolute value on `[a, b]` for `a ≥ 0`;
+* `Real.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
+  `Real.continuousAt_inv_log_one_add_add_inv_log_one_sub_one`,
+  `Real.abs_inv_log_one_add_add_inv_log_one_sub_le`: the symmetric profile
+  `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` tends to `1` as `u → 0`, `u ≠ 0`, is continuous at `1`, and
+  satisfies `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3` on `(0, 1 / 2]`;
 * `Real.abs_log_log_inv_le`: for `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`.
 
 It also records the calculus of the radial profile `r ↦ log log (c / r)`, which for `c ≠ 0` has
@@ -104,6 +113,121 @@ theorem continuousOn_update_inv_log_sub_inv_sub_one :
     have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
     exact (by fun_prop (disch := assumption) :
       ContinuousAt (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) t).continuousWithinAt
+
+/-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is bounded in absolute value on every
+compact interval `[a, b]` with `0 ≤ a`. -/
+theorem exists_abs_inv_log_sub_inv_sub_one_le {a b : ℝ} (ha : 0 ≤ a) :
+    ∃ C : ℝ, ∀ t ∈ Icc a b, |(log t)⁻¹ - (t - 1)⁻¹| ≤ C := by
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (continuousOn_update_inv_log_sub_inv_sub_one.mono fun t (ht : t ∈ Icc a b) ↦ ha.trans ht.1)
+  refine ⟨max C 0, fun t ht ↦ ?_⟩
+  rcases eq_or_ne t 1 with rfl | ht1
+  · simp
+  · calc |(log t)⁻¹ - (t - 1)⁻¹|
+        = ‖Function.update (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) 1 (1 / 2) t‖ := by
+          rw [Function.update_of_ne ht1, norm_eq_abs]
+      _ ≤ C := hC t ht
+      _ ≤ max C 0 := le_max_left _ _
+
+/-- The symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` tends to `1` as `u → 0`,
+`u ≠ 0`. -/
+theorem tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero :
+    Tendsto (fun u : ℝ ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹) (𝓝[≠] 0) (𝓝 1) := by
+  have hp : Tendsto (fun u : ℝ ↦ (log (1 + u))⁻¹ - u⁻¹) (𝓝[≠] 0) (𝓝 (1 / 2)) := by
+    have h1 : Tendsto (fun u : ℝ ↦ 1 + u) (𝓝[≠] 0) (𝓝[≠] 1) :=
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (by simpa using ((continuous_const_add (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds)
+        (by
+          filter_upwards [self_mem_nhdsWithin] with u (hu : u ≠ 0)
+          exact mem_compl_singleton_iff.mpr (by simpa using hu))
+    refine (tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.comp h1).congr fun u ↦ ?_
+    simp [Function.comp_apply]
+  have hm : Tendsto (fun u : ℝ ↦ (log (1 - u))⁻¹ + u⁻¹) (𝓝[≠] 0) (𝓝 (1 / 2)) := by
+    have h1 : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[≠] 0) (𝓝[≠] 1) :=
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (by simpa using ((continuous_sub_left (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds)
+        (by
+          filter_upwards [self_mem_nhdsWithin] with u (hu : u ≠ 0)
+          exact mem_compl_singleton_iff.mpr (by simp [sub_eq_self, hu]))
+    refine (tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.comp h1).congr fun u ↦ ?_
+    simp only [Function.comp_apply, sub_sub_cancel_left, inv_neg, sub_neg_eq_add]
+  have hsum : Tendsto
+      (fun u : ℝ ↦ ((log (1 + u))⁻¹ - u⁻¹) + ((log (1 - u))⁻¹ + u⁻¹))
+      (𝓝[≠] 0) (𝓝 1) := by
+    simpa only [add_halves] using hp.add hm
+  exact hsum.congr fun u ↦ by ring
+
+/-- The symmetric integrand `u ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹` is continuous at `1`, where it
+takes the value `(log 2)⁻¹`. -/
+theorem continuousAt_inv_log_one_add_add_inv_log_one_sub_one :
+    ContinuousAt (fun u : ℝ ↦ (log (1 + u))⁻¹ + (log (1 - u))⁻¹) 1 := by
+  have h1 : ContinuousAt (fun u : ℝ ↦ (log (1 + u))⁻¹) 1 :=
+    ((continuousAt_log (by norm_num)).comp (by fun_prop)).inv₀ (by
+      have h11 : (1 : ℝ) + 1 = 2 := by norm_num
+      dsimp only [Function.comp_apply]
+      rw [h11]
+      exact (log_pos one_lt_two).ne')
+  have h2 : ContinuousAt (fun u : ℝ ↦ (log (1 - u))⁻¹) 1 := by
+    have h0 : ContinuousAt (fun t : ℝ ↦ (log t)⁻¹) (1 - 1) := by
+      simpa [sub_self] using continuousAt_inv_log_zero
+    exact h0.comp (continuous_sub_left (1 : ℝ)).continuousAt
+  exact h1.add h2
+
+/-- Explicit bound on `(0, 1 / 2]` for the symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹`:
+`|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3`. -/
+theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu : u ≤ 1 / 2) :
+    |(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3 := by
+  have h1u : 0 < 1 + u := by linarith
+  have h1mu : 0 < 1 - u := by linarith
+  have hlp : 0 < log (1 + u) := log_pos (by linarith)
+  have hlm : 0 < -log (1 - u) := neg_pos.mpr (log_neg h1mu (by linarith))
+  -- Rewrite as `-log (1 - u^2) / (log (1 + u) * (-log (1 - u)))`.
+  have hrew : (log (1 + u))⁻¹ + (log (1 - u))⁻¹ =
+      -log (1 - u ^ 2) / (log (1 + u) * (-log (1 - u))) := by
+    have hmul : log (1 + u) + log (1 - u) = log (1 - u ^ 2) := by
+      rw [← log_mul h1u.ne' h1mu.ne']; ring_nf
+    have hlm_ne : log (1 - u) ≠ 0 := (log_neg h1mu (by linarith)).ne
+    field_simp [hlp.ne', hlm_ne]
+    linarith [hmul]
+  have hnum_nonneg : 0 ≤ -log (1 - u ^ 2) :=
+    neg_nonneg.mpr (log_nonpos (by nlinarith) (by nlinarith))
+  rw [abs_of_nonneg (by rw [hrew]; positivity), hrew]
+  -- Lower bound `log (1 + u) ≥ (3 / 4) * u` by concavity of `log` on `[1, 3 / 2]`.
+  have hlp_ge : 3 / 4 * u ≤ log (1 + u) := by
+    have hlog32 : (3 / 8 : ℝ) ≤ log (3 / 2) := by
+      rw [le_log_iff_exp_le (by norm_num)]
+      have hb := exp_bound' (x := (3 / 8 : ℝ)) (by norm_num) (by norm_num) (n := 4) (by decide)
+      simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+      norm_num at hb ⊢
+      linarith
+    have hconc : (1 - 2 * u) • log 1 + (2 * u) • log (3 / 2) ≤
+        log ((1 - 2 * u) • 1 + (2 * u) • (3 / 2)) :=
+      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
+        (by linarith) (by linarith) (by ring)
+    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
+    have hcomb : (1 - 2 * u) * 1 + 2 * u * (3 / 2) = 1 + u := by ring
+    rw [hcomb] at hconc
+    nlinarith
+  have hlm_ge : u ≤ -log (1 - u) := by linarith [log_le_sub_one_of_pos h1mu]
+  -- Upper bound `-log (1 - u^2) ≤ 4 * log (4 / 3) * u^2` by concavity of `log` on `[3 / 4, 1]`.
+  have hnum_le : -log (1 - u ^ 2) ≤ 4 * log (4 / 3) * u ^ 2 := by
+    have hconc : (1 - 4 * u ^ 2) • log 1 + (4 * u ^ 2) • log (3 / 4) ≤
+        log ((1 - 4 * u ^ 2) • 1 + (4 * u ^ 2) • (3 / 4)) :=
+      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
+        (by nlinarith) (by positivity) (by ring)
+    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
+    have hcomb : (1 - 4 * u ^ 2) * 1 + 4 * u ^ 2 * (3 / 4) = 1 - u ^ 2 := by ring
+    have hlog34 : log (3 / 4 : ℝ) = -log (4 / 3) := by rw [← log_inv]; norm_num
+    rw [hcomb, hlog34] at hconc
+    linarith
+  have hden_ge : 3 / 4 * u ^ 2 ≤ log (1 + u) * (-log (1 - u)) := by
+    calc 3 / 4 * u ^ 2 = (3 / 4 * u) * u := by ring
+      _ ≤ log (1 + u) * (-log (1 - u)) := mul_le_mul hlp_ge hlm_ge hu0.le hlp.le
+  calc -log (1 - u ^ 2) / (log (1 + u) * (-log (1 - u)))
+      ≤ (4 * log (4 / 3) * u ^ 2) / (3 / 4 * u ^ 2) :=
+        div_le_div₀ (by have : 0 ≤ log (4 / 3) := log_nonneg (by norm_num); positivity)
+          hnum_le (by positivity) hden_ge
+    _ = 16 * log (4 / 3) / 3 := by field_simp [hu0.ne']; ring
 
 /-- For `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`. -/
 theorem abs_log_log_inv_le {x : ℝ} (hx : 0 ≤ x) (hx1 : x < exp (-1)) :

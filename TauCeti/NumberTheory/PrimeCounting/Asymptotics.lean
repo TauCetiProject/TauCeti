@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.LSeries.WeakPNT
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 
 /-!
 # Prime counts in fixed multiplicative intervals

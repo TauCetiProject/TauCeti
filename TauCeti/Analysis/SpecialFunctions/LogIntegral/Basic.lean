@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 
 /-!
 # The logarithmic integral
@@ -27,24 +27,15 @@ origin.
 The asymptotic is proved from the exact identity
 `Li x = x / log x - 2 / log 2 + ∫ t in 2..x, ((log t) ^ 2)⁻¹`,
 the fundamental theorem of calculus applied to `t ↦ t / log t`, together with the estimate that
-the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bounds it by
-`√x / (log 2) ^ 2 + 4 * x / (log x) ^ 2`, and both terms are `o (x / log x)`.
+the remaining integral is `o (x / log x)` (from
+`TauCeti.Analysis.SpecialFunctions.Integrals.InvLog`). Splitting that integral at `√x` bounds it
+by `√x / (log 2) ^ 2 + 4 * x / (log x) ^ 2`, and both terms are `o (x / log x)`.
 
 ## Main declarations
 
-* `Real.continuousOn_inv_log_rpow`, `Real.intervalIntegrable_inv_log_rpow`,
-  `Real.integral_inv_log_rpow_le`, `Real.le_integral_inv_log_rpow`,
-  `Real.integral_inv_log_rpow_nonneg`, `Real.integral_inv_log_rpow_eq_sub_add` — continuity,
-  monotonicity bounds, and integration by parts for reciprocal real powers `(log t ^ k)⁻¹` on
-  intervals with `a, b > 1`.
-* `Real.integral_inv_log_rpow_le_sqrt_add`, `Real.integral_inv_log_rpow_lt_div_add`,
-  `Real.integral_inv_log_pow_le_sqrt_add`, `Real.integral_inv_log_pow_lt_div_add` — explicit upper
-  bounds for `∫ t in 2..x, (log t ^ k)⁻¹` with `k ≥ 0` and `x ≥ 2`.
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
 * `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
-* `TauCeti.Real.integral_inv_log_pow_eq_sub_add` — integration by parts for every reciprocal
-  logarithm power, with either orientation of the interval.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
   quotient form `TauCeti.Real.tendsto_logIntegral_mul_log_div_atTop`.
@@ -65,11 +56,6 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
   bounds `|∫ t in a..b, f t / (t * log t ^ 2)|` by `∫ t in a..b, g t / log t ^ 2`, and linear bounds
   `|f t| ≤ c i * t` on the pieces of a partition bound it by increments of `x ↦ Li x - x / log x`.
 
-The auxiliary bounds `TauCeti.Real.integral_inv_log_pow_le` and
-`TauCeti.Real.le_integral_inv_log_pow` estimate `∫ t in a..b, ((log t) ^ n)⁻¹` by monotonicity of
-the logarithm. They are stated for a general exponent because the identity above needs `n = 2`
-while `Li` itself is the case `n = 1`.
-
 ## Use in prime counting
 
 These are the analytic inputs to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`,
@@ -86,9 +72,6 @@ bounds for `π - Li` in `TauCeti/NumberTheory/Chebyshev/ThetaTransfer.lean`.
 * A. Fiori, H. Kadiri, J. Swidinsky, *Sharper bounds for the error term in the prime number
   theorem*, Res. Number Theory 9 (2023), article 63, Lemma 19 (the bound on a partition).
 
-The integration-by-parts recurrence is adapted
-from the Ramanujan estimates in the [PrimeNumberTheoremAnd project](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/dc6e36e/PrimeNumberTheoremAnd/IEANTN/Ramanujan/Ramanujan.lean).
-
 Mathlib's `Mathlib/NumberTheory/Chebyshev.lean` carries out this estimate for the rational
 Chebyshev function, in `Chebyshev.integral_theta_div_log_sq_isLittleO`; the argument for a general
 integrand below follows the same split into a bounded initial segment and a linearly bounded tail.
@@ -99,194 +82,7 @@ public section
 open Asymptotics Filter MeasureTheory Set
 open scoped Topology
 
-namespace Real
-
-/-! ### Reciprocal real powers of the logarithm -/
-
-/-- Reciprocal real powers of `log` are continuous on `(1, ∞)`. -/
-theorem continuousOn_inv_log_rpow (k : ℝ) :
-    ContinuousOn (fun t : ℝ ↦ (log t ^ k)⁻¹) (Ioi 1) := by
-  have hlog : ContinuousOn log (Ioi 1) :=
-    continuousOn_log.mono fun t ht ↦ ne_of_gt (zero_lt_one.trans ht)
-  have hrpow : ContinuousOn (fun t : ℝ ↦ log t ^ k) (Ioi 1) :=
-    hlog.rpow_const fun t ht ↦ Or.inl (log_pos ht).ne'
-  exact hrpow.inv₀ fun t ht ↦ (rpow_pos_of_pos (log_pos ht) k).ne'
-
-/-- Reciprocal real powers of `log` are interval integrable on any interval to the right of `1`. -/
-theorem intervalIntegrable_inv_log_rpow (k : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    IntervalIntegrable (fun t : ℝ ↦ (log t ^ k)⁻¹) volume a b := by
-  refine ((continuousOn_inv_log_rpow k).mono fun t ht ↦ ?_).intervalIntegrable
-  rcases mem_uIcc.mp ht with ht | ht
-  · exact ha.trans_le ht.1
-  · exact hb.trans_le ht.1
-
-/-- Monotonicity upper bound `∫ t in a..b, (log t ^ k)⁻¹ ≤ (b - a) / log a ^ k` for `k ≥ 0`. -/
-theorem integral_inv_log_rpow_le {k : ℝ} (hk : 0 ≤ k) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    ∫ t in a..b, (log t ^ k)⁻¹ ≤ (b - a) / log a ^ k := by
-  have hla : 0 < log a := log_pos ha
-  have hb : 1 < b := ha.trans_le hab
-  have hmono := intervalIntegral.integral_mono_on hab (intervalIntegrable_inv_log_rpow k ha hb)
-    (g := fun _ ↦ (log a ^ k)⁻¹) intervalIntegrable_const fun t ht ↦
-      inv_anti₀ (rpow_pos_of_pos hla k)
-        (rpow_le_rpow hla.le (log_le_log (by linarith) ht.1) hk)
-  simpa [smul_eq_mul, div_eq_mul_inv] using hmono
-
-/-- Monotonicity lower bound `(b - a) / log b ^ k ≤ ∫ t in a..b, (log t ^ k)⁻¹` for `k ≥ 0`. -/
-theorem le_integral_inv_log_rpow {k : ℝ} (hk : 0 ≤ k) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    (b - a) / log b ^ k ≤ ∫ t in a..b, (log t ^ k)⁻¹ := by
-  have hb : 1 < b := ha.trans_le hab
-  have hmono := intervalIntegral.integral_mono_on hab
-    (f := fun _ ↦ (log b ^ k)⁻¹) intervalIntegrable_const
-    (intervalIntegrable_inv_log_rpow k ha hb) fun t ht ↦ by
-      have hlt : 0 < log t := log_pos (ha.trans_le ht.1)
-      exact inv_anti₀ (rpow_pos_of_pos hlt k)
-        (rpow_le_rpow hlt.le (log_le_log (zero_lt_one.trans (ha.trans_le ht.1)) ht.2) hk)
-  simpa [smul_eq_mul, div_eq_mul_inv] using hmono
-
-/-- The integrand `(log t ^ k)⁻¹` is nonnegative to the right of `1`, so its integral is. -/
-theorem integral_inv_log_rpow_nonneg (k : ℝ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    0 ≤ ∫ t in a..b, (log t ^ k)⁻¹ :=
-  intervalIntegral.integral_nonneg hab fun _ ht ↦
-    inv_nonneg.mpr (rpow_pos_of_pos (log_pos (ha.trans_le ht.1)) k).le
-
-/-- Integration by parts for `∫ t in a..b, (log t ^ k)⁻¹` with any real exponent `k` and
-endpoints `a, b > 1`. -/
-theorem integral_inv_log_rpow_eq_sub_add (k : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    (∫ t in a..b, (log t ^ k)⁻¹) =
-      b / log b ^ k - a / log a ^ k + k * ∫ t in a..b, (log t ^ (k + 1))⁻¹ := by
-  have hi := intervalIntegrable_inv_log_rpow k ha hb
-  have hi1 := intervalIntegrable_inv_log_rpow (k + 1) ha hb
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hasDerivAt_div_log_rpow k (log_pos (by
-      rcases mem_uIcc.mp ht with ht | ht
-      · exact ha.trans_le ht.1
-      · exact hb.trans_le ht.1)))
-    (hi.sub (hi1.const_mul k))
-  rw [intervalIntegral.integral_sub hi (hi1.const_mul k),
-    intervalIntegral.integral_const_mul] at hFTC
-  exact sub_eq_iff_eq_add.mp hFTC
-
-/-- Explicit upper bound `∫ t in 2..x, (log t ^ k)⁻¹ ≤ √x / log 2 ^ k + 2 ^ k * x / log x ^ k`
-for every real `k ≥ 0` and `x ≥ 2`. -/
-theorem integral_inv_log_rpow_le_sqrt_add {k : ℝ} (hk : 0 ≤ k) {x : ℝ} (hx : 2 ≤ x) :
-    (∫ t in (2 : ℝ)..x, (log t ^ k)⁻¹) ≤
-      √x / log 2 ^ k + 2 ^ k * x / log x ^ k := by
-  have hx0 : 0 < x := by linarith
-  have hlog2 : 0 < log 2 := log_pos one_lt_two
-  have hlogx : 0 < log x := log_pos (by linarith)
-  rcases le_or_gt 4 x with h4 | h4
-  · have hsq : 2 ≤ √x := by nlinarith [sq_sqrt hx0.le, sqrt_nonneg x]
-    have hle : √x ≤ x := by
-      rw [sqrt_le_self_iff]
-      exact Or.inr (by linarith)
-    have hsplit : (∫ t in (2 : ℝ)..x, (log t ^ k)⁻¹) =
-        (∫ t in (2 : ℝ)..√x, (log t ^ k)⁻¹) + ∫ t in √x..x, (log t ^ k)⁻¹ :=
-      (intervalIntegral.integral_add_adjacent_intervals
-        (intervalIntegrable_inv_log_rpow k one_lt_two (by linarith))
-        (intervalIntegrable_inv_log_rpow k (by linarith) (by linarith))).symm
-    have hb₁ : (∫ t in (2 : ℝ)..√x, (log t ^ k)⁻¹) ≤ √x / log 2 ^ k := by
-      refine (integral_inv_log_rpow_le hk one_lt_two hsq).trans ?_
-      gcongr
-      linarith
-    have hb₂ : (∫ t in √x..x, (log t ^ k)⁻¹) ≤ 2 ^ k * x / log x ^ k := by
-      refine (integral_inv_log_rpow_le hk (by linarith) hle).trans ?_
-      rw [log_sqrt hx0.le, div_rpow hlogx.le zero_le_two, div_div_eq_mul_div, mul_comm (x - √x)]
-      gcongr
-      linarith [sqrt_nonneg x]
-    rw [hsplit]
-    linarith
-  · have hlog_half : log x / 2 ≤ log 2 := by
-      have h : log x ≤ log (2 ^ 2) := log_le_log hx0 (by norm_num; exact h4.le)
-      rw [log_pow] at h
-      norm_num at h
-      linarith
-    have hb : (∫ t in (2 : ℝ)..x, (log t ^ k)⁻¹) ≤ 2 ^ k * x / log x ^ k := by
-      refine (integral_inv_log_rpow_le hk one_lt_two hx).trans ?_
-      have hrpow_le : (log x / 2) ^ k ≤ log 2 ^ k := rpow_le_rpow (by positivity) hlog_half hk
-      have hdiv : (x - 2) / log 2 ^ k ≤ (x - 2) / (log x / 2) ^ k :=
-        div_le_div_of_nonneg_left (by linarith) (rpow_pos_of_pos (by positivity) k) hrpow_le
-      refine hdiv.trans ?_
-      rw [div_rpow hlogx.le zero_le_two, div_div_eq_mul_div, mul_comm (x - 2)]
-      gcongr
-      linarith
-    have hnn : 0 ≤ √x / log 2 ^ k := div_nonneg (sqrt_nonneg x) (rpow_pos_of_pos hlog2 k).le
-    linarith
-
-/-- Explicit strict upper bound
-`∫ t in 2..x, (log t ^ k)⁻¹ <`
-`x / log x ^ k + k * (√x / log 2 ^ (k + 1) + 2 ^ (k + 1) * x / log x ^ (k + 1))`
-for every real `k ≥ 0` and `x ≥ 2`. -/
-theorem integral_inv_log_rpow_lt_div_add {k : ℝ} (hk : 0 ≤ k) {x : ℝ} (hx : 2 ≤ x) :
-    (∫ t in (2 : ℝ)..x, (log t ^ k)⁻¹) <
-      x / log x ^ k +
-        k * (√x / log 2 ^ (k + 1) + 2 ^ (k + 1) * x / log x ^ (k + 1)) := by
-  rw [integral_inv_log_rpow_eq_sub_add k one_lt_two (by linarith)]
-  have h2pos : 0 < 2 / log 2 ^ k := div_pos two_pos (rpow_pos_of_pos (log_pos one_lt_two) k)
-  have hrem := integral_inv_log_rpow_le_sqrt_add (k := k + 1) (by linarith) hx
-  linarith [mul_le_mul_of_nonneg_left hrem hk]
-
-/-- Explicit upper bound `∫ t in 2..x, (log t ^ n)⁻¹ ≤ √x / log 2 ^ n + 2 ^ n * x / log x ^ n`
-for every `n : ℕ` and `x ≥ 2`. -/
-theorem integral_inv_log_pow_le_sqrt_add (n : ℕ) {x : ℝ} (hx : 2 ≤ x) :
-    (∫ t in (2 : ℝ)..x, (log t ^ n)⁻¹) ≤
-      √x / log 2 ^ n + 2 ^ n * x / log x ^ n := by
-  simpa only [rpow_natCast] using
-    integral_inv_log_rpow_le_sqrt_add (k := (n : ℝ)) (Nat.cast_nonneg n) hx
-
-/-- Explicit strict upper bound
-`∫ t in 2..x, (log t ^ n)⁻¹ <`
-`x / log x ^ n + n * (√x / log 2 ^ (n + 1) + 2 ^ (n + 1) * x / log x ^ (n + 1))`
-for every `n : ℕ` and `x ≥ 2`. -/
-theorem integral_inv_log_pow_lt_div_add (n : ℕ) {x : ℝ} (hx : 2 ≤ x) :
-    (∫ t in (2 : ℝ)..x, (log t ^ n)⁻¹) <
-      x / log x ^ n +
-        (n : ℝ) * (√x / log 2 ^ (n + 1) + 2 ^ (n + 1) * x / log x ^ (n + 1)) := by
-  have h := integral_inv_log_rpow_lt_div_add (k := (n : ℝ)) (Nat.cast_nonneg n) hx
-  simpa only [rpow_natCast, ← Nat.cast_add_one] using h
-
-end Real
-
 namespace TauCeti.Real
-
-/-! ### Reciprocal powers of the logarithm -/
-
-/-- Reciprocal powers of the logarithm are continuous to the right of its zero `t = 1`. -/
-theorem continuousOn_inv_log_pow (n : ℕ) :
-    ContinuousOn (fun t : ℝ ↦ (Real.log t ^ n)⁻¹) (Ioi 1) := by
-  simpa only [Real.rpow_natCast] using Real.continuousOn_inv_log_rpow (n : ℝ)
-
-/-- The weight `t⁻¹ / log t ^ n` of integrals against powers of `1 / log` is continuous to the
-right of `t = 1`. -/
-theorem continuousOn_inv_div_log_pow (n : ℕ) :
-    ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ n) (Ioi 1) := by
-  simpa only [div_eq_mul_inv] using
-    ContinuousOn.fun_mul (continuousOn_inv₀.mono fun t (ht : t ∈ Ioi 1) ↦
-      mem_compl_singleton_iff.mpr (zero_lt_one.trans ht).ne') (continuousOn_inv_log_pow n)
-
-/-- Reciprocal powers of the logarithm are interval integrable on any interval to the right
-of `1`. -/
-theorem intervalIntegrable_inv_log_pow (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    IntervalIntegrable (fun t : ℝ ↦ (Real.log t ^ n)⁻¹) volume a b := by
-  simpa only [Real.rpow_natCast] using Real.intervalIntegrable_inv_log_rpow (n : ℝ) ha hb
-
-/-- Monotonicity of the logarithm bounds `∫ t in a..b, (log t ^ n)⁻¹` above by the value of the
-integrand at the left endpoint. -/
-theorem integral_inv_log_pow_le (n : ℕ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    ∫ t in a..b, (Real.log t ^ n)⁻¹ ≤ (b - a) / Real.log a ^ n := by
-  simpa only [Real.rpow_natCast] using
-    Real.integral_inv_log_rpow_le (Nat.cast_nonneg n) ha hab
-
-/-- Monotonicity of the logarithm bounds `∫ t in a..b, (log t ^ n)⁻¹` below by the value of the
-integrand at the right endpoint. -/
-theorem le_integral_inv_log_pow (n : ℕ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    (b - a) / Real.log b ^ n ≤ ∫ t in a..b, (Real.log t ^ n)⁻¹ := by
-  simpa only [Real.rpow_natCast] using
-    Real.le_integral_inv_log_rpow (Nat.cast_nonneg n) ha hab
-
-/-- The integrand `(log t ^ n)⁻¹` is nonnegative to the right of `1`, so its integral is. -/
-theorem integral_inv_log_pow_nonneg (n : ℕ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
-    0 ≤ ∫ t in a..b, (Real.log t ^ n)⁻¹ := by
-  simpa only [Real.rpow_natCast] using Real.integral_inv_log_rpow_nonneg (n : ℝ) ha hab
 
 /-! ### The logarithmic integral -/
 
@@ -327,14 +123,6 @@ theorem le_logIntegral {x : ℝ} (hx : 2 ≤ x) : (x - 2) / Real.log x ≤ logIn
   simpa using le_integral_inv_log_pow 1 one_lt_two hx
 
 /-! ### The asymptotic `Li x ~ x / log x` -/
-
-/-- Integration by parts for reciprocal powers of the logarithm. Both endpoints lie to the
-right of `1`; the signed interval integral allows either order of the endpoints. -/
-theorem integral_inv_log_pow_eq_sub_add (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    (∫ t in a..b, (Real.log t ^ n)⁻¹) = b / Real.log b ^ n - a / Real.log a ^ n +
-      (n : ℝ) * ∫ t in a..b, (Real.log t ^ (n + 1))⁻¹ := by
-  simpa only [Real.rpow_natCast, ← Nat.cast_add_one] using
-    Real.integral_inv_log_rpow_eq_sub_add (n : ℝ) ha hb
 
 /-- **The antiderivative identity for the logarithmic integral.** Integrating the derivative of
 `t ↦ t / log t` from `2` to `x` writes `Li x` as `x / log x` plus a constant and a remainder
