@@ -50,6 +50,8 @@ comparing weak and classical derivatives
 * `TauCeti.CircleSobolev.mulLoop T hs S`: for `s > 1/2`, the bounded real-linear map
   `H^s(E) → H⁰(E)` multiplying the continuous representative pointwise by `S`.
 * `TauCeti.CircleSobolev.loopOperator T S`: the operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`.
+* `TauCeti.CircleSobolev.complexLoopOperator`: `L_S` as a complex-linear operator, for a loop `S`
+  of complex-linear maps (`TauCeti.CircleSobolev.loopOperator_I_smul`).
 
 ## Main statements
 
@@ -63,8 +65,8 @@ comparing weak and classical derivatives
   rotation of the circle by `θ` intertwines `L_S` with `L` of the translated loop
   `x ↦ S (x + θ)`, so `L_S` commutes with the rotation when `S (x + θ) = S x`
   (`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`).
-* `TauCeti.CircleSobolev.loopOperator_I_smul`: for a loop of complex-linear maps, `L_S` is
-  complex linear.
+* `TauCeti.CircleSobolev.mulLoop_apply_I_smul`, `TauCeti.CircleSobolev.loopOperator_I_smul`: for
+  a loop of complex-linear maps, the zero-order term and `L_S` are complex linear.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.norm_mulLoop_le`: for a loop with `‖S t‖ ≤ M`, the zero-order term has
   norm at most `M` for the `H⁰` norms, and `TauCeti.CircleSobolev.norm_sq_le_of_loopOperator`
@@ -203,17 +205,20 @@ theorem loopOperator_zero :
   ext a : 1
   simp [loopOperator_apply, mulLoop_apply]
 
+/-- Multiplication by a loop of complex-linear maps commutes with multiplication by `I`. -/
+theorem mulLoop_apply_I_smul {S : C(AddCircle T, E →L[ℝ] E)} (hs : 1 / 2 < s)
+    (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev s E) :
+    mulLoop T hs S (I • a) = I • mulLoop T hs S a := by
+  rw [mulLoop_apply, mulLoop_apply, map_smul (toContinuousMap T hs), ← map_smul (ofContinuousMap T)]
+  refine congrArg (ofContinuousMap T) (ContinuousMap.ext fun t ↦ ?_)
+  simp [hS]
+
 /-- **Complex-linear loops give complex-linear operators.** If every `S t` commutes with
 multiplication by `I`, so does `L_S ζ = ζ' - S ζ`. -/
 theorem loopOperator_I_smul {S : C(AddCircle T, E →L[ℝ] E)}
     (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
     loopOperator T S (I • a) = I • loopOperator T S a := by
-  have h : applyContinuousLinearMap S (toContinuousMap T (by norm_num) (I • a)) =
-      I • applyContinuousLinearMap S (toContinuousMap T (by norm_num) a) := by
-    ext t
-    simp [hS]
-  rw [loopOperator_apply, loopOperator_apply, mulLoop_apply, mulLoop_apply, map_smul, h,
-    map_smul, smul_sub]
+  rw [loopOperator_apply, loopOperator_apply, map_smul, mulLoop_apply_I_smul T _ hS, smul_sub]
 
 /-- Subtracting `S₂` from the coefficient loop adds multiplication by `S₂` to `L_S`. -/
 theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
@@ -349,6 +354,41 @@ theorem I_smul_loopOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E))
   rw [← Complex.coe_smul δ (I • inclusion zero_le_one a), smul_smul, smul_smul,
     show I * (δ : ℂ) * I = -(δ : ℂ) by linear_combination (δ : ℂ) * I_sq, neg_smul,
     Complex.coe_smul, sub_eq_add_neg]
+
+/-! ### Loops of complex-linear maps -/
+
+section ComplexLinear
+
+variable {S : C(AddCircle T, E →L[ℝ] E)}
+
+/-- **The loop operator of a loop of complex-linear maps is complex linear.** This is
+`ζ ↦ ζ' - S ζ` as a complex-linear operator `H¹(E) → H⁰(E)`. It is given by its fields, rather
+than by `ContinuousLinearMap.complexOfMapISmul`, so that its underlying real operator is
+`TauCeti.CircleSobolev.loopOperator T S` by definition, and complex orientations of its
+determinant line are elements of the determinant line of `L_S`. -/
+@[expose]
+def complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
+    CircleSobolev 1 E →L[ℂ] CircleSobolev 0 E where
+  toFun := loopOperator T S
+  map_add' := map_add _
+  map_smul' := by
+    exact (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).map_smul_of_map_I_smul
+      (loopOperator_I_smul T hS)
+  cont := (loopOperator T S).continuous
+
+@[simp]
+theorem complexLoopOperator_apply (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
+    complexLoopOperator T hS a = loopOperator T S a :=
+  (rfl)
+
+/-- The real operator underlying `TauCeti.CircleSobolev.complexLoopOperator` is the loop
+operator. -/
+@[simp]
+theorem restrictScalars_complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
+    (complexLoopOperator T hS).restrictScalars ℝ = loopOperator T S :=
+  (rfl)
+
+end ComplexLinear
 
 section Inner
 
