@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Morse.Bott.Index
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -37,8 +37,11 @@ namespace `TauCeti.SmoothEmbedding`). By the smooth local frame criterion
 subbundles of the normal bundle, the **negative and positive normal bundles** `ν⁻` and `ν⁺`; the
 rank of `ν⁻` is the index of the submanifold. The indices are locally constant along a Morse–Bott
 submanifold, so on a connected one the hypothesis holds automatically (the `_of_preconnectedSpace`
-versions). The negative normal bundle is the bundle whose disc bundle is attached when the
-critical level of the submanifold is crossed.
+versions). For a smooth function and a smooth fibre metric, the negative normal spaces of a
+submanifold of constant index therefore form a topological vector bundle whose rank is the index
+(`IsNondegenerateCriticalSubmanifold.hasLocalSubbundleFrames_negativeNormalSpace`). The negative
+normal bundle is the bundle whose disc bundle is attached when the critical level of the
+submanifold is crossed.
 
 The subbundles depend on the metric `g`, but their ranks do not. No eigenbasis of the normal
 Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`, the
@@ -714,5 +717,42 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
     ).exists_bundleDiffeomorph_prod_of_isCompl
     (h.hasLocalContMDiffSubbundleFrames_positiveNormalSpace hn hk hf hdim g hr')
     (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _)
+
+end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+/-! ### Smooth Morse–Bott submanifolds -/
+
+namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
+  {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
+  [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- **The negative normal bundle of a smooth Morse–Bott submanifold.** For a smooth function `f`
+and a smooth fibre metric `g` on the normal bundle of a nondegenerate critical submanifold of
+constant Morse index `r`, the negative normal spaces relative to `g` have continuous local frames
+of size `r`: they form the negative normal bundle, a topological vector bundle of rank `r`
+(`TauCeti.HasLocalSubbundleFrames.vectorBundle`). This is the smooth case of
+`hasLocalContMDiffSubbundleFrames_negativeNormalSpace`. -/
+theorem hasLocalSubbundleFrames_negativeNormalSpace
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric) := by
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  exact (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
+    (fun s ↦ hfs.contMDiffAt.of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

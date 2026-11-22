@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
@@ -16,7 +18,8 @@ A continuous linear operator `A` on tempered distributions that maps `H^{s,p}(E,
 `H^{r,p}(E, G)` is automatically bounded between these Banach spaces, by the closed graph theorem;
 `BesselPotentialSpace.mapCLM` bundles such restrictions. This file applies the construction to the
 directional derivative `∂_v : H^{s+1,p}(E, F) → H^{s,p}(E, F)` for `1 < p < ∞`
-(`BesselPotentialSpace.lineDerivCLM`). Combined with
+(`BesselPotentialSpace.lineDerivCLM`), and to the Laplacian `Δ : H^{s+2}(E, F) → H^s(E, F)`
+(`BesselPotentialSpace.laplacianCLM`). Combined with
 `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`, `mapCLM` likewise yields
 multiplication by a function with bounded derivatives as a bounded operator on `H^{k,p}`; these
 are the linear building blocks of differential operators with nondecaying smooth coefficients on
@@ -37,10 +40,13 @@ The second part of the file describes the operators on these functions when `u` 
 
 * a real function `f` lies in `realSobolevFunctions E s p` exactly when `f`, viewed as a complex
   function, is almost everywhere the `Lᵖ` function of some `u ∈ H^{s,p}(E)`
-  (`TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq`);
+  (`TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq`), which
+  `BesselPotentialSpace.ofRealSobolevFunction` chooses;
 * if moreover `f` is `C¹`, `1 < p < ∞` and `u ∈ H^{s+1,p}(E)`, then the `Lᵖ` function of `∂_v u`
   is almost everywhere the classical derivative `x ↦ fderiv ℝ f x v`
   (`BesselPotentialSpace.coeFn_inclusionLp_lineDerivCLM_ae_eq`);
+* if `f` is `C²` and `u ∈ H^{s+2}(E)`, then the `L²` function of `Δu` is almost everywhere the
+  classical Laplacian `Δf` (`BesselPotentialSpace.coeFn_inclusionLp_laplacianCLM_ae_eq`);
 * if `w` has the tempered distribution `g u` for a bounded function `g` of temperate growth, then
   the `Lᵖ` function of `w` is almost everywhere `g` times that of `u`
   (`BesselPotentialSpace.coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM`).
@@ -49,6 +55,9 @@ The second part of the file describes the operators on these functions when `u` 
 
 * `BesselPotentialSpace.lineDerivCLM`: the directional derivative
   `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)` for `1 < p < ∞`.
+* `BesselPotentialSpace.laplacianCLM`: the Laplacian `H^{s+2}(E, F) →L[ℂ] H^s(E, F)`.
+* `BesselPotentialSpace.ofRealSobolevFunction`: the element of `H^{s,p}(E)` of a real function in
+  `realSobolevFunctions E s p`.
 * `BesselPotentialSpace.exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM` and
   `BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`: the norm of
   `H^{s+1,p}` is controlled by the `Lᵖ` norm and the first derivatives.
@@ -59,7 +68,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory TemperedDistribution Topology
-open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv
+open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv Laplacian
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -86,6 +95,26 @@ theorem toDistr_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) (u : H^{s
   simp [lineDerivCLM]
 
 end lineDerivCLM
+
+section laplacianCLM
+
+open scoped Laplacian
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Laplacian on the Sobolev scale.** The Laplacian `Δ`, as a bounded operator
+`H^{s+2}(E, F) →L[ℂ] H^s(E, F)` (`TemperedDistribution.MemSobolev.laplacian`). -/
+def laplacianCLM (s : ℝ) : H^{s + 2}(E, F) →L[ℂ] H^{s}(E, F) :=
+  mapCLM (LineDeriv.laplacianCLM ℂ E 𝓢'(E, F)) fun u ↦ by
+    simpa using u.memSobolev_toDistr.laplacian
+
+/-- `laplacianCLM s` acts on the underlying tempered distributions by `Δ`. -/
+@[simp]
+theorem toDistr_laplacianCLM (s : ℝ) (u : H^{s + 2}(E, F)) :
+    (laplacianCLM s u).toDistr = Δ u.toDistr := by
+  simp [laplacianCLM]
+
+end laplacianCLM
 
 section Gradient
 
@@ -209,6 +238,28 @@ end TemperedDistribution
 
 namespace BesselPotentialSpace
 
+/-- **The element of `H^{s,p}(E)` of a real Sobolev function.** For `s ≥ 0` and a real function
+`f ∈ realSobolevFunctions E s p`, the element of `H^{s,p}(E)` whose `Lᵖ` function is
+`x ↦ (f x : ℂ)` (`BesselPotentialSpace.coeFn_inclusionLp_ofRealSobolevFunction`). -/
+def ofRealSobolevFunction {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : H^{s, p}(E) :=
+  ((mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs).1 hf).choose
+
+/-- The `Lᵖ` function of `ofRealSobolevFunction hs hf` is `x ↦ (f x : ℂ)`. -/
+theorem coeFn_inclusionLp_ofRealSobolevFunction {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s p) :
+    ⇑(inclusionLp hs (ofRealSobolevFunction hs hf)) =ᵐ[volume] fun x ↦ (f x : ℂ) :=
+  ((mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs).1 hf).choose_spec
+
+/-- An element of `H^{s,p}(E)` whose `Lᵖ` function is almost everywhere `x ↦ (f x : ℂ)` is
+`ofRealSobolevFunction hs hf`. -/
+theorem eq_ofRealSobolevFunction_of_ae {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) {w : H^{s, p}(E)}
+    (hw : ⇑(inclusionLp hs w) =ᵐ[volume] fun x ↦ (f x : ℂ)) :
+    w = ofRealSobolevFunction hs hf :=
+  inclusionLp_injective hs <| Lp.ext <|
+    hw.trans (coeFn_inclusionLp_ofRealSobolevFunction hs hf).symm
+
 /-- **Classical derivatives of real elements of `H^{s+1,p}`.** For `1 < p < ∞` and `s ≥ 0`, if the
 `Lᵖ` function of `u ∈ H^{s+1,p}(E)` is almost everywhere a real `C¹` function `f`, then the `Lᵖ`
 function of the derivative `∂_v u ∈ H^{s,p}(E)` is almost everywhere its classical derivative
@@ -234,6 +285,48 @@ theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1
       TauCeti.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf hu₀f hu'f]
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u', hu'f] with x h h'
   rw [hd, h, Complex.ofRealCLM_apply, h']
+
+/-- **The classical Laplacian of real elements of `H^{s+2}`.** For `s ≥ 0`, if the `L²` function
+of `u ∈ H^{s+2}(E)` is almost everywhere a real `C²` function `f`, then the `L²` function of
+`Δu ∈ H^s(E)` is almost everywhere the classical Laplacian `Δf`. In particular `Δf` is square
+integrable. -/
+theorem coeFn_inclusionLp_laplacianCLM_ae_eq {s : ℝ} (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) {u : H^{s + 2}(E)}
+    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] fun x ↦ (f x : ℂ)) :
+    ⇑(inclusionLp hs (laplacianCLM s u)) =ᵐ[volume] fun x ↦ (Δ f x : ℂ) := by
+  set b := stdOrthonormalBasis ℝ E
+  set u' : H^{s + 1 + 1}(E) := u.copy (s + 1 + 1) (by ring)
+  set D : E → H^{s + 1}(E) →L[ℂ] H^{s}(E) :=
+    lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top
+  set D' : E → H^{s + 1 + 1}(E) →L[ℂ] H^{s + 1}(E) :=
+    lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top
+  have hu' : ⇑(inclusionLp (by linarith) u') =ᵐ[volume] fun x ↦ (f x : ℂ) := by
+    have h : inclusionLp (by linarith : (0 : ℝ) ≤ s + 1 + 1) u' = inclusionLp (by linarith) u := by
+      rw [inclusionLp_eq_iff, toTemperedDistribution_inclusionLp]
+      exact (toDistr_copy u (by ring : s + 2 = s + 1 + 1)).symm
+    rwa [h]
+  -- Each second derivative `∂_{b i} ∂_{b i} u` is the classical one.
+  have hd (i : _) : ⇑(inclusionLp hs (D (b i) (D' (b i) u'))) =ᵐ[volume]
+      fun x ↦ (fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) : ℂ) :=
+    coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top hs
+      ((hf.fderiv_right le_rfl).clm_apply contDiff_const)
+      (coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top (by linarith)
+        (hf.of_le one_le_two) hu' (b i)) (b i)
+  -- `Δu` is the sum of the second derivatives `∂_{b i} ∂_{b i} u`.
+  have hsum : laplacianCLM s u = ∑ i, D (b i) (D' (b i) u') := by
+    refine ext ?_
+    have hmap := map_sum (toDistrCLM E ℂ s 2) (fun i ↦ D (b i) (D' (b i) u')) Finset.univ
+    simp only [toDistrCLM_apply] at hmap
+    rw [hmap, toDistr_laplacianCLM, TemperedDistribution.laplacian_eq_sum b]
+    have hcopy : u'.toDistr = u.toDistr := toDistr_copy u (by ring)
+    simp only [D, D', toDistr_lineDerivCLM, hcopy]
+  rw [hsum, map_sum]
+  filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
+      fun i ↦ inclusionLp hs (D (b i) (D' (b i) u')),
+    ae_all_iff.2 hd] with x h₁ h₂
+  rw [h₁, TauCeti.laplacian_eq_sum_fderiv_fderiv_apply b
+    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x), Complex.ofReal_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ h₂ i
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {r s : ℝ} {p : ℝ≥0∞}
   [Fact (1 ≤ p)]

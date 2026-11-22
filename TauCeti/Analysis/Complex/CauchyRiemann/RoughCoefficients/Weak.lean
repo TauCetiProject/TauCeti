@@ -69,9 +69,10 @@ for the statements here.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), lowering the exponent
-  (`TauCeti.IsWeakCRSolution.mono_exponent`) and invariance under changes of
-  `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω` (`TauCeti.isWeakCRSolution_congr_ae`).
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
+  (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
+  invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
+  (`TauCeti.isWeakCRSolution_congr_ae`).
 
 The proofs test against vector-valued test functions through the inner-product form of the weak
 derivative identity (`TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`) and the

@@ -13,9 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Mollification.Interior
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -29,27 +27,15 @@ space. For coefficients `J ∈ W^{1,p}_loc(Ω; End V)` with `J² = -1` and `S �
 `∂_s ξ + J ∂_t ξ + S ξ = η`
 
 in the sense of `TauCeti.IsWeakCRSolution`. This file proves the order-zero step of interior
-regularity (McDuff–Salamon, Lemma B.4.6):
+regularity (McDuff–Salamon, Lemma B.4.6): if `η ∈ Lʳ_loc` with `1 < r < ∞` and
+`1/p + 1/q ≤ 1/r`, then `ξ ∈ W^{1,r}_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one`). No
+derivative of `ξ` is assumed. In McDuff–Salamon's proof of interior regularity this step is
+iterated along the exponent ladder `TauCeti.exists_finite_sobolev_exponent_ladder`, with Sobolev
+embedding between the steps.
 
-1. *Single Hölder step* (`TauCeti.IsWeakCRSolution.memWkpLoc_one`): if `η ∈ Lʳ_loc` with
-   `1 < r < ∞` and `1/p + 1/q ≤ 1/r`, then `ξ ∈ W^{1,r}_loc(Ω)`. No derivative of `ξ` is
-   assumed.
-2. *Bootstrap across the Sobolev exponent ladder*
-   (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`): if `1/p + 1/q < 1`, `1 < s ≤ p` with
-   `s < ∞` and `η ∈ Lˢ_loc(Ω)`, alternating the single Hölder step with the two-dimensional Sobolev
-   embedding decreases `1/q` by `1/2 - 1/p > 0` at each subcritical step (`r₁ < 2`), stopping
-   immediately if the product exponent reaches `s`. At the critical exponent `r₁ = 2`, embedding
-   `W^{1,2}_loc` into a large finite `L^{t*}_loc` pushes the next product exponent above `2`, and
-   for `r₁ > 2` the embedding `W^{1,r₁}_loc ⊂ L^∞_loc` finishes in one final step to yield
-   `ξ ∈ W^{1,s}_loc(Ω)`. The coefficient endpoint `p = ∞` is handled by lowering `p` locally to a
-   finite exponent above `max 2 s`. In particular `ξ ∈ W^{1,q}_loc(Ω)` when `q ≤ p`, `q < ∞`, and
-   `η ∈ L^q_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`), and `ξ ∈ W^{1,p}_loc(Ω)`
-   when `p < ∞` and `η ∈ Lᵖ_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one_self`).
-
-The proof of the single Hölder step rewrites the first-order equation as a divergence-form Laplace
-equation for `ξ` with locally `Lʳ` data and applies
-`TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`. For a real test function `φ` and a
-vector `v`, test the weak equation against
+The proof rewrites the first-order equation as a divergence-form Laplace equation for `ξ` with
+locally `Lʳ` data and applies `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`. For a
+real test function `φ` and a vector `v`, test the weak equation against
 
 `ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`.
 
@@ -67,10 +53,8 @@ extended from smooth test functions to bounded compactly supported test fields w
 derivative in `Lˢ`, `1/s + 1/q ≤ 1`
 (`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
 field: the mollifications are smooth test functions, their derivatives are the mollifications of
-the weak derivative, and every pairing in the weak equation converges via
-`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`—by strong `Lˢ` convergence of the
-derivative mollifications when `s < ∞`, and by weak-star convergence against `L¹` for the bounded
-test field itself and for the derivatives at `s = ∞`.
+the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
+convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
 
 ## Main results
 
@@ -78,11 +62,7 @@ test field itself and for the derivatives at `s = ∞`.
   against bounded compactly supported Sobolev test fields.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`: for `p > 2` a `W^{1,p}_loc` coefficient
   `J` is locally bounded.
-* `TauCeti.IsWeakCRSolution.memWkpLoc_one`: single Hölder step of order-zero interior regularity.
-* `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`,
-  `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`,
-  `TauCeti.IsWeakCRSolution.memWkpLoc_one_self`: order-zero interior regularity across the
-  Sobolev exponent ladder.
+* `TauCeti.IsWeakCRSolution.memWkpLoc_one`: order-zero interior regularity.
 
 ## References
 
@@ -93,7 +73,7 @@ test field itself and for the derivatives at `s = ∞`.
 public section
 
 open MeasureTheory TopologicalSpace Complex Set Metric Filter
-open scoped InnerProductSpace ContDiff Distributions ENNReal NNReal Convolution Topology
+open scoped InnerProductSpace ContDiff Distributions ENNReal Convolution Topology
 open Laplacian LineDeriv
 
 namespace TauCeti
@@ -259,8 +239,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
       (hψb.restrict K') (memLp_one_iff_integrable.2 ha))
   -- Test the weak equation against the mollifications of `ψ` and pass to the limit.
   choose φ hφ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψb hDψ
-    le_top hs1 hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
-      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
+    le_top hs1 hball (ContDiffBump.shrinking hδ n) (ContDiffBump.rOut_shrinking_le hδ n)
   have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : ℂ)) hδ
   have hlimD : ∀ (c : ℂ) {a : ℂ → V}, MemLp a q (volume.restrict K') →
       Tendsto (fun n => ∫ z, ⟪fderiv ℝ (φ n : ℂ → V) z c, a z⟫_ℝ) atTop
@@ -482,231 +461,5 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
   rw [← integral_add (hI1.const_inner (𝕜 := ℝ) v) (hI2.const_inner (𝕜 := ℝ) v),
     integral_congr_ae (hJJ.mono fun z hz => inner_crTestField_eq φ v z hz), integral_neg,
     integral_sub (hPΩ.integrable_of_forall_notMem_eq_zero hP0) hψη, hPeq, sub_self, neg_zero]
-
-/-! ### Order-zero Sobolev exponent ladder -/
-
-section Ladder
-
-variable [FiniteDimensional ℝ V] {r : ℝ≥0∞}
-
-/-- Once `ξ` reaches `W^{1,r}_loc` for some `r > 2`, the `L^∞` Sobolev embedding puts `ξ` in
-`L^∞_loc`, and one more application of `IsWeakCRSolution.memWkpLoc_one` reaches
-`W^{1,s}_loc`. -/
-private theorem memWkpLoc_one_of_two_lt (hr : 2 < r) (hp : 2 < p) (hp_top : p ≠ ⊤)
-    (hs1 : 1 < s) (hsp : s ≤ p)
-    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
-    (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc s Ω η)
-    (hξr : MemWkpLoc r Ω 1 ξ) : MemWkpLoc s Ω 1 ξ :=
-  have hc : IsSobolevCRCoefficients p Ω J DJ S :=
-    ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
-  (hsol.of_memLpLoc (hξr.memLpLoc_top hr)).memWkpLoc_one hc hp hJsq hs1
-    (ne_top_of_le_ne_top hp_top hsp) (by simpa using ENNReal.inv_le_inv.2 hsp) hη
-
-/-- Subcritical step (`1 < r₁ < 2`) of the order-zero ladder: for `1/r₁ = 1/p + 1/t`, the critical
-two-dimensional Sobolev embedding `W^{1,r₁}_loc ⊂ L^{t'}_loc` decreases `1/t` by `1/2 - 1/p`. -/
-private theorem memWkpLoc_one_subcritical_step {p t r₁ : ℝ≥0} (hp_inv : (p : ℝ)⁻¹ < 2⁻¹)
-    (hpt : (p : ℝ)⁻¹ + (t : ℝ)⁻¹ < 1)
-    (hr₁_coe : (r₁ : ℝ) = ((p : ℝ)⁻¹ + (t : ℝ)⁻¹)⁻¹) (hr₁_gt1 : 1 < (r₁ : ℝ))
-    (hlt2 : (r₁ : ℝ) < 2) (hsolt : IsWeakCRSolution t Ω J DJ S ξ η)
-    (hξ_r₁ : MemWkpLoc r₁ Ω 1 ξ) :
-    ∃ t' : ℝ≥0, (0 : ℝ) < t' ∧ (p : ℝ)⁻¹ + (t' : ℝ)⁻¹ < 1 ∧
-      (t' : ℝ)⁻¹ = (t : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) ∧ IsWeakCRSolution t' Ω J DJ S ξ η := by
-  have hr₁_pos : (0 : ℝ) < r₁ := zero_lt_one.trans hr₁_gt1
-  set b' : ℝ := (r₁ : ℝ)⁻¹ - 2⁻¹
-  have hb'_pos : 0 < b' := sub_pos.2 ((inv_lt_inv₀ zero_lt_two hr₁_pos).2 hlt2)
-  have hb'_eq : b' = (t : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) := by
-    dsimp only [b']; rw [hr₁_coe, inv_inv]; ring
-  let t' : ℝ≥0 := ⟨b'⁻¹, by positivity⟩
-  have ht'_coe : (t' : ℝ) = b'⁻¹ := NNReal.coe_mk b'⁻¹ (by positivity)
-  have ht'_pos : (0 : ℝ) < t' := by rw [ht'_coe]; positivity
-  have ht'_inv : (t' : ℝ)⁻¹ = b' := by rw [ht'_coe, inv_inv]
-  have hr₁_le_t' : r₁ ≤ t' := by
-    rw [← NNReal.coe_le_coe]
-    exact (inv_le_inv₀ ht'_pos hr₁_pos).1 (by rw [ht'_inv]; dsimp [b']; linarith)
-  have hξ_t' : MemLpLoc t' Ω ξ :=
-    hξ_r₁.memLpLoc_of_inv_sub_inv_le (by exact_mod_cast hr₁_gt1.le) hr₁_le_t'
-      (by rw [ht'_inv]; dsimp [b']; linarith)
-  refine ⟨t', ht'_pos, ?_, ht'_inv.trans hb'_eq, hsolt.of_memLpLoc hξ_t'⟩
-  rw [ht'_inv, hb'_eq]; linarith
-
-/-- Critical case (`r₁ = 2`) of the order-zero ladder: `W^{1,2}_loc` embeds into every finite
-`L^{t*}_loc`; choosing `1/t* = (1/2 - 1/p) / 2` makes the next product exponent exceed `2`, where
-`memWkpLoc_one_of_two_lt` finishes. -/
-private theorem memWkpLoc_one_critical_case {p s r₁ : ℝ≥0} (hp : 2 < (p : ℝ≥0∞))
-    (hs1 : 1 < (s : ℝ≥0∞)) (hsp : (s : ℝ≥0∞) ≤ p) (hrs : (r₁ : ℝ) < s) (heq2 : (r₁ : ℝ) = 2)
-    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
-    (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc s Ω η)
-    (hξ_r₁ : MemWkpLoc r₁ Ω 1 ξ) : MemWkpLoc s Ω 1 ξ := by
-  have hc : IsSobolevCRCoefficients p Ω J DJ S :=
-    ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
-  have hpR : (2 : ℝ) < p := by exact_mod_cast hp
-  have hp0 : (0 : ℝ) < p := by linarith
-  have hp_inv : (p : ℝ)⁻¹ < 2⁻¹ := (inv_lt_inv₀ hp0 zero_lt_two).2 hpR
-  set a : ℝ := 2⁻¹ - (p : ℝ)⁻¹
-  have ha : 0 < a := sub_pos.2 hp_inv
-  let t_star : ℝ≥0 := ⟨(a / 2)⁻¹, by positivity⟩
-  have ht_star_coe : (t_star : ℝ) = (a / 2)⁻¹ := NNReal.coe_mk (a / 2)⁻¹ (by positivity)
-  have ht_star_pos : (0 : ℝ) < t_star := by rw [ht_star_coe]; positivity
-  have ht_star_inv : (t_star : ℝ)⁻¹ = a / 2 := by rw [ht_star_coe, inv_inv]
-  have hr₁_le_star : r₁ ≤ t_star := by
-    rw [← NNReal.coe_le_coe, heq2]
-    exact (inv_le_inv₀ ht_star_pos zero_lt_two).1
-      (by rw [ht_star_inv]; dsimp [a]; linarith [inv_pos.2 hp0])
-  have hξ_star : MemLpLoc t_star Ω ξ :=
-    hξ_r₁.memLpLoc_of_inv_sub_inv_le (by rw [← NNReal.coe_le_coe, heq2]; norm_num) hr₁_le_star
-      (by rw [heq2, ht_star_inv]; linarith)
-  set r₂_real : ℝ := min (s : ℝ) ((p : ℝ)⁻¹ + a / 2)⁻¹
-  have hr₂_gt2 : 2 < r₂_real := lt_min (heq2 ▸ hrs)
-    ((lt_inv_comm₀ zero_lt_two (by positivity)).2 (by dsimp [a]; linarith [hp_inv]))
-  let r₂ : ℝ≥0 := ⟨r₂_real, by positivity⟩
-  have hr₂_coe : (r₂ : ℝ) = r₂_real := NNReal.coe_mk r₂_real (by positivity)
-  have hr₂_pos : (0 : ℝ) < r₂ := by rw [hr₂_coe]; positivity
-  have hpqr₂ : (p : ℝ≥0∞)⁻¹ + (t_star : ℝ≥0∞)⁻¹ ≤ (r₂ : ℝ≥0∞)⁻¹ :=
-    (ENNReal.inv_coe_add_inv_coe_le_inv_coe_iff (by exact_mod_cast hp0.ne')
-      (by exact_mod_cast ht_star_pos.ne') (by exact_mod_cast hr₂_pos.ne')).2 <| by
-        rw [← NNReal.coe_le_coe]; push_cast
-        rw [ht_star_inv, hr₂_coe]
-        exact (le_inv_comm₀ (by positivity) (by positivity)).2 (min_le_right _ _)
-  have hr₂_gt2' : (2 : ℝ) < r₂ := hr₂_coe.symm ▸ hr₂_gt2
-  have hr₂_le_s : (r₂ : ℝ) ≤ s := hr₂_coe.trans_le (min_le_left _ _)
-  have hξ_r₂ : MemWkpLoc r₂ Ω 1 ξ :=
-    (hsol.of_memLpLoc hξ_star).memWkpLoc_one hc hp hJsq
-      (by exact_mod_cast one_lt_two.trans hr₂_gt2') ENNReal.coe_ne_top hpqr₂
-      (hη.mono_exponent (by exact_mod_cast hr₂_le_s))
-  exact memWkpLoc_one_of_two_lt (by exact_mod_cast hr₂_gt2')
-    hp ENNReal.coe_ne_top hs1 hsp hJ hDJ hJsq hS hsol hη hξ_r₂
-
-/-- Finite-exponent Sobolev ladder: `n` serves as induction fuel for the subcritical recursion
-(`1/t ≤ n * (1/2 - 1/p)` with `1/p + 1/t < 1`), since each subcritical step (`r₁ < 2`) decreases
-`1/t` by `1/2 - 1/p`. At any step the recursion terminates immediately if the product exponent
-reaches `s`, handles the critical case `r₁ = 2` by embedding `W^{1,2}_loc` into a large finite
-`L^{t*}_loc` before continuing past `2`, and finishes `r₁ > 2` via `W^{1,r₁}_loc ⊂ L^∞_loc`. -/
-private theorem memWkpLoc_one_ladder {p s : ℝ≥0} (hp : 2 < (p : ℝ≥0∞))
-    (hs1 : 1 < (s : ℝ≥0∞)) (hsp : (s : ℝ≥0∞) ≤ p)
-    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
-    (hS : MemLpLoc p Ω S) (hη : MemLpLoc s Ω η) :
-    ∀ (n : ℕ) {t : ℝ≥0}, (0 : ℝ) < t → (p : ℝ)⁻¹ + (t : ℝ)⁻¹ < 1 →
-      (t : ℝ)⁻¹ ≤ n * (2⁻¹ - (p : ℝ)⁻¹) → IsWeakCRSolution t Ω J DJ S ξ η →
-      MemWkpLoc s Ω 1 ξ := by
-  have hc : IsSobolevCRCoefficients p Ω J DJ S :=
-    ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
-  have hpR : (2 : ℝ) < p := by exact_mod_cast hp
-  have hp0 : (0 : ℝ) < p := zero_lt_two.trans hpR
-  have hp_inv : (p : ℝ)⁻¹ < 2⁻¹ := (inv_lt_inv₀ hp0 zero_lt_two).2 hpR
-  have hs1R : (1 : ℝ) < s := by exact_mod_cast hs1
-  intro n
-  induction n with
-  | zero => intro t ht0 _ htn _; linarith [inv_pos.2 ht0]
-  | succ n ih =>
-    intro t ht0 hpt htn hsolt
-    set r_prod : ℝ := ((p : ℝ)⁻¹ + (t : ℝ)⁻¹)⁻¹
-    have hr_prod_gt : 1 < r_prod := (one_lt_inv₀ (by positivity)).2 hpt
-    -- If the product exponent `r_prod` already reaches `s`, a single Hölder step finishes.
-    rcases le_or_gt (s : ℝ) r_prod with hsr | hrs
-    · exact hsolt.memWkpLoc_one hc hp hJsq hs1 ENNReal.coe_ne_top
-        ((ENNReal.inv_coe_add_inv_coe_le_inv_coe_iff (by exact_mod_cast hp0.ne')
-          (by exact_mod_cast ht0.ne') (by exact_mod_cast (zero_lt_one.trans hs1R).ne')).2 <| by
-            rw [← NNReal.coe_le_coe]; push_cast
-            exact (le_inv_comm₀ (by positivity) (zero_lt_one.trans hs1R)).2 hsr)
-        hη
-    · -- Otherwise step to `W^{1,r₁}_loc` at `r₁ = r_prod` and split on `r₁ < 2`, `= 2`, `> 2`.
-      let r₁ : ℝ≥0 := ⟨r_prod, by positivity⟩
-      have hr₁_coe : (r₁ : ℝ) = r_prod := NNReal.coe_mk r_prod (by positivity)
-      have hr₁_pos : (0 : ℝ) < r₁ := by rw [hr₁_coe]; positivity
-      have hξ_r₁ : MemWkpLoc r₁ Ω 1 ξ :=
-        hsolt.memWkpLoc_one hc hp hJsq
-          (by exact_mod_cast (hr₁_coe.symm ▸ hr_prod_gt : (1 : ℝ) < r₁)) ENNReal.coe_ne_top
-          ((ENNReal.inv_coe_add_inv_coe_le_inv_coe_iff (by exact_mod_cast hp0.ne')
-            (by exact_mod_cast ht0.ne') (by exact_mod_cast hr₁_pos.ne')).2 <| by
-              rw [← NNReal.coe_le_coe]; simp [hr₁_coe, r_prod])
-          (hη.mono_exponent (by exact_mod_cast (hr₁_coe.trans_lt hrs).le))
-      rcases lt_trichotomy (r₁ : ℝ) 2 with hlt2 | heq2 | hgt2
-      · obtain ⟨t', ht'0, hpt', ht'_eq, hsolt'⟩ :=
-          memWkpLoc_one_subcritical_step hp_inv hpt hr₁_coe (hr₁_coe ▸ hr_prod_gt) hlt2 hsolt hξ_r₁
-        refine ih ht'0 hpt' ?_ hsolt'
-        have hstep : ((n + 1 : ℕ) : ℝ) * (2⁻¹ - (p : ℝ)⁻¹) =
-            (n : ℝ) * (2⁻¹ - (p : ℝ)⁻¹) + (2⁻¹ - (p : ℝ)⁻¹) := by push_cast; ring
-        linarith [htn, ht'_eq, hstep]
-      · exact memWkpLoc_one_critical_case hp hs1 hsp (hr₁_coe ▸ hrs) heq2 hJ hDJ hJsq hS hsolt hη
-          hξ_r₁
-      · exact memWkpLoc_one_of_two_lt (by exact_mod_cast hgt2) hp ENNReal.coe_ne_top hs1 hsp
-          hJ hDJ hJsq hS hsolt hη hξ_r₁
-
-/-- **Order-zero interior regularity** (McDuff–Salamon, Lemma B.4.6). Let `2 < p ≤ ∞`,
-`1/p + 1/q < 1`, and `1 < s ≤ p` with `s < ∞`. If `J ∈ W^{1,p}_loc(Ω)` satisfies `J² = -1` almost
-everywhere on `Ω` with weak derivative `DJ`, `S ∈ Lᵖ_loc(Ω)`, `ξ` solves
-`∂_s ξ + J ∂_t ξ + S ξ = η` weakly in `L^q_loc(Ω)`, and `η ∈ Lˢ_loc(Ω)`, then
-`ξ ∈ W^{1,s}_loc(Ω)`. The coefficient endpoint `p = ∞` is included. -/
-theorem IsWeakCRSolution.memWkpLoc_one_of_memLpLoc (hp : 2 < p) (hpq : p⁻¹ + q⁻¹ < 1)
-    (hs1 : 1 < s) (hs_top : s ≠ ⊤) (hsp : s ≤ p)
-    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ V)
-    (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc s Ω η) :
-    MemWkpLoc s Ω 1 ξ := by
-  have hJsq' : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1 := by
-    simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hJsq
-  obtain ⟨p', hp', hp'_top, hp'p, hp'q, hsp'⟩ :
-      ∃ p' : ℝ≥0∞, 2 < p' ∧ p' ≠ ⊤ ∧ p' ≤ p ∧ p'⁻¹ + q⁻¹ < 1 ∧ s ≤ p' := by
-    by_cases hp_top : p = ⊤
-    · subst hp_top
-      have hq1 : 1 < q := ENNReal.inv_lt_one.1 (by simpa using hpq)
-      obtain ⟨p', hp'_gt, hp'_top, hp'q⟩ :=
-        ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one
-          (max_ne_top (by simp : (2 : ℝ≥0∞) ≠ ⊤) hs_top) hq1
-      exact ⟨p', (le_max_left 2 s).trans_lt hp'_gt, hp'_top, le_top, hp'q,
-        (le_max_right 2 s).trans hp'_gt.le⟩
-    · exact ⟨p, hp, hp_top, le_rfl, hpq, hsp⟩
-  have hJ' : MemWkpLoc p' Ω 1 J := hJ.mono_exponent hp'p
-  have hS' : MemLpLoc p' Ω S := hS.mono_exponent hp'p
-  have hq₀_top : min q p' ≠ ⊤ := ne_top_of_le_ne_top hp'_top (min_le_right q p')
-  have hsol₀ : IsWeakCRSolution (min q p') Ω J DJ S ξ η := hsol.mono_exponent (min_le_left q p')
-  have hpq₀ : p'⁻¹ + (min q p')⁻¹ < 1 := ENNReal.inv_add_inv_min_lt_one hp' hp'q
-  generalize hq₀_def : min q p' = q₀
-  rw [hq₀_def] at hq₀_top hsol₀ hpq₀
-  lift q₀ to ℝ≥0 using hq₀_top
-  lift p' to ℝ≥0 using hp'_top
-  lift s to ℝ≥0 using hs_top
-  have hpR : (2 : ℝ) < p' := by exact_mod_cast hp'
-  have hp0 : (0 : ℝ) < p' := zero_lt_two.trans hpR
-  have ha : 0 < 2⁻¹ - (p' : ℝ)⁻¹ := sub_pos.2 ((inv_lt_inv₀ hp0 zero_lt_two).2 hpR)
-  have hq₀_pos : (0 : ℝ) < q₀ := by
-    by_contra hle
-    simp [NNReal.coe_eq_zero.1 (le_antisymm (not_lt.1 hle) q₀.coe_nonneg)] at hpq₀
-  have hpq₀R : (p' : ℝ)⁻¹ + (q₀ : ℝ)⁻¹ < 1 := by
-    have h := (ENNReal.inv_coe_add_inv_coe_lt_one_iff (by exact_mod_cast hp0.ne')
-      (by exact_mod_cast hq₀_pos.ne')).1 hpq₀
-    exact_mod_cast h
-  exact memWkpLoc_one_ladder hp' hs1 hsp' hJ' hDJ hJsq' hS' hη
-    ⌈(q₀ : ℝ)⁻¹ / (2⁻¹ - (p' : ℝ)⁻¹)⌉₊ hq₀_pos hpq₀R ((div_le_iff₀ ha).1 (Nat.le_ceil _)) hsol₀
-
-/-- **Order-zero interior regularity at the solution's exponent.** If `2 < p ≤ ∞`,
-`1/p + 1/q < 1`, `q < ∞`, `q ≤ p`, `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`,
-`S ∈ Lᵖ_loc(Ω)`, and `ξ` solves `∂_s ξ + J ∂_t ξ + S ξ = η` weakly in `L^q_loc(Ω)` with
-`η ∈ L^q_loc(Ω)`, then `ξ ∈ W^{1,q}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one_of_le (hp : 2 < p) (hpq : p⁻¹ + q⁻¹ < 1) (hq_top : q ≠ ⊤)
-    (hqp : q ≤ p) (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ V)
-    (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc q Ω η) :
-    MemWkpLoc q Ω 1 ξ :=
-  hsol.memWkpLoc_one_of_memLpLoc hp hpq
-    (ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)) hq_top hqp hJ hDJ hJsq hS hη
-
-/-- **Order-zero interior regularity at the coefficient exponent.** If `2 < p < ∞`,
-`1/p + 1/q < 1`, `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`,
-and `ξ` solves `∂_s ξ + J ∂_t ξ + S ξ = η` weakly in `L^q_loc(Ω)` with `η ∈ Lᵖ_loc(Ω)`, then
-`ξ ∈ W^{1,p}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one_self (hp : 2 < p) (hp_top : p ≠ ⊤) (hpq : p⁻¹ + q⁻¹ < 1)
-    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ V)
-    (hS : MemLpLoc p Ω S) (hsol : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc p Ω η) :
-    MemWkpLoc p Ω 1 ξ :=
-  hsol.memWkpLoc_one_of_memLpLoc hp hpq
-    ((by exact_mod_cast one_lt_two : (1 : ℝ≥0∞) < 2).trans hp) hp_top le_rfl hJ
-    hDJ hJsq hS hη
-
-end Ladder
 
 end TauCeti

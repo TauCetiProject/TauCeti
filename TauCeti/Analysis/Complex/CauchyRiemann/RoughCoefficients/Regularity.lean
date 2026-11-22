@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Differentiated
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -50,7 +50,7 @@ with `k ≤ ℓ` and `k ≤ m` and every finite target exponent `1 < s ≤ p`, t
 2. *Induction on `k`* (`TauCeti.IsWeakCRSolution.memWkpLoc_of_memWkpLoc`). When `p = ∞`, the
    coefficient exponent is first lowered to a finite `p' > max 2 s` with `1/p' + 1/q < 1`
    (`ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`). The base `k = 0` is
-   `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`. For `k = k' + 1`, the induction hypothesis
+   `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`. For `k = k' + 1`, the induction hypothesis
    at `k'` puts `ξ` in `W^{k'+1,s}_loc(Ω)`; simultaneously, two-dimensional Sobolev embedding
    (`TauCeti.MemWkpLoc.exists_two_lt_le_memLpLoc_of_one_lt`) upgrades `η ∈ W^{1,s}_loc(Ω)` to
    `L^{q₁}_loc(Ω)` for an exponent `2 < q₁ ≤ p`, so order-zero regularity puts `ξ` in
@@ -251,8 +251,10 @@ theorem IsWeakCRSolution.memWkpLoc_of_memWkpLoc {k ℓ m : ℕ} (hp : 2 < p)
       (hJ.mono_exponent le_top) (hS.mono_exponent le_top) hp'_top
   induction k generalizing V q ℓ m with
   | zero =>
-    exact hsol.memWkpLoc_one_of_memLpLoc hp hpq hs1 hs_top hsp (hJ.of_le hℓ) hDJ hJsq
-      hS.memLpLoc hη.memLpLoc
+    exact hsol.memWkpLoc_one_of_le
+      ⟨hDJ, hJ.memLpLoc, (hJ.of_le hℓ).memLpLoc_of_hasWeakFDerivOn hDJ, hS.memLpLoc⟩ hp
+      (by simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hJsq)
+      hpq hs1 hs_top hsp hη.memLpLoc
   | succ k' ih =>
     have hξ_s : MemWkpLoc s Ω (k' + 1) ξ :=
       ih hℓ (by omega) (by omega) hDJ hJsq hsol hη.of_succ hpq hJ hS
@@ -262,8 +264,10 @@ theorem IsWeakCRSolution.memWkpLoc_of_memWkpLoc {k ℓ m : ℕ} (hp : 2 < p)
     have hpq₁ : p⁻¹ + (q₁ : ℝ≥0∞)⁻¹ < 1 :=
       ENNReal.inv_add_inv_lt_one_of_two_lt hp (by exact_mod_cast hq₁.le)
     have hξ_q₁ : MemWkpLoc q₁ Ω 1 ξ :=
-      hsol.memWkpLoc_one_of_memLpLoc hp hpq (by exact_mod_cast one_lt_two.trans hq₁)
-        ENNReal.coe_ne_top hq₁_le_p (hJ.of_le hℓ) hDJ hJsq hS.memLpLoc hη_q₁
+      hsol.memWkpLoc_one_of_le
+        ⟨hDJ, hJ.memLpLoc, (hJ.of_le hℓ).memLpLoc_of_hasWeakFDerivOn hDJ, hS.memLpLoc⟩ hp
+        (by simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hJsq)
+        hpq (by exact_mod_cast one_lt_two.trans hq₁) ENNReal.coe_ne_top hq₁_le_p hη_q₁
     have hSm' : MemWkpLoc p Ω (k' + 1) S := hS.of_le hkm
     obtain ⟨DS, hDS, hDS_k'⟩ := hSm'.exists_weakFDeriv_of_isOpen
     obtain ⟨Dη, hDη, hDη_k'⟩ := hη.exists_weakFDeriv_of_isOpen

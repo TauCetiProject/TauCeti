@@ -89,6 +89,8 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
+* `TauCeti.HasWeakLineDerivOn.locallyLipschitzOn_smul`: the same for a factor that is only
+  locally Lipschitz on `Ω`, such as the continuous representative of a `W^{1,∞}` function.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
@@ -436,6 +438,20 @@ theorem HasWeakLineDerivOn.lipschitzOnWith_smul (h : HasWeakLineDerivOn μ Ω u 
   · exact (ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx => by
       simp only [← hgψ hx, (hnear x hx).lineDeriv_eq]
 
+/-- **The Leibniz rule for weak directional derivatives with a locally Lipschitz factor.** If `u'`
+is a weak derivative of `u` in the direction `v` on `Ω` and `ψ` is locally Lipschitz on `Ω`, then
+`ψ u` is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
+Neither `ψ` nor its directional derivative need be bounded on `Ω`. -/
+theorem HasWeakLineDerivOn.locallyLipschitzOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hψ : LocallyLipschitzOn (Ω : Set E) ψ) :
+    HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) v := by
+  -- On each relatively compact open `V` with closure in `Ω` the factor is Lipschitz, so the
+  -- Lipschitz rule applies there.
+  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
+  obtain ⟨K, hK⟩ := (hψ.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
+  exact (h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul (hK.mono subset_closure)
+
 /-- **The Leibniz rule for weak directional derivatives with a `C¹` factor.** If `u'` is a weak
 derivative of `u` in the direction `v` on `Ω` and `ψ` is `C^n` on `Ω` for some `n ≠ 0`, then `ψ u`
 is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
@@ -446,20 +462,14 @@ theorem HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞}
     (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
-  -- On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so the
-  -- Lipschitz rule applies there, and its almost-everywhere directional derivative is the
-  -- classical one.
+  -- The factor is locally Lipschitz on `Ω`, and its directional derivative is the classical one.
   have hψ1 : ContDiffOn ℝ 1 ψ Ω := hψ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   have hll : LocallyLipschitzOn (Ω : Set E) ψ := fun x hx => by
     obtain ⟨K, t, ht, hK⟩ :=
       ((hψ1 x hx).contDiffAt (Ω.isOpen.mem_nhds hx)).exists_lipschitzOnWith
     exact ⟨K, t, nhdsWithin_le_nhds ht, hK⟩
-  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
-  obtain ⟨K, hK⟩ := (hll.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
-  refine ((h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul
-    (hK.mono subset_closure)).congr_ae_deriv ?_
-  filter_upwards [ae_restrict_mem V.isOpen.measurableSet] with x hx
-  have hxΩ : x ∈ (Ω : Set E) := hVΩ (subset_closure hx)
+  refine (h.locallyLipschitzOn_smul hll).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hxΩ
   rw [((hψ1.differentiableOn one_ne_zero x hxΩ).differentiableAt
     (Ω.isOpen.mem_nhds hxΩ)).lineDeriv_eq_fderiv]
 

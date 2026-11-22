@@ -47,7 +47,8 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one`: the local Sobolev inequality
   `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
-* `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`.
+* `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`, and
+  `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top`, the same with exponents in `ℝ≥0∞`.
 * `TauCeti.MemWkpLoc.exists_two_lt_le_memLpLoc_of_one_lt`: for `p > 2` and `s > 1`, membership of
   `W^{1,s}_loc` in `L^r_loc` for some finite `2 < r ≤ p`.
 * `TauCeti.MemWkpLoc.of_succ_of_inv_sub_inv_le`: order lowering `W^{k+1,q}_loc ⊂ W^{k,s}_loc`.
@@ -184,6 +185,23 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hq : 1 �
     (by rwa [hKc]) (by rwa [hKc])
   exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
     (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+
+/-- The local Sobolev embedding `W^{1,r}_loc(Ω, F) ⊂ Lᵗ_loc(Ω, F)` for exponents in `ℝ≥0∞`: if
+`1 ≤ r ≤ t < ∞` and `1/r - 1/t ≤ 1/2`, every `u ∈ W^{1,r}_loc(Ω, F)` is locally `Lᵗ` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u)
+    (hr : 1 ≤ r) (ht : t ≠ ⊤) (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) : MemLpLoc t Ω u := by
+  have hr_top : r ≠ ⊤ := ne_top_of_le_ne_top ht hrt
+  have ht0 : t ≠ 0 := (zero_lt_one.trans_le (hr.trans hrt)).ne'
+  rw [← ENNReal.coe_toNNReal hr_top] at hu
+  rw [← ENNReal.coe_toNNReal ht]
+  refine hu.memLpLoc_of_inv_sub_inv_le ?_ (ENNReal.toNNReal_mono ht hrt) ?_
+  · rw [← ENNReal.coe_le_coe, ENNReal.coe_toNNReal hr_top]
+    exact_mod_cast hr
+  · have h := ENNReal.toReal_mono (by finiteness) (tsub_le_iff_right.1 hgap)
+    simp only [ne_eq, ENNReal.inv_eq_top, ht0, not_false_eq_true, OfNat.ofNat_ne_zero,
+      ENNReal.toReal_add, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
+    simp only [ENNReal.coe_toNNReal_eq_toReal]
+    linarith
 
 /-- **Order-one Sobolev upgrade above `2`.** If `2 < p ≤ ∞` and `1 < s ≤ ∞`, every
 `u ∈ W^{1,s}_loc(Ω, F)` belongs to `L^r_loc(Ω, F)` for some finite exponent `r` with
