@@ -97,7 +97,8 @@ theorem _root_.Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ioo (p q : R[X])
         (eval_ne_zero_of_sign_eq_derivSignRight hq hqa)))
       (by simpa using (mul_ne_zero (eval_ne_zero_of_sign_eq_derivSignLeft hp hpb)
         (eval_ne_zero_of_sign_eq_derivSignLeft hq hqb)))]
-  simp only [eval_mul, sign_mul, hpa, hqa, hpb, hqb, derivSignLeft_mul, derivSignRight_mul]
+  simp only [eval_mul, sign_mul, hpa, hqa, hpb, hqb, derivSignLeft_mul,
+    derivSignRight_eq_signRight, signRight_mul]
 
 /-- Inversion on a left-open, right-closed interval uses right-hand signs at both endpoints. -/
 theorem _root_.Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ioc (p q : R[X])
