@@ -275,6 +275,30 @@ theorem apply_path_symm_apply {A B : V →L[ℝ] V} {Ψ : Path A B}
   rw [Path.symm_apply]
   exact hΨ _ u v
 
+omit [FiniteDimensional ℝ V] in
+/-- The pointwise composition of two paths of linear maps preserving `ω` runs through maps
+preserving `ω`. -/
+theorem apply_path_mul_apply {A₁ B₁ A₂ B₂ : V →L[ℝ] V} {Ψ₁ : Path A₁ B₁} {Ψ₂ : Path A₂ B₂}
+    (h₁ : ∀ t u v, ω (Ψ₁ t u) (Ψ₁ t v) = ω u v) (h₂ : ∀ t u v, ω (Ψ₂ t u) (Ψ₂ t v) = ω u v)
+    (t : I) (u v : V) : ω ((Ψ₁.mul Ψ₂) t u) ((Ψ₁.mul Ψ₂) t v) = ω u v := by
+  rw [Path.mul_apply, mul_apply_eq_comp, mul_apply_eq_comp, h₁, h₂]
+
+/-- The matrices of a concatenation of two paths of linear maps preserving `ω` are, at each time,
+the concatenation of their matrices. -/
+theorem matrixPath_trans_apply {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) {A B C : V →L[ℝ] V}
+    (Ψ₁ : Path A B) (Ψ₂ : Path B C) (h₁ : ∀ t u v, ω (Ψ₁ t u) (Ψ₁ t v) = ω u v)
+    (h₂ : ∀ t u v, ω (Ψ₂ t u) (Ψ₂ t v) = ω u v) (t : I) :
+    ω.matrixPath hb (Ψ₁.trans Ψ₂) (ω.apply_path_trans_apply h₁ h₂) t =
+      ((ω.matrixPath hb Ψ₁ h₁).trans (ω.matrixPath hb Ψ₂ h₂)) t := by
+  rw [matrixPath_apply]
+  -- Both paths run through the first path on `[0, 1/2]` and through the second on `[1/2, 1]`.
+  by_cases ht : (t : ℝ) ≤ 1 / 2
+  · conv_rhs => rw [Path.trans_apply, dite_eq_left ht, matrixPath_apply]
+    exact ω.toGLSymplectic_congr hb (by rw [Path.trans_apply, dite_eq_left ht]) _ _
+  · conv_rhs => rw [Path.trans_apply, dite_eq_right ht, matrixPath_apply]
+    exact ω.toGLSymplectic_congr hb (by rw [Path.trans_apply, dite_eq_right ht]) _ _
+
 /-! ### The Conley–Zehnder index -/
 
 /-- **The Conley–Zehnder index of a path of linear symplectic maps.** For a path `Ψ` of linear
@@ -335,14 +359,7 @@ theorem conleyZehnderIndex_trans {A B C : V →L[ℝ] V} (Ψ₁ : Path A B) (Ψ�
   obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
   rw [ω.conleyZehnderIndex_eq hb, ω.conleyZehnderIndex_eq hb, ω.conleyZehnderIndex_eq hb,
     ← GLSymplectic.conleyZehnderIndex_trans]
-  refine GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦ ?_
-  rw [matrixPath_apply]
-  -- Both paths run through the first path on `[0, 1/2]` and through the second on `[1/2, 1]`.
-  by_cases ht : (t : ℝ) ≤ 1 / 2
-  · conv_rhs => rw [Path.trans_apply, dite_eq_left ht, matrixPath_apply]
-    exact ω.toGLSymplectic_congr hb (by rw [Path.trans_apply, dite_eq_left ht]) _ _
-  · conv_rhs => rw [Path.trans_apply, dite_eq_right ht, matrixPath_apply]
-    exact ω.toGLSymplectic_congr hb (by rw [Path.trans_apply, dite_eq_right ht]) _ _
+  exact GLSymplectic.conleyZehnderIndex_congr _ _ (ω.matrixPath_trans_apply hb Ψ₁ Ψ₂ h₁ h₂)
 
 /-- Reversing a path of linear symplectic maps negates its Conley–Zehnder index. -/
 theorem conleyZehnderIndex_symm {A B : V →L[ℝ] V} (Ψ : Path A B)
@@ -407,6 +424,33 @@ theorem apply_path_map_conj_apply (e : V ≃L[ℝ] W) (he : IsSymplectomorphism 
   rw [hΨ, ← he', e.apply_symm_apply, e.apply_symm_apply] at key
   simpa using key
 
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
+/-- A linear symplectomorphism `e : (V, ω) ≃ (W, ω')` carries a symplectic basis `b` of `(V, ω)`
+to a symplectic basis `b.map e` of `(W, ω')`. -/
+theorem toMatrix_map_eq_J (e : V ≃L[ℝ] W) (he : IsSymplectomorphism ω ω' e.toLinearEquiv)
+    {b : Basis (ι ⊕ ι) ℝ V} (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) :
+    LinearMap.BilinForm.toMatrix (b.map e.toLinearEquiv) ω'.toBilinForm = J ι ℝ := by
+  rw [← hb]
+  ext i j
+  simp only [LinearMap.BilinForm.toMatrix_apply, Basis.map_apply]
+  exact he.apply (b i) (b j)
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
+/-- For a linear symplectomorphism `e : (V, ω) ≃ (W, ω')`, the symplectic matrix of
+`e ∘ C ∘ e⁻¹` in the basis `b.map e` is the symplectic matrix of `C` in the basis `b`. -/
+theorem toGLSymplectic_conj (e : V ≃L[ℝ] W) (he : IsSymplectomorphism ω ω' e.toLinearEquiv)
+    {b : Basis (ι ⊕ ι) ℝ V} (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ)
+    (C : V →L[ℝ] V) (hC : ∀ u v, ω (C u) (C v) = ω u v)
+    (hC' : ∀ u v, ω' (((e : V →L[ℝ] W) ∘L C ∘L (e.symm : W →L[ℝ] V)) u)
+      (((e : V →L[ℝ] W) ∘L C ∘L (e.symm : W →L[ℝ] V)) v) = ω' u v) :
+    ω'.toGLSymplectic (ω.toMatrix_map_eq_J e he hb)
+      ((e : V →L[ℝ] W) ∘L C ∘L (e.symm : W →L[ℝ] V) : W →L[ℝ] W) hC' =
+      ω.toGLSymplectic hb C hC := by
+  refine Subtype.ext (Units.ext ?_)
+  rw [coe_toGLSymplectic, coe_toGLSymplectic]
+  ext i j
+  simp [LinearMap.toMatrix_apply, Basis.map_apply, Basis.map_repr]
+
 /-- **Naturality of the Conley–Zehnder index.** A linear symplectomorphism `e : (V, ω) ≃ (W, ω')`
 carries a path `Ψ` of linear symplectic maps of `V` to the path `e ∘ Ψ ∘ e⁻¹` of linear symplectic
 maps of `W` with the same Conley–Zehnder index. In particular the index of the linearized flow
@@ -420,15 +464,8 @@ theorem conleyZehnderIndex_map_conj (e : V ≃L[ℝ] W)
       ω.conleyZehnderIndex Ψ hΨ := by
   obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
   -- The image of a symplectic basis under `e` is a symplectic basis with the same matrices.
-  have hb' : LinearMap.BilinForm.toMatrix (b.map e.toLinearEquiv) ω'.toBilinForm = J (Fin m) ℝ := by
-    rw [← hb]
-    ext i j
-    simp only [LinearMap.BilinForm.toMatrix_apply, Basis.map_apply]
-    exact he.apply (b i) (b j)
-  rw [ω'.conleyZehnderIndex_eq hb', ω.conleyZehnderIndex_eq hb]
-  refine GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦ Subtype.ext (Units.ext ?_)
-  rw [matrixPath_apply, matrixPath_apply, coe_toGLSymplectic, coe_toGLSymplectic]
-  ext i j
-  simp [LinearMap.toMatrix_apply, Basis.map_apply, Basis.map_repr]
+  rw [ω'.conleyZehnderIndex_eq (ω.toMatrix_map_eq_J e he hb), ω.conleyZehnderIndex_eq hb]
+  exact GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦
+    ω.toGLSymplectic_conj e he hb (Ψ t) (hΨ t) (apply_path_map_conj_apply ω e he hΨ t)
 
 end TauCeti.SymplecticForm

@@ -23,6 +23,12 @@ depend on the basis (`TauCeti.SymplecticForm.maslovIndex_eq`): the matrices in t
 are conjugate by the change of basis matrix, and conjugating by a constant symplectic matrix does
 not change the Maslov index, by the product axiom `TauCeti.GLSymplectic.maslovIndex_mul`.
 
+* **Loop operations.** The Maslov index vanishes on constant loops, is additive under
+  concatenation and pointwise composition, changes sign under reversal, is invariant under
+  homotopies through loops, and is preserved by conjugation with a linear symplectomorphism
+  (`TauCeti.SymplecticForm.maslovIndex_refl`, `maslovIndex_trans`, `maslovIndex_mul`,
+  `maslovIndex_symm`, `maslovIndex_eq_of_homotopy`, `maslovIndex_map_conj`), each read from the
+  matrix law in a symplectic basis.
 * **Loops through a contractible space.** A loop of linear symplectic maps `t ↦ a(β t)` that
   factors through a continuous map `a` on a contractible space has Maslov index zero
   (`TauCeti.SymplecticForm.maslovIndex_map_eq_zero`): contracting the space contracts the loop
@@ -75,9 +81,8 @@ theorem maslovIndex_matrixPath_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
   -- In the basis `b'` the loop of matrices is the pointwise product `P M P⁻¹`.
   have h : GLSymplectic.maslovIndex (ω.matrixPath hb' g hg) =
       GLSymplectic.maslovIndex
-        (((Path.refl P).mul (ω.matrixPath hb g hg)).mul (Path.refl P⁻¹)) := by
-    rw [GLSymplectic.maslovIndex_def, GLSymplectic.maslovIndex_def]
-    exact Circle.degree_congr _ _ fun t ↦ by
+        (((Path.refl P).mul (ω.matrixPath hb g hg)).mul (Path.refl P⁻¹)) :=
+    GLSymplectic.maslovIndex_congr _ _ fun t ↦ by
       simp [ω.toGLSymplectic_eq_basisChange_mul hb hb', P]
   rw [h, GLSymplectic.maslovIndex_mul, GLSymplectic.maslovIndex_mul,
     GLSymplectic.maslovIndex_refl, GLSymplectic.maslovIndex_refl, zero_add, add_zero]
@@ -115,9 +120,72 @@ theorem maslovIndex_congr {A A' : V →L[ℝ] V} (g : Path A A) (g' : Path A' A'
     (hg : ∀ t u v, ω (g t u) (g t v) = ω u v) (h : ∀ t, g t = g' t) :
     ω.maslovIndex g hg = ω.maslovIndex g' fun t ↦ h t ▸ hg t := by
   obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
-  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb, GLSymplectic.maslovIndex_def,
-    GLSymplectic.maslovIndex_def]
-  exact Circle.degree_congr _ _ fun t ↦ by simp [h t]
+  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb]
+  refine GLSymplectic.maslovIndex_congr _ _ fun t ↦ ?_
+  rw [matrixPath_apply, matrixPath_apply]
+  exact ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap (h t)) _ _
+
+/-- A constant loop of linear symplectic maps has Maslov index zero. -/
+@[simp]
+theorem maslovIndex_refl (A : V →L[ℝ] V)
+    (hA : ∀ t u v, ω (Path.refl A t u) (Path.refl A t v) = ω u v) :
+    ω.maslovIndex (Path.refl A) hA = 0 := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.maslovIndex_eq hb, ← GLSymplectic.maslovIndex_refl
+    (ω.toGLSymplectic hb A (by simpa using hA 0))]
+  exact GLSymplectic.maslovIndex_congr _ _ fun t ↦ by simp
+
+/-- The Maslov index of loops of linear symplectic maps is additive under concatenation. -/
+theorem maslovIndex_trans {A : V →L[ℝ] V} (g₁ g₂ : Path A A)
+    (h₁ : ∀ t u v, ω (g₁ t u) (g₁ t v) = ω u v) (h₂ : ∀ t u v, ω (g₂ t u) (g₂ t v) = ω u v) :
+    ω.maslovIndex (g₁.trans g₂) (ω.apply_path_trans_apply h₁ h₂) =
+      ω.maslovIndex g₁ h₁ + ω.maslovIndex g₂ h₂ := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb, ω.maslovIndex_eq hb,
+    ← GLSymplectic.maslovIndex_trans]
+  exact GLSymplectic.maslovIndex_congr _ _ (ω.matrixPath_trans_apply hb g₁ g₂ h₁ h₂)
+
+/-- Reversing a loop of linear symplectic maps negates its Maslov index. -/
+theorem maslovIndex_symm {A : V →L[ℝ] V} (g : Path A A)
+    (hg : ∀ t u v, ω (g t u) (g t v) = ω u v) :
+    ω.maslovIndex g.symm (ω.apply_path_symm_apply hg) = -ω.maslovIndex g hg := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb, ← GLSymplectic.maslovIndex_symm]
+  exact GLSymplectic.maslovIndex_congr _ _ fun t ↦ by simp [Path.symm_apply]
+
+/-- **The product axiom.** The pointwise composition `t ↦ g₁(t) ∘ g₂(t)` of two loops of linear
+symplectic maps has the sum of their Maslov indices. -/
+theorem maslovIndex_mul {A B : V →L[ℝ] V} (g₁ : Path A A) (g₂ : Path B B)
+    (h₁ : ∀ t u v, ω (g₁ t u) (g₁ t v) = ω u v) (h₂ : ∀ t u v, ω (g₂ t u) (g₂ t v) = ω u v) :
+    ω.maslovIndex (g₁.mul g₂) (ω.apply_path_mul_apply h₁ h₂) =
+      ω.maslovIndex g₁ h₁ + ω.maslovIndex g₂ h₂ := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb, ω.maslovIndex_eq hb,
+    ← GLSymplectic.maslovIndex_mul]
+  refine GLSymplectic.maslovIndex_congr _ _ fun t ↦ ?_
+  conv_rhs => rw [Path.mul_apply, matrixPath_apply, matrixPath_apply]
+  rw [matrixPath_apply, ← ω.toGLSymplectic_comp hb (h₁ t) (h₂ t) fun u v ↦ by simp [h₁ t, h₂ t]]
+  exact ω.toGLSymplectic_congr hb
+    (by rw [Path.mul_apply, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]) _ _
+
+/-- **Homotopy invariance.** If `F` is a homotopy from the loop `g₀` to the loop `g₁` through
+loops of linear symplectic maps (`F (s, 0) = F (s, 1)` for every `s`; the base point may move),
+the two loops have the same Maslov index. -/
+theorem maslovIndex_eq_of_homotopy {A B : V →L[ℝ] V} (g₀ : Path A A) (g₁ : Path B B)
+    (F : C(I × I, V →L[ℝ] V)) (hF : ∀ p u v, ω (F p u) (F p v) = ω u v)
+    (h₀ : ∀ t, F (0, t) = g₀ t) (h₁ : ∀ t, F (1, t) = g₁ t) (hF₀₁ : ∀ s, F (s, 0) = F (s, 1)) :
+    ω.maslovIndex g₀ (fun t ↦ h₀ t ▸ hF (0, t)) = ω.maslovIndex g₁ (fun t ↦ h₁ t ▸ hF (1, t)) := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.maslovIndex_eq hb, ω.maslovIndex_eq hb]
+  -- The matrices of `F` form a homotopy of loops of symplectic matrices.
+  refine GLSymplectic.maslovIndex_eq_of_homotopy _ _
+    ⟨fun p ↦ ω.toGLSymplectic hb (F p) (hF p), ω.continuous_toGLSymplectic hb F.continuous hF⟩
+    (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
+  · rw [ContinuousMap.coe_mk, matrixPath_apply]
+    exact ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap (h₀ t)) _ _
+  · rw [ContinuousMap.coe_mk, matrixPath_apply]
+    exact ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap (h₁ t)) _ _
+  · exact ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap (hF₀₁ s)) _ _
 
 /-- **Loops through a contractible space have Maslov index zero.** If `a` is a continuous family of
 linear symplectic maps of `(V, ω)` parametrized by a contractible space `Y`, the loop
@@ -196,5 +264,25 @@ theorem conleyZehnderIndex_frameChange {A A' B C : V →L[ℝ] V} (g : Path A A)
     ← ω.toGLSymplectic_comp hb (hΨ t) hA fun u v ↦ by simp [hΨ t, hA],
     ← ω.toGLSymplectic_comp hb hgt _ fun u v ↦ by simp [hΨ t, hA, hgt]]
   exact ω.toGLSymplectic_congr hb (by simp [frameChange_apply]) _ _
+
+/-! ### Naturality -/
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+  {ω' : SymplecticForm W}
+
+/-- **Naturality of the Maslov index.** A linear symplectomorphism `e : (V, ω) ≃ (W, ω')` carries
+a loop `g` of linear symplectic maps of `V` to the loop `e ∘ g ∘ e⁻¹` of linear symplectic maps of
+`W` with the same Maslov index. -/
+theorem maslovIndex_map_conj (e : V ≃L[ℝ] W) (he : IsSymplectomorphism ω ω' e.toLinearEquiv)
+    {A : V →L[ℝ] V} (g : Path A A) (hg : ∀ t u v, ω (g t u) (g t v) = ω u v) :
+    ω'.maslovIndex (g.map (f := fun C : V →L[ℝ] V ↦ (e : V →L[ℝ] W) ∘L C ∘L
+      (e.symm : W →L[ℝ] V)) (by fun_prop)) (apply_path_map_conj_apply ω e he hg) =
+      ω.maslovIndex g hg := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  -- The image of a symplectic basis under `e` is a symplectic basis with the same matrices.
+  rw [ω'.maslovIndex_eq (ω.toMatrix_map_eq_J e he hb), ω.maslovIndex_eq hb]
+  refine GLSymplectic.maslovIndex_congr _ _ fun t ↦ ?_
+  rw [matrixPath_apply, matrixPath_apply]
+  exact ω.toGLSymplectic_conj e he hb (g t) (hg t) (apply_path_map_conj_apply ω e he hg t)
 
 end TauCeti.SymplecticForm
