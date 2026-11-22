@@ -649,16 +649,18 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
 
 /-- **Joint regularity of Hamiltonian vector fields of a family at a point.** For a nondegenerate
 two-form on a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is
-jointly `C^(n+1)` at `q = (p, x)`, the Hamiltonian vector fields `(p', x') ↦ X_{H p'}(x')` are
-jointly `C^n` at `q`, for `n ≤ ∞`. -/
+jointly `C^(n+1)` at `q ∈ N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly
+`C^n` at `q`, for `n ≤ ∞`. This applies to families which are only regular over an open set of
+parameters, such as Hamiltonian perturbations on a punctured domain. -/
 theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
     [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
     [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
     {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
     ContMDiffAt (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
-  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn) q.2).comp q
-    contMDiffAt_snd).clm_bundle_apply hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
+    contMDiff_snd).contMDiffAt (x := q)).clm_bundle_apply
+    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
 
 /-- **Joint regularity of Hamiltonian vector fields of a family on an open set.** For a
 nondegenerate two-form on a finite-dimensional manifold and a family of Hamiltonians
@@ -700,8 +702,8 @@ theorem contMDiffOn_hamiltonianVectorField_prod {E₁ H₁ P E₂ H₂ Q : Type*
   dsimp only [Function.comp_apply, a]
   rw [Diffeomorph.prodAssocOfModels_symm_apply]
 
-/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
-a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
+/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on a
+finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
 `n ≤ ∞`. For `N = ℝ` this is the regularity of the vector field of a time-dependent Hamiltonian,
 which is what is needed to integrate it to a time-dependent Hamiltonian flow. -/

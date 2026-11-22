@@ -45,6 +45,10 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   `TauCeti.Floer.contDiffOn_almostComplexInChartAt`,
   `TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt`,
   `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt`).
+* For a nondegenerate `ω` and Hamiltonians `K(z)` which are jointly `C^(n+1)` in `z` and the
+  target point, the Hamiltonian vector field in the chart is `C^n` on the chart target
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`): it is
+  the coordinate expression of the `C^n` section `(z, x) ↦ X_{K(z)}(x)` of the tangent bundle.
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -172,6 +176,11 @@ theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α)
   rw [almostComplexInChartAt_apply, almostComplexInChartAt_apply,
     Trivialization.symmL_continuousLinearMapAt _ hx, AlmostComplexStructure.apply_apply, map_neg,
     Trivialization.continuousLinearMapAt_symmL _ hx]
+
+/-- Reparametrizing a family of structures reparametrizes the family read in the chart. -/
+theorem almostComplexInChartAt_comp {Q : Type*} (f : Q → P) (p : Q × E) :
+    almostComplexInChartAt I α (fun z ↦ J (f z)) p = almostComplexInChartAt I α J (f p.1, p.2) :=
+  (rfl)
 
 /-- For a jointly regular family of structures over the domain `ℝ × ℝ`, the structure in the chart
 is the coordinate expression of the family in the product chart at `(p, α)`, whatever `p`. In
@@ -331,6 +340,41 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
       (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm y)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
+
+/-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
+family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
+`U` of the domain, the Hamiltonian vector field of `K` read in the chart at `α` is `C^n` on
+`U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed by the
+compactness theorems for Floer solutions in a manifold. -/
+theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsNondegenerate)
+    {U : Set (ℝ × ℝ)} {K : ℝ × ℝ → M → ℝ} {n : ℕ∞}
+    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
+    (α : M) :
+    ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
+  set T := trivializationAt E (TangentSpace I) α
+  set φ := extChartAt I α
+  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `(ℝ × ℝ) × M`.
+  set ψ : (ℝ × ℝ) × E → (ℝ × ℝ) × M := fun p ↦ (p.1, φ.symm p.2)
+  rintro ⟨z, y⟩ ⟨hz, hy⟩
+  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
+    simpa [T, φ] using (extChartAt I α).map_target hw
+  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` at
+  -- `(z, φ⁻¹ y)`, so its coordinates in the trivialization at `α` are `C^n` there.
+  have hX := hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
+    (hK z hz (φ.symm y))
+  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
+    (by simpa [T] using hbase hy)).1 hX).2
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, (ℝ × ℝ) × E) (𝓘(ℝ, ℝ × ℝ).prod I) n ψ
+      (U ×ˢ φ.target) (z, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (z, y) hψ)).congr
+    (fun p hp ↦ ?_) ?_
+  · rw [hamiltonianVectorFieldInChartAt_apply]
+    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hp.2) _
+  · rw [hamiltonianVectorFieldInChartAt_apply]
+    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
 
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
