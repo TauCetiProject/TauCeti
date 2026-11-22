@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
+public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.SpectralGap
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Wirtinger's inequality for periodic functions
@@ -54,6 +57,9 @@ the estimate behind removal of singularities and energy quantization for holomor
 * `TauCeti.integral_norm_sub_average_sq_eq_iff`: its equality case.
 * `TauCeti.integral_norm_sq_le_of_integral_eq_zero`: Wirtinger's inequality for mean-zero `C¹`
   loops.
+* `TauCeti.mul_setIntegral_norm_sq_le_setIntegral_norm_fderiv_sq`: the same on the slices
+  `t ↦ ξ(s, t)` of a `C¹` map over a rectangle `[a₁, b₁] × [a, b]`,
+  `(2π / (b - a))² ∫ ‖ξ‖² ≤ ∫ ‖∂t ξ‖²`.
 * `TauCeti.integral_norm_sq_eq_sum_integral_inner_sq`: the interval integral of `‖F‖ ^ 2` is the
   sum of those of the squared coordinates of `F` in an orthonormal basis.
 * `ContinuousLinearMap.norm_integral_apply_apply_le`: the bound on the integral of a bilinear form
@@ -300,6 +306,32 @@ theorem integral_norm_sub_average_sq_eq_iff (hab : a < b)
   · rintro ⟨u, v, huv⟩ i
     refine ⟨⟪e i, u⟫, ⟪e i, v⟫, fun t ht => ?_⟩
     rw [huv t ht, inner_add_right, real_inner_smul_right, real_inner_smul_right]
+
+/-- **Wirtinger's inequality on the slices of a rectangle.** If `ξ` is a `C¹` map into a
+finite-dimensional real inner product space whose slices `t ↦ ξ(s, t)` take equal values at
+`t = a` and `t = b` and have mean zero on `[a, b]`, then over the rectangle `[a₁, b₁] × [a, b]`,
+`(2π / (b - a))² ∫ ‖ξ‖² ≤ ∫ ‖∂t ξ‖²`. -/
+theorem mul_setIntegral_norm_sq_le_setIntegral_norm_fderiv_sq {ξ : ℝ × ℝ → V} {a₁ b₁ : ℝ}
+    (hab : a < b) (hξ : ContDiff ℝ 1 ξ) (hper : ∀ s, ξ (s, a) = ξ (s, b))
+    (hmean : ∀ s, ∫ t in a..b, ξ (s, t) = 0) :
+    (2 * π / (b - a)) ^ 2 * ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖ξ z‖ ^ 2 ≤
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 := by
+  have hc : 0 < (2 * π / (b - a)) ^ 2 := by
+    have := Real.pi_pos
+    have := sub_pos.2 hab
+    positivity
+  have hslice (s : ℝ) (_ : s ∈ Icc a₁ b₁) : ∫ t in Icc a b, ‖ξ (s, t)‖ ^ 2 ≤
+      ((2 * π / (b - a)) ^ 2)⁻¹ * ∫ t in Icc a b, ‖fderiv ℝ ξ (s, t) (0, 1)‖ ^ 2 := by
+    have h := integral_norm_sq_le_of_integral_eq_zero hab
+      (fun t ↦ hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t)))
+      (continuous_fderiv_apply_slice_right hξ s (0, 1)) (hper s) (hmean s)
+    simpa only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab.le, div_pow,
+      inv_div] using h
+  have h := setIntegral_rect_le_mul_of_forall_setIntegral_le
+    (hξ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
+    (((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).norm.pow 2
+      |>.integrableOn_Icc_prod_Icc) hslice
+  rwa [← le_div_iff₀' hc, div_eq_inv_mul]
 
 end Vector
 

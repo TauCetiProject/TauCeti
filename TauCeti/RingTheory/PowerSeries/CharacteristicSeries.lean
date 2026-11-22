@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.Bernoulli
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.RingTheory.PowerSeries.Exp.Basic
+public import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # The characteristic power series of the Todd, Â and L genera
@@ -46,6 +48,10 @@ products are expressed in the elementary symmetric polynomials `pᵢ` of the `x�
 coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/12 + …`,
 `Â = 1 - p₁/24 + …` and `L = 1 + p₁/3 + …`.
 
+The formal logarithm of the Â series is `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`, read off from
+its logarithmic derivative `1 / X - coth (X / 2) / 2`. Its even coefficients `-B₂ₖ / (2k (2k)!)`
+are the constant terms of the logarithm of the characteristic series of the Witten genus.
+
 ## Main definitions
 
 * `TauCeti.aHatSeries A`: the series `(X / 2) / sinh (X / 2)`.
@@ -69,6 +75,7 @@ coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/
   `B(X) e^{X/2} = Â(X)` and `B(2X) e^X = Â(2X)`.
 * `TauCeti.map_aHatSeries`, `TauCeti.map_hirzebruchLSeries`: `Â` and `L` commute with ring
   homomorphisms between `ℚ`-algebras.
+* `TauCeti.logOf_aHatSeries`: `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`.
 
 ## References
 
@@ -280,6 +287,55 @@ theorem map_aHatSeries {R S : Type*} [CommRing R] [Algebra ℚ R]
     PowerSeries.map f (aHatSeries R) = aHatSeries S := by
   ext n
   simp [coeff_aHatSeries]
+
+/-- **The logarithm of the Â series**:
+`log ((X / 2) / sinh (X / 2)) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`. Only even `n` contribute, since
+the odd Bernoulli numbers beyond `B₁` vanish; the coefficient of `X²` is `-1/24`. -/
+theorem logOf_aHatSeries :
+    logOf (aHatSeries A) =
+      mk fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / (n * n !)) := by
+  set s : ℕ → A := fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / n !) with hs
+  have hmk : (mk fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / (n * n !))) =
+      mk fun n ↦ (n : ℚ)⁻¹ • s n := by
+    ext n
+    simp only [coeff_mk, hs]
+    split_ifs
+    · simp
+    · rw [Algebra.smul_def, ← map_mul]
+      congr 1
+      field_simp
+  -- The claim is that `T = ∑ sₙ₊₁ Xⁿ` is the logarithmic derivative `Â' / Â`.
+  rw [hmk, logOf_eq_mk_iff (constantCoeff_aHatSeries A)]
+  set c := algebraMap ℚ A 2⁻¹
+  set h := rescale c (exp A)
+  set k := rescale (-c) (exp A)
+  set Â := aHatSeries A
+  set T : A⟦X⟧ := mk fun n ↦ s (n + 1)
+  have h2 : (2 : A) * c = 1 := mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  have h2C : (2 : A⟦X⟧) * C c = 1 := by rw [← map_ofNat C 2, ← map_mul, h2, map_one]
+  have hhk : h * k = 1 := rescale_exp_mul_rescale_neg_exp c
+  -- `Â (e^{X/2} - e^{-X/2}) = X`, and its derivative
+  have hA : Â * (h - k) = X := aHatSeries_mul_sub A
+  have hB : bernoulliPowerSeries A * h = Â := bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries A
+  have hd : d⁄dX Â * (h - k) + Â * (C c * h + C c * k) = 1 := by
+    have := congrArg (d⁄dX) hA
+    rw [Derivation.leibniz, map_sub, derivative_rescale, derivative_rescale, derivative_exp,
+      derivative_X, smul_eq_mul, smul_eq_mul, map_neg] at this
+    linear_combination this
+  -- `X T = 1 - B - X / 2`, where `B = X / (e^X - 1) = Â e^{-X/2}` is the Bernoulli series
+  have hXT : X * T = 1 - Â * k - C c * X := by
+    have hXT' : X * T = 1 - bernoulliPowerSeries A - C c * X := by
+      ext (_ | _ | n)
+      · rw [coeff_zero_eq_constantCoeff_apply]
+        simp [bernoulliPowerSeries]
+      · simp [T, hs, c, bernoulliPowerSeries]
+      · simp [T, hs, bernoulliPowerSeries, coeff_succ_X_mul, neg_div]
+    linear_combination hXT' + bernoulliPowerSeries A * hhk - k * hB
+  -- Hence `(T Â - Â') X² = 0`, and `X` is not a zero divisor.
+  have key : (T * Â - d⁄dX Â) * X * X = 0 := by
+    linear_combination (Â * X) * hXT + (d⁄dX Â * X + C c * X * Â) * hA - (X * Â) * hd +
+      (Â ^ 2 * k * X) * h2C
+  exact sub_eq_zero.1 (mul_X_cancel (mul_X_cancel (by simpa using key)))
 
 /-! ### The L series -/
 

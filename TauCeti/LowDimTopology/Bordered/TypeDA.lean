@@ -76,8 +76,9 @@ The tensor products in `M ⊠ P` and `P ⊠ N` are taken over `R` on the generat
 tensor differential of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose
 idempotents do not match are among the generators of `P ⊠ N`, and they vanish in the tensor product
 over the idempotents, which `P ⊠_I N` discards. The type `A` module `M ⊠ P` is built here from a
-differential module `M`; the box tensor product of a general `A∞` module with a type `DA`
-bimodule, and the associativity for it, are not treated.
+differential module `M`; for a general `A∞` module `M` whose operations vanish from some arity on it
+is `TauCeti.TypeDAStructure.typeABoxModule`, in `TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA`.
+The associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is not treated.
 
 ## Main definitions
 
@@ -217,7 +218,7 @@ private theorem boxAct_apply_of_ne_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n �
   rw [boxAct_apply, ite_eq_right hn, zero_add]
 
 /-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
-private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+theorem coeff_congr {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
     (hab : ∀ l, b l = a (Fin.cast h l)) : P.coeff m b = P.coeff n a := by
   subst h
   congr 1
@@ -249,7 +250,7 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       fun y => dM (P.boxAct dM n a φ y) := by
     rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => ite_eq_right (by
       have := Fin.val_lt_last hk; omega)) (by simp),
-      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_eq_of_eq (Fin.val_last n),
+      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_congr (Fin.val_last n),
       Fin.val_last]
     exact fun l => congrArg a (Fin.ext (by simp))
   -- Only the first composite has `m₁` inside.
@@ -259,7 +260,7 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       continuationMap R M (P.coeff n a) (fun y => dM (φ y)) := by
     rw [Finset.sum_eq_single 0 (fun k _ hk => by
       rw [ite_eq_right (Fin.val_ne_zero_iff.mpr hk), map_zero]) (by simp),
-      ite_eq_left (Fin.val_zero _), P.coeff_eq_of_eq (n := n) (by simp)]
+      ite_eq_left (Fin.val_zero _), P.coeff_congr (n := n) (by simp)]
     exact fun l => congrArg a (Fin.ext (by rw [Fin.val_cast]; simp))
   -- The Leibniz rule for `dM (ψ ⬝ δₙ)`.
   have hdM : (fun y => dM (P.boxAct dM n a φ y)) =
