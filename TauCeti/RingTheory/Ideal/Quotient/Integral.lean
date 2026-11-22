@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.IntegralClosure.Quotient
@@ -15,6 +16,8 @@ import TauCeti.RingTheory.IntegralClosure.Quotient
 A monic relation modulo a two-sided ideal `I` gives a monic relation modulo every power `I^n`:
 raise the original polynomial to the `n`-th power. This works in noncommutative algebras because
 polynomials in a single element with central coefficients can be evaluated multiplicatively.
+In particular the quotient by `I^n` is integral whenever the quotient by `I` is
+(`Algebra.IsIntegral.quotient_pow`).
 Likewise, an element is integral modulo a product `I * J` of two-sided ideals exactly when it is
 integral modulo `I` and modulo `J`: two monic relations multiply to a monic relation modulo
 `I * J`. These allow finiteness arguments using integral generators to survive passage to smaller
@@ -49,3 +52,12 @@ theorem isIntegral_quotient_mul_iff {I J : Ideal A} [I.IsTwoSided] [J.IsTwoSided
   exact Ideal.mul_mem_mul hpI hqJ
 
 end TauCeti
+
+/-- If the quotient by a two-sided ideal is integral, so is the quotient by every power of that
+ideal. No commutativity of the ambient algebra is needed. -/
+theorem Algebra.IsIntegral.quotient_pow {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {I : Ideal A} [I.IsTwoSided] (h : Algebra.IsIntegral R (A ⧸ I)) (n : ℕ) :
+    Algebra.IsIntegral R (A ⧸ I ^ n) :=
+  ⟨fun x ↦ by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    exact TauCeti.isIntegral_quotient_pow_of_isIntegral_quotient (h.isIntegral _) n⟩
