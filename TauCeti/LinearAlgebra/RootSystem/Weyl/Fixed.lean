@@ -69,12 +69,14 @@ variable (σ : P.Aut)
 theorem fixedWeylGroup_smul_mem (w : P.fixedWeylGroup σ) {x : M}
     (hx : x ∈ LinearMap.fixedSubmodule σ.weightMap) :
     (w : P.weylGroup) • x ∈ LinearMap.fixedSubmodule σ.weightMap := by
-  have hc := congrArg (fun a : P.Aut ↦ a.weightMap x)
+  have hc := congrArg (fun a : P.Aut ↦ Equiv.weightHom P a x)
     ((P.mem_fixedWeylGroup σ w.val).mp w.property)
-  rw [LinearMap.mem_fixedSubmodule_iff] at hx ⊢
-  -- The native Weyl action is the weight map, via the subgroup and linear-equivalence coercions.
-  change σ.weightMap ((w.val.val).weightMap x) = (w.val.val).weightMap x
-  simpa [hx] using hc
+  rw [LinearMap.mem_fixedSubmodule_iff, ← Equiv.weightEquiv_apply,
+    ← Equiv.weightHom_apply P] at hx ⊢
+  rw [Subgroup.smul_def]
+  -- Unfold only the ambient automorphism action, defined by evaluating `Equiv.weightHom`.
+  dsimp only [HSMul.hSMul, SMul.smul, Equiv.instDistribMulActionAut]
+  simpa only [map_mul, mul_apply_eq_comp, hx] using hc
 
 /-- The linear representation on the fixed space, obtained by restricting the native Weyl
 representation. Its vectors are fixed vectors, not classes in an invariant quotient. -/
