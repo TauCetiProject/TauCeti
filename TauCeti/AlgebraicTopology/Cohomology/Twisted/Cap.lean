@@ -58,12 +58,14 @@ factor gives the relative diagonal `C(X, A; L ⊗ K) ⟶ C(X, A; L) ⊗ C(X; K)`
 (`TopPair.twistedCap_space_naturality`), since the relative diagonal is natural in maps of pairs
 (`TopPair.twistedAlexanderWhitneyDiagonal_space_naturality`).
 
-Followed by a push-forward, it gives `TopPair.twistedPushforwardCap`: for a map `p₀ : X ⟶ Y`, a
-local system `L` on `Y` with a copairing `ε : R ⟶ L ⊗ L`, and a class `u ∈ Hⁿ(X, A; p₀^*L, R)`,
-the morphism `Hₘ(X, A; R) ⟶ Hₚ(Y; L)`, `x ↦ p₀_*(ε_* x ⌢ u)`, `R`-linear in `u`. The copairing
-reads a chain with constant coefficients as a chain twisted by `p₀^*L ⊗ p₀^*L`, and the cap
-product with `u` consumes one factor, the constant system `R` being the unit of the tensor product
-(`TauCeti.LocalCoefficientSystem.constantTensorIso`). It is natural in maps of pairs over `Y`
+Followed by a push-forward, it gives `TopPair.twistedPushforwardCap`: for a map `p₀ : X ⟶ Y`,
+local systems `L`, `K` and `N` on `Y` with a morphism `ε : K ⟶ L ⊗ N`, and a class
+`u ∈ Hⁿ(X, A; p₀^*L, R)`, the morphism `Hₘ(X, A; p₀^*K) ⟶ Hₚ(Y; N)`, `x ↦ p₀_*(ε_* x ⌢ u)`,
+`R`-linear in `u`. The morphism `ε` reads a chain twisted by `p₀^*K` as a chain twisted by
+`p₀^*L ⊗ p₀^*N`, and the cap product with `u` consumes the first factor, the constant system `R`
+being the unit of the tensor product (`TauCeti.LocalCoefficientSystem.constantTensorIso`). For a
+copairing `R ⟶ L ⊗ L` tensored with a coefficient module `A`, this is a morphism
+`Hₘ(X, A; A) ⟶ Hₚ(Y; L ⊗ A)`. It is natural in maps of pairs over `Y`
 (`TopPair.twistedPushforwardCap_naturality`). This is the form of the homology Thom map
 `x ↦ π_*(x ⌢ u)` of a possibly non-orientable vector bundle `E` with Thom pair `(E, E₀)`, when the
 Thom class `u` is a relative class with coefficients in the orientation system of `E`
@@ -81,9 +83,9 @@ Thom class `u` is a relative class with coefficients in the orientation system o
 * `TopPair.twistedCap`: the relative cap product, with `TopPair.twistedCap_homologyπ`,
   `TopPair.twistedCap_twistedCohomologyπ`, `TopPair.twistedCap_coefficient_naturality` and the
   projection formula `TopPair.twistedCap_space_naturality`.
-* `TopPair.twistedPushforwardCap`: the relative cap product with a class twisted by a pulled-back
-  local system with a copairing, followed by push-forward, with its naturality in maps of pairs
-  `TopPair.twistedPushforwardCap_naturality`.
+* `TopPair.twistedPushforwardCap`: a change of coefficients `K ⟶ L ⊗ N`, the relative cap
+  product with a class twisted by the pull-back of `L` and a push-forward, with its naturality in
+  maps of pairs `TopPair.twistedPushforwardCap_naturality`.
 
 ## References
 
@@ -156,25 +158,6 @@ lemma twistedCap_homologyπ (p q n : ℕ) (h : p + q = n)
   TauCeti.ChainComplex.cap_homologyπ _ _ _ _ _ _ _
 
 variable {L K M} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
-
-variable (K) in
-/-- The constant system with fibre `R` is the unit of the tensor product of local systems: the left
-unitor, with the unit written as the constant system, as it appears in the target of a cap
-product with values in `R`. -/
-def constantTensorIso : (constantFunctor X).obj (ModuleCat.of R R) ⊗ K ≅ K :=
-  λ_ K
-
-variable (K) in
-@[simp]
-lemma constantTensorIso_hom_app (x : FundamentalGroupoid X) :
-    (constantTensorIso K).hom.app x = (λ_ (K.obj x)).hom :=
-  (rfl)
-
-variable (K) in
-@[simp]
-lemma constantTensorIso_inv_app (x : FundamentalGroupoid X) :
-    (constantTensorIso K).inv.app x = (λ_ (K.obj x)).inv :=
-  (rfl)
 
 /-- **Naturality of the cap product in the coefficient systems**: for morphisms `η : L ⟶ L'` and
 `θ : K ⟶ K'`, capping with the pulled-back class `η^* α` and changing coefficients along `θ` is
@@ -338,97 +321,100 @@ end Space
 section PushforwardCap
 
 variable {Y : TopCat.{v}} (p₀ : P.fst ⟶ Y) (L : LocalCoefficientSystem.{max v w, v, max v w} R Y)
-  (ε : (constantFunctor Y).obj (ModuleCat.of R R) ⟶ L ⊗ L)
+  {K N : LocalCoefficientSystem.{max v w, v, max v w} R Y} (ε : K ⟶ L ⊗ N)
 
 /-- **The relative cap product followed by push-forward, with local coefficients**: for a pair
-`P = (X, A)`, a map `p₀ : X ⟶ Y`, a local system `L` on `Y` with a copairing
-`ε : R ⟶ L ⊗ L`, and a relative class `u ∈ Hⁿ(X, A; p₀^*L, R)`, the morphism
-`Hₘ(X, A; R) ⟶ Hₚ(Y; L)`, `x ↦ p₀_*(ε_* x ⌢ u)` (`n + p = m`), `R`-linear in `u`. The copairing
-reads a chain with constant coefficients as a chain twisted by `p₀^*L ⊗ p₀^*L`; capping with `u`
-consumes the first factor. For the Thom pair `(E, E₀)` of a vector bundle, its projection and the
-orientation local system `o(E)`, whose tensor square is constant, this is the homology Thom map
-with coefficients twisted by `o(E)` (`TauCeti.twistedHomologyThomMap`). -/
+`P = (X, A)`, a map `p₀ : X ⟶ Y`, local systems `L`, `K` and `N` on `Y` with a morphism
+`ε : K ⟶ L ⊗ N`, and a relative class `u ∈ Hⁿ(X, A; p₀^*L, R)`, the morphism
+`Hₘ(X, A; p₀^*K) ⟶ Hₚ(Y; N)`, `x ↦ p₀_*(ε_* x ⌢ u)` (`n + p = m`), `R`-linear in `u`. The morphism
+`ε` reads a chain twisted by `p₀^*K` as a chain twisted by `p₀^*L ⊗ p₀^*N`; capping with `u`
+consumes the first factor. For a copairing `R ⟶ L ⊗ L` tensored with a coefficient module `A`, this
+is a morphism `Hₘ(X, A; A) ⟶ Hₚ(Y; L ⊗ A)`. For the Thom pair `(E, E₀)` of a vector bundle, its
+projection and the orientation local system `o(E)`, whose tensor square is constant, this is the
+homology Thom map with coefficients twisted by `o(E)` (`TauCeti.twistedHomologyThomMap`). -/
 def twistedPushforwardCap (n p m : ℕ) (h : n + p = m) :
     P.twistedCohomology ((LocalCoefficientSystem.pullback p₀.hom).obj L) R (ModuleCat.of R R) n
-      →ₗ[R] (P.twistedHomology ((constantFunctor P.fst).obj (ModuleCat.of R R)) m ⟶
-        L.twistedHomology p) :=
+      →ₗ[R] (P.twistedHomology ((LocalCoefficientSystem.pullback p₀.hom).obj K) m ⟶
+        N.twistedHomology p) :=
   Linear.rightComp R _
       (LocalCoefficientSystem.twistedHomologyCoefficientMap
-          (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom p ≫
-        LocalCoefficientSystem.twistedHomologyMap p₀ L p) ∘ₗ
+          (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom p ≫
+        LocalCoefficientSystem.twistedHomologyMap p₀ N p) ∘ₗ
     Linear.leftComp R _ (P.twistedHomologyCoefficientMap
-      ((pullbackConstantIso p₀.hom (ModuleCat.of R R)).inv ≫
-        (LocalCoefficientSystem.pullback p₀.hom).map ε ≫ (pullbackTensorIso p₀.hom L L).hom) m) ∘ₗ
+      ((LocalCoefficientSystem.pullback p₀.hom).map ε ≫ (pullbackTensorIso p₀.hom L N).hom) m) ∘ₗ
     P.twistedCap ((LocalCoefficientSystem.pullback p₀.hom).obj L)
-      ((LocalCoefficientSystem.pullback p₀.hom).obj L) (ModuleCat.of R R) n p m h
+      ((LocalCoefficientSystem.pullback p₀.hom).obj N) (ModuleCat.of R R) n p m h
 
-/-- `TopPair.twistedPushforwardCap` is the change of coefficients along the copairing, the relative
-cap product with `u`, the identification `R ⊗ p₀^*L ≅ p₀^*L` and the push-forward along `p₀`. -/
+/-- `TopPair.twistedPushforwardCap` is the change of coefficients along `ε`, the relative cap
+product with `u`, the identification `R ⊗ p₀^*N ≅ p₀^*N` and the push-forward along `p₀`. -/
 lemma twistedPushforwardCap_apply {n p m : ℕ} (h : n + p = m)
     (u : P.twistedCohomology ((LocalCoefficientSystem.pullback p₀.hom).obj L) R
       (ModuleCat.of R R) n) :
     P.twistedPushforwardCap p₀ L ε n p m h u =
-      P.twistedHomologyCoefficientMap ((pullbackConstantIso p₀.hom (ModuleCat.of R R)).inv ≫
-          (LocalCoefficientSystem.pullback p₀.hom).map ε ≫ (pullbackTensorIso p₀.hom L L).hom) m ≫
+      P.twistedHomologyCoefficientMap
+          ((LocalCoefficientSystem.pullback p₀.hom).map ε ≫ (pullbackTensorIso p₀.hom L N).hom) m ≫
         P.twistedCap ((LocalCoefficientSystem.pullback p₀.hom).obj L)
-          ((LocalCoefficientSystem.pullback p₀.hom).obj L) (ModuleCat.of R R) n p m h u ≫
+          ((LocalCoefficientSystem.pullback p₀.hom).obj N) (ModuleCat.of R R) n p m h u ≫
           LocalCoefficientSystem.twistedHomologyCoefficientMap
-            (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom p ≫
-            LocalCoefficientSystem.twistedHomologyMap p₀ L p :=
+            (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom p ≫
+            LocalCoefficientSystem.twistedHomologyMap p₀ N p :=
   (rfl)
 
 variable {P' : TopPair.{v}} (φ : P' ⟶ P)
 
-/-- Pulling the copairing back along `φ` and then along `p₀`, or along their composite, gives the
-same copairing on `X'`. -/
+/-- Pulling `ε` back along `φ` and then along `p₀`, or along their composite, gives the same change
+of coefficients on `X'`. -/
 private lemma twistedHomologyCoefficientMap_pullback_copairing (m : ℕ) :
-    P'.twistedHomologyCoefficientMap
-        ((pullbackConstantIso (Hom.fst φ ≫ p₀).hom (ModuleCat.of R R)).inv ≫
-          (LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).map ε ≫
-            (pullbackTensorIso (Hom.fst φ ≫ p₀).hom L L).hom) m ≫
+    P'.twistedHomologyCoefficientMap ((pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app K) m ≫
+      P'.twistedHomologyCoefficientMap
+        ((LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).map ε ≫
+          (pullbackTensorIso (Hom.fst φ ≫ p₀).hom L N).hom) m ≫
       P'.twistedHomologyCoefficientMap
         ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L ⊗ₘ
-          (pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L) m =
+          (pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app N) m =
       P'.twistedHomologyCoefficientMap
         ((LocalCoefficientSystem.pullback (Hom.fst φ).hom).map
-          ((pullbackConstantIso p₀.hom (ModuleCat.of R R)).inv ≫
-            (LocalCoefficientSystem.pullback p₀.hom).map ε ≫
-              (pullbackTensorIso p₀.hom L L).hom)) m ≫
+          ((LocalCoefficientSystem.pullback p₀.hom).map ε ≫
+            (pullbackTensorIso p₀.hom L N).hom)) m ≫
         P'.twistedHomologyCoefficientMap
           (pullbackTensorIso (Hom.fst φ).hom ((LocalCoefficientSystem.pullback p₀.hom).obj L)
-            ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom m := by
+            ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom m := by
   simp only [← P'.twistedHomologyCoefficientMap_comp]
   congr 1
-  -- On each fibre both sides are the copairing at the same point, up to identities.
+  -- On each fibre both sides are `ε` at the same point, up to identities.
   apply NatTrans.ext
   funext x
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro r
-  -- The fibres `L.obj` at `p₀ (φ x)`, read through the composite or the iterated pull-back, agree
-  -- by definition of `FundamentalGroupoid.map`, which closes the goal by `rfl`.
-  simp only [NatTrans.comp_app, ModuleCat.hom_comp, Functor.comp_obj, Monoidal.tensorObj_obj,
-    pullback_obj_obj, TopCat.hom_comp, Monoidal.tensorHom_app, pullbackCompIso_hom_app_app,
-    pullbackTensorIso_hom_app, constantFunctor_obj_obj, pullback_map_app,
-    pullbackConstantIso_inv_app, Functor.map_comp, Category.id_comp, Category.comp_id]
+  simp only [Functor.comp_obj, Monoidal.tensorObj_obj, pullback_obj_obj, TopCat.hom_comp,
+    Category.assoc, NatTrans.comp_app, pullbackCompIso_inv_app_app, pullback_map_app,
+    pullbackTensorIso_hom_app, Monoidal.tensorHom_app, pullbackCompIso_hom_app_app,
+    Category.id_comp, Functor.map_comp, Category.comp_id]
+  -- The identities in `𝟙 _ ⊗ₘ 𝟙 _` are on the fibres of `L` and `N` at `(p₀ ∘ φ) x`, while the
+  -- composite they sit in is typed at `p₀ (φ x)`. These agree only by unfolding
+  -- `FundamentalGroupoid.map`, so the motive of `rw [id_tensorHom_id]` is ill-typed and only `erw`
+  -- rewrites it.
   erw [MonoidalCategory.id_tensorHom_id]
+  -- The fibres of `L ⊗ N` at `p₀ (φ x)`, read through the composite or the iterated pull-back,
+  -- agree by definition of `FundamentalGroupoid.map`, which closes the goal by `rfl`.
   rfl
 
-/-- The identification `R ⊗ p₀^*L ≅ p₀^*L` is compatible with pulling back along `φ`. -/
+/-- The identification `R ⊗ p₀^*N ≅ p₀^*N` is compatible with pulling back along `φ`. -/
 private lemma twistedHomologyCoefficientMap_constantTensorIso_pullback (p : ℕ) :
     LocalCoefficientSystem.twistedHomologyCoefficientMap
         ((constantFunctor P'.fst).obj (ModuleCat.of R R) ◁
-          (pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app L) p ≫
+          (pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app N) p ≫
       LocalCoefficientSystem.twistedHomologyCoefficientMap
-        (constantTensorIso ((LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).obj L)).hom p ≫
+        (constantTensorIso ((LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).obj N)).hom p ≫
       LocalCoefficientSystem.twistedHomologyCoefficientMap
-        ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L) p =
+        ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app N) p =
       LocalCoefficientSystem.twistedHomologyCoefficientMap
         (pullbackConstantTensorIso (Hom.fst φ).hom (ModuleCat.of R R)
-          ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom p ≫
+          ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom p ≫
       LocalCoefficientSystem.twistedHomologyCoefficientMap
         ((LocalCoefficientSystem.pullback (Hom.fst φ).hom).map
-          (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom) p := by
+          (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom) p := by
   simp only [← LocalCoefficientSystem.twistedHomologyCoefficientMap_comp]
   congr 1
   -- On each fibre both sides are the left unitor of the same module, up to identities.
@@ -438,33 +424,37 @@ private lemma twistedHomologyCoefficientMap_constantTensorIso_pullback (p : ℕ)
   apply ModuleCat.hom_ext
   apply TensorProduct.ext'
   intro r k
+  simp only [Functor.comp_obj, pullback_obj_obj, constantFunctor_obj_obj, Monoidal.tensorObj_obj,
+    Monoidal.whiskerLeft_app, pullbackCompIso_inv_app_app, TopCat.hom_comp,
+    constantTensorIso_hom_app, pullbackCompIso_hom_app_app, ModuleCat.hom_comp,
+    pullbackConstantTensorIso_hom_app, pullback_map_app, Category.id_comp]
   -- As above, the fibres at `p₀ (φ x)` agree by definition, which closes the goal by `rfl`.
-  simp
   rfl
 
 /-- **Naturality of the twisted push-forward cap product in maps of pairs**: for a map of pairs
 `φ : (X', A') ⟶ (X, A)` and `u ∈ Hⁿ(X, A; p₀^*L, R)`, pushing a class forward along `φ` and then
 capping with `u` and pushing forward along `p₀` is capping with `φ^*u` and pushing forward along
-`p₀ ∘ φ`, after identifying `φ^*p₀^*L` with `(p₀ ∘ φ)^*L`. -/
+`p₀ ∘ φ`, after identifying `φ^*p₀^*K` with `(p₀ ∘ φ)^*K` and `φ^*p₀^*L` with `(p₀ ∘ φ)^*L`. -/
 lemma twistedPushforwardCap_naturality {n p m : ℕ} (h : n + p = m)
     (u : P.twistedCohomology ((LocalCoefficientSystem.pullback p₀.hom).obj L) R
       (ModuleCat.of R R) n) :
-    P'.twistedPushforwardCap (Hom.fst φ ≫ p₀) L ε n p m h
+    P'.twistedHomologyCoefficientMap ((pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app K) m ≫
+      P'.twistedPushforwardCap (Hom.fst φ ≫ p₀) L ε n p m h
         (P'.twistedCohomologyCoefficientMap R (ModuleCat.of R R)
           ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L) n
           (twistedCohomologyMap R (ModuleCat.of R R) φ _ n u)) =
-      twistedHomologyMap φ ((constantFunctor P.fst).obj (ModuleCat.of R R)) m ≫
+      twistedHomologyMap φ ((LocalCoefficientSystem.pullback p₀.hom).obj K) m ≫
         P.twistedPushforwardCap p₀ L ε n p m h u := by
   rw [twistedPushforwardCap_apply, twistedPushforwardCap_apply]
-  -- The cap product with `φ^*u`, read through `φ^*p₀^*L ≅ (p₀ ∘ φ)^*L`.
+  -- The cap product with `φ^*u`, read through `φ^*p₀^*L ≅ (p₀ ∘ φ)^*L` and its analogue for `N`.
   have h₁ := congrArg (· ≫ LocalCoefficientSystem.twistedHomologyCoefficientMap
     ((constantFunctor P'.fst).obj (ModuleCat.of R R) ◁
-      (pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app L) p)
+      (pullbackCompIso (Hom.fst φ).hom p₀.hom).inv.app N) p)
     (P'.twistedCap_coefficient_naturality
       (L := (LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).obj L)
-      (K := (LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).obj L)
+      (K := (LocalCoefficientSystem.pullback (Hom.fst φ ≫ p₀).hom).obj N)
       ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L)
-      ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app L) n p m h
+      ((pullbackCompIso (Hom.fst φ).hom p₀.hom).hom.app N) n p m h
       (twistedCohomologyMap R (ModuleCat.of R R) φ _ n u))
   simp only [Category.assoc] at h₁
   rw [← LocalCoefficientSystem.twistedHomologyCoefficientMap_comp,
@@ -473,24 +463,24 @@ lemma twistedPushforwardCap_naturality {n p m : ℕ} (h : n + p = m)
   -- `whiskerLeft_id` matches only up to reducible unfolding.
   erw [MonoidalCategory.whiskerLeft_id] at h₁
   rw [LocalCoefficientSystem.twistedHomologyCoefficientMap_id, Category.comp_id] at h₁
-  -- The projection formula for `φ`, with the pull-back of `p₀^*L ⊗ p₀^*L` unfolded.
+  -- The projection formula for `φ`, with the pull-back of `p₀^*L ⊗ p₀^*N` unfolded.
   have h₂ := congrArg (P'.twistedHomologyCoefficientMap (pullbackTensorIso (Hom.fst φ).hom
     ((LocalCoefficientSystem.pullback p₀.hom).obj L)
-    ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom m ≫ ·)
+    ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom m ≫ ·)
     (twistedCap_space_naturality φ ((LocalCoefficientSystem.pullback p₀.hom).obj L)
-      ((LocalCoefficientSystem.pullback p₀.hom).obj L) (ModuleCat.of R R) n p m h u)
+      ((LocalCoefficientSystem.pullback p₀.hom).obj N) (ModuleCat.of R R) n p m h u)
   simp only [twistedHomologyCoefficientMap_hom_inv_id_assoc] at h₂
   rw [reassoc_of% TopPair.twistedHomologyMap_naturality φ
-      (L := (constantFunctor P.fst).obj (ModuleCat.of R R)), ← reassoc_of% h₂,
+      (L := (LocalCoefficientSystem.pullback p₀.hom).obj K), ← reassoc_of% h₂,
     reassoc_of% LocalCoefficientSystem.twistedHomologyMap_naturality (Hom.fst φ)
-      (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj L)).hom p,
-    LocalCoefficientSystem.twistedHomologyMap_comp (Hom.fst φ) p₀ L p, h₁]
+      (constantTensorIso ((LocalCoefficientSystem.pullback p₀.hom).obj N)).hom p,
+    LocalCoefficientSystem.twistedHomologyMap_comp (Hom.fst φ) p₀ N p, h₁]
   simp only [Category.assoc]
   rw [reassoc_of% twistedHomologyCoefficientMap_pullback_copairing,
     reassoc_of% twistedHomologyCoefficientMap_constantTensorIso_pullback]
-  -- The two sides differ by associativity and by `(pullback p₀ ⋙ pullback φ).obj L`, which is
-  -- `(pullback φ).obj ((pullback p₀).obj L)` by `Functor.comp_obj`.
-  exact Category.assoc _ _ _
+  -- The two sides differ only by `(pullback p₀ ⋙ pullback φ).obj L` and its analogue for `N`, which
+  -- are `(pullback φ).obj ((pullback p₀).obj L)` and its analogue by `Functor.comp_obj`.
+  rfl
 
 end PushforwardCap
 

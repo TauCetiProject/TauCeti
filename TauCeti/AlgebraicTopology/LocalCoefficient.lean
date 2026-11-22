@@ -318,6 +318,25 @@ theorem pullbackConstantTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}
     (pullbackConstantTensorIso f M K).inv.app x = 𝟙 _ := by
   simp [pullbackConstantTensorIso]
 
+/-- The constant system with fibre `S` is the unit of the tensor product of local systems: the left
+unitor, with the unit written as the constant system, as it appears in the target of a cap
+product with values in `S`. -/
+def constantTensorIso {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X) :
+    (constantFunctor X).obj (ModuleCat.of S S) ⊗ K ≅ K :=
+  λ_ K
+
+@[simp]
+theorem constantTensorIso_hom_app {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X)
+    (x : FundamentalGroupoid X) :
+    (constantTensorIso K).hom.app x = (λ_ (K.obj x)).hom :=
+  (rfl)
+
+@[simp]
+theorem constantTensorIso_inv_app {X : TopCat.{v₁}} (K : LocalCoefficientSystem.{w, v₁, w} S X)
+    (x : FundamentalGroupoid X) :
+    (constantTensorIso K).inv.app x = (λ_ (K.obj x)).inv :=
+  (rfl)
+
 end Tensor
 
 section Homotopy
