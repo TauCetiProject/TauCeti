@@ -18,6 +18,10 @@ integral, universally injective, surjective morphism.
 
 This criterion applies to Frobenius without imposing finiteness or reducedness assumptions.
 
+For a ring map `B → R` with `Spec R → Spec B` a universal homeomorphism and any `B`-algebra `C`,
+contraction along `C → R ⊗[B] C` is a homeomorphism of prime spectra
+(`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.isHomeomorph_comap_includeRight`).
+
 ## References
 
 * [TauCetiProject/TauCeti#18102](https://github.com/TauCetiProject/TauCeti/pull/18102) by
@@ -189,6 +193,25 @@ theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶
     IsIntegralHom.SpecMap_iff, UniversallyInjective.SpecMap_iff, surjective_iff,
     funext (Spec.map_apply φ)]
   exact Iff.rfl
+
+open scoped TensorProduct in
+/-- If `Spec R ⟶ Spec B` is a universal homeomorphism, then so is its base change
+`Spec (R ⊗[B] C) ⟶ Spec C` for every `B`-algebra `C`; in particular, contraction of prime ideals
+along `C → R ⊗[B] C` is a homeomorphism of prime spectra. -/
+theorem IsUniversalHomeomorphism.isHomeomorph_comap_includeRight {B R : Type u} [CommRing B]
+    [CommRing R] [Algebra B R]
+    [IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom (algebraMap B R)))]
+    (C : Type u) [CommRing C] [Algebra B C] :
+    IsHomeomorph (PrimeSpectrum.comap
+      (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom) := by
+  have : IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom)) :=
+    MorphismProperty.IsStableUnderBaseChange.of_isPullback (P := @IsUniversalHomeomorphism.{u})
+      (isPullback_SpecMap_of_isPushout _ _ _ _ (CommRingCat.isPushout_tensorProduct B R C))
+      inferInstance
+  have h := IsUniversalHomeomorphism.isHomeomorph (Spec.map (CommRingCat.ofHom
+    (Algebra.TensorProduct.includeRight : C →ₐ[B] R ⊗[B] C).toRingHom))
+  rwa [funext (Spec.map_apply _)] at h
 
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
