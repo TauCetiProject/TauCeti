@@ -118,22 +118,24 @@ theorem airyAi_sq_add_airyBi_sq_eq_regularizedHGFun (z : ℂ) :
 
 /-! ### Integrability and moment evaluation on `(0, ∞)` -/
 
+private theorem cpow_mul_cexp_sub_cube_div_twelve_eq {t : ℝ} (ht : 0 < t) (n : ℕ) (z : ℂ) :
+    (t : ℂ) ^ ((n : ℂ) - 1 / 2) * cexp (z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) =
+      (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) := by
+  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
+  rw [sub_eq_add_neg, cpow_add _ _ ht0, cpow_natCast, neg_div, ofReal_ofNat, cpow_ofNat,
+    show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring]
+  ring
+
 private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0 < t) (n : ℕ)
     (z : ℂ) :
     ‖(t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)‖ =
       t ^ ((n : ℝ) - 1 / 2) * Real.exp (z.re * t - 1 / 12 * t ^ (3 : ℝ)) := by
   have h := norm_cpow_mul_cexp_mul_sub_mul_cpow 3 (1 / 12) ((n : ℂ) - 1 / 2) z ht
-  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
-  have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
-  have hpow : (t : ℂ) ^ ((n : ℂ) - 1 / 2) = (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) := by
-    rw [sub_eq_add_neg, cpow_add _ _ ht0, cpow_natCast, neg_div]
   have hre : ((n : ℂ) - 1 / 2).re = (n : ℝ) - 1 / 2 := by
     rw [sub_re, natCast_re]
     norm_num
   have hb : (1 / 12 : ℂ).re = 1 / 12 := by norm_num
-  rw [hpow, h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring,
-    hre, hb] at h
-  simpa [mul_assoc, mul_left_comm, mul_comm] using h
+  rwa [cpow_mul_cexp_sub_cube_div_twelve_eq ht n z, hre, hb] at h
 
 /-- For every complex `z` and natural number `n`, the `n`-th moment integrand
 `t ↦ tⁿ exp(z t − t³ / 12) t^{−1/2}` is Bochner integrable on `(0, ∞)`. -/
@@ -148,14 +150,7 @@ theorem integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) (z : �
     linarith [n.cast_nonneg (α := ℝ)]
   refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 12)
     (s := (n : ℂ) - 1 / 2) (by norm_num) (by norm_num) hs z).congr_fun
-    (fun t (ht : 0 < t) => ?_) measurableSet_Ioi
-  dsimp only
-  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
-  have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
-  have hpow : (t : ℂ) ^ ((n : ℂ) - 1 / 2) = (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) := by
-    rw [sub_eq_add_neg, cpow_add _ _ ht0, cpow_natCast, neg_div]
-  rw [hpow, h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring]
-  ring
+    (fun t (ht : 0 < t) => cpow_mul_cexp_sub_cube_div_twelve_eq ht n z) measurableSet_Ioi
 
 /-- The integrand `t ↦ exp(z t − t³ / 12) t^{−1/2}` of DLMF 9.11.4 is Bochner integrable on
 `(0, ∞)` for every complex `z`. -/
@@ -180,9 +175,9 @@ private theorem hasSum_integral_airy_product_series (z : ℂ) :
       ∫ t in Ioi (0 : ℝ),
           (t : ℂ) ^ (-1 / 2 : ℂ) * cexp (z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) =
         ∫ t in Ioi (0 : ℝ), cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
-    have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
-    rw [h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring, mul_comm]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) => ?_
+    simpa only [Nat.cast_zero, zero_sub, pow_zero, one_mul, neg_div] using
+      cpow_mul_cexp_sub_cube_div_twelve_eq ht 0 z
   rw [hint] at hsum
   refine hsum.congr_fun fun m => ?_
   have h12 : (1 / 12 : ℂ) ^ (-((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ)) =

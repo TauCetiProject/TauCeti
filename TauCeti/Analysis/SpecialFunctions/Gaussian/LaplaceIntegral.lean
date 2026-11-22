@@ -124,10 +124,6 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_nonneg {a b s c : �
   exact mul_le_mul_of_nonneg_left
     (Real.exp_le_exp.mpr (by nlinarith [sq_nonneg u])) (by positivity)
 
-private theorem re_neg_mul_sq_sub_mul (b z : ℂ) (u : ℝ) :
-    (-b * (u : ℂ) ^ 2 - z * u).re = -b.re * u ^ 2 - z.re * u := by
-  simp [sq]
-
 /-- For `0 < u` and any `b s z : ℂ`, the norm of
 `(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
 `u ^ s.re * exp (-b.re * u ^ 2 - z.re * u)`. -/
@@ -272,7 +268,10 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left {b s₀ : 
     refine ⟨rexp (z.re ^ 2 / (2 * b.re)), ?_⟩
     filter_upwards [Filter.eventually_ge_atTop (1 : ℝ)] with u (hu : 1 ≤ u)
     have hu_sq : u ≤ u ^ 2 := by nlinarith
-    rw [Complex.norm_exp, Real.norm_of_nonneg (Real.exp_pos _).le, re_neg_mul_sq_sub_mul]
+    have hnorm := norm_cpow_mul_cexp_neg_mul_sq_sub_mul b 0 z (zero_lt_one.trans_le hu)
+    simp only [Complex.cpow_zero, one_mul, Complex.zero_re, Real.rpow_zero] at hnorm
+    dsimp only [f]
+    rw [hnorm, Real.norm_of_nonneg (Real.exp_pos _).le]
     refine (exp_neg_mul_sq_sub_mul_le hb z.re u).trans ?_
     exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith)) (Real.exp_pos _).le
   have hf_rpow : f =O[atTop] fun u : ℝ => u ^ (-(s₀.re + 1)) :=
