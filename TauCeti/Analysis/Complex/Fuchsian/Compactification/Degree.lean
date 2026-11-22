@@ -49,7 +49,7 @@ private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_cuspOrbitMk
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ∑ᶠ y : {y : Δ.CompactifiedQuotient //
         compactifiedQuotientMap h y = .ofCusp (Γ.cuspOrbitMk c)},
-      localMultiplicity (compactifiedQuotientMap h) y.1 =
+      localMultiplicity (compactifiedQuotientMap h) y.val =
         (Δ.subgroupOf Γ).index := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let Q := Γ ⧸ Δ.subgroupOf Γ
@@ -58,17 +58,17 @@ private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_cuspOrbitMk
   -- a coset `gΔ` gives the adjoined cusp of the `Δ`-orbit of `g⁻¹ • c`
   let φ : Q → F := fun r =>
     cuspOrbitFiberEquivCompactifiedFiber h _ ((cuspOrbitFiberEquivBoundaryOrbitFiber h _).symm
-      ⟨(TauCeti.cosetToOrbitRelMapFiber h (c : OnePoint ℝ) r).1,
-        (TauCeti.cosetToOrbitRelMapFiber h (c : OnePoint ℝ) r).2.trans
+      ⟨(TauCeti.cosetToOrbitRelMapFiber h (c : OnePoint ℝ) r).val,
+        (TauCeti.cosetToOrbitRelMapFiber h (c : OnePoint ℝ) r).property.trans
           (cuspOrbitMk_val c).symm⟩)
   have hφ_eq_iff (r s : Q) :
       φ r = φ s ↔ TauCeti.orbitOfCosetTranslate (c : OnePoint ℝ) r =
         TauCeti.orbitOfCosetTranslate (𝒢 := Δ) (c : OnePoint ℝ) s := by
     simp only [φ, EmbeddingLike.apply_eq_iff_eq, Subtype.mk.injEq,
       TauCeti.cosetToOrbitRelMapFiber_apply]
-  have hφ_mk (g : Γ) : (φ (g : Q)).1 = ofCusp (Δ.cuspOrbitMk ⟨g⁻¹ • (c : OnePoint ℝ),
+  have hφ_mk (g : Γ) : (φ (g : Q)).val = ofCusp (Δ.cuspOrbitMk ⟨g⁻¹ • (c : OnePoint ℝ),
       mem_cuspPoints.mpr (IsCuspPoint.of_isFiniteRelIndex
-        ((mem_cuspPoints.mp c.2).smul g⁻¹))⟩) := by
+        ((mem_cuspPoints.mp c.property).smul g⁻¹))⟩) := by
     simp only [φ, cuspOrbitFiberEquivCompactifiedFiber_apply]
     congr 1
     apply Subtype.ext
@@ -79,14 +79,14 @@ private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_cuspOrbitMk
     obtain ⟨D, rfl⟩ := (cuspOrbitFiberEquivCompactifiedFiber h _).surjective y
     obtain ⟨q, rfl⟩ := (cuspOrbitFiberEquivBoundaryOrbitFiber h _).symm.surjective D
     obtain ⟨r, hr⟩ := TauCeti.cosetToOrbitRelMapFiber_surjective h (c : OnePoint ℝ)
-      ⟨q.1, q.2.trans (cuspOrbitMk_val c)⟩
+      ⟨q.val, q.property.trans (cuspOrbitMk_val c)⟩
     refine ⟨r, ?_⟩
     simp only [φ, hr]
   have : Finite F := finite_fiber_compactifiedQuotientMap h _
   let : Fintype F := Fintype.ofFinite F
   -- each point of the fibre is the image of as many cosets as its local multiplicity
   have hweight (y : F) : Nat.card {r : Q // φ r = y} =
-      localMultiplicity (compactifiedQuotientMap h) y.1 := by
+      localMultiplicity (compactifiedQuotientMap h) y.val := by
     obtain ⟨r, rfl⟩ := hφ_surj y
     induction r using QuotientGroup.induction_on with
     | H g =>
@@ -105,7 +105,7 @@ theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_ofCusp
     [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] (C : Γ.CuspOrbit) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ∑ᶠ y : {y : Δ.CompactifiedQuotient // compactifiedQuotientMap h y = .ofCusp C},
-      localMultiplicity (compactifiedQuotientMap h) y.1 =
+      localMultiplicity (compactifiedQuotientMap h) y.val =
         (Δ.subgroupOf Γ).index := by
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
   exact sum_localMultiplicity_compactifiedQuotientMap_fiber_cuspOrbitMk h c

@@ -146,7 +146,8 @@ private theorem valuation_sum_mul_le_exp_neg_ramificationIdx {a c : ℕ} {Q₀ :
   have hb1 : Q₀.valuation (algebraMap F F' ((b q : F))) ≤ 1 := by
     refine Q₀.mem_integers_iff.mp (Q₀.mem_integers_iff_ord_nonneg.mpr ?_)
     rw [ord_algebraMap_restrict k F Q₀ ((b q : F))]
-    exact mul_nonneg (by positivity) ((Q₀.restrict k F).mem_integers_iff_ord_nonneg.mp (b q).2)
+    exact mul_nonneg (by positivity) ((Q₀.restrict k F).mem_integers_iff_ord_nonneg.mp
+        (b q).property)
   have hwval : Q₀.valuation (w q.1) ≤ WithZero.exp (-(ramificationIdx F Q₀ : ℤ)) := by
     have hne : w q.1 ≠ 0 := by
       intro h
@@ -251,7 +252,7 @@ private theorem linearIndependent_mul_pow_of_forall_linearIndependent_residue {�
       (Q i₀).valuation (Z m) ≤ WithZero.exp (-(ramificationIdx F (Q i₀) : ℤ)) := fun m hm ↦
     valuation_sum_mul_le_exp_neg_ramificationIdx k F (fun q ↦ b ⟨m, q⟩)
       (fun j ↦ hwN m j i₀ (Ne.symm hm)) (hτint m i₀ (Ne.symm hm))
-  exact false_of_sum_eq_zero_of_valuation_lt F hZsum hZne hZord l₀.2 hZm
+  exact false_of_sum_eq_zero_of_valuation_lt F hZsum hZne hZord l₀.isLt hZm
 
 /-- **The fundamental inequality**, for a family of places indexed by a finite type. This is the
 form the proof produces; `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_le_finrank` is the
@@ -280,7 +281,7 @@ private theorem sum_relativeDegree_mul_ramificationIdx_le_finrank {ι : Type*} [
     intro i j
     have h1 : (Q i).valuation (w i j - (z i j : F')) ≤ 1 :=
       (Q i).mem_integers_iff.mp ((Q i).mem_integers_iff_ord_nonneg.mpr (by rw [hw i j]; omega))
-    have h2 : (Q i).valuation ((z i j : F')) ≤ 1 := (Q i).mem_integers_iff.mp (z i j).2
+    have h2 : (Q i).valuation ((z i j : F')) ≤ 1 := (Q i).mem_integers_iff.mp (z i j).property
     have h3 := (Q i).valuation.map_add_le h1 h2
     rw [show w i j - (z i j : F') + (z i j : F') = w i j by ring] at h3
     exact (Q i).mem_integers_iff.mpr h3
@@ -320,7 +321,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_le_finrank (P : Place k F)
     ∑ P' ∈ s, ramificationIdx F P' * relativeDegree k F P' ≤ Module.finrank F F' := by
   have key := sum_relativeDegree_mul_ramificationIdx_le_finrank k F
     (Q := fun P' : {P' // P' ∈ s} ↦ (P' : Place k' F')) Subtype.val_injective
-    (P := P) fun P' ↦ hs P' P'.2
+    (P := P) fun P' ↦ hs P' P'.property
   rw [← Finset.sum_coe_sort s fun P' ↦ ramificationIdx F P' * relativeDegree k F P']
   exact le_trans (le_of_eq (Finset.sum_congr rfl fun P' _ ↦ mul_comm _ _)) key
 

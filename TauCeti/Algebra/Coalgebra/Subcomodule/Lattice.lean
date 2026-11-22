@@ -85,7 +85,7 @@ instance instSupSet : SupSet (Subcomodule R C M) where
           (by
             simp only [Submodule.range_subtype]
             exact le_iSup (fun N : S ↦ (N : Subcomodule R C M).toSubmodule) N)
-          le_rfl (N.1.coact_mem hm) }
+          le_rfl (N.val.coact_mem hm) }
 
 /-- The underlying submodule of the join is the join of the underlying submodules. -/
 @[simp]
@@ -153,7 +153,7 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcomodule R C M)
     · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
       exact le_iSup (fun P : S ↦ (P : Subcomodule R C M).toSubmodule) ⟨N, hN⟩
     · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
-      exact iSup_le fun P ↦ toSubmodule_le_toSubmodule.2 (hN P.2)
+      exact iSup_le fun P ↦ toSubmodule_le_toSubmodule.2 (hN P.property)
 
 /-- The carrier of a nonempty directed supremum of subcomodules is the union of their carriers. -/
 @[simp]
@@ -182,10 +182,10 @@ carriers. -/
 @[simp]
 theorem coe_sSup_of_directedOn {S : Set (Subcomodule R C M)} (hS : S.Nonempty)
     (hdir : DirectedOn (· ≤ ·) S) :
-    ((sSup S : Subcomodule R C M) : Set M) = ⋃ N : S, (N.1 : Set M) := by
+    ((sSup S : Subcomodule R C M) : Set M) = ⋃ N : S, (N.val : Set M) := by
   let : Nonempty S := hS.to_subtype
   rw [sSup_eq_iSup']
-  exact coe_iSup_of_directed (fun N : S ↦ N.1) hdir.directed_val
+  exact coe_iSup_of_directed (fun N : S ↦ N.val) hdir.directed_val
 
 /-- Membership in the supremum of a nonempty directed set of subcomodules reduces to membership
 in one member of the set. -/
@@ -194,7 +194,7 @@ theorem mem_sSup_of_directedOn {S : Set (Subcomodule R C M)} (hS : S.Nonempty)
     (hdir : DirectedOn (· ≤ ·) S) {m : M} :
     m ∈ sSup S ↔ ∃ N ∈ S, m ∈ N := by
   let : Nonempty S := hS.to_subtype
-  simp only [sSup_eq_iSup', mem_iSup_of_directed (fun N : S ↦ N.1) hdir.directed_val,
+  simp only [sSup_eq_iSup', mem_iSup_of_directed (fun N : S ↦ N.val) hdir.directed_val,
     SetCoe.exists, exists_prop]
 
 /-- The join of finitely generated subcomodules is finitely generated as an `R`-module. -/

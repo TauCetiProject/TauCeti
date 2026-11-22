@@ -31,7 +31,8 @@ type counts the components of the represented link.
 ## Main results
 
 * `Equiv.Perm.IsCycle.pow_apply_eq_self_iff`: `(f ^ n) x = x` holds for one point moved by the
-  cycle exactly when it holds for all of them, namely exactly when `orderOf f ∣ n`.
+  cycle exactly when it holds for all of them, namely exactly when `orderOf f ∣ n`. Unlike
+  Mathlib's `Equiv.Perm.IsCycle.pow_eq_one_iff'`, this needs no finiteness of the underlying type.
 * `Equiv.Perm.IsCycle.cycleType_pow_of_not_dvd`: for `n ∤ k`, the cycle type of `f ^ k` is
   `gcd n k` copies of `n / gcd n k`.
 
@@ -54,11 +55,20 @@ open Equiv Equiv.Perm
 
 /-- A power of a cycle fixes a point moved by the cycle exactly when the exponent is a multiple
 of the order of the cycle. Since the right-hand side does not depend on the point, a power of a
-cycle either moves every point the cycle moves, or fixes all of them. -/
+cycle either moves every point the cycle moves, or fixes all of them.
+
+The underlying type need not be finite: a cycle of infinite order has `orderOf f = 0`, and then
+only `f ^ 0` fixes a moved point. -/
 @[simp]
-theorem _root_.Equiv.Perm.IsCycle.pow_apply_eq_self_iff {β : Type*} [Finite β] {f : Perm β}
+theorem _root_.Equiv.Perm.IsCycle.pow_apply_eq_self_iff {β : Type*} {f : Perm β}
     (hf : f.IsCycle) {n : ℕ} {x : β} (hx : f x ≠ x) : (f ^ n) x = x ↔ orderOf f ∣ n := by
-  rw [← hf.pow_eq_one_iff' hx, orderOf_dvd_iff_pow_eq_one]
+  rw [orderOf_dvd_iff_pow_eq_one]
+  refine ⟨fun h => Perm.ext fun y => ?_, fun h => by rw [h, Perm.one_apply]⟩
+  by_cases hy : f y = y
+  · rw [pow_apply_eq_self_of_apply_eq_self hy, Perm.one_apply]
+  · -- `y = (f ^ i) x` for some `i`, and powers of `f` commute, so `f ^ n` also fixes `y`
+    obtain ⟨i, rfl⟩ := hf.exists_zpow_eq hx hy
+    rw [← zpow_natCast, zpow_apply_comm, zpow_natCast, h, Perm.one_apply]
 
 variable {α : Type*} [DecidableEq α] [Fintype α] {f : Perm α}
 
@@ -67,23 +77,17 @@ variable {α : Type*} [DecidableEq α] [Fintype α] {f : Perm α}
 private theorem card_support_of_mem_cycleFactorsFinset_pow (hf : f.IsCycle) {k : ℕ} {c : Perm α}
     (hc : c ∈ (f ^ k).cycleFactorsFinset) :
     c.support.card = f.support.card / f.support.card.gcd k := by
-  have horder : orderOf (f ^ k) = f.support.card / f.support.card.gcd k := by
-    rw [orderOf_pow, hf.orderOf]
   have hcyc : c.IsCycle := (mem_cycleFactorsFinset_iff.mp hc).1
   obtain ⟨x, hx, -⟩ := id hcyc
-  have hxf : x ∈ f.support :=
+  have hxf : f x ≠ x := mem_support.mp <|
     support_pow_le f k (mem_cycleFactorsFinset_support_le hc (mem_support.mpr hx))
   have hcx : c = (f ^ k).cycleOf x := cycle_is_cycleOf (mem_support.mpr hx) hc
-  rw [← hcyc.orderOf, ← horder]
-  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_) (orderOf_dvd_of_pow_eq_one ?_)
-  · -- `c` raised to the order of `f ^ k` fixes `x`, hence is the identity.
-    refine (hcyc.pow_eq_one_iff' hx).mpr ?_
-    rw [hcx, cycleOf_pow_apply_self, pow_orderOf_eq_one, one_apply]
-  · -- conversely `f ^ k` raised to the order of `c` fixes `x`, hence is the identity.
-    have hfix : (f ^ (k * orderOf c)) x = x := by
-      rw [pow_mul, ← cycleOf_pow_apply_self, ← hcx, pow_orderOf_eq_one, one_apply]
-    rw [← pow_mul]
-    exact orderOf_dvd_iff_pow_eq_one.mp ((hf.pow_apply_eq_self_iff (mem_support.mp hxf)).mp hfix)
+  -- the right-hand side is the order of `f ^ k`
+  rw [← hcyc.orderOf, ← hf.orderOf, ← orderOf_pow]
+  refine orderOf_eq_orderOf_iff.mpr fun m => ?_
+  -- both `c ^ m = 1` and `(f ^ k) ^ m = 1` are decided by whether `(f ^ k) ^ m` fixes `x`
+  rw [hcyc.pow_eq_one_iff' hx, hcx, cycleOf_pow_apply_self, ← pow_mul]
+  exact (hf.pow_apply_eq_self_iff hxf).trans orderOf_dvd_iff_pow_eq_one
 
 /-- The cycle type of a power of a cycle: writing `n = f.support.card` for the length of the
 cycle, the permutation `f ^ k` is a product of `gcd n k` disjoint cycles, each of length
@@ -98,9 +102,8 @@ theorem _root_.Equiv.Perm.IsCycle.cycleType_pow_of_not_dvd (hf : f.IsCycle) {k :
   have hd : f.support.card.gcd k ∣ f.support.card := Nat.gcd_dvd_left _ _
   have hsupp : (f ^ k).support = f.support := hf.support_pow_eq_iff.mpr (by rwa [hf.orderOf])
   have hrep : (f ^ k).cycleType =
-      Multiset.replicate (f ^ k).cycleType.card
-        (f.support.card / f.support.card.gcd k) := by
-    refine Multiset.eq_replicate.mpr ⟨rfl, fun m hm => ?_⟩
+      Multiset.replicate (f ^ k).cycleType.card (f.support.card / f.support.card.gcd k) := by
+    refine Multiset.eq_replicate_card.mpr fun m hm => ?_
     rw [cycleType_def, Multiset.mem_map] at hm
     obtain ⟨c, hc, rfl⟩ := hm
     exact card_support_of_mem_cycleFactorsFinset_pow hf hc

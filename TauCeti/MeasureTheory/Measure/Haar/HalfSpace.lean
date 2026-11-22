@@ -43,7 +43,8 @@ almost-everywhere representative of a half-space.
 
 * `TauCeti.eq_setOf_inner_lt_or_le_of_forall_inner_nonpos`: the exact classification.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
-* `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`: the exact half-ball measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
 
@@ -193,6 +194,17 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall
     simpa only [← hAB] using hu
   exact (ENNReal.eq_div_iff (by norm_num) (by norm_num)).2 (by
     simpa only [two_mul] using hsum)
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` also cuts every closed ball centred on its boundary
+hyperplane into two equal parts, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) :
+    μ ({y | c < ⟪y, ν⟫} ∩ closedBall x r) = μ (closedBall x r) / 2 := by
+  have h : {y : E | c < ⟪y, ν⟫} = {y | ⟪y, -ν⟫ < -c} := by
+    ext y
+    simp only [mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
+  rw [h, μ.addHaar_setOf_inner_lt_inter_closedBall (neg_ne_zero.2 hν) (by rw [inner_neg_right, hx])]
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/

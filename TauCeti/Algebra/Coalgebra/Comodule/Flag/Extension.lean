@@ -101,7 +101,7 @@ theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
     omega
   rw [coefficientMatrix_apply, hb]
-  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
+  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).property)
     ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦
       LinearMap.congr_fun hcoord ⟨w, Subcomodule.mem_carrier.1 hw⟩)
 
@@ -114,8 +114,8 @@ variable [AddCommGroup M] [Module k M] [Comodule k C M]
 /-- The tautological linear equivalence between a subcomodule and the subtype of its exposed
 underlying submodule. -/
 private def toSubmoduleEquiv (N : Subcomodule k C M) : N ≃ₗ[k] N.toSubmodule where
-  toFun x := ⟨x, x.2⟩
-  invFun x := ⟨x, x.2⟩
+  toFun x := ⟨x, x.property⟩
+  invFun x := ⟨x, x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FinitePresentation
+public import TauCeti.Algebra.Colimit.Ring.Basic
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
 import Mathlib.Data.Fintype.Order
 
@@ -29,6 +30,10 @@ maps with the same base change agree at a later stage. For `S` and `M` finite é
 full faithfulness half of the statement that finite étale algebras over a directed colimit of
 rings are the directed 2-colimit of finite étale algebras over the stages.
 
+Over the base ring `ℤ`, the factorization statement also applies to Mathlib's `Ring.DirectLimit`:
+for a directed system of commutative rings `G i` indexed by a nonempty directed preorder, a ring
+homomorphism from a finitely presented ring into `Ring.DirectLimit G f` factors through some stage.
+
 Mathlib proves the first two statements for colimit cocones in `Under R` over `CommRingCat`
 (`RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit` and
 `RingHom.EssFiniteType.exists_comp_map_eq_of_isColimit`, in
@@ -40,6 +45,9 @@ the concrete colimit `DirectLimit` of a directed system of algebras.
 * `TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation`: an `A`-algebra map from a
   finitely presented `A`-algebra into a directed colimit of `A`-algebras factors through some
   stage.
+* `RingHom.exists_of_comp_eq_of_finitePresentation`: for a directed system of commutative rings
+  indexed by a nonempty directed preorder, a ring homomorphism from a finitely presented ring into
+  `Ring.DirectLimit G f` factors through some stage.
 * `TauCeti.DirectLimit.Algebra.exists_comp_eq_comp_of_finiteType`: two `A`-algebra maps from an
   `A`-algebra of finite type into a stage which agree in the colimit agree at a later stage.
 * `TauCeti.DirectLimit.Algebra.exists_eq_rTensor_comp_of_finitePresentation`,
@@ -169,7 +177,7 @@ theorem exists_eq_comp_of_finitePresentation [Algebra.FinitePresentation A S]
     simp [ψ₀, hx]
   -- Each of the finitely many relations dies at some later stage.
   have hrel (r : s) : ∃ m, ∃ him : i ≤ m, f i m him (ψ₀ r) = 0 := by
-    have hr : π r = 0 := RingHom.mem_ker.mp (hs ▸ Ideal.subset_span r.2)
+    have hr : π r = 0 := RingHom.mem_ker.mp (hs ▸ Ideal.subset_span r.property)
     obtain ⟨m, him, hm⟩ := (DirectLimit.exists_eq_zero (f := (f · · ·)) ⟨i, ψ₀ r⟩).mp <| by
       simpa [hr] using congr($hψ₀ r)
     exact ⟨m, him, hm⟩
@@ -224,3 +232,31 @@ end CommRing
 end DirectLimit.Algebra
 
 end TauCeti
+
+namespace RingHom
+
+variable {ι : Type*} [Preorder ι] [Nonempty ι] [IsDirectedOrder ι] {G : ι → Type*}
+  [∀ i, CommRing (G i)] {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)]
+
+/-- Let `G i` be a directed system of commutative rings, indexed by a nonempty directed preorder,
+with transition maps `f i j`, and let `S` be a finitely presented ring (a finitely presented
+`ℤ`-algebra). Then every ring homomorphism `g : S →+* Ring.DirectLimit G f` factors through some
+stage: `g = (Ring.DirectLimit.of G f i).comp g'` for some `i` and some `g' : S →+* G i`. This is
+the surjectivity half of the statement that `Hom(S, -)` commutes with directed colimits for a
+finitely presented ring `S`. -/
+theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
+    [Algebra.FinitePresentation ℤ S] (g : S →+* Ring.DirectLimit G (f · · ·)) :
+    ∃ i, ∃ g' : S →+* G i, (Ring.DirectLimit.of G (f · · ·) i).comp g' = g := by
+  -- View `G` as a directed system of `ℤ`-algebras, identify the two colimits along
+  -- `ringEquivOfEq`, and apply `exists_eq_comp_of_finitePresentation` over the base ring `ℤ`.
+  let F i j (hij : i ≤ j) : G i →ₐ[ℤ] G j := (f i j hij).toIntAlgHom
+  have hF i j hij x : F i j hij x = f i j hij x := (f i j hij).toIntAlgHom_apply x
+  have : DirectedSystem G (F · · ·) := by
+    simpa only [F, RingHom.toIntAlgHom_coe] using (inferInstance : DirectedSystem G (f · · ·))
+  set e := TauCeti.Ring.DirectLimit.ringEquivOfEq hF with he
+  obtain ⟨i, ψ, hψ⟩ := TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation
+    (e.toRingHom.comp g).toIntAlgHom
+  refine ⟨i, ψ, RingHom.ext fun a ↦ e.injective ?_⟩
+  simpa [he] using (congr($hψ a)).symm
+
+end RingHom

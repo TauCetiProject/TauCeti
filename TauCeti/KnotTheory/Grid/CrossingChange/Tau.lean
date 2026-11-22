@@ -6,17 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Grading
+public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
+public import TauCeti.KnotTheory.Grid.Move.Tau
 import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
+import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
 
 /-!
-# Crossing change maps and the invariant `τ`
+# Crossing change maps, the invariant `τ`, and the unknotting bound
 
 Let `C` be a column turn at the columns `a = C.column` and `b = finRotate n a` of a grid diagram
 `G`, and let `G' = G.swapColumns a b`. Write `Φ : GC⁻(G) → GC⁻(G')` for the commutation map of
 `C` and `Ψ : GC⁻(G') → GC⁻(G)` for the commutation map of `G'` turning at the same columns in
 another row `t`; the target of `Ψ` is the complex of `G'.swapColumns a b`, which is `G`. This file
-turns the chain homotopies of the crossing change maps into the crossing change inequality for `τ`.
+proves the unconditional crossing-change inequalities for `τ` and deduces the lower bound
+`|τ(K)| ≤ u(K)` on the unknotting number of a grid knot.
 
 The comparison along a single column turn is in `Homology/Commutation/Tau.lean`: if
 `ΨΦ` is chain homotopic to multiplication by `p` with `p(U, …, U) = U ^ k`, then `GH⁻(G')` is not
@@ -24,39 +28,47 @@ torsion if `GH⁻(G)` is not (`GridDiagram.IsKnot.not_isTorsion_swapColumns_of_h
 `τ(G')` is at most `τ(G)` minus the Alexander degree of `Φ`
 (`GridDiagram.IsKnot.tau_swapColumns_le_of_homotopy`).
 
-The main application is to a crossing change. If the segments of the columns `a` and `b`
-interleave with `O_a` on the arc of column `b`, the crossing change maps are the commutation map
-`Φ` turning in the row of `O_a`, of Alexander degree `0`, and the commutation map `Ψ` of `G'`
-turning in the row of `X_b`, of Alexander degree `-1`
+If the segments of the columns `a` and `b` interleave with `O_a` on the arc of column `b`, the
+crossing change maps are the commutation map `Φ` turning in the row of `O_a`, of Alexander degree
+`0`, and the commutation map `Ψ` of `G'` turning in the row of `X_b`, of Alexander degree `-1`
 (`GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc` and
-`GridDiagram.commutationBidegree_eq_of_notMem_columnArc`). Ozsváth, Stipsicz and Szabó show that
-both composites are chain homotopic to multiplication by a variable, `ΨΦ` to `V_b` and `ΦΨ` to
-`V_a`, with the hexagon-counting maps `GridDiagram.crossingChangeHomotopy` as the homotopies; these
-homotopy equations are in `CrossingChange/Homotopy/Equation.lean`. Together they give
-`τ(G) - 1 ≤ τ(G') ≤ τ(G)` (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`). No
-assumption that `GH⁻` is non-torsion is needed here: the two composites show that `GH⁻(G)` and
-`GH⁻(G')` are torsion together, and then both invariants vanish. With `O_a` off the arc of column
-`b`, the markings of `G'` are in the first order and exchanging its columns returns `G`, so
-`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one. This is the inequality from
-which the bound of `|τ|` by the unknotting number follows.
+`GridDiagram.commutationBidegree_eq_of_notMem_columnArc`). By the crossing-change homotopy
+equations (`CrossingChange/Homotopy/Equation.lean`), `ΨΦ` and `ΦΨ` are chain homotopic to
+multiplication by `V_b` and `V_a`, so `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
+(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`) with no non-torsion assumption: the
+two composites show that `GH⁻(G)` and `GH⁻(G')` are torsion together, when both invariants vanish.
+In the opposite cyclic order `τ(G) ≤ τ(G') ≤ τ(G) + 1`
+(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`), so `|τ(G') - τ(G)| ≤ 1`
+(`GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`). Diagonal reflection preserves `τ`
+(`GridDiagram.IsKnot.tau_transpose` in `Homology/Tau.lean`) and exchanges row and column
+cross-commutations, so any cross-commutation changes `τ` by at most `1`
+(`GridDiagram.IsKnot.natAbs_tau_sub_le_one_of_isCrossCommutation`).
+
+Passing to `GridLink` modulo grid moves, `τ` is `1`-Lipschitz along the crossing-change graph
+(`GridLink.IsKnot.natAbs_tau_sub_le_edist`). Evaluating at the unknot over any field of
+characteristic two gives `|τ(L)| ≤ u(L)` (`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`).
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`: **the crossing change
-  inequality**, `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across every crossing change with `O_a` on the arc of
-  column `b`.
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`:
-  `τ(G) ≤ τ(G') ≤ τ(G) + 1` across every crossing change with `O_a` off the arc of column `b`.
-* `TauCeti.GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`: `|τ(G') - τ(G)| ≤ 1` across
-  every crossing change.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`,
+  `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`, and
+  `TauCeti.GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`: **the unconditional
+  crossing-change inequalities** for interleaving adjacent columns.
+* `TauCeti.GridDiagram.IsKnot.natAbs_tau_sub_le_one_of_isCrossCommutation` and
+  `TauCeti.GridLink.IsCrossingChange.natAbs_tau_sub_le_one`: a cross-commutation or crossing change
+  changes `τ` by at most `1`.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_sub_le_edist`: `|τ(L) - τ(L')|` is bounded by the
+  crossing-change graph distance.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_le_unknottingNumber`: **the unknotting bound**
+  `|τ(L)| ≤ u(L)` over any field of characteristic two.
 
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
   and Monographs 208, 2015, Sections 6.1 and 6.2: the crossing change maps, their composites, and
-  the resulting inequality for `τ`.
+  the bound `|τ(K)| ≤ u(K)` (Corollary 6.2.4).
 * S. Sarkar, *Grid diagrams and the Ozsváth--Szabó tau-invariant*, Math. Res. Lett. 18 (2011),
-  arXiv:1011.5265: the crossing change inequality for `τ` from grid diagrams.
+  arXiv:1011.5265: the crossing change inequality and unknotting bound from grid diagrams.
 -/
 
 public section
@@ -155,8 +167,145 @@ theorem abs_tau_swapColumns_sub_tau_le_one {a : Fin n}
   · have key := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc K h hO
     exact ⟨by linarith [key.2], by linarith [key.1]⟩
 
+/-- Exchanging two cyclically adjacent interleaving columns of a knot grid changes `τ` by at most
+`1`. -/
+theorem natAbs_tau_swapColumns_sub_le_one {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a)) :
+    ((hG.swapColumns a (finRotate n a)).tau K - hG.tau K).natAbs ≤ 1 := by
+  simpa only [Int.abs_eq_natAbs, Nat.cast_le_one] using hG.abs_tau_swapColumns_sub_tau_le_one K h
+
+/-- A column cross-commutation between knot grids changes `τ` by at most `1`. -/
+theorem natAbs_tau_sub_le_one_of_isColumnCrossCommutation {H : GridDiagram n} (hH : H.IsKnot)
+    (h : G.IsColumnCrossCommutation H) :
+    (hH.tau K - hG.tau K).natAbs ≤ 1 := by
+  rcases (isColumnCrossCommutation_iff G H).mp h with ⟨a, ha, rfl⟩
+  exact hG.natAbs_tau_swapColumns_sub_le_one K ha
+
+/-- A row cross-commutation between knot grids changes `τ` by at most `1`. -/
+theorem natAbs_tau_sub_le_one_of_isRowCrossCommutation {H : GridDiagram n} (hH : H.IsKnot)
+    (h : G.IsRowCrossCommutation H) :
+    (hH.tau K - hG.tau K).natAbs ≤ 1 := by
+  have hG' : G.transpose.IsKnot := G.isKnot_transpose.mpr hG
+  have hH' : H.transpose.IsKnot := H.isKnot_transpose.mpr hH
+  simpa only [tau_transpose] using hG'.natAbs_tau_sub_le_one_of_isColumnCrossCommutation K hH'
+    ((isColumnCrossCommutation_transpose G H).mpr h)
+
+/-- Any cross-commutation (row or column) between knot grids changes `τ` by at most `1`. -/
+theorem natAbs_tau_sub_le_one_of_isCrossCommutation {H : GridDiagram n} (hH : H.IsKnot)
+    (h : G.IsCrossCommutation H) :
+    (hH.tau K - hG.tau K).natAbs ≤ 1 := by
+  rcases (isCrossCommutation_iff G H).mp h with h | h
+  · exact hG.natAbs_tau_sub_le_one_of_isRowCrossCommutation K hH h
+  · exact hG.natAbs_tau_sub_le_one_of_isColumnCrossCommutation K hH h
+
 end IsKnot
 
+/-! ### Cross-commutation bounds on knot diagrams -/
+
+/-- A column cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsColumnCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff _ _).mp h
+  exact Nat.cast_le.mp
+    ((Int.natCast_natAbs _).trans_le (hG.abs_tau_swapColumns_sub_tau_le_one K ha))
+
+/-- A row cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsRowCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  simpa only [IsKnot.tau_transpose] using
+    ((G.isColumnCrossCommutation_transpose G').mpr h).natAbs_tau_sub_le_one
+      ((G.isKnot_transpose).mpr hG) ((G'.isKnot_transpose).mpr hG') K
+
+/-- Any cross-commutation (of rows or columns) between knot grid diagrams alters `τ` by at most
+`1`. -/
+theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  rcases (isCrossCommutation_iff _ _).mp h with h | h
+  · exact h.natAbs_tau_sub_le_one hG hG' K
+  · exact h.natAbs_tau_sub_le_one hG hG' K
+
 end GridDiagram
+
+/-! ### Crossing changes, graph distance, and the unknotting bound on grid knots -/
+
+namespace GridLink
+
+/-- A single crossing change between grid knots changes `τ` by at most `1`. -/
+theorem IsCrossingChange.natAbs_tau_sub_le_one {L L' : GridLink} (h : IsCrossingChange L L')
+    (hL : L.IsKnot) (hL' : L'.IsKnot) (K : Type*) [CommRing K] [CharP K 2] :
+    (hL'.tau K - hL.tau K).natAbs ≤ 1 := by
+  obtain ⟨n, G, G', hcross, rfl, rfl⟩ := (isCrossingChange_iff L L').mp h
+  rw [IsKnot.tau_toGridLink, IsKnot.tau_toGridLink]
+  exact ((isKnot_toGridLink G).mp hL).natAbs_tau_sub_le_one_of_isCrossCommutation K
+    ((isKnot_toGridLink G').mp hL') hcross
+
+namespace IsKnot
+
+/-- Along any walk in the crossing-change graph starting at a knot, `τ` changes by at most the
+length of the walk. -/
+theorem natAbs_tau_sub_le_walk_length {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] (w : crossingChangeGraph.Walk L L') :
+    (hL.tau K - hL'.tau K).natAbs ≤ w.length := by
+  induction w with
+  | nil => simp
+  | @cons _ v _ hadj w ih =>
+    have hcross : IsCrossingChange _ v := (crossingChangeGraph_adj.mp hadj).2
+    have hv : v.IsKnot := hcross.isKnot_iff.mpr hL
+    have hstep := hcross.natAbs_tau_sub_le_one hL hv K
+    have hrest := ih hv hL'
+    simp only [SimpleGraph.Walk.length_cons]
+    omega
+
+/-- **`τ` is `1`-Lipschitz on the crossing-change graph.** For any two grid knots `L` and `L'`,
+`|τ(L) - τ(L')|` is bounded by the extended distance `crossingChangeGraph.edist L L'`. -/
+theorem natAbs_tau_sub_le_edist {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    ((hL.tau K - hL'.tau K).natAbs : ℕ∞) ≤ crossingChangeGraph.edist L L' := by
+  rw [SimpleGraph.edist_eq_sInf, le_sInf_iff]
+  rintro _ ⟨w, rfl⟩
+  exact Nat.cast_le.mpr (hL.natAbs_tau_sub_le_walk_length hL' K w)
+
+/-- **The unknotting bound `|τ(L)| ≤ u(L)`.** Over any field of characteristic two, the absolute
+value of `τ(L)` of a grid knot `L` is at most its unknotting number. -/
+theorem natAbs_tau_le_unknottingNumber {L : GridLink} (hL : L.IsKnot)
+    (K : Type*) [Field K] [CharP K 2] :
+    ((hL.tau K).natAbs : ℕ∞) ≤ L.unknottingNumber := by
+  simpa only [unknottingNumber_def, tau_unknot, sub_zero] using
+    hL.natAbs_tau_sub_le_edist isKnot_unknot K
+
+end IsKnot
+
+/-- For a grid link `L` with finite unknotting number, `(τ(L)).natAbs ≤ u(L).toNat` over any field
+of characteristic two. -/
+theorem natAbs_tau_le_toNat_unknottingNumber {L : GridLink} (h : L.unknottingNumber ≠ ⊤)
+    (K : Type*) [Field K] [CharP K 2] :
+    ((isKnot_of_unknottingNumber_ne_top h).tau K).natAbs ≤ L.unknottingNumber.toNat :=
+  ENat.natCast_le_natCast.mp <| by
+    rw [ENat.natCast_toNat h]
+    exact (isKnot_of_unknottingNumber_ne_top h).natAbs_tau_le_unknottingNumber K
+
+/-- For a grid link `L` with finite unknotting number, `|τ(L)| ≤ u(L).toNat` as integers over any
+field of characteristic two. -/
+theorem abs_tau_le_toNat_unknottingNumber {L : GridLink} (h : L.unknottingNumber ≠ ⊤)
+    (K : Type*) [Field K] [CharP K 2] :
+    |(isKnot_of_unknottingNumber_ne_top h).tau K| ≤ (L.unknottingNumber.toNat : ℤ) := by
+  rw [Int.abs_eq_natAbs]
+  exact Nat.cast_le.mpr (natAbs_tau_le_toNat_unknottingNumber h K)
+
+end GridLink
+
+/-- **The unknotting bound on a knot grid diagram.** Over any field of characteristic two, the
+absolute value of `τ(G)` is at most the unknotting number of the grid knot presented by `G`. -/
+theorem GridDiagram.IsKnot.natAbs_tau_le_unknottingNumber {n : ℕ} {G : GridDiagram n}
+    (hG : G.IsKnot) (K : Type*) [Field K] [CharP K 2] :
+    ((hG.tau K).natAbs : ℕ∞) ≤ G.toGridLink.unknottingNumber := by
+  simpa only [GridLink.IsKnot.tau_toGridLink] using
+    ((GridLink.isKnot_toGridLink G).mpr hG).natAbs_tau_le_unknottingNumber K
 
 end TauCeti

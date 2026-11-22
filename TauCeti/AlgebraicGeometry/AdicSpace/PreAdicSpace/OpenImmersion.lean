@@ -50,7 +50,8 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   with the restriction of its target to its image.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.pullbackConeOfLeft`: the pullback of an open immersion
   along a morphism, with `pullbackConeOfLeftIsLimit` proving that it is a pullback.
-* `TauCeti.PreAdicSpace.Hom.restrictPreimage`: a morphism restricted over an open of its target.
+* `TauCeti.PreAdicSpace.Hom.restrictPreimage`, `TauCeti.PreAdicSpace.Hom.liftRestrict`: a morphism
+  restricted over an open of its target or lifted from an open mapped into it.
 * `TauCeti.PreAdicSpace.restrictRestrictIso`: restricting a restriction is restricting to the
   image.
 
@@ -487,7 +488,7 @@ noncomputable def restrictPreimage :
     X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ⟶ Y.restrict V.isOpenEmbedding :=
   IsOpenImmersion.lift (Y.ofRestrict V.isOpenEmbedding)
     (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f)
-    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.1, Opens.mem_map.mp x.2⟩, rfl⟩)
+    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.val, Opens.mem_map.mp x.property⟩, rfl⟩)
 
 /-- The restriction of a morphism commutes with the inclusions of the open subspaces. -/
 @[reassoc (attr := simp)]
@@ -511,9 +512,41 @@ theorem restrictPreimage_uniq
 @[simp]
 theorem restrictPreimage_base_apply
     (x : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding) :
-    (f.restrictPreimage V).base x = ⟨f.base x.1, Opens.mem_map.mp x.2⟩ := by
+    (f.restrictPreimage V).base x = ⟨f.base x.val, Opens.mem_map.mp x.property⟩ := by
   apply Subtype.ext
   exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+/-- Lift the restriction of a morphism `f : X ⟶ Y` to `O ≤ f⁻¹(U)` across `Y.ofRestrict U`. -/
+noncomputable def liftRestrict {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) :
+    X.restrict O.isOpenEmbedding ⟶ Y.restrict U.isOpenEmbedding :=
+  IsOpenImmersion.lift (Y.ofRestrict U.isOpenEmbedding)
+    (X.ofRestrict O.isOpenEmbedding ≫ f)
+    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.val, hOU x.property⟩, rfl⟩)
+
+/-- `liftRestrict` commutes with the open subspace inclusions into `X` and `Y`. -/
+@[reassoc (attr := simp)]
+theorem liftRestrict_ofRestrict {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) :
+    f.liftRestrict hOU ≫ Y.ofRestrict U.isOpenEmbedding =
+      X.ofRestrict O.isOpenEmbedding ≫ f :=
+  IsOpenImmersion.lift_fac _ _ _
+
+/-- Uniqueness of `liftRestrict` as the morphism commuting with the open subspace inclusions. -/
+theorem liftRestrict_uniq {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U)
+    (g : X.restrict O.isOpenEmbedding ⟶ Y.restrict U.isOpenEmbedding)
+    (hg : g ≫ Y.ofRestrict U.isOpenEmbedding = X.ofRestrict O.isOpenEmbedding ≫ f) :
+    g = f.liftRestrict hOU :=
+  IsOpenImmersion.lift_uniq _ _ _ g hg
+
+/-- On points, `liftRestrict` evaluates as `f.base` with codomain restricted to `U`. -/
+@[simp]
+theorem liftRestrict_base_apply {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) (x : X.restrict O.isOpenEmbedding) :
+    (f.liftRestrict hOU).base x = ⟨f.base x.val, hOU x.property⟩ := by
+  apply Subtype.ext
+  exact congrArg (fun g ↦ g.base x) (f.liftRestrict_ofRestrict hOU)
 
 
 /-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be
@@ -532,12 +565,12 @@ theorem prop_restrictPreimage_iff_of_isOpenImmersion (P : MorphismProperty PreAd
   have hV : Set.range v.base = Set.range (Y.ofRestrict V.isOpenEmbedding).base := by
     rw [hv]
     ext y
-    exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.2⟩
+    exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.property⟩
   have hU : Set.range u.base =
       Set.range (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding).base := by
     rw [hu]
     ext x
-    exact ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.2⟩
+    exact ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨z, rfl⟩; exact z.property⟩
   let eY := IsOpenImmersion.isoOfRangeEq v (Y.ofRestrict V.isOpenEmbedding) hV
   let eX := IsOpenImmersion.isoOfRangeEq u
     (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding) hU
@@ -576,7 +609,7 @@ theorem prop_restrictPreimage_restrictPreimage_iff (P : MorphismProperty PreAdic
       rw [restrictPreimage_base_apply]
       rfl
     · rintro ⟨z, hz, hzx⟩
-      have hxW : f.base x ∈ W := hzx ▸ z.2
+      have hxW : f.base x ∈ W := hzx ▸ z.property
       let x' : X.restrict ((Opens.map f.base).obj W).isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxW⟩
       have heq : (f.restrictPreimage W).base x' = z :=
         (f.restrictPreimage_base_apply W x').trans (Subtype.ext hzx.symm)
@@ -591,7 +624,7 @@ theorem prop_restrictPreimage_of_forall_exists_le (P : MorphismProperty PreAdicS
     [P.RespectsIso]
     (hP : ∀ {X' Y' : PreAdicSpace.{u}} (g : X' ⟶ Y') {ι : Type u} (V : ι → Opens Y'),
       iSup V = ⊤ → (∀ i, P (g.restrictPreimage (V i))) → P g)
-    (W : Opens Y) (h : ∀ y : W, ∃ V : Opens Y, y.1 ∈ V ∧ V ≤ W ∧ P (f.restrictPreimage V)) :
+    (W : Opens Y) (h : ∀ y : W, ∃ V : Opens Y, y.val ∈ V ∧ V ≤ W ∧ P (f.restrictPreimage V)) :
     P (f.restrictPreimage W) := by
   choose V hyV hVW hV using h
   -- the opens `V y`, read as opens of `Y|_W`, cover it
@@ -644,14 +677,14 @@ theorem range_restrictPreimage_comp_eq_preimage_range {f : X ⟶ Y} {V : Opens Y
     exact ⟨(q.restrictPreimage R).base z, congrArg (fun g ↦ g.base z) w⟩
   · rintro ⟨r, hr⟩
     -- `f x` lies in `V`; the point of `Z'` over `x` maps to the point `r` of `R`
-    have hxV : f.base x ∈ V := Eq.mpr (congrArg (· ∈ V) hr.symm) (eV.inv.base r.1).2
+    have hxV : f.base x ∈ V := Eq.mpr (congrArg (· ∈ V) hr.symm) (eV.inv.base r.val).property
     let x' : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxV⟩
     have hfx : (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base (q.base (eU.hom.base x')) =
-        (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base r.1 :=
+        (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base r.val :=
       (congrArg (fun g ↦ g.base x') hfac).symm.trans hr.symm
     have hzR : eU.hom.base x' ∈ (Opens.map q.base).obj R :=
-      Opens.mem_map.mpr (Eq.mpr (congrArg (· ∈ R) (hinj hfx)) r.2)
-    exact ⟨⟨eU.hom.base x', hzR⟩, congrArg (fun g ↦ (g.base x').1) eU.hom_inv_id⟩
+      Opens.mem_map.mpr (Eq.mpr (congrArg (· ∈ R) (hinj hfx)) r.property)
+    exact ⟨⟨eU.hom.base x', hzR⟩, congrArg (fun g ↦ (g.base x').val) eU.hom_inv_id⟩
 
 /-- The open of `Y` cut out by `W` inside the chart `V` has the same image as the chart
 restricted over the pullback of `W`. -/
@@ -671,7 +704,7 @@ theorem range_restrict_chart_target_eq {V W : Opens Y} {YA : PreAdicSpace.{u}}
     · exact Opens.mem_map.mpr (Opens.mem_map.mpr (hi.symm ▸ hyW))
     · exact congrArg Subtype.val hi
   · rintro ⟨r, rfl⟩
-    exact ⟨⟨⟨_, Opens.mem_map.mp (Opens.mem_map.mp r.2)⟩, (eV.inv.base r.1).2⟩, rfl⟩
+    exact ⟨⟨⟨_, Opens.mem_map.mp (Opens.mem_map.mp r.property)⟩, (eV.inv.base r.val).property⟩, rfl⟩
 
 /-- The source analogue of `range_restrict_chart_target_eq`, for a chart square `hfac`. -/
 theorem range_restrict_chart_source_eq {f : X ⟶ Y} {W : Opens Y} {U : Opens X}
@@ -695,11 +728,11 @@ theorem range_restrict_chart_source_eq {f : X ⟶ Y} {W : Opens Y} {U : Opens X}
         ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)) := by
       have hw := congrArg (fun g ↦ g.base z') hfac
       exact Opens.mem_map.mpr (Opens.mem_map.mpr (Opens.mem_map.mpr (hw ▸ hzW)))
-    exact ⟨⟨eU.hom.base z', hz⟩, congrArg (fun g ↦ (g.base z').1) eU.hom_inv_id⟩
+    exact ⟨⟨eU.hom.base z', hz⟩, congrArg (fun g ↦ (g.base z').val) eU.hom_inv_id⟩
   · rintro ⟨r, rfl⟩
     have hw := congrArg (fun g ↦ g.base r) w
     exact ⟨⟨⟨_, Opens.mem_map.mpr (hw ▸ Opens.mem_map.mp (Opens.mem_map.mp
-      ((q.restrictPreimage _).base r).2))⟩, (eU.inv.base r.1).2⟩, rfl⟩
+      ((q.restrictPreimage _).base r).property))⟩, (eU.inv.base r.val).property⟩, rfl⟩
 
 end PreAdicSpace
 
