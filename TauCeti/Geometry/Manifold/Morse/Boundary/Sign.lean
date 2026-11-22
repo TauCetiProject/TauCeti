@@ -167,7 +167,7 @@ private theorem card_fin_eq_finrank_prod
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1) :
     Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
       Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) := by
-  rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+  rw [Fintype.card_fin, φ.finrank_prod_negativeWeight_fun]
   omega
 
 /-- The defining formula of the target orientation. -/
