@@ -27,7 +27,8 @@ ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extensio
 from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
 `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
-and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`.
+that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, and that a pointwise
+bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals.
 
 ## Main statements
 
@@ -43,6 +44,8 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
 * `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
   `m ≤ ∫_a^{a+K} σ`.
+* `TauCeti.setIntegral_le_mul_add_mul_of_le`: a pointwise bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+  measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
@@ -224,6 +227,19 @@ theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 
   have h := setIntegral_ge_of_const_le_real measurableSet_Icc (by simp)
     (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
   simpa [hK.le, hK.ne'] using h
+
+/-- **Integrating a bound by a combination of two functions.** If `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+measurable set `s`, with `g₁` and `g₂` integrable on `s`, then
+`∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`. -/
+theorem setIntegral_le_mul_add_mul_of_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} {f g₁ g₂ : α → ℝ} {c₁ c₂ : ℝ} (hs : MeasurableSet s) (hf : ∀ x ∈ s, 0 ≤ f x)
+    (hg₁ : IntegrableOn g₁ s μ) (hg₂ : IntegrableOn g₂ s μ)
+    (h : ∀ x ∈ s, f x ≤ c₁ * g₁ x + c₂ * g₂ x) :
+    ∫ x in s, f x ∂μ ≤ c₁ * (∫ x in s, g₁ x ∂μ) + c₂ * ∫ x in s, g₂ x ∂μ := by
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg₁.const_mul c₁) (hg₂.const_mul c₂)]
+  exact integral_mono_of_nonneg (ae_restrict_of_forall_mem hs hf)
+    ((hg₁.const_mul c₁).add (hg₂.const_mul c₂)) (ae_restrict_of_forall_mem hs h)
 
 open Metric in
 /-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over

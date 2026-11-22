@@ -6,61 +6,57 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
-public import TauCeti.GroupTheory.PropertyT.Basic
+public import TauCeti.GroupTheory.PropertyT.KazhdanPair
+public import TauCeti.RepresentationTheory.Continuous.Unitary.Induced
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PropertyT.PositiveDefinite
-import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
-# Finite-index permanence of relative property (T)
+# Relative property (T) and subgroups of finite index
 
-When the ambient discrete group `Γ` is countable (in every Hilbert-space universe `u`), or under a
-normality hypothesis in the group's own universe `v`, relative property (T) is invariant under
-passing to finite-index subgroups and overgroups, both for the target subgroup `Λ ≤ Γ` and for the
-ambient discrete group `Γ`:
+Relative property (T) is insensitive to passing to and from subgroups of finite index:
 
-1. **Finite relative index in the target subgroup**: if `K` has finite relative index in `Λ`
-   (`K.IsFiniteRelIndex Λ`, i.e., `[Λ : K ⊓ Λ] < ∞`), then relative property (T) of `K` in `Γ`
-   implies relative property (T) of `Λ` in `Γ` (and the converse holds when `K ≤ Λ`), whenever `Γ`
-   is countable (in any universe `u`) or `K` is normal in `Γ` (starting from the universe `v` of
-   `Γ`). Given an almost invariant unit vector `ξ`, quantitative relative property (T) of `K`
-   yields a `K`-invariant vector `v` within `1 / 2` of `ξ`, and averaging `ρ (s x) v` over a finite
-   set of left-coset representatives of `K.subgroupOf Λ` in `Λ` produces a nonzero `Λ`-invariant
-   vector.
-2. **Finite index in the ambient group**: if `H ≤ Γ` has `[Γ : H] < ∞` (`H.FiniteIndex`), then
-   `Λ.subgroupOf H` has relative property (T) in `H` if and only if `Λ` has relative property (T)
-   in `Γ`, whenever `Γ` is countable (in any universe `u`) or `Λ` is normal in `Γ` (for Hilbert
-   spaces in the universe `v` of `Γ`). From `H` to `Γ`, pushing forward `Λ.subgroupOf H` along
-   `H.subtype` gives `Λ ⊓ H`, which has finite relative index in `Λ`. From `Γ` to `H`, inducing a
-   normalized positive-definite function `φ : H → ℂ` to `Γ` via `TauCeti.inducedFun` along a
-   section fixing the identity coset controls `1 - (φ h).re` by
-   `[Γ : H] * (1 - (inducedFun s φ h).re)` for `h ∈ Λ.subgroupOf H`.
-
-When `K` (respectively `Λ`) is normal, quantitative approximation requires no countability
-assumption on `Γ` for Hilbert spaces in the universe `v` of `Γ`; in particular, Kazhdan's theorem
-that property (T) (`Λ = ⊤`) is a finite-index invariant holds for arbitrary discrete groups in the
-universe `v` of `Γ` without countability.
+* **Finite-index overgroups.** For a normal subgroup `N` of an arbitrary group `Γ`, quantitative
+  Kazhdan approximation and coset averaging (`exists_invariant_norm_sub_lt_of_finiteIndex`) transfer
+  relative property (T) to every subgroup `Λ` in which `N ⊓ Λ` has finite index
+  (`Subgroup.RelativePropertyT.of_relIndex_ne_zero`). When `Γ` is countable, the same holds for
+  arbitrary subgroups `K` with `K.IsFiniteRelIndex Λ`
+  (`Subgroup.RelativePropertyT.of_isFiniteRelIndex`), using the quantitative characterization in
+  `TauCeti/GroupTheory/PropertyT/PositiveDefinite.lean`.
+* **Finite-index subgroups.** If a normal subgroup `Λ` of `Γ` has relative property (T) and `K` has
+  finite index in `Γ`, inducing a representation of `K` with almost invariant vectors to `Γ` shows
+  that `Λ ⊓ K` has relative property (T) in `K` (`Subgroup.RelativePropertyT.subgroupOf`), which
+  yields equivalence for normal `Λ` (`Subgroup.relativePropertyT_subgroupOf_iff_of_normal`) and
+  Kazhdan's theorem that property (T) is a finite-index invariant of arbitrary discrete groups
+  (`Subgroup.relativePropertyT_top_iff_of_finiteIndex`). When `Γ` is countable, inducing
+  positive-definite functions via `TauCeti.inducedFun` gives the same equivalence for arbitrary
+  subgroups `Λ` without normality (`Subgroup.relativePropertyT_subgroupOf_iff`).
 
 ## Main statements
 
+* `Subgroup.RelativePropertyT.of_relIndex_ne_zero`: relative property (T) passes from a normal
+  subgroup `N` to every subgroup in which `N` has finite relative index.
+* `Subgroup.RelativePropertyT.subgroupOf`: relative property (T) of a normal subgroup `Λ` passes to
+  `Λ ⊓ K` inside a subgroup `K` of finite index.
+* `Subgroup.relativePropertyT_top_iff_of_finiteIndex`: a group has property (T) if and only if a
+  subgroup of finite index has property (T).
+* `Subgroup.RelativePropertyT.of_isFiniteRelIndex_of_normal`,
+  `Subgroup.relativePropertyT_iff_of_isFiniteRelIndex_of_normal`,
+  `Subgroup.relativePropertyT_subgroupOf_iff_of_normal`: universe-`v` finite-index transfer and
+  equivalences for normal subgroups without countability.
 * `Subgroup.RelativePropertyT.of_isFiniteRelIndex`,
-  `Subgroup.relativePropertyT_iff_of_isFiniteRelIndex` (for countable `Γ`, in any universe `u`), and
-  `_of_normal` (for normal `K` without countability, starting from the universe `v` of `Γ`):
-  transfer and equivalence under finite relative index `K.IsFiniteRelIndex Λ`.
-* `Subgroup.relativePropertyT_subgroupOf_iff` (for countable `Γ`, in any universe `u`) and
-  `Subgroup.relativePropertyT_subgroupOf_iff_of_normal` (for normal `Λ` without countability, in
-  the universe `v` of `Γ`): invariance under passing to a finite-index ambient subgroup `H ≤ Γ`.
-* `Subgroup.relativePropertyT_top_iff_of_finiteIndex`: Kazhdan's theorem that property (T) in the
-  universe `v` of `Γ` is a finite-index invariant of arbitrary discrete groups, with no
-  countability hypothesis.
+  `Subgroup.relativePropertyT_iff_of_isFiniteRelIndex`,
+  `Subgroup.relativePropertyT_subgroupOf_iff`: finite-index transfer and equivalences for
+  arbitrary subgroups of countable groups.
 
 ## References
 
 * C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, §14.1 (Exercise 14.3 and
   Proposition 14.1.5).
+* B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Cambridge University Press
+  (2008), Theorem 1.7.1.
 * P. Jolissaint, *On Property (T) for pairs of topological groups*, Enseign. Math. (2) 51 (2005),
   31–45, Proposition 2.4.
-* B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Theorem 1.7.1.
 -/
 
 public section
@@ -74,20 +70,135 @@ open scoped ComplexOrder
 
 variable {Γ : Type v} [Group Γ]
 
-/-! ### Auxiliary lemmas for coset averaging and positive-definite induction -/
+/-! ### Normal subgroups in arbitrary discrete groups -/
 
-section Helpers
+/-- **Relative property (T) passes to finite-index overgroups.** If a normal subgroup `N` has
+relative property (T), then so does every subgroup `Λ` in which `N ⊓ Λ` has finite index. -/
+theorem RelativePropertyT.of_relIndex_ne_zero {N Λ : Subgroup Γ} [N.Normal]
+    (hN : N.RelativePropertyT.{max u v}) (hNΛ : N.relIndex Λ ≠ 0) :
+    Λ.RelativePropertyT.{max u v} := by
+  classical
+  have : (N.subgroupOf Λ).FiniteIndex := ⟨hNΛ⟩
+  obtain ⟨F, δ, hδ, hK⟩ := (relativePropertyT_iff_exists_isKazhdanPair N).mp hN
+  refine (relativePropertyT_def Λ).mpr fun H _ _ _ ρ hρ hρa ↦ ?_
+  -- A unit vector `ξ` moved little by `F` and by the chosen representatives of `Λ ⧸ N ⊓ Λ`.
+  let Q := Λ ⧸ N.subgroupOf Λ
+  let := (N.subgroupOf Λ).fintypeQuotientOfFiniteIndex
+  obtain ⟨ξ, hξ1, hξ⟩ := (hasAlmostInvariantVectors_def ρ).mp hρa
+    (F ∪ Finset.univ.image fun q : Q ↦ ((q.out : Λ) : Γ)) (min δ 1 / 4) (by positivity)
+  -- It lies within `1 / 4` of an `N`-invariant vector `η`.
+  obtain ⟨η, hη, hξη⟩ := hK.exists_mem_invariants_norm_sub_lt hρ (by norm_num : (0 : ℝ) < 1 / 4)
+    fun g hg ↦ (hξ g (Finset.mem_union_left _ hg)).trans_le (by linarith [min_le_left δ 1])
+  -- Each representative moves `η` by less than `3 / 4`, so averaging gives a `Λ`-invariant `w`
+  -- within `3 / 4` of `η`, hence within `1` of the unit vector `ξ`, so `w ≠ 0`.
+  have hηΛ : η ∈ ((ρ.restrict Λ.subtype).restrict (N.subgroupOf Λ).subtype).invariants :=
+    fun h ↦ hη ⟨_, mem_subgroupOf.mp h.property⟩
+  have hmove (q : Q) : ‖ρ.restrict Λ.subtype q.out η - η‖ < 3 / 4 := by
+    have hq : ‖ρ ((q.out : Λ) : Γ) ξ - ξ‖ < 1 / 4 :=
+      (hξ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ (Finset.mem_univ q)))).trans_le
+        (by linarith [min_le_right δ 1])
+    have h1 := norm_sub_le_norm_sub_add_norm_sub (ρ ((q.out : Λ) : Γ) η) (ρ ((q.out : Λ) : Γ) ξ) η
+    have h2 := norm_sub_le_norm_sub_add_norm_sub (ρ ((q.out : Λ) : Γ) ξ) ξ η
+    rw [← map_sub, hρ.norm_map] at h1
+    rw [restrict_apply_apply, coe_subtype]
+    linarith [norm_sub_rev η ξ]
+  obtain ⟨w, hw, hwη⟩ :=
+    (ρ.restrict Λ.subtype).exists_invariant_norm_sub_lt_of_finiteIndex hηΛ hmove
+  refine ⟨w, fun hw0 ↦ ?_, hw⟩
+  rw [hw0, zero_sub, norm_neg] at hwη
+  linarith [norm_sub_norm_le ξ η]
 
-/-- Averaging a `K`-invariant vector within `1 / 2` of an almost invariant unit vector over left
-cosets of `K.subgroupOf Λ` in `Λ` produces a nonzero `Λ`-invariant vector. -/
-private theorem relativePropertyT_of_exists_invariant_half {K Λ : Subgroup Γ}
-    [K.IsFiniteRelIndex Λ] {F₁ : Finset Γ} {δ₁ : ℝ} (hδ₁ : 0 < δ₁)
-    (hK : ∀ (V : Type u) [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-      (ρ : ContRepresentation ℂ Γ V), ρ.IsUnitary →
-        ∀ ξ : V, ‖ξ‖ = 1 → (∀ g ∈ F₁, ‖ρ g ξ - ξ‖ < δ₁) →
-          ∃ v ∈ (ρ.restrict K.subtype).invariants, ‖v - ξ‖ < 1 / 2) :
+/-- **Relative property (T) passes to subgroups of finite index.** If a normal subgroup `Λ` of `Γ`
+has relative property (T) and `K` has finite index in `Γ`, then `Λ ⊓ K` has relative property (T)
+in `K`. -/
+theorem RelativePropertyT.subgroupOf {Λ : Subgroup Γ} [Λ.Normal]
+    (hΛ : Λ.RelativePropertyT.{max u v}) (K : Subgroup Γ) [K.FiniteIndex] :
+    (Λ.subgroupOf K).RelativePropertyT.{max u v} := by
+  classical
+  let := K.fintypeQuotientOfFiniteIndex
+  refine (relativePropertyT_def _).mpr fun H _ _ _ ρ hρ hρa ↦ ?_
+  -- The induced representation of `Γ` has almost invariant vectors, hence a nonzero `Λ`-invariant
+  -- vector `f`; a nonzero value of `f` is fixed by `Λ ⊓ K`.
+  obtain ⟨f, hf0, hf⟩ := (relativePropertyT_def Λ).mp hΛ (PiLp 2 fun _ : Γ ⧸ K ↦ H) (induced ρ)
+    (isUnitary_induced hρ) (hasAlmostInvariantVectors_induced hρa)
+  obtain ⟨x, hx⟩ : ∃ x, f x ≠ 0 := by
+    by_contra! h
+    exact hf0 (PiLp.ext h)
+  exact ⟨f x, hx, apply_mem_invariants_of_mem_invariants_induced ρ hf x⟩
+
+/-- **Property (T) and subgroups of finite index.** A group has property (T) if and only if a
+subgroup of finite index has property (T). -/
+theorem relativePropertyT_top_iff_of_finiteIndex (K : Subgroup Γ) [K.FiniteIndex] :
+    (⊤ : Subgroup Γ).RelativePropertyT.{max u v} ↔
+      (⊤ : Subgroup K).RelativePropertyT.{max u v} := by
+  refine ⟨fun h ↦ by simpa using h.subgroupOf K, fun h ↦ ?_⟩
+  -- Property (T) of `K` gives relative property (T) of `K`, hence of its normal core, in `Γ`.
+  have hK : K.RelativePropertyT.{max u v} := by
+    simpa [map_top, range_subtype] using h.map K.subtype
+  refine (hK.mono K.normalCore_le).of_relIndex_ne_zero ?_
+  rw [relIndex_top_right]
+  exact FiniteIndex.index_ne_zero
+
+/-- If a normal subgroup `K` has finite relative index in `Λ` (`K.IsFiniteRelIndex Λ`) and relative
+property (T) in the universe `v` of `Γ`, then `Λ` has relative property (T) in every Hilbert-space
+universe `u`, with no countability assumption on `Γ` (and without requiring `K ≤ Λ`). -/
+theorem RelativePropertyT.of_isFiniteRelIndex_of_normal {K : Subgroup Γ} [K.Normal]
+    (hK : K.RelativePropertyT.{v}) (Λ : Subgroup Γ) [K.IsFiniteRelIndex Λ] :
+    Λ.RelativePropertyT.{u} :=
+  ((Λ.relativePropertyT_max_iff.{u, v}).mp
+    ((K.relativePropertyT_max_iff.{u, v}.mpr hK).of_relIndex_ne_zero
+      IsFiniteRelIndex.relIndex_ne_zero)).of_universe
+
+/-- Without countability, if `K` is normal in `Γ` and has finite relative index in `Λ` (`K ≤ Λ`),
+then `K` has relative property (T) if and only if `Λ` does, for Hilbert spaces in the universe `v`
+of `Γ`. -/
+theorem relativePropertyT_iff_of_isFiniteRelIndex_of_normal {K Λ : Subgroup Γ} [K.Normal]
+    (hKL : K ≤ Λ) [K.IsFiniteRelIndex Λ] :
+    K.RelativePropertyT.{v} ↔ Λ.RelativePropertyT.{v} :=
+  ⟨fun hK ↦ hK.of_isFiniteRelIndex_of_normal Λ, fun hΛ ↦ hΛ.mono hKL⟩
+
+/-- Without countability, for a normal subgroup `Λ` and a finite-index subgroup `H` of `Γ`,
+`Λ.subgroupOf H` has relative property (T) in `H` if and only if `Λ` has relative property (T) in
+`Γ`, for Hilbert spaces in the universe `v` of `Γ`. -/
+theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Normal]
+    [H.FiniteIndex] :
+    (Λ.subgroupOf H).RelativePropertyT.{v} ↔ Λ.RelativePropertyT.{v} := by
+  have hdown {G' : Type v} [Group G'] (M L : Subgroup G') [M.Normal] [L.FiniteIndex]
+      (hM : M.RelativePropertyT.{v}) : (M.subgroupOf L).RelativePropertyT.{v} :=
+    (relativePropertyT_max_iff.{v, v} (M.subgroupOf L)).mp
+      (((relativePropertyT_max_iff.{v, v} M).mpr hM).subgroupOf L)
+  refine ⟨fun hΛH ↦ ?_, hdown Λ H⟩
+  -- Pass down from `H` to `H.normalCore` so that `Λ ⊓ H.normalCore` is normal in `Γ`.
+  let N := H.normalCore
+  have : N.IsFiniteRelIndex H := isFiniteRelIndex_of_finiteIndex
+  let N_H : Subgroup H := N.subgroupOf H
+  have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
+    hdown (Λ.subgroupOf H) N_H hΛH
+  have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
+    rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_inf _ _ _ H.subtype_injective, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_subgroupOf_eq_of_le H.normalCore_le, inf_assoc,
+      inf_of_le_right H.normalCore_le]
+  have hinfT : (Λ ⊓ N).RelativePropertyT.{v} := by
+    rw [← hmap]
+    exact hΛNH.map (H.subtype.comp N_H.subtype)
+  have : (Λ ⊓ N).IsFiniteRelIndex Λ :=
+    IsFiniteRelIndex.inf inferInstance isFiniteRelIndex_of_finiteIndex
+  exact hinfT.of_isFiniteRelIndex_of_normal Λ
+
+/-! ### Arbitrary subgroups in countable discrete groups -/
+
+section Countable
+
+/-- **Finite-relative-index permanence.** In a countable discrete group `Γ`, if `K` has finite
+relative index in `Λ` (`K.IsFiniteRelIndex Λ`) and `K` has relative property (T), then `Λ` has
+relative property (T) (without requiring `K ≤ Λ`). -/
+theorem RelativePropertyT.of_isFiniteRelIndex [Countable Γ] {K : Subgroup Γ}
+    (hK : K.RelativePropertyT.{u}) (Λ : Subgroup Γ) [K.IsFiniteRelIndex Λ] :
     Λ.RelativePropertyT.{u} := by
   classical
+  obtain ⟨F₁, δ₁, hδ₁, hF₁⟩ :=
+    (K.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt.{u}).mp hK (1 / 4) (by norm_num)
   let Q := Λ ⧸ K.subgroupOf Λ
   let : Fintype Q := Subgroup.fintypeQuotientOfFiniteIndex
   let F : Finset Γ := F₁ ∪ Finset.univ.image fun x : Q ↦ (x.out : Γ)
@@ -95,44 +206,29 @@ private theorem relativePropertyT_of_exists_invariant_half {K Λ : Subgroup Γ}
   have hδ : 0 < δ := lt_min hδ₁ (by norm_num)
   refine (isKazhdanPair_of_exists_invariant_norm_sub_lt_one (F := F)
     fun V _ _ _ ρ hρ ξ hξ hξF ↦ ?_).relativePropertyT hδ
-  obtain ⟨v, hvK, hvξ⟩ := hK V ρ hρ ξ hξ fun g hg ↦
+  obtain ⟨v, hvK, hvξ⟩ := hF₁ V ρ hρ ξ hξ fun g hg ↦
     (hξF g (Finset.mem_union_left _ hg)).trans_le (min_le_left _ _)
-  let ρΛ := (ρ.restrict Λ.subtype).toRepresentation
-  let w : V := (Fintype.card Q : ℂ)⁻¹ • Representation.relNorm ρΛ (K.subgroupOf Λ) v
-  have hvK' : ∀ h : K.subgroupOf Λ, ρΛ h v = v := fun h ↦
-    hvK ⟨h.val.val, h.property⟩
-  have hwΛ : w ∈ (ρ.restrict Λ.subtype).invariants := fun g ↦ by
-    dsimp only [w]
-    rw [map_smul]
-    congr 1
-    exact Representation.relNorm_apply_eq_self ρΛ hvK' g
-  have hcard_ne : (Fintype.card Q : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hw_sub : w - ξ = (Fintype.card Q : ℂ)⁻¹ • ∑ x : Q, (ρ (x.out : Γ) v - ξ) := by
-    simp only [w, Representation.relNorm_apply, ρΛ, Finset.sum_sub_distrib, Finset.sum_const,
-      Finset.card_univ, smul_sub, ← Nat.cast_smul_eq_nsmul ℂ, ← mul_smul,
-      inv_mul_cancel₀ hcard_ne, one_smul]
-    rfl
-  have hterm_lt (x : Q) : ‖ρ (x.out : Γ) v - ξ‖ < 3 / 4 := by
-    have hsx_mem : (x.out : Γ) ∈ F :=
-      Finset.mem_union_right _ (Finset.mem_image_of_mem _ (Finset.mem_univ x))
-    have hsx_lt : ‖ρ (x.out : Γ) ξ - ξ‖ < 1 / 4 := (hξF _ hsx_mem).trans_le (min_le_right _ _)
-    have hsplit : ρ (x.out : Γ) v - ξ = ρ (x.out : Γ) (v - ξ) + (ρ (x.out : Γ) ξ - ξ) := by
-      rw [map_sub]
-      abel
-    rw [hsplit]
-    calc ‖ρ (x.out : Γ) (v - ξ) + (ρ (x.out : Γ) ξ - ξ)‖
-        ≤ ‖ρ (x.out : Γ) (v - ξ)‖ + ‖ρ (x.out : Γ) ξ - ξ‖ := norm_add_le _ _
-      _ = ‖v - ξ‖ + ‖ρ (x.out : Γ) ξ - ξ‖ := by rw [hρ.norm_map]
-      _ < 3 / 4 := by linarith
-  have hw_lt : ‖w - ξ‖ < 3 / 4 := by
-    have hpos : (0 : ℝ) < Fintype.card Q := Nat.cast_pos.mpr Fintype.card_pos
-    rw [hw_sub, norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_lt_iff₀ hpos]
-    calc ‖∑ x : Q, (ρ (x.out : Γ) v - ξ)‖
-        ≤ ∑ x : Q, ‖ρ (x.out : Γ) v - ξ‖ := norm_sum_le _ _
-      _ < ∑ _x : Q, (3 / 4 : ℝ) :=
-          Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun x _ ↦ hterm_lt x
-      _ = Fintype.card Q * (3 / 4) := by simp
-  exact ⟨w, hwΛ, hw_lt.trans (by norm_num)⟩
+  have hvK' : v ∈ ((ρ.restrict Λ.subtype).restrict (K.subgroupOf Λ).subtype).invariants :=
+    fun h ↦ hvK ⟨_, mem_subgroupOf.mp h.property⟩
+  have hmove (q : Q) : ‖ρ.restrict Λ.subtype q.out v - v‖ < 3 / 4 := by
+    have hq : ‖ρ (q.out : Γ) ξ - ξ‖ < 1 / 4 :=
+      (hξF _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ (Finset.mem_univ q)))).trans_le
+        (min_le_right _ _)
+    have h1 := norm_sub_le_norm_sub_add_norm_sub (ρ (q.out : Γ) v) (ρ (q.out : Γ) ξ) v
+    have h2 := norm_sub_le_norm_sub_add_norm_sub (ρ (q.out : Γ) ξ) ξ v
+    rw [← map_sub, hρ.norm_map] at h1
+    rw [restrict_apply_apply, coe_subtype]
+    linarith [norm_sub_rev v ξ]
+  obtain ⟨w, hw, hwv⟩ :=
+    (ρ.restrict Λ.subtype).exists_invariant_norm_sub_lt_of_finiteIndex hvK' hmove
+  exact ⟨w, hw, (norm_sub_le_norm_sub_add_norm_sub w v ξ).trans_lt (by linarith)⟩
+
+/-- In a countable discrete group `Γ`, if `K ≤ Λ` has finite relative index in `Λ`, then `K` has
+relative property (T) if and only if `Λ` does. -/
+theorem relativePropertyT_iff_of_isFiniteRelIndex [Countable Γ] {K Λ : Subgroup Γ}
+    (hKL : K ≤ Λ) [K.IsFiniteRelIndex Λ] :
+    K.RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{u} :=
+  ⟨fun hK ↦ hK.of_isFiniteRelIndex Λ, fun hΛ ↦ hΛ.mono hKL⟩
 
 /-- Inducing positive-definite functions from a finite-index subgroup `H ≤ Γ` via
 `TauCeti.inducedFun` transfers quantitative positive-definite approximation from `Λ` to
@@ -182,85 +278,6 @@ private theorem posSemidef_approx_subgroupOf {Λ H : Subgroup Γ} [H.FiniteIndex
   have hnorm_sq : ‖φ h - 1‖ ^ 2 ≤ 2 * (1 - (φ h).re) := hφ.norm_sub_one_sq_le h1 h
   exact (sq_lt_sq₀ (norm_nonneg _) hε.le).mp (by linarith)
 
-end Helpers
-
-/-! ### Finite relative index in the target subgroup -/
-
-/-- If a normal subgroup `K` has finite relative index in `Λ` (`K.IsFiniteRelIndex Λ`) and relative
-property (T) in the universe `v` of `Γ`, then `Λ` has relative property (T) in every Hilbert-space
-universe `u`, with no countability assumption on `Γ` (and without requiring `K ≤ Λ`). -/
-theorem RelativePropertyT.of_isFiniteRelIndex_of_normal {K : Subgroup Γ} [K.Normal]
-    (hK : K.RelativePropertyT.{v}) (Λ : Subgroup Γ) [K.IsFiniteRelIndex Λ] :
-    Λ.RelativePropertyT.{u} := by
-  obtain ⟨F₁, δ₁, hδ₁, hKP⟩ := K.relativePropertyT_iff_exists_isKazhdanPair.{v, v}.mp hK
-  exact relativePropertyT_of_exists_invariant_half (mul_pos (by norm_num : (0 : ℝ) < 1 / 2) hδ₁)
-    fun V _ _ _ ρ hρ ξ _ hξF ↦
-      hKP.exists_invariant_norm_sub_lt hδ₁ hρ (by norm_num) ξ hξF
-
-/-- Without countability, if `K` is normal in `Γ` and has finite relative index in `Λ` (`K ≤ Λ`),
-then `K` has relative property (T) if and only if `Λ` does, for Hilbert spaces in the universe `v`
-of `Γ`. -/
-theorem relativePropertyT_iff_of_isFiniteRelIndex_of_normal {K Λ : Subgroup Γ} [K.Normal]
-    (hKL : K ≤ Λ) [K.IsFiniteRelIndex Λ] :
-    K.RelativePropertyT.{v} ↔ Λ.RelativePropertyT.{v} :=
-  ⟨fun hK ↦ hK.of_isFiniteRelIndex_of_normal Λ, fun hΛ ↦ hΛ.mono hKL⟩
-
-/-- **Finite-relative-index permanence.** In a countable discrete group `Γ`, if `K` has finite
-relative index in `Λ` (`K.IsFiniteRelIndex Λ`) and `K` has relative property (T), then `Λ` has
-relative property (T) (without requiring `K ≤ Λ`). -/
-theorem RelativePropertyT.of_isFiniteRelIndex [Countable Γ] {K : Subgroup Γ}
-    (hK : K.RelativePropertyT.{u}) (Λ : Subgroup Γ) [K.IsFiniteRelIndex Λ] :
-    Λ.RelativePropertyT.{u} := by
-  obtain ⟨F₁, δ₁, hδ₁, hF₁⟩ :=
-    (K.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt.{u}).mp hK (1 / 2) (by norm_num)
-  exact relativePropertyT_of_exists_invariant_half hδ₁ hF₁
-
-/-- In a countable discrete group `Γ`, if `K ≤ Λ` has finite relative index in `Λ`, then `K` has
-relative property (T) if and only if `Λ` does. -/
-theorem relativePropertyT_iff_of_isFiniteRelIndex [Countable Γ] {K Λ : Subgroup Γ}
-    (hKL : K ≤ Λ) [K.IsFiniteRelIndex Λ] :
-    K.RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{u} :=
-  ⟨fun hK ↦ hK.of_isFiniteRelIndex Λ, fun hΛ ↦ hΛ.mono hKL⟩
-
-/-! ### Finite index in the ambient group -/
-
-/-- Without countability, for a normal subgroup `Λ` and a finite-index subgroup `H` of `Γ`,
-`Λ.subgroupOf H` has relative property (T) in `H` if and only if `Λ` has relative property (T) in
-`Γ`, for Hilbert spaces in the universe `v` of `Γ`. -/
-theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Normal]
-    [H.FiniteIndex] :
-    (Λ.subgroupOf H).RelativePropertyT.{v} ↔ Λ.RelativePropertyT.{v} := by
-  have hdown {G' : Type v} [Group G'] (M L : Subgroup G') [M.Normal] [L.FiniteIndex]
-      (hM : M.RelativePropertyT.{v}) : (M.subgroupOf L).RelativePropertyT.{v} :=
-    (relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal (M.subgroupOf L)).mpr
-      (posSemidef_approx_subgroupOf
-        ((relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal M).mp hM))
-  refine ⟨fun hΛH ↦ ?_, hdown Λ H⟩
-  -- Pass down from `H` to `H.normalCore` so that `Λ ⊓ H.normalCore` is normal in `Γ`.
-  let N := H.normalCore
-  have : N.IsFiniteRelIndex H := isFiniteRelIndex_of_finiteIndex
-  let N_H : Subgroup H := N.subgroupOf H
-  have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
-    hdown (Λ.subgroupOf H) N_H hΛH
-  have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
-    rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
-      Subgroup.map_inf _ _ _ H.subtype_injective, Subgroup.subgroupOf_map_subtype,
-      Subgroup.map_subgroupOf_eq_of_le H.normalCore_le, inf_assoc,
-      inf_of_le_right H.normalCore_le]
-  have hinfT : (Λ ⊓ N).RelativePropertyT.{v} := by
-    rw [← hmap]
-    exact hΛNH.map (H.subtype.comp N_H.subtype)
-  have : (Λ ⊓ N).IsFiniteRelIndex Λ :=
-    IsFiniteRelIndex.inf inferInstance isFiniteRelIndex_of_finiteIndex
-  exact hinfT.of_isFiniteRelIndex_of_normal Λ
-
-/-- **Kazhdan's finite-index theorem.** For a finite-index subgroup `H` of an arbitrary discrete
-group `Γ` (with no countability assumption), `H` has property (T) if and only if `Γ` has property
-(T), for Hilbert spaces in the universe `v` of `Γ`. -/
-theorem relativePropertyT_top_iff_of_finiteIndex (H : Subgroup Γ) [H.FiniteIndex] :
-    (⊤ : Subgroup H).RelativePropertyT.{v} ↔ (⊤ : Subgroup Γ).RelativePropertyT.{v} := by
-  simpa using relativePropertyT_subgroupOf_iff_of_normal (⊤ : Subgroup Γ) H
-
 /-- **Ambient finite-index invariance of relative property (T).** For any subgroup `Λ` and any
 finite-index subgroup `H` of a countable discrete group `Γ`, `Λ.subgroupOf H` has relative property
 (T) in `H` if and only if `Λ` has relative property (T) in `Γ`. -/
@@ -276,5 +293,7 @@ theorem relativePropertyT_subgroupOf_iff [Countable Γ] (Λ H : Subgroup Γ) [H.
   · exact ((Λ.subgroupOf H).relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt.{u}).mpr
       (posSemidef_approx_subgroupOf
         ((Λ.relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt.{u}).mp hΛ))
+
+end Countable
 
 end Subgroup

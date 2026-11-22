@@ -21,8 +21,8 @@ This file establishes the quantitative invariant-vector and positive-definite ch
 relative property (T) for a subgroup `Λ` of a discrete group `Γ`:
 
 * For a normal subgroup `Λ` of an arbitrary discrete group `Γ`, quantitative Kazhdan approximation
-  (`IsKazhdanPair.exists_invariant_norm_sub_lt`) yields the quantitative and net uniform-convergence
-  positive-definite characterizations without countability.
+  (`IsKazhdanPair.exists_mem_invariants_norm_sub_lt`) yields the quantitative and net
+  uniform-convergence positive-definite characterizations without countability.
 * For an arbitrary subgroup `Λ` of a countable discrete group `Γ`, relative property (T) is
   equivalent to:
   1. **Quantitative invariant-vector approximation**: for every `ε > 0`, there exist a finite set
@@ -426,10 +426,11 @@ theorem relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal
           ∀ φ : Γ → ℂ, (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
             (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε := by
   refine ⟨fun hΛ ↦ ?_, fun hpd_approx ↦ ?_⟩
-  · obtain ⟨F, δ, hδ, hK⟩ := Λ.relativePropertyT_iff_exists_isKazhdanPair.{v, v}.mp hΛ
-    exact posSemidef_approx_of_approx_invariant fun ε hε ↦
-      ⟨F, ε * δ, mul_pos hε hδ, fun H _ _ _ ρ hρ ξ _ hξF ↦
-        hK.exists_invariant_norm_sub_lt hδ hρ hε ξ hξF⟩
+  · refine posSemidef_approx_of_approx_invariant fun ε hε ↦ ?_
+    obtain ⟨F, δ, hδ, hF⟩ := hΛ.exists_mem_invariants_norm_sub_lt.{v, v} hε
+    exact ⟨F, δ, hδ, fun H _ _ _ ρ hρ ξ _ hξF ↦ by
+      obtain ⟨η, hη, hξη⟩ := hF H ρ hρ ξ hξF
+      exact ⟨η, hη, by rwa [norm_sub_rev]⟩⟩
   · obtain ⟨F, δ, hδ, hF⟩ := approx_invariant_of_posSemidef_approx.{v} hpd_approx zero_lt_one
     exact (isKazhdanPair_of_exists_invariant_norm_sub_lt_one hF).relativePropertyT hδ
 

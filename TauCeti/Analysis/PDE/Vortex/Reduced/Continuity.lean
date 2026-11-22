@@ -347,31 +347,11 @@ private theorem sobolevReducedFunctional_eq_realFunctional {P : Polynomial ℂ}
   rw [potential_def] at hu
   rw [sobolevReducedFunctional_eq_coe hu, realFunctional_def, potential_def, linearCoeff_def]
 
-/-- Where `u ≤ M`, the potential is at most `2 exp (2M) u²`. -/
-private theorem potential_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ}
-    (hM : 0 ≤ M) {z : ℂ} (hz : W1p.value u z ≤ M) :
-    potential P u z ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
-    (div_le_one (by positivity)).2 (by linarith)
-  rw [potential_def]
-  calc _ ≤ 1 * (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
-        mul_le_mul_of_nonneg_right h1 (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-    _ ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
-
 /-- A function of `H¹(ℂ)` bounded above has integrable potential. -/
 private theorem integrable_potential {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
     {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) : Integrable (potential P u) := by
-  have hnonneg (z : ℂ) : 0 ≤ potential P u z := by
-    rw [potential_def]
-    exact norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u) z
-  refine Integrable.mono' (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M)))
-    (by
-      rw [potential_def]
-      exact aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u) ?_
-  filter_upwards [hu] with z hz
-  rw [Real.norm_of_nonneg (hnonneg z)]
-  exact potential_le hM hz
+  rw [potential_def]
+  exact integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
 
 /-- If the weights `h` of `P` and `Q` differ by at most `ε`, then for `u ≤ M` the potentials
 differ by at most `2 ε exp (2M) ‖u‖₂²`. -/

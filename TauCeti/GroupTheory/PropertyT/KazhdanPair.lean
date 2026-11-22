@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.GroupTheory.PropertyT.Basic
+public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 import Mathlib.Algebra.Group.Shrink
-import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 
 /-!
@@ -40,10 +39,15 @@ which is not a typeclass instance, so the `*_max_iff` equivalences are provided 
 (for example whenever `Γ` is countable, via `Countable.toSmall`), `IsKazhdanPair` and
 `RelativePropertyT` are independent of the Hilbert-space universe.
 
-For a normal subgroup `Λ` of an arbitrary discrete group `Γ`, the subspace `H^Λ` of `Λ`-invariant
-vectors is `Γ`-invariant, so restricting a unitary representation to `(H^Λ)ᗮ` turns any Kazhdan
-pair `(F, δ)` with `δ > 0` into a quantitative approximation bound: every vector `ξ` moved by at
-most `ε * δ` on `F` lies within `ε` of its orthogonal projection onto `H^Λ`.
+## Quantitative form for normal subgroups
+
+When `Λ` is normal, its invariant vectors form a `Γ`-invariant closed subspace `W`, so the
+orthogonal complement `Wᗮ` carries a unitary representation of `Γ` without nonzero `Λ`-invariant
+vectors. A Kazhdan pair `(F, δ)` then forces `δ ‖ζ‖ ≤ ‖ρ g ζ - ζ‖` for some `g ∈ F` and every
+`ζ ∈ Wᗮ`, and projecting a vector `ξ` onto `W` gives a `Λ`-invariant vector within
+`max_{g ∈ F} ‖ρ g ξ - ξ‖ / δ` of `ξ` (Anantharaman–Popa, Proposition 14.1.2 (c), for normal
+subgroups). For a subgroup that is not normal the quantitative form also holds, by a theorem of
+Jolissaint, proved in `TauCeti/GroupTheory/PropertyT/PositiveDefinite.lean` for countable groups.
 
 ## Main statements
 
@@ -61,14 +65,16 @@ most `ε * δ` on `F` lies within `ε` of its orthogonal projection onto `H^Λ`.
   `Γ`).
 * `Subgroup.isKazhdanPair_max_iff`, `Subgroup.relativePropertyT_max_iff`: unconditional universe
   equivalence between `max u v` and `v`.
-* `Subgroup.IsKazhdanPair.norm_sub_starProjection_invariants_le`,
-  `Subgroup.IsKazhdanPair.exists_invariant_norm_sub_lt`: quantitative Kazhdan approximation for
-  normal subgroups, without countability.
+* `Subgroup.IsKazhdanPair.exists_mem_invariants_norm_sub_lt` and
+  `Subgroup.RelativePropertyT.exists_mem_invariants_norm_sub_lt`: for a normal subgroup, a vector
+  moved little by the elements of a Kazhdan set is close to an invariant vector.
 
 ## References
 
 * C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, Proposition 14.1.2.
 * B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Chapter 1.
+* P. Jolissaint, *On property (T) for pairs of topological groups*, Enseign. Math. (2) 51 (2005),
+  31–45.
 -/
 
 public section
@@ -274,84 +280,58 @@ theorem relativePropertyT_max_iff (Λ : Subgroup Γ) :
     Λ.RelativePropertyT.{max u v} ↔ Λ.RelativePropertyT.{v} :=
   ⟨fun h ↦ have : Small.{max u v} Γ := small_max Γ; h.of_universe, RelativePropertyT.of_universe⟩
 
-section Normal
+/-- **Kazhdan pairs, quantitatively.** Let `(F, δ)` be a Kazhdan pair for a normal subgroup `Λ`.
+If every element of `F` moves a vector `ξ` of a unitary representation by less than `δ * ε`, then
+`ξ` lies within `ε` of a `Λ`-invariant vector, namely its orthogonal projection onto the
+`Λ`-invariant vectors. -/
+theorem IsKazhdanPair.exists_mem_invariants_norm_sub_lt {Λ : Subgroup Γ} [Λ.Normal]
+    {F : Finset Γ} {δ : ℝ} (hΛ : Λ.IsKazhdanPair.{u} F δ) {H : Type u}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {ρ : ContRepresentation ℂ Γ H} (hρ : ρ.IsUnitary) {ξ : H} {ε : ℝ} (hε : 0 < ε)
+    (hξ : ∀ g ∈ F, ‖ρ g ξ - ξ‖ < δ * ε) :
+    ∃ η ∈ (ρ.restrict Λ.subtype).invariants, ‖ξ - η‖ < ε := by
+  set W := (ρ.restrict Λ.subtype).invariants
+  have hW (g : Γ) (v : H) (hv : v ∈ W) : ρ g v ∈ W := ρ.apply_mem_invariants_restrict Λ g v hv
+  have hWo (g : Γ) (v : H) (hv : v ∈ Wᗮ) : ρ g v ∈ Wᗮ := hρ.apply_mem_orthogonal hW g hv
+  refine ⟨W.starProjection ξ, W.starProjection_apply_mem ξ, ?_⟩
+  -- The component `ζ` of `ξ` orthogonal to `W` has norm less than `ε`.
+  rw [← Submodule.starProjection_orthogonal_val]
+  set ζ := Wᗮ.starProjection ξ
+  by_contra! hle
+  have hζ : ζ ≠ 0 := norm_pos_iff.mp (hε.trans_le hle)
+  -- Each `g ∈ F` moves `ζ` at most as much as it moves `ξ`.
+  have hmove (g : Γ) (hg : g ∈ F) : ‖ρ g ζ - ζ‖ < δ * ‖ζ‖ := by
+    have hδ : 0 ≤ δ := by
+      by_contra! hδ
+      linarith [hξ g hg, norm_nonneg (ρ g ξ - ξ), mul_neg_of_neg_of_pos hδ hε]
+    rw [← hρ.starProjection_apply_comm hWo, ← map_sub]
+    exact ((Wᗮ.norm_starProjection_apply_le _).trans_lt (hξ g hg)).trans_le
+      (mul_le_mul_of_nonneg_left hle hδ)
+  -- So `ζ / ‖ζ‖` is an `(F, δ)`-invariant unit vector of the representation on `Wᗮ`, which has
+  -- no nonzero `Λ`-invariant vector.
+  obtain ⟨v, hv0, hv⟩ := hΛ Wᗮ (ρ.subrepresentation Wᗮ hWo) (hρ.subrepresentation hWo)
+    ⟨(‖ζ‖⁻¹ : ℂ) • ⟨ζ, Wᗮ.starProjection_apply_mem ξ⟩, by simp [norm_smul, hζ], fun g hg ↦ by
+      rw [← Submodule.norm_coe]
+      simp only [AddSubgroupClass.coe_sub, coe_subrepresentation_apply, Submodule.coe_smul,
+        map_smul, ← smul_sub, norm_smul, norm_inv, Complex.norm_real, norm_norm]
+      rw [inv_mul_lt_iff₀ (norm_pos_iff.mpr hζ), mul_comm]
+      exact hmove g hg⟩
+  refine hv0 (Subtype.ext ((Submodule.disjoint_def.mp W.orthogonal_disjoint) v ?_ v.property))
+  exact (ρ.mem_invariants_restrict).mpr fun s hs ↦ by
+    simpa using congrArg Subtype.val (hv ⟨s, hs⟩)
 
-/-- **Quantitative Kazhdan approximation for normal subgroups.** If `(F, δ)` with `δ > 0` is a
-Kazhdan pair for a normal subgroup `Λ` in the universe of `Γ`, then in any unitary representation
-`ρ` of `Γ` on a Hilbert space (in any universe) every vector `ξ` moved by at most `ε * δ` on `F`
-lies within `ε` of its orthogonal projection onto `H^Λ`. -/
-theorem IsKazhdanPair.norm_sub_starProjection_invariants_le {Λ : Subgroup Γ} [Λ.Normal]
-    {F : Finset Γ} {δ : ℝ} (hK : Λ.IsKazhdanPair.{v} F δ) (hδ : 0 < δ)
-    {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    {ρ : ContRepresentation ℂ Γ H} (hρ : ρ.IsUnitary) {ε : ℝ} (hε : 0 ≤ ε) (ξ : H)
-    (hF : ∀ g ∈ F, ‖ρ g ξ - ξ‖ ≤ ε * δ) :
-    ‖ξ - (ρ.restrict Λ.subtype).invariants.starProjection ξ‖ ≤ ε := by
-  let W := (ρ.restrict Λ.subtype).invariants
-  have hW : ∀ g, ∀ v ∈ W, ρ g v ∈ W := apply_mem_invariants_restrict ρ Λ
-  let η : H := ξ - W.starProjection ξ
-  by_cases hη0 : η = 0
-  · dsimp only [η] at hη0
-    rw [hη0, norm_zero]
-    exact hε
-  have hηpos : 0 < ‖η‖ := norm_pos_iff.mpr hη0
-  -- Restrict `ρ` to `Wᗮ`, which is `Γ`-invariant since `Λ` is normal and `ρ` is unitary, and has
-  -- no nonzero `Λ`-invariant vectors.
-  let σ := ρ.subrepresentation Wᗮ (hρ.apply_mem_orthogonal hW)
-  have hσ : σ.IsUnitary := hρ.subrepresentation (hρ.apply_mem_orthogonal hW)
-  let η₀ : Wᗮ := ⟨(‖η‖⁻¹ : ℂ) • η, Wᗮ.smul_mem _ (W.sub_starProjection_mem_orthogonal ξ)⟩
-  have hη₀_norm : ‖η₀‖ = 1 := by
-    rw [← Submodule.norm_coe]
-    exact norm_smul_inv_norm hη0
-  have hno_inv : ¬ ∃ v : Wᗮ, v ≠ 0 ∧ v ∈ (σ.restrict Λ.subtype).invariants := by
-    rintro ⟨v, hv0, hv⟩
-    have hvW : (v : H) ∈ W := fun k ↦ by
-      simpa only [σ, restrict_apply_apply, coe_subrepresentation_apply] using
-        congrArg Subtype.val (hv k)
-    exact hv0 (Subtype.ext ((Submodule.disjoint_def.mp W.orthogonal_disjoint) v hvW v.property))
-  have hnotF : ¬ ∀ g ∈ F, ‖σ g η₀ - η₀‖ < δ := fun hlt ↦
-    hno_inv ((isKazhdanPair_def Λ F δ).mp hK.of_universe Wᗮ σ hσ ⟨η₀, hη₀_norm, hlt⟩)
-  push Not at hnotF
-  obtain ⟨g, hgF, hgδ⟩ := hnotF
-  have hcomm : ρ g η - η = Wᗮ.starProjection (ρ g ξ - ξ) := by
-    dsimp only [η]
-    rw [Submodule.starProjection_orthogonal_val, map_sub, map_sub,
-      hρ.starProjection_apply_comm hW g ξ]
-    abel
-  have hproj_le : ‖ρ g η - η‖ ≤ ‖ρ g ξ - ξ‖ := by
-    rw [hcomm]
-    exact Wᗮ.norm_starProjection_apply_le _
-  have hscale : ‖σ g η₀ - η₀‖ = ‖η‖⁻¹ * ‖ρ g η - η‖ := by
-    rw [← Submodule.norm_coe, Submodule.coe_sub, coe_subrepresentation_apply, map_smul, ← smul_sub,
-      norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)]
-  rw [hscale, le_inv_mul_iff₀' hηpos] at hgδ
-  have hle : δ * ‖η‖ ≤ δ * ε := by linarith [hproj_le, hF g hgF]
-  exact le_of_mul_le_mul_left hle hδ
-
-/-- For a Kazhdan pair `(F, δ)` (`δ > 0`) of a normal subgroup `Λ` in the universe `v` of `Γ`,
-any vector in a unitary representation on a Hilbert space (in any universe) moved by strictly less
-than `ε * δ` on `F` (`ε > 0`) is strictly within `ε` of a `Λ`-invariant vector. -/
-theorem IsKazhdanPair.exists_invariant_norm_sub_lt {Λ : Subgroup Γ} [Λ.Normal]
-    {F : Finset Γ} {δ : ℝ} (hK : Λ.IsKazhdanPair.{v} F δ) (hδ : 0 < δ)
-    {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    {ρ : ContRepresentation ℂ Γ H} (hρ : ρ.IsUnitary) {ε : ℝ} (hε : 0 < ε) (ξ : H)
-    (hF : ∀ g ∈ F, ‖ρ g ξ - ξ‖ < ε * δ) :
-    ∃ v ∈ (ρ.restrict Λ.subtype).invariants, ‖v - ξ‖ < ε := by
-  refine ⟨(ρ.restrict Λ.subtype).invariants.starProjection ξ,
-    Submodule.starProjection_apply_mem _ ξ, ?_⟩
-  rw [norm_sub_rev]
-  rcases F.eq_empty_or_nonempty with rfl | hFne
-  · exact (hK.norm_sub_starProjection_invariants_le hδ hρ le_rfl ξ (by simp)).trans_lt hε
-  · let m : ℝ := (F.sup' hFne fun g ↦ ‖ρ g ξ - ξ‖) / δ
-    have hm_nonneg : 0 ≤ m := by
-      obtain ⟨g₀, hg₀⟩ := hFne
-      exact div_nonneg ((norm_nonneg _).trans (F.le_sup' (fun g ↦ ‖ρ g ξ - ξ‖) hg₀)) hδ.le
-    have hm_lt : m < ε := by
-      rw [div_lt_iff₀ hδ, Finset.sup'_lt_iff]
-      exact hF
-    refine (hK.norm_sub_starProjection_invariants_le hδ hρ hm_nonneg ξ fun g hg ↦ ?_).trans_lt hm_lt
-    rw [div_mul_cancel₀ _ hδ.ne']
-    exact F.le_sup' (fun g ↦ ‖ρ g ξ - ξ‖) hg
-
-end Normal
+/-- **The quantitative form of relative property (T) for normal subgroups.** If a normal subgroup
+`Λ` has relative property (T), then for every `ε > 0` there are a finite set `F` and a `δ > 0` such
+that every vector of a unitary representation moved by less than `δ` by each element of `F` lies
+within `ε` of a `Λ`-invariant vector. -/
+theorem RelativePropertyT.exists_mem_invariants_norm_sub_lt {Λ : Subgroup Γ} [Λ.Normal]
+    (hΛ : Λ.RelativePropertyT.{max u v}) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧
+      ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+        (ρ : ContRepresentation ℂ Γ H), ρ.IsUnitary → ∀ ξ : H, (∀ g ∈ F, ‖ρ g ξ - ξ‖ < δ) →
+          ∃ η ∈ (ρ.restrict Λ.subtype).invariants, ‖ξ - η‖ < ε := by
+  obtain ⟨F, δ, hδ, hK⟩ := (relativePropertyT_iff_exists_isKazhdanPair Λ).mp hΛ
+  exact ⟨F, δ * ε, mul_pos hδ hε, fun H _ _ _ ρ hρ ξ hξ ↦
+    hK.exists_mem_invariants_norm_sub_lt hρ hε hξ⟩
 
 end Subgroup
