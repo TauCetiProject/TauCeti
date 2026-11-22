@@ -93,6 +93,20 @@ theorem stripMeasure_eq_prod :
   unfold stripMeasure
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
 
+/-- Lebesgue measure on `[0, 1]`, the second factor of the strip measure, is a probability
+measure. -/
+instance isProbabilityMeasure_restrict_Icc_zero_one :
+    IsProbabilityMeasure (volume.restrict (Icc (0 : ℝ) 1)) :=
+  ⟨by simp⟩
+
+/-- An almost everywhere statement about the first coordinate `s` holds almost everywhere on the
+strip. -/
+theorem ae_stripMeasure_of_ae_fst {p : ℝ → Prop} (h : ∀ᵐ s, p s) :
+    ∀ᵐ z ∂stripMeasure, p z.1 := by
+  rw [stripMeasure_eq_prod]
+  exact (Measure.quasiMeasurePreserving_fst (μ := volume)
+    (ν := volume.restrict (Icc (0 : ℝ) 1))).ae h
+
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
 def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
   (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))

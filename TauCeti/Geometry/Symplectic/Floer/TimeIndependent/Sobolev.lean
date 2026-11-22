@@ -24,8 +24,8 @@ be the linearized Floer operator along the time-independent cylinder `(s, t) ↦
 (`TauCeti.SymplecticForm.floerLinearization_const_eq`), realized on the Sobolev space as
 `TauCeti.SymplecticForm.floerSobolevOperator : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`. Its
 coefficients do not depend on `t`. This file shows that, when `‖dX_H(γ(s))‖ ≤ a < 2π` for every
-`s`, the realization splits along the zero Fourier mode, on which it is the Morse operator
-`ζ ↦ ζ' - J dX_H(γ) ζ`, and that the other modes carry no kernel.
+`s`, the realization commutes with the projection onto the zero Fourier mode, and that the other
+modes carry no kernel.
 
 * **The coefficients.** For a constant `J` the coefficient field of `D` on jets is that of
   `∂s + J ∂t - J dX_H(u)` (`TauCeti.SymplecticForm.floerJetCoeff_const_eq`). Along `γ` it does not
@@ -36,22 +36,23 @@ coefficients do not depend on `t`. This file shows that, when `‖dX_H(γ(s))‖
   (`TauCeti.SymplecticForm.floerSobolevOperator_sliceAverageL`).
 * **The gap on the nonzero modes.** On the complement of the zero mode `D` is bounded below:
   `(2π - a)² ‖x - P x‖² ≤ ((2π)² + 1) ‖D (x - P x)‖²` for every `x ∈ W^{1,2}` and its slice average
-  `P x` (`TauCeti.SymplecticForm.sq_norm_sub_sliceAverageL_le`). On test sections this is the
-  estimate of Wirtinger's inequality on the slices,
+  `P x`
+  (`TauCeti.SymplecticForm.mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator`). On
+  test sections this is the estimate of Wirtinger's inequality on the slices,
   `TauCeti.SymplecticForm.mul_setIntegral_norm_sq_le_setIntegral_norm_floerLinearization_sq`, with
-  its counterpart for the derivatives; it extends to
-  `W^{1,2}` because the slice average maps the jet of a test section `ξ` to the jet of the test
-  section `ξbar`, and the jets of test sections are dense.
+  its counterpart for the derivatives; it extends to `W^{1,2}` because the slice average maps the
+  jet of a test section `ξ` to the jet of the test section `ξbar`, and the jets of test sections are
+  dense.
 * **The kernel lies in the zero mode.** Consequently every element of the kernel of `D` on
   `W^{1,2}` is its own slice average, a section that does not depend on `t`
   (`TauCeti.SymplecticForm.sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero`), whatever the
   regularity of the element.
 
-This is the Sobolev counterpart of the classical statement
-`TauCeti.SymplecticForm.forall_floerLinearization_comp_fst_eq_zero_iff`, without its hypotheses on
-the second derivative of `X_H` and on `γ'`: the kernel of `D` is carried by its zero Fourier mode,
-the Morse operator. The cokernel, and the identification of the zero mode with the Morse operator on
-`W^{1,2}(ℝ, V)`, are not treated here.
+This gives, at the Sobolev level and without the hypotheses on the second derivative of `X_H` and
+on `γ'`, the `t`-independence half of
+`TauCeti.SymplecticForm.forall_floerLinearization_comp_fst_eq_zero_iff`. The ordinary differential
+equation on the zero mode, the converse, the cokernel, and the identification of the zero mode with
+the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)` are not treated here.
 
 ## References
 
@@ -143,16 +144,6 @@ section Gap
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
 
-/-- A function on the plane vanishing for `|s| > R` has the same integral for the strip measure as
-over the rectangle `[-R, R] × [0, 1]`. -/
-private theorem integral_stripMeasure_eq_setIntegral {g : ℝ × ℝ → ℝ} {R : ℝ}
-    (hg : ∀ z : ℝ × ℝ, R < |z.1| → g z = 0) :
-    ∫ z, g z ∂stripMeasure = ∫ z in Icc (-R) R ×ˢ Icc 0 1, g z :=
-  setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (MeasurableSet.univ.prod measurableSet_Icc)
-    (prod_mono (subset_univ _) subset_rfl) fun z hz ↦ hg z (by
-      have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
-      rwa [mem_Icc, ← abs_le, not_le] at h)
-
 /-- On the jet of a test section `η` vanishing for `|s| ≥ R`, the squared norm of the Sobolev
 realization of `D` is the integral of `‖D η‖²` over the rectangle `[-R, R] × [0, 1]`. -/
 private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral (hH : ContDiff ℝ 2 H)
@@ -169,13 +160,12 @@ private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral (hH : ContDiff
     filter_upwards [floerSobolevOperator_jetLp_ae_eq ω
       (memLp_floerJetCoeff_const_comp_fst hH hγ haγ) η] with z hz
     rw [hz])]
-  refine integral_stripMeasure_eq_setIntegral fun z hz ↦ ?_
-  have h := jet_eq_zero_of_lt_abs hR hz
-  simp only [jet_apply, Prod.mk_eq_zero] at h
-  simp [floerLinearization_const_eq, h.1, h.2.1, h.2.2]
+  refine integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ ?_
+  simp only [jet_apply, Prod.mk_eq_zero] at hz
+  simp [floerLinearization_const_eq, hz.1, hz.2.1, hz.2.2]
 
 /-- The gap on the nonzero modes for the jet of a test section whose slices have mean zero. -/
-private theorem sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
+private theorem mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (η : testSection V) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, (η : ℝ × ℝ → V) (s, t) = 0) :
@@ -188,9 +178,6 @@ private theorem sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
   set R₀ := max R 0
   have hR₀ : ∀ s t, R₀ ≤ |s| → (η : ℝ × ℝ → V) (s, t) = 0 :=
     fun s t hs ↦ hR s t ((le_max_left _ _).trans hs)
-  have hc : ∀ z : ℝ × ℝ, R₀ < |z.1| → (η : ℝ × ℝ → V) z = 0 ∧
-      fderiv ℝ (η : ℝ × ℝ → V) z (1, 0) = 0 ∧ fderiv ℝ (η : ℝ × ℝ → V) z (0, 1) = 0 :=
-    fun z hz ↦ by simpa [jet_apply] using jet_eq_zero_of_lt_abs hR₀ hz
   have hs : -R₀ ≤ R₀ := by linarith [le_max_right R 0]
   have h₀ : ∀ t, (η : ℝ × ℝ → V) (-R₀, t) = 0 :=
     fun t ↦ hR₀ _ t (by rw [abs_neg, abs_of_nonneg (le_max_right _ _)])
@@ -201,10 +188,7 @@ private theorem sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
   have hB := mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearization_sq hg hH hγ
     ha (fun s _ ↦ haγ s) hη2 hηp hmean hs h₀ h₁
   -- The squared norm of the jet is at most the `W^{1,2}` energy over the rectangle.
-  have hJ := sq_norm_jetLp_le_integral η hη1
-  rw [integral_stripMeasure_eq_setIntegral (R := R₀) fun z hz ↦ by
-    obtain ⟨e₁, e₂, e₃⟩ := hc z hz
-    simp [e₁, e₂, e₃]] at hJ
+  have hJ := sq_norm_jetLp_le_setIntegral hη1 hR₀
   have hd := hη1.continuous_fderiv one_ne_zero
   have hi₁ : IntegrableOn (fun z ↦ ‖fderiv ℝ (η : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ (η : ℝ × ℝ → V) z (0, 1)‖ ^ 2) (Icc (-R₀) R₀ ×ˢ Icc 0 1) :=
@@ -223,9 +207,9 @@ private theorem sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
 `‖dX_H(γ(s))‖ ≤ a ≤ 2π` for every `s`. Then the Sobolev realization `D` of the linearized operator
 along `(s, t) ↦ γ(s)` satisfies `(2π - a)² ‖x - P x‖² ≤ ((2π)² + 1) ‖D (x - P x)‖²` for every
 `x ∈ W^{1,2}(ℝ × S¹, V)`, where `P x` is the slice average of `x`. -/
-theorem sq_norm_sub_sliceAverageL_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H)
-    (hγ : Continuous γ) {a : ℝ} (ha : a ≤ 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) (x : H1 V) :
+theorem mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
+    (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) (x : H1 V) :
     (2 * π - a) ^ 2 * ‖x - sliceAverageL x‖ ^ 2 ≤
       ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (x - sliceAverageL x)‖ ^ 2 := by
@@ -256,19 +240,21 @@ theorem sq_norm_sub_sliceAverageL_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH
       intervalIntegral.integral_const, sub_zero, one_smul, sliceAverage_apply, sub_self]
   simp only [hx]
   rw [← Submodule.norm_coe]
-  exact sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero hg hH hγ ha haγ η hmean
+  exact mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero hg hH hγ ha haγ η hmean
 
 /-- **The nonzero modes are bounded below.** Under the hypotheses of
-`TauCeti.SymplecticForm.sq_norm_sub_sliceAverageL_le`, an element `x` of `W^{1,2}(ℝ × S¹, V)` whose
-slice average vanishes satisfies `(2π - a)² ‖x‖² ≤ ((2π)² + 1) ‖D x‖²`. -/
-theorem sq_norm_le_of_sliceAverageL_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a ≤ 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {x : H1 V}
+`TauCeti.SymplecticForm.mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator`, an
+element `x` of `W^{1,2}(ℝ × S¹, V)` whose slice average vanishes satisfies
+`(2π - a)² ‖x‖² ≤ ((2π)² + 1) ‖D x‖²`. -/
+theorem mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
+    (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {x : H1 V}
     (hx : sliceAverageL x = 0) :
     (2 * π - a) ^ 2 * ‖x‖ ^ 2 ≤
       ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x‖ ^ 2 := by
-  simpa [hx] using sq_norm_sub_sliceAverageL_le hg hH hγ ha haγ x
+  simpa [hx] using
+    mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator hg hH hγ ha haγ x
 
 /-- **The kernel lies in the zero mode.** Let the inner product of `V` be the metric `ω(·, J ·)`,
 let `H` be a `C²` autonomous Hamiltonian and `γ` a continuous curve with
@@ -284,7 +270,7 @@ theorem sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero (hg : ∀ v w, ω 
   have hD : ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (fun _ ↦ H) (fun z ↦ γ z.1) (x - sliceAverageL x) = 0 := by
     rw [map_sub, floerSobolevOperator_sliceAverageL, hx, map_zero, sub_zero]
-  have h := sq_norm_sub_sliceAverageL_le hg hH hγ ha.le haγ x
+  have h := mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator hg hH hγ ha.le haγ x
   rw [hD, norm_zero] at h
   have hpos : 0 < (2 * π - a) ^ 2 := pow_pos (sub_pos.2 ha) 2
   have h0 : ‖x - sliceAverageL x‖ ^ 2 ≤ 0 := by nlinarith

@@ -92,6 +92,16 @@ open scoped ENNReal
 
 namespace TauCeti.StripSobolev
 
+/-- Almost every slice `t ↦ f (s, t)` of a square integrable section on the strip is integrable
+on `[0, 1]`. -/
+theorem ae_integrable_slice {E : Type*} [NormedAddCommGroup E] {f : ℝ × ℝ → E}
+    (hf : MemLp f 2 stripMeasure) :
+    ∀ᵐ s, Integrable (fun t ↦ f (s, t)) (volume.restrict (Icc (0 : ℝ) 1)) := by
+  rw [stripMeasure_eq_prod] at hf
+  filter_upwards [((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf).prod_right_ae,
+    hf.aestronglyMeasurable.prodMk_left] with s hs hm
+  exact ((memLp_two_iff_integrable_sq_norm hm).2 hs).integrable one_le_two
+
 section NormedSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]

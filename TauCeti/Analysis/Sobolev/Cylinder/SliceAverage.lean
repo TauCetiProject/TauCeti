@@ -89,9 +89,6 @@ theorem sliceAverage_sliceAverage [CompleteSpace E] (f : ℝ × ℝ → E) :
   simp only [sliceAverage_apply]
   rw [intervalIntegral.integral_const, sub_zero, one_smul]
 
-private instance : IsProbabilityMeasure (volume.restrict (Icc (0 : ℝ) 1)) :=
-  ⟨by simp⟩
-
 /-- **Jensen's inequality on a slice.** The squared norm of the slice average is at most the
 integral of the squared norm over the slice. -/
 private theorem enorm_sliceAverage_rpow_le {s : ℝ}
@@ -144,32 +141,14 @@ theorem eLpNorm_sliceAverage_le (hf : AEStronglyMeasurable f stripMeasure) :
 /-- The slice average of a square integrable section on the strip is square integrable. -/
 theorem memLp_sliceAverage (hf : MemLp f 2 stripMeasure) :
     MemLp (sliceAverage f) 2 stripMeasure :=
-  (eLpNorm_sliceAverage_le hf.aestronglyMeasurable).trans_lt hf
+  memLp_iff.2 ((eLpNorm_sliceAverage_le hf.aestronglyMeasurable).trans_lt (memLp_iff.1 hf))
 
 omit [NormedSpace ℝ E] in
 /-- Almost every slice of a square integrable section on the strip is integrable over `[0, 1]`. -/
 theorem ae_intervalIntegrable_slice (hf : MemLp f 2 stripMeasure) :
     ∀ᵐ s, IntervalIntegrable (fun t ↦ f (s, t)) volume 0 1 := by
-  have hm := hf.aestronglyMeasurable
-  rw [stripMeasure_eq_prod] at hm
-  have hlt : eLpNorm f 2 stripMeasure < ∞ := hf
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable, ENNReal.toReal_ofNat, stripMeasure_eq_prod,
-    lintegral_prod _ (hm.eNorm.pow_const _)] at hlt
-  have hfin : ∫⁻ s, ∫⁻ t, ‖f (s, t)‖ₑ ^ (2 : ℝ) ∂(volume.restrict (Icc (0 : ℝ) 1)) < ∞ := by
-    by_contra h
-    rw [not_lt, top_le_iff] at h
-    rw [h] at hlt
-    simp at hlt
-  filter_upwards [hm.prodMk_left, ae_lt_top' (hm.eNorm.pow_const _).lintegral_prod_right' hfin.ne]
-    with s hs hsl
-  have hmem : MemLp (fun t ↦ f (s, t)) 2 (volume.restrict (Icc (0 : ℝ) 1)) := by
-    change eLpNorm _ _ _ < ∞
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hs,
-      ENNReal.toReal_ofNat]
-    exact ENNReal.rpow_lt_top_of_nonneg (by norm_num) hsl.ne
-  rw [intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one]
-  exact hmem.integrable one_le_two
+  filter_upwards [ae_integrable_slice hf] with s hs
+  exact (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).2 hs
 
 /-- Sections that agree almost everywhere on the strip have slice averages that agree almost
 everywhere on the strip. -/
@@ -185,17 +164,11 @@ theorem sliceAverage_congr_ae (h : f =ᵐ[stripMeasure] g) :
   rw [sliceAverage_mk f z.1 z.2, sliceAverage_mk g z.1 z.2]
   exact hz
 
-/-- An almost everywhere statement about the slices `s` holds almost everywhere on the strip. -/
-private theorem ae_strip_of_ae {p : ℝ → Prop} (h : ∀ᵐ s, p s) : ∀ᵐ z ∂stripMeasure, p z.1 := by
-  rw [stripMeasure_eq_prod]
-  exact (Measure.quasiMeasurePreserving_fst (μ := volume)
-    (ν := volume.restrict (Icc (0 : ℝ) 1))).ae h
-
 /-- The slice average is additive on square integrable sections, almost everywhere. -/
 theorem sliceAverage_add_ae (hf : MemLp f 2 stripMeasure) (hg : MemLp g 2 stripMeasure) :
     sliceAverage (f + g) =ᵐ[stripMeasure] sliceAverage f + sliceAverage g := by
-  filter_upwards [ae_strip_of_ae (ae_intervalIntegrable_slice hf),
-    ae_strip_of_ae (ae_intervalIntegrable_slice hg)] with z hfz hgz
+  filter_upwards [ae_stripMeasure_of_ae_fst (ae_intervalIntegrable_slice hf),
+    ae_stripMeasure_of_ae_fst (ae_intervalIntegrable_slice hg)] with z hfz hgz
   exact intervalIntegral.integral_add hfz hgz
 
 /-- The slice average is homogeneous. -/
@@ -274,7 +247,8 @@ theorem sliceAverageLp_jetOperator {V W : Type*} [NormedAddCommGroup V] [NormedS
   · refine Lp.ext ?_
     filter_upwards [coeFn_sliceAverageLp (jetOperator stripMeasure M x),
       sliceAverage_congr_ae (coeFn_jetOperator hMb x), coeFn_jetOperator hMb (sliceAverageLp x),
-      coeFn_sliceAverageLp x, ae_strip_of_ae (ae_intervalIntegrable_slice (Lp.memLp x))]
+      coeFn_sliceAverageLp x,
+      ae_stripMeasure_of_ae_fst (ae_intervalIntegrable_slice (Lp.memLp x))]
       with z h₁ h₂ h₃ h₄ hz
     rw [h₁, h₂, h₃, h₄, sliceAverage_apply_apply hM hz]
   · simp [jetOperator_of_not_memLp hMb]
@@ -287,7 +261,8 @@ theorem sliceAverageLp_compLpL [CompleteSpace E] [CompleteSpace F] (L : E →L[�
   refine Lp.ext ?_
   filter_upwards [coeFn_sliceAverageLp (L.compLpL 2 stripMeasure x),
     sliceAverage_congr_ae (L.coeFn_compLpL x), L.coeFn_compLpL (sliceAverageLp x),
-    coeFn_sliceAverageLp x, ae_strip_of_ae (ae_intervalIntegrable_slice (Lp.memLp x))]
+    coeFn_sliceAverageLp x,
+    ae_stripMeasure_of_ae_fst (ae_intervalIntegrable_slice (Lp.memLp x))]
     with z h₁ h₂ h₃ h₄ hz
   rw [h₁, h₂, h₃, h₄]
   exact sliceAverage_apply_apply (M := fun _ ↦ L) (fun _ _ ↦ rfl) hz
@@ -397,14 +372,8 @@ theorem sliceAverageL_jetLp (ξ : testSection V) :
 /-- The value of the slice average of an element of `H1` is the slice average of its value. -/
 theorem valueL_sliceAverageL (x : H1 V) :
     valueL (sliceAverageL x) = sliceAverageLp (valueL x) := by
-  set y : Lp (V × V × V) 2 stripMeasure := x.val
-  refine Lp.ext ?_
-  filter_upwards [coeFn_valueL (sliceAverageL x), coeFn_sliceAverageLp y,
-    coeFn_sliceAverageLp (valueL x), sliceAverage_congr_ae (coeFn_valueL x),
-    ae_strip_of_ae (ae_intervalIntegrable_slice (Lp.memLp y))]
-    with z h₁ h₂ h₃ h₄ hz
-  rw [h₁, coe_sliceAverageL, h₂, h₃, h₄]
-  exact (sliceAverage_apply_apply (M := fun _ ↦ ContinuousLinearMap.fst ℝ V (V × V))
-    (fun _ _ ↦ rfl) hz).symm
+  have h (y : H1 V) : valueL y = (ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure y :=
+    Lp.ext ((coeFn_valueL y).trans ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL _).symm)
+  rw [h, h, coe_sliceAverageL, sliceAverageLp_compLpL]
 
 end TauCeti.CylinderSobolev

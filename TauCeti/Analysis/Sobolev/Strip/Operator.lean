@@ -115,7 +115,7 @@ private theorem le_sqrt_max_mul_of_sq_le {a b C : ℝ} (hb : 0 ≤ b)
 
 /-- The squared `L²` norm of the jet of a `C¹` element of `S` vanishing for `|s| ≥ R` is at most
 its `W^{1,2}` energy over `[-R, R] × [0, 1]`. -/
-private theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
+theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
     {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0) :
     ‖jetLp S ξ‖ ^ 2 ≤ ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1,
       (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 + ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 +
