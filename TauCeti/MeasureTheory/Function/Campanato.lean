@@ -106,6 +106,8 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
   below.
 * `setAverage_closedBall_restrict_norm_sub_le`: square mean oscillation of order `r^{n+2κ}` gives
   mean oscillation of order `r^κ`, on a set with density bounded below.
+* `norm_setAverage_closedBall_restrict_le_sqrt`: an `L²` bound bounds the averages, on a set with
+  density bounded below.
 * `exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: square mean oscillation decaying like
   `r^{n+2κ}` at `x` keeps the averages bounded, so that `∫_{B(x, r) ∩ Ω} ‖f‖²` decays like `rⁿ`,
   on a set with density bounded below in the balls around `x`.
@@ -699,6 +701,28 @@ private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (h
   rw [(div_eq_iff (measureReal_ball_pos μ z hR).ne').1
     (μ.addHaar_real_ball_div_addHaar_real_ball z z hR hs)] at h2
   exact (mul_le_mul_of_nonneg_right h2 (sq_nonneg _)).trans h1
+
+/-- **Bounded averages from an `L²` bound.** Let `c > 0`, let `Ω` have density at least `c` in
+`closedBall z t`, and let `S ⊇ ball z t ∩ Ω` have finite measure with `∫_S ‖g‖² ≤ Φ`. Then the
+average of `g` over `closedBall z t` for `μ.restrict Ω` has norm at most
+`√(Φ / (c μ(B(z, t))))`. -/
+theorem norm_setAverage_closedBall_restrict_le_sqrt {S : Set E} {t Φ : ℝ} (hc : 0 < c)
+    (ht : 0 < t) (hd : (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
+    (hS : ball z t ∩ Ω ⊆ S) (hSfin : μ S ≠ ⊤) (hg : MemLp g 2 (μ.restrict S))
+    (hΦ : ∫ y in S, ‖g y‖ ^ 2 ∂μ ≤ Φ) :
+    ‖⨍ y in closedBall z t, g y ∂μ.restrict Ω‖ ≤ √(Φ / (c * μ.real (ball z t))) := by
+  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
+  have h1 := measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top
+    (hg.mono_measure (Measure.restrict_mono hS le_rfl))
+  have h2 : ∫ y in ball z t ∩ Ω, ‖g y‖ ^ 2 ∂μ ≤ Φ :=
+    (setIntegral_mono_set (by
+        simpa only [sub_zero] using hg.integrableOn_norm_sub_sq_of_subset subset_rfl hSfin 0)
+      (ae_of_all _ fun _ => by positivity) hS.eventuallySubset).trans hΦ
+  have h0 : 0 < (c : ℝ) * μ.real (ball z t) := mul_pos hc (measureReal_ball_pos μ z ht)
+  have hΦ0 : 0 ≤ Φ := (integral_nonneg fun _ => by positivity).trans hΦ
+  rw [Real.le_sqrt (norm_nonneg _) (div_nonneg hΦ0 h0.le), le_div_iff₀ h0, mul_comm]
+  exact (mul_le_mul_of_nonneg_right (μ.mul_measureReal_ball_le_measureReal_ball_inter hd)
+    (sq_nonneg _)).trans (h1.trans h2)
 
 end NormedSpace
 

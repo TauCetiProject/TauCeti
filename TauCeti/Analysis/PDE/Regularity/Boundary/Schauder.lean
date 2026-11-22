@@ -101,33 +101,6 @@ namespace PDE
 
 variable {n : ℕ}
 
-section Geometry
-
-variable {H : Set (EuclideanSpace ℝ (Fin (n + 1)))} {ν x : EuclideanSpace ℝ (Fin (n + 1))}
-  {c₀ : ℝ}
-
-/-- A half-space `H = {y | c₀ < ⟪y, ν⟫}` has density at least one half in every closed ball
-centred in its closure, in the form of the measure density property of Campanato's theorem. -/
-private theorem half_mul_volume_closedBall_le (hν : ν ≠ 0) (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ)
-    (hx : c₀ ≤ ⟪x, ν⟫_ℝ) (t : ℝ) :
-    (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall x t) ≤ volume (closedBall x t ∩ H) := by
-  rw [ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ← ENNReal.div_eq_inv_mul,
-    show H = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH, inter_comm]
-  exact volume.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter_closedBall hν hx
-
-/-- A ball of radius `s > 0` centred in the closure of a half-space `H` meets `H` in a set of
-measure at least `|B(0, s)| / 2 = s^{n+1} ω / 2`. -/
-private theorem half_mul_le_measureReal_ball_inter (hν : ν ≠ 0)
-    (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hx : c₀ ≤ ⟪x, ν⟫_ℝ) {s : ℝ} (hs : 0 < s) :
-    2⁻¹ * (s ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) ≤
-      volume.real (ball x s ∩ H) := by
-  have h := volume.mul_measureReal_ball_le_measureReal_ball_inter
-    (half_mul_volume_closedBall_le hν hH hx s)
-  rwa [Measure.addHaar_real_ball_of_pos volume x hs, finrank_euclideanSpace_fin, NNReal.coe_inv,
-    NNReal.coe_ofNat] at h
-
-end Geometry
-
 section Affine
 
 variable {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -802,35 +775,6 @@ private theorem sqrt_add_mul_sq_mul_rpow_neg_le {Φ c R Q a : ℝ} (hΦ : 0 ≤ 
     _ ≤ (1 + √c) * (Q + R ^ (-a) * √Φ) := by
         nlinarith [Real.sqrt_nonneg c, mul_nonneg hRn (Real.sqrt_nonneg Φ)]
 
-
-/-- **The averages at a fixed scale.** If `x` lies in the closure of the half-space `H`, the
-set `B(x, ρ) ∩ H` lies in `S`, and `∫_S ‖g‖² ≤ Φ`, then the average of `g` over `closedBall x ρ` for
-the Lebesgue measure on `H` has norm at most `√(Φ / (|B(0, ρ)| / 2))`. -/
-private theorem norm_setAverage_closedBall_restrict_le_sqrt
-    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {H S : Set (EuclideanSpace ℝ (Fin (n + 1)))} {ν x : EuclideanSpace ℝ (Fin (n + 1))}
-    {c₀ ρ Φ : ℝ} (hν : ν ≠ 0) (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hx : c₀ ≤ ⟪x, ν⟫_ℝ)
-    (hρ : 0 < ρ) (hS : ball x ρ ∩ H ⊆ S) (hSfin : volume S ≠ ⊤)
-    (hg : MemLp g 2 (volume.restrict S)) (hΦ : ∫ y in S, ‖g y‖ ^ 2 ≤ Φ) :
-    ‖⨍ y in closedBall x ρ, g y ∂volume.restrict H‖ ≤
-      √(Φ / (2⁻¹ * (ρ ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))) := by
-  rw [volume.restrict_restrict_closedBall_eq_restrict_ball_inter]
-  have h1 := measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top
-    (hg.mono_measure (Measure.restrict_mono hS le_rfl))
-  have h2 : ∫ y in ball x ρ ∩ H, ‖g y‖ ^ 2 ≤ Φ :=
-    (setIntegral_mono_set (by
-        simpa only [sub_zero] using hg.integrableOn_norm_sub_sq_of_subset subset_rfl hSfin
-          (0 : EuclideanSpace ℝ (Fin (n + 1))))
-      (ae_of_all _ fun _ => by positivity) hS.eventuallySubset).trans hΦ
-  have h3 := half_mul_le_measureReal_ball_inter hν hH hx hρ
-  have hw : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-    measureReal_ball_pos volume _ one_pos
-  have h0 : 0 < 2⁻¹ * (ρ ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :=
-    by positivity
-  have hΦ0 : 0 ≤ Φ := (integral_nonneg fun _ => by positivity).trans hΦ
-  rw [Real.le_sqrt (norm_nonneg _) (div_nonneg hΦ0 h0.le), le_div_iff₀ h0, mul_comm]
-  exact (mul_le_mul_of_nonneg_right h3 (sq_nonneg _)).trans (h1.trans h2)
-
 end Constants
 
 /-- **Oscillation at the points of a half-ball.** In the setting of the main theorem, there are
@@ -943,8 +887,14 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
     have hsub : ball x d ⊆ ball z (2 * d) ∩ H := subset_inter (fun y hy => by
       rw [mem_ball] at hy ⊢
       linarith [dist_triangle y x z]) hballH
-    have hSd : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) ≤ volume.real (ball z (2 * d) ∩ H) :=
-      (le_of_eq (by ring)).trans (half_mul_le_measureReal_ball_inter hν hH hzc.ge (by positivity))
+    have hSd : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) ≤ volume.real (ball z (2 * d) ∩ H) := by
+      have h := volume.mul_measureReal_ball_le_measureReal_ball_inter
+        (volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner
+          (r := 2 * d) hν hzc.ge)
+      rw [Measure.addHaar_real_ball_of_pos volume z (by positivity), finrank_euclideanSpace_fin,
+        NNReal.coe_inv, NNReal.coe_ofNat, show {y | c₀ < ⟪y, ν⟫_ℝ} = (H : Set _) from
+          Set.ext fun y => (hH y).symm] at h
+      exact (le_of_eq (by ring)).trans h
     obtain ⟨c, hc⟩ := exists_setIntegral_ball_sub_sq_le_of_near hd hR hw₁ ht.le hc₁
       Ka.coe_nonneg hM hC hVc hsub measure_ball_inter_ne_top
       ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono
@@ -1057,7 +1007,9 @@ theorem exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnW
   -- The half-space has density at least one half around the points of the closed half-space.
   have hdens : ∀ x ∈ ball z₀ (R / 4) ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ}, ∀ r, 0 < r → r ≤ ρ →
       (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall x r) ≤ volume (closedBall x r ∩ H) :=
-    fun x hx r _ _ => half_mul_volume_closedBall_le hν hH hx.2 r
+    fun x hx r _ _ => by
+      rw [show (H : Set _) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+      exact volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner hν hx.2
   have hsubU : ∀ x ∈ ball z₀ (R / 4) ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ}, ∀ r ≤ ρ, ball x r ⊆ ball z₀ R :=
     fun x hx r hr => ball_subset_ball' (by linarith [mem_ball.1 hx.1])
   have hCamp := holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
@@ -1089,9 +1041,11 @@ theorem exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnW
     exact Real.sqrt_le_sqrt (div_le_div_of_nonneg_right hint (by positivity))
   · -- The bound on the averages at the scale `ρ`.
     intro x hx
-    exact norm_setAverage_closedBall_restrict_le_sqrt hν hH hx.2 hρ
+    have h := norm_setAverage_closedBall_restrict_le_sqrt (by norm_num) hρ (hdens x hx ρ hρ le_rfl)
       (inter_subset_inter_left _ (hsubU x hx ρ le_rfl)) measure_ball_inter_ne_top
       (hg.mono_measure (Measure.restrict_mono (inter_subset_left.trans hU) le_rfl)) le_rfl
+    rwa [Measure.addHaar_real_ball_of_pos volume x hρ, finrank_euclideanSpace_fin, NNReal.coe_inv,
+      NNReal.coe_ofNat] at h
   refine hCamp.mono_const (Real.toNNReal_le_toNNReal ?_)
   -- The constant of Campanato's theorem is at most `C` times the scaled data.
   have hMo : √(2 * K / w₁) * (√V * R ^ (-A)) ≤
