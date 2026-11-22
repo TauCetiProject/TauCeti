@@ -15,7 +15,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.ProductMeasure
 
 /-!
-# The Marchenko–Pastur law for sub-Gaussian entries
+# The Marchenko–Pastur law
 
 Sample covariance matrices with independent, unit second moment entries and a uniform
 directional sub-Gaussian bound have almost surely convergent empirical spectral measures
@@ -25,8 +25,8 @@ converge in mean absolute error and in probability. The proof uses uniform leave
 concentration, the rank-one resolvent estimate and stability of the Marchenko–Pastur equation.
 
 For the corners of one infinite array of i.i.d. complex entries with mean zero and unit second
-absolute moment, `marchenkoPastur_ae` removes the sub-Gaussian assumption. Bounded centred
-entries of unit variance are sub-Gaussian, so the sub-Gaussian law gives the bounded case, and
+absolute moment, `marchenkoPastur_ae` removes the sub-Gaussian assumption.
+`ae_tendsto_spectralMeasure_sampleCovariance_of_bounded` gives the bounded case, and
 the bounded-entry reduction `ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_entries`
 transfers it to finite variance. Real entries are the case of an entry law supported on `ℝ`.
 
@@ -202,27 +202,22 @@ theorem marchenkoPastur_ae {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
     nlinarith [NNReal.coe_nonneg y]
   have hind (m : ℕ) : iIndepFun (fun ij : Fin (p (m + 1)) × Fin (m + 1) ↦
       fun ω ↦ x (ij.1, ij.2) ω) P :=
-    hindep.precomp (g := fun ij : Fin (p (m + 1)) × Fin (m + 1) ↦ ((ij.1 : ℕ), (ij.2 : ℕ)))
-      fun a b h ↦ by
-        simp only [Prod.mk.injEq] at h
-        exact Prod.ext (Fin.ext h.1) (Fin.ext h.2)
+    hindep.precomp (Fin.val_injective.prodMap Fin.val_injective)
   have h := ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_entries
     (X := fun m ω ↦ Matrix.of fun (i : Fin (p (m + 1))) (j : Fin (m + 1)) ↦ x (i, j) ω)
     (μ := (marchenkoPastur y).toProbabilityMeasure) hind (fun _ _ _ ↦ hx _) hmean hvar
     (by positivity) hdim ?_
   · filter_upwards [h] with ω hω
     exact (tendsto_add_atTop_iff_nat 1).1 hω
-  -- Bounded centred entries of unit variance are sub-Gaussian, so the sub-Gaussian law applies.
   intro Y hY ρ hYind hYlaw ⟨B, hB⟩ hρmean hρunit
   apply tendsto_expectedCovarianceSpectralMeasure_of_ae_tendsto hY
-  refine ae_tendsto_spectralMeasure_sampleCovariance_of_hasSubgaussianMGF (K := B.toNNReal ^ 2)
-    hYind (fun m i j ↦ ?_) (fun m i j ↦ ?_) (NNReal.tendsto_coe.1 (by simpa using hp')) hy.ne'
-  · have hl := hYlaw m i j
-    refine hasSubgaussianMGF_re_star_mul_of_norm_le hl.aemeasurable ?_ (hl.integral_eq.trans hρmean)
-    exact (hl.ae_iff (p := fun x ↦ ‖x‖ ≤ B.toNNReal)
-      (measurableSet_setOfPred.1 (measurableSet_le measurable_norm measurable_const))).2
-      (hB.mono fun _ h ↦ h.trans (Real.le_coe_toNNReal B))
-  · exact ((hYlaw m i j).integral_comp (by fun_prop)).trans hρunit
+  refine ae_tendsto_spectralMeasure_sampleCovariance_of_bounded hYind hY (b := B.toNNReal)
+    (fun m i j ↦ ?_) (fun m i j ↦ (hYlaw m i j).integral_eq.trans hρmean)
+    (fun m i j ↦ ((hYlaw m i j).integral_comp (by fun_prop)).trans hρunit)
+    (NNReal.tendsto_coe.1 (by simpa using hp')) hy.ne'
+  exact ((hYlaw m i j).ae_iff (p := fun x ↦ ‖x‖ ≤ B.toNNReal)
+    (measurableSet_setOfPred.1 (measurableSet_le measurable_norm measurable_const))).2
+    (hB.mono fun _ h ↦ h.trans (Real.le_coe_toNNReal B))
 
 section VaryingSpaces
 
