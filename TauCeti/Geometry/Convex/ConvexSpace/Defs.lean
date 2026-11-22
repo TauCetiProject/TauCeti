@@ -81,14 +81,8 @@ theorem extendWeights_of_notMem_range (p : StdSimplex R ι) {w : ι → R}
 
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
 theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
-    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y := by
-  cases x
-  cases y
-  congr 1
-  exact Finsupp.ext fun
-    | ⟨0, _⟩ => h0
-    | ⟨1, _⟩ => h1
-    | ⟨2, _⟩ => h2
+    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y :=
+  toFun_comp_weights_injective <| funext fun | 0 => h0 | 1 => h1 | 2 => h2
 
 /-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
 @[simp]
@@ -102,6 +96,33 @@ theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (F
     x.weights 1 + x.weights 2 ≤ 1 := by
   rw [← x.total_fin_three, add_assoc]
   exact le_add_of_nonneg_left (x.nonneg 0)
+
+variable {X Y : Type*}
+
+/-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
+`f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range
+(`StdSimplex.map_comap`), and a left inverse of it (`StdSimplex.comap_map`). -/
+noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) : StdSimplex R X where
+  weights := Finsupp.comapDomain f y.weights hf.injOn
+  nonneg a := by simpa using y.nonneg (f a)
+  total := by
+    have := y.total
+    rwa [← Finsupp.mapDomain_comapDomain f hf y.weights h,
+      Finsupp.sum_mapDomain_index (by simp) (by simp)] at this
+
+/-- The weights of a pulled back point are the pulled back weights. -/
+theorem weights_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) :
+    (comap hf y h).weights = Finsupp.comapDomain f y.weights hf.injOn :=
+  (rfl)
+
+/-- The weight of a pulled back point at `a` is the weight of the point at `f a`. -/
+@[simp]
+theorem weights_comap_apply {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) (a : X) :
+    (comap hf y h).weights a = y.weights (f a) := by
+  rw [weights_comap, Finsupp.comapDomain_apply]
 
 end AddCommMonoid
 
@@ -134,38 +155,9 @@ theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSim
     ∑ y ∈ Finset.univ.filter P, (x.map f).weights y =
       ∑ a ∈ Finset.univ.filter (fun a ↦ P (f a)), x.weights a := by
   classical
-  rw [Finset.sum_filter, Finset.sum_filter, weights_map,
-    ← Finsupp.sum_fintype (Finsupp.mapDomain f x.weights) (fun y r ↦ if P y then r else 0)
-      (by simp),
-    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
-    Finsupp.sum_fintype _ _ (by simp)]
-
-/-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
-`f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range
-(`StdSimplex.map_comap`), and a left inverse of it (`StdSimplex.comap_map`). -/
-noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) : StdSimplex R X where
-  weights := Finsupp.comapDomain f y.weights hf.injOn
-  nonneg a := by simp
-  total := by
-    have := y.total
-    rwa [← Finsupp.mapDomain_comapDomain f hf y.weights h,
-      Finsupp.sum_mapDomain_index (by simp) (by simp)] at this
-
-omit [IsStrictOrderedRing R] in
-/-- The weights of a pulled back point are the pulled back weights. -/
-theorem weights_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) :
-    (comap hf y h).weights = Finsupp.comapDomain f y.weights hf.injOn :=
-  (rfl)
-
-omit [IsStrictOrderedRing R] in
-/-- The weight of a pulled back point at `a` is the weight of the point at `f a`. -/
-@[simp]
-theorem weights_comap_apply {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) (a : X) :
-    (comap hf y h).weights a = y.weights (f a) := by
-  rw [weights_comap, Finsupp.comapDomain_apply]
+  -- Sum the fibre sums of `weights_map_apply` over the fibres above `P`.
+  simp_rw [weights_map_apply]
+  simpa using Finset.sum_fiberwise_eq_sum_filter Finset.univ (Finset.univ.filter P) f x.weights
 
 /-- Pulling back a point along an injective map whose range contains its support, and then mapping
 forward again, recovers the point. -/
@@ -298,9 +290,7 @@ weights, such as casting rational barycentric coordinates into an ordered field.
 noncomputable def mapRange (f : R →+* S) (hf : Monotone f) (w : StdSimplex R X) :
     StdSimplex S X where
   weights := w.weights.mapRange f (map_zero f)
-  nonneg x := by
-    simpa only [Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply, ← map_zero f] using
-      hf (w.nonneg x)
+  nonneg x := by simpa using hf (w.nonneg x)
   total := by
     rw [Finsupp.sum_mapRange_index (by simp), ← map_finsuppSum f w.weights fun _ r ↦ r,
       w.total, map_one]
@@ -318,17 +308,14 @@ theorem weights_mapRange_apply (f : R →+* S) (hf : Monotone f) (w : StdSimplex
 
 /-- Scalar pushforward along an injective homomorphism is injective. -/
 theorem mapRange_injective {f : R →+* S} (hf : Monotone f) (hfinj : Function.Injective f) :
-    Function.Injective (mapRange (X := X) f hf) := by
-  intro w₁ w₂ h
-  ext x
-  exact hfinj (by simpa only [weights_mapRange_apply] using congrArg (fun u ↦ u.weights x) h)
+    Function.Injective (mapRange (X := X) f hf) := fun _ _ h ↦
+  ext <| Finsupp.mapRange_injective _ (map_zero f) hfinj congr(($h).weights)
 
 /-- Scalar pushforward along an injective homomorphism preserves the support of weights. -/
 @[simp]
 theorem support_weights_mapRange {f : R →+* S} (hf : Monotone f) (hfinj : Function.Injective f)
-    (w : StdSimplex R X) : (w.mapRange f hf).weights.support = w.weights.support := by
-  ext x
-  simp [Finsupp.mem_support_iff, map_eq_zero_iff f hfinj]
+    (w : StdSimplex R X) : (w.mapRange f hf).weights.support = w.weights.support :=
+  Finsupp.support_mapRange_of_injective (map_zero f) _ hfinj
 
 /-- Scalar pushforward sends each vertex point mass to the corresponding vertex point mass. -/
 @[simp]
