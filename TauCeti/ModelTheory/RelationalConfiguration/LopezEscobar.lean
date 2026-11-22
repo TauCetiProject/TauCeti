@@ -544,8 +544,6 @@ theorem exists_sentence_separating_of_forall_not_isoSetoid [Countable V]
   obtain ⟨R₀, hR₀, hsep⟩ := exists_countable_relations_separating_continuous hf hg
     fun x y => hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
   have : Countable R₀ := hR₀.to_subtype
-  have : ∀ n, Countable ((symbSublang (L := L) ∅ R₀).Relations n) :=
-    fun n => (sigma_mk_injective (i := n)).countable
   let ι₀ := symbSublangIncl (L := L) ∅ R₀
   have hA' : AnalyticSet (ι₀.reductConfiguration '' range f) :=
     (analyticSet_range_of_polishSpace hf).image_of_continuous ι₀.continuous_reductConfiguration
@@ -584,8 +582,6 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
     fun ⟨hB_meas, hB_inv⟩ => ?_⟩
   obtain ⟨R₀, hR₀, B₀, hB₀_meas, rfl⟩ := exists_countable_sublanguage_of_measurableSet hB_meas
   have : Countable R₀ := hR₀.to_subtype
-  have : ∀ n, Countable ((symbSublang (L := L) ∅ R₀).Relations n) :=
-    fun n => (sigma_mk_injective (i := n)).countable
   let ι₀ := symbSublangIncl (L := L) ∅ R₀
   have hB₀_inv : IsomorphismInvariant B₀ := by
     rw [isomorphismInvariant_iff_isInvariantBlock] at hB_inv ⊢

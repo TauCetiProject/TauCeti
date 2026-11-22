@@ -403,6 +403,45 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
   simpa only [map_sum, map_add, _root_.map_mul, map_negOnePowCast_smul] using
     congrArg (coefficientComparison q hq) (hL i j l)
 
+include hμ₁ in
+/-- **The Leibniz rule for the ground-ring product of class-indexed counts.** This is
+`novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add` for the ground-ring
+linear and bilinear maps of the kernels, for any potential bounds of the kernels: the Leibniz
+hypothesis of `LinearMap.cohomologyProduct` for the product of class-indexed counts and the maps
+of the cylinder counts. -/
+theorem kernelMap_kernelProduct_coefficientComparison_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
+    (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
+    (hL : ∀ i j l, ∑ k, Q i j k * D₀ k l =
+      ∑ k, D₁ i k * Q k j l + negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * Q i k l)
+    {C₁ C₂ C₀ CQ : ℝ}
+    (hδ₁ : ∀ p p',
+      mapKernelOfMatrix r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) p p' ≠ 0 →
+        F₁ p' ≤ F₁ p + C₁)
+    (hδ₂ : ∀ p p',
+      mapKernelOfMatrix r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) p p' ≠ 0 →
+        F₂ p' ≤ F₂ p + C₂)
+    (hδ₀ : ∀ p p',
+      mapKernelOfMatrix r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l)) p p' ≠ 0 →
+        F₀ p' ≤ F₀ p + C₀)
+    (hnQ : ∀ p₁ p₂ p₀,
+      kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+        F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + CQ)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e)
+    (b : NovikovModule R F₂) :
+    kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)
+        (kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a b) =
+      kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _)
+          (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) b +
+        negOnePowCast R e • kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a
+          (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _) b) := by
+  simpa only [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hnQ,
+    novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+    novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁,
+    novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂] using
+    novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add r₁ r₂ r₀ q hq hF₁ hF₂
+      hF₀ hμ₁ Q D₁ D₂ D₀ n hL ha b
+
 end Leibniz
 
 section Commutativity
