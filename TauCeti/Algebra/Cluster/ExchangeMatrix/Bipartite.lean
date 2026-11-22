@@ -70,6 +70,7 @@ def bipartiteMatrix : Matrix I I ℤ :=
   Matrix.of fun i j ↦ if i = j then 0 else if c i then -A.cartan i j else A.cartan i j
 
 /-- The characteristic entries of the signed Cartan matrix. -/
+@[grind =]
 theorem bipartiteMatrix_apply (i j : I) :
     A.bipartiteMatrix c i j =
       if i = j then 0 else if c i then -A.cartan i j else A.cartan i j := by rfl
@@ -109,6 +110,20 @@ theorem isSkewSymmetrizer_bipartiteMatrix :
         A.bipartiteMatrix_apply_of_ne c (Ne.symm hij)]
       have hsymm := A.symmetrizes i j
       cases hci : c i <;> cases hcj : c j <;> simp_all
+
+/-- The signed Cartan matrix with all vertices mutable and the Cartan datum's symmetrizer. -/
+def bipartiteExchangeMatrix : ExchangeMatrix (Function.Embedding.refl I) where
+  matrix := A.bipartiteMatrix c
+  symmetrizer i := A.symmetrizer i
+  isSkewSymmetrizer := A.isSkewSymmetrizer_bipartiteMatrix c
+
+@[simp]
+theorem bipartiteExchangeMatrix_matrix : (A.bipartiteExchangeMatrix c).matrix =
+    A.bipartiteMatrix c := by rfl
+
+@[simp]
+theorem bipartiteExchangeMatrix_symmetrizer (i : I) :
+    (A.bipartiteExchangeMatrix c).symmetrizer i = A.symmetrizer i := by rfl
 
 /-- Forgetting the orientation recovers the original Cartan matrix exactly. -/
 @[simp]
