@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Convex.Cone.Face.Basic
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file
 characterises salience through the face lattice of a pointed cone: when scalar multiplication has
 no zero divisors, the zero cone is a face exactly when the cone is salient. It also records that a
-face of a cone cuts out a face of every smaller cone.
+face of a cone cuts out a face of every smaller cone, and that a face is the intersection of the
+cone with the linear span of the face.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ face of a cone cuts out a face of every smaller cone.
 * `ConvexCone.Salient.bot_isFaceOf`: the zero cone is a face of a salient pointed cone.
 * `PointedCone.IsFaceOf.inf_of_le`: a face of a cone meets a smaller cone in a face of the
   smaller cone.
+* `PointedCone.IsFaceOf.mem_of_mem_span`: a point of a cone in the linear span of a face lies in
+  the face.
 -/
 
 public section
@@ -66,3 +69,18 @@ theorem ConvexCone.Salient.bot_isFaceOf (hC : (C : ConvexCone R V).Salient) :
 theorem PointedCone.bot_isFaceOf_iff :
     (⊥ : PointedCone R V).IsFaceOf C ↔ (C : ConvexCone R V).Salient :=
   ⟨IsFaceOf.salient_of_bot, ConvexCone.Salient.bot_isFaceOf⟩
+
+section Ring
+
+variable {S W : Type*} [Ring S] [PartialOrder S] [IsDirectedOrder S] [IsOrderedRing S]
+  [AddCommGroup W] [Module S W] {C F : PointedCone S W}
+
+/-- A face of a pointed cone is cut out of the cone by its own linear span: a point `x` of the
+cone in the span of the face is a difference `p - n` of points of the face, so `x + n = p` forces
+`x` into the face. -/
+theorem PointedCone.IsFaceOf.mem_of_mem_span (hF : F.IsFaceOf C) {x : W} (hx : x ∈ C)
+    (hxF : x ∈ Submodule.span S (F : Set W)) : x ∈ F := by
+  obtain ⟨p, hp, n, hn, rfl⟩ := PointedCone.mem_span.1 hxF
+  exact hF.mem_of_add_mem_left hx (hF.le hn) (by simpa using hp)
+
+end Ring

@@ -59,6 +59,8 @@ forcing the integral and real ranks to agree.
   real-linear functional, additively in the character.
 * `TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq`: every additive real-valued
   function on the integral characters is evaluation at a point of `V`.
+* `TauCeti.Toric.IsIntegralLattice.finrank_span_image`: the real span of the image of a
+  sublattice has dimension the integral rank of the sublattice.
 * `TauCeti.Toric.IsIntegralLattice.eq_of_isPrimitive_of_eq_smul`: two primitive lattice vectors
   whose images point in the same direction are equal.
 * `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
@@ -195,6 +197,35 @@ theorem IsIntegralLattice.linearIndependent_basis {ι : Type*} (h : IsIntegralLa
   have hB (j : ι) : h.isBaseChange.basis b j = i (b j) := by
     simpa using h.isBaseChange.basis_apply b j
   exact funext hB ▸ (h.isBaseChange.basis b).linearIndependent
+
+/-- The real span of the image of a sublattice has real dimension equal to the integral rank of
+the sublattice: an integral basis of the sublattice maps to a real basis of that span. -/
+theorem IsIntegralLattice.finrank_span_image (h : IsIntegralLattice i) (L : Submodule ℤ N) :
+    Module.finrank ℝ (Submodule.span ℝ (i '' L)) = Module.finrank ℤ L := by
+  have := h.free
+  have := h.finite
+  let b := Module.finBasis ℤ L
+  have hli : LinearIndependent ℝ (i ∘ (L.subtype ∘ b)) :=
+    (linearIndependent_comp_iff_of_liftBaseChange_injective
+      h.isBaseChange.liftBaseChange_injective).2
+      (b.linearIndependent.map' L.subtype (Submodule.ker_subtype L))
+  have hL : Submodule.span ℤ (Set.range (L.subtype ∘ b)) = L := by
+    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
+  have hspan : Submodule.span ℝ (Set.range (i ∘ (L.subtype ∘ b))) =
+      Submodule.span ℝ (i '' L) := by
+    refine le_antisymm (Submodule.span_mono ?_) (Submodule.span_le.2 ?_)
+    · rintro _ ⟨j, rfl⟩
+      exact ⟨_, (b j).property, rfl⟩
+    · rintro _ ⟨n, hn, rfl⟩
+      rw [← hL] at hn
+      induction hn using Submodule.span_induction with
+      | mem x hx =>
+        obtain ⟨j, rfl⟩ := hx
+        exact Submodule.subset_span ⟨j, rfl⟩
+      | zero => simp
+      | add x y _ _ hx hy => simpa using add_mem hx hy
+      | smul k x _ hx => simpa [← Int.cast_smul_eq_zsmul ℝ] using Submodule.smul_mem _ (k : ℝ) hx
+  rw [← hspan, finrank_span_eq_card hli, Fintype.card_fin]
 
 end Basic
 

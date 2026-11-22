@@ -24,10 +24,13 @@ whose monomials are units along the orbit of `σ`.
 ## Main declarations
 
 * `TauCeti.Toric.coneSublattice`: the sublattice `N_σ` of lattice vectors in the span of `σ`.
-* `TauCeti.Toric.hasUniqueDiv_quotient_coneSublattice`: the quotient `N ⧸ N_σ` is torsion
-  free.
+* `TauCeti.Toric.mem_coneSublattice_of_zsmul_mem` and
+  `TauCeti.Toric.hasUniqueDiv_quotient_coneSublattice`: `N_σ` is saturated, so the quotient
+  `N ⧸ N_σ` is torsion free.
 * `TauCeti.Toric.free_quotient_coneSublattice`: for finitely generated `N`, the quotient
   `N ⧸ N_σ` is free.
+* `TauCeti.Toric.IsLatticeRational.finrank_coneSublattice`: for a lattice-rational cone, the rank
+  of `N_σ` is the dimension of the real span of `σ`.
 * `TauCeti.Toric.IsLatticeRational.forall_realCharacter_eq_zero_iff_coneSublattice_le_ker`: an
   integral character vanishes on a lattice-rational cone exactly when its kernel contains `N_σ`.
 * `TauCeti.Toric.IsLatticeRational.realCharacter_comp_mk'_eq_zero` and
@@ -58,6 +61,23 @@ theorem mem_coneSublattice {n : N} :
     n ∈ coneSublattice i σ ↔ i n ∈ Submodule.span ℝ (σ : Set V) :=
   (Iff.rfl)
 
+/-- The sublattice of a cone grows with the cone. -/
+theorem coneSublattice_mono {τ : PointedCone ℝ V} (h : τ ≤ σ) :
+    coneSublattice i τ ≤ coneSublattice i σ :=
+  fun _ hn ↦ Submodule.span_mono h hn
+
+/-- The sublattice of the zero cone is zero, since an integral lattice map is injective. -/
+theorem coneSublattice_bot (hi : IsIntegralLattice i) : coneSublattice i ⊥ = ⊥ := by
+  ext n
+  simp [hi.injective.eq_iff' (map_zero i)]
+
+/-- The sublattice of a cone is saturated: if a nonzero multiple of a lattice vector lies in
+`N_σ`, so does the vector. -/
+theorem mem_coneSublattice_of_zsmul_mem {k : ℤ} (hk : k ≠ 0) {n : N}
+    (h : k • n ∈ coneSublattice i σ) : n ∈ coneSublattice i σ := by
+  rw [mem_coneSublattice, map_zsmul, ← Int.cast_smul_eq_zsmul ℝ] at h
+  simpa [Int.cast_ne_zero.2 hk] using Submodule.smul_mem _ (k : ℝ)⁻¹ h
+
 /-- The sublattice of a cone is saturated: the quotient lattice `N ⧸ N_σ` is torsion free. -/
 instance hasUniqueDiv_quotient_coneSublattice :
     HasUniqueDiv (N ⧸ coneSublattice i σ) := by
@@ -65,11 +85,9 @@ instance hasUniqueDiv_quotient_coneSublattice :
   intro k x hkx
   induction x using QuotientAddGroup.induction_on with
   | H n =>
-    rw [← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq_zero_iff, mem_coneSublattice,
-      map_zsmul, ← Int.cast_smul_eq_zsmul ℝ] at hkx
-    rw [or_iff_not_imp_left, QuotientAddGroup.eq_zero_iff, mem_coneSublattice]
-    intro hk
-    simpa [Int.cast_ne_zero.2 hk] using Submodule.smul_mem _ (k : ℝ)⁻¹ hkx
+    rw [← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq_zero_iff] at hkx
+    rw [or_iff_not_imp_left, QuotientAddGroup.eq_zero_iff]
+    exact fun hk ↦ mem_coneSublattice_of_zsmul_mem hk hkx
 
 /-- For a finitely generated lattice `N`, the quotient lattice `N ⧸ N_σ` is free: it is finitely
 generated and torsion free. -/
@@ -118,5 +136,28 @@ theorem IsLatticeRational.comp_mk'_mem_dualSemigroup (hσ : IsLatticeRational i 
     (hi : IsIntegralLattice i) (m : N ⧸ coneSublattice i σ →+ ℤ) :
     m.comp (QuotientAddGroup.mk' (coneSublattice i σ)) ∈ dualSemigroup hi σ :=
   (mem_dualSemigroup hi _).2 fun _ hy ↦ (hσ.realCharacter_comp_mk'_eq_zero hi m hy).ge
+
+/-- The real span of the sublattice of a lattice-rational cone is the real span of the cone. -/
+theorem IsLatticeRational.span_image_coneSublattice (hσ : IsLatticeRational i σ) :
+    Submodule.span ℝ (i '' coneSublattice i σ) = Submodule.span ℝ (σ : Set V) := by
+  refine le_antisymm (Submodule.span_le.2 ?_) ?_
+  · rintro _ ⟨n, hn, rfl⟩
+    exact hn
+  · obtain ⟨s, hs⟩ := isLatticeRational_iff.1 hσ
+    have hsub : i '' (s : Set N) ⊆ i '' coneSublattice i σ := by
+      rintro _ ⟨n, hn, rfl⟩
+      exact ⟨n, Submodule.subset_span (hs ▸ PointedCone.subset_hull ⟨n, hn, rfl⟩), rfl⟩
+    refine Submodule.span_le.2 fun x hx ↦ ?_
+    rw [hs] at hx
+    exact Submodule.span_mono hsub (PointedCone.hull_le_span ℝ _ hx)
+
+/-- The integral rank of the sublattice `N_σ` of a lattice-rational cone is the dimension of the
+real span of `σ`. -/
+theorem IsLatticeRational.finrank_coneSublattice (hσ : IsLatticeRational i σ)
+    (hi : IsIntegralLattice i) :
+    Module.finrank ℤ (coneSublattice i σ).toIntSubmodule =
+      Module.finrank ℝ (Submodule.span ℝ (σ : Set V)) := by
+  rw [← hσ.span_image_coneSublattice, ← hi.finrank_span_image]
+  rfl
 
 end TauCeti.Toric
