@@ -6,9 +6,7 @@ Authors: Jon Crall, OpenAI gpt-6.1-sol
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.Block.Basic
-import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 
 /-!
@@ -52,7 +50,27 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  rw [blockFiniteInclusion, Orthonormal.synthesisMapIsometry_single, one_smul, Function.comp_apply]
+  have h := Orthonormal.synthesisMapIsometry_single
+    ((blockHardyBasis r).orthonormal.comp
+      (fun j : Fin (n + 1) × Fin r => (j.1.val, j.2))
+      (by
+        intro a b hab
+        exact Prod.ext (Fin.ext (congrArg (fun p : ℕ × Fin r => p.1) hab))
+          (congrArg (fun p : ℕ × Fin r => p.2) hab))) i (1 : ℂ)
+  simp only [one_smul, Function.comp_apply] at h
+  refine Eq.trans ?_ h
+  -- The native lemma chooses classical equality; reconcile its coordinate unit with Fin equality.
+  congr 1
+  ext j
+  by_cases hji : j = i <;> simp [EuclideanSpace.single, hji]
+
+/-- The adjoint inclusion reads the selected block Hardy coefficients. -/
+@[simp] theorem adjoint_blockFiniteInclusion_apply (r n : ℕ) (f : BlockHardySpace r)
+    (i : Fin (n + 1) × Fin r) :
+    ((blockFiniteInclusion r n).toContinuousLinearMap.adjoint f) i =
+      (blockHardyBasis r).repr f (i.1, i.2) := by
+  rw [blockFiniteInclusion, Orthonormal.adjoint_synthesisMapIsometry_apply]
+  exact ((blockHardyBasis r).repr_apply_apply f (i.1, i.2)).symm
 
 /-- Matrix of compression to the first `n + 1` block positions. -/
 def blockFiniteSectionMatrix {r : ℕ}
@@ -92,8 +110,26 @@ def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
 @[simp] theorem blockFiniteSectionIndexEquiv_val (r n : ℕ) [NeZero r]
     (p : Fin (n + 1) × Fin r) :
     (blockFiniteSectionIndexEquiv r n p).val = p.1.val * r + p.2.val := by
-  change p.2.val + r * p.1.val = _
+  rw [blockFiniteSectionIndexEquiv, Equiv.trans_apply, finCongr_apply_coe,
+    finProdFinEquiv_apply_val]
   ac_rfl
+
+/-- The inverse flattened index recovers its quotient block position. -/
+@[simp] theorem blockFiniteSectionIndexEquiv_symm_fst (r n : ℕ) [NeZero r]
+    (m : Fin ((n + 1) * r - 1 + 1)) :
+    ((blockFiniteSectionIndexEquiv r n).symm m).1.val = m.val / r := by
+  obtain ⟨p, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective m
+  rw [Equiv.symm_apply_apply, blockFiniteSectionIndexEquiv_val]
+  simp only [Nat.mul_comm p.1.val r, Nat.mul_add_div (NeZero.pos r),
+    Nat.div_eq_of_lt p.2.isLt, Nat.add_zero]
+
+/-- The inverse flattened index recovers its remainder coordinate. -/
+@[simp] theorem blockFiniteSectionIndexEquiv_symm_snd (r n : ℕ) [NeZero r]
+    (m : Fin ((n + 1) * r - 1 + 1)) :
+    ((blockFiniteSectionIndexEquiv r n).symm m).2.val = m.val % r := by
+  obtain ⟨p, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective m
+  rw [Equiv.symm_apply_apply, blockFiniteSectionIndexEquiv_val]
+  rw [Nat.mul_add_mod_of_lt p.2.isLt]
 
 /-- Flattening block coordinates gives the matrix of the native Hilbert-basis finite section. -/
 theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
@@ -115,6 +151,15 @@ theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
       blockHardyBasisNat r (blockFiniteSectionIndexEquiv r n p) =
         blockHardyBasis r (p.1, p.2) := by
     rw [blockFiniteSectionIndexEquiv_val, blockHardyBasisNat_apply]
-  simpa only [hb, EuclideanSpace.single] using h.symm
+  simpa only [hb] using h.symm
+
+/-- The determinant of a native full-block finite section is the block compression determinant. -/
+theorem det_finiteSection_eq_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
+    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
+    (T.finiteSection (blockHardyBasisNat r) ((n + 1) * r - 1)).toLinearMap.det =
+      (blockFiniteSectionMatrix T n).det := by
+  rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun _ ℂ).toBasis,
+    ← ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix,
+    ← reindex_blockFiniteSectionMatrix, Matrix.det_reindex_self]
 
 end TauCeti

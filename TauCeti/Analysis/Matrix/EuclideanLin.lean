@@ -216,17 +216,20 @@ theorem toEuclideanCLM_apply_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace �
     toEuclideanCLM (𝕜 := 𝕜) A x i = ∑ j, A i j * x j := by
   simp [mulVec, dotProduct]
 
+/-- A matrix operator sends a coordinate unit vector to the corresponding column. -/
+theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 (fun i => A i j) := by
+  rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
+    Matrix.mulVec_single_one]
+  rfl
+
 /-- The matrix of a continuous linear map has entries given by its action on coordinate units. -/
-theorem toEuclideanCLM_symm_apply_single
+@[simp] theorem toEuclideanCLM_symm_apply_single
     (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
     (toEuclideanCLM (𝕜 := 𝕜)).symm T i j = T (EuclideanSpace.single j 1) i := by
-  have h := congrArg (fun S : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι =>
-    S (EuclideanSpace.single j 1) i) ((toEuclideanCLM (𝕜 := 𝕜)).apply_symm_apply T)
-  have hm := (Matrix.toEuclideanCLM_apply_apply
-    ((toEuclideanCLM (𝕜 := 𝕜)).symm T) (EuclideanSpace.single j 1) i)
-  simp only [PiLp.single_apply, EuclideanSpace.single, mul_ite,
-    mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true] at hm
-  exact hm.symm.trans h
+  rw [ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix, LinearMap.toMatrix_apply]
+  simp
 
 /-- The continuous linear map of a matrix depends continuously on the matrix. -/
 theorem continuous_toEuclideanCLM :
