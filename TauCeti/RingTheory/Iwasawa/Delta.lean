@@ -209,13 +209,21 @@ theorem torsionBy_one_add_X_pow_sub_one_quotient_span_pow {O : Type*} [CommRing 
   obtain ⟨q, hq⟩ := map_dvd Polynomial.coeToPowerSeries.ringHom hdvd₁
   simp only [Polynomial.coeToPowerSeries.ringHom_apply] at hq
   have hq' : ¬ (F : O⟦X⟧) ∣ q := fun ⟨r, hr⟩ ↦ hndvd₂ ⟨r, by rw [hq, hr, sq, mul_assoc]⟩
+  have hIJ : Ideal.span {((F ^ n : O[X]) : O⟦X⟧)} ≤ Ideal.span {((F : O⟦X⟧) ^ (n - 1))} := by
+    rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_span_singleton, Polynomial.coe_pow]
+    exact pow_dvd_pow _ (Nat.sub_le n 1)
+  have hmap :=
+    (Ideal.map_span (Ideal.Quotient.mk (Ideal.span {((F ^ n : O[X]) : O⟦X⟧)}))
+      {(F : O⟦X⟧) ^ (n - 1)}).trans (by rw [Set.image_singleton])
   ext x
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [mem_torsionBy_iff, ← hcoe, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
     Submodule.Quotient.mk_eq_zero, smul_eq_mul, Ideal.mem_span_singleton,
-    Ideal.Quotient.mk_eq_mk, Polynomial.coe_pow,
-    Ideal.Quotient.mk_mem_span_singleton_iff_dvd (pow_dvd_pow _ (Nat.sub_le n 1)),
-    hq, mul_assoc, ← mul_pow_sub_one hn (F : O⟦X⟧), mul_dvd_mul_iff_left hprimeF'.ne_zero]
+    ← Submodule.restrictScalars_span O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})
+      Ideal.Quotient.mk_surjective,
+    Submodule.restrictScalars_mem, Ideal.Quotient.mk_eq_mk, Ideal.submodule_span_eq, ← hmap,
+    Ideal.mem_quotient_iff_mem hIJ, Ideal.mem_span_singleton, Polynomial.coe_pow, hq, mul_assoc,
+    ← mul_pow_sub_one hn (F : O⟦X⟧), mul_dvd_mul_iff_left hprimeF'.ne_zero]
   exact ⟨hprimeF'.pow_dvd_of_dvd_mul_left (n - 1) hq', fun hd ↦ dvd_mul_of_dvd_right hd q⟩
 
 /-- For a prime `p` with `(p : O) ≠ 0` and a prime polynomial `F` distinguished at `I` over an

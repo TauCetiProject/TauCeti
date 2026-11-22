@@ -360,17 +360,17 @@ theorem finite_smul_top_iff_of_finite_ker_of_finite_coker {R M N : Type*} [CommR
     (DistribSMul.toLinearMap R N r).codRestrict (r • (⊤ : Submodule R N)) fun n ↦ by
       rw [DistribSMul.toLinearMap_apply]
       exact Submodule.smul_mem_pointwise_smul n r ⊤ Submodule.mem_top
-  let q : (N ⧸ LinearMap.range φ) →ₗ[R] (↥(r • (⊤ : Submodule R N)) ⧸ LinearMap.range φ') :=
-    (LinearMap.range φ).liftQ ((LinearMap.range φ').mkQ ∘ₗ toSmul) fun n hn ↦ by
-      rcases hn with ⟨m, rfl⟩
-      rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.mkQ_apply,
-        Submodule.Quotient.mk_eq_zero]
-      refine ⟨⟨r • m, Submodule.smul_mem_pointwise_smul m r ⊤ Submodule.mem_top⟩, Subtype.ext ?_⟩
-      simp [φ', toSmul]
-  have hq : Function.Surjective q := fun y ↦ by
-    obtain ⟨⟨z, hz⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+  have htoSmul_surj : Function.Surjective toSmul := fun ⟨z, hz⟩ ↦ by
     obtain ⟨n, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists z r ⊤).mp hz
-    exact ⟨Submodule.Quotient.mk n, rfl⟩
+    exact ⟨n, Subtype.ext (DistribSMul.toLinearMap_apply R N r n)⟩
+  let q : (N ⧸ LinearMap.range φ) →ₗ[R] (↥(r • (⊤ : Submodule R N)) ⧸ LinearMap.range φ') :=
+    (LinearMap.range φ).mapQ (LinearMap.range φ') toSmul fun n hn ↦ by
+      rcases hn with ⟨m, rfl⟩
+      exact ⟨⟨r • m, Submodule.smul_mem_pointwise_smul m r ⊤ Submodule.mem_top⟩, Subtype.ext <| by
+        simp [φ', toSmul]⟩
+  have hq : Function.Surjective q := by
+    rw [← LinearMap.range_eq_top, Submodule.range_mapQ,
+      LinearMap.range_eq_top.mpr htoSmul_surj, Submodule.map_top, Submodule.range_mkQ]
   have : Finite (↥(r • (⊤ : Submodule R N)) ⧸ LinearMap.range φ') := Finite.of_surjective q hq
   exact φ'.finite_iff_of_finite_ker_of_finite_coker
 

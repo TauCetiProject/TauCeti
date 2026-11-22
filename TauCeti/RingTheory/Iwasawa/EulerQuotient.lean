@@ -66,7 +66,8 @@ is multiplicative in the ideal, so the horizontal blocks together contribute
 
 * `TauCeti.Iwasawa.torsionBy_elementary_eq_bot`,
   `TauCeti.Iwasawa.resultant_ne_zero_of_finite_quotSMulTop_elementary`,
-  `TauCeti.Iwasawa.finite_quotSMulTop_elementary_iff` and
+  `TauCeti.Iwasawa.finite_quotSMulTop_elementary_iff`,
+  `TauCeti.Iwasawa.natCard_quotSMulTop_elementary_of_isWeierstrassFactorization` and
   `TauCeti.Iwasawa.natCard_quotSMulTop_elementary`: the kernel and the cokernel of multiplication
   by `G` on an elementary module.
 * `TauCeti.Iwasawa.resultant_charPoly_ne_zero_of_finite_quotSMulTop` and
@@ -146,6 +147,37 @@ theorem resultant_ne_zero_of_finite_quotSMulTop_elementary {ϖ : O}
   have hsurj : Function.Surjective π := fun y ↦ ⟨(0, 0, Pi.single j y), by simp [π]⟩
   exact Finite.of_surjective _ (QuotSMulTop.map_surjective _ hsurj)
 
+/-- **The cokernel of a Weierstrass polynomial on a torsion elementary module.** Let `ϖ` be a
+uniformiser, let the `Fⱼ` be distinguished at the maximal ideal with `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`, and
+let `(G : O⟦X⟧) = P * h` be a Weierstrass factorization at the maximal ideal. Then the cokernel of
+`G` on `∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` has
+`q ^ ((Σ mᵢ) deg P) · #(O ⧸ Res(∏ⱼ Fⱼ ^ nⱼ, G))` elements, where `q` is the cardinality of the
+residue field. -/
+theorem natCard_quotSMulTop_elementary_of_isWeierstrassFactorization {ϖ : O} (hϖ : Irreducible ϖ)
+    {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]}
+    (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (n : Fin b → ℕ)
+    {P : O[X]} {h : O⟦X⟧} (HG : (G : O⟦X⟧).IsWeierstrassFactorization P h)
+    (hres : (∏ j, F j ^ n j).resultant G ≠ 0) :
+    Nat.card (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ 0 m F n)) =
+      Nat.card (ResidueField O) ^ ((∑ i, m i) * P.natDegree) *
+        Nat.card (O ⧸ Ideal.span {(∏ j, F j ^ n j).resultant G}) := by
+  rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _] at hres ⊢
+  rw [Finset.prod_ne_zero_iff] at hres
+  rw [natCard_quotSMulTop_prod, natCard_quotSMulTop_prod, natCard_quotSMulTop_pi,
+    natCard_quotSMulTop_pi, natCard_quotSMulTop_pi, Finset.univ_eq_empty, Finset.prod_empty,
+    one_mul]
+  congr 1
+  · rw [Finset.sum_mul, ← Finset.prod_pow_eq_pow_sum]
+    exact Finset.prod_congr rfl fun i _ ↦
+      natCard_quotSMulTop_quotient_span_C_pow hϖ HG (m i)
+  · -- The order of a quotient of the Dedekind domain `O` is multiplicative in the ideal.
+    rw [← Ideal.prod_span_singleton, ← Ideal.absNorm_eq_natCard, map_prod]
+    refine Finset.prod_congr rfl fun j _ ↦ ?_
+    have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
+    have hnorm := H.norm_mk_coe_eq_resultant G
+    rw [H.natCard_quotSMulTop (hnorm ▸ hres j (Finset.mem_univ j)), hnorm,
+      Ideal.absNorm_eq_natCard]
+
 /-- **The cokernel of a distinguished polynomial on a torsion elementary module.** Let `G` be a
 polynomial distinguished at the maximal ideal, and let the `Fⱼ` be distinguished with
 `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`. Then the cokernel of `G` on
@@ -156,23 +188,9 @@ theorem natCard_quotSMulTop_elementary {ϖ : O} (hϖ : Irreducible ϖ) {a b : �
     (hG : G.IsDistinguishedAt (maximalIdeal O)) (hres : (∏ j, F j ^ n j).resultant G ≠ 0) :
     Nat.card (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ 0 m F n)) =
       Nat.card (ResidueField O) ^ ((∑ i, m i) * G.natDegree) *
-        Nat.card (O ⧸ Ideal.span {(∏ j, F j ^ n j).resultant G}) := by
-  rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _] at hres ⊢
-  rw [Finset.prod_ne_zero_iff] at hres
-  rw [natCard_quotSMulTop_prod, natCard_quotSMulTop_prod, natCard_quotSMulTop_pi,
-    natCard_quotSMulTop_pi, natCard_quotSMulTop_pi, Finset.univ_eq_empty, Finset.prod_empty,
-    one_mul]
-  congr 1
-  · rw [Finset.sum_mul, ← Finset.prod_pow_eq_pow_sum]
-    exact Finset.prod_congr rfl fun i _ ↦
-      natCard_quotSMulTop_quotient_span_C_pow hϖ hG.isWeierstrassFactorizationAt (m i)
-  · -- The order of a quotient of the Dedekind domain `O` is multiplicative in the ideal.
-    rw [← Ideal.prod_span_singleton, ← Ideal.absNorm_eq_natCard, map_prod]
-    refine Finset.prod_congr rfl fun j _ ↦ ?_
-    have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
-    have hnorm := H.norm_mk_coe_eq_resultant G
-    rw [H.natCard_quotSMulTop (hnorm ▸ hres j (Finset.mem_univ j)), hnorm,
-      Ideal.absNorm_eq_natCard]
+        Nat.card (O ⧸ Ideal.span {(∏ j, F j ^ n j).resultant G}) :=
+  natCard_quotSMulTop_elementary_of_isWeierstrassFactorization hϖ m hF n
+    hG.isWeierstrassFactorizationAt hres
 
 /-- **Finiteness of the cokernel on a torsion elementary module.** Over a complete discrete
 valuation ring with finite residue field, let `ϖ` be a uniformiser, let the `Fⱼ` be distinguished
@@ -186,27 +204,15 @@ theorem finite_quotSMulTop_elementary_iff [Finite (ResidueField O)] {ϖ : O} (h�
     Finite (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ 0 m F n)) ↔
       (∏ j, F j ^ n j).resultant G ≠ 0 := by
   refine ⟨resultant_ne_zero_of_finite_quotSMulTop_elementary 0 m hF n, fun hres ↦ ?_⟩
-  rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _,
-    Finset.prod_ne_zero_iff] at hres
   have hG' : ((G : O⟦X⟧).map (residue O)) ≠ 0 := by
     rw [← Polynomial.polynomial_map_coe, Ne, Polynomial.coe_eq_zero_iff]
     exact hG
   obtain ⟨P, h, HG⟩ := PowerSeries.exists_isWeierstrassFactorization hG'
+  have : Finite (O ⧸ Ideal.span {(∏ j, F j ^ n j).resultant G}) :=
+    Ring.HasFiniteQuotients.finiteQuotient (by simpa [Ideal.span_singleton_eq_bot] using hres)
   refine Nat.finite_of_card_ne_zero ?_
-  rw [natCard_quotSMulTop_prod, natCard_quotSMulTop_prod, natCard_quotSMulTop_pi,
-    natCard_quotSMulTop_pi, natCard_quotSMulTop_pi, Finset.univ_eq_empty, Finset.prod_empty,
-    one_mul]
-  refine mul_ne_zero (Finset.prod_ne_zero_iff.2 fun i _ ↦ ?_)
-    (Finset.prod_ne_zero_iff.2 fun j _ ↦ ?_)
-  · rw [natCard_quotSMulTop_quotient_span_C_pow hϖ HG (m i)]
-    exact pow_ne_zero _ Nat.card_pos.ne'
-  · have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
-    have : Finite (QuotSMulTop (G : O⟦X⟧)
-        (O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)})) :=
-      (H.finite_quotSMulTop_iff _).2 <| by
-        rw [H.norm_mk_coe_eq_resultant]
-        exact hres j (Finset.mem_univ j)
-    exact Nat.card_pos.ne'
+  rw [natCard_quotSMulTop_elementary_of_isWeierstrassFactorization hϖ m hF n HG hres]
+  exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') Nat.card_pos.ne'
 
 end Elementary
 

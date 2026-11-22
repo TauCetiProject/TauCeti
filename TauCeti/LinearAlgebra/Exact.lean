@@ -614,11 +614,11 @@ theorem finite_ker_restrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
     [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
     {p : Submodule R M} {q : Submodule R₂ M₂} (f : M →ₛₗ[τ₁₂] M₂)
     (hf : ∀ x ∈ p, f x ∈ q) [Finite (ker f)] :
-    Finite (ker (f.restrict hf)) :=
-  Finite.of_injective
-    (fun x : ker (f.restrict hf) ↦
-      (⟨x.val.val, mem_ker.mpr (congrArg Subtype.val (mem_ker.mp x.property))⟩ : ker f))
-    fun _ _ h ↦ Subtype.ext (Subtype.ext (Subtype.mk.inj h))
+    Finite (ker (f.restrict hf)) := by
+  have hfin : (ker f : Set M).Finite := by
+    rwa [← Set.finite_coe_iff, SetLike.coe_sort_coe]
+  rw [← SetLike.coe_sort_coe, Set.finite_coe_iff, ker_restrict, Submodule.comap_coe]
+  exact hfin.preimage p.subtype_injective.injOn
 
 section Ring
 

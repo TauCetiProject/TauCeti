@@ -708,32 +708,17 @@ nontrivial, both sides are `0`. -/
 theorem natCard_eq_natCard_residueField_pow_length {R M : Type*} [CommRing R] [IsLocalRing R]
     [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) :
     Nat.card M = Nat.card (IsLocalRing.ResidueField R) ^ (Module.length R M).toNat := by
-  obtain ⟨s, hhead, hlast⟩ := isFiniteLength_iff_exists_compositionSeries.mp hM
-  have hstep : ∀ k (hk : k < s.length + 1),
-      Nat.card (s ⟨k, hk⟩) = Nat.card (IsLocalRing.ResidueField R) ^ k := by
-    intro k
-    induction k with
-    | zero =>
-      intro hk
-      have hbot : s ⟨0, hk⟩ = ⊥ := hhead
-      rw [hbot, pow_zero]
-      exact Nat.card_unique
-    | succ k ih =>
-      intro hk
-      have hcov : s ⟨k, by omega⟩ ⋖ s ⟨k + 1, hk⟩ := s.step ⟨k, by omega⟩
-      let S : Submodule R (s ⟨k + 1, hk⟩) := (s ⟨k, by omega⟩).comap (s ⟨k + 1, hk⟩).subtype
-      have hsimple : IsSimpleModule R (s ⟨k + 1, hk⟩ ⧸ S) :=
-        (covBy_iff_quot_is_simple hcov.le).mp hcov
-      obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hsimple
-      rw [IsLocalRing.eq_maximalIdeal hI] at e
-      have hcardS : Nat.card S = Nat.card (s ⟨k, by omega⟩) :=
-        Nat.card_congr (Submodule.comapSubtypeEquivOfLe hcov.le).toEquiv
-      rw [S.card_eq_card_quotient_mul_card, hcardS, ih (by omega), Nat.card_congr e.toEquiv,
-        pow_succ, IsLocalRing.ResidueField]
-  have hlen := Module.length_compositionSeries s hhead hlast
-  rw [← hlen, ENat.toNat_natCast, ← hstep s.length (Nat.lt_succ_self _)]
-  have htop : s ⟨s.length, Nat.lt_succ_self _⟩ = ⊤ := hlast
-  rw [htop]
-  exact (Nat.card_congr Submodule.topEquiv.toEquiv).symm
+  induction hM with
+  | of_subsingleton => simp
+  | @of_simple_quotient M _ _ N _ hN ih =>
+    obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R (M ⧸ N)›
+    rw [IsLocalRing.eq_maximalIdeal hI] at e
+    have hlen : Module.length R M = Module.length R N + 1 := by
+      rw [Module.length_eq_add_of_exact N.subtype N.mkQ N.subtype_injective N.mkQ_surjective
+          (LinearMap.exact_subtype_mkQ N),
+        Module.length_eq_one R (M ⧸ N)]
+    rw [N.card_eq_card_quotient_mul_card, ih, Nat.card_congr e.toEquiv, hlen,
+      ENat.toNat_add (Module.length_ne_top_iff.mpr hN) (by simp), ENat.toNat_one, pow_succ,
+      IsLocalRing.ResidueField, mul_comm]
 
 end IsFiniteLength

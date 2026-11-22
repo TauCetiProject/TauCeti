@@ -783,20 +783,21 @@ example (p : ℕ) [Fact p.Prime] (k : ℕ) :
     rw [Polynomial.natDegree_X, Nat.lt_one_iff] at hi
     simp [hi]
   have H := hX.isWeierstrassFactorizationAt
-  have hres_eval (P : ℤ_[p][X]) : (Polynomial.X : ℤ_[p][X]).resultant P = P.eval 0 := by
-    have h := Polynomial.resultant_X_sub_C_left P P.natDegree (0 : ℤ_[p]) le_rfl
-    rwa [map_zero, sub_zero, ← Polynomial.natDegree_X (R := ℤ_[p])] at h
+  have hres_eval (P : ℤ_[p][X]) : (Polynomial.X : ℤ_[p][X]).resultant P = P.coeff 0 := by
+    have h := Polynomial.resultant_X_pow_left P 1 _ le_rfl
+    rw [pow_one, pow_one] at h
+    rwa [Polynomial.natDegree_X]
   have hXcoe : (X : ℤ_[p]⟦X⟧) = ((Polynomial.X : ℤ_[p][X]) : ℤ_[p]⟦X⟧) := Polynomial.coe_X.symm
   dsimp only [M]
   rw [hXcoe]
   refine ⟨?_, ?_⟩
   · refine TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero (A := ℤ_[p]) ?_
     rw [Ideal.Quotient.algebraMap_eq, H.norm_mk_coe_eq_resultant, hres_eval,
-      ← Polynomial.coeff_zero_eq_eval_zero, coeff_zero_growthTransition_zero]
+      coeff_zero_growthTransition_zero]
   · have hnorm : Algebra.norm ℤ_[p]
         (Ideal.Quotient.mk (Ideal.span {((Polynomial.X : ℤ_[p][X]) : ℤ_[p]⟦X⟧)})
           (growthTransition p ℤ_[p] 1 k : ℤ_[p]⟦X⟧)) = (p : ℤ_[p]) ^ k := by
-      rw [H.norm_mk_coe_eq_resultant, hres_eval, ← Polynomial.coeff_zero_eq_eval_zero,
+      rw [H.norm_mk_coe_eq_resultant, hres_eval,
         coeff_zero_growthTransition_of_pos p ℤ_[p] hp Nat.one_pos, Nat.add_sub_cancel]
     have hne : ((p : ℤ_[p]) ^ k) ≠ 0 :=
       pow_ne_zero k (PadicInt.irreducible_p (p := p)).ne_zero
