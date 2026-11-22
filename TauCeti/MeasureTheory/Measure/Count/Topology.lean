@@ -11,11 +11,11 @@ public import Mathlib.MeasureTheory.Group.Measure
 /-!
 # Counting measure on discrete spaces
 
-Counting measure is inner regular in any topological space with measurable singletons, and on a
-discrete space it is also finite on compact sets, outer regular, and regular. On a discrete group
-it is therefore both a regular and an inner regular Haar measure. These instances allow regular
-representations and `L¹` convolution algebras on counting-measure `Lᵖ` spaces without a
-countability assumption.
+Counting measure is inner regular in any topological space, outer regular on any discrete space,
+and on a discrete space with measurable singletons it is also finite on compact sets and regular.
+On a discrete group it is therefore both a regular and an inner regular Haar measure. These
+instances allow regular representations and `L¹` convolution algebras on counting-measure `Lᵖ`
+spaces without a countability assumption.
 -/
 
 public section
@@ -35,10 +35,6 @@ instance outerRegular_of_discreteTopology [DiscreteTopology X] (μ : Measure X) 
     μ.OuterRegular where
   outerRegular s _ _ hr := ⟨s, Set.Subset.rfl, isOpen_discrete s, hr⟩
 
-section MeasurableSingletonClass
-
-variable [MeasurableSingletonClass X]
-
 /-- Any strict lower bound for the counting measure of a set `s` is exceeded on a finite (hence
 compact) subset of `s`. -/
 theorem exists_isCompact_lt_count {s : Set X} {r : ℝ≥0∞} (hr : r < count s) :
@@ -48,12 +44,18 @@ theorem exists_isCompact_lt_count {s : Set X} {r : ℝ≥0∞} (hr : r < count s
   · obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hr.ne_top
     obtain ⟨t, hts, hcard⟩ := (Set.not_finite.mp hs).exists_subset_card_eq n
     refine ⟨t, hts, t.finite_toSet.isCompact, hn.trans_le ?_⟩
-    rw [count_apply_finset, hcard]
+    calc (n : ℝ≥0∞) = t.card := by rw [hcard]
+      _ = ∑' _ : (t : Set X), (1 : ℝ≥0∞) := by simp
+      _ ≤ count (t : Set X) := le_count_apply
 
-/-- Counting measure is inner regular in any topological space with measurable singletons, since
-every finite subset is compact. -/
+/-- Counting measure is inner regular in any topological space, since every finite subset is
+compact. -/
 instance count_innerRegular : (count : Measure X).InnerRegular where
   innerRegular _ _ _ hr := exists_isCompact_lt_count hr
+
+section MeasurableSingletonClass
+
+variable [MeasurableSingletonClass X]
 
 variable [DiscreteTopology X]
 

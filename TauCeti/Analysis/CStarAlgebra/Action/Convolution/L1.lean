@@ -380,11 +380,10 @@ private theorem norm_compLp_mul_translateLp_le (a : A) (r : G) (g : Lp A 1 μ) :
 integrable, with neither local compactness of `G`, separability of `A`, nor σ-finiteness of `μ`. -/
 theorem integrable_mul_translateLp {f : G → A} (hf : Integrable f μ) (g : Lp A 1 μ) :
     Integrable (fun r => (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) μ := by
-  let B : Lp A 1 μ →L[ℂ] A →L[ℂ] Lp A 1 μ := ((ContinuousLinearMap.mul ℂ A).compLpL₂ 1 μ).flip
   have hmeas : AEStronglyMeasurable
-      (fun r => B (α.translateLp μ 1 r g) (f r)) μ :=
-    hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
-      (B.continuous.comp (α.continuous_translateLp_apply ENNReal.one_ne_top g))
+      (fun r => (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) μ :=
+    ((ContinuousLinearMap.mul ℂ A).compLpL₂ 1 μ).aestronglyMeasurable_comp₂_continuous
+      hf.aefinStronglyMeasurable (α.continuous_translateLp_apply ENNReal.one_ne_top g)
   exact (hf.norm.mul_const ‖g‖).mono' hmeas
     (.of_forall fun r => α.norm_compLp_mul_translateLp_le (f r) r g)
 
