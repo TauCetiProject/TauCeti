@@ -121,6 +121,8 @@ polynomial in the Morse inequalities.
   `TauCeti.IsMorse.exists_isCriticalBandCut`: on a compact manifold a critical-band cut exists for
   a function with finitely many critical values, such as a Morse function, starting below and
   ending above all values of `f`.
+* `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: the same cut indexed by
+  `ℕ`, at regular values.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -1003,6 +1005,30 @@ theorem exists_isCriticalBandCut_of_finite_image_criticalPoints [CompactSpace M]
     have := ha (lt_add_one q)
     exact ⟨(a q + a (q + 1)) / 2, ⟨by linarith, by linarith⟩,
       fun y hy hfy ↦ absurd hfy (hx y hy)⟩
+
+/-- **Critical-band cuts indexed by `ℕ`.** A continuous function `f` with finitely many critical
+values on a compact manifold can be cut at regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, with
+`s 0 < f ≤ s (N + 1)`, such that each band `f⁻¹[s j, s (j + 1)]` is a critical band. This is the
+form of a critical-band cut (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`)
+taken by the Morse–Bott inequalities. -/
+theorem exists_monotone_isCriticalBand_of_finite_image_criticalPoints [CompactSpace M]
+    (hf : Continuous f) (hfin : (f '' criticalPoints I f).Finite) :
+    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
+      (∀ j, IsCriticalBand I f (s j) (s (j + 1))) ∧ ∀ j, IsRegularValue I 𝓘(ℝ) f (s j) := by
+  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ :=
+    exists_isCriticalBandCut_of_finite_image_criticalPoints (I := I) hf hfin
+  have hband (j : ℕ) : IsCriticalBand I f (a (q₀ + j)) (a (q₀ + (j + 1))) := by
+    simpa [add_assoc] using ha.isCriticalBand (q₀ + j)
+  refine ⟨fun j ↦ a (q₀ + j), (q₁ - q₀).toNat, fun j k hjk ↦ ha.monotone (by lia),
+    fun x ↦ by simpa using hq₀ x, fun x ↦ (hq₁ x).trans (ha.monotone (by lia)), hband,
+    fun j ↦ ?_⟩
+  rcases j with _ | j
+  · exact isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (by simpa using hq₀ x : _ < f x).ne' hx
+  -- The critical value of a critical band lies strictly inside it, so its upper end is regular.
+  obtain ⟨c, hc, hcrit⟩ := (hband j).exists_mem_Ioo_forall_eq
+  refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hfx⟩ ↦ hc.2.ne ?_
+  replace hfx : f x = a (q₀ + (j + 1)) := by simpa using hfx
+  rw [← hcrit x hx ⟨hfx ▸ hc.1.le.trans hc.2.le, hfx.le⟩, hfx]
 
 /-- **Critical-band cuts exist for Morse functions on compact manifolds.** A Morse function `f` on
 a compact manifold has a critical-band cut `a : ℤ → ℝ` which starts below and ends above all values

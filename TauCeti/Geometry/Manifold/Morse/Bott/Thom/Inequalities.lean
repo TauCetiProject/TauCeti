@@ -43,7 +43,8 @@ negative normal bundles are. Without such a Thom class the homology of a piece m
 the orientation local system of its negative normal bundle, which this file does not treat.
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so the
-manifolds, their models and the field `K` live in `Type`.
+base `S`, the model space `E` of `M` and the field `K` live in `Type`, and in the band statements so
+does `M`.
 
 ## Main results
 

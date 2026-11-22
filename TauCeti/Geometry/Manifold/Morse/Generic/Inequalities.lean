@@ -66,8 +66,6 @@ have Thom classes, for instance when they are oriented.
   homology of regular sublevels, and its vanishing above the dimension.
 * `TauCeti.finite_singularHomology_of_compactSpace`: finiteness of the homology of a compact
   boundaryless manifold.
-* `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: a cut at regular values
-  into critical bands, for a function with finitely many critical values on a compact manifold.
 * `TauCeti.finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff`,
@@ -226,33 +224,6 @@ theorem isZero_singularHomology_sublevelPair_of_contMDiff {C : Type v} [Category
   rw [← hgf]
   exact hg.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact hga hgb
     (fun _ _ ↦ manifoldMorseIndex_le_finrank) R hn
-
-/-! ### Cuts into critical bands -/
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- **Critical-band cuts indexed by `ℕ`.** A continuous function `f` with finitely many critical
-values on a compact manifold can be cut at regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, with
-`s 0 < f ≤ s (N + 1)`, such that each band `f⁻¹[s j, s (j + 1)]` is a critical band. This is the
-form of a critical-band cut (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`)
-taken by the inequalities below. -/
-theorem exists_monotone_isCriticalBand_of_finite_image_criticalPoints [CompactSpace M]
-    (hf : Continuous f) (hfin : (f '' criticalPoints I f).Finite) :
-    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
-      (∀ j, IsCriticalBand I f (s j) (s (j + 1))) ∧ ∀ j, IsRegularValue I 𝓘(ℝ) f (s j) := by
-  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ :=
-    exists_isCriticalBandCut_of_finite_image_criticalPoints (I := I) hf hfin
-  have hband (j : ℕ) : IsCriticalBand I f (a (q₀ + j)) (a (q₀ + (j + 1))) := by
-    simpa [add_assoc] using ha.isCriticalBand (q₀ + j)
-  refine ⟨fun j ↦ a (q₀ + j), (q₁ - q₀).toNat, fun j k hjk ↦ ha.monotone (by lia),
-    fun x ↦ by simpa using hq₀ x, fun x ↦ (hq₁ x).trans (ha.monotone (by lia)), hband,
-    fun j ↦ ?_⟩
-  rcases j with _ | j
-  · exact isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (by simpa using hq₀ x : _ < f x).ne' hx
-  -- The critical value of a critical band lies strictly inside it, so its upper end is regular.
-  obtain ⟨c, hc, hcrit⟩ := (hband j).exists_mem_Ioo_forall_eq
-  refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hfx⟩ ↦ hc.2.ne ?_
-  replace hfx : f x = a (q₀ + (j + 1)) := by simpa using hfx
-  rw [← hcrit x hx ⟨hfx ▸ hc.1.le.trans hc.2.le, hfx.le⟩, hfx]
 
 /-! ### The inequalities for the bands of a smooth function -/
 
