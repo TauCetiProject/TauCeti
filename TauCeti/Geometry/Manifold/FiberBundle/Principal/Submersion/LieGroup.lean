@@ -291,7 +291,7 @@ def diffeomorphManifoldTotalSpaceOfSubmersionLieGroup :
 theorem diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_apply
     (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
     diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit q =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).2.val :=
+      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).snd.val :=
   diffeomorphManifoldTotalSpaceOfSubmersion_apply _ _ _ _ _ _ _ _ q
 
 /-- Inverse map of `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`. -/

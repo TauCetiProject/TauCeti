@@ -58,7 +58,7 @@ variable (F : Type*) {E B : Type*} (f : E → B)
 /-- `ProjectionFiber F f b` is equivalent to the set-theoretic fibre `{x : E // f x = b}`. -/
 def equivSubtype (b : B) : ProjectionFiber F f b ≃ {x : E // f x = b} where
   toFun y := ⟨y.val, y.map_val⟩
-  invFun y := ⟨y.1, y.2⟩
+  invFun y := ⟨y.val, y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -70,20 +70,20 @@ theorem coe_equivSubtype_apply (b : B) (y : ProjectionFiber F f b) :
 /-- Applying `(equivSubtype F f b).symm` preserves the underlying point in `E`. -/
 @[simp]
 theorem val_equivSubtype_symm (b : B) (y : {x : E // f x = b}) :
-    ((equivSubtype F f b).symm y).val = y.1 := (rfl)
+    ((equivSubtype F f b).symm y).val = y.val := (rfl)
 
 /-- The bundled total space `TotalSpace F (ProjectionFiber F f)` is canonically equivalent to `E`
 via `⟨b, y⟩ ↦ y.val` and `x ↦ ⟨f x, ⟨x, rfl⟩⟩`. -/
 def totalSpaceEquiv : TotalSpace F (ProjectionFiber F f) ≃ E where
-  toFun p := p.2.val
+  toFun p := p.snd.val
   invFun x := ⟨f x, ⟨x, rfl⟩⟩
   left_inv | ⟨_, _, rfl⟩ => rfl
   right_inv _ := rfl
 
-/-- `totalSpaceEquiv F f` sends a bundled point `p` to `p.2.val`. -/
+/-- `totalSpaceEquiv F f` sends a bundled point `p` to `p.snd.val`. -/
 @[simp]
 theorem totalSpaceEquiv_apply (p : TotalSpace F (ProjectionFiber F f)) :
-    totalSpaceEquiv F f p = p.2.val := (rfl)
+    totalSpaceEquiv F f p = p.snd.val := (rfl)
 
 /-- `totalSpaceEquiv F f` sends `⟨b, y⟩` to `y.val`. -/
 theorem totalSpaceEquiv_mk (b : B) (y : ProjectionFiber F f b) :
@@ -99,11 +99,11 @@ theorem proj_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).proj 
 
 /-- The underlying domain point of `(totalSpaceEquiv F f).symm x` is `x`. -/
 @[simp]
-theorem val_snd_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).2.val = x := (rfl)
+theorem val_snd_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).snd.val = x := (rfl)
 
 /-- `totalSpaceEquiv F f` intertwines the bundle projection with `f`. -/
 theorem map_totalSpaceEquiv (p : TotalSpace F (ProjectionFiber F f)) :
-    f (totalSpaceEquiv F f p) = p.proj := p.2.map_val
+    f (totalSpaceEquiv F f p) = p.proj := p.snd.map_val
 
 /-- Composing `f` with `totalSpaceEquiv F f` equals the bundle projection
 `π F (ProjectionFiber F f)`. -/
@@ -241,7 +241,7 @@ variable {F E B : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalS
 projection `π F (TauCeti.ProjectionFiber F f)`. -/
 def projectionFiber (t : Trivialization F f) :
     Trivialization F (π F (TauCeti.ProjectionFiber F f)) :=
-  t.compHomeomorphOfEq (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f) fun p ↦ p.2.map_val
+  t.compHomeomorphOfEq (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f) fun p ↦ p.snd.map_val
 
 /-- `t.projectionFiber` evaluates `t` on the underlying point in `E`. -/
 @[simp]

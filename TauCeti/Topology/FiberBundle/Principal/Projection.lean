@@ -57,7 +57,7 @@ theorem isEquivariant_projectionFiber_iff (t : Trivialization G f)
   letI := TauCeti.ProjectionFiber.mulAction G hinv
   isEquivariant_iff_of_equiv t.projectionFiber t (TauCeti.ProjectionFiber.totalSpaceEquiv G f)
     t.projectionFiber_baseSet
-    (fun p ↦ by rw [TauCeti.ProjectionFiber.totalSpaceEquiv_apply]; exact p.2.map_val)
+    (fun p ↦ by rw [TauCeti.ProjectionFiber.totalSpaceEquiv_apply]; exact p.snd.map_val)
     (fun p ↦ t.projectionFiber_apply p)
     fun g p ↦ TauCeti.ProjectionFiber.totalSpaceEquiv_smul G hinv (op g) p
 

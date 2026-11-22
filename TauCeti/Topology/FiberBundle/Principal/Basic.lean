@@ -167,14 +167,14 @@ theorem isEquivariant_iff_of_equiv {Z : Type*} [TopologicalSpace Z] {proj : Z �
     (e : Trivialization G (π G P)) (t : Trivialization G proj) (h : TotalSpace G P ≃ Z)
     (hbase : e.baseSet = t.baseSet) (hproj : ∀ p : TotalSpace G P, proj (h p) = p.proj)
     (happ : ∀ p : TotalSpace G P, e p = t (h p))
-    (hsmul : ∀ (g : G) (p : TotalSpace G P), h ⟨p.proj, op g • p.2⟩ = op g • h p) :
+    (hsmul : ∀ (g : G) (p : TotalSpace G P), h ⟨p.proj, op g • p.snd⟩ = op g • h p) :
     e.IsEquivariant ↔
       ∀ z : Z, proj z ∈ t.baseSet → ∀ g : G, (t (op g • z)).2 = (t z).2 * g := by
   refine ⟨fun he z hz g ↦ ?_, fun ht ↦ ⟨fun b hb y g ↦ ?_⟩⟩
   · have hzp : proj (h (h.symm z)) = (h.symm z).proj := hproj _
     rw [h.apply_symm_apply] at hzp
     have hb : (h.symm z).proj ∈ e.baseSet := hbase.symm ▸ hzp.symm ▸ hz
-    have h1 := he.snd_apply_smul (h.symm z).proj hb (h.symm z).2 g
+    have h1 := he.snd_apply_smul (h.symm z).proj hb (h.symm z).snd g
     rw [happ, hsmul, happ, h.apply_symm_apply] at h1
     exact h1
   · have h1 := ht (h ⟨b, y⟩) ((hproj ⟨b, y⟩).symm ▸ hbase ▸ hb) g

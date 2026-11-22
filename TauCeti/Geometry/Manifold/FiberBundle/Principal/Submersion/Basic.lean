@@ -491,8 +491,8 @@ private theorem contMDiff_diffeomorphManifoldTotalSpace_toFun :
     q₀))).congr_of_eventuallyEq ?_
   filter_upwards [hproj.continuousAt (hU.mem_nhds hz₀U)] with q hqU
   set z := (ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q
-  have hzp : p z.2.val = z.proj := z.2.map_val
-  have hxU : p z.2.val ∈ U := by rwa [hzp]
+  have hzp : p z.snd.val = z.proj := z.snd.map_val
+  have hxU : p z.snd.val ∈ U := by rwa [hzp]
   dsimp only [z₀] at ht_eq
   simp only [ProjectionFiber.totalSpaceEquiv_apply, comp_apply, ht_eq,
     Trivialization.projectionFiber_apply, actionTrivializationOfContMDiffSection_apply]
@@ -536,7 +536,7 @@ def diffeomorphManifoldTotalSpaceOfSubmersion :
 theorem diffeomorphManifoldTotalSpaceOfSubmersion_apply
     (q : ManifoldTotalSpace G (ProjectionFiber G p)) :
     diffeomorphManifoldTotalSpaceOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker q =
-      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).2.val := by
+      ((ManifoldTotalSpace.homeomorph G (ProjectionFiber G p)).symm q).snd.val := by
   dsimp [diffeomorphManifoldTotalSpaceOfSubmersion]
   exact ProjectionFiber.totalSpaceEquiv_apply G p _
 
