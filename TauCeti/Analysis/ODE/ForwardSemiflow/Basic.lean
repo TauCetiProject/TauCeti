@@ -144,7 +144,7 @@ theorem forwardSemiflow_mem {X : E → E} {S : Set E} {x : E} {t : ℝ}
 
 /-- For any `t ∈ forwardSemiflowInterval X S x`, there exists an integral curve `γ` on `[0, b)`
 passing through `forwardSemiflow X S t x` at time `t`. -/
-theorem exists_hasDerivWithinAt_eq_forwardSemiflow {X : E → E} {S : Set E} {x : E} {t : ℝ}
+theorem exists_integralCurve_eq_forwardSemiflow {X : E → E} {S : Set E} {x : E} {t : ℝ}
     (ht : t ∈ forwardSemiflowInterval X S x) :
     ∃ γ : ℝ → E, ∃ b > (0 : ℝ), t ∈ Ico 0 b ∧ γ t = forwardSemiflow X S t x ∧
       γ 0 = x ∧ MapsTo γ (Ico 0 b) S ∧
@@ -205,8 +205,8 @@ theorem eqOn_forwardSemiflow (hX : LocallyLipschitzOn S X)
   have ht_mem : t ∈ forwardSemiflowInterval X S x :=
     Ico_subset_forwardSemiflowInterval hb h0 hS hγ' ht
   dsimp only [forwardSemiflow]; rw [dite_eq_left ht_mem]
-  obtain ⟨b₁, _, ht₁, h0₁, hS₁, hγ₁'⟩ := ht_mem.choose_spec
-  exact hX.eqOn_Ico_of_hasDerivAt_Ioo
+  obtain ⟨b₁, hb₁, ht₁, h0₁, hS₁, hγ₁'⟩ := ht_mem.choose_spec
+  exact hX.eqOn_Ico_of_hasDerivAt_Ioo ⟨le_rfl, lt_min hb hb₁⟩
     (fun s hs ↦ ((hγ' s ⟨hs.1, hs.2.trans_le (min_le_left _ _)⟩).continuousWithinAt).mono
       (Ico_subset_Ico_right (min_le_left _ _)))
     (fun s hs ↦ (hγ' s ⟨hs.1.le, hs.2.trans_le (min_le_left _ _)⟩).hasDerivAt
@@ -310,70 +310,127 @@ theorem forwardSemiflow_add (hX : LocallyLipschitzOn S X)
 
 /-- Spatial Grönwall Lipschitz bound and joint continuity of `forwardSemiflow` on `Icc 0 τ ×ˢ B`
 from a Lipschitz bound on `X` over a trapping region `B'`. -/
-theorem lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc {B B' : Set E}
-    (hX : LocallyLipschitzOn S X) {τ : ℝ} {K : ℝ≥0} (hτ : 0 < τ)
+theorem exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc {B B' : Set E}
+    (hX : LocallyLipschitzOn S X) {τ : ℝ} {K : ℝ≥0}
     (hKLip : LipschitzOnWith K X B')
-    (hsub : ∀ y ∈ B, Ico 0 (2 * τ) ⊆ forwardSemiflowInterval X S y)
-    (hmem : ∀ y ∈ B, ∀ t ∈ Icc 0 τ, forwardSemiflow X S t y ∈ B') :
+    (hsub : ∀ y ∈ B, τ ∈ forwardSemiflowInterval X S y)
+    (hmem : ∀ y ∈ B, ∀ t ∈ Ico 0 τ, forwardSemiflow X S t y ∈ B') :
     ∃ KΦ : ℝ≥0,
       (∀ t ∈ Icc 0 τ, LipschitzOnWith KΦ (fun y ↦ forwardSemiflow X S t y) B) ∧
       ContinuousOn (uncurry (forwardSemiflow X S)) (Icc 0 τ ×ˢ B) := by
-  set KΦ : ℝ≥0 := ⟨Real.exp ((K : ℝ) * τ), (Real.exp_pos _).le⟩
-  have hcont {y : E} (hy : y ∈ B) : ContinuousOn (fun u ↦ forwardSemiflow X S u y) (Icc 0 τ) :=
-    fun s hs ↦ ((hX.hasDerivWithinAt_forwardSemiflow_Ico (hsub y hy)
-      ⟨hs.1, by linarith [hs.2]⟩).continuousWithinAt).mono fun _ hu ↦ ⟨hu.1, by linarith [hu.2]⟩
+  let KΦ : ℝ≥0 := Real.toNNReal (Real.exp ((K : ℝ) * τ))
+  have hcont {y : E} (hy : y ∈ B) : ContinuousOn (fun u ↦ forwardSemiflow X S u y) (Icc 0 τ) := by
+    obtain ⟨b, hτb, hsub_y⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval (hsub y hy)
+    exact fun s hs ↦ ((hX.hasDerivWithinAt_forwardSemiflow_Ico hsub_y
+      ⟨hs.1, hs.2.trans_lt hτb⟩).continuousWithinAt).mono fun _ hu ↦ ⟨hu.1, hu.2.trans_lt hτb⟩
   have hLipΦ (t : ℝ) (ht : t ∈ Icc 0 τ) :
       LipschitzOnWith KΦ (fun y ↦ forwardSemiflow X S t y) B := by
     refine lipschitzOnWith_iff_dist_le_mul.mpr fun y₁ hy₁ y₂ hy₂ ↦ ?_
     have hIci {y : E} (hy : y ∈ B) (s : ℝ) (hs : s ∈ Ico 0 τ) : HasDerivWithinAt
-        (fun u ↦ forwardSemiflow X S u y) (X (forwardSemiflow X S s y)) (Ici s) s :=
-      (hX.hasDerivWithinAt_forwardSemiflow_Ico (hsub y hy)
-        ⟨hs.1, by linarith [hs.2]⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-          ⟨Iio (2 * τ), isOpen_Iio, mem_Iio.mpr (by linarith [hs.2]),
-            fun _ hu ↦ ⟨hs.1.trans hu.2, hu.1⟩⟩
+        (fun u ↦ forwardSemiflow X S u y) (X (forwardSemiflow X S s y)) (Ici s) s := by
+      obtain ⟨b, hτb, hsub_y⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval (hsub y hy)
+      exact (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub_y
+        ⟨hs.1, hs.2.trans hτb⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
+          ⟨Iio b, isOpen_Iio, hs.2.trans hτb, fun _ hu ↦ ⟨hs.1.trans hu.2, hu.1⟩⟩
     refine (dist_le_of_trajectories_ODE_of_mem (v := fun _ ↦ X) (s := fun _ ↦ B')
-      (fun _ _ ↦ hKLip) (hcont hy₁) (hIci hy₁) (fun s hs ↦ hmem y₁ hy₁ s (Ico_subset_Icc_self hs))
-      (hcont hy₂) (hIci hy₂) (fun s hs ↦ hmem y₂ hy₂ s (Ico_subset_Icc_self hs))
+      (fun _ _ ↦ hKLip) (hcont hy₁) (hIci hy₁) (hmem y₁ hy₁)
+      (hcont hy₂) (hIci hy₂) (hmem y₂ hy₂)
       (by simp only [forwardSemiflow_zero]; exact le_rfl) t ht).trans ?_
-    rw [sub_zero, mul_comm (dist y₁ y₂)]; change Real.exp ((K : ℝ) * t) * dist y₁ y₂ ≤
-      Real.exp ((K : ℝ) * τ) * dist y₁ y₂
+    rw [sub_zero, mul_comm (dist y₁ y₂), Real.coe_toNNReal _ (Real.exp_pos _).le]
     gcongr; exact ht.2
   exact ⟨KΦ, hLipΦ,
     continuousOn_prod_of_continuousOn_lipschitzOnWith' _ KΦ hLipΦ fun _ hy ↦ hcont hy⟩
 
-/-- **Cocycle continuation along `forwardSemiflowInterval`.** Any local product-neighborhood
-property `Q : Set (ℝ × E) → Prop` of `forwardSemiflow X S` that implies joint continuity, is
-closed under restriction, open-cover gluing, and cocycle time-shifting, and holds locally around
-every point of `S`, propagates to `Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S)` for every
-`T ∈ forwardSemiflowInterval X S x₀`. -/
-theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
-    (hX : LocallyLipschitzOn S X) {Q : Set (ℝ × E) → Prop}
-    (hQ_mono : ∀ ⦃S₁ S₂⦄, Q S₂ → S₁ ⊆ S₂ → Q S₁)
-    (hQ_cont : ∀ ⦃S'⦄, Q S' → ContinuousOn (uncurry (forwardSemiflow X S)) S')
-    (hQ_local : ∀ ⦃S'⦄, (∀ p ∈ S', ∃ W, IsOpen W ∧ p ∈ W ∧ Q (S' ∩ W)) → Q S')
+/-- Restart, cocycle-shift, and gluing step for `exists_Icc_prod_of_mem_forwardSemiflowInterval`:
+combines a property `Q` on `Icc 0 (s + δs) ×ˢ B₁` with a property `Q` on `Icc 0 τz ×ˢ B₂` when
+`forwardSemiflow X S s` maps `B ⊆ B₁` into `B₂`. -/
+private theorem cocycle_glue_Icc_prod (hX : LocallyLipschitzOn S X)
+    {Q : Set (ℝ × E) → ℝ × E → Prop}
+    (hQ_mono : ∀ ⦃S₁ S₂ p⦄, p ∈ S₁ → S₁ ⊆ S₂ → Q S₂ p → Q S₁ p)
+    (hQ_nhds : ∀ ⦃S₁ S₂ p⦄, S₁ ⊆ S₂ → S₁ ∈ 𝓝[S₂] p → Q S₁ p → Q S₂ p)
     (hQ_shift : ∀ {s δ τ : ℝ} {B₁ B₂ : Set E},
-      Q (Icc 0 (s + δ) ×ˢ B₁) → Q (Icc 0 τ ×ˢ B₂) → 0 ≤ s → 0 < δ →
+      (∀ p ∈ Icc 0 (s + δ) ×ˢ B₁, Q (Icc 0 (s + δ) ×ˢ B₁) p) →
+      (∀ p ∈ Icc 0 τ ×ˢ B₂, Q (Icc 0 τ ×ˢ B₂) p) → 0 ≤ s → 0 < δ →
       (∀ y ∈ B₁, forwardSemiflow X S s y ∈ B₂) →
       (∀ p ∈ Icc s (s + τ) ×ˢ B₁, uncurry (forwardSemiflow X S) p =
         uncurry (forwardSemiflow X S) (p.1 - s, forwardSemiflow X S s p.2)) →
-      Q (Icc s (s + τ) ×ˢ B₁))
+      ∀ p ∈ Icc s (s + τ) ×ˢ B₁, Q (Icc s (s + τ) ×ˢ B₁) p)
+    {s δs τz : ℝ} {B₁ B₂ B : Set E} (hs0 : 0 ≤ s) (hδs : 0 < δs) (hτz : 0 < τz)
+    (hB_sub : B ⊆ B₁)
+    (hsubs : ∀ y ∈ B₁, Ico 0 (s + 2 * δs) ⊆ forwardSemiflowInterval X S y)
+    (hsubz : ∀ y ∈ B₂, Ico 0 (2 * τz) ⊆ forwardSemiflowInterval X S y)
+    (hQs : ∀ p ∈ Icc 0 (s + δs) ×ˢ B₁, Q (Icc 0 (s + δs) ×ˢ B₁) p)
+    (hQz : ∀ p ∈ Icc 0 τz ×ˢ B₂, Q (Icc 0 τz ×ˢ B₂) p)
+    (hΦs_ball : ∀ y ∈ B, forwardSemiflow X S s y ∈ B₂) :
+    (∀ y ∈ B, Ico 0 (s + 2 * τz) ⊆ forwardSemiflowInterval X S y) ∧
+      ∀ p ∈ Icc 0 (s + τz) ×ˢ B, Q (Icc 0 (s + τz) ×ˢ B) p := by
+  have hsub_all (y : E) (hy : y ∈ B) :
+      Ico 0 (s + 2 * τz) ⊆ forwardSemiflowInterval X S y := fun t ht ↦ by
+    have hsJ := hsubs y (hB_sub hy) ⟨hs0, by linarith⟩
+    rcases le_or_gt t s with hts | hst
+    · exact Icc_subset_forwardSemiflowInterval_of_mem hsJ ⟨ht.1, hts⟩
+    · rw [← sub_add_cancel t s]
+      exact (hX.add_mem_forwardSemiflowInterval_iff hsJ (by linarith)).mpr
+        (hsubz (forwardSemiflow X S s y) (hΦs_ball y hy) ⟨by linarith, by linarith [ht.2]⟩)
+  have hstep_Q : ∀ p ∈ Icc s (s + τz) ×ˢ B, Q (Icc s (s + τz) ×ˢ B) p :=
+    hQ_shift (fun p hp ↦ hQ_mono hp (prod_mono Subset.rfl hB_sub) (hQs p ⟨hp.1, hB_sub hp.2⟩))
+      hQz hs0 hδs hΦs_ball fun p hp ↦ by
+        have htJ : p.1 - s ∈ forwardSemiflowInterval X S (forwardSemiflow X S s p.2) :=
+          hsubz (forwardSemiflow X S s p.2) (hΦs_ball p.2 hp.2)
+            ⟨by linarith [hp.1.1], by linarith [hp.1.2]⟩
+        simpa [uncurry, sub_add_cancel] using
+          hX.forwardSemiflow_add (hsub_all p.2 hp.2 ⟨hs0, by linarith⟩) htJ
+  refine ⟨hsub_all, fun p hp ↦ ?_⟩
+  set T₁ := min (s + δs) (s + τz)
+  rcases lt_or_ge p.1 T₁ with hlt | hge
+  · exact hQ_nhds (prod_mono (Icc_subset_Icc_right (min_le_right _ _)) Subset.rfl)
+      (mem_nhdsWithin.mpr ⟨Iio T₁ ×ˢ univ, isOpen_Iio.prod isOpen_univ, ⟨hlt, trivial⟩,
+        fun q hq ↦ ⟨⟨hq.2.1.1, hq.1.1.le⟩, hq.2.2⟩⟩)
+      (hQ_mono ⟨⟨hp.1.1, hlt.le⟩, hp.2⟩ (prod_mono (Icc_subset_Icc_right (min_le_left _ _)) hB_sub)
+        (hQs p ⟨⟨hp.1.1, hlt.le.trans (min_le_left _ _)⟩, hB_sub hp.2⟩))
+  · exact hQ_nhds (prod_mono (Icc_subset_Icc_left hs0) Subset.rfl)
+      (mem_nhdsWithin.mpr ⟨Ioi s ×ˢ univ, isOpen_Ioi.prod isOpen_univ,
+        ⟨(lt_min (by linarith) (by linarith)).trans_le hge, trivial⟩,
+        fun q hq ↦ ⟨⟨hq.1.1.le, hq.2.1.2⟩, hq.2.2⟩⟩)
+      (hstep_Q p ⟨⟨(lt_min (by linarith) (by linarith)).trans_le hge |>.le, hp.1.2⟩, hp.2⟩)
+
+/-- **Cocycle continuation along `forwardSemiflowInterval`.** Any local product-neighborhood
+property `Q : Set (ℝ × E) → ℝ × E → Prop` of `forwardSemiflow X S` that implies joint continuity,
+is closed under restriction, neighborhood-within localization, and cocycle time-shifting, and holds
+locally around every point of `S`, propagates to `Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S)` for every
+`T ∈ forwardSemiflowInterval X S x₀`. -/
+theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
+    (hX : LocallyLipschitzOn S X) {Q : Set (ℝ × E) → ℝ × E → Prop}
+    (hQ_mono : ∀ ⦃S₁ S₂ p⦄, p ∈ S₁ → S₁ ⊆ S₂ → Q S₂ p → Q S₁ p)
+    (hQ_cont : ∀ ⦃S'⦄, (∀ p ∈ S', Q S' p) → ContinuousOn (uncurry (forwardSemiflow X S)) S')
+    (hQ_nhds : ∀ ⦃S₁ S₂ p⦄, S₁ ⊆ S₂ → S₁ ∈ 𝓝[S₂] p → Q S₁ p → Q S₂ p)
+    (hQ_shift : ∀ {s δ τ : ℝ} {B₁ B₂ : Set E},
+      (∀ p ∈ Icc 0 (s + δ) ×ˢ B₁, Q (Icc 0 (s + δ) ×ˢ B₁) p) →
+      (∀ p ∈ Icc 0 τ ×ˢ B₂, Q (Icc 0 τ ×ˢ B₂) p) → 0 ≤ s → 0 < δ →
+      (∀ y ∈ B₁, forwardSemiflow X S s y ∈ B₂) →
+      (∀ p ∈ Icc s (s + τ) ×ˢ B₁, uncurry (forwardSemiflow X S) p =
+        uncurry (forwardSemiflow X S) (p.1 - s, forwardSemiflow X S s p.2)) →
+      ∀ p ∈ Icc s (s + τ) ×ˢ B₁, Q (Icc s (s + τ) ×ˢ B₁) p)
     (hQ_loc : ∀ x ∈ S, ∃ r > 0, ∃ τ > 0,
       (∀ y ∈ ball x r ∩ S, Ico 0 (2 * τ) ⊆ forwardSemiflowInterval X S y) ∧
-      Q (Icc 0 τ ×ˢ (ball x r ∩ S)))
+      ∀ p ∈ Icc 0 τ ×ˢ (ball x r ∩ S), Q (Icc 0 τ ×ˢ (ball x r ∩ S)) p)
     {x₀ : E} {T : ℝ} (hx₀ : x₀ ∈ S) (hT : T ∈ forwardSemiflowInterval X S x₀) :
     ∃ r > 0, ∃ δ > 0,
       (∀ y ∈ ball x₀ r ∩ S, Ico 0 (T + 2 * δ) ⊆ forwardSemiflowInterval X S y) ∧
-      Q (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S)) := by
+      ∀ p ∈ Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S), Q (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S)) p := by
   let Φ := forwardSemiflow X S
   let P : ℝ → Prop := fun t ↦ ∃ r > 0, ∃ δ > 0,
     (∀ y ∈ ball x₀ r ∩ S, Ico 0 (t + 2 * δ) ⊆ forwardSemiflowInterval X S y) ∧
-    Q (Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S))
+    ∀ p ∈ Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S), Q (Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S)) p
   have hP_ext {t r δ : ℝ} (hr : 0 < r) (hδ : 0 < δ)
       (hsub : ∀ y ∈ ball x₀ r ∩ S, Ico 0 (t + 2 * δ) ⊆ forwardSemiflowInterval X S y)
-      (hQ : Q (Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S))) {u : ℝ} (hu : u ≤ t + δ / 2) : P u :=
+      (hQ : ∀ p ∈ Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S), Q (Icc 0 (t + δ) ×ˢ (ball x₀ r ∩ S)) p)
+      {u : ℝ} (hu : u ≤ t + δ / 2) : P u :=
     ⟨r, hr, δ / 4, by positivity,
       fun y hy ↦ (Ico_subset_Ico_right (by linarith)).trans (hsub y hy),
-      hQ_mono hQ (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)⟩
+      fun p hp ↦ hQ_mono hp (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)
+        (hQ p ⟨⟨hp.1.1, by linarith [hp.1.2]⟩, hp.2⟩)⟩
+  -- Step 1: Assume `¬ P T` and let `b = sInf {t ∈ [0, T] | ¬ P t}`; show `0 < b ≤ T`.
   by_contra hnotPT
   let B : Set ℝ := {t ∈ Icc 0 T | ¬ P t}
   have hBne : B.Nonempty := ⟨T, ⟨nonneg_of_mem_forwardSemiflowInterval hT, le_rfl⟩, hnotPT⟩
@@ -386,7 +443,9 @@ theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
     le_csInf hBne fun t ht ↦ le_of_not_gt fun hlt ↦ ht.2 <|
       hP_ext (t := 0) hr₀ (half_pos hτ₀)
         (fun y hy ↦ (Ico_subset_Ico_right (by linarith)).trans (hsub₀ y hy))
-        (hQ_mono hQ₀ (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)) (by linarith)
+        (fun p hp ↦ hQ_mono hp (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)
+          (hQ₀ p ⟨⟨hp.1.1, by linarith [hp.1.2]⟩, hp.2⟩)) (by linarith)
+  -- Step 2: Take a local neighborhood `(rz, τz)` around `Φ b x₀` and step back to `s = b - η < b`.
   have hbJ : b ∈ forwardSemiflowInterval X S x₀ :=
     Icc_subset_forwardSemiflowInterval_of_mem hT ⟨hb0, hbT⟩
   obtain ⟨rz, hrz, τz, hτz, hsubz, hQz⟩ := hQ_loc (Φ b x₀) (forwardSemiflow_mem hbJ)
@@ -400,6 +459,8 @@ theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
   have hΦs_mem : Φ s x₀ ∈ ball (Φ b x₀) rz := hclose_b <| by
     rw [Real.dist_eq, abs_of_neg (sub_neg.mpr hs_lt_b)]
     linarith [min_le_right (b / 2) (min (η₀ / 2) (τz / 3)), min_le_left (η₀ / 2) (τz / 3)]
+  -- Step 3: Use `P s` and continuity of `Φ s` to shrink `r' ≤ rs` so `Φ s` maps
+  -- `ball x₀ r' ∩ S` into `ball (Φ b x₀) rz ∩ S`.
   have hPs : P s := by_contra fun hnotPs ↦
     not_lt_of_ge (csInf_le hBbdd ⟨⟨hs_pos.le, hs_lt_b.le.trans hbT⟩, hnotPs⟩) hs_lt_b
   obtain ⟨rs, hrs, δs, hδs, hsubs, hQs⟩ := hPs
@@ -412,38 +473,17 @@ theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
     have hy_rs : y ∈ ball x₀ rs ∩ S := ⟨ball_subset_ball (min_le_left _ _) hy.1, hy.2⟩
     exact ⟨hballc ⟨ball_subset_ball (min_le_right _ _) hy.1, hy_rs⟩,
       forwardSemiflow_mem (hsubs y hy_rs ⟨hs_pos.le, by linarith⟩)⟩
-  have hsub_all (y : E) (hy : y ∈ ball x₀ r' ∩ S) :
-      Ico 0 (s + 2 * τz) ⊆ forwardSemiflowInterval X S y := fun t ht ↦ by
-    have hsJ := hsubs y ⟨ball_subset_ball (min_le_left _ _) hy.1, hy.2⟩ ⟨hs_pos.le, by linarith⟩
-    rcases le_or_gt t s with hts | hst
-    · exact Icc_subset_forwardSemiflowInterval_of_mem hsJ ⟨ht.1, hts⟩
-    · rw [← sub_add_cancel t s]
-      exact (hX.add_mem_forwardSemiflowInterval_iff hsJ (by linarith)).mpr
-        (hsubz (Φ s y) (hΦs_ball y hy) ⟨by linarith, by linarith [ht.2]⟩)
-  have hstep_Q : Q (Icc s (s + τz) ×ˢ (ball x₀ r' ∩ S)) :=
-    hQ_shift (hQ_mono hQs
-        (prod_mono Subset.rfl (inter_subset_inter_left S (ball_subset_ball (min_le_left _ _)))))
-      hQz hs_pos.le hδs hΦs_ball fun p hp ↦ by
-        have htJ : p.1 - s ∈ forwardSemiflowInterval X S (Φ s p.2) :=
-          hsubz (Φ s p.2) (hΦs_ball p.2 hp.2) ⟨by linarith [hp.1.1], by linarith [hp.1.2]⟩
-        simpa [Φ, uncurry, sub_add_cancel] using
-          hX.forwardSemiflow_add (hsub_all p.2 hp.2 ⟨hs_pos.le, by linarith⟩) htJ
-  have hglue : Q (Icc 0 (s + τz) ×ˢ (ball x₀ r' ∩ S)) := by
-    set T₁ := min (s + δs) (s + τz)
-    refine hQ_local fun p _ ↦ ?_
-    rcases lt_or_ge p.1 T₁ with hlt | hge
-    · exact ⟨Iio T₁ ×ˢ univ, isOpen_Iio.prod isOpen_univ, ⟨hlt, trivial⟩,
-        hQ_mono hQs fun _ hq ↦ ⟨⟨hq.1.1.1, hq.2.1.le.trans (min_le_left _ _)⟩,
-          ball_subset_ball (min_le_left _ _) hq.1.2.1, hq.1.2.2⟩⟩
-    · exact ⟨Ioi s ×ˢ univ, isOpen_Ioi.prod isOpen_univ,
-        ⟨(lt_min (by linarith) (by linarith)).trans_le hge, trivial⟩,
-        hQ_mono hstep_Q fun _ hq ↦ ⟨⟨hq.2.1.le, hq.1.1.2⟩, hq.1.2⟩⟩
+  -- Step 4: Glue via `cocycle_glue_Icc_prod` to push `P` past `b`, contradicting `b = sInf B`.
+  obtain ⟨hsub_all, hglue⟩ := hX.cocycle_glue_Icc_prod hQ_mono hQ_nhds hQ_shift hs_pos.le hδs hτz
+    (inter_subset_inter_left S (ball_subset_ball (min_le_left _ _)))
+    hsubs hsubz hQs hQz hΦs_ball
   have hbs_le : b - s ≤ τz / 3 := by
     linarith [min_le_right (b / 2) (min (η₀ / 2) (τz / 3)), min_le_right (η₀ / 2) (τz / 3)]
   have hb_contra : b + τz / 6 ≤ b := le_csInf hBne fun t ht ↦ le_of_not_gt fun hlt ↦
     ht.2 <| hP_ext (t := b) (lt_min hrs hrc) (by positivity : 0 < τz / 3)
       (fun y hy ↦ (Ico_subset_Ico_right (by linarith)).trans (hsub_all y hy))
-      (hQ_mono hglue (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)) (by linarith)
+      (fun p hp ↦ hQ_mono hp (prod_mono (Icc_subset_Icc_right (by linarith)) Subset.rfl)
+        (hglue p ⟨⟨hp.1.1, by linarith [hp.1.2]⟩, hp.2⟩)) (by linarith)
   linarith
 
 /-- **No cluster point with uniform local restart.** If `X` is locally Lipschitz on `S`,

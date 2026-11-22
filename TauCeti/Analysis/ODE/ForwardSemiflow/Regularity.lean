@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.ODE.ForwardSemiflow.Basic
-public import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Time regularity of forward semiflow trajectories

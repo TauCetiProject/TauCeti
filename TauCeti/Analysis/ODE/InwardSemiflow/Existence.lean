@@ -250,8 +250,10 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
   obtain ⟨τ, hτ, hsub, hmem, hint⟩ := exists_Ico_and_Icc_forwardSemiflow_of_ball_subset hX hx₀
     hr hε hδ h2rU hKLip hin_ball
   -- Step 3: Spatial Grönwall Lipschitz bound and joint continuity on `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.
-  obtain ⟨KΦ, hLipΦ, hcontΦ⟩ := hX.lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc hτ
-    hKLip hsub hmem
+  obtain ⟨KΦ, hLipΦ, hcontΦ⟩ :=
+    hX.exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc hKLip
+      (fun y hy ↦ hsub y hy ⟨hτ.le, by linarith⟩)
+      (fun y hy t ht ↦ hmem y hy t (Ico_subset_Icc_self ht))
   exact ⟨r, hr, τ, hτ, K, KΦ, h2rU, hKLip, hsub, hmem, hint, hLipΦ, hcontΦ⟩
 
 /-- At any point `x ∈ U ∩ C` where a locally Lipschitz field `X` is strictly inward to the convex
@@ -275,15 +277,16 @@ theorem Convex.exists_continuousOn_Icc_of_mem_forwardSemiflowInterval {C U : Set
       ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) := by
   obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
   obtain ⟨r, hr, δ, hδ, hsub, hcont⟩ := hX.exists_Icc_prod_of_mem_forwardSemiflowInterval
-    (fun _ _ h hsub ↦ h.mono hsub) (fun _ h ↦ h)
-    (fun _ h p hp ↦ let ⟨W, hW, hpW, hfW⟩ := h p hp
-      (hfW p ⟨hp, hpW⟩).mono_of_mem_nhdsWithin
-        (inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds (hW.mem_nhds hpW))))
+    (Q := ContinuousWithinAt (uncurry (forwardSemiflow X (U ∩ C))))
+    (fun _ _ _ _ hsub h ↦ h.mono hsub) (fun _ h ↦ h)
+    (fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem)
     (fun {s δ τ B₁ B₂} hQ₁ hQ₂ hs0 hδ hmaps hcocycle ↦ by
       have hΦs : ContinuousOn (fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) s p.2)
           (Icc s (s + τ) ×ˢ B₁) :=
-        hQ₁.comp (continuousOn_const.prodMk continuousOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
-      exact (hQ₂.comp ((continuousOn_fst.sub continuousOn_const).prodMk hΦs)
+        ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₁
+          (continuousOn_const.prodMk continuousOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
+      exact (ContinuousOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₂
+        ((continuousOn_fst.sub continuousOn_const).prodMk hΦs)
         fun p hp ↦ ⟨⟨by dsimp; linarith [hp.1.1], by dsimp; linarith [hp.1.2]⟩,
           hmaps p.2 hp.2⟩).congr hcocycle)
     (fun x hx ↦ by
@@ -297,7 +300,7 @@ theorem Convex.exists_continuousOn_Icc_of_mem_forwardSemiflowInterval {C U : Set
   have hsub_inter : ball x₀ r' ∩ C ⊆ ball x₀ r ∩ (U ∩ C) :=
     fun _ hy ↦ ⟨ball_subset_ball (min_le_left _ _) hy.1, hr'U hy.1, hy.2⟩
   exact ⟨r', lt_min hr hrU, δ, hδ, hr'U, fun y hy ↦ hsub y (hsub_inter hy),
-    hcont.mono (prod_mono Subset.rfl hsub_inter)⟩
+    ContinuousOn.mono hcont (prod_mono Subset.rfl hsub_inter)⟩
 
 /-- **Relative openness of the maximal forward semiflow domain.** If `X` is locally Lipschitz on
 `U ∩ C` and strictly inward to the convex set `C` at every point of `U ∩ C`, then

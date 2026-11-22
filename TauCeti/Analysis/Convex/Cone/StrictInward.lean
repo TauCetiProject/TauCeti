@@ -457,7 +457,7 @@ theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt_Iic {C : Set E} (hC : Con
 
 /-- Any curve in a convex set `C` on `[a, b]` whose derivatives within `[a, b]` on `(a, b]` lie in
 the strict inward cone of `C` maps `(a, b]` into `interior C`. -/
-theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt {C : Set E} (hC : Convex ℝ C)
+theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt_Icc {C : Set E} (hC : Convex ℝ C)
     {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Icc a b) C)
     (hγ' : ∀ t ∈ Ioc a b, HasDerivWithinAt γ (v t) (Icc a b) t)
     (hv : ∀ t ∈ Ioc a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
