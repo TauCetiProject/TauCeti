@@ -20,7 +20,7 @@ For a group `G` and an arbitrary ring `Λ`, the identity-coefficient functional 
 `MonoidAlgebra.cyclicCoeffOne Λ G : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project,
 Section 64.15, Lemma 64.15.1). Composing with the Hattori–Stallings trace of a finite projective
 left `Λ[G]`-module `P` defines `LinearMap.hattoriStallingsGroupTrace Λ G P` and, over a commutative
-ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →+ A` without dividing by `|G|`.
+ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →ₗ[A] A` without dividing by `|G|`.
 
 ## Main definitions and results
 
@@ -359,8 +359,7 @@ theorem hattoriStallingsTrace_restrictScalars_eq_card_nsmul_hattoriStallingsGrou
       Nat.card G • hattoriStallingsGroupTrace Λ G P u := by
   let Z : Subgroup G := ⊤; let φZ := mapDomainRingHom Λ Z.subtype
   let _ : Module Λ[Z] Λ[G] := φZ.toModule; let _ : Module Λ[Z] P := Module.compHom P φZ
-  obtain ⟨_, _, _, _⟩ :=
-    Subgroup.restrictSubgroup_finite_projective (R := Λ) Z (fun _ _ ↦ rfl) P fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _⟩ := Subgroup.restrictSubgroup_compHom_finite_projective (R := Λ) Z P
   have hZ : Z = (MulEquiv.refl G).toMonoidHom.eqLocus (.id G) := (MonoidHom.eqLocus_same _).symm
   let u_Z : Module.End Λ[Z] P :=
     { toFun := u, map_add' := map_add u, map_smul' := fun r p ↦ map_smul u (φZ r) p }
@@ -373,12 +372,23 @@ end Restriction
 
 section CommRing
 
-variable (A G P : Type*) [CommRing A] [Group G] [AddCommGroup P] [Module A[G] P]
+variable (A G P : Type*) [CommRing A] [Group G] [AddCommGroup P] [Module A P] [Module A[G] P]
+  [IsScalarTower A A[G] P] [SMulCommClass A[G] A P]
   [Module.Finite A[G] P] [Module.Projective A[G] P]
 
 /-- **The scalar-valued group-ring trace over a commutative ring** `Tr_A^G(u, P) ∈ A`. -/
-def projectiveGroupTrace : Module.End A[G] P →+ A :=
-  (TauCeti.cyclicQuotientEquivOfComm ℤ A).toAddMonoidHom.comp (hattoriStallingsGroupTrace A G P)
+def projectiveGroupTrace : Module.End A[G] P →ₗ[A] A where
+  toFun u := TauCeti.cyclicQuotientEquivOfComm ℤ A (hattoriStallingsGroupTrace A G P u)
+  map_add' _ _ := by simp only [map_add]
+  map_smul' a u := by
+    classical
+    obtain ⟨n, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective A[G] P
+    simp only [RingHom.id_apply, hattoriStallingsGroupTrace_apply,
+      hattoriStallingsTrace_eq_of_retract (Pi.basisFun A[G] (Fin n)) i π hπi,
+      Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, cyclicCoeffOne_mk,
+      TauCeti.cyclicQuotientEquivOfComm_mk, coeff_sum, Finsupp.finsetSum_apply, Finset.mul_sum,
+      smul_eq_mul]
+    exact Finset.sum_congr rfl fun _ _ ↦ by simp
 
 variable {A G P}
 
@@ -394,7 +404,8 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_projectiveGroupTrace (u : Module.End A
 
 section TwoModules
 
-variable {Q : Type*} [AddCommGroup Q] [Module A[G] Q]
+variable {Q : Type*} [AddCommGroup Q] [Module A Q] [Module A[G] Q]
+  [IsScalarTower A A[G] Q] [SMulCommClass A[G] A Q]
   [Module.Finite A[G] Q] [Module.Projective A[G] Q]
 
 /-- Cyclicity of `projectiveGroupTrace` across finite projective left `A[G]`-modules. -/
@@ -425,20 +436,16 @@ end TwoModules
     projectiveGroupTrace A G A[G] u = (u 1).coeff 1 := by simp [projectiveGroupTrace_apply]
 
 /-- `projectiveGroupTrace` is `A`-linear in the endomorphism. -/
-@[simp] theorem projectiveGroupTrace_smul [Module A P] [IsScalarTower A A[G] P]
-    [SMulCommClass A[G] A P] (a : A) (u : Module.End A[G] P) :
-    projectiveGroupTrace A G P (a • u) = a * projectiveGroupTrace A G P u := by
-  classical
-  obtain ⟨n, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective A[G] P
-  simp only [projectiveGroupTrace_apply, hattoriStallingsGroupTrace_apply,
-    hattoriStallingsTrace_eq_of_retract (Pi.basisFun A[G] (Fin n)) i π hπi,
-    Module.Basis.hattoriStallingsTrace_apply, Submodule.mkQ_apply, cyclicCoeffOne_mk,
-    TauCeti.cyclicQuotientEquivOfComm_mk, coeff_sum, Finsupp.finsetSum_apply, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun _ _ ↦ by simp
+theorem projectiveGroupTrace_smul (a : A) (u : Module.End A[G] P) :
+    projectiveGroupTrace A G P (a • u) = a * projectiveGroupTrace A G P u := by simp
 
 /-- Scalar extension of `projectiveGroupTrace` along `φ : A →+* B`. -/
 @[simp] theorem projectiveGroupTrace_balancedExtension_mapRingHom {B : Type*} [CommRing B]
-    (φ : A →+* B) (u : Module.End A[G] P) :
+    (φ : A →+* B)
+    [Module B (TauCeti.BalancedExtension (mapRingHom G φ) P)]
+    [IsScalarTower B B[G] (TauCeti.BalancedExtension (mapRingHom G φ) P)]
+    [SMulCommClass B[G] B (TauCeti.BalancedExtension (mapRingHom G φ) P)]
+    (u : Module.End A[G] P) :
     projectiveGroupTrace B G (TauCeti.BalancedExtension (mapRingHom G φ) P)
         (TauCeti.BalancedExtension.map (mapRingHom G φ) u) =
       φ (projectiveGroupTrace A G P u) := by
@@ -446,16 +453,22 @@ end TwoModules
 
 /-- Induction along an injective group homomorphism preserves `projectiveGroupTrace`. -/
 @[simp] theorem projectiveGroupTrace_balancedExtension_mapDomainRingHom_of_injective
-    {H Q : Type*} [Group H] [AddCommGroup Q] [Module A[H] Q]
+    {H Q : Type*} [Group H] [AddCommGroup Q] [Module A Q] [Module A[H] Q]
+    [IsScalarTower A A[H] Q] [SMulCommClass A[H] A Q]
     [Module.Finite A[H] Q] [Module.Projective A[H] Q]
-    {p : H →* G} (hp : Function.Injective p) (u : Module.End A[H] Q) :
+    {p : H →* G} (hp : Function.Injective p)
+    [Module A (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
+    [IsScalarTower A A[G] (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
+    [SMulCommClass A[G] A (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
+    (u : Module.End A[H] Q) :
     projectiveGroupTrace A G (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)
         (TauCeti.BalancedExtension.map (mapDomainRingHom A p) u) =
       projectiveGroupTrace A H Q u := by simp [projectiveGroupTrace_apply, hp]
 
 /-- Subgroup restriction multiplies `projectiveGroupTrace` by `[G : H]`. -/
 theorem projectiveGroupTrace_eq_index_mul (H : Subgroup G)
-    [Module A[H] P] [Module.Finite A[H] P] [Module.Projective A[H] P]
+    [Module A[H] P] [IsScalarTower A A[H] P] [SMulCommClass A[H] A P]
+    [Module.Finite A[H] P] [Module.Projective A[H] P]
     (hP : ∀ (r : A[H]) (p : P), r • p = mapDomainRingHom A H.subtype r • p)
     (u : Module.End A[G] P) (u_H : Module.End A[H] P) (hu : ∀ p, u_H p = u p) :
     projectiveGroupTrace A H P u_H = H.index * projectiveGroupTrace A G P u := by
@@ -465,7 +478,7 @@ theorem projectiveGroupTrace_eq_index_mul (H : Subgroup G)
 
 /-- Over a commutative ring `A`, `Tr_A(u, P) = |G| * Tr_A^G(u, P)`. -/
 theorem projectiveTrace_restrictScalars_eq_card_mul_projectiveGroupTrace
-    [Module A P] [IsScalarTower A A[G] P] [Module.Finite A P] [Module.Projective A P]
+    [Module.Finite A P] [Module.Projective A P]
     (u : Module.End A[G] P) :
     projectiveTrace A P (u.restrictScalars A) =
       (Nat.card G : A) * projectiveGroupTrace A G P u := by

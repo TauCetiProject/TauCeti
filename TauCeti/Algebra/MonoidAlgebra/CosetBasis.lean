@@ -25,10 +25,14 @@ left-coset representatives of `p.range`, which represent its right cosets.
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
 * `TauCeti.MonoidAlgebra.coeff_basisCosets_repr`: evaluates arbitrary `m : M` coefficients of the
   `q`-th coordinate in `basisCosets`.
+* `Subgroup.restrictSubgroup_compHom_finite_projective` and
+  `Subgroup.restrictSubgroup_compHom_isScalarTower_finite_projective`: restricting a finitely
+  generated projective `R[G]`-module to the group algebra of a finite-index subgroup along the
+  canonical `RingHom.toModule` and `Module.compHom` actions keeps it finitely generated and
+  projective, with the corresponding scalar towers.
 * `Subgroup.restrictSubgroup_finite_projective` and
-  `Subgroup.restrictSubgroup_isScalarTower_finite_projective`: restricting a finitely generated
-  projective `R[G]`-module to the group algebra of a finite-index subgroup keeps it finitely
-  generated and projective, with the corresponding scalar towers.
+  `Subgroup.restrictSubgroup_isScalarTower_finite_projective`: general versions for arbitrary
+  compatible `R[C]`-actions.
 * `TauCeti.MonoidAlgebra.subsingleton_of_infinite_quotient` and
   `TauCeti.MonoidAlgebra.subsingleton_of_infinite_group`: a finite projective `R[G]`-module that
   is finitely generated over an infinite-index subgroup algebra `R[H]` (or over `R` when `G` is
@@ -181,6 +185,43 @@ namespace MonoidAlgebra
 
 variable {R : Type*} [Semiring R] {G : Type*} [Group G]
 
+/-- Restricting a finitely generated projective `R[G]`-module `X` to the group algebra of a
+finite-index subgroup `C` along the canonical `RingHom.toModule` and `Module.compHom` actions
+gives a finitely generated projective `R[C]`-module, with compatible `R[C]`-`R[G]` scalar towers. -/
+theorem _root_.Subgroup.restrictSubgroup_compHom_finite_projective (C : Subgroup G)
+    [C.FiniteIndex] (X : Type*) [AddCommMonoid X] [Module R[G] X]
+    [Module.Finite R[G] X] [Module.Projective R[G] X] :
+    letI : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
+    letI : Module R[C] X := Module.compHom X (mapDomainRingHom R C.subtype)
+    IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧
+      Module.Finite R[C] X ∧ Module.Projective R[C] X := by
+  let φ : R[C] →+* R[G] := mapDomainRingHom R C.subtype
+  let _ : Module R[C] R[G] := φ.toModule
+  let _ : Module R[C] X := Module.compHom X φ
+  have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
+  let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
+  have : Finite (G ⧸ C.subtype.range) := by rw [Subgroup.range_subtype]; infer_instance
+  have : Module.Free R[C] R[G] := .of_basis b
+  have : Module.Finite R[C] R[G] := .of_basis b
+  have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ mul_smul (φ r) s x⟩
+  exact ⟨hAA, hAX, .trans R[G] X, .trans R[C] R[G] X⟩
+
+/-- Restricting a finitely generated projective `R[G]`-module `X` to the group algebra of a
+finite-index subgroup `C` along the canonical `RingHom.toModule` and `Module.compHom` actions
+gives a finitely generated projective `R[C]`-module on which `R` and `R[G]` act compatibly. -/
+theorem _root_.Subgroup.restrictSubgroup_compHom_isScalarTower_finite_projective (C : Subgroup G)
+    [C.FiniteIndex] (X : Type*) [AddCommMonoid X] [Module R X] [Module R[G] X]
+    [IsScalarTower R R[G] X] [Module.Finite R[G] X] [Module.Projective R[G] X] :
+    letI : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
+    letI : Module R[C] X := Module.compHom X (mapDomainRingHom R C.subtype)
+    IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧ IsScalarTower R R[C] X ∧
+      Module.Finite R[C] X ∧ Module.Projective R[C] X := by
+  let _ : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
+  let _ : Module R[C] X := Module.compHom X (mapDomainRingHom R C.subtype)
+  obtain ⟨hAA, hAX, hfin, hproj⟩ := C.restrictSubgroup_compHom_finite_projective (R := R) X
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, hfin, hproj⟩
+  exact (congrArg (· • x) (mapDomain_smul C.subtype a r)).trans (smul_assoc a _ x)
+
 /-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the group
 algebra of a finite-index subgroup `C` gives a finitely generated projective `R[C]`-module, with
 compatible `R[C]`-`R[G]` scalar towers. Here `R[C]` acts on `R[G]` and on `X` through
@@ -189,20 +230,13 @@ theorem _root_.Subgroup.restrictSubgroup_finite_projective (C : Subgroup G)
     [C.FiniteIndex] [inst : Module R[C] R[G]]
     (hA : ∀ (r : R[C]) (s : R[G]), r • s = mapDomainRingHom R C.subtype r * s)
     (X : Type*) [AddCommMonoid X] [Module R[G] X]
-    [Module.Finite R[G] X] [Module.Projective R[G] X] [Module R[C] X]
+    [Module.Finite R[G] X] [Module.Projective R[G] X] [instX : Module R[C] X]
     (hX : ∀ (r : R[C]) (x : X), r • x = mapDomainRingHom R C.subtype r • x) :
     IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧
       Module.Finite R[C] X ∧ Module.Projective R[C] X := by
-  let φ : R[C] →+* R[G] := mapDomainRingHom R C.subtype
-  obtain rfl : inst = φ.toModule := Module.ext' _ _ hA
-  let _ : Module R[C] R[G] := φ.toModule
-  have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
-  let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
-  have : Finite (G ⧸ C.subtype.range) := by rw [Subgroup.range_subtype]; infer_instance
-  have : Module.Free R[C] R[G] := .of_basis b
-  have : Module.Finite R[C] R[G] := .of_basis b
-  have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by rw [hX r (s • x)]; exact mul_smul _ s x⟩
-  exact ⟨hAA, hAX, .trans R[G] X, .trans R[C] R[G] X⟩
+  obtain rfl : inst = (mapDomainRingHom R C.subtype).toModule := Module.ext' _ _ hA
+  obtain rfl : instX = Module.compHom X (mapDomainRingHom R C.subtype) := Module.ext' _ _ hX
+  exact C.restrictSubgroup_compHom_finite_projective X
 
 /-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the
 group algebra of a finite-index subgroup `C` gives a finitely generated projective `R[C]`-module,
@@ -212,13 +246,12 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
     [C.FiniteIndex] [inst : Module R[C] R[G]]
     (hA : ∀ (r : R[C]) (s : R[G]), r • s = mapDomainRingHom R C.subtype r * s)
     (X : Type*) [AddCommMonoid X] [Module R X] [Module R[G] X] [IsScalarTower R R[G] X]
-    [Module.Finite R[G] X] [Module.Projective R[G] X] [Module R[C] X]
+    [Module.Finite R[G] X] [Module.Projective R[G] X] [instX : Module R[C] X]
     (hX : ∀ (r : R[C]) (x : X), r • x = mapDomainRingHom R C.subtype r • x) :
     IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧ IsScalarTower R R[C] X ∧
       Module.Finite R[C] X ∧ Module.Projective R[C] X := by
-  obtain ⟨hAA, hAX, hfin, hproj⟩ := C.restrictSubgroup_finite_projective hA X hX
-  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, hfin, hproj⟩
-  rw [hX (a • r) x, hX r x]
-  exact (congrArg (· • x) (mapDomain_smul C.subtype a r)).trans (smul_assoc a _ x)
+  obtain rfl : inst = (mapDomainRingHom R C.subtype).toModule := Module.ext' _ _ hA
+  obtain rfl : instX = Module.compHom X (mapDomainRingHom R C.subtype) := Module.ext' _ _ hX
+  exact C.restrictSubgroup_compHom_isScalarTower_finite_projective X
 
 end MonoidAlgebra

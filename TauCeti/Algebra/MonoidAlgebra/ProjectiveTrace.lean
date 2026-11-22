@@ -86,8 +86,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   let φ : MonoidAlgebra A Q →ₐ[A] MonoidAlgebra A G := mapDomainAlgHom A A Q.subtype
   let _ : Module (MonoidAlgebra A Q) (MonoidAlgebra A G) := (mapDomainRingHom A Q.subtype).toModule
   let _ : Module (MonoidAlgebra A Q) X := .compHom X (mapDomainRingHom A Q.subtype)
-  obtain ⟨_, _, _, _, _⟩ := Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := A) Q
-    (fun _ _ ↦ rfl) X fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _, _⟩ :=
+    Subgroup.restrictSubgroup_compHom_isScalarTower_finite_projective (R := A) Q X
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ

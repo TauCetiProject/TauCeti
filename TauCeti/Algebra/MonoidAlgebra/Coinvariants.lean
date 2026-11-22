@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Cardinality
 public import TauCeti.Algebra.Module.Projective.Semilinear
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
@@ -26,9 +27,11 @@ at `Λ = ℤ`.
 
 * `TauCeti.Coinvariants.ker`, `TauCeti.Coinvariants`, `TauCeti.Coinvariants.mk`: the coinvariant
   quotient `P_G = P ⧸ ⟨single g 1 • p - p⟩` and its quotient map.
-* `TauCeti.Coinvariants.lift`, `TauCeti.Coinvariants.liftSemilinear`, `TauCeti.Coinvariants.map`,
-  `TauCeti.Coinvariants.congr`, `TauCeti.Coinvariants.piEquiv`: universal properties, functoriality,
-  and identification `Coinvariants Λ G (ι → Λ[G]) ≃ₗ[Λ] (ι → Λ)` for finite `ι`.
+* `TauCeti.Coinvariants.lift`, `TauCeti.Coinvariants.liftSemilinear`,
+  `TauCeti.Coinvariants.balancedExtensionEquiv`, `TauCeti.Coinvariants.map`,
+  `TauCeti.Coinvariants.congr`, `TauCeti.Coinvariants.piEquiv`: universal properties, comparison
+  with `TauCeti.BalancedExtension (augmentation Λ G) P`, functoriality, and identification
+  `Coinvariants Λ G (ι → Λ[G]) ≃ₗ[Λ] (ι → Λ)` for finite `ι`.
 * `Module.Finite` and `Module.Projective` over `Λ[G]` descend to `Coinvariants Λ G P` over `Λ`.
 
 ## References
@@ -181,6 +184,50 @@ def liftSemilinear (f : P →ₛₗ[augmentation Λ G] Q) : Coinvariants Λ G P 
 
 end LiftSemilinear
 
+section BalancedExtension
+
+variable (Λ G P) in
+/-- Coinvariants of `P` identify with scalar extension along the augmentation `Λ[G] →+* Λ`. -/
+def balancedExtensionEquiv :
+    Coinvariants Λ G P ≃ₗ[Λ] BalancedExtension (augmentation Λ G) P :=
+  LinearEquiv.ofLinearMap
+    (liftSemilinear (BalancedExtension.includeRight (augmentation Λ G) P))
+    (BalancedExtension.lift (mkSemilinear Λ G P))
+    (BalancedExtension.hom_ext fun p ↦ by simp)
+    (hom_ext fun p ↦ by simp)
+
+@[simp]
+theorem balancedExtensionEquiv_mk (p : P) :
+    balancedExtensionEquiv Λ G P (mk Λ G P p) =
+      BalancedExtension.tmul (augmentation Λ G) 1 p := by
+  simp [balancedExtensionEquiv]
+
+theorem balancedExtensionEquiv_mk_eq_includeRight (p : P) :
+    balancedExtensionEquiv Λ G P (mk Λ G P p) =
+      BalancedExtension.includeRight (augmentation Λ G) P p := by
+  simp
+
+@[simp]
+theorem balancedExtensionEquiv_comp_mkSemilinear :
+    (balancedExtensionEquiv Λ G P).toLinearMap.comp (mkSemilinear Λ G P) =
+      BalancedExtension.includeRight (augmentation Λ G) P := by
+  ext p; simp
+
+@[simp]
+theorem balancedExtensionEquiv_symm_tmul (c : Λ) (p : P) :
+    (balancedExtensionEquiv Λ G P).symm (BalancedExtension.tmul (augmentation Λ G) c p) =
+      c • mk Λ G P p := by
+  simp [balancedExtensionEquiv]
+
+@[simp]
+theorem balancedExtensionEquiv_symm_comp_includeRight :
+    (balancedExtensionEquiv Λ G P).symm.toLinearMap.comp
+        (BalancedExtension.includeRight (augmentation Λ G) P) =
+      mkSemilinear Λ G P := by
+  ext p; simp
+
+end BalancedExtension
+
 section Map
 
 variable {P' : Type*} [AddCommGroup P'] [Module Λ P'] [Module Λ[G] P'] [IsScalarTower Λ Λ[G] P']
@@ -213,6 +260,19 @@ theorem map_comp {P'' : Type*} [AddCommGroup P''] [Module Λ P''] [Module Λ[G] 
 theorem map_surjective {f : P →ₗ[Λ[G]] P'} (hf : Function.Surjective f) :
     Function.Surjective (map (Λ := Λ) f) := fun y ↦ by
   obtain ⟨p', rfl⟩ := mk_surjective y; obtain ⟨p, rfl⟩ := hf p'; exact ⟨mk Λ G P p, rfl⟩
+
+@[simp]
+theorem balancedExtensionEquiv_map (f : P →ₗ[Λ[G]] P') (x : Coinvariants Λ G P) :
+    balancedExtensionEquiv Λ G P' (map f x) =
+      BalancedExtension.map (augmentation Λ G) f (balancedExtensionEquiv Λ G P x) := by
+  induction x using induction_on with
+  | h p => simp
+
+theorem balancedExtensionEquiv_comp_map (f : P →ₗ[Λ[G]] P') :
+    (balancedExtensionEquiv Λ G P').toLinearMap ∘ₗ map f =
+      BalancedExtension.map (augmentation Λ G) f ∘ₗ
+        (balancedExtensionEquiv Λ G P).toLinearMap := by
+  ext p; simp
 
 /-- The `Λ`-linear equivalence `Coinvariants Λ G P ≃ₗ[Λ] Coinvariants Λ G P'` induced by a
 `Λ[G]`-linear equivalence `e : P ≃ₗ[Λ[G]] P'`. -/

@@ -117,8 +117,7 @@ private theorem centralizer_finite_projective (γ : nonnegSubmonoid deg) :
       Module.Projective Λ[centralizerSubgroup ι γ.val] P := by
   let Z := centralizerSubgroup ι γ.val; let φZ := mapDomainRingHom Λ Z.subtype
   let _ : Module Λ[Z] Λ[G] := φZ.toModule; let _ : Module Λ[Z] P := Module.compHom P φZ
-  have ⟨_, _, hfin, hproj⟩ :=
-    Subgroup.restrictSubgroup_finite_projective (R := Λ) Z (fun _ _ ↦ rfl) P fun _ _ ↦ rfl
+  have ⟨_, _, hfin, hproj⟩ := Subgroup.restrictSubgroup_compHom_finite_projective (R := Λ) Z P
   exact ⟨hfin, hproj⟩
 
 /-- **The centralizer group-ring trace** `Tr_Λ^{Z_γ}(γ, P) ∈ Λ / [Λ, Λ]` of `γ ∈ Γ` on `P`,
@@ -418,7 +417,10 @@ theorem conjClassGroupTrace_eq_mkQ_conjClassProjectiveGroupTrace (d : ℕ) (c : 
 /-- Agreement of `centralizerProjectiveGroupTrace` with `projectiveGroupTrace` whenever `P` already
 carries a compatible `A[Z_γ]`-module structure. -/
 theorem centralizerProjectiveGroupTrace_eq_projectiveGroupTrace (γ : nonnegSubmonoid deg)
-    [Module A[centralizerSubgroup ι γ.val] P] [Module.Finite A[centralizerSubgroup ι γ.val] P]
+    [Module A P] [Module A[centralizerSubgroup ι γ.val] P]
+    [IsScalarTower A A[centralizerSubgroup ι γ.val] P]
+    [SMulCommClass A[centralizerSubgroup ι γ.val] A P]
+    [Module.Finite A[centralizerSubgroup ι γ.val] P]
     [Module.Projective A[centralizerSubgroup ι γ.val] P]
     (hPZ : ∀ (r : A[centralizerSubgroup ι γ.val]) (p : P),
       r • p = mapDomainRingHom A (centralizerSubgroup ι γ.val).subtype r • p)

@@ -29,6 +29,9 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.augmentationLinearMap`: the coefficient-sum linear map.
 * `MonoidAlgebra.augmentationLinearMap_surjective`: surjectivity over any semiring.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
+* `MonoidAlgebra.augmentation_eq_sum_coeff` and
+  `MonoidAlgebra.augmentation_eq_sum_coeff_of_fintype`: support-sum and finite-monoid
+  coefficient-sum formulas for augmentation.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over an additively torsion-free semiring,
   an element invariant under every right translation and with augmentation `|G|` is the norm.
 * `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
@@ -57,6 +60,22 @@ noncomputable def augmentation (K : Type v) [Monoid K] : MonoidAlgebra R K →+*
 theorem augmentation_single {K : Type v} [Monoid K] (k : K) (r : R) :
     augmentation R K (single k r) = r := by
   simp [augmentation]
+
+/-- The coefficient-sum augmentation of `x : R[K]` equals the sum of its coefficients over its
+support. -/
+theorem augmentation_eq_sum_coeff {K : Type v} [Monoid K] (x : MonoidAlgebra R K) :
+    augmentation R K x = ∑ k ∈ x.coeff.support, x.coeff k := by
+  conv_lhs => rw [← sum_coeff_single x]
+  rw [Finsupp.sum, map_sum]
+  simp
+
+/-- Over a finite monoid `K`, the coefficient-sum augmentation of `x : R[K]` equals the sum of
+all its coefficients. -/
+theorem augmentation_eq_sum_coeff_of_fintype {K : Type v} [Monoid K] [Fintype K]
+    (x : MonoidAlgebra R K) :
+    augmentation R K x = ∑ k : K, x.coeff k := by
+  rw [augmentation_eq_sum_coeff]
+  exact Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦ Finsupp.notMem_support_iff.1 hk
 
 /-- The coefficient-sum augmentation is natural with respect to homomorphisms of monoids. -/
 @[simp]
@@ -124,9 +143,7 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTor
     simpa using congrArg (fun z : MonoidAlgebra R G ↦ z.coeff 1) (hinv g⁻¹)
   have hγ1 : γ.coeff 1 = 1 := by
     have h : augmentation R G γ = Fintype.card G * γ.coeff 1 := by
-      conv_lhs => rw [← sum_coeff_single γ]
-      rw [Finsupp.sum_fintype _ _ (by simp), map_sum]
-      simp [hcoeff]
+      simp [augmentation_eq_sum_coeff_of_fintype, hcoeff]
     refine ((AddCommute.all _ _).nsmul_right_inj (Fintype.card_ne_zero (α := G))).1 ?_
     rw [nsmul_eq_mul, nsmul_one, ← h, hε]
   ext g
