@@ -58,8 +58,8 @@ the inverse.
   convolution monoids.
 * `AlgHom.piValueMulEquiv`: points valued in a product of commutative algebras are families of
   points valued in the factors.
-* `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
-  gives the corresponding constant point.
+* `AlgHom.mapValue_mapValue_ofId`: extending a base-valued point to `A` and then mapping it along
+  `φ : A →ₐ[R] B` extends it to `B`.
 
 ## References
 
@@ -224,6 +224,12 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
   ext f : 1
   simp [AlgHom.comp_assoc]
 
+/-- Extending a base-valued point to `A` and then mapping it along `φ : A →ₐ[R] B` extends it to
+`B`. -/
+lemma mapValue_mapValue_ofId (φ : A →ₐ[R] B) (g : WithConv (H →ₐ[R] R)) :
+    mapValue φ (mapValue (Algebra.ofId R A) g) = mapValue (Algebra.ofId R B) g := by
+  rw [← MonoidHom.comp_apply, ← mapValue_comp, Algebra.comp_ofId]
+
 /-- An isomorphism `e : A ≃ₐ[R] B` of value algebras induces, by post-composition, an
 isomorphism of convolution monoids, with inverse induced by `e.symm`. -/
 noncomputable def _root_.AlgEquiv.mapValueMulEquiv (e : A ≃ₐ[R] B) :
@@ -281,19 +287,6 @@ lemma piValueMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[R] B i)) (h : H)
   rfl
 
 end Pi
-
-section BialgebraConstantPoint
-
-variable [CommSemiring H] [_root_.Bialgebra R H] [CommSemiring A] [Algebra R A]
-
-/-- Mapping a base-valued point first to the coordinate algebra and then through an
-algebra-valued point gives the corresponding constant point in the value algebra. -/
-lemma _root_.WithConv.mapValue_algebraOfId (x : WithConv (H →ₐ[R] A))
-    (g : WithConv (H →ₐ[R] R)) :
-    mapValue x.ofConv (mapValue (Algebra.ofId R H) g) = mapValue (Algebra.ofId R A) g := by
-  rw [← MonoidHom.comp_apply, ← mapValue_comp, Algebra.comp_ofId]
-
-end BialgebraConstantPoint
 
 section CommHopf
 
