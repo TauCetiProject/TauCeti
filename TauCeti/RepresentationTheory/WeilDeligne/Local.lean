@@ -40,8 +40,7 @@ open _root_.ValuativeRel in
 local Weil group `W_K` with its Weil topology and arithmetic degree, and `q` the cardinality of the
 residue field of `K`. -/
 abbrev LocalWeilDeligneParameter (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] (E V : Type*) [Field E] [CharZero E] [AddCommGroup V]
-    [Module E V] [FiniteDimensional E V] :=
+    [IsNonarchimedeanLocalField K] (E V : Type*) [Field E] [AddCommGroup V] [Module E V] :=
   WeilDeligneParameter E (ClassFieldTheory.WeilGroup K) V (ClassFieldTheory.weilDegree K)
     (Nat.card 𝓀[K])
 

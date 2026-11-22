@@ -7,13 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Topology.Instances.Int
+public import Mathlib.Topology.Constructions
 public import TauCeti.LinearAlgebra.JordanChevalley.Multiplicative
 
 /-!
 # Raw Weil–Deligne parameters
 
-Let `E` be a field of characteristic zero, `V` a finite-dimensional `E`-vector space, `W` a
+Let `E` be a field, `V` an `E`-vector space (finite-dimensional, over a field of characteristic
+zero, in the case of interest), `W` a
 topological group with an *arithmetic degree* `deg : W →* Multiplicative ℤ` (a homomorphism
 `W → ℤ`, read through `(deg w).toAdd`) and `q` a natural number. A
 **raw Weil–Deligne parameter** `(V, r, N)` consists of
@@ -80,9 +81,8 @@ with open kernel, and a nilpotent endomorphism `N` of `V` with `r(w) N r(w)⁻¹
 Frobenius semisimplicity is the separate predicate `WeilDeligneParameter.IsFrobeniusSemisimple`
 (Deligne 1973, §8.4.1, p. 568). -/
 @[ext]
-structure WeilDeligneParameter (E W V : Type*) [Field E] [CharZero E] [Group W]
-    [TopologicalSpace W] [AddCommGroup V] [Module E V] [FiniteDimensional E V]
-    (deg : W →* Multiplicative ℤ) (q : ℕ) where
+structure WeilDeligneParameter (E W V : Type*) [Field E] [Group W]
+    [TopologicalSpace W] [AddCommGroup V] [Module E V] (deg : W →* Multiplicative ℤ) (q : ℕ) where
   /-- The Weil action. -/
   r : Representation E W V
   /-- The kernel of the Weil action is open. -/
@@ -96,11 +96,9 @@ structure WeilDeligneParameter (E W V : Type*) [Field E] [CharZero E] [Group W]
 
 namespace WeilDeligneParameter
 
-variable {E W V V' V'' V''' : Type*} [Field E] [CharZero E] [Group W] [TopologicalSpace W]
-  [AddCommGroup V] [Module E V] [FiniteDimensional E V]
-  [AddCommGroup V'] [Module E V'] [FiniteDimensional E V']
-  [AddCommGroup V''] [Module E V''] [FiniteDimensional E V'']
-  [AddCommGroup V'''] [Module E V'''] [FiniteDimensional E V''']
+variable {E W V V' V'' V''' : Type*} [Field E] [Group W] [TopologicalSpace W]
+  [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V']
+  [AddCommGroup V''] [Module E V''] [AddCommGroup V'''] [Module E V''']
   {deg : W →* Multiplicative ℤ} {q : ℕ}
 
 /-- The conjugation relation in the form `r(w) N = q ^ deg w • N r(w)`. -/
@@ -152,16 +150,21 @@ theorem ext {f g : Hom D D'} (h : f.toLinearMap = g.toLinearMap) : f = g := by
   congr
   exact Representation.IntertwiningMap.ext h
 
-instance : FunLike (Hom D D') V V' where
+instance instFunLike : FunLike (Hom D D') V V' where
   coe f := f.toLinearMap
   coe_injective _ _ h := ext (LinearMap.coe_injective h)
 
-instance : LinearMapClass (Hom D D') E V V' where
+instance instLinearMapClass : LinearMapClass (Hom D D') E V V' where
   map_add f := f.toLinearMap.map_add
   map_smulₛₗ f := f.toLinearMap.map_smul
 
 @[simp]
 theorem coe_toIntertwiningMap (f : Hom D D') : ⇑f.toIntertwiningMap = f :=
+  rfl
+
+@[simp]
+theorem coe_mk (f : Representation.IntertwiningMap D.r D'.r) (h) :
+    ⇑(⟨f, h⟩ : Hom D D') = f :=
   rfl
 
 /-- The underlying linear map of a morphism intertwines the Weil actions. -/
@@ -178,45 +181,55 @@ theorem map_N_apply (f : Hom D D') (v : V) : f (D.N v) = D'.N (f v) :=
 
 variable (D) in
 /-- The identity morphism of a parameter. -/
-@[expose] def id : Hom D D where
+def id : Hom D D where
   toIntertwiningMap := .id D.r
   comp_N := rfl
 
 /-- The composition of morphisms of parameters. -/
-@[expose] def comp (f : Hom D' D'') (g : Hom D D') : Hom D D'' where
+def comp (f : Hom D' D'') (g : Hom D D') : Hom D D'' where
   toIntertwiningMap := f.toIntertwiningMap.comp g.toIntertwiningMap
   comp_N := by
     rw [Representation.IntertwiningMap.comp_toLinearMap, LinearMap.comp_assoc, g.comp_N,
       ← LinearMap.comp_assoc, f.comp_N, LinearMap.comp_assoc]
 
+theorem id_toIntertwiningMap : (id D).toIntertwiningMap = .id D.r :=
+  (rfl)
+
+theorem comp_toIntertwiningMap (f : Hom D' D'') (g : Hom D D') :
+    (f.comp g).toIntertwiningMap = f.toIntertwiningMap.comp g.toIntertwiningMap :=
+  (rfl)
+
 @[simp]
 theorem id_toLinearMap : (id D).toLinearMap = LinearMap.id :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem comp_toLinearMap (f : Hom D' D'') (g : Hom D D') :
     (f.comp g).toLinearMap = f.toLinearMap ∘ₗ g.toLinearMap :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem id_apply (v : V) : id D v = v :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem comp_apply (f : Hom D' D'') (g : Hom D D') (v : V) : f.comp g v = f (g v) :=
-  rfl
+  (rfl)
 
 @[simp]
-theorem id_comp (f : Hom D D') : (id D').comp f = f :=
-  rfl
+theorem id_comp (f : Hom D D') : (id D').comp f = f := by
+  ext1
+  simp
 
 @[simp]
-theorem comp_id (f : Hom D D') : f.comp (id D) = f :=
-  rfl
+theorem comp_id (f : Hom D D') : f.comp (id D) = f := by
+  ext1
+  simp
 
 theorem comp_assoc (f : Hom D'' D''') (g : Hom D' D'') (h : Hom D D') :
-    (f.comp g).comp h = f.comp (g.comp h) :=
-  rfl
+    (f.comp g).comp h = f.comp (g.comp h) := by
+  ext1
+  simp [LinearMap.comp_assoc]
 
 end Hom
 
@@ -240,14 +253,14 @@ theorem ext {f g : Iso D D'} (h : f.toLinearEquiv = g.toLinearEquiv) : f = g := 
   congr
   exact Representation.Equiv.toLinearEquiv_injective h
 
-instance : EquivLike (Iso D D') V V' where
+instance instEquivLike : EquivLike (Iso D D') V V' where
   coe f := f.toLinearEquiv
   inv f := f.toLinearEquiv.symm
   left_inv f := f.toLinearEquiv.left_inv
   right_inv f := f.toLinearEquiv.right_inv
   coe_injective' _ _ h _ := ext (LinearEquiv.coe_injective h)
 
-instance : LinearEquivClass (Iso D D') E V V' where
+instance instLinearEquivClass : LinearEquivClass (Iso D D') E V V' where
   map_add f := f.toLinearEquiv.map_add
   map_smulₛₗ f := f.toLinearEquiv.map_smul
 
@@ -255,42 +268,72 @@ instance : LinearEquivClass (Iso D D') E V V' where
 theorem coe_toRepresentationEquiv (f : Iso D D') : ⇑f.toRepresentationEquiv = f :=
   rfl
 
+@[simp]
+theorem coe_mk (f : Representation.Equiv D.r D'.r) (h) : ⇑(⟨f, h⟩ : Iso D D') = f :=
+  rfl
+
+@[simp]
+theorem coe_toLinearEquiv (f : Iso D D') : ⇑f.toLinearEquiv = f :=
+  rfl
+
 /-- The underlying linear equivalence of an isomorphism intertwines the Weil actions. -/
 theorem comp_r (f : Iso D D') (w : W) :
     f.toLinearEquiv.toLinearMap ∘ₗ D.r w = D'.r w ∘ₗ f.toLinearEquiv.toLinearMap :=
   f.isIntertwining' w
 
+/-- An isomorphism intertwines the Weil actions: `f (r(w) v) = r'(w) (f v)`. -/
+theorem map_r_apply (f : Iso D D') (w : W) (v : V) : f (D.r w v) = D'.r w (f v) :=
+  LinearMap.congr_fun (f.comp_r w) v
+
+/-- An isomorphism intertwines the monodromy operators: `f (N v) = N' (f v)`. -/
+theorem map_N_apply (f : Iso D D') (v : V) : f (D.N v) = D'.N (f v) :=
+  LinearMap.congr_fun f.comp_N v
+
 /-- The morphism underlying an isomorphism. -/
-@[expose] def toHom (f : Iso D D') : Hom D D' where
+def toHom (f : Iso D D') : Hom D D' where
   toIntertwiningMap := f.toIntertwiningMap
   comp_N := f.comp_N
+
+theorem toHom_toIntertwiningMap (f : Iso D D') : f.toHom.toIntertwiningMap = f.toIntertwiningMap :=
+  (rfl)
 
 @[simp]
 theorem toHom_toLinearMap (f : Iso D D') :
     f.toHom.toLinearMap = f.toLinearEquiv.toLinearMap :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_toHom (f : Iso D D') : ⇑f.toHom = f :=
-  rfl
+  (rfl)
 
 /-- The isomorphism given by a morphism whose underlying map is bijective. -/
-@[expose] def ofBijective (f : Hom D D') (hf : Function.Bijective f) : Iso D D' where
+def ofBijective (f : Hom D D') (hf : Function.Bijective f) : Iso D D' where
   toRepresentationEquiv := f.toIntertwiningMap.ofBijective hf
   comp_N := f.comp_N
 
+theorem ofBijective_toRepresentationEquiv (f : Hom D D') (hf : Function.Bijective f) :
+    (ofBijective f hf).toRepresentationEquiv = f.toIntertwiningMap.ofBijective hf :=
+  (rfl)
+
 @[simp]
 theorem coe_ofBijective (f : Hom D D') (hf : Function.Bijective f) : ⇑(ofBijective f hf) = f :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem toHom_ofBijective (f : Hom D D') (hf : Function.Bijective f) :
+    (ofBijective f hf).toHom = f := by
+  ext1
+  ext v
+  simp
 
 variable (D) in
 /-- The identity isomorphism of a parameter. -/
-@[expose, refl] def refl : Iso D D where
+@[refl] def refl : Iso D D where
   toRepresentationEquiv := .refl D.r
   comp_N := rfl
 
 /-- The inverse of an isomorphism of parameters. -/
-@[expose, symm] def symm (f : Iso D D') : Iso D' D where
+@[symm] def symm (f : Iso D D') : Iso D' D where
   toRepresentationEquiv := f.toRepresentationEquiv.symm
   comp_N := by
     rw [Representation.Equiv.toLinearMap_symm, LinearEquiv.toLinearMap_symm_comp_eq,
@@ -298,54 +341,83 @@ variable (D) in
     exact f.comp_N.symm
 
 /-- The composition of isomorphisms of parameters. -/
-@[expose, trans] def trans (f : Iso D D') (g : Iso D' D'') : Iso D D'' where
+@[trans] def trans (f : Iso D D') (g : Iso D' D'') : Iso D D'' where
   toRepresentationEquiv := f.toRepresentationEquiv.trans g.toRepresentationEquiv
-  comp_N := (g.toHom.comp f.toHom).comp_N
+  comp_N := by
+    ext v
+    simp [map_N_apply]
+
+theorem refl_toRepresentationEquiv : (refl D).toRepresentationEquiv = .refl D.r :=
+  (rfl)
+
+theorem symm_toRepresentationEquiv (f : Iso D D') :
+    f.symm.toRepresentationEquiv = f.toRepresentationEquiv.symm :=
+  (rfl)
+
+theorem trans_toRepresentationEquiv (f : Iso D D') (g : Iso D' D'') :
+    (f.trans g).toRepresentationEquiv = f.toRepresentationEquiv.trans g.toRepresentationEquiv :=
+  (rfl)
 
 @[simp]
 theorem refl_toLinearEquiv : (refl D).toLinearEquiv = LinearEquiv.refl E V :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem symm_toLinearEquiv (f : Iso D D') : f.symm.toLinearEquiv = f.toLinearEquiv.symm :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem trans_toLinearEquiv (f : Iso D D') (g : Iso D' D'') :
     (f.trans g).toLinearEquiv = f.toLinearEquiv.trans g.toLinearEquiv :=
-  rfl
-
-@[simp]
-theorem toHom_refl : (refl D).toHom = Hom.id D :=
-  rfl
-
-@[simp]
-theorem toHom_trans (f : Iso D D') (g : Iso D' D'') : (f.trans g).toHom = g.toHom.comp f.toHom :=
-  rfl
-
-@[simp]
-theorem refl_trans (f : Iso D D') : (refl D).trans f = f :=
-  rfl
-
-@[simp]
-theorem trans_refl (f : Iso D D') : f.trans (refl D') = f :=
-  rfl
-
-theorem trans_assoc (f : Iso D D') (g : Iso D' D'') (h : Iso D'' D''') :
-    (f.trans g).trans h = f.trans (g.trans h) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem refl_apply (v : V) : refl D v = v :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem trans_apply (f : Iso D D') (g : Iso D' D'') (v : V) : f.trans g v = g (f v) :=
-  rfl
+  (rfl)
 
 /-- The inverse of an isomorphism acts by the inverse of its underlying linear equivalence. -/
 theorem symm_apply (f : Iso D D') (v : V') : f.symm v = f.toLinearEquiv.symm v :=
-  rfl
+  (rfl)
+
+theorem coe_toLinearEquiv_symm (f : Iso D D') : ⇑f.toLinearEquiv.symm = f.symm :=
+  (rfl)
+
+/-- The inverse function of an isomorphism is its inverse isomorphism. -/
+@[simp]
+theorem invFun_eq_symm (f : Iso D D') : f.invFun = f.symm :=
+  (rfl)
+
+@[simp]
+theorem toHom_refl : (refl D).toHom = Hom.id D := by
+  ext1
+  ext v
+  simp
+
+@[simp]
+theorem toHom_trans (f : Iso D D') (g : Iso D' D'') : (f.trans g).toHom = g.toHom.comp f.toHom := by
+  ext1
+  ext v
+  simp
+
+@[simp]
+theorem refl_trans (f : Iso D D') : (refl D).trans f = f := by
+  ext1
+  simp only [trans_toLinearEquiv, refl_toLinearEquiv, LinearEquiv.refl_trans]
+
+@[simp]
+theorem trans_refl (f : Iso D D') : f.trans (refl D') = f := by
+  ext1
+  simp only [trans_toLinearEquiv, refl_toLinearEquiv, LinearEquiv.trans_refl]
+
+theorem trans_assoc (f : Iso D D') (g : Iso D' D'') (h : Iso D'' D''') :
+    (f.trans g).trans h = f.trans (g.trans h) := by
+  ext1
+  simp only [trans_toLinearEquiv]
+  exact LinearEquiv.trans_assoc _ _ _
 
 @[simp]
 theorem apply_symm_apply (f : Iso D D') (v : V') : f (f.symm v) = v :=
@@ -356,16 +428,31 @@ theorem symm_apply_apply (f : Iso D D') (v : V) : f.symm (f v) = v :=
   f.toLinearEquiv.symm_apply_apply v
 
 @[simp]
-theorem symm_symm (f : Iso D D') : f.symm.symm = f :=
-  rfl
+theorem symm_symm (f : Iso D D') : f.symm.symm = f := by
+  ext1
+  simp only [symm_toLinearEquiv, LinearEquiv.symm_symm]
 
 @[simp]
-theorem self_trans_symm (f : Iso D D') : f.trans f.symm = refl D :=
-  ext (LinearEquiv.self_trans_symm _)
+theorem refl_symm : (refl D).symm = refl D := by
+  ext1
+  simp only [symm_toLinearEquiv, refl_toLinearEquiv, LinearEquiv.refl_symm]
 
 @[simp]
-theorem symm_trans_self (f : Iso D D') : f.symm.trans f = refl D' :=
-  ext (LinearEquiv.symm_trans_self _)
+theorem trans_symm (f : Iso D D') (g : Iso D' D'') : (f.trans g).symm = g.symm.trans f.symm := by
+  ext1
+  simp only [symm_toLinearEquiv, trans_toLinearEquiv, LinearEquiv.trans_symm]
+
+@[simp]
+theorem self_trans_symm (f : Iso D D') : f.trans f.symm = refl D := by
+  ext1
+  simp only [trans_toLinearEquiv, symm_toLinearEquiv, refl_toLinearEquiv,
+    LinearEquiv.self_trans_symm]
+
+@[simp]
+theorem symm_trans_self (f : Iso D D') : f.symm.trans f = refl D' := by
+  ext1
+  simp only [trans_toLinearEquiv, symm_toLinearEquiv, refl_toLinearEquiv,
+    LinearEquiv.symm_trans_self]
 
 end Iso
 
@@ -373,7 +460,7 @@ end Iso
 
 /-- **Transport of a parameter** along a linear equivalence `e : V ≃ₗ[E] V'`: both the Weil action
 and the monodromy are conjugated by `e` (`transport_r_apply`, `transport_N_apply`). -/
-@[expose] def transport (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V') :
+def transport (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V') :
     WeilDeligneParameter E W V' deg q where
   r := (e.conjAlgEquiv E : Module.End E V →* Module.End E V').comp D.r
   isOpen_ker := by
@@ -391,49 +478,66 @@ and the monodromy are conjugated by `e` (`transport_r_apply`, `transport_N_apply
 variable (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V') (e' : V' ≃ₗ[E] V'')
 
 theorem transport_r (w : W) : (D.transport e).r w = e.conjAlgEquiv E (D.r w) :=
-  rfl
+  (rfl)
 
 @[simp]
-theorem transport_r_apply (w : W) (v : V') : (D.transport e).r w v = e (D.r w (e.symm v)) :=
-  rfl
+theorem transport_r_apply (w : W) (v : V') : (D.transport e).r w v = e (D.r w (e.symm v)) := by
+  simp [transport_r, LinearEquiv.conjAlgEquiv_apply]
 
 theorem transport_N : (D.transport e).N = e.conjAlgEquiv E D.N :=
-  rfl
+  (rfl)
 
 @[simp]
-theorem transport_N_apply (v : V') : (D.transport e).N v = e (D.N (e.symm v)) :=
-  rfl
+theorem transport_N_apply (v : V') : (D.transport e).N v = e (D.N (e.symm v)) := by
+  simp [transport_N, LinearEquiv.conjAlgEquiv_apply]
 
 /-- Transport along the identity is the identity. -/
 @[simp]
-theorem transport_refl : D.transport (LinearEquiv.refl E V) = D :=
-  rfl
+theorem transport_refl : D.transport (LinearEquiv.refl E V) = D := by
+  ext1
+  · ext w v
+    simp
+  · ext v
+    simp
 
 /-- Transporting twice is transporting along the composite. -/
 @[simp]
-theorem transport_transport : (D.transport e).transport e' = D.transport (e.trans e') :=
-  rfl
+theorem transport_transport : (D.transport e).transport e' = D.transport (e.trans e') := by
+  ext1
+  · ext w v
+    simp
+  · ext v
+    simp
 
 /-- The isomorphism from a parameter to its transport along `e`, given by `e` itself. -/
-@[expose] def transportIso : Iso D (D.transport e) where
+def transportIso : Iso D (D.transport e) where
   toRepresentationEquiv := .mk e fun w ↦ by ext v; simp
   comp_N := by ext v; simp
 
 @[simp]
 theorem transportIso_toLinearEquiv : (D.transportIso e).toLinearEquiv = e :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_transportIso : ⇑(D.transportIso e) = e :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem coe_transportIso_symm : ⇑(D.transportIso e).symm = e.symm := by
+  rw [← Iso.coe_toLinearEquiv, Iso.symm_toLinearEquiv, transportIso_toLinearEquiv]
 
 variable {D} in
 /-- **Isomorphisms are transports**: an isomorphism `f : D ≅ D'` exhibits `D'` as the transport of
 `D` along the underlying linear equivalence of `f`. -/
 theorem Iso.eq_transport {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') :
-    D' = D.transport f.toLinearEquiv :=
-  WeilDeligneParameter.ext (MonoidHom.ext fun w ↦ (f.conj_apply_self w).symm)
-    ((LinearEquiv.eq_comp_toLinearMap_symm _ _).mpr f.comp_N.symm)
+    D' = D.transport f.toLinearEquiv := by
+  ext1
+  · ext w v
+    rw [transport_r_apply, Iso.coe_toLinearEquiv_symm, Iso.coe_toLinearEquiv, f.map_r_apply,
+      Iso.apply_symm_apply]
+  · ext v
+    rw [transport_N_apply, Iso.coe_toLinearEquiv_symm, Iso.coe_toLinearEquiv, f.map_N_apply,
+      Iso.apply_symm_apply]
 
 variable {D} in
 /-- **Frobenius semisimplicity is invariant under isomorphism.** -/
@@ -452,7 +556,7 @@ theorem isFrobeniusSemisimple_transport :
 variable (q) in
 /-- **The unramified parameter** of a linear automorphism `A` of `V`, for a continuous degree map:
 `r(w) = A ^ deg w` and `N = 0`. Elements of degree `0` act trivially. -/
-@[expose] def unramified (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
+def unramified (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
     WeilDeligneParameter E W V deg q where
   r := (Units.coeHom _).comp ((zpowersHom _ A).comp deg)
   isOpen_ker := by
@@ -471,11 +575,12 @@ theorem unramified_r (hdeg : Continuous deg) (A : GeneralLinearGroup E V) (w : W
 @[simp]
 theorem unramified_N (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
     (unramified q hdeg A).N = 0 :=
-  rfl
+  (rfl)
 
 /-- **Frobenius semisimplicity of an unramified parameter**: the unramified parameter of `A` is
 Frobenius semisimple exactly when the degree is trivial or `A` is semisimple. -/
-theorem isFrobeniusSemisimple_unramified_iff (hdeg : Continuous deg)
+theorem isFrobeniusSemisimple_unramified_iff [CharZero E] [FiniteDimensional E V]
+    (hdeg : Continuous deg)
     (A : GeneralLinearGroup E V) :
     (unramified q hdeg A).IsFrobeniusSemisimple ↔
       deg = 1 ∨ LinearMap.GeneralLinearGroup.IsSemisimple A := by
@@ -486,7 +591,7 @@ theorem isFrobeniusSemisimple_unramified_iff (hdeg : Continuous deg)
       by_contra! h'
       exact hd (MonoidHom.ext h')
     have hn : (deg w).toAdd ≠ 0 := by simpa using hw
-    exact (LinearMap.GeneralLinearGroup.isSemisimple_zpow_iff hn A).1 (h w hn)
+    exact (LinearMap.GeneralLinearGroup.isSemisimple_zpow_iff (Int.cast_ne_zero.2 hn) A).1 (h w hn)
   · rintro (hd | hA) w hw
     · simp [hd] at hw
     · exact hA.zpow _
@@ -494,7 +599,8 @@ theorem isFrobeniusSemisimple_unramified_iff (hdeg : Continuous deg)
 /-- **A nontrivial unipotent Frobenius is not semisimple**: for a nontrivial degree, if `A ≠ 1` is
 unipotent, as for the Jordan block `[[1, 1], [0, 1]]`, then the unramified parameter of `A` is not
 Frobenius semisimple. -/
-theorem not_isFrobeniusSemisimple_unramified_of_isUnipotent_of_ne_one (hdeg : Continuous deg)
+theorem not_isFrobeniusSemisimple_unramified_of_isUnipotent_of_ne_one [CharZero E]
+    [FiniteDimensional E V] (hdeg : Continuous deg)
     {A : GeneralLinearGroup E V} (hA : LinearMap.GeneralLinearGroup.IsUnipotent A) (hA₁ : A ≠ 1)
     (hd : deg ≠ 1) : ¬ (unramified q hdeg A).IsFrobeniusSemisimple := by
   rw [isFrobeniusSemisimple_unramified_iff, or_iff_right hd]
