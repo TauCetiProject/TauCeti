@@ -11,11 +11,12 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 /-!
 # Factoring an operator through the range of a dominating operator
 
-Let `g : E →L[𝕜] G` and `f : E →L[𝕜] F` be continuous linear maps into normed spaces, from a
-module `E` with any topology (no norm on `E` is needed), with `‖f x‖ ≤ C ‖g x‖` for every `x`.
-Then `f` vanishes on the kernel of `g`, so it factors as `f = S ∘ g` through the range of `g`,
-with a factor `S` of norm at most `C`. When `F` is complete, `S` extends by continuity to the
-closure of that range, with the same bound. Conversely, any such factorization gives the bound.
+Let `g : E →L[𝕜] G` and `f : E →L[𝕜] F` be continuous linear maps from a module `E` with any
+topology (no norm on `E` is needed) to a seminormed space `G` and a normed space `F`, and let
+`0 ≤ C` with `‖f x‖ ≤ C ‖g x‖` for every `x`. Then `f` vanishes on the kernel of `g`, so it factors
+as `f = S ∘ g` through the range of `g`, with a factor `S` of norm at most `C`. When `F` is
+complete, `S` extends by continuity to the closure of that range, with the same bound. Conversely,
+any such factorization gives the bound.
 
 The factor on the range is Mathlib's `LinearMap.compLeftInverse` and its extension to the closure
 is `LinearMap.extendOfNorm`. This file records the pointwise and operator-norm bounds for the
@@ -24,9 +25,10 @@ former and the two factorization criteria.
 ## Main results
 
 * `LinearMap.norm_compLeftInverse_apply_le`: the pointwise bound `C` for `f.compLeftInverse g`.
-* `LinearMap.opNorm_compLeftInverse_le`: the norm of `f.compLeftInverse g` is at most `C`.
-* `ContinuousLinearMap.exists_eq_comp_rangeRestrict_iff`: `f` factors through the range of `g`
-  with a factor of norm at most `C` iff `‖f x‖ ≤ C ‖g x‖` for all `x`.
+* `LinearMap.opNorm_compLeftInverse_le`: for `0 ≤ C`, the norm of `f.compLeftInverse g` is at
+  most `C`.
+* `ContinuousLinearMap.exists_eq_comp_rangeRestrict_iff`: for `0 ≤ C`, `f` factors through the
+  range of `g` with a factor of norm at most `C` iff `‖f x‖ ≤ C ‖g x‖` for all `x`.
 * `ContinuousLinearMap.exists_eq_comp_codRestrict_topologicalClosure_iff`: the same criterion for
   factorizations through the closure of the range, when the target is complete.
 -/
@@ -49,8 +51,8 @@ theorem norm_compLeftInverse_apply_le {f : E →ₛₗ[σ₁₂] F} {g : E →�
   rw [compLeftInverse_apply_of_bdd f g ⟨C, h⟩ x _ rfl]
   exact h x
 
-/-- If `‖f x‖ ≤ C ‖g x‖` for all `x`, the factor `f.compLeftInverse g` of `f` through the range
-of `g` has operator norm at most `C`. -/
+/-- If `0 ≤ C` and `‖f x‖ ≤ C ‖g x‖` for all `x`, the factor `f.compLeftInverse g` of `f` through
+the range of `g` has operator norm at most `C`. -/
 theorem opNorm_compLeftInverse_le {f : E →ₛₗ[σ₁₂] F} {g : E →ₗ[𝕜] G} {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) : ‖f.compLeftInverse g‖ ≤ C :=
   ContinuousLinearMap.opNorm_le_bound _ hC (norm_compLeftInverse_apply_le h)
@@ -62,8 +64,8 @@ namespace ContinuousLinearMap
 variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeminormedAddCommGroup G]
   [NormedSpace 𝕜 G] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] [RingHomIsometric σ₁₂]
 
-/-- An operator `f` factors as `S ∘ g` through the range of `g`, with `‖S‖ ≤ C`, if and only if
-`‖f x‖ ≤ C ‖g x‖` for all `x`. -/
+/-- For `0 ≤ C`, an operator `f` factors as `S ∘ g` through the range of `g`, with `‖S‖ ≤ C`, if
+and only if `‖f x‖ ≤ C ‖g x‖` for all `x`. -/
 theorem exists_eq_comp_rangeRestrict_iff {f : E →SL[σ₁₂] F} {g : E →L[𝕜] G} {C : ℝ}
     (hC : 0 ≤ C) :
     (∃ S : LinearMap.range (g : E →ₗ[𝕜] G) →SL[σ₁₂] F, ‖S‖ ≤ C ∧ f = S.comp g.rangeRestrict) ↔
@@ -76,8 +78,8 @@ theorem exists_eq_comp_rangeRestrict_iff {f : E →SL[σ₁₂] F} {g : E →L[�
     ext x
     exact (LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, h⟩ x _ rfl).symm
 
-/-- When `F` is complete, an operator `f` factors as `S ∘ g` through the closure of the range of
-`g`, with `‖S‖ ≤ C`, if and only if `‖f x‖ ≤ C ‖g x‖` for all `x`. -/
+/-- When `F` is complete and `0 ≤ C`, an operator `f` factors as `S ∘ g` through the closure of
+the range of `g`, with `‖S‖ ≤ C`, if and only if `‖f x‖ ≤ C ‖g x‖` for all `x`. -/
 theorem exists_eq_comp_codRestrict_topologicalClosure_iff [CompleteSpace F] {f : E →SL[σ₁₂] F}
     {g : E →L[𝕜] G} {C : ℝ} (hC : 0 ≤ C) :
     (∃ S : (LinearMap.range (g : E →ₗ[𝕜] G)).topologicalClosure →SL[σ₁₂] F,
