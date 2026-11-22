@@ -38,10 +38,12 @@ assuming `NormedSpace ℝ E` gives positivity of nonnegative scalar multiplicati
 ## Main definitions
 
 * `TauCeti.IsArchimedeanOrderUnit`: the algebraic axioms of an Archimedean order unit.
-* `TauCeti.orderUnitNorm`: the infimum norm `sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}`.
+* `TauCeti.orderUnitNorm`: the order-unit infimum gauge
+  `sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}` (a norm under the hypotheses of
+  `TauCeti.WithOrderUnitNorm`).
 * `TauCeti.WithOrderUnitNorm`: wrapper equipping an Archimedean order-unit space with its
   order-unit norm as a `NormedAddCommGroup` and `NormedSpace ℝ`.
-* `TauCeti.IsOrderUnitNorm`: compatibility of an existing norm and partial order with a unit `e`.
+* `TauCeti.IsOrderUnitNorm`: compatibility of an existing norm and order relation with a unit `e`.
 
 ## Main results
 
@@ -89,7 +91,9 @@ structure IsArchimedeanOrderUnit {E : Type*} [Zero E] [SMul ℝ E] [LE E] (e : E
   nonpositivity. -/
   archimedean : ∀ a : E, (∀ ε : ℝ, 0 < ε → a ≤ ε • e) → a ≤ 0
 
-/-- The order-unit norm `inf {r ≥ 0 : -r • e ≤ a ∧ a ≤ r • e}` associated to an element `e`. -/
+/-- The order-unit infimum gauge `sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}` associated to
+an element `e` (equal to `0` when the bounding set is empty). See `WithOrderUnitNorm` for the
+hypotheses under which this gauge is a genuine norm. -/
 def orderUnitNorm {E : Type*} [SMul ℝ E] [LE E] (e a : E) : ℝ :=
   sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}
 
@@ -148,7 +152,7 @@ theorem orderUnitNorm_le_iff {a : E} {r : ℝ} (hr : 0 ≤ r) :
       exists_lt_of_csInf_lt (he.nonempty_orderUnitNormSet a) hs
     have hts' : 0 ≤ (s - t) • e := smul_nonneg (sub_nonneg.mpr hts.le) he.nonneg
     refine ⟨?_, ?_⟩
-    · calc -s • e = -t • e - (s - t) • e := by rw [sub_smul, neg_smul, neg_smul]; abel
+    · calc -s • e = -t • e - (s - t) • e := by simp only [sub_smul, neg_smul]; abel
         _ ≤ -t • e := sub_le_self _ hts'
         _ ≤ a := ht1
     · calc a ≤ t • e := ht2
@@ -337,7 +341,7 @@ theorem normedSpaceCore (he : IsArchimedeanOrderUnit e) :
   norm_eq_zero_iff x := by
     rw [norm_def, he.orderUnitNorm_eq_zero_iff, WithOrderUnitNorm.ext_iff, val_zero]
   norm_smul r x := by
-    rw [norm_def, val_smul, he.orderUnitNorm_smul, Real.norm_eq_abs, norm_def]
+    simp only [norm_def, val_smul, he.orderUnitNorm_smul, Real.norm_eq_abs]
   norm_triangle x y := he.orderUnitNorm_add_le x.val y.val
 
 instance : NormedAddCommGroup (WithOrderUnitNorm he) :=
@@ -365,7 +369,7 @@ end WithOrderUnitNorm
 
 /-! ### The predicate `IsOrderUnitNorm` and its basic properties -/
 
-/-- Compatibility of an existing norm and partial order with an order unit `e`: `‖e‖ = 1` and
+/-- Compatibility of an existing norm and order relation with an order unit `e`: `‖e‖ = 1` and
 `‖a‖ ≤ r ↔ -r • e ≤ a ∧ a ≤ r • e` for every `r ≥ 0`. -/
 structure IsOrderUnitNorm {E : Type*} [Norm E] [SMul ℝ E] [LE E] (e : E) : Prop where
   /-- The order unit has norm one. -/
@@ -378,8 +382,11 @@ theorem WithOrderUnitNorm.isOrderUnitNorm {E : Type*} [AddCommGroup E] [Module �
     [PartialOrder E] [IsOrderedAddMonoid E] [PosSMulMono ℝ E] {e : E}
     (he : IsArchimedeanOrderUnit e) :
     IsOrderUnitNorm (WithOrderUnitNorm.unit he) where
-  norm_e := he.orderUnitNorm_self
-  norm_le_iff _ _ hr := he.orderUnitNorm_le_iff hr
+  norm_e := by
+    rw [WithOrderUnitNorm.norm_def, WithOrderUnitNorm.val_unit, he.orderUnitNorm_self]
+  norm_le_iff x r hr := by
+    rw [WithOrderUnitNorm.norm_def, he.orderUnitNorm_le_iff hr]
+    simp only [WithOrderUnitNorm.le_iff, WithOrderUnitNorm.val_smul, WithOrderUnitNorm.val_unit]
 
 namespace IsOrderUnitNorm
 
@@ -431,7 +438,8 @@ theorem nonneg [LE E] (he : IsOrderUnitNorm e) : 0 ≤ e := by
 theorem pos [PartialOrder E] (he : IsOrderUnitNorm e) : 0 < e :=
   he.nonneg.lt_of_ne' he.ne_zero
 
-/-- The interval formula forces definiteness: an element of norm zero must be zero. -/
+/-- When the order is antisymmetric (`PartialOrder`), the interval formula forces definiteness:
+an element of norm zero must be zero. -/
 theorem eq_zero_of_norm_eq_zero [PartialOrder E] (he : IsOrderUnitNorm e) {a : E} (ha : ‖a‖ = 0) :
     a = 0 := by
   have ⟨h1, h2⟩ := (he.norm_le_iff a 0 le_rfl).mp ha.le
@@ -511,8 +519,8 @@ theorem orderClosedTopology : OrderClosedTopology E where
         ← he.nonneg_iff_norm_sub_le, sub_nonneg]
     have hsmul : Continuous (fun r : ℝ => r • e) := by
       refine LipschitzWith.continuous (K := 1) (LipschitzWith.of_dist_le_mul fun r s => ?_)
-      rw [NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm, ← sub_smul, Real.norm_eq_abs,
-        he.norm_le_iff _ |r - s| (abs_nonneg _)]
+      simp only [NNReal.coe_one, one_mul, dist_eq_norm, ← sub_smul, Real.norm_eq_abs]
+      rw [he.norm_le_iff _ |r - s| (abs_nonneg _)]
       rcases le_total 0 (r - s) with h | h
       · rw [abs_of_nonneg h, neg_smul]
         exact ⟨(neg_nonpos.mpr (he.smul_nonneg_of_nonneg h)).trans
@@ -554,8 +562,7 @@ theorem posSMulMono {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
     have hc : 0 ≤ b - a := sub_nonneg.mpr hab
     have hnorm : ‖‖b - a‖ • e - (b - a)‖ ≤ ‖b - a‖ := (he.nonneg_iff_norm_sub_le (b - a)).mp hc
     have hmul : ‖‖r • (b - a)‖ • e - r • (b - a)‖ ≤ ‖r • (b - a)‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, mul_smul, ← smul_sub, norm_smul,
-        Real.norm_eq_abs, abs_of_nonneg hr]
+      simp only [norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, mul_smul, ← smul_sub]
       exact mul_le_mul_of_nonneg_left hnorm hr
     have hrba : 0 ≤ r • (b - a) := (he.nonneg_iff_norm_sub_le _).mpr hmul
     rw [smul_sub, sub_nonneg] at hrba
@@ -607,7 +614,8 @@ theorem map_linearIsometryEquiv {E F : Type*} [SeminormedAddCommGroup E] [Module
   norm_e := by rw [Φ.norm_map, he.norm_e]
   norm_le_iff b r hr := by
     obtain ⟨a, rfl⟩ := Φ.surjective b
-    rw [Φ.norm_map, he.norm_le_iff a r hr, ← map_smul, ← map_smul, hord, hord]
+    rw [Φ.norm_map, he.norm_le_iff a r hr]
+    simp only [← map_smul, hord]
 
 /-- Every unital real linear order isomorphism between order-unit spaces is automatically
 isometric. -/
@@ -617,10 +625,15 @@ theorem norm_map_of_orderIso {E F : Type*} [SeminormedAddCommGroup E] [Module �
     (Φ : E ≃ₗ[ℝ] F) (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (a : E) :
     ‖Φ a‖ = ‖a‖ := by
   refine le_antisymm ?_ ?_
-  · rw [hf.norm_le_iff (Φ a) ‖a‖ (norm_nonneg a), ← hunit, ← map_smul, ← map_smul, hord, hord]
+  · rw [hf.norm_le_iff (Φ a) ‖a‖ (norm_nonneg a), ← hunit]
+    simp only [← map_smul, hord]
     exact ⟨he.neg_norm_smul_le a, he.le_norm_smul a⟩
-  · rw [he.norm_le_iff a ‖Φ a‖ (norm_nonneg (Φ a)), ← hord, ← hord, map_smul, map_smul, hunit]
-    exact ⟨hf.neg_norm_smul_le (Φ a), hf.le_norm_smul (Φ a)⟩
+  · rw [he.norm_le_iff a ‖Φ a‖ (norm_nonneg (Φ a))]
+    refine ⟨(hord _ _).mp ?_, (hord _ _).mp ?_⟩
+    · simp only [map_smul, hunit]
+      exact hf.neg_norm_smul_le (Φ a)
+    · simp only [map_smul, hunit]
+      exact hf.le_norm_smul (Φ a)
 
 /-- Bundle a unital linear order isomorphism between order-unit spaces as a
 `LinearIsometryEquiv`. -/

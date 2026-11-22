@@ -32,8 +32,8 @@ we establish:
 * state existence (`TauCeti.IsOrderUnitNorm.stateSpace_nonempty`),
 * weak-star compactness and convexity (`TauCeti.IsOrderUnitNorm.isCompact_stateSpace`,
   `TauCeti.OrderUnit.convex_stateSpace`),
-* restriction, Hahn–Banach extension, pullback along unital positive maps, and weak-star
-  homeomorphism with the states of `TauCeti.OrderUnitCompletion he`,
+* restriction, Hahn–Banach extension, contravariant pullback along unital positive maps,
+  and weak-star homeomorphism with the states of `TauCeti.OrderUnitCompletion he`,
 * order and point separation (`TauCeti.IsOrderUnitNorm.le_iff_forall_state_le`,
   `TauCeti.IsOrderUnitNorm.eq_iff_forall_state_eq`),
 * norm attainment and detection (`TauCeti.IsOrderUnitNorm.exists_state_abs_apply_eq_norm`,
@@ -267,12 +267,15 @@ theorem continuous_statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monot
   refine WeakDual.continuous_of_continuous_eval fun a => ?_
   simpa using continuous_eval_stateSpace (e := f) (T a)
 
+/-- Pulling back along the identity map fixes every state. -/
 @[simp]
 theorem statePullback_id {e : E} (φ : stateSpace e) :
     statePullback (ContinuousLinearMap.id ℝ E) monotone_id rfl φ = φ :=
   Subtype.ext (DFunLike.ext _ _ fun a => by
     simpa using statePullback_apply (ContinuousLinearMap.id ℝ E) monotone_id rfl φ a)
 
+/-- Pulling back along a composition `S.comp T` reverses the order of composition: it applies the
+pullback along `S` first, then the pullback along `T`. -/
 theorem statePullback_comp {e : E} {f : F} {g : G}
     (S : F →L[ℝ] G) (hS : Monotone S) (hSu : S f = g)
     (T : E →L[ℝ] F) (hT : Monotone T) (hTu : T e = f) (φ : stateSpace g) :

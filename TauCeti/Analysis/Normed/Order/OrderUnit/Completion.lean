@@ -131,7 +131,67 @@ instance : CompleteSpace (OrderUnitCompletion he) :=
   (completeSpace_congr (e := (toCompletionₗᵢ he).toEquiv)
     (toCompletionₗᵢ he).isometry.isUniformEmbedding).mpr inferInstance
 
-/-- If `r • ↑e + x` and `r • ↑e - x` both lie in the closed positive cone of `Completion E`, then
+omit [NormedSpace ℝ E] [IsOrderedAddMonoid E] in
+private theorem zero_mem_closure_nonneg :
+    (0 : UniformSpace.Completion E) ∈
+      closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) :=
+  subset_closure ⟨0, le_rfl, UniformSpace.Completion.coe_zero⟩
+
+omit [NormedSpace ℝ E] in
+private theorem add_mem_closure_nonneg {x y : UniformSpace.Completion E}
+    (hx : x ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}))
+    (hy : y ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) :
+    x + y ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
+  have hmem : (x, y) ∈
+      closure ((((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) ×ˢ
+        (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) := by
+    rw [closure_prod_eq]
+    exact ⟨hx, hy⟩
+  have himg := image_closure_subset_closure_image continuous_add ⟨_, hmem, rfl⟩
+  refine closure_minimal ?_ isClosed_closure himg
+  rintro _ ⟨⟨_, _⟩, ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩, rfl⟩
+  exact subset_closure ⟨a + b, add_nonneg ha hb, UniformSpace.Completion.coe_add a b⟩
+
+private theorem norm_sub_le_norm_add_of_nonneg (he : IsOrderUnitNorm e)
+    {v u : E} (hv : 0 ≤ v) (hu : 0 ≤ u) : ‖v - u‖ ≤ ‖v + u‖ := by
+  refine he.norm_le_of_neg_le_of_le ?_ ?_
+  · rw [neg_add, sub_eq_add_neg]
+    exact add_le_add ((neg_nonpos.mpr hv).trans hv) le_rfl
+  · rw [sub_eq_add_neg]
+    exact add_le_add le_rfl ((neg_nonpos.mpr hu).trans hu)
+
+private theorem norm_sub_le_norm_add_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
+    {v u : UniformSpace.Completion E}
+    (hv : v ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}))
+    (hu : u ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) :
+    ‖v - u‖ ≤ ‖v + u‖ := by
+  let C : Set (UniformSpace.Completion E) :=
+    ((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}
+  have hclosed : IsClosed {p : UniformSpace.Completion E × UniformSpace.Completion E |
+      ‖p.1 - p.2‖ ≤ ‖p.1 + p.2‖} :=
+    isClosed_le (continuous_fst.sub continuous_snd).norm
+      (continuous_fst.add continuous_snd).norm
+  have hsub : C ×ˢ C ⊆ {p | ‖p.1 - p.2‖ ≤ ‖p.1 + p.2‖} := by
+    rintro ⟨_, _⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
+    simp only [Set.mem_ofPred_eq, ← UniformSpace.Completion.coe_sub,
+      ← UniformSpace.Completion.coe_add, UniformSpace.Completion.norm_coe]
+    exact norm_sub_le_norm_add_of_nonneg he ha hb
+  have hmem : (v, u) ∈ closure (C ×ˢ C) := by
+    rw [closure_prod_eq]
+    exact ⟨hv, hu⟩
+  exact closure_minimal hsub hclosed hmem
+
+private theorem eq_zero_of_mem_closure_nonneg_of_neg_mem (he : IsOrderUnitNorm e)
+    {z : UniformSpace.Completion E}
+    (hz : z ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}))
+    (hneg : -z ∈ closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) :
+    z = 0 := by
+  have hineq := norm_sub_le_norm_add_of_mem_closure_nonneg he hz hneg
+  rw [sub_neg_eq_add, ← two_smul ℝ z, add_neg_cancel, norm_zero, norm_smul, Real.norm_eq_abs,
+    abs_of_pos zero_lt_two] at hineq
+  exact norm_eq_zero.mp (le_antisymm (by linarith) (norm_nonneg z))
+
+/-- If `x + r • ↑e` and `r • ↑e - x` both lie in the closed positive cone of `Completion E`, then
 `‖x‖ ≤ r`. -/
 private theorem norm_le_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
     {x : UniformSpace.Completion E} {r : ℝ} (hr : 0 ≤ r)
@@ -140,74 +200,31 @@ private theorem norm_le_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
     (h2 : r • (e : UniformSpace.Completion E) - x ∈
       closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) : ‖x‖ ≤ r := by
   let y : UniformSpace.Completion E := r • (e : UniformSpace.Completion E)
-  let C : Set (UniformSpace.Completion E) :=
-    ((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}
-  let halfDiff : UniformSpace.Completion E × UniformSpace.Completion E →
-      UniformSpace.Completion E := fun p => (2⁻¹ : ℝ) • (p.1 - p.2)
-  let halfSum : UniformSpace.Completion E × UniformSpace.Completion E →
-      UniformSpace.Completion E := fun p => (2⁻¹ : ℝ) • (p.1 + p.2)
-  have hhd : Continuous halfDiff := by dsimp only [halfDiff]; fun_prop
-  have hhs : Continuous halfSum := by dsimp only [halfSum]; fun_prop
-  have hclosed : IsClosed {p : UniformSpace.Completion E × UniformSpace.Completion E |
-      ‖halfDiff p‖ ≤ ‖halfSum p‖} :=
-    isClosed_le hhd.norm hhs.norm
-  have hsub : C ×ˢ C ⊆ {p | ‖halfDiff p‖ ≤ ‖halfSum p‖} := by
-    rintro ⟨_, _⟩ ⟨⟨v, hv, rfl⟩, ⟨u, hu, rfl⟩⟩
-    simp only [Set.mem_ofPred_eq, halfDiff, halfSum, ← UniformSpace.Completion.coe_sub,
-      ← UniformSpace.Completion.coe_add, ← UniformSpace.Completion.coe_smul,
-      UniformSpace.Completion.norm_coe]
-    refine he.norm_le_of_neg_le_of_le ?_ ?_
-    · rw [← sub_nonneg, sub_neg_eq_add, ← smul_add]
-      have hsum : (v - u) + (v + u) = (2 : ℝ) • v := by rw [two_smul]; abel
-      rw [hsum, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-      exact hv
-    · rw [← sub_nonneg, ← smul_sub]
-      have hdiff : (v + u) - (v - u) = (2 : ℝ) • u := by rw [two_smul]; abel
-      rw [hdiff, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-      exact hu
-  have hmem : (x + y, y - x) ∈ closure (C ×ˢ C) := by
-    rw [closure_prod_eq]
-    exact ⟨h1, h2⟩
-  have hineq := closure_minimal hsub hclosed hmem
-  have hhalfDiff : halfDiff (x + y, y - x) = x := by
-    have hdiff : (x + y) - (y - x) = (2 : ℝ) • x := by rw [two_smul]; abel
-    dsimp only [halfDiff]
-    rw [hdiff, smul_smul]
-    norm_num
-  have hhalfSum : halfSum (x + y, y - x) = y := by
-    have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
-    dsimp only [halfSum]
-    rw [hsum, smul_smul]
-    norm_num
-  rw [Set.mem_ofPred_eq, hhalfDiff, hhalfSum] at hineq
-  simpa [y, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, UniformSpace.Completion.norm_coe,
-    he.norm_e] using hineq
+  have hineq := norm_sub_le_norm_add_of_mem_closure_nonneg he h1 h2
+  have hdiff : (x + y) - (y - x) = (2 : ℝ) • x := by rw [two_smul]; abel
+  have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
+  rw [hdiff, hsum, norm_smul, norm_smul, Real.norm_eq_abs, abs_of_pos zero_lt_two] at hineq
+  have hy : ‖y‖ = r := by
+    simp [y, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, UniformSpace.Completion.norm_coe,
+      he.norm_e]
+  linarith
 
 instance : PartialOrder (OrderUnitCompletion he) where
   le x y := y.toCompletion - x.toCompletion ∈
     closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})
   le_refl x := by
-    have h0 : (0 : UniformSpace.Completion E) ∈
-        closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) :=
-      subset_closure ⟨0, le_rfl, UniformSpace.Completion.coe_zero⟩
-    simpa using h0
+    rw [sub_self]
+    exact zero_mem_closure_nonneg
   le_trans x y z hxy hyz := by
-    have hmem : (z.toCompletion - y.toCompletion, y.toCompletion - x.toCompletion) ∈
-        closure ((((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) ×ˢ
-          (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) := by
-      rw [closure_prod_eq]
-      exact ⟨hyz, hxy⟩
-    have himg := image_closure_subset_closure_image continuous_add ⟨_, hmem, rfl⟩
-    have hadd : (z.toCompletion - y.toCompletion) + (y.toCompletion - x.toCompletion) ∈
-        closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
-      refine closure_minimal ?_ isClosed_closure himg
-      rintro _ ⟨⟨_, _⟩, ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩, rfl⟩
-      exact subset_closure ⟨a + b, add_nonneg ha hb, UniformSpace.Completion.coe_add a b⟩
-    rwa [sub_add_sub_cancel] at hadd
+    rw [← sub_add_sub_cancel z.toCompletion y.toCompletion x.toCompletion]
+    exact add_mem_closure_nonneg hyz hxy
   le_antisymm x y hxy hyx := by
-    have hnorm : ‖y.toCompletion - x.toCompletion‖ ≤ 0 :=
-      norm_le_of_mem_closure_nonneg he le_rfl (by simpa using hxy) (by simpa using hyx)
-    exact OrderUnitCompletion.ext (sub_eq_zero.mp (norm_le_zero_iff.mp hnorm)).symm
+    have hneg : -(y.toCompletion - x.toCompletion) ∈
+        closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
+      rw [neg_sub]
+      exact hyx
+    exact OrderUnitCompletion.ext
+      (sub_eq_zero.mp (eq_zero_of_mem_closure_nonneg_of_neg_mem he hxy hneg)).symm
 
 theorem le_iff (x y : OrderUnitCompletion he) :
     x ≤ y ↔ y.toCompletion - x.toCompletion ∈
@@ -277,8 +294,10 @@ theorem isOrderUnitNorm (he : IsOrderUnitNorm e) : IsOrderUnitNorm (coe he e) wh
       exact neg_le.mp (hupper (-x) (by simpa [norm_neg] using hx))
     · rw [← norm_toCompletion]
       refine norm_le_of_mem_closure_nonneg he hr ?_ ?_
-      · simpa [le_iff, neg_smul, sub_neg_eq_add] using h1
-      · simpa [le_iff] using h2
+      · rw [le_iff, toCompletion_smul, toCompletion_coe, neg_smul, sub_neg_eq_add] at h1
+        exact h1
+      · rw [le_iff, toCompletion_smul, toCompletion_coe] at h2
+        exact h2
 
 instance : PosSMulMono ℝ (OrderUnitCompletion he) :=
   (isOrderUnitNorm he).posSMulMono
