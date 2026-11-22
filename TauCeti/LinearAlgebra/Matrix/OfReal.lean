@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.DetDescent
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Real matrices as complex matrices
@@ -36,6 +37,8 @@ congruence.
 * `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
   `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
   `(e₁, e₂) ≠ 0`).
+* `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
+  complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
@@ -99,6 +102,13 @@ theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e�
   simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Complex.ofReal_sub,
     Complex.ofReal_add, Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
+
+/-- A real square matrix is invertible exactly when it is invertible as a complex matrix: the
+case `ℝ → ℂ` of `Matrix.isUnit_map_iff`. -/
+@[simp]
+theorem isUnit_map_ofReal_iff [Fintype n] [DecidableEq n] {M : Matrix n n ℝ} :
+    IsUnit (M.map ((↑) : ℝ → ℂ)) ↔ IsUnit M :=
+  isUnit_map_iff Complex.ofRealHom M
 
 /-- The determinant of the complex image of a real matrix is the image of its determinant. -/
 @[simp]
