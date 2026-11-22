@@ -29,8 +29,10 @@ with the finiteness of the multiplicities.
 The enumeration sorts `ι` lexicographically by the value of `f` and, among indices with equal
 values, by an arbitrary well-ordering of `ι`; each index is then sent to the number of indices
 below it (`ncardIioOrderEmbedding`), which is finite. For any linear order whose strict initial
-segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`, and
-every rank below its extended cardinality is attained (`exists_ncard_Iio_eq_of_finite_Iio`).
+segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`,
+every rank below its extended cardinality is attained (`exists_ncard_Iio_eq_of_finite_Iio`), and
+for a strictly increasing tail after a finite prefix, the rank equals the prefix cardinality plus
+the tail index (`ncard_Iio_eq_ncard_add_of_strictMono`).
 -/
 
 public section
@@ -41,7 +43,7 @@ open Filter Set
 
 /-- When every strict initial segment `Set.Iio a` of a linear order is finite, the rank map
 `a ↦ (Set.Iio a).ncard` is an order embedding into `ℕ`. -/
-@[expose] noncomputable def ncardIioOrderEmbedding {α : Type*} [LinearOrder α]
+noncomputable def ncardIioOrderEmbedding {α : Type*} [LinearOrder α]
     (hfin : ∀ a : α, (Set.Iio a).Finite) : α ↪o ℕ :=
   OrderEmbedding.ofStrictMono (fun a ↦ (Set.Iio a).ncard) fun _ b hab ↦
     ncard_lt_ncard ⟨fun _ hc ↦ hc.trans hab, fun hsub ↦ lt_irrefl _ (hsub hab)⟩ (hfin b)
@@ -51,7 +53,7 @@ open Filter Set
 theorem ncardIioOrderEmbedding_apply {α : Type*} [LinearOrder α]
     (hfin : ∀ a : α, (Set.Iio a).Finite) (a : α) :
     ncardIioOrderEmbedding hfin a = (Set.Iio a).ncard :=
-  rfl
+  (rfl)
 
 /-- In a linear order whose strict initial segments `Set.Iio a` are finite, every rank `n`
 strictly below `ENat.card α` is attained as `(Set.Iio a).ncard = n`. -/
@@ -66,8 +68,7 @@ theorem exists_ncard_Iio_eq_of_finite_Iio {α : Type*} [LinearOrder α]
       rw [← Set.encard_univ, Set.eq_empty_of_isEmpty (univ : Set α)] at hn
       simp at hn
     obtain ⟨x⟩ := hne
-    have hIic : Set.Iic x = insert x (Set.Iio x) := by ext; simp [le_iff_eq_or_lt]
-    have hF : (Set.Iic x).Finite := hIic ▸ (hfin x).insert x
+    have hF : (Set.Iic x).Finite := Set.insert_Iio (a := x) ▸ (hfin x).insert x
     let m : α := hF.toFinset.min' (hF.toFinset_nonempty.mpr ⟨x, le_rfl⟩)
     have hIio : Set.Iio m = ∅ := by
       ext y
@@ -81,24 +82,20 @@ theorem exists_ncard_Iio_eq_of_finite_Iio {α : Type*} [LinearOrder α]
     classical
     obtain ⟨a, ha⟩ := exists_ncard_Iio_eq_of_finite_Iio hfin
       (lt_of_le_of_lt (Nat.cast_le.mpr (Nat.le_succ n)) hn)
-    have hIic : Set.Iic a = insert a (Set.Iio a) := by ext; simp [le_iff_eq_or_lt]
-    have ha_fin : (Set.Iic a).Finite := hIic ▸ (hfin a).insert a
+    have ha_fin : (Set.Iic a).Finite := Set.insert_Iio (a := a) ▸ (hfin a).insert a
     have ha_card : (Set.Iic a).ncard = n + 1 := by
-      rw [hIic, Set.ncard_insert_of_notMem (lt_irrefl a) (hfin a), ha]
+      rw [← Set.insert_Iio, Set.ncard_insert_of_notMem (lt_irrefl a) (hfin a), ha]
     have hex : (Set.Iic a)ᶜ.Nonempty := by
       by_contra hne
       rw [Set.not_nonempty_iff_eq_empty, Set.compl_empty_iff] at hne
       have hcard : ENat.card α = (n + 1 : ℕ) := by
-        rw [← Set.encard_univ, ← hne, ha_fin.encard_eq_coe_toFinset_card,
-          ← Set.ncard_eq_toFinset_card _ ha_fin, ha_card]
+        rw [← Set.encard_univ, ← hne, ← ha_fin.cast_ncard_eq, ha_card]
       rw [hcard] at hn
       exact lt_irrefl _ hn
     obtain ⟨y, hy⟩ := hex
     have hay : a < y := not_le.mp hy
-    have hS : (Set.Ioc a y).Finite := ((hfin y).insert y).subset fun x hx ↦ by
-      rcases hx.2.eq_or_lt with rfl | hlt
-      · exact Set.mem_insert x _
-      · exact Set.mem_insert_of_mem y hlt
+    have hS : (Set.Ioc a y).Finite :=
+      (Set.insert_Iio (a := y) ▸ (hfin y).insert y).subset Set.Ioc_subset_Iic_self
     let b : α := hS.toFinset.min' (hS.toFinset_nonempty.mpr ⟨y, hay, le_rfl⟩)
     have hb_mem : b ∈ Set.Ioc a y := hS.mem_toFinset.mp (Finset.min'_mem _ _)
     refine ⟨b, ?_⟩
@@ -112,6 +109,27 @@ theorem exists_ncard_Iio_eq_of_finite_Iio {α : Type*} [LinearOrder α]
       · intro hxa
         exact hxa.trans_lt hb_mem.1
     rw [hIio, ha_card]
+
+/-- If `A : Set α` is a finite prefix strictly preceding a strictly increasing tail `z : ℕ → α`
+that together exhaust `α`, then `z n` has rank `(Set.Iio (z n)).ncard = A.ncard + n`. -/
+theorem ncard_Iio_eq_ncard_add_of_strictMono {α : Type*} [LinearOrder α]
+    {A : Set α} (hA : A.Finite) {z : ℕ → α} (hz : StrictMono z)
+    (hA_lt : ∀ a ∈ A, ∀ m, a < z m) (hexh : ∀ a : α, a ∈ A ∨ ∃ m, a = z m) (n : ℕ) :
+    (Set.Iio (z n)).ncard = A.ncard + n := by
+  have hIio : Set.Iio (z n) = A ∪ z '' (Finset.range n : Set ℕ) := by
+    ext a
+    constructor
+    · intro ha
+      rcases hexh a with haA | ⟨m, rfl⟩
+      · exact .inl haA
+      · exact .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr (hz.lt_iff_lt.mp ha)), rfl⟩
+    · rintro (haA | ⟨m, hm, rfl⟩)
+      · exact hA_lt a haA n
+      · exact hz (Finset.mem_range.mp (Finset.mem_coe.mp hm))
+  have hdisj : Disjoint A (z '' (Finset.range n : Set ℕ)) :=
+    Set.disjoint_left.mpr fun _ haA ⟨m, _, ham⟩ => (hA_lt _ haA m).ne ham.symm
+  rw [hIio, Set.ncard_union_eq hdisj hA ((Finset.range n).finite_toSet.image z),
+    Set.ncard_image_of_injective _ hz.injective, Set.ncard_coe_finset, Finset.card_range]
 
 /-- **Nondecreasing enumeration.** If `f : ι → α` has finite sublevel sets on an infinite type
 `ι`, there is a bijection `e : ℕ ≃ ι` along which `f` is nondecreasing: `f (e 0) ≤ f (e 1) ≤ ⋯`.

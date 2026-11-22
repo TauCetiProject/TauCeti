@@ -37,9 +37,10 @@ Whenever a function `f : ℂ → ℂ` has only finitely many sector zeros
   contains infinitely many zeros (`TauCeti.exists_sectorZero_eq`);
 * under local norm-finiteness, for `1 ≤ k` with `(k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard`,
   `sectorZero θ₁ θ₂ f k` attains its defining predicate (`TauCeti.sectorZero_spec_of_le_encard`),
-  is strictly `Complex.polarLt`-monotone and injective on such indices
-  (`TauCeti.polarLt_sectorZero_of_lt_of_le_encard`, `TauCeti.injOn_sectorZero`), and has
-  nondecreasing norms (`TauCeti.norm_sectorZero_le_norm_sectorZero_of_le_encard`);
+  is strictly `Complex.polarLt`-monotone and bijective onto `sectorZeros θ₁ θ₂ f` on such
+  indices (`TauCeti.polarLt_sectorZero_of_lt_of_le_encard`, `TauCeti.injOn_sectorZero`,
+  `TauCeti.bijOn_sectorZero`), and has nondecreasing norms
+  (`TauCeti.norm_sectorZero_le_norm_sectorZero_of_le_encard`);
 * when `sectorZeros θ₁ θ₂ f` is additionally infinite, these properties hold for all `k ≥ 1`, every
   sector zero appears at a unique positive index (`TauCeti.existsUnique_sectorZero_eq_of_infinite`),
   and `‖sectorZero θ₁ θ₂ f k‖ → ∞` as `k → ∞` (`TauCeti.tendsto_norm_sectorZero_atTop`);
@@ -203,15 +204,10 @@ theorem ncard_sectorZeroInit_lt
     {z₁ z₂ : ℂ} (hz₁ : z₁ ∈ sectorZeros θ₁ θ₂ f) (h12 : z₁.polarLt z₂) :
     {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₁}.ncard <
       {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₂}.ncard := by
-  by_cases hz₂ : z₂ ∈ sectorZeros θ₁ θ₂ f
-  · let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
-    let r := ncardIioOrderEmbedding (finite_Iio_sectorZeros hfin)
-    have hlt := r.lt_iff_lt.mpr (show (⟨z₁, hz₁⟩ : sectorZeros θ₁ θ₂ f) < ⟨z₂, hz₂⟩ from h12)
-    simpa [r, ncardIioOrderEmbedding_apply, ncard_Iio_sectorZeros_eq] using hlt
-  · refine Set.ncard_lt_ncard
-      ⟨fun w hw => ⟨hw.1, trans_of Complex.polarLt hw.2 h12⟩, fun hsub => ?_⟩
-      (finite_sectorZeroInit hfin z₂)
-    exact irrefl_of Complex.polarLt z₁ (hsub ⟨hz₁, h12⟩).2
+  refine Set.ncard_lt_ncard
+    ⟨fun w hw => ⟨hw.1, trans_of Complex.polarLt hw.2 h12⟩, fun hsub => ?_⟩
+    (finite_sectorZeroInit hfin z₂)
+  exact irrefl_of Complex.polarLt z₁ (hsub ⟨hz₁, h12⟩).2
 
 /-- Under local norm-finiteness, two zeros in the same open sector with equal initial-segment
 cardinalities coincide. -/
@@ -292,8 +288,7 @@ theorem polarLt_sectorZero_of_lt_of_le_encard
   change (⟨sectorZero θ₁ θ₂ f j, hspec_j.1⟩ : sectorZeros θ₁ θ₂ f) <
     ⟨sectorZero θ₁ θ₂ f k, hspec_k.1⟩
   rw [← r.lt_iff_lt]
-  dsimp only [r, ncardIioOrderEmbedding_apply]
-  rw [ncard_Iio_sectorZeros_eq, ncard_Iio_sectorZeros_eq, hspec_j.2, hspec_k.2]
+  simp only [r, ncardIioOrderEmbedding_apply, ncard_Iio_sectorZeros_eq, hspec_j.2, hspec_k.2]
   omega
 
 /-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` is injective on positive indices at most the
@@ -302,13 +297,40 @@ theorem injOn_sectorZero
     (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite) :
     Set.InjOn (sectorZero θ₁ θ₂ f)
       {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard} := by
+  let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
+  let S : Set ℕ := {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard}
+  let g : S → sectorZeros θ₁ θ₂ f := fun k =>
+    ⟨sectorZero θ₁ θ₂ f k.val, (sectorZero_spec_of_le_encard hfin k.property.1 k.property.2).1⟩
+  have hg : StrictMonoOn g Set.univ := fun j _ k _ hjk =>
+    polarLt_sectorZero_of_lt_of_le_encard hfin j.property.1 hjk k.property.2
   intro j hj k hk hEq
-  rcases lt_trichotomy j k with hlt | rfl | hgt
-  · exact absurd (hEq ▸ polarLt_sectorZero_of_lt_of_le_encard hfin hj.1 hlt hk.2)
-      (irrefl_of Complex.polarLt _)
-  · rfl
-  · exact absurd (hEq ▸ polarLt_sectorZero_of_lt_of_le_encard hfin hk.1 hgt hj.2)
-      (irrefl_of Complex.polarLt _)
+  exact congrArg Subtype.val
+    (hg.injOn (Set.mem_univ ⟨j, hj⟩) (Set.mem_univ ⟨k, hk⟩) (Subtype.ext hEq))
+
+/-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` restricts to a bijection from
+`{k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard}` onto `sectorZeros θ₁ θ₂ f`. -/
+theorem bijOn_sectorZero
+    (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite) :
+    Set.BijOn (sectorZero θ₁ θ₂ f)
+      {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard}
+      (sectorZeros θ₁ θ₂ f) := by
+  refine ⟨fun _ hk => (sectorZero_spec_of_le_encard hfin hk.1 hk.2).1, injOn_sectorZero hfin,
+    fun z hz => ?_⟩
+  refine ⟨{w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard + 1, ⟨Nat.le_add_left 1 _, ?_⟩,
+    sectorZero_eq_of_ncard hfin hz rfl⟩
+  have hI_fin : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.Finite :=
+    finite_sectorZeroInit hfin z
+  have hz_not : z ∉ {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z} :=
+    fun h => irrefl_of Complex.polarLt z h.2
+  have hsub : insert z {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z} ⊆ sectorZeros θ₁ θ₂ f :=
+    Set.insert_subset_iff.mpr ⟨hz, fun _ hw => hw.1⟩
+  calc
+    (({w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard + 1 : ℕ) : ℕ∞)
+        = {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.encard + 1 := by
+          rw [Nat.cast_add, Nat.cast_one, hI_fin.cast_ncard_eq]
+    _ = (insert z {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}).encard :=
+          (Set.encard_insert_of_notMem hz_not).symm
+    _ ≤ (sectorZeros θ₁ θ₂ f).encard := Set.encard_le_encard hsub
 
 /-- Under local norm-finiteness, the norms `‖sectorZero θ₁ θ₂ f ·‖` are nondecreasing for
 `1 ≤ j ≤ k` whenever `(k : ℕ∞)` is at most the sector zero cardinality. -/
@@ -405,32 +427,19 @@ private theorem sectorZero_add_eq_of_tail
     (hexh : ∀ w ∈ sectorZeros θ₁ θ₂ f, w ∈ A ∨ ∃ m, w = zSeq m)
     (n : ℕ) :
     sectorZero θ₁ θ₂ f (A.ncard + 1 + n) = zSeq n := by
-  have hinj : Function.Injective zSeq := fun i j hij => by
-    rcases lt_trichotomy i j with hlt | rfl | hgt
-    · exact absurd (hij ▸ hstrict hlt) (irrefl_of Complex.polarLt _)
-    · rfl
-    · exact absurd (hij ▸ hstrict hgt) (irrefl_of Complex.polarLt _)
-  have hInit_eq : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)} =
-      A ∪ zSeq '' (Finset.range n : Set ℕ) := by
-    ext w
-    constructor
-    · rintro ⟨hwS, hwp⟩
-      rcases hexh w hwS with hwA | ⟨m, rfl⟩
-      · exact .inl hwA
-      · refine .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr ?_), rfl⟩
-        by_contra! hnm
-        rcases hnm.eq_or_lt with rfl | hlt
-        · exact irrefl_of Complex.polarLt _ hwp
-        · exact asymm_of Complex.polarLt (hstrict hlt) hwp
-    · rintro (hwA | ⟨m, hm, rfl⟩)
-      · exact ⟨hA_sub hwA, hA_lt w hwA n⟩
-      · exact ⟨hzS m, hstrict (Finset.mem_range.mp (Finset.mem_coe.mp hm))⟩
-  have hdisj : Disjoint A (zSeq '' (Finset.range n : Set ℕ)) :=
-    Set.disjoint_left.mpr fun _ hwA ⟨m, _, hwm⟩ =>
-      irrefl_of Complex.polarLt _ (hwm ▸ hA_lt _ hwA m)
+  let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
+  let A' : Set (sectorZeros θ₁ θ₂ f) := Subtype.val ⁻¹' A
+  let zSub : ℕ → sectorZeros θ₁ θ₂ f := fun m => ⟨zSeq m, hzS m⟩
+  have hA'_fin : A'.Finite := hA_fin.preimage Subtype.val_injective.injOn
+  have hA'_card : A'.ncard = A.ncard := by
+    rw [← Set.ncard_image_of_injective A' Subtype.val_injective,
+      Set.image_preimage_eq_iff.mpr (by rw [Subtype.range_coe]; exact hA_sub)]
+  have hrank := ncard_Iio_eq_ncard_add_of_strictMono hA'_fin
+    (z := zSub) (fun _ _ h => hstrict h)
+    (fun w hw m => hA_lt w.val hw m)
+    (fun w => (hexh w.val w.property).imp id fun ⟨m, hm⟩ => ⟨m, Subtype.ext hm⟩) n
   have hcard : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)}.ncard = A.ncard + 1 + n - 1 := by
-    rw [hInit_eq, Set.ncard_union_eq hdisj hA_fin ((Finset.range n).finite_toSet.image zSeq),
-      Set.ncard_image_of_injective _ hinj, Set.ncard_coe_finset, Finset.card_range]
+    rw [← ncard_Iio_sectorZeros_eq (zSub n), hrank, hA'_card]
     omega
   exact sectorZero_eq_of_ncard hfin (hzS n) hcard
 
@@ -597,25 +606,23 @@ private theorem mem_sectorZeros_cos_iff {θ₁ θ₂ θ : ℝ}
       push_cast
       ring
     · exfalso
-      have hneg : (2 * (m : ℝ) + 1) * Real.pi / 2 < 0 := by
+      have hpos : 0 < -((2 * (m : ℝ) + 1) * Real.pi / 2) := by
         have hm_le : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm_neg
         nlinarith [Real.pi_pos]
-      have hx₀ : (Complex.ofReal ((2 * (m : ℝ) + 1) * Real.pi / 2)) ≠ 0 :=
-        Complex.ofReal_ne_zero.mpr hneg.ne
-      have hy₀ : Complex.exp ((θ : ℂ) * Complex.I) ≠ 0 := Complex.exp_ne_zero _
-      have harg_x : (Complex.ofReal ((2 * (m : ℝ) + 1) * Real.pi / 2)).arg = Real.pi :=
-        Complex.arg_ofReal_of_neg hneg
-      have harg_y : (Complex.exp ((θ : ℂ) * Complex.I)).arg = θ := by
-        rw [Complex.arg_exp_mul_I]
-        exact toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨hθ_gt, by linarith⟩
+      have hz_pos : z = Complex.ofReal (-((2 * (m : ℝ) + 1) * Real.pi / 2)) *
+          Complex.exp (((θ + Real.pi : ℝ) : ℂ) * Complex.I) := by
+        rw [hz_eq]
+        push_cast
+        rw [add_mul (θ : ℂ) Real.pi Complex.I, Complex.exp_add, Complex.exp_pi_mul_I]
+        ring
+      have hz_arg : z.arg = toIocMod Real.two_pi_pos (-Real.pi) (θ + Real.pi) := by
+        rw [hz_pos, Complex.arg_ofReal_mul hpos, Complex.arg_exp_mul_I]
       rcases le_or_gt θ 0 with hθ_le | hθ_pos
-      · have hz_arg : z.arg = Real.pi + θ := by
-          rw [hz_eq, Complex.arg_mul hx₀ hy₀ ⟨by rw [harg_x, harg_y]; linarith,
-            by rw [harg_x, harg_y]; linarith⟩, harg_x, harg_y]
+      · rw [toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith⟩] at hz_arg
         linarith
-      · have hz_arg : z.arg = θ - Real.pi := by
-          rw [hz_eq, Complex.arg_mul_of_pi_lt (by rw [harg_x, harg_y]; linarith), harg_x, harg_y]
-          ring
+      · rw [← toIocMod_sub Real.two_pi_pos (-Real.pi) (θ + Real.pi),
+          show θ + Real.pi - 2 * Real.pi = θ - Real.pi by ring,
+          toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith⟩] at hz_arg
         linarith
   · rintro ⟨n, rfl⟩
     rw [mem_sectorZeros_iff, arg_rotatedCosZero hθ_gt hθ_lt.le n]
