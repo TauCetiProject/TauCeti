@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
@@ -54,18 +56,6 @@ variable {k : ℕ} {α : ℝ≥0} {E F G : Type*} [NormedAddCommGroup E] [Normed
 private abbrev compMultilinearL (L : F →L[ℝ] G) (m : ℕ) : (E [×m]→L[ℝ] F) →L[ℝ] E [×m]→L[ℝ] G :=
   ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin m ↦ E) F G L
 
-/-- Separating the first variable commutes with postcomposition. -/
-private theorem curryLeft_compMultilinearL (L : F →L[ℝ] G) {m : ℕ} (M : E [×(m + 1)]→L[ℝ] F) :
-    (compMultilinearL L (m + 1) M).curryLeft = (compMultilinearL L m).comp M.curryLeft := by
-  ext h v
-  simp
-
-/-- The norm of postcomposition of multilinear maps with `L` is at most `‖L‖`. -/
-private theorem norm_compMultilinearL_le (L : F →L[ℝ] G) (m : ℕ) :
-    ‖compMultilinearL (E := E) L m‖ ≤ ‖L‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun M ↦
-    L.norm_compContinuousMultilinearMap_le M
-
 /-- The fields `L ∘ D_t^r D_x^m u` of the postcomposition. -/
 private def compLeftFields (L : F →L[ℝ] G) (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
     slab (E := E) a b →ᵇ (E [×m]→L[ℝ] G) :=
@@ -87,7 +77,7 @@ private theorem hasFDerivAt_compLeftFields (L : F →L[ℝ] G)
     HasFDerivAt (fun y ↦ compLeftFields L u r m (slabMk y t))
       (compLeftFields L u r (m + 1) (slabMk x t)).curryLeft x := by
   have hd := (compMultilinearL L m).hasFDerivAt.comp x (hasFDerivAt_mixedDerivL u h t x)
-  rw [← curryLeft_compMultilinearL] at hd
+  rw [compLeftFields_apply, ContinuousLinearMap.compContinuousMultilinearMap_curryLeft]
   exact hd
 
 private theorem hasDerivWithinAt_compLeftFields (L : F →L[ℝ] G)
@@ -133,20 +123,11 @@ private theorem compLeft_apply (L : F →L[ℝ] G) (u : ParabolicCkHolderSpace k
     ContinuousMultilinearMap.curry0_apply, ContinuousLinearMap.compContinuousMultilinearMap_coe,
     Function.comp_apply]
 
-/-- A bounded Hölder map whose values are those of `g` followed by `L'` has norm at most
-`‖L'‖ ‖g‖`. -/
-private theorem norm_holderSpace_le_of_apply_eq {X F' G' : Type*} [MetricSpace X]
-    [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G'] [NormedSpace ℝ G']
-    {β : ℝ≥0} (L' : F' →L[ℝ] G') {g : HolderSpace β X F'} {g' : HolderSpace β X G'}
-    (hg' : ∀ x, g' x = L' (g x)) : ‖g'‖ ≤ ‖L'‖ * ‖g‖ := by
-  rw [show g' = HolderSpace.compLeftL L' g from
-    HolderSpace.ext fun x ↦ by rw [hg', HolderSpace.compLeftL_apply]]
-  exact (HolderSpace.compLeftL L').le_of_opNorm_le (HolderSpace.norm_compLeftL_le L') g
-
 /-- Postcomposition with `L` multiplies the norm by at most `‖L‖`. -/
 private theorem norm_compLeft_le (L : F →L[ℝ] G) (u : ParabolicCkHolderSpace k α E F hab) :
     ‖compLeft L u‖ ≤ ‖L‖ * ‖u‖ := by
-  have hL (m : ℕ) : ‖compMultilinearL (E := E) L m‖ ≤ ‖L‖ := norm_compMultilinearL_le L m
+  have hL (m : ℕ) : ‖compMultilinearL (E := E) L m‖ ≤ ‖L‖ :=
+    L.norm_compContinuousMultilinearMapL_le
   have hfield {r m : ℕ} (h : 2 * r + m ≤ k) :
       ‖mixedDerivL r m (compLeft L u)‖ ≤ ‖L‖ * ‖mixedDerivL r m u‖ := by
     rw [mixedDerivL_compLeft L u h]
@@ -157,8 +138,8 @@ private theorem norm_compLeft_le (L : F →L[ℝ] G) (u : ParabolicCkHolderSpace
   have hslice (r m : ℕ) : ‖timeSliceL r m (compLeft L u)‖ ≤ ‖L‖ * ‖timeSliceL r m u‖ := by
     by_cases h : 2 * r + m + 1 = k
     · refine lp.norm_le_of_forall_le (by positivity) fun x ↦ ?_
-      refine (norm_holderSpace_le_of_apply_eq (compMultilinearL L m) (g := timeSliceL r m u x)
-        (g' := timeSliceL r m (compLeft L u) x) fun t ↦ ?_).trans
+      refine (HolderSpace.norm_le_mul_norm_of_apply_eq (compMultilinearL L m)
+        (f := timeSliceL r m (compLeft L u) x) (g := timeSliceL r m u x) fun t ↦ ?_).trans
         (mul_le_mul (hL m) (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x) (norm_nonneg _)
           (norm_nonneg L))
       rw [timeSliceL_apply (compLeft L u) h, timeSliceL_apply u h,
@@ -169,8 +150,8 @@ private theorem norm_compLeft_le (L : F →L[ℝ] G) (u : ParabolicCkHolderSpace
   have hholder (r m : ℕ) :
       ‖mixedDerivHolderL r m (compLeft L u)‖ ≤ ‖L‖ * ‖mixedDerivHolderL r m u‖ := by
     by_cases h : 2 * r + m = k
-    · refine (norm_holderSpace_le_of_apply_eq (compMultilinearL L m) (g := mixedDerivHolderL r m u)
-        (g' := mixedDerivHolderL r m (compLeft L u)) fun p ↦ ?_).trans
+    · refine (HolderSpace.norm_le_mul_norm_of_apply_eq (compMultilinearL L m)
+        (f := mixedDerivHolderL r m (compLeft L u)) (g := mixedDerivHolderL r m u) fun p ↦ ?_).trans
         (mul_le_mul_of_nonneg_right (hL m) (norm_nonneg _))
       rw [mixedDerivHolderL_apply (compLeft L u) h, mixedDerivHolderL_apply u h,
         mixedDerivL_compLeft L u h.le, compLeftFields_apply,

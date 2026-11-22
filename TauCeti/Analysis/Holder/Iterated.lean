@@ -61,6 +61,8 @@ conditions are closed under uniform convergence, which gives completeness.
 * `TauCeti.CkHolderSpace.holderWith`: for `α ≤ 1`, an element is itself globally `α`-Hölder.
 * `TauCeti.CkHolderSpace.fderivL`: the derivative `C^{k+1,α} → C^{k,α}` with values in `E →L[ℝ] F`,
   of operator norm at most one.
+* `TauCeti.CkHolderSpace.iteratedFDeriv_fderivL`: the derivative fields of `fderivL f` are those
+  of `f` of positive order, with the last variable separated.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.supportedCkHolderSubmodule`: the elements vanishing off a set `s`; it is closed
   (`TauCeti.isClosed_supportedCkHolderSubmodule`), hence complete for a complete codomain, and
@@ -770,11 +772,19 @@ private def fderivAux (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E 
 private theorem coe_fderivAux (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivAux f) = fderiv ℝ f :=
   coe_ofContDiff _ _ _ _
 
+private theorem iteratedFDeriv_fderivAux (f : CkHolderSpace (k + 1) α E F) (i : Fin (k + 1))
+    (x : E) :
+    (fderivAux f).iteratedFDeriv i x =
+      continuousMultilinearCurryRightEquiv' ℝ i E F (f.iteratedFDeriv i.succ x) := by
+  rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq, coe_fderivAux]
+  -- `i.succ` is `i + 1` by definition; unfold the top derivative through `fderiv`.
+  exact ((continuousMultilinearCurryRightEquiv' ℝ i E F).apply_symm_apply _).symm.trans
+    (congrArg _ iteratedFDeriv_succ_eq_comp_right.symm)
+
 private theorem norm_fderivAux_le (f : CkHolderSpace (k + 1) α E F) : ‖fderivAux f‖ ≤ ‖f‖ := by
   have hfield (i : Fin (k + 1)) : ‖(fderivAux f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i.succ‖ :=
     (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
-      rw [← iteratedFDeriv_eq, coe_fderivAux, norm_iteratedFDeriv_fderiv, ← Fin.val_succ,
-        iteratedFDeriv_eq f i.succ]
+      rw [iteratedFDeriv_fderivAux, LinearIsometryEquiv.norm_map]
       exact (f.iteratedFDeriv i.succ).norm_coe_le_norm x
   have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (fderivAux f)) =
       nnHolderNorm α (_root_.iteratedFDeriv ℝ (k + 1) f) := by
@@ -808,6 +818,13 @@ theorem fderivL_apply (f : CkHolderSpace (k + 1) α E F) (x : E) :
 
 theorem coe_fderivL (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivL k α E F f) = fderiv ℝ f :=
   coe_fderivAux f
+
+/-- The derivative fields of `fderivL f` are those of `f` of one order more, with the last
+variable separated. -/
+theorem iteratedFDeriv_fderivL (f : CkHolderSpace (k + 1) α E F) (i : Fin (k + 1)) (x : E) :
+    (fderivL k α E F f).iteratedFDeriv i x =
+      continuousMultilinearCurryRightEquiv' ℝ i E F (f.iteratedFDeriv i.succ x) :=
+  iteratedFDeriv_fderivAux f i x
 
 /-- The derivative has operator norm at most one. -/
 theorem norm_fderivL_le_one : ‖fderivL k α E F‖ ≤ 1 :=

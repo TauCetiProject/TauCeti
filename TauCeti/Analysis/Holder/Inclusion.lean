@@ -480,6 +480,15 @@ theorem coe_inclusionSuccL (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F) :
     ⇑(inclusionSuccL hα f) = ⇑f :=
   coe_ofSucc hα f
 
+/-- The order inclusion keeps the derivative fields of order at most `k`. -/
+@[simp]
+theorem iteratedFDeriv_inclusionSuccL (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F)
+    (i : Fin (k + 1)) : (inclusionSuccL hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc := by
+  ext1 x
+  rw [← iteratedFDeriv_eq, coe_inclusionSuccL]
+  -- `i.castSucc` is `i` as a natural number by definition.
+  exact iteratedFDeriv_eq f i.castSucc x
+
 /-- The order inclusion has norm at most `k + 4`. -/
 theorem norm_inclusionSuccL_le (hα : α ≤ 1) :
     ‖inclusionSuccL (k := k) (E := E) (F := F) hα‖ ≤ k + 4 :=
