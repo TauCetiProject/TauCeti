@@ -135,14 +135,14 @@ private theorem fderiv_vertexLift_apply_eq
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v) → ℝ}
     {f' : (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) →L[ℝ] ℝ}
-    (hf : (fun w ↦ L (vertexLift hv hi w)) = f) (hf' : HasFDerivAt f f' w)
+    (hf : L ∘ vertexLift hv hi = f) (hf' : HasFDerivAt f f' w)
     (a : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) :
     L (fderiv ℝ (vertexLift hv hi) w a) = f' a := by
   have hd : DifferentiableAt ℝ (vertexLift hv hi) w :=
     (contDiffAt_vertexLift hv hi hvP hw (n := 1)).differentiableAt one_ne_zero
   have h := L.hasFDerivAt.comp w hd.hasFDerivAt
-  rw [show (L ∘ vertexLift hv hi) = f from hf] at h
+  rw [hf] at h
   exact congrArg (· a) (h.unique hf')
 
 /-- The coordinates in the active facets of the derivative of the lift are those of the tangent
