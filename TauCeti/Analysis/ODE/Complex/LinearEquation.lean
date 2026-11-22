@@ -669,6 +669,20 @@ def ofTwo {U : Opens ℂ} (f g : ℂ → ℂ) (hf : DifferentiableOn ℂ f U)
   order_pos := by omega
   coeff := ![HolomorphicFunctions.of U g hg, HolomorphicFunctions.of U f hf]
 
+/-- The zero-order coefficient of `LinearEquation.ofTwo f g hf hg` evaluates to `g` on `U`. -/
+@[simp]
+theorem extend_ofTwo_coeff_zero {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    HolomorphicFunctions.extend ((ofTwo f g hf hg).coeff 0) z = g z := by
+  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
+
+/-- The first-order coefficient of `LinearEquation.ofTwo f g hf hg` evaluates to `f` on `U`. -/
+@[simp]
+theorem extend_ofTwo_coeff_one {U : Opens ℂ} {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U)
+    (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    HolomorphicFunctions.extend ((ofTwo f g hf hg).coeff 1) z = f z := by
+  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
+
 /-- Ambient solutions of `LinearEquation.ofTwo f g hf hg` are precisely complex-differentiable
 functions on `U` satisfying `deriv (deriv y) z + f z * deriv y z + g z * y z = 0` on `U`. -/
 @[simp]
@@ -678,7 +692,7 @@ theorem isSolution_ofTwo_iff {U : Opens ℂ} {f g : ℂ → ℂ} (hf : Different
       ∀ z ∈ U, deriv (deriv y) z + f z * deriv y z + g z * y z = 0 := by
   rw [isSolution_two_iff]
   refine and_congr_right fun _ ↦ forall₂_congr fun z hz ↦ ?_
-  simp [ofTwo, HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]
+  simp only [extend_ofTwo_coeff_zero hf hg hz, extend_ofTwo_coeff_one hf hg hz]
 
 /-! The following checks fix the coefficient sign, unscaled-jet convention, and disc dimension. -/
 

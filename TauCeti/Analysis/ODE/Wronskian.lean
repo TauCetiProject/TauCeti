@@ -59,11 +59,17 @@ theorem wronskian_eq_of_hasDerivAt
     (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
     (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t) (t a : 𝕜) :
     ψ t * φ' t - φ t * ψ' t = ψ a * φ' a - φ a * ψ' a := by
-  rw [mul_comm (φ t), mul_comm (φ a)]
-  simpa using mul_wronskian_eq_of_hasDerivAt (U := Set.univ) isOpen_univ isPreconnected_univ
-    (f := 0) (g := -q) (E := fun _ ↦ (1 : 𝕜)) (fun z _ ↦ by simpa using hasDerivAt_const z (1 : 𝕜))
-    (fun z _ ↦ hψ z) (fun z _ ↦ by simpa using hψ' z)
-    (fun z _ ↦ hφ z) (fun z _ ↦ by simpa using hφ' z) (Set.mem_univ t) (Set.mem_univ a)
+  have h := mul_wronskian_eq_of_hasDerivAt (U := Set.univ) isOpen_univ isPreconnected_univ
+    (f := 0) (g := -q) (E := fun _ ↦ (1 : 𝕜))
+    (fun z _ ↦ (hasDerivAt_const z (1 : 𝕜)).congr_deriv (by simp only [Pi.zero_apply, zero_mul]))
+    (fun z _ ↦ hψ z)
+    (fun z _ ↦ (hψ' z).congr_deriv (by simp only [Pi.zero_apply, Pi.neg_apply, zero_mul,
+      zero_add, neg_mul, neg_neg]))
+    (fun z _ ↦ hφ z)
+    (fun z _ ↦ (hφ' z).congr_deriv (by simp only [Pi.zero_apply, Pi.neg_apply, zero_mul,
+      zero_add, neg_mul, neg_neg]))
+    (Set.mem_univ t) (Set.mem_univ a)
+  simpa only [one_mul, mul_comm (φ t), mul_comm (φ a)] using h
 
 /-- The Wronskian `ψ φ' - φ ψ'` of the fundamental pair of solutions of `f'' = q f` at `a`, with
 `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1`, is identically one. The value `ψ'(a)` is irrelevant,

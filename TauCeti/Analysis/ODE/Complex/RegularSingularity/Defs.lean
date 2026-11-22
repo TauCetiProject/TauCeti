@@ -383,15 +383,21 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
       (∑ k ∈ range m, ((α₂ + k) * fs (m - k) + gs (m - k)) * b' k) =
         ∑ k ∈ range m, ((α₂ + k) * fs (m - k) + gs (m - k)) * b k := fun m h =>
     sum_congr rfl fun k hk => by rw [h k (mem_range.mp hk)]
+  have hstep : ∀ s, s ≠ 0 → s ≠ N → (∀ k < s, b' k = b k) →
+      c' * regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s =
+        c * regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s →
+      b' s = b s := by
+    intro s hs0 hsN hk_eq hF
+    have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
+    rw [hsum_congr s hk_eq, hF] at hdiff
+    exact mul_left_cancel₀ (indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hsN)
+      (by linear_combination hdiff)
   have hb'_lt : ∀ s < N, b' s = b s := by
     intro s hs; induction s using Nat.strong_induction_on with | ind s ih =>
       rcases eq_or_ne s 0 with rfl | hs0
       · simp [b, hb'0 hs, hs]
-      · have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
-        rw [hsum_congr s fun k hk => ih k hk (hk.trans hs),
-          regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hdiff
-        exact mul_left_cancel₀ (indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hs.ne)
-          (by linear_combination hdiff)
+      · refine hstep s hs0 hs.ne (fun k hk => ih k hk (hk.trans hs)) ?_
+        simp [regularSingularLogForcing_of_lt _ _ _ hs]
   have hc'_eq : c' = c := by
     rcases eq_or_ne N 0 with rfl | hN0
     · exact (hc'0 rfl).trans (regularSingularLogMultiplier_zero fs gs α₂).symm
@@ -404,9 +410,6 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
     rcases lt_trichotomy s N with hsN | rfl | hsN
     · exact hb'_lt s hsN
     · simp [b, hb'N]
-    · have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
-      rw [hc'_eq, hsum_congr s ih] at hdiff
-      exact mul_left_cancel₀ (indicialPoly_add_nat_ne_zero_of_ne hfact (by omega) hsN.ne')
-        (by linear_combination hdiff)
+    · exact hstep s (by omega) hsN.ne' ih (by rw [hc'_eq])
 
 end TauCeti

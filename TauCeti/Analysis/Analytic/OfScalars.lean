@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
 # Scalar formal multilinear series
@@ -49,6 +50,7 @@ completeness (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_s
 with translated punctured-disc variants
 (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt`,
+`FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt`); in particular, a scalar series
 whose sum has no zero in a disk about the origin converges on that disk, because the sum is `0`
 wherever the series diverges.
@@ -150,23 +152,6 @@ private theorem factorial_mul_changeOriginSeries_ofScalars_one
   rw [Nat.choose_symm_add]
   ring
 
-private theorem descFactorial_mul_pow_sub_eq_zero_of_notMem_range
-    {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂) (y : 𝕂) {n k : ℕ}
-    (hk : k ∉ Set.range (· + n)) :
-    (k.descFactorial n : 𝕂) * c k * y ^ (k - n) = 0 := by
-  simp [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp fun h ↦ hk ⟨k - n, Nat.sub_add_cancel h⟩)]
-
-private theorem descFactorial_mul_pow_eq_pow_mul_sub
-    {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂) (y : 𝕂) (k n : ℕ) :
-    (k.descFactorial n : 𝕂) * c k * y ^ k =
-      y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n)) := by
-  rcases lt_or_ge k n with hkn | hnk
-  · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hkn]
-  · have hpow : y ^ n * y ^ (k - n) = y ^ k := by rw [← pow_add, Nat.add_sub_of_le hnk]
-    calc (k.descFactorial n : 𝕂) * c k * y ^ k
-        = (k.descFactorial n : 𝕂) * c k * (y ^ n * y ^ (k - n)) := by rw [hpow]
-      _ = y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n)) := by ring
-
 /-- Inside its ball of convergence, the `n`-th iterated derivative of a scalar power series at
 `x + y` is the sum of the termwise differentiated series
 `∑ k, k.descFactorial n * c k * y ^ (k - n)`. -/
@@ -186,12 +171,14 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow_sub
     ((p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)).hasSum
       (mem_eball_zero_iff.mpr (hy.trans_le hf.r_le))) fun _ ↦ (1 : 𝕂)
   rw [zero_add] at hsum
-  -- reindex along `l ↦ l + n`: the terms with `k < n` vanish since `k.descFactorial n = 0`
-  rw [hderiv]
-  refine ((add_left_injective n).hasSum_iff fun k hk ↦
-    descFactorial_mul_pow_sub_eq_zero_of_notMem_range c y hk).mp
-    ((hsum.mul_left _).congr_fun fun l ↦ ?_)
-  simpa only [Function.comp_apply, p, Nat.add_sub_cancel] using
+  -- shift by `n`: the prefix `k < n` vanishes since `k.descFactorial n = 0`
+  rw [hderiv, ← hasSum_nat_add_iff' n]
+  have hprefix : ∑ k ∈ Finset.range n, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) = 0 :=
+    Finset.sum_eq_zero fun k hk ↦ by
+      simp [Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk)]
+  rw [hprefix, sub_zero]
+  refine (hsum.mul_left _).congr_fun fun l ↦ ?_
+  simpa only [p, Nat.add_sub_cancel] using
     (factorial_mul_changeOriginSeries_ofScalars_one c y n l).symm
 
 /-- Inside its ball of convergence, the iterated derivatives of a scalar power series centered at
@@ -211,8 +198,12 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow_eq_pow_mul_ite
     (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) x r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
     HasSum (fun k : ℕ ↦ (k.descFactorial n : 𝕂) * c k * y ^ k)
       (y ^ n * iteratedDeriv n f (x + y)) :=
-  ((hf.hasSum_descFactorial_mul_pow_sub hy n).mul_left (y ^ n)).congr_fun fun k ↦
-    descFactorial_mul_pow_eq_pow_mul_sub c y k n
+  ((hf.hasSum_descFactorial_mul_pow_sub hy n).mul_left (y ^ n)).congr_fun fun k ↦ by
+    calc (k.descFactorial n : 𝕂) * c k * y ^ k
+        = ((k.descFactorial n : 𝕂) * y ^ k) * c k := by ring
+      _ = (y ^ n * ((k.descFactorial n : 𝕂) * y ^ (k - n))) * c k := by
+          rw [Nat.cast_descFactorial_mul_pow]
+      _ = y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n)) := by ring
 
 /-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
 `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
@@ -248,9 +239,8 @@ theorem summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius
       _ ≤ ‖(n.factorial : 𝕂)‖ * ‖(p.changeOriginSeries n l) fun _ ↦ y‖ :=
             mul_le_mul_of_nonneg_left (ContinuousMultilinearMap.unit_le_opNorm _ hunit)
               (norm_nonneg _)
-  refine ((add_left_injective n).summable_iff fun k hk ↦ ?_).mp
-    (by simpa only [Function.comp_def, Nat.add_sub_cancel] using hbound)
-  simp [descFactorial_mul_pow_sub_eq_zero_of_notMem_range c y hk]
+  rw [← summable_nat_add_iff n]
+  simpa only [Nat.add_sub_cancel] using hbound
 
 /-- Inside the convergence disk of `ofScalars 𝕂 c`, the rescaled termwise differentiated series
 `∑ k, k.descFactorial n * c k * y ^ k` is absolutely summable. -/
@@ -260,8 +250,13 @@ theorem summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius
     Summable fun k : ℕ ↦ ‖(k.descFactorial n : 𝕂) * c k * y ^ k‖ := by
   refine ((summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius c hy n).mul_left
     (‖y‖ ^ n)).congr fun k ↦ ?_
-  simpa only [norm_mul, norm_pow] using
-    (congrArg norm (descFactorial_mul_pow_eq_pow_mul_sub c y k n)).symm
+  have hpow : y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n)) =
+      (k.descFactorial n : 𝕂) * c k * y ^ k := by
+    calc y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n))
+        = (y ^ n * ((k.descFactorial n : 𝕂) * y ^ (k - n))) * c k := by ring
+      _ = (k.descFactorial n : 𝕂) * y ^ k * c k := by rw [Nat.cast_descFactorial_mul_pow]
+      _ = (k.descFactorial n : 𝕂) * c k * y ^ k := by ring
+  simpa only [norm_mul, norm_pow] using congrArg norm hpow
 
 /-- Inside its ball of convergence, a scalar power series `∑ c n * y ^ n` is absolutely
 summable. -/
@@ -492,6 +487,34 @@ theorem analyticOnNhd_tsum_ofScalars_of_norm_sub_lt {𝕜 : Type*} [DenselyNorme
     AnalyticOnNhd 𝕜 (fun u : 𝕜 ↦ ∑' n : ℕ, c n * u ^ n) (Metric.ball 0 r) :=
   Metric.eball_ofReal (x := (0 : 𝕜)) (ε := r) ▸
     (hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt c z₀ hr hc).analyticOnNhd
+
+/-- Over a complete densely normed field, if `(z - z₀) ^ k * f z` equals the sum of the scalar
+power series `∑ c n * (z - z₀) ^ n` on the punctured disc `0 < ‖z - z₀‖ < r`, then `f` is
+analytic on `Metric.ball z₀ r \ {z₀}`. -/
+theorem analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt {𝕜 : Type*} [DenselyNormedField 𝕜]
+    [CompleteSpace 𝕜] {f : 𝕜 → 𝕜} {c : ℕ → 𝕜} (z₀ : 𝕜) {r : ℝ} {k : ℕ}
+    (hf : ∀ z : 𝕜, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun n : ℕ ↦ c n * (z - z₀) ^ n) ((z - z₀) ^ k * f z)) :
+    AnalyticOnNhd 𝕜 f (Metric.ball z₀ r \ {z₀}) := by
+  by_cases hr : 0 < r
+  · have han := analyticOnNhd_tsum_ofScalars_of_norm_sub_lt c z₀ hr
+      fun w hw0 hwr ↦ (hf w hw0 hwr).summable
+    have hq : AnalyticOnNhd 𝕜 (fun w : 𝕜 ↦ ((w - z₀) ^ k)⁻¹ * ∑' n : ℕ, c n * (w - z₀) ^ n)
+        (Metric.ball z₀ r \ {z₀}) := fun w hw ↦ by
+      have hsub : AnalyticAt 𝕜 (fun u : 𝕜 ↦ u - z₀) w := analyticAt_id.sub analyticAt_const
+      have hcomp : AnalyticAt 𝕜 (fun u : 𝕜 ↦ ∑' n : ℕ, c n * (u - z₀) ^ n) w :=
+        (han (w - z₀) (by simpa [Metric.mem_ball, dist_eq_norm] using hw.1)).comp
+          (f := fun u : 𝕜 ↦ u - z₀) (x := w) hsub
+      exact (((analyticAt_id.sub analyticAt_const).pow k).inv
+        (pow_ne_zero k (sub_ne_zero.mpr hw.2))).mul hcomp
+    refine hq.congr (Metric.isOpen_ball.sdiff isClosed_singleton) fun w hw ↦ ?_
+    have hw0 : w - z₀ ≠ 0 := sub_ne_zero.mpr hw.2
+    have hwr : ‖w - z₀‖ < r := by simpa [Metric.mem_ball, dist_eq_norm] using hw.1
+    rw [(hf w (norm_pos_iff.mpr hw0) hwr).tsum_eq, inv_mul_cancel_left₀ (pow_ne_zero k hw0)]
+  · have hemp : Metric.ball z₀ r \ {z₀} = ∅ := by
+      simp [Metric.ball_eq_empty.mpr (not_lt.mp hr)]
+    rw [hemp]
+    exact fun _ hx ↦ False.elim hx
 
 /-- Over a densely normed field, if `∑ c n * (z - z₀) ^ n` is summable on the punctured open disc
 `0 < ‖z - z₀‖ < r`, then `‖c n‖ * ρ ^ n` is uniformly bounded for every `0 ≤ ρ < r`. -/

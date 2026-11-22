@@ -12,7 +12,6 @@ public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
-import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
@@ -32,8 +31,8 @@ For `w''(z) + f(z) w'(z) + g(z) w(z) = 0` at a regular singularity `z₀` where
 * Explicit Abel–Liouville formulas (`TauCeti.wronskian_regularSingular_eq`,
   `TauCeti.wronskian_regularSingular_second_eq`), nonvanishing
   (`TauCeti.wronskian_regularSingular_ne_zero`, `TauCeti.wronskian_regularSingular_second_ne_zero`),
-  and fundamental pair existence (`TauCeti.exists_isSolution_regularSingular_fundamental_pair` for
-  `TauCeti.regularSingularEquation`, and `TauCeti.exists_regularSingular_fundamental_pair`).
+  and fundamental pair existence (`TauCeti.exists_regularSingular_fundamental_pair` for
+  `TauCeti.regularSingularEquation`).
 
 ## References
 * NIST DLMF §2.7(ii), 2.7.1–2.7.6, <https://dlmf.nist.gov/2.7.ii>.
@@ -87,9 +86,11 @@ theorem cpow_mul_exp_mul_wronskian_eq {z₀ : ℂ} {r : ℝ} {f g w₁ w₂ : �
     dsimp only [id]
     rw [cpow_eq_cpow_sub_natCast_mul_pow hzu0 (fs 0) 1, Nat.cast_one, pow_one]
     field_simp [hzu0]; ring
-  exact mul_wronskian_eq_of_hasDerivAt (g := g) hopen
-    (isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r) hE
-    (fun z hz => (hw₁.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
+  have hpre : IsPreconnected U := by
+    dsimp only [U]; rw [← coe_regularSingularSlitDisc z₀ r]
+    exact isPreconnected_regularSingularSlitDisc z₀ r
+  exact mul_wronskian_eq_of_hasDerivAt (g := g) hopen hpre
+    hE (fun z hz => (hw₁.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
     (fun z hz => ((hw₁.deriv hopen).differentiableAt (hopen.mem_nhds hz)).hasDerivAt.congr_deriv
       (by linear_combination hsol₁ z hz.1 hz.2))
     (fun z hz => (hw₂.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
@@ -121,15 +122,14 @@ private theorem wronskian_ansatz_eval_of_pos {z₀ α₁ α₂ c : ℂ} {N : ℕ
   have hψ_d1 := hasDerivAt_cpow_mul_tsum (σ := α₂) hb_sum (z := z₀ + t)
     (by simpa using hts) (by simpa using htb)
   have hdw₁ : deriv w₁ (z₀ + t) = (t : ℂ) ^ (α₁ - 1) * (α₁ * A₁ t + t * deriv A₁ t) := by
-    simpa [w₁, A₁] using hw₁_d1.deriv
+    simpa only [w₁, A₁, add_sub_cancel_left] using hw₁_d1.deriv
   have hdw₂ : deriv w₂ (z₀ + t) = (t : ℂ) ^ (α₂ - 1) * (α₂ * B t + t * deriv B t) +
       c * (deriv w₁ (z₀ + t) * Complex.log t + (t : ℂ)⁻¹ * w₁ (z₀ + t)) := by
-    have hsum_d := (hψ_d1.add ((hw₁_d1.const_mul c).mul_log_sub (z₀ := z₀)
-      (by simpa using hts))).deriv
-    rw [show ((fun w => (w - z₀) ^ α₂ * ∑' s, b s * (w - z₀) ^ s) +
-        fun u => c * ((u - z₀) ^ α₁ * ∑' s, a s * (u - z₀) ^ s) * Complex.log (u - z₀)) = w₂ from
-      funext fun w => by simp only [Pi.add_apply, w₂, w₁, A₁, B, mul_assoc]] at hsum_d
-    rw [hsum_d, hdw₁]; dsimp only [w₁, A₁, B]; simp only [add_sub_cancel_left]; ring
+    have hsum_d : HasDerivAt w₂ _ (z₀ + t) :=
+      (hψ_d1.add ((hw₁_d1.const_mul c).mul_log_sub (z₀ := z₀)
+        (by simpa using hts))).congr_of_eventuallyEq (Filter.Eventually.of_forall fun w => by
+          dsimp only [Pi.add_apply, w₂, w₁, A₁, B])
+    rw [hsum_d.deriv, hdw₁]; dsimp only [w₁, A₁, B]; simp only [add_sub_cancel_left]; ring
   rw [hdw₂, hdw₁]; dsimp only [w₁, w₂, A₁, B]; simp only [add_sub_cancel_left]
   have hpow_add3 (x y z : ℂ) :
       (t : ℂ) ^ x * ((t : ℂ) ^ y * (t : ℂ) ^ z) = (t : ℂ) ^ (x + y + z) := by
@@ -144,8 +144,8 @@ private theorem wronskian_ansatz_eval_of_pos {z₀ α₁ α₂ c : ℂ} {N : ℕ
     rcases hcN with rfl | hdiff
     · simp
     · rw [← Complex.cpow_neg_one, ← Complex.cpow_add _ _ ht_ne, hpow_add3,
-        show fs 0 + -1 + (α₁ + α₁) = (N : ℂ) by linear_combination hvieta + hdiff,
-        Complex.cpow_natCast]
+        ← Complex.cpow_natCast (t : ℂ) N]
+      congr 2; linear_combination hvieta + hdiff
   linear_combination cexp (H t) * (A₁ t * (α₂ * B t + t * deriv B t)) * hp1 -
     cexp (H t) * ((α₁ * A₁ t + t * deriv A₁ t) * B t) * hp2 + cexp (H t) * A₁ t ^ 2 * hc_pow
 
@@ -251,23 +251,20 @@ theorem wronskian_regularSingular_eq {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g : �
       w₁ z * deriv w₂ z - deriv w₁ z * w₂ z =
         (α₂ - α₁) * (z - z₀) ^ (-fs 0) * cexp (-H (z - z₀)) := by
   intro w₁ w₂ H z hzs hzb
-  obtain ⟨ha₁_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁
-  obtain ⟨ha₂_sum, _, hw₂_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂
-  have hw₁_eq : regularSingularSolution fs gs z₀ α₁ = fun w =>
-      (w - z₀) ^ α₁ * ∑' s, regularSingularCoeff fs gs α₁ s * (w - z₀) ^ s :=
-    funext fun w => regularSingularSolution_apply _ _ _ _ w
-  have hw₂_eq : regularSingularSolution fs gs z₀ α₂ = fun w =>
-      (w - z₀) ^ α₂ * ∑' s, regularSingularCoeff fs gs α₂ s * (w - z₀) ^ s :=
-    funext fun w => regularSingularSolution_apply _ _ _ _ w
-  rw [hw₁_eq] at hw₁_sol
-  rw [hw₂_eq] at hw₂_sol
+  obtain ⟨ha₁_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁
+  obtain ⟨ha₂_sum, hw₂_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂
+  have hw₁_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₁_sol).2
+  have hw₂_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₂_sol).2
+  rw [regularSingularSolution_eq] at hw₁_op hw₂_op
   have hId := abel_liouville_wronskian_ansatz_eq (c := 0) (N := 1) hf
     (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inl rfl) ha₁_sum ha₂_sum
-    hw₁_sol (fun w hws hwb => by simpa only [zero_mul, add_zero] using hw₂_sol w hws hwb)
+    (fun w hws hwb => hw₁_op w (mem_regularSingularSlitDisc.mpr ⟨hws, hwb⟩))
+    (fun w hws hwb => by
+      simpa only [zero_mul, add_zero] using hw₂_op w (mem_regularSingularSlitDisc.mpr ⟨hws, hwb⟩))
     z hzs hzb
   simp only [zero_mul, add_zero, regularSingularCoeff_zero, mul_one] at hId
   dsimp only [w₁, w₂]
-  rw [hw₁_eq, hw₂_eq]
+  rw [regularSingularSolution_eq, regularSingularSolution_eq]
   exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) hId
 
 /-- For two distinct indicial roots `α₁ ≠ α₂` that are both non-resonant (`Q(αᵢ + s) ≠ 0` for all
@@ -315,23 +312,19 @@ theorem wronskian_regularSingular_second_eq {z₀ α₁ α₂ : ℂ} {N : ℕ} {
   set a := regularSingularCoeff fs gs (α₂ + N)
   set b := regularSingularSecondCoeff fs gs α₂ N
   set c := regularSingularLogMultiplier fs gs α₂ N
-  obtain ⟨ha_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
+  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
     fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
-  obtain ⟨hb_sum, _, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hdiff
-  have hw₁_eq : regularSingularSolution fs gs z₀ (α₂ + (N : ℂ)) = fun w =>
-      (w - z₀) ^ (α₂ + (N : ℂ)) *
-        ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (w - z₀) ^ s :=
-    funext fun w => regularSingularSolution_apply _ _ _ _ w
-  have hw₂_eq : regularSingularSecondSolution fs gs z₀ α₂ N = fun w =>
-      (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
-        c * (fun u => (u - z₀) ^ (α₂ + (N : ℂ)) *
-          ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (u - z₀) ^ s) w * Complex.log (w - z₀) := by
-    ext w; simp only [regularSingularSecondSolution_apply, regularSingularSolution_apply, b, c]
-  rw [hw₁_eq] at hw₁_sol
-  rw [hw₂_eq] at hw₂_sol
+  obtain ⟨hb_sum, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hdiff
+  have hw₁_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₁_sol).2
+  have hw₂_op := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₂_sol).2
+  rw [regularSingularSolution_eq] at hw₁_op
+  rw [regularSingularSecondSolution_eq, regularSingularSolution_eq] at hw₂_op
   have hId := abel_liouville_wronskian_ansatz_eq (c := c) (N := N) hf
     (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inr hdiff) ha_sum hb_sum
-    hw₁_sol (fun w hws hwb => by simpa only [b, c] using hw₂_sol w hws hwb) z hzs hzb
+    (fun w hws hwb => hw₁_op w (mem_regularSingularSlitDisc.mpr ⟨hws, hwb⟩))
+    (fun w hws hwb => by
+      simpa only [b, c] using hw₂_op w (mem_regularSingularSlitDisc.mpr ⟨hws, hwb⟩))
+    z hzs hzb
   have hdiff' : α₂ - (α₂ + N) = -(N : ℂ) := by ring
   have ha0 : a 0 = 1 := regularSingularCoeff_zero fs gs (α₂ + N)
   have hconst : (α₂ - (α₂ + N)) * a 0 * b 0 + c * (0 : ℂ) ^ N * a 0 ^ 2 =
@@ -344,7 +337,7 @@ theorem wronskian_regularSingular_second_eq {z₀ α₁ α₂ : ℂ} {N : ℕ} {
         regularSingularSecondCoeff_zero_of_pos fs gs α₂ (Nat.pos_of_ne_zero hN0)
       simp [hN0, hb0, zero_pow hN0]
   dsimp only [w₁, w₂]
-  rw [hw₁_eq, hw₂_eq]
+  rw [regularSingularSolution_eq, regularSingularSecondSolution_eq, regularSingularSolution_eq]
   exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) (hId.trans hconst)
 
 /-- When `α₁ - α₂ = N ∈ ℕ`, the primary series solution `w₁` and the second solution `w₂` have
@@ -372,7 +365,7 @@ theorem wronskian_regularSingular_second_ne_zero {z₀ α₁ α₂ : ℂ} {N : �
 /-- **Existence of a fundamental pair of `LinearEquation` solutions at every regular singularity**:
 on `regularSingularSlitDisc z₀ r`, `regularSingularEquation hf hg` always possesses two solutions
 with nowhere-vanishing Wronskian. -/
-theorem exists_isSolution_regularSingular_fundamental_pair {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ}
+theorem exists_regularSingular_fundamental_pair {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ}
     {fs gs : ℕ → ℂ}
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
       HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
@@ -386,40 +379,18 @@ theorem exists_isSolution_regularSingular_fundamental_pair {z₀ : ℂ} {r : ℝ
   obtain ⟨α₁, α₂, hre, hfact⟩ := exists_indicialPoly_roots (fs 0) (gs 0)
   have hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) ≠ 0 :=
     fun _ hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
-  have hw₁ := isSolution_regularSingularSolution hf hg (by simp [hfact]) hres₁
+  have hw₁ := (regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁).2
   by_cases hnat : ∃ N : ℕ, α₁ - α₂ = N
   · obtain ⟨N, hN⟩ := hnat
-    exact ⟨_, _, hw₁, isSolution_regularSingularSecondSolution hf hg hfact hN, fun z hz =>
+    exact ⟨_, _, hw₁, (regularSingular_second_solution hf hg hfact hN).2, fun z hz =>
       let h := mem_regularSingularSlitDisc.mp hz
       wronskian_regularSingular_second_ne_zero hf hg hfact hN z h.1 h.2⟩
   · have hnat' := not_exists.mp hnat
     have hres₂ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0 := fun s hs =>
       (indicialPoly_add_nat_ne_zero_iff hfact).mpr ⟨by omega, hnat' s⟩
-    exact ⟨_, _, hw₁, isSolution_regularSingularSolution hf hg (by simp [hfact]) hres₂, fun z hz =>
+    exact ⟨_, _, hw₁, (regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂).2, fun z hz =>
       let h := mem_regularSingularSlitDisc.mp hz
       wronskian_regularSingular_ne_zero hf hg hfact hres₁ hres₂
         (fun h0 => hnat' 0 (by simp [h0])) z h.1 h.2⟩
-
-/-- **Existence of a fundamental pair at every regular singularity**: on
-`{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`, `w'' + f w' + g w = 0` always possesses two holomorphic
-solutions with nowhere-vanishing Wronskian. -/
-theorem exists_regularSingular_fundamental_pair {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z)) :
-    ∃ w₁ w₂ : ℂ → ℂ,
-      DifferentiableOn ℂ w₁ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
-      DifferentiableOn ℂ w₂ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
-      (∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0) ∧
-      (∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0) ∧
-      ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        w₁ z * deriv w₂ z - deriv w₁ z * w₂ z ≠ 0 := by
-  obtain ⟨w₁, w₂, hw₁, hw₂, hwr⟩ := exists_isSolution_regularSingular_fundamental_pair hf hg
-  simp only [isSolution_regularSingularEquation_iff, mem_regularSingularSlitDisc,
-    coe_regularSingularSlitDisc, and_imp] at hw₁ hw₂ hwr
-  exact ⟨w₁, w₂, hw₁.1, hw₂.1, hw₁.2, hw₂.2, hwr⟩
 
 end TauCeti
