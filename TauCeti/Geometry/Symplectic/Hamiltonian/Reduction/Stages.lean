@@ -30,7 +30,7 @@ symplectic manifold can be reduced in two ways at a pair of values `(c, b)`:
 
 **Reduction in stages** says that the two results agree: there is a diffeomorphism `Φ : Q → Q₂`
 with `Φ [z] = [[z]]` pulling `η₂` back to the direct reduced form `η`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.exists_diffeomorph_apply_eq_and_mpullback_eq`).
+(`IsEquivariantMomentMap.exists_diffeomorph_apply_eq_and_mpullback_eq_of_smul_eq_smul_smul`).
 
 The theorem is stated for arbitrary presentations of the three reduced spaces: `π`, `π₁` and `π₂`
 are surjective submersions out of the regular levels, with the submanifold structures of
@@ -63,7 +63,7 @@ submersions with the same fibres induce a diffeomorphism (`Equiv.diffeomorphOfSu
   level of `(μ, ν)` at `(c, b)` is `μ⁻¹(c) ∩ ν⁻¹(b)`.
 * `SmoothTwoForm.IsEquivariantMomentMap.forall_differential_surjective_prod_of_isSubmersion`:
   regularity at both stages gives regularity of `(c, b)` for `(μ, ν)`.
-* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.exists_diffeomorph_apply_eq_and_mpullback_eq`:
+* `IsEquivariantMomentMap.exists_diffeomorph_apply_eq_and_mpullback_eq_of_smul_eq_smul_smul`:
   **reduction in stages**.
 
 ## References
@@ -322,8 +322,9 @@ regular value of `μ`, with the level `Z₁ = μ⁻¹(c)` carrying its submanifo
   `π^* η = i^* σ`. This is the direct reduction by `G × L` at `(c, b)`.
 
 Then there is a diffeomorphism `Φ : Q → Q₂` with `Φ [z] = [[z]]` and `Φ^* η₂ = η`. -/
-theorem exists_diffeomorph_apply_eq_and_mpullback_eq (hμ : σ.IsEquivariantMomentMap μ)
-    (hν : σ.IsEquivariantMomentMap ν) (hsmul : ∀ (g : G × L) (x : M), g • x = g.1 • g.2 • x)
+theorem exists_diffeomorph_apply_eq_and_mpullback_eq_of_smul_eq_smul_smul
+    (hμ : σ.IsEquivariantMomentMap μ) (hν : σ.IsEquivariantMomentMap ν)
+    (hsmul : ∀ (g : G × L) (x : M), g • x = g.1 • g.2 • x)
     (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (hνG : ∀ (g : G) (x : M), ν (g • x) = ν x)
     (hreg₁ : ∀ x, μ x = c → Surjective (hμ.differential x))
     (hn₁ : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n₁)
