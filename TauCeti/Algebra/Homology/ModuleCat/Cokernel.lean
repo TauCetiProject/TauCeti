@@ -1,0 +1,153 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+
+/-!
+# Cokernels of morphisms of complexes of modules, on elements
+
+Let `φ : B ⟶ A` be a morphism of homological complexes of modules. Cokernels of complexes are
+computed degreewise, so the projection `π : A ⟶ cokernel φ` is surjective in each degree
+(`HomologicalComplex.cokernel_π_f_surjective`) and its kernel in degree `i` is the range of
+`φ.f i` (`HomologicalComplex.cokernel_π_f_apply_eq_zero_iff`). This file records the resulting
+description of the cycles and homology classes of `cokernel φ` through representatives in `A`.
+
+* The map `cokernel φ ⟶ cokernel ψ` induced by a commutative square sends the image of a
+  representative to the image of its image, on elements and on homology classes
+  (`HomologicalComplex.cokernel_map_f_cokernel_π_f_apply`,
+  `HomologicalComplex.homologyMap_cokernel_map_moduleCatKerHomologyClass`). For a functor `G` out
+  of a thin category, the ranges of the maps `G.map f` into `G_a`, the kernels of the projections
+  onto the quotients of `G_a`, grow with the source (`HomologicalComplex.range_map_f_le`).
+* The image `π c` of `c ∈ A_i` is a cycle exactly when the boundary of `c` lies in the range of
+  `φ` (`HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff`).
+* Every homology class of `cokernel φ` is the class of such an image `π c`
+  (`HomologicalComplex.exists_moduleCatKerHomologyClass_cokernel_π_eq`).
+* Changing `c` by a boundary of `A` does not change the homology class of `π c`
+  (`HomologicalComplex.moduleCatKerHomologyClass_cokernel_π_sub_d`), and conversely two
+  representatives with the same class differ by a boundary up to an element of the range of `φ`
+  (`HomologicalComplex.exists_sub_sub_d_mem_range_of_moduleCatKerHomologyClass_eq`).
+
+For an inclusion of subcomplexes `φ`, these are the classical descriptions of relative cycles and
+relative homology classes of the pair `(A, B)`.
+-/
+
+public section
+
+open CategoryTheory Limits
+
+namespace HomologicalComplex
+
+universe v
+
+variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+  {A B : HomologicalComplex (ModuleCat.{v} R) c} (φ : B ⟶ A)
+
+/-- An element of `A_i` vanishes in the cokernel of `φ` exactly when it lies in the range of
+`φ.f i`. -/
+@[simp]
+lemma cokernel_π_f_apply_eq_zero_iff (i : ι) (y : A.X i) :
+    (cokernel.π φ).f i y = 0 ↔ y ∈ LinearMap.range (φ.f i).hom := by
+  constructor
+  · intro h
+    have hS := (exact_iff_degreewise_exact _).1 (ShortComplex.exact_cokernel φ) i
+    rw [ShortComplex.moduleCat_exact_iff] at hS
+    exact hS y h
+  · rintro ⟨u, rfl⟩
+    rw [← ConcreteCategory.comp_apply, ← comp_f, cokernel.condition, zero_f]
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+
+/-- The projection onto the cokernel of `φ` is surjective in each degree. -/
+lemma cokernel_π_f_surjective (i : ι) : Function.Surjective ((cokernel.π φ).f i) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- The image of `c ∈ A_i` in the cokernel of `φ` is killed by the differential to degree `j`
+exactly when the boundary of `c` lies in the range of `φ.f j`. -/
+lemma cokernel_d_π_f_apply_eq_zero_iff (i j : ι) (x : A.X i) :
+    (cokernel φ).d i j ((cokernel.π φ).f i x) = 0 ↔
+      A.d i j x ∈ LinearMap.range (φ.f j).hom := by
+  rw [Hom.comm_apply, cokernel_π_f_apply_eq_zero_iff]
+
+/-- For a functor `G` out of a thin category, the range of `G.map f` into `G_a` grows with the
+source of `f`. -/
+lemma range_map_f_le {J : Type*} [Category* J] [Quiver.IsThin J]
+    (G : J ⥤ HomologicalComplex (ModuleCat.{v} R) c) {s s' a : J} (f : s ⟶ a) (g : s' ⟶ a)
+    (u : s ⟶ s') (i : ι) :
+    LinearMap.range ((G.map f).f i).hom ≤ LinearMap.range ((G.map g).f i).hom := by
+  rw [Subsingleton.elim f (u ≫ g), G.map_comp, comp_f, ModuleCat.hom_comp]
+  exact LinearMap.range_comp_le_range _ _
+
+section Map
+
+variable {A' B' : HomologicalComplex (ModuleCat.{v} R) c} (ψ : B' ⟶ A') (u : B ⟶ B') (v : A ⟶ A')
+  (w : u ≫ ψ = φ ≫ v)
+
+/-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on representatives. -/
+@[simp]
+lemma cokernel_map_f_cokernel_π_f_apply (i : ι) (y : A.X i) :
+    (cokernel.map φ ψ u v w).f i ((cokernel.π φ).f i y) = (cokernel.π ψ).f i (v.f i y) := by
+  rw [← ConcreteCategory.comp_apply, ← comp_f, cokernel.π_desc, comp_f,
+    ConcreteCategory.comp_apply]
+
+/-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on homology classes of representatives. -/
+lemma homologyMap_cokernel_map_moduleCatKerHomologyClass {n m : ι} (hm : c.next n = m)
+    (y : A.X n) (hy : (cokernel φ).d n m ((cokernel.π φ).f n y) = 0)
+    (hy' : (cokernel ψ).d n m ((cokernel.π ψ).f n (v.f n y)) = 0) :
+    homologyMap (cokernel.map φ ψ u v w) n
+        ((cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n y, hy⟩) =
+      (cokernel ψ).moduleCatKerHomologyClass hm ⟨(cokernel.π ψ).f n (v.f n y), hy'⟩ := by
+  rw [homologyMap_moduleCatKerHomologyClass]
+  congr 2
+  exact cokernel_map_f_cokernel_π_f_apply φ ψ u v w n y
+
+end Map
+
+variable {n m p : ι} (hm : c.next n = m) (hp : c.prev n = p)
+
+/-- Every homology class of the cokernel of `φ` is the class of the image of some `x ∈ A_n` whose
+image is a cycle. -/
+lemma exists_moduleCatKerHomologyClass_cokernel_π_eq (ξ : (cokernel φ).homology n) :
+    ∃ (x : A.X n) (hx : (cokernel φ).d n m ((cokernel.π φ).f n x) = 0),
+      (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n x, hx⟩ = ξ := by
+  obtain ⟨⟨z, hz⟩, rfl⟩ := (cokernel φ).moduleCatKerHomologyClass_surjective hm ξ
+  obtain ⟨x, rfl⟩ := cokernel_π_f_surjective φ n z
+  exact ⟨x, hz, rfl⟩
+
+include hp
+
+/-- Changing a representative by a boundary of `A` does not change the homology class of its
+image in the cokernel of `φ`. -/
+lemma moduleCatKerHomologyClass_cokernel_π_sub_d (x : A.X n) (e : A.X p)
+    (h₁ : (cokernel φ).d n m ((cokernel.π φ).f n (x - A.d p n e)) = 0)
+    (h₂ : (cokernel φ).d n m ((cokernel.π φ).f n x) = 0) :
+    (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n (x - A.d p n e), h₁⟩ =
+      (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n x, h₂⟩ := by
+  rw [← sub_eq_zero, ← map_sub]
+  refine ((cokernel φ).exact_inclusion_moduleCatKerHomologyClass hm hp _).2
+    ⟨⟨_, (cokernel.π φ).f p (-e), rfl⟩, Subtype.ext ?_⟩
+  simp only [Submodule.coe_inclusion, Submodule.coe_sub, map_sub, sub_sub_cancel_left,
+    map_neg, Hom.comm_apply]
+
+/-- Two representatives in `A_n` of the same homology class of the cokernel of `φ` differ by a
+boundary of `A`, up to an element of the range of `φ.f n`. -/
+lemma exists_sub_sub_d_mem_range_of_moduleCatKerHomologyClass_eq (x x' : A.X n)
+    (hx : (cokernel φ).d n m ((cokernel.π φ).f n x) = 0)
+    (hx' : (cokernel φ).d n m ((cokernel.π φ).f n x') = 0)
+    (h : (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n x, hx⟩ =
+      (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n x', hx'⟩) :
+    ∃ e : A.X p, x - x' - A.d p n e ∈ LinearMap.range (φ.f n).hom := by
+  rw [← sub_eq_zero, ← map_sub] at h
+  obtain ⟨⟨_, ⟨w, rfl⟩⟩, hw⟩ :=
+    ((cokernel φ).exact_inclusion_moduleCatKerHomologyClass hm hp _).1 h
+  obtain ⟨e, rfl⟩ := cokernel_π_f_surjective φ p w
+  refine ⟨e, (cokernel_π_f_apply_eq_zero_iff _ _ _).1 ?_⟩
+  have hw' := congrArg Subtype.val hw
+  simp only [Submodule.coe_inclusion, Submodule.coe_sub] at hw'
+  rw [map_sub, map_sub, ← Hom.comm_apply, hw', sub_self]
+
+end HomologicalComplex

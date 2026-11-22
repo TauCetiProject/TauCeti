@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.RepresentationTheory.Compact.BilinearForm
 
 /-!
@@ -117,7 +118,7 @@ private noncomputable def gramFamily : C(G, V →L[𝕜] V) where
   toFun g := (ContinuousLinearMap.adjoint (π g)).comp (π g)
   continuous_toFun :=
     (ContinuousLinearMap.compL 𝕜 V V V).continuous₂.comp
-      (((ContinuousLinearMap.adjoint (𝕜 := 𝕜) (E := V) (F := V)).continuous.comp hπ).prodMk hπ)
+      (hπ.clm_adjoint.prodMk hπ)
 
 /-- The Gram operator of the Haar-averaged inner product
 `⟪v, w⟫_G = ∫ g, ⟪π g v, π g w⟫ ∂(haarProb G)` of a continuous representation of a compact group.
