@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.Analysis.Calculus.ProjectionGraph
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -37,12 +37,13 @@ same wave front set (`Distribution.waveFrontSet_smulLeftCLM_ofFun_one_map_graph`
 ## The argument
 
 The shear `Φ x = x + f (P x)`, where `P` is the orthogonal projection onto `V`, is a smooth
-diffeomorphism of `E` with inverse `Ψ x = x - f (P x)`, since `P` vanishes on the values of `f`.
+diffeomorphism of `E` with inverse `Ψ x = x - f (P x)`, since `P` vanishes on the values of `f`:
+`Ψ` is the graph chart `ContinuousLinearMap.projectionGraphChart` of `P`.
 It maps `V` onto `S`, and its Jacobian determinant is `1`: its derivative is `1 + X ∘ P` with
-`X = Df(P x)` taking values in `Vᗮ`, so `det (1 + X ∘ P) = det (1 + P ∘ X) = 1` by the
-Weinstein–Aronszajn identity (`LinearMap.det_one_add_comp_comm`). Hence the measure on `S` is the
-pullback `Ψ^*` of the surface measure of `V` (`Distribution.compCLMOfOpenPartialHomeomorph`), and
-the invariance of the wave front set under changes of variables
+`X` taking values in `Vᗮ`, so `det (1 + X ∘ P) = det (1 + P ∘ X) = 1` by the Weinstein–Aronszajn
+identity (`ContinuousLinearMap.det_fderiv_projectionGraphChart_symm`). Hence the measure on `S`
+is the pullback `Ψ^*` of the surface measure of `V` (`Distribution.compCLMOfOpenPartialHomeomorph`),
+and the invariance of the wave front set under changes of variables
 (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`) carries the conormal set of `V` to
 that of `S`: the covectors `ξ` over `v + f v` are those with `DΦ(v)ᵀ ξ ∈ Vᗮ`.
 
@@ -80,19 +81,13 @@ private def shearDisp (f : V → Vᗮ) (x : E) : E :=
   (f (V.orthogonalProjectionOnto x) : E)
 
 /-- The displacement takes values in `Vᗮ`, which the projection onto `V` kills. -/
-private theorem orthogonalProjectionOnto_shearDisp (x : E) :
-    V.orthogonalProjectionOnto (shearDisp f x) = 0 :=
-  Submodule.orthogonalProjectionOnto_eq_zero_iff.2 (f _).property
+private theorem starProjection_shearDisp (x : E) : V.starProjection (shearDisp f x) = 0 :=
+  V.starProjection_apply_eq_zero_iff.2 (f _).property
 
-/-- Moving along a vector which the projection onto `V` kills does not change the displacement. -/
-private theorem shearDisp_add_of_orthogonalProjectionOnto_eq_zero {x y : E}
-    (hy : V.orthogonalProjectionOnto y = 0) : shearDisp f (x + y) = shearDisp f x := by
-  simp only [shearDisp, map_add, hy, add_zero]
-
-/-- On the graph, the displacement at `v + f v` is `f v`. -/
-private theorem shearDisp_add (v : V) : shearDisp f ((v : E) + f v) = f v := by
-  rw [shearDisp_add_of_orthogonalProjectionOnto_eq_zero
-    (Submodule.orthogonalProjectionOnto_eq_zero_iff.2 (f v).property), shearDisp,
+/-- The displacement only depends on the projection onto `V`. -/
+private theorem shearDisp_starProjection (x : E) :
+    shearDisp f (V.starProjection x) = shearDisp f x := by
+  rw [shearDisp, shearDisp, Submodule.starProjection_apply,
     Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
 
 /-- On `V`, the displacement at `v` is `f v`. -/
@@ -102,83 +97,58 @@ private theorem shearDisp_coe (v : V) : shearDisp f v = f v := by
 private theorem contDiff_shearDisp (hf : ContDiff ℝ ∞ f) : ContDiff ℝ ∞ (shearDisp f) :=
   Vᗮ.subtypeL.contDiff.comp (hf.comp V.orthogonalProjectionOnto.contDiff)
 
-/-- The homeomorphism `x ↦ x - f (P x)` of `E`, with inverse the shear `x ↦ x + f (P x)`. It maps
+/-- The derivative of the displacement is `Df(P x) ∘ P`. -/
+private theorem hasFDerivAt_shearDisp (hf : ContDiff ℝ ∞ f) (x : E) :
+    HasFDerivAt (shearDisp f)
+      ((Vᗮ.subtypeL ∘L fderiv ℝ f (V.orthogonalProjectionOnto x)) ∘L V.orthogonalProjectionOnto)
+      x :=
+  (Vᗮ.subtypeL.hasFDerivAt.comp _ ((hf.differentiable (by simp)) _).hasFDerivAt).comp x
+    V.orthogonalProjectionOnto.hasFDerivAt
+
+/-- The graph chart `x ↦ x - f (P x)` of `E`, with inverse the shear `x ↦ x + f (P x)`. It maps
 the graph of `f` onto `V`. -/
-private def straighten (hf : ContDiff ℝ ∞ f) : E ≃ₜ E where
-  toFun x := x - shearDisp f x
-  invFun x := x + shearDisp f x
-  left_inv x := by
-    beta_reduce
-    rw [sub_eq_add_neg, shearDisp_add_of_orthogonalProjectionOnto_eq_zero (by
-      rw [map_neg, orthogonalProjectionOnto_shearDisp, neg_zero]), neg_add_cancel_right]
-  right_inv x := by
-    beta_reduce
-    rw [shearDisp_add_of_orthogonalProjectionOnto_eq_zero (orthogonalProjectionOnto_shearDisp x),
-      add_sub_cancel_right]
-  continuous_toFun := continuous_id.sub (contDiff_shearDisp hf).continuous
-  continuous_invFun := continuous_id.add (contDiff_shearDisp hf).continuous
+private def straighten (hf : ContDiff ℝ ∞ f) : OpenPartialHomeomorph E E :=
+  V.starProjection.projectionGraphChart (shearDisp f) isOpen_univ
+    (contDiff_shearDisp hf).continuous.continuousOn fun x _ ↦ starProjection_shearDisp x
+
+private theorem straighten_source (hf : ContDiff ℝ ∞ f) : (straighten hf).source = univ := by
+  simp [straighten]
+
+private theorem straighten_target (hf : ContDiff ℝ ∞ f) : (straighten hf).target = univ := by
+  simp [straighten]
 
 private theorem straighten_symm_apply (hf : ContDiff ℝ ∞ f) (x : E) :
-    (straighten hf).symm x = x + shearDisp f x :=
-  (rfl)
-
-/-- The straightening as an open partial homeomorphism with source and target `E`. -/
-private def straightenOPH (hf : ContDiff ℝ ∞ f) : OpenPartialHomeomorph E E :=
-  (straighten hf).toOpenPartialHomeomorph
-
-private theorem straightenOPH_apply (hf : ContDiff ℝ ∞ f) (x : E) :
-    straightenOPH hf x = x - shearDisp f x :=
-  (rfl)
-
-private theorem coe_straightenOPH_symm (hf : ContDiff ℝ ∞ f) :
-    ⇑(straightenOPH hf).symm = fun x ↦ x + shearDisp f x :=
-  (rfl)
-
-private theorem straightenOPH_source (hf : ContDiff ℝ ∞ f) : (straightenOPH hf).source = univ :=
-  (rfl)
-
-private theorem straightenOPH_target (hf : ContDiff ℝ ∞ f) : (straightenOPH hf).target = univ :=
-  (rfl)
+    (straighten hf).symm x = x + shearDisp f x := by
+  simp [straighten, shearDisp_starProjection]
 
 /-- The straightening sends the point `v + f v` of the graph to `v`. -/
-private theorem straightenOPH_add (hf : ContDiff ℝ ∞ f) (v : V) :
-    straightenOPH hf ((v : E) + f v) = v := by
-  rw [straightenOPH_apply, shearDisp_add, add_sub_cancel_right]
+private theorem straighten_add (hf : ContDiff ℝ ∞ f) (v : V) :
+    straighten hf ((v : E) + f v) = v := by
+  simp [straighten, V.starProjection_apply_eq_zero_iff.2 (f v).property, shearDisp_coe]
 
-private theorem contDiffOn_straightenOPH (hf : ContDiff ℝ ∞ f) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (straightenOPH hf) (straightenOPH hf).source :=
-  (contDiff_id.sub (contDiff_shearDisp hf)).contDiffOn
+private theorem contDiffOn_straighten (hf : ContDiff ℝ ∞ f) :
+    ContDiffOn ℝ (⊤ : ℕ∞) (straighten hf) (straighten hf).source := fun _ _ ↦
+  (V.starProjection.contDiffAt_projectionGraphChart _ _ _ _
+    (contDiff_shearDisp hf).contDiffAt).contDiffWithinAt
 
-private theorem contDiffOn_straightenOPH_symm (hf : ContDiff ℝ ∞ f) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (straightenOPH hf).symm (straightenOPH hf).target :=
-  (contDiff_id.add (contDiff_shearDisp hf)).contDiffOn
+private theorem contDiffOn_straighten_symm (hf : ContDiff ℝ ∞ f) :
+    ContDiffOn ℝ (⊤ : ℕ∞) (straighten hf).symm (straighten hf).target := fun _ _ ↦
+  (V.starProjection.contDiffAt_projectionGraphChart_symm _ _ _ _
+    (contDiff_shearDisp hf).contDiffAt).contDiffWithinAt
 
 /-- The derivative of the shear `x ↦ x + f (P x)` is `1 + Df(P x) ∘ P`. -/
-private theorem hasFDerivAt_shear (hf : ContDiff ℝ ∞ f) (x : E) :
-    HasFDerivAt (fun y ↦ y + shearDisp f y)
-      (ContinuousLinearMap.id ℝ E + (Vᗮ.subtypeL ∘L fderiv ℝ f (V.orthogonalProjectionOnto x)) ∘L
-        V.orthogonalProjectionOnto) x :=
-  (hasFDerivAt_id x).add ((Vᗮ.subtypeL.hasFDerivAt.comp _
-    ((hf.differentiable (by simp)) _).hasFDerivAt).comp x V.orthogonalProjectionOnto.hasFDerivAt)
+private theorem hasFDerivAt_straighten_symm (hf : ContDiff ℝ ∞ f) (x : E) :
+    HasFDerivAt (straighten hf).symm (ContinuousLinearMap.id ℝ E +
+      ((Vᗮ.subtypeL ∘L fderiv ℝ f (V.orthogonalProjectionOnto (V.starProjection x))) ∘L
+        V.orthogonalProjectionOnto) ∘L V.starProjection) x :=
+  V.starProjection.hasFDerivAt_projectionGraphChart_symm _ _ _ _ (hasFDerivAt_shearDisp hf _)
 
-/-- **The shear preserves volume.** Its derivative `1 + X ∘ P`, with `X = Df(P x)` valued in
-`Vᗮ`, has determinant `det (1 + P ∘ X) = 1`. -/
-private theorem det_fderiv_shear (hf : ContDiff ℝ ∞ f) (x : E) :
-    (fderiv ℝ (fun y ↦ y + shearDisp f y) x).det = 1 := by
-  have hPX : (V.orthogonalProjectionOnto : E →ₗ[ℝ] V) ∘ₗ
-      ((Vᗮ.subtypeL ∘L fderiv ℝ f (V.orthogonalProjectionOnto x) : V →L[ℝ] E) : V →ₗ[ℝ] E) = 0 :=
-    LinearMap.ext fun u ↦ by
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-        ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, LinearMap.zero_apply]
-      exact Submodule.orthogonalProjectionOnto_eq_zero_iff.2
-        (fderiv ℝ f (V.orthogonalProjectionOnto x) u).property
-  have h := LinearMap.det_one_add_comp_comm
-    ((Vᗮ.subtypeL ∘L fderiv ℝ f (V.orthogonalProjectionOnto x) : V →L[ℝ] E) : V →ₗ[ℝ] E)
-    (V.orthogonalProjectionOnto : E →ₗ[ℝ] V)
-  rw [hPX, add_zero, map_one] at h
-  rw [(hasFDerivAt_shear hf x).fderiv, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.coe_id, ← Module.End.one_eq_id,
-    ContinuousLinearMap.toLinearMap_comp, h]
+/-- **The shear preserves volume.** Its derivative `1 + X ∘ P`, with `X` valued in `Vᗮ`, has
+determinant `1`. -/
+private theorem det_fderiv_straighten_symm (hf : ContDiff ℝ ∞ f) (x : E) :
+    (fderiv ℝ (straighten hf).symm x).det = 1 :=
+  V.starProjection.det_fderiv_projectionGraphChart_symm _ _ _ _ (hasFDerivAt_shearDisp hf _)
+    (ContinuousLinearMap.ext fun _ ↦ V.starProjection_apply_eq_zero_iff.2 (Subtype.prop _))
 
 /-! ### The measure on the graph as a pullback -/
 
@@ -187,8 +157,8 @@ straightening `x ↦ x - f (P x)` of the surface measure of `V`. -/
 private theorem ofFun_one_map_graph_eq_compCLMOfOpenPartialHomeomorph [MeasurableSpace E]
     [BorelSpace E] (hf : ContDiff ℝ ∞ f) (Ω : Opens E) :
     ofFun Ω (1 : E → ℂ) (volume.map fun v : V ↦ (v : E) + f v) ⊤ =
-      compCLMOfOpenPartialHomeomorph (straightenOPH hf) (contDiffOn_straightenOPH hf)
-        (contDiffOn_straightenOPH_symm hf) (by simp [straightenOPH_source])
+      compCLMOfOpenPartialHomeomorph (straighten hf) (contDiffOn_straighten hf)
+        (contDiffOn_straighten_symm hf) (by simp [straighten_source])
         (mapsTo_univ _ _) (ofFun ⊤ 1 (volume.map ((↑) : V → E)) ⊤) := by
   have hV : Topology.IsClosedEmbedding ((↑) : V → E) :=
     V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional
@@ -197,8 +167,9 @@ private theorem ofFun_one_map_graph_eq_compCLMOfOpenPartialHomeomorph [Measurabl
     ext v
     rw [Function.comp_apply, straighten_symm_apply, shearDisp_coe]
   have hS : Topology.IsClosedEmbedding fun v : V ↦ (v : E) + f v := by
-    rw [hg]
-    exact (straighten hf).symm.isClosedEmbedding.comp hV
+    rw [hg, ← OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_symm_apply _
+      (straighten_source hf) (straighten_target hf)]
+    exact (Homeomorph.isClosedEmbedding _).comp hV
   -- Both pushed-forward measures are finite on compact sets.
   have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap volume hV.isProperMap
   have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap volume hS.isProperMap
@@ -209,39 +180,36 @@ private theorem ofFun_one_map_graph_eq_compCLMOfOpenPartialHomeomorph [Measurabl
     hS.measurableEmbedding.integral_map, hV.measurableEmbedding.integral_map]
   refine integral_congr_ae (Filter.Eventually.of_forall fun v ↦ ?_)
   simp only [Pi.one_apply]
-  rw [pushforwardCLM_apply_of_mem _ (by simp [straightenOPH_target]), coe_straightenOPH_symm,
-    det_fderiv_shear hf, abs_one, one_smul]
-  beta_reduce
-  rw [shearDisp_coe]
+  rw [pushforwardCLM_apply_of_mem _ (by simp [straighten_target]), det_fderiv_straighten_symm hf,
+    abs_one, one_smul, straighten_symm_apply, shearDisp_coe]
 
 /-! ### The wave front set -/
 
 /-- A point lies on the graph of `f` exactly when its straightening lies in `V`. -/
-private theorem straightenOPH_mem_iff (hf : ContDiff ℝ ∞ f) (x : E) :
-    straightenOPH hf x ∈ V ↔ ∃ v : V, (v : E) + f v = x := by
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · -- The point `⟨x - f (P x), hx⟩` of `V` is `P x`, so `f` takes the value `f (P x)` there.
-    have hP : (⟨_, hx⟩ : V) = V.orthogonalProjectionOnto x := by
-      rw [← Submodule.orthogonalProjectionOnto_mem_subspace_eq_self (⟨_, hx⟩ : V)]
-      simp only [straightenOPH_apply, map_sub, orthogonalProjectionOnto_shearDisp, sub_zero]
-    have hfx : (f ⟨_, hx⟩ : E) = shearDisp f x := by rw [hP, shearDisp]
-    exact ⟨⟨_, hx⟩, by rw [hfx]; simp only [straightenOPH_apply, sub_add_cancel]⟩
-  · rintro ⟨v, rfl⟩
-    rw [straightenOPH_add]
-    exact v.property
+private theorem straighten_mem_iff (hf : ContDiff ℝ ∞ f) (x : E) :
+    straighten hf x ∈ V ↔ ∃ v : V, (v : E) + f v = x := by
+  have h := V.starProjection.projectionGraphChart_mem_range_iff (shearDisp f) isOpen_univ
+    (contDiff_shearDisp hf).continuous.continuousOn (fun x _ ↦ starProjection_shearDisp x)
+    V.isIdempotentElem_starProjection (subset_univ _) (fun x _ ↦ starProjection_shearDisp x)
+    (mem_univ (V.starProjection x))
+  simp only [Submodule.range_starProjection, inter_univ, mem_image, SetLike.mem_coe] at h
+  refine h.trans ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨⟨y, hy⟩, ?_⟩, fun ⟨v, hvx⟩ ↦ ⟨v, v.property, ?_⟩⟩
+  · rwa [← shearDisp_coe]
+  · rwa [shearDisp_coe]
 
 /-- At a point `v` of `V`, the transposed derivative of the shear maps `ξ` into `Vᗮ` exactly
 when `ξ` annihilates the tangent vectors `u + Df(v) u`, `u ∈ V`, of the graph. -/
-private theorem adjoint_fderiv_shear_mem_orthogonal_iff (hf : ContDiff ℝ ∞ f) (v : V) (ξ : E) :
-    ((fderiv ℝ (fun y ↦ y + shearDisp f y) (v : E))†) ξ ∈ Vᗮ ↔
+private theorem adjoint_fderiv_straighten_symm_mem_orthogonal_iff (hf : ContDiff ℝ ∞ f) (v : V)
+    (ξ : E) : ((fderiv ℝ (straighten hf).symm (v : E))†) ξ ∈ Vᗮ ↔
       ∀ u : V, ⟪ξ, (u : E) + fderiv ℝ f v u⟫ = 0 := by
-  have key (u : V) : ⟪((fderiv ℝ (fun y ↦ y + shearDisp f y) (v : E))†) ξ, (u : E)⟫ =
+  have key (u : V) : ⟪((fderiv ℝ (straighten hf).symm (v : E))†) ξ, (u : E)⟫ =
       ⟪ξ, (u : E) + fderiv ℝ f v u⟫ := by
-    rw [ContinuousLinearMap.adjoint_inner_left, (hasFDerivAt_shear hf v).fderiv]
+    rw [ContinuousLinearMap.adjoint_inner_left, (hasFDerivAt_straighten_symm hf v).fderiv]
     simp [Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
   rw [Submodule.mem_orthogonal']
   exact ⟨fun h u ↦ (key u).symm.trans (h u u.property),
     fun h u hu ↦ (key ⟨u, hu⟩).trans (h ⟨u, hu⟩)⟩
+
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -260,17 +228,17 @@ theorem waveFrontSet_ofFun_one_map_graph (hf : ContDiff ℝ ∞ f) (Ω : Opens E
   simp only [mem_ofPred_eq, mem_prod, mem_inter_iff, Opens.coe_top, mem_univ, true_and,
     mem_sdiff, SetLike.mem_coe, mem_singleton_iff]
   refine and_congr_right fun hx ↦ ⟨fun ⟨hV, hξV, hξ0⟩ ↦ ?_, fun ⟨v, hv, hξ0, hξ⟩ ↦ ?_⟩
-  · obtain ⟨v, rfl⟩ := (straightenOPH_mem_iff hf x).1 hV
-    rw [straightenOPH_add, coe_straightenOPH_symm] at hξV hξ0
+  · obtain ⟨v, rfl⟩ := (straighten_mem_iff hf x).1 hV
+    rw [straighten_add] at hξV hξ0
     refine ⟨v, rfl, fun h ↦ hξ0 (by rw [h, map_zero]),
-      (adjoint_fderiv_shear_mem_orthogonal_iff hf v ξ).1 hξV⟩
+      (adjoint_fderiv_straighten_symm_mem_orthogonal_iff hf v ξ).1 hξV⟩
   · subst hv
-    have hinv := (straightenOPH hf).adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
-      (contDiffOn_straightenOPH hf) (contDiffOn_straightenOPH_symm hf) (by simp)
-      (x := (v : E) + f v) (by simp [straightenOPH_source]) ξ
-    rw [straightenOPH_add, coe_straightenOPH_symm] at hinv ⊢
+    have hinv := (straighten hf).adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
+      (contDiffOn_straighten hf) (contDiffOn_straighten_symm hf) (by simp)
+      (x := (v : E) + f v) (by simp [straighten_source]) ξ
+    rw [straighten_add] at hinv ⊢
     refine ⟨v.property,
-      (adjoint_fderiv_shear_mem_orthogonal_iff hf v ξ).2 hξ, fun h ↦ hξ0 ?_⟩
+      (adjoint_fderiv_straighten_symm_mem_orthogonal_iff hf v ξ).2 hξ, fun h ↦ hξ0 ?_⟩
     rw [← hinv, h, map_zero]
 
 /-- **Smooth densities on a graph.** Multiplying the measure on the graph of `f` by a smooth
@@ -282,9 +250,9 @@ theorem waveFrontSet_smulLeftCLM_ofFun_one_map_graph (hf : ContDiff ℝ ∞ f) (
     (smulLeftCLM hρ (ofFun Ω (1 : E → ℂ) (volume.map fun v : V ↦ (v : E) + f v) ⊤)).waveFrontSet =
       {p : E × E | p.1 ∈ Ω ∧ ∃ v : V, (v : E) + f v = p.1 ∧ p.2 ≠ 0 ∧
         ∀ u : V, ⟪p.2, (u : E) + fderiv ℝ f v u⟫ = 0} := by
-  rw [← waveFrontSet_ofFun_one_map_graph hf Ω]
-  refine Subset.antisymm (fun p hp ↦ (waveFrontSet_smulLeftCLM_subset _ hρ hp).1) fun p hp ↦ ?_
+  rw [waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero _ hρ fun p hp ↦ ?_,
+    waveFrontSet_ofFun_one_map_graph hf Ω]
   obtain ⟨hx, v, hv, -⟩ := (waveFrontSet_ofFun_one_map_graph hf Ω).subset hp
-  exact (mem_waveFrontSet_smulLeftCLM_iff hρ (hv ▸ hρ0 v (hv ▸ hx))).2 hp
+  exact hv ▸ hρ0 v (hv ▸ hx)
 
 end Distribution
