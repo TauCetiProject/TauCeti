@@ -34,16 +34,12 @@ covering the range is weighted by its occurrence count.
 * `Function.sum_occCount_eq_card`: the total occurrence count is the cardinality of the index type.
 * `Function.exists_equiv_of_occCount_eq`, `Function.exists_perm_of_occCount_eq`: equal counts on
   finite families give a bijection of their index types.
-* `Function.occCount_subtype_ne`, `Function.exists_equiv_subtype_ne_of_occCount_eq`: deleting the
-  indices with value `z` keeps the other counts, so equal counts away from `z` match the
-  remaining indices.
-* `Function.occCount_eq_of_forall_ne`: equal total cardinality and equal occurrence counts away
-  from `z` force equal occurrence count at `z`.
-* `Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`: in a commutative group, square total
-  product and square fiber products away from `z` force a square fiber product at `z`.
-* `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
-* `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
-  matching of the indices away from another fiber.
+* `Function.occCount_subtype_ne`, `Function.exists_equiv_subtype_ne_of_occCount_eq`,
+  `Function.occCount_eq_of_forall_ne`: occurrence counts away from `z` and equality at `z`.
+* `Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`: square fiber products away from `z`
+  force a square fiber product at `z`.
+* `Finset.prod_filter_subtype_ne`, `Finset.prod_filter_subtype_ne_equiv`: fiber products ignore
+  the deletion of another value `z`.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
 * `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
@@ -230,21 +226,18 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
-private theorem exists_finset_mem_and_forall_mem {Y : Type*} [Finite X] [Finite Y]
-    (u : X → S) (v : Y → S) (z : S) :
-    ∃ T : Finset S, z ∈ T ∧ (∀ x, u x ∈ T) ∧ ∀ y, v y ∈ T := by
-  classical
-  let _ := Fintype.ofFinite X; let _ := Fintype.ofFinite Y
-  exact ⟨insert z (Finset.univ.image u ∪ Finset.univ.image v), Finset.mem_insert_self z _,
-    fun x => by simp, fun y => by simp⟩
-
 /-- Two finite families on index types of the same cardinality with equal occurrence counts away
 from `z` also have equal occurrence count at `z`. -/
 theorem occCount_eq_of_forall_ne {Y : Type*} [Finite X] [Finite Y] {u : X → S} {v : Y → S}
     {z : S} (hcard : Nat.card X = Nat.card Y) (h : ∀ a, a ≠ z → occCount u a = occCount v a) :
     occCount u z = occCount v z := by
   classical
-  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
+  let := Fintype.ofFinite X
+  let := Fintype.ofFinite Y
+  let T := insert z (Finset.univ.image u ∪ Finset.univ.image v)
+  have hzT : z ∈ T := Finset.mem_insert_self z _
+  have huT : ∀ x, u x ∈ T := fun x => Finset.mem_insert_of_mem (by simp)
+  have hvT : ∀ y, v y ∈ T := fun y => Finset.mem_insert_of_mem (by simp)
   have hsumu := sum_occCount_eq_card u huT; have hsumv := sum_occCount_eq_card v hvT
   rw [← Finset.add_sum_erase _ _ hzT] at hsumu hsumv
   have herase : ∑ a ∈ T.erase z, occCount u a = ∑ a ∈ T.erase z, occCount v a :=
@@ -260,7 +253,10 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
     (hne : ∀ a, a ≠ z →
       IsSquare ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val)) :
     IsSquare ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) := by
-  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
+  let T := insert z (Finset.univ.image u ∪ Finset.univ.image v)
+  have hzT : z ∈ T := Finset.mem_insert_self z _
+  have huT : ∀ x, u x ∈ T := fun x => Finset.mem_insert_of_mem (by simp)
+  have hvT : ∀ y, v y ∈ T := fun y => Finset.mem_insert_of_mem (by simp)
   have hmul :
       ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) *
         ∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val) =

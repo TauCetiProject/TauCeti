@@ -12,8 +12,6 @@ import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
 
@@ -21,15 +19,8 @@ import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
 # Oddity invariance for lattices of odd discriminant
 
 For a nondegenerate integral lattice `L` of odd discriminant, any characteristic vector `w` has
-`L.integralNorm w mod 8` determined by `L.sigPos - L.sigNeg mod 8` and `b_L`: passing to
-`L.evenSublattice` preserves odd-prime localizations (`[L : N] ≤ 2`), and Milgram's theorem equates
-`sigPos L - sigNeg L mod 8` with `(w² mod 8)` plus the odd-prime Gauss-sum invariants from `b_L`.
-
-## Main results
-
-* `TauCeti.IntegralLattice.integralNorm_modEq_eight_of_odd_discriminant`: for nondegenerate
-  lattices of odd discriminant with congruent signature differences mod 8 and isometric discriminant
-  bilinear modules, characteristic vectors have congruent norms mod 8.
+`L.integralNorm w mod 8` determined by `L.sigPos - L.sigNeg mod 8` and `b_L`
+(`TauCeti.IntegralLattice.integralNorm_modEq_eight_of_odd_discriminant`).
 
 ## References
 

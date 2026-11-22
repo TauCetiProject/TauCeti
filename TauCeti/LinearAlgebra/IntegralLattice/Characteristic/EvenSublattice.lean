@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Nat.PrimeFin
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature

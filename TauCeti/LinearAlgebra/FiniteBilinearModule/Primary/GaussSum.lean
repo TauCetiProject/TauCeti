@@ -11,21 +11,9 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 /-!
 # Gauss sums and primary decomposition of finite quadratic modules
 
-By primary decomposition (`TauCeti.FiniteQuadraticModule.primaryDecomposition`), the scaled and
-unscaled Gauss sums factor over `p ∈ (#A).primeFactors`, and for nondegenerate `A` the
-`ZMod 8`-valued `gaussSign` splits as the sum over `p ∈ (#A).primeFactors` (or any superset of
-primes, since coprime primes give trivial primary components).
-
-## Main results
-
-* `TauCeti.FiniteQuadraticModule.scaledGaussSum_eq_prod_primeFactors`: scaled Gauss sum factors
-  over `(#A).primeFactors`.
-* `TauCeti.FiniteQuadraticModule.gaussSum_eq_prod_primeFactors`: Gauss sum factors over
-  `(#A).primeFactors`.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primeFactors`: `gaussSign` splits over
-  `(#A).primeFactors`.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset`: the same sum over any
-  finite set of primes containing `(#A).primeFactors`.
+By primary decomposition (`TauCeti.FiniteQuadraticModule.primaryDecomposition`), the Gauss sum and
+scaled Gauss sum factor over `p ∈ (#A).primeFactors`, and for nondegenerate `A` the `ZMod 8`-valued
+`gaussSign` splits as the sum over `p ∈ (#A).primeFactors` (or any superset of primes).
 
 ## References
 

@@ -235,8 +235,9 @@ theorem iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare
       have h1 : π ^ m * UB x y = (B.restrict _) x y := by simpa using LinearMap.congr_fun₂ hUB x y
       have h2 : π ^ m * UC (e x) (e y) = (B'.restrict _) (e x) (e y) := by
         simpa using LinearMap.congr_fun₂ hUC (e x) (e y)
-      change π ^ m * UC (e x) (e y) = π ^ m * UB x y
-      rw [h1, h2]; simpa using e.map_app y x) }⟩
+      rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+        LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, h1, h2]
+      simpa using e.map_app y x) }⟩
   have hdet := hUeq.isSquare_det_mul_det bm (cm.reindex (Fintype.equivOfCardEq hcard.symm))
   rw [det_toMatrix_reindex,
     hb.toMatrix_span_of_smul_eq Subtype.val_injective (fun _ _ hab ↦ mul_left_cancel₀ hπm hab)

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 public import TauCeti.NumberTheory.IntegralLattice.Dyadic.DensityExponent.Basic
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic

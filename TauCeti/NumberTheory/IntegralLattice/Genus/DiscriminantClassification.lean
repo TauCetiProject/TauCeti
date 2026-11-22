@@ -5,90 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Discriminant
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Oddity
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
-import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.OddPrime
 
 /-!
-# The genus and discriminant forms
+# Classification of genera via discriminant forms
 
-Lattices in one genus share their signature, dyadic localization `L_2`, and discriminant bilinear
-form `b_L` (`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`), or
-discriminant quadratic form `q_L` when even
-(`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`). Conversely,
-`b_L` fixes the discriminant
-(`TauCeti.IntegralLattice.discriminant_eq_of_isometry_discriminantBilinearModule`), signature and
-discriminant fix the signed determinant
-(`TauCeti.IntegralLattice.determinant_eq_of_signature_eq_of_discriminant_eq`), and `b_L[p^∞]`
-classifies `L_p` at every odd prime `p`
-(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`), reducing
-the genus to `L_2`. For odd discriminant (`L_2` unimodular), `b_L` and signature even fix the
-parity-dependent oddity (`TauCeti.IntegralLattice.integralNorm_modEq_eight_of_odd_discriminant`),
-proving the odd-discriminant cases of Nikulin's Corollaries 1.9.4 and 1.16.3.
-
-## Main results
-
-* `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule` and
-  `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`: discriminant
-  bilinear and quadratic forms are genus invariants.
-* `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_two_and_discriminantBilinear` and
-  `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_two_and_discriminantQuadratic`: dyadic
-  reduction of the genus of nondegenerate lattices via the discriminant form.
-* `TauCeti.IntegralLattice.sameGenus_iff_discriminantBilinear_of_odd_discriminant`: nondegenerate
-  lattices of odd discriminant lie in one genus iff signatures, parities, and `b_L` agree.
-* `TauCeti.IntegralLattice.sameGenus_iff_discriminantQuadratic_of_isEven_of_odd_discriminant`: even
-  nondegenerate lattices of odd discriminant lie in one genus iff signatures and `q_L` agree.
+This file establishes the dyadic reduction of the genus via discriminant forms and the
+odd-discriminant cases of Nikulin's Corollaries 1.9.4 and 1.16.3.
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.9
-  (Corollary 1.9.4) and §1.16 (Corollary 1.16.3).
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.9, §1.16.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 15, §7.
 -/
 
 public section
 
-open AddCommGroup Module
-
 namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-
-/-! ### Discriminant forms are genus invariants -/
-
-namespace SameGenus
-
-/-- **Lattices in one genus have isometric discriminant bilinear forms.** This is the easy half of
-Nikulin's Corollary 1.16.3: the genus of a nondegenerate lattice determines its discriminant
-bilinear form `b_L`. -/
-theorem nonempty_isometry_discriminantBilinearModule {L : IntegralLattice V}
-    {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate] (h : L.SameGenus M) :
-    Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
-      M.discriminantBilinearModule) :=
-  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
-    have : Fact p.Prime := ⟨hp⟩
-    (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
-
-/-- **Even lattices in one genus have isometric discriminant quadratic forms.** This is the easy
-half of Nikulin's Corollary 1.9.4: the genus of an even nondegenerate lattice determines its
-discriminant quadratic form `q_L`. -/
-theorem nonempty_isometry_discriminantQuadraticModule {L : IntegralLattice V}
-    {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate] (h : L.SameGenus M)
-    (hL : L.IsEven) :
-    Nonempty (FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
-      (M.discriminantQuadraticModule (h.isEven_iff.mp hL))) :=
-  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
-    have : Fact p.Prime := ⟨hp⟩
-    (h.localIntegralForm_equivalent p).map (primaryDiscriminantQuadraticIsometry _ _)
-
-end SameGenus
 
 /-! ### Dyadic reduction of the genus -/
 

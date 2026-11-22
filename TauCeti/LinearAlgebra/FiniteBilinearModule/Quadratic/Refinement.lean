@@ -250,7 +250,9 @@ theorem isometryOfBilinearIsometryOfOdd_refl (A : FiniteQuadraticModule.{u})
     isometryOfBilinearIsometryOfOdd hA
         (FiniteBilinearModule.Isometry.refl A.toFiniteBilinearModule) =
       QuadraticMap.IsometryEquiv.refl A.quadratic :=
-  DFunLike.ext _ _ fun x ↦ by simp; rfl
+  DFunLike.ext _ _ fun x ↦ by
+    rw [isometryOfBilinearIsometryOfOdd_apply, FiniteBilinearModule.Isometry.refl_apply,
+      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply]
 
 /-- Upgrading a composite bilinear isometry at odd order gives the composite upgraded quadratic
 isometry. -/

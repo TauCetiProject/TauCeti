@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
@@ -22,36 +23,15 @@ import TauCeti.NumberTheory.Padics.Unit.Squares
 /-!
 # Classification of odd-prime localizations by discriminant forms
 
-For nondegenerate integral lattices `L, M` and an odd prime `p`, `L_p ≃ M_p` preserves rank, the
-`p`-adic square class of the signed determinant
-(`TauCeti.IntegralLattice.localIntegralForm_equivalent_imp`), and the `p`-primary discriminant
-bilinear form (`TauCeti.IntegralLattice.primaryDiscriminantBilinearIsometry`). Conversely, in
-diagonal Jordan form
-(`TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`), the `p`-primary
-discriminant bilinear modules are `⊕ᵢ q_{θᵢ}^{(p)}(pᵏⁱ)`
-(`TauCeti.IntegralLattice.nonempty_isometry_pi_oddCyclic_primaryComponent`), whose isometry matches
-ranks and unit square classes at all `m ≥ 1`
-(`TauCeti.FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff`). Total rank and determinant
-square class fix `m = 0` (`Function.occCount_eq_of_forall_ne`,
-`Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`), and diagonal Jordan classification
-(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_forall_occCount_eq_and_isSquare`)
-assembles `L_p ≃ M_p`.
-
-## Main results
-
-* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`: `L_p` and
-  `M_p` are integrally isometric at an odd prime `p` if and only if `L` and `M` have equal rank,
-  their signed determinants agree modulo squares in `ℤ_p`, and the `p`-primary components of their
-  discriminant bilinear modules are isometric.
-* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantQuadratic`: the
-  corresponding criterion for even lattices in terms of the `p`-primary discriminant quadratic
-  modules.
+For nondegenerate integral lattices `L, M` and an odd prime `p`, `L_p ≃ M_p` is classified by equal
+rank, equal `p`-adic determinant square class, and isometric `p`-primary discriminant bilinear
+(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`) or, for
+even lattices, quadratic
+(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantQuadratic`) modules.
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.9 and
-  §1.16.
-* O. T. O'Meara, *Introduction to Quadratic Forms*, §92.
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.9, §1.16.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 15, §7.
 -/
 

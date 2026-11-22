@@ -86,16 +86,17 @@ theorem exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow (hp : p ≠ 2)
 /-- The signed determinant of `L` in `ℤ_p` differs from the diagonal Jordan Gram determinant
 `(∏ i, u i) · p ^ (∑ i, k i)` by the square of the change-of-basis unit. -/
 theorem exists_unit_determinant_eq_sq_mul_prod
-    {b : Basis (Fin (finrank ℤ_[p] (L.LocalCarrier p))) ℤ_[p] (L.LocalCarrier p)}
-    {u : Fin (finrank ℤ_[p] (L.LocalCarrier p)) → ℤ_[p]ˣ}
-    {k : Fin (finrank ℤ_[p] (L.LocalCarrier p)) → ℕ}
+    {ι : Type*} [Fintype ι]
+    {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {u : ι → ℤ_[p]ˣ} {k : ι → ℕ}
     (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
     ∃ d : ℤ_[p]ˣ,
       (L.determinant : ℤ_[p]) =
         (d : ℤ_[p]) ^ 2 * ((∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i) := by
-  have hfin : finrank ℤ_[p] (L.LocalCarrier p) = finrank ℤ L := Module.finrank_baseChange
-  let b₀ := ((Module.finBasis ℤ L).baseChange ℤ_[p]).reindex (finCongr hfin.symm)
+  classical
+  have hcard : Fintype.card ι = finrank ℤ L := by
+    rw [← Module.finrank_eq_card_basis b, Module.finrank_baseChange]
+  let b₀ := ((Module.finBasis ℤ L).baseChange ℤ_[p]).reindex (Fintype.equivFinOfCardEq hcard).symm
   obtain ⟨d, hd⟩ := (LinearMap.BilinForm.Equivalent.refl _).exists_det_eq_unit_sq_mul_det b₀ b
   rw [LinearMap.BilinForm.det_toMatrix_reindex, L.det_toMatrix_localIntegralForm,
     hb.det_toMatrix] at hd

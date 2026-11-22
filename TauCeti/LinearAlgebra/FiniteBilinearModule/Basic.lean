@@ -381,6 +381,21 @@ theorem apply_symm_apply (f : Isometry A B) (x : B) : f (f.symm x) = x :=
 theorem trans_apply (f : Isometry A B) (g : Isometry B C) (x : A) : (f.trans g) x = g (f x) :=
   f.toAddEquiv.trans_apply g.toAddEquiv x
 
+/-- The identity isometry between two equal finite bilinear modules. -/
+def ofEq {A' : FiniteBilinearModule.{u}} (h : A = A') : Isometry A A' :=
+  h ▸ refl A
+
+/-- The identity isometry between equal finite bilinear modules is the cast of carriers. -/
+theorem ofEq_apply {A' : FiniteBilinearModule.{u}} (h : A = A') (x : A) :
+    ofEq h x = cast (congrArg (fun C : FiniteBilinearModule.{u} ↦ (C : Type u)) h) x := by
+  subst h
+  rfl
+
+/-- The identity isometry of a reflexive equality is the identity. -/
+@[simp]
+theorem ofEq_rfl : ofEq (rfl : A = A) = refl A :=
+  (rfl)
+
 /-- Forgetting the identity isometry gives the identity morphism. -/
 @[simp]
 theorem refl_toHom (A : FiniteBilinearModule) : (refl A).toHom = Hom.id A := by

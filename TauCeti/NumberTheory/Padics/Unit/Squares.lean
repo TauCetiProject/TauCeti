@@ -14,16 +14,9 @@ import TauCeti.RingTheory.Henselian.SquareClasses
 /-!
 # Square classes of odd-prime `p`-adic units via the Legendre symbol
 
-For an odd prime `p`, Hensel's lemma (`TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare`)
-together with `PadicInt.toZMod_eq_residueField_comp_residue` and `legendreSym.eq_one_iff` reduces
-squares in `ℤ_[p]ˣ` to `legendreSym p t = 1`.
-
-## Main results
-
-* `PadicInt.isSquare_iff_legendreSym_eq_one`: `u ∈ ℤ_[p]ˣ` congruent to `t` mod `p` is a square iff
-  `legendreSym p t = 1`.
-* `PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq`: two finite products of units agree
-  modulo squares iff the products of the Legendre symbols of integer representatives agree.
+For an odd prime `p`, Hensel's lemma reduces squares in `ℤ_[p]ˣ`
+(`PadicInt.isSquare_iff_legendreSym_eq_one`) and products of units modulo squares
+(`PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq`) to the Legendre symbol modulo `p`.
 
 ## References
 

@@ -375,7 +375,7 @@ private theorem exists_sum_mul_eq_diag_of_sq_eq_self {S : Type*} [CommRing S]
         · congr 1; rw [hsum_u]
           have hsk : sk = vk * a k.castSucc k.castSucc + ∑ i, u'' i * a (f i) k.castSucc := by
             dsimp only [sk]; rw [Fin.sum_univ_succAbove _ k]
-            simp only [v, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]; rfl
+            simp only [v, f, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
           have hterms (i : Fin m) : u'' i * a'' i j' = u'' i * a (f i) (f j') +
               u'' i * a (f i) last * a k.castSucc (f j') +
               u'' i * a (f i) last * a k.castSucc k.castSucc * a last (f j') +

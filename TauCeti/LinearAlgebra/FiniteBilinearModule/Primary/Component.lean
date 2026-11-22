@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
-public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
 import TauCeti.Algebra.Group.Primary.Card
 
@@ -308,13 +307,9 @@ ambient module. -/
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : A.restrict (AddCommGroup.primaryComponent A n)) :
-    (f.restrictPrimaryComponent n x).val = f x.val := by
-  have h := f.restrictHom_restrictPrimaryComponent_apply n x
-  let y : AddCommGroup.primaryComponent B n := f.restrictPrimaryComponent n x
-  let x' : AddCommGroup.primaryComponent A n := x
-  change B.restrictHom _ y = f (A.restrictHom _ x') at h
-  rw [B.restrictHom_apply, A.restrictHom_apply] at h
-  exact h
+    (f.restrictPrimaryComponent n x).val = f x.val :=
+  (B.restrictHom_apply _ (f.restrictPrimaryComponent n x)).symm.trans <|
+    (f.restrictHom_restrictPrimaryComponent_apply n x).trans (congrArg f (A.restrictHom_apply _ x))
 
 /-- The additive equivalence underlying a restricted quadratic isometry is the restricted additive
 equivalence. -/
@@ -335,7 +330,10 @@ theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (
       QuadraticMap.IsometryEquiv.refl
         (A.restrict (AddCommGroup.primaryComponent A n)).quadratic :=
   DFunLike.ext _ _ fun _ ↦ by
-    apply Subtype.ext; rw [Isometry.coe_restrictPrimaryComponent_apply]; rfl
+    apply Subtype.ext
+    rw [Isometry.coe_restrictPrimaryComponent_apply,
+      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply,
+      ← Isometry.toHom_apply, Isometry.refl_toHom, Hom.id_apply]
 
 /-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
 restricted isometry. -/

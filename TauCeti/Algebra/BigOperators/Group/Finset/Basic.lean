@@ -11,22 +11,10 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 /-!
 # Finite-product descent for scaling-closed predicates
 
-Let `M` be a commutative monoid, `P : M → Prop` a predicate, and `f, g : ι → M` two families
-indexed by a finite set `s : Finset ι`. Suppose that for every `k ∈ s`, `P` is closed under
-multiplying by `g k` (`P a → P (a * g k)`) and satisfies the pairwise descent rule
-`P (a * f k) → P (a * g k) → P a`. Then `P` holds at `c` whenever it holds at `c * ∏ k ∈ s, g k`
-and at `c * f k` for every `k ∈ s`.
-
-In a commutative ring, taking `f k = b k` and `g k = 1 - b k` recovers descent from the
-complementary finite cover `c * ∏ k ∈ s, (1 - b k)` and `{c * b k | k ∈ s}` whenever `P` is closed
-under scaling and glues `P (a * e)` with `P (a * (1 - e))`.
-
-## Main results
-
-* `TauCeti.of_mul_prod_of_forall_mul`: finite-product descent for a predicate on a commutative
-  monoid.
-* `TauCeti.of_add_sum_of_forall_add`: the additive counterpart for a finite sum in an additive
-  commutative monoid.
+If a predicate `P` on a commutative monoid is closed under multiplying by `g k` (`k ∈ s`) and
+glues `P (a * f k)` with `P (a * g k)` into `P a`, then `P (c * ∏ k ∈ s, g k)` and
+`∀ k ∈ s, P (c * f k)` imply `P c` (`TauCeti.of_mul_prod_of_forall_mul`, and its additive version
+`TauCeti.of_add_sum_of_forall_add`).
 -/
 
 public section

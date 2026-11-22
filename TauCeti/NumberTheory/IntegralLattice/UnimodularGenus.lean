@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 

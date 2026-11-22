@@ -11,11 +11,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattic
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
 import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum.AffineLagrangian
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Subgroup
-import TauCeti.LinearAlgebra.IntegralLattice.Index
-import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 
 /-!
 # Van der Blij's characteristic-norm congruence
@@ -121,13 +118,16 @@ private theorem halfCharacteristicDual_mem_primaryComponent_two [L.IsNondegenera
       AddCommGroup.primaryComponent
         (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2 := by
   refine AddCommGroup.mem_primaryComponent.mpr ⟨2, ?_⟩
-  suffices (2 ^ 2) • (Submodule.Quotient.mk (halfCharacteristicDual L hw) :
-      L.evenSublattice.DiscriminantGroup) = 0 from this
-  rw [← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, L.evenSublattice_carrier]
-  refine ⟨(2 : ℤ) • w, L.two_smul_mem_evenSubmodule w, ?_⟩
-  rw [map_smul, Submodule.coe_subtype, Submodule.coe_smul, halfCharacteristicDual]
-  simp only [Nat.cast_pow, Nat.cast_ofNat, ← Int.cast_smul_eq_zsmul ℚ, smul_smul]; norm_num
+  -- State the torsion equation in `DiscriminantGroup` so quotient `nsmul` and `mk_smul` use the
+  -- quotient `AddCommGroup` instance rather than `discriminantQuadraticModule.addCommGroup`.
+  have h : (2 ^ 2 • Submodule.Quotient.mk (halfCharacteristicDual L hw) :
+      L.evenSublattice.DiscriminantGroup) = 0 := by
+    rw [← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
+      L.evenSublattice.discriminantGroup_mk_eq_zero_iff, L.evenSublattice_carrier]
+    refine ⟨(2 : ℤ) • w, L.two_smul_mem_evenSubmodule w, ?_⟩
+    rw [map_smul, Submodule.coe_subtype, Submodule.coe_smul, halfCharacteristicDual]
+    simp only [Nat.cast_pow, Nat.cast_ofNat, ← Int.cast_smul_eq_zsmul ℚ, smul_smul]; norm_num
+  exact h
 
 private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondegenerate]
     (hodd : Odd L.discriminant) :
