@@ -59,8 +59,9 @@ normed spaces:
   `S`, a bound `M` on the values at the coordinate vectors bounds every value:
   `‖L v‖ ≤ #ι * ‖v‖ * M` for the sup norm, provided `‖σ (v j)‖ ≤ ‖v j‖` for every coordinate.
 * `LinearMap.norm_inv_smul_sub_le`: for a semilinear map `L : E →ₛₗ[σ] F` between seminormed
-  modules over normed division rings, an estimate `‖w - L (t • v)‖ ≤ c ‖t • v‖` with `t ≠ 0` and
-  `‖t‖ ≤ ‖σ t‖` rescales to `‖(σ t)⁻¹ • w - L v‖ ≤ c ‖v‖`. No continuity of `L` is needed.
+  modules over a normed ring and a normed division ring, both acting with `‖a • x‖ = ‖a‖ ‖x‖`, an
+  estimate `‖w - L (t • v)‖ ≤ c ‖t • v‖` with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖` rescales to
+  `‖(σ t)⁻¹ • w - L v‖ ≤ c ‖v‖`. No continuity of `L` is needed.
 
 The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
 commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -283,7 +284,7 @@ theorem norm_apply_le_card_mul_norm_mul {ι R S F : Type*} [Fintype ι] [Decidab
 
 section Rescale
 
-variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+variable {𝕜 𝕜₂ E F : Type*} [NormedRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜₂ F]
   [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
 
@@ -293,9 +294,9 @@ within `c ‖v‖` of `L v`. -/
 theorem norm_inv_smul_sub_le (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F}
     {v : E} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
     ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
+  have hσ : σ t ≠ 0 := norm_pos_iff.1 <| (norm_pos_iff.2 ht).trans_le hσt
   have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
-    rw [map_smulₛₗ, smul_sub, inv_smul_smul₀ hσ]
+    simp [smul_sub, hσ]
   rw [this, norm_smul, norm_inv]
   rw [norm_smul] at h
   have hcv : 0 ≤ c * ‖v‖ := (mul_nonneg_iff_of_pos_left (norm_pos_iff.2 ht)).1 <| by

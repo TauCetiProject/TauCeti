@@ -481,11 +481,10 @@ to `t` is its value with that coordinate set to zero, plus `σ t` times its valu
 vector `Pi.single i 1`. -/
 public theorem apply_update_eq_add_smul (f : (ι → R) →ₛₗ[σ] M) (x : ι → R) (i : ι) (t : R) :
     f (Function.update x i t) = f (Function.update x i 0) + σ t • f (Pi.single i 1) := by
-  -- Setting the coordinate `i` of `0` to `t` gives `t • Pi.single i 1`.
-  have hsingle : Function.update (0 : ι → R) i t = t • Pi.single i 1 := by
-    rw [← Pi.single_smul', smul_eq_mul, mul_one, Pi.single]
+  -- Split the updated vector coordinatewise, at `i` and away from it.
   have hsplit : Function.update x i t = Function.update x i 0 + t • Pi.single i 1 := by
-    simpa [hsingle] using Function.update_add x 0 i 0 t
+    ext j
+    rcases eq_or_ne j i with rfl | hj <;> simp [*]
   simp [hsplit]
 
 /-- Over a semiring with left-cancellative addition, replacing the coordinate `i` of `v` by the

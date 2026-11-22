@@ -71,8 +71,8 @@ theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [Topolog
     simpa using hα
   set e := LinearEquiv.dilatransvection h
   have he (v : ι → R) : e v = f v := by
-    rw [hf, LinearEquiv.dilatransvection.apply, Pi.update_eq_sub_add_single, ← Pi.single_smul',
-      smul_eq_mul, mul_one, LinearMap.sub_apply, coe_coe, LinearMap.proj_apply, Pi.single_sub]
+    rw [hf, LinearEquiv.dilatransvection.apply, Pi.update_eq_sub_add_single]
+    simp [Pi.single_sub, ← Pi.single_smul']
     abel
   -- With `d` the inverse of the coefficient, setting the coordinate `i` of `u` to `s * -d`
   -- lowers the value of `α` at `u` with that coordinate zeroed by `s`.
