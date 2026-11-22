@@ -77,7 +77,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- The minimal number of generators of the maximal ideal of the holomorphic stalk at any point in
 the domain of a holomorphic chart equals `Module.finrank ℂ E`. -/
 theorem spanFinrank_maximalIdeal_holomorphicStalk (e : OpenPartialHomeomorph X H)
-    (he : e ∈ IsManifold.maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
+    (he : e ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ e.source) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       Module.finrank ℂ E := by
   have := e.isRegularLocalRing_holomorphicStalk he hx
@@ -101,11 +101,13 @@ theorem isRegular_map_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
       (l.map fun i ↦ e.holomorphicLinearCoordinateGerm he x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
-  have := e.isRegularLocalRing_holomorphicStalk he hx
+  have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 1 X :=
+    IsManifold.maximalAtlas_subset_of_le le_top he
+  have := e.isRegularLocalRing_holomorphicStalk he₁ hx
   have := Module.Finite.finite_basis b
   exact TauCeti.IsRegularLocalRing.isRegular_map_of_span_range_eq_maximalIdeal
     (by rw [maximalIdeal_stalk, e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx])
-    (by rw [e.spanFinrank_maximalIdeal_holomorphicStalk he hx, Module.finrank_eq_nat_card_basis b])
+    (by rw [e.spanFinrank_maximalIdeal_holomorphicStalk he₁ hx, Module.finrank_eq_nat_card_basis b])
     hl
 
 /-- Centered coordinates of a holomorphic chart, in any ordered basis, form a regular sequence
@@ -134,9 +136,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 complex dimension of the manifold model. -/
 theorem spanFinrank_maximalIdeal_stalk (x : X) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
-      Module.finrank ℂ E := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  exact (chartAt H x).spanFinrank_maximalIdeal_holomorphicStalk
+      Module.finrank ℂ E :=
+  (chartAt H x).spanFinrank_maximalIdeal_holomorphicStalk
     (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
 
 /-- The embedding dimension of a holomorphic stalk on any finite-dimensional complex manifold

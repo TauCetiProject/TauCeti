@@ -51,9 +51,9 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 * `RingHom.IsRueckert φ W`: the Rückert hypotheses for `φ : A[X] →+* B` and `W ⊆ A[X]`.
 * `RingHom.IsRueckert.quotientEquiv`: the ring isomorphism `A[X] ⧸ (w) ≃+* B ⧸ (φ w)` induced by
   `φ`, for `w ∈ W`.
-* `RingHom.IsRueckert.isPrime_span_apply_iff`, `RingHom.IsRueckert.prime_apply_iff`, and
-  `RingHom.IsRueckert.irreducible_apply_iff`: a member `w ∈ W` generates a prime ideal, is prime,
-  or is irreducible in `A[X]` if and only if `φ w` has the same property in `B`.
+* `RingHom.IsRueckert.isPrime_span_apply_iff` and `RingHom.IsRueckert.prime_apply_iff`: a member
+  `w ∈ W` generates a prime ideal or is prime in `A[X]` if and only if `φ w` has the same property
+  in `B`.
 
 ## References
 
@@ -214,15 +214,6 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
     refine (hfw.map α.symm).trans ?_
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
-
-/-- Over a unique factorisation domain `A`, a member of `W` becomes irreducible in a domain `B`
-after applying `φ` if and only if it is irreducible in `A[X]`. -/
-theorem irreducible_apply_iff [UniqueFactorizationMonoid A] [IsDomain B]
-    {w : A[X]} (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
-  have : IsDomain A := Function.Injective.isDomain (φ.comp C) (h.injective.comp C_injective)
-  have : UniqueFactorizationMonoid B := h.uniqueFactorizationMonoid
-  rw [UniqueFactorizationMonoid.irreducible_iff_prime,
-    UniqueFactorizationMonoid.irreducible_iff_prime, h.prime_apply_iff hw]
 
 /-- Over a Jacobson ring `A`, every nonzero radical ideal of `B` is the intersection of the
 maximal ideals containing it. -/

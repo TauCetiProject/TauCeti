@@ -53,12 +53,10 @@ element. -/
 theorem Nodup.exists_append_forall_mem {ι : Type*} [Finite ι] {l : List ι} (hl : l.Nodup) :
     ∃ l' : List ι, (l ++ l').Nodup ∧ ∀ i : ι, i ∈ l ++ l' := by
   classical
-  let : Fintype ι := Fintype.ofFinite ι
-  let all := (Finset.univ : Finset ι).toList
+  obtain ⟨all, hall, hmem⟩ := Finite.exists_univ_list ι
   have hperm : List.Perm (l ++ all.diff l) all :=
     List.subperm_append_diff_self_of_count_le (List.subperm_ext_iff.mp
-      (hl.subperm fun i _ ↦ Finset.mem_toList.2 (Finset.mem_univ i)))
-  exact ⟨all.diff l, hperm.nodup_iff.2 (Finset.nodup_toList _),
-    fun i ↦ hperm.mem_iff.2 (Finset.mem_toList.2 (Finset.mem_univ i))⟩
+      (hl.subperm fun i _ ↦ hmem i))
+  exact ⟨all.diff l, hperm.nodup_iff.2 hall, fun i ↦ hperm.mem_iff.2 (hmem i)⟩
 
 end List
