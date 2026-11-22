@@ -52,6 +52,9 @@ version of this homomorphism, with real values, is `TauCeti.SmoothMappingTorus.t
 the angular class and the time form of the circle are compared by
 `AddCircle.homologyPeriodHom_timeForm_eq_singularKronecker_angularClass_mul`.
 
+* **Naturality.** A map of mapping tori induced by `g : F → G` with `g ∘ φ = ψ ∘ g` covers the
+  identity of `ℝ/ℤ`, so it pulls the base class back to the base class
+  (`TauCeti.MappingTorus.singularCohomologyMap_map_baseClass`).
 * **Comparison with the Wang class.** `circleWangClass` and the winding number are both
   isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign `s = ±1`
   (`TauCeti.MappingTorus.exists_circleWangClass_eq_zsmul`), and `⟨[dt], h⟩ = s ε(δ h)` on every
@@ -64,14 +67,15 @@ the angular class and the time form of the circle are compared by
   integer value (`TauCeti.MappingTorus.singularKronecker_baseClass_surjective`). If moreover
   `H₁(F; ℤ)` is free of finite rank and `det (𝟙 - φ_*) ≠ 0` on it, the period of `h` vanishes
   exactly when `h` has finite order
-  (`TauCeti.MappingTorus.singularKronecker_baseClass_eq_zero_iff`): the period homomorphism is
-  not injective, and its kernel is the torsion of `H₁(T_φ; ℤ)`.
+  (`TauCeti.MappingTorus.singularKronecker_baseClass_eq_zero_iff`): the kernel of the period
+  homomorphism is the torsion of `H₁(T_φ; ℤ)`, so it is injective only when `H₁(T_φ; ℤ)` is
+  torsion-free.
 * **A generator.** Under the same hypotheses the identification `H¹(T_φ; ℤ) ≃ ℤ` of
   `TauCeti.MappingTorus.cohomologyOneEquiv` sends `[dt]` to `±1`
-  (`TauCeti.MappingTorus.cohomologyOneEquiv_baseClass`), so every class of `H¹(T_φ; ℤ)` is an
-  integer multiple of `[dt]` (`TauCeti.MappingTorus.exists_eq_zsmul_baseClass`). For a surface
-  mapping torus with `b₁ = 1` this is the class `[dt]` of `t = [ds ∧ dt]` in the line labels of
-  the symplectic suspension `(ℝ/ℤ)_s × Y_φ`
+  (`TauCeti.MappingTorus.cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one`), so every class of
+  `H¹(T_φ; ℤ)` is an integer multiple of `[dt]` (`TauCeti.MappingTorus.exists_eq_zsmul_baseClass`)
+  and `[dt]` is a basis of `H¹(T_φ; ℤ)` (`TauCeti.MappingTorus.basisBaseClass`). With the angular
+  class `[ds]` of a circle factor it gives the basis `([ds], [dt])` of `H¹((ℝ / pℤ) × T_φ; ℤ)`
   (`TauCeti.MappingTorus.basisAddCircleProd`).
 
 ## References
@@ -139,6 +143,21 @@ instance isIso_wangClass_refl_punit : IsIso (wangClass R (Homeomorph.refl PUnit.
     (inferInstanceAs (IsIso ((TopCat.of PUnit.{w + 1}).singularHomology₀ε R)))
 
 end General
+
+section ModuleCat
+
+variable {k : Type u} [Ring k] (R : ModuleCat.{u} k) {F : Type u} [TopologicalSpace F]
+  (φ : F ≃ₜ F)
+
+/-- With module coefficients, the Wang class applies the Wang connecting morphism and then the
+augmentation. -/
+lemma wangClass_apply
+    (c : ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj R).obj (TopCat.of (MappingTorus φ))) :
+    (wangClass R φ).hom c = (TopCat.of F).singularHomology₀ε R ((wangδ φ R 0).hom c) := by
+  rw [wangClass_def]
+  exact ModuleCat.comp_apply _ _ c
+
+end ModuleCat
 
 section Circle
 
@@ -261,6 +280,16 @@ lemma baseClass_def :
       (AddCircle.angularClass 1) :=
   (rfl)
 
+/-- **Naturality of the base class.** For a map `g : F → G` with `g ∘ φ = ψ ∘ g`, the induced map
+of mapping tori covers the identity of `ℝ/ℤ`, so it pulls the base class of `T_ψ` back to the base
+class of `T_φ`. -/
+@[simp]
+theorem singularCohomologyMap_map_baseClass {G : Type} [TopologicalSpace G] (ψ : G ≃ₜ G)
+    (g : C(F, G)) (h : Function.Semiconj g φ ψ) :
+    TopCat.singularCohomologyMap (TopCat.ofHom (map φ ψ g h)) 1 (baseClass ψ) = baseClass φ := by
+  rw [baseClass, baseClass, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
+    ← TopCat.ofHom_comp, proj_comp_map]
+
 /-- **The periods of the base class**: `⟨[dt], h⟩` is the winding number of the projection of `h`
 to the base circle `ℝ/ℤ`. -/
 theorem singularKronecker_baseClass
@@ -299,9 +328,7 @@ theorem exists_singularKronecker_baseClass_apply :
             ((wangδ φ (ModuleCat.of ℤ ℤ) 0).hom c) := by
   obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_eq_zsmul
   refine ⟨s, hs, fun φ c ↦ (congrArg (fun f ↦ f.hom c) (h φ)).trans ?_⟩
-  rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, wangClass_def]
-  -- A composite of module maps is applied by applying its factors in turn.
-  rfl
+  rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, wangClass_apply]
 
 variable [PathConnectedSpace F]
 
@@ -326,9 +353,9 @@ variable [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).o
   [Module.Finite ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
     (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
 
-/-- **The kernel of the period homomorphism is the torsion.** If `H₁(F; ℤ)` is free of finite rank
-and `det (𝟙 - φ_*) ≠ 0` on it, a class `h ∈ H₁(T_φ; ℤ)` has period `⟨[dt], h⟩ = 0` exactly when it
-has finite order. -/
+/-- **The kernel of the period homomorphism is the torsion.** If `F` is path-connected, `H₁(F; ℤ)`
+is free of finite rank and `det (𝟙 - φ_*) ≠ 0` on it, a class `h ∈ H₁(T_φ; ℤ)` has period
+`⟨[dt], h⟩ = 0` exactly when it has finite order. -/
 theorem singularKronecker_baseClass_eq_zero_iff
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
@@ -350,7 +377,7 @@ theorem singularKronecker_baseClass_eq_zero_iff
 
 /-- **The base class corresponds to `±1`.** Under the hypotheses of `cohomologyOneEquiv`, the
 identification `H¹(T_φ; ℤ) ≃ ℤ` sends the base class `[dt]` to `1` or `-1`. -/
-theorem cohomologyOneEquiv_baseClass
+theorem cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
     cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet (baseClass φ) = 1 ∨
@@ -369,9 +396,7 @@ theorem cohomologyOneEquiv_baseClass
   · refine (congrArg (fun f ↦ f.hom c) (h φ)).trans (Eq.trans ?_
       (singularKronecker_cohomologyOneEquiv_symm_apply φ (ModuleCat.of ℤ ℤ) hdet s c).symm)
     rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, mul_comm,
-      wangClass_def]
-    -- A composite of module maps is applied by applying its factors in turn.
-    rfl
+      wangClass_apply]
 
 /-- **The base class generates `H¹(T_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)` is free of
 finite rank and `det (𝟙 - φ_*) ≠ 0` on it, every class of `H¹(T_φ; ℤ)` is an integer multiple of
@@ -383,9 +408,33 @@ theorem exists_eq_zsmul_baseClass
       (ModuleCat.of ℤ ℤ) 1) : ∃ m : ℤ, x = m • baseClass φ := by
   set e := cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet
   have hss : e (baseClass φ) * e (baseClass φ) = 1 := by
-    rcases cohomologyOneEquiv_baseClass φ hdet with h | h <;> rw [h] <;> rfl
+    rcases cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one φ hdet with h | h <;> rw [h] <;> rfl
   refine ⟨e x * e (baseClass φ), e.injective ?_⟩
   rw [map_zsmul, smul_eq_mul, mul_assoc, hss, mul_one]
+
+/-- **The basis `[dt]` of `H¹(T_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)` is free of finite
+rank and `det (𝟙 - φ_*) ≠ 0` on it, the base class alone is a basis of `H¹(T_φ; ℤ)`. -/
+def basisBaseClass
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
+    Module.Basis (Fin 1) ℤ
+      ((TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+        (ModuleCat.of ℤ ℤ) 1) :=
+  .mk (v := ![baseClass φ])
+    (LinearIndependent.of_comp (cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet).toLinearMap (by
+      rcases cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one φ hdet with h | h <;>
+        simp [Function.comp_def, h]))
+    fun x _ ↦ by
+      obtain ⟨m, rfl⟩ := exists_eq_zsmul_baseClass φ hdet x
+      exact zsmul_mem (Submodule.subset_span (Set.mem_range_self 0)) m
+
+/-- The vector of `basisBaseClass` is the base class. -/
+@[simp]
+lemma basisBaseClass_apply
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) (i : Fin 1) :
+    basisBaseClass φ hdet i = baseClass φ := by
+  simp [basisBaseClass, Fin.fin_one_eq_zero i]
 
 end Integral
 
