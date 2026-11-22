@@ -18,9 +18,9 @@ import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 For any function `f : (ι → ℂ) → E` complex differentiable on a closed polydisc `closedBall c R`
 (with no completeness assumption on `E`), applying Hahn–Banach and the one-variable maximum
-modulus principle along the `i`-th coordinate bounds `TauCeti.partialDslope i ζ f` by
+modulus principle along the `i`-th coordinate bounds `TauCeti.partialDslope i f ζ` by
 `2 * M / (R - r)` on `closedBall c R` whenever `ζ ∈ closedBall (c i) r` with `r < R` and `f` is
-bounded by `M` on `closedBall c R` (`TauCeti.norm_partialDslope_le`).
+bounded by `M` on `closedBall c R` (`TauCeti.norm_partialDslope_le_of_mem_closedBall`).
 
 ## References
 
@@ -36,12 +36,12 @@ namespace TauCeti
 
 /-- **Polydisc maximum modulus bound for `partialDslope`.** If `f : (ι → ℂ) → E` is complex
 differentiable and bounded by `M` on `closedBall c R`, and `ζ ∈ closedBall (c i) r` with `r < R`,
-then `‖partialDslope i ζ f z‖ ≤ 2 * M / (R - r)` for every `z ∈ closedBall c R`. -/
-theorem norm_partialDslope_le {ι E : Type*} [DecidableEq ι] [Fintype ι] [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M : ℝ} {i : ι} {ζ : ℂ}
-    (hf : DifferentiableOn ℂ f (closedBall c R)) (hζ : ζ ∈ closedBall (c i) r)
+then `‖partialDslope i f ζ z‖ ≤ 2 * M / (R - r)` for every `z ∈ closedBall c R`. -/
+theorem norm_partialDslope_le_of_mem_closedBall {ι E : Type*} [DecidableEq ι] [Fintype ι]
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M : ℝ} {i : ι}
+    {ζ : ℂ} (hf : DifferentiableOn ℂ f (closedBall c R)) (hζ : ζ ∈ closedBall (c i) r)
     (hrR : r < R) (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
-    ‖partialDslope i ζ f z‖ ≤ 2 * M / (R - r) := by
+    ‖partialDslope i f ζ z‖ ≤ 2 * M / (R - r) := by
   have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp hζ)
   have hR : 0 < R := hr.trans_lt hrR
   have hRr : 0 < R - r := sub_pos.mpr hrR
@@ -54,7 +54,7 @@ theorem norm_partialDslope_le {ι E : Type*} [DecidableEq ι] [Fintype ι] [Norm
       fun u hu ↦ update_mem_closedBall hu hz
   have hh_at : DifferentiableAt ℂ h ζ :=
     (hh_diff.mono ball_subset_closedBall).differentiableAt (isOpen_ball.mem_nhds hζ_ball)
-  obtain ⟨φ, hφ_norm, hφ_val⟩ := exists_dual_vector'' ℂ (partialDslope i ζ f z)
+  obtain ⟨φ, hφ_norm, hφ_val⟩ := exists_dual_vector'' ℂ (partialDslope i f ζ z)
   set g : ℂ → ℂ := dslope (φ ∘ h) ζ
   have hg_diff : DifferentiableOn ℂ g (ball (c i) R) :=
     (Complex.differentiableOn_dslope (isOpen_ball.mem_nhds hζ_ball)).mpr
@@ -83,7 +83,7 @@ theorem norm_partialDslope_le {ι E : Type*} [DecidableEq ι] [Fintype ι] [Norm
     exact mem_closedBall.mpr ((dist_le_pi_dist z c i).trans (mem_closedBall.mp hz))
   have hgz := Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball ⟨hg_diff, hg_cont⟩
     hg_fr hzi
-  have hφ_eq : g (z i) = (‖partialDslope i ζ f z‖ : ℂ) :=
+  have hφ_eq : g (z i) = (‖partialDslope i f ζ z‖ : ℂ) :=
     (φ.dslope_comp h ζ (z i) fun _ ↦ hh_at).trans (by dsimp only [h]; rwa [← partialDslope_apply])
   simpa [hφ_eq] using hgz
 

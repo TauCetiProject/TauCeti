@@ -12,23 +12,16 @@ import TauCeti.Analysis.Calculus.DSlope.Integral
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
-# Analyticity and integral representation of coordinate divided differences
+# Local analyticity of coordinate divided differences
 
-When `f : (ι → ℂ) → E` is entire (with `ι` finite and `E` complete), `TauCeti.partialDslope i ζ f`
-admits the segment integral representation
-
-  `partialDslope i ζ f z = ∫ t in (0 : ℝ)..1, partialDeriv i f (update z i (ζ + t • (z i - ζ)))`
-
-(`TauCeti.partialDslope_eq_integral_partialDeriv`). Locally, whenever `f` is analytic at `z` and
-`update z i ζ`, `partialDslope i ζ f` is analytic at `z` (`TauCeti.analyticAt_partialDslope`),
-and in particular entire when `f` is entire (`TauCeti.differentiable_partialDslope`).
+Whenever `f : (ι → ℂ) → E` (with `ι` finite and `E` complete) is analytic at `z` and
+`update z i ζ`, `TauCeti.partialDslope i f ζ` is analytic at `z`
+(`TauCeti.analyticAt_partialDslope`).
 
 ## Main results
 
-* `TauCeti.partialDslope_eq_integral_partialDeriv`: the integral representation over `[0, 1]`.
-* `TauCeti.analyticAt_partialDslope`: `partialDslope i ζ f` is analytic at `z` when `f` is
+* `TauCeti.analyticAt_partialDslope`: `partialDslope i f ζ` is analytic at `z` when `f` is
   analytic at `z` and `update z i ζ`.
-* `TauCeti.differentiable_partialDslope`: `partialDslope i ζ f` is entire when `f` is entire.
 -/
 
 public section
@@ -38,31 +31,14 @@ open Function Metric Set
 namespace TauCeti
 
 variable {ι E : Type*} [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℂ E]
-variable [Finite ι] [CompleteSpace E]
+variable [CompleteSpace E]
 
-/-- **Integral representation of the coordinate divided difference.** For an entire function
-`f : (ι → ℂ) → E`, `partialDslope i ζ f z` equals the average of `∂ᵢ f` along the segment from `ζ`
-to `z i` in the `i`-th coordinate. -/
-theorem partialDslope_eq_integral_partialDeriv {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
-    (i : ι) (ζ : ℂ) (z : ι → ℂ) :
-    partialDslope i ζ f z =
-      ∫ t in (0 : ℝ)..1, partialDeriv i f (update z i (ζ + t • (z i - ζ))) := by
-  have := Fintype.ofFinite ι
-  have hline : Differentiable ℂ (fun w ↦ f (update z i w)) :=
-    fun w ↦ (hf (update z i w)).comp w (hasFDerivAt_update z w).differentiableAt
-  rw [partialDslope_apply,
-    dslope_eq_integral_deriv isOpen_univ (hline.contDiff (n := 1)).contDiffOn (subset_univ _)]
-  refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  rw [partialDeriv_eq_deriv_update (hf _) i]
-  simp only [update_idem, update_self]
-
-omit [Finite ι] in
 /-- Local integral representation on `ball z r` across `ζ = z i` when `f` is complex
 differentiable on `ball z r`. -/
 private theorem partialDslope_eq_integral_partialDeriv_of_mem_ball [Fintype ι] {f : (ι → ℂ) → E}
     {z : ι → ℂ} {r : ℝ} (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball z r)) (i : ι)
     {q : ι → ℂ} (hq : q ∈ ball z r) :
-    partialDslope i (z i) f q =
+    partialDslope i f (z i) q =
       ∫ t in (0 : ℝ)..1, partialDeriv i f (update q i (z i + t • (q i - z i))) := by
   have hmem (w : ℂ) (hw : w ∈ ball (z i) r) : update q i w ∈ ball z r := by
     rw [mem_ball, dist_pi_lt_iff hr]
@@ -86,13 +62,12 @@ private theorem partialDslope_eq_integral_partialDeriv_of_mem_ball [Fintype ι] 
     ((hf _ (hmem _ hpt)).differentiableAt (isOpen_ball.mem_nhds (hmem _ hpt))) i]
   simp only [update_idem, update_self]
 
-omit [Finite ι] in
 /-- **Local analyticity of the coordinate divided difference.** If `f : (ι → ℂ) → E` is analytic at
-`z` and at `update z i ζ`, then `partialDslope i ζ f` is analytic at `z`. On the hyperplane
+`z` and at `update z i ζ`, then `partialDslope i f ζ` is analytic at `z`. On the hyperplane
 `z i = ζ`, the two analyticity hypotheses coincide. -/
 theorem analyticAt_partialDslope [Fintype ι] {f : (ι → ℂ) → E} {z : ι → ℂ} {i : ι} {ζ : ℂ}
     (hfz : AnalyticAt ℂ f z) (hfζ : AnalyticAt ℂ f (update z i ζ)) :
-    AnalyticAt ℂ (partialDslope i ζ f) z := by
+    AnalyticAt ℂ (partialDslope i f ζ) z := by
   rcases ne_or_eq (z i) ζ with hne | rfl
   · have hupd_diff : Differentiable ℂ (fun q : ι → ℂ ↦ update q i ζ) :=
       differentiable_pi.mpr fun j ↦ by
@@ -106,7 +81,7 @@ theorem analyticAt_partialDslope [Fintype ι] {f : (ι → ℂ) → E} {z : ι �
         analyticAt_const).inv (sub_ne_zero.mpr hne)
     refine (hinv.smul (hfz.sub (hfζ.comp_of_eq hupd_an rfl))).congr ?_
     filter_upwards [(continuousAt_apply i z).eventually_ne hne] with q hq
-    exact (partialDslope_of_ne i f hq).symm
+    exact (partialDslope_of_ne hq).symm
   · obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hfz.eventually_analyticAt
     have hf_diff : DifferentiableOn ℂ f (ball z r) :=
       fun y hy ↦ (hball (mem_ball.mp hy)).differentiableAt.differentiableWithinAt
@@ -133,16 +108,5 @@ theorem analyticAt_partialDslope [Fintype ι] {f : (ι → ℂ) → E} {z : ι �
     refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
     simp only [one_smul, Function.comp_apply, projIcc_of_mem zero_le_one (Ioc_subset_Icc_self ht),
       Complex.real_smul]
-
-omit [Finite ι] in
-/-- **Entireness of the coordinate divided difference.** If `f : (ι → ℂ) → E` is entire, then
-`partialDslope i ζ f` is entire. -/
-theorem differentiable_partialDslope [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
-    (i : ι) (ζ : ℂ) :
-    Differentiable ℂ (partialDslope i ζ f) := by
-  have := Fintype.ofFinite ι
-  exact fun z ↦
-    (analyticAt_partialDslope (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)
-      (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)).differentiableAt
 
 end TauCeti

@@ -12,10 +12,11 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.Eval.Degree
 import TauCeti.Algebra.Polynomial.Eval.Pi
 import TauCeti.Algebra.Polynomial.LinearFactor
-import TauCeti.Analysis.Complex.DividedDifference.Analytic
+import TauCeti.Analysis.Complex.DividedDifference.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.DividedDifference.Estimate
 import TauCeti.Analysis.Complex.PartialDeriv.Roots
+import TauCeti.Analysis.Complex.PartialDslope
 import TauCeti.Analysis.Complex.PiBall
 import TauCeti.RingTheory.Polynomial.DegreeLT
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
@@ -146,17 +147,17 @@ theorem eq_of_eq_add_mul_eval {f f₀ fk f₀' fk' : (ι → ℂ) → ℂ}
   simpa [update_eq_self] using
     Polynomial.eq_zero_of_mul_eval_eq_zero (w₀ := z k) (hline_cont z).continuousAt hP0 hgP
 
-/-- When `5 * r ≤ R`, `0 < R`, and `ζ ∈ closedBall (c k) r`, `partialDslope k ζ f` is bounded on
+/-- When `5 * r ≤ R`, `0 < R`, and `ζ ∈ closedBall (c k) r`, `partialDslope k f ζ` is bounded on
 `closedBall c R` by `5 / (2 * R) * M`. -/
 private lemma norm_partialDslope_le_five_div_two_mul [Fintype ι] {f : (ι → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {k : ι} {ζ : ℂ} {c : ι → ℂ} {r R M : ℝ}
     (hR : 0 < R) (hrR : 5 * r ≤ R) (hζ : ζ ∈ closedBall (c k) r)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {w : ι → ℂ} (hw : w ∈ closedBall c R) :
-    ‖partialDslope k ζ f w‖ ≤ 5 / (2 * R) * M := by
+    ‖partialDslope k f ζ w‖ ≤ 5 / (2 * R) * M := by
   have hM0 : 0 ≤ M := (norm_nonneg (f w)).trans (hM w hw)
   have hr_lt_R : r < R := by linarith [dist_nonneg.trans (mem_closedBall.mp hζ)]
   have hRr : 0 < R - r := sub_pos.mpr hr_lt_R
-  refine (norm_partialDslope_le hf.differentiableOn hζ hr_lt_R hM hw).trans ?_
+  refine (norm_partialDslope_le_of_mem_closedBall hf.differentiableOn hζ hr_lt_R hM hw).trans ?_
   rw [div_le_iff₀ hRr]
   have h1 : 4 * R ≤ 5 * (R - r) := by linarith
   have h2 : 4 * R * M ≤ 5 * (R - r) * M := mul_le_mul_of_nonneg_right h1 hM0
@@ -216,7 +217,7 @@ private theorem exists_eq_add_mul_prod_of_list [Fintype ι] {f : (ι → ℂ) �
     obtain ⟨Q, hQ, _⟩ := hdeg z
     exact ⟨0, bot_le.trans_lt hQ, by simp⟩
   | cons ζ l ih =>
-    have hq₁ : Differentiable ℂ (partialDslope k ζ f) := differentiable_partialDslope hf k ζ
+    have hq₁ : Differentiable ℂ (partialDslope k f ζ) := differentiable_partialDslope hf k ζ
     obtain ⟨r', q', hr', hq', hdiv', hdeg', hdeg_ne', hnorm'⟩ := ih hq₁
     let f₀ : (ι → ℂ) → ℂ := fun z ↦ f (update z k ζ) + (z k - ζ) * r' z
     have hf₀ : Differentiable ℂ f₀ := by
@@ -227,7 +228,7 @@ private theorem exists_eq_add_mul_prod_of_list [Fintype ι] {f : (ι → ℂ) �
       · simpa [hj] using differentiable_apply j
     refine ⟨f₀, q', hf₀, hq', ?_, ?_, ?_, ?_⟩
     · intro z
-      have hstep := eq_update_add_sub_mul_partialDslope k ζ f z
+      have hstep := eq_update_add_sub_mul_partialDslope k f ζ z
       rw [hdiv' z] at hstep
       simp only [f₀, List.map_cons, List.prod_cons, eval_mul, eval_sub, eval_X, eval_C]
       linear_combination hstep

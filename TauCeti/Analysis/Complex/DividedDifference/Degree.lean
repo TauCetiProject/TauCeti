@@ -15,15 +15,15 @@ import TauCeti.Analysis.Calculus.DSlope.Basic
 /-!
 # Coordinate polynomial degree control for `partialDslope`
 
-The coordinate divided difference `TauCeti.partialDslope i ζ` agrees with Euclidean division by
-`X - C ζ` along polynomial coordinate lines in direction `i`, lowers polynomial degree in `z i` by
-one, and preserves polynomial degree bounds in every other coordinate `j ≠ i` for entire
+The coordinate divided difference `TauCeti.partialDslope i` at `ζ` agrees with Euclidean division
+by `X - C ζ` along polynomial coordinate lines in direction `i`, lowers polynomial degree in `z i`
+by one, and preserves polynomial degree bounds in every other coordinate `j ≠ i` for entire
 functions (by Lagrange interpolation along coordinate `j` and linearity of `dslope · ζ`).
 
 ## Main results
 
 * `TauCeti.partialDslope_update_eq_eval_divByMonic`: exact polynomial division formula
-  `partialDslope i ζ f (update z i w) = (P /ₘ (X - C ζ)).eval w`.
+  `partialDslope i f ζ (update z i w) = (P /ₘ (X - C ζ)).eval w`.
 * `TauCeti.exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self`: degree reduction in the
   divided coordinate.
 * `TauCeti.exists_degree_lt_and_partialDslope_eq_eval`,
@@ -40,10 +40,10 @@ namespace TauCeti
 variable {ι : Type*} [DecidableEq ι]
 
 /-- If `f` agrees with a polynomial `P` along the `i`-th coordinate line through `z`, then
-`partialDslope i ζ f` agrees with `P /ₘ (X - C ζ)` along that line. -/
+`partialDslope i f ζ` agrees with `P /ₘ (X - C ζ)` along that line. -/
 theorem partialDslope_update_eq_eval_divByMonic {f : (ι → ℂ) → ℂ} {i : ι} {ζ : ℂ}
     {z : ι → ℂ} {P : ℂ[X]} (hP : ∀ w, f (update z i w) = P.eval w) (w : ℂ) :
-    partialDslope i ζ f (update z i w) = (P /ₘ (X - C ζ)).eval w := by
+    partialDslope i f ζ (update z i w) = (P /ₘ (X - C ζ)).eval w := by
   have hPdiv : P = C (P.eval ζ) + (X - C ζ) * (P /ₘ (X - C ζ)) := by
     conv_lhs => rw [← modByMonic_add_div P (X - C ζ), modByMonic_X_sub_C_eq_C_eval]
   have hfun : (fun u ↦ f (update (update z i w) i u)) =
@@ -62,12 +62,12 @@ theorem partialDslope_update_eq_eval_divByMonic {f : (ι → ℂ) → ℂ} {i : 
   simp [hderiv]
 
 /-- **Degree reduction in the divided coordinate.** If `f` is a polynomial of degree at most `e` in
-`z i` along the `i`-th coordinate line through `z`, then `partialDslope i ζ f` is a polynomial of
+`z i` along the `i`-th coordinate line through `z`, then `partialDslope i f ζ` is a polynomial of
 degree at most `e - 1` along that line. -/
 theorem exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self {f : (ι → ℂ) → ℂ} (i : ι)
     (ζ : ℂ) {e : ℕ} {z : ι → ℂ}
     (hf : ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update z i w) = Q.eval w) :
-    ∃ Q : ℂ[X], Q.natDegree ≤ e - 1 ∧ ∀ w, partialDslope i ζ f (update z i w) = Q.eval w := by
+    ∃ Q : ℂ[X], Q.natDegree ≤ e - 1 ∧ ∀ w, partialDslope i f ζ (update z i w) = Q.eval w := by
   obtain ⟨P, hPdeg, hP⟩ := hf
   refine ⟨P /ₘ (X - C ζ), ?_, partialDslope_update_eq_eval_divByMonic hP⟩
   calc (P /ₘ (X - C ζ)).natDegree
@@ -75,11 +75,11 @@ theorem exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self {f : (ι → 
     _ ≤ e - 1 := by rw [natDegree_X_sub_C]; omega
 
 /-- **Coordinate degree preservation under `partialDslope`.** If `f` is entire and a polynomial of
-degree strictly less than `d` in coordinate `j`, then so is `partialDslope i ζ f`. -/
+degree strictly less than `d` in coordinate `j`, then so is `partialDslope i f ζ`. -/
 theorem exists_degree_lt_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ) → ℂ}
     (hf : Differentiable ℂ f) (i j : ι) (ζ : ℂ) {d : WithBot ℕ}
     (hdeg : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, partialDslope i ζ f (update z j w) = Q.eval w := by
+    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, partialDslope i f ζ (update z j w) = Q.eval w := by
   by_cases hij : j = i
   · subst hij
     obtain ⟨P, hPdeg, hP⟩ := hdeg z
@@ -94,10 +94,10 @@ theorem exists_degree_lt_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ)
     let s : Finset ℕ := Finset.range d
     let v : ℕ → ℂ := fun m ↦ (m : ℂ)
     have hv : Set.InjOn v s := Nat.cast_injective.injOn
-    refine ⟨Lagrange.interpolate s v (fun m ↦ partialDslope i ζ f (update z j (v m))), ?_,
+    refine ⟨Lagrange.interpolate s v (fun m ↦ partialDslope i f ζ (update z j (v m))), ?_,
       fun w ↦ ?_⟩
     · simpa only [s, Finset.card_range, Nat.cast_withBot] using
-        Lagrange.degree_interpolate_lt (fun m ↦ partialDslope i ζ f (update z j (v m))) hv
+        Lagrange.degree_interpolate_lt (fun m ↦ partialDslope i f ζ (update z j (v m))) hv
     · have hfun : (fun u ↦ f (update (update z j w) i u)) =
           fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
         ext u
@@ -119,11 +119,11 @@ theorem exists_degree_lt_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ)
         update_of_ne (Ne.symm hij)]
 
 /-- If `f` is entire and a polynomial of degree at most `e` in coordinate `j`, then so is
-`partialDslope i ζ f`. -/
+`partialDslope i f ζ`. -/
 theorem exists_natDegree_le_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ) → ℂ}
     (hf : Differentiable ℂ f) (i j : ι) (ζ : ℂ) {e : ℕ}
     (hdeg : ∀ y, ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, partialDslope i ζ f (update z j w) = Q.eval w := by
+    ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, partialDslope i f ζ (update z j w) = Q.eval w := by
   simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
     exists_degree_lt_and_partialDslope_eq_eval hf i j ζ (d := Order.succ (e : WithBot ℕ))
       (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hdeg y) z

@@ -17,7 +17,7 @@ import TauCeti.Analysis.Complex.DividedDifference.Degree
 Differentiating an entire function `f : (ι → ℂ) → ℂ` along any coordinate `i` (once or iterated
 `m` times) preserves strict polynomial degree bounds `Q.degree < d` along every coordinate line `j`.
 Along `j = i` this follows from polynomial differentiation, and along `j ≠ i` it follows by
-evaluating `partialDslope i (z i) f` on the hyperplane `w i = z i`.
+evaluating `partialDslope i f (z i)` on the hyperplane `w i = z i`.
 
 ## Main results
 
@@ -49,7 +49,7 @@ theorem exists_degree_lt_and_partialDeriv_eq_eval {ι : Type*} [DecidableEq ι] 
     rw [hfun, Polynomial.deriv]
   · obtain ⟨Q, hQ, hQz⟩ := exists_degree_lt_and_partialDslope_eq_eval hf i j (z i) hdeg z
     exact ⟨Q, hQ, fun w ↦ by
-      rw [← partialDslope_of_eq (hf _) i (update_of_ne (Ne.symm hij) w z), hQz]⟩
+      rw [← partialDslope_of_eq (hf _) (update_of_ne (Ne.symm hij) w z), hQz]⟩
 
 /-- Iterated differentiation of an entire function along coordinate `i` preserves a strict
 polynomial degree bound `< d` in every coordinate `j`. -/

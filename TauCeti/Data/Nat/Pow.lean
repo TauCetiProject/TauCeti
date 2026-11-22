@@ -14,7 +14,8 @@ import Mathlib.Data.Nat.Factors
 
 A natural number `n ≠ 1` either is not a power of `b`, or is a power `b ^ k` with a positive
 exponent `k`, because `b ^ 0 = 1`. Moreover, any natural number `n` that is not a power of `b` has
-a prime divisor distinct from `b`.
+a prime divisor distinct from `b`; for a prime `p`, this makes the powers of `p` exactly the
+natural numbers with no prime divisor other than `p`.
 
 For positive bases `b < a` and `n ≥ 3`, we also bound differences of powers below by
 `(a + b) * a ^ (n - 2)`.
@@ -27,6 +28,8 @@ For positive bases `b < a` and `n ≥ 3`, we also bound differences of powers be
   degrees `n ≥ 2` that are not powers of two.
 * `Nat.exists_prime_dvd_ne_of_forall_ne_pow`: every `n` not of the form `b ^ k` has a prime divisor
   `q ≠ b`.
+* `Nat.Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq`: for a prime `p`, a natural number has no
+  prime divisor distinct from `p` if and only if it is a power of `p`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
 * `Nat.mul_pow_le_pow_mul`: `n * b ^ p ≤ b ^ (n * p)` for `2 ≤ b` and `0 < p`.
 -/
@@ -52,6 +55,16 @@ theorem exists_prime_dvd_ne_of_forall_ne_pow {b n : ℕ} (hpow : ∀ k, n ≠ b 
   · by_contra! h
     exact hpow n.primeFactorsList.length
       (Nat.eq_prime_pow_of_unique_prime_dvd hn fun {q} hq hdvd ↦ h q hq hdvd)
+
+/-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
+`p`. -/
+theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prime) :
+    (∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) ↔ ∃ n : ℕ, p ^ n = k := by
+  refine ⟨fun hno ↦ ?_, fun ⟨n, hn⟩ q hq hqp hqd ↦
+    hqp (Nat.prime_eq_prime_of_dvd_pow hq hp (hn ▸ hqd))⟩
+  by_contra! hpow
+  obtain ⟨q, hq, hqk, hqp⟩ := exists_prime_dvd_ne_of_forall_ne_pow fun n h ↦ hpow n h.symm
+  exact hno q hq hqp hqk
 
 /-- For positive bases `b < a` and `n ≥ 3`, `a ^ n - b ^ n` strictly exceeds
 `(a + b) * a ^ (n - 2) = a ^ (n - 1) + b * a ^ (n - 2)`. -/
