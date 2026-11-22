@@ -19,10 +19,11 @@ when `𝕜 = ℝ`); openness needs only a linear order on `𝕜` whose intervals
 These facts apply, for example, to separating positive continuous functions in the proof of
 Pietsch domination.
 
-A linear functional on `C(X, 𝕜)`, for a linearly ordered semifield `𝕜` such as `ℝ≥0` or any
-linearly ordered field, that is bounded above on the uniformly positive functions is nonpositive on
-them, since they form a cone, and hence nonpositive on every nonnegative function: adding a positive
-constant to a large multiple of a nonnegative function makes it uniformly positive. This is the
+A linear functional on `C(X, 𝕜)` is bounded above on the uniformly positive functions only if it
+is nonpositive on them, since they form a cone. It is then nonpositive on every nonnegative
+function: adding a positive constant to a large multiple of a nonnegative function makes it
+uniformly positive. Here `𝕜` is a linearly ordered semifield in which `a ≤ b` gives `b = a + c` for
+some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field. This is the
 positivity of the functional produced by separating the uniformly positive functions from a cone.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
@@ -121,9 +122,10 @@ end ContinuousMap
 
 namespace LinearMap
 
-/-- A linear functional on `C(X, 𝕜)`, for a linearly ordered semifield `𝕜` such as `ℝ≥0` or any
-linearly ordered field, that is bounded above on the functions bounded below by a positive constant
-is nonpositive on the nonnegative functions. -/
+/-- A linear functional on `C(X, 𝕜)` that is bounded above on the functions bounded below by a
+positive constant is nonpositive on the nonnegative functions. Here `𝕜` is a linearly ordered
+semifield in which `a ≤ b` gives `b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any
+linearly ordered field. -/
 theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
     [ContinuousConstSMul 𝕜 𝕜] (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
