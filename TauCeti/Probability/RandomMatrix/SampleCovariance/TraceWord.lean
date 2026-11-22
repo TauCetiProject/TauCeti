@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
-public import TauCeti.Combinatorics.TraceWord.Bipartite
+public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
