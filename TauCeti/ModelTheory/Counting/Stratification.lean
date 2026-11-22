@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.ExtensionSpectrum
-public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
+public import TauCeti.ModelTheory.RelationalConfiguration.BorelIsomorphism
 public import TauCeti.ModelTheory.Scott.Height
 public import TauCeti.SetTheory.Cardinal.AlephOne
 
@@ -205,9 +205,7 @@ theorem isIsolatingRank_scottHeight :
     obtain ⟨e⟩ := isoSetoid_apply.1 hcd
     exact @Language.Equiv.scottHeight_eq L _ ℕ c.toStructure ℕ d.toStructure e
   lt_omega_one c := @scottHeight_lt_omega_one L _ ℕ c.toStructure _
-  isolates c d hcd := isoSetoid_apply.2
-    (@nonempty_equiv_of_bfEquiv_of_scottHeight_le L _ ℕ c.toStructure _ ℕ d.toStructure _ _ le_rfl
-      (bfEquivSetoid_apply.1 hcd))
+  isolates c d hcd := (isoSetoid_iff_bfEquivSetoid_of_scottHeight_le le_rfl).2 hcd
 
 variable (L) in
 /-- Every relational language has an isolating rank on its configurations on `ℕ`. -/

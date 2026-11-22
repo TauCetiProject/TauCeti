@@ -19,10 +19,10 @@ The set need not be measurable or isomorphism invariant for the graph to be Bore
 measurable for the induced measurable structure on its square. To apply a dichotomy requiring a
 standard Borel domain, the set itself must be Borel, as model classes are.
 
-The Scott height supplies the canonical isolating rank. A bound `β` on the internal Scott rank
-also suffices, but gives a bound `β + ω` on the Scott height, not necessarily `β` itself.
-Countably many isomorphism classes give Borel isomorphism as well, since they bound every
-isolating rank.
+The Scott height supplies the canonical isolating rank; the Borel forms for a bound on the Scott
+height or the internal ordinals, on any countable carrier, are in
+`TauCeti.ModelTheory.RelationalConfiguration.BorelIsomorphism`. Countably many isomorphism classes
+give Borel isomorphism as well, since they bound the Scott height.
 
 The **bounded-rank dichotomy** follows. If an isolating rank is bounded below `ω₁` on the models
 on `ℕ` of an infinitary sentence `φ` with countable branching, in a vocabulary with countably many
@@ -37,9 +37,6 @@ countable models bound every isomorphism-invariant countable rank on the models 
 
 * `TauCeti.IsIsolatingRank.measurableSet_setOf_comap_isoSetoid`: a bounded isolating rank gives
   a Borel isomorphism relation.
-* `TauCeti.RelationalConfiguration.measurableSet_setOf_comap_isoSetoid_of_scottHeight_le` and
-  `TauCeti.RelationalConfiguration.measurableSet_setOf_comap_isoSetoid_of_internalScottRank_le`:
-  the external and internal Scott rank forms.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_comap_isoSetoid_of_countable_isoClasses`:
   countably many isomorphism classes give a Borel isomorphism relation.
 * `TauCeti.IsIsolatingRank.countable_isoClasses_or_hasPerfectAntichainOn` and
@@ -237,24 +234,6 @@ theorem countableModelCount_le_aleph0_iff_exists_rank_bound (hρ : IsIsolatingRa
 end Sentences
 
 namespace RelationalConfiguration
-
-/-- A countable uniform bound on the Scott heights of the decoded structures makes
-isomorphism Borel on `K`. -/
-theorem measurableSet_setOf_comap_isoSetoid_of_scottHeight_le (hβ : β < ω₁)
-    (hK : ∀ c ∈ K, @scottHeight L _ ℕ c.toStructure ≤ β) :
-    MeasurableSet {p : K × K | (isoSetoid L ℕ).comap Subtype.val p.1 p.2} :=
-  (isIsolatingRank_scottHeight L).measurableSet_setOf_comap_isoSetoid hβ hK
-
-/-- A countable bound on the internal Scott ranks of the decoded structures makes
-isomorphism Borel on `K`. The associated bound on Scott height is `β + ω`. -/
-theorem measurableSet_setOf_comap_isoSetoid_of_internalScottRank_le (hβ : β < ω₁)
-    (hK : ∀ c ∈ K, @internalScottRank L _ ℕ c.toStructure ≤ β) :
-    MeasurableSet {p : K × K | (isoSetoid L ℕ).comap Subtype.val p.1 p.2} := by
-  apply measurableSet_setOf_comap_isoSetoid_of_scottHeight_le (β := β + ω)
-    (Ordinal.isPrincipal_add_omega 1 hβ Ordinal.omega0_lt_omega_one)
-  intro c hc
-  exact (@scottHeight_le_internalScottRank_add_omega0 L _ ℕ c.toStructure).trans
-    (add_le_add (hK c hc) le_rfl)
 
 /-- On a set meeting countably many isomorphism classes, isomorphism has Borel graph for
 its induced measurable structure, even if the set itself is not Borel. -/

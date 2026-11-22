@@ -14,13 +14,15 @@ public import TauCeti.ModelTheory.Scott.Height
 Let `L` be a relational language with countably many relation symbols of each arity and `V` a
 countable carrier, so that the configurations on `V` form a Polish space. For a set `K` of
 configurations, isomorphism restricted to `K` is the set of pairs
-`{p | isoSetoid L V p.1 p.2} ∩ K ×ˢ K`. It is always analytic, and this file says when it is
-Borel.
+`{p | isoSetoid L V p.1 p.2} ∩ K ×ˢ K`, or the set of pairs of `K × K` related by
+`(isoSetoid L V).comap Subtype.val`, measurable for the induced structure. This file says when it
+is Borel.
 
 * **Bounded Scott height.** If every configuration in `K` decodes to a structure of Scott height
   at most `β`, then isomorphism on `K` is back-and-forth equivalence at level `β`, because
-  equivalence at the Scott height decides isomorphism. For `β < ω₁` and Borel `K` it is therefore
-  Borel. The same holds when the internal stabilization ordinals on `K` are bounded below `ω₁`,
+  equivalence at the Scott height decides isomorphism. For `β < ω₁` it is therefore Borel on
+  `K × K`, with no measurability of `K` needed, and Borel in the ambient square when `K` is. The
+  same holds when the internal stabilization ordinals on `K` are bounded below `ω₁`,
   since the Scott height lies within `ω` of the internal stabilization ordinal.
 * **One countable level.** Conversely, for analytic `K`, if isomorphism on `K` is Borel then it is
   back-and-forth equivalence at a single countable level. The pairs of `K` that are not isomorphic
@@ -37,10 +39,15 @@ coordinates decides isomorphism once there are uncountably many relation symbols
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.measurableSet_iso_inter_of_scottHeight_le`: isomorphism on a
-  Borel class of Scott height at most `β < ω₁` is Borel.
-* `TauCeti.RelationalConfiguration.measurableSet_iso_inter_of_selfStabilizationOrdinal_le`: the
-  same for internal stabilization ordinals at most `β < ω₁`.
+* `TauCeti.RelationalConfiguration.comap_isoSetoid_eq_bfEquivSetoid_of_scottHeight_le`: on a set
+  of Scott height at most `β`, isomorphism is back-and-forth equivalence at level `β`.
+* `TauCeti.RelationalConfiguration.measurableSet_setOf_comap_isoSetoid_of_scottHeight_le`:
+  isomorphism on any set of configurations whose Scott heights are at most `β < ω₁` is Borel for
+  the induced measurable structure. The variants ending in `_of_selfStabilizationOrdinal_le` and
+  `_of_internalScottRank_le` bound the internal stabilization ordinals or internal Scott ranks.
+* `TauCeti.RelationalConfiguration.measurableSet_iso_inter_of_scottHeight_le` and
+  `TauCeti.RelationalConfiguration.measurableSet_iso_inter_of_selfStabilizationOrdinal_le`: the
+  same in the ambient square, for a Borel class.
 * `TauCeti.RelationalConfiguration.measurableSet_iso_inter_iff_exists_bfLevel`: isomorphism on a
   Borel class is Borel exactly when it is back-and-forth equivalence at one countable level.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_selfStabilizesCompletely` and
@@ -51,8 +58,11 @@ coordinates decides isomorphism once there are uncountably many relation symbols
 
 * David Marker, *Lectures on Infinitary Model Theory*, lecture notes, University of Illinois at
   Chicago, 2013, Theorem 11.19: isomorphism on the models of a sentence of a countable vocabulary
-  is Borel exactly when their Scott ranks are bounded below `ω₁`. Here the bound is on the Scott
-  height rather than the internal rank, for which the backward direction fails.
+  is Borel exactly when their Scott ranks are bounded below `ω₁`. Here the bound may be on the
+  Scott height or on the internal ordinals: for countable structures these lie within `ω` of each
+  other, so either bound below `ω₁` gives the other. For the converse, this file proves that Borel
+  isomorphism is back-and-forth equivalence at one countable level, rather than a bound on the
+  ranks.
 * Cameron Freer's `cameronfreer/infinitary-logic`, checkpoint
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b` (Apache-2.0), covers related material in
   `InfinitaryLogic/Descriptive/IsomorphismBorel.lean`. The proofs here are built directly on
@@ -82,16 +92,49 @@ theorem isoSetoid_iff_bfEquivSetoid_of_scottHeight_le [Countable V] {β : Ordina
       (bfEquivSetoid_apply.1 hcd))⟩
 
 /-- On a set of configurations whose decoded structures have Scott height at most `β`,
-isomorphism is back-and-forth equivalence at level `β`. -/
-theorem setOf_isoSetoid_inter_eq_of_scottHeight_le [Countable V]
+isomorphism is back-and-forth equivalence at level `β`. No measurability of the set is needed. -/
+theorem comap_isoSetoid_eq_bfEquivSetoid_of_scottHeight_le [Countable V]
     {K : Set (RelationalConfiguration L V)} {β : Ordinal.{w}}
     (hK : ∀ c ∈ K, @scottHeight L _ V c.toStructure ≤ β) :
-    {p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
-        K ×ˢ K =
-      {p | bfEquivSetoid L V β p.1 p.2} ∩ K ×ˢ K := by
-  ext p
-  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod]
-  exact and_congr_left fun hp => isoSetoid_iff_bfEquivSetoid_of_scottHeight_le (hK p.1 hp.1)
+    (isoSetoid L V).comap (Subtype.val : K → _) =
+      (bfEquivSetoid L V β).comap (Subtype.val : K → _) := by
+  ext c d
+  exact isoSetoid_iff_bfEquivSetoid_of_scottHeight_le (hK c c.property)
+
+/-- In a vocabulary with countably many relation symbols of each arity, on a countable carrier, a
+countable uniform bound on the Scott heights of the decoded structures makes isomorphism Borel on
+`K`, for the induced measurable structure. No measurability of `K` is required. -/
+theorem measurableSet_setOf_comap_isoSetoid_of_scottHeight_le [Countable V]
+    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} {β : Ordinal.{w}}
+    (hβ : β < ω₁) (hK : ∀ c ∈ K, @scottHeight L _ V c.toStructure ≤ β) :
+    MeasurableSet {p : K × K | (isoSetoid L V).comap Subtype.val p.1 p.2} := by
+  rw [comap_isoSetoid_eq_bfEquivSetoid_of_scottHeight_le hK]
+  exact (measurableSet_setOf_bfEquivSetoid hβ).preimage
+    ((measurable_subtypeVal.comp measurable_fst).prodMk
+      (measurable_subtypeVal.comp measurable_snd))
+
+/-- In a vocabulary with countably many relation symbols of each arity, on a countable carrier, a
+countable bound on the internal stabilization ordinals of the decoded structures makes
+isomorphism Borel on `K`, for the induced measurable structure. The associated bound on Scott
+height is `β + ω`. -/
+theorem measurableSet_setOf_comap_isoSetoid_of_selfStabilizationOrdinal_le [Countable V]
+    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} {β : Ordinal.{w}}
+    (hβ : β < ω₁) (hK : ∀ c ∈ K, @selfStabilizationOrdinal L _ V c.toStructure ≤ β) :
+    MeasurableSet {p : K × K | (isoSetoid L V).comap Subtype.val p.1 p.2} :=
+  measurableSet_setOf_comap_isoSetoid_of_scottHeight_le
+    (Ordinal.isPrincipal_add_omega 1 hβ Ordinal.omega0_lt_omega_one) fun c hc =>
+      (@scottHeight_le_selfStabilizationOrdinal_add_omega0 L _ V c.toStructure).trans
+        (add_le_add_left (hK c hc) ω)
+
+/-- In a vocabulary with countably many relation symbols of each arity, on a countable carrier, a
+countable bound on the internal Scott ranks of the decoded structures makes isomorphism Borel on
+`K`, for the induced measurable structure. -/
+theorem measurableSet_setOf_comap_isoSetoid_of_internalScottRank_le [Countable V]
+    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)} {β : Ordinal.{w}}
+    (hβ : β < ω₁) (hK : ∀ c ∈ K, @internalScottRank L _ V c.toStructure ≤ β) :
+    MeasurableSet {p : K × K | (isoSetoid L V).comap Subtype.val p.1 p.2} :=
+  measurableSet_setOf_comap_isoSetoid_of_selfStabilizationOrdinal_le hβ fun c hc =>
+    (@selfStabilizationOrdinal_le_internalScottRank L _ V c.toStructure).trans (hK c hc)
 
 /-- **Borel isomorphism under bounded Scott height.** In a vocabulary with countably many relation
 symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K` of
@@ -102,8 +145,19 @@ theorem measurableSet_iso_inter_of_scottHeight_le [Countable V] [∀ n, Countabl
     MeasurableSet
       ({p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
         K ×ˢ K) := by
-  rw [setOf_isoSetoid_inter_eq_of_scottHeight_le hKβ]
-  exact (measurableSet_setOf_bfEquivSetoid hβ).inter (hK.prod hK)
+  -- The ambient set is the image of the induced one under the embedding `K × K → V × V`.
+  have himage := ((MeasurableEmbedding.subtypeVal hK).prodMap
+    (MeasurableEmbedding.subtypeVal hK)).measurableSet_image.2
+      (measurableSet_setOf_comap_isoSetoid_of_scottHeight_le hβ hKβ)
+  convert himage using 1
+  ext ⟨c, d⟩
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_image, Prod.exists, Prod.map_apply,
+    Prod.mk.injEq, Setoid.comap_rel, Subtype.exists, exists_and_left, exists_prop]
+  constructor
+  · rintro ⟨hcd, hc, hd⟩
+    exact ⟨c, hc, d, hcd, rfl, hd, rfl⟩
+  · rintro ⟨c, hc, d, hcd, rfl, hd, rfl⟩
+    exact ⟨hcd, hc, hd⟩
 
 /-- **Borel isomorphism under bounded internal stabilization.** In a vocabulary with countably many
 relation symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K`
