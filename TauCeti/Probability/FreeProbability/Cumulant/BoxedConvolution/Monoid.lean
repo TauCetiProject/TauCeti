@@ -198,11 +198,12 @@ theorem map_toBoxed {S : Type*} [CommSemiring S] (f : R →+* S) (p : R⟦X⟧) 
 
 @[simp]
 theorem map_id : map (RingHom.id R) = MonoidHom.id (BoxedConvolution R) :=
-  MonoidHom.ext fun _ => BoxedConvolution.ext <| PowerSeries.ext fun _ => by simp
+  MonoidHom.ext fun x => BoxedConvolution.ext <| congrFun (PowerSeries.map_id (R := R)) x.ofBoxed
 
 theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (f : R →+* S) (g : S →+* T) :
     map (g.comp f) = (map g).comp (map f) :=
-  MonoidHom.ext fun _ => BoxedConvolution.ext <| PowerSeries.ext fun _ => by simp
+  MonoidHom.ext fun x => BoxedConvolution.ext <|
+    DFunLike.congr_fun (PowerSeries.map_comp f g) x.ofBoxed
 
 theorem map_comp_apply {S T : Type*} [CommSemiring S] [CommSemiring T] (f : R →+* S)
     (g : S →+* T) (x : BoxedConvolution R) :
@@ -214,20 +215,16 @@ theorem constantCoeffHom_comp_map {S : Type*} [CommSemiring S] (f : R →+* S) :
     constantCoeffHom.comp (map f) = (f : R →* S).comp constantCoeffHom :=
   MonoidHom.ext fun _ => by simp
 
-theorem constantCoeffHom_map {S : Type*} [CommSemiring S] (f : R →+* S)
-    (x : BoxedConvolution R) :
-    constantCoeffHom (map f x) = f (constantCoeffHom x) := by
-  simp
+theorem constantCoeffHom_map {S : Type*} [CommSemiring S] (f : R →+* S) (x : BoxedConvolution R) :
+    constantCoeffHom (map f x) = f (constantCoeffHom x) := by simp
 
 @[simp]
 theorem coeffOneHom_comp_map {S : Type*} [CommSemiring S] (f : R →+* S) :
     coeffOneHom.comp (map f) = (f : R →* S).comp coeffOneHom :=
   MonoidHom.ext fun _ => by simp
 
-theorem coeffOneHom_map {S : Type*} [CommSemiring S] (f : R →+* S)
-    (x : BoxedConvolution R) :
-    coeffOneHom (map f x) = f (coeffOneHom x) := by
-  simp
+theorem coeffOneHom_map {S : Type*} [CommSemiring S] (f : R →+* S) (x : BoxedConvolution R) :
+    coeffOneHom (map f x) = f (coeffOneHom x) := by simp
 
 variable (R) in
 /-- The submonoid of `BoxedConvolution R` consisting of normalised series `1 + ∑_{n ≥ 1} aₙ Xⁿ`,
@@ -249,14 +246,12 @@ theorem map_mem_normalizedSubmonoid {S : Type*} [CommSemiring S] (f : R →+* S)
 /-- Base change on the normalised boxed-convolution submonoid along a ring homomorphism
 `f : R →+* S`. -/
 noncomputable def mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S) :
-    normalizedSubmonoid R →* normalizedSubmonoid S where
-  toFun x := ⟨map f x.val, map_mem_normalizedSubmonoid f x.property⟩
-  map_one' := Subtype.ext (map_one (map f))
-  map_mul' x y := Subtype.ext (map_mul (map f) x.val y.val)
+    normalizedSubmonoid R →* normalizedSubmonoid S :=
+  ((map f).domRestrict (normalizedSubmonoid R)).codRestrict (normalizedSubmonoid S)
+    fun x => map_mem_normalizedSubmonoid f x.property
 
 @[simp]
-theorem coe_mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S)
-    (x : normalizedSubmonoid R) :
+theorem coe_mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S) (x : normalizedSubmonoid R) :
     ((mapNormalized f x : normalizedSubmonoid S) : BoxedConvolution S) = map f x := (rfl)
 
 @[simp]
@@ -311,8 +306,7 @@ theorem toBoxed_freeCumulantSeries_mem_normalizedSubmonoid (φ : A → R) (a : A
 /-- For a normalised functional `φ`, the free cumulant series of `1` is the boxed-convolution
 identity `1 + X`. -/
 theorem toBoxed_freeCumulantSeries_one {φ : A → R} (hφ : φ 1 = 1) :
-    toBoxed (freeCumulantSeries φ (1 : A)) = 1 := by
-  simp [freeCumulantSeries_one hφ]
+    toBoxed (freeCumulantSeries φ (1 : A)) = 1 := by simp [freeCumulantSeries_one hφ]
 
 end Monoid
 
@@ -339,8 +333,7 @@ theorem IsFreelyIndependent.toBoxed_freeCumulantSeries_list_prod {B : ι → Sub
       (h.cond_adjoin_singleton_list_prod hφ hnodup.1 (hl p List.mem_cons_self) hl'))
       |>.freeCumulantSeries_mul hφ (i := true) (j := false) (by decide)
     simp only [Bool.cond_true, Bool.cond_false] at hmul
-    simp only [List.map_cons, List.prod_cons]
-    rw [hmul, toBoxed_boxedConvolution, ih hnodup.2 hl']
+    simp only [List.map_cons, List.prod_cons, hmul, toBoxed_boxedConvolution, ih hnodup.2 hl']
 
 /-- *Free cumulants of a finite product of free elements*: for a duplicate-free list `l` of
 indices of a freely independent family `c` under a normalised `φ`, the free cumulant series of
@@ -351,8 +344,7 @@ theorem IsFreelyIndependentElements.toBoxed_freeCumulantSeries_list_prod {c : ι
       (l.map fun i => toBoxed (freeCumulantSeries φ (c i))).prod := by
   simpa [Function.comp_def] using
     (isFreelyIndependentElements_iff.mp h).toBoxed_freeCumulantSeries_list_prod hφ
-      (l := l.map fun i => (i, c i))
-      (by simpa [Function.comp_def] using hnodup)
+      (l := l.map fun i => (i, c i)) (by simpa [Function.comp_def] using hnodup)
       (by simp [Algebra.self_mem_adjoin_singleton])
 
 end FreeProduct

@@ -209,6 +209,18 @@ theorem X_boxedConvolution_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constan
 
 end CommSemiring
 
+section Ring
+
+variable [Ring R]
+
+/-- Every formal power series over a ring agrees at all positive degrees with a power series of
+constant coefficient `1`. -/
+theorem exists_constantCoeff_eq_one_coeff_eq (f : R⟦X⟧) :
+    ∃ f' : R⟦X⟧, constantCoeff f' = 1 ∧ ∀ k, k ≠ 0 → coeff k f = coeff k f' :=
+  ⟨f + C (1 - constantCoeff f), by simp, fun k hk => by simp [coeff_C, hk]⟩
+
+end Ring
+
 section CommRing
 
 variable [CommRing R]

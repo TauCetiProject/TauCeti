@@ -504,16 +504,12 @@ types (`FormalCoordinate R` has multiplication by substitution, whereas `R⟦X�
 multiplication): `φ` corresponds to its coefficient shift `φ / X`, whose constant coefficient is
 the unit linear coefficient of `φ`, and a unit `u : R⟦X⟧ˣ` corresponds to `X * u`. -/
 noncomputable def unitsEquiv : FormalCoordinate R ≃ R⟦X⟧ˣ where
-  toFun φ :=
-    let s : R⟦X⟧ := PowerSeries.mk fun n ↦ coeff (n + 1) φ.toPowerSeries
-    have hs : constantCoeff s = φ.linearCoeff := by simp [s]
-    Units.mk s (invOfUnit s φ.linearCoeff) (mul_invOfUnit s _ hs) (invOfUnit_mul s _ hs)
+  toFun φ := φ.isUnit_mk_coeff_succ.unit
   invFun u :=
     { toPowerSeries := X * (u : R⟦X⟧)
       constantCoeff_toPowerSeries := by simp
       isUnit_coeff_one := by simpa using isUnit_iff_constantCoeff.mp u.isUnit }
-  left_inv φ := FormalCoordinate.ext <| by
-    simpa [φ.constantCoeff_toPowerSeries] using (eq_X_mul_shift_add_const φ.toPowerSeries).symm
+  left_inv φ := FormalCoordinate.ext φ.toPowerSeries_eq_X_mul.symm
   right_inv u := Units.ext <| PowerSeries.ext fun n ↦ by simp
 
 /-- The underlying power series of `φ.unitsEquiv` is the coefficient shift `φ / X`. -/
@@ -547,8 +543,7 @@ theorem X_mul_val_unitsEquiv (φ : FormalCoordinate R) :
 
 @[simp]
 theorem val_unitsEquiv_mul_X (φ : FormalCoordinate R) :
-    (φ.unitsEquiv : R⟦X⟧) * X = φ.toPowerSeries := by
-  rw [mul_comm, X_mul_val_unitsEquiv]
+    (φ.unitsEquiv : R⟦X⟧) * X = φ.toPowerSeries := by rw [mul_comm, X_mul_val_unitsEquiv]
 
 @[simp]
 theorem linearCoeff_unitsEquiv_symm (u : R⟦X⟧ˣ) :
@@ -570,24 +565,20 @@ theorem unitsEquiv_homothety (u : Rˣ) :
 
 @[simp]
 theorem unitsEquiv_homothety_mul (u : Rˣ) (φ : FormalCoordinate R) :
-    (homothety u * φ).unitsEquiv = Units.map ↑(C (R := R)) u * φ.unitsEquiv := by
-  apply Units.ext
-  apply X_mul_injective
-  dsimp only
-  rw [X_mul_val_unitsEquiv, toPowerSeries_homothety_mul]
-  simp [Algebra.smul_def, mul_left_comm X]
+    (homothety u * φ).unitsEquiv = Units.map ↑(C (R := R)) u * φ.unitsEquiv :=
+  Units.ext <| X_mul_injective <| by
+    dsimp only; rw [X_mul_val_unitsEquiv, toPowerSeries_homothety_mul]
+    simp [Algebra.smul_def, mul_left_comm X]
 
 /-- Right-multiplying a formal coordinate by `homothety u` rescales `φ.unitsEquiv` by `u` and
 multiplies by `C u`. -/
 theorem unitsEquiv_mul_homothety (φ : FormalCoordinate R) (u : Rˣ) :
     (φ * homothety u).unitsEquiv =
-      Units.map ↑(C (R := R)) u * Units.map ↑(rescale (u : R)) φ.unitsEquiv := by
-  apply Units.ext
-  apply X_mul_injective
-  dsimp only
-  rw [X_mul_val_unitsEquiv, toPowerSeries_mul_homothety, ← X_mul_val_unitsEquiv φ, map_mul,
-    rescale_X]
-  simp [mul_left_comm X, mul_assoc]
+      Units.map ↑(C (R := R)) u * Units.map ↑(rescale (u : R)) φ.unitsEquiv :=
+  Units.ext <| X_mul_injective <| by
+    dsimp only; rw [X_mul_val_unitsEquiv, toPowerSeries_mul_homothety,
+      ← X_mul_val_unitsEquiv φ, map_mul, rescale_X]
+    simp [mul_left_comm X, mul_assoc]
 
 @[simp]
 theorem map_unitsEquiv {S : Type*} [CommRing S] (f : R →+* S) (φ : FormalCoordinate R) :
@@ -670,13 +661,11 @@ theorem toPowerSeries_toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)
 
 @[simp]
 theorem linearCoeff_toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
-    (f.toFormalCoordinate hf).linearCoeff = hf.unit :=
-  Units.ext <| by simp
+    (f.toFormalCoordinate hf).linearCoeff = hf.unit := Units.ext <| by simp
 
 @[simp]
 theorem toFormalCoordinate_toPowerSeries (φ : FormalCoordinate R) :
-    φ.toPowerSeries.toFormalCoordinate φ.isUnit_coeff_one = φ :=
-  FormalCoordinate.ext <| by simp
+    φ.toPowerSeries.toFormalCoordinate φ.isUnit_coeff_one = φ := FormalCoordinate.ext <| by simp
 
 @[simp]
 theorem toFormalCoordinate_X : (X : R⟦X⟧).toFormalCoordinate (by simp) = 1 :=
@@ -688,12 +677,10 @@ theorem toFormalCoordinate_one_add_X : (1 + X : R⟦X⟧).toFormalCoordinate (by
 
 /-- `toFormalCoordinate` depends only on the positive-degree coefficients of `f`. -/
 theorem toFormalCoordinate_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : IsUnit (coeff 1 g))
-    (h : ∀ k, k ≠ 0 → coeff k f = coeff k g) :
-    f.toFormalCoordinate hf = g.toFormalCoordinate hg :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [coeff_zero_eq_constantCoeff_apply]
-    · simp [coeff_C, hn, h n hn]
+    (h : ∀ k, k ≠ 0 → coeff k f = coeff k g) : f.toFormalCoordinate hf = g.toFormalCoordinate hg :=
+  FormalCoordinate.ext <| PowerSeries.ext fun
+    | 0 => by simp [coeff_zero_eq_constantCoeff_apply]
+    | n + 1 => by simp [h _ n.succ_ne_zero]
 
 /-- Adding a constant series on the left leaves `toFormalCoordinate` unchanged. -/
 @[simp]
@@ -725,10 +712,10 @@ theorem map_toFormalCoordinate {S : Type*} [CommRing S] (α : R →+* S) (f : R�
 theorem toFormalCoordinate_rescale {c : R} (hc : IsUnit c) (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     (rescale c f).toFormalCoordinate (by simpa [coeff_rescale] using hc.mul hf) =
       f.toFormalCoordinate hf * FormalCoordinate.homothety hc.unit :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
+  FormalCoordinate.ext <| by
     rw [FormalCoordinate.toPowerSeries_mul_homothety]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
-    · simp [coeff_rescale, coeff_C, hn]
+    exact PowerSeries.ext fun
+      | 0 => by simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
+      | n + 1 => by simp [coeff_rescale]
 
 end PowerSeries

@@ -59,9 +59,11 @@ identify the group of normalised boxed-convolution units with `R⟦X⟧ˣ`:
   `unitsMulEquiv`.
 * `TauCeti.val_sSeriesMulEquiv_freeCumulantSeriesNormalizedUnit`,
   `TauCeti.IsFreelyIndependent.freeCumulantSeriesNormalizedUnit_mul`,
-  `TauCeti.IsFreelyIndependent.freeCumulantSeriesNormalizedUnit_list_prod`: for a normalised `φ`,
-  `sSeriesMulEquiv` maps `freeCumulantSeriesNormalizedUnit` to `sSeries`, and
-  `freeCumulantSeriesNormalizedUnit` is multiplicative on free products.
+  `TauCeti.IsFreelyIndependent.freeCumulantSeriesNormalizedUnit_list_prod`,
+  `TauCeti.IsFreelyIndependent.sSeries_list_prod`,
+  `TauCeti.IsFreelyIndependentElements.sSeries_list_prod`: for a normalised `φ`,
+  `sSeriesMulEquiv` maps `freeCumulantSeriesNormalizedUnit` to `sSeries`, and both
+  `freeCumulantSeriesNormalizedUnit` and `sSeries` are multiplicative on free products.
 
 ## References
 
@@ -101,9 +103,8 @@ theorem constantCoeff_boxedConvolutionInv (f : R⟦X⟧) (hf₀ : IsUnit (consta
 /-- The constant coefficient of `f.boxedConvolutionInv hf₀ hf₁` is a unit. -/
 theorem isUnit_constantCoeff_boxedConvolutionInv (f : R⟦X⟧) (hf₀ : IsUnit (constantCoeff f))
     (hf₁ : IsUnit (coeff 1 f)) :
-    IsUnit (constantCoeff (f.boxedConvolutionInv hf₀ hf₁)) := by
-  rw [constantCoeff_boxedConvolutionInv]
-  exact hf₀.ringInverse
+    IsUnit (constantCoeff (f.boxedConvolutionInv hf₀ hf₁)) :=
+  constantCoeff_boxedConvolutionInv f hf₀ hf₁ ▸ hf₀.ringInverse
 
 /-- `f.boxedConvolutionInv hf₀ hf₁` agrees with `ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁)⁻¹`
 at every positive index. -/
@@ -116,9 +117,9 @@ theorem coeff_boxedConvolutionInv_eq_coeff_ofBoxedSSeriesUnit (f : R⟦X⟧)
 /-- The linear coefficient of `f.boxedConvolutionInv hf₀ hf₁` is a unit. -/
 theorem isUnit_coeff_one_boxedConvolutionInv (f : R⟦X⟧) (hf₀ : IsUnit (constantCoeff f))
     (hf₁ : IsUnit (coeff 1 f)) :
-    IsUnit (coeff 1 (f.boxedConvolutionInv hf₀ hf₁)) := by
-  rw [coeff_boxedConvolutionInv_eq_coeff_ofBoxedSSeriesUnit f hf₀ hf₁ one_ne_zero]
-  exact isUnit_coeff_one_ofBoxedSSeriesUnit _
+    IsUnit (coeff 1 (f.boxedConvolutionInv hf₀ hf₁)) :=
+  coeff_boxedConvolutionInv_eq_coeff_ofBoxedSSeriesUnit f hf₀ hf₁ one_ne_zero ▸
+    isUnit_coeff_one_ofBoxedSSeriesUnit _
 
 @[simp]
 theorem boxedSSeriesUnit_boxedConvolutionInv (f : R⟦X⟧) (hf₀ : IsUnit (constantCoeff f))
@@ -143,15 +144,11 @@ theorem boxedConvolution_boxedConvolutionInv_cancel (f : R⟦X⟧) (hf₀ : IsUn
     (hf₁ : IsUnit (coeff 1 f)) :
     f.boxedConvolution (f.boxedConvolutionInv hf₀ hf₁) = 1 + X :=
   eq_of_constantCoeff_eq_of_boxedSSeries_eq
+    (by rw [coeff_one_boxedConvolution]; exact hf₁.mul (isUnit_coeff_one_boxedConvolutionInv ..))
+    (by simp) (by simp [Ring.mul_inverse_cancel _ hf₀])
     (by
-      rw [coeff_one_boxedConvolution]
-      exact hf₁.mul (isUnit_coeff_one_boxedConvolutionInv f hf₀ hf₁))
-    (by simp)
-    (by simp [Ring.mul_inverse_cancel _ hf₀])
-    (by
-      have h := congrArg Units.val
-        (boxedSSeriesUnit_boxedConvolution hf₁ (isUnit_coeff_one_boxedConvolutionInv f hf₀ hf₁))
-      simpa [boxedSSeriesUnit_boxedConvolutionInv] using h)
+      simpa [boxedSSeriesUnit_boxedConvolutionInv] using congrArg Units.val
+        (boxedSSeriesUnit_boxedConvolution hf₁ (isUnit_coeff_one_boxedConvolutionInv f hf₀ hf₁)))
 
 /-- *Left boxed-convolution inverse*: `f.boxedConvolutionInv ⊠ f = 1 + X`. -/
 @[simp]
@@ -166,10 +163,9 @@ theorem eq_boxedConvolutionInv_of_boxedConvolution_eq_one_add_X {f g : R⟦X⟧}
     (hf₀ : IsUnit (constantCoeff f)) (hf₁ : IsUnit (coeff 1 f))
     (hfg : f.boxedConvolution g = 1 + X) :
     g = f.boxedConvolutionInv hf₀ hf₁ :=
-  BoxedConvolution.toBoxed_inj.mp
-    (left_inv_eq_right_inv
-      (BoxedConvolution.ext (boxedConvolutionInv_boxedConvolution_cancel f hf₀ hf₁))
-      (BoxedConvolution.ext hfg)).symm
+  BoxedConvolution.toBoxed_inj.mp (left_inv_eq_right_inv
+    (BoxedConvolution.ext (boxedConvolutionInv_boxedConvolution_cancel f hf₀ hf₁))
+    (BoxedConvolution.ext hfg)).symm
 
 /-- Characterisation of `f.boxedConvolutionInv hf₀ hf₁` by the right boxed-convolution inverse
 equation `f ⊠ g = 1 + X`. -/
@@ -276,23 +272,21 @@ particular, a boxed-convolution inverse with respect to the identity `X` on seri
 constant coefficient) if and only if `coeff 1 f` is a unit. -/
 theorem exists_boxedConvolution_eq_X_iff {f : R⟦X⟧} :
     (∃ g : R⟦X⟧, constantCoeff g = 0 ∧ f.boxedConvolution g = X) ↔ IsUnit (coeff 1 f) := by
-  refine ⟨fun ⟨g, _, hfg⟩ => ?_, fun hf₁ => ?_⟩
-  · refine IsUnit.of_mul_eq_one (coeff 1 g) ?_
-    simpa [coeff_one_boxedConvolution] using congrArg (coeff 1) hfg
-  · refine ⟨ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁)⁻¹ - 1, by simp, ?_⟩
-    ext n
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    rw [coeff_boxedConvolution_congr hn (f' := ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁))
+  refine ⟨fun ⟨g, _, hfg⟩ => IsUnit.of_mul_eq_one (coeff 1 g)
+    (by simpa [coeff_one_boxedConvolution] using congrArg (coeff 1) hfg), fun hf₁ => ?_⟩
+  refine ⟨ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁)⁻¹ - 1, by simp, ?_⟩
+  ext (_ | n)
+  · simp
+  · rw [coeff_boxedConvolution_congr n.succ_ne_zero
+      (f' := ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁))
       (fun k hk => by simp [coeff_C, coeff_one, hk])
-      (g' := ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁)⁻¹)
-      (fun k hk => by simp [coeff_one, hk])]
+      (g' := ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁)⁻¹) (fun k hk => by simp [coeff_one, hk])]
     have hinv := boxedConvolution_ofBoxedSSeriesUnit_inv
       (constantCoeff_ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁))
       (isUnit_coeff_one_ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf₁))
     rw [boxedSSeriesUnit_ofBoxedSSeriesUnit] at hinv
     rw [hinv]
-    simp [coeff_one, hn]
+    simp [coeff_one]
 
 end Inverse
 
@@ -328,8 +322,7 @@ theorem val_inv_unitOfIsUnit (x : BoxedConvolution R) (hx₀ : IsUnit (constantC
       toBoxed (x.ofBoxed.boxedConvolutionInv hx₀ hx₁) := (rfl)
 
 @[simp]
-theorem unitOfIsUnit_one :
-    unitOfIsUnit (1 : BoxedConvolution R) (by simp) (by simp) = 1 :=
+theorem unitOfIsUnit_one : unitOfIsUnit (1 : BoxedConvolution R) (by simp) (by simp) = 1 :=
   Units.ext <| by simp
 
 theorem unitOfIsUnit_mul (x y : BoxedConvolution R)
@@ -395,12 +388,12 @@ theorem normalizedUnit_boxedConvolution {f g : R⟦X⟧}
 coefficient is a unit of `R`. -/
 theorem isUnit_normalizedSubmonoid_iff {x : normalizedSubmonoid R} :
     IsUnit x ↔ IsUnit (coeff 1 x.val.ofBoxed) := by
-  refine ⟨fun hx => ?_, fun hx => ?_⟩
-  · simpa using (hx.map (normalizedSubmonoid R).subtype).map coeffOneHom
-  · have hu := (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx).isUnit
-    have hx' : (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx :
-        normalizedSubmonoid R) = x := Subtype.ext (toBoxed_ofBoxed x.val)
-    rwa [hx'] at hu
+  refine ⟨fun hx => by simpa using (hx.map (normalizedSubmonoid R).subtype).map coeffOneHom,
+    fun hx => ?_⟩
+  have hu := (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx).isUnit
+  exact (Subtype.ext (toBoxed_ofBoxed x.val) :
+    (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx :
+      normalizedSubmonoid R) = x) ▸ hu
 
 /-- *The one-variable boxed-convolution / S-series group isomorphism*: the formal S-series
 identifies the group of units of `BoxedConvolution.normalizedSubmonoid R` (normalised power series
@@ -479,9 +472,8 @@ noncomputable def unitsMulEquiv : (BoxedConvolution R)ˣ ≃* Rˣ × R⟦X⟧ˣ 
     unitOfIsUnit (toBoxed f) (by simp [f])
       (by simpa [f, coeff_C] using isUnit_coeff_one_ofBoxedSSeriesUnit p.2)
   left_inv u := Units.ext <| BoxedConvolution.ext <| by
-    dsimp only
-    rw [val_unitOfIsUnit, ofBoxed_toBoxed, ofBoxedSSeriesUnit_boxedSSeriesUnit]
-    simp only [Units.coe_map, constantCoeffHom_apply, map_sub, map_one]
+    simp only [val_unitOfIsUnit, ofBoxed_toBoxed, ofBoxedSSeriesUnit_boxedSSeriesUnit,
+      Units.coe_map, constantCoeffHom_apply, map_sub, map_one]
     ring
   right_inv p := Prod.ext (Units.ext <| by simp) <| by
     dsimp only
@@ -565,16 +557,16 @@ theorem freeCumulantSeriesNormalizedUnit_def (φ : A → R) (a : A) (ha : IsUnit
 @[simp]
 theorem coe_val_freeCumulantSeriesNormalizedUnit (φ : A → R) (a : A) (ha : IsUnit (φ a)) :
     ((freeCumulantSeriesNormalizedUnit φ a ha : normalizedSubmonoid R) : BoxedConvolution R) =
-      toBoxed (freeCumulantSeries φ a) := by
-  rw [freeCumulantSeriesNormalizedUnit_def, coe_val_normalizedUnit]
+      toBoxed (freeCumulantSeries φ a) :=
+  coe_val_normalizedUnit ..
 
 @[simp]
 theorem coe_val_inv_freeCumulantSeriesNormalizedUnit (φ : A → R) (a : A) (ha : IsUnit (φ a)) :
     ((↑(freeCumulantSeriesNormalizedUnit φ a ha)⁻¹ : normalizedSubmonoid R) :
         BoxedConvolution R) =
       toBoxed (ofBoxedSSeriesUnit
-        ((freeCumulantSeries φ a).boxedSSeriesUnit (by rwa [coeff_one_freeCumulantSeries]))⁻¹) := by
-  rw [freeCumulantSeriesNormalizedUnit_def, coe_val_inv_normalizedUnit]
+        ((freeCumulantSeries φ a).boxedSSeriesUnit (by rwa [coeff_one_freeCumulantSeries]))⁻¹) :=
+  coe_val_inv_normalizedUnit ..
 
 @[simp]
 theorem freeCumulantSeriesNormalizedUnit_one {φ : A → R} (hφ : φ 1 = 1) (h1 : IsUnit (φ 1)) :
@@ -584,8 +576,8 @@ theorem freeCumulantSeriesNormalizedUnit_one {φ : A → R} (hφ : φ 1 = 1) (h1
 @[simp]
 theorem sSeriesMulEquiv_freeCumulantSeriesNormalizedUnit (φ : A → R) (a : A) (ha : IsUnit (φ a)) :
     sSeriesMulEquiv (freeCumulantSeriesNormalizedUnit φ a ha) =
-      (freeCumulantSeries φ a).boxedSSeriesUnit (by rwa [coeff_one_freeCumulantSeries]) := by
-  rw [freeCumulantSeriesNormalizedUnit_def, sSeriesMulEquiv_normalizedUnit]
+      (freeCumulantSeries φ a).boxedSSeriesUnit (by rwa [coeff_one_freeCumulantSeries]) :=
+  sSeriesMulEquiv_normalizedUnit ..
 
 /-- For a normalised functional `φ`, applying `BoxedConvolution.sSeriesMulEquiv` to
 `freeCumulantSeriesNormalizedUnit φ a ha` yields `sSeries φ a ha`. -/
@@ -640,14 +632,14 @@ theorem IsFreelyIndependent.freeCumulantSeriesNormalizedUnit_list_prod {B : ι �
     freeCumulantSeriesNormalizedUnit φ (l.map Prod.snd).prod
         (h.isUnit_apply_list_prod hφ hnodup hl hu) =
       (l.attach.map fun p =>
-        freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property)).prod := by
-  apply Units.ext
-  apply Subtype.ext
-  rw [coe_val_freeCumulantSeriesNormalizedUnit,
-    h.toBoxed_freeCumulantSeries_list_prod hφ hnodup hl]
-  simpa [Function.comp_def, ← l.attach_map_val] using
-    (map_list_prod ((normalizedSubmonoid R).subtype.comp (Units.coeHom _))
-      (l.attach.map fun p => freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property))).symm
+        freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property)).prod :=
+  Units.ext <| Subtype.ext <| by
+    rw [coe_val_freeCumulantSeriesNormalizedUnit,
+      h.toBoxed_freeCumulantSeries_list_prod hφ hnodup hl]
+    simpa [Function.comp_def, ← l.attach_map_val] using
+      (map_list_prod ((normalizedSubmonoid R).subtype.comp (Units.coeHom _))
+        (l.attach.map fun p =>
+          freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property))).symm
 
 /-- *Multiplicativity of `freeCumulantSeriesNormalizedUnit` on finite products of free elements*:
 for a duplicate-free list `l` of indices of a freely independent family `c` with unit means under a
@@ -661,12 +653,40 @@ theorem IsFreelyIndependentElements.freeCumulantSeriesNormalizedUnit_list_prod {
       (l.attach.map fun i =>
         freeCumulantSeriesNormalizedUnit φ (c i.val) (hu i.val i.property)).prod := by
   have h1 := (isFreelyIndependentElements_iff.mp h).freeCumulantSeriesNormalizedUnit_list_prod hφ
-    (l := l.map fun i => (i, c i))
-    (by simpa [Function.comp_def] using hnodup)
-    (by simp [Algebra.self_mem_adjoin_singleton])
-    (by simpa using hu)
-  refine (Units.ext <| Subtype.ext <| by simp [Function.comp_def]).trans (h1.trans ?_)
-  simp [List.attach_map, Function.comp_def]
+    (l := l.map fun i => (i, c i)) (by simpa [Function.comp_def] using hnodup)
+    (by simp [Algebra.self_mem_adjoin_singleton]) (by simpa using hu)
+  simpa [List.attach_map, Function.comp_def] using
+    (Units.ext <| Subtype.ext <| by simp [Function.comp_def]).trans h1
+
+/-- *Multiplicativity of the formal S-series on finite products of free variables*: for a
+normalised `φ`, a freely independent family `B`, and a list `l : List (ι × A)` with pairwise
+distinct indices whose letters `p.2 ∈ B p.1` have unit means, the formal S-series of
+`(l.map Prod.snd).prod` is the product of the formal S-series of the letters. -/
+theorem IsFreelyIndependent.sSeries_list_prod {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {l : List (ι × A)}
+    (hnodup : (l.map Prod.fst).Nodup) (hl : ∀ p ∈ l, p.2 ∈ B p.1)
+    (hu : ∀ p ∈ l, IsUnit (φ p.2)) :
+    sSeries φ (l.map Prod.snd).prod (h.isUnit_apply_list_prod hφ hnodup hl hu) =
+      (l.attach.map fun p => sSeries φ p.val.2 (hu p.val p.property)).prod := by
+  simpa only [map_list_prod, MonoidHom.coe_comp, Function.comp_def, Units.coeHom_apply,
+    MulEquiv.coe_toMonoidHom, List.map_map,
+    val_sSeriesMulEquiv_freeCumulantSeriesNormalizedUnit hφ] using
+    congrArg ((Units.coeHom R⟦X⟧).comp sSeriesMulEquiv.toMonoidHom)
+      (h.freeCumulantSeriesNormalizedUnit_list_prod hφ hnodup hl hu)
+
+/-- *Multiplicativity of the formal S-series on finite products of free elements*: for a
+duplicate-free list `l` of indices of a freely independent family `c` with unit means under a
+normalised `φ`, the S-series of `(l.map c).prod` is the product of the S-series of the factors. -/
+theorem IsFreelyIndependentElements.sSeries_list_prod {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {l : List ι} (hnodup : l.Nodup)
+    (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
+    sSeries φ (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) =
+      (l.attach.map fun i => sSeries φ (c i.val) (hu i.val i.property)).prod := by
+  simpa only [map_list_prod, MonoidHom.coe_comp, Function.comp_def, Units.coeHom_apply,
+    MulEquiv.coe_toMonoidHom, List.map_map,
+    val_sSeriesMulEquiv_freeCumulantSeriesNormalizedUnit hφ] using
+    congrArg ((Units.coeHom R⟦X⟧).comp sSeriesMulEquiv.toMonoidHom)
+      (h.freeCumulantSeriesNormalizedUnit_list_prod hφ hnodup hu)
 
 end FreeProduct
 

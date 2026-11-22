@@ -74,23 +74,22 @@ private theorem boxedConvolution_assoc_of_constantCoeff_eq_one {R : Type*} [Comm
 
 private theorem boxedConvolution_assoc_ring {R : Type*} [CommRing R] (f g h : R⟦X⟧) :
     (f.boxedConvolution g).boxedConvolution h = f.boxedConvolution (g.boxedConvolution h) := by
-  let N (s : R⟦X⟧) := s + C (1 - constantCoeff s)
-  have hN (s : R⟦X⟧) : constantCoeff (N s) = 1 := by simp [N]
-  have hcoeff (s : R⟦X⟧) (k : ℕ) (hk : k ≠ 0) : coeff k s = coeff k (N s) := by
-    simp [N, coeff_C, hk]
+  obtain ⟨f', hf₀, hf⟩ := exists_constantCoeff_eq_one_coeff_eq f
+  obtain ⟨g', hg₀, hg⟩ := exists_constantCoeff_eq_one_coeff_eq g
+  obtain ⟨h', hh₀, hh⟩ := exists_constantCoeff_eq_one_coeff_eq h
   ext n
   rcases eq_or_ne n 0 with rfl | hn
   · simp [mul_assoc]
   calc
     coeff n ((f.boxedConvolution g).boxedConvolution h) =
-        coeff n (((N f).boxedConvolution (N g)).boxedConvolution (N h)) :=
+        coeff n ((f'.boxedConvolution g').boxedConvolution h') :=
       coeff_boxedConvolution_congr hn
-        (fun k hk => coeff_boxedConvolution_congr hk (hcoeff f) (hcoeff g)) (hcoeff h)
-    _ = coeff n ((N f).boxedConvolution ((N g).boxedConvolution (N h))) :=
-      congrArg (coeff n) (boxedConvolution_assoc_of_constantCoeff_eq_one _ _ _ (hN f) (hN g) (hN h))
+        (fun k hk => coeff_boxedConvolution_congr hk hf hg) hh
+    _ = coeff n (f'.boxedConvolution (g'.boxedConvolution h')) :=
+      congrArg (coeff n) (boxedConvolution_assoc_of_constantCoeff_eq_one f' g' h' hf₀ hg₀ hh₀)
     _ = coeff n (f.boxedConvolution (g.boxedConvolution h)) :=
-      (coeff_boxedConvolution_congr hn (hcoeff f)
-        (fun k hk => coeff_boxedConvolution_congr hk (hcoeff g) (hcoeff h))).symm
+      (coeff_boxedConvolution_congr hn hf
+        (fun k hk => coeff_boxedConvolution_congr hk hg hh)).symm
 
 /-- Scalar boxed convolution is associative over every commutative semiring. The constant
 coefficients are arbitrary; no invertibility of the linear coefficients is required. -/
