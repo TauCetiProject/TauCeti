@@ -98,12 +98,12 @@ def subtype : AlgebraicK2 R →* SteinbergGroup R :=
   (SteinbergGroup.toStableGL R).ker.subtype
 
 /-- Evaluating `AlgebraicK2.subtype R` yields the underlying element of `St(R)`. -/
+@[simp]
 theorem subtype_apply (x : AlgebraicK2 R) :
     subtype R x = (x : SteinbergGroup R) :=
   (rfl)
 
 /-- Evaluating `AlgebraicK2.subtype R` on `AlgebraicK2.mk z hz` gives `z`. -/
-@[simp]
 theorem subtype_mk (z : SteinbergGroup R) (hz : SteinbergGroup.toStableGL R z = 1) :
     subtype R (mk z hz) = z :=
   (rfl)
@@ -118,7 +118,6 @@ theorem toStableGL_comp_subtype :
   MonoidHom.ext fun x ↦ x.property
 
 /-- Every element in the image of `AlgebraicK2.subtype R` maps to `1` under `toStableGL R`. -/
-@[simp]
 theorem toStableGL_subtype (x : AlgebraicK2 R) :
     SteinbergGroup.toStableGL R (subtype R x) = 1 :=
   DFunLike.congr_fun (toStableGL_comp_subtype R) x
@@ -145,7 +144,6 @@ theorem subtype_comp_map (f : R →+* S) :
 
 /-- Applying `AlgebraicK2.subtype` to `AlgebraicK2.map f x` yields
 `IndexedSteinbergGroup.map f (subtype R x)`. -/
-@[simp]
 theorem subtype_map (f : R →+* S) (x : AlgebraicK2 R) :
     subtype S (map f x) = IndexedSteinbergGroup.map f (subtype R x) :=
   DFunLike.congr_fun (subtype_comp_map f) x
@@ -155,6 +153,15 @@ theorem subtype_map (f : R →+* S) (x : AlgebraicK2 R) :
 @[simp]
 theorem coe_map_apply (f : R →+* S) (x : AlgebraicK2 R) :
     (map f x : SteinbergGroup S) = IndexedSteinbergGroup.map f x :=
+  (rfl)
+
+/-- Applying `AlgebraicK2.map f` to `AlgebraicK2.mk z hz` yields
+`AlgebraicK2.mk (IndexedSteinbergGroup.map f z) _`. -/
+@[simp]
+theorem map_mk (f : R →+* S) (z : SteinbergGroup R)
+    (hz : SteinbergGroup.toStableGL R z = 1) :
+    map f (mk z hz) =
+      mk (IndexedSteinbergGroup.map f z) (by rw [SteinbergGroup.toStableGL_map, hz, map_one]) :=
   (rfl)
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₂`. -/
