@@ -26,9 +26,10 @@ characters at their common level, including primes dividing both conductors.
 
 The factors are nonzero on `Re(s) > 0`, so order preservation
 (`meromorphicOrderAt_LFunction_changeLevel`) holds throughout the open right half-plane,
-including `χ = 1` at `s = 1`. By contrast, the L-function evaluation and logarithmic-derivative
-identities and the `log N` bound on `Re(s) ≥ 1` exclude `χ = 1` at the pole `s = 1`, as in the
-native continuation API.
+including `χ = 1` at `s = 1`, where the principal L-function has a simple pole
+(`meromorphicOrderAt_LFunction_one_one`). By contrast, the L-function evaluation and
+logarithmic-derivative identities and the `log N` bound on `Re(s) ≥ 1` exclude `χ = 1` at the
+pole `s = 1`, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -139,7 +140,7 @@ theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero 
 
 /-- The continued L-function of any principal Dirichlet character has a simple pole at `1`. -/
 @[simp]
-theorem meromorphicOrderAt_LFunction_one_at_one (q : ℕ) [NeZero q] :
+theorem meromorphicOrderAt_LFunction_one_one (q : ℕ) [NeZero q] :
     meromorphicOrderAt (1 : DirichletCharacter ℂ q).LFunction 1 = (-1 : ℤ) := by
   rw [← changeLevel_one (q.one_dvd),
     meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) q.one_dvd

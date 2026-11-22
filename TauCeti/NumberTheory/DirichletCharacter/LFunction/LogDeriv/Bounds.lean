@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
@@ -53,7 +54,6 @@ theorem exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one :
   obtain ⟨C, hC0, hγ⟩ := exists_norm_logDeriv_gammaFactor_le_log (a := 1) (b := 2) zero_lt_one
   refine ⟨C, hC0, fun {q} _ ψ hψ {η} hη hη1 u ↦ ?_⟩
   let q₀ : ℕ := ψ.conductor
-  have : NeZero q₀ := ⟨Nat.ne_of_gt (Nat.pos_of_dvd_of_pos ψ.conductor_dvd_level (NeZero.pos q))⟩
   let ψ₀ : DirichletCharacter ℂ q₀ := ψ.primitiveCharacter
   have hψ₀_prim : ψ₀.IsPrimitive := ψ.primitiveCharacter_isPrimitive
   have hψ₀_ne : ψ₀ ≠ 1 := mt ψ.primitiveCharacter_eq_one_iff.mp hψ
@@ -118,12 +118,8 @@ theorem exists_sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le :
   have hmaj := χ.re_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar (σ := 1 + η)
     (by linarith)
   have h1 := hprin q hη hη1
-  have hlog3 : 1 < Real.log 3 := by
-    rw [Real.lt_log_iff_exp_lt (by norm_num)]
-    linarith [Real.exp_one_lt_d9]
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have h1_le : 1 ≤ Real.log (3 * q) :=
-    hlog3.le.trans (Real.log_le_log (by norm_num) (by linarith))
+  have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
+  have h1_le : 1 ≤ Real.log (3 * q) := (Real.one_lt_log_of_three_le (by linarith)).le
   have hlogq_le : Real.log q ≤ Real.log (3 * q) :=
     Real.log_le_log (by positivity) (by linarith)
   have hC0_le :

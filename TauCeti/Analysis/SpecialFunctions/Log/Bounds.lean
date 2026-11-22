@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
 
+import Mathlib.Analysis.Complex.ExponentialBounds
+
 /-!
 # Elementary bounds for the real logarithm
 
@@ -15,7 +17,10 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. Conversely, since `e < 3`,
+`1 < log 3` (`Real.one_lt_log_three`), hence `1 < log x` for `3 ≤ x`
+(`Real.one_lt_log_of_three_le`) and in particular `1 ≤ log (|u| + 3)`
+(`Real.one_le_log_abs_add_three`).
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -36,6 +41,8 @@ in explicit prime-counting estimates.
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
+* `Real.one_lt_log_three`, `Real.one_lt_log_of_three_le`, `Real.one_le_log_abs_add_three`:
+  `1 < log 3`, `1 < log x` for `3 ≤ x`, and `1 ≤ log (|u| + 3)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -55,6 +62,18 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   rw [h4, log_pow]
   norm_num
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- The natural logarithm of `3` is strictly greater than `1`. -/
+theorem one_lt_log_three : 1 < log 3 :=
+  (lt_log_iff_exp_lt (by norm_num)).mpr exp_one_lt_three
+
+/-- For `3 ≤ x`, the natural logarithm of `x` is strictly greater than `1`. -/
+theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
+  one_lt_log_three.trans_le (log_le_log (by norm_num) hx)
+
+/-- For every real `u`, `1 ≤ log (|u| + 3)`. -/
+theorem one_le_log_abs_add_three (u : ℝ) : 1 ≤ log (|u| + 3) :=
+  (one_lt_log_of_three_le (by linarith [abs_nonneg u])).le
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by

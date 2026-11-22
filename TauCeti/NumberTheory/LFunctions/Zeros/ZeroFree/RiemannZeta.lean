@@ -8,9 +8,10 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 import Mathlib.Topology.MetricSpace.Thickening
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ThreeFourOne
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.ThreeFourOne
 
 /-!
 # The de la Vallée Poussin zero-free region for `riemannZeta`
@@ -88,10 +89,7 @@ private theorem riemannZeta_four_div_le_of_two_le_abs_im {C₀ C₁ β t : ℝ}
     (hζ : riemannZeta (β + t * I) = 0) :
     4 / (1 + η - β) ≤ 3 / η + A * Real.log (|t| + 3) := by
   set L : ℝ := Real.log (|t| + 3)
-  have hL1 : 1 < L := by
-    have hlog5 : 1 < Real.log 5 :=
-      (Real.lt_log_iff_exp_lt (by norm_num)).mpr (by linarith [Real.exp_one_lt_d9])
-    exact hlog5.trans_le (Real.log_le_log (by norm_num) (by linarith))
+  have hL1 : 1 < L := Real.one_lt_log_of_three_le (by linarith)
   have hLpos : 0 < L := zero_lt_one.trans hL1
   have h341 := threeFourOne_neg_re_logDeriv_riemannZeta_nonneg (σ := 1 + η) (by linarith) t
   simp only [Complex.ofReal_add, Complex.ofReal_one, Complex.neg_re] at h341
@@ -134,10 +132,7 @@ private theorem exists_c_riemannZeta_ne_zero_of_two_le_abs_im :
   rw [hs_eq] at hζ
   have ht_ge : (2 : ℝ) ≤ |t| := him
   set L : ℝ := Real.log (|t| + 3)
-  have hL1 : 1 < L := by
-    have hlog5 : 1 < Real.log 5 :=
-      (Real.lt_log_iff_exp_lt (by norm_num)).mpr (by linarith [Real.exp_one_lt_d9])
-    exact hlog5.trans_le (Real.log_le_log (by norm_num) (by linarith))
+  have hL1 : 1 < L := Real.one_lt_log_of_three_le (by linarith)
   set η : ℝ := 1 / (8 * A * L)
   have hηpos : 0 < η := by positivity
   have hη1 : η ≤ 1 := div_le_one_of_le₀ (by nlinarith) (by positivity)

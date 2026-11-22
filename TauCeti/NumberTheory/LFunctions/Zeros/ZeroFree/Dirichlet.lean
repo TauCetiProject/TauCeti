@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ThreeFourOne
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Order
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFree.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
@@ -55,12 +57,37 @@ open scoped Topology
 
 namespace TauCeti
 
+private theorem one_lt_log_three_mul (q : ℕ) [NeZero q] : 1 < Real.log (3 * q) :=
+  Real.one_lt_log_of_three_le (by linarith [(Nat.one_le_cast.mpr NeZero.one_le : (1 : ℝ) ≤ q)])
+
+private theorem log_three_mul_pos (q : ℕ) [NeZero q] : 0 < Real.log (3 * q) :=
+  zero_lt_one.trans (one_lt_log_three_mul q)
+
+private theorem log_three_mul_le {q : ℕ} [NeZero q] (t : ℝ) :
+    Real.log (3 * q) ≤ Real.log (q * (|t| + 3)) := by
+  have hq : (0 : ℝ) < q := Nat.cast_pos.mpr (NeZero.pos q)
+  exact Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
+
+private theorem one_lt_log_mul_abs_add_three {q : ℕ} [NeZero q] (t : ℝ) :
+    1 < Real.log (q * (|t| + 3)) :=
+  (one_lt_log_three_mul q).trans_le (log_three_mul_le t)
+
+private theorem log_le_log_mul_abs_add_three {q : ℕ} [NeZero q] (t : ℝ) :
+    Real.log q ≤ Real.log (q * (|t| + 3)) := by
+  have hq : (0 : ℝ) < q := Nat.cast_pos.mpr (NeZero.pos q)
+  exact Real.log_le_log hq (le_mul_of_one_le_right hq.le (by linarith [abs_nonneg t]))
+
+private theorem log_abs_add_three_le_log_mul {q : ℕ} [NeZero q] (t : ℝ) :
+    Real.log (|t| + 3) ≤ Real.log (q * (|t| + 3)) :=
+  Real.log_le_log (by positivity)
+    (le_mul_of_one_le_left (by positivity) (Nat.one_le_cast.mpr NeZero.one_le))
+
 private theorem re_pos_of_le_one_sub_div_log {c : ℝ} (hc : c ≤ Real.log 3 / 2) {q : ℕ}
     [NeZero q] (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) : 0 < ρ.re := by
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
   have hlog_ge : Real.log 3 ≤ Real.log (q * (|ρ.im| + 3)) :=
-    Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg ρ.im])
+    (Real.log_le_log (by norm_num) (by linarith [abs_nonneg ρ.im])).trans
+      (log_abs_add_three_le_log_mul ρ.im)
   have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ 1 / 2 := by
     calc
       c / Real.log (q * (|ρ.im| + 3)) ≤ (Real.log 3 / 2) / Real.log 3 := by
@@ -73,19 +100,14 @@ private theorem re_pos_of_le_one_sub_div_log {c : ℝ} (hc : c ≤ Real.log 3 / 
 
 private theorem log_two_mul_abs_add_three_le {q : ℕ} [NeZero q] (t : ℝ) :
     Real.log (|2 * t| + 3) ≤ 2 * Real.log (q * (|t| + 3)) := by
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have hlog3 : 1 < Real.log 3 :=
-    (Real.lt_log_iff_exp_lt (by norm_num)).mpr (by linarith [Real.exp_one_lt_d9])
   have hlog2 : Real.log 2 ≤ 1 :=
     (Real.log_le_iff_le_exp (by norm_num)).mpr (by linarith [Real.exp_one_gt_d9])
-  have hL : 1 < Real.log (q * (|t| + 3)) :=
-    hlog3.trans_le (Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg t]))
+  have hL : 1 < Real.log (q * (|t| + 3)) := one_lt_log_mul_abs_add_three t
   calc
     Real.log (|2 * t| + 3) ≤ Real.log (2 * (|t| + 3)) :=
       Real.log_le_log (by positivity) (by rw [abs_mul, abs_two]; linarith)
     _ = Real.log 2 + Real.log (|t| + 3) := Real.log_mul (by norm_num) (by positivity)
-    _ ≤ 1 + Real.log (q * (|t| + 3)) :=
-        add_le_add hlog2 (Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t]))
+    _ ≤ 1 + Real.log (q * (|t| + 3)) := add_le_add hlog2 (log_abs_add_three_le_log_mul t)
     _ ≤ 2 * Real.log (q * (|t| + 3)) := by linarith
 
 private theorem neg_re_logDeriv_sq_add_two_mul_le {C_ne C_ζ : ℝ} (hCne : 0 < C_ne) (hCζ : 0 < C_ζ)
@@ -102,9 +124,8 @@ private theorem neg_re_logDeriv_sq_add_two_mul_le {C_ne C_ζ : ℝ} (hCne : 0 < 
       1 / (2 * η) +
         max (3 / 2 + 2 * C_ne) (1 + 2 * C_ζ) * Real.log (q * (|t| + 3)) := by
   set L : ℝ := Real.log (q * (|t| + 3))
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have hLpos : 0 < L := Real.log_pos (by nlinarith [abs_nonneg t])
-  have hlogq_le : Real.log q ≤ L := Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
+  have hLpos : 0 < L := zero_lt_one.trans (one_lt_log_mul_abs_add_three t)
+  have hlogq_le : Real.log q ≤ L := log_le_log_mul_abs_add_three t
   have hlog2t_le : Real.log (|2 * t| + 3) ≤ 2 * L := log_two_mul_abs_add_three_le t
   have h2t_eq : (1 : ℂ) + η + 2 * t * I = 1 + η + ((2 * t : ℝ) : ℂ) * I := by push_cast; ring
   rcases hcase with hsq | ⟨hχ2_1, ht_big⟩
@@ -166,13 +187,9 @@ private theorem threeFourOne_contradiction_of_primitive_ne_one {C_prin C_zero C_
     (hcase : χ ^ 2 ≠ 1 ∨ (χ ^ 2 = 1 ∧ (1 / (16 * K * Real.log (q * (|t| + 3)))) / 2 ≤ |t|)) :
     False := by
   set L : ℝ := Real.log (q * (|t| + 3))
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have hlog3 : 1 < Real.log 3 :=
-    (Real.lt_log_iff_exp_lt (by norm_num)).mpr (by linarith [Real.exp_one_lt_d9])
-  have hL1 : 1 < L := hlog3.trans_le (Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg t]))
-  have hlogq_le : Real.log q ≤ L := Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
-  have hlogt_le : Real.log (|t| + 3) ≤ L :=
-    Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
+  have hL1 : 1 < L := one_lt_log_mul_abs_add_three t
+  have hlogq_le : Real.log q ≤ L := log_le_log_mul_abs_add_three t
+  have hlogt_le : Real.log (|t| + 3) ≤ L := log_abs_add_three_le_log_mul t
   set η : ℝ := 1 / (16 * K * L)
   have hηpos : 0 < η := by positivity
   have hη1 : η ≤ 1 := div_le_one_of_le₀ (by nlinarith) (by positivity)
@@ -211,22 +228,21 @@ private theorem threeFourOne_contradiction_of_primitive_ne_one {C_prin C_zero C_
   rw [div_le_div_iff₀ (by positivity) (by positivity)] at hcon
   linarith
 
+private abbrev RetainedZeroSumBound (C_sum : ℝ) : Prop :=
+  ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
+    ∀ {S : Finset ℂ}, (∀ ρ ∈ S, 0 < ρ.re) → ∀ {η : ℝ}, 0 < η → η ≤ 1 →
+    ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η : ℂ) - ρ)).re ≤
+      1 / η + C_sum * Real.log (3 * q)
+
 private theorem eta_budget_le {C_sum K η₀ : ℝ} {q : ℕ} [NeZero q] (hK1 : 1 ≤ K)
     (hKC : C_sum ≤ K) (hη₀ : η₀ = 1 / (16 * K * Real.log (3 * q)))
-    (hsum : ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
-      ∀ {S : Finset ℂ}, (∀ ρ ∈ S, 0 < ρ.re) → ∀ {η : ℝ}, 0 < η → η ≤ 1 →
-      ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η : ℂ) - ρ)).re ≤
-        1 / η + C_sum * Real.log (3 * q))
+    (hsum : RetainedZeroSumBound C_sum)
     (χ : DirichletCharacter ℂ q) (hprim : χ.IsPrimitive) (hne : χ ≠ 1)
     {S : Finset ℂ} (hS : ∀ ρ ∈ S, 0 < ρ.re) :
     0 < η₀ ∧ η₀ ≤ 1 ∧
       ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η₀ : ℂ) - ρ)).re ≤
         17 / (16 * η₀) := by
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have hlog3 : 1 < Real.log 3 :=
-    (Real.lt_log_iff_exp_lt (by norm_num)).mpr (by linarith [Real.exp_one_lt_d9])
-  have hlog3q_ge1 : 1 ≤ Real.log (3 * q) :=
-    hlog3.le.trans (Real.log_le_log (by norm_num) (by linarith))
+  have hlog3q_ge1 : 1 ≤ Real.log (3 * q) := (one_lt_log_three_mul q).le
   have hlog3q_pos : 0 < Real.log (3 * q) := zero_lt_one.trans_le hlog3q_ge1
   have hη₀_pos : 0 < η₀ := by rw [hη₀]; positivity
   have hη₀_1 : η₀ ≤ 1 := by rw [hη₀]; exact div_le_one_of_le₀ (by nlinarith) (by positivity)
@@ -268,10 +284,7 @@ private theorem re_one_div_sub_ge_of_zero {q : ℕ} [NeZero q] {χ : DirichletCh
         div_le_div_of_nonneg_left hnum_pos.le hden_pos hden_hi
 
 private theorem contradiction_of_retained_sum_ge {C_sum K : ℝ} (hK1 : 1 ≤ K) (hKC : C_sum ≤ K)
-    (hsum : ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
-      ∀ {S : Finset ℂ}, (∀ ρ ∈ S, 0 < ρ.re) → ∀ {η : ℝ}, 0 < η → η ≤ 1 →
-      ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η : ℂ) - ρ)).re ≤
-        1 / η + C_sum * Real.log (3 * q))
+    (hsum : RetainedZeroSumBound C_sum)
     {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q) (hprim : χ.IsPrimitive) (hne : χ ≠ 1)
     {S : Finset ℂ} (hS_pos : ∀ ρ ∈ S, 0 < ρ.re) (hS_zero : ∀ ρ ∈ S, χ.LFunction ρ = 0)
     (hS_gap : ∀ ρ ∈ S, 1 - ρ.re ≤ (1 / (16 * K * Real.log (3 * q))) / 10)
@@ -302,6 +315,34 @@ private theorem contradiction_of_retained_sum_ge {C_sum K : ℝ} (hK1 : 1 ≤ K)
   rw [div_le_div_iff₀ (by positivity) (by positivity)] at hcon
   linarith
 
+private theorem contradiction_of_retained_sum_pair {C_sum K : ℝ} (hK1 : 1 ≤ K) (hKC : C_sum ≤ K)
+    (hsum : RetainedZeroSumBound C_sum)
+    {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q) (hprim : χ.IsPrimitive) (hne : χ ≠ 1)
+    {ρ₁ ρ₂ : ℂ} (hne12 : ρ₁ ≠ ρ₂)
+    (hpos₁ : 0 < ρ₁.re) (hpos₂ : 0 < ρ₂.re)
+    (hzero₁ : χ.LFunction ρ₁ = 0) (hzero₂ : χ.LFunction ρ₂ = 0)
+    (hgap₁ : 1 - ρ₁.re ≤ (1 / (16 * K * Real.log (3 * q))) / 10)
+    (hgap₂ : 1 - ρ₂.re ≤ (1 / (16 * K * Real.log (3 * q))) / 10)
+    (him₁ : |ρ₁.im| ≤ (1 / (16 * K * Real.log (3 * q))) / 2)
+    (him₂ : |ρ₂.im| ≤ (1 / (16 * K * Real.log (3 * q))) / 2) : False := by
+  have hm₁ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ₁).mp hzero₁
+  have hm₂ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ₂).mp hzero₂
+  refine contradiction_of_retained_sum_ge hK1 hKC hsum χ hprim hne (S := {ρ₁, ρ₂})
+    (by
+      simp only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq]
+      exact ⟨hpos₁, hpos₂⟩)
+    (by
+      simp only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq]
+      exact ⟨hzero₁, hzero₂⟩)
+    (by
+      simp only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq]
+      exact ⟨hgap₁, hgap₂⟩)
+    (by
+      simp only [Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq]
+      exact ⟨him₁, him₂⟩) ?_
+  rw [Finset.sum_pair hne12]
+  omega
+
 private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
     (hc₁_log : c₁ ≤ Real.log 3 / 2) (hc₁_K : c₁ ≤ 1 / (160 * K))
     (h341 : ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
@@ -312,13 +353,13 @@ private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
     {ρ : ℂ} (hre : 1 - c₁ / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re)
     (hord : 0 < meromorphicOrderAt χ.LFunction ρ) :
     χ ^ 2 = 1 ∧ |ρ.im| < (1 / (16 * K * Real.log (q * (|ρ.im| + 3)))) / 2 := by
-  have hzero : χ.LFunction ρ = 0 := (χ.pos_meromorphicOrderAt_LFunction_iff hne ρ).mp hord
+  have hzero : χ.LFunction ρ = 0 := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ).mp hord
   have hρpos : 0 < ρ.re := re_pos_of_le_one_sub_div_log hc₁_log ρ hre
   have hβ_lt : ρ.re < 1 := by
     by_contra h
     exact χ.LFunction_ne_zero_of_one_le_re (.inl hne) (not_lt.mp h) hzero
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  have hlog_pos : 0 < Real.log (q * (|ρ.im| + 3)) := Real.log_pos (by nlinarith [abs_nonneg ρ.im])
+  have hlog_pos : 0 < Real.log (q * (|ρ.im| + 3)) :=
+    zero_lt_one.trans (one_lt_log_mul_abs_add_three ρ.im)
   have hre' : 1 - 1 / (160 * K) / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re := by
     have hc_le : c₁ / Real.log (q * (|ρ.im| + 3)) ≤ 1 / (160 * K) / Real.log (q * (|ρ.im| + 3)) :=
       div_le_div_of_nonneg_right hc₁_K hlog_pos.le
@@ -330,15 +371,6 @@ private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
   refine ⟨hsq, ?_⟩
   by_contra h
   exact h341 χ hprim hne hρpos hβ_lt hzero' hre' (.inr ⟨hsq, not_lt.mp h⟩)
-
-private theorem log_three_mul_pos (q : ℕ) [NeZero q] : 0 < Real.log (3 * q) := by
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  exact Real.log_pos (by linarith)
-
-private theorem log_three_mul_le {q : ℕ} [NeZero q] (t : ℝ) :
-    Real.log (3 * q) ≤ Real.log (q * (|t| + 3)) := by
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
-  exact Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
 
 private theorem gap_le_of_le_one_sub_div_log {K c₁ : ℝ} (hK1 : 1 ≤ K) (hc₁_K : c₁ ≤ 1 / (160 * K))
     {q : ℕ} [NeZero q] {ρ : ℂ} (hre : 1 - c₁ / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) :
@@ -353,16 +385,13 @@ private theorem gap_le_of_le_one_sub_div_log {K c₁ : ℝ} (hK1 : 1 ≤ K) (hc�
 
 private theorem real_of_primitive_ne_one {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K) (hKC : C_sum ≤ K)
     (hc₁_log : c₁ ≤ Real.log 3 / 2) (hc₁_K : c₁ ≤ 1 / (160 * K))
-    (hsum : ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
-      ∀ {S : Finset ℂ}, (∀ ρ ∈ S, 0 < ρ.re) → ∀ {η : ℝ}, 0 < η → η ≤ 1 →
-      ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η : ℂ) - ρ)).re ≤
-        1 / η + C_sum * Real.log (3 * q))
+    (hsum : RetainedZeroSumBound C_sum)
     {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q) (hprim : χ.IsPrimitive) (hne : χ ≠ 1)
     {ρ : ℂ} (hre : 1 - c₁ / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re)
     (hord : 0 < meromorphicOrderAt χ.LFunction ρ) (hsq : χ ^ 2 = 1)
     (ht_lt : |ρ.im| < (1 / (16 * K * Real.log (q * (|ρ.im| + 3)))) / 2) : ρ.im = 0 := by
   by_contra ht0
-  have hzero : χ.LFunction ρ = 0 := (χ.pos_meromorphicOrderAt_LFunction_iff hne ρ).mp hord
+  have hzero : χ.LFunction ρ = 0 := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ).mp hord
   have hρpos : 0 < ρ.re := re_pos_of_le_one_sub_div_log hc₁_log ρ hre
   have hlog3q_pos : 0 < Real.log (3 * q) := log_three_mul_pos q
   have hη_le :
@@ -379,34 +408,13 @@ private theorem real_of_primitive_ne_one {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K) (h
     have him := congrArg Complex.im h
     simp only [Complex.star_def, Complex.conj_im] at him
     exact ht0 (by linarith)
-  have hm₁ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ).mp hzero
-  have hm₂ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne (star ρ)).mp hconj_zero
-  refine contradiction_of_retained_sum_ge hK1 hKC hsum χ hprim hne (S := {ρ, star ρ})
-    (fun z hz ↦ by
-      rcases Finset.mem_insert.mp hz with rfl | hz
-      · exact hρpos
-      · rw [Finset.mem_singleton.mp hz]; simpa [Complex.star_def] using hρpos)
-    (fun z hz ↦ by
-      rcases Finset.mem_insert.mp hz with rfl | hz
-      · exact hzero
-      · rw [Finset.mem_singleton.mp hz]; exact hconj_zero)
-    (fun z hz ↦ by
-      rcases Finset.mem_insert.mp hz with rfl | hz
-      · exact hgap
-      · rw [Finset.mem_singleton.mp hz]; simpa [Complex.star_def] using hgap)
-    (fun z hz ↦ by
-      rcases Finset.mem_insert.mp hz with rfl | hz
-      · exact him_le
-      · rw [Finset.mem_singleton.mp hz]; simpa [Complex.star_def] using him_le) ?_
-  rw [Finset.sum_pair hne_conj]
-  omega
+  exact contradiction_of_retained_sum_pair hK1 hKC hsum χ hprim hne hne_conj
+    hρpos (by simpa [Complex.star_def] using hρpos) hzero hconj_zero
+    hgap (by simpa [Complex.star_def] using hgap) him_le (by simpa [Complex.star_def] using him_le)
 
 private theorem simple_and_unique_of_real_sq {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K) (hKC : C_sum ≤ K)
     (hc₁_log : c₁ ≤ Real.log 3 / 2) (hc₁_K : c₁ ≤ 1 / (160 * K))
-    (hsum : ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ.IsPrimitive → χ ≠ 1 →
-      ∀ {S : Finset ℂ}, (∀ ρ ∈ S, 0 < ρ.re) → ∀ {η : ℝ}, 0 < η → η ≤ 1 →
-      ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η : ℂ) - ρ)).re ≤
-        1 / η + C_sum * Real.log (3 * q))
+    (hsum : RetainedZeroSumBound C_sum)
     {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q) (hprim : χ.IsPrimitive) (hne : χ ≠ 1)
     (hreal_sq : ∀ {ρ : ℂ}, 1 - c₁ / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re →
       0 < meromorphicOrderAt χ.LFunction ρ → ρ.im = 0 ∧ χ ^ 2 = 1) :
@@ -423,43 +431,32 @@ private theorem simple_and_unique_of_real_sq {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K
     refine ⟨him, hsq, ?_⟩
     rw [χ.meromorphicOrderAt_LFunction_eq_one_iff hne ρ]
     by_contra hm_ne
-    have hzero := (χ.pos_meromorphicOrderAt_LFunction_iff hne ρ).mp hord
+    have hzero := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ).mp hord
     have hm1 := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ).mp hzero
     refine contradiction_of_retained_sum_ge hK1 hKC hsum χ hprim hne (S := {ρ})
-      (fun z hz ↦ by
-        rw [Finset.mem_singleton.mp hz]; exact re_pos_of_le_one_sub_div_log hc₁_log ρ hre)
-      (fun z hz ↦ by rw [Finset.mem_singleton.mp hz]; exact hzero)
-      (fun z hz ↦ by
-        rw [Finset.mem_singleton.mp hz]; exact gap_le_of_le_one_sub_div_log hK1 hc₁_K hre)
-      (fun z hz ↦ by rw [Finset.mem_singleton.mp hz, him, abs_zero]; positivity) ?_
+      (by
+        simp only [Finset.mem_singleton, forall_eq]
+        exact re_pos_of_le_one_sub_div_log hc₁_log ρ hre)
+      (by simp only [Finset.mem_singleton, forall_eq]; exact hzero)
+      (by
+        simp only [Finset.mem_singleton, forall_eq]
+        exact gap_le_of_le_one_sub_div_log hK1 hc₁_K hre)
+      (by simp only [Finset.mem_singleton, forall_eq, him, abs_zero]; positivity) ?_
     rw [Finset.sum_singleton]
     omega
   · by_contra hne12
     obtain ⟨him₁, -⟩ := hreal_sq hre₁ hord₁
     obtain ⟨him₂, -⟩ := hreal_sq hre₂ hord₂
-    have hzero₁ := (χ.pos_meromorphicOrderAt_LFunction_iff hne ρ₁).mp hord₁
-    have hzero₂ := (χ.pos_meromorphicOrderAt_LFunction_iff hne ρ₂).mp hord₂
-    have hm₁ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ₁).mp hzero₁
-    have hm₂ := (χ.LFunction_eq_zero_iff_one_le_analyticOrderNatAt hne ρ₂).mp hzero₂
-    refine contradiction_of_retained_sum_ge hK1 hKC hsum χ hprim hne (S := {ρ₁, ρ₂})
-      (fun z hz ↦ by
-        rcases Finset.mem_insert.mp hz with rfl | hz
-        · exact re_pos_of_le_one_sub_div_log hc₁_log z hre₁
-        · rw [Finset.mem_singleton.mp hz]; exact re_pos_of_le_one_sub_div_log hc₁_log _ hre₂)
-      (fun z hz ↦ by
-        rcases Finset.mem_insert.mp hz with rfl | hz
-        · exact hzero₁
-        · rw [Finset.mem_singleton.mp hz]; exact hzero₂)
-      (fun z hz ↦ by
-        rcases Finset.mem_insert.mp hz with rfl | hz
-        · exact gap_le_of_le_one_sub_div_log hK1 hc₁_K hre₁
-        · rw [Finset.mem_singleton.mp hz]; exact gap_le_of_le_one_sub_div_log hK1 hc₁_K hre₂)
-      (fun z hz ↦ by
-        rcases Finset.mem_insert.mp hz with rfl | hz
-        · rw [him₁, abs_zero]; positivity
-        · rw [Finset.mem_singleton.mp hz, him₂, abs_zero]; positivity) ?_
-    rw [Finset.sum_pair hne12]
-    omega
+    have hzero₁ := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ₁).mp hord₁
+    have hzero₂ := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ₂).mp hord₂
+    exact contradiction_of_retained_sum_pair hK1 hKC hsum χ hprim hne hne12
+      (re_pos_of_le_one_sub_div_log hc₁_log ρ₁ hre₁)
+      (re_pos_of_le_one_sub_div_log hc₁_log ρ₂ hre₂)
+      hzero₁ hzero₂
+      (gap_le_of_le_one_sub_div_log hK1 hc₁_K hre₁)
+      (gap_le_of_le_one_sub_div_log hK1 hc₁_K hre₂)
+      (by rw [him₁, abs_zero]; positivity)
+      (by rw [him₂, abs_zero]; positivity)
 
 private theorem primitive_nonprincipal_zeroFreeRegion :
     ∃ c₁ : ℝ, 0 < c₁ ∧ c₁ ≤ Real.log 3 / 2 ∧
@@ -504,10 +501,9 @@ private theorem principal_meromorphicOrderAt_not_pos {c c_ζ : ℝ} (hc_ζ : 0 <
     (q : ℕ) [NeZero q] (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re)
     (hord : 0 < meromorphicOrderAt (1 : DirichletCharacter ℂ q).LFunction ρ) : False := by
   rcases eq_or_ne ρ 1 with rfl | hρ1
-  · rw [meromorphicOrderAt_LFunction_one_at_one q] at hord
+  · rw [meromorphicOrderAt_LFunction_one_one q] at hord
     exact absurd hord (by decide)
   · have hpos := re_pos_of_le_one_sub_div_log hc_log ρ hre
-    have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q)
     rw [← changeLevel_one (q.one_dvd),
       meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) q.one_dvd hpos,
       LFunction_modOne_eq, (analyticOn_riemannZeta ρ hρ1).meromorphicOrderAt_eq] at hord
@@ -516,7 +512,7 @@ private theorem principal_meromorphicOrderAt_not_pos {c c_ζ : ℝ} (hc_ζ : 0 <
       rw [(analyticOn_riemannZeta ρ hρ1).analyticOrderAt_eq_zero.mpr hne] at hord
       simp at hord
     have hlog_ge : Real.log (|ρ.im| + 3) ≤ Real.log (q * (|ρ.im| + 3)) :=
-      Real.log_le_log (by linarith [abs_nonneg ρ.im]) (by nlinarith [abs_nonneg ρ.im])
+      log_abs_add_three_le_log_mul ρ.im
     have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ c_ζ / Real.log (|ρ.im| + 3) :=
       div_le_div₀ hc_ζ.le hc_le_ζ (Real.log_pos (by linarith [abs_nonneg ρ.im])) hlog_ge
     exact hζ_zfr ρ (by linarith) hζ0
@@ -548,7 +544,6 @@ theorem dirichletLFunction_zeroFreeRegion :
     exact ⟨fun ρ hre hord ↦ (no_zero ρ hre hord).elim,
       fun ρ₁ _ hre₁ _ hord₁ _ ↦ (no_zero ρ₁ hre₁ hord₁).elim⟩
   · let q₀ : ℕ := χ.conductor
-    have : NeZero q₀ := ⟨Nat.ne_of_gt (Nat.pos_of_dvd_of_pos χ.conductor_dvd_level (NeZero.pos q))⟩
     let χ₀ : DirichletCharacter ℂ q₀ := χ.primitiveCharacter
     have hχ₀_ne : χ₀ ≠ 1 := mt χ.primitiveCharacter_eq_one_iff.mp hχ1
     obtain ⟨hsingle, huniq⟩ := hprim_zfr q₀ χ₀ χ.primitiveCharacter_isPrimitive hχ₀_ne
@@ -558,14 +553,17 @@ theorem dirichletLFunction_zeroFreeRegion :
       have hpos := re_pos_of_le_one_sub_div_log hc_log ρ hre
       have hq₀ : (q₀ : ℝ) ≤ q := by
         exact_mod_cast Nat.le_of_dvd (NeZero.pos q) χ.conductor_dvd_level
-      have hq₀1 : (1 : ℝ) ≤ q₀ := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (NeZero.ne q₀)
       have hlog_ge : Real.log (q₀ * (|ρ.im| + 3)) ≤ Real.log (q * (|ρ.im| + 3)) :=
-        Real.log_le_log (by positivity) (mul_le_mul_of_nonneg_right hq₀ (by positivity))
+        Real.log_le_log (mul_pos (Nat.cast_pos.mpr (NeZero.pos q₀)) (by positivity))
+          (mul_le_mul_of_nonneg_right hq₀ (by positivity))
       have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ c₁ / Real.log (q₀ * (|ρ.im| + 3)) :=
-        div_le_div₀ hc₁.le (min_le_right _ _) (Real.log_pos (by nlinarith [abs_nonneg ρ.im]))
-          hlog_ge
-      rw [← χ.changeLevel_primitiveCharacter]
-      exact ⟨by linarith, meromorphicOrderAt_LFunction_changeLevel χ₀ χ.conductor_dvd_level hpos⟩
+        div_le_div₀ hc₁.le (min_le_right _ _)
+          (zero_lt_one.trans (one_lt_log_mul_abs_add_three ρ.im)) hlog_ge
+      have hord_eq : meromorphicOrderAt χ.LFunction ρ =
+          meromorphicOrderAt (changeLevel χ.conductor_dvd_level χ₀).LFunction ρ := by
+        rw [χ.changeLevel_primitiveCharacter]
+      exact ⟨by linarith,
+        hord_eq.trans (meromorphicOrderAt_LFunction_changeLevel χ₀ χ.conductor_dvd_level hpos)⟩
     refine ⟨fun ρ hre hord ↦ ?_, fun ρ₁ ρ₂ hre₁ hre₂ hord₁ hord₂ ↦ ?_⟩
     · obtain ⟨hre', hord_eq⟩ := htransfer ρ hre
       rw [hord_eq] at hord ⊢

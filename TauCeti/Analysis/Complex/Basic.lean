@@ -37,7 +37,8 @@ the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
-`Complex.inv_re_nonneg`). Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
+`Complex.inv_re_nonneg`), and maps `1 ≤ z.re` into `z⁻¹.re ≤ 1` (`Complex.inv_re_le_one`).
+Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
 one-sided upper bound `Re ρ ≤ B` on all zeros of `f` confines every zero to the bounded vertical
 strip `|Re ρ| ≤ max B |Re a - B|` (`TauCeti.abs_re_le_max_of_re_le_of_sub_conj`).
 
@@ -86,6 +87,19 @@ theorem Complex.inv_re_nonneg {z : ℂ} : 0 ≤ z⁻¹.re ↔ 0 ≤ z.re := by
     · simp
     · simp [inv_re, hz]
   simpa only [le_iff_eq_or_lt, eq_comm (a := (0 : ℝ))] using or_congr hzero Complex.inv_re_pos
+
+/-- A complex number with real part at least `1` has inverse with real part at most `1`. -/
+theorem Complex.inv_re_le_one {z : ℂ} (hz : 1 ≤ z.re) : z⁻¹.re ≤ 1 := by
+  have hz0 : 0 < z.re := zero_lt_one.trans_le hz
+  have hsq : z.re ^ 2 ≤ normSq z := by
+    rw [normSq_apply, ← sq]
+    nlinarith [sq_nonneg z.im]
+  rw [inv_re]
+  calc
+    z.re / normSq z ≤ z.re / z.re ^ 2 :=
+      div_le_div_of_nonneg_left hz0.le (sq_pos_of_pos hz0) hsq
+    _ = 1 / z.re := by field_simp
+    _ ≤ 1 := div_le_one_of_le₀ hz hz0.le
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/

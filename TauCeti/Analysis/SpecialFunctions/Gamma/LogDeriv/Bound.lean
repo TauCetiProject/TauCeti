@@ -11,9 +11,10 @@ public import TauCeti.Analysis.SpecialFunctions.Log.Pi
 public import Mathlib.Analysis.Real.Pi.Bounds
 
 import TauCeti.Analysis.SpecialFunctions.Gamma.SectorialDigamma
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!
-# An explicit bound for the real-place gamma term on `[1, 3]`
+# Bounds for the real-place gamma term
 
 The constant `gammaLogDerivBound`, written `C_Γ`, is
 `(|-γ - 2 log 2| + |2 - γ - 2 log 2| + |log π|) / 2`, built from Euler's constant and elementary
@@ -25,6 +26,10 @@ At a real point `s` off the poles, `logDeriv Gammaℝ s = ψ(s/2)/2 - (log π)/2
 `s = 1` and `ψ(3/2)/2 - (log π)/2 ≈ -0.55412` at `s = 3`, because real digamma is monotone on
 the positive axis. Hence `‖logDeriv Gammaℝ s‖ ≤ C_Γ`. The interval `[1, 3]` covers both parity
 shifts `σ + κ` with `1 < σ ≤ 2` and `κ ∈ {0, 1}` of the gamma factor of a Dirichlet L-function.
+
+On unbounded vertical strips `a ≤ Re s ≤ b` with `0 < a`, the sectorial digamma bound
+`Complex.exists_norm_digamma_le_log` yields the logarithmic growth estimate
+`‖logDeriv Gammaℝ s‖ ≤ C * log (|Im s| + 3)` (`Complex.exists_norm_logDeriv_Gammaℝ_le_log`).
 
 ## Main declarations
 
@@ -175,9 +180,7 @@ theorem one_lt_norm_logDeriv_Gammaℝ_one : 1 < ‖logDeriv Gammaℝ 1‖ := by
   rw [norm_logDeriv_Gammaℝ_one]
   have hγ := one_half_lt_eulerMascheroniConstant
   have h2 := log_two_gt_d9
-  have h3 : 1 < Real.log π := by
-    rw [lt_log_iff_exp_lt pi_pos]
-    linarith [exp_one_lt_d9, pi_gt_three]
+  have h3 : 1 < Real.log π := Real.one_lt_log_of_three_le pi_gt_three.le
   norm_num at h2
   linarith
 
@@ -199,9 +202,6 @@ theorem exists_norm_logDeriv_Gammaℝ_le_log {a b : ℝ} (ha : 0 < a) :
     ∃ C : ℝ, 0 < C ∧ ∀ s : ℂ, s.re ∈ Icc a b →
       ‖logDeriv Gammaℝ s‖ ≤ C * Real.log (|s.im| + 3) := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_digamma_le_log (a := a / 2) (b := b / 2) (half_pos ha)
-  have hlog3 : 1 < Real.log 3 := by
-    rw [Real.lt_log_iff_exp_lt (by norm_num)]
-    linarith [Real.exp_one_lt_d9]
   refine ⟨C / 2 + |Real.log Real.pi| / 2 + 1, by positivity, fun s hs ↦ ?_⟩
   have hpole : ∀ n : ℕ, s ≠ -(2 * (n : ℂ)) := by
     intro n hn
@@ -217,8 +217,7 @@ theorem exists_norm_logDeriv_Gammaℝ_le_log {a b : ℝ} (ha : 0 < a) :
     linarith [abs_nonneg s.im]
   have hlog_le : Real.log (|(s / 2).im| + 2) ≤ Real.log (|s.im| + 3) :=
     Real.log_le_log (by positivity) him
-  have hlog3_le : 1 ≤ Real.log (|s.im| + 3) :=
-    hlog3.le.trans (Real.log_le_log (by norm_num) (by linarith [abs_nonneg s.im]))
+  have hlog3_le : 1 ≤ Real.log (|s.im| + 3) := Real.one_le_log_abs_add_three s.im
   have h1 : ‖digamma (s / 2) / 2‖ ≤ (C / 2) * Real.log (|s.im| + 3) := by
     rw [norm_div, Complex.norm_two]
     have hmul := (hC (s / 2) hs_half).trans (mul_le_mul_of_nonneg_left hlog_le hC0.le)

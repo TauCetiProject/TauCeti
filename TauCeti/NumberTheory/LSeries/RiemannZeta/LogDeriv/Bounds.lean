@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.LogDeriv
@@ -50,25 +52,6 @@ open scoped LSeries.notation Topology
 
 namespace TauCeti
 
-private theorem re_one_div_le_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
-    (1 / s).re ≤ 1 := by
-  have hs0 : 0 < s.re := by linarith
-  have hsq : s.re ^ 2 ≤ Complex.normSq s := by
-    rw [Complex.normSq_apply, ← sq]
-    nlinarith [sq_nonneg s.im]
-  rw [one_div, Complex.inv_re]
-  calc
-    s.re / Complex.normSq s ≤ s.re / s.re ^ 2 :=
-      div_le_div_of_nonneg_left hs0.le (sq_pos_of_pos hs0) hsq
-    _ = 1 / s.re := by field_simp
-    _ ≤ 1 := div_le_one_of_le₀ hs.le hs0.le
-
-private theorem one_le_log_abs_add_three (u : ℝ) : 1 ≤ Real.log (|u| + 3) := by
-  have hlog3 : 1 < Real.log 3 := by
-    rw [Real.lt_log_iff_exp_lt (by norm_num)]
-    linarith [Real.exp_one_lt_d9]
-  exact hlog3.le.trans (Real.log_le_log (by norm_num) (by linarith [abs_nonneg u]))
-
 private theorem neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv {C₀ : ℝ}
     (hΓ : ∀ s : ℂ, s.re ∈ Icc (1 : ℝ) 2 → ‖logDeriv Gammaℝ s‖ ≤ C₀ * Real.log (|s.im| + 3))
     {η : ℝ} (hη : 0 < η) (hη1 : η ≤ 1) (u r : ℝ)
@@ -92,7 +75,8 @@ private theorem neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv {C₀ : �
     ring
   have hΓs : (logDeriv Gammaℝ s).re ≤ C₀ * Real.log (|u| + 3) :=
     (Complex.re_le_norm _).trans ((hΓ s ⟨by linarith, by linarith⟩).trans_eq (by rw [hs_im]))
-  linarith [re_one_div_le_one_of_one_lt_re hs1, one_le_log_abs_add_three u]
+  have h1s : (1 / s).re ≤ 1 := by simpa only [one_div] using Complex.inv_re_le_one hs1.le
+  linarith [Real.one_le_log_abs_add_three u]
 
 private theorem zetaEntireCompletion_zero_hypotheses {s : ℂ} (hs1 : 1 < s.re) :
     riemannZetaData.entireCompletion 0 ≠ 0 ∧
@@ -112,7 +96,7 @@ private theorem neg_re_logDeriv_riemannZeta_one_add_zero_le {C₀ : ℝ}
   set s : ℂ := 1 + η + u * I
   have hs1 : 1 < s.re := by simp [s, hη]
   obtain ⟨hξ0, hξ_ne, hξ_le⟩ := zetaEntireCompletion_zero_hypotheses hs1
-  have hlog3 := one_le_log_abs_add_three u
+  have hlog3 := Real.one_le_log_abs_add_three u
   by_cases hβ0 : β ≤ 0
   · have hξ_nonneg : 0 ≤ (logDeriv zetaEntireCompletion s).re := by
       simpa only [riemannZetaData_entireCompletion] using

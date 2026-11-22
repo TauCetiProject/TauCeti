@@ -15,7 +15,9 @@ The archimedean factor of a Dirichlet character `χ` has the logarithmic derivat
 `s + a`, where `a` is `0` for even and `1` for odd characters; off its poles this is
 `ψ((s + a)/2)/2 − ½ log π`. On each compact subset of the positive half-plane these logarithmic
 derivatives are bounded by one constant for all characters of all moduli, and on the real interval
-`[1, 2]` their norm is bounded explicitly by `TauCeti.gammaLogDerivBound`.
+`[1, 2]` their norm is bounded explicitly by `TauCeti.gammaLogDerivBound`. On unbounded vertical
+strips `a ≤ Re s ≤ b` (`0 < a`), `DirichletCharacter.exists_norm_logDeriv_gammaFactor_le_log`
+gives a uniform logarithmic bound `C * log (|Im s| + 3)` for all characters.
 
 On the positive half-plane, away from the zeros of `L(χ, ·)`, the logarithmic derivative of
 Mathlib's completed function `Λ(χ, s)` is the sum of those of the archimedean factor and of

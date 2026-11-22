@@ -27,13 +27,11 @@ termwise yields the classical `3-4-1` inequality
 ```
 
 for every real `σ > 1`, real `t`, and Dirichlet character `χ` of any positive level `N`.
-We also specialize the `3-4-1` inequality at level `1` to `riemannZeta`.
 
 ## Main results
 
 * `DirichletCharacter.threeFourOne_neg_re_logDeriv_LFunction_nonneg`: the `3-4-1` logarithmic
   derivative inequality for any Dirichlet character `χ` modulo `N`.
-* `TauCeti.threeFourOne_neg_re_logDeriv_riemannZeta_nonneg`: specialization to `riemannZeta`.
 
 ## References
 
@@ -137,16 +135,3 @@ theorem threeFourOne_neg_re_logDeriv_LFunction_nonneg {N : ℕ} [NeZero N]
   exact tsum_nonneg (threeFourOne_term_nonneg χ t)
 
 end DirichletCharacter
-
-namespace TauCeti
-
-/-- **The `3-4-1` logarithmic-derivative inequality for `riemannZeta`.** For real `σ > 1` and
-real `t`, `0 ≤ 3 * (-Re ζ'/ζ(σ)) + 4 * (-Re ζ'/ζ(σ + it)) + (-Re ζ'/ζ(σ + 2it))`. -/
-theorem threeFourOne_neg_re_logDeriv_riemannZeta_nonneg {σ : ℝ} (hσ : 1 < σ) (t : ℝ) :
-    0 ≤ 3 * (-logDeriv riemannZeta σ).re +
-      4 * (-logDeriv riemannZeta (σ + t * I)).re +
-      (-logDeriv riemannZeta (σ + 2 * t * I)).re := by
-  simpa only [DirichletCharacter.LFunction_modOne_eq, one_pow] using
-    (1 : DirichletCharacter ℂ 1).threeFourOne_neg_re_logDeriv_LFunction_nonneg hσ t
-
-end TauCeti
