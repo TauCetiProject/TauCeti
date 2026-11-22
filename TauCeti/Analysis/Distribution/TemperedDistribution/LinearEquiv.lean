@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LinearIsometry
 import TauCeti.Topology.Algebra.Module.Equiv.Basic
@@ -243,7 +244,8 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
   · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
       A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
     ext u
-    simp [fourierMultiplierCLM_apply_apply, SchwartzMap.smulLeftCLM, hg, hgA]
+    simp [fourierMultiplierCLM_apply_apply, SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg,
+      SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgA]
 
 /-- The Bessel potential `J^s` commutes with the pullback along a linear isometry. -/
 theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :
@@ -251,6 +253,7 @@ theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) 
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (besselPotential E F s T) := by
   have h := fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
     (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) T
+  rw [besselPotential]
   rwa [show (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ∘ A =
     fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) from funext fun x ↦ by simp] at h
 

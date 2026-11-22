@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
-public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Linear isometries of Schwartz functions
@@ -24,8 +25,6 @@ every Fourier multiplier whose symbol is invariant under `A`, such as the Bessel
 
 * `SchwartzMap.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`: the
   Fourier multiplier with symbol `g ∘ A` applied to `f ∘ A` is `(T_g f) ∘ A`.
-* `ContinuousLinearEquiv.hasTemperateGrowth_comp_iff`: precomposing with a continuous linear
-  equivalence preserves and reflects temperate growth.
 
 ## References
 
@@ -41,19 +40,6 @@ open MeasureTheory FourierTransform
 open scoped SchwartzMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-namespace ContinuousLinearEquiv
-
-variable {D V W : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup V]
-  [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-- Precomposing with a continuous linear equivalence preserves and reflects temperate growth. -/
-theorem hasTemperateGrowth_comp_iff (e : D ≃L[ℝ] V) {g : V → W} :
-    (g ∘ e).HasTemperateGrowth ↔ g.HasTemperateGrowth :=
-  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp e.symm.hasTemperateGrowth,
-    fun h ↦ h.comp e.hasTemperateGrowth⟩
-
-end ContinuousLinearEquiv
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -80,6 +66,7 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv 
       fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv]
   · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
       A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
-    simp [fourierMultiplierCLM_apply, smulLeftCLM, hg, hgA]
+    simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg,
+      smulLeftCLM_of_not_hasTemperateGrowth hgA]
 
 end SchwartzMap
