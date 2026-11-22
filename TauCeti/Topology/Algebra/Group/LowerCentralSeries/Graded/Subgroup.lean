@@ -34,6 +34,10 @@ that Labute's classification of Demushkin groups with `q = 2` runs on, identifie
 
 * `TauCeti.mem_gradedPieceOf_iff`: the elements of `gr_k(K)` are the classes of the elements of
   `K ∩ λ_k(G)`.
+* `TauCeti.gradedPieceOf_closure_le`: `gr_k(⟨S⟩)` lies in every subspace containing the classes of
+  the elements of `S ⊆ λ_k(G)`.
+* `TauCeti.gradedPieceOf_topologicalClosure`: when `λ_{k+1}` is open, `K` and its closure have the
+  same graded piece in degree `k`.
 * `TauCeti.gradedPow_mem_gradedPieceOf`, `TauCeti.gradedPowIter_gradedMkZero_mem_gradedPieceOf`:
   `π gr_k(K) ≤ gr_{k+1}(K)`, and `π^j` of the class of an element of `K` lies in `gr_j(K)`.
 * `TauCeti.gradedBracket_mem_gradedPieceOf_left`, `TauCeti.gradedBracket_mem_gradedPieceOf_right`:
@@ -99,6 +103,56 @@ theorem gradedPieceOf_top (k : ℕ) : gradedPieceOf p (⊤ : Subgroup G) k = ⊤
   rintro z -
   obtain ⟨x, rfl⟩ := gradedMk_surjective k z
   exact gradedMk_mem_gradedPieceOf (mem_top _)
+
+/-- The graded piece of `λ_k` itself in degree `k` is the whole of `gr_k(G)`. -/
+@[simp]
+theorem gradedPieceOf_pLowerCentralSeries_self (k : ℕ) :
+    gradedPieceOf p (pLowerCentralSeries p G k) k = ⊤ := by
+  rw [eq_top_iff]
+  rintro z -
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k z
+  exact gradedMk_mem_gradedPieceOf x.property
+
+/-- **The graded piece of a generated subgroup.** If `S ⊆ λ_k(G)` and the classes of the elements
+of `S` lie in a subspace `W ≤ gr_k(G)`, then so does all of `gr_k(⟨S⟩)`. -/
+theorem gradedPieceOf_closure_le {S : Set G} {k : ℕ} (hS : S ⊆ pLowerCentralSeries p G k)
+    {W : Submodule (ZMod p) (gradedPiece p G k)}
+    (hW : ∀ g (hg : g ∈ S), gradedMk p G k ⟨g, hS hg⟩ ∈ W) :
+    gradedPieceOf p (Subgroup.closure S) k ≤ W := by
+  have hle : Subgroup.closure S ≤ pLowerCentralSeries p G k := (Subgroup.closure_le _).mpr hS
+  rintro z hz
+  obtain ⟨⟨x, hxk⟩, hx, rfl⟩ := mem_gradedPieceOf_iff.1 hz
+  clear hz
+  replace hx : x ∈ Subgroup.closure S := hx
+  induction hx using Subgroup.closure_induction with
+  | mem g hg => exact hW g hg
+  | one =>
+    rw [show (⟨1, hxk⟩ : pLowerCentralSeries p G k) = 1 from rfl, gradedMk_one]
+    exact W.zero_mem
+  | mul x y hx hy ihx ihy =>
+    rw [show (⟨x * y, hxk⟩ : pLowerCentralSeries p G k) = ⟨x, hle hx⟩ * ⟨y, hle hy⟩ from rfl,
+      gradedMk_mul]
+    exact W.add_mem (ihx (hle hx)) (ihy (hle hy))
+  | inv x hx ihx =>
+    rw [show (⟨x⁻¹, hxk⟩ : pLowerCentralSeries p G k) = (⟨x, hle hx⟩)⁻¹ from rfl, gradedMk_inv]
+    exact W.neg_mem (ihx (hle hx))
+
+/-- **Closing up a subgroup does not change its graded piece** when `λ_{k+1}` is open: an element
+of the closure of `K` lies in the open coset `x λ_{k+1}` of some element of `K`, and both have the
+same class in `gr_k(G)`. -/
+theorem gradedPieceOf_topologicalClosure {K : Subgroup G} {k : ℕ}
+    (h : IsOpen (pLowerCentralSeries p G (k + 1) : Set G)) :
+    gradedPieceOf p K.topologicalClosure k = gradedPieceOf p K k := by
+  refine le_antisymm (fun z hz ↦ ?_) (gradedPieceOf_mono K.le_topologicalClosure k)
+  obtain ⟨x, hx, rfl⟩ := mem_gradedPieceOf_iff.1 hz
+  rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe, _root_.mem_closure_iff] at hx
+  obtain ⟨y, hy, hyK⟩ := hx ((fun g ↦ (x : G)⁻¹ * g) ⁻¹' (pLowerCentralSeries p G (k + 1) : Set G))
+    (h.preimage (continuous_const.mul continuous_id)) (by simp [one_mem])
+  have hyk : y ∈ pLowerCentralSeries p G k := by
+    simpa using mul_mem x.property (pLowerCentralSeries_succ_le k hy)
+  refine mem_gradedPieceOf_iff.2 ⟨⟨y, hyk⟩, hyK, ?_⟩
+  rw [gradedMk_eq_gradedMk_iff, QuotientGroup.eq]
+  simpa using inv_mem hy
 
 /-- **`π` preserves the graded pieces of a subgroup**: `π gr_k(K) ≤ gr_{k+1}(K)`. -/
 theorem gradedPow_mem_gradedPieceOf {K : Subgroup G} {k : ℕ} {z : gradedPiece p G k}

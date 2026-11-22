@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Powerful
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentral.Powerful
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
 
 /-!
@@ -44,8 +45,13 @@ By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
   for a topologically finitely generated powerful pro-`p` group, `[G : Gᵖ] = p ^ d(G)`.
 * `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`: the dimension is
   `log_p [G : Gᵖ]`.
+* `TauCeti.IsPowerful.relIndex_pLowerCentralSeries_le`: in a topologically finitely generated
+  powerful pro-`p` group every successive index `[λ_k : λ_{k+1}]` of the lower `p`-series is at
+  most `p ^ d(G)`.
 * `TauCeti.isUniform_congr`, `TauCeti.IsUniform.prod`: uniformity is invariant under topological
   group isomorphism and stable under binary products.
+* `TauCeti.isUniform_pLowerCentralSeries`: the terms `λ_k = G^{p^k}` of the lower `p`-series of a
+  uniform group are uniform.
 * `TauCeti.isUniform_of_subsingleton`: the trivial group is uniform; its dimension is `0` by
   `TauCeti.topologicalGeneratorRankNat_of_subsingleton`.
 * `TauCeti.isUniform_multiplicative_pi_padicInt`, `TauCeti.isUniform_multiplicative_padicInt`:
@@ -119,6 +125,19 @@ theorem IsUniform.topologicalGeneratorRankNat_eq_log_index (hG : IsUniform p G) 
       Nat.log p (closedPowerSubgroup p G).index := by
   rw [hG.index_closedPowerSubgroup, Nat.log_pow hp.out.one_lt]
 
+/-- **The successive indices of the lower `p`-series of a powerful group are at most `p ^ d`**:
+for a topologically finitely generated powerful pro-`p` group, `[λ_k : λ_{k+1}] ≤ p ^ d` for every
+`k`, where `d` is the topological generator rank, with equality for `k = 0`. -/
+theorem IsPowerful.relIndex_pLowerCentralSeries_le (hG : IsPowerful p G) (hP : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
+    (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) ≤
+      p ^ topologicalGeneratorRankNat G hfg := by
+  induction k with
+  | zero =>
+    rw [pLowerCentralSeries_zero, Subgroup.relIndex_top_right,
+      ← hG.closedPowerSubgroup_eq_pLowerCentralSeries_one, hG.index_closedPowerSubgroup hP hfg]
+  | succ k ih => exact (hG.relIndex_pLowerCentralSeries_succ_le hp.out hfg k).trans ih
+
 end Index
 
 section Closure
@@ -162,6 +181,30 @@ theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G where
   isPowerful := (isPowerful_iff (p := p)).mpr fun g _ ↦ Subsingleton.elim g 1 ▸ one_mem _
 
 end Closure
+
+section PowerSubgroups
+
+variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **The canonical power subgroups of a uniform group are uniform**: every term
+`λ_k = G^{p^k}` (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`) of the lower
+`p`-series of a uniform group is uniform. It is open, hence topologically finitely generated, and
+powerful by `TauCeti.isPowerful_pLowerCentralSeries`. -/
+theorem isUniform_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
+    IsUniform p (pLowerCentralSeries p G k) where
+  isProP := hG.isProP.subgroup _
+  isTopologicallyFinitelyGenerated := hG.isTopologicallyFinitelyGenerated.of_openSubgroup
+    ⟨pLowerCentralSeries p G k, hG.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
+      hp.out k⟩
+  isMulTorsionFree :=
+    have := hG.isMulTorsionFree
+    Function.Injective.isMulTorsionFree (pLowerCentralSeries p G k).subtype
+      (pLowerCentralSeries p G k).subtype_injective
+  isPowerful := isPowerful_pLowerCentralSeries hp.out hG.isPowerful hG.isProP
+    hG.isTopologicallyFinitelyGenerated k
+
+end PowerSubgroups
 
 section PadicInt
 
