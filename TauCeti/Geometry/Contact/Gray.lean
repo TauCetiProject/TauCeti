@@ -70,6 +70,9 @@ vector fields glue for a family of contact structures that has no global definin
 * `TauCeti.SmoothForm.eq_grayVectorField_iff`: the Gray vector field is characterized by the
   horizontal contact-Moser equation.
 * `TauCeti.SmoothForm.mlieDerivForm_grayVectorField_add`: Gray's equation.
+* `TauCeti.SmoothForm.mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField`: Gray's
+  equation at a single time, as the identity of forms that Moser's principle for families of forms
+  consumes.
 * `TauCeti.SmoothForm.contMDiff_grayVectorField`: the Gray vector field is jointly smooth.
 * `TauCeti.SmoothForm.grayVectorField_eq_zero`: the Gray vector field vanishes at points where the
   contact hyperplane is stationary near the given time.

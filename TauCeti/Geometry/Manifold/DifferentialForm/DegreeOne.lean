@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -45,6 +46,9 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `TauCeti.SmoothForm.contMDiffAt_apply_vectorField`,
+  `TauCeti.SmoothForm.contMDiff_apply_vectorField`: a smooth real one-form evaluated on a vector
+  field that is `C^n` at a point (resp. everywhere) is `C^n` there.
 * `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
   evaluates a tangent vector through the differential of the map.
 * `TauCeti.isLocalFrameOn_degreeOneEquiv_iff`: real one-forms are a frame of the cotangent bundle
@@ -245,6 +249,23 @@ theorem degreeOneEquiv_apply_apply_vec (φ : SmoothForm I M F 1) (x : M) (v : Ta
     degreeOneEquiv φ x v = φ.val x ![v] := by
   rw [degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
+/-- **A smooth real one-form evaluated on a vector field that is `C^n` at `x` is `C^n` at `x`**,
+for `n ≤ ∞`. -/
+theorem contMDiffAt_apply_vectorField {n : WithTop ℕ∞} [ENat.LEInfty n] (φ : SmoothForm I M ℝ 1)
+    {V : Π x : M, TangentSpace I x} {x : M} (hV : ContMDiffAt I I.tangent n (T% V) x) :
+    ContMDiffAt I 𝓘(ℝ) n (fun y ↦ φ.val y ![V y]) x := by
+  have hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) y (degreeOneEquiv φ y)) x :=
+    ((degreeOneEquiv φ).contMDiff x).of_le ENat.LEInfty.out
+  simpa using hφ.clm_bundle_apply_scalar hV
+
+/-- **A smooth real one-form evaluated on a `C^n` vector field is a `C^n` function**, for
+`n ≤ ∞`. -/
+theorem contMDiff_apply_vectorField {n : WithTop ℕ∞} [ENat.LEInfty n] (φ : SmoothForm I M ℝ 1)
+    {V : Π x : M, TangentSpace I x} (hV : ContMDiff I I.tangent n (T% V)) :
+    ContMDiff I 𝓘(ℝ) n fun x ↦ φ.val x ![V x] := fun x ↦
+  φ.contMDiffAt_apply_vectorField (hV x)
+
 /-- A family of smooth one-forms `α m`, evaluated along a map `b : N → M`, is `C^n` at `m₀` as a
 section of the bundle of linear maps exactly when it is `C^n` as a section of the bundle of
 alternating maps. -/
@@ -293,6 +314,12 @@ theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+
+/-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
+a linear map. -/
+theorem eval_val (φ : SmoothForm I M ℝ 1) (x : M) :
+    RoughForm.eval φ.val x = (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] ℝ) :=
+  LinearMap.ext fun v ↦ by rw [RoughForm.eval_apply, degreeOneEquiv_coe_apply]
 
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]

@@ -17,6 +17,8 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.Pseudodifferential.FourierSchur
+import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -85,9 +87,13 @@ families of operators.
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
   with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), with
-  constants given by a continuous seminorm of `a`, uniformly over the symbols vanishing outside a
-  fixed compact set (`TauCeti.Symbol.exists_norm_fourier_slice_le_seminorm`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), the
+  same at the angular frequency `ξ = 2πζ`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice_smul`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.norm_iteratedFDeriv_fourier_slice_smul_le`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_smul_le`),
+  with constants given by a continuous seminorm of `a`, uniformly over the symbols vanishing
+  outside a fixed compact set (`TauCeti.Symbol.exists_norm_fourier_slice_le_seminorm`,
   `TauCeti.Symbol.exists_norm_coordinateDeriv_fourier_slice_le_seminorm`,
   `TauCeti.Symbol.exists_norm_iteratedFDeriv_fourier_slice_le_seminorm`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
@@ -543,6 +549,51 @@ theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
     exists_norm_iteratedFDeriv_fourier_slice_le_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ k r
   exact ⟨q a, apply_nonneg _ _, hq a hKa⟩
 
+/-- The rescaled position-Fourier slice `ζ ↦ â(η, 2πζ)` is smooth. -/
+theorem HasCompactSpatialSupport.contDiff_fourier_slice_smul
+    (ha : a.HasCompactSpatialSupport) (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ζ : CoordinateSpace n ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η :=
+  (ha.contDiff_fourier_slice η).comp (contDiff_const_smul _)
+
+/-- The rescaled slice `ζ ↦ â(η, 2πζ)` inherits the derivative bounds of `ξ ↦ â(η, ξ)`: a bound
+`B ⟨ξ⟩ ^ (m - j) ⟨η⟩ ^ (-r)` on the `j`-th derivative gives
+`‖D^j‖ ≤ (2π) ^ j (2π) ^ |m - j| B ⟨ζ⟩ ^ (m - j) ⟨η⟩ ^ (-r)`. -/
+theorem HasCompactSpatialSupport.norm_iteratedFDeriv_fourier_slice_smul_le
+    (ha : a.HasCompactSpatialSupport) {j : ℕ} {r B : ℝ} (hB0 : 0 ≤ B)
+    (hB : ∀ η ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        B * (1 + ‖ξ‖ ^ 2) ^ ((m - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
+    (η ζ : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
+      (2 * π) ^ j * (2 * π) ^ |m - j| * B * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2) *
+        (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
+  have hw := one_add_norm_smul_sq_rpow_le h2π (m - j) ζ
+  rw [iteratedFDeriv_comp_const_smul (2 * π)
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)), norm_smul, norm_pow,
+    Real.norm_of_nonneg (by positivity)]
+  calc (2 * π) ^ j * ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η)
+        ((2 * π) • ζ)‖
+      ≤ (2 * π) ^ j * (B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m - j) / 2) *
+          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by
+        gcongr
+        exact hB η _
+    _ ≤ (2 * π) ^ j * (B * ((2 * π) ^ |m - j| * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2)) *
+          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by gcongr
+    _ = _ := by ring
+
+/-- **Fréchet derivatives of the rescaled slice.** For a symbol `a` of order `m` with compact
+spatial support, the slice `ζ ↦ â(η, 2πζ)` at the angular frequency `2πζ` has derivatives
+`‖D^j â(η, 2πζ)‖ ≤ B ⟨ζ⟩ ^ (m - j) ⟨η⟩ ^ (-r)`, for every `j` and `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_smul_le
+    (ha : a.HasCompactSpatialSupport) (j : ℕ) (r : ℝ) :
+    ∃ B, 0 ≤ B ∧ ∀ η ζ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
+        B * (1 + ‖ζ‖ ^ 2) ^ ((m - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_le j r
+  exact ⟨(2 * π) ^ j * (2 * π) ^ |m - j| * C, by positivity,
+    ha.norm_iteratedFDeriv_fourier_slice_smul_le hC0 hC⟩
+
 end Decay
 
 /-! ### The Fourier transform of the quantization -/
@@ -914,24 +965,6 @@ theorem toDistr_apply_eq_toDistr_quantizeSobolev (ha : a.HasCompactSpatialSuppor
   simpa only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion] using
     congrArg BesselPotentialSpace.toDistr (DFunLike.congr_fun h u)
 
-/-- On Schwartz functions the operators of two symbols with the same coefficient agree, so their
-Sobolev extensions agree on `H^s ⊆ H^t`, `t ≤ s`. -/
-private theorem toDistr_quantizeSobolev_inclusion {m' : ℝ} {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) {s t : ℝ} (hts : t ≤ s)
-    (u : H^{s}(CoordinateSpace n, V)) :
-    (a.quantizeSobolev ha s u).toDistr =
-      (b.quantizeSobolev hb t (BesselPotentialSpace.inclusion hts u)).toDistr := by
-  have key : BesselPotentialSpace.inclusion (min_le_left (s - m) (t - m')) ∘L
-        a.quantizeSobolev ha s =
-      BesselPotentialSpace.inclusion (min_le_right (s - m) (t - m')) ∘L
-        b.quantizeSobolev hb t ∘L BesselPotentialSpace.inclusion hts := by
-    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
-      BesselPotentialSpace.ext ?_
-    ext φ
-    simp [hab]
-  simpa using congrArg (fun T ↦ (T u).toDistr) key
-
 /-- **Compatibility of the Sobolev extensions.** The operator `Op(a) : H^s → H^{s - m}` only
 depends on the coefficient of `a` and on the tempered distribution of its argument: symbols `a`
 and `b` of orders `m` and `m'` with the same coefficient give the same tempered distribution on
@@ -941,13 +974,14 @@ theorem toDistr_quantizeSobolev_congr {m' : ℝ} {b : Symbol n V W m'}
     (hb : b.HasCompactSpatialSupport) {s t : ℝ} {u : H^{s}(CoordinateSpace n, V)}
     {v : H^{t}(CoordinateSpace n, V)} (huv : u.toDistr = v.toDistr) :
     (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb t v).toDistr := by
-  rcases le_total t s with h | h
-  · rw [toDistr_quantizeSobolev_inclusion hab ha hb h u]
-    congr 2
-    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
-  · rw [toDistr_quantizeSobolev_inclusion hab.symm hb ha h v]
-    congr 2
-    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+  refine SchwartzMap.toDistr_apply_congr_of_comp_eq ENNReal.ofNat_ne_top
+    (A := quantizeUniformCLM a ha.isUniform) ?_ ?_ huv
+  · refine ContinuousLinearMap.ext fun u ↦ BesselPotentialSpace.ext ?_
+    ext φ
+    simp
+  · refine ContinuousLinearMap.ext fun u ↦ BesselPotentialSpace.ext ?_
+    ext φ
+    simp [hab]
 
 /-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
 order `0` has compact spatial support, for instance a compactly supported `φ`
