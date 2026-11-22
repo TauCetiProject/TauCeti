@@ -409,14 +409,14 @@ theorem mem_stableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem
     (hy : ∀ τ, 0 ≤ τ → ∀ i, negativeGradientFlow (perturb f h s) hf' τ y ∉ tsupport (h i)) :
     y ∈ Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q ↔
       y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
-  have heq : (fun t ↦ negativeGradientFlow f hf t y) =ᶠ[atTop]
-      fun t ↦ negativeGradientFlow (perturb f h s) hf' t y := by
-    filter_upwards [eventually_ge_atTop 0] with t ht
+  -- In forward time the two orbits of `y` agree, so the orbit of `f` avoids the supports too.
+  refine mem_stableSet_perturb_iff hf hf' fun t ht ↦ ?_
+  have heq : negativeGradientFlow f hf t y = negativeGradientFlow (perturb f h s) hf' t y := by
     refine negativeGradientFlow_apply_eq_of_gradient_eq hf hf' fun τ hτ ↦ ?_
     rw [uIcc_of_le ht] at hτ
     exact (gradient_perturb_of_forall_notMem_tsupport s (hy τ hτ.1)).symm
-  simp only [Flow.mem_stableSet]
-  exact (tendsto_congr' heq).symm
+  rw [heq]
+  exact hy t ht
 
 /-- **Unstable sets away from the perturbation, along the perturbed orbit.** If the backward orbit
 of `y` under the negative-gradient flow of `perturb f h s` avoids the closed supports (`tsupport`)
@@ -428,26 +428,14 @@ theorem mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMe
     (hy : ∀ τ, τ ≤ 0 → ∀ i, negativeGradientFlow (perturb f h s) hf' τ y ∉ tsupport (h i)) :
     y ∈ Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ↔
       y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
-  have heq : (fun t ↦ negativeGradientFlow f hf t y) =ᶠ[atBot]
-      fun t ↦ negativeGradientFlow (perturb f h s) hf' t y := by
-    filter_upwards [eventually_le_atBot 0] with t ht
+  -- In backward time the two orbits of `y` agree, so the orbit of `f` avoids the supports too.
+  refine mem_unstableSet_perturb_iff hf hf' fun t ht ↦ ?_
+  have heq : negativeGradientFlow f hf t y = negativeGradientFlow (perturb f h s) hf' t y := by
     refine negativeGradientFlow_apply_eq_of_gradient_eq hf hf' fun τ hτ ↦ ?_
     rw [uIcc_of_ge ht] at hτ
     exact (gradient_perturb_of_forall_notMem_tsupport s (hy τ hτ.2)).symm
-  simp only [Flow.mem_unstableSet]
-  exact (tendsto_congr' heq).symm
-
-/-- A curve converging to a point outside the closed supports of a finite family eventually avoids
-them. -/
-private theorem eventually_forall_notMem_tsupport {ι' X : Type*} [Finite ι'] [TopologicalSpace X]
-    {g : ι' → X → ℝ} {l : Filter ℝ} {γ : ℝ → X} {p : X}
-    (hp : ∀ i, p ∉ tsupport (g i)) (hγ : Tendsto γ l (𝓝 p)) :
-    ∀ᶠ t in l, ∀ i, γ t ∉ tsupport (g i) := by
-  have hU : (⋃ i, tsupport (g i))ᶜ ∈ 𝓝 p :=
-    (isClosed_iUnion_of_finite fun i ↦ isClosed_tsupport (g i)).isOpen_compl.mem_nhds
-      (by simpa only [mem_compl_iff, mem_iUnion, not_exists] using hp)
-  filter_upwards [hγ hU] with t ht i hi
-  exact ht (mem_iUnion.2 ⟨i, hi⟩)
+  rw [heq]
+  exact hy t ht
 
 /-- **Unstable sets of low rest points are unchanged.** If the closed supports (`tsupport`) of
 the family lie where `f > c` and `f p ≤ c`, with `f` continuous at `p`, then for every parameter
@@ -468,8 +456,9 @@ theorem unstableSet_perturb_eq (hf : LipschitzWith K (∇ f)) {s : EuclideanSpac
   · intro hy
     -- Far back, the perturbed orbit of `y` stays outside the supports, near `p`; restarted there,
     -- it is an orbit of `f`.
-    obtain ⟨T₀, hT₀⟩ := eventually_atBot.1 (eventually_forall_notMem_tsupport
-      (fun i hi ↦ (hp.trans_lt (hsupp i hi)).false) (Flow.mem_unstableSet.mp hy))
+    obtain ⟨T₀, hT₀⟩ := eventually_atBot.1 (eventually_all.2 fun i ↦
+      (Flow.mem_unstableSet.mp hy).eventually ((isClosed_tsupport (h i)).isOpen_compl.mem_nhds
+        fun hi ↦ (hp.trans_lt (hsupp i hi)).false))
     set T := min T₀ 0
     set z := negativeGradientFlow (perturb f h s) hf' T y
     have hz : z ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
@@ -504,8 +493,9 @@ theorem stableSet_perturb_eq (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace 
   · intro hy
     -- Far ahead, the perturbed orbit of `y` stays outside the supports, near `q`; restarted there,
     -- it is an orbit of `f`.
-    obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 (eventually_forall_notMem_tsupport
-      (fun i hi ↦ ((hsupp i hi).trans_le hq).false) (Flow.mem_stableSet.mp hy))
+    obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 (eventually_all.2 fun i ↦
+      (Flow.mem_stableSet.mp hy).eventually ((isClosed_tsupport (h i)).isOpen_compl.mem_nhds
+        fun hi ↦ ((hsupp i hi).trans_le hq).false))
     set T := max T₀ 0
     set z := negativeGradientFlow (perturb f h s) hf' T y
     have hz : z ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
