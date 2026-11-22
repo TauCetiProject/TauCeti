@@ -86,7 +86,8 @@ covectors read in two charts.
 * `TauCeti.BundleTest.waveFrontSet_add_subset`, `TauCeti.BundleTest.waveFrontSet_smul`: the wave
   front set of a sum lies in the union, and nonzero real multiples do not change it.
 * `TauCeti.BundleTest.singularSupport`: the singular support of `T`, the points near which `T` is
-  not smooth, read in a chart and a frame. It does not depend on them
+  not smooth, read in a chart and a frame; on a manifold with boundary it contains every boundary
+  point. It does not depend on the chart and the frame
   (`TauCeti.BundleTest.notMem_singularSupport_iff`), and it is closed
   (`TauCeti.BundleTest.isClosed_singularSupport`).
 * `TauCeti.BundleTest.proj_image_waveFrontSet`: on a manifold without boundary, the projection of
@@ -98,7 +99,9 @@ covectors read in two charts.
 ## Singular support
 
 `T` is smooth near `x` when, in a chart `c` at `x` and a frame, all components of its local
-representative are smooth functions near `c x` (`Distribution.singularSupport`). The Euclidean
+representative are smooth functions near `c x` (`Distribution.singularSupport`). As for the wave
+front set, this is meant for a manifold without boundary: at a boundary point there is no chart
+into `E`, so every boundary point lies in the singular support. The Euclidean
 theorem that a distribution is smooth near a point exactly when it is microlocally smooth at that
 point in every nonzero direction
 (`Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt`) turns this into
@@ -555,12 +558,8 @@ theorem isMicrolocallySmoothAt_smul_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {
     rintro ⟨t, ht, c, hc, hcs, hct, hx, h⟩
     refine ⟨t, ht, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
     have hsm : (toDual ℝ E).symm ((s • ζ) ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) =
-        s • (toDual ℝ E).symm (ζ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) := by
-      rw [LinearIsometryEquiv.symm_apply_eq]
-      ext u
-      -- The tangent spaces are `E` by definition, which `simp` does not see through.
-      simp
-      rfl
+        s • (toDual ℝ E).symm (ζ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) :=
+      (congrArg _ (ContinuousLinearMap.smul_comp _ _ _)).trans (map_smul _ _ _)
     rw [hsm]
     exact (Distribution.isMicrolocallySmoothAt_smul_iff hs).2 (h v)
   refine ⟨fun h ↦ ?_, key hr⟩
@@ -631,7 +630,11 @@ variable (I) in
 `t` over its source are all the components of the local representative of `T` smooth functions
 near `c x`. The chart and the frame do not matter (`TauCeti.BundleTest.notMem_singularSupport_iff`),
 and on a manifold without boundary the singular support is the projection of the wave front set
-(`TauCeti.BundleTest.proj_image_waveFrontSet`). -/
+(`TauCeti.BundleTest.proj_image_waveFrontSet`).
+
+The notion is meant for a boundaryless model `I`, where such charts exist at every point. At a
+boundary point of a manifold with boundary there is no chart into `E`, so every boundary point lies
+in the singular support, even for `T = 0`. -/
 def singularSupport (T : BundleTest I F V →L_c[ℝ] ℝ) : Set M :=
   {x | ¬ ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t)
     (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
@@ -664,7 +667,7 @@ private theorem forall_notMem_singularSupport_chartComponent_iff
   have hξ : ξ ≠ 0 := by
     rintro rfl
     simp only [ne_eq, LinearIsometryEquiv.map_eq_zero_iff] at hη
-    exact hη (ContinuousLinearMap.ext fun _ ↦ rfl)
+    exact hη (ContinuousLinearMap.zero_comp _)
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
 
 /-- **The singular support in any chart and frame.** For a smooth chart `c` at `x` with smooth
@@ -764,6 +767,11 @@ theorem singularSupport_smul {a : ℝ} (ha : a ≠ 0) (T : BundleTest I F V →L
 theorem singularSupport_neg (T : BundleTest I F V →L_c[ℝ] ℝ) :
     singularSupport I (-T) = singularSupport I T := by
   rw [← neg_one_smul ℝ T, singularSupport_smul (neg_ne_zero.2 one_ne_zero)]
+
+/-- The singular support of a difference lies in the union of the singular supports. -/
+theorem singularSupport_sub_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
+    singularSupport I (S - T) ⊆ singularSupport I S ∪ singularSupport I T := by
+  simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
 
 end SingularSupport
 
