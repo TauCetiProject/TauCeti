@@ -127,26 +127,27 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
       r ≠ a5FourthD4 := by
   refine ⟨fun h ↦ ?_, fun hr p hp g hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
   rintro rfl
-  refine a5FourthD4BlockRot_notMem_glueSymmetries ?_
-  have hmem := h _ cyclic_mem_gluePatterns_a5FourthD4 a5FourthD4BlockRot
-    a5FourthD4BlockRot_mem_symmetries
+  refine a5FourthD4BlockRotation_notMem_glueSymmetries ?_
+  have hmem := h _ cyclic_mem_gluePatterns_a5FourthD4
+    (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) a5FourthD4BlockRotation_mem_symmetries
   exact (permCongr_cyclic_a5FourthD4 cyclic_mem_gluePatterns_a5FourthD4
-    a5FourthD4BlockRot) ▸ hmem
+    (a5FourthD4BlockRotation : Equiv.Perm (Fin 5))) ▸ hmem
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
-`a5FourthD4BlockRot ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
+`a5FourthD4BlockRotation ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
 `a5FourthD4TrialityRotation ^ k`. -/
 theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
     (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
     ∃ k < 3,
-      (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.val = a5FourthD4BlockRot ^ k ∧
+      (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.val =
+          a5FourthD4BlockRotation ^ k ∧
         coupledPatternIsometryHom hp g = a5FourthD4TrialityRotation ^ k := by
   cases classifyA5FourthD4GluePattern hp with
   | inl h =>
     rcases h with ⟨word, rfl⟩
     refine ⟨0, by decide, ?_, ?_⟩
     · rw [Subsingleton.elim g 1, Subgroup.coe_one, Equiv.Perm.one_def, Equiv.permCongr_refl]
-      exact (pow_zero a5FourthD4BlockRot).symm
+      exact (pow_zero a5FourthD4BlockRotation).symm
     · rw [coupledPatternIsometryHom_literal, MonoidHom.one_apply, pow_zero]
   | inr h =>
     rcases h with rfl

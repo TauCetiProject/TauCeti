@@ -85,6 +85,8 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
   the same map through `Circle.exp` differ by a constant integer multiple of `2π`.
+* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
+  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -119,6 +121,20 @@ theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
     rwa [hc a₀, exp_add, mul_eq_left] at this
   obtain ⟨m, hm⟩ := exp_eq_one.1 hexp
   exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
+
+/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
+on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
+`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
+theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
+    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
+    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
+    ∃ C, ∀ x ∈ s, f x - g x = C := by
+  have := isPreconnected_iff_preconnectedSpace.1 hs
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
+    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
+    fun x ↦ by
+      simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.property)
+  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 /-- Every path in the circle has a continuous lift through `Circle.exp`. -/
 theorem exists_lift {x y : Circle} (γ : Path x y) :

@@ -7,20 +7,22 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4
 
+import TauCeti.Data.Fin.Cast
+
 /-!
 # The coupled triality symmetry of the table row `A₅⁴ D₄`
 
 In the rootful rank-24 table, `TauCeti.RootfulNiemeierType.a5FourthD4` is the unique row whose
 parenthesized pattern symmetry is not a pure coordinate glue symmetry: rotating the three marked
-`A₅` positions `1, 2, 3` (`TauCeti.RootfulNiemeierType.a5FourthD4BlockRot`) while leaving the `D₄`
-label in position `4` unchanged sends `[33001]` outside the glue subgroup
-(`TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`).
+`A₅` positions `1, 2, 3` (`TauCeti.RootfulNiemeierType.a5FourthD4BlockRotation`) while leaving the
+`D₄` label in position `4` unchanged sends `[33001]` outside the glue subgroup
+(`TauCeti.RootfulNiemeierType.a5FourthD4BlockRotation_notMem_glueSymmetries`).
 
 Coupling the block rotation with `D₄` triality (`TauCeti.DynkinType.typeD4Triality`) on the `D₄`
 component preserves `a5FourthD4.glueSubgroup`
-(`TauCeti.RootfulNiemeierType.a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff`), and this module
-lifts that glue-word symmetry via `coupledLatticeIsometry` to the order-three, determinant-one
-self-isometry `TauCeti.RootfulNiemeierType.a5FourthD4TrialityRotation` of
+(`TauCeti.RootfulNiemeierType.a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff`), yielding the
+order-three, determinant-one self-isometry
+`TauCeti.RootfulNiemeierType.a5FourthD4TrialityRotation` (= `a5FourthD4TrialityIsometry`) of
 `TauCeti.niemeierA5FourthD4`.  This yields a faithful action
 `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom` of the cyclic pattern's symmetry group on
 `niemeierA5FourthD4`.
@@ -53,140 +55,76 @@ namespace RootfulNiemeierType
 
 open DynkinType IntegralLattice
 
-/-! ### Lifting `[2(024)0]` to `niemeierA5FourthD4` via `D₄` triality -/
+/-! ### Re-exporting the coupled triality rotation on `niemeierA5FourthD4` -/
 
 /-- **The coupled triality rotation of `niemeierA5FourthD4`**: the self-isometry moving the three
 marked `A₅` components by `1 ↦ 2 ↦ 3 ↦ 1`, fixing the leading `A₅` component `0`, and applying
 `TauCeti.DynkinType.typeD4Triality` on the `D₄` component `4`. -/
 noncomputable def a5FourthD4TrialityRotation :
     Isometry niemeierA5FourthD4 niemeierA5FourthD4 :=
-  a5FourthD4.coupledLatticeIsometry
-    (g := (a5FourthD4BlockRot⁻¹ : Equiv.Perm (Fin a5FourthD4.components.length)))
-    componentType_a5FourthD4BlockRot_inv componentTriality
-    (fun k x ↦ componentTrialityLabel k x)
-    glueAlphabetIsometry_componentTrialityLabel
-    fun w ↦ by
-      have h := a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff w
-      rw [a5FourthD4TrialityGlueIsometry, QuadraticMap.IsometryEquiv.trans_apply] at h
-      rwa [← funext fun k ↦ QuadraticMap.IsometryEquiv.pi_apply componentTrialityLabel _ k]
+  a5FourthD4TrialityIsometry
 
-private theorem a5FourthD4TrialityRotation_apply
-    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) (k : Fin 5) :
-    a5FourthD4TrialityRotation x k =
-      componentTriality k fun j ↦
-        x ((a5FourthD4BlockRot⁻¹ : Equiv.Perm (Fin a5FourthD4.components.length)) k)
-          (Fin.cast (congrArg rank (componentType_a5FourthD4BlockRot_inv k)).symm j) := by
-  refine (a5FourthD4.coupledLatticeIsometry_apply _ _ _ _ _ x k).trans
-    (congrArg (componentTriality k) (funext fun j ↦ ?_))
-  exact rootLatticeIsometryOfEq_apply _ _ _ _ _ j
-
-private theorem a5FourthD4TrialityRotation_apply_of_inv_eq
-    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) {k b : Fin 5}
-    (hkb : a5FourthD4BlockRot⁻¹ k = b)
-    (hb : (a5FourthD4.componentType k).rank = (a5FourthD4.componentType b).rank := by rfl) :
-    a5FourthD4TrialityRotation x k =
-      componentTriality k fun j ↦ x b (Fin.cast hb j) := by
-  rw [a5FourthD4TrialityRotation_apply]
-  subst hkb
-  -- After substituting `b = a5FourthD4BlockRot⁻¹ k`, the two rank casts agree by proof irrelevance.
-  rfl
-
-private theorem a5FourthD4TrialityRotation_apply_of_refl
-    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) {k b : Fin 5}
-    (hk : componentTriality k = 1)
-    (hkb : a5FourthD4BlockRot⁻¹ k = b)
+private theorem a5FourthD4TrialityRotation_apply_of_eq
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
+    {k b : Fin a5FourthD4.components.length}
+    (hk : k ≠ a5FourthD4D4Index) (hkb : a5FourthD4BlockRotation.symm k = b)
     (hb : (a5FourthD4.componentType k).rank = (a5FourthD4.componentType b).rank := by rfl) :
     a5FourthD4TrialityRotation x k = fun j ↦ x b (Fin.cast hb j) := by
-  rw [a5FourthD4TrialityRotation_apply_of_inv_eq x hkb hb, hk, Isometry.one_apply]
+  funext j
+  exact (a5FourthD4TrialityIsometry_apply_of_ne x hk j).trans
+    (Fin.apply_cast_eq_apply_cast x hkb _ hb j)
 
 @[simp]
 theorem a5FourthD4TrialityRotation_apply_zero
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityRotation x (0 : Fin 5) = x (0 : Fin 5) :=
-  a5FourthD4TrialityRotation_apply_of_refl x
-    (componentTriality_of_ne fun h ↦ absurd (congrArg Fin.val h) (by decide))
-    a5FourthD4BlockRot_inv_zero
+  a5FourthD4TrialityRotation_apply_of_eq x (k := ⟨0, by decide⟩) (b := ⟨0, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_zero (by decide))
 
 @[simp]
 theorem a5FourthD4TrialityRotation_apply_one
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityRotation x (1 : Fin 5) = x (3 : Fin 5) :=
-  a5FourthD4TrialityRotation_apply_of_refl x
-    (componentTriality_of_ne fun h ↦ absurd (congrArg Fin.val h) (by decide))
-    a5FourthD4BlockRot_inv_one
+  a5FourthD4TrialityRotation_apply_of_eq x (k := ⟨1, by decide⟩) (b := ⟨3, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_one (by decide))
 
 @[simp]
 theorem a5FourthD4TrialityRotation_apply_two
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityRotation x (2 : Fin 5) = x (1 : Fin 5) :=
-  a5FourthD4TrialityRotation_apply_of_refl x
-    (componentTriality_of_ne fun h ↦ absurd (congrArg Fin.val h) (by decide))
-    a5FourthD4BlockRot_inv_two
+  a5FourthD4TrialityRotation_apply_of_eq x (k := ⟨2, by decide⟩) (b := ⟨1, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_two (by decide))
 
 @[simp]
 theorem a5FourthD4TrialityRotation_apply_three
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityRotation x (3 : Fin 5) = x (2 : Fin 5) :=
-  a5FourthD4TrialityRotation_apply_of_refl x
-    (componentTriality_of_ne fun h ↦ absurd (congrArg Fin.val h) (by decide))
-    a5FourthD4BlockRot_inv_three
+  a5FourthD4TrialityRotation_apply_of_eq x (k := ⟨3, by decide⟩) (b := ⟨2, by decide⟩)
+    (by decide) (a5FourthD4BlockRotation_symm_apply_mk_three (by decide))
 
 @[simp]
 theorem a5FourthD4TrialityRotation_apply_four
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityRotation x (4 : Fin 5) =
-      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) := by
-  rw [a5FourthD4TrialityRotation_apply_of_inv_eq x a5FourthD4BlockRot_inv_four]
-  change componentTriality a5FourthD4D4Index (x (4 : Fin 5)) = _
-  rw [componentTriality_d4Index]
-  rfl
+      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
+  a5FourthD4TrialityIsometry_apply_four x
 
-/-- **The coupled triality rotation has order three.** -/
+/-- **The coupled triality rotation has order dividing three.** -/
 @[simp]
-theorem a5FourthD4TrialityRotation_pow_three : a5FourthD4TrialityRotation ^ 3 = 1 := by
-  let τ := typeD4Triality (isSimplyLaced_D 4)
-  have h4 : ∀ y : Fin (D 4).rank → ℚ, τ (τ (τ y)) = y := fun y ↦ by
-    rw [← Isometry.mul_apply, ← Isometry.mul_apply, ← pow_two, ← pow_succ,
-      typeD4Triality_pow_three, Isometry.one_apply]
-  apply Isometry.ext
-  intro x
-  rw [pow_succ, pow_two, Isometry.mul_apply, Isometry.mul_apply, Isometry.one_apply]
-  funext k
-  generalize (k : Fin 5) = j
-  fin_cases j
-  · exact (a5FourthD4TrialityRotation_apply_zero _).trans <|
-      (a5FourthD4TrialityRotation_apply_zero _).trans (a5FourthD4TrialityRotation_apply_zero _)
-  · exact (a5FourthD4TrialityRotation_apply_one _).trans <|
-      (a5FourthD4TrialityRotation_apply_three _).trans (a5FourthD4TrialityRotation_apply_two _)
-  · exact (a5FourthD4TrialityRotation_apply_two _).trans <|
-      (a5FourthD4TrialityRotation_apply_one _).trans (a5FourthD4TrialityRotation_apply_three _)
-  · exact (a5FourthD4TrialityRotation_apply_three _).trans <|
-      (a5FourthD4TrialityRotation_apply_two _).trans (a5FourthD4TrialityRotation_apply_one _)
-  · exact (a5FourthD4TrialityRotation_apply_four _).trans <|
-      (congrArg τ (a5FourthD4TrialityRotation_apply_four _)).trans <|
-        (congrArg (fun v ↦ τ (τ v)) (a5FourthD4TrialityRotation_apply_four _)).trans
-          (h4 (x (4 : Fin 5)))
+theorem a5FourthD4TrialityRotation_pow_three : a5FourthD4TrialityRotation ^ 3 = 1 :=
+  a5FourthD4TrialityIsometry_pow_three
+
+/-- `a5FourthD4TrialityRotation` has exact order `3`. -/
+@[simp]
+theorem orderOf_a5FourthD4TrialityRotation : orderOf a5FourthD4TrialityRotation = 3 :=
+  orderOf_a5FourthD4TrialityIsometry
 
 /-- `a5FourthD4TrialityRotation` is nontrivial. -/
 theorem a5FourthD4TrialityRotation_ne_one : a5FourthD4TrialityRotation ≠ 1 := by
   intro h
-  let x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ :=
-    fun i _ ↦ if i.val = 1 then 1 else 0
-  have hx := congrFun (congrFun (DFunLike.congr_fun h x) (2 : Fin 5)) ⟨0, by decide⟩
-  have hlhs : a5FourthD4TrialityRotation x (2 : Fin 5) ⟨0, by decide⟩ = 1 := by
-    rw [congrFun (a5FourthD4TrialityRotation_apply_two x) ⟨0, by decide⟩]
-    rfl
-  have hrhs : (1 : Isometry niemeierA5FourthD4 niemeierA5FourthD4) x (2 : Fin 5) ⟨0, by decide⟩ =
-      0 := by
-    rw [Isometry.one_apply]
-    rfl
-  exact one_ne_zero (hlhs.symm.trans (hx.trans hrhs))
-
-/-- `a5FourthD4TrialityRotation` has exact order `3`. -/
-@[simp]
-theorem orderOf_a5FourthD4TrialityRotation : orderOf a5FourthD4TrialityRotation = 3 := by
-  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  exact orderOf_eq_prime a5FourthD4TrialityRotation_pow_three a5FourthD4TrialityRotation_ne_one
+  have h3 := orderOf_a5FourthD4TrialityRotation
+  rw [h, orderOf_one] at h3
+  exact absurd h3 (by decide)
 
 /-- **`a5FourthD4TrialityRotation` is a proper isometry (`det = 1`).** -/
 @[simp]
@@ -196,32 +134,67 @@ theorem det_a5FourthD4TrialityRotation :
 
 /-! ### Faithful action of `[2(024)0].symmetries` on `niemeierA5FourthD4` -/
 
-/-- **The symmetries of the cyclic pattern `[2(024)0]` of `A₅⁴ D₄`** are `1`,
-`a5FourthD4BlockRot`, and `a5FourthD4BlockRot ^ 2`. -/
-theorem mem_symmetries_cyclic_a5FourthD4_iff (g : Equiv.Perm (Fin 5)) :
-    g ∈ (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries ↔
-      g = 1 ∨ g = a5FourthD4BlockRot ∨ g = a5FourthD4BlockRot ^ 2 := by
-  refine (SetLike.ext_iff.mp symmetries_cyclic_a5FourthD4 g).trans
-    ((mem_zpowers_iff_mem_range_orderOf (x := a5FourthD4BlockRot) (y := g)).trans ?_)
-  rw [orderOf_a5FourthD4BlockRot]
+/-- The symmetry group of `[2(024)0]` is the cyclic subgroup generated by
+`a5FourthD4BlockRotation`. -/
+theorem symmetries_cyclic_a5FourthD4 :
+    (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries =
+      Subgroup.zpowers (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) := by
+  refine (GluePattern.symmetries_cyclic [2] [0, 2, 4] [0]).trans (congrArg Subgroup.zpowers ?_)
+  ext i
+  have hi := congrArg Fin.val (Equiv.congr_fun permCongr_finSumPerm_finRotate ⟨i.val, i.isLt⟩)
+  rw [Equiv.permCongr_apply, finCongr_apply, Fin.val_cast, finCongr_symm, finCongr_apply] at hi
+  have hcast : Fin.cast (by decide : 1 + 3 + 1 = a5FourthD4.components.length).symm
+      (⟨i.val, i.isLt⟩ : Fin a5FourthD4.components.length) = i :=
+    Fin.ext (Fin.val_cast _ _)
+  exact (congrArg (fun j : Fin (1 + 3 + 1) ↦ ((Equiv.Perm.finSumPerm
+    (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin 1)) (finRotate 3))
+    (1 : Equiv.Perm (Fin 1))) j).val) hcast).symm.trans hi
+
+/-- `a5FourthD4BlockRotation` belongs to the symmetry group of the cyclic pattern `[2(024)0]`. -/
+theorem a5FourthD4BlockRotation_mem_symmetries :
+    (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ∈
+      (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries := by
+  rw [symmetries_cyclic_a5FourthD4]
+  exact Subgroup.mem_zpowers _
+
+private theorem mem_zpowers_a5FourthD4BlockRotation_iff
+    (g : Equiv.Perm (Fin a5FourthD4.components.length)) :
+    g ∈ Subgroup.zpowers a5FourthD4BlockRotation ↔
+      g = 1 ∨ g = a5FourthD4BlockRotation ∨ g = a5FourthD4BlockRotation ^ 2 := by
+  rw [mem_zpowers_iff_mem_range_orderOf, orderOf_a5FourthD4BlockRotation]
   simp only [Finset.range_add_one, Finset.range_zero, Finset.mem_image, Finset.mem_insert,
     Finset.notMem_empty, exists_eq_or_imp, pow_zero, pow_one]
   tauto
 
-private theorem forall_mem_zpowers_a5FourthD4BlockRot
+/-- **The symmetries of the cyclic pattern `[2(024)0]` of `A₅⁴ D₄`** are `1`,
+`a5FourthD4BlockRotation`, and `a5FourthD4BlockRotation ^ 2`. -/
+theorem mem_symmetries_cyclic_a5FourthD4_iff (g : Equiv.Perm (Fin 5)) :
+    g ∈ (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries ↔
+      g = 1 ∨ g = (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ∨
+        g = (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ^ 2 :=
+  (SetLike.ext_iff.mp symmetries_cyclic_a5FourthD4 g).trans
+    (mem_zpowers_a5FourthD4BlockRotation_iff g)
+
+private theorem forall_mem_zpowers_a5FourthD4BlockRotation
     (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
-    g ∈ Subgroup.zpowers ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ := by
+    g ∈ Subgroup.zpowers
+      (⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
+        a5FourthD4BlockRotation_mem_symmetries⟩ :
+        (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) := by
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
     ((SetLike.ext_iff.mp symmetries_cyclic_a5FourthD4 g.val).mp g.property)
   exact ⟨k, Subtype.ext hk⟩
 
-private theorem orderOf_a5FourthD4BlockRot_mk_eq_orderOf_a5FourthD4TrialityRotation_mk :
-    orderOf (⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ :
+private theorem orderOf_a5FourthD4BlockRotation_mk_eq_orderOf_a5FourthD4TrialityRotation_mk :
+    orderOf (⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
+        a5FourthD4BlockRotation_mem_symmetries⟩ :
         (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) =
       orderOf (⟨a5FourthD4TrialityRotation, Subgroup.mem_zpowers _⟩ :
         Subgroup.zpowers a5FourthD4TrialityRotation) :=
-  (Subgroup.orderOf_mk a5FourthD4BlockRot a5FourthD4BlockRot_mem_symmetries).trans
-    (orderOf_a5FourthD4BlockRot.trans
+  (Subgroup.orderOf_mk (a5FourthD4BlockRotation : Equiv.Perm (Fin 5))
+      a5FourthD4BlockRotation_mem_symmetries).trans
+    ((show orderOf (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) = 3 from
+        orderOf_a5FourthD4BlockRotation).trans
       (orderOf_a5FourthD4TrialityRotation.symm.trans (Subgroup.orderOf_mk _ _).symm))
 
 /-- **The indicated symmetry group of `[2(024)0]` acts on `niemeierA5FourthD4`** by powers of
@@ -230,32 +203,35 @@ noncomputable def a5FourthD4CyclicSymmetryHom :
     (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries →*
       Isometry niemeierA5FourthD4 niemeierA5FourthD4 :=
   (Subgroup.zpowers a5FourthD4TrialityRotation).subtype.comp
-    (mulEquivOfOrderOfEq forall_mem_zpowers_a5FourthD4BlockRot
+    (mulEquivOfOrderOfEq forall_mem_zpowers_a5FourthD4BlockRotation
       (Subgroup.forall_zpowers.mpr fun m ↦ ⟨m, rfl⟩)
-      orderOf_a5FourthD4BlockRot_mk_eq_orderOf_a5FourthD4TrialityRotation_mk).toMonoidHom
+      orderOf_a5FourthD4BlockRotation_mk_eq_orderOf_a5FourthD4TrialityRotation_mk).toMonoidHom
 
-/-- The generator `a5FourthD4BlockRot` of `[2(024)0].symmetries` acts as
+/-- The generator `a5FourthD4BlockRotation` of `[2(024)0].symmetries` acts as
 `a5FourthD4TrialityRotation`. -/
 @[simp]
 theorem a5FourthD4CyclicSymmetryHom_blockRot :
-    a5FourthD4CyclicSymmetryHom ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ =
+    a5FourthD4CyclicSymmetryHom
+        ⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
+          a5FourthD4BlockRotation_mem_symmetries⟩ =
       a5FourthD4TrialityRotation := by
   simp [a5FourthD4CyclicSymmetryHom, mulEquivOfOrderOfEq_apply_gen]
 
-/-- Every symmetry of `[2(024)0]` acts on the component positions as `a5FourthD4BlockRot ^ k`
+/-- Every symmetry of `[2(024)0]` acts on the component positions as `a5FourthD4BlockRotation ^ k`
 (`k < 3`) and on `niemeierA5FourthD4` as the matching power `a5FourthD4TrialityRotation ^ k`. -/
 theorem exists_a5FourthD4CyclicSymmetryHom_eq_pow
     (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
     ∃ k < 3,
-      g.val = a5FourthD4BlockRot ^ k ∧
+      g.val = (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ^ k ∧
         a5FourthD4CyclicSymmetryHom g = a5FourthD4TrialityRotation ^ k := by
-  obtain ⟨k, hk, hgk⟩ : ∃ k < 3, g.val = a5FourthD4BlockRot ^ k := by
+  obtain ⟨k, hk, hgk⟩ : ∃ k < 3, g.val = (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ^ k := by
     rcases (mem_symmetries_cyclic_a5FourthD4_iff g.val).mp g.property with h | h | h
     · exact ⟨0, by decide, h.trans (pow_zero _).symm⟩
     · exact ⟨1, by decide, h.trans (pow_one _).symm⟩
     · exact ⟨2, by decide, h⟩
   refine ⟨k, hk, hgk, ?_⟩
-  rw [show g = ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ ^ k from Subtype.ext hgk,
+  rw [show g = ⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
+      a5FourthD4BlockRotation_mem_symmetries⟩ ^ k from Subtype.ext hgk,
     map_pow, a5FourthD4CyclicSymmetryHom_blockRot]
 
 /-- Every symmetry of the cyclic pattern `[2(024)0]` acts on `niemeierA5FourthD4` with

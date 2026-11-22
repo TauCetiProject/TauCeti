@@ -243,7 +243,7 @@ theorem toBesselPotentialSpace_eq_iff {k : ℕ} {u : Wkp (volume : Measure E) �
       BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k) h
         =ᵐ[volume] fun x ↦ (value k u x : ℂ) := by
   refine ⟨fun hu ↦ hu ▸ coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u, fun hh ↦ ?_⟩
-  refine BesselPotentialSpace.inclusionLp_injective (Nat.cast_nonneg k) (Lp.ext ?_)
+  refine BesselPotentialSpace.ext_of_ae_eq_inclusionLp (Nat.cast_nonneg k) ?_
   exact (coeFn_inclusionLp_toBesselPotentialSpace hp hp_top k u).trans hh.symm
 
 /-- The identification is compatible with lowering the order: the inclusion
@@ -263,13 +263,13 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
     IsClosed (Set.range (toBesselPotentialSpace (E := E) hp hp_top k)) := by
   -- The complexified real functions are closed in `Lᵖ(E, ℂ)`: taking real parts is a retraction.
   have hclosed : IsClosed (Set.range (Complex.ofRealCLM.compLpL p (volume : Measure E))) := by
+    have hcomp : Complex.reCLM.comp Complex.ofRealCLM = ContinuousLinearMap.id ℝ ℝ := by
+      ext
+      simp
     refine Function.LeftInverse.isClosed_range (f := Complex.reCLM.compLpL p volume)
-      (fun g ↦ Lp.ext ?_) (ContinuousLinearMap.continuous _) (ContinuousLinearMap.continuous _)
-    simp only [ContinuousLinearMap.compLpL_apply]
-    filter_upwards [Complex.reCLM.coeFn_compLp (p := p) (μ := volume)
-      (Complex.ofRealCLM.compLp g), Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) g]
-      with x h₁ h₂
-    simp [h₁, h₂]
+      (fun g ↦ ?_) (ContinuousLinearMap.continuous _) (ContinuousLinearMap.continuous _)
+    simp only [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.compLp_comp_linear,
+      hcomp, ContinuousLinearMap.id_compLp]
   -- By Calderón's theorem, the range is the preimage of this set under the inclusion into `Lᵖ`.
   convert hclosed.preimage (BesselPotentialSpace.inclusionLp (Nat.cast_nonneg k)).continuous
     using 1
