@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The conjugation action of the special linear group on matrices
@@ -31,9 +30,9 @@ invertible matrix commuting with `X` has the same determinant as `g`.
 
 ## Main definitions
 
-* `ConjAct.specialLinearGroupMulAction`: the conjugation action `g • M = g M g⁻¹` of
-  `ConjAct (SpecialLinearGroup n R)` on `Matrix n n R`, with scalar multiplication
-  `ConjAct.specialLinearGroupScalar`.
+* `ConjAct.specialLinearGroupMulSemiringAction`: the conjugation action `g • M = g M g⁻¹` of
+  `ConjAct (SpecialLinearGroup n R)` on `Matrix n n R`, by ring automorphisms, with scalar
+  multiplication `ConjAct.specialLinearGroupScalar`.
 * `TauCeti.traceDetFiber n t d`: the `n × n` matrices of trace `t` and determinant `d`
   (`TauCeti.mem_traceDetFiber`), as a sub-action, whose orbits are the `SL(n, R)`-conjugacy
   classes of such matrices.
@@ -87,11 +86,19 @@ theorem specialLinearGroup_smul_def (g : ConjAct (SpecialLinearGroup n R)) (M : 
       ((ofConjAct g)⁻¹ : SpecialLinearGroup n R) :=
   rfl
 
-/-- Conjugation `g • M = g M g⁻¹` is an action of `SL(n, R)` on `Matrix n n R`. -/
-instance specialLinearGroupMulAction :
-    MulAction (ConjAct (SpecialLinearGroup n R)) (Matrix n n R) where
+/-- Conjugation `g • M = g M g⁻¹` is an action of `SL(n, R)` on `Matrix n n R` by ring
+automorphisms, as Mathlib's `ConjAct.unitsMulSemiringAction` is for the units of a semiring. -/
+instance specialLinearGroupMulSemiringAction :
+    MulSemiringAction (ConjAct (SpecialLinearGroup n R)) (Matrix n n R) where
   one_smul M := by simp [specialLinearGroup_smul_def]
   mul_smul g h M := by simp [specialLinearGroup_smul_def, Matrix.mul_assoc]
+  smul_zero g := by simp [specialLinearGroup_smul_def]
+  smul_add g M N := by simp [specialLinearGroup_smul_def, Matrix.mul_add, Matrix.add_mul]
+  smul_one g := by simp [specialLinearGroup_smul_def, mul_adjugate]
+  -- `g⁻¹ = adjugate g` and `adjugate g * g = 1` cancel the middle factors of `g M g⁻¹ g N g⁻¹`
+  smul_mul g M N := by
+    simp [specialLinearGroup_smul_def, Matrix.mul_assoc, ← Matrix.mul_assoc (adjugate _),
+      adjugate_mul]
 
 /-- Conjugation by `SL(n, R)` preserves the trace. -/
 @[simp]
@@ -210,7 +217,7 @@ theorem add_scalar_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
     (hM : M ∈ traceDetFiber (Fin 2) t d) (r : R) :
     M + scalar (Fin 2) r ∈ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) := by
   obtain ⟨rfl, rfl⟩ := hM
-  rw [mem_traceDetFiber, trace_fin_two, trace_fin_two, det_fin_two, det_fin_two]
+  rw [mem_traceDetFiber_fin_two, trace_fin_two, det_fin_two]
   simp only [Matrix.add_apply, scalar_apply, diagonal_apply_eq, diagonal_apply_ne _ zero_ne_one,
     diagonal_apply_ne _ one_ne_zero, add_zero]
   constructor <;> ring
@@ -221,13 +228,10 @@ def traceDetFiberAddScalarEquiv (t d r : R) :
     traceDetFiber (Fin 2) t d ≃ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) where
   toFun M := ⟨M.val + scalar (Fin 2) r, add_scalar_mem_traceDetFiber M.property r⟩
   invFun M := ⟨M.val - scalar (Fin 2) r, by
-    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.property
-    rw [trace_fin_two] at ht
-    rw [det_fin_two] at hd
-    rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
-    simp only [Matrix.sub_apply, scalar_apply, diagonal_apply_eq, diagonal_apply_ne _ zero_ne_one,
-      diagonal_apply_ne _ one_ne_zero, sub_zero]
-    exact ⟨by linear_combination ht, by linear_combination hd - r * ht⟩⟩
+    -- translating back by `-r` lands in the fibre of trace `t` and determinant `d`
+    have h := add_scalar_mem_traceDetFiber M.property (-r)
+    rw [map_neg, ← sub_eq_add_neg] at h
+    convert h using 2 <;> ring⟩
   left_inv M := Subtype.ext (add_sub_cancel_right _ _)
   right_inv M := Subtype.ext (sub_add_cancel _ _)
 
