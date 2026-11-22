@@ -122,7 +122,8 @@ private def horseshoeTwistAux : (n : ℕ) →
         (I₃.exact_succ n).comp_descToInjective _ _⟩
 
 /-- The twisting maps `tⁿ : I₃ⁿ ⟶ I₁ⁿ⁺¹` of the horseshoe resolution, whose differential is
-`(u, v) ↦ (d u + t v, d v)` on `I₁ⁿ ⊞ I₃ⁿ`. They are characterized by
+`(u, v) ↦ (d u + t v, d v)` on `I₁ⁿ ⊞ I₃ⁿ`. They are one choice, made through the
+injectivity of the terms of `I₁`, among many maps satisfying
 `CategoryTheory.InjectiveResolution.comp_horseshoeTwist_zero` and
 `CategoryTheory.InjectiveResolution.d_comp_horseshoeTwist`. -/
 def horseshoeTwist (n : ℕ) : I₃.cocomplex.X n ⟶ I₁.cocomplex.X (n + 1) :=
