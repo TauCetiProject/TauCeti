@@ -172,9 +172,6 @@ theorem exists_isOpen_injOn_isLocalHomeomorphOn_smul_slice (hx : x ∈ T) {W : S
   rw [domRestrict_eq, ← map_map, map_nhds_subtypeVal_eq_nhds q.property
     ((isOpen_univ.prod hU).mem_nhds q.property)]
   obtain ⟨⟨u, s⟩, -, hs⟩ := q
-  intro B hB
-  rw [mem_map, nhds_prod_eq, nhds_subtype, mem_prod_iff] at hB
-  obtain ⟨t₁, ht₁, t₂, ⟨t₃, ht₃, ht₃₂⟩, hsub⟩ := hB
   have hWs : W ∈ 𝓝 (s : X) := mem_of_superset (isOpen_interior.mem_nhds hs) hOW
   have hw : Tendsto (fun z ↦ u⁻¹ • z) (𝓝 (u • (s : X))) (𝓝 (s : X)) := by
     simpa using (continuous_const_smul u⁻¹).tendsto (u • (s : X))
@@ -184,10 +181,15 @@ theorem exists_isOpen_injOn_isLocalHomeomorphOn_smul_slice (hx : x ∈ T) {W : S
     simpa using tendsto_const_nhds (x := u).mul hgw.inv
   have h₂ : Tendsto (fun z ↦ g (u⁻¹ • z) • u⁻¹ • z) (𝓝 (u • (s : X))) (𝓝 (s : X)) := by
     simpa using hgw.smul hw
-  filter_upwards [h₁ ht₁, h₂ ht₃, hw hWs] with z hz₁ hz₃ hzW
-  have hmem := hsub (show (u * (g (u⁻¹ • z))⁻¹, (⟨_, hgT _ hzW⟩ : T)) ∈ t₁ ×ˢ t₂ from
-    ⟨hz₁, ht₃₂ hz₃⟩)
-  simpa [F, mul_smul] using hmem
+  classical
+  -- The slice coordinate of the local inverse, extended by `s` off `u • W`.
+  let t : X → T := fun z ↦ if h : u⁻¹ • z ∈ W then ⟨_, hgT _ h⟩ else s
+  have ht : ∀ᶠ z in 𝓝 (u • (s : X)), (t z : X) = g (u⁻¹ • z) • u⁻¹ • z := by
+    filter_upwards [hw hWs] with z hz
+    simp [t, show u⁻¹ • z ∈ W from hz]
+  exact le_map_of_right_inverse (mba := fun z ↦ (u * (g (u⁻¹ • z))⁻¹, t z))
+    (ht.mono fun z hz ↦ by simp [F, hz, mul_smul])
+    (h₁.prodMk_nhds (tendsto_subtype_rng.2 (h₂.congr' (ht.mono fun _ h ↦ h.symm))))
 
 end GaugeFixing
 
