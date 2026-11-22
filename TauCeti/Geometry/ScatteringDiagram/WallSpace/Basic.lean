@@ -63,10 +63,6 @@ variable {Γ Λ R L : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 def wallBracketNormal (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) : Λ →+ ℤ :=
   m (ρ n') • m' - m' (ρ n) • m
 
-/-- The bracket normal is the difference of the two scaled input characters. -/
-theorem wallBracketNormal_def (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) :
-    wallBracketNormal ρ n n' m m' = m (ρ n') • m' - m' (ρ n) • m := (rfl)
-
 /-- Evaluate the bracket normal on a tangent vector. -/
 @[simp]
 theorem wallBracketNormal_apply (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) (v : Λ) :
@@ -140,7 +136,7 @@ theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : 
     H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
   by_cases hmn : m (ρ n) = 0
   · apply H.wall_le_wall_of_ker_ge n
-    rw [wallBracketNormal_def]
+    rw [wallBracketNormal]
     exact f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
   · simp [hmn]
 
