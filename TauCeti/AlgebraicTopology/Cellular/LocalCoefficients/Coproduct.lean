@@ -177,7 +177,8 @@ def isColimitCofanTwistedHomologyMapCharacteristicCellPairMap (n : ℕ) :
       refine (Category.assoc _ _ _).trans ?_
       refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
         (TopPair.twistedHomologyMap_comp _ _ _ n).symm)).trans ?_
-      exact (TopPair.twistedHomologyMap_congr _ (characteristicCellPairMap_def C j) n).symm)
+      exact (TopPair.twistedHomologyMap_congr _
+        (congrArg TopPair.Hom.fst (characteristicCellPairMap_def C j)) n).symm)
 
 /-- On the disk `D⁰`, a point, the class of a coefficient over the centre is an isomorphism onto
 the relative homology `H₀(D⁰, ∅; K)`. -/
