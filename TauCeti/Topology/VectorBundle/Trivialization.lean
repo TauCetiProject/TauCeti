@@ -35,8 +35,12 @@ For scalar coordinates `q : F ≃L[𝕜] 𝕜` of a rank-one model,
 `Bundle.Trivialization.scalarCoordChange` computes the actual scalar transition. Its
 application, nonvanishing, identity and cocycle laws follow from the native linear changes.
 
-More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+The fibre coordinate of a continuous section in any trivialization is continuous on its base set
+(`Bundle.Trivialization.continuousOn_snd_apply_mk`).
+
+Any linear trivialization sends a vector over its base set to a nonzero vector
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`,
+`Bundle.Trivialization.snd_apply_eq_zero_iff`), and likewise
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
 with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
 `Bundle.Trivialization.symm_apply_smul`). Near a point whose image under a map continuous there
@@ -175,6 +179,14 @@ theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
+/-- The fibre coordinate of a continuous section in a trivialization is continuous on the base
+set of the trivialization. -/
+theorem continuousOn_snd_apply_mk {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) :
+    ContinuousOn (fun b ↦ (e (TotalSpace.mk' F b (s b))).2) e.baseSet :=
+  continuous_snd.comp_continuousOn
+    (e.continuousOn.comp hs.continuousOn fun _ hb ↦ e.mem_source.2 hb)
+
 section Linear
 
 variable (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F] [AddCommMonoid F] [Module R F]
@@ -187,6 +199,13 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- A linear trivialization sends a vector over its base set to zero exactly when the vector is
+zero. -/
+theorem snd_apply_eq_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
+    (e v).2 = 0 ↔ v.snd = 0 :=
+  not_iff_not.1 (e.snd_apply_ne_zero_iff R hv)
 
 include R in
 /-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to

@@ -69,8 +69,11 @@ Two linear trivializations whose base sets contain `b` read a class of `(F, F �
 the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`): an invertible
 linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
-for the fibre classes of an oriented bundle. In homology, the maps
-`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ by the same sign
+for the fibre classes of an oriented bundle. When `2 = 0` in the coefficients the sign is invisible,
+and any two linear trivializations read a class of `(F, F ∖ {0})` as the same class of the fibre
+pair (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`). In
+homology, the maps `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ
+by the same sign
 (`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`).
 
 ## Main definitions and results
@@ -107,6 +110,8 @@ for the fibre classes of an oriented bundle. In homology, the maps
   constant along paths in `W` within its base set.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
+* `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`: when
+  `2 = 0` in the coefficients, fibre classes read in two trivializations agree.
 * `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
   the homology of the fibre pairs induced by two linear trivializations differ by the same sign.
 
@@ -600,6 +605,26 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
     simp [e.apply_mk_symm hb]
   rw [ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul
     (e.continuousLinearEquivAt ℝ b hb), h]
+
+/-- **In characteristic two, fibre classes do not depend on the trivialization**: if `2 = 0` in
+`K`, then for linear trivializations `e` and `e'` whose base sets contain `b`, pulling back a class
+`g ∈ Hⁿ(F, F ∖ {0}; R, M)` to the fibre pair `(E_b, E_b ∖ {0})` along `e'` gives the pull-back
+along `e`. The two differ by the sign of the determinant of the coordinate change, and `-1` acts
+as `1` on a `K`-module. -/
+theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero (h2 : (2 : K) = 0) {b : B}
+    (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {n : ℕ}
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
+      TopPair.singularCohomologyMap
+        (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb']
+  have hdet : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det ≠ 0 :=
+    -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+    (LinearEquiv.isUnit_det' (e.coordChangeL ℝ e' b).toLinearEquiv).ne_zero
+  rcases hdet.lt_or_gt with h | h
+  · rw [sign_neg h, SignType.coe_neg_one, neg_one_zsmul, neg_eq_iff_add_eq_zero, ← two_smul K,
+      h2, zero_smul]
+  · rw [sign_pos h, SignType.coe_one, one_zsmul]
 
 /-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**, in
 homology: for linear trivializations `e` and `e'` whose base sets contain `b`, the map
