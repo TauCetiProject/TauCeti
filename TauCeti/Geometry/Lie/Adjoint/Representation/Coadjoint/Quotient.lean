@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Subgroup
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Quotient
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Annihilator
 
 /-!
 # The dual action of `G ⧸ N` and the coadjoint action on the annihilator of `𝔫`

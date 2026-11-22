@@ -10,8 +10,6 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.PicardGroup.Contraction
-import TauCeti.LinearAlgebra.Dual.Annihilator
-import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Invariants of the dual representation
@@ -40,13 +38,6 @@ If `g` fixes pointwise the hyperplane `ker ℓ` cut out by a linear form `ℓ`, 
 every linear form by a multiple of `ℓ`, and conversely. This is the divisibility behind the
 divided-difference operator of a pseudoreflection.
 
-For a `G`-stable submodule `W`, the annihilator `W⁰` of linear forms vanishing on `W` is stable
-under the dual representation. An element `g` moving every vector by an element of `W`,
-`ρ g v - v ∈ W`, fixes `W⁰` pointwise. Under the identification `(V ⧸ W)* ≃ W⁰`, the dual
-representation on `W⁰` is the dual of the quotient representation on `V ⧸ W`. For the adjoint
-representation of a Lie group and the Lie algebra of a closed normal subgroup this is the
-coadjoint action on the annihilator used in reduction in stages.
-
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
 `Dual Y ⊗ X`, this counts intertwiners in both directions alike. The invariant bilinear forms of `ρ`
 are the intertwiners into `ρ.dual`, so counting them is counting invariants of a dual.
@@ -66,14 +57,6 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
-* `Representation.dualAnnihilator_le_comap_dual`: if `W` is stable under `ρ g⁻¹`, its annihilator
-  is stable under `ρ.dual g`.
-* `Representation.dual_apply_eq_self_of_mem_dualAnnihilator`: an element moving every vector by
-  an element of `W` fixes the annihilator `W⁰` pointwise.
-* `Representation.dualQuotEquivDualAnnihilator_symm_dual_apply`: under `(V ⧸ W)* ≃ W⁰`, the dual
-  representation on `W⁰` is the dual of the quotient representation on `V ⧸ W`.
-* `Representation.dual_ofQuotient_comp_mk'`: the dual of `ρ.ofQuotient S`, pulled back along
-  `G → G ⧸ S`, is `ρ.dual`.
 * `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
@@ -181,59 +164,6 @@ theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective �
   simp only [injective_iff_map_eq_one, dual_apply_eq_one_iff]
 
 end Field
-
-/-! ### Annihilators of invariant submodules -/
-
-section Annihilator
-
-variable {k G V : Type*} [Group G]
-
-/-- **The annihilator of an invariant submodule is invariant.** If `W` is stable under `ρ g⁻¹`,
-its dual annihilator `W⁰` is stable under `ρ.dual g`, since `(ρ.dual g φ) w = φ (ρ g⁻¹ w)` vanishes
-for `w ∈ W`. -/
-theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module k V]
-    (ρ : Representation k G V) {W : Submodule k V} {g : G} (hW : W ≤ W.comap (ρ g⁻¹)) :
-    W.dualAnnihilator ≤ W.dualAnnihilator.comap (ρ.dual g) := by
-  rw [← Submodule.map_le_iff_le_comap, dual_apply, ← LinearMap.dualMap_def]
-  exact (W.dualAnnihilator_map_dualMap_le (ρ g⁻¹)).trans (Submodule.dualAnnihilator_anti hW)
-
-/-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S`,
-pulled back along `G → G ⧸ S`, is the dual of `ρ`:
-`(ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual`. The `simp` lemma
-`Representation.dual_comp` rewrites `((ρ.ofQuotient S).comp (QuotientGroup.mk' S)).dual` to this
-left-hand side, where `Representation.ofQuotient_comp_mk'` no longer applies. -/
-@[simp]
-theorem dual_ofQuotient_comp_mk' [CommSemiring k] [AddCommMonoid V] [Module k V]
-    (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
-    (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
-  rw [← dual_comp, ofQuotient_comp_mk']
-
-variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}
-  {W : Submodule k V} {g : G}
-
-/-- An element `g` that moves every vector by an element of `W`, `ρ g v - v ∈ W`, fixes every
-linear form vanishing on `W` under the dual representation. No invariance of `W` is needed. -/
-theorem dual_apply_eq_self_of_mem_dualAnnihilator (hg : ∀ v, ρ g v - v ∈ W)
-    {φ : Module.Dual k V} (hφ : φ ∈ W.dualAnnihilator) : ρ.dual g φ = φ := by
-  ext v
-  -- `φ` takes the same value at `v = ρ g (ρ g⁻¹ v)` and at `ρ g⁻¹ v`.
-  have h := (Submodule.mem_dualAnnihilator φ).1 hφ _ (hg (ρ g⁻¹ v))
-  rw [map_sub, self_inv_apply, sub_eq_zero] at h
-  simp [Module.Dual.transpose_apply, ← h]
-
-/-- **The dual of a quotient representation is the dual representation on the annihilator.** Under
-the identification `(V ⧸ W)* ≃ W⁰` of `Submodule.dualQuotEquivDualAnnihilator`, the translate
-`ρ.dual g φ` of `φ ∈ W⁰` corresponds to the translate under the dual of the quotient representation
-on `V ⧸ W`. -/
-theorem dualQuotEquivDualAnnihilator_symm_dual_apply (hW : ∀ g, W ≤ W.comap (ρ g)) (g : G)
-    {φ : Module.Dual k V} (hφ : φ ∈ W.dualAnnihilator) :
-    W.dualQuotEquivDualAnnihilator.symm
-        ⟨ρ.dual g φ, ρ.dualAnnihilator_le_comap_dual (hW g⁻¹) hφ⟩ =
-      (ρ.quotient W hW).dual g (W.dualQuotEquivDualAnnihilator.symm ⟨φ, hφ⟩) := by
-  ext v
-  simp [Module.Dual.transpose_apply]
-
-end Annihilator
 
 end Representation
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quotient
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Annihilator
 
 /-!
 # Polynomial invariants of a faithful quotient

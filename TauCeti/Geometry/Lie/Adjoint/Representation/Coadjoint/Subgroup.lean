@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Annihilator
 
 /-!
 # Coadjoint actions on annihilators of subgroup Lie algebras
