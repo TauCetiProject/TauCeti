@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 import TauCeti.Data.List.Commutation
 import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced

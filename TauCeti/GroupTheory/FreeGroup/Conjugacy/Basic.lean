@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Algebra.Group.Conj
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic

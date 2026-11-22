@@ -25,7 +25,8 @@ The results hold for every group with `IsFreeGroup`, in particular for `FreeGrou
 Conjugation and inversion transport maximal roots: `(g * r * g⁻¹) ^ k = g * x * g⁻¹` and
 `r⁻¹ ^ k = x⁻¹`, and neither operation creates or destroys proper powers
 (`Monoid.isProperPower_conj_iff`, `Monoid.isProperPower_inv`), so by uniqueness the maximal
-roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with the same exponent.
+roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with the same exponent. For
+`m ≠ 0`, the maximal root of `x ^ m` is `r`, with exponent `m * k`.
 
 ## Main results
 
@@ -42,6 +43,10 @@ roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with t
 * `IsFreeGroup.intEquivCentralizer`: the centralizer of a non-proper-power `u` is isomorphic to
   `ℤ`, via `k ↦ u ^ k`.
 * `IsFreeGroup.eq_or_eq_inv_of_commute`: two commuting non-proper-powers are equal or inverse.
+* `IsFreeGroup.pow_eq_conj_iff`, `IsFreeGroup.pow_eq_inv_iff`,
+  `IsFreeGroup.pow_eq_pow_iff_eq_and_eq_mul`: if `r ^ k = x` is the maximal root decomposition,
+  then the maximal root decompositions of `g * x * g⁻¹`, `x⁻¹` and `x ^ m` are
+  `(g * r * g⁻¹) ^ k`, `r⁻¹ ^ k` and `r ^ (m * k)`.
 
 ## References
 
@@ -179,5 +184,32 @@ theorem pow_eq_iff_dvd_and_eq_pow_div {x r y : G} {k n : ℕ}
     exact ⟨Dvd.intro_left j rfl, by rw [Nat.mul_div_cancel _ (Nat.pos_of_ne_zero hn), zpow_natCast]⟩
   · rintro ⟨⟨c, rfl⟩, rfl⟩
     rw [Nat.mul_div_cancel_left c (Nat.pos_of_ne_zero hn), ← pow_mul, mul_comm, hx]
+
+/-- Conjugation transports maximal roots in a free group: if `r ^ k = x` with `r` not a proper
+power, then the decompositions `s ^ l = g * x * g⁻¹` with `l ≠ 0` and `s` not a proper power are
+exactly `s = g * r * g⁻¹` and `l = k`. -/
+theorem pow_eq_conj_iff {x r s : G} {k l : ℕ} (g : G) (hr : ¬IsProperPower r) (hx : r ^ k = x)
+    (hl : l ≠ 0) (hs : ¬IsProperPower s) : s ^ l = g * x * g⁻¹ ↔ s = g * r * g⁻¹ ∧ l = k := by
+  rw [← hx, ← conj_pow, eq_comm, pow_eq_pow_iff_of_not_isProperPower hl
+    ((isProperPower_conj_iff g r).not.2 hr) hs]
+  exact and_congr eq_comm eq_comm
+
+/-- Inversion transports maximal roots in a free group: if `r ^ k = x` with `r` not a proper
+power, then the decompositions `s ^ l = x⁻¹` with `l ≠ 0` and `s` not a proper power are exactly
+`s = r⁻¹` and `l = k`. -/
+theorem pow_eq_inv_iff {x r s : G} {k l : ℕ} (hr : ¬IsProperPower r) (hx : r ^ k = x)
+    (hl : l ≠ 0) (hs : ¬IsProperPower s) : s ^ l = x⁻¹ ↔ s = r⁻¹ ∧ l = k := by
+  rw [← hx, ← inv_pow, eq_comm,
+    pow_eq_pow_iff_of_not_isProperPower hl (isProperPower_inv.not.2 hr) hs]
+  exact and_congr eq_comm eq_comm
+
+/-- Powers transport maximal roots in a free group: if `r ^ k = x` with `r` not a proper power,
+then the decompositions `s ^ l = x ^ m` with `l ≠ 0` and `s` not a proper power are exactly
+`s = r` and `l = m * k`. For `m = 0` both sides are false. -/
+theorem pow_eq_pow_iff_eq_and_eq_mul {x r s : G} {k l : ℕ} (m : ℕ) (hr : ¬IsProperPower r)
+    (hx : r ^ k = x) (hl : l ≠ 0) (hs : ¬IsProperPower s) :
+    s ^ l = x ^ m ↔ s = r ∧ l = m * k := by
+  rw [← hx, ← pow_mul', eq_comm, pow_eq_pow_iff_of_not_isProperPower hl hr hs]
+  exact and_congr eq_comm eq_comm
 
 end IsFreeGroup

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 import TauCeti.Computability.Primrec.List
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Word
 

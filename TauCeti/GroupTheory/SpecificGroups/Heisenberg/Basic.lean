@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 public import Mathlib.LinearAlgebra.Matrix.Notation
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
