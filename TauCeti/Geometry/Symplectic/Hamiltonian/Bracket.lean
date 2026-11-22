@@ -264,14 +264,11 @@ theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDif
     (hg : ContMDiff I 𝓘(ℝ) 2 g) :
     σ.hamiltonianVectorField (σ.poissonBracket f g) =
       -mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) := by
-  refine (h.isHamiltonianVectorField_iff_eq.1 (isHamiltonianVectorField_iff.2 fun x v ↦ ?_)).symm
-  have hfg : σ.poissonBracket f g = fun y ↦
-      SmoothBundleForm.eval₂ σ y (σ.hamiltonianVectorField f y) (σ.hamiltonianVectorField g y) :=
-    funext (σ.poissonBracket_def f g)
-  rw [hfg, (h.isHamiltonianVectorField_hamiltonianVectorField f).mvfderiv_eval₂ hσ
-    (h.isHamiltonianVectorField_hamiltonianVectorField g) (hf x) (hg x)
-    (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x),
-    Pi.neg_apply, SmoothBundleForm.eval₂_neg_left]
+  refine (h.isHamiltonianVectorField_iff_eq.1 ?_).symm
+  rw [show σ.poissonBracket f g = _ from funext (σ.poissonBracket_def f g)]
+  exact (h.isHamiltonianVectorField_hamiltonianVectorField f).neg_mlieBracket hσ
+    (h.isHamiltonianVectorField_hamiltonianVectorField g) hf hg
+    (h.mdifferentiable_hamiltonianVectorField hf) (h.mdifferentiable_hamiltonianVectorField hg)
 
 /-- **Locally Poisson-commuting functions have commuting Hamiltonian vector fields.** For a
 nondegenerate closed form on a finite-dimensional manifold and `C²` functions `f` and `g` whose
