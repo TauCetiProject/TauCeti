@@ -61,7 +61,7 @@ theorem killingForm_prod :
 
 /-- A product of two Killing Lie algebras is Killing. -/
 instance IsKilling.instProd [IsKilling R L] [IsKilling R L'] : IsKilling R (L × L') :=
-  TauCeti.isKilling_of_killingForm_nondegenerate R (L × L') <| killingForm_prod R L L' ▸
+  (TauCeti.isKilling_iff_killingForm_nondegenerate R (L × L')).mpr <| killingForm_prod R L L' ▸
     BilinForm.nondegenerate_prod_iff.2
       ⟨IsKilling.killingForm_nondegenerate R L, IsKilling.killingForm_nondegenerate R L'⟩
 

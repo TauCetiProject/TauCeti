@@ -115,8 +115,9 @@ theorem ofReal_re_add_I_smul_ofReal_im
 theorem ext_ofReal {δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
     (h : ∀ u : C^n⟮I, M; ℝ⟯, δ₁ (ContMDiffMap.ofReal u) = δ₂ (ContMDiffMap.ofReal u)) :
     δ₁ = δ₂ := by
-  ext f
-  rw [← ContMDiffMap.ofReal_re_add_I_smul_im f, map_add, map_add, map_smul, map_smul, h, h]
+  have hlin : (δ₁ : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) = δ₂ :=
+    ContMDiffMap.linearMap_ext_ofReal h
+  exact Derivation.ext (LinearMap.ext_iff.mp hlin)
 
 /-- A complex derivation of `C^n(M, ℂ)` is determined by its real and imaginary parts. -/
 theorem ext_re_im {δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}

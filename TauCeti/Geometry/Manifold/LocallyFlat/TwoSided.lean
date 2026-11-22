@@ -162,7 +162,7 @@ private abbrev sideRestrict (f : N → M) (A : Set M) : N → ↥(A ∪ range f)
 private theorem coe_mem_of_isCollar {c : N × Ico (0 : ℝ) 1 → ↥(A ∪ range f)}
     (hc : IsCollar (sideRestrict f A) c) {p : N × Ico (0 : ℝ) 1} (hp : (p.2 : ℝ) ≠ 0) :
     (c p : M) ∈ A := by
-  rcases (c p).2 with h | ⟨y, hy⟩
+  rcases (c p).property with h | ⟨y, hy⟩
   · exact h
   · refine absurd ?_ hp
     have hp' : p ∈ c ⁻¹' range (sideRestrict f A) := ⟨y, Subtype.ext hy⟩
@@ -188,7 +188,7 @@ private theorem IsLocallyBicollaredWithSides.isLocallyCollared_sideRestrict
     simp only [mem_range, Subtype.ext_iff, val_codRestrict_apply, mem_preimage, mem_image]
     constructor
     · rintro ⟨⟨u, t⟩, rfl⟩
-      exact ⟨(u, t), ⟨mem_univ _, by linarith [t.2.1], t.2.2⟩, rfl⟩
+      exact ⟨(u, t), ⟨mem_univ _, by linarith [t.property.1], t.property.2⟩, rfl⟩
     · rintro ⟨⟨u, t⟩, ⟨-, -, ht1⟩, rfl⟩
       have ht0 : 0 ≤ t := by
         by_contra! ht
@@ -201,24 +201,24 @@ private theorem IsLocallyBicollaredWithSides.isLocallyCollared_sideRestrict
       (IsEmbedding.id.prodMap IsEmbedding.subtypeVal)).codRestrict _ hmem
   · rw [hrange]
     exact (hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioo)).preimage
-      continuous_subtype_val
+      continuous_subtypeVal
   · by_contra ht
     exact disjoint_left.1 (h.disjoint_range_left hA hAB) ⟨y, congrArg Subtype.val hy⟩
-      (hbA ⟨mem_univ _, lt_of_le_of_ne t.2.1 (Ne.symm ht)⟩)
+      (hbA ⟨mem_univ _, lt_of_le_of_ne t.property.1 (Ne.symm ht)⟩)
 
 /-- The depth `|s| ∈ [0, 1)` of a point `s` of the open interval `(-1, 1)`. -/
 private def depth (s : ball (0 : ℝ) 1) : Ico (0 : ℝ) 1 :=
   ⟨|(s : ℝ)|, abs_nonneg _, by
-    have hs := mem_ball_zero_iff.1 s.2
+    have hs := mem_ball_zero_iff.1 s.property
     rwa [Real.norm_eq_abs] at hs⟩
 
 /-- The point of `(-1, 1)` at depth `t` on the positive side. -/
 private def posBall (t : Ico (0 : ℝ) 1) : ball (0 : ℝ) 1 :=
-  ⟨t, by simpa [abs_of_nonneg t.2.1] using t.2.2⟩
+  ⟨t, by simpa [abs_of_nonneg t.property.1] using t.property.2⟩
 
 /-- The point of `(-1, 1)` at depth `t` on the negative side. -/
 private def negBall (t : Ico (0 : ℝ) 1) : ball (0 : ℝ) 1 :=
-  ⟨-t, by simpa [abs_of_nonneg t.2.1] using t.2.2⟩
+  ⟨-t, by simpa [abs_of_nonneg t.property.1] using t.property.2⟩
 
 @[simp] private theorem coe_posBall (t : Ico (0 : ℝ) 1) : (posBall t : ℝ) = t := rfl
 
@@ -229,19 +229,19 @@ private theorem depth_of_coe_eq_zero {s : ball (0 : ℝ) 1} (hs : (s : ℝ) = 0)
   Subtype.ext (by simp [depth, hs])
 
 private theorem continuous_depth : Continuous depth :=
-  (continuous_abs.comp continuous_subtype_val).subtype_mk _
+  (continuous_abs.comp continuous_subtypeVal).subtype_mk _
 
 private theorem continuous_posBall : Continuous posBall :=
-  continuous_subtype_val.subtype_mk _
+  continuous_subtypeVal.subtype_mk _
 
 private theorem continuous_negBall : Continuous negBall :=
-  continuous_subtype_val.neg.subtype_mk _
+  continuous_subtypeVal.neg.subtype_mk _
 
 private theorem depth_posBall (t : Ico (0 : ℝ) 1) : depth (posBall t) = t :=
-  Subtype.ext (abs_of_nonneg t.2.1)
+  Subtype.ext (abs_of_nonneg t.property.1)
 
 private theorem depth_negBall (t : Ico (0 : ℝ) 1) : depth (negBall t) = t :=
-  Subtype.ext ((abs_neg _).trans (abs_of_nonneg t.2.1))
+  Subtype.ext ((abs_neg _).trans (abs_of_nonneg t.property.1))
 
 private theorem posBall_depth {s : ball (0 : ℝ) 1} (hs : 0 ≤ (s : ℝ)) : posBall (depth s) = s :=
   Subtype.ext (abs_of_nonneg hs)
@@ -280,13 +280,13 @@ private theorem glue_mem_right (hcB : IsCollar (sideRestrict f B) cB) (x : N)
 omit [TopologicalSpace M] [TopologicalSpace N] in
 private theorem glue_posBall (p : N × Ico (0 : ℝ) 1) :
     glue cA cB (p.1, posBall p.2) = cA p := by
-  simp only [glue, coe_posBall, p.2.2.1, ↓reduceIte, depth_posBall]
+  simp only [glue, coe_posBall, p.2.property.1, ↓reduceIte, depth_posBall]
 
 private theorem glue_negBall (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) (p : N × Ico (0 : ℝ) 1) :
     glue cA cB (p.1, negBall p.2) = cB p := by
   obtain ⟨x, t⟩ := p
-  rcases t.2.1.eq_or_lt with ht | ht
+  rcases t.property.1.eq_or_lt with ht | ht
   · have ht' : t = ⟨0, by norm_num⟩ := Subtype.ext ht.symm
     subst ht'
     rw [glue_of_coe_eq_zero hcA x (by simp), coe_apply_zero_of_isCollar hcB]
@@ -295,10 +295,10 @@ private theorem glue_negBall (hcA : IsCollar (sideRestrict f A) cA)
 
 private theorem continuous_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) : Continuous (glue cA cB) := by
-  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtype_val.comp continuous_snd) ?_
-  · exact continuous_subtype_val.comp (hcA.isOpenEmbedding.continuous.comp
+  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtypeVal.comp continuous_snd) ?_
+  · exact continuous_subtypeVal.comp (hcA.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
-  · exact continuous_subtype_val.comp (hcB.isOpenEmbedding.continuous.comp
+  · exact continuous_subtypeVal.comp (hcB.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
   · rintro ⟨x, s⟩ hs
     simp only [depth_of_coe_eq_zero hs.symm, coe_apply_zero_of_isCollar hcA,
@@ -313,7 +313,7 @@ private theorem glue_ne (hcB : IsCollar (sideRestrict f B) cB) (hAB : Disjoint A
   have hB' := glue_mem_right (cA := cA) hcB y ht
   rw [← he] at hB'
   simp only [glue, hs, ↓reduceIte] at hB'
-  exact (cA (x, depth s)).2.elim (disjoint_left.1 hAB · hB') (disjoint_left.1 hfB · hB')
+  exact (cA (x, depth s)).property.elim (disjoint_left.1 hAB · hB') (disjoint_left.1 hfB · hB')
 
 private theorem injective_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) (hAB : Disjoint A B) (hfB : Disjoint (range f) B) :

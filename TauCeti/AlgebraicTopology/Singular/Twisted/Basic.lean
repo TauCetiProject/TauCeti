@@ -122,15 +122,13 @@ def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop
 /-- Transport inside a simplex is the path class inside the image of the simplex, from the image
 of one point to the image of the other. -/
 lemma pathTransport_eq_pathClass (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
-    pathTransport σ z w = (TopCat.simplexMap σ).pathClass z w :=
-  (rfl)
+    pathTransport σ z w = (TopCat.simplexMap σ).pathClass z w := (rfl)
 
 /-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
 lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
     {z w : toTop.{v}.obj n.unop} (q : Path z w) :
     pathTransport σ z w = Path.Homotopic.Quotient.mk
-      (q.map (TopCat.simplexMap σ).continuous) :=
-  (TopCat.simplexMap σ).pathClass_eq_mk q
+      (q.map (TopCat.simplexMap σ).continuous) := (TopCat.simplexMap σ).pathClass_eq_mk q
 
 /-- Transport inside a simplex is the image of the unique path class of the topological simplex
 under the map of fundamental groupoids induced by the simplex. -/
@@ -146,8 +144,7 @@ lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
 lemma pathTransport_self (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) :
-    pathTransport σ z z = 𝟙 _ :=
-  (TopCat.simplexMap σ).pathClass_self z
+    pathTransport σ z z = 𝟙 _ := (TopCat.simplexMap σ).pathClass_self z
 
 /-- Transports inside a simplex compose: running from `z` to `w` and then from `w` to `y` is
 running from `z` to `y`. -/
@@ -236,8 +233,7 @@ lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
 /-- Vertex transport is the path class inside the simplex between the two vertices. -/
 lemma vertexTransport_eq_pathClass (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = (TopCat.simplexMap σ).pathClass (toTopInitialVertex m.unop)
-      (toTop.map α.unop (toTopInitialVertex n.unop)) :=
-  (rfl)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
@@ -324,14 +320,12 @@ def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
 /-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
 initial vertices of its singular simplices. -/
 def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
-    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
-  coproductIsCoproduct _
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) := coproductIsCoproduct _
 
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
 lemma twistedChains_hom_ext {A : ModuleCat.{max v w} R} {f g : (twistedChains L).obj n ⟶ A}
-    (h : ∀ σ, ιTwistedChains L σ ≫ f = ιTwistedChains L σ ≫ g) : f = g :=
-  Sigma.hom_ext _ _ h
+    (h : ∀ σ, ιTwistedChains L σ ≫ f = ιTwistedChains L σ ≫ g) : f = g := Sigma.hom_ext _ _ h
 
 /-- Two maps into twisted chains through the summands of equal simplices agree when the maps into
 the coefficient modules agree up to the identification of these modules. -/
@@ -355,8 +349,7 @@ lemma eqToHom_comp_ιTwistedChains_eq {M : ModuleCat.{max v w} R}
 singular simplex. -/
 def twistedChainsDesc {A : ModuleCat.{max v w} R}
     (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A) :
-    (twistedChains L).obj n ⟶ A :=
-  Sigma.desc φ
+    (twistedChains L).obj n ⟶ A := Sigma.desc φ
 
 /-- The map out of twisted chains given by a family of maps restricts to each member of the
 family on the summand of the corresponding simplex. -/
@@ -364,8 +357,7 @@ family on the summand of the corresponding simplex. -/
 lemma ιTwistedChains_twistedChainsDesc {A : ModuleCat.{max v w} R}
     (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A)
     (σ : (TopCat.toSSet.obj X).obj n) :
-    ιTwistedChains L σ ≫ twistedChainsDesc L φ = φ σ :=
-  Sigma.ι_comp_desc _ _
+    ιTwistedChains L σ ≫ twistedChainsDesc L φ = φ σ := Sigma.ι_comp_desc _ _
 
 /-- A structure map of twisted chains sends the summand of a simplex `σ` into the summand of the
 reindexed simplex, after transporting the coefficients along the initial vertices. -/
@@ -430,6 +422,14 @@ lemma ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f (k : ℕ)
     ιTwistedChainComplex L k σ ≫
         (twistedChainComplexIsoAlternatingFaceMapComplex L).hom.f k =
       ιTwistedChains L σ :=
+  Category.comp_id _
+
+/-- The inverse alternating-face comparison preserves each simplex inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChains_isoAlternatingFaceMapComplex_inv_f (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChains L σ ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f k =
+      ιTwistedChainComplex L k σ :=
   Category.comp_id _
 
 /-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
@@ -1331,6 +1331,15 @@ def subsetTwistedChainComplexMap (h : A ⊆ B) :
         (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
     twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
       ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+
+/-- The map induced by `A ⊆ B` is the change of coefficients identifying the two restrictions of
+`L` to `A`, followed by the map induced by the inclusion of `A` into `B`. -/
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
+        ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := (rfl)
 
 /-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
 `A ⊆ X`. -/

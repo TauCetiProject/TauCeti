@@ -39,8 +39,9 @@ optimal plans compare two optimal plans through their sum.
   forms of subadditivity;
 * `TauCeti.transportCost_le_sum_of_split` — transport cost along a splitting of both measures into
   a part matched cell by cell and a remainder bounded by the maximal cost;
-* `TauCeti.IsOptimalCoupling.add` — the sum of two optimal plans for the same marginals is optimal
-  for the doubled marginals;
+* `TauCeti.IsOptimalCoupling.add` and `TauCeti.IsOptimalCoupling.eq_of_add_eq_graphPlan` — the sum
+  of two optimal plans for the same marginals is optimal for the doubled marginals, so determinism
+  of optimal plans for `(μ + μ, ν + ν)` forces uniqueness of the optimal plan for `(μ, ν)`;
 * `TauCeti.transportCost_smul_add_smul_lt` — strict convexity in the target: when the optimal
   plans out of the source into a mixture of two distinct targets are induced by maps, the cost to
   the mixture is strictly below the mixture of the costs.
@@ -141,6 +142,23 @@ protected theorem IsOptimalCoupling.add {c : X × Y → ℝ≥0∞} {π π' : Me
   lintegral_eq := by
     rw [lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq, ← two_smul ℝ≥0∞ μ,
       ← two_smul ℝ≥0∞ ν, transportCost_smul ENNReal.ofNat_ne_top, two_mul]
+
+/-- **Uniqueness of optimal plans from determinism of their sum.** If `π` and `π'` are optimal
+plans between `μ` and `ν`, and their optimal sum `π + π'` between `μ + μ` and `ν + ν` is the graph
+plan of a `(μ + μ)`-a.e. measurable map `T`, then both `π` and `π'` equal `graphPlan T μ` and so
+`π = π'`. -/
+theorem IsOptimalCoupling.eq_of_add_eq_graphPlan [MeasurableEq Y] {c : X × Y → ℝ≥0∞}
+    {π π' : Measure (X × Y)} {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν)
+    (h' : IsOptimalCoupling c π' μ ν)
+    (hgraph : IsOptimalCoupling c (π + π') (μ + μ) (ν + ν) →
+      ∃ T : X → Y, AEMeasurable T (μ + μ) ∧ π + π' = graphPlan T (μ + μ)) :
+    π = π' := by
+  obtain ⟨T, hT, hsum⟩ := hgraph (h.add h')
+  have key {σ : Measure (X × Y)} (hσ : σ.fst = μ) (hle : σ ≤ graphPlan T (μ + μ)) :
+      σ = graphPlan T μ := by
+    rw [eq_graphPlan_of_absolutelyContinuous hT (Measure.absolutelyContinuous_of_le hle), hσ]
+  exact (key h.fst_eq (hsum ▸ Measure.le_add_right le_rfl)).trans
+    (key h'.fst_eq (hsum ▸ Measure.le_add_left le_rfl)).symm
 
 /-- **Strict convexity of the transport cost in the target.** Let `π₀` and `π₁` be optimal plans
 from `μ` to `ν₀` and to `ν₁`, and let `a, b` be nonzero weights with `a + b = 1`. If every optimal
