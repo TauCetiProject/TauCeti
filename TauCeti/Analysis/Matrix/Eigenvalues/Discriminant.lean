@@ -14,8 +14,8 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 The discriminant of the characteristic polynomial of a Hermitian matrix is the product of
 the squared gaps of its ordered real eigenvalues. It is therefore nonzero exactly when the
 eigenvalues are distinct. Along linear coordinates on the self-adjoint matrices, the zero locus
-of the real polynomial `Matrix.exists_eval_eq_re_charpoly_discr` is thus the set of matrices with
-a repeated eigenvalue.
+of the real polynomial that `Matrix.exists_eval_eq_linearMap_charpoly_discr` gives for the real
+part is thus the set of matrices with a repeated eigenvalue.
 
 The discriminant argument is the one used in Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2.
