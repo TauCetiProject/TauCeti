@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
+public import TauCeti.Analysis.Sobolev.Wkp.SupercriticalMultiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Holder
 import TauCeti.Analysis.Sobolev.GagliardoNirenberg
 import TauCeti.Analysis.Sobolev.Wkp.BilinOfAeMul
@@ -27,8 +28,10 @@ for a constant `C` depending only on `E`, `k` and `p` (`TauCeti.Wkp.exists_norm_
 Multiplication is then a bounded bilinear map `W^{k,p}(E) × W^{k,p}(E) → W^{k,p}(E)`
 (`TauCeti.Wkp.mulOfFinrankLtL`). For
 `p > n` this holds at every order `k ≥ 1` (`TauCeti.Wkp.mulL`), since then every factor of positive
-order is bounded; the content here is the range `n / k < p ≤ n`, in which the intermediate
-derivatives of the factors need not be bounded.
+order is bounded, and the two multiplications agree where both are defined
+(`TauCeti.Wkp.mulOfFinrankLtL_eq_mulL`). The content here is the range `2 ≤ p ≤ n` with
+`k p > n`, in which the intermediate derivatives of the factors need not be bounded. The range
+`n / k < p < 2` is not covered.
 
 For classical functions this gives the estimate that makes the `Lᵖ` norms of the derivatives
 through order `k` behave like a Banach algebra norm. If `f` and `g` are `Cᵏ` on `E` and their
@@ -77,6 +80,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
 namespace Wkp
+
+/-- An exponent `q` with `d < k q.toReal` for a natural number `d` is finite, since
+`∞.toReal = 0`. -/
+private theorem ne_top_of_natCast_lt_mul_toReal {d : ℕ} {q : ℝ≥0∞} (h : (d : ℝ) < k * q.toReal) :
+    q ≠ ∞ := by
+  rintro rfl
+  rw [ENNReal.toReal_top, mul_zero] at h
+  exact h.not_ge (Nat.cast_nonneg _)
 
 /-- For `k p > n`, the values of the elements of `W^{k,p}(E)` are represented by a continuous linear
 map into `L^∞`: the Sobolev embedding into bounded Hölder functions, followed by the inclusion of
@@ -266,10 +277,7 @@ theorem exists_norm_mul_le (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.to
     ∃ C, ∀ u v : Wkp (volume : Measure E) ⊤ p k, ∃ w : Wkp (volume : Measure E) ⊤ p k,
       (value k w : E → ℝ) =ᵐ[volume] (fun x ↦ value k u x * value k v x) ∧
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  have hp' : p ≠ ∞ := by
-    rintro rfl
-    rw [ENNReal.toReal_top, mul_zero] at hk
-    exact hk.not_ge (Nat.cast_nonneg _)
+  have hp' : p ≠ ∞ := ne_top_of_natCast_lt_mul_toReal hk
   set T := ofTestFunctionₗ (mu := (volume : Measure E)) (Omega := ⊤) (p := p) k
   obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp) hp' hk
   obtain ⟨C, P, hP, hPn, hPsub⟩ := exists_value_ae_eq_mul_testFunction hp hp' hJ
@@ -323,11 +331,8 @@ def mulOfFinrankLtL (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
       exact ⟨w, ae_restrict_of_ae hw⟩)
     fun u ↦ by
       -- The value of `u` is bounded by the `L^∞` norm of its image under the Sobolev embedding.
-      have hp' : p ≠ ∞ := by
-        rintro rfl
-        rw [ENNReal.toReal_top, mul_zero] at hk
-        exact hk.not_ge (Nat.cast_nonneg _)
-      obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp) hp' hk
+      obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp)
+        (ne_top_of_natCast_lt_mul_toReal hk) hk
       refine ⟨‖J u‖, ?_⟩
       filter_upwards [hJ u, Lp.ae_norm_le_norm_top (J u)] with x h₁ h₂
       rwa [← h₁]
@@ -361,6 +366,15 @@ theorem mulOfFinrankLtL_assoc (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p
     mulOfFinrankLtL hp hk (mulOfFinrankLtL hp hk u v) w =
       mulOfFinrankLtL hp hk u (mulOfFinrankLtL hp hk v w) :=
   bilinOfAeMul_assoc u v w
+
+/-- For `p > dim E` and `2 ≤ p`, multiplication `mulOfFinrankLtL` agrees with the supercritical
+multiplication `TauCeti.Wkp.mulL` on `W^{j+1,p}(E)`. -/
+theorem mulOfFinrankLtL_eq_mulL {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 2 ≤ (q : ℝ≥0∞))
+    (hq : (finrank ℝ E : ℝ≥0) < q) {j : ℕ}
+    (hk : (finrank ℝ E : ℝ) < (j + 1 : ℕ) * (q : ℝ≥0∞).toReal) :
+    mulOfFinrankLtL hp hk = mulL (mu := (volume : Measure E)) hq j := by
+  ext u v
+  exact (eq_mulL_iff hq).2 (value_mulOfFinrankLtL_ae hp hk u v)
 
 end Wkp
 
