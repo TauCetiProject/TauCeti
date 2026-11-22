@@ -281,25 +281,21 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
 
-/-- A real-frequency complex exponential character `exp (t * u * I)` is unimodular. -/
-theorem norm_cexp_mul_I (t u : ℝ) : ‖Complex.exp (t * u * Complex.I)‖ = 1 := by
-  rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
-
 /-- The time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential character has
 modulus at most `1`, for every real frequency `u` and every `T : ℝ`. -/
 theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
     ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
   by_cases hT : T = 0
   · simp [hT]
-  have hint : ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T| := by
-    simpa only [one_mul, sub_zero] using
-      intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1) fun t _ =>
-        (norm_cexp_mul_I t u).le
-  rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
-  calc
-    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T|⁻¹ * |T| :=
-      mul_le_mul_of_nonneg_left hint (inv_nonneg.mpr (abs_nonneg T))
-    _ = 1 := inv_mul_cancel₀ (abs_ne_zero.mpr hT)
+  rw [← Complex.ofReal_inv, ← Complex.real_smul, ← show
+      (∫ t in (0 : ℝ)..1, Complex.exp ((T * t : ℝ) * u * Complex.I)) =
+        T⁻¹ • ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I) by
+      simpa only [mul_zero, mul_one] using
+        intervalIntegral.integral_comp_mul_left (a := 0) (b := 1)
+          (fun t : ℝ => Complex.exp (t * u * Complex.I)) hT]
+  simpa only [sub_zero, abs_one, mul_one] using
+    intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := 1) (C := 1) fun t _ => by
+      rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
 
 /-- Quantitative `O(|u|⁻¹ |T|⁻¹)` decay of the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)`
 for any nonzero real frequency `u` and every `T : ℝ`. -/
@@ -316,7 +312,7 @@ theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le {u : ℝ} (hu : u ≠ 0) (T 
       ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖
           ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
       _ = 2 := by
-        rw [mul_right_comm, mul_comm (u : ℂ) (T : ℂ), norm_cexp_mul_I, norm_one]
+        rw [mul_right_comm, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, norm_one]
         norm_num
   have hunorm : ‖(u : ℂ) * Complex.I‖ = |u| := by
     rw [norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]

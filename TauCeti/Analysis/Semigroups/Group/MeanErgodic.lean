@@ -170,14 +170,12 @@ theorem norm_average_orbit_le (U : StronglyContinuousGroup X)
     ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t v‖ ≤ ‖v‖ := by
   by_cases hT : T = 0
   · simp [hT]
-  rw [norm_smul, Real.norm_eq_abs, abs_inv]
-  calc
-    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, U t v‖ ≤ |T|⁻¹ * (‖v‖ * |T - 0|) :=
-      mul_le_mul_of_nonneg_left (U.norm_intervalIntegral_orbit_le hnorm 0 T v)
-        (inv_nonneg.mpr (abs_nonneg T))
-    _ = ‖v‖ := by
-      rw [sub_zero, ← mul_assoc, mul_comm |T|⁻¹ ‖v‖, mul_assoc,
-        inv_mul_cancel₀ (abs_ne_zero.mpr hT), mul_one]
+  rw [← show (∫ t in (0 : ℝ)..1, U (T * t) v) = T⁻¹ • ∫ t in (0 : ℝ)..T, U t v by
+      simpa only [mul_zero, mul_one] using
+        intervalIntegral.integral_comp_mul_left (a := 0) (b := 1) (fun t => U t v) hT]
+  simpa only [sub_zero, abs_one, mul_one] using
+    intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := 1) (C := ‖v‖) fun t _ =>
+      (U.norm_map_apply_eq_of_norm_le_one (T * t) (hnorm _) (hnorm _) v).le
 
 /-- Quantitative decay of the time average on a coboundary `U s v - v`, for every `T : ℝ`. -/
 theorem norm_average_orbit_apply_sub_le (U : StronglyContinuousGroup X)
@@ -470,15 +468,17 @@ section ComplexInnerProduct
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
+private theorem isUnitary_toComplexContRep {U : StronglyContinuousGroup H} (hU : U.IsUnitary) :
+    (U.toComplexContRep hU.isComplexLinear).IsUnitary :=
+  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x =>
+    hU.norm_map (Multiplicative.toAdd g) x
+
 /-- The correlation function `t ↦ ⟪v, U t v⟫_ℂ` of a vector under a unitary C₀-group is positive
 definite. -/
 theorem IsUnitary.isPositiveDefiniteSub_inner {U : StronglyContinuousGroup H} (hU : U.IsUnitary)
     (v : H) : TauCeti.IsPositiveDefiniteSub fun t : ℝ => ⟪v, U t v⟫_ℂ := by
   let π := U.toComplexContRep hU.isComplexLinear
-  have hπ : π.IsUnitary :=
-    (ContRepresentation.isUnitary_iff_norm_map π).mpr fun g x =>
-      hU.norm_map (Multiplicative.toAdd g) x
-  have hpos := (hπ.posSemidef_inner_map_inv_mul v).submatrix
+  have hpos := ((isUnitary_toComplexContRep hU).posSemidef_inner_map_inv_mul v).submatrix
     (fun a : ℝ => Multiplicative.ofAdd (-a))
   have heq : (Matrix.of fun g h : Multiplicative ℝ => ⟪v, π (g⁻¹ * h) v⟫_ℂ).submatrix
       (fun a : ℝ => Multiplicative.ofAdd (-a)) (fun a : ℝ => Multiplicative.ofAdd (-a)) =
@@ -508,11 +508,9 @@ private theorem inner_twisted_orbit_eq_integral (U : StronglyContinuousGroup H) 
       ∫ ξ, conj (Complex.exp (s * (ξ - ω) * Complex.I)) *
         Complex.exp (t * (ξ - ω) * Complex.I) ∂σ := by
   have hUst : ⟪U s v, U t v⟫_ℂ = ⟪v, U (t - s) v⟫_ℂ := by
-    calc
-      ⟪U s v, U t v⟫_ℂ = ⟪U (-s) (U s v), U (-s) (U t v)⟫_ℂ :=
-        (hU.inner_map_map (-s) _ _).symm
-      _ = ⟪v, U (t - s) v⟫_ℂ := by
-        rw [U.map_neg_apply_map_apply, ← U.map_add_apply, neg_add_eq_sub]
+    simpa only [toComplexContRep_apply, toAdd_mul, toAdd_inv, toAdd_ofAdd, neg_add_eq_sub] using
+      ((isUnitary_toComplexContRep hU).inner_map_inv_mul
+        (Multiplicative.ofAdd s) (Multiplicative.ofAdd t) v v).symm
   rw [inner_smul_left, inner_smul_right, hUst, hσ (t - s), charFun_apply_real,
     ← integral_const_mul, ← integral_const_mul]
   refine integral_congr_ae (Eventually.of_forall fun ξ => ?_)
@@ -541,7 +539,8 @@ private theorem intervalIntegral_inner_twisted_orbit_eq (U : StronglyContinuousG
     Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable 1
       (Eventually.of_forall fun p => by
         rw [Function.uncurry_apply_pair, norm_mul, Complex.norm_conj, ← Complex.ofReal_sub,
-          TauCeti.norm_cexp_mul_I, TauCeti.norm_cexp_mul_I, mul_one])
+          ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, ← Complex.ofReal_mul,
+          Complex.norm_exp_ofReal_mul_I, mul_one])
   rw [intervalIntegral_integral_swap hint]
   exact integral_congr_ae (Eventually.of_forall fun ξ => intervalIntegral.integral_const_mul _ _)
 
@@ -617,13 +616,12 @@ private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup
       (Eventually.of_forall fun p => by
         dsimp only [e]
         rw [Function.uncurry_apply_pair, norm_mul, Complex.norm_conj, ← Complex.ofReal_sub,
-          TauCeti.norm_cexp_mul_I, one_mul]
+          ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
         simpa only [one_mul, sub_zero] using
-          intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1) fun t _ =>
-            (by
+          intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1)
+            fun t _ => by
               dsimp only [e]
-              rw [← Complex.ofReal_sub]
-              exact (TauCeti.norm_cexp_mul_I t (p.2 - ω)).le))
+              rw [← Complex.ofReal_sub, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I])
   have hcomplex :
       ((‖∫ t in (0 : ℝ)..T, f t‖ ^ 2 : ℝ) : ℂ) = ((∫ ξ, ‖K ξ‖ ^ 2 ∂σ : ℝ) : ℂ) := by
     calc
