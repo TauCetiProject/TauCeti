@@ -49,9 +49,7 @@ defined modulo `N / p`) and `HeckeRing.GL2.Newform.qExpansion_coeff_prime_eq_zer
 
 public section
 
-open UpperHalfPlane CongruenceSubgroup TauCeti
-
-open scoped MatrixGroups ModularForm
+open UpperHalfPlane TauCeti
 
 namespace HeckeRing.GL2.Newform
 

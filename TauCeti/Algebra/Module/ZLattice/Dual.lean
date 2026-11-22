@@ -124,6 +124,11 @@ finite-dimensional space, `dual_dual`. -/
 theorem le_dual_dual (L : Submodule ℤ E) : L ≤ dual (dual L) :=
   le_dual_comm.mpr le_rfl
 
+/-- The dual of the zero lattice is the whole space. -/
+@[simp]
+theorem dual_bot : dual (⊥ : Submodule ℤ E) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_dual.mpr fun y hy ↦ ⟨0, by simp [(mem_bot ℤ).mp hy]⟩
+
 /-- A vector orthogonal to a lattice lies in its dual lattice, its inner products with the lattice
 being `0`. -/
 theorem mem_dual_of_mem_orthogonal_span {L : Submodule ℤ E} {x : E}
@@ -202,7 +207,7 @@ theorem dual_span_singleton_le_self_iff {c : ℝ} :
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 := by
   rcases eq_or_ne c 0 with rfl | hc
   · refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ by norm_num at hm⟩
-    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (mem_dual.mpr fun y hy ↦ ⟨0, by simp_all⟩)
+    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (by simp)
     rw [span_singleton_eq_bot.mpr rfl, mem_bot] at h1
     exact (one_ne_zero h1).elim
   · rw [dual_span_singleton hc, span_singleton_le_iff_mem, Submodule.mem_span_singleton]

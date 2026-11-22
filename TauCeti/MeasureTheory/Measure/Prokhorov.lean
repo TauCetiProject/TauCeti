@@ -20,8 +20,10 @@ import TauCeti.Topology.Compactness.Compact
 
 This file contains generic consequences of Mathlib's Prokhorov compactness theorem. For finite
 measures, tightness and a uniform mass bound give a weak cluster limit without a real-line support
-condition or normalization step. For probability measures on a Polish space, a weakly convergent
-sequence is tight.
+condition or normalization step. For measures with uniformly bounded masses on
+compact sets, weighting by a positive continuous function that decays fast enough along a compact
+exhaustion makes them tight with bounded mass, which gives vague compactness. For probability
+measures on a Polish space, a weakly convergent sequence is tight.
 
 ## Main declarations
 
@@ -36,6 +38,9 @@ sequence is tight.
   metrizable space, without requiring a first-countability instance for finite measures.
 * `TauCeti.exists_subseq_tendsto_integral_of_withDensity`: compact-test subsequential convergence
   after tight weighting by a strictly positive continuous function.
+* `TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`: vague compactness, a sequence
+  of measures with uniformly bounded masses on every compact set of a locally compact, σ-compact,
+  metrizable space has a subsequence converging vaguely to a locally finite measure.
 * `IsCompact.measure_le_of_tendsto_integral`: compact-set mass bounds inherited from open
   neighbourhood bounds under convergence against compactly supported continuous functions.
 * `TauCeti.isTightMeasureSet_range_of_tendsto`: a weakly convergent sequence of probability
@@ -229,6 +234,127 @@ theorem exists_subseq_tendsto_integral_of_withDensity
     exact ae_of_all _ fun x => by simp [g, NNReal.smul_def, smul_eq_mul, mul_comm]
   simpa only [CompactlySupportedContinuousMap.toBoundedContinuousFunction_apply, hleft, hright]
     using hlim g.toBoundedContinuousFunction
+
+omit [T2Space α] [BorelSpace α] in
+/-- A term of the weight built in `exists_weight_of_iSup_measure_ne_top`: a cutoff `0 ≤ f ≤ 1`
+supported in `T`, scaled by `(1 / 4) ^ k / (M + 1)` where `M` bounds `ν T`, integrates over `S`
+to at most `(1 / 2) ^ N (1 / 2) ^ k` when `N ≤ k`, and to zero when `T` and `S` are disjoint. -/
+private lemma ofReal_mul_setLIntegral_le {ν : Measure α} {T S : Set α} (hT : MeasurableSet T)
+    {f : C(α, ℝ)} (hf : ∀ x, f x ∈ Icc 0 1) (hfT : tsupport f ⊆ T) {M : ℝ} (hM : 0 ≤ M)
+    (hνT : ν T ≤ ENNReal.ofReal M) {k N : ℕ} (hkN : N ≤ k ∨ Disjoint T S) :
+    ENNReal.ofReal ((1 / 4) ^ k * (M + 1)⁻¹) * ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤
+      ENNReal.ofReal ((1 / 2) ^ N * (1 / 2) ^ k) := by
+  -- The cutoff is at most the indicator of `T`, so its integral over `S` is at most `ν (T ∩ S)`.
+  have hint : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤ ν (T ∩ S) := by
+    refine (lintegral_mono fun x ↦ ?_).trans_eq
+      (by rw [lintegral_indicator_one hT, Measure.restrict_apply hT])
+    by_cases hx : x ∈ T
+    · simpa [hx] using (hf x).2
+    · simp [hx, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfT h)]
+  rcases hkN with hNk | hTS
+  · grw [hint, measure_mono inter_subset_left, hνT, ← ENNReal.ofReal_mul (by positivity)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have h1 : M * (M + 1)⁻¹ ≤ 1 := by
+      rw [mul_inv_le_iff₀ (by linarith)]
+      linarith
+    have h2 : ((1 : ℝ) / 2) ^ k ≤ (1 / 2) ^ N :=
+      pow_le_pow_of_le_one (by norm_num) (by norm_num) hNk
+    calc (1 / 4) ^ k * (M + 1)⁻¹ * M = (1 / 2) ^ k * (1 / 2) ^ k * (M * (M + 1)⁻¹) := by
+          rw [show (1 / 4 : ℝ) = 1 / 2 * (1 / 2) by norm_num, mul_pow]; ring
+      _ ≤ (1 / 2) ^ k * (1 / 2) ^ k := mul_le_of_le_one_right (by positivity) h1
+      _ ≤ (1 / 2) ^ N * (1 / 2) ^ k := by gcongr
+  · have : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν = 0 :=
+      le_antisymm (hint.trans (by rw [hTS.inter_eq, measure_empty])) zero_le
+    simp [this]
+
+/-- An exhausting sequence of cutoffs gives a positive continuous weight whose integrals against
+measures with uniformly bounded masses on compact sets are uniformly bounded, with uniformly
+small tails outside the exhaustion. -/
+private lemma exists_weight_of_iSup_measure_ne_top [LocallyCompactSpace α]
+    [SigmaCompactSpace α] (σ : ℕ → Measure α) (hσ : ∀ K, IsCompact K → ⨆ n, σ n K ≠ ∞) :
+    ∃ (w : α → ℝ≥0) (K : CompactExhaustion α), Continuous w ∧ (∀ x, 0 < w x) ∧
+      ∀ (S : Set α) (N : ℕ), (∀ k < N, Disjoint (K (k + 1)) S) → ∀ n,
+        ∫⁻ x in S, w x ∂σ n ≤ ENNReal.ofReal ((1 / 2) ^ N * 2) := by
+  let K := CompactExhaustion.choice α
+  -- Cutoffs `0 ≤ f k ≤ 1`, equal to one on `K k` and supported in `K (k + 1)`.
+  choose f hfK _ hfV hfr using fun k : ℕ ↦ exists_continuousMap_one_of_isCompact_subset_isOpen
+    (K.isCompact k) isOpen_interior (K.subset_interior_succ k)
+  -- The weight is `∑ a k f k`, where `a k = (1 / 4) ^ k / (M k + 1)` and `M k` bounds the masses
+  -- of `K (k + 1)`.
+  let M : ℕ → ℝ := fun k ↦ (⨆ n, σ n (K (k + 1))).toReal
+  let a : ℕ → ℝ := fun k ↦ (1 / 4) ^ k * (M k + 1)⁻¹
+  have hM (k : ℕ) : 0 ≤ M k := ENNReal.toReal_nonneg
+  have ha (k : ℕ) : 0 < a k := by positivity
+  have hsum : Summable a :=
+    (summable_geometric_of_lt_one (by norm_num) (by norm_num)).of_nonneg_of_le
+      (fun k ↦ (ha k).le) fun k ↦
+        mul_le_of_le_one_right (by positivity) (inv_le_one_of_one_le₀ (by linarith [hM k]))
+  have hterm (k : ℕ) (x : α) : 0 ≤ a k * f k x := mul_nonneg (ha k).le (hfr k x).1
+  have hle (k : ℕ) (x : α) : a k * f k x ≤ a k := mul_le_of_le_one_right (ha k).le (hfr k x).2
+  have hsumx (x : α) : Summable fun k ↦ a k * f k x :=
+    hsum.of_nonneg_of_le (hterm · x) (hle · x)
+  refine ⟨fun x ↦ (∑' k, a k * f k x).toNNReal, K, ?_, fun x ↦ ?_, fun S N hSN n ↦ ?_⟩
+  · exact continuous_real_toNNReal.comp (continuous_tsum (f := fun k x ↦ a k * f k x)
+      (fun k ↦ continuous_const.mul (f k).continuous) hsum fun k x ↦ by
+        rw [Real.norm_of_nonneg (hterm k x)]; exact hle k x)
+  · obtain ⟨k, hk⟩ := K.exists_mem x
+    refine Real.toNNReal_pos.2 ((ha k).trans_le ((le_of_eq ?_).trans
+      ((hsumx x).le_tsum k fun j _ ↦ hterm j x)))
+    rw [hfK k hk, Pi.one_apply, mul_one]
+  -- Expand the weight and bound the `k`-th term by `(1 / 2) ^ N (1 / 2) ^ k`.
+  have hw (x : α) : ((∑' k, a k * f k x).toNNReal : ℝ≥0∞) =
+      ∑' k, ENNReal.ofReal (a k) * ENNReal.ofReal (f k x) := by
+    rw [ENNReal.ofNNReal_toNNReal, ENNReal.ofReal_tsum_of_nonneg (hterm · x) (hsumx x)]
+    exact tsum_congr fun k ↦ ENNReal.ofReal_mul (ha k).le
+  have hgeom : ENNReal.ofReal ((1 / 2) ^ N * 2) =
+      ∑' k, ENNReal.ofReal ((1 / 2) ^ N * (1 / 2) ^ k) := by
+    rw [← ENNReal.ofReal_tsum_of_nonneg (f := fun k : ℕ ↦ (1 / 2 : ℝ) ^ N * (1 / 2) ^ k)
+      (fun k ↦ by positivity) (summable_geometric_two.mul_left _), tsum_mul_left,
+      tsum_geometric_two]
+  simp_rw [hw]
+  rw [lintegral_tsum fun k ↦
+    ((f k).continuous.measurable.ennreal_ofReal.const_mul _).aemeasurable, hgeom]
+  refine tsum_le_tsum fun k ↦ ?_
+  rw [lintegral_const_mul _ (f k).continuous.measurable.ennreal_ofReal]
+  refine ofReal_mul_setLIntegral_le (K.isCompact (k + 1)).isClosed.measurableSet (hfr k)
+    ((hfV k).trans interior_subset) (hM k) ?_ ((le_or_gt N k).imp_right (hSN k))
+  rw [ENNReal.ofReal_toReal (hσ _ (K.isCompact (k + 1)))]
+  exact le_iSup (fun n ↦ σ n (K (k + 1))) n
+
+open scoped CompactlySupported in
+/-- **Vague compactness.** A sequence of measures on a locally compact, σ-compact, metrizable
+space whose masses on each compact set are bounded uniformly in `n` has a subsequence converging
+vaguely, that is against every continuous compactly supported function, to a locally finite
+measure. The measures may have infinite total mass. -/
+theorem exists_subseq_tendsto_integral_of_iSup_measure_ne_top [LocallyCompactSpace α]
+    [SigmaCompactSpace α] [PseudoMetrizableSpace α] (σ : ℕ → Measure α)
+    (hσ : ∀ K, IsCompact K → ⨆ n, σ n K ≠ ∞) :
+    ∃ (μ : Measure α) (φ : ℕ → ℕ), IsLocallyFiniteMeasure μ ∧ StrictMono φ ∧
+      ∀ f : C_c(α, ℝ), Tendsto (fun k => ∫ x, f x ∂σ (φ k)) atTop
+        (𝓝 (∫ x, f x ∂μ)) := by
+  -- A σ-compact metrizable space is separable.
+  have : SeparableSpace α := by
+    let := pseudoMetrizableSpacePseudoMetric α
+    infer_instance
+  obtain ⟨w, K, hw, hpos, htail⟩ := exists_weight_of_iSup_measure_ne_top σ hσ
+  refine exists_subseq_tendsto_integral_of_withDensity σ w hw hpos 2 (fun n ↦ ?_) ?_
+  · -- The total mass is the case `S = univ`, `N = 0`.
+    rw [withDensity_apply _ MeasurableSet.univ]
+    simpa using htail univ 0 (fun k hk ↦ absurd hk (Nat.not_lt_zero k)) n
+  · -- The tails outside `K N` are uniformly small.
+    refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε ↦ ?_
+    have hlim : Tendsto (fun N : ℕ ↦ ENNReal.ofReal ((1 / 2) ^ N * 2)) atTop (𝓝 0) := by
+      have h := (tendsto_pow_atTop_nhds_zero_of_lt_one (r := (1 : ℝ) / 2) (by norm_num)
+        (by norm_num)).mul_const 2
+      rw [zero_mul] at h
+      simpa using ENNReal.tendsto_ofReal h
+    obtain ⟨N, hN⟩ := (hlim.eventually (gt_mem_nhds hε)).exists
+    have hKN : MeasurableSet (K N)ᶜ := (K.isCompact N).isClosed.measurableSet.compl
+    refine ⟨K N, K.isCompact N, ?_⟩
+    rintro - ⟨n, rfl⟩
+    rw [withDensity_apply _ hKN]
+    exact (htail _ N (fun k hk ↦ disjoint_compl_right_iff_subset.2
+      (K.subset (Nat.succ_le_of_lt hk))) n).trans hN.le
 
 open scoped CompactlySupported in
 /-- Under convergence against compactly supported continuous functions, a mass bound on an

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Lebesgue couple `(L^{p₀}, L^{p₁})`
@@ -17,11 +19,16 @@ couple, `TauCeti.CompatibleCouple.lebesgue`, inside the common ambient space `L�
 `Lᵖ` and Lorentz spaces (Bergh–Löfström, Chapter 5). Its intersection is `L^{p₀} ∩ L^{p₁}`, the
 pairs of functions agreeing almost everywhere (`TauCeti.CompatibleCouple.mem_lebesgue_inter_iff`),
 and its sum is `L^{p₀} + L^{p₁}`, in which two decompositions agree exactly when their sums agree
-almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`). At the
+almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`), and a
+decomposition is a function `g ∈ Lᵖ` exactly when its sum agrees with `g` almost everywhere
+(`TauCeti.CompatibleCouple.lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff`). At the
 exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
 so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
 (`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
 `TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`).
+Any almost everywhere splitting `f₀ + f₁` of a function representing an element `v` of the sum
+bounds the `K`-functional: `K(t, v) ≤ ‖f₀‖_{p₀} + t ‖f₁‖_{p₁}` for `t > 0`
+(`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul`).
 
 For `p₀ ≤ p ≤ p₁` the space `Lᵖ` is an intermediate space of the couple: there are continuous
 injections
@@ -88,6 +95,17 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
     sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
 
+/-- A decomposition `f₀ + f₁` in `L^{p₀} + L^{p₁}` is the function `g ∈ Lᵖ` of `L¹ + L^∞` exactly
+when `f₀ + f₁ = g` almost everywhere. -/
+theorem lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f₀ : Lp E p₀ μ} {f₁ : Lp E p₁ μ} {g : Lp E p μ} :
+    (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed
+        ((lebesgue 𝕜 E μ p₀ p₁).fstToSum f₀ + (lebesgue 𝕜 E μ p₀ p₁).sndToSum f₁) =
+      L1AddLinfty.ofLp g ↔ ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g := by
+  simp only [← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜
+
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
 the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/
 theorem lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum (g : Lp E 1 μ) (h : Lp E ∞ μ) :
@@ -116,6 +134,34 @@ theorem norm_lebesgue_one_top_sumSpaceEmbed (v : (lebesgue 𝕜 E μ 1 ∞).SumS
       ((lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh)]
     exact norm_fstToSum_add_sndToSum_le _ g h
 
+/-- Any almost everywhere splitting `f₀ + f₁ = f` of a function `f` representing an element `v` of
+`L^{p₀} + L^{p₁}` bounds the `K`-functional at `t > 0` by `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`. -/
+theorem ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul {v : (lebesgue 𝕜 E μ p₀ p₁).SumSpace}
+    {f f₀ f₁ : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (hsum : f₀ + f₁ =ᵐ[μ] f) {t : ℝ} (ht : 0 < t) :
+    ENNReal.ofReal ((lebesgue 𝕜 E μ p₀ p₁).kFunctional t v) ≤
+      eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ := by
+  by_cases hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ = ∞
+  · rw [hfin]
+    exact le_top
+  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
+  have hdec : (lebesgue 𝕜 E μ p₀ p₁).fstToSum (h₀.toLp f₀) +
+      (lebesgue 𝕜 E μ p₀ p₁).sndToSum (h₁.toLp f₁) = v := by
+    refine (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective (L1AddLinfty.toAEEqFun_injective ?_)
+    rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
+      map_add, L1AddLinfty.toAEEqFun_ofLp, L1AddLinfty.toAEEqFun_ofLp]
+    refine AEEqFun.ext ?_
+    filter_upwards [AEEqFun.coeFn_add (h₀.toLp f₀ : α →ₘ[μ] E) (h₁.toLp f₁), h₀.coeFn_toLp,
+      h₁.coeFn_toLp, hsum, hv] with x hx hx₀ hx₁ hxs hxv
+    rw [hx, Pi.add_apply, hxv, ← hxs, Pi.add_apply, ← hx₀, ← hx₁]
+  calc ENNReal.ofReal ((lebesgue 𝕜 E μ p₀ p₁).kFunctional t v)
+      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
+        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
+    _ = eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ := by
+        rw [Lp.ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+          eLpNorm_congr_ae h₁.coeFn_toLp]
+
 section Intermediate
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -139,6 +185,19 @@ def lpToLebesgueSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
 theorem sumSpaceEmbed_lpToLebesgueSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
     (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed (lpToLebesgueSum h₀ h₁ f) = L1AddLinfty.ofLp f :=
   sumSpaceEmbed_toSum _ _ _ _ f
+
+/-- Every decomposition `f = g + h` with `g ∈ L^{p₀}` and `h ∈ L^{p₁}` represents the image of `f`
+in the sum space. -/
+theorem lpToLebesgueSum_eq_fstToSum_add_sndToSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) {f : Lp E p μ}
+    {g : Lp E p₀ μ} {h : Lp E p₁ μ} (hgh : ⇑g + ⇑h =ᵐ[μ] f) :
+    lpToLebesgueSum h₀ h₁ f =
+      (lebesgue 𝕜 E μ p₀ p₁).fstToSum g + (lebesgue 𝕜 E μ p₀ p₁).sndToSum h := by
+  refine (lebesgue 𝕜 E μ p₀ p₁).sumSpace_ext ?_
+  apply (l1Linfty 𝕜 E μ).sumSpace_ext
+  simpa only [map_add, sumSpaceEmbed_lpToLebesgueSum, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp,
+    ContinuousLinearMap.coe_coe] using
+    ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh).symm
 
 theorem norm_lpToLebesgueSum_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
     ‖(lpToLebesgueSum h₀ h₁ f : (lebesgue 𝕜 E μ p₀ p₁).SumSpace)‖ ≤ 2 * ‖f‖ :=

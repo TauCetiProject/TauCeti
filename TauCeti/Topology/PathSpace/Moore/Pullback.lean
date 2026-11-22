@@ -27,6 +27,11 @@ this applies to characteristic disks. The equivariant comparison is the local
 path-fibration input for constructing a cellular free resolution over loop chains.
 It is a homotopy trivialization, not a homeomorphism or a strict inverse assertion.
 
+A map `g : D' → D` of parameter spaces induces a loop-equivariant map `paramMap g` from the
+pullback along `f ∘ g` to the pullback along `f`, an open embedding when `g` is one. For a
+disjoint union of disks, it includes the pullback over a single disk into the pullback over all
+of them.
+
 The construction uses the retracing loops of `MoorePathBetween.retrace`,
 with endpoints varying continuously with the parameter.
 
@@ -68,6 +73,9 @@ def toMoorePathFrom : C(MoorePathPullback f b, MoorePathFrom X b) :=
 @[simp]
 theorem point_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
     point (f := f) (b := b) ⟨(d, γ), h⟩ = d := (rfl)
+
+/-- The parameter of a point of the pullback is its first coordinate. -/
+theorem point_def (x : MoorePathPullback f b) : x.point = x.val.1 := (rfl)
 
 @[simp]
 theorem path_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
@@ -173,6 +181,52 @@ theorem point_trivializationMap (z : D × MooreLoopSpace X b) :
 theorem path_trivializationMap (z : D × MooreLoopSpace X b) :
     (trivializationMap τ h₀ h₁ z).path = z.2.toMoorePath.trans (τ z.1) (by simp [h₀]) :=
   MoorePathFrom.toMoorePath_mk _ _
+
+section ParamMap
+
+variable {D' : Type*} [TopologicalSpace D'] (g : C(D', D))
+
+/-- The map of pulled-back path spaces induced by a map `g : D' → D` of parameter spaces: a path
+from `b` to `f (g d')` lies over `d'` in the pullback along `f ∘ g`, and over `g d'` in the
+pullback along `f`. -/
+def paramMap : C(MoorePathPullback (f.comp g) b, MoorePathPullback f b) :=
+  ⟨fun x ↦ ⟨(g x.point, x.val.2), x.property⟩,
+    ((g.continuous.comp continuous_point).prodMk toMoorePathFrom.continuous).subtype_mk _⟩
+
+@[simp]
+theorem point_paramMap (x : MoorePathPullback (f.comp g) b) :
+    (paramMap g x).point = g x.point := (rfl)
+
+@[simp]
+theorem path_paramMap (x : MoorePathPullback (f.comp g) b) : (paramMap g x).path = x.path :=
+  (rfl)
+
+@[simp]
+theorem toMoorePathFrom_paramMap (x : MoorePathPullback (f.comp g) b) :
+    toMoorePathFrom (paramMap g x) = toMoorePathFrom x := (rfl)
+
+/-- The map induced by a map of parameter spaces commutes with the action of loops. -/
+@[simp]
+theorem paramMap_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback (f.comp g) b) :
+    paramMap g (leftAct ω x) = leftAct ω (paramMap g x) := (rfl)
+
+/-- The paths over the image of `g` are exactly the image of the map induced by `g`. -/
+theorem range_paramMap : Set.range (paramMap (b := b) (f := f) g) = point ⁻¹' Set.range g := by
+  refine Set.Subset.antisymm ?_ fun x ⟨d', hd'⟩ ↦
+    ⟨⟨(d', x.val.2), x.property.trans (congrArg f hd'.symm)⟩, ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨x.point, rfl⟩
+  · exact ext hd' rfl
+
+/-- The map induced by an open embedding of parameter spaces is an open embedding. -/
+theorem isOpenEmbedding_paramMap (hg : Topology.IsOpenEmbedding g) :
+    Topology.IsOpenEmbedding (paramMap (b := b) (f := f) g) := by
+  refine ⟨Topology.IsEmbedding.subtypeVal.of_comp_iff.1 ?_, ?_⟩
+  · exact (hg.isEmbedding.prodMap Topology.IsEmbedding.id).comp Topology.IsEmbedding.subtypeVal
+  · rw [range_paramMap]
+    exact hg.isOpen_range.preimage continuous_point
+
+end ParamMap
 
 /-- Append the reversed chosen path to recover a loop, retaining the parameter. -/
 def trivializationInverse (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b)

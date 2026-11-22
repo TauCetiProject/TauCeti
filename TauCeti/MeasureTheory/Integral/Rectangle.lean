@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -37,6 +38,8 @@ a doubly (twisted) periodic map are used.
   integral over a nondegenerate rectangle vanishes on it.
 * `Continuous.integrableOn_Icc_prod_Icc`: a continuous function is integrable over every closed
   rectangle.
+* `TauCeti.setIntegral_Icc_prod_comp_fst`: a function of the first coordinate integrates over
+  `[a₁, b₁] × [a₂, b₂]` to `b₂ - a₂` times its integral over `[a₁, b₁]`.
 * `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
@@ -50,10 +53,14 @@ a doubly (twisted) periodic map are used.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 * `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq`,
+  `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq_of_periodic`,
   `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`,
   `TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le`: for a function of period one in the
-  second coordinate, integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over
+  second coordinate, integrals over the horizontal strips `ℝ × [c, c + 1]` agree, and those over
   `ℝ × [-1, 2]` are controlled by those over the fundamental strip `ℝ × [0, 1]`.
+* `TauCeti.eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero`: a continuous function of period
+  one in the second coordinate whose `L²` norm vanishes on every rectangle `[-R, R] × [0, 1]` is
+  zero.
 
 Translation invariance of Lebesgue measure on `ℝ × ℝ` comes from
 `TauCeti.isAddHaarMeasure_volume_prod`.
@@ -151,6 +158,13 @@ omit [NormedSpace ℝ E] in
 theorem _root_.Continuous.integrableOn_Icc_prod_Icc {f : ℝ × ℝ → E} (hf : Continuous f) :
     IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂) :=
   hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+
+/-- A function of the first coordinate integrates over the rectangle `[a₁, b₁] × [a₂, b₂]` to
+`b₂ - a₂` times its integral over `[a₁, b₁]`. -/
+theorem setIntegral_Icc_prod_comp_fst (f : ℝ → E) (h₂ : a₂ ≤ b₂) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z.1 = (b₂ - a₂) • ∫ s in Icc a₁ b₁, f s := by
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_fun_fst]
+  simp [h₂]
 
 /-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
 `[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
@@ -271,6 +285,24 @@ theorem setLIntegral_univ_prod_Icc_add_one_eq {g : ℝ × ℝ → ℝ≥0∞} (k
   rw [← hφ.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) g, hpre]
   simp only [hg]
 
+/-- For a measurable function of period one in `t`, the integrals over the strips
+`ℝ × [c, c + 1]` and `ℝ × [0, 1]` agree, for every real `c`. -/
+theorem setLIntegral_univ_prod_Icc_add_one_eq_of_periodic {g : ℝ × ℝ → ℝ≥0∞} (hgm : Measurable g)
+    (hg : ∀ s t, g (s, t + 1) = g (s, t)) (c : ℝ) :
+    ∫⁻ z in univ ×ˢ Icc c (c + 1), g z = ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  -- By Tonelli, both integrals are integrals over `s` of the integrals of the `1`-periodic slices
+  -- `t ↦ g (s, t)` over a period, which are their integrals over the circle `ℝ ⧸ ℤ`.
+  have hgp (s : ℝ) : Function.Periodic (fun t ↦ g (s, t)) 1 := hg s
+  have key (a : ℝ) : ∫⁻ z in univ ×ˢ Icc a (a + 1), g z =
+      ∫⁻ s, ∫⁻ x : UnitAddCircle, (hgp s).lift x := by
+    rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ,
+      lintegral_prod _ hgm.aemeasurable]
+    refine lintegral_congr fun s ↦ ?_
+    rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, ← UnitAddCircle.lintegral_preimage a]
+    simp only [Function.Periodic.lift_coe]
+  rw [key c]
+  simpa using (key 0).symm
+
 /-- For a function of period one in `t`, the integral over `ℝ × [-1, 2]` is at most three times
 the integral over the strip `ℝ × [0, 1]`. -/
 theorem setLIntegral_univ_prod_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
@@ -323,6 +355,28 @@ theorem eLpNorm_restrict_univ_prod_Icc_neg_one_two_le {F : Type*} [NormedAddComm
           _ = 2 := by
               rw [show (4 : ℝ≥0∞) = 2 ^ (2 : ℝ) by norm_num, ← ENNReal.rpow_mul]
               norm_num
+
+omit [NormedSpace ℝ E] in
+/-- A continuous function `ξ : ℝ × ℝ → E` of period one in the second coordinate whose `L²` norm
+vanishes on every rectangle `[-R, R] × [0, 1]` is zero. -/
+theorem eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
+    (h : ∀ R, 0 < R → ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 = 0) : ξ = 0 := by
+  -- Periodicity in `t` moves every point into a rectangle `[-R, R] × [0, 1]`, where `‖ξ‖²`
+  -- vanishes.
+  funext z
+  obtain ⟨s, t⟩ := z
+  have hst := (show Function.Periodic (fun t ↦ ξ (s, t)) 1 from fun t ↦ hper s t).sub_int_mul_eq
+    (x := t) ⌊t⌋
+  rw [mul_one] at hst
+  rw [Pi.zero_apply, ← hst, ← norm_eq_zero, ← sq_eq_zero_iff]
+  have hR : (0 : ℝ) < |s| + 1 := by positivity
+  refine eqOn_zero_of_setIntegral_rect_eq_zero (by linarith) zero_lt_one (by fun_prop)
+    (fun z ↦ sq_nonneg ‖ξ z‖) (h _ hR) ⟨⟨?_, ?_⟩, ?_, ?_⟩
+  · linarith [neg_abs_le s]
+  · linarith [le_abs_self s]
+  · exact sub_nonneg.2 (Int.floor_le t)
+  · linarith [Int.lt_floor_add_one t]
 
 end TauCeti
 
