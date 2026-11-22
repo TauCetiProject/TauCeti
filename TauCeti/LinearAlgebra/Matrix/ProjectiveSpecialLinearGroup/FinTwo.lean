@@ -192,10 +192,9 @@ theorem IsParabolic.pow [CharZero R] {g : PSL(2, R)} (hg : IsParabolic g)
       exact hpos (-a) (by rwa [mk_neg]) (by simp [hneg2])
   intro b hb htr
   let M : Matrix (Fin 2) (Fin 2) R := b
-  have hsq : (M - 1) * (M - 1) = 0 := by
-    rw [sub_mul, mul_sub, mul_one, one_mul, ← sq, M.sq_eq_trace_smul_sub_det_smul_one_fin_two,
-      htr, b.det_coe, two_smul, one_smul]; abel
-  have hm : (M - 1) * M = M - 1 := sub_eq_zero.mp (by rwa [← mul_sub_one])
+  have hsq : (M - 1) ^ 2 = 0 :=
+    Matrix.sub_one_sq_eq_zero_of_det_eq_one_of_trace_eq_two b.det_coe htr
+  have hm : (M - 1) * M = M - 1 := sub_eq_zero.mp (by rwa [← mul_sub_one, ← sq])
   have hpow : ∀ k : ℕ, M ^ k = 1 + (k : R) • (M - 1) := fun k ↦ by
     induction k with
     | zero => simp

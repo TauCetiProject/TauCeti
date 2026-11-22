@@ -69,6 +69,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   determinant-one matrix `A`, according to its trace.
 * `Matrix.trace_pow_eq_two_of_trace_eq_two`: the powers of a determinant-one matrix of trace `2`
   have trace `2`.
+* `Matrix.sub_one_sq_eq_zero_of_det_eq_one_of_trace_eq_two`: subtracting `1` from a
+  determinant-one matrix of trace `2` gives a square-zero matrix.
 * `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix, the signs of
   `det (1 - A ^ n)` over the nondegenerate powers follow a geometric sequence.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
@@ -126,6 +128,13 @@ theorem trace_pow_eq_two_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : 
   | zero => norm_num [trace_one]
   | one => simpa using htr
   | more n h₀ h₁ => rw [trace_pow_add_two_fin_two, h₀, h₁, htr, hdet]; ring
+
+/-- For a `2 × 2` matrix `A` of determinant one and trace `2`, `(A - 1) ^ 2 = 0`. -/
+theorem sub_one_sq_eq_zero_of_det_eq_one_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace = 2) : (A - 1) ^ 2 = 0 := by
+  rw [sq, sub_mul, mul_sub, mul_one, one_mul, ← sq,
+    A.sq_eq_trace_smul_sub_det_smul_one_fin_two, htr, hdet, two_smul, one_smul]
+  abel
 
 /-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
 the Cayley–Hamilton identity in size two. -/
@@ -407,13 +416,8 @@ theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
   set B : Matrix (Fin 2) (Fin 2) R := b.val
   set N : Matrix (Fin 2) (Fin 2) R := A - 1
   have hNtr : N.trace = 0 := by simp [N, A, ha]
-  have hNdet : N.det = 0 := by
-    have hneg : N = -(1 - A) := (neg_sub 1 A).symm
-    rw [hneg, Matrix.det_neg, Fintype.card_fin, neg_one_sq, one_mul,
-      Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one a.det_coe, ha, sub_self]
-  have hNsq : N ^ 2 = 0 := by
-    rw [Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two, hNtr, hNdet, zero_smul, zero_smul,
-      sub_zero]
+  have hNsq : N ^ 2 = 0 :=
+    Matrix.sub_one_sq_eq_zero_of_det_eq_one_of_trace_eq_two a.det_coe ha
   have hcommNB : Commute N B := by
     refine Commute.sub_left ?_ (Commute.one_left B)
     simpa [Commute, SemiconjBy, A, B, coe_mul] using congrArg Subtype.val hcomm.eq

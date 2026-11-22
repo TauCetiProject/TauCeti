@@ -15,6 +15,7 @@ import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.OrderOf
@@ -385,11 +386,9 @@ theorem mem_sl2ZModThreeQuaternionSubgroup_iff_pow_four {g : SL(2, ZMod 3)} :
         exponent_quaternionGroup_two
     simpa [hexp] using Subgroup.pow_exponent_eq_one hg
   · intro h4
-    have h3 : g ^ 3 ∈ sl2ZModThreeQuaternionSubgroup := by
-      simpa [index_sl2ZModThreeQuaternionSubgroup] using
-        sl2ZModThreeQuaternionSubgroup.pow_index_mem g
-    have hinv : (g ^ 3)⁻¹ = g := inv_eq_of_mul_eq_one_right (by simpa [← pow_succ] using h4)
-    exact hinv ▸ inv_mem h3
+    exact Subgroup.mem_of_pow_mem_of_coprime_index
+      (by rw [index_sl2ZModThreeQuaternionSubgroup]; decide)
+      (h4.symm ▸ one_mem _)
 
 /-- **Trace characterization of `Q₈ ≤ SL(2, ZMod 3)`**: a matrix in `SL(2, ZMod 3)` belongs
 to `TauCeti.sl2ZModThreeQuaternionSubgroup` if and only if it is `1`, `-1`, or traceless. -/
