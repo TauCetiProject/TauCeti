@@ -333,14 +333,23 @@ theorem gauge_root [T1Space R] [Nontrivial R] (n : ℕ) :
     ϖ.gauge (ϖ.root n) = 2 ^ (-(1 / (p : ℝ) ^ n)) := by
   simpa using ϖ.gauge_root_mul n 1
 
+omit [NeZero p] in
+/-- The admissible root-system radii form a nonempty set, using the level-zero roots. -/
+private theorem gauge_radius_set_nonempty (x : R) :
+    ((fun q : ℤ × ℕ ↦ (2 : ℝ) ^ (-((q.1 : ℝ) / p ^ q.2))) ''
+      {q | (ϖ.zpow (-q.1) q.2 : R) * x ∈ powerBoundedSubring R}).Nonempty := by
+  obtain ⟨k, hk⟩ := ϖ.normDatum.exists_zpow_mul_mem x
+  refine ⟨_, (-k, 0), ?_, rfl⟩
+  simpa only [Set.mem_ofPred_eq, zpow_def, neg_neg, normDatum_pseudoUniformizer,
+    normDatum_ringOfDefinition] using hk
+
 /-- **The `ℤ[1/p]`-exponent formula** for `p > 1`:
 `|x|_ϖ = inf { 2 ^ (-(m / p ^ n)) | ϖ ^ (-(m / p ^ n)) x ∈ R° }`. -/
 theorem gauge_eq_sInf (hp : 1 < p) (x : R) :
     ϖ.gauge x = sInf ((fun q : ℤ × ℕ ↦ (2 : ℝ) ^ (-((q.1 : ℝ) / p ^ q.2))) ''
       {q | (ϖ.zpow (-q.1) q.2 : R) * x ∈ powerBoundedSubring R}) := by
   refine le_antisymm (le_csInf ?_ ?_) (le_of_forall_gt fun c hc ↦ ?_)
-  · obtain ⟨k, hk⟩ := ϖ.normDatum.exists_zpow_mul_mem x
-    exact ⟨_, ⟨(-k, 0), by simpa [zpow_def] using hk, rfl⟩⟩
+  · exact ϖ.gauge_radius_set_nonempty x
   · rintro _ ⟨q, hq, rfl⟩
     exact (ϖ.gauge_le_rpow_iff q.1 q.2).mpr hq
   -- Choose `q = m / p ^ n` with `|x|_ϖ < 2 ^ (-q) < c`, i.e. `-log₂ c < q < b` for the bound `b`
@@ -372,9 +381,7 @@ theorem exists_gauge_radius_lt (hp : 1 < p) {x : R} {d : ℝ} (hd : ϖ.gauge x <
   let : NeZero p := ⟨(Nat.zero_lt_one.trans hp).ne'⟩
   rw [ϖ.gauge_eq_sInf hp x] at hd
   obtain ⟨_, ⟨⟨m, n⟩, hm, rfl⟩, hlt⟩ :=
-    exists_lt_of_csInf_lt (by
-      obtain ⟨k, hk⟩ := ϖ.normDatum.exists_zpow_mul_mem x
-      exact ⟨_, (-k, 0), by simpa [zpow_def] using hk, rfl⟩) hd
+    exists_lt_of_csInf_lt (ϖ.gauge_radius_set_nonempty x) hd
   exact ⟨m, n, hm, hlt⟩
 
 end TauCeti.Perfectoid.PseudoUniformizerRoots
