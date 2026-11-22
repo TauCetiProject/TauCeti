@@ -548,8 +548,9 @@ theorem IsNondegenerateFixedPt.isInvertible_id_sub_fderiv [CompleteSpace 𝕜]
 theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
     {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) : (1 - fderiv 𝕜 f x).det ≠ 0 := by
   have hD := (mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
+  -- Unfold the determinant to injectivity of the underlying function, and write `1` as `id`.
   rw [Ne, ContinuousLinearMap.det, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
-    LinearMap.ker_eq_bot]
+    LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe, ContinuousLinearMap.one_def]
   exact (hD.isNondegenerateFixedPt_iff_injective_id_sub h.isFixedPt).1 h
 
 /-- **The fixed-point derivative of an iterate.** If `f` is differentiable at a fixed point `x`,

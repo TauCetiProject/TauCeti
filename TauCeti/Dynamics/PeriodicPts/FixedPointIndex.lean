@@ -113,6 +113,8 @@ theorem exists_pos_forall_sum_sign_det_iterate_comp_eq_fixedPointIndex {φ : E �
     exact hηφ (hψV z z.property |>.trans_le (min_le_left _ _)) (subset_closure z.property)
   obtain ⟨hgc, hgi⟩ := hstab g hgf
   -- At the fixed points of `g`, the perturbed iterate has derivatives with `det (1 - D) ≠ 0`.
+  -- Since `g z` is `(φ ∘ ψ)^[k] z` by definition, `hnd`, `hfin` and the sum below read `g z = z`
+  -- as `(φ ∘ ψ)^[k] z = z`.
   have hD (z : V) (hz : g z = z) : HasFDerivAt (φ ∘ ψ)^[k] (fderiv ℝ (φ ∘ ψ)^[k] z) z :=
     (mdifferentiableAt_iff_differentiableAt.1 (hnd z hz).mdifferentiableAt).hasFDerivAt
   have hdet (z : V) (hz : g z = z) := (hnd z hz).det_one_sub_fderiv_ne_zero
