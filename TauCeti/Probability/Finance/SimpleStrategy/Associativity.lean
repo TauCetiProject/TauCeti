@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
 # Associativity of elementary integration
@@ -16,6 +16,9 @@ intersections of their trading intervals. `simpleGains_simpleGains_eq_sum` gives
 corresponding gains formula against an arbitrary price path, including observation
 times inside a trading interval. `simpleHolding_mul_eq_sum` identifies its integrand
 as the product holding, and `simpleGains_simpleGains` gives the common-grid form.
+When both holdings have heights chosen at the left endpoints of their intervals, the
+product is again such a simple holding on one common grid, whose gains are the iterated
+gains (`exists_simpleHolding_simpleGains_eq_mul`).
 
 The identities are pathwise and need no regularity, measurability or integrability
 of the price or holdings. Nondecreasing grids may have repeated dates, and either
@@ -32,7 +35,7 @@ extending integration by approximation and localization.
 
 public section
 
-open Finset Set
+open Finset Set MeasureTheory
 
 namespace TauCeti.Finance
 
@@ -106,5 +109,30 @@ theorem simpleGains_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω :
   · have ht : τ j ≤ t := (not_le.mp ht).le
     rw [min_eq_left ht, hstep _ ⟨le_min (hτ hj.le hj (Nat.le_succ j)) ht, min_le_left _ _⟩]
     ring
+
+/-- The product of two simple holdings with heights chosen at the left endpoints of their
+intervals is one simple holding on a strictly increasing common grid starting at the bottom
+time, again with heights chosen at the left endpoints. Against every price path, its gains are
+the gains of the first holding against the gains of the second. -/
+theorem exists_simpleHolding_simpleGains_eq_mul [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) (hτ : MonotoneOn τ (Set.Iic n))
+    (hρ : MonotoneOn ρ (Set.Iic m))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (hb : ∀ j < m, StronglyMeasurable[ℱ (ρ j)] (b j)) :
+    ∃ (N : ℕ) (σ : ℕ → ι) (c : ℕ → Ω → ℝ),
+      σ 0 = ⊥ ∧ StrictMonoOn σ (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (σ j)] (c j)) ∧
+      (∀ t ω, simpleHolding σ N c t ω = simpleHolding ρ m b t ω * simpleHolding τ n a t ω) ∧
+      ∀ (X : ι → Ω → ℝ) t ω,
+        simpleGains σ N c X t ω = simpleGains ρ m b (simpleGains τ n a X) t ω := by
+  obtain ⟨N, σ, c, hσ₀, hσ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
+    (range m ×ˢ range n) (fun p ↦ max (τ p.2) (ρ p.1))
+    (fun p ↦ min (τ (p.2 + 1)) (ρ (p.1 + 1))) (fun p ω ↦ b p.1 ω * a p.2 ω) fun p hp ↦ by
+      obtain ⟨hj, hi⟩ := mem_product.mp hp
+      exact ((hb p.1 (mem_range.mp hj)).mono (ℱ.mono (le_max_right _ _))).mul
+        ((ha p.2 (mem_range.mp hi)).mono (ℱ.mono (le_max_left _ _)))
+  refine ⟨N, σ, c, hσ₀, hσ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  · rw [hhold, simpleHolding_mul_eq_sum, sum_product]
+  · rw [hgain, simpleGains_simpleGains_eq_sum hτ hρ, sum_product]
 
 end TauCeti.Finance
