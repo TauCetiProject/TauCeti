@@ -8,12 +8,13 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Vec
 public import TauCeti.Analysis.Matrix.Entropy
 import TauCeti.Analysis.Matrix.Exponential.Log
-import TauCeti.Analysis.Matrix.FunctionalCalculus
 import TauCeti.Analysis.Matrix.Kronecker
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.OperatorJensen
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Vec
 import TauCeti.Topology.Instances.Matrix
@@ -70,9 +71,9 @@ it extends to every positive semidefinite `ρ` by letting `t → 0⁺` in `ρ + 
   compression identity `Vᴴ * Δ(ρ, σ) * V = Δ(ρ_A, σ_A)`.
 * `Matrix.PosDef.relativeEntropy_partialTraceRight_le`: monotonicity of the relative entropy under
   the partial trace, `D(Tr₂ ρ ‖ Tr₂ σ) ≤ D(ρ ‖ σ)`, for positive definite `ρ` and `σ`.
-* `Matrix.PosDef.relativeEntropy_smul`, `Matrix.PosDef.relativeEntropy_add_le`, and
-  `Matrix.PosDef.relativeEntropy_smul_add_smul_le`: positive homogeneity, subadditivity, and joint
-  convexity of the relative entropy for positive definite matrices over any `RCLike` field.
+* `Matrix.PosDef.relativeEntropy_add_le` and `Matrix.PosDef.relativeEntropy_smul_add_smul_le`:
+  subadditivity and joint convexity of the relative entropy for positive definite matrices over
+  any `RCLike` field.
 * `Matrix.PosSemidef.vonNeumannEntropy_strong_subadditivity`: strong subadditivity,
   `S(ρ) + S(ρ_B) ≤ S(ρ_AB) + S(ρ_BC)`.
 
@@ -355,48 +356,22 @@ theorem PosSemidef.vonNeumannEntropy_strong_subadditivity
 
 /-! ### Joint convexity of the relative entropy -/
 
-/-- **Positive homogeneity of the relative entropy.** Scaling both positive definite arguments by a
-positive real factor `c` scales `D(ρ ‖ σ)` by `c`. -/
-theorem PosDef.relativeEntropy_smul {ρ σ : Matrix m m 𝕜} (hρ : ρ.PosDef) (hσ : σ.PosDef)
-    {c : ℝ} (hc : 0 < c) :
-    relativeEntropy (c • ρ) (c • σ) = (c : EReal) * relativeEntropy ρ σ := by
-  let : NormedAlgebra ℝ (Matrix m m 𝕜) := Matrix.l2OpNormedAlgebraReal
-  have hlog (A : Matrix m m 𝕜) (hA : A.PosDef) :
-      cfc Real.log (c • A) = algebraMap ℝ (Matrix m m 𝕜) (Real.log c) + cfc Real.log A :=
-    CFC.log_smul' A hc (isStrictlyPositive_iff_posDef.2 hA)
-  rw [relativeEntropy_of_posDef (hσ.smul hc), relativeEntropy_of_posDef hσ, ← EReal.coe_mul,
-    hlog ρ hρ, hlog σ hσ, add_sub_add_left_eq_sub, smul_mul_assoc, trace_smul, RCLike.smul_re]
-
 /-- **Subadditivity of the relative entropy** for positive definite matrices over `ℂ`, by
 partial-trace monotonicity on two-block diagonal matrices. -/
 private theorem PosDef.relativeEntropy_add_le_complex {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m ℂ}
     (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
     relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
-  have hBD (A₁ A₂ : Matrix m m ℂ) (h₁ : A₁.PosDef) (h₂ : A₂.PosDef) :
-      (blockDiagonal ![A₁, A₂]).PosDef := by
-    have hmul : (blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂])ᴴ *
-        blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂] = blockDiagonal ![A₁, A₂] := by
-      rw [blockDiagonal_conjTranspose, ← blockDiagonal_mul]
-      refine congrArg blockDiagonal (funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩))
-      · simp [(CFC.sqrt_nonneg A₁).isSelfAdjoint.isHermitian.eq,
-          CFC.sqrt_mul_sqrt_self A₁ h₁.posSemidef.nonneg]
-      · simp [(CFC.sqrt_nonneg A₂).isSelfAdjoint.isHermitian.eq,
-          CFC.sqrt_mul_sqrt_self A₂ h₂.posSemidef.nonneg]
-    refine isStrictlyPositive_iff_posDef.1 ⟨(hmul ▸ posSemidef_conjTranspose_mul_self _).nonneg,
-      (isUnit_iff_isUnit_det _).2 ?_⟩
-    rw [det_blockDiagonal, Fin.prod_univ_two]
-    exact ((isUnit_iff_isUnit_det _).1 h₁.isUnit).mul ((isUnit_iff_isUnit_det _).1 h₂.isUnit)
-  have htr (A₁ A₂ : Matrix m m ℂ) : (blockDiagonal ![A₁, A₂]).partialTraceRight = A₁ + A₂ := by
-    ext i j; simp [partialTraceRight_apply, blockDiagonal_apply, Fin.sum_univ_two]
-  have hQ := hBD σ₁ σ₂ hσ₁ hσ₂
-  have hmono := (hBD ρ₁ ρ₂ hρ₁ hρ₂).relativeEntropy_partialTraceRight_le hQ
-  rw [htr ρ₁ ρ₂, htr σ₁ σ₂] at hmono
+  have hP := (posDef_blockDiagonal_iff ![ρ₁, ρ₂]).2 (Fin.forall_fin_two.2 ⟨hρ₁, hρ₂⟩)
+  have hQ := (posDef_blockDiagonal_iff ![σ₁, σ₂]).2 (Fin.forall_fin_two.2 ⟨hσ₁, hσ₂⟩)
+  have hmono := hP.relativeEntropy_partialTraceRight_le hQ
+  simp only [partialTraceRight_blockDiagonal, Fin.sum_univ_two, Matrix.cons_val_zero,
+    Matrix.cons_val_one] at hmono
   refine hmono.trans_eq ?_
   rw [relativeEntropy_of_posDef hQ, relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂,
     ← EReal.coe_add]
   congr 1
-  rw [cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩),
-    cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩),
+  rw [TauCeti.cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩),
+    TauCeti.cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩),
     ← blockDiagonal_sub, ← blockDiagonal_mul, trace_blockDiagonal, Fin.sum_univ_two, map_add]
   simp only [Pi.sub_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
@@ -405,16 +380,17 @@ field, `D(ρ₁ + ρ₂ ‖ σ₁ + σ₂) ≤ D(ρ₁ ‖ σ₁) + D(ρ₂ ‖ 
 theorem PosDef.relativeEntropy_add_le {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m 𝕜}
     (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
     relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
-  let Φ := Matrix.mapToComplexStarAlgHom (n := m) (𝕜 := 𝕜)
+  let Φ := TauCeti.mapToComplexStarAlgHom (n := m) (𝕜 := 𝕜)
   have hD (ρ σ : Matrix m m 𝕜) (hρ : ρ.PosDef) (hσ : σ.PosDef) :
       relativeEntropy (Φ ρ) (Φ σ) = relativeEntropy ρ σ := by
     rw [relativeEntropy_of_posDef hσ.mapToComplexStarAlgHom, relativeEntropy_of_posDef hσ]
     congr 1
     have hlog (A : Matrix m m 𝕜) (hA : A.PosDef) : cfc Real.log (Φ A) = Φ (cfc Real.log A) :=
       (StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _)
-        continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ)).symm
+        TauCeti.continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint
+        (hA.1.isSelfAdjoint.map Φ)).symm
     rw [hlog ρ hρ, hlog σ hσ, ← map_sub, ← map_mul]
-    simp only [Matrix.trace, Matrix.diag_apply, map_sum, Φ, mapToComplexStarAlgHom_apply]
+    simp only [Matrix.trace, Matrix.diag_apply, map_sum, Φ, TauCeti.mapToComplexStarAlgHom_apply]
     simp
   have h := hρ₁.mapToComplexStarAlgHom.relativeEntropy_add_le_complex
     hρ₂.mapToComplexStarAlgHom hσ₁.mapToComplexStarAlgHom hσ₂.mapToComplexStarAlgHom

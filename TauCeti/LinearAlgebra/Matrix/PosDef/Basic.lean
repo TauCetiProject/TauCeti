@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Algebra.Order.Star.Rat
@@ -99,6 +100,84 @@ theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [
     simp
   rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
   simp
+
+/-- A block-diagonal matrix over an arbitrary index type is positive definite iff every
+diagonal block is positive definite. -/
+@[simp]
+theorem _root_.Matrix.posDef_blockDiagonal_iff {o R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [AddLeftMono R] [DecidableEq o] (M : o → _root_.Matrix n n R) :
+    (_root_.Matrix.blockDiagonal M).PosDef ↔ ∀ k, (M k).PosDef := by
+  refine ⟨fun h k ↦ ?_, fun h ↦ ⟨?_, fun x hx ↦ ?_⟩⟩
+  · have hsub : ((_root_.Matrix.blockDiagonal M).submatrix (·, k) (·, k)).PosDef :=
+      h.submatrix fun _ _ h' ↦ (Prod.ext_iff.1 h').1
+    simpa [show (_root_.Matrix.blockDiagonal M).submatrix (·, k) (·, k) = M k by
+      ext i j; simp [_root_.Matrix.blockDiagonal_apply]] using hsub
+  · rw [_root_.Matrix.IsHermitian, _root_.Matrix.blockDiagonal_conjTranspose]
+    exact congrArg _root_.Matrix.blockDiagonal (funext fun k ↦ (h k).isHermitian.eq)
+  · classical
+    have hinj (k : o) : Function.Injective (fun i : n ↦ (i, k)) :=
+      fun _ _ h' ↦ (Prod.ext_iff.1 h').1
+    let xk (k : o) : n →₀ R := x.comapDomain (·, k) (hinj k).injOn
+    have hxk_term (k : o) :
+        ((xk k).sum fun i xi ↦ (xk k).sum fun j xj ↦ star xi * M k i j * xj) =
+          ∑ p ∈ x.support with p.2 = k, ∑ q ∈ x.support with q.2 = k,
+            star (x p) * M k p.1 q.1 * x q := by
+      have hinner (i : n) :
+          ((xk k).sum fun j xj ↦ star (xk k i) * M k i j * xj) =
+            ∑ q ∈ x.support with q.2 = k, star (x (i, k)) * M k i q.1 * x q := by
+        rw [Finsupp.sum]
+        refine Finset.sum_bij (fun j _ ↦ (j, k)) (fun j hj ↦ ?_)
+          (fun _ _ _ _ h' ↦ (Prod.ext_iff.1 h').1) (fun q hq ↦ ?_) (fun j _ ↦ rfl)
+        · simpa [xk] using hj
+        · simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq] at hq
+          have hqk : (q.1, k) = q := Prod.ext rfl hq.2.symm
+          exact ⟨q.1, by simpa [xk, hqk] using hq.1, hqk⟩
+      rw [Finsupp.sum]
+      refine Finset.sum_bij (fun i _ ↦ (i, k)) (fun i hi ↦ ?_)
+        (fun _ _ _ _ h' ↦ (Prod.ext_iff.1 h').1) (fun p hp ↦ ?_) (fun i _ ↦ hinner i)
+      · simpa [xk] using hi
+      · simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq] at hp
+        have hpk : (p.1, k) = p := Prod.ext rfl hp.2.symm
+        exact ⟨p.1, by simpa [xk, hpk] using hp.1, hpk⟩
+    have hsum : (x.sum fun ⟨i, k⟩ xi ↦ x.sum fun ⟨j, k'⟩ xj ↦
+          star xi * _root_.Matrix.blockDiagonal M (i, k) (j, k') * xj) =
+        ∑ k ∈ x.support.image Prod.snd,
+          (xk k).sum fun i xi ↦ (xk k).sum fun j xj ↦ star xi * M k i j * xj := by
+      conv_lhs => rw [Finsupp.sum]
+      rw [← Finset.sum_fiberwise_of_maps_to (t := x.support.image Prod.snd)
+        (g := Prod.snd) (fun _ hp ↦ Finset.mem_image_of_mem _ hp)]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [hxk_term k]
+      refine Finset.sum_congr rfl fun ⟨i, k'⟩ hp ↦ ?_
+      have hpk : k' = k := (Finset.mem_filter.1 hp).2
+      subst hpk
+      dsimp only [Finsupp.sum]
+      rw [← Finset.sum_filter_add_sum_filter_not x.support (fun q ↦ q.2 = k')]
+      have hzero : (∑ q ∈ x.support with ¬q.2 = k',
+          star (x (i, k')) * _root_.Matrix.blockDiagonal M (i, k') (q.1, q.2) * x q) = 0 :=
+        Finset.sum_eq_zero fun ⟨j, k''⟩ hq ↦ by
+          have hqk : k' ≠ k'' := Ne.symm (Finset.mem_filter.1 hq).2
+          simp [_root_.Matrix.blockDiagonal_apply, hqk]
+      rw [hzero, add_zero]
+      refine Finset.sum_congr rfl fun ⟨j, k''⟩ hq ↦ ?_
+      have hqk : k'' = k' := (Finset.mem_filter.1 hq).2
+      subst hqk
+      simp [_root_.Matrix.blockDiagonal_apply]
+    rw [hsum]
+    obtain ⟨p₀, hp₀⟩ := Finsupp.support_nonempty_iff.2 hx
+    have hxk₀ : xk p₀.2 ≠ 0 := by
+      intro h0
+      have : xk p₀.2 p₀.1 = 0 := by rw [h0]; rfl
+      exact Finsupp.mem_support_iff.1 hp₀ (by simpa [xk] using this)
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_image_of_mem Prod.snd hp₀)]
+    exact add_pos_of_pos_of_nonneg ((h p₀.2).2 hxk₀)
+      (Finset.sum_nonneg fun k _ ↦ (h k).posSemidef.2 (xk k))
+
+/-- A block-diagonal matrix whose diagonal blocks are positive definite is positive definite. -/
+theorem _root_.Matrix.PosDef.blockDiagonal {o R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [AddLeftMono R] [DecidableEq o] {M : o → _root_.Matrix n n R} (hM : ∀ k, (M k).PosDef) :
+    (_root_.Matrix.blockDiagonal M).PosDef :=
+  (_root_.Matrix.posDef_blockDiagonal_iff M).2 hM
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/

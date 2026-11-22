@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Topology.Order.Compact
+public import TauCeti.LinearAlgebra.Matrix.OfReal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 import TauCeti.Analysis.Matrix.L2OpNorm
@@ -111,3 +112,15 @@ theorem PosSemidef.l2_opNorm_le_of_le_smul_one [Fintype n] [DecidableEq n] {A : 
 end L2OpNorm
 
 end Matrix
+
+namespace TauCeti
+
+/-- The entrywise complex embedding `TauCeti.mapToComplexStarAlgHom` preserves and reflects the
+Loewner order. -/
+@[simp]
+theorem mapToComplexStarAlgHom_le_iff {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
+    {A B : Matrix n n 𝕜} :
+    mapToComplexStarAlgHom A ≤ mapToComplexStarAlgHom B ↔ A ≤ B := by
+  rw [Matrix.le_iff, Matrix.le_iff, ← map_sub, posSemidef_mapToComplexStarAlgHom_iff]
+
+end TauCeti

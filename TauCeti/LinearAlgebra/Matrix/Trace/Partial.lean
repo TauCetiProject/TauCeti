@@ -61,6 +61,14 @@ theorem partialTraceRight_apply (Y : Matrix (m × n) (m × n) R) (i j : m) :
     partialTraceRight Y i j = ∑ k, Y (i, k) (j, k) := by
   simp [partialTraceRight, Matrix.sum_apply, blockDiag_apply]
 
+/-- The partial trace over the second factor of a block-diagonal matrix is the sum of its diagonal
+blocks. -/
+@[simp]
+theorem partialTraceRight_blockDiagonal [DecidableEq n] (M : n → Matrix m m R) :
+    partialTraceRight (blockDiagonal M) = ∑ k, M k := by
+  ext i j
+  simp [partialTraceRight_apply, blockDiagonal_apply]
+
 @[simp]
 theorem partialTraceRight_zero : partialTraceRight (0 : Matrix (m × n) (m × n) R) = 0 := by
   ext

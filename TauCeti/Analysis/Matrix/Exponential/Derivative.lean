@@ -86,6 +86,25 @@ theorem bijective_expFDeriv_diagonal (d : n → ℝ) :
     simp only [expFDeriv_diagonal, Matrix.of_apply]
     exact mul_div_cancel₀ _ (hn i j)
 
+/-- **Trace of the exponential derivative.** For any square matrices `A` and `Y`,
+`Tr (expFDeriv A Y) = Tr (exp A * Y)`. -/
+theorem trace_expFDeriv (A Y : Matrix n n 𝕜) :
+    (TauCeti.expFDeriv 𝕜 A Y).trace = (NormedSpace.exp A * Y).trace := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  let : NormedAlgebra ℚ (Matrix n n 𝕜) := TauCeti.normedAlgebraRatOfReal
+  rw [TauCeti.expFDeriv_apply_eq_integral]
+  have hi : IntervalIntegrable (fun t : ℝ ↦ exp ((1 - t) • A) * Y * exp (t • A))
+      MeasureTheory.volume 0 1 := Continuous.intervalIntegrable (by fun_prop) _ _
+  have hcomm : (∫ t in (0 : ℝ)..1, exp ((1 - t) • A) * Y * exp (t • A)).trace =
+      ∫ t in (0 : ℝ)..1, (exp ((1 - t) • A) * Y * exp (t • A)).trace := by
+    simpa using ((traceLinearMap n 𝕜 𝕜).toContinuousLinearMap.intervalIntegral_comp_comm hi).symm
+  have hconst (t : ℝ) : (exp ((1 - t) • A) * Y * exp (t • A)).trace = (exp A * Y).trace := by
+    rw [trace_mul_cycle,
+      ← NormedSpace.exp_add_of_commute (((Commute.refl A).smul_left t).smul_right (1 - t)),
+      ← add_smul, add_sub_cancel, one_smul]
+  rw [hcomm]
+  simp [hconst]
+
 end Matrix
 
 namespace Matrix.IsHermitian

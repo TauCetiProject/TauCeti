@@ -65,12 +65,8 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 ## Main results
 
 * `Matrix.IsHermitian.cfc_mul_eq_mul_cfc` — `A * V = V * B` implies `cfc f A * V = V * cfc f B`;
-* `Matrix.cfc_transpose`, `Matrix.cfc_reindex`, `Matrix.cfc_blockDiagonal_of_isHermitian` — the
+* `Matrix.cfc_transpose`, `Matrix.cfc_reindex`, `TauCeti.cfc_blockDiagonal_of_isHermitian` — the
   functional calculus commutes with transposition, reindexing, and block-diagonal assembly;
-* `Matrix.mapToComplexStarAlgHom`, `Matrix.continuous_mapToComplexStarAlgHom`,
-  `Matrix.PosSemidef.mapToComplexStarAlgHom`, `Matrix.PosDef.mapToComplexStarAlgHom` — the
-  canonical continuous entrywise embedding `Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ` and its
-  positivity-preservation properties;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul` — `cfc f A` acts by `f μ` on an
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
@@ -177,68 +173,6 @@ theorem cfc_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m) (f : �
       exact (reindex e e).injective h
     rw [cfc_apply_of_not_predicate A hA, cfc_apply_of_not_predicate _ hA']
     simp
-
-/-- **The functional calculus acts blockwise on a block-diagonal Hermitian matrix.** -/
-theorem cfc_blockDiagonal_of_isHermitian {o : Type*} [Fintype o] [DecidableEq o]
-    (f : ℝ → ℝ) {M : o → Matrix n n 𝕜} (hM : ∀ k, (M k).IsHermitian) :
-    cfc f (blockDiagonal M) = blockDiagonal fun k ↦ cfc f (M k) := by
-  have hBM : (blockDiagonal M).IsHermitian := by
-    rw [IsHermitian, blockDiagonal_conjTranspose]
-    exact congrArg blockDiagonal (funext fun k ↦ (hM k).eq)
-  let V (k : o) : Matrix (n × o) n 𝕜 := of fun p j ↦ if p = (j, k) then 1 else 0
-  have hint (k : o) : blockDiagonal M * V k = V k * M k := by
-    ext ⟨i, l⟩ j
-    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
-  ext ⟨i, l⟩ ⟨j, k⟩
-  have hcfc := congrFun (congrFun (hBM.cfc_mul_eq_mul_cfc (hM k) (hint k) f) (i, l)) j
-  have hL : (cfc f (blockDiagonal M) * V k) (i, l) j = cfc f (blockDiagonal M) (i, l) (j, k) := by
-    simp [V, Matrix.mul_apply]
-  have hR : (V k * cfc f (M k)) (i, l) j = (blockDiagonal fun r ↦ cfc f (M r)) (i, l) (j, k) := by
-    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
-  rw [← hL, hcfc, hR]
-
-/-- The canonical entrywise embedding `Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ` induced by
-`RCLike.map 𝕜 ℂ`. -/
-noncomputable def mapToComplexStarAlgHom : Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ where
-  toFun A := A.map (RCLike.map 𝕜 ℂ)
-  map_one' := by ext i j; by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-  map_mul' A B := by
-    ext i j; simp only [map_apply, Matrix.mul_apply, map_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ Complex.ext (by simp) (by simp)
-  map_zero' := by ext; simp
-  map_add' A B := by ext i j; exact Complex.ext (by simp) (by simp)
-  commutes' r := by ext i j; by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
-  map_star' A := by
-    ext i j
-    exact Complex.ext (by simp [star_eq_conjTranspose]) (by simp [star_eq_conjTranspose])
-
-/-- Evaluating `Matrix.mapToComplexStarAlgHom` entrywise applies `RCLike.map 𝕜 ℂ`. -/
-@[simp]
-theorem mapToComplexStarAlgHom_apply (A : Matrix n n 𝕜) (i j : n) :
-    mapToComplexStarAlgHom A i j = RCLike.map 𝕜 ℂ (A i j) := by rfl
-
-/-- The entrywise embedding `Matrix.mapToComplexStarAlgHom` is continuous. -/
-@[continuity, fun_prop]
-theorem continuous_mapToComplexStarAlgHom :
-    Continuous (mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)) :=
-  continuous_id.matrix_map (RCLike.map 𝕜 ℂ).continuous
-
-open scoped ComplexOrder MatrixOrder in
-/-- Entrywise embedding into `ℂ` preserves positive semidefiniteness. -/
-theorem PosSemidef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosSemidef) :
-    (Matrix.mapToComplexStarAlgHom A).PosSemidef := by
-  let Φ := Matrix.mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)
-  have hmul : Φ A = (Φ (CFC.sqrt A))ᴴ * Φ (CFC.sqrt A) := by
-    rw [← star_eq_conjTranspose, ← map_star, (CFC.sqrt_nonneg A).isSelfAdjoint.star_eq, ← map_mul,
-      CFC.sqrt_mul_sqrt_self A hA.nonneg]
-  exact hmul ▸ posSemidef_conjTranspose_mul_self _
-
-open scoped ComplexOrder MatrixOrder in
-/-- Entrywise embedding into `ℂ` preserves positive definiteness. -/
-theorem PosDef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosDef) :
-    (Matrix.mapToComplexStarAlgHom A).PosDef :=
-  isStrictlyPositive_iff_posDef.1 ⟨hA.posSemidef.mapToComplexStarAlgHom.nonneg,
-    hA.isUnit.map Matrix.mapToComplexStarAlgHom.toRingHom⟩
 
 /-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
 `x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/
@@ -376,6 +310,27 @@ end Matrix
 namespace TauCeti
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
+
+/-- **The functional calculus acts blockwise on a block-diagonal Hermitian matrix.** -/
+theorem cfc_blockDiagonal_of_isHermitian {o : Type*} [Fintype o] [DecidableEq o]
+    (f : ℝ → ℝ) {M : o → Matrix n n 𝕜} (hM : ∀ k, (M k).IsHermitian) :
+    cfc f (Matrix.blockDiagonal M) = Matrix.blockDiagonal fun k ↦ cfc f (M k) := by
+  have hBM : (Matrix.blockDiagonal M).IsHermitian := by
+    rw [Matrix.IsHermitian, Matrix.blockDiagonal_conjTranspose]
+    exact congrArg Matrix.blockDiagonal (funext fun k ↦ (hM k).eq)
+  let V (k : o) : Matrix (n × o) n 𝕜 := Matrix.of fun p j ↦ if p = (j, k) then 1 else 0
+  have hint (k : o) : Matrix.blockDiagonal M * V k = V k * M k := by
+    ext ⟨i, l⟩ j
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, Matrix.blockDiagonal_apply, hlk]
+  ext ⟨i, l⟩ ⟨j, k⟩
+  have hcfc := congrFun (congrFun (hBM.cfc_mul_eq_mul_cfc (hM k) (hint k) f) (i, l)) j
+  have hL : (cfc f (Matrix.blockDiagonal M) * V k) (i, l) j =
+      cfc f (Matrix.blockDiagonal M) (i, l) (j, k) := by
+    simp [V, Matrix.mul_apply]
+  have hR : (V k * cfc f (M k)) (i, l) j =
+      (Matrix.blockDiagonal fun r ↦ cfc f (M r)) (i, l) (j, k) := by
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, Matrix.blockDiagonal_apply, hlk]
+  rw [← hL, hcfc, hR]
 
 /-- **Continuity of the Hermitian functional calculus.** For a continuous `f : ℝ → ℝ`, the map
 `A ↦ cfc f A` is continuous on the Hermitian matrices. -/

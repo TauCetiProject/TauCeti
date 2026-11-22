@@ -10,7 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.EReal.Basic
 public import TauCeti.Analysis.Matrix.FunctionalCalculus
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
+import TauCeti.Analysis.Matrix.Exponential.Log
 import TauCeti.Analysis.Matrix.Kronecker
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
@@ -74,6 +76,8 @@ spin systems.
   `D(ρ ‖ 1 ⊗ₖ Tr₁ ρ) = -S(ρ) + S(Tr₁ ρ)` when `Tr₁ ρ` is positive definite;
 * `Matrix.PosSemidef.re_trace_mul_cfc_log_le` and `Matrix.PosSemidef.relativeEntropy_nonpos` —
   if `0 ≤ A ≤ B`, then `Tr (A log A) ≤ Tr (A log B)` and `D(A ‖ B) ≤ 0`;
+* `Matrix.PosDef.relativeEntropy_smul` — positive homogeneity of the relative entropy for positive
+  definite matrices;
 * `Matrix.concaveOn_vonNeumannEntropy` and `Matrix.sum_mul_vonNeumannEntropy_le` — concavity,
   `∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`;
 * `Matrix.vonNeumannEntropy_sum_smul_le` — the upper mixture bound
@@ -216,6 +220,22 @@ theorem relativeEntropy_of_posDef (hσ : σ.PosDef) :
   refine relativeEntropy_of_ker_le ?_
   rw [LinearMap.ker_eq_bot.mpr (by exact hσ.mulVec_injective)]
   exact bot_le
+
+section
+open scoped MatrixOrder Matrix.Norms.L2Operator
+
+/-- **Positive homogeneity of the relative entropy.** Scaling both positive definite arguments by a
+positive real factor `c` scales `D(ρ ‖ σ)` by `c`. -/
+theorem PosDef.relativeEntropy_smul (hρ : ρ.PosDef) (hσ : σ.PosDef) {c : ℝ} (hc : 0 < c) :
+    relativeEntropy (c • ρ) (c • σ) = (c : EReal) * relativeEntropy ρ σ := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  have hlog (A : Matrix n n 𝕜) (hA : A.PosDef) :
+      cfc Real.log (c • A) = algebraMap ℝ (Matrix n n 𝕜) (Real.log c) + cfc Real.log A :=
+    CFC.log_smul' A hc (isStrictlyPositive_iff_posDef.2 hA)
+  rw [relativeEntropy_of_posDef (hσ.smul hc), relativeEntropy_of_posDef hσ, ← EReal.coe_mul,
+    hlog ρ hρ, hlog σ hσ, add_sub_add_left_eq_sub, smul_mul_assoc, trace_smul, RCLike.smul_re]
+
+end
 
 /-- Under the support condition, `D(ρ ‖ σ) = -S(ρ) - Tr (ρ log σ)`. -/
 theorem IsHermitian.relativeEntropy_eq_neg_vonNeumannEntropy_sub (hρ : ρ.IsHermitian)

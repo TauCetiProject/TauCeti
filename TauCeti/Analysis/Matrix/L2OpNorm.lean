@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.InnerProductSpace.HermitianDilation.Basic
+import TauCeti.Analysis.InnerProductSpace.HermitianDilation.Norm
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The `ℓ²` operator norm as a normed real algebra
@@ -22,6 +25,10 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 * `Matrix.l2OpNormedAlgebraReal`: `Matrix n n 𝕜` with the `ℓ²` operator norm, as a normed
   `ℝ`-algebra.
+* `TauCeti.euclideanSumProdEquiv`: isometric identification of `EuclideanSpace 𝕜 (m ⊕ p)` with
+  `WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)`.
+* `Matrix.hermitianDilation`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular
+  matrix `A`.
 
 ## Main results
 
@@ -34,8 +41,11 @@ rather than restricting scalars, so that no algebra diamond arises.
   its `ℓ²` operator norm.
 * `Matrix.l2_opNorm_fromBlocks_zero₁₂_zero₂₁`: the `ℓ²` operator norm of a block-diagonal matrix
   `fromBlocks A 0 0 B` is `max ‖A‖ ‖B‖`.
-* `Matrix.l2_opNorm_fromBlocks_zero_conjTranspose`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0`
-  has the same `ℓ²` operator norm as `A`.
+* `Matrix.toEuclideanLin_fromBlocks_zero_diagonal`, `Matrix.toEuclideanLin_hermitianDilation`:
+  conjugation of the Euclidean operator of `fromBlocks 0 A Aᴴ 0` / `A.hermitianDilation` to
+  `LinearMap.hermitianDilation A.toEuclideanLin`.
+* `Matrix.l2_opNorm_fromBlocks_zero_diagonal`, `Matrix.l2_opNorm_hermitianDilation`: the
+  Hermitian dilation `fromBlocks 0 A Aᴴ 0` has the same `ℓ²` operator norm as `A`.
 * `Matrix.l2_opNorm_map_ofReal`: a real, possibly rectangular, matrix has the same `ℓ²` operator
   norm as a complex matrix.
 -/
@@ -122,6 +132,7 @@ theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
 
 /-- The `ℓ²` operator norm of a block-diagonal rectangular matrix is the maximum of the `ℓ²`
 operator norms of its diagonal blocks. -/
+@[simp]
 theorem l2_opNorm_fromBlocks_zero₁₂_zero₂₁ {m₁ m₂ n₁ n₂ : Type*}
     [Fintype m₁] [Fintype m₂] [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
     (A : Matrix m₁ n₁ 𝕜) (B : Matrix m₂ n₂ 𝕜) :
@@ -157,19 +168,202 @@ theorem l2_opNorm_fromBlocks_zero₁₂_zero₂₁ {m₁ m₂ n₁ n₂ : Type*}
         EuclideanSpace.equiv, mul_pow] using (sq_le_sq₀ (norm_nonneg _)
           (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 ((fromBlocks A 0 0 B).l2_opNorm_mulVec x)
 
+end Matrix
+
+namespace TauCeti
+
+/-- Isometric identification of `EuclideanSpace 𝕜 (m ⊕ p)` with
+`WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)`, matching the coordinate order of
+`LinearMap.hermitianDilation` on `A.toEuclideanLin`. -/
+@[expose]
+noncomputable def euclideanSumProdEquiv (m p 𝕜 : Type*) [RCLike 𝕜] [Fintype m] [Fintype p] :
+    EuclideanSpace 𝕜 (m ⊕ p) ≃ₗᵢ[𝕜] WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m) where
+  toFun v :=
+    WithLp.toLp 2 (WithLp.toLp 2 (v.ofLp ∘ Sum.inr), WithLp.toLp 2 (v.ofLp ∘ Sum.inl))
+  invFun z := WithLp.toLp 2 (Sum.elim z.snd.ofLp z.fst.ofLp)
+  map_add' _ _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
+  map_smul' _ _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
+  left_inv v := by ext k; cases k <;> rfl
+  right_inv _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
+  norm_map' v := by
+    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+    dsimp
+    rw [WithLp.prod_norm_sq_eq_of_L2]
+    simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, add_comm]
+
+/-- Evaluating `TauCeti.euclideanSumProdEquiv` splits a vector on `m ⊕ p` into its right and
+left summands. -/
+@[simp]
+theorem euclideanSumProdEquiv_apply {m p 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype p]
+    (v : EuclideanSpace 𝕜 (m ⊕ p)) :
+    euclideanSumProdEquiv m p 𝕜 v =
+      WithLp.toLp 2 (WithLp.toLp 2 (v.ofLp ∘ Sum.inr), WithLp.toLp 2 (v.ofLp ∘ Sum.inl)) := rfl
+
+/-- Evaluating the inverse of `TauCeti.euclideanSumProdEquiv` combines the two blocks via
+`Sum.elim`. -/
+@[simp]
+theorem euclideanSumProdEquiv_symm_apply {m p 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype p]
+    (z : WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)) :
+    (euclideanSumProdEquiv m p 𝕜).symm z = WithLp.toLp 2 (Sum.elim z.snd.ofLp z.fst.ofLp) := rfl
+
+end TauCeti
+
+namespace Matrix
+
+variable {n 𝕜 : Type*} [RCLike 𝕜]
+
+open scoped Matrix.Norms.L2Operator
+
+/-- Under `TauCeti.euclideanSumProdEquiv`, the Euclidean linear map of `fromBlocks 0 A Aᴴ 0`
+is conjugate to `LinearMap.hermitianDilation A.toEuclideanLin`. -/
+theorem toEuclideanLin_fromBlocks_zero_diagonal {m p : Type*} [Fintype m] [Fintype p]
+    [DecidableEq m] [DecidableEq p] (A : Matrix m p 𝕜) :
+    (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0).toEuclideanLin =
+      (TauCeti.euclideanSumProdEquiv m p 𝕜).symm.toLinearEquiv.toLinearMap ∘ₗ
+        A.toEuclideanLin.hermitianDilation ∘ₗ
+        (TauCeti.euclideanSumProdEquiv m p 𝕜).toLinearEquiv.toLinearMap := by
+  refine LinearMap.ext fun v ↦ ?_
+  have hv : v.ofLp = Sum.elim (v.ofLp ∘ Sum.inl) (v.ofLp ∘ Sum.inr) := by
+    ext k; cases k <;> rfl
+  apply WithLp.ofLp_injective 2
+  ext k
+  cases k with
+  | inl i =>
+    simp only [toLpLin_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearIsometryEquiv.coe_toLinearEquiv, LinearMap.hermitianDilation_apply,
+      TauCeti.euclideanSumProdEquiv_apply, TauCeti.euclideanSumProdEquiv_symm_apply]
+    conv_lhs => rw [hv, fromBlocks_mulVec]
+    simp
+  | inr j =>
+    have hadj : (A.toEuclideanLin.adjoint (WithLp.toLp 2 (v.ofLp ∘ Sum.inl))).ofLp j =
+        (Aᴴ *ᵥ (v.ofLp ∘ Sum.inl)) j := by
+      simp [← toEuclideanLin_conjTranspose_eq_adjoint, toLpLin_apply]
+    simp only [toLpLin_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearIsometryEquiv.coe_toLinearEquiv, LinearMap.hermitianDilation_apply,
+      TauCeti.euclideanSumProdEquiv_apply, TauCeti.euclideanSumProdEquiv_symm_apply]
+    conv_lhs => rw [hv, fromBlocks_mulVec]
+    simpa using hadj.symm
+
 /-- The Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular matrix `A` has the same `ℓ²`
 operator norm as `A`. -/
-theorem l2_opNorm_fromBlocks_zero_conjTranspose {m p : Type*} [Fintype m] [Fintype p]
+@[simp]
+theorem l2_opNorm_fromBlocks_zero_diagonal {m p : Type*} [Fintype m] [Fintype p]
     [DecidableEq m] [DecidableEq p] (A : Matrix m p 𝕜) :
     ‖fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0‖ = ‖A‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  have hmul : (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0)ᴴ * fromBlocks 0 A Aᴴ 0 =
-      fromBlocks (A * Aᴴ) 0 0 (Aᴴ * A) := by
-    simp [fromBlocks_conjTranspose, fromBlocks_multiply]
-  have hAA : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
-    simpa [l2_opNorm_conjTranspose] using l2_opNorm_conjTranspose_mul_self Aᴴ
-  rw [sq, ← l2_opNorm_conjTranspose_mul_self, hmul, l2_opNorm_fromBlocks_zero₁₂_zero₂₁,
-    l2_opNorm_conjTranspose_mul_self, hAA, max_self, sq]
+  let e := TauCeti.euclideanSumProdEquiv m p 𝕜
+  let D : EuclideanSpace 𝕜 (m ⊕ p) →L[𝕜] EuclideanSpace 𝕜 (m ⊕ p) :=
+    (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0).toEuclideanLin.toContinuousLinearMap
+  have hD : ‖D‖ = ‖A.toEuclideanLin.hermitianDilation.toContinuousLinearMap‖ := by
+    refine le_antisymm ?_ ?_
+    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+      have hDv : D v = e.symm (A.toEuclideanLin.hermitianDilation (e v)) := by
+        simpa [D, e] using congrFun (congrArg DFunLike.coe
+          (toEuclideanLin_fromBlocks_zero_diagonal A)) v
+      rw [hDv, e.symm.norm_map]
+      simpa [e.norm_map] using
+        A.toEuclideanLin.hermitianDilation.toContinuousLinearMap.le_opNorm (e v)
+    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun z ↦ ?_
+      have hTz : A.toEuclideanLin.hermitianDilation z = e (D (e.symm z)) := by
+        have h := congrArg e (congrFun (congrArg DFunLike.coe
+          (toEuclideanLin_fromBlocks_zero_diagonal A)) (e.symm z))
+        simpa only [D, e, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+          LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.apply_symm_apply,
+          LinearMap.coe_toContinuousLinearMap'] using h.symm
+      rw [LinearMap.coe_toContinuousLinearMap', hTz, e.norm_map]
+      simpa [e.symm.norm_map] using D.le_opNorm (e.symm z)
+  calc
+    ‖fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0‖ = ‖D‖ := by
+      rw [l2_opNorm_def (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0), LinearEquiv.trans_apply]
+    _ = ‖A.toEuclideanLin.hermitianDilation.toContinuousLinearMap‖ := hD
+    _ = ‖A.toEuclideanLin.toContinuousLinearMap‖ :=
+      LinearMap.norm_toContinuousLinearMap_hermitianDilation _
+    _ = ‖A‖ := by rw [l2_opNorm_def A, LinearEquiv.trans_apply]
+
+/-- The Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular matrix `A : Matrix m p 𝕜`. -/
+@[expose]
+noncomputable def hermitianDilation {m p : Type*} (A : Matrix m p 𝕜) :
+    Matrix (m ⊕ p) (m ⊕ p) 𝕜 :=
+  fromBlocks 0 A Aᴴ 0
+
+/-- Unfolding `Matrix.hermitianDilation` into a block matrix. -/
+theorem hermitianDilation_def {m p : Type*} (A : Matrix m p 𝕜) :
+    A.hermitianDilation = fromBlocks 0 A Aᴴ 0 := rfl
+
+/-- The Hermitian dilation of the zero matrix is zero. -/
+@[simp]
+theorem hermitianDilation_zero {m p : Type*} :
+    hermitianDilation (0 : Matrix m p 𝕜) = 0 := by
+  ext i j; cases i <;> cases j <;> simp [hermitianDilation]
+
+/-- Hermitian dilation commutes with negation. -/
+@[simp]
+theorem hermitianDilation_neg {m p : Type*} (A : Matrix m p 𝕜) :
+    hermitianDilation (-A) = -A.hermitianDilation := by
+  ext i j; cases i <;> cases j <;> simp [hermitianDilation]
+
+/-- Hermitian dilation is additive. -/
+@[simp]
+theorem hermitianDilation_add {m p : Type*} (A B : Matrix m p 𝕜) :
+    hermitianDilation (A + B) = A.hermitianDilation + B.hermitianDilation := by
+  ext i j; cases i <;> cases j <;> simp [hermitianDilation]
+
+/-- Hermitian dilation commutes with subtraction. -/
+@[simp]
+theorem hermitianDilation_sub {m p : Type*} (A B : Matrix m p 𝕜) :
+    hermitianDilation (A - B) = A.hermitianDilation - B.hermitianDilation := by
+  ext i j; cases i <;> cases j <;> simp [hermitianDilation]
+
+/-- Hermitian dilation commutes with real scalar multiplication. -/
+@[simp]
+theorem hermitianDilation_real_smul {m p : Type*} (r : ℝ) (A : Matrix m p 𝕜) :
+    hermitianDilation (r • A) = r • A.hermitianDilation := by
+  ext i j; cases i <;> cases j <;> simp [hermitianDilation]
+
+/-- Hermitian dilation commutes with finite sums. -/
+@[simp]
+theorem hermitianDilation_sum {ι m p : Type*} (s : Finset ι) (f : ι → Matrix m p 𝕜) :
+    (∑ k ∈ s, f k).hermitianDilation = ∑ k ∈ s, (f k).hermitianDilation := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.sum_empty, Finset.sum_empty, hermitianDilation_zero]
+  | @insert k s hk ih => rw [Finset.sum_insert hk, Finset.sum_insert hk, hermitianDilation_add, ih]
+
+/-- The Hermitian dilation of any rectangular matrix is Hermitian. -/
+@[simp]
+theorem isHermitian_hermitianDilation {m p : Type*} (A : Matrix m p 𝕜) :
+    A.hermitianDilation.IsHermitian :=
+  isHermitian_zero.fromBlocks rfl isHermitian_zero
+
+/-- The Hermitian dilation map `A ↦ A.hermitianDilation` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_hermitianDilation {m p : Type*} :
+    Continuous (Matrix.hermitianDilation (m := m) (p := p) (𝕜 := 𝕜)) :=
+  continuous_const.matrix_fromBlocks continuous_id continuous_id.matrix_conjTranspose
+    continuous_const
+
+/-- Squaring the Hermitian dilation yields the block diagonal matrix of the two Gram matrices
+`A * Aᴴ` and `Aᴴ * A`. -/
+theorem hermitianDilation_mul_self {m p : Type*} [Fintype m] [Fintype p]
+    (A : Matrix m p 𝕜) :
+    A.hermitianDilation * A.hermitianDilation = fromBlocks (A * Aᴴ) 0 0 (Aᴴ * A) := by
+  simp [hermitianDilation, fromBlocks_multiply]
+
+/-- Under `TauCeti.euclideanSumProdEquiv`, the Euclidean linear map of `A.hermitianDilation`
+is conjugate to `LinearMap.hermitianDilation A.toEuclideanLin`. -/
+theorem toEuclideanLin_hermitianDilation {m p : Type*} [Fintype m] [Fintype p]
+    [DecidableEq m] [DecidableEq p] (A : Matrix m p 𝕜) :
+    A.hermitianDilation.toEuclideanLin =
+      (TauCeti.euclideanSumProdEquiv m p 𝕜).symm.toLinearEquiv.toLinearMap ∘ₗ
+        A.toEuclideanLin.hermitianDilation ∘ₗ
+        (TauCeti.euclideanSumProdEquiv m p 𝕜).toLinearEquiv.toLinearMap :=
+  A.toEuclideanLin_fromBlocks_zero_diagonal
+
+/-- The `ℓ²` operator norm of `A.hermitianDilation` equals `‖A‖`. -/
+@[simp]
+theorem l2_opNorm_hermitianDilation {m p : Type*} [Fintype m] [Fintype p]
+    [DecidableEq m] [DecidableEq p] (A : Matrix m p 𝕜) :
+    ‖A.hermitianDilation‖ = ‖A‖ :=
+  A.l2_opNorm_fromBlocks_zero_diagonal
 
 section OfReal
 
