@@ -16,9 +16,12 @@ public import TauCeti.Algebra.Lie.Weights.Central
 -- comes `LieIdeal.quotientEquivOfIsCompl`, which identifies the derived ideal with `L ⧸ Z(L)`.
 public import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
-import TauCeti.Algebra.Lie.AdjointAction.Basic
+import Mathlib.Algebra.Lie.Derivation.Killing
 import Mathlib.Algebra.Lie.Normalizer
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.SemiDirect.Basic
 
 /-!
 # Reductive Lie algebras: the structure theorem
@@ -125,9 +128,11 @@ the derived ideal is isomorphic to `L ⧸ Z(L)`, hence Killing and semisimple.
 * `TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries`: **a Lie algebra whose derived
   ideal has trivial radical is reductive**, with
   `TauCeti.radical_le_center_of_hasTrivialRadical_derivedSeries` the inclusion it rests on.
-* `TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries`: **such a Lie algebra
+* `TauCeti.isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries` and
+  `TauCeti.isCompl_center_derivedSeries_of_isKilling_derivedSeries`: **such a Lie algebra
   is the direct sum of its centre and its derived ideal**, over a field of characteristic zero and
-  in finite dimension.
+  in finite dimension, or over an arbitrary field when `[L, L]` is Killing with no ambient
+  finite-dimensionality assumption.
 * `TauCeti.center_inf_derivedSeries_eq_bot` and `TauCeti.isCompl_center_derivedSeries`: **a
   reductive Lie algebra is the direct sum of its centre and its derived ideal.**
 * `TauCeti.isKilling_quotient_center` and `TauCeti.isKilling_derivedSeries`: the quotient by the
@@ -420,6 +425,58 @@ theorem isCompl_center_derivedSeries_of_hasTrivialRadical_derivedSeries :
     codisjoint_iff.mpr (sup_center_derivedSeries_eq_top K L)⟩
 
 end Complement
+
+section KillingComplement
+
+/-- **A Lie algebra whose derived ideal is Killing is the direct sum of its centre and its derived
+ideal**, over any field `K` and with no finite-dimensionality assumption on `L`: nondegeneracy of
+the Killing form of `[L, L]` makes `[L, L]` finite-dimensional and forces every derivation of
+`[L, L]` to be inner (`LieDerivation.IsKilling.exists_eq_ad`). -/
+theorem isCompl_center_derivedSeries_of_isKilling_derivedSeries
+    (K : Type u) (L : Type v) [Field K] [LieRing L] [LieAlgebra K L]
+    [LieAlgebra.IsKilling K (derivedSeries K L 1)] :
+    IsCompl (LieAlgebra.center K L) (derivedSeries K L 1) := by
+  have : Module.Finite K (derivedSeries K L 1) := finite_of_isKilling
+  have hcenterD : LieAlgebra.center K (derivedSeries K L 1) = ⊥ :=
+    LieAlgebra.center_eq_bot K (derivedSeries K L 1)
+  refine ⟨disjoint_iff.mpr (inf_derivedSeries_eq_bot_of_isSolvable K L _), ?_⟩
+  rw [codisjoint_iff, eq_top_iff]
+  intro x _
+  -- The adjoint action of `x` on `[L, L]` is a derivation of a finite-dimensional Killing
+  -- algebra, hence equals `ad d` for some `d ∈ [L, L]`.
+  let δ : LieDerivation K (derivedSeries K L 1) (derivedSeries K L 1) :=
+    LieIdeal.ad (derivedSeries K L 1) x
+  obtain ⟨d, hd⟩ := LieDerivation.IsKilling.exists_eq_ad δ
+  have hcomm (u : derivedSeries K L 1) : ⁅x - (d : L), (u : L)⁆ = 0 := by
+    have hu : ⁅(d : L), (u : L)⁆ = ⁅x, (u : L)⁆ := by
+      have := congrArg (fun f : LieDerivation K (derivedSeries K L 1) (derivedSeries K L 1) ↦
+        (f u : L)) hd
+      simpa [δ, LieIdeal.ad_apply_apply, LieSubmodule.coe_bracket] using this
+    rw [sub_lie, hu, sub_self]
+  have hxdZ : x - (d : L) ∈ LieAlgebra.center K L := by
+    rw [LieModule.mem_maxTrivSubmodule]
+    intro y
+    have hmem : (⟨⁅x - (d : L), y⁆, LieAlgebra.lie_mem_derivedSeries_one _ y⟩ :
+        derivedSeries K L 1) ∈ LieAlgebra.center K (derivedSeries K L 1) := by
+      rw [LieModule.mem_maxTrivSubmodule]
+      intro u
+      apply Subtype.ext
+      rw [LieIdeal.coe_bracket_of_module, LieSubmodule.coe_bracket, ZeroMemClass.coe_zero]
+      have h1 : ⁅(u : L), x - (d : L)⁆ = 0 := by
+        rw [← lie_skew, hcomm u, neg_zero]
+      have h2 : ⁅x - (d : L), ⁅(u : L), y⁆⁆ = 0 :=
+        hcomm ⟨⁅(u : L), y⁆, LieAlgebra.lie_mem_derivedSeries_one (u : L) y⟩
+      rw [leibniz_lie, h1, zero_lie, zero_add, h2]
+    rw [hcenterD, LieSubmodule.mem_bot] at hmem
+    have hzero : ⁅x - (d : L), y⁆ = 0 := congrArg Subtype.val hmem
+    rw [← lie_skew, hzero, neg_zero]
+  have hx_eq : x = (x - (d : L)) + (d : L) := (sub_add_cancel x (d : L)).symm
+  rw [hx_eq]
+  exact (LieAlgebra.center K L ⊔ derivedSeries K L 1).add_mem
+    (le_sup_left (a := LieAlgebra.center K L) hxdZ)
+    (le_sup_right (b := derivedSeries K L 1) d.property)
+
+end KillingComplement
 
 /-! ### The structure theorem -/
 

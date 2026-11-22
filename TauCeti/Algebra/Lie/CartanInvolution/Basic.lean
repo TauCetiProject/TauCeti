@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
+import TauCeti.Algebra.Lie.Hom
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
-import TauCeti.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # Cartan involutions
@@ -28,11 +26,10 @@ skew-adjoint for `x ∈ 𝔨` and self-adjoint for `x ∈ 𝔭` (see
 `TauCeti.Algebra.Lie.CartanInvolution.Decomposition`). This file adds the sign of the Killing
 form: it is negative definite on `𝔨` and positive definite on `𝔭`. Consequently the Killing form
 of `L` is nondegenerate, so a Lie algebra with a Cartan involution is semisimple; `𝔭` is the
-Killing-orthogonal complement of `𝔨`, so a Cartan involution is determined by `𝔨`; `𝔨` carries
-the negative definite invariant form `B|_𝔨`, so that `𝔨` is reductive and is the direct sum of
-its centre and its derived algebra, the latter semisimple with negative definite Killing form; and
-over `ℝ`, self-adjointness of `ad x` for `x ∈ 𝔭` with respect to `B_θ` yields diagonalizability
-of `ad x`.
+Killing-orthogonal complement of `𝔨`, so a Cartan involution is determined by `𝔨`; and `𝔨`
+carries the negative definite invariant form `B|_𝔨`, so that `𝔨` is reductive and is the direct
+sum of its centre and its derived algebra, the latter semisimple with negative definite Killing
+form.
 
 ## Main definitions
 
@@ -56,9 +53,6 @@ of `ad x`.
   `LieEquiv.IsCartanInvolution.killingForm_derivedSeries_fixedSubalgebra_self_neg`: `𝔨` is
   reductive and splits as the direct sum of its centre and its derived algebra, which is
   semisimple with negative definite Killing form.
-* `LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top` and
-  `LieEquiv.IsCartanInvolution.isSemisimple_ad`: over `ℝ`, `ad x` is diagonalizable for every
-  `x ∈ 𝔭`.
 
 ## References
 
@@ -71,119 +65,6 @@ public section
 open LieAlgebra LieModule
 
 namespace LieEquiv
-
-section General
-
-variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [LieRing L'] [LieAlgebra R L']
-
-/-- The `-1`-eigenspace of the identity automorphism is `⊥` when `2` is invertible. -/
-@[simp]
-theorem cartanP_refl [Invertible (2 : R)] :
-    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
-  ext x
-  simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
-  constructor
-  · intro hx
-    have h2 : (2 : R) • x = 0 := by
-      rw [two_smul]
-      exact eq_neg_iff_add_eq_zero.mp hx
-    simpa using congrArg ((⅟2 : R) • ·) h2
-  · rintro rfl
-    simp
-
-/-- An involutive Lie automorphism is its own inverse. -/
-theorem symm_eq_self_of_involutive {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :
-    θ.symm = θ :=
-  LieEquiv.ext fun x ↦ θ.symm_apply_eq.mpr (hθ x).symm
-
-/-- An intertwining Lie equivalence maps `θ.cartanP` onto `θ'.cartanP`. -/
-theorem map_cartanP (e : L ≃ₗ⁅R⁆ L') {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
-    (h : ∀ x, θ' (e x) = e (θ x)) :
-    θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := by
-  ext y
-  rw [Submodule.mem_map]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [mem_cartanP] at hx ⊢
-    simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, h, hx, map_neg]
-  · intro hy
-    refine ⟨e.symm y, ?_, by simp⟩
-    rw [mem_cartanP] at hy ⊢
-    apply e.injective
-    simp only [coe_toLieHom]
-    rw [← h, e.apply_symm_apply, hy, map_neg, e.apply_symm_apply]
-
-/-- `[𝔭, 𝔨] ⊆ 𝔭`: bracketing a `-1`-eigenvector with a fixed vector lands in `cartanP`. -/
-theorem lie_mem_cartanP_of_mem_cartanP_of_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L} {x y : L}
-    (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    ⁅x, y⁆ ∈ θ.cartanP := by
-  rw [← lie_skew]
-  exact neg_mem (lie_mem_cartanP hy hx)
-
-/-- Symmetric form of `B(𝔨, 𝔭) = 0`: `B(𝔭, 𝔨) = 0`. -/
-theorem killingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    killingForm R L x y = 0 := by
-  rw [LieModule.traceForm_comm]
-  exact killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hy hx
-
-/-- The twisted Killing form of the identity automorphism is minus the Killing form. -/
-@[simp]
-theorem twistedKillingForm_refl :
-    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).twistedKillingForm = -killingForm R L := by
-  ext x y
-  simp
-
-/-- An intertwining Lie equivalence is an isometry between the corresponding twisted Killing
-forms. -/
-theorem twistedKillingForm_map_map_of_intertwine (e : L ≃ₗ⁅R⁆ L')
-    {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'} (h : ∀ x, θ' (e x) = e (θ x)) (x y : L) :
-    θ'.twistedKillingForm (e x) (e y) = θ.twistedKillingForm x y := by
-  simp only [twistedKillingForm_apply, h, killingForm_of_equiv_apply]
-
-/-- On `𝔨` in the right argument, `B_θ(x, y) = -B(x, y)`. -/
-theorem twistedKillingForm_apply_of_mem_fixedSubalgebra_right (θ : L ≃ₗ⁅R⁆ L) {x y : L}
-    (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    θ.twistedKillingForm x y = -killingForm R L x y := by
-  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hy
-  simp [hy]
-
-/-- On `𝔭` in the right argument, `B_θ(x, y) = B(x, y)`. -/
-theorem twistedKillingForm_apply_of_mem_cartanP_right (θ : L ≃ₗ⁅R⁆ L) {x y : L}
-    (hy : y ∈ θ.cartanP) :
-    θ.twistedKillingForm x y = killingForm R L x y := by
-  rw [mem_cartanP] at hy
-  simp [hy]
-
-/-- `𝔨` and `𝔭` are orthogonal for `B_θ` over a base ring without additive torsion. -/
-theorem twistedKillingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
-    θ.twistedKillingForm x y = 0 := by
-  rw [θ.twistedKillingForm_apply_of_mem_cartanP_right hy]
-  exact killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hx hy
-
-/-- Symmetric form of `B_θ(𝔨, 𝔭) = 0`: `B_θ(𝔭, 𝔨) = 0`. -/
-theorem twistedKillingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra [IsAddTorsionFree R]
-    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.cartanP) (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
-    θ.twistedKillingForm x y = 0 := by
-  rw [θ.twistedKillingForm_apply_of_mem_fixedSubalgebra_right hy,
-    killingForm_eq_zero_of_mem_cartanP_of_mem_fixedSubalgebra hx hy, neg_zero]
-
-/-- For an involutive automorphism `θ`, the `B_θ`-adjoint of `ad x` is `-ad (θ x)`. -/
-theorem isAdjointPair_twistedKillingForm_ad {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ)
-    (x : L) :
-    LinearMap.IsAdjointPair θ.twistedKillingForm θ.twistedKillingForm (ad R L x)
-      (-ad R L (θ x)) := by
-  intro y z
-  simp only [twistedKillingForm_apply, ad_apply, Pi.neg_apply, map_neg, neg_neg]
-  have h1 : killingForm R L ⁅x, y⁆ (θ z) = -killingForm R L y ⁅x, θ z⁆ := by
-    rw [← lie_skew x y, map_neg, LinearMap.neg_apply, LieModule.traceForm_apply_lie_apply]
-  have h2 : ⁅x, θ z⁆ = θ ⁅θ x, z⁆ := by
-    rw [map_lie, hθ x]
-  rw [h1, neg_neg, h2]
-
-end General
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 
@@ -230,23 +111,18 @@ omit [IsStrictOrderedRing K] in
 theorem isCartanInvolution_iff_of_intertwine {L' : Type*} [LieRing L'] [LieAlgebra K L']
     (e : L ≃ₗ⁅K⁆ L') {θ : L ≃ₗ⁅K⁆ L} {θ' : L' ≃ₗ⁅K⁆ L'} (h : ∀ x, θ' (e x) = e (θ x)) :
     θ'.IsCartanInvolution ↔ θ.IsCartanInvolution := by
-  constructor
-  · intro hθ'
-    refine ⟨fun x ↦ e.injective ?_, fun x hx ↦ ?_⟩
-    · simp only [coe_toLieHom]
-      rw [← h, ← h, hθ'.involutive (e x)]
-    · rw [LinearMap.BilinMap.toQuadraticMap_apply,
-        ← twistedKillingForm_map_map_of_intertwine e h x x]
-      exact hθ'.posDef_twistedKillingForm (e x) (by simpa using hx)
-  · intro hθ
-    refine ⟨fun y ↦ ?_, fun y hy ↦ ?_⟩
-    · obtain ⟨x, rfl⟩ := e.surjective y
-      simp only [coe_toLieHom]
-      rw [h, h, hθ.involutive x]
-    · obtain ⟨x, rfl⟩ := e.surjective y
-      simp only [coe_toLieHom, LinearMap.BilinMap.toQuadraticMap_apply]
-      rw [twistedKillingForm_map_map_of_intertwine e h x x]
-      exact hθ.posDef_twistedKillingForm x (fun hx ↦ hy (by simp [hx]))
+  refine ⟨fun hθ' ↦ ⟨(e.toLinearEquiv.toEquiv.involutive_iff_of_intertwine h).mp hθ'.involutive,
+      fun x hx ↦ ?_⟩,
+    fun hθ ↦ ⟨(e.toLinearEquiv.toEquiv.involutive_iff_of_intertwine h).mpr hθ.involutive,
+      fun y hy ↦ ?_⟩⟩
+  · rw [LinearMap.BilinMap.toQuadraticMap_apply,
+      ← twistedKillingForm_map_map_of_intertwine e h x x]
+    exact hθ'.posDef_twistedKillingForm (e x) (by simpa using hx)
+  · obtain ⟨x, hx⟩ := e.surjective y
+    rw [← hx, LinearMap.BilinMap.toQuadraticMap_apply]
+    change 0 < θ'.twistedKillingForm (e x) (e x)
+    rw [twistedKillingForm_map_map_of_intertwine e h x x]
+    exact hθ.posDef_twistedKillingForm x (fun hx0 ↦ hy (by rw [← hx, hx0, map_zero]))
 
 omit [IsStrictOrderedRing K] in
 /-- Conjugating a Lie automorphism by a Lie equivalence preserves the Cartan-involution
@@ -309,21 +185,26 @@ theorem killingForm_apply_self_pos_of_mem_cartanP (hθ : θ.IsCartanInvolution) 
   have := hθ.killingForm_apply_apply_neg hx₀
   rwa [mem_cartanP.mp hx, map_neg, neg_lt_zero] at this
 
+omit [IsStrictOrderedRing K] in
 /-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
 theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L := by
   refine ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <|
     (LieIdeal.coe_killingCompl_top K L).trans (eq_bot_iff.mpr fun x hx ↦ ?_)⟩
   by_contra hx₀
-  have := hθ.killingForm_apply_apply_neg hx₀
-  rw [LinearMap.mem_ker.mp hx, LinearMap.zero_apply] at this
-  exact this.false
+  have hpos := hθ.twistedKillingForm_self_pos hx₀
+  have h0 : killingForm K L x (θ x) = 0 := by
+    simpa using LinearMap.congr_fun (LinearMap.mem_ker.mp hx) (θ x)
+  rw [twistedKillingForm_apply, h0, neg_zero] at hpos
+  exact lt_irrefl 0 hpos
 
+omit [IsStrictOrderedRing K] in
 /-- A Lie algebra with a Cartan involution is finite-dimensional, since its Killing form is
 nondegenerate. -/
 theorem finiteDimensional (hθ : θ.IsCartanInvolution) : FiniteDimensional K L :=
   have := hθ.isKilling
   TauCeti.finite_of_isKilling
 
+omit [IsStrictOrderedRing K] in
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.isKilling
@@ -402,27 +283,6 @@ theorem hasCentralRadical_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
     isSymm_negKillingFormFixed.isRefl (posDef_negKillingFormFixed hθ).anisotropic
     lieInvariant_negKillingFormFixed
 
-/-- The centre and derived ideal of `𝔨` are orthogonal for the ambient Killing form `B|_𝔨`. -/
-theorem killingForm_eq_zero_of_mem_center_of_mem_derivedSeries_fixedSubalgebra
-    (hθ : θ.IsCartanInvolution) {z d : θ.toLieHom.fixedSubalgebra}
-    (hz : z ∈ center K θ.toLieHom.fixedSubalgebra)
-    (hd : d ∈ derivedSeries K θ.toLieHom.fixedSubalgebra 1) :
-    killingForm K L (z : L) (d : L) = 0 := by
-  have := hθ.finiteDimensional
-  have hnd : (negKillingFormFixed θ).Nondegenerate :=
-    LinearMap.BilinForm.nondegenerate_of_anisotropic _
-      (posDef_negKillingFormFixed hθ).anisotropic
-  have hortho := LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center
-    (negKillingFormFixed θ) hnd.2 lieInvariant_negKillingFormFixed
-  have hz' : z ∈ (negKillingFormFixed θ).orthogonal
-      (derivedSeries K θ.toLieHom.fixedSubalgebra 1).toSubmodule := by
-    rw [← LieAlgebra.InvariantForm.orthogonal_toSubmodule (L := θ.toLieHom.fixedSubalgebra)
-      (negKillingFormFixed θ) lieInvariant_negKillingFormFixed, hortho]
-    exact hz
-  have h0 := (LinearMap.BilinForm.mem_orthogonal_iff.mp hz') d hd
-  rw [negKillingFormFixed_apply, neg_eq_zero, LieModule.traceForm_comm] at h0
-  exact h0
-
 /-- The derived algebra of the fixed subalgebra `𝔨` of a Cartan involution has negative definite
 Killing form. -/
 theorem killingForm_derivedSeries_fixedSubalgebra_self_neg (hθ : θ.IsCartanInvolution)
@@ -434,33 +294,5 @@ theorem killingForm_derivedSeries_fixedSubalgebra_self_neg (hθ : θ.IsCartanInv
     x hx
 
 end IsCartanInvolution
-
-section Real
-
-variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
-
-namespace IsCartanInvolution
-
-/-- **Diagonalizability of `ad x` on `𝔭`.** For a Cartan involution of a real Lie algebra and
-every `x ∈ 𝔭`, the eigenspaces of `ad x` over `ℝ` span `L`. -/
-theorem iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution)
-    {x : L} (hx : x ∈ θ.cartanP) :
-    ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ := by
-  have : FiniteDimensional ℝ L := hθ.finiteDimensional
-  exact LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top
-    (fun _ ↦ hθ.twistedKillingForm_self_pos)
-    ((LinearMap.mem_selfAdjointSubmodule _).mp
-      (θ.ad_mem_selfAdjointSubmodule_twistedKillingForm hx))
-
-/-- For a Cartan involution of a real Lie algebra and every `x ∈ 𝔭`, the adjoint operator `ad x`
-is semisimple. -/
-theorem isSemisimple_ad {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution)
-    {x : L} (hx : x ∈ θ.cartanP) :
-    (ad ℝ L x).IsSemisimple :=
-  TauCeti.isSemisimple_of_iSup_eigenspace_eq_top (hθ.iSup_eigenspace_ad_eq_top hx)
-
-end IsCartanInvolution
-
-end Real
 
 end LieEquiv

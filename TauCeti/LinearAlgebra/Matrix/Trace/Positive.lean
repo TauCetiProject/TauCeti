@@ -13,11 +13,16 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 Nonnegative diagonal weights give a positive functional on matrices. Strictly positive weights
 make this functional faithful on squares, including for rectangular matrices. These facts allow
 finite matrix representations with nonuniform weights to detect null vectors of trace forms.
+
+For nonzero matrices over a strictly ordered ring, `(X * Xᵀ).trace` is strictly positive
+(`Matrix.trace_mul_transpose_pos`).
 -/
 
 public section
 
 namespace Matrix
+
+section
 
 variable {R m n : Type*} [Ring R] [PartialOrder R] [StarRing R] [IsOrderedRing R]
   [Fintype m] [Fintype n] [DecidableEq n]
@@ -51,5 +56,23 @@ theorem trace_diagonal_mul_conjTranspose_mul_self_eq_zero_iff
     exact trace_conjTranspose_mul_self_eq_zero_iff.mp (by simp [trace, hdiag])
   · rintro rfl
     simp
+
+end
+
+/-- The trace of `X * Xᵀ` is strictly positive for any nonzero matrix `X` over a strictly ordered
+commutative ring. -/
+theorem trace_mul_transpose_pos {K m n : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
+    [Fintype m] [Fintype n] {X : Matrix m n K} (hX : X ≠ 0) :
+    0 < (X * Xᵀ).trace := by
+  have htr : (X * Xᵀ).trace = Xᵀ.vec ⬝ᵥ Xᵀ.vec := by
+    rw [Matrix.vec_dotProduct_vec, Matrix.transpose_transpose]
+  have hnonneg : 0 ≤ (X * Xᵀ).trace := by
+    rw [htr]
+    exact Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _
+  have hne : (X * Xᵀ).trace ≠ 0 := by
+    rw [htr, ne_eq, dotProduct_self_eq_zero, Matrix.vec_eq_zero_iff]
+    intro h
+    exact hX (Matrix.transpose_injective (h.trans Matrix.transpose_zero.symm))
+  exact lt_of_le_of_ne hnonneg hne.symm
 
 end Matrix

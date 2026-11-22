@@ -38,8 +38,12 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 ## Main results
 
+* `LinearMap.BilinForm.center_le_orthogonal_derivedSeries_one`: for any invariant form over a
+  commutative ring, the centre is contained in the orthogonal complement of the derived ideal.
 * `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
   form, the orthogonal complement of the derived ideal is the centre.
+* `LieSubalgebra.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries`: the centre and derived
+  ideal of any Lie subalgebra are orthogonal for the ambient Killing form.
 * `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
   invariance.
 * `LinearMap.BilinForm.lieInvariant_of_isTrivial`: every form on a trivial Lie module is
@@ -127,30 +131,54 @@ open LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
 
+/-- For any invariant bilinear form over a commutative ring, the centre is contained in the
+orthogonal complement of the derived ideal. -/
+theorem center_le_orthogonal_derivedSeries_one (B : LinearMap.BilinForm K L)
+    (hinv : B.lieInvariant L) :
+    center K L ≤ LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) := by
+  intro z hz
+  rw [LieAlgebra.InvariantForm.mem_orthogonal]
+  intro d hd
+  rw [LieModule.mem_maxTrivSubmodule] at hz
+  have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
+    rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨x, y, rfl⟩
+    rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
+      map_zero, neg_zero]
+  simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+
 /-- The orthogonal complement of the derived ideal for a right-separating invariant form
 is the centre. -/
 theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
     (hB : B.SeparatingRight) (hinv : B.lieInvariant L) :
     LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) = center K L := by
-  ext z
-  rw [LieAlgebra.InvariantForm.mem_orthogonal, LieModule.mem_maxTrivSubmodule]
-  constructor
-  · intro hz x
-    apply hB
-    intro y
-    have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
-      LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
-    exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
-  · intro hz d hd
-    have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
-      rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨x, y, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
-        map_zero, neg_zero]
-    simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+  refine le_antisymm ?_ (center_le_orthogonal_derivedSeries_one B hinv)
+  intro z hz
+  rw [LieAlgebra.InvariantForm.mem_orthogonal] at hz
+  rw [LieModule.mem_maxTrivSubmodule]
+  intro x
+  apply hB
+  intro y
+  have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
+    LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
+  exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
 
 end LinearMap.BilinForm
+
+/-- For any Lie subalgebra `H` over a commutative ring `R`, the centre and derived ideal of `H`
+are orthogonal for the ambient Killing form `killingForm R L`. -/
+theorem LieSubalgebra.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries
+    {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (H : LieSubalgebra R L)
+    {z d : H} (hz : z ∈ LieAlgebra.center R H) (hd : d ∈ LieAlgebra.derivedSeries R H 1) :
+    killingForm R L (z : L) (d : L) = 0 := by
+  let B : LinearMap.BilinForm R H :=
+    (killingForm R L).compl₁₂ H.incl.toLinearMap H.incl.toLinearMap
+  have hinv : B.lieInvariant H :=
+    (_root_.LieModule.traceForm_lieInvariant R L L).compl₁₂ H.incl
+  have hz' := LinearMap.BilinForm.center_le_orthogonal_derivedSeries_one B hinv hz
+  rw [LieAlgebra.InvariantForm.mem_orthogonal] at hz'
+  simpa [B, _root_.LieModule.traceForm_comm] using hz' d hd
 
 namespace TauCeti.LieModule
 

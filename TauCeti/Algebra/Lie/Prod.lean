@@ -418,9 +418,8 @@ noncomputable def LieIdeal.prodEquivOfIsCompl (I J : LieIdeal R L) (h : IsCompl 
     map_lie' {p q} := by
       have hIJ (x : I) (y : J) : ⁅(x : L), (y : L)⁆ = 0 := by
         have hmem : ⁅(x : L), (y : L)⁆ ∈ I ⊓ J :=
-          ⟨lie_mem_left R L I x y x.property, J.lie_mem y.property⟩
-        rw [h.inf_eq_bot] at hmem
-        exact hmem
+          (LieSubmodule.lie_le_inf I J) (LieSubmodule.lie_mem_lie x.property y.property)
+        rwa [h.inf_eq_bot, LieSubmodule.mem_bot] at hmem
       have hJI (y : J) (x : I) : ⁅(y : L), (x : L)⁆ = 0 := by
         rw [← lie_skew, hIJ x y, neg_zero]
       simp [lie_add, add_lie, hIJ, hJI] }

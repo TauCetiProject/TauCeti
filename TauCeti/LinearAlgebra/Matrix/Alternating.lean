@@ -30,7 +30,9 @@ covers every ring of odd characteristic.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
   zero, with `Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP` reading that off an odd
   characteristic.
-* `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
+* `Matrix.trace_eq_zero_of_transpose_eq_neg_of_add_self` and
+  `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when doubling is injective at
+  zero, or when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
 * `Matrix.eta_fin_four_of_transpose_eq_neg`: a `4 × 4` such matrix written out in terms of its six
@@ -93,11 +95,17 @@ theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : M
   nth_rewrite 1 [h]
   rw [neg_add_cancel]
 
+/-- **A matrix equal to the negative of its transpose has trace zero**, as soon as zero is the only
+entry that doubles to zero. -/
+theorem trace_eq_zero_of_transpose_eq_neg_of_add_self [Fintype n] [AddCommGroup S]
+    (X : Matrix n n S) (hX : Xᵀ = -X) (h2 : ∀ x : S, x + x = 0 → x = 0) : trace X = 0 :=
+  Finset.sum_eq_zero fun a _ => diag_eq_zero_of_transpose_eq_neg hX h2 a
+
 /-- A skew-symmetric matrix has trace zero when `2` is invertible. -/
 theorem trace_eq_zero_of_transpose_eq_neg {R : Type*} [Fintype n] [Ring R]
-    [Invertible (2 : R)] (X : Matrix n n R) (hX : Xᵀ = -X) : trace X = 0 := by
-  exact Finset.sum_eq_zero fun a _ => diag_eq_zero_of_transpose_eq_neg hX
-    (isUnit_of_invertible (2 : R)).eq_zero_of_add_self_eq_zero a
+    [Invertible (2 : R)] (X : Matrix n n R) (hX : Xᵀ = -X) : trace X = 0 :=
+  trace_eq_zero_of_transpose_eq_neg_of_add_self X hX
+    (isUnit_of_invertible (2 : R)).eq_zero_of_add_self_eq_zero
 
 /-- **In a ring of odd characteristic the diagonal of a matrix equal to the negative of its
 transpose vanishes**: odd characteristic implies that doubling is injective at zero, which

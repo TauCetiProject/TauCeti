@@ -70,6 +70,10 @@ whole algebra.
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
   only solvable one, whose quotient has trivial radical.
+* `LieEquiv.apply_mem_derivedSeries_iff`, `LieEquiv.derivedSeriesCongr`,
+  `LieEquiv.coe_derivedSeriesCongr`, `LieEquiv.derivedSeriesCongr_symm`,
+  `LieEquiv.involutive_derivedSeriesCongr`: a Lie equivalence transports membership in every term
+  of the derived series and induces an equivalence on each term.
 
 ## References
 
@@ -323,3 +327,47 @@ theorem hasTrivialRadical_quotient_iff [IsNoetherian R L] (I : LieIdeal R L) [Is
     fun h => h ▸ hasTrivialRadical_quotient_radical R L⟩
 
 end LieAlgebra
+
+namespace LieEquiv
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+private theorem map_derivedSeries_eq (e : L ≃ₗ⁅R⁆ L') (k : ℕ) :
+    (derivedSeries R L k).map e.toLieHom = derivedSeries R L' k :=
+  LieIdeal.derivedSeries_map_eq k e.surjective
+
+/-- A Lie equivalence preserves membership in every term of the derived series. -/
+@[simp]
+theorem apply_mem_derivedSeries_iff (e : L ≃ₗ⁅R⁆ L') (k : ℕ) {x : L} :
+    e x ∈ derivedSeries R L' k ↔ x ∈ derivedSeries R L k := by
+  rw [← e.map_derivedSeries_eq k, LieIdeal.mem_map_equiv]
+  simp
+
+/-- The Lie equivalence on the `k`-th term of the derived series induced by a Lie equivalence. -/
+def derivedSeriesCongr (e : L ≃ₗ⁅R⁆ L') (k : ℕ) :
+    derivedSeries R L k ≃ₗ⁅R⁆ derivedSeries R L' k :=
+  e.ofSubalgebras (derivedSeries R L k).toLieSubalgebra (derivedSeries R L' k).toLieSubalgebra <| by
+    ext x
+    simp only [LieSubalgebra.mem_map]
+    exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ (e.apply_mem_derivedSeries_iff k).mpr hy,
+      fun hx ↦ ⟨e.symm x, (e.apply_mem_derivedSeries_iff k).mp (by simpa using hx), by simp⟩⟩
+
+/-- `derivedSeriesCongr` agrees with `e` on underlying elements. -/
+@[simp]
+theorem coe_derivedSeriesCongr (e : L ≃ₗ⁅R⁆ L') (k : ℕ) (x : derivedSeries R L k) :
+    (e.derivedSeriesCongr k x : L') = e x := by
+  rfl
+
+/-- `derivedSeriesCongr` commutes with `.symm`. -/
+@[simp]
+theorem derivedSeriesCongr_symm (e : L ≃ₗ⁅R⁆ L') (k : ℕ) :
+    (e.derivedSeriesCongr k).symm = e.symm.derivedSeriesCongr k := by
+  ext x
+  rfl
+
+/-- `derivedSeriesCongr` preserves involutivity. -/
+theorem involutive_derivedSeriesCongr {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) (k : ℕ) :
+    Function.Involutive (θ.derivedSeriesCongr k) :=
+  fun x ↦ Subtype.ext (hθ x)
+
+end LieEquiv

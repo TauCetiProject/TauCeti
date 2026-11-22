@@ -12,8 +12,9 @@ public import Mathlib.Algebra.Lie.Basic
 
 Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
 construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
-intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
-actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`).
+intertwining homomorphisms, self-inverses for involutive automorphisms
+(`LieEquiv.symm_eq_self_of_involutive`), and intertwining of inverse equivalences on Lie
+algebras and bracket actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`).
 -/
 
 public section
@@ -36,6 +37,11 @@ theorem comp_intertwines (u : L →ₗ⁅R⁆ M) (v : M →ₗ⁅R⁆ N)
 end LieHom
 
 namespace LieEquiv
+
+/-- An involutive Lie automorphism is its own inverse. -/
+theorem symm_eq_self_of_involutive {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :
+    θ.symm = θ :=
+  LieEquiv.ext fun x ↦ θ.symm_apply_eq.mpr (hθ x).symm
 
 /-- Construct a `LieEquiv` from two mutually inverse `LieHom`s. -/
 def ofLieHoms (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ L)
