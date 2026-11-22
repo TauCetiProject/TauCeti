@@ -117,6 +117,26 @@ def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
       signFiber R (p := proj) (deck (F := F) (E := E) (ι := ι)) (funext proj_deck) x.as :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x
 
+/-- Read through `TauCeti.VectorBundleOrientationCover.signLocalSystem_def`, the fibre of the
+orientation local system is identified with the module of sign functions as by
+`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`. -/
+theorem signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app
+    (x : FundamentalGroupoid (TopCat.of B)) (g : (signLocalSystem F E R hι).obj x) :
+    (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x
+        ((eqToIso (signLocalSystem_def hι)).hom.app x g) =
+      signLocalSystemObjEquiv hι x g :=
+  (rfl)
+
+/-- The inverse form of
+`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app`.
+-/
+theorem signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_inv_app
+    (x : FundamentalGroupoid (TopCat.of B))
+    (g : ((isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck).obj x) :
+    signLocalSystemObjEquiv hι x ((eqToIso (signLocalSystem_def hι)).inv.app x g) =
+      (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x g :=
+  (rfl)
+
 /-- Transport in the orientation local system precomposes with path lifting along the inverse
 path in the orientation double cover. -/
 @[simp]
@@ -158,6 +178,36 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     Subtype.ext (by simp [deck_apply])
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
   exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).property _
+
+/-- Evaluation at the opposite orientation is the negative of evaluation at `o`, stated for the
+inverse equivalences. -/
+theorem signLocalSystemFiberEquiv_neg_symm {b : B} (o : Orientation ℝ (E b) ι) :
+    (signLocalSystemFiberEquiv (R := R) hι (-o)).symm.toLinearMap =
+      -(signLocalSystemFiberEquiv (R := R) hι o).symm.toLinearMap := by
+  refine LinearMap.ext fun r ↦ (signLocalSystemFiberEquiv hι o).injective ?_
+  have h := signLocalSystemFiberEquiv_neg hι o ((signLocalSystemFiberEquiv hι (-o)).symm r)
+  rw [LinearEquiv.apply_symm_apply] at h
+  rw [LinearMap.neg_apply, map_neg, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply]
+  exact (neg_eq_iff_eq_neg.2 h).symm
+
+/-- Transport in the orientation local system along a path which lifts, in the orientation double
+cover, from the orientation `o` at its start to the orientation `o'` at its end carries the value at
+`o` to the value at `o'`. -/
+theorem signLocalSystemFiberEquiv_map {b b' : B}
+    (p : FundamentalGroupoid.mk b ⟶ FundamentalGroupoid.mk b') {o : Orientation ℝ (E b) ι}
+    {o' : Orientation ℝ (E b') ι}
+    (h : (isCoveringMap_proj (F := F) (E := E) hι).monodromy p ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b', o'⟩, rfl⟩)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
+    signLocalSystemFiberEquiv hι o' ((signLocalSystem F E R hι).map p f) =
+      signLocalSystemFiberEquiv hι o f := by
+  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply,
+    signLocalSystemObjEquiv_map_apply, ← h, ← IsCoveringMap.monodromy_trans_apply]
+  -- Monodromy along `p` followed by its inverse is the identity of the fibre.
+  have h' := congrArg (fun a ↦ (isCoveringMap_proj (F := F) (E := E) hι).monodromy a
+    (⟨⟨b, o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))))
+    (IsIso.hom_inv_id p)
+  exact congrArg _ (h'.trans (congrFun (isCoveringMap_proj (F := F) (E := E) hι).monodromy_refl _))
 
 /-- Every loop at `b` acts by `1` or by `-1` on the fibre of the orientation local system over
 `b`. -/

@@ -43,6 +43,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
 * `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
+* `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
@@ -67,6 +68,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.isSMulRegular_quotient_smul_top_congr` and
   `Ideal.isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem`: regularity of a scalar on `M ⧸ I • M`
   depends only on its class modulo `I`, up to multiplication by units.
+* `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: a scalar that is a unit modulo `I` is
+  regular on `M ⧸ I • M`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -201,6 +204,31 @@ theorem map_comp_quotEquivOfEq (x : R) (f : M →ₗ[R] N) :
   Submodule.linearMap_qext _ rfl
 
 end QuotSMulTop
+
+namespace Module.IsTorsionBy
+
+variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- Modulo an element killing `M`, the module is unchanged: `M ⧸ x M ≃ M` when `x • M = 0`. -/
+noncomputable def quotSMulTopEquiv {x : R} (hx : Module.IsTorsionBy R M x) :
+    QuotSMulTop x M ≃ₗ[R] M :=
+  Submodule.quotEquivOfEqBot _ <| eq_bot_iff.2 fun _ hy ↦ by
+    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
+    exact (Submodule.mem_bot R).2 (@hx y)
+
+/-- The identification `M ⧸ x M ≃ M` sends the residue class of `m` to `m`. -/
+@[simp]
+theorem quotSMulTopEquiv_mk {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.quotSMulTopEquiv (Submodule.Quotient.mk m) = m := by
+  rw [quotSMulTopEquiv, Submodule.quotEquivOfEqBot_apply_mk]
+
+/-- The inverse of the identification `M ⧸ x M ≃ M` sends `m` to its residue class. -/
+@[simp]
+theorem quotSMulTopEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.quotSMulTopEquiv.symm m = Submodule.Quotient.mk m :=
+  (LinearEquiv.symm_apply_eq _).2 (quotSMulTopEquiv_mk hx m).symm
+
+end Module.IsTorsionBy
 
 namespace Ideal
 
@@ -359,6 +387,14 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+/-- A scalar that is a unit modulo `I` is regular on `M ⧸ I • M`. -/
+theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {a : R}
+    (ha : IsUnit (Ideal.Quotient.mk I a)) : IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a := by
+  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective ha.unit⁻¹.val
+  have hmem : y * a - 1 ∈ I := by
+    rw [← Ideal.Quotient.eq, map_mul, hy, map_one, IsUnit.val_inv_mul]
+  exact ((I.isSMulRegular_quotient_smul_top_congr hmem).mpr (IsSMulRegular.one _)).of_mul
 
 end Ring
 
