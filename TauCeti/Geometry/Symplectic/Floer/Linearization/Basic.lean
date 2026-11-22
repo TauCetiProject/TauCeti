@@ -25,20 +25,26 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
 complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
-(`floerLinearization_const_eq`). On a direction multiplied by a cutoff `β(s)` it acts as
+(`floerLinearization_const_eq`). On a direction multiplied by a function `f` of both variables it
+acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`), so that
+`‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` where `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`
+(`norm_floerLinearization_fun_smul_sq_le`). On a direction multiplied by a cutoff `β(s)` it acts as
 `β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case of the same rule for any operator
 `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Line`); in particular, conjugated by an exponential
-weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). On a direction
-multiplied by a function `f` of both variables it acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ`
-(`floerLinearization_fun_smul`, from `TauCeti.cauchyRiemann_fun_smul`), so the factor changes it
-only by a zeroth-order term (`norm_floerLinearization_fun_smul_sub_le`). Its value at a point
-depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), and
-on the Floer data only through their values at that point (`floerLinearization_congr_data`). For
-`C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction are
-`C¹` (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
-(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite, and its square
-is integrable on a compactly supported direction (`integrable_norm_floerLinearization_sq`).
+weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). A factor `f`
+changes the operator only by a zeroth-order term (`norm_floerLinearization_fun_smul_sub_le`). Its
+value at a point depends only on the germ of the direction there
+(`floerLinearization_congr_of_eventuallyEq`), so it vanishes off the support of the direction
+(`floerLinearization_of_notMem_tsupport`), and on the Floer data only through their values at that
+point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²` Hamiltonians it is
+continuous wherever the map and the direction are `C¹` (`continuousAt_floerLinearization`), and
+continuous everywhere when they are so everywhere (`continuous_floerLinearization`), or when the
+direction is supported in an open set on which the data are regular
+(`continuous_floerLinearization_of_tsupport_subset`), so its `L²` norms over compact sets are
+finite. A compactly supported direction has a compactly supported image
+(`hasCompactSupport_floerLinearization`), whose square norm is then integrable
+(`integrable_norm_floerLinearization_sq`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
@@ -237,12 +243,69 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
+/-- **Multiplying by a function.** If `f` and `ξ` are differentiable at `z`, the linearized Floer
+operator at `z` sends `f ξ` to `f D ξ + (∂s f) ξ + (∂t f) J ξ`. -/
+theorem floerLinearization_fun_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z =
+      f z • ω.floerLinearization J Ks Kt u ξ z + fderiv ℝ f z stdComplexLineReal • ξ z +
+        fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z) := by
+  rw [floerLinearization_def, fderiv_fun_smul hf hξ, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_smul, map_add,
+    map_sub]
+  module
+
+/-- **The operator on a cut-off direction, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` at
+`z`, then `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` at `z`. -/
+theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z)
+    (hf₁ : |f z| ≤ 1) {M B : ℝ} (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
+    ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
+      2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖ξ z‖ ^ 2 := by
+  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
+  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ ≤ M * ‖ξ z‖ := by
+    rw [norm_smul]
+    gcongr
+    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
+  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ ≤ M * (B * ‖ξ z‖) := by
+    rw [norm_smul]
+    gcongr
+    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
+    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
+  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
+  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
+    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
+  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
+    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
+  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
+      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
+      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
+    nlinarith
+  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
+        gcongr
+    _ ≤ _ := by
+        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
+          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
+
 /-- The linearization at `z` depends only on the germ of the direction at `z`. -/
 theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u : ℝ × ℝ → V) {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The linearized Floer operator vanishes off the support of the direction. -/
+theorem floerLinearization_of_notMem_tsupport (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
+    {z : ℝ × ℝ} (hz : z ∉ tsupport ξ) : ω.floerLinearization J Ks Kt u ξ z = 0 := by
+  rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
+    (notMem_tsupport_iff_eventuallyEq.1 hz)]
+  exact ω.floerLinearization_zero J Ks Kt u z
 
 /-- **The linearized operator of a translate.** The linearized Floer operator of the data
 `w ↦ (J, K_s, K_t, u) (w + v)` in the direction `w ↦ ξ (w + v)` at `z` is the linearized operator of
@@ -306,17 +369,6 @@ theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V
     show ∀ a b c b' c' : V, a + b + c - (a + b' + c') = (b - b') + (c - c') by
       intro a b c b' c'; abel, ← sub_apply, ← sub_apply]
   exact (norm_add_le _ _).trans (add_le_add (le_opNorm _ _) (le_opNorm _ _))
-
-/-- **Multiplying by a scalar function.** If `f` and `ξ` are differentiable at `z`, the
-linearization at `z` sends `f ξ` to `f(z) D ξ + (∂s f) ξ + (∂t f) J ξ`. -/
-theorem floerLinearization_fun_smul (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
-    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z =
-      f z • ω.floerLinearization J Ks Kt u ξ z + fderiv ℝ f z stdComplexLineReal • ξ z +
-        fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z) := by
-  simp only [floerLinearization_eq_add]
-  exact cauchyRiemann_fun_smul (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hf hξ
 
 /-- **The derivative of a scalar factor adds a zeroth-order term.** If `‖df‖ ≤ B` and
 `‖J(z, u z)‖ ≤ N` at `z`, then `D(f ξ) - f D ξ` has norm at most `B (1 + N) ‖ξ‖` there. -/
@@ -430,6 +482,24 @@ theorem continuousAt_floerLinearization (ω : SymplecticForm V)
   exact ((hdξ _).add (hJu.clm_apply (hdξ _))).add
     ((ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu).clm_apply hξ.continuousAt)
 
+/-- The linearized Floer operator in a direction `ξ` supported in an open set `U` is continuous
+when the data are regular along `u` on `U`. -/
+theorem continuous_floerLinearization_of_tsupport_subset (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
+    (hJ : ∀ z ∈ U, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z) (hξ : ContDiff ℝ 1 ξ) (hξU : tsupport ξ ⊆ U) :
+    Continuous (ω.floerLinearization J Ks Kt u ξ) := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  by_cases hz : z ∈ U
+  · exact ω.continuousAt_floerLinearization (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+      hξ.contDiffAt
+  · have h : ω.floerLinearization J Ks Kt u ξ =ᶠ[nhds z] fun _ ↦ 0 :=
+      Filter.mem_of_superset ((isClosed_tsupport ξ).isOpen_compl.mem_nhds fun h ↦ hz (hξU h))
+        fun w hw ↦ ω.floerLinearization_of_notMem_tsupport J Ks Kt u hw
+    exact continuousAt_const.congr h.symm
+
 /-- **Global continuity of the linearization.** Let `u` and `ξ` be `C¹`, and let the coefficients
 `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point `(z, u z)`. Then the linearized
 Floer operator along `u` in the direction `ξ` is continuous. -/
@@ -439,24 +509,25 @@ theorem continuous_floerLinearization (ω : SymplecticForm V)
     (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
     (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
     (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
-  continuous_iff_continuousAt.2 fun z ↦
-    ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
+  ω.continuous_floerLinearization_of_tsupport_subset (U := Set.univ) (fun z _ ↦ hJ z)
+    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun _ _ ↦ hu.contDiffAt) hξ (Set.subset_univ _)
 
-/-- **Square integrability of the linearization.** Let `u` and `ξ` be `C¹`, with `ξ` compactly
-supported, and let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every
-point `(z, u z)`. Then `‖D_u ξ‖²` is integrable for every measure finite on compact sets. -/
+/-- The linearized Floer operator in a compactly supported direction is compactly supported. -/
+theorem hasCompactSupport_floerLinearization (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
+    (hξ : HasCompactSupport ξ) : HasCompactSupport (ω.floerLinearization J Ks Kt u ξ) :=
+  hξ.mono' fun _ hz ↦ by_contra fun h ↦ hz (ω.floerLinearization_of_notMem_tsupport J Ks Kt u h)
+
+/-- Where the linearized Floer operator in a compactly supported direction is continuous, its
+square norm is integrable. -/
 theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
     {μ : MeasureTheory.Measure (ℝ × ℝ)} [MeasureTheory.IsFiniteMeasureOnCompacts μ]
-    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) :
-    MeasureTheory.Integrable (fun z ↦ ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) μ := by
-  refine (ω.continuous_floerLinearization hJ hKs hKt hu hξ).integrable_norm_sq_of_hasCompactSupport
-    (HasCompactSupport.intro hξc.isCompact fun z hz ↦ ?_)
-  rw [floerLinearization_congr_of_eventuallyEq _ _ _ _ _ (notMem_tsupport_iff_eventuallyEq.1 hz)]
-  simp
+    (hD : Continuous (ω.floerLinearization J Ks Kt u ξ)) (hξ : HasCompactSupport ξ) :
+    MeasureTheory.Integrable (fun z ↦ ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) μ :=
+  Continuous.integrable_of_hasCompactSupport (by fun_prop)
+    ((ω.hasCompactSupport_floerLinearization J Ks Kt u hξ).comp_left (g := fun v ↦ ‖v‖ ^ 2)
+      (by simp))
 
 /-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
 Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly

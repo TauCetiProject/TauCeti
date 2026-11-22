@@ -51,6 +51,8 @@ normed spaces:
   holomorphic change of coordinates.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
+* `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
+  `K ‖c‖`-Lipschitz.
 -/
 
 public section
@@ -227,5 +229,15 @@ theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   calc 0 < 2 * r := by positivity
     _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
     _ ≤ Metric.diam s := Metric.diam_mono hball hb
+
+/-- If a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is `K ‖c‖`-Lipschitz. -/
+theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [SeminormedRing 𝕜]
+    [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {K : NNReal} {f : α → 𝕜}
+    (hf : LipschitzWith K f) (c : E) : LipschitzWith (K * ‖c‖₊) fun y ↦ f y • c := by
+  have hc : LipschitzWith ‖c‖₊ fun r : 𝕜 ↦ r • c := .of_dist_le_mul fun r s ↦ by
+    rw [dist_eq_norm, dist_eq_norm, ← sub_smul, coe_nnNorm, mul_comm]
+    exact norm_smul_le _ _
+  rw [mul_comm]
+  exact hc.comp hf
 
 end

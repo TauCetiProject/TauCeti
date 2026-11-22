@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
@@ -217,10 +218,11 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) := by
   -- The energy of the translated end over `s` is that of `u ∘ φ` over `s + (R, 0)`.
-  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2)
-    (u ∘ realChart positive.cylindricalEndLift) (R, 0) ((· + ((R, 0) : ℝ × ℝ)) '' s)
+  have h := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) (R, 0)
+    ((· + ((R, 0) : ℝ × ℝ)) '' s)
   rw [preimage_image_eq _ (add_left_injective _)] at h
-  simp only [Prod.snd_add, add_zero, comp_apply] at h
+  simp only [floerEnergyDensity_constSmooth, Prod.snd_add, add_zero, comp_apply] at h
   rw [h]
   exact ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset hH hHs ha hu
     ((measurableEmbedding_addRight _).measurableSet_image' hs)

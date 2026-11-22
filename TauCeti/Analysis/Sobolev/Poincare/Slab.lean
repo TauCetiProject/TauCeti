@@ -456,8 +456,8 @@ theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im {η : ℂ �
   have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ Complex.equivRealProdCLM.symm) p (0, 1) =
       fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I := by
     rw [Complex.equivRealProdCLM.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe]
-    congr 1
+      ContinuousLinearEquiv.coe_coe, Complex.equivRealProdCLM_symm_apply (0, 1)]
+    simp
   simp only [hdη, Function.comp_apply] at hpoinc
   rw [← Complex.volume_preserving_equiv_real_prod.integral_comp'
       fun p ↦ ‖η (Complex.equivRealProdCLM.symm p)‖ ^ 2,

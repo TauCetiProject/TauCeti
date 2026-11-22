@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
@@ -13,6 +14,8 @@ public import Mathlib.Topology.Sets.Opens
 import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Complex.Isometry
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -33,6 +36,8 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
+(`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
 
 public section
@@ -163,6 +168,14 @@ theorem setLIntegral_reProdIm_comp_im (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (
   simp only [one_mul, lintegral_const, Measure.restrict_apply_univ] at h2
   rw [← h2, ← h]
   rfl
+
+/-- Multiplication by a complex number of modulus one preserves Lebesgue measure on `ℂ`, so it
+does not change integrals. -/
+theorem integral_comp_mul_left_of_norm_eq_one {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {c : ℂ} (hc : ‖c‖ = 1) (g : ℂ → E) :
+    ∫ z, g (c * z) = ∫ z, g z := by
+  set a : Circle := ⟨c, by simpa [Submonoid.unitSphere] using hc⟩
+  simpa only [rotation_apply] using MeasureTheory.integral_comp (rotation a) g
 
 end Complex
 

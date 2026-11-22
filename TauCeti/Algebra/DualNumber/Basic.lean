@@ -14,10 +14,13 @@ import Mathlib.RingTheory.DualNumber
 /-!
 # Basic properties of dual numbers
 
-The coordinatewise scalar action on dual numbers commutes with multiplication. These
-instances make bilinear multiplication and convolution available with that module structure.
-Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
-they are a finite module over their coefficient ring.
+A coordinatewise scalar action on dual numbers forms a scalar tower with multiplication whenever
+the action on the coefficients does, and it commutes with multiplication whenever the action on
+the coefficients does; the two laws lift separately. When the coordinatewise action is a module
+structure over a commutative semiring, together they make multiplication bilinear, which makes
+bilinear multiplication and convolution available with that module structure.
+The dual numbers are a finite module over their coefficient ring, so dual numbers over an
+Artinian ring are also Artinian.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
 `1 + inr c` is a unit with inverse `1 - inr c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
@@ -56,26 +59,23 @@ theorem map_fstHom_dualNumberUnit {R B : Type*} [CommSemiring R] [Ring B] [Algeb
   ext
   simp
 
-variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
+variable {R B : Type*} [Semiring B] [SMul R B]
 
-/-- Coordinatewise scalar multiplication associates with multiplication of dual numbers. -/
-instance dualNumberIsScalarTower : IsScalarTower R (DualNumber B) (DualNumber B) where
-  smul_assoc r x y := by
-    ext <;> simp [smul_eq_mul, smul_add]
+/-- Coordinatewise scalar multiplication associates with multiplication of dual numbers
+whenever it associates with multiplication of the coefficients. -/
+instance dualNumberIsScalarTower [IsScalarTower R B B] :
+    IsScalarTower R (DualNumber B) (DualNumber B) :=
+  .of_smul_one_mul fun r x ↦ by
+    have h : r • (0 : B) = 0 := by rw [← smul_one_mul, mul_zero]
+    ext <;> simp [h, smul_one_mul]
 
-/-- Coordinatewise scalar multiplication commutes with left multiplication of dual numbers. -/
-instance dualNumberSMulCommClass : SMulCommClass R (DualNumber B) (DualNumber B) where
-  smul_comm r x y := by
-    ext <;> simp [smul_eq_mul, smul_add]
-
-/-- Dual numbers over an Artinian ring form an Artinian ring. -/
-instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
-    IsArtinianRing (DualNumber R) := by
-  have : IsScalarTower R (DualNumber R) (DualNumber R) :=
-    ⟨fun r x y ↦ by
-      simpa only [smul_eq_mul, ← TrivSqZeroExt.inl_mul_eq_smul] using
-        mul_assoc (TrivSqZeroExt.inl r) x y⟩
-  exact isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
+/-- Coordinatewise scalar multiplication commutes with left multiplication of dual numbers
+whenever it commutes with left multiplication of the coefficients. -/
+instance dualNumberSMulCommClass [SMulCommClass R B B] :
+    SMulCommClass R (DualNumber B) (DualNumber B) :=
+  .of_mul_smul_one fun r x ↦ by
+    have h : r • (0 : B) = 0 := by rw [← mul_smul_one, zero_mul]
+    ext <;> simp [h, mul_smul_one]
 
 /-- Multiplication by `ε` on the dual numbers is exact. -/
 theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
@@ -83,17 +83,11 @@ theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
       (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps)
       (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps) := by
   intro x
-  constructor
-  · intro hx
-    have hx' : x.fst = 0 := by
-      have h := congrArg TrivSqZeroExt.snd hx
-      simpa [LinearMap.toSpanSingleton_apply] using h
-    refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
-    rw [← TrivSqZeroExt.inl_fst_add_inr_snd_eq x, hx']
-    simp [LinearMap.toSpanSingleton_apply, DualNumber.inr_eq_smul_eps,
-      ← TrivSqZeroExt.inl_mul_eq_smul]
-  · rintro ⟨y, rfl⟩
-    simp [LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_assoc]
+  -- `x * ε = inr x.fst`, so both sides say that `ε` divides `x`.
+  have h : x * DualNumber.eps = 0 ↔ x.fst = 0 := by simp [TrivSqZeroExt.ext_iff]
+  simp only [LinearMap.toSpanSingleton_apply, smul_eq_mul, Set.mem_range, h,
+    DualNumber.fst_eq_zero_iff_eps_dvd, dvd_def]
+  exact exists_congr fun y ↦ by rw [(DualNumber.commute_eps_left y).eq, eq_comm]
 
 end TauCeti
 
@@ -185,5 +179,10 @@ theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
   (dualNumberBasis R).ext fun i => by fin_cases i <;> simpa
 
 end DualNumberBasis
+
+/-- Dual numbers over an Artinian ring form an Artinian ring. -/
+instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
+    IsArtinianRing (DualNumber R) :=
+  .of_finite R (DualNumber R)
 
 end TauCeti
