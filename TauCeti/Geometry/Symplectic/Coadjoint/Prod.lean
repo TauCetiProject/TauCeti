@@ -96,9 +96,13 @@ theorem leftInvariantKirillovForm_groupLieAlgebraDualProdDualEquivDual :
     ext ξ
     simp only [groupLieAlgebraDualProdDualEquivDual_apply, LinearMap.add_apply,
       LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-  rw [h, leftInvariantKirillovForm_add, ← mpullback_leftInvariantKirillovForm _ _ contMDiff_fst,
-    ← mpullback_leftInvariantKirillovForm _ _ contMDiff_snd, SmoothTwoForm.prod_def]
-  simp only [MonoidHom.coe_fst, MonoidHom.coe_snd]
+  rw [h, leftInvariantKirillovForm_add,
+    ← mpullback_leftInvariantKirillovForm (I' := I.prod J) _ ⟨MonoidHom.fst G K, contMDiff_fst⟩,
+    ← mpullback_leftInvariantKirillovForm (I' := I.prod J) _ ⟨MonoidHom.snd G K, contMDiff_snd⟩,
+    SmoothTwoForm.prod_def]
+  -- The smooth monoid morphisms built from `MonoidHom.fst` and `MonoidHom.snd` coerce to
+  -- `Prod.fst` and `Prod.snd` by unfolding.
+  rfl
 
 /-! ### The product orbit -/
 

@@ -72,7 +72,8 @@ since the exterior derivative has no term in which `𝔤` acts on the values of 
 * `TauCeti.mpullback_mul_left_leftInvariantForm`,
   `TauCeti.mpullback_mul_left_leftInvariantSmoothForm`: left translations preserve `α^L`.
 * `TauCeti.forall_mpullback_mul_left_eq_iff`: the left-invariant forms are the forms `α^L`.
-* `TauCeti.leftInvariantForm_apply_ne_zero`: `α^L` vanishes nowhere unless `α = 0`.
+* `TauCeti.leftInvariantForm_apply_eq_zero_iff`, `TauCeti.leftInvariantForm_apply_ne_zero`:
+  `α^L` vanishes at a point exactly when `α = 0`, so it vanishes nowhere unless `α = 0`.
 * `TauCeti.mpullback_leftInvariantForm`, `TauCeti.mpullback_leftInvariantSmoothForm`: the pullback
   of `α^L` along a homomorphism `φ` is the extension of `α ∘ dφ₁`.
 * `TauCeti.isSmoothForm_leftInvariantForm`: on a `C^n` Lie group, `α^L` is `C^m` for `m + 1 ≤ n`.
@@ -160,14 +161,20 @@ theorem leftInvariantForm_apply_mulInvariantVectorField
     leftInvariantForm I G F k α g (fun i ↦ mulInvariantVectorField (X i) g) = α X := by
   simp only [leftInvariantForm_apply, mfderiv_inv_mul_mulInvariantVectorField]
 
+/-- A left-invariant form vanishes at one point exactly when its value at the identity is zero. -/
+@[simp]
+theorem leftInvariantForm_apply_eq_zero_iff {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} {g : G} :
+    leftInvariantForm I G F k α g = 0 ↔ α = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, Pi.zero_apply]⟩
+  ext X
+  rw [← leftInvariantForm_apply_mulInvariantVectorField α g X, h,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+    Pi.zero_apply]
+
 /-- A left-invariant form vanishes nowhere unless its value at the identity is zero. -/
 theorem leftInvariantForm_apply_ne_zero {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} (hα : α ≠ 0)
-    (g : G) : leftInvariantForm I G F k α g ≠ 0 := by
-  intro h
-  obtain ⟨X, hX⟩ := DFunLike.ne_iff.1 hα
-  apply hX
-  rw [← leftInvariantForm_apply_mulInvariantVectorField α g X, h]
-  simp only [ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+    (g : G) : leftInvariantForm I G F k α g ≠ 0 :=
+  leftInvariantForm_apply_eq_zero_iff.not.mpr hα
 
 /-- Every left translation preserves the left-invariant extension of `α`. -/
 @[simp]
@@ -312,7 +319,11 @@ theorem mpullback_leftInvariantForm [ContMDiffMul I 1 G] [ContMDiffMul I' 1 G'] 
     exact (MonoidHom.groupLieAlgebraMap_apply _ _ _).symm
   ext v
   rw [mpullback_apply, leftInvariantForm_apply, leftInvariantForm_apply]
-  exact congrArg α (funext fun i ↦ key (v i))
+  -- On the left, `α` takes vectors in `TangentSpace I' ((φ g)⁻¹ * φ g)`, which is definitionally
+  -- the Lie algebra (both are the model space), so `compContinuousLinearMap_apply` does not rewrite
+  -- syntactically; it is applied as a term instead.
+  exact (congrArg α (funext fun i ↦ key (v i))).trans
+    (α.compContinuousLinearMap_apply _ _).symm
 
 /-- The pullback of the smooth left-invariant extension of `α` along a smooth homomorphism `φ` is
 the smooth left-invariant extension of `α` precomposed with the differential of `φ` at the
