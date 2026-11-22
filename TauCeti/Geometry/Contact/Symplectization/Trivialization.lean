@@ -220,17 +220,17 @@ variable [FiniteDimensional ℝ E] [Nonempty M] (hξ : IsContactDistribution I �
 `TauCeti.IsContMDiffDistribution.annihilatorContMDiffVectorBundle` at smoothness `∞`. -/
 local instance : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
 
-include hξ in
-/-- The trivialization `κ_α` of the annihilator line of a contact structure `ξ = ker α` is
-smooth, for the manifold structure of the annihilator bundle. -/
-theorem contMDiff_symplectizationToAnnihilator :
-    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+omit [Nonempty M] in
+/-- The trivialization `κ_α` of the annihilator line of a smooth corank-one distribution
+`ξ = ker α` is smooth, for the manifold structure of the annihilator bundle. -/
+theorem contMDiff_symplectizationToAnnihilator {k : ℕ} (hD : IsContMDiffDistribution I ∞ k ξ)
+    (hk : k + 1 = finrank ℝ E) :
+    letI := hD.annihilatorFiberBundle hk
     ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ (α.symplectizationToAnnihilator hα) :=
-  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  letI := hD.annihilatorFiberBundle hk
   fun p ↦ by
   -- The inclusion `ξ⁰ → T*M` is a smooth embedding, and its composite with `κ_α` is smooth.
-  have hj := hξ.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
-    hξ.finrank_sub_one_add_one
+  have hj := hD.isSmoothEmbedding_annihilatorInclusion (n := ∞) hk
   have hκ := α.contMDiff_symplectizationToCotangent
   rw [ContMDiffAt.iff_comp_isImmersionAt (hj.isImmersion.isImmersionAt _),
     hj.isEmbedding.isInducing.continuousAt_iff,
@@ -247,7 +247,8 @@ theorem mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm :
     haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
       hξ.finrank_sub_one_add_one
     mpullback (α.symplectizationToAnnihilator hα)
-        (contMDiff_symplectizationToAnnihilator hα hξ) hξ.annihilatorLiouvilleForm =
+        (contMDiff_symplectizationToAnnihilator hα hξ.isContMDiffDistribution
+          hξ.finrank_sub_one_add_one) hξ.annihilatorLiouvilleForm =
       α.symplectization :=
   letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
@@ -269,7 +270,9 @@ theorem mpullback_symplectizationToAnnihilator_mextDerivₗ_annihilatorLiouville
     haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
       hξ.finrank_sub_one_add_one
-    mpullback (α.symplectizationToAnnihilator hα) (contMDiff_symplectizationToAnnihilator hα hξ)
+    mpullback (α.symplectizationToAnnihilator hα)
+        (contMDiff_symplectizationToAnnihilator hα hξ.isContMDiffDistribution
+          hξ.finrank_sub_one_add_one)
         (mextDerivₗ (I.prod 𝓘(ℝ, Fin 1 → ℝ)) 1 hξ.annihilatorLiouvilleForm) =
       mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization :=
   letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
@@ -285,7 +288,8 @@ theorem injective_mfderiv_symplectizationToAnnihilator (p : ℝ × M) :
       (α.symplectizationToAnnihilator hα) p) :=
   letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   by
-  have hκ := (contMDiff_symplectizationToAnnihilator hα hξ p).mdifferentiableAt (by simp)
+  have hκ := (contMDiff_symplectizationToAnnihilator hα hξ.isContMDiffDistribution
+    hξ.finrank_sub_one_add_one p).mdifferentiableAt (by simp)
   have hj := (hξ.isContMDiffDistribution.contMDiff_annihilatorInclusion (n := ∞)
     hξ.finrank_sub_one_add_one (α.symplectizationToAnnihilator hα p)).mdifferentiableAt (by simp)
   have hαc : α.IsContactForm :=
@@ -313,7 +317,8 @@ theorem isLocalDiffeomorph_symplectizationToAnnihilator [BoundarylessManifold I 
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   fun p ↦ isLocalDiffeomorphAt_of_injective_mfderiv
-    (contMDiff_symplectizationToAnnihilator hα hξ).contMDiffOn isOpen_univ (mem_univ p)
+    (contMDiff_symplectizationToAnnihilator hα hξ.isContMDiffDistribution
+      hξ.finrank_sub_one_add_one).contMDiffOn isOpen_univ (mem_univ p)
     BoundarylessManifold.isInteriorPoint (by simp)
     (injective_mfderiv_symplectizationToAnnihilator hα hξ p)
     (by simp [Module.finrank_prod, add_comm])
