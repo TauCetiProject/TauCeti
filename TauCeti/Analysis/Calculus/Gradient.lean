@@ -73,6 +73,8 @@ chain rule for the gradient of a real profile composed with a real function.
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
 * `TauCeti.inner_fderiv_gradient`: over `ℝ`,
   `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
+* `TauCeti.norm_smul_gradient_add_smul_gradient_le`: over `ℝ`, the product-rule gradient
+  `ζ ∇φ + φ ∇ζ` is bounded by `2 N P` when `ζ`, `∇ζ` are bounded by `N` and `φ`, `∇φ` by `P`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -402,5 +404,20 @@ theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSp
     ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
   rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
   simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
+
+/-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
+`|φ|, ‖∇φ‖ ≤ P`. -/
+theorem norm_smul_gradient_add_smul_gradient_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {ζ φ : E → ℝ} {N P : ℝ} (hζN : ∀ x, |ζ x| ≤ N)
+    (hgradN : ∀ x, ‖∇ ζ x‖ ≤ N) (hφP : ∀ x, |φ x| ≤ P) (hgradP : ∀ x, ‖∇ φ x‖ ≤ P) (x : E) :
+    ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ 2 * N * P := by
+  have hN : 0 ≤ N := (abs_nonneg _).trans (hζN x)
+  calc ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ |ζ x| * ‖∇ φ x‖ + |φ x| * ‖∇ ζ x‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+    _ ≤ N * P + P * N := by
+        gcongr
+        exacts [hζN x, hgradP x, (abs_nonneg _).trans (hφP x), hφP x, hgradN x]
+    _ = 2 * N * P := by ring
 
 end TauCeti

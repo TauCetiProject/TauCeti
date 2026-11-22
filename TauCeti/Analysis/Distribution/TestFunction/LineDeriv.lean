@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # Directional derivatives of test functions
@@ -21,7 +23,10 @@ integration-by-parts identity uses exactly this, for instance to show that weak 
 commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
 directional derivative. Finally, a test function on `Ω` times a function smooth on `Ω` is again a
 test function, with the classical product rule for its directional derivatives; this is what lets
-a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
+a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`. On a real inner
+product space, the directional derivative of a scalar test function is the pairing with its
+gradient, and the product of a scalar test function with a smooth function supported in `Ω` is a
+test function on `Ω` whose gradient obeys the product rule.
 
 ## Main declarations
 
@@ -54,6 +59,9 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   classical Laplacian.
 * `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
   integrable on `Ω`.
+* `TestFunction.lineDerivCLM_apply_eq_inner`: `∂_{v} φ x = ⟪v, ∇φ x⟫` for a scalar test function.
+* `TauCeti.exists_testFunction_mul`: for `ζ` smooth with `tsupport ζ ⊆ Ω`, the product `ζ φ` is a
+  test function on `Ω` with gradient `ζ ∇φ + φ ∇ζ`.
 -/
 
 public section
@@ -285,3 +293,44 @@ theorem integrable_laplacian_smul [MeasurableSpace E] [OpensMeasurableSpace E] {
   simpa only [laplacianCLM_apply] using (laplacianCLM ℝ E 𝓓(Ω, ℝ) φ).integrable_smul hu
 
 end TestFunction
+
+namespace TestFunction
+
+open TopologicalSpace
+open scoped Distributions Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {Ω : Opens E}
+
+/-- The directional derivative of a test function along `v` is the pairing of `v` with its
+gradient. -/
+theorem lineDerivCLM_apply_eq_inner (phi : 𝓓(Ω, ℝ)) (v x : E) :
+    (lineDerivCLM (n := ⊤) (k := ⊤) ℝ v phi : E → ℝ) x = ⟪v, ∇ (phi : E → ℝ) x⟫_ℝ := by
+  rw [lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
+    InnerProductSpace.toDual_symm_apply,
+    (phi.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+end TestFunction
+
+namespace TauCeti
+
+open TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {Ω : Opens E}
+
+/-- The product `ζ φ` of a test function `φ` with a smooth function `ζ` whose support lies in
+`Ω` is a test function on `Ω`, with gradient `ζ ∇φ + φ ∇ζ`. -/
+theorem exists_testFunction_mul {U : Opens E} {ζ : E → ℝ} (hζ : ContDiff ℝ ∞ ζ)
+    (hts : tsupport ζ ⊆ Ω) (phi : 𝓓(U, ℝ)) :
+    ∃ psi : 𝓓(Ω, ℝ), (psi : E → ℝ) = (fun x => ζ x * phi x) ∧
+      ∀ x, ∇ (psi : E → ℝ) x = ζ x • ∇ (phi : E → ℝ) x + phi x • ∇ ζ x := by
+  refine ⟨⟨fun x => ζ x * phi x, hζ.mul phi.contDiff, phi.hasCompactSupport.mul_left,
+    tsupport_mul_subset_left.trans hts⟩, TestFunction.coe_mk, fun x => ?_⟩
+  rw [TestFunction.coe_mk]
+  apply (InnerProductSpace.toDual ℝ E).injective
+  simp only [toDual_gradient, map_add, map_smul]
+  exact fderiv_fun_mul (hζ.differentiable (by simp) x) (phi.contDiff.differentiable (by simp) x)
+
+end TauCeti
