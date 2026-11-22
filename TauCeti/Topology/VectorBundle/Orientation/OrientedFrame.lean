@@ -316,13 +316,16 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
   obtain ⟨r, hr⟩ := Unitary.exists_det_eq_neg_one (V := V) (hι ▸ Fintype.card_pos)
   have hr' : r ∉ specialOrthogonalGroup V :=
     notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
+  have : T.orthonormalFrameBundleFiber.IsEquivariant :=
+    T.isEquivariant_orthonormalFrameBundleFiber_iff.2 fun p _ g ↦ congrArg Prod.snd (hT g p)
   -- The local frame of `T`, corrected by `correction`, is positively oriented over `T.baseSet`.
-  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem hT
+  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
     (fun _ hp _ ↦ smul_mem_orientedFrames_iff hι hp) subset_rfl
     (fun y _ ↦ smul_localFrame_mem (s := s) (o := o) hr' y) T.open_baseSet
     (fun _ hy ↦ (continuousAt_correction (s := s) (o := o) (r := r) (·⁻¹) hy).continuousWithinAt)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦
+    (congrArg t (Subtype.ext (coe_orientedFrames_smul _ _))).trans (hteq g p (ht ▸ hp))⟩
 
 end OrientedTrivialization
 

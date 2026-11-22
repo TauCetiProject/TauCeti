@@ -38,7 +38,8 @@ vector `a` and a vector `c` outside the complex line of `a`, the vectors
 `(a, K a, u, K u)`, with `u` the normalized component of `c` orthogonal to `a` and `K a`, form an
 orthonormal basis adapted to `K` (`ContinuousLinearMap.adaptedFourBasis`), depending continuously
 on `K` while `c` stays outside that complex line. Matching it with an adapted orthonormal basis of
-`(V, J₀)` (`OrthonormalBasis.toAdaptedFourBasis`) corrects `σ` to a continuous local unitary frame.
+`(V, J₀)` (`OrthonormalBasis.unitaryToAdaptedFourBasis`) corrects `σ` to a continuous local unitary
+frame.
 As for the positively oriented frames
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization_orientedFrames`), dividing by the corrected
 frame trivializes the unitary frames, through the construction shared by such reductions
@@ -228,27 +229,29 @@ private theorem isOpen_goodSet
 
 variable {J e cF β c}
 
-/-- Over the good set, the local frame of `e`, corrected by `toAdaptedFourBasis`, is unitary,
+/-- Over the good set, the local frame of `e`, corrected by `unitaryToAdaptedFourBasis`, is unitary,
 when `β` is adapted to `J₀`. -/
 private theorem smul_symm_apply_one_mem_unitaryFrames (hJ₂ : ∀ b v, J b (J b v) = -v)
     (hJ₀ : ∀ v, (J₀ : V →L[ℝ] V) ((J₀ : V →L[ℝ] V) v) = -v) (hβ₁ : β 1 = (J₀ : V →L[ℝ] V) (β 0))
     (hβ₃ : β 3 = (J₀ : V →L[ℝ] V) (β 2)) {y : B} (hy : y ∈ goodSet J e cF β c) :
-    op (β.toAdaptedFourBasis c (localStructure J e cF β y)) •
+    op (β.unitaryToAdaptedFourBasis c (localStructure J e cF β y)) •
       (e.orthonormalFrameBundle cF β).toOpenPartialHomeomorph.symm (y, 1) ∈
         unitaryFrames F J J₀ := by
   simp only [e.orthonormalFrameBundle_symm_apply' cF β, op_one, one_smul, mem_unitaryFrames_iff,
     frame_smul_apply, proj_smul, unop_op]
   intro v
-  rw [← OrthonormalBasis.apply_toAdaptedFourBasis_apply hJ₀ hβ₁ hβ₃
+  rw [← OrthonormalBasis.apply_unitaryToAdaptedFourBasis_apply hJ₀ hβ₁ hβ₃
     (localStructure_localStructure e cF β hJ₂ y) hy.2 v]
   exact orthonormalFrameAt_localStructure J e cF β y _
 
-/-- The correction `toAdaptedFourBasis` of `localStructure` is continuous over the good set. -/
-private theorem continuousOn_toAdaptedFourBasis_localStructure (hJ₂ : ∀ b v, J b (J b v) = -v)
+/-- The correction `unitaryToAdaptedFourBasis` of `localStructure` is continuous over the good
+set. -/
+private theorem continuousOn_unitaryToAdaptedFourBasis_localStructure
+    (hJ₂ : ∀ b v, J b (J b v) = -v)
     (hJ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, J v.proj v.snd⟩ : TotalSpace F E)) :
-    ContinuousOn (fun y ↦ β.toAdaptedFourBasis c (localStructure J e cF β y))
+    ContinuousOn (fun y ↦ β.unitaryToAdaptedFourBasis c (localStructure J e cF β y))
       (goodSet J e cF β c) :=
-  (OrthonormalBasis.continuousOn_toAdaptedFourBasis β c).comp
+  (OrthonormalBasis.continuousOn_unitaryToAdaptedFourBasis β c).comp
     ((continuousOn_localStructure e cF β hJ).mono fun _ hy ↦ hy.1)
     fun y hy ↦ ⟨localStructure_localStructure e cF β hJ₂ y, hy.2⟩
 
@@ -289,15 +292,17 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
     (localStructure J e cF β x : V →L[ℝ] V) (β 0) β.toBasis
   rw [OrthonormalBasis.coe_toBasis] at hj
   have hx : x ∈ goodSet J e cF β (β j) := ⟨mem_baseSet_trivializationAt F E x, hj⟩
-  -- The local frame of `e`, corrected by `toAdaptedFourBasis`, is a continuous local unitary frame
-  -- over the good set.
+  -- The local frame of `e`, corrected by `unitaryToAdaptedFourBasis`, is a continuous local unitary
+  -- frame over the good set.
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
-    (U := goodSet J e cF β (β j)) (e.orthonormalFrameBundle_smul cF β)
+    (U := goodSet J e cF β (β j))
     (fun _ hp _ ↦ smul_mem_unitaryFrames_iff hp)
     (fun _ hy ↦ (e.baseSet_orthonormalFrameBundle cF β).symm ▸ hy.1)
     (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ hβ₁.symm hβ₃.symm hy)
-    (isOpen_goodSet e cF β (β j) hJ) (continuousOn_toAdaptedFourBasis_localStructure hJ₂ hJ)
+    (isOpen_goodSet e cF β (β j) hJ)
+    (continuousOn_unitaryToAdaptedFourBasis_localStructure hJ₂ hJ)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦
+    (congrArg t (Subtype.ext (coe_unitaryFrames_smul _ _))).trans (hteq g p (ht ▸ hp))⟩
 
 end TauCeti.OrthonormalFrameBundle

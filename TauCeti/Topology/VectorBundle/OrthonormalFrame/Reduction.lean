@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Principal
 
 /-!
 # Local trivializations of reductions of the orthonormal frame bundle
 
 Let `E → B` be a vector bundle with fibre inner products, let `V` be a real inner product space,
-and let `T` be an *equivariant* trivialization of the orthonormal frame bundle of `E` modelled on
-`V`: it turns the right action of the orthogonal group `unitary (V →L[ℝ] V)` into right
-multiplication on the fibre coordinate. Over its base set every frame is the local frame
-`T.symm (y, 1)` acted on by its fibre coordinate
-(`TauCeti.OrthonormalFrameBundle.eq_smul_symm_apply_one`), and `T.symm (y, g)` is the local frame
-at `y` acted on by `g` (`TauCeti.OrthonormalFrameBundle.symm_apply_eq_smul_symm_apply_one`).
+and let `T` be a trivialization of the orthonormal frame bundle of `E` modelled on `V` that is
+*equivariant*, `T.orthonormalFrameBundleFiber.IsEquivariant`: it turns the right action of the
+orthogonal group `unitary (V →L[ℝ] V)` into right multiplication on the fibre coordinate. Over its
+base set every frame is then the local frame `T.symm (y, 1)` acted on by its fibre coordinate
+(`Bundle.Trivialization.symm_apply_eq_smul`).
 
 Let `H` be a subgroup of the orthogonal group and `S` a set of frames such that, for `p ∈ S`,
 `op g • p ∈ S` exactly when `g ∈ H`. The positively oriented frames of an oriented bundle with
@@ -31,9 +30,6 @@ reduced frames trivializes a reduction of the structure group.
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.eq_smul_symm_apply_one`,
-  `TauCeti.OrthonormalFrameBundle.symm_apply_eq_smul_symm_apply_one`: an equivariant
-  trivialization is division by its local frame.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`: a set of frames
   stable exactly under `H` is locally trivial with fibre `H` wherever a local frame can be
   corrected into it continuously.
@@ -60,27 +56,25 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} {E : B → Type*}
 
 section Equivariant
 
-variable (hT : ∀ (g : unitary (V →L[ℝ] V)) (p : OrthonormalFrameBundle ℝ F E V),
-  T (op g • p) = ((T p).1, (T p).2 * g))
-include hT
-
-/-- Over the base set of an equivariant trivialization `T` of the orthonormal frame bundle, every
-frame is the local frame `T.symm (y, 1)` acted on by its fibre coordinate. -/
-theorem eq_smul_symm_apply_one {p : OrthonormalFrameBundle ℝ F E V} (hp : p.proj ∈ T.baseSet) :
-    p = op (T p).2 • T.toOpenPartialHomeomorph.symm (p.proj, 1) := by
-  refine T.injOn (T.mem_source.2 hp)
-    (T.mem_source.2 (by rwa [proj_smul, T.proj_symm_apply' hp])) ?_
-  rw [T.coe_coe, hT, T.apply_symm_apply' hp, one_mul]
-  exact Prod.ext (T.coe_fst' hp) rfl
+variable [T.orthonormalFrameBundleFiber.IsEquivariant]
 
 /-- The inverse of an equivariant trivialization at `(y, g)` is the local frame `T.symm (y, 1)`
-acted on by `g`. -/
-theorem symm_apply_eq_smul_symm_apply_one {y : B} (hy : y ∈ T.baseSet)
+acted on by `g`: `Bundle.Trivialization.symm_apply_eq_smul` read through `totalSpaceEquiv`. -/
+private theorem symm_apply_eq_smul_symm_apply_one {y : B} (hy : y ∈ T.baseSet)
     (g : unitary (V →L[ℝ] V)) :
     T.toOpenPartialHomeomorph.symm (y, g) = op g • T.toOpenPartialHomeomorph.symm (y, 1) := by
-  have hproj : (T.toOpenPartialHomeomorph.symm (y, g)).proj = y := T.proj_symm_apply' hy
-  have hy' : (T.toOpenPartialHomeomorph.symm (y, g)).proj ∈ T.baseSet := by rwa [hproj]
-  exact (eq_smul_symm_apply_one hT hy').trans (by rw [hproj, T.apply_symm_apply' hy])
+  have h := congrArg totalSpaceEquiv (T.orthonormalFrameBundleFiber.symm_apply_eq_smul
+    (T.baseSet_orthonormalFrameBundleFiber ▸ hy) g)
+  rwa [← TotalSpace.smul_mk, TotalSpace.eta, totalSpaceEquiv_smul,
+    Trivialization.orthonormalFrameBundleFiber_symm_apply,
+    Trivialization.orthonormalFrameBundleFiber_symm_apply,
+    Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
+
+/-- Over the base set of an equivariant trivialization `T`, every frame is the local frame
+`T.symm (y, 1)` acted on by its fibre coordinate. -/
+private theorem eq_smul_symm_apply_one {p : OrthonormalFrameBundle ℝ F E V}
+    (hp : p.proj ∈ T.baseSet) : p = op (T p).2 • T.toOpenPartialHomeomorph.symm (p.proj, 1) :=
+  (T.symm_apply_mk_proj (T.mem_source.2 hp)).symm.trans (symm_apply_eq_smul_symm_apply_one hp _)
 
 end Equivariant
 
@@ -106,31 +100,30 @@ this lies in `S`, and to `p₀` otherwise. -/
 private def reductionTrivializationInv (p₀ : S) (q : B × H) : S :=
   if h : T.toOpenPartialHomeomorph.symm (q.1, c q.1 * q.2) ∈ S then ⟨_, h⟩ else p₀
 
-variable (hT : ∀ (g : unitary (V →L[ℝ] V)) (p : OrthonormalFrameBundle ℝ F E V),
-    T (op g • p) = ((T p).1, (T p).2 * g))
+variable [T.orthonormalFrameBundleFiber.IsEquivariant]
   (hS : ∀ p ∈ S, ∀ g, op g • p ∈ S ↔ g ∈ H) (hUT : U ⊆ T.baseSet)
   (hcS : ∀ y ∈ U, op (c y) • T.toOpenPartialHomeomorph.symm (y, 1) ∈ S)
 
-include hT hS hUT hcS
+include hS hUT hcS
 
 /-- Over `U`, the fibre coordinate of a frame of `S`, multiplied by the inverse correction, lies in
 `H`. -/
 private theorem inv_mul_mem {p : OrthonormalFrameBundle ℝ F E V} (hp : p.proj ∈ U) (h : p ∈ S) :
     (c p.proj)⁻¹ * (T p).2 ∈ H := by
   rw [← hS _ (hcS _ hp), smul_smul, ← op_mul, mul_inv_cancel_left,
-    ← eq_smul_symm_apply_one hT (hUT hp)]
+    ← eq_smul_symm_apply_one (hUT hp)]
   exact h
 
 /-- Over `U`, the inverse of `T` at the correction times an element of `H` lies in `S`. -/
 private theorem symm_apply_mul_mem {y : B} (hy : y ∈ U) {g : unitary (V →L[ℝ] V)} (hg : g ∈ H) :
     T.toOpenPartialHomeomorph.symm (y, c y * g) ∈ S := by
-  rw [symm_apply_eq_smul_symm_apply_one hT (hUT hy), op_mul, mul_smul]
+  rw [symm_apply_eq_smul_symm_apply_one (hUT hy), op_mul, mul_smul]
   exact (hS _ (hcS y hy) g).2 hg
 
 private theorem coe_reductionTrivializationInv (p₀ : S) {q : B × H} (hq : q.1 ∈ U) :
     (reductionTrivializationInv T c p₀ q : OrthonormalFrameBundle ℝ F E V) =
       T.toOpenPartialHomeomorph.symm (q.1, c q.1 * q.2) := by
-  rw [reductionTrivializationInv, dite_eq_left (symm_apply_mul_mem hT hS hUT hcS hq q.2.property)]
+  rw [reductionTrivializationInv, dite_eq_left (symm_apply_mul_mem hS hUT hcS hq q.2.property)]
 
 variable [NormedAddCommGroup F] [FiberBundle F E] (hU : IsOpen U) (hc : ContinuousOn c U)
 
@@ -145,17 +138,17 @@ private def reductionTrivialization (p₀ : S) :
   target := U ×ˢ univ
   map_source' _ hp := ⟨hp, mem_univ _⟩
   map_target' q hq := by
-    rw [mem_ofPred_eq, coe_reductionTrivializationInv hT hS hUT hcS p₀ hq.1,
+    rw [mem_ofPred_eq, coe_reductionTrivializationInv hS hUT hcS p₀ hq.1,
       T.proj_symm_apply' (hUT hq.1)]
     exact hq.1
   left_inv' p hp := by
     apply Subtype.ext
-    rw [coe_reductionTrivializationInv (q := (p.val.proj, _)) hT hS hUT hcS p₀ hp,
-      coe_toSubgroup (inv_mul_mem hT hS hUT hcS hp p.property), mul_inv_cancel_left]
+    rw [coe_reductionTrivializationInv (q := (p.val.proj, _)) hS hUT hcS p₀ hp,
+      coe_toSubgroup (inv_mul_mem hS hUT hcS hp p.property), mul_inv_cancel_left]
     exact T.symm_apply_mk_proj (T.mem_source.2 (hUT hp))
   right_inv' := by
     rintro ⟨y, g⟩ hq
-    rw [Prod.mk.injEq, coe_reductionTrivializationInv hT hS hUT hcS p₀ hq.1,
+    rw [Prod.mk.injEq, coe_reductionTrivializationInv hS hUT hcS p₀ hq.1,
       T.proj_symm_apply' (hUT hq.1), T.apply_symm_apply' (hUT hq.1), inv_mul_cancel_left]
     exact ⟨rfl, Subtype.ext (coe_toSubgroup g.property)⟩
   open_source := hU.preimage (continuous_proj.comp continuous_subtypeVal)
@@ -164,14 +157,14 @@ private def reductionTrivialization (p₀ : S) :
     have hproj : Continuous fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj :=
       continuous_proj.comp continuous_subtypeVal
     refine hproj.continuousOn.prodMk (Topology.IsInducing.subtypeVal.continuousOn_iff.2
-      (ContinuousOn.congr ?_ fun p hp ↦ coe_toSubgroup (inv_mul_mem hT hS hUT hcS hp p.property)))
+      (ContinuousOn.congr ?_ fun p hp ↦ coe_toSubgroup (inv_mul_mem hS hUT hcS hp p.property)))
     exact ((hc.comp hproj.continuousOn fun _ hp ↦ hp).inv).mul (continuous_snd.comp_continuousOn
       (T.continuousOn_toFun.comp continuous_subtypeVal.continuousOn
         fun _ hp ↦ T.mem_source.2 (hUT hp)))
   continuousOn_invFun := by
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
       (f := fun q : B × H ↦ T.toOpenPartialHomeomorph.symm (q.1, c q.1 * q.2)) ?_
-      fun q hq ↦ coe_reductionTrivializationInv hT hS hUT hcS p₀ hq.1)
+      fun q hq ↦ coe_reductionTrivializationInv hS hUT hcS p₀ hq.1)
     refine T.toOpenPartialHomeomorph.continuousOn_symm.comp (continuousOn_fst.prodMk ?_)
       fun _ hq ↦ T.mem_target.2 (hUT hq.1)
     exact (hc.comp continuousOn_fst mapsTo_fst_prod).mul
@@ -183,25 +176,26 @@ private def reductionTrivialization (p₀ : S) :
   proj_toFun _ _ := rfl
 
 private theorem reductionTrivialization_apply (p₀ p : S) :
-    reductionTrivialization U hT hS hUT hcS hU hc p₀ p =
+    reductionTrivialization U hS hUT hcS hU hc p₀ p =
       (p.val.proj, toSubgroup H ((c p.val.proj)⁻¹ * (T p.val).2)) :=
   rfl
 
 /-- The trivialization `reductionTrivialization` is equivariant over its base set. -/
 private theorem reductionTrivialization_smul (p₀ : S) (g : H) {p : S}
     (hp : (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U) :
-    reductionTrivialization U hT hS hUT hcS hU hc p₀
+    reductionTrivialization U hS hUT hcS hU hc p₀
         ⟨op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V),
           (hS _ p.property g).2 g.property⟩ =
-      ((reductionTrivialization U hT hS hUT hcS hU hc p₀ p).1,
-        (reductionTrivialization U hT hS hUT hcS hU hc p₀ p).2 * g) := by
-  have h₁ := inv_mul_mem hT hS hUT hcS hp p.property
-  have h₂ := inv_mul_mem hT hS hUT hcS (p := op (g : unitary (V →L[ℝ] V)) • p.val)
+      ((reductionTrivialization U hS hUT hcS hU hc p₀ p).1,
+        (reductionTrivialization U hS hUT hcS hU hc p₀ p).2 * g) := by
+  have h₁ := inv_mul_mem hS hUT hcS hp p.property
+  have h₂ := inv_mul_mem hS hUT hcS (p := op (g : unitary (V →L[ℝ] V)) • p.val)
     (by rwa [proj_smul]) ((hS _ p.property g).2 g.property)
   rw [proj_smul] at h₂
   simp only [reductionTrivialization_apply, proj_smul]
   refine Prod.ext rfl (Subtype.ext ?_)
-  rw [Subgroup.coe_mul, coe_toSubgroup h₁, coe_toSubgroup h₂, hT, mul_assoc]
+  rw [Subgroup.coe_mul, coe_toSubgroup h₁, coe_toSubgroup h₂,
+    T.isEquivariant_orthonormalFrameBundleFiber_iff.1 inferInstance _ (hUT hp), mul_assoc]
 
 include hU hc in
 /-- A set `S` of orthonormal frames, carried into itself by exactly the elements of a subgroup `H`
@@ -213,8 +207,8 @@ theorem exists_trivialization_of_continuousOn_smul_mem {x : B} (hx : x ∈ U) :
       t.baseSet = U ∧ ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U →
         t ⟨op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V),
           (hS _ p.property g).2 g.property⟩ = ((t p).1, (t p).2 * g) :=
-  ⟨reductionTrivialization U hT hS hUT hcS hU hc ⟨_, hcS x hx⟩, rfl,
-    fun g _ hp ↦ reductionTrivialization_smul hT hS hUT hcS hU hc _ g hp⟩
+  ⟨reductionTrivialization U hS hUT hcS hU hc ⟨_, hcS x hx⟩, rfl,
+    fun g _ hp ↦ reductionTrivialization_smul hS hUT hcS hU hc _ g hp⟩
 
 end Reduction
 

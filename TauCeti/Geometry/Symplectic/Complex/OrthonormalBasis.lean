@@ -69,10 +69,10 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
   `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
   normalized residual of `c`, form an orthonormal basis.
-* `OrthonormalBasis.apply_toAdaptedFourBasis_apply`,
-  `OrthonormalBasis.continuousOn_toAdaptedFourBasis`: the orthogonal transformation carrying a
-  basis adapted to `J₀` to the basis `(a, K a, u, K u)` intertwines `J₀` with `K`, and depends
-  continuously on `K`.
+* `OrthonormalBasis.apply_unitaryToAdaptedFourBasis_apply`,
+  `OrthonormalBasis.continuousOn_unitaryToAdaptedFourBasis`: the orthogonal transformation
+  carrying a basis adapted to `J₀` to the basis `(a, K a, u, K u)` intertwines `J₀` with `K`, and
+  depends continuously on `K`.
 
 ## References
 
@@ -360,6 +360,29 @@ noncomputable def adaptedFourFrame (K : V →L[ℝ] V) (a c : V) : Fin 4 → V :
   ![a, K a, ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c,
     K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c)]
 
+theorem adaptedFourFrame_def (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c = ![a, K a, ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c,
+      K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c)] :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_zero (K : V →L[ℝ] V) (a c : V) : K.adaptedFourFrame a c 0 = a :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_one (K : V →L[ℝ] V) (a c : V) : K.adaptedFourFrame a c 1 = K a :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_two (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c 2 = ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_three (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c 3 = K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c) :=
+  (rfl)
+
 /-- For an orthogonal complex structure `K`, a unit vector `a` and a vector `c` outside the complex
 line of `a`, the vectors `(a, K a, u, K u)` are orthonormal. -/
 theorem orthonormal_adaptedFourFrame {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
@@ -383,7 +406,7 @@ variable [Fact (finrank ℝ V = 4)]
 /-- The orthonormal basis `(a, K a, u, K u)` of a four-dimensional space adapted to an orthogonal
 complex structure `K`, for a unit vector `a` and a vector `c` outside the complex line of `a`, where
 `u` is the normalized residual of `c`. -/
-noncomputable def adaptedFourBasis {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
+noncomputable def adaptedFourBasis (K : V →L[ℝ] V) (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
     (hK₂ : ∀ v, K (K v) = -v) {a c : V} (ha : ‖a‖ = 1) (hr : K.complexLineResidual a c ≠ 0) :
     OrthonormalBasis (Fin 4) ℝ V :=
   (basisOfOrthonormalOfCardEqFinrank (orthonormal_adaptedFourFrame hK hK₂ ha hr)
@@ -394,7 +417,7 @@ noncomputable def adaptedFourBasis {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K 
 @[simp]
 theorem coe_adaptedFourBasis {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
     (hK₂ : ∀ v, K (K v) = -v) {a c : V} (ha : ‖a‖ = 1) (hr : K.complexLineResidual a c ≠ 0) :
-    (adaptedFourBasis hK hK₂ ha hr : Fin 4 → V) = K.adaptedFourFrame a c := by
+    (K.adaptedFourBasis hK hK₂ ha hr : Fin 4 → V) = K.adaptedFourFrame a c := by
   rw [adaptedFourBasis, Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
 
 end ContinuousLinearMap
@@ -439,7 +462,7 @@ theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ 
     fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
   exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
 
-section ToAdaptedFourBasis
+section UnitaryToAdaptedFourBasis
 
 open Module
 open scoped RealInnerProductSpace
@@ -451,63 +474,62 @@ open scoped Classical in
 `(a, K a, u, K u)` adapted to `K` (`ContinuousLinearMap.adaptedFourBasis`), where `a = β 0` and `u`
 is the normalized residual of `c`, when `K` is a complex structure and `c` lies outside the complex
 line of `a`; and `1` otherwise. -/
-noncomputable def toAdaptedFourBasis (β : OrthonormalBasis (Fin 4) ℝ V) (c : V)
+noncomputable def unitaryToAdaptedFourBasis (β : OrthonormalBasis (Fin 4) ℝ V) (c : V)
     (K : unitary (V →L[ℝ] V)) : unitary (V →L[ℝ] V) :=
   if h : (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
       (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0 then
-    Unitary.linearIsometryEquiv.symm (β.equiv (ContinuousLinearMap.adaptedFourBasis
+    Unitary.linearIsometryEquiv.symm (β.equiv ((K : V →L[ℝ] V).adaptedFourBasis
       (Unitary.inner_map_map K) h.1 (β.orthonormal.1 0) h.2) (Equiv.refl _))
   else 1
 
 variable {β : OrthonormalBasis (Fin 4) ℝ V} {c : V} {K : unitary (V →L[ℝ] V)}
 
 /-- When `K` is a complex structure and `c` lies outside the complex line of `β 0`,
-`toAdaptedFourBasis` carries `β i` to the `i`-th adapted vector. -/
-theorem toAdaptedFourBasis_apply_basis (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
+`unitaryToAdaptedFourBasis` carries `β i` to the `i`-th adapted vector. -/
+theorem unitaryToAdaptedFourBasis_apply_basis (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
     (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (i : Fin 4) :
-    (β.toAdaptedFourBasis c K : V →L[ℝ] V) (β i) =
+    (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) (β i) =
       (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i := by
-  rw [toAdaptedFourBasis, dite_eq_left ⟨hK₂, hr⟩, Unitary.coe_symm_linearIsometryEquiv_apply,
-    LinearIsometryEquiv.coe_coe'', OrthonormalBasis.equiv_apply_basis, Equiv.refl_apply,
-    ContinuousLinearMap.coe_adaptedFourBasis]
+  rw [unitaryToAdaptedFourBasis, dite_eq_left ⟨hK₂, hr⟩]
+  simp
 
-private theorem toAdaptedFourBasis_apply_eq_sum
+private theorem unitaryToAdaptedFourBasis_apply_eq_sum
     (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
     (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (v : V) :
-    (β.toAdaptedFourBasis c K : V →L[ℝ] V) v =
+    (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) v =
       ∑ i, ⟪β i, v⟫ • (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i := by
   conv_lhs => rw [← β.sum_repr' v]
-  simp [map_sum, map_smul, toAdaptedFourBasis_apply_basis hK₂ hr]
+  simp [map_sum, map_smul, unitaryToAdaptedFourBasis_apply_basis hK₂ hr]
 
-/-- `toAdaptedFourBasis` intertwines `J₀` with `K`, when `β` is adapted to `J₀`:
+/-- `unitaryToAdaptedFourBasis` intertwines `J₀` with `K`, when `β` is adapted to `J₀`:
 `β 1 = J₀ (β 0)` and `β 3 = J₀ (β 2)`. -/
-theorem apply_toAdaptedFourBasis_apply {J₀ : V →L[ℝ] V} (hJ₀ : ∀ v, J₀ (J₀ v) = -v)
+theorem apply_unitaryToAdaptedFourBasis_apply {J₀ : V →L[ℝ] V} (hJ₀ : ∀ v, J₀ (J₀ v) = -v)
     (hβ₁ : β 1 = J₀ (β 0)) (hβ₃ : β 3 = J₀ (β 2))
     (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
     (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (v : V) :
-    (K : V →L[ℝ] V) ((β.toAdaptedFourBasis c K : V →L[ℝ] V) v) =
-      (β.toAdaptedFourBasis c K : V →L[ℝ] V) (J₀ v) := by
-  have hΦ := toAdaptedFourBasis_apply_basis hK₂ hr
-  set Φ : V →L[ℝ] V := ((β.toAdaptedFourBasis c K : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+    (K : V →L[ℝ] V) ((β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) v) =
+      (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) (J₀ v) := by
+  have hΦ := unitaryToAdaptedFourBasis_apply_basis hK₂ hr
+  set Φ : V →L[ℝ] V := ((β.unitaryToAdaptedFourBasis c K : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
   have key : (((K : V →L[ℝ] V) ∘L Φ : V →L[ℝ] V) : V →ₗ[ℝ] V) =
       ((Φ ∘L J₀ : V →L[ℝ] V) : V →ₗ[ℝ] V) := by
     refine β.toBasis.ext fun i ↦ ?_
     simp only [OrthonormalBasis.coe_toBasis, ContinuousLinearMap.coe_comp,
       ContinuousLinearMap.coe_coe, Function.comp_apply]
     fin_cases i <;> dsimp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
-    · simp [hΦ, ← hβ₁, ContinuousLinearMap.adaptedFourFrame]
+    · simp [hΦ, ← hβ₁]
     · rw [hΦ 1, hβ₁, hJ₀, map_neg, hΦ 0]
-      simp [ContinuousLinearMap.adaptedFourFrame, hK₂]
-    · simp [hΦ, ← hβ₃, ContinuousLinearMap.adaptedFourFrame]
+      simp [hK₂]
+    · simp [hΦ, ← hβ₃]
     · rw [hΦ 3, hβ₃, hJ₀, map_neg, hΦ 2]
-      simp [ContinuousLinearMap.adaptedFourFrame, hK₂]
+      simp [hK₂]
   exact LinearMap.congr_fun key v
 
 variable (β c) in
-/-- `toAdaptedFourBasis` depends continuously on the complex structure `K`, while `c` stays outside
-the complex line of `β 0`. -/
-theorem continuousOn_toAdaptedFourBasis :
-    ContinuousOn (β.toAdaptedFourBasis c)
+/-- `unitaryToAdaptedFourBasis` depends continuously on the complex structure `K`, while `c` stays
+outside the complex line of `β 0`. -/
+theorem continuousOn_unitaryToAdaptedFourBasis :
+    ContinuousOn (β.unitaryToAdaptedFourBasis c)
       {K | (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
         (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} := by
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
@@ -535,8 +557,8 @@ theorem continuousOn_toAdaptedFourBasis :
       {K | (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
         (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} :=
     continuousOn_finsetSum Finset.univ fun i _ ↦ continuousOn_const.smul (hvec i)
-  exact hsum.congr fun K hK ↦ toAdaptedFourBasis_apply_eq_sum hK.1 hK.2 v
+  exact hsum.congr fun K hK ↦ unitaryToAdaptedFourBasis_apply_eq_sum hK.1 hK.2 v
 
-end ToAdaptedFourBasis
+end UnitaryToAdaptedFourBasis
 
 end OrthonormalBasis
