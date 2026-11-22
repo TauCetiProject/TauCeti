@@ -47,9 +47,8 @@ basic example on which the dyadic decomposition can be computed exactly.
   inverse Fourier transform of `δ_ξ` is the plane wave `e_ξ`, and that of `δ₀` is the constant `1`.
 * `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`,
-  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`,
-  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of plane
-  waves and of the constant `1`.
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`: the blocks of plane
+  waves.
 * `TemperedDistribution.lineDerivOp_fourierInv_delta`: the derivatives of a plane wave.
 * `TauCeti.two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le`: the constant of Bernstein's
   inequality for one derivative in `L^∞` is at least `2π`.
@@ -128,16 +127,6 @@ theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ 
   · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
       (h.trans (le_mul_of_one_le_left φ.rIn_pos.le (one_le_pow₀ one_le_two)))]
     simp
-
-/-- **The Littlewood–Paley blocks of the constant `1`.** The constant function `1`, the tempered
-distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ₀`, and its blocks
-`Δⱼ`, `j ≥ 1`, vanish. -/
-@[simp]
-theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
-    littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
-      if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
-  rw [← fourierInv_delta_zero]
-  exact littlewoodPaleyBlock_fourierInv_delta_of_norm_le φ (by simpa using φ.rIn_pos.le) k
 
 /-- **The derivatives of a plane wave.** Differentiating the plane wave `𝓕⁻ δ_ξ` in the direction
 `m` multiplies it by `2πi ⟪ξ, m⟫`. -/

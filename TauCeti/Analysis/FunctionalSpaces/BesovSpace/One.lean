@@ -8,15 +8,15 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
 public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
 
 /-!
 # The constant function `1` in Besov spaces
 
 The constant function `1` belongs to `B^s_{∞,q}` for every `s : ℝ` and `1 ≤ q ≤ ∞`, with
-underlying tempered distribution `(volume : Measure E).toTemperedDistribution`, zeroth
-Littlewood–Paley block `1 ∈ L^∞`, vanishing higher blocks, and Besov norm `1`
-(`NormOneClass (TauCeti.BesovSpace ℂ φ s ∞ q)`). This module collects the `One` and
+underlying tempered distribution `(volume : Measure E).toTemperedDistribution`
+(`TemperedDistribution.memBesov_toTemperedDistribution_volume`), zeroth Littlewood–Paley block
+`1 ∈ L^∞`, vanishing higher blocks (`TauCeti.BesovSpace.block_eq_ite_of_toDistr_eq_volume`), and
+Besov norm `1` (`NormOneClass (TauCeti.BesovSpace ℂ φ s ∞ q)`). This module collects the `One` and
 `NormOneClass` instances along with their compatibility lemmas for `lowPass`, `inclusion`,
 `inclusionOfLT`, `bumpEquiv`, `ofLpCLM`, and `toLpCLM`.
 -/
@@ -50,10 +50,28 @@ instance : One (BesovSpace ℂ φ s ∞ q) where
 @[simp] theorem weightedBlocks_one :
     (1 : BesovSpace ℂ φ s ∞ q).weightedBlocks = lp.single q 0 1 := rfl
 
+/-- **The constant `1` lies in every Hölder–Zygmund space.** As a tempered distribution, `1` is
+the volume, which lies in `B^s_{∞,q}` for every `s` and `q`. -/
+theorem _root_.TemperedDistribution.memBesov_toTemperedDistribution_volume (s : ℝ)
+    (q : ℝ≥0∞) : (volume : Measure E).toTemperedDistribution.MemBesov φ s ∞ q :=
+  memBesov_of_littlewoodPaleyBlock_eq_ite (m := 0) (p := ∞)
+    (f := 1) (fun k ↦ by
+      rw [littlewoodPaleyBlock_toTemperedDistribution_volume, Lp.toTemperedDistribution_one])
+
+/-- **The blocks of the constant `1`.** If the tempered distribution of `u ∈ B^s_{∞,q}` is the
+constant function `1`, then `Δ₀ u = 1` and `Δⱼ u = 0` for `j ≥ 1`. -/
+theorem block_eq_ite_of_toDistr_eq_volume {u : BesovSpace ℂ φ s ∞ q}
+    (hu : u.toDistr = (volume : Measure E).toTemperedDistribution) (k : ℕ) :
+    u.block k = if k = 0 then 1 else 0 :=
+  Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, hu, littlewoodPaleyBlock_toTemperedDistribution_volume]
+    split_ifs
+    · rw [Lp.toTemperedDistribution_one]
+    · simp
+
 /-- The `j`-th Littlewood–Paley block of `1 ∈ B^s_{∞,q}` is `1` at `j = 0` and `0` for `j ≥ 1`. -/
 theorem block_one (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block j = if j = 0 then 1 else 0 :=
-  Lp.toTemperedDistribution_injective <| by
-    rcases j with _ | j <;> simp
+  block_eq_ite_of_toDistr_eq_volume toDistr_one j
 
 @[simp] theorem block_one_zero : (1 : BesovSpace ℂ φ s ∞ q).block 0 = 1 := by simp [block_one]
 

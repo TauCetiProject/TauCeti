@@ -149,9 +149,10 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the kernels `𝓕⁻ ψⱼ`,
   `j ≥ 1`, have integral zero.
 * `ContDiffBump.fourierInv_inhomogeneousLittlewoodPaley_neg`: the kernels `𝓕⁻ ψⱼ` are even.
-* `TemperedDistribution.littlewoodPaleyBlock_delta_zero` and
-  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`: the blocks of the Dirac mass `δ₀`
-  are the kernels `𝓕⁻ ψⱼ`.
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`,
+  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`, and
+  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of the
+  Dirac mass `δ₀` are the kernels `𝓕⁻ ψⱼ`, and the constant `1` has only the `Δ₀` block.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le` and
   `TemperedDistribution.exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le`: the blocks and
   enlarged blocks are bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass
@@ -952,6 +953,27 @@ theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact
       ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) :
         𝓢'(E, ℂ)) := by
   rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
+
+/-- **The Littlewood–Paley blocks of the constant `1`.** The constant function `1`, the tempered
+distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ₀`, and its blocks
+`Δⱼ`, `j ≥ 1`, vanish. -/
+@[simp]
+theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
+    littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
+      if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
+  have hvol : (volume : Measure E).toTemperedDistribution = 𝓕⁻ (delta (0 : E)) := by
+    ext f
+    simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
+  rw [hvol, littlewoodPaleyBlock_apply,
+    fourierMultiplierCLM_fourierInv_delta
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) 0]
+  rcases k with _ | k
+  · rw [φ.inhomogeneousLittlewoodPaley_zero,
+      φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)]
+    simp [← hvol]
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
+      (by rw [norm_zero]; exact mul_nonneg (by positivity) φ.rIn_pos.le)]
+    simp
 
 variable {φ} in
 /-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of

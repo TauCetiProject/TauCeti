@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -179,25 +180,6 @@ theorem hasSum_block_smul_sum_block_of_toDistr_eq_fourierInv_delta (N : ℕ)
 end PlaneWave
 
 section Constant
-
-/-- **The constant `1` lies in every Hölder–Zygmund space.** As a tempered distribution, `1` is
-the volume, which lies in `B^s_{∞,q}` for every `s` and `q`. -/
-theorem _root_.TemperedDistribution.memBesov_toTemperedDistribution_volume (s : ℝ)
-    (q : ℝ≥0∞) : (volume : Measure E).toTemperedDistribution.MemBesov φ s ∞ q :=
-  memBesov_of_littlewoodPaleyBlock_eq_ite (m := 0) (p := ∞)
-    (f := 1) (fun k ↦ by
-      rw [littlewoodPaleyBlock_toTemperedDistribution_volume, Lp.toTemperedDistribution_one])
-
-/-- **The blocks of the constant `1`.** If the tempered distribution of `u ∈ B^s_{∞,q}` is the
-constant function `1`, then `Δ₀ u = 1` and `Δⱼ u = 0` for `j ≥ 1`. -/
-theorem block_eq_ite_of_toDistr_eq_volume {u : BesovSpace ℂ φ s ∞ q}
-    (hu : u.toDistr = (volume : Measure E).toTemperedDistribution) (k : ℕ) :
-    u.block k = if k = 0 then 1 else 0 :=
-  Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, hu, littlewoodPaleyBlock_toTemperedDistribution_volume]
-    split_ifs
-    · rw [Lp.toTemperedDistribution_one]
-    · simp
 
 variable {u : BesovSpace ℂ φ s ∞ q} (hu : u.toDistr = (volume : Measure E).toTemperedDistribution)
   (N : ℕ) (v : BesovSpace F φ s' p q')
