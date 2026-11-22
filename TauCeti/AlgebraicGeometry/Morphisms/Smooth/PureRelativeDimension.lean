@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # Smooth morphisms of pure relative dimension
@@ -24,8 +25,6 @@ Cartier divisor.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
-  morphism has standard smooth charts of some relative dimension around every point.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension`:
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
 * `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_smoothLocus_ι_comp`: a morphism of
@@ -35,23 +34,6 @@ Cartier divisor.
 public section
 
 open CategoryTheory AlgebraicGeometry
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
-
-/-- Around every point, a smooth morphism has an affine chart on which it is standard smooth of
-some relative dimension `m`. -/
-theorem exists_isStandardSmoothOfRelativeDimension_of_smooth {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [Smooth f] (x : X) :
-    ∃ (m : ℕ) (U : Y.Opens) (_ : IsAffineOpen U) (V : X.Opens) (_ : IsAffineOpen V) (_ : x ∈ V)
-      (e : V ≤ f ⁻¹ᵁ U), (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m := by
-  obtain ⟨U, hU, V, hV, hx, e, h⟩ := Smooth.exists_isStandardSmooth f x
-  let := (f.appLE U V e).hom.toAlgebra
-  obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
-  exact ⟨P.dimension, U, hU, V, hV, hx, e, _, _, _, ‹_›, P, rfl⟩
-
-end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
 

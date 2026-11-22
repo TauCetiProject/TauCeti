@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 
 /-!
