@@ -77,17 +77,6 @@ section Constant
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
-is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`: the term in the derivative of the complex
-structure vanishes. -/
-private theorem floerJetCoeff_const (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerJetCoeff (fun _ _ ↦ J₀) Ks Kt u z =
-      firstOrderJetCoeff J₀ (-fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) -
-        J₀.comp (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z))) := by
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [floerJetCoeff_apply, floerLinearizationCoeff_apply, sub_eq_add_neg]
-
 /-- For a constant complex structure `J₀`, at a point where the data are those `(0, H_t)` of a
 Floer trajectory, the coefficient field of the linearized Floer operator is that of
 `∂s + J₀ ∂t - J₀ dX_{H_t}(u)`. -/
@@ -98,18 +87,6 @@ private theorem floerJetCoeff_const_of_eq (ω : SymplecticForm V) (J₀ : V →L
       firstOrderJetCoeff J₀ (-J₀.comp (fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (u z))) := by
   rw [floerJetCoeff_const, hKs, hKt, Pi.zero_def, hamiltonianVectorField_const]
   simp
-
-omit [FiniteDimensional ℝ V] in
-/-- The coefficient fields of two operators `∂s + A ∂t + C` and `∂s + A ∂t + C'` with the same
-principal part differ by at most `‖C - C'‖`. -/
-private theorem norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le (A C C' : V →L[ℝ] V) :
-    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A C'‖ ≤ ‖C - C'‖ := by
-  have h : firstOrderJetCoeff A C - firstOrderJetCoeff A C' =
-      (C - C').comp (ContinuousLinearMap.fst ℝ V (V × V)) :=
-    ContinuousLinearMap.ext fun v ↦ by simp
-  rw [h]
-  exact (opNorm_comp_le _ _).trans
-    (mul_le_of_le_one_right (norm_nonneg _) (norm_fst_le ℝ V (V × V)))
 
 /-- Along maps whose loops converge uniformly to a continuous loop `x`, the maps
 `J₀ dX_{H_t}(u(s, t))` converge uniformly to `J₀ dX_{H_t}(x(t))` for `t ∈ [0, 1]`. -/
