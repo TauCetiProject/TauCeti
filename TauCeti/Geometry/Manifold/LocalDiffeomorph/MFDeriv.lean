@@ -158,11 +158,11 @@ theorem hasFDerivAt_comp_symm_trans (ψ₀ : OpenPartialHomeomorph M V₀)
   filter_upwards [hsource] with z hz
   simp [ψ₁.left_inv hz]
 
-/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into a normed space is
+/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into normed spaces is
 `C^n` on its source when `ψ₂` is `C^n` on its source and `ψ₁⁻¹` is `C^n` on its target. -/
-theorem contDiffOn_symm_trans_of_contMDiffOn {ψ₁ ψ₂ : OpenPartialHomeomorph M V₀}
-    (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₀) n ψ₂ ψ₂.source)
-    (hψ₁ : ContMDiffOn 𝓘(𝕜, V₀) I n ψ₁.symm ψ₁.target) :
+theorem contDiffOn_symm_trans_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V₁}
+    {ψ₂ : OpenPartialHomeomorph M V₂} (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₂) n ψ₂ ψ₂.source)
+    (hψ₁ : ContMDiffOn 𝓘(𝕜, V₁) I n ψ₁.symm ψ₁.target) :
     ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂) (ψ₁.symm.trans ψ₂).source := by
   rw [trans_source, coe_trans]
   exact contMDiffOn_iff_contDiffOn.1 (hψ₂.comp (hψ₁.mono Set.inter_subset_left) fun _ hy ↦ hy.2)

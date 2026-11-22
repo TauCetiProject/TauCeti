@@ -8,12 +8,10 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
-import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -42,10 +40,10 @@ chart transition (`Bundle.Trivialization.forall_isMicrolocallySmoothAt_chartComp
 one chart and two frames the transition is the identity
 (`Bundle.Trivialization.forall_isMicrolocallySmoothAt_chartComponent_iff_of_chart`).
 
-So covectors transform by the transpose of the derivative of the transition, and microlocal
-smoothness of `T` at a covector `ξ ∈ T*ₓM` is well defined: it is microlocal smoothness of the
-components in any chart `c` at `x`, at `c x` in the direction of the covector `ξ ∘ D(c⁻¹)(c x)`
-read in the chart (`TauCeti.BundleTest.IsMicrolocallySmoothAt`,
+So covectors transform by the transpose of the derivative of the transition, and on a manifold
+without boundary microlocal smoothness of `T` at a covector `ξ ∈ T*ₓM` is well defined: it is
+microlocal smoothness of the components in any chart `c` at `x`, at `c x` in the direction of the
+covector `ξ ∘ D(c⁻¹)(c x)` read in the chart (`TauCeti.BundleTest.IsMicrolocallySmoothAt`,
 `TauCeti.BundleTest.isMicrolocallySmoothAt_iff`). The **wave front set** of `T`
 (`TauCeti.BundleTest.waveFrontSet`) is the set of nonzero covectors of the cotangent bundle
 `TauCeti.CotangentBundle I M` at which `T` is not microlocally smooth.
@@ -81,7 +79,8 @@ covectors read in two charts.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt`: microlocal smoothness of `T` at a covector of `M`,
   and `TauCeti.BundleTest.isMicrolocallySmoothAt_iff`, its characterization in every chart and
   frame.
-* `TauCeti.BundleTest.waveFrontSet`: the wave front set of `T`, a subset of the cotangent bundle.
+* `TauCeti.BundleTest.waveFrontSet`: the wave front set of `T`, a subset of the cotangent bundle,
+  empty for `T = 0` on a manifold without boundary (`TauCeti.BundleTest.waveFrontSet_zero`).
 
 ## References
 
@@ -238,12 +237,7 @@ private theorem contDiffOn_transitionCoeff
       (Module.finBasis ℝ F).coord j (t'.coordChangeL ℝ t (c'.symm z) v))
       (c'.symm.trans c).source := by
   set κ := c'.symm.trans c
-  have hdet : ContDiffOn ℝ (⊤ : ℕ∞) (fun z ↦ |(fderiv ℝ κ z).det|) κ.source := fun z hz ↦
-    (ContDiffAt.comp (g := fun r : ℝ ↦ |r|) z
-      (contDiffAt_abs (κ.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) hz))
-      (ContinuousLinearMap.contDiff_det.contDiffAt.comp z
-        ((he.fderiv_of_isOpen κ.open_source (by simp)).contDiffAt
-          (κ.open_source.mem_nhds hz)))).contDiffWithinAt
+  have hdet := κ.contDiffOn_abs_det_fderiv_of_contDiffOn (m := ⊤) (by simp) he he'
   have hG : ContDiffOn ℝ (⊤ : ℕ∞) (fun z ↦ (t'.coordChangeL ℝ t (c'.symm z) : F →L[ℝ] F))
       κ.source :=
     contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_coordChangeL (IB := I) t' t).comp
@@ -252,6 +246,18 @@ private theorem contDiffOn_transitionCoeff
   have hcoord := (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)).contDiff
     (n := (⊤ : ℕ∞))
   exact hdet.mul (hcoord.comp_contDiffOn (hG.clm_apply contDiffOn_const))
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+include hc hc' in
+/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
+source, and so is its inverse on its target. -/
+private theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
+    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
+    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
+      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
+  refine ⟨OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs', ?_⟩
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+  exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
 
 /-- If every component in `(t, c)` is microlocally smooth at `(κ y, (Dκ⁻¹(κ y))ᵀ ξ)`, for the
 transition `κ = c ∘ c'⁻¹`, then every component in `(t', c')` is microlocally smooth at
@@ -263,10 +269,7 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
     (h : ∀ w, (t.chartComponent c hc hct T w).IsMicrolocallySmoothAt (c'.symm.trans c y)
       (((fderiv ℝ (c'.symm.trans c).symm (c'.symm.trans c y))†) ξ)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsMicrolocallySmoothAt y ξ := by
-  have he := OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs'
-  have he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-    exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
+  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
   -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
   obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
     (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
@@ -310,10 +313,7 @@ theorem forall_isMicrolocallySmoothAt_chartComponent_iff
     rw [hzy]
     exact h w
   · intro h v
-    have he := OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs'
-    have he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-      rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-      exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
+    obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
     refine isMicrolocallySmoothAt_chartComponent_of_forall (t := t) (hc := hc) (hct := hct)
       (t' := t') (hc' := hc') (hct' := hct') hcs hcs' T hys (fun w ↦ ?_) v
     have hη := (c'.symm.trans c).adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he
@@ -360,7 +360,11 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 in some smooth chart `c` at `x` with smooth inverse and some frame `t` over its source, every
 component of the local representative of `T` is microlocally smooth at `c x` in the direction of
 the covector `ξ ∘ D(c⁻¹)(c x)` read in the chart, identified with a vector of `E` through the inner
-product. The chart and the frame do not matter (`TauCeti.BundleTest.isMicrolocallySmoothAt_iff`). -/
+product. The chart and the frame do not matter (`TauCeti.BundleTest.isMicrolocallySmoothAt_iff`).
+
+The notion is meant for a boundaryless model `I`, where such charts exist at every point. At a
+boundary point of a manifold with boundary there is no chart into `E`, and `T` is never
+microlocally smooth there. -/
 def IsMicrolocallySmoothAt (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : Prop :=
   ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t) (c : OpenPartialHomeomorph M E)
@@ -407,9 +411,8 @@ theorem isMicrolocallySmoothAt_iff (T : BundleTest I F V →L_c[ℝ] ℝ)
   ext u
   simp only [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply, adjoint_inner_left,
     toDual_symm_apply]
-  rw [hD, hwx]
-  -- The transition `c.symm.trans c₀` is `c₀ ∘ c.symm` by definition.
-  rfl
+  rw [hD, hwx, OpenPartialHomeomorph.coe_trans]
+  exact ContinuousLinearMap.comp_apply _ _ _
 
 variable (I) in
 /-- The **wave front set** of a real functional `T` on bundle tests, for instance a distributional
@@ -421,5 +424,39 @@ def waveFrontSet (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (CotangentBundle I
 theorem mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {p : CotangentBundle I M} :
     p ∈ waveFrontSet I T ↔ p.snd ≠ 0 ∧ ¬ IsMicrolocallySmoothAt T p.proj p.snd :=
   Iff.rfl
+
+omit [FiniteDimensional ℝ E] [T2Space M] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I] in
+/-- On a manifold without boundary, every point lies in the source of a smooth chart into `E` with
+smooth inverse, over which the bundle has a frame. -/
+private theorem exists_chart [I.Boundaryless] (x : M) :
+    ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t)
+      (c : OpenPartialHomeomorph M E), ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target ∧ c.source ⊆ t.baseSet ∧ x ∈ c.source := by
+  have hmem : (chartAt H x).restr (trivializationAt F V x).baseSet ∈
+      IsManifold.maximalAtlas I ∞ M :=
+    restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
+      (trivializationAt F V x).open_baseSet
+  refine ⟨trivializationAt F V x, inferInstance,
+    ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E),
+    OpenPartialHomeomorph.contMDiffOn_extendTrans _ hmem contDiff_id,
+    OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ hmem contDiff_id, ?_, ?_⟩ <;>
+  rw [OpenPartialHomeomorph.extendTrans_source,
+    OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
+  · exact inter_subset_right
+  · exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+
+/-- On a manifold without boundary, the zero functional has empty wave front set. -/
+@[simp]
+theorem waveFrontSet_zero [I.Boundaryless] : waveFrontSet I (0 : BundleTest I F V →L_c[ℝ] ℝ) = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun p hp ↦ hp.2 <| by
+    obtain ⟨t, _, c, hc, hcs, hct, hx⟩ := exists_chart (I := I) (F := F) (V := V) p.proj
+    refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
+    -- The components of the zero functional vanish, and the empty sum is microlocally smooth.
+    have h := IsMicrolocallySmoothAt.sum (∅ : Finset Unit) (T := fun _ ↦ 0)
+      (ξ := (toDual ℝ E).symm (p.snd ∘L mfderiv 𝓘(ℝ, E) I c.symm (c p.proj)))
+      (show c p.proj ∈ (⟨c.target, c.open_target⟩ : Opens E) from c.map_source hx) (by simp)
+    simpa [chartComponent] using h
 
 end TauCeti.BundleTest
