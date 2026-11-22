@@ -80,8 +80,9 @@ theorem exists_notMem_isLocalization_atPrime_away [Finite (PrimeSpectrum R)]
     ∃ f ∉ p.asIdeal, IsLocalization.AtPrime (Localization.Away f) p.asIdeal := by
   classical
   -- Choose, in every prime not contained in `p`, an element outside `p`.
-  have : ∀ q : {q : PrimeSpectrum R // ¬q.asIdeal ≤ p.asIdeal}, ∃ a ∈ q.1.asIdeal, a ∉ p.asIdeal :=
-    fun q ↦ Set.not_subset.mp q.2
+  have : ∀ q : {q : PrimeSpectrum R // ¬q.asIdeal ≤ p.asIdeal}, ∃ a ∈ q.val.asIdeal, a ∉ p.asIdeal
+      :=
+    fun q ↦ Set.not_subset.mp q.property
   choose a ha hap using this
   have := Fintype.ofFinite {q : PrimeSpectrum R // ¬q.asIdeal ≤ p.asIdeal}
   have hf : ∏ q, a q ∉ p.asIdeal := by

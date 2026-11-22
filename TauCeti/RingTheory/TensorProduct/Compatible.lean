@@ -116,14 +116,14 @@ noncomputable def relativeTensorProductEquiv :
   toFun x := ⟨⟨x.comp Algebra.TensorProduct.includeLeft,
     x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)⟩,
     x.comp_includeLeft_eq_comp_includeRight⟩
-  invFun p := p.1.1.tensorProductLift p.1.2 p.2
+  invFun p := p.val.1.tensorProductLift p.val.2 p.property
   left_inv := AlgHom.tensorProductLift_restrict
   right_inv p := by ext <;> simp
 
 /-- The relative tensor-product equivalence sends a map to its pair of restrictions. -/
 @[simp]
 theorem relativeTensorProductEquiv_apply_coe (x : A ⊗[C] B →ₐ[k] R) :
-    (relativeTensorProductEquiv k C A B R x).1 =
+    (relativeTensorProductEquiv k C A B R x).val =
       (x.comp Algebra.TensorProduct.includeLeft,
         x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)) :=
   (rfl)
@@ -134,7 +134,7 @@ theorem relativeTensorProductEquiv_symm_apply
     (p : {p : (A →ₐ[k] R) × (B →ₐ[k] R) //
       p.1.comp (IsScalarTower.toAlgHom k C A) =
         p.2.comp (IsScalarTower.toAlgHom k C B)}) :
-    (relativeTensorProductEquiv k C A B R).symm p = p.1.1.tensorProductLift p.1.2 p.2 :=
+    (relativeTensorProductEquiv k C A B R).symm p = p.val.1.tensorProductLift p.val.2 p.property :=
   (rfl)
 
 /-- Restriction from a relative tensor product has image exactly the pairs of algebra maps

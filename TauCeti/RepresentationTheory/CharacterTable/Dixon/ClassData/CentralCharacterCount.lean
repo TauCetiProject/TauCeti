@@ -114,7 +114,7 @@ theorem centralCharacterSearch_nonempty :
     (algHomEquivEigenrow ((MonoidAlgebra.lift F F G (1 : G →* F)).comp
       (Subalgebra.center F (MonoidAlgebra F G)).val)), ?_⟩
   rw [d.mem_centralCharacterSearch]
-  exact (d.modularEigenrowEquiv.symm _).2
+  exact (d.modularEigenrowEquiv.symm _).property
 
 /-- **The executable central-character search over `ZMod p` returns exactly `r` rows at a good
 Dixon prime**, the form in which the modular phase of the Burnside--Dixon--Schneider algorithm

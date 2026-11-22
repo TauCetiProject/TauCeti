@@ -63,7 +63,7 @@ theorem invSelf_smul_mem_zmultiples {x : T} (hx : IsOfFinAddOrder x) :
     (invSelf m : Localization.Away m) • x ∈ AddSubgroup.zmultiples x := by
   have : Finite (AddSubgroup.zmultiples x) := hx.finite_zmultiples
   let f : AddSubgroup.zmultiples x → AddSubgroup.zmultiples x := fun w ↦
-    ⟨m • (w : T), AddSubgroup.zsmul_mem _ w.2 m⟩
+    ⟨m • (w : T), AddSubgroup.zsmul_mem _ w.property m⟩
   have hf : Function.Injective f := fun w w' h ↦ Subtype.ext <| by
     have h' : m • (w : T) = m • (w' : T) := congrArg Subtype.val h
     simpa only [invSelf_smul_zsmul (m := m)] using
@@ -72,7 +72,7 @@ theorem invSelf_smul_mem_zmultiples {x : T} (hx : IsOfFinAddOrder x) :
   have hw : m • (w : T) = x := congrArg Subtype.val hw
   have hx : (invSelf m : Localization.Away m) • x = w := by
     simpa only [hw] using invSelf_smul_zsmul (m := m) (w : T)
-  exact hx ▸ w.2
+  exact hx ▸ w.property
 
 /-- **A finitely generated torsion `ℤ[1/m]`-module is finite.** If every element of a finitely
 generated `ℤ[1/m]`-module has finite additive order, then the integer multiples of finitely many

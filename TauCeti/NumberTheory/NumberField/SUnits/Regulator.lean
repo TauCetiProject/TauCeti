@@ -85,7 +85,7 @@ variable {S}
 private def fullLogMatrix {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
     Matrix ι (InfinitePlace K ⊕ S) ℝ :=
   Matrix.of fun i ↦ Sum.elim (fun w ↦ (w.mult : ℝ) * Real.log (w ((ε i : Kˣ) : K)))
-    (fun v ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K)))
+    (fun v ↦ Real.log (FinitePlace.mk v.val ((ε i : Kˣ) : K)))
 
 /-- The rows of the full matrix of weighted logarithms sum to zero: this is the product formula. -/
 private theorem sum_fullLogMatrix {ι : Type*}
@@ -100,21 +100,21 @@ infinite place `w'`: the row of `ε i` lists `mult w * log (w (ε i))` at the in
 private def logMatrix {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
     (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) : Matrix ι ι ℝ :=
   Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
-    (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-    (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k)
+    (w.val.mult : ℝ) * Real.log (w.val ((ε i : Kˣ) : K)))
+    (fun v : S ↦ Real.log (FinitePlace.mk v.val ((ε i : Kˣ) : K))) (e k)
 
 private theorem logMatrix_apply {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
     (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) (i k : ι) :
     logMatrix ε w' e i k = Sum.elim (fun w : {w // w ≠ w'} ↦
-      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) :=
+      (w.val.mult : ℝ) * Real.log (w.val ((ε i : Kˣ) : K)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.val ((ε i : Kˣ) : K))) (e k) :=
   rfl
 
 private theorem logMatrix_eq {ι : Type*} (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K)
     (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
     logMatrix ε w' e = Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
-      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k) :=
+      (w.val.mult : ℝ) * Real.log (w.val ((ε i : Kˣ) : K)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.val ((ε i : Kˣ) : K))) (e k) :=
   rfl
 
 /-- Deleting the column of the infinite place `w'` from the full matrix of weighted logarithms
@@ -140,8 +140,8 @@ theorem regulator_eq_abs_det {ι : Type*} [Fintype ι] [DecidableEq ι]
       CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) = ⊤)
     (w' : InfinitePlace K) (e : ι ≃ ({w // w ≠ w'} ⊕ S)) :
     regulator S = |(Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
-      (w.1.mult : ℝ) * Real.log (w.1 ((ε i : Kˣ) : K)))
-      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((ε i : Kˣ) : K))) (e k)).det| := by
+      (w.val.mult : ℝ) * Real.log (w.val ((ε i : Kˣ) : K)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.val ((ε i : Kˣ) : K))) (e k)).det| := by
   classical
   -- The cardinality of `ι` is forced by `e`, so `ε` is a fundamental system.
   have hcard : Fintype.card ι = Fintype.card ({w : InfinitePlace K // w ≠ w₀} ⊕ S) := by
@@ -175,7 +175,7 @@ theorem regulator_empty : regulator (∅ : Finset (HeightOneSpectrum (𝓞 K))) 
   -- The ordinary fundamental system generates the `∅`-units modulo torsion.
   have hε : Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion (T.unit K) = ⊤ := by
     refine eq_top_iff.mpr fun x _ ↦ ?_
-    obtain ⟨u, hu⟩ := Set.mem_unit_empty_iff (R := 𝓞 K) K |>.mp (by simpa [T] using x.2)
+    obtain ⟨u, hu⟩ := Set.mem_unit_empty_iff (R := 𝓞 K) K |>.mp (by simpa [T] using x.property)
     have hx : unitOfUnits T K u = x := Subtype.ext (Units.ext (by rw [val_unitOfUnits, hu]))
     have hu' : u ∈ Subgroup.closure (Set.range (NumberField.Units.fundSystem K)) ⊔
         NumberField.Units.torsion K := by

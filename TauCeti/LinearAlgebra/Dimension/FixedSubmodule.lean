@@ -115,9 +115,9 @@ theorem two_mul_finrank_iInf_fixedSubmodule_insert
     ((v.restrict (hS hvS)).restrict fun x hx => hf.mpr <| by
       simpa only [LinearMap.coe_restrict_apply] using hv1 x (hk.mp hx))
     (by ext x; simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.coe_restrict_apply]
-      using huv x (hk.mp x.2))
+      using huv x (hk.mp x.property))
     (by ext x; simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.coe_restrict_apply]
-      using hvu x (hf.mp x.2))
+      using hvu x (hf.mp x.property))
   -- Inside `S`, the new common fixed space is the fixed space of `q`.
   rw [Finset.iInf_insert, inf_comm, ← LinearMap.finrank_fixedSubmodule_restrict (hS hcomm),
     hq.two_mul_finrank_fixedSubmodule e]

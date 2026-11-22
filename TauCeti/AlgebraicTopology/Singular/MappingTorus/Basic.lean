@@ -69,6 +69,21 @@ lemma monodromyChainMap_def :
         (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) :=
   (rfl)
 
+/-- The monodromy chain map of `φ⁻¹` is a left inverse of that of `φ`. -/
+@[reassoc (attr := simp)]
+lemma monodromyChainMap_comp_monodromyChainMap_symm :
+    monodromyChainMap φ R ≫ monodromyChainMap φ.symm R = 𝟙 _ := by
+  rw [monodromyChainMap_def, monodromyChainMap_def, ← Functor.map_comp]
+  convert ((singularChainComplexFunctor C).obj R).map_id (TopCat.of F)
+  ext x
+  exact φ.symm_apply_apply x
+
+/-- The monodromy chain map of `φ⁻¹` is a right inverse of that of `φ`. -/
+@[reassoc (attr := simp)]
+lemma monodromyChainMap_symm_comp_monodromyChainMap :
+    monodromyChainMap φ.symm R ≫ monodromyChainMap φ R = 𝟙 _ := by
+  simpa using monodromyChainMap_comp_monodromyChainMap_symm φ.symm R
+
 /-- The map on singular chains induced by inclusion of the fibre at height zero. -/
 noncomputable def fibreInclusionChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) ⟶
@@ -126,6 +141,14 @@ lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
 lemma singularHomologyMap_incl_eq [CategoryWithHomology C] (n : ℕ) :
     ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) =
       HomologicalComplex.homologyMap (fibreInclusionChainMap φ R) n :=
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
+  (rfl)
+
+/-- On singular homology, the monodromy induces the homology map of
+`TauCeti.MappingTorus.monodromyChainMap`. -/
+lemma singularHomologyMap_monodromy_eq [CategoryWithHomology C] (n : ℕ) :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) =
+      HomologicalComplex.homologyMap (monodromyChainMap φ R) n :=
   -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
   (rfl)
 
