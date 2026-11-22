@@ -27,7 +27,8 @@ of orientations of `F`, so the projection is a covering map
 fixed-point-free deck involution (`TauCeti.VectorBundleOrientationCover.deck`).
 
 A family of fibre orientations is an orientation of the bundle exactly when the associated
-section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk_cover` and
+section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk_cover`,
+`TauCeti.VectorBundleOrientation.coverSection` and
 `TauCeti.VectorBundleOrientation.ofContinuous`), so a bundle is orientable if and only if its
 orientation double cover has a continuous section
 (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`). Over a connected base, a
@@ -52,6 +53,8 @@ in a trivialization have locally constant determinant sign.
   a trivialization.
 * `TauCeti.VectorBundleOrientationCover.deck`: the deck involution reversing orientations.
 * `TauCeti.VectorBundleOrientation.ofContinuous`: an orientation from a continuous section.
+* `TauCeti.VectorBundleOrientation.coverSection`: the continuous section of the cover given by an
+  orientation.
 
 ## Main results
 
@@ -60,6 +63,8 @@ in a trivialization have locally constant determinant sign.
   bases of the fibres give a continuous map to the cover.
 * `TauCeti.VectorBundleOrientationCover.exists_section_of_isClopen`: over a preconnected base, a
   nonempty proper clopen subset of the cover is the image of a continuous section.
+* `TauCeti.VectorBundleOrientationCover.mem_sheet_of_forall_proj_mem_baseSet`: a path in the
+  cover over the base set of a trivialization stays in the sheet through its starting point.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
@@ -461,6 +466,30 @@ theorem exists_section_of_isClopen [PreconnectedSpace B] (hι : Fintype.card ι 
   rw [hpre]
   exact (isCoveringMap_proj (F := F) (E := E) hι).isOpenMap _ (hV.inter hC.isOpen)
 
+/-- **Paths over a trivializing set stay in a sheet**: a path in the orientation double cover over
+the base set of a trivialization `e` of the atlas, starting in the sheet read as `ω`, stays in that
+sheet, provided `ι` has cardinality the rank of the bundle. -/
+theorem mem_sheet_of_forall_proj_mem_baseSet (hι : Fintype.card ι = finrank ℝ F)
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+    (ω : Orientation ℝ F ι) {Γ : C(unitInterval, VectorBundleOrientationCover F E ι)}
+    (hΓ : ∀ t, (Γ t).proj ∈ e.baseSet) (h₀ : Γ 0 ∈ sheet e ω) (t : unitInterval) :
+    Γ t ∈ sheet e ω := by
+  -- Over the base set the cover is the disjoint union of the open sheets read as `ω` and `-ω`,
+  -- so the preimage of the sheet read as `ω` is clopen.
+  have hcompl : (Γ ⁻¹' sheet e ω)ᶜ = Γ ⁻¹' sheet e (-ω) := by
+    ext u
+    simp only [mem_compl_iff, mem_preimage, mem_sheet_iff]
+    refine ⟨fun h ↦ ⟨hΓ u, ?_⟩, fun ⟨_, h⟩ ⟨_, h'⟩ ↦ Module.Ray.ne_neg_self ω (h'.symm.trans h)⟩
+    rcases Orientation.eq_or_eq_neg (e.mapOrientation ι (hΓ u) (Γ u).orientation) ω
+      (Nat.card_eq_fintype_card.trans hι) with h' | h'
+    · exact absurd ⟨hΓ u, h'⟩ h
+    · exact h'
+  have hclopen : IsClopen (Γ ⁻¹' sheet e ω) :=
+    ⟨by rw [← isOpen_compl_iff, hcompl]
+        exact (isOpen_sheet hι e (-ω)).preimage Γ.continuous,
+      (isOpen_sheet hι e ω).preimage Γ.continuous⟩
+  exact Set.eq_univ_iff_forall.1 (hclopen.eq_univ ⟨0, h₀⟩) t
+
 end VectorBundleOrientationCover
 
 namespace VectorBundleOrientation
@@ -517,12 +546,52 @@ theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
     (trivializationAt F E b).open_baseSet.mem_nhds hx] with y hy hy'
   exact ⟨hy', (hy hy').trans hxo⟩
 
+/-- The continuous section `b ↦ (b, o b)` of the orientation double cover given by an orientation
+`o` of the bundle, provided `ι` has cardinality the rank of the bundle. -/
+def coverSection (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) :
+    C(B, VectorBundleOrientationCover F E ι) :=
+  ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩
+
+/-- The section given by an orientation `o` sends `b` to `(b, o b)`. -/
+@[simp]
+theorem coverSection_apply (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) :
+    o.coverSection hι b = ⟨b, o b⟩ :=
+  (rfl)
+
+/-- The section given by an orientation is a section of the projection. -/
+theorem proj_coverSection (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) : (o.coverSection hι b).proj = b :=
+  (rfl)
+
+/-- The section given by an orientation is injective. -/
+theorem coverSection_injective (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) : Function.Injective (o.coverSection hι) :=
+  Function.LeftInverse.injective (g := VectorBundleOrientationCover.proj) (o.proj_coverSection hι)
+
+/-- The deck involution exchanges the sections given by `o` and by the opposite orientation. -/
+theorem deck_coverSection (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) :
+    VectorBundleOrientationCover.deck (o.coverSection hι b) = (-o).coverSection hι b :=
+  (rfl)
+
+/-- The sheets of the sections given by `o` and by the opposite orientation are disjoint. -/
+theorem disjoint_range_coverSection_neg (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) :
+    Disjoint (Set.range (o.coverSection hι)) (Set.range ((-o).coverSection hι)) := by
+  refine Set.disjoint_left.2 ?_
+  rintro _ ⟨x, rfl⟩ ⟨y, h⟩
+  obtain rfl : y = x := by
+    simpa only [proj_coverSection] using congrArg VectorBundleOrientationCover.proj h
+  exact VectorBundleOrientationCover.deck_ne_self _ ((o.deck_coverSection hι y).trans h)
+
 /-- A bundle of rank `card ι` is orientable if and only if its orientation double cover has a
 continuous section. -/
 theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
     Nonempty (VectorBundleOrientation F E ι) ↔
       ∃ s : B → VectorBundleOrientationCover F E ι, Continuous s ∧ ∀ b, (s b).proj = b := by
-  refine ⟨fun ⟨o⟩ ↦ ⟨_, o.continuous_mk_cover hι, fun _ ↦ rfl⟩, fun ⟨s, hs, hproj⟩ ↦ ?_⟩
+  refine ⟨fun ⟨o⟩ ↦ ⟨_, (o.coverSection hι).continuous, o.proj_coverSection hι⟩,
+    fun ⟨s, hs, hproj⟩ ↦ ?_⟩
   -- A section is determined by its fibre orientations, transported along `(s b).proj = b`.
   have key (p : VectorBundleOrientationCover F E ι) (b : B) (h : p.proj = b) :
       (⟨b, h ▸ p.orientation⟩ : VectorBundleOrientationCover F E ι) = p := by

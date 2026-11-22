@@ -26,7 +26,8 @@ Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
-transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`. Likewise the image
+transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` and
+`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹`. Likewise the image
 `F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
 (`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
 
@@ -448,6 +449,30 @@ theorem NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate (τ : F ⟶ 
   simp only [comp_whiskerRight, Category.assoc, rightAdjointMate_comp_evaluation]
   rw [← whisker_exchange_assoc, Functor.mapRightDualIso_hom_whiskerRight_evaluation,
     ← tensorHom_def_assoc, ← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, hη]
+
+/-- The coevaluation counterpart of
+`CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`: a monoidal natural
+transformation `τ : F ⟶ G` between strong monoidal functors satisfies
+`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹` as morphisms `(G.obj X)ᘁ ⟶ G.obj Xᘁ`. Together, the two
+identities make the mate `(τ_X)ᘁ`, transported through the dual-comparison isomorphisms as
+`δ^G_X ≫ (τ_X)ᘁ ≫ (δ^F_X)⁻¹`, a two-sided inverse of `τ_{Xᘁ}`. -/
+@[reassoc]
+theorem NatTrans.rightAdjointMate_comp_mapRightDualIso_inv_comp_app (τ : F ⟶ G) [τ.IsMonoidal]
+    (X : C) [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :
+    (τ.app X)ᘁ ≫ (F.mapRightDualIso X).inv ≫ τ.app Xᘁ = (G.mapRightDualIso X).inv := by
+  have hδ : δ F X Xᘁ ≫ (τ.app X ⊗ₘ τ.app Xᘁ) = τ.app (X ⊗ Xᘁ) ≫ δ G X Xᘁ := by
+    rw [← cancel_epi (μ F X Xᘁ), μ_δ_assoc, IsMonoidal.tensor_assoc, μ_δ, Category.comp_id]
+  -- Morphisms out of the right dual `(G.obj X)ᘁ` are determined by their composite with the
+  -- coevaluation of `G.obj X`, by transposition.
+  have hext : ∀ {f g : (G.obj X)ᘁ ⟶ G.obj Xᘁ},
+      η_ (G.obj X) (G.obj X)ᘁ ≫ G.obj X ◁ f = η_ (G.obj X) (G.obj X)ᘁ ≫ G.obj X ◁ g → f = g :=
+    fun h ↦ by simpa using congrArg (tensorLeftHomEquiv (𝟙_ D) (G.obj X) (G.obj X)ᘁ _).symm h
+  refine hext ?_
+  rw [Functor.coevaluation_whiskerLeft_mapRightDualIso_inv]
+  simp only [whiskerLeft_comp]
+  rw [coevaluation_comp_rightAdjointMate_assoc, ← whisker_exchange_assoc,
+    Functor.coevaluation_whiskerLeft_mapRightDualIso_inv_assoc, ← tensorHom_def,
+    hδ, τ.naturality_assoc, IsMonoidal.unit_assoc]
 
 /-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of
 duals and duals of images: `α_{Xᘁ} ≫ δ^G_X = δ^F_X ≫ (α_X⁻¹)ᘁ`. -/
