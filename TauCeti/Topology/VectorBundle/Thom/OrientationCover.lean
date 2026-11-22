@@ -37,7 +37,7 @@ the fixed classes upstairs are the relative homology of `(E, E₀)` and the nega
 are the homology of `B` twisted by the orientation local system of `E`. Through these two
 identifications, this isomorphism becomes the Thom isomorphism
 `Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` with orientation-twisted coefficients
-(`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyLinearEquivTwistedHomology`).
+(`TauCeti.thomPairSingularHomologyLinearEquivTwistedHomology`).
 
 ## Main definitions and results
 
