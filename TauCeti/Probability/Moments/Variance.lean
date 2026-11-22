@@ -392,11 +392,11 @@ theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
     lintegral_congr_ae (h2.mono fun w hw => evariance_congr hw)]
   exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
 
-omit [SFinite ν] in
-/-- If `F` is almost everywhere strongly measurable on the product of a finite measure and a
-probability measure, and both of its integrated section variances are finite, then `F` is
-square-integrable. -/
-private theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν]
+omit [SFinite ν] [IsProbabilityMeasure π] in
+/-- If `F` is almost everywhere strongly measurable on the product of two finite measures, and the
+lower integrals of the extended variances of its sections in either coordinate are both finite,
+then `F` is square-integrable. -/
+theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν] [IsFiniteMeasure π]
     (hF : AEStronglyMeasurable F (ν.prod π))
     (h₁ : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
     (h₂ : ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π ≠ ∞) : MemLp F 2 (ν.prod π) := by
@@ -410,13 +410,13 @@ private theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν]
   have hGL : MemLp (fun p : α × β => F p - ∫ a, F (a, p.2) ∂ν) 2 (ν.prod π) := by
     refine hGm.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
     rw [lintegral_prod_symm _ (hGm.eNorm.pow_const 2)]
-    exact h₂.lt_top
+    simpa only [evariance] using h₂.lt_top
   -- Almost every section in the second coordinate is square-integrable, both before and after
   -- centering in the first coordinate, so the centering function is square-integrable.
-  obtain ⟨a, ⟨ha₁, hsec⟩, ha₃⟩ := (((ae_lt_top' (aemeasurable_evariance_prod_right hF) h₁).and
-    hGL.ae_memLp_prod_right).and hF.prodMk_left).exists
+  obtain ⟨a, ha, hsec⟩ := ((ae_memLp_two_prod_right_of_lintegral_evariance_ne_top hF h₁).and
+    hGL.ae_memLp_prod_right).exists
   have hmL : MemLp (fun w => ∫ a, F (a, w) ∂ν) 2 π := by
-    convert ((evariance_lt_top_iff_memLp ha₃).mp ha₁).sub hsec using 1
+    convert ha.sub hsec using 1
     ext w
     simp
   convert hGL.add (hmL.comp_snd ν) using 1

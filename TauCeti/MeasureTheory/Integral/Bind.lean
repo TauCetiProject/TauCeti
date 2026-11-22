@@ -12,7 +12,8 @@ public import Mathlib.MeasureTheory.Function.L2Space
 # Bochner integration against mixtures
 
 The Bochner integral against `Measure.bind` of an observable integrable under the mixture is the
-iterated integral against its components. Integrability is characterized by almost-everywhere
+iterated integral against its components. The `L¹` seminorm of the component integrals is at most
+that of the observable under the mixture. Integrability is characterized by almost-everywhere
 component integrability and integrability of the component absolute moments. The second-moment
 version supports covariance calculations for mixtures. The real mass of a measurable set is the
 integral of its component real masses when those component masses are finite almost everywhere.
@@ -93,14 +94,26 @@ theorem aestronglyMeasurable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurabl
   filter_upwards [hKκ] with a ha
   simp only [κ, Kernel.coe_mk, ha]
 
+/-- The `L¹` seminorm of the component Bochner integrals of an observable against the mixing
+measure is at most the `L¹` seminorm of the observable against the mixture. No measurability of
+the observable and no bound on the component masses is needed: the `L¹` seminorm of a function
+that is not almost everywhere strongly measurable is `∞`. -/
+theorem eLpNorm_one_integral_bind_le [NormedSpace ℝ E] (hK : AEMeasurable K μ) :
+    eLpNorm (fun a ↦ ∫ x, f x ∂K a) 1 μ ≤ eLpNorm f 1 (μ.bind K) := by
+  by_cases hf : AEStronglyMeasurable f (μ.bind K)
+  · rw [eLpNorm_one_eq_lintegral_eNorm (aestronglyMeasurable_integral_bind hK hf),
+      eLpNorm_one_eq_lintegral_eNorm hf, lintegral_bind hK hf.eNorm]
+    exact lintegral_mono fun a ↦ eNorm_integral_le_lintegral_eNorm _
+  · rw [eLpNorm_of_not_aestronglyMeasurable hf]
+    exact le_top
+
 /-- If an observable is integrable against the mixture, then its component Bochner integrals are
 integrable against the mixing measure. -/
 theorem integrable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (hf : Integrable f (μ.bind K)) :
     Integrable (fun a ↦ ∫ x, f x ∂K a) μ :=
-  ((integrable_bind_iff hK hf.aestronglyMeasurable).mp hf).2.mono'
-    (aestronglyMeasurable_integral_bind hK hf.aestronglyMeasurable)
-    (.of_forall fun _ ↦ norm_integral_le_integral_norm _)
+  memLp_one_iff_integrable.mp <| memLp_iff.mpr <|
+    (eLpNorm_one_integral_bind_le hK).trans_lt (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
 
 /-- A mixture has a finite second moment exactly when its components do almost everywhere
 and their second moments are integrable under the mixing law. -/

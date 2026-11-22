@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.Probability.Moments.Covariance
 
 /-!
 # Means and covariances of mixtures
@@ -20,26 +21,29 @@ its component means against the mixing measure. The covariance of a mixture is t
 component covariances against the mixing measure plus the covariance of the component means under
 the mixing measure; taking the same observable twice gives the law of total variance.
 
-Throughout, the component family need only be almost everywhere measurable. Component means are
-the component Bochner integrals; they are genuine averages only where the component is a
-probability measure, and they are `0` by convention for observables that are not integrable under
-the component or that take values in an incomplete space. With no assumption on the mixing measure,
-if almost every component has mass at most a constant `c`, then for `1 ≤ p` the `Lᵖ` seminorm of
-the component means is at most `c ^ (1 - 1 / p)` times the `Lᵖ` seminorm of the observable under
-the mixture, so an observable in `Lᵖ` of the mixture has its component means in `Lᵖ` of the mixing
-measure. In particular, for square-integrable observables the component means are
-square-integrable and the component covariances are integrable. The laws of total covariance and
-variance need almost every component to be a probability measure and the mixing measure to be
-finite, but not of mass one: Mathlib's `covariance` and `variance` are defined for every measure
-and center by raw integrals, not by normalized averages, and the identities hold in that sense for
-every finite mixing measure. They fail for some infinite mixing measures. The covariance formula
-applies to any pair of real observables that are square-integrable under the mixture, including
-coordinates of a vector-valued law. The extended variance identity on the product of a finite
-first measure and a probability second measure needs no integrability, only almost everywhere
-strong measurability with respect to the product measure: for such an observable that is not
-square-integrable, both sides are infinite. The extended variances, under an s-finite measure on
+Throughout, the component family need only be almost everywhere measurable. Component means are the
+component Bochner integrals; they are genuine averages only where the component is a probability
+measure, and they are `0` by convention for observables that are not integrable under the component
+or that take values in an incomplete space. With no assumption on the mixing measure, if almost
+every component has mass at most a constant `c`, then for `1 ≤ p` the `Lᵖ` seminorm of the component
+means is at most `c ^ (1 - 1 / p)` times the `Lᵖ` seminorm of the observable under the mixture, so
+an observable in `Lᵖ` of the mixture has its component means in `Lᵖ` of the mixing measure. For
+`p = 1` no mass bound is needed. In particular, for square-integrable observables the component
+means are square-integrable and the component covariances are integrable. The laws of total
+covariance and variance need almost every component to be a probability measure and the mixing
+measure to be finite, but not of mass one: Mathlib's `covariance` and `variance` are defined for
+every measure and center by raw integrals, not by normalized averages, and the identities hold in
+that sense for every finite mixing measure. They fail for some infinite mixing measures. The
+covariance formula applies to any pair of real observables that are square-integrable under the
+mixture, including coordinates of a vector-valued law. The extended variance identity on the product
+of a finite first measure and a probability second measure needs no integrability, only almost
+everywhere strong measurability with respect to the product measure: for such an observable that is
+not square-integrable, both sides are infinite. The extended variances, under an s-finite measure on
 the second coordinate, of the sections of a function that is almost everywhere strongly measurable
-on a product are almost everywhere measurable in the first coordinate.
+on a product are almost everywhere measurable in the first coordinate. Under a finite measure on the
+second coordinate, if their lower integral is finite, then almost every section is
+square-integrable. On the product of two finite measures, if moreover the extended variance of the
+section integrals is finite, then the function is square-integrable.
 
 The integration steps use Mathlib's kernel-composition theory through
 `TauCeti.MeasureTheory.Integral.Bind`.
@@ -139,25 +143,8 @@ theorem memLp_integral_bind {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ 
     rcases eq_or_ne p ∞ with rfl | hp_top
     · simp
     · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hp_top hp))
-  exact (eLpNorm_integral_bind_le hp hK hmass).trans_lt
+  exact memLp_iff.mpr <| (eLpNorm_integral_bind_le hp hK hmass).trans_lt
     (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg hexp ENNReal.coe_ne_top) hX.eLpNorm_lt_top)
-
-/-- Mathlib's covariance under a finite measure, expanded in terms of its total mass. For a
-probability measure this is `covariance_eq_sub`. -/
-private theorem covariance_eq_integral_mul_add {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω}
-    [IsFiniteMeasure ν] {X Y : Ω → ℝ} (hX : MemLp X 2 ν) (hY : MemLp Y 2 ν) :
-    covariance X Y ν = ν[X * Y] + (ν.real Set.univ - 2) * (ν[X] * ν[Y]) := by
-  have hXY : Integrable (fun ω ↦ X ω * Y ω) ν := hX.integrable_mul hY
-  have hXc : Integrable (fun ω ↦ X ω * ν[Y]) ν := (hX.integrable one_le_two).mul_const _
-  have hcY : Integrable (fun ω ↦ ν[X] * Y ω) ν := (hY.integrable one_le_two).const_mul _
-  have hc : Integrable (fun _ ↦ ν[X] * ν[Y]) ν := integrable_const _
-  have hl : Integrable (fun ω ↦ X ω * Y ω - X ω * ν[Y]) ν := hXY.sub hXc
-  have hr : Integrable (fun ω ↦ ν[X] * Y ω - ν[X] * ν[Y]) ν := hcY.sub hc
-  simp_rw [covariance, sub_mul, mul_sub]
-  rw [integral_sub hl hr, integral_sub hXY hXc, integral_sub hcY hc]
-  simp_rw [integral_mul_const, integral_const_mul, integral_const, smul_eq_mul]
-  simp only [Pi.mul_apply]
-  ring
 
 variable {X Y : β → ℝ}
 
@@ -204,8 +191,9 @@ theorem measurable_evariance_prod_right {π : Measure β} [SFinite π] {F : α �
     (hF : Measurable F) : Measurable fun a => evariance (fun w => F (a, w)) π := by
   have hm : StronglyMeasurable fun a => ∫ w, F (a, w) ∂π :=
     hF.stronglyMeasurable.integral_prod_right'
-  exact Measurable.lintegral_prod_right' (f := fun p : α × β => ‖F p - ∫ w, F (p.1, w) ∂π‖ₑ ^ 2)
-    ((hF.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
+  simpa only [evariance] using
+    Measurable.lintegral_prod_right' (f := fun p : α × β => ‖F p - ∫ w, F (p.1, w) ∂π‖ₑ ^ 2)
+      ((hF.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
 
 /-- The extended variances, under an s-finite measure, of the sections in the second coordinate
 of a function that is almost everywhere strongly measurable on a product form an almost everywhere
@@ -218,12 +206,24 @@ theorem aemeasurable_evariance_prod_right {π : Measure β} [SFinite π] {F : α
   filter_upwards [Measure.ae_ae_of_ae_prod hF.ae_eq_mk] with a ha
   exact (evariance_congr ha).symm
 
+/-- If a function is almost everywhere strongly measurable on the product with a finite measure,
+and the lower integral of the extended variances of its sections in the second coordinate is
+finite, then almost every such section is square-integrable. -/
+theorem ae_memLp_two_prod_right_of_lintegral_evariance_ne_top {π : Measure β} [IsFiniteMeasure π]
+    {F : α × β → ℝ} (hF : AEStronglyMeasurable F (μ.prod π))
+    (h : ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ ≠ ∞) :
+    ∀ᵐ a ∂μ, MemLp (fun w => F (a, w)) 2 π := by
+  filter_upwards [ae_lt_top' (aemeasurable_evariance_prod_right hF) h, hF.prodMk_left]
+    with a ha hma
+  exact (evariance_lt_top_iff_memLp hma).mp ha
+
 variable [IsFiniteMeasure μ]
 
-/-- **Law of total covariance**: the covariance of a mixture over a finite mixing measure is the
-integral of the component covariances against the mixing measure plus the covariance of the
-component means under the mixing measure. Both covariances are Mathlib's, centered by raw
-integrals. -/
+/-- **Law of total covariance**: for two real observables that are square-integrable under the
+mixture, if the mixing measure is finite and almost every component is a probability measure, then
+the covariance of the mixture is the integral of the component covariances against the mixing
+measure plus the covariance of the component means under the mixing measure. Both covariances are
+Mathlib's, centered by raw integrals. -/
 theorem covariance_bind (hK : AEMeasurable K μ)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a))
     (hX : MemLp X 2 (μ.bind K)) (hY : MemLp Y 2 (μ.bind K)) :
@@ -261,9 +261,11 @@ theorem covariance_bind (hK : AEMeasurable K μ)
     Measure.integral_bind hK (hY.integrable one_le_two)]
   ring
 
-/-- **Law of total variance**: the variance of a mixture over a finite mixing measure is the
-integral of the component variances against the mixing measure plus the variance of the component
-means under the mixing measure. Both variances are Mathlib's, centered by raw integrals. -/
+/-- **Law of total variance**: for a real observable that is square-integrable under the mixture,
+if the mixing measure is finite and almost every component is a probability measure, then the
+variance of the mixture is the integral of the component variances against the mixing measure plus
+the variance of the component means under the mixing measure. Both variances are Mathlib's,
+centered by raw integrals. -/
 theorem variance_bind (hK : AEMeasurable K μ)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a)) (hX : MemLp X 2 (μ.bind K)) :
     variance X (μ.bind K) = (∫ a, variance X (K a) ∂μ) +
@@ -276,33 +278,38 @@ theorem variance_bind (hK : AEMeasurable K μ)
   exact integral_congr_ae
     (hXae.mono fun a ha ↦ covariance_self ha.aestronglyMeasurable.aemeasurable)
 
-variable {π : Measure β} [IsProbabilityMeasure π] {F : α × β → ℝ}
-
-/-- If an observable is almost everywhere strongly measurable on the product of a finite measure
-and a probability measure, and both terms of the law of total variance on the product are finite,
-then the observable is square-integrable. -/
-private theorem memLp_prod_of_evariance_ne_top (hF : AEStronglyMeasurable F (μ.prod π))
+/-- If an observable is almost everywhere strongly measurable on the product of two finite
+measures, the lower integral of the extended variances of its sections in the second coordinate is
+finite, and the extended variance of the integrals of those sections is finite, then the observable
+is square-integrable. -/
+theorem memLp_prod_of_evariance_ne_top {π : Measure β} [IsFiniteMeasure π] {F : α × β → ℝ}
+    (hF : AEStronglyMeasurable F (μ.prod π))
     (hslice : ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ ≠ ∞)
     (hmean : evariance (fun a => ∫ w, F (a, w) ∂π) μ ≠ ∞) : MemLp F 2 (μ.prod π) := by
-  have hvm := aemeasurable_evariance_prod_right hF
-  have hsl : ∀ᵐ a ∂μ, MemLp (fun w => F (a, w)) 2 π := by
-    filter_upwards [ae_lt_top' hvm hslice, hF.prodMk_left] with a ha hma
-    exact (evariance_lt_top_iff_memLp hma).mp ha
+  have hsl := ae_memLp_two_prod_right_of_lintegral_evariance_ne_top hF hslice
   have hmL := (evariance_lt_top_iff_memLp hF.integral_prod_right').mp hmean.lt_top
-  have hvar : Integrable (fun a => variance (fun w => F (a, w)) π) μ :=
-    integrable_toReal_of_lintegral_ne_top hvm hslice
-  -- Each section's second moment is its variance plus its squared mean.
+  have hvar : Integrable (fun a => variance (fun w => F (a, w)) π) μ := by
+    simpa only [variance] using
+      integrable_toReal_of_lintegral_ne_top (aemeasurable_evariance_prod_right hF) hslice
+  -- Each section's second moment is its variance minus `(mass - 2)` times its squared integral.
   rw [memLp_two_iff_integrable_sq hF, integrable_prod_iff (f := fun p ↦ F p ^ 2) (hF.pow 2)]
-  refine ⟨hsl.mono fun a ha => ha.integrable_sq, (hvar.add hmL.integrable_sq).congr ?_⟩
+  refine ⟨hsl.mono fun a ha => ha.integrable_sq,
+    (hvar.sub (hmL.integrable_sq.const_mul (π.real Set.univ - 2))).congr ?_⟩
   filter_upwards [hsl] with a ha
-  simp only [Pi.add_apply, Real.norm_of_nonneg (sq_nonneg _), variance_eq_sub ha, Pi.pow_apply,
-    sub_add_cancel]
+  have h := covariance_eq_integral_mul_add ha ha
+  rw [covariance_self ha.aestronglyMeasurable.aemeasurable] at h
+  simp only [Real.norm_of_nonneg (sq_nonneg _)]
+  simp only [Pi.sub_apply, h, Pi.mul_apply, sq]
+  ring
+
+variable {π : Measure β} [IsProbabilityMeasure π] {F : α × β → ℝ}
 
 /-- The law of total variance on the product of a finite measure and a probability measure: the
-extended variance of `F` is the integral against the first factor of the variances in the second
-coordinate plus the variance of the average over the second coordinate. The observable `F` need
-only be almost everywhere strongly measurable with respect to the product measure; when it is not
-square-integrable, both sides are infinite. -/
+extended variance of `F` is the lower integral against the first factor of the extended variances
+of its sections in the second coordinate plus the extended variance, under the first factor, of
+its averages over the second coordinate. The observable `F` need only be almost everywhere strongly
+measurable with respect to the product measure; when it is not square-integrable, both sides are
+infinite. -/
 theorem evariance_prod_eq (hF : AEStronglyMeasurable F (μ.prod π)) :
     evariance F (μ.prod π) = ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ +
       evariance (fun a => ∫ w, F (a, w) ∂π) μ := by
@@ -352,7 +359,8 @@ namespace ProbabilityTheory.Kernel
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {μ : Measure α} [IsFiniteMeasure μ] {X Y : β → ℝ}
 
-/-- The law of total covariance for the composition of a finite measure and a Markov kernel. -/
+/-- The law of total covariance for the composition of a finite measure and a Markov kernel, for
+two real observables that are square-integrable under the composition. -/
 theorem covariance_comp (κ : Kernel α β) [IsMarkovKernel κ]
     (hX : MemLp X 2 (κ ∘ₘ μ)) (hY : MemLp Y 2 (κ ∘ₘ μ)) :
     covariance X Y (κ ∘ₘ μ) = (∫ a, covariance X Y (κ a) ∂μ) +
@@ -360,7 +368,8 @@ theorem covariance_comp (κ : Kernel α β) [IsMarkovKernel κ]
   exact TauCeti.Probability.covariance_bind κ.aemeasurable
     (Filter.Eventually.of_forall fun _ ↦ inferInstance) hX hY
 
-/-- The law of total variance for the composition of a finite measure and a Markov kernel. -/
+/-- The law of total variance for the composition of a finite measure and a Markov kernel, for a
+real observable that is square-integrable under the composition. -/
 theorem variance_comp (κ : Kernel α β) [IsMarkovKernel κ]
     (hX : MemLp X 2 (κ ∘ₘ μ)) :
     variance X (κ ∘ₘ μ) = (∫ a, variance X (κ a) ∂μ) +
