@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Semilinear maps, finite generation and projectivity under restriction of scalars
@@ -66,6 +66,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
+* `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
+  of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
 -/
 
 public section
@@ -152,7 +154,7 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
-  have hRM : Module.Projective R M := Module.Projective.trans S M
+  have hRM : Module.Projective R M := Module.Projective.trans R S M
   exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
@@ -279,6 +281,15 @@ theorem apply_restrictScalarsLinearEquivOfBijective_symm_apply (hg : Function.Bi
 
 end SemilinearMap
 
+/-- Restriction of scalars preserves colimits of any shape that exist in `AddCommGrpCat.{v}`,
+with no constraint between the ring universes and the module universe `v`. -/
+instance preservesColimitsOfShape_restrictScalars
+    {J : Type*} [Category* J] [Limits.HasColimitsOfShape J AddCommGrpCat.{v}] (f : R →+* S) :
+    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) :=
+  ⟨fun {_} ↦ inferInstance⟩
+
+section Algebra
+
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
 
 /-- For an `S`-module `M` whose `R`-module structure factors through `algebraMap R S`,
@@ -314,6 +325,8 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+end Algebra
 
 section OpOp
 

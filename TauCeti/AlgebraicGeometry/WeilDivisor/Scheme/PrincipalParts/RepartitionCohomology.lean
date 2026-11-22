@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -176,8 +176,16 @@ lemma repartitionToCohomologyOne_naturality {D E : SchemeWeilDivisor X} (h : D �
     Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1
         (repartitionToCohomologyOne hex hdim D a) =
       repartitionToCohomologyOne hex hdim E a := by
-  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply,
-    principalPartsBoundary_naturality, repartitionToPrincipalParts_naturality]
+  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply]
+  have hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X) :=
+    fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property
+  have : Epi (toPrincipalParts D) := epi_toPrincipalParts hclosed D
+  have hn := principalPartsBoundary_naturality k hclosed
+    (principalPartsShortComplexMap (sheafHomOfLE h) (𝟙 _) (by simp))
+    (repartitionToPrincipalParts hex hdim D a)
+  erw [principalPartsShortComplexMap_τ₁, principalPartsShortComplexMap_τ₃,
+    principalPartsMap_ofLE, repartitionToPrincipalParts_naturality] at hn
+  exact hn
 
 /-- Every first cohomology class is represented by a repartition. -/
 theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :

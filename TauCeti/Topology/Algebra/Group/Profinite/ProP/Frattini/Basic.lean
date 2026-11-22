@@ -106,18 +106,18 @@ closed normal subgroup whose quotient is elementary abelian, so that `G ⧸ proP
 then the largest elementary abelian quotient of `G` by a closed normal subgroup; see
 `TauCeti.proPFrattini_le_iff`. -/
 def proPFrattini : Subgroup G :=
-  ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.1.toSubgroup
+  ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.val.toSubgroup
 
 /-- The defining equation of the pro-`p` Frattini subgroup: the body of `TauCeti.proPFrattini` is
 not exposed, so unfolding it goes through this lemma. -/
 theorem proPFrattini_def :
     proPFrattini p G =
-      ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.1.toSubgroup := by
+      ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.val.toSubgroup := by
   rw [proPFrattini]
 
 /-- The pro-`p` Frattini subgroup is a normal subgroup. -/
 instance proPFrattini_normal : (proPFrattini p G).Normal :=
-  Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
+  Subgroup.normal_iInf_normal fun U ↦ U.val.isNormal'
 
 end Defs
 
@@ -129,7 +129,7 @@ theorem mem_proPFrattini_iff {x : G} :
     x ∈ proPFrattini p G ↔
       ∀ U : OpenNormalSubgroup G, U.toSubgroup.index = p → x ∈ U.toSubgroup := by
   rw [proPFrattini_def, Subgroup.mem_iInf]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- The pro-`p` Frattini subgroup is contained in every open normal subgroup of index `p`. -/
 theorem proPFrattini_le {U : OpenNormalSubgroup G} (hU : U.toSubgroup.index = p) :
@@ -140,7 +140,7 @@ theorem proPFrattini_le {U : OpenNormalSubgroup G} (hU : U.toSubgroup.index = p)
 instance isClosed_proPFrattini [SeparatelyContinuousMul G] :
     IsClosed ((proPFrattini p G : Subgroup G) : Set G) := by
   rw [proPFrattini_def, Subgroup.coe_iInf]
-  exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
+  exact isClosed_iInter fun U ↦ U.val.toOpenSubgroup.isClosed
 
 /-! ### The elementary abelian generators -/
 

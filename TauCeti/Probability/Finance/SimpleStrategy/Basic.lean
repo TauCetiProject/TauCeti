@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import Mathlib.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Order.Interval.Set.Subdivision
 
@@ -157,6 +157,17 @@ theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
   exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
     (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
 
+/-- Over a partition monotone up to `n`, a simple strategy whose positions are bounded in norm
+by `C` at a sample point `ω` holds at most `max C 0` there at every time. -/
+theorem norm_simpleHolding_le (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) {C : ℝ}
+    (haC : ∀ j < n, ‖a j ω‖ ≤ C) :
+    ‖simpleHolding τ n a t ω‖ ≤ max C 0 := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, htj⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj htj]
+    exact (haC j hj).trans (le_max_left _ _)
+  · simp [simpleHolding_of_notMem_Ioc hτ ht]
+
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
 theorem simpleGains_of_le (hτ : MonotoneOn τ (Set.Iic n)) (ht : t ≤ τ 0) (X : ι → Ω → ℝ)
@@ -278,20 +289,8 @@ theorem isStronglyPredictable_simpleHolding [OrderBot ι]
       ∑ j ∈ range n, (Set.Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.2) p.1 :=
     funext fun p ↦ simpleHolding_def τ n a p.1 p.2
   rw [IsStronglyPredictable, huncurry]
-  refine Finset.stronglyMeasurable_fun_sum _ fun j hj ↦ Measurable.stronglyMeasurable ?_
-  intro B hB
-  have hA : MeasurableSet[ℱ (τ j)] (a j ⁻¹' B) := (ha j (mem_range.1 hj)).measurable hB
-  have hI : MeasurableSet[ℱ.predictable] (Set.Ioc (τ j) (τ (j + 1)) ×ˢ (a j ⁻¹' B)) :=
-    measurableSet_predictable_Ioc_prod _ _ hA
-  have hU : MeasurableSet[ℱ.predictable] (Set.Ioc (τ j) (τ (j + 1)) ×ˢ (Set.univ : Set Ω)) :=
-    measurableSet_predictable_Ioc_prod _ _ MeasurableSet.univ
-  by_cases h0 : (0 : ℝ) ∈ B
-  · convert hI.union hU.compl using 1
-    ext ⟨s, ω⟩
-    by_cases hs : s ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hs, h0]
-  · convert hI using 1
-    ext ⟨s, ω⟩
-    by_cases hs : s ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hs, h0]
+  exact Finset.stronglyMeasurable_fun_sum _ fun j hj ↦
+    ℱ.stronglyMeasurable_indicator_Ioc_predictable _ _ (ha j (mem_range.1 hj))
 
 /-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
 at the start of its interval, are adapted when the price is. -/

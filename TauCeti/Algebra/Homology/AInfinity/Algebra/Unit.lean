@@ -86,12 +86,12 @@ theorem mem_shift_one_piece (h : 𝒜.StrictUnit e) : e ∈ (𝒜.grading.shift 
 
 /-- The suspended Taylor map vanishes on a word of length other than two containing the strict
 unit. -/
-theorem taylor_of_tprod_eq_zero (h : 𝒜.StrictUnit e) (n : {n : ℕ // 0 < n}) (hn : n.1 ≠ 2)
-    (x : Fin n.1 → A) (hx : ∃ i, x i = e) :
+theorem taylor_of_tprod_eq_zero (h : 𝒜.StrictUnit e) (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2)
+    (x : Fin n.val → A) (hx : ∃ i, x i = e) :
     𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) = 0 := by
   obtain ⟨i, hi⟩ := hx
   rw [taylor_of_tprod]
-  exact h.higher n.1 hn _ ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero h.degree_zero]⟩
+  exact h.higher n.val hn _ ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero h.degree_zero]⟩
 
 /-- On the two-letter word `[e, y]` the suspended Taylor map returns `y`. -/
 @[simp]

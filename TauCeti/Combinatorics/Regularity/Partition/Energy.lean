@@ -79,7 +79,7 @@ theorem weightedEnergy_def (P : Finpartition (univ : Finset V)) :
 /-- The weighted energy, summed over the subtype of parts. -/
 private theorem weightedEnergy_eq_sum_subtype (P : Finpartition (univ : Finset V)) :
     G.weightedEnergy P = ∑ A : P.parts, ∑ C : P.parts,
-      (#A.1 * #C.1 / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity A.1 C.1 : ℝ) ^ 2 := by
+      (#A.val * #C.val / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity A.val C.val : ℝ) ^ 2 := by
   rw [weightedEnergy, ← sum_coe_sort]
   exact sum_congr rfl fun A _ => (sum_coe_sort _ _).symm
 
@@ -93,8 +93,8 @@ theorem weightedEnergy_le_one (P : Finpartition (univ : Finset V)) : G.weightedE
   rw [weightedEnergy_eq_sum_subtype]
   refine le_trans (sum_le_sum fun A _ => sum_le_sum fun C _ => ?_) (by
     simpa using P.sum_sum_weight_le_one)
-  have h0 : (0 : ℝ) ≤ G.edgeDensity A.1 C.1 := mod_cast G.edgeDensity_nonneg _ _
-  have h1 : (G.edgeDensity A.1 C.1 : ℝ) ≤ 1 := mod_cast G.edgeDensity_le_one _ _
+  have h0 : (0 : ℝ) ≤ G.edgeDensity A.val C.val := mod_cast G.edgeDensity_nonneg _ _
+  have h1 : (G.edgeDensity A.val C.val : ℝ) ≤ 1 := mod_cast G.edgeDensity_le_one _ _
   exact mul_le_of_le_one_right (by positivity) (pow_le_one₀ h0 h1)
 
 /-- The weighted energy is the mean square of the block-average step function
@@ -119,20 +119,11 @@ theorem weightedEnergy_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V
     (P : Finpartition (univ : Finset V)) :
     (G.comap e.symm).weightedEnergy ((P.copy (image_univ_equiv e.symm).symm).comap e.symm) =
       G.weightedEnergy P := by
-  -- the part through `e v` is the part of `P` through `v`, relabelled
-  have hpart (v : V) : ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part (e v) =
-      (P.part v).map e.toEmbedding := by
-    have hcopy : (P.copy (image_univ_equiv e.symm).symm).part v = P.part v :=
-      part_eq_of_mem _ (by simp) (P.mem_part (mem_univ v))
-    ext y
-    rw [Finpartition.part_comap (mem_univ _), mem_filter, Equiv.symm_apply_apply, hcopy,
-      mem_map_equiv]
-    simp
   rw [weightedEnergy_eq_sum_part, weightedEnergy_eq_sum_part, Fintype.card_congr e.symm,
     ← e.sum_comp]
   simp_rw [← e.sum_comp (fun y => ((G.comap e.symm).edgeDensity _
-    (((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part y) : ℝ) ^ 2), hpart,
-    edgeDensity_comap_symm]
+    (((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part y) : ℝ) ^ 2),
+    P.part_comap_copy_equiv, Equiv.symm_apply_apply, Equiv.symm_symm, edgeDensity_comap_symm]
 
 section Refinement
 
@@ -142,15 +133,15 @@ variable {P Q : Finpartition (univ : Finset V)}
 energy, since each coarse density is the size-weighted average of its fine densities. -/
 private theorem sum_sum_weight_mul_edgeDensity_mul_parent (h : Q ≤ P) :
     ∑ B : Q.parts, ∑ D : Q.parts,
-      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.1 D.1 : ℝ) *
-        G.edgeDensity (refinementParent h B).1 (refinementParent h D).1 =
+      (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.val D.val : ℝ) *
+        G.edgeDensity (refinementParent h B).val (refinementParent h D).val =
       G.weightedEnergy P := by
   rw [weightedEnergy_eq_sum_subtype, sum_sum_eq_sum_sum_fiber h]
   refine sum_congr rfl fun A _ => sum_congr rfl fun C _ => ?_
   calc _ = ∑ B : Q.parts with refinementParent h B = A,
       ∑ D : Q.parts with refinementParent h D = C,
-        (#(G.interedges B.1 D.1) : ℝ) *
-          ((G.edgeDensity A.1 C.1 : ℝ) / (Fintype.card V : ℝ) ^ 2) := by
+        (#(G.interedges B.val D.val) : ℝ) *
+          ((G.edgeDensity A.val C.val : ℝ) / (Fintype.card V : ℝ) ^ 2) := by
         refine sum_congr rfl fun B hB => sum_congr rfl fun D hD => ?_
         rw [(mem_filter.1 hB).2, (mem_filter.1 hD).2,
           ← G.card_mul_card_mul_edgeDensity_real]
@@ -164,15 +155,15 @@ private theorem sum_sum_weight_mul_edgeDensity_mul_parent (h : Q ≤ P) :
 parts with a given parent partition it. -/
 private theorem sum_sum_weight_mul_parent_sq (h : Q ≤ P) :
     ∑ B : Q.parts, ∑ D : Q.parts,
-      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) *
-        (G.edgeDensity (refinementParent h B).1 (refinementParent h D).1 : ℝ) ^ 2 =
+      (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) *
+        (G.edgeDensity (refinementParent h B).val (refinementParent h D).val : ℝ) ^ 2 =
       G.weightedEnergy P := by
   rw [weightedEnergy_eq_sum_subtype, sum_sum_eq_sum_sum_fiber h]
   refine sum_congr rfl fun A _ => sum_congr rfl fun C _ => ?_
   calc _ = ∑ B : Q.parts with refinementParent h B = A,
       ∑ D : Q.parts with refinementParent h D = C,
-        (#B.1 : ℝ) * #D.1 *
-          ((G.edgeDensity A.1 C.1 : ℝ) ^ 2 / (Fintype.card V : ℝ) ^ 2) := by
+        (#B.val : ℝ) * #D.val *
+          ((G.edgeDensity A.val C.val : ℝ) ^ 2 / (Fintype.card V : ℝ) ^ 2) := by
         refine sum_congr rfl fun B hB => sum_congr rfl fun D hD => ?_
         rw [(mem_filter.1 hB).2, (mem_filter.1 hD).2]
         ring
@@ -189,16 +180,16 @@ the energy gap. All ordered pairs of fine parts are summed, diagonal blocks incl
 equitability or regularity is assumed, and on the empty host both sides vanish. -/
 theorem weightedDensityDeviation_sq (h : Q ≤ P) :
     ∑ B : Q.parts, ∑ D : Q.parts,
-      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) *
-        ((G.edgeDensity B.1 D.1 : ℝ) -
-          G.edgeDensity (refinementParent h B).1 (refinementParent h D).1) ^ 2 =
+      (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) *
+        ((G.edgeDensity B.val D.val : ℝ) -
+          G.edgeDensity (refinementParent h B).val (refinementParent h D).val) ^ 2 =
       G.weightedEnergy Q - G.weightedEnergy P := by
   calc _ = ∑ B : Q.parts, ∑ D : Q.parts,
-        ((#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.1 D.1 : ℝ) ^ 2 -
-          2 * ((#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.1 D.1 : ℝ) *
-            G.edgeDensity (refinementParent h B).1 (refinementParent h D).1) +
-          (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) *
-            (G.edgeDensity (refinementParent h B).1 (refinementParent h D).1 : ℝ) ^ 2) :=
+        ((#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.val D.val : ℝ) ^ 2 -
+          2 * ((#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) * (G.edgeDensity B.val D.val : ℝ) *
+            G.edgeDensity (refinementParent h B).val (refinementParent h D).val) +
+          (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) *
+            (G.edgeDensity (refinementParent h B).val (refinementParent h D).val : ℝ) ^ 2) :=
         sum_congr rfl fun _ _ => sum_congr rfl fun _ _ => by ring
     _ = G.weightedEnergy Q - 2 * G.weightedEnergy P + G.weightedEnergy P := by
         -- The first occurrence of the coarse energy is the cross term, the second the parent term.
@@ -221,18 +212,18 @@ parent densities is at most `√ε`. This is weighted Cauchy–Schwarz applied t
 theorem weightedDensityDeviation_abs_le (h : Q ≤ P) {ε : ℝ}
     (hgap : G.weightedEnergy Q - G.weightedEnergy P ≤ ε) :
     ∑ B : Q.parts, ∑ D : Q.parts,
-      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) *
-        |(G.edgeDensity B.1 D.1 : ℝ) -
-          G.edgeDensity (refinementParent h B).1 (refinementParent h D).1| ≤ √ε := by
+      (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) *
+        |(G.edgeDensity B.val D.val : ℝ) -
+          G.edgeDensity (refinementParent h B).val (refinementParent h D).val| ≤ √ε := by
   rw [← G.weightedDensityDeviation_sq (P := P) (Q := Q) h] at hgap
   have hw : ∑ B : Q.parts, ∑ D : Q.parts,
-      (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) ≤ 1 := by
+      (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) ≤ 1 := by
     simpa using Q.sum_sum_weight_le_one
   rw [← Fintype.sum_prod_type'] at hgap hw ⊢
   exact Finset.weighted_sum_abs_le_sqrt (ι := Q.parts × Q.parts) univ
-    (fun p => #p.1.1 * #p.2.1 / (Fintype.card V : ℝ) ^ 2)
-    (fun p => (G.edgeDensity p.1.1 p.2.1 : ℝ) -
-      G.edgeDensity (refinementParent h p.1).1 (refinementParent h p.2).1)
+    (fun p => #p.1.val * #p.2.val / (Fintype.card V : ℝ) ^ 2)
+    (fun p => (G.edgeDensity p.1.val p.2.val : ℝ) -
+      G.edgeDensity (refinementParent h p.1).val (refinementParent h p.2).val)
     (fun _ _ => by positivity) hw hgap
 
 /-- Summed over all ordered pairs of vertices, the edge densities between the parts through them
@@ -249,18 +240,18 @@ theorem sum_sum_abs_edgeDensity_part_sub_le (h : Q ≤ P) {ε : ℝ}
   -- Group both vertices by their fine parts, each paired with its coarse parent.
   calc ∑ x, ∑ y, |(G.edgeDensity (Q.part x) (Q.part y) : ℝ) -
         G.edgeDensity (P.part x) (P.part y)|
-      = ∑ x, ∑ D : Q.parts, #D.1 • |(G.edgeDensity (Q.part x) D.1 : ℝ) -
-          G.edgeDensity (P.part x) (refinementParent h D).1| :=
+      = ∑ x, ∑ D : Q.parts, #D.val • |(G.edgeDensity (Q.part x) D.val : ℝ) -
+          G.edgeDensity (P.part x) (refinementParent h D).val| :=
         sum_congr rfl fun x _ ↦ Finpartition.sum_apply_part_part h fun B A ↦
           |(G.edgeDensity (Q.part x) B : ℝ) - G.edgeDensity (P.part x) A|
-    _ = ∑ D : Q.parts, ∑ B : Q.parts, #B.1 • (#D.1 • |(G.edgeDensity B.1 D.1 : ℝ) -
-          G.edgeDensity (refinementParent h B).1 (refinementParent h D).1|) := by
+    _ = ∑ D : Q.parts, ∑ B : Q.parts, #B.val • (#D.val • |(G.edgeDensity B.val D.val : ℝ) -
+          G.edgeDensity (refinementParent h B).val (refinementParent h D).val|) := by
         rw [sum_comm]
         exact sum_congr rfl fun D _ ↦ Finpartition.sum_apply_part_part h fun B A ↦
-          #D.1 • |(G.edgeDensity B D.1 : ℝ) - G.edgeDensity A (refinementParent h D).1|
+          #D.val • |(G.edgeDensity B D.val : ℝ) - G.edgeDensity A (refinementParent h D).val|
     _ = (Fintype.card V : ℝ) ^ 2 * ∑ B : Q.parts, ∑ D : Q.parts,
-          (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) * |(G.edgeDensity B.1 D.1 : ℝ) -
-            G.edgeDensity (refinementParent h B).1 (refinementParent h D).1| := by
+          (#B.val * #D.val / (Fintype.card V : ℝ) ^ 2) * |(G.edgeDensity B.val D.val : ℝ) -
+            G.edgeDensity (refinementParent h B).val (refinementParent h D).val| := by
         rw [sum_comm, mul_sum]
         refine sum_congr rfl fun B _ ↦ ?_
         rw [mul_sum]

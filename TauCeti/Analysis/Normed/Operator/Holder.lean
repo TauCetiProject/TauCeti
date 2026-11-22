@@ -11,16 +11,21 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
 
 /-!
-# Bilinear operations on bounded Hölder functions
+# Linear and bilinear operations on bounded Hölder functions
 
 A continuous bilinear map sends two bounded Hölder functions of the same exponent to a Hölder
 function. The estimate keeps the uniform bounds separate from the Hölder constants, so it also
-applies to restrictions and yields the product estimate for the supremum-plus-Hölder norm.
+applies to restrictions and yields the product estimate for the supremum-plus-Hölder norm. On a
+compact set the uniform bounds are automatic for a positive exponent
+(`ContinuousLinearMap.exists_holderOnWith_comp₂_of_isCompact`).
 
 If one argument vanishes off a set `s`, the other need only be Hölder and bounded on `s`
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
 multiplication): this is how a cutoff extends a function given on `s` to the whole space, and how
 freezing a coefficient on the support of a localized function is estimated.
+
+A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
+the operator norm (`ContinuousLinearMap.holderWith_comp`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -44,6 +49,13 @@ variable {𝕜 𝕜₂ 𝕜₃ X E F G : Type*} [NontriviallyNormedField 𝕜] [
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
   [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
   {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+
+/-- A continuous (semi)linear map applied after a Hölder function is Hölder with the same exponent,
+the constant multiplied by the operator norm. -/
+theorem holderWith_comp (L : E →SL[σ₁₃] G) {C r : ℝ≥0} {f : X → E} (hf : HolderWith C r f) :
+    HolderWith (‖L‖₊ * C) r fun x ↦ L (f x) := by
+  have h := (holderWith_one.2 L.lipschitzWith).comp hf
+  rwa [NNReal.coe_one, NNReal.rpow_one, one_mul, Function.comp_def] at h
 
 /-- A bilinear map preserves Hölder continuity on a set when both input functions are bounded
 there. The constant is `‖B‖ * (Mf * Kg + Mg * Kf)`. -/
@@ -75,6 +87,19 @@ theorem holderOnWith_comp₂ (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
     _ = _ := by
       push_cast
       ring
+
+/-- On a compact set, a bilinear map sends two functions that are `α`-Hölder there, with
+`0 < α`, to an `α`-Hölder function: Hölder functions of positive exponent are continuous, hence
+bounded on the compact set. -/
+theorem exists_holderOnWith_comp₂_of_isCompact (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
+    {α Kf Kg : ℝ≥0} {f : X → E} {g : X → F} {s : Set X} (hs : IsCompact s) (hα : 0 < α)
+    (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s) :
+    ∃ C, HolderOnWith C α (fun x ↦ B (f x) (g x)) s := by
+  obtain ⟨Mf, hMf⟩ := hs.exists_bound_of_continuousOn (hf.continuousOn hα)
+  obtain ⟨Mg, hMg⟩ := hs.exists_bound_of_continuousOn (hg.continuousOn hα)
+  exact ⟨_, B.holderOnWith_comp₂ hf hg (Mf := Mf.toNNReal) (Mg := Mg.toNNReal)
+    (fun x hx ↦ (hMf x hx).trans (Real.le_coe_toNNReal Mf))
+    (fun x hx ↦ (hMg x hx).trans (Real.le_coe_toNNReal Mg))⟩
 
 /-- A bilinear map preserves global Hölder continuity for uniformly bounded functions. -/
 theorem holderWith_comp₂ (B : E →SL[σ₁₃] F →SL[σ₂₃] G)

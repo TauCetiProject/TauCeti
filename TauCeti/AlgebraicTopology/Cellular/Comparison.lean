@@ -130,8 +130,8 @@ lemma isIso_homologyMap_skeletonBasePairToComplex_fst {m k : ℕ} (hk : k < m)
   have hc := isColimitMapCoconeSingularHomology R k (skeletonCocone C)
     (fun j ↦ IsEmbedding.inclusion (skeletonLT C (j : ℕ∞)).subset_complex) fun K hK ↦ by
       obtain ⟨n, hn⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-        (hK.image continuous_subtype_val) (by rintro _ ⟨x, -, rfl⟩; exact x.2)
-      exact ⟨n, fun x hx ↦ ⟨⟨x.1, hn ⟨x, hx, rfl⟩⟩, rfl⟩⟩
+        (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
+      exact ⟨n, fun x hx ↦ ⟨⟨x.val, hn ⟨x, hx, rfl⟩⟩, rfl⟩⟩
   -- From the `m`-skeleton on, the diagram of homology objects in degree `k` is constant.
   have hconst : (skeletonFunctor C ⋙
       (AlgebraicTopology.singularHomologyFunctor A k).obj R).IsEventuallyConstantFrom (m + 1) := by

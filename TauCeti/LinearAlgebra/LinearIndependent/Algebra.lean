@@ -11,52 +11,50 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 /-!
 # Lifting linear independence by expanding coefficients
 
-Suppose the image of a scalar semiring `S` in an algebra `L` lies in the `R`-span of a family `γ`.
-If the products `γ m * β i` are linearly independent over `R`, then `β` is linearly independent
-over `S`, provided `S` acts faithfully on `L`. This reduces independence over `S` to independence
-over `R` by expanding the coefficients in the spanning family.
+Suppose the image of a scalar semiring `S` in an algebra `A` lies in the `R`-span of a family `γ`,
+and let `β` be a family in an `A`-module `M`. If the products `γ m • β i` are linearly independent
+over `R`, then `β` is linearly independent over `S`, provided `S` acts faithfully on `A`. This
+reduces independence over `S` to independence over `R` by expanding the coefficients in the
+spanning family.
 -/
 
 public section
 
-namespace TauCeti
+namespace LinearIndependent
 
-/-- If every element of `S` is an `R`-linear combination of a family `γ` in `L`, and the
-products `γ m * β i` are linearly independent over `R`, then `β` is linearly independent over `S`.
-The scalar map from `S` to `L` must be injective. -/
-theorem linearIndependent_of_linearIndependent_mul_of_mem_span {R S L : Type*} [CommSemiring R]
-    [CommSemiring S] [Semiring L] [Algebra R L] [Algebra S L] [FaithfulSMul S L]
-    {κ ι : Type*} {γ : κ → L} {β : ι → L}
-    (hγ : ∀ x : S, algebraMap S L x ∈ Submodule.span R (Set.range γ))
-    (h : LinearIndependent R fun p : ι × κ ↦ γ p.2 * β p.1) :
+open Finsupp
+
+/-- If every element of `S` is an `R`-linear combination of a family `γ` in `A`, and the
+products `γ m • β i` are linearly independent over `R`, then `β` is linearly independent over `S`.
+The scalar map from `S` to `A` must be injective. -/
+theorem of_smul_of_algebraMap_mem_span {R S A M : Type*} [Semiring R] [CommSemiring S]
+    [Semiring A] [Algebra S A] [FaithfulSMul S A] [AddCommMonoid M] [Module A M] [Module S M]
+    [IsScalarTower S A M] [Module R A] [Module R M] [IsScalarTower R A M]
+    {κ ι : Type*} {γ : κ → A} {β : ι → M}
+    (h : LinearIndependent R fun p : κ × ι ↦ γ p.1 • β p.2)
+    (hγ : ∀ x : S, algebraMap S A x ∈ Submodule.span R (Set.range γ)) :
     LinearIndependent S β := by
-  classical
-  choose c hc using fun x ↦ Finsupp.mem_span_range_iff_exists_finsupp.mp (hγ x)
-  rw [linearIndependent_iff'ₛ] at h ⊢
-  intro s f g hfg i hi
-  let T := s.biUnion fun j ↦ (c (f j)).support ∪ (c (g j)).support
-  have hexpand (x : S) (hx : (c x).support ⊆ T) :
-      algebraMap S L x = ∑ m ∈ T, c x m • γ m := by
-    rw [← hc x, Finsupp.sum_of_support_subset _ hx]
-    intro m _
-    simp
-  have hsum (a : ι → S) (ha : ∀ j ∈ s, (c (a j)).support ⊆ T) :
-      ∑ j ∈ s, a j • β j = ∑ p ∈ s ×ˢ T, c (a p.1) p.2 • (γ p.2 * β p.1) := by
-    rw [Finset.sum_product]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [Algebra.smul_def, hexpand (a j) (ha j hj), Finset.sum_mul]
-    exact Finset.sum_congr rfl fun m _ ↦ smul_mul_assoc _ _ _
-  have hT (j : ι) (hj : j ∈ s) : (c (f j)).support ∪ (c (g j)).support ⊆ T :=
-    Finset.subset_biUnion_of_mem (fun j ↦ (c (f j)).support ∪ (c (g j)).support) hj
-  have hf : ∀ j ∈ s, (c (f j)).support ⊆ T := fun j hj ↦
-    Finset.subset_union_left.trans (hT j hj)
-  have hg : ∀ j ∈ s, (c (g j)).support ⊆ T := fun j hj ↦
-    Finset.subset_union_right.trans (hT j hj)
-  have hcoeff := h (s ×ˢ T) (fun p ↦ c (f p.1) p.2) (fun p ↦ c (g p.1) p.2)
-    ((hsum f hf).symm.trans (hfg.trans (hsum g hg)))
-  apply FaithfulSMul.algebraMap_injective S L
-  rw [hexpand (f i) (hf i hi), hexpand (g i) (hg i hi)]
-  exact Finset.sum_congr rfl fun m hm ↦ by
-    rw [hcoeff (i, m) (Finset.mem_product.mpr ⟨hi, hm⟩)]
+  rw [← linearIndependent_equiv' (.prodComm ..) (g := fun p : ι × κ ↦ γ p.2 • β p.1) rfl,
+    LinearIndependent, linearCombination_smul] at h
+  simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, LinearEquiv.coe_coe,
+    ← Function.comp_assoc] at h
+  -- `linearCombination A β` is injective on coefficient families with entries in `span R γ`
+  have hinj : Set.InjOn (linearCombination A β)
+      (Set.range (mapRange.linearMap (linearCombination R γ))) :=
+    (h.of_comp_right (curryLinearEquiv R).surjective).injOn_range
+  -- coefficient families from `S`, mapped into `A`, are such families
+  have hrange (f : ι →₀ S) : f.mapRange (algebraMap S A) (map_zero _) ∈
+      Set.range (mapRange.linearMap (linearCombination R γ)) := by
+    simp only [Set.mem_range, mapRange.linearMap_apply]
+    rw [← Set.mem_range, range_mapRange]
+    exact fun i ↦ by simpa [← range_linearCombination] using hγ (f i)
+  -- and mapping them into `A` does not change their combination of `β`
+  have hlc (f : ι →₀ S) : linearCombination A β (f.mapRange (algebraMap S A) (map_zero _)) =
+      linearCombination S β f := by
+    simp [linearCombination_apply, sum_mapRange_index, algebraMap_smul]
+  intro f g hfg
+  refine mapRange_injective _ (map_zero _) (FaithfulSMul.algebraMap_injective S A)
+    (hinj (hrange f) (hrange g) ?_)
+  simpa [hlc] using hfg
 
-end TauCeti
+end LinearIndependent
