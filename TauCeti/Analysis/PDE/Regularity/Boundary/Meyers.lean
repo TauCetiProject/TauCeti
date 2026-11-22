@@ -9,7 +9,8 @@ public import TauCeti.Analysis.PDE.Regularity.HigherIntegrability
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
-import TauCeti.Analysis.Sobolev.W1p.Zero.FiniteMeasure
+import TauCeti.Analysis.Sobolev.FiniteMeasure
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
@@ -52,14 +53,17 @@ proves the two global estimates of Meyers' Theorem 1, for exponents near `2` on 
   the problem with `F ∈ L²(Ω)` are among these solutions. The right-hand side only involves
   `‖F‖_{Lᵖ}`, a weaker norm than `‖F‖_{L²}`, so this is not a regularity statement but the a priori
   estimate of the `W^{1,p}` theory of the Dirichlet problem for `p < 2`.
-* **Well-posedness below `2`.** For the same exponents and every `F ∈ Lᵖ(Ω; ℝⁿ)` the problem has
-  exactly one weak solution `u ∈ W^{1,p}_0(Ω)`
-  (`TauCeti.PDE.exists_existsUnique_forall_setIntegral_matrixBilinearForm_eq_divergence`).
+* **Existence below `2`, and uniqueness in this solution class.** For the same exponents and
+  every `F ∈ Lᵖ(Ω; ℝⁿ)` the problem has exactly one weak solution `u ∈ W^{1,p}_0(Ω)` in the sense
+  above (`TauCeti.PDE.exists_existsUnique_forall_setIntegral_matrixBilinearForm_eq_divergence`).
   Approximating `F` in `Lᵖ(Ω)` by simple functions, which lie in `L²(Ω)`, the `H¹₀(Ω)` solutions
   form a Cauchy sequence in `W^{1,p}_0(Ω)` by the estimate below `2` and the Poincaré inequality,
   and their limit solves the problem; uniqueness is the estimate applied to the difference of two
-  solutions. For exponents far below `2` uniqueness fails in general, by Serrin's pathological
-  solutions, so the range near `2` is essential.
+  solutions. As the test functions include `C_c^∞(Ω)`, the solution is also a weak solution in the
+  usual sense. Uniqueness among all solutions tested only against `C_c^∞(Ω)` is not proved here:
+  it would need every `v ∈ H¹₀(Ω)` with `∇v ∈ L^{2+ε}(Ω)` to lie in `W^{1,2+ε}_0(Ω)`. For exponents
+  far below `2` uniqueness fails in general, by Serrin's pathological solutions, so the range near
+  `2` is essential.
 
 The local estimate up to the boundary
 (`TauCeti.PDE.exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence`) bounds the
@@ -87,7 +91,8 @@ test functions in `W^{1,p}_0(Ω)`. Testing the two equations with each other giv
 * `TauCeti.PDE.exists_eLpNorm_gradient_conjExponent_le_divergence`: the global estimate below
   `2`, for weak solutions in `W^{1,p}_0(Ω)`.
 * `TauCeti.PDE.exists_existsUnique_forall_setIntegral_matrixBilinearForm_eq_divergence`: existence
-  and uniqueness of the weak solution in `W^{1,p}_0(Ω)` below `2`.
+  of a weak solution in `W^{1,p}_0(Ω)` below `2`, unique among the solutions tested against every
+  `v ∈ H¹₀(Ω)` with `∇v ∈ L^{2+ε}(Ω)`.
 
 ## References
 
@@ -235,6 +240,16 @@ theorem exists_eLpNorm_gradient_le_divergence [Nonempty ι] (K : ℝ) {θ : ℝ}
 
 section BelowTwo
 
+/-- `u ∈ W^{1,p}_0(Ω)` is a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` tested against every
+`v ∈ H¹₀(Ω)` with `∇v ∈ L^q(Ω)`: `∫_Ω ⟪∇v, a ∇u⟫ = -∫_Ω ⟪F, ∇v⟫`. -/
+private def IsWeakSolution {p : ℝ≥0∞} [Fact (1 ≤ p)] {Omega : Opens (EuclideanSpace ℝ ι)}
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (q : ℝ≥0∞) (u : W1p0 mu Omega p) : Prop :=
+  ∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
+    ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
+      (W1p.gradient (u : W1p mu Omega p) x) ∂mu =
+        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu
+
 /-- The field `x ↦ (a x)ᵀ (ξ x)`, defined through the Riesz isomorphism by
 `⟪flux a ξ x, η⟫ = ⟪ξ x, a x η⟫`: its pairing with a gradient is the integrand of the weak form. -/
 private noncomputable def flux (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
@@ -331,18 +346,9 @@ private theorem forall_setIntegral_matrixBilinearForm_sub {p q : ℝ≥0∞} [Fa
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     {F₁ F₂ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF₁ : MemLp F₁ p (mu.restrict Omega))
     (hF₂ : MemLp F₂ p (mu.restrict Omega)) {u₁ u₂ : W1p0 mu Omega p}
-    (hu₁ : ∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u₁ : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪F₁ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
-    (hu₂ : ∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u₂ : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪F₂ x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
-    (v : W1p0 mu Omega 2) (hvq : MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega)) :
-    ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient ((u₁ - u₂ : W1p0 mu Omega p) : W1p mu Omega p) x) ∂mu =
-      -∫ x in Omega, ⟪(F₁ - F₂) x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+    (hu₁ : IsWeakSolution a F₁ q u₁) (hu₂ : IsWeakSolution a F₂ q u₂) :
+    IsWeakSolution a (F₁ - F₂) q (u₁ - u₂) := by
+  intro v hvq
   have hG := memLp_flux h ha hvq
   have hlin := ((hG.innerLpCLM ℝ (q' := p)).comp W1p.gradientL).map_sub (u₁ : W1p mu Omega p) u₂
   rw [← Submodule.coe_sub] at hlin
@@ -351,18 +357,6 @@ private theorem forall_setIntegral_matrixBilinearForm_sub {p q : ℝ≥0∞} [Fa
   rw [hlin, hu₁ v hvq, hu₂ v hvq, integral_sub (hF₁.integrable_inner_of_holderConjugate hvq)
     (hF₂.integrable_inner_of_holderConjugate hvq)]
   ring
-
-/-- The conjugate exponent `p` of `2 + ε`, `ε > 0`, is finite and at most `2`. -/
-private theorem ne_top_and_le_two_of_holderConjugate {ε : ℝ} (hε : 0 < ε) {p : ℝ≥0∞}
-    [p.HolderConjugate (ENNReal.ofReal (2 + ε))] : p ≠ ∞ ∧ p ≤ 2 := by
-  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 + ε) := by
-    rw [← ENNReal.ofReal_ofNat 2]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
-  refine ⟨(ENNReal.HolderConjugate.ne_top_iff_ne_one p _).2 (ne_of_gt
-    (ENNReal.one_lt_two.trans_le h2)), ENNReal.inv_le_inv.1 ?_⟩
-  rw [← ENNReal.HolderConjugate.one_sub_inv (ENNReal.ofReal (2 + ε)) p,
-    ← ENNReal.one_sub_inv_two]
-  exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 h2) 1
 
 omit [DecidableEq ι] in
 /-- The constant of Meyers' estimates is finite on a set of finite measure. -/
@@ -374,21 +368,19 @@ private theorem coe_mul_one_add_div_rpow_ne_top (C : ℝ≥0) {Omega : Opens (Eu
       (ENNReal.div_ne_top hfin (measure_ball_pos mu 0 hr₀).ne')⟩)
 
 /-- For `g ∈ L²(Ω)` and `p ≤ 2`, the `H¹₀(Ω)` solution of the Dirichlet problem with datum `g`
-is a weak solution in `W^{1,p}_0(Ω)`, tested against all of `H¹₀(Ω)`. -/
+is a weak solution in `W^{1,p}_0(Ω)`: it solves the equation against all of `H¹₀(Ω)`, so against
+the test functions `v` with `∇v ∈ L^q(Ω)` for every `q`. -/
 private theorem exists_forall_setIntegral_matrixBilinearForm_eq_of_memLp_two [Nonempty ι]
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp2 : p ≤ 2) {Omega : Opens (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hfin : mu Omega ≠ ∞)
     {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 (mu.restrict Omega)) :
-    ∃ u : W1p0 mu Omega p, ∀ v : W1p0 mu Omega 2,
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪g x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+    ∃ u : W1p0 mu Omega p, ∀ q, IsWeakSolution a g q u := by
   have : IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
     isFiniteMeasure_restrict.2 hfin
   obtain ⟨w, hw⟩ := h.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top ha hfin hg
-  refine ⟨W1p0.ofExponentLEL hp2 w, fun v => ?_⟩
+  refine ⟨W1p0.ofExponentLEL hp2 w, fun _ v _ => ?_⟩
   rw [W1p0.coe_ofExponentLEL, W1p.coeFn_gradient_ofExponentLE, ← hw v,
     energyFormH1_zero_zero_eq_setIntegral]
 
@@ -400,21 +392,9 @@ private theorem eq_of_forall_setIntegral_matrixBilinearForm_eq {p q : ℝ≥0∞
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {M : ℝ≥0∞}
     (hstab : ∀ (F' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (w : W1p0 mu Omega p),
-      (∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-        ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-          (W1p.gradient (w : W1p mu Omega p) x) ∂mu =
-            -∫ x in Omega, ⟪F' x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
-      ‖(w : W1p mu Omega p)‖ₑ ≤ M * eLpNorm F' p (mu.restrict Omega))
+      IsWeakSolution a F' q w → ‖(w : W1p mu Omega p)‖ₑ ≤ M * eLpNorm F' p (mu.restrict Omega))
     {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F p (mu.restrict Omega))
-    {u₁ u₂ : W1p0 mu Omega p}
-    (hu₁ : ∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u₁ : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
-    (hu₂ : ∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u₂ : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+    {u₁ u₂ : W1p0 mu Omega p} (hu₁ : IsWeakSolution a F q u₁) (hu₂ : IsWeakSolution a F q u₂) :
     u₁ = u₂ := by
   have hd := hstab (F - F) (u₁ - u₂) (forall_setIntegral_matrixBilinearForm_sub h ha hF hF hu₁ hu₂)
   rw [sub_self, eLpNorm_zero, mul_zero] at hd
@@ -438,15 +418,8 @@ private theorem forall_setIntegral_matrixBilinearForm_eq_of_tendsto {p q : ℝ�
     {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F p (mu.restrict Omega))
     (hgF : Tendsto (fun n => eLpNorm (F - g n) p (mu.restrict Omega)) atTop (𝓝 0))
     {u : ℕ → W1p0 mu Omega p} {u₀ : W1p0 mu Omega p} (hu₀ : Tendsto u atTop (𝓝 u₀))
-    (hu : ∀ n, ∀ v : W1p0 mu Omega 2,
-      MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u n : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪g n x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
-    (v : W1p0 mu Omega 2) (hvq : MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega)) :
-    ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-      (W1p.gradient (u₀ : W1p mu Omega p) x) ∂mu =
-        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+    (hu : ∀ n, IsWeakSolution a (g n) q (u n)) : IsWeakSolution a F q u₀ := by
+  intro v hvq
   -- The left side is continuous in the solution.
   have hG := memLp_flux h ha hvq
   let Φ := ((hG.innerLpCLM ℝ (q' := p)).comp W1p.gradientL).comp
@@ -484,17 +457,9 @@ private theorem exists_forall_setIntegral_matrixBilinearForm_eq_of_stability [No
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hfin : mu Omega ≠ ∞) {M : ℝ≥0∞}
     (hM : M ≠ ∞)
     (hstab : ∀ (F' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (w : W1p0 mu Omega p),
-      (∀ v : W1p0 mu Omega 2, MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-        ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-          (W1p.gradient (w : W1p mu Omega p) x) ∂mu =
-            -∫ x in Omega, ⟪F' x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
-      ‖(w : W1p mu Omega p)‖ₑ ≤ M * eLpNorm F' p (mu.restrict Omega))
+      IsWeakSolution a F' q w → ‖(w : W1p mu Omega p)‖ₑ ≤ M * eLpNorm F' p (mu.restrict Omega))
     {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F p (mu.restrict Omega)) :
-    ∃ u : W1p0 mu Omega p, ∀ v : W1p0 mu Omega 2,
-      MemLp (W1p.gradient (v : W1p mu Omega 2)) q (mu.restrict Omega) →
-      ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-        (W1p.gradient (u : W1p mu Omega p) x) ∂mu =
-          -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+    ∃ u : W1p0 mu Omega p, IsWeakSolution a F q u := by
   have : IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
     isFiniteMeasure_restrict.2 hfin
   choose g hgF hgp using fun n : ℕ =>
@@ -509,7 +474,7 @@ private theorem exists_forall_setIntegral_matrixBilinearForm_eq_of_stability [No
     refine EMetric.cauchySeq_iff_le_tendsto_0.2 ⟨fun N => M * ((N : ℝ≥0∞)⁻¹ + (N : ℝ≥0∞)⁻¹),
       fun n m N hn hm => ?_, ?_⟩
     · have hd := hstab _ (u n - u m) (forall_setIntegral_matrixBilinearForm_sub h ha (hgp n)
-        (hgp m) (fun v _ => hu n v) (fun v _ => hu m v))
+        (hgp m) (hu n q) (hu m q))
       rw [eDist_eq_eNorm_sub]
       refine hd.trans ?_
       dsimp only
@@ -525,7 +490,7 @@ private theorem exists_forall_setIntegral_matrixBilinearForm_eq_of_stability [No
   refine ⟨u₀, forall_setIntegral_matrixBilinearForm_eq_of_tendsto h ha hgp hF
     (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       ENNReal.tendsto_inv_nat_nhds_zero (fun _ => zero_le) fun n => (hgF n).le) hu₀
-    fun n v _ => hu n v⟩
+    fun n => hu n q⟩
 
 end BelowTwo
 
@@ -574,10 +539,13 @@ theorem exists_eLpNorm_gradient_conjExponent_le_divergence [Nonempty ι] (K : �
     continuous_id.matrix_transpose.comp_aestronglyMeasurable ha
   set D := (C : ℝ≥0∞) * (1 + (mu Omega / mu (ball 0 r₀)) ^ (ε / 2))
   have hD : D ≠ ∞ := coe_mul_one_add_div_rpow_ne_top C hfin hr₀ hε.le
+  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 + ε) := by
+    rw [← ENNReal.ofReal_ofNat 2]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
   -- Norm `∇u` in `Lᵖ` against bounded test fields `g`, which lie in `L²(Ω)` and `L^{2+ε}(Ω)`.
   refine (Lp.aestronglyMeasurable _).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℝ)
-    (q' := ENNReal.ofReal (2 + ε)) (ne_top_and_le_two_of_holderConjugate hε).1
-    fun g s _ _ hg => ?_
+    (q' := ENNReal.ofReal (2 + ε)) ((ENNReal.HolderConjugate.ne_top_iff_ne_one p _).2
+      (ENNReal.one_lt_two.trans_le h2).ne') fun g s _ _ hg => ?_
   have hg2 : MemLp g 2 (mu.restrict Omega) := hg.mono_exponent le_top
   have hgq : MemLp g (ENNReal.ofReal (2 + ε)) (mu.restrict Omega) := hg.mono_exponent le_top
   -- Test the equation of `u` with the solution `v` of the adjoint problem with datum `g`, whose
@@ -606,7 +574,8 @@ theorem exists_eLpNorm_gradient_conjExponent_le_divergence [Nonempty ι] (K : �
   simp only [div_eq_mul_inv]
   ring
 
-/-- **`W^{1,p}` well-posedness of the Dirichlet problem below the exponent `2`.** Let `K` bound
+/-- **Existence, and uniqueness in a solution class, for the Dirichlet problem in `W^{1,p}_0`
+below the exponent `2`.** Let `K` bound
 the ellipticity ratio and let `θ > 0`. There is `ε₀ > 0`, depending only on the dimension, `K`
 and `θ`, with the following property for every `0 < ε ≤ ε₀` and the conjugate exponent
 `p = (2+ε)/(1+ε)` of `2 + ε`. Let `Ω ⊆ ℝⁿ` be open of finite measure, and suppose that its
@@ -616,9 +585,16 @@ domains. Let `a` be measurable and uniformly elliptic on `Ω` with constants
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in `Ω`, `u = 0` on `∂Ω`
 
-has exactly one weak solution `u ∈ W^{1,p}_0(Ω)`: `∫_Ω ⟪∇v, a ∇u⟫ = -∫_Ω ⟪F, ∇v⟫` for every
-`v ∈ H¹₀(Ω)` with `∇v ∈ L^{2+ε}(Ω)`. Its gradient obeys the bound
-`TauCeti.PDE.exists_eLpNorm_gradient_conjExponent_le_divergence`.
+has exactly one solution `u ∈ W^{1,p}_0(Ω)` in the following sense: `∫_Ω ⟪∇v, a ∇u⟫ = -∫_Ω ⟪F, ∇v⟫`
+for every `v ∈ H¹₀(Ω)` with `∇v ∈ L^{2+ε}(Ω)`. These test functions include `C_c^∞(Ω)`, so `u` is
+also a weak solution in the usual sense, tested against `C_c^∞(Ω)`. Uniqueness is proved only
+within the solution class above, which is built to contain the adjoint solutions of the duality
+argument. Uniqueness among all solutions tested only against `C_c^∞(Ω)` would also need every
+`v ∈ H¹₀(Ω)` with `∇v ∈ L^{2+ε}(Ω)` to lie in `W^{1,2+ε}_0(Ω)`, which is not proved here.
+
+When `ε` is also below the threshold of
+`TauCeti.PDE.exists_eLpNorm_gradient_conjExponent_le_divergence`, the gradient of `u` obeys that
+theorem's bound.
 
 For `F ∈ L²(Ω)` the `H¹₀(Ω)` solution, included by `TauCeti.W1p0.ofExponentLEL`, is a weak solution
 in this sense, hence it is the solution. For `F` only in `Lᵖ(Ω)` there is in general no solution
@@ -644,7 +620,12 @@ theorem exists_existsUnique_forall_setIntegral_matrixBilinearForm_eq_divergence 
   refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
   obtain ⟨C, hC⟩ := hM ε hε hεle
   intro p _ _ Omega a lam Lam F r₀ h hK ha hF hdens hr₀ hfin
-  obtain ⟨hp, hp2⟩ := ne_top_and_le_two_of_holderConjugate hε (p := p)
+  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 + ε) := by
+    rw [← ENNReal.ofReal_ofNat 2]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hp : p ≠ ∞ := (ENNReal.HolderConjugate.ne_top_iff_ne_one p _).2
+    (ENNReal.one_lt_two.trans_le h2).ne'
+  have hp2 : p ≤ 2 := ENNReal.HolderConjugate.le_two h2
   obtain ⟨P, hPw⟩ :=
     W1p.exists_forall_enorm_le_mul_enorm_gradient_of_measure_ne_top (mu := mu) hp hfin
   -- Meyers' estimate and the Poincaré inequality bound every solution by its datum.
@@ -654,11 +635,7 @@ theorem exists_existsUnique_forall_setIntegral_matrixBilinearForm_eq_divergence 
       (by positivity) (coe_mul_one_add_div_rpow_ne_top C hfin hr₀ hε.le))
       (ENNReal.ofReal_pos.2 h.pos).ne')
   have hstab (F' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (w : W1p0 mu Omega p)
-      (hw : ∀ v : W1p0 mu Omega 2,
-        MemLp (W1p.gradient (v : W1p mu Omega 2)) (ENNReal.ofReal (2 + ε)) (mu.restrict Omega) →
-        ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (v : W1p mu Omega 2) x)
-          (W1p.gradient (w : W1p mu Omega p) x) ∂mu =
-            -∫ x in Omega, ⟪F' x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) :
+      (hw : IsWeakSolution a F' (ENNReal.ofReal (2 + ε)) w) :
       ‖(w : W1p mu Omega p)‖ₑ ≤
         P * (D ^ (2 + ε)⁻¹ / ENNReal.ofReal lam) * eLpNorm F' p (mu.restrict Omega) := by
     refine (hPw w w.property).trans ?_

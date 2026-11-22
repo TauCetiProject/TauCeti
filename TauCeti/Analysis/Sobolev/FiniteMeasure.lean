@@ -49,6 +49,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   bound with one constant `K` for all balls, `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_forall_enorm_le_mul_enorm_gradient_of_measure_ne_top`: the Poincaré
+  inequality `‖u‖_{W^{1,p}} ≤ C ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`, for `p < ∞`.
 * `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, an `Lʳ(Ω)` function
   times a `W^{1,2}_0(Ω)` function is integrable.
 * `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
@@ -322,6 +324,30 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
   rw [ENNReal.coe_toNNReal hC]
   exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega hpq.le
     (by rw [hq, inv_inv]; ring) hδn hu
+
+/-- **The Poincaré inequality on `W^{1,p}_0(Ω)` for `Ω` of finite measure.** In dimension
+`n ≥ 1` and for `p < ∞`, there is a constant `C` with `‖u‖_{W^{1,p}} ≤ C ‖∇u‖_{Lᵖ}` for every
+`u ∈ W^{1,p}_0(Ω)`. This is the case `q = p` of
+`TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`, which bounds the value.
+No regularity of `Ω` is assumed. -/
+theorem W1p.exists_forall_enorm_le_mul_enorm_gradient_of_measure_ne_top [Nontrivial E]
+    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ u ∈ w1p0Submodule mu Omega p, ‖u‖ₑ ≤ C * ‖W1p.gradient u‖ₑ := by
+  have hpp : p = (p.toNNReal : ℝ≥0∞) := (ENNReal.coe_toNNReal hp).symm
+  -- The Sobolev inequality at `q = p`, that is `δ = 0`, bounds the value.
+  obtain ⟨S, hS, hval⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ u ∈ w1p0Submodule mu Omega p,
+      eLpNorm (W1p.value u : E → ℝ) p (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ := by
+    refine ⟨_, ?_, fun u hu => by
+      have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (q := p.toNNReal)
+        hOmega hpp.le (sub_self _) (inv_pos.2 (Nat.cast_pos.2 finrank_pos)) hu
+      rwa [← hpp] at h⟩
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by simp) hOmega)
+  refine ⟨(S + 1).toNNReal, fun u hu => ?_⟩
+  rw [ENNReal.coe_toNNReal (ENNReal.add_ne_top.2 ⟨hS, ENNReal.one_ne_top⟩), add_mul, one_mul]
+  refine (W1p.enorm_le_enorm_value_add_enorm_gradient _).trans (add_le_add ?_ le_rfl)
+  rw [Lp.eNorm_def]
+  exact hval u hu
 
 end W1p0
 
