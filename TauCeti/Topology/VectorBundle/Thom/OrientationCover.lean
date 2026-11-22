@@ -29,14 +29,15 @@ By naturality of the Thom maps, the homology Thom map `x ↦ π_*(x ⌢ u)` ther
 of the lifted involution on `Hₘ(E', E'₀)` to minus the action of `τ` on `Hₚ(B')`, and the Thom map
 `a ↦ π^*a ⌣ u` carries the action of `τ` to minus that of the lifted involution.
 
-With coefficients in a field `K`, the homology Thom map
+With coefficients in a commutative ring `K`, the homology Thom map
 of `E'` is bijective, so it restricts to an isomorphism from the classes of `Hₘ(E', E'₀; K)` fixed
 by the lifted involution onto the classes of `Hₚ(B'; K)` negated by `τ`
 (`TauCeti.VectorBundleOrientationCover.homologyThomMapDeckEquiv`). When `2` is invertible in `K`,
 the fixed classes upstairs are the relative homology of `(E, E₀)` and the negated classes of `B'`
-are the homology of `B` twisted by the orientation local system of `E`; neither identification is
-proved in this file. Through them, this isomorphism becomes the Thom isomorphism
-`Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` with orientation-twisted coefficients.
+are the homology of `B` twisted by the orientation local system of `E`. Through these two
+identifications, this isomorphism becomes the Thom isomorphism
+`Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` with orientation-twisted coefficients
+(`TauCeti.thomPairSingularHomologyLinearEquivTwistedHomology`).
 
 ## Main definitions and results
 
@@ -282,9 +283,9 @@ theorem thomMap_singularCohomologyMap_deck {M : ModuleCat.{w} K} {p m : ℕ}
 
 end ThomMap
 
-section Field
+section CommRing
 
-variable {K : Type w} [Field K] (ω : Orientation ℝ F ι)
+variable {K : Type w} [CommRing K] (ω : Orientation ℝ F ι)
   {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
     (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)} (hg : Submodule.span K {g} = ⊤)
   {p m : ℕ} (h : finrank ℝ F + p = m)
@@ -302,11 +303,11 @@ private theorem bijective_homologyThomMap_tautological :
 
 include hg in
 /-- **The Thom isomorphism on the orientation cover, restricted to deck invariants.** Let `E → B`
-be a real vector bundle, and `u` the Thom class, with
-coefficients in a field `K`, of the tautological orientation of the pull-back `E'` of `E` to its
-orientation cover `B'`. The homology Thom map `x ↦ π_*(x ⌢ u)` restricts to an isomorphism from the
-classes of `Hₘ(E', E'₀; K)` fixed by the lifted deck involution onto the classes of `Hₚ(B'; K)`,
-`m = rank + p`, that the deck involution negates. -/
+be a real vector bundle, and `u` the Thom class, with coefficients in a commutative ring `K`, of the
+tautological orientation of the pull-back `E'` of `E` to its orientation cover `B'`. The homology
+Thom map `x ↦ π_*(x ⌢ u)` restricts to an isomorphism from the classes of `Hₘ(E', E'₀; K)` fixed
+by the lifted deck involution onto the classes of `Hₚ(B'; K)`, `m = rank + p`, that the deck
+involution negates. -/
 def homologyThomMapDeckEquiv :
     LinearMap.ker ((TopPair.singularHomologyMap (deckThomPairMap F E ι) (ModuleCat.of K K) m).hom -
         LinearMap.id) ≃ₗ[K]
@@ -349,6 +350,6 @@ theorem coe_homologyThomMapDeckEquiv_apply
         ((tautologicalOrientation (F := F) (E := E) (ι := ι)).thomClassOfModel hι ω g)).hom ↑x :=
   (rfl)
 
-end Field
+end CommRing
 
 end TauCeti.VectorBundleOrientationCover
