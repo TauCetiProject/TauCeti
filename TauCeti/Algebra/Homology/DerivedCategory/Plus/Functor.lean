@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.ExactFunctor
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
 
+import TauCeti.Algebra.Homology.DerivedCategory.Functoriality
+
 /-!
 # Exact functors on bounded-below derived categories
 
@@ -29,7 +31,8 @@ with cohomology functors.
   embeddings in every degree.
 * `CategoryTheory.Functor.mapDerivedCategoryPlusCompHomologyFunctorIso`: compatibility with
   cohomology functors in every degree.
-* `CategoryTheory.NatTrans.mapDerivedCategoryPlus`: naturality in morphisms of exact functors.
+* `CategoryTheory.NatTrans.mapDerivedCategoryPlus`: naturality in morphisms of exact functors,
+  with component formula `CategoryTheory.NatTrans.mapDerivedCategoryPlus_app_Q_obj`.
 
 ## References
 
@@ -139,26 +142,10 @@ lemma ι_map_mapDerivedCategoryPlusFactors_hom_app (K : CochainComplex.Plus C₁
         F.mapDerivedCategoryFactors.hom.app K.obj := by
   have h := NatTrans.congr_app F.whiskerRight_mapDerivedCategoryPlusFactors_hom_ι K
   simp only [Functor.whiskerRight_app, NatTrans.comp_app, Functor.associator_hom_app,
-    Functor.associator_inv_app, Functor.whiskerLeft_app, Category.comp_id, Category.id_comp] at h
-  have h2 : F.mapDerivedCategoryFactors.hom.app ((CochainComplex.Plus.ι C₁).obj K) ≫
-      DerivedCategory.Q.map (F.mapCochainComplexPlusCompι.inv.app K) ≫
-      (DerivedCategory.Plus.QCompιIso C₂).inv.app (F.mapCochainComplexPlus.obj K) =
-      F.mapDerivedCategoryFactors.hom.app K.obj := by
-    have h2a : DerivedCategory.Q.map (F.mapCochainComplexPlusCompι.inv.app K) ≫
-        (DerivedCategory.Plus.QCompιIso C₂).inv.app (F.mapCochainComplexPlus.obj K) = 𝟙 _ := by
-      dsimp [Functor.mapCochainComplexPlus]
-      rw [Functor.mapCochainComplexPlusCompι_inv_app, DerivedCategory.Plus.QCompιIso_inv_app,
-        DerivedCategory.Q.map_id, Category.id_comp]
-      rfl
-    rw [h2a]
-    exact Category.comp_id _
-  have h1 : F.mapDerivedCategory.map ((DerivedCategory.Plus.QCompιIso C₁).hom.app K) ≫
-      F.mapDerivedCategoryFactors.hom.app K.obj =
-      F.mapDerivedCategoryFactors.hom.app K.obj := by
-    dsimp [DerivedCategory.Plus.Q]
-    rw [DerivedCategory.Plus.QCompιIso_hom_app, F.mapDerivedCategory.map_id, Category.id_comp]
-  rw [h2, h1] at h
-  exact h
+    Functor.associator_inv_app, Functor.whiskerLeft_app, DerivedCategory.Plus.QCompιIso_hom_app,
+    DerivedCategory.Plus.QCompιIso_inv_app, Functor.mapCochainComplexPlusCompι_inv_app,
+    ObjectProperty.ι_obj, Functor.comp_obj] at h
+  simpa [DerivedCategory.Plus.Q, Functor.mapCochainComplexPlus] using h
 
 instance : NatTrans.CommShift F.mapDerivedCategoryPlusFactors.hom ℤ :=
   NatTrans.CommShift.of_comp_faithful DerivedCategory.Plus.ι <| by
@@ -230,29 +217,43 @@ lemma mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app_Q_obj
           (F.mapCochainComplexPlus.obj K) ≫
         (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app K.obj ≫
         F.map ((TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₁ n).inv.app K) := by
-  have hH : (DerivedCategory.Plus.homologyFunctor C₂ n).map
-        (F.mapDerivedCategoryPlusFactors.hom.app K) =
-      (DerivedCategory.homologyFunctor C₂ n).map
-          (F.mapDerivedCategoryPlusCompιIso.hom.app (DerivedCategory.Plus.Q.obj K)) ≫
-        (DerivedCategory.homologyFunctor C₂ n).map
-          (F.mapDerivedCategoryFactors.hom.app K.obj) := by
-    rw [← Functor.map_comp]
-    exact congrArg (DerivedCategory.homologyFunctor C₂ n).map
-      (F.ι_map_mapDerivedCategoryPlusFactors_hom_app K)
-  have hQ : (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.app
-        (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) =
-      (DerivedCategory.homologyFunctor C₂ n).map (F.mapDerivedCategoryFactors.hom.app K.obj) ≫
-        (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₂ n).hom.app
-          (F.mapCochainComplexPlus.obj K) ≫
-        (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app K.obj ≫
-        F.map ((TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₁ n).inv.app K) := by
-    have hQ' : (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app
-        K.obj = ((K.obj.sc n).mapHomologyIso F).hom := by simp
-    rw [CochainComplex.Plus.homologyFunctorFactors_hom_app,
-      CochainComplex.Plus.homologyFunctorFactors_inv_app, hQ']
-    exact F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj n K.obj
-  exact (F.mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app n _).trans
-    ((congrArg (_ ≫ ·) hQ).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hH.symm)))
+  calc (F.mapDerivedCategoryPlusCompHomologyFunctorIso n).hom.app (DerivedCategory.Plus.Q.obj K)
+    _ = ((DerivedCategory.homologyFunctor C₂ n).map
+            (F.mapDerivedCategoryPlusCompιIso.hom.app (DerivedCategory.Plus.Q.obj K)) ≫
+          (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.app
+            (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) :
+          (DerivedCategory.Plus.homologyFunctor C₂ n).obj
+              (F.mapDerivedCategoryPlus.obj (DerivedCategory.Plus.Q.obj K)) ⟶
+            F.obj ((DerivedCategory.Plus.homologyFunctor C₁ n).obj
+              (DerivedCategory.Plus.Q.obj K))) :=
+      F.mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app n _
+    _ = (DerivedCategory.Plus.homologyFunctor C₂ n).map
+            (F.mapDerivedCategoryPlusFactors.hom.app K) ≫
+          (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₂ n).hom.app
+            (F.mapCochainComplexPlus.obj K) ≫
+          (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app K.obj ≫
+          F.map ((TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₁ n).inv.app K) := by
+      have hQ : (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.app
+            (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) =
+          (DerivedCategory.homologyFunctor C₂ n).map
+              (F.mapDerivedCategoryFactors.hom.app K.obj) ≫
+            (DerivedCategory.homologyFunctorFactors C₂ n).hom.app
+              ((F.mapHomologicalComplex (ComplexShape.up ℤ)).obj K.obj) ≫
+            ((K.obj.sc n).mapHomologyIso F).hom ≫
+            F.map ((DerivedCategory.homologyFunctorFactors C₁ n).inv.app K.obj) :=
+        F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj n K.obj
+      have hH := congrArg (DerivedCategory.homologyFunctor C₂ n).map
+        (F.ι_map_mapDerivedCategoryPlusFactors_hom_app K)
+      rw [hQ]
+      simp only [Functor.map_comp, DerivedCategory.Plus.homologyFunctor,
+        CochainComplex.Plus.homologyFunctorFactors_hom_app,
+        CochainComplex.Plus.homologyFunctorFactors_inv_app,
+        Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app,
+        Functor.comp_map] at hH ⊢
+      dsimp only [DerivedCategory.Plus.Q, Functor.mapCochainComplexPlus, ObjectProperty.lift]
+        at hH ⊢
+      rw [← Category.assoc, ← hH]
+      rfl
 
 end CategoryTheory.Functor
 
@@ -281,23 +282,50 @@ lemma whiskerRight_mapDerivedCategoryPlus_ι (τ : F ⟶ G) :
         G.mapDerivedCategoryPlusCompιIso.inv :=
   ((DerivedCategory.TStructure.t (C := C₂)).plus.fullyFaithfulι.whiskeringRight _).map_preimage _
 
+/-- Component formula for `τ.mapDerivedCategoryPlus` on `DerivedCategory.Plus.Q.obj K`. -/
+@[reassoc]
+lemma mapDerivedCategoryPlus_app_Q_obj (τ : F ⟶ G) (K : CochainComplex.Plus C₁) :
+    τ.mapDerivedCategoryPlus.app (DerivedCategory.Plus.Q.obj K) =
+      F.mapDerivedCategoryPlusFactors.hom.app K ≫
+        DerivedCategory.Plus.Q.map (τ.mapCochainComplexPlus.app K) ≫
+        G.mapDerivedCategoryPlusFactors.inv.app K := by
+  apply DerivedCategory.Plus.ι.map_injective
+  have hτ : DerivedCategory.Plus.ι.map (τ.mapDerivedCategoryPlus.app
+      (DerivedCategory.Plus.Q.obj K)) =
+      F.mapDerivedCategoryPlusCompιIso.hom.app (DerivedCategory.Plus.Q.obj K) ≫
+        τ.mapDerivedCategory.app (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) ≫
+        G.mapDerivedCategoryPlusCompιIso.inv.app (DerivedCategory.Plus.Q.obj K) := by
+    simpa [Functor.whiskerRight_app, Functor.whiskerLeft_app, NatTrans.comp_app] using
+      NatTrans.congr_app (whiskerRight_mapDerivedCategoryPlus_ι τ)
+        (DerivedCategory.Plus.Q.obj K)
+  have hFacInv : DerivedCategory.Plus.ι.map (G.mapDerivedCategoryPlusFactors.inv.app K) =
+      G.mapDerivedCategoryFactors.inv.app K.obj ≫
+        G.mapDerivedCategoryPlusCompιIso.inv.app (DerivedCategory.Plus.Q.obj K) := by
+    rw [← cancel_epi (DerivedCategory.Plus.ι.map (G.mapDerivedCategoryPlusFactors.hom.app K)),
+      ← Functor.map_comp, Iso.hom_inv_id_app, Functor.map_id,
+      G.ι_map_mapDerivedCategoryPlusFactors_hom_app K]
+    simp
+  have hQ : DerivedCategory.Plus.ι.map
+      (DerivedCategory.Plus.Q.map (τ.mapCochainComplexPlus.app K)) =
+      DerivedCategory.Q.map ((τ.mapHomologicalComplex _).app K.obj) := by
+    dsimp only [DerivedCategory.Plus.Q, Functor.mapCochainComplexPlus, ObjectProperty.lift]
+    simp only [ObjectProperty.ι_map, ObjectProperty.homMk_hom, Functor.comp_map, Functor.comp_obj,
+      ObjectProperty.ι_obj, NatTrans.mapCochainComplexPlus_app_hom]
+  rw [hτ, Functor.map_comp, Functor.map_comp, F.ι_map_mapDerivedCategoryPlusFactors_hom_app K,
+    hQ, hFacInv]
+  have happ : τ.mapDerivedCategory.app
+      (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) =
+      F.mapDerivedCategoryFactors.hom.app K.obj ≫
+        DerivedCategory.Q.map ((τ.mapHomologicalComplex _).app K.obj) ≫
+        G.mapDerivedCategoryFactors.inv.app K.obj := by
+    simpa [DerivedCategory.Plus.Q] using τ.mapDerivedCategory_app_Q_obj K.obj
+  rw [happ]
+  simp only [Category.assoc]
+
 instance (τ : F ⟶ G) : NatTrans.CommShift τ.mapDerivedCategoryPlus ℤ :=
   NatTrans.CommShift.of_comp_faithful DerivedCategory.Plus.ι <| by
     rw [whiskerRight_mapDerivedCategoryPlus_ι]
     infer_instance
-
-private lemma mapDerivedCategory_id (F : C₁ ⥤ C₂) [F.Additive] [PreservesFiniteLimits F]
-    [PreservesFiniteColimits F] :
-    mapDerivedCategory (𝟙 F) = 𝟙 F.mapDerivedCategory := by
-  apply Localization.natTrans_ext DerivedCategory.Q (HomologicalComplex.quasiIso C₁ (.up ℤ))
-  intro K
-  simp [mapDerivedCategory_app_Q_obj, mapHomologicalComplex_id]
-
-private lemma mapDerivedCategory_comp (τ₁ : F ⟶ G) (τ₂ : G ⟶ H) :
-    (τ₁ ≫ τ₂).mapDerivedCategory = τ₁.mapDerivedCategory ≫ τ₂.mapDerivedCategory := by
-  apply Localization.natTrans_ext DerivedCategory.Q (HomologicalComplex.quasiIso C₁ (.up ℤ))
-  intro K
-  simp [mapDerivedCategory_app_Q_obj, mapHomologicalComplex_comp]
 
 /-- `NatTrans.mapDerivedCategoryPlus` sends the identity natural transformation to the
 identity. -/
@@ -307,9 +335,8 @@ lemma mapDerivedCategoryPlus_id (F : C₁ ⥤ C₂) [F.Additive] [PreservesFinit
     mapDerivedCategoryPlus (𝟙 F) = 𝟙 F.mapDerivedCategoryPlus := by
   apply ((DerivedCategory.TStructure.t (C := C₂)).plus.fullyFaithfulι.whiskeringRight
     _).map_injective
-  change whiskerRight (mapDerivedCategoryPlus (𝟙 F)) DerivedCategory.Plus.ι =
-    whiskerRight (𝟙 F.mapDerivedCategoryPlus) DerivedCategory.Plus.ι
-  rw [whiskerRight_mapDerivedCategoryPlus_ι, mapDerivedCategory_id]
+  simp only [Functor.whiskeringRight_obj_map, whiskerRight_mapDerivedCategoryPlus_ι,
+    mapDerivedCategory_id, Functor.whiskerRight_id']
   ext X
   simp
 
@@ -320,11 +347,8 @@ lemma mapDerivedCategoryPlus_comp (τ₁ : F ⟶ G) (τ₂ : G ⟶ H) :
       τ₁.mapDerivedCategoryPlus ≫ τ₂.mapDerivedCategoryPlus := by
   apply ((DerivedCategory.TStructure.t (C := C₂)).plus.fullyFaithfulι.whiskeringRight
     _).map_injective
-  change whiskerRight (τ₁ ≫ τ₂).mapDerivedCategoryPlus DerivedCategory.Plus.ι =
-    whiskerRight (τ₁.mapDerivedCategoryPlus ≫ τ₂.mapDerivedCategoryPlus) DerivedCategory.Plus.ι
-  rw [Functor.whiskerRight_comp, whiskerRight_mapDerivedCategoryPlus_ι,
-    whiskerRight_mapDerivedCategoryPlus_ι, whiskerRight_mapDerivedCategoryPlus_ι,
-    mapDerivedCategory_comp]
+  simp only [Functor.whiskeringRight_obj_map, Functor.whiskerRight_comp,
+    whiskerRight_mapDerivedCategoryPlus_ι, mapDerivedCategory_comp]
   ext X
   simp
 

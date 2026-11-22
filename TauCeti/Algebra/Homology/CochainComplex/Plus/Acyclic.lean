@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Homology.CochainComplexPlus
 public import Mathlib.CategoryTheory.Preadditive.Injective.InjectiveObject
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 
-import Mathlib.Algebra.Homology.DerivedCategory.DerivabilityStructureInjectives
-import Mathlib.Algebra.Homology.Factorizations.CM5b
+import Mathlib.Algebra.Homology.Factorizations.CM5a
+import Mathlib.Algebra.Homology.FullSubcategory
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -20,7 +20,7 @@ Let `F : C ⥤ D` be an additive functor between abelian categories, where `C` h
 injectives, and let `P : ObjectProperty C` be closed under isomorphisms, contain injective objects,
 be closed under cokernels of monomorphisms, and have `F` exact on short exact sequences starting in
 `P`. Then `F` preserves quasi-isomorphisms from bounded-below `P`-complexes into bounded-below
-complexes of injectives (`CategoryTheory.Functor.quasiIso_map_of_adapted_injective`), and
+complexes of injectives (`CategoryTheory.Functor.quasiIso_map_of_adapted_to_injective`), and
 consequently preserves quasi-isomorphisms between any two bounded-below `P`-complexes
 (`CategoryTheory.Functor.quasiIso_map_of_adapted`).
 
@@ -29,7 +29,8 @@ consequently preserves quasi-isomorphisms between any two bounded-below `P`-comp
 * `TauCeti/CategoryTheory/Abelian/AcyclicResolution.lean`, whose adapted quasi-isomorphism proof
   pattern is adapted here to `CochainComplex.Plus`.
 * Mathlib's `Mathlib/Algebra/Homology/Factorizations/CM5b.lean`, whose bounded-below injective
-  monomorphism factorization `CochainComplex.cm5b` is used in `quasiIso_map_of_adapted_injective`.
+  monomorphism factorization `CochainComplex.cm5b` is used in
+  `quasiIso_map_of_adapted_to_injective`.
 * The Stacks Project, Derived Categories, §13.15–§13.16 (tags 05T8, 015E).
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006, §13.3.
 -/
@@ -56,7 +57,7 @@ include hinj hP hF in
 /-- **Adapted bounded-below complexes preserve quasi-isomorphisms into injective complexes.**
 For a quasi-isomorphism `i : K ⟶ ι(I)` from a bounded-below `P`-complex `K` to a bounded-below
 complex `I` of injective objects, `F(i)` is a quasi-isomorphism. -/
-theorem quasiIso_map_of_adapted_injective
+theorem quasiIso_map_of_adapted_to_injective
     {K : CochainComplex.Plus C} (hK : ∀ n, P (K.obj.X n))
     {I : CochainComplex.Plus (InjectiveObject C)}
     (i : K ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I) [QuasiIso i.hom] :
@@ -120,15 +121,21 @@ theorem quasiIso_map_of_adapted
     (hK : ∀ n, P (K.obj.X n)) (hL : ∀ n, P (L.obj.X n)) :
     QuasiIso ((F.mapHomologicalComplex _).map f.hom) := by
   obtain ⟨b, _⟩ := L.property
-  obtain ⟨I, _, j, hj⟩ := CochainComplex.Plus.exists_quasiIso_injective L b
-  have : QuasiIso j.hom := (CochainComplex.Plus.quasiIso_iff C j).1 hj
+  obtain ⟨M, j₀, _, hM, _⟩ :=
+    CochainComplex.Plus.modelCategoryQuillen.exists_quasiIso_injective L.obj b
+  let I₀ : CochainComplex (InjectiveObject C) ℤ := HomologicalComplex.liftObjectProperty _ M hM
+  have hI₀ : I₀.IsStrictlyGE b := by
+    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]
+  let I : CochainComplex.Plus (InjectiveObject C) := ⟨I₀, b, hI₀⟩
+  let j : L ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I := ObjectProperty.homMk j₀
+  have : QuasiIso j.hom := inferInstanceAs (QuasiIso j₀)
   have : QuasiIso (f ≫ j).hom := inferInstanceAs (QuasiIso (f.hom ≫ j.hom))
   have : QuasiIso ((F.mapHomologicalComplex _).map j.hom) :=
-    F.quasiIso_map_of_adapted_injective P hinj hP hF hL j
+    F.quasiIso_map_of_adapted_to_injective P hinj hP hF hL j
   have : QuasiIso ((F.mapHomologicalComplex _).map f.hom ≫
       (F.mapHomologicalComplex _).map j.hom) := by
     rw [← Functor.map_comp]
-    exact F.quasiIso_map_of_adapted_injective P hinj hP hF hK (f ≫ j)
+    exact F.quasiIso_map_of_adapted_to_injective P hinj hP hF hK (f ≫ j)
   exact quasiIso_of_comp_right ((F.mapHomologicalComplex _).map f.hom)
     ((F.mapHomologicalComplex _).map j.hom)
 

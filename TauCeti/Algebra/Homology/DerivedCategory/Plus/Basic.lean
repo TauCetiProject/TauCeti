@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Plus
-public import TauCeti.Algebra.Homology.CochainComplex.Plus
+public import TauCeti.Algebra.Homology.CochainComplex.Plus.Basic
 
 /-!
 # Basic localization, homology, single-functor, and cone properties on `DerivedCategory.Plus`
@@ -160,21 +160,14 @@ lemma ι_map_singleFunctorIsoCompQ_hom_app (n : ℤ) (X : C) :
     _root_.DerivedCategory.Plus.ι.map ((singleFunctorIsoCompQ C n).hom.app X) =
       (_root_.DerivedCategory.Plus.singleFunctorιIso C n).hom.app X ≫
         (_root_.DerivedCategory.singleFunctorIsoCompQ C n).hom.app X ≫
+        _root_.DerivedCategory.Q.map
+          ((TauCeti.CochainComplex.Plus.singleFunctorCompιIso C n).inv.app X) ≫
         (_root_.DerivedCategory.Plus.QCompιIso C).inv.app
           ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) := by
   have h := NatTrans.congr_app (whiskerRight_singleFunctorIsoCompQ_hom_ι (C := C) n) X
-  simp only [Functor.whiskerRight_app, NatTrans.comp_app, Functor.associator_hom_app,
-    Functor.associator_inv_app, Functor.whiskerLeft_app, Category.comp_id, Category.id_comp] at h
-  have h1 : _root_.DerivedCategory.Q.map
-        ((TauCeti.CochainComplex.Plus.singleFunctorCompιIso C n).inv.app X) ≫
-        (_root_.DerivedCategory.Plus.QCompιIso C).inv.app
-          ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) =
-      (_root_.DerivedCategory.Plus.QCompιIso C).inv.app
-        ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) := by
-    rw [TauCeti.CochainComplex.Plus.singleFunctorCompιIso_inv_app,
-      _root_.DerivedCategory.Q.map_id, Category.id_comp]
-  rw [h1] at h
-  exact h
+  simpa only [Functor.whiskerRight_app, NatTrans.comp_app, Functor.associator_hom_app,
+    Functor.associator_inv_app, Functor.whiskerLeft_app, Category.comp_id, Category.id_comp,
+    Category.assoc] using h
 
 /-- The image of a mapping cone triangle in `CochainComplex.Plus C` under `DerivedCategory.Plus.Q`
 is distinguished. -/

@@ -7,9 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import Mathlib.CategoryTheory.Functor.Derived.RightDerivedCommShift
+public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Functor
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
-public import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.Algebra.Homology.Embedding.Extend.Map
 
 /-!
 # Comparison theorems for bounded-below right derived functors
@@ -76,6 +77,13 @@ private def rightDerivedCompUnit₁ :
     whiskerRight F₁.rightDerivedFunctorPlusUnit V.mapDerivedCategoryPlus ≫
     (Functor.associator _ _ _).hom
 
+private lemma rightDerivedCompUnit₁_app (K : CochainComplex.Plus C₁) :
+    (rightDerivedCompUnit₁ F₁ V).app K =
+      V.mapDerivedCategoryPlusFactors.inv.app (F₁.mapCochainComplexPlus.obj K) ≫
+        V.mapDerivedCategoryPlus.map (F₁.rightDerivedFunctorPlusUnit.app K) := by
+  dsimp [rightDerivedCompUnit₁]
+  simp
+
 private instance : NatTrans.CommShift (rightDerivedCompUnit₁ F₁ V) ℤ := by
   dsimp [rightDerivedCompUnit₁]
   infer_instance
@@ -93,6 +101,19 @@ private def rightDerivedCompUnit₂ :
     (Functor.associator _ _ _).inv ≫
     whiskerRight U.mapDerivedCategoryPlusFactors.inv F₂.rightDerivedFunctorPlus ≫
     (Functor.associator _ _ _).hom
+
+omit [EnoughInjectives C₁] [HasDerivedCategory D₁] [PreservesFiniteLimits V]
+  [PreservesFiniteColimits V] in
+private lemma rightDerivedCompUnit₂_app (K : CochainComplex.Plus C₁) :
+    (rightDerivedCompUnit₂ F₁ F₂ U V e).app K =
+      DerivedCategory.Plus.Q.map
+          ((F₁.mapCochainComplexPlusCompIso V).hom.app K ≫
+            e.hom.mapCochainComplexPlus.app K ≫
+            (U.mapCochainComplexPlusCompIso F₂).inv.app K) ≫
+        F₂.rightDerivedFunctorPlusUnit.app (U.mapCochainComplexPlus.obj K) ≫
+        F₂.rightDerivedFunctorPlus.map (U.mapDerivedCategoryPlusFactors.inv.app K) := by
+  dsimp [rightDerivedCompUnit₂]
+  simp
 
 private instance : NatTrans.CommShift (rightDerivedCompUnit₂ F₁ F₂ U V e) ℤ := by
   have : NatTrans.CommShift (F₁.mapCochainComplexPlusCompIso V).hom ℤ := inferInstance
@@ -132,7 +153,7 @@ private lemma isRightDerivedFunctor_comp₂ :
 include hU in
 /-- **Exact-functor comparison for bounded-below right derived functors.**
 If `F₁ ⋙ V ≅ U ⋙ F₂` with `U` and `V` exact and `F₂.rightDerivedFunctorPlusUnit` is an
-isomorphism on `U`-images of bounded-below complexes of injectives (for instance, when `U` sends
+isomorphism on `U`-images of bounded-below complexes of injectives (for instance, whenever `U` sends
 injectives into an `F₂`-adapted class), then `RF₁⁺ ⋙ V⁺ ≅ U⁺ ⋙ RF₂⁺` canonically and
 compatibly with shifts. -/
 def rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso :
@@ -145,6 +166,18 @@ def rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso :
     (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
     (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
     (CochainComplex.Plus.quasiIso C₁)
+
+include hU in
+private lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom :
+    (rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom =
+      have := isRightDerivedFunctor_comp₁ F₁ V
+      have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
+      Functor.rightDerivedNatTrans
+        (F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus)
+        (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
+        (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
+        (CochainComplex.Plus.quasiIso C₁) (𝟙 _) :=
+  rfl
 
 include hU in
 /-- Universal-property characterization of `rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso`:
@@ -165,18 +198,17 @@ lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom_fac_app
         F₂.rightDerivedFunctorPlus.map (U.mapDerivedCategoryPlusFactors.inv.app K) := by
   have := isRightDerivedFunctor_comp₁ F₁ V
   have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
-  rw [← cancel_epi (V.mapDerivedCategoryPlusFactors.inv.app (F₁.mapCochainComplexPlus.obj K)),
-    Iso.inv_hom_id_app_assoc]
   have h := Functor.rightDerivedNatTrans_app
     (F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus)
     (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
     (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
-    (CochainComplex.Plus.quasiIso C₁) (Iso.refl _).hom K
-  simpa only [rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso, Functor.rightDerivedUnique,
-    Functor.rightDerivedNatIso_hom, rightDerivedCompUnit₁, rightDerivedCompUnit₂, Iso.refl_hom,
-    NatTrans.id_app, NatTrans.comp_app, whiskerLeft_app, whiskerRight_app, associator_hom_app,
-    associator_inv_app, Functor.comp_obj, Category.id_comp, Category.comp_id,
-    Category.assoc] using h
+    (CochainComplex.Plus.quasiIso C₁) (𝟙 _) K
+  rw [rightDerivedCompUnit₁_app, rightDerivedCompUnit₂_app, NatTrans.id_app,
+    Category.id_comp, Category.assoc,
+    ← rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom F₁ F₂ U V e hU] at h
+  rw [← cancel_epi (V.mapDerivedCategoryPlusFactors.inv.app (F₁.mapCochainComplexPlus.obj K)),
+    Iso.inv_hom_id_app_assoc]
+  exact h
 
 include hU in
 instance : NatTrans.CommShift
@@ -237,7 +269,9 @@ private def degreeZeroComponent (n : ℕ) (X : C) (I : InjectiveResolution X) :
   (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).mapIso
       (F.rightDerivedFunctorPlus.mapIso
         ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).app X)) ≪≫
-    F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ) ≪≫
+    F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ) ≪≫
+    HomologicalComplex.homologyMapIso
+      ((F.mapHomologicalComplex (.up ℤ)).mapIso (eqToIso I.cocomplexPlus_obj)) (n : ℤ) ≪≫
     HomologicalComplex.homologyMapIso
       (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat) (n : ℤ) ≪≫
     ((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
@@ -249,7 +283,9 @@ private lemma degreeZeroComponent_hom (n : ℕ) (X : C) (I : InjectiveResolution
       (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ)).hom ≫
+        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ)).hom ≫
+        HomologicalComplex.homologyMap
+          ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom I.cocomplexPlus_obj)) (n : ℤ) ≫
         HomologicalComplex.homologyMap
           (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
@@ -266,21 +302,29 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
         (degreeZeroComponent F n Y IY).hom =
       (degreeZeroComponent F n X IX).hom ≫ (F.rightDerived n).map f := by
   let φ : IX.cocomplex ⟶ IY.cocomplex := InjectiveResolution.desc f IY IX
-  let φExt :
-      (⟨IX.cocomplex.extend ComplexShape.embeddingUpNat,
-          (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ : CochainComplex.Plus C) ⟶
-      ⟨IY.cocomplex.extend ComplexShape.embeddingUpNat,
-        (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩ :=
-    ObjectProperty.homMk (HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat)
   have h1 := congrArg (fun g ↦ (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
       (F.rightDerivedFunctorPlus.map g))
     ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.naturality f)
   simp only [Functor.map_comp] at h1
   have h2 := F.rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
-    IX.extendResolution IY.extendResolution
-    ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f) φExt
-    (InjectiveResolution.extendResolution_naturality f IX IY φ
+    IX.ιPlus IY.ιPlus
+    ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f)
+    (InjectiveResolution.cocomplexPlusMap φ)
+    (InjectiveResolution.ιPlus_naturality f IX IY φ
       (InjectiveResolution.desc_commutes f IY IX)) (n : ℤ)
+  have h2' : HomologicalComplex.homologyMap
+        ((F.mapHomologicalComplex (.up ℤ)).map (InjectiveResolution.cocomplexPlusMap φ).hom)
+          (n : ℤ) ≫
+        HomologicalComplex.homologyMap
+          ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom IY.cocomplexPlus_obj)) (n : ℤ) =
+      HomologicalComplex.homologyMap
+        ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom IX.cocomplexPlus_obj)) (n : ℤ) ≫
+        HomologicalComplex.homologyMap
+          ((F.mapHomologicalComplex (.up ℤ)).map
+            (HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat)) (n : ℤ) := by
+    rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+      ← Functor.map_comp, ← Functor.map_comp, InjectiveResolution.cocomplexPlusMap_hom]
+    simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
   have h3 := congrArg (fun g ↦ HomologicalComplex.homologyMap g (n : ℤ))
     (HomologicalComplex.mapExtendIso_hom_naturality F ComplexShape.embeddingUpNat φ)
   simp only [HomologicalComplex.homologyMap_comp] at h3
@@ -294,9 +338,7 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
       (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   rw [degreeZeroComponent_hom, degreeZeroComponent_hom]
   simp only [Category.assoc]
-  rw [reassoc_of% h1, reassoc_of% h2]
-  dsimp only [φExt, ObjectProperty.homMk_hom]
-  rw [reassoc_of% h3, reassoc_of% h4, h5]
+  rw [reassoc_of% h1, reassoc_of% h2, reassoc_of% h2', reassoc_of% h3, reassoc_of% h4, h5]
 
 /-- **Degree-zero complexes recover classical right derived functors.** For every `n : ℕ`,
 `DerivedCategory.Plus.singleFunctor C 0 ⋙ F.rightDerivedFunctorPlus ⋙
@@ -322,7 +364,9 @@ lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_i
       (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.extendResolution (n : ℤ)).hom ≫
+        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ)).hom ≫
+        HomologicalComplex.homologyMap
+          ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom I.cocomplexPlus_obj)) (n : ℤ) ≫
         HomologicalComplex.homologyMap
           (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso

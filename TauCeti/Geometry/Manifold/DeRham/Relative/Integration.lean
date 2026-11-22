@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
-import TauCeti.Algebra.Homology.Embedding.Extend
+import TauCeti.Algebra.Homology.Embedding.Extend.Basic
 import TauCeti.Algebra.Homology.ModuleCat.LinearYoneda
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 

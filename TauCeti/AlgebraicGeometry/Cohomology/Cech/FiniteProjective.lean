@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.Algebra.Homology.Embedding.Extend.Map
 public import TauCeti.Algebra.Homology.ModuleCat.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.Flat
