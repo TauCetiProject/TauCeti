@@ -7,9 +7,12 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.LocalRing.HilbertSamuel
 public import TauCeti.RingTheory.RegularLocalRing.Flat
+
+import TauCeti.RingTheory.AdicCompletion.Localization
 
 /-!
 # Dimension, regularity, and Hilbert–Samuel functions of the completion of a local ring
@@ -30,6 +33,8 @@ characteristic, over a complete discrete valuation ring.
 
 * `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
+* `TauCeti.AdicCompletion.isRegularLocalRing_iff_of_isMaximal`: completing a Noetherian ring `R` at
+  a maximal ideal `p` is regular if and only if any localization `Rₚ` of `R` at `p` is regular.
 * `TauCeti.localQuotientHilbertSamuel_adicCompletion`,
   `TauCeti.localQuotientHilbertSamuel_adicCompletion_bot`: extending an ideal `I` of `R` (and in
   particular `⊥`) to `R̂` preserves `TauCeti.localQuotientHilbertSamuel`.
@@ -73,6 +78,17 @@ end
 instance {R : Type*} [CommRing R] [IsRegularLocalRing R] :
     IsRegularLocalRing (AdicCompletion (maximalIdeal R) R) :=
   isRegularLocalRing_iff.mpr ‹_›
+
+/-- Completing a Noetherian ring `R` at a maximal ideal `p` yields a regular local ring if and only
+if any localization `Rₚ` of `R` at `p` is a regular local ring. -/
+theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetherianRing R]
+    (p : Ideal R) [p.IsMaximal] (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ]
+    [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ] :
+    IsRegularLocalRing (AdicCompletion p R) ↔ IsRegularLocalRing Rₚ := by
+  have : IsNoetherianRing Rₚ := IsLocalization.isNoetherianRing p.primeCompl Rₚ ‹_›
+  let e := (_root_.AdicCompletion.equivMaximalIdealOfAtPrime p Rₚ).toRingEquiv
+  exact ⟨fun _ ↦ isRegularLocalRing_iff.mp (.of_ringEquiv e),
+    fun _ ↦ .of_ringEquiv (R := AdicCompletion (maximalIdeal Rₚ) Rₚ) e.symm⟩
 
 end TauCeti.AdicCompletion
 

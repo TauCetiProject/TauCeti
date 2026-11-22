@@ -5,6 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Topology.VectorBundle.Trivialization
+import Mathlib.Geometry.Manifold.PartitionOfUnity
+
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
@@ -46,6 +50,12 @@ maps pulled back along. Both comparisons are the identity on every fibre, so for
 they are fibrewise linear, and over a complex model at `n = ∞` they are holomorphic bundle
 equivalences between holomorphic vector bundles, which Mathlib's `ContMDiffVectorBundle.pullback`
 makes `f *ᵖ E` when `E` is one.
+
+The local chart comparison `Bundle.Pullback.localTransport` is smooth on the common chart
+domain. `Bundle.Pullback.exists_contMDiff_hom_map_I_eq_cast` constructs a jointly smooth
+complex-linear Hom field equal to the identity casts on any closed coincidence set of two
+base maps. `Bundle.Pullback.contMDiff_fiberwise_comp_of_hom` gives its smooth total-space map
+after smooth base change.
 
 The native Hom section between two pullbacks by the same map is `Cⁿ` at a point exactly when its
 original Hom field along that map is `Cⁿ` there, provided the map is `Cⁿ` at that point
@@ -317,3 +327,219 @@ theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {
   ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
 
 end ContMDiffVectorBundle
+
+
+open Set Function FiberBundle
+open scoped ContDiff Topology
+
+namespace Bundle.Pullback
+
+noncomputable section LocalTransport
+variable {EM HM M EP HP P F : Type*}
+  [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [IsManifold IM ∞ M]
+  [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+  {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+  [IsManifold IP ∞ P]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
+  (b₀ b₁ : C^∞⟮IP, P; IM, M⟯)
+  (e : Trivialization F (π F V)) [e.IsLinear ℂ] [e.IsLinear ℝ] [MemTrivializationAtlas e]
+
+local instance sourceSmoothBundle : ContMDiffVectorBundle ∞ F ((b₀ : P → M) *ᵖ V) IP :=
+  ContMDiffVectorBundle.pullback F V IP b₀
+local instance targetSmoothBundle : ContMDiffVectorBundle ∞ F ((b₁ : P → M) *ᵖ V) IP :=
+  ContMDiffVectorBundle.pullback F V IP b₁
+
+/-- The real-linear transport obtained by reading and reconstructing in one complex chart. -/
+def localTransport (p : P) : V (b₀ p) →L[ℝ] V (b₁ p) :=
+  ((e.symmL ℂ (b₁ p)).comp (e.continuousLinearMapAt ℂ (b₀ p))).restrictScalars ℝ
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
+  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
+  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
+/-- Evaluation of local chart transport in the original source and target fibres. -/
+theorem localTransport_apply (p : P) (v : V (b₀ p)) :
+    localTransport b₀ b₁ e p v =
+      e.symmL ℂ (b₁ p) (e.continuousLinearMapAt ℂ (b₀ p) v) := by rfl
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
+  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
+  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
+/-- Local chart transport commutes with multiplication by `I`. -/
+theorem localTransport_map_I (p : P) (v : V (b₀ p)) :
+    localTransport b₀ b₁ e p (Complex.I • v) = Complex.I • localTransport b₀ b₁ e p v := by
+  exact (((e.symmL ℂ (b₁ p)).comp
+    (e.continuousLinearMapAt ℂ (b₀ p))).map_smul Complex.I v)
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
+  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
+  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
+/-- The local transport in the original total space is chart reconstruction at the new base. -/
+theorem lift_localTransport (v : TotalSpace F ((b₀ : P → M) *ᵖ V))
+    (hv : b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet) :
+    Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
+      v.proj (localTransport b₀ b₁ e v.proj v.snd)) =
+    e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2) := by
+  -- The pullback total-space constructor and its projection are retyped in the original
+  -- fibres, so the explicit transport and chart evaluation laws apply without inferred
+  -- pullback-family instances. This reduction changes no vector or base point.
+  let u : V (b₀ v.proj) := v.snd
+  change (TotalSpace.mk' F (E := V) (b₁ v.proj)
+    (localTransport b₀ b₁ e v.proj u)) =
+      e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e ⟨b₀ v.proj, u⟩).2)
+  rw [localTransport_apply, e.continuousLinearMapAt_apply_of_mem ℂ hv.1, e.symmL_apply hv.2]
+  exact e.mk_symm hv.2 _
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
+  [IsScalarTower ℝ ℂ F] [VectorBundle ℂ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [e.IsLinear ℝ] in
+/-- Local chart transport is smooth wherever both base maps lie in the chart. -/
+theorem contMDiffOn_localTransport :
+    ContMDiffOn (IP.prod 𝓘(ℝ, F)) (IP.prod 𝓘(ℝ, F)) ∞
+      (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
+        TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
+          v.proj (localTransport b₀ b₁ e v.proj v.snd))
+      {v | b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} := by
+  intro v hv
+  have hp : ContMDiffAt (IP.prod 𝓘(ℝ, F)) IP ∞
+      (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦ v.proj) v := contMDiffAt_proj _
+  have hl := (Pullback.contMDiff_lift b₀ b₀.contMDiff).contMDiffAt (x := v)
+  have hcoord := (e.contMDiffAt (e.mem_source.mpr hv.1)).comp v hl
+  have hpair := ((b₁.contMDiff.contMDiffAt).comp v hp).prodMk hcoord.snd
+  have hs := (e.contMDiffAt_symm (e.mem_target.mpr hv.2)).comp v hpair
+  have hU : IsOpen {v : TotalSpace F ((b₀ : P → M) *ᵖ V) |
+      b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} :=
+    (e.open_baseSet.preimage (b₀.contMDiff.continuous.comp (continuous_proj _ _))).inter
+      (e.open_baseSet.preimage (b₁.contMDiff.continuous.comp (continuous_proj _ _)))
+  have heq : (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
+      Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
+        v.proj (localTransport b₀ b₁ e v.proj v.snd))) =ᶠ[𝓝 v]
+      (fun v ↦ e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2)) := by
+    filter_upwards [hU.mem_nhds hv] with w hw
+    exact lift_localTransport b₀ b₁ e w hw
+  apply ContMDiffAt.contMDiffWithinAt
+  exact (Pullback.contMDiffAt_iff b₁ (b₁.contMDiff.contMDiffAt)).2
+    ⟨hp, hs.congr_of_eventuallyEq heq⟩
+
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
+  [IsScalarTower ℝ ℂ F] [VectorBundle ℂ F V]
+  [∀ x, ContinuousSMul ℂ (V x)] [e.IsLinear ℝ] in
+/-- Local chart transport is smooth wherever both base maps lie in the chart. -/
+theorem contMDiffOn_localTransport_hom [FiniteDimensional ℝ F] :
+    ContMDiffOn IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+      (fun p ↦ TotalSpace.mk' (F →L[ℝ] F)
+        (E := fun p ↦ ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p)
+        p (localTransport b₀ b₁ e p))
+      {p | b₀ p ∈ e.baseSet ∧ b₁ p ∈ e.baseSet} := by
+  intro p hp
+  apply ContMDiffAt.contMDiffWithinAt
+  apply (TauCeti.contMDiffAt_hom_bundle_iff
+    (F₁ := F) (F₂ := F) (IB := IP)
+    (E₁ := (b₀ : P → M) *ᵖ V) (E₂ := (b₁ : P → M) *ᵖ V)
+    (localTransport b₀ b₁ e) p).2
+  intro v
+  have hU : IsOpen {v : TotalSpace F ((b₀ : P → M) *ᵖ V) |
+      b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} :=
+    (e.open_baseSet.preimage (b₀.contMDiff.continuous.comp (continuous_proj _ _))).inter
+      (e.open_baseSet.preimage (b₁.contMDiff.continuous.comp (continuous_proj _ _)))
+  exact (contMDiffOn_localTransport b₀ b₁ e ⟨p, v⟩ hp).contMDiffAt (hU.mem_nhds hp)
+
+
+omit [IsManifold IM ∞ M] [IsScalarTower ℝ ℂ F]
+  [∀ x, ContinuousSMul ℂ (V x)] in
+/-- A smooth complex-linear Hom field extending the identity casts on a closed coincidence set. -/
+theorem exists_contMDiff_hom_map_I_eq_cast [FiniteDimensional ℝ EP]
+    [FiniteDimensional ℝ F] [T2Space P] [SigmaCompactSpace P]
+    (D : Set P) (hD : IsClosed D) (hbase : ∀ p ∈ D, b₀ p = b₁ p) :
+    ∃ A : ∀ p, ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p,
+      ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+        (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (A p)) ∧
+      (∀ p v, A p (Complex.I • v) = Complex.I • A p v) ∧
+      ∀ p ∈ D, ∀ h : b₀ p = b₁ p, ∀ v, A p v = cast (congrArg V h) v := by
+  let Z (p : P) := ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p
+  let t (p : P) : Set (Z p) := {A | (∀ v, A (Complex.I • v) = Complex.I • A v) ∧
+    (p ∈ D → ∀ h : b₀ p = b₁ p, ∀ v, A v = cast (congrArg V h) v)}
+  have hconv (p : P) : Convex ℝ (t p) := by
+    rintro A ⟨hAI, hAD⟩ B ⟨hBI, hBD⟩ a b _ _ hab
+    refine ⟨fun v ↦ ?_, fun hp h v ↦ ?_⟩
+    · simp only [add_apply, smul_apply, hAI, hBI,
+        smul_add]
+      exact congrArg₂ (· + ·) (smul_comm _ _ _) (smul_comm _ _ _)
+    · simp only [add_apply, smul_apply,
+        hAD hp h, hBD hp h]
+      have hs (w : V (b₁ p)) : a • w + b • w = w := by
+        rw [← add_smul, hab, one_smul]
+      exact hs _
+  have hloc (p : P) : ∃ U ∈ 𝓝 p, ∃ a : ∀ p, Z p,
+      ContMDiffOn IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+        (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (a p)) U ∧ ∀ q ∈ U, a q ∈ t q := by
+    by_cases hp : p ∈ D
+    · let e := trivializationAt F V (b₀ p)
+      let U := {q | b₀ q ∈ e.baseSet ∧ b₁ q ∈ e.baseSet}
+      have hU : IsOpen U :=
+        (e.open_baseSet.preimage b₀.contMDiff.continuous).inter
+          (e.open_baseSet.preimage b₁.contMDiff.continuous)
+      have hpU : p ∈ U := by
+        refine ⟨mem_baseSet_trivializationAt F V (b₀ p), ?_⟩
+        rw [← hbase p hp]
+        exact mem_baseSet_trivializationAt F V (b₀ p)
+      refine ⟨U, hU.mem_nhds hpU, localTransport b₀ b₁ e,
+        contMDiffOn_localTransport_hom b₀ b₁ e, ?_⟩
+      intro q hq
+      refine ⟨localTransport_map_I b₀ b₁ e q, fun _ h v ↦ ?_⟩
+      exact e.symmL_continuousLinearMapAt_eq_cast ℂ h hq.1 v
+    · refine ⟨Dᶜ, hD.isOpen_compl.mem_nhds hp, fun _ ↦ 0, ?_, ?_⟩
+      · exact (contMDiff_zeroSection (F := F →L[ℝ] F) (E := Z) (IB := IP) (n := ∞) ℝ).contMDiffOn
+      · intro q hq
+        exact ⟨fun v ↦ by simp, fun hqD ↦ (hq hqD).elim⟩
+  obtain ⟨A, hA⟩ := exists_contMDiffSection_forall_mem_convex_of_local IP Z t hconv hloc
+  exact ⟨A, A.contMDiff, fun p ↦ (hA p).1, fun p hp ↦ (hA p).2 hp⟩
+
+omit [IsManifold IM ∞ M] [IsManifold IP ∞ P] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
+  [∀ x, Module ℂ (V x)] in
+/-- A smooth native Hom field induces a smooth fibrewise map after any smooth base change. -/
+theorem contMDiff_fiberwise_comp_of_hom [FiniteDimensional ℝ F]
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ}
+    [TopologicalSpace Q] [ChartedSpace HQ Q]
+    (A : ∀ p, ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p)
+    (hA : ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+      (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (A p))) (j : C^∞⟮IQ, Q; IP, P⟯) :
+    ContMDiff (IQ.prod 𝓘(ℝ, F)) (IQ.prod 𝓘(ℝ, F)) ∞
+      (fun v : TotalSpace F ((b₀.comp j : Q → M) *ᵖ V) ↦
+        TotalSpace.mk' F (E := (b₁.comp j : Q → M) *ᵖ V) v.proj (A (j v.proj) v.snd)) := by
+  have hAt := (TauCeti.contMDiff_hom_bundle_iff
+    (IB := IP) (F₁ := F) (F₂ := F)
+    (E₁ := (b₀ : P → M) *ᵖ V) (E₂ := (b₁ : P → M) *ᵖ V) A).1 hA
+  have hit := Pullback.contMDiff_fiberwise
+    (F := F) (F' := F) (E := (b₀ : P → M) *ᵖ V) (E' := (b₁ : P → M) *ᵖ V)
+    (fun p v ↦ A p v) hAt j j.contMDiff
+  have hr := (Pullback.compDiffeomorph (n := ∞) V b₁ j).symm.contMDiff.comp
+    (hit.comp (Pullback.compDiffeomorph (n := ∞) V b₀ j).contMDiff)
+  apply hr.congr
+  intro v
+  simp only [Function.comp_apply]
+  rw [Pullback.compDiffeomorph_apply (n := ∞) (E := V) b₀ j v,
+    Pullback.compDiffeomorph_symm_apply]
+
+
+end LocalTransport
+
+end Bundle.Pullback
