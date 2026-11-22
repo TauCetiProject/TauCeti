@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DualNumber
+public import TauCeti.RingTheory.DualNumber.Order
+public import TauCeti.RingTheory.Ideal.Order.Topology
 public import TauCeti.RingTheory.MarkedIdeal.Basic
 import Mathlib.RingTheory.Nilpotent.Lemmas
-import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Examples of affine ideal order and marked ideals
@@ -63,29 +63,12 @@ section DualNumbers
 
 variable {k : Type*} [Field k]
 
-private theorem maximalIdeal_sq_eq_bot : maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
-  rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq,
-    DualNumber.eps_mul_eps, Ideal.span_singleton_zero]
-
-/-- On the dual numbers `k[ε] / (ε²)`, the maximal ideal has local order `1`. -/
-theorem localOrder_maximalIdeal :
-    (maximalIdeal (DualNumber k)).localOrder = 1 := by
-  refine le_antisymm (le_of_not_gt fun hlt ↦ ?_) ?_
-  · have h2 : ((2 : ℕ) : ℕ∞) ≤ (maximalIdeal (DualNumber k)).localOrder := by
-      have : ((1 : ℕ) : ℕ∞) + 1 ≤ (maximalIdeal (DualNumber k)).localOrder :=
-        ENat.natCast_add_one_le_iff.mpr (by simpa using hlt)
-      exact_mod_cast this
-    rw [Ideal.natCast_le_localOrder_iff, maximalIdeal_sq_eq_bot,
-      DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_le_iff_mem,
-      Ideal.mem_bot] at h2
-    exact DualNumber.eps_ne_zero h2
-  · rw [← Nat.cast_one, Ideal.natCast_le_localOrder_iff, _root_.pow_one]
-
 -- On `k[ε] / (ε²)`, `𝔪` has local order `1` while `𝔪²` has local order `⊤`.
 example :
     (maximalIdeal (DualNumber k)).localOrder = 1 ∧
       (maximalIdeal (DualNumber k) ^ 2).localOrder = ⊤ :=
-  ⟨localOrder_maximalIdeal, by rw [maximalIdeal_sq_eq_bot, Ideal.localOrder_bot]⟩
+  ⟨DualNumber.localOrder_maximalIdeal,
+    by rw [DualNumber.maximalIdeal_sq_eq_bot, Ideal.localOrder_bot]⟩
 
 -- On `k[ε] / (ε²)`, `(𝔪, 2)` has empty cosupport, whereas rescaling by `2` gives `(𝔪², 4)` with
 -- full nonempty cosupport.
@@ -97,17 +80,18 @@ example :
   intro M
   have hprime (p : PrimeSpectrum (DualNumber k)) :
       p = IsLocalRing.closedPoint (DualNumber k) := by
+    have hle : maximalIdeal (DualNumber k) ≤ p.asIdeal := by
+      rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_le_iff_mem]
+      exact (nilpotent_iff_mem_prime.mp DualNumber.isNilpotent_eps) p.asIdeal p.isPrime
     ext1
-    refine le_antisymm (IsLocalRing.le_maximalIdeal p.isPrime.ne_top) ?_
-    change maximalIdeal (DualNumber k) ≤ p.asIdeal
-    rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_le_iff_mem]
-    exact (nilpotent_iff_mem_prime.mp DualNumber.isNilpotent_eps) p.asIdeal p.isPrime
+    simpa [IsLocalRing.closedPoint] using
+      le_antisymm (IsLocalRing.le_maximalIdeal p.isPrime.ne_top) hle
   have h1 : M.cosupport = ∅ := by
     ext p
     rw [mem_cosupport_iff, hprime p, Ideal.orderAt_closedPoint]
-    simp [M, localOrder_maximalIdeal]
+    simp [M, DualNumber.localOrder_maximalIdeal]
   have h2 : (M.pow 2).cosupport = Set.univ :=
-    cosupport_eq_univ_of_ideal_eq_bot (by rw [pow_ideal, maximalIdeal_sq_eq_bot])
+    cosupport_eq_univ_of_ideal_eq_bot (by rw [pow_ideal, DualNumber.maximalIdeal_sq_eq_bot])
   refine ⟨h1, h2, ?_⟩
   rw [h1, h2]
   exact Set.Nonempty.ne_empty ⟨IsLocalRing.closedPoint (DualNumber k), trivial⟩

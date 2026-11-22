@@ -7,18 +7,19 @@ module
 
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.Kaehler.Conormal
-import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.RingTheory.LocalProperties.Projective
 
 /-!
 # Lifting local residue functionals to global derivations
 
 Let `A` be a local localization of a `k`-algebra `R` at a submonoid `S`, with residue field `κ`.
-When `Ω[R⁄k]` is finitely generated and projective over `R`, any `κ`-linear functional
-`φ : κ ⊗[A] Ω[A⁄k] →ₗ[κ] κ` lifts via `Ω[R⁄k] →ₗ[R] A` (using projectivity of `Ω[R⁄k]`) and
-denominator clearing (`Module.FinitePresentation.exists_lift_of_isLocalizedModule`) to a global
-`k`-derivation `δ` of `R` and a denominator `s ∈ S` whose localization agrees modulo `𝔪_A` with
-`s • φ ∘ (1 ⊗ d)`.
+When `Ω[R⁄k]` is finitely generated and projective over `R`, `Ω[A⁄k]` is projective over `A` by
+`Module.projective_of_isLocalizedModule` applied to `KaehlerDifferential.map`. Any `κ`-linear
+functional `φ : κ ⊗[A] Ω[A⁄k] →ₗ[κ] κ` lifts to an `A`-linear map `Ω[A⁄k] →ₗ[A] A`, hence to a
+`k`-derivation `D` of `A`; applying `Derivation.exists_extendOfIsLocalization_eq_smul` produces
+`s ∈ S` and a global `k`-derivation `δ` of `R` whose extension to `A` equals `algebraMap R A s • D`,
+and therefore agrees modulo `𝔪_A` with `s • φ ∘ (1 ⊗ d)`.
 
 When `κ` is formally smooth over `k`, the tensors `1 ⊗ d(t j)` of a minimal generating set `t` of
 `𝔪_A` are `κ`-linearly independent (`KaehlerDifferential.linearIndependent_tmul_D`). Dualizing
@@ -55,41 +56,22 @@ theorem exists_derivation_residue_eq {k R A : Type*} [CommRing k] [CommRing R] [
             φ ((1 : ResidueField A) ⊗ₜ[A] KaehlerDifferential.D k A x) := by
   set κ := ResidueField A
   have : Module.FinitePresentation R Ω[R⁄k] := Module.finitePresentation_of_projective R Ω[R⁄k]
-  let f : Ω[R⁄k] →ₗ[R] κ :=
-    ((φ.restrictScalars A).comp (TensorProduct.mk A κ Ω[A⁄k] 1)).restrictScalars R ∘ₗ
-      KaehlerDifferential.map k k R A
-  have hsurj : Function.Surjective (IsScalarTower.toAlgHom R A κ).toLinearMap :=
-    fun y ↦ by simpa [κ, ResidueField.algebraMap_eq] using residue_surjective (R := A) y
-  obtain ⟨fA, hfA⟩ :=
-    Module.projective_lifting_property (IsScalarTower.toAlgHom R A κ).toLinearMap f hsurj
-  obtain ⟨g, s, hg⟩ :=
-    Module.FinitePresentation.exists_lift_of_isLocalizedModule S (Algebra.linearMap R A) fA
-  let δ : Derivation k R R := g.compDer (KaehlerDifferential.D k R)
-  let Dloc : Derivation k A A := ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S
-  refine ⟨s, δ, fun x ↦ congrFun (IsLocalization.eq_of_leibniz (A := R) (T := A) (N := κ) S
-    (δ₁ := fun x ↦ residue A (Dloc x))
-    (δ₂ := fun x ↦ residue A (algebraMap R A s) * φ ((1 : κ) ⊗ₜ[A] KaehlerDifferential.D k A x))
-    (fun x y ↦ by
-      rw [Dloc.leibniz, map_add, smul_eq_mul, smul_eq_mul, map_mul, map_mul,
-        Algebra.smul_def, Algebra.smul_def, ResidueField.algebraMap_eq])
-    (fun x y ↦ by
-      rw [(KaehlerDifferential.D k A).leibniz, TensorProduct.tmul_add, map_add, mul_add,
-        TensorProduct.tmul_smul, TensorProduct.tmul_smul,
-        ← algebraMap_smul κ x, ← algebraMap_smul κ y, φ.map_smul, φ.map_smul,
-        smul_eq_mul, smul_eq_mul, Algebra.smul_def, Algebra.smul_def]
-      ring)
-    fun r ↦ ?_) x⟩
-  have hfAr : residue A (fA (KaehlerDifferential.D k R r)) = f (KaehlerDifferential.D k R r) := by
-    have h := LinearMap.congr_fun hfA (KaehlerDifferential.D k R r)
-    simpa [κ, ResidueField.algebraMap_eq] using h
-  have hgr : algebraMap R A (δ r) = algebraMap R A s * fA (KaehlerDifferential.D k R r) := by
-    simpa [δ, Submonoid.smul_def, Algebra.smul_def] using
-      LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
-  have hloc : Dloc (algebraMap R A r) = algebraMap R A (δ r) := by simp [Dloc]
-  rw [hloc, hgr, map_mul, hfAr]
-  dsimp only [f]
-  rw [LinearMap.comp_apply, KaehlerDifferential.map_D]
-  simp
+  have : Module.Projective A Ω[A⁄k] :=
+    Module.projective_of_isLocalizedModule S (KaehlerDifferential.map k k R A)
+  let ψ : Ω[A⁄k] →ₗ[A] κ := (φ.restrictScalars A).comp (TensorProduct.mk A κ Ω[A⁄k] 1)
+  have hsurj : Function.Surjective (Algebra.linearMap A κ) := fun y ↦ by
+    obtain ⟨a, rfl⟩ := residue_surjective (R := A) y
+    exact ⟨a, rfl⟩
+  obtain ⟨fA, hfA⟩ := Module.projective_lifting_property (Algebra.linearMap A κ) ψ hsurj
+  let D : Derivation k A A := fA.compDer (KaehlerDifferential.D k A)
+  obtain ⟨s, δ, hδ⟩ := exists_extendOfIsLocalization_eq_smul S D
+  refine ⟨s, δ, fun x ↦ ?_⟩
+  have hdx := congrArg (fun d : Derivation k A A ↦ residue A (d x)) hδ
+  have hfAx : residue A (fA (KaehlerDifferential.D k A x)) =
+      φ ((1 : κ) ⊗ₜ[A] KaehlerDifferential.D k A x) := by
+    simpa [ψ, κ, ResidueField.algebraMap_eq] using
+      LinearMap.congr_fun hfA (KaehlerDifferential.D k A x)
+  simpa [D, Submonoid.smul_def, Algebra.smul_def, map_mul, hfAx] using hdx
 
 /-- For a minimal system of generators `t : Fin r → A` of the maximal ideal of a local localization
 `A` of `R` (with `Ω[R⁄k]` finite projective and `κ` formally smooth over `k`), each coordinate `i`

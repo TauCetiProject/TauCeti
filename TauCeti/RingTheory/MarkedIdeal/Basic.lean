@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.Order
+public import Mathlib.RingTheory.Spectrum.Prime.Basic
+public import TauCeti.RingTheory.Ideal.Order.Basic
 public import TauCeti.RingTheory.RegularLocalRing.AssociatedGraded
 
 /-!
@@ -176,6 +177,7 @@ theorem pow_ideal : (P.pow k).ideal = P.ideal ^ k := (rfl)
 theorem pow_mark : (P.pow k).mark = k * P.mark := (rfl)
 
 /-- Rescaling composes multiplicatively. -/
+@[simp]
 theorem pow_pow (l : ℕ) [NeZero l] :
     (P.pow k).pow l = P.pow (k * l) :=
   MarkedIdeal.ext (pow_mul P.ideal k l).symm (by simp [mul_left_comm, mul_comm])

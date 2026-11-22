@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.RingTheory.RegularLocalRing.Quotient
 import TauCeti.RingTheory.EssentialFiniteness
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
-import TauCeti.RingTheory.Smooth.Field
 import TauCeti.RingTheory.Smooth.Jacobian
 
 /-!

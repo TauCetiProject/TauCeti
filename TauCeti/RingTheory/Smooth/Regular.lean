@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Smooth.Flat
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.RegularLocalRing.Flat
-import Mathlib.RingTheory.Smooth.Locus
 import TauCeti.RingTheory.EssentialFiniteness
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 import TauCeti.RingTheory.Smooth.Field

@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import Mathlib.RingTheory.Spectrum.Prime.Defs
 public import TauCeti.RingTheory.Ideal.AssociatedGraded
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
@@ -344,19 +344,6 @@ theorem orderAt_prod {ι : Type*} (s : Finset ι) (I : ι → Ideal R) (p : Prim
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     (∏ i ∈ s, I i).orderAt p = ∑ i ∈ s, (I i).orderAt p := by
   simp only [orderAt_def, ← Ideal.mapHom_apply, map_prod, localOrder_prod]
-
-/-- In a local ring, the order at the closed point agrees with the local order. -/
-@[simp]
-theorem orderAt_closedPoint [IsLocalRing R] (I : Ideal R) :
-    I.orderAt (IsLocalRing.closedPoint R) = I.localOrder := by
-  let e : R ≃ₐ[R] Localization.AtPrime (IsLocalRing.closedPoint R).asIdeal :=
-    IsLocalization.atUnits R (IsLocalRing.closedPoint R).asIdeal.primeCompl
-      fun x hx ↦ notMem_maximalIdeal.mp hx
-  have he : (e.toRingEquiv : R →+* Localization.AtPrime (IsLocalRing.closedPoint R).asIdeal) =
-      algebraMap R _ :=
-    RingHom.ext e.commutes
-  rw [orderAt_def, ← he]
-  exact localOrder_map_equiv I e.toRingEquiv
 
 end AtPrime
 

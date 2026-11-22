@@ -72,6 +72,8 @@ difference of their constant coefficients.
   if it is constant.
 * `MvPolynomial.sub_eq_C_of_forall_pderiv_eq`: two polynomials with equal formal partial
   derivatives differ by the difference of their constant coefficients.
+* `Derivation.apply_eq_sum_pderiv`: every `R`-derivation out of `MvPolynomial σ R` expands on a
+  polynomial `f` as a finite sum over `f.vars` of partial derivatives acting on `D (X i)`.
 -/
 
 public section
@@ -378,3 +380,29 @@ theorem sub_eq_C_of_forall_pderiv_eq {φ ψ : MvPolynomial σ R}
 end UniqueDiv
 
 end MvPolynomial
+
+namespace Derivation
+
+open MvPolynomial
+
+/-- Every `R`-derivation out of `MvPolynomial σ R` agrees on `f` with the finite sum over
+`f.vars` of partial derivatives acting on `D (X i)`. -/
+theorem apply_eq_sum_pderiv {σ R A : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+    [Module (MvPolynomial σ R) A] [IsScalarTower R (MvPolynomial σ R) A]
+    (D : Derivation R (MvPolynomial σ R) A) (f : MvPolynomial σ R) :
+    D f = ∑ i ∈ f.vars, pderiv i f • D (X i) := by
+  classical
+  let D' : Derivation R (MvPolynomial σ R) A :=
+    ∑ i ∈ f.vars, (LinearMap.toSpanSingleton (MvPolynomial σ R) A (D (X i))).compDer (pderiv i)
+  have hD' (g : MvPolynomial σ R) : D' g = ∑ i ∈ f.vars, pderiv i g • D (X i) := by
+    simp [D', Derivation.coeFn_coe]
+  rw [← hD' f]
+  refine derivation_eq_of_forall_mem_vars fun j hj ↦ ?_
+  rw [hD', Finset.sum_eq_single j]
+  · simp
+  · intro i _ hij
+    simp [pderiv_X_of_ne hij.symm]
+  · intro hjn
+    exact absurd hj hjn
+
+end Derivation
