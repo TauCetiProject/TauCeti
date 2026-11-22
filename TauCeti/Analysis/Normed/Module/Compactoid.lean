@@ -17,10 +17,10 @@ A subset `S` of a seminormed space `E` over a normed field `K`, or more generall
 seminormed group with an action of a seminormed ring `K`, is *compactoid*
 (`TauCeti.IsCompactoidSet K S`) if for every `ε > 0` there are finitely many vectors
 `v₁, …, vₙ` such that every `x ∈ S` lies within `ε` of a combination `∑ aᵢ • vᵢ` with all
-`‖aᵢ‖ ≤ 1`. Over a nonarchimedean field the combinations with `‖aᵢ‖ ≤ 1` are exactly the
-`K°`-submodule spanned by the `vᵢ`, so this is the condition that
-`S ⊆ U + span_{K°} F` for every zero neighbourhood `U` and some finite `F`
-(`TauCeti.isCompactoidSet_iff_forall_mem_nhds`).
+`‖aᵢ‖ ≤ 1`. Equivalently, `S ⊆ U + {∑ aᵢ • vᵢ | ‖aᵢ‖ ≤ 1}` for every zero neighbourhood `U` and
+suitable finitely many `vᵢ` (`TauCeti.isCompactoidSet_iff_forall_mem_nhds`). For a seminormed
+space over a nonarchimedean field, these combinations are exactly the `K°`-submodule spanned by
+the `vᵢ`, so the condition reads `S ⊆ U + span_{K°} F` for some finite `F`.
 
 Compactoid sets replace relatively compact sets in nonarchimedean functional analysis: over a
 field such as `ℂ_p`, which is not locally compact, a bounded subset of a line need not be totally
@@ -53,7 +53,8 @@ seminormed space over `ℚ`. Under both conditions the two notions agree
   finite sums, continuous linear images and closure.
 * `TauCeti.IsCompactoidSet.union`: stability under finite unions, when `0 • x = 0`.
 * `TauCeti.IsCompactoidSet.image_of_forall_exists`: stability under continuous additive maps `u`
-  that transport coefficients, `u (a • v) = b • u v` with `‖b‖ ≤ 1` whenever `‖a‖ ≤ 1`.
+  that transport coefficients: for each `a` with `‖a‖ ≤ 1` and each `v`, `u (a • v) = b • u v`
+  for some `b` with `‖b‖ ≤ 1`.
 * `TauCeti.IsCompactoidSet.smul`, `TauCeti.IsCompactoidSet.smul₀`: stability under scalar
   multiples, for a distributive action by continuous maps that commutes with itself, or of a
   normed division ring.
@@ -137,7 +138,8 @@ theorem isCompactoidSet_of_forall_exists_finset {ι : Type*} {S : Set E} (v : ι
 /-- **A compactoid set is approximated by finite pieces of one sequence**: there is a sequence `v`
 such that, for every `ε > 0`, every point of `S` is within `ε` of a combination of finitely many
 fixed terms of `v` with coefficients of norm at most one. Consequently `S` lies in the closure of
-the span of `v`. -/
+the set of finite combinations of terms of `v` with coefficients of norm at most one; for a module
+action, in particular, in the closure of the span of `v`. -/
 theorem IsCompactoidSet.exists_seq_forall_exists_finset {S : Set E} (hS : IsCompactoidSet K S) :
     ∃ v : ℕ → E, ∀ ε : ℝ, 0 < ε → ∃ t : Finset ℕ, ∀ x ∈ S,
       ∃ a : ℕ → K, (∀ i, ‖a i‖ ≤ 1) ∧ ‖x - ∑ i ∈ t, a i • v i‖ < ε := by
@@ -271,14 +273,14 @@ theorem IsCompactoidSet.isBounded [IsBoundedSMul K E] {S : Set E} (hS : IsCompac
   exact (dist_pair_smul a 0 v).trans (mul_le_of_le_one_left dist_nonneg ha)
 
 /-- The image of a compactoid set under a continuous additive map `u` is compactoid as soon as `u`
-transports coefficients: every `a` with `‖a‖ ≤ 1` has some `b` with `‖b‖ ≤ 1` and
-`u (a • v) = b • u v` for all `v`. This covers continuous linear maps
+transports coefficients: for every `a` with `‖a‖ ≤ 1` and every `v` there is some `b` with
+`‖b‖ ≤ 1` and `u (a • v) = b • u v`; `b` may depend on `v`. This covers continuous linear maps
 (`TauCeti.IsCompactoidSet.image`, with `b = a`) and multiplication by a scalar `c` that acts
 continuously and additively, with `b = a` for commuting actions (`TauCeti.IsCompactoidSet.smul`)
 and `b = c * a * c⁻¹` over a normed division ring (`TauCeti.IsCompactoidSet.smul₀`). -/
 theorem IsCompactoidSet.image_of_forall_exists [SMul K F] {S : Set E} (hS : IsCompactoidSet K S)
     (u : E →+ F) (hu : Continuous u)
-    (h : ∀ a : K, ‖a‖ ≤ 1 → ∃ b : K, ‖b‖ ≤ 1 ∧ ∀ v : E, u (a • v) = b • u v) :
+    (h : ∀ a : K, ‖a‖ ≤ 1 → ∀ v : E, ∃ b : K, ‖b‖ ≤ 1 ∧ u (a • v) = b • u v) :
     IsCompactoidSet K (u '' S) := by
   rw [isCompactoidSet_iff_forall_mem_nhds] at hS ⊢
   intro U hU
@@ -287,7 +289,7 @@ theorem IsCompactoidSet.image_of_forall_exists [SMul K F] {S : Set E} (hS : IsCo
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨a, ha, hx⟩ := hv x hx
   choose b hb hub using h
-  refine ⟨fun i ↦ b (a i) (ha i), fun i ↦ hb _ _, ?_⟩
+  refine ⟨fun i ↦ b (a i) (ha i) (v i), fun i ↦ hb _ _ _, ?_⟩
   rwa [Set.mem_preimage, map_sub, map_sum,
     Finset.sum_congr rfl fun i _ ↦ hub (a i) (ha i) (v i)] at hx
 
@@ -296,7 +298,7 @@ end SMul
 /-- The image of a compactoid set under a continuous linear map is compactoid. -/
 theorem IsCompactoidSet.image [Module K E] [Module K F] {S : Set E} (hS : IsCompactoidSet K S)
     (u : E →L[K] F) : IsCompactoidSet K (u '' S) :=
-  hS.image_of_forall_exists (u : E →+ F) u.continuous fun a ha ↦ ⟨a, ha, map_smul u a⟩
+  hS.image_of_forall_exists (u : E →+ F) u.continuous fun a ha v ↦ ⟨a, ha, map_smul u a v⟩
 
 /-- A scalar multiple of a compactoid set is compactoid, for a distributive action by continuous
 maps that commutes with itself. -/
@@ -304,7 +306,7 @@ theorem IsCompactoidSet.smul [DistribSMul K E] [SMulCommClass K K E] [Continuous
     {S : Set E} (hS : IsCompactoidSet K S) (c : K) :
     IsCompactoidSet K (c • S) :=
   hS.image_of_forall_exists (DistribSMul.toAddMonoidHom E c) (continuous_const_smul c)
-    fun a ha ↦ ⟨a, ha, smul_comm c a⟩
+    fun a ha v ↦ ⟨a, ha, smul_comm c a v⟩
 
 end SeminormedRing
 
@@ -314,7 +316,7 @@ theorem IsCompactoidSet.smul₀ [NormedDivisionRing K] [SeminormedAddCommGroup E
     [DistribMulAction K E] [ContinuousConstSMul K E] {S : Set E} (hS : IsCompactoidSet K S)
     (c : K) : IsCompactoidSet K (c • S) := by
   refine hS.image_of_forall_exists (DistribSMul.toAddMonoidHom E c) (continuous_const_smul c)
-    fun a ha ↦ ⟨c * a * c⁻¹, ?_, fun v ↦ ?_⟩ <;> rcases eq_or_ne c 0 with rfl | hc
+    fun a ha v ↦ ⟨c * a * c⁻¹, ?_, ?_⟩ <;> rcases eq_or_ne c 0 with rfl | hc
   · simp
   · rwa [norm_mul, norm_mul, norm_inv, mul_right_comm, mul_inv_cancel₀ (norm_ne_zero_iff.2 hc),
       one_mul]
