@@ -45,7 +45,7 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `ContDiff.isBigO_iteratedFDeriv_exp_sub_one`: along a filter on which `ρ` is bounded, the
   derivative of order `n` of `exp ℓ - 1` is `O(ρ)` when the derivatives of `ℓ` of order at most `n`
   are `O(ρ)`.
-* `ContDiffOn.norm_iteratedFDeriv_exp_comp_le`: the pointwise bound
+* `ContDiffAt.norm_iteratedFDeriv_exp_comp_le`: the pointwise bound
   `‖Dⁿ (exp f) (x)‖ ≤ n! exp (f x) max ε εⁿ` when the derivatives of `f` of orders `1` to `n` at
   `x` have norm at most `ε`.
 -/
@@ -226,14 +226,13 @@ theorem ContDiff.isBigO_iteratedFDeriv_exp_sub_one {D : Type*} [NormedAddCommGro
       iteratedFDeriv_const_of_ne n.succ_ne_zero, Pi.zero_apply, sub_zero]
 
 open scoped Nat in
-/-- **Pointwise bound on the derivatives of `exp f`.** Let `f` be `Cⁿ` on an open set containing
-`x`, with derivatives of orders `1` to `n` at `x` of norm at most `ε`. Then the derivative of order
-`n` of `y ↦ exp (f y)` at `x` has norm at most `n! exp (f x) max ε εⁿ`; for `n ≥ 1` and `ε ≤ 1`
-this is `n! exp (f x) ε`. It is a form of the Faà di Bruno bound `norm_iteratedFDeriv_comp_le`
+/-- **Pointwise bound on the derivatives of `exp f`.** Let `f` be `Cⁿ` at `x`, with derivatives
+of orders `1` to `n` at `x` of norm at most `ε`. Then the derivative of order `n` of
+`y ↦ exp (f y)` at `x` has norm at most `n! exp (f x) max ε εⁿ`; for `n ≥ 1` and `ε ≤ 1` this is
+`n! exp (f x) ε`. It is a form of the Faà di Bruno bound `norm_iteratedFDeriv_comp_le`
 in which the derivatives of `f` of all positive orders have one bound `ε`. -/
-theorem ContDiffOn.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : E → ℝ} {s : Set E} {n : ℕ} (hf : ContDiffOn ℝ n f s) (hs : IsOpen s)
-    {x : E} (hx : x ∈ s) {ε : ℝ} (hε : 0 ≤ ε)
+theorem ContDiffAt.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → ℝ} {n : ℕ} {x : E} (hf : ContDiffAt ℝ n f x) {ε : ℝ} (hε : 0 ≤ ε)
     (hD : ∀ i, 1 ≤ i → i ≤ n → ‖iteratedFDeriv ℝ i f x‖ ≤ ε) :
     ‖iteratedFDeriv ℝ n (fun y ↦ Real.exp (f y)) x‖ ≤ n ! * Real.exp (f x) * max ε (ε ^ n) := by
   set t : ℝ := ε ^ ((n : ℝ)⁻¹)
@@ -258,7 +257,7 @@ theorem ContDiffOn.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGro
       · rw [Real.rpow_inv_natCast_pow hε hn.ne']
         exact le_max_left _ _
   have h := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (g := Real.exp)
-    (C := Real.exp (f x)) (D := D) Real.contDiff_exp.contDiffAt (hf.contDiffAt (hs.mem_nhds hx))
+    (C := Real.exp (f x)) (D := D) Real.contDiff_exp.contDiffAt hf
     (fun j _ ↦ (TauCeti.norm_iteratedFDeriv_real_exp j _).le)
     (fun i hi hin ↦ (hD i hi hin).trans (hεD i hi hin))
   exact h.trans (mul_le_mul_of_nonneg_left hDn (by positivity))

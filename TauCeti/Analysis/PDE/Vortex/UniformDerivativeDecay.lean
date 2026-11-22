@@ -49,7 +49,7 @@ smooth (`TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`) and solves
 The interior estimate for Poisson's equation, applied to the components of `Dⁿ ℓ`
 (`TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`), bounds `Dⁿ⁺¹ ℓ (z)`
 by `Dⁿ ℓ` and `Dⁿ (Δ ℓ)` on the disc. Near the disc `Δ ℓ = (exp ℓ - 1) / 4`, so for `n ≥ 1` the
-Faà di Bruno bound for `exp ℓ` (`ContDiffOn.norm_iteratedFDeriv_exp_comp_le`) controls `Dⁿ (Δ ℓ)`
+Faà di Bruno bound for `exp ℓ` (`ContDiffAt.norm_iteratedFDeriv_exp_comp_le`) controls `Dⁿ (Δ ℓ)`
 by the derivatives of `ℓ` of orders `1` to `n`, and for `n = 0` it is the defect. By induction on
 the order, every derivative of `ℓ` is at most a constant times `exp (-c ρ)` at distance at least
 `L + 3 n` from the zeros. The derivatives of the defect `1 - |α|² = 1 - exp ℓ` follow by the same
@@ -121,16 +121,6 @@ private theorem normSq_pos_of_ne_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {
     (hw : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) : 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2) :=
   mul_pos (by norm_num) ((by positivity : (0 : ℝ) ≤ x w 2 ^ 2 + x w 3 ^ 2).lt_of_ne' hw)
 
-/-- A smooth vortex with the degree-`m` end framing satisfies `|α|² ≤ 1` everywhere: the framed
-case of `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
-private theorem normSq_le_one_of_framed {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-    (w : ℂ) : 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≤ 1 :=
-  normSq_le_one_of_tendsto (((contDiff_piLp 2).1 hx 2).of_le (by simp))
-    (((contDiff_piLp 2).1 hx 3).of_le (by simp)) hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) w
-
 /-- The set where the section of a smooth vortex does not vanish is open. -/
 private theorem isOpen_normSq_ne_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
     IsOpen {w | x w 2 ^ 2 + x w 3 ^ 2 ≠ 0} :=
@@ -179,7 +169,8 @@ private theorem norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add
   have hℓ := contDiffOn_log_normSq hx hsol
   have hexp : ContDiffAt ℝ n (fun w ↦ Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) y :=
     (Real.contDiff_exp.contDiffAt.comp y (hℓ.contDiffAt (hU.mem_nhds hy))).of_le (by simp)
-  have hB := (hℓ.of_le (by simp)).norm_iteratedFDeriv_exp_comp_le hU hy (mul_nonneg hK hE₀) hD
+  have hB := ((hℓ.contDiffAt (hU.mem_nhds hy)).of_le (by simp)).norm_iteratedFDeriv_exp_comp_le
+    (mul_nonneg hK hE₀) hD
   rw [Real.exp_log (normSq_pos_of_ne_zero hy)] at hB
   -- `max (K E) ((K E)ⁿ) ≤ max 1 K ^ n E`, since `E ≤ 1` and `n ≥ 1`.
   have hmax : max (K * E) ((K * E) ^ n) ≤ max 1 K ^ n * E := by
@@ -272,8 +263,8 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
     (fun w hw ↦ hlow' w (ball_subset_closedBall (ball_subset_ball (by norm_num) hw)) n le_rfl)
     (fun w hw ↦ have hw' := ball_subset_closedBall (by simpa using hw)
       norm_iteratedFDeriv_laplacian_log_normSq_le hx hsol (hα w hw')
-        (normSq_le_one_of_framed hx hsol hframe w) hK hE₀ hE₁ (hlow' w hw')
-        (hdef w (ρ - 3) (hfar w hw')))
+        (normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe w)
+        hK hE₀ hE₁ (hlow' w hw') (hdef w (ρ - 3) (hfar w hw')))
   calc _ ≤ 8 * (K * E) / 1 + 340 * ((K₀ + n ! * max 1 K ^ n) / 4 * E) * 1 := hest
     _ = _ := by
       simp only [E, exp_neg_mul_sub]
@@ -300,7 +291,8 @@ private theorem exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp (m n 
     obtain rfl : j = 0 := by omega
     rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
     exact (Real.abs_log_le_two_mul_one_sub (half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD
-      fun a ha ↦ hR.trans (hρ a ha)).le (normSq_le_one_of_framed hx hsol hframe z)).trans
+      fun a ha ↦ hR.trans (hρ a ha)).le
+      (normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z)).trans
       (by linarith [hdef x D hx hsol hframe hD z ρ hρ])
   | succ n ih =>
     obtain ⟨K, R, hK, hLR, h⟩ := ih
@@ -350,7 +342,8 @@ theorem exists_norm_iteratedFDeriv_one_sub_normSq_le_mul_exp_of_forall_le_norm_s
   · -- Order zero is the decay of the defect itself, which is nonnegative.
     obtain ⟨K₀, hK₀, hdef⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
     refine ⟨K₀, 0, hK₀, fun x D hx hsol hframe hD z ρ _ hρ ↦ ?_⟩
-    have hs₁ := normSq_le_one_of_framed hx hsol hframe z
+    have hs₁ :=
+      normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z
     rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
     exact hdef x D hx hsol hframe hD z ρ hρ
   -- Positive orders: near `z`, `1 - |α|² = (-1) exp (log |α|²) + 1`.
@@ -368,7 +361,8 @@ theorem exists_norm_iteratedFDeriv_one_sub_normSq_le_mul_exp_of_forall_le_norm_s
     rw [Real.exp_log (normSq_pos_of_ne_zero hw), smul_eq_mul]
     ring
   have hB := norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add hx hsol hα
-    (normSq_le_one_of_framed hx hsol hframe z) hn heq hK (Real.exp_pos _).le hE₁
+    (normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z) hn heq hK
+    (Real.exp_pos _).le hE₁
     fun i _ hi ↦ h x D hx hsol hframe hD z ρ hR hρ i hi
   rwa [abs_neg, abs_one, one_mul] at hB
 
@@ -413,7 +407,8 @@ theorem exists_norm_fderiv_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c 
   have hpos : 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
       (le_max_right R L).trans (hR.trans (hρ a ha))
-  have hs₁ := normSq_le_one_of_framed hx hsol hframe z
+  have hs₁ := normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp))
+    hsol hframe z
   -- Where `0 < |α|² ≤ 1`, `|∇ |α|²| ≤ |∇ log |α|²|`.
   exact (norm_fderiv_le_norm_fderiv_log (((contDiff_normSq hp hq).differentiable (by norm_num)) z)
     (by linarith) hs₁).trans (hK x D hx hsol hframe hD z ρ ((le_max_left R L).trans hR) hρ)
@@ -467,7 +462,8 @@ theorem exists_energyDensity_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
   refine ⟨65 / 64 * K₁ ^ 2 + 2 * K₂ ^ 2, R, by positivity,
     fun x D hx hsol hframe hD z ρ hR hρ ↦ ?_⟩
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hs₁ := normSq_le_one_of_framed hx hsol hframe z
+  have hs₁ := normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp))
+    hsol hframe z
   -- The modulus defect is at most `K₁ exp (-(c / 2) ρ)`, and `|d_a α (1)| ≤ K₂ exp (-(c / 2) ρ)`.
   refine (energyDensity_le_of_equation_eq_zero (((hxi 2).differentiable (by simp)) z)
     (((hxi 3).differentiable (by simp)) z) (hsol z) (by linarith)

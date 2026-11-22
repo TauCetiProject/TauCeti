@@ -402,6 +402,15 @@ theorem exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : �
       (sub_nonneg.2 hρL.le) hball
     exact h.trans (mul_le_mul_of_nonneg_right (le_max_right 1 M) (Real.exp_pos _).le)
 
+/-- A plane vortex with the degree-`m` end framing satisfies `|α|² ≤ 1` everywhere: the framed
+case of `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
+theorem normSq_le_one_of_tendsto_sectionValue_mul_inv_pow {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (z : ℂ) : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 :=
+  normSq_le_one_of_tendsto ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+
 /-- **Uniform exponential decay of the curvature of plane vortices away from their zeros.** For
 every degree `m` and rate `0 ≤ c < 1 / 2` there is a constant `K ≥ 0` such that every smooth plane
 vortex with the degree-`m` end framing and zero divisor `D` has curvature coefficient
@@ -418,9 +427,8 @@ theorem exists_abs_curvature_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
           K * Real.exp (-(c * ρ)) := by
   obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
   refine ⟨K / 8, by positivity, fun x D hx hsol hframe hD z ρ hρ ↦ ?_⟩
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have h₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  have h₁ :=
+    normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK x D hx hsol hframe hD z ρ hρ]
 
