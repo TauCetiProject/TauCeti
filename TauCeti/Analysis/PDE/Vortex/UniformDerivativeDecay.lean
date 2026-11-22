@@ -105,6 +105,32 @@ private theorem half_lt_normSq_of_forall_le_norm_sub {x : ℂ → EuclideanSpace
     (by norm_num : (0 : ℝ) < 1 / 2) hz
   linarith
 
+/-- At distance at least `√(2 m (16 m + 1))` from every zero, the section does not vanish. -/
+private theorem normSq_ne_zero_of_forall_le_norm_sub {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {z : ℂ}
+    (hz : ∀ a ∈ D, Real.sqrt (m * (16 * m + 1) / (1 / 2)) ≤ ‖z - a‖) :
+    x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h0 ↦ by
+  have := half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD hz
+  rw [h0, mul_zero] at this
+  norm_num at this
+
+/-- Where the section does not vanish, `|α|² = 4 (p² + q²)` is positive. -/
+private theorem normSq_pos_of_ne_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ}
+    (hw : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) : 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2) :=
+  mul_pos (by norm_num) ((by positivity : (0 : ℝ) ≤ x w 2 ^ 2 + x w 3 ^ 2).lt_of_ne' hw)
+
+/-- A smooth vortex with the degree-`m` end framing satisfies `|α|² ≤ 1` everywhere: the framed
+case of `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
+private theorem normSq_le_one_of_framed {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (w : ℂ) : 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≤ 1 :=
+  normSq_le_one_of_tendsto (((contDiff_piLp 2).1 hx 2).of_le (by simp))
+    (((contDiff_piLp 2).1 hx 3).of_le (by simp)) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) w
+
 /-- `log |α|²` is smooth on the open set where the section of a smooth vortex does not vanish, and
 there its Laplacian is `exp (log |α|²) / 4 - 1 / 4`. -/
 private theorem contDiffOn_log_normSq_and_laplacian_eventuallyEq
@@ -123,10 +149,8 @@ private theorem contDiffOn_log_normSq_and_laplacian_eventuallyEq
   refine ⟨hU, fun w hw ↦ (contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
     hw (Eventually.of_forall hsol)).contDiffWithinAt, fun y hy ↦ ?_⟩
   filter_upwards [hU.mem_nhds hy] with w hw
-  have hpos : 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2) :=
-    mul_pos (by norm_num) ((by positivity : (0 : ℝ) ≤ x w 2 ^ 2 + x w 3 ^ 2).lt_of_ne' hw)
   rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hw
-    (Eventually.of_forall hsol), Real.exp_log hpos, smul_eq_mul]
+    (Eventually.of_forall hsol), Real.exp_log (normSq_pos_of_ne_zero hw), smul_eq_mul]
   ring
 
 open scoped Nat in
@@ -146,10 +170,8 @@ private theorem norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add
   obtain ⟨hU, hℓ, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
   have hexp : ContDiffAt ℝ n (fun w ↦ Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) y :=
     (Real.contDiff_exp.contDiffAt.comp y (hℓ.contDiffAt (hU.mem_nhds hy))).of_le (by simp)
-  have hpos : 0 < 4 * (x y 2 ^ 2 + x y 3 ^ 2) :=
-    mul_pos (by norm_num) ((by positivity : (0 : ℝ) ≤ x y 2 ^ 2 + x y 3 ^ 2).lt_of_ne' hy)
   have hB := (hℓ.of_le (by simp)).norm_iteratedFDeriv_exp_comp_le hU hy (mul_nonneg hK hE₀) hD
-  rw [Real.exp_log hpos] at hB
+  rw [Real.exp_log (normSq_pos_of_ne_zero hy)] at hB
   -- `max (K E) ((K E)ⁿ) ≤ max 1 K ^ n E`, since `E ≤ 1` and `n ≥ 1`.
   have hmax : max (K * E) ((K * E) ^ n) ≤ max 1 K ^ n * E := by
     refine max_le (mul_le_mul_of_nonneg_right ((le_max_right 1 K).trans
@@ -216,11 +238,10 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
       Real.exp (c * 3) * (8 * K + 340 * ((K₀ + n ! * max 1 K ^ n) / 4)) *
         Real.exp (-(c * ρ)) := by
   obtain ⟨hU, hℓ, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
   set E : ℝ := Real.exp (-(c * (ρ - 3)))
   have hE₀ : 0 ≤ E := (Real.exp_pos _).le
-  have hE₁ : E ≤ 1 :=
-    Real.exp_le_one_iff.2 (by nlinarith [(Real.sqrt_nonneg _).trans hLR])
+  have hρ₃ : 0 ≤ ρ - 3 := by linarith [(Real.sqrt_nonneg _).trans hLR]
+  have hE₁ : E ≤ 1 := Real.exp_le_one_iff.2 (neg_nonpos.2 (mul_nonneg hc₀ hρ₃))
   -- Every point of the closed disc of radius `3` about `z` is at distance at least `ρ - 3 ≥ R`
   -- from the zeros, so there `|α|² > 1 / 2`.
   have hfar (w : ℂ) (hw : w ∈ closedBall z 3) (a : ℂ) (ha : a ∈ D) : ρ - 3 ≤ ‖w - a‖ := by
@@ -228,11 +249,9 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
     have := norm_sub_le_norm_sub_add_norm_sub z w a
     rw [norm_sub_rev z w] at this
     linarith [hρ a ha]
-  have hα (w : ℂ) (hw : w ∈ closedBall z 3) : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0 := fun h0 ↦ by
-    have := half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
+  have hα (w : ℂ) (hw : w ∈ closedBall z 3) : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0 :=
+    normSq_ne_zero_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
       (show Real.sqrt (m * (16 * m + 1) / (1 / 2)) ≤ ‖w - a‖ by linarith [hfar w hw a ha])
-    rw [h0, mul_zero] at this
-    norm_num at this
   have hlow' (w : ℂ) (hw : w ∈ closedBall z 3) :=
     hlow w (ρ - 3) (by linarith) (hfar w hw)
   -- The interior estimate for the derivatives, with the bound on `Dⁿ (Δ log |α|²)` on the disc.
@@ -243,9 +262,8 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
     (fun w hw ↦ hlow' w (ball_subset_closedBall (ball_subset_ball (by norm_num) hw)) n le_rfl)
     (fun w hw ↦ have hw' := ball_subset_closedBall (by simpa using hw)
       norm_iteratedFDeriv_laplacian_log_normSq_le hx hsol (hα w hw')
-        (normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-          (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) w)
-        hK hE₀ hE₁ (hlow' w hw') (hdef w (ρ - 3) (hfar w hw')))
+        (normSq_le_one_of_framed hx hsol hframe w) hK hE₀ hE₁ (hlow' w hw')
+        (hdef w (ρ - 3) (hfar w hw')))
   calc _ ≤ 8 * (K * E) / 1 + 340 * ((K₀ + n ! * max 1 K ^ n) / 4 * E) * 1 := hest
     _ = _ := by
       simp only [E, exp_neg_mul_sub]
@@ -270,12 +288,10 @@ private theorem exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp (m n 
     -- Order zero: `|log |α|²| ≤ 2 (1 - |α|²)` where `|α|² ≥ 1 / 2`.
     refine ⟨2 * K₀, _, by positivity, le_rfl, fun x D hx hsol hframe hD z ρ hR hρ j hj ↦ ?_⟩
     obtain rfl : j = 0 := by omega
-    have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
     rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
     exact (Real.abs_log_le_two_mul_one_sub (half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD
-      fun a ha ↦ hR.trans (hρ a ha)).le (normSq_le_one_of_tendsto ((hxi 2).of_le (by simp))
-      ((hxi 3).of_le (by simp)) hsol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
-      z)).trans (by linarith [hdef x D hx hsol hframe hD z ρ hρ])
+      fun a ha ↦ hR.trans (hρ a ha)).le (normSq_le_one_of_framed hx hsol hframe z)).trans
+      (by linarith [hdef x D hx hsol hframe hD z ρ hρ])
   | succ n ih =>
     obtain ⟨K, R, hK, hLR, h⟩ := ih
     refine ⟨max K (Real.exp (c * 3) * (8 * K + 340 * ((K₀ + n ! * max 1 K ^ n) / 4))), R + 3,
@@ -324,31 +340,25 @@ theorem exists_norm_iteratedFDeriv_one_sub_normSq_le_mul_exp_of_forall_le_norm_s
   · -- Order zero is the decay of the defect itself, which is nonnegative.
     obtain ⟨K₀, hK₀, hdef⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
     refine ⟨K₀, 0, hK₀, fun x D hx hsol hframe hD z ρ _ hρ ↦ ?_⟩
-    have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-    have hs₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+    have hs₁ := normSq_le_one_of_framed hx hsol hframe z
     rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
     exact hdef x D hx hsol hframe hD z ρ hρ
   -- Positive orders: near `z`, `1 - |α|² = (-1) exp (log |α|²) + 1`.
   obtain ⟨K, R, hK, hLR, h⟩ := exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp m n hc₀ hc
   refine ⟨n ! * max 1 K ^ n, R, by positivity, fun x D hx hsol hframe hD z ρ hR hρ ↦ ?_⟩
   obtain ⟨hU, -, -⟩ := contDiffOn_log_normSq_and_laplacian_eventuallyEq hx hsol
-  have hhalf := half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
-    hLR.trans (hR.trans (hρ a ha))
-  have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h0 ↦ by
-    rw [h0, mul_zero] at hhalf
-    norm_num at hhalf
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 :=
+    normSq_ne_zero_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
+      hLR.trans (hR.trans (hρ a ha))
+  have hE₁ : Real.exp (-(c * ρ)) ≤ 1 := Real.exp_le_one_iff.2 (neg_nonpos.2
+    (mul_nonneg hc₀ ((Real.sqrt_nonneg _).trans (hLR.trans hR))))
   have heq : (fun w ↦ 1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) =ᶠ[𝓝 z]
       fun w ↦ (-1 : ℝ) • Real.exp (Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) + 1 := by
     filter_upwards [hU.mem_nhds hα] with w hw
-    rw [Real.exp_log (mul_pos (by norm_num)
-      ((by positivity : (0 : ℝ) ≤ x w 2 ^ 2 + x w 3 ^ 2).lt_of_ne' hw)), smul_eq_mul]
+    rw [Real.exp_log (normSq_pos_of_ne_zero hw), smul_eq_mul]
     ring
   have hB := norm_iteratedFDeriv_le_of_eventuallyEq_smul_exp_log_normSq_add hx hsol hα
-    (normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z) hn heq hK
-    (Real.exp_pos _).le (Real.exp_le_one_iff.2 (by nlinarith [(Real.sqrt_nonneg _).trans hLR]))
+    (normSq_le_one_of_framed hx hsol hframe z) hn heq hK (Real.exp_pos _).le hE₁
     fun i _ hi ↦ h x D hx hsol hframe hD z ρ hR hρ i hi
   rwa [abs_neg, abs_one, one_mul] at hB
 
@@ -393,8 +403,7 @@ theorem exists_norm_fderiv_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c 
   have hpos : 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
       (le_max_right R L).trans (hR.trans (hρ a ha))
-  have hs₁ := normSq_le_one_of_tendsto hp hq hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  have hs₁ := normSq_le_one_of_framed hx hsol hframe z
   -- Where `0 < |α|² ≤ 1`, `|∇ |α|²| ≤ |∇ log |α|²|`.
   exact (norm_fderiv_le_norm_fderiv_log (((contDiff_normSq hp hq).differentiable (by norm_num)) z)
     (by linarith) hs₁).trans (hK x D hx hsol hframe hD z ρ ((le_max_left R L).trans hR) hρ)
