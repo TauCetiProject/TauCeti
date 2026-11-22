@@ -31,9 +31,10 @@ In Hopf coordinates, if `D` and `R_u(G)` are cut out by the Hopf ideals `I` and 
 intersection is cut out by `I ⊔ I_u`, and the statement is `I ⊔ I_u = augmentation`. This is the
 scheme-theoretic statement: it also excludes infinitesimal intersections such as `μₚ`.
 
-The argument uses nothing about `R_u(G)` beyond smoothness and unipotence, so it is stated for any
-closed subgroup `U` with smooth unipotent coordinate algebra
-(`sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`) and then specialised to `R_u(G)`.
+The argument uses nothing about `R_u(G)` beyond smoothness and unipotence: it is the
+specialisation to `R_u(G)` of
+`TauCeti.FiniteTypeCommHopfAlgCat.sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`,
+for any closed subgroup with smooth unipotent coordinate algebra.
 
 Over an algebraically closed field every torus is split, hence diagonalizable, so a torus of `G`
 meets `R_u(G)` trivially. When `G` is reduced, the composite `D → G → G ⧸ R_u(G)` therefore has
@@ -47,8 +48,6 @@ kernel of `G → G ⧸ R_u(G)` with `R_u(G)`.
 
 In the `TauCeti.FiniteTypeCommHopfAlgCat` namespace:
 
-* `sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`: a diagonalizable closed subgroup
-  meets a smooth unipotent closed subgroup trivially.
 * `sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_groupLikeSpanned`: a diagonalizable
   closed subgroup meets the unipotent radical trivially.
 * `sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_torus`: a torus meets the unipotent
@@ -72,36 +71,6 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (G : FiniteTypeCommHopfAlgCat.{u, u} k)
-
-/-- **A diagonalizable closed subgroup meets a smooth unipotent closed subgroup trivially**,
-over an algebraically closed field and scheme-theoretically. If the Hopf ideal `I` cuts out a closed
-subgroup whose coordinate algebra is spanned by its group-like elements and `U` cuts out a smooth
-unipotent closed subgroup, then `I` and `U` together generate the augmentation ideal. -/
-theorem sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent {I U : HopfIdeal k G}
-    (hI : DiagonalizableGroup.groupLikeSpannedProperty k (quotient G I))
-    (hU : smoothUnipotentCommHopfAlgProperty k (quotient G U)) :
-    I ⊔ U = HopfIdeal.augmentation k G := by
-  have hU' := (smoothUnipotentCommHopfAlgProperty_iff k (quotient G U)).mp hU
-  have hgeom : geometricallyUnipotentPointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient G.obj U) :=
-    (geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).mpr hU'.2
-  let _ : Algebra.Smooth k (CommHopfAlgCat.quotient G.obj U) := hU'.1
-  let _ : IsReduced (CommHopfAlgCat.quotient G.obj U) := isReduced_of_smooth k _
-  -- The intersection is a closed subgroup of the diagonalizable subgroup (its coordinate algebra
-  -- is a Hopf quotient), hence diagonalizable.
-  have hK : Subcoalgebra.groupLikeSetSpan (R := k)
-      (C := CommHopfAlgCat.quotient G.obj (I ⊔ U)) Set.univ = ⊤ :=
-    (DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp <|
-      DiagonalizableGroup.groupLikeSpannedProperty.of_surjective k _ _
-        (quotientMapOfLe G (le_sup_left : I ≤ I ⊔ U)) (quotientMapOfLe_surjective G le_sup_left) hI
-  -- It is also a closed subgroup of the reduced unipotent group `U`, hence trivial.
-  have htriv := hgeom.bialgHom_eq_unit_comp_counit_of_groupLikeSetSpan_eq_top hK
-    (toBialgHom (quotientMapOfLe G (le_sup_right : U ≤ I ⊔ U)))
-  refine le_antisymm (HopfIdeal.le_augmentation k G _) fun x hx ↦ ?_
-  rw [← mkQuotient_eq_zero_iff, ← mkQuotient_comp_quotientMapOfLe G (le_sup_right : U ≤ I ⊔ U),
-    toBialgHom_comp, BialgHom.comp_apply, htriv, BialgHom.comp_apply,
-    Bialgebra.counitBialgHom_apply, CoalgHomClass.counit_comp_apply,
-    (HopfIdeal.mem_augmentation k G).mp hx, map_zero]
 
 /-- **A diagonalizable closed subgroup meets the unipotent radical trivially**, over an
 algebraically closed field and scheme-theoretically. If the Hopf ideal `I` cuts out a closed
@@ -137,13 +106,16 @@ kernelHopfIdeal_coinvariantsι_unipotentRadical_comp_mkQuotient_eq_augmentation_
         (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G) ≫
           CommHopfAlgCat.mkQuotient G.obj I) =
       HopfIdeal.augmentation k (CommHopfAlgCat.quotient G.obj I) := by
+  -- The kernel of `O(G ⧸ R_u(G)) → O(G) → O(G) ⧸ I` is the image of `I_u` in `O(G) ⧸ I`.
   rw [CommHopfAlgCat.kernelHopfIdeal_comp,
-    CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq (isNormal_unipotentRadicalDefiningIdeal G),
-    ← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff (CommHopfAlgCat.mkQuotient G.obj I).hom
+    CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq (isNormal_unipotentRadicalDefiningIdeal G)]
+  -- Both sides are images of Hopf ideals of `O(G)` containing `I`, so they agree exactly when their
+  -- pullbacks to `O(G)` do: these are `I_u ⊔ I` and the augmentation ideal.
+  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff (CommHopfAlgCat.mkQuotient G.obj I).hom
       (CommHopfAlgCat.mkQuotient_surjective G.obj I),
     HopfIdeal.comapOfSurjective_map, HopfIdeal.comapOfSurjective_augmentation, sup_comm]
-  simpa only [CommHopfAlgCat.hom_mkQuotient, HopfIdeal.kerOfSurjective_mkBialgHom] using
-    sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_groupLikeSpanned G hI
+  have hsup := sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_groupLikeSpanned G hI
+  simpa only [CommHopfAlgCat.hom_mkQuotient, HopfIdeal.kerOfSurjective_mkBialgHom] using hsup
 
 /-- **A torus of a reduced group maps to the quotient by the unipotent radical with trivial
 kernel**, over an algebraically closed field and scheme-theoretically: if the Hopf ideal `I` cuts
