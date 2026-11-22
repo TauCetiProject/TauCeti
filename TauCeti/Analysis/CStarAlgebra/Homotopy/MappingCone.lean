@@ -21,7 +21,7 @@ the supremum product norm `‖(a, f)‖ = max ‖a‖ ‖f‖` (Blackadar, *Oper
   with projections `TauCeti.MappingCone.fstHom` and `TauCeti.MappingCone.sndHom`.
 * `TauCeti.MappingCone.lift` and `TauCeti.MappingCone.map`: pullback universal property and
   functoriality for commuting squares of `⋆`-homomorphisms.
-* `TauCeti.MappingCone.inl`, `TauCeti.MappingCone.equivKerFstHom`,
+* `TauCeti.MappingCone.inr`, `TauCeti.MappingCone.equivKerFstHom`,
   `TauCeti.MappingCone.fstHom_surjective`, and `TauCeti.MappingCone.quotientKerFstHomEquiv`:
   the mapping cone exact sequence `0 → CStarSuspension B → MappingCone φ → A → 0`.
 * `TauCeti.MappingCone.sectionCLM` and `TauCeti.MappingCone.sectionCP`: the isometric completely
@@ -83,9 +83,13 @@ def MappingCone (φ : A →⋆ₙₐ[ℂ] B) : Type _ :=
 instance (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalCStarAlgebra (MappingCone φ) :=
   inferInstanceAs (NonUnitalCStarAlgebra (mappingConeSubalgebra φ))
 
+/-- Equip `MappingCone φ` with the spectral (C⋆-) partial order so that `A →CP MappingCone φ`
+(`MappingCone.sectionCP`) typechecks. -/
 instance (φ : A →⋆ₙₐ[ℂ] B) : PartialOrder (MappingCone φ) :=
   CStarAlgebra.spectralOrder _
 
+/-- Equip `MappingCone φ` with the spectral `StarOrderedRing` structure matching its
+`PartialOrder` so that `A →CP MappingCone φ` (`MappingCone.sectionCP`) typechecks. -/
 instance (φ : A →⋆ₙₐ[ℂ] B) : StarOrderedRing (MappingCone φ) :=
   CStarAlgebra.spectralOrderedRing _
 
@@ -153,7 +157,8 @@ instance {A B : Type*} [NonUnitalCommCStarAlgebra A] [NonUnitalCommCStarAlgebra 
     (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalCommCStarAlgebra (MappingCone φ) where
   mul_comm x y := ext (by rw [fst_mul, fst_mul, mul_comm]) (by rw [snd_mul, snd_mul, mul_comm])
 
-theorem norm_eq {φ : A →⋆ₙₐ[ℂ] B} (x : MappingCone φ) : ‖x‖ = max ‖x.fst‖ ‖x.snd‖ := (rfl)
+theorem norm_eq {φ : A →⋆ₙₐ[ℂ] B} (x : MappingCone φ) : ‖x‖ = max ‖x.fst‖ ‖x.snd‖ :=
+  Prod.norm_def x.val
 
 theorem continuous_fst {φ : A →⋆ₙₐ[ℂ] B} : Continuous (fst (φ := φ)) :=
   _root_.continuous_fst.comp continuous_subtypeVal
@@ -294,37 +299,37 @@ variable {A B C D : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   [NonUnitalCStarAlgebra C] [NonUnitalCStarAlgebra D]
 
 /-- Isometric `⋆`-homomorphism `CStarSuspension B →⋆ₙₐ[ℂ] MappingCone φ` sending `g` to `(0, g)`. -/
-def inl (φ : A →⋆ₙₐ[ℂ] B) : CStarSuspension B →⋆ₙₐ[ℂ] MappingCone φ :=
+def inr (φ : A →⋆ₙₐ[ℂ] B) : CStarSuspension B →⋆ₙₐ[ℂ] MappingCone φ :=
   lift φ 0 CStarSuspension.toCone (by ext g; simp)
 
-@[simp] theorem fst_inl_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) : (inl φ g).fst = 0 := (rfl)
+@[simp] theorem fst_inr_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) : (inr φ g).fst = 0 := (rfl)
 
-@[simp] theorem snd_inl_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) :
-    (inl φ g).snd = CStarSuspension.toCone g := (rfl)
+@[simp] theorem snd_inr_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) :
+    (inr φ g).snd = CStarSuspension.toCone g := (rfl)
 
-@[simp] theorem fstHom_comp_inl (φ : A →⋆ₙₐ[ℂ] B) : (fstHom φ).comp (inl φ) = 0 := (rfl)
+@[simp] theorem fstHom_comp_inr (φ : A →⋆ₙₐ[ℂ] B) : (fstHom φ).comp (inr φ) = 0 := (rfl)
 
-theorem map_comp_inl {φ : A →⋆ₙₐ[ℂ] B} {ψ : C →⋆ₙₐ[ℂ] D} {α : A →⋆ₙₐ[ℂ] C} {β : B →⋆ₙₐ[ℂ] D}
+theorem map_comp_inr {φ : A →⋆ₙₐ[ℂ] B} {ψ : C →⋆ₙₐ[ℂ] D} {α : A →⋆ₙₐ[ℂ] C} {β : B →⋆ₙₐ[ℂ] D}
     (hsq : ψ.comp α = β.comp φ) :
-    (map φ ψ α β hsq).comp (inl φ) = (inl ψ).comp (CStarSuspension.map β) := by
+    (map φ ψ α β hsq).comp (inr φ) = (inr ψ).comp (CStarSuspension.map β) := by
   ext g : 1
   refine ext (by simp) ?_
   ext t
   by_cases ht1 : t = iocOne
   · subst ht1; simp
   · obtain ⟨x, rfl⟩ := notMem_compl_iff.mp fun hx =>
-      ht1 ((notMem_range_iooToIoc_iff t).mp hx)
+      ht1 ((notMem_range_inclusion_Ioo_Ioc_iff t).mp hx)
     simp
 
-theorem inl_injective (φ : A →⋆ₙₐ[ℂ] B) : Function.Injective (inl φ) := fun _ _ h =>
+theorem inr_injective (φ : A →⋆ₙₐ[ℂ] B) : Function.Injective (inr φ) := fun _ _ h =>
   CStarSuspension.toCone_injective (congrArg snd h)
 
-theorem isometry_inl (φ : A →⋆ₙₐ[ℂ] B) : Isometry (inl φ) :=
-  NonUnitalStarAlgHom.isometry (inl φ) (inl_injective φ)
+theorem isometry_inr (φ : A →⋆ₙₐ[ℂ] B) : Isometry (inr φ) :=
+  NonUnitalStarAlgHom.isometry (inr φ) (inr_injective φ)
 
-theorem mem_range_inl_iff (φ : A →⋆ₙₐ[ℂ] B) {x : MappingCone φ} :
-    x ∈ range (inl φ) ↔ fstHom φ x = 0 :=
-  ⟨fun ⟨g, hg⟩ => hg ▸ fst_inl_apply φ g,
+theorem mem_range_inr_iff (φ : A →⋆ₙₐ[ℂ] B) {x : MappingCone φ} :
+    x ∈ range (inr φ) ↔ fstHom φ x = 0 :=
+  ⟨fun ⟨g, hg⟩ => hg ▸ fst_inr_apply φ g,
     fun hx =>
       ⟨CStarSuspension.ofConeEqZero x.snd
           (by rw [← x.eq_evalOne, ← fstHom_apply φ x, hx, map_zero]),
@@ -334,7 +339,7 @@ theorem mem_range_inl_iff (φ : A →⋆ₙₐ[ℂ] B) {x : MappingCone φ} :
 `fstHom φ : MappingCone φ →⋆ₙₐ[ℂ] A`. -/
 def equivKerFstHom (φ : A →⋆ₙₐ[ℂ] B) :
     CStarSuspension B ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (fstHom φ) where
-  toFun g := ⟨inl φ g, by simp [TwoSidedIdeal.mem_ker]⟩
+  toFun g := ⟨inr φ g, by simp [TwoSidedIdeal.mem_ker]⟩
   invFun x := CStarSuspension.ofConeEqZero x.val.snd <| by
     have hx : x.val.fst = 0 := (TwoSidedIdeal.mem_ker (fstHom φ)).mp x.property
     rw [← x.val.eq_evalOne, hx, map_zero]
@@ -342,19 +347,19 @@ def equivKerFstHom (φ : A →⋆ₙₐ[ℂ] B) :
   right_inv x := by
     have hx : x.val.fst = 0 := (TwoSidedIdeal.mem_ker (fstHom φ)).mp x.property
     exact Subtype.ext (ext hx.symm (CStarSuspension.toCone_ofConeEqZero _ _))
-  map_mul' g₁ g₂ := Subtype.ext (map_mul (inl φ) g₁ g₂)
-  map_add' g₁ g₂ := Subtype.ext (map_add (inl φ) g₁ g₂)
-  map_smul' c g := Subtype.ext (map_smul (inl φ) c g)
-  map_star' g := Subtype.ext (map_star (inl φ) g)
+  map_mul' g₁ g₂ := Subtype.ext (map_mul (inr φ) g₁ g₂)
+  map_add' g₁ g₂ := Subtype.ext (map_add (inr φ) g₁ g₂)
+  map_smul' c g := Subtype.ext (map_smul (inr φ) c g)
+  map_star' g := Subtype.ext (map_star (inr φ) g)
 
 @[simp]
 theorem coe_equivKerFstHom_apply (φ : A →⋆ₙₐ[ℂ] B) (g : CStarSuspension B) :
-    ((equivKerFstHom φ g : TwoSidedIdeal.ker (fstHom φ)) : MappingCone φ) = inl φ g := (rfl)
+    ((equivKerFstHom φ g : TwoSidedIdeal.ker (fstHom φ)) : MappingCone φ) = inr φ g := (rfl)
 
 @[simp]
 theorem equivKerFstHom_symm_apply (φ : A →⋆ₙₐ[ℂ] B) (x : TwoSidedIdeal.ker (fstHom φ))
     (t : Ioo (0 : ℝ) 1) :
-    (equivKerFstHom φ).symm x t = (x : MappingCone φ).snd (iooToIoc t) :=
+    (equivKerFstHom φ).symm x t = (x : MappingCone φ).snd (Set.inclusion Ioo_subset_Ioc_self t) :=
   CStarSuspension.ofConeEqZero_apply x.val.snd _ t
 
 /-- Linear section `a ↦ (a, t ↦ t • φ a)` of `fstHom φ`, bundled as a `ℂ`-linear map. -/
@@ -390,8 +395,6 @@ def sectionCLM (φ : A →⋆ₙₐ[ℂ] B) : A →L[ℂ] MappingCone φ :=
 
 @[simp] theorem snd_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionCLM φ a).snd = CStarCone.linearPath (φ a) := (rfl)
-
-theorem fstHom_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : fstHom φ (sectionCLM φ a) = a := (rfl)
 
 @[simp]
 theorem norm_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : ‖sectionCLM φ a‖ = ‖a‖ :=
@@ -481,12 +484,6 @@ theorem toLinearMap_sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →�
 theorem sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     sectionCP φ a = sectionCLM φ a := (rfl)
 
-theorem fstHom_sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
-    fstHom φ (sectionCP φ a) = a := (rfl)
-
-theorem norm_sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
-    ‖sectionCP φ a‖ = ‖a‖ := norm_sectionCLM_apply φ a
-
 /-- The linear section `a ↦ (a, t ↦ t • φ a)` preserves the product of `a` and `b` if and only if
 `φ (a * b) = 0` (since `(t • φ a) * (t • φ b) = t² • φ (a * b)` differs from `t • φ (a * b)` at
 `t = 1/2` whenever `φ (a * b) ≠ 0`). -/
@@ -508,11 +505,6 @@ theorem sectionCLM_map_mul_eq_iff (φ : A →⋆ₙₐ[ℂ] B) (a b : A) :
   · intro hab
     refine ext rfl ?_; ext t
     simp [hab, ← Complex.coe_smul, smul_mul_smul_comm, ← map_mul]
-
-theorem sectionCP_map_mul_eq_iff [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B)
-    (a b : A) :
-    sectionCP φ (a * b) = sectionCP φ a * sectionCP φ b ↔ φ (a * b) = 0 :=
-  sectionCLM_map_mul_eq_iff φ a b
 
 end ExactSequence
 

@@ -18,9 +18,9 @@ Elementary maps, membership lemmas, and open inclusions for `I = Set.Icc (0 : �
 * The tent map `TauCeti.tent : I → I`, `t ↦ min (2 t) (2 - 2 t)`, which rises linearly from `0`
   to `1` on `[0, 1 / 2]` and falls back to `0` on `[1 / 2, 1]`, together with its real-value
   formula, continuity, and endpoint values.
-* `TauCeti.iocToUnitInterval`, `TauCeti.iocOne`, and `TauCeti.iooToIoc`: canonical open embeddings
-  `(0, 1] → [0, 1]` (missing only `0`) and `(0, 1) → (0, 1]` (missing only `1 = iocOne`), together
-  with their ranges and continuity lemmas.
+* `TauCeti.iocOne`, `TauCeti.notMem_range_inclusion_Ioc_Icc_iff`, and
+  `TauCeti.notMem_range_inclusion_Ioo_Ioc_iff`: endpoint `1` of `(0, 1]` and one-point complement
+  characterizations of the canonical `Set.inclusion` maps `(0, 1) ↪ (0, 1] ↪ [0, 1]`.
 * `TauCeti.truncatedShift`: truncated shift `(t, s) ↦ max (s - t) 0` on `I × I`, together with its
   value formula (`TauCeti.coe_truncatedShift`) and endpoint identities.
 * `TauCeti.scaleClamp`, `TauCeti.shiftClamp`, and `TauCeti.warpHomotopy`: clamped interval-square
@@ -34,8 +34,9 @@ Elementary maps, membership lemmas, and open inclusions for `I = Set.Icc (0 : �
 * `TauCeti.tent`: the tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval.
 * `TauCeti.coe_tent`, `TauCeti.continuous_tent`, `TauCeti.tent_zero`, `TauCeti.tent_one`: the
   coercion formula, continuity, and vanishing at `0` and `1` of `TauCeti.tent`.
-* `TauCeti.iocToUnitInterval`, `TauCeti.iocOne`, `TauCeti.iooToIoc`: canonical open inclusions
-  `(0, 1] → [0, 1]` and `(0, 1) → (0, 1]`.
+* `TauCeti.iocOne`, `TauCeti.notMem_range_inclusion_Ioc_Icc_iff`,
+  `TauCeti.notMem_range_inclusion_Ioo_Ioc_iff`: endpoint `1` of `(0, 1]` and complement
+  characterizations of `Set.inclusion Ioc_subset_Icc_self` and `Set.inclusion Ioo_subset_Ioc_self`.
 * `TauCeti.truncatedShift`, `TauCeti.coe_truncatedShift`, `TauCeti.truncatedShift_zero_right`,
   `TauCeti.truncatedShift_zero_left`, `TauCeti.truncatedShift_one_left`: the truncated shift
   `I × I → I` and its endpoint laws.
@@ -84,62 +85,23 @@ theorem tent_one : tent 1 = 0 := by
   ext
   norm_num
 
-/-- Canonical inclusion `(0, 1] → [0, 1]`. -/
-def iocToUnitInterval (x : Ioc (0 : ℝ) 1) : I := ⟨x.val, Ioc_subset_Icc_self x.property⟩
-
-@[simp]
-theorem coe_iocToUnitInterval (x : Ioc (0 : ℝ) 1) : (iocToUnitInterval x : ℝ) = x.val := (rfl)
-
-theorem continuous_iocToUnitInterval : Continuous iocToUnitInterval :=
-  continuous_subtypeVal.subtype_mk _
-
-theorem range_iocToUnitInterval : range iocToUnitInterval = {(0 : I)}ᶜ :=
-  Set.ext fun t => by
-    simp only [mem_range, mem_compl_iff, mem_singleton_iff]
-    exact ⟨fun ⟨x, hx⟩ h0 => x.property.1.ne' (congrArg Subtype.val (hx.trans h0)),
-      fun ht0 => ⟨⟨t.val, lt_of_le_of_ne t.property.1 fun h => ht0 (Subtype.ext h.symm),
-        t.property.2⟩, rfl⟩⟩
-
-theorem notMem_range_iocToUnitInterval_iff (t : I) :
-    t ∉ range iocToUnitInterval ↔ t = 0 := by
-  rw [range_iocToUnitInterval, mem_compl_iff, mem_singleton_iff, not_not]
-
-theorem isOpenEmbedding_iocToUnitInterval : IsOpenEmbedding iocToUnitInterval :=
-  ⟨IsEmbedding.of_comp continuous_iocToUnitInterval continuous_subtypeVal IsEmbedding.subtypeVal,
-    range_iocToUnitInterval ▸ isOpen_compl_singleton⟩
-
 /-- The endpoint `1` of `Set.Ioc (0 : ℝ) 1`. -/
 def iocOne : Ioc (0 : ℝ) 1 := ⟨1, right_mem_Ioc.mpr zero_lt_one⟩
 
 @[simp]
 theorem coe_iocOne : (iocOne : ℝ) = 1 := (rfl)
 
-@[simp]
-theorem iocToUnitInterval_iocOne : iocToUnitInterval iocOne = 1 := (rfl)
+/-- The canonical inclusion `(0, 1] → [0, 1]` omits only `0`. -/
+theorem notMem_range_inclusion_Ioc_Icc_iff (t : I) :
+    t ∉ range (Set.inclusion Ioc_subset_Icc_self) ↔ t = 0 := by
+  simp only [Set.range_inclusion, mem_ofPred_eq, mem_Ioc, t.property.2, and_true, not_lt]
+  exact ⟨fun h => Subtype.ext (le_antisymm h t.property.1), fun h => h ▸ le_rfl⟩
 
-/-- Canonical inclusion `(0, 1) → (0, 1]`. -/
-def iooToIoc (x : Ioo (0 : ℝ) 1) : Ioc (0 : ℝ) 1 := ⟨x.val, Ioo_subset_Ioc_self x.property⟩
-
-@[simp]
-theorem coe_iooToIoc (x : Ioo (0 : ℝ) 1) : (iooToIoc x : ℝ) = x.val := (rfl)
-
-theorem continuous_iooToIoc : Continuous iooToIoc :=
-  continuous_subtypeVal.subtype_mk _
-
-theorem range_iooToIoc : range iooToIoc = {iocOne}ᶜ :=
-  Set.ext fun t => by
-    simp only [mem_range, mem_compl_iff, mem_singleton_iff]
-    exact ⟨fun ⟨x, hx⟩ h1 => x.property.2.ne (congrArg Subtype.val (hx.trans h1)),
-      fun ht1 => ⟨⟨t.val, t.property.1, lt_of_le_of_ne t.property.2 fun h => ht1 (Subtype.ext h)⟩,
-        rfl⟩⟩
-
-theorem notMem_range_iooToIoc_iff (t : Ioc (0 : ℝ) 1) :
-    t ∉ range iooToIoc ↔ t = iocOne := by
-  rw [range_iooToIoc, mem_compl_iff, mem_singleton_iff, not_not]
-
-theorem isOpenEmbedding_iooToIoc : IsOpenEmbedding iooToIoc :=
-  ⟨IsEmbedding.of_comp continuous_iooToIoc continuous_subtypeVal IsEmbedding.subtypeVal,
-    range_iooToIoc ▸ isOpen_compl_singleton⟩
+/-- The canonical inclusion `(0, 1) → (0, 1]` omits only `iocOne`. -/
+theorem notMem_range_inclusion_Ioo_Ioc_iff (t : Ioc (0 : ℝ) 1) :
+    t ∉ range (Set.inclusion Ioo_subset_Ioc_self) ↔ t = iocOne := by
+  simp only [Set.range_inclusion, mem_ofPred_eq, mem_Ioo, t.property.1, true_and, not_lt]
+  exact ⟨fun h => Subtype.ext (le_antisymm t.property.2 h), fun h => h ▸ le_rfl⟩
 
 /-- Truncated shift `(t, s) ↦ max (s - t) 0` on `unitInterval × unitInterval`. -/
 noncomputable def truncatedShift : C(I × I, I) where

@@ -31,6 +31,8 @@ cones), we need the corresponding non-unital `⋆`-algebra homomorphisms (`A →
   possibly non-unital `A`.
 * `ContinuousMap.curryStarAlgEquiv`: currying `C(X × Y, A) ≃⋆ₐ[𝕜] C(X, C(Y, A))` when `Y` is
   locally compact.
+* `ContinuousMap.nonUnitalStarAlgHomOfPointwise`: bundle a map `A → C(X, B)` that is pointwise
+  a `⋆`-homomorphism into `A →⋆ₙₐ[𝕜] C(X, B)`.
 -/
 
 public section
@@ -189,6 +191,33 @@ theorem curryStarAlgEquiv_symm_apply (g : C(X, C(Y, A))) :
     (curryStarAlgEquiv 𝕜 X Y A).symm g = g.uncurry := (rfl)
 
 end Curry
+
+section Pointwise
+
+variable {X : Type*} [TopologicalSpace X]
+variable {𝕜 A B : Type*} [Monoid 𝕜]
+  [NonUnitalNonAssocSemiring A] [DistribMulAction 𝕜 A] [Star A]
+  [TopologicalSpace B] [NonUnitalNonAssocSemiring B] [IsTopologicalSemiring B]
+  [DistribMulAction 𝕜 B] [ContinuousConstSMul 𝕜 B] [Star B] [ContinuousStar B]
+
+/-- Bundle a map `f : A → C(X, B)` as a non-unital `⋆`-algebra homomorphism `A →⋆ₙₐ[𝕜] C(X, B)`
+when at every point `x : X` evaluation `a ↦ f a x` agrees with some `ψ : A →⋆ₙₐ[𝕜] B`. -/
+def nonUnitalStarAlgHomOfPointwise (f : A → C(X, B))
+    (hf : ∀ x : X, ∃ ψ : A →⋆ₙₐ[𝕜] B, ∀ a, f a x = ψ a) :
+    A →⋆ₙₐ[𝕜] C(X, B) where
+  toFun := f
+  map_smul' r a := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_smul]
+  map_zero' := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ]
+  map_add' a b := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_add]
+  map_mul' a b := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_mul]
+  map_star' a := ext fun x => let ⟨ψ, hψ⟩ := hf x; by simp [hψ, map_star]
+
+@[simp]
+theorem nonUnitalStarAlgHomOfPointwise_apply (f : A → C(X, B))
+    (hf : ∀ x : X, ∃ ψ : A →⋆ₙₐ[𝕜] B, ∀ a, f a x = ψ a) (a : A) :
+    nonUnitalStarAlgHomOfPointwise f hf a = f a := (rfl)
+
+end Pointwise
 
 end ContinuousMap
 

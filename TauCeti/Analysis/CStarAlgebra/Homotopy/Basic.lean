@@ -109,34 +109,28 @@ theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
     H.symm.toHom a t = H.toHom a (σ t) := by
   simp [symm]
 
+/-- Pointwise concatenated path used to define `Homotopy.trans`. -/
+private noncomputable def transPath (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) :
+    C(I, B) :=
+  ((Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)).trans
+    (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a))).toContinuousMap
+
 /-- Concatenate two homotopies `H₀ : Homotopy φ₀ φ₁` and `H₁ : Homotopy φ₁ φ₂`. -/
 noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) : Homotopy φ₀ φ₂ where
-  toHom :=
-    { toFun a :=
-        ((Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)).trans
-          (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a))).toContinuousMap
-      map_smul' r a := by
-        ext t
-        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.smul_apply]
-        split_ifs <;> simp [map_smul]
-      map_zero' := by
-        ext t
-        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.zero_apply]
-        split_ifs <;> simp
-      map_add' a b := by
-        ext t
-        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.add_apply]
-        split_ifs <;> simp [map_add]
-      map_mul' a b := by
-        ext t
-        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.mul_apply]
-        split_ifs <;> simp [map_mul]
-      map_star' a := by
-        ext t
-        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.star_apply]
-        split_ifs <;> simp [map_star] }
-  eval_zero a := Path.source _
-  eval_one a := Path.target _
+  toHom := ContinuousMap.nonUnitalStarAlgHomOfPointwise (transPath H₀ H₁) fun t => by
+    by_cases ht : (t : ℝ) ≤ 1 / 2
+    · have ht' : (t : ℝ) ≤ 2⁻¹ := one_div (2 : ℝ) ▸ ht
+      refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
+          ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2 (mem_Icc.mpr ⟨nonneg t, ht⟩)⟩).comp H₀.toHom,
+        fun a => ?_⟩
+      simp [transPath, Path.trans_apply, ht']
+    · have ht' : ¬(t : ℝ) ≤ 2⁻¹ := one_div (2 : ℝ) ▸ ht
+      refine ⟨(ContinuousMap.evalNonUnitalStarAlgHom 𝕜 B
+          ⟨2 * t - 1, two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 ht).le, le_one t⟩)⟩).comp
+          H₁.toHom, fun a => ?_⟩
+      simp [transPath, Path.trans_apply, ht']
+  eval_zero a := by simp [transPath]
+  eval_one a := by simp [transPath]
 
 /-- Pointwise evaluation of a concatenated homotopy across the unit interval. -/
 theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) (t : I) :
@@ -145,9 +139,10 @@ theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ �
         H₀.toHom a ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2 (mem_Icc.mpr ⟨nonneg t, h⟩)⟩
       else
         H₁.toHom a ⟨2 * t - 1,
-          two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 h).le, le_one t⟩)⟩ :=
-  Path.trans_apply (Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a))
-    (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)) t
+          two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 h).le, le_one t⟩)⟩ := by
+  simpa [trans, transPath] using
+    Path.trans_apply (Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a))
+      (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)) t
 
 /-- On the first half `t ≤ 2⁻¹`, `H₀.trans H₁` evaluates `H₀` at `2 * t` (stated with `2⁻¹` for
 `simp` normal form). -/
@@ -169,9 +164,12 @@ theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homot
         (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := by
   let γ₀ := Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)
   let γ₁ := Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)
+  have hdef : (H₀.trans H₁).toHom a = (γ₀.trans γ₁).toContinuousMap := by
+    simp [trans, transPath, γ₀, γ₁]
   calc
-    (H₀.trans H₁).toHom a t = (γ₀.trans γ₁).extend t :=
-      (Path.extend_apply (γ₀.trans γ₁) t.property).symm
+    (H₀.trans H₁).toHom a t = (γ₀.trans γ₁).extend t := by
+      rw [hdef]
+      exact (Path.extend_apply (γ₀.trans γ₁) t.property).symm
     _ = γ₁.extend (2 * t - 1) := Path.extend_trans_of_half_le γ₀ γ₁ ((one_div (2 : ℝ)).symm ▸ ht)
     _ = H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
           (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := Path.extend_apply γ₁ _
