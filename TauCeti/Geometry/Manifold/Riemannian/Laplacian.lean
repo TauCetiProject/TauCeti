@@ -386,7 +386,7 @@ theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
       LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
   -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
   rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
-    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL_real,
+    ContinuousLinearMap.toLinearMap₁₂_comp, ContinuousLinearMap.toLinearMap₁₂_innerSL_real,
     ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
 
 /-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
