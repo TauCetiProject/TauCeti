@@ -369,20 +369,15 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
           (Lam * M + K * ‖W1p.gradient U‖)) / lam + Lam * (K * ‖W1p.gradient U‖) / lam ^ 2 ∧
         HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, e⟫_ℝ) G e := by
   set b := EuclideanSpace.basisFun ι ℝ
-  set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, e⟫_ℝ / ‖e‖ ^ 2) • e
+  -- `P` is the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
+  set P := (ℝ ∙ e)ᗮ.starProjection
   set D : ℝ := Lam * M + K * ‖W1p.gradient U‖
   have hν' : (‖e‖ ^ 2)⁻¹ • e = e := by simp [he]
   have hb : ∀ i, ‖b i‖ = 1 := fun i => b.orthonormal.1 i
-  -- `P` is the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
-  have hPeq : ∀ z, P z = (ℝ ∙ e)ᗮ.starProjection z := fun z => by
-    rw [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
-      RCLike.ofReal_real_eq_id, id_eq, real_inner_comm]
-  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z => by
-    rw [hPeq, ← Submodule.mem_orthogonal_singleton_iff_inner_left]
-    exact Submodule.starProjection_apply_mem _ z
-  have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i => by
-    rw [hPeq]
-    exact (Submodule.norm_starProjection_apply_le _ (b i)).trans_eq (hb i)
+  have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z =>
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ z)
+  have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i =>
+    (Submodule.norm_starProjection_apply_le _ (b i)).trans_eq (hb i)
   have hgK : 0 ≤ (K : ℝ) * ‖W1p.gradient U‖ := by positivity
   -- The tangential terms `Gᵢⱼ = ∂_{P eᵢ} (aⁱʲ ∂ⱼu)`, each of norm at most `D`.
   choose G hGn hG using fun i j =>
@@ -394,10 +389,6 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
     simp only [hb, mul_one, one_mul, D]
     have := mul_le_mul_of_nonneg_left (hPb i) hgK
     linarith)
-  -- The normal derivative of `W = ∑ⱼ ⟪e, a eⱼ⟫ ∂ⱼu`, from the equation.
-  have hW := hasWeakLineDerivOn_sum_smul_inner_gradient
-    (fun p q => (lipschitzOnWith_matrixBilinearForm_apply_apply hK p q).continuousOn)
-    hU (G := fun i j => G i j) hG
   -- The terms `Tⱼ = ∂_e (⟪e, a eⱼ⟫ ∂_{P eⱼ}u)`, each of norm at most `D`, where weak derivatives
   -- commute: `∂_e ∂_{P eⱼ}u = ∂_{P eⱼ} ∂_e u`.
   choose T hTn hT using fun j =>
@@ -411,6 +402,16 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
     have h1 := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hM (hPb j)) ha.upper_nonneg
     have h2 := mul_le_mul_of_nonneg_left (hPb j) hgK
     linarith)
+  -- `hasWeakLineDerivOn_sum_smul_inner_gradient` and `sum_smul_inner_sub_sum_smul_inner_proj`
+  -- state `P` by its formula `P z = z - (⟪z, e⟫ / ‖e‖²) e`.
+  have hPeq : ∀ z, P z = z - (⟪z, e⟫_ℝ / ‖e‖ ^ 2) • e := fun z => by
+    rw [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
+      RCLike.ofReal_real_eq_id, id_eq, real_inner_comm]
+  simp only [hPeq] at hG hT
+  -- The normal derivative of `W = ∑ⱼ ⟪e, a eⱼ⟫ ∂ⱼu`, from the equation.
+  have hW := hasWeakLineDerivOn_sum_smul_inner_gradient
+    (fun p q => (lipschitzOnWith_matrixBilinearForm_apply_apply hK p q).continuousOn)
+    hU (G := fun i j => G i j) hG
   -- Subtracting the tangential parts leaves `⟪e, a e⟫ ∂_e u`, whose derivative is `R`.
   obtain ⟨R, hRn, hRae⟩ := exists_norm_le_ae_eq_neg_add_sum_sub_sum f G T hGD hTD
   have hR := ((hW.sub (HasWeakLineDerivOn.sum Finset.univ fun j _ => hT j)).congr_ae
@@ -448,7 +449,8 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G e := by
   set Py := (ℝ ∙ e)ᗮ.starProjection y
   have hdec : y = ⟪y, e⟫_ℝ • e + Py := by
-    simp [Py, Submodule.starProjection_singleton, he, real_inner_comm]
+    rw [real_inner_comm, ← Submodule.starProjection_unit_singleton ℝ he,
+      Submodule.starProjection_add_starProjection_orthogonal]
   -- `∂_e ∂_y u = ⟪y, e⟫ ∂_e ∂_e u + ∂_{P y} ∂_e u`, where weak derivatives commute.
   have hPy : ⟪Py, e⟫_ℝ = 0 :=
     Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ y)
@@ -485,7 +487,8 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w := by
   set Pw := (ℝ ∙ e)ᗮ.starProjection w
   have hdec : ⟪w, e⟫_ℝ • e + Pw = w := by
-    simp [Pw, Submodule.starProjection_singleton, he, real_inner_comm]
+    rw [real_inner_comm, ← Submodule.starProjection_unit_singleton ℝ he,
+      Submodule.starProjection_add_starProjection_orthogonal]
   obtain ⟨G₁, hG₁n, hG₁⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tangential he hM hGeen hGee htan y
   have hPw : ⟪Pw, e⟫_ℝ = 0 :=
