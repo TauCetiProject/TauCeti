@@ -12,8 +12,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
-import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Conformal.Area
+import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Sobolev.Poincare.Slab
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -87,9 +87,11 @@ private theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 <
   have hηc : HasCompactSupport fun z ↦ f z⁻¹ :=
     HasCompactSupport.intro (isCompact_closedBall 0 R⁻¹) fun z hz ↦
       hηR z (by simpa [mem_closedBall_zero_iff] using hz)
+  have hη : ContDiff ℝ 1 fun z ↦ f z⁻¹ := by
+    have h := hfc.contDiff_update_comp_inv hf
+    rwa [Function.update_eq_self_iff.2 (by simp [hfR 0 (by simpa using hR)])] at h
   -- The Poincaré inequality on the strip `|Im z| < 2 R⁻¹` containing that disc.
-  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_I_sq
-    (contDiff_comp_inv hf hfc (hfR 0 (by simpa using hR))) hηc (r := 2 * R⁻¹) fun z hz ↦
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_I_sq hη hηc (r := 2 * R⁻¹) fun z hz ↦
       hηR z (by linarith [Complex.abs_im_le_norm z, inv_pos.2 hR])
   calc _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := hpoinc
     _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :=
