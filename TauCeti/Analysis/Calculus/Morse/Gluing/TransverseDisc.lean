@@ -30,8 +30,8 @@ again strictly differentiable at `0`, with the same derivative
 (`TauCeti.hasStrictFDerivAt_norm_div_smul`), although the faces are not smooth for a
 general norm. By the inverse function theorem, near the broken entrance point the entry points
 of the orbits through the disc form a Lipschitz graph `y ↦ (g y, y)` in the entrance face
-(`TauCeti.exists_lipschitzOnWith_rescale_graph`). The exit face is treated in the same way,
-using exit times.
+(`TauCeti.exists_lipschitzOnWith_rescale_graph_prod`, with a trivial parameter). The exit face is
+treated in the same way, using exit times.
 
 Transversality to the stable set in the usual sense, that the tangent space of the disc and the
 stable set together span, means that the derivative of the expanding component of `ψ` is
@@ -56,8 +56,8 @@ in `s` and `y`. Through the local compactification of jointly Lipschitz families
 (`TauCeti.exists_homeomorph_closure_biUnion_splitGluingPairs_prod`), the orbits running from the
 first family of discs to the second, together with the broken ones, form a product of `[0, r₀]`
 with a ball of parameters. This is the local model of a collar along the once-broken
-trajectories of a compactified space of trajectories. The single-disc statements are the case of
-the trivial parameter in `Unit`.
+trajectories of a compactified space of trajectories. The single-disc traces and gluing are the
+case of the trivial parameter in `Unit`.
 
 ## Main results
 
@@ -69,10 +69,6 @@ the trivial parameter in `Unit`.
 * `TauCeti.exists_splitQuadraticFlow_splitExitTime_eq_graph_prod`: the same for exit points of
   the orbits through a family of discs transverse to the unstable set, as graphs over the
   contracting factor in the exit face.
-* `TauCeti.exists_splitQuadraticFlow_splitEntryTime_eq_graph`,
-  `TauCeti.exists_splitQuadraticFlow_splitExitTime_eq_graph`: the same for a single disc.
-* `TauCeti.mem_splitGluingPairs_splitQuadraticFlow_splitEntryTime`: an orbit entering the box on
-  the graph of `g` and leaving it on the graph of `k` gives a pair of `splitGluingPairs`.
 * `TauCeti.exists_homeomorph_closure_biUnion_splitGluingPairs_of_hasStrictFDerivAt`: the orbits
   through the box from one family of transverse discs to the other, near the broken orbit, form a
   product of `[0, r₀]` with a ball of parameters once the broken orbits are added, and these are
@@ -175,88 +171,6 @@ theorem exists_splitQuadraticFlow_splitExitTime_eq_graph_prod {P : Type*} [Norme
     simp only [WithLp.fstL_apply, WithLp.sndL_apply] at hz
     rw [splitQuadraticFlow_splitExitTime hε hz₀]
     exact hz
-
-/-- **Entrance trace of a transverse disc.** Let `ψ` be a disc through the point `(x₀, 0)` of the
-stable set on the entrance face `‖x‖ = ε`, strictly differentiable at `0` with the derivative of
-its expanding component invertible. Near `(x₀, 0)`, the points where the orbits through the disc
-enter the box form a Lipschitz graph `y ↦ (g y, y)` in the entrance face over a closed ball of
-the expanding factor, with `g 0 = x₀`: every point of the graph is the entry point of the orbit
-through `ψ z` for some `z` in a prescribed neighbourhood `U` of `0`, and conversely, for `z`
-near `0`, the entry point of the orbit through `ψ z` lies on the graph.
-
-This is the input `y ↦ (g y, y)` of the gluing theorem
-`TauCeti.exists_setOf_mem_splitPassage_source_graph_eq_image`, and the case of the trivial
-parameter in `TauCeti.exists_splitQuadraticFlow_splitEntryTime_eq_graph_prod`. -/
-theorem exists_splitQuadraticFlow_splitEntryTime_eq_graph {x₀ : Eₛ}
-    (hψ : HasStrictFDerivAt ψ ψ' 0) (hψ' : (WithLp.sndL 2 ℝ Eₛ Eᵤ ∘L ψ').IsInvertible)
-    (hψ₀ : ψ 0 = WithLp.toLp 2 (x₀, 0)) (hx₀ : ‖x₀‖ = ε) (hε : 0 < ε) (hU : U ∈ 𝓝 0) :
-    ∃ δ > 0, ∃ (K : ℝ≥0) (g : Eᵤ → Eₛ), LipschitzOnWith K g (closedBall 0 δ) ∧ g 0 = x₀ ∧
-      (∀ y ∈ closedBall 0 δ, ‖g y‖ = ε ∧ ∃ z ∈ U,
-        splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z) = WithLp.toLp 2 (g y, y)) ∧
-      ∀ᶠ z in 𝓝 0, (splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z)).fst =
-        g (splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z)).snd := by
-  -- Take the trivial parameter in `Unit`.
-  obtain ⟨L, hL⟩ := hψ'
-  obtain ⟨δ, hδ, K, g, hg, hg₀, hpts, hexh⟩ :=
-    exists_splitQuadraticFlow_splitEntryTime_eq_graph_prod (c := fun _ ↦ (0 : Unit)) hψ
-      (hasStrictFDerivAt_const _ _)
-      ⟨L.trans (ContinuousLinearEquiv.uniqueProd ℝ Eᵤ Unit).symm, by rw [← hL]; ext; simp⟩ hψ₀ rfl
-      hx₀ hε hU
-  have hmk : MapsTo (Prod.mk (0 : Unit)) (closedBall (0 : Eᵤ) δ) (closedBall 0 δ) := fun y hy ↦ by
-    simpa [Prod.norm_def] using hy
-  refine ⟨δ, hδ, K * 1, fun y ↦ g (0, y), hg.comp (LipschitzWith.prodMk_left 0).lipschitzOnWith hmk,
-    hg₀, fun y hy ↦ ?_, hexh⟩
-  obtain ⟨hgy, z, hzU, -, hz⟩ := hpts _ (hmk hy)
-  exact ⟨hgy, z, hzU, hz⟩
-
-/-- **Exit trace of a transverse disc.** Let `ψ` be a disc through the point `(0, y₀)` of the
-unstable set on the exit face `‖y‖ = ε`, strictly differentiable at `0` with the derivative of
-its contracting component invertible. Near `(0, y₀)`, the points where the orbits through the
-disc leave the box form a Lipschitz graph `x ↦ (x, k x)` in the exit face over a closed ball of
-the contracting factor, with `k 0 = y₀`: every point of the graph is the exit point of the orbit
-through `ψ z` for some `z` in a prescribed neighbourhood `U` of `0`, and conversely, for `z` near
-`0`, the exit point of the orbit through `ψ z` lies on the graph.
-
-This is the input `x ↦ (x, k x)` of the gluing theorem
-`TauCeti.exists_setOf_mem_splitPassage_source_graph_eq_image`, and the case of the trivial
-parameter in `TauCeti.exists_splitQuadraticFlow_splitExitTime_eq_graph_prod`. -/
-theorem exists_splitQuadraticFlow_splitExitTime_eq_graph {y₀ : Eᵤ}
-    (hψ : HasStrictFDerivAt ψ ψ' 0) (hψ' : (WithLp.fstL 2 ℝ Eₛ Eᵤ ∘L ψ').IsInvertible)
-    (hψ₀ : ψ 0 = WithLp.toLp 2 (0, y₀)) (hy₀ : ‖y₀‖ = ε) (hε : 0 < ε) (hU : U ∈ 𝓝 0) :
-    ∃ δ > 0, ∃ (K : ℝ≥0) (k : Eₛ → Eᵤ), LipschitzOnWith K k (closedBall 0 δ) ∧ k 0 = y₀ ∧
-      (∀ x ∈ closedBall 0 δ, ‖k x‖ = ε ∧ ∃ z ∈ U,
-        splitQuadraticFlow (splitExitTime ε (ψ z)) (ψ z) = WithLp.toLp 2 (x, k x)) ∧
-      ∀ᶠ z in 𝓝 0, (splitQuadraticFlow (splitExitTime ε (ψ z)) (ψ z)).snd =
-        k (splitQuadraticFlow (splitExitTime ε (ψ z)) (ψ z)).fst := by
-  -- Take the trivial parameter in `Unit`.
-  obtain ⟨L, hL⟩ := hψ'
-  obtain ⟨δ, hδ, K, k, hk, hk₀, hpts, hexh⟩ :=
-    exists_splitQuadraticFlow_splitExitTime_eq_graph_prod (c := fun _ ↦ (0 : Unit)) hψ
-      (hasStrictFDerivAt_const _ _)
-      ⟨L.trans (ContinuousLinearEquiv.uniqueProd ℝ Eₛ Unit).symm, by rw [← hL]; ext; simp⟩ hψ₀ rfl
-      hy₀ hε hU
-  have hmk : MapsTo (Prod.mk (0 : Unit)) (closedBall (0 : Eₛ) δ) (closedBall 0 δ) := fun x hx ↦ by
-    simpa [Prod.norm_def] using hx
-  refine ⟨δ, hδ, K * 1, fun x ↦ k (0, x), hk.comp (LipschitzWith.prodMk_left 0).lipschitzOnWith hmk,
-    hk₀, fun x hx ↦ ?_, hexh⟩
-  obtain ⟨hkx, z, hzU, -, hz⟩ := hpts _ (hmk hx)
-  exact ⟨hkx, z, hzU, hz⟩
-
-/-- **Entrance and exit pairs from an orbit entering the box.** If the orbit through a point `w`
-with `x(w) ≠ 0` enters the box off the stable set, at a point on the graph of `g` whose expanding
-coordinate has norm at most `r₀ * ε` with `r₀ ≤ 1`, and leaves it at a point `v` on the graph of
-`k`, then the entry point and `v` form a pair of `splitGluingPairs ε r₀ g k`. -/
-theorem mem_splitGluingPairs_splitQuadraticFlow_splitEntryTime {g : Eᵤ → Eₛ} {k : Eₛ → Eᵤ}
-    {r₀ : ℝ} (hε : 0 < ε) (hr₀₁ : r₀ ≤ 1) {w v : WithLp 2 (Eₛ × Eᵤ)} (hw : w.fst ≠ 0)
-    (hne : (splitQuadraticFlow (splitEntryTime ε w) w).snd ≠ 0)
-    (hsnd : ‖(splitQuadraticFlow (splitEntryTime ε w) w).snd‖ ≤ r₀ * ε)
-    (hg : (splitQuadraticFlow (splitEntryTime ε w) w).fst =
-      g (splitQuadraticFlow (splitEntryTime ε w) w).snd)
-    (hv : v = splitPassage ε (splitQuadraticFlow (splitEntryTime ε w) w)) (hk : v.snd = k v.fst) :
-    (splitQuadraticFlow (splitEntryTime ε w) w, v) ∈ splitGluingPairs ε r₀ g k :=
-  mem_splitGluingPairs.2 ⟨mem_splitPassage_source.2
-    ⟨norm_fst_splitQuadraticFlow_splitEntryTime hε hw, hne,
-      hsnd.trans (mul_le_of_le_one_left hε.le hr₀₁)⟩, hsnd, hg, hv, hk⟩
 
 /-- **Gluing through families of transverse discs.** Let `ψ` be a disc through the broken entrance
 point `(x₀, 0)` with a parameter `c`, whose slices `c = s` are transverse to the stable set, and
@@ -389,10 +303,19 @@ theorem exists_homeomorph_closure_biUnion_splitGluingPairs_of_hasStrictFDerivAt
     refine ⟨hS, fun hne hpass ↦ mem_splitGluingPairs_splitQuadraticFlow_splitEntryTime hε hr₀₁
       hz₀ hne (by rwa [splitQuadraticFlow_splitEntryTime hε hz₀]) hzg hpass.symm hz'k⟩
 
+/-- A map stays invertible after adding the zero map to the trivial parameter space `Unit` as
+first component; this reads a single disc as a family with a trivial parameter. -/
+private theorem isInvertible_zero_unit_prod {G E : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : G →L[ℝ] E} (hf : f.IsInvertible) :
+    ((0 : G →L[ℝ] Unit).prod f).IsInvertible := by
+  obtain ⟨L, rfl⟩ := hf
+  exact ⟨L.trans (ContinuousLinearEquiv.uniqueProd ℝ E Unit).symm, by ext; simp⟩
+
 /-- **Gluing through transverse discs.** Let `ψ` be a disc through the broken entrance point
 `(x₀, 0)` transverse to the stable set, and `χ` a disc through the broken exit point `(0, y₀)`
-transverse to the unstable set, as in `TauCeti.exists_splitQuadraticFlow_splitEntryTime_eq_graph`
-and `TauCeti.exists_splitQuadraticFlow_splitExitTime_eq_graph`. Then there are a radius `r₀ > 0`
+transverse to the unstable set, as in the trivial-parameter case of
+`TauCeti.exists_splitQuadraticFlow_splitEntryTime_eq_graph_prod` and
+`TauCeti.exists_splitQuadraticFlow_splitExitTime_eq_graph_prod`. Then there are a radius `r₀ > 0`
 and graphs `g`, `k` in the entrance and exit faces such that:
 
 * the closure of the entrance/exit pairs `splitGluingPairs ε r₀ g k` of unbroken orbits is a
@@ -434,16 +357,17 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
         (splitQuadraticFlow (splitEntryTime ε (ψ q.1)) (ψ q.1),
           splitQuadraticFlow (splitExitTime ε (χ q.2)) (χ q.2)) ∈ splitGluingPairs ε r₀ g k := by
   -- Take the trivial parameters in `Unit`, for which the parameter ball is a point.
-  obtain ⟨L, hL⟩ := hψ'
-  obtain ⟨M, hM⟩ := hχ'
   obtain ⟨r₀, ρ, hr₀, hρ, g, k, hg₀, hk₀, ⟨e, hcoord, -, he₀⟩, hcl, -, hpairs, hev⟩ :=
     exists_homeomorph_closure_biUnion_splitGluingPairs_of_hasStrictFDerivAt
       (P := Unit) (Q := Unit) (c := fun _ ↦ 0) (d := fun _ ↦ 0) hψ (hasStrictFDerivAt_const _ _)
-      ⟨L.trans (ContinuousLinearEquiv.uniqueProd ℝ Eᵤ Unit).symm, by rw [← hL]; ext; simp⟩ hψ₀ rfl
-      hx₀ hχ (hasStrictFDerivAt_const _ _)
-      ⟨M.trans (ContinuousLinearEquiv.uniqueProd ℝ Eₛ Unit).symm, by rw [← hM]; ext; simp⟩ hχ₀ rfl
-      hy₀ hε hU hV (fun _ _ _ _ _ ↦ rfl) fun _ _ _ _ _ ↦ rfl
-  rw [← Prod.mk_zero_zero] at hg₀ hk₀
+      (isInvertible_zero_unit_prod hψ') hψ₀ rfl hx₀ hχ (hasStrictFDerivAt_const _ _)
+      (isInvertible_zero_unit_prod hχ') hχ₀ rfl hy₀ hε hU hV (fun _ _ _ _ _ ↦ rfl)
+      fun _ _ _ _ _ ↦ rfl
+  have hbr : ((WithLp.toLp 2 (g ((0 : Unit × Unit).1, 0), 0),
+      WithLp.toLp 2 (0, k ((0 : Unit × Unit).2, 0))) : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ)) =
+      (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀)) := by
+    rw [← hg₀, ← hk₀]
+    rfl
   have hS : closedBall (0 : Unit × Unit) ρ = {0} :=
     subsingleton_of_subsingleton.eq_singleton_of_mem (mem_closedBall_self hρ.le)
   have hset : (⋃ p ∈ closedBall (0 : Unit × Unit) ρ,
@@ -462,10 +386,9 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   refine ⟨r₀, hr₀, fun y ↦ g (0, y), fun x ↦ k (0, x),
     ⟨(i.trans e).trans (Homeomorph.setCongr (congrArg closure hset)), fun w ↦ hcoord _, ?_⟩,
     ?_, fun w hw ↦ ?_, hev.mono fun q hq ↦ hq.2⟩
-  · rw [← hg₀, ← hk₀]
-    exact he₀ 0 (mem_closedBall_self hρ.le)
-  · rw [← hset, hcl, hset, hS, image_singleton, union_comm, ← insert_eq, Prod.fst_zero,
-      Prod.snd_zero, hg₀, hk₀]
+  · exact (he₀ 0 (mem_closedBall_self hρ.le)).trans hbr
+  · rw [← hset, hcl, hset]
+    simp only [hS, image_singleton, hbr, union_singleton]
   · obtain ⟨⟨z, hzU, -, hz⟩, z', hz'V, -, hz'⟩ := hpairs 0 (mem_closedBall_self hρ.le) w hw
     exact ⟨⟨z, hzU, hz⟩, z', hz'V, hz'⟩
 

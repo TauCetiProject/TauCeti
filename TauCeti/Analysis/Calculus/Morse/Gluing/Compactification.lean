@@ -33,8 +33,8 @@ over pairs of a trajectory into the middle critical point and a trajectory out o
 depending on the first and `k p` on the second. In the split box, this chart is the model from
 which a collar along once-broken trajectories is expected to come. When the discs are the graphs
 `y ↦ (g (s, y), y)` and `x ↦ (x, k (t, x))` of maps `g` and `k` Lipschitz jointly in a parameter
-from a proper space and the point, these hypotheses hold on a small ball of parameters, which
-gives a chart by `[0, r₀]` times that ball.
+from a proper space and the point, with distinct parameters giving disjoint graphs, these
+hypotheses hold on a small ball of parameters, which gives a chart by `[0, r₀]` times that ball.
 
 ## Main results
 
@@ -83,6 +83,22 @@ theorem mem_splitGluingPairs {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × E
       p.1 ∈ (splitPassage ε).source ∧ ‖p.1.snd‖ ≤ r₀ * ε ∧
         p.1.fst = g p.1.snd ∧ p.2 = splitPassage ε p.1 ∧ p.2.snd = k p.2.fst :=
   Iff.rfl
+
+/-- **Entrance and exit pairs from an orbit entering the box.** If the orbit through a point `w`
+with `x(w) ≠ 0` enters the box off the stable set, at a point on the graph of `g` whose expanding
+coordinate has norm at most `r₀ * ε` with `r₀ ≤ 1`, and leaves it at a point `v` on the graph of
+`k`, then the entry point and `v` form a pair of `splitGluingPairs ε r₀ g k`. -/
+theorem mem_splitGluingPairs_splitQuadraticFlow_splitEntryTime (hε : 0 < ε) (hr₀₁ : r₀ ≤ 1)
+    {w v : WithLp 2 (Eₛ × Eᵤ)} (hw : w.fst ≠ 0)
+    (hne : (splitQuadraticFlow (splitEntryTime ε w) w).snd ≠ 0)
+    (hsnd : ‖(splitQuadraticFlow (splitEntryTime ε w) w).snd‖ ≤ r₀ * ε)
+    (hg : (splitQuadraticFlow (splitEntryTime ε w) w).fst =
+      g (splitQuadraticFlow (splitEntryTime ε w) w).snd)
+    (hv : v = splitPassage ε (splitQuadraticFlow (splitEntryTime ε w) w)) (hk : v.snd = k v.fst) :
+    (splitQuadraticFlow (splitEntryTime ε w) w, v) ∈ splitGluingPairs ε r₀ g k :=
+  mem_splitGluingPairs.2 ⟨mem_splitPassage_source.2
+    ⟨norm_fst_splitQuadraticFlow_splitEntryTime hε hw, hne,
+      hsnd.trans (mul_le_of_le_one_left hε.le hr₀₁)⟩, hsnd, hg, hv, hk⟩
 
 /-- If the entrance points over `Ioc 0 r₀` are parametrized by an exhaustive family `w` of the
 sphere of radius `ε`, then the entrance and exit pairs built from `w` over `Ioc 0 δ` are exactly the
