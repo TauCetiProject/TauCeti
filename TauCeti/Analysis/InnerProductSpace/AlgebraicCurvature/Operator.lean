@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 This file supplements `TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare` with
 injectivity, identity and scalar-contraction evaluations, characterization of
-`curvatureEndomorphism r`, and `O(V)`-equivariance for `TauCeti.FourTensor.ofExteriorEnd`.
+`curvatureEndomorphism r`, the rank-one operator characterization of `planeCurvature u v`, and
+pullback / `O(V)`-equivariance for `TauCeti.FourTensor.ofExteriorEnd`.
 
 ## Main statements
 
@@ -26,8 +27,14 @@ injectivity, identity and scalar-contraction evaluations, characterization of
 * `TauCeti.FourTensor.ofExteriorEnd_one`: the identity on `⋀[ℝ]^2 V` corresponds to
   `constantCurvature V`.
 * `TauCeti.FourTensor.scalar_ofExteriorEnd`: `scalar (ofExteriorEnd T) = 2 * trace T`.
-* `LinearIsometryEquiv.ofExteriorEnd_compContinuousLinearMap`: equivariance under linear isometric
-  equivalences.
+* `TauCeti.FourTensor.curvatureEndomorphism_eq_iff_of_antisymm`: characterization of
+  `curvatureEndomorphism r` on pure bivectors.
+* `TauCeti.FourTensor.planeCurvature_eq_ofExteriorEnd` and
+  `TauCeti.FourTensor.curvatureEndomorphism_planeCurvature`: the bivector rank-one operator
+  characterization of `planeCurvature u v`.
+* `ContinuousLinearMap.ofExteriorEnd_compContinuousLinearMap` and
+  `LinearIsometryEquiv.ofExteriorEnd_compContinuousLinearMap`: pullback of `ofExteriorEnd` along
+  continuous linear maps and equivariance under linear isometric equivalences.
 
 ## References
 
@@ -83,15 +90,47 @@ theorem curvatureEndomorphism_eq_iff_of_antisymm {r : FourTensor V}
    fun h ↦ exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ by
      rw [inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂, h]⟩
 
-/-- Characterization of `curvatureEndomorphism r` on pure bivectors for an algebraic curvature
-tensor `r`. -/
-theorem IsAlgebraicCurvature.curvatureEndomorphism_eq_iff {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    curvatureEndomorphism r = T ↔
-      ∀ u v z w, ⟪T (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫ = r ![u, v, z, w] :=
-  curvatureEndomorphism_eq_iff_of_antisymm hr.antisymm_first hr.antisymm_last T
+/-- The rank-one plane curvature tensor `planeCurvature u v` is the four-tensor associated to
+the rank-one operator `(u ∧ v) ⊗ (u ∧ v)` on `⋀[ℝ]^2 V`. -/
+theorem planeCurvature_eq_ofExteriorEnd (u v : V) :
+    planeCurvature u v =
+      ofExteriorEnd
+        (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
+          (ιMulti ℝ 2 ![u, v])).toLinearMap := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [planeCurvature_apply, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply, real_inner_smul_left, inner_ιMulti_two, inner_ιMulti_two]
+
+/-- The bivector endomorphism of `planeCurvature u v` is the rank-one operator
+`ξ ↦ ⟪u ∧ v, ξ⟫ • (u ∧ v)`. -/
+@[simp]
+theorem curvatureEndomorphism_planeCurvature (u v : V) :
+    curvatureEndomorphism (planeCurvature u v) =
+      (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
+        (ιMulti ℝ 2 ![u, v])).toLinearMap := by
+  rw [planeCurvature_eq_ofExteriorEnd, curvatureEndomorphism_ofExteriorEnd]
 
 end TauCeti.FourTensor
+
+namespace ContinuousLinearMap
+
+open exteriorPower TauCeti.FourTensor
+
+/-- Pulling back `ofExteriorEnd T` along a continuous linear map `f : W →L[ℝ] V` conjugates `T`
+by `exteriorPower.map 2 f.toLinearMap` and its adjoint. -/
+theorem ofExteriorEnd_compContinuousLinearMap {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+    (f : W →L[ℝ] V) (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    (ofExteriorEnd T).compContinuousLinearMap (fun _ ↦ f) =
+      ofExteriorEnd
+        (LinearMap.adjoint (exteriorPower.map 2 f.toLinearMap) ∘ₗ T ∘ₗ
+          exteriorPower.map 2 f.toLinearMap) := by
+  refine ext_vec fun u v z w ↦ ?_
+  simp only [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, LinearMap.comp_apply,
+    LinearMap.adjoint_inner_left, map_apply_ιMulti_two, ContinuousLinearMap.coe_coe]
+
+end ContinuousLinearMap
 
 namespace LinearIsometryEquiv
 
@@ -107,10 +146,8 @@ theorem ofExteriorEnd_compContinuousLinearMap {V W : Type*}
       ofExteriorEnd
         ((exteriorPower.map 2 e.symm.toLinearMap) ∘ₗ T ∘ₗ
           (exteriorPower.map 2 e.toLinearMap)) := by
-  refine ext_vec fun u v z w ↦ ?_
-  rw [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, ofExteriorEnd_apply,
-    e.inner_conj_exteriorPowerMap]
-  simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-    map_apply_ιMulti_two, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  have he : e.toLinearIsometry.toContinuousLinearMap.toLinearMap = e.toLinearMap :=
+    LinearMap.ext fun _ ↦ rfl
+  rw [ContinuousLinearMap.ofExteriorEnd_compContinuousLinearMap, he, e.adjoint_exteriorPowerMap]
 
 end LinearIsometryEquiv

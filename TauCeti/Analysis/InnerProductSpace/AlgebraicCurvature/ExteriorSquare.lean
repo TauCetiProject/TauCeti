@@ -224,16 +224,6 @@ theorem curvatureEndomorphism_ofExteriorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) 
     rw [inner_curvatureEndomorphism_ιMulti_of_antisymm (ofExteriorEnd_antisymm_first T)
       (ofExteriorEnd_antisymm_last T), ofExteriorEnd_apply]
 
-/-- Pair-interchange symmetry of `ofExteriorEnd T` is equivalent to symmetry of `T` on
-`⋀[ℝ]^2 V`. -/
-theorem ofExteriorEnd_swap_pairs_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    (∀ u v z w, ofExteriorEnd T ![u, v, z, w] = ofExteriorEnd T ![z, w, u, v]) ↔
-      T.IsSymmetric :=
-  ⟨fun h ↦ by
-    simpa only [curvatureEndomorphism_ofExteriorEnd] using
-      isSymmetric_curvatureEndomorphism_of_swap_pairs h,
-   fun h u v z w ↦ by simp only [ofExteriorEnd_apply]; rw [h, real_inner_comm]⟩
-
 /-- `ofExteriorEnd T` is bivector-symmetric iff `T` is symmetric on `⋀[ℝ]^2 V`. -/
 @[simp]
 theorem isBivectorSymmetric_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
@@ -246,10 +236,11 @@ theorem isBivectorSymmetric_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V)
 @[simp]
 theorem isAlgebraicCurvature_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     IsAlgebraicCurvature (ofExteriorEnd T) ↔ IsAlgebraicCurvatureEndomorphism T :=
-  ⟨fun h ↦ ⟨(ofExteriorEnd_swap_pairs_iff T).mp h.swap_pairs, fun u v z w ↦ by
+  ⟨fun h ↦ ⟨(isBivectorSymmetric_ofExteriorEnd_iff T).mp h.isBivectorSymmetric, fun u v z w ↦ by
       simpa only [ofExteriorEnd_apply] using h.cyclic_eq_zero u v z w⟩,
-   fun h ↦ ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T,
-     (ofExteriorEnd_swap_pairs_iff T).mpr h.isSymmetric, fun u v z w ↦ by
+   fun h ↦
+     have hs := (isBivectorSymmetric_ofExteriorEnd_iff T).mpr h.isSymmetric
+     ⟨hs.antisymm_first, hs.antisymm_last, hs.swap_pairs, fun u v z w ↦ by
        simpa only [ofExteriorEnd_apply] using h.cyclic_eq_zero u v z w⟩⟩
 
 /-- On pair-antisymmetric four-tensors, `ofExteriorEnd` and `curvatureEndomorphism` are inverses. -/

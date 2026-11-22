@@ -31,8 +31,7 @@ and quadratic bivector-operator identities
 `ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + 2 • A.sharpBilin B)`,
 `Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + A.sharp))`, and
 `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` for every symmetric endomorphism `A` of `⋀[ℝ]^2 V`
-and every algebraic curvature tensor `r`, together with the rank-one operator characterization
-`curvatureEndomorphism (planeCurvature u v) = rankOne ℝ (u ∧ v) (u ∧ v)`.
+and every bivector-symmetric four-tensor `r`.
 
 ## Main definitions
 
@@ -50,11 +49,8 @@ and every algebraic curvature tensor `r`, together with the rank-one operator ch
 * `LinearMap.IsSymmetric.reactionBilinear_ofExteriorEnd`,
   `LinearMap.IsSymmetric.reactionTensor_ofExteriorEnd`,
   `TauCeti.FourTensor.curvatureEndomorphism_reactionTensor`, and
-  `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor`: the operator
+  `TauCeti.FourTensor.IsBivectorSymmetric.curvatureEndomorphism_reactionTensor`: the operator
   identity `Q(R) = 2 (R² + R#)`.
-* `TauCeti.FourTensor.planeCurvature_eq_ofExteriorEnd` and
-  `TauCeti.FourTensor.curvatureEndomorphism_planeCurvature`: the bivector rank-one operator
-  characterization of `planeCurvature u v`.
 
 ## References
 
@@ -191,7 +187,7 @@ private theorem map_comp_bracketLift {W V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] (f : W →ₗᵢ[ℝ] V) :
     map 2 f.toLinearMap ∘ₗ bracketLift W =
       bracketLift V ∘ₗ TensorProduct.map (map 2 f.toLinearMap) (map 2 f.toLinearMap) :=
-  TensorProduct.ext' fun x y ↦ f.map_twoVectorBracket x y
+  TensorProduct.ext' fun x y ↦ f.exteriorPowerMap_twoVectorBracket x y
 
 private theorem adjoint_bracketLift_comp_map {W V : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
@@ -236,19 +232,10 @@ theorem sharpBilin_conj_exteriorPowerMap {W V : Type*}
             rw [← hmap, ← adjoint_bracketLift_comp_map e]
       _ = E' ∘ₗ (bracketLift V ∘ₗ TensorProduct.map A B ∘ₗ (bracketLift V).adjoint) ∘ₗ E := by
             simp only [LinearMap.comp_assoc]
-  rw [Module.End.sharpBilin_eq, Module.End.sharpBilin_eq]
-  change (1 / 2 : ℝ) •
-      LinearMap.adjoint
-        (bracketLift W ∘ₗ TensorProduct.map (E' ∘ₗ A ∘ₗ E) (E' ∘ₗ B ∘ₗ E) ∘ₗ
-          (bracketLift W).adjoint) =
-    E' ∘ₗ ((1 / 2 : ℝ) •
-      LinearMap.adjoint
-        (bracketLift V ∘ₗ TensorProduct.map A B ∘ₗ (bracketLift V).adjoint)) ∘ₗ E
-  rw [hcore, LinearMap.adjoint_comp, LinearMap.adjoint_comp, e.adjoint_exteriorPowerMap,
-    e.symm.adjoint_exteriorPowerMap]
-  simp only [LinearMap.smul_comp, LinearMap.comp_smul, LinearMap.comp_assoc,
-    LinearIsometryEquiv.symm_symm]
-  rfl
+  have hadj := congrArg (fun T : Module.End ℝ (⋀[ℝ]^2 W) ↦ (1 / 2 : ℝ) • T.adjoint) hcore
+  simpa only [Module.End.sharpBilin_eq, bracketLift, E, E', LinearMap.adjoint_comp,
+    e.adjoint_exteriorPowerMap, e.symm.adjoint_exteriorPowerMap, LinearIsometryEquiv.symm_symm,
+    LinearMap.smul_comp, LinearMap.comp_smul, LinearMap.comp_assoc] using hadj
 
 /-- Conjugating an endomorphism of `⋀[ℝ]^2 V` by the exterior square of a linear isometric
 equivalence commutes with `Module.End.sharp`. -/
@@ -339,21 +326,14 @@ private theorem sum_inner_twoVectorBracket_contract {ι : Type*} [Fintype ι]
         (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
         (⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ * ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫)) =
       4 * ⟪twoVectorBracket (A x) (B y), ξ⟫ := by
-  have hlhs :
-      ⟪twoVectorBracket
-          (A (∑ p : ι × ι, ⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ • ιMulti ℝ 2 ![b p.1, b p.2]))
-          (B (∑ q : ι × ι, ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫ • ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ =
-      ∑ q : ι × ι, ∑ p : ι × ι,
-        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
-          (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
-          (⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ * ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫) := by
-    simp only [map_sum, LinearMap.sum_apply, sum_inner, map_smul, LinearMap.smul_apply,
-      real_inner_smul_left, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [Finset.sum_comm, ← hlhs]
-  simp only [Fintype.sum_prod_type, b.sum_inner_smul_ιMulti_two, map_smul, LinearMap.smul_apply,
-    real_inner_smul_left]
-  ring
+  have h := b.sum_inner_mul_inner_smul_ιMulti_two
+    ((twoVectorBracket.compl₁₂ A B).compr₂ ((innerₗ (⋀[ℝ]^2 V)).flip ξ)) x y
+  simp only [smul_eq_mul, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
+    LinearMap.flip_apply, innerₗ_apply_apply] at h
+  simp only [Fintype.sum_prod_type]
+  rw [← h]
+  refine Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+    Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
 
 /-- Reduction of `2 * ⟪Module.End.sharpBilin A B ξ, z ∧ w⟫` to a single basis sum over `V`. -/
 private theorem two_mul_inner_sharpBilin_ιMulti_right {ι : Type*} [Fintype ι]
@@ -462,16 +442,7 @@ theorem IsBivectorSymmetric.curvatureEndomorphism_reactionTensor {r : FourTensor
         (curvatureEndomorphism r).sharp) :=
   FourTensor.curvatureEndomorphism_reactionTensor hr.antisymm_first hr.swap_pairs
 
-/-- For every algebraic curvature tensor `r`, `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with
-`R = curvatureEndomorphism r`. -/
-theorem IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) :
-    curvatureEndomorphism (FourTensor.reactionTensor r) =
-      (2 : ℝ) • (curvatureEndomorphism r * curvatureEndomorphism r +
-        (curvatureEndomorphism r).sharp) :=
-  hr.isBivectorSymmetric.curvatureEndomorphism_reactionTensor
-
-/-! ### Explicit evaluations: identity and rank-one bivectors -/
+/-! ### Explicit evaluation on the identity -/
 
 /-- `Module.End.sharp 1 = (dim V - 2) • 1` on `⋀[ℝ]^2 V`, in every dimension `dim V : ℕ`. -/
 @[simp]
@@ -495,25 +466,5 @@ theorem _root_.Module.End.sharp_one :
   rw [eq_sub_of_add_eq' h1, hsub]
   refine LinearMap.ext fun x ↦ ?_
   simp only [LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self, sub_smul, one_smul]
-
-/-- The rank-one plane curvature tensor `planeCurvature u v` is the four-tensor associated to
-the rank-one operator `(u ∧ v) ⊗ (u ∧ v)` on `⋀[ℝ]^2 V`. -/
-theorem planeCurvature_eq_ofExteriorEnd (u v : V) :
-    planeCurvature u v =
-      ofExteriorEnd
-        (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
-          (ιMulti ℝ 2 ![u, v])).toLinearMap := by
-  refine ext_vec fun a b c d ↦ ?_
-  rw [planeCurvature_apply, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
-    InnerProductSpace.rankOne_apply, real_inner_smul_left, inner_ιMulti_two, inner_ιMulti_two]
-
-/-- The bivector endomorphism of `planeCurvature u v` is the rank-one operator
-`ξ ↦ ⟪u ∧ v, ξ⟫ • (u ∧ v)`. -/
-@[simp]
-theorem curvatureEndomorphism_planeCurvature (u v : V) :
-    curvatureEndomorphism (planeCurvature u v) =
-      (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
-        (ιMulti ℝ 2 ![u, v])).toLinearMap := by
-  rw [planeCurvature_eq_ofExteriorEnd, curvatureEndomorphism_ofExteriorEnd]
 
 end TauCeti.FourTensor

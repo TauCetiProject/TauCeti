@@ -16,9 +16,10 @@ For an orthonormal basis `b`, the wedges `b i ∧ b j` indexed by all ordered pa
 redundant family: each increasing pair occurs twice, with opposite signs, and diagonal wedges
 vanish. Consequently their rank-one operators sum to twice the identity on `Λ² E`.
 
-This gives trace formulas using all ordered pairs instead of the increasing pairs indexing
-Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms (`LinearMap.trace`)
-and for bilinear forms (`TauCeti.bilinFormTrace`), fixing the factor of two in curvature
+This gives trace and double-contraction formulas using all ordered pairs instead of the increasing
+pairs indexing Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms
+(`LinearMap.trace`) and for bilinear forms (`TauCeti.bilinFormTrace`), as well as bilinear maps
+(`OrthonormalBasis.sum_inner_mul_inner_smul_ιMulti_two`), fixing the factor of two in curvature
 contractions.
 -/
 
@@ -40,28 +41,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 twice the identity on the exterior square. -/
 theorem sum_rankOne_ιMulti_two (b : OrthonormalBasis ι ℝ E) :
     (∑ i, ∑ j, (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![b i, b j])
-      (ιMulti ℝ 2 ![b i, b j])).toLinearMap) = (2 : ℝ) • LinearMap.id := by
-  classical
-  apply linearMap_ext_inner_ιMulti_two
-  intro a c u v
-  simp only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-    InnerProductSpace.rankOne_apply, sum_inner, real_inner_smul_left,
-    LinearMap.smul_apply, LinearMap.id_apply, inner_ιMulti_two]
-  have hp (x y : E) : (∑ i, ⟪b i, x⟫ * ⟪b i, y⟫) = ⟪x, y⟫ := by
-    simpa only [real_inner_comm x] using b.sum_inner_mul_inner x y
-  -- Expand the two Gram determinants and contract each factor by Parseval.
-  simp_rw [sub_mul, mul_sub, sum_sub_distrib]
-  simp_rw [mul_mul_mul_comm (⟪b _, _⟫) (⟪b _, _⟫) (⟪b _, _⟫) (⟪b _, _⟫)]
-  simp_rw [← mul_sum, hp, ← sum_mul, hp]
-  ring
-
-/-- Every bivector equals half the sum of its inner products against all ordered basis wedges
-`b i ∧ b j`. -/
-theorem sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (η : ⋀[ℝ]^2 E) :
-    (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], η⟫ • ιMulti ℝ 2 ![b i, b j]) = (2 : ℝ) • η := by
-  simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-    InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
-    LinearMap.congr_fun b.sum_rankOne_ιMulti_two η
+      (ιMulti ℝ 2 ![b i, b j])).toLinearMap) = (2 : ℝ) • LinearMap.id :=
+  LinearMap.ext fun η ↦ by
+    simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
+      InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
+      b.sum_inner_smul_ιMulti_two η
 
 /-- The sum of the diagonal coefficients of an endomorphism against all ordered basis wedges
 is twice its trace. In contrast, the increasing wedges form an orthonormal basis and count
@@ -107,5 +91,27 @@ theorem sum_apply_mul_eq_half_sum_ιMulti {ι' : Type*} [Fintype ι']
   simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at h2
   rw [h2]
   ring
+
+/-- Contracting a bilinear map `Φ` on `⋀² E` against all pairs of ordered basis wedges of an
+orthonormal basis `b` scales `Φ x y` by `4`. -/
+theorem sum_inner_mul_inner_smul_ιMulti_two {M : Type*} [AddCommGroup M] [Module ℝ M]
+    (b : OrthonormalBasis ι ℝ E) (Φ : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] M) (x y : ⋀[ℝ]^2 E) :
+    (∑ i, ∑ j, ∑ k, ∑ l,
+      (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) •
+        Φ (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l])) =
+      (4 : ℝ) • Φ x y := by
+  have h :
+      Φ (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], x⟫ • ιMulti ℝ 2 ![b i, b j])
+        (∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l]) =
+      ∑ i, ∑ j, ∑ k, ∑ l,
+        (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) •
+          Φ (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l]) := by
+    set Y := ∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l]
+    simp only [map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [Y, map_sum, map_smul, Finset.smul_sum, smul_smul]
+  rw [← h, b.sum_inner_smul_ιMulti_two, b.sum_inner_smul_ιMulti_two]
+  simp only [map_smul, LinearMap.smul_apply, smul_smul]
+  norm_num
 
 end OrthonormalBasis
