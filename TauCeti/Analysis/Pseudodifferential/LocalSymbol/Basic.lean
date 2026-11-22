@@ -50,7 +50,8 @@ global one. It does extend after multiplication by a cutoff:
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 The smoothing symbols on `U` (`TauCeti.LocalSymbol.IsSmoothing`), of every real order on `U`, are
 preserved by restriction and by the cut-off extension, and the restriction of a smoothing symbol
-on `ℝⁿ` is smoothing on `U`.
+on `ℝⁿ` is smoothing on `U`. Over `U = ℝⁿ` they are the smoothing symbols on `ℝⁿ`
+(`TauCeti.Symbol.isSmoothing_restrictTopEquiv_iff`).
 
 Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
 near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
@@ -617,6 +618,11 @@ theorem IsSmoothing.sub {a b : LocalSymbol U V W m} (ha : a.IsSmoothing) (hb : b
     (a - b).IsSmoothing := by
   simpa only [sub_eq_add_neg] using ha.add hb.neg
 
+/-- A symbol on `U` is smoothing exactly when its negative is. -/
+@[simp]
+theorem isSmoothing_neg_iff {a : LocalSymbol U V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
 /-- Including a symbol on `U` into a higher order does not change whether it is smoothing. -/
 @[simp]
 theorem isSmoothing_inclusion_iff {a : LocalSymbol U V W m} {h : m ≤ m'} :
@@ -642,17 +648,24 @@ end Smoothing
 
 end LocalSymbol
 
+/-- Over `U = ℝⁿ`, smoothing symbols on an open set are smoothing symbols on `ℝⁿ`. -/
+@[simp]
+theorem Symbol.isSmoothing_restrictTopEquiv_iff {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ} {a : Symbol n V W m} :
+    (Symbol.restrictTopEquiv a).IsSmoothing ↔ a.IsSmoothing := by
+  rw [LocalSymbol.isSmoothing_iff, Symbol.isSmoothing_iff]
+  refine forall_congr' fun m' => ⟨fun ⟨b, hb⟩ => ⟨Symbol.restrictTopEquiv.symm b, ?_⟩,
+    fun ⟨b, hb⟩ => ⟨Symbol.restrictTopEquiv b, ?_⟩⟩
+  · rw [Symbol.coefficient_restrictTopEquiv_symm_apply, hb,
+      Symbol.coefficient_restrictTopEquiv_apply]
+  · rw [Symbol.coefficient_restrictTopEquiv_apply, Symbol.coefficient_restrictTopEquiv_apply, hb]
+
 /-- The restriction of a smoothing symbol on `ℝⁿ` to an open set `U` of positions is a smoothing
 symbol on `U`. -/
 theorem Symbol.IsSmoothing.restrict {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
     [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
     {a : Symbol n V W m} (ha : a.IsSmoothing) : (a.restrict U).IsSmoothing := by
   simpa only [Symbol.restrict_restrictTopEquiv] using
-    LocalSymbol.IsSmoothing.restrict (a := Symbol.restrictTopEquiv a)
-      (fun m' => (Symbol.isSmoothing_iff.1 ha m').elim fun b hb =>
-        ⟨Symbol.restrictTopEquiv b, by
-          rw [Symbol.coefficient_restrictTopEquiv_apply, Symbol.coefficient_restrictTopEquiv_apply,
-            hb]⟩)
-      (le_top : U ≤ ⊤)
+    (Symbol.isSmoothing_restrictTopEquiv_iff.2 ha).restrict (le_top : U ≤ ⊤)
 
 end TauCeti
