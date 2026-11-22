@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
-import TauCeti.Algebra.Lie.GeneralLinear.Finrank
-import TauCeti.Algebra.Lie.Orthogonal.TypeD.Finrank
-import TauCeti.Algebra.Lie.SpecialLinear.Root.Generation
-import TauCeti.LinearAlgebra.Matrix.ToLin
+public import TauCeti.RepresentationTheory.Spin.Structure
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.MatrixProd
 import TauCeti.RepresentationTheory.Spin.Dimension
-import TauCeti.RepresentationTheory.Spin.Exceptional.Four.RootOperators
 import TauCeti.RepresentationTheory.Spin.Polarization.Faithful
 
 /-!
@@ -35,19 +34,21 @@ standard modules of the two factors of `sl₂ × sl₂`:
 In particular each half-spin action alone has image `sl₂`; it is not faithful, since the other
 factor acts on it trivially. This is the Lie-algebra counterpart of the group isomorphism
 `exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_finrank_eq_four`
-in `TauCeti`.
+in `TauCeti`, and it is the restriction of the same matrix model of the even Clifford algebra
+(`typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd`).
 
 ## The argument
 
-In the oriented exterior basis `1, w₀, w₁, w₀ ∧ w₁` of the spinor module, the positive and negative
-simple-root bivectors act by matrix units
-(`TauCeti.toMatrix_spinAction_typeDSimpleRootBivector_fin_two` and its negative analogue): the
-chain root pair moves between `w₀` and `w₁`, inside `S⁻`, and the fork root pair moves between
-`1` and `w₀ ∧ w₁`, inside `S⁺`. Hence the image of `so₄` contains the raising and lowering matrices
-of each factor, with zero in the other factor. These generate `sl₂` as a Lie algebra
-(`TauCeti.eq_top_of_specialLinear_adjacent_single_mem`), so the image contains `sl₂ × sl₂`. Both
-`so₄` and `sl₂ × sl₂` have dimension six (`TauCeti.LieAlgebra.Orthogonal.finrank_typeD`), which
-forces the image to be `sl₂ × sl₂`. The paired action is injective in every rank
+The even structure theorem `TauCeti.SpinPolarizationData.evenCliffordEquivProdEnd` identifies the
+even Clifford algebra with `End S⁺ × End S⁻`, and in matrices with `M₂ × M₂`. In this model
+reversal is adjugation in both factors (`map_reverseEven_eq_adjugate_prod_of_finrank_eq_four`),
+and a `2 × 2` matrix `A` has adjugate `tr A • 1 - A`. So an even element is negated by reversal
+exactly when both of its half-spin actions have trace zero. Quadratic Clifford elements are negated
+by reversal, which gives the trace condition. Conversely, an even element negated by reversal has
+odd commutators with vectors that are fixed by reversal; in dimension four these are vectors
+(`mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four`), so the element is quadratic
+(`mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι`). The paired
+action is injective in every rank
 (`TauCeti.SpinPolarizationData.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective`).
 
 ## Main definitions and results
@@ -63,6 +64,8 @@ All declarations are in the namespace `TauCeti.SpinPolarizationData`.
   `mem_range_typeDSpinMinusLieRep_iff_of_card_eq_two`: each half-spin image is `sl₂`.
 * `typeDHalfSpinLieEquivSlProdSl`: the Lie algebra isomorphism `so₄ ≃ sl₂ × sl₂` given by the
   matrices of the two half-spin actions.
+* `typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd`: this isomorphism is the
+  matrix model of the even Clifford algebra, applied to the quadratic Clifford realization.
 * `typeDSpinPlusLieModuleEquivStd` and `typeDSpinMinusLieModuleEquivStd`: through this
   isomorphism, `S⁺` and `S⁻` are the standard modules of the first and second factor `sl₂`.
 
@@ -86,314 +89,99 @@ variable {K : Type u} [Field K] [Invertible (2 : K)] {V : Type v} [AddCommGroup 
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {ι : Type w} [Fintype ι] [DecidableEq ι] (b : Basis ι K P.W) (hline : P.line = ⊥)
 
-/-! ### Dimension -/
+/-! ### Reversal on the even Clifford algebra in dimension four -/
 
-omit [Invertible (2 : K)] in
-private theorem finrank_sl_toSubmodule_fin_two :
-    finrank K (SpecialLinear.sl (Fin 2) K).toSubmodule = 3 :=
-  -- `sl` and its underlying submodule are the same subtype with the same module structure.
-  (finrank_sl (n := Fin 2) (R := K)).trans (by simp)
+omit [Invertible (2 : K)] [DecidableEq ι] in
+include b hline in
+private theorem finrank_eq_four_of_card_eq_two (hι : Fintype.card ι = 2) : finrank K V = 4 := by
+  classical
+  rw [finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, hι]
 
-/-! ### Quadratic Clifford elements acting on the half-spin modules -/
+omit [DecidableEq ι] in
+include b in
+/-- In dimension four, an even Clifford element is negated by reversal exactly when it acts on both
+half-spin modules by trace-zero endomorphisms: in the matrix model `M₂ × M₂`, reversal is
+adjugation, and `adjugate A = tr A • 1 - A`. -/
+private theorem reverseEven_eq_neg_iff_trace_eq_zero (hι : Fintype.card ι = 2) (z : even Q) :
+    reverseEven Q z = -z ↔
+      LinearMap.trace K (spinPlus Q P) (spinPlusAction Q P hline z) = 0 ∧
+        LinearMap.trace K (spinMinus Q P) (spinMinusAction Q P hline z) = 0 := by
+  have hV := P.finrank_eq_four_of_card_eq_two b hline hι
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional K P.W := b.finiteDimensional_of_finite
+  have hW : finrank K P.W = 2 := by rw [finrank_eq_card_basis b, hι]
+  have hplus : finrank K (spinPlus Q P) = 2 := by rw [finrank_spinPlus P, hW]; rfl
+  have hminus : finrank K (spinMinus Q P) = 2 := by
+    rw [finrank_spinMinus P (Submodule.finrank_eq_zero.not.1 (by omega)), hW]; rfl
+  let B := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
+  let B' := Module.finBasisOfFinrankEq K (spinMinus Q P) hminus
+  let e := (P.evenCliffordEquivProdEnd hline).trans
+    ((LinearMap.toMatrixAlgEquiv B).prodCongr (LinearMap.toMatrixAlgEquiv B'))
+  have he (y : even Q) : e y = (LinearMap.toMatrix B B (spinPlusAction Q P hline y),
+      LinearMap.toMatrix B' B' (spinMinusAction Q P hline y)) := by
+    simp only [e, AlgEquiv.trans_apply, AlgEquiv.prodCongr_apply,
+      P.evenCliffordEquivProdEnd_apply, evenSpinActionProd_apply,
+      LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
+      Equiv.prodCongr_apply, Prod.map_apply, AlgEquiv.coe_toEquiv]
+  have h := map_reverseEven_eq_adjugate_prod_of_finrank_eq_four Q
+    (P.nondegenerate_of_line_eq_bot hline) hV e z
+  rw [← e.injective.eq_iff, h, map_neg, he, Prod.neg_mk, Prod.mk.injEq,
+    Matrix.adjugate_fin_two_eq_trace_smul_one_sub, Matrix.adjugate_fin_two_eq_trace_smul_one_sub,
+    sub_eq_neg_self, sub_eq_neg_self, smul_eq_zero, smul_eq_zero,
+    LinearMap.trace_eq_matrix_trace K B, LinearMap.trace_eq_matrix_trace K B']
+  simp
 
-/-- An element of `so₄` given by a quadratic Clifford element acts on `S⁺` through the spin
-action of that element. -/
-private theorem coe_typeDSpinPlusLieRep_symm_apply {y : CliffordAlgebra Q}
-    (hy : y ∈ quadraticLieSubalgebra Q) (s : spinPlus Q P) :
-    ((P.typeDSpinPlusLieRep b hline ((P.typeDQuadraticEquiv b hline).symm ⟨y, hy⟩) s :
-      spinPlus Q P) : ExteriorAlgebra K P.W) = spinAction Q P y s := by
-  rw [coe_typeDSpinPlusLieRep_apply, typeDSpinLieRep_apply, LieEquiv.apply_symm_apply]
+omit [DecidableEq ι] in
+include b hline in
+/-- In dimension four, an even Clifford element negated by reversal is quadratic: its commutator
+with a vector is odd and fixed by reversal, hence a vector. -/
+private theorem mem_quadraticLieSubalgebra_of_reverseEven_eq_neg (hι : Fintype.card ι = 2)
+    {z : even Q} (hz : reverseEven Q z = -z) :
+    (z : CliffordAlgebra Q) ∈ quadraticLieSubalgebra Q := by
+  have hV := P.finrank_eq_four_of_card_eq_two b hline hι
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  have hrev : reverse (z : CliffordAlgebra Q) = -z := by
+    simpa using congrArg Subtype.val hz
+  have hz0 : (z : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
+    rw [← even_toSubmodule]
+    exact z.property
+  refine mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι Q
+    (P.nondegenerate_of_line_eq_bot hline) z.property hrev fun v ↦ ?_
+  refine mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV.le ?_ ?_
+  · rw [Ring.lie_def]
+    exact Submodule.sub_mem _
+      (by simpa using SetLike.mul_mem_graded hz0 (ι_mem_evenOdd_one Q v))
+      (by simpa using SetLike.mul_mem_graded (ι_mem_evenOdd_one Q v) hz0)
+  · rw [Ring.lie_def, map_sub, reverse.map_mul, reverse.map_mul, reverse_ι, hrev, mul_neg, neg_mul,
+      sub_neg_eq_add, neg_add_eq_sub]
 
-/-- An element of `so₄` given by a quadratic Clifford element acts on `S⁻` through the spin
-action of that element. -/
-private theorem coe_typeDSpinMinusLieRep_symm_apply {y : CliffordAlgebra Q}
-    (hy : y ∈ quadraticLieSubalgebra Q) (s : spinMinus Q P) :
-    ((P.typeDSpinMinusLieRep b hline ((P.typeDQuadraticEquiv b hline).symm ⟨y, hy⟩) s :
-      spinMinus Q P) : ExteriorAlgebra K P.W) = spinAction Q P y s := by
-  rw [coe_typeDSpinMinusLieRep_apply, typeDSpinLieRep_apply, LieEquiv.apply_symm_apply]
-
-/-! ### Restricting root matrices to the half-spin coordinates
-
-A simple-root bivector acts on the spinor module by a matrix unit in the oriented exterior basis.
-The lemmas below read off its action on a half-spin module whose basis is a subfamily of that
-basis. -/
-
-section Restrict
-
-variable {S : Submodule K (ExteriorAlgebra K P.W)} {g : Fin 2 → Finset (Fin 2)}
-  {y : CliffordAlgebra Q} {f : Module.End K S} {p q : Finset (Fin 2)}
-
-omit [Invertible (2 : K)] in
-/-- A Clifford element whose spin action is the matrix unit `single p q 1` sends the coordinate
-vector at `q` to the coordinate vector at `p`, and every other coordinate vector to zero. -/
-private theorem apply_basis_of_toMatrixAlgEquiv_eq_single (b₂ : Basis (Fin 2) K P.W)
-    (B : Basis (Fin 2) K S)
-    (hB : ∀ c, (B c : ExteriorAlgebra K P.W) = spinFourExteriorBasis P b₂ (g c))
-    (hf : ∀ s, (f s : ExteriorAlgebra K P.W) = spinAction Q P y s)
-    (h : LinearMap.toMatrixAlgEquiv (spinFourExteriorBasis P b₂) (spinAction Q P y) =
-      Matrix.single p q 1) (c : Fin 2) :
-    (f (B c) : ExteriorAlgebra K P.W) = if q = g c then spinFourExteriorBasis P b₂ p else 0 := by
-  have h' := congrArg (Matrix.toLinAlgEquiv (spinFourExteriorBasis P b₂)) h
-  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv] at h'
-  rw [hf, hB, h', Module.Basis.toLinAlgEquiv_single_apply_basis]
-  split_ifs <;> simp
-
-omit [Invertible (2 : K)] in
-/-- If both indices of the matrix unit are coordinates of the half-spin module, the restricted
-action is the corresponding matrix unit. -/
-private theorem toMatrix_eq_single_of_restrict (b₂ : Basis (Fin 2) K P.W)
-    (B : Basis (Fin 2) K S)
-    (hB : ∀ c, (B c : ExteriorAlgebra K P.W) = spinFourExteriorBasis P b₂ (g c))
-    (hf : ∀ s, (f s : ExteriorAlgebra K P.W) = spinAction Q P y s)
-    (h : LinearMap.toMatrixAlgEquiv (spinFourExteriorBasis P b₂) (spinAction Q P y) =
-      Matrix.single p q 1) (hg : Function.Injective g)
-    {i j : Fin 2} (hp : g i = p) (hq : g j = q) :
-    LinearMap.toMatrix B B f = Matrix.single i j 1 :=
-  B.toMatrixAlgEquiv_eq_single_of_apply_basis f i j 1 fun c ↦ Subtype.ext <| by
-    rw [P.apply_basis_of_toMatrixAlgEquiv_eq_single b₂ B hB hf h, ← hq, ← hp]
-    by_cases hjc : j = c
-    · simp [hjc, hB]
-    · simp [hjc, hg.ne hjc]
-
-omit [Invertible (2 : K)] in
-/-- If the column of the matrix unit is not a coordinate of the half-spin module, the restricted
-action vanishes. -/
-private theorem toMatrix_eq_zero_of_restrict (b₂ : Basis (Fin 2) K P.W)
-    (B : Basis (Fin 2) K S)
-    (hB : ∀ c, (B c : ExteriorAlgebra K P.W) = spinFourExteriorBasis P b₂ (g c))
-    (hf : ∀ s, (f s : ExteriorAlgebra K P.W) = spinAction Q P y s)
-    (h : LinearMap.toMatrixAlgEquiv (spinFourExteriorBasis P b₂) (spinAction Q P y) =
-      Matrix.single p q 1) (hq : ∀ c, q ≠ g c) :
-    LinearMap.toMatrix B B f = 0 := by
-  rw [← map_zero (LinearMap.toMatrix B B)]
-  congr 1
-  refine B.ext fun c ↦ Subtype.ext ?_
-  rw [P.apply_basis_of_toMatrixAlgEquiv_eq_single b₂ B hB hf h]
-  simp [hq c]
-
-end Restrict
-
-/-! ### The coordinate bases of the two half-spin modules -/
-
-section Coordinates
-
-variable (b₂ : Basis (Fin 2) K P.W)
-
-/-- The even coordinates `∅` and `{0, 1}` of the oriented rank-two exterior basis. -/
-private def plusIndex : Fin 2 → Finset (Fin 2) := ![∅, {0, 1}]
-
-/-- The odd coordinates `{0}` and `{1}` of the oriented rank-two exterior basis. -/
-private def minusIndex : Fin 2 → Finset (Fin 2) := ![{0}, {1}]
-
-private theorem plusIndex_injective : Function.Injective plusIndex := by
-  unfold plusIndex; decide
-
-private theorem minusIndex_injective : Function.Injective minusIndex := by
-  unfold minusIndex; decide
-
-omit [Invertible (2 : K)] in
-private theorem spinFourExteriorBasis_plusIndex_mem (c : Fin 2) :
-    spinFourExteriorBasis P b₂ (plusIndex c) ∈ spinPlus Q P := by
-  rw [mem_spinPlus]
-  fin_cases c
-  · simpa [plusIndex] using Submodule.one_le.mp (one_le_evenOdd_zero _)
-  · simpa [plusIndex] using ι_mul_ι_mem_evenOdd_zero (0 : QuadraticForm K P.W) (b₂ 0) (b₂ 1)
-
-omit [Invertible (2 : K)] in
-private theorem spinFourExteriorBasis_minusIndex_mem (c : Fin 2) :
-    spinFourExteriorBasis P b₂ (minusIndex c) ∈ spinMinus Q P := by
-  rw [mem_spinMinus]
-  fin_cases c
-  · simpa [minusIndex] using ι_mem_evenOdd_one (0 : QuadraticForm K P.W) (b₂ 0)
-  · simpa [minusIndex] using ι_mem_evenOdd_one (0 : QuadraticForm K P.W) (b₂ 1)
-
-omit [Invertible (2 : K)] in
-include b₂ in
-private theorem finrank_W_of_basis : finrank K P.W = 2 := by
-  rw [finrank_eq_card_basis b₂, Fintype.card_fin]
-
-/-- The basis `1, w₀ ∧ w₁` of `S⁺`. -/
-private noncomputable def plusBasis : Basis (Fin 2) K (spinPlus Q P) :=
-  have : FiniteDimensional K P.W := b₂.finiteDimensional_of_finite
-  basisOfLinearIndependentOfCardEqFinrank
-    (b := fun c ↦ ⟨_, spinFourExteriorBasis_plusIndex_mem P b₂ c⟩)
-    (LinearIndependent.of_comp (spinPlus Q P).subtype
-      ((spinFourExteriorBasis P b₂).linearIndependent.comp _ plusIndex_injective))
-    (by rw [finrank_spinPlus, finrank_W_of_basis P b₂, Fintype.card_fin]; rfl)
-
-/-- The basis `w₀, w₁` of `S⁻`. -/
-private noncomputable def minusBasis : Basis (Fin 2) K (spinMinus Q P) :=
-  have : FiniteDimensional K P.W := b₂.finiteDimensional_of_finite
-  basisOfLinearIndependentOfCardEqFinrank
-    (b := fun c ↦ ⟨_, spinFourExteriorBasis_minusIndex_mem P b₂ c⟩)
-    (LinearIndependent.of_comp (spinMinus Q P).subtype
-      ((spinFourExteriorBasis P b₂).linearIndependent.comp _ minusIndex_injective))
-    (by
-      have hW : P.W ≠ ⊥ := fun hW ↦ by
-        have := finrank_W_of_basis P b₂
-        rw [hW, finrank_bot] at this
-        omega
-      rw [finrank_spinMinus P hW, finrank_W_of_basis P b₂, Fintype.card_fin]; rfl)
-
-omit [Invertible (2 : K)] in
-private theorem coe_plusBasis (c : Fin 2) :
-    (plusBasis P b₂ c : ExteriorAlgebra K P.W) = spinFourExteriorBasis P b₂ (plusIndex c) := by
-  rw [plusBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
-
-omit [Invertible (2 : K)] in
-private theorem coe_minusBasis (c : Fin 2) :
-    (minusBasis P b₂ c : ExteriorAlgebra K P.W) = spinFourExteriorBasis P b₂ (minusIndex c) := by
-  rw [minusBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
-
-end Coordinates
-
-/-! ### The paired matrix action -/
-
-variable {κ κ' : Type*} [Fintype κ] [DecidableEq κ] [Fintype κ'] [DecidableEq κ']
-
-/-- The action of `so₄` on `S⁺ × S⁻`, read as pairs of matrices in bases of the two half-spin
-modules. -/
-private noncomputable def matrixPairLieHom (B : Basis κ K (spinPlus Q P))
-    (B' : Basis κ' K (spinMinus Q P)) :
-    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Matrix κ κ K × Matrix κ' κ' K :=
-  ((LinearMap.toMatrixAlgEquiv B).toLieEquiv.toLieHom.comp (P.typeDSpinPlusLieRep b hline)).prod
-    ((LinearMap.toMatrixAlgEquiv B').toLieEquiv.toLieHom.comp (P.typeDSpinMinusLieRep b hline))
-
-private theorem matrixPairLieHom_apply (B : Basis κ K (spinPlus Q P))
-    (B' : Basis κ' K (spinMinus Q P)) (x : LieAlgebra.Orthogonal.typeD ι K) :
-    P.matrixPairLieHom b hline B B' x =
-      (LinearMap.toMatrix B B (P.typeDSpinPlusLieRep b hline x),
-        LinearMap.toMatrix B' B' (P.typeDSpinMinusLieRep b hline x)) :=
-  rfl
-
-/-- The basis of `W` renumbered by `Fin 2`. -/
-private noncomputable abbrev basisFinTwo (hι : Fintype.card ι = 2) : Basis (Fin 2) K P.W :=
-  b.reindex (Fintype.equivFinOfCardEq hι)
-
-/-- The paired action in the coordinate bases `1, w₀ ∧ w₁` of `S⁺` and `w₀, w₁` of `S⁻`. -/
-private noncomputable abbrev coordinateLieHom (hι : Fintype.card ι = 2) :
-    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K :=
-  P.matrixPairLieHom b hline (plusBasis P (P.basisFinTwo b hι)) (minusBasis P (P.basisFinTwo b hι))
-
-/-- The fork root pair of `so₄` acts on `S⁺` by the raising and lowering matrices and trivially on
-`S⁻`; the chain root pair acts trivially on `S⁺` and by the raising and lowering matrices on
-`S⁻`. -/
-private theorem coordinateLieHom_root_pairs (hι : Fintype.card ι = 2) :
-    (∃ x, P.coordinateLieHom b hline hι x = (Matrix.single 0 1 1, 0)) ∧
-    (∃ x, P.coordinateLieHom b hline hι x = (Matrix.single 1 0 1, 0)) ∧
-    (∃ x, P.coordinateLieHom b hline hι x = (0, Matrix.single 0 1 1)) ∧
-    (∃ x, P.coordinateLieHom b hline hι x = (0, Matrix.single 1 0 1)) := by
-  set b₂ := P.basisFinTwo b hι
-  have hplus := coe_plusBasis P b₂
-  have hminus := coe_minusBasis P b₂
-  have hP {y} (hy) := P.coe_typeDSpinPlusLieRep_symm_apply b hline (y := y) hy
-  have hM {y} (hy) := P.coe_typeDSpinMinusLieRep_symm_apply b hline (y := y) hy
-  have hpos (i : Fin 2) := toMatrix_spinAction_typeDSimpleRootBivector_fin_two P b₂ i
-  have hneg (i : Fin 2) := toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two P b₂ i
-  have hmemPos (i : Fin 2) := P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b₂ (by omega) i
-  have hmemNeg (i : Fin 2) :=
-    P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b₂ (by omega) i
-  -- The fork root pair is indexed by `1`, the chain root pair by `0`.
-  refine ⟨⟨(P.typeDQuadraticEquiv b hline).symm ⟨_, hmemNeg 1⟩, ?_⟩,
-    ⟨(P.typeDQuadraticEquiv b hline).symm ⟨_, hmemPos 1⟩, ?_⟩,
-    ⟨(P.typeDQuadraticEquiv b hline).symm ⟨_, hmemPos 0⟩, ?_⟩,
-    ⟨(P.typeDQuadraticEquiv b hline).symm ⟨_, hmemNeg 0⟩, ?_⟩⟩ <;>
-  rw [matrixPairLieHom_apply, Prod.ext_iff] <;> constructor
-  · exact P.toMatrix_eq_single_of_restrict b₂ _ hplus (hP _) (by simpa [plusIndex] using hneg 1)
-      plusIndex_injective (i := 0) (j := 1) rfl rfl
-  · exact P.toMatrix_eq_zero_of_restrict b₂ _ hminus (hM _) (by simpa using hneg 1)
-      (by unfold minusIndex; decide)
-  · exact P.toMatrix_eq_single_of_restrict b₂ _ hplus (hP _) (by simpa [plusIndex] using hpos 1)
-      plusIndex_injective (i := 1) (j := 0) rfl rfl
-  · exact P.toMatrix_eq_zero_of_restrict b₂ _ hminus (hM _) (by simpa using hpos 1)
-      (by unfold minusIndex; decide)
-  · exact P.toMatrix_eq_zero_of_restrict b₂ _ hplus (hP _) (by simpa using hpos 0)
-      (by unfold plusIndex; decide)
-  · exact P.toMatrix_eq_single_of_restrict b₂ _ hminus (hM _) (by simpa [minusIndex] using hpos 0)
-      minusIndex_injective (i := 0) (j := 1) rfl rfl
-  · exact P.toMatrix_eq_zero_of_restrict b₂ _ hplus (hP _) (by simpa using hneg 0)
-      (by unfold plusIndex; decide)
-  · exact P.toMatrix_eq_single_of_restrict b₂ _ hminus (hM _) (by simpa [minusIndex] using hneg 0)
-      minusIndex_injective (i := 1) (j := 0) rfl rfl
-
-/-- Every pair of trace-zero matrices is the pair of matrices, in the coordinate bases, of the
-actions of an element of `so₄` on `S⁺` and `S⁻`. -/
-private theorem sl_prod_sl_le_range_coordinateLieHom (hι : Fintype.card ι = 2) :
-    (SpecialLinear.sl (Fin 2) K).toSubmodule.prod (SpecialLinear.sl (Fin 2) K).toSubmodule ≤
-      LinearMap.range (P.coordinateLieHom b hline hι).toLinearMap := by
-  set sl₂ := SpecialLinear.sl (Fin 2) K
-  let inc : sl₂ × sl₂ →ₗ⁅K⁆ Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K :=
-    (sl₂.incl.comp (LieHom.fst K sl₂ sl₂)).prod (sl₂.incl.comp (LieHom.snd K sl₂ sl₂))
-  set T := (P.coordinateLieHom b hline hι).range.comap inc
-  obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩⟩ := P.coordinateLieHom_root_pairs b hline hι
-  have hmem {A : Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K} {a : sl₂ × sl₂}
-      (ha : inc a = A) (x) (hx : P.coordinateLieHom b hline hι x = A) : a ∈ T :=
-    (LieSubalgebra.mem_comap ..).2 ((LieHom.mem_range _ _).2 ⟨x, hx.trans ha.symm⟩)
-  have hinl : T.comap (LieHom.inl K sl₂ sl₂) = ⊤ :=
-    eq_top_of_specialLinear_adjacent_single_mem 1 K
-      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₁ hx₁)
-      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₂ hx₂)
-  have hinr : T.comap (LieHom.inr K sl₂ sl₂) = ⊤ :=
-    eq_top_of_specialLinear_adjacent_single_mem 1 K
-      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₃ hx₃)
-      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₄ hx₄)
-  rintro ⟨A, A'⟩ ⟨hA, hA'⟩
-  have h : ((⟨A, hA⟩, ⟨A', hA'⟩) : sl₂ × sl₂) ∈ T := by
-    have h₁ : ((⟨A, hA⟩, 0) : sl₂ × sl₂) ∈ T :=
-      (LieSubalgebra.mem_comap ..).1 (hinl ▸ LieSubalgebra.mem_top (⟨A, hA⟩ : sl₂))
-    have h₂ : ((0, ⟨A', hA'⟩) : sl₂ × sl₂) ∈ T :=
-      (LieSubalgebra.mem_comap ..).1 (hinr ▸ LieSubalgebra.mem_top (⟨A', hA'⟩ : sl₂))
-    simpa using T.add_mem h₁ h₂
-  obtain ⟨x, hx⟩ := (LieSubalgebra.mem_comap ..).1 h
-  exact ⟨x, hx⟩
-
-omit [Invertible (2 : K)] in
-private theorem finrank_sl_prod_sl :
-    finrank K ((SpecialLinear.sl (Fin 2) K).toSubmodule.prod
-      (SpecialLinear.sl (Fin 2) K).toSubmodule) = 6 := by
-  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_sl_toSubmodule_fin_two]
-
-/-- The pairs of matrices, in the coordinate bases, of the actions of `so₄` on `S⁺` and `S⁻` are
-exactly the pairs of trace-zero matrices: the image contains them, and both have dimension
-six. -/
-private theorem range_coordinateLieHom (hι : Fintype.card ι = 2) :
-    LinearMap.range (P.coordinateLieHom b hline hι).toLinearMap =
-      (SpecialLinear.sl (Fin 2) K).toSubmodule.prod (SpecialLinear.sl (Fin 2) K).toSubmodule := by
-  refine (Submodule.eq_of_le_of_finrank_le (P.sl_prod_sl_le_range_coordinateLieHom b hline hι)
-    ?_).symm
-  have h6 : finrank K (LieAlgebra.Orthogonal.typeD ι K) = 6 := by
-    rw [TauCeti.LieAlgebra.Orthogonal.finrank_typeD, hι]
-    rfl
-  have : Module.Finite K (LieAlgebra.Orthogonal.typeD ι K) :=
-    Module.finite_of_finrank_pos (by omega)
-  rw [finrank_sl_prod_sl, ← h6]
-  exact LinearMap.finrank_range_le _
+include b in
+/-- Both half-spin actions of an element of `so₄` have trace zero, since its quadratic Clifford
+realization is negated by reversal. -/
+private theorem trace_typeDSpinLieRep_eq_zero_of_card_eq_two (hι : Fintype.card ι = 2)
+    (x : LieAlgebra.Orthogonal.typeD ι K) :
+    LinearMap.trace K (spinPlus Q P) (P.typeDSpinPlusLieRep b hline x) = 0 ∧
+      LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
+  have h := P.evenSpinActionProd_typeDQuadraticEquiv b hline x
+  rw [evenSpinActionProd_apply, Prod.mk.injEq] at h
+  rw [← h.1, ← h.2, ← P.reverseEven_eq_neg_iff_trace_eq_zero b hline hι]
+  exact Subtype.ext (by simp)
 
 /-! ### The image of `so₄` in `End S⁺ × End S⁻` -/
 
 /-- Every element of `so₄` acts on the even half-spin module by an endomorphism of trace zero. -/
+@[simp]
 theorem trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two (hι : Fintype.card ι = 2)
     (x : LieAlgebra.Orthogonal.typeD ι K) :
-    LinearMap.trace K (spinPlus Q P) (P.typeDSpinPlusLieRep b hline x) = 0 := by
-  have hx : P.coordinateLieHom b hline hι x ∈ (SpecialLinear.sl (Fin 2) K).toSubmodule.prod
-      (SpecialLinear.sl (Fin 2) K).toSubmodule := by
-    rw [← range_coordinateLieHom P b hline hι]
-    exact LinearMap.mem_range_self _ x
-  have h := (Submodule.mem_prod.mp hx).1
-  rw [LieSubalgebra.mem_toSubmodule, SpecialLinear.mem_sl_iff, matrixPairLieHom_apply] at h
-  rw [LinearMap.trace_eq_matrix_trace K (plusBasis P (P.basisFinTwo b hι)), h]
+    LinearMap.trace K (spinPlus Q P) (P.typeDSpinPlusLieRep b hline x) = 0 :=
+  (P.trace_typeDSpinLieRep_eq_zero_of_card_eq_two b hline hι x).1
 
 /-- Every element of `so₄` acts on the odd half-spin module by an endomorphism of trace zero. -/
+@[simp]
 theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two (hι : Fintype.card ι = 2)
     (x : LieAlgebra.Orthogonal.typeD ι K) :
-    LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
-  have hx : P.coordinateLieHom b hline hι x ∈ (SpecialLinear.sl (Fin 2) K).toSubmodule.prod
-      (SpecialLinear.sl (Fin 2) K).toSubmodule := by
-    rw [← range_coordinateLieHom P b hline hι]
-    exact LinearMap.mem_range_self _ x
-  have h := (Submodule.mem_prod.mp hx).2
-  rw [LieSubalgebra.mem_toSubmodule, SpecialLinear.mem_sl_iff, matrixPairLieHom_apply] at h
-  rw [LinearMap.trace_eq_matrix_trace K (minusBasis P (P.basisFinTwo b hι)), h]
+    LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 :=
+  (P.trace_typeDSpinLieRep_eq_zero_of_card_eq_two b hline hι x).2
 
 /-- **The image of `so₄` in `End S⁺ × End S⁻` is `sl(S⁺) × sl(S⁻)`.** For an even polarization
 with `dim W = 2`, a pair of endomorphisms of the two half-spin modules is the pair of actions of
@@ -404,23 +192,22 @@ theorem mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_t
     (f, f') ∈ ((P.typeDSpinPlusLieRep b hline).prod (P.typeDSpinMinusLieRep b hline)).range ↔
       LinearMap.trace K (spinPlus Q P) f = 0 ∧ LinearMap.trace K (spinMinus Q P) f' = 0 := by
   rw [LieHom.mem_range]
-  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨hf, hf'⟩ ↦ ?_⟩
+  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun hf ↦ ?_⟩
   · rw [LieHom.prod_apply, Prod.mk.injEq] at hx
-    exact ⟨hx.1 ▸ P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two b hline hι x,
-      hx.2 ▸ P.trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two b hline hι x⟩
-  set Bp := plusBasis P (P.basisFinTwo b hι)
-  set Bm := minusBasis P (P.basisFinTwo b hι)
-  have hA : (LinearMap.toMatrix Bp Bp f, LinearMap.toMatrix Bm Bm f') ∈
-      (SpecialLinear.sl (Fin 2) K).toSubmodule.prod (SpecialLinear.sl (Fin 2) K).toSubmodule := by
-    rw [Submodule.mem_prod, LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_toSubmodule,
-      SpecialLinear.mem_sl_iff, SpecialLinear.mem_sl_iff, ← LinearMap.trace_eq_matrix_trace,
-      ← LinearMap.trace_eq_matrix_trace]
-    exact ⟨hf, hf'⟩
-  obtain ⟨x, hx⟩ := P.sl_prod_sl_le_range_coordinateLieHom b hline hι hA
-  rw [LieHom.coe_toLinearMap, matrixPairLieHom_apply, Prod.mk.injEq] at hx
-  exact ⟨x, by
-    rw [LieHom.prod_apply, (LinearMap.toMatrix Bp Bp).injective hx.1,
-      (LinearMap.toMatrix Bm Bm).injective hx.2]⟩
+    exact hx.1 ▸ hx.2 ▸ P.trace_typeDSpinLieRep_eq_zero_of_card_eq_two b hline hι x
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos
+    (by rw [P.finrank_eq_four_of_card_eq_two b hline hι]; omega)
+  obtain ⟨z, hz⟩ := evenSpinActionProd_surjective P hline (f, f')
+  rw [evenSpinActionProd_apply, Prod.mk.injEq] at hz
+  have hmem := P.mem_quadraticLieSubalgebra_of_reverseEven_eq_neg b hline hι
+    ((P.reverseEven_eq_neg_iff_trace_eq_zero b hline hι z).2 (hz.1 ▸ hz.2 ▸ hf))
+  set x := (P.typeDQuadraticEquiv b hline).symm ⟨z, hmem⟩
+  have hx : (⟨P.typeDQuadraticEquiv b hline x,
+      quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩ : even Q) = z :=
+    Subtype.ext (by simp [x])
+  have h := P.evenSpinActionProd_typeDQuadraticEquiv b hline x
+  rw [hx, evenSpinActionProd_apply, hz.1, hz.2] at h
+  exact ⟨x, by rw [LieHom.prod_apply, h]⟩
 
 /-- **The image of `so₄` in `End S⁺` is `sl(S⁺)`.** For an even polarization with `dim W = 2`, an
 endomorphism of the even half-spin module is the action of an element of the split type-`D` Lie
@@ -449,6 +236,23 @@ theorem mem_range_typeDSpinMinusLieRep_iff_of_card_eq_two (hι : Fintype.card ι
   exact ⟨x, congrArg Prod.snd hx⟩
 
 /-! ### The isomorphism `so₄ ≃ sl₂ × sl₂` -/
+
+variable {κ κ' : Type*} [Fintype κ] [DecidableEq κ] [Fintype κ'] [DecidableEq κ']
+
+/-- The action of `so₄` on `S⁺ × S⁻`, read as pairs of matrices in bases of the two half-spin
+modules. -/
+private noncomputable def matrixPairLieHom (B : Basis κ K (spinPlus Q P))
+    (B' : Basis κ' K (spinMinus Q P)) :
+    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Matrix κ κ K × Matrix κ' κ' K :=
+  ((LinearMap.toMatrixAlgEquiv B).toLieEquiv.toLieHom.comp (P.typeDSpinPlusLieRep b hline)).prod
+    ((LinearMap.toMatrixAlgEquiv B').toLieEquiv.toLieHom.comp (P.typeDSpinMinusLieRep b hline))
+
+private theorem matrixPairLieHom_apply (B : Basis κ K (spinPlus Q P))
+    (B' : Basis κ' K (spinMinus Q P)) (x : LieAlgebra.Orthogonal.typeD ι K) :
+    P.matrixPairLieHom b hline B B' x =
+      (LinearMap.toMatrix B B (P.typeDSpinPlusLieRep b hline x),
+        LinearMap.toMatrix B' B' (P.typeDSpinMinusLieRep b hline x)) :=
+  rfl
 
 /-- **`D₂ ≅ A₁ × A₁`.** For an even polarization with `dim W = 2` and bases `B` of the even
 half-spin module `S⁺` and `B'` of the odd half-spin module `S⁻`, sending an element of the split
@@ -532,6 +336,26 @@ theorem typeDSpinMinusLieRep_typeDHalfSpinLieEquivSlProdSl_symm_apply (hι : Fin
       Matrix.toLin B' B' (p.2 : Matrix κ' κ' K) := by
   rw [← LinearMap.toMatrix_symm, LinearEquiv.eq_symm_apply,
     ← P.coe_typeDHalfSpinLieEquivSlProdSl_apply_snd b hline hι B B', LieEquiv.apply_symm_apply]
+
+/-- **`typeDHalfSpinLieEquivSlProdSl` restricts the matrix model of the even Clifford algebra.**
+The pair of matrices of an element of `so₄` is the image of its quadratic Clifford realization
+under the even structure isomorphism `even Q ≃ End S⁺ × End S⁻` followed by taking matrices in
+`B` and `B'`. This is the model from which
+`exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_finrank_eq_four`
+builds `Spin₄ ≅ SL₂ × SL₂`. -/
+theorem typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd [FiniteDimensional K V]
+    (hι : Fintype.card ι = 2) (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P))
+    (x : LieAlgebra.Orthogonal.typeD ι K) :
+    (((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B' x).1 : Matrix κ κ K),
+        ((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B' x).2 : Matrix κ' κ' K)) =
+      ((P.evenCliffordEquivProdEnd hline).trans
+        ((LinearMap.toMatrixAlgEquiv B).prodCongr (LinearMap.toMatrixAlgEquiv B')))
+        ⟨P.typeDQuadraticEquiv b hline x,
+          quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩ := by
+  rw [AlgEquiv.trans_apply, evenCliffordEquivProdEnd_apply,
+    evenSpinActionProd_typeDQuadraticEquiv, coe_typeDHalfSpinLieEquivSlProdSl_apply_fst,
+    coe_typeDHalfSpinLieEquivSlProdSl_apply_snd]
+  rfl
 
 /-! ### The half-spin modules as standard modules -/
 

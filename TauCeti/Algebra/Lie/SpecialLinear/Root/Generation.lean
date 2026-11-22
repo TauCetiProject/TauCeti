@@ -13,13 +13,6 @@ public import TauCeti.Algebra.Lie.SpecialLinear.Root.Brackets
 Adjacent raising and lowering matrices generate the native special linear Lie algebra
 over every commutative ring. Consequently, Lie homomorphisms out of this algebra are
 determined by their values on these matrices.
-
-## Main results
-
-* `TauCeti.eq_top_of_specialLinear_adjacent_single_mem`: a Lie subalgebra containing the adjacent
-  raising and lowering matrices is everything.
-* `TauCeti.lieSpan_specialLinear_adjacent_single_eq_top`: these matrices generate the special
-  linear Lie algebra.
 -/
 
 public section
@@ -140,9 +133,7 @@ private theorem roots_mem_of_lt (S : LieSubalgebra A (sl (Fin (r + 1)) A))
     omega
   simpa only [ha, hb] using interval_mem r A S he hf a b hab
 
-/-- A Lie subalgebra of the special linear Lie algebra containing the adjacent raising and lowering
-matrices is everything. -/
-theorem eq_top_of_specialLinear_adjacent_single_mem {S : LieSubalgebra A (sl (Fin (r + 1)) A)}
+private theorem eq_top_of_simple_mem (S : LieSubalgebra A (sl (Fin (r + 1)) A))
     (he : ∀ i : Fin r, single i.castSucc i.succ
       (Fin.castSucc_lt_succ (i := i)).ne (1 : A) ∈ S)
     (hf : ∀ i : Fin r, single i.succ i.castSucc
@@ -173,7 +164,7 @@ theorem lieSpan_specialLinear_adjacent_single_eq_top :
         (Fin.castSucc_lt_succ (i := i)).ne (1 : A)) ∪
       Set.range (fun i : Fin r ↦ single i.succ i.castSucc
         (Fin.castSucc_lt_succ (i := i)).ne' (1 : A))) = ⊤ := by
-  apply eq_top_of_specialLinear_adjacent_single_mem
+  apply eq_top_of_simple_mem
   · intro i
     exact LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩)
   · intro i

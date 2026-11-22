@@ -96,13 +96,11 @@ theorem typeDSpinLieRep_injective (hline : P.line = ⊥) :
 an element is determined by its actions on `S⁺` and `S⁻`. -/
 theorem typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective (hline : P.line = ⊥) :
     Function.Injective ((P.typeDSpinPlusLieRep b hline).prod (P.typeDSpinMinusLieRep b hline)) := by
+  have := Module.Finite.of_basis (P.typeDBasis b hline)
   intro x y hxy
-  rw [LieHom.prod_apply, LieHom.prod_apply, Prod.mk.injEq] at hxy
-  refine P.typeDSpinLieRep_injective b hline <|
-    LinearMap.ext_on_codisjoint (isCompl_spinPlus_spinMinus P).codisjoint (fun s hs ↦ ?_)
-      (fun s hs ↦ ?_)
-  · simpa using congrArg (fun f ↦ ((f ⟨s, hs⟩ : spinPlus Q P) : ExteriorAlgebra K P.W)) hxy.1
-  · simpa using congrArg (fun f ↦ ((f ⟨s, hs⟩ : spinMinus Q P) : ExteriorAlgebra K P.W)) hxy.2
+  rw [LieHom.prod_apply, LieHom.prod_apply, ← P.evenSpinActionProd_typeDQuadraticEquiv,
+    ← P.evenSpinActionProd_typeDQuadraticEquiv] at hxy
+  simpa using congrArg Subtype.val (evenSpinActionProd_injective P hline hxy)
 
 end SpinPolarizationData
 
