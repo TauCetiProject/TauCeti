@@ -144,9 +144,8 @@ theorem isNonface_hirzebruch_iff (hb : 0 < b) (ha : 0 < a) (hab : k * b < a)
     · refine IsNonface.mono (isNonface_def.2 fun x hx hs ↦ ?_) h
       have h0 := zero_mem_activeSet_hirzebruch_iff.1 (hs (by simp))
       have h3 := three_mem_activeSet_hirzebruch_iff.1 (hs (by simp))
-      obtain ⟨-, hq₀, hqb, -⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
       rw [h0, zero_add] at h3
-      exact (intCast_mul_lt_of_nonneg_of_le ha hab hq₀ hqb).ne h3
+      exact (intCast_mul_lt_of_mem_facetPolyhedron_hirzebruch ha hab hx).ne h3
 
 variable (R : Type*) [CommRing R]
 
