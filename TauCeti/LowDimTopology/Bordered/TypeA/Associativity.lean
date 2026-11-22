@@ -8,6 +8,7 @@ module
 public import TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Order.BigOperators.Fin
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Associativity of the box tensor product with a type `DA` bimodule
@@ -74,12 +75,6 @@ variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {S : Type*} {ιB : S → B} {Y : Type*} [Fintype Y]
   (P : TypeDAStructure dA dB ιB Y) {T : Type*} {ιA : T → A} {X : Type*}
 
-/-- The block of length `j t` starting at the `t`-th partial sum of `j` ends before the total. -/
-private theorem partialSum_castSucc_add_le {k : ℕ} (j : Fin k → ℕ) (t : Fin k) :
-    Fin.partialSum j t.castSucc + j t ≤ Fin.partialSum j (Fin.last k) := by
-  rw [← Fin.partialSum_succ]
-  exact Fin.monotone_partialSum (fun _ => Nat.zero_le _) (Fin.le_last _)
-
 variable [Fintype X] (N : TypeDStructure dA ιA X)
 
 /-- The coefficients of `N` along the block of length `len` of a path `x` starting at `s`. -/
@@ -128,13 +123,14 @@ private theorem sum_pathBlock_snoc_left {W : Type*} [AddCommGroup W] [Module R W
           x (Fin.last (Fin.partialSum (Fin.init j) (Fin.last k) + j (Fin.last k))) = z then
         f (fun t => P.coeff (j t) (pathBlock
           (n := Fin.partialSum (Fin.init j) (Fin.last k) + j (Fin.last k)) N x
-          (Fin.partialSum j t.castSucc) (j t) (hn ▸ partialSum_castSucc_add_le j t))) else 0) =
+          (Fin.partialSum j t.castSucc) (j t)
+          (hn ▸ Fin.partialSum_castSucc_add_le (fun _ => Nat.zero_le _) t))) else 0) =
     ∑ x' : Fin (Fin.partialSum (Fin.init j) (Fin.last k) + 1) → X,
       ∑ r : Fin (j (Fin.last k) + 1) → X,
         if x' 0 = a ∧ x' (Fin.last _) = r 0 ∧ r (Fin.last _) = z then
           f (Fin.snoc (fun t => P.coeff (Fin.init j t) (pathBlock N x'
             (Fin.partialSum (Fin.init j) t.castSucc) (Fin.init j t)
-            (partialSum_castSucc_add_le (Fin.init j) t)))
+            (Fin.partialSum_castSucc_add_le (fun _ => Nat.zero_le _) t)))
             (P.coeff (j (Fin.last k)) fun l => N.coeff (r l.castSucc) (r l.succ))) else 0 := by
   have hL : Fin.partialSum j (Fin.last k).castSucc = Fin.partialSum (Fin.init j) (Fin.last k) :=
     (Fin.partialSum_init (Fin.last k)).symm
@@ -218,7 +214,7 @@ private theorem sum_pathBlock {W : Type*} [AddCommGroup W] [Module R W] (k : ℕ
     (hn : Fin.partialSum j (Fin.last k) = n) :
     ∑ x : Fin (n + 1) → X, (if x 0 = a ∧ x (Fin.last n) = z then
       f (fun t => P.coeff (j t) (pathBlock N x (Fin.partialSum j t.castSucc) (j t)
-        (hn ▸ partialSum_castSucc_add_le j t))) else 0) =
+        (hn ▸ Fin.partialSum_castSucc_add_le (fun _ => Nat.zero_le _) t))) else 0) =
     ∑ w : Fin (k + 1) → X, if w 0 = a ∧ w (Fin.last k) = z then
       f (fun t => P.iterMatrix N (j t) (w t.castSucc) (w t.succ)) else 0 := by
   induction k generalizing n z with
@@ -252,13 +248,12 @@ private theorem exists_iterMatrix_eq_zero (h : N.IsBounded ∨ ∃ K, ∀ k, K �
 private theorem partialSum_last_lt_mul {k K J : ℕ} (hk : k < K) (hJ : 1 ≤ J) {j : Fin k → ℕ}
     (hj : j ∈ Fintype.piFinset fun _ : Fin k => range J) :
     Fin.partialSum j (Fin.last k) < K * J := by
-  have := Fin.partialSum_le_nsmul (c := J - 1)
-    (fun t => Nat.le_sub_one_of_lt (Finset.mem_range.mp (Fintype.mem_piFinset.mp hj t)))
-    (Fin.last k)
-  rw [Fin.val_last, smul_eq_mul] at this
-  have hlt : k * (J - 1) < K * J :=
-    (Nat.mul_le_mul_left k (Nat.sub_le J 1)).trans_lt (Nat.mul_lt_mul_of_pos_right hk hJ)
-  omega
+  have := Finset.sum_le_card_nsmul univ j (J - 1)
+    fun t _ => Nat.le_sub_one_of_lt (Finset.mem_range.mp (Fintype.mem_piFinset.mp hj t))
+  rw [Finset.card_univ, Fintype.card_fin, smul_eq_mul] at this
+  rw [Fin.partialSum_last]
+  exact this.trans_lt
+    ((Nat.mul_le_mul_left k (Nat.sub_le J 1)).trans_lt (Nat.mul_lt_mul_of_pos_right hk hJ))
 
 section Assoc
 
@@ -312,7 +307,7 @@ private theorem cutTerm_cutOfPartialSum {k n : ℕ} (j : Fin k → ℕ)
     · have hblock : (fun t => P.blockMatrix (fun l => N.coeff (x l.castSucc) (x l.succ))
           (cutOfPartialSum j hn t.castSucc) (cutOfPartialSum j hn t.succ)) =
           fun t => P.coeff (j t) (pathBlock N x (Fin.partialSum j t.castSucc) (j t)
-            (hn ▸ partialSum_castSucc_add_le j t)) :=
+            (hn ▸ Fin.partialSum_castSucc_add_le (fun _ => Nat.zero_le _) t)) :=
         funext fun t => P.blockMatrix_eq_pathBlock N x rfl (Fin.partialSum_succ j t) _
       rw [h.1, hblock]
     · rfl
