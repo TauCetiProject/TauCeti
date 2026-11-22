@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Convolution.ConeDecay
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Normed.Module.OppositeCones
 
@@ -50,21 +51,30 @@ cut-off distributions, `∫ 𝓕⁻ f η T (φ e_η) dη = T (φ f)`
 its point in every positive dimension (`Distribution.not_noOppositeCovectorsOn_delta_delta`), so
 `δ₀ · δ₀` is not covered.
 
-The wave front set of the product lies in the sums of the frequencies of the factors
-(Hörmander I, Theorem 8.2.10): writing `Σ_K(S)` for the frequencies of `WF(S)` over `K`,
+The wave front set of the product lies in the sums of the frequencies of the factors. Writing
+`Σ_K(S)` for the frequencies of `WF(S)` over `K`, pooled over all points of `K`,
 
 `WF(φ² S T) ⊆ supp φ × ((Σ_K(S) ∪ {0}) + (Σ_K(T) ∪ {0}))`, with `K = supp φ`
 
-(`Distribution.waveFrontSet_cutoffProduct_subset`). The proof starts from the convolution formula
+(`Distribution.waveFrontSet_cutoffProduct_subset`). This is a cut-off analogue of Hörmander I,
+Theorem 8.2.10, and its proof follows Hörmander's; it is not pointwise, since the frequencies of
+`WF(S)` and `WF(T)` added here may come from different points of `supp φ`. The global pointwise
+bound, where both come from the same point, is not proved here.
+
+The proof starts from the convolution formula
 `(χ φ² S T)^(ζ) = ∫ S (φ e_η) T (χ φ e_(ζ - η)) dη` (`Distribution.localFourier_cutoffProduct`).
 Thicken `Σ_K(S)` and `Σ_K(T)` to open cones `U₁` and `U₂`, off which the two factors decay
-rapidly. If `ζ` lies in a small cone around a frequency outside the sum, then for each `η` at most
-one of `η ∈ U₁` and `ζ - η ∈ U₂` holds, and the decaying factor is evaluated at a frequency
-comparable to `ζ`. This rests on the fact that `Σ_K(S)` and `Σ_K(T)`, together with `0`, are
-closed (`Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`) cones without opposite
-directions, so that their sum is closed (`TauCeti.isClosed_add_of_forall_neg_mem`). The same
-bound holds with any such closed cones in place of `Σ_K(S)` and `Σ_K(T)`
-(`Distribution.waveFrontSet_cutoffProduct_subset_of_cones`), the form of Brouder, Dang and Hélein.
+rapidly (`TauCeti.exists_cones_of_notMem_add`). If `ζ` lies in a small cone around a frequency
+outside the sum, then for each `η` at most one of `η ∈ U₁` and `ζ - η ∈ U₂` holds, and the
+decaying factor is evaluated at a frequency comparable to `ζ`, so the convolution decays
+(`TauCeti.exists_one_add_norm_pow_mul_norm_integral_mul_le`). This rests on the fact that
+`Σ_K(S)` and `Σ_K(T)`, together with `0`, are closed
+(`Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`) cones without opposite
+directions, so that their sum is closed (`TauCeti.isClosed_add_of_forall_neg_mem_imp_eq_zero`).
+The same bound holds with any such closed cones in place of `Σ_K(S)` and `Σ_K(T)`
+(`Distribution.waveFrontSet_cutoffProduct_subset_of_cones`). This is a cut-off analogue, with one
+pair of cones over all of `supp φ`, of Brouder, Dang and Hélein, Theorem 6.1, whose cones are
+taken at each point.
 
 ## Main declarations
 
@@ -92,9 +102,11 @@ bound holds with any such closed cones in place of `Σ_K(S)` and `Σ_K(T)`
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
-  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions).
+  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions); the bounds here are
+  cut-off, non-pointwise analogues.
 * C. Brouder, N. V. Dang, F. Hélein, *Continuity of the fundamental operations on distributions
-  having a specified wave front set*, Studia Math. 232 (2016), arXiv:1409.7662v2, Theorem 6.1.
+  having a specified wave front set*, Studia Math. 232 (2016), arXiv:1409.7662v2, Theorem 6.1,
+  whose cone form is followed here with one pair of cones over the support of the cutoff.
 -/
 
 public section
@@ -231,10 +243,12 @@ form a closed set: microlocal smoothness is an open condition, and `K` is compac
 theorem isClosed_insert_zero_image_snd_waveFrontSet_inter {K : Set E} (hK : IsCompact K)
     (hKΩ : K ⊆ Ω) (T : 𝓓'(Ω, ℂ)) :
     IsClosed (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ))) := by
+  have hmem (ζ : E) : ζ ∈ (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ)))ᶜ ↔
+      ¬ζ = 0 ∧ ∀ x, (x, ζ) ∈ T.waveFrontSet → x ∉ K := by
+    simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
+      and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and]
   refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun ζ hζ ↦ ?_)
-  simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
-    and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and] at hζ
-  obtain ⟨hζ0, hζK⟩ := hζ
+  obtain ⟨hζ0, hζK⟩ := (hmem ζ).1 hζ
   -- Near `ζ`, the distribution is microlocally smooth at every point of `K`.
   have hsmooth : ∀ x ∈ K, ∀ᶠ p : E × E in 𝓝 (ζ, x), T.IsMicrolocallySmoothAt p.2 p.1 := by
     intro x hx
@@ -245,9 +259,7 @@ theorem isClosed_insert_zero_image_snd_waveFrontSet_inter {K : Set E} (hK : IsCo
   filter_upwards [hK.eventually_forall_of_forall_eventually
     (P := fun ζ' x ↦ T.IsMicrolocallySmoothAt x ζ') hsmooth,
     isOpen_ne.mem_nhds hζ0] with ζ' hζ' hζ'0
-  simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
-    and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and]
-  exact ⟨hζ'0, fun x hx hxK ↦ (mem_waveFrontSet_iff.1 hx).2.2 (hζ' x hxK)⟩
+  exact (hmem ζ').2 ⟨hζ'0, fun x hx hxK ↦ (mem_waveFrontSet_iff.1 hx).2.2 (hζ' x hxK)⟩
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -642,267 +654,6 @@ theorem localFourier_cutoffProduct {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectors
     AddChar.map_add_eq_mul, Circle.coe_mul]
   ring
 
-/-! ### Decay of a convolution in a cone -/
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- One factor of the convolution integrand decays at `u` and the other grows at most polynomially
-at `v`, where `u + v = ζ` and `c ‖ζ‖ ≤ ‖u‖`. Then `(1 + ‖ζ‖) ^ M X Y` is bounded by a multiple of
-`(1 + ‖u‖) ^ (-d)`. -/
-private theorem one_add_norm_pow_mul_mul_mul_le {c : ℝ} (hc : 0 < c) (hc1 : c ≤ 1) {ζ u v : E}
-    (huv : u + v = ζ) (hcu : c * ‖ζ‖ ≤ ‖u‖) {X Y B C : ℝ} {k M d : ℕ} (hX0 : 0 ≤ X)
-    (hB : 0 ≤ B) (hY0 : 0 ≤ Y) (hY : Y ≤ B * (1 + ‖v‖) ^ k)
-    (hX : (1 + ‖u‖) ^ (M + k + d) * X ≤ C) :
-    (1 + ‖ζ‖) ^ M * (X * Y) * (1 + ‖u‖) ^ d ≤ B * ((1 + c⁻¹) ^ k * c⁻¹ ^ M) * C := by
-  have hc' : 1 ≤ c⁻¹ := (one_le_inv₀ hc).2 hc1
-  have hζ : ‖ζ‖ ≤ c⁻¹ * ‖u‖ := by rwa [le_inv_mul_iff₀ hc]
-  have hv : ‖v‖ ≤ ‖ζ‖ + ‖u‖ := by
-    rw [← huv, add_comm u v]
-    simpa using norm_sub_le (v + u) u
-  have hz : 1 + ‖ζ‖ ≤ c⁻¹ * (1 + ‖u‖) := by nlinarith [norm_nonneg u]
-  have hb : 1 + ‖v‖ ≤ (1 + c⁻¹) * (1 + ‖u‖) := by nlinarith [norm_nonneg u]
-  calc (1 + ‖ζ‖) ^ M * (X * Y) * (1 + ‖u‖) ^ d
-      ≤ (c⁻¹ * (1 + ‖u‖)) ^ M * (X * (B * ((1 + c⁻¹) * (1 + ‖u‖)) ^ k)) * (1 + ‖u‖) ^ d := by
-        gcongr
-        exact hY.trans (by gcongr)
-    _ = B * ((1 + c⁻¹) ^ k * c⁻¹ ^ M) * ((1 + ‖u‖) ^ (M + k + d) * X) := by
-        rw [mul_pow, mul_pow, pow_add, pow_add]
-        ring
-    _ ≤ B * ((1 + c⁻¹) ^ k * c⁻¹ ^ M) * C := by gcongr
-
-/-- If `X b ≤ D` or `X a ≤ D`, then `X (a b) ≤ D (a + b)`. -/
-private theorem mul_mul_le_mul_add_of_le_or_le {X a b D : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hD : 0 ≤ D) (h : X * b ≤ D ∨ X * a ≤ D) : X * (a * b) ≤ D * (a + b) := by
-  rcases h with h | h
-  · nlinarith [mul_le_mul_of_nonneg_right h ha, mul_nonneg hD hb]
-  · nlinarith [mul_le_mul_of_nonneg_right h hb, mul_nonneg hD ha]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The pointwise bound behind `exists_one_add_norm_pow_mul_norm_integral_mul_le`: for `ζ ∈ Γ`,
-the integrand `F η G (ζ - η)`, weighted by `(1 + ‖ζ‖) ^ M`, is bounded by a multiple of
-`(1 + ‖η‖) ^ (-d) + (1 + ‖ζ - η‖) ^ (-d)`. -/
-private theorem exists_one_add_norm_pow_mul_norm_mul_le {F G : E → ℂ} {A B : ℝ} {k : ℕ}
-    (hA : 0 ≤ A) (hB : 0 ≤ B) (hFk : ∀ η, ‖F η‖ ≤ A * (1 + ‖η‖) ^ k)
-    (hGk : ∀ θ, ‖G θ‖ ≤ B * (1 + ‖θ‖) ^ k) {U₁ U₂ : Set E}
-    (hF : ∀ N : ℕ, ∃ C, 0 ≤ C ∧ ∀ η ∈ U₁ᶜ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C)
-    (hG : ∀ N : ℕ, ∃ C, 0 ≤ C ∧ ∀ θ ∈ U₂ᶜ, (1 + ‖θ‖) ^ N * ‖G θ‖ ≤ C) {Γ : Set E} {c : ℝ}
-    (hc : 0 < c) (hΓ : ∀ ζ ∈ Γ, ∀ η, (η ∈ U₁ → ζ - η ∉ U₂ ∧ c * ‖ζ‖ ≤ ‖ζ - η‖) ∧
-      (ζ - η ∈ U₂ → c * ‖ζ‖ ≤ ‖η‖)) (M d : ℕ) :
-    ∃ D, ∀ ζ ∈ Γ, ∀ η, (1 + ‖ζ‖) ^ M * ‖F η * G (ζ - η)‖ * ((1 + ‖η‖) ^ d * (1 + ‖ζ - η‖) ^ d) ≤
-      D * ((1 + ‖η‖) ^ d + (1 + ‖ζ - η‖) ^ d) := by
-  obtain ⟨CF, hCF0, hCF⟩ := hF (M + k + d)
-  obtain ⟨CG, hCG0, hCG⟩ := hG (M + k + d)
-  set c' := min c 1
-  have hc' : 0 < c' := lt_min hc one_pos
-  set L := (1 + c'⁻¹) ^ k * c'⁻¹ ^ M
-  have hL : 0 ≤ L := by positivity
-  set D := CF * CG + A * L * CG + B * L * CF
-  have hK₁ : A * L * CG ≤ D := by nlinarith [mul_nonneg hB hL, mul_nonneg hCF0 hCG0]
-  have hK₂ : B * L * CF ≤ D := by nlinarith [mul_nonneg hA hL, mul_nonneg hCF0 hCG0]
-  have hK₃ : CF * CG ≤ D := by nlinarith [mul_nonneg hA hL, mul_nonneg hB hL, hCG0]
-  refine ⟨D, fun ζ hζ η ↦ ?_⟩
-  have hc'ζ {u : E} (h : c * ‖ζ‖ ≤ ‖u‖) : c' * ‖ζ‖ ≤ ‖u‖ :=
-    (mul_le_mul_of_nonneg_right (min_le_left c 1) (norm_nonneg ζ)).trans h
-  set a := 1 + ‖η‖
-  set b := 1 + ‖ζ - η‖
-  have ha : 1 ≤ a := le_add_of_nonneg_right (norm_nonneg _)
-  have hb : 1 ≤ b := le_add_of_nonneg_right (norm_nonneg _)
-  rw [norm_mul]
-  refine mul_mul_le_mul_add_of_le_or_le (by positivity) (by positivity)
-    ((mul_nonneg hCF0 hCG0).trans hK₃) ?_
-  by_cases h₁ : η ∈ U₁
-  · -- `G` decays at `ζ - η`, which is comparable to `ζ`.
-    obtain ⟨h₂, hcη⟩ := (hΓ ζ hζ η).1 h₁
-    refine Or.inl (le_trans ?_ hK₁)
-    rw [mul_comm (‖F η‖)]
-    simpa [L, mul_comm A] using one_add_norm_pow_mul_mul_mul_le hc' (min_le_right c 1)
-      (sub_add_cancel ζ η) (hc'ζ hcη) (norm_nonneg _) hA (norm_nonneg _) (hFk η) (hCG _ h₂)
-  refine Or.inr ?_
-  by_cases h₂ : ζ - η ∈ U₂
-  · -- `F` decays at `η`, which is comparable to `ζ`.
-    refine le_trans ?_ hK₂
-    simpa [L] using one_add_norm_pow_mul_mul_mul_le hc' (min_le_right c 1)
-      (add_sub_cancel η ζ) (hc'ζ ((hΓ ζ hζ η).2 h₂)) (norm_nonneg _) hB (norm_nonneg _)
-      (hGk _) (hCF η h₁)
-  · -- Both factors decay.
-    refine le_trans ?_ hK₃
-    have hab : 1 + ‖ζ‖ ≤ a * b := by
-      have : ‖ζ‖ ≤ ‖η‖ + ‖ζ - η‖ := by simpa using norm_add_le η (ζ - η)
-      nlinarith [norm_nonneg η, norm_nonneg (ζ - η)]
-    have h₃ : a ^ (M + d) ≤ a ^ (M + k + d) := pow_le_pow_right₀ ha (by omega)
-    have h₄ : b ^ M ≤ b ^ (M + k + d) := pow_le_pow_right₀ hb (by omega)
-    calc (1 + ‖ζ‖) ^ M * (‖F η‖ * ‖G (ζ - η)‖) * a ^ d
-        ≤ (a * b) ^ M * (‖F η‖ * ‖G (ζ - η)‖) * a ^ d := by gcongr
-      _ = (a ^ (M + d) * ‖F η‖) * (b ^ M * ‖G (ζ - η)‖) := by rw [pow_add, mul_pow]; ring
-      _ ≤ (a ^ (M + k + d) * ‖F η‖) * (b ^ (M + k + d) * ‖G (ζ - η)‖) := by gcongr
-      _ ≤ CF * CG := mul_le_mul (hCF η h₁) (hCG _ h₂) (by positivity) hCF0
-
-/-- Rapid decay of the convolution `ζ ↦ ∫ F η G (ζ - η) dη` on a set `Γ` of frequencies, where `F`
-and `G` grow at most polynomially and decay rapidly off `U₁` and off `U₂`. For `ζ ∈ Γ`, whenever
-`η ∈ U₁`, so that `F η` need not be small, `ζ - η` lies off `U₂` and is comparable to `ζ`, and
-whenever `ζ - η ∈ U₂`, `η` is comparable to `ζ`. -/
-private theorem exists_one_add_norm_pow_mul_norm_integral_mul_le {F G : E → ℂ} {A B : ℝ} {k : ℕ}
-    (hA : 0 ≤ A) (hB : 0 ≤ B) (hFk : ∀ η, ‖F η‖ ≤ A * (1 + ‖η‖) ^ k)
-    (hGk : ∀ θ, ‖G θ‖ ≤ B * (1 + ‖θ‖) ^ k) {U₁ U₂ : Set E}
-    (hF : ∀ N : ℕ, ∃ C, 0 ≤ C ∧ ∀ η ∈ U₁ᶜ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C)
-    (hG : ∀ N : ℕ, ∃ C, 0 ≤ C ∧ ∀ θ ∈ U₂ᶜ, (1 + ‖θ‖) ^ N * ‖G θ‖ ≤ C) {Γ : Set E} {c : ℝ}
-    (hc : 0 < c) (hΓ : ∀ ζ ∈ Γ, ∀ η, (η ∈ U₁ → ζ - η ∉ U₂ ∧ c * ‖ζ‖ ≤ ‖ζ - η‖) ∧
-      (ζ - η ∈ U₂ → c * ‖ζ‖ ≤ ‖η‖)) (M : ℕ) :
-    ∃ C, ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ M * ‖∫ η, F η * G (ζ - η)‖ ≤ C := by
-  set d := finrank ℝ E + 1
-  obtain ⟨D, hD⟩ := exists_one_add_norm_pow_mul_norm_mul_le hA hB hFk hGk hF hG hc hΓ M d
-  set w : E → ℝ := fun θ ↦ (1 + ‖θ‖) ^ (-(d : ℝ))
-  have hw (θ : E) : w θ = ((1 + ‖θ‖) ^ d)⁻¹ := by
-    simp only [w, Real.rpow_neg (by positivity : (0 : ℝ) ≤ 1 + ‖θ‖), Real.rpow_natCast]
-  have hint : Integrable w := integrable_one_add_norm (by simp [d])
-  have hint' (ζ : E) : Integrable fun η ↦ D * w η + D * w (ζ - η) :=
-    (hint.const_mul D).add ((hint.comp_sub_left ζ).const_mul D)
-  refine ⟨2 * D * ∫ θ, w θ, fun ζ hζ ↦ ?_⟩
-  calc (1 + ‖ζ‖) ^ M * ‖∫ η, F η * G (ζ - η)‖
-      = ‖∫ η, ((1 + ‖ζ‖) ^ M : ℂ) * (F η * G (ζ - η))‖ := by
-        rw [integral_const_mul, norm_mul]
-        norm_cast
-        rw [Real.norm_of_nonneg (by positivity)]
-    _ ≤ ∫ η, (D * w η + D * w (ζ - η)) := by
-        refine norm_integral_le_of_norm_le (hint' ζ) (ae_of_all _ fun η ↦ ?_)
-        rw [norm_mul]
-        norm_cast
-        rw [Real.norm_of_nonneg (by positivity), hw, hw, ← div_eq_mul_inv, ← div_eq_mul_inv,
-          div_add_div _ _ (by positivity) (by positivity), le_div_iff₀ (by positivity)]
-        linarith [hD ζ hζ η]
-    _ = 2 * D * ∫ θ, w θ := by
-        rw [integral_add (hint.const_mul D) ((hint.comp_sub_left ζ).const_mul D),
-          integral_const_mul, integral_const_mul, integral_sub_left_eq_self]
-        ring
-
-/-! ### Conic neighbourhoods for the frequencies of a product -/
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The vectors `η` within `ε ‖η‖` of a set `Γ'` closed under multiplication by positive reals
-form an open set containing `Γ' \ {0}`, whose complement is again closed under multiplication by
-positive reals. -/
-private theorem exists_isOpen_forall_exists_norm_sub_lt {Γ' : Set E}
-    (hc : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') {ε : ℝ} (hε : 0 < ε) :
-    ∃ U : Set E, IsOpen U ∧ Γ' \ {0} ⊆ U ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Uᶜ, t • η ∈ Uᶜ) ∧
-      ∀ η ∈ U, ∃ ξ ∈ Γ', ‖η - ξ‖ < ε * ‖η‖ := by
-  refine ⟨⋃ ξ ∈ Γ', {η | ‖η - ξ‖ < ε * ‖η‖},
-    isOpen_biUnion fun ξ _ ↦ isOpen_lt (by fun_prop) (by fun_prop),
-    fun ξ hξ ↦ mem_biUnion hξ.1 (by simpa using mul_pos hε (norm_pos_iff.2 hξ.2)), ?_,
-    fun η hη ↦ by simpa using hη⟩
-  intro t ht η hη htη
-  obtain ⟨ξ, hξ, hηξ⟩ := mem_iUnion₂.1 htη
-  refine hη (mem_biUnion (hc _ (inv_pos.2 ht) ξ hξ) ?_)
-  have heq : η - t⁻¹ • ξ = t⁻¹ • (t • η - ξ) := by
-    rw [smul_sub, smul_smul, inv_mul_cancel₀ ht.ne', one_smul]
-  rw [mem_ofPred_eq, norm_smul, Real.norm_of_nonneg ht.le] at hηξ
-  rw [mem_ofPred_eq, heq, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
-  calc t⁻¹ * ‖t • η - ξ‖ < t⁻¹ * (ε * (t * ‖η‖)) := by gcongr
-    _ = ε * ‖η‖ := by field_simp
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If `ζ` is at distance at least `α ‖ζ‖` from `ξ` and `ξ` is within `ε ‖u‖` of `u`, with
-`ε ≤ min (1 / 2) (α / 2)`, then `ζ - u` has norm at least `α ‖ζ‖ / 4`. -/
-private theorem mul_norm_le_norm_of_norm_sub_lt {α ε : ℝ} (hε : 0 ≤ ε) (hε₁ : ε ≤ 1 / 2)
-    (hε₂ : ε ≤ α / 2) {ζ u v ξ : E} (huv : u + v = ζ) (hu : ‖u - ξ‖ < ε * ‖u‖)
-    (hα : α * ‖ζ‖ ≤ ‖ζ - ξ‖) : α / 4 * ‖ζ‖ ≤ ‖v‖ := by
-  have h1 : ‖ζ - ξ‖ ≤ ‖v‖ + ‖u - ξ‖ := by
-    rw [← huv, show u + v - ξ = v + (u - ξ) by abel]
-    exact norm_add_le _ _
-  have h2 : ‖u‖ ≤ ‖ζ‖ + ‖v‖ := by
-    rw [← huv]
-    simpa using norm_sub_le (u + v) v
-  have h3 : ε * ‖u‖ ≤ α / 2 * ‖ζ‖ + 1 / 2 * ‖v‖ := by
-    calc ε * ‖u‖ ≤ ε * (‖ζ‖ + ‖v‖) := by gcongr
-      _ = ε * ‖ζ‖ + ε * ‖v‖ := by ring
-      _ ≤ α / 2 * ‖ζ‖ + 1 / 2 * ‖v‖ := by gcongr
-  nlinarith [norm_nonneg ζ, norm_nonneg v]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If `ξ₁` is within `ε ‖η‖` of `η` and `ξ₂` within `ε ‖ζ - η‖` of `ζ - η`, the summands control
-the sum, `κ (‖ξ₁‖ + ‖ξ₂‖) ≤ ‖ξ₁ + ξ₂‖`, and `ε` is small, then `ζ` is within `α ‖ζ‖` of
-`ξ₁ + ξ₂`. -/
-private theorem norm_sub_add_lt_mul_norm {κ α ε : ℝ} (hκ : 0 < κ) (hα : 0 ≤ α)
-    (hε₃ : ε ≤ κ / (4 * (1 + κ))) (hε₄ : ε ≤ α * κ / 4) {ζ η ξ₁ ξ₂ : E}
-    (he₁ : ‖η - ξ₁‖ < ε * ‖η‖) (he₂ : ‖ζ - η - ξ₂‖ < ε * ‖ζ - η‖)
-    (hκ' : κ * (‖ξ₁‖ + ‖ξ₂‖) ≤ ‖ξ₁ + ξ₂‖) : ‖ζ - (ξ₁ + ξ₂)‖ < α * ‖ζ‖ := by
-  have hη : ‖η‖ ≤ ‖ξ₁‖ + ‖η - ξ₁‖ := norm_le_norm_add_norm_sub' η ξ₁
-  have hθ : ‖ζ - η‖ ≤ ‖ξ₂‖ + ‖ζ - η - ξ₂‖ := norm_le_norm_add_norm_sub' _ ξ₂
-  have hsum : ‖ξ₁ + ξ₂‖ ≤ ‖ζ‖ + ‖η - ξ₁‖ + ‖ζ - η - ξ₂‖ := by
-    calc ‖ξ₁ + ξ₂‖ = ‖ζ - (η - ξ₁) - (ζ - η - ξ₂)‖ := by congr 1; abel
-      _ ≤ _ := norm_sub_le_of_le (norm_sub_le _ _) le_rfl
-  have hdiff : ‖ζ - (ξ₁ + ξ₂)‖ ≤ ‖η - ξ₁‖ + ‖ζ - η - ξ₂‖ := by
-    calc ‖ζ - (ξ₁ + ξ₂)‖ = ‖(η - ξ₁) + (ζ - η - ξ₂)‖ := by congr 1; abel
-      _ ≤ _ := norm_add_le _ _
-  -- With `s = ‖η‖ + ‖ζ - η‖`, first `κ s ≤ 4 ‖ζ‖ / 3`, then the errors are below `α ‖ζ‖ / 3`.
-  set s := ‖η‖ + ‖ζ - η‖
-  have hes : ‖η - ξ₁‖ + ‖ζ - η - ξ₂‖ < ε * s := by simp only [s]; linarith
-  have hs : κ * s ≤ ‖ζ‖ + (1 + κ) * (ε * s) := by nlinarith
-  have hκε : (1 + κ) * ε ≤ κ / 4 := by
-    rw [le_div_iff₀ (by positivity)] at hε₃
-    linarith
-  have hs0 : 0 ≤ s := by positivity
-  have hs' : κ * s ≤ 4 / 3 * ‖ζ‖ := by nlinarith
-  have hεs : ε * s ≤ α / 3 * ‖ζ‖ := by
-    calc ε * s ≤ α * κ / 4 * s := by gcongr
-      _ = α / 4 * (κ * s) := by ring
-      _ ≤ α / 4 * (4 / 3 * ‖ζ‖) := mul_le_mul_of_nonneg_left hs' (by positivity)
-      _ = α / 3 * ‖ζ‖ := by ring
-  nlinarith [norm_nonneg ζ, norm_nonneg (ζ - (ξ₁ + ξ₂))]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- **Conic neighbourhoods for the frequencies of a product.** Let `Γ₁` and `Γ₂` be closed sets
-containing `0`, closed under multiplication by positive reals, without opposite nonzero vectors,
-and let `ζ₀ ∉ Γ₁ + Γ₂`. Then there are open neighbourhoods `U₁ ⊇ Γ₁ \ {0}` and `U₂ ⊇ Γ₂ \ {0}`
-whose complements are again closed under multiplication by positive reals, an open cone `Γ`
-containing `ζ₀` and `c > 0` such that, for `ζ ∈ Γ`: if `η ∈ U₁`, then `ζ - η ∉ U₂` and
-`c ‖ζ‖ ≤ ‖ζ - η‖`; and if `ζ - η ∈ U₂`, then `c ‖ζ‖ ≤ ‖η‖`. The sets `Uᵢ` are the vectors `η` within
-`ε ‖η‖` of `Γᵢ` for a small `ε > 0`. -/
-private theorem exists_cones_of_notMem_add {Γ₁ Γ₂ : Set E} (h₁ : IsClosed Γ₁) (h₂ : IsClosed Γ₂)
-    (h0₁ : (0 : E) ∈ Γ₁) (h0₂ : (0 : E) ∈ Γ₂)
-    (hc₁ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₁, t • ξ ∈ Γ₁) (hc₂ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₂, t • ξ ∈ Γ₂)
-    (hopp : ∀ ξ ∈ Γ₁, -ξ ∈ Γ₂ → ξ = 0) {ζ₀ : E} (hζ₀ : ζ₀ ∉ Γ₁ + Γ₂) :
-    ∃ U₁ U₂ : Set E, IsOpen U₁ ∧ IsOpen U₂ ∧ Γ₁ \ {0} ⊆ U₁ ∧ Γ₂ \ {0} ⊆ U₂ ∧
-      (∀ t : ℝ, 0 < t → ∀ η ∈ U₁ᶜ, t • η ∈ U₁ᶜ) ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ U₂ᶜ, t • η ∈ U₂ᶜ) ∧
-      ∃ Γ : Set E, IsOpen Γ ∧ ζ₀ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ) ∧
-        ∃ c > 0, ∀ ζ ∈ Γ, ∀ η, (η ∈ U₁ → ζ - η ∉ U₂ ∧ c * ‖ζ‖ ≤ ‖ζ - η‖) ∧
-          (ζ - η ∈ U₂ → c * ‖ζ‖ ≤ ‖η‖) := by
-  obtain ⟨κ, hκ, hκab⟩ := TauCeti.exists_mul_norm_add_le_norm_add h₁ h₂ hc₁ hc₂ hopp
-  -- An open cone `Γ` around `ζ₀` stays away from the closed cone `Γ₁ + Γ₂` proportionally to
-  -- the norm.
-  have hcompl : ∀ t : ℝ, 0 < t → ∀ ζ ∈ (Γ₁ + Γ₂)ᶜ, t • ζ ∈ (Γ₁ + Γ₂)ᶜ := by
-    intro t ht ζ hζ hmem
-    obtain ⟨a, ha, b, hb, hab⟩ := Set.mem_add.1 hmem
-    refine hζ (Set.mem_add.2
-      ⟨t⁻¹ • a, hc₁ _ (inv_pos.2 ht) a ha, t⁻¹ • b, hc₂ _ (inv_pos.2 ht) b hb, ?_⟩)
-    rw [← smul_add, hab, smul_smul, inv_mul_cancel₀ ht.ne', one_smul]
-  have hcl := TauCeti.isClosed_add_of_forall_neg_mem h₁ h₂ hc₁ hc₂ hopp
-  obtain ⟨Γ, hΓo, hζΓ, hΓc, α, hα, hball⟩ :=
-    hcl.isOpen_compl.exists_cone_closedBall_subset hcompl hζ₀
-  have hαΓ : ∀ ζ ∈ Γ, ∀ a ∈ Γ₁, ∀ b ∈ Γ₂, α * ‖ζ‖ ≤ ‖ζ - (a + b)‖ := fun ζ hζ a ha b hb ↦ by
-    by_contra hlt
-    refine hball ζ hζ (mem_closedBall.2 ?_) (add_mem_add ha hb)
-    rw [dist_eq_norm, norm_sub_rev]
-    exact (lt_of_not_ge hlt).le
-  -- The thickenings of `Γ₁` and `Γ₂`.
-  set ε := min (min (1 / 2) (α / 2)) (min (κ / (4 * (1 + κ))) (α * κ / 4))
-  have hε : 0 < ε := by positivity
-  have hε₁ : ε ≤ 1 / 2 := (min_le_left _ _).trans (min_le_left _ _)
-  have hε₂ : ε ≤ α / 2 := (min_le_left _ _).trans (min_le_right _ _)
-  obtain ⟨U₁, hU₁, hsub₁, hcU₁, hmem₁⟩ := exists_isOpen_forall_exists_norm_sub_lt hc₁ hε
-  obtain ⟨U₂, hU₂, hsub₂, hcU₂, hmem₂⟩ := exists_isOpen_forall_exists_norm_sub_lt hc₂ hε
-  refine ⟨U₁, U₂, hU₁, hU₂, hsub₁, hsub₂, hcU₁, hcU₂, Γ, hΓo, hζΓ, hΓc, α / 4, by positivity,
-    fun ζ hζ η ↦ ⟨fun hη ↦ ?_, fun hη ↦ ?_⟩⟩
-  · obtain ⟨ξ₁, hξ₁, he₁⟩ := hmem₁ η hη
-    refine ⟨fun hη' ↦ ?_, mul_norm_le_norm_of_norm_sub_lt hε.le hε₁ hε₂ (add_sub_cancel η ζ) he₁
-      (by simpa using hαΓ ζ hζ ξ₁ hξ₁ 0 h0₂)⟩
-    -- `η ∈ U₁` and `ζ - η ∈ U₂` would put `ζ` close to `Γ₁ + Γ₂`.
-    obtain ⟨ξ₂, hξ₂, he₂⟩ := hmem₂ _ hη'
-    exact (norm_sub_add_lt_mul_norm hκ hα.le ((min_le_right _ _).trans (min_le_left _ _))
-      ((min_le_right _ _).trans (min_le_right _ _)) he₁ he₂ (hκab ξ₁ hξ₁ ξ₂ hξ₂)).not_ge
-      (hαΓ ζ hζ ξ₁ hξ₁ ξ₂ hξ₂)
-  · obtain ⟨ξ₂, hξ₂, he₂⟩ := hmem₂ _ hη
-    exact mul_norm_le_norm_of_norm_sub_lt hε.le hε₁ hε₂ (sub_add_cancel ζ η) he₂
-      (by simpa using hαΓ ζ hζ 0 h0₁ ξ₂ hξ₂)
-
 /-! ### The wave front set of the product -/
 
 /-- The product `φ² S T` is microlocally smooth at `(x, ζ)` whenever `ζ ∉ Γ₁ + Γ₂`, for closed cones
@@ -917,7 +668,7 @@ private theorem isMicrolocallySmoothAt_cutoffProduct_of_notMem_add {φ : 𝓓(Ω
     (hT : ∀ x ∈ tsupport φ, ∀ ξ, (x, ξ) ∈ T.waveFrontSet → ξ ∈ Γ₂) {x ζ : E} (hx : x ∈ Ω)
     (hζ : ζ ∉ Γ₁ + Γ₂) : (S.cutoffProduct T φ h).IsMicrolocallySmoothAt x ζ := by
   obtain ⟨U₁, U₂, hU₁, hU₂, hsub₁, hsub₂, hcU₁, hcU₂, Γ, hΓ, hζΓ, hΓc, c, hc, hgeom⟩ :=
-    exists_cones_of_notMem_add h₁ h₂ h0₁ h0₂ hc₁ hc₂ hopp hζ
+    TauCeti.exists_cones_of_notMem_add h₁ h₂ h0₁ h0₂ hc₁ hc₂ hopp hζ
   -- A cutoff at `x`, and the localized Fourier transforms of `φ S` and of `χ φ T`.
   obtain ⟨χ, -, hχx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) (Ω.isOpen.mem_nhds hx)
     subset_rfl (1 : ℂ)
@@ -938,7 +689,7 @@ private theorem isMicrolocallySmoothAt_cutoffProduct_of_notMem_add {φ : 𝓓(Ω
     hp.2 (hsub₂ ⟨hT p.1 (hψ hp.1) p.2 hwf, (mem_waveFrontSet_iff.1 hwf).2.1⟩)
   refine isMicrolocallySmoothAt_iff.2 ⟨χ, by simp [hχx], Γ, hΓ, hζΓ, hΓc, fun M ↦ ?_⟩
   simp_rw [localFourier_cutoffProduct]
-  exact exists_one_add_norm_pow_mul_norm_integral_mul_le (k := max kS kT) hA0 hB0
+  exact TauCeti.exists_one_add_norm_pow_mul_norm_integral_mul_le (k := max kS kT) hA0 hB0
     (fun η ↦ (hA η).trans (mul_le_mul_of_nonneg_left (hpow (le_max_left _ _) η) hA0))
     (fun θ ↦ (hB θ).trans (mul_le_mul_of_nonneg_left (hpow (le_max_right _ _) θ) hB0))
     (fun N ↦ exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
@@ -946,11 +697,13 @@ private theorem isMicrolocallySmoothAt_cutoffProduct_of_notMem_add {φ : 𝓓(Ω
     (fun N ↦ exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
       hU₂.isClosed_compl hcU₂ hdT N) hc hgeom M
 
-/-- **The wave front set of a product, for closed cones** (Hörmander I, Theorem 8.2.10). Let `Γ₁`
-and `Γ₂` be closed sets of frequencies, closed under multiplication by positive reals and without
-opposite nonzero vectors, containing the frequencies of the wave front sets of `S` and of `T` over
-the support of `φ`. Then the frequencies of the wave front set of `φ² S T` lie in
-`(Γ₁ ∪ {0}) + (Γ₂ ∪ {0})`, that is, in `Γ₁`, in `Γ₂` or in `Γ₁ + Γ₂`. -/
+/-- **The wave front set of a cut-off product, for closed cones.** Let `Γ₁` and `Γ₂` be closed
+sets of frequencies, closed under multiplication by positive reals and without opposite nonzero
+vectors, containing the frequencies of the wave front sets of `S` and of `T` at all points of the
+support of `φ`. Then the frequencies of the wave front set of `φ² S T` lie in
+`(Γ₁ ∪ {0}) + (Γ₂ ∪ {0})`, that is, in `Γ₁`, in `Γ₂` or in `Γ₁ + Γ₂`. This is a cut-off analogue,
+with one pair of cones over the whole support of `φ`, of the pointwise cone form in Brouder, Dang
+and Hélein, Theorem 6.1; the proof follows that of Hörmander I, Theorem 8.2.10. -/
 theorem waveFrontSet_cutoffProduct_subset_of_cones {φ : 𝓓(Ω, ℂ)}
     (h : NoOppositeCovectorsOn S T (tsupport φ)) {Γ₁ Γ₂ : Set E} (h₁ : IsClosed Γ₁)
     (h₂ : IsClosed Γ₂) (hc₁ : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ₁, t • ξ ∈ Γ₁)
@@ -963,52 +716,44 @@ theorem waveFrontSet_cutoffProduct_subset_of_cones {φ : 𝓓(Ω, ℂ)}
   refine ⟨(dsupport_cutoffProduct_subset h (waveFrontSet_subset_dsupport _ hp).1).1,
     by_contra fun hζ ↦ hns ?_⟩
   -- Adjoin `0` to both cones.
-  have hcl {Γ' : Set E} (h' : IsClosed Γ') : IsClosed (insert 0 Γ') := by
-    rw [insert_eq]
-    exact isClosed_singleton.union h'
-  have hcone {Γ' : Set E} (hc : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') :
-      ∀ t : ℝ, 0 < t → ∀ ξ ∈ insert 0 Γ', t • ξ ∈ insert 0 Γ' := by
-    rintro t ht ξ (rfl | hξ)
-    · simp
-    · exact mem_insert_of_mem _ (hc t ht ξ hξ)
-  have hopp' : ∀ ξ ∈ insert (0 : E) Γ₁, -ξ ∈ insert 0 Γ₂ → ξ = 0 := by
-    rintro ξ (rfl | hξ) (hξ' | hξ')
-    · rfl
-    · rfl
-    · exact neg_eq_zero.1 hξ'
-    · exact hopp ξ hξ hξ'
-  exact isMicrolocallySmoothAt_cutoffProduct_of_notMem_add h (hcl h₁) (hcl h₂) (mem_insert _ _)
-    (mem_insert _ _) (hcone hc₁) (hcone hc₂) hopp'
+  exact isMicrolocallySmoothAt_cutoffProduct_of_notMem_add h
+    (insert_eq (0 : E) Γ₁ ▸ isClosed_singleton.union h₁)
+    (insert_eq (0 : E) Γ₂ ▸ isClosed_singleton.union h₂) (mem_insert _ _) (mem_insert _ _)
+    (TauCeti.forall_smul_mem_insert_zero hc₁) (TauCeti.forall_smul_mem_insert_zero hc₂)
+    (TauCeti.forall_neg_mem_insert_zero_imp_eq_zero hopp)
     (fun x hx ξ hwf ↦ mem_insert_of_mem _ (hS x hx ξ hwf))
     (fun x hx ξ hwf ↦ mem_insert_of_mem _ (hT x hx ξ hwf)) hx hζ
 
-/-- **The wave front set of a product** (Hörmander I, Theorem 8.2.10). If `S` and `T` have no
-opposite covectors over the support of `φ`, the wave front set of `φ² S T` lies over the support
-of `φ`, with frequencies `ξ + η` where `ξ` is `0` or a frequency of `WF(S)` over the support of `φ`,
-and `η` is `0` or a frequency of `WF(T)` over the support of `φ`. -/
+/-- **The wave front set of a cut-off product.** If `S` and `T` have no opposite covectors over
+the support of `φ`, the wave front set of `φ² S T` lies over the support of `φ`, with frequencies
+`ξ + η` where `ξ` is `0` or a frequency of `WF(S)` over the support of `φ`, and `η` is `0` or a
+frequency of `WF(T)` over the support of `φ`. The frequencies `ξ` and `η` are pooled over the
+support of `φ` and may come from different points, so this is a cut-off, non-pointwise analogue of
+Hörmander I, Theorem 8.2.10, proved along the lines of Hörmander's proof. -/
 theorem waveFrontSet_cutoffProduct_subset {φ : 𝓓(Ω, ℂ)}
     (h : NoOppositeCovectorsOn S T (tsupport φ)) :
     (S.cutoffProduct T φ h).waveFrontSet ⊆ tsupport φ ×ˢ
       (insert 0 (Prod.snd '' (S.waveFrontSet ∩ tsupport φ ×ˢ univ)) +
         insert 0 (Prod.snd '' (T.waveFrontSet ∩ tsupport φ ×ˢ univ))) := by
   have hK : IsCompact (tsupport φ) := φ.hasCompactSupport.isCompact
+  -- The frequencies of `WF(R)` over the support of `φ` form a cone, and those of `S` and `T` have
+  -- no opposite nonzero vectors.
   have hcone (R : 𝓓'(Ω, ℂ)) : ∀ t : ℝ, 0 < t →
-      ∀ ξ ∈ insert 0 (Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ)),
-        t • ξ ∈ insert 0 (Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ)) := by
-    rintro t ht ξ (rfl | ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩)
-    · simp
-    · exact mem_insert_of_mem _
-        ⟨(x, t • ξ), ⟨(smul_mem_waveFrontSet_iff ht).2 hwf, hx, mem_univ _⟩, rfl⟩
+      ∀ ξ ∈ Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ),
+        t • ξ ∈ Prod.snd '' (R.waveFrontSet ∩ tsupport φ ×ˢ univ) := by
+    rintro t ht _ ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩
+    exact ⟨(x, t • ξ), ⟨(smul_mem_waveFrontSet_iff ht).2 hwf, hx, mem_univ _⟩, rfl⟩
+  have hopp : ∀ ξ ∈ Prod.snd '' (S.waveFrontSet ∩ tsupport φ ×ˢ univ),
+      -ξ ∈ Prod.snd '' (T.waveFrontSet ∩ tsupport φ ×ˢ univ) → ξ = 0 := by
+    rintro _ ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩ ⟨⟨y, ξ'⟩, ⟨hwf', hy, -⟩, hξ'eq⟩
+    exact (noOppositeCovectorsOn_iff.1 h x hx y hy ξ hwf (by simpa [← hξ'eq] using hwf')).elim
   have hsub := waveFrontSet_cutoffProduct_subset_of_cones h
     (isClosed_insert_zero_image_snd_waveFrontSet_inter hK φ.tsupport_subset S)
-    (isClosed_insert_zero_image_snd_waveFrontSet_inter hK φ.tsupport_subset T) (hcone S)
-    (hcone T) ?_ (fun x hx ξ hwf ↦ mem_insert_of_mem _ ⟨(x, ξ), ⟨hwf, hx, mem_univ _⟩, rfl⟩)
+    (isClosed_insert_zero_image_snd_waveFrontSet_inter hK φ.tsupport_subset T)
+    (TauCeti.forall_smul_mem_insert_zero (hcone S)) (TauCeti.forall_smul_mem_insert_zero (hcone T))
+    (TauCeti.forall_neg_mem_insert_zero_imp_eq_zero hopp)
     (fun x hx ξ hwf ↦ mem_insert_of_mem _ ⟨(x, ξ), ⟨hwf, hx, mem_univ _⟩, rfl⟩)
-  · simpa only [insert_idem] using hsub
-  · rintro ξ (rfl | ⟨⟨x, ξ⟩, ⟨hwf, hx, -⟩, rfl⟩) (hξ' | ⟨⟨y, ξ'⟩, ⟨hwf', hy, -⟩, hξ'eq⟩)
-    · rfl
-    · rfl
-    · exact neg_eq_zero.1 hξ'
-    · exact (noOppositeCovectorsOn_iff.1 h x hx y hy ξ hwf (by simpa [← hξ'eq] using hwf')).elim
+    (fun x hx ξ hwf ↦ mem_insert_of_mem _ ⟨(x, ξ), ⟨hwf, hx, mem_univ _⟩, rfl⟩)
+  simpa only [insert_idem] using hsub
 
 end Distribution
