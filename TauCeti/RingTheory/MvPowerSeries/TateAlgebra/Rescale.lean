@@ -45,7 +45,7 @@ variable [IsUltrametricDist R]
 private noncomputable def restrictedRescaleAlgHom (u : σ → R)
     (hu : ∀ i, IsNormMulUnit (u i)) (hrs : ∀ i, ‖u i‖ * s i = r i) :
     IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s where
-  toFun f := ⟨MvPowerSeries.rescale u f, (isRestricted_rescale_iff u hu hrs f).mpr f.2⟩
+  toFun f := ⟨MvPowerSeries.rescale u f, (isRestricted_rescale_iff u hu hrs f).mpr f.property⟩
   map_one' := Subtype.ext (map_one (MvPowerSeries.rescale u))
   map_mul' f g := Subtype.ext (map_mul (MvPowerSeries.rescale u) (f : MvPowerSeries σ R) g)
   map_zero' := Subtype.ext (map_zero (MvPowerSeries.rescale u))
@@ -72,7 +72,7 @@ noncomputable def restrictedRescaleEquiv (u : σ → Rˣ)
       (isRestricted_rescale_iff (fun i ↦ (u i : R)) hu hrs _).mp <| by
         have hcancel := rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R)
         simp only [inv_inv] at hcancel
-        exact hcancel.symm ▸ f.2⟩
+        exact hcancel.symm ▸ f.property⟩
     left_inv f := Subtype.ext (rescale_inv_rescale u f)
     right_inv f := Subtype.ext <| by
       simpa using rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R) }

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.Linearization
--- Private: Grönwall's inequality and the fundamental theorem of calculus are used only inside
--- proofs; no declaration below exposes their APIs.
+-- Private: Grönwall's inequality, the fundamental theorem of calculus and the regularity of the
+-- gradient are used only inside proofs; no declaration below exposes their APIs.
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -199,15 +200,10 @@ private theorem exists_time_of_tendsto
     exact (hγ t hta.le).hasDerivAt (Ici_mem_nhds hta)
   have hdiff : ∀ t ∈ Ici T, DifferentiableAt ℝ f (γ t) := fun t ht ↦
     ((hT t ht).1.2).differentiableAt (by simp)
-  have hgradfun : (∇ f : E → E) = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    exact (toDual ℝ E).eq_symm_apply.2 toDual_gradient
   have hcont : ContinuousOn (fun s ↦ ∇ f (γ s)) (Ici T) := by
     intro s hs
-    have hgs : ContinuousAt (∇ f) (γ s) := by
-      rw [hgradfun]
-      exact ((toDual ℝ E).symm.continuous.continuousAt).comp
-        (((hT s hs).1.2).continuousAt_fderiv (by simp))
+    have hgs : ContinuousAt (∇ f) (γ s) :=
+      ((hT s hs).1.2.gradient_right (m := 0) (by simp)).continuousAt
     exact (hgs.comp (hderiv s hs).continuousAt).continuousWithinAt
   have hcurve : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici T) :=
     fun s hs ↦ (hderiv s hs).hasDerivWithinAt
@@ -272,7 +268,7 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
         linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
       rw [dist_comm, dist_eq_norm, Nat.cast_succ, ← add_assoc]
       refine (hstep _ hmem).trans_eq ?_
-      rw [hrdef, ← Real.exp_nat_mul, mul_assoc, ← Real.exp_add]
+      rw [hrdef, ← Real.exp_natCast_mul, mul_assoc, ← Real.exp_add]
       congr 2
       ring
   refine ⟨lam / 2, by linarith, q * Real.exp (lam / 2 * T) / (1 - r), by positivity, ?_⟩

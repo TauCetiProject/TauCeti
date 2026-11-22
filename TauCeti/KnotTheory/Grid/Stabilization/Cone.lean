@@ -108,7 +108,7 @@ noncomputable def stabilizeXConeStateEquiv :
 /-- The cone-state equivalence sends an off-center generator to its underlying stabilized state. -/
 @[simp]
 theorem stabilizeXConeStateEquiv_apply_inl (y : G.StabilizeXOffCenterState s) :
-    G.stabilizeXConeStateEquiv s (.inl y) = y.1 := by
+    G.stabilizeXConeStateEquiv s (.inl y) = y.val := by
   simp [stabilizeXConeStateEquiv]
 
 /-- The cone-state equivalence sends a center generator to the state with the center inserted. -/
@@ -163,7 +163,7 @@ theorem stabilizeXCenterProjection_apply (f : GridChainMinus R (n + 1)) (x : Gri
 /-- The off-center inclusion sends a generator to the same grid state. -/
 @[simp]
 theorem stabilizeXOffCenterInclusion_single (y : G.StabilizeXOffCenterState s) (a : S) :
-    G.stabilizeXOffCenterInclusion s R (Finsupp.single y a) = Finsupp.single y.1 a :=
+    G.stabilizeXOffCenterInclusion s R (Finsupp.single y a) = Finsupp.single y.val a :=
   Finsupp.mapDomain_single
 
 /-- The off-center projection restricts a chain to the off-center states. -/
@@ -192,7 +192,7 @@ private theorem stabilizeXOffCenterInclusion_projection_apply (f : GridChainMinu
   split_ifs with h
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨y, rfl⟩
-    exact y.2 h
+    exact y.property h
   · exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
       (⟨y, h⟩ : G.StabilizeXOffCenterState s)
 
@@ -223,7 +223,7 @@ theorem stabilizeXCenterProjection_offCenterInclusion (f : G.StabilizeXOffCenter
     G.stabilizeXCenterProjection s R (G.stabilizeXOffCenterInclusion s R f) = 0 := by
   refine Finsupp.ext fun x => Finsupp.mapDomain_of_notMem_range _ _ ?_
   rintro ⟨y, hy⟩
-  exact y.2 (hy ▸ GridState.insertPoint_apply_newColumn _ _ _)
+  exact y.property (hy ▸ GridState.insertPoint_apply_newColumn _ _ _)
 
 /-- A center chain has no off-center part. -/
 @[simp]
@@ -231,7 +231,7 @@ theorem stabilizeXOffCenterProjection_centerInclusion (f : GridState n →₀ S)
     G.stabilizeXOffCenterProjection s R (G.stabilizeXCenterInclusion s R f) = 0 := by
   refine Finsupp.ext fun y => Finsupp.mapDomain_of_notMem_range _ _ ?_
   rintro ⟨x, hx⟩
-  exact y.2 (hx ▸ GridState.insertPoint_apply_newColumn _ _ _)
+  exact y.property (hx ▸ GridState.insertPoint_apply_newColumn _ _ _)
 
 /-- The unblocked differential of the stabilization has no component from off-center states to
 center states. -/
@@ -248,7 +248,7 @@ theorem stabilizeXCenterProjection_unblockedDifferential_offCenterInclusion
     refine Finsupp.ext fun x => ?_
     rw [stabilizeXOffCenterInclusion_single, ← mul_one a, ← smul_eq_mul, ← Finsupp.smul_single,
       map_smul]
-    simp [G.unblockedCoefficient_stabilizeX_eq_zero s R y.2]
+    simp [G.unblockedCoefficient_stabilizeX_eq_zero s R y.property]
 
 /-- The center block of the unblocked differential of the stabilization. -/
 noncomputable def stabilizeXCenterDifferential : (GridState n →₀ S) →ₗ[S] (GridState n →₀ S) :=

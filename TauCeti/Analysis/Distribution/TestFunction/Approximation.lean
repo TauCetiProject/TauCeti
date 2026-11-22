@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Calculus.BumpFunction.Normed
+public import Mathlib.Analysis.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
@@ -26,6 +28,10 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 
 ## Main results
 
+* `MeasureTheory.LocallyIntegrable.exists_testFunction_eq_normed_convolution`: the mollification
+  of a locally integrable function supported in a compact set `K` by a normalized bump of outer
+  radius at most `δ` is a test function on `Ω` supported in `cthickening δ K`, if that thickening
+  lies in `Ω`.
 * `Continuous.exists_testFunction_dist_le`: a continuous function supported in a compact set `K`
   is uniformly approximated by test functions supported in any closed thickening of `K` that lies
   in `Ω`.
@@ -49,16 +55,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
 omit [CompleteSpace F] in
-/-- Mollifying a continuous function supported in a compact set `K` by a normalized bump of outer
-radius at most `δ` gives a test function on `Ω` supported in `cthickening δ K`, as long as that
-thickening lies in `Ω`. -/
-private theorem exists_testFunction_eq_normed_convolution [MeasurableSpace E] [BorelSpace E]
-    {f : E → F} (hf : Continuous f) {K : Set E} (hK : IsCompact K) (hfK : tsupport f ⊆ K)
+/-- Mollifying a locally integrable function supported in a compact set `K` by a normalized bump of
+outer radius at most `δ` gives a test function on `Ω` supported in `cthickening δ K`, as long as
+that thickening lies in `Ω`. -/
+theorem MeasureTheory.LocallyIntegrable.exists_testFunction_eq_normed_convolution
+    [HasContDiffBump E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    {f : E → F}
+    (hf : LocallyIntegrable f μ) {K : Set E} (hK : IsCompact K) (hfK : tsupport f ⊆ K)
     {δ : ℝ} (hKΩ : cthickening δ K ⊆ Ω) (ρ : ContDiffBump (0 : E)) (hρ : ρ.rOut ≤ δ) :
-    ∃ φ : 𝓓(Ω, F),
-      ⇑φ = ρ.normed Measure.addHaar ⋆[ContinuousLinearMap.lsmul ℝ ℝ, Measure.addHaar] f ∧
-        tsupport φ ⊆ cthickening δ K := by
-  set g := ρ.normed Measure.addHaar ⋆[ContinuousLinearMap.lsmul ℝ ℝ, Measure.addHaar] f
+    ∃ φ : 𝓓(Ω, F), ⇑φ = ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f ∧
+      tsupport φ ⊆ cthickening δ K := by
+  set g := ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f
   have hgs : tsupport g ⊆ cthickening δ K := by
     have hsupp : Function.support g ⊆ thickening ρ.rOut K := by
       refine (support_convolution_subset _).trans ?_
@@ -66,9 +73,8 @@ private theorem exists_testFunction_eq_normed_convolution [MeasurableSpace E] [B
       exact add_subset_add_left ((subset_tsupport f).trans hfK)
     exact (closure_mono hsupp).trans <| (closure_thickening_subset_cthickening _ _).trans <|
       cthickening_mono hρ K
-  exact ⟨⟨g, ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed
-      hf.locallyIntegrable, hK.cthickening.of_isClosed_subset (isClosed_tsupport _) hgs,
-      hgs.trans hKΩ⟩, rfl, hgs⟩
+  exact ⟨⟨g, ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed hf,
+      hK.cthickening.of_isClosed_subset (isClosed_tsupport _) hgs, hgs.trans hKΩ⟩, rfl, hgs⟩
 
 /-- A continuous function supported in a compact set `K` is uniformly approximated by test
 functions on `Ω`, as long as a closed thickening `cthickening δ K` lies in `Ω`: for every `ε > 0`
@@ -84,8 +90,9 @@ theorem Continuous.exists_testFunction_dist_le {f : E → F} (hf : Continuous f)
   -- Mollify `f` by a normalized bump of outer radius `min η δ`.
   have hr : 0 < min η δ := lt_min hη hδ
   let ρ : ContDiffBump (0 : E) := ⟨min η δ / 2, min η δ, half_pos hr, half_lt_self hr⟩
+  have hfi : LocallyIntegrable f Measure.addHaar := hf.locallyIntegrable
   obtain ⟨φ, hφ, hφs⟩ :=
-    exists_testFunction_eq_normed_convolution hf hK hfK hKΩ ρ (min_le_right _ _)
+    hfi.exists_testFunction_eq_normed_convolution hK hfK hKΩ ρ (min_le_right _ _)
   refine ⟨φ, hφs, fun x => ?_⟩
   rw [hφ]
   exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
@@ -118,8 +125,9 @@ theorem ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le {f : E → F}
   set r := min (min η₁ η₂) δ
   have hr : 0 < r := lt_min (lt_min hη₁ hη₂) hδ
   let ρ : ContDiffBump (0 : E) := ⟨r / 2, r, half_pos hr, half_lt_self hr⟩
+  have hfi : LocallyIntegrable f Measure.addHaar := hf.continuous.locallyIntegrable
   obtain ⟨φ, hφ, hφs⟩ :=
-    exists_testFunction_eq_normed_convolution hf.continuous hK hfK hKΩ ρ (min_le_right _ _)
+    hfi.exists_testFunction_eq_normed_convolution hK hfK hKΩ ρ (min_le_right _ _)
   refine ⟨φ, hφs, fun x => ⟨?_, ?_⟩⟩
   · rw [hφ]
     exact ρ.dist_normed_convolution_le hf.continuous.aestronglyMeasurable fun y hy =>
