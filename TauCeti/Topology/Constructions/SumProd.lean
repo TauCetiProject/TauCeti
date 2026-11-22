@@ -17,6 +17,9 @@ points have empty interior. This lets fibrewise empty-interior results apply to 
 arbitrary topological products, without countability, separation, or finite-dimensionality
 assumptions on either factor.
 In particular, graphs with values in a space without isolated points have empty interior.
+The interior of the preimage of a set under a projection is the preimage of its interior
+(`TauCeti.interior_preimage_fst`, `TauCeti.interior_preimage_snd`), so the vertical and
+horizontal lines through non-isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
 sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
@@ -120,5 +123,27 @@ theorem _root_.Set.interior_graphOn [∀ y : Y, NeBot (𝓝[≠] y)] (s : Set X)
   refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun x ↦ ?_
   have hsub : Prod.mk x ⁻¹' s.graphOn f ⊆ {f x} := fun y hy ↦ (mem_graphOn.mp hy).2.symm
   simpa using interior_mono hsub
+
+/-- The interior of the preimage of a set under the first projection is the preimage of its
+interior. -/
+theorem interior_preimage_fst (s : Set X) :
+    interior (Prod.fst ⁻¹' s : Set (X × Y)) = Prod.fst ⁻¹' interior s :=
+  (isOpenMap_fst.preimage_interior_eq_interior_preimage continuous_fst s).symm
+
+/-- The interior of the preimage of a set under the second projection is the preimage of its
+interior. -/
+theorem interior_preimage_snd (s : Set Y) :
+    interior (Prod.snd ⁻¹' s : Set (X × Y)) = Prod.snd ⁻¹' interior s :=
+  (isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd s).symm
+
+/-- A vertical line `{x} × Y` through a non-isolated point `x` has empty interior. -/
+theorem interior_preimage_fst_singleton (x : X) [NeBot (𝓝[≠] x)] :
+    interior (Prod.fst ⁻¹' {x} : Set (X × Y)) = ∅ := by
+  rw [interior_preimage_fst, interior_singleton, preimage_empty]
+
+/-- A horizontal line `X × {y}` through a non-isolated point `y` has empty interior. -/
+theorem interior_preimage_snd_singleton (y : Y) [NeBot (𝓝[≠] y)] :
+    interior (Prod.snd ⁻¹' {y} : Set (X × Y)) = ∅ := by
+  rw [interior_preimage_snd, interior_singleton, preimage_empty]
 
 end TauCeti
