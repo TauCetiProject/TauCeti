@@ -52,17 +52,13 @@ theorem intervalIntegrable_mul_cpow_of_ne_zero {h g : ℝ → ℂ} {α β : ℝ}
     (hg0 : ∀ x ∈ uIcc α β, g x ≠ 0) (e : ℂ) :
     IntervalIntegrable (fun x => h x * g x ^ e) μ α β := by
   have hg_meas := (hg.mono uIoc_subset_uIcc).aemeasurable (μ := μ) measurableSet_uIoc
-  have hpow : AEMeasurable (fun x => g x ^ e) (μ.restrict (Ι α β)) :=
-    (continuous_exp.measurable.comp_aemeasurable
-      ((measurable_log.comp_aemeasurable hg_meas).mul_const e)).congr <| by
-        filter_upwards [ae_restrict_mem (μ := μ) measurableSet_uIoc] with x hx
-        exact (cpow_def_of_ne_zero (hg0 x (uIoc_subset_uIcc hx)) e).symm
   have hdom : ContinuousOn (fun x => ‖h x‖ * (‖g x‖ ^ e.re * Real.exp (Real.pi * |e.im|)))
       (uIcc α β) :=
     hh.norm.mul ((hg.norm.rpow_const
       (fun x hx => Or.inl (norm_ne_zero_iff.mpr (hg0 x hx)))).mul continuousOn_const)
   exact hdom.intervalIntegrable.mono_fun'
-    (((hh.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc).mul hpow).aestronglyMeasurable
+    (((hh.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc).mul
+      (hg_meas.pow_const e)).aestronglyMeasurable
     (Filter.Eventually.of_forall fun x => by
       simp only [norm_mul]
       exact mul_le_mul_of_nonneg_left (norm_cpow_le_mul_exp _ _) (norm_nonneg _))

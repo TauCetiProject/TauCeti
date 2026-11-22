@@ -86,8 +86,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_mul_inv_add_sub_inv_add_div_one_add_sq` — the Mellin integrals of the rational
   sine-compensated Laplace transform `(x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)`, with a power formula
   for `0 < α < 2`, `α ≠ 1`, and the logarithmic value `a * log a` at exponent one;
-* `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
-  second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
+* `TauCeti.inv_sq_smul_rpow_mul_one_add_rpow` — the change-of-variables identity relating the first
+  and second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
   `TauCeti.integrable_one_add_sq_div_rpow`, and `TauCeti.integral_one_add_sq_div_rpow` — the
   Cauchy-type kernel `(1 + x ^ 2 / ν) ^ (-s)` is integrable on the line for `0 < ν` and
@@ -434,8 +434,8 @@ variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
 integrand of Euler's first one, for every `u < 1`. -/
-lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
-    |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
+lemma inv_sq_smul_rpow_mul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
+    ((1 - u) ^ 2)⁻¹ • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
   have h1u : (0 : ℝ) < 1 - u := by linarith
   have hbase := one_add_div_one_sub h1u.ne'
@@ -449,7 +449,7 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+  rw [smul_eq_mul, hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
     e1, e2, div_eq_mul_inv]
   calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
       = u ^ (a - 1) *
@@ -467,10 +467,10 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
         ⟨zero_le_one, le_rfl⟩)
   have hchart := (integrableOn_Ioi_iff_integrableOn_div_one_sub
     (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (ρ := 0) zero_lt_one).2
-  apply (by simpa only [zero_div] using hchart)
+  simp only [zero_div] at hchart
+  apply hchart
   refine hIoo.congr_fun (fun u hu => ?_) measurableSet_Ioo
-  simpa only [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg (1 - u)))] using
-    (abs_deriv_smul_one_add_rpow a b hu.2).symm
+  exact (inv_sq_smul_rpow_mul_one_add_rpow a b hu.2).symm
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
     ∀ᶠ x in atTop,
@@ -573,8 +573,7 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   · exact setIntegral_congr_set Ioo_ae_eq_Ioc
-  · simpa only [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg (1 - u)))] using
-      abs_deriv_smul_one_add_rpow a b hu.2
+  · exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-! ### The Cauchy-type kernel `(1 + x ^ 2) ^ (-s)` -/
 

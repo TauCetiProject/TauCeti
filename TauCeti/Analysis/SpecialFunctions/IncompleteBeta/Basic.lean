@@ -319,8 +319,7 @@ theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ} (hu01 : u
       ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) := by
   rw [integral_Ioi_eq_integral_div_one_sub _ hu01]
   refine setIntegral_congr_fun measurableSet_Ioo fun u hu => ?_
-  simpa only [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg (1 - u)))] using
-    abs_deriv_smul_one_add_rpow a b hu.2
+  exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-- The upper tail of the first beta-integral kernel is the total beta mass minus the normalized
 lower incomplete beta mass. -/

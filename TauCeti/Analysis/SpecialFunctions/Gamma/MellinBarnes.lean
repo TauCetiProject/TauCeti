@@ -11,7 +11,6 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -97,13 +96,13 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       (ρ := 0) zero_lt_one).2
     simpa only [zero_div] using
       hchart (hbeta.congr_fun
-        (fun u hu ↦ (inv_sq_smul_div_cpow_smul_one_add_cpow s a hu).symm) measurableSet_Ioo)
+        (fun u hu ↦ (inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2).symm) measurableSet_Ioo)
   · rw [mellin]
     have hchart := TauCeti.integral_Ioi_eq_integral_div_one_sub
       (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a)) (ρ := 0) zero_lt_one
     simp only [zero_div] at hchart
     rw [hchart, setIntegral_congr_fun measurableSet_Ioo
-      (fun u hu ↦ inv_sq_smul_div_cpow_smul_one_add_cpow s a hu),
+      (fun u hu ↦ inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2),
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 

@@ -923,7 +923,7 @@ theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : �
   have hslit : 1 - z ∈ slitPlane := by
     simpa only [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (by rwa [norm_neg] : ‖-z‖ < 1)
   have hzρ : ‖z‖ * ρ < 1 := (mul_le_of_le_one_right (norm_nonneg z) hρ1.le).trans_lt hz
-  -- Adapt the earlier continuation proof of `Complex.hypergeometricLoopZero_zero`.
+  -- Continue in b from the right half-plane with c - b fixed.
   let d := c - b
   have hd : 0 < d.re := by simpa only [d, sub_re, sub_pos] using hbc
   have hc : c = b + d := by simp [d]
