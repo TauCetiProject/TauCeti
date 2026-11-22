@@ -74,8 +74,8 @@ instance quasiIso_tensorHom_id (A : CochainComplex C ℤ) [A.IsKFlat]
     QuasiIso (tensorHom f (𝟙 A)) := by
   rw [HomologicalComplex.tensorHom, ← whiskerRight_eq_mapBifunctorMap]
   exact quasiIso_of_arrow_mk_iso (A ◁ f) (f ▷ A)
-    (Arrow.isoMk (TauCeti.koszulBraiding C A K) (TauCeti.koszulBraiding C A L)
-      (by simp [TauCeti.koszulBraidingHom_naturality_right]))
+    (Arrow.isoMk (HomologicalComplex.koszulBraiding A K) (HomologicalComplex.koszulBraiding A L)
+      (by simp [TauCeti.koszulBraiding_hom_naturality_right]))
 
 /-- Tensoring a quasi-isomorphism on the right with a K-flat complex via `▷` is a
 quasi-isomorphism. -/
@@ -140,8 +140,8 @@ instance quasiIso_id_tensorHom_of_isKFlat (A : CochainComplex C ℤ)
     rw [whiskerRight_eq_mapBifunctorMap]
     exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
   exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
-    (Arrow.isoMk (TauCeti.koszulBraiding C P A) (TauCeti.koszulBraiding C Q A)
-      (by simp [TauCeti.koszulBraidingHom_naturality_left]))
+    (Arrow.isoMk (HomologicalComplex.koszulBraiding P A) (HomologicalComplex.koszulBraiding Q A)
+      (by simp [TauCeti.koszulBraiding_hom_naturality_left]))
 
 /-- Whiskering a quasi-isomorphism between K-flat complexes on the right by an arbitrary complex
 gives a quasi-isomorphism. -/

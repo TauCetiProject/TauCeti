@@ -11,8 +11,9 @@ public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
 /-!
 # The Künneth map and the interchange of factors
 
-For nonnegative chain complexes `K` and `L` in a braided preadditive monoidal category, the Koszul
-interchange `K ⊗ L ⟶ L ⊗ K` (`HomologicalComplex.koszulBraiding`) sends the tensor
+For nonnegative chain complexes `K` and `L` in a braided preadditive monoidal category whose two
+tensor products `tensorObj K L` and `tensorObj L K` exist, the Koszul interchange
+`(HomologicalComplex.koszulBraiding K L).hom : tensorObj K L ⟶ tensorObj L K` sends the tensor
 product `x ⊗ y` of cycles of degrees `p` and `q` to `(-1)^(p * q) • y ⊗ x`.  So on homology it
 sends the cross product `x × y` to `(-1)^(p * q) • y × x`
 (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom`).

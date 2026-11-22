@@ -18,8 +18,11 @@ interchange is the shape-generic `HomologicalComplex.koszulBraiding` of
 `TauCeti/Algebra/Homology/Monoidal/Braiding.lean`, whose sign at `ComplexShape.down ℕ` is that of
 the instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat`. It exists in any braided
 preadditive monoidal category, assuming only that the two tensor complexes exist. This file
-evaluates it on each summand with the sign `(-1)^(p*q)`; in a symmetric category, its inverse is
-the same construction with the factors swapped.
+evaluates it on each summand with the sign `(-1)^(p*q)`. Since that sign is symmetric
+(`HomologicalComplex₂.totalComplexShapeSymmetrySymmetryDownNat`), the general
+`HomologicalComplex.koszulBraiding_inv` and `HomologicalComplex.koszulBraiding_hom_comp_hom`
+apply in a symmetric category: the inverse is the interchange of the swapped factors, and
+interchanging twice is the identity.
 
 The tensor-cochain formula is the chain-level interchange needed to compare the Alexander–Whitney
 diagonal with its transpose, and hence to prove graded commutativity of cup products. The cup
@@ -31,9 +34,6 @@ pairing. No commutativity is asserted for the Alexander–Whitney diagonal itsel
 * `TauCeti.NatChainComplex.ιTensorObj_koszulBraiding_hom_f` and
   `TauCeti.NatChainComplex.ιTensorObj_koszulBraiding_inv_f`: the interchange and its inverse on
   each bidegree summand, with the sign `(-1)^(p*q)`.
-* `TauCeti.NatChainComplex.koszulBraiding_hom_comp_hom` and
-  `TauCeti.NatChainComplex.koszulBraiding_inv`: interchanging twice is the identity in a
-  symmetric category, so the inverse is the interchange of the swapped factors.
 * `TauCeti.NatChainComplex.koszulBraiding_hom_f_comp_tensorCochain`: signed tensor-cochain
   interchange in every output degree.
 * `TauCeti.NatChainComplex.cupCochain_koszulBraiding_hom`: signed cup-cochain interchange.
@@ -47,8 +47,9 @@ cochain braiding. The tensor-cochain and cup formulas use the existing API in
 
 The summand rules restate `HomologicalComplex.ιTensorObj_koszulBraiding_hom_f` and
 `HomologicalComplex.ιTensorObj_koszulBraiding_inv_f` with the sign evaluated as the integer
-`(-1)^(p*q)`, and they are the `simp` lemmas for the interchange of chain complexes indexed by
-`ℕ`. The interchange requires no monoidal structure on the entire category of complexes.
+`(-1)^(p*q)`. They have higher `simp` priority than the general rules, so that `simp` uses them
+on chain complexes indexed by `ℕ`. The interchange requires no monoidal structure on the entire
+category of complexes.
 
 ## References
 
@@ -77,7 +78,7 @@ variable [BraidedCategory C]
 /-- On the bidegree-`(p, q)` summand, the Koszul braiding `HomologicalComplex.koszulBraiding` of
 chain complexes is the coefficient braiding multiplied by `(-1)^(p*q)`, followed by the inclusion
 of the swapped summand. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp high)]
 lemma ιTensorObj_koszulBraiding_hom_f (p q n : ℕ) (h : p + q = n) :
     ιTensorObj A B p q n h ≫ (HomologicalComplex.koszulBraiding A B).hom.f n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (A.X p) (B.X q)).hom ≫
@@ -89,7 +90,7 @@ lemma ιTensorObj_koszulBraiding_hom_f (p q n : ℕ) (h : p + q = n) :
 
 /-- On the bidegree-`(q, p)` summand, the inverse Koszul braiding is the inverse coefficient
 braiding multiplied by `(-1)^(p*q)`, followed by the inclusion of the swapped summand. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp high)]
 lemma ιTensorObj_koszulBraiding_inv_f (p q n : ℕ) (h : q + p = n) :
     ιTensorObj B A q p n h ≫ (HomologicalComplex.koszulBraiding A B).inv.f n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (A.X p) (B.X q)).inv ≫
@@ -100,34 +101,6 @@ lemma ιTensorObj_koszulBraiding_inv_f (p q n : ℕ) (h : q + p = n) :
   simp [Nat.mul_comm q p]
 
 end Braided
-
-section Symmetric
-
-variable [SymmetricCategory C]
-
-/-- In a symmetric category, interchanging tensor factors twice is the identity chain map. -/
-@[reassoc (attr := simp)]
-lemma koszulBraiding_hom_comp_hom :
-    (HomologicalComplex.koszulBraiding A B).hom ≫ (HomologicalComplex.koszulBraiding B A).hom =
-      𝟙 _ := by
-  ext n : 1
-  refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
-  simp only [HomologicalComplex.comp_f, ιTensorObj_koszulBraiding_hom_f_assoc,
-    ιTensorObj_koszulBraiding_hom_f, Preadditive.comp_zsmul, Preadditive.zsmul_comp,
-    Category.assoc, smul_smul, SymmetricCategory.symmetry_assoc,
-    HomologicalComplex.id_f, Category.comp_id]
-  rw [Nat.mul_comm q p, ← pow_add, ← two_mul, pow_mul]
-  simp
-
-/-- In a symmetric category, the inverse Koszul braiding swaps the factors in the opposite
-order. -/
-@[simp]
-lemma koszulBraiding_inv :
-    (HomologicalComplex.koszulBraiding A B).inv = (HomologicalComplex.koszulBraiding B A).hom := by
-  apply (cancel_epi (HomologicalComplex.koszulBraiding A B).hom).1
-  rw [Iso.hom_inv_id, koszulBraiding_hom_comp_hom]
-
-end Symmetric
 
 section Cochain
 

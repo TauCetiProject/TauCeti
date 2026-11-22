@@ -22,7 +22,11 @@ products with the Koszul differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d 
 The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
 complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
 bidegree `(p, q)`. It is the natural-number analogue of Mathlib's `TotalComplexShapeSymmetry`
-instance for cochain complexes indexed by `ℤ`, and adapts its sign calculation.
+instance for cochain complexes indexed by `ℤ`, and adapts its sign calculation. The instances
+`HomologicalComplex₂.totalComplexShapeSymmetrySymmetryDownNat` and
+`HomologicalComplex₂.totalComplexShapeSymmetrySymmetryUpInt` record that both signs are symmetric
+in the two factors (`TotalComplexShapeSymmetrySymmetry`), as the Koszul braiding of
+`TauCeti/Algebra/Homology/Monoidal/Braiding.lean` needs for its inverse and symmetry laws.
 -/
 
 public section
@@ -75,5 +79,23 @@ instance totalComplexShapeSymmetryDownNat :
     rintro p q _ rfl
     dsimp
     rw [one_mul, Nat.mul_add, Nat.mul_one, pow_add, mul_assoc, Int.units_mul_self, mul_one]
+
+/-- The Koszul sign `(-1)^(p*q)` of `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` is
+symmetric in the two factors. -/
+instance totalComplexShapeSymmetrySymmetryDownNat :
+    TotalComplexShapeSymmetrySymmetry (ComplexShape.down ℕ) (ComplexShape.down ℕ)
+      (ComplexShape.down ℕ) where
+  σ_symm p q := by
+    change (-1 : ℤˣ) ^ (q * p) = (-1 : ℤˣ) ^ (p * q)
+    rw [Nat.mul_comm]
+
+/-- The Koszul sign `(p * q).negOnePow` of Mathlib's `TotalComplexShapeSymmetry` instance for
+cochain complexes indexed by `ℤ` is symmetric in the two factors. -/
+instance totalComplexShapeSymmetrySymmetryUpInt :
+    TotalComplexShapeSymmetrySymmetry (ComplexShape.up ℤ) (ComplexShape.up ℤ)
+      (ComplexShape.up ℤ) where
+  σ_symm p q := by
+    change (q * p).negOnePow = (p * q).negOnePow
+    rw [mul_comm]
 
 end HomologicalComplex₂

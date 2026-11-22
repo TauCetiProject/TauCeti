@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Preadditive
 public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
 # Regrading tensor products of chain complexes
@@ -149,12 +150,8 @@ noncomputable def regradeTensorHom :
     apply mapBifunctor.hom_ext
     intro a b h
     replace h : a + b = k := h
-    rw [ι_mapBifunctorDesc_assoc, mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add,
-      mapBifunctor.ι_D₁_assoc, mapBifunctor.ι_D₂_assoc,
-      mapBifunctor.d₁_eq _ _ _ _ (up_mk a (a + 1) rfl) b (k + 1) (by dsimp; omega),
-      mapBifunctor.d₂_eq _ _ _ _ a (up_mk b (b + 1) rfl) (k + 1) (by dsimp; omega)]
-    simp only [ε₁_def, ε₂_def, ε_up_ℤ, one_smul, curriedTensor_map_app, curriedTensor_obj_map,
-      Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
+    rw [ι_mapBifunctorDesc_assoc, ιTensorObj_d_assoc]
+    simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
     -- The summands and differentials of the regraded complexes are those of `K`, `L` and `K ⊗ L`
     -- by definition of `HomologicalComplex.restriction`, so the identity between plain summands
     -- closes the goal.
