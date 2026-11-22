@@ -43,7 +43,8 @@ of the bundle and its conjugate, with the original bundle first. -/
 noncomputable def complexifyRealifyIso (A : FiniteRankBundleCore ℂ B) :
     (complexify B).obj ((realify B).obj A) ≅ whitneySum A ((conjugate B).obj A) :=
   constIso (fun _ => (Set.inter_self _).symm) (complexifyRealifyCoords A.rank)
-    fun i j x _ _ => ContinuousLinearMap.complexifyRealifyCoords_comp (A.core.coordChange i j x)
+    fun i j x _ _ =>
+      (A.core.coordChange i j x).complexifyRealifyCoords_comp_complexifyCoords_realifyCoords
 
 /-- The forward bundle comparison is the complex-linear coordinate splitting. -/
 @[simp] theorem fiberMap_complexifyRealifyIso_hom (A : FiniteRankBundleCore ℂ B) (x : B) :
@@ -66,9 +67,18 @@ noncomputable def complexifyRealifyIso (A : FiniteRankBundleCore ℂ B) :
   intro x
   simp only [fiberMap_comp, fiberMap_complexify_map, fiberMap_realify_map,
     fiberMap_complexifyRealifyIso_hom, fiberMap_whitneyMap, fiberMap_conjugate_map]
-  exact ContinuousLinearMap.complexifyRealifyCoords_comp (f.fiberMap x)
+  exact (f.fiberMap x).complexifyRealifyCoords_comp_complexifyCoords_realifyCoords
 
 variable {X : Type v} [TopologicalSpace X]
+
+/-- Pullback of the forward splitting map is the forward map of the pulled-back splitting. -/
+@[simp] theorem pullbackMap_complexifyRealifyIso_hom (A : FiniteRankBundleCore ℂ B) (f : C(X, B)) :
+    pullbackMap (complexifyRealifyIso A).hom f = (complexifyRealifyIso (A.pullback f)).hom := by
+  apply hom_ext
+  intro x
+  exact (fiberMap_pullbackMap (complexifyRealifyIso A).hom f x).trans
+    ((fiberMap_complexifyRealifyIso_hom A (f x)).trans
+      (fiberMap_complexifyRealifyIso_hom (A.pullback f) x).symm)
 
 /-- Pullback of the splitting is the splitting of the pulled-back bundle. The two
 sides use the strict pullback comparisons of coordinate functors and Whitney sums. -/
@@ -77,10 +87,12 @@ sides use the strict pullback comparisons of coordinate functors and Whitney sum
     (pullbackFunctor f).mapIso (complexifyRealifyIso A) =
       complexifyRealifyIso (A.pullback f) := by
   apply Iso.ext
-  apply hom_ext
-  intro x
-  exact (fiberMap_pullbackMap (complexifyRealifyIso A).hom f x).trans
-    ((fiberMap_complexifyRealifyIso_hom A (f x)).trans
-      (fiberMap_complexifyRealifyIso_hom (A.pullback f) x).symm)
+  rw [Functor.mapIso_hom, pullbackFunctor_map, pullbackMap_complexifyRealifyIso_hom]
+
+/-- Pullback of the inverse splitting map is the inverse map of the pulled-back splitting. -/
+@[simp] theorem pullbackMap_complexifyRealifyIso_inv (A : FiniteRankBundleCore ℂ B) (f : C(X, B)) :
+    pullbackMap (complexifyRealifyIso A).inv f = (complexifyRealifyIso (A.pullback f)).inv := by
+  rw [← pullbackFunctor_map (f := f), ← Functor.mapIso_inv,
+    pullbackFunctor_mapIso_complexifyRealifyIso]
 
 end TauCeti.FiniteRankBundleCore
