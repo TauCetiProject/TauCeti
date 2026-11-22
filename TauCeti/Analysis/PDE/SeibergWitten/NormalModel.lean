@@ -777,6 +777,12 @@ section Rows
 
 variable {ξ η : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
 
+/-- The connection of the normal model is differentiable where its plane fields are. -/
+theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
+    (hη : DifferentiableAt ℝ η (normalCoord e y)) :
+    DifferentiableAt ℝ (normalModelConnection e ξ η) y :=
+  (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
+
 variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
