@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -17,87 +17,34 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 Discs whose radii are a fixed multiple of the distance of their centers to the vertex, centered
 at the points of a closed sector `|arg z| ≤ θ'`, stay inside every larger open sector
-`|arg w| < θ`: this follows from compactness of the arc of unit directions of the closed sector.
-On such discs the norms are comparable to the norm of the center, so Cauchy's estimate for the
-derivative turns a power bound `‖f w‖ ≤ B ‖w‖ ^ ν` on the open sector into the bound
-`‖f' z‖ ≤ K B ‖z‖ ^ (ν - 1)` on the closed subsector, with `K` depending only on the sectors
-and `ν`.
+`|arg w| < θ`, and on them the norms are comparable to the norm of the center
+(`Complex.exists_pos_forall_closedBall_abs_arg_lt` in `TauCeti.Analysis.Complex.Sector.Bounds`).
+Cauchy's estimate for the derivative on these discs turns a power bound `‖f w‖ ≤ B ‖w‖ ^ ν` on
+the open sector into the bound `‖f' z‖ ≤ K B ‖z‖ ^ (ν - 1)` on the closed subsector, with `K`
+depending only on the sectors and `ν`, both pointwise and eventually as `z → ∞`.
 
 ## Main results
 
-* `Complex.exists_pos_forall_closedBall_abs_arg_lt_of_le_pi`,
-  `Complex.exists_pos_forall_closedBall_abs_arg_lt`: discs of radius proportional to the norm of
-  their centers in a closed sector stay in a larger open sector.
 * `Complex.exists_pos_norm_deriv_le_of_sector_bound`: a power bound in an open sector gives a
   derivative bound with the next lower power in a closed subsector.
+* `Complex.exists_pos_eventually_norm_deriv_le_sector`: the eventual form, along
+  `cobounded ℂ` restricted to the sectors.
 
 The statements and proofs are adapted from the lean-DLMF project
-(<https://github.com/bjbraams/lean-DLMF>), file `DLMFMathlib/Analysis/Complex/Sector.lean`, where
-the sectors may have any bisector.
+(<https://github.com/bjbraams/lean-DLMF>), files `DLMFMathlib/Analysis/Complex/Sector.lean`, where
+the sectors may have any bisector, and `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
 
 public section
 
 noncomputable section
 
-open Metric Set
+open Bornology Filter Metric Set
 open scoped Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 namespace Complex
-
-/-- For `θ' < θ ≤ π`, the closed balls of radius `c ‖z‖` around the points `z ≠ 0` of the closed
-sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `0 < c ≤ 1 / 2`. -/
-theorem exists_pos_forall_closedBall_abs_arg_lt_of_le_pi {θ θ' : ℝ} (hθ : θ ≤ π)
-    (hθ' : θ' < θ) : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' →
-      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
-  let K : Set ℂ := (fun φ : ℝ => exp (φ * I)) '' Icc (-θ') θ'
-  let U : Set ℂ := slitPlane ∩ (fun z : ℂ => |z.arg|) ⁻¹' Iio θ
-  have hK : IsCompact K := isCompact_Icc.image (by fun_prop)
-  have hU : IsOpen U := continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
-  have hKU : K ⊆ U := by
-    rintro _ ⟨φ, hφ, rfl⟩
-    have ha : (exp (φ * I)).arg = φ := by
-      rw [arg_exp_mul_I, toIocMod_eq_self]
-      constructor <;> linarith [hφ.1, hφ.2]
-    refine ⟨mem_slitPlane_iff_arg.mpr ⟨by linarith [hφ.2], exp_ne_zero _⟩, ?_⟩
-    rw [Set.mem_preimage, ha, Set.mem_Iio, abs_lt]
-    constructor <;> linarith [hφ.1, hφ.2]
-  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
-  refine ⟨min δ (1 / 2), lt_min hδ (by norm_num), min_le_right _ _,
-    fun z hz harg w hw => ?_⟩
-  have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr hz
-  have hzr : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hz0.ne'
-  rw [mem_closedBall, dist_eq_norm] at hw
-  have hunit : z / (‖z‖ : ℂ) ∈ K := by
-    refine ⟨z.arg, abs_le.mp harg, ?_⟩
-    rw [eq_div_iff hzr, mul_comm, norm_mul_exp_arg_mul_I]
-  have hdist : dist (w / (‖z‖ : ℂ)) (z / (‖z‖ : ℂ)) ≤ δ := by
-    rw [dist_eq_norm, ← sub_div, norm_div, norm_real, Real.norm_of_nonneg hz0.le]
-    exact ((div_le_iff₀ hz0).mpr hw).trans (min_le_left _ _)
-  have hwU := (hδU (mem_cthickening_of_dist_le _ _ _ K hunit hdist)).2
-  rwa [Set.mem_preimage, Set.mem_Iio, div_eq_mul_inv, ← ofReal_inv,
-    arg_mul_ofReal _ (inv_pos.mpr hz0)] at hwU
-
-/-- For `θ' < θ`, the closed balls of radius `c ‖z‖` around the points `z ≠ 0` of the closed
-sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `c > 0`, and the norms in
-these balls lie between `‖z‖ / 2` and `2 ‖z‖`. -/
-theorem exists_pos_forall_closedBall_abs_arg_lt {θ θ' : ℝ} (hθ' : θ' < θ) :
-    ∃ c > 0, ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' → ∀ w ∈ closedBall z (c * ‖z‖),
-      |w.arg| < θ ∧ ‖z‖ / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ‖z‖ := by
-  obtain ⟨c, hc, hc2, h⟩ : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' →
-      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
-    rcases le_or_gt θ π with hθ | hθ
-    · exact exists_pos_forall_closedBall_abs_arg_lt_of_le_pi hθ hθ'
-    · exact ⟨1 / 2, by norm_num, le_rfl, fun _ _ _ w _ => (abs_arg_le_pi w).trans_lt hθ⟩
-  refine ⟨c, hc, fun z hz harg w hw => ⟨h z hz harg w hw, ?_⟩⟩
-  rw [mem_closedBall, dist_eq_norm] at hw
-  have hnear : ‖w - z‖ ≤ ‖z‖ / 2 := hw.trans (by nlinarith [norm_nonneg z])
-  have h1 := norm_le_norm_add_norm_sub z w
-  have h2 := norm_le_norm_add_norm_sub w z
-  rw [norm_sub_rev] at h1
-  constructor <;> linarith
 
 /-- **Cauchy's estimate in a sector.** For `θ' < θ` there is `K > 0` such that every `f`
 holomorphic on `{A < ‖w‖, |arg w| < θ}` and bounded there by `B ‖w‖ ^ ν` satisfies
@@ -129,5 +76,24 @@ theorem exists_pos_norm_deriv_le_of_sector_bound {θ θ' : ℝ} (hθ' : θ' < θ
   refine hd.trans_eq ?_
   rw [Real.rpow_sub hz0, Real.rpow_one]
   field_simp
+
+/-- The eventual form of Cauchy's estimate in a sector: for `θ' < θ` there is `K > 0` such that
+an eventual bound `‖f z‖ ≤ B ‖z‖ ^ ν` as `z → ∞` in `|arg z| < θ`, for `f` holomorphic on
+`{R < ‖z‖, |arg z| < θ}`, gives `‖f' z‖ ≤ K B ‖z‖ ^ (ν - 1)` as `z → ∞` in `|arg z| ≤ θ'`. The
+constant does not depend on `f`, `R` or `B`. -/
+theorem exists_pos_eventually_norm_deriv_le_sector {θ θ' : ℝ} (hθ' : θ' < θ) (ν : ℝ) :
+    ∃ K > 0, ∀ (f : ℂ → E) (R B : ℝ),
+      DifferentiableOn ℂ f {z | R < ‖z‖ ∧ |arg z| < θ} →
+      (∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z | |arg z| < θ}, ‖f z‖ ≤ B * ‖z‖ ^ ν) →
+      ∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ'}, ‖deriv f z‖ ≤ K * B * ‖z‖ ^ (ν - 1) := by
+  obtain ⟨K, hK, hder⟩ := exists_pos_norm_deriv_le_of_sector_bound (E := E) hθ' ν
+  refine ⟨K, hK, fun f R B hf hbound => ?_⟩
+  obtain ⟨A, -, hA⟩ := (hasBasis_cobounded_norm.inf_principal _).eventually_iff.mp hbound
+  refine (hasBasis_cobounded_norm.inf_principal _).eventually_iff.mpr
+    ⟨2 * max (max A R) 0 + 1, trivial, fun z ⟨hz, harg⟩ => ?_⟩
+  have hfn : DifferentiableOn ℂ f {w | max A R < ‖w‖ ∧ |w.arg| < θ} :=
+    hf.mono fun w hw => ⟨(le_max_right A R).trans_lt hw.1, hw.2⟩
+  refine hder f (max A R) B hfn (fun w hw hwa => ?_) z ((lt_add_one _).trans_le hz) harg
+  exact hA ⟨((le_max_left A R).trans_lt hw).le, hwa⟩
 
 end Complex

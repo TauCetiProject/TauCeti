@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Norm bounds for nonnegative translations in complex sectors
@@ -27,6 +28,15 @@ These inequalities control reciprocal kernels in sectorial and Stieltjes integra
 symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, and every
 sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
 (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
+
+Discs whose radii are a fixed multiple of the norm of their centers, centered at the nonzero
+points of a closed sector `|arg z| ≤ θ'`, stay inside every larger open sector `|arg w| < θ`, by
+compactness of the arc of unit directions of the closed sector
+(`Complex.exists_pos_forall_closedBall_abs_arg_lt_of_le_pi`,
+`Complex.exists_pos_forall_closedBall_abs_arg_lt`); on such discs the norms are comparable to the
+norm of the center. These two statements and proofs are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMFMathlib/Analysis/Complex/Sector.lean`, where
+the sectors may have any bisector.
 -/
 
 public section
@@ -216,5 +226,63 @@ theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
   rw [← himg]
   exact ((Set.ordConnected_Ici.inter Set.ordConnected_Ioi).isPreconnected.prod
     isPreconnected_Ioo).image φ hφ.continuousOn
+
+section Discs
+
+open Metric Set
+
+/-- For `θ' < θ ≤ π`, the closed balls of radius `c ‖z‖` around the points `z ≠ 0` of the closed
+sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `0 < c ≤ 1 / 2`. -/
+theorem exists_pos_forall_closedBall_abs_arg_lt_of_le_pi {θ θ' : ℝ} (hθ : θ ≤ π)
+    (hθ' : θ' < θ) : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' →
+      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
+  let K : Set ℂ := (fun φ : ℝ => exp (φ * I)) '' Icc (-θ') θ'
+  let U : Set ℂ := slitPlane ∩ (fun z : ℂ => |z.arg|) ⁻¹' Iio θ
+  have hK : IsCompact K := isCompact_Icc.image (by fun_prop)
+  have hU : IsOpen U := continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
+  have hKU : K ⊆ U := by
+    rintro _ ⟨φ, hφ, rfl⟩
+    have ha : (exp (φ * I)).arg = φ := by
+      rw [arg_exp_mul_I, toIocMod_eq_self]
+      constructor <;> linarith [hφ.1, hφ.2]
+    refine ⟨mem_slitPlane_iff_arg.mpr ⟨by linarith [hφ.2], exp_ne_zero _⟩, ?_⟩
+    rw [Set.mem_preimage, ha, Set.mem_Iio, abs_lt]
+    constructor <;> linarith [hφ.1, hφ.2]
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  refine ⟨min δ (1 / 2), lt_min hδ (by norm_num), min_le_right _ _,
+    fun z hz harg w hw => ?_⟩
+  have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr hz
+  have hzr : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hz0.ne'
+  rw [mem_closedBall, dist_eq_norm] at hw
+  have hunit : z / (‖z‖ : ℂ) ∈ K := by
+    refine ⟨z.arg, abs_le.mp harg, ?_⟩
+    rw [eq_div_iff hzr, mul_comm, norm_mul_exp_arg_mul_I]
+  have hdist : dist (w / (‖z‖ : ℂ)) (z / (‖z‖ : ℂ)) ≤ δ := by
+    rw [dist_eq_norm, ← sub_div, norm_div, norm_real, Real.norm_of_nonneg hz0.le]
+    exact ((div_le_iff₀ hz0).mpr hw).trans (min_le_left _ _)
+  have hwU := (hδU (mem_cthickening_of_dist_le _ _ _ K hunit hdist)).2
+  rwa [Set.mem_preimage, Set.mem_Iio, div_eq_mul_inv, ← ofReal_inv,
+    arg_mul_ofReal _ (inv_pos.mpr hz0)] at hwU
+
+/-- For `θ' < θ`, the closed balls of radius `c ‖z‖` around the points `z ≠ 0` of the closed
+sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `c > 0`, and the norms in
+these balls lie between `‖z‖ / 2` and `2 ‖z‖`. -/
+theorem exists_pos_forall_closedBall_abs_arg_lt {θ θ' : ℝ} (hθ' : θ' < θ) :
+    ∃ c > 0, ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' → ∀ w ∈ closedBall z (c * ‖z‖),
+      |w.arg| < θ ∧ ‖z‖ / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ‖z‖ := by
+  obtain ⟨c, hc, hc2, h⟩ : ∃ c > 0, c ≤ 1 / 2 ∧ ∀ z : ℂ, z ≠ 0 → |z.arg| ≤ θ' →
+      ∀ w ∈ closedBall z (c * ‖z‖), |w.arg| < θ := by
+    rcases le_or_gt θ π with hθ | hθ
+    · exact exists_pos_forall_closedBall_abs_arg_lt_of_le_pi hθ hθ'
+    · exact ⟨1 / 2, by norm_num, le_rfl, fun _ _ _ w _ => (abs_arg_le_pi w).trans_lt hθ⟩
+  refine ⟨c, hc, fun z hz harg w hw => ⟨h z hz harg w hw, ?_⟩⟩
+  rw [mem_closedBall, dist_eq_norm] at hw
+  have hnear : ‖w - z‖ ≤ ‖z‖ / 2 := hw.trans (by nlinarith [norm_nonneg z])
+  have h1 := norm_le_norm_add_norm_sub z w
+  have h2 := norm_le_norm_add_norm_sub w z
+  rw [norm_sub_rev] at h1
+  constructor <;> linarith
+
+end Discs
 
 end Complex

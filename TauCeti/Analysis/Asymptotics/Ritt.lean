@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.Deriv.ZPow
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.Complex.Sector.Deriv
 
 /-!
@@ -29,14 +30,13 @@ stay inside `S`, by compactness of the arc of unit directions of the subsector.
 
 ## Main results
 
-* `Asymptotics.exists_pos_eventually_norm_deriv_le_sector`: the eventual form of Cauchy's
-  estimate in a sector.
 * `Asymptotics.isBigO_deriv_of_isBigO_sector`, `Asymptotics.isLittleO_deriv_of_isLittleO_sector`:
   Ritt's theorem with `O` and with `o`.
 * `Asymptotics.HasAsymptoticExpansion.deriv_sector`: termwise differentiation of a Poincaré
   expansion at infinity in a sector.
 
-The sector geometry and the pointwise Cauchy estimate are in
+The sector geometry is in `TauCeti.Analysis.Complex.Sector.Bounds`, the pointwise and eventual
+Cauchy estimates in a sector (`Complex.exists_pos_eventually_norm_deriv_le_sector`) are in
 `TauCeti.Analysis.Complex.Sector.Deriv`, the comparison of real powers of comparable numbers is
 `Real.rpow_le_two_rpow_abs_mul`, and the derivative of `z ↦ (z ^ n)⁻¹` is `hasDerivAt_inv_pow`.
 
@@ -59,25 +59,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 namespace Asymptotics
 
 open Complex
-
-/-- The eventual form of Cauchy's estimate in a sector: for `θ' < θ` there is `K > 0` such that
-an eventual bound `‖f z‖ ≤ B ‖z‖ ^ ν` as `z → ∞` in `|arg z| < θ`, for `f` holomorphic on
-`{R < ‖z‖, |arg z| < θ}`, gives `‖f' z‖ ≤ K B ‖z‖ ^ (ν - 1)` as `z → ∞` in `|arg z| ≤ θ'`. The
-constant does not depend on `f`, `R` or `B`. -/
-theorem exists_pos_eventually_norm_deriv_le_sector {θ θ' : ℝ} (hθ' : θ' < θ) (ν : ℝ) :
-    ∃ K > 0, ∀ (f : ℂ → E) (R B : ℝ),
-      DifferentiableOn ℂ f {z | R < ‖z‖ ∧ |arg z| < θ} →
-      (∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z | |arg z| < θ}, ‖f z‖ ≤ B * ‖z‖ ^ ν) →
-      ∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ'}, ‖deriv f z‖ ≤ K * B * ‖z‖ ^ (ν - 1) := by
-  obtain ⟨K, hK, hder⟩ := exists_pos_norm_deriv_le_of_sector_bound (E := E) hθ' ν
-  refine ⟨K, hK, fun f R B hf hbound => ?_⟩
-  obtain ⟨A, -, hA⟩ := (hasBasis_cobounded_norm.inf_principal _).eventually_iff.mp hbound
-  refine (hasBasis_cobounded_norm.inf_principal _).eventually_iff.mpr
-    ⟨2 * max (max A R) 0 + 1, trivial, fun z ⟨hz, harg⟩ => ?_⟩
-  have hfn : DifferentiableOn ℂ f {w | max A R < ‖w‖ ∧ |w.arg| < θ} :=
-    hf.mono fun w hw => ⟨(le_max_right A R).trans_lt hw.1, hw.2⟩
-  refine hder f (max A R) B hfn (fun w hw hwa => ?_) z ((lt_add_one _).trans_le hz) harg
-  exact hA ⟨((le_max_left A R).trans_lt hw).le, hwa⟩
 
 /-- **Ritt's theorem** (DLMF §2.1(ii)): if `f` is holomorphic on `{R < ‖z‖, |arg z| < θ}` and
 `f(z) = O(‖z‖ ^ ν)` as `z → ∞` in `|arg z| < θ`, then `f'(z) = O(‖z‖ ^ (ν - 1))` as `z → ∞` in
