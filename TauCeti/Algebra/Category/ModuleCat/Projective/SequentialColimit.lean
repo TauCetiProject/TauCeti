@@ -59,8 +59,8 @@ variable {R : Type u} [Ring R] (F : ℕ ⥤ ModuleCat.{v} R)
 /-- The colimit of a sequence of modules of projective dimension `< n` has projective dimension
 `< n + 1`. In terms of `HasProjectiveDimensionLE`, a sequential colimit of modules of projective
 dimension at most `d` has projective dimension at most `d + 1`. -/
-theorem hasProjectiveDimensionLT_succ_of_isColimit [Small.{v} R] {c : Cocone F} (hc : IsColimit c)
-    (n : ℕ) (h : ∀ i, HasProjectiveDimensionLT (F.obj i) n) :
+theorem hasProjectiveDimensionLT_succ_of_isColimit [EnoughProjectives (ModuleCat.{v} R)]
+    {c : Cocone F} (hc : IsColimit c) (n : ℕ) (h : ∀ i, HasProjectiveDimensionLT (F.obj i) n) :
     HasProjectiveDimensionLT c.pt (n + 1) := by
   have hsum (m : ℕ) (hm : n ≤ m) : HasProjectiveDimensionLT (of R (⨁ i, F.obj i)) m :=
     hasProjectiveDimensionLT_of_isColimit_cofan (coproductCoconeIsColimit fun i ↦ F.obj i) m
