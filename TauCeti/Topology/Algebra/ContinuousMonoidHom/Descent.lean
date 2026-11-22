@@ -98,12 +98,12 @@ noncomputable def homEquivOfIsQuotientMap (p : G →ₜ* Q) (hp : IsQuotientMap 
       exact (congrArg f hx).trans (map_one f)⟩
   {
   toFun := forward
-  invFun f := liftOfIsQuotientMap p hp f.1 f.2
+  invFun f := liftOfIsQuotientMap p hp f.val f.property
   left_inv f :=
-    (liftOfIsQuotientMap_unique p hp (forward f).1 (forward f).2 f rfl).symm
+    (liftOfIsQuotientMap_unique p hp (forward f).val (forward f).property f rfl).symm
   right_inv f := by
     apply Subtype.ext
-    exact liftOfIsQuotientMap_comp p hp f.1 f.2
+    exact liftOfIsQuotientMap_comp p hp f.val f.property
   }
 
 /-- Evaluation of the forward quotient-homomorphism equivalence. -/
@@ -120,7 +120,7 @@ theorem homEquivOfIsQuotientMap_apply_coe (p : G →ₜ* Q) (hp : IsQuotientMap 
 @[simp]
 theorem homEquivOfIsQuotientMap_symm_apply (p : G →ₜ* Q) (hp : IsQuotientMap p)
     (f : {g : G →ₜ* H // (p : G →* Q).ker ≤ (g : G →* H).ker}) :
-    (homEquivOfIsQuotientMap p hp).symm f = liftOfIsQuotientMap p hp f.1 f.2 := by
+    (homEquivOfIsQuotientMap p hp).symm f = liftOfIsQuotientMap p hp f.val f.property := by
   apply (homEquivOfIsQuotientMap p hp).injective
   rw [(homEquivOfIsQuotientMap p hp).apply_symm_apply]
   apply Subtype.ext

@@ -114,7 +114,7 @@ private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo
       (isAlt_degreeOneForm_of_repr_inl_eq_zero _ hc) hpq hv
   have hmem : e₁ r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
     (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom.map_pLowerCentralSeries_le
-      (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ⟨r, r.2, rfl⟩
+      (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ⟨r, r.property, rfl⟩
   refine ⟨e₁, hmem, ?_, ?_, ?_⟩
   · -- `e₁ r` and the normal-form word have the same class in `gr_1(F)`.
     rw [gradedMk_eq_gradedMk_iff]

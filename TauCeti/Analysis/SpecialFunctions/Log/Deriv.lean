@@ -12,15 +12,19 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
-The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`.
+Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`.
+The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and that of
+`r ↦ log (c / r)` wherever `c ≠ 0` and `r ≠ 0`.
 
 ## Main results
 
 * `TauCeti.differentiableAt_comp_log_iff`: differentiability of `v ∘ log` at `x ≠ 0` is
   differentiability of `v` at `log x`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
+* `TauCeti.norm_fderiv_le_norm_fderiv_log`: where `0 < f z ≤ 1`, `‖∇ f‖ ≤ ‖∇ log f‖`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
+* `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -72,6 +76,14 @@ theorem mul_deriv_comp_log (hx : x ≠ 0) :
 
 end
 
+/-- Where `0 < f z ≤ 1`, the gradient of `f` is at most the gradient of `log f`, since
+`∇ f = f ∇ log f`. -/
+theorem norm_fderiv_le_norm_fderiv_log {f : E → ℝ} {z : E} (hf : DifferentiableAt ℝ f z)
+    (h₀ : 0 < f z) (h₁ : f z ≤ 1) : ‖fderiv ℝ f z‖ ≤ ‖fderiv ℝ (fun w ↦ log (f w)) z‖ := by
+  rw [(hf.hasFDerivAt.log h₀.ne').fderiv, norm_smul, norm_inv, Real.norm_of_nonneg h₀.le,
+    le_inv_mul_iff₀ h₀]
+  exact mul_le_of_le_one_left (norm_nonneg _) h₁
+
 end TauCeti
 
 namespace TauCeti.Real
@@ -96,3 +108,16 @@ theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : Real.log t ≠ 0) :
       ring
 
 end TauCeti.Real
+
+namespace Real
+
+/-- The derivative of `r ↦ log (c / r)` is `-r⁻¹`, for `c ≠ 0` and `r ≠ 0`. -/
+theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
+    HasDerivAt (fun s : ℝ => log (c / s)) (-r⁻¹) r := by
+  have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
+    simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using
+      (hasDerivAt_inv hr).const_mul c
+  refine (hdiv.log (div_ne_zero hc hr)).congr_deriv ?_
+  field_simp
+
+end Real

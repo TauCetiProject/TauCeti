@@ -67,8 +67,8 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 Frattini subgroup: an open normal subgroup of prime index `p` is a maximal open subgroup. -/
 theorem profiniteFrattini_le_proPFrattini : profiniteFrattini G ≤ proPFrattini p G := by
   rw [proPFrattini_def]
-  exact le_iInf fun U ↦ profiniteFrattini_le U.1.isOpen
-    (Subgroup.isCoatom_of_index_prime (by rw [U.2]; exact hp.out))
+  exact le_iInf fun U ↦ profiniteFrattini_le U.val.isOpen
+    (Subgroup.isCoatom_of_index_prime (by rw [U.property]; exact hp.out))
 
 namespace IsProP
 

@@ -8,7 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import Mathlib.Combinatorics.SimpleGraph.LineGraph
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
+public import TauCeti.Combinatorics.SimpleGraph.Coloring.Edge
 
 /-!
 # Line graphs and edge-colourings of multigraphs
@@ -39,6 +40,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   graph.
 * `Graph.Iso.lineGraph`: isomorphic multigraphs have isomorphic line graphs.
 * `Graph.lineGraphOfSimpleGraphIso`: the line graph of `Graph.ofSimpleGraph H` is `H.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: colourings of `H.lineGraph` are proper
+  edge-colourings of `Graph.ofSimpleGraph H`.
 * `Graph.EdgeColoring G C`: proper edge-colourings of `G` by `C`, with the constructor
   `Graph.EdgeColoring.mk` and the restriction `Graph.EdgeColoring.ofLE` to subgraphs, such as
   `G.deleteEdges F`.
@@ -54,6 +57,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   exactly `F.encard` colours.
 * `Graph.chromaticNumber_lineGraph_ofSimpleGraph`: for a simple graph the least number of colours
   is that of Mathlib's `SimpleGraph.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: proper edge-colourings of a simple graph agree with
+  those of its associated edge-labelled multigraph.
 -/
 
 public section
@@ -95,7 +100,7 @@ private theorem pairwise_lineGraph_adj_inclusion (G : Graph α β) (x : α) :
     Pairwise fun e f : G.incidenceSet x ↦ G.lineGraph.Adj
       (inclusion (G.incidenceSet_subset_edgeSet x) e)
       (inclusion (G.incidenceSet_subset_edgeSet x) f) :=
-  fun e f hef ↦ G.isClique_lineGraph_incidenceSet x e.2 f.2
+  fun e f hef ↦ G.isClique_lineGraph_incidenceSet x e.property f.property
     ((inclusion_injective (G.incidenceSet_subset_edgeSet x)).ne hef)
 
 /-- The line graph of a subgraph `H ≤ G` is the subgraph of the line graph of `G` induced on the
@@ -105,7 +110,8 @@ def lineGraphEmbeddingOfLE (h : H ≤ G) : H.lineGraph ↪g G.lineGraph where
   inj' := inclusion_injective h.edgeSet_mono
   map_rel_iff' {e f} := by
     simp only [Function.Embedding.coeFn_mk, lineGraph_adj, ne_eq,
-      (inclusion_injective h.edgeSet_mono).eq_iff, ← h.inc_congr e.2, ← h.inc_congr f.2]
+      (inclusion_injective h.edgeSet_mono).eq_iff, ← h.inc_congr e.property,
+          ← h.inc_congr f.property]
 
 /-- The embedding of line graphs induced by `H ≤ G` keeps each edge identity. -/
 @[simp]
@@ -216,11 +222,61 @@ theorem incidenceCount_le_chromaticNumber_lineGraph (G : Graph α β) (x : α) :
   exact SimpleGraph.le_chromaticNumber_of_pairwise_adj (Nat.card_coe_set_eq _).ge _
     (G.pairwise_lineGraph_adj_inclusion x)
 
-/-- For a simple graph `H`, proper edge-colourings of `Graph.ofSimpleGraph H` need as many colours
-as colourings of Mathlib's `SimpleGraph.lineGraph`. -/
+/-- The chromatic number of the line graph of `Graph.ofSimpleGraph H` is the chromatic index of
+the simple graph `H`. -/
+@[simp]
 theorem chromaticNumber_lineGraph_ofSimpleGraph (H : SimpleGraph α) :
-    (ofSimpleGraph H).lineGraph.chromaticNumber = H.lineGraph.chromaticNumber :=
+    (ofSimpleGraph H).lineGraph.chromaticNumber = H.chromaticIndex :=
   SimpleGraph.chromaticNumber_congr (lineGraphOfSimpleGraphIso H)
+
+end Graph
+
+namespace SimpleGraph
+
+open scoped Graph
+
+variable {V : Type u} {G : SimpleGraph V} {C : Type w} {k : ℕ}
+
+/-- Proper edge-colourings of a simple graph are equivalent to proper edge-colourings of its
+associated edge-labelled multigraph. -/
+def edgeColoringEquivOfSimpleGraph (G : SimpleGraph V) (C : Type w) :
+    G.EdgeColoring C ≃ (Graph.ofSimpleGraph G).EdgeColoring C :=
+  coloringCongr (Graph.lineGraphOfSimpleGraphIso G).symm (Equiv.refl C)
+
+/-- Transporting a simple-graph edge-colouring to the associated multigraph evaluates it on the
+corresponding simple edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_apply
+    (c : G.EdgeColoring C) (e : E(Graph.ofSimpleGraph G)) :
+    edgeColoringEquivOfSimpleGraph G C c e =
+      c (Graph.lineGraphOfSimpleGraphIso G e) :=
+  (rfl)
+
+/-- Transporting a multigraph edge-colouring to the simple graph evaluates it on the
+corresponding actual edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_symm_apply
+    (c : (Graph.ofSimpleGraph G).EdgeColoring C) (e : G.edgeSet) :
+    (edgeColoringEquivOfSimpleGraph G C).symm c e =
+      c ((Graph.lineGraphOfSimpleGraphIso G).symm e) :=
+  (rfl)
+
+/-- Edge-colourability of a simple graph agrees with edge-colourability of its associated
+edge-labelled multigraph. -/
+theorem edgeColorableWith_iff_nonempty_edgeColoring_ofSimpleGraph :
+    G.EdgeColorableWith C ↔ Nonempty ((Graph.ofSimpleGraph G).EdgeColoring C) :=
+  (edgeColoringEquivOfSimpleGraph G C).nonempty_congr
+
+/-- Edge-colourability by at most `k` colours agrees with edge-colourability of the associated
+edge-labelled multigraph. -/
+theorem edgeColorable_iff_nonempty_edgeColoring_ofSimpleGraph :
+    G.EdgeColorable k ↔ Nonempty ((Graph.ofSimpleGraph G).EdgeColoring (Fin k)) :=
+  (edgeColorable_iff_edgeColorableWith G).trans
+    edgeColorableWith_iff_nonempty_edgeColoring_ofSimpleGraph
+
+end SimpleGraph
+
+namespace Graph
 
 /-! ### Parallel edges -/
 
@@ -229,8 +285,8 @@ banana graph is complete. -/
 @[simp]
 theorem lineGraph_banana (u v : α) (F : Set β) : (banana u v F).lineGraph = ⊤ := by
   ext e f
-  have he : (e : β) ∈ F := by simpa using e.2
-  have hf : (f : β) ∈ F := by simpa using f.2
+  have he : (e : β) ∈ F := by simpa using e.property
+  have hf : (f : β) ∈ F := by simpa using f.property
   simp only [lineGraph_adj, banana_inc, SimpleGraph.top_adj, and_iff_left_iff_imp]
   exact fun _ ↦ ⟨u, ⟨he, Or.inl rfl⟩, hf, Or.inl rfl⟩
 
@@ -242,3 +298,9 @@ theorem chromaticNumber_lineGraph_banana (u v : α) (F : Set β) :
     edgeSet_banana]
 
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u} {C : Type w}
+
+end SimpleGraph
