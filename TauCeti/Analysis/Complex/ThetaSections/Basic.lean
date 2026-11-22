@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # Automorphy factors, Gaussian metrics, and holomorphic theta sections on complex tori
@@ -183,8 +184,8 @@ theorem thetaFactor_commutator_real_eq_iff_exists_intCast_eq (k : ℝ) (τ : ℂ
   have hne : thetaFactor k τ α β 1 0 (z + τ) * thetaFactor k τ α β 0 1 z ≠ 0 :=
     mul_ne_zero (thetaFactor_ne_zero _ _ _ _ _ _ _) (thetaFactor_ne_zero _ _ _ _ _ _ _)
   have hneg : -2 * π * I * (k : ℂ) = -(2 * π * I * k) := by ring
-  rw [mul_eq_right₀ hne, hneg, Complex.exp_neg, inv_eq_one, Complex.exp_eq_one_iff]
-  simp [mul_comm (2 * π * I), mul_left_inj' two_pi_I_ne_zero, ← ofReal_intCast, eq_comm]
+  rw [mul_eq_right₀ hne, hneg, Complex.exp_neg, inv_eq_one,
+    Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff]
 
 /-! ### Gaussian Hermitian metric and Chern Wirtinger forms -/
 
@@ -232,14 +233,6 @@ theorem thetaMetric_add_int_add_int_mul_tau_mul_norm_thetaFactor_sq (k : ℝ) {�
   field_simp [hτ]
   ring
 
-/-- Along the single generator shift `z ↦ z + τ` at any real level `k : ℝ`, the metric weight
-transforms inversely to the squared modulus of the generator factor whenever `τ.im ≠ 0`. -/
-theorem thetaMetric_add_tau_mul_norm_sq (k : ℝ) {τ : ℂ} (hτ : τ.im ≠ 0) (β : ℝ) (z : ℂ) :
-    thetaMetric k τ (z + τ) * ‖cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z)‖ ^ 2 =
-      thetaMetric k τ z := by
-  simpa [thetaFactor_zero_one] using
-    thetaMetric_add_int_add_int_mul_tau_mul_norm_thetaFactor_sq k hτ 0 β 0 1 z
-
 /-- The `(1, 0)`-Wirtinger derivative of `log (thetaMetric k τ z)` is the Chern connection
 `(1, 0)`-form `∂ log h = 2πik (im z / im τ)`. -/
 theorem wirtingerDeriv_log_thetaMetric (k : ℝ) (τ z : ℂ) :
@@ -263,7 +256,9 @@ theorem wirtingerDeriv_log_thetaMetric (k : ℝ) (τ z : ℂ) :
     rw [hfun]
     exact Complex.ofRealCLM.hasFDerivAt.comp z hreal
   rw [wirtingerDeriv_apply, hf.fderiv]
-  simp
+  simp only [ContinuousLinearMap.comp_apply, smul_apply, Complex.ofRealCLM_apply,
+    Complex.imCLM_apply, smul_eq_mul, mul_one, Complex.one_im, Complex.I_im]
+  push_cast
   ring
 
 /-- The `(0, 1)`-Wirtinger derivative of the Chern `(1, 0)`-form `∂ log (thetaMetric k τ)` is the
@@ -285,9 +280,14 @@ theorem conjWirtingerDeriv_wirtingerDeriv_log_thetaMetric (k : ℝ) (τ z : ℂ)
     rw [hfun]
     exact (Complex.ofRealCLM.hasFDerivAt.comp z Complex.imCLM.hasFDerivAt).const_smul c
   rw [conjWirtingerDeriv_apply, hf.fderiv]
-  simp [c]
-  ring_nf
-  simp
+  simp only [c, smul_apply, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply,
+    Complex.imCLM_apply, smul_eq_mul, Complex.one_im, Complex.I_im, mul_zero, zero_add,
+    Complex.ofReal_zero, Complex.ofReal_one, mul_one]
+  calc
+    (2 : ℂ)⁻¹ * (I * (2 * π * I * k / τ.im)) =
+        (2 * (2 : ℂ)⁻¹) * (I * I) * (π * k / τ.im) := by ring
+    _ = 1 * (-1) * (π * k / τ.im) := by rw [mul_inv_cancel₀ two_ne_zero, I_mul_I]
+    _ = -(π : ℂ) * k / τ.im := by ring
 
 /-! ### Holomorphic theta sections -/
 
@@ -305,7 +305,8 @@ noncomputable def thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ) : Submodule �
   zero_mem' := ⟨differentiable_const 0, fun z => by simp, fun z => by simp⟩
   smul_mem' := by
     rintro c f ⟨hf, hf1, hfτ⟩
-    exact ⟨hf.const_smul c, fun z => by simp [hf1]; ring, fun z => by simp [hfτ]; ring⟩
+    exact ⟨hf.const_smul c, fun z => by simp only [Pi.smul_apply, smul_eq_mul, hf1]; ring,
+      fun z => by simp only [Pi.smul_apply, smul_eq_mul, hfτ]; ring⟩
 
 /-- Membership characterization for `thetaSections`. -/
 theorem mem_thetaSections_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ} :
@@ -420,7 +421,7 @@ theorem thetaSections_add_int (k : ℕ) (τ : ℂ) (α β : ℝ) (a b : ℤ) :
     thetaSections k τ (α + a) (β + b) = thetaSections k τ α β := by
   ext s
   have hα : cexp (2 * π * I * (α + a : ℝ)) = cexp (2 * π * I * α) := by
-    simpa [thetaFactor_one_zero] using thetaFactor_add_int k τ α β a b 1 0 0
+    simpa only [thetaFactor_one_zero] using thetaFactor_add_int k τ α β a b 1 0 0
   have hβ : ∀ z : ℂ,
       cexp (2 * π * I * (β + b : ℝ) - π * I * k * τ - 2 * π * I * k * z) =
         cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := fun z => by

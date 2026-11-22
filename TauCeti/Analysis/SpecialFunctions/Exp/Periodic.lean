@@ -28,6 +28,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
+* `Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff`: `exp (2 π i x) = 1` for real `x` if and only
+  if `x` is an integer.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
@@ -55,6 +57,15 @@ theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
 @[simp]
 theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖ = 1 := by
   simp [norm_exp]
+
+/-- `e(x) = 1` for real `x` if and only if `x` is an integer. -/
+theorem exp_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
+    cexp (2 * π * I * x) = 1 ↔ ∃ n : ℤ, (n : ℝ) = x := by
+  rw [exp_eq_one_iff]
+  refine ⟨fun ⟨n, hn⟩ => ⟨n, ofReal_injective ?_⟩, fun ⟨n, hn⟩ => ⟨n, ?_⟩⟩
+  · rw [ofReal_intCast]
+    exact (mul_left_cancel₀ two_pi_I_ne_zero (hn.trans (mul_comm _ _))).symm
+  · rw [← hn, ofReal_intCast, mul_comm]
 
 /-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
 `(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/

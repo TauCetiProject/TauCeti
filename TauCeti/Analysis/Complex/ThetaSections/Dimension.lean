@@ -17,8 +17,10 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Complex.Laurent.Expansion
+import TauCeti.Analysis.Complex.Laurent.Periodic
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # Twisted Fourier analysis, characteristic basis, and dimension of theta sections
@@ -46,10 +48,10 @@ function `jacobiTheta₂`, we construct the explicit `Fin k`-indexed `ℂ`-basis
 
 ## Main results
 
-* `TauCeti.hasSum_thetaFourierCoeff` and
-  `TauCeti.forall_add_tau_iff_forall_thetaFourierCoeff_add`: twisted Fourier expansion of
-  quasi-periodic entire functions and exact equivalence with the integer-level coefficient
-  recurrence.
+* `TauCeti.hasSum_thetaFourierCoeff`, `TauCeti.forall_add_tau_iff_forall_thetaFourierCoeff_add`,
+  and `TauCeti.thetaFourierCoeff_add_of_mem_thetaSections`: twisted Fourier expansion of
+  quasi-periodic entire functions, exact equivalence with the integer-level coefficient
+  recurrence, and the recurrence for theta sections.
 * `TauCeti.thetaMetric_mul_norm_sq_add_int_add_int_mul_tau`: unconditional lattice invariance of
   the pointwise Hermitian norm squared `thetaMetric k τ z * ‖s z‖²` for theta sections.
 * `TauCeti.characteristicTheta_mem_thetaSections`, `TauCeti.jacobiTheta₂_mem_thetaSections`, and
@@ -104,23 +106,26 @@ theorem thetaFourierCoeff_smul (α : ℝ) (c : ℂ) (s : ℂ → ℂ) (m : ℤ) 
   refine intervalIntegral.integral_congr fun t _ => ?_
   ring
 
+private lemma fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff (α : ℝ) (s : ℂ → ℂ) (m : ℤ) :
+    fourierCoeffOn zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t) m =
+      thetaFourierCoeff α s m := by
+  rw [fourierCoeffOn_eq_integral, thetaFourierCoeff_def]
+  simp only [sub_zero, div_one, one_smul]
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  simp only [smul_eq_mul, fourier_coe_apply, ← mul_assoc, ← Complex.exp_add]
+  congr 2
+  push_cast
+  ring
+
 /-- `thetaFourierCoeff` is additive on functions interval-integrable on `[0, 1]`. -/
 theorem thetaFourierCoeff_add {α : ℝ} {s₁ s₂ : ℂ → ℂ}
     (hs₁ : IntervalIntegrable (fun t : ℝ => s₁ t) MeasureTheory.volume 0 1)
     (hs₂ : IntervalIntegrable (fun t : ℝ => s₂ t) MeasureTheory.volume 0 1) (m : ℤ) :
     thetaFourierCoeff α (s₁ + s₂) m = thetaFourierCoeff α s₁ m + thetaFourierCoeff α s₂ m := by
-  have hexp : ContinuousOn (fun t : ℝ => cexp (-2 * π * I * (m + α) * t)) (uIcc (0 : ℝ) 1) :=
-    (by fun_prop : Continuous fun t : ℝ => cexp (-2 * π * I * (m + α) * t)).continuousOn
-  have h1 : IntervalIntegrable (fun t : ℝ => cexp (-2 * π * I * (m + α) * t) * s₁ t)
-      MeasureTheory.volume 0 1 :=
-    hs₁.continuousOn_mul hexp
-  have h2 : IntervalIntegrable (fun t : ℝ => cexp (-2 * π * I * (m + α) * t) * s₂ t)
-      MeasureTheory.volume 0 1 :=
-    hs₂.continuousOn_mul hexp
-  rw [thetaFourierCoeff_def, thetaFourierCoeff_def, thetaFourierCoeff_def,
-    ← intervalIntegral.integral_add h1 h2]
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  simp only [Pi.add_apply, mul_add]
+  have hexp : ContinuousOn (fun t : ℝ => cexp (-2 * π * I * α * t)) (uIcc (0 : ℝ) 1) :=
+    ((continuous_const.mul continuous_ofReal).cexp).continuousOn
+  simp only [← fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff, Pi.add_apply, mul_add]
+  exact fourierCoeffOn_add zero_lt_one (hs₁.continuousOn_mul hexp) (hs₂.continuousOn_mul hexp) m
 
 private noncomputable def twistedPeriodic (α : ℝ) (s : ℂ → ℂ) (z : ℂ) : ℂ :=
   cexp (-2 * π * I * α * z) * s z
@@ -154,17 +159,6 @@ private lemma differentiableOn_twistedCusp {α : ℝ} {s : ℂ → ℂ}
   rw [← hq]
   exact (Function.Periodic.differentiableAt_cuspFunction one_ne_zero
     (periodic_twistedPeriodic h1) (hdiff _)).differentiableWithinAt
-
-private lemma fourierCoeffOn_twistedPeriodic_eq_thetaFourierCoeff (α : ℝ) (s : ℂ → ℂ) (m : ℤ) :
-    fourierCoeffOn zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t) m =
-      thetaFourierCoeff α s m := by
-  rw [fourierCoeffOn_eq_integral, thetaFourierCoeff_def]
-  simp only [sub_zero, div_one, one_smul]
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  simp only [smul_eq_mul, fourier_coe_apply, ← mul_assoc, ← Complex.exp_add]
-  congr 2
-  push_cast
-  ring
 
 private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → ℂ}
     (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (m : ℤ) :
@@ -374,27 +368,50 @@ theorem forall_add_tau_iff_forall_thetaFourierCoeff_add {k : ℤ} {τ : ℂ} {α
               thetaFourierCoeff α s m * cexp (2 * π * I * ((m + k : ℤ) + α) * z)) := by ring
   exact hL.unique hR'
 
+/-- The twisted Fourier coefficients of a level-`k` theta section satisfy the shift-by-`k`
+recurrence `c (m + k) = exp (2πi(m + α)τ - 2πiβ + πikτ) * c m`. -/
+theorem thetaFourierCoeff_add_of_mem_thetaSections {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+    (hs : s ∈ thetaSections k τ α β) (m : ℤ) :
+    thetaFourierCoeff α s (m + k) =
+      cexp (2 * π * I * (m + α) * τ - 2 * π * I * β + π * I * k * τ) *
+        thetaFourierCoeff α s m :=
+  (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := (k : ℤ))
+    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
+    (by simpa only [Int.cast_natCast] using add_tau_of_mem_thetaSections hs) m
+
 /-! ### Vanishing for `τ.im ≤ 0` and metric descent -/
 
 private lemma norm_thetaFourierCoeff_add_level {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
     (hs : s ∈ thetaSections k τ α β) (n : ℤ) :
     ‖thetaFourierCoeff α s (n + k)‖ =
       Real.exp (-2 * π * ((n : ℝ) + α + (k : ℝ) / 2) * τ.im) * ‖thetaFourierCoeff α s n‖ := by
-  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := (k : ℤ))
-    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
-    (by simpa using add_tau_of_mem_thetaSections hs) n
-  rw [hrec, norm_mul, Complex.norm_exp]
+  rw [thetaFourierCoeff_add_of_mem_thetaSections hs n, norm_mul, Complex.norm_exp]
   congr 2
-  simp
+  have hexp : 2 * π * I * ((n : ℂ) + α) * τ - 2 * π * I * β + π * I * k * τ =
+      (↑(2 * π * ((n : ℝ) + α + (k : ℝ) / 2)) * τ - ↑(2 * π * β)) * I := by
+    push_cast
+    ring
+  rw [hexp, Complex.mul_I_re, Complex.sub_im, Complex.im_ofReal_mul, Complex.ofReal_im]
   ring
 
-private lemma periodic_thetaFourierCoeff_eq_zero {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
-    (hs : s ∈ thetaSections k τ α β) :
-    Function.Periodic (fun n : ℤ => thetaFourierCoeff α s n = 0) (k : ℤ) := fun n => by
-  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := (k : ℤ))
-    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
-    (by simpa using add_tau_of_mem_thetaSections hs) n
-  exact propext (by dsimp only; rw [hrec, mul_eq_zero, or_iff_right (Complex.exp_ne_zero _)])
+private lemma thetaFourierCoeff_add_eq_zero_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+    (hs : s ∈ thetaSections k τ α β) (n : ℤ) :
+    thetaFourierCoeff α s (n + k) = 0 ↔ thetaFourierCoeff α s n = 0 := by
+  rw [thetaFourierCoeff_add_of_mem_thetaSections hs n, mul_eq_zero,
+    or_iff_right (Complex.exp_ne_zero _)]
+
+private lemma thetaFourierCoeff_add_int_mul_eq_zero_iff {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
+    (hs : s ∈ thetaSections k τ α β) (n q : ℤ) :
+    thetaFourierCoeff α s (n + q * k) = 0 ↔ thetaFourierCoeff α s n = 0 := by
+  induction q using Int.induction_on with
+  | zero => simp only [zero_mul, add_zero]
+  | succ i ih =>
+    have hidx : n + ((i : ℤ) + 1) * k = (n + i * k) + k := by ring
+    rw [hidx, thetaFourierCoeff_add_eq_zero_iff hs, ih]
+  | pred i ih =>
+    have hidx : n + (-(i : ℤ)) * k = (n + (-(i : ℤ) - 1) * k) + k := by ring
+    rw [hidx, thetaFourierCoeff_add_eq_zero_iff hs] at ih
+    exact ih
 
 /-- When `k > 0` and `τ.im ≤ 0`, there are no nonzero holomorphic theta sections. -/
 theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
@@ -421,7 +438,7 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
         exact ih.trans (le_mul_of_one_le_left (norm_nonneg _) (Real.one_le_exp harg))
     have hinj : Function.Injective (fun j : ℕ => n + (j : ℤ) * k) := fun j₁ j₂ h => by
       have hk0 : (k : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hk.ne'
-      exact Int.ofNat.inj (mul_right_cancel₀ hk0 (add_left_cancel h))
+      exact Int.natCast_inj.mp (mul_right_cancel₀ hk0 (add_left_cancel h))
     have htend : Tendsto (fun j : ℕ => ‖thetaFourierCoeff α s (n + j * k)‖) atTop (𝓝 0) := by
       simpa only [Function.comp_def, norm_zero] using
         (tendsto_thetaFourierCoeff_zero α s).norm.comp
@@ -435,7 +452,7 @@ theorem thetaSections_eq_bot_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ
     have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
     nlinarith
   have hj0 : thetaFourierCoeff α s (m + j * k) = 0 := hzero_ge _ hge
-  exact ((periodic_thetaFourierCoeff_eq_zero hs).nat_mul j m).mp hj0
+  exact (thetaFourierCoeff_add_int_mul_eq_zero_iff hs m j).mp hj0
 
 /-- For positive level `k > 0` and `τ.im ≤ 0`, `thetaSections k τ α β` has dimension `0`. -/
 theorem finrank_thetaSections_of_im_nonpos (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : τ.im ≤ 0)
@@ -699,7 +716,7 @@ theorem thetaFourierCoeff_characteristicTheta_fin {k : ℕ} {τ : ℂ} (hτ : 0 
     have hq0 : q = 0 := by nlinarith [Int.natCast_nonneg r.1, Int.natCast_nonneg r'.1]
     rw [hq0, mul_zero] at hq
     have heq : (r' : ℤ) = r := sub_eq_zero.mp hq
-    exact hrr (Fin.ext (Int.ofNat.inj heq))
+    exact hrr (Fin.ext (Int.natCast_inj.mp heq))
 
 /-! ### Explicit basis and dimension `k` -/
 
@@ -716,7 +733,7 @@ private lemma thetaFourierCoeff_eq_zero_of_fin_eq_zero {k : ℕ} (hk : 0 < k) {�
     rw [hr_cast, mul_comm]
     exact (Int.emod_add_mul_ediv m (k : ℤ)).symm
   rw [hm]
-  exact ((periodic_thetaFourierCoeff_eq_zero hs).int_mul (m / (k : ℤ)) r).mpr (hfin r)
+  exact (thetaFourierCoeff_add_int_mul_eq_zero_iff hs r (m / (k : ℤ))).mpr (hfin r)
 
 private noncomputable def thetaSectionsEquivFun (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : 0 < τ.im)
     (α β : ℝ) : thetaSections k τ α β ≃ₗ[ℂ] (Fin k → ℂ) :=
@@ -801,28 +818,28 @@ theorem finrank_thetaSections (k : ℕ) (hk : 0 < k) (τ : ℂ) (hτ : 0 < τ.im
 private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im ≠ 0) {α β : ℝ}
     {s : ℂ → ℂ} (hs : s ∈ thetaSections 0 τ α β) {m : ℤ} (hm : thetaFourierCoeff α s m ≠ 0) :
     (m : ℝ) + α = 0 ∧ ∃ b : ℤ, (b : ℝ) = β := by
-  have hrec := (forall_add_tau_iff_forall_thetaFourierCoeff_add (k := 0)
-    (differentiable_of_mem_thetaSections hs) (add_one_of_mem_thetaSections hs)).mp
-    (by simpa using add_tau_of_mem_thetaSections hs) m
-  simp only [Int.cast_zero, add_zero, mul_zero, zero_mul] at hrec
+  have hrec := thetaFourierCoeff_add_of_mem_thetaSections hs m
+  simp only [Nat.cast_zero, add_zero, mul_zero, zero_mul] at hrec
   have hexp : cexp (2 * π * I * (m + α) * τ - 2 * π * I * β) = 1 :=
-    mul_right_cancel₀ hm (by simpa using hrec.symm)
+    mul_right_cancel₀ hm (by simpa only [one_mul] using hrec.symm)
   have hnorm_eq := norm_thetaFourierCoeff_add_level hs m
   simp only [Nat.cast_zero, add_zero, zero_div] at hnorm_eq
   have hnorm : Real.exp (-2 * π * ((m : ℝ) + α) * τ.im) = 1 :=
-    mul_right_cancel₀ (norm_ne_zero_iff.mpr hm) (by simpa using hnorm_eq.symm)
+    mul_right_cancel₀ (norm_ne_zero_iff.mpr hm) (by simpa only [one_mul] using hnorm_eq.symm)
   have hma : (m : ℝ) + α = 0 := by
     have hmul : -2 * π * ((m : ℝ) + α) * τ.im = 0 :=
-      Real.exp_injective (by simpa using hnorm)
+      Real.exp_injective (by simpa only [Real.exp_zero] using hnorm)
     have hne : -2 * π * τ.im ≠ 0 :=
       mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero) Real.pi_pos.ne') hτ
     have : (-2 * π * τ.im) * ((m : ℝ) + α) = 0 := by linarith
     exact (mul_eq_zero.mp this).resolve_left hne
   have hmaC : ((m : ℂ) + α) = 0 := by exact_mod_cast hma
-  rw [hmaC, mul_zero, zero_mul, zero_sub, Complex.exp_neg, inv_eq_one,
-    Complex.exp_eq_one_iff] at hexp
-  refine ⟨hma, ?_⟩
-  simpa [mul_comm (2 * π * I), mul_left_inj' two_pi_I_ne_zero, ← ofReal_intCast, eq_comm] using hexp
+  have hneg : 2 * π * I * (m + α) * τ - 2 * π * I * β = -(2 * π * I * (β : ℂ)) := by
+    rw [hmaC]
+    ring
+  rw [hneg, Complex.exp_neg, inv_eq_one,
+    Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff] at hexp
+  exact ⟨hma, hexp⟩
 
 /-- At level `k = 0` with `τ.im ≠ 0` and integer characteristics `(α, β) ∈ ℤ × ℤ`, the theta
 sections are precisely the constant functions. -/
