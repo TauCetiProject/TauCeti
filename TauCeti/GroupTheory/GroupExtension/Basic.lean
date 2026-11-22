@@ -373,16 +373,6 @@ theorem inducesAction_iff [MulDistribMulAction G M] :
     InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
   Iff.rfl
 
-/-- Relabelling the quotient along `e : G ≃* H` preserves `GroupExtension.InducesAction`, provided
-the action of `H` on `M`, pulled back along `e`, is the action of `G`. -/
-theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
-    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
-    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
-    InducesAction (S.relabelQuotient e) := by
-  intro x m
-  simpa only [TauCeti.GroupExtension.relabelQuotient_conjAct, relabelQuotient_rightHom,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul] using hact x m
-
 /-- Relabelling both the kernel and the quotient transports the induced action along the two
 equivalences, provided they identify the ambient actions. -/
 theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
@@ -395,6 +385,15 @@ theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
   simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, hsmul]
   rw [← hact x (eM m), GroupExtension.inl_conjAct_comm]
+
+/-- Relabelling the quotient along `e : G ≃* H` preserves `GroupExtension.InducesAction`, provided
+the action of `H` on `M`, pulled back along `e`, is the action of `G`. This is
+`GroupExtension.InducesAction.relabel` with the identity of the kernel. -/
+theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
+    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
+    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
+    InducesAction (S.relabelQuotient e) :=
+  hact.relabel (MulEquiv.refl M) e hsmul
 
 /-- **A central extension induces exactly the trivial action.** This is the constructor for
 `GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the

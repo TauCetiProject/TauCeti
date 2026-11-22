@@ -12,6 +12,8 @@ public import Mathlib.Topology.Separation.Basic
 # Total disconnectedness of discrete sets and of a universe lift
 
 A discrete set is totally disconnected, since a preconnected discrete set has at most one point.
+Conversely a totally disconnected space is `T₁` (`TotallyDisconnectedSpace.t1Space`): the closure
+of a point is preconnected, so it is that point.
 In a `T₁` space every finite set is discrete (`Set.Finite.isDiscrete`), which is how a finite
 ω-limit set is shown to be a single point. Likewise a continuous map from a preconnected space to a
 discrete space is constant, so it is the constant map at its limit along any nontrivial filter
@@ -32,6 +34,13 @@ universe u v
 theorem IsDiscrete.isTotallyDisconnected {X : Type*} [TopologicalSpace X] {s : Set X}
     (hs : IsDiscrete s) : IsTotallyDisconnected s := fun _t hts ht ↦
   ht.isDiscrete_iff_subsingleton.1 (hs.mono hts)
+
+/-- **A totally disconnected space is `T₁`.** The closure of a point is preconnected, hence a
+subsingleton, so it is that point. -/
+theorem TotallyDisconnectedSpace.t1Space (X : Type*) [TopologicalSpace X]
+    [TotallyDisconnectedSpace X] : T1Space X :=
+  ⟨fun x => closure_subset_iff_isClosed.1 fun _ hy =>
+    isPreconnected_singleton.closure.subsingleton hy (subset_closure (Set.mem_singleton x))⟩
 
 open Filter Topology in
 /-- **A continuous map from a preconnected space to a discrete space is constant at its limit.** If

@@ -239,14 +239,15 @@ theorem contCohomologyClass_eq_zero_iff :
   simp
 
 /-- The class of the twisted product of `α`, read through its canonical section, is the class of
-`α`, because `TauCeti.GroupExtension.factorSet_canonicalSection` reads `α` back off that section. -/
-theorem contCohomologyClass_factorSet_canonicalSection
-    (h : Continuous ⇑(GroupExtension.factorSet α.canonicalSection α.canonicalSection_one
-      α.inducesAction_groupExtension)) :
+`α`, because `TauCeti.GroupExtension.factorSet_canonicalSection` reads `α` back off that section.
+The same equation transports the continuity `hα` of `α` to the factor set of the canonical
+section, so no separate continuity proof is asked for. -/
+theorem contCohomologyClass_factorSet_canonicalSection :
     (GroupExtension.factorSet α.canonicalSection α.canonicalSection_one
-      α.inducesAction_groupExtension).contCohomologyClass h =
-        α.contCohomologyClass hα :=
-  contCohomologyClass_congr (GroupExtension.factorSet_canonicalSection α) h
+      α.inducesAction_groupExtension).contCohomologyClass
+        ((GroupExtension.factorSet_canonicalSection α).symm ▸ hα) =
+      α.contCohomologyClass hα :=
+  contCohomologyClass_congr (GroupExtension.factorSet_canonicalSection α) _
 
 /-- **Every class in `H²(G, M)` is the class of a continuous factor set.** A continuous `2`-cocycle
 need not be normalized; subtracting the coboundary of the constant `1`-cochain at its value at
@@ -421,11 +422,13 @@ variable {E' : Type*} [Group E'] [TopologicalSpace E'] [ContinuousMul E] [Contin
   (hσc : Continuous ⇑σ) (hσ'c : Continuous ⇑σ') (hσ : σ 1 = 1) (hσ' : σ' 1 = 1)
   (hact : S.InducesAction) (hact' : S'.InducesAction)
 
-/-- Equal classes give an equivalence that is continuous, and a homeomorphism once the projection
-of `S'` is continuous as well: a continuous primitive of the quotient of the two factor sets
-rescales one twisted product onto the other by `TauCeti.FactorSet.rescaleEquiv`, and the comparison
-maps `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` are continuous. -/
-private theorem exists_equiv_continuous_and_isHomeomorph (hrh : Continuous S.rightHom)
+/-- **Equal classes give a continuous equivalence**, which is moreover a homeomorphism whenever
+the projection of `S'` is continuous as well: a continuous primitive of the quotient of the two
+factor sets rescales one twisted product onto the other by `TauCeti.FactorSet.rescaleEquiv`, and
+the comparison maps `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` are continuous. Only the
+continuity of the inverse needs the projection of `S'`. -/
+private theorem exists_equiv_continuous_of_contCohomologyClass_factorSet_eq
+    (hrh : Continuous S.rightHom)
     (h : (factorSet σ hσ hact).contCohomologyClass (continuous_factorSet hinl hσc hσ hact) =
       (factorSet σ' hσ' hact').contCohomologyClass (continuous_factorSet hinl' hσ'c hσ' hact')) :
     ∃ e : S.Equiv S', Continuous ⇑e ∧ (Continuous S'.rightHom → IsHomeomorph ⇑e) := by
@@ -437,16 +440,27 @@ private theorem exists_equiv_continuous_and_isHomeomorph (hrh : Continuous S.rig
     have key := hxe g h
     rw [div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul] at key
     rw [← key, mul_comm]
-  have he : Continuous ⇑(((factorSetToGroupExtensionEquiv σ hσ hact).symm.trans
-      (FactorSet.rescaleEquiv _ _ x hx')).trans (factorSetToGroupExtensionEquiv σ' hσ' hact')) :=
-    (continuous_factorSetToGroupExtensionEquiv hinl'.continuous hσ'c hσ' hact').comp
+  -- the composite equivalence `E → E_α → E_β → E'` and its inverse, as composites of functions
+  let φ := factorSetToGroupExtensionEquiv σ hσ hact
+  let ρ := FactorSet.rescaleEquiv _ _ x hx'
+  let φ' := factorSetToGroupExtensionEquiv σ' hσ' hact'
+  let e : S.Equiv S' := (φ.symm.trans ρ).trans φ'
+  let e' : E' → E := fun y => φ (ρ.symm (φ'.symm y))
+  have he_apply : ∀ y, e y = φ' (ρ (φ.symm y)) := fun y => by
+    simp only [e, GroupExtension.Equiv.trans_apply]
+  have he : Continuous ⇑e :=
+    ((continuous_factorSetToGroupExtensionEquiv hinl'.continuous hσ'c hσ' hact').comp
       ((FactorSet.continuous_rescaleEquiv hx' hx).comp
-        (continuous_factorSetToGroupExtensionEquiv_symm hinl hrh hσc hσ hact))
-  refine ⟨_, he, fun hrh' =>
-    isHomeomorph_iff_exists_inverse.2 ⟨he, _, EquivLike.left_inv _, EquivLike.right_inv _, ?_⟩⟩
-  exact (continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
-    ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
-      (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))
+        (continuous_factorSetToGroupExtensionEquiv_symm hinl hrh hσc hσ hact))).congr
+      fun y => (he_apply y).symm
+  refine ⟨e, he, fun hrh' => isHomeomorph_iff_exists_inverse.2 ⟨he, e', fun y => ?_, fun y => ?_,
+    (continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
+      ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
+        (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))⟩⟩
+  · simp only [e', he_apply, GroupExtension.Equiv.symm_apply_apply,
+      GroupExtension.Equiv.apply_symm_apply]
+  · simp only [e', he_apply, GroupExtension.Equiv.symm_apply_apply,
+      GroupExtension.Equiv.apply_symm_apply]
 
 /-- **Equal classes give a homeomorphic equivalence.** Two extensions of `G` by `M`, both inducing
 the ambient action and both with continuous projection, embedded kernel and a continuous
@@ -460,8 +474,8 @@ theorem exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq
     (h : (factorSet σ hσ hact).contCohomologyClass (continuous_factorSet hinl hσc hσ hact) =
       (factorSet σ' hσ' hact').contCohomologyClass (continuous_factorSet hinl' hσ'c hσ' hact')) :
     ∃ e : S.Equiv S', IsHomeomorph ⇑e :=
-  let ⟨e, _, he⟩ := exists_equiv_continuous_and_isHomeomorph hinl hinl' hσc hσ'c hσ hσ' hact hact'
-    hrh h
+  let ⟨e, _, he⟩ := exists_equiv_continuous_of_contCohomologyClass_factorSet_eq hinl hinl' hσc
+    hσ'c hσ hσ' hact hact' hrh h
   ⟨e, he hrh'⟩
 
 /-- **Continuous `H²` classifies extensions with continuous normalized sections.** Two extensions of
@@ -496,8 +510,8 @@ theorem exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
     rw [← contCohomologyClass_factorSet_eq hinl' hτ₁ hσ' hact' hτc hσ'c]
     exact FactorSet.contCohomologyClass_congr hfac.symm _
   · intro h
-    obtain ⟨e, he, -⟩ := exists_equiv_continuous_and_isHomeomorph hinl hinl' hσc hσ'c hσ hσ' hact
-      hact' hrh h
+    obtain ⟨e, he, -⟩ := exists_equiv_continuous_of_contCohomologyClass_factorSet_eq hinl hinl'
+      hσc hσ'c hσ hσ' hact hact' hrh h
     exact ⟨e, he⟩
 
 end Equiv
@@ -506,13 +520,21 @@ end Equiv
 
 section Profinite
 
-variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E] [CompactSpace M]
+/- A compact, totally disconnected group with continuous multiplication is a topological group,
+since a totally disconnected space is `T₁`, and so it is Hausdorff and has the continuous inversion
+that `TauCeti.GroupExtension.continuous_factorSet` asks for. So only the multiplication of the total
+groups is assumed continuous below. -/
+attribute [local instance] TotallyDisconnectedSpace.t1Space IsTopologicalGroup.of_compactSpace
+
+variable [ContinuousMul E] [CompactSpace E] [TotallyDisconnectedSpace E] [CompactSpace M]
   [T2Space G]
 
 /-- **The class of a profinite extension with compact kernel** in the explicit continuous
 cohomology group `H²(G, M)`: the class of the factor set of any continuous normalized section, of
 which `TauCeti.GroupExtension.exists_continuous_section` provides one. By
-`GroupExtension.contCohomologyClass_eq` the choice of section does not matter. -/
+`GroupExtension.contCohomologyClass_eq` the choice of section does not matter. The total group `E`
+is compact and totally disconnected with continuous multiplication; its inversion is then
+continuous by `IsTopologicalGroup.of_compactSpace`, so `E` is a profinite group. -/
 noncomputable def _root_.GroupExtension.contCohomologyClass (S : GroupExtension M E G)
     (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hact : S.InducesAction) :
     H2 G (Additive M) :=
@@ -540,7 +562,7 @@ exactly when their classes agree. Such an equivalence is automatically a homeomo
 groups being compact and Hausdorff (`TauCeti.GroupExtension.continuousMulEquivOfEquiv`). -/
 theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq {E' : Type*}
     [Group E']
-    [TopologicalSpace E'] [IsTopologicalGroup E'] [CompactSpace E'] [TotallyDisconnectedSpace E']
+    [TopologicalSpace E'] [ContinuousMul E'] [CompactSpace E'] [TotallyDisconnectedSpace E']
     (S' : GroupExtension M E' G) (hinl' : Continuous S'.inl) (hrh' : Continuous S'.rightHom)
     (hact' : S'.InducesAction) :
     (∃ e : S.Equiv S', Continuous ⇑e) ↔
@@ -631,7 +653,7 @@ theorem contCohomologyClass_ofFactorSet :
   -- Rewriting the extension alone would ill-type its continuity and action witnesses.
   -- The abbreviation keeps the witnesses definitionally equal across the projection.
   exact (α.groupExtension.contCohomologyClass_eq _ _ _ (FactorSet.continuous_canonicalSection α)
-    α.canonicalSection_one).trans (FactorSet.contCohomologyClass_factorSet_canonicalSection α hα _)
+    α.canonicalSection_one).trans (FactorSet.contCohomologyClass_factorSet_canonicalSection α hα)
 
 /-- **Every class of `H²(G, M)` is the class of a profinite extension**, namely of the twisted
 product of a continuous factor set representing it. -/
