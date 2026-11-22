@@ -70,6 +70,9 @@ cohomology.
 * `AddCircle.singularKronecker_angularClass`: `θ_p` evaluates a class to its winding number.
 * `TopCat.singularCohomologyAddCircleProdSlantEquiv`: the cohomology of `(ℝ / pℤ) × Y`.
 * `TopCat.singularCohomologyMap_snd_add_singularCup_addCircle`: the decomposition of a class.
+* `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero`,
+  `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne`: the
+  classes `pr₂^* b` and, in degree one, `pr₁^* θ_p` in the decomposition.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
@@ -262,6 +265,28 @@ lemma singularCohomologyAddCircleProdSlantEquiv_symm_apply (s₀ : AddCircle p) 
       (add_comm 1 n) one_ne_zero (AddCircle.fundamentalClass p) (AddCircle.angularClass p) bc.1 bc.2
     rw [AddCircle.singularKronecker_angularClass_fundamentalClass, one_smul] at h
     exact h.symm
+
+/-- The decomposition of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` sends the pullback `pr₂^* b` of a class of `Y` to
+`(b, 0)`. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero (s₀ : AddCircle p) (n : ℕ)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm (b, 0) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) b := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero, map_zero, add_zero]
+
+/-- The decomposition of `H¹((ℝ / pℤ) × Y; ℤ)` sends the angular class `pr₁^* θ_p` of the circle
+factor to `(0, 1)`, where `1 ∈ H⁰(Y; ℤ)` is the unit class. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne
+    (s₀ : AddCircle p) :
+    (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 0).symm
+        (0, Y.singularCohomologyZeroOne) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+        (AddCircle.angularClass p) := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero]
+  -- `zero_add` is applied to the classes only: rewriting would also reach the degree `0 + 1`.
+  refine (zero_add _).trans ?_
+  rw [TauCeti.singularCohomologyMap_singularCohomologyZeroOne]
+  exact singularCup_singularCohomologyZeroOne_right _ _ _
 
 /-- **The decomposition of a class of `(ℝ / pℤ) × Y`**: for `s₀ ∈ ℝ / pℤ`, every
 `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is `pr₂^* (φ / [s₀]) + pr₁^* θ_p ⌣ pr₂^* (φ / [ℝ / pℤ])`, where `θ_p`
