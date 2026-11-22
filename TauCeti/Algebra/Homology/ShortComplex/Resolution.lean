@@ -190,11 +190,14 @@ def resolutionπ (S : ShortComplex C) :
 lemma resolutionπ_f_zero (S : ShortComplex C) : S.resolutionπ.f 0 = S.g :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
-/-- In positive degrees, the augmentation of `S.resolutionComplex` vanishes, since its target
-does. -/
+/-- Every chain map into the single complex on `A` in degree `j` vanishes in degrees `i ≠ j`,
+since its target does. For instance, the augmentation `S.resolutionπ` vanishes in positive
+degrees. -/
 @[simp]
-lemma resolutionπ_f_succ (S : ShortComplex C) (n : ℕ) : S.resolutionπ.f (n + 1) = 0 :=
-  (HomologicalComplex.isZero_single_obj_X _ 0 S.X₃ (n + 1) n.succ_ne_zero).eq_of_tgt _ _
+lemma _root_.HomologicalComplex.Hom.to_single_f_eq_zero {ι : Type*} [DecidableEq ι]
+    {c : ComplexShape ι} {K : HomologicalComplex C c} {j : ι} {A : C}
+    (f : K ⟶ (HomologicalComplex.single C c j).obj A) {i : ι} (hi : i ≠ j) : f.f i = 0 :=
+  (HomologicalComplex.isZero_single_obj_X c j A i hi).eq_of_tgt _ _
 
 /-- A morphism of short complexes induces the chain map of the associated complexes given by its
 first two components. -/
