@@ -22,8 +22,9 @@ fibre `F⁻¹(h, j)` under the flow action of `F`, is the lattice of `ℝ²` spa
 
 (`TauCeti.hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure`). Through the
 orbit map, these lattices are the first homology groups of the Liouville tori. This file
-transports them around the focus–focus value `(1, 0)` of `F` and computes the **Hamiltonian
-monodromy** of the pendulum.
+transports them around the focus–focus value `(1, 0)` of `F` and derives what the **Hamiltonian
+monodromy** of the pendulum forces on continuous sections of these lattices: each gains `m γ_J`,
+where `m` is its `γ₂`-coordinate.
 
 Let `γ(t) = (1 + r cos t, r sin t)`, `t ∈ [0, 2π]`, be the counterclockwise circle of radius
 `r > 0` about `(1, 0)`, running above the curve of relative equilibria off the axis `j = 0`.
@@ -39,7 +40,8 @@ bounded away from `0`, the section returns to
 `b(2π) = b(0) + m γ_J`,
 
 where `m` is its `γ₂`-coordinate on the upper half-circle
-(`exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod`).
+(`exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod`,
+`TauCeti.apply_two_mul_pi_eq_apply_zero_add_zsmul_of_mem_closure_sphericalPendulumPeriod`).
 So a continuous section through `γ_J` on the upper half-circle, such as the constant one, returns
 to its initial value, and a continuous section through `γ₂` there gains `γ_J`
 (`TauCeti.apply_two_mul_pi_eq_apply_zero_of_mem_closure_sphericalPendulumPeriod`,
@@ -63,6 +65,8 @@ action–angle coordinates around `(1, 0)`, which would supply such a basis.
 * `exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod`:
   a continuous section of the period lattices along the loop gains `m γ_J`, where `m` is its
   `γ₂`-coordinate.
+* `TauCeti.apply_two_mul_pi_eq_apply_zero_add_zsmul_of_mem_closure_sphericalPendulumPeriod`: a
+  continuous section equal to `m γ₂ + n γ_J` at a time of the upper half-circle gains `m γ_J`.
 * `TauCeti.apply_two_mul_pi_eq_apply_zero_of_mem_closure_sphericalPendulumPeriod`,
   `TauCeti.apply_two_mul_pi_eq_apply_zero_add_of_mem_closure_sphericalPendulumPeriod`: continuous
   sections through `γ_J` close up, and continuous sections through `γ₂` gain `γ_J`.
@@ -140,7 +144,8 @@ private theorem exists_forall_eq_of_isPreconnected {s : Set ℝ} (hs : IsPreconn
   fin_cases i
   · simp [h₀ t ht, hM t ht, hTdef]
   · simp only [hΘdef] at e₁ e₀
-    simp
+    simp only [Pi.add_apply, Pi.smul_apply]
+    simp only [Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero, zsmul_eq_mul, Fin.isValue]
     linarith
 
 /-- On the upper half-circle the period is at least `2π / √(2 (r + 4))`, since there
@@ -314,6 +319,31 @@ theorem exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_hamiltonianFlo
         (hx t ht hs)]
       exact hbΛ t ht hs
 
+/-- **The monodromy on a section with given coordinates.** A continuous section of the period
+lattices along the circle `γ` about the focus–focus value that equals `m γ₂ + n γ_J`, with
+`γ₂ = (T, -Θ)` and `γ_J = (0, 2π)`, at some time of the upper half-circle gains `m γ_J` after one
+turn. -/
+theorem apply_two_mul_pi_eq_apply_zero_add_zsmul_of_mem_closure_sphericalPendulumPeriod
+    (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    {b : ℝ → Fin 2 → ℝ} (hb : ContinuousOn b (Icc 0 (2 * π)))
+    (hbΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 → b t ∈ AddSubgroup.closure
+      {![sphericalPendulumPeriod (1 + r * cos t) (r * sin t),
+        -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)], ![0, 2 * π]})
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo 0 π) {m n : ℤ}
+    (hbt₀ : b t₀ = m • ![sphericalPendulumPeriod (1 + r * cos t₀) (r * sin t₀),
+      -sphericalPendulumRotationAngle (1 + r * cos t₀) (r * sin t₀)] + n • ![0, 2 * π]) :
+    b (2 * π) = b 0 + m • ![0, 2 * π] := by
+  obtain ⟨m', n', h, h2π⟩ :=
+    exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ
+      hb hbΛ
+  have hT := (two_mul_pi_div_sqrt_le_sphericalPendulumPeriod_of_mem_Ioo hr hγ ht₀).trans_lt'
+    (by positivity)
+  have h₀ := congrFun ((h t₀ ht₀).symm.trans hbt₀) 0
+  simp only [Pi.add_apply, Pi.smul_apply] at h₀
+  simp only [Matrix.cons_val_zero, smul_zero, add_zero, zsmul_eq_mul] at h₀
+  rw [h2π, Int.cast_injective (mul_right_cancel₀ hT.ne' h₀)]
+
 /-- **The monodromy fixes `γ_J`.** A continuous section of the period lattices along the circle
 `γ` about the focus–focus value that equals `γ_J = (0, 2π)` at some time of the upper half-circle
 returns to its initial value after one turn. The constant section `γ_J` is one. -/
@@ -325,16 +355,8 @@ theorem apply_two_mul_pi_eq_apply_zero_of_mem_closure_sphericalPendulumPeriod (h
         -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)], ![0, 2 * π]})
     {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo 0 π) (hbt₀ : b t₀ = ![0, 2 * π]) :
     b (2 * π) = b 0 := by
-  obtain ⟨m, n, h, h2π⟩ :=
-    exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ
-      hb hbΛ
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1
-    (hγ t₀ (sin_pos_of_pos_of_lt_pi ht₀.1 ht₀.2).ne')
-  have hT := sphericalPendulumPeriod_pos hj hz hV
-  have h₀ := congrFun ((h t₀ ht₀).symm.trans hbt₀) 0
-  simp only [Pi.add_apply, Pi.smul_apply] at h₀
-  simp only [Matrix.cons_val_zero, smul_zero, add_zero, zsmul_eq_mul] at h₀
-  rw [h2π, (Int.cast_eq_zero.1 ((mul_eq_zero.1 h₀).resolve_right hT.ne')), zero_smul, add_zero]
+  rw [apply_two_mul_pi_eq_apply_zero_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ hb
+    hbΛ ht₀ (m := 0) (n := 1) (by rw [hbt₀, zero_smul, one_smul, zero_add]), zero_smul, add_zero]
 
 /-- **Sections through `γ₂` gain `γ_J`.** A continuous section of the period lattices along the
 circle `γ` about the focus–focus value that equals `γ₂ = (T, -Θ)` at some time of the upper
@@ -351,17 +373,8 @@ theorem apply_two_mul_pi_eq_apply_zero_add_of_mem_closure_sphericalPendulumPerio
     (hbt₀ : b t₀ = ![sphericalPendulumPeriod (1 + r * cos t₀) (r * sin t₀),
       -sphericalPendulumRotationAngle (1 + r * cos t₀) (r * sin t₀)]) :
     b (2 * π) = b 0 + ![0, 2 * π] := by
-  obtain ⟨m, n, h, h2π⟩ :=
-    exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ
-      hb hbΛ
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1
-    (hγ t₀ (sin_pos_of_pos_of_lt_pi ht₀.1 ht₀.2).ne')
-  have hT := sphericalPendulumPeriod_pos hj hz hV
-  have h₀ := congrFun ((h t₀ ht₀).symm.trans hbt₀) 0
-  simp only [Pi.add_apply, Pi.smul_apply] at h₀
-  simp only [Matrix.cons_val_zero, smul_zero, add_zero, zsmul_eq_mul] at h₀
-  have hm : (m : ℝ) = 1 := mul_right_cancel₀ hT.ne' (h₀.trans (one_mul _).symm)
-  rw [h2π, Int.cast_eq_one.1 hm, one_smul]
+  rw [apply_two_mul_pi_eq_apply_zero_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ hb
+    hbΛ ht₀ (m := 1) (n := 0) (by rw [hbt₀, one_smul, zero_smul, add_zero]), one_smul]
 
 /-- **Closed sections are multiples of `γ_J`.** A continuous section of the period lattices along
 the circle `γ` about the focus–focus value that returns to its initial value after one turn is an
@@ -412,9 +425,8 @@ theorem closure_pair_ne_closure_sphericalPendulumPeriod (hr : 0 < r)
   have h₀ := congrFun hkl 0
   simp only [hn₁ t ht, hn₂ t ht, Pi.add_apply, Pi.smul_apply, Matrix.cons_val_zero, smul_zero,
     add_zero] at h₀
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1
-    (hγ t (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne')
-  exact (sphericalPendulumPeriod_pos hj hz hV).ne' h₀.symm
+  exact ((two_mul_pi_div_sqrt_le_sphericalPendulumPeriod_of_mem_Ioo hr hγ ht).trans_lt'
+    (by positivity)).ne' h₀.symm
 
 end Monodromy
 

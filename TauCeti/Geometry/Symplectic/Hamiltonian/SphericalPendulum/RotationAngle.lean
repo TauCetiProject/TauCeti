@@ -666,18 +666,6 @@ section Continuity
 
 variable {h j z₀ : ℝ}
 
-/-- The regular integrand of the spherical pendulum rotation angle after the sine substitution
-between turning points `a` and `b`, with third root `h - a - b`. -/
-noncomputable def sphericalPendulumRotationAngleSinIntegrand (a b h j θ : ℝ) : ℝ :=
-  j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-    √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))))
-
-/-- The formula for the regular sine-substitution integrand. -/
-theorem sphericalPendulumRotationAngleSinIntegrand_def (a b h j θ : ℝ) :
-    sphericalPendulumRotationAngleSinIntegrand a b h j θ =
-      j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-        √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ)))) := (rfl)
-
 /-- **The rotation angle as a regular integral.** For `j ≠ 0` and `(h, j)` strictly above the
 curve of relative equilibria, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between
 the turning points `z₋ < z₊` turns the rotation angle into the integral
@@ -687,36 +675,17 @@ theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z
     (hV : sphericalPendulumEffectivePotential j z₀ < h) :
     sphericalPendulumRotationAngle h j =
       2 * ∫ θ in (-(π / 2))..(π / 2),
-        sphericalPendulumRotationAngleSinIntegrand (sphericalPendulumLowerTurningPoint h j)
-          (sphericalPendulumUpperTurningPoint h j) h j θ := by
-  simp only [sphericalPendulumRotationAngle_def, sphericalPendulumRotationAngleSinIntegrand_def,
-    ← div_div]
+        j / ((1 - ((sphericalPendulumLowerTurningPoint h j +
+            sphericalPendulumUpperTurningPoint h j) / 2 +
+          (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+            sin θ) ^ 2) *
+          √(2 * (h - sphericalPendulumLowerTurningPoint h j -
+            sphericalPendulumUpperTurningPoint h j -
+            ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+              (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+                2 * sin θ)))) := by
+  simp only [sphericalPendulumRotationAngle_def, ← div_div]
   rw [integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin hj hz₀ hV]
-
-/-- **Joint continuity of the regular integrand.** With the turning points `z₋(h, j)`,
-`z₊(h, j)` substituted, the integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly
-continuous in `((h, j), θ)` for `(h, j)` in `sphericalPendulumTurningPointDomain`, since its
-denominator is positive there. -/
-theorem continuousOn_sphericalPendulumRotationAngleSinIntegrand :
-    ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumRotationAngleSinIntegrand
-        (sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-        (sphericalPendulumUpperTurningPoint p.1.1 p.1.2) p.1.1 p.1.2 p.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) := by
-  have ha : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumLowerTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  have hb : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumUpperTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumUpperTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
-  refine ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hp.1
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-  have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
-  have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz hV
-  exact (one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha₁ hab.le hb₁ (by linarith) p.2).ne'
 
 /-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
 values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with
