@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+import TauCeti.RepresentationTheory.Continuous.Basic
+import TauCeti.Topology.Algebra.Module.JointContinuity
 
 /-!
 # Jointly continuous representations
@@ -157,6 +159,32 @@ def toContRepresentation (ρ : ContinuousRep Γ R V) : ContRepresentation R Γ V
 theorem toContRepresentation_apply (ρ : ContinuousRep Γ R V) (g : Γ) (x : V) :
     ρ.toContRepresentation g x = ρ g x :=
   (rfl)
+
+/-- Forgetting joint continuity loses no data. -/
+theorem toContRepresentation_injective :
+    Function.Injective (toContRepresentation : ContinuousRep Γ R V → ContRepresentation R Γ V) := by
+  intro ρ σ h
+  ext g x
+  simpa only [toContRepresentation_apply] using
+    congrArg (fun τ : ContRepresentation R Γ V => τ g x) h
+
+/-- A Mathlib continuous representation lifts to a jointly continuous representation exactly
+when its action map is jointly continuous. -/
+@[simp]
+theorem _root_.ContRepresentation.exists_continuousRep_iff (ρ : ContRepresentation R Γ V) :
+    (∃ σ : ContinuousRep Γ R V, σ.toContRepresentation = ρ) ↔
+      Continuous (fun p : Γ × V => ρ p.1 p.2) := by
+  constructor
+  · rintro ⟨σ, rfl⟩
+    simpa only [toContRepresentation_apply, coe_toRepresentation] using σ.continuous_action
+  · intro h
+    refine ⟨⟨ρ.toRepresentation, by simpa only [ContRepresentation.toRepresentation_apply] using h⟩,
+      ?_⟩
+    apply DFunLike.ext
+    intro g
+    apply ContinuousLinearMap.ext
+    intro x
+    simp only [toContRepresentation_apply, coe_mk, ContRepresentation.toRepresentation_apply]
 
 end ContRepresentation
 
@@ -368,22 +396,13 @@ private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
       map_add' := TensorProduct.tmul_add 1
       map_smul' a x := by simp [TensorProduct.tmul_smul, algebraMap_smul] }
   have hι : Continuous ι := IsModuleTopology.continuous_of_linearMapₛₗ (continuous_algebraMap A B) ι
-  -- A finite generating family `m` of `M` presents `B ⊗[A] M` as the open quotient
-  -- `b ↦ ∑ i, b i • (1 ⊗ m i)` of `Bⁿ`; through that quotient the action is
-  -- `(g, b) ↦ ∑ i, b i • (1 ⊗ ρ g (m i))`.
-  let q := Fintype.linearCombination B fun i => (1 : B) ⊗ₜ[A] m i
-  have hq : IsOpenQuotientMap q := by
-    refine IsModuleTopology.isOpenQuotientMap_of_surjective (LinearMap.range_eq_top.mp ?_)
-    have hrange : (Set.range fun i => (1 : B) ⊗ₜ[A] m i) =
-        TensorProduct.mk A B M 1 '' Set.range m :=
-      Set.range_comp (TensorProduct.mk A B M 1) m
-    rw [Fintype.range_linearCombination, hrange, ← Submodule.baseChange_span, hm,
-      Submodule.baseChange_top]
-  refine ((IsOpenQuotientMap.id.prodMap hq).continuous_comp_iff).mp ?_
-  have hF : Continuous fun p : Γ × (Fin n → B) => ∑ i, p.2 i • ι (ρ p.1 (m i)) := by
-    fun_prop
-  refine hF.congr fun p => ?_
-  simp [q, ι, Fintype.linearCombination_apply, Representation.baseChange_apply]
+  have hspan : Submodule.span B (Set.range fun i => (1 : B) ⊗ₜ[A] m i) = ⊤ := by
+    change Submodule.span B (Set.range ((TensorProduct.mk A B M 1) ∘ m)) = ⊤
+    rw [Set.range_comp, ← Submodule.baseChange_span, hm, Submodule.baseChange_top]
+  refine (ModuleTopology.continuous_uncurry_iff_apply_of_span_eq_top
+    (Representation.baseChange B ρ.toRepresentation) _ hspan).mpr fun i => ?_
+  exact (hι.comp (ρ.continuous_orbit (m i))).congr fun g => by
+    simp [ι, Representation.baseChange_apply]
 
 /-- **Extension of scalars of a continuous representation** along a continuous coefficient map
 `A → B`, for a finite module `M` with its module topology. The action on `B ⊗[A] M` is
