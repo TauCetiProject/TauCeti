@@ -9,7 +9,7 @@ import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 import TauCeti.RingTheory.Huber.NoetherianType.Quotient
 import TauCeti.RingTheory.Huber.Padic.Basic
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Examples: Huber's standing class and its separation from noetherian type

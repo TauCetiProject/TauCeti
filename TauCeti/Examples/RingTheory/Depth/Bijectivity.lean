@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Depth.Bijectivity
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 public import Mathlib.RingTheory.Regular.Flat
 import TauCeti.RingTheory.Localization.Module
 

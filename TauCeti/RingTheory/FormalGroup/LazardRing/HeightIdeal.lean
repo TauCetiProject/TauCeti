@@ -22,7 +22,7 @@ import Mathlib.RingTheory.Regular.Flat
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.Algebra.MvPolynomial.Variables
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Primality, polynomial quotients, and regularity of the Lazard height ideals

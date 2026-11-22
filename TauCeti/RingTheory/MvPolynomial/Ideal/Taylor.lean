@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Ideal
-public import TauCeti.RingTheory.MvPolynomial.OrderAt
+public import Mathlib.RingTheory.MvPolynomial.Ideal
+public import TauCeti.Algebra.MvPolynomial.Taylor
 
 /-!
 # Point evaluation ideals and the Taylor shift
 
-This file bridges `TauCeti.RingTheory.MvPolynomial.Ideal` and
-`TauCeti.RingTheory.MvPolynomial.OrderAt` by identifying the evaluation ideal `RingHom.ker (eval a)`
-and its powers as pullbacks of the ideal of variables `MvPolynomial.idealOfVars σ R` and its powers
-along the Taylor shift `MvPolynomial.taylor a`.
+This file bridges Mathlib's `idealOfVars` and `TauCeti.Algebra.MvPolynomial.Taylor` by identifying
+the evaluation ideal `RingHom.ker (eval a)` and its powers as pullbacks of the ideal of variables
+`MvPolynomial.idealOfVars σ R` and its powers along the Taylor shift `MvPolynomial.taylor a`.
 
 ## Main results
 
@@ -41,7 +40,10 @@ the Taylor shift `taylor a`. -/
 theorem ker_eval_eq_comap_taylor (a : σ → R) :
     RingHom.ker (eval a) = (idealOfVars σ R).comap (taylor a).toRingHom := by
   ext p
-  simp [RingHom.mem_ker, ← ker_constantCoeff]
+  rw [RingHom.mem_ker, Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    ← pow_one (idealOfVars σ R), mem_pow_idealOfVars_iff', ← constantCoeff_taylor,
+    constantCoeff_eq]
+  simp [Finsupp.degree_eq_zero_iff]
 
 end CommSemiring
 

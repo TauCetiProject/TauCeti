@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 import Mathlib.RingTheory.Ideal.Int
 import TauCeti.RingTheory.FormalGroup.Hazewinkel.NSMul
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import TauCeti.RingTheory.MvPolynomial.RegularSequence
 
 /-!

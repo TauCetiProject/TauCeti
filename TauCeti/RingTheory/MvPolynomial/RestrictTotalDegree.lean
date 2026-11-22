@@ -121,7 +121,7 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
 variable (σ R) in
 /-- The monomial basis of the polynomials of total degree at most `m`, indexed by exponents of
 degree at most `m`. -/
-noncomputable def basisRestrictTotalDegree (m : ℕ) :
+@[expose] noncomputable def basisRestrictTotalDegree (m : ℕ) :
     Module.Basis {s : σ →₀ ℕ // s.degree ≤ m} R (restrictTotalDegree σ R m) :=
   (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
     (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm)
@@ -300,8 +300,8 @@ theorem killCompl_mem_restrictTotalDegree {τ : Type*} {g : τ → σ} (hg : Fun
     exact Nat.zero_le _
 
 /-- The bounded hyperplane slice map: restricts a polynomial of total degree at most `d + 1` and
-its `j₀`-th partial derivative to the coordinate hyperplane `X j₀ = 0`, producing bounded-degree
-polynomials of degrees `d + 1` and `d` in the remaining variables. -/
+its `j₀`-th partial derivative to the coordinate hyperplane `X j₀ = 0`, producing polynomials of
+total degree at most `d + 1` and `d`, respectively, in the remaining variables. -/
 noncomputable def hyperplaneSliceMap (j₀ : σ) (d : ℕ) :
     restrictTotalDegree σ R (d + 1) →ₗ[R]
       restrictTotalDegree {j : σ // j ≠ j₀} R (d + 1) ×
@@ -353,6 +353,98 @@ theorem hyperplaneSliceMap_surjective (j₀ : σ) (d : ℕ) :
   refine ⟨⟨p, hp⟩, Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩
   · simp [p, killCompl_X_of_notMem_range]
   · simp [p, pderiv_rename_of_notMem_range]
+
+/-- Changing coefficients along a ring map preserves the total degree bound. -/
+theorem map_mem_restrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S)
+    {m : ℕ} {p : MvPolynomial σ R} (hp : p ∈ restrictTotalDegree σ R m) :
+    map φ p ∈ restrictTotalDegree σ S m :=
+  (mem_restrictTotalDegree σ m _).2 <|
+    (Finset.sup_mono (support_map_subset φ p)).trans <|
+      (mem_restrictTotalDegree σ m p).1 hp
+
+variable (σ) in
+/-- Changing the coefficients of polynomials of total degree at most `m` along a ring map
+`φ : R →+* S`, as a `φ`-semilinear map. -/
+noncomputable def mapRestrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ) :
+    restrictTotalDegree σ R m →ₛₗ[φ] restrictTotalDegree σ S m where
+  toFun p := ⟨map φ p, map_mem_restrictTotalDegree φ p.property⟩
+  map_add' p q := Subtype.ext (map_add (map φ) (p : MvPolynomial σ R) q)
+  map_smul' r p := Subtype.ext <| by simp [smul_eq_C_mul]
+
+/-- The underlying polynomial of `mapRestrictTotalDegree σ φ m p` is `map φ p`. -/
+@[simp]
+theorem coe_mapRestrictTotalDegree_apply {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ)
+    (p : restrictTotalDegree σ R m) :
+    (mapRestrictTotalDegree σ φ m p : MvPolynomial σ S) = map φ p :=
+  (rfl)
+
+/-- An element of `restrictTotalDegree σ R (d + 1)` lies in the kernel of `hyperplaneSliceMap j₀ d`
+if and only if `X j₀ ^ 2` divides it. -/
+theorem mem_ker_hyperplaneSliceMap {j₀ : σ} {d : ℕ} {f : restrictTotalDegree σ R (d + 1)} :
+    f ∈ LinearMap.ker (hyperplaneSliceMap (R := R) j₀ d) ↔
+      X j₀ ^ 2 ∣ (f : MvPolynomial σ R) := by
+  classical
+  simp only [LinearMap.mem_ker, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Subtype.ext_iff,
+    hyperplaneSliceMap_fst_coe, hyperplaneSliceMap_snd_coe, Submodule.coe_zero]
+  constructor
+  · rintro ⟨h0, h1⟩
+    have hcoeff0 {m : σ →₀ ℕ} (hm : m j₀ = 0) (g : MvPolynomial σ R)
+        (hg : killCompl (Subtype.val_injective (p := (· ≠ j₀))) g = 0) : g.coeff m = 0 := by
+      let u : {j : σ // j ≠ j₀} →₀ ℕ := m.comapDomain Subtype.val Subtype.val_injective.injOn
+      have hu : u.mapDomain Subtype.val = m := by
+        ext i
+        by_cases hi : i = j₀
+        · subst hi
+          rw [hm]
+          exact Finsupp.mapDomain_of_notMem_range u _ fun ⟨j, hj⟩ ↦ j.property hj
+        · rw [show i = (⟨i, hi⟩ : {j : σ // j ≠ j₀}).val from rfl,
+            Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+          exact Finsupp.comapDomain_apply _ _ _ _
+      simp [← hu, ← coeff_killCompl, hg]
+    have hge2 : ∀ m ∈ (f : MvPolynomial σ R).support, 2 ≤ m j₀ := by
+      intro m hm
+      by_contra! hlt
+      have hm0 : (f : MvPolynomial σ R).coeff m = 0 := by
+        have hlt' : m j₀ = 0 ∨ m j₀ = 1 := by omega
+        rcases hlt' with hm_eq | hm_eq
+        · exact hcoeff0 hm_eq f.val h0
+        · let m' : σ →₀ ℕ := m - Finsupp.single j₀ 1
+          have hm'0 : m' j₀ = 0 := by simp [m', hm_eq]
+          have hm'_add : m' + Finsupp.single j₀ 1 = m := by
+            ext i
+            by_cases hi : i = j₀
+            · subst hi; simp [m', hm_eq]
+            · simp [m', hi]
+          have hcm' := hcoeff0 hm'0 (pderiv j₀ f.val) h1
+          rw [coeff_pderiv, hm'_add, hm'0] at hcm'
+          simpa using hcm'
+      exact mem_support_iff.1 hm hm0
+    refine ⟨∑ m ∈ (f : MvPolynomial σ R).support,
+        monomial (m - Finsupp.single j₀ 2) ((f : MvPolynomial σ R).coeff m), ?_⟩
+    rw [Finset.mul_sum]
+    conv_lhs => rw [(f : MvPolynomial σ R).as_sum]
+    refine Finset.sum_congr rfl fun m hm ↦ ?_
+    have hadd : Finsupp.single j₀ 2 + (m - Finsupp.single j₀ 2) = m := by
+      ext i
+      by_cases hi : i = j₀
+      · subst hi
+        have := hge2 m hm
+        simp only [Finsupp.coe_add, Finsupp.coe_tsub, Pi.add_apply, Pi.sub_apply,
+          Finsupp.single_eq_same]
+        omega
+      · simp [hi]
+    rw [show (X j₀ : MvPolynomial σ R) ^ 2 = monomial (Finsupp.single j₀ 2) 1 from by
+      simp [X, monomial_pow], monomial_mul_monomial, one_mul, hadd]
+  · rintro ⟨q, hq⟩
+    have hX : killCompl (R := R) (Subtype.val_injective (p := (· ≠ j₀))) (X j₀) = 0 :=
+      killCompl_X_of_notMem_range Subtype.val_injective (by simp)
+    refine ⟨?_, ?_⟩
+    · rw [hq, map_mul, map_pow, hX, zero_pow two_ne_zero, zero_mul]
+    · have hpderiv : pderiv j₀ (f : MvPolynomial σ R) =
+          X j₀ * (pderiv j₀ (X j₀ * q) + q) := by
+        rw [hq, sq, mul_assoc, Derivation.leibniz, pderiv_X_self]
+        simp [mul_add]
+      rw [hpderiv, map_mul, hX, zero_mul]
 
 /-- In one variable, `MvPolynomial.uniqueAlgEquiv` identifies the polynomials of total degree at
 most `d` with `Polynomial.degreeLT R (d + 1)`. -/

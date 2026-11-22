@@ -10,13 +10,13 @@ public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Independence
 -- Proof-only: maps out of a polynomial ring lift along surjections, and `ker_constantCoeff`.
 import TauCeti.Algebra.MvPolynomial.Lift
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 -- Proof-only: injective graded ring homomorphisms reflect homogeneity.
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 -- Proof-only: the graded Nakayama lemma for generators.
 import TauCeti.RingTheory.GradedAlgebra.Nakayama
 -- Proof-only: `ker_constantCoeff` identifies the augmentation ideal with `idealOfVars`.
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Lazard's theorem: the Lazard ring is a polynomial ring

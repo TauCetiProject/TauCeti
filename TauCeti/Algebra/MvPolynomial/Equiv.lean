@@ -38,6 +38,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
 * `MvPolynomial.uniqueAlgEquiv_pderiv`: in one variable, `uniqueAlgEquiv` intertwines `pderiv`
   with `Polynomial.derivative`.
+* `MvPolynomial.eval_uniqueAlgEquiv`: in one variable, evaluating `uniqueAlgEquiv R σ f` at
+  `a default` equals `eval a f`.
 * `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
   the degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
@@ -167,6 +169,12 @@ theorem uniqueAlgEquiv_pderiv {σ : Type*} [Unique σ] (f : MvPolynomial σ R) :
     rw [Unique.eq_default j, pderiv_mul, pderiv_X_self, mul_one, map_add, map_mul, map_mul,
       Polynomial.derivative_mul, hp]
     simp [mul_comm, add_comm]
+
+/-- In one variable, evaluating `uniqueAlgEquiv R σ f` at `a default` equals `eval a f`. -/
+theorem eval_uniqueAlgEquiv {σ : Type*} [Unique σ] (a : σ → R) (f : MvPolynomial σ R) :
+    (uniqueAlgEquiv R σ f).eval (a default) = eval a f := by
+  simpa only [Polynomial.eval, eval, coe_eval₂Hom] using
+    (eval₂_uniqueAlgEquiv (R := R) (σ := σ) (φ := RingHom.id R) (a := a) (f := f))
 
 section Map
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Noetherianity of multivariate polynomial rings

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import Mathlib.Algebra.TrivSqZeroExt.Basic
-public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.RingTheory.TrivSqZeroExt
+public import TauCeti.Algebra.TrivSqZeroExt.Basic
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.MvPolynomial.Ideal.Taylor
 
 /-!
@@ -45,7 +44,8 @@ jet at `P` is surjective, identifying `R[X] ⧸ 𝔪_P²` with `TrivSqZeroExt R 
 
 * `TauCeti.fst_jetAlgebra`, `TauCeti.snd_jetAlgebra_apply`: the first jet consists of the value
   and the partial derivatives at `P`.
-* `TauCeti.sub_sum_mem_ker_eval_sq`: the first-order Taylor expansion modulo `𝔪_P²`.
+* `TauCeti.sub_sum_vars_mem_ker_eval_sq`, `TauCeti.sub_sum_mem_ker_eval_sq`: the first-order
+  Taylor expansion modulo `𝔪_P²` over arbitrary and finite variable types.
 * `TauCeti.jetAlgebra_surjective`, `TauCeti.ker_jetAlgebra`: the first jet is surjective (in
   finitely many variables) with kernel `𝔪_P²`.
 * `TauCeti.jetAlgebraEquiv_mk`: `jetAlgebraEquiv P` sends the class of `f` to `jetAlgebra P f`.
@@ -73,45 +73,33 @@ variable {R : Type*} [CommRing R]
 theorem X_sub_C_mem_ker_eval (P : σ → R) (j : σ) : X j - C (P j) ∈ RingHom.ker (eval P) := by
   simp [RingHom.mem_ker]
 
-/-- The first-order part `∑ⱼ ∂ⱼ f (P) (Xⱼ - Pⱼ)` of the expansion of `f` at `P` after a polynomial
-`p * Xᵢ`: it is `Pᵢ` times that of `p`, plus `p(P) (Xᵢ - Pᵢ)`. -/
-private theorem sum_pderiv_mul_X [Fintype σ] (P : σ → R) (p : MvPolynomial σ R) (i : σ) :
-    ∑ j, C (eval P (pderiv j (p * X i))) * (X j - C (P j)) =
-      C (eval P p) * (X i - C (P i)) +
-        C (P i) * ∑ j, C (eval P (pderiv j p)) * (X j - C (P j)) := by
-  classical
-  simp only [Derivation.leibniz, pderiv_X, smul_eq_mul, map_add, map_mul, eval_X, add_mul,
-    Finset.sum_add_distrib, Finset.mul_sum]
-  congr 1
-  · rw [Fintype.sum_eq_single i fun j hj ↦ by simp [hj.symm]]
-    simp
-  · exact Finset.sum_congr rfl fun j _ ↦ by ring
-
 /-- **First-order Taylor expansion.** A polynomial agrees with its first-order Taylor polynomial
+`f(P) + ∑_{j ∈ f.vars} ∂ⱼ f (P) (Xⱼ - Pⱼ)` at `P` modulo the square of the ideal of `P`. -/
+theorem sub_sum_vars_mem_ker_eval_sq (P : σ → R) (f : MvPolynomial σ R) :
+    f - C (eval P f) - ∑ j ∈ f.vars, C (eval P (pderiv j f)) * (X j - C (P j)) ∈
+      RingHom.ker (eval P) ^ 2 := by
+  have h := eval_sub_eval_sub_sum_pderiv_mem_sq (p := map C f) (I := RingHom.ker (eval P))
+    (a := fun i ↦ C (P i)) (b := X) (s := f.vars)
+    (fun i hi _ ↦ vars_map f C hi) (fun i _ ↦ X_sub_C_mem_ker_eval P i)
+  have hb : eval X (map C f) = f := by
+    rw [eval_map, ← algebraMap_eq, ← aeval_def, aeval_X_left, AlgHom.id_apply]
+  have ha (g : MvPolynomial σ R) :
+      eval (fun i ↦ (C (P i) : MvPolynomial σ R)) (map (C : R →+* MvPolynomial σ R) g) =
+        C (eval P g) := by
+    rw [eval_map]
+    exact (hom_eval₂ g (RingHom.id R) C P).symm
+  simpa only [hb, ha f, pderiv_map, ha] using h
+
+/-- **First-order Taylor expansion** in finitely many variables: a polynomial agrees with
 `f(P) + ∑ⱼ ∂ⱼ f (P) (Xⱼ - Pⱼ)` at `P` modulo the square of the ideal of `P`. -/
 theorem sub_sum_mem_ker_eval_sq [Fintype σ] (P : σ → R) (f : MvPolynomial σ R) :
     f - C (eval P f) - ∑ j, C (eval P (pderiv j f)) * (X j - C (P j)) ∈
       RingHom.ker (eval P) ^ 2 := by
-  rw [sq]
-  induction f using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq =>
-    convert add_mem hp hq using 1
-    simp only [map_add, Finset.sum_add_distrib, add_mul]
-    ring
-  | mul_X p i hp =>
-    -- The remainder for `p * Xᵢ` is the remainder for `p` times `Xᵢ`, plus the first-order part
-    -- of `p` times `Xᵢ - Pᵢ`, which lies in `𝔪_P * 𝔪_P`.
-    have key : p * X i - C (eval P (p * X i)) -
-        ∑ j, C (eval P (pderiv j (p * X i))) * (X j - C (P j)) =
-        (p - C (eval P p) - ∑ j, C (eval P (pderiv j p)) * (X j - C (P j))) * X i +
-          (∑ j, C (eval P (pderiv j p)) * (X j - C (P j))) * (X i - C (P i)) := by
-      rw [sum_pderiv_mul_X, eval_mul, eval_X, map_mul]
-      ring
-    rw [key]
-    exact add_mem (Ideal.mul_mem_right _ _ hp) <| Ideal.mul_mem_mul
-      (sum_mem fun j _ ↦ Ideal.mul_mem_left _ _ (X_sub_C_mem_ker_eval P j))
-      (X_sub_C_mem_ker_eval P i)
+  have hsub : ∑ j ∈ f.vars, C (eval P (pderiv j f)) * (X j - C (P j)) =
+      ∑ j, C (eval P (pderiv j f)) * (X j - C (P j)) :=
+    Finset.sum_subset (Finset.subset_univ _) fun j _ hj ↦ by
+      simp [pderiv_eq_zero_of_notMem_vars hj]
+  simpa only [hsub] using sub_sum_vars_mem_ker_eval_sq P f
 
 end PointIdeal
 

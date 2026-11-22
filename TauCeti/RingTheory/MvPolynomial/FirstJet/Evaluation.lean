@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Rank
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
-import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.Tactic.NormNum
-import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Interpolation of values and first derivatives by bounded-degree polynomials
@@ -34,9 +32,7 @@ their derivatives `αⱼ P i ^ (α - eⱼ)`. Its rank equals
 `finrank R (LinearMap.range (firstJetMap P d))` (`TauCeti.rank_firstJetMatrix_eq_finrank_range`).
 Over a commutative semiring satisfying `StrongRankCondition`, the rank is bounded by
 `min ((d + r) choose r) (n * (r + 1))` and well-poisedness requires
-`n * (r + 1) ≤ (d + r) choose r`; over a nontrivial commutative semiring satisfying
-`OrzechProperty`, injectivity of `firstJetMap P d` is characterized by full column rank; and over a
-field, well-poisedness is full row rank `n * (r + 1)`.
+`n * (r + 1) ≤ (d + r) choose r`; over a field, well-poisedness is full row rank `n * (r + 1)`.
 
 ## Main definitions
 
@@ -55,13 +51,13 @@ field, well-poisedness is full row rank `n * (r + 1)`.
 * `TauCeti.firstJetMap_surjective_iff`: the first-jet map is onto iff the value map is onto and
   the derivative map on its kernel is onto.
 * `TauCeti.toMatrix_firstJetMap`, `TauCeti.firstJetMatrix_mulVec`,
+  `TauCeti.firstJetMatrix_mulVec_comp_equivFun`,
   `TauCeti.firstJetMap_surjective_iff_mulVec_surjective`: `firstJetMatrix P d` is the matrix of
   the uncurried first-jet map in the monomial basis.
 * `TauCeti.rank_firstJetMatrix_eq_finrank_range`, `TauCeti.rank_firstJetMatrix_comp_equiv`:
   matrix rank equals range `finrank` and is invariant under reindexing.
-* `TauCeti.rank_firstJetMatrix_le`, `TauCeti.injective_firstJetMap_iff_rank_eq`,
-  `TauCeti.WellPoised.card_mul_le`: rank bounds and full-column-rank criterion over
-  `StrongRankCondition` and `OrzechProperty` semirings.
+* `TauCeti.rank_firstJetMatrix_le`, `TauCeti.WellPoised.card_mul_le`: rank bounds over
+  `StrongRankCondition` semirings.
 * `TauCeti.wellPoised_iff`, `TauCeti.wellPoised_iff_rank`: well-poisedness and, over a field,
   its full-row-rank characterization.
 * `TauCeti.WellPoised.mono`, `TauCeti.WellPoised.comp_injective`,
@@ -148,16 +144,17 @@ theorem firstJetMap_comp_inclusion {d e : ℕ} (h : d ≤ e) :
 /-- Naturality of `firstJetMap` under a change of coefficients `φ : R →+* S`. -/
 theorem firstJetMap_map [CommSemiring S] (φ : R →+* S) (f : restrictTotalDegree σ R d)
     (i : ι) (z : Option σ) :
-    firstJetMap (fun i ↦ φ ∘ P i) d
-        ⟨map φ (f : MvPolynomial σ R),
-          (restrictTotalDegree_eq_restrictSupport σ S d).symm ▸
-            map_mem_restrictSupport φ ((restrictTotalDegree_eq_restrictSupport σ R d) ▸ f.property)⟩
-        i z =
+    firstJetMap (fun i ↦ φ ∘ P i) d (mapRestrictTotalDegree σ φ d f) i z =
       φ (firstJetMap P d f i z) := by
-  let e := LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R d)
-  simpa [firstJetMap_def, e] using
-    congrFun (jetEval_mapRestrictSupport {s : σ →₀ ℕ | s.degree ≤ d}
-      (fun z : ι × Option σ ↦ P z.1) (fun z ↦ z.2.elim 0 (Finsupp.single · 1)) φ (e f)) (i, z)
+  cases z with
+  | none =>
+    rw [firstJetMap_apply_none, coe_mapRestrictTotalDegree_apply, eval_map,
+      firstJetMap_apply_none]
+    exact (hom_eval₂ (f : MvPolynomial σ R) (RingHom.id R) φ (P i)).symm
+  | some j =>
+    rw [firstJetMap_apply_some, coe_mapRestrictTotalDegree_apply, pderiv_map, eval_map,
+      firstJetMap_apply_some]
+    exact (hom_eval₂ (pderiv j (f : MvPolynomial σ R)) (RingHom.id R) φ (P i)).symm
 
 /-- The value map of the points `P i` in degree `d`: a polynomial `f` of total degree at most `d`
 is sent to its values `f (P i)`. These are the `none` rows of `TauCeti.firstJetMap P d`. -/
@@ -272,11 +269,23 @@ theorem toMatrix_firstJetMap [Finite (ι × Option σ)] {d : ℕ}
     LinearMap.toMatrix (basisRestrictTotalDegree σ R d) (Pi.basisFun R (ι × Option σ))
       ((LinearEquiv.curry R R ι (Option σ)).symm.toLinearMap ∘ₗ firstJetMap P d) =
       firstJetMatrix P d := by
-  ext ⟨i, z⟩ a
-  simp [LinearMap.toMatrix_apply, firstJetMap_basisRestrictTotalDegree]
+  have hcur :
+      ((LinearEquiv.curry R R ι (Option σ)).symm.toLinearMap ∘ₗ firstJetMap P d) ∘ₗ
+        (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R d).symm).toLinearMap =
+        jetEval {s : σ →₀ ℕ | s.degree ≤ d} (fun z ↦ P z.1)
+          (fun z ↦ z.2.elim 0 (Finsupp.single · 1)) := by
+    ext f ⟨i, z⟩
+    cases z with
+    | none => simp
+    | some j =>
+      simp [show pderiv j (f : MvPolynomial σ R) =
+          hasseDeriv (Finsupp.single j 1) (f : MvPolynomial σ R) from by
+        simpa using (factorial_smul_hasseDeriv_single j 1 (f : MvPolynomial σ R)).symm]
+  rw [basisRestrictTotalDegree, LinearMap.toMatrix_map_left, hcur, firstJetMatrix]
+  exact toMatrix_jetEval _ _ _
 
-/-- Reindexing points along an equivalence permutes the rows of `firstJetMatrix`. -/
-theorem firstJetMatrix_comp_equiv (P : ι → σ → R) (e : κ ≃ ι) (d : ℕ) :
+/-- Reindexing points transforms the rows of `firstJetMatrix`. -/
+theorem firstJetMatrix_comp (P : ι → σ → R) (e : κ → ι) (d : ℕ) :
     firstJetMatrix (P ∘ e) d = (firstJetMatrix P d).submatrix (Prod.map e id) id := by
   ext ⟨j, z⟩ a
   cases z <;> simp
@@ -302,30 +311,31 @@ theorem rank_firstJetMatrix_eq_finrank_range {d : ℕ} (P : ι → σ → R) :
 @[simp]
 theorem rank_firstJetMatrix_comp_equiv {d : ℕ} (P : ι → σ → R) (e : κ ≃ ι) :
     (firstJetMatrix (P ∘ e) d).rank = (firstJetMatrix P d).rank := by
-  rw [firstJetMatrix_comp_equiv]
+  rw [firstJetMatrix_comp]
   exact Matrix.rank_submatrix _ (e.prodCongr (Equiv.refl _)) (Equiv.refl _)
 
 /-- In monomial coordinates the first-jet map is multiplication by the first-jet matrix. -/
-theorem firstJetMatrix_mulVec [Fintype σ] [DecidableEq σ] (f : restrictTotalDegree σ R d) :
+theorem firstJetMatrix_mulVec [Fintype {s : σ →₀ ℕ // s.degree ≤ d}]
+    (f : restrictTotalDegree σ R d) :
     firstJetMatrix P d *ᵥ (basisRestrictTotalDegree σ R d).equivFun f =
       Function.uncurry (firstJetMap P d f) := by
-  -- `MvPolynomial.jetEval_eq_mulVec` needs the column instance on the set of exponents.
-  let _ : Fintype {s : σ →₀ ℕ | s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   simp only [firstJetMap, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     LinearEquiv.coe_curry, Function.uncurry_curry, jetEval_eq_mulVec]
+  rw [firstJetMatrix]
   congr 1
-  funext s
-  simp
+
+/-- In monomial coordinates, `firstJetMap P d` equals multiplication by `firstJetMatrix P d`. -/
+theorem firstJetMatrix_mulVec_comp_equivFun [Fintype {s : σ →₀ ℕ // s.degree ≤ d}] :
+    (firstJetMatrix P d).mulVec ∘ (basisRestrictTotalDegree σ R d).equivFun =
+      (Equiv.curry ι (Option σ) R).symm ∘ firstJetMap P d :=
+  funext (firstJetMatrix_mulVec P d)
 
 variable {P d} in
 /-- The first-jet map is onto iff multiplication by the first-jet matrix is onto. -/
-theorem firstJetMap_surjective_iff_mulVec_surjective [Fintype σ] [DecidableEq σ] :
+theorem firstJetMap_surjective_iff_mulVec_surjective [Fintype {s : σ →₀ ℕ // s.degree ≤ d}] :
     Function.Surjective (firstJetMap P d) ↔ (firstJetMatrix P d).mulVec.Surjective := by
-  have h : (firstJetMatrix P d).mulVec ∘ (basisRestrictTotalDegree σ R d).equivFun =
-      (Equiv.curry ι (Option σ) R).symm ∘ firstJetMap P d :=
-    funext (firstJetMatrix_mulVec P d)
-  rw [← Function.Surjective.of_comp_iff _ (basisRestrictTotalDegree σ R d).equivFun.surjective, h,
-    EquivLike.comp_surjective]
+  rw [← Function.Surjective.of_comp_iff _ (basisRestrictTotalDegree σ R d).equivFun.surjective,
+    firstJetMatrix_mulVec_comp_equivFun, EquivLike.comp_surjective]
 
 /-- The points `P i` are *well poised* in degree `d` when every family of values and first
 partial derivatives at the points is attained by a polynomial of total degree at most `d`. -/
@@ -358,6 +368,7 @@ theorem WellPoised.comp_injective (hP : WellPoised P d) {e : κ → ι}
   exact he.extend_apply t 0 k
 
 /-- Well-poisedness does not depend on the indexing of the points. -/
+@[simp]
 theorem wellPoised_comp_equiv (e : κ ≃ ι) : WellPoised (P ∘ e) d ↔ WellPoised P d := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp_injective e.injective⟩
   simpa [Function.comp_assoc] using h.comp_injective e.symm.injective
@@ -365,16 +376,11 @@ theorem wellPoised_comp_equiv (e : κ ≃ ι) : WellPoised (P ∘ e) d ↔ WellP
 /-- Over a nontrivial commutative semiring, a well-poised tuple must consist of distinct points. -/
 theorem WellPoised.injective [Nontrivial R] (h : WellPoised P d) :
     Function.Injective P := by
-  classical
-  intro i j hij
-  by_contra hne
-  obtain ⟨f, hf⟩ := (wellPoised_iff.1 h) (Function.update 0 i fun _ ↦ 1)
-  have hi : eval (P i) (f : MvPolynomial σ R) = 1 := by
-    simpa using congrFun (congrFun hf i) none
-  have hj : eval (P j) (f : MvPolynomial σ R) = 0 := by
-    simpa [Function.update_of_ne (Ne.symm hne)] using congrFun (congrFun hf j) none
-  rw [hij, hj] at hi
-  exact zero_ne_one hi
+  have hsurj : Function.Surjective (LinearMap.funLeft R (Option σ → R) P ∘
+      firstJetMap (id : (σ → R) → σ → R) d) := by
+    rw [← LinearMap.coe_comp, ← firstJetMap_comp (P := id) (d := d) P]
+    exact wellPoised_iff.1 h
+  exact Function.surjective_comp_right_iff_injective.1 (Function.Surjective.of_comp hsurj)
 
 /-- The empty tuple is well poised in every degree. -/
 @[simp]
@@ -382,7 +388,8 @@ theorem wellPoised_of_isEmpty [IsEmpty ι] (P : ι → σ → R) (d : ℕ) : Wel
   wellPoised_iff.2 fun _ ↦ ⟨0, _root_.funext fun i ↦ isEmptyElim i⟩
 
 variable (P) in
-/-- No point is well poised in degree zero: the partial derivatives of a constant vanish. -/
+/-- A nonempty tuple over a nontrivial commutative semiring with at least one variable cannot be
+well poised in degree zero: the partial derivatives of a constant vanish. -/
 theorem not_wellPoised_zero [Nontrivial R] [Nonempty ι] [Nonempty σ] : ¬WellPoised P 0 := by
   intro hP
   obtain ⟨i⟩ := ‹Nonempty ι›
@@ -412,24 +419,6 @@ theorem rank_firstJetMatrix_le [StrongRankCondition R] [Fintype σ] [Fintype ι]
       ≤ Module.finrank R (ι → Option σ → R) := Submodule.finrank_le _
     _ = Fintype.card ι * (Fintype.card σ + 1) := by
       simp [Module.finrank_pi_fintype, Fintype.card_option]
-
-/-- **Full column rank criterion.** Over a nontrivial commutative semiring satisfying
-`OrzechProperty`, `firstJetMap P d` is injective if and only if `firstJetMatrix P d` has rank
-`(d + Fintype.card σ).choose (Fintype.card σ)`. -/
-theorem injective_firstJetMap_iff_rank_eq [Nontrivial R] [OrzechProperty R] [Fintype σ] {d : ℕ}
-    (P : ι → σ → R) :
-    Function.Injective (firstJetMap P d) ↔
-      (firstJetMatrix P d).rank = (d + Fintype.card σ).choose (Fintype.card σ) := by
-  classical
-  let _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
-  have h : (firstJetMatrix P d).mulVec ∘ (basisRestrictTotalDegree σ R d).equivFun =
-      (Equiv.curry ι (Option σ) R).symm ∘ firstJetMap P d :=
-    funext (firstJetMatrix_mulVec P d)
-  rw [← Function.Injective.of_comp_iff (Equiv.curry ι (Option σ) R).symm.injective, ← h,
-    Function.Injective.of_comp_iff' _ (basisRestrictTotalDegree σ R d).equivFun.bijective,
-    ← Matrix.rank_eq_card_iff_mulVec_injective,
-    ← Module.finrank_eq_card_basis (basisRestrictTotalDegree σ R d),
-    TauCeti.finrank_restrictTotalDegree]
 
 /-- **Necessary dimension bound for well-poisedness.** Over a commutative semiring satisfying
 `StrongRankCondition`, if `P` is well poised in degree `d`, then
@@ -505,6 +494,7 @@ variable {k : Type*} [Field k]
 theorem wellPoised_iff_rank [Fintype ι] [Fintype σ] {P : ι → σ → k} {d : ℕ} :
     WellPoised P d ↔ (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) := by
   classical
+  let _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   rw [WellPoised, firstJetMap_surjective_iff_mulVec_surjective,
     Matrix.mulVec_surjective_iff_rank_eq_card, Fintype.card_prod, Fintype.card_option]
 

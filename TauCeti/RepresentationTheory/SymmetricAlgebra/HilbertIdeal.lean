@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 public import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.GradedAlgebra.Subalgebra
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # The Hilbert ideal of a linear group action

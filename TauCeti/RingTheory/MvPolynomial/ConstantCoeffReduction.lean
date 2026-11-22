@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.LinearAlgebra.Finsupp.LSum
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Constant coefficient reduction of maps between free polynomial modules

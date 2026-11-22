@@ -11,7 +11,7 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.RingTheory.Henselian.Approximation.Newton
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Checks for Newton approximation with Elkik's Jacobian ideal

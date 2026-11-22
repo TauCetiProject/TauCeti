@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.MvPolynomial.FirstJet.Basic
 public import TauCeti.RingTheory.TrivSqZeroExt
 import Mathlib.Data.ZMod.Defs
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Double points in affine space
@@ -18,12 +17,12 @@ For a family of points `Pᵢ : σ → R`, `TauCeti.doubleIdeal P` is the square 
 common vanishing ideal `⋂ᵢ 𝔪_{Pᵢ}` (`𝔪_P = ker (eval P)`). In general, `R[X] ⧸ doubleIdeal P`
 is the thickening defined by the square of that common vanishing ideal.
 
-For finitely many points over a commutative ring whose evaluation ideals `𝔪_{Pᵢ}` are pairwise
+For finitely many points over a commutative semiring whose evaluation ideals `𝔪_{Pᵢ}` are pairwise
 comaximal (for example, distinct points over a field), `doubleIdeal P` equals the intersection
-`⋂ᵢ 𝔪_{Pᵢ}²` of the individual double-point ideals, so the quotient represents the union of the
-individual doubled points `2Pᵢ`, and the Chinese remainder theorem splits the quotient into the
-quotient factors `R[X] ⧸ 𝔪_{Pᵢ}²`. For finitely many variables, each quotient factor is the
-algebra of first jets `TrivSqZeroExt R (σ → R)` (`TauCeti.ker_jetAlgebra`), so
+`⋂ᵢ 𝔪_{Pᵢ}²` of the individual double-point ideals. Over a commutative ring, the quotient represents
+the union of the individual doubled points `2Pᵢ`, and the Chinese remainder theorem splits the
+quotient into the quotient factors `R[X] ⧸ 𝔪_{Pᵢ}²`. For finitely many variables, each quotient
+factor is the algebra of first jets `TrivSqZeroExt R (σ → R)` (`TauCeti.ker_jetAlgebra`), so
 `R[X] ⧸ doubleIdeal P ≃ₐ[R] ∏ᵢ TrivSqZeroExt R (σ → R)`, sending the class of `f` to its values
 and gradients at the points. In particular, values and first derivatives can be prescribed
 independently by a single polynomial, and for `r` variables and `n` points over a commutative ring
@@ -68,48 +67,52 @@ open MvPolynomial
 
 variable {σ ι κ : Type*}
 
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
 /-- The square of the common vanishing ideal `⋂ᵢ ker (eval (P i))` of a family of points `Pᵢ`.
 When the family is finite and its evaluation ideals are pairwise comaximal, this equals
 `⋂ᵢ ker (eval (P i)) ^ 2` (`TauCeti.doubleIdeal_eq_iInf`), the ideal of the individual doubled
 points `2Pᵢ`. Repetitions among the points are allowed. -/
-noncomputable def doubleIdeal {R : Type*} [CommSemiring R] (P : ι → σ → R) :
+noncomputable def doubleIdeal (P : ι → σ → R) :
     Ideal (MvPolynomial σ R) :=
   (⨅ i, RingHom.ker (eval (P i))) ^ 2
 
-theorem doubleIdeal_def {R : Type*} [CommSemiring R] (P : ι → σ → R) :
+theorem doubleIdeal_def (P : ι → σ → R) :
     doubleIdeal P = (⨅ i, RingHom.ker (eval (P i))) ^ 2 :=
   (rfl)
 
 /-- Reindexing the points does not change the double-point ideal. -/
-theorem doubleIdeal_comp {R : Type*} [CommSemiring R] (P : ι → σ → R) (e : κ ≃ ι) :
+@[simp]
+theorem doubleIdeal_comp (P : ι → σ → R) (e : κ ≃ ι) :
     doubleIdeal (P ∘ e) = doubleIdeal P := by
   simp only [doubleIdeal_def, Function.comp_apply]
   rw [e.iInf_comp (g := fun i ↦ RingHom.ker (eval (P i)))]
 
 /-- The squared intersection ideal is always contained in the intersection of the squared point
 ideals. -/
-theorem doubleIdeal_le_iInf_sq {R : Type*} [CommSemiring R] (P : ι → σ → R) :
+theorem doubleIdeal_le_iInf_sq (P : ι → σ → R) :
     doubleIdeal P ≤ ⨅ i, RingHom.ker (eval (P i)) ^ 2 := by
   rw [doubleIdeal_def]
   exact le_iInf fun i ↦ Ideal.pow_right_mono (iInf_le _ i) 2
 
+/-- For an empty family of points, the double-point ideal is the unit ideal. -/
 @[simp]
-theorem doubleIdeal_isEmpty {R : Type*} [CommSemiring R] [IsEmpty ι] (P : ι → σ → R) :
+theorem doubleIdeal_isEmpty [IsEmpty ι] (P : ι → σ → R) :
     doubleIdeal P = ⊤ := by
   simp [doubleIdeal_def]
 
+/-- For a singleton family of points, the double-point ideal is the square of its evaluation
+ideal. -/
 @[simp]
-theorem doubleIdeal_unique {R : Type*} [CommSemiring R] [Unique ι] (P : ι → σ → R) :
+theorem doubleIdeal_unique [Unique ι] (P : ι → σ → R) :
     doubleIdeal P = RingHom.ker (eval (P default)) ^ 2 := by
   simp [doubleIdeal_def]
 
-section CommRing
-
-variable {R : Type*} [CommRing R] {P : ι → σ → R}
-
 /-- For a finite family of points whose evaluation ideals are pairwise comaximal, the square of the
 common vanishing ideal is the intersection of the squares of the ideals of the individual points. -/
-theorem doubleIdeal_eq_iInf [Finite ι]
+theorem doubleIdeal_eq_iInf [Finite ι] {P : ι → σ → R}
     (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) :
     doubleIdeal P = ⨅ i, RingHom.ker (eval (P i)) ^ 2 := by
   cases nonempty_fintype ι
@@ -117,6 +120,12 @@ theorem doubleIdeal_eq_iInf [Finite ι]
       ∏ i, f i = ⨅ i, f i := by
     simpa using Ideal.prod_eq_iInf_of_pairwise_isCoprime (s := Finset.univ) fun i _ j _ h ↦ hf h
   rw [doubleIdeal_def, ← hcop hP, ← hcop fun _ _ hij ↦ (hP hij).pow, Finset.prod_pow]
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {P : ι → σ → R}
 
 section JetAlgebra
 

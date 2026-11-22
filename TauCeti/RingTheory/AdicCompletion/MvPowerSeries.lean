@@ -11,7 +11,7 @@ import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Surjective
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!

@@ -16,9 +16,9 @@ This file connects the double-point quotient
 evaluation (`TauCeti.RingTheory.MvPolynomial.FirstJet.Evaluation`).
 
 For a finite family of points whose evaluation ideals are pairwise comaximal, the kernel of
-`TauCeti.firstJetMap P d` equals the degree-`d` part of `TauCeti.doubleIdeal P`
-(`TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`). When in addition the variable type is finite,
-`TauCeti.firstJetMap P d` factors through `TauCeti.doublePointQuotientEquiv` and
+`TauCeti.firstJetMap P d` consists of the elements of `TauCeti.doubleIdeal P` of total degree at
+most `d` (`TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`). When in addition the variable type is
+finite, `TauCeti.firstJetMap P d` factors through `TauCeti.doublePointQuotientEquiv` and
 `TauCeti.jetEquivOption` (`TauCeti.firstJetMap_eq_doublePointQuotientEquiv`), so `P` is well poised
 in degree `d` if and only if the quotient map `R[X] → R[X] ⧸ doubleIdeal P` is surjective on
 `restrictTotalDegree σ R d` (`TauCeti.wellPoised_iff_surjective_quotientMk`).
@@ -26,8 +26,8 @@ in degree `d` if and only if the quotient map `R[X] → R[X] ⧸ doubleIdeal P` 
 ## Main results
 
 * `TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`: for finitely many points with pairwise
-  comaximal evaluation ideals, `LinearMap.ker (firstJetMap P d)` is the degree-`d` part of
-  `doubleIdeal P`.
+  comaximal evaluation ideals, `LinearMap.ker (firstJetMap P d)` consists of the elements of
+  `doubleIdeal P` of total degree at most `d`.
 * `TauCeti.firstJetMap_eq_doublePointQuotientEquiv`: for finitely many points in finitely many
   variables with pairwise comaximal evaluation ideals, `firstJetMap P d` factors through the
   quotient by `doubleIdeal P`, `doublePointQuotientEquiv`, and `jetEquivOption`.

@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.MvPolynomial.Expand
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Examples and counterexamples for linear Noether normalization

@@ -9,7 +9,7 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Data.PNat.Basic
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Regular sequences of polynomial variables

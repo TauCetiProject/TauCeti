@@ -11,7 +11,7 @@ public import TauCeti.KnotTheory.Grid.XHomotopy.SimplyBlocked
 public import Mathlib.Algebra.Module.ZMod
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.LinearAlgebra.Dimension.Prod
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Partially blocked grid homology and the dimension of fully blocked grid homology
