@@ -17,21 +17,21 @@ Multiplying a special unitary matrix by a scalar of modulus one gives a continuo
 
 `S¹ × SU(n) → U(n)`, `(z, A) ↦ z A`
 
-(`Matrix.UnitaryGroup.circleProdSpecialUnitary`). It is onto, since every unitary matrix becomes
+(`TauCeti.circleProdSpecialUnitary`). It is onto, since every unitary matrix becomes
 special unitary after rescaling by a `card n`-th root of the inverse of its determinant
 (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`). A pair `(z, A)` lies in its kernel exactly
-when `A = z⁻¹ I` (`Matrix.UnitaryGroup.mem_ker_circleProdSpecialUnitary_iff`), and then
+when `A = z⁻¹ I` (`TauCeti.mem_ker_circleProdSpecialUnitary_iff`), and then
 `det A = z⁻ⁿ = 1`, with `n = card n`. So the first projection identifies the kernel with the group
 of `n`-th roots of unity of the circle, embedded as `ζ ↦ (ζ, ζ⁻¹ I)`
-(`Matrix.UnitaryGroup.kerCircleProdSpecialUnitaryEquiv`), and the kernel has `n` elements
-(`Matrix.UnitaryGroup.natCard_ker_circleProdSpecialUnitary`).
+(`TauCeti.kerCircleProdSpecialUnitaryEquiv`), and the kernel has `n` elements
+(`TauCeti.natCard_ker_circleProdSpecialUnitary`).
 
 For a nonempty index type the kernel is a finite, hence discrete, subgroup, and a continuous
 surjective homomorphism from the compact group `S¹ × SU(n)` onto the Hausdorff group `U(n)` is a
 quotient map. So the homomorphism is the quotient of `S¹ × SU(n)` by its kernel, a covering map
-(`Matrix.UnitaryGroup.isQuotientCoveringMap_circleProdSpecialUnitary`,
-`Matrix.UnitaryGroup.isCoveringMap_circleProdSpecialUnitary`) each of whose fibres has `n` points
-(`Matrix.UnitaryGroup.natCard_preimage_circleProdSpecialUnitary`).
+(`TauCeti.isQuotientCoveringMap_circleProdSpecialUnitary`,
+`TauCeti.isCoveringMap_circleProdSpecialUnitary`) each of whose fibres has `n` points
+(`TauCeti.natCard_preimage_circleProdSpecialUnitary`).
 
 This is the decomposition of a compact connected Lie group as a finite quotient `(T × K) / Γ` of
 the product of a torus `T` and a simply connected semisimple compact group `K`, for `G = U(n)`:
@@ -41,16 +41,16 @@ For the empty index type `U(n)` and `SU(n)` are trivial, the kernel is the whole
 
 ## Main definitions
 
-* `Matrix.UnitaryGroup.circleProdSpecialUnitary`: the homomorphism `(z, A) ↦ z A`.
-* `Matrix.UnitaryGroup.kerCircleProdSpecialUnitaryEquiv`: its kernel is the group of `n`-th
+* `TauCeti.circleProdSpecialUnitary`: the homomorphism `(z, A) ↦ z A`.
+* `TauCeti.kerCircleProdSpecialUnitaryEquiv`: its kernel is the group of `n`-th
   roots of unity of the circle.
 
 ## Main results
 
-* `Matrix.UnitaryGroup.circleProdSpecialUnitary_surjective`: the homomorphism is onto.
-* `Matrix.UnitaryGroup.natCard_ker_circleProdSpecialUnitary`: its kernel has `n` elements.
-* `Matrix.UnitaryGroup.isCoveringMap_circleProdSpecialUnitary`: it is a covering map.
-* `Matrix.UnitaryGroup.natCard_preimage_circleProdSpecialUnitary`: every fibre has `n` points.
+* `TauCeti.circleProdSpecialUnitary_surjective`: the homomorphism is onto.
+* `TauCeti.natCard_ker_circleProdSpecialUnitary`: its kernel has `n` elements.
+* `TauCeti.isCoveringMap_circleProdSpecialUnitary`: it is a covering map.
+* `TauCeti.natCard_preimage_circleProdSpecialUnitary`: every fibre has `n` points.
 
 ## References
 
@@ -62,19 +62,11 @@ For the empty index type `U(n)` and `SU(n)` are trivial, the kernel is the whole
 
 public section
 
-namespace Matrix
+open Matrix
+
+namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The scalar matrix `ζ⁻¹ I` is special unitary when `ζ` is a `card n`-th root of unity of the
-circle. -/
-theorem inv_smul_one_mem_specialUnitaryGroup {ζ : Circle} (hζ : ζ ^ Fintype.card n = 1) :
-    ((ζ⁻¹ : Circle) : ℂ) • (1 : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ := by
-  refine mem_specialUnitaryGroup_iff.2
-    ⟨Unitary.smul_mem_of_mem ζ⁻¹.coe_mem_unitary (one_mem _), ?_⟩
-  rw [det_smul, det_one, mul_one, ← Circle.coe_pow, inv_pow, hζ, inv_one, Circle.coe_one]
-
-namespace UnitaryGroup
 
 /-- **`U(n)` from the circle and `SU(n)`**: the homomorphism `S¹ × SU(n) → U(n)`,
 `(z, A) ↦ z A`. -/
@@ -106,29 +98,23 @@ theorem circleProdSpecialUnitary_surjective :
   intro U
   obtain ⟨c, hc⟩ := exists_circle_smul_mem_specialUnitaryGroup U
   refine ⟨(c⁻¹, ⟨_, hc⟩), Subtype.ext ?_⟩
-  rw [coe_circleProdSpecialUnitary_apply, smul_smul, Circle.coe_inv,
-    inv_mul_cancel₀ (Circle.coe_ne_zero c), one_smul]
+  rw [coe_circleProdSpecialUnitary_apply]
+  exact inv_smul_smul c (U : Matrix n n ℂ)
 
 /-- A pair `(z, A)` maps to the identity exactly when `A` is the scalar matrix `z⁻¹ I`. -/
 theorem mem_ker_circleProdSpecialUnitary_iff (p : Circle × specialUnitaryGroup n ℂ) :
     p ∈ (circleProdSpecialUnitary (n := n)).ker ↔
       (p.2 : Matrix n n ℂ) = ((p.1⁻¹ : Circle) : ℂ) • 1 := by
   rw [MonoidHom.mem_ker, ← Subtype.coe_inj, coe_circleProdSpecialUnitary_apply,
-    UnitaryGroup.one_val, Circle.coe_inv]
-  constructor
-  · intro h
-    rw [← h, smul_smul, inv_mul_cancel₀ (Circle.coe_ne_zero _), one_smul]
-  · intro h
-    rw [h, smul_smul, mul_inv_cancel₀ (Circle.coe_ne_zero _), one_smul]
+    UnitaryGroup.one_val, ← Circle.smul_def, ← Circle.smul_def, eq_inv_smul_iff]
 
 /-- The first coordinate of a point of the kernel is a `card n`-th root of unity: the second
 coordinate `z⁻¹ I` has determinant `z⁻ⁿ`, which must be one. -/
 theorem pow_card_eq_one_of_mem_ker_circleProdSpecialUnitary {p : Circle × specialUnitaryGroup n ℂ}
     (hp : p ∈ (circleProdSpecialUnitary (n := n)).ker) : p.1 ^ Fintype.card n = 1 := by
-  have hdet := (mem_specialUnitaryGroup_iff.1 p.2.property).2
-  rw [(mem_ker_circleProdSpecialUnitary_iff p).1 hp, det_smul, det_one, mul_one,
-    ← Circle.coe_pow, inv_pow] at hdet
-  exact inv_eq_one.1 (Circle.ext hdet)
+  rw [← inv_eq_one, ← inv_pow, ← circle_smul_one_mem_specialUnitaryGroup_iff,
+    ← (mem_ker_circleProdSpecialUnitary_iff p).1 hp]
+  exact p.2.property
 
 /-- **The kernel of `S¹ × SU(n) → U(n)` is the group of `n`-th roots of unity**, embedded as
 `ζ ↦ (ζ, ζ⁻¹ I)`; the isomorphism is the first projection. -/
@@ -137,7 +123,8 @@ noncomputable def kerCircleProdSpecialUnitaryEquiv :
   toFun p := ⟨toUnits p.val.1,
     (mem_rootsOfUnity' _ _).2 (pow_card_eq_one_of_mem_ker_circleProdSpecialUnitary p.property)⟩
   invFun ζ := ⟨(((ζ : Circleˣ) : Circle),
-      ⟨_, inv_smul_one_mem_specialUnitaryGroup ((mem_rootsOfUnity' _ _).1 ζ.property)⟩),
+      ⟨_, circle_smul_one_mem_specialUnitaryGroup_iff.2 <|
+        (inv_pow _ _).trans (inv_eq_one.2 ((mem_rootsOfUnity' _ _).1 ζ.property))⟩),
     (mem_ker_circleProdSpecialUnitary_iff _).2 rfl⟩
   left_inv p := by
     refine Subtype.ext (Prod.ext rfl (Subtype.ext ?_))
@@ -204,6 +191,4 @@ theorem natCard_preimage_circleProdSpecialUnitary [Nonempty n] (U : unitaryGroup
   rw [← natCard_ker_circleProdSpecialUnitary, Nat.card_congr
     (isQuotientCoveringMap_circleProdSpecialUnitary.fiberEquivGroup ⟨p, hp⟩)]
 
-end UnitaryGroup
-
-end Matrix
+end TauCeti
