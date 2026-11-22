@@ -83,7 +83,11 @@ vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z
 isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
 (`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`). For a nondegenerate form, if
 moreover `μ(x)` is coadjoint-fixed, the components of `μ` pairwise Poisson-commute at `x`
-(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`). More generally, where the cocycle
+vanishes the moment map is a Poisson map to `𝔤*` with its positive Lie–Poisson structure: functions
+`f` and `g` whose differentials at `x` are `⟨dμ_x(·), Z⟩` and `⟨dμ_x(·), Z'⟩` have Hamiltonian
+vectors `Z_M x` and `Z'_M x`, and `{f, g}(x) = μ(x)(⁅Z, Z'⁆)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_apply_lie_of_mvfderiv_eq`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -337,6 +341,20 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
   ext v Z
   simp [h.differential_apply_eq_eval₂]
 
+/-- Two moment maps of the same action have the same differential, since both differentials are
+computed by the moment-map identity `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. -/
+theorem differential_eq_differential (h : σ.IsMomentMap a μ) (h' : σ.IsMomentMap a μ') :
+    h.differential = h'.differential := by
+  funext x
+  ext v Z
+  rw [h.differential_apply_eq_eval₂, h'.differential_apply_eq_eval₂]
+
+/-- Shifting a moment map by a constant `ν ∈ 𝔤*` does not change its differential. -/
+@[simp]
+theorem differential_add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
+    (h.add_const ν).differential = h.differential :=
+  (h.add_const ν).differential_eq_differential h
+
 /-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
 homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
 @[simp]
@@ -548,6 +566,33 @@ theorem differential_apply_of_momentCocycle_eq_zero (h : σ.IsMomentMap a μ) {x
   ext Z'
   rw [differential_apply_eq_eval₂, momentCocycle_eq_zero_iff.1 hc, Module.Dual.lie_apply,
     ← lie_skew, map_neg]
+
+/-- **Hamiltonian vector fields of functions of a moment map.** For a nondegenerate form on a
+finite-dimensional manifold, if the differential of `f` at `x` is `v ↦ ⟨dμ_x(v), Z⟩`, as for the
+composite `F ∘ μ` of a function `F` on `𝔤*` whose derivative at `μ(x)` is evaluation at `Z`, then
+the Hamiltonian vector field of `f` at `x` is `Z_M x`. -/
+theorem hamiltonianVectorField_apply_eq_of_mvfderiv_eq [FiniteDimensional ℝ E]
+    (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) {f : M → ℝ} {x : M} {Z : 𝔤}
+    (hf : ∀ v, mvfderiv I f x v = h.differential x v Z) :
+    σ.hamiltonianVectorField f x = a Z x := by
+  -- Both vectors have flat `df_x`, by the moment map identity `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`.
+  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun v ↦ ?_)
+  rw [hσ.flat_hamiltonianVectorField, flat_apply, hf, h.differential_apply_eq_eval₂]
+
+/-- **A moment map is a Poisson map where its cocycle vanishes.** For a nondegenerate form on a
+finite-dimensional manifold, let the cocycle of `μ` vanish at `x`, and let the differentials of `f`
+and `g` at `x` be `v ↦ ⟨dμ_x(v), Z⟩` and `v ↦ ⟨dμ_x(v), Z'⟩`, as for the composites `F ∘ μ` and
+`G ∘ μ` of functions on `𝔤*` with derivatives `Z` and `Z'` at `μ(x)`. Then
+`{f, g}(x) = μ(x)(⁅Z, Z'⁆)`, the positive Lie–Poisson bracket `{F, G}(ν) = ν ⁅dF_ν, dG_ν⁆` of `F`
+and `G` at `μ(x)`. For the components `f = μ_Z` and `g = μ_Z'` this is `{μ_Z, μ_Z'} = μ_{⁅Z, Z'⁆}`
+at `x`. -/
+theorem poissonBracket_eq_apply_lie_of_mvfderiv_eq [FiniteDimensional ℝ E]
+    (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) {f g : M → ℝ} {x : M} {Z Z' : 𝔤}
+    (hc : σ.momentCocycle a μ x = 0) (hf : ∀ v, mvfderiv I f x v = h.differential x v Z)
+    (hg : ∀ v, mvfderiv I g x v = h.differential x v Z') :
+    σ.poissonBracket f g x = μ x ⁅Z, Z'⁆ := by
+  rw [poissonBracket_def, h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hf,
+    h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hg, momentCocycle_eq_zero_iff.1 hc]
 
 /-- If the cocycle of a moment map vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
 coadjoint stabilizer of `μ(x)`. -/

@@ -47,6 +47,8 @@ and vanishing on boundaries.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
+* `ContinuousMap.singularHomologyMap_eq_homologyMap_toSSet_map`: singular homology maps are the
+  homology maps of the singular simplicial sets.
 * `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
   by the powers of its action.
 -/
@@ -285,6 +287,17 @@ theorem singularHomologyMap_eq_singularHomologyFunctor_map {Y Z : Type u} [Topol
     singularHomologyMap k n g =
       (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
         (TopCat.ofHom g)).hom :=
+  rfl
+
+variable {k n} in
+/-- The map induced on singular homology by a continuous map is the map induced on the homology of
+the singular simplicial sets: `singularChains k` is by definition the simplicial chain complex of
+`TopCat.toSSet`. This identifies results stated for the homology of `TopCat.toSSet` with
+singular homology. -/
+theorem singularHomologyMap_eq_homologyMap_toSSet_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of k k) n).hom :=
   rfl
 
 variable {k n} in
