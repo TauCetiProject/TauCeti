@@ -84,6 +84,8 @@ trivializing open sets, by induction on their number, and so over a compact base
 
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairTwistedFiberClass`: the isomorphism sends
   the twisted fibre class over `b` to the class of `b`.
+* `TauCeti.thomPairTwistedHomologyFinrankIso_inv_singularHomology₀Section`: its inverse sends the
+  class of `b` to the twisted fibre class over `b`.
 * `TauCeti.thomPairTwistedFiberClass_eq`: every trivialization of the atlas at `b` exhibits the
   twisted fibre class over `b` as the image under the fibre inclusion of the class which it reads
   as the fibre class which it reads as `γ`.
@@ -441,19 +443,16 @@ private theorem signFiberClassOver_eq_of_joinedIn (c : B) {W : Set B} {x y : B} 
     signFiberClassOver (E := E) hι ω γ hx = signFiberClassOver (E := E) hι ω γ hy := by
   set e := trivializationAt F E c
   have hV : W ∩ e.baseSet ⊆ e.baseSet := inter_subset_right
-  obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1
-    ((span_complZeroPairPointHom_one F R).symm ▸ Submodule.mem_top : γ ∈ _)
   rw [← restrictOver_signFiberClassOver (E := E) hι ω γ inter_subset_left h.source_mem,
     ← restrictOver_signFiberClassOver (E := E) hι ω γ inter_subset_left h.target_mem]
   congr 1
-  apply (ModuleCat.mono_iff_injective (readOver hι e ω hV (finrank ℝ F) ≫
-    TopPair.singularHomologyMap (e.thomPairOverIso ℝ hV).hom (ModuleCat.of R R)
-      (finrank ℝ F))).1 inferInstance
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    readOver_signFiberClassOver, readOver_signFiberClassOver, ← ha,
-    singularHomologyMap_thomPairOverIso_readFiberClass,
-    singularHomologyMap_thomPairOverIso_readFiberClass,
-    singularHomology₀Section_eq_of_joined _ h.joined_subtype]
+  apply (ModuleCat.mono_iff_injective (readOver hι e ω hV (finrank ℝ F))).1 inferInstance
+  rw [readOver_signFiberClassOver, readOver_signFiberClassOver, readFiberClass, readFiberClass,
+    ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
+    ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp]
+  exact ConcreteCategory.congr_hom
+    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
+      (ModuleCat.of R R) (h.mono (subset_inter subset_rfl hV)) (finrank ℝ F) rfl) γ
 
 include hι in
 /-- **The twisted fibre classes are constant along paths.** -/
@@ -896,29 +895,36 @@ def thomPairTwistedHomologyFinrankIso (hγ : Submodule.span R {γ} = ⊤) :
   have := isIso_signThomPairFinrankInv (E := E) hι ω γ hγ
   (asIso (signThomPairFinrankInv (E := E) hι ω γ)).symm
 
+/-- The inverse of the isomorphism `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` sends the class of `b` to the
+twisted fibre class over `b`. -/
+@[simp]
+theorem thomPairTwistedHomologyFinrankIso_inv_singularHomology₀Section
+    (hγ : Submodule.span R {γ} = ⊤) (b : B) :
+    (thomPairTwistedHomologyFinrankIso hι ω γ hγ).inv
+        (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
+      thomPairTwistedFiberClass E hι ω γ b := by
+  have hsec := ConcreteCategory.congr_hom (singularHomology₀Section_naturality
+    (ModuleCat.of R R) (X := TopCat.of B) (Y := TopCat.of (univ : Set B))
+    (TopCat.isoOfHomeo (Homeomorph.Set.univ B).symm).hom b) (1 : R)
+  have hΨ := ConcreteCategory.congr_hom (singularHomology₀Section_signThomPairOverFinrankInv
+    (E := E) hι ω γ (W := univ) ((TopCat.isoOfHomeo (X := TopCat.of B)
+      (Y := TopCat.of (univ : Set B)) (Homeomorph.Set.univ B).symm).hom b)) (1 : R)
+  rw [ConcreteCategory.comp_apply] at hsec hΨ
+  rw [thomPairTwistedHomologyFinrankIso, Iso.symm_inv, asIso_hom, signThomPairFinrankInv,
+    ConcreteCategory.comp_apply, hsec]
+  simp only [ConcreteCategory.comp_apply]
+  rw [hΨ]
+  simp [thomPairTwistedFiberClass]
+
 /-- The isomorphism `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` sends the twisted fibre class over `b` to the
 class of `b`. -/
+@[simp]
 theorem thomPairTwistedHomologyFinrankIso_hom_thomPairTwistedFiberClass
     (hγ : Submodule.span R {γ} = ⊤) (b : B) :
     (thomPairTwistedHomologyFinrankIso hι ω γ hγ).hom (thomPairTwistedFiberClass E hι ω γ b) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1 := by
-  have := isIso_signThomPairFinrankInv (E := E) hι ω γ hγ
-  have h : signThomPairFinrankInv (E := E) hι ω γ
-      (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
-      thomPairTwistedFiberClass E hι ω γ b := by
-    have hsec := ConcreteCategory.congr_hom (singularHomology₀Section_naturality
-      (ModuleCat.of R R) (X := TopCat.of B) (Y := TopCat.of (univ : Set B))
-      (TopCat.isoOfHomeo (Homeomorph.Set.univ B).symm).hom b) (1 : R)
-    have hΨ := ConcreteCategory.congr_hom (singularHomology₀Section_signThomPairOverFinrankInv
-      (E := E) hι ω γ (W := univ) ((TopCat.isoOfHomeo (X := TopCat.of B)
-        (Y := TopCat.of (univ : Set B)) (Homeomorph.Set.univ B).symm).hom b)) (1 : R)
-    rw [ConcreteCategory.comp_apply] at hsec hΨ
-    rw [signThomPairFinrankInv, ConcreteCategory.comp_apply, hsec]
-    simp only [ConcreteCategory.comp_apply]
-    rw [hΨ]
-    simp [thomPairTwistedFiberClass]
-  rw [← h, thomPairTwistedHomologyFinrankIso, Iso.symm_hom, asIso_inv,
-    ← ConcreteCategory.comp_apply, IsIso.hom_inv_id, ConcreteCategory.id_apply]
+  rw [← thomPairTwistedHomologyFinrankIso_inv_singularHomology₀Section hι ω γ hγ,
+    ← ConcreteCategory.comp_apply, Iso.inv_hom_id, ConcreteCategory.id_apply]
 
 end ThomPair
 

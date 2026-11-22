@@ -62,6 +62,29 @@ def twistedHomologyPullbackSignLocalSystemIso (e : Trivialization F (π F E))
   asIso (P.twistedHomologyCoefficientMap (pullbackSignLocalSystemIso R hι e ω g hg).hom n) ≪≫
     P.twistedHomologyConstantIso (ModuleCat.of R R) n
 
+/-- The identification of homology with coefficients in the pulled-back orientation local system
+with ordinary homology is induced by the trivialization of the pulled-back system. -/
+theorem twistedHomologyPullbackSignLocalSystemIso_hom (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) (P : TopPair.{u})
+    (g : C(P.fst, TopCat.of B)) (hg : ∀ y, g y ∈ e.baseSet) (n : ℕ) :
+    (twistedHomologyPullbackSignLocalSystemIso R hι e ω P g hg n).hom =
+      P.twistedHomologyCoefficientMap (pullbackSignLocalSystemIso R hι e ω g hg).hom n ≫
+        (P.twistedHomologyConstantIso (ModuleCat.of R R) n).hom := by
+  simp only [twistedHomologyPullbackSignLocalSystemIso, Iso.trans_hom, asIso_hom]
+
+/-- The inverse of the identification of homology with coefficients in the pulled-back orientation
+local system with ordinary homology is induced by the inverse trivialization of the pulled-back
+system. -/
+theorem twistedHomologyPullbackSignLocalSystemIso_inv (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) (P : TopPair.{u})
+    (g : C(P.fst, TopCat.of B)) (hg : ∀ y, g y ∈ e.baseSet) (n : ℕ) :
+    (twistedHomologyPullbackSignLocalSystemIso R hι e ω P g hg n).inv =
+      (P.twistedHomologyConstantIso (ModuleCat.of R R) n).inv ≫
+        P.twistedHomologyCoefficientMap (pullbackSignLocalSystemIso R hι e ω g hg).inv n :=
+  Iso.inv_ext (by
+    rw [twistedHomologyPullbackSignLocalSystemIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
+      TopPair.twistedHomologyCoefficientMap_hom_inv_id])
+
 /-- Two trivializations and orientations of the model fibre which pull back to the same
 orientations of the fibres over `g` give the same identification of homology with coefficients in
 the pulled-back orientation local system with ordinary homology. -/
