@@ -21,7 +21,8 @@ with the actual simplicial face.
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
 simplicial set and the map it induces, also applied to a class
-(`TauCeti.singularHomologyFunctor_obj_map_hom_apply`).
+(`TauCeti.singularHomologyFunctor_obj_map_hom_apply`). It also exposes additivity of the
+coefficient homology functor, inherited from the singular-chain and homology functors.
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
@@ -210,3 +211,16 @@ lemma chainComplexMap_f_comp_subtypeVal {S' T' : Set X} (g : of ↥S' ⟶ of ↥
   exact TopCat.ext hg
 
 end TopCat
+
+namespace AlgebraicTopology
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+  [CategoryWithHomology C]
+
+/-- Singular homology is additive in its coefficient object. -/
+instance singularHomologyFunctor_additive (n : ℕ) :
+    (singularHomologyFunctor.{w} C n).Additive := by
+  dsimp only [singularHomologyFunctor]
+  infer_instance
+
+end AlgebraicTopology
