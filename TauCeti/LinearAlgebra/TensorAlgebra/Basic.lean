@@ -14,8 +14,10 @@ Mathlib's `TensorAlgebra.tprod R M n x` is the product `ι (x 0) * ⋯ * ι (x (
 generators of the tensor algebra.  This file records how such a product splits off its last
 generator (`TensorAlgebra.tprod_succ`) or its first generator (`TensorAlgebra.tprod_succ_eq_ι_mul`,
 `TensorAlgebra.tprod_cons`), the steps of inductions on the length of the product, together with
-linear-map extensionality on pure tensors (`TensorAlgebra.linearMap_ext_tprod`) and left
-multiplication on tensor-power ranges (`TensorAlgebra.ι_mul_mem_range_toTensorAlgebra`).
+linear-map extensionality on pure tensors (`TensorAlgebra.linearMap_ext_tprod`), left
+multiplication on tensor-power ranges (`TensorAlgebra.ι_mul_mem_range_toTensorAlgebra`), and
+evaluation of `TensorAlgebra.ofDirectSum` on a single homogeneous summand
+(`TensorAlgebra.ofDirectSum_of`).
 -/
 
 public section
@@ -40,6 +42,13 @@ theorem tprod_succ_eq_ι_mul {n : ℕ} (x : Fin (n + 1) → M) :
 /-- Prepending a generator to a pure tensor product multiplies on the left by `ι R c`. -/
 theorem tprod_cons {n : ℕ} (c : M) (x : Fin n → M) :
     tprod R M (n + 1) (Fin.cons c x) = ι R c * tprod R M n x := by simp
+
+/-- Evaluating `TensorAlgebra.ofDirectSum` on a single homogeneous summand recovers
+`TensorPower.toTensorAlgebra`. -/
+@[simp]
+theorem ofDirectSum_of {n : ℕ} (x : TensorPower R n M) :
+    ofDirectSum (DirectSum.of (fun m ↦ TensorPower R m M) n x) = TensorPower.toTensorAlgebra x :=
+  DirectSum.toAddMonoid_of (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) n x
 
 /-- Two linear maps out of the tensor algebra agree if they agree on all pure tensor products. -/
 theorem linearMap_ext_tprod {f g : TensorAlgebra R M →ₗ[R] N}

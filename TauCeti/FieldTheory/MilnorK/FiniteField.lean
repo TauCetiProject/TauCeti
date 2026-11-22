@@ -95,9 +95,10 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one (hc : IsSteinbergPairing c)
   have htwo : (2 : ℤ) • c g g = 0 :=
     (natCast_zsmul (c g g) 2).trans (hc.two_nsmul_map_self g)
   rcases hm.mul hn with ⟨k, hk⟩
-  rw [hk, add_zsmul, mul_comm (2 : ℤ) k, mul_zsmul, htwo, zsmul_zero, zero_add, one_zsmul]
-    at hmn_zero
-  exact hmn_zero
+  have hodd_smul : (m * n) • c g g = c g g := by
+    rw [hk, add_zsmul, mul_comm (2 : ℤ) k, mul_zsmul]
+    simp [htwo]
+  exact hodd_smul.symm.trans hmn_zero
 
 /-- Every Steinberg pairing on a finite field into an additive group is identically zero. -/
 theorem eq_zero_of_finite [Finite F] (hc : IsSteinbergPairing c) (a b : Fˣ) : c a b = 0 := by
@@ -134,7 +135,7 @@ theorem symbol_eq_zero_of_finite [Finite F] (a b : Fˣ) : symbol a b = 0 :=
   isSteinbergPairing_symbol.eq_zero_of_finite a b
 
 /-- The degree-two symbol group `SymbolGroup F` of any finite field is trivial. -/
-theorem SymbolGroup.subsingleton_of_finite (F : Type u) [Field F] [Finite F] :
+instance SymbolGroup.subsingleton_of_finite (F : Type u) [Field F] [Finite F] :
     Subsingleton (SymbolGroup F) := by
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   induction x using SymbolGroup.induction_on with

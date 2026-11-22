@@ -16,6 +16,8 @@ injective or surjective (`LinearMap.injective_comp`, `LinearMap.surjective_comp`
 `Function.Injective.comp` and `Function.Surjective.comp` for the coercion of `g.comp f`, so that
 they can be passed where a proof about exactly this coercion is expected. Pasting a commutative
 square onto a factorization gives a factorization (`LinearMap.comp_comp_eq_comp_comp_of_comp_eq`).
+It also provides the identity and composition laws for integer linearization of additive
+homomorphisms (`AddMonoidHom.toIntLinearMap_id` and `AddMonoidHom.toIntLinearMap_comp`).
 -/
 
 public section
@@ -60,3 +62,21 @@ theorem comp_comp_eq_comp_comp_of_comp_eq {ψ : V →ₗ[R] W} {ψ' : V' →ₗ[
 end Paste
 
 end LinearMap
+
+namespace AddMonoidHom
+
+/-- Viewing the identity additive homomorphism as a `ℤ`-linear map gives the identity linear map. -/
+@[simp]
+theorem toIntLinearMap_id (M : Type*) [AddCommGroup M] :
+    (AddMonoidHom.id M).toIntLinearMap = LinearMap.id :=
+  LinearMap.ext fun _ ↦ by simp
+
+/-- Viewing a composite of additive homomorphisms as a `ℤ`-linear map gives the composite of
+their `ℤ`-linear maps. -/
+@[simp]
+theorem toIntLinearMap_comp {M N P : Type*} [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
+    (g : N →+ P) (f : M →+ N) :
+    (g.comp f).toIntLinearMap = g.toIntLinearMap ∘ₗ f.toIntLinearMap :=
+  LinearMap.ext fun _ ↦ by simp
+
+end AddMonoidHom

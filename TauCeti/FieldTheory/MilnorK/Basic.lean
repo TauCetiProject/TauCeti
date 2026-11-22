@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 
 import Mathlib.Algebra.Group.Units.Hom
 import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.TensorAlgebra.Projection
 
 /-!
@@ -256,8 +257,8 @@ theorem degree_eq_span_symbol (n : ℕ) :
       rw [map_smul, TensorPower.toTensorAlgebra_tprod, map_zsmul]
       refine Submodule.smul_mem _ r (Submodule.subset_span ?_)
       refine ⟨List.ofFn (Additive.toMul ∘ m), List.length_ofFn, ?_⟩
-      rw [← mkRingHom_tprod]
-      rfl
+      have hm : m = Additive.ofMul ∘ (Additive.toMul ∘ m) := funext fun _ ↦ (ofMul_toMul _).symm
+      rw [← mkRingHom_tprod, ← hm]
     | add x y hx hy =>
       rw [map_add, map_add]
       exact add_mem hx hy
@@ -335,8 +336,9 @@ theorem map_symbol {S : Type w} [CommSemiring S] (f : R →+* S) (l : List Rˣ) 
 
 /-- If an additive homomorphism out of `MilnorK R` sends every length-`n` symbol into an additive
 subgroup `S`, then it maps all of `MilnorK.degree R n` into `S`. -/
-theorem map_mem_of_symbol_mem {A : Type*} {σ : Type*} [AddGroup A] [SetLike σ A]
-    [AddSubgroupClass σ A] (g : MilnorK R →+ A) {S : σ} {n : ℕ}
+theorem map_mem_of_symbol_mem {A F : Type*} {σ : Type*} [AddGroup A] [SetLike σ A]
+    [AddSubgroupClass σ A] [FunLike F (MilnorK R) A] [AddMonoidHomClass F (MilnorK R) A]
+    (g : F) {S : σ} {n : ℕ}
     (hg : ∀ l : List Rˣ, l.length = n → g (symbol l) ∈ S) {x : MilnorK R}
     (hx : x ∈ degree R n) : g x ∈ S := by
   rw [degree_eq_span_symbol] at hx
@@ -349,8 +351,7 @@ theorem map_mem_of_symbol_mem {A : Type*} {σ : Type*} [AddGroup A] [SetLike σ 
 /-- `MilnorK.map f` preserves every homogeneous degree piece. -/
 theorem map_mem_degree {S : Type w} [CommSemiring S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
     (hx : x ∈ degree R n) : map f x ∈ degree S n :=
-  map_mem_of_symbol_mem (map f).toAddMonoidHom (fun l hl ↦ by
-    change map f (symbol l) ∈ degree S n
+  map_mem_of_symbol_mem (map f) (fun l hl ↦ by
     rw [map_symbol]
     simpa only [hl, List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom)))
     hx
@@ -366,8 +367,8 @@ theorem map_comp {S : Type v} {T : Type w} [CommSemiring S] [CommSemiring T]
     (g : S →+* T) (f : R →+* S) :
     map (g.comp f) = (map g).comp (map f) :=
   algHom_ext fun a ↦ by
-    simp only [map_ofUnit, AlgHom.comp_apply]
-    rfl
+    simp only [map_ofUnit, AlgHom.comp_apply, RingHom.toMonoidHom_comp, Units.map_comp,
+      MonoidHom.comp_apply]
 
 end MilnorK
 
