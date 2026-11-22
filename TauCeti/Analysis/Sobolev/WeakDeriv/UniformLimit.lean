@@ -92,7 +92,7 @@ theorem tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniform
   have hcoe : (ψ : E → ℝ) = fun x ↦ lineDeriv ℝ (φ : E → ℝ) x w :=
     funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
   have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ)
-    ψ.continuous ψ.hasCompactSupport
+    ψ.continuous.continuousOn ψ.hasCompactSupport
     (Eventually.of_forall fun i ↦ (hu i).continuousOn.mono ψ.tsupport_subset)
     (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
       ψ.tsupport_subset ψ.hasCompactSupport)).neg
@@ -108,11 +108,13 @@ direction `w`, `∫ a • ∂_w uᵢ → ∫ a • ∂_w v`. The limit `v` is lo
 (`TauCeti.locallyLipschitzOn_of_tendsto`), so `fderiv ℝ v` is its derivative almost everywhere
 on `Ω` and its weak derivative there. -/
 theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteDimensional ℝ F]
-    [l.NeBot] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
+    (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (hbd : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ᶠ i in l, ∀ x ∈ K, ‖fderiv ℝ (u i) x‖ ≤ C)
     (hlim : TendstoLocallyUniformlyOn u v l Ω) {a : E → ℝ} (ha : Continuous a)
     (hac : HasCompactSupport a) (haΩ : tsupport a ⊆ Ω) (w : E) :
     Tendsto (fun i ↦ ∫ x, a x • fderiv ℝ (u i) x w ∂μ) l (𝓝 (∫ x, a x • fderiv ℝ v x w ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
   have hdiff : ∀ᶠ i in l, DifferentiableOn ℝ (u i) Ω :=
     Eventually.of_forall fun i ↦ (hu i).differentiableOn one_ne_zero
   have hpt : ∀ x ∈ Ω, Tendsto (fun i ↦ u i x) l (𝓝 (v x)) := fun _ hx ↦ hlim.tendsto_at hx
@@ -178,11 +180,13 @@ every compact subset of `Ω`, converging locally uniformly on `Ω` to `v`. Then 
 of linear maps into a finite-dimensional space, continuous on `Ω` with compact support in `Ω`,
 and every direction `w`, `∫ A (∂_w uᵢ) → ∫ A (∂_w v)`. -/
 theorem tendsto_integral_apply_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteDimensional ℝ F]
-    [FiniteDimensional ℝ G] [l.NeBot] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
+    [FiniteDimensional ℝ G] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (hbd : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ᶠ i in l, ∀ x ∈ K, ‖fderiv ℝ (u i) x‖ ≤ C)
     (hlim : TendstoLocallyUniformlyOn u v l Ω) {A : E → F →L[ℝ] G} (hA : ContinuousOn A Ω)
     (hAc : HasCompactSupport A) (hAΩ : tsupport A ⊆ Ω) (w : E) :
     Tendsto (fun i ↦ ∫ x, A x (fderiv ℝ (u i) x w) ∂μ) l (𝓝 (∫ x, A x (fderiv ℝ v x w) ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
   have hv := locallyLipschitzOn_of_tendsto hΩ
     (Eventually.of_forall fun i ↦ (hu i).differentiableOn one_ne_zero) hbd
     fun _ hx ↦ hlim.tendsto_at hx

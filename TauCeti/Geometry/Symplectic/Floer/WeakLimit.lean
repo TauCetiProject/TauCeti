@@ -72,7 +72,7 @@ there, then `∫ φ • (J(z, uᵢ) - J(z, v)) (∂ₛuᵢ) → 0`. -/
 private theorem tendsto_integral_smul_sub_apply_fderiv_one (hΩ : IsOpen Ω) (hK : IsCompact K)
     (hJ : ContinuousOn J (Ω ×ˢ K)) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (huK : ∀ i, MapsTo (u i) Ω K) (hv : ContinuousOn v Ω) (hvK : MapsTo v Ω K) {φ : ℂ → ℝ}
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (hφΩ : tsupport φ ⊆ Ω) {M : ℝ}
+    (hφ : ContinuousOn φ (tsupport φ)) (hφc : HasCompactSupport φ) (hφΩ : tsupport φ ⊆ Ω) {M : ℝ}
     (hM : ∀ᶠ i in l, ∀ y ∈ tsupport φ, ‖fderiv ℝ (u i) y‖ ≤ M)
     (hU : TendstoUniformlyOn u v l (tsupport φ)) :
     Tendsto (fun i ↦ ∫ y, φ y • (J (y, u i y) - J (y, v y)) (fderiv ℝ (u i) y 1)) l (𝓝 0) := by
@@ -146,10 +146,10 @@ private theorem integral_smul_fderiv_I_sub_sub_eq_zero [l.NeBot] (hΩ : IsOpen �
     hbd hlim (A := fun y ↦ φ y • J (y, v y)) (hφ.continuousOn.smul hJv) hφc.smul_right
     ((tsupport_smul_subset_left _ _).trans hφΩ) 1
   simp only [FunLike.coe_smul, Pi.smul_apply] at L₂
-  have L₃ := tendsto_integral_smul_sub_apply_fderiv_one hΩ hK hJ hu huK hv.continuousOn hvK hφ hφc
-    hφΩ hM hU
+  have L₃ := tendsto_integral_smul_sub_apply_fderiv_one hΩ hK hJ hu huK hv.continuousOn hvK
+    hφ.continuousOn hφc hφΩ hM hU
   have L₄ := MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume)
-    hφ hφc (Eventually.of_forall fun i ↦ (hQu i).mono hφΩ)
+    hφ.continuousOn hφc (Eventually.of_forall fun i ↦ (hQu i).mono hφΩ)
     (IsCompact.tendstoUniformlyOn_comp_prodMk hφc hK
       (hQ.mono (prod_mono hφΩ subset_rfl)) (Eventually.of_forall fun i ↦ (huK i).mono_left hφΩ)
       (hvK.mono_left hφΩ) hU)
