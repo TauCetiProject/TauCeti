@@ -224,7 +224,8 @@ theorem exists_mkQ_comp_eq_factorPow_comp [IsNoetherianRing R] [Module.Finite R 
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply] at hgx
   simp only [LinearMap.comp_apply, LinearMap.equivOfSurjective_apply, LinearMap.sub_apply,
     Submodule.mkQ_apply, Submodule.Quotient.mk_sub, ← hgx,
-    (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.apply_mem_smul_top_of_mem hc x), sub_zero]
+    (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.apply_mem_smul_top_of_mem_smul_top hc x),
+    sub_zero]
   exact (Submodule.factor_mk _ (h x)).symm
 
 end Hom
