@@ -17,8 +17,6 @@ public import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
 import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
-import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
-import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
@@ -60,7 +58,8 @@ nilpotence of the left-invariant derivation on `H` holds in two geometric settin
   `TauCeti.basePointsRepresentation_adjoint_expPoint_eq_expAd`, and
   `TauCeti.basePointsRepresentation_adjoint_expPointAt`: `exp x` and `exp (t x)` act on `𝔤` as
   `IsNilpotent.exp (ad x)` (equivalently `TauCeti.expAd x`) and `IsNilpotent.exp (t • ad x)`.
-* `TauCeti.exists_iterate_leftInvariantDerivation_eq_zero_of_mem_ker_inf_range` and
+* `TauCeti.exists_iterate_leftInvariantDerivation_eq_zero_of_mem_ker_inf_range`,
+  `TauCeti.map_expAdSubgroup_le_map_quotientPointsSubgroup`, and
   `TauCeti.exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_mem_expAdSubgroup`:
   elements of `ker (ad e) ⊓ [e, 𝔤]` have locally nilpotent invariant vector fields, and
   `expAdSubgroup k e` is realized in any closed subgroup whose Lie algebra contains `Lie(C_G(e))`.
@@ -68,10 +67,9 @@ nilpotence of the left-invariant derivation on `H` holds in two geometric settin
   **Kostant's conjugacy theorem at fixed `e`** in any closed subgroup containing `Lie(C_G(e))`,
   specialized to `C_G(e)(k)` and `C_G(e)°(k)` in
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_e_eq`
-  and
-  `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_e_eq`,
-  `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq`.
+  and `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq`.
 * `TauCeti.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad`,
+  `TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup`,
   `TauCeti.exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_smul_of_mem_intLieAlgebra`,
   `TauCeti.expAdPoint`, `TauCeti.expAdPoint_mem_identityComponent`,
   `TauCeti.expAdPoint_mem_centralizer_identityComponent`,
@@ -217,6 +215,36 @@ section ExpAdSubgroup
 variable {k : Type u} {H : Type u} [Field k] [CharZero k] [CommRing H] [HopfAlgebra k H]
   [Module.Finite k (Bialgebra.CotangentSpace k H)]
 
+/-- **Kostant's subgroup `expAdSubgroup k e` lies in the adjoint image of any closed subgroup whose
+Lie algebra contains `Lie(C_G(e))`.** -/
+theorem map_expAdSubgroup_le_map_quotientPointsSubgroup
+    [LieAlgebra ℚ (Module.Dual k (Bialgebra.CotangentSpace k H))]
+    (e : Module.Dual k (Bialgebra.CotangentSpace k H)) {J : HopfIdeal k H}
+    (hlie : (centralizerHopfIdeal H e).lieSubalgebra (B := k) ≤ J.lieSubalgebra (B := k)) :
+    (expAdSubgroup k e).map
+        (LinearMap.GeneralLinearGroup.generalLinearEquiv k
+          (Module.Dual k (Bialgebra.CotangentSpace k H))).symm.toMonoidHom ≤
+      (CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) J
+        (CommAlgCat.of k k)).map
+          (Comodule.basePointsRepresentation (R := k) (H := H)
+            (Module.Dual k (Bialgebra.CotangentSpace k H))).toHomUnits := by
+  let : Algebra ℚ H := ((algebraMap k H).comp (algebraMap ℚ k)).toAlgebra
+  rw [Subgroup.map_le_iff_le_comap, expAdSubgroup_le_iff]
+  intro y hy hmem
+  have hd := exists_iterate_leftInvariantDerivation_eq_zero_of_mem_ker_inf_range hmem
+  have hyJ : Derivation.cotangentDualLieEquiv (R := k) (H := H) y ∈ J.lieSubalgebra (B := k) := by
+    apply hlie
+    rw [mem_lieSubalgebra_centralizerHopfIdeal_iff, ← LieEquiv.map_lie]
+    have hker : ⁅e, y⁆ = 0 := LinearMap.mem_ker.mp hmem.1
+    rw [hker, map_zero]
+  refine ⟨toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) y) hd),
+    J.toConv_expPoint_mem_quotientPointsSubgroup hyJ hd, ?_⟩
+  apply (LinearMap.GeneralLinearGroup.generalLinearEquiv k
+    (Module.Dual k (Bialgebra.CotangentSpace k H))).injective
+  rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
+  refine LinearEquiv.ext fun z ↦ ?_
+  simpa using basePointsRepresentation_adjoint_expPoint_eq_expAd hd hy z
+
 /-- **Kostant's subgroup `expAdSubgroup k e` is realized by rational points of any closed subgroup
 whose Lie algebra contains `Lie(C_G(e))`.** -/
 theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_mem_expAdSubgroup
@@ -231,34 +259,11 @@ theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_of_mem_exp
       ∀ x : Module.Dual k (Bialgebra.CotangentSpace k H),
         Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g x =
           ψ x := by
-  let : Algebra ℚ H := ((algebraMap k H).comp (algebraMap ℚ k)).toAlgebra
-  let G := CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) J
-    (CommAlgCat.of k k)
-  let Φ : WithConv (H →ₐ[k] k) →*
-      (Module.Dual k (Bialgebra.CotangentSpace k H) ≃ₗ[k]
-        Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv k
-      (Module.Dual k (Bialgebra.CotangentSpace k H))).toMonoidHom.comp
-      (Comodule.basePointsRepresentation
-        (Module.Dual k (Bialgebra.CotangentSpace k H))).toHomUnits
-  have hle : expAdSubgroup k e ≤ G.map Φ := by
-    refine expAdSubgroup_le_iff.mpr fun y hy hmem ↦ ?_
-    have hd := exists_iterate_leftInvariantDerivation_eq_zero_of_mem_ker_inf_range hmem
-    have hyJ : Derivation.cotangentDualLieEquiv (R := k) (H := H) y ∈ J.lieSubalgebra (B := k) := by
-      apply hlie
-      rw [mem_lieSubalgebra_centralizerHopfIdeal_iff, ← LieEquiv.map_lie]
-      have hker : ⁅e, y⁆ = 0 := LinearMap.mem_ker.mp hmem.1
-      rw [hker, map_zero]
-    refine ⟨toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) y) hd),
-      J.toConv_expPoint_mem_quotientPointsSubgroup hyJ hd, ?_⟩
-    apply LinearEquiv.ext
-    intro x
-    simpa [Φ, LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap] using
-      basePointsRepresentation_adjoint_expPoint_eq_expAd hd hy x
-  obtain ⟨g, hg, hgψ⟩ := hle hψ
+  obtain ⟨g, hg, hge⟩ := map_expAdSubgroup_le_map_quotientPointsSubgroup e hlie ⟨ψ, hψ, rfl⟩
   refine ⟨g, hg, fun x ↦ ?_⟩
-  have hx := LinearEquiv.congr_fun hgψ.symm x
-  simpa [Φ, LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap] using hx.symm
+  have hx := congrArg (fun u : LinearMap.GeneralLinearGroup k _ ↦
+    LinearMap.GeneralLinearGroup.generalLinearEquiv k _ u x) hge
+  simpa using hx
 
 end ExpAdSubgroup
 
@@ -284,6 +289,31 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad
       (Derivation.cotangentDualLieEquiv (R := k) (H := H)).toLieHom
   exact isNilpotent_apply_of_isNilpotent_ad (ρ := ρ) hx
 
+/-- **Every inner automorphism in `Int(𝔤)` lies in the adjoint image of any closed subgroup with
+full Lie algebra.** -/
+theorem intLieAlgebra_le_map_quotientPointsSubgroup
+    {H : Type u} [CommRing H] [HopfAlgebra k H]
+    [Module.Finite k (Bialgebra.CotangentSpace k H)]
+    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
+    [LieAlgebra ℚ (Module.Dual k (Bialgebra.CotangentSpace k H))]
+    {J : HopfIdeal k H} (hJ : J.lieSubalgebra (B := k) = ⊤) :
+    intLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H)) ≤
+      (CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) J
+        (CommAlgCat.of k k)).map
+          (Comodule.basePointsRepresentation (R := k) (H := H)
+            (Module.Dual k (Bialgebra.CotangentSpace k H))).toHomUnits := by
+  let : Algebra ℚ H := ((algebraMap k H).comp (algebraMap ℚ k)).toAlgebra
+  refine intLieAlgebra_le_iff.mpr fun x hx ↦ ?_
+  have hd := exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx
+  have hxJ : Derivation.cotangentDualLieEquiv (R := k) (H := H) x ∈ J.lieSubalgebra (B := k) :=
+    hJ.symm ▸ LieSubalgebra.mem_top _
+  refine ⟨toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x) hd),
+    J.toConv_expPoint_mem_quotientPointsSubgroup hxJ hd, ?_⟩
+  apply Units.ext
+  apply LinearMap.ext
+  intro y
+  simpa using basePointsRepresentation_adjoint_expPoint_eq_expAd hd hx y
+
 /-- **Every inner automorphism in `Int(𝔤)` is realized by a rational point of any closed subgroup
 with full Lie algebra.** -/
 theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_smul_of_mem_intLieAlgebra
@@ -299,26 +329,10 @@ theorem exists_mem_quotientPointsSubgroup_basePointsRepresentation_eq_smul_of_me
       ∀ y : Module.Dual k (Bialgebra.CotangentSpace k H),
         Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g y =
           γ • y := by
-  let : Algebra ℚ H := ((algebraMap k H).comp (algebraMap ℚ k)).toAlgebra
-  let G := CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) J
-    (CommAlgCat.of k k)
-  let Φ := (Comodule.basePointsRepresentation (R := k) (H := H)
-    (Module.Dual k (Bialgebra.CotangentSpace k H))).toHomUnits
-  have hle : intLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H)) ≤ G.map Φ := by
-    refine intLieAlgebra_le_iff.mpr fun x hx ↦ ?_
-    have hd := exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx
-    have hxJ : Derivation.cotangentDualLieEquiv (R := k) (H := H) x ∈ J.lieSubalgebra (B := k) :=
-      hJ.symm ▸ LieSubalgebra.mem_top _
-    refine ⟨toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x) hd),
-      J.toConv_expPoint_mem_quotientPointsSubgroup hxJ hd, ?_⟩
-    apply Units.ext
-    apply LinearMap.ext
-    intro y
-    simpa [Φ] using basePointsRepresentation_adjoint_expPoint_eq_expAd hd hx y
-  obtain ⟨g, hg, hgγ⟩ := hle hγ
+  obtain ⟨g, hg, hgγ⟩ := intLieAlgebra_le_map_quotientPointsSubgroup hJ hγ
   refine ⟨g, hg, fun y ↦ ?_⟩
   have hy := congrArg (fun u : LinearMap.GeneralLinearGroup k _ ↦ u • y) hgγ
-  simpa [Φ, Units.smul_def] using hy
+  simpa [Units.smul_def] using hy
 
 end IsKilling
 
@@ -330,36 +344,33 @@ variable {k H : Type u} [Field k] [CharZero k] [CommRing H] [HopfAlgebra k H]
 
 local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
 
+omit [Algebra.FiniteType k H] in
 /-- **An `ad`-nilpotent element of a Killing tangent Lie algebra induces a locally nilpotent
 left-invariant derivation on `H`.** -/
 theorem exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero
     {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     ∀ a : H, ∃ m,
       (Bialgebra.leftInvariantDerivation
-        (Derivation.cotangentDualLieEquiv (R := k) (H := H) x))^[m] a = 0 := by
-  obtain ⟨M, hfaith⟩ := Comodule.exists_isFaithful (k := k) (H := H)
-  rcases Comodule.isFaithful_def.mp hfaith with ⟨d, b, _⟩
-  have hsurj : Function.Surjective (Comodule.coordinateBialgHom (H := H) b) :=
-    (Comodule.coordinateBialgHom_surjective_iff_isFaithful b).mpr hfaith
-  exact Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential
-    (Derivation.cotangentDualLieEquiv (R := k) (H := H) x) b hsurj
-    (Comodule.isNilpotent_differential_cotangentDualLieEquiv_of_isNilpotent_ad hx)
+        (Derivation.cotangentDualLieEquiv (R := k) (H := H) x))^[m] a = 0 :=
+  exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx
 
 /-- **The exponential `k`-point `exp x ∈ G(k)` attached to an `ad`-nilpotent element `x ∈ 𝔤`.** -/
 noncomputable def expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     WithConv (H →ₐ[k] k) :=
   letI : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)
-    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx))
+    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx))
 
+omit [Algebra.FiniteType k H] in
 /-- **`expAdPoint` unfolds to the Taylor exponential point of `cotangentDualLieEquiv x`.** -/
 theorem expAdPoint_def {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     expAdPoint (H := H) hx =
       let : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
       toConv (Bialgebra.expPoint (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)
-        (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)) :=
+        (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)) :=
   (rfl)
 
+omit [Algebra.FiniteType k H] in
 /-- **The exponential of `0 ∈ 𝔤` is the identity point of `G(k)`.** -/
 @[simp]
 theorem expAdPoint_zero (h0 : IsNilpotent (LieAlgebra.ad k 𝔤 (0 : 𝔤))) :
@@ -368,6 +379,7 @@ theorem expAdPoint_zero (h0 : IsNilpotent (LieAlgebra.ad k 𝔤 (0 : 𝔤))) :
   simp only [expAdPoint_def, map_zero, Bialgebra.expPoint_zero]
   rfl
 
+omit [Algebra.FiniteType k H] in
 /-- **On any finite-dimensional comodule, `expAdPoint hx` acts by the operator exponential of its
 differentiated action.** -/
 theorem Comodule.basePointsRepresentation_expAdPoint
@@ -378,7 +390,7 @@ theorem Comodule.basePointsRepresentation_expAdPoint
         (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)) := by
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   exact Comodule.basePointsRepresentation_expPoint
-    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
+    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)
     (Comodule.isNilpotent_differential_cotangentDualLieEquiv_of_isNilpotent_ad hx)
 
 /-- **The adjoint action of `expAdPoint hx` on `𝔤` is the operator exponential `exp (ad x)`.** -/
@@ -420,6 +432,7 @@ theorem expAdPoint_eq_one_iff {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤
     expAdPoint (H := H) hx = 1 ↔ x = 0 := by
   rw [← expAdPoint_zero (k := k) (H := H) (by simp), expAdPoint_eq_iff]
 
+omit [Algebra.FiniteType k H] in
 /-- **If `x` lies in the Lie algebra of a closed subgroup `Spec (H / I)`, then `expAdPoint hx`
 lies in that subgroup's `k`-points.** -/
 theorem expAdPoint_mem_quotientPointsSubgroup (I : HopfIdeal k H)
@@ -429,7 +442,7 @@ theorem expAdPoint_mem_quotientPointsSubgroup (I : HopfIdeal k H)
       CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of k H) I (CommAlgCat.of k k) := by
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
   exact I.toConv_expPoint_mem_quotientPointsSubgroup hxI
-    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
+    (exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_ad hx)
 
 /-- **As a Lie automorphism, `expAdPoint hx` acts on `𝔤` by `expAd x`.** -/
 theorem basePointsAdjointLieEquiv_expAdPoint [LieAlgebra ℚ 𝔤]
@@ -458,8 +471,8 @@ theorem toHomUnits_basePointsRepresentation_expAdPoint [LieAlgebra ℚ 𝔤]
 theorem intLieAlgebra_le_range_basePointsRepresentation [LieAlgebra ℚ 𝔤] :
     intLieAlgebra k 𝔤 ≤
       (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤).toHomUnits.range :=
-  intLieAlgebra_le_iff.mpr fun _ hx ↦
-    ⟨expAdPoint hx, toHomUnits_basePointsRepresentation_expAdPoint hx⟩
+  (intLieAlgebra_le_map_quotientPointsSubgroup (J := ⊥) HopfIdeal.lieSubalgebra_bot).trans
+    fun _ ⟨g, _, hg⟩ ↦ ⟨g, hg⟩
 
 end Field
 
@@ -501,10 +514,10 @@ theorem intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent [LieAlgebr
         (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
         (CommAlgCat.of k k)).map
           (Comodule.basePointsRepresentation (R := k) (H := H.obj) 𝔤).toHomUnits :=
-  intLieAlgebra_le_iff.mpr fun _ hx ↦
-    ⟨expAdPoint hx, expAdPoint_mem_identityComponent hx,
-      toHomUnits_basePointsRepresentation_expAdPoint hx⟩
+  intLieAlgebra_le_map_quotientPointsSubgroup
+    (HopfIdeal.lieSubalgebra_identityComponentHopfIdeal_eq_top (k := k) (H := H))
 
+omit [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))] in
 /-- **Kostant's subgroup `expAdSubgroup k e` is realized by rational points of `C_G(e)°`.** -/
 theorem map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent
     [LieAlgebra ℚ 𝔤] (e : 𝔤) :
@@ -513,13 +526,9 @@ theorem map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComp
       (CommHopfAlgCat.quotientPointsSubgroup H.obj
         (centralizerHopfIdeal H.obj e).identityComponent
         (CommAlgCat.of k k)).map
-          (Comodule.basePointsRepresentation (R := k) (H := H.obj) 𝔤).toHomUnits := by
-  rw [Subgroup.map_le_iff_le_comap, expAdSubgroup_le_iff]
-  intro y hy hye
-  have hcomm : ⁅y, e⁆ = 0 := by
-    rw [← lie_skew, ← LieAlgebra.ad_apply (R := k), LinearMap.mem_ker.mp hye.1, neg_zero]
-  exact ⟨expAdPoint hy, expAdPoint_mem_centralizer_identityComponent hy hcomm,
-    toHomUnits_basePointsRepresentation_expAdPoint hy⟩
+          (Comodule.basePointsRepresentation (R := k) (H := H.obj) 𝔤).toHomUnits :=
+  map_expAdSubgroup_le_map_quotientPointsSubgroup e
+    (centralizerHopfIdeal H.obj e).lieSubalgebra_identityComponent.ge
 
 end IsAlgClosed
 
@@ -573,36 +582,13 @@ theorem exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsReprese
 
 end Subgroup
 
-section IdentityComponent
-
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-  {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-  {h e f h' f' : Module.Dual k (Bialgebra.CotangentSpace k H)}
-
-/-- **Kostant's conjugacy theorem at fixed `e` in `C_G(e)°(k)`.** Over an algebraically closed
-field of characteristic zero, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `Lie(G)`
-sharing `e` are conjugate by a rational point of the connected centralizer `C_G(e)°`. -/
-theorem exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_e_eq
-    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
-    ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (centralizerHopfIdeal H e).identityComponent (CommAlgCat.of k k),
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' :=
-  t.exists_mem_quotientPointsSubgroup_basePointsRepresentation_e_eq_of_lieSubalgebra_le t'
-    (centralizerHopfIdeal H e).lieSubalgebra_identityComponent.ge
-
-end IdentityComponent
-
 /-- **Kostant's conjugacy theorem at fixed nilpositive element, in `C_G(e)°(k)`.** Over an
-algebraically closed field `k` of characteristic zero, if `G = Spec H` is of finite type with
-Killing Lie algebra `𝔤`, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `𝔤` sharing `e` are
-conjugate by a rational point of the connected centralizer `C_G(e)°`. -/
+algebraically closed field `k` of characteristic zero, if `G = Spec H` is of finite type, any two
+`sl₂` triples `(h, e, f)` and `(h', e, f')` in `Lie(G)` sharing `e` are conjugate by a rational
+point of the connected centralizer `C_G(e)°`. -/
 theorem exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
     {h f h' f' e : Module.Dual k (Bialgebra.CotangentSpace k H)}
     (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
     ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
@@ -610,17 +596,8 @@ theorem exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq
       Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
         Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
         Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' := by
-  let _ := ratLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))
-  obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
-  obtain ⟨g, hg, hgu⟩ :=
-    map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent (H := H) e
-      ⟨φ.toLinearEquiv, hφ, rfl⟩
-  have hact (z : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g z =
-        φ z := by
-    have := LinearMap.congr_fun (congrArg Units.val hgu) z
-    rwa [MonoidHom.coe_toHomUnits] at this
-  exact ⟨g, hg, (hact e).trans hφe, (hact h).trans hφh, (hact f).trans hφf⟩
+          f' :=
+  t.exists_mem_quotientPointsSubgroup_basePointsRepresentation_e_eq_of_lieSubalgebra_le t'
+    (centralizerHopfIdeal H.obj e).lieSubalgebra_identityComponent.ge
 
 end IsSl2Triple

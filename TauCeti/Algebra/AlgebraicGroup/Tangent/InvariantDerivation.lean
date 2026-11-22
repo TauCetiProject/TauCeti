@@ -350,21 +350,15 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_subcomodule
     (h : H) : ∃ n, (leftInvariantDerivation d)^[n] h = 0 := by
   obtain ⟨N, hN, hh⟩ := Subcomodule.exists_finite_subcomodule_mem (R := R) (C := H) h
   obtain ⟨n, hn⟩ := hd N hN ⟨h, hh⟩
-  have hmap : ∀ (k : ℕ) (x : N),
-      (((Comodule.differential (R := R) (H := H) (M := N) d ^ k) x : N) : H) =
-        (leftInvariantDerivation d)^[k] (x : H) := by
-    intro k
-    induction k with
-    | zero => intro x; rfl
-    | succ k ih =>
-      intro x
-      have hsub := (Subcomodule.subtype N).map_differential d
-        ((Comodule.differential (R := R) (H := H) (M := N) d ^ k) x)
-      simp only [Subcomodule.subtype_apply, ← toLinearMap_leftInvariantDerivation,
-        Derivation.coeFn_coe] at hsub
-      rw [pow_succ', mul_apply_eq_comp, hsub, ih, Function.iterate_succ_apply']
+  have hsemi : Function.Semiconj (Subtype.val : N → H)
+      (Comodule.differential (R := R) (H := H) (M := N) d) (leftInvariantDerivation d) := by
+    intro x
+    have hsub := (Subcomodule.subtype N).map_differential d x
+    simpa only [Subcomodule.subtype_apply, ← toLinearMap_leftInvariantDerivation,
+      Derivation.coeFn_coe] using hsub
   refine ⟨n, ?_⟩
-  simpa only [hn, ZeroMemClass.coe_zero] using (hmap n ⟨h, hh⟩).symm
+  simpa only [← pow_apply_eq_iterate, hn, ZeroMemClass.coe_zero] using
+    (hsemi.iterate_right n ⟨h, hh⟩).symm
 
 /-- **Nilpotence on finite subcomodules implies local nilpotence of the invariant vector field.** -/
 theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_isNilpotent

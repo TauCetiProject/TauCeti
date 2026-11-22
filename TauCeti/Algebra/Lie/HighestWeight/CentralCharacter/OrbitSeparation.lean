@@ -7,29 +7,30 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.DotOrbit
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
-import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.RingTheory.Invariant.OrbitSeparation
 
 /-!
 # Dot-invariant and Weyl-invariant polynomials separate orbits
 
-For two weights in distinct dot orbits, finite interpolation produces a polynomial taking
-values zero and one on the respective orbits. Its product over Weyl pullbacks remains zero
-and one on those orbits and is dot-invariant. Consequently two weights have identical
-values on every dot-invariant polynomial exactly when they lie in one dot orbit.
-
-This is the invariant-theoretic step of the Harish-Chandra central-character orbit theorem.
-It is independent of surjectivity of the Harish-Chandra projection.
-
-Transporting the dot-orbit separation along translation by `-ρ` gives the analogous separation
-for linear Weyl invariants `S(H)^W` (`TauCeti.linearInvariants H`): distinct linear Weyl orbits
-on `H*` are separated by a Weyl invariant taking value `0` at one weight and `1` at the other
+Via `TauCeti.linearInvariants_eq_symmetricAlgebraInvariants`, the linear Weyl invariants `S(H)^W`
+coincide with the fixed points of the coroot representation `RootPairing.weylGroupCorootRep`, so
+`FixedPoints.exists_mem_subalgebra_eq_zero_and_eq_one` and
+`FixedPoints.forall_mem_subalgebra_eq_iff` show that distinct linear Weyl orbits on `H*` are
+separated by a Weyl invariant taking value `0` at one weight and `1` at the other
 (`TauCeti.exists_mem_linearInvariants_lift_eq_zero_one`,
 `TauCeti.forall_mem_linearInvariants_lift_eq_iff`), and via `LieAlgebra.IsKilling.cartanEquivDual`
 they separate Weyl orbits on `H`
 (`TauCeti.forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff`).
+
+Transporting linear Weyl separation along translation by `ρ`
+(`TauCeti.translation_neg_weylVector_mem_linearInvariants_iff`) gives the analogous separation for
+dot-invariant polynomials (`TauCeti.exists_mem_dotInvariants_lift_eq_zero_one`,
+`TauCeti.forall_mem_dotInvariants_lift_eq_iff`).
+
+This is the invariant-theoretic step of the Harish-Chandra central-character orbit theorem.
+It is independent of surjectivity of the Harish-Chandra projection.
 
 ## References
 
@@ -48,130 +49,31 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
-section Dot
-
-variable {b : (IsKilling.rootSystem H).Base}
-
-/-- Finite interpolation on the dot orbits of `lam` and `mu`: if the orbits are distinct, some
-polynomial vanishes on the orbit of `lam` and is `1` on the orbit of `mu`. -/
-private theorem exists_lift_dotAction_eq_zero_one {lam mu : Dual K H}
-    (h : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu) :
-    ∃ q : SymmetricAlgebra K H,
-      (∀ w : (IsKilling.rootSystem H).weylGroup,
-        SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w lam) q = 0) ∧
-      ∀ w : (IsKilling.rootSystem H).weylGroup,
-        SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w mu) q = 1 := by
-  classical
-  let P := IsKilling.rootSystem H
-  let := RootPairing.finite_weylGroup P
-  let := Fintype.ofFinite P.weylGroup
-  -- Interpolate on both entire orbits before taking a product of pullbacks.
-  let s := Finset.univ.image (fun w : P.weylGroup ↦ dotAction P b w lam) ∪
-    Finset.univ.image (fun w : P.weylGroup ↦ dotAction P b w mu)
-  let values (f : Dual K H) : K := if ∃ w, dotAction P b w lam = f then 0 else 1
-  obtain ⟨q, hq'⟩ := AlgHom.surjective_pi_of_injective
-    (fun f : s ↦ SymmetricAlgebra.lift (f : Dual K H))
-    (SymmetricAlgebra.lift.injective.comp Subtype.val_injective) (fun f : s ↦ values f)
-  have hq (f : Dual K H) (hf : f ∈ s) : SymmetricAlgebra.lift f q = values f :=
-    congrFun hq' ⟨f, hf⟩
-  have hq_lam (w : P.weylGroup) : SymmetricAlgebra.lift (dotAction P b w lam) q = 0 := by
-    rw [hq _ (Finset.mem_union_left _ (Finset.mem_image.mpr ⟨w, Finset.mem_univ _, rfl⟩))]
-    exact ite_eq_left ⟨w, rfl⟩
-  have hq_mu (w : P.weylGroup) : SymmetricAlgebra.lift (dotAction P b w mu) q = 1 := by
-    rw [hq _ (Finset.mem_union_right _ (Finset.mem_image.mpr ⟨w, Finset.mem_univ _, rfl⟩))]
-    simp only [values, ite_eq_right_iff, zero_ne_one, imp_false]
-    rintro ⟨v, hv⟩
-    apply h
-    refine ⟨w⁻¹ * v, ?_⟩
-    rw [dotAction_mul, hv, dotAction_inv_dotAction]
-  exact ⟨q, hq_lam, hq_mu⟩
-
-/-- Pulling a polynomial back along the dot action of `w`: the algebra maps `pull w` satisfy
-`lift f (pull w p) = lift (w ∙ f) p`. -/
-private theorem exists_lift_pull_eq_lift_dotAction :
-    ∃ pull : (IsKilling.rootSystem H).weylGroup → SymmetricAlgebra K H →ₐ[K] SymmetricAlgebra K H,
-      ∀ (w : (IsKilling.rootSystem H).weylGroup) (f : Dual K H) (p : SymmetricAlgebra K H),
-        SymmetricAlgebra.lift f (pull w p) =
-          SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w f) p := by
-  let P := IsKilling.rootSystem H
-  -- The transpose map on the Cartan and the affine constant give polynomial pullbacks.
-  let pull (w : P.weylGroup) : SymmetricAlgebra K H →ₐ[K] SymmetricAlgebra K H :=
-    SymmetricAlgebra.lift
-      ((SymmetricAlgebra.ι K H).comp (w : P.Aut).toHom.coweightMap +
-        (Algebra.linearMap K (SymmetricAlgebra K H)).comp (dotAction P b w 0))
-  have hpull (w : P.weylGroup) (f : Dual K H) (p : SymmetricAlgebra K H) :
-      SymmetricAlgebra.lift f (pull w p) =
-        SymmetricAlgebra.lift (dotAction P b w f) p := by
-    have heq : (SymmetricAlgebra.lift f).comp (pull w) =
-        SymmetricAlgebra.lift (dotAction P b w f) := by
-      ext x
-      have ht := congrFun (congrArg DFunLike.coe
-        ((w : P.Aut).toHom.weight_coweight_transpose_apply P P x)) f
-      have ht' : (w • f) x = f ((w : P.Aut).toHom.coweightMap x) := by
-        -- The Weyl action is the weight map of the underlying root-pairing automorphism.
-        change ((w : P.Aut).toHom.weightMap f) x = _
-        -- Express the perfect pairing as the bilinear evaluation map so its public
-        -- root-system evaluation lemma applies.
-        change P.toLinearMap ((w : P.Aut).toHom.weightMap f) x =
-          P.toLinearMap f ((w : P.Aut).toHom.coweightMap x) at ht
-        simpa only [P, IsKilling.rootSystem_toLinearMap_apply] using ht
-      -- Normalize the composite coercion before using the generator evaluation lemma.
-      change SymmetricAlgebra.lift f (pull w (SymmetricAlgebra.ι K H x)) =
-        SymmetricAlgebra.lift (dotAction P b w f) (SymmetricAlgebra.ι K H x)
-      simp only [pull, SymmetricAlgebra.lift_ι_apply,
-        LinearMap.add_apply, LinearMap.comp_apply, map_add, Algebra.linearMap_apply,
-        AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply]
-      rw [← ht']
-      simp [dotAction_def, add_sub_assoc]
-    exact DFunLike.congr_fun heq p
-  exact ⟨pull, hpull⟩
-
-/-- Two distinct dot orbits are separated by a dot-invariant polynomial with values zero
-and one. The weights need not be integral or dominant. -/
-theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
-    (h : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu) :
-    ∃ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = 0 ∧
-      SymmetricAlgebra.lift mu p = 1 := by
-  classical
-  classical
-  let P := IsKilling.rootSystem H
-  let := RootPairing.finite_weylGroup P
-  let := Fintype.ofFinite P.weylGroup
-  obtain ⟨q, hq_lam, hq_mu⟩ := exists_lift_dotAction_eq_zero_one (b := b) h
-  obtain ⟨pull, hpull⟩ := exists_lift_pull_eq_lift_dotAction (b := b) (H := H)
-  -- Right multiplication permutes the factors, so the product is dot-invariant.
-  let p := ∏ w : P.weylGroup, pull w q
-  have heval (f : Dual K H) : SymmetricAlgebra.lift f p =
-      ∏ w : P.weylGroup, SymmetricAlgebra.lift (dotAction P b w f) q := by
-    simp only [p, P, map_prod, hpull]
-  refine ⟨p, ?_, ?_, ?_⟩
-  · rw [mem_dotInvariants_iff]
-    intro v f
-    rw [heval, heval]
-    exact Fintype.prod_equiv (Equiv.mulRight v) _ _
-      (fun w ↦ by simp only [P, Equiv.coe_mulRight, dotAction_mul])
-  · rw [heval]
-    simp [P, hq_lam]
-  · rw [heval]
-    simp [P, hq_mu]
-
-/-- Equality of all dot-invariant polynomial values characterizes a dot orbit. -/
-theorem forall_mem_dotInvariants_lift_eq_iff {lam mu : Dual K H} :
-    (∀ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
-      ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu := by
-  constructor
-  · intro heq
-    by_contra h
-    obtain ⟨p, hp, hlam, hmu⟩ := exists_mem_dotInvariants_lift_eq_zero_one h
-    simpa [hlam, hmu] using heq p hp
-  · rintro ⟨w, rfl⟩ p hp
-    exact ((mem_dotInvariants_iff.mp hp) w lam).symm
-
-end Dot
-
 section Linear
 
 open LieAlgebra.IsKilling
+
+/-- Precomposing evaluation at `lam` with the coroot action of `w` is evaluation at `w • lam`. -/
+private theorem symmetricAlgebraLift_comp_corootRep_eq
+    (w : (rootSystem H).weylGroup) (lam : Dual K H) :
+    letI := (rootSystem H).weylGroupCorootRep.symmetricAlgebraMulSemiringAction
+    haveI := (rootSystem H).weylGroupCorootRep.smulCommClass_symmetricAlgebraMulSemiringAction
+    (SymmetricAlgebra.lift lam).comp
+        (MulSemiringAction.toAlgHom K (SymmetricAlgebra K H)
+          (Subgroup.equivOp (rootSystem H).weylGroup w)) =
+      SymmetricAlgebra.lift (w • lam) := by
+  let := (rootSystem H).weylGroupCorootRep.symmetricAlgebraMulSemiringAction
+  have := (rootSystem H).weylGroupCorootRep.smulCommClass_symmetricAlgebraMulSemiringAction
+  refine _root_.SymmetricAlgebra.algHom_ext <| LinearMap.ext fun h ↦ ?_
+  change (SymmetricAlgebra.lift lam)
+      ((MulSemiringAction.toAlgHom K (SymmetricAlgebra K H)
+        (Subgroup.equivOp (rootSystem H).weylGroup w)) (SymmetricAlgebra.ι K H h)) =
+    SymmetricAlgebra.lift (w • lam) (SymmetricAlgebra.ι K H h)
+  rw [MulSemiringAction.toAlgHom_apply, Representation.symmetricAlgebraMulSemiringAction_smul,
+    Representation.symmetricAlgebra_apply, _root_.SymmetricAlgebra.map_apply_ι,
+    SymmetricAlgebra.lift_ι_apply, SymmetricAlgebra.lift_ι_apply,
+    RootPairing.weylGroupCorootRep_equivOp_apply]
+  exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (rootSystem H).Aut) lam h).symm
 
 /-- **Distinct linear Weyl orbits on `H*` are separated by a Weyl invariant** taking value `0` at
 `lam` and `1` at `mu`. -/
@@ -179,31 +81,40 @@ theorem exists_mem_linearInvariants_lift_eq_zero_one {lam mu : Dual K H}
     (h : ¬ ∃ w : (rootSystem H).weylGroup, w • lam = mu) :
     ∃ p ∈ linearInvariants H,
       SymmetricAlgebra.lift lam p = 0 ∧ SymmetricAlgebra.lift mu p = 1 := by
-  obtain ⟨b⟩ := (rootSystem H).nonempty_base
-  have hdot : ¬ ∃ w, dotAction (rootSystem H) b w
-      (lam - weylVector (rootSystem H) b) = mu - weylVector (rootSystem H) b := by
-    rintro ⟨w, hw⟩
-    apply h
-    refine ⟨w, ?_⟩
-    have hw' := congrArg (· + weylVector (rootSystem H) b) hw
-    rwa [dotAction_def, sub_add_cancel, sub_add_cancel, sub_add_cancel] at hw'
-  obtain ⟨q, hq, hqlam, hqmu⟩ := exists_mem_dotInvariants_lift_eq_zero_one (b := b) hdot
-  refine ⟨SymmetricAlgebra.translation (-weylVector (rootSystem H) b) q,
-    (translation_neg_weylVector_mem_linearInvariants_iff b).mpr hq, ?_, ?_⟩
-  · simpa [sub_eq_add_neg] using hqlam
-  · simpa [sub_eq_add_neg] using hqmu
+  have : Finite (rootSystem H).weylGroup := RootPairing.finite_weylGroup (rootSystem H)
+  have : Finite (rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
+  let ρ := (rootSystem H).weylGroupCorootRep
+  let := ρ.symmetricAlgebraMulSemiringAction
+  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  rw [linearInvariants_eq_symmetricAlgebraInvariants,
+    ρ.symmetricAlgebraInvariants_eq_fixedPoints]
+  refine FixedPoints.exists_mem_subalgebra_eq_zero_and_eq_one fun g hg ↦ h ?_
+  let w : (rootSystem H).weylGroup := (Subgroup.equivOp _).symm g
+  have hgw : g = Subgroup.equivOp _ w := ((Subgroup.equivOp _).apply_symm_apply g).symm
+  rw [hgw, symmetricAlgebraLift_comp_corootRep_eq] at hg
+  exact ⟨w, SymmetricAlgebra.lift.injective hg⟩
 
 /-- **The Weyl invariants `S(H)^W` separate linear Weyl orbits on `H*`.** -/
 theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
     (∀ p ∈ linearInvariants H,
         SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
       ∃ w : (rootSystem H).weylGroup, w • lam = mu := by
-  refine ⟨fun heq ↦ ?_, ?_⟩
-  · by_contra h
-    obtain ⟨p, hp, h0, h1⟩ := exists_mem_linearInvariants_lift_eq_zero_one h
-    exact zero_ne_one ((h0.symm.trans (heq p hp)).trans h1)
-  · rintro ⟨w, rfl⟩ p hp
-    exact ((mem_linearInvariants_iff.mp hp) w lam).symm
+  have : Finite (rootSystem H).weylGroup := RootPairing.finite_weylGroup (rootSystem H)
+  have : Finite (rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
+  let ρ := (rootSystem H).weylGroupCorootRep
+  let := ρ.symmetricAlgebraMulSemiringAction
+  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  rw [linearInvariants_eq_symmetricAlgebraInvariants,
+    ρ.symmetricAlgebraInvariants_eq_fixedPoints, FixedPoints.forall_mem_subalgebra_eq_iff]
+  constructor
+  · rintro ⟨g, hg⟩
+    let w : (rootSystem H).weylGroup := (Subgroup.equivOp _).symm g
+    have hgw : g = Subgroup.equivOp _ w := ((Subgroup.equivOp _).apply_symm_apply g).symm
+    rw [hgw, symmetricAlgebraLift_comp_corootRep_eq] at hg
+    exact ⟨w, SymmetricAlgebra.lift.injective hg⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨Subgroup.equivOp _ w, ?_⟩
+    rw [symmetricAlgebraLift_comp_corootRep_eq, hw]
 
 /-- **The Weyl invariants `S(H)^W` separate Weyl orbits on `H`** when read through
 `LieAlgebra.IsKilling.cartanEquivDual`. -/
@@ -221,5 +132,43 @@ theorem forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff {h₁ h₂ : H} 
     exact ⟨w⁻¹, (cartanEquivDual_coweightEquiv w h₁).symm⟩
 
 end Linear
+
+section Dot
+
+variable {b : (IsKilling.rootSystem H).Base}
+
+/-- Two distinct dot orbits are separated by a dot-invariant polynomial with values zero
+and one. The weights need not be integral or dominant. -/
+theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
+    (h : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu) :
+    ∃ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = 0 ∧
+      SymmetricAlgebra.lift mu p = 1 := by
+  have hlin : ¬ ∃ w : (IsKilling.rootSystem H).weylGroup,
+      w • (lam + weylVector (IsKilling.rootSystem H) b) =
+        mu + weylVector (IsKilling.rootSystem H) b := by
+    rintro ⟨w, hw⟩
+    apply h
+    refine ⟨w, ?_⟩
+    have hw' := congrArg (· - weylVector (IsKilling.rootSystem H) b) hw
+    simpa [dotAction_def] using hw'
+  obtain ⟨q, hq, hqlam, hqmu⟩ := exists_mem_linearInvariants_lift_eq_zero_one hlin
+  refine ⟨(_root_.SymmetricAlgebra.translation (-weylVector (IsKilling.rootSystem H) b)).symm q,
+    (translation_neg_weylVector_mem_linearInvariants_iff b).mp (by simpa using hq), ?_, ?_⟩
+  · simpa [_root_.SymmetricAlgebra.translation_symm] using hqlam
+  · simpa [_root_.SymmetricAlgebra.translation_symm] using hqmu
+
+/-- Equality of all dot-invariant polynomial values characterizes a dot orbit. -/
+theorem forall_mem_dotInvariants_lift_eq_iff {lam mu : Dual K H} :
+    (∀ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
+      ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu := by
+  constructor
+  · intro heq
+    by_contra h
+    obtain ⟨p, hp, hlam, hmu⟩ := exists_mem_dotInvariants_lift_eq_zero_one h
+    simpa [hlam, hmu] using heq p hp
+  · rintro ⟨w, rfl⟩ p hp
+    exact ((mem_dotInvariants_iff.mp hp) w lam).symm
+
+end Dot
 
 end TauCeti
