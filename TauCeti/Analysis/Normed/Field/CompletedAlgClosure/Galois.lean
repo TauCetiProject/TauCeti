@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
 public import TauCeti.Analysis.Normed.Field.CompletedAlgClosure.Basic
 public import TauCeti.Topology.Algebra.UniformRing
 
@@ -25,6 +26,8 @@ automorphism `σ_C` of `C`. This file proves that `σ ↦ σ_C` identifies `G_K`
 
 ## Main definitions
 
+* `TauCeti.SpectralAlgClosure.absoluteGaloisGroupEquiv K`: `G_K` as the `K`-algebra automorphisms
+  of `K^alg`, via `Field.absoluteGaloisGroup.toAlgEquiv` and `SpectralAlgClosure.algEquiv K`.
 * `TauCeti.CompletedAlgClosure.galoisExtension σ`: the extension `σ_C : C ≃A[K] C` of `σ ∈ G_K`.
 
 ## Main results
@@ -58,10 +61,20 @@ namespace TauCeti
 universe u
 
 /-- An element of the absolute Galois group `G_K`, viewed as a `K`-algebra automorphism of
-`SpectralAlgClosure K`. -/
-abbrev SpectralAlgClosure.absoluteGaloisGroupEquiv (K : Type u) [Field K] :
+`SpectralAlgClosure K`: `Field.absoluteGaloisGroup.toAlgEquiv` transported along the canonical
+isomorphism `SpectralAlgClosure.algEquiv K`. -/
+def SpectralAlgClosure.absoluteGaloisGroupEquiv (K : Type u) [Field K] :
     Field.absoluteGaloisGroup K ≃* (SpectralAlgClosure K ≃ₐ[K] SpectralAlgClosure K) :=
-  MulEquiv.refl _
+  Field.absoluteGaloisGroup.toAlgEquiv.trans (AlgEquiv.autCongr (SpectralAlgClosure.algEquiv K))
+
+/-- `SpectralAlgClosure.absoluteGaloisGroupEquiv K σ` acts as `σ` through the canonical
+isomorphism `SpectralAlgClosure.algEquiv K`. -/
+@[simp]
+theorem SpectralAlgClosure.absoluteGaloisGroupEquiv_apply (K : Type u) [Field K]
+    (σ : Field.absoluteGaloisGroup K) (x : SpectralAlgClosure K) :
+    absoluteGaloisGroupEquiv K σ x =
+      algEquiv K (Field.absoluteGaloisGroup.toAlgEquiv σ ((algEquiv K).symm x)) :=
+  rfl
 
 variable {K : Type u} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
 

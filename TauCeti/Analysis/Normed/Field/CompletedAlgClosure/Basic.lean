@@ -31,6 +31,8 @@ field and normed `K`-algebra. This file defines both and proves that the separab
   normed-algebra structures are Mathlib's `spectralNorm.normedField` and
   `spectralNorm.normedAlgebra`. The synonym keeps the spectral norm from becoming an instance on
   `AlgebraicClosure K` itself.
+* `TauCeti.SpectralAlgClosure.algEquiv K`: the canonical `K`-algebra isomorphism
+  `AlgebraicClosure K ≃ₐ[K] SpectralAlgClosure K`.
 * `TauCeti.CompletedAlgClosure K`: the field `C`, the uniform completion of
   `SpectralAlgClosure K`.
 
@@ -91,6 +93,11 @@ instance instIsAlgebraic : Algebra.IsAlgebraic K (SpectralAlgClosure K) :=
 /-- `K^alg` is algebraically closed. -/
 instance instIsAlgClosed : IsAlgClosed (SpectralAlgClosure K) :=
   inferInstanceAs (IsAlgClosed (AlgebraicClosure K))
+
+/-- The canonical `K`-algebra isomorphism from `AlgebraicClosure K` to its type synonym
+`SpectralAlgClosure K`, the identity on the underlying type. -/
+def algEquiv : AlgebraicClosure K ≃ₐ[K] SpectralAlgClosure K :=
+  AlgEquiv.refl
 
 end Field
 
