@@ -10,9 +10,10 @@ public import Mathlib.LinearAlgebra.Multilinear.Curry
 /-!
 # Currying the first argument of a multilinear map into its values
 
-A multilinear map `f` in `n + 1` arguments determines the multilinear map in the last `n`
-arguments whose value at `(m₁, …, mₙ)` is the linear map `m₀ ↦ f (m₀, m₁, …, mₙ)`. This gives a
-linear equivalence `TauCeti.multilinearCurryFirstEquiv`. It differs from Mathlib's
+A multilinear map `f` in `n + 1` arguments, semilinear along `σ : R →+* S` with `S` commutative,
+determines the multilinear map in the last `n` arguments whose value at `(m₁, …, mₙ)` is the
+semilinear map `m₀ ↦ f (m₀, m₁, …, mₙ)`. This gives an `S`-linear equivalence
+`TauCeti.multilinearCurryFirstEquiv`. It differs from Mathlib's
 `multilinearCurryLeftEquiv`, which curries the first argument outside, into linear maps valued in
 multilinear maps, and is the first-argument counterpart of `multilinearCurryRightEquiv`.
 
@@ -35,14 +36,14 @@ public section
 
 namespace TauCeti
 
-variable (R : Type*) {n : ℕ} (M : Fin (n + 1) → Type*) (N : Type*) [CommSemiring R]
-  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [AddCommMonoid N] [Module R N]
+variable {R S : Type*} [Semiring R] [CommSemiring S] (σ : R →+* S) {n : ℕ}
+  (M : Fin (n + 1) → Type*) (N : Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  [AddCommMonoid N] [Module S N]
 
 /-- Currying the first argument of a multilinear map into its values:
 `f ↦ ((m₁, …, mₙ) ↦ (m₀ ↦ f (m₀, m₁, …, mₙ)))`. -/
 def multilinearCurryFirstEquiv :
-    MultilinearMap (RingHom.id R) M N ≃ₗ[R] MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M
-        i.succ) (M 0 →ₗ[R] N) where
+    ((Π i, M i) →ₘₛₗ[σ] N) ≃ₗ[S] (Π i : Fin n, M i.succ) →ₘₛₗ[σ] M 0 →ₛₗ[σ] N where
   toFun f := MultilinearMap.mk'
     (fun m ↦
       { toFun x := f (Fin.cons x m)
@@ -59,23 +60,23 @@ def multilinearCurryFirstEquiv :
   invFun g := MultilinearMap.mk' (fun m ↦ g (Fin.tail m) (m 0))
     (fun m i x y ↦ by cases i using Fin.cases <;> simp [Ne.symm])
     (fun m i r x ↦ by cases i using Fin.cases <;> simp [Ne.symm])
-  left_inv f := by ext m; exact congrArg f (Fin.cons_self_tail m)
+  left_inv f := by ext m; simp
   right_inv g := by ext m x; simp
 
-variable {R M N}
+variable {σ M N}
 
 /-- The curried map evaluates `f` on the tuple with `x` prepended. -/
 @[simp]
-theorem multilinearCurryFirstEquiv_apply_apply (f : MultilinearMap (RingHom.id R) M N)
+theorem multilinearCurryFirstEquiv_apply_apply (f : (Π i, M i) →ₘₛₗ[σ] N)
     (m : ∀ i : Fin n, M i.succ) (x : M 0) :
-    multilinearCurryFirstEquiv R M N f m x = f (Fin.cons x m) :=
+    multilinearCurryFirstEquiv σ M N f m x = f (Fin.cons x m) :=
   (rfl)
 
 /-- The uncurried map evaluates on the last `n` entries and then on the first one. -/
 @[simp]
 theorem multilinearCurryFirstEquiv_symm_apply
-    (g : MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M i.succ) (M 0 →ₗ[R] N)) (m : ∀ i, M i) :
-    (multilinearCurryFirstEquiv R M N).symm g m = g (Fin.tail m) (m 0) :=
+    (g : (Π i : Fin n, M i.succ) →ₘₛₗ[σ] M 0 →ₛₗ[σ] N) (m : ∀ i, M i) :
+    (multilinearCurryFirstEquiv σ M N).symm g m = g (Fin.tail m) (m 0) :=
   (rfl)
 
 end TauCeti

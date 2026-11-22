@@ -52,7 +52,6 @@ regular case.
   trivial kernel is nondegenerate.
 * `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on a submodule complementary
   to another, which its polar form pairs perfectly, is nondegenerate.
-* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
   form restricts nondegenerately is complementary to its polar orthogonal complement.
@@ -114,11 +113,6 @@ namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
-
-/-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
-theorem isSymm_polarBilin (Q : QuadraticForm R M) :
-    LinearMap.BilinForm.IsSymm Q.polarBilin :=
-  ⟨fun x y => polar_comm Q x y⟩
 
 /-- Polarization commutes with restricting a quadratic map to a submodule. -/
 @[simp]

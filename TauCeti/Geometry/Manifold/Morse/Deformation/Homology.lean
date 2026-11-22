@@ -73,6 +73,8 @@ cut.
 * `TauCeti.isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff`: an inclusion of pairs
   `(K, L) ⟶ ({f ≤ b}, {f ≤ a})` is an isomorphism on relative homology exactly when it is one
   after cutting off regular collars of the band.
+* `TauCeti.singularHomologySublevelPairIsoSymmetricBand`: in particular a compact band around an
+  isolated critical value `c` can be narrowed to any `f⁻¹[c - ε, c + ε]` inside it.
 
 ## References
 
@@ -314,6 +316,23 @@ lemma singularHomologyMap_innerToTotal_comp_singularHomologySublevelPairIsoOfCol
         (X := TopCat.of M) (sublevel_mono f has) (sublevel_mono f hst))) R n := by
   simp [singularHomologySublevelPairIsoOfCollars]
 
+omit [T2Space M] in
+/-- A sub-band `f⁻¹[a₁, b₁]` of a compact band `f⁻¹[a, b]` of a continuous function is compact. -/
+theorem isCompact_preimage_Icc_of_subset (hf : Continuous f)
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) :
+    IsCompact (f ⁻¹' Icc a₁ b₁) :=
+  hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) (preimage_mono (Icc_subset_Icc ha₁ hb₁))
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+/-- If every critical point of `f` in the band `f⁻¹[a, b]` lies on the level `c`, then a sub-band
+`f⁻¹[a₁, b₁]` missing the level `c` contains no critical point. -/
+theorem mfderiv_ne_zero_of_notMem_Icc {c : ℝ}
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁)
+    (hb₁ : b₁ ≤ b) (hc : c ∉ Icc a₁ b₁) (x : M) (h₁ : a₁ ≤ f x) (h₂ : f x ≤ b₁) :
+    mfderiv I 𝓘(ℝ) f x ≠ 0 := fun h₀ ↦ hc <| by
+  rw [← hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h₀) ⟨ha₁.trans h₁, h₂.trans hb₁⟩]
+  exact ⟨h₁, h₂⟩
+
 /-- **The relative homology of an isolated critical value.** Let `f⁻¹[s, t]` and `f⁻¹[s', t']` be
 compact bands with `s, s' < c < t, t'`, in each of which every critical point of `f` lies on the
 level `c`. Then `Hₙ({f ≤ t}, {f ≤ s})` and `Hₙ({f ≤ t'}, {f ≤ s'})` are isomorphic: cutting off
@@ -330,25 +349,62 @@ def singularHomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ) �
   have hu : max s s' < c := max_lt hsc hs'c
   have hv : c < min t t' := lt_min hct hct'
   have hfc := hf.continuous
-  -- Below `max s s'` and above `min t t'` the bands hold no critical point.
-  have hreg {a b : ℝ} (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
-      {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) (hc : c ∉ Icc a₁ b₁) :
-      ∀ x, a₁ ≤ f x → f x ≤ b₁ → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ h₀ ↦ hc <| by
-    rw [← hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h₀) ⟨ha₁.trans h₁, h₂.trans hb₁⟩]
-    exact ⟨h₁, h₂⟩
-  have hsub {a b a₁ b₁ : ℝ} (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha₁ : a ≤ a₁)
-      (hb₁ : b₁ ≤ b) : IsCompact (f ⁻¹' Icc a₁ b₁) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc) (preimage_mono (Icc_subset_Icc ha₁ hb₁))
+  -- Below `max s s'` and above `min t t'` the bands are compact and hold no critical point.
   singularHomologySublevelPairIsoOfCollars hf (le_max_left s s') (hu.trans hv).le
-      (min_le_left t t') (hsub hcompact le_rfl (hu.trans hct).le)
-      (hsub hcompact (hsc.trans hv).le le_rfl)
-      (hreg hcrit le_rfl (hu.trans hct).le fun h ↦ hu.not_ge h.2)
-      (hreg hcrit (hsc.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) R n ≪≫
+      (min_le_left t t') (isCompact_preimage_Icc_of_subset hfc hcompact le_rfl (hu.trans hct).le)
+      (isCompact_preimage_Icc_of_subset hfc hcompact (hsc.trans hv).le le_rfl)
+      (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (hu.trans hct).le fun h ↦ hu.not_ge h.2)
+      (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans hv).le le_rfl fun h ↦ hv.not_ge h.1)
+      R n ≪≫
     (singularHomologySublevelPairIsoOfCollars hf (le_max_right s s') (hu.trans hv).le
-      (min_le_right t t') (hsub hcompact' le_rfl (hu.trans hct').le)
-      (hsub hcompact' (hs'c.trans hv).le le_rfl)
-      (hreg hcrit' le_rfl (hu.trans hct').le fun h ↦ hu.not_ge h.2)
-      (hreg hcrit' (hs'c.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) R n).symm
+      (min_le_right t t') (isCompact_preimage_Icc_of_subset hfc hcompact' le_rfl (hu.trans hct').le)
+      (isCompact_preimage_Icc_of_subset hfc hcompact' (hs'c.trans hv).le le_rfl)
+      (mfderiv_ne_zero_of_notMem_Icc hcrit' le_rfl (hu.trans hct').le fun h ↦ hu.not_ge h.2)
+      (mfderiv_ne_zero_of_notMem_Icc hcrit' (hs'c.trans hv).le le_rfl fun h ↦ hv.not_ge h.1)
+      R n).symm
+
+omit [T2Space M] in
+/-- **Narrowing a band.** If the band `f⁻¹[a, b]` of a continuous function is compact and
+`ε ≤ min (c - a) (b - c)`, then `[c - ε, c + ε] ⊆ [a, b]` and the band `f⁻¹[c - ε, c + ε]` is
+compact. -/
+theorem Icc_subset_and_isCompact_preimage_Icc (hf : Continuous f)
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) {c ε : ℝ} (hεδ : ε ≤ min (c - a) (b - c)) :
+    Icc (c - ε) (c + ε) ⊆ Icc a b ∧ IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) := by
+  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b :=
+    Icc_subset_Icc (by linarith [hεδ.trans (min_le_left _ _)])
+      (by linarith [hεδ.trans (min_le_right _ _)])
+  exact ⟨hε', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) (preimage_mono hε')⟩
+
+/-- **Narrowing a band around an isolated critical value.** Let `a < c < b`, with the band
+`f⁻¹[a, b]` compact and every critical point of `f` in it on the level `c`. For
+`0 < ε ≤ min (c - a) (b - c)`, `Hₙ({f ≤ b}, {f ≤ a})` is identified with
+`Hₙ({f ≤ c + ε}, {f ≤ c - ε})` by `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`
+(`TauCeti.singularHomologySublevelPairIsoSymmetricBand_def`). -/
+def singularHomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
+    (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (R : A) (n : ℕ) :
+    (sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
+      (sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology R n :=
+  have hband := Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ
+  singularHomologySublevelPairIsoOfCriticalValue hf hac hcb (by linarith : c - ε < c)
+    (by linarith : c < c + ε) hcompact hband.2 hcrit (fun x hx hfx ↦ hcrit x hx (hband.1 hfx)) R n
+
+/-- The narrowed-band identification `TauCeti.singularHomologySublevelPairIsoSymmetricBand` is
+`TauCeti.singularHomologySublevelPairIsoOfCriticalValue` for the bands `f⁻¹[a, b]` and
+`f⁻¹[c - ε, c + ε]`, so its naturality lemma
+`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom` applies. -/
+lemma singularHomologySublevelPairIsoSymmetricBand_def (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
+    (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (R : A) (n : ℕ) :
+    singularHomologySublevelPairIsoSymmetricBand hf hac hcb hcompact hcrit hε hεδ R n =
+      singularHomologySublevelPairIsoOfCriticalValue hf hac hcb (by linarith : c - ε < c)
+        (by linarith : c < c + ε) hcompact
+        (Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).2 hcrit
+        (fun x hx hfx ↦ hcrit x hx
+          ((Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).1 hfx)) R n :=
+  (rfl)
 
 /-- The identification `TauCeti.singularHomologySublevelPairIsoOfCollars` of
 `Hₙ({f ≤ b}, {f ≤ a})` with `Hₙ({f ≤ t}, {f ≤ s})` is compatible with inclusions of pairs: for

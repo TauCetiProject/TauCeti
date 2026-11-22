@@ -45,6 +45,7 @@ This file supplies general constructions for Lie modules that are missing from M
   of the Lie action on `v`.
 * `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
   `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.lieAnnihilator_zero`: the annihilator of the zero vector is all of `L`.
 * `TauCeti.apply_lie_eq_zero_of_lieAnnihilator_eq_top`: a coadjoint-fixed functional vanishes on
   brackets.
 * `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
@@ -357,6 +358,11 @@ theorem lieAnnihilator_eq_top_iff {v : M} :
 @[simp]
 theorem lieAnnihilator_eq_top [LieModule.IsTrivial L M] (v : M) : lieAnnihilator R L v = ⊤ :=
   (lieAnnihilator_eq_top_iff R L).2 fun x ↦ trivial_lie_zero L M x v
+
+/-- The annihilator of the zero vector is the whole Lie algebra. -/
+@[simp]
+theorem lieAnnihilator_zero : lieAnnihilator R L (0 : M) = ⊤ :=
+  (lieAnnihilator_eq_top_iff R L).2 lie_zero
 
 variable {R L} in
 /-- **A coadjoint-fixed functional vanishes on brackets.** If every element of `L` annihilates
