@@ -384,10 +384,7 @@ theorem mpullback_leftInvariantForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) 
     TauCeti.mpullback_leftInvariantSmoothForm]
   congr 1
   ext v
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    AlternatingMap.coe_toContinuousAlternatingMap, AlternatingMap.coe_toContinuousAlternatingMap,
-    AlternatingMap.ofSubsingleton_apply_apply, AlternatingMap.ofSubsingleton_apply_apply,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Function.comp_apply]
+  simp
 
 /-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant Kirillov form of `ν` back to the left-invariant Kirillov form of `ν ∘ dφ`. -/

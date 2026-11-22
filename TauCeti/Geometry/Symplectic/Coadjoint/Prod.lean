@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Prod
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
+import TauCeti.Geometry.Manifold.Algebra.Monoid
 
 /-!
 # Coadjoint orbits of a product of Lie groups
@@ -91,18 +92,17 @@ theorem leftInvariantKirillovForm_groupLieAlgebraDualProdDualEquivDual :
       SmoothTwoForm.prod ν.leftInvariantKirillovForm ν'.leftInvariantKirillovForm := by
   -- The covector `(ν, ν')` is `ν ∘ d(pr_G) + ν' ∘ d(pr_K)`.
   have h : groupLieAlgebraDualProdDualEquivDual ℝ I G J K (ν, ν') =
-      ν ∘ₗ ((MonoidHom.fst G K).groupLieAlgebraMap (I.prod J) I).toLinearMap +
-        ν' ∘ₗ ((MonoidHom.snd G K).groupLieAlgebraMap (I.prod J) J).toLinearMap := by
+      ν ∘ₗ ((ContMDiffMonoidMorphism.fst (I := I) (I' := J) (n := ∞) (G' := K)).toMonoidHom
+          |>.groupLieAlgebraMap (I.prod J) I).toLinearMap +
+        ν' ∘ₗ ((ContMDiffMonoidMorphism.snd (I := I) (I' := J) (n := ∞) (G := G)).toMonoidHom
+          |>.groupLieAlgebraMap (I.prod J) J).toLinearMap := by
     ext ξ
     simp only [groupLieAlgebraDualProdDualEquivDual_apply, LinearMap.add_apply,
-      LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-  rw [h, leftInvariantKirillovForm_add,
-    ← mpullback_leftInvariantKirillovForm (I' := I.prod J) _ ⟨MonoidHom.fst G K, contMDiff_fst⟩,
-    ← mpullback_leftInvariantKirillovForm (I' := I.prod J) _ ⟨MonoidHom.snd G K, contMDiff_snd⟩,
-    SmoothTwoForm.prod_def]
-  -- The smooth monoid morphisms built from `MonoidHom.fst` and `MonoidHom.snd` coerce to
-  -- `Prod.fst` and `Prod.snd` by unfolding.
-  rfl
+      LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContMDiffMonoidMorphism.toMonoidHom_fst,
+      ContMDiffMonoidMorphism.toMonoidHom_snd]
+  rw [h, leftInvariantKirillovForm_add, ← mpullback_leftInvariantKirillovForm,
+    ← mpullback_leftInvariantKirillovForm, SmoothTwoForm.prod_def]
+  simp only [ContMDiffMonoidMorphism.coe_fst, ContMDiffMonoidMorphism.coe_snd]
 
 /-! ### The product orbit -/
 
