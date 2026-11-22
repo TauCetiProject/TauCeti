@@ -7,16 +7,19 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.MooreEvaluation
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelPath
+import TauCeti.Topology.Closure
 
 /-!
-# The Barraud–Cornea cocycle of the compactified Morse trajectory spaces
+# The Barraud–Cornea cocycle of the spaces of broken Morse trajectories
 
 Let `f` be a Morse function on a compact boundaryless manifold `M` and `X` a pseudo-gradient field
 adapted to `f`. Fix a dense set `L` of levels containing no level of a critical point; a countable
 one exists (`TauCeti.IsMorse.exists_countable_dense_forall_apply_notMem`). For critical points `x`
-and `y`, the compactified space of trajectories from `x` to `y` is the space of records of broken
-trajectories from `x` to `y` on the levels of `L` strictly between `f y` and `f x`
-(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords`).
+and `y`, the space of broken trajectories from `x` to `y` is the space of their records on the
+levels of `L` strictly between `f y` and `f x`
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords`). When `X` satisfies the
+Morse–Smale condition and `x ≠ y`, it is the compactified space of trajectories from `x` to `y`
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`).
 
 These spaces, indexed by the critical points, carry the structure on which twisting chain systems
 (`TauCeti.TwistingChainSystem`) and their Moore-loop cocycles
@@ -32,23 +35,24 @@ These spaces, indexed by the critical points, carry the structure on which twist
   concatenation of Moore paths
   (`TauCeti.IsAdaptedPseudoGradient.morseRecordsEval_morseRecordsComp`).
 
-So every twisting chain system on the compactified trajectory spaces, together with a map
+So every twisting chain system on the broken trajectory spaces, together with a map
 `θ : M → Y` sending all critical points to one point `y₀`, gives a twisting cocycle over the
 cubical chains `C^□_*(Ω_{y₀} Y)` on the Moore loops of `Y`
 (`TauCeti.TwistingChainSystem.morseTwistingCocycle`). Its entry at `(x, y)` is the push-forward of
 the chain of `(x, y)` along the evaluation of broken trajectories into Moore paths, followed by
-`θ`. For a representing chain system, whose chains are fundamental chains relative to the boundary
-(`TauCeti.TwistingChainSystem.IsRepresenting`), and for `θ` the collapse of an embedded tree through
-the critical points, this is the Barraud–Cornea cocycle, which twists the Morse complex with
-coefficients in a DG local system.
+`θ`. When `X` satisfies the Morse–Smale condition, so that the broken trajectory spaces are the
+compactified trajectory spaces, the chain system is representing, its chains being fundamental
+chains relative to the boundary (`TauCeti.TwistingChainSystem.IsRepresenting`), and `θ` is the
+collapse of an embedded tree through the critical points, this is the Barraud–Cornea cocycle, which
+twists the Morse complex with coefficients in a DG local system.
 
 ## Main definitions
 
-* `TauCeti.IsAdaptedPseudoGradient.morseRecordsComp`: the composition maps of the compactified
+* `TauCeti.IsAdaptedPseudoGradient.morseRecordsComp`: the composition maps of the broken
   trajectory spaces between critical points.
 * `TauCeti.IsAdaptedPseudoGradient.morseRecordsEval`: their evaluation into Moore paths.
 * `TauCeti.TwistingChainSystem.morseTwistingCocycle`: the twisting cocycle over the Moore loops of
-  a twisting chain system on the compactified trajectory spaces.
+  a twisting chain system on the broken trajectory spaces.
 
 ## Main results
 
@@ -87,7 +91,7 @@ section Comp
 
 variable (hL : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∉ L)
 
-/-- **The composition maps of the compactified trajectory spaces**: for critical points `x`, `y`
+/-- **The composition maps of the broken trajectory spaces**: for critical points `x`, `y`
 and `z`, the concatenation at `y` of broken trajectories from `x` to `y` and from `y` to `z`,
 recorded on the levels of a set `L` containing no level of a critical point. -/
 def morseRecordsComp (x y z : criticalPoints 𝓘(ℝ, E) f) :
@@ -104,7 +108,7 @@ theorem morseRecordsComp_apply (x y z : criticalPoints 𝓘(ℝ, E) f)
     hX.morseRecordsComp hL x y z w = hX.morseBrokenTrajectoryConcat (hL y y.property) w :=
   (rfl)
 
-/-- **The composition maps of the compactified trajectory spaces are associative**, in the form
+/-- **The composition maps of the broken trajectory spaces are associative**, in the form
 required of the composition maps of a twisting chain system
 (`TauCeti.cubicalChainDifferential_twistingChainSum`). -/
 theorem morseRecordsComp_assoc {x y : criticalPoints 𝓘(ℝ, E) f} (w z : criticalPoints 𝓘(ℝ, E) f)
@@ -119,20 +123,13 @@ end Comp
 
 section Eval
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The levels of a dense set `L` strictly between `a` and `b` are dense between `a` and `b`. -/
-private theorem subset_closure_range_subtypeVal (hdense : Dense L) (a b : ℝ) :
-    Ioo a b ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo a b) → ℝ)) := by
-  rw [Subtype.range_coe, inter_comm]
-  exact hdense.open_subset_closure_inter isOpen_Ioo
-
-/-- **The evaluation of the compactified trajectory spaces into Moore paths**: a broken trajectory
+/-- **The evaluation of the broken trajectory spaces into Moore paths**: a broken trajectory
 from `p` to `r`, recorded on the levels of a dense set `L`, is sent to the Moore path of length
 `f p - f r` whose point at time `t` is its point on the level `f p - t`. -/
 def morseRecordsEval (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Dense L) (p r : M) :
     C(↥(hX.morseBrokenTrajectoryRecords p r (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)),
       MoorePath M) :=
-  hX.morseLevelPath hf (subset_closure_range_subtypeVal hdense _ _)
+  hX.morseLevelPath hf (subset_closure_range_subtypeVal_inter isOpen_Ioo fun x _ ↦ hdense x)
 
 variable (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Dense L) {p r : M}
   (w : ↥(hX.morseBrokenTrajectoryRecords p r (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
@@ -185,14 +182,17 @@ variable [Fintype (criticalPoints 𝓘(ℝ, E) f)] {R : Type*} [CommRing R]
   {hL : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∉ L}
   {Y : Type*} [TopologicalSpace Y] {y₀ : Y} {θ : C(M, Y)}
 
-/-- **The twisting cocycle over the Moore loops of a twisting chain system on the compactified
-Morse trajectory spaces.** Evaluate the broken trajectories from `x` to `y` into Moore paths from
+/-- **The twisting cocycle over the Moore loops of a twisting chain system on the broken Morse
+trajectory spaces.** Evaluate the broken trajectories from `x` to `y` into Moore paths from
 `x` to `y`, parametrized by the values of `f`
 (`TauCeti.IsAdaptedPseudoGradient.morseRecordsEval`), and map them to Moore loops at `y₀` along a
 map `θ : M → Y` sending every critical point to `y₀`. The push-forwards of the chains of `S` along
-these evaluations form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `S` is a representing
-chain system and `θ` is the collapse `M → M / T` of an embedded tree `T` through the critical
-points, or its composite with a homotopy inverse `M / T → M`, this is the Barraud–Cornea cocycle. -/
+these evaluations form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `X` satisfies the
+Morse–Smale condition, so that the broken trajectory spaces are the compactified trajectory spaces
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`), `S` is a
+representing chain system and `θ` is the collapse `M → M / T` of an embedded tree `T` through the
+critical points, or its composite with a homotopy inverse `M / T → M`, this is the Barraud–Cornea
+cocycle. -/
 def morseTwistingCocycle (S : TwistingChainSystem ind (hX.morseRecordsComp hL) R)
     (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Dense L) (hθ : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, θ x = y₀) :
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)

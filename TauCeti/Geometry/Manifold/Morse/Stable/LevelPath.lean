@@ -13,6 +13,7 @@ import TauCeti.Data.Fin.Basic
 import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.Stable.Stratum
+import TauCeti.Topology.Closure
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -702,11 +703,10 @@ variable {L : Set ℝ} {p q r : M}
 
 /-- **Above the level of `q`, the points of a concatenation are those of the first broken
 trajectory.** Let `w₁` and `w₂` record broken trajectories from `p` to `q` and from `q` to `r` on
-the levels of `L`, dense between the levels of their ends, and let `f q` not be a level of `L`.
-On a level `a ≥ f q`, the point of their concatenation at `q` is the point of `w₁`. -/
+the levels of `L`, dense between `f r` and `f p`, and let `f q` not be a level of `L`. On a level
+`a ≥ f q`, the point of their concatenation at `q` is the point of `w₁`. -/
 theorem morseLevelPoint_morseRecordConcat_of_le (hf : IsMorse 𝓘(ℝ, E) f) (hq : f q ∉ L)
     (hpr : Ioo (f r) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
-    (hpq : Ioo (f q) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)))
     {w₁ : ↥(L ∩ Ioo (f q) (f p)) → M} {w₂ : ↥(L ∩ Ioo (f r) (f q)) → M}
     (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q Subtype.val)
     (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r Subtype.val) {a : ℝ} (ha : f q ≤ a) :
@@ -717,6 +717,10 @@ theorem morseLevelPoint_morseRecordConcat_of_le (hf : IsMorse 𝓘(ℝ, E) f) (h
   -- Both sides are continuous in the level, and on the levels of `L` between `f q` and `f p`,
   -- which are dense there, both are the recorded point of `w₁`.
   have hw := hX.morseRecordConcat_mem_morseBrokenTrajectoryRecords hq hw₁ hw₂
+  have hpq : Ioo (f q) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)) :=
+    subset_closure_range_subtypeVal_inter isOpen_Ioo fun x hx ↦
+      closure_mono (range_subset_iff.2 fun d ↦ d.property.1)
+        (hpr ⟨(hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₂).trans_lt hx.1, hx.2⟩)
   refine EqOn.closure (s := L ∩ Ioo (f q) (f p)) (fun d hd ↦ ?_)
     (hX.continuous_morseLevelPoint hf hpr hw) (hX.continuous_morseLevelPoint hf hpq hw₁)
     (closure_minimal (Subtype.range_coe ▸ hpq) isClosed_closure
@@ -729,11 +733,10 @@ theorem morseLevelPoint_morseRecordConcat_of_le (hf : IsMorse 𝓘(ℝ, E) f) (h
 
 /-- **Below the level of `q`, the points of a concatenation are those of the second broken
 trajectory.** Let `w₁` and `w₂` record broken trajectories from `p` to `q` and from `q` to `r` on
-the levels of `L`, dense between the levels of their ends, and let `f q` not be a level of `L`.
-On a level `a ≤ f q`, the point of their concatenation at `q` is the point of `w₂`. -/
+the levels of `L`, dense between `f r` and `f p`, and let `f q` not be a level of `L`. On a level
+`a ≤ f q`, the point of their concatenation at `q` is the point of `w₂`. -/
 theorem morseLevelPoint_morseRecordConcat_of_ge (hf : IsMorse 𝓘(ℝ, E) f) (hq : f q ∉ L)
     (hpr : Ioo (f r) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
-    (hqr : Ioo (f r) (f q) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ)))
     {w₁ : ↥(L ∩ Ioo (f q) (f p)) → M} {w₂ : ↥(L ∩ Ioo (f r) (f q)) → M}
     (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q Subtype.val)
     (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r Subtype.val) {a : ℝ} (ha : a ≤ f q) :
@@ -744,6 +747,10 @@ theorem morseLevelPoint_morseRecordConcat_of_ge (hf : IsMorse 𝓘(ℝ, E) f) (h
   · rw [hX.morseLevelPoint_of_le_apply hw har, hX.morseLevelPoint_of_le_apply hw₂ har]
   -- Both sides are continuous in the level, and on the levels of `L` between `f r` and `f q`,
   -- which are dense there, both are the recorded point of `w₂`.
+  have hqr : Ioo (f r) (f q) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ)) :=
+    subset_closure_range_subtypeVal_inter isOpen_Ioo fun x hx ↦
+      closure_mono (range_subset_iff.2 fun d ↦ d.property.1)
+        (hpr ⟨hx.1, hx.2.trans_le (hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₁)⟩)
   refine EqOn.closure (s := L ∩ Ioo (f r) (f q)) (fun d hd ↦ ?_)
     (hX.continuous_morseLevelPoint hf hpr hw) (hX.continuous_morseLevelPoint hf hqr hw₂)
     (closure_minimal (Subtype.range_coe ▸ hqr) isClosed_closure
@@ -776,11 +783,11 @@ theorem morseLevelPath_morseBrokenTrajectoryConcat (hf : IsMorse 𝓘(ℝ, E) f)
     coe_morseBrokenTrajectoryConcat_apply]
   split_ifs with ht
   · rw [morseLevelPath_apply]
-    exact hX.morseLevelPoint_morseRecordConcat_of_le hf hq hpr hpq w.1.property w.2.property
+    exact hX.morseLevelPoint_morseRecordConcat_of_le hf hq hpr w.1.property w.2.property
       (by linarith [(Real.le_toNNReal_iff_coe_le (sub_nonneg.2 hqp)).1 ht])
   · rw [morseLevelPath_apply, NNReal.coe_sub (not_le.1 ht).le,
       Real.coe_toNNReal _ (sub_nonneg.2 hqp), show f q - (t - (f p - f q)) = f p - t by ring]
-    exact hX.morseLevelPoint_morseRecordConcat_of_ge hf hq hpr hqr w.1.property w.2.property
+    exact hX.morseLevelPoint_morseRecordConcat_of_ge hf hq hpr w.1.property w.2.property
       (by linarith [(Real.toNNReal_lt_iff_lt_coe (sub_nonneg.2 hqp)).1 (not_le.1 ht)])
 
 end Concat
