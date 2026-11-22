@@ -81,8 +81,11 @@ predicate does not depend on chosen atlases, and it is intended for open sets `s
 meant for `p > 2`, where Sobolev maps are continuous; the definition is stated for every `p`.
 No dimension hypothesis on `E` is needed; the theorems assume it complete, as weak derivatives
 require.
-That the equation in one atlas of each implies it in all charts, its invariance under
-diffeomorphisms of `M`, and boundary conditions are not treated here.
+That the equation in one atlas of each implies it in all charts is
+`TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`, in
+`TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas`. Invariance under diffeomorphisms of
+`M` is proved in `TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.TargetDiffeomorph`.
+Boundary conditions are not treated here.
 
 ## References
 
