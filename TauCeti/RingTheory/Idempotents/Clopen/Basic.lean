@@ -33,8 +33,6 @@ function on `Spec R`), quotient prime pullbacks, and ring homomorphisms.
   idempotents.
 * `PrimeSpectrum.map_isIdempotentElemEquivClopens_symm`: compatibility of clopen idempotents with
   ring homomorphisms.
-* `IsIdempotentElem.comap_mem_basicOpen_quotient_one_sub`: every prime of `R ⧸ (1 - e)` lies over
-  `D(e)`.
 -/
 
 public section
@@ -99,12 +97,12 @@ theorem map_isIdempotentElemEquivClopens_symm {S : Type*} [CommRing S] (f : R �
     (U : Clopens (PrimeSpectrum R)) :
     f (isIdempotentElemEquivClopens.symm U).val =
       (isIdempotentElemEquivClopens.symm
-        ⟨comap f ⁻¹' U, U.isClopen.preimage (continuous_comap f)⟩).val := by
+        (Clopens.comap ⟨comap f, continuous_comap f⟩ U)).val := by
   apply basicOpen_injOn_isIdempotentElem ((isIdempotentElemEquivClopens.symm U).property.map f)
     (isIdempotentElemEquivClopens.symm _).property
   rw [← comap_basicOpen, basicOpen_isIdempotentElemEquivClopens_symm,
     basicOpen_isIdempotentElemEquivClopens_symm]
-  rfl
+  exact Opens.ext (by ext; simp)
 
 /-- The idempotents attached to the clopen fibers of a locally constant function on `Spec R` form
 a complete orthogonal family indexed by the finite range of the function. -/
@@ -120,19 +118,3 @@ theorem completeOrthogonalIdempotents_fiberClopens {α : Type*}
 end CommRing
 
 end PrimeSpectrum
-
-namespace IsIdempotentElem
-
-/-- For an idempotent `e : R`, every prime ideal of the quotient `R ⧸ (1 - e)` pulls back into
-the basic open set `D(e)` of `Spec R`. -/
-theorem comap_mem_basicOpen_quotient_one_sub {R : Type*} [CommRing R] {e : R}
-    (he : IsIdempotentElem e) (q : PrimeSpectrum (R ⧸ Ideal.span {1 - e})) :
-    q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e := by
-  rw [← SetLike.mem_coe, PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he,
-    PrimeSpectrum.mem_zeroLocus]
-  rintro x (rfl : x = 1 - e)
-  rw [SetLike.mem_coe, PrimeSpectrum.comap_asIdeal, Ideal.mem_comap, Ideal.Quotient.algebraMap_eq,
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span rfl)]
-  exact q.asIdeal.zero_mem
-
-end IsIdempotentElem

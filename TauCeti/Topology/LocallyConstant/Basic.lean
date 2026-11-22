@@ -8,15 +8,23 @@ module
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Locally constant functions with discrete codomain
+# Locally constant functions: discrete codomains and pairing
 
 For a discrete codomain, locally constant functions are exactly continuous maps:
-`LocallyConstant.equivContinuousMap`.
+`LocallyConstant.equivContinuousMap`. For two locally constant functions on the same space,
+`LocallyConstant.prodMk` bundles their pointwise pairing.
 -/
 
 public section
 
 namespace LocallyConstant
+
+/-- Pair two locally constant functions on the same space into a locally constant function into
+the product. -/
+@[expose, simps]
+def prodMk {X α β : Type*} [TopologicalSpace X]
+    (f : LocallyConstant X α) (g : LocallyConstant X β) : LocallyConstant X (α × β) :=
+  ⟨fun x ↦ (f x, g x), f.isLocallyConstant.prodMk g.isLocallyConstant⟩
 
 /-- For a discrete codomain, locally constant functions are the same as continuous maps. -/
 @[expose, simps apply]

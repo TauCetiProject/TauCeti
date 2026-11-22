@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Prod
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
@@ -149,6 +151,17 @@ instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Finite R X.o
 projective. -/
 instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Projective R X.obj :=
   (finiteProjectiveModules_iff.mp X.property).2
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives is
+finitely presented. -/
+instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.FinitePresentation R X.obj :=
+  Module.finitePresentation_of_projective R X.obj
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives over
+a commutative ring is flat. -/
+instance {R : Type u} [CommRing R] (X : (finiteProjectiveModules R).FullSubcategory) :
+    Module.Flat R X.obj :=
+  Module.Flat.of_projective
 
 variable (R)
 

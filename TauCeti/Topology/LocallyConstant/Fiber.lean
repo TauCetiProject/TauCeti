@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
+public import TauCeti.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Sets.Clopens
 
 /-!
 # Fibers of a locally constant function as clopen sets
@@ -25,10 +27,9 @@ their underlying open sets `(f.fiberClopens a).toOpens` can index restrictions o
 `finset_sup_fiberClopens_of_forall_mem`), and their preimages under a continuous map `g` are the
 fibers of `f ∘ g` (`LocallyConstant.comap_toOpens_fiberClopens`,
 `LocallyConstant.preimage_fiberClopens`).
-The joint fibers of two locally constant functions and the preimages of fibers along a continuous
-map likewise form pairwise-disjoint covering clopen families (`pairwise_disjoint_fiberClopens_inf`,
-`finset_sup_fiberClopens_inf`, `pairwise_disjoint_preimage_fiberClopens`,
-`finset_sup_preimage_fiberClopens`).
+The joint fibers of two locally constant functions likewise form pairwise-disjoint covering clopen
+families (`pairwise_disjoint_fiberClopens_inf`, `finset_sup_fiberClopens_inf`,
+`finset_sup_fiberClopens_inf_of_forall_mem`).
 -/
 
 public section
@@ -111,13 +112,11 @@ theorem finset_sup_fiberClopens [CompactSpace X] (f : LocallyConstant X α) :
     f.range_finite.toFinset.sup f.fiberClopens = ⊤ :=
   f.finset_sup_fiberClopens_of_forall_mem fun x ↦ f.range_finite.mem_toFinset.2 ⟨x, rfl⟩
 
-private def prodMk {β : Type*} (f : LocallyConstant X α) (g : LocallyConstant X β) :
-    LocallyConstant X (α × β) :=
-  ⟨fun x ↦ (f x, g x), f.isLocallyConstant.prodMk g.isLocallyConstant⟩
-
-private theorem fiberClopens_prodMk {β : Type*} (f : LocallyConstant X α)
+/-- A fiber of the pairing `f.prodMk g` is the intersection of the corresponding fibers of `f`
+and `g`. -/
+theorem fiberClopens_prodMk {β : Type*} (f : LocallyConstant X α)
     (g : LocallyConstant X β) (ab : α × β) :
-    (prodMk f g).fiberClopens ab = f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2 :=
+    (f.prodMk g).fiberClopens ab = f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2 :=
   Clopens.ext <| Set.ext fun _ ↦ Prod.ext_iff
 
 /-- Distinct joint fibers of two locally constant functions are disjoint clopen sets. -/
@@ -125,7 +124,7 @@ theorem pairwise_disjoint_fiberClopens_inf {β : Type*} (f : LocallyConstant X �
     (g : LocallyConstant X β) :
     Pairwise (Function.onFun Disjoint fun ab : α × β ↦
       f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2) := by
-  simpa only [← fiberClopens_prodMk] using (prodMk f g).pairwise_disjoint_fiberClopens
+  simpa only [← fiberClopens_prodMk] using (f.prodMk g).pairwise_disjoint_fiberClopens
 
 /-- If `s` and `t` contain all values of `f` and `g`, then their joint fibers cover the domain. -/
 theorem finset_sup_fiberClopens_inf_of_forall_mem {β : Type*} (f : LocallyConstant X α)
@@ -133,7 +132,7 @@ theorem finset_sup_fiberClopens_inf_of_forall_mem {β : Type*} (f : LocallyConst
     (hs : ∀ x, f x ∈ s) (ht : ∀ x, g x ∈ t) :
     (s ×ˢ t).sup (fun ab ↦ f.fiberClopens ab.1 ⊓ g.fiberClopens ab.2) = ⊤ := by
   simpa only [← fiberClopens_prodMk] using
-    (prodMk f g).finset_sup_fiberClopens_of_forall_mem fun x ↦ Finset.mem_product.2 ⟨hs x, ht x⟩
+    (f.prodMk g).finset_sup_fiberClopens_of_forall_mem fun x ↦ Finset.mem_product.2 ⟨hs x, ht x⟩
 
 /-- On a compact space, the joint fibers over the finite ranges of two locally constant functions
 cover the whole space. -/
@@ -154,30 +153,10 @@ theorem comap_toOpens_fiberClopens {Y : Type*} [TopologicalSpace Y] (g : C(Y, X)
 
 /-- The clopen preimage under a continuous map `g` of the fiber of `f` over `a` is the fiber of
 `f ∘ g` over `a`. -/
+@[simp]
 theorem preimage_fiberClopens {Y : Type*} [TopologicalSpace Y] (g : C(Y, X))
     (f : LocallyConstant X α) (a : α) :
-    (⟨g ⁻¹' f.fiberClopens a, (f.fiberClopens a).isClopen.preimage g.continuous⟩ : Clopens Y) =
-      (f.comap g).fiberClopens a :=
-  Clopens.ext rfl
-
-/-- Distinct preimages of fibers of a locally constant function along a continuous map are disjoint
-clopen sets. -/
-theorem pairwise_disjoint_preimage_fiberClopens {Y : Type*} [TopologicalSpace Y]
-    (g : C(Y, X)) (f : LocallyConstant X α) :
-    Pairwise (Function.onFun Disjoint fun a ↦
-      (⟨g ⁻¹' f.fiberClopens a,
-        (f.fiberClopens a).isClopen.preimage g.continuous⟩ : Clopens Y)) := by
-  simpa only [preimage_fiberClopens] using (f.comap g).pairwise_disjoint_fiberClopens
-
-/-- Pulling back the fiber partition of `f` on a compact space `X` along a continuous map
-`g : C(Y, X)` gives a covering clopen partition of `Y`. -/
-theorem finset_sup_preimage_fiberClopens [CompactSpace X] {Y : Type*} [TopologicalSpace Y]
-    (g : C(Y, X)) (f : LocallyConstant X α) :
-    f.range_finite.toFinset.sup
-      (fun a ↦ (⟨g ⁻¹' f.fiberClopens a,
-        (f.fiberClopens a).isClopen.preimage g.continuous⟩ : Clopens Y)) = ⊤ := by
-  simp_rw [preimage_fiberClopens]
-  exact (f.comap g).finset_sup_fiberClopens_of_forall_mem
-    fun y ↦ f.range_finite.mem_toFinset.2 ⟨g y, rfl⟩
+    Clopens.comap g (f.fiberClopens a) = (f.comap g).fiberClopens a :=
+  Clopens.ext (by ext; simp)
 
 end LocallyConstant

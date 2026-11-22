@@ -139,6 +139,18 @@ theorem quotientHomeomorphZeroLocus_apply_coe (I : Ideal R) (y : PrimeSpectrum (
     (isEmbedding_comap_of_surjective
       (R ⧸ I) (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective) y
 
+/-- Every prime ideal of the quotient `R ⧸ (1 - e)` pulls back into the basic open set `D(e)` of
+`Spec R`: the quotient map sends `e` to `1`, which lies outside every prime ideal. -/
+theorem comap_mem_basicOpen_quotient_one_sub (e : R)
+    (q : PrimeSpectrum (R ⧸ Ideal.span {1 - e})) :
+    q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ basicOpen e := by
+  rw [mem_basicOpen, comap_asIdeal, Ideal.mem_comap, Ideal.Quotient.algebraMap_eq]
+  have h1 : Ideal.Quotient.mk (Ideal.span {1 - e}) e = 1 :=
+    Ideal.Quotient.eq.2 <| by
+      simpa using Submodule.neg_mem _ (Ideal.subset_span (Set.mem_singleton (1 - e)))
+  rw [h1]
+  exact q.isPrime.one_notMem
+
 end Quotient
 
 variable {R : Type*} [CommSemiring R]

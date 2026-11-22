@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
-public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 import TauCeti.Algebra.Module.Projective.Semilinear
 
@@ -51,8 +49,6 @@ commutativity is assumed.
   `S ⊗_R (Π i, M i) ≃ Π i, (S ⊗_R M i)`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
   matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
-* `IsIdempotentElem.balancedExtensionSpanSingletonEquiv`: extension of the principal left ideal
-  `Re` of an idempotent element `e`, `S ⊗_R Re ≃ S f(e)`.
 * `TauCeti.BalancedExtension.equivTensorProduct`: identification with Mathlib's tensor product
   `S ⊗[R] P` when `R` is commutative and `S` is an `R`-algebra.
 
@@ -624,66 +620,6 @@ theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
     (rangeVecMulLinearEquiv f he).symm w =
       ∑ i, tmul f ((w : ι → S) i) ⟨e i, e.row_mem_range_vecMulLinear i⟩ := by
   simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
-
-private def balancedExtensionSpanSingletonFwd {e : R} (he : IsIdempotentElem e) :
-    (Ideal.span {e} : Ideal R) →ₛₗ[f] (Ideal.span {f e} : Ideal S) where
-  toFun x := ⟨f x.val, (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).2 <| by
-    rw [← map_mul, (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.property]⟩
-  map_add' x y := Subtype.ext (_root_.map_add f x.val y.val)
-  map_smul' r x := Subtype.ext (map_mul f r x.val)
-
-private theorem coe_balancedExtensionSpanSingletonFwd {e : R} (he : IsIdempotentElem e)
-    (x : (Ideal.span {e} : Ideal R)) :
-    (balancedExtensionSpanSingletonFwd f he x : S) = f x.val := (rfl)
-
-private noncomputable def balancedExtensionSpanSingletonInv (e : R) :
-    (Ideal.span {f e} : Ideal S) →ₗ[S]
-      TauCeti.BalancedExtension f (Ideal.span {e} : Ideal R) :=
-  (LinearMap.toSpanSingleton S _
-    (TauCeti.BalancedExtension.tmul f (1 : S) (TauCeti.spanSingletonGenerator e))).comp
-    (Ideal.span {f e} : Ideal S).subtype
-
-private theorem balancedExtensionSpanSingletonInv_apply (e : R)
-    (y : (Ideal.span {f e} : Ideal S)) :
-    balancedExtensionSpanSingletonInv f e y =
-      y.val • TauCeti.BalancedExtension.tmul f (1 : S) (TauCeti.spanSingletonGenerator e) :=
-  (rfl)
-
-/-- Along any ring homomorphism `f : R →+* S`, balanced extension of scalars sends the principal
-left ideal `Re` of an idempotent `e` to `S f(e)`. -/
-noncomputable def _root_.IsIdempotentElem.balancedExtensionSpanSingletonEquiv
-    {e : R} (he : IsIdempotentElem e) :
-    TauCeti.BalancedExtension f (Ideal.span {e} : Ideal R) ≃ₗ[S]
-      (Ideal.span {f e} : Ideal S) :=
-  LinearEquiv.ofLinearMap
-    (TauCeti.BalancedExtension.lift (balancedExtensionSpanSingletonFwd f he))
-    (balancedExtensionSpanSingletonInv f e)
-    (LinearMap.ext fun y ↦ Subtype.ext <| by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply,
-        balancedExtensionSpanSingletonInv_apply, map_smul, TauCeti.BalancedExtension.lift_tmul,
-        one_smul, SetLike.val_smul, smul_eq_mul, coe_balancedExtensionSpanSingletonFwd,
-        TauCeti.coe_spanSingletonGenerator]
-      exact (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).1 y.property)
-    (TauCeti.BalancedExtension.hom_ext fun x ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, TauCeti.BalancedExtension.lift_tmul,
-        one_smul, balancedExtensionSpanSingletonInv_apply, coe_balancedExtensionSpanSingletonFwd]
-      rw [TauCeti.BalancedExtension.smul_tmul, mul_one, ← one_mul (f x.val),
-        ← TauCeti.BalancedExtension.tmul_smul, TauCeti.smul_spanSingletonGenerator he x])
-
-@[simp]
-theorem _root_.IsIdempotentElem.coe_balancedExtensionSpanSingletonEquiv_tmul
-    {e : R} (he : IsIdempotentElem e) (s : S) (x : (Ideal.span {e} : Ideal R)) :
-    (he.balancedExtensionSpanSingletonEquiv f (TauCeti.BalancedExtension.tmul f s x) : S) =
-      s * f x.val := by
-  simp [IsIdempotentElem.balancedExtensionSpanSingletonEquiv,
-    coe_balancedExtensionSpanSingletonFwd]
-
-@[simp]
-theorem _root_.IsIdempotentElem.balancedExtensionSpanSingletonEquiv_symm_apply
-    {e : R} (he : IsIdempotentElem e) (y : (Ideal.span {f e} : Ideal S)) :
-    (he.balancedExtensionSpanSingletonEquiv f).symm y =
-      y.val • TauCeti.BalancedExtension.tmul f (1 : S) (TauCeti.spanSingletonGenerator e) :=
-  balancedExtensionSpanSingletonInv_apply f e y
 
 end Idempotent
 

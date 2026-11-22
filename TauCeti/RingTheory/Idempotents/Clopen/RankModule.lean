@@ -11,23 +11,17 @@ public import TauCeti.RingTheory.Idempotents.Clopen.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 import TauCeti.LinearAlgebra.Pi
+import TauCeti.RingTheory.Idempotents.BalancedExtension
 import TauCeti.RingTheory.Idempotents.Projective
-import TauCeti.RingTheory.Spectrum.Maximal.Basic
-import TauCeti.RingTheory.Spectrum.Prime.RankDecomposition
 
 /-!
-# Clopen-glued modules and semilocal classification
+# Clopen-glued finitely generated projective modules
 
 For a locally constant function `f : PrimeSpectrum R → ℕ`, the compact space `Spec R` forces the
 range of `f` to be finite, so the clopen fibers `f⁻¹{k}` yield a complete orthogonal family of
 idempotents. Gluing free modules of rank `k` over each fiber defines the finitely generated
 projective module `TauCeti.ClopenRankModule R f` of stalk rank `f`, compatible with arbitrary
 scalar extension and specializing to `0` and `Rⁿ` on zero and constant functions.
-
-Over a commutative semilocal ring (`Finite (MaximalSpectrum R)`), every constant-rank piece of a
-finitely presented flat module `M` is free over its quotient ring by
-`Module.nonempty_basis_of_flat_of_finrank_eq`, so every finitely presented flat module is linearly
-isomorphic to `TauCeti.ClopenRankModule R (Module.rankLocallyConstant R M)`.
 
 ## Main definitions
 
@@ -39,15 +33,11 @@ isomorphic to `TauCeti.ClopenRankModule R (Module.rankLocallyConstant R M)`.
 ## Main results
 
 * `TauCeti.ClopenRankModule.rankAtStalk_eq`: `ClopenRankModule R f` has stalk rank `f`.
-* `TauCeti.nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum`: over a commutative
-  semilocal ring, every finitely presented flat module is isomorphic to the clopen-glued module of
-  its rank function.
 
 ## References
 
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, §2, pp. 71–72
   and Exercise II.2.6, p. 79.
-* The Stacks Project, Tags 00EE and 02M9.
 -/
 
 public section
@@ -209,8 +199,8 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
     infer_instance
   have hmap (k : ℕ) : φ (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val =
       (isIdempotentElemEquivClopens.symm (f'.fiberClopens k)).val := by
-    rw [PrimeSpectrum.map_isIdempotentElemEquivClopens_symm φ (f.fiberClopens k)]
-    congr 2; ext q; simp [f']
+    rw [PrimeSpectrum.map_isIdempotentElemEquivClopens_symm φ (f.fiberClopens k),
+      LocallyConstant.preimage_fiberClopens]
   exact ((BalancedExtension.congr φ (equivPi R f)).trans <|
     (BalancedExtension.piEquiv φ _ _).trans <|
       LinearEquiv.piCongrRight fun k ↦
@@ -222,29 +212,5 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
     ((LinearEquiv.piRestrictOfSubsingleton S _ hsub hsubsingleton).trans (equivPi S f').symm)
 
 end ClopenRankModule
-
-/-- **Semilocal module classification.** Over a commutative semilocal ring, every finitely
-presented flat module `M` is linearly isomorphic to `ClopenRankModule R (rank M)`. -/
-theorem nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum
-    {R : Type u} [CommRing R] [Finite (MaximalSpectrum R)]
-    (M : Type*) [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M] :
-    Nonempty (M ≃ₗ[R] ClopenRankModule R (Module.rankLocallyConstant R M)) := by
-  let r := Module.rankLocallyConstant R M
-  have hpiece (k : Module.ranks R M) : Nonempty
-      (((R ⧸ Ideal.span
-          {1 - (isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val}) ⊗[R] M)
-        ≃ₗ[R] (Fin k.val →
-          (Ideal.span
-            {(isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val} : Ideal R))) := by
-    let e := (isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val
-    let Rk := R ⧸ Ideal.span {1 - e}
-    obtain ⟨b⟩ := Module.nonempty_basis_of_flat_of_finrank_eq Rk (Rk ⊗[R] M) k.val fun P ↦ by
-      rw [Module.finrank_quotient_tensorProduct_eq_rankAtStalk]
-      exact Module.rankAtStalk_rankPiece R M k P.toPrimeSpectrum
-    exact ⟨(b.equivFun.restrictScalars R).trans <| LinearEquiv.piCongrRight fun _ ↦
-      (isIdempotentElemEquivClopens.symm _).property.spanSingletonEquivQuotientOneSub.symm⟩
-  exact ⟨(Module.equivPiRankPieces R M).trans
-    ((LinearEquiv.piCongrRight fun k ↦ Classical.choice (hpiece k)).trans
-      (ClopenRankModule.equivPi R r).symm)⟩
 
 end TauCeti

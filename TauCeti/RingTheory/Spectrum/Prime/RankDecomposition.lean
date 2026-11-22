@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Idempotents.BaseChange
 public import TauCeti.RingTheory.Idempotents.Clopen.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
+import TauCeti.RingTheory.Spectrum.Prime.Topology
+
 /-!
 # Constant-rank decomposition of finitely presented flat modules
 
@@ -71,10 +73,9 @@ theorem rankAtStalk_rankPiece (k : ranks R M)
       {1 - (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val})
       ⊗[R] M) q = k.val := by
   let e := (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val
-  have he : IsIdempotentElem e := (isIdempotentElemEquivClopens.symm _).property
   rw [rankAtStalk_baseChange]
   have hD : q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e :=
-    he.comap_mem_basicOpen_quotient_one_sub q
+    PrimeSpectrum.comap_mem_basicOpen_quotient_one_sub e q
   rw [PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm] at hD
   simpa [rankLocallyConstant_apply] using LocallyConstant.mem_fiberClopens.1 hD
 
