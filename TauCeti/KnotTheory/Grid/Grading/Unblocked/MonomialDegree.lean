@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Unblocked
 
@@ -59,32 +60,24 @@ variable {n : ℕ} (R : Type*) [CommSemiring R] {ι : Type*}
 /-- The chains of `GC⁻` all of whose monomials `V^e · x` have degree `deg x e` in the set `S`.
 Only singletons and complements of singletons are used: the first are the homogeneous pieces, and
 comparing against the second makes the pieces independent. -/
-private def monomialDegreeSupported (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
-    Submodule R (GridChainMinus R n) where
-  carrier := {c | ∀ x : GridState n, ∀ e ∈ (c x).support, deg x e ∈ S}
-  add_mem' {a b} ha hb x e he := by
-    classical
-    rw [Finsupp.add_apply] at he
-    rcases Finset.mem_union.mp (MvPolynomial.support_add he) with h | h
-    · exact ha x e h
-    · exact hb x e h
-  zero_mem' x e he := by simp at he
-  smul_mem' a b hb x e he := by
-    rw [Finsupp.smul_apply] at he
-    exact hb x e (MvPolynomial.support_smul he)
+private noncomputable def monomialDegreeSupported (deg : GridState n → (Fin n →₀ ℕ) → ι)
+    (S : Set ι) : Submodule R (GridChainMinus R n) :=
+  ⨅ x, (restrictSupport R {e | deg x e ∈ S}).comap (Finsupp.lapply x)
 
 variable {R} {deg : GridState n → (Fin n →₀ ℕ) → ι}
 
 /-- A chain is supported in a set of degrees exactly when every monomial occurring in it has
 degree in that set. -/
 private theorem mem_monomialDegreeSupported {S : Set ι} {c : GridChainMinus R n} :
-    c ∈ monomialDegreeSupported R deg S ↔ ∀ x : GridState n, ∀ e ∈ (c x).support, deg x e ∈ S :=
-  Iff.rfl
+    c ∈ monomialDegreeSupported R deg S ↔ ∀ x : GridState n, ∀ e ∈ (c x).support, deg x e ∈ S := by
+  simp only [monomialDegreeSupported, Submodule.mem_iInf, Submodule.mem_comap,
+    Finsupp.lapply_apply, mem_restrictSupport_iff, Set.subset_def, Finset.mem_coe,
+    Set.mem_ofPred_eq]
 
 /-- Enlarging the set of degrees enlarges the supported submodule. -/
 private theorem monomialDegreeSupported_mono {S T : Set ι} (h : S ⊆ T) :
     monomialDegreeSupported R deg S ≤ monomialDegreeSupported R deg T :=
-  fun _ hc x e he => h (mem_monomialDegreeSupported.mp hc x e he)
+  iInf_mono fun _ => Submodule.comap_mono (restrictSupport_mono R fun _ he => h he)
 
 variable (R deg) in
 /-- The chains of `GC⁻` homogeneous of degree `a`: those all of whose monomials `V^e · x` have
@@ -92,7 +85,7 @@ degree `deg x e = a`.
 
 The variables move the degree, so this is a submodule over the coefficient ring `R` only, not over
 `R[V₀, …, V_{n-1}]`. -/
-def monomialDegreePiece (a : ι) : Submodule R (GridChainMinus R n) :=
+noncomputable def monomialDegreePiece (a : ι) : Submodule R (GridChainMinus R n) :=
   monomialDegreeSupported R deg {a}
 
 /-- A chain is homogeneous of degree `a` exactly when every monomial occurring in it has degree
@@ -180,7 +173,7 @@ theorem isInternal_monomialDegreePiece : DirectSum.IsInternal (monomialDegreePie
 
 /-- The internal grading of `GC⁻` over the coefficient ring `R` by the degrees `deg x e` of its
 monomial generators `V^e · x`. -/
-def monomialDegreeGrading : InternalGrading R (GridChainMinus R n) ι :=
+noncomputable def monomialDegreeGrading : InternalGrading R (GridChainMinus R n) ι :=
   ⟨monomialDegreePiece R deg, isInternal_monomialDegreePiece R deg⟩
 
 /-- The pieces of the grading by monomial degrees are the homogeneous pieces. -/

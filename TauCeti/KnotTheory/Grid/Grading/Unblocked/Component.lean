@@ -77,15 +77,10 @@ variable {n : ℕ} (G : GridDiagram n)
 on that component. -/
 theorem card_componentOSet_inter_coveredSquares (q : G.Components) (r : GridRectangle n) :
     (G.componentOSet q ∩ r.coveredSquares).card = (G.componentColumns q ∩ G.OColumns r).card := by
-  refine Finset.card_bij (fun p _ => p.1) (fun p hp => ?_) (fun p hp p' hp' h => ?_)
-    (fun c hc => ?_)
-  · simp only [Finset.mem_inter, mem_componentOSet, mem_componentColumns, mem_OColumns] at hp ⊢
-    obtain ⟨⟨hO, hq⟩, hr⟩ := hp
-    exact ⟨hq, by rwa [hO]⟩
-  · simp only [Finset.mem_inter, mem_componentOSet] at hp hp'
-    exact Prod.ext h (by rw [← hp.1.1, ← hp'.1.1, h])
-  · simp only [Finset.mem_inter, mem_componentColumns, mem_OColumns] at hc
-    exact ⟨(c, G.O c), by simpa [Finset.mem_inter, mem_componentOSet] using hc, rfl⟩
+  rw [componentOSet_def, Finset.filter_inter, ← Finset.inter_filter, ← card_OColumnsOfSquares]
+  congr 1
+  ext c
+  simp [mem_componentColumns, mem_OColumns, and_comm]
 
 /-- A rectangle with no `X`-marking raises the grading of each component by the number of covered
 `O`-markings on it. So, with each variable `V_c` charged `-1` in the grading of the component of
@@ -175,8 +170,8 @@ theorem monomialComponentAlexander_add_of_mem_unblockedRectangles {x y : GridSta
 `V^e · x` have multidegree `a`.
 
 The variables move the multidegree, so this is a submodule over the coefficient ring `R` only. -/
-def componentAlexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : G.Components → ℚ) :
-    Submodule R (GridChainMinus R n) :=
+noncomputable def componentAlexanderChainMinusPiece (R : Type*) [CommSemiring R]
+    (a : G.Components → ℚ) : Submodule R (GridChainMinus R n) :=
   GridChainMinus.monomialDegreePiece R G.monomialComponentAlexander a
 
 /-- A chain of `GC⁻` is homogeneous of Alexander multidegree `a` exactly when every monomial
@@ -241,7 +236,7 @@ theorem iSupIndep_componentAlexanderChainMinusPiece (R : Type*) [CommSemiring R]
 
 /-- **The Alexander multigrading of `GC⁻`**: the unblocked grid chain module is the internal direct
 sum of its multigraded pieces, as a module over the coefficient ring `R`. -/
-def componentAlexanderChainMinusGrading (R : Type*) [CommRing R] :
+noncomputable def componentAlexanderChainMinusGrading (R : Type*) [CommRing R] :
     InternalGrading R (GridChainMinus R n) (G.Components → ℚ) :=
   GridChainMinus.monomialDegreeGrading R G.monomialComponentAlexander
 

@@ -520,7 +520,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
 
 /-- **The Alexander grading of `GC⁻`**: the unblocked grid chain module is the internal direct sum
 of its Alexander pieces, as a module over the coefficient ring `R`. -/
-def alexanderChainMinusGrading (R : Type*) [CommRing R] :
+noncomputable def alexanderChainMinusGrading (R : Type*) [CommRing R] :
     InternalGrading R (GridChainMinus R n) ℤ :=
   GridChainMinus.monomialDegreeGrading R fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)
 
