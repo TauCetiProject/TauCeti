@@ -38,6 +38,10 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
   `DirichletCharacter.exists_norm_logDeriv_LFunction_add_tsum_prime_le`: the uniform bound.
 * `DirichletCharacter.abs_re_logDeriv_LFunction_add_tsum_prime_le`: the real-part form at real
   arguments.
+* `DirichletCharacter.norm_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar`,
+  `DirichletCharacter.re_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar`: comparison with
+  the principal character's logarithmic derivative on the half-plane `σ ≤ Re s` (`σ > 1`) and
+  on the real axis.
 * `DirichletCharacter.im_logDeriv_LFunction_ofReal`: `L′/L(σ, χ)` is real for a real-valued
   character.
 -/
@@ -163,6 +167,54 @@ theorem abs_re_logDeriv_LFunction_add_tsum_prime_le [NeZero N] {σ : ℝ} (hσ :
     exact tsum_congr fun p ↦ (χ.re_prime_mul_log_div_cpow_ofReal p σ).symm
   rw [hre, ← Complex.add_re]
   exact (Complex.abs_re_le_norm _).trans (χ.norm_logDeriv_LFunction_add_tsum_prime_le hs)
+
+/-- For `1 < σ ≤ re s`, the logarithmic derivative of any Dirichlet L-function `L(s, χ)` is
+bounded in norm by minus the real part of the principal character's logarithmic derivative at `σ`,
+since `‖χ n‖ ≤ ((1 : DirichletCharacter ℂ N) n).re` termwise. -/
+theorem norm_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar [NeZero N]
+    {σ : ℝ} (hσ : 1 < σ) (hs : σ ≤ s.re) :
+    ‖logDeriv (LFunction χ) s‖ ≤ -(logDeriv (LFunctionTrivChar N) σ).re := by
+  have hsre : 1 < s.re := hσ.trans_le hs
+  have hσre : 1 < (σ : ℂ).re := by simpa only [Complex.ofReal_re] using hσ
+  rw [χ.logDeriv_LFunction_eq_neg_LSeries hsre, norm_neg, LFunctionTrivChar,
+    (1 : DirichletCharacter ℂ N).logDeriv_LFunction_eq_neg_LSeries hσre,
+    Complex.neg_re, neg_neg, LSeries, LSeries]
+  let trivCoeff : ℕ → ℝ := fun n ↦ if IsUnit (n : ZMod N) then Λ n else 0
+  have htriv_nn (n : ℕ) : 0 ≤ trivCoeff n := by
+    dsimp [trivCoeff]; split_ifs <;> [exact vonMangoldt_nonneg; exact le_rfl]
+  have htriv_eq (n : ℕ) :
+      term (↗(1 : DirichletCharacter ℂ N) * ↗Λ) σ n = term (↗trivCoeff) σ n := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · by_cases hunit : IsUnit (n : ZMod N) <;>
+        simp [term_of_ne_zero hn, trivCoeff, hunit, MulChar.one_apply, MulChar.map_nonunit]
+  have hnorm (n : ℕ) :
+      ‖term (↗χ * ↗Λ) s n‖ ≤ (term (↗(1 : DirichletCharacter ℂ N) * ↗Λ) σ n).re := by
+    rw [htriv_eq n,
+      Complex.re_eq_norm.mpr (LSeries.term_nonneg (Complex.zero_le_real.mpr (htriv_nn n)) σ)]
+    refine (LSeries.norm_term_le_of_re_le_re (↗χ * ↗Λ) (s := (σ : ℂ))
+      (by simpa only [Complex.ofReal_re]) n).trans ?_
+    refine LSeries.norm_term_le (σ : ℂ) ?_
+    rcases eq_or_ne n 0 with rfl | _
+    · simp
+    · by_cases hunit : IsUnit (n : ZMod N)
+      · simp only [Pi.mul_apply, trivCoeff, hunit, ↓reduceIte, norm_mul, Complex.norm_real,
+          Real.norm_of_nonneg vonMangoldt_nonneg]
+        exact mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n)
+      · simp [Pi.mul_apply, trivCoeff, hunit, MulChar.map_nonunit _ hunit]
+  have hs₁ : Summable (term (↗(1 : DirichletCharacter ℂ N) * ↗Λ) σ) :=
+    LSeriesSummable_twist_vonMangoldt 1 hσre
+  rw [Complex.re_tsum hs₁]
+  exact tsum_of_norm_bounded (Complex.reCLM.summable hs₁).hasSum hnorm
+
+/-- On the real half-line `σ > 1`, `(logDeriv χ.LFunction σ).re` is at most
+`-(logDeriv (LFunctionTrivChar N) σ).re`, since `-(χ n).re ≤ ((1 : DirichletCharacter ℂ N) n).re`
+termwise. -/
+theorem re_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar [NeZero N]
+    {σ : ℝ} (hσ : 1 < σ) :
+    (logDeriv (LFunction χ) σ).re ≤ -(logDeriv (LFunctionTrivChar N) σ).re :=
+  (Complex.re_le_norm _).trans
+    (χ.norm_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar hσ (by simp))
 
 /-! ### Real-valued characters at real arguments -/
 

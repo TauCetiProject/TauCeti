@@ -155,19 +155,15 @@ theorem exists_sum_primesLE_filter_eq_one_log_div_le :
       ∑ p ∈ (Nat.primesLE ⌊X⌋₊).filter (fun p : ℕ ↦ χ (p : ZMod N) = 1), Real.log p / p ≤
         Real.exp 1 / 2 *
           (Real.log X + C - (logDeriv (LFunction χ) ((1 + (Real.log X)⁻¹ : ℝ) : ℂ)).re) := by
-  obtain ⟨C, hC⟩ := TauCeti.exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le
+  obtain ⟨C, -, hC⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
   refine ⟨C, fun N _ χ X hX ↦ ?_⟩
   have hX1 : 1 < X := (Real.one_lt_exp_iff.mpr one_pos).trans_le hX
   have hlog : 1 ≤ Real.log X := by simpa using Real.log_le_log (Real.exp_pos 1) hX
   have hlog0 : 0 < Real.log X := one_pos.trans_le hlog
   -- the pole of `-ζ′/ζ` at `1` bounds `-re ζ′/ζ(1 + 1 / log X)` by `log X + C`
   have hζ : -(logDeriv riemannZeta ((1 + (Real.log X)⁻¹ : ℝ) : ℂ)).re ≤ Real.log X + C := by
-    have h := hC (Real.log X)⁻¹ (inv_pos.mpr hlog0) (inv_le_one_of_one_le₀ hlog)
-    rw [← Complex.ofReal_inv, inv_inv] at h
-    have hre := (Complex.re_le_norm _).trans h
-    rw [Complex.sub_re, Complex.neg_re, Complex.ofReal_re] at hre
-    rw [Complex.ofReal_add, Complex.ofReal_one]
-    linarith
+    simpa only [one_div, inv_inv, Complex.ofReal_add, Complex.ofReal_one] using
+      hC (Real.log X)⁻¹ (inv_pos.mpr hlog0) (inv_le_one_of_one_le₀ hlog)
   exact (χ.sum_primesLE_filter_eq_one_log_div_le_exp_one hX1).trans
     (mul_le_mul_of_nonneg_left (by linarith) (by positivity))
 

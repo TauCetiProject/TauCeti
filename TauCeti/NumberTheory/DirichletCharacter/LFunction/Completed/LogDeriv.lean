@@ -98,6 +98,29 @@ theorem norm_logDeriv_gammaFactor_ofReal_le {σ : ℝ} (hσ : σ ∈ Set.Icc 1 2
   · rw [ho.logDeriv_gammaFactor, ← ofReal_one, ← ofReal_add]
     exact norm_logDeriv_Gammaℝ_ofReal_le ⟨by linarith [hσ.1], by linarith [hσ.2]⟩
 
+open scoped Classical in
+/-- On any vertical strip `a ≤ Re s ≤ b` with `0 < a` (allowing `b < a`), the logarithmic
+derivative of the archimedean factor of every Dirichlet character satisfies
+`‖logDeriv χ.gammaFactor s‖ ≤ C * log (|Im s| + 3)`. -/
+theorem exists_norm_logDeriv_gammaFactor_le_log {a b : ℝ} (ha : 0 < a) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {N : ℕ} (χ : DirichletCharacter ℂ N) (s : ℂ),
+      s.re ∈ Set.Icc a b → ‖logDeriv χ.gammaFactor s‖ ≤ C * Real.log (|s.im| + 3) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_logDeriv_Gammaℝ_le_log (a := a) (b := b + 1) ha
+  refine ⟨C, hC0, fun χ s hs ↦ ?_⟩
+  rw [χ.logDeriv_gammaFactor]
+  set κ : ℂ := if χ.Even then 0 else 1
+  have hκ_re : κ.re ∈ Set.Icc (0 : ℝ) 1 := by
+    dsimp [κ]
+    split_ifs <;> simp
+  have hκ_im : κ.im = 0 := by
+    dsimp [κ]
+    split_ifs <;> simp
+  have hs' : (s + κ).re ∈ Set.Icc a (b + 1) := by
+    rw [add_re]
+    exact ⟨by linarith [hs.1, hκ_re.1], by linarith [hs.2, hκ_re.2]⟩
+  have him : (s + κ).im = s.im := by rw [add_im, hκ_im, add_zero]
+  simpa only [him] using hC (s + κ) hs'
+
 variable [NeZero N]
 
 /-- On the positive half-plane, away from the zeros of `L(χ, ·)`, the logarithmic derivative of

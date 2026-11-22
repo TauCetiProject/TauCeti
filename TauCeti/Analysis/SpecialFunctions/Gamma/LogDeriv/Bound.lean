@@ -10,6 +10,8 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 public import TauCeti.Analysis.SpecialFunctions.Log.Pi
 public import Mathlib.Analysis.Real.Pi.Bounds
 
+import TauCeti.Analysis.SpecialFunctions.Gamma.SectorialDigamma
+
 /-!
 # An explicit bound for the real-place gamma term on `[1, 3]`
 
@@ -41,6 +43,8 @@ shifts `σ + κ` with `1 < σ ≤ 2` and `κ ∈ {0, 1}` of the gamma factor of 
 * `Complex.norm_logDeriv_Gammaℝ_one`, `Complex.one_lt_norm_logDeriv_Gammaℝ_one`: the norm at the
   tight end `s = 1` is `(γ + 2 log 2 + log π) / 2`, which exceeds `1`, so the `|log π|` term
   of `C_Γ` cannot be dropped.
+* `Complex.exists_norm_logDeriv_Gammaℝ_le_log`: logarithmic vertical-strip bound on `a ≤ Re s ≤ b`
+  for any `0 < a`.
 
 ## References
 
@@ -188,5 +192,46 @@ theorem norm_logDeriv_Gammaℝ_three :
   rw [ofReal_ofNat] at h'
   rw [h', norm_real, Real.norm_eq_abs, abs_of_neg h]
   ring
+
+/-- On every vertical strip `a ≤ Re s ≤ b` with `0 < a` (allowing `b < a`), the logarithmic
+derivative of `Gammaℝ` satisfies `‖logDeriv Gammaℝ s‖ ≤ C * log (|Im s| + 3)`. -/
+theorem exists_norm_logDeriv_Gammaℝ_le_log {a b : ℝ} (ha : 0 < a) :
+    ∃ C : ℝ, 0 < C ∧ ∀ s : ℂ, s.re ∈ Icc a b →
+      ‖logDeriv Gammaℝ s‖ ≤ C * Real.log (|s.im| + 3) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_digamma_le_log (a := a / 2) (b := b / 2) (half_pos ha)
+  have hlog3 : 1 < Real.log 3 := by
+    rw [Real.lt_log_iff_exp_lt (by norm_num)]
+    linarith [Real.exp_one_lt_d9]
+  refine ⟨C / 2 + |Real.log Real.pi| / 2 + 1, by positivity, fun s hs ↦ ?_⟩
+  have hpole : ∀ n : ℕ, s ≠ -(2 * (n : ℂ)) := by
+    intro n hn
+    have hre := congrArg Complex.re hn
+    simp only [neg_re, mul_re, re_ofNat, natCast_re, im_ofNat, natCast_im] at hre
+    linarith [ha.trans_le hs.1, (n.cast_nonneg : (0 : ℝ) ≤ n)]
+  rw [logDeriv_Gammaℝ hpole]
+  have hs_half : (s / 2).re ∈ Icc (a / 2) (b / 2) := by
+    simp only [div_ofNat_re]
+    exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
+  have him : |(s / 2).im| + 2 ≤ |s.im| + 3 := by
+    simp only [div_ofNat_im, abs_div, abs_two]
+    linarith [abs_nonneg s.im]
+  have hlog_le : Real.log (|(s / 2).im| + 2) ≤ Real.log (|s.im| + 3) :=
+    Real.log_le_log (by positivity) him
+  have hlog3_le : 1 ≤ Real.log (|s.im| + 3) :=
+    hlog3.le.trans (Real.log_le_log (by norm_num) (by linarith [abs_nonneg s.im]))
+  have h1 : ‖digamma (s / 2) / 2‖ ≤ (C / 2) * Real.log (|s.im| + 3) := by
+    rw [norm_div, Complex.norm_two]
+    have hmul := (hC (s / 2) hs_half).trans (mul_le_mul_of_nonneg_left hlog_le hC0.le)
+    linarith
+  have h2 : ‖(Real.log Real.pi : ℂ) / 2‖ ≤ (|Real.log Real.pi| / 2) * Real.log (|s.im| + 3) := by
+    rw [norm_div, Complex.norm_two, norm_real, Real.norm_eq_abs]
+    have hmul := mul_le_mul_of_nonneg_left hlog3_le (by positivity : 0 ≤ |Real.log Real.pi| / 2)
+    linarith
+  calc
+    ‖digamma (s / 2) / 2 - (Real.log Real.pi : ℂ) / 2‖
+        ≤ ‖digamma (s / 2) / 2‖ + ‖(Real.log Real.pi : ℂ) / 2‖ := norm_sub_le _ _
+    _ ≤ (C / 2 + |Real.log Real.pi| / 2) * Real.log (|s.im| + 3) := by linarith
+    _ ≤ (C / 2 + |Real.log Real.pi| / 2 + 1) * Real.log (|s.im| + 3) := by
+        nlinarith [hlog3_le]
 
 end Complex

@@ -28,6 +28,7 @@ continuation.
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
 * `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
   as well.
+* `TauCeti.meromorphicOrderAt_riemannZeta_one`: `riemannZeta` has a simple pole at `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -83,16 +84,28 @@ theorem meromorphicOrderAt_completedRiemannZeta_one :
   congr 1
   exact funext fun z ↦ (completedRiemannZeta_one_sub z).symm
 
+private theorem riemannZeta_eventuallyEq_mul_inv_Gammaℝ_one :
+    riemannZeta =ᶠ[𝓝[≠] 1] (fun z ↦ (Gammaℝ z)⁻¹) * completedRiemannZeta := by
+  filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+  rw [Pi.mul_apply, riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, mul_comm]
+
 /-- Mathlib's Riemann zeta function is meromorphic on `ℂ`. Away from `1` it is analytic
 (`analyticOn_riemannZeta`); its pole at `1` is that of `completedRiemannZeta`. -/
 theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
   intro z
   rcases eq_or_ne z 1 with rfl | hz
-  · refine ((meromorphic_completedRiemannZeta 1).mul
-      (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt).congr ?_
-    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
-    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
+  · exact ((Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt.mul
+      (meromorphic_completedRiemannZeta 1)).congr riemannZeta_eventuallyEq_mul_inv_Gammaℝ_one.symm
   · exact (analyticOn_riemannZeta z hz).meromorphicAt
+
+/-- Mathlib's Riemann zeta function has a simple pole at `1`. -/
+@[simp]
+theorem meromorphicOrderAt_riemannZeta_one :
+    meromorphicOrderAt riemannZeta 1 = (-1 : ℤ) := by
+  rw [meromorphicOrderAt_congr riemannZeta_eventuallyEq_mul_inv_Gammaℝ_one,
+    meromorphicOrderAt_mul_of_ne_zero (Complex.differentiable_Gammaℝ_inv.analyticAt 1)
+      (inv_ne_zero (Gammaℝ_ne_zero_of_re_pos zero_lt_one)),
+    meromorphicOrderAt_completedRiemannZeta_one]
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :

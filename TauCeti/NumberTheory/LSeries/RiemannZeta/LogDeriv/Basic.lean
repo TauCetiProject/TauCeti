@@ -11,10 +11,13 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import Mathlib.Tactic.Linarith
 
 /-!
-# The higher-prime-power remainder of the Riemann zeta logarithmic derivative
+# The higher-prime-power remainder and right-half-plane bound for zeta
 
-On the real half-line greater than one, subtracting the prime sum from `-ζ′/ζ` leaves the
-exact geometric higher-prime-power tail.
+On the real half-line greater than one, subtracting the prime sum from `-ζ'/ζ` leaves the
+exact geometric higher-prime-power tail. On `2 ≤ Re s`, specializing the uniform Dirichlet
+majorant (built on Michael Stoll's `DirichletCharacter.LSeries_twist_vonMangoldt_eq` and
+`ArithmeticFunction.LSeries_vonMangoldt_eq_deriv_riemannZeta_div`) to level `1` and `σ = 2`
+bounds `‖ζ'/ζ(s)‖` by `-(ζ'/ζ)(2).re`.
 -/
 
 public section
@@ -46,5 +49,12 @@ theorem neg_re_logDeriv_riemannZeta_sub_tsum_prime_eq {σ : ℝ} (hσ : 1 < σ) 
   have hr := congrArg Complex.re h
   simp only [Complex.add_re, Complex.neg_re, Complex.ofReal_re] at hr
   linarith [(vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (by linarith : 1 / 2 < σ)).tsum_eq]
+
+/-- On the half-plane `2 ≤ Re s`, `‖ζ'/ζ(s)‖` is bounded by `-(ζ'/ζ)(2).re`. -/
+theorem norm_logDeriv_riemannZeta_le_of_two_le_re {s : ℂ} (hs : 2 ≤ s.re) :
+    ‖logDeriv riemannZeta s‖ ≤ -(logDeriv riemannZeta 2).re := by
+  simpa only [LFunctionTrivChar, DirichletCharacter.LFunction_modOne_eq, Complex.ofReal_ofNat] using
+    (1 : DirichletCharacter ℂ 1).norm_logDeriv_LFunction_le_neg_re_logDeriv_LFunctionTrivChar
+      (σ := 2) one_lt_two hs
 
 end TauCeti

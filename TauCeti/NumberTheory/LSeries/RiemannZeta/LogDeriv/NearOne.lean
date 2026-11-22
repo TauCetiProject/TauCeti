@@ -70,4 +70,15 @@ theorem exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le :
   have := hC _ ⟨η, ⟨hη.le, hη₁⟩, rfl⟩ (by simpa using hη.ne')
   rwa [add_sub_cancel_left, ← norm_neg, neg_add] at this
 
+/-- One positive constant `C` satisfies `-(logDeriv riemannZeta (1 + η)).re ≤ 1 / η + C`
+for all `0 < η ≤ 1`. -/
+theorem exists_neg_re_logDeriv_riemannZeta_one_add_le :
+    ∃ C > 0, ∀ η : ℝ, 0 < η → η ≤ 1 →
+      -(logDeriv riemannZeta (1 + η)).re ≤ 1 / η + C := by
+  obtain ⟨C, hC⟩ := exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le
+  refine ⟨max C 1, by positivity, fun η hη hη₁ ↦ ?_⟩
+  have h := (Complex.re_le_norm _).trans (hC η hη hη₁)
+  rw [Complex.sub_re, Complex.neg_re, ← Complex.ofReal_inv, Complex.ofReal_re, ← one_div] at h
+  linarith [le_max_left C 1]
+
 end TauCeti

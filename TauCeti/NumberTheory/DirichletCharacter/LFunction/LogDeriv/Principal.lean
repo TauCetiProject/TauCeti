@@ -7,19 +7,22 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 import Mathlib.Tactic.Linarith
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 /-!
-# Exact higher-prime-power remainders for principal characters
+# Exact higher-prime-power remainders and pole bounds for principal characters
 
 Principal characters retain the higher prime powers away from the level's prime divisors.
 The complex logarithmic derivative differs from zeta's by the sum of the deleted Euler-factor
 logarithmic derivatives wherever the principal L-function is nonzero, away from `s = 1`.
+On `1 ≤ Re s`, `-Re L'/L(s, χ₀) ≤ -Re ζ'/ζ(s) + log N` away from `s = 1`, and on the real
+half-line `(1, 2]` this gives `1 / η + C + log N`.
 On the real axis, the higher-prime-power remainder has a finite correction bounded by one
-absolute geometric majorant,
-independently of the level.
+absolute geometric majorant, independently of the level.
 -/
 
 public section
@@ -34,28 +37,13 @@ theorem logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta (N : ℕ) [NeZero N]
     {s : ℂ} (hL : LFunctionTrivChar N s ≠ 0) (hs1 : s ≠ 1) :
     logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s =
       ∑ p ∈ N.primeFactors, (Real.log p : ℂ) / ((p : ℂ) ^ s - 1) := by
-  let f (p : ℕ) (z : ℂ) := 1 - (p : ℂ) ^ (-z)
-  let P (z : ℂ) := ∏ p ∈ N.primeFactors, f p z
-  have heq : LFunctionTrivChar N =ᶠ[𝓝 s] P * riemannZeta := by
-    filter_upwards [eventually_ne_nhds hs1] with z hz
-    simpa only [P, f, Pi.mul_apply] using LFunctionTrivChar_eq_mul_riemannZeta (N := N) hz
-  have hPζ : P s * riemannZeta s ≠ 0 := by
-    intro hz
-    exact hL (heq.eq_of_nhds.trans hz)
-  have hP := (mul_ne_zero_iff.mp hPζ).1
-  have hζ := (mul_ne_zero_iff.mp hPζ).2
-  have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : DifferentiableAt ℂ (f p) s := by
-    have : NeZero p := ⟨(Nat.pos_of_mem_primeFactors hp).ne'⟩
-    dsimp only [f]
-    fun_prop
-  have hf0 (p : ℕ) (hp : p ∈ N.primeFactors) : f p s ≠ 0 :=
-    Finset.prod_ne_zero_iff.mp hP p hp
-  have hd := (logDeriv_congr_nhds heq).eq_of_nhds
-  rw [logDeriv_mul _ hP hζ (DifferentiableAt.fun_finsetProd hdf)
-    (differentiableAt_riemannZeta hs1), logDeriv_fun_prod hf0 hdf] at hd
-  rw [hd, add_sub_cancel_right]
+  have h := logDeriv_LFunction_changeLevel_sub (1 : DirichletCharacter ℂ 1) N.one_dvd
+    (by rwa [changeLevel_one]) (.inr hs1)
+  rw [changeLevel_one, LFunction_modOne_eq] at h
+  rw [h]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  dsimp only [f]
+  have h1 : (1 : DirichletCharacter ℂ 1) p = 1 := MulChar.one_apply (isUnit_of_subsingleton _)
+  simp only [h1, one_mul]
   rw [Complex.logDeriv_one_sub_cpow_neg]
   congr 1
   exact (Complex.ofReal_log p.cast_nonneg).symm
@@ -172,3 +160,33 @@ theorem abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le (N : ℕ) [NeZero
           (zero_lt_one.trans hσ).le))
 
 end Nat
+
+namespace DirichletCharacter
+
+/-- Away from `s = 1`, on the half-plane `1 ≤ Re s`, raising the principal character's level from
+`1` to `N` increases `-Re L'/L(s, χ₀)` by at most `log N`. -/
+theorem neg_re_logDeriv_LFunctionTrivChar_le_neg_re_logDeriv_riemannZeta_add (N : ℕ) [NeZero N]
+    {s : ℂ} (hs : 1 ≤ s.re) (hs1 : s ≠ 1) :
+    -(logDeriv (LFunctionTrivChar N) s).re ≤ -(logDeriv riemannZeta s).re + Real.log N := by
+  have hch := norm_logDeriv_LFunction_changeLevel_sub_le (1 : DirichletCharacter ℂ 1) N.one_dvd
+    hs (.inr hs1)
+  rw [changeLevel_one, LFunction_modOne_eq, norm_sub_rev] at hch
+  have hre := (Complex.re_le_norm _).trans hch
+  rw [Complex.sub_re] at hre
+  dsimp only [LFunctionTrivChar]
+  linarith
+
+/-- One positive absolute constant `C` satisfies
+`-(logDeriv (LFunctionTrivChar N) (1 + η)).re ≤ 1 / η + C + Real.log N` for every positive level
+`N` and every `0 < η ≤ 1`. -/
+theorem exists_neg_re_logDeriv_LFunctionTrivChar_one_add_le :
+    ∃ C > 0, ∀ (N : ℕ) [NeZero N] {η : ℝ}, 0 < η → η ≤ 1 →
+      -(logDeriv (LFunctionTrivChar N) (1 + η)).re ≤ 1 / η + C + Real.log N := by
+  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
+  refine ⟨C, hC0, fun N _ η hη hη1 ↦ ?_⟩
+  have hne1 : (1 : ℂ) + η ≠ 1 := by simpa using hη.ne'
+  have hs1 : (1 : ℝ) ≤ ((1 : ℂ) + η).re := by simp [hη.le]
+  linarith [neg_re_logDeriv_LFunctionTrivChar_le_neg_re_logDeriv_riemannZeta_add N hs1 hne1,
+    hC η hη hη1]
+
+end DirichletCharacter
