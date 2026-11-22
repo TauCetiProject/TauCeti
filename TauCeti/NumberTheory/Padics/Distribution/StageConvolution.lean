@@ -122,10 +122,10 @@ theorem convolveFunRightStage_transition {h : ℕ} (ψ : AnalyticStage p (h + 1)
     convolveFunRightStage ψ (transition K c) =
       transition K (convolveFunRightStage (ψ.comp (transition K)) c) := by
   rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq,
-    ← transition_compLeft_transition_comulCurried K c, ← transition_compLeft K]
-  refine congrArg (transition K) ?_
-  ext i
-  simp
+    ← transition_compLeft_transition_comulCurried K c, ← transition_compLeft K,
+    compLeft_comp (α := ZMod (p ^ h) × ℕ) ψ (transition K)
+      (ψ.bound.imp fun _ hb ↦ hb.2) (exists_norm_transition_le K),
+    ContinuousLinearMap.comp_apply]
 
 /-- Stage-level right convolution commutes with multi-level stage transitions. -/
 theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
@@ -143,10 +143,21 @@ functionals. -/
 theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
       (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  ext c i
-  simp only [convolveFunRightStage_apply, ContinuousLinearMap.comp_apply]
-  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq, comulCurried_compLeft K,
-    comulCurried_comulCurried K, compLeft_apply, compLeft_apply]
+  refine ContinuousLinearMap.ext fun c ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq,
+    convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq, comulCurried_compLeft K,
+    comulCurried_comulCurried K,
+    compLeft_comp (α := ZMod (p ^ h) × ℕ) φ (convolveFunRightStage ψ)
+      (φ.bound.imp fun _ hb ↦ hb.2)
+      ⟨‖convolveFunRightStage ψ‖, (convolveFunRightStage ψ).le_opNorm⟩,
+    ContinuousLinearMap.comp_apply,
+    ← ContinuousLinearMap.comp_apply (compLeft (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2))
+      (exists_norm_compLeft_apply_le ψ (ψ.bound.imp fun _ hb ↦ hb.2)))
+      (compLeft (comulCurried K) (exists_norm_comulCurried_le K)),
+    ← compLeft_comp (α := ZMod (p ^ h) × ℕ) (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2))
+      (comulCurried K) (exists_norm_compLeft_apply_le ψ (ψ.bound.imp fun _ hb ↦ hb.2))
+      (exists_norm_comulCurried_le K)]
+  rfl
 
 /-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
 operator. -/

@@ -451,10 +451,7 @@ theorem convolveFunRight_ofStage (ν : LocallyAnalyticDistribution p K) (h : ℕ
     (c : AnalyticStage p h K) :
     convolveFunRight ν (ofStage K h c) =
       ofStage K h (convolveFunRightStage (stage h ν) c) := by
-  rw [ofStage_def]
-  exact Module.DirectLimit.map_apply_of
-    (fun h ↦ (convolveFunRightStage (stage h ν)).toLinearMap)
-    (fun _ _ hhk ↦ LinearMap.ext (convolveFunRightStage_stage_transitionLE ν hhk)) c
+  simp [convolveFunRight, ofStage_def]
 
 /-- Evaluating `convolveFunRight ν f` at `x` applies `ν` to the translate of `f` by `x`. -/
 @[simp]
