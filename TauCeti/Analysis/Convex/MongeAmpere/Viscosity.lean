@@ -289,8 +289,8 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
       (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) := by
     rw [hψMA]
-    exact withDensity_restrict_le_mongeAmpereMeasure μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
-      AbsolutelyContinuous.rfl (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
+    exact withDensity_restrict_le_mongeAmpereMeasure μ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
   -- `u < ψ` on the sphere and `ψ < u` at the centre, contradicting the comparison principle.
   refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr hψc (hu.subset hbΩ (convex_ball x₀ r))
     hψcont ((hu.continuousOn hΩ).mono hBΩ) hMAB (fun x hx => ?_) ?_
@@ -364,8 +364,8 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
       mongeAmpereMeasure μ
         (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) := by
     rw [hψMA]
-    exact mongeAmpereMeasure_le_withDensity_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
-      AbsolutelyContinuous.rfl (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
+    exact mongeAmpereMeasure_le_withDensity_restrict μ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
   -- `ψ < u` on the sphere and `u < ψ` at the centre, contradicting the comparison principle.
   refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr (hu.subset hbΩ (convex_ball x₀ r)) hψc
     ((hu.continuousOn hΩ).mono hBΩ) hψcont hMAB (fun x hx => ?_) ?_

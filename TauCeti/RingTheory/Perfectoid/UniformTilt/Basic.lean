@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Perfection
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.RingTheory.Perfection
 import Mathlib.LinearAlgebra.SModEq.Pow
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.UniformApproximation
@@ -78,6 +79,8 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   `A ⊆ B°` and `x, y` with all coordinates in `A`, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_of_charP`: in characteristic `p` the addition is
   coordinatewise.
+* `TauCeti.Perfectoid.uniformTilt.coeff_zero_eq_zero_iff`: in the tilt of a reduced ring, `x♯ = 0`
+  only for `x = 0`.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
   is perfect, and of characteristic `p` when `B` is nonzero.
 * `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
@@ -91,6 +94,9 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   `TauCeti.Perfectoid.uniformTilt.instT2Space`: the tilt is a complete Hausdorff topological ring.
 * `TauCeti.Perfectoid.uniformTilt.continuous_coeff` and
   `TauCeti.Perfectoid.uniformTilt.continuous_map`: the coordinates and `g♭` are continuous.
+* `Finset.span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit` and
+  `Finset.isOpen_span_image_uniformTilt_coeff_zero_of_exists_isUnit`: sharp images of a finite
+  subset of `B♭` containing a unit generate the unit (hence open) ideal of `B`.
 
 ## References
 
@@ -132,7 +138,7 @@ private def boundSubgroup (c : powerBoundedSubring B) (N : ℕ) : AddSubgroup B 
     refine (powerBoundedSubring B).sum_mem fun m hm ↦ ?_
     rw [← mul_assoc]
     exact mul_mem (mul_pow_mul_pow_mem_powerBoundedSubring
-      (by have := Finset.mem_range.mp hm; omega) c.2 hS hT) (natCast_mem _ _)
+      (by have := Finset.mem_range.mp hm; omega) c.property hS hT) (natCast_mem _ _)
   neg_mem' {S} hS := by
     simp only [Set.mem_ofPred_eq] at hS ⊢
     rw [neg_pow, mul_left_comm]
@@ -178,7 +184,7 @@ private theorem boundSubgroup_succ_le (N : ℕ) :
   have h : ((c : B) * z ^ p ^ N) ^ p = (c : B) ^ q * ((c : B) * z ^ p ^ (N + 1)) := by
     rw [pow_succ, hq]; ring
   rw [h]
-  exact mul_mem (pow_mem c.2 q) hz
+  exact mul_mem (pow_mem c.property q) hz
 
 private theorem antitone_boundSubgroup : Antitone (boundSubgroup p c) :=
   antitone_nat_of_succ_le boundSubgroup_succ_le
@@ -189,7 +195,7 @@ private theorem pow_mul_pow_mem_boundSubgroup {N j l : ℕ} {S T : B} (hjl : j +
     S ^ j * T ^ l ∈ boundSubgroup p c N := by
   rw [mem_boundSubgroup, mul_pow, ← pow_mul, ← pow_mul]
   exact mul_pow_mul_pow_mem_powerBoundedSubring
-    (by rw [← add_mul, hjl, pow_succ, mul_comm]) c.2 hS hT
+    (by rw [← add_mul, hjl, pow_succ, mul_comm]) c.property hS hT
 
 /-- A multiple `p ^ e * z` of `z ∈ W(c, N)` lies in `p ^ k • W(c, N)` for `k ≤ e`. -/
 private theorem pow_mul_mem_scaledSubgroup {N k e : ℕ} (hke : k ≤ e) {z : B}
@@ -303,8 +309,8 @@ private theorem isQuasiCompatible_of_pow {σ : ℕ → B} (hσ : ∀ N, σ (N + 
 /-- The coordinate sequence of an element of the tilt is quasi-compatible for any bound moving its
 zeroth coordinate into `B°`. -/
 private theorem isQuasiCompatible_val (x : Perfection B p)
-    (hx : (c : B) * x.1 0 ∈ powerBoundedSubring B) : IsQuasiCompatible p c x.1 :=
-  isQuasiCompatible_of_pow x.2 hx
+    (hx : (c : B) * x.val 0 ∈ powerBoundedSubring B) : IsQuasiCompatible p c x.val :=
+  isQuasiCompatible_of_pow x.property hx
 
 end Bound
 
@@ -465,9 +471,9 @@ namespace uniformTilt
 instance instSubsingleton [Subsingleton B] : Subsingleton (uniformTilt p B) :=
   ⟨fun _ _ ↦ Perfection.extMonoid fun _ ↦ Subsingleton.elim _ _⟩
 
-private theorem val_mul (x y : Perfection B p) : (x * y).1 = x.1 * y.1 := rfl
+private theorem val_mul (x y : Perfection B p) : (x * y).val = x.val * y.val := rfl
 
-private theorem val_pow (x : Perfection B p) (i m : ℕ) : x.1 (i + m) ^ p ^ m = x.1 i :=
+private theorem val_pow (x : Perfection B p) (i m : ℕ) : x.val (i + m) ^ p ^ m = x.val i :=
   Perfection.coeffMonoidHom_pow_p_pow' x i m
 
 /-- The element of the tilt with a given compatible system `(x n)ₙ` of `p`-th roots as its
@@ -483,7 +489,7 @@ variable [hp : Fact p.Prime]
 private def zero' : Perfection B p :=
   ⟨0, fun _ ↦ by simp [hp.out.ne_zero]⟩
 
-private theorem val_zero' : (zero' : Perfection B p).1 = 0 := rfl
+private theorem val_zero' : (zero' : Perfection B p).val = 0 := rfl
 
 private theorem zero'_mul (x : Perfection B p) : zero' * x = zero' :=
   Subtype.ext <| funext fun _ ↦ zero_mul _
@@ -516,34 +522,34 @@ variable [hp : Fact p.Prime] [UniformSpace B] [IsUniformAddGroup B] [IsTopologic
 
 /-- The limit addition `(x + y)⁽ⁱ⁾ = lim_m (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. -/
 private noncomputable def add' (x y : Perfection B p) : Perfection B p :=
-  ⟨tiltLim p (x.1 + y.1), fun i ↦ by
+  ⟨tiltLim p (x.val + y.val), fun i ↦ by
     obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-      (Set.toFinite {x.1 0, y.1 0})
+      (Set.toFinite {x.val 0, y.val 0})
     exact tiltLim_succ_pow hc ((isQuasiCompatible_val x (h _ (by simp))).add
       (isQuasiCompatible_val y (h _ (by simp)))) i⟩
 
 /-- The negation `(-x)⁽ⁱ⁾ = lim_m (-x⁽ⁱ⁺ᵐ⁾) ^ p ^ m`: coordinatewise for odd `p`, and the identity
 for `p = 2`. -/
 private noncomputable def neg' (x : Perfection B p) : Perfection B p :=
-  ⟨tiltLim p (-x.1), fun i ↦ by
+  ⟨tiltLim p (-x.val), fun i ↦ by
     obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-      (Set.toFinite {x.1 0})
+      (Set.toFinite {x.val 0})
     exact tiltLim_succ_pow hc (isQuasiCompatible_val x (h _ (by simp))).neg i⟩
 
-private theorem val_add' (x y : Perfection B p) : (add' x y).1 = tiltLim p (x.1 + y.1) := rfl
+private theorem val_add' (x y : Perfection B p) : (add' x y).val = tiltLim p (x.val + y.val) := rfl
 
-private theorem val_neg' (x : Perfection B p) : (neg' x).1 = tiltLim p (-x.1) := rfl
+private theorem val_neg' (x : Perfection B p) : (neg' x).val = tiltLim p (-x.val) := rfl
 
 private theorem add'_comm (x y : Perfection B p) : add' x y = add' y x :=
   Subtype.ext <| by rw [val_add', val_add', add_comm]
 
 private theorem add'_zero (x : Perfection B p) : add' x zero' = x :=
-  Subtype.ext <| by rw [val_add', val_zero', add_zero, tiltLim_of_pow x.2]
+  Subtype.ext <| by rw [val_add', val_zero', add_zero, tiltLim_of_pow x.property]
 
 private theorem add'_assoc (x y z : Perfection B p) :
     add' (add' x y) z = add' x (add' y z) := by
   obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-    (Set.toFinite {x.1 0, y.1 0, z.1 0})
+    (Set.toFinite {x.val 0, y.val 0, z.val 0})
   have hx := isQuasiCompatible_val x (h _ (by simp))
   have hy := isQuasiCompatible_val y (h _ (by simp))
   have hz := isQuasiCompatible_val z (h _ (by simp))
@@ -554,13 +560,13 @@ private theorem add'_assoc (x y z : Perfection B p) :
       simpa using tiltLim_sub_mem hc hσ N
   refine Subtype.ext ?_
   simp only [val_add']
-  rw [key (hx.add hy) hz, add_comm x.1 (tiltLim p (y.1 + z.1)), key (hy.add hz) hx]
+  rw [key (hx.add hy) hz, add_comm x.val (tiltLim p (y.val + z.val)), key (hy.add hz) hx]
   congr 1
   abel
 
 private theorem neg'_add' (x : Perfection B p) : add' (neg' x) x = zero' := by
   obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-    (Set.toFinite {x.1 0})
+    (Set.toFinite {x.val 0})
   have hx := isQuasiCompatible_val x (h _ (by simp))
   refine Subtype.ext ?_
   rw [val_add', val_neg',
@@ -571,13 +577,13 @@ private theorem neg'_add' (x : Perfection B p) : add' (neg' x) x = zero' := by
 
 private theorem mul_add' (x y z : Perfection B p) : x * add' y z = add' (x * y) (x * z) := by
   obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-    (Set.toFinite {y.1 0, z.1 0})
+    (Set.toFinite {y.val 0, z.val 0})
   have hyz := (isQuasiCompatible_val y (h _ (by simp))).add
     (isQuasiCompatible_val z (h _ (by simp)))
   refine Subtype.ext (funext fun i ↦ ?_)
   simp only [val_mul, val_add', Pi.mul_apply]
   -- the defining sequence of the right side is `x⁽ⁱ⁾` times that of `y + z`
-  refine (((tendsto_tiltLim hc hyz i).const_mul (x.1 i)).congr fun m ↦ ?_).limUnder_eq.symm
+  refine (((tendsto_tiltLim hc hyz i).const_mul (x.val i)).congr fun m ↦ ?_).limUnder_eq.symm
   rw [Pi.add_apply, Pi.add_apply, Pi.mul_apply, Pi.mul_apply, ← mul_add, mul_pow, val_pow]
 
 private theorem zero'_add' (x : Perfection B p) : add' zero' x = x := by
@@ -625,7 +631,7 @@ noncomputable def coeff (n : ℕ) : uniformTilt p B →* B :=
   Perfection.coeffMonoidHom B p n
 
 private theorem coeff_apply (x : uniformTilt p B) (n : ℕ) :
-    coeff p B n x = (x : Perfection B p).1 n := rfl
+    coeff p B n x = (x : Perfection B p).val n := rfl
 
 /-- The coordinates of `uniformTilt.mk x hx` are the terms of `x`. -/
 @[simp]
@@ -633,7 +639,7 @@ theorem coeff_mk (x : ℕ → B) (hx : ∀ n, x (n + 1) ^ p = x n) (n : ℕ) :
     coeff p B n (mk x hx) = x n := (rfl)
 
 private theorem coeff_add_eq (x y : uniformTilt p B) (n : ℕ) :
-    coeff p B n (x + y) = tiltLim p ((x : Perfection B p).1 + (y : Perfection B p).1) n := rfl
+    coeff p B n (x + y) = tiltLim p ((x : Perfection B p).val + (y : Perfection B p).val) n := rfl
 
 /-- Elements of the tilt with the same coordinates are equal. -/
 @[ext]
@@ -662,20 +668,19 @@ theorem coeff_zero (n : ℕ) : coeff p B n 0 = 0 := (rfl)
 /-- An element of the tilt is a unit exactly when its zeroth coordinate is a unit. -/
 @[simp]
 theorem isUnit_iff_coeff_zero {x : uniformTilt p B} :
-    IsUnit x ↔ IsUnit (coeff p B 0 x) := by
-  refine ⟨fun hx ↦ hx.map _, fun hx ↦ ?_⟩
-  have hu (n : ℕ) : IsUnit (coeff p B n x) := by
-    apply (isUnit_pow_iff (pow_ne_zero n hp.out.ne_zero)).mp
-    simpa only [← coeff_pow_p_pow x 0 n, zero_add] using hx
-  let u (n : ℕ) : Bˣ := (hu n).unit
-  have hpow (n : ℕ) : u (n + 1) ^ p = u n := by
-    apply Units.ext
-    simpa only [Units.val_pow_eq_pow_val, u, IsUnit.unit_spec] using coeff_pow_p x n
-  let y : uniformTilt p B := mk (fun n ↦ ↑((u n)⁻¹)) (fun n ↦ by
-    rw [← Units.val_pow_eq_pow_val, inv_pow, hpow])
-  refine isUnit_iff_exists_inv.mpr ⟨y, ext fun n ↦ ?_⟩
-  simp only [map_mul, y, coeff_mk, map_one]
-  exact (hu n).mul_val_inv
+    IsUnit x ↔ IsUnit (coeff p B 0 x) :=
+  -- `uniformTilt p B` is `Perfection B p`, with the same multiplication and coordinates
+  ⟨fun hx ↦ hx.map _, (Perfection.isLocalHom_coeffMonoidHom (M := B) (p := p) 0).map_nonunit x⟩
+
+/-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
+`p ^ n`-th root of `x♯`. -/
+@[simp]
+theorem coeff_zero_eq_zero_iff [IsReduced B] {x : uniformTilt p B} :
+    coeff p B 0 x = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ coeff_zero 0⟩
+  rw [coeff_zero]
+  refine IsReduced.eq_zero _ ⟨p ^ n, ?_⟩
+  rw [← h, ← coeff_pow_p_pow x 0 n, zero_add]
 
 /-- **The limit formula for the addition**:
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. -/
@@ -683,7 +688,7 @@ theorem coeff_add (x y : uniformTilt p B) (i : ℕ) :
     Tendsto (fun m ↦ (coeff p B (i + m) x + coeff p B (i + m) y) ^ p ^ m) atTop
       (𝓝 (coeff p B i (x + y))) := by
   obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
-    (s := {(x : Perfection B p).1 0, (y : Perfection B p).1 0}) (Set.toFinite _)
+    (s := {(x : Perfection B p).val 0, (y : Perfection B p).val 0}) (Set.toFinite _)
   rw [coeff_add_eq]
   simp only [coeff_apply]
   exact tendsto_tiltLim hc ((isQuasiCompatible_val _ (h _ (by simp))).add
@@ -735,11 +740,11 @@ theorem coeff_add_sub_mem_of_forall_mem {A : Subring B} (hA : IsClosed (A : Set 
     simpa [hs, a, b, ← add_assoc] using congrArg Subtype.val hd
   choose d hd using hd
   set f : ℕ → B := fun m ↦ (p : B) ^ m * d m with hf_def
-  have hf : ∀ m, f m ∈ A := fun m ↦ mul_mem (pow_mem (natCast_mem _ p) m) (d m).2
+  have hf : ∀ m, f m ∈ A := fun m ↦ mul_mem (pow_mem (natCast_mem _ p) m) (d m).property
   have hfs : Summable f := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
     exact IsUniform.isBounded_powerBoundedSubring.tendsto_mul hpn.out
-      (Eventually.of_forall fun m ↦ hAB (d m).2)
+      (Eventually.of_forall fun m ↦ hAB (d m).property)
   -- telescoping: `s m = s 0 + p * ∑_{j < m} f j`
   have htel : ∀ m, s m = s 0 + p * ∑ j ∈ Finset.range m, f j := fun m ↦ by
     induction m with
@@ -819,7 +824,7 @@ instance charP [Nontrivial B] : CharP (uniformTilt p B) p := by
     rw [pow_one, mul_sub, mul_one, ← pow_succ', ← hq]
   have h := congrFun (tiltLim_congr isUnit_one hσ hconst
     fun M ↦ coeff_natCast_sub_mem (p := p) (B := B) p M) N
-  rw [tiltLim_of_pow (p : uniformTilt p B).2] at h
+  rw [tiltLim_of_pow (p : uniformTilt p B).property] at h
   rw [coeff_apply, h]
   exact tendsto_nhds_unique (tendsto_tiltLim isUnit_one hconst N)
     (hpn.out.comp (tendsto_atTop_mono (fun m ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id))
@@ -867,7 +872,7 @@ private theorem coeff_add_sub_pow_mem {c : powerBoundedSubring B} (hc : IsUnit (
   have hγ0 := antitone_boundSubgroup (Nat.zero_le i) hγ
   rw [mem_boundSubgroup, pow_zero, pow_one] at hγ0
   refine ⟨-γ, by rw [mul_neg]; exact neg_mem hγ0, ?_⟩
-  have ht : coeff p B (i + m) (x + y) = (x.1 + y.1) (i + m) + (p : B) ^ 1 * δ := by
+  have ht : coeff p B (i + m) (x + y) = (x.val + y.val) (i + m) + (p : B) ^ 1 * δ := by
     rw [coeff_add_eq]
     linear_combination -he
   rw [← coeff_pow_p_pow (x + y) i m, ht]
@@ -916,7 +921,7 @@ private theorem mul_coeff_zero_add_mem {c : powerBoundedSubring B} (hc : IsUnit 
     {x d : uniformTilt p B} (hx : (c : B) * coeff p B 0 x ∈ powerBoundedSubring B)
     (hd : coeff p B 0 d ∈ powerBoundedSubring B) :
     (c : B) * coeff p B 0 (x + d) ∈ powerBoundedSubring B := by
-  have hd' : (c : B) * coeff p B 0 d ∈ powerBoundedSubring B := mul_mem c.2 hd
+  have hd' : (c : B) * coeff p B 0 d ∈ powerBoundedSubring B := mul_mem c.property hd
   obtain ⟨δ, hδ, he⟩ := coeff_add_sub_pow_mem hc hx hd' 0 0
   simp only [add_zero, pow_zero, pow_one, zero_add] at he
   have h : (c : B) * coeff p B 0 (x + d) =
@@ -942,7 +947,7 @@ private theorem exists_coeff_add_sub_mem {c : powerBoundedSubring B} (hc : IsUni
   obtain ⟨hd0, hdV, hdB⟩ := hd
   -- with `α = x⁽ⁿ⁺ᵐ⁾` and `δ = d⁽ⁿ⁺ᵐ⁾`, the difference is `(α + δ) ^ p ^ m - α ^ p ^ m` up to an
   -- error in `p ^ (m + 1) c⁻¹ B°`, and every binomial term contains a factor `δ ∈ V`
-  obtain ⟨ε, hε, he⟩ := coeff_add_sub_pow_mem hc hx (mul_mem c.2 hd0) n m
+  obtain ⟨ε, hε, he⟩ := coeff_add_sub_pow_mem hc hx (mul_mem c.property hd0) n m
   set α := coeff p B (n + m) x
   set δ := coeff p B (n + m) d
   have hbin : (α + δ) ^ p ^ m - α ^ p ^ m =
@@ -965,7 +970,7 @@ private theorem exists_coeff_add_sub_mem {c : powerBoundedSubring B} (hc : IsUni
       rwa [← h0] at hx
     simpa using mul_pow_mul_pow_mem_powerBoundedSubring (b := 0)
       ((hj.le.trans (Nat.pow_le_pow_right hp.out.pos (Nat.le_add_left m n))).trans (by simp))
-      c.2 hx' hx'
+      c.property hx' hx'
   rw [hk, pow_succ', show α ^ j * (δ * δ ^ k) * ((p ^ m).choose j : B) =
     δ * (α ^ j * δ ^ k * (p ^ m).choose j) by ring]
   refine hS _ hdV _ ?_
@@ -1083,3 +1088,34 @@ end Map
 end uniformTilt
 
 end TauCeti.Perfectoid
+
+namespace Finset
+
+open TauCeti.Huber TauCeti.Perfectoid
+
+variable {p : ℕ} [Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
+  [IsUniformAddGroup B] [IsTopologicalRing B] [IsTateRing B] [CompleteSpace B] [T2Space B]
+  [IsUniform B] [Fact (IsTopologicallyNilpotent (p : B))]
+
+open scoped Classical in
+/-- If a finite subset `T` of `B♭` contains a unit, then the sharp images of elements of `T`
+generate the unit ideal of `B`. -/
+theorem span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit
+    (T : Finset (uniformTilt p B)) (hT : ∃ f ∈ T, IsUnit f) :
+    Ideal.span ((T.image (uniformTilt.coeff p B 0) : Finset B) : Set B) = ⊤ := by
+  obtain ⟨f, hfT, hf⟩ := hT
+  refine Ideal.eq_top_of_isUnit_mem _ ?_ (uniformTilt.isUnit_iff_coeff_zero.mp hf)
+  exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ hfT))
+
+open scoped Classical in
+/-- If a finite subset `T` of `B♭` contains a unit, then the sharp images `T♯` generate an open
+ideal of `B`. -/
+theorem isOpen_span_image_uniformTilt_coeff_zero_of_exists_isUnit
+    (T : Finset (uniformTilt p B)) (hT : ∃ f ∈ T, IsUnit f) :
+    IsOpen
+      ((Ideal.span ((T.image (uniformTilt.coeff p B 0) : Finset B) : Set B) : Ideal B) :
+        Set B) := by
+  rw [T.span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit hT]
+  exact isOpen_univ
+
+end Finset

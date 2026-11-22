@@ -44,29 +44,29 @@ private lemma mk_mem_frontier_prod_Icc_of_mem_frontier {y : X}
 without moving its basepoint. This also includes a degenerate interval. -/
 private theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
     (hc : c ∈ frontier (Icc a b)) (x : s) :
-    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.2 hc
+    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.property hc
     let hsub := (hs.prod isClosed_Icc).frontier_subset
-    ∀ q : Path (⟨(x.1, c), x.2, isClosed_Icc.frontier_subset hc⟩ : s ×ˢ Icc a b)
-        ⟨(x.1, c), x.2, isClosed_Icc.frontier_subset hc⟩,
-      ∃ p : Path (⟨(x.1, c), hface⟩ : frontier (s ×ˢ Icc a b)) ⟨(x.1, c), hface⟩,
+    ∀ q : Path (⟨(x.val, c), x.property, isClosed_Icc.frontier_subset hc⟩ : s ×ˢ Icc a b)
+        ⟨(x.val, c), x.property, isClosed_Icc.frontier_subset hc⟩,
+      ∃ p : Path (⟨(x.val, c), hface⟩ : frontier (s ×ˢ Icc a b)) ⟨(x.val, c), hface⟩,
         (p.map (continuous_inclusion hsub)).Homotopic q := by
   intro hface hsub q
-  let p : Path (⟨(x.1, c), hface⟩ : frontier (s ×ˢ Icc a b)) ⟨(x.1, c), hface⟩ :=
-    { toFun := fun t => ⟨((q t).1.1, c),
-        mk_mem_frontier_prod_Icc_of_mem_frontier (q t).2.1 hc⟩
+  let p : Path (⟨(x.val, c), hface⟩ : frontier (s ×ˢ Icc a b)) ⟨(x.val, c), hface⟩ :=
+    { toFun := fun t => ⟨((q t).val.1, c),
+        mk_mem_frontier_prod_Icc_of_mem_frontier (q t).property.1 hc⟩
       continuous_toFun := by fun_prop
       source' := by apply Subtype.ext; simp
       target' := by apply Subtype.ext; simp }
   refine ⟨p, ⟨?_⟩⟩
   refine
-    { toFun := fun z => ⟨((q z.2).1.1, (1 - (z.1 : ℝ)) * c + z.1 * (q z.2).1.2),
-        (q z.2).2.1, ?_⟩
+    { toFun := fun z => ⟨((q z.2).val.1, (1 - (z.1 : ℝ)) * c + z.1 * (q z.2).val.2),
+        (q z.2).property.1, ?_⟩
       continuous_toFun := by fun_prop
       map_zero_left := fun t => by apply Subtype.ext; simp [p]
       map_one_left := fun t => by apply Subtype.ext; simp
       prop' := ?_ }
-  · exact (convex_Icc a b) (isClosed_Icc.frontier_subset hc) (q z.2).2.2
-      (sub_nonneg.mpr z.1.2.2) z.1.2.1 (by ring)
+  · exact (convex_Icc a b) (isClosed_Icc.frontier_subset hc) (q z.2).property.2
+      (sub_nonneg.mpr z.1.property.2) z.1.property.1 (by ring)
   · intro t u hu
     rcases hu with hu | hu <;> rcases hu with rfl <;>
       apply Subtype.ext <;> simp [p] <;> ring
@@ -75,10 +75,10 @@ private theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
 on fundamental groups. -/
 private theorem fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier
     (hs : IsClosed s) (hc : c ∈ frontier (Icc a b)) (x : s) :
-    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.2 hc
+    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.property hc
     Function.Surjective (FundamentalGroup.map
       (ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset)
-      (⟨(x.1, c), hface⟩ : frontier (s ×ˢ Icc a b))) := by
+      (⟨(x.val, c), hface⟩ : frontier (s ×ˢ Icc a b))) := by
   intro hface γ
   obtain ⟨q, hq⟩ := Quotient.exists_rep γ.asHom
   obtain ⟨p, hp⟩ := exists_path_frontier_prod_Icc hs hc x q
@@ -95,25 +95,25 @@ theorem fundamentalGroupMap_frontier_prod_Icc_surjective
       (ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset) z) := by
   let j : C(frontier (s ×ˢ Icc a b), s ×ˢ Icc a b) :=
     ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset
-  have hz := (hs.prod isClosed_Icc).frontier_subset z.2
-  have hcases := z.2
+  have hz := (hs.prod isClosed_Icc).frontier_subset z.property
+  have hcases := z.property
   simp only [frontier_prod_eq, mem_union, mem_prod] at hcases
   rcases hcases with hend | hside
   · exact fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hend.2
-      ⟨z.1.1, hz.1⟩
+      ⟨z.val.1, hz.1⟩
   · have hab : a ≤ b := hz.2.1.trans hz.2.2
     have hb : b ∈ frontier (Icc a b) := by simp [frontier_Icc hab]
     let w : frontier (s ×ˢ Icc a b) :=
-      ⟨(z.1.1, b), mk_mem_frontier_prod_Icc_of_mem_frontier hz.1 hb⟩
+      ⟨(z.val.1, b), mk_mem_frontier_prod_Icc_of_mem_frontier hz.1 hb⟩
     let p : Path z w :=
-      { toFun := fun t => ⟨(z.1.1, (1 - (t : ℝ)) * z.1.2 + t * b), by
+      { toFun := fun t => ⟨(z.val.1, (1 - (t : ℝ)) * z.val.2 + t * b), by
           simp only [frontier_prod_eq, mem_union, mem_prod]
           exact Or.inr ⟨hside.1, subset_closure ((convex_Icc a b) hz.2 ⟨hab, le_rfl⟩
-            (sub_nonneg.mpr t.2.2) t.2.1 (by ring))⟩⟩
+            (sub_nonneg.mpr t.property.2) t.property.1 (by ring))⟩⟩
         continuous_toFun := by fun_prop
         source' := by apply Subtype.ext; simp
         target' := by apply Subtype.ext; simp [w] }
     exact j.fundamentalGroupMap_surjective_of_path p
-      (fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hb ⟨z.1.1, hz.1⟩)
+      (fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hb ⟨z.val.1, hz.1⟩)
 
 end TauCeti

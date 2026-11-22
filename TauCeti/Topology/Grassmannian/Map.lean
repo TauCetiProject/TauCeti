@@ -30,18 +30,18 @@ namespace finiteFullRankFrame
 /-- Apply an injective linear map to each vector of a frame. -/
 def map (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
     (v : finiteFullRankFrame 𝕜 r N) : finiteFullRankFrame 𝕜 r M :=
-  ⟨f ∘ v.1, v.2.map' f (LinearMap.ker_eq_bot.2 hf)⟩
+  ⟨f ∘ v.val, v.property.map' f (LinearMap.ker_eq_bot.2 hf)⟩
 
 @[simp]
 theorem coe_map (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
-    (v : finiteFullRankFrame 𝕜 r N) : (map f hf v).1 = f ∘ v.1 := (rfl)
+    (v : finiteFullRankFrame 𝕜 r N) : (map f hf v).val = f ∘ v.val := (rfl)
 
 /-- Applying a continuous linear map to all frame vectors is continuous. -/
 @[fun_prop]
 theorem continuous_map [TopologicalSpace 𝕜]
     (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
     (hfc : Continuous f) : Continuous (map (r := r) f hf) :=
-  (continuous_pi fun i ↦ hfc.comp ((continuous_apply i).comp continuous_subtype_val)).subtype_mk _
+  (continuous_pi fun i ↦ hfc.comp ((continuous_apply i).comp continuous_subtypeVal)).subtype_mk _
 
 end finiteFullRankFrame
 
@@ -50,11 +50,11 @@ namespace finiteGrassmannian
 /-- The image of a plane under an injective linear map, retaining its dimension. -/
 noncomputable def map (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
     (V : finiteGrassmannian 𝕜 r N) : finiteGrassmannian 𝕜 r M :=
-  ⟨V.1.map f, (Submodule.equivMapOfInjective f hf V.1).finrank_eq.symm.trans V.2⟩
+  ⟨V.val.map f, (Submodule.equivMapOfInjective f hf V.val).finrank_eq.symm.trans V.property⟩
 
 @[simp]
 theorem coe_map (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
-    (V : finiteGrassmannian 𝕜 r N) : (map f hf V).1 = V.1.map f := (rfl)
+    (V : finiteGrassmannian 𝕜 r N) : (map f hf V).val = V.val.map f := (rfl)
 
 /-- Taking spans commutes with applying an injective linear map to frame vectors. -/
 @[simp]
@@ -75,7 +75,7 @@ theorem map_comp (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Func
     (g : (Fin M → 𝕜) →ₗ[𝕜] (Fin L → 𝕜)) (hg : Function.Injective g)
     (V : finiteGrassmannian 𝕜 r N) :
     map (g.comp f) (hg.comp hf) V = map g hg (map f hf V) :=
-  Subtype.ext (Submodule.map_comp f g V.1)
+  Subtype.ext (Submodule.map_comp f g V.val)
 
 /-- An injective linear map induces an injective map of Grassmannians. -/
 theorem map_injective (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f) :

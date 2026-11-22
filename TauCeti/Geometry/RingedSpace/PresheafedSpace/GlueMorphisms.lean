@@ -104,7 +104,7 @@ private theorem piece_le (W : Opens Y) (i : ι) :
 
 private theorem piece_le_cover (W : Opens Y) (i : ι) : piece U f W i ≤ U i := by
   rintro _ ⟨x, -, rfl⟩
-  exact x.2
+  exact x.property
 
 private theorem ofArrows_piece_mem (W : Opens Y) :
     Sieve.ofArrows _ (fun i ↦ homOfLE (piece_le U hU f hf W i)) ∈
@@ -137,7 +137,7 @@ private theorem c_app_map_eq (W : Opens Y) ⦃V : Opens X⦄ ⦃i j : ι⦄ (a :
       (homOfLE hi))).obj ((Opens.map (f i).base).obj W)) := by
     intro x hx
     obtain ⟨y, hy, rfl⟩ := a.le hx
-    exact ⟨⟨y.1, hx⟩, hy, rfl⟩
+    exact ⟨⟨y.val, hx⟩, hy, rfl⟩
   have e : X.presheaf.map a.op =
       X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le hi _)).op ≫
         X.presheaf.map (homOfLE hV).op := by

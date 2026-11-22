@@ -180,7 +180,7 @@ noncomputable def baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
 /-- The bundled closed root subgroup is represented by the transported root-subgroup morphism. -/
 @[simp]
 theorem coe_baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
-    (baseChangeRootSubgroupClosedSubgroup A k).1 =
+    (baseChangeRootSubgroupClosedSubgroup A k).val =
       letI := Grp.mono_of_mono_left (baseChangeRootSubgroup A k)
       Subobject.mk (baseChangeRootSubgroup A k) :=
   ClosedSubgroupScheme.coe_mk _
@@ -188,7 +188,7 @@ theorem coe_baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
 /-- The bundled transported root subgroup is canonically isomorphic to the additive group
 scheme. -/
 noncomputable def baseChangeRootSubgroupClosedSubgroupIso (k : Fin 7 ⊕ Fin 7) :
-    ((baseChangeRootSubgroupClosedSubgroup A k).1 :
+    ((baseChangeRootSubgroupClosedSubgroup A k).val :
       Grp (Over (Spec (CommRingCat.of A)))) ≅ AdditiveGroup.groupScheme A :=
   ClosedSubgroupScheme.mkIso (baseChangeRootSubgroup A k)
 
@@ -197,7 +197,7 @@ the transported root-subgroup map. -/
 @[simp]
 theorem baseChangeRootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 7 ⊕ Fin 7) :
     (baseChangeRootSubgroupClosedSubgroupIso A k).inv ≫
-        (baseChangeRootSubgroupClosedSubgroup A k).1.arrow =
+        (baseChangeRootSubgroupClosedSubgroup A k).val.arrow =
       baseChangeRootSubgroup A k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (baseChangeRootSubgroup A k)
 

@@ -58,7 +58,7 @@ map `Φ.final.comp f`: the image `Φ.finalHomeomorph '' range f` is `range (Φ.f
 theorem range_final_comp :
     Set.range (Φ.final.comp f) = Φ.finalHomeomorph '' Set.range f := by
   rw [ContinuousMap.coe_comp, Set.range_comp]
-  exact Set.image_congr' fun y => (Φ.finalHomeomorph_apply y).symm
+  exact Set.image_congr' rfl fun y => (Φ.finalHomeomorph_apply y).symm
 
 /-- A point lies in `range f` exactly when its image under the final homeomorphism lies in the
 range of the moved map. This is the compatibility that lets the final homeomorphism restrict to

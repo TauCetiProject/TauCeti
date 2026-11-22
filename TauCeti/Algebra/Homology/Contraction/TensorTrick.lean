@@ -202,7 +202,7 @@ end Core
 private theorem gradedCoderiv_comp_letter_comp_of (G : InternalGrading R M ℤ) (d : Module.End R M)
     (n : {n : ℕ // 0 < n}) :
     gradedCoderiv G (d ∘ₗ letter R M) 1 ∘ₗ of R M n =
-      of R M n ∘ₗ slotSum n.1 (G.koszulTwist 1) d LinearMap.id := by
+      of R M n ∘ₗ slotSum n.val (G.koszulTwist 1) d LinearMap.id := by
   obtain ⟨n, hn⟩ := n
   refine PiTensorProduct.ext (MultilinearMap.ext fun x ↦ ?_)
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, slotSum,
@@ -213,9 +213,9 @@ private theorem gradedCoderiv_comp_letter_comp_of (G : InternalGrading R M ℤ) 
   split_ifs <;> rfl
 
 private theorem gradedCoderiv_comp_letter_of (G : InternalGrading R M ℤ) (d : Module.End R M)
-    (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
+    (n : {n : ℕ // 0 < n}) (z : TensorPower R n.val M) :
     gradedCoderiv G (d ∘ₗ letter R M) 1 (of R M n z) =
-      of R M n (slotSum n.1 (G.koszulTwist 1) d LinearMap.id z) :=
+      of R M n (slotSum n.val (G.koszulTwist 1) d LinearMap.id z) :=
   LinearMap.congr_fun (gradedCoderiv_comp_letter_comp_of G d n) z
 
 /-- Letterwise extensions of two odd maps intertwined by a degree-zero map are intertwined by its
@@ -247,23 +247,23 @@ the grading `G`. -/
 noncomputable def reducedTensorWordsHomotopy (G : InternalGrading R M ℤ) :
     Module.End R (ReducedTensorWords R M) :=
   DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦
-    of R M n ∘ₗ ∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
+    of R M n ∘ₗ ∑ j ∈ Finset.range n.val, PiTensorProduct.map fun i : Fin n.val ↦
       if i.val < j then G.koszulTwist 1 else if i.val = j then c.homotopy else c.incl ∘ₗ c.proj
 
 private theorem reducedTensorWordsHomotopy_of_slotSum (G : InternalGrading R M ℤ)
     (n : {n : ℕ // 0 < n})
-    (z : TensorPower R n.1 M) :
+    (z : TensorPower R n.val M) :
     c.reducedTensorWordsHomotopy G (of R M n z) =
-      of R M n (slotSum n.1 (G.koszulTwist 1) c.homotopy (c.incl ∘ₗ c.proj) z) :=
+      of R M n (slotSum n.val (G.koszulTwist 1) c.homotopy (c.incl ∘ₗ c.proj) z) :=
   toModule_of R M _ n z
 
 /-- The tensor-trick homotopy on an arbitrary word of length `n`, expanded as the sum of its
 single-slot actions. -/
 @[simp]
 theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M ℤ) (n : {n : ℕ // 0 < n})
-    (z : TensorPower R n.1 M) :
+    (z : TensorPower R n.val M) :
     c.reducedTensorWordsHomotopy G (of R M n z) =
-      of R M n ((∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
+      of R M n ((∑ j ∈ Finset.range n.val, PiTensorProduct.map fun i : Fin n.val ↦
         if i.val < j then G.koszulTwist 1
         else if i.val = j then c.homotopy else c.incl ∘ₗ c.proj) z) := by
   rw [c.reducedTensorWordsHomotopy_of_slotSum G n z]
@@ -272,9 +272,9 @@ theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M ℤ) (n : {n : �
 /-- The tensor-trick homotopy on a pure tensor word: the sum over positions `j` of the word with
 the letters before `j` Koszul-twisted, `h` applied at `j`, and `i p` applied after `j`. -/
 theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M ℤ) (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → M) :
+    (x : Fin n.val → M) :
     c.reducedTensorWordsHomotopy G (of R M n (PiTensorProduct.tprod R x)) =
-      ∑ j ∈ Finset.range n.1, of R M n (PiTensorProduct.tprod R fun i ↦
+      ∑ j ∈ Finset.range n.val, of R M n (PiTensorProduct.tprod R fun i ↦
         if i.val < j then G.koszulTwist 1 (x i)
         else if i.val = j then c.homotopy (x i) else c.incl (c.proj (x i))) := by
   simp only [reducedTensorWordsHomotopy_of, LinearMap.sum_apply, map_sum,
@@ -485,19 +485,19 @@ noncomputable def reducedTensorWords (G : InternalGrading R M ℤ) (H : Internal
   proj := ReducedTensorWords.map (R := R) c.proj
   homotopy := c.reducedTensorWordsHomotopy G
   dM_comp_incl := linearMap_ext R N fun n x ↦ by
-    have h := LinearMap.congr_fun (slotSum_comp_map hincl c.dM_comp_incl n.1)
+    have h := LinearMap.congr_fun (slotSum_comp_map hincl c.dM_comp_incl n.val)
       (PiTensorProduct.tprod R x)
     simp only [LinearMap.comp_apply] at h
     simp only [LinearMap.comp_apply, map_of, gradedCoderiv_comp_letter_of, h]
   proj_comp_dM := linearMap_ext R M fun n x ↦ by
-    have h := LinearMap.congr_fun (slotSum_comp_map hproj c.proj_comp_dM.symm n.1)
+    have h := LinearMap.congr_fun (slotSum_comp_map hproj c.proj_comp_dM.symm n.val)
       (PiTensorProduct.tprod R x)
     simp only [LinearMap.comp_apply] at h
     simp only [LinearMap.comp_apply, map_of, gradedCoderiv_comp_letter_of, h]
   proj_comp_incl := by
     rw [← ReducedTensorWords.map_comp, c.proj_comp_incl, ReducedTensorWords.map_id]
   dM_comp_homotopy_add_homotopy_comp_dM := linearMap_ext R M fun n x ↦ by
-    have h := LinearMap.congr_fun (c.slotSum_contraction G H hdM hh hincl hproj n.1)
+    have h := LinearMap.congr_fun (c.slotSum_contraction G H hdM hh hincl hproj n.val)
       (PiTensorProduct.tprod R x)
     simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.sub_apply,
       LinearMap.id_apply] at h

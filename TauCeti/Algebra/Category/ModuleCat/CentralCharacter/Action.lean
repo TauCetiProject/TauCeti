@@ -45,7 +45,7 @@ variable {H : Type*} [Monoid H] {R : Type*} [CommRing R]
 inverse automorphisms are continuous. -/
 lemma isStableUnderLeftAction_discreteCentralCharacterModules
     (ha : ∀ h, Continuous (a h).symm)
-    (hχ : ∀ h, χ.comp (TauCeti.centerCongr (a h)).symm.toAlgHom = χ) :
+    (hχ : ∀ h, χ.comp (Subalgebra.centerCongr (a h).symm).toAlgHom = χ) :
     letI := restrictScalarsMonoidalLeftAction.{v}
       ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
     (TauCeti.discreteCentralCharacterModules.{v} χ).IsStableUnderLeftAction (Discrete H) := by
@@ -69,14 +69,14 @@ lemma isStableUnderLeftAction_discreteCentralCharacterModules_of_centerFixed
   intro h
   apply AlgHom.ext
   intro z
-  have hcenter : (TauCeti.centerCongr (a h)).symm z = z := by
+  have hcenter : Subalgebra.centerCongr (a h).symm z = z := by
     apply Subtype.ext
-    rw [TauCeti.centerCongr_symm_apply_coe]
+    rw [Subalgebra.centerCongr_symm_apply_coe]
     exact (AlgEquiv.symm_apply_eq (a h)).mpr (hz h z).symm
   exact congrArg χ hcenter
 
 variable (ha : ∀ h, Continuous (a h).symm)
-  (hχ : ∀ h, χ.comp (TauCeti.centerCongr (a h)).symm.toAlgHom = χ)
+  (hχ : ∀ h, χ.comp (Subalgebra.centerCongr (a h).symm).toAlgHom = χ)
 
 /-- The coherent twisting action on a strict discrete character fiber. It restricts the
 native action on all modules, so its unit and associator have identity underlying maps. -/

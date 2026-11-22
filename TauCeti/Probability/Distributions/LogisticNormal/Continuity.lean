@@ -39,21 +39,21 @@ and zero covariances. -/
 theorem continuous_logisticNormalMeasure (r : ι) :
     Continuous (fun p : EuclideanSpace ℝ {i // i ≠ r} ×
         {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ // S.PosSemidef} ↦
-      (logisticNormalMeasure r p.1 p.2.1).toProbabilityMeasure) := by
+      (logisticNormalMeasure r p.1 p.2.val).toProbabilityMeasure) := by
   have h := (ProbabilityMeasure.continuous_map (continuous_logisticNormalChart r)).comp
     continuous_multivariateGaussian
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map,
     Measure.coe_toProbabilityMeasure]
-  exact (logisticNormalMeasure_def r p.1 p.2.1).symm
+  exact (logisticNormalMeasure_def r p.1 p.2.val).symm
 
 /-- As the positive semidefinite Gaussian covariance tends to zero, the simplex logistic-normal
 law converges weakly to the point mass at the logistic chart of its mean. -/
 theorem tendsto_logisticNormalMeasure_nhds_zero_dirac (r : ι)
     (m : EuclideanSpace ℝ {i // i ≠ r}) :
     Tendsto (fun S : {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ // S.PosSemidef} ↦
-      (logisticNormalMeasure r m S.1).toProbabilityMeasure)
+      (logisticNormalMeasure r m S.val).toProbabilityMeasure)
       (𝓝 ⟨0, Matrix.PosSemidef.zero⟩)
       (𝓝 (Measure.dirac (logisticNormalChart r m)).toProbabilityMeasure) := by
   have h := ((continuous_logisticNormalMeasure r).comp
