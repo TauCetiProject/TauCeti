@@ -14,11 +14,14 @@ The topological support of a compactly supported map on a seminormed group lies 
 around the origin (`HasCompactSupport.exists_pos_le_norm_notMem_tsupport`). This strengthens
 Mathlib's `HasCompactSupport.exists_pos_le_norm`, which only gives vanishing of the map itself,
 so that it also applies to derivatives of the map.
+
+On a proper normed group, a compactly supported function on `ℝ` composed with `x ↦ ‖x‖²` is
+compactly supported (`HasCompactSupport.comp_norm_sq`).
 -/
 
 public section
 
-open Metric
+open Metric Filter
 
 /-- A compactly supported map has topological support inside some open ball of positive radius
 around the origin. -/
@@ -29,3 +32,12 @@ theorem HasCompactSupport.exists_pos_le_norm_notMem_tsupport {X Y : Type*}
   refine ⟨max R 1, by positivity, fun x hx h ↦ ?_⟩
   have := mem_ball_zero_iff.1 (hR h)
   linarith [le_max_left R 1]
+
+/-- A function of `‖x‖²` built from a compactly supported function on `ℝ` is compactly supported
+on a proper normed group. -/
+theorem HasCompactSupport.comp_norm_sq {E M : Type*} [NormedAddCommGroup E] [ProperSpace E]
+    [Zero M] {f : ℝ → M} (hf : HasCompactSupport f) :
+    HasCompactSupport fun x : E ↦ f (‖x‖ ^ 2) := by
+  rw [hasCompactSupport_iff_eventuallyEq, coclosedCompact_eq_cocompact] at hf ⊢
+  exact ((tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).eventually
+    (hf.filter_mono atTop_le_cocompact)

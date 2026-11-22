@@ -27,7 +27,7 @@ has norm `1`, while its image in one variable is `0`.
 Through this comparison the orthogonality of the power sums in finitely many variables passes to
 the symmetric functions: `⟨p_μ, p_ν⟩ = z_μ δ_(μν)` for the power-sum products `p_μ`. That needs the
 character table of the symmetric group, and is proved in
-`TauCeti/RepresentationTheory/Symmetric/StableHallInner.lean`.
+`TauCeti/RepresentationTheory/Symmetric/Stable/HallInner.lean`.
 
 On all of `Λ_R` the Hall inner product `TauCeti.SymmetricFunction.hallInner R` is defined by the
 Schur basis `TauCeti.SymmetricFunction.schurBasis R`, indexed by `Σ n, n.Partition`, which collects

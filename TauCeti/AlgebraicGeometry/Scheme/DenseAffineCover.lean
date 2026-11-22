@@ -49,22 +49,22 @@ every other component. -/
 theorem exists_isAffineOpen_genericPoint_mem_and_disjoint
     (hX : (irreducibleComponents X).Finite) (C : irreducibleComponents X) :
     ∃ V : X.Opens, IsAffineOpen V ∧ (genericPoints.ofComponent C : X) ∈ V ∧
-      (V : Set X) ⊆ C.1 ∧
-      ∀ D ∈ irreducibleComponents X, D ≠ C.1 → Disjoint (V : Set X) D := by
-  let T : Set (Set X) := irreducibleComponents X \ {C.1}
+      (V : Set X) ⊆ C.val ∧
+      ∀ D ∈ irreducibleComponents X, D ≠ C.val → Disjoint (V : Set X) D := by
+  let T : Set (Set X) := irreducibleComponents X \ {C.val}
   have hT : T.Finite := hX.sdiff
   let O : X.Opens := ⟨(⋃₀ T)ᶜ, (hT.isClosed_sUnion
     (fun D hD ↦ isClosed_of_mem_irreducibleComponents D hD.1)).isOpen_compl⟩
-  have hOC : (O : Set X) ⊆ C.1 := by
-    rw [← closure_sUnion_irreducibleComponents_sdiff_singleton hX C.1 C.2]
+  have hOC : (O : Set X) ⊆ C.val := by
+    rw [← closure_sUnion_irreducibleComponents_sdiff_singleton hX C.val C.property]
     exact subset_closure
   have hηO : (genericPoints.ofComponent C : X) ∈ O := by
     rintro ⟨D, hD, hηD⟩
-    have hCD : C.1 ⊆ D :=
+    have hCD : C.val ⊆ D :=
       (genericPoints.isGenericPoint_ofComponent C).mem_closed_set_iff
         (isClosed_of_mem_irreducibleComponents D hD.1) |>.mp hηD
     exact hD.2 (Set.mem_singleton_iff.mpr
-      (Set.Subset.antisymm (C.2.2 hD.1.1 hCD) hCD))
+      (Set.Subset.antisymm (C.property.2 hD.1.1 hCD) hCD))
   obtain ⟨V, hV, hηV, hVO⟩ := exists_isAffineOpen_mem_and_subset hηO
   refine ⟨V, hV, hηV, hVO.trans hOC, fun D hD hDC ↦ ?_⟩
   exact Set.disjoint_left.mpr fun y hyV hyD ↦ hVO hyV ⟨D, ⟨hD, hDC⟩, hyD⟩
@@ -87,16 +87,16 @@ theorem exists_isAffineOpen_mem_and_genericPoints_subset
   -- Each missing generic point has an affine neighbourhood inside its own component
   -- and outside every other component. These neighbourhoods are pairwise disjoint.
   choose V hV hηV hVC hVD using fun C : s ↦
-    X.exists_isAffineOpen_genericPoint_mem_and_disjoint hX ⟨C.1, C.2.1⟩
+    X.exists_isAffineOpen_genericPoint_mem_and_disjoint hX ⟨C.val, C.property.1⟩
   have : Finite s := hs.to_subtype
   have hpair : Pairwise fun C D : s ↦ Disjoint (V C) (V D) := by
     intro C D hCD
     rw [← Opens.coe_disjoint]
-    exact (hVD C D.1 D.2.1 (fun h ↦ hCD (Subtype.ext h.symm))).mono_right (hVC D)
+    exact (hVD C D.val D.property.1 (fun h ↦ hCD (Subtype.ext h.symm))).mono_right (hVC D)
   have hWV : Disjoint W (⨆ C : s, V C) := by
     refine disjoint_iSup_iff.mpr fun C ↦ ?_
     rw [← Opens.coe_disjoint]
-    exact Set.disjoint_left.mpr fun y hyW hyV ↦ hWW₀ hyW ⟨C.1, C.2, hVC C hyV⟩
+    exact Set.disjoint_left.mpr fun y hyW hyV ↦ hWW₀ hyW ⟨C.val, C.property, hVC C hyV⟩
   refine ⟨W ⊔ ⨆ C : s, V C,
     hW.sup_of_disjoint (IsAffineOpen.iSup_of_disjoint hV hpair) hWV,
     Or.inl hxW, ?_⟩
@@ -104,18 +104,18 @@ theorem exists_isAffineOpen_mem_and_genericPoints_subset
   let C := genericPoints.component ⟨η, hη⟩
   by_cases hxC : x ∈ (C : Set X)
   · exact Or.inl (((genericPoints.isGenericPoint ⟨η, hη⟩).specializes hxC).mem_open W.isOpen hxW)
-  · have hC : C.1 ∈ s := ⟨C.2, hxC⟩
-    have heq : (genericPoints.ofComponent ⟨C.1, C.2⟩ : X) = η :=
+  · have hC : C.val ∈ s := ⟨C.property, hxC⟩
+    have heq : (genericPoints.ofComponent ⟨C.val, C.property⟩ : X) = η :=
       congrArg Subtype.val (genericPoints.ofComponent_component ⟨η, hη⟩)
-    exact Or.inr (Opens.mem_iSup.mpr ⟨⟨C.1, hC⟩, by
-      simpa only [heq] using hηV ⟨C.1, hC⟩⟩)
+    exact Or.inr (Opens.mem_iSup.mpr ⟨⟨C.val, hC⟩, by
+      simpa only [heq] using hηV ⟨C.val, hC⟩⟩)
 
 /-- A quasi-compact scheme with finitely many irreducible components has a finite affine
 open cover whose total intersection is dense. This includes every Noetherian scheme. -/
 theorem exists_finite_affine_cover_dense_iInter [CompactSpace X]
     (hX : (irreducibleComponents X).Finite) :
-    ∃ s : Finset X.affineOpens, (⨆ U ∈ s, U.1) = ⊤ ∧
-      Dense (⋂ U ∈ s, (U.1 : Set X)) := by
+    ∃ s : Finset X.affineOpens, (⨆ U ∈ s, U.val) = ⊤ ∧
+      Dense (⋂ U ∈ s, (U.val : Set X)) := by
   classical
   choose U hU hxU hηU using X.exists_isAffineOpen_mem_and_genericPoints_subset hX
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ (U x : Set X))

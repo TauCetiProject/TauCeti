@@ -63,15 +63,6 @@ open scoped TauCeti.ExactDivisor
 
 namespace TauCeti
 
-private theorem padicUnitsEquivIntProd_eq_of_decomposition (p : ℕ) [Fact p.Prime]
-    (x : ℚ_[p]ˣ) (k : ℤ) (w : ℤ_[p]ˣ)
-    (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((w : ℤ_[p]) : ℚ_[p])) :
-    padicUnitsEquivIntProd p x = (.ofAdd k, w) := by
-  rw [← (padicUnitsEquivIntProd p).apply_symm_apply (.ofAdd k, w)]
-  congr 1
-  apply Units.ext
-  simpa [padicUnitsEquivIntProd_symm_apply] using hx
-
 private def cyclotomicSymbolComponents (m p : ℕ) [NeZero m] [Fact p.Prime] :
     Multiplicative ℤ × ℤ_[p]ˣ →*
       (ZMod (p ^ padicValNat p m))ˣ × (ZMod (m / p ^ padicValNat p m))ˣ :=

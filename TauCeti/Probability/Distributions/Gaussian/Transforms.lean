@@ -41,11 +41,13 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
-* `TauCeti.Probability.integral_exp_nat_mul_sin_gaussianReal` and
-  `TauCeti.Probability.integral_cos_gaussianReal` evaluate two real integrals against the standard
-  Gaussian law.
+* `TauCeti.Probability.integral_exp_int_mul_sin_gaussianReal` shows that the sine at frequency
+  `2π` is orthogonal to every integer-exponent exponential under the standard Gaussian law.
+* `TauCeti.Probability.integral_cos_gaussianReal` computes the cosine transform of a real Gaussian
+  law.
 * `TauCeti.Probability.gaussian_exp_integral`, `gaussian_x_exp_integral` and
-  `gaussian_x_exp_integrable` give its exponential and first tilted moments.
+  `gaussian_x_exp_integrable` give the exponential and first tilted moments of the standard
+  Gaussian law.
 
 ## References
 
@@ -112,99 +114,73 @@ theorem gaussian_exp_integral (a : ℝ) :
   have h := congrFun (ProbabilityTheory.mgf_fun_id_gaussianReal (μ := 0) (v := 1)) a
   simpa [ProbabilityTheory.mgf] using h
 
+/-- A Gaussian exponential normalized by its cumulant-generating function has mean one. -/
+theorem integral_exp_mul_sub_gaussianReal (μ b : ℝ) (v : ℝ≥0) :
+    ∫ y, Real.exp (b * y - (μ * b + (v : ℝ) * b ^ 2 / 2)) ∂gaussianReal μ v = 1 := by
+  simp_rw [Real.exp_sub, integral_div]
+  have h : (∫ y, Real.exp (b * y) ∂gaussianReal μ v) =
+      Real.exp (μ * b + (v : ℝ) * b ^ 2 / 2) := by
+    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) b
+  rw [h, div_self (ne_of_gt (Real.exp_pos _))]
+
 /-- The first exponentially tilted moment of the standard Gaussian. -/
 theorem gaussian_x_exp_integral (a : ℝ) :
     ∫ x : ℝ, x * Real.exp (a * x) ∂ProbabilityTheory.gaussianReal 0 1 =
       a * Real.exp (a ^ 2 / 2) := by
-  open ProbabilityTheory Real in
-    have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
-      simp
-    have h := deriv_mgf ha
-    rw [mgf_fun_id_gaussianReal] at h
-    have hd : HasDerivAt (fun t : ℝ => exp (0 * t + (1 : ℝ≥0) * t ^ 2 / 2))
-        (a * exp (a ^ 2 / 2)) a := by
-      convert ((hasDerivAt_id a).pow 2 |>.div_const 2).exp using 1 <;> simp; ring
-    rw [hd.deriv] at h
-    exact h.symm
+  have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by simp
+  -- The tilted moment is the derivative at `a` of the moment-generating function.
+  rw [← deriv_mgf ha, mgf_fun_id_gaussianReal]
+  have hd : HasDerivAt (fun t : ℝ => Real.exp (0 * t + (1 : ℝ≥0) * t ^ 2 / 2))
+      (a * Real.exp (a ^ 2 / 2)) a := by
+    convert ((hasDerivAt_id a).pow 2 |>.div_const 2).exp using 1 <;> simp; ring
+  exact hd.deriv
 
 /-- The first exponentially tilted moment of the standard Gaussian is integrable. -/
 theorem gaussian_x_exp_integrable (a : ℝ) :
-    Integrable (fun x : ℝ => x * Real.exp (a * x)) (ProbabilityTheory.gaussianReal 0 1) := by
-  open ProbabilityTheory in
-    have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
-      simp
-    simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+    Integrable (fun x : ℝ => x * Real.exp (a * x)) (gaussianReal 0 1) := by
+  simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet
+    (X := fun x : ℝ => x) (μ := gaussianReal 0 1) (by simp) 1
 
 /-- The sine at frequency `2π` is orthogonal under the standard Gaussian law to every
-exponential with a natural-number exponent. -/
-theorem integral_exp_nat_mul_sin_gaussianReal (n : ℕ) :
+exponential with an integer exponent. -/
+theorem integral_exp_int_mul_sin_gaussianReal (n : ℤ) :
     ∫ y, Real.exp ((n : ℝ) * y) * Real.sin (2 * Real.pi * y) ∂gaussianReal 0 1 = 0 := by
+  -- The integrand is the imaginary part of `exp (z * y)` for `z = n + 2πi`.
   let z : ℂ := (n : ℝ) + (2 * Real.pi : ℝ) * Complex.I
-  have hzint : Integrable (fun y : ℝ => Complex.exp (z * y)) (gaussianReal 0 1) := by
-    apply integrable_cexp_mul_of_re_mem_integrableExpSet measurable_id.aemeasurable
-    simp [z]
+  have hzint : Integrable (fun y : ℝ => Complex.exp (z * y)) (gaussianReal 0 1) :=
+    integrable_cexp_mul_of_re_mem_integrableExpSet measurable_id.aemeasurable (by simp [z])
   calc
     _ = ∫ y, (Complex.exp (z * y)).im ∂gaussianReal 0 1 := by
       congr with y
-      rw [Complex.exp_im]
-      simp only [z, Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re,
-        Complex.I_im, mul_zero, sub_zero, Complex.add_im, Complex.ofReal_im, zero_add,
-        Complex.mul_im, zero_mul, add_zero]
-      congr 2
-      ring_nf
-    _ = (∫ y, Complex.exp (z * y) ∂gaussianReal 0 1).im := integral_im hzint
-    _ = (complexMGF id (gaussianReal 0 1) z).im := by rfl
-    _ = (Complex.exp (z * 0 + (1 : ℂ) * z ^ 2 / 2)).im := by
-      convert congrArg Complex.im (complexMGF_id_gaussianReal (μ := 0) (v := 1) z) using 1
-      norm_num
+      simp [Complex.exp_im, z]
+    _ = (∫ y, Complex.exp (z * y) ∂gaussianReal 0 1).im := by
+      simpa only [RCLike.im_to_complex] using integral_im hzint
+    _ = (Complex.exp (z ^ 2 / 2)).im := by
+      simpa [complexMGF] using
+        congrArg Complex.im (complexMGF_id_gaussianReal (μ := 0) (v := 1) z)
     _ = 0 := by
-      rw [Complex.exp_im]
-      have harg : z * 0 + (1 : ℂ) * z ^ 2 / 2 =
-          (((n : ℝ) ^ 2 - (2 * Real.pi) ^ 2) / 2 : ℝ) +
-            ((n : ℝ) * (2 * Real.pi) : ℝ) * Complex.I := by
-        apply Complex.ext
-        · simp [z, pow_two]
-        · simp [z, pow_two]
-          ring_nf
-      rw [harg]
-      simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
-        Complex.I_im, Complex.I_re, mul_one, mul_zero, zero_add]
-      have hsin : Real.sin ((n : ℝ) * (2 * Real.pi)) = 0 := by
-        convert Real.sin_nat_mul_pi (2 * n) using 1
-        push_cast
-        ring_nf
-      simp only [add_zero]
-      rw [hsin, mul_zero]
+      have him : (z ^ 2 / 2).im = n * (2 * Real.pi) := by
+        simp [z, pow_two]
+        ring
+      rw [Complex.exp_im, him, Real.sin_periodic.int_mul_eq, Real.sin_zero, mul_zero]
 
-/-- The cosine transform of the standard Gaussian is `exp (-t² / 2)`. -/
-theorem integral_cos_gaussianReal (t : ℝ) :
-    ∫ y, Real.cos (t * y) ∂gaussianReal 0 1 = Real.exp (-(t ^ 2) / 2) := by
-  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I))
-      (gaussianReal 0 1) := by
-    have hone : Integrable (fun _ : ℝ => (1 : ℝ)) (gaussianReal 0 1) := integrable_const 1
-    refine Integrable.mono' (f := fun y : ℝ => Complex.exp (t * y * Complex.I)) hone
-      (by fun_prop) (ae_of_all _ fun y => ?_)
-    rw [Complex.norm_exp]
-    simp
+/-- The cosine transform of the Gaussian law `gaussianReal μ v` is `exp (-v t² / 2) cos (t μ)`,
+the real part of its characteristic function. -/
+theorem integral_cos_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
+    ∫ y, Real.cos (t * y) ∂gaussianReal μ v =
+      Real.exp (-(v * t ^ 2) / 2) * Real.cos (t * μ) := by
+  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I)) (gaussianReal μ v) :=
+    .of_bound (by fun_prop) 1 (.of_forall fun y => by simp [Complex.norm_exp])
   calc
-    _ = ∫ y, (Complex.exp (t * y * Complex.I)).re ∂gaussianReal 0 1 := by
+    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal μ v).re := by
+      rw [← RCLike.re_to_complex, ← integral_re hint]
       congr with y
-      rw [Complex.exp_re]
-      simp
-    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal 0 1).re := integral_re hint
-    _ = (charFun (gaussianReal 0 1) t).re := by rw [charFun_apply_real]
-    _ = (Complex.exp (t * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2)).re := by
-      convert congrArg Complex.re (charFun_gaussianReal (μ := 0) (v := 1) t) using 1
-      norm_num
-    _ = Real.exp (-(t ^ 2) / 2) := by
-      have harg : (t : ℂ) * 0 * Complex.I - (1 : ℂ) * t ^ 2 / 2 =
-          ((-(t ^ 2) / 2 : ℝ) : ℂ) := by
-        push_cast
-        ring_nf
-      rw [harg]
-      exact Complex.exp_ofReal_re _
+      simp [Complex.exp_re]
+    _ = _ := by
+      rw [← charFun_apply_real, charFun_gaussianReal, Complex.exp_re]
+      simp [← Complex.ofReal_pow, neg_div]
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Every directional linear functional of a multivariate Gaussian has finite exponential moments
 of all real orders.

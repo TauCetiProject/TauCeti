@@ -99,6 +99,15 @@ theorem fullWeightTorusRestriction_apply (s : Fin t.rank → Aˣ) (i : Fin t.ran
       torusCharacter s (D.weightLatticeBasis i : Fin t.rank → ℤ) := by
   simp [fullWeightTorusRestriction, torusPointMap_apply]
 
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights,
+restriction from the full weight lattice is the identity on torus parameters. -/
+theorem fullWeightTorusRestriction_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (s : Fin t.rank → Aˣ) :
+    D.fullWeightTorusRestriction A s = s := by
+  funext i
+  rw [D.fullWeightTorusRestriction_apply, hb, torusCharacter_single, zpow_one]
+
 /-- Restriction is characterized by evaluation on every character of the actual weight lattice. -/
 @[simp]
 theorem torusCharacter_fullWeightTorusRestriction (s : Fin t.rank → Aˣ)
