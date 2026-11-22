@@ -40,6 +40,14 @@ endomorphism `T`, the orientation that `det T`'s canonical trivialization induce
 differs from the one given by invertibility of `L` by the sign of `det T`. This is how the sign of
 `det (1 - P)` for a linearized return map `P` enters the orientation of periodic orbits.
 
+The canonical trivializations are not continuous in families of endomorphisms as they stand. The
+**normalized generator** `LinearMap.detLineEndGenerator`, the element at which `detLineEndEquiv T`
+takes the value `(-1) ^ (dim (ker T) * (dim V + 1))`, corrects this: over the reals, the
+normalized generators of a family form a continuous orientation of its determinant line bundle
+(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). At a bijective `T` the normalized generator
+is `det T` times the generator of `LinearMap.detLineEquivOfBijective`
+(`LinearMap.detLineEndGenerator_eq_det_smul`).
+
 ## Main declarations
 
 * `LinearMap.detLineEndEquiv`: the canonical trivialization `det T ≃ K` of the determinant line of
@@ -51,6 +59,10 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
   `LinearMap.detLineEquivOfBijective` through the factor `(det T)⁻¹`.
 * `LinearMap.sign_detLineEndEquiv`: over an ordered field, the two trivializations of a bijective
   `T` induce orientations that differ by the sign of `det T`.
+* `LinearMap.detLineEndGenerator`: the normalized generator of `det T`, characterized by
+  `LinearMap.detLineEndEquiv_detLineEndGenerator`.
+* `LinearMap.detLineEndGenerator_eq_det_smul`: for bijective `T`, it is `det T` times the
+  generator of `LinearMap.detLineEquivOfBijective`.
 
 ## References
 
@@ -58,6 +70,9 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
   Colloquium Publications **52**, 2012, Appendix A.2 (determinant lines of exact sequences).
 * M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. **14** (2002),
   209–244, Appendix A, for the torsion convention.
+* A. Zinger, *The determinant line bundle for Fredholm operators: construction, properties, and
+  classification*, Math. Scand. **118** (2016), 203–268, arXiv:1304.6368, for the sign
+  normalizations making determinant line identifications continuous.
 -/
 
 public section
@@ -113,6 +128,14 @@ theorem detLineEndEquiv_tmul (u : Fin (finrank K (ker T)) → ker T)
     (ker T).injective_subtype T.exact_subtype_ker_map T.exact_map_mkQ_range
     (range T).mkQ_surjective u v z hβ hγ φ hξ, detLineEndEquiv_detLineFourTermEquiv]
 
+/-- The canonical trivializations of the determinant lines of equal endomorphisms agree through
+the identification `LinearMap.detLineCongrOfEq` of these lines. -/
+@[simp]
+theorem detLineEndEquiv_detLineCongrOfEq {T' : V →ₗ[K] V} (h : T = T') (x : T.detLine) :
+    T'.detLineEndEquiv (detLineCongrOfEq h x) = T.detLineEndEquiv x := by
+  subst h
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
+
 /-- **The canonical and the bijective trivializations differ by the determinant.** For a bijective
 endomorphism `T`, the canonical trivialization of its determinant line is `(det T)⁻¹` times the
 trivialization `LinearMap.detLineEquivOfBijective`, which sends the product of the empty exterior
@@ -156,5 +179,51 @@ theorem sign_detLineEndEquiv [LinearOrder K] [IsStrictOrderedRing K] (hT : Funct
     SignType.sign (T.detLineEndEquiv x) =
       SignType.sign (LinearMap.det T) * SignType.sign (T.detLineEquivOfBijective hT x) := by
   rw [detLineEndEquiv_eq_inv_det_mul T hT, sign_mul, TauCeti.sign_inv]
+
+/-! ### The normalized generator -/
+
+/-- **The normalized generator of the determinant line of an endomorphism.** The element of
+`det T` at which the canonical trivialization `LinearMap.detLineEndEquiv` takes the value
+`(-1) ^ (dim (ker T) * (dim V + 1))`.
+
+The sign makes these generators continuous in families of endomorphisms of a real
+finite-dimensional normed space: a single kernel chart, stabilizing by the whole space, reads them
+all as one fixed vector, so they are coherent
+(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). Without it, when `dim V` is even, the
+elements `T.detLineEndEquiv.symm 1` change sign whenever the parity of `dim (ker T)` jumps. The
+sign is `1` when `T` is injective, when `dim V` is odd, and when `ker T` has even dimension, for
+instance when `T` is the realification of a complex-linear map. -/
+def detLineEndGenerator : T.detLine :=
+  (-1 : K) ^ (finrank K (ker T) * (finrank K V + 1)) • T.detLineEndEquiv.symm 1
+
+theorem detLineEndGenerator_def :
+    T.detLineEndGenerator =
+      (-1 : K) ^ (finrank K (ker T) * (finrank K V + 1)) • T.detLineEndEquiv.symm 1 :=
+  (rfl)
+
+/-- The canonical trivialization takes the value `(-1) ^ (dim (ker T) * (dim V + 1))` at the
+normalized generator. This characterizes it. -/
+@[simp]
+theorem detLineEndEquiv_detLineEndGenerator :
+    T.detLineEndEquiv T.detLineEndGenerator = (-1) ^ (finrank K (ker T) * (finrank K V + 1)) := by
+  rw [detLineEndGenerator_def, map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one]
+
+/-- The normalized generator is nonzero. -/
+theorem detLineEndGenerator_ne_zero : T.detLineEndGenerator ≠ 0 := fun h ↦ by
+  have := T.detLineEndEquiv_detLineEndGenerator
+  rw [h, map_zero] at this
+  exact pow_ne_zero _ (neg_ne_zero.2 one_ne_zero) this.symm
+
+/-- **The normalized generator of a bijective endomorphism** is `det T` times the generator of
+the bijective trivialization `LinearMap.detLineEquivOfBijective`. -/
+theorem detLineEndGenerator_eq_det_smul (hT : Function.Bijective T) :
+    T.detLineEndGenerator = LinearMap.det T • (T.detLineEquivOfBijective hT).symm 1 := by
+  have hdet : LinearMap.det T ≠ 0 := fun h ↦
+    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hT.1)
+  refine T.detLineEndEquiv.injective ?_
+  have hk : finrank K (ker T) * (finrank K V + 1) = 0 := by
+    rw [finrank_ker_eq_zero_of_injective hT.1, zero_mul]
+  rw [detLineEndEquiv_detLineEndGenerator, hk, pow_zero, detLineEndEquiv_eq_inv_det_mul T hT,
+    map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, inv_mul_cancel₀ hdet]
 
 end LinearMap

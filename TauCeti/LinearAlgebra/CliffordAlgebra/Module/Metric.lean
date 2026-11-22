@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Basic
 public import TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates
 
@@ -55,10 +56,8 @@ theorem bilinForm_map_cliffordAlgebraι_apply_map_cliffordAlgebraι_apply
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W) (B : BilinForm K W)
     (v : M) (hρ : B.IsSkewAdjoint (ρ (ι Q v))) (x y : W) :
     B (ρ (ι Q v) x) (ρ (ι Q v) y) = -Q v * B x y := by
-  have hsq : ρ (ι Q v) (ρ (ι Q v) y) = Q v • y := by
-    rw [← mul_apply_eq_comp, comp_ι_sq_scalar, Module.algebraMap_end_apply]
-  simpa only [Pi.neg_apply, hsq, map_neg, map_smul, smul_eq_mul, neg_mul] using
-    hρ x (ρ (ι Q v) y)
+  simpa only [Pi.neg_apply, ρ.map_cliffordAlgebraι_apply_self, map_neg, map_smul, smul_eq_mul,
+    neg_mul] using hρ x (ρ (ι Q v) y)
 
 end Scaling
 
@@ -104,13 +103,10 @@ theorem exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι
     obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι b (i := i)
       (by rw [hQ]; exact isUnit_neg_one)
     have hact : σ g = ρ (ι Q (b i)) := by simp [σ, hg]
-    have hsq (y : W) : ρ (ι Q (b i)) (ρ (ι Q (b i)) y) = -y := by
-      rw [← mul_apply_eq_comp, comp_ι_sq_scalar, hQ, map_neg, map_one,
-        LinearMap.neg_apply, one_apply_eq_self]
     intro x y
     have h := hinv.apply g x (-(ρ (ι Q (b i)) y))
-    simpa only [B, LinearMap.comp_apply, AlgHom.toLinearMap_apply, hact, map_neg, hsq,
-      neg_neg, Pi.neg_apply] using h
+    simpa only [B, LinearMap.comp_apply, AlgHom.toLinearMap_apply, hact, map_neg,
+      ρ.map_cliffordAlgebraι_apply_self_of_eq_neg_one (hQ i), neg_neg, Pi.neg_apply] using h
   intro v
   simpa only [Submodule.mem_comap, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
     LinearMap.mem_skewAdjointSubmodule] using hspan (Submodule.mem_top : v ∈ ⊤)
