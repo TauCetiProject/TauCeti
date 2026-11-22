@@ -242,7 +242,7 @@ theorem isPrimitiveIdempotent_of_gradeZero_le_span (i : I) (hne : e i ≠ 0) :
   -- `eᵢ`; accordingly `f` or `eᵢ - f` is an idempotent without degree-zero component.
   have hmem : (decompose 𝒜 f 0 : A) ∈ cornerSubmodule k (e i) (e i) ⊓ 𝒜 0 :=
     ⟨coe_decompose_mem_cornerSubmodule (he₀ i) (he₀ i)
-      ((mem_cornerSubmodule_iff k hei hei).2 (by rw [hef, hfe])) 0, (decompose 𝒜 f 0).2⟩
+      ((mem_cornerSubmodule_iff k hei hei).2 (by rw [hef, hfe])) 0, (decompose 𝒜 f 0).property⟩
   rw [cornerSubmodule_inf_zero_eq_span_singleton he₀ ho hspan i,
     Submodule.mem_span_singleton] at hmem
   obtain ⟨c, hc⟩ := hmem
@@ -281,7 +281,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
     by_contra h
     exact lt_irrefl 0 (pos_of_mem_cornerSubmodule_inf ho hneg hspan hij
       ⟨coe_decompose_mem_cornerSubmodule (he₀ i) (he₀ j) hx 0,
-        (decompose 𝒜 x 0).2⟩ h)
+        (decompose 𝒜 x 0).property⟩ h)
   rw [← decompose_of_mem_same 𝒜 (he₀ i), hxy, GradedAlgebra.coe_decompose_mul_zero_of_nonneg hneg,
     hx₀, zero_mul]
 

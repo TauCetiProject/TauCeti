@@ -7,8 +7,14 @@ module
 
 public import Mathlib.AlgebraicGeometry.Group.Affine
 
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+
 /-!
-# Morphisms of affine schemes over an affine base
+# Schemes and morphisms over an affine base
+
+For a scheme with an explicit structure morphism `π : X ⟶ Spec R`, sections over each open
+carry an `R`-algebra structure, and restriction maps are algebra homomorphisms. These algebra
+structures are supplied explicitly and can be installed locally, without a global instance.
 
 For commutative `R`-algebras `A` and `B`, the scheme `Spec B` is a scheme over `Spec R` through
 Mathlib's `AlgebraicGeometry.specOverSpec`. This file identifies the morphisms
@@ -31,14 +37,26 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Hom.sectionsAlgebra`: the algebra of sections over an arbitrary
+  open induced by an explicit morphism to `Spec R`.
+* `AlgebraicGeometry.Scheme.Hom.algebraMap_sections`: the ring map underlying that algebra.
+* `AlgebraicGeometry.Scheme.Hom.fromSpec_toSpec`: an affine open chart respects its induced
+  algebra structure over `R`.
+* `AlgebraicGeometry.Scheme.Hom.resₐ`: restriction of sections as an algebra homomorphism.
+* `AlgebraicGeometry.Scheme.Hom.resₐ_toRingHom`: the underlying restriction ring homomorphism.
+* `AlgebraicGeometry.Scheme.Hom.commSq_specMap_algebraMap_self`: a morphism over `Spec R` forms a
+  commutative square with the structure morphisms and
+  `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
 * `AlgebraicGeometry.Spec.map_algHom_comp_map_algebraMap`: `Spec f` of an `R`-algebra map is a
   morphism over `Spec R`.
-
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
   `Spec R` with image in an affine open over `Spec R` factors through it by a unique algebra
   homomorphism.
+* `TauCeti.AlgebraicGeometry.exists_algHom_SpecMap_eq`: a morphism `Spec B ⟶ Spec A` over
+  `Spec R` is `Spec.map` of an `R`-algebra homomorphism; `SpecMap_quotient_mk_comp_SpecMap_algHom`
+  and `SpecMap_algHom_comp_quotient` compute its restriction to `Spec (B ⧸ I)`.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
@@ -50,6 +68,50 @@ public section
 open _root_.AlgebraicGeometry CategoryTheory Opposite
 
 universe u
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {R : Type u} [CommRing R] {X : Scheme.{u}} (π : X ⟶ Spec (.of R))
+
+/-- The sections over an open `U` form an `R`-algebra through the structure morphism `π`.
+Install this structure locally when using the associated restriction algebra homomorphisms. -/
+@[instance_reducible]
+noncomputable def sectionsAlgebra (U : X.Opens) : Algebra R Γ(X, U) :=
+  ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom.toAlgebra
+
+/-- The algebra map on sections is the pullback from the global sections of `Spec R`. -/
+theorem algebraMap_sections (U : X.Opens) :
+    @algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U) =
+      ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom := by
+  rfl
+
+/-- The inclusion `Spec Γ(X, U) ⟶ X` of an affine open respects its induced `R`-algebra. -/
+theorem fromSpec_toSpec {U : X.Opens} (hU : IsAffineOpen U) :
+    hU.fromSpec ≫ π =
+      Spec.map (CommRingCat.ofHom (@algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U))) := by
+  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
+
+/-- Restriction of sections as a map of the `R`-algebras induced by `π`. -/
+noncomputable def resₐ {U V : X.Opens} (h : V ≤ U) :
+    letI := sectionsAlgebra π U
+    letI := sectionsAlgebra π V
+    Γ(X, U) →ₐ[R] Γ(X, V) := by
+  letI := sectionsAlgebra π U
+  letI := sectionsAlgebra π V
+  exact {
+    toRingHom := (X.presheaf.map (homOfLE h).op).hom
+    commutes' := fun r ↦ by
+      exact congr(($(π.appLE_map (U := ⊤) (fun _ _ ↦ trivial) (homOfLE h).op)).hom
+        ((Scheme.ΓSpecIso (.of R)).inv.hom r)) }
+
+/-- The ring homomorphism underlying algebraic restriction is presheaf restriction. -/
+theorem resₐ_toRingHom {U V : X.Opens} (h : V ≤ U) :
+    letI := sectionsAlgebra π U
+    letI := sectionsAlgebra π V
+    (π.resₐ h).toRingHom = (X.presheaf.map (homOfLE h).op).hom := by
+  rfl
+
+end AlgebraicGeometry.Scheme.Hom
 
 namespace AlgebraicGeometry.Spec
 
@@ -74,6 +136,20 @@ theorem map_algHom_comp_map_algebraMap {R A B : Type u} [CommRing R] [CommRing A
 
 end AlgebraicGeometry.Spec
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- A morphism `f : X ⟶ Y` over `Spec R` forms a commutative square with the structure morphisms
+and `Spec.map (CommRingCat.ofHom (algebraMap R R))`. -/
+theorem commSq_specMap_algebraMap_self {X Y : Scheme.{u}} (f : X ⟶ Y) (R : Type u) [CommRing R]
+    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [hf : f.IsOver (Spec (.of R))] :
+    CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R))) := by
+  refine ⟨?_⟩
+  rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
+  exact hf.comp_over
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace TauCeti.AlgebraicGeometry
 
 variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
@@ -90,7 +166,7 @@ noncomputable def specOverHomEquivAlgHom :
 /-- The inverse of `specOverHomEquivAlgHom` applies `Spec` to an algebra homomorphism. -/
 @[simp]
 theorem coe_specOverHomEquivAlgHom_symm_apply (φ : A →ₐ[R] B) :
-    (specOverHomEquivAlgHom.symm φ).1 = Spec.map (CommRingCat.ofHom (φ : A →+* B)) :=
+    (specOverHomEquivAlgHom.symm φ).val = Spec.map (CommRingCat.ofHom (φ : A →+* B)) :=
   (rfl)
 
 /-- Applying `Spec` to the algebra homomorphism of a morphism over `Spec R` recovers the
@@ -98,7 +174,7 @@ morphism. -/
 @[simp]
 theorem spec_map_specOverHomEquivAlgHom
     (f : {f : Spec (.of B) ⟶ Spec (.of A) // f.IsOver (Spec (.of R))}) :
-    Spec.map (CommRingCat.ofHom (specOverHomEquivAlgHom f : A →+* B)) = f.1 := by
+    Spec.map (CommRingCat.ofHom (specOverHomEquivAlgHom f : A →+* B)) = f.val := by
   rw [← coe_specOverHomEquivAlgHom_symm_apply, Equiv.symm_apply_apply]
 
 /-- A morphism `p : Spec B ⟶ X` over `Spec R` whose image lies in the image of an open immersion
@@ -116,6 +192,30 @@ theorem existsUnique_spec_map_comp_eq_of_range_subset {X : Scheme.{u}}
   · rw [← Equiv.symm_apply_eq]
     exact Subtype.ext <|
       (coe_specOverHomEquivAlgHom_symm_apply ψ).trans (IsOpenImmersion.lift_uniq f p h _ hψ)
+
+/-- Every morphism `Spec B ⟶ Spec A` over `Spec R` is `Spec.map` of an `R`-algebra map
+`A →ₐ[R] B`: the surjectivity half of Mathlib's `Spec.homEquivAlgHom`, in the form used to
+rewrite a morphism of affine schemes. -/
+theorem exists_algHom_SpecMap_eq (l : Spec (.of B) ⟶ Spec (.of A))
+    (hl : l ≫ Spec.algebraMap R A = Spec.algebraMap R B) :
+    ∃ f : A →ₐ[R] B, Spec.map (CommRingCat.ofHom f.toRingHom) = l :=
+  ⟨Spec.homEquivAlgHom ⟨l, hl⟩, by
+    rw [← Spec.homEquivAlgHom_symm_apply_val, Equiv.symm_apply_apply]⟩
+
+/-- Restricting `Spec B ⟶ Spec A` along `Spec (B ⧸ I) ⟶ Spec B` composes the `R`-algebra map with
+the quotient map. -/
+theorem SpecMap_quotient_mk_comp_SpecMap_algHom (I : Ideal B) (f : A →ₐ[R] B) :
+    Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.map (CommRingCat.ofHom f.toRingHom) =
+      Spec.map (CommRingCat.ofHom ((Ideal.Quotient.mkₐ R I).comp f).toRingHom) := by
+  rw [← Spec.map_comp]
+  rfl
+
+/-- The lifting problem for `Spec (B ⧸ I) ⟶ Spec B` over `Spec R` coming from an `R`-algebra map
+`A →ₐ[R] B ⧸ I`. -/
+theorem SpecMap_algHom_comp_quotient (I : Ideal B) (f : A →ₐ[R] B ⧸ I) :
+    Spec.map (CommRingCat.ofHom f.toRingHom) ≫ Spec.algebraMap R A =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.algebraMap R B := by
+  exact (Spec.homEquivAlgHom.symm f).property.trans (by rw [← Spec.map_comp]; rfl)
 
 section algSpec
 

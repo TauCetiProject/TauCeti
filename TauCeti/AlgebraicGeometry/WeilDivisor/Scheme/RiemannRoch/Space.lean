@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
 public import TauCeti.Topology.KrullDimension.Basic
-public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
 # Riemann–Roch spaces on a proper curve
@@ -139,21 +139,21 @@ def residueMap {g : X.functionField} (hg0 : g ≠ 0)
     letI := (X.Γevaluation y).hom.toAlgebra
     sections (D + WeilDivisor.ofPoint y) ⊤ →ₗ[Γ(X, ⊤)] X.residueField y :=
   letI := (X.Γevaluation y).hom.toAlgebra
-  { toFun s := X.residue y (exists_algebraMap_eq_mul hg0 hg s.2).choose
+  { toFun s := X.residue y (exists_algebraMap_eq_mul hg0 hg s.property).choose
     map_add' s t := by
       rw [← map_add]
       congr 1
       refine IsFractionRing.injective _ X.functionField ?_
-      rw [map_add, (exists_algebraMap_eq_mul hg0 hg s.2).choose_spec,
-        (exists_algebraMap_eq_mul hg0 hg t.2).choose_spec,
-        (exists_algebraMap_eq_mul hg0 hg (s + t).2).choose_spec, Submodule.coe_add, map_add,
+      rw [map_add, (exists_algebraMap_eq_mul hg0 hg s.property).choose_spec,
+        (exists_algebraMap_eq_mul hg0 hg t.property).choose_spec,
+        (exists_algebraMap_eq_mul hg0 hg (s + t).property).choose_spec, Submodule.coe_add, map_add,
         mul_add]
     map_smul' a s := by
-      have key : (exists_algebraMap_eq_mul hg0 hg (a • s).2).choose =
-          X.presheaf.germ ⊤ y trivial a * (exists_algebraMap_eq_mul hg0 hg s.2).choose := by
+      have key : (exists_algebraMap_eq_mul hg0 hg (a • s).property).choose =
+          X.presheaf.germ ⊤ y trivial a * (exists_algebraMap_eq_mul hg0 hg s.property).choose := by
         refine IsFractionRing.injective _ X.functionField ?_
-        rw [(exists_algebraMap_eq_mul hg0 hg (a • s).2).choose_spec, map_mul,
-          (exists_algebraMap_eq_mul hg0 hg s.2).choose_spec,
+        rw [(exists_algebraMap_eq_mul hg0 hg (a • s).property).choose_spec, map_mul,
+          (exists_algebraMap_eq_mul hg0 hg s.property).choose_spec,
           Scheme.algebraMap_germ_eq_germToFunctionField (X := X) (U := ⊤) (x := (y : X))
             trivial a,
           Submodule.coe_smul, map_smul, Algebra.smul_def, RingHom.algebraMap_toAlgebra]
@@ -169,8 +169,8 @@ the sections of `𝒪_X(D + y)`. -/
 lemma residueMap_eq_zero_iff {g : X.functionField} (hg0 : g ≠ 0)
     (hg : X.ord g y = WeilDivisor.coeff D y + 1) (s : sections (D + WeilDivisor.ofPoint y) ⊤) :
     residueMap D y hg0 hg s = 0 ↔ (s : Γ(Scheme.rationalFunctions X, ⊤)) ∈ sections D ⊤ := by
-  rw [mem_sections_iff_mem_maximalIdeal hg0 hg s.2
-    (exists_algebraMap_eq_mul hg0 hg s.2).choose_spec]
+  rw [mem_sections_iff_mem_maximalIdeal hg0 hg s.property
+    (exists_algebraMap_eq_mul hg0 hg s.property).choose_spec]
   exact IsLocalRing.residue_eq_zero_iff _
 
 /-- The residue map takes the residue of any stalk element representing `g` times the given
@@ -182,7 +182,7 @@ lemma residueMap_eq_residue {g : X.functionField} (hg0 : g ≠ 0)
     residueMap D y hg0 hg s = X.residue y r := by
   rw [residueMap]
   exact congrArg (X.residue y) (IsFractionRing.injective _ X.functionField
-    ((exists_algebraMap_eq_mul hg0 hg s.2).choose_spec.trans hr.symm))
+    ((exists_algebraMap_eq_mul hg0 hg s.property).choose_spec.trans hr.symm))
 
 /-- **Adding a point to a divisor preserves finite generation of global sections.** If the global
 sections of `𝒪_X(D)` are finitely generated over a Noetherian ring `Γ(X, ⊤)`, and the residue
@@ -268,15 +268,7 @@ theorem finiteDimensional_globalSections_sheaf (hX : ∀ y : X, coheight y ≤ 1
   let := (Scheme.Modules.baseRingToGlobalSections k X).toAlgebra
   -- `Γ(X, ⊤)` is a finite field extension of `k`, since `X` is proper and integral over `k`.
   let := (isField_of_universallyClosed k (X ↘ Spec (.of k))).toField
-  have hbase : Scheme.Modules.baseRingToGlobalSections k X =
-      (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
-    RingHom.ext (Scheme.Modules.baseRingToGlobalSections_apply k X)
-  have : (Scheme.Modules.baseRingToGlobalSections k X).Finite := by
-    rw [hbase]
-    exact (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
-      (RingHom.Finite.of_surjective _
-        (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective)
-  have : Module.Finite k Γ(X, ⊤) := this
+  have : Module.Finite k Γ(X, ⊤) := Scheme.Modules.finite_baseRingToGlobalSections X k
   -- Codimension-one points of a curve are closed, so their residue fields are finite over `k`.
   have hfin (y : CodimensionOnePoint X) : (X.Γevaluation y).hom.Finite :=
     Scheme.finite_Γevaluation_of_isClosed (X ↘ Spec (.of k))

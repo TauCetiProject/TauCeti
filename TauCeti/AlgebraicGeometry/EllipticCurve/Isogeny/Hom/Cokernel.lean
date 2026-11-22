@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.GroupTheory.Index.Comp
 import TauCeti.GroupTheory.Index.Quotient
 
@@ -55,6 +56,8 @@ No characteristic-zero or separability hypothesis is needed.
   `#coker(f) / #ker(f)`, in `ℚ`.
 * `TauCeti.Isogeny.Hom.index_range_nsmul_mul_card_ker_mul_card_ker_dual`: the cokernel/kernel
   ratios of `f` and `f̂` multiply to that of multiplication by `deg f`.
+* `TauCeti.Isogeny.Hom.degree_mul_index_range_mul_dual_eq_card_ker_mul_dual_of_nsmul`:
+  cancelling `#E₁(F)[deg f]` when `deg f · #coker([deg f]) = #E₁(F)[deg f]`.
 
 ## References
 
@@ -147,5 +150,30 @@ theorem index_range_nsmul_mul_card_ker_mul_card_ker_dual :
         Nat.card (nsmulAddMonoidHom (α := W₁.Point) f.degree).ker := by
   simpa only [dual_pointMapHom_comp_pointMapHom] using
     AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker f.pointMapHom f.dual.pointMapHom
+
+/-- When `deg f · #(E₁(F) ⧸ deg f · E₁(F)) = #E₁(F)[deg f]`, cancelling `#E₁(F)[deg f]` from
+`index_range_nsmul_mul_card_ker_mul_card_ker_dual` gives
+`deg f · #(E₂(F) ⧸ f E₁(F)) · #(E₁(F) ⧸ f̂ E₂(F)) = #E₁(F)[f] · #E₂(F)[f̂]`. -/
+theorem degree_mul_index_range_mul_dual_eq_card_ker_mul_dual_of_nsmul
+    (hf : f ≠ 0)
+    (hidx : f.degree * (nsmulAddMonoidHom (α := W₁.Point) f.degree).range.index =
+      Nat.card (Submodule.torsionBy ℤ W₁.Point f.degree)) :
+    f.degree * (f.pointMapHom.range.index * f.dual.pointMapHom.range.index) =
+      Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker := by
+  have hcomp0 : f.dual.comp f ≠ 0 := by
+    rw [dual_comp_self, ← one_def, nsmul_one]
+    exact Nat.cast_ne_zero.mpr (f.degree_eq_zero_iff.not.mpr hf)
+  have hker : (f.dual.comp f).pointMapHom = nsmulAddMonoidHom f.degree := by
+    rw [comp_pointMapHom, dual_pointMapHom_comp_pointMapHom]
+  have : Finite (nsmulAddMonoidHom (α := W₁.Point) f.degree).ker :=
+    hker ▸ (f.dual.comp f).finite_ker_pointMapHom hcomp0
+  have hpos : 0 < Nat.card (Submodule.torsionBy ℤ W₁.Point f.degree) := by
+    rw [← TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy]
+    exact Nat.card_pos
+  have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
+  rw [TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy] at h
+  refine Nat.eq_of_mul_eq_mul_left hpos ?_
+  linear_combination f.degree * h.symm +
+    (Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker) * hidx
 
 end TauCeti.Isogeny.Hom

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Basic
-public import TauCeti.Algebra.Homology.Contraction.Linear.Homology
+public import TauCeti.Algebra.Homology.Contraction.Linear.Homology.Basic
 
 /-!
 # The minimal A-infinity model on cohomology

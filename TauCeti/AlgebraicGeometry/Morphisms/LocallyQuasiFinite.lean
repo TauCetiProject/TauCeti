@@ -1,7 +1,8 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang,
+  Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -25,6 +26,11 @@ distinct points of one fibre never specialize to each other because the fibres a
 is incomparability for quasi-finite morphisms. Consequently the codimension of a point is at most
 the codimension of its image, and the dimension of the source is at most that of the target.
 
+A locally quasi-finite morphism `π : V ⟶ Spec R` from an integral affine scheme maps every proper
+closed subset of `V` into the zero locus of a single nonzero element of `R`. Étale morphisms are
+locally quasi-finite, so this applies to an étale chart `V ⟶ 𝔸ⁿ`: the boundary of a dense open
+of the chart is mapped into a hypersurface.
+
 ## Main results
 
 * `AlgebraicGeometry.LocallyQuasiFinite.of_formallyUnramified`: a formally unramified morphism
@@ -39,6 +45,11 @@ the codimension of its image, and the dimension of the source is at most that of
   the coheight of a point is at most the coheight of its image.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
   morphism has dimension at most that of its target.
+* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
+  a closed, surjective, locally quasi-finite morphism preserves dimension.
+* `AlgebraicGeometry.Scheme.Hom.exists_ne_zero_image_subset_zeroLocus`: a locally quasi-finite
+  morphism from an integral affine scheme to `Spec R` maps a proper closed subset into the zero
+  locus of a nonzero element of `R`.
 * `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`: a dominant morphism of
   integral schemes, locally of finite type, which is quasi-finite at `x` with integrally closed
   local ring at `f x`, preserves the dimension of the local ring at `x`;
@@ -146,6 +157,15 @@ theorem Scheme.Hom.topologicalKrullDim_le {X Y : Scheme.{u}} (f : X ⟶ Y)
   exact iSup_le fun x ↦ (WithBot.coe_le_coe.mpr (f.coheight_le_coheight_apply x)).trans
     (le_iSup (fun y : Y ↦ (Order.coheight y : WithBot ℕ∞)) (f x))
 
+/-- A closed, surjective, locally quasi-finite morphism preserves Krull dimension.
+The two inequalities use incomparability of its fibers and lifting of specialization chains.
+Flatness is not required. -/
+theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [Surjective f]
+    (hf : IsClosedMap f) : topologicalKrullDim X = topologicalKrullDim Y :=
+  le_antisymm f.topologicalKrullDim_le
+    (hf.specializingMap.topologicalKrullDim_le_of_surjective f.surjective)
+
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is
 quasi-finite at `x` and the local ring of `Y` at `f x` is integrally closed, then the local rings
@@ -245,5 +265,45 @@ theorem Scheme.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_e
   congr 2
   ext a
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _ ⟨a, rfl⟩
+
+/-- **Proper closed subsets map into the zero locus of a nonzero element.** Let `π : V ⟶ Spec R`
+be a locally quasi-finite morphism from an integral affine scheme, for instance an étale morphism
+to an affine space. Then every closed subset `Z ≠ V` is mapped into the zero locus `V(h)` of some
+nonzero `h : R`. When `R` is a domain, such as `MvPolynomial (Fin m) k`, `V(h)` is a hypersurface.
+The element `h` need not generate the ideal of the closure of `π '' Z`. -/
+theorem Scheme.Hom.exists_ne_zero_image_subset_zeroLocus {R : Type u} [CommRing R]
+    {V : Scheme.{u}} [IsIntegral V] [IsAffine V] (π : V ⟶ Spec (.of R)) [LocallyQuasiFinite π]
+    {Z : Set V} (hZ : IsClosed Z) (hZV : Z ≠ Set.univ) :
+    ∃ h : R, h ≠ 0 ∧ π '' Z ⊆ PrimeSpectrum.zeroLocus {h} := by
+  -- Write `π` as `Spec` of `φ : R ⟶ Γ(V, ⊤)` up to the isomorphism `V ≅ Spec Γ(V, ⊤)`.
+  set φ : CommRingCat.of R ⟶ Γ(V, ⊤) := (Scheme.ΓSpecIso _).inv ≫ π.appTop
+  have hπ : V.isoSpec.inv ≫ π = Spec.map φ := by
+    rw [Iso.inv_comp_eq, Spec.map_comp, Scheme.isoSpec_hom_naturality_assoc]
+    simp [Scheme.isoSpec_hom]
+  have : LocallyQuasiFinite (Spec.map φ) := hπ ▸ inferInstance
+  have hφ : φ.hom.QuasiFinite := HasRingHomProperty.Spec_iff.mp this
+  algebraize [φ.hom]
+  -- The image `Z'` of `Z` in `Spec Γ(V, ⊤)` is a proper closed subset, so its vanishing ideal is
+  -- nonzero.
+  set Z' : Set (Spec Γ(V, ⊤)) := V.isoSpec.inv ⁻¹' Z
+  have hmem (v : V) : V.isoSpec.hom v ∈ Z' ↔ v ∈ Z := by
+    rw [Set.mem_preimage, Scheme.hom_inv_apply]
+  have hZ' : PrimeSpectrum.vanishingIdeal Z' ≠ ⊥ := by
+    intro h0
+    apply hZV
+    have hZ'c : IsClosed (X := PrimeSpectrum Γ(V, ⊤)) Z' := hZ.preimage V.isoSpec.inv.continuous
+    have h1 := PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure Z'
+    rw [h0, PrimeSpectrum.zeroLocus_bot, hZ'c.closure_eq] at h1
+    exact Set.eq_univ_iff_forall.mpr fun v ↦ (hmem v).mp (h1 ▸ Set.mem_univ _)
+  -- A nonzero element of its contraction to `R` vanishes on `π '' Z`.
+  obtain ⟨h, hh, hh0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Algebra.QuasiFinite.under_ne_bot R hZ')
+  refine ⟨h, hh0, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  have hπz : π z = Spec.map φ (V.isoSpec.hom z) := by
+    rw [← hπ, Scheme.Hom.comp_apply, Scheme.hom_inv_apply]
+  refine (PrimeSpectrum.mem_zeroLocus _ _).mpr (Set.singleton_subset_iff.mpr ?_)
+  rw [hπz]
+  exact (PrimeSpectrum.mem_vanishingIdeal _ _).mp hh _ ((hmem z).mpr hz)
 
 end AlgebraicGeometry
