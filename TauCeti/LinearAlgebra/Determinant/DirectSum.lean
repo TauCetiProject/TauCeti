@@ -533,8 +533,7 @@ private theorem detLineKerProdMap_apply (u : Fin (finrank K (ker f)) → ker f)
     detLineKerProdMap f g β = exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ w := by
   rw [detLineKerProdMap, LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq]
   refine Subtype.ext ?_
-  rw [LinearEquiv.coe_detLineCongr, hβ, ExteriorAlgebra.map_apply_ιMulti,
-    coe_detLineProdEquiv_tmul]
+  rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti _ hβ, coe_detLineProdEquiv_tmul]
   congr 1
   funext i
   induction i using Fin.addCases <;> ext <;> simp
