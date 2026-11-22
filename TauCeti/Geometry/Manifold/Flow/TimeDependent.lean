@@ -358,6 +358,14 @@ theorem mem_timeDependentFlowDomain_self_of_mem {X : ℝ → (x : M) → Tangent
   rw [mem_timeDependentFlowDomain, sub_self]
   exact mem_flowDomain_zero_of_mem (mem_timeDependentFlowDomain.1 h)
 
+/-- If the flow from `(s, x)` is defined up to time `t`, it is defined at every time between `s`
+and `t`. -/
+theorem uIcc_subset_setOf_mem_timeDependentFlowDomain
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    uIcc s t ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} :=
+  (ordConnected_setOf_mem_timeDependentFlowDomain s x).uIcc_subset
+    (mem_timeDependentFlowDomain_self_of_mem h) h
+
 section Flow
 
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]

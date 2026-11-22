@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.Geometry.Manifold.Instances.AddCircle
 import TauCeti.Geometry.Sphere.Circle
 
 /-!
@@ -61,6 +63,31 @@ These results are the decomposition of `Sᵈ⁺¹ × Y` in
 circle with `ℝ / pℤ` which carries the standard generator of `H₁(S¹; ℤ)` to the circuit class. The
 second component is thus taken against the orientation of increasing `s`.
 
+**Cup products and the intersection form.** Since `H²(ℝ / pℤ; ℤ) = 0`, the angular class has
+`θ_p ⌣ θ_p = 0` (`AddCircle.singularCup_angularClass_self`), so the cup product of two decomposed
+classes is
+`(pr₂^* b + θ_p ⌣ pr₂^* c) ⌣ (pr₂^* b' + θ_p ⌣ pr₂^* c')`
+`  = pr₂^* (b ⌣ b') + θ_p ⌣ pr₂^* (c ⌣ b' + (-1)^(deg b) b ⌣ c')`. Its Kronecker pairing with the
+homology cross product `[ℝ / pℤ] × y` of the circuit class with a class `y` of `Y` is the pairing
+of its slant product by `[ℝ / pℤ]` with `y` (`TopCat.singularKronecker_singularSlant`), which
+discards the summand pulled back from `Y`. So
+
+`⟨x ⌣ x', [ℝ / pℤ] × y⟩ = ⟨c ⌣ b', y⟩ + (-1)^(deg b) ⟨b ⌣ c', y⟩`
+
+(`TopCat.singularKronecker_singularCup_addCircle_singularHomologyCross`), for every space `Y`, with
+no manifold or finiteness hypothesis. For a closed oriented three-manifold `Y` with fundamental
+class `y = [Y]`, the class `[ℝ / pℤ] × [Y]` is a fundamental class of `(ℝ / pℤ) × Y`, for the
+orientation of increasing `s` followed by that of `Y` (this is not proved here), and the cup
+pairing against it on `H²((ℝ / pℤ) × Y; ℤ)` is the intersection form. In degree two the formula
+reads `x · x' = ⟨b ⌣ c', y⟩ + ⟨b' ⌣ c, y⟩`
+(`TopCat.singularCupPairing_addCircle_singularHomologyCross`):
+the summands `pr₂^* H²(Y; ℤ)` and `θ_p ⌣ pr₂^* H¹(Y; ℤ)` are isotropic and are paired by the cup
+pairing `(b, c) ↦ ⟨b ⌣ c, y⟩` of `Y`. In particular `pr₂^* b · pr₂^* b' = 0`,
+`t · t' = 0` and `pr₂^* b · t = t · pr₂^* b = ⟨b ⌣ c, y⟩` for `t = θ_p ⌣ pr₂^* c`, and every
+square `x · x = 2 ⟨b ⌣ c, y⟩` is even. For the symplectic suspension `(ℝ / ℤ)_s × Y_φ` of a surface
+mapping torus with `b₁(Y_φ) = 1`, these are the intersection numbers `v · v = t · t = 0` and
+`v · t = t · v = ⟨v ⌣ a, y⟩` of its line-label classes `v` and `t = [ds] ⌣ a`.
+
 The coefficients of the chains are `ℤ`, so `M = ℝ` gives real cohomology and `M = ℤ` integral
 cohomology.
 
@@ -86,6 +113,17 @@ cohomology.
   from `Y`.
 * `TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`,
   `TopCat.isOfFinAddOrder_smul_add_smul_addCircle_iff`: generators modulo torsion.
+* `AddCircle.singularCup_angularClass_self`: `θ_p ⌣ θ_p = 0`.
+* `TopCat.singularKronecker_singularCup_addCircle_singularHomologyCross`: the Kronecker pairing of
+  a cup product of decomposed classes with `[ℝ / pℤ] × y`.
+* `TopCat.singularCupPairing_addCircle_singularHomologyCross`: the cup pairing on
+  `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`, and its values
+  `TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross`,
+  `TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross`,
+  `TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross` and
+  `TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross` on the two summands.
+* `TopCat.singularCupPairing_self_addCircle_singularHomologyCross`,
+  `TopCat.even_singularCupPairing_self_addCircle_singularHomologyCross`: the squares are even.
 
 ## References
 
@@ -135,6 +173,16 @@ theorem singularKronecker_angularClass_fundamentalClass :
     (TopCat.of (AddCircle p)).singularKronecker ℤ 1 (angularClass p) (fundamentalClass p) =
       (1 : ℤ) := by
   rw [singularKronecker_angularClass, firstHomologyAddEquiv_fundamentalClass]
+
+/-- **The cup square of the angular class vanishes**: `θ_p ⌣ θ_p = 0`, because
+`H²(ℝ / pℤ; ℤ) = 0` for the compact one-dimensional manifold `ℝ / pℤ`. -/
+@[simp]
+theorem singularCup_angularClass_self :
+    (TopCat.of (AddCircle p)).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+      (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 (1 + 1) rfl (angularClass p) (angularClass p) = 0 :=
+  (ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
+    (M := AddCircle p) (E := ℝ) (𝟙_ (ModuleCat.{0} ℤ)) (𝟙_ (ModuleCat.{0} ℤ))
+    (Module.finrank_self ℝ) one_lt_two)).elim _ _
 
 /-- The unit circle `S¹ ⊆ ℝ²` and `ℝ / pℤ` are identified by a homeomorphism carrying the standard
 generator of `H₁(S¹; ℤ)` to the circuit class. -/
@@ -629,5 +677,228 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective
         (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (1 + 1)).hom := by
   exact mem_range_singularCohomologyMap_snd_addCircle_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
+
+
+/-! ### Cup products and the intersection form of `(ℝ / pℤ) × Y` -/
+
+section IntersectionForm
+
+/-- **The Kronecker pairing of a cup product on `(ℝ / pℤ) × Y` with `[ℝ / pℤ] × y`**: for
+`b ∈ Hᵐ⁺¹(Y; ℤ)`, `c ∈ Hᵐ(Y; ℤ)`, `b' ∈ Hᵐ'⁺¹(Y; ℤ)`, `c' ∈ Hᵐ'(Y; ℤ)` and a homology class
+`y ∈ Hₘ₊ₘ'₊₁(Y; ℤ)`,
+
+`⟨(pr₂^* b + θ_p ⌣ pr₂^* c) ⌣ (pr₂^* b' + θ_p ⌣ pr₂^* c'), [ℝ / pℤ] × y⟩`
+`  = ⟨c ⌣ b', y⟩ + (-1)^(m + 1) ⟨b ⌣ c', y⟩`,
+
+where `[ℝ / pℤ] × y` is the homology cross product of the circuit class with `y`, read with
+coefficients `ℤ` through `ℤ ⊗ ℤ ≅ ℤ`. No hypothesis on `Y` is needed: the summand `pr₂^* (b ⌣ b')`
+of the cup product is killed by the slant product by `[ℝ / pℤ]`. -/
+theorem singularKronecker_singularCup_addCircle_singularHomologyCross {m m' : ℕ}
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) (m + 1))
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) m)
+    (b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) (m' + 1))
+    (c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) m')
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + m' + 1)).obj
+      (𝟙_ (ModuleCat.{0} ℤ))).obj Y) :
+    ((TopCat.of (AddCircle p) ⊗ Y).singularKronecker ℤ (m + m' + 1 + 1)
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+        (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1) (m' + 1) (m + m' + 1 + 1) (by omega)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (m + 1) b +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 m (m + 1) (add_comm 1 m)
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) m c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (m' + 1) b' +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 m' (m' + 1) (add_comm 1 m')
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) m' c')))).hom
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + m' + 1 + 1)).map
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app (TopCat.of (AddCircle p) ⊗ Y)
+        (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+          (𝟙_ (ModuleCat.{0} ℤ)) 1 (m + m' + 1) (m + m' + 1 + 1) (add_comm 1 _)
+          (AddCircle.fundamentalClass p ⊗ₜ y))) =
+      (Y.singularKronecker ℤ (m + m' + 1)
+          (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom m
+            (m' + 1) (m + m' + 1) (by omega) c b')).hom y +
+        (-1 : ℤ) ^ (m + 1) * (Y.singularKronecker ℤ (m + m' + 1)
+          (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom
+            (m + 1) m' (m + m' + 1) (by omega) b c')).hom y := by
+  -- expand the cup product, using `θ_p ⌣ θ_p = 0`
+  rw [singularCup_singularCohomologyMap_snd_add_singularCup (add_comm 1 m) (add_comm 1 m')
+      (by omega) (add_comm 1 _) _ (AddCircle.singularCup_angularClass_self p)]
+  -- evaluating on `[ℝ / pℤ] × y` is evaluating the slant product by `[ℝ / pℤ]` on `y`
+  rw [← singularKronecker_singularSlant (𝟙_ (ModuleCat.{0} ℤ)) (TopCat.of (AddCircle p)) Y
+    (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 (m + m' + 1) (m + m' + 1 + 1) (add_comm 1 _)
+    (AddCircle.fundamentalClass p)]
+  have h := singularSlant_singularCohomologyMap_snd_add_singularCup (𝟙_ (ModuleCat.{0} ℤ))
+    (TopCat.of (AddCircle p)) Y (add_comm 1 (m + m' + 1)) one_ne_zero
+    (AddCircle.fundamentalClass p) (AddCircle.angularClass p)
+    (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1)
+      (m' + 1) (m + m' + 1 + 1) (by omega) b b')
+    (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom m
+        (m' + 1) (m + m' + 1) (by omega) c b' +
+      ((-1 : ℤ) ^ (1 * (m + 1))) •
+        Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1)
+          m' (m + m' + 1) (by omega) b c')
+  rw [h, AddCircle.singularKronecker_angularClass_fundamentalClass, one_smul, one_mul, map_add,
+    map_zsmul]
+  simp
+
+variable {Y}
+
+/-- **The cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`**: for `y ∈ H₃(Y; ℤ)`,
+the cup pairing against the homology cross product `[ℝ / pℤ] × y` of the classes
+`x = pr₂^* b + θ_p ⌣ pr₂^* c` and `x' = pr₂^* b' + θ_p ⌣ pr₂^* c'` is
+`x · x' = ⟨b ⌣ c', y⟩ + ⟨b' ⌣ c, y⟩`. When `y` is the fundamental class of a closed oriented
+three-manifold `Y`, this is the intersection form of `(ℝ / pℤ) × Y` in the decomposition
+`H²((ℝ / pℤ) × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ θ_p ⌣ pr₂^* H¹(Y; ℤ)`: both summands are isotropic, and
+they are paired by the cup pairing of `Y`. -/
+theorem singularCupPairing_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b' +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c')) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c' +
+        Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b' c := by
+  rw [singularCupPairing_apply, singularCupPairing_apply, singularCupPairing_apply]
+  have h := singularKronecker_singularCup_addCircle_singularHomologyCross (p := p) Y (m := 1)
+    (m' := 1) b c b' c' y
+  -- `c ⌣ b' = b' ⌣ c`, since the product of the degrees is even
+  rw [Y.singularCup_gradedComm_tensorUnit ℤ (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
+    (p := 1 + 1) (q := 1) (n := 1 + 1 + 1) rfl b' c] at h
+  refine h.trans ?_
+  norm_num
+  abel
+
+/-- **Classes pulled back from `Y` are orthogonal** for the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)`
+against `[ℝ / pℤ] × y`: `pr₂^* b · pr₂^* b' = 0`. -/
+theorem singularCupPairing_snd_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b') = 0 := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y b b' 0 0
+
+/-- **Classes `θ_p ⌣ pr₂^* c` are orthogonal** for the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)`
+against `[ℝ / pℤ] × y`: `(θ_p ⌣ pr₂^* c) · (θ_p ⌣ pr₂^* c') = 0`. -/
+theorem singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (c c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c')) = 0 := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y 0 0 c c'
+
+/-- **The pairing of the two summands** of `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y` is the
+cup pairing of `Y`: `pr₂^* b · (θ_p ⌣ pr₂^* c) = ⟨b ⌣ c, y⟩`. -/
+theorem singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b)
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c)) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y b 0 0 c
+
+/-- **The pairing of the two summands in the other order**: against `[ℝ / pℤ] × y`,
+`(θ_p ⌣ pr₂^* c) · pr₂^* b = ⟨b ⌣ c, y⟩` as well. -/
+theorem singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y 0 b c 0
+
+/-- **The squares of the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`**: for
+every class `x` with components `(b, c) = (x / [s₀], x / [ℝ / pℤ])`, `x · x = 2 ⟨b ⌣ c, y⟩`. -/
+theorem singularCupPairing_self_addCircle_singularHomologyCross (s₀ : AddCircle p)
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y))) x x =
+      2 * Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y
+        (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1 x).1
+        (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1 x).2 := by
+  obtain ⟨⟨b, c⟩, rfl⟩ :=
+    (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1).symm.surjective x
+  rw [AddEquiv.apply_symm_apply, singularCohomologyAddCircleProdSlantEquiv_symm_apply]
+  exact (singularCupPairing_addCircle_singularHomologyCross y b b c c).trans (two_mul _).symm
+
+/-- **The cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y` is even**, for every space
+`Y`. When `y` is the fundamental class of a closed oriented three-manifold `Y`, this says that the
+intersection form of `(ℝ / pℤ) × Y` is even, so no class has square `-1`. -/
+theorem even_singularCupPairing_self_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    Even ((TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y))) x x) := by
+  rw [singularCupPairing_self_addCircle_singularHomologyCross 0]
+  exact even_two_mul _
+
+end IntersectionForm
 
 end TopCat
