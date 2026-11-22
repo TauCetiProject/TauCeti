@@ -61,7 +61,7 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
   compose to relative dimension at most `d + e` for morphisms locally of finite type.
-* `TauCeti.AlgebraicGeometry.coheight_le_add_of_relativeDimensionLE`,
+* `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_relativeDimensionLE`,
   `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_krullDimLE`, and
   `AlgebraicGeometry.Scheme.Hom.coheight_le_succ_of_relativeDimensionLE`: point codimension bounds
   from `RelativeDimensionLE d` and a finite Krull-dimension bound on the base.
@@ -363,17 +363,6 @@ theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
   exact_mod_cast (coheight_le_topologicalKrullDim x).trans
     ((relativeDimensionLE_iff_of_field f).mp inferInstance)
 
-/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a locally
-Noetherian scheme of Krull dimension at most `e` has codimension at most `d + e`. -/
-theorem coheight_le_add_of_relativeDimensionLE [IsLocallyNoetherian X] [IsLocallyNoetherian Y]
-    (f : X ⟶ Y) [RelativeDimensionLE d f] {e : ℕ} (hY : topologicalKrullDim Y ≤ e) (x : X) :
-    Order.coheight x ≤ d + e := by
-  have hx : (Order.coheight x : WithBot ℕ∞) ≤ ((d + e : ℕ) : WithBot ℕ∞) :=
-    (coheight_le_topologicalKrullDim x).trans
-      ((topologicalKrullDim_le_add_of_relativeDimensionLE (d := d) f).trans
-        ((add_le_add_left hY _).trans_eq (by rw [Nat.cast_add, add_comm])))
-  exact_mod_cast hx
-
 end AlgebraicGeometry
 
 end TauCeti
@@ -382,13 +371,26 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
+/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a locally
+Noetherian scheme of Krull dimension at most `e` has codimension at most `d + e`. -/
+theorem coheight_le_add_of_relativeDimensionLE {X Y : Scheme.{u}} [IsLocallyNoetherian X]
+    [IsLocallyNoetherian Y] (f : X ⟶ Y) {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d f]
+    {e : ℕ} (hY : topologicalKrullDim Y ≤ e) (x : X) :
+    Order.coheight x ≤ d + e := by
+  have hx : (Order.coheight x : WithBot ℕ∞) ≤ ((d + e : ℕ) : WithBot ℕ∞) :=
+    (TauCeti.coheight_le_topologicalKrullDim x).trans
+      ((TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE
+        (d := d) f).trans
+        ((add_le_add_left hY _).trans_eq (by rw [Nat.cast_add, add_comm])))
+  exact_mod_cast hx
+
 /-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
 ring of Krull dimension at most `e` has codimension at most `d + e`. -/
 theorem coheight_le_add_of_krullDimLE {R : Type u} [CommRing R] [IsNoetherianRing R] (e : ℕ)
     [Ring.KrullDimLE e R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsLocallyNoetherian X]
     {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d toBase] (x : X) :
     Order.coheight x ≤ d + e :=
-  TauCeti.AlgebraicGeometry.coheight_le_add_of_relativeDimensionLE toBase
+  toBase.coheight_le_add_of_relativeDimensionLE
     ((PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R).trans_le
       (Order.KrullDimLE.krullDim_le (n := e) (α := PrimeSpectrum R))) x
 

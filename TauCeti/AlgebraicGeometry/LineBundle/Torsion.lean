@@ -66,7 +66,7 @@ lemma coe_pullbackTorsionLinearMap_apply (f : X ⟶ Y) (N : ℕ)
 lemma pullbackTorsionLinearMap_id (X : Scheme.{u}) (N : ℕ) :
     pullbackTorsionLinearMap (𝟙 X) N = LinearMap.id := by
   rw [pullbackTorsionLinearMap, pullbackLinearMap_id]
-  exact AddMonoidHom.torsionByZModLinearMap_id N
+  exact LinearMap.toAddMonoidHom_torsionByZModLinearMap_id N
 
 /-- `pullbackTorsionLinearMap` is contravariantly functorial under composition of scheme morphisms.
 -/
@@ -76,8 +76,8 @@ lemma pullbackTorsionLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (N : ℕ) :
       pullbackTorsionLinearMap f N ∘ₗ pullbackTorsionLinearMap g N := by
   rw [pullbackTorsionLinearMap, pullbackTorsionLinearMap, pullbackTorsionLinearMap,
     pullbackLinearMap_comp]
-  exact AddMonoidHom.torsionByZModLinearMap_comp
-    (pullbackLinearMap f).toAddMonoidHom (pullbackLinearMap g).toAddMonoidHom N
+  exact LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp
+    (pullbackLinearMap f) (pullbackLinearMap g) N
 
 /-- Post-composing `pullbackTorsionLinearMap g N` with a `ZMod N`-torsion restriction of `φ`
 agrees with restricting `φ ∘ₗ pullbackLinearMap g`. -/
@@ -87,39 +87,48 @@ lemma torsionByZModLinearMap_comp_pullbackTorsionLinearMap {A : Type*} [AddCommG
     φ.toAddMonoidHom.torsionByZModLinearMap N ∘ₗ pullbackTorsionLinearMap g N =
       (φ ∘ₗ pullbackLinearMap g).toAddMonoidHom.torsionByZModLinearMap N := by
   rw [pullbackTorsionLinearMap]
-  exact (AddMonoidHom.torsionByZModLinearMap_comp
-    φ.toAddMonoidHom (pullbackLinearMap g).toAddMonoidHom N).symm
+  exact (LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp φ (pullbackLinearMap g) N).symm
+
+/-- The underlying additive homomorphism of `MulEquiv.toAdditive (pullbackEquiv e)` agrees with
+`(pullbackLinearMap e.hom).toAddMonoidHom`. -/
+private lemma toAddMonoidHom_toAdditive_pullbackEquiv (e : X ≅ Y) :
+    (MulEquiv.toAdditive (pullbackEquiv e)).toAddMonoidHom =
+      (pullbackLinearMap e.hom).toAddMonoidHom := by
+  ext a
+  apply Additive.toMul.injective
+  simp
 
 /-- An isomorphism of schemes induces a `ZMod N`-linear equivalence on `N`-torsion Picard subgroups.
 -/
 def pullbackTorsionLinearEquiv (e : X ≅ Y) (N : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass Y)) (N : ℤ) ≃ₗ[ZMod N]
       AddSubgroup.torsionBy (Additive (LineBundleClass X)) (N : ℤ) :=
-  LinearEquiv.ofLinearMap (pullbackTorsionLinearMap e.hom N) (pullbackTorsionLinearMap e.inv N)
-    (by rw [← pullbackTorsionLinearMap_comp, e.hom_inv_id, pullbackTorsionLinearMap_id])
-    (by rw [← pullbackTorsionLinearMap_comp, e.inv_hom_id, pullbackTorsionLinearMap_id])
+  (MulEquiv.toAdditive (pullbackEquiv e)).torsionByZModLinearEquiv N
 
 /-- The underlying `ZMod N`-linear map of `pullbackTorsionLinearEquiv e N` is
 `pullbackTorsionLinearMap e.hom N`. -/
 lemma toLinearMap_pullbackTorsionLinearEquiv (e : X ≅ Y) (N : ℕ) :
     (pullbackTorsionLinearEquiv e N).toLinearMap = pullbackTorsionLinearMap e.hom N := by
-  ext a
-  simp [pullbackTorsionLinearEquiv]
+  rw [pullbackTorsionLinearEquiv, AddEquiv.toLinearMap_torsionByZModLinearEquiv,
+    toAddMonoidHom_toAdditive_pullbackEquiv, pullbackTorsionLinearMap]
 
 /-- Applying `pullbackTorsionLinearEquiv e N` agrees with `pullbackTorsionLinearMap e.hom N`. -/
 @[simp]
 lemma pullbackTorsionLinearEquiv_apply (e : X ≅ Y) (N : ℕ)
     (a : AddSubgroup.torsionBy (Additive (LineBundleClass Y)) (N : ℤ)) :
     pullbackTorsionLinearEquiv e N a = pullbackTorsionLinearMap e.hom N a := by
-  ext
-  simp [pullbackTorsionLinearEquiv]
+  rw [← LinearEquiv.coe_toLinearMap, toLinearMap_pullbackTorsionLinearEquiv]
 
 /-- The inverse of `pullbackTorsionLinearEquiv e N` is `pullbackTorsionLinearEquiv e.symm N`. -/
 @[simp]
 lemma pullbackTorsionLinearEquiv_symm (e : X ≅ Y) (N : ℕ) :
     (pullbackTorsionLinearEquiv e N).symm = pullbackTorsionLinearEquiv e.symm N := by
+  rw [pullbackTorsionLinearEquiv, AddEquiv.torsionByZModLinearEquiv_symm,
+    pullbackTorsionLinearEquiv]
+  congr 1
   ext a
-  simp [pullbackTorsionLinearEquiv]
+  apply Additive.toMul.injective
+  simp
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
 

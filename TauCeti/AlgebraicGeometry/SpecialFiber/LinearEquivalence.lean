@@ -32,6 +32,10 @@ Taking degrees on proper curves gives the numerical triviality of the special fi
 
 * `AlgebraicGeometry.Scheme.Hom.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one`: the
   divisor `Σᵢ mᵢ Cᵢ` of the special fibre is linearly equivalent to zero.
+* `AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear`: the `ℤ`-linear vertical Cartier
+  homomorphism `v ↦ ∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` on special-fibre component tuples.
+* `AlgebraicGeometry.Scheme.Hom.multiplicity_mem_ker_verticalLineBundleLinear`: the multiplicity
+  vector lies in `ker verticalLineBundleLinear`.
 
 ## References
 
@@ -84,5 +88,64 @@ theorem prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one
       LineBundleClass.mk (isEffectiveCartier_pow (hC η) _).toInvertibleSheaf,
     Finset.prod_congr rfl fun η _ ↦ LineBundleClass.mk_toInvertibleSheaf_pow (hC η) _] at h
   simp only [inv_pow, Finset.prod_inv_distrib, h, inv_one]
+
+omit [Flat toBase] in
+/-- **Vertical Cartier homomorphism**, sending a tuple `v` on the special-fibre components to
+`∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` in `Additive (LineBundleClass X)`. -/
+def verticalLineBundleLinear (hX : ∀ x : X, coheight x ≤ 2)
+    (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    ((toBase.finite_setOf_base_eq_closedPoint
+        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) →ₗ[ℤ]
+      Additive (LineBundleClass X) :=
+  Fintype.linearCombination ℤ fun i ↦ Additive.ofMul (LineBundleClass.mk
+    (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+      hX i.val.property).toInvertibleSheaf)⁻¹
+
+omit [Flat toBase] in
+/-- Multiplicative expansion of `verticalLineBundleLinear v` as `∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ`. -/
+@[simp]
+lemma toMul_verticalLineBundleLinear_apply (hX : ∀ x : X, coheight x ≤ 2)
+    (hη : toBase (genericPoint X) ≠ closedPoint R)
+    (v : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :
+    (toBase.verticalLineBundleLinear hX hη v).toMul =
+      ∏ i : (toBase.finite_setOf_base_eq_closedPoint
+          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+          hX i.val.property).toInvertibleSheaf)⁻¹ ^ v i := by
+  simp [verticalLineBundleLinear, Fintype.linearCombination_apply]
+
+omit [Flat toBase] in
+/-- Evaluating `verticalLineBundleLinear` at `Pi.single i 1` yields `[𝒪_X(Cᵢ)]`. -/
+@[simp]
+lemma verticalLineBundleLinear_single (hX : ∀ x : X, coheight x ≤ 2)
+    (hη : toBase (genericPoint X) ≠ closedPoint R)
+    [DecidableEq (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset]
+    (i : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
+    toBase.verticalLineBundleLinear hX hη (Pi.single i 1) =
+      Additive.ofMul (LineBundleClass.mk
+        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+          hX i.val.property).toInvertibleSheaf)⁻¹ := by
+  simp [verticalLineBundleLinear]
+
+/-- The multiplicity vector `i ↦ mᵢ` lies in `ker verticalLineBundleLinear` since
+`div(π) = ∑ᵢ mᵢ Cᵢ` is principal and therefore defines the trivial line bundle. -/
+theorem multiplicity_mem_ker_verticalLineBundleLinear (hX : ∀ x : X, coheight x ≤ 2)
+    (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
+    (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π) :
+    (fun i : (toBase.finite_setOf_base_eq_closedPoint
+        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset ↦
+      (toBase.specialFiberMultiplicity π i : ℤ)) ∈
+      LinearMap.ker (toBase.verticalLineBundleLinear hX hη) := by
+  rw [LinearMap.mem_ker]
+  refine Additive.toMul.injective ?_
+  rw [toMul_verticalLineBundleLinear_apply, toMul_zero]
+  refine (Finset.prod_congr rfl fun i _ ↦ ?_).trans ((Finset.prod_coe_sort _ fun η ↦
+    (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+      hX η.property).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π η).trans
+    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg))
+  rw [zpow_natCast]
 
 end AlgebraicGeometry.Scheme.Hom

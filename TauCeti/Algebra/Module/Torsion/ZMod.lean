@@ -30,6 +30,10 @@ to a `ZMod n`-linear map `f.torsionByZModLinearMap n : A[n] →ₗ[ZMod n] B[n]`
 * `AddMonoidHom.torsionByZModLinearMap_zero`, `AddMonoidHom.torsionByZModLinearMap_add`,
   `AddMonoidHom.torsionByZModLinearMap_neg`: additivity of `torsionByZModLinearMap`.
 * `AddMonoidHom.injective_torsionByZModLinearMap`: injectivity is preserved on `n`-torsion.
+* `LinearMap.toAddMonoidHom_torsionByZModLinearMap_id`,
+  `LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp`: restriction laws for `ℤ`-linear maps.
+* `AddEquiv.torsionByZModLinearEquiv`: the `ZMod n`-linear equivalence induced by `e : A ≃+ B`
+  on `n`-torsion subgroups.
 -/
 
 public section
@@ -124,3 +128,114 @@ theorem injective_torsionByZModLinearMap {f : A →+ B} (hf : Function.Injective
     simpa only [coe_torsionByZModLinearMap_apply] using congrArg Subtype.val h
 
 end AddMonoidHom
+
+namespace LinearMap
+
+variable {A B C : Type*} [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
+
+/-- The identity `ℤ`-linear map restricts to the identity `ZMod n`-linear map on `n`-torsion. -/
+@[simp]
+theorem toAddMonoidHom_torsionByZModLinearMap_id (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
+    (LinearMap.id (R := ℤ) (M := A)).toAddMonoidHom.torsionByZModLinearMap n = LinearMap.id := by
+  ext x
+  rw [AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
+    LinearMap.id_apply, LinearMap.id_apply]
+
+/-- Restriction of `ℤ`-linear maps to `n`-torsion commutes with composition. -/
+@[simp]
+theorem toAddMonoidHom_torsionByZModLinearMap_comp (g : B →ₗ[ℤ] C) (f : A →ₗ[ℤ] B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
+    (g.comp f).toAddMonoidHom.torsionByZModLinearMap n =
+      g.toAddMonoidHom.torsionByZModLinearMap n ∘ₗ f.toAddMonoidHom.torsionByZModLinearMap n := by
+  ext x
+  rw [AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
+    LinearMap.comp_apply, LinearMap.comp_apply, AddMonoidHom.coe_torsionByZModLinearMap_apply,
+    AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
+    LinearMap.toAddMonoidHom_coe]
+
+end LinearMap
+
+namespace AddEquiv
+
+variable {A B C : Type*} [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
+
+/-- Restrict an additive equivalence `e : A ≃+ B` to a `ZMod n`-linear equivalence
+`AddSubgroup.torsionBy A (n : ℤ) ≃ₗ[ZMod n] AddSubgroup.torsionBy B (n : ℤ)`. -/
+def torsionByZModLinearEquiv (e : A ≃+ B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
+    AddSubgroup.torsionBy A (n : ℤ) ≃ₗ[ZMod n] AddSubgroup.torsionBy B (n : ℤ) :=
+  LinearEquiv.ofLinearMap
+    (e.toAddMonoidHom.torsionByZModLinearMap n)
+    (e.symm.toAddMonoidHom.torsionByZModLinearMap n)
+    (by
+      rw [← AddMonoidHom.torsionByZModLinearMap_comp]
+      ext x
+      simp)
+    (by
+      rw [← AddMonoidHom.torsionByZModLinearMap_comp]
+      ext x
+      simp)
+
+/-- The underlying `ZMod n`-linear map of `e.torsionByZModLinearEquiv n` is
+`e.toAddMonoidHom.torsionByZModLinearMap n`. -/
+@[simp]
+theorem toLinearMap_torsionByZModLinearEquiv (e : A ≃+ B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
+    (e.torsionByZModLinearEquiv n).toLinearMap = e.toAddMonoidHom.torsionByZModLinearMap n := by
+  ext x
+  simp [torsionByZModLinearEquiv]
+
+/-- Applying `e.torsionByZModLinearEquiv n` agrees with `e.toAddMonoidHom.torsionByZModLinearMap n`.
+-/
+@[simp]
+theorem torsionByZModLinearEquiv_apply (e : A ≃+ B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
+    (x : AddSubgroup.torsionBy A (n : ℤ)) :
+    e.torsionByZModLinearEquiv n x = e.toAddMonoidHom.torsionByZModLinearMap n x := by
+  simp [torsionByZModLinearEquiv]
+
+/-- Evaluating `e.torsionByZModLinearEquiv n` and coercing to `B` agrees with `e`. -/
+theorem coe_torsionByZModLinearEquiv_apply (e : A ≃+ B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
+    (x : AddSubgroup.torsionBy A (n : ℤ)) :
+    (e.torsionByZModLinearEquiv n x : B) = e x := by
+  rw [torsionByZModLinearEquiv_apply, AddMonoidHom.coe_torsionByZModLinearMap_apply,
+    AddEquiv.coe_toAddMonoidHom]
+
+/-- The inverse of `e.torsionByZModLinearEquiv n` is `e.symm.torsionByZModLinearEquiv n`. -/
+@[simp]
+theorem torsionByZModLinearEquiv_symm (e : A ≃+ B) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
+    (e.torsionByZModLinearEquiv n).symm = e.symm.torsionByZModLinearEquiv n := by
+  ext x
+  simp [torsionByZModLinearEquiv]
+
+/-- The identity additive equivalence restricts to the identity `ZMod n`-linear equivalence on
+`n`-torsion. -/
+@[simp]
+theorem torsionByZModLinearEquiv_refl (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
+    (AddEquiv.refl A).torsionByZModLinearEquiv n = LinearEquiv.refl (ZMod n) _ := by
+  ext x
+  simp
+
+/-- Restriction of additive equivalences to `n`-torsion respects composition. -/
+@[simp]
+theorem torsionByZModLinearEquiv_trans (e₁ : A ≃+ B) (e₂ : B ≃+ C) (n : ℕ)
+    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
+    [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
+    (e₁.trans e₂).torsionByZModLinearEquiv n =
+      (e₁.torsionByZModLinearEquiv n).trans (e₂.torsionByZModLinearEquiv n) := by
+  ext x
+  simp
+
+end AddEquiv
