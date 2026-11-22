@@ -106,7 +106,7 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
 theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
     (dehomogenize i p).totalDegree ≤ p.totalDegree := by
   rw [dehomogenize]
-  refine (totalDegree_aeval_le (fun j ↦ ?_) p).trans_eq (mul_one _)
+  refine (totalDegree_aeval_le p fun j _ ↦ ?_).trans_eq (mul_one _)
   refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j
   · simp
   · rw [Fin.insertNth_apply_succAbove]

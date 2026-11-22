@@ -175,7 +175,7 @@ theorem weakCompletionSet_subset_of_forall_mem_adjoin [Finite ι] {κ : Type*} {
   obtain ⟨D, hD⟩ := Finite.exists_le fun i ↦ (Q i).totalDegree
   rintro z ⟨c, P, hP, hz⟩
   refine ⟨c * D, fun j ↦ aeval Q (P j), fun j ↦ ?_, fun k ↦ ?_⟩
-  · refine (totalDegree_aeval_le hD _).trans ?_
+  · refine (totalDegree_aeval_le _ fun i _ ↦ hD i).trans ?_
     calc (P j).totalDegree * D ≤ c * (j + 1) * D := Nat.mul_le_mul_right _ (hP j)
       _ = c * D * (j + 1) := by ring
   · have hQ' : (fun i ↦ aeval y (Q i)) = x := funext hQ

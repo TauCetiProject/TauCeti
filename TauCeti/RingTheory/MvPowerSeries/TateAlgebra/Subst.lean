@@ -155,11 +155,15 @@ theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomia
   have hdeg (d : σ →₀ ℕ) (e : τ →₀ ℕ) (he : (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0) :
       ρ' ^ e.degree ≤ ρ ^ d.degree := by
     have hle : e.degree ≤ A * d.degree := by
-      have h := MvPolynomial.totalDegree_aeval_le hA (MvPolynomial.monomial d (1 : R))
+      have h := MvPolynomial.totalDegree_aeval_le (MvPolynomial.monomial d (1 : R))
+        fun s _ ↦ hA s
       rw [MvPolynomial.aeval_monomial, map_one, one_mul] at h
+      have hd : (MvPolynomial.monomial d (1 : R)).totalDegree ≤ d.degree := by
+        refine (MvPolynomial.totalDegree_monomial_le d 1).trans_eq ?_
+        rw [Finsupp.degree_apply, Finsupp.sum]
+        simp only [id]
       exact (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans <|
-        h.trans <| (Nat.mul_le_mul_right A (MvPolynomial.totalDegree_monomial_le d 1)).trans_eq
-          (mul_comm _ _)
+        h.trans <| (Nat.mul_le_mul_right A hd).trans_eq (mul_comm _ _)
     calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
       _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
       _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _

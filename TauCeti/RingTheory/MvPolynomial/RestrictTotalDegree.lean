@@ -271,7 +271,7 @@ theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R
     (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
     (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
   rw [mem_restrictTotalDegree] at hp ⊢
-  exact (totalDegree_aeval_le hf p).trans ((mul_one _).trans_le hp)
+  exact (totalDegree_aeval_le p fun i _ ↦ hf i).trans ((mul_one _).trans_le hp)
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
