@@ -122,21 +122,25 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
 /-- Pulling a rough form back along the inverse of a `C^n` partial diffeomorphism (`n ≠ 0`) and
 then along the partial diffeomorphism itself recovers the form at every point of its source. -/
+@[simp]
 theorem mpullback_mpullback_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
     (ω : RoughForm I M V k) {x : M} (hx : x ∈ φ.source) :
-    mpullback I I' φ (mpullback I' I φ.symm ω) x = ω x := by
+    mpullback I I' φ (mpullback I' I φ.toPartialEquiv.symm ω) x = ω x := by
   have hid : φ.symm ∘ φ =ᶠ[𝓝 x] id :=
     eventually_of_mem (φ.open_source.mem_nhds hx) fun _ hx' ↦ φ.left_inv hx'
-  rw [← mpullback_comp_at (φ.mdifferentiableAt hn hx)
+  rw [← PartialDiffeomorph.symm_toPartialEquiv,
+    ← mpullback_comp_at (φ.mdifferentiableAt hn hx)
       (φ.symm.mdifferentiableAt hn (φ.map_source hx)),
     hid.mpullback_eq, mpullback_id]
 
 /-- Pulling a rough form back along a `C^n` partial diffeomorphism (`n ≠ 0`) and then along its
 inverse recovers the form at every point of its target. -/
+@[simp]
 theorem mpullback_symm_mpullback (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
     (ω : RoughForm I' M' V k) {y : M'} (hy : y ∈ φ.target) :
-    mpullback I' I φ.symm (mpullback I I' φ ω) y = ω y :=
-  φ.symm.mpullback_mpullback_symm hn ω hy
+    mpullback I' I φ.toPartialEquiv.symm (mpullback I I' φ ω) y = ω y := by
+  simpa only [PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_symm] using
+    φ.symm.mpullback_mpullback_symm hn ω hy
 
 /-- Pulling the restriction of a rough form to `φ.target` back along
 `φ.toDiffeomorphSourceTarget` equals restricting the pullback `φ^* β` to `φ.source`. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.StandardCompatible
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 
 /-!
 # The radial Liouville structure of a symplectic vector space
@@ -22,14 +24,21 @@ with `dλ = ω` (`TauCeti.SymplecticForm.mextDeriv_radialPrimitive`). Its Liouvi
 the position field, `ι_Z ω = λ` for `Z(x) = x / 2`
 (`TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`).
 
+On `V × V` for any real inner product space `V`, the canonical momentum one-form
+`TauCeti.innerProductMomentumForm` (`⟪p, dq⟫`) is built similarly from
+`ContinuousLinearMap.liouvilleFormCLM` and has exterior derivative `-TauCeti.stdSymplecticForm`.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.radialPrimitive`: the one-form `λₓ(v) = ω(x, v) / 2`.
+* `TauCeti.innerProductMomentumForm`: the momentum one-form `⟪p, dq⟫` on `V × V`.
 
 ## Main results
 
 * `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`.
 * `TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`: `ι_Z ω = λ` for `Z(x) = x / 2`.
+* `TauCeti.innerProductMomentumForm_apply`: evaluation of `⟪p, dq⟫`.
+* `TauCeti.mextDeriv_innerProductMomentumForm_apply`: `d⟪p, dq⟫ = -stdSymplecticForm`.
 
 ## References
 
@@ -108,5 +117,68 @@ theorem constSmooth_interior_two_inv_smul :
   exact (LinearMap.map_smul₂ ω.toBilinForm _ x (v 0)).trans (smul_eq_mul _ _)
 
 end SymplecticForm
+
+section InnerProductMomentumForm
+
+open scoped InnerProductSpace
+
+/-- The standard momentum one-form `⟪p, dq⟫` on `V × V`, constructed as the radial primitive
+(`ContinuousLinearMap.liouvilleFormCLM`) of `2 • ((q, p), (u, v)) ↦ ⟪p, u⟫`. Its exterior
+derivative is `-TauCeti.stdSymplecticForm`
+(`TauCeti.mextDeriv_innerProductMomentumForm_apply`). -/
+def innerProductMomentumForm (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    SmoothForm 𝓘(ℝ, V × V) (V × V) ℝ 1 :=
+  ⟨(ContinuousLinearMap.liouvilleFormCLM
+      ((2 : ℝ) • ((innerSL ℝ).bilinearComp (ContinuousLinearMap.snd ℝ V V)
+        (ContinuousLinearMap.fst ℝ V V))) : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ),
+    (isSmoothForm_modelSpace_iff.2
+      (ContinuousLinearMap.liouvilleFormCLM _).contDiff).mem_smoothBundleForms⟩
+
+/-- Unfolding lemma for the underlying rough form of `innerProductMomentumForm V`. -/
+private theorem innerProductMomentumForm_toRoughForm (V : Type*) [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] :
+    (innerProductMomentumForm V).val =
+      (ContinuousLinearMap.liouvilleFormCLM
+        ((2 : ℝ) • ((innerSL ℝ).bilinearComp (ContinuousLinearMap.snd ℝ V V)
+          (ContinuousLinearMap.fst ℝ V V))) : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ) :=
+  rfl
+
+/-- `innerProductMomentumForm V` evaluates a tangent vector `v` at `(q, p)` as `⟪p, v.fst⟫`. -/
+@[simp]
+theorem innerProductMomentumForm_apply {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (x : V × V) (v : TangentSpace 𝓘(ℝ, V × V) x) :
+    (innerProductMomentumForm V).val x ![v] =
+      ⟪x.snd, (NormedSpace.fromTangentSpace x v).fst⟫_ℝ := by
+  rw [innerProductMomentumForm_toRoughForm]
+  -- `TangentSpace 𝓘(ℝ, V × V) x` is definitionally `V × V`, and `NormedSpace.fromTangentSpace x`
+  -- is the definitional identity on that carrier.
+  refine (ContinuousLinearMap.liouvilleFormCLM_apply _ x
+    ![NormedSpace.fromTangentSpace x v]).trans ?_
+  simp only [smul_apply, ContinuousLinearMap.bilinearComp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', innerSL_apply_apply,
+    Matrix.cons_val_zero, smul_eq_mul]
+  ring
+
+/-- The exterior derivative of `innerProductMomentumForm V` is `-stdSymplecticForm`. -/
+theorem mextDeriv_innerProductMomentumForm_apply {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (y : V × V) (u w : TangentSpace 𝓘(ℝ, V × V) y) :
+    mextDeriv (innerProductMomentumForm V).val y ![u, w] =
+      -stdSymplecticForm (NormedSpace.fromTangentSpace y u)
+        (NormedSpace.fromTangentSpace y w) := by
+  -- On the model space `V × V`, `mextDeriv` coincides with `extDeriv`, `TangentSpace 𝓘(ℝ, V × V) y`
+  -- is definitionally `V × V` with `NormedSpace.fromTangentSpace y` as the identity, and the
+  -- trivial fibre `Bundle.Trivial (V × V) ℝ y` is definitionally `ℝ`.
+  refine (congrArg (fun (A : (V × V) [⋀^Fin 2]→L[ℝ] ℝ) ↦
+      A ![NormedSpace.fromTangentSpace y u, NormedSpace.fromTangentSpace y w])
+    (mextDeriv_eq_extDeriv (innerProductMomentumForm V).val y)).trans ?_
+  rw [innerProductMomentumForm_toRoughForm, ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
+  simp only [smul_apply, ContinuousLinearMap.bilinearComp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', innerSL_apply_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, smul_eq_mul,
+    stdSymplecticForm_apply]
+  rw [real_inner_comm (NormedSpace.fromTangentSpace y w).snd]
+  ring
+
+end InnerProductMomentumForm
 
 end TauCeti

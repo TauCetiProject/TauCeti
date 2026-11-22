@@ -184,6 +184,7 @@ theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E'
 
 /-- For a smooth map `f : L → W`, the product map `Prod.map f id : L × ℝ → W × ℝ` pulls the
 contactization form `dz - θ` back to the contactization form `dz - f^* θ`. -/
+@[simp]
 theorem mpullback_prodMap_id_contactization {E' H' L : Type*} [NormedAddCommGroup E']
     [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace L]
     [ChartedSpace H' L] [IsManifold J ∞ L] (θ : SmoothForm I W ℝ 1) {f : L → W}

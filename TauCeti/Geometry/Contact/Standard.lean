@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Geometry.Contact.Contactization
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Contact.Reeb
+public import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Symplectic.Liouville.Radial
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The standard contact forms
@@ -61,7 +65,9 @@ For `V = ℝ` this is the form `dz - x dy` above in the coordinates `(q, p, z) =
 (`TauCeti.mpullback_innerProductContactForm_real`). The linear map
 `(q, p, z) ↦ (q, -p, -z)` preserves the contact structure and reverses its coorientation,
 pulling `α` back to `-α`
-(`TauCeti.mpullback_innerProductContactForm_neg`).
+(`TauCeti.mpullback_innerProductContactForm_neg`), and reassociating `((q, p), z) ↦ (q, p, z)`
+pulls `α` back to the contactization of `TauCeti.innerProductMomentumForm`
+(`TauCeti.mpullback_prodAssocSymmSelf_symm_innerProductContactForm`).
 
 ## References
 
@@ -375,6 +381,7 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
 
 /-- The Reeb vector field of the standard contact form `dz - ⟪p, dq⟫` on `V × V × ℝ` is the
 constant vector `(0, 0, 1)`. No finite-dimensionality of `V` is needed. -/
+@[simp]
 theorem reebVectorField_innerProductContactForm (x : V × V × ℝ) :
     (innerProductContactForm V).reebVectorField x =
       (NormedSpace.fromTangentSpace x).symm (0, 0, 1) := by
@@ -387,11 +394,10 @@ theorem reebVectorField_innerProductContactForm (x : V × V × ℝ) :
     simp [stdSymplecticForm_apply]
 
 /-- Read in `V × V × ℝ`, the Reeb vector field of `dz - ⟪p, dq⟫` is `(0, 0, 1)`. -/
-@[simp]
 theorem fromTangentSpace_reebVectorField_innerProductContactForm (x : V × V × ℝ) :
     NormedSpace.fromTangentSpace x ((innerProductContactForm V).reebVectorField x) =
       (0, 0, 1) := by
-  rw [reebVectorField_innerProductContactForm, ContinuousLinearEquiv.apply_symm_apply]
+  simp
 
 /-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
@@ -467,6 +473,39 @@ theorem mpullback_innerProductContactForm_neg :
     mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2))
       (innerProductContactForm V).val = (-innerProductContactForm V).val := by
   simpa [← Prod.neg_mk] using mpullback_innerProductContactForm_smul V (-1)
+
+/-- Reassociating `((q, p), t) ↦ (q, p, t)` pulls `innerProductContactForm V` back to the
+contactization form `dz - ⟪p, dq⟫` of `innerProductMomentumForm V`. -/
+theorem mpullback_prodAssocSymmSelf_symm_innerProductContactForm :
+    SmoothForm.mpullback (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm
+        (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm.contMDiff (innerProductContactForm V) =
+      (innerProductMomentumForm V).contactization := by
+  apply Subtype.ext; funext p; refine ContinuousAlternatingMap.ext_fin_one fun u ↦ ?_
+  let g₁ : (V × V) →L[ℝ] V × V × ℝ :=
+    (ContinuousLinearMap.fst ℝ V V).prod ((ContinuousLinearMap.snd ℝ V V).prod 0)
+  let g₂ : ℝ →L[ℝ] V × V × ℝ :=
+    (0 : ℝ →L[ℝ] V).prod ((0 : ℝ →L[ℝ] V).prod (ContinuousLinearMap.id ℝ ℝ))
+  have h_eq : ⇑(Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm =
+      ⇑g₁ ∘ Prod.fst + ⇑g₂ ∘ Prod.snd := by
+    funext ⟨⟨q, r⟩, t⟩
+    simp [Diffeomorph.prodAssocSymmSelf_symm_apply, g₁, g₂]
+  have h1 (v : TangentSpace 𝓘(ℝ, V × V) p.fst) :
+      mvfderiv 𝓘(ℝ, V × V) g₁ p.fst v = g₁ v := by
+    rw [mvfderiv_eq_fderiv_apply, g₁.hasFDerivAt.fderiv]
+  have h2 (v : TangentSpace 𝓘(ℝ) p.snd) : mvfderiv 𝓘(ℝ) g₂ p.snd v = g₂ v := by
+    rw [mvfderiv_eq_fderiv_apply, g₂.hasFDerivAt.fderiv]
+  have hassoc_d :
+      mvfderiv (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm p u =
+        g₁ u.fst + g₂ u.snd := by
+    have h := mvfderiv_comp_fst_add_comp_snd_apply
+      (g₁.differentiable.mdifferentiable p.fst) (g₂.differentiable.mdifferentiable p.snd) u
+    rw [← h_eq] at h
+    exact h.trans (congrArg₂ (· + ·) (h1 u.fst) (h2 u.snd))
+  rw [SmoothForm.mpullback_apply_one, innerProductContactForm_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, hassoc_d, SmoothForm.contactization_apply,
+    innerProductMomentumForm_apply, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply, Diffeomorph.prodAssocSymmSelf_symm_apply]
+  simp [g₁, g₂]
 
 end InnerProductSpace
 

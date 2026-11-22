@@ -18,8 +18,6 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
-import TauCeti.Geometry.Manifold.TwoForm.Kernel
-import TauCeti.Geometry.Symplectic.Liouville.Linear
 import TauCeti.Geometry.Symplectic.Manifold.Darboux
 import TauCeti.Logic.Equiv.PartialEquiv
 
@@ -62,18 +60,19 @@ of `TauCeti/Geometry/Contact/Darboux/Basic.lean`:
    (`TauCeti.SmoothForm.IsContactForm.isLocalDiffeomorphAt_flowOf_reebVectorField_comp`) and pulls
    `α₀` back to the contactization form `dt + β` (`(-β).contactization`), where `β` is the
    restriction of `α₀` to the slice (`TauCeti.mpullback_flowOf_comp_apply_eq_contactization`).
-3. Because `dβ` is closed and nondegenerate at the origin of the slice, and nondegeneracy is open
-   (`TauCeti.SmoothForm.isOpen_setOf_nondegenerate_bilinFormAt`), the symplectic Darboux theorem
-   (`TauCeti.SmoothTwoForm.IsSymplectic.exists_standardDarbouxChart`) provides slice coordinates
-   `ψ` into `ℝⁿ × ℝⁿ` pulling the standard symplectic form `Σᵢ dqᵢ ∧ dpᵢ` back to `dβ`.
+3. Because `dβ` is closed and nondegenerate at the origin of the slice, the symplectic Darboux
+   theorem (`TauCeti.SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint`)
+   provides slice coordinates `ψ` into `ℝⁿ × ℝⁿ` pulling the standard symplectic form
+   `Σᵢ dqᵢ ∧ dpᵢ` back to `dβ`.
 4. On the open submanifold `ψ.target` of `ℝⁿ × ℝⁿ`, the pushed-forward one-form `β_t = (ψ⁻¹)^* β`
-   and the standard primitive `⟪p, dq⟫` (`ContinuousLinearMap.liouvilleFormCLM`) have opposite
+   and the standard momentum form `⟪p, dq⟫` (`TauCeti.innerProductMomentumForm`) have opposite
    exterior derivatives, so `β_t + ⟪p, dq⟫` is closed. The Poincaré lemma
    (`TauCeti.exists_contMDiff_isPrimitiveOn`) supplies a smooth primitive on an open neighbourhood
    `B ⊆ ψ.target` of `0` vanishing at `0`. Absorbing this primitive into the Reeb-time coordinate
    via `TauCeti.contactizationShift` (`TauCeti.mpullback_contactizationShift_contactization`) and
-   reassociating `(ℝⁿ × ℝⁿ) × ℝ ≃ ℝⁿ × ℝⁿ × ℝ` pulls `dz - Σᵢ pᵢ dqᵢ` back to `dt + β`, completing
-   the chart.
+   reassociating `(ℝⁿ × ℝⁿ) × ℝ ≃ ℝⁿ × ℝⁿ × ℝ`
+   (`TauCeti.mpullback_prodAssocSymmSelf_symm_innerProductContactForm`) pulls `dz - Σᵢ pᵢ dqᵢ` back
+   to `dt + β`, completing the chart.
 
 ## Main results
 
@@ -250,13 +249,9 @@ private theorem exists_reebSliceChart_opens {W₀ : Opens E} (p₀ : W₀)
   let Φ' := Φ.restrOpen D hD
   let Ψ := Φ'.symm
   have hΦ'_src : Φ'.source = Φ.source ∩ D := Φ.restrOpen_source hD
-  have hfΦ : ∀ q ∈ Φ.source, F q = Φ q := fun q hq ↦ by
-    have h1 : F (hloc.localInverse (Φ q)) = Φ q := hloc.localInverse_right_inv (Φ.map_source hq)
-    have h2 : hloc.localInverse (Φ q) = q := Φ.left_inv hq
-    rwa [h2] at h1
   have hs₀_src : (s₀, (0 : ℝ)) ∈ Φ'.source := hΦ'_src ▸ ⟨hloc.localInverse_mem_target, h0_dom⟩
   have hΦ'_zero : Φ' (s₀, 0) = p₀ := by
-    rw [PartialDiffeomorph.coe_restrOpen, ← hfΦ (s₀, 0) hloc.localInverse_mem_target]
+    rw [PartialDiffeomorph.coe_restrOpen, hloc.localInverse_symm_apply hloc.localInverse_mem_target]
     dsimp only [F]
     rw [flowOf_zero, hι_s₀]
   refine ⟨K, S_K, s₀, β, Ψ, hdimK, hnd₀, hΦ'_zero ▸ Φ'.map_source hs₀_src,
@@ -264,13 +259,14 @@ private theorem exists_reebSliceChart_opens {W₀ : Opens E} (p₀ : W₀)
   have hΨp : Ψ p ∈ Φ'.source := Ψ.map_source hp
   have hev_F : F =ᶠ[𝓝 (Ψ p)] Φ' := eventually_of_mem (Φ'.open_source.mem_nhds hΨp) fun q hq ↦ by
     rw [PartialDiffeomorph.coe_restrOpen]
-    exact hfΦ q (hΦ'_src ▸ hq).left
+    exact (hloc.localInverse_symm_apply (hΦ'_src ▸ hq).left).symm
   have hpull_symm : mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, E) Φ' α₀.val (Ψ p) =
       (-β).contactization.val (Ψ p) := by
     rw [hev_F.symm.mpullback_eq]
     exact mpullback_flowOf_comp_apply_eq_contactization hα₀.contMDiff_reebVectorField hι_K
       hα₀.apply_reebVectorField hα₀.interior_mextDeriv_reebVectorField (hΦ'_src ▸ hΨp).right
-  rw [← hpull_symm, ← mpullback_apply_one, Φ'.mpullback_symm_mpullback (by simp) α₀.val hp]
+  rw [← hpull_symm, ← mpullback_apply_one, PartialDiffeomorph.symm_toPartialEquiv,
+    Φ'.mpullback_symm_mpullback (by simp) α₀.val hp]
 
 /-- Construct standard Euclidean symplectic Darboux coordinates `ψ : S_K → ℝⁿ × ℝⁿ` around a point
 `s₀` of an open subset `S_K : Opens K` where `dβ` is nondegenerate. -/
@@ -289,46 +285,25 @@ private theorem exists_symplecticSliceDarboux_opens {K : Type*} [NormedAddCommGr
             (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, K) ψ.symm z w) =
             stdSymplecticForm (NormedSpace.fromTangentSpace z u)
               (NormedSpace.fromTangentSpace z w) := by
-  let σ : SmoothTwoForm 𝓘(ℝ, K) S_K := mextDerivₗ 𝓘(ℝ, K) 1 β
-  let S₀ : Opens S_K := ⟨{s | (σ.bilinFormAt s).Nondegenerate},
-    σ.isOpen_setOf_nondegenerate_bilinFormAt⟩
-  let σ₀ : SmoothTwoForm 𝓘(ℝ, K) S₀ := SmoothForm.mpullback Subtype.val contMDiff_subtypeVal σ
-  have hσ₀ : σ₀.IsSymplectic := by
-    refine ⟨(SmoothForm.isClosed_mextDerivₗ β).mpullback _ _,
-      SmoothTwoForm.isNondegenerate_iff_separatingLeft.2 fun x v hv ↦ ?_⟩
-    apply (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, K)) x).injective
-    rw [map_zero]
-    refine x.property.left _ fun w ↦ ?_
-    have h := hv ((Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, K)) x).symm w)
-    rwa [SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, ← SmoothForm.bilinFormAt_apply] at h
-  obtain ⟨n, ψ₀, hs₀', h0', hchart₀⟩ := hσ₀.exists_standardDarbouxChart ⟨s₀, hnd₀⟩
-  obtain ⟨ψ, hs₀, -, h0, ht_sub, hsymm⟩ := ψ₀.exists_ambient_of_opens hs₀'
+  obtain ⟨n, ψ, hs₀, h0, hchart⟩ :=
+    SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint
+      (SmoothForm.isClosed_mextDerivₗ β) hnd₀ BoundarylessManifold.isInteriorPoint
   have hdim : finrank ℝ K = 2 * n := by
     have hL : finrank ℝ K = finrank ℝ (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) :=
       ((ψ.isLocalDiffeomorphAt _ _ _ hs₀).mfderivToContinuousLinearEquiv
         (by simp)).toLinearEquiv.finrank_eq
     rw [finrank_prod, finrank_euclideanSpace_fin] at hL
     omega
-  refine ⟨n, ψ, hdim, hs₀, h0.trans h0', fun z hz u w ↦ ?_⟩
+  refine ⟨n, ψ, hdim, hs₀, h0, fun z hz u w ↦ ?_⟩
   let J := 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n))
-  have hz₀ : z ∈ ψ₀.target := ht_sub hz
-  have hx₀ : ψ₀.symm z ∈ ψ₀.source := ψ₀.map_target hz₀
-  have hev_symm : ψ.symm =ᶠ[𝓝 z] (Subtype.val : S₀ → S_K) ∘ ψ₀.symm :=
-    eventually_of_mem (ψ.open_target.mem_nhds hz) hsymm
   have hinv_d (a : TangentSpace J z) :
-      mvfderiv 𝓘(ℝ, K) ψ₀ (ψ₀.symm z) (mfderiv J 𝓘(ℝ, K) ψ₀.symm z a) =
+      mvfderiv 𝓘(ℝ, K) ψ (ψ.symm z) (mfderiv J 𝓘(ℝ, K) ψ.symm z a) =
         NormedSpace.fromTangentSpace z a := by
-    rw [mvfderiv_apply_eq_mfderiv_apply, ψ₀.mfderiv_apply_mfderiv_symm_apply (by simp) hz₀,
+    rw [mvfderiv_apply_eq_mfderiv_apply, ψ.mfderiv_apply_mfderiv_symm_apply (by simp) hz,
       NormedSpace.fromTangentSpace_apply]
-  have key := hchart₀ (ψ₀.symm z) hx₀ (mfderiv J 𝓘(ℝ, K) ψ₀.symm z u)
-    (mfderiv J 𝓘(ℝ, K) ψ₀.symm z w)
-  rw [hinv_d u, hinv_d w, SmoothBundleForm.eval₂_apply, SmoothForm.coe_mpullback,
-    ← mpullback_apply_pair,
-    ← mpullback_comp_at (ψ₀.symm.mdifferentiableAt (n := ∞) (by simp) hz₀)
-      ((contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp)),
-    ← hev_symm.mpullback_eq, mpullback_apply_pair, ← SmoothBundleForm.eval₂_apply] at key
-  exact key
+  have key := hchart (ψ.symm z) (ψ.map_target hz) (mfderiv J 𝓘(ℝ, K) ψ.symm z u)
+    (mfderiv J 𝓘(ℝ, K) ψ.symm z w)
+  rwa [hinv_d u, hinv_d w] at key
 
 /-- On `ψ.target`, the sum of the pushed-forward slice one-form `β` and a smooth primitive `θ` of
 `-ω₀` is closed. -/
@@ -495,92 +470,6 @@ private theorem mpullback_contactization_comp
     LinearMap.comp_apply, mpullback_contactizationShift_contactization hg hshift_eq,
     SmoothForm.mpullback_prodMap_id_contactization β he]
 
-/-- The standard momentum one-form `⟪p, dq⟫` on `V × V`, constructed as the radial primitive
-(`ContinuousLinearMap.liouvilleFormCLM`) of `2 • ((q, p), (u, v)) ↦ ⟪p, u⟫`. -/
-private def innerProductMomentumForm (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
-    SmoothForm 𝓘(ℝ, V × V) (V × V) ℝ 1 :=
-  ⟨(ContinuousLinearMap.liouvilleFormCLM
-      ((2 : ℝ) • ((innerSL ℝ).bilinearComp (ContinuousLinearMap.snd ℝ V V)
-        (ContinuousLinearMap.fst ℝ V V))) : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ),
-    (isSmoothForm_modelSpace_iff.2
-      (ContinuousLinearMap.liouvilleFormCLM _).contDiff).mem_smoothBundleForms⟩
-
-/-- Unfolding lemma for the underlying rough form of `innerProductMomentumForm V`. -/
-private theorem innerProductMomentumForm_toRoughForm (V : Type*) [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] :
-    (innerProductMomentumForm V).val =
-      (ContinuousLinearMap.liouvilleFormCLM
-        ((2 : ℝ) • ((innerSL ℝ).bilinearComp (ContinuousLinearMap.snd ℝ V V)
-          (ContinuousLinearMap.fst ℝ V V))) : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ) :=
-  rfl
-
-/-- `innerProductMomentumForm V` evaluates a tangent vector `v` at `(q, p)` as `⟪p, v.fst⟫`. -/
-private theorem innerProductMomentumForm_apply {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] (x : V × V) (v : TangentSpace 𝓘(ℝ, V × V) x) :
-    (innerProductMomentumForm V).val x ![v] =
-      ⟪x.snd, (NormedSpace.fromTangentSpace x v).fst⟫_ℝ := by
-  rw [innerProductMomentumForm_toRoughForm]
-  -- `TangentSpace 𝓘(ℝ, V × V) x` is definitionally `V × V`, and `NormedSpace.fromTangentSpace x`
-  -- is the definitional identity on that carrier.
-  refine (ContinuousLinearMap.liouvilleFormCLM_apply _ x
-    ![NormedSpace.fromTangentSpace x v]).trans ?_
-  simp only [smul_apply, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.coe_snd',
-    ContinuousLinearMap.coe_fst', innerSL_apply_apply, Matrix.cons_val_zero, smul_eq_mul]
-  ring
-
-/-- The exterior derivative of `innerProductMomentumForm V` is `-stdSymplecticForm`. -/
-private theorem mextDeriv_innerProductMomentumForm_apply {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] (y : V × V) (u w : TangentSpace 𝓘(ℝ, V × V) y) :
-    mextDeriv (innerProductMomentumForm V).val y ![u, w] =
-      -stdSymplecticForm (NormedSpace.fromTangentSpace y u)
-        (NormedSpace.fromTangentSpace y w) := by
-  -- On the model space `V × V`, `mextDeriv` coincides with `extDeriv`, `TangentSpace 𝓘(ℝ, V × V) y`
-  -- is definitionally `V × V` with `NormedSpace.fromTangentSpace y` as the identity, and the
-  -- trivial fibre `Bundle.Trivial (V × V) ℝ y` is definitionally `ℝ`.
-  refine (congrArg (fun (A : (V × V) [⋀^Fin 2]→L[ℝ] ℝ) ↦
-      A ![NormedSpace.fromTangentSpace y u, NormedSpace.fromTangentSpace y w])
-    (mextDeriv_eq_extDeriv (innerProductMomentumForm V).val y)).trans ?_
-  rw [innerProductMomentumForm_toRoughForm, ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
-  simp only [smul_apply, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.coe_snd',
-    ContinuousLinearMap.coe_fst', innerSL_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, smul_eq_mul, stdSymplecticForm_apply]
-  rw [real_inner_comm (NormedSpace.fromTangentSpace y w).snd]
-  ring
-
-/-- Reassociating `((q, p), t) ↦ (q, p, t)` pulls `innerProductContactForm V` back to the
-contactization form `dz - ⟪p, dq⟫` of `innerProductMomentumForm V`. -/
-private theorem mpullback_prodAssocSymmSelf_symm_innerProductContactForm (V : Type*)
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
-    SmoothForm.mpullback (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm
-        (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm.contMDiff (innerProductContactForm V) =
-      (innerProductMomentumForm V).contactization := by
-  apply Subtype.ext; funext p; refine ContinuousAlternatingMap.ext_fin_one fun u ↦ ?_
-  let g₁ : (V × V) →L[ℝ] V × V × ℝ :=
-    (ContinuousLinearMap.fst ℝ V V).prod ((ContinuousLinearMap.snd ℝ V V).prod 0)
-  let g₂ : ℝ →L[ℝ] V × V × ℝ :=
-    (0 : ℝ →L[ℝ] V).prod ((0 : ℝ →L[ℝ] V).prod (ContinuousLinearMap.id ℝ ℝ))
-  have h_eq : ⇑(Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm =
-      ⇑g₁ ∘ Prod.fst + ⇑g₂ ∘ Prod.snd := by
-    funext ⟨⟨q, r⟩, t⟩
-    simp [Diffeomorph.prodAssocSymmSelf_symm_apply, g₁, g₂]
-  have h1 (v : TangentSpace 𝓘(ℝ, V × V) p.fst) :
-      mvfderiv 𝓘(ℝ, V × V) g₁ p.fst v = g₁ v := by
-    rw [mvfderiv_eq_fderiv_apply, g₁.hasFDerivAt.fderiv]
-  have h2 (v : TangentSpace 𝓘(ℝ) p.snd) : mvfderiv 𝓘(ℝ) g₂ p.snd v = g₂ v := by
-    rw [mvfderiv_eq_fderiv_apply, g₂.hasFDerivAt.fderiv]
-  have hassoc_d :
-      mvfderiv (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm p u =
-        g₁ u.fst + g₂ u.snd := by
-    have h := mvfderiv_comp_fst_add_comp_snd_apply
-      (g₁.differentiable.mdifferentiable p.fst) (g₂.differentiable.mdifferentiable p.snd) u
-    rw [← h_eq] at h
-    exact h.trans (congrArg₂ (· + ·) (h1 u.fst) (h2 u.snd))
-  rw [SmoothForm.mpullback_apply_one, innerProductContactForm_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, hassoc_d, SmoothForm.contactization_apply,
-    innerProductMomentumForm_apply, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, Diffeomorph.prodAssocSymmSelf_symm_apply]
-  simp [g₁, g₂]
-
 /-- On an open neighbourhood `W_B ⊆ S_K` of `s₀`, construct a smooth local diffeomorphism
 `F : W_B × ℝ → ℝⁿ × ℝⁿ × ℝ` sending `(s₀, 0)` to `0` that pulls `innerProductContactForm` back to
 the restriction of `(-β).contactization` to `W_B × ℝ`. -/
@@ -708,13 +597,9 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
   have hs₀Ω : (s₀, (0 : ℝ)) ∈ Ω.source := by
     rw [PartialDiffeomorph.trans_source, mem_inter_iff, mem_preimage, hW_q₀]
     exact ⟨hloc_W.localInverse_mem_source, hloc_F.localInverse_mem_target⟩
-  have hF_symm_eq {z : W_B × ℝ} (hz : z ∈ hloc_F.localInverse.symm.source) :
-      hloc_F.localInverse.symm z = F z :=
-    (hloc_F.localInverse_right_inv (hloc_F.localInverse.symm.map_source hz)).symm.trans
-      (congrArg F (hloc_F.localInverse.right_inv hz))
   have hΩ₀ : Ω (s₀, 0) = 0 := by
     rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hW_q₀,
-      hF_symm_eq hloc_F.localInverse_mem_target, hF_q₀]
+      hloc_F.localInverse_symm_apply hloc_F.localInverse_mem_target, hF_q₀]
   refine ⟨Ω, hs₀Ω, hΩ₀, fun x hx u ↦ ?_⟩
   have hx' : x ∈ hloc_W.localInverse.source ∧
       hloc_W.localInverse x ∈ hloc_F.localInverse.symm.source := by
@@ -727,7 +612,7 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
     filter_upwards [(hloc_W.localInverse.open_target.inter
       hloc_F.localInverse.symm.open_source).mem_nhds ⟨hy_tgt, hy_F⟩] with z hz
     rw [Function.comp_apply, PartialDiffeomorph.coe_trans, Function.comp_apply,
-      hloc_W.localInverse_left_inv hz.left, hF_symm_eq hz.right]
+      hloc_W.localInverse_left_inv hz.left, hloc_F.localInverse_symm_apply hz.right]
   have hpull_eq : mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) (𝓘(ℝ, K).prod 𝓘(ℝ)) inc_W
       (mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, V × V × ℝ) Ω (innerProductContactForm V).val) y =
       mpullback (𝓘(ℝ, K).prod 𝓘(ℝ)) (𝓘(ℝ, K).prod 𝓘(ℝ)) inc_W (-β).contactization.val y := by

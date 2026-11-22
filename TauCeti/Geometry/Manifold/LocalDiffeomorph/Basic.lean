@@ -52,6 +52,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
 
 ## Main results
 
+* `IsLocalDiffeomorphAt.localInverse_symm_apply`: the inverse of a local inverse agrees with the
+  original map on its target.
 * `IsLocalDiffeomorph.coe_diffeomorphOfBijective`: the associated global diffeomorphism
   has the original forward map.
 * `OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas`: extend any maximal-atlas chart
@@ -210,6 +212,15 @@ theorem _root_.IsLocalDiffeomorph.coe_diffeomorphOfBijective
     {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hf' : Function.Bijective f) :
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
+
+/-- The inverse of `hf.localInverse` agrees with `f` on `hf.localInverse.target`. -/
+theorem _root_.IsLocalDiffeomorphAt.localInverse_symm_apply
+    {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
+    {f : M → N} {x : M} (hf : IsLocalDiffeomorphAt I J n f x) {x' : M}
+    (hx' : x' ∈ hf.localInverse.target) :
+    hf.localInverse.symm x' = f x' :=
+  (hf.localInverse_right_inv (hf.localInverse.symm.map_source hx')).symm.trans
+    (congrArg f (hf.localInverse.right_inv hx'))
 
 /-- Precomposing a map with a `C^n` local diffeomorphism, `n ≠ 0`, does not change the image of its
 differential. No differentiability of `g` is assumed: when `g` is not differentiable at `φ x`,
