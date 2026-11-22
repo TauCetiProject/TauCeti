@@ -24,9 +24,10 @@ The quotient is right division: multiplication need not be commutative. For orde
 the ratio formulation also supports order arguments.
 
 If `(σ - a) • f(σ)` is bounded along a filter on a normed division ring `𝕜` that eventually
-avoids `a`, for instance because it has a limit, then `f(σ) = O((σ - a)⁻¹)` along it. Here `𝕜`
-acts on the values of `f` by a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as every bounded
-action does. On the real line, for `a = 1` and the right-sided limit `σ → 1⁺`, this is the growth
+avoids `a`, then `f(σ) = O((σ - a)⁻¹)` along it. When the values of `f` lie in a seminormed group,
+whose norm is continuous, a limit of `(σ - a) • f(σ)` gives this boundedness. Here `𝕜` acts on
+the values of `f` by a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as every bounded action
+does. On the real line, for `a = 1` and the right-sided limit `σ → 1⁺`, this is the growth
 bound near `s = 1` of a Dedekind zeta function or an `L`-series with a simple pole there, read off
 from the limit of `(s - 1) L(s)` along the real axis.
 
@@ -54,11 +55,11 @@ soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic
 an explicit inequality valid at every point, which a summation argument can apply at infinitely
 many points at once. The interval bounds hold when the dominated function is bounded on the
 intervals `[a, b]` and the dominating one is bounded away from zero. They also hold when closed
-intervals are compact and both functions are continuous on the half-line, where the norm of the
-dominating function does not vanish: this covers exponentially decaying majorants such as
-`exp (-p x)`. For the slowly decaying majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local
-boundedness of `f` on compact intervals alone suffices, covering step functions such as summatory
-functions.
+intervals are compact and both functions take values in seminormed groups and are continuous on
+the half-line, where the norm of the dominating function does not vanish: this covers
+exponentially decaying majorants such as `exp (-p x)`. For the slowly decaying majorant
+`(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact intervals alone suffices,
+covering step functions such as summatory functions.
 
 If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a radius `q > 0`, then at
 a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
@@ -94,7 +95,8 @@ evaluations of elliptic integrals.
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below on `[a, ∞)` by a positive
   constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
-  intervals are compact, `f` and `g` are continuous on `[a, ∞)` and `‖g‖` does not vanish there.
+  intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
+  `[a, ∞)`, and `‖g‖` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -129,12 +131,13 @@ theorem isLittleO_sub_mul_iff_tendsto_div {α 𝕜 : Type*} [NormedDivisionRing 
 
 /-- **A bounded `(σ - a) • f(σ)` bounds `f` by `(σ - a)⁻¹`.** If `(σ - a) • f(σ) = O(1)` along a
 filter `l` on a normed division ring `𝕜` on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)`
-along `l`. The boundedness holds in particular when `(σ - a) • f(σ)` has a limit along `l`
-(`Filter.Tendsto.isBigO_one`). The action of `𝕜` need only be a multiplicative action with
-`‖c • x‖ ≤ ‖c‖ * ‖x‖`, as `norm_smul_le` gives for any bounded action. Typical choices of `l` are
-the one-sided and punctured neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is
-how such a bound is usually obtained for a Dedekind zeta function or an `L`-series near `s = 1`,
-from the limit of `(s - 1) L(s)` along the real axis. -/
+along `l`. The boundedness holds in particular when the values of `f` lie in a seminormed group,
+whose norm is continuous, and `(σ - a) • f(σ)` has a limit along `l` (`Filter.Tendsto.isBigO_one`).
+The action of `𝕜` need only be a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as
+`norm_smul_le` gives for any bounded action. Typical choices of `l` are the one-sided and punctured
+neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is how such a bound is
+usually obtained for a Dedekind zeta function or an `L`-series near `s = 1`, from the limit of
+`(s - 1) L(s)` along the real axis. -/
 theorem isBigO_inv_sub_of_sub_smul_isBigO_one {𝕜 E : Type*} [NormedDivisionRing 𝕜] [Norm E]
     [MulAction 𝕜 E] (hb : ∀ (c : 𝕜) (x : E), ‖c • x‖ ≤ ‖c‖ * ‖x‖)
     {l : Filter 𝕜} {f : 𝕜 → E} {a : 𝕜} (hne : ∀ᶠ σ in l, σ ≠ a)
@@ -264,10 +267,10 @@ theorem IsBigO.isBigO_principal_Ici {ι E F : Type*} [LinearOrder ι] [Norm E] [
       exact mul_le_mul_of_nonneg_left (hg x hx.1) (le_max_right _ _)
 
 /-- **An eventual big-O bound holds on a whole half-line, continuous version.** In a linear
-order whose closed intervals are compact, if `f = O(g)` at `atTop`, both functions are continuous
-on `[a, ∞)` and `‖g‖` does not vanish there, then `f = O(g)` uniformly on `[a, ∞)`. Unlike
-`IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero, as for an exponentially decaying
-majorant. -/
+order whose closed intervals are compact, if `f = O(g)` at `atTop`, both functions take values in
+seminormed groups and are continuous on `[a, ∞)`, and `‖g‖` does not vanish there, then
+`f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
+as for an exponentially decaying majorant. -/
 theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrder ι]
     [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [SeminormedAddGroup F]
     {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g) (hf : ContinuousOn f (Set.Ici a))
