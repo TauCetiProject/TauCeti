@@ -26,6 +26,9 @@ A continuous injection on a compact set `K` restricts to a closed embedding of `
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
 (`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
 eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it.
+
+A nonempty compact set totally ordered by specialization contains a point specializing all of its
+points (`IsCompact.exists_forall_specializes`).
 -/
 
 public section
@@ -289,6 +292,25 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
     (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
   exact hwU (h w hwS (by simpa [image_singleton] using
     hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
+/-- A nonempty compact set whose points are pairwise comparable for specialization contains a
+point that is a specialization of each of its points. This is the analogue of
+`IsCompact.exists_isGreatest` for the specialization preorder, which need not be linear and in
+which `closure {x}` plays the role of the closed interval `Set.Ici x`. -/
+theorem _root_.IsCompact.exists_forall_specializes {K : Set X} (hK : IsCompact K)
+    (hne : K.Nonempty) (hc : IsChain (· ⤳ ·) K) : ∃ x ∈ K, ∀ y ∈ K, y ⤳ x := by
+  have : Nonempty K := hne.to_subtype
+  suffices (K ∩ ⋂ y : K, closure {y.val}).Nonempty by
+    obtain ⟨x, hxK, hx⟩ := this
+    exact ⟨x, hxK, fun y hy ↦ specializes_iff_mem_closure.2 (mem_iInter.1 hx ⟨y, hy⟩)⟩
+  by_contra H
+  rw [not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty] at H
+  have hdir : Directed (· ⊇ ·) fun y : K ↦ closure {y.val} := fun y z ↦ by
+    rcases hc.total y.property z.property with h | h
+    · exact ⟨z, specializes_iff_closure_subset.1 h, subset_rfl⟩
+    · exact ⟨y, subset_rfl, specializes_iff_closure_subset.1 h⟩
+  obtain ⟨y, hy⟩ := hK.elim_directed_family_closed _ (fun _ ↦ isClosed_closure) H hdir
+  exact disjoint_left.1 hy y.property (subset_closure rfl)
 
 /-- If maps `f i` converge to `g` continuously at every point of a compact set `A`, that is
 `f p.1 p.2 → g a` as `p → (l, a)`, and `g` maps `A` into an open set `t`, then eventually along
