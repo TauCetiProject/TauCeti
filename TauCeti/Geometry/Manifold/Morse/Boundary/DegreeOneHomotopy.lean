@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Commutation
-public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Data.Set.Card
-import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 
 /-!
 # Mod-two chain homotopies counting trajectories of index `-1`
@@ -47,12 +45,8 @@ commutes with the Morse boundaries (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_
 graded degree-one map is a chain homotopy from `φ` to the continuation morphism of `V`
 (`TauCeti.morseDegreeOneHomotopy`).
 
-**Product fields.** Under the Morse–Smale condition, the Morse index does not rise along the space
-component of a trajectory of a product field `(X x, Y b)`
-(`manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField`, in the namespace
-`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`).
-The degree-one map vanishes when the slices between critical points whose indices differ by one are
-empty (`TauCeti.morseDegreeOneMap_eq_zero_of_slice_eq_empty`).
+**Vanishing.** The degree-one map vanishes when the slices between critical points whose indices
+differ by one are empty (`TauCeti.morseDegreeOneMap_eq_zero_of_slice_eq_empty`).
 
 ## Main declarations
 
@@ -541,33 +535,5 @@ theorem morseDegreeOneHomotopy_hom (φ : h₀.morseComplex hf₀ ⟶ h₁.morseC
   (rfl)
 
 end Homotopy
-
-/-! ### Product fields -/
-
-namespace IsAdaptedPseudoGradient.IsMorseSmale
-
-variable {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-  {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-
-include h hf in
-/-- **The Morse index does not rise along a trajectory of a product field.** Under the Morse–Smale
-condition, if an integral curve of the product field `(X x, Y b)` on `M × N` runs from `(p, b)` to
-`(q, b')`, then `ind q ≤ ind p`: its space component is a trajectory of `X` from `p` to `q`. -/
-theorem manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField
-    {Y : (b : N) → TangentSpace J b} {γ : ℝ → M × N}
-    (hγ : IsMIntegralCurve γ (Manifold.prodVectorField X Y)) {p q : M} {b b' : N}
-    (hp : Tendsto γ atBot (𝓝 (p, b))) (hq : Tendsto γ atTop (𝓝 (q, b'))) :
-    manifoldMorseIndex 𝓘(ℝ, E) f q ≤ manifoldMorseIndex 𝓘(ℝ, E) f p := by
-  rcases eq_or_ne p q with rfl | hpq
-  · exact le_rfl
-  obtain ⟨hy, -⟩ := hX.mem_unstableSet_inter_stableSet_of_isMIntegralCurve
-    (Manifold.isMIntegralCurve_prodVectorField_iff.1 hγ).1
-    ((continuous_fst.tendsto _).comp hp) ((continuous_fst.tendsto _).comp hq)
-  exact (h.manifoldMorseIndex_lt hf hpq ⟨_, hy⟩).le
-
-end IsAdaptedPseudoGradient.IsMorseSmale
 
 end TauCeti
