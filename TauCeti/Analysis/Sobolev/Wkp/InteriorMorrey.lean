@@ -45,8 +45,9 @@ Let `V` be open with compact closure in `Ω`.
 
 * If `n / 2 < p < n`, the interior Sobolev embedding of order two
   (`TauCeti.Wkp.exists_sobolevEmbeddingL_of_isCompact_closure`) puts `u` in `W^{1,p⋆}(V)`, where
-  `1 / p⋆ = 1 / p - 1 / n`. Then `p⋆ > n` exactly because `p > n / 2`, and Morrey's exponent is
-  `1 - n / p⋆ = 2 - n / p`.
+  `1 / p⋆ = 1 / p - 1 / n`
+  (`TauCeti.Wkp.exists_w1p_value_ae_eq_of_isCompact_closure_of_lt_finrank`). Then `p⋆ > n`
+  exactly because `p > n / 2`, and Morrey's exponent is `1 - n / p⋆ = 2 - n / p`.
 * If `n ≤ p`, every `W^{1,p}(Ω)` function lies in `L^q(V)` for every finite `q`
   (`TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`), and the first weak derivatives
   `∂ᵥu` of `u` lie in `W^{1,p}(Ω)` (`TauCeti.Wkp.exists_hasWeakLineDerivOn_value`), so `u`
@@ -66,6 +67,9 @@ derivative is the sum of their `(1 - n / p)`-Hölder continuous coordinates.
 
 * `TauCeti.Wkp.exists_w1p_value_ae_eq_of_isCompact_closure`: `W^{2,p}(Ω) ⊆ W^{1,q}(V)` for every
   finite `q ≥ 1`, when `n ≤ p` and `V` is open with compact closure in `Ω`.
+* `TauCeti.Wkp.exists_w1p_value_ae_eq_of_isCompact_closure_of_lt_finrank`:
+  `W^{2,p}(Ω) ⊆ W^{1,p⋆}(V)`, `1 / p⋆ = 1 / p - 1 / n`, when `p < n` and `V` is open with compact
+  closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n < 2 p`, is continuous on `Ω`.
 * `TauCeti.Wkp.abs_preciseRepresentative_le`: an almost-everywhere bound `|u| ≤ M` on an open
@@ -122,11 +126,27 @@ theorem Wkp.exists_w1p_value_ae_eq_of_isCompact_closure (hp : (finrank ℝ E : �
     fun v => (hd v).mono hV
   exact ⟨w, by simpa only [Wkp.value_one] using hw⟩
 
+/-- **`W^{2,p}(Ω) ⊆ W^{1,p⋆}(V)` for `p < n`.** Let `p < n`, where `n` is the dimension, let
+`1 / p⋆ = 1 / p - 1 / n`, and let `V` be an open set with compact closure in `Ω`. Then `1 ≤ p⋆`, and
+every `u ∈ W^{2,p}(Ω)` agrees almost everywhere on `V` with an element of `W^{1,p⋆}(V)`. -/
+theorem Wkp.exists_w1p_value_ae_eq_of_isCompact_closure_of_lt_finrank
+    (hpn : p < finrank ℝ E) (u : Wkp mu Omega p 2) {V : Opens E}
+    (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Omega) :
+    ∃ (_ : Fact (1 ≤ (p⁻¹ - (finrank ℝ E : ℝ≥0∞)⁻¹)⁻¹)),
+      ∃ w : W1p mu V (p⁻¹ - (finrank ℝ E : ℝ≥0∞)⁻¹)⁻¹,
+        W1p.value w =ᵐ[mu.restrict V] Wkp.value 2 u := by
+  have hinv : (finrank ℝ E : ℝ≥0∞)⁻¹ < p⁻¹ := ENNReal.inv_lt_inv.2 hpn
+  have hexp : (p⁻¹ - (finrank ℝ E : ℝ≥0∞)⁻¹)⁻¹⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹ := by
+    rw [inv_inv, tsub_add_cancel_of_le hinv.le]
+  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  obtain ⟨T, hT⟩ := Wkp.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu)
+    (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hinv).ne') hexp hVc hVΩ 1
+  exact ⟨inferInstance, T u, by simpa only [Wkp.value_one] using hT u⟩
+
 /-- The exponent bookkeeping below the dimension: if `n / 2 < p < n` and `1 / p⋆ = 1 / p - 1 / n`,
-then `p⋆` is finite, satisfies the Sobolev relation `1 / p⋆ + 1 / n = 1 / p`, exceeds `n`, and has
-Morrey exponent `1 - n / p⋆ = 2 - n / p`. -/
+then `p⋆` exceeds `n` and has Morrey exponent `1 - n / p⋆ = 2 - n / p`. -/
 private theorem exponent_facts_of_lt {n : ℝ≥0∞} (hn : n ≠ ⊤) (hp2 : n < 2 * p) (hpn : p < n) :
-    (p⁻¹ - n⁻¹)⁻¹ ≠ ⊤ ∧ (p⁻¹ - n⁻¹)⁻¹⁻¹ + n⁻¹ = p⁻¹ ∧ n < (p⁻¹ - n⁻¹)⁻¹ ∧
+    n < (p⁻¹ - n⁻¹)⁻¹ ∧
       ((1 : ℝ≥0∞) - n / (p⁻¹ - n⁻¹)⁻¹).toNNReal = ((2 : ℝ≥0∞) - n / p).toNNReal := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
@@ -138,8 +158,7 @@ private theorem exponent_facts_of_lt {n : ℝ≥0∞} (hn : n ≠ ⊤) (hp2 : n 
     rw [← two_mul, ← div_eq_mul_inv, ENNReal.lt_div_iff_mul_lt (Or.inl hn0) (Or.inl hn),
       mul_comm, ← div_eq_mul_inv, ENNReal.div_lt_iff (Or.inl hp0) (Or.inl hptop)]
     exact hp2
-  refine ⟨ENNReal.inv_ne_top.2 (tsub_pos_of_lt hinv).ne', ?_, ?_, ?_⟩
-  · rw [inv_inv, tsub_add_cancel_of_le hinv.le]
+  refine ⟨?_, ?_⟩
   · rw [← ENNReal.inv_lt_inv, inv_inv]
     exact ENNReal.sub_lt_of_lt_add hinv.le hinv2
   · -- Both exponents are `2 - n / p`: `n / p⋆ = n (1 / p - 1 / n) = n / p - 1`.
@@ -163,11 +182,9 @@ private theorem Wkp.exists_w1p_value_ae_eq_of_lt_two_mul (hp : (finrank ℝ E : 
   · have : Fact (1 ≤ ((finrank ℝ E + 1 : ℝ≥0) : ℝ≥0∞)) := ⟨by simp⟩
     exact ⟨_, this, by exact_mod_cast lt_add_one (finrank ℝ E),
       Wkp.exists_w1p_value_ae_eq_of_isCompact_closure hnp u hVc hVΩ _⟩
-  · obtain ⟨hpstar, hexp, hq, -⟩ := exponent_facts_of_lt (ENNReal.natCast_ne_top _) hp hpn
-    let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-    obtain ⟨T, hT⟩ := Wkp.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu) hpstar hexp
-      hVc hVΩ 1
-    exact ⟨_, inferInstance, hq, T u, by simpa only [Wkp.value_one] using hT u⟩
+  · obtain ⟨_, w, hw⟩ :=
+      Wkp.exists_w1p_value_ae_eq_of_isCompact_closure_of_lt_finrank hpn u hVc hVΩ
+    exact ⟨_, inferInstance, (exponent_facts_of_lt (ENNReal.natCast_ne_top _) hp hpn).1, w, hw⟩
 
 /-- **Continuity of `W^{2,p}` functions for `p` above half the dimension.** If `n < 2 p`, where `n`
 is the dimension, the precise representative of any `u ∈ W^{2,p}(Ω)`, which agrees with `u` almost
@@ -216,15 +233,12 @@ theorem Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact_of_lt_finrank
     {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C ((2 : ℝ≥0∞) - finrank ℝ E / p).toNNReal
       (preciseRepresentative mu (Wkp.value 2 u)) K := by
-  obtain ⟨hpstar, hexp, hq, hα⟩ := exponent_facts_of_lt (ENNReal.natCast_ne_top _) hp hpn
-  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  obtain ⟨hq, hα⟩ := exponent_facts_of_lt (ENNReal.natCast_ne_top _) hp hpn
   obtain ⟨V, hKV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-  obtain ⟨T, hT⟩ := Wkp.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu) hpstar hexp
-    hVc hVΩ 1
-  obtain ⟨C, hC⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_isCompact hq (T u) hK hKV
+  obtain ⟨_, w, hw⟩ := Wkp.exists_w1p_value_ae_eq_of_isCompact_closure_of_lt_finrank hpn u hVc hVΩ
+  obtain ⟨C, hC⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_isCompact hq w hK hKV
   rw [hα] at hC
-  exact ⟨C, holderOnWith_preciseRepresentative_of_ae_eq
-    (by simpa only [Wkp.value_one] using hT u) hKV hC⟩
+  exact ⟨C, holderOnWith_preciseRepresentative_of_ae_eq hw hKV hC⟩
 
 /-- **Hölder continuity of `W^{2,p}` functions for `p` at least the dimension.** If `n ≤ p ≤ ∞`,
 where `n` is the dimension, then for every finite `q > n` the precise representative of any
@@ -328,10 +342,9 @@ theorem Wkp.exists_holderOnWith_fderiv_preciseRepresentative_of_isCompact
       W1p.exists_holderOnWith_preciseRepresentative_of_isCompact hp (Wkp.lineDerivL (b i) 1 u)
         hK hKΩ
   refine ⟨∑ i, C i, HolderOnWith.of_dist_le fun x hx y hy => ?_⟩
-  rw [hfd x (hKΩ hx), hfd y (hKΩ hy), dist_eq_norm, ← Finset.sum_sub_distrib, NNReal.coe_sum,
-    Finset.sum_mul]
+  simp only [hfd x (hKΩ hx), hfd y (hKΩ hy), dist_eq_norm, ← Finset.sum_sub_distrib,
+    NNReal.coe_sum, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
-  rw [← sub_smul, norm_smul, innerSL_apply_norm, b.orthonormal.1 i, mul_one, ← dist_eq_norm]
-  simpa only [Wkp.value_one] using (hC i).dist_le hx hy
+  simpa [← sub_smul, norm_smul, b.orthonormal.1 i, ← dist_eq_norm] using (hC i).dist_le hx hy
 
 end TauCeti
