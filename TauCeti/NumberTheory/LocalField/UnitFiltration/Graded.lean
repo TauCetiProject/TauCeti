@@ -27,9 +27,6 @@ group of `𝓀[K]`, and shows that it has `#𝓀[K]` elements.
 
 ## Main definitions
 
-* `TauCeti.unitFiltrationEquivPrincipalUnitGroup` and
-  `TauCeti.unitFiltrationGradedEquivPrincipalUnitGraded`: identification of the unit filtration and
-  its successive quotients with the principal-unit filtration of `𝒪[K]`.
 * `TauCeti.unitFiltrationGradedSuccEquivMaximalIdealGraded`: subtracting one identifies a
   positive unit-filtration quotient with the corresponding quotient of powers of the maximal
   ideal.
@@ -107,79 +104,6 @@ theorem coe_coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)
     ((x : Kˣ) : K) - 1
   rw [coe_unitFiltrationToIntegerUnits]
 
-variable (K) in
-/-- Identification of the unit-filtration step `U(K, i)` with the principal unit group
-`(𝓂[K] ^ i).principalUnitGroup` of the integer ring `𝒪[K]`. -/
-def unitFiltrationEquivPrincipalUnitGroup (i : ℕ) :
-    unitFiltration K i ≃* (maximalIdeal 𝒪[K] ^ i).principalUnitGroup where
-  toFun x := ⟨unitFiltrationToIntegerUnits i x, by
-    rw [Ideal.mem_principalUnitGroup]
-    obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.mp x.prop
-    have heq : unitFiltrationToIntegerUnits i x = u :=
-      Units.ext (Subtype.ext (by rw [coe_unitFiltrationToIntegerUnits, ← hux]))
-    rwa [heq]⟩
-  invFun u := ⟨Units.map (Subring.subtype 𝒪[K]).toMonoidHom (u : 𝒪[K]ˣ),
-    mem_unitFiltration_iff_exists.mpr ⟨u, Ideal.mem_principalUnitGroup.mp u.prop, rfl⟩⟩
-  left_inv x := Subtype.ext (unitsMap_subtype_unitFiltrationToIntegerUnits i x)
-  right_inv u := Subtype.ext (Units.ext (Subtype.ext (coe_unitFiltrationToIntegerUnits i _)))
-  map_mul' x y := Subtype.ext (map_mul (unitFiltrationToIntegerUnits i) x y)
-
-/-- Reading a principal unit corresponding to `x ∈ U(K, i)` in `K` recovers `x`. -/
-@[simp]
-theorem coe_unitFiltrationEquivPrincipalUnitGroup (i : ℕ) (x : unitFiltration K i) :
-    (((unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) :=
-  coe_unitFiltrationToIntegerUnits i x
-
-/-- Reading the element of `U(K, i)` corresponding to `u ∈ (𝓂[K] ^ i).principalUnitGroup` in `K`
-recovers `u`. -/
-@[simp]
-theorem coe_unitFiltrationEquivPrincipalUnitGroup_symm (i : ℕ)
-    (u : (maximalIdeal 𝒪[K] ^ i).principalUnitGroup) :
-    (((unitFiltrationEquivPrincipalUnitGroup K i).symm u : Kˣ) : K) = ((u : 𝒪[K]ˣ) : K) := by
-  simp [unitFiltrationEquivPrincipalUnitGroup]
-
-variable (K) in
-/-- Identification of the graded unit-filtration quotient `U(K, i) / U(K, i + 1)` with the
-corresponding principal-unit graded quotient `PrincipalUnitGraded 𝒪[K] i`. -/
-def unitFiltrationGradedEquivPrincipalUnitGraded (i : ℕ) :
-    UnitFiltrationGraded K i ≃* PrincipalUnitGraded 𝒪[K] i :=
-  QuotientGroup.congr _ _ (unitFiltrationEquivPrincipalUnitGroup K i) <| by
-    ext u
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-    refine ⟨?_, fun hu ↦ ?_⟩
-    · rintro ⟨x, hx, rfl⟩
-      rw [Ideal.mem_principalUnitGroup]
-      obtain ⟨v, hv, hvx⟩ :=
-        mem_unitFiltration_iff_exists.mp (hx : (x : Kˣ) ∈ unitFiltration K (i + 1))
-      have hv_eq : ((unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ) : 𝒪[K]) = (v : 𝒪[K]) :=
-        Subtype.ext (by rw [coe_unitFiltrationEquivPrincipalUnitGroup, ← hvx])
-      change ((unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ) : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (i + 1)
-      rwa [hv_eq]
-    · obtain ⟨x, hxu⟩ := (unitFiltrationEquivPrincipalUnitGroup K i).surjective u
-      refine ⟨x, ?_, hxu⟩
-      rw [mem_unitFiltration_iff_exists]
-      refine ⟨(unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ), ?_,
-        coe_unitFiltrationEquivPrincipalUnitGroup i x⟩
-      rwa [hxu, ← Ideal.mem_principalUnitGroup]
-
-/-- Evaluating `unitFiltrationGradedEquivPrincipalUnitGraded` on a coset transports the
-representative along `unitFiltrationEquivPrincipalUnitGroup`. -/
-@[simp]
-theorem unitFiltrationGradedEquivPrincipalUnitGraded_mk (i : ℕ) (x : unitFiltration K i) :
-    unitFiltrationGradedEquivPrincipalUnitGraded K i (QuotientGroup.mk x) =
-      QuotientGroup.mk (unitFiltrationEquivPrincipalUnitGroup K i x) :=
-  QuotientGroup.congr_mk ..
-
-/-- Evaluating the inverse of `unitFiltrationGradedEquivPrincipalUnitGraded` on a coset transports
-the representative backwards along `unitFiltrationEquivPrincipalUnitGroup`. -/
-@[simp]
-theorem unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk (i : ℕ)
-    (u : (maximalIdeal 𝒪[K] ^ i).principalUnitGroup) :
-    (unitFiltrationGradedEquivPrincipalUnitGraded K i).symm (QuotientGroup.mk u) =
-      QuotientGroup.mk ((unitFiltrationEquivPrincipalUnitGroup K i).symm u) := by
-  rw [MulEquiv.symm_apply_eq, unitFiltrationGradedEquivPrincipalUnitGraded_mk,
-    MulEquiv.apply_symm_apply]
-
 /-- Subtracting one identifies the positive unit-filtration quotient
 `U(K,n+1) / U(K,n+2)` with `𝓂[K]^(n+1) / 𝓂[K]^(n+2)`. -/
 noncomputable def unitFiltrationGradedSuccEquivMaximalIdealGraded (n : ℕ) :
@@ -201,7 +125,7 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk
     _
   rw [principalUnitGradedSuccEquivMaximalIdealGraded_ofMul_mk]
   exact congrArg (fun z : (𝓂[K] ^ (n + 1) : Ideal 𝒪[K]) ↦
-    Multiplicative.ofAdd (Submodule.Quotient.mk z)) (Subtype.ext rfl)
+    Multiplicative.ofAdd (Submodule.Quotient.mk z)) (Subtype.ext (Subtype.ext (by simp)))
 
 /-- Every positive graded piece `U(K,n+1) / U(K,n+2)`, read additively, is isomorphic to the
 additive group of the residue field. -/

@@ -120,44 +120,33 @@ private local instance instBasePrimeIdealPrime (L : Type*) [Field L] [ValuativeR
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] : (basePrimeIdeal L).IsPrime :=
   (maximalIdeal.isMaximal 𝒪[L]).isPrime.comap _
 
-private theorem isUnit_algebraMap_of_mem_basePrimeIdeal_primeCompl (L : Type*) [Field L]
-    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-    (s : (basePrimeIdeal L).primeCompl) : IsUnit (algebraMap ℤ 𝒪[L] s) :=
-  IsLocalRing.notMem_maximalIdeal.mp s.prop
+private local instance instIsLocalizationMaximalIdealPrimeCompl (L : Type*) [Field L]
+    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
+    IsLocalization (maximalIdeal 𝒪[L]).primeCompl 𝒪[L] :=
+  IsLocalization.self fun _ hx ↦ IsLocalRing.notMem_maximalIdeal.mp hx
+
+private noncomputable def baseRingHom (L : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
+    Localization.AtPrime (basePrimeIdeal L) →+* 𝒪[L] :=
+  RingHom.comp
+    (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L] :
+      Localization.AtPrime (maximalIdeal 𝒪[L]) →+* 𝒪[L])
+    (Localization.localRingHom (basePrimeIdeal L) (maximalIdeal 𝒪[L]) (algebraMap ℤ 𝒪[L]) rfl)
 
 private local instance instBaseRingAlgebra (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
     Algebra (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] :=
-  (IsLocalization.lift (M := (basePrimeIdeal L).primeCompl)
-    (S := Localization.AtPrime (basePrimeIdeal L))
-    (isUnit_algebraMap_of_mem_basePrimeIdeal_primeCompl L)).toAlgebra
+  (baseRingHom L).toAlgebra
 
 private local instance instBaseRingIsLocalHom (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    IsLocalHom (algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L]) := ⟨fun r hr ↦ by
-  obtain ⟨⟨z, s⟩, rfl⟩ := IsLocalization.mk'_surjective (basePrimeIdeal L).primeCompl r
-  dsimp only at hr ⊢
-  have hspec :
-      algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L]
-          (IsLocalization.mk' (Localization.AtPrime (basePrimeIdeal L)) z s) *
-        algebraMap ℤ 𝒪[L] (s : ℤ) = algebraMap ℤ 𝒪[L] z := by
-    rw [mul_comm]
-    exact ((IsLocalization.lift_mk'_spec (isUnit_algebraMap_of_mem_basePrimeIdeal_primeCompl L)
-      z _ s).mp rfl).symm
-  have hz : z ∈ (basePrimeIdeal L).primeCompl := by
-    rw [Ideal.mem_primeCompl_iff]
-    intro hzp
-    have hunit : IsUnit (algebraMap ℤ 𝒪[L] z) := by
-      rw [← hspec]
-      exact hr.mul (isUnit_algebraMap_of_mem_basePrimeIdeal_primeCompl L s)
-    exact (IsLocalRing.notMem_maximalIdeal.mpr hunit) hzp
-  have hmul :
-      IsLocalization.mk' (Localization.AtPrime (basePrimeIdeal L)) z s *
-        algebraMap ℤ (Localization.AtPrime (basePrimeIdeal L)) (s : ℤ) =
-        algebraMap ℤ (Localization.AtPrime (basePrimeIdeal L)) z :=
-    IsLocalization.mk'_spec (Localization.AtPrime (basePrimeIdeal L)) z s
-  exact isUnit_of_mul_isUnit_left
-    (hmul.symm ▸ IsLocalization.map_units (Localization.AtPrime (basePrimeIdeal L)) ⟨z, hz⟩)⟩
+    IsLocalHom (algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L]) :=
+  have : IsLocalHom (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L]) :=
+    isLocalHom_equiv _
+  @RingHom.isLocalHom_comp _ _ _ _ _ _ _ _
+    (isLocalHom_toRingHom (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L]))
+    (Localization.isLocalHom_localRingHom (basePrimeIdeal L) (maximalIdeal 𝒪[L])
+      (algebraMap ℤ 𝒪[L]) rfl)
 
 private local instance instBaseRingSMulCommClass (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] (G : Type*) [Group G]

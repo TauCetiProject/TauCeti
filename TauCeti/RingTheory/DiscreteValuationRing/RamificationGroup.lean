@@ -412,6 +412,27 @@ private def ramificationGroupSuccEquiv (n : ℕ) :
   MulEquiv.subgroupCongr (by push_cast; rfl)
 
 variable (G) in
+private def ramificationGroupGradedSuccEquiv (n : ℕ) :
+    RamificationGroupGraded G S ((n : ℤ) + 1) ≃* RamificationGroupGraded G S (n + 1 : ℕ) :=
+  QuotientGroup.equivQuotientSubgroupOfOfEq
+    (show ramificationGroup G S (((n : ℤ) + 1) + 1) =
+        ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) by push_cast; rfl)
+    (show ramificationGroup G S ((n : ℤ) + 1) =
+        ramificationGroup G S (n + 1 : ℕ) by push_cast; rfl)
+
+variable (G) in
+private theorem ramificationGroupGradedSuccEquiv_mk (n : ℕ)
+    (τ : ramificationGroup G S ((n : ℤ) + 1)) :
+    ramificationGroupGradedSuccEquiv G n (QuotientGroup.mk τ) =
+      QuotientGroup.mk (ramificationGroupSuccEquiv G n τ) := by
+  refine (QuotientGroup.quotientMapSubgroupOfOfLe_mk
+    (show ramificationGroup G S (((n : ℤ) + 1) + 1) ≤
+        ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) by push_cast; exact le_rfl)
+    (show ramificationGroup G S ((n : ℤ) + 1) ≤
+        ramificationGroup G S (n + 1 : ℕ) by push_cast; exact le_rfl) τ).trans ?_
+  exact congrArg QuotientGroup.mk (Subtype.ext (MulEquiv.subgroupCongr_apply _ τ).symm)
+
+variable (G) in
 /-- The positive-depth additive homomorphism `Additive G_{n+1} →+ ResidueField S` attached to a
 uniformizer `ϖ`, sending `σ` with `σ • ϖ - ϖ = y * ϖ ^ (n + 2)` to `residue S y`. -/
 noncomputable def ramificationGroupToResidueField (n : ℕ) {ϖ : S} (hϖ : Irreducible ϖ) :
@@ -442,11 +463,7 @@ noncomputable def ramificationGroupGradedToResidueField (n : ℕ) {ϖ : S} (hϖ 
     Additive (RamificationGroupGraded G S ((n : ℤ) + 1)) →+ ResidueField S :=
   (principalUnitGradedSuccEquivResidueField n hϖ).toAddMonoidHom.comp
     ((ramificationGroupGradedToPrincipalUnitGraded G (n + 1) hϖ).comp
-      (QuotientGroup.equivQuotientSubgroupOfOfEq
-        (show ramificationGroup G S (((n : ℤ) + 1) + 1) =
-            ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) by push_cast; rfl)
-        (show ramificationGroup G S ((n : ℤ) + 1) =
-            ramificationGroup G S (n + 1 : ℕ) by push_cast; rfl)).toMonoidHom).toAdditive
+      (ramificationGroupGradedSuccEquiv G n).toMonoidHom).toAdditive
 
 @[simp]
 theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
@@ -457,17 +474,7 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) {ϖ : S} (hϖ :
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     MonoidHom.toAdditive_apply_apply, toMul_ofMul, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom]
-  have h1 : ramificationGroup G S (((n : ℤ) + 1) + 1) =
-      ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) := by push_cast; rfl
-  have h2 : ramificationGroup G S ((n : ℤ) + 1) =
-      ramificationGroup G S (n + 1 : ℕ) := by push_cast; rfl
-  have hquot :
-      QuotientGroup.equivQuotientSubgroupOfOfEq h1 h2 (QuotientGroup.mk τ) =
-        QuotientGroup.mk (Subgroup.inclusion h2.le τ) :=
-    QuotientGroup.quotientMapSubgroupOfOfLe_mk h1.le h2.le τ
-  have hτ : ramificationGroupSuccEquiv G n τ = Subgroup.inclusion h2.le τ :=
-    Subtype.ext (MulEquiv.subgroupCongr_apply _ τ)
-  rw [hquot, hτ, ramificationGroupGradedToPrincipalUnitGraded_mk,
+  rw [ramificationGroupGradedSuccEquiv_mk, ramificationGroupGradedToPrincipalUnitGraded_mk,
     ramificationGroupToPrincipalUnitGraded_apply]
 
 /-- If `τ ∈ G_{n+1}` satisfies `(τ : G) • ϖ - ϖ = y * ϖ ^ (n + 2)`, then
@@ -526,11 +533,7 @@ theorem ramificationGroupGradedToResidueField_change (n : ℕ) {ϖ ϖ' : S}
         ramificationGroupGradedToResidueField G n hϖ' (Additive.ofMul τ) := by
   have htheta := DFunLike.congr_fun
     (ramificationGroupGradedToPrincipalUnitGraded_eq_of_irreducible G (n + 1) hϖ hϖ')
-    (QuotientGroup.equivQuotientSubgroupOfOfEq
-      (show ramificationGroup G S (((n : ℤ) + 1) + 1) =
-          ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) by push_cast; rfl)
-      (show ramificationGroup G S ((n : ℤ) + 1) =
-          ramificationGroup G S (n + 1 : ℕ) by push_cast; rfl) τ)
+    (ramificationGroupGradedSuccEquiv G n τ)
   rw [ramificationGroupGradedToResidueField, ramificationGroupGradedToResidueField]
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     MonoidHom.toAdditive_apply_apply, toMul_ofMul, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
@@ -623,12 +626,7 @@ theorem ramificationGroupGradedToResidueField_injective (n : ℕ) {ϖ : S} (hϖ 
   exact (principalUnitGradedSuccEquivResidueField n hϖ).injective.comp <|
     Additive.ofMul.injective.comp <|
       (ramificationGroupGradedToPrincipalUnitGraded_injective G R (n + 1) hϖ).comp <|
-        (QuotientGroup.equivQuotientSubgroupOfOfEq
-          (show ramificationGroup G S (((n : ℤ) + 1) + 1) =
-              ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) by push_cast; rfl)
-          (show ramificationGroup G S ((n : ℤ) + 1) =
-              ramificationGroup G S (n + 1 : ℕ) by push_cast; rfl)).injective.comp
-          Additive.toMul.injective
+        (ramificationGroupGradedSuccEquiv G n).injective.comp Additive.toMul.injective
 
 variable (G) in
 /-- Under separable residue extension, the kernel of `ramificationGroupToResidueField` is
